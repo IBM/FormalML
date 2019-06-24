@@ -40,6 +40,8 @@ Definition diverges_left (s: nat -> R) : Prop :=
 
 End SeriesDivergence.
 
+Section AssumptionC.
+
 Local Open Scope R_scope.
 Definition Assumption_C_1 (ak : nat -> R) : Prop :=
   let 
@@ -48,6 +50,20 @@ Definition Assumption_C_1 (ak : nat -> R) : Prop :=
     (forall n, ak n >= 0) /\
     diverges_right ak /\
     converges ak_squared.
+
+(* note: classical sup = LEM, and isn't needed anyway as long as we can specialize the definition of the stochastic subgradients a little bit to be a sequence indexable by nat *)
+Definition Assumption_C_2 (x: nat -> R) : Prop :=
+  exists M : R,
+    forall k: nat, Rabs (x k) < M.
+
+(* TODO *)
+Definition Assumption_C_3 := 1=1.
+
+Definition Assumption_C (alpha: nat -> R) (x : nat -> R) : Prop :=
+  Assumption_C_1 alpha /\ Assumption_C_2 x /\ Assumption_C_3.
+
 Local Close Scope R_scope.
+
+End AssumptionC.
 
 End NN.
