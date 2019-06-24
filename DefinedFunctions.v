@@ -30,6 +30,22 @@ Fixpoint concat (l1 l2 : list string) :=
   | cons hd tl => cons hd (concat tl l2)
   end.
 
+(*
+Explanation:
+in_dec is the decision procedure for deciding whether an element is in a List.
+It takes 3 arguments:
+  1. a decision procedure for determining if two members the parameterizing type are equal.
+     For strings, this is string_dec (defined in Coq.Strings.String).
+  2. the element to search for
+  3. the list to search in.
+
+Notice that when you define this function, Coq will print "concat is recursively defined (descreasing on the 1st argument)"
+The part about "decreasing on the 1st argument" is important -- your recursive
+definitions must always descrease. So, for example, the following definition
+will not work:
+
+Fixpoint loop (l : list string) := (loop l)
+*)
 Fixpoint unique (l : list string) :=
   match l with
   | nil => l
@@ -52,6 +68,19 @@ Fixpoint free_variables (f : DefinedFunction) := unique
   | Log e => free_variables e
   | Exp e => free_variables e
   end.
+
+
+
+(* We need ot open the string scope in order to use "a" as a string. *)
+Open Scope string_scope.
+Theorem ex1 : (free_variables (Plus (Var "a") (Var "b"))) = "a"::"b"::nil.
+Proof.
+(* Reflexivity doesn't need syntactically identical things on either side of =. 
+ * It suffices that the left-hand side beta-reduced to the right-hand side. *)
+reflexivity.
+Qed.
+
+Close Scope string_scope.
 
 End FreeVariablesExample.
 
