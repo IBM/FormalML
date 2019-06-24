@@ -30,13 +30,13 @@ Definition diverges_right (s: nat -> R) : Prop :=
   forall m: R,
     exists N: nat,
       forall n: nat, 
-        n >= N -> Rlt (s n) m.
+        n >= N -> Rgt (s n) m.
 
 Definition diverges_left (s: nat -> R) : Prop :=
   forall m: R,
     exists N: nat,
       forall n:nat, 
-        n >= N -> Rgt (s n) m.
+        n >= N -> Rlt (s n) m.
 
 End SeriesDivergence.
 
