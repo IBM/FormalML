@@ -8,36 +8,31 @@ Module NN.
 Section DefinedFunctions.
 
 (* Terms are defined functions with free variables. *)
-Inductive Term : Type :=
+Inductive DefinedFunction : Type :=
   | Number (x : R)
   | Var (name : string)
-  | Plus (l r : Term)
-  | Minus (l r : Term)
-  | Times (l r : Term)
-  | Divide (l r : Term)
-  | Exp (e : Term)
-  | Log (e : Term)
-  | Abs (e : Term)
-  | Max (l r : Term).
-
-(* DefinedFunctions are either base terms or applications of base terms to a list of arguments *)
-Inductive DefinedFunction : Type :=
-  | BaseTerm (e: Term)
-  | App (e: Term) (args: string -> DefinedFunction).
+  | Plus (l r : DefinedFunction)
+  | Minus (l r : DefinedFunction)
+  | Times (l r : DefinedFunction)
+  | Divide (l r : DefinedFunction)
+  | Exp (e : DefinedFunction)
+  | Log (e : DefinedFunction)
+  | Abs (e : DefinedFunction)
+  | Max (l r : DefinedFunction).
 
 (* Replaces all varriables in e with new terms. *)
-Fixpoint DF_apply (e: Term) (args: string -> Term) :=
+Fixpoint DF_apply (e: DefinedFunction) (args: string -> DefinedFunction) :=
   match e with
   | Number x => Number x
   | Var name => args name
   | Plus l r => Plus (DF_apply l args) (DF_apply r args)
-  | Times l r => Plus (DF_apply l args) (DF_apply r args)
-  | Minus l r => Plus (DF_apply l args) (DF_apply r args)
-  | Divide l r => Plus (DF_apply l args) (DF_apply r args)
-  | Max l r => Plus (DF_apply l args) (DF_apply r args)
+  | Times l r => Times (DF_apply l args) (DF_apply r args)
+  | Minus l r => Minus (DF_apply l args) (DF_apply r args)
+  | Divide l r => Divide (DF_apply l args) (DF_apply r args)
+  | Max l r => Max (DF_apply l args) (DF_apply r args)
   | Exp e => Exp (DF_apply e args)
-  | Log e => Exp (DF_apply e args)
-  | Abs e => Exp (DF_apply e args)
+  | Log e => Log (DF_apply e args)
+  | Abs e => Abs (DF_apply e args)
   end.
 
 End DefinedFunctions.
