@@ -27,8 +27,8 @@ Inductive DefinedFunction : Type :=
   | Divide (l r : DefinedFunction)
   | Exp (e : DefinedFunction)
   | Log (e : DefinedFunction)
-  | Abs (e : DefinedFunction)
-  | Max (l r : DefinedFunction).
+  | Abs (e : DefinedFunction).
+
 
 (* Replaces all varriables in e with new terms. *)
 Fixpoint DF_apply (e: DefinedFunction) (args: string -> DefinedFunction) :=
@@ -39,11 +39,17 @@ Fixpoint DF_apply (e: DefinedFunction) (args: string -> DefinedFunction) :=
   | Times l r => Times (DF_apply l args) (DF_apply r args)
   | Minus l r => Minus (DF_apply l args) (DF_apply r args)
   | Divide l r => Divide (DF_apply l args) (DF_apply r args)
-  | Max l r => Max (DF_apply l args) (DF_apply r args)
   | Exp e => Exp (DF_apply e args)
   | Log e => Log (DF_apply e args)
   | Abs e => Abs (DF_apply e args)
   end.
+
+(* max(a,b) == (abs(b-a) + b + a)/2
+  * note: might be easier to just have a Max branch on the DF function:
+  *   | Max (l r : DefinedFunction).
+  *)
+Definition Max (a b : DefinedFunction) :=
+  Divide (Plus (Plus (Abs (Minus b a)) b) a) 2.
 
 End DefinedFunctions.
 
