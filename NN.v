@@ -41,11 +41,12 @@ End DefinedFunctions.
 Section Vectors.
 (* I'm using Coq.Vectors.Vector. *)
 
-(* The type of real-valued vectors *)
+(* The type of real-valued vectors
+ * TODO surely there's a vector space library for Coq? *)
 Definition rvector : nat -> Set := t R.
 
 (* A norm on real-valued vectors
- * TODO define a proper norm *)
+ * TODO define a proper norm, or find a real vector space library. *)
 Fixpoint norm (n: nat) (vector: rvector n) := R0.
 
 End Vectors.
