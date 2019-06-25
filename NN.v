@@ -4,6 +4,15 @@ Require Import Arith.
 Require Import String.
 Require Import Vector.
 
+(* note: if you're running coqide from a different directory from this one, you might need
+to do something like this: 
+*)
+Add LoadPath "/Users/nathan@ibm.com/dev/nn_sopt".
+
+
+Load AxiomaticNormedRealVectorSpace.
+Import AxiomaticNormedRealVectorSpace.
+
 Module NN.
 
 Section DefinedFunctions.
@@ -37,19 +46,6 @@ Fixpoint DF_apply (e: DefinedFunction) (args: string -> DefinedFunction) :=
   end.
 
 End DefinedFunctions.
-
-Section Vectors.
-(* I'm using Coq.Vectors.Vector. *)
-
-(* The type of real-valued vectors
- * TODO surely there's a vector space library for Coq? *)
-Definition rvector : nat -> Set := t R.
-
-(* A norm on real-valued vectors
- * TODO define a proper norm, or find a real vector space library. *)
-Fixpoint norm (n: nat) (vector: rvector n) := R0.
-
-End Vectors.
 
 Section SeriesDivergence.
 
@@ -85,15 +81,15 @@ Definition Assumption_C_1 (ak : nat -> R) : Prop :=
     converges ak_squared.
 
 (* note: classical sup = LEM, and isn't needed anyway as long as we can specialize the definition of the stochastic subgradients a little bit to be a sequence indexable by nat *)
-Definition Assumption_C_2 (d: nat) (x: nat -> rvector d) : Prop :=
+Definition Assumption_C_2 (s: Set) (x: nat -> rvector s) : Prop :=
   exists M : R,
-    forall k: nat, (norm d (x k)) < M.
+    forall k: nat, norm s (x k) < M.
 
 (* TODO *)
 Definition Assumption_C_3 := 1=1.
 
-Definition Assumption_C (d: nat) (alpha: nat -> R) (x : nat -> rvector d) : Prop :=
-  Assumption_C_1 alpha /\ Assumption_C_2 d x /\ Assumption_C_3.
+Definition Assumption_C (s: Set) (alpha: nat -> R) (x : nat -> rvector s) : Prop :=
+  Assumption_C_1 alpha /\ Assumption_C_2 s x /\ Assumption_C_3.
 
 Local Close Scope R_scope.
 
