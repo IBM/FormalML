@@ -1,88 +1,219 @@
-Require Import Rbase.
 Require Import String.
+Require Import RelationClasses.
 Require Import List.
+Require Import Assoc.
+Require Import Rbase Rtrigo Rpower Rbasic_fun.
+Require Import Lra.
 
 Module DefinedFunctions.
 
-Section Definitions.
+  Section Definitions.
+    
+    Definition var := string.
 
-(* A subset of defined functions *)
-Inductive DefinedFunction : Type :=
-  | Number (x : R)
-  | Var (name : string)
-  | Plus (l r : DefinedFunction)
-  | Minus (l r : DefinedFunction)
-  | Times (l r : DefinedFunction)
-  | Divide (l r : DefinedFunction)
-  | Exp (e : DefinedFunction)
-  | Log (e : DefinedFunction)
-  | Abs (e : DefinedFunction)
-  | Max (l r : DefinedFunction).
+    (* A subset of defined functions *)
 
-End Definitions.
+    Inductive DefinedFunction : Set :=
+    | Number (x : R)
+    | Var (name : var)
+    | Plus (l r : DefinedFunction)
+    | Minus (l r : DefinedFunction)
+    | Times (l r : DefinedFunction)
+    | Divide (l r : DefinedFunction)
+    | Exp (e : DefinedFunction)
+    | Log (e : DefinedFunction)
+    | Abs (e : DefinedFunction)
+    | Max (l r : DefinedFunction).
 
-Section FreeVariablesExample.
+  End Definitions.
 
-(* helper function for free_variables. *)
-Fixpoint concat (l1 l2 : list string) :=
-  match l1 with
-  | nil => l2
-  | cons hd tl => cons hd (concat tl l2)
-  end.
+  Section eval.
 
-(*
-Explanation:
-in_dec is the decision procedure for deciding whether an element is in a List.
-It takes 3 arguments:
-  1. a decision procedure for determining if two members the parameterizing type are equal.
-     For strings, this is string_dec (defined in Coq.Strings.String).
-  2. the element to search for
-  3. the list to search in.
+    Definition df_env := list (string * R).
 
-Notice that when you define this function, Coq will print "concat is recursively defined (descreasing on the 1st argument)"
-The part about "decreasing on the 1st argument" is important -- your recursive
-definitions must always descrease. So, for example, the following definition
-will not work:
+    Fixpoint df_eval (σ:df_env) (df:DefinedFunction) : option R
+      := match df with
+         | Number r => Some r
+         | Var x => lookup string_dec σ x
+         | Plus l r =>
+           match df_eval σ l, df_eval σ r with
+           | Some l', Some r' => Some (l' + r')%R
+           | _, _ => None
+           end
+         | Minus l r =>
+           match df_eval σ l, df_eval σ r with
+           | Some l', Some r' => Some (l' - r')%R
+           | _, _ => None
+           end
+         | Times l r =>
+           match df_eval σ l, df_eval σ r with
+           | Some l', Some r' => Some (l' * r')%R
+           | _, _ => None
+           end
+         | Divide l r =>
+           match df_eval σ l, df_eval σ r with
+           | Some l', Some r' => Some (l' / r')%R
+           | _, _ => None
+           end
+         | Exp e =>
+           match df_eval σ e with
+           | Some v => Some (exp v)
+           | _ => None
+           end
+         | Log e => 
+           match df_eval σ e with
+           | Some v => Some (ln v)
+           | _ => None
+           end
+         | Abs e =>
+           match df_eval σ e with
+           | Some v => Some (Rabs v)
+           | _ => None
+           end
+         | Max l r =>
+           match df_eval σ l, df_eval σ r with
+           | Some l', Some r' => Some (Rmax l' r')
+           | _, _ => None
+           end
+         end.
 
-Fixpoint loop (l : list string) := (loop l)
-*)
-Fixpoint unique (l : list string) :=
-  match l with
-  | nil => l
-  | cons hd tl => if (in_dec string_dec hd tl) then (unique tl) else cons hd (unique tl)
-  end.
+  End eval.
 
-(* An example of a recursively defined function over an inductive data type.
- * computes the set of all variables occurring in a defined function.
- * note: may containing names more than once. *)
-Fixpoint free_variables (f : DefinedFunction) := unique
-  match f with
-  | Number x => nil
-  | Var name => cons name nil
-  | Plus l r => concat (free_variables l) (free_variables r)
-  | Minus l r => concat (free_variables l) (free_variables r)
-  | Times l r => concat (free_variables l) (free_variables r)
-  | Divide l r => concat (free_variables l) (free_variables r)
-  | Max l r => concat (free_variables l) (free_variables r)
-  | Abs e => free_variables e
-  | Log e => free_variables e
-  | Exp e => free_variables e
-  end.
+  Section max_derived.
+    Definition MaxDerived (a b : DefinedFunction) :=
+      Divide (Plus (Plus (Abs (Minus b a)) b) a) (Number 2).
+    
+    Lemma MaxDerivedMax_eq (a b : DefinedFunction) :
+      forall σ, df_eval σ (Max a b) = df_eval σ (MaxDerived a b).
+    Proof.
+      simpl; intros σ.
+      destruct (df_eval σ a); destruct (df_eval σ b); trivial.
+      f_equal.
+      destruct (Rle_dec r r0).
+      - rewrite Rmax_right by trivial.
+        rewrite Rabs_pos_eq by lra.
+        lra.
+      - rewrite Rmax_left by lra.
+        rewrite Rabs_minus_sym.
+        rewrite Rabs_pos_eq by lra.
+        lra.
+    Qed.
+
+  End max_derived.
+
+  Section fv.
+
+    Lemma incl_app_iff {A:Type} (l m n : list A) :
+      incl (l ++ m) n <-> incl l n /\ incl m n.
+    Proof.
+      unfold incl; intuition.
+      rewrite in_app_iff in H.
+      intuition.
+    Qed.
+    
+    Global Instance incl_pre A : PreOrder (@incl A).
+    Proof.
+      unfold incl.
+      constructor; red; intuition.
+    Qed.
+
+    Fixpoint df_free_variables (f : DefinedFunction) : list var
+      := match f with
+         | Number x => nil
+         | Var name => name::nil
+         | Plus l r => (df_free_variables l) ++ (df_free_variables r)
+         | Minus l r => (df_free_variables l) ++ (df_free_variables r)
+         | Times l r => (df_free_variables l) ++ (df_free_variables r)
+         | Divide l r => (df_free_variables l) ++ (df_free_variables r)
+         | Max l r => (df_free_variables l) ++ (df_free_variables r)
+         | Abs e => df_free_variables e
+         | Log e => df_free_variables e
+         | Exp e => df_free_variables e
+         end.
+
+    Definition df_closed (f: DefinedFunction) : Prop
+      := match df_free_variables f with
+         | nil => True
+         | _ => False
+         end.
+
+    Lemma df_closed_nil (f: DefinedFunction) : df_closed f -> df_free_variables f = nil.
+    Proof.
+      unfold df_closed.
+      destruct (df_free_variables f); tauto.
+    Qed.
+
+    Lemma df_eval_free (σ:df_env) (f:DefinedFunction) :
+      incl (df_free_variables f) (domain σ) -> {v | df_eval σ f = Some v}.
+    Proof.
+      induction f; simpl; intros inc
+      ;  try solve [rewrite incl_app_iff in inc
+                    ; intuition
+                    ; destruct H1 as [v1 ev1]
+                    ; destruct H2 as [v2 ev2]
+                    ; rewrite ev1; rewrite ev2
+                    ; eauto
+                   | intuition
+                     ; destruct H as [v1 ev1]
+                     ; rewrite ev1
+                     ; eauto].
+      - eauto.
+      - apply in_dom_lookup.
+        specialize (inc name); simpl in *.
+        intuition.
+    Qed.
+
+    (*  This version has better computational properties *)
+    Lemma df_eval_free_compute (σ:df_env) (f:DefinedFunction) :
+      incl (df_free_variables f) (domain σ) -> {v | df_eval σ f = Some v}.
+    Proof.
+      case_eq (df_eval σ f); simpl.
+      - intros r ?? ; exists r; eauto.
+      - intros ? inc.
+        destruct (df_eval_free _ _ inc); congruence.
+    Defined.
+
+    Lemma df_eval_closed (f:DefinedFunction) :
+      df_closed f -> {v | df_eval nil f = Some v}.
+    Proof.
+      intros c.
+      apply (df_eval_free_compute nil f).
+      rewrite df_closed_nil by trivial.
+      simpl; reflexivity.
+    Defined.        
+
+  End fv.
+
+  Section subst.
+    Fixpoint df_subst (e: DefinedFunction) (args: string -> DefinedFunction) :=
+      match e with
+      | Number x => Number x
+      | Var name => args name
+      | Plus l r => Plus (df_subst l args) (df_subst r args)
+      | Times l r => Times (df_subst l args) (df_subst r args)
+      | Minus l r => Minus (df_subst l args) (df_subst r args)
+      | Divide l r => Divide (df_subst l args) (df_subst r args)
+      | Exp e => Exp (df_subst e args)
+      | Log e => Log (df_subst e args)
+      | Abs e => Abs (df_subst e args)
+      | Max l r => Max (df_subst l args) (df_subst r args)
+      end.
+  End subst.
 
 
-
-(* We need ot open the string scope in order to use "a" as a string. *)
-Open Scope string_scope.
-Theorem ex1 : (free_variables (Plus (Var "a") (Var "b"))) = "a"::"b"::nil.
-Proof.
-(* Reflexivity doesn't need syntactically identical things on either side of =. 
- * It suffices that the left-hand side beta-reduced to the right-hand side. *)
-reflexivity.
-Qed.
-
-Close Scope string_scope.
-
-End FreeVariablesExample.
-
+  Section FreeVariablesExample.
+    (* We need ot open the string scope in order to use "a" as a string. *)
+    Open Scope string_scope.
+    Theorem ex1 : (df_free_variables (Plus (Var "a") (Var "b"))) = "a"::"b"::nil.
+    Proof.
+      (* Reflexivity doesn't need syntactically identical things on either side of =. 
+       * It suffices that the left-hand side beta-reduced to the right-hand side. *)
+      reflexivity.
+    Qed.
+    
+    Close Scope string_scope.
+    
+  End FreeVariablesExample.
+    
 End DefinedFunctions.
 
