@@ -1,4 +1,5 @@
 Require Import List.
+Require Import RelationClasses.
 
 Section Assoc.
   
@@ -55,5 +56,79 @@ Section Assoc.
     Hint Resolve in_dom_lookup in_dom.
     intros. eauto.
   Qed.
+
+  Section lookup_eq.
+      Definition lookup_equiv (l1 l2:list (A*B))
+        := forall x, lookup l1 x = lookup l2 x.
+      
+  Global Instance lookup_equiv_equiv
+    : Equivalence lookup_equiv.
+  Proof.
+    unfold lookup_equiv.
+    constructor; red; intros.
+    - trivial.
+    - symmetry; auto.
+    - rewrite H by trivial.
+      eauto.
+  Qed.
+
+  End lookup_eq.
+  Section lookup_on.
+
+
+  Definition lookup_equiv_on 
+             (dom:list A) (l1 l2:list (A*B))
+    := forall x, In x dom -> lookup l1 x = lookup l2 x.
+
+  Global Instance lookup_equiv_on_equiv dom
+    : Equivalence (lookup_equiv_on dom).
+  Proof.
+    unfold lookup_equiv_on.
+    constructor; red; intros.
+    - trivial.
+    - symmetry; auto.
+    - rewrite H by trivial.
+      eauto.
+  Qed.
+
+    Lemma lookup_equiv_on_dom_incl 
+          (dom1 dom2:list A) (l1 l2:list (A*B))
+      : incl dom2 dom1 ->
+        lookup_equiv_on dom1 l1 l2 ->
+        lookup_equiv_on dom2 l1 l2.
+    Proof.
+      unfold lookup_equiv_on; intuition.
+    Qed.
+
+    Lemma lookup_equiv_on_dom_app_f
+          {dom1 dom2:list A} {l1 l2:list (A*B)}
+      : lookup_equiv_on dom1 l1 l2 ->
+        lookup_equiv_on dom2 l1 l2 -> 
+        lookup_equiv_on (dom1++dom2) l1 l2.
+    Proof.
+      unfold lookup_equiv_on; intros.
+      rewrite in_app_iff in *; intuition.
+    Qed.
+    
+    Lemma lookup_equiv_on_dom_app 
+          (dom1 dom2:list A) (l1 l2:list (A*B))
+      : lookup_equiv_on (dom1++dom2) l1 l2 ->
+        lookup_equiv_on dom1 l1 l2 
+        /\ lookup_equiv_on dom2 l1 l2.
+    Proof.
+      unfold lookup_equiv_on; intuition.
+    Qed.
+
+    Lemma lookup_equiv_on_lookup_equiv
+          (l1 l2 : list (A * B)) :
+      lookup_equiv l1 l2 <-> (forall dom, lookup_equiv_on dom l1 l2).
+    Proof.
+      unfold lookup_equiv, lookup_equiv_on.
+      split; intros.
+      - intuition.
+      - apply (H (x::nil)); simpl; eauto.
+    Qed.
+    
+  End lookup_on.
 
 End Assoc.
