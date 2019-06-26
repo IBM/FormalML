@@ -205,21 +205,55 @@ Module DefinedFunctions.
 
   End fv.
 
-  Section subst.
-    Fixpoint df_subst (e: DefinedFunction) (args: string -> DefinedFunction) :=
+  Section apply.
+    
+    Fixpoint df_apply (e: DefinedFunction) (args: string -> DefinedFunction) :=
       match e with
       | Number x => Number x
       | Var name => args name
-      | Plus l r => Plus (df_subst l args) (df_subst r args)
-      | Times l r => Times (df_subst l args) (df_subst r args)
-      | Minus l r => Minus (df_subst l args) (df_subst r args)
-      | Divide l r => Divide (df_subst l args) (df_subst r args)
-      | Exp e => Exp (df_subst e args)
-      | Log e => Log (df_subst e args)
-      | Abs e => Abs (df_subst e args)
-      | Max l r => Max (df_subst l args) (df_subst r args)
+      | Plus l r => Plus (df_apply l args) (df_apply r args)
+      | Times l r => Times (df_apply l args) (df_apply r args)
+      | Minus l r => Minus (df_apply l args) (df_apply r args)
+      | Divide l r => Divide (df_apply l args) (df_apply r args)
+      | Exp e => Exp (df_apply e args)
+      | Log e => Log (df_apply e args)
+      | Abs e => Abs (df_apply e args)
+      | Max l r => Max (df_apply l args) (df_apply r args)
       end.
-  End subst.
+    
+ End apply.
+
+    
+  Section subst.
+    Fixpoint df_subst (e: DefinedFunction) (v:var) (e':DefinedFunction) :=
+      match e with
+      | Number x => Number x
+      | Var name =>
+        if string_dec name v
+        then e'
+        else Var name
+      | Plus l r => Plus (df_subst l v e') (df_subst r v e')
+      | Times l r => Times (df_subst l v e') (df_subst r v e')
+      | Minus l r => Minus (df_subst l v e') (df_subst r v e')
+      | Divide l r => Divide (df_subst l v e') (df_subst r v e')
+      | Exp e => Exp (df_subst e v e')
+      | Log e => Log (df_subst e v e')
+      | Abs e => Abs (df_subst e v e')
+      | Max l r => Max (df_subst l v e') (df_subst r v e')
+      end.
+
+
+    Lemma df_subst_nfree (e: DefinedFunction) (v:var) (e':DefinedFunction) :
+      ~ In v (df_free_variables e) ->
+      df_subst e v e' = e.
+    Proof.
+      induction e; simpl; trivial; intros nin
+      ; try solve [try rewrite in_app_iff in nin
+                   ; intuition congruence].
+      - destruct (string_dec name v); intuition.
+    Qed.
+
+    End subst.
 
 
   Section FreeVariablesExample.
