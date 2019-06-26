@@ -44,12 +44,16 @@ Fixpoint DF_apply (e: DefinedFunction) (args: string -> DefinedFunction) :=
   | Abs e => Abs (DF_apply e args)
   end.
 
+Local Open Scope R_scope.
+Definition R2 := 2.
+Local Close Scope R_scope.
+
 (* max(a,b) == (abs(b-a) + b + a)/2
   * note: might be easier to just have a Max branch on the DF function:
   *   | Max (l r : DefinedFunction).
   *)
 Definition Max (a b : DefinedFunction) :=
-  Divide (Plus (Plus (Abs (Minus b a)) b) a) 2.
+  Divide (Plus (Plus (Abs (Minus b a)) b) a) (Number R2).
 
 End DefinedFunctions.
 
