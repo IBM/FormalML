@@ -3,27 +3,24 @@ Require Import Arith.
 
 Module SigmaAlg.
 
-(* If U -> Prop defines a set S, then U->Prop->Prop will be a subset of the powerset of S. *)
-Record SigmaAlgebra (U: Type) : Type := mkRat {
-  X: U -> Prop;
+Definition SigmaAlgebra (U: Type) := (U -> Prop) -> Prop.
 
-  Sigma: (U -> Prop) -> Prop;
+Definition complement (U: Type) (A: U -> Prop) : U -> Prop :=
+  fun u:U => ~(A u).
 
-  X_in_Sigma: 
-    exists A: U -> Prop, Sigma A /\ forall u:U, X u <-> A u;
+Definition intersection (U: Type) (A_1 : U -> Prop) (A_2 : U -> Prop) : U -> Prop :=
+  fun u:U => A_1 u /\ A_2 u.
 
-  Closed_Under_Intersection:
-    forall A_1 A_2 : U -> Prop, exists A_3 : U -> Prop,
-      (Sigma A_1 /\ Sigma A_2) -> (
-        forall u:U, (A_1 u /\ A_2 u) <-> A_3 u
-      );
+Axiom Closed_Under_Intersection:
+  forall U: Type,
+    forall sa: SigmaAlgebra U,
+      forall A_1 A_2 : U -> Prop, 
+        sa A_1 /\ sa A_2 -> sa (intersection U A_1 A_2).
 
-  Closed_Under_Complement:
-    forall A: U -> Prop, Sigma A ->
-      exists A_Complement : U -> Prop,
-        Sigma A_Complement /\
-        forall u:U, A u <-> ~(A_Complement u)
-}.
-
+Axiom Closed_Under_Complement:
+  forall U: Type,
+    forall sa: SigmaAlgebra U,
+      forall A : U -> Prop, 
+          sa A -> sa (complement U A).
 
 End SigmaAlg.
