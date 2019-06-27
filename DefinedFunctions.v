@@ -1,9 +1,10 @@
 Require Import String.
 Require Import RelationClasses.
 Require Import List.
-Require Import Assoc.
 Require Import Rbase Rtrigo Rpower Rbasic_fun.
 Require Import Lra.
+
+Require Import ListAdd Assoc.
 
 Module DefinedFunctions.
 
@@ -103,20 +104,6 @@ Module DefinedFunctions.
 
   Section fv.
 
-    Lemma incl_app_iff {A:Type} (l m n : list A) :
-      incl (l ++ m) n <-> incl l n /\ incl m n.
-    Proof.
-      unfold incl; intuition.
-      rewrite in_app_iff in H.
-      intuition.
-    Qed.
-    
-    Global Instance incl_pre A : PreOrder (@incl A).
-    Proof.
-      unfold incl.
-      constructor; red; intuition.
-    Qed.
-
     Fixpoint df_free_variables (f : DefinedFunction) : list var
       := match f with
          | Number x => nil
@@ -143,7 +130,7 @@ Module DefinedFunctions.
       destruct (df_free_variables f); tauto.
     Qed.
 
-    Lemma df_eval_free (σ:df_env) (f:DefinedFunction) :
+    Lemma df_eval_complete' (σ:df_env) (f:DefinedFunction) :
       incl (df_free_variables f) (domain σ) -> {v | df_eval σ f = Some v}.
     Proof.
       induction f; simpl; intros inc
@@ -163,42 +150,110 @@ Module DefinedFunctions.
         intuition.
     Qed.
 
-    (*  This version has better computational properties *)
-    Lemma df_eval_free_compute (σ:df_env) (f:DefinedFunction) :
+    (* This version has better computational properties *)
+    Lemma df_eval_complete (σ:df_env) (f:DefinedFunction) :
       incl (df_free_variables f) (domain σ) -> {v | df_eval σ f = Some v}.
     Proof.
       case_eq (df_eval σ f); simpl.
       - intros r ?? ; exists r; eauto.
       - intros ? inc.
-        destruct (df_eval_free _ _ inc); congruence.
+        destruct (df_eval_complete' _ _ inc); congruence.
+    Defined.
+
+    Lemma df_eval_none  (σ:df_env) (f:DefinedFunction) :
+      df_eval σ f = None ->
+      {v | In v (df_free_variables f) /\ ~ In v (domain σ)}.
+    Proof.
+      intros.
+      destruct (incl_dec string_dec (df_free_variables f) (domain σ)).
+      - destruct (df_eval_complete _ _ i); congruence.
+      - apply (nincl_exists string_dec) in n; trivial.
+    Qed.
+
+    (* Either we can evaluate df or we are missing a variable definition.
+       Note that this theorem may fail to hold if we change the definition of 
+       division to make it partial.
+     *)
+    Lemma df_eval_compute (σ:df_env) (f:DefinedFunction) :
+      {v | df_eval σ f = Some v} + {x | In x (df_free_variables f) /\ ~ In x (domain σ)}.
+    Proof.
+      case_eq (df_eval σ f); simpl.
+      - eauto.
+      - intros H; apply df_eval_none in H; eauto.
     Defined.
 
     Lemma df_eval_closed (f:DefinedFunction) :
       df_closed f -> {v | df_eval nil f = Some v}.
     Proof.
       intros c.
-      apply (df_eval_free_compute nil f).
+      apply (df_eval_complete nil f).
       rewrite df_closed_nil by trivial.
       simpl; reflexivity.
     Defined.        
 
+    Lemma df_eval_lookup_on (σ₁ σ₂:df_env) (f:DefinedFunction) :
+      lookup_equiv_on string_dec (df_free_variables f) σ₁ σ₂ ->
+      df_eval σ₁ f = df_eval σ₂ f.
+    Proof.
+      intros lookeq.
+      induction f; simpl in *; trivial
+      ;  try solve [apply lookup_equiv_on_dom_app in lookeq; intuition
+                    ; rewrite H1, H2; trivial
+                   | rewrite IHf; trivial].
+      - apply lookeq; simpl; tauto.
+    Qed.
+
   End fv.
 
-  Section subst.
-    Fixpoint df_subst (e: DefinedFunction) (args: string -> DefinedFunction) :=
+  Section apply.
+    
+    Fixpoint df_apply (e: DefinedFunction) (args: string -> DefinedFunction) :=
       match e with
       | Number x => Number x
       | Var name => args name
-      | Plus l r => Plus (df_subst l args) (df_subst r args)
-      | Times l r => Times (df_subst l args) (df_subst r args)
-      | Minus l r => Minus (df_subst l args) (df_subst r args)
-      | Divide l r => Divide (df_subst l args) (df_subst r args)
-      | Exp e => Exp (df_subst e args)
-      | Log e => Log (df_subst e args)
-      | Abs e => Abs (df_subst e args)
-      | Max l r => Max (df_subst l args) (df_subst r args)
+      | Plus l r => Plus (df_apply l args) (df_apply r args)
+      | Times l r => Times (df_apply l args) (df_apply r args)
+      | Minus l r => Minus (df_apply l args) (df_apply r args)
+      | Divide l r => Divide (df_apply l args) (df_apply r args)
+      | Exp e => Exp (df_apply e args)
+      | Log e => Log (df_apply e args)
+      | Abs e => Abs (df_apply e args)
+      | Max l r => Max (df_apply l args) (df_apply r args)
       end.
-  End subst.
+    
+ End apply.
+
+    
+  Section subst.
+    Fixpoint df_subst (e: DefinedFunction) (v:var) (e':DefinedFunction) :=
+      match e with
+      | Number x => Number x
+      | Var name =>
+        if string_dec name v
+        then e'
+        else Var name
+      | Plus l r => Plus (df_subst l v e') (df_subst r v e')
+      | Times l r => Times (df_subst l v e') (df_subst r v e')
+      | Minus l r => Minus (df_subst l v e') (df_subst r v e')
+      | Divide l r => Divide (df_subst l v e') (df_subst r v e')
+      | Exp e => Exp (df_subst e v e')
+      | Log e => Log (df_subst e v e')
+      | Abs e => Abs (df_subst e v e')
+      | Max l r => Max (df_subst l v e') (df_subst r v e')
+      end.
+
+
+    Lemma df_subst_nfree (e: DefinedFunction) (v:var) (e':DefinedFunction) :
+      ~ In v (df_free_variables e) ->
+      df_subst e v e' = e.
+    Proof.
+      induction e; simpl; trivial; intros nin
+      ; try solve [try rewrite in_app_iff in nin
+                   ; intuition congruence].
+      - destruct (string_dec name v); intuition.
+    Qed.
+
+    End subst.
 
 
   Section FreeVariablesExample.
