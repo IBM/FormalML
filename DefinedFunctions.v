@@ -166,7 +166,7 @@ Module DefinedFunctions.
          | Abs e =>
            match df_eval σ e, df_eval_deriv σ e v with
            | Some ee, Some ed => Some (ed * (neg_sign ee))
-           | _ => None
+           | _, _ => None
            end
          | Sign e => Some 0
          | Max l r =>
