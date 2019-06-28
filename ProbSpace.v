@@ -3,41 +3,32 @@ Require Import Coq.Reals.Rfunctions.
 
 Module ProbabilitySpace.
 
-Record ProbSpace := mkProbSpace {
-  T: Type;
-  Sigma: (T -> Prop) -> Prop;
-  P: (T -> Prop) -> R;
-}.
-Definition Omega (ps: ProbSpace) := (fun o:ps.(T) => True).
-
-(* TODO : should all these axioms be components of the record instead of defined at the top level? I guess it doesn't matter... *)
-Axiom Sample_space_nonnegative :
-  forall (ps: ProbSpace),
-    exists t:ps.(T), ps.(Omega) t.
-
-Definition complement (U: Type) (A: U -> Prop) : U -> Prop :=
+Definition complement {U: Type} (A: U -> Prop) : U -> Prop :=
   fun u:U => ~(A u).
 
-Definition intersection (U: Type) (A_1 : U -> Prop) (A_2 : U -> Prop) : U -> Prop :=
+Definition intersection {U: Type} (A_1 : U -> Prop) (A_2 : U -> Prop) : U -> Prop :=
   fun u:U => A_1 u /\ A_2 u.
 
-Section SigmaAlgebraAxioms.
+Class ProbSpace (T:Set) := {
+  ps_Sigma: (T -> Prop) -> Prop;
+  ps_P: (T -> Prop) -> R;
+  ps_sa_closed_under_intersections :
+    forall A_1 A_2: (T -> Prop),
+      ps_Sigma A_1 /\ ps_Sigma A_2 -> ps_Sigma (intersection A_1 A_2);
+  
+  ps_sa_closed_under_complements :
+    forall A_1 : (T -> Prop),
+      ps_Sigma A_1 -> ps_Sigma (complement A_1);
+  
+  ps_sa_contains_sample_space : 
+    ps_Sigma (fun x:T => True) ;
 
-Axiom ps_sa_closed_under_intersections :
-  forall ps: ProbSpace,
-    forall A_1 A_2: (ps.(T) -> Prop),
-      ps.(Sigma) A_1 /\ ps.(Sigma) A_2 -> ps.(Sigma) (intersection ps.(T) A_1 A_2).
+  Sample_space_nonnegative :
+    inhabited T
 
-Axiom ps_sa_closed_under_complements :
-  forall ps: ProbSpace,
-    forall A_1 : (ps.(T) -> Prop),
-      ps.(Sigma) A_1 -> ps.(Sigma) (complement ps.(T) A_1).
+  }.
 
-Axiom ps_sa_contains_sample_space : 
-  forall ps: ProbSpace,
-    ps.(Sigma) ps.(Omega).
-
-End SigmaAlgebraAxioms.
+Definition Omega {T} (ps: ProbSpace T) := (fun o:T => True).
 
 Section ProbabilityMeasureAxioms.
 
@@ -52,52 +43,46 @@ Definition union_of_collection (T: Type) (collection: nat -> (T -> Prop)) :=
   fun t:T => (exists n, (collection n) t).
 
 (* Prop: the sum of probabilities for everything in the collection == R. *)
-Definition sum_of_probs_equals (ps: ProbSpace) (collection: nat -> (ps.(T) -> Prop)) (result: R) :=
-  infinite_sum (fun n:nat => ps.(P) (collection n)) result.
+Definition sum_of_probs_equals `{ps: ProbSpace} (collection: nat -> (T -> Prop)) (result: R) :=
+  infinite_sum (fun n:nat => ps_P (collection n)) result.
 
-Axiom P_is_a_probability_measure :
-  forall ps: ProbSpace,
-    forall collection: nat -> (ps.(T) -> Prop),
+Class MeasureSpace {T:Set} {ps:ProbSpace T} := {
+  P_is_a_probability_measure :=
+    forall collection: nat -> (T -> Prop),
       (* Assume: collection is a subset of Sigma and its elements are pairwise disjoint. *)
-      (forall n:nat, ps.(Sigma) (collection n)) 
+      (forall n:nat, ps_Sigma (collection n)) 
       /\ 
-      collection_is_pairwise_disjoint ps.(T) collection 
+      collection_is_pairwise_disjoint T collection 
       ->
         let
-          prob_of_union := ps.(P) (union_of_collection ps.(T) collection)
+          prob_of_union := ps_P (union_of_collection T collection)
         in
-          sum_of_probs_equals ps collection prob_of_union /\ ps.(P) ps.(Omega) = R1.
-
-End ProbabilityMeasureAxioms.
+        sum_of_probs_equals collection prob_of_union /\ ps_P ps.(Omega) = R1
+  }.
 
 Section RandomVariable1.
 
 (* A sigma algebra **over the same domain T as the ProbSpace! *)
-Record SigmaAlgebra := mkSigmaAlgebra {
-  sT: Type;
-  sSigma : (sT -> Prop) -> Prop;
+Class SigmaAlgebra (T:Set) := {
+ sSigma : (T -> Prop) -> Prop;
+
+ sa_closed_under_intersections :
+    forall A_1 A_2: (T -> Prop),
+      sSigma A_1 /\ sSigma A_2 -> sSigma (intersection A_1 A_2) ;
+
+ sa_closed_under_complements :
+    forall A_1 : (T -> Prop),
+      sSigma A_1 -> sSigma (complement A_1) ;
+
+ sa_contains_sample_space :
+    sSigma (fun x:T => True) 
+                          
 }.
-Definition sOmega (sa: SigmaAlgebra) := fun t:(sa.(sT)) => True.
 
-(* Sigma algebra axioms copy-pasted from above. TODO : I tried re-using the sigma algebra strcutre but ran into problems... *)
-Axiom sa_closed_under_intersections :
-  forall sa: SigmaAlgebra,
-    forall A_1 A_2: (sa.(sT) -> Prop),
-      sa.(sSigma) A_1 /\ sa.(sSigma) A_2 -> sa.(sSigma) (intersection sa.(sT) A_1 A_2).
-
-Axiom sa_closed_under_complements :
-  forall sa: SigmaAlgebra,
-    forall A_1 : (sa.(sT) -> Prop),
-      sa.(sSigma) A_1 -> sa.(sSigma) (complement sa.(sT) A_1).
-
-Axiom sa_contains_sample_space : 
-  forall sa: SigmaAlgebra,
-    sa.(sSigma) sa.(sOmega).
+Definition sOmega {T} (sa: SigmaAlgebra T) := fun t:T => True.
 
 (* and now I give up on a proper measure-theoretic definition because I don't think we'll be able to do anything with it... *)
-Record RandomVariable1 := mkRandomVariable {
-  dom: ProbSpace;
-  cod: SigmaAlgebra;
+Class RandomVariable1 (T) {dom: ProbSpace} {cod: SigmaAlgebra} :=
 
   (* convert between types... this should not be necessary at all! *)
   dom_to_cod: dom.(T) -> cod.(sT);
