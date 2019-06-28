@@ -4,14 +4,7 @@ Require Import Arith.
 Require Import String.
 Require Import Vector.
 
-(* note: if you're running coqide from a different directory from this one, you might need
-to do something like this: 
-*)
-Add LoadPath "/Users/nathan@ibm.com/dev/nn_sopt".
-
-
-Load AxiomaticNormedRealVectorSpace.
-Import AxiomaticNormedRealVectorSpace.
+Require Import AxiomaticNormedRealVectorSpace.
 
 Module NN.
 
@@ -31,18 +24,7 @@ Inductive DefinedFunction : Type :=
 
 
 (* Replaces all varriables in e with new terms. *)
-Fixpoint DF_apply (e: DefinedFunction) (args: string -> DefinedFunction) :=
-  match e with
-  | Number x => Number x
-  | Var name => args name
-  | Plus l r => Plus (DF_apply l args) (DF_apply r args)
-  | Times l r => Times (DF_apply l args) (DF_apply r args)
-  | Minus l r => Minus (DF_apply l args) (DF_apply r args)
-  | Divide l r => Divide (DF_apply l args) (DF_apply r args)
-  | Exp e => Exp (DF_apply e args)
-  | Log e => Log (DF_apply e args)
-  | Abs e => Abs (DF_apply e args)
-  end.
+
 
 Local Open Scope R_scope.
 Definition R2 := 2.
