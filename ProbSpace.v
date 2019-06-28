@@ -62,33 +62,31 @@ Class ProbSpace {T:Set} (S:SigmaAlgebra T) := {
     inhabited T
                                              }.
 
-Section RandomVariable1.
+Section RandomVariable.
 
 (* A sigma algebra **over the same domain T as the ProbSpace! *)
 
 (* and now I give up on a proper measure-theoretic definition because I don't think we'll be able to do anything with it... *)
-  Class RandomVariable1 {Ts:Set} {Td:Set}
+  Class RandomVariable {Ts:Set} {Td:Set}
         {doms: SigmaAlgebra Ts}
         (dom: ProbSpace doms)
         (cod: SigmaAlgebra Td) := {
 
   (* the actual variable. *)
-  rv_rv: Ts -> Td
+  rv_X: Ts -> Td
 
   (* now state that the preimgae of every B in cod.sa_sigma is in dom.Sigma, requiring lots of coercions. *)
 }.
 
-End RandomVariable1.
+  Definition Pr {Ts:Set} {Td:Set}
+        {doms: SigmaAlgebra Ts}
+        {dom: ProbSpace doms}
+        {cod: SigmaAlgebra Td}
+        (rv:RandomVariable dom cod)
+        (S:Td->Prop)
+    := @sa_sigma _ doms (fun x:Ts => S (rv_X x)).
 
-Section RandomVariable2.
-
-Record RandomVariable2 := mkRanadomVariable2 {
-  probSpace: ProbSpace;
-  fn: probSpace.(T) -> R;
-}.
-
-(* TODO now how do we define mean unless we make assumptions on countability... *)
-
-End RandomVariable2.
-
+  End RandomVariable.
+  
+  
 End ProbabilitySpace.
