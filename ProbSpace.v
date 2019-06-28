@@ -9,29 +9,6 @@ Definition complement {U: Type} (A: U -> Prop) : U -> Prop :=
 Definition intersection {U: Type} (A_1 : U -> Prop) (A_2 : U -> Prop) : U -> Prop :=
   fun u:U => A_1 u /\ A_2 u.
 
-Class ProbSpace (T:Set) := {
-  ps_Sigma: (T -> Prop) -> Prop;
-  ps_P: (T -> Prop) -> R;
-  ps_sa_closed_under_intersections :
-    forall A_1 A_2: (T -> Prop),
-      ps_Sigma A_1 /\ ps_Sigma A_2 -> ps_Sigma (intersection A_1 A_2);
-  
-  ps_sa_closed_under_complements :
-    forall A_1 : (T -> Prop),
-      ps_Sigma A_1 -> ps_Sigma (complement A_1);
-  
-  ps_sa_contains_sample_space : 
-    ps_Sigma (fun x:T => True) ;
-
-  Sample_space_nonnegative :
-    inhabited T
-
-  }.
-
-Definition Omega {T} (ps: ProbSpace T) := (fun o:T => True).
-
-Section ProbabilityMeasureAxioms.
-
 (* Collections are *countable* sequences of subsets of the powerset of T. *)
 
 Definition collection_is_pairwise_disjoint (T: Type) (collection: nat -> (T -> Prop)) :=
@@ -42,57 +19,63 @@ Definition collection_is_pairwise_disjoint (T: Type) (collection: nat -> (T -> P
 Definition union_of_collection (T: Type) (collection: nat -> (T -> Prop)) :=
   fun t:T => (exists n, (collection n) t).
 
-(* Prop: the sum of probabilities for everything in the collection == R. *)
-Definition sum_of_probs_equals `{ps: ProbSpace} (collection: nat -> (T -> Prop)) (result: R) :=
-  infinite_sum (fun n:nat => ps_P (collection n)) result.
+Class SigmaAlgebra (T:Set) := {
+ sa_sigma : (T -> Prop) -> Prop;
 
-Class MeasureSpace {T:Set} {ps:ProbSpace T} := {
-  P_is_a_probability_measure :=
+ sa_closed_under_intersections :
+    forall A_1 A_2: (T -> Prop),
+      sa_sigma A_1 /\ sa_sigma A_2 -> sa_sigma (intersection A_1 A_2) ;
+
+ sa_closed_under_complements :
+    forall A_1 : (T -> Prop),
+      sa_sigma A_1 -> sa_sigma (complement A_1) ;
+
+ sa_contains_sample_space :
+    sa_sigma (fun x:T => True) 
+                          
+                             }.
+
+Definition Omega T := (fun o:T => True).
+
+(* Prop: the sum of probabilities for everything in the collection == R. *)
+Definition sum_of_probs_equals {T:Type}
+           (p : (T -> Prop) -> R)
+           (collection: nat -> (T -> Prop)) (result: R) :=
+  infinite_sum (fun n:nat => p (collection n)) result.
+
+Class ProbSpace {T:Set} (S:SigmaAlgebra T) := {
+  ps_P: (T -> Prop) -> R;
+
+  ps_P_is_a_probability_measure :=
     forall collection: nat -> (T -> Prop),
       (* Assume: collection is a subset of Sigma and its elements are pairwise disjoint. *)
-      (forall n:nat, ps_Sigma (collection n)) 
+      (forall n:nat, sa_sigma (collection n)) 
       /\ 
       collection_is_pairwise_disjoint T collection 
       ->
         let
           prob_of_union := ps_P (union_of_collection T collection)
         in
-        sum_of_probs_equals collection prob_of_union /\ ps_P ps.(Omega) = R1
-  }.
+        sum_of_probs_equals ps_P collection prob_of_union /\ ps_P (Omega T) = R1;
+
+  ps_sample_space_nonnegative :
+    inhabited T
+                                             }.
 
 Section RandomVariable1.
 
 (* A sigma algebra **over the same domain T as the ProbSpace! *)
-Class SigmaAlgebra (T:Set) := {
- sSigma : (T -> Prop) -> Prop;
-
- sa_closed_under_intersections :
-    forall A_1 A_2: (T -> Prop),
-      sSigma A_1 /\ sSigma A_2 -> sSigma (intersection A_1 A_2) ;
-
- sa_closed_under_complements :
-    forall A_1 : (T -> Prop),
-      sSigma A_1 -> sSigma (complement A_1) ;
-
- sa_contains_sample_space :
-    sSigma (fun x:T => True) 
-                          
-}.
-
-Definition sOmega {T} (sa: SigmaAlgebra T) := fun t:T => True.
 
 (* and now I give up on a proper measure-theoretic definition because I don't think we'll be able to do anything with it... *)
-Class RandomVariable1 (T) {dom: ProbSpace} {cod: SigmaAlgebra} :=
-
-  (* convert between types... this should not be necessary at all! *)
-  dom_to_cod: dom.(T) -> cod.(sT);
-  cod_to_dom: cod.(sT) -> dom.(T);
-  coercions_preserve_eq : (forall t:dom.(T), forall s:cod.(sT), (dom_to_cod t) = s <-> (cod_to_dom s) = t);
+  Class RandomVariable1 (Ts:Set) (Td:Set)
+        {doms: SigmaAlgebra Ts}
+        {dom: ProbSpace doms}
+        {cod: SigmaAlgebra Td} := {
 
   (* the actual variable. *)
-  rv: dom.(T) -> cod.(sT);
+  rv_rv: Ts -> Td
 
-  (* now state that the preimgae of every B in cod.sSigma is in dom.Sigma, requiring lots of coercions. *)
+  (* now state that the preimgae of every B in cod.sa_sigma is in dom.Sigma, requiring lots of coercions. *)
 }.
 
 End RandomVariable1.
