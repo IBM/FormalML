@@ -78,15 +78,50 @@ Section RandomVariable.
   (* now state that the preimgae of every B in cod.sa_sigma is in dom.Sigma, requiring lots of coercions. *)
 }.
 
-  Definition Pr {Ts:Set} {Td:Set}
-        {doms: SigmaAlgebra Ts}
-        {dom: ProbSpace doms}
-        {cod: SigmaAlgebra Td}
-        (rv:RandomVariable dom cod)
-        (S:Td->Prop)
-    := @sa_sigma _ doms (fun x:Ts => S (rv_X x)).
-
   End RandomVariable.
+
+  Definition event_union {T} (A B:T->Prop)
+    := fun x:T => A x \/ B x.
   
+  Definition event_inter {T} (A B:T->Prop)
+    := fun x:T => A x /\ B x.
   
+  Definition event_complement {T} (A:T->Prop)
+    := fun x:T => not (A x).
+
+  Notation "a ∪ b" := (event_union a b) (at level 50) : prob. (* \cup *)
+  Notation "a ∩ b" := (event_inter a b) (at level 50) : prob. (* \cap *)
+  Notation "¬ a" := (event_complement a) (at level 75) : prob. (* \neg *)
+  
+  Section prob.
+    Local Open Scope R.
+    Local Open Scope prob.
+
+    Definition Pr {Ts:Set} {Td:Set}
+               {doms: SigmaAlgebra Ts}
+               {dom: ProbSpace doms}
+               {cod: SigmaAlgebra Td}
+               {rv:RandomVariable dom cod}
+               (S:Td->Prop)
+      := ps_P (fun x:Ts => S (rv_X x)).
+
+    Context {Ts:Set} {Td:Set}
+            {doms: SigmaAlgebra Ts}
+            {dom: ProbSpace doms}
+            {cod: SigmaAlgebra Td}
+            {rv:RandomVariable dom cod}.
+
+    Definition independent (A B:Td->Prop) :=
+      Pr (A ∩ B) = (Pr A * Pr B).
+
+    Notation "a ⊥ b" := (independent a b) (at level 50) : prob. (* \perp *)
+
+    Lemma pr_plus (A B:Td->Prop) :
+      Pr (A ∪ B) = Pr A  + Pr B + Pr (A ∩ B).
+    Proof.
+      (* how do we prove this? *)
+      
+    Admitted.
+
+    End prob.
 End ProbabilitySpace.
