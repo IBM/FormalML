@@ -4,6 +4,7 @@ Require Import List.
 Require Import Rbase Rtrigo Rpower Rbasic_fun.
 Require Import Lra.
 
+Require Import BasicTactics.
 Require Import ListAdd Assoc.
 
 Module DefinedFunctions.
@@ -28,6 +29,23 @@ Module DefinedFunctions.
     | Max (l r : DefinedFunction).
 
   End Definitions.
+
+  Tactic Notation "DefinedFunction_cases" tactic(first) ident(c) :=
+  first;
+  [ Case_aux c "Number"%string
+  | Case_aux c "Var"%string
+  | Case_aux c "Plus"%string
+  | Case_aux c "Minus"%string
+  | Case_aux c "Times"%string
+  | Case_aux c "Divide"%string
+  | Case_aux c "Exp"%string
+  | Case_aux c "Log"%string
+  | Case_aux c "Abs"%string
+  | Case_aux c "Sign"%string
+  | Case_aux c "Max"%string].
+
+  Definition neg_sign (e:R)
+    := (if Rle_dec e 0 then -1 else 1)%R.
 
   Section deriv.
     Fixpoint df_deriv (df:DefinedFunction) (v:var) : DefinedFunction
@@ -104,7 +122,7 @@ Module DefinedFunctions.
            end
          | Sign e =>
            match df_eval σ e with
-           | Some v => Some (0)%R
+           | Some v => Some (neg_sign v)
            | _ => None
            end
          | Max l r =>
@@ -121,9 +139,6 @@ Module DefinedFunctions.
 
   Section deriv2.
 
-    Definition neg_sign (e:R)
-      := (if Rle_dec e 0 then -1 else 1)%R.
-
     Fixpoint df_eval_deriv (σ:df_env) (df:DefinedFunction) (v:var) : option R
       := (match df with
          | Number _ => Some 0
@@ -131,24 +146,24 @@ Module DefinedFunctions.
                     then Some 1
                     else Some 0
          | Plus l r => 
-           match df_eval σ l, df_eval σ r with
+           match df_eval_deriv σ l v, df_eval_deriv σ r v with
            | Some le, Some lr => Some (le + lr)
            | _, _ => None
            end
          | Minus l r =>
-           match df_eval σ l, df_eval σ r with
+           match df_eval_deriv σ l v, df_eval_deriv σ r v with
            | Some le, Some lr => Some (le - lr)
            | _, _ => None
            end
          | Times l r =>
-           match df_eval σ l, df_eval_deriv σ r v, df_eval σ r, df_eval_deriv σ l v with
+           match df_eval σ l, df_eval_deriv σ l v, df_eval σ r, df_eval_deriv σ r v with
            | Some le, Some ld, Some re, Some rd =>
              Some (le * rd + 
                    (ld * re))
            | _, _, _, _ => None
            end
          | Divide l r =>
-           match df_eval σ l, df_eval_deriv σ r v, df_eval σ r, df_eval_deriv σ l v with
+           match df_eval σ l, df_eval_deriv σ l v, df_eval σ r, df_eval_deriv σ r v with
            | Some le, Some ld, Some re, Some rd =>
              Some (((ld * re) - (le * rd)) / (re * re))
            | _, _, _, _ => None
@@ -170,7 +185,7 @@ Module DefinedFunctions.
            end
          | Sign e => Some 0
          | Max l r =>
-           match df_eval σ l, df_eval_deriv σ r v, df_eval σ r, df_eval_deriv σ l v with
+           match df_eval σ l, df_eval_deriv σ l v, df_eval σ r, df_eval_deriv σ r v with
            | Some le, Some ld, Some re, Some rd =>
              Some (((ld - rd) * (neg_sign (le - re)) + (ld + rd)) / 2)
            | _, _, _, _ => None
@@ -182,7 +197,26 @@ Module DefinedFunctions.
     
     End deriv2.
 
-    
+    Section deriv_deriv.
+
+      Theorem df_eval_deriv_same (σ:df_env) (df:DefinedFunction) (v:var) :
+        df_eval_deriv σ df v = df_eval σ (df_deriv df v).
+      Proof.
+        DefinedFunction_cases (induction df) Case; simpl; trivial
+        ; try rewrite <- IHdf1, <- IHdf2; trivial
+        ; try rewrite <- IHdf; trivial 
+        ; try solve [ destruct (df_eval σ df1); trivial
+                      ; destruct (df_eval_deriv σ df1 v); trivial
+                      ; destruct (df_eval_deriv σ df2 v); trivial
+                      ; destruct (df_eval σ df2); trivial
+                    |  destruct (df_eval σ df); trivial
+                       ; destruct (df_eval_deriv σ df v); trivial].
+        - Case "Var"%string.
+          destruct (string_dec name v); simpl; trivial.
+      Qed.
+
+      End deriv_deriv.
+        
   Section max_derived.
     Definition MaxDerived (a b : DefinedFunction) :=
       Divide (Plus (Plus (Abs (Minus b a)) b) a) (Number 2).
@@ -390,3 +424,16 @@ Module DefinedFunctions.
     
 End DefinedFunctions.
 
+Tactic Notation "DefinedFunction_cases" tactic(first) ident(c) :=
+  first;
+  [ Case_aux c "Number"%string
+  | Case_aux c "Var"%string
+  | Case_aux c "Plus"%string
+  | Case_aux c "Minus"%string
+  | Case_aux c "Times"%string
+  | Case_aux c "Divide"%string
+  | Case_aux c "Exp"%string
+  | Case_aux c "Log"%string
+  | Case_aux c "Abs"%string
+  | Case_aux c "Sign"%string
+  | Case_aux c "Max"%string].
