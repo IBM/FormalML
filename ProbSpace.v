@@ -67,10 +67,10 @@ Section RandomVariable1.
 (* A sigma algebra **over the same domain T as the ProbSpace! *)
 
 (* and now I give up on a proper measure-theoretic definition because I don't think we'll be able to do anything with it... *)
-  Class RandomVariable1 (Ts:Set) (Td:Set)
+  Class RandomVariable1 {Ts:Set} {Td:Set}
         {doms: SigmaAlgebra Ts}
-        {dom: ProbSpace doms}
-        {cod: SigmaAlgebra Td} := {
+        (dom: ProbSpace doms)
+        (cod: SigmaAlgebra Td) := {
 
   (* the actual variable. *)
   rv_rv: Ts -> Td
