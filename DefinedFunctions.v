@@ -47,9 +47,9 @@ Module DefinedFunctions.
                            (Times r r)
          | Exp e => Times (df_deriv e v) (Exp e)
          | Log e => Divide (df_deriv e v) e
-         | Abs e => Sign e
+         | Abs e => Times (df_deriv e v) (Sign e) 
          | Sign e => Number 0
-         | Max l r => Divide (Plus (Sign (Minus l r))
+         | Max l r => Divide (Plus (Times (Minus (df_deriv l v) (df_deriv r v)) (Sign (Minus l r)))
                                    (Plus (df_deriv l v) (df_deriv r v)))
                              (Number 2)
           end)%R.
@@ -164,15 +164,15 @@ Module DefinedFunctions.
            | _, _ => None
            end
          | Abs e =>
-           match df_eval σ e with
-           | Some ee => Some (neg_sign ee)
+           match df_eval σ e, df_eval_deriv σ e v with
+           | Some ee, Some ed => Some (ed * (neg_sign ee))
            | _ => None
            end
          | Sign e => Some 0
          | Max l r =>
            match df_eval σ l, df_eval_deriv σ r v, df_eval σ r, df_eval_deriv σ l v with
            | Some le, Some ld, Some re, Some rd =>
-             Some (((neg_sign (le - re)) + (ld + rd)) / 2)
+             Some (((ld - rd) * (neg_sign (le - re)) + (ld + rd)) / 2)
            | _, _, _, _ => None
            end
           end)%R.
