@@ -24,12 +24,43 @@ Module DefinedFunctions.
     | Exp (e : DefinedFunction)
     | Log (e : DefinedFunction)
     | Abs (e : DefinedFunction)
+    | Sign (e : DefinedFunction)
     | Max (l r : DefinedFunction).
 
   End Definitions.
 
-  Section eval.
+  Section deriv.
+    Fixpoint df_deriv (df:DefinedFunction) (v:var) : DefinedFunction
+      := (match df with
+         | Number _ => Number 0
+         | Var x => if string_dec x v
+                    then Number 1
+                    else Number 0
+         | Plus l r => Plus (df_deriv l v) (df_deriv r v)
+         | Minus l r => Minus (df_deriv l v) (df_deriv r v)
+         | Times l r => Plus (Times l (df_deriv r v))
+                             (Times (df_deriv l v) r)
+         | Divide l r => Divide 
+                           (Minus
+                              (Times (df_deriv l v) r)
+                              (Times l (df_deriv r v)))
+                           (Times r r)
+         | Exp e => Times (df_deriv e v) (Exp e)
+         | Log e => Divide (df_deriv e v) e
+         | Abs e => Sign e
+         | Sign e => Number 0
+         | Max l r => Divide (Plus (Sign (Minus l r))
+                                   (Plus (df_deriv l v) (df_deriv r v)))
+                             (Number 2)
+          end)%R.
 
+    Definition df_gradient (df:DefinedFunction) (lv:list var) : list DefinedFunction
+      := map (df_deriv df) lv.
+    
+  End deriv.
+  
+  Section eval.
+    
     Definition df_env := list (string * R).
 
     Fixpoint df_eval (σ:df_env) (df:DefinedFunction) : option R
@@ -71,6 +102,11 @@ Module DefinedFunctions.
            | Some v => Some (Rabs v)
            | _ => None
            end
+         | Sign e =>
+           match df_eval σ e with
+           | Some v => Some (0)%R
+           | _ => None
+           end
          | Max l r =>
            match df_eval σ l, df_eval σ r with
            | Some l', Some r' => Some (Rmax l' r')
@@ -78,11 +114,90 @@ Module DefinedFunctions.
            end
          end.
 
+    Definition df_eval_symbolic_gradient (σ:df_env) (df:DefinedFunction) (lv:list var) : option (list R)
+      := listo_to_olist (map (df_eval σ) (df_gradient df lv)).
+    
   End eval.
 
+  Section deriv2.
+
+    Definition neg_sign (e:R)
+      := (if Rle_dec e 0 then -1 else 1)%R.
+
+    Fixpoint df_eval_deriv (σ:df_env) (df:DefinedFunction) (v:var) : option R
+      := (match df with
+         | Number _ => Some 0
+         | Var x => if string_dec x v
+                    then Some 1
+                    else Some 0
+         | Plus l r => 
+           match df_eval σ l, df_eval σ r with
+           | Some le, Some lr => Some (le + lr)
+           | _, _ => None
+           end
+         | Minus l r =>
+           match df_eval σ l, df_eval σ r with
+           | Some le, Some lr => Some (le - lr)
+           | _, _ => None
+           end
+         | Times l r =>
+           match df_eval σ l, df_eval_deriv σ r v, df_eval σ r, df_eval_deriv σ l v with
+           | Some le, Some ld, Some re, Some rd =>
+             Some (le * rd + 
+                   (ld * re))
+           | _, _, _, _ => None
+           end
+         | Divide l r =>
+           match df_eval σ l, df_eval_deriv σ r v, df_eval σ r, df_eval_deriv σ l v with
+           | Some le, Some ld, Some re, Some rd =>
+             Some (((ld * re) - (le * rd)) / (re * re))
+           | _, _, _, _ => None
+           end
+         | Exp e =>
+           match df_eval σ e, df_eval_deriv σ e v with
+           | Some ee, Some ed => Some (ed * exp ee)
+           | _, _  => None
+           end
+         | Log e =>
+           match df_eval σ e, df_eval_deriv σ e v with
+           | Some ee, Some ed => Some (ed / ee)
+           | _, _ => None
+           end
+         | Abs e =>
+           match df_eval σ e with
+           | Some ee => Some (neg_sign ee)
+           | _ => None
+           end
+         | Sign e => Some 0
+         | Max l r =>
+           match df_eval σ l, df_eval_deriv σ r v, df_eval σ r, df_eval_deriv σ l v with
+           | Some le, Some ld, Some re, Some rd =>
+             Some (((neg_sign (le - re)) + (ld + rd)) / 2)
+           | _, _, _, _ => None
+           end
+          end)%R.
+
+    Definition df_eval_gradient σ (df:DefinedFunction) (lv:list var) : option (list R)
+      := listo_to_olist (map (df_eval_deriv σ df) lv).
+    
+    End deriv2.
+
+    
   Section max_derived.
     Definition MaxDerived (a b : DefinedFunction) :=
       Divide (Plus (Plus (Abs (Minus b a)) b) a) (Number 2).
+
+    Delimit Scope df_scope with df.
+    
+    Notation "x + y" := (Plus x y) (only printing) : df_scope.
+    Notation "x - y" := (Minus x y) (only printing) : df_scope.
+    Notation "x / y" := (Divide x y) (only printing) : df_scope.
+    Notation "x * y" := (Times x y) (only printing) : df_scope.
+    Notation "x" := (Number x) (only printing, at level 0) : df_scope.
+    Notation "x" := (Var x) (only printing, at level 0) : df_scope.
+    Notation "'|' x '|'" := (Abs x) (only printing, at level 0) : df_scope.
+    
+(*    Eval vm_compute in (df_deriv (MaxDerived (Var ("hi"%string)) (Var ("hello"%string))) "hi"%string)%df. *)
     
     Lemma MaxDerivedMax_eq (a b : DefinedFunction) :
       forall σ, df_eval σ (Max a b) = df_eval σ (MaxDerived a b).
@@ -114,6 +229,7 @@ Module DefinedFunctions.
          | Divide l r => (df_free_variables l) ++ (df_free_variables r)
          | Max l r => (df_free_variables l) ++ (df_free_variables r)
          | Abs e => df_free_variables e
+         | Sign e => df_free_variables e
          | Log e => df_free_variables e
          | Exp e => df_free_variables e
          end.
@@ -218,6 +334,7 @@ Module DefinedFunctions.
       | Exp e => Exp (df_apply e args)
       | Log e => Log (df_apply e args)
       | Abs e => Abs (df_apply e args)
+      | Sign e => Sign (df_apply e args)
       | Max l r => Max (df_apply l args) (df_apply r args)
       end.
     
@@ -239,6 +356,7 @@ Module DefinedFunctions.
       | Exp e => Exp (df_subst e v e')
       | Log e => Log (df_subst e v e')
       | Abs e => Abs (df_subst e v e')
+      | Sign e => Sign (df_subst e v e')
       | Max l r => Max (df_subst l v e') (df_subst r v e')
       end.
 
