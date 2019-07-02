@@ -5,42 +5,41 @@ Require Import Reals.Rfunctions.
 
 Module AxiomaticNormedRealVectorSpace.
 
-Inductive rvector (s: Type) : Set :=
+Inductive rvector (d: nat) : Set :=
 | zero
-| add (x y : rvector s)
-| inverse (x: rvector s)
-| smult (r:R) (x: rvector s).
+| add (x y : rvector d)
+| inverse (x: rvector d)
+| smult (r:R) (x: rvector d).
 
-Class NormedVectorSpace (s: Type) :=
-{
-  norm:  forall t, rvector t -> R;
+Class NormedVectorSpace (d: nat) :=
+  {
+    norm:  rvector d -> R;
 
-  rv_axiom_additive : forall s: Set, forall (x y z : (rvector s)),
-    (add s x y) = (add s y x)  /\
-    (add s (add s x y) z) = (add s x (add s y z)) /\
-    (add s (zero s) x) = (add s x (zero s)) /\
-    (add s x (zero s)) = x /\
-    (add s (inverse s x) x) = (add s x (inverse s x)) /\
-    (add s x (inverse s x)) = zero s;
+    rv_axiom_additive : forall x y z : rvector d,
+    (add d x y) = (add d y x)  /\
+    (add d (add d x y) z) = (add d x (add d y z)) /\
+    (add d (zero d) x) = (add d x (zero d)) /\
+    (add d x (zero d)) = x /\
+    (add d (inverse d x) x) = (add d x (inverse d x)) /\
+    (add d x (inverse d x)) = zero d;
 
-  rv_axiom_multiplicaive : forall s : Set, forall (x : rvector s), forall (c d : R),
-    smult s R0 x = zero s /\
-    smult s R1 x = x /\
-    smult s (Rmult c d) x = smult s c (smult s d x);
+    rv_axiom_multiplicaive : forall (x : rvector d), forall (b c : R),
+    smult d R0 x = zero d /\
+    smult d R1 x = x /\
+    smult d (Rmult b c) x = smult d b (smult d c x);
 
-  rv_axiom_distributive : forall s: Set, forall (x y : rvector s), forall (c d : R),
-    smult s c (add s x y) = add s (smult s c x) (smult s c y) /\
-    smult s (Rplus c d) x = add s (smult s c x) (smult s d x);
+    rv_axiom_distributive : forall (x y : rvector d), forall (a b : R),
+    smult d b (add d x y) = add d (smult d b x) (smult d b y) /\
+    smult d (Rplus a b) x = add d (smult d a x) (smult d b x);
 
+    norm_axiom_zero : forall (x:rvector d),
+          norm (zero d) = R0 <-> x=zero d;
 
-  norm_axiom_zero : forall s: Set, forall (x:rvector s), (norm s (zero s)) = R0 <-> x=zero s;
+    norm_axiom_abs : forall (x: rvector d), forall (a:R), 
+    norm (smult d a x) = Rmult (Rabs a) (norm x);
 
-  norm_axiom_abs : forall s: Set, forall (x: rvector s), forall (c:R), 
-    norm s (smult s c x) = Rmult (Rabs c) (norm s x);
-
-  norm_axiom_add : forall s:Set, forall (x y : rvector s),
-    norm s (add s x y) = Rplus (norm s x) (norm s y);
-
-}.
+    norm_axiom_add : forall (x y : rvector d),
+    norm (add d x y) = Rplus (norm x) (norm y);
+  }.
 
 End AxiomaticNormedRealVectorSpace.
