@@ -147,21 +147,99 @@ Lemma RiemannInt_pn1 f (n:nat) (pr1:Riemann_integrable f 1 (2 + INR n)) :
     (forall x y :R, 1 <= x -> y <= 2 + (INR n) -> x<=y -> f y <= f x)
     -> RiemannInt pr1 <= sum_f 1 (n+1) (fun j:nat => f (INR j)).
 Proof.
-  intros.
+  revert pr1.
   induction n; simpl.
-  - assert (eqq:(2 + INR 0)=2) by (compute; lra).
-    generalize pr1; intros pr1'.
-    rewrite eqq in pr1.
-    
+  - assert (eqq:(2 + 0)=2) by (compute; lra).
+    rewrite eqq.
+    intros.
     generalize (RiemannInt_p1 _ _ pr1); intros.
     cut_to H0.
-    + Opaque RiemannInt.
-      compute.
-      Transparent RiemannInt.
-      eapply Rle_trans; [| eapply H0].
-      clear.
-      revert pr1 pr1'.
-Admitted.
+    + auto.
+    + intros.
+      apply H; lra.
+  - intros.
+    replace (match n with
+                                    | 0%nat => 1
+                                    | S _ => INR n + 1
+             end) with (INR n + 1) in *
+      by repeat (destruct n; simpl; try lra).
+    assert (leqs:1 <= (2 + INR n) <= (2 + match n with
+                                    | 0%nat => 1
+                                    | S _ => INR n + 1
+                      end)).
+    { destruct n.
+      - simpl; split; intros; lra.
+      - rewrite <- Rplus_assoc.
+        split; intros; [ | lra].
+        replace 1 with (1+0) by lra.
+        apply Rplus_le_compat; [lra | ].
+        apply pos_INR.
+    }
+    generalize (RiemannInt_P22 pr1 leqs); intros pr2.
+    specialize (IHn pr2).
+    cut_to IHn.
+    + unfold sum_f in *.
+      replace ((S (n + 1) - 1)%nat) with ((S n)%nat) by omega.
+      replace ((n + 1 - 1)%nat) with (n%nat) in IHn by omega.
+      simpl.
+      assert (eqn:match n with
+                  | 0%nat => 1
+                  | S _ => INR n + 1
+                  end = INR n + 1).
+      { destruct n; trivial; simpl; lra. }
+      assert (pr3:Riemann_integrable f (2 + INR n)
+        (2 + match n with 
+             | 0%nat => 1
+             | S _ => INR n + 1
+             end)).
+      { rewrite eqn.
+        apply continuity_implies_RiemannInt.
+        - lra.
+        - intros.
+          apply C0.
+          lra.
+      } 
+      generalize (RiemannInt_P26 pr2 pr3 pr1); intros eqr.
+      rewrite <- eqr.
+      clear pr1 eqr.
+      apply Rplus_le_compat; trivial.
+      revert pr3 H; clear.
+      assert (eqn:2 + match n with
+                  | 0%nat => 1
+                  | S _ => INR n + 1
+                  end = (2 + INR n) + 1).
+      { destruct n.
+        - simpl; lra.
+        - lra.
+      }
+      rewrite eqn.
+      intros pr3 H.
+      replace (match (n + 1)%nat with
+                      | 0%nat => 1
+                      | S _ => INR (n + 1) + 1
+               end) with (2 + INR n).
+      * apply (RiemannInt_p1 _ _ pr3).
+        intros.
+        apply H; try lra.
+        eapply Rle_trans; [| eapply H0].
+        replace 1 with (1 + 0) by lra.
+        apply Rplus_le_compat; try lra.
+        apply pos_INR.
+      * { assert (forall x, match x%nat with
+              | 0%nat => 1
+              | S _ => INR x + 1
+                            end = INR x+1).
+          { destruct x; [simpl | ]; lra. }
+          rewrite H0.
+          rewrite plus_INR.
+          simpl; lra.
+        } 
+    + intros.
+      apply C0.
+      lra.
+    + intros.
+      apply H; lra.
+Qed.
 
 Lemma invpos n : n > 0 -> 1/n >0.
 Proof.
@@ -218,13 +296,11 @@ Lemma RiemannInt_cont_pn1 f (n:nat) :
        sum_f 1 n (fun j:nat => f (INR j)).
 Proof.
   intros.
-  
-  
-Qed.
+Admitted.
   
 
 Lemma RiemannInt_cont_pn2 :
-  forall f (n:nat) (h:0 < INR n)
+  forall f (n:nat) (h:1 <= INR n)
     (C0:forall x:R, 1 <= x <= INR n -> continuity_pt f x),
     (forall x y :R, 1 <= x -> y <= INR n -> x<=y -> f y <= f x)
     -> (f 1) + RiemannInt (@continuity_implies_RiemannInt f 1 (INR n) h C0) >= 
