@@ -319,6 +319,19 @@ Proof.
       apply H; lra.
 Qed.
 
+Lemma RiemannInt_pn f (n:nat) (pr1:Riemann_integrable f 1 (2 + INR n)) :
+    (forall x y :R, 1 <= x -> y <= 2 + (INR n) -> x<=y -> f y <= f x)
+    -> sum_f 2 (2+n) (fun j:nat => f (INR j))
+       <= RiemannInt pr1 <= 
+       sum_f 1 (n+1) (fun j:nat => f (INR j)).
+Proof.
+  split.
+  - apply Rge_le.
+    apply RiemannInt_pn2; trivial.
+  - apply RiemannInt_pn1; trivial.
+Qed.
+
+  
 Lemma ale21 n : 1 <= 2 + INR n.
 Proof.
   generalize (pos_INR n); intros.
@@ -343,6 +356,19 @@ Lemma RiemannInt_cont_pn2 f (n:nat):
 Proof.
   intros.
   apply RiemannInt_pn2; trivial.
+Qed.
+
+Lemma RiemannInt_cont_pn f (n:nat): 
+  forall (C0:forall x:R, 1 <= x <= 2 + (INR n) -> continuity_pt f x),
+    (forall x y :R, 1 <= x -> y <= (2 + INR n) -> x<=y -> f y <= f x)
+    ->  sum_f 2 (2+n) (fun j:nat => f (INR j))
+        <= RiemannInt (@continuity_implies_RiemannInt f 1 (2 + (INR n)) (ale21 n) C0) <=
+        sum_f 1 (n+1) (fun j:nat => f (INR j)).
+Proof.
+  split.
+  - apply Rge_le.
+    apply RiemannInt_cont_pn2; trivial.
+  - apply RiemannInt_cont_pn1; trivial.
 Qed.
 
 Lemma sum_bound_22 n : 0 <= n -> 0 <= 2-1/(n+2) - (2-1/(n+1)) - 1/((n+2)*(n+2)).
@@ -410,7 +436,6 @@ Proof.
       * destruct n; simpl; trivial.
     + destruct n; simpl; trivial; lra.
 Qed.
-
 
 
 
