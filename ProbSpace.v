@@ -49,9 +49,9 @@ Class SigmaAlgebra (T:Set) :=
     (* alternative to assuming functional extensionality *)
     sa_sigma_ext : forall T1 T2, (forall x,  T1 x <-> T2 x) -> sa_sigma T1 <-> sa_sigma T2;
     
-    sa_closed_under_intersections :
+    sa_closed_under_union :
       forall A_1 A_2: event T,
-        sa_sigma A_1 /\ sa_sigma A_2 -> sa_sigma (A_1 ∩ A_2) ;
+        sa_sigma A_1 /\ sa_sigma A_2 -> sa_sigma (A_1 ∪ A_2) ;
     
     sa_closed_under_complements :
       forall A_1 : event T,
