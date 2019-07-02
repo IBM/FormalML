@@ -124,8 +124,14 @@ Proof.
   lra.
 Qed.
 
+Lemma Riemann_integrable_nil f a b : a = b -> Riemann_integrable f a b.
+Proof.
+  intros.
+  subst.
+  apply RiemannInt_P7.
+Qed.
+
 Lemma RiemannInt_pn1 f (n:nat) (pr1:Riemann_integrable f 1 (2 + INR n)) :
-  forall (C0:forall x:R, 1 <= x <= 2 + (INR n) -> continuity_pt f x),
     (forall x y :R, 1 <= x -> y <= 2 + (INR n) -> x<=y -> f y <= f x)
     -> RiemannInt pr1 <= sum_f 1 (n+1) (fun j:nat => f (INR j)).
 Proof.
@@ -174,12 +180,11 @@ Proof.
              | 0%nat => 1
              | S _ => INR n + 1
              end)).
-      { rewrite eqn.
-        apply continuity_implies_RiemannInt.
-        - lra.
-        - intros.
-          apply C0.
-          lra.
+      {
+        apply (@RiemannInt_P23 f 1  (2 + match n with
+                                        | 0%nat => 1
+                                        | S _ => INR n + 1
+                                         end)); trivial.
       } 
       generalize (RiemannInt_P26 pr2 pr3 pr1); intros eqr.
       rewrite <- eqr.
@@ -217,31 +222,127 @@ Proof.
           simpl; lra.
         } 
     + intros.
-      apply C0.
-      lra.
+      apply H; lra.
+Qed.
+
+Lemma RiemannInt_pn2 f (n:nat) (pr1:Riemann_integrable f 1 (2 + INR n)) :
+    (forall x y :R, 1 <= x -> y <= (2 + INR n) -> x<=y -> f y <= f x)
+    -> RiemannInt pr1 >= sum_f 2 (2+n) (fun j:nat => f (INR j)).
+Proof.
+  revert pr1.
+  induction n; simpl.
+  - assert (eqq:(2 + 0)=2) by (compute; lra).
+    rewrite eqq.
+    intros.
+    generalize (RiemannInt_p2 _ _ pr1); intros.
+    cut_to H0.
+    + auto.
+    + intros.
+      apply H; trivial.
+  - intros.
+    replace (match n with
+                                    | 0%nat => 1
+                                    | S _ => INR n + 1
+             end) with (INR n + 1) in *
+      by repeat (destruct n; simpl; try lra).
+    assert (leqs:1 <= (2 + INR n) <= (2 + match n with
+                                    | 0%nat => 1
+                                    | S _ => INR n + 1
+                      end)).
+    { destruct n.
+      - simpl; split; intros; lra.
+      - rewrite <- Rplus_assoc.
+        split; intros; [ | lra].
+        replace 1 with (1+0) by lra.
+        apply Rplus_le_compat; [lra | ].
+        apply pos_INR.
+    }
+    generalize (RiemannInt_P22 pr1 leqs); intros pr2.
+    specialize (IHn pr2).
+    cut_to IHn.
+    + unfold sum_f in *.
+      replace ( (S (S (S n)) - 2))%nat with ((S n)%nat) by omega.
+      replace ((2 + n - 2)%nat) with (n%nat) in IHn by omega.
+      simpl.
+      assert (eqn:match (n + 2)%nat with
+                  | 0%nat => 1
+                  | S _ => INR (n + 2) + 1
+                  end = INR (n + 2) + 1).
+      { destruct n; simpl; lra. }
+      assert (pr3:Riemann_integrable f (2 + INR n)
+        (2 + match n with 
+             | 0%nat => 1
+             | S _ => INR n + 1
+             end)).
+      {
+        apply (@RiemannInt_P23 f 1  (2 + match n with
+                                        | 0%nat => 1
+                                        | S _ => INR n + 1
+                                         end)); trivial.
+      } 
+      generalize (RiemannInt_P26 pr2 pr3 pr1); intros eqr.
+      rewrite <- eqr.
+      clear pr1 eqr.
+      apply Rplus_ge_compat; trivial.
+      revert pr3 H; clear.
+      assert (eqn:2 + match n with
+                  | 0%nat => 1
+                  | S _ => INR n + 1
+                  end = (2 + INR n) + 1).
+      { destruct n.
+        - simpl; lra.
+        - lra.
+      }
+      rewrite eqn.
+      intros pr3 H.
+      replace (match (n + 2)%nat with
+                      | 0%nat => 1
+                      | S _ => INR (n + 2) + 1
+               end) with ((2 + INR n) + 1).
+      * apply (RiemannInt_p2 _ _ pr3).
+        intros.
+        apply H; try lra.
+        eapply Rle_trans; [| eapply H0].
+        replace 1 with (1 + 0) by lra.
+        apply Rplus_le_compat; try lra.
+        apply pos_INR.
+      * { assert (forall x, match x%nat with
+              | 0%nat => 1
+              | S _ => INR x + 1
+                            end = INR x+1).
+          { destruct x; [simpl | ]; lra. }
+          rewrite H0.
+          rewrite plus_INR.
+          simpl; lra.
+        } 
     + intros.
       apply H; lra.
 Qed.
 
-Lemma invpos n : n > 0 -> 1/n >0.
+Lemma ale21 n : 1 <= 2 + INR n.
 Proof.
-  intros.
-  rewrite (Fdiv_def Rfield).
-  apply Rgt_lt in H.
-  apply Rlt_gt.
-  apply Rmult_lt_0_compat.
-  - lra.
-  - apply Rinv_0_lt_compat; trivial.
+  generalize (pos_INR n); intros.
+  lra.
 Qed.
 
-
-Lemma invpos' n : 0 < n -> 0 < 1/n.
+Lemma RiemannInt_cont_pn1 f (n:nat) :
+  forall (C0:forall x:R, 1 <= x <= 2 + (INR n) -> continuity_pt f x),
+    (forall x y :R, 1 <= x -> y <= 2 + (INR n) -> x<=y -> f y <= f x)
+    -> RiemannInt (@continuity_implies_RiemannInt f 1 (2 + (INR n)) (ale21 n) C0) <= 
+       sum_f 1 (n+1) (fun j:nat => f (INR j)).
 Proof.
   intros.
-  rewrite (Fdiv_def Rfield).
-  apply Rmult_lt_0_compat.
-  - lra.
-  - apply Rinv_0_lt_compat; trivial.
+  apply RiemannInt_pn1; trivial.
+Qed.
+  
+Lemma RiemannInt_cont_pn2 f (n:nat): 
+  forall (C0:forall x:R, 1 <= x <= 2 + (INR n) -> continuity_pt f x),
+    (forall x y :R, 1 <= x -> y <= (2 + INR n) -> x<=y -> f y <= f x)
+    -> RiemannInt (@continuity_implies_RiemannInt f 1 (2 + (INR n)) (ale21 n) C0) >=
+       sum_f 2 (2+n) (fun j:nat => f (INR j)).
+Proof.
+  intros.
+  apply RiemannInt_pn2; trivial.
 Qed.
 
 Lemma sum_bound_22 n : 0 <= n -> 0 <= 2-1/(n+2) - (2-1/(n+1)) - 1/((n+2)*(n+2)).
@@ -309,35 +410,6 @@ Proof.
       * destruct n; simpl; trivial.
     + destruct n; simpl; trivial; lra.
 Qed.
-
-
-Lemma RiemannInt_cont_pn1 f (n:nat) :
-  forall (C0:forall x:R, 1 <= x <= 1 + (INR n) -> continuity_pt f x),
-    (forall x y :R, 1 <= x -> y <= 1 + (INR n) -> x<=y -> f y <= f x)
-    -> RiemannInt (@continuity_implies_RiemannInt f 1 (1 + (INR n)) (ale2 n) C0) <= 
-       sum_f 1 n (fun j:nat => f (INR j)).
-Proof.
-  intros.
-Admitted.
-  
-
-Lemma RiemannInt_cont_pn2 :
-  forall f (n:nat) (h:1 <= INR n)
-    (C0:forall x:R, 1 <= x <= INR n -> continuity_pt f x),
-    (forall x y :R, 1 <= x -> y <= INR n -> x<=y -> f y <= f x)
-    -> (f 1) + RiemannInt (@continuity_implies_RiemannInt f 1 (INR n) h C0) >= 
-       sum_f 1 n (fun j:nat => f (INR j)).
-Admitted.
-
-(* then take limits as n-> \infty *)
-  
-(* 
-S n = sum_{k=1}^n f(k), I n = integ_1^n f(x)dx
-positive_lb f 1 /\ continuity_lb f 1 /\ decreasing_lb f 1 ->
-    I (n+1) <= S n <= f(1) + I n 
-*)
-
-
 
 
 
