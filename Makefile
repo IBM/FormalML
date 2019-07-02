@@ -1,7 +1,7 @@
 # Contains the list of all the Coq modules
 include Makefile.coq_modules
 
-FILES = $(MODULES:%=%.v)
+FILES = $(addprefix coq/,$(MODULES:%=%.v))
 
 all: coq
 
