@@ -163,6 +163,54 @@ Proof.
       revert pr1 pr1'.
 Admitted.
 
+Lemma invpos n : n > 0 -> 1/n >0.
+Proof.
+  intros.
+  rewrite (Fdiv_def Rfield).
+  apply Rgt_lt in H.
+  apply Rlt_gt.
+  apply Rmult_lt_0_compat.
+  - lra.
+  - apply Rinv_0_lt_compat; trivial.
+Qed.
+
+
+Lemma invpos' n : 0 < n -> 0 < 1/n.
+Proof.
+  intros.
+  rewrite (Fdiv_def Rfield).
+  apply Rmult_lt_0_compat.
+  - lra.
+  - apply Rinv_0_lt_compat; trivial.
+Qed.
+
+Lemma sum_bound_22 n : n >= 0 -> 2-1/(n+2) - ( 2-1/(n+1) + 1/((n+2)*(n+2))) >=0.
+Proof.
+  intros; field_simplify (2-1/(n+2) - ( 2-1/(n+1) + 1/((n+2)*(n+2)))) .
+  - apply Rge_le in H.
+    apply Rle_ge.
+    destruct H.
+    + rewrite (Fdiv_def Rfield).
+      left.
+      apply Rmult_lt_0_compat; [lra | ].
+      apply Rinv_0_lt_compat.
+      replace 0 with (0 + 0 + 0 + 0) by lra.
+      repeat try apply Rplus_lt_compat.
+      * simpl pow.
+        repeat (apply Rmult_lt_0_compat; trivial).
+        lra.
+      * simpl pow.
+        repeat (apply Rmult_lt_0_compat; trivial)
+        ; lra.
+      * lra.
+      * lra.
+    + subst.
+      simpl pow.
+      replace ((0 * (0 * (0 * 1)) + 5 * (0 * (0 * 1)) + 8 * 0 + 4)) with 4 by lra.
+      lra.
+  - lra.
+Qed.
+
 Lemma RiemannInt_cont_pn1 f (n:nat) :
   forall (C0:forall x:R, 1 <= x <= 1 + (INR n) -> continuity_pt f x),
     (forall x y :R, 1 <= x -> y <= 1 + (INR n) -> x<=y -> f y <= f x)
