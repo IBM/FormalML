@@ -16,7 +16,6 @@ Section incl.
     unfold incl.
     constructor; red; intuition.
   Qed.
-  Print incl.
 
   Lemma incl_dec {A} (dec:forall a b:A, {a = b} + {a <> b}) (l1 l2:list A) :
     {incl l1 l2} + {~ incl l1 l2}.
