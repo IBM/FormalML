@@ -124,24 +124,6 @@ Proof.
   lra.
 Qed.
 
-Lemma sum_f_bound n : sum_f_R0 (fun i => 1 / Rsqr (INR i+1)) n <= 2 - 1 / (INR (n + 1)).
-Proof.
-  induction n.
-  - simpl.
-    unfold Rsqr.
-    lra.
-  - simpl.
-    replace ((match n with
-       | 0%nat => 1
-       | S _ => INR n + 1
-              end)) with (INR n + 1).
-    + replace (match (n + 1)%nat with
-          | 0%nat => 1
-          | S _ => INR (n + 1) + 1
-               end) with (INR (n + 1) + 1).
-      *
-Admitted.
-
 Lemma RiemannInt_pn1 f (n:nat) (pr1:Riemann_integrable f 1 (2 + INR n)) :
   forall (C0:forall x:R, 1 <= x <= 2 + (INR n) -> continuity_pt f x),
     (forall x y :R, 1 <= x -> y <= 2 + (INR n) -> x<=y -> f y <= f x)
@@ -262,14 +244,15 @@ Proof.
   - apply Rinv_0_lt_compat; trivial.
 Qed.
 
-Lemma sum_bound_22 n : n >= 0 -> 2-1/(n+2) - ( 2-1/(n+1) + 1/((n+2)*(n+2))) >=0.
+Lemma sum_bound_22 n : 0 <= n -> 0 <= 2-1/(n+2) - (2-1/(n+1)) - 1/((n+2)*(n+2)).
 Proof.
-  intros; field_simplify (2-1/(n+2) - ( 2-1/(n+1) + 1/((n+2)*(n+2)))) .
-  - apply Rge_le in H.
-    apply Rle_ge.
-    destruct H.
-    + rewrite (Fdiv_def Rfield).
-      left.
+  intros.
+  replace (2 - 1 / (n + 2) - (2 - 1 / (n + 1)) - 1 / ((n + 2) * (n + 2)))
+                              with (1 / (n + 1) - 1 / (n + 2) - 1 / ((n + 2) * (n + 2))) by lra.
+  field_simplify (1 / (n + 1) - 1 / (n + 2) - 1 / ((n + 2) * (n + 2))); try lra.
+  rewrite (Fdiv_def Rfield).
+  destruct H.
+  - left.
       apply Rmult_lt_0_compat; [lra | ].
       apply Rinv_0_lt_compat.
       replace 0 with (0 + 0 + 0 + 0) by lra.
@@ -282,12 +265,51 @@ Proof.
         ; lra.
       * lra.
       * lra.
-    + subst.
-      simpl pow.
-      replace ((0 * (0 * (0 * 1)) + 5 * (0 * (0 * 1)) + 8 * 0 + 4)) with 4 by lra.
-      lra.
-  - lra.
+  - subst. 
+    simpl pow.
+    lra.
 Qed.
+
+Lemma sum_f_bound n : sum_f_R0 (fun i => 1 / Rsqr (INR i+1)) n <= 2 - 1 / (INR (n + 1)).
+Proof.
+  induction n.
+  - simpl.
+    unfold Rsqr.
+    lra.
+  - simpl.
+    replace ((match n with
+       | 0%nat => 1
+       | S _ => INR n + 1
+              end)) with (INR n + 1).
+    + replace (match (n + 1)%nat with
+          | 0%nat => 1
+          | S _ => INR (n + 1) + 1
+               end) with (INR (n + 1) + 1).
+      * replace (2 - 1 / (INR (n + 1) + 1)) with (2 - 1 / INR (n + 1) + ((2 - 1 / (INR (n + 1) + 1)) - (2 - 1 / INR (n + 1)))) by lra.
+        apply Rplus_le_compat; trivial.
+        generalize (sum_bound_22 (INR n)); intros sb.
+        cut_to sb; [| apply pos_INR].
+        replace ((INR n + 1 + 1)²) with ((INR n + 2) * (INR n + 2)); [| unfold Rsqr; lra].
+        { replace (INR (n + 1) + 1) with (INR (n+2)).
+          - apply (Rplus_le_compat_r (1 / ((INR n + 2) * (INR n + 2)))) in sb.
+            rewrite Rplus_0_l in sb.
+            eapply Rle_trans; [eapply sb |].
+            clear.
+            replace ( 2 - 1 / (INR n + 2) - (2 - 1 / (INR n + 1)) - 1 / ((INR n + 2) * (INR n + 2)) +
+                      1 / ((INR n + 2) * (INR n + 2)) ) with
+                                  (( 2 - 1 / (INR n + 2) - (2 - 1 / (INR n + 1)))) by lra.
+            unfold Rminus.
+            repeat rewrite Rplus_assoc.
+            apply Rplus_le_compat_l.
+            repeat rewrite plus_INR.
+            apply Rplus_le_compat_l.
+            simpl; lra.
+          - repeat rewrite plus_INR; simpl; lra.
+        } 
+      * destruct n; simpl; trivial.
+    + destruct n; simpl; trivial; lra.
+Qed.
+
 
 Lemma RiemannInt_cont_pn1 f (n:nat) :
   forall (C0:forall x:R, 1 <= x <= 1 + (INR n) -> continuity_pt f x),
