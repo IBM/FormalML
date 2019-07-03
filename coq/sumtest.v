@@ -1,52 +1,12 @@
 Require Import Reals.Rbase.
 Require Import Reals.Rfunctions.
-Require Import Arith.
-Require Export Rlimit.
-Require Export Rderiv.
 Require Import Ranalysis_reg.
 Require Import Reals.Integration.
-
 Require Import Lra Omega.
 Require Import BasicTactics Sums.
 
-
 Local Open Scope R_scope.
 Implicit Type f : R -> R.
-
-Definition lb_interval (lb x:R) : Prop := x >= lb.
-
-Definition positive_lb f (lb:R) : Prop := forall x:R, x >= lb -> f x > 0.
-
-Definition continuity_lb f (lb:R) : Prop := forall x:R, x >= lb -> continuity_pt f x.
-
-Definition decreasing_lb f (lb:R) : Prop := forall x y:R, x>=lb -> x <= y -> f y <= f x.
-
-(* sum from 1 to n of f:R -> R *)
-Definition sum_f1 (n:nat) f := sum_f 1 n (fun j:nat => f (INR j)).
-
-Definition Newton_integrable (f:R -> R) (a b:R) : Type :=
-  { g:R -> R | antiderivative f g a b \/ antiderivative f g b a }.
-
-Definition NewtonInt (f:R -> R) (a b:R) (pr:Newton_integrable f a b) : R :=
-  let (g,_) := pr in g b - g a.
-
-Definition integ_f1 (b:R) f (pr:Newton_integrable f R1 b) : R :=  NewtonInt f R1 b pr.
-
-(*
-Lemma continuity_implies_RiemannInt :
-  forall (f:R -> R) (a b:R),
-    a <= b ->
-    (forall x:R, a <= x <= b -> continuity_pt f x) -> Riemann_integrable f a b.
-Admitted.
-*)
-(*
-Lemma RiemannInt_P19 :
-  forall (f g:R -> R) (a b:R) (pr1:Riemann_integrable f a b)
-    (pr2:Riemann_integrable g a b),
-    a <= b ->
-    (forall x:R, a < x < b -> f x <= g x) -> RiemannInt pr1 <= RiemannInt pr2.
-Admitted.
-*)
 
 Lemma RiemannInt_p1 f (a:R) (pr1:Riemann_integrable f a (a+1)) :
     (forall x y :R, a <= x -> y <= a+1 -> x<=y -> f y <= f x)
@@ -92,43 +52,6 @@ Proof.
   - lra.
   - intros.
     apply H; lra.
-Qed.
-
-Lemma ale (a:R) : a <= a + 1.
-Proof.
-  lra.
-Qed.
-  
-Lemma RiemannInt_cont_p1 f (a:R) :
-  forall (C0:forall x:R, a <= x <= a+1 -> continuity_pt f x),
-    (forall x y :R, a <= x -> y <= a+1 -> x<=y -> f y <= f x)
-    -> RiemannInt (continuity_implies_RiemannInt (ale a) C0) <= f a .
-Proof.
-  intros.
-  apply RiemannInt_p1; trivial.
-Qed.
-
-Lemma RiemannInt_cont_p2 :
-  forall f (a:R)
-    (C0:forall x:R, a <= x <= a+1 -> continuity_pt f x),
-    (forall x y :R, a <= x -> y <= a+1 -> x<=y -> f y <= f x)
-    -> RiemannInt (continuity_implies_RiemannInt (ale a) C0) >= f (a+1) .
-Proof.
-  intros.
-  apply RiemannInt_p2; trivial.
-Qed.
-
-Lemma ale2 n : 1 <= 1 + (INR n).
-Proof.
-  generalize (pos_INR n); intros.
-  lra.
-Qed.
-
-Lemma Riemann_integrable_nil f a b : a = b -> Riemann_integrable f a b.
-Proof.
-  intros.
-  subst.
-  apply RiemannInt_P7.
 Qed.
 
 Lemma RiemannInt_pn1 f (n:nat) (pr1:Riemann_integrable f 1 (2 + INR n)) :
@@ -331,7 +254,6 @@ Proof.
   - apply RiemannInt_pn1; trivial.
 Qed.
 
-  
 Lemma ale21 n : 1 <= 2 + INR n.
 Proof.
   generalize (pos_INR n); intros.
@@ -437,7 +359,47 @@ Proof.
     + destruct n; simpl; trivial; lra.
 Qed.
 
+Lemma decreasing_inv_x a b : 0 < a -> a < b -> (/ b) < (/ a).
+Proof.  
+  - intros.
+    apply Rinv_lt_contravar; trivial.
+    apply Rmult_lt_0_compat; trivial.
+    apply Rlt_trans with (r2 := a); trivial.
+Qed.
+
+Lemma decreasing_inv_xsq a b : 0 < a -> a < b -> (/ (Rsqr b)) < (/ (Rsqr a)).
+Proof.  
+  - intros.
+    apply decreasing_inv_x.
+    apply Rlt_0_sqr.
+    apply Rgt_not_eq.
+    apply Rlt_gt; trivial.
+    unfold Rsqr.
+    apply Rmult_gt_0_lt_compat; trivial.
+    apply Rlt_gt; trivial.
+    apply Rlt_trans with (r2 := a); trivial.
+Qed.
+
+Lemma continuity_pt_inv_x a : 0 < a -> continuity_pt (fun x : R => / x) a.
+Proof.
+  intros.
+  apply continuity_pt_inv.
+  apply derivable_continuous_pt.
+  apply derivable_pt_id.
+  apply Rgt_not_eq.
+  apply Rlt_gt; trivial.
+Qed.
+
+Lemma continuity_pt_inv_xsq a : 0 < a -> continuity_pt (fun x : R => / Rsqr x) a.
+Proof.
+  intros.
+  apply continuity_pt_inv. 
+  apply derivable_continuous_pt.
+  apply derivable_pt_Rsqr.
+  unfold Rsqr.
+  apply Rmult_integral_contrapositive.
+  lra.
+Qed.
 
 
-
-
+    
