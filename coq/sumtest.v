@@ -380,7 +380,10 @@ Proof.
     apply Rlt_trans with (r2 := a); trivial.
 Qed.
 
-Lemma continuity_pt_inv_x a : 0 < a -> continuity_pt (fun x : R => / x) a.
+Definition f_inv := (fun x : R =>  / x).
+Definition f_inv_sq := (fun x : R => / Rsqr x).
+
+Lemma continuity_pt_inv_x a : 0 < a -> continuity_pt f_inv a.
 Proof.
   intros.
   apply continuity_pt_inv.
@@ -390,7 +393,7 @@ Proof.
   apply Rlt_gt; trivial.
 Qed.
 
-Lemma continuity_pt_inv_xsq a : 0 < a -> continuity_pt (fun x : R => / Rsqr x) a.
+Lemma continuity_pt_inv_xsq a : 0 < a -> continuity_pt f_inv_sq a.
 Proof.
   intros.
   apply continuity_pt_inv. 
@@ -401,5 +404,54 @@ Proof.
   lra.
 Qed.
 
+Lemma integrable_inv a : 1 <= a -> Riemann_integrable f_inv 1 a.
+Proof.
+  intros.
+  apply continuity_implies_RiemannInt; trivial.
+  intros.
+  apply continuity_pt_inv_x.
+  lra.
+Qed.
 
-    
+Lemma integrable_inv_sq a : 1 <= a -> Riemann_integrable f_inv_sq 1 a.
+Proof.  
+  intros.
+  apply continuity_implies_RiemannInt; trivial.
+  intros.
+  apply continuity_pt_inv_xsq.
+  lra.
+Qed.
+
+Lemma ub_sum_inv_sq (n:nat) :
+   sum_f 2 (2+n) (fun j:nat => f_inv_sq (INR j))
+        <= RiemannInt (@integrable_inv_sq (2 + (INR n)) (ale21 n)).
+Admitted.
+(* prove? using RiemannInt_pn2 *)
+
+Lemma lb_sum_inv (n:nat) :
+  RiemannInt (@integrable_inv (2 + (INR n)) (ale21 n))
+     <= sum_f 1 (1+n) (fun j:nat => f_inv (INR j)).
+Admitted.
+(* prove? using ReimannInt_pn1 *)
+
+Lemma derivable_pt_lim_ln : forall x:R, 0 < x -> derivable_pt_lim ln x (/ x).
+Admitted.
+
+Lemma derivable_pt_lim_inv :
+  forall f (x l:R), f x <> 0 -> derivable_pt_lim f x l -> 
+                    derivable_pt_lim (/ f) x (- l / (Rsqr (f x))).
+Admitted.
+
+Lemma derive_pt_inv :
+  forall (f:R -> R) (x:R) (pr:derivable_pt f x) (na:f x <> 0),
+    derive_pt (/ f) x (derivable_pt_inv f x na pr) =
+    - derive_pt f x pr / Rsqr (f x).
+Admitted.
+
+Lemma FTC_Riemann :
+  forall (f:C1_fun) (a b:R) (pr:Riemann_integrable (derive f (diff0 f)) a b),
+    RiemannInt pr = f b - f a.
+Admitted.
+
+
+
