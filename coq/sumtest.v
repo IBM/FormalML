@@ -359,27 +359,6 @@ Proof.
     + destruct n; simpl; trivial; lra.
 Qed.
 
-Lemma decreasing_inv_x a b : 0 < a -> a < b -> (/ b) < (/ a).
-Proof.  
-  - intros.
-    apply Rinv_lt_contravar; trivial.
-    apply Rmult_lt_0_compat; trivial.
-    apply Rlt_trans with (r2 := a); trivial.
-Qed.
-
-Lemma decreasing_inv_xsq a b : 0 < a -> a < b -> (/ (Rsqr b)) < (/ (Rsqr a)).
-Proof.  
-  - intros.
-    apply decreasing_inv_x.
-    apply Rlt_0_sqr.
-    apply Rgt_not_eq.
-    apply Rlt_gt; trivial.
-    unfold Rsqr.
-    apply Rmult_gt_0_lt_compat; trivial.
-    apply Rlt_gt; trivial.
-    apply Rlt_trans with (r2 := a); trivial.
-Qed.
-
 Definition f_inv := (fun x : R =>  / x).
 Definition f_inv_sq := (fun x : R => / Rsqr x).
 
@@ -425,14 +404,31 @@ Qed.
 Lemma ub_sum_inv_sq (n:nat) :
    sum_f 2 (2+n) (fun j:nat => f_inv_sq (INR j))
         <= RiemannInt (@integrable_inv_sq (2 + (INR n)) (ale21 n)).
-Admitted.
-(* prove? using RiemannInt_pn2 *)
+Proof.
+   apply Rge_le.
+   apply RiemannInt_pn2.
+   intros.
+   unfold f_inv_sq.
+   apply Rinv_le_contravar; trivial.
+   apply Rmult_lt_0_compat; trivial.
+   lra.
+   lra.
+   unfold Rsqr.
+   cut (0 <= x); intros.
+   apply Rmult_le_compat; trivial.
+   lra.
+Qed.
 
 Lemma lb_sum_inv (n:nat) :
   RiemannInt (@integrable_inv (2 + (INR n)) (ale21 n))
-     <= sum_f 1 (1+n) (fun j:nat => f_inv (INR j)).
-Admitted.
-(* prove? using ReimannInt_pn1 *)
+       <= sum_f 1 (n+1) (fun j:nat => f_inv (INR j)).
+Proof.  
+  apply RiemannInt_pn1.
+  intros.
+  unfold f_inv.
+  apply Rinv_le_contravar; trivial.
+  lra.
+Qed.
 
 Lemma derivable_pt_lim_ln : forall x:R, 0 < x -> derivable_pt_lim ln x (/ x).
 Admitted.
