@@ -1,8 +1,10 @@
 Require Import Coq.Reals.Rbase.
 Require Import Coq.Reals.Rfunctions.
+Require Import List.
 Require Import EquivDec Nat Omega Lra.
 
-Require Import BasicTactics.
+Require Import BasicTactics ListAdd.
+Import ListNotations.
 
 Local Open Scope R.
 (* The standard library defines sum_f_R0 as an inclusive sum from 0.
@@ -180,6 +182,39 @@ Proof.
       destruct n; simpl; lra.
   Qed.
 
+    
+  Lemma sum_f'_as_fold_right f (n:nat) s :
+    sum_f_R0' (fun x : nat => f (x + s)%nat) n = fold_right (fun a b => f a + b) 0 (seq s n).
+  Proof.
+    revert s.
+    induction n; simpl; trivial.
+    intros.
+    rewrite (IHn s).
+    destruct n; [simpl; lra | ].
+    replace (seq s (S n)) with ([s]++seq (S s) n) by (simpl; trivial).
+    rewrite seq_Sn.
+    repeat rewrite fold_right_app.
+    simpl.
+    rewrite (fold_right_plus_acc _ (f (S (s + n)) + 0)).
+    rewrite Rplus_assoc.
+    f_equal.
+    f_equal.
+    rewrite Rplus_0_r.
+    f_equal.
+    omega.
+  Qed.
+
+  Lemma sum_f_R0'_as_fold_right f (n:nat) :
+    sum_f_R0' f n = fold_right (fun a b => f a + b) 0 (seq 0 n).
+  Proof.
+    generalize (sum_f'_as_fold_right f n 0); simpl; intros HH.
+    rewrite <- HH.
+    apply sum_f_R0'_ext.
+    intros.
+    f_equal.
+    omega.
+  Qed.
+
 End sum'.
 
 Section inf_sum'.
@@ -268,68 +303,135 @@ Section inf_sum'.
       tauto.
     Qed.
 
-    Lemma infinite_sum'_const_to_0 c :
-      infinite_sum' (fun _ => c) 0 -> c = 0.
+    (*
+    Lemma infinite_sum'_unique_half f l1 l2 :
+      infinite_sum' f l1 ->
+      infinite_sum' f l2 ->
+      l2 <= l1 ->
+      l1 = l2.
     Proof.
-      unfold infinite_sum'; intros inf.
-      destruct (Req_dec c 0).
-      - subst; tauto.
-      - specialize (inf (Rabs c)).
-        cut_to inf.
-        + destruct inf as [N Nconv].
-          specialize (Nconv (N+2))%nat.
-          cut_to Nconv; [| omega].
-          unfold R_dist in Nconv.
-          rewrite sum_f_R0'_const in Nconv.
-          rewrite Rminus_0_r in Nconv.
-          apply Rsqr_lt_abs_1 in Nconv.
-          rewrite Rsqr_mult in Nconv.
-          apply Rlt_not_le in Nconv.
-          elim Nconv.
-          replace (c²) with ((c² * 1)%R) at 1 by lra.
-          { apply Rmult_le_compat_l.
-            - apply Rle_0_sqr.
-            - rewrite plus_INR.
-              rewrite Rsqr_plus.
-              replace (INR 2)² with (INR 4) by (vm_compute; lra).
-              apply (Rle_trans _ (INR 4)).
-              + vm_compute; lra.
-              + rewrite Rplus_assoc.
-                rewrite Rplus_comm.
-                replace (INR 4) with (INR 4 + 0)%R at 1 by lra.
-                rewrite Rplus_assoc.
-                apply Rplus_le_compat_l.
-                apply Rplus_le_le_0_compat.
-                * rewrite Rmult_assoc.
-                  apply Rmult_le_pos; [ lra | ].
-                  apply Rmult_le_pos; apply pos_INR.
-                * apply Rle_0_sqr.
-          }
-        + apply Rabs_pos_lt; trivial.
+      unfold infinite_sum'; intros inf1 inf2 le.
+      destruct (Req_dec (l1 - l2) 0); [lra | ].
+      assert (gt0:(l1 - l2) / 2 > 0) by lra.
+      specialize (inf1 _ gt0).
+      destruct inf1 as [N1 inf1].
+      specialize (inf2 _ gt0).
+      destruct inf2 as [N2 inf2].
+      specialize (inf1 (max N1 N2)).
+      specialize (inf2 (max N1 N2)).
+
+      l2 - x < (l1 - l2) / 2
+                         l1 - x < (l1 - l2) / 2k
+      
+     *)
+
+    Lemma R_dist_too_small_impossible_lt r l1 l2 :
+      l1 < l2 ->
+      R_dist r l1 < R_dist l1 l2 / 2 ->
+      R_dist r l2 < R_dist l1 l2 / 2 -> False.
+    Proof.
+      intros ltl inf1 inf2.
+      generalize (Rplus_lt_compat _ _ _ _ inf1 inf2); intros ltt.
+      replace (R_dist l1 l2 / 2 + R_dist l1 l2 / 2) with (R_dist l1 l2) in ltt by lra.
+      rewrite (R_dist_sym r l1) in ltt.
+      generalize (R_dist_tri l1 l2 r); intros.
+      lra.
     Qed.
-    
-(*
-  Lemma infinite_sum'_chisel s l : infinite_sum' s l <->
-                                  forall n,
-                                    infinite_sum' (fun x =>
-                                                    if x == n then 0
-                                                    else s x) (l - s n).
-  Proof.
-    unfold infinite_sum'.
-    split; intros H.
-    - intros n eps eps_gt.
-      destruct (H eps eps_gt) as [N Nconv].
-      exists (S (max n N)).
-      assert (n <= max n N)%nat by apply Nat.le_max_l.
-      intros n0 n0_gt.
-      specialize (Nconv (S (max n N))).
-      cut_to Nconv.
-      + rewrite (sum_f_R0'_chisel s (S (max n N)) n) in Nconv by omega.
-        
-        
-      + apply Nat.le_max_r.
-        
-  Qed.
- *)
+             
+    Lemma R_dist_too_small_impossible_neq r l1 l2 :
+      l1 <> l2 ->
+      R_dist r l1 < R_dist l1 l2 / 2 ->
+      R_dist r l2 < R_dist l1 l2 / 2 -> False.
+    Proof.
+      intros neq inf1 inf2.
+      destruct (Rlt_le_dec l1 l2).
+      - eapply R_dist_too_small_impossible_lt; eauto.
+      - destruct r0.
+        + rewrite (R_dist_sym l1 l2) in * .
+          eapply R_dist_too_small_impossible_lt; eauto.
+        + intuition.
+    Qed.
+                                                     
+    Lemma infinite_sum'_unique {f l1 l2} :
+      infinite_sum' f l1 ->
+      infinite_sum' f l2 ->
+      l1 = l2.
+    Proof.
+      unfold infinite_sum'; intros inf1 inf2.
+      destruct (Req_dec (l1 - l2) 0); [lra | ].
+      generalize (Rabs_pos_lt _ H); intros gt0.
+      apply Rlt_gt in gt0.
+      assert (gt02:R_dist l1  l2 / 2 > 0) by (unfold R_dist; lra).
+      specialize (inf1 _ gt02).
+      specialize (inf2 _ gt02).
+      destruct inf1 as [N1 inf1].
+      destruct inf2 as [N2 inf2].
+      specialize (inf1 (max N1 N2)).
+      specialize (inf2 (max N1 N2)).
+      cut_to inf1; [ | apply Nat.le_max_l].
+      cut_to inf2; [ | apply Nat.le_max_r].
+      revert inf1 inf2.
+      generalize (sum_f_R0' f (max N1 N2)); intros.
+      eelim R_dist_too_small_impossible_neq; try eapply inf1; eauto.
+      lra.
+    Qed.
+
+    Lemma infinite_sum'_const_shift {c d} :
+      infinite_sum' (fun _ => c) d ->
+      (infinite_sum' (fun _ => c) (d+c)).
+    Proof.
+      intros.
+      apply (infinite_sum'_split 1  (fun _ => c) (d+c)).
+      simpl.
+      replace (d + c - (0 + c)) with d; trivial.
+      lra.
+    Qed.
+
+    Lemma infinite_sum'_const0 {d} :
+      infinite_sum' (fun _ : nat => 0) d ->
+      d = 0.
+    Proof.
+      unfold infinite_sum'; intros HH.
+      destruct (Req_dec d 0); trivial.
+      assert (gt0:Rabs d/2>0).
+      {
+        generalize (Rabs_pos_lt d H).
+        lra.
+      }
+      specialize (HH _ gt0).
+      destruct HH as [N Nconv].
+      specialize (Nconv N).
+      cut_to Nconv; [ | left; trivial].
+      rewrite sum_f_R0'_const in Nconv.
+      unfold R_dist in Nconv.
+      replace (0 * INR N - d) with (- d) in Nconv by lra.
+      rewrite Rabs_Ropp in Nconv.
+      lra.
+    Qed.
+
+    Lemma infinite_sum'_const1 {c d} :
+      infinite_sum' (fun _ => c) d -> c = 0.
+    Proof.
+      intros inf1.
+      generalize (infinite_sum'_const_shift inf1); intros inf2.
+      generalize (infinite_sum'_unique inf1 inf2); intros eqq.
+      lra.
+    Qed.
+
+    Lemma infinite_sum'_const {c d} :
+      infinite_sum' (fun _ => c) d -> c = 0 /\ d = 0.
+    Proof.
+      intros inf1.
+      generalize (infinite_sum'_const1 inf1); intros; subst.
+      generalize (infinite_sum'_const0 inf1); intros; subst.
+      tauto.
+    Qed.
+
+    Lemma infinite_sum'_const2 {c d} :
+      infinite_sum' (fun _ => c) d -> d = 0.
+    Proof.
+      intros inf1.
+      generalize (infinite_sum'_const inf1); tauto.
+    Qed.
     
 End inf_sum'.

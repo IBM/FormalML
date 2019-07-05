@@ -1,194 +1,702 @@
 Require Import Coq.Reals.Rbase.
 Require Import Coq.Reals.Rfunctions.
-Require Import Lra.
+Require Import Lra Omega.
 Require Import List.
+Require Import Morphisms EquivDec.
 
-Require Import BasicTactics Sums.
+Require Import BasicTactics Sums ListAdd.
 Import ListNotations.
-  
+
 
 Section ev.
   Definition event T := T -> Prop.
 
+  Definition event_sub {T} (A B:event T) := forall x, A x -> B x.
+  Definition event_equiv {T} (A B:event T) := forall x, A x <-> B x.
+  
+  Global Instance event_equiv_equiv {T} : Equivalence (@event_equiv T).
+  Proof.
+    firstorder.
+  Qed.
+
+  Global Instance event_equiv_sub {T} : subrelation event_equiv (@event_sub T).
+  Proof.
+    firstorder.
+  Qed.
+
+  Global Instance event_sub_pre {T} : PreOrder (@event_sub T).
+  Proof.
+    firstorder.
+  Qed.
+
+  Global Instance event_sub_part {T} : PartialOrder event_equiv (@event_sub T).
+  Proof.
+    firstorder.
+  Qed.
+
   (* also written Ω *)
-  Definition event_True {T}
+  Definition event_True {T} : event T
     := fun x: T => True. 
 
   (* also written Ø *)
-  Definition event_False {T}
+  Definition event_False {T} : event T
     := fun x: T => False.
   
-  Definition event_union {T} (A B:T->Prop)
+  Definition event_union {T} (A B:event T) : event T
     := fun x:T => A x \/ B x.
   
-  Definition event_inter {T} (A B:T->Prop)
+  Definition event_inter {T} (A B:event T) : event T
     := fun x:T => A x /\ B x.
   
-  Definition event_complement {T} (A:T->Prop)
+  Definition event_complement {T} (A:event T) : event T
     := fun x:T => not (A x).
+
+  Definition event_diff {T} (A B:event T) : event T
+    := fun x:T => A x /\ not (B x).
+
+  Definition event_lem {T} (A:event T) : Prop
+    := forall x, A x \/ ~ A x.
 End ev.
-  
+
+Definition event_disjoint {T} (A B:event T) : Prop
+  := forall x, A x -> B x -> False.
+
 Notation "a ∪ b" := (event_union a b) (at level 50) : prob. (* \cup *)
 Notation "a ∩ b" := (event_inter a b) (at level 50) : prob. (* \cap *)
-Notation "¬ a" := (event_complement a) (at level 75) : prob. (* \neg *)
-  
-  (* Collections are *countable* sequences of subsets of the powerset of T. *)
+Notation "¬ a" := (event_complement a) (at level 20) : prob. (* \neg *)
+Notation "a \ b" := (event_diff a b) (at level 50) : prob.
+Notation "a ≤ b" := (event_sub a b) (at level 70) : prob. (* \leq *) 
 
 Local Open Scope prob.
 
+Global Instance event_union_proper {T} :
+  Proper (event_equiv ==> event_equiv ==> event_equiv) (@event_union T).
+Proof.
+  firstorder.
+Qed.
 
-Definition collection_is_pairwise_disjoint (T: Type) (collection: nat -> event T) :=
+Global Instance event_inter_proper {T} :
+  Proper (event_equiv ==> event_equiv ==> event_equiv) (@event_inter T).
+Proof.
+  firstorder.
+Qed.
+
+Global Instance event_complement_proper {T} :
+  Proper (event_equiv ==> event_equiv) (@event_complement T).
+Proof.
+  firstorder.
+Qed.
+
+Global Instance event_diff_proper {T} :
+  Proper (event_equiv ==> event_equiv ==> event_equiv) (@event_diff T).
+Proof.
+  firstorder.
+Qed.
+
+Global Instance event_union_sub_proper {T} :
+  Proper (event_sub ==> event_sub ==> event_sub) (@event_union T).
+Proof.
+  firstorder.
+Qed.
+
+Global Instance event_inter_sub_proper {T} :
+  Proper (event_sub ==> event_sub ==> event_sub) (@event_inter T).
+Proof.
+  firstorder.
+Qed.
+
+Global Instance event_complement_sub_proper {T} :
+  Proper (event_sub --> event_sub) (@event_complement T).
+Proof.
+  firstorder.
+Qed.
+
+Global Instance event_diff_sub_proper {T} :
+  Proper (event_sub ==> event_sub --> event_sub) (@event_diff T).
+Proof.
+  firstorder.
+Qed.
+
+Global Instance event_disjoint_proper {T} :
+  Proper (event_sub --> event_sub --> Basics.impl) (@event_disjoint T).
+Proof.
+  firstorder.
+Qed.
+
+Lemma event_diff_derived {T} (A B:T->Prop) : A \ B === A ∩ ¬B.
+Proof.
+  unfold equiv, event_equiv, event_diff, event_inter, event_complement.
+  firstorder.
+Qed.
+
+Lemma event_disjoint_inter {T} (A B:event T) :
+  event_disjoint A B <-> A ∩ B === event_False.
+Proof.
+  unfold equiv, event_equiv, event_disjoint, event_inter, event_False.
+  firstorder.
+Qed.
+
+Lemma event_disjoint_diff {T} (A B:event T) : event_disjoint A (B \ A).
+Proof.
+  firstorder.
+Qed.
+
+Hint Resolve event_disjoint_diff : prob.
+
+Lemma event_disjoint_complement {T} (A:event T) : event_disjoint A (¬ A).
+Proof.
+  firstorder.
+Qed.
+
+Hint Resolve event_disjoint_complement : prob.
+
+Lemma event_sub_true {T} (A:event T) : A ≤ event_True.
+Proof.
+  firstorder.
+Qed.
+
+Lemma event_false_sub {T} (A:event T) : event_False ≤ A.
+Proof.
+  firstorder.
+Qed.
+
+Hint Resolve @event_sub_true @event_false_sub : prob.
+
+Lemma event_sub_union_l {T} (A B:event T) : A ≤ A ∪ B.
+Proof.
+  firstorder.
+Qed.
+
+Lemma event_sub_union_r {T} (A B:event T) : B ≤ A ∪ B.
+Proof.
+  firstorder.
+Qed.
+
+Hint Resolve @event_sub_union_l @event_sub_union_r : prob.
+
+Lemma event_inter_sub_l {T} (A B:event T) : A ∩ B ≤ A.
+Proof.
+  firstorder.
+Qed.
+
+Lemma event_inter_sub_r {T} (A B:event T) : A ∩ B ≤ B.
+Proof.
+  firstorder.
+Qed.
+
+Hint Resolve @event_inter_sub_l @event_inter_sub_r : prob.
+
+Lemma event_union_true_l {T} (A:event T) : event_True ∪ A === event_True.
+Proof.
+  firstorder.
+Qed.
+
+Lemma event_union_true_r {T} (A:event T) : A ∪ event_True === event_True.
+Proof.
+  firstorder.
+Qed.
+
+Hint Rewrite @event_union_true_l @event_union_true_r : prob.
+
+Lemma event_union_false_l {T} (A:event T) : event_False ∪ A === A.
+Proof.
+  firstorder.
+Qed.
+
+Lemma event_union_false_r {T} (A:event T) : A ∪ event_False === A.
+Proof.
+  firstorder.
+Qed.
+
+Hint Rewrite @event_union_false_l @event_union_false_r : prob.
+
+Lemma event_union_complement {T} (A:event T) :
+  event_lem A ->
+  A ∪ ¬ A === event_True.
+Proof.
+  firstorder.
+Qed.
+
+Lemma event_inter_true_l {T} (A:event T) : event_True ∩ A === A.
+Proof.
+  firstorder.
+Qed.
+
+Lemma event_inter_true_r {T} (A:event T) : A ∩ event_True === A.
+Proof.
+  firstorder.
+Qed.
+
+Hint Rewrite @event_inter_true_l @event_inter_true_r : prob.
+
+Lemma event_inter_false_l {T} (A:event T) : event_False ∩ A === event_False.
+Proof.
+  firstorder.
+Qed.
+
+Lemma event_inter_false_r {T} (A:event T) : A ∩ event_False === event_False.
+Proof.
+  firstorder.
+Qed.
+
+Hint Rewrite @event_inter_false_l @event_inter_false_r : prob.
+
+Lemma event_inter_complement {T} (A:event T) :
+  A ∩ ¬ A === event_False.
+Proof.
+  firstorder.
+Qed.
+
+Hint Rewrite @event_inter_complement : prob.
+
+Lemma event_diff_true_l {T} (A:event T) : event_True \ A === ¬ A.
+Proof.
+  firstorder.
+Qed.
+
+Lemma event_diff_true_r {T} (A:event T) : A \ event_True === event_False.
+Proof.
+  firstorder.
+Qed.
+
+Hint Rewrite @event_diff_true_l @event_diff_true_r : prob.
+
+Lemma event_diff_false_l {T} (A:event T) : event_False \ A === event_False.
+Proof.
+  firstorder.
+Qed.
+
+Lemma event_diff_false_r {T} (A:event T) : A \ event_False === A.
+Proof.
+  firstorder.
+Qed.
+
+Hint Rewrite @event_diff_false_l @event_diff_false_r : prob.
+
+Lemma event_union_comm {T} (A B:event T) : A ∪ B === B ∪ A.
+Proof.
+  firstorder.
+Qed.
+
+Lemma event_inter_comm {T} (A B:event T) : A ∩ B === B ∩ A.
+Proof.
+  firstorder.
+Qed.
+
+Lemma event_union_self {T} (A:event T) : A ∪ A === A.
+Proof.
+  firstorder.
+Qed.
+
+Lemma event_inter_self {T} (A:event T) : A ∩ A === A.
+Proof.
+  firstorder.
+Qed.
+
+Lemma event_union_not_self {T} (A:event T) :
+  event_lem A ->
+  A ∪ ¬ A === event_True.
+Proof.
+  firstorder.
+Qed.
+
+Lemma event_inter_not_self {T} (A B:event T) : A ∩ ¬ A === event_False.
+Proof.
+  firstorder.
+Qed.
+
+Lemma event_union_assoc {T} (A B C:event T) : A ∪ (B ∪ C) === (A ∪ B) ∪ C.
+Proof.
+  firstorder.
+Qed.
+
+Lemma event_inter_assoc {T} (A B C:event T) : A ∩ (B ∩ C) === (A ∩ B) ∩ C.
+Proof.
+  firstorder.
+Qed.
+
+Lemma event_union_inter_distr {T} (A B C:event T) : A ∪ (B ∩ C) === (A ∪ B) ∩ (A ∪ C).
+Proof.
+  firstorder.
+Qed.
+
+Lemma event_inter_union_distr {T} (A B C:event T) : A ∩ (B ∪ C) === (A ∩ B) ∪ (A ∩ C).
+Proof.
+  firstorder.
+Qed.
+
+Hint Rewrite @event_union_self @event_inter_self @event_inter_not_self : prob.
+
+Lemma event_union_diff {T:Type} (A B:event T) :
+  event_lem A ->
+  A ∪ (B \ A) === A ∪ B.
+Proof.
+  intros.
+  rewrite event_diff_derived.
+  rewrite event_union_inter_distr.
+  rewrite event_union_not_self by trivial.
+  autorewrite with prob.
+  reflexivity.
+Qed.
+
+Lemma event_union_sub_l {T:Type} (A B:event T) :
+  B ≤ A -> A ∪ B === A.
+Proof.
+  firstorder.
+Qed.
+
+Lemma event_union_sub_r {T:Type} (A B:event T) :
+  A ≤ B -> A ∪ B === B.
+Proof.
+  firstorder.
+Qed.
+
+Lemma event_union_diff_sub {T:Type} (A B:event T) :
+  event_lem A ->
+  A ≤ B -> A ∪ (B \ A) === B.
+Proof.
+  intros.
+  rewrite event_union_diff by trivial.
+  apply event_union_sub_r; trivial.
+Qed.
+
+(* Collections are *countable* sequences of subsets of the powerset of T. *)
+
+Definition collection_is_pairwise_disjoint {T: Type} (collection: nat -> event T) :=
   forall n1 n2 : nat, n1 <> n2 ->
-                      forall x : T, (collection n1) x -> ~((collection n2) x).
+                      event_disjoint (collection n1) (collection n2).
 
 (* Returns a new set prop (T->Prop) that returns true if t:T is in any of the sets within the collection. *)
 Definition union_of_collection {T: Type} (collection: nat -> event T) : event T :=
   fun t:T => (exists n, (collection n) t).
 
-Class SigmaAlgebra (T:Set) :=
+Definition inter_of_collection {T: Type} (collection: nat -> event T) : event T :=
+  fun t:T => (forall n, (collection n) t).
+
+
+Lemma collection_is_pairwise_disjoint_sub {T:Type} (coll:nat -> event T) (f:event T -> event T):
+  (forall a, f a ≤ a) ->
+  collection_is_pairwise_disjoint coll ->
+  collection_is_pairwise_disjoint (fun n => f (coll n)).
+Proof.
+  intros subs disj n1 n2 neq.
+  specialize (disj _ _ neq).
+  repeat rewrite subs; trivial.
+Qed.  
+
+Lemma event_inter_countable_union_distr {T} (A:event T) (coll:nat->event T) :
+  A ∩ union_of_collection coll === union_of_collection (fun n => A ∩ (coll n)).
+Proof.
+  firstorder.
+Qed.
+
+Class SigmaAlgebra (T:Type) :=
   {
     sa_sigma : event T -> Prop;
     
     (* alternative to assuming functional extensionality *)
-    sa_ext (A1 A2:event T) : (forall x,  A1 x <-> A2 x) -> sa_sigma A1 <-> sa_sigma A2;
+    sa_proper :> Proper (event_equiv ==> iff) sa_sigma ;
+
+    (* alternative to assuming LEM *)
+    sa_dec (A:event T) : event_lem A;
     
     sa_countable_union (collection: nat -> event T) :
       (forall n, sa_sigma (collection n)) ->
       sa_sigma (union_of_collection collection);
     
     sa_complement (A:event T) :
-        sa_sigma A -> sa_sigma (¬ A) ;
+      sa_sigma A -> sa_sigma (¬ A) ;
     
     sa_True : sa_sigma event_True 
-               
+                       
   }.
 
-  Lemma sa_False {T} {s: SigmaAlgebra T} : sa_sigma (event_False).
-  Proof.
-    eapply sa_ext
-    ; [ | eapply sa_complement; eapply sa_True].
-    unfold event_False, event_True, event_complement; tauto.
-  Qed.
+Hint Resolve sa_dec : prob.
 
-  Definition list_collection {T} {s : SigmaAlgebra T} (l:list (event T)) : nat -> event T
-    := fun n => nth n l event_False.
+(* restate some lemmas that rely on lem unconditionally *)
+Lemma ps_event_union_complement {T} {s : SigmaAlgebra T} (A:event T) :
+  A ∪ ¬ A === event_True.
+Proof.
+  apply event_union_complement.
+  apply sa_dec.
+Qed.
 
-  Definition list_union {T} {s : SigmaAlgebra T} (l:list (event T)) : event T
-    := fun x => exists a, In a l /\ a x.
+Lemma ps_event_union_not_self {T} {s : SigmaAlgebra T} (A:event T) :
+  A ∪ ¬ A === event_True.
+Proof.
+  apply event_union_not_self.
+  apply sa_dec.
+Qed.
 
-  Lemma list_union_union {T} {s : SigmaAlgebra T} (l:list (event T)) :
-    forall x, union_of_collection (list_collection l) x <-> list_union l x.
-  Proof.
-    unfold union_of_collection, list_collection, list_union.
-    intros x.
-    split; intros H.
-    - destruct H as [n nnth].
-      destruct (nth_in_or_default n l event_False).
-      + eauto.
-      + rewrite e in nnth.
-        red in nnth; intuition.
-    - destruct H as [a [inn ax]].
-      eapply In_nth in inn.
-      destruct inn as [n [_ nnth]].
-      exists n.
-      rewrite nnth.
-      trivial.
-  Qed.
+Lemma ps_event_union_diff {T:Type} {s : SigmaAlgebra T} (A B:event T) :
+  A ∪ (B \ A) === A ∪ B.
+Proof.
+  apply event_union_diff.
+  apply sa_dec.
+Qed.
 
-  Lemma list_collection_sigma {T} {s : SigmaAlgebra T} (l:list (event T)) :
-    (forall x : event T, In x l -> sa_sigma x) <->
-    (forall n : nat, sa_sigma (list_collection l n)).
-  Proof.
-    unfold list_collection.
+Lemma ps_event_union_diff_sub {T:Type} {s : SigmaAlgebra T} (A B:event T) :
+  A ≤ B -> A ∪ (B \ A) === B.
+Proof.
+  apply event_union_diff_sub.
+  apply sa_dec.
+Qed.
+
+Hint Resolve @ps_event_union_complement @ps_event_union_not_self 2ps_event_union_diff @ps_event_union_diff_sub : prob.
+
+Lemma sa_notnot {T} {s: SigmaAlgebra T} (A:event T) : forall x, ~ ~ A x -> A x.
+Proof.
+  intros.
+  destruct (sa_dec A x); intuition.
+Qed.
+
+Lemma sa_False {T} {s: SigmaAlgebra T} : sa_sigma (event_False).
+Proof.
+  eapply sa_proper
+  ; [ | eapply sa_complement; eapply sa_True].
+  unfold event_equiv, event_False, event_True, event_complement; tauto.
+Qed.
+
+Hint Resolve sa_True sa_False sa_complement : prob.
+
+Lemma sa_countable_inter {T} {s: SigmaAlgebra T} (collection: nat -> event T) :
+  (forall n, sa_sigma (collection n)) ->
+  sa_sigma (inter_of_collection collection).
+Proof.
+  intros H.
+  generalize (sa_countable_union (fun n => event_complement (collection n)))
+  ; intros HH.
+  cut_to HH.
+  - unfold inter_of_collection, union_of_collection in *.
+    apply sa_complement in HH.
+    eapply sa_proper; [| eapply HH]; intros x.
+    unfold event_complement in *.
     split; intros.
-    - destruct (nth_in_or_default n l event_False).
-      + eauto.
-      + rewrite e.
-        apply sa_False.
-    - eapply In_nth in H0.
+    + intros [n ncoll].
+      intuition.
+    + destruct (sa_dec (collection n) x); trivial.
+      elim H0; eauto.
+  - intros.
+    apply sa_complement; auto.
+Qed.
+
+Definition list_collection {T} {s : SigmaAlgebra T} (l:list (event T)) (d:event T) : nat -> event T
+  := fun n => nth n l d.
+
+Definition list_union {T} {s : SigmaAlgebra T} (l:list (event T)) : event T
+  := fun x => exists a, In a l /\ a x.
+
+Definition list_inter {T} {s : SigmaAlgebra T} (l:list (event T)) : event T
+  := fun x => forall a, In a l -> a x.
+
+Lemma event_inter_list_union_distr {T} {s : SigmaAlgebra T} (A:event T) (l: list (event T)) :
+  A ∩ list_union l === list_union (map (event_inter A) l).
+Proof.
+  unfold list_union; intros.
+  intros x; simpl.
+  simpl; split; intros HH.
+  - destruct HH as [ax [B [Bin Bx]]].
+    exists (event_inter A B).
+    split.
+    + apply in_map_iff.
+      eauto.
+    + firstorder.
+  - destruct HH as [Bi [Biin Bix]].
+    apply in_map_iff in Biin.
+    destruct Biin as [B [Bieq Bin]]; subst.
+    firstorder.
+Qed.
+
+Lemma list_union_union {T} {s : SigmaAlgebra T} (l:list (event T)) :
+  union_of_collection (list_collection l event_False) === list_union l.
+Proof.
+  unfold equiv, event_equiv, union_of_collection, list_collection, list_union.
+  intros x.
+  split; intros H.
+  - destruct H as [n nnth].
+    destruct (nth_in_or_default n l event_False).
+    + eauto.
+    + rewrite e in nnth.
+      red in nnth; intuition.
+  - destruct H as [a [inn ax]].
+    eapply In_nth in inn.
+    destruct inn as [n [_ nnth]].
+    exists n.
+    rewrite nnth.
+    trivial.
+Qed.
+
+Lemma list_inter_inter {T} {s : SigmaAlgebra T} (l:list (event T)) :
+  inter_of_collection (list_collection l event_True) === list_inter l.
+Proof.
+  unfold equiv, event_equiv, inter_of_collection, list_collection, list_inter.
+  intros x.
+  split; intros H.
+  - intros a inn.
+    eapply In_nth in inn.
+    destruct inn as [n [_ nnth]].
+    rewrite <- nnth.
+    eauto.
+  - intros n.
+    destruct (nth_in_or_default n l event_True).
+    + eapply H; eauto.
+    + rewrite e; vm_compute; trivial.
+Qed.
+
+Lemma list_union2 {T} {s : SigmaAlgebra T} (x1 x2 : event T) :
+  list_union [x1 ; x2] === x1 ∪ x2.
+Proof.
+  unfold equiv, event_equiv, list_union, event_union; simpl; intros.
+  split.
+  - intros [?[??]].
+    intuition congruence.
+  - intros [?|?]; eauto.
+Qed.
+
+Lemma list_inter2 {T} {s : SigmaAlgebra T} (x1 x2 : event T) :
+  list_inter [x1 ; x2] === x1 ∩ x2.
+Proof.
+  unfold equiv, event_equiv, list_inter, event_inter; simpl; intros.
+  split.
+  - intros.
+    generalize (H x1).
+    generalize (H x2).
+    intuition eauto.
+  - intros [??] a.
+    intuition congruence.
+Qed.
+
+Lemma list_collection_disjoint {T} {s : SigmaAlgebra T} (l:list (event T)) :
+    ForallOrdPairs event_disjoint l ->
+    collection_is_pairwise_disjoint (list_collection l event_False).
+Proof.
+  unfold collection_is_pairwise_disjoint, event_disjoint, event_False, list_collection.
+  - induction l; simpl; intros.
+    + simpl in H1.
+      destruct n1; simpl in *; tauto.
+    + inversion H; subst; clear H.
+      specialize (IHl H6).
+      simpl in *.
+      destruct n1.
+      * destruct n2; simpl; [tauto | ].
+        { destruct (nth_in_or_default n2 l (fun _ : T => False)).
+          - rewrite Forall_forall in H5.
+            eapply H5; eauto.
+          - rewrite e in H2; tauto.
+        }
+      * { destruct n2.
+          - destruct (nth_in_or_default n1 l (fun _ : T => False)).
+            + rewrite Forall_forall in H5.
+              specialize (H5 _ i _ H2); tauto.
+            + rewrite e in H1; tauto.
+          - eauto.
+        }
+Qed.
+
+Lemma list_collection_sigma {T} {s : SigmaAlgebra T} (l:list (event T)) (d:event T) :
+  ((forall x : event T, In x l -> sa_sigma x) /\ sa_sigma d) <->
+  (forall n : nat, sa_sigma (list_collection l d n)).
+Proof.
+  unfold list_collection.
+  split; intros.
+  - destruct H.
+    destruct (nth_in_or_default n l d).
+    + eauto.
+    + rewrite e.
+      trivial.
+  - split; intros.
+    + eapply In_nth in H0.
       destruct H0 as [n [_ nnth]].
       specialize (H n).
       rewrite nnth in H; trivial.
-  Qed.
-
-  Lemma sa_list_union {T} {s: SigmaAlgebra T} (l:list (event T)) :
-    (forall x, In x l -> sa_sigma x) ->
-    sa_sigma (list_union l).
-  Proof.
-    intros.
-    generalize (sa_countable_union (list_collection l)); intros.
-    erewrite sa_ext.
-    - apply H0.
-      apply list_collection_sigma; trivial.
-    - intros.
-      symmetry.
-      apply list_union_union.
-  Qed.
-
-  Lemma sa_union {T} {s: SigmaAlgebra T} {A₁ A₂} :
-    sa_sigma A₁ -> sa_sigma A₂ -> sa_sigma (A₁ ∪ A₂).
-  Proof.
-    intros.
-    generalize (sa_list_union [A₁ ; A₂]); intros.
-    erewrite sa_ext; [eapply H1 | ].
-    - simpl; intuition congruence.
-    - unfold list_union, event_union; simpl.
-      intuition; try eauto.
-      destruct H2 as [a [inn ax]].
-      intuition congruence.
-  Qed.
-
-  (* TODO: best way to solve this
-  Lemma sa_inter {T} {s: SigmaAlgebra T} {A₁ A₂} :
-    sa_sigma A₁ -> sa_sigma A₂ -> sa_sigma (A₁ ∩ A₂).
-  Proof.
-    intros sa1 sa2.
-    unfold event_inter.
-    apply sa_complement in sa1.
-    apply sa_complement in sa2.
-    generalize (sa_union sa1 sa2); intros sa3.
-    apply sa_complement in sa3.
-    unfold event_union in sa3.
-    unfold event_complement in *.
-    eapply sa_ext; [| eapply sa3].
-    intros; simpl.
-    split; intros.
-    - tauto.
-    - apply Decidable.not_or in H.
-      destruct H.
-  Qed.
-*)
-
-  (* Prop: the sum of probabilities for everything in the collection == R. *)
-Definition sum_of_probs_equals {T:Type}
-             (p : event T -> R)
-             (collection: nat -> event T) (result: R) :=
-    infinite_sum' (fun n:nat => p (collection n)) result.
-
-Class ProbSpace {T:Set} (S:SigmaAlgebra T) :=
-  {
-    ps_P: event T -> R;
-    ps_P_ext : forall x1 x2, (forall z, x1 z <-> x2 z) -> ps_P x1 = ps_P x2 ;
-    
-    ps_P_sum (collection: nat -> event T) :
-      (* Assume: collection is a subset of Sigma and its elements are pairwise disjoint. *)
-      (forall n:nat, sa_sigma (collection n)) -> 
-      collection_is_pairwise_disjoint T collection ->
-      sum_of_probs_equals ps_P collection (ps_P (union_of_collection collection));
-    
-    ps_P_one : ps_P event_True = R1;
-    
-    ps_sample_space_nonnegative : inhabited T
-  }.
-
-Lemma ps_True {T:Set} {S:SigmaAlgebra T} (ps:ProbSpace S) : ps_P event_True = R1.
-Proof.
-  apply ps_P_one.
+    + specialize (H (length l)).
+      rewrite nth_overflow in H; auto.
 Qed.
 
-Lemma ps_False {T:Set} {S:SigmaAlgebra T} (ps:ProbSpace S) : ps_P event_False = R0.
+Lemma sa_list_union {T} {s: SigmaAlgebra T} (l:list (event T)) :
+  (forall x, In x l -> sa_sigma x) ->
+  sa_sigma (list_union l).
 Proof.
-  generalize (ps_P_sum
+  intros.
+  rewrite <- list_union_union.
+  apply sa_countable_union.
+  apply list_collection_sigma.
+  auto with prob.
+Qed.
+
+Lemma sa_list_inter {T} {s: SigmaAlgebra T} (l:list (event T)) :
+  (forall x, In x l -> sa_sigma x) ->
+  sa_sigma (list_inter l).
+Proof.
+  intros.
+  rewrite <- list_inter_inter.
+  apply sa_countable_inter.
+  apply list_collection_sigma.
+  auto with prob.
+Qed.
+
+Lemma sa_union {T} {s: SigmaAlgebra T} {A₁ A₂} :
+  sa_sigma A₁ -> sa_sigma A₂ -> sa_sigma (A₁ ∪ A₂).
+Proof.
+  intros.
+  rewrite <- list_union2.
+  apply sa_list_union.
+  simpl; intuition congruence.
+Qed.
+
+Lemma sa_inter {T} {s: SigmaAlgebra T} {A₁ A₂} :
+  sa_sigma A₁ -> sa_sigma A₂ -> sa_sigma (A₁ ∩ A₂).
+Proof.
+  intros.
+  rewrite <- list_inter2.
+  apply sa_list_inter.
+  simpl; intuition congruence.
+Qed.
+
+Hint Resolve sa_union sa_inter : prob.
+
+Lemma sa_diff {T} {s: SigmaAlgebra T} {A₁ A₂} :
+  sa_sigma A₁ -> sa_sigma A₂ -> sa_sigma (A₁ \ A₂).
+Proof.
+  intros.
+  rewrite event_diff_derived.
+  auto with prob.
+Qed.
+
+Hint Resolve sa_diff : prob.
+
+(* Prop: the sum of probabilities for everything in the collection == R. *)
+Definition sum_of_probs_equals {T:Type}
+           (p : event T -> R)
+           (collection: nat -> event T) (result: R) :=
+  infinite_sum' (fun n:nat => p (collection n)) result.
+
+Class ProbSpace {T:Type} (S:SigmaAlgebra T) :=
+  {
+    ps_P: event T -> R;
+    ps_proper :> Proper (event_equiv ==> eq) ps_P ;
+    
+    ps_countable_disjoint_union (collection: nat -> event T) :
+      (* Assume: collection is a subset of Sigma and its elements are pairwise disjoint. *)
+      (forall n:nat, sa_sigma (collection n)) -> 
+      collection_is_pairwise_disjoint collection ->
+      sum_of_probs_equals ps_P collection (ps_P (union_of_collection collection));
+    
+    ps_one : ps_P event_True = R1;
+    
+    ps_pos (A:event T): (0 <= ps_P A)%R
+  }.
+
+Lemma ps_True {T:Type} {S:SigmaAlgebra T} (ps:ProbSpace S) : ps_P event_True = R1.
+Proof.
+  apply ps_one.
+Qed.
+
+(* P numbers are as per https://www.stat.washington.edu/~nehemyl/files/UW_MATH-STAT394_axioms-proba.pdf *)
+(* P1.1 *)
+Lemma ps_False {T:Type} {S:SigmaAlgebra T} (ps:ProbSpace S) : ps_P event_False = R0.
+Proof.
+  generalize (ps_countable_disjoint_union
                 (fun n => match n with
                           | 0 => event_True
                           | _ => event_False
@@ -205,17 +713,16 @@ Proof.
                                                   | S _ => event_False
                                                   end)
                              (fun x : nat => ps_P event_False)) in HH.
-    + rewrite (ps_P_ext (union_of_collection
+    + rewrite (@ps_proper _ _ _ (union_of_collection
                            (fun n : nat => match n with
                                            | 0%nat => event_True
                                            | S _ => event_False
                                            end)) (event_True)) in HH.
       * replace (ps_P (ProbSpace:=ps) event_True) with R1 in HH
-          by (symmetry; apply ps_P_one).
+          by (symmetry; apply ps_one).
         replace (R1 - (0 + R1))%R with R0 in HH by lra.
-        apply infinite_sum'_const_to_0 in HH.
-        trivial.
-      * unfold event_True; intuition.
+        eapply infinite_sum'_const1; eauto.
+      * unfold event_equiv, event_True; intuition.
         red.
         exists 0%nat; trivial.
     + destruct x; simpl; trivial.
@@ -223,7 +730,205 @@ Proof.
     + apply sa_True.
     + apply sa_False. 
   - unfold collection_is_pairwise_disjoint.
-    destruct n1; destruct n2; unfold event_True, event_False; try tauto.
+    destruct n1; destruct n2; unfold event_True, event_False, event_disjoint; try tauto.
+Qed.
+
+Local Open Scope R.
+
+(* P1.2 *)
+Lemma ps_list_disjoint_union {T:Type} {S:SigmaAlgebra T} (ps:ProbSpace S) (l: list (event T)) :
+  (* Assume: collection is a subset of Sigma and its elements are pairwise disjoint. *)
+  (forall x : event T, In x l -> sa_sigma x) ->
+  ForallOrdPairs event_disjoint l ->
+  ps_P (list_union l) = fold_right Rplus 0 (map ps_P l).
+Proof.
+  intros Hs Hd.
+  generalize (ps_countable_disjoint_union (list_collection l event_False)); intros HH.
+  cut_to HH.
+  - unfold sum_of_probs_equals in HH.
+    erewrite ps_proper in HH; [| eapply list_union_union ].
+    apply (infinite_sum'_split (length l)) in HH.
+    apply (infinite_sum'_ext  (fun x : nat => ps_P (list_collection l event_False (x + length l)))
+                              (fun x : nat => 0)) in HH.
+    + apply infinite_sum'_const2 in HH.
+      apply Rminus_diag_uniq in HH.
+      rewrite HH.
+      clear.
+      unfold list_collection.
+      rewrite sum_f_R0'_as_fold_right.
+      rewrite (list_as_nthseq l event_False) at 2.
+      rewrite map_map.
+      rewrite fold_right_map; trivial.
+    + intros.
+      erewrite ps_proper; [eapply ps_False | ]; intros.
+      unfold list_collection.
+      rewrite nth_overflow; intuition.
+  - apply list_collection_sigma.
+    intuition.
+  - apply list_collection_disjoint; trivial.
+Qed.
+
+Lemma ps_disjoint_union {T:Type} {S:SigmaAlgebra T} (ps:ProbSpace S) (x1 x2: event T) :
+  (* Assume: collection is a subset of Sigma and its elements are pairwise disjoint. *)
+  sa_sigma x1 ->
+  sa_sigma x2 ->
+  event_disjoint x1 x2 ->
+  ps_P (x1 ∪ x2) = ps_P x1 + ps_P x2.
+Proof.
+  intros sa1 sa2 disj.
+  rewrite <- list_union2.
+  rewrite ps_list_disjoint_union; simpl.
+  - lra.
+  - intuition congruence.
+  - repeat constructor; trivial.
+Qed.
+
+
+
+(* P1.3 *)
+Lemma ps_sub {T:Type} {S:SigmaAlgebra T} (ps:ProbSpace S) (A B: event T) :
+  sa_sigma A ->
+  sa_sigma B ->
+  A ≤ B -> ps_P A <= ps_P B.
+Proof.
+  intros sa1 sa2 impl.
+  generalize (ps_disjoint_union ps
+                                A (B \ A)); intros HH.
+  cut_to HH; [ | auto with prob.. ].
+  rewrite event_union_diff_sub in HH by auto with prob.
+  rewrite HH.
+  generalize (ps_pos (B \ A)).
+  lra.
+Qed.
+
+(* C1.1 *)
+Lemma ps_le1 {T:Type} {S:SigmaAlgebra T} (ps:ProbSpace S) (A: event T)
+  : sa_sigma A ->
+    ps_P A <= R1.
+Proof.
+  intros.
+  rewrite <- ps_one.
+  apply ps_sub; auto with prob.
+Qed.
+
+(* P1.4 *)
+Lemma ps_countable_total {T:Type} {S:SigmaAlgebra T} (ps:ProbSpace S) (A:event T) (coll:nat -> event T) :
+  sa_sigma A ->
+  (forall n, sa_sigma (coll n)) ->
+  collection_is_pairwise_disjoint coll ->
+  union_of_collection coll === event_True ->
+  infinite_sum' (fun i => ps_P (A ∩ (coll i))) (ps_P A).
+Proof.
+  intros saA saC disjC partC.
+  rewrite <- (event_inter_true_r A).
+  rewrite <- partC.
+  rewrite event_inter_countable_union_distr.
+  apply ps_countable_disjoint_union.
+  - auto with prob.
+  - apply collection_is_pairwise_disjoint_sub; auto with prob.
+Qed.
+
+Lemma ps_list_total {T:Type} {S:SigmaAlgebra T} (ps:ProbSpace S) (A:event T) (l: list (event T)) :
+  sa_sigma A ->
+  Forall sa_sigma l ->
+  ForallOrdPairs event_disjoint l ->
+  list_union l === event_True ->
+  ps_P A = fold_right Rplus 0 (map ps_P (map (event_inter A) l)).
+Proof.
+  intros.
+  rewrite <- ps_list_disjoint_union.
+  - rewrite <- event_inter_list_union_distr.
+    rewrite H2.
+    autorewrite with prob.
+    trivial.
+  - intros x xin.
+    apply in_map_iff in xin.
+    destruct xin as [? [??]]; subst.
+    rewrite Forall_forall in H0.
+    auto with prob.
+  - apply ForallOrdPairs_impl; trivial.
+    apply ForallPairs_ForallOrdPairs.
+    firstorder.
+Qed.
+
+Lemma ps_total {T:Type} {S:SigmaAlgebra T} (ps:ProbSpace S) (A B C:event T) :
+  sa_sigma A ->
+  sa_sigma B ->
+  sa_sigma C ->
+  event_disjoint B C ->
+  B ∪ C === event_True ->
+  ps_P A = ps_P (A ∩ B) + ps_P (A ∩ C).
+Proof.
+  intros.
+  intros.
+  rewrite (ps_list_total ps A [B;C]); trivial.
+  - simpl; lra.
+  - repeat constructor; trivial.
+  - repeat constructor; trivial.
+  - rewrite list_union2; trivial.
+Qed.
+
+(* P1.5 *)
+Lemma ps_complement {T:Type} {S:SigmaAlgebra T} (ps:ProbSpace S) (A: event T) :
+  sa_sigma A ->
+  ps_P (¬ A) = 1 - ps_P A.
+Proof.
+  intros sa1.
+  generalize (ps_total ps event_True A (¬ A)); intros HH.
+  cut_to HH; auto with prob.
+  - rewrite ps_one in HH.
+    autorewrite with prob in HH.
+    lra.
+Qed.
+
+(* P1.6 *)
+Lemma ps_union {T:Type} {S:SigmaAlgebra T} (ps:ProbSpace S) (A B: event T) :
+  sa_sigma A ->
+  sa_sigma B ->
+  ps_P (A ∪ B) = ps_P A + ps_P B - ps_P (A ∩ B).
+Proof.
+  intros sa1 sa2.
+  rewrite <- event_union_diff by auto with prob.
+  rewrite ps_disjoint_union by auto with prob.
+  rewrite (ps_total ps B A (¬ A)) by auto with prob.
+  rewrite event_diff_derived.  
+  rewrite (event_inter_comm A B).
+  lra.
+Qed.
+
+(* P1.7 inclusion/exclusion identity should not be hard to prove, 
+   but is somewhat painful to state so it is omitted for now.
+   We state and prove the case for n=3 for fun
+ *)
+
+Lemma ps_union3 {T:Type} {S:SigmaAlgebra T} (ps:ProbSpace S) (A B C: event T) :
+  sa_sigma A ->
+  sa_sigma B ->
+  sa_sigma C ->
+  ps_P (A ∪ B ∪ C) =
+  ps_P A + ps_P B + ps_P C
+                    - ps_P (A ∩ B) - ps_P (A ∩ C) - ps_P (B ∩ C)
+  + ps_P (A ∩ B ∩ C).
+Proof.
+  intros sa1 sa2 sa3.
+  rewrite (ps_union ps (A ∪ B) C) by auto with prob.
+  rewrite (ps_union ps A B) by auto with prob.
+  rewrite (event_inter_comm (A ∪ B) C).
+  rewrite event_inter_union_distr.
+  rewrite (ps_union ps (C ∩ A) (C ∩ B)) by auto with prob.
+  rewrite (event_inter_comm A C).
+  rewrite (event_inter_comm B C).
+  cut ((C ∩ A) ∩ (C ∩ B) === (A ∩ B) ∩ C).
+  { intros eqq; rewrite eqq; lra. }
+  rewrite event_inter_assoc.
+  rewrite (event_inter_comm (C ∩ A) C).
+  rewrite event_inter_assoc.
+  autorewrite with prob.
+  rewrite (event_inter_comm C A).
+  rewrite <- event_inter_assoc.
+  rewrite (event_inter_comm C B).
+  rewrite event_inter_assoc.
+  reflexivity.
 Qed.
 
 Section RandomVariable.
@@ -231,10 +936,10 @@ Section RandomVariable.
   (* A sigma algebra **over the same domain T as the ProbSpace! *)
   
   (* and now I give up on a proper measure-theoretic definition because I don't think we'll be able to do anything with it... *)
-  Class RandomVariable {Ts:Set} {Td:Set}
+  Class RandomVariable {Ts:Type} {Td:Type}
         {doms: SigmaAlgebra Ts}
         (dom: ProbSpace doms)
-          (cod: SigmaAlgebra Td) :=
+        (cod: SigmaAlgebra Td) :=
     {
       
       (* the actual variable. *)
@@ -247,7 +952,7 @@ Section prob.
   Local Open Scope R.
   Local Open Scope prob.
 
-  Definition Pr {Ts:Set} {Td:Set}
+  Definition Pr {Ts:Type} {Td:Type}
              {doms: SigmaAlgebra Ts}
              {dom: ProbSpace doms}
              {cod: SigmaAlgebra Td}
@@ -255,7 +960,7 @@ Section prob.
              (S:Td->Prop)
     := ps_P (fun x:Ts => S (rv_X x)).
 
-  Context {Ts:Set} {Td:Set}
+  Context {Ts:Type} {Td:Type}
           {doms: SigmaAlgebra Ts}
           {dom: ProbSpace doms}
           {cod: SigmaAlgebra Td}
@@ -271,34 +976,21 @@ Section prob.
   Lemma pr_True : Pr event_True = R1.
   Proof.
     unfold Pr; simpl.
-    rewrite (ps_P_ext _ event_True) by (unfold event_True; tauto).
+    rewrite (ps_proper _ event_True) by firstorder. 
     apply ps_True.
   Qed.
   
   Lemma pr_False : Pr event_False = R0.
   Proof.
     unfold Pr; simpl.
-    rewrite (ps_P_ext _ event_False) by (unfold event_False; tauto).
+    rewrite (ps_proper _ event_False) by firstorder.
     apply ps_False.
   Qed.
 
-  (*
-    Lemma pr_plus (A B:Td->Prop) :
-      Pr (A ∪ B) = Pr A  + Pr B - Pr (A ∩ B).
-    Proof.
-      generalize (ps_P_sum
-                    (fun n => match n with
-                              | 0 => A
-                              | 1 => B
-                              | _ => event_False
-                              end)).
-      
-   *)
-
 End prob.
-
-
+  
 Notation "a ∪ b" := (event_union a b) (at level 50) : prob. (* \cup *)
 Notation "a ∩ b" := (event_inter a b) (at level 50) : prob. (* \cap *)
-Notation "¬ a" := (event_complement a) (at level 75) : prob. (* \neg *)
-Notation "a ⊥ b" := (independent a b) (at level 50) : prob. (* \perp *)
+Notation "¬ a" := (event_complement a) (at level 20) : prob. (* \neg *)
+Notation "a \ b" := (event_diff a b) (at level 50) : prob.
+Notation "a ≤ b" := (event_sub a b) (at level 70) : prob. (* \leq *) 
