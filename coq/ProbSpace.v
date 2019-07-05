@@ -932,25 +932,25 @@ Proof.
 Qed.
 
 Section RandomVariable.
-
-  (* A sigma algebra **over the same domain T as the ProbSpace! *)
-
-  (* The preimage of the function X on domain B. *)
+  (* todo better type names. *)
+  (* The preimage of the function X on codomain B. *)
   Definition preimage {Ts: Type} {Td: Type}
-             (X: Ts → Td)
+             (X: Ts -> Td)
              (B: event Td)
-             ≔ fun omega: Ts ⇒ B (X omega).
-  
+             := fun omega: Ts => B (X omega).
+
+  (* A random variable is a mapping from a pobability space to a sigma algebra. *)
   Class RandomVariable {Ts:Type} {Td:Type}
         {doms: SigmaAlgebra Ts}
         (dom: ProbSpace doms)
         (cod: SigmaAlgebra Td) :=
     {
-      
-      (* the actual variable. *)
+      (* the random variable. *)
       rv_X: Ts -> Td;
 
-      forall B: event Td, exists 
+      (* for every element B in the sigma algebra, 
+           the preimage of rv_X on B is an event in the probability space *)
+      rv_preimage: forall B: event Td, (sa_sigma (preimage rv_X B));
     }.
   
 End RandomVariable.
