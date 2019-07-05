@@ -2,6 +2,8 @@ Require Import Reals.Rbase.
 Require Import Reals.Rfunctions.
 Require Import Ranalysis_reg.
 Require Import Reals.Integration.
+Require Import Rtrigo_def.
+
 Require Import Lra Omega.
 Require Import BasicTactics Sums.
 
@@ -379,8 +381,7 @@ Proof.
   apply derivable_continuous_pt.
   apply derivable_pt_Rsqr.
   unfold Rsqr.
-  apply Rmult_integral_contrapositive.
-  lra.
+  apply Rmult_integral_contrapositive; lra.
 Qed.
 
 Lemma integrable_inv a : 1 <= a -> Riemann_integrable f_inv 1 a.
@@ -397,8 +398,7 @@ Proof.
   intros.
   apply continuity_implies_RiemannInt; trivial.
   intros.
-  apply continuity_pt_inv_xsq.
-  lra.
+  apply continuity_pt_inv_xsq; lra.
 Qed.
 
 Lemma ub_sum_inv_sq (n:nat) :
@@ -410,9 +410,7 @@ Proof.
    intros.
    unfold f_inv_sq.
    apply Rinv_le_contravar; trivial.
-   apply Rmult_lt_0_compat; trivial.
-   lra.
-   lra.
+   apply Rmult_lt_0_compat; lra.
    unfold Rsqr.
    cut (0 <= x); intros.
    apply Rmult_le_compat; trivial.
@@ -420,14 +418,32 @@ Proof.
 Qed.
 
 Lemma lb_sum_inv (n:nat) :
-  RiemannInt (@integrable_inv (2 + (INR n)) (ale21 n))
+   RiemannInt (@integrable_inv (2 + (INR n)) (ale21 n))
        <= sum_f 1 (n+1) (fun j:nat => f_inv (INR j)).
 Proof.  
-  apply RiemannInt_pn1.
+   apply RiemannInt_pn1.
+   intros.
+   unfold f_inv.
+   apply Rinv_le_contravar; lra.
+Qed.
+
+Lemma inv_int_bounded : forall x:R, 0 < x -> 1 - (/ x) < 1.
+Proof. 
   intros.
-  unfold f_inv.
-  apply Rinv_le_contravar; trivial.
-  lra.
+  rewrite <- (Rplus_0_r 1) at 2.
+  apply Rplus_lt_compat_l.
+  apply Ropp_lt_gt_0_contravar.
+  apply Rinv_0_lt_compat; trivial.
+Qed.
+
+Lemma ln_int_unbounded : forall x:R, 0 < x -> { y | ln y - ln 1 > x}.
+Proof.
+  intros.
+  exists (exp(x+1)).
+  rewrite ln_1.
+  rewrite ln_exp.
+  rewrite <- (Rplus_0_r x) at 2.
+  replace (1-0) with 1; lra.
 Qed.
 
 Lemma derivable_pt_lim_ln : forall x:R, 0 < x -> derivable_pt_lim ln x (/ x).
@@ -442,6 +458,10 @@ Lemma derive_pt_inv :
   forall (f:R -> R) (x:R) (pr:derivable_pt f x) (na:f x <> 0),
     derive_pt (/ f) x (derivable_pt_inv f x na pr) =
     - derive_pt f x pr / Rsqr (f x).
+Admitted.
+
+Lemma derivable_inv :
+  forall f:R -> R, (forall x:R, f x <> 0) -> derivable f -> derivable (/ f).
 Admitted.
 
 Lemma FTC_Riemann :
