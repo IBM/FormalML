@@ -934,8 +934,13 @@ Qed.
 Section RandomVariable.
 
   (* A sigma algebra **over the same domain T as the ProbSpace! *)
+
+  (* The preimage of the function X on domain B. *)
+  Definition preimage {Ts: Type} {Td: Type}
+             (X: Ts → Td)
+             (B: event Td)
+             ≔ fun omega: Ts ⇒ B (X omega).
   
-  (* and now I give up on a proper measure-theoretic definition because I don't think we'll be able to do anything with it... *)
   Class RandomVariable {Ts:Type} {Td:Type}
         {doms: SigmaAlgebra Ts}
         (dom: ProbSpace doms)
@@ -943,7 +948,9 @@ Section RandomVariable.
     {
       
       (* the actual variable. *)
-      rv_X: Ts -> Td
+      rv_X: Ts -> Td;
+
+      forall B: event Td, exists 
     }.
   
 End RandomVariable.
