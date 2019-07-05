@@ -8,37 +8,6 @@ Require Import AxiomaticNormedRealVectorSpace.
 
 Module NN.
 
-Section DefinedFunctions.
-
-(* Terms are defined functions with free variables. *)
-Inductive DefinedFunction : Type :=
-  | Number (x : R)
-  | Var (name : string)
-  | Plus (l r : DefinedFunction)
-  | Minus (l r : DefinedFunction)
-  | Times (l r : DefinedFunction)
-  | Divide (l r : DefinedFunction)
-  | Exp (e : DefinedFunction)
-  | Log (e : DefinedFunction)
-  | Abs (e : DefinedFunction).
-
-
-(* Replaces all varriables in e with new terms. *)
-
-
-Local Open Scope R_scope.
-Definition R2 := 2.
-Local Close Scope R_scope.
-
-(* max(a,b) == (abs(b-a) + b + a)/2
-  * note: might be easier to just have a Max branch on the DF function:
-  *   | Max (l r : DefinedFunction).
-  *)
-Definition Max (a b : DefinedFunction) :=
-  Divide (Plus (Plus (Abs (Minus b a)) b) a) (Number R2).
-
-End DefinedFunctions.
-
 Section SeriesDivergence.
 
 Definition converges (s: nat -> R) :=
@@ -72,7 +41,6 @@ Definition Assumption_C_1 (ak : nat -> R) : Prop :=
     diverges_right ak /\
     converges ak_squared.
 
-(* note: classical sup = LEM, and isn't needed anyway as long as we can specialize the definition of the stochastic subgradients a little bit to be a sequence indexable by nat *)
 Definition Assumption_C_2 (s: Set) (x: nat -> rvector s) : Prop :=
   exists M : R,
     forall k: nat, norm s (x k) < M.
