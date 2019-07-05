@@ -952,6 +952,16 @@ Section RandomVariable.
            the preimage of rv_X on B is an event in the probability space *)
       rv_preimage: forall B: event Td, (sa_sigma (preimage rv_X B));
     }.
+
+  Class RealValuedRandomVariable {Ts:Type}
+        {doms: SigmaAlgebra Ts}
+        (dom: ProbSpace doms)
+        (cod: SigmaAlgebra R) :=
+    {
+      rrv: RandomVariable dom cod;
+      
+      rrv_is_real: forall r:R, sa_sigma (fun omega:Ts => (rv_X omega) <= r);
+    }.
   
 End RandomVariable.
 
