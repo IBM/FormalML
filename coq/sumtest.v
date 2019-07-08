@@ -464,10 +464,60 @@ Lemma derivable_inv :
   forall f:R -> R, (forall x:R, f x <> 0) -> derivable f -> derivable (/ f).
 Admitted.
 
-Lemma FTC_Riemann :
-  forall (f:C1_fun) (a b:R) (pr:Riemann_integrable (derive f (diff0 f)) a b),
-    RiemannInt pr = f b - f a.
-Admitted.
+Definition f_opp_inv := (fun x : R =>  - / x).
+
+Lemma derivable_opp_inv: (forall x:R, x <> 0) -> derivable f_opp_inv.
+Proof.
+  intros.
+  apply derivable_opp.
+  apply derivable_inv.
+  intros; trivial.
+  apply derivable_id.
+Qed.
+
+Lemma derivable_pt_opp_inv x: (x <> 0) -> derivable_pt f_opp_inv x.
+Proof.
+  intros.
+  apply derivable_pt_opp.
+  apply derivable_pt_inv; trivial.
+  apply derivable_pt_id.
+Qed.  
+
+Lemma derivable_pt_ln x: (0 < x) -> derivable_pt ln x.
+Proof.
+  intros.
+  unfold derivable_pt.
+  exists (/ x).
+  unfold derivable_pt_abs.
+  apply derivable_pt_lim_ln; trivial.
+Qed.  
+
+
+Lemma Newton_integrable_inv_Rsqr (b:R) : 
+  (1 <= b) -> Newton_integrable (fun x:R => / Rsqr x) 1 b.
+Proof.
+  intros.
+  unfold Newton_integrable.
+  exists f_opp_inv.
+  left.
+  unfold antiderivative.
+  split.
+  intros.
+  cut (x <> 0).
+     intros.
+     exists (derivable_pt_opp_inv x).
+
+
+Definition Newton_integrable (f:R -> R) (a b:R) : Type :=
+  { g:R -> R | antiderivative f g a b \/ antiderivative f g b a }.
+
+
+Definition NewtonInt (f:R -> R) (a b:R) (pr:Newton_integrable f a b) : R :=
+  let (g,_) := pr in g b - g a.
+
+
+
+
 
 
 
