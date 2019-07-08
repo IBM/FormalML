@@ -481,7 +481,7 @@ Proof.
   apply derivable_pt_opp.
   apply derivable_pt_inv; trivial.
   apply derivable_pt_id.
-Qed.  
+Defined.
 
 Lemma derivable_pt_ln x: (0 < x) -> derivable_pt ln x.
 Proof.
@@ -490,8 +490,23 @@ Proof.
   exists (/ x).
   unfold derivable_pt_abs.
   apply derivable_pt_lim_ln; trivial.
-Qed.  
+Defined.
 
+Lemma Newton_integrable_inv (b:R) : 
+  (1 <= b) -> Newton_integrable Rinv 1 b.
+Proof.
+  intros.
+  unfold Newton_integrable.
+  exists ln.
+  left.
+  unfold antiderivative.
+  split; trivial.
+  intros.
+  cut (0 < x); [ | lra ].
+  intros pf.
+  exists (derivable_pt_ln x pf).
+  reflexivity.
+Qed.
 
 Lemma Newton_integrable_inv_Rsqr (b:R) : 
   (1 <= b) -> Newton_integrable (fun x:R => / Rsqr x) 1 b.
@@ -501,11 +516,29 @@ Proof.
   exists f_opp_inv.
   left.
   unfold antiderivative.
-  split.
+  split; trivial.
   intros.
   cut (x <> 0).
-     intros.
-     exists (derivable_pt_opp_inv x).
+  - intros pf.
+    exists (derivable_pt_opp_inv x pf).
+    destruct (derivable_pt_opp_inv x pf).
+    simpl.
+    
+    
+    SearchAbout derivable_pt_abs.
+   
+    
+    unfold derivable_pt_opp_inv.
+    Print derivable_pt_opp.
+    
+
+    unfold derive_pt.
+    destruct (derivable_pt_opp_inv x pf)
+    ; simpl.
+    vm_compute in d.
+    vm_compute.
+  - lra.
+Qed.
 
 
 Definition Newton_integrable (f:R -> R) (a b:R) : Type :=

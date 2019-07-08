@@ -47,6 +47,7 @@ Module DefinedFunctions.
   Definition neg_sign (e:R)
     := (if Rle_dec e 0 then -1 else 1)%R.
 
+
   Section deriv.
     Fixpoint df_deriv (df:DefinedFunction) (v:var) : DefinedFunction
       := (match df with
@@ -137,6 +138,73 @@ Module DefinedFunctions.
     
   End eval.
 
+  Section isderiv.
+    
+  Context (σ:df_env).
+  Context (v:var).
+
+  Inductive is_deriv : DefinedFunction -> R -> Prop
+    := 
+    | is_deriv_Number (x : R) : is_deriv (Number x) R0
+    | is_deriv_Var_eq : is_deriv (String v) v R1
+    | is_deriv_Var_neq (name : var) : name <> v -> is_deriv (String v) name (Number 0)
+    | is_deriv_Plus (l l' r r' : DefinedFunction) :
+        is_deriv l l' ->
+        is_deriv r r' ->
+        is_deriv (Plus l r) (Plus l' r')
+    | is_deriv_Minus (l l' r r' : DefinedFunction) :
+        is_deriv l l' ->
+        is_deriv r r' ->
+        is_deriv (Minus l r) (Minus l' r')
+    | is_deriv_Times (l l' r r' : DefinedFunction) :
+        is_deriv l l' ->
+        is_deriv r r' ->
+        is_deriv (Times l r) (Plus (Times l r') (Times l' r))
+    | is_deriv_Divide (l l' r r' : DefinedFunction) :
+        is_deriv l l' ->
+        is_deriv r r' ->
+        is_deriv (Times l r)
+                 (Divide 
+                           (Minus
+                              (Times l' r)
+                              (Times l r'))
+                           (Times r r))
+    | is_deriv_Exp (e e' : DefinedFunction) :
+        is_deriv e e' ->
+        is_deriv (Exp e) (Times e' (Exp e))
+    | is_deriv_Log (e e': DefinedFunction) :
+        is_deriv e e' ->
+        is_deriv (Exp e) (Divide e' e)
+    | is_deriv_Abs_nzero (e e' : DefinedFunction) n : (df_eval σ e) = Some n -> n <> 0 ->
+        is_deriv e e' -> is_deriv (Abs e) (Times e' (Sign e))
+    | is_deriv_Abs_zero (e e' : DefinedFunction) :
+        (df_eval σ e) = Some 0  ->
+        is_deriv e e' ->
+        forall s, -1 <= s <= 1 ->
+                  is_deriv (Abs e) (Times e' (Number s))
+    | is_deriv_Sign (e : DefinedFunction) :
+        is_deriv (Sign e) (Number 0)
+    | is_deriv_Max_l (l l' r : DefinedFunction) (lres rres:R):
+        df_eval σ l = Some lres ->
+        df_eval σ r = Some rres ->
+        lres >= rres ->
+        is_deriv l l' ->
+        is_deriv (Max l r) l'
+    | is_deriv_Max_r (l l' r : DefinedFunction) (lres rres:R):
+        df_eval σ l = Some lres ->
+        df_eval σ r = Some rres ->
+        rres >= lres ->
+        is_deriv r r' ->
+        is_deriv (Max l r) r'
+    | is_deriv_Max_zero (l l' r : DefinedFunction) (lres rres:R):
+        df_eval σ l = Some lres ->
+        df_eval σ r = Some rres ->
+        rres = lres ->
+        is_deriv (Max l r) ()
+  .
+
+  End isderiv.
+  
   Section deriv2.
 
     Fixpoint df_eval_deriv (σ:df_env) (df:DefinedFunction) (v:var) : option R
