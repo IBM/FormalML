@@ -7,7 +7,6 @@ Require Import Morphisms EquivDec.
 Require Import BasicTactics Sums ListAdd.
 Import ListNotations.
 
-
 Section ev.
   Definition event T := T -> Prop.
 
@@ -297,6 +296,35 @@ Lemma event_union_not_self {T} (A:event T) :
 Proof.
   firstorder.
 Qed.
+
+Lemma event_complement_swap {T} (A B:event T) :
+      event_lem A ->
+      event_lem B ->
+      ¬ A === B <-> A === ¬ B.
+Proof.
+  firstorder.
+Qed.
+
+Lemma event_not_not {T} (A:event T) :
+  event_lem A ->
+  ¬ (¬ A) === A.
+Proof.
+  firstorder.
+Qed.
+
+Lemma event_not_all {T} :
+  ¬ (@Ω T) === ∅.
+Proof.
+  firstorder.
+Qed.
+
+Lemma event_not_none {T} :
+  ¬ ∅ === (@Ω T).
+Proof.
+  firstorder.
+Qed.
+
+Hint Rewrite @event_not_all @event_not_none : prob.
 
 Lemma event_inter_not_self {T} (A B:event T) : A ∩ ¬ A === ∅.
 Proof.
