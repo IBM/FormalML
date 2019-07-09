@@ -427,24 +427,6 @@ Proof.
    apply Rinv_le_contravar; lra.
 Qed.
 
-Lemma inv_int_bounded : forall x:R, 0 < x -> 1 - (/ x) < 1.
-Proof. 
-  intros.
-  rewrite <- (Rplus_0_r 1) at 2.
-  apply Rplus_lt_compat_l.
-  apply Ropp_lt_gt_0_contravar.
-  apply Rinv_0_lt_compat; trivial.
-Qed.
-
-Lemma ln_int_unbounded : forall x:R, 0 < x -> { y | ln y - ln 1 > x}.
-Proof.
-  intros.
-  exists (exp(x+1)).
-  rewrite ln_1.
-  rewrite ln_exp.
-  rewrite <- (Rplus_0_r x) at 2.
-  replace (1-0) with 1; lra.
-Qed.
 
 Definition f_opp_inv := (fun x : R =>  - / x).
 
@@ -478,6 +460,16 @@ Proof.
   unfold NewtonInt.
   unfold Newton_integrable_inv.
   reflexivity.
+Qed.
+
+Lemma ln_int_unbounded : forall x:R, 0 < x -> { y | ln y - ln 1 > x}.
+Proof.
+  intros.
+  exists (exp(x+1)).
+  rewrite ln_1.
+  rewrite ln_exp.
+  rewrite <- (Rplus_0_r x) at 2.
+  replace (1-0) with 1; lra.
 Qed.
 
 Lemma derivable_pt_opp :
@@ -565,6 +557,15 @@ Lemma NewtonInt_inv_Rsqr (b:R) (pr:1 <= b) :
 Proof.
   unfold NewtonInt, Newton_integrable_inv_Rsqr, f_opp_inv.
   lra.
+Qed.
+
+Lemma inv_int_bounded : forall x:R, 0 < x -> 1 - (/ x) < 1.
+Proof. 
+  intros.
+  rewrite <- (Rplus_0_r 1) at 2.
+  apply Rplus_lt_compat_l.
+  apply Ropp_lt_gt_0_contravar.
+  apply Rinv_0_lt_compat; trivial.
 Qed.
 
 
