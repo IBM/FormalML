@@ -446,42 +446,7 @@ Proof.
   replace (1-0) with 1; lra.
 Qed.
 
-Lemma derivable_pt_lim_ln : forall x:R, 0 < x -> derivable_pt_lim ln x (/ x).
-Admitted.
-
-Lemma derivable_pt_lim_inv :
-  forall f (x l:R), f x <> 0 -> derivable_pt_lim f x l -> 
-                    derivable_pt_lim (/ f) x (- l / (Rsqr (f x))).
-Admitted.
-
-Lemma derive_pt_inv :
-  forall (f:R -> R) (x:R) (pr:derivable_pt f x) (na:f x <> 0),
-    derive_pt (/ f) x (derivable_pt_inv f x na pr) =
-    - derive_pt f x pr / Rsqr (f x).
-Admitted.
-
-Lemma derivable_inv :
-  forall f:R -> R, (forall x:R, f x <> 0) -> derivable f -> derivable (/ f).
-Admitted.
-
 Definition f_opp_inv := (fun x : R =>  - / x).
-
-Lemma derivable_opp_inv: (forall x:R, x <> 0) -> derivable f_opp_inv.
-Proof.
-  intros.
-  apply derivable_opp.
-  apply derivable_inv.
-  intros; trivial.
-  apply derivable_id.
-Qed.
-
-Lemma derivable_pt_opp_inv x: (x <> 0) -> derivable_pt f_opp_inv x.
-Proof.
-  intros.
-  apply derivable_pt_opp.
-  apply derivable_pt_inv; trivial.
-  apply derivable_pt_id.
-Defined.
 
 Lemma derivable_pt_ln x: (0 < x) -> derivable_pt ln x.
 Proof.
@@ -492,8 +457,7 @@ Proof.
   apply derivable_pt_lim_ln; trivial.
 Defined.
 
-Lemma Newton_integrable_inv (b:R) : 
-  (1 <= b) -> Newton_integrable Rinv 1 b.
+Lemma Newton_integrable_inv (b:R) : (1 <= b) -> Newton_integrable Rinv 1 b.
 Proof.
   intros.
   unfold Newton_integrable.
@@ -503,10 +467,85 @@ Proof.
   split; trivial.
   intros.
   cut (0 < x); [ | lra ].
-  intros pf.
-  exists (derivable_pt_ln x pf).
+  intros xg0.
+  exists (derivable_pt_ln x xg0).
+  reflexivity.
+Defined.
+
+Lemma NewtonInt_inv (b:R) (pr:1 <= b) :
+    (NewtonInt Rinv 1 b (Newton_integrable_inv b pr)) = (ln b) - (ln 1).
+Proof.
+  unfold NewtonInt.
+  unfold Newton_integrable_inv.
   reflexivity.
 Qed.
+
+             
+Lemma derivable_pt_opp_inv x: (x <> 0) -> derivable_pt f_opp_inv x.
+Proof.
+  intros.
+  apply derivable_pt_opp.
+  apply derivable_pt_inv; trivial.
+  apply derivable_pt_id.
+Defined.
+
+
+Lemma derivable_pt_opp_inv2 x: (x <> 0) -> derivable_pt (- Rinv) x.
+Proof.
+  intros.
+  unfold derivable_pt.
+  exists (/ Rsqr x).
+  unfold derivable_pt_abs.
+  rewrite <- (Ropp_involutive  (/ x²)).
+  apply derivable_pt_lim_opp.
+  cut (derivable_pt Rinv x).
+  unfold derivable_pt.
+  unfold derivable_pt_abs.
+  exists (- / Rsqr x).
+
+
+Lemma Newton_integrable_inv_Rsqr (b:R) : 
+  (1 <= b) -> Newton_integrable (fun x:R => / Rsqr x) 1 b.
+Proof.
+  intros.
+  unfold Newton_integrable.
+  exists f_opp_inv.
+  left.
+  unfold antiderivative.
+  split; trivial.
+  intros.
+  cut (x <> 0).
+  - intros xn0.
+    exists (derivable_pt_opp_inv x xn0).
+    apply derive_pt_opp with (f := Rinv) (x := x) (pr1 := (derivable_pt_inv id x xn0 (derivable_pt_id x))). 
+    unfold derive_pt.
+    destruct (derivable_pt_opp_inv x pf).
+    simpl.
+
+
+
+Print derive_pt_opp.
+
+Lemma Newton_integrable_inv_Rsqr (b:R) : 
+  (1 <= b) -> Newton_integrable (fun x:R => / Rsqr x) 1 b.
+Proof.
+  intros.
+  unfold Newton_integrable.
+  exists f_opp_inv.
+  left.
+  unfold antiderivative.
+  split; trivial.
+  intros.
+  cut (x <> 0).
+  - intros xn0.
+    exists (derivable_pt_opp_inv x xn0).
+    apply derive_pt_opp with (f := Rinv) (x := x) (pr1 := (derivable_pt_inv id x xn0 (derivable_pt_id x))). 
+    unfold derive_pt.
+    destruct (derivable_pt_opp_inv x pf).
+    simpl.
+
+
+ 
 
 Lemma Newton_integrable_inv_Rsqr (b:R) : 
   (1 <= b) -> Newton_integrable (fun x:R => / Rsqr x) 1 b.
