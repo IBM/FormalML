@@ -480,7 +480,62 @@ Proof.
   reflexivity.
 Qed.
 
-             
+Lemma derivable_pt_opp :
+  forall f (x:R), derivable_pt f x -> derivable_pt (- f) x.
+Proof.
+  unfold derivable_pt; intros f x X.
+  elim X; intros.
+  exists (- x0).
+  apply derivable_pt_lim_opp; assumption.
+Defined.
+
+Lemma derivable_pt_id : forall x:R, derivable_pt id x.
+Proof.
+  unfold derivable_pt; intro.
+  exists 1.
+  apply derivable_pt_lim_id.
+Defined.
+
+Lemma derivable_pt_const : forall a x:R, derivable_pt (fct_cte a) x.
+Proof.
+  intros; unfold derivable_pt.
+  exists 0.
+  apply derivable_pt_lim_const.
+Defined.
+
+Lemma derivable_pt_div :
+  forall (f1 f2:R -> R) (x:R),
+    derivable_pt f1 x ->
+    derivable_pt f2 x -> f2 x <> 0 -> derivable_pt (f1 / f2) x.
+Proof.
+  unfold derivable_pt.
+  intros f1 f2 x X X0 H.
+  elim X; intros.
+  elim X0; intros.
+  exists ((x0 * f2 x - x1 * f1 x) / Rsqr (f2 x)).
+  apply derivable_pt_lim_div; assumption.
+Defined.
+
+Lemma derivable_pt_inv :
+  forall (f:R -> R) (x:R),
+    f x <> 0 -> derivable_pt f x -> derivable_pt (/ f) x.
+Proof.
+  intros f x H X; cut (derivable_pt (fct_cte 1 / f) x -> derivable_pt (/ f) x).
+  intro X0; apply X0.
+  apply derivable_pt_div.
+  apply derivable_pt_const.
+  assumption.
+  assumption.
+  unfold div_fct, inv_fct, fct_cte; intros (x0,p);
+    unfold derivable_pt; exists x0;
+      unfold derivable_pt_abs; unfold derivable_pt_lim;
+        unfold derivable_pt_abs in p; unfold derivable_pt_lim in p;
+          intros; elim (p eps H0); intros; exists x1; intros;
+            unfold Rdiv in H1; unfold Rdiv; rewrite <- (Rmult_1_l (/ f x));
+              rewrite <- (Rmult_1_l (/ f (x + h))).
+  apply H1; assumption.
+Defined.
+
 Lemma derivable_pt_opp_inv x: (x <> 0) -> derivable_pt f_opp_inv x.
 Proof.
   intros.
@@ -489,21 +544,6 @@ Proof.
   apply derivable_pt_id.
 Defined.
 
-
-Lemma derivable_pt_opp_inv2 x: (x <> 0) -> derivable_pt (- Rinv) x.
-Proof.
-  intros.
-  unfold derivable_pt.
-  exists (/ Rsqr x).
-  unfold derivable_pt_abs.
-  rewrite <- (Ropp_involutive  (/ x²)).
-  apply derivable_pt_lim_opp.
-  cut (derivable_pt Rinv x).
-  unfold derivable_pt.
-  unfold derivable_pt_abs.
-  exists (- / Rsqr x).
-
-
 Lemma Newton_integrable_inv_Rsqr (b:R) : 
   (1 <= b) -> Newton_integrable (fun x:R => / Rsqr x) 1 b.
 Proof.
@@ -514,82 +554,17 @@ Proof.
   unfold antiderivative.
   split; trivial.
   intros.
-  cut (x <> 0).
-  - intros xn0.
-    exists (derivable_pt_opp_inv x xn0).
-    apply derive_pt_opp with (f := Rinv) (x := x) (pr1 := (derivable_pt_inv id x xn0 (derivable_pt_id x))). 
-    unfold derive_pt.
-    destruct (derivable_pt_opp_inv x pf).
-    simpl.
+  cut (x <> 0); [ | lra ].
+  intros xn0.
+  exists (derivable_pt_opp_inv x xn0).
+  vm_compute; lra.
+Defined.
 
-
-
-Print derive_pt_opp.
-
-Lemma Newton_integrable_inv_Rsqr (b:R) : 
-  (1 <= b) -> Newton_integrable (fun x:R => / Rsqr x) 1 b.
+Lemma NewtonInt_inv_Rsqr (b:R) (pr:1 <= b) :
+    (NewtonInt (fun x:R => / Rsqr x) 1 b (Newton_integrable_inv_Rsqr b pr)) = 1 - 1 / b.
 Proof.
-  intros.
-  unfold Newton_integrable.
-  exists f_opp_inv.
-  left.
-  unfold antiderivative.
-  split; trivial.
-  intros.
-  cut (x <> 0).
-  - intros xn0.
-    exists (derivable_pt_opp_inv x xn0).
-    apply derive_pt_opp with (f := Rinv) (x := x) (pr1 := (derivable_pt_inv id x xn0 (derivable_pt_id x))). 
-    unfold derive_pt.
-    destruct (derivable_pt_opp_inv x pf).
-    simpl.
-
-
- 
-
-Lemma Newton_integrable_inv_Rsqr (b:R) : 
-  (1 <= b) -> Newton_integrable (fun x:R => / Rsqr x) 1 b.
-Proof.
-  intros.
-  unfold Newton_integrable.
-  exists f_opp_inv.
-  left.
-  unfold antiderivative.
-  split; trivial.
-  intros.
-  cut (x <> 0).
-  - intros pf.
-    exists (derivable_pt_opp_inv x pf).
-    destruct (derivable_pt_opp_inv x pf).
-    simpl.
-    
-    
-    SearchAbout derivable_pt_abs.
-   
-    
-    unfold derivable_pt_opp_inv.
-    Print derivable_pt_opp.
-    
-
-    unfold derive_pt.
-    destruct (derivable_pt_opp_inv x pf)
-    ; simpl.
-    vm_compute in d.
-    vm_compute.
-  - lra.
+  unfold NewtonInt, Newton_integrable_inv_Rsqr, f_opp_inv.
+  lra.
 Qed.
-
-
-Definition Newton_integrable (f:R -> R) (a b:R) : Type :=
-  { g:R -> R | antiderivative f g a b \/ antiderivative f g b a }.
-
-
-Definition NewtonInt (f:R -> R) (a b:R) (pr:Newton_integrable f a b) : R :=
-  let (g,_) := pr in g b - g a.
-
-
-
-
-
 
 
