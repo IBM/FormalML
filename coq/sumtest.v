@@ -472,6 +472,8 @@ Proof.
   replace (1-0) with 1; lra.
 Qed.
 
+(* next 5 functions copied from COQ library with Qed replaced by Defined *)
+
 Lemma derivable_pt_opp :
   forall f (x:R), derivable_pt f x -> derivable_pt (- f) x.
 Proof.
