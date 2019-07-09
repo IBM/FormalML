@@ -290,12 +290,19 @@ Proof.
   firstorder.
 Qed.
 
+Lemma event_diff_self {T} (A:event T) : A \ A === ∅.
+Proof.
+  firstorder.
+Qed.
+
 Lemma event_union_not_self {T} (A:event T) :
   event_lem A ->
   A ∪ ¬ A === Ω.
 Proof.
   firstorder.
 Qed.
+
+Hint Rewrite @event_union_self @event_inter_self @event_diff_self : prob.
 
 Lemma event_complement_swap {T} (A B:event T) :
       event_lem A ->
