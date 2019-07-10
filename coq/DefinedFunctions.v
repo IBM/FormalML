@@ -146,61 +146,66 @@ Module DefinedFunctions.
   Inductive is_deriv : DefinedFunction -> R -> Prop
     := 
     | is_deriv_Number (x : R) : is_deriv (Number x) R0
-    | is_deriv_Var_eq : is_deriv (String v) v R1
-    | is_deriv_Var_neq (name : var) : name <> v -> is_deriv (String v) name (Number 0)
-    | is_deriv_Plus (l l' r r' : DefinedFunction) :
+    | is_deriv_Var_eq : is_deriv (Var v) R1
+    | is_deriv_Var_neq (name : var) : name <> v -> is_deriv (Var name) R0
+    | is_deriv_Plus l l' r r' :
         is_deriv l l' ->
         is_deriv r r' ->
-        is_deriv (Plus l r) (Plus l' r')
-    | is_deriv_Minus (l l' r r' : DefinedFunction) :
+        is_deriv (Plus l r) (l' + r')
+    | is_deriv_Minus l l' r r' :
         is_deriv l l' ->
         is_deriv r r' ->
-        is_deriv (Minus l r) (Minus l' r')
-    | is_deriv_Times (l l' r r' : DefinedFunction) :
+        is_deriv (Minus l r) (l' - r')
+    | is_deriv_Times l le l' r re r' :
+        df_eval σ l = Some le ->
         is_deriv l l' ->
+        df_eval σ r = Some re ->
         is_deriv r r' ->
-        is_deriv (Times l r) (Plus (Times l r') (Times l' r))
-    | is_deriv_Divide (l l' r r' : DefinedFunction) :
+        is_deriv (Times l r) ((le * r') + (l' * re))
+    | is_deriv_Divide l le l' r re r' :
+        df_eval σ l = Some le ->
         is_deriv l l' ->
+        df_eval σ r = Some re ->
         is_deriv r r' ->
         is_deriv (Times l r)
-                 (Divide 
-                           (Minus
-                              (Times l' r)
-                              (Times l r'))
-                           (Times r r))
-    | is_deriv_Exp (e e' : DefinedFunction) :
+                 (((l' * re ) - (le  * r'))
+                    / (re * re))
+    | is_deriv_Exp e ee e' :
+        df_eval σ e = Some ee ->
         is_deriv e e' ->
-        is_deriv (Exp e) (Times e' (Exp e))
-    | is_deriv_Log (e e': DefinedFunction) :
+        is_deriv (Exp e) (e' * (exp ee))
+    | is_deriv_Log e ee e' :
+        df_eval σ e = Some ee ->
         is_deriv e e' ->
-        is_deriv (Exp e) (Divide e' e)
-    | is_deriv_Abs_nzero (e e' : DefinedFunction) n : (df_eval σ e) = Some n -> n <> 0 ->
-        is_deriv e e' -> is_deriv (Abs e) (Times e' (Sign e))
-    | is_deriv_Abs_zero (e e' : DefinedFunction) :
-        (df_eval σ e) = Some 0  ->
+        is_deriv (Exp e) (e' / ee)
+    | is_deriv_Abs_nzero e ee e' :
+        df_eval σ e = Some ee ->
+        ee <> R0 ->
+        is_deriv e e' -> is_deriv (Abs e) (e' * (neg_sign ee))
+    | is_deriv_Abs_zero e e' :
+        df_eval σ e = Some R0  ->
         is_deriv e e' ->
-        forall s, -1 <= s <= 1 ->
-                  is_deriv (Abs e) (Times e' (Number s))
+        forall s, (-1 <= s <= 1)%R ->
+                  is_deriv (Abs e) (e' * s)
     | is_deriv_Sign (e : DefinedFunction) :
-        is_deriv (Sign e) (Number 0)
-    | is_deriv_Max_l (l l' r : DefinedFunction) (lres rres:R):
-        df_eval σ l = Some lres ->
-        df_eval σ r = Some rres ->
-        lres >= rres ->
+        is_deriv (Sign e) R0
+    | is_deriv_Max_l l le l' re r :
+        df_eval σ l = Some le ->
+        df_eval σ r = Some re ->
+        (le > re)%R ->
         is_deriv l l' ->
         is_deriv (Max l r) l'
-    | is_deriv_Max_r (l l' r : DefinedFunction) (lres rres:R):
-        df_eval σ l = Some lres ->
-        df_eval σ r = Some rres ->
-        rres >= lres ->
+    | is_deriv_Max_r l le r re r' :
+        df_eval σ l = Some le ->
+        df_eval σ r = Some re ->
+        (re > le)%R ->
         is_deriv r r' ->
         is_deriv (Max l r) r'
-    | is_deriv_Max_zero (l l' r : DefinedFunction) (lres rres:R):
-        df_eval σ l = Some lres ->
-        df_eval σ r = Some rres ->
-        rres = lres ->
-        is_deriv (Max l r) ()
+    | is_deriv_Max_zero l ee r :
+        df_eval σ l = Some ee ->
+        df_eval σ r = Some ee ->
+        (* TODO: generalize this *)
+        is_deriv (Max l r) R0
   .
 
   End isderiv.
