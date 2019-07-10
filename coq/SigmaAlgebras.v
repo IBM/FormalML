@@ -1,10 +1,6 @@
 Require Import Classical.
 Require Import ClassicalChoice.
 
-
-Require Import Coq.Reals.Rbase.
-Require Import Coq.Reals.Rfunctions.
-Require Import Lra Omega.
 Require Import List.
 Require Import Morphisms EquivDec.
 
@@ -312,7 +308,6 @@ Qed.
 
 Instance pullback_sa {X Y:Type} (sa:SigmaAlgebra Y) (f:X->Y) : SigmaAlgebra X
   := generated_sa (fun e => sa_sigma (event_pullback f e)).
-
 
 (*
 Definition is_countable {T} (e:event T)
