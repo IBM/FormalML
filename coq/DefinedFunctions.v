@@ -198,10 +198,9 @@ Module DefinedFunctions.
         (re > le)%R ->
         is_deriv r r' ->
         is_deriv (Max l r) r'
-    | is_deriv_Max_eq l le l' r re r' :
-        df_eval σ l = Some le ->
-        df_eval σ r = Some re ->
-        (re = le)%R ->
+    | is_deriv_Max_eq l l' ee r r' :
+        df_eval σ l = Some ee ->
+        df_eval σ r = Some ee ->
         is_deriv l l' ->
         is_deriv r r' ->
         is_deriv (Max l r) ((l' + r')/2)
