@@ -47,6 +47,9 @@ Module DefinedFunctions.
   Definition neg_sign (e:R)
     := (if Rle_dec e 0 then -1 else 1)%R.
 
+  Definition sign (e:R)
+    := (if Rlt_dec e 0 then -1 else 
+        if Rgt_dec e 0 then 1 else 0)%R.
 
   Section deriv.
     Fixpoint df_deriv (df:DefinedFunction) (v:var) : DefinedFunction
@@ -123,7 +126,7 @@ Module DefinedFunctions.
            end
          | Sign e =>
            match df_eval σ e with
-           | Some v => Some (neg_sign v)
+           | Some v => Some (sign v)
            | _ => None
            end
          | Max l r =>
@@ -178,15 +181,9 @@ Module DefinedFunctions.
         df_eval σ e = Some ee ->
         is_deriv e e' ->
         is_deriv (Exp e) (e' / ee)
-    | is_deriv_Abs_nzero e ee e' :
+    | is_deriv_Abs e ee e' :
         df_eval σ e = Some ee ->
-        ee <> R0 ->
-        is_deriv e e' -> is_deriv (Abs e) (e' * (neg_sign ee))
-    | is_deriv_Abs_zero e e' :
-        df_eval σ e = Some R0  ->
-        is_deriv e e' ->
-        forall s, (-1 <= s <= 1)%R ->
-                  is_deriv (Abs e) (e' * s)
+        is_deriv e e' -> is_deriv (Abs e) (e' * (sign ee))
     | is_deriv_Sign (e : DefinedFunction) :
         is_deriv (Sign e) R0
     | is_deriv_Max_l l le l' re r :
@@ -201,11 +198,13 @@ Module DefinedFunctions.
         (re > le)%R ->
         is_deriv r r' ->
         is_deriv (Max l r) r'
-    | is_deriv_Max_zero l ee r :
-        df_eval σ l = Some ee ->
-        df_eval σ r = Some ee ->
-        (* TODO: generalize this *)
-        is_deriv (Max l r) R0
+    | is_deriv_Max_eq l le l' r re r' :
+        df_eval σ l = Some le ->
+        df_eval σ r = Some re ->
+        (re = le)%R ->
+        is_deriv l l' ->
+        is_deriv r r' ->
+        is_deriv (Max l r) ((l' + r')/2)
   .
 
   End isderiv.
@@ -253,14 +252,14 @@ Module DefinedFunctions.
            end
          | Abs e =>
            match df_eval σ e, df_eval_deriv σ e v with
-           | Some ee, Some ed => Some (ed * (neg_sign ee))
+           | Some ee, Some ed => Some (ed * (sign ee))
            | _, _ => None
            end
          | Sign e => Some 0
          | Max l r =>
            match df_eval σ l, df_eval_deriv σ l v, df_eval σ r, df_eval_deriv σ r v with
            | Some le, Some ld, Some re, Some rd =>
-             Some (((ld - rd) * (neg_sign (le - re)) + (ld + rd)) / 2)
+             Some (((ld - rd) * (sign (le - re)) + (ld + rd)) / 2)
            | _, _, _, _ => None
            end
           end)%R.
