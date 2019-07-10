@@ -252,6 +252,68 @@ Proof.
     split; reflexivity.
 Qed.
 
+Instance sigma_algebra_intersection {T} (coll:SigmaAlgebra T->Prop): SigmaAlgebra T
+  := { sa_sigma := fun e => forall sa, coll sa -> @sa_sigma _ sa e
+     }.
+Proof.
+  - intros x y xyeq.
+    split; intros HH sa.
+    + rewrite <- xyeq.
+      auto.
+    + rewrite xyeq.
+      eauto.
+  - auto.
+  - intros.
+    apply sa_countable_union.
+    auto.
+  - intros e all_sa sa cs.
+    eauto with prob.
+  - eauto with prob.
+Defined.
+
+Definition all_included {T} (F:event T -> Prop) : SigmaAlgebra T -> Prop
+  := fun sa => forall (e:event T), F e -> @sa_sigma _ sa e.
+
+Instance generated_sa {T} (F:event T -> Prop) : SigmaAlgebra T
+  := sigma_algebra_intersection (all_included F).
+
+Lemma generated_sa_sub {T} (F:event T -> Prop) :
+  forall x, F x -> @sa_sigma _ (generated_sa F) x.
+Proof.
+  unfold sa_sigma, generated_sa, sigma_algebra_intersection, all_included.
+  eauto.
+Qed.
+
+Lemma generated_sa_minimal {T} (F:event T -> Prop) (sa':SigmaAlgebra T) :
+  (forall x, F x -> @sa_sigma _ sa' x) ->
+  (forall x, @sa_sigma _ (generated_sa F) x -> @sa_sigma _ sa' x).
+Proof.
+  intros ff x sax.
+  unfold sa_sigma, generated_sa, sigma_algebra_intersection, all_included in sax.
+  eauto.
+Qed.
+
+Definition event_set_product {T₁ T₂} (s₁ : event T₁ -> Prop) (s₂ : event T₂ -> Prop) : event (T₁ * T₂) -> Prop
+  := fun (e:event (T₁ * T₂)) =>
+       exists e₁ e₂,
+         s₁ e₁ /\ s₂ e₂ ->
+         e === (fun '(x₁, x₂) => e₁ x₁ /\ e₂ x₂).
+
+Instance product_sa {T₁ T₂} (sa₁:SigmaAlgebra T₁) (sa₂:SigmaAlgebra T₂) : SigmaAlgebra (T₁ * T₂)
+  := generated_sa (event_set_product (@sa_sigma _ sa₁) (@sa_sigma _ sa₂)).
+
+Definition event_pullback {X Y:Type} (f:X->Y) (ex:event X) : event Y
+  := fun y => exists x, f x = y.
+
+Instance event_pullback_proper {X Y:Type} (f:X->Y) : Proper (event_equiv ==> event_equiv) (event_pullback f).
+Proof.
+  repeat red; intuition.
+Qed.
+
+Instance pullback_sa {X Y:Type} (sa:SigmaAlgebra Y) (f:X->Y) : SigmaAlgebra X
+  := generated_sa (fun e => sa_sigma (event_pullback f e)).
+
+
 (*
 Definition is_countable {T} (e:event T)
   := exists (coll:nat -> T -> Prop),
