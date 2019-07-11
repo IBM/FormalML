@@ -998,6 +998,18 @@ Section RandomVariable.
   
 End RandomVariable.
 
+Class measure {Ts: Type} (dom: SigmaAlgebra Ts) :=
+  {
+    measure_mu: event Ts -> R;
+
+    measure_ge_zero: forall A : event Ts, sa_sigma A -> measure_mu A >= 0;
+
+    measure_coutably_additive: forall collection: nat -> event Ts,
+        sum_of_probs_equals measure_mu collection (measure_mu (union_of_collection collection))
+  }.
+
+
+
 Section prob.
   Local Open Scope R.
   Local Open Scope prob.
