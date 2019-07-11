@@ -270,6 +270,14 @@ Qed.
 
 Hint Rewrite @event_diff_false_l @event_diff_false_r : prob.
 
+
+Lemma event_diff_sub {T:Type} (x y:event T) : x \ y ≤ x.
+Proof.
+  firstorder.
+Qed.
+
+Hint Resolve event_diff_sub : prob.
+
 Lemma event_union_comm {T} (A B:event T) : A ∪ B === B ∪ A.
 Proof.
   firstorder.
@@ -513,16 +521,16 @@ Proof.
     apply sa_complement; auto.
 Qed.
 
-Definition list_collection {T} {s : SigmaAlgebra T} (l:list (event T)) (d:event T) : nat -> event T
+Definition list_collection {T} (l:list (event T)) (d:event T) : nat -> event T
   := fun n => nth n l d.
 
-Definition list_union {T} {s : SigmaAlgebra T} (l:list (event T)) : event T
+Definition list_union {T} (l:list (event T)) : event T
   := fun x => exists a, In a l /\ a x.
 
-Definition list_inter {T} {s : SigmaAlgebra T} (l:list (event T)) : event T
+Definition list_inter {T}  (l:list (event T)) : event T
   := fun x => forall a, In a l -> a x.
 
-Lemma event_inter_list_union_distr {T} {s : SigmaAlgebra T} (A:event T) (l: list (event T)) :
+Lemma event_inter_list_union_distr {T} (A:event T) (l: list (event T)) :
   A ∩ list_union l === list_union (map (event_inter A) l).
 Proof.
   unfold list_union; intros.
@@ -540,7 +548,7 @@ Proof.
     firstorder.
 Qed.
 
-Lemma list_union_union {T} {s : SigmaAlgebra T} (l:list (event T)) :
+Lemma list_union_union {T} (l:list (event T)) :
   union_of_collection (list_collection l ∅) === list_union l.
 Proof.
   unfold equiv, event_equiv, union_of_collection, list_collection, list_union.
@@ -559,7 +567,7 @@ Proof.
     trivial.
 Qed.
 
-Lemma list_inter_inter {T} {s : SigmaAlgebra T} (l:list (event T)) :
+Lemma list_inter_inter {T} (l:list (event T)) :
   inter_of_collection (list_collection l Ω) === list_inter l.
 Proof.
   unfold equiv, event_equiv, inter_of_collection, list_collection, list_inter.
@@ -576,30 +584,65 @@ Proof.
     + rewrite e; vm_compute; trivial.
 Qed.
 
-Lemma list_union2 {T} {s : SigmaAlgebra T} (x1 x2 : event T) :
-  list_union [x1 ; x2] === x1 ∪ x2.
+Lemma list_union_nil {T:Type} :
+  @list_union T [] === ∅.
+Proof.
+  firstorder.
+Qed.
+
+Lemma list_union_cons {T} (x1 : event T) (l:list (event T)):
+  list_union (x1::l) === x1 ∪ (list_union l).
 Proof.
   unfold equiv, event_equiv, list_union, event_union; simpl; intros.
   split.
   - intros [?[??]].
-    intuition congruence.
-  - intros [?|?]; eauto.
+    intuition (congruence || eauto).
+  - intros [?|[??]]; intuition eauto.
 Qed.
 
-Lemma list_inter2 {T} {s : SigmaAlgebra T} (x1 x2 : event T) :
-  list_inter [x1 ; x2] === x1 ∩ x2.
+Hint Rewrite @list_union_nil @list_union_cons : prob.
+
+Lemma list_union2 {T} (x1 x2 : event T) :
+  list_union [x1 ; x2] === x1 ∪ x2.
 Proof.
-  unfold equiv, event_equiv, list_inter, event_inter; simpl; intros.
+  autorewrite with prob.
+  reflexivity.
+Qed.
+
+Lemma list_inter_nil {T:Type} :
+  @list_inter T [] === Ω.
+Proof.
+  firstorder.
+Qed.
+
+Lemma list_inter_cons {T} (x1 : event T) (l:list (event T)):
+  list_inter (x1::l) === x1 ∩ (list_inter l).
+Proof.
+  unfold equiv, event_equiv, list_union, event_inter; simpl; intros.
   split.
   - intros.
-    generalize (H x1).
-    generalize (H x2).
+    generalize (H x1); simpl; intros HH.
+    intuition.
+    intros a inn.
+    generalize (H a); simpl.
     intuition eauto.
-  - intros [??] a.
-    intuition congruence.
+  - intros [??] a; simpl.
+    red in H0.
+    intuition.
+    + congruence.
+    + eapply H0; eauto.
 Qed.
 
-Lemma list_collection_disjoint {T} {s : SigmaAlgebra T} (l:list (event T)) :
+Hint Rewrite @list_inter_nil @list_inter_cons : prob.
+
+Lemma list_inter2 {T} (x1 x2 : event T) :
+  list_inter [x1 ; x2] === x1 ∩ x2.
+Proof.
+  autorewrite with prob.
+  reflexivity.
+Qed.
+
+Lemma list_collection_disjoint {T} (l:list (event T)) :
     ForallOrdPairs event_disjoint l ->
     collection_is_pairwise_disjoint (list_collection l ∅).
 Proof.
@@ -766,6 +809,8 @@ Proof.
     destruct n1; destruct n2; unfold Ω, event_none, event_disjoint; try tauto.
 Qed.
 
+Hint Rewrite @ps_none @ps_all : prob.
+
 Local Open Scope R.
 
 (* P1.2 *)
@@ -815,8 +860,6 @@ Proof.
   - intuition congruence.
   - repeat constructor; trivial.
 Qed.
-
-
 
 (* P1.3 *)
 Lemma ps_sub {T:Type} {S:SigmaAlgebra T} (ps:ProbSpace S) (A B: event T) :
@@ -964,6 +1007,108 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma ps_boole_inequality {T:Type} {S:SigmaAlgebra T} (ps:ProbSpace S)
+      (l: list (event T)) :
+  Forall sa_sigma l ->
+  ps_P (list_union l) <= fold_right Rplus 0 (map ps_P l).
+Proof.
+  intros.
+  induction l; simpl.
+  - autorewrite with prob.
+    lra.
+  - inversion H; clear H; subst.
+    autorewrite with prob.
+    rewrite ps_union; trivial.
+    + specialize (IHl H3).
+      generalize ( ps_pos (a ∩ list_union l)); intros.
+      lra.
+    + apply sa_list_union.
+      apply Forall_forall; trivial.
+Qed.    
+
+Definition make_collection_disjoint {T:Type} (coll:nat->event T) : nat -> event T
+  := fun x => coll x \ (union_of_collection (fun y =>
+                                               if lt_dec y x
+                                               then coll y
+                                               else ∅)).
+
+Lemma make_collection_disjoint_in {T:Type} (coll:nat->event T) (x:nat) (e:T) :
+  make_collection_disjoint coll x e <->
+  (coll x e /\ forall y, (y < x)%nat -> ~ coll y e).
+Proof.
+  split.
+  - unfold make_collection_disjoint; intros HH.
+    destruct HH as [H1 H2].
+    split; trivial.
+    intros y ylt cy.
+    apply H2.
+    exists y.
+    destruct (lt_dec y x); intuition.
+  - intros [ce fce].
+    unfold make_collection_disjoint.
+    split; trivial.
+    unfold union_of_collection.
+    intros [n Hn].
+    destruct (lt_dec n x); trivial.
+    eapply fce; eauto.
+Qed.
+
+(*
+Require Import Arith Wf.
+
+Lemma make_collection_disjoint_in_exists {T:Type} (coll:nat->event T) (x:nat) (e:T) :
+  coll x e ->
+  exists n : nat, make_collection_disjoint coll n e.
+Proof.
+  intros.
+  unfold make_collection_disjoint.
+  assert ((exists y, y < x /\ coll y e) \/ ~(exists y, y < x /\ coll y e) )%nat.
+  
+  revert H.
+  induction x as [ x IHx ] using (well_founded_induction lt_wf).
+  induction x; intros H.
+  - exists 0%nat.
+    simpl.
+    compute.
+    split; trivial.
+    firstorder.
+  - 
+*)
+
+Lemma sa_make_collection_disjoint {T:Type} (sa:SigmaAlgebra T) (coll:nat->event T) :
+  (forall n, sa_sigma (coll n)) ->
+  (forall n : nat, sa_sigma (make_collection_disjoint coll n)).
+Proof.
+  unfold make_collection_disjoint; intros sas n.
+  apply sa_diff; [eauto | ].
+  apply sa_countable_union; intros.
+  destruct (lt_dec n0 n)
+  ; auto with prob.
+Qed.
+  
+Lemma make_collection_disjoint_disjoint {T:Type} (coll:nat->event T) :
+  collection_is_pairwise_disjoint (make_collection_disjoint coll).
+Proof.
+  intros x y xyneq e e1 e2.
+  apply make_collection_disjoint_in in e1.
+  apply make_collection_disjoint_in in e2.
+  destruct e1 as [H11 H12].
+  destruct e2 as [H21 H22].
+  destruct (not_eq _ _ xyneq) as [xlt|ylt].
+  - eapply H22; eauto.
+  - eapply H12; eauto.
+Qed.
+
+Lemma union_of_make_collection_disjoint {T:Type} {sa:SigmaAlgebra T} (ps:ProbSpace sa) (coll:nat->event T) :
+  (forall n : nat, sa_sigma (coll n)) ->
+  sum_of_probs_equals ps_P  (make_collection_disjoint coll) (ps_P (union_of_collection  (make_collection_disjoint coll))).
+Proof.
+  intros.
+  apply ps_countable_disjoint_union.
+  - apply sa_make_collection_disjoint; trivial.
+  - apply make_collection_disjoint_disjoint.
+Qed.
+
 Section RandomVariable.
   (* todo better type names. *)
   (* The preimage of the function X on codomain B. *)
@@ -1055,3 +1200,70 @@ Notation "a ∩ b" := (event_inter a b) (at level 50) : prob. (* \cap *)
 Notation "¬ a" := (event_complement a) (at level 20) : prob. (* \neg *)
 Notation "a \ b" := (event_diff a b) (at level 50) : prob.
 Notation "a ≤ b" := (event_sub a b) (at level 70) : prob. (* \leq *) 
+
+Require Import Classical ClassicalFacts.
+
+Section classic.
+  
+  Lemma make_collection_disjoint_union {T:Type} {S:SigmaAlgebra T} (coll:nat->event T) :
+    union_of_collection coll
+                        ===
+                        union_of_collection (make_collection_disjoint coll).
+  Proof.
+    unfold union_of_collection.
+    intros t.
+    split; intros [n Hn].
+    - generalize (excluded_middle_entails_unrestricted_minimization classic (fun n => coll n t))
+      ; intros HH.
+      specialize (HH _ Hn).
+      destruct HH as [m mmin].
+      exists m.
+      destruct mmin.
+      unfold make_collection_disjoint.
+      split; trivial.
+      unfold union_of_collection.
+      intros [nn Hnn].
+      destruct (lt_dec nn m); [ | tauto].
+      specialize (H0 _ Hnn).
+      omega.
+    - apply make_collection_disjoint_in in Hn.
+      exists n; tauto.
+  Qed.
+
+  Lemma ps_diff_le {T:Type} {S:SigmaAlgebra T} (ps:ProbSpace S) x y :
+    sa_sigma x ->
+    sa_sigma y ->
+    ps_P (x \ y) <= ps_P x.
+  Proof.
+    intros.
+    apply ps_sub; auto with prob.
+  Qed.
+    
+  Lemma make_collection_disjoint_le {T:Type} {S:SigmaAlgebra T} (ps:ProbSpace S)
+        (coll: nat -> event T) :
+    (forall n, sa_sigma (coll n)) ->
+    forall n, ps_P (make_collection_disjoint coll n) <= ps_P (coll n).
+  Proof.
+    intros sas n.
+    unfold make_collection_disjoint.
+    apply ps_diff_le; auto 2.
+    apply sa_countable_union; intros nn.
+    destruct (lt_dec nn n); auto with prob.
+  Qed.
+    
+  Theorem ps_countable_boole_inequality {T:Type} {S:SigmaAlgebra T} (ps:ProbSpace S)
+        (coll: nat -> event T) sum :
+    (forall n, sa_sigma (coll n)) ->
+    infinite_sum' (fun n => ps_P (coll n)) sum ->
+    ps_P (union_of_collection coll) <= sum.
+  Proof.
+    intros sas.
+    rewrite make_collection_disjoint_union.
+    generalize (union_of_make_collection_disjoint ps coll sas); intros.
+    unfold sum_of_probs_equals in H.
+    eapply infinite_sum'_le; eauto.
+    intros n; simpl.
+    apply make_collection_disjoint_le; trivial.
+  Qed.
+
+End classic.

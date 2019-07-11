@@ -266,6 +266,74 @@ Module DefinedFunctions.
     Definition df_eval_gradient σ (df:DefinedFunction) (lv:list var) : option (list R)
       := listo_to_olist (map (df_eval_deriv σ df) lv).
     
+    Definition single_olist (ol : option (list R)) : option (list (list R)) :=
+      match ol with
+      | Some l => Some (l::nil)
+      | _      => None
+      end.
+
+   Definition combine_prod (l1 l2 : list (list R)) : list (list (R * R))
+     := let l12 := list_prod l1 l2
+        in map (fun '(x,y) => combine x y) l12.
+
+    Fixpoint df_eval_subgradient (σ:df_env) (df:DefinedFunction) (lv:list var) : option (list (list R))
+      := (match df with
+         | Number _ => Some ( (map (fun v:var => 0) lv) :: nil )
+         | Var x => single_olist (df_eval_gradient σ df lv)
+         | Plus l r => 
+           match df_eval_subgradient σ l lv, df_eval_subgradient σ r lv with
+           | Some ld, Some rd => Some (map (map (fun '(x, y) => x+y)) (combine_prod ld rd))
+           | _, _ => None
+           end
+         | Minus l r =>
+           match df_eval_subgradient σ l lv, df_eval_subgradient σ r lv with
+           | Some ld, Some rd => Some (map (map (fun '(x, y) => x-y)) (combine_prod ld rd))
+           | _, _ => None
+           end
+         | Times l r =>
+           match df_eval σ l, df_eval_subgradient σ l lv, df_eval σ r, df_eval_subgradient σ r lv with
+           | Some le, Some ld, Some re, Some rd =>
+             Some (map (map (fun '(lp,rp) => lp*re + le*rp)) (combine_prod ld rd))
+           | _, _, _, _ => None
+           end
+         | Divide l r =>
+           match df_eval σ l, df_eval_subgradient σ l lv, df_eval σ r, df_eval_subgradient σ r lv with
+           | Some le, Some ld, Some re, Some rd =>
+             Some (map (map (fun '(lp,rp) => (lp*re - le*rp)/(Rsqr re))) (combine_prod ld rd))
+           | _, _, _, _ => None
+           end
+         | Exp e =>
+           match df_eval σ e, df_eval_subgradient σ e lv with
+           | Some ee, Some ed => Some (map (map (fun pd => pd * exp ee)) ed)
+           | _, _  => None
+           end
+         | Log e =>
+           match df_eval σ e, df_eval_subgradient σ e lv with
+           | Some ee, Some ed => Some (map (map (fun pd => (pd / ee))) ed)
+           | _, _ => None
+           end
+         | Abs e =>
+           match df_eval σ e, df_eval_subgradient σ e lv with
+           | Some ee, Some ed => 
+              if Req_EM_T ee 0 then Some (ed ++ (map (map (fun ep => -ep)) ed))
+              else Some (map (map (fun ed => (ed * (sign ee)))) ed)
+           | _, _ => None
+           end
+         | Sign e =>
+           match df_eval σ e with
+           | Some ee => Some ((map (fun v:var => 0) lv) :: nil )
+           | _ => None
+           end
+         | Max l r =>
+           match df_eval σ l, df_eval_subgradient σ l lv, df_eval σ r, df_eval_subgradient σ r lv with
+           | Some le, Some ld, Some re, Some rd =>
+             if Req_EM_T le re then Some (ld ++ rd)
+             else if Rgt_dec le re then Some ld
+                  else Some rd
+           | _, _, _, _ => None
+           end
+          end)%R.
+
     End deriv2.
 
     Section deriv_deriv.
