@@ -276,22 +276,18 @@ Module DefinedFunctions.
      := let l12 := list_prod l1 l2
         in map (fun '(x,y) => combine x y) l12.
 
-   Definition cp_app l (f:R->R->R)
-     := map (map (fun '(x,y) => f x y)) l.
-
- 
     Fixpoint df_eval_subgradient (σ:df_env) (df:DefinedFunction) (lv:list var) : option (list (list R))
       := (match df with
          | Number _ => Some ( (map (fun v:var => 0) lv) :: nil )
          | Var x => single_olist (df_eval_gradient σ df lv)
          | Plus l r => 
            match df_eval_subgradient σ l lv, df_eval_subgradient σ r lv with
-           | Some ld, Some rd => Some (cp_app (combine_prod ld rd) Rplus)
+           | Some ld, Some rd => Some (map (map (fun '(x, y) => x+y)) (combine_prod ld rd))
            | _, _ => None
            end
          | Minus l r =>
            match df_eval_subgradient σ l lv, df_eval_subgradient σ r lv with
-           | Some ld, Some rd => Some (cp_app (combine_prod ld rd) Rminus)
+           | Some ld, Some rd => Some (map (map (fun '(x, y) => x-y)) (combine_prod ld rd))
            | _, _ => None
            end
          | Times l r =>
