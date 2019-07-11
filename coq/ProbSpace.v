@@ -1165,8 +1165,7 @@ Section lebesgueintegration.
    * Again, see https://en.wikipedia.org/wiki/Lebesgue_integration#Towards_a_formal_definition *)
   Definition Lebesgue_integrable_pos {dom: SigmaAlgebra R}
              (f : R -> R)
-             (f_nonneg : forall x:R, f x >= 0)
-             (f_decreasing : forall x y:R, y>x -> f y < f x)
+             (f_nonneg : forall x:R, f x > 0)
              (measure: MeasurableFunction)
              (a b : R) :=
     (Riemann_integrable (F_star measure f) a b).
