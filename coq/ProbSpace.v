@@ -1,5 +1,6 @@
 Require Import Coq.Reals.Rbase.
 Require Import Coq.Reals.Rfunctions.
+Require Import Coq.Reals.RiemannInt.
 Require Import Lra Omega.
 Require Import List.
 Require Import Morphisms EquivDec.
@@ -1143,17 +1144,32 @@ Section RandomVariable.
   
 End RandomVariable.
 
-Class measure {Ts: Type} (dom: SigmaAlgebra Ts) :=
-  {
-    measure_mu: event Ts -> R;
+Section lebesgueintegration.
+  
+  Class MeasurableFunction {Ts: Type} {dom: SigmaAlgebra Ts} :=
+    {
+      measure_mu: event Ts -> R;
+      
+      measure_ge_zero: forall A : event Ts, sa_sigma A -> measure_mu A >= 0;
+  
+      measure_coutably_additive: forall collection: nat -> event Ts,
+          sum_of_probs_equals measure_mu collection (measure_mu (union_of_collection collection))
+    }.
 
-    measure_ge_zero: forall A : event Ts, sa_sigma A -> measure_mu A >= 0;
+  (* See https://en.wikipedia.org/wiki/Lebesgue_integration#Towards_a_formal_definition *)
+  Definition F_star {dom:SigmaAlgebra R} (measure: MeasurableFunction) (f: R -> R) (t: R) :=
+    measure_mu (fun (x: R) => (f x) > t).
 
-    measure_coutably_additive: forall collection: nat -> event Ts,
-        sum_of_probs_equals measure_mu collection (measure_mu (union_of_collection collection))
-  }.
-
-
+  (* The integral $\int f d\mu defined in terms of the Riemann integral.
+   * note that this definition assumes that f : R -> R+
+   * Again, see https://en.wikipedia.org/wiki/Lebesgue_integration#Towards_a_formal_definition *)
+  Definition Lebesgue_integrable_pos {dom: SigmaAlgebra R}
+             (f : R -> R)
+             (f_nonneg : forall x:R, f x > 0)
+             (measure: MeasurableFunction)
+             (a b : R) :=
+    (Riemann_integrable (F_star measure f) a b).
+End lebesgueintegration.
 
 Section prob.
   Local Open Scope R.
