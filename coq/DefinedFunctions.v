@@ -279,9 +279,6 @@ Module DefinedFunctions.
    Definition cp_app l (f:R->R->R)
      := map (map (fun '(x,y) => f x y)) l.
 
-(*
-`(Req_dec ee 0)`
- *)
  
     Fixpoint df_eval_subgradient (σ:df_env) (df:DefinedFunction) (lv:list var) : option (list (list R))
       := (match df with
