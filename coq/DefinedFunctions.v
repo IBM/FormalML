@@ -6,18 +6,36 @@ Require Import Lra.
 
 Require Import BasicTactics.
 Require Import ListAdd Assoc.
+Require Import EquivDec.
 
-Module DefinedFunctions.
 
   Section Definitions.
     
     Definition var := string.
+    
+    Inductive SubVar : Set :=
+    | Name (s : string)
+    | Sub (v : SubVar) (i : nat).
 
+
+    Definition var_dec : forall v1 v2 : SubVar, {v1 = v2} + {v1 <> v2}.
+    Proof.
+      decide equality.
+      apply string_dec.
+      apply Nat.eq_dec.
+    Defined.
+    
+    Global Instance var_eqdec : EqDec SubVar eq.
+    Proof.
+      intros x y.
+      apply var_dec.
+    Defined.
+    
     (* A subset of defined functions *)
 
     Inductive DefinedFunction : Set :=
     | Number (x : R)
-    | Var (name : var)
+    | Var (v : SubVar)
     | Plus (l r : DefinedFunction)
     | Minus (l r : DefinedFunction)
     | Times (l r : DefinedFunction)
@@ -52,12 +70,10 @@ Module DefinedFunctions.
         if Rgt_dec e 0 then 1 else 0)%R.
 
   Section deriv.
-    Fixpoint df_deriv (df:DefinedFunction) (v:var) : DefinedFunction
+    Fixpoint df_deriv (df:DefinedFunction) (v:SubVar) : DefinedFunction
       := (match df with
          | Number _ => Number 0
-         | Var x => if string_dec x v
-                    then Number 1
-                    else Number 0
+         | Var x => if x == v then Number 1 else Number 0
          | Plus l r => Plus (df_deriv l v) (df_deriv r v)
          | Minus l r => Minus (df_deriv l v) (df_deriv r v)
          | Times l r => Plus (Times l (df_deriv r v))
@@ -76,19 +92,19 @@ Module DefinedFunctions.
                              (Number 2)
           end)%R.
 
-    Definition df_gradient (df:DefinedFunction) (lv:list var) : list DefinedFunction
+    Definition df_gradient (df:DefinedFunction) (lv:list SubVar) : list DefinedFunction
       := map (df_deriv df) lv.
     
   End deriv.
   
   Section eval.
     
-    Definition df_env := list (string * R).
+    Definition df_env := list (SubVar * R).
 
     Fixpoint df_eval (σ:df_env) (df:DefinedFunction) : option R
       := match df with
          | Number r => Some r
-         | Var x => lookup string_dec σ x
+         | Var x => lookup var_dec σ x
          | Plus l r =>
            match df_eval σ l, df_eval σ r with
            | Some l', Some r' => Some (l' + r')%R
@@ -136,7 +152,7 @@ Module DefinedFunctions.
            end
          end.
 
-    Definition df_eval_symbolic_gradient (σ:df_env) (df:DefinedFunction) (lv:list var) : option (list R)
+    Definition df_eval_symbolic_gradient (σ:df_env) (df:DefinedFunction) (lv:list SubVar) : option (list R)
       := listo_to_olist (map (df_eval σ) (df_gradient df lv)).
     
   End eval.
@@ -144,13 +160,13 @@ Module DefinedFunctions.
   Section isderiv.
     
   Context (σ:df_env).
-  Context (v:var).
+  Context (v:SubVar).
 
   Inductive is_deriv : DefinedFunction -> R -> Prop
     := 
     | is_deriv_Number (x : R) : is_deriv (Number x) R0
     | is_deriv_Var_eq : is_deriv (Var v) R1
-    | is_deriv_Var_neq (name : var) : name <> v -> is_deriv (Var name) R0
+    | is_deriv_Var_neq (sv : SubVar) : sv <> v -> is_deriv (Var sv) R0
     | is_deriv_Plus l l' r r' :
         is_deriv l l' ->
         is_deriv r r' ->
@@ -210,10 +226,10 @@ Module DefinedFunctions.
   
   Section deriv2.
 
-    Fixpoint df_eval_deriv (σ:df_env) (df:DefinedFunction) (v:var) : option R
+    Fixpoint df_eval_deriv (σ:df_env) (df:DefinedFunction) (v:SubVar) : option R
       := (match df with
          | Number _ => Some 0
-         | Var x => if string_dec x v
+         | Var x => if x == v
                     then Some 1
                     else Some 0
          | Plus l r => 
@@ -263,7 +279,7 @@ Module DefinedFunctions.
            end
           end)%R.
 
-    Definition df_eval_gradient σ (df:DefinedFunction) (lv:list var) : option (list R)
+    Definition df_eval_gradient σ (df:DefinedFunction) (lv:list SubVar) : option (list R)
       := listo_to_olist (map (df_eval_deriv σ df) lv).
     
     Definition single_olist (ol : option (list R)) : option (list (list R)) :=
@@ -276,9 +292,9 @@ Module DefinedFunctions.
      := let l12 := list_prod l1 l2
         in map (fun '(x,y) => combine x y) l12.
 
-    Fixpoint df_eval_subgradient (σ:df_env) (df:DefinedFunction) (lv:list var) : option (list (list R))
+    Fixpoint df_eval_subgradient (σ:df_env) (df:DefinedFunction) (lv:list SubVar) : option (list (list R))
       := (match df with
-         | Number _ => Some ( (map (fun v:var => 0) lv) :: nil )
+         | Number _ => Some ( (map (fun v:SubVar => 0) lv) :: nil )
          | Var x => single_olist (df_eval_gradient σ df lv)
          | Plus l r => 
            match df_eval_subgradient σ l lv, df_eval_subgradient σ r lv with
@@ -321,7 +337,7 @@ Module DefinedFunctions.
            end
          | Sign e =>
            match df_eval σ e with
-           | Some ee => Some ((map (fun v:var => 0) lv) :: nil )
+           | Some ee => Some ((map (fun v:SubVar => 0) lv) :: nil )
            | _ => None
            end
          | Max l r =>
@@ -338,7 +354,7 @@ Module DefinedFunctions.
 
     Section deriv_deriv.
 
-      Theorem df_eval_deriv_same (σ:df_env) (df:DefinedFunction) (v:var) :
+      Theorem df_eval_deriv_same (σ:df_env) (df:DefinedFunction) (v:SubVar) :
         df_eval_deriv σ df v = df_eval σ (df_deriv df v).
       Proof.
         DefinedFunction_cases (induction df) Case; simpl; trivial
@@ -351,7 +367,7 @@ Module DefinedFunctions.
                     |  destruct (df_eval σ df); trivial
                        ; destruct (df_eval_deriv σ df v); trivial].
         - Case "Var"%string.
-          destruct (string_dec name v); simpl; trivial.
+          destruct (equiv_dec v0 v); simpl; trivial.
       Qed.
 
       End deriv_deriv.
@@ -392,7 +408,7 @@ Module DefinedFunctions.
 
   Section fv.
 
-    Fixpoint df_free_variables (f : DefinedFunction) : list var
+    Fixpoint df_free_variables (f : DefinedFunction) : list SubVar
       := match f with
          | Number x => nil
          | Var name => name::nil
@@ -435,7 +451,7 @@ Module DefinedFunctions.
                      ; eauto].
       - eauto.
       - apply in_dom_lookup.
-        specialize (inc name); simpl in *.
+        specialize (inc v); simpl in *.
         intuition.
     Qed.
 
@@ -454,9 +470,9 @@ Module DefinedFunctions.
       {v | In v (df_free_variables f) /\ ~ In v (domain σ)}.
     Proof.
       intros.
-      destruct (incl_dec string_dec (df_free_variables f) (domain σ)).
+      destruct (incl_dec var_dec (df_free_variables f) (domain σ)).
       - destruct (df_eval_complete _ _ i); congruence.
-      - apply (nincl_exists string_dec) in n; trivial.
+      - apply (nincl_exists var_dec) in n; trivial.
     Qed.
 
     (* Either we can evaluate df or we are missing a variable definition.
@@ -481,7 +497,7 @@ Module DefinedFunctions.
     Defined.        
 
     Lemma df_eval_lookup_on (σ₁ σ₂:df_env) (f:DefinedFunction) :
-      lookup_equiv_on string_dec (df_free_variables f) σ₁ σ₂ ->
+      lookup_equiv_on var_dec (df_free_variables f) σ₁ σ₂ ->
       df_eval σ₁ f = df_eval σ₂ f.
     Proof.
       intros lookeq.
@@ -496,7 +512,7 @@ Module DefinedFunctions.
 
   Section apply.
     
-    Fixpoint df_apply (e: DefinedFunction) (args: string -> DefinedFunction) :=
+    Fixpoint df_apply (e: DefinedFunction) (args: SubVar -> DefinedFunction) :=
       match e with
       | Number x => Number x
       | Var name => args name
@@ -515,11 +531,11 @@ Module DefinedFunctions.
 
     
   Section subst.
-    Fixpoint df_subst (e: DefinedFunction) (v:var) (e':DefinedFunction) :=
+    Fixpoint df_subst (e: DefinedFunction) (v:SubVar) (e':DefinedFunction) :=
       match e with
       | Number x => Number x
       | Var name =>
-        if string_dec name v
+        if var_dec name v
         then e'
         else Var name
       | Plus l r => Plus (df_subst l v e') (df_subst r v e')
@@ -534,19 +550,20 @@ Module DefinedFunctions.
       end.
 
 
-    Lemma df_subst_nfree (e: DefinedFunction) (v:var) (e':DefinedFunction) :
+    Lemma df_subst_nfree (e: DefinedFunction) (v:SubVar) (e':DefinedFunction) :
       ~ In v (df_free_variables e) ->
       df_subst e v e' = e.
     Proof.
       induction e; simpl; trivial; intros nin
       ; try solve [try rewrite in_app_iff in nin
                    ; intuition congruence].
-      - destruct (string_dec name v); intuition.
+      - destruct (var_dec v0 v); intuition.
     Qed.
 
     End subst.
 
 
+(*
   Section FreeVariablesExample.
     (* We need ot open the string scope in order to use "a" as a string. *)
     Open Scope string_scope.
@@ -556,12 +573,12 @@ Module DefinedFunctions.
        * It suffices that the left-hand side beta-reduced to the right-hand side. *)
       reflexivity.
     Qed.
-    
+
     Close Scope string_scope.
-    
+
   End FreeVariablesExample.
-    
-End DefinedFunctions.
+*)            
+
 
 Tactic Notation "DefinedFunction_cases" tactic(first) ident(c) :=
   first;
