@@ -18,8 +18,12 @@ MODULES = \
 	Assoc \
 	AxiomaticNormedRealVectorSpace \
 	BasicTactics \
+	BorelSigmaAlgebra \
 	DefinedFunctions \
+	Isomorphism \
 	ListAdd \
+	PairEncoding \
 	ProbSpace \
+	SigmaAlgebras \
 	Sums \
 	sumtest
