@@ -1,11 +1,14 @@
 Require Import Classical.
 Require Import ClassicalChoice.
+Require Import FinFun.
 
 Require Import List.
 Require Import Morphisms EquivDec.
 
 Require Import BasicTactics Sums ListAdd.
 Require Import ProbSpace.
+Require Import Isomorphism PairEncoding.
+
 Import ListNotations.
 
 Local Open Scope prob.
@@ -309,7 +312,6 @@ Qed.
 Instance pullback_sa {X Y:Type} (sa:SigmaAlgebra Y) (f:X->Y) : SigmaAlgebra X
   := generated_sa (fun e => sa_sigma (event_pullback f e)).
 
-(*
 Definition is_countable {T} (e:event T)
   := exists (coll:nat -> T -> Prop),
     (forall n t1 t2, coll n t1 -> coll n t2 -> t1 = t2) /\
@@ -343,72 +345,52 @@ Proof.
     apply event_equiv_sub; trivial.
 Qed.
 
-Definition cantor_pair (k1 k2 : nat) : nat
-  := (((k1 + k2) * (k1 + k2 + 1))/2 + k2)%nat.
-
-Definition Rfloor x := (up x - 1)%Z.
-Require Import Rbase R_sqrt.
-
-Definition cantor_pair_inv (k:nat) : nat*nat
-  := let i := Z.to_nat (Rfloor((sqrt(INR ((8 * k + 1)%nat)) - 1)/2)) in
-     ((k-(i*i + i)/2), ((i*i + 3*i)/2-k)).
-
 Lemma union_of_collection_sup {T} (coll:nat->event T) n : (coll n) ≤ (union_of_collection coll).
 Proof.
   unfold event_sub, union_of_collection.
   eauto.
 Qed.
 
-Require Import FinFun.
 
 Definition F {T} (coll:nat->event T) (n:nat) : ({x:T | coll n x} -> nat) -> Prop
   := fun f => Injective f.
 
 
-Lemma F_non_empty {T} (coll:nat->event T) (n:nat) :
-  is_countable (coll n) ->
-  exists f, F coll n f.
-Proof.
-  exists (fun _ => n).
-  red.
-  unfold is_countable, Injective in *.
-  intros.
-
 Lemma union_of_collection_is_countable {T} (coll:nat->event T) :
   (forall n : nat, is_countable (coll n)) -> is_countable (union_of_collection coll).
 Proof.
   intros isc.
-
-  
-  intros isc.
   apply choice in isc.
-  destruct isc as [f fprop]. 
-  exists (fun n t => union_of_collection (fun x => f n x) t).
+  destruct isc as [f fprop].
+  exists (fun n => let '(n1,n2) := iso_b n in f n1 n2); simpl.
   split.
-  - intros n t1 t2 [x1 xc1] [x2 xc2].
-    specialize (fprop n).
-    destruct fprop as [p1 p2].
-    eapply p1; eauto.
-    
-    
-  - intros t; split.
-    + intros [x cx].
-      specialize (fprop x).
-      destruct fprop as [p1 p2].
-      apply p2 in cx.
-      destruct cx as [n fn].
-      exists n.
-      red; eauto.
-    + intros [n [n1 fnn]].
-      red.
-      specialize (fprop n1).
-      destruct fprop as [p1 p2].
+  - intros.
+    case_eq (iso_b n); intros n1 n2 eqq.
+    rewrite eqq in *.
+    destruct (fprop n1)
+      as [HH1 HH2].
+    eapply HH1; eauto.
+  - intros x.
+    split.
+    + intros [n1 ncoll].
+      destruct (fprop n1) as [HH1 HH2].
+      specialize (HH2 x).
+      apply HH2 in ncoll.
+      destruct ncoll as [n2 fx].
+      exists (iso_f (n1,n2)).
+      rewrite iso_b_f; trivial.
+    + intros [n fx].
+      case_eq (iso_b n).
+      intros n1 n2 eqq.
+      rewrite eqq in *.
+      destruct (fprop n1) as [HH1 HH2].
+      specialize (HH2 x).
       exists n1.
-      apply p2.
+      apply HH2.
       eauto.
 Qed.
 
-
+(* The set of countable and c-countable sets forms a sigma algebra *)
 Instance countable_sa (T:Type) : SigmaAlgebra T
   := {
       sa_sigma (f:event T) := is_countable f \/ is_countable (¬ f)
@@ -440,5 +422,3 @@ Proof.
     rewrite event_not_all.
     apply is_countable_empty.
 Qed.
-
-*)
