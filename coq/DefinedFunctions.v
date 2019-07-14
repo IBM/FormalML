@@ -10,6 +10,15 @@ Require Import EquivDec.
 
 (* Declare Scope df_scope. *)
 
+(* in pytorch relu(f)' if f <=0 then 0 else f' *)
+(* in pytorch abs(f)' = f'*sign(f) *)
+(* max(a,b)' = if a<=b then b' else a' *)
+(* min(a,b)' = if a>=b then b' else a' *)
+(* x = Variable(torch.tensor(0.0), requires_grad=True) *)
+(* z = torch.min(x*x, x); z.backward(); print(x.grad) = 1 *)
+(* x.grad.data.zero_() between tests *)
+(* relu behaves like max(x, 0), not max(0,x), i.e. relu(x)' at 0 = 0 *)
+
   Section Definitions.
     
     Definition var := string.
@@ -45,6 +54,7 @@ Require Import EquivDec.
     | Log (e : DefinedFunction)
     | Abs (e : DefinedFunction)
     | Sign (e : DefinedFunction)
+    | PSign (e : DefinedFunction)
     | Max (l r : DefinedFunction).
 
   End Definitions.
@@ -61,7 +71,11 @@ Require Import EquivDec.
   | Case_aux c "Log"%string
   | Case_aux c "Abs"%string
   | Case_aux c "Sign"%string
+  | Case_aux c "PSign"%string
   | Case_aux c "Max"%string].
+
+  Definition pos_sign (e:R)
+    := (if Rge_dec e 0 then 1 else -1)%R.
 
   Definition neg_sign (e:R)
     := (if Rle_dec e 0 then -1 else 1)%R.
@@ -70,6 +84,12 @@ Require Import EquivDec.
     := (if Rlt_dec e 0 then -1 else 
         if Rgt_dec e 0 then 1 else 0)%R.
 
+  Definition df_plus (df1 df2 : DefinedFunction) : DefinedFunction :=
+    Plus df1 df2.
+
+  Definition df_times (df1 df2 : DefinedFunction) : DefinedFunction :=
+    Times df1 df2.
+  
   Section deriv.
     Fixpoint df_deriv (df:DefinedFunction) (v:SubVar) : DefinedFunction
       := (match df with
@@ -88,8 +108,9 @@ Require Import EquivDec.
          | Log e => Divide (df_deriv e v) e
          | Abs e => Times (df_deriv e v) (Sign e) 
          | Sign e => Number 0
-         | Max l r => Divide (Plus (Times (Minus (df_deriv l v) (df_deriv r v)) (Sign (Minus l r)))
-                                   (Plus (df_deriv l v) (df_deriv r v)))
+         | PSign e => Number 0
+         | Max l r => Divide (Plus (Times (Minus (df_deriv r v) (df_deriv l v)) (PSign (Minus r l)))
+                                   (Plus (df_deriv r v) (df_deriv l v)))
                              (Number 2)
           end)%R.
 
@@ -144,6 +165,11 @@ Require Import EquivDec.
          | Sign e =>
            match df_eval σ e with
            | Some v => Some (sign v)
+           | _ => None
+           end
+         | PSign e =>
+           match df_eval σ e with
+           | Some v => Some (pos_sign v)
            | _ => None
            end
          | Max l r =>
@@ -203,6 +229,8 @@ Require Import EquivDec.
         is_deriv e e' -> is_deriv (Abs e) (e' * (sign ee))
     | is_deriv_Sign (e : DefinedFunction) :
         is_deriv (Sign e) R0
+    | is_deriv_PSign (e : DefinedFunction) :
+        is_deriv (PSign e) R0
     | is_deriv_Max_l l le l' re r :
         df_eval σ l = Some le ->
         df_eval σ r = Some re ->
@@ -212,16 +240,17 @@ Require Import EquivDec.
     | is_deriv_Max_r l le r re r' :
         df_eval σ l = Some le ->
         df_eval σ r = Some re ->
-        (re > le)%R ->
+        (re >= le)%R ->
         is_deriv r r' ->
-        is_deriv (Max l r) r'
+        is_deriv (Max l r) r'.
+   (*
     | is_deriv_Max_eq l l' ee r r' :
         df_eval σ l = Some ee ->
         df_eval σ r = Some ee ->
         is_deriv l l' ->
         is_deriv r r' ->
-        is_deriv (Max l r) ((l' + r')/2)
-  .
+        is_deriv (Max l r) ((l' + r')/2) *)
+
 
   End isderiv.
   
@@ -272,10 +301,11 @@ Require Import EquivDec.
            | _, _ => None
            end
          | Sign e => Some 0
+         | PSign e => Some 0
          | Max l r =>
            match df_eval σ l, df_eval_deriv σ l v, df_eval σ r, df_eval_deriv σ r v with
            | Some le, Some ld, Some re, Some rd =>
-             Some (((ld - rd) * (sign (le - re)) + (ld + rd)) / 2)
+             if Rle_dec le re then Some rd else Some ld
            | _, _, _, _ => None
            end
           end)%R.
@@ -341,6 +371,11 @@ Require Import EquivDec.
            | Some ee => Some ((map (fun v:SubVar => 0) lv) :: nil )
            | _ => None
            end
+         | PSign e =>
+           match df_eval σ e with
+           | Some ee => Some ((map (fun v:SubVar => 0) lv) :: nil )
+           | _ => None
+           end
          | Max l r =>
            match df_eval σ l, df_eval_subgradient σ l lv, df_eval σ r, df_eval_subgradient σ r lv with
            | Some le, Some ld, Some re, Some rd =>
@@ -369,6 +404,26 @@ Require Import EquivDec.
                        ; destruct (df_eval_deriv σ df v); trivial].
         - Case "Var"%string.
           destruct (equiv_dec v0 v); simpl; trivial.
+        - case_eq (df_eval σ df1); trivial
+          ; case_eq (df_eval_deriv σ df1 v); trivial
+          ; case_eq (df_eval_deriv σ df2 v); trivial
+          ; case_eq (df_eval σ df2); trivial.
+          intros.
+          destruct (Rle_dec r2 r); simpl.
+          + f_equal.
+            unfold sign.
+            destruct (Rlt_dec (r2-r) 0); try lra.
+            destruct (Rgt_dec (r2-r) 0); try lra.
+            unfold pos_sign.
+            destruct (Rge_dec (r-r2) 0); try lra.
+            unfold pos_sign.
+            destruct (Rge_dec (r-r2) 0); try lra.
+
+          + unfold pos_sign.
+            destruct (Rge_dec (r- r2) 0); try lra.
+            destruct (Rgt_dec (r2-r) 0); try lra.
+            f_equal.
+            lra.
       Qed.
 
       End deriv_deriv.
@@ -420,6 +475,7 @@ Require Import EquivDec.
          | Max l r => (df_free_variables l) ++ (df_free_variables r)
          | Abs e => df_free_variables e
          | Sign e => df_free_variables e
+         | PSign e => df_free_variables e
          | Log e => df_free_variables e
          | Exp e => df_free_variables e
          end.
@@ -525,6 +581,7 @@ Require Import EquivDec.
       | Log e => Log (df_apply e args)
       | Abs e => Abs (df_apply e args)
       | Sign e => Sign (df_apply e args)
+      | PSign e => PSign (df_apply e args)
       | Max l r => Max (df_apply l args) (df_apply r args)
       end.
     
@@ -547,6 +604,7 @@ Require Import EquivDec.
       | Log e => Log (df_subst e v e')
       | Abs e => Abs (df_subst e v e')
       | Sign e => Sign (df_subst e v e')
+      | PSign e => PSign (df_subst e v e')
       | Max l r => Max (df_subst l v e') (df_subst r v e')
       end.
 
@@ -593,4 +651,5 @@ Tactic Notation "DefinedFunction_cases" tactic(first) ident(c) :=
   | Case_aux c "Log"%string
   | Case_aux c "Abs"%string
   | Case_aux c "Sign"%string
+  | Case_aux c "PSign"%string
   | Case_aux c "Max"%string].
