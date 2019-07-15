@@ -461,7 +461,8 @@ Section inf_sum'.
       generalize (infinite_sum'_const inf1); tauto.
     Qed.
 
-  Hint Resolve Nat.le_max_l Nat.le_max_r.
+  Hint Resolve Nat.le_max_l Nat.le_max_r : arith.
+    
   Lemma infinite_sum'_plus {f1 f2} {sum1 sum2} :
     infinite_sum' f1 sum1 ->
     infinite_sum' f2 sum2 ->
@@ -477,9 +478,9 @@ Section inf_sum'.
     intros n ngt.
 
     specialize (H1 n).
-    cut_to H1; [ | apply (le_trans _ (max N1 N2)); auto].
+    cut_to H1; [ | apply (le_trans _ (max N1 N2)); auto with arith].
     specialize (H2 n).
-    cut_to H2; [ | apply (le_trans _ (max N1 N2)); auto].
+    cut_to H2; [ | apply (le_trans _ (max N1 N2)); auto with arith].
 
     rewrite sum_f_R0'_plus.
     generalize (R_dist_plus (sum_f_R0' f1 n) sum1 (sum_f_R0' f2 n) sum2); intros.

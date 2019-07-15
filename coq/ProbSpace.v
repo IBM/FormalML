@@ -8,6 +8,8 @@ Require Import Morphisms EquivDec.
 Require Import BasicTactics Sums ListAdd.
 Import ListNotations.
 
+(* Declare Scope prob. *)
+
 Section ev.
   Definition event T := T -> Prop.
 

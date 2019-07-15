@@ -18,104 +18,112 @@ Proof.
   intros ??; apply classic.
 Qed.
 
-Local Hint Resolve classic_event_lem.
-
 Lemma event_complement_swap_classic {T} (A B:event T) : ¬ A === B <-> A === ¬ B.
 Proof.
   intros.
-  apply event_complement_swap; auto.
+  apply event_complement_swap; auto using classic_event_lem.
 Qed.
 
-Instance trivial_sa (T:Type) : SigmaAlgebra T
+Program Instance trivial_sa (T:Type) : SigmaAlgebra T
   := {
       sa_sigma (f:event T) := (f === ∅ \/ f === Ω)
     }.
-Proof.
-  - intros ?? eqq.
-    repeat rewrite eqq.
-    tauto.
-  - auto.
-  - intros.
-    (* sigh. more classical reasoning needed *)
-    destruct (classic (exists n, collection n === Ω))
-    ; [right|left]; firstorder.
-  - firstorder.
-  - firstorder.
+Next Obligation.
+  intros ?? eqq.
+  repeat rewrite eqq.
+  tauto.
+Qed.
+Next Obligation.
+  auto using classic_event_lem.
+Qed.
+Next Obligation.
+  (* sigh. more classical reasoning needed *)
+  destruct (classic (exists n, collection n === Ω))
+  ; [right|left]; firstorder.
+Qed.
+Next Obligation.
+  firstorder.
+Qed.
+Next Obligation.
+  firstorder.
 Qed.
 
-Instance discrete_sa (T:Type) : SigmaAlgebra T
+Program Instance discrete_sa (T:Type) : SigmaAlgebra T
   := {
       sa_sigma := fun _ => True 
     }.
-Proof.
-  all: trivial.
-  - firstorder.
-Qed.
+Solve Obligations with (auto using classic_event_lem || firstorder).
 
-Instance subset_sa (T:Type) (A:event T) : SigmaAlgebra T
+Program Instance subset_sa (T:Type) (A:event T) : SigmaAlgebra T
   := {
       sa_sigma f := (f === ∅ \/ f === A \/ f === ¬ A \/ f === Ω)
     }.
-Proof.
-  - intros ?? eqq.
-    repeat rewrite eqq.
-    tauto.
-  - intros ??; apply classic.
-  - intros.
-    (* sigh. more classical reasoning needed *)
-    destruct (classic (exists n, collection n === Ω))
-    ; [repeat right; firstorder | ].
-    destruct (classic (exists n, collection n === A))
-    ; destruct (classic (exists n, collection n === ¬ A)).
-    + right; right; right.
-      unfold union_of_collection, equiv, event_equiv; intros x.
-      split; [firstorder | ].
-      destruct (classic (A x)).
-      * destruct H1 as [n1 H1].
-        exists n1.
-        apply H1; trivial.
-      * destruct H2 as [n2 H2].
-        exists n2.
-        apply H2; trivial.
-    + right; left.
-      unfold union_of_collection, equiv, event_equiv; intros x.
-      split.
-      * intros [n cn].
-        specialize (H n).
-        destruct H as [eqq|[eqq|[eqq|eqq]]]
-        ; apply eqq in cn
-        ; firstorder.
-      * intros ax.
-        destruct H1 as [n1 H1].
-        exists n1.
-        apply H1; trivial.
-    + right; right. left.
-      unfold union_of_collection, equiv, event_equiv; intros x.
-      split.
-      * intros [n cn].
-        specialize (H n).
-        destruct H as [eqq|[eqq|[eqq|eqq]]]
-        ; apply eqq in cn
-        ; firstorder.
-      * intros ax.
-        destruct H2 as [n2 H2].
-        exists n2.
-        apply H2; trivial.
-    + left.
-      split; [| firstorder].
-      intros [n cn].
-        destruct (H n) as [eqq|[eqq|[eqq|eqq]]]
-        ; apply eqq in cn
-        ; firstorder.
-  - intros.
-    repeat rewrite event_complement_swap_classic.
-    autorewrite with prob.
-    rewrite event_not_not by auto.
-    tauto.
-  - repeat right.
-    reflexivity.
+Next Obligation.
+  intros ?? eqq.
+  repeat rewrite eqq.
+  tauto.
 Qed.
-
+Next Obligation.
+  auto using classic_event_lem.
+Qed.
+Next Obligation.
+  (* sigh. more classical reasoning needed *)
+  destruct (classic (exists n, collection n === Ω))
+  ; [repeat right; firstorder | ].
+  destruct (classic (exists n, collection n === A))
+  ; destruct (classic (exists n, collection n === ¬ A)).
+  + right; right; right.
+    unfold union_of_collection, equiv, event_equiv; intros x.
+    split; [firstorder | ].
+    destruct (classic (A x)).
+    * destruct H1 as [n1 H1].
+      exists n1.
+      apply H1; trivial.
+    * destruct H2 as [n2 H2].
+      exists n2.
+      apply H2; trivial.
+  + right; left.
+    unfold union_of_collection, equiv, event_equiv; intros x.
+    split.
+    * intros [n cn].
+      specialize (H n).
+      destruct H as [eqq|[eqq|[eqq|eqq]]]
+      ; apply eqq in cn
+      ; firstorder.
+    * intros ax.
+      destruct H1 as [n1 H1].
+      exists n1.
+      apply H1; trivial.
+  + right; right. left.
+    unfold union_of_collection, equiv, event_equiv; intros x.
+    split.
+    * intros [n cn].
+      specialize (H n).
+      destruct H as [eqq|[eqq|[eqq|eqq]]]
+      ; apply eqq in cn
+      ; firstorder.
+    * intros ax.
+      destruct H2 as [n2 H2].
+      exists n2.
+      apply H2; trivial.
+  + left.
+    split; [| firstorder].
+    intros [n cn].
+    destruct (H n) as [eqq|[eqq|[eqq|eqq]]]
+    ; apply eqq in cn
+    ; firstorder.
+Qed.
+Next Obligation.
+  replace event_equiv with equiv in * by reflexivity.
+  repeat rewrite event_complement_swap_classic.
+  rewrite event_not_not by auto using classic_event_lem.
+  autorewrite with prob.
+  tauto.
+Qed.
+Next Obligation.
+  repeat right.
+  reflexivity.
+Qed.
 
 Definition is_partition {T} (part:nat->event T)
   := collection_is_pairwise_disjoint part 
@@ -167,13 +175,14 @@ Proof.
   ; intuition.
 Qed.
 
-Instance countable_partition_sa {T} (part:nat->event T) (is_part:is_partition part) : SigmaAlgebra T
+Program Instance countable_partition_sa {T} (part:nat->event T) (is_part:is_partition part) : SigmaAlgebra T
   := {
       sa_sigma := in_partition_union part
     }.
-Proof.
-  - intros ??; apply classic.
-  - intros.
+Next Obligation.
+  auto using classic_event_lem.
+Qed.
+Next Obligation.
     unfold in_partition_union in *.
     unfold is_partition in *.
     apply choice in H.
@@ -217,58 +226,68 @@ Proof.
         apply pH in cn.
         destruct cn.
         eauto.
-  - destruct is_part as [disj tot].
-    intros A [sub [is_sub uc2]].
-    rewrite <- uc2.
-    exists (fun x => part x \ sub x).
-    split.
-    + apply sub_partition_diff; trivial.
-    + intros x.
-      unfold union_of_collection, event_complement, event_diff.
-      { split.
-        -
-          intros [n [part1 sub1]].
-          intros [nn sub2].
-          destruct (n == nn); unfold equiv, complement in *.
-          + subst; tauto.
-          + specialize (disj _ _ c x part1).
-            destruct (is_sub nn); [ | firstorder].
-            apply H in sub2.
-            tauto.
-        - intros.
-          unfold union_of_collection in tot.
-          assert (xin:Ω x) by firstorder.
-          apply tot in xin.
-          destruct xin as [n partn].
-          exists n.
-          split; trivial.
-          intros subx.
-          eauto.
-      } 
-  - exists part.
-    destruct is_part as [disj tot].
-    rewrite tot.
-    split; reflexivity.
+Qed.
+Next Obligation.
+  destruct is_part as [disj tot].
+  destruct H as [sub [is_sub uc2]].
+  rewrite <- uc2.
+  exists (fun x => part x \ sub x).
+  split.
+  + apply sub_partition_diff; trivial.
+  + intros x.
+    unfold union_of_collection, event_complement, event_diff.
+    { split.
+      -
+        intros [n [part1 sub1]].
+        intros [nn sub2].
+        destruct (n == nn); unfold equiv, complement in *.
+        + subst; tauto.
+        + specialize (disj _ _ c x part1).
+          destruct (is_sub nn); [ | firstorder].
+          apply H in sub2.
+          tauto.
+      - intros.
+        unfold union_of_collection in tot.
+        assert (xin:Ω x) by firstorder.
+        apply tot in xin.
+        destruct xin as [n partn].
+        exists n.
+        split; trivial.
+        intros subx.
+        eauto.
+    }
+Qed.
+Next Obligation.
+  exists part.
+  destruct is_part as [disj tot].
+  rewrite tot.
+  split; reflexivity.
 Qed.
 
-Instance sigma_algebra_intersection {T} (coll:SigmaAlgebra T->Prop): SigmaAlgebra T
+Program Instance sigma_algebra_intersection {T} (coll:SigmaAlgebra T->Prop): SigmaAlgebra T
   := { sa_sigma := fun e => forall sa, coll sa -> @sa_sigma _ sa e
      }.
-Proof.
-  - intros x y xyeq.
-    split; intros HH sa.
-    + rewrite <- xyeq.
-      auto.
-    + rewrite xyeq.
-      eauto.
-  - auto.
-  - intros.
-    apply sa_countable_union.
+Next Obligation.
+  intros x y xyeq.
+  split; intros HH sa.
+  + rewrite <- xyeq.
     auto.
-  - intros e all_sa sa cs.
-    eauto with prob.
-  - eauto with prob.
+  + rewrite xyeq.
+    eauto.
+Qed.
+Next Obligation.
+  auto using classic_event_lem.
+Qed.
+Next Obligation.
+  apply sa_countable_union.
+  auto.
 Defined.
+Next Obligation.
+  eauto with prob.
+Defined.
+Next Obligation.
+  eauto with prob.
+Qed.
 
 Definition all_included {T} (F:event T -> Prop) : SigmaAlgebra T -> Prop
   := fun sa => forall (e:event T), F e -> @sa_sigma _ sa e.
@@ -362,7 +381,7 @@ Proof.
   intros isc.
   apply choice in isc.
   destruct isc as [f fprop].
-  exists (fun n => let '(n1,n2) := iso_b n in f n1 n2); simpl.
+  exists (fun n => let '(n1,n2) := iso_b n in f n1 n2).
   split.
   - intros.
     case_eq (iso_b n); intros n1 n2 eqq.
@@ -391,34 +410,40 @@ Proof.
 Qed.
 
 (* The set of countable and c-countable sets forms a sigma algebra *)
-Instance countable_sa (T:Type) : SigmaAlgebra T
+Program Instance countable_sa (T:Type) : SigmaAlgebra T
   := {
       sa_sigma (f:event T) := is_countable f \/ is_countable (¬ f)
     }.
-Proof.
-  - unfold is_countable.
-    intros ?? eqq.
-    split; intros [[? HH]|[? HH]]
-    ; rewrite eqq in HH || rewrite <- eqq in HH
-    ; eauto.
-  - intros ??; apply classic.
-  - intros coll colln.
-    destruct (classic (forall n, is_countable (coll n))).
-    + (* they are all countable *)
-      left.
-      apply union_of_collection_is_countable; trivial.
-    + apply not_all_ex_not in H.
-      destruct H as [n ncn].
-      assert (iscnn:is_countable (¬ coll n)).
-      { destruct (colln n); intuition. }
-      generalize (union_of_collection_sup coll n); intros subs.
-      apply event_complement_sub_proper in subs.
-      rewrite <- subs in iscnn.
-      eauto.
-  - intros.
-    rewrite event_not_not by auto with prob.
-    tauto.
-  - right.
-    rewrite event_not_all.
-    apply is_countable_empty.
+Next Obligation.
+  unfold is_countable.
+  intros ?? eqq.
+  split; intros [[? HH]|[? HH]]
+  ; rewrite eqq in HH || rewrite <- eqq in HH
+  ; eauto.
+Qed.
+Next Obligation.
+  auto using classic_event_lem.
+Qed.
+Next Obligation.
+  destruct (classic (forall n, is_countable (collection n))).
+  + (* they are all countable *)
+    left.
+    apply union_of_collection_is_countable; trivial.
+  + apply not_all_ex_not in H0.
+    destruct H0 as [n ncn].
+    assert (iscnn:is_countable (¬ collection n)).
+    { destruct (H n); intuition. }
+    generalize (union_of_collection_sup collection n); intros subs.
+    apply event_complement_sub_proper in subs.
+    rewrite <- subs in iscnn.
+    eauto.
+Qed.
+Next Obligation.
+  rewrite event_not_not by auto using classic_event_lem.
+  tauto.
+Qed.
+Next Obligation.
+  right.
+  rewrite event_not_all.
+  apply is_countable_empty.
 Qed.

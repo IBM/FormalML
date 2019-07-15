@@ -600,11 +600,11 @@ Lemma in_interleave_with_end_padding {A} (l1 l2:list A) def1 def2:
     In x (interleave_with_end_padding l1 def1 l2 def2) ->
     In x l1 \/ In x l2 \/ x = def1 \/ x = def2.
 Proof.
-  Hint Resolve repeat_spec.
+  Hint Resolve repeat_spec : list.
   intros.
   destruct (in_interleave _ _ x H)
   ; rewrite in_app_iff in *
-  ; intuition eauto.
+  ; intuition eauto with list.
 Qed.
   
 Lemma encode_digits_pair0 l1 l2 :
@@ -612,11 +612,10 @@ Lemma encode_digits_pair0 l1 l2 :
   Forall (eq bin_digit0) l1 /\
   Forall (eq bin_digit0) l2.
 Proof.
-  Hint Resolve interleave_with_end_padding_in1 interleave_with_end_padding_in2.
   unfold encode_digits_pair.
   repeat rewrite Forall_forall.
   split; intros HH.
-  - intuition eauto.
+  - intuition eauto using interleave_with_end_padding_in1,interleave_with_end_padding_in2.
   - intros ? inn.
     apply in_interleave_with_end_padding in inn.
     intuition eauto.
@@ -1173,18 +1172,18 @@ Qed.
 
 End Internal.
 
-Instance N_pair_encoder : Isomorphism (N*N) N
+Program Instance N_pair_encoder : Isomorphism (N*N) N
   := {
       iso_f '(x,y) := Internal.encode_pair x y ;
       iso_b xy := Internal.decode_pair xy
     }.
-Proof.
-  - intros a.
-    generalize (@Internal.encode_decode_pair a); intros HH.
-    destruct (Internal.decode_pair a); simpl in *.
+Next Obligation.
+    generalize (@Internal.encode_decode_pair b); intros HH.
+    destruct (Internal.decode_pair b); simpl in *.
     trivial.
-  - intros [a1 a2].
-    apply Internal.decode_encode_pair.
+Qed.
+Next Obligation.
+  apply Internal.decode_encode_pair.
 Qed.
 
 Global Instance pair_encoder {A} (iso:Isomorphism A N) : Isomorphism (A*A) A

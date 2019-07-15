@@ -8,6 +8,7 @@ Require Import BasicTactics.
 Require Import ListAdd Assoc.
 Require Import EquivDec.
 
+(* Declare Scope df_scope. *)
 
   Section Definitions.
     

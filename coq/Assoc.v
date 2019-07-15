@@ -50,11 +50,9 @@ Section Assoc.
       intuition congruence.
     Qed.
 
-
   Lemma in_lookup :  forall {l} {a:A} {b0:B}, In (a,b0) l -> {v | lookup l a = Some v}.
   Proof.
-    Hint Resolve in_dom_lookup in_dom.
-    intros. eauto.
+    intros. eauto using in_dom_lookup, in_dom.
   Qed.
 
   Section lookup_eq.
