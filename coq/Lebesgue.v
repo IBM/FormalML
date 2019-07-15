@@ -17,8 +17,8 @@ Definition Partition (a b : R) (n : nat) : (list R) :=
 
 Lemma telescope f (a b : R) (n : nat) :
   (n > 0)%nat ->
-  let pl := Partition a b n in
-  (fold_right Rplus 0 (map f (removelast pl))) - (fold_right Rplus 0 (map f (tl pl))) =
+  let pl := map f (Partition a b n) in
+  (fold_right Rplus 0 (removelast pl)) - (fold_right Rplus 0 (tl pl)) =
   f(a) - f(b).
 Proof.
   (* strategy: 
@@ -32,7 +32,7 @@ Proof.
   intros nzero.
   simpl.
   unfold Partition.
-  rewrite removelast_map, tl_map.
+  repeat rewrite removelast_map, tl_map.
   repeat rewrite fold_right_map.
   rewrite removelast_seq, tl_seq.
   replace ((n + 1 - 1)%nat) with n by omega.
