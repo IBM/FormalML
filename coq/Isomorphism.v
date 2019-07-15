@@ -1,4 +1,4 @@
-Require Import NArith.
+Require Import NArith List.
 
 Class Isomorphism (A B:Type) :=
   {
@@ -54,6 +54,24 @@ Next Obligation.
 Qed.
 Next Obligation.
   repeat rewrite iso_b_f; trivial.
+Qed.
+
+Program Instance Isomorphism_list {A B} (iso1:Isomorphism A B) : Isomorphism (list A) (list B)
+  := {
+      iso_f := map iso_f ;
+      iso_b := map iso_b
+    }.
+Next Obligation.
+  rewrite map_map.
+  erewrite map_ext; try apply map_id.
+  intros.
+  apply iso_f_b.
+Qed.
+Next Obligation.
+  rewrite map_map.
+  erewrite map_ext; try apply map_id.
+  intros.
+  apply iso_b_f.
 Qed.
 
 Global Instance nat_to_N_iso : Isomorphism nat N
