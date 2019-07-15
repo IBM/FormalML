@@ -1,4 +1,4 @@
-Require Import List.
+Require Import List Permutation.
 Require Import RelationClasses.
 Require Import Omega Lra Rbase.
 
@@ -33,21 +33,21 @@ Section incl.
   Defined.
 
   Lemma nincl_exists {A} (dec:forall a b:A, {a = b} + {a <> b}) (l1 l2:list A) :
-      ~ incl l1 l2 -> {x | In x l1 /\ ~ In x l2}.
-    Proof.
-      unfold incl.
-      induction l1; simpl.
-      - intros H; elim H;  intuition.
-      - intros.
-        destruct (in_dec dec a l2).
-        + destruct IHl1.
-          * intros inn.
-            apply H. intuition; subst; trivial.
-          * exists x; intuition.
-        + exists a; intuition.
-    Qed.
+    ~ incl l1 l2 -> {x | In x l1 /\ ~ In x l2}.
+  Proof.
+    unfold incl.
+    induction l1; simpl.
+    - intros H; elim H;  intuition.
+    - intros.
+      destruct (in_dec dec a l2).
+      + destruct IHl1.
+        * intros inn.
+          apply H. intuition; subst; trivial.
+        * exists x; intuition.
+      + exists a; intuition.
+  Qed.
 
-    End incl.
+  End incl.
 
 Section olist.
   
@@ -62,22 +62,40 @@ Section olist.
     end.
   
   Lemma listo_to_olist_some {A:Type} (l:list (option A)) (l':list A) :
-      listo_to_olist l = Some l' ->
-      l = (map Some l').
-    Proof.
-      revert l'.
-      induction l; simpl; intros l' eqq.
-      - inversion eqq; subst; simpl; trivial.
-      - destruct a; try discriminate.
-        case_eq (listo_to_olist l)
-        ; [intros ? eqq2 | intros eqq2]
-        ; rewrite eqq2 in eqq
-        ; try discriminate.
-        inversion eqq; subst.
-        rewrite (IHl l0); trivial. 
-    Qed.
+    listo_to_olist l = Some l' ->
+    l = (map Some l').
+  Proof.
+    revert l'.
+    induction l; simpl; intros l' eqq.
+    - inversion eqq; subst; simpl; trivial.
+    - destruct a; try discriminate.
+      case_eq (listo_to_olist l)
+      ; [intros ? eqq2 | intros eqq2]
+      ; rewrite eqq2 in eqq
+      ; try discriminate.
+      inversion eqq; subst.
+      rewrite (IHl l0); trivial. 
+  Qed.
 
 End olist.
+
+Section Map.
+
+  Lemma removelast_map {A B : Type} (f:A->B) (l : list A) :
+    removelast (map f l) = map f (removelast l).
+  Proof.
+    induction l; simpl; trivial.
+    rewrite IHl.
+    destruct l; simpl; trivial.
+  Qed.
+
+  Lemma tl_map {A B : Type} (f:A->B) (l : list A) :
+    tl (map f l) = map f (tl l).
+  Proof.
+    destruct l; simpl; trivial.
+  Qed.
+
+End Map.
 
 Section Fold.
   Context {A B C: Type}.
@@ -120,6 +138,20 @@ Proof.
   induction l; simpl.
   - lra.
   - rewrite IHl; lra.
+Qed.
+
+Lemma fold_right_perm {A} (f : A -> A -> A)
+      (assoc:forall x y z : A, f x (f y z) = f (f x y) z) 
+      (comm:forall x y : A, f x y = f y x) (l1 l2:list A) (unit:A) 
+      (perm:Permutation l1 l2) :
+  fold_right f unit l1 = fold_right f unit l2.
+Proof.
+  revert l1 l2 perm.
+  apply Permutation_ind_bis; simpl; intros.
+  - trivial.
+  - rewrite H0; trivial.
+  - rewrite assoc, (comm y x), <- assoc, H0; trivial.
+  - rewrite H0, H2; trivial.
 Qed.
 
 Section Seq.
@@ -184,7 +216,27 @@ Section Seq.
     rewrite seq_app.
     simpl; trivial.
   Qed.
-  
+
+Lemma tl_seq n : tl (seq 0 n) = seq 1 (n-1).
+Proof.
+  destruct n; simpl; trivial.
+  rewrite Nat.sub_0_r.
+  trivial.
+Qed.
+
+Lemma removelast_seq (n:nat) : removelast (seq 0 n) = seq 0 (n-1).
+Proof.
+  induction n; simpl; trivial.
+  rewrite Nat.sub_0_r.
+  rewrite <- seq_shift.
+  rewrite removelast_map.
+  rewrite IHn.
+  repeat rewrite seq_shift.
+  destruct n; simpl; trivial.
+  rewrite Nat.sub_0_r.
+  trivial.
+Qed.
+
 End Seq.
 
 Section fp.

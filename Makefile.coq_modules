@@ -21,6 +21,7 @@ MODULES = \
 	BorelSigmaAlgebra \
 	DefinedFunctions \
 	Isomorphism \
+	Lebesgue \
 	ListAdd \
 	PairEncoding \
 	ProbSpace \
