@@ -1,4 +1,4 @@
-Require Import NArith List.
+Require Import NArith RList List Rbase.
 
 Class Isomorphism (A B:Type) :=
   {
@@ -81,3 +81,25 @@ Global Instance nat_to_N_iso : Isomorphism nat N
       iso_f_b := N2Nat.id ;
       iso_b_f := Nat2N.id ;
     }.
+
+Global Program Instance Rlist_to_list_iso : Isomorphism Rlist (list R)
+  := {
+      iso_f := (fix iso_f (l:Rlist) : list R
+                := match l with
+                   | RList.nil => nil
+                   | RList.cons x y => cons x (iso_f y)
+                   end) ;
+      iso_b := (fix iso_b (l:list R) : Rlist
+                := match l with
+                   | nil => RList.nil
+                   | cons x y => RList.cons x (iso_b y)
+                   end)
+
+      }.
+Next Obligation.
+  induction b; simpl; congruence.
+Qed.
+Next Obligation.
+  induction a; simpl; congruence.
+Qed.
+
