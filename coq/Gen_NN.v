@@ -9,7 +9,7 @@ Require Import BasicTactics.
 Require Import ListAdd Assoc.
 
 Record FullNN : Set := mkNN { ldims : list nat; param_var : SubVar; 
-                              factiv : DefinedFunction ; floss : DefinedFunction }.
+                              f_activ : DefinedFunction ; f_loss : DefinedFunction }.
 
 Definition mkRvector (lr : list R) : list DefinedFunction :=
     map (fun r => Number r) lr.
@@ -40,13 +40,13 @@ Definition activation (df : DefinedFunction) (vec : list DefinedFunction) : opti
     | None => None
     end.
 
-Definition mkNN2 (n1 n2 n3 : nat) (ivar wvar : SubVar) (factiv : DefinedFunction) : option (list DefinedFunction) :=
+Definition mkNN2 (n1 n2 n3 : nat) (ivar wvar : SubVar) (f_activ : DefinedFunction) : option (list DefinedFunction) :=
   let mat1 := mkMatrix (Sub wvar 1) n1 n2 in
   let mat2 := mkMatrix (Sub wvar 2) n2 n3 in
   let ivec := mkVector ivar n1 in
-  let N1 := activation factiv (mul_mat_vec mat1 ivec) in 
+  let N1 := activation f_activ (mul_mat_vec mat1 ivec) in 
   match N1 with
-  | Some vec => activation factiv (mul_mat_vec mat2 vec)
+  | Some vec => activation f_activ (mul_mat_vec mat2 vec)
   | None => None
   end.
 
