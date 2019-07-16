@@ -609,6 +609,12 @@ Require Import EquivDec.
       end.
 
 
+   Definition df_substp := fun e '(v,e') => df_subst e v  e'.
+
+   Definition df_subst_list (e:DefinedFunction) (l:list (SubVar*DefinedFunction)) : DefinedFunction
+      := fold_left df_substp l e.
+
+
     Lemma df_subst_nfree (e: DefinedFunction) (v:SubVar) (e':DefinedFunction) :
       ~ In v (df_free_variables e) ->
       df_subst e v e' = e.

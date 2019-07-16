@@ -20,6 +20,7 @@ MODULES = \
 	BasicTactics \
 	BorelSigmaAlgebra \
 	DefinedFunctions \
+	Gen_NN \
 	Isomorphism \
 	Lebesgue \
 	ListAdd \

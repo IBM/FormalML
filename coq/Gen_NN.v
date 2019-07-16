@@ -65,11 +65,6 @@ Definition deltalosses (df : DefinedFunction) (losses : list DefinedFunction) : 
   | None => None
   end.
 
-  Definition df_substp := fun e '(v,e') => df_subst e v  e'.
-
-  Definition df_subst_list (e:DefinedFunction) (l:list (SubVar*DefinedFunction)) : DefinedFunction
-      := fold_left df_substp l e.
-      
 Definition NNinstance (n1 n2 n3 : nat) (ivar : SubVar) (f_loss : DefinedFunction) 
            (NN2 : list DefinedFunction) (inputs : (list R)) 
            (outputs : (list R)): option DefinedFunction :=
