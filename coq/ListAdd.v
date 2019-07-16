@@ -265,4 +265,81 @@ Section fp.
   Qed. 
 
 End fp.
-  
+
+Lemma nth_last {A} (l:list A) d: nth (pred (length l)) l d = last l d.
+Proof.
+  induction l; simpl; trivial.
+  destruct l; simpl in *; trivial.
+Qed.
+
+Lemma nth_hd {A} (l:list A) d: nth 0 l d = hd d l.
+Proof.
+  destruct l; simpl in *; trivial.
+Qed.
+
+Lemma hd_app {A} (l1 l2:list A) d : l1 <> nil -> hd d (l1 ++ l2) = hd d l1.
+Proof.
+  induction l1; simpl; congruence.
+Qed.
+
+Lemma last_rev {A} (l:list A) d : last l d = hd d (rev l).
+Proof.
+  induction l; trivial.
+  simpl rev.
+  destruct l; trivial.
+  rewrite hd_app; trivial.
+  intros eqq.
+  apply (f_equal (@length A)) in eqq.
+  simpl in eqq.
+  rewrite app_length in eqq.
+  simpl in eqq.
+  omega.
+Qed.
+
+Lemma last_app {A} (l1 l2:list A) d : l2 <> nil -> last (l1 ++ l2) d = last l2 d.
+Proof.
+  intros.
+  repeat rewrite last_rev.
+  rewrite rev_app_distr.
+  rewrite hd_app; trivial.
+  intro eqq; apply H.
+  apply (f_equal (@rev A)) in eqq.
+  rewrite rev_involutive in eqq.
+  trivial.
+Qed.
+
+Lemma seq_last s n d :
+  (n > 0)%nat ->
+  last (seq s n) d = (s+n-1)%nat.
+Proof.
+  intros.
+  destruct n.
+  - simpl; omega.
+  - rewrite seq_Sn.
+    rewrite last_app by congruence.
+    simpl.
+    omega.
+Qed.
+
+Lemma last_map {A B} (f:A->B) (l:list A) d : last (map f l) (f d) = f (last l d).
+Proof.
+  induction l; simpl; trivial.
+  destruct l; simpl; trivial.
+Qed.
+
+Lemma map_nth_in {A B} (f:A->B) l d1 n :
+  (n < length l)%nat ->
+  exists d2,
+  nth n (map f l) d1 = f (nth n l d2).
+Proof.
+  revert n.
+  induction l; simpl.
+  - destruct n; omega.
+  - destruct n; trivial.
+    + intros; eauto.
+    + intros.
+      destruct (IHl n).
+      * omega.
+      * rewrite H0.
+        eauto.
+Qed.

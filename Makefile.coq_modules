@@ -26,6 +26,7 @@ MODULES = \
 	ListAdd \
 	PairEncoding \
 	ProbSpace \
+	RealAdd \
 	SigmaAlgebras \
 	Sums \
 	sumtest
