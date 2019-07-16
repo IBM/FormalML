@@ -763,7 +763,7 @@ Class ProbSpace {T:Type} (S:SigmaAlgebra T) :=
     
     ps_one : ps_P Ω = R1;
     
-    ps_pos (A:event T): (0 <= ps_P A)%R
+    ps_pos (A:event T): sa_sigma A -> (0 <= ps_P A)%R
   }.
 
 Lemma ps_all {T:Type} {S:SigmaAlgebra T} (ps:ProbSpace S) : ps_P Ω = R1.
@@ -876,7 +876,8 @@ Proof.
   cut_to HH; [ | auto with prob.. ].
   rewrite event_union_diff_sub in HH by auto with prob.
   rewrite HH.
-  generalize (ps_pos (B \ A)).
+  generalize (ps_pos (B \ A)); intros.
+  cut_to H; auto with prob.
   lra.
 Qed.
 
@@ -1024,7 +1025,11 @@ Proof.
     rewrite ps_union; trivial.
     + specialize (IHl H3).
       generalize ( ps_pos (a ∩ list_union l)); intros.
-      lra.
+      cut_to H.
+      * lra.
+      * rewrite Forall_forall in *.
+        apply sa_inter; trivial.
+        apply sa_list_union; auto.
     + apply sa_list_union.
       apply Forall_forall; trivial.
 Qed.    
@@ -1148,18 +1153,23 @@ End RandomVariable.
 
 Section lebesgueintegration.
   
-  Class MeasurableFunction {Ts: Type} {dom: SigmaAlgebra Ts} :=
+  Class MeasurableFunction {Ts: Type} (dom: SigmaAlgebra Ts) :=
     {
       measure_mu: event Ts -> R;
-      
-      measure_ge_zero: forall A : event Ts, sa_sigma A -> measure_mu A >= 0;
+
+      measure_none : measure_mu ∅ = R0 ;
+      measure_ge_zero: forall A : event Ts, sa_sigma A -> 0 <= measure_mu A;
   
       measure_coutably_additive: forall collection: nat -> event Ts,
-          sum_of_probs_equals measure_mu collection (measure_mu (union_of_collection collection))
+           (forall n : nat, sa_sigma (collection n)) ->
+           collection_is_pairwise_disjoint collection ->
+           sum_of_probs_equals measure_mu collection (measure_mu (union_of_collection collection))
+
+                               
     }.
 
   (* See https://en.wikipedia.org/wiki/Lebesgue_integration#Towards_a_formal_definition *)
-  Definition F_star {dom:SigmaAlgebra R} (measure: MeasurableFunction) (f: R -> R) (t: R) :=
+  Definition F_star {dom:SigmaAlgebra R} (measure: MeasurableFunction dom) (f: R -> R) (t: R) :=
     measure_mu (fun (x: R) => (f x) > t).
 
   (* The integral $\int f d\mu defined in terms of the Riemann integral.
@@ -1168,10 +1178,19 @@ Section lebesgueintegration.
   Definition Lebesgue_integrable_pos {dom: SigmaAlgebra R}
              (f : R -> R)
              (f_nonneg : forall x:R, f x > 0)
-             (measure: MeasurableFunction)
+             (measure: MeasurableFunction dom)
              (a b : R) :=
     (Riemann_integrable (F_star measure f) a b).
 End lebesgueintegration.
+
+Instance ProbSpace_Measurable {T:Type} {sa: SigmaAlgebra T} (ps:ProbSpace sa) : MeasurableFunction sa
+  := {
+      measure_mu := ps_P ;
+      measure_none := (ps_none ps) ;
+      measure_ge_zero := ps_pos ;
+      measure_coutably_additive := ps_countable_disjoint_union ; 
+    }.
+
 
 Section prob.
   Local Open Scope R.
@@ -1285,3 +1304,4 @@ Section classic.
   Qed.
 
 End classic.
+
