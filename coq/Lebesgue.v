@@ -183,6 +183,11 @@ Lemma nth_map (A : Type) (f : A -> A) (l : list A) (c : A) (i : nat):
 Proof.  
 Admitted.
 
+Lemma map_nil (A : Type) (f : A -> A) (l : list A):
+  l <> nil <-> map f l <> nil.
+Proof.  
+Admitted.
+
 Lemma find_pt_le_p1 (f : R -> R) (a b x : R) (i n : nat) :
   (n > 0)%nat -> (i < pred (length (Partition a b n)))%nat -> a <= b ->
   nth i (Partition a b n) 0 < x < nth (S i) (Partition a b n) 0 ->
@@ -250,4 +255,9 @@ Proof.
   unfold Partition.
   apply map_seq_nnil.
   apply S_le; trivial.
-Admitted.  
+  apply map_nil.
+  unfold Partition.
+  apply map_seq_nnil.
+Qed.  
+        
+  
