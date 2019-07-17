@@ -184,7 +184,7 @@ Proof.
 Admitted.
 
 Lemma find_pt_le_p1 (f : R -> R) (a b x : R) (i n : nat) :
-  (n > 0)%nat -> (i <= n)%nat -> a <= b ->
+  (n > 0)%nat -> (i < pred (length (Partition a b n)))%nat -> a <= b ->
   nth i (Partition a b n) 0 < x < nth (S i) (Partition a b n) 0 ->
   find_pt_le f (Partition a b n) x = f (nth (S i) (Partition a b n) 0).
 Proof.  
@@ -198,6 +198,12 @@ Lemma find_pt_le_p2 (f : R -> R) (a b x : R) (i n : nat) :
   Rabs ((f x) - (f (nth (S i) (Partition a b n) 0))) <= Rabs ((f (nth i (Partition a b n) 0)) - (f (nth (S i) (Partition a b n) 0))).
 Proof.  
 Admitted.
+
+Lemma S_le (i j:nat) :
+  ((S i) <= j)%nat <-> (i < j)%nat.
+Proof.
+  intuition.
+Qed.  
 
 Lemma part2step  :
   forall (f:R -> R) (a b:R) (n : nat), 
@@ -240,4 +246,8 @@ Proof.
   rewrite map_tl.
   rewrite nth_tl.
   rewrite nth_map.
-Admitted.
+  apply find_pt_le_p1; trivial.
+  unfold Partition.
+  apply map_seq_nnil.
+  apply S_le; trivial.
+Admitted.  
