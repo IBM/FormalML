@@ -133,3 +133,105 @@ Proof.
       apply INR_zero_lt; trivial.
     + lra.
 Qed.
+
+(* lr should be strictly increasing like in Partition *)
+Fixpoint find_pt_le f (lr : list R) (x : R) :=
+  match lr with
+  | nil => f x
+  | y :: lr' => if Rle_dec x y then f y else find_pt_le f lr' x
+  end.
+                                 
+Lemma tl_length (A : Type) (l : list A) :
+  l <> nil -> length l = S (length (tl l)).
+Proof.
+  intros.
+  destruct l; simpl; congruence.
+Qed.
+
+Lemma map_seq_nnil {B} (f:nat->B) n :
+  map f (seq 0 (n+1)%nat) <> nil.
+Proof.
+  rewrite seq_app.
+  rewrite map_app.
+  simpl.
+  intro; eapply app_cons_not_nil. 
+  eauto.
+Qed.
+
+Lemma map_seq_nnil_alt {B} (f:nat->B) n :
+  map f (seq 0 (n+1)%nat) <> nil.
+Proof.
+  intro eqq.
+  apply (f_equal (@length B)) in eqq.
+  rewrite map_length in eqq.
+  rewrite seq_length in eqq.
+  simpl in eqq.
+  omega.
+Qed.
+
+Lemma nth_tl (A : Type) (l : list A) (c : A) (i : nat) :
+  l <> nil -> nth i (tl l) c = nth (S i) l c.
+Proof.
+  intros.
+  induction l.
+  contradiction.
+  unfold tl.
+  reflexivity.
+Qed.
+
+Lemma find_pt_le_p1 (f : R -> R) (a b x : R) (i n : nat) :
+  (n > 0)%nat -> (i <= n)%nat -> a <= b ->
+  nth i (Partition a b n) 0 < x < nth (S i) (Partition a b n) 0 ->
+  find_pt_le f (Partition a b n) x = f (nth (S i) (Partition a b n) 0).
+Proof.  
+  intros.
+  unfold find_pt_le.
+Admitted.
+
+Lemma find_pt_le_p2 (f : R -> R) (a b x : R) (i n : nat) :
+  (n > 0)%nat -> (i <= n)%nat -> a <= b ->
+  nth i (Partition a b n) 0 < x < nth (S i) (Partition a b n) 0 ->
+  Rabs ((f x) - (f (nth (S i) (Partition a b n) 0))) <= Rabs ((f (nth i (Partition a b n) 0)) - (f (nth (S i) (Partition a b n) 0))).
+Proof.  
+Admitted.
+
+Lemma part2step  :
+  forall (f:R -> R) (a b:R) (n : nat), 
+    (n>0)%nat -> (a <= b) -> IsStepFun (fun x => find_pt_le f (Partition a b n) x) a b.
+Proof.
+  intros.
+  unfold IsStepFun.
+  exists (iso_b (Partition a b n)).
+  unfold is_subdivision.
+  exists (iso_b (map f (tl (Partition a b n)))).
+  unfold adapted_couple.
+  split.
+  apply (orderedPartition a b n); trivial.
+  split.
+  cut ((Rmin a b) = a).
+  intros.
+  replace (Rmin a b) with a.
+  apply (orderedPartition a b n); trivial.
+  apply Rmin_left; trivial.
+  split.  
+  cut ((Rmax a b) = b).
+  intros.
+  replace (Rmax a b) with b.
+  apply (orderedPartition a b n); trivial.
+  apply Rmax_right; trivial.
+  split.
+  autorewrite with R_iso.
+  cut ((Partition a b n) <> nil).
+  intros.
+  rewrite map_length.
+  apply tl_length; trivial.
+  unfold Partition.
+  apply map_seq_nnil.
+  autorewrite with R_iso.  
+  intros.
+  unfold constant_D_eq.
+  unfold open_interval.
+  autorewrite with R_iso.  
+  intros.
+Admitted.
+
