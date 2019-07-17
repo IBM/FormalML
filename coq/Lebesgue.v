@@ -128,13 +128,8 @@ Proof.
     rewrite S_INR.
     apply Rplus_le_compat_l.
     apply Rmult_le_compat_r.
-    + rewrite <- (Rmult_1_l (/ INR n)).
-      left.
-      apply Fourier_util.Rlt_mult_inv_pos.
-      * lra.
-      * { destruct n.
-          - omega.
-          - apply INR_zero_lt; trivial.
-        }
+    + left.
+      apply Rinv_pos.
+      apply INR_zero_lt; trivial.
     + lra.
 Qed.
