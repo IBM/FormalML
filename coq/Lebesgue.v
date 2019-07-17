@@ -9,7 +9,6 @@ Require Import Lra Omega.
 Require Import BasicTactics Sums ListAdd RealAdd.
 Require Import Isomorphism.
 
-
 Local Open Scope R_scope.
 Implicit Type f : R -> R.
 
@@ -179,6 +178,11 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma nth_map (A : Type) (f : A -> A) (l : list A) (c : A) (i : nat):
+  l <> nil -> (i <= pred(length l))%nat -> nth i (map f l) c = f (nth i l c).
+Proof.  
+Admitted.
+
 Lemma find_pt_le_p1 (f : R -> R) (a b x : R) (i n : nat) :
   (n > 0)%nat -> (i <= n)%nat -> a <= b ->
   nth i (Partition a b n) 0 < x < nth (S i) (Partition a b n) 0 ->
@@ -233,5 +237,7 @@ Proof.
   unfold open_interval.
   autorewrite with R_iso.  
   intros.
+  rewrite map_tl.
+  rewrite nth_tl.
+  rewrite nth_map.
 Admitted.
-
