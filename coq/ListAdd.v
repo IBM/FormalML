@@ -333,7 +333,19 @@ Proof.
   destruct l; simpl; trivial.
 Qed.
 
-Lemma map_nth_in {A B} (f:A->B) l d1 n :
+Lemma map_nth_in {A B} (f:A->B) l d1 n d2 :
+  (n < length l)%nat ->
+  nth n (map f l) d1 = f (nth n l d2).
+Proof.
+  revert n.
+  induction l; simpl.
+  - destruct n; omega.
+  - destruct n; trivial.
+    intros; eauto.
+    rewrite IHl; trivial; omega.
+Qed.
+
+Lemma map_nth_in_exists {A B} (f:A->B) l d1 n :
   (n < length l)%nat ->
   exists d2,
   nth n (map f l) d1 = f (nth n l d2).
@@ -348,4 +360,17 @@ Proof.
       * omega.
       * rewrite H0.
         eauto.
+Qed.
+
+Lemma nth_in_default {A} (l:list A) d1 d2 n :
+  (n < length l)%nat ->
+  nth n l d1 = nth n l d2.
+Proof.
+  revert n.
+  induction l; simpl.
+  - destruct n; omega.
+  - destruct n; trivial.
+    + intros; eauto.
+      rewrite (IHl n); trivial.
+      omega.
 Qed.
