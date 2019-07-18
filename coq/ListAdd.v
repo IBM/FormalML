@@ -95,12 +95,6 @@ Section Map.
     destruct l; simpl; trivial.
   Qed.
 
-  Lemma map_tl {A B : Type} (f:A->B) (l : list A) :
-    map f (tl l) = tl (map f l).
-  Proof.
-    destruct l; simpl; trivial.
-  Qed.
-
 End Map.
 
 Section Fold.

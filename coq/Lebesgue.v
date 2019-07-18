@@ -34,7 +34,7 @@ Lemma Partition_nth a b n d nn :
 Proof.
   intros.
   unfold Partition.
-  destruct (map_nth_in (fun i : nat => a + INR i * ((b - a) / INR n)) (seq 0 (n + 1)) d nn).
+  destruct (map_nth_in_exists (fun i : nat => a + INR i * ((b - a) / INR n)) (seq 0 (n + 1)) d nn).
   + rewrite seq_length.
     omega.
   + rewrite H0.
@@ -179,35 +179,26 @@ Proof.
 Qed.
 
 (* there must be an easier way to do this *)
-Lemma map_nil (A : Type) (f : A -> A) (l : list A):
+Lemma map_nil (A B : Type) (f : A -> B) (l : list A):
   l <> nil <-> map f l <> nil.
-Proof.  
-  intros.
-  induction l.
-  unfold map.
-  intuition.
-  unfold map.
-  split.
-  intros.
-  apply not_eq_sym.
-  apply nil_cons.
-  intros.
-  apply not_eq_sym.
-  apply nil_cons.
+Proof.
+  destruct l; simpl; intuition congruence.
 Qed.
 
 Lemma nth_map (A : Type) (f : A -> A) (l : list A) (c : A) (i : nat):
   l <> nil -> (i <= pred(length l))%nat -> nth i (map f l) c = f (nth i l c).
 Proof.  
   intros.
-  induction i.
+  cut (i < length l)%nat.
+  intros.
+  apply map_nth_in.
+  trivial.
   induction l.
-  contradiction.
-  unfold map.
-  unfold nth; trivial.
-Admitted.  
+  simpl; contradiction.
+  destruct l; simpl in *; omega.
+Qed.
 
-Lemma find_pt_le_p1 (f : R -> R) (a b x : R) (i n : nat) :
+Lemma Partition_p1 (f : R -> R) (a b x : R) (i n : nat) :
   (n > 0)%nat -> (i < pred (length (Partition a b n)))%nat -> a <= b ->
   nth i (Partition a b n) 0 < x < nth (S i) (Partition a b n) 0 ->
   find_pt_le f (Partition a b n) x = f (nth (S i) (Partition a b n) 0).
@@ -216,7 +207,7 @@ Proof.
   unfold find_pt_le.
 Admitted.
 
-Lemma find_pt_le_p2 (f : R -> R) (a b x : R) (i n : nat) :
+Lemma Partition_p2 (f : R -> R) (a b x : R) (i n : nat) :
   (n > 0)%nat -> (i <= n)%nat -> a <= b ->
   nth i (Partition a b n) 0 < x < nth (S i) (Partition a b n) 0 ->
   Rabs ((f x) - (f (nth (S i) (Partition a b n) 0))) <= Rabs ((f (nth i (Partition a b n) 0)) - (f (nth (S i) (Partition a b n) 0))).
@@ -267,10 +258,10 @@ Proof.
   unfold open_interval.
   autorewrite with R_iso.  
   intros.
-  rewrite map_tl.
+  rewrite <- tl_map.
   rewrite nth_tl.
   rewrite nth_map.
-  apply find_pt_le_p1; trivial.
+  apply Partition_p1; trivial.
   unfold Partition.
   apply map_seq_nnil.
   apply S_le; trivial.
