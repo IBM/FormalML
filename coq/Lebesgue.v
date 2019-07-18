@@ -178,15 +178,34 @@ Proof.
   reflexivity.
 Qed.
 
-Lemma nth_map (A : Type) (f : A -> A) (l : list A) (c : A) (i : nat):
-  l <> nil -> (i <= pred(length l))%nat -> nth i (map f l) c = f (nth i l c).
-Proof.  
-Admitted.
-
+(* there must be an easier way to do this *)
 Lemma map_nil (A : Type) (f : A -> A) (l : list A):
   l <> nil <-> map f l <> nil.
 Proof.  
-Admitted.
+  intros.
+  induction l.
+  unfold map.
+  intuition.
+  unfold map.
+  split.
+  intros.
+  apply not_eq_sym.
+  apply nil_cons.
+  intros.
+  apply not_eq_sym.
+  apply nil_cons.
+Qed.
+
+Lemma nth_map (A : Type) (f : A -> A) (l : list A) (c : A) (i : nat):
+  l <> nil -> (i <= pred(length l))%nat -> nth i (map f l) c = f (nth i l c).
+Proof.  
+  intros.
+  induction i.
+  induction l.
+  contradiction.
+  unfold map.
+  unfold nth; trivial.
+Admitted.  
 
 Lemma find_pt_le_p1 (f : R -> R) (a b x : R) (i n : nat) :
   (n > 0)%nat -> (i < pred (length (Partition a b n)))%nat -> a <= b ->
