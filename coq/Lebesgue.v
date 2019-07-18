@@ -214,12 +214,6 @@ Lemma Partition_p2 (f : R -> R) (a b x : R) (i n : nat) :
 Proof.  
 Admitted.
 
-Lemma S_le (i j:nat) :
-  ((S i) <= j)%nat <-> (i < j)%nat.
-Proof.
-  intuition.
-Qed.  
-
 Lemma part2step  :
   forall (f:R -> R) (a b:R) (n : nat), 
     (n>0)%nat -> (a <= b) -> IsStepFun (fun x => find_pt_le f (Partition a b n) x) a b.
@@ -264,10 +258,11 @@ Proof.
   apply Partition_p1; trivial.
   unfold Partition.
   apply map_seq_nnil.
-  apply S_le; trivial.
+  intuition.
   apply map_nil.
   unfold Partition.
   apply map_seq_nnil.
-Qed.  
+Qed.
+
         
   
