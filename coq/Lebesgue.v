@@ -4,6 +4,7 @@ Require Import Ranalysis_reg.
 Require Import Reals.Integration.
 Require Import Rtrigo_def.
 Require Import List Permutation.
+Require Import Sorted.
 
 Require Import Lra Omega.
 Require Import BasicTactics Sums ListAdd RealAdd.
@@ -43,6 +44,33 @@ Proof.
     lra.
 Qed.
 
+Lemma Partition_func_increasing a b n:
+  a < b ->
+  (0 < n)%nat ->
+  Morphisms.Proper (Morphisms.respectful lt Rlt) (fun i : nat => a + INR i * ((b - a) / INR n)).
+Proof.
+  repeat red; intros.
+  apply Rplus_lt_compat_l.
+  apply Rmult_lt_compat_r.
+  - apply Rmult_lt_0_compat; trivial.
+    + lra.
+    + apply Rinv_pos.
+      apply INR_zero_lt; trivial.
+  - apply lt_INR; trivial.
+Qed.
+
+Lemma Partition_StronglySorted a b n :
+  a < b ->
+  (0 < n)%nat ->
+  StronglySorted Rlt (Partition a b n).
+Proof.
+  intros.
+  unfold Partition.
+  apply (StronglySorted_map lt Rlt).
+  - apply Partition_func_increasing; trivial.
+  - apply StronglySorted_seq.
+Qed.
+
 Lemma Partition_length a b n : length (Partition a b n) = S n.
 Proof.
   unfold Partition.
@@ -50,6 +78,18 @@ Proof.
   omega.
 Qed.
 
+Lemma find_bucket_nth_finds_Rle needle l idx d1 d2:
+  StronglySorted Rle l ->
+  (S idx < length l)%nat ->
+  nth idx l d1 < needle ->
+  needle < nth (S idx) l d2 ->
+  find_bucket Rle_dec needle l = Some (nth idx l d1, nth (S idx) l d2).
+Proof.
+  intros.
+  apply find_bucket_nth_finds; trivial
+  ; repeat red; intros; lra.
+Qed.
+  
 Lemma telescope f (a b : R) (n : nat) :
   (n > 0)%nat ->
   let pl := map f (Partition a b n) in
@@ -103,7 +143,9 @@ Proof.
 Qed.
 
 Lemma orderedPartition (a b : R) (n:nat)  :
- (n>0)%nat -> a <= b -> let rpl := iso_b (Partition a b n) in
+  (n>0)%nat ->
+  a <= b ->
+  let rpl := iso_b (Partition a b n) in
            pos_Rl rpl 0 = a /\
            pos_Rl rpl (pred (Rlength rpl)) = b /\
            ordered_Rlist rpl.
@@ -133,90 +175,44 @@ Proof.
     + lra.
 Qed.
 
-(* lr should be strictly increasing like in Partition *)
-Fixpoint find_pt_le f (lr : list R) (x : R) :=
-  match lr with
-  | nil => f x
-  | y :: lr' => if Rle_dec x y then f y else find_pt_le f lr' x
-  end.
-                                 
-Lemma tl_length (A : Type) (l : list A) :
-  l <> nil -> length l = S (length (tl l)).
+Lemma find_bucket_Partition a b n idx d1 d2 needle:
+  (n > 0)%nat ->
+  (idx < n)%nat ->
+  a < b ->
+  nth idx (Partition a b n) d1 < needle < nth (S idx) (Partition a b n) d2 ->
+  find_bucket Rle_dec needle (Partition a b n) = Some (nth idx (Partition a b n) d1, nth (S idx) (Partition a b n) d2).
 Proof.
   intros.
-  destruct l; simpl; congruence.
+  apply find_bucket_nth_finds_Rle; trivial.
+  - eapply StronglySorted_sub; [ | eapply Partition_StronglySorted ]; trivial.
+    apply Rlt_le_sub.
+  - rewrite Partition_length.
+    omega.
+  - tauto.
+  - tauto.
 Qed.
-
-Lemma map_seq_nnil {B} (f:nat->B) n :
-  map f (seq 0 (n+1)%nat) <> nil.
-Proof.
-  rewrite seq_app.
-  rewrite map_app.
-  simpl.
-  intro; eapply app_cons_not_nil. 
-  eauto.
-Qed.
-
-Lemma map_seq_nnil_alt {B} (f:nat->B) n :
-  map f (seq 0 (n+1)%nat) <> nil.
-Proof.
-  intro eqq.
-  apply (f_equal (@length B)) in eqq.
-  rewrite map_length in eqq.
-  rewrite seq_length in eqq.
-  simpl in eqq.
-  omega.
-Qed.
-
-Lemma nth_tl (A : Type) (l : list A) (c : A) (i : nat) :
-  l <> nil -> nth i (tl l) c = nth (S i) l c.
-Proof.
-  intros.
-  induction l.
-  contradiction.
-  unfold tl.
-  reflexivity.
-Qed.
-
-(* there must be an easier way to do this *)
-Lemma map_nil (A B : Type) (f : A -> B) (l : list A):
-  l <> nil <-> map f l <> nil.
-Proof.
-  destruct l; simpl; intuition congruence.
-Qed.
-
-Lemma nth_map (A : Type) (f : A -> A) (l : list A) (c : A) (i : nat):
-  l <> nil -> (i <= pred(length l))%nat -> nth i (map f l) c = f (nth i l c).
-Proof.  
-  intros.
-  cut (i < length l)%nat.
-  intros.
-  apply map_nth_in.
-  trivial.
-  induction l.
-  simpl; contradiction.
-  destruct l; simpl in *; omega.
-Qed.
-
-Lemma Partition_p1 (f : R -> R) (a b x : R) (i n : nat) :
-  (n > 0)%nat -> (i < pred (length (Partition a b n)))%nat -> a <= b ->
-  nth i (Partition a b n) 0 < x < nth (S i) (Partition a b n) 0 ->
-  find_pt_le f (Partition a b n) x = f (nth (S i) (Partition a b n) 0).
-Proof.  
-  intros.
-  unfold find_pt_le.
-Admitted.
-
-Lemma Partition_p2 (f : R -> R) (a b x : R) (i n : nat) :
-  (n > 0)%nat -> (i <= n)%nat -> a <= b ->
-  nth i (Partition a b n) 0 < x < nth (S i) (Partition a b n) 0 ->
-  Rabs ((f x) - (f (nth (S i) (Partition a b n) 0))) <= Rabs ((f (nth i (Partition a b n) 0)) - (f (nth (S i) (Partition a b n) 0))).
+    
+(*
+Lemma Partition_p2 (f : R -> R) (a b x : R) (idx n : nat) :
+  (n > 0)%nat ->
+  (idx < n)%nat ->
+  a < b ->
+nth idx (Partition a b n) 0 < x < nth (S idx) (Partition a b n) 0 ->
+  Rabs ((f x) - (f (nth (S idx) (Partition a b n) 0))) <= Rabs ((f (nth idx (Partition a b n) 0)) - (f (nth (S idx) (Partition a b n) 0))).
 Proof.  
 Admitted.
+*)
 
-Lemma part2step  :
-  forall (f:R -> R) (a b:R) (n : nat), 
-    (n>0)%nat -> (a <= b) -> IsStepFun (fun x => find_pt_le f (Partition a b n) x) a b.
+Definition find_pt_le f a b n needle : R
+  := match find_bucket Rle_dec needle (Partition a b n) with
+     | Some (lower,upper) => f upper
+     | None => 0
+     end.
+
+Lemma part2step (f:R -> R) (a b:R) (n : nat) :
+  (n > 0)%nat ->
+  a < b ->
+  IsStepFun (find_pt_le f a b n) a b.
 Proof.
   intros.
   unfold IsStepFun.
@@ -224,45 +220,22 @@ Proof.
   unfold is_subdivision.
   exists (iso_b (map f (tl (Partition a b n)))).
   unfold adapted_couple.
-  split.
-  apply (orderedPartition a b n); trivial.
-  split.
-  cut ((Rmin a b) = a).
-  intros.
-  replace (Rmin a b) with a.
-  apply (orderedPartition a b n); trivial.
-  apply Rmin_left; trivial.
-  split.  
-  cut ((Rmax a b) = b).
-  intros.
-  replace (Rmax a b) with b.
-  apply (orderedPartition a b n); trivial.
-  apply Rmax_right; trivial.
-  split.
-  autorewrite with R_iso.
-  cut ((Partition a b n) <> nil).
-  intros.
-  rewrite map_length.
-  apply tl_length; trivial.
-  unfold Partition.
-  apply map_seq_nnil.
-  autorewrite with R_iso.  
-  intros.
-  unfold constant_D_eq.
-  unfold open_interval.
-  autorewrite with R_iso.  
-  intros.
-  rewrite <- tl_map.
-  rewrite nth_tl.
-  rewrite nth_map.
-  apply Partition_p1; trivial.
-  unfold Partition.
-  apply map_seq_nnil.
-  intuition.
-  apply map_nil.
-  unfold Partition.
-  apply map_seq_nnil.
+  destruct (orderedPartition a b n) as [? [??]]; trivial; try lra.
+  repeat split; trivial.
+  - rewrite Rmin_left; lra.
+  - rewrite Rmax_right; lra.
+  - autorewrite with R_iso.
+    rewrite map_length, length_S_tl; trivial.
+    apply Partition_nnil.
+  - unfold constant_D_eq, open_interval.
+    intros idx idxlt x openx.
+    autorewrite with R_iso in *.
+    rewrite Partition_length in idxlt.
+    simpl in idxlt.
+    unfold find_pt_le.
+    erewrite find_bucket_Partition; try eapply openx; trivial.
+    erewrite map_nth_in with (d2:=0). 
+    + rewrite nth_tl; trivial.
+    + rewrite tl_length, Partition_length.
+      omega.
 Qed.
-
-        
-  

@@ -1,6 +1,7 @@
 Require Import List Permutation.
-Require Import RelationClasses.
+Require Import RelationClasses Morphisms.
 Require Import Omega Lra Rbase.
+Require Import Relation_Definitions Sorted.
 
 Import ListNotations.
 Section incl.
@@ -266,6 +267,12 @@ Section fp.
 
 End fp.
 
+Lemma nth_tl {A} idx (l:list A) d : nth idx (tl l) d = nth (S idx) l d.
+Proof.
+  destruct l; simpl; trivial.
+  destruct idx; trivial.
+Qed.
+
 Lemma nth_last {A} (l:list A) d: nth (pred (length l)) l d = last l d.
 Proof.
   induction l; simpl; trivial.
@@ -367,4 +374,209 @@ Proof.
     + intros; eauto.
       rewrite (IHl n); trivial.
       omega.
+Qed.
+
+Lemma Forall_app {A} {P:A->Prop} {l1 l2} :
+  Forall P (l1 ++ l2) <->
+  Forall P l1 /\ Forall P l2.
+Proof.
+  repeat rewrite Forall_forall.
+  intuition.
+  apply in_app_iff in H.
+  intuition.
+Qed.
+       
+Lemma StronglySorted_app_inv {A} {R:relation A} {l1 l2} :
+  StronglySorted R (l1 ++ l2) ->
+  StronglySorted R l1 /\ StronglySorted R l2.
+Proof.
+  Hint Constructors StronglySorted.
+  revert l2.
+  induction l1; intros l2 ss; simpl in *.
+  - simpl in *; split; trivial.
+  - inversion ss; subst; clear ss.
+    destruct (IHl1 _ H1).
+    split; trivial.
+    constructor; trivial.
+    apply Forall_app in H2.
+    tauto.
+Qed.
+
+Lemma StronglySorted_sub {A} (R1 R2:relation A) :
+    subrelation R1 R2 ->
+    forall l, StronglySorted R1 l -> StronglySorted R2 l.
+Proof.
+  Hint Constructors StronglySorted.
+  intros sub.
+  induction l; simpl; intros ssl; trivial.
+  inversion ssl; clear ssl; subst.
+  simpl in *.
+  constructor.
+  - apply IHl; intuition.
+  - rewrite Forall_forall in *.
+    eauto.
+Qed.
+  
+Lemma StronglySorted_map_in {A B} (R1:relation A) (R2:relation B) (f:A->B) l :
+  (forall x y, In x l /\ In y l -> R1 x y -> R2 (f x) (f y)) ->
+  StronglySorted R1 l -> StronglySorted R2 (map f l).
+Proof.
+  Hint Constructors StronglySorted.
+  intros prop.
+  induction l; simpl; intros ssl; trivial.
+  inversion ssl; clear ssl; subst.
+  simpl in *.
+  constructor.
+  - apply IHl; intuition.
+  - rewrite Forall_forall in *.
+    intros x inn.
+    apply in_map_iff in inn.
+    destruct inn as [a' [eqq inn]].
+    subst; auto.
+Qed.
+
+Lemma StronglySorted_map {A B} (R1:relation A) (R2:relation B) (f:A->B) :
+  Proper (R1 ==> R2) f ->
+  forall l,
+    StronglySorted R1 l -> StronglySorted R2 (map f l).
+Proof.
+  intros.
+  eapply StronglySorted_map_in; eauto.
+Qed.
+
+Section bucket.
+
+  Context {A:Type} {R:relation A} (R_dec : forall x y, {R x y} + {~ R x y}).
+
+  Fixpoint find_bucket (needle:A) (haystack:list A)
+    := match haystack with
+       | x::((y::_) as more) => if R_dec x needle
+                       then if R_dec needle y
+                            then Some (x,y)
+                            else find_bucket needle more
+                       else None
+       | _ => None
+       end.
+  
+  Lemma find_bucket_break needle l a1 a2:
+    find_bucket needle l = Some (a1, a2) ->
+      exists l1 l2,
+        l = l1 ++ [a1; a2] ++ l2.
+  Proof.
+    induction l; simpl; try discriminate.
+    destruct l; try discriminate.
+    destruct (R_dec a needle); try discriminate.
+    destruct (R_dec needle a0).
+    - inversion 1; subst.
+      exists nil, l.
+      reflexivity.
+    - intros HH.
+      destruct (IHl HH) as [l1 [l2 eqq]].
+      rewrite eqq.
+      exists (a::l1), l2.
+      reflexivity.
+  Qed.
+
+  Lemma middle_find_bucket needle l1 l2 a1 a2:
+    transitive _ R ->
+    antisymmetric _ R ->
+    StronglySorted R (l1++[a1]) ->
+    R a1 needle ->
+    R needle a2 ->
+    ~ R needle a1 ->
+    ~ R a2 needle ->
+    find_bucket needle (l1 ++ a1::a2::l2) = Some (a1, a2).
+  Proof.
+    intros trans antisymm.
+    intros sorted r1 r2 nr1 nr2.
+    revert sorted.
+    induction l1; intros sorted.
+    - simpl.
+      destruct (R_dec a1 needle); [ | tauto].
+      destruct (R_dec needle a2); [ | tauto].
+      trivial.
+    - simpl in *.
+      inversion sorted; clear sorted; subst.
+      specialize (IHl1 H1).
+      rewrite IHl1; trivial.
+      destruct (R_dec a needle).
+      + destruct l1; simpl.
+        * destruct (R_dec needle a1); tauto.
+        * destruct (R_dec needle a0); trivial.
+          elim nr1.
+          apply (trans _ a0); trivial.
+          inversion H1; clear H1; subst.
+          rewrite Forall_forall in H4.
+          apply H4.
+          rewrite in_app_iff.
+          simpl; tauto.
+      + rewrite Forall_forall in H2.
+        elim n.
+        apply (trans _ a1); trivial.
+        apply H2.
+        rewrite in_app_iff.
+        simpl; tauto.
+  Qed.
+                 
+  Lemma find_bucket_nth_finds needle l idx d1 d2:
+    transitive _ R ->
+    antisymmetric _ R ->
+    StronglySorted R l ->
+    S idx < length l ->
+    R (nth idx l d1) needle ->
+    R needle (nth (S idx) l d2) ->
+    ~ R needle (nth idx l d1) ->
+    ~ R (nth (S idx) l d2) needle ->
+    find_bucket needle l = Some (nth idx l d1, nth (S idx) l d2).
+  Proof.
+    intros trans antisymm ss idx_bound.
+    assert (idx_bound':idx < length l) by omega.
+    destruct (nth_split l d1 idx_bound') as [l1 [l2 [eqq leneq]]].
+    revert eqq.
+    generalize (nth idx l d1); intros a1.
+    intros eqq r1 r2 nr1 nr2.
+    subst.
+    rewrite app_nth2 in * by omega.
+    replace ((S (length l1) - length l1)) with 1 in * by omega.
+    rewrite app_length in idx_bound.
+    simpl in *.
+    destruct l2; simpl in *; [ omega | ].
+    apply middle_find_bucket; trivial.
+    replace (l1 ++ a1 :: a :: l2) with ((l1 ++ a1::nil) ++ (a :: l2)) in ss.
+    - apply StronglySorted_app_inv in ss.
+      tauto.
+    - rewrite app_ass; simpl; trivial.
+  Qed.
+
+End bucket.
+
+Lemma Rlt_le_sub : subrelation Rlt Rle.
+Proof.
+  repeat red; intuition.
+Qed.
+
+Lemma StronglySorted_seq s n : StronglySorted lt (seq s n).
+Proof.
+  revert s.
+  induction n; intros s; simpl.
+  - constructor.
+  - constructor; trivial.
+    rewrite Forall_forall; intros.
+    apply in_seq in H.
+    omega.
+Qed.
+
+Lemma length_S_tl {A : Type} (l : list A) :
+  l <> nil ->
+  length l = S (length (tl l)).
+Proof.
+  intros.
+  destruct l; simpl; congruence.
+Qed.
+
+Lemma tl_length {A : Type} (l : list A) :
+  length (tl l) = pred (length l).
+Proof.
+  intros.
+  destruct l; simpl; congruence.
 Qed.
