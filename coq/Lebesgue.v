@@ -59,7 +59,36 @@ Proof.
   - apply lt_INR; trivial.
 Qed.
 
-Lemma Partition_StronglySorted a b n :
+Lemma Partition_func_eq a n i :
+  (0 < n)%nat ->  
+  a + INR i * ((a - a) / INR n) = a.
+Proof.
+  replace (a-a) with 0 by lra.
+  intros.
+  field_simplify
+  ; trivial
+  ; try apply INR_nzero; trivial.
+  unfold Rdiv.
+  rewrite Rmult_assoc.
+  rewrite Rinv_r by (apply INR_nzero; trivial).
+  lra.
+Qed.
+
+Lemma Partition_func_nondecreasing a b n:
+  a <= b ->
+  (0 < n)%nat ->
+  Morphisms.Proper (Morphisms.respectful lt Rle) (fun i : nat => a + INR i * ((b - a) / INR n)).
+Proof.
+  repeat red; intros.
+  destruct H.
+  - left.
+    apply Partition_func_increasing; trivial.
+  - subst.
+    repeat rewrite Partition_func_eq by trivial.
+    eauto.
+Qed.
+
+Lemma Partition_StronglySorted_lt a b n :
   a < b ->
   (0 < n)%nat ->
   StronglySorted Rlt (Partition a b n).
@@ -68,6 +97,18 @@ Proof.
   unfold Partition.
   apply (StronglySorted_map lt Rlt).
   - apply Partition_func_increasing; trivial.
+  - apply StronglySorted_seq.
+Qed.
+
+Lemma Partition_StronglySorted_le a b n :
+  a <= b ->
+  (0 < n)%nat ->
+  StronglySorted Rle (Partition a b n).
+Proof.
+  intros.
+  unfold Partition.
+  apply (StronglySorted_map lt Rle).
+  - apply Partition_func_nondecreasing; trivial.
   - apply StronglySorted_seq.
 Qed.
 
@@ -89,7 +130,7 @@ Proof.
   apply find_bucket_nth_finds; trivial
   ; repeat red; intros; lra.
 Qed.
-  
+
 Lemma telescope f (a b : R) (n : nat) :
   (n > 0)%nat ->
   let pl := map f (Partition a b n) in
@@ -178,14 +219,13 @@ Qed.
 Lemma find_bucket_Partition a b n idx d1 d2 needle:
   (n > 0)%nat ->
   (idx < n)%nat ->
-  a < b ->
+  a <= b ->
   nth idx (Partition a b n) d1 < needle < nth (S idx) (Partition a b n) d2 ->
   find_bucket Rle_dec needle (Partition a b n) = Some (nth idx (Partition a b n) d1, nth (S idx) (Partition a b n) d2).
 Proof.
   intros.
   apply find_bucket_nth_finds_Rle; trivial.
-  - eapply StronglySorted_sub; [ | eapply Partition_StronglySorted ]; trivial.
-    apply Rlt_le_sub.
+  - eapply Partition_StronglySorted_le; trivial.
   - rewrite Partition_length.
     omega.
   - tauto.
@@ -200,7 +240,7 @@ Definition find_pt_le f a b n needle : R
 
 Lemma part2step (f:R -> R) (a b:R) (n : nat) :
   (n > 0)%nat ->
-  a < b ->
+  a <= b ->
   IsStepFun (find_pt_le f a b n) a b.
 Proof.
   intros.
@@ -232,7 +272,7 @@ Qed.
 Lemma Partition_p2 (f : R -> R) (a b x : R) (idx n : nat) :
   (n > 0)%nat ->
   (idx < n)%nat ->
-  a < b ->
+  a <= b ->
   nth idx (Partition a b n) 0 < x < nth (S idx) (Partition a b n) 0 ->
   R_dist x (nth (S idx) (Partition a b n) 0) <= R_dist (nth idx (Partition a b n) 0) (nth (S idx) (Partition a b n) 0).
 Proof.

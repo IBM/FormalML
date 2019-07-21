@@ -550,11 +550,6 @@ Section bucket.
 
 End bucket.
 
-Lemma Rlt_le_sub : subrelation Rlt Rle.
-Proof.
-  repeat red; intuition.
-Qed.
-
 Lemma StronglySorted_seq s n : StronglySorted lt (seq s n).
 Proof.
   revert s.
