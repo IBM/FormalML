@@ -192,17 +192,6 @@ Proof.
   - tauto.
 Qed.
     
-(*
-Lemma Partition_p2 (f : R -> R) (a b x : R) (idx n : nat) :
-  (n > 0)%nat ->
-  (idx < n)%nat ->
-  a < b ->
-nth idx (Partition a b n) 0 < x < nth (S idx) (Partition a b n) 0 ->
-  Rabs ((f x) - (f (nth (S idx) (Partition a b n) 0))) <= Rabs ((f (nth idx (Partition a b n) 0)) - (f (nth (S idx) (Partition a b n) 0))).
-Proof.  
-Admitted.
-*)
-
 Definition find_pt_le f a b n needle : R
   := match find_bucket Rle_dec needle (Partition a b n) with
      | Some (lower,upper) => f upper
@@ -239,3 +228,32 @@ Proof.
     + rewrite tl_length, Partition_length.
       omega.
 Qed.
+
+Lemma Partition_p2 (f : R -> R) (a b x : R) (idx n : nat) :
+  (n > 0)%nat ->
+  (idx < n)%nat ->
+  a < b ->
+  nth idx (Partition a b n) 0 < x < nth (S idx) (Partition a b n) 0 ->
+  R_dist x (nth (S idx) (Partition a b n) 0) <= R_dist (nth idx (Partition a b n) 0) (nth (S idx) (Partition a b n) 0).
+Proof.
+  intros.
+  rewrite (R_dist_sym x).
+  rewrite (R_dist_sym (nth idx (Partition a b n) 0)).
+  unfold R_dist.
+  repeat rewrite Rabs_pos_eq by lra.
+  lra.
+Qed.
+
+(*
+
+This can't be true without additional assumptions on f
+
+Lemma Partition_p2 (f : R -> R) (a b x : R) (idx n : nat) :
+  (n > 0)%nat ->
+  (idx < n)%nat ->
+  a < b ->
+  nth idx (Partition a b n) 0 < x < nth (S idx) (Partition a b n) 0 ->
+  R_dist (f x) (f (nth (S idx) (Partition a b n) 0)) <= R_dist (f (nth idx (Partition a b n) 0)) (f (nth (S idx) (Partition a b n) 0)).
+Proof.
+  intros.
+*)
