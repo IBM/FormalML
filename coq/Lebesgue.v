@@ -269,19 +269,37 @@ Proof.
       omega.
 Qed.
 
-Lemma Partition_p2 (f : R -> R) (a b x : R) (idx n : nat) :
-  (n > 0)%nat ->
-  (idx < n)%nat ->
-  a <= b ->
-  nth idx (Partition a b n) 0 < x < nth (S idx) (Partition a b n) 0 ->
-  R_dist x (nth (S idx) (Partition a b n) 0) <= R_dist (nth idx (Partition a b n) 0) (nth (S idx) (Partition a b n) 0).
+Lemma bounded_dist_le  x lower upper :
+  lower <= x <= upper ->
+  R_dist x upper <= R_dist lower upper.
 Proof.
   intros.
   rewrite (R_dist_sym x).
-  rewrite (R_dist_sym (nth idx (Partition a b n) 0)).
+  rewrite (R_dist_sym lower).
   unfold R_dist.
   repeat rewrite Rabs_pos_eq by lra.
   lra.
+Qed.
+
+Lemma bounded_increasing_dist_le (f : R -> R) x lower upper :
+  increasing f ->
+  lower <= x <= upper ->
+  R_dist (f x) (f upper) <= R_dist (f lower) (f upper).
+Proof.
+  intros df xin.
+  apply bounded_dist_le.
+  destruct xin as [ltx gtx].
+  red in df.
+  split; apply df; trivial.
+Qed.  
+
+Lemma Partition_p2 (f : R -> R) (a b x : R) (idx n : nat) :
+  increasing f ->
+  nth idx (Partition a b n) 0 <= x <= nth (S idx) (Partition a b n) 0 ->
+  R_dist (f x) (f (nth (S idx) (Partition a b n) 0)) <= R_dist (f (nth idx (Partition a b n) 0)) (f (nth (S idx) (Partition a b n) 0)).
+Proof.
+  intros.
+  apply bounded_increasing_dist_le; trivial.
 Qed.
 
 (*
