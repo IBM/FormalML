@@ -621,3 +621,52 @@ Proof.
   intros.
   destruct l; simpl; congruence.
 Qed.
+
+Lemma combine_nth_in {A B : Type} (l : list A) (l' : list B) (n : nat) (x : A) (y : B) :
+  n < min (length l) (length l') ->
+  nth n (combine l l') (x, y) = (nth n l x, nth n l' y).
+Proof.
+  revert l' n.
+  induction l; simpl; intros l' n nlt.
+  - omega.
+  - destruct l'; simpl in *.
+    + omega.
+    + destruct n; simpl; trivial.
+      apply IHl.
+      omega.
+Qed.
+
+Definition adjacent_pairs {A:Type} (l:list A) := (combine l (tl l)).
+
+Definition adjacent_pairs_alt {A:Type} (l:list A) := (combine (removelast l) (tl l)).
+
+Lemma adjacent_pairs_alt_eq {A:Type} (l:list A) :
+  adjacent_pairs l = adjacent_pairs_alt l.
+Proof.
+  unfold adjacent_pairs, adjacent_pairs_alt.
+  induction l; simpl; trivial.
+  destruct l; simpl in *; trivial.
+  f_equal.
+  trivial.
+Qed.
+
+Lemma adjacent_pairs_length {A:Type} (l:list A) : length (adjacent_pairs l) = pred (length l).
+Proof.
+  unfold adjacent_pairs.
+  rewrite combine_length.
+  rewrite tl_length.
+  rewrite Nat.min_r; trivial.
+  omega.
+Qed.
+
+Lemma adjacent_pairs_nth_in {A:Type} n (l:list A) d1 d2 :
+  S n < length l ->
+  nth n (adjacent_pairs l) (d1,d2) = (nth n l d1, nth (S n) l d2).
+Proof.
+  intros.
+  unfold adjacent_pairs.
+  rewrite combine_nth_in.
+  - rewrite nth_tl; trivial.
+  - rewrite tl_length.
+    rewrite Nat.min_r; omega.
+Qed.
