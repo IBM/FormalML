@@ -315,8 +315,14 @@ Proof.
   lra.
 Qed.
 
+Definition interval_increasing f (a b:R) : Prop := 
+  forall x y :R, a <= x -> y <= b -> x<=y -> f x <= f y.
+
+Definition interval_decreasing f (a b:R) : Prop :=
+  forall x y :R, a <= x -> y <= b -> x<=y -> f y <= f x.
+
 Lemma bounded_increasing_dist_le (f : R -> R) x lower upper :
-  increasing f ->
+  interval_increasing f lower upper ->
   lower <= x <= upper ->
   R_dist (f x) (f upper) <= R_dist (f lower) (f upper).
 Proof.
@@ -325,10 +331,12 @@ Proof.
   destruct xin as [ltx gtx].
   red in df.
   split; apply df; trivial.
+  apply Rle_refl.
+  apply Rle_refl.  
 Qed.  
 
 Lemma bounded_decreasing_dist_le (f : R -> R) x lower upper :
-  decreasing f ->
+  interval_decreasing f lower upper ->
   lower <= x <= upper ->
   R_dist (f x) (f upper) <= R_dist (f lower) (f upper).
 Proof.
@@ -337,23 +345,72 @@ Proof.
   destruct xin as [ltx gtx].
   red in df.
   split; apply df; trivial.
+  apply Rle_refl.
+  apply Rle_refl.  
 Qed.  
 
-Lemma Partition_p2 (f : R -> R) (a b x : R) (idx n : nat) :
-  increasing f ->
+Lemma subinterval_increasing (f : R -> R) (a b x y : R) :
+  a <= x -> x <= y -> y <= b -> interval_increasing f a b -> interval_increasing f x y.
+Proof.
+  intros.
+  red in H2.
+  red.
+  intros.
+  cut (y0 <= b).
+  cut (a <= x0).
+  intuition.
+  lra.
+  lra.
+Qed.
+  
+Lemma subinterval_decreasing (f : R -> R) (a b x y : R) :
+  a <= x -> x <= y -> y <= b -> interval_decreasing f a b -> interval_decreasing f x y.
+Proof.
+  intros.
+  red in H2.
+  red.
+  intros.
+  cut (y0 <= b).
+  cut (a <= x0).
+  intuition.
+  lra.
+  lra.
+Qed.
+
+Lemma Partition_f_increasing (f : R -> R) (a b x : R) (idx n : nat) :
+  (0 < n)%nat ->
+  (idx < n)%nat ->
+  a <= b ->
+  interval_increasing f a b ->
   nth idx (Partition a b n) 0 <= x <= nth (S idx) (Partition a b n) 0 ->
   R_dist (f x) (f (nth (S idx) (Partition a b n) 0)) <= R_dist (f (nth idx (Partition a b n) 0)) (f (nth (S idx) (Partition a b n) 0)).
 Proof.
   intros.
   apply bounded_increasing_dist_le; trivial.
+  apply (subinterval_increasing f a b).
+  rewrite Partition_nth.
+  cut ((INR idx)*(b-a)/INR n >= 0).
+  intros.
+  lra.
+  apply Rle_ge.
+  apply (Partition_func_shift_nonneg a b n idx).
+  trivial.
+  trivial.
+  intuition.
+  Admitted.
+  
+
 Qed.
 
-Lemma Partition_p3 (f : R -> R) (a b x : R) (idx n : nat) :
-  decreasing f ->
+Lemma Partition_f_decreasing (f : R -> R) (a b x : R) (idx n : nat) :
+  (n > 0)%nat ->
+  (idx < n)%nat ->
+  interval_decreasing f a b ->
   nth idx (Partition a b n) 0 <= x <= nth (S idx) (Partition a b n) 0 ->
   R_dist (f x) (f (nth (S idx) (Partition a b n) 0)) <= R_dist (f (nth idx (Partition a b n) 0)) (f (nth (S idx) (Partition a b n) 0)).
 Proof.
   intros.
   apply bounded_decreasing_dist_le; trivial.
-Qed.
+  apply (subinterval_decreasing f a b).
+  Admitted.
 
