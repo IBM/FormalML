@@ -444,6 +444,52 @@ Proof.
   eapply StronglySorted_map_in; eauto.
 Qed.
 
+Lemma StronglySorted_nth_lt {A} R (l:list A) idx1 idx2 d1 d2 :
+  StronglySorted R l ->
+  (idx2 < length l)%nat ->
+  (idx1 < idx2)%nat ->
+  R (nth idx1 l d1) (nth idx2 l d2).
+Proof.
+  intros.
+  destruct (@nth_split _ idx1 l d1)
+           as [l1 [l2 [leqq l1len]]]
+  ; [ omega | ].
+  rewrite leqq in H.
+  apply StronglySorted_app_inv in H.
+  destruct H as [ _ ssl2].
+  inversion ssl2; clear ssl2; subst.
+  rewrite leqq in *.
+  rewrite app_length in H0.
+  simpl in H0.
+  revert H4.
+  generalize (nth (length l1) l d1).
+  clear l leqq.
+  intros a Fa.
+  rewrite Forall_forall in Fa.
+  apply Fa.
+  rewrite app_nth2 by omega.
+  simpl.
+  case_eq (idx2 - length l1); try omega.
+  intros.
+  apply nth_In.
+  omega.
+Qed.
+
+Lemma StronglySorted_nth_le {A} R (l:list A) idx1 idx2 d1 d2 :
+  reflexive _ R ->
+  StronglySorted R l ->
+  (idx2 < length l)%nat ->
+  (idx1 <= idx2)%nat ->
+  R (nth idx1 l d1) (nth idx2 l d2).
+Proof.
+  intros refl ?? leq.
+  destruct leq.
+  - erewrite nth_in_default; try apply refl.
+    trivial.
+  - apply StronglySorted_nth_lt; trivial.
+    omega.
+Qed.
+
 Section bucket.
 
   Context {A:Type} {R:relation A} (R_dec : forall x y, {R x y} + {~ R x y}).

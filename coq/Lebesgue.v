@@ -44,6 +44,27 @@ Proof.
     lra.
 Qed.
 
+Lemma Partition_length a b n : length (Partition a b n) = S n.
+Proof.
+  unfold Partition.
+  rewrite map_length, seq_length.
+  omega.
+Qed.
+
+Lemma Partition_last a b n d :
+  (0 < n)%nat ->
+  last (Partition a b n) d = b.
+Proof.
+  intros npos.
+  rewrite <- nth_last.
+  rewrite Partition_length.
+  simpl.
+  rewrite Partition_nth by trivial.
+  field_simplify.
+  - lra.
+  - apply INR_nzero; trivial.
+Qed.
+
 Lemma Partition_func_shift_nonneg a b n i:
   a <= b ->
   (0 < n)%nat ->
@@ -135,12 +156,47 @@ Proof.
   - apply Partition_func_nondecreasing; trivial.
   - apply StronglySorted_seq.
 Qed.
-
-Lemma Partition_length a b n : length (Partition a b n) = S n.
+                                       
+Lemma Partition_nth_le a b n idx1 idx2 d1 d2:
+  a <= b ->
+  (0 < n)%nat ->
+  (idx2 <= n)%nat ->
+  (idx1 <= idx2)%nat ->
+  nth idx1 (Partition a b n) d1 <= nth idx2 (Partition a b n) d2.
 Proof.
-  unfold Partition.
-  rewrite map_length, seq_length.
+  intros.
+  apply StronglySorted_nth_le; trivial.
+  - repeat red; intros; eauto.
+  - apply Partition_StronglySorted_le; trivial.
+  - rewrite Partition_length.
+    omega.
+Qed.
+
+Lemma Partition_lower_bound a b n idx :
+  (a <= b) ->
+  (0 < n)%nat ->
+  (idx <= n)%nat ->
+  a <= nth idx (Partition a b n) 0.
+Proof.
+  intros H1 H2 H3.
+  erewrite <- (Partition_hd a b n 0) at 1.
+  rewrite <- nth_hd.
+  apply Partition_nth_le; trivial.
   omega.
+Qed.
+
+Lemma Partition_upper_bound a b n idx :
+  (a <= b) ->
+  (0 < n)%nat ->
+  (idx <= n)%nat ->
+  nth idx (Partition a b n) 0 <= b.
+Proof.
+  intros H1 H2 H3.
+  erewrite <- (Partition_last a b n 0) at 2 by omega.
+  rewrite <- nth_last.
+  rewrite Partition_length.
+  simpl.
+  apply Partition_nth_le; trivial.
 Qed.
 
 Lemma find_bucket_nth_finds_Rle needle l idx d1 d2:
@@ -387,30 +443,27 @@ Lemma Partition_f_increasing (f : R -> R) (a b x : R) (idx n : nat) :
 Proof.
   intros.
   apply bounded_increasing_dist_le; trivial.
-  apply (subinterval_increasing f a b).
-  rewrite Partition_nth.
-  cut ((INR idx)*(b-a)/INR n >= 0).
-  intros.
-  lra.
-  apply Rle_ge.
-  apply (Partition_func_shift_nonneg a b n idx).
-  trivial.
-  trivial.
-  intuition.
-  Admitted.
-  
-
+  apply (subinterval_increasing f a b); trivial.
+  - apply Partition_lower_bound; trivial; omega.
+  - apply Partition_nth_le; trivial; omega.
+  - apply Partition_upper_bound; trivial; omega.
 Qed.
 
+
 Lemma Partition_f_decreasing (f : R -> R) (a b x : R) (idx n : nat) :
-  (n > 0)%nat ->
+  (0 < n)%nat ->
   (idx < n)%nat ->
+  a <= b ->
   interval_decreasing f a b ->
   nth idx (Partition a b n) 0 <= x <= nth (S idx) (Partition a b n) 0 ->
   R_dist (f x) (f (nth (S idx) (Partition a b n) 0)) <= R_dist (f (nth idx (Partition a b n) 0)) (f (nth (S idx) (Partition a b n) 0)).
 Proof.
   intros.
   apply bounded_decreasing_dist_le; trivial.
-  apply (subinterval_decreasing f a b).
-  Admitted.
+  apply (subinterval_decreasing f a b); trivial.
+  - apply Partition_lower_bound; trivial; omega.
+  - apply Partition_nth_le; trivial; omega.
+  - apply Partition_upper_bound; trivial; omega.
+Qed.
+
 
