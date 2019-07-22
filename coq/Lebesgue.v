@@ -47,7 +47,7 @@ Qed.
 Lemma Partition_func_shift_nonneg a b n i:
   a <= b ->
   (0 < n)%nat ->
-  0 <= INR i * ((b - a) / INR n).
+  0 <= INR i * (b - a) / INR n.
 Proof.
   intros.
   destruct i.
@@ -56,12 +56,12 @@ Proof.
   - { destruct H.
       - left.
         apply Rmult_lt_0_compat; trivial.
-        + apply INR_zero_lt.
-          omega.
         + apply Rmult_lt_0_compat; trivial.
+          * apply INR_zero_lt.
+            omega.
           * lra.
-          * apply Rinv_pos.
-            apply INR_zero_lt; trivial.
+        + apply Rinv_pos.
+          apply INR_zero_lt; trivial.
       - right.
         subst.
         lra.
