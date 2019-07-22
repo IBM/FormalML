@@ -474,7 +474,32 @@ Definition find_pt_le_psi f a b n needle : R
 
 Definition list_map_diffs f (l : list R) : (list R) :=
   let mapfl := map f l in
-  map (fun '(x, y) => x-y) (combine mapfl (tl mapfl)).
+  map (fun '(x, y) => x-y) (adjacent_pairs (map f l)).
+
+Lemma list_map_diffs_length f l : length (list_map_diffs f l) = pred (length l).
+Proof.
+  unfold list_map_diffs.
+  rewrite map_length, adjacent_pairs_length, map_length; trivial.
+Qed.
+
+Lemma list_map_diff_nth_in n f (l:list R) d d1 d2 :
+  (S n < length l)%nat ->
+  nth n (list_map_diffs f l) d = (f (nth n l d1) - f (nth (S n) l d2)).
+Proof.
+  intros.
+  unfold list_map_diffs; simpl.
+  erewrite map_nth_in.
+  - rewrite adjacent_pairs_nth_in.
+    + repeat erewrite map_nth_in by omega.
+      reflexivity.
+    + rewrite map_length; trivial.
+  - rewrite adjacent_pairs_length, map_length.
+    omega.
+
+    Unshelve.
+    exact d1.
+    exact d2.
+Qed.
 
 Lemma part2step_psi (f:R -> R) (a b:R) (n : nat) :
   (n > 0)%nat ->
@@ -492,11 +517,9 @@ Proof.
   - rewrite Rmin_left; lra.
   - rewrite Rmax_right; lra.
   - autorewrite with R_iso.
-
-Admitted
- (*    
-    rewrite map_length, length_S_tl; trivial.
-    apply Partition_nnil.
+    rewrite list_map_diffs_length.
+    rewrite Partition_length.
+    simpl; trivial.
   - unfold constant_D_eq, open_interval.
     intros idx idxlt.
     intros.
@@ -505,12 +528,12 @@ Admitted
     simpl in idxlt.
     unfold find_pt_le_psi.
     erewrite find_bucket_Partition; try eapply H4; trivial.
-    erewrite map_nth_in with (d2:=0). 
-    + rewrite nth_tl; trivial
-    + rewrite tl_length, Partition_length.
-   omega.
+    erewrite list_map_diff_nth_in.
+    + reflexivity.
+    + rewrite Partition_length.
+      omega.
 Qed.
-*)
+
 
 (*
 Definition Riemann_integrable (f:R -> R) (a b:R) : Type :=

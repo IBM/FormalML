@@ -670,3 +670,21 @@ Proof.
   - rewrite tl_length.
     rewrite Nat.min_r; omega.
 Qed.
+
+Lemma combine_map {A B C D:Type} (f:A->C) (g:B->D) (l1:list A) (l2:list B) :
+  combine (map f l1) (map g l2) = map (fun '(x,y) => (f x, g y)) (combine l1 l2).
+Proof.
+  revert l2.
+  induction l1; intros l2; simpl; trivial.
+  destruct l2; simpl; trivial.
+  f_equal.
+  auto.
+Qed.
+
+Lemma adjacent_pairs_map {A B:Type} (f:A->B) (l:list A) :
+  adjacent_pairs (map f l) = map (fun '(x,y) => (f x, f y)) (adjacent_pairs l).
+Proof.
+  unfold adjacent_pairs.
+  rewrite tl_map, combine_map.
+  trivial.
+Qed.
