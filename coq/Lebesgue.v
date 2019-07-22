@@ -473,7 +473,6 @@ Definition find_pt_le_psi f a b n needle : R
      end.
 
 Definition list_map_diffs f (l : list R) : (list R) :=
-  let mapfl := map f l in
   map (fun '(x, y) => x-y) (adjacent_pairs (map f l)).
 
 Lemma list_map_diffs_length f l : length (list_map_diffs f l) = pred (length l).
@@ -535,7 +534,15 @@ Proof.
 Qed.
 
 
+Lemma RiemannInt_SF_psi (f: R -> R) (a b:R) (n: nat) :
+  forall (npos: (n > 0)%nat) (aleb: (a <= b)),
+    RiemannInt_SF (mkStepFun (part2step_psi f a b n npos aleb)) = (f(a)-f(b))*(a-b)/(INR n).
+
+
 (*
+Record StepFun (a b:R) : Type := mkStepFun
+  {fe :> R -> R; pre : IsStepFun fe a b}.
+
 Definition Riemann_integrable (f:R -> R) (a b:R) : Type :=
   forall eps:posreal,
     { phi:StepFun a b &
