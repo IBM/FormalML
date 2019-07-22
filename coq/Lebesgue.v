@@ -466,4 +466,58 @@ Proof.
   - apply Partition_upper_bound; trivial; omega.
 Qed.
 
+Definition find_pt_le_psi f a b n needle : R
+  := match find_bucket Rle_dec needle (Partition a b n) with
+     | Some (lower,upper) => f lower - f upper
+     | None => 0
+     end.
 
+Definition list_map_diffs f (l : list R) : (list R) :=
+  let mapfl := map f l in
+  map (fun '(x, y) => x-y) (combine mapfl (tl mapfl)).
+
+Lemma part2step_psi (f:R -> R) (a b:R) (n : nat) :
+  (n > 0)%nat ->
+  a <= b ->
+  IsStepFun (find_pt_le_psi f a b n) a b.
+Proof.
+  intros.
+  unfold IsStepFun.
+  exists (iso_b (Partition a b n)).
+  unfold is_subdivision.
+  exists (iso_b (list_map_diffs f (Partition a b n))).
+  unfold adapted_couple.
+  destruct (orderedPartition a b n) as [? [??]]; trivial; try lra.
+  repeat split; trivial.
+  - rewrite Rmin_left; lra.
+  - rewrite Rmax_right; lra.
+  - autorewrite with R_iso.
+
+Admitted
+ (*    
+    rewrite map_length, length_S_tl; trivial.
+    apply Partition_nnil.
+  - unfold constant_D_eq, open_interval.
+    intros idx idxlt.
+    intros.
+    autorewrite with R_iso in *.
+    rewrite Partition_length in idxlt.
+    simpl in idxlt.
+    unfold find_pt_le_psi.
+    erewrite find_bucket_Partition; try eapply H4; trivial.
+    erewrite map_nth_in with (d2:=0). 
+    + rewrite nth_tl; trivial
+    + rewrite tl_length, Partition_length.
+   omega.
+Qed.
+*)
+
+(*
+Definition Riemann_integrable (f:R -> R) (a b:R) : Type :=
+  forall eps:posreal,
+    { phi:StepFun a b &
+      { psi:StepFun a b |
+        (forall t:R,
+          Rmin a b <= t <= Rmax a b -> Rabs (f t - phi t) <= psi t) /\
+        Rabs (RiemannInt_SF psi) < eps } }.
+*)
