@@ -281,6 +281,16 @@ Proof.
   lra.
 Qed.
 
+Lemma bounded_dist_le_P2  x lower upper :
+  lower <= x <= upper ->
+  R_dist x lower <= R_dist upper lower.
+Proof.
+  intros.
+  unfold R_dist.
+  repeat rewrite Rabs_pos_eq by lra.
+  lra.
+Qed.
+
 Lemma bounded_increasing_dist_le (f : R -> R) x lower upper :
   increasing f ->
   lower <= x <= upper ->
@@ -288,6 +298,18 @@ Lemma bounded_increasing_dist_le (f : R -> R) x lower upper :
 Proof.
   intros df xin.
   apply bounded_dist_le.
+  destruct xin as [ltx gtx].
+  red in df.
+  split; apply df; trivial.
+Qed.  
+
+Lemma bounded_decreasing_dist_le (f : R -> R) x lower upper :
+  decreasing f ->
+  lower <= x <= upper ->
+  R_dist (f x) (f upper) <= R_dist (f lower) (f upper).
+Proof.
+  intros df xin.
+  apply bounded_dist_le_P2.
   destruct xin as [ltx gtx].
   red in df.
   split; apply df; trivial.
@@ -302,16 +324,12 @@ Proof.
   apply bounded_increasing_dist_le; trivial.
 Qed.
 
-(*
-
-This can't be true without additional assumptions on f
-
-Lemma Partition_p2 (f : R -> R) (a b x : R) (idx n : nat) :
-  (n > 0)%nat ->
-  (idx < n)%nat ->
-  a < b ->
-  nth idx (Partition a b n) 0 < x < nth (S idx) (Partition a b n) 0 ->
+Lemma Partition_p3 (f : R -> R) (a b x : R) (idx n : nat) :
+  decreasing f ->
+  nth idx (Partition a b n) 0 <= x <= nth (S idx) (Partition a b n) 0 ->
   R_dist (f x) (f (nth (S idx) (Partition a b n) 0)) <= R_dist (f (nth idx (Partition a b n) 0)) (f (nth (S idx) (Partition a b n) 0)).
 Proof.
   intros.
-*)
+  apply bounded_decreasing_dist_le; trivial.
+Qed.
+
