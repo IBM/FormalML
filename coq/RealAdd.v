@@ -77,12 +77,12 @@ Proof.
 Qed.
 
 Lemma telescope_plus_fold_right_sub_seq f s n :
-  (n > 0)%nat ->
   fold_right Rplus 0 (map (fun x => (f (INR x)) -  (f (INR (x+1)))) (seq s n)) = (f (INR s)) - (f (INR (s+n))).
 Proof.
   Opaque INR.
-  destruct n; simpl; intros; [omega | ].
-  clear H.
+  destruct n; simpl; intros.
+  { replace (s+0)%nat with s by omega. lra.
+  } 
   revert s.
   induction n; intros s; simpl.
   - lra.
