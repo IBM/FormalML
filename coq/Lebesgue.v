@@ -65,6 +65,42 @@ Proof.
   - apply INR_nzero; trivial.
 Qed.
 
+Lemma list_hd_last {A} (l:list A) d1 d2 :
+  (length l > 1)%nat ->
+  l = hd d1 l :: tl (removelast l) ++ (last l d2::nil).
+Proof.
+  intros.
+  generalize (@app_removelast_last _ l d2); intros.
+  destruct l; simpl; simpl in *.
+  - omega.
+  - destruct l; simpl in *.
+    + omega.
+    + intuition congruence.
+Qed.  
+  
+Lemma Partition_unfold_hd_tl (a b : R) (n : nat) : 
+  (n > 0)%nat ->
+  Partition a b n =
+  a::
+  let inc := (b - a)/(INR n) in
+  (map (fun i => a + (INR i)*inc) (seq 1 (n-1)))
+    ++ (b::nil).
+Proof.
+  intros.
+  rewrite (list_hd_last (Partition a b n) 0 0).
+  - rewrite Partition_hd.
+    rewrite Partition_last by trivial.
+    simpl.
+    repeat f_equal.
+    unfold Partition.
+    rewrite removelast_map, tl_map.
+    rewrite removelast_seq, tl_seq.
+    repeat f_equal.
+    omega.
+  - rewrite Partition_length.
+    omega.
+Qed.
+
 Lemma Partition_func_shift_nonneg a b n i:
   a <= b ->
   (0 < n)%nat ->
@@ -288,7 +324,7 @@ Lemma find_bucket_Partition a b n idx d1 d2 needle:
   (n > 0)%nat ->
   (idx < n)%nat ->
   a <= b ->
-  nth idx (Partition a b n) d1 < needle < nth (S idx) (Partition a b n) d2 ->
+  nth idx (Partition a b n) d1 < needle <= nth (S idx) (Partition a b n) d2 ->
   find_bucket Rle_dec needle (Partition a b n) = Some (nth idx (Partition a b n) d1, nth (S idx) (Partition a b n) d2).
 Proof.
   intros.
@@ -335,6 +371,9 @@ Proof.
     + rewrite nth_tl; trivial.
     + rewrite tl_length, Partition_length.
       omega.
+    + omega.
+    + destruct openx.
+      split; eauto; lra.
 Qed.
 
 Lemma Partition_f_increasing (f : R -> R) (a b x : R) (idx n : nat) :
@@ -435,6 +474,9 @@ Proof.
     + reflexivity.
     + rewrite Partition_length.
       omega.
+    + trivial.
+    + destruct H4; split; intros; eauto.
+      left; eauto.
 Defined.
 
 Lemma adjacent_pairs_Partition a b n :
@@ -453,7 +495,7 @@ Proof.
   replace (a0+1)%nat with (S a0) by omega.
   trivial.
 Qed.
-                                                                                                  
+
 Lemma RiemannInt_SF_psi (f: R -> R) (a b:R) (n: nat) :
   forall (npos: (n > 0)%nat) (aleb: (a <= b)),
     RiemannInt_SF (mkStepFun (part2step_psi f a b n npos aleb)) = (f(a)-f(b))*(b-a)/(INR n).
@@ -474,6 +516,7 @@ Proof.
   rewrite combine_self.
   repeat rewrite map_map.
   rewrite adjacent_pairs_Partition.
+  simpl.
   repeat rewrite map_map.
 
   rewrite (map_ext
@@ -503,15 +546,44 @@ Proof.
     ; try apply INR_nzero; trivial.
 Qed.
 
-(*
-Record StepFun (a b:R) : Type := mkStepFun
-  {fe :> R -> R; pre : IsStepFun fe a b}.
 
-Definition Riemann_integrable (f:R -> R) (a b:R) : Type :=
-  forall eps:posreal,
-    { phi:StepFun a b &
-      { psi:StepFun a b |
-        (forall t:R,
-          Rmin a b <= t <= Rmax a b -> Rabs (f t - phi t) <= psi t) /\
-        Rabs (RiemannInt_SF psi) < eps } }.
-*)
+Lemma find_bucket_Partition_exists a b n needle:
+  (n > 0)%nat ->
+  a <= needle <= b ->
+  exists lower upper,
+    find_bucket Rle_dec needle (Partition a b n) = Some (lower, upper).
+Proof.
+  intros npos ineqs.
+  rewrite (Partition_unfold_hd_tl a b n npos).
+  apply find_bucket_bounded_Rle_exists; trivial.
+Qed.
+            
+Lemma StepBounded (f : R -> R) (a b : R) (n : nat) :
+  forall (npos: (n > 0)%nat) (aleb: (a <= b)),
+    interval_decreasing f a b ->
+    let phi := mkStepFun (part2step f a b n npos aleb) in
+    let psi := mkStepFun (part2step_psi f a b n npos aleb) in
+    (forall t:R,
+        a <= t <= b -> Rabs (f t - phi t) <= psi t).
+Proof.
+  simpl; intros.
+  unfold find_pt_le, find_pt_le_psi.
+  destruct (find_bucket_Partition_exists a b n t npos H0)
+    as [lower [upper eqq]].
+  rewrite eqq.
+
+  destruct (find_bucket_bucket_in Rle_dec t (Partition a b n) lower upper 0 0)
+  as [r1 r2]; trivial.
+  - red; intros; lra.
+  - apply Partition_StronglySorted_le; trivial.
+  - rewrite Partition_hd in r1.
+    rewrite Partition_last in r2 by trivial.
+    destruct (find_bucket_needle_in Rle_dec t (Partition a b n) lower upper)
+             as [r3 r4]; trivial.
+  rewrite Rabs_pos_eq.
+    + unfold Rminus.
+      apply Rplus_le_compat_r.
+      apply H; lra.
+    + cut (f upper <= f t); [intros; lra | ].
+      apply H; lra.
+Qed.

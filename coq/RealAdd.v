@@ -68,7 +68,7 @@ Lemma find_bucket_nth_finds_Rle needle l idx d1 d2:
   StronglySorted Rle l ->
   (S idx < length l)%nat ->
   nth idx l d1 < needle ->
-  needle < nth (S idx) l d2 ->
+  needle <= nth (S idx) l d2 ->
   find_bucket Rle_dec needle l = Some (nth idx l d1, nth (S idx) l d2).
 Proof.
   intros.
@@ -76,24 +76,31 @@ Proof.
   ; repeat red; intros; lra.
 Qed.
 
+Lemma find_bucket_bounded_Rle_exists {a b needle} :
+  a <= needle <= b ->
+  forall l,
+    exists lower upper,
+      find_bucket Rle_dec needle (a::l++[b]) = Some (lower, upper).
+Proof.
+  intros.
+  apply find_bucket_bounded_le_exists; intros; lra.
+Qed.
+
 Lemma telescope_plus_fold_right_sub_seq f s n :
   fold_right Rplus 0 (map (fun x => (f (INR x)) -  (f (INR (x+1)))) (seq s n)) = (f (INR s)) - (f (INR (s+n))).
 Proof.
   Opaque INR.
-  destruct n; simpl; intros.
-  { replace (s+0)%nat with s by omega. lra.
-  } 
   revert s.
-  induction n; intros s; simpl.
-  - lra.
+  induction n; simpl; intros s.
+  - replace (s+0)%nat with s by omega.
+    lra.
   - specialize (IHn (S s)).
-    unfold Rminus in *.
+    unfold Rminus in *.    
     rewrite Rplus_assoc in *.
     f_equal.
-    apply Rplus_eq_reg_l in IHn.
-    replace (S s + S n)%nat with (s + S (S n))%nat in IHn by omega.
-    rewrite <- IHn; clear IHn.
-    simpl.
+    simpl in IHn.
+    replace (S (s + n))%nat with (s + (S n))%nat in IHn by omega.
+    rewrite IHn.
     replace (s+1)%nat with (S s) by omega.
     lra.
     Transparent INR.

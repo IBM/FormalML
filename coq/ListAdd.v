@@ -504,7 +504,7 @@ Section bucket.
        | _ => None
        end.
   
-  Lemma find_bucket_break needle l a1 a2:
+  Lemma find_bucket_break {needle l a1 a2}:
     find_bucket needle l = Some (a1, a2) ->
       exists l1 l2,
         l = l1 ++ [a1; a2] ++ l2.
@@ -530,11 +530,10 @@ Section bucket.
     R a1 needle ->
     R needle a2 ->
     ~ R needle a1 ->
-    ~ R a2 needle ->
     find_bucket needle (l1 ++ a1::a2::l2) = Some (a1, a2).
   Proof.
     intros trans antisymm.
-    intros sorted r1 r2 nr1 nr2.
+    intros sorted r1 r2 nr1.
     revert sorted.
     induction l1; intros sorted.
     - simpl.
@@ -572,7 +571,6 @@ Section bucket.
     R (nth idx l d1) needle ->
     R needle (nth (S idx) l d2) ->
     ~ R needle (nth idx l d1) ->
-    ~ R (nth (S idx) l d2) needle ->
     find_bucket needle l = Some (nth idx l d1, nth (S idx) l d2).
   Proof.
     intros trans antisymm ss idx_bound.
@@ -580,7 +578,7 @@ Section bucket.
     destruct (nth_split l d1 idx_bound') as [l1 [l2 [eqq leneq]]].
     revert eqq.
     generalize (nth idx l d1); intros a1.
-    intros eqq r1 r2 nr1 nr2.
+    intros eqq r1 r2 nr1.
     subst.
     rewrite app_nth2 in * by omega.
     replace ((S (length l1) - length l1)) with 1 in * by omega.
@@ -592,6 +590,81 @@ Section bucket.
     - apply StronglySorted_app_inv in ss.
       tauto.
     - rewrite app_ass; simpl; trivial.
+  Qed.
+
+  Lemma find_bucket_needle_in needle l a1 a2:
+    find_bucket needle l = Some (a1, a2) ->
+    R a1 needle /\ R needle a2.
+  Proof.
+    induction l; simpl; try discriminate.
+    destruct l; try discriminate.
+    destruct (R_dec a needle); try discriminate.
+    destruct (R_dec needle a0).
+    - inversion 1; subst.
+      tauto.
+    - intuition.
+  Qed.
+
+  Lemma find_bucket_bucket_in needle l a1 a2 d1 d2:
+    reflexive _ R ->
+    StronglySorted R l ->
+    find_bucket needle l = Some (a1, a2) ->
+    R (hd d1 l) a1 /\ R a2 (last l d2).
+  Proof.
+    intros refl ssl eqq1.
+    destruct (find_bucket_break eqq1)
+      as [l1 [l2 eqq2]].
+    replace (l1 ++ [a1; a2] ++ l2) with ((l1 ++ a1::nil) ++ (a2::l2)) in eqq2.
+    - subst.
+      apply StronglySorted_app_inv in ssl.
+      destruct ssl as [ssl1 ssl2].
+      split.
+      + destruct l1; simpl.
+        * apply refl.
+        * inversion ssl1; subst.
+          rewrite Forall_forall in H2.
+          apply H2.
+          rewrite in_app_iff; simpl; tauto.
+      + inversion ssl2; clear ssl2; subst.
+        rewrite last_app by congruence.
+        rewrite Forall_forall in H2.
+        simpl.
+        destruct l2.
+        * apply refl.
+        * apply H2.
+          clear.
+          { revert a.
+            induction l2.
+            - simpl; tauto.
+            - simpl in *.
+              eauto.
+          } 
+    - rewrite app_ass; simpl; reflexivity.
+  Qed.
+
+  Lemma find_bucket_bounded_le_exists a b l (needle:A) :
+    (forall x y, R x y \/ R y x) ->
+    R a needle ->
+    R needle b ->
+    exists lower upper,
+    find_bucket needle (a::l++[b]) = Some (lower, upper).
+  Proof.
+    intros total r1 r2.
+    simpl.
+    destruct (R_dec a needle); [ | tauto].
+    induction l; simpl.
+    - destruct (R_dec needle b); [ | tauto].
+      eauto.
+    - destruct (IHl) as [lower [upper eqq]].
+      destruct (R_dec needle a0).
+      + eauto.
+      + clear IHl r.
+        { destruct (R_dec a0 needle).
+          - destruct l; simpl in *.
+            + destruct (R_dec needle b); simpl; eauto.
+            + destruct (R_dec needle a1); eauto.
+          - destruct (total needle a0); tauto.
+        } 
   Qed.
 
 End bucket.
