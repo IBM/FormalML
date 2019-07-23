@@ -199,19 +199,7 @@ Proof.
   apply Partition_nth_le; trivial.
 Qed.
 
-Lemma find_bucket_nth_finds_Rle needle l idx d1 d2:
-  StronglySorted Rle l ->
-  (S idx < length l)%nat ->
-  nth idx l d1 < needle ->
-  needle < nth (S idx) l d2 ->
-  find_bucket Rle_dec needle l = Some (nth idx l d1, nth (S idx) l d2).
-Proof.
-  intros.
-  apply find_bucket_nth_finds; trivial
-  ; repeat red; intros; lra.
-Qed.
-
-Lemma telescope f (a b : R) (n : nat) :
+Lemma Partition_telescope f (a b : R) (n : nat) :
   (n > 0)%nat ->
   let pl := map f (Partition a b n) in
   (fold_right Rplus 0 (removelast pl)) - (fold_right Rplus 0 (tl pl)) =
@@ -349,90 +337,6 @@ Proof.
       omega.
 Qed.
 
-Lemma bounded_dist_le  x lower upper :
-  lower <= x <= upper ->
-  R_dist x upper <= R_dist lower upper.
-Proof.
-  intros.
-  rewrite (R_dist_sym x).
-  rewrite (R_dist_sym lower).
-  unfold R_dist.
-  repeat rewrite Rabs_pos_eq by lra.
-  lra.
-Qed.
-
-Lemma bounded_dist_le_P2  x lower upper :
-  lower <= x <= upper ->
-  R_dist x lower <= R_dist upper lower.
-Proof.
-  intros.
-  unfold R_dist.
-  repeat rewrite Rabs_pos_eq by lra.
-  lra.
-Qed.
-
-Definition interval_increasing f (a b:R) : Prop := 
-  forall x y :R, a <= x -> y <= b -> x<=y -> f x <= f y.
-
-Definition interval_decreasing f (a b:R) : Prop :=
-  forall x y :R, a <= x -> y <= b -> x<=y -> f y <= f x.
-
-Lemma bounded_increasing_dist_le (f : R -> R) x lower upper :
-  interval_increasing f lower upper ->
-  lower <= x <= upper ->
-  R_dist (f x) (f upper) <= R_dist (f lower) (f upper).
-Proof.
-  intros df xin.
-  apply bounded_dist_le.
-  destruct xin as [ltx gtx].
-  red in df.
-  split; apply df; trivial.
-  apply Rle_refl.
-  apply Rle_refl.  
-Qed.  
-
-Lemma bounded_decreasing_dist_le (f : R -> R) x lower upper :
-  interval_decreasing f lower upper ->
-  lower <= x <= upper ->
-  R_dist (f x) (f upper) <= R_dist (f lower) (f upper).
-Proof.
-  intros df xin.
-  apply bounded_dist_le_P2.
-  destruct xin as [ltx gtx].
-  red in df.
-  split; apply df; trivial.
-  apply Rle_refl.
-  apply Rle_refl.  
-Qed.  
-
-Lemma subinterval_increasing (f : R -> R) (a b x y : R) :
-  a <= x -> x <= y -> y <= b -> interval_increasing f a b -> interval_increasing f x y.
-Proof.
-  intros.
-  red in H2.
-  red.
-  intros.
-  cut (y0 <= b).
-  cut (a <= x0).
-  intuition.
-  lra.
-  lra.
-Qed.
-  
-Lemma subinterval_decreasing (f : R -> R) (a b x y : R) :
-  a <= x -> x <= y -> y <= b -> interval_decreasing f a b -> interval_decreasing f x y.
-Proof.
-  intros.
-  red in H2.
-  red.
-  intros.
-  cut (y0 <= b).
-  cut (a <= x0).
-  intuition.
-  lra.
-  lra.
-Qed.
-
 Lemma Partition_f_increasing (f : R -> R) (a b x : R) (idx n : nat) :
   (0 < n)%nat ->
   (idx < n)%nat ->
@@ -531,13 +435,73 @@ Proof.
     + reflexivity.
     + rewrite Partition_length.
       omega.
+Defined.
+
+Lemma adjacent_pairs_Partition a b n :
+  adjacent_pairs (Partition a b n) =
+  let inc := (b - a)/(INR n) in
+  map (fun i => (a + (INR i)*inc, a + (INR (i+1))*inc)) (seq 0 n).
+Proof.
+  intros.
+  unfold Partition.
+  rewrite adjacent_pairs_map.
+  rewrite adjacent_pairs_seq.
+  rewrite map_map.
+  replace (n+1)%nat with (S n) by omega.
+  simpl pred.
+  apply map_ext; intros.
+  replace (a0+1)%nat with (S a0) by omega.
+  trivial.
 Qed.
-
-
+                                                                                                  
 Lemma RiemannInt_SF_psi (f: R -> R) (a b:R) (n: nat) :
   forall (npos: (n > 0)%nat) (aleb: (a <= b)),
-    RiemannInt_SF (mkStepFun (part2step_psi f a b n npos aleb)) = (f(a)-f(b))*(a-b)/(INR n).
+    RiemannInt_SF (mkStepFun (part2step_psi f a b n npos aleb)) = (f(a)-f(b))*(b-a)/(INR n).
+Proof.
+  intros npos aleb.
+  unfold RiemannInt_SF.
+  destruct (Rle_dec a b); [ | tauto].
+  unfold subdivision_val, subdivision.
+  simpl.
+  rewrite Int_SF'_eq.
+  rewrite Int_SF'_alt_eq.
+  unfold Int_SF'_alt.
+  unfold list_map_diffs.
+  rewrite combine_map.
+  rewrite adjacent_pairs_map.
+  rewrite <- (map_id (adjacent_pairs (Partition a b n))) at 2.
+  rewrite combine_map.
+  rewrite combine_self.
+  repeat rewrite map_map.
+  rewrite adjacent_pairs_Partition.
+  repeat rewrite map_map.
 
+  rewrite (map_ext
+             (fun x : nat =>
+                (f (a + INR x * ((b - a) / INR n)) - f (a + INR (x + 1) * ((b - a) / INR n))) *
+                (a + INR (x + 1) * ((b - a) / INR n) - (a + INR x * ((b - a) / INR n))))
+  (fun x : nat =>
+                (f (a + INR x * ((b - a) / INR n)) - f (a + INR (x + 1) * ((b - a) / INR n))) *
+                (((b - a) / INR n)))).
+  - rewrite fold_right_Rplus_mult_const.
+    rewrite (telescope_plus_fold_right_sub_seq (fun x => (f(a + x * ((b - a) / INR n)))) 0 n) by trivial.
+    simpl.
+    replace (a + 0 * ((b - a) / INR n)) with a by lra.
+    replace (a + INR n * ((b - a) / INR n)) with b.
+    + lra.
+    + unfold Rdiv.
+      rewrite <- Rmult_comm.
+      rewrite Rmult_assoc.
+      rewrite Rinv_l.
+      * lra.
+      * apply INR_nzero; trivial.
+  - intros.
+    f_equal.
+    replace (a0 + 1)%nat with (S a0) by omega.
+    rewrite S_INR.
+    field_simplify; trivial
+    ; try apply INR_nzero; trivial.
+Qed.
 
 (*
 Record StepFun (a b:R) : Type := mkStepFun

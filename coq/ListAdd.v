@@ -688,3 +688,21 @@ Proof.
   rewrite tl_map, combine_map.
   trivial.
 Qed.
+
+Lemma combine_self {A:Type} (l:list A) :
+  combine l l = map (fun x => (x,x)) l.
+Proof.
+  induction l; simpl; trivial.
+  f_equal; trivial.
+Qed.
+
+Lemma adjacent_pairs_seq s n :
+  adjacent_pairs (seq s n) = map (fun i => (i, S i)) (seq s (pred n)).
+Proof.
+  unfold adjacent_pairs.
+  revert s.
+  induction n; simpl; intros s; trivial.
+  destruct n; simpl; trivial.
+  f_equal.
+  apply IHn.
+Qed.
