@@ -247,3 +247,13 @@ Proof.
   destruct k; simpl; trivial.
   rewrite IHl; trivial.
 Qed.
+
+Lemma up_pos (r:R) :
+  r>0 -> ((up r) > 0)%Z.
+Proof.
+  intros.
+  destruct (archimed r) as [lb ub].
+  assert (IZR (up r) > 0) by lra.
+  apply lt_IZR in H0.
+  omega.
+Qed.
