@@ -670,3 +670,14 @@ Proof.
     rewrite Rabs_R0.
     destruct epsilon; trivial.
 Qed.
+
+Corollary RiemannInt_SF_psi_limit_decreasing (f: R -> R) (a b:R) :
+  forall (aleb: (a <= b)) (epsilon : posreal),
+    interval_decreasing f a b ->
+  exists (n:nat),
+    Rabs (RiemannInt_SF (mkStepFun (part2step_psi f a b (n+1)%nat (natp1gz n) aleb))) < epsilon.
+Proof.
+  intros aleb epsilon fdecr.
+  apply RiemannInt_SF_psi_limit.
+  apply fdecr; lra.
+Qed.
