@@ -273,6 +273,20 @@ Proof.
   destruct idx; trivial.
 Qed.
 
+Lemma nth_removelast_in {A} idx (l:list A) d :
+  idx < pred (length l) ->
+  nth idx (removelast l) d = nth idx l d.
+Proof.
+  revert idx.
+  induction l; simpl; trivial; intros idx inn.
+  destruct l.
+  - destruct idx; simpl in *; omega.
+  - simpl in *.
+    destruct idx; trivial.
+    rewrite IHl by omega.
+    trivial.
+Qed.
+
 Lemma nth_last {A} (l:list A) d: nth (pred (length l)) l d = last l d.
 Proof.
   induction l; simpl; trivial.
@@ -693,6 +707,15 @@ Lemma tl_length {A : Type} (l : list A) :
 Proof.
   intros.
   destruct l; simpl; congruence.
+Qed.
+
+Lemma removelast_length {A : Type} (l : list A) :
+  length (removelast l) = pred (length l).
+Proof.
+  induction l; trivial.
+  destruct l; trivial.
+  simpl in *.
+  rewrite IHl; trivial.
 Qed.
 
 Lemma combine_nth_in {A B : Type} (l : list A) (l' : list B) (n : nat) (x : A) (y : B) :

@@ -693,3 +693,17 @@ Proof.
     apply StepBounded; trivial.
   - apply npf.
 Qed.
+
+Theorem RiemannInt_increasing (f: R -> R) (a b:R) :
+  a <= b ->
+  interval_increasing f a b ->
+  Riemann_integrable f a b.
+Proof.
+  intros.
+  cut (Riemann_integrable (fun y => - (fun x => -f x) y) a b).
+  - apply Riemann_integrable_ext; intros.
+    lra.
+  - apply Riemann_integrable_Ropp.
+    apply RiemannInt_decreasing; trivial.
+    apply increasing_decreasing_opp; trivial.
+Qed.

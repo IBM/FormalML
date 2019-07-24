@@ -197,6 +197,19 @@ Proof.
   lra.
 Qed.
 
+Lemma increasing_decreasing_opp (f : R -> R) (a b:R) :
+  a <= b -> interval_increasing f a b -> interval_decreasing (fun x => -f x) a b.
+Proof.
+  unfold interval_increasing.
+  unfold interval_decreasing.
+  intros.
+  apply Ropp_le_contravar.
+  apply H0.
+  trivial.
+  trivial.
+  trivial.
+Qed.
+
 Fixpoint Int_SF' (l k : list R) {struct l} : R :=
   match l with
   | nil => 0
