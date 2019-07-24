@@ -587,3 +587,85 @@ Proof.
     + cut (f upper <= f t); [intros; lra | ].
       apply H; lra.
 Qed.
+
+Lemma natp1gz (n : nat) : (n+1 > 0)%nat.
+Proof.
+  omega.
+Qed.
+
+Lemma INR_up_over_cancel r (epsilon:posreal) :
+  r > 0 ->
+  Rabs (r / INR (Z.to_nat (up (r / epsilon)) + 1)) < epsilon.
+Proof.
+  intros.
+  destruct epsilon as [epsilon pf].
+  rewrite INR_IZR_INZ.
+  rewrite Nat.add_1_r.
+  simpl.
+  rewrite Zpos_P_of_succ_nat.
+  assert (repos:r / epsilon > 0).
+  { apply Rdiv_lt_0_compat; lra. }
+  destruct (archimed (r / epsilon)) as [lb ub].
+  assert (izrpos: 0 < IZR (up (r / epsilon))).
+  { lra. }
+  rewrite Z2Nat.id.
+  - rewrite succ_IZR.
+    rewrite Rabs_pos_eq.
+    + apply (Rmult_gt_compat_r epsilon) in lb; trivial.
+      { replace ( r / epsilon * epsilon) with r in lb.
+        - apply (Rmult_gt_compat_l (/ IZR (up (r / epsilon)))) in lb; trivial.
+          + repeat rewrite <- Rmult_assoc in lb.
+            rewrite <- Rinv_l_sym in lb by lra.
+            rewrite Rmult_1_l in lb.
+            rewrite Rmult_comm in lb.
+            eapply Rlt_trans; try eapply lb.
+            unfold Rdiv.
+            apply Rmult_lt_compat_l; trivial.
+            apply Rinv_lt_contravar.
+            * apply Rmult_lt_0_compat; lra.
+            * lra.
+          + apply Rinv_pos.
+            lra.
+        - unfold Rdiv.
+          rewrite Rmult_assoc.
+          rewrite <- Rinv_l_sym; lra.
+      } 
+    + left.
+      apply Rdiv_lt_0_compat; trivial.
+      apply (Rlt_trans _ ((r/epsilon) + 1)).
+      * apply Rplus_lt_0_compat; lra.
+      * apply Rplus_lt_compat_r; trivial.
+  - apply le_IZR.
+    lra.
+Qed.
+                                             
+Lemma RiemannInt_SF_psi_limit (f: R -> R) (a b:R) :
+ forall (aleb: (a <= b)) (epsilon : posreal),
+   f a - f b >= 0 ->
+  exists (n:nat),
+    Rabs (RiemannInt_SF (mkStepFun (part2step_psi f a b (n+1)%nat (natp1gz n) aleb))) < epsilon.
+Proof.
+  intros aleb epsilon fdecr.
+  inversion aleb.
+  - inversion fdecr.
+    + exists (Z.to_nat (up (((f(a)-f(b))*(b-a))/epsilon))).
+      rewrite RiemannInt_SF_psi.
+      apply INR_up_over_cancel.
+      apply Rmult_lt_0_compat; lra.
+    + exists (0)%nat.
+      rewrite RiemannInt_SF_psi.
+      rewrite H0.
+      unfold Rdiv.
+      repeat rewrite Rmult_0_l.
+      rewrite Rabs_R0.
+      destruct epsilon; trivial.
+  - exists (0)%nat.
+    rewrite RiemannInt_SF_psi.
+    rewrite H.
+    replace (b-b) with 0 by lra.
+    rewrite Rmult_0_r.
+    unfold Rdiv.
+    rewrite Rmult_0_l.
+    rewrite Rabs_R0.
+    destruct epsilon; trivial.
+Qed.
