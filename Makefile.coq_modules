@@ -22,11 +22,11 @@ MODULES = \
 	DefinedFunctions \
 	Gen_NN \
 	Isomorphism \
-	Lebesgue \
 	ListAdd \
 	PairEncoding \
 	ProbSpace \
 	RealAdd \
+	RiemannAdd \
 	SigmaAlgebras \
 	Sums \
 	sumtest
