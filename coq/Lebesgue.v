@@ -641,7 +641,7 @@ Qed.
                                              
 Lemma RiemannInt_SF_psi_limit (f: R -> R) (a b:R) :
  forall (aleb: (a <= b)) (epsilon : posreal),
-   f a - f b >= 0 ->
+   f b <= f a ->
   exists (n:nat),
     Rabs (RiemannInt_SF (mkStepFun (part2step_psi f a b (n+1)%nat (natp1gz n) aleb))) < epsilon.
 Proof.
@@ -655,6 +655,7 @@ Proof.
     + exists (0)%nat.
       rewrite RiemannInt_SF_psi.
       rewrite H0.
+      replace (f a - f a) with 0 by lra.
       unfold Rdiv.
       repeat rewrite Rmult_0_l.
       rewrite Rabs_R0.
