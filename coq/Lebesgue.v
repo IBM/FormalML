@@ -642,26 +642,28 @@ Qed.
 Lemma RiemannInt_SF_psi_limit (f: R -> R) (a b:R) :
  forall (aleb: (a <= b)) (epsilon : posreal),
    f b <= f a ->
-  exists (n:nat),
-    Rabs (RiemannInt_SF (mkStepFun (part2step_psi f a b (n+1)%nat (natp1gz n) aleb))) < epsilon.
+   {n:nat | 
+    Rabs (RiemannInt_SF (mkStepFun (part2step_psi f a b (n+1)%nat (natp1gz n) aleb))) < epsilon}.
 Proof.
   intros aleb epsilon fdecr.
-  inversion aleb.
-  - inversion fdecr.
+  destruct (Rlt_dec a b).
+  - destruct (Rlt_dec (f b) (f a)).
     + exists (Z.to_nat (up (((f(a)-f(b))*(b-a))/epsilon))).
       rewrite RiemannInt_SF_psi.
       apply INR_up_over_cancel.
       apply Rmult_lt_0_compat; lra.
     + exists (0)%nat.
       rewrite RiemannInt_SF_psi.
-      rewrite H0.
-      replace (f a - f a) with 0 by lra.
+      assert (f a = f b) by lra.
+      rewrite H.
+      replace (f b - f b) with 0 by lra.
       unfold Rdiv.
       repeat rewrite Rmult_0_l.
       rewrite Rabs_R0.
       destruct epsilon; trivial.
   - exists (0)%nat.
     rewrite RiemannInt_SF_psi.
+    assert (a = b) by lra.
     rewrite H.
     replace (b-b) with 0 by lra.
     rewrite Rmult_0_r.
@@ -674,10 +676,28 @@ Qed.
 Corollary RiemannInt_SF_psi_limit_decreasing (f: R -> R) (a b:R) :
   forall (aleb: (a <= b)) (epsilon : posreal),
     interval_decreasing f a b ->
-  exists (n:nat),
-    Rabs (RiemannInt_SF (mkStepFun (part2step_psi f a b (n+1)%nat (natp1gz n) aleb))) < epsilon.
+  {n:nat | 
+    Rabs (RiemannInt_SF (mkStepFun (part2step_psi f a b (n+1)%nat (natp1gz n) aleb))) < epsilon}.
 Proof.
   intros aleb epsilon fdecr.
   apply RiemannInt_SF_psi_limit.
   apply fdecr; lra.
+Qed.
+
+Theorem RiemannInt_decreasing (f: R -> R) (a b:R) :
+  a <= b ->
+  interval_decreasing f a b ->
+  Riemann_integrable f a b.
+Proof.
+  intros aleb fdecr.
+  red; intros epsilon.
+  destruct (RiemannInt_SF_psi_limit_decreasing f a b aleb epsilon fdecr)
+  as [n npf].
+  exists (mkStepFun (part2step f a b (n+1) (natp1gz n) aleb)).
+  exists (mkStepFun (part2step_psi f a b (n+1) (natp1gz n) aleb)).
+  split; intros.
+  - rewrite Rmin_left in H by lra.
+    rewrite Rmax_right in H by lra.
+    apply StepBounded; trivial.
+  - apply npf.
 Qed.
