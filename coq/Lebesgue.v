@@ -594,8 +594,8 @@ Proof.
 Qed.
 
 Lemma INR_up_over_cancel r (epsilon:posreal) :
-  r > 0 ->
-  Rabs (r / INR (Z.to_nat (up (r / epsilon)) + 1)) < epsilon.
+  r <> 0 ->
+  Rabs (r / INR (Z.to_nat (up (Rabs r / epsilon)) + 1)) < epsilon.
 Proof.
   intros.
   destruct epsilon as [epsilon pf].
@@ -603,55 +603,52 @@ Proof.
   rewrite Nat.add_1_r.
   simpl.
   rewrite Zpos_P_of_succ_nat.
-  assert (repos:r / epsilon > 0).
-  { apply Rdiv_lt_0_compat; lra. }
-  destruct (archimed (r / epsilon)) as [lb ub].
-  assert (izrpos: 0 < IZR (up (r / epsilon))).
+  assert (repos:Rabs r / epsilon > 0).
+  { apply Rdiv_lt_0_compat; try lra.
+    apply Rabs_pos_lt; trivial.
+  }
+  destruct (archimed (Rabs r / epsilon)) as [lb ub].
+  assert (izrpos: 0 < IZR (up (Rabs r / epsilon))).
   { lra. }
   rewrite Z2Nat.id.
   - rewrite succ_IZR.
-    rewrite Rabs_pos_eq.
-    + apply (Rmult_gt_compat_r epsilon) in lb; trivial.
-      { replace ( r / epsilon * epsilon) with r in lb.
-        - apply (Rmult_gt_compat_l (/ IZR (up (r / epsilon)))) in lb; trivial.
-          + repeat rewrite <- Rmult_assoc in lb.
-            rewrite <- Rinv_l_sym in lb by lra.
-            rewrite Rmult_1_l in lb.
-            rewrite Rmult_comm in lb.
-            eapply Rlt_trans; try eapply lb.
-            unfold Rdiv.
-            apply Rmult_lt_compat_l; trivial.
-            apply Rinv_lt_contravar.
-            * apply Rmult_lt_0_compat; lra.
-            * lra.
-          + apply Rinv_pos.
-            lra.
-        - unfold Rdiv.
-          rewrite Rmult_assoc.
-          rewrite <- Rinv_l_sym; lra.
-      } 
-    + left.
-      apply Rdiv_lt_0_compat; trivial.
-      apply (Rlt_trans _ ((r/epsilon) + 1)).
-      * apply Rplus_lt_0_compat; lra.
-      * apply Rplus_lt_compat_r; trivial.
+    apply (Rmult_gt_compat_r epsilon) in lb; trivial.
+    { replace ( Rabs r / epsilon * epsilon) with (Rabs r) in lb.
+      - apply (Rmult_gt_compat_l (/ IZR (up (Rabs r / epsilon)))) in lb; trivial.
+        + repeat rewrite <- Rmult_assoc in lb.
+          rewrite <- Rinv_l_sym in lb by lra.
+          rewrite Rmult_1_l in lb.
+          rewrite Rmult_comm in lb.
+          eapply Rlt_trans; try eapply lb.
+          unfold Rdiv.
+          rewrite Rabs_mult.
+          { apply Rmult_lt_compat_l; trivial.
+            - apply Rabs_pos_lt; trivial.
+            - rewrite Rabs_Rinv by lra.
+              rewrite Rabs_pos_eq at 1.
+              + apply Rinv_lt_contravar.
+                * apply Rmult_lt_0_compat; try lra.
+                * lra.
+              + lra.
+          }
+        + apply Rinv_pos.
+          lra.
+      - unfold Rdiv.
+        rewrite Rmult_assoc.
+        rewrite <- Rinv_l_sym; lra.
+    } 
   - apply le_IZR.
     lra.
 Qed.
                                              
 Lemma RiemannInt_SF_psi_limit (f: R -> R) (a b:R) :
  forall (aleb: (a <= b)) (epsilon : posreal),
-   f b <= f a ->
    {n:nat | 
     Rabs (RiemannInt_SF (mkStepFun (part2step_psi f a b (n+1)%nat (natp1gz n) aleb))) < epsilon}.
 Proof.
-  intros aleb epsilon fdecr.
+  intros aleb epsilon.
   destruct (Rlt_dec a b).
-  - destruct (Rlt_dec (f b) (f a)).
-    + exists (Z.to_nat (up (((f(a)-f(b))*(b-a))/epsilon))).
-      rewrite RiemannInt_SF_psi.
-      apply INR_up_over_cancel.
-      apply Rmult_lt_0_compat; lra.
+  - destruct (Req_EM_T (f a) (f b)).
     + exists (0)%nat.
       rewrite RiemannInt_SF_psi.
       assert (f a = f b) by lra.
@@ -661,6 +658,12 @@ Proof.
       repeat rewrite Rmult_0_l.
       rewrite Rabs_R0.
       destruct epsilon; trivial.
+    + exists (Z.to_nat (up (Rabs ((f(a)-f(b))*(b-a))/epsilon))).
+      rewrite RiemannInt_SF_psi.
+      apply INR_up_over_cancel.
+      intros eqq.
+      apply Rmult_integral in eqq.
+      intuition lra.
   - exists (0)%nat.
     rewrite RiemannInt_SF_psi.
     assert (a = b) by lra.
@@ -673,17 +676,6 @@ Proof.
     destruct epsilon; trivial.
 Qed.
 
-Corollary RiemannInt_SF_psi_limit_decreasing (f: R -> R) (a b:R) :
-  forall (aleb: (a <= b)) (epsilon : posreal),
-    interval_decreasing f a b ->
-  {n:nat | 
-    Rabs (RiemannInt_SF (mkStepFun (part2step_psi f a b (n+1)%nat (natp1gz n) aleb))) < epsilon}.
-Proof.
-  intros aleb epsilon fdecr.
-  apply RiemannInt_SF_psi_limit.
-  apply fdecr; lra.
-Qed.
-
 Theorem RiemannInt_decreasing (f: R -> R) (a b:R) :
   a <= b ->
   interval_decreasing f a b ->
@@ -691,7 +683,7 @@ Theorem RiemannInt_decreasing (f: R -> R) (a b:R) :
 Proof.
   intros aleb fdecr.
   red; intros epsilon.
-  destruct (RiemannInt_SF_psi_limit_decreasing f a b aleb epsilon fdecr)
+  destruct (RiemannInt_SF_psi_limit f a b aleb epsilon)
   as [n npf].
   exists (mkStepFun (part2step f a b (n+1) (natp1gz n) aleb)).
   exists (mkStepFun (part2step_psi f a b (n+1) (natp1gz n) aleb)).
