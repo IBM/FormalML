@@ -248,6 +248,17 @@ Proof.
   rewrite IHl; trivial.
 Qed.
 
+Lemma up_IZR n : up (IZR n) = (Z.succ n)%Z.
+Proof.
+  symmetry.
+  apply tech_up; try rewrite succ_IZR; lra.
+Qed.
+
+Lemma up0 : up 0 = 1%Z.
+Proof.
+  apply up_IZR.
+Qed.
+
 Lemma up_pos (r:R) :
   r>0 -> ((up r) > 0)%Z.
 Proof.
@@ -257,3 +268,23 @@ Proof.
   apply lt_IZR in H0.
   omega.
 Qed.
+
+Lemma up_nonneg (r:R) :
+  r>=0 -> ((up r) >= 0)%Z.
+Proof.
+  inversion 1.
+  - unfold Z.ge; rewrite up_pos; congruence.
+  - subst. rewrite up0.
+    omega.
+Qed.
+
+Lemma INR_up_pos r :
+  r >= 0 -> INR (Z.to_nat (up r)) = IZR (up r).
+Proof.
+  intros.
+  rewrite INR_IZR_INZ.
+  rewrite Z2Nat.id; trivial.
+  generalize (up_nonneg _ H).
+  omega.
+Qed.
+  
