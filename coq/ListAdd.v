@@ -718,6 +718,8 @@ Proof.
   rewrite IHl; trivial.
 Qed.
 
+Section combining.
+
 Lemma combine_nth_in {A B : Type} (l : list A) (l' : list B) (n : nat) (x : A) (y : B) :
   n < min (length l) (length l') ->
   nth n (combine l l') (x, y) = (nth n l x, nth n l' y).
@@ -731,6 +733,125 @@ Proof.
       apply IHl.
       omega.
 Qed.
+
+Lemma combine_map {A B C D:Type} (f:A->C) (g:B->D) (l1:list A) (l2:list B) :
+  combine (map f l1) (map g l2) = map (fun '(x,y) => (f x, g y)) (combine l1 l2).
+Proof.
+  revert l2.
+  induction l1; intros l2; simpl; trivial.
+  destruct l2; simpl; trivial.
+  f_equal.
+  auto.
+Qed.
+
+Lemma combine_self {A:Type} (l:list A) :
+  combine l l = map (fun x => (x,x)) l.
+Proof.
+  induction l; simpl; trivial.
+  f_equal; trivial.
+Qed.
+
+Lemma combine_nil_l {A B} (l:list B) : combine (@nil A) l = nil.
+Proof.
+  reflexivity.
+Qed.
+
+Lemma combine_nil_r {A B} (l:list A) : combine l (@nil B) = nil.
+Proof.
+  destruct l; trivial.
+Qed.
+
+Lemma combine_swap {A B} (l1:list A) (l2:list B) : combine l1 l2 = map (fun xy => (snd xy, fst xy)) (combine l2 l1).
+Proof.
+  revert l2; induction l1; simpl; intros
+  ; destruct l2; simpl; trivial.
+  rewrite IHl1; trivial.
+Qed.
+
+Lemma list_prod_map {A B C D:Type} (f:A->C) (g:B->D) (l1:list A) (l2:list B) :
+  list_prod (map f l1) (map g l2) = map (fun '(x,y) => (f x, g y)) (list_prod l1 l2).
+Proof.
+  revert l2.
+  induction l1; intros l2; simpl; trivial.
+  rewrite map_app.
+  repeat rewrite map_map.
+  rewrite IHl1.
+  trivial.
+Qed.
+
+Lemma list_prod_nil_l {A B} (l:list B) : list_prod (@nil A) l = nil.
+Proof.
+  reflexivity.
+Qed.
+
+Lemma list_prod_nil_r {A B} (l:list A) : list_prod l (@nil B) = nil.
+Proof.
+  induction l; trivial.
+Qed.
+
+Lemma list_prod_cons2_pred {A B} (l1:list A) a (l2:list B) :
+  Permutation (list_prod l1 (a :: l2)) (map (fun x : A => (x, a)) l1 ++ list_prod l1 l2).
+Proof.
+  revert a l2.
+  induction l1; simpl; intros.
+  - reflexivity.
+  - rewrite IHl1.
+    apply Permutation_cons; trivial.
+    repeat rewrite <- app_ass.
+    apply Permutation_app; [ | reflexivity ].
+    rewrite Permutation_app_swap.
+    reflexivity.
+Qed.
+
+Lemma list_prod_swap {A B} (l1:list A) (l2:list B) : Permutation (list_prod l1 l2) (map (fun xy => (snd xy, fst xy)) (list_prod l2 l1)).
+Proof.
+  revert l1; induction l2; simpl; intros.
+  - rewrite list_prod_nil_r; simpl.
+    reflexivity.
+  - rewrite map_app.
+    rewrite <- IHl2.
+    rewrite map_map; simpl.
+    apply list_prod_cons2_pred.
+Qed.
+
+Instance list_prod_perm_proper1 {A B} : Proper ((@Permutation A) ==> eq ==> (@Permutation (A*B))) (@list_prod A B).
+Proof.
+  intros l1 l1' perm1 l2' l2 eqq; subst.
+  revert l1 l1' perm1.
+  apply Permutation_ind_bis; intros.
+  - reflexivity.
+  - simpl.
+    rewrite H0; reflexivity.
+  - simpl.
+    rewrite H0.
+    repeat rewrite <- app_ass.
+    apply Permutation_app; [ | reflexivity ].
+    rewrite Permutation_app_swap.
+    reflexivity.
+  - etransitivity; eauto.
+Qed.
+
+Global Instance list_prod_perm_proper {A B} : Proper ((@Permutation A) ==> (@Permutation B) ==> (@Permutation (A*B))) (@list_prod A B).
+Proof.
+  intros l1 l1' perm1 l2 l2' perm2.
+  transitivity (list_prod l1' l2).
+  - apply list_prod_perm_proper1; trivial.
+  - rewrite (list_prod_swap l1' l2).
+    rewrite (list_prod_swap l1' l2').
+    apply Permutation_map.
+    apply list_prod_perm_proper1; trivial.
+Qed.
+
+Lemma combine_incl_list_prod {A B} (l1:list A) (l2:list B) : incl (combine l1 l2) (list_prod l1 l2).
+Proof.
+  intros [x y] inn.
+  apply in_prod_iff.
+  split.
+  - eapply in_combine_l; eauto.
+  - eapply in_combine_r; eauto.
+Qed.
+
+End combining.
 
 Definition adjacent_pairs {A:Type} (l:list A) := (combine l (tl l)).
 
@@ -767,29 +888,12 @@ Proof.
     rewrite Nat.min_r; omega.
 Qed.
 
-Lemma combine_map {A B C D:Type} (f:A->C) (g:B->D) (l1:list A) (l2:list B) :
-  combine (map f l1) (map g l2) = map (fun '(x,y) => (f x, g y)) (combine l1 l2).
-Proof.
-  revert l2.
-  induction l1; intros l2; simpl; trivial.
-  destruct l2; simpl; trivial.
-  f_equal.
-  auto.
-Qed.
-
 Lemma adjacent_pairs_map {A B:Type} (f:A->B) (l:list A) :
   adjacent_pairs (map f l) = map (fun '(x,y) => (f x, f y)) (adjacent_pairs l).
 Proof.
   unfold adjacent_pairs.
   rewrite tl_map, combine_map.
   trivial.
-Qed.
-
-Lemma combine_self {A:Type} (l:list A) :
-  combine l l = map (fun x => (x,x)) l.
-Proof.
-  induction l; simpl; trivial.
-  f_equal; trivial.
 Qed.
 
 Lemma adjacent_pairs_seq s n :

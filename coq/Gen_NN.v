@@ -65,6 +65,24 @@ Definition deltalosses (df : DefinedFunction) (losses : list DefinedFunction) : 
   | None => None
   end.
 
+Lemma deltalosses_unique_var {df : DefinedFunction} {v:SubVar} :
+  unique_var df = Some v ->
+  forall  (losses : list DefinedFunction),
+  deltalosses df losses = Some (fold_right Plus (Number R0) (map (fun dfj => df_subst df v dfj) losses)).
+Proof.
+  unfold deltalosses; intros eqq.
+  rewrite eqq; reflexivity.
+Qed.
+
+Lemma deltalosses_None {df : DefinedFunction} :
+  unique_var df = None ->
+  forall (losses : list DefinedFunction),
+  deltalosses df losses = None.
+Proof.
+  unfold deltalosses; intros eqq.
+  rewrite eqq; reflexivity.
+Qed.
+
 Definition NNinstance (n1 n2 n3 : nat) (ivar : SubVar) (f_loss : DefinedFunction) 
            (NN2 : list DefinedFunction) (inputs : (list R)) 
            (outputs : (list R)): option DefinedFunction :=
@@ -76,13 +94,34 @@ Definition NNinstance (n1 n2 n3 : nat) (ivar : SubVar) (f_loss : DefinedFunction
      deltalosses f_loss losses.
 
 
-  
+Lemma NNinstance_unique_var (n1 n2 n3 : nat) (ivar : SubVar) (f_loss : DefinedFunction) 
+      (NN2 : list DefinedFunction) (inputs : (list R)) 
+      (outputs : (list R)) (v:SubVar) :
+  unique_var f_loss = Some v ->
+  NNinstance n1 n2 n3 ivar f_loss NN2 inputs outputs =
+  Some (
+      let ipairs := (list_prod (map (fun n => (Sub ivar n)) (seq 1 n1))
+                               (map Number inputs)) in
+      let inputFunctions := (map (fun df => df_subst_list df ipairs) NN2) in
+      let losses := (map (fun '(df,outval) =>  (Minus df (Number outval)))
+                         (list_prod inputFunctions outputs)) in
+     (fold_right Plus (Number R0) (map (fun dfj => df_subst f_loss v dfj) losses))
+    ).
+Proof.
+  unfold NNinstance.
+  intros.
+  rewrite (deltalosses_unique_var H).
+  reflexivity.
+Qed.
 
-
-  
-
-
-
-
-
-  
+Lemma NNinstance_None (n1 n2 n3 : nat) (ivar : SubVar) (f_loss : DefinedFunction) 
+      (NN2 : list DefinedFunction) (inputs : (list R)) 
+      (outputs : (list R)) :
+  unique_var f_loss = None ->
+  NNinstance n1 n2 n3 ivar f_loss NN2 inputs outputs = None.
+Proof.
+  unfold NNinstance.
+  intros.
+  rewrite (deltalosses_None H).
+  reflexivity.
+Qed.
