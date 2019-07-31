@@ -1,6 +1,7 @@
 Require Import String.
 Require Import RelationClasses.
 Require Import List.
+Require Import ListAdd.
 Require Import Rbase Rtrigo Rpower Rbasic_fun.
 Require Import DefinedFunctions.
 Require Import Lra.
@@ -125,3 +126,40 @@ Proof.
   rewrite (deltalosses_None H).
   reflexivity.
 Qed.
+
+Definition lookup_list (σ:df_env) (lvar : list SubVar) : option (list R) :=
+  listo_to_olist (map (fun v => lookup var_dec σ v) lvar).
+
+(* we don't know what a random state type is yet *)
+Definition RND_state := Type.
+
+Fixpoint randvecst (n : nat) (st : RND_state ) (randgen : RND_state -> (R * RND_state)) : list (R * RND_state) := 
+  match n with
+  | 0 => nil
+  | S n' => let rst :=  randgen st in
+            rst :: randvecst n' (snd rst) randgen
+  end.
+
+Definition randvec (n : nat ) (st : RND_state) (randgen : RND_state -> (R * RND_state)) : list (R) * RND_state := 
+  let rstlist := randvecst n st randgen in
+  (map fst rstlist, snd(last rstlist (R0,st))).
+
+Definition map2 {A:Type} {B:Type} {C:Type} (f: A -> B -> C ) (lA : list A) (lB : list B) : list C :=
+  map (fun '(a, b) => f a b) (combine lA lB).
+
+Definition map3 {A:Type} {B:Type} {C:Type} {D:Type} (f: A -> B -> C -> D) (lA : list A) (lB : list B) (lC : list C) : list D :=
+  map (fun '(a, bc) => f a (fst bc) (snd bc)) (combine lA (combine lB lC)).
+
+Local Open Scope R.
+
+Definition optimize_step (step : nat) (df : DefinedFunction) (σ:df_env) (lvar : list SubVar) (st : RND_state) (randgen : RND_state -> (R * RND_state)) : (option df_env)*RND_state :=
+  let ogradvec := df_eval_gradient σ df lvar in
+  let alpha   := / (INR (S step)) in
+  let '(noisevec, Rstate) := randvec (length lvar) st randgen in
+  let olvals := lookup_list σ lvar in
+  match (ogradvec, olvals) with
+    | (Some gradvec, Some lvals) => 
+      (Some (combine lvar (map3 (fun val grad noise => val - alpha*(grad + noise))
+                                lvals gradvec noisevec)), Rstate)
+    | (_, _) => (None, Rstate)
+  end.                  
