@@ -1,5 +1,6 @@
 Require Import String.
 Require Import RelationClasses.
+Require Import Streams.
 Require Import List.
 Require Import ListAdd.
 Require Import Rbase Rtrigo Rpower Rbasic_fun.
@@ -130,6 +131,7 @@ Qed.
 Definition lookup_list (σ:df_env) (lvar : list SubVar) : option (list R) :=
   listo_to_olist (map (fun v => lookup var_dec σ v) lvar).
 
+(*
 (* we don't know what a random state type is yet *)
 Definition RND_state := Type.
 
@@ -143,23 +145,43 @@ Fixpoint randvecst (n : nat) (st : RND_state ) (randgen : RND_state -> (R * RND_
 Definition randvec (n : nat ) (st : RND_state) (randgen : RND_state -> (R * RND_state)) : list (R) * RND_state := 
   let rstlist := randvecst n st randgen in
   (map fst rstlist, snd(last rstlist (R0,st))).
+*)
 
-Definition map2 {A:Type} {B:Type} {C:Type} (f: A -> B -> C ) (lA : list A) (lB : list B) : list C :=
+Definition combine_with {A:Type} {B:Type} {C:Type} (f: A -> B -> C ) (lA : list A) (lB : list B) : list C :=
   map (fun '(a, b) => f a b) (combine lA lB).
 
-Definition map3 {A:Type} {B:Type} {C:Type} {D:Type} (f: A -> B -> C -> D) (lA : list A) (lB : list B) (lC : list C) : list D :=
+Definition combine3_with {A:Type} {B:Type} {C:Type} {D:Type} (f: A -> B -> C -> D) (lA : list A) (lB : list B) (lC : list C) : list D :=
   map (fun '(a, bc) => f a (fst bc) (snd bc)) (combine lA (combine lB lC)).
+
+Fixpoint streamtake (n : nat) {A : Type} (st : Stream A) : (list A) * (Stream A) :=
+  match n with
+  | 0 => (nil, st)
+  | S n' => let rst := streamtake n' (Streams.tl st) in
+            ((Streams.hd st)::(fst rst), snd rst)
+  end.
 
 Local Open Scope R.
 
-Definition optimize_step (step : nat) (df : DefinedFunction) (σ:df_env) (lvar : list SubVar) (st : RND_state) (randgen : RND_state -> (R * RND_state)) : (option df_env)*RND_state :=
+Fixpoint update_first {A B:Type} (dec:forall a a':A, {a=a'} + {a<>a'}) l a n : list (A*B)
+      := match l with
+         | nil => nil
+         | (f',v')::os => if dec a f' then (a,n)::os else (f',v')::(update_first dec os a n)
+         end.
+
+Definition update_firstp {A B:Type} (dec:forall a a':A, {a=a'} + {a<>a'}) := fun (l:list (A*B)) '(v,e') => update_first dec l v  e'.
+
+Definition update_list {A B:Type} (dec:forall a a':A, {a=a'} + {a<>a'}) (l up:list (A*B))  : list (A*B)
+      := fold_left (update_firstp dec) l up.
+
+
+Definition optimize_step (step : nat) (df : DefinedFunction) (σ:df_env) (lvar : list SubVar) (noise_st : Stream R) : (option df_env)*(Stream R) :=
   let ogradvec := df_eval_gradient σ df lvar in
   let alpha   := / (INR (S step)) in
-  let '(noisevec, Rstate) := randvec (length lvar) st randgen in
+  let '(lnoise, nst) := streamtake (length lvar) noise_st in
   let olvals := lookup_list σ lvar in
   match (ogradvec, olvals) with
     | (Some gradvec, Some lvals) => 
-      (Some (combine lvar (map3 (fun val grad noise => val - alpha*(grad + noise))
-                                lvals gradvec noisevec)), Rstate)
-    | (_, _) => (None, Rstate)
+      (Some (update_list var_dec σ (combine lvar (combine3_with (fun val grad noise => val - alpha*(grad + noise))
+                                                       lvals gradvec lnoise))), nst)
+    | (_, _) => (None, nst)
   end.                  
