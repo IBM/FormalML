@@ -125,7 +125,7 @@ Section Digits.
          | _ => l
          end.
 
-    Program Fixpoint nat_to_digits_backwards (n:nat) {measure n lt_wf} :
+    Program Fixpoint nat_to_digits_backwards (n:nat) {measure n lt} :
       {l:list digit | digits_to_nat (rev l) = n /\ (forall a, hd_error (rev l) = Some a -> proj1_sig a <> 0)}
       := if n == 0
          then nil

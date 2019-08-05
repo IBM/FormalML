@@ -335,19 +335,20 @@ Section CoqLibAdd.
     Lemma forallt_impl {A} {P1 P2:A->Type} {l:list A} :
       Forallt P1 l -> Forallt (fun x => P1 x -> P2 x) l -> Forallt P2 l.
     Proof.
-      Hint Constructors Forallt.
-      induction l; trivial.
-      inversion 1; inversion 1; subst.
-      auto.
+      induction l.
+      - intros; constructor.
+      - inversion 1; inversion 1; subst.
+        constructor; auto.
     Defined.
 
     Lemma forallt_weaken {A} P : (forall x:A, P x) -> forall l, Forallt P l.
     Proof.
-      Hint Constructors Forallt.
       intros.
-      induction l. apply Forallt_nil.
-      apply Forallt_cons. apply (X a).
-      trivial.
+      induction l.
+      - apply Forallt_nil.
+      - apply Forallt_cons.
+        + apply (X a).
+        + trivial.
     Defined.
 
     Lemma Forallt_inv: forall A P (a:A) l, Forallt P (a :: l) -> P a.

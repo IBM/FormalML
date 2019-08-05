@@ -45,7 +45,7 @@ Section Sublist.
         forall x l1 l2, sublist l1 l2 -> sublist l1 (x::l2)
     .
     
-    Hint Constructors sublist.
+    Hint Constructors sublist : list.
     
     Lemma sublist_In {l1 l2:list A} :
       sublist l1 l2 -> forall x, In x l1 -> In x l2.
@@ -70,7 +70,7 @@ Section Sublist.
     Qed.
 
     
-    Hint Immediate sublist_nil_l.
+    Hint Immediate sublist_nil_l : list.
     
     Global Instance sublist_pre : PreOrder sublist.
     Proof.
@@ -79,10 +79,10 @@ Section Sublist.
       - intros.
         apply sublist_nil_r in H0; subst.
         apply sublist_nil_r in H; subst.
-        auto.
+        auto with list.
       - intros.
-        inversion H0; subst; eauto 3.
-        inversion H; subst; eauto 3.
+        inversion H0; subst; eauto 3 with list.
+        inversion H; subst; eauto 3 with list.
     Qed.
 
     Lemma sublist_trans l1 l2 l3:
@@ -143,9 +143,9 @@ Section Sublist.
       sublist a2 b2 ->
       sublist (a1 ++ a2) (b1 ++ b2).
     Proof.
-      Hint Constructors sublist.
+      Hint Constructors sublist : list.
       revert a1 a2 b2.
-      induction b1; inversion 1; subst; simpl; eauto.
+      induction b1; inversion 1; subst; simpl; eauto with list.
     Qed.
 
     Lemma sublist_app_l (l1 l2:list A) : sublist l1 (l1 ++ l2).
@@ -173,7 +173,7 @@ Section Sublist.
     
   End sublist.
 
-  Hint Constructors sublist.
+  Hint Constructors sublist : list.
 
   Lemma cut_down_to_sublist
         {A B} {dec:EqDec A eq}
@@ -188,8 +188,8 @@ Section Sublist.
     sublist l1 l2 -> sublist (map f l1) (map f l2).
   Proof.
     revert l1; induction l2; intros.
-    - apply sublist_nil_r in H; subst; simpl; auto.
-    - inversion H; subst; simpl; auto.
+    - apply sublist_nil_r in H; subst; simpl; auto with list.
+    - inversion H; subst; simpl; auto with list.
   Qed.
 
   Lemma sublist_domain {A B} {l1 l2:list(A*B)} :
@@ -204,11 +204,11 @@ Section Sublist.
   Proof.
     revert l1 l2.
     induction l3; intros.
-    - apply sublist_nil_r in H; subst; simpl; trivial.
+    - apply sublist_nil_r in H; subst; simpl; trivial with list.
     - inversion H; subst.
       + simpl.
-        match_destr; eauto.
-      + eauto.
+        match_destr; eauto with list.
+      + eauto with list.
   Qed.
   
   Global Instance Forall_sublist {A} {P:A->Prop} :
@@ -278,7 +278,7 @@ Section Sublist.
     trivial.
   Qed.
 
-  Hint Immediate sublist_nil_l.
+  Hint Immediate sublist_nil_l : list.
 
   Lemma StronglySorted_incl_sublist {A R l1 l2} `{EqDec A eq} `{StrictOrder A R} : 
     StronglySorted R l1 ->
@@ -291,10 +291,10 @@ Section Sublist.
     generalize (StronglySorted_NoDup _ H2).
     revert l1 H1 H2 H3.
     induction l2; simpl.
-    - destruct l1; simpl; auto 1.
+    - destruct l1; simpl; auto 1 with list.
       intros. specialize (H3 a); intuition.
     - intros. inversion H2; subst.
-      destruct l1; auto 1.
+      destruct l1; auto 1 with list.
       simpl in *.
       inversion H1; subst.
       inversion H4; inversion H5; subst.
@@ -381,7 +381,7 @@ Section Sublist.
     sublist l1 l2 -> sublist (filter f l1) (filter f l2).
   Proof.
     revert l1. induction l2; simpl; intros.
-    - apply sublist_nil_r in H; subst; simpl; auto 1.
+    - apply sublist_nil_r in H; subst; simpl; auto 1 with list.
     - inversion H; subst.
       + specialize (IHl2 _ H2); simpl.
         destruct (f a); [apply sublist_cons | ]; congruence.
@@ -446,12 +446,12 @@ Section Sublist.
   Proof.
     revert l1.
     induction l2; intros l1; destruct l1.
-    - left; trivial.
+    - left; trivial with list.
     - right; inversion 1.
     - left; apply sublist_nil_l.
     - destruct (a0 == a).
       + destruct (IHl2 l1).
-        * left. rewrite e. eauto.
+        * left. rewrite e. eauto with list.
         * right. rewrite e. intro subl.
           apply sublist_cons_eq_inv in subl.
           intuition.
@@ -465,7 +465,7 @@ Section Sublist.
     sublist (remove dec x l1) (remove dec x l2).
   Proof.
     revert l1. induction l2; simpl; intros.
-    - apply sublist_nil_r in H; subst; simpl; auto 1.
+    - apply sublist_nil_r in H; subst; simpl; auto 1 with list.
     - inversion H; subst.
       + specialize (IHl2 _ H2); simpl.
         match_destr. apply sublist_cons; auto.
@@ -599,7 +599,7 @@ Section Sublist.
     unfold incl.
     revert l1.
     induction l2; simpl.
-    - destruct l1; simpl; eauto 3.
+    - destruct l1; simpl; eauto 3 with list.
       intros ? inn.
       specialize (inn a); intuition.
     - intros.
@@ -837,4 +837,4 @@ Section Sublist.
   Qed.
 
 End Sublist.
-Hint Immediate sublist_nil_l.
+Hint Immediate sublist_nil_l : list.

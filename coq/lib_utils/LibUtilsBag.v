@@ -95,7 +95,7 @@ Section Bag.
       | y::tl => if (x == y) then tl else y::(remove_one x tl)
     end.
 
-  Hint Unfold ldeqA.
+  Hint Unfold ldeqA : bag.
 
   Ltac tac
     := repeat progress (intros; simpl in *; try autorewrite with bag in *; try match goal with
@@ -124,7 +124,7 @@ Section Bag.
            destruct (@equiv_dec A eqA eqvA eqdecA x y)
        end;
                         unfold complement, Equivalence.equiv in *;
-                          try subst; try reflexivity; eauto).
+                          try subst; try reflexivity; eauto with bag).
 
   Global Instance remove_one_proper : Proper (eq ==> ldeqA ==> ldeqA) remove_one.
   Proof.
@@ -191,12 +191,14 @@ Section Bag.
 
   Global Instance bminus_proper : Proper (ldeqA ==> ldeqA ==> ldeqA) bminus.
   Proof.
-    unfold Proper, respectful.
+    unfold Proper, respectful, ldeqA.
     intros x y H.
     elim H; tac.
-    - rewrite remove_one_comm; eauto.
+    - rewrite H2; eauto.
+    - rewrite remove_one_comm.
+      rewrite H0.
+      eauto.
     - rewrite H1; eauto.
-      symmetry; eauto.
   Qed. 
 
   (* some useful properties *)
@@ -300,7 +302,7 @@ Section Bag.
   Proof.
     intros; induction l; tac.
     left; exists (a0::x).
-    rewrite perm_swap, l0; eauto.
+    rewrite perm_swap, l0; eauto with bag.
   Qed.
 
   (* It seems some properties are easier to check on a different representation with
@@ -328,7 +330,7 @@ Section Bag.
     
     Notation "X ≅# Y" := (mult_equiv X Y) (at level 70) : rbag_scope.                              (* ≅ = \cong *)
 
-    Hint Unfold mult_equiv.
+    Hint Unfold mult_equiv : bag.
 
     Global Instance mult_proper : Proper (ldeqA ==> eq ==> eq) mult.
     Proof.
@@ -369,8 +371,7 @@ Section Bag.
 
     Lemma groupby_noDup l : NoDup (domain (groupby l)).
     Proof.
-      Hint Constructors NoDup.
-      induction l; simpl; trivial.
+      induction l; simpl; [constructor | ].
       case_eq (lookup equiv_dec (groupby l) a); [intros ? ?| intros neq].
       - rewrite domain_update_first; trivial.
       - simpl; constructor; auto. apply lookup_none_nin in neq; trivial.
@@ -405,11 +406,11 @@ Section Bag.
     
     Lemma smush_groupby l : Permutation (smush (groupby l)) l.
     Proof.
-      Hint Resolve groupby_noDup.
+      Hint Resolve groupby_noDup : bag.
       induction l; simpl; trivial.
       case_eq (lookup equiv_dec (groupby l) a); [intros n eqn | intros neq].
       - destruct (lookup_to_front equiv_dec eqn).
-        assert (perm1:Permutation (update_first equiv_dec (groupby l) a (S n)) (update_first equiv_dec ((a, n) :: x) a (S n))) by (apply update_first_NoDup_perm_proper; auto). 
+        assert (perm1:Permutation (update_first equiv_dec (groupby l) a (S n)) (update_first equiv_dec ((a, n) :: x) a (S n))) by (apply update_first_NoDup_perm_proper; auto with bag). 
         rewrite perm1.
         simpl. destruct (equiv_dec a a); try congruence.
         rewrite smush1.
@@ -1566,6 +1567,6 @@ Hint Rewrite
      bunion_bminus 
      remove_one_consed : bag.
 
-Hint Unfold ldeqA.
-Hint Unfold mult_equiv.
+Hint Unfold ldeqA : bag.
+Hint Unfold mult_equiv : bag.
 

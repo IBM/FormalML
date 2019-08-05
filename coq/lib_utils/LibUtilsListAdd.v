@@ -356,7 +356,7 @@ Section ListAdd.
         + right. now inversion_clear 1.
     Defined.
 
-    Global Instance Forall_perm {A P} : Proper ((@Permutation A) ==> iff) (@Forall A P).
+    Global Instance Forall_perm {P} : Proper ((@Permutation A) ==> iff) (@Forall A P).
     Proof.
       intros ? ? perm.
       repeat rewrite Forall_forall.
@@ -620,7 +620,6 @@ Section ListAdd.
           <->
           forallb2 f l1 l2 = true.
       Proof.
-        Hint Unfold iff.
         induction l1; destruct l2; simpl; intuition;
           repeat rewrite andb_true_iff in *; firstorder.
       Qed.
@@ -628,7 +627,6 @@ Section ListAdd.
       Lemma forallb2_Forallb {A B:Type} (f:A->B->bool) :
         forall l1 l2, forallb2 f l1 l2 = true <-> Forall2 (fun x y => f x y = true) l1 l2.
       Proof.
-        Hint Constructors Forall2.
         Ltac inv := try match goal with 
                         | [H:Forall2 _ _ (_::_) |- _ ] => inversion H; clear H
                         | [H:Forall2 _ (_::_) _ |- _ ] => inversion H; clear H
@@ -662,7 +660,6 @@ Section ListAdd.
         (forall x y, In x l1 -> In y l2 -> f1 x y-> f2 x y) ->
         Forall2 f1 l1 l2 -> Forall2 f2 l1 l2.
       Proof.
-        Hint Constructors Forall2.
         intros.
         induction H0; firstorder.
       Qed.
@@ -742,7 +739,6 @@ Section ListAdd.
       Lemma Forall2_conj {A B} {f1 f2:A->B->Prop} {l1 l2} : 
         Forall2 f1 l1 l2 -> Forall2 f2 l1 l2 -> Forall2 (fun x y => f1 x y /\ f2 x y) l1 l2.
       Proof.
-        Hint Constructors Forall2.
         intros.
         induction H0; trivial.
         invcs H; firstorder.
@@ -1678,7 +1674,7 @@ Section ListAdd.
       unfold asymmetric_over; simpl; intuition.
     Qed.
 
-    Hint Resolve asymmetric_over_cons_inv.
+    Hint Resolve asymmetric_over_cons_inv : list.
 
     Lemma asymmetric_over_swap {A} R {a b:A} {l1} :
       asymmetric_over R (a::b::l1) ->
@@ -1695,8 +1691,8 @@ Section ListAdd.
     
     Global Instance perm_in {A} : Proper (eq ==> (@Permutation A) ==> iff) (@In A).
     Proof.
-      Hint Resolve Permutation_in Permutation_sym.
-      unfold Proper, respectful; intros; subst; intuition; eauto.
+      Hint Resolve Permutation_in Permutation_sym : list.
+      unfold Proper, respectful; intros; subst; intuition; eauto with list.
     Qed.
     
     Lemma NoDup_perm' {A:Type} {a b:list A} : NoDup a -> Permutation a b -> NoDup b.
@@ -1705,7 +1701,7 @@ Section ListAdd.
       revert nd.
       revert a b p.
       apply (Permutation_ind_bis (fun l l' => NoDup l -> NoDup l')); intuition.
-      - inversion H1; subst. constructor; eauto.
+      - inversion H1; subst. constructor; eauto with list.
       - inversion H1; subst. inversion H5; subst.
         rewrite H in H4,H6.
         constructor; [|constructor]; simpl in *; intuition; subst; eauto.
@@ -1714,8 +1710,8 @@ Section ListAdd.
     Global Instance NoDup_perm {A:Type} :
       Proper (@Permutation A ==> iff) (@NoDup A).
     Proof.
-      Hint Resolve NoDup_perm' Permutation_sym.
-      unfold Proper, respectful; intros; subst; intuition; eauto.
+      Hint Resolve NoDup_perm' Permutation_sym : list.
+      unfold Proper, respectful; intros; subst; intuition; eauto with list.
     Qed.
 
     Lemma NoDup_Permutation' {A : Type} (l l' : list A) :
@@ -1740,12 +1736,12 @@ Section ListAdd.
         inversion H; subst; auto.
     Qed.
     
-    Hint Resolve NoDup_app_inv.
+    Hint Resolve NoDup_app_inv : list.
 
     Lemma NoDup_app_inv2 {A:Type} {a b:list A} : NoDup (a++b) -> NoDup b.
     Proof.
       rewrite Permutation_app_comm.
-      eauto.
+      eauto with list.
     Qed.
 
     Lemma NoDup_dec {A:Type} {dec:EqDec A eq} (l:list A): {NoDup l} + {~NoDup l}.
@@ -1905,7 +1901,7 @@ Section ListAdd.
       red; inversion 2.
     Qed.
 
-    Hint Immediate disjoint_nil_l disjoint_nil_r.
+    Hint Immediate disjoint_nil_l disjoint_nil_r : list.
 
     Lemma disjoint_incl {A:Type} (l1 l2 l3:list A) :
       incl l3 l2 ->
@@ -2284,6 +2280,6 @@ Section ListAdd.
 
 End ListAdd.
 
-Hint Resolve disjoint_nil_l disjoint_nil_r.
+Hint Resolve disjoint_nil_l disjoint_nil_r : list.
 
 Global Arguments remove_nin_inv {A eqdec v1 v2 l}.

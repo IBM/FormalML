@@ -287,10 +287,10 @@ Lemma StronglySorted_app_inv {A} {R:relation A} {l1 l2} :
   StronglySorted R (l1 ++ l2) ->
   StronglySorted R l1 /\ StronglySorted R l2.
 Proof.
-  Hint Constructors StronglySorted.
+  Hint Constructors StronglySorted : list.
   revert l2.
   induction l1; intros l2 ss; simpl in *.
-  - simpl in *; split; trivial.
+  - simpl in *; split; trivial with list.
   - inversion ss; subst; clear ss.
     destruct (IHl1 _ H1).
     split; trivial.
@@ -303,9 +303,9 @@ Lemma StronglySorted_sub {A} (R1 R2:relation A) :
     subrelation R1 R2 ->
     forall l, StronglySorted R1 l -> StronglySorted R2 l.
 Proof.
-  Hint Constructors StronglySorted.
+  Hint Constructors StronglySorted : list.
   intros sub.
-  induction l; simpl; intros ssl; trivial.
+  induction l; simpl; intros ssl; trivial with list.
   inversion ssl; clear ssl; subst.
   simpl in *.
   constructor.
@@ -318,9 +318,9 @@ Lemma StronglySorted_map_in {A B} (R1:relation A) (R2:relation B) (f:A->B) l :
   (forall x y, In x l /\ In y l -> R1 x y -> R2 (f x) (f y)) ->
   StronglySorted R1 l -> StronglySorted R2 (map f l).
 Proof.
-  Hint Constructors StronglySorted.
+  Hint Constructors StronglySorted : list.
   intros prop.
-  induction l; simpl; intros ssl; trivial.
+  induction l; simpl; intros ssl; trivial with list.
   inversion ssl; clear ssl; subst.
   simpl in *.
   constructor.

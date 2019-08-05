@@ -744,7 +744,6 @@ Section Bindings.
     Forall2 P l1 l2 ->
     Forall2 P (@rec_sort A l1) (@rec_sort B l2).
   Proof.
-    Hint Constructors Forall2.
     revert l2; induction l1; simpl; inversion 2; subst; eauto.
     simpl in *; inversion H.
     apply rec_cons_sort_Forall2; auto.
@@ -789,7 +788,7 @@ Section Bindings.
     rewrite <- IHl. apply insertion_sort_insert_equiv_domain.
   Qed.
 
-  Hint Resolve ODT_lt_strorder.
+  Hint Resolve ODT_lt_strorder : list.
   
   Lemma insertion_sort_insert_swap_neq {A} a1 (b1:A) a2 b2 l :
     ~(eq a1 a2) ->
@@ -1696,9 +1695,9 @@ Section Edot.
 
 End Edot.
 
-Hint Unfold rec_sort rec_concat_sort.
-Hint Resolve drec_sort_sorted drec_concat_sort_sorted.
-Hint Resolve is_list_sorted_NoDup_strlt.
+Hint Unfold rec_sort rec_concat_sort : list.
+Hint Resolve drec_sort_sorted drec_concat_sort_sorted : list.
+Hint Resolve is_list_sorted_NoDup_strlt : list.
 
 Section MergeBindings.
   (* Merge record stuff *)
@@ -1744,7 +1743,7 @@ Section MergeBindings.
     destruct (compatible g1 g2); try discriminate.
     inversion H0; subst.
     unfold rec_concat_sort, rec_concat_sort in *.
-    eauto.
+    eauto with list.
   Qed.
 
   Lemma edot_merge_bindings {A} `{EqDec A eq} (l1 l2:list (string*A)) (s:string) (x:A) :
@@ -1934,5 +1933,5 @@ Section MergeBindings.
 
 End MergeBindings.
 
-Hint Resolve @merge_bindings_sorted.
+Hint Resolve @merge_bindings_sorted : list.
 
