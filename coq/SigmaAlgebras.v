@@ -5,9 +5,8 @@ Require Import FinFun.
 Require Import List.
 Require Import Morphisms EquivDec.
 
-Require Import BasicTactics Sums ListAdd.
+Require Import Utils.
 Require Import ProbSpace.
-Require Import Isomorphism PairEncoding.
 
 Import ListNotations.
 

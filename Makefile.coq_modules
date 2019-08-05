@@ -14,19 +14,27 @@
 # limitations under the License.
 #
 
-MODULES = \
-	Assoc \
+QCERT_LIB_UTILS = LibUtilsAssoc LibUtilsBag LibUtilsBindings LibUtilsBindingsNat \
+		  LibUtilsClosure LibUtilsCompat LibUtilsCoqLibAdd LibUtilsDigits \
+		  LibUtilsFresh LibUtilsGroupByDomain LibUtilsInterleaved \
+		  LibUtilsLattice LibUtilsLift LibUtilsLiftIterators LibUtilsListAdd \
+		  LibUtilsResult LibUtilsSortingAdd LibUtilsStringAdd LibUtilsSublist \
+		  LibUtils
+
+MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
+	utils/Assoc \
+	utils/Isomorphism \
+	utils/ListAdd \
+	utils/PairEncoding \
+	utils/RealAdd \
+	utils/RiemannAdd \
+	utils/Sums \
+	utils/Utils \
 	AxiomaticNormedRealVectorSpace \
-	BasicTactics \
 	BorelSigmaAlgebra \
 	DefinedFunctions \
 	Gen_NN \
-	Isomorphism \
-	ListAdd \
-	PairEncoding \
 	ProbSpace \
-	RealAdd \
-	RiemannAdd \
 	SigmaAlgebras \
-	Sums \
 	sumtest
+	

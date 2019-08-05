@@ -3,82 +3,9 @@ Require Import RelationClasses Morphisms.
 Require Import Omega Lra Rbase.
 Require Import Relation_Definitions Sorted.
 
+Require Import LibUtils.
+
 Import ListNotations.
-Section incl.
-  
-  Lemma incl_app_iff {A:Type} (l m n : list A) :
-    incl (l ++ m) n <-> incl l n /\ incl m n.
-  Proof.
-    unfold incl; intuition.
-    rewrite in_app_iff in H.
-    intuition.
-  Qed.
-  
-  Global Instance incl_pre A : PreOrder (@incl A).
-  Proof.
-    unfold incl.
-    constructor; red; intuition.
-  Qed.
-
-  Lemma incl_dec {A} (dec:forall a b:A, {a = b} + {a <> b}) (l1 l2:list A) :
-    {incl l1 l2} + {~ incl l1 l2}.
-  Proof.
-    unfold incl.
-    induction l1.
-    - left; inversion 1.
-    - destruct IHl1.
-      + destruct (in_dec dec a l2).
-        * left; simpl; intros; intuition; congruence.
-        * right; simpl;  intros inn; apply n; intuition.
-      + right; simpl; intros inn; apply n; intuition.
-  Defined.
-
-  Lemma nincl_exists {A} (dec:forall a b:A, {a = b} + {a <> b}) (l1 l2:list A) :
-    ~ incl l1 l2 -> {x | In x l1 /\ ~ In x l2}.
-  Proof.
-    unfold incl.
-    induction l1; simpl.
-    - intros H; elim H;  intuition.
-    - intros.
-      destruct (in_dec dec a l2).
-      + destruct IHl1.
-        * intros inn.
-          apply H. intuition; subst; trivial.
-        * exists x; intuition.
-      + exists a; intuition.
-  Qed.
-
-  End incl.
-
-Section olist.
-  
-  Fixpoint listo_to_olist {a: Type} (l: list (option a)) : option (list a) :=
-    match l with
-    | nil => Some nil
-    | Some x :: xs => match listo_to_olist xs with
-                      | None => None
-                      | Some xs => Some (x::xs)
-                      end
-    | None :: xs => None
-    end.
-  
-  Lemma listo_to_olist_some {A:Type} (l:list (option A)) (l':list A) :
-    listo_to_olist l = Some l' ->
-    l = (map Some l').
-  Proof.
-    revert l'.
-    induction l; simpl; intros l' eqq.
-    - inversion eqq; subst; simpl; trivial.
-    - destruct a; try discriminate.
-      case_eq (listo_to_olist l)
-      ; [intros ? eqq2 | intros eqq2]
-      ; rewrite eqq2 in eqq
-      ; try discriminate.
-      inversion eqq; subst.
-      rewrite (IHl l0); trivial. 
-  Qed.
-
-End olist.
 
 Section Map.
 
@@ -100,26 +27,6 @@ End Map.
 
 Section Fold.
   Context {A B C: Type}.
-  
-  Lemma fold_left_map
-        (f:A -> C -> A) (g:B->C) (l:list B) (init:A) :
-    fold_left f (map g l) init = fold_left (fun a b => f a (g b)) l init.
-  Proof.
-    revert init.
-    induction l; simpl; trivial.
-  Qed.
-
-  Lemma fold_left_ext
-        (f g:A -> B -> A) (l:list B) (init:A) :
-    (forall x y, f x y = g x y) ->
-    fold_left f l init = fold_left g l init.
-  Proof.
-    intros eqq.
-    revert init.
-    induction l; simpl; trivial; intros.
-    rewrite eqq, IHl.
-    trivial.
-  Qed.
 
   Lemma fold_right_map
         (f:C -> A -> A) (g:B->C) (l:list B) (init:A) :
@@ -139,20 +46,6 @@ Proof.
   induction l; simpl.
   - lra.
   - rewrite IHl; lra.
-Qed.
-
-Lemma fold_right_perm {A} (f : A -> A -> A)
-      (assoc:forall x y z : A, f x (f y z) = f (f x y) z) 
-      (comm:forall x y : A, f x y = f y x) (l1 l2:list A) (unit:A) 
-      (perm:Permutation l1 l2) :
-  fold_right f unit l1 = fold_right f unit l2.
-Proof.
-  revert l1 l2 perm.
-  apply Permutation_ind_bis; simpl; intros.
-  - trivial.
-  - rewrite H0; trivial.
-  - rewrite assoc, (comm y x), <- assoc, H0; trivial.
-  - rewrite H0, H2; trivial.
 Qed.
 
 Section Seq.
@@ -201,20 +94,10 @@ Section Seq.
     f_equal; omega.
   Qed.
 
-  Lemma seq_app s n m : seq s (n + m) = seq s n ++ seq (s+n) m.
-  Proof.
-    revert s.
-    induction n; simpl; intros s.
-    - f_equal; omega.
-    - rewrite IHn.
-      do 3 f_equal.
-      omega.
-  Qed.
-  
   Lemma seq_Sn s n : seq s (S n) = seq s n ++ [(s+n)]%nat.
   Proof.
     replace (S n) with (n + 1)%nat by omega.
-    rewrite seq_app.
+    rewrite seq_plus.
     simpl; trivial.
   Qed.
 
@@ -390,7 +273,7 @@ Proof.
       omega.
 Qed.
 
-Lemma Forall_app {A} {P:A->Prop} {l1 l2} :
+Lemma Forall_app_iff {A} {P:A->Prop} {l1 l2} :
   Forall P (l1 ++ l2) <->
   Forall P l1 /\ Forall P l2.
 Proof.
@@ -412,7 +295,7 @@ Proof.
     destruct (IHl1 _ H1).
     split; trivial.
     constructor; trivial.
-    apply Forall_app in H2.
+    apply Forall_app_iff in H2.
     tauto.
 Qed.
 

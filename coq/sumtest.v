@@ -5,7 +5,7 @@ Require Import Reals.Integration.
 Require Import Rtrigo_def.
 
 Require Import Lra Omega.
-Require Import BasicTactics Sums.
+Require Import Utils.
 
 Local Open Scope R_scope.
 Implicit Type f : R -> R.

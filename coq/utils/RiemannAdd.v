@@ -7,7 +7,7 @@ Require Import List Permutation.
 Require Import Sorted.
 
 Require Import Lra Omega.
-Require Import BasicTactics Sums ListAdd RealAdd.
+Require Import LibUtils Sums ListAdd RealAdd.
 Require Import Isomorphism.
 
 Local Open Scope R_scope.

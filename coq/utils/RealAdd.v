@@ -6,7 +6,7 @@ Require Import Rtrigo_def.
 Require Import List.
 Require Import EquivDec Nat Omega Lra.
 
-Require Import BasicTactics ListAdd.
+Require Import LibUtils ListAdd.
 Require Import Relation_Definitions Sorted.
 
 Require Import Isomorphism.

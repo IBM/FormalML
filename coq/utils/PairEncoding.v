@@ -1,7 +1,7 @@
 Require Import BinNums Nat List.
 Require Import Omega.
 
-Require Import BasicTactics Isomorphism.
+Require Import LibUtils Isomorphism.
 Import ListNotations.
 
 Module Internal.

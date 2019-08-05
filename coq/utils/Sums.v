@@ -3,7 +3,7 @@ Require Import Coq.Reals.Rfunctions.
 Require Import List.
 Require Import EquivDec Nat Omega Lra.
 
-Require Import BasicTactics ListAdd.
+Require Import LibUtils ListAdd.
 Import ListNotations.
 
 Local Open Scope R.

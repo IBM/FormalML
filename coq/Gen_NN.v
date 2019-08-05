@@ -7,8 +7,7 @@ Require Import Rbase Rtrigo Rpower Rbasic_fun.
 Require Import DefinedFunctions.
 Require Import Lra.
 
-Require Import BasicTactics.
-Require Import ListAdd Assoc.
+Require Import Utils.
 
 Record FullNN : Type := mkNN { ldims : list nat; param_var : SubVar; 
                               f_activ : DefinedFunction ; f_loss : DefinedFunction }.

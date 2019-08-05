@@ -1,12 +1,12 @@
 Require Import String.
+Require Import EquivDec.
 Require Import RelationClasses.
 Require Import List.
 Require Import Rbase Rtrigo Rpower Rbasic_fun.
 Require Import Lra.
 
-Require Import BasicTactics.
-Require Import ListAdd Assoc.
-Require Import EquivDec.
+
+Require Import Utils.
 
 (* Declare Scope df_scope. *)
 
@@ -496,7 +496,7 @@ Require Import EquivDec.
       incl (df_free_variables f) (domain σ) -> {v | df_eval σ f = Some v}.
     Proof.
       induction f; simpl; intros inc
-      ;  try solve [rewrite incl_app_iff in inc
+      ;  try solve [rewrite <- incl_app_iff in inc
                     ; intuition
                     ; destruct H1 as [v1 ev1]
                     ; destruct H2 as [v2 ev2]
@@ -507,7 +507,7 @@ Require Import EquivDec.
                      ; rewrite ev1
                      ; eauto].
       - eauto.
-      - apply in_dom_lookup.
+      - apply in_dom_lookup_strong.
         specialize (inc v); simpl in *.
         intuition.
     Qed.
@@ -527,9 +527,9 @@ Require Import EquivDec.
       {v | In v (df_free_variables f) /\ ~ In v (domain σ)}.
     Proof.
       intros.
-      destruct (incl_dec var_dec (df_free_variables f) (domain σ)).
+      destruct (incl_dec (df_free_variables f) (domain σ)).
       - destruct (df_eval_complete _ _ i); congruence.
-      - apply (nincl_exists var_dec) in n; trivial.
+      - apply (nincl_exists) in n; trivial.
     Qed.
 
     (* Either we can evaluate df or we are missing a variable definition.
@@ -554,7 +554,7 @@ Require Import EquivDec.
     Defined.        
 
     Lemma df_eval_lookup_on (σ₁ σ₂:df_env) (f:DefinedFunction) :
-      lookup_equiv_on var_dec (df_free_variables f) σ₁ σ₂ ->
+      lookup_equiv_on (df_free_variables f) σ₁ σ₂ ->
       df_eval σ₁ f = df_eval σ₂ f.
     Proof.
       intros lookeq.
