@@ -161,12 +161,6 @@ Fixpoint streamtake (n : nat) {A : Type} (st : Stream A) : (list A) * (Stream A)
 
 Local Open Scope R.
 
-Fixpoint update_first {A B:Type} (dec:forall a a':A, {a=a'} + {a<>a'}) l a n : list (A*B)
-      := match l with
-         | nil => nil
-         | (f',v')::os => if dec a f' then (a,n)::os else (f',v')::(update_first dec os a n)
-         end.
-
 Definition update_firstp {A B:Type} (dec:forall a a':A, {a=a'} + {a<>a'}) := fun (l:list (A*B)) '(v,e') => update_first dec l v  e'.
 
 Definition update_list {A B:Type} (dec:forall a a':A, {a=a'} + {a<>a'}) (l up:list (A*B))  : list (A*B)
