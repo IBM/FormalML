@@ -10,9 +10,8 @@ RUN ["/bin/bash", "--login", "-c", "set -x \
 
 WORKDIR /home/coq
 
-COPY _CoqProject Makefile Makefile.coq_modules ./
-COPY coq coq
+COPY --chown=coq:coq _CoqProject Makefile Makefile.coq_modules ./
+COPY --chown=coq:coq coq coq
 
 RUN ["/bin/bash", "--login", "-c", "set -x \
-  && sudo chown -R coq:coq /home/coq \
-  && make coq"]
+      && make coq"]
