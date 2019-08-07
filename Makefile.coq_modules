@@ -28,6 +28,8 @@ MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	utils/PairEncoding \
 	utils/RealAdd \
 	utils/RiemannAdd \
+	utils/StreamAdd \
+	utils/StreamLimits \
 	utils/Sums \
 	utils/Utils \
 	AxiomaticNormedRealVectorSpace \

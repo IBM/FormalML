@@ -4,7 +4,7 @@ FROM ${coq_image}
 RUN ["/bin/bash", "--login", "-c", "set -x \
   && if [ -n \"${COMPILER_EDGE}\" ]; then opam switch ${COMPILER_EDGE} && eval $(opam env); fi \
   && opam update -y \
-  && opam install -y -j ${NJOBS} coq-mathcomp-ssreflect \
+  && opam install -y -j ${NJOBS} coq-mathcomp-ssreflect coq-coquelicot \ 
   && opam config list && opam repo list && opam list \
   && opam clean -a -c -s --logs"]
 
