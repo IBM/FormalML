@@ -3,7 +3,7 @@ Require Import Coq.Reals.Rfunctions.
 Require Import List.
 Require Import EquivDec Nat Omega Lra.
 
-Require Import LibUtils ListAdd.
+Require Import LibUtils ListAdd RealAdd.
 Import ListNotations.
 
 Local Open Scope R.
@@ -582,3 +582,151 @@ Qed.
   Qed.    
   
 End inf_sum'.
+
+Section harmonic.
+
+  Lemma fold_right_plus_acc_power2 n :
+    fold_right (fun (a : nat) (b : R) => 1 / INR (S a) + b) 0 (seq (2 ^ n) (2 ^ n)) >= 1 / 2.
+  Proof.
+    induction n.
+    - simpl; lra.
+    - Opaque INR.
+      simpl.
+      rewrite Nat.add_0_r.
+      rewrite seq_plus.
+      rewrite fold_right_app.
+      rewrite fold_right_plus_acc.
+      Transparent INR.
+  Admitted.      
+
+  Lemma seq_shiftn start len : seq start len = map (plus start) (seq 0 len).
+  Proof.
+    induction start; simpl.
+    - rewrite map_id; trivial.
+    - rewrite <- seq_shift.
+      rewrite IHstart.
+      rewrite map_map.
+      trivial.
+  Qed.
+  
+  Lemma sum_f_R0'_plus_n f n1 n2 : sum_f_R0' f (n1 + n2) =
+                                   sum_f_R0' f n1 +
+                                   sum_f_R0' (fun x => f (n1+x))%nat n2.
+  Proof.
+    repeat rewrite sum_f_R0'_as_fold_right.
+    rewrite seq_plus.
+    rewrite fold_right_app.
+    rewrite fold_right_plus_acc.
+    simpl.
+    rewrite (seq_shiftn n1).
+    rewrite fold_right_map.
+    trivial.
+  Qed.
+
+  Lemma sum_f_R0'_le_f (f g:nat->R) n :
+    (forall i, (i < n)%nat -> f i <= g i) ->
+    sum_f_R0' f n <= sum_f_R0' g n.
+  Proof.
+    induction n; simpl.
+    - lra.
+    - intros fa.
+      apply Rplus_le_compat; auto.
+  Qed.        
+
+  Lemma frac_max_frac_le (x y:R) :
+    1 <= x ->
+    x <= y ->
+    x / (x + 1) <= y / (y + 1).
+  Proof.
+    intros.
+    assert (1 <= x) by lra.
+    cut (x * (y + 1) <= y * (x + 1)).
+    - intros HH.
+      apply (Rmult_le_compat_r (/ (x+1))) in HH.
+      + rewrite Rinv_r_simpl_l in HH by lra.
+        apply (Rmult_le_compat_r (/ (y+1))) in HH.
+        * eapply Rle_trans; try eassumption.
+          unfold Rdiv.
+          repeat rewrite Rmult_assoc.
+          apply Rmult_le_compat_l; [lra | ].
+          rewrite <- Rmult_assoc.
+          rewrite Rinv_r_simpl_m by lra.
+          right; trivial.
+        * left; apply Rinv_0_lt_compat; lra.
+      + left; apply Rinv_0_lt_compat; lra.
+    - lra.
+  Qed.
+
+  Lemma pow_le1 n : (1 <= 2 ^ n)%nat.
+  Proof.
+    induction n; simpl; omega.
+  Qed.
+    
+  Lemma sum_f_R0'_eq2 n :
+    sum_f_R0' (fun _:nat => 1 / INR (S (2^n))) (2^n)%nat >= 1/2.
+  Proof.
+    intros.
+    rewrite sum_f_R0'_const.
+    rewrite S_INR.
+    field_simplify.
+    - apply Rle_ge.
+      apply frac_max_frac_le.
+      + lra.
+      + replace 1 with (INR 1) by reflexivity.
+        apply le_INR.
+        apply pow_le1.
+    - rewrite <- S_INR.
+      apply INR_nzero.
+      omega.
+  Qed.
+        
+Lemma sum_f_R0'_bound2 (n:nat) : sum_f_R0' (fun i:nat => 1 / INR (S i)) (2^n)%nat >= 1+(INR n)/2.
+Proof.
+  intros.
+  induction n.
+  - simpl; lra.
+  - rewrite S_INR.
+    simpl pow.
+    rewrite sum_f_R0'_plus_n.
+    replace ( 1 + (INR n + 1) / 2) with ( 1 + INR n / 2 + 1 / 2) by lra.
+    apply Rplus_ge_compat; trivial.
+    rewrite Nat.add_0_r.
+    eapply Rge_trans; [ | apply (sum_f_R0'_eq2 n) ].
+    apply Rle_ge.
+    apply sum_f_R0'_le_f; intros.
+    unfold Rdiv.
+    apply Rmult_le_compat_l; [ lra | ].
+    apply Rinv_le_contravar.
+    + apply INR_zero_lt.
+      omega.
+    + apply le_INR.
+      omega.
+    SearchAbout Rinv.
+    repeat rewrite S_INR.
+    rewrite plus_INR.
+    
+    
+    + apply sum_f_R0'_eq2.
+    apply Rle_trans 
+    ; eapply sum_f_R0'_le_f.
+    
+    
+
+    
+    rewrite sum_f_R0'_as_fold_right in *.
+    rewrite seq_plus.
+    rewrite fold_right_app.
+    rewrite fold_right_plus_acc.
+    replace ( 1 + (INR n + 1) / 2) with ( 1 + INR n / 2 + 1 / 2) by lra.
+    apply Rplus_ge_compat; trivial.
+    rewrite plus_O_n.
+    rewrite Nat.add_0_r.
+    rewrite seq_shiftn.
+    rewrite fold_right_map.
+    rewrite <- sum_f_R0'_as_fold_right.
+    apply Rle_ge.
+    SearchAbout sum_f_R0'.
+    sum_f_R0' f (2 ^ n) <= sum_f_R0' f (2 ^ n) <= 
+    SearchAbout sum_f_R0'.
+    
+Qed.
