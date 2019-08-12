@@ -121,6 +121,16 @@ Proof.
   trivial.
 Qed.
 
+Lemma seq_shiftn_map start len : seq start len = map (plus start) (seq 0 len).
+Proof.
+  induction start; simpl.
+  - rewrite map_id; trivial.
+  - rewrite <- seq_shift.
+    rewrite IHstart.
+    rewrite map_map.
+    trivial.
+Qed.
+
 End Seq.
 
 Section fp.

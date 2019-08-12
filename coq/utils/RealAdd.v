@@ -26,6 +26,16 @@ Proof.
     lra.
 Qed.
 
+Lemma INR_nzero_eq {n} :
+  (~ n = 0)%nat -> INR n <> 0.
+Proof.
+  destruct n.
+  - omega.
+  - rewrite S_INR.
+    generalize (pos_INR n); intros.
+    lra.
+Qed.
+
 Lemma INR_zero_lt {n} :
   (n > 0)%nat -> 0 < INR n.
 Proof.
@@ -287,4 +297,27 @@ Proof.
   generalize (up_nonneg _ H).
   omega.
 Qed.
-  
+
+Lemma frac_max_frac_le (x y:R) :
+  1 <= x ->
+  x <= y ->
+  x / (x + 1) <= y / (y + 1).
+Proof.
+  intros.
+  assert (1 <= x) by lra.
+  cut (x * (y + 1) <= y * (x + 1)).
+  - intros HH.
+    apply (Rmult_le_compat_r (/ (x+1))) in HH.
+    + rewrite Rinv_r_simpl_l in HH by lra.
+      apply (Rmult_le_compat_r (/ (y+1))) in HH.
+      * eapply Rle_trans; try eassumption.
+        unfold Rdiv.
+        repeat rewrite Rmult_assoc.
+        apply Rmult_le_compat_l; [lra | ].
+        rewrite <- Rmult_assoc.
+        rewrite Rinv_r_simpl_m by lra.
+        right; trivial.
+      * left; apply Rinv_0_lt_compat; lra.
+    + left; apply Rinv_0_lt_compat; lra.
+  - lra.
+Qed.

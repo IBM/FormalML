@@ -242,6 +242,30 @@ Proof.
       lra.
   Qed.
 
+  Lemma sum_f_R0'_plus_n f n1 n2 : sum_f_R0' f (n1 + n2) =
+                                   sum_f_R0' f n1 +
+                                   sum_f_R0' (fun x => f (n1+x))%nat n2.
+  Proof.
+    repeat rewrite sum_f_R0'_as_fold_right.
+    rewrite seq_plus.
+    rewrite fold_right_app.
+    rewrite fold_right_plus_acc.
+    simpl.
+    rewrite (seq_shiftn_map n1).
+    rewrite fold_right_map.
+    trivial.
+  Qed.
+
+  Lemma sum_f_R0'_le_f (f g:nat->R) n :
+    (forall i, (i < n)%nat -> f i <= g i) ->
+    sum_f_R0' f n <= sum_f_R0' g n.
+  Proof.
+    induction n; simpl.
+    - lra.
+    - intros fa.
+      apply Rplus_le_compat; auto.
+  Qed.        
+
 End sum'.
 
 Section inf_sum'.
@@ -585,148 +609,135 @@ End inf_sum'.
 
 Section harmonic.
 
-  Lemma fold_right_plus_acc_power2 n :
-    fold_right (fun (a : nat) (b : R) => 1 / INR (S a) + b) 0 (seq (2 ^ n) (2 ^ n)) >= 1 / 2.
-  Proof.
-    induction n.
-    - simpl; lra.
-    - Opaque INR.
-      simpl.
-      rewrite Nat.add_0_r.
-      rewrite seq_plus.
-      rewrite fold_right_app.
-      rewrite fold_right_plus_acc.
-      Transparent INR.
-  Admitted.      
-
-  Lemma seq_shiftn start len : seq start len = map (plus start) (seq 0 len).
-  Proof.
-    induction start; simpl.
-    - rewrite map_id; trivial.
-    - rewrite <- seq_shift.
-      rewrite IHstart.
-      rewrite map_map.
-      trivial.
-  Qed.
-  
-  Lemma sum_f_R0'_plus_n f n1 n2 : sum_f_R0' f (n1 + n2) =
-                                   sum_f_R0' f n1 +
-                                   sum_f_R0' (fun x => f (n1+x))%nat n2.
-  Proof.
-    repeat rewrite sum_f_R0'_as_fold_right.
-    rewrite seq_plus.
-    rewrite fold_right_app.
-    rewrite fold_right_plus_acc.
-    simpl.
-    rewrite (seq_shiftn n1).
-    rewrite fold_right_map.
-    trivial.
-  Qed.
-
-  Lemma sum_f_R0'_le_f (f g:nat->R) n :
-    (forall i, (i < n)%nat -> f i <= g i) ->
-    sum_f_R0' f n <= sum_f_R0' g n.
-  Proof.
-    induction n; simpl.
-    - lra.
-    - intros fa.
-      apply Rplus_le_compat; auto.
-  Qed.        
-
-  Lemma frac_max_frac_le (x y:R) :
-    1 <= x ->
-    x <= y ->
-    x / (x + 1) <= y / (y + 1).
-  Proof.
-    intros.
-    assert (1 <= x) by lra.
-    cut (x * (y + 1) <= y * (x + 1)).
-    - intros HH.
-      apply (Rmult_le_compat_r (/ (x+1))) in HH.
-      + rewrite Rinv_r_simpl_l in HH by lra.
-        apply (Rmult_le_compat_r (/ (y+1))) in HH.
-        * eapply Rle_trans; try eassumption.
-          unfold Rdiv.
-          repeat rewrite Rmult_assoc.
-          apply Rmult_le_compat_l; [lra | ].
-          rewrite <- Rmult_assoc.
-          rewrite Rinv_r_simpl_m by lra.
-          right; trivial.
-        * left; apply Rinv_0_lt_compat; lra.
-      + left; apply Rinv_0_lt_compat; lra.
-    - lra.
-  Qed.
-
   Lemma pow_le1 n : (1 <= 2 ^ n)%nat.
   Proof.
     induction n; simpl; omega.
   Qed.
-    
+
+  Lemma Sle_mult_gt1 a n :
+    (n > 0)%nat ->
+    (a > 1)%nat ->
+    (S n <= a * n)%nat.
+  Proof.
+    destruct a; try omega.
+    destruct a; try omega.
+    intros.
+    simpl.
+    destruct n; simpl; try omega.
+    apply le_n_S.
+    rewrite plus_comm.
+    apply le_n_S.
+    fold add.
+    rewrite <- plus_assoc.
+    apply Nat.le_add_r.
+  Qed.
+
+  Lemma pow_exp_gt a b :
+    (a > 1)%nat ->
+    (a ^ b > b)%nat.
+  Proof.
+    intros neq.
+    induction b; simpl.
+    - omega.
+    - apply gt_n_S in IHb.
+      eapply le_gt_trans; try eassumption.
+      apply Sle_mult_gt1; omega. 
+  Qed.      
   Lemma sum_f_R0'_eq2 n :
-    sum_f_R0' (fun _:nat => 1 / INR (S (2^n))) (2^n)%nat >= 1/2.
+    sum_f_R0' (fun _:nat => 1 / INR (2^(S n))) (2^n)%nat = 1/2.
   Proof.
     intros.
     rewrite sum_f_R0'_const.
-    rewrite S_INR.
-    field_simplify.
-    - apply Rle_ge.
-      apply frac_max_frac_le.
-      + lra.
-      + replace 1 with (INR 1) by reflexivity.
-        apply le_INR.
-        apply pow_le1.
-    - rewrite <- S_INR.
-      apply INR_nzero.
+    replace (2 ^ S n)%nat with (2 * 2 ^ n)%nat by reflexivity.
+    rewrite mult_INR.
+    unfold Rdiv.
+    rewrite Rinv_mult_distr.
+    - repeat rewrite Rmult_assoc.
+      rewrite <- Rinv_l_sym.
+      + simpl; lra.
+      + apply INR_nzero_eq.
+        apply Nat.pow_nonzero.
+        omega.
+    - simpl; lra.
+    - apply INR_nzero_eq.
+      apply Nat.pow_nonzero.
       omega.
   Qed.
-        
-Lemma sum_f_R0'_bound2 (n:nat) : sum_f_R0' (fun i:nat => 1 / INR (S i)) (2^n)%nat >= 1+(INR n)/2.
-Proof.
-  intros.
-  induction n.
-  - simpl; lra.
-  - rewrite S_INR.
-    simpl pow.
-    rewrite sum_f_R0'_plus_n.
-    replace ( 1 + (INR n + 1) / 2) with ( 1 + INR n / 2 + 1 / 2) by lra.
-    apply Rplus_ge_compat; trivial.
-    rewrite Nat.add_0_r.
-    eapply Rge_trans; [ | apply (sum_f_R0'_eq2 n) ].
-    apply Rle_ge.
-    apply sum_f_R0'_le_f; intros.
-    unfold Rdiv.
-    apply Rmult_le_compat_l; [ lra | ].
-    apply Rinv_le_contravar.
-    + apply INR_zero_lt.
-      omega.
-    + apply le_INR.
-      omega.
-    SearchAbout Rinv.
-    repeat rewrite S_INR.
-    rewrite plus_INR.
-    
-    
-    + apply sum_f_R0'_eq2.
-    apply Rle_trans 
-    ; eapply sum_f_R0'_le_f.
-    
-    
+  
+  Lemma sum_f_R0'_bound2 (n:nat) : sum_f_R0' (fun i:nat => 1 / INR (S i)) (2^n)%nat >= 1+(INR n)/2.
+  Proof.
+    intros.
+    induction n.
+    - simpl; lra.
+    - rewrite S_INR.
+      simpl pow.
+      rewrite sum_f_R0'_plus_n.
+      replace ( 1 + (INR n + 1) / 2) with ( 1 + INR n / 2 + 1 / 2) by lra.
+      apply Rplus_ge_compat; trivial.
+      rewrite Nat.add_0_r.
+      clear.
+      eapply Rge_trans; [ | right; apply (sum_f_R0'_eq2 n)].
+      apply Rle_ge.
+      apply sum_f_R0'_le_f; intros.
+      unfold Rdiv.
+      apply Rmult_le_compat_l; [ lra | ].
+      apply Rinv_le_contravar.
+      + apply INR_zero_lt.
+        omega.
+      + apply le_INR.
+        simpl.
+        omega.
+  Qed.
 
-    
-    rewrite sum_f_R0'_as_fold_right in *.
-    rewrite seq_plus.
-    rewrite fold_right_app.
-    rewrite fold_right_plus_acc.
-    replace ( 1 + (INR n + 1) / 2) with ( 1 + INR n / 2 + 1 / 2) by lra.
-    apply Rplus_ge_compat; trivial.
-    rewrite plus_O_n.
-    rewrite Nat.add_0_r.
-    rewrite seq_shiftn.
-    rewrite fold_right_map.
-    rewrite <- sum_f_R0'_as_fold_right.
-    apply Rle_ge.
-    SearchAbout sum_f_R0'.
-    sum_f_R0' f (2 ^ n) <= sum_f_R0' f (2 ^ n) <= 
-    SearchAbout sum_f_R0'.
-    
-Qed.
+  Lemma harmonic_diverges' l : ~ infinite_sum' (fun i:nat => 1 / INR (S i)) l.
+  Proof.
+    intros inf.
+    specialize (inf 1).
+    cut_to inf; try lra.
+    destruct inf as [N Npf].
+    specialize (Npf (2^(2*(N + Z.to_nat (up l))))%nat).
+    cut_to Npf.
+    - generalize (sum_f_R0'_bound2 (2 * (N + Z.to_nat (up l)))); intros sle.
+      rewrite mult_INR in sle.
+      unfold Rdiv in sle.
+      rewrite Rinv_r_simpl_m in sle by (simpl; lra).
+      unfold R_dist in Npf.
+      apply Rabs_def2 in Npf.
+      destruct Npf as [Npf1 Npf2].
+      assert (oops:INR (N + Z.to_nat (up l)) < l) by lra.
+      rewrite plus_INR in oops.
+      assert (lgt:l > 0).
+      { eapply Rle_lt_trans; try eapply oops.
+        apply Rplus_le_le_0_compat
+        ; apply pos_INR.
+      }
+      rewrite INR_up_pos in oops by lra.
+      destruct (archimed l).
+      generalize (pos_INR N).
+      lra.
+    - rewrite Nat.pow_mul_r.
+      simpl.
+      rewrite NPeano.Nat.pow_add_r.
+      unfold ge.
+      replace N with (N * 1)%nat at 1 by omega.
+      apply mult_le_compat.
+      + generalize (pow_exp_gt 4 N)
+        ; omega.
+      + generalize (Z.to_nat (up l)); intros n.
+        destruct n; simpl.
+        * omega.
+        * generalize (pow_exp_gt 4 n); omega.
+  Qed.
+
+  
+  Definition diverges (f:nat->R)
+    := forall l, ~ infinite_sum f l.
+  
+  Theorem harmonic_diverges : diverges (fun i:nat => 1 / INR (S i)).
+  Proof.
+    intros l inf.
+    apply infinite_sum_infinite_sum' in inf.
+    eapply harmonic_diverges'; eauto.
+  Qed.
+
+End harmonic.
