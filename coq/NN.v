@@ -46,10 +46,11 @@ Definition Assumption_C_2 (s: Set) (x: nat -> rvector s) : Prop :=
     forall k: nat, norm s (x k) < M.
 
 (* TODO *)
-Definition Assumption_C_3 := 1=1.
+Definition Assumption_C_3 (zeta: nat -> R) : Prop :=
+  ZeroMeanBoundedVariance zeta.
 
-Definition Assumption_C (s: Set) (alpha: nat -> R) (x : nat -> rvector s) : Prop :=
-  Assumption_C_1 alpha /\ Assumption_C_2 s x /\ Assumption_C_3.
+Definition Assumption_C (s: Set) (zeta: nat -> R) (alpha: nat -> R) (x : nat -> rvector s) : Prop :=
+  Assumption_C_1 alpha /\ Assumption_C_2 s x /\ Assumption_C_3 zeta.
 
 Local Close Scope R_scope.
 

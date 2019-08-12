@@ -1191,6 +1191,14 @@ Instance ProbSpace_Measurable {T:Type} {sa: SigmaAlgebra T} (ps:ProbSpace sa) : 
       measure_coutably_additive := ps_countable_disjoint_union ; 
     }.
 
+Section zmBoundedVariance.
+  (* TODO finish this definition *)
+  Class ZeroMeanVoundedVariance (t: nat -> R) :=
+    {
+      has_zero_mean: Prop;
+      has_bounded_variance: Prop;
+    }.
+End zmBoundedVariance.
 
 Section prob.
   Local Open Scope R.
