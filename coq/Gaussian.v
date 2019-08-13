@@ -32,6 +32,7 @@ Definition erf (x:R) := RInt erf' 0 x.
 Axiom erf_pinfty : erf (p_infty) = 1.
 Axiom erf_minfty : erf (m_infty) = -1.
 
+
 (* following is standard normal density, i.e. has mean 0 and std=1 *)
 (* CDF(x) = RInt Standard_Gaussian_PDF -infty x *)
 Definition Standard_Gaussian_PDF (t:R) := (/ (sqrt (2*PI))) * exp (-t^2/2).
@@ -77,6 +78,9 @@ Proof.
   unfold Standard_Gaussian_PDF.
   unfold erf'.
   Admitted.
+
+Lemma Standard_Gaussian_PDF_int1 : RInt (fun t => Standard_Gaussian_PDF t) m_infty p_infty = 1.
+Admitted.
 
 (* generates 2 gaussian samples from 2 uniform samples *)
 (* with mean 0 and variance 1 *)
@@ -395,4 +399,54 @@ Proof.
     apply HH3.
   - simpl.
     exists 0; intros; discriminate.
+Qed.
+
+Lemma continuous_derive_gaussian_mean x :
+  continuous (Derive (fun t : R => - t * Standard_Gaussian_PDF t)) x.
+Proof.
+Admitted.
+
+
+Lemma plim_gaussian_mean : is_lim (fun t => - t*(Standard_Gaussian_PDF t)) p_infty 0.
+Proof.
+  unfold Standard_Gaussian_PDF.
+Admitted.
+
+Lemma mlim_gaussian_mean : is_lim (fun t => - t*(Standard_Gaussian_PDF t)) m_infty 0.
+Proof.
+  unfold Standard_Gaussian_PDF.
+Admitted.
+
+Import RInt_gen.
+
+Lemma variance_int1_middle (a b:Rbar) :
+  RInt_gen (fun t => (t^2-1)*Standard_Gaussian_PDF t) (Rbar_locally m_infty) (Rbar_locally p_infty) = 0.
+Proof.
+  apply is_RInt_gen_unique.
+  apply (is_RInt_gen_ext (Derive (fun t : R => - t * Standard_Gaussian_PDF t))).
+  - simpl.
+    eapply (Filter_prod _ _ _ (fun _ => True) (fun _ => True))
+    ; simpl; eauto.
+    intros.
+    rewrite variance_derive; trivial.
+  - replace 0 with (0 - 0) by lra.
+    apply is_RInt_gen_Derive.
+    + eapply (Filter_prod _ _ _ (fun _ => True) (fun _ => True))
+      ; simpl; eauto.
+      intros; simpl.
+      unfold Standard_Gaussian_PDF.
+      auto_derive; trivial.
+    + eapply (Filter_prod _ _ _ (fun _ => True) (fun _ => True))
+      ; simpl; eauto.
+      intros; simpl.
+      apply continuous_derive_gaussian_mean.
+    + apply mlim_gaussian_mean.
+    + apply plim_gaussian_mean.
+  Unshelve.
+  exact 0.
+  exact 0.
+  exact 0.
+  exact 0.
+  exact 0.
+  exact 0.
 Qed.
