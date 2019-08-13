@@ -220,12 +220,13 @@ Qed.
 (* SearchAbout ex_RInt.*)
 
 Lemma odd_integral (t:R) (f : R-> R):
-  -t <= 0 <= t ->
+  0 <= t ->
   ex_RInt f (-t) t ->
   oddfun f -> RInt f (-t) t = 0.
 Proof.  
   unfold oddfun.
   intros.
+  assert(le_chain:- t <= 0 <= t) by lra.
   assert (fneg: ex_RInt f (- t) 0).
   {  apply ex_RInt_Chasles_1 with (a := -t) (b := 0) (c := t) (f0 := f); trivial. }
   assert (fpos:ex_RInt f 0 t).
@@ -250,7 +251,7 @@ Qed.
 
 (* proves that normalized gaussian has zero mean *)
 Lemma zero_mean_gaussian (t:R):
-  -t <= 0 <= t -> RInt (fun t => t * (Gaussian_PDF t)) (-t) t = 0.
+  0 <= t -> RInt (fun t => t * (Gaussian_PDF t)) (-t) t = 0.
 Proof.
   intros.
   apply odd_integral; trivial.
