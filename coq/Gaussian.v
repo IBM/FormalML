@@ -5,6 +5,7 @@ Require Import Coquelicot.RInt_analysis.
 Require Import Coquelicot.Continuity.
 Require Import Coquelicot.Rbar.
 Require Import Coquelicot.Derive.
+Require Import Coquelicot.AutoDerive.
 
 Require Import Reals.Rbase.
 Require Import Reals.Rfunctions.
@@ -24,8 +25,6 @@ Set Bullet Behavior "Strict Subproofs".
 
 Local Open Scope R_scope.
 Implicit Type f : R -> R.
-
-SearchAbout Derive.
 
 Definition erf' (x:R) := (2 / sqrt PI) * exp(-x^2).
 Definition erf (x:R) := RInt erf' 0 x.

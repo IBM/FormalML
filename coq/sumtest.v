@@ -579,6 +579,9 @@ Require Import Coquelicot.Lim_seq.
 (*from coquelicot*)
 Require Import Coquelicot.Rcomplements.
 Require Import Coquelicot.Lub.
+
+Set Bullet Behavior "Strict Subproofs".
+
 Lemma ex_finite_lim_seq_correct (u : nat -> R) :
   ex_finite_lim_seq u <-> ex_lim_seq u /\ is_finite (Lim_seq u).
 Proof.
@@ -747,11 +750,11 @@ Proof.
 Defined.
 
 Lemma converges_2harmonic :
-  exists sum:R, infinite_sum (fun n => sum_f_R0 (fun i => 1 / Rsqr (INR i + 1)) n) sum.
+  exists sum:R, infinite_sum (fun i => 1 / Rsqr (INR i + 1)) sum.
 Proof.
   assert (ex_finite_lim_seq (fun n => sum_f_R0 (fun i => 1 / Rsqr (INR i + 1)) n)).
   apply sum_inv_sqr_bounded.  
   destruct H.
   exists x.
-  trivial.
-Admitted.
+  apply infinite_sum_is_lim_seq; trivial.
+Qed.

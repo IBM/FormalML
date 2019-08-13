@@ -1,3 +1,6 @@
+Require Import Coquelicot.Coquelicot.
+Set Bullet Behavior "Strict Subproofs".
+
 Require Import Coq.Reals.Rbase.
 Require Import Coq.Reals.Rfunctions.
 Require Import List.
@@ -741,3 +744,24 @@ Section harmonic.
   Qed.
 
 End harmonic.
+
+Section coquelicot.
+Lemma infinite_sum_is_lim_seq (f:nat->R) (l:R) : is_lim_seq (fun i => sum_f_R0 f i) l <-> infinite_sum f l.
+Proof.
+  split; intros HH.
+  - apply Series.is_series_Reals.
+    unfold Series.is_series.
+    red in HH.
+    eapply filterlim_ext; try eapply HH.
+    intros; simpl.
+    rewrite sum_n_Reals.
+    reflexivity.
+  - apply Series.is_series_Reals in HH.
+    unfold Series.is_series in HH.
+    red.
+    eapply filterlim_ext; try eapply HH.
+    intros; simpl.
+    rewrite sum_n_Reals.
+    reflexivity.
+Qed.
+End coquelicot.
