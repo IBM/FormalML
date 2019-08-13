@@ -29,10 +29,9 @@ SearchAbout Derive.
 
 Definition erf' (x:R) := (2 / sqrt PI) * exp(-x^2).
 Definition erf (x:R) := RInt erf' 0 x.
-Lemma erf_pinfty : erf (p_infty) = 1.
-Admitted.
-Lemma erf_minfty : erf (m_infty) = -1.
-Admitted.
+
+Axiom erf_pinfty : erf (p_infty) = 1.
+Axiom erf_minfty : erf (m_infty) = -1.
 
 (* following is standard normal density, i.e. has mean 0 and std=1 *)
 (* CDF(x) = RInt Standard_Gaussian_PDF -infty x *)
@@ -284,38 +283,38 @@ Qed.
 
 Lemma derivable_pt_std_nmean (x:R) : 
   derivable_pt (fun t => -t*Standard_Gaussian_PDF t) x.
-Proof.  
-  apply derivable_pt_mult.
-  apply derivable_pt_opp.
-  apply derivable_pt_id.
-  unfold Standard_Gaussian_PDF.
-  apply derivable_pt_mult.
-  apply derivable_pt_const.
-  apply derivable_pt_comp with (f1 := (fun t => -t^2/2)).
-  apply derivable_pt_div.
-  apply derivable_pt_opp.
-  apply derivable_pt_mult.
-  apply derivable_pt_id.
-  apply derivable_pt_mult.
-  apply derivable_pt_id.
-  apply derivable_pt_const.
-  apply derivable_pt_const.    
-  lra.
-  apply derivable_pt_exp.
+Proof.
+
+  repeat first [
+           apply derivable_pt_mult
+         | apply derivable_pt_opp
+         | apply derivable_pt_id
+         | apply derivable_pt_const
+         | apply derivable_pt_div
+         | apply derivable_pt_comp with (f1 := (fun t => -t^2/2))
+         | apply derivable_pt_exp
+         ].
 Qed.
 
-SearchAbout PI.
+Lemma sqrt_2PI_nzero : sqrt(2*PI) <> 0.
+Proof.
+  assert (PI > 0) by apply PI_RGT_0.
+
+  apply Rgt_not_eq.
+  apply sqrt_lt_R0.
+  lra.
+Qed.
+
+Ltac solve_derive := try solve [auto_derive; trivial | lra].
 
 Lemma variance_derive (x:R) : 
       Derive (fun t => -t*Standard_Gaussian_PDF t) x = (x^2-1)*Standard_Gaussian_PDF x.
 Proof.
-  assert (PI > 0).
-  apply PI_RGT_0.         
-  assert (sqrt(2*PI) <> 0).
-  apply Rgt_not_eq.
-  apply sqrt_lt_R0.
-  lra.
-  rewrite -> Derive_mult with (f := fun t => -t) (g := Standard_Gaussian_PDF).
+
+  generalize sqrt_2PI_nzero; intros.
+
+  rewrite -> Derive_mult with (f := fun t => -t) (g := Standard_Gaussian_PDF)
+  ; try solve [unfold Standard_Gaussian_PDF; solve_derive].
   rewrite Derive_opp.
   rewrite Derive_id.
   ring_simplify.
@@ -323,69 +322,78 @@ Proof.
   rewrite -> Rplus_comm with (r1 := Standard_Gaussian_PDF x * x ^ 2).
   apply Rplus_eq_compat_l.
   unfold Standard_Gaussian_PDF.
-  rewrite Derive_mult.
-  rewrite Derive_const.
+  rewrite Derive_mult; solve_derive.
+  rewrite Derive_const; solve_derive.
   ring_simplify.
-  rewrite Derive_comp.
-  rewrite Derive_div.
+  rewrite Derive_comp; solve_derive.
+  rewrite Derive_div; solve_derive.
   rewrite Derive_const.
   rewrite Derive_opp.
-  rewrite Derive_mult.
-  rewrite Derive_mult.
+  rewrite Derive_mult; solve_derive.
+  rewrite Derive_mult; solve_derive.
   rewrite Derive_id.
   rewrite Derive_const.
-  field_simplify.
+  field_simplify; try lra. 
   rewrite <- Derive_Reals with (pr := derivable_pt_exp (-x^2/2)).
   rewrite derive_pt_exp.
-  field_simplify.
-  reflexivity.
-  lra.
-  assert (ex_derive (fun x => x * 1) x).
-  apply ex_derive_mult.    
-  apply ex_derive_id.
-  apply ex_derive_const.
-  trivial.
-  trivial.
-  trivial.
-  apply ex_derive_id.
-  apply ex_derive_const.
-  apply ex_derive_id.
-  apply ex_derive_mult.    
-  apply ex_derive_id.
-  apply ex_derive_const.
-  apply ex_derive_opp with (f:=fun y => y^2).
-  apply ex_derive_mult.
-  apply ex_derive_id.
-  apply ex_derive_mult.
-  apply ex_derive_id.
-  apply ex_derive_const.
-  apply ex_derive_const.  
-  lra.
-Admitted.
+  field_simplify; lra.
+Qed.
+
+Require Import Coquelicot.ElemFct.
+
+Lemma limxexp_inv_inf : is_lim (fun t => exp(t^2/2) / t) p_infty p_infty.
+Proof.
+  eapply is_lim_le_p_loc; [idtac | apply is_lim_div_exp_p].
+  unfold Rbar_locally'.
+  exists 3; intros.
+  apply Rmult_le_compat_r.
+  - left.
+    apply Rinv_0_lt_compat.
+    lra.
+  - left.
+    apply exp_increasing.
+    simpl.
+    replace x with (x*1) at 1 by lra.
+    unfold Rdiv.
+    repeat rewrite Rmult_assoc.
+    apply Rmult_lt_compat_l; lra.
+Qed.
   
-Lemma variance_int1 (x:R):
-  RInt (fun t => (t^2*exp(-t^2/2))) 0 x = 
-  -x*exp(-x^2/2) + RInt (fun t => exp(-t^2/2)) 0 x.
-Admitted.
-
-
 Lemma limxexp_inf : is_lim (fun t => t*exp(-t^2/2)) p_infty 0.
 Proof.
-   unfold is_lim.
-  unfold filterlim.
-  unfold filter_le.
-  unfold filtermap.
+  generalize (limxexp_inv_inf); intros HH.
+  apply is_lim_inv in HH; try discriminate.
+  simpl in HH.
+  eapply is_lim_ext_loc; try apply HH.
   intros.
-  unfold Rbar_locally'.
-  unfold Rbar_locally.
-  unfold locally.
-  unfold ball.
-  intros.
-  destruct H.
-  unfold UniformSpace.ball in H.
-Admitted.
-  
+  simpl.
+  exists 0.
+  intros x xpos.
+  replace (- (x * (x * 1)) / 2) with (- ((x * (x * 1)) / 2)) by lra.
+  rewrite exp_Ropp.
+  field.
+  split; try lra.
+  generalize (exp_pos (x * (x * 1) / 2)).
+  lra.
+Qed.
+
 Lemma limxexp_minf : is_lim (fun t => t*exp(-t^2/2)) m_infty 0.
-Admitted.
-
-
+Proof.
+  generalize limxexp_inf; intros HH.
+  generalize (is_lim_comp (fun t => t*exp(-t^2/2)) Ropp m_infty 0 p_infty HH); intros HH2.
+  cut_to HH2.
+  - apply is_lim_opp in HH2.
+    simpl in HH2.
+    replace (- 0) with 0 in HH2 by lra.
+    eapply is_lim_ext; try eapply HH2.
+    intros; simpl.
+    field_simplify.
+    do 3 f_equal.
+    lra.
+  - generalize (is_lim_id m_infty); intros HH3.
+    apply is_lim_opp in HH3.
+    simpl in HH3.
+    apply HH3.
+  - simpl.
+    exists 0; intros; discriminate.
+Qed.
