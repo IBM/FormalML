@@ -82,7 +82,7 @@ Proof.
   Admitted.
 
 Lemma Standard_Gaussian_PDF_int1 : 
-  RInt_gen Standard_Gaussian_PDF (Rbar_locally m_infty) (Rbar_locally p_infty) = 1.
+  is_RInt_gen Standard_Gaussian_PDF (Rbar_locally m_infty) (Rbar_locally p_infty)  1.
 Admitted.
 
 (* generates 2 gaussian samples from 2 uniform samples *)
@@ -447,10 +447,9 @@ Proof.
   apply limxexp_minf.  
 Qed.
 
-Lemma variance_int1_middle (a b:Rbar) :
-  RInt_gen (fun t => (t^2-1)*Standard_Gaussian_PDF t) (Rbar_locally m_infty) (Rbar_locally p_infty) = 0.
+Lemma variance_int1_middle :
+  is_RInt_gen (fun t => (t^2-1)*Standard_Gaussian_PDF t) (Rbar_locally m_infty) (Rbar_locally p_infty) 0.
 Proof.
-  apply is_RInt_gen_unique.
   apply (is_RInt_gen_ext (Derive (fun t : R => - t * Standard_Gaussian_PDF t))).
   - simpl.
     eapply (Filter_prod _ _ _ (fun _ => True) (fun _ => True))
@@ -479,19 +478,24 @@ Proof.
   exact 0.
 Qed.
 
-Lemma variance_standard_gaussian :
-  let a:= (Rbar_locally m_infty) in
-  let b:= (Rbar_locally p_infty) in
-  is_RInt_gen (fun t => (t^2-1)*Standard_Gaussian_PDF t + Standard_Gaussian_PDF t) a b (0 + 1).
-Admitted.
+Lemma variance_standard_gaussian0 :
+  is_RInt_gen (fun t => (t^2-1)*Standard_Gaussian_PDF t + Standard_Gaussian_PDF t) (Rbar_locally m_infty) (Rbar_locally p_infty) 1.
+Proof.
+  intros.
+  replace (1) with (0 + 1) at 1 by lra.
+  apply is_RInt_gen_plus with 
+      (f:=(fun t => (t^2-1)*Standard_Gaussian_PDF t)) (lf :=0)
+      (g:=(fun t => Standard_Gaussian_PDF t)) (lg := 1).
+  apply variance_int1_middle.
+  apply Standard_Gaussian_PDF_int1.
+Qed.
 
-Lemma variance_standard_gaussian2 :
+Lemma variance_standard_gaussian :
   RInt_gen (fun t => t^2*Standard_Gaussian_PDF t) 
            (Rbar_locally m_infty) (Rbar_locally p_infty) = 1.
 Proof.
   apply is_RInt_gen_unique.
-  replace 1 with (0 + 1) by lra.
-  eapply is_RInt_gen_ext; try eapply variance_standard_gaussian.
+  eapply is_RInt_gen_ext; try eapply variance_standard_gaussian0.
   eapply (Filter_prod _ _ _ (fun _ => True) (fun _ => True))
   ; simpl; eauto.
   intros; simpl.
