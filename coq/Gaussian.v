@@ -1,6 +1,7 @@
 Require Import mathcomp.ssreflect.ssreflect mathcomp.ssreflect.ssrbool mathcomp.ssreflect.eqtype mathcomp.ssreflect.seq.
 Require Import Coquelicot.Hierarchy.
 Require Import Coquelicot.RInt.
+Require Import Coquelicot.RInt_gen.
 Require Import Coquelicot.RInt_analysis.
 Require Import Coquelicot.Continuity.
 Require Import Coquelicot.Rbar.
@@ -29,9 +30,8 @@ Implicit Type f : R -> R.
 Definition erf' (x:R) := (2 / sqrt PI) * exp(-x^2).
 Definition erf (x:R) := RInt erf' 0 x.
 
-Axiom erf_pinfty : erf (p_infty) = 1.
-Axiom erf_minfty : erf (m_infty) = -1.
-
+Axiom erf_pinfty : Lim erf p_infty = 1.
+Axiom erf_minfty : Lim erf m_infty = -1.
 
 (* following is standard normal density, i.e. has mean 0 and std=1 *)
 (* CDF(x) = RInt Standard_Gaussian_PDF -infty x *)
@@ -67,7 +67,8 @@ Proof.
 Qed.  
 
 (* standard normal distribution *)
-Definition Standard_Gaussian_CDF (t:R) := RInt Standard_Gaussian_PDF m_infty t.
+Definition Standard_Gaussian_CDF (t:R) := 
+  RInt_gen Standard_Gaussian_PDF (Rbar_locally m_infty) (Rbar_locally t).
 
 Lemma std_from_erf :
   forall x:R, Standard_Gaussian_CDF x = (/ 2) * (1 + erf (x/sqrt 2)).
@@ -77,9 +78,11 @@ Proof.
   unfold erf.
   unfold Standard_Gaussian_PDF.
   unfold erf'.
+  
   Admitted.
 
-Lemma Standard_Gaussian_PDF_int1 : RInt (fun t => Standard_Gaussian_PDF t) m_infty p_infty = 1.
+Lemma Standard_Gaussian_PDF_int1 : 
+  RInt_gen Standard_Gaussian_PDF (Rbar_locally m_infty) (Rbar_locally p_infty) = 1.
 Admitted.
 
 (* generates 2 gaussian samples from 2 uniform samples *)
@@ -404,20 +407,45 @@ Qed.
 Lemma continuous_derive_gaussian_mean x :
   continuous (Derive (fun t : R => - t * Standard_Gaussian_PDF t)) x.
 Proof.
-Admitted.
-
+  apply (continuous_ext (fun t => (t^2-1)*Standard_Gaussian_PDF t)).
+  intros.
+  rewrite variance_derive; trivial.
+  apply continuous_mult with (f := fun t => t^2-1).
+  apply continuous_minus with (f := fun t => t^2).
+  apply continuous_mult with (f:=id).
+  apply continuous_id.
+  apply continuous_mult with (f:=id).
+  apply continuous_id.
+  apply continuous_const.
+  apply continuous_const.
+  apply continuous_Standard_Gaussian_PDF.
+Qed.
 
 Lemma plim_gaussian_mean : is_lim (fun t => - t*(Standard_Gaussian_PDF t)) p_infty 0.
 Proof.
+  replace (0) with ((- / sqrt (2*PI)) * 0) by lra.  
   unfold Standard_Gaussian_PDF.
-Admitted.
+  apply (is_lim_ext (fun t : R => (- / sqrt (2 * PI)) * (t * exp (- t ^ 2 / 2)))).
+  intros.
+  field_simplify; trivial.
+  apply sqrt_2PI_nzero.
+  apply sqrt_2PI_nzero.
+  apply is_lim_scal_l with (a:=- / sqrt (2 * PI)) (l := 0).
+  apply limxexp_inf.  
+Qed.  
 
 Lemma mlim_gaussian_mean : is_lim (fun t => - t*(Standard_Gaussian_PDF t)) m_infty 0.
 Proof.
+  replace (0) with ((- / sqrt (2*PI)) * 0) by lra.  
   unfold Standard_Gaussian_PDF.
-Admitted.
-
-Import RInt_gen.
+  apply (is_lim_ext (fun t : R => (- / sqrt (2 * PI)) * (t * exp (- t ^ 2 / 2)))).
+  intros.
+  field_simplify; trivial.
+  apply sqrt_2PI_nzero.
+  apply sqrt_2PI_nzero.
+  apply is_lim_scal_l with (a:=- / sqrt (2 * PI)) (l := 0).
+  apply limxexp_minf.  
+Qed.
 
 Lemma variance_int1_middle (a b:Rbar) :
   RInt_gen (fun t => (t^2-1)*Standard_Gaussian_PDF t) (Rbar_locally m_infty) (Rbar_locally p_infty) = 0.
@@ -450,3 +478,23 @@ Proof.
   exact 0.
   exact 0.
 Qed.
+
+Lemma variance_standard_gaussian :
+  RInt_gen (fun t => t^2*Standard_Gaussian_PDF t) 
+           (Rbar_locally m_infty) (Rbar_locally p_infty) = 1.
+Proof.
+Admitted.
+(*
+
+  intros.
+  replace (RInt (fun t : R => t ^ 2 * Standard_Gaussian_PDF t) a b) with
+      (RInt (fun t : R => (t^2-1)*Standard_Gaussian_PDF t + Standard_Gaussian_PDF t) a b).
+  apply RInt_plus with (f := (fun t => (t^2-1)*Standard_Gaussian_PDF t))
+                       (g := (fun t => Standard_Gaussian_PDF t)).
+  apply variance_exint0; trivial.
+  apply ex_RInt_Standard_Gaussian_PDF; trivial.
+  apply RInt_ext.
+  intros.
+  lra.
+Qed.
+*)
