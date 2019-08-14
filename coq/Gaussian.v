@@ -82,8 +82,14 @@ Proof.
   unfold Standard_Gaussian_CDF.
   unfold Standard_Gaussian_PDF.
   apply is_RInt_gen_unique.
-(*  apply is_RInt_gen_Chasles with (b:=0) (l1:=/2) (l2 :=(/2)*erf (x/sqrt 2)).*)
-  Admitted.
+  apply (@is_RInt_gen_Chasles (R_CompleteNormedModule)) with (b:=0) (l1:=/2) (l2 :=(/2)*erf (x/sqrt 2)).
+  - apply Hierarchy.filter_filter.
+  - apply Hierarchy.filter_filter.
+  - admit.
+  - admit.
+Admitted.
+
+
 
 Lemma Standard_Gaussian_PDF_int1 : 
   is_RInt_gen Standard_Gaussian_PDF (Rbar_locally m_infty) (Rbar_locally p_infty)  1.
@@ -500,3 +506,4 @@ Proof.
   exact 0.
   exact 0.
 Qed.
+
