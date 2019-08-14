@@ -7,6 +7,7 @@ Require Import Coquelicot.Continuity.
 Require Import Coquelicot.Rbar.
 Require Import Coquelicot.Derive.
 Require Import Coquelicot.AutoDerive.
+Require Import Coquelicot.ElemFct.
 
 Require Import Reals.Rbase.
 Require Import Reals.Rfunctions.
@@ -41,7 +42,15 @@ Definition Standard_Gaussian_PDF (t:R) := (/ (sqrt (2*PI))) * exp (-t^2/2).
 Definition General_Gaussian_PDF (mu sigma t : R) :=
    (/ (sigma * (sqrt (2*PI)))) * exp (- (t - mu)^2/(2*sigma^2)).
 
-  
+Lemma sqrt_2PI_nzero : sqrt(2*PI) <> 0.
+Proof.
+  assert (PI > 0) by apply PI_RGT_0.
+
+  apply Rgt_not_eq.
+  apply sqrt_lt_R0.
+  lra.
+Qed.
+
 Lemma gen_from_std (mu sigma : R) :
    sigma > 0 -> forall x:R,  General_Gaussian_PDF mu sigma x = 
                              / sigma * Standard_Gaussian_PDF ((x-mu)/sigma).
@@ -49,12 +58,8 @@ Proof.
   intros.
   assert (sigma <> 0).
   apply Rgt_not_eq; trivial.
-  assert (PI > 0).
-  apply PI_RGT_0.
-  assert (sqrt(2*PI) <> 0).
-  apply Rgt_not_eq.
-  apply sqrt_lt_R0.
-  lra.
+  generalize sqrt_2PI_nzero; intros.
+
   unfold General_Gaussian_PDF.
   unfold Standard_Gaussian_PDF.
   field_simplify.
@@ -71,14 +76,13 @@ Definition Standard_Gaussian_CDF (t:R) :=
   RInt_gen Standard_Gaussian_PDF (Rbar_locally m_infty) (Rbar_locally t).
 
 Lemma std_from_erf :
-  forall x:R, Standard_Gaussian_CDF x = (/ 2) * (1 + erf (x/sqrt 2)).
+  forall x:R, Standard_Gaussian_CDF x = (/ 2) + (/2)*erf (x/sqrt 2).
 Proof.
   intros.
   unfold Standard_Gaussian_CDF.
-  unfold erf.
   unfold Standard_Gaussian_PDF.
-  unfold erf'.
-  
+  apply is_RInt_gen_unique.
+(*  apply is_RInt_gen_Chasles with (b:=0) (l1:=/2) (l2 :=(/2)*erf (x/sqrt 2)).*)
   Admitted.
 
 Lemma Standard_Gaussian_PDF_int1 : 
@@ -126,7 +130,7 @@ Proof.
 Qed.
 
 Lemma ex_RInt_Standard_Gaussian_PDF (a b:R) :
-    a <= b -> ex_RInt Standard_Gaussian_PDF a b.
+     a <= b -> ex_RInt Standard_Gaussian_PDF a b.
 Proof.
   intros.
   apply ex_RInt_continuous with (f:=Standard_Gaussian_PDF).
@@ -302,14 +306,6 @@ Proof.
          ].
 Qed.
 
-Lemma sqrt_2PI_nzero : sqrt(2*PI) <> 0.
-Proof.
-  assert (PI > 0) by apply PI_RGT_0.
-
-  apply Rgt_not_eq.
-  apply sqrt_lt_R0.
-  lra.
-Qed.
 
 Ltac solve_derive := try solve [auto_derive; trivial | lra].
 
@@ -345,7 +341,6 @@ Proof.
   field_simplify; lra.
 Qed.
 
-Require Import Coquelicot.ElemFct.
 
 Lemma limxexp_inv_inf : is_lim (fun t => exp(t^2/2) / t) p_infty p_infty.
 Proof.
