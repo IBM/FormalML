@@ -480,21 +480,24 @@ Proof.
 Qed.
 
 Lemma variance_standard_gaussian :
+  let a:= (Rbar_locally m_infty) in
+  let b:= (Rbar_locally p_infty) in
+  is_RInt_gen (fun t => (t^2-1)*Standard_Gaussian_PDF t + Standard_Gaussian_PDF t) a b (0 + 1).
+Admitted.
+
+Lemma variance_standard_gaussian2 :
   RInt_gen (fun t => t^2*Standard_Gaussian_PDF t) 
            (Rbar_locally m_infty) (Rbar_locally p_infty) = 1.
 Proof.
-Admitted.
-(*
-
-  intros.
-  replace (RInt (fun t : R => t ^ 2 * Standard_Gaussian_PDF t) a b) with
-      (RInt (fun t : R => (t^2-1)*Standard_Gaussian_PDF t + Standard_Gaussian_PDF t) a b).
-  apply RInt_plus with (f := (fun t => (t^2-1)*Standard_Gaussian_PDF t))
-                       (g := (fun t => Standard_Gaussian_PDF t)).
-  apply variance_exint0; trivial.
-  apply ex_RInt_Standard_Gaussian_PDF; trivial.
-  apply RInt_ext.
-  intros.
+  apply is_RInt_gen_unique.
+  replace 1 with (0 + 1) by lra.
+  eapply is_RInt_gen_ext; try eapply variance_standard_gaussian.
+  eapply (Filter_prod _ _ _ (fun _ => True) (fun _ => True))
+  ; simpl; eauto.
+  intros; simpl.
+  unfold Standard_Gaussian_PDF.
   lra.
+  Unshelve.
+  exact 0.
+  exact 0.
 Qed.
-*)
