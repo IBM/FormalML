@@ -32,8 +32,16 @@ Definition erf' (x:R) := (2 / sqrt PI) * exp(-x^2).
 (*Definition erf (x:R) := RInt erf' 0 x.*)
 Definition erf (x:R) := RInt erf' 0 x.
 
+
+(*
+Axiom erf_pinfty : is_lim erf p_infty 1.
+Axiom erf_minfty : is_lim erf m_infty -1.
+ *)
+
 Axiom erf_pinfty : Lim erf p_infty = 1.
 Axiom erf_minfty : Lim erf m_infty = -1.
+Axiom erf_pinfty_ex : ex_lim erf p_infty.
+Axiom erf_minfty_ex : ex_lim erf m_infty.
 
 (* following is standard normal density, i.e. has mean 0 and std=1 *)
 (* CDF(x) = RInt_gen Standard_Gaussian_PDF (Rbar_locally m_infty) x *)
@@ -52,7 +60,6 @@ Proof.
   lra.
 Qed.
 
-SearchAbout sqrt.
 Lemma gen_from_std (mu sigma : R) :
    sigma > 0 -> forall x:R,  General_Gaussian_PDF mu sigma x = 
                              / sigma * Standard_Gaussian_PDF ((x-mu)/sigma).
@@ -75,7 +82,73 @@ Qed.
 
 (* standard normal distribution *)
 Definition Standard_Gaussian_CDF (t:R) := 
-  RInt_gen Standard_Gaussian_PDF (Rbar_locally m_infty) (Rbar_locally t).
+  Lim (fun a => RInt Standard_Gaussian_PDF a t) m_infty.
+
+Lemma continuous_Standard_Gaussian_PDF :
+  forall (x:R), continuous Standard_Gaussian_PDF x.
+Proof.
+  intros.
+  unfold Standard_Gaussian_PDF.
+  apply continuous_mult with (f:= fun t => / sqrt (2*PI)) (g:=fun t=> exp(-t^2/2)).
+  apply continuous_const.
+  apply continuous_comp with (g := exp).
+  unfold Rdiv.
+  apply continuous_mult with (f := fun t => -t^2) (g := fun t => /2).
+  apply continuous_opp with (f := fun t =>  t^2).
+  apply continuous_mult with (f := id).
+  apply continuous_id.
+  apply continuous_mult with (f := id).
+  apply continuous_id.
+  apply continuous_const.
+  apply continuous_const.  
+  apply ex_derive_continuous with (f := exp) (x0 := -x^2/2).
+  apply ex_derive_Reals_1.
+  unfold derivable_pt.
+  unfold derivable_pt_abs.
+  exists (exp (- x ^ 2 / 2)).
+  apply derivable_pt_lim_exp.
+Qed.
+
+Lemma ex_RInt_Standard_Gaussian_PDF (a b:R) :
+  ex_RInt Standard_Gaussian_PDF a b.
+Proof.
+  intros.
+  apply ex_RInt_continuous with (f:=Standard_Gaussian_PDF).
+  intros.
+  apply continuous_Standard_Gaussian_PDF.
+Qed.
+
+Lemma ex_lim_Standard_Gaussian_PDF :
+  ex_lim (fun a : R => RInt Standard_Gaussian_PDF 0 a) m_infty.
+Proof. 
+Admitted (* Barry *) .
+
+Lemma Standard_Gaussian_CDF_split x :
+  Standard_Gaussian_CDF x = 
+  RInt Standard_Gaussian_PDF 0 x
+  - Lim (fun a : R => RInt Standard_Gaussian_PDF 0 a) m_infty .
+Proof.
+  unfold Standard_Gaussian_CDF.
+  assert (Lim (fun a : R => RInt Standard_Gaussian_PDF a x) m_infty =
+          Rbar_minus (Lim (fun a => RInt Standard_Gaussian_PDF 0 x) m_infty)
+          (Lim (fun a : R => RInt Standard_Gaussian_PDF 0 a) m_infty)).
+  { rewrite <- Lim_minus.
+    - apply Lim_ext; intros.
+      apply (Rplus_eq_reg_r (RInt Standard_Gaussian_PDF 0 y)).
+      field_simplify.
+      f_equal.
+      symmetry.
+      apply @RInt_Chasles.
+      + apply ex_RInt_Standard_Gaussian_PDF.
+      + apply ex_RInt_Standard_Gaussian_PDF.
+    - apply ex_lim_const.
+    - apply ex_lim_Standard_Gaussian_PDF.
+    - admit (* Avi *) .
+  } 
+  rewrite H.
+  rewrite Lim_const.
+  admit. (* Avi *)
+Admitted.
 
 Lemma sqrt2_neq0 :
   sqrt 2 <> 0.
@@ -182,37 +255,140 @@ Proof.
   reflexivity.
 Qed.
 
+Hint Resolve Rlt_sqrt2_0 sqrt2_neq0 Rinv_pos : Rarith.
+
 Lemma std_from_erf0 (x:R) : 
   RInt Standard_Gaussian_PDF 0 x = / 2 * erf(x/sqrt 2).
 Proof.
   unfold erf.
   replace (/ 2 * RInt erf' 0 (x / sqrt 2)) with (scal (/ 2) (RInt erf' 0 (x / sqrt 2))).
-  rewrite <- RInt_scal with (l := /2) (f:=erf') (a := 0) (b := x / sqrt 2).
-  replace (0) with (/ sqrt 2 * 0 + 0) at 2 by lra.
-  replace (x / sqrt 2) with (/ sqrt 2 * x + 0) by lra.
-  rewrite <- RInt_comp_lin with (v:=0) (u:=/sqrt 2) (a:=0) (b:=x).
-  apply RInt_ext.
+  - rewrite <- RInt_scal with (l := /2) (f:=erf') (a := 0) (b := x / sqrt 2).
+    + replace (0) with (/ sqrt 2 * 0 + 0) at 2 by lra.
+      replace (x / sqrt 2) with (/ sqrt 2 * x + 0) by lra.
+      rewrite <- RInt_comp_lin with (v:=0) (u:=/sqrt 2) (a:=0) (b:=x).
+      * apply RInt_ext.
+        intros.
+        rewrite std_pdf_from_erf'.
+        { replace (erf'(/ sqrt 2 * x0 + 0)) with (erf' (x0/sqrt 2)).
+          - repeat rewrite scale_mult.
+            field_simplify; auto with Rarith.
+          - f_equal.
+            field_simplify; auto with Rarith.
+        }
+      * apply ex_RInt_scal with (f := erf').
+        field_simplify; auto with Rarith.
+        apply ex_RInt_continuous with (f := erf') (a:=0 / sqrt 2) (b := x /sqrt 2).
+        intros.
+        apply continuous_erf'.
+    + apply ex_RInt_continuous with (f := erf') (a:=0) (b := x /sqrt 2).  
+      intros.
+      apply continuous_erf'.
+  - reflexivity.
+Qed.
+
+Lemma Rbar_mult_p_infty_pos (z:R) :
+  0 < z -> Rbar_mult p_infty z = p_infty.
+Proof.
   intros.
-  rewrite std_pdf_from_erf'.
-  replace (erf'(/ sqrt 2 * x0 + 0)) with (erf' (x0/sqrt 2)).
-  rewrite -> scale_mult with (a:=/2) (x:=erf' (x0/sqrt 2)).
-  admit.
-  apply f_equal.
-  field_simplify; trivial.
-  apply sqrt2_neq0.
-  apply sqrt2_neq0.
-  apply ex_RInt_scal with (f := erf').
-  field_simplify.
-  apply ex_RInt_continuous with (f := erf') (a:=0 / sqrt 2) (b := x /sqrt 2).
+  simpl.
+  destruct (Rle_dec 0 z); try lra.
+  destruct (Rle_lt_or_eq_dec 0 z r); trivial; try lra.
+Qed.    
+
+Lemma Rbar_mult_m_infty_pos (z:R) :
+  0 < z -> Rbar_mult m_infty z = m_infty.
+Proof.
   intros.
-  apply continuous_erf'.
-  apply sqrt2_neq0.
-  apply sqrt2_neq0.
-  apply ex_RInt_continuous with (f := erf') (a:=0) (b := x /sqrt 2).  
+  simpl.
+  destruct (Rle_dec 0 z); try lra.
+  destruct (Rle_lt_or_eq_dec 0 z r); trivial; try lra.
+Qed.
+
+Lemma Rbar_mult_p_infty_neg (z:R) :
+  0 > z -> Rbar_mult p_infty z = m_infty.
+Proof.
   intros.
-  apply continuous_erf'.
-  reflexivity.
-  Admitted.
+  simpl.
+  destruct (Rle_dec 0 z); trivial; try lra.
+  destruct (Rle_lt_or_eq_dec 0 z r); trivial; try lra.
+Qed.    
+
+Lemma Rbar_mult_m_infty_neg (z:R) :
+  0 > z -> Rbar_mult m_infty z = p_infty.
+Proof.
+  intros.
+  simpl.
+  destruct (Rle_dec 0 z); trivial; try lra.
+  destruct (Rle_lt_or_eq_dec 0 z r); trivial; try lra.
+Qed.
+
+Lemma erf0_limit_p_infty : Lim (fun x => erf(x/sqrt 2)) p_infty = 1.
+Proof.
+  assert (A1:Lim (fun x : R => x / sqrt 2) p_infty = p_infty).
+  {
+    unfold Rdiv.
+    rewrite Lim_scal_r.
+    rewrite Lim_id.
+    apply Rbar_mult_p_infty_pos.
+    auto with Rarith.
+  }
+  rewrite (Lim_comp erf (fun x => x / sqrt 2)).
+  - rewrite A1 erf_pinfty; trivial.
+  - rewrite A1.
+    apply erf_pinfty_ex.
+  - apply ex_lim_scal_r.
+    apply ex_lim_id.
+  - rewrite A1.
+    red.
+    exists 0; intros.
+    discriminate.
+Qed.
+
+Lemma erf0_limit_m_infty : Lim (fun x => erf(x/sqrt 2)) m_infty = -1.
+Proof.
+  assert (A1:Lim (fun x : R => x / sqrt 2) m_infty = m_infty).
+  {
+    unfold Rdiv.
+    rewrite Lim_scal_r.
+    rewrite Lim_id.
+    apply Rbar_mult_m_infty_pos.
+    auto with Rarith.
+  }
+  rewrite (Lim_comp erf (fun x => x / sqrt 2)).
+  - rewrite A1 erf_minfty; trivial.
+  - rewrite A1.
+    apply erf_minfty_ex.
+  - apply ex_lim_scal_r.
+    apply ex_lim_id.
+  - rewrite A1.
+    red.
+    exists 0; intros.
+    discriminate.
+Qed.
+
+
+
+(*
+Lemma Rint_lim_gen f (ra rb:Rbar) :
+  Lim (fun ab => RInt f (fst ab) (fst ab)) (ra,rb)  = RInt_gen f (Rbar_locally ra) (Rbar_locally rb).
+Proof.
+  
+Qed.
+*)
+(*
+Lemma Rint_lim_gen2 f a (rb:Rbar) :
+  Lim (RInt f a) rb  = RInt_gen f (at_point a) (Rbar_locally rb).
+Proof.
+  
+Qed.
+
+Lemma Rint_lim_gen1 f (ra:Rbar) b :
+  Lim (fun a => RInt f a b) ra  = RInt_gen f (Rbar_locally ra) (at_point b).
+Proof.
+  
+Qed.
+*)
+
 
 (* following may not be provable since no RInt_gen_comp_lin lemma *)
 Lemma std_from_erf00 (x:Rbar) : 
@@ -221,25 +397,25 @@ Proof.
   unfold Standard_Gaussian_PDF.
   unfold erf.
   unfold erf'.
+
+                                                             
   Admitted.
 
-Lemma std_from_erf :
+Lemma std'_from_erf :
   forall x:R, Standard_Gaussian_CDF x = (/ 2) + (/2)*erf (x/sqrt 2).
 Proof.
   intros.
-  unfold Standard_Gaussian_CDF.
-  apply is_RInt_gen_unique.
-  apply (@is_RInt_gen_Chasles R_CompleteNormedModule) with (b:=0) (l1:=/2) (l2 :=(/2)*erf (x/sqrt 2)).
-  apply Hierarchy.filter_filter.
-  apply Hierarchy.filter_filter.
-  replace (/ 2) with (- - /2) by lra.
-  apply (@is_RInt_gen_swap R_CompleteNormedModule) with (l:=-/2).
-  apply Hierarchy.filter_filter.
-  apply Hierarchy.filter_filter.
-  (* apply std_from_erf00 with (x := m_infty).*)
-  admit.
-  apply std_from_erf00.
-Admitted.
+  rewrite Standard_Gaussian_CDF_split.
+  rewrite std_from_erf0.
+  rewrite (Lim_ext (fun a =>  / 2 * erf(a/sqrt 2))).
+  - rewrite Lim_scal_l.
+    rewrite erf0_limit_m_infty.
+    simpl.
+    f_equal.
+    lra.
+  - intros.
+    rewrite std_from_erf0; trivial.
+Qed.
 
 
 Lemma Standard_Gaussian_PDF_int1 : 
@@ -260,40 +436,6 @@ CoFixpoint mkGaussianStream (uniformStream : Stream R) : Stream R :=
   let ust3 := tl ust2 in
   let '(g1,g2) := Box_Muller u1 u2 in
   Cons g1 (Cons g2 (mkGaussianStream ust3)).
-
-Lemma continuous_Standard_Gaussian_PDF :
-  forall (x:R), continuous Standard_Gaussian_PDF x.
-Proof.
-  intros.
-  unfold Standard_Gaussian_PDF.
-  apply continuous_mult with (f:= fun t => / sqrt (2*PI)) (g:=fun t=> exp(-t^2/2)).
-  apply continuous_const.
-  apply continuous_comp with (g := exp).
-  unfold Rdiv.
-  apply continuous_mult with (f := fun t => -t^2) (g := fun t => /2).
-  apply continuous_opp with (f := fun t =>  t^2).
-  apply continuous_mult with (f := id).
-  apply continuous_id.
-  apply continuous_mult with (f := id).
-  apply continuous_id.
-  apply continuous_const.
-  apply continuous_const.  
-  apply ex_derive_continuous with (f := exp) (x0 := -x^2/2).
-  apply ex_derive_Reals_1.
-  unfold derivable_pt.
-  unfold derivable_pt_abs.
-  exists (exp (- x ^ 2 / 2)).
-  apply derivable_pt_lim_exp.
-Qed.
-
-Lemma ex_RInt_Standard_Gaussian_PDF (a b:R) :
-     a <= b -> ex_RInt Standard_Gaussian_PDF a b.
-Proof.
-  intros.
-  apply ex_RInt_continuous with (f:=Standard_Gaussian_PDF).
-  intros.
-  apply continuous_Standard_Gaussian_PDF.
-Qed.
 
 Lemma continuous_Standard_Gaussian_mean_PDF : 
   forall (x:R), continuous (fun t => t * (Standard_Gaussian_PDF t)) x.
