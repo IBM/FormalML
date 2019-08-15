@@ -29,13 +29,14 @@ Local Open Scope R_scope.
 Implicit Type f : R -> R.
 
 Definition erf' (x:R) := (2 / sqrt PI) * exp(-x^2).
+(*Definition erf (x:R) := RInt erf' 0 x.*)
 Definition erf (x:R) := RInt erf' 0 x.
 
 Axiom erf_pinfty : Lim erf p_infty = 1.
 Axiom erf_minfty : Lim erf m_infty = -1.
 
 (* following is standard normal density, i.e. has mean 0 and std=1 *)
-(* CDF(x) = RInt Standard_Gaussian_PDF -infty x *)
+(* CDF(x) = RInt_gen Standard_Gaussian_PDF (Rbar_locally m_infty) x *)
 Definition Standard_Gaussian_PDF (t:R) := (/ (sqrt (2*PI))) * exp (-t^2/2).
 
 (* general gaussian density with mean = mu and std = sigma *)
@@ -51,6 +52,7 @@ Proof.
   lra.
 Qed.
 
+SearchAbout sqrt.
 Lemma gen_from_std (mu sigma : R) :
    sigma > 0 -> forall x:R,  General_Gaussian_PDF mu sigma x = 
                              / sigma * Standard_Gaussian_PDF ((x-mu)/sigma).
@@ -75,20 +77,146 @@ Qed.
 Definition Standard_Gaussian_CDF (t:R) := 
   RInt_gen Standard_Gaussian_PDF (Rbar_locally m_infty) (Rbar_locally t).
 
+Lemma sqrt2_neq0 :
+  sqrt 2 <> 0.
+Proof.
+  apply Rgt_not_eq.
+  apply Rlt_gt.
+  apply Rlt_sqrt2_0.
+Qed.
+
+Lemma derive_xover_sqrt2 (x:R):
+  Derive (fun x => x/sqrt 2) x = /sqrt 2.
+Proof.
+  generalize sqrt2_neq0; intros.
+  unfold Rdiv.
+  rewrite Derive_mult.
+  rewrite Derive_id.
+  rewrite Derive_const.
+  field_simplify; trivial.
+  apply ex_derive_id.
+  apply ex_derive_const.
+Qed.
+  
+Lemma continuous_erf' :
+  forall (x:R), continuous erf' x.
+Proof.
+  intros.
+  unfold erf'.
+  apply continuous_mult with (f := fun x => 2 / sqrt PI).
+  apply continuous_const.
+  apply continuous_comp with (g := exp).
+  apply continuous_opp with (f := fun x => x^2).
+  apply continuous_mult with (f:=id).
+  apply continuous_id.
+  apply continuous_mult with (f:=id).
+  apply continuous_id.
+  apply continuous_const.
+  apply ex_derive_continuous with (f := exp).
+  apply ex_derive_Reals_1.
+  apply derivable_pt_exp.
+Qed.
+
+Lemma std_pdf_from_erf' (x:R):
+  Standard_Gaussian_PDF x = / (2*sqrt 2) * (erf' (x / sqrt 2)).
+Proof.
+  unfold Standard_Gaussian_PDF.
+  unfold erf'.
+  field_simplify.
+  replace (sqrt (2*PI)) with (sqrt(2)*sqrt(PI)).
+  unfold Rdiv.
+  apply Rmult_eq_compat_r.
+  apply f_equal.
+  field_simplify.
+  replace (sqrt 2 ^ 2) with (2); trivial.
+  rewrite <- Rsqr_pow2.  
+  rewrite -> Rsqr_sqrt with (x:=2); trivial; lra.
+  apply sqrt2_neq0.
+  rewrite sqrt_mult_alt; trivial; lra.
+  split.
+  assert (PI > 0) by apply PI_RGT_0.
+  apply Rgt_not_eq.
+  apply sqrt_lt_R0; lra.
+  apply sqrt2_neq0.
+  apply sqrt_2PI_nzero.
+Qed.
+
+Lemma std_pdf_from_erf (x:R):
+  Derive (fun t=> erf (t/sqrt 2)) x = 2 * Standard_Gaussian_PDF x.
+Proof.
+  generalize sqrt2_neq0; intros.
+  assert (PI > 0) by apply PI_RGT_0.
+  assert (sqrt PI <> 0).
+  apply Rgt_not_eq.
+  apply sqrt_lt_R0; lra.
+  unfold erf.
+  assert (forall y:R, ex_RInt erf' 0 y).
+  intros.
+  apply (@ex_RInt_continuous R_CompleteNormedModule).
+  intros.
+  apply continuous_erf'.
+  rewrite Derive_comp.
+  rewrite Derive_RInt.
+  rewrite derive_xover_sqrt2.
+  rewrite std_pdf_from_erf'.
+  field_simplify; trivial.
+  apply locally_open with (D:=fun _ => True); trivial.
+  apply open_true.
+  apply continuous_erf'.
+  unfold ex_derive.
+  exists (erf' (x / sqrt 2)).
+  apply is_derive_RInt with (a:=0).
+  apply locally_open with (D:=fun _ => True); trivial.
+  apply open_true.
+  intros.
+  apply RInt_correct with (f:=erf') (a:=0) (b:=x0); trivial.
+  apply continuous_erf'.
+  unfold Rdiv.
+  apply ex_derive_mult.
+  apply ex_derive_id.
+  apply ex_derive_const.
+Qed.
+
+Lemma std_from_erf0 (x:R) : 
+  RInt Standard_Gaussian_PDF 0 x = / 2 * erf(x/sqrt 2).
+Proof.
+  unfold erf.
+  replace (/ 2 * RInt erf' 0 (x / sqrt 2)) with (scal (/ 2) (RInt erf' 0 (x / sqrt 2))).
+  rewrite <- RInt_scal with (l := /2) (f:=erf') (a := 0) (b := x / sqrt 2).
+  replace (0) with (/ sqrt 2 * 0 + 0) at 2 by lra.
+  replace (x / sqrt 2) with (/ sqrt 2 * x + 0) by lra.
+  rewrite <- RInt_comp_lin with (v:=0) (u:=/sqrt 2) (a:=0) (b:=x).
+  apply RInt_ext.
+  intros.
+  rewrite std_pdf_from_erf'.
+  Admitted.
+
+(* following may not be provable since no RInt_gen_comp_lin lemma *)
+Lemma std_from_erf00 (x:Rbar) : 
+  is_RInt_gen Standard_Gaussian_PDF (at_point 0) (Rbar_locally x) ((/2) * erf(x/sqrt 2)).
+Proof.
+  unfold Standard_Gaussian_PDF.
+  unfold erf.
+  unfold erf'.
+  Admitted.
+
 Lemma std_from_erf :
   forall x:R, Standard_Gaussian_CDF x = (/ 2) + (/2)*erf (x/sqrt 2).
 Proof.
   intros.
   unfold Standard_Gaussian_CDF.
-  unfold Standard_Gaussian_PDF.
   apply is_RInt_gen_unique.
-  apply (@is_RInt_gen_Chasles (R_CompleteNormedModule)) with (b:=0) (l1:=/2) (l2 :=(/2)*erf (x/sqrt 2)).
-  - apply Hierarchy.filter_filter.
-  - apply Hierarchy.filter_filter.
-  - admit.
-  - admit.
+  apply (@is_RInt_gen_Chasles R_CompleteNormedModule) with (b:=0) (l1:=/2) (l2 :=(/2)*erf (x/sqrt 2)).
+  apply Hierarchy.filter_filter.
+  apply Hierarchy.filter_filter.
+  replace (/ 2) with (- - /2) by lra.
+  apply (@is_RInt_gen_swap R_CompleteNormedModule) with (l:=-/2).
+  apply Hierarchy.filter_filter.
+  apply Hierarchy.filter_filter.
+  (* apply std_from_erf00 with (x := m_infty).*)
+  admit.
+  apply std_from_erf00.
 Admitted.
-
 
 
 Lemma Standard_Gaussian_PDF_int1 : 
