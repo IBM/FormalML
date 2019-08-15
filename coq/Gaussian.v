@@ -177,6 +177,11 @@ Proof.
   apply ex_derive_const.
 Qed.
 
+Lemma scale_mult (a x : R) : (scal a x) = (a * x).
+Proof.
+  reflexivity.
+Qed.
+
 Lemma std_from_erf0 (x:R) : 
   RInt Standard_Gaussian_PDF 0 x = / 2 * erf(x/sqrt 2).
 Proof.
@@ -189,6 +194,24 @@ Proof.
   apply RInt_ext.
   intros.
   rewrite std_pdf_from_erf'.
+  replace (erf'(/ sqrt 2 * x0 + 0)) with (erf' (x0/sqrt 2)).
+  rewrite -> scale_mult with (a:=/2) (x:=erf' (x0/sqrt 2)).
+  admit.
+  apply f_equal.
+  field_simplify; trivial.
+  apply sqrt2_neq0.
+  apply sqrt2_neq0.
+  apply ex_RInt_scal with (f := erf').
+  field_simplify.
+  apply ex_RInt_continuous with (f := erf') (a:=0 / sqrt 2) (b := x /sqrt 2).
+  intros.
+  apply continuous_erf'.
+  apply sqrt2_neq0.
+  apply sqrt2_neq0.
+  apply ex_RInt_continuous with (f := erf') (a:=0) (b := x /sqrt 2).  
+  intros.
+  apply continuous_erf'.
+  reflexivity.
   Admitted.
 
 (* following may not be provable since no RInt_gen_comp_lin lemma *)
