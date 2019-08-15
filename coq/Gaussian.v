@@ -389,18 +389,6 @@ Proof.
 Qed.
 *)
 
-
-(* following may not be provable since no RInt_gen_comp_lin lemma *)
-Lemma std_from_erf00 (x:Rbar) : 
-  is_RInt_gen Standard_Gaussian_PDF (at_point 0) (Rbar_locally x) ((/2) * erf(x/sqrt 2)).
-Proof.
-  unfold Standard_Gaussian_PDF.
-  unfold erf.
-  unfold erf'.
-
-                                                             
-  Admitted.
-
 Lemma std'_from_erf :
   forall x:R, Standard_Gaussian_CDF x = (/ 2) + (/2)*erf (x/sqrt 2).
 Proof.
@@ -416,11 +404,6 @@ Proof.
   - intros.
     rewrite std_from_erf0; trivial.
 Qed.
-
-
-Lemma Standard_Gaussian_PDF_int1 : 
-  is_RInt_gen Standard_Gaussian_PDF (Rbar_locally m_infty) (Rbar_locally p_infty)  1.
-Admitted.
 
 (* generates 2 gaussian samples from 2 uniform samples *)
 (* with mean 0 and variance 1 *)
