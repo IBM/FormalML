@@ -739,6 +739,10 @@ Proof.
   exact 0.
 Qed.
 
+Lemma Standard_Gaussian_PDF_int1 : 
+  is_RInt_gen Standard_Gaussian_PDF (Rbar_locally m_infty) (Rbar_locally p_infty)  1.
+Admitted.
+
 Lemma variance_standard_gaussian0 :
   is_RInt_gen (fun t => (t^2-1)*Standard_Gaussian_PDF t + Standard_Gaussian_PDF t) (Rbar_locally m_infty) (Rbar_locally p_infty) 1.
 Proof.
