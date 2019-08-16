@@ -29,22 +29,14 @@ Local Open Scope R_scope.
 Implicit Type f : R -> R.
 
 Definition erf' (x:R) := (2 / sqrt PI) * exp(-x^2).
-(*Definition erf (x:R) := RInt erf' 0 x.*)
 Definition erf (x:R) := RInt erf' 0 x.
-
-
-(*
-Axiom erf_pinfty : is_lim erf p_infty 1.
-Axiom erf_minfty : is_lim erf m_infty -1.
- *)
 
 Axiom erf_pinfty : Lim erf p_infty = 1.
 Axiom erf_minfty : Lim erf m_infty = -1.
-Axiom erf_pinfty_ex : ex_lim erf p_infty.
-Axiom erf_minfty_ex : ex_lim erf m_infty.
+Axiom erf_ex_lim : forall (x:Rbar), ex_lim erf x.
 
 (* following is standard normal density, i.e. has mean 0 and std=1 *)
-(* CDF(x) = RInt_gen Standard_Gaussian_PDF (Rbar_locally m_infty) x *)
+(* CDF(x) = RInt_gen Standard_Gaussian_PDF (Rbar_locally m_infty) (Rbar_locally x) *)
 Definition Standard_Gaussian_PDF (t:R) := (/ (sqrt (2*PI))) * exp (-t^2/2).
 
 (* general gaussian density with mean = mu and std = sigma *)
@@ -109,38 +101,6 @@ Proof.
   apply continuous_Standard_Gaussian_PDF.
 Qed.
 
-Lemma ex_lim_Standard_Gaussian_PDF :
-  ex_lim (fun a : R => RInt Standard_Gaussian_PDF 0 a) m_infty.
-Proof. 
-Admitted (* Barry *) .
-
-Lemma Standard_Gaussian_CDF_split x :
-  Standard_Gaussian_CDF x = 
-  Rbar_minus (RInt Standard_Gaussian_PDF 0 x)
-  (Lim (fun a : R => RInt Standard_Gaussian_PDF 0 a) m_infty).
-Proof.
-  unfold Standard_Gaussian_CDF.
-  assert (Lim (fun a : R => RInt Standard_Gaussian_PDF a x) m_infty =
-          Rbar_minus (Lim (fun a => RInt Standard_Gaussian_PDF 0 x) m_infty)
-          (Lim (fun a : R => RInt Standard_Gaussian_PDF 0 a) m_infty)).
-  { rewrite <- Lim_minus.
-    - apply Lim_ext; intros.
-      apply (Rplus_eq_reg_r (RInt Standard_Gaussian_PDF 0 y)).
-      field_simplify.
-      f_equal.
-      symmetry.
-      apply @RInt_Chasles.
-      + apply ex_RInt_Standard_Gaussian_PDF.
-      + apply ex_RInt_Standard_Gaussian_PDF.
-    - apply ex_lim_const.
-    - apply ex_lim_Standard_Gaussian_PDF.
-    - rewrite Lim_const. 
-      apply ex_Rbar_minus_Finite_l.
-  } 
-  rewrite H.
-  rewrite Lim_const.
-  trivial.
-Qed.
 
 Lemma derive_xover_sqrt2 (x:R):
   Derive (fun x => x/sqrt 2) x = /sqrt 2.
@@ -319,7 +279,7 @@ Proof.
   rewrite (Lim_comp erf (fun x => x / sqrt 2)).
   - rewrite A1 erf_pinfty; trivial.
   - rewrite A1.
-    apply erf_pinfty_ex.
+    apply erf_ex_lim.
   - apply ex_lim_scal_r.
     apply ex_lim_id.
   - rewrite A1.
@@ -341,7 +301,7 @@ Proof.
   rewrite (Lim_comp erf (fun x => x / sqrt 2)).
   - rewrite A1 erf_minfty; trivial.
   - rewrite A1.
-    apply erf_minfty_ex.
+    apply erf_ex_lim.
   - apply ex_lim_scal_r.
     apply ex_lim_id.
   - rewrite A1.
@@ -350,7 +310,49 @@ Proof.
     discriminate.
 Qed.
 
+Lemma ex_lim_Standard_Gaussian_PDF :
+  ex_lim (fun a : R => RInt Standard_Gaussian_PDF 0 a) m_infty.
+Proof.
+  apply ex_lim_ext with (f := fun a => (/2) * erf (/sqrt 2 * a + 0)).
+  intros.
+  symmetry.
+  replace (erf(/sqrt 2 * y + 0) ) with (erf(y/sqrt 2)).
+  apply std_from_erf0.
+  apply f_equal.
+  field.
+  apply sqrt2_neq0.
+  apply ex_lim_comp_lin with (f := fun x => /2 * erf x) (a := /sqrt 2) (b := 0).
+  apply ex_lim_scal_l with (a:=/2). 
+  apply erf_ex_lim.
+Qed.
 
+Lemma Standard_Gaussian_CDF_split x :
+  Standard_Gaussian_CDF x = 
+  Rbar_minus (RInt Standard_Gaussian_PDF 0 x)
+  (Lim (fun a : R => RInt Standard_Gaussian_PDF 0 a) m_infty).
+Proof.
+  unfold Standard_Gaussian_CDF.
+  assert (Lim (fun a : R => RInt Standard_Gaussian_PDF a x) m_infty =
+          Rbar_minus (Lim (fun a => RInt Standard_Gaussian_PDF 0 x) m_infty)
+          (Lim (fun a : R => RInt Standard_Gaussian_PDF 0 a) m_infty)).
+  { rewrite <- Lim_minus.
+    - apply Lim_ext; intros.
+      apply (Rplus_eq_reg_r (RInt Standard_Gaussian_PDF 0 y)).
+      field_simplify.
+      f_equal.
+      symmetry.
+      apply @RInt_Chasles.
+      + apply ex_RInt_Standard_Gaussian_PDF.
+      + apply ex_RInt_Standard_Gaussian_PDF.
+    - apply ex_lim_const.
+    - apply ex_lim_Standard_Gaussian_PDF.
+    - rewrite Lim_const. 
+      apply ex_Rbar_minus_Finite_l.
+  } 
+  rewrite H.
+  rewrite Lim_const.
+  trivial.
+Qed.
 
 (*
 Lemma Rint_lim_gen f (ra rb:Rbar) :
