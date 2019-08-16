@@ -741,9 +741,44 @@ Proof.
   exact 0.
 Qed.
 
+Lemma Standard_Gaussian_CDF1:
+  is_lim Standard_Gaussian_CDF p_infty 1.
+Proof.
+  apply is_lim_ext with (f:=fun x => / 2  + /2 * erf (x/sqrt 2)).
+  intros.
+  symmetry.
+  - rewrite std'_from_erf.
+    simpl.
+    reflexivity.
+  - eapply is_lim_plus.
+    + eapply is_lim_const.
+    + eapply is_lim_mult.
+      * eapply is_lim_const.
+      * apply Lim_correct.
+        { eapply ex_lim_ext
+          ; [ | eapply (ex_lim_comp_lin erf (/ sqrt 2) 0 p_infty) ].
+          - intros.
+            simpl.
+            f_equal.
+            lra.
+          - apply erf_ex_lim.
+        } 
+      * rewrite erf0_limit_p_infty.
+        simpl; trivial.
+    + rewrite erf0_limit_p_infty.
+      vm_compute.
+      do 2 f_equal.
+      lra.
+Qed.
+
 Lemma Standard_Gaussian_PDF_int1 : 
   is_RInt_gen Standard_Gaussian_PDF (Rbar_locally m_infty) (Rbar_locally p_infty)  1.
+Proof.
+Proof.
+
+  
 Admitted.
+
 
 Lemma variance_standard_gaussian0 :
   is_RInt_gen (fun t => (t^2-1)*Standard_Gaussian_PDF t + Standard_Gaussian_PDF t) (Rbar_locally m_infty) (Rbar_locally p_infty) 1.
