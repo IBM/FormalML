@@ -18,6 +18,7 @@
 
 Require Export LibUtils.
 Require Export Assoc.
+Require Export CoquelicotAdd.
 Require Export Isomorphism.
 Require Export ListAdd.
 Require Export PairEncoding.

@@ -51,15 +51,6 @@ Definition Standard_Gaussian_PDF (t:R) := (/ (sqrt (2*PI))) * exp (-t^2/2).
 Definition General_Gaussian_PDF (mu sigma t : R) :=
    (/ (sigma * (sqrt (2*PI)))) * exp (- (t - mu)^2/(2*sigma^2)).
 
-Lemma sqrt_2PI_nzero : sqrt(2*PI) <> 0.
-Proof.
-  assert (PI > 0) by apply PI_RGT_0.
-
-  apply Rgt_not_eq.
-  apply sqrt_lt_R0.
-  lra.
-Qed.
-
 Lemma gen_from_std (mu sigma : R) :
    sigma > 0 -> forall x:R,  General_Gaussian_PDF mu sigma x = 
                              / sigma * Standard_Gaussian_PDF ((x-mu)/sigma).
@@ -125,8 +116,8 @@ Admitted (* Barry *) .
 
 Lemma Standard_Gaussian_CDF_split x :
   Standard_Gaussian_CDF x = 
-  RInt Standard_Gaussian_PDF 0 x
-  - Lim (fun a : R => RInt Standard_Gaussian_PDF 0 a) m_infty .
+  Rbar_minus (RInt Standard_Gaussian_PDF 0 x)
+  (Lim (fun a : R => RInt Standard_Gaussian_PDF 0 a) m_infty).
 Proof.
   unfold Standard_Gaussian_CDF.
   assert (Lim (fun a : R => RInt Standard_Gaussian_PDF a x) m_infty =
@@ -143,19 +134,12 @@ Proof.
       + apply ex_RInt_Standard_Gaussian_PDF.
     - apply ex_lim_const.
     - apply ex_lim_Standard_Gaussian_PDF.
-    - admit (* Avi *) .
+    - rewrite Lim_const. 
+      apply ex_Rbar_minus_Finite_l.
   } 
   rewrite H.
   rewrite Lim_const.
-  admit. (* Avi *)
-Admitted.
-
-Lemma sqrt2_neq0 :
-  sqrt 2 <> 0.
-Proof.
-  apply Rgt_not_eq.
-  apply Rlt_gt.
-  apply Rlt_sqrt2_0.
+  trivial.
 Qed.
 
 Lemma derive_xover_sqrt2 (x:R):
