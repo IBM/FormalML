@@ -354,13 +354,33 @@ Proof.
   trivial.
 Qed.
 
-(*
-Lemma Rint_lim_gen f (ra rb:Rbar) :
-  Lim (fun ab => RInt f (fst ab) (fst ab)) (ra,rb)  = RInt_gen f (Rbar_locally ra) (Rbar_locally rb).
+Lemma Rint_lim_gen_m_infty_p_infty f (l:R) :
+  (forall x y, ex_RInt f x y) ->
+  filterlim (fun x => RInt f (fst x) (snd x))
+            (filter_prod (Rbar_locally' m_infty) (Rbar_locally' p_infty))
+            (Rbar_locally l) ->
+  is_RInt_gen (V:=R_CompleteNormedModule) f (Rbar_locally m_infty) (Rbar_locally p_infty) l.
 Proof.
-  
+  intros fex.
+  unfold is_RInt_gen.
+  unfold filterlimi, filterlim.
+  unfold filtermap, filtermapi.
+  unfold filter_le; intros.
+  simpl in *.
+SearchAbout ex_RInt.
+  specialize (H P H0).
+  replace (Rbar_locally' m_infty) with (Rbar_locally m_infty)  in * by reflexivity.
+  replace (Rbar_locally' p_infty) with (Rbar_locally p_infty)  in * by reflexivity.
+  revert H.
+  apply filter_prod_ind; intros.
+  eapply Filter_prod; eauto.
+  intros.
+  eexists; split; try eapply H2; eauto.
+  apply RInt_correct.
+  simpl.
+  auto.
 Qed.
-*)
+
 (*
 Lemma Rint_lim_gen2 f a (rb:Rbar) :
   Lim (RInt f a) rb  = RInt_gen f (at_point a) (Rbar_locally rb).
@@ -774,8 +794,9 @@ Qed.
 Lemma Standard_Gaussian_PDF_int1 : 
   is_RInt_gen Standard_Gaussian_PDF (Rbar_locally m_infty) (Rbar_locally p_infty)  1.
 Proof.
-Proof.
-
+  apply Rint_lim_gen_m_infty_p_infty.
+  - apply ex_RInt_Standard_Gaussian_PDF.
+  - generalize (Standard_Gaussian_CDF1); intros cdf.
   
 Admitted.
 
