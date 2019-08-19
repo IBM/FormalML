@@ -27,6 +27,9 @@ Definition vecprod (vec1 vec2 : list DefinedFunction) : DefinedFunction :=
 Definition mul_mat_vec (mat : list (list DefinedFunction)) (vec : list DefinedFunction) : list DefinedFunction :=
   map (fun row => vecprod row vec) mat.
 
+Definition add_vec (vec1 vec2 : list DefinedFunction) : list DefinedFunction :=
+   map (fun '(x,y) => Plus x y) (combine vec1 vec2). 
+
 Definition unique_var (df : DefinedFunction) : option SubVar :=
   let fv := nodup var_dec (df_free_variables df) in
   match fv with
@@ -48,6 +51,18 @@ Definition mkNN2 (n1 n2 n3 : nat) (ivar wvar : SubVar) (f_activ : DefinedFunctio
   let N1 := activation f_activ (mul_mat_vec mat1 ivec) in 
   match N1 with
   | Some vec => activation f_activ (mul_mat_vec mat2 vec)
+  | None => None
+  end.
+
+Definition mkNN2_bias (n1 n2 n3 : nat) (ivar wvar : SubVar) (f_activ : DefinedFunction) : option (list DefinedFunction) :=
+  let mat1 := mkSubVarMatrix (Sub wvar 1) n1 n2 in
+  let b1 := mkSubVarVector (Sub wvar 1) n2 in
+  let mat2 := mkSubVarMatrix (Sub wvar 2) n2 n3 in
+  let b2 := mkSubVarVector (Sub wvar 2) n3 in
+  let ivec := mkSubVarVector ivar n1 in
+  let N1 := activation f_activ (add_vec (mul_mat_vec mat1 ivec) b1) in 
+  match N1 with
+  | Some vec => activation f_activ (add_vec (mul_mat_vec mat2 vec) b2)
   | None => None
   end.
 
