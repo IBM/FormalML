@@ -44,27 +44,44 @@ Definition activation (df : DefinedFunction) (vec : list DefinedFunction) : opti
     | None => None
     end.
 
-Definition mkNN2 (n1 n2 n3 : nat) (ivar wvar : SubVar) (f_activ : DefinedFunction) : option (list DefinedFunction) :=
+Definition create_activation_fun (df : DefinedFunction) : option (DefinedFunction -> DefinedFunction) :=
+    match unique_var df with
+    | Some v => Some (fun val => df_subst df v val)
+    | None => None
+    end.
+
+Definition mkNN2 (n1 n2 n3 : nat) (ivar wvar : SubVar) (f_activ : DefinedFunction -> DefinedFunction) : list DefinedFunction :=
   let mat1 := mkSubVarMatrix (Sub wvar 1) n1 n2 in
   let mat2 := mkSubVarMatrix (Sub wvar 2) n2 n3 in
   let ivec := mkSubVarVector ivar n1 in
-  let N1 := activation f_activ (mul_mat_vec mat1 ivec) in 
-  match N1 with
-  | Some vec => activation f_activ (mul_mat_vec mat2 vec)
-  | None => None
-  end.
+  let N1 := map f_activ (mul_mat_vec mat1 ivec) in 
+  map f_activ (mul_mat_vec mat2 N1).
 
-Definition mkNN2_bias (n1 n2 n3 : nat) (ivar wvar : SubVar) (f_activ : DefinedFunction) : option (list DefinedFunction) :=
+Definition mkNN2_bias (n1 n2 n3 : nat) (ivar wvar : SubVar) (f_activ : DefinedFunction -> DefinedFunction) : list DefinedFunction :=
   let mat1 := mkSubVarMatrix (Sub wvar 1) n1 n2 in
   let b1 := mkSubVarVector (Sub wvar 1) n2 in
   let mat2 := mkSubVarMatrix (Sub wvar 2) n2 n3 in
   let b2 := mkSubVarVector (Sub wvar 2) n3 in
   let ivec := mkSubVarVector ivar n1 in
-  let N1 := activation f_activ (add_vec (mul_mat_vec mat1 ivec) b1) in 
-  match N1 with
-  | Some vec => activation f_activ (add_vec (mul_mat_vec mat2 vec) b2)
-  | None => None
+  let N1 := map f_activ (add_vec (mul_mat_vec mat1 ivec) b1) in 
+  map f_activ (add_vec (mul_mat_vec mat2 N1) b2).
+
+Fixpoint mkNN_gen_0 (n1:nat) (nvlist : list (nat * SubVar)) (ivec : list DefinedFunction)
+           (f_activ : DefinedFunction -> DefinedFunction) : list DefinedFunction :=
+  match nvlist with
+  | nil => ivec
+  | cons (n2,v) nvlist1 => 
+    let mat := mkSubVarMatrix v n1 n2 in
+    let b := mkSubVarVector v n2 in
+    let N := map f_activ (add_vec (mul_mat_vec mat ivec) b) in
+    mkNN_gen_0 n2 nvlist1 N f_activ
   end.
+
+Definition mkNN_gen (n1:nat) (nlist : list nat) (ivar wvar : SubVar) 
+           (f_activ : DefinedFunction -> DefinedFunction) : list DefinedFunction :=
+  let vlist := map (fun i => Sub wvar i) (seq 1 (length nlist)) in
+  let ivec := map (fun i => Var (Sub ivar i)) (seq 1 n1) in
+  mkNN_gen_0 n1 (combine nlist vlist) ivec f_activ.
 
 Record testcases : Type := mkTest {ninput: nat; noutput: nat; ntest: nat; 
                                    data : list ((list R) * (list R))}.
@@ -189,7 +206,9 @@ Definition optimize_step (step : nat) (df : DefinedFunction) (σ:df_env) (lvar :
   let olvals := lookup_list σ lvar in
   match (ogradvec, olvals) with
     | (Some gradvec, Some lvals) => 
-      (Some (update_list var_dec σ (combine lvar (combine3_with (fun val grad noise => val - alpha*(grad + noise))
-                                                       lvals gradvec lnoise))), nst)
+      (Some (update_list var_dec σ 
+                         (combine lvar (combine3_with 
+                                          (fun val grad noise => val - alpha*(grad + noise))
+                                          lvals gradvec lnoise))), nst)
     | (_, _) => (None, nst)
   end.                  
