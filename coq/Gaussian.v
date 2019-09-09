@@ -381,20 +381,6 @@ SearchAbout ex_RInt.
   auto.
 Qed.
 
-(*
-Lemma Rint_lim_gen2 f a (rb:Rbar) :
-  Lim (RInt f a) rb  = RInt_gen f (at_point a) (Rbar_locally rb).
-Proof.
-  
-Qed.
-
-Lemma Rint_lim_gen1 f (ra:Rbar) b :
-  Lim (fun a => RInt f a b) ra  = RInt_gen f (Rbar_locally ra) (at_point b).
-Proof.
-  
-Qed.
-*)
-
 Lemma std'_from_erf :
   forall x:R, Standard_Gaussian_CDF x = (/ 2) + (/2)*erf (x/sqrt 2).
 Proof.
@@ -536,7 +522,7 @@ Qed.
 
 (* proves that normalized gaussian has zero mean *)
 
-Lemma zero_mean_gaussian (t:R):
+Lemma zero_mean_standard_gaussian_symmetric (t:R):
   0 <= t -> RInt (fun t => t * (Standard_Gaussian_PDF t)) (-t) t = 0.
 Proof.
   intros.
@@ -791,15 +777,119 @@ Proof.
       lra.
 Qed.
 
-Lemma Standard_Gaussian_PDF_int1 : 
-  is_RInt_gen Standard_Gaussian_PDF (Rbar_locally m_infty) (Rbar_locally p_infty)  1.
-Proof.
-  apply Rint_lim_gen_m_infty_p_infty.
-  - apply ex_RInt_Standard_Gaussian_PDF.
-  - generalize (Standard_Gaussian_CDF1); intros cdf.
-  
-Admitted.
 
+Lemma lim_rint_gen_p_infty (f : R->R) (a:R) (l:R):
+  (forall x y, ex_RInt f x y) ->
+  is_lim (fun x => RInt f a x) p_infty l -> is_RInt_gen f (at_point a) (Rbar_locally p_infty) l.
+Proof.
+  intros fex.
+  unfold is_lim.
+  intros.
+  unfold filterlim in H.
+  unfold filter_le in H.
+  unfold filtermap in H.
+  simpl in *.
+  intros P Plocal.
+  specialize (H P Plocal).
+  destruct H as [M PltM].
+  eexists (fun x => x=a) (fun y => _); try easy.
+  - simpl.
+    eauto.
+  - simpl.
+    intros.
+    subst.
+    simpl in *.
+    exists (RInt f a y).  
+    split; trivial.
+    apply (@RInt_correct R_CompleteNormedModule); trivial.
+Qed.
+
+Lemma lim_rint_gen_m_infty (f : R->R) (a:R) (l:R):
+  (forall x y, ex_RInt f x y) ->
+  is_lim (fun x => RInt f a x) m_infty l -> is_RInt_gen f (at_point a) (Rbar_locally m_infty) l.
+Proof.
+  intros fex.
+  unfold is_lim.
+  intros.
+  unfold filterlim in H.
+  unfold filter_le in H.
+  unfold filtermap in H.
+  simpl in *.
+  intros P Plocal.
+  specialize (H P Plocal).
+  destruct H as [M PltM].
+  eexists (fun x => x=a) (fun y => _); try easy.
+  - simpl.
+    eauto.
+  - simpl.
+    intros.
+    subst.
+    simpl in *.
+    exists (RInt f a y).  
+    split; trivial.
+    apply (@RInt_correct R_CompleteNormedModule); trivial.
+Qed.
+
+Lemma Standard_Gaussian_PDF_int1_a : 
+  is_RInt_gen Standard_Gaussian_PDF (at_point 0) (Rbar_locally p_infty)  (/2).
+Proof.
+  apply lim_rint_gen_p_infty.
+  apply ex_RInt_Standard_Gaussian_PDF.
+  apply is_lim_ext with (f := (fun x => / 2 * erf(x/sqrt 2))).
+  intros.
+  symmetry.
+  apply std_from_erf0.
+  replace (Finite (/ 2)) with (Rbar_mult (/ 2) (Finite 1)).
+  apply is_lim_scal_l with (a:=/2) (f:= fun x:R => erf(x/sqrt 2)) (l := 1).
+  replace (Finite 1) with (Lim (fun x : R => erf (x / sqrt 2)) p_infty).
+  apply Lim_correct.
+  apply ex_lim_ext with (f := fun x => erf ((/ sqrt 2) * x + 0)).
+  intros.
+  apply f_equal; lra.
+  apply ex_lim_comp_lin with (f := erf) (a := / sqrt 2) (b:=0).
+  apply erf_ex_lim.
+  apply erf0_limit_p_infty.
+  apply Rbar_finite_eq; lra.
+Qed.
+
+Lemma Standard_Gaussian_PDF_int1_b : 
+  is_RInt_gen Standard_Gaussian_PDF (at_point 0) (Rbar_locally m_infty)  (-/2).
+Proof.
+  apply lim_rint_gen_m_infty.
+  apply ex_RInt_Standard_Gaussian_PDF.
+  apply is_lim_ext with (f := (fun x => / 2 * erf(x/sqrt 2))).
+  intros.
+  symmetry.
+  apply std_from_erf0.
+  replace (Finite (-/ 2)) with (Rbar_mult (/ 2) (Finite (-1))).
+  apply is_lim_scal_l with (a:=/2) (f:= fun x:R => erf(x/sqrt 2)) (l := -1).
+  replace (Finite (-1)) with (Lim (fun x : R => erf (x / sqrt 2)) m_infty).
+  apply Lim_correct.
+  apply ex_lim_ext with (f := fun x => erf ((/ sqrt 2) * x + 0)).
+  intros.
+  apply f_equal; lra.
+  apply ex_lim_comp_lin with (f := erf) (a := / sqrt 2) (b:=0).
+  apply erf_ex_lim.
+  apply erf0_limit_m_infty.
+  apply Rbar_finite_eq; lra.
+Qed.
+
+Lemma Standard_Gaussian_PDF_int1 : 
+  is_RInt_gen Standard_Gaussian_PDF (Rbar_locally m_infty) (Rbar_locally p_infty) 1.
+Proof.  
+  replace (1) with (plus (/ 2) (/ 2)).
+  apply (@is_RInt_gen_Chasles R_CompleteNormedModule) with (b := 0) (l1 := /2) (l2 := /2).  
+  apply Rbar_locally_filter.
+  apply Rbar_locally_filter.  
+  replace (/ 2) with (opp (opp (/2))).
+  apply (@is_RInt_gen_swap R_CompleteNormedModule) with (l := (opp (/2))).
+  apply Rbar_locally_filter.  
+  apply at_point_filter.
+  apply Standard_Gaussian_PDF_int1_b.
+  apply opp_opp.
+  apply Standard_Gaussian_PDF_int1_a.
+  compute; lra.
+Qed.
 
 Lemma variance_standard_gaussian0 :
   is_RInt_gen (fun t => (t^2-1)*Standard_Gaussian_PDF t + Standard_Gaussian_PDF t) (Rbar_locally m_infty) (Rbar_locally p_infty) 1.
@@ -827,30 +917,4 @@ Proof.
   Unshelve.
   exact 0.
   exact 0.
-Qed.
-
-Lemma lim_rint_gen (f : R->R) (l:R):
-  (forall x y, ex_RInt f x y) ->
-  is_lim (fun x => RInt f 0 x) p_infty l -> is_RInt_gen f (at_point 0) (Rbar_locally p_infty) l.
-Proof.
-  intros fex.
-  unfold is_lim.
-  intros.
-  unfold filterlim in H.
-  unfold filter_le in H.
-  unfold filtermap in H.
-  simpl in *.
-  intros P Plocal.
-  specialize (H P Plocal).
-  destruct H as [M PltM].
-  eexists (fun x => x=0) (fun y => _); try easy.
-  - simpl.
-    eauto.
-  - simpl.
-    intros.
-    subst.
-    simpl in *.
-    exists (RInt f 0 y).  
-    split; trivial.
-    apply (@RInt_correct R_CompleteNormedModule); trivial.
 Qed.
