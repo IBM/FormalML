@@ -829,3 +829,28 @@ Proof.
   exact 0.
 Qed.
 
+Lemma lim_rint_gen (f : R->R) (l:R):
+  (forall x y, ex_RInt f x y) ->
+  is_lim (fun x => RInt f 0 x) p_infty l -> is_RInt_gen f (at_point 0) (Rbar_locally p_infty) l.
+Proof.
+  intros fex.
+  unfold is_lim.
+  intros.
+  unfold filterlim in H.
+  unfold filter_le in H.
+  unfold filtermap in H.
+  simpl in *.
+  intros P Plocal.
+  specialize (H P Plocal).
+  destruct H as [M PltM].
+  eexists (fun x => x=0) (fun y => _); try easy.
+  - simpl.
+    eauto.
+  - simpl.
+    intros.
+    subst.
+    simpl in *.
+    exists (RInt f 0 y).  
+    split; trivial.
+    apply (@RInt_correct R_CompleteNormedModule); trivial.
+Qed.
