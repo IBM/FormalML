@@ -616,6 +616,7 @@ Proof.
 Qed.
 
 
+
 Lemma limxexp_inv_inf : is_lim (fun t => exp(t^2/2) / t) p_infty p_infty.
 Proof.
   eapply is_lim_le_p_loc; [idtac | apply is_lim_div_exp_p].
@@ -918,3 +919,146 @@ Proof.
   exact 0.
   exact 0.
 Qed.
+
+Lemma limexp_inf : is_lim (fun t => exp(t^2/2)) p_infty p_infty.
+Proof.
+  eapply is_lim_le_p_loc; [idtac | apply is_lim_exp_p].
+  unfold Rbar_locally'.
+  exists 2; intros.
+  left.
+  apply exp_increasing.
+  simpl.
+  replace (x) with (x*1) at 1 by lra.
+  replace (x * (x * 1) / 2) with (x * (x / 2)) by lra.
+  apply Rmult_lt_compat_l; lra.
+Qed.
+
+Lemma limexp_neg_inf : is_lim (fun t => exp(-t^2/2)) p_infty 0.
+Proof.
+  apply (is_lim_ext (fun t => / exp(t^2/2))).
+  intros.
+  symmetry.
+  replace (- y^2/2) with (- (y^2/2)).
+  apply exp_Ropp with (x:=y^2/2).
+  lra.
+  replace (Finite 0) with (Rbar_inv p_infty).
+  apply is_lim_inv.
+  apply limexp_inf.
+  discriminate.
+  compute; trivial.
+Qed.
+
+Lemma limexp_neg_minf : is_lim (fun t => exp(-t^2/2)) m_infty 0.
+Proof.
+  replace (0) with ((-1) * 0 + 0).
+  apply (is_lim_ext (fun t => exp(-(-1*t+0)^2/2))).
+  intros.
+  apply f_equal.
+  field_simplify; trivial.
+  apply is_lim_comp_lin with (a := -1) (b := 0) (f := fun t => exp(-t^2/2)).
+  replace (Rbar_plus (Rbar_mult (-1) m_infty) 0) with (p_infty).
+  replace (-1 * 0 + 0) with (0) by lra.
+  apply limexp_neg_inf.
+  rewrite Rbar_plus_0_r.
+  symmetry.
+  rewrite Rbar_mult_comm.
+  apply is_Rbar_mult_unique.
+  apply is_Rbar_mult_m_infty_neg.
+  compute; lra.
+  apply Rlt_not_eq; lra.
+  compute.
+  field_simplify.
+  reflexivity.
+Qed.
+
+Lemma Derive_opp_Standard_Gaussian_PDF (x:R):
+  Derive (fun t => - Standard_Gaussian_PDF t) x = x*Standard_Gaussian_PDF x.
+Proof.
+  rewrite Derive_opp.
+  unfold Standard_Gaussian_PDF.
+  rewrite Derive_scal.
+  rewrite Derive_comp.
+  rewrite <- Derive_Reals with (pr := derivable_pt_exp (-x^2/2)).
+  rewrite derive_pt_exp.
+  unfold Rdiv at 1.
+  rewrite Derive_scal_l.
+  rewrite Derive_opp.
+  rewrite Derive_pow.
+  simpl.
+  rewrite Derive_id.
+  field_simplify.
+  unfold Rdiv at 1.
+  unfold Rdiv at 2.
+  replace (2 * x * exp (- (x * (x * 1)) / 2) * / (2 * sqrt (2 * PI))) with (x * exp (- (x * (x * 1)) / 2) * (2 * / (2 * sqrt (2 * PI)))) by lra.
+  apply Rmult_eq_compat_l.
+  field_simplify.
+  reflexivity.
+  apply sqrt_2PI_nzero.
+  apply sqrt_2PI_nzero.
+  apply sqrt_2PI_nzero.
+  apply sqrt_2PI_nzero.  
+  apply ex_derive_id.
+  solve_derive.
+  solve_derive.  
+Qed.
+  
+Lemma ex_derive_opp_Standard_Gaussian_PDF (x:R):
+  ex_derive (fun t => - Standard_Gaussian_PDF t) x.
+Proof.
+  unfold Standard_Gaussian_PDF.
+  solve_derive.
+Qed.
+
+Lemma continuous_Derive_opp_Standard_Gaussian_PDF (x:R):
+  continuous (Derive (fun t => - Standard_Gaussian_PDF t)) x.
+Proof.
+  apply continuous_ext with (f:=fun t => t*Standard_Gaussian_PDF t).
+  symmetry.
+  apply Derive_opp_Standard_Gaussian_PDF.
+  apply (@continuous_mult R_CompleteNormedModule).
+  apply continuous_id.
+  apply continuous_Standard_Gaussian_PDF.
+Qed.
+
+Lemma mean_standard_gaussian :
+  is_RInt_gen (fun t => t*Standard_Gaussian_PDF t) 
+           (Rbar_locally m_infty) (Rbar_locally p_infty) 0.
+Proof.  
+  replace (0) with (0 - 0) by lra.
+  apply (is_RInt_gen_ext (Derive (fun t => - Standard_Gaussian_PDF t))).
+  apply filter_forall.
+  intros; trivial.
+  apply Derive_opp_Standard_Gaussian_PDF.
+  apply is_RInt_gen_Derive with (f := fun t => - Standard_Gaussian_PDF t) (la := 0) (lb := 0).
+  apply filter_forall.  
+  intros; trivial.
+  apply ex_derive_opp_Standard_Gaussian_PDF.
+  apply filter_forall.
+  intros; trivial.
+  apply continuous_Derive_opp_Standard_Gaussian_PDF.
+  replace (filterlim (fun t : R => - Standard_Gaussian_PDF t) (Rbar_locally m_infty) (locally 0)) with (is_lim (fun t : R => - Standard_Gaussian_PDF t) m_infty 0).
+  unfold Standard_Gaussian_PDF.
+  apply (is_lim_ext (fun t : R => (- / sqrt (2 * PI)) *  exp (- t ^ 2 / 2))).
+  intros.
+  field_simplify; trivial.
+  apply sqrt_2PI_nzero.
+  apply sqrt_2PI_nzero. 
+  replace (0) with ((- / sqrt (2*PI)) * 0) by lra.  
+  apply is_lim_scal_l with (a:=- / sqrt (2 * PI)) (l := 0).
+  apply limexp_neg_minf.
+  unfold is_lim.
+  reflexivity.
+  replace (filterlim (fun t : R => - Standard_Gaussian_PDF t) (Rbar_locally p_infty) (locally 0)) with (is_lim (fun t : R => - Standard_Gaussian_PDF t) p_infty 0).
+  unfold Standard_Gaussian_PDF.
+  apply (is_lim_ext (fun t : R => (- / sqrt (2 * PI)) *  exp (- t ^ 2 / 2))).
+  intros.
+  field_simplify; trivial.
+  apply sqrt_2PI_nzero.
+  apply sqrt_2PI_nzero. 
+  replace (0) with ((- / sqrt (2*PI)) * 0) by lra.  
+  apply is_lim_scal_l with (a:=- / sqrt (2 * PI)) (l := 0).
+  apply limexp_neg_inf.
+  unfold is_lim.
+  reflexivity.
+Qed.
+
