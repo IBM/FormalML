@@ -20,7 +20,6 @@ Require Import Rtrigo1.
 Require Import Ranalysis1.
 Require Import Lra Omega.
 
-
 Require Import Utils.
 
 Set Bullet Behavior "Strict Subproofs".
@@ -67,6 +66,9 @@ Qed.
 Definition Standard_Gaussian_CDF (t:R) := 
   Lim (fun a => RInt Standard_Gaussian_PDF a t) m_infty.
 
+Definition Standard_Gaussian_CDF2 (t:Rbar) := 
+  RInt_gen Standard_Gaussian_PDF (Rbar_locally m_infty) (Rbar_locally t).
+
 Lemma continuous_Standard_Gaussian_PDF :
   forall (x:R), continuous Standard_Gaussian_PDF x.
 Proof.
@@ -100,7 +102,6 @@ Proof.
   intros.
   apply continuous_Standard_Gaussian_PDF.
 Qed.
-
 
 Lemma derive_xover_sqrt2 (x:R):
   Derive (fun x => x/sqrt 2) x = /sqrt 2.
@@ -234,36 +235,36 @@ Lemma Rbar_mult_p_infty_pos (z:R) :
   0 < z -> Rbar_mult p_infty z = p_infty.
 Proof.
   intros.
-  simpl.
-  destruct (Rle_dec 0 z); try lra.
-  destruct (Rle_lt_or_eq_dec 0 z r); trivial; try lra.
+  apply is_Rbar_mult_unique.
+  apply is_Rbar_mult_p_infty_pos.
+  simpl; auto.
 Qed.    
 
 Lemma Rbar_mult_m_infty_pos (z:R) :
   0 < z -> Rbar_mult m_infty z = m_infty.
 Proof.
   intros.
-  simpl.
-  destruct (Rle_dec 0 z); try lra.
-  destruct (Rle_lt_or_eq_dec 0 z r); trivial; try lra.
+  apply is_Rbar_mult_unique.
+  apply is_Rbar_mult_m_infty_pos.
+  simpl; auto.
 Qed.
 
 Lemma Rbar_mult_p_infty_neg (z:R) :
   0 > z -> Rbar_mult p_infty z = m_infty.
 Proof.
   intros.
-  simpl.
-  destruct (Rle_dec 0 z); trivial; try lra.
-  destruct (Rle_lt_or_eq_dec 0 z r); trivial; try lra.
+  apply is_Rbar_mult_unique.
+  apply is_Rbar_mult_p_infty_neg.
+  simpl; auto.
 Qed.    
 
 Lemma Rbar_mult_m_infty_neg (z:R) :
   0 > z -> Rbar_mult m_infty z = p_infty.
 Proof.
   intros.
-  simpl.
-  destruct (Rle_dec 0 z); trivial; try lra.
-  destruct (Rle_lt_or_eq_dec 0 z r); trivial; try lra.
+  apply is_Rbar_mult_unique.  
+  apply is_Rbar_mult_m_infty_neg.
+  simpl; auto.
 Qed.
 
 Lemma erf0_limit_p_infty : Lim (fun x => erf(x/sqrt 2)) p_infty = 1.
@@ -380,7 +381,7 @@ Proof.
   auto.
 Qed.
 
-Lemma std'_from_erf :
+Lemma std_CDF_from_erf :
   forall x:R, Standard_Gaussian_CDF x = (/ 2) + (/2)*erf (x/sqrt 2).
 Proof.
   intros.
@@ -450,84 +451,6 @@ Proof.
   apply ex_RInt_continuous with (f := fun t => t^2 * (Standard_Gaussian_PDF t)).
   intros.
   apply continuous_Standard_Gaussian_variance_PDF.
-Qed.
-
-Definition oddfun (f : R -> R) : Prop := forall x:R, f(-x) = - f (x).
-
-Lemma odd_mean_standard_gaussian : oddfun (fun t => t * (Standard_Gaussian_PDF t)).
-Proof.  
-  unfold oddfun.
-  intros.
-  rewrite Ropp_mult_distr_l.
-  apply Rmult_eq_compat_l with (r1 := Standard_Gaussian_PDF (-x)) (r2 := Standard_Gaussian_PDF x).  
-  unfold Standard_Gaussian_PDF.
-  apply Rmult_eq_compat_l.
-  replace ((-x)^2) with (x^2) by lra.
-  trivial.
-Qed.
-
-Lemma RInt_comp_opp (f : R -> R) (a b : R) :
-  ex_RInt f (-a) (-b) ->
-  RInt f (-a) (-b) = RInt (fun y => - (f (- y))) a b.
-Proof.
-  intros.
-  symmetry.
-  apply is_RInt_unique.
-  apply: is_RInt_comp_opp.
-  exact: RInt_correct.    
-Qed.
-
-Lemma negate_arg (t:R) (f:R -> R): 
-  ex_RInt f 0 (-t) -> 
-  RInt (fun t => - (f (- t))) 0 t = RInt f 0 (-t).
-Proof.  
-  intros.
-  symmetry.
-  replace (0) with (- 0) at 1 by lra.
-  apply RInt_comp_opp with (a:=0) (b:=t) (f := f).
-  ring_simplify.
-  trivial.
-Qed.
-
-Lemma odd_integral (t:R) (f : R-> R):
-  0 <= t ->
-  ex_RInt f (-t) t ->
-  oddfun f -> RInt f (-t) t = 0.
-Proof.  
-  unfold oddfun.
-  intros.
-  assert(le_chain:- t <= 0 <= t) by lra.
-  assert (fneg: ex_RInt f (- t) 0).
-  {  apply ex_RInt_Chasles_1 with (a := -t) (b := 0) (c := t) (f0 := f); trivial. }
-  assert (fpos:ex_RInt f 0 t).
-  {  apply ex_RInt_Chasles_2 with (a := -t) (b := 0) (c := t) (f0 := f); trivial. }
-  assert (fnegswap: ex_RInt f 0 (- t)).
-  {  apply ex_RInt_swap. trivial. }
-  assert (fopp: ex_RInt (fun x : R => f (- x)) 0 t).
-  { apply ex_RInt_ext with (g:=(fun x => f (-x))) (a:=0) (b:=t) (f0 := (fun x => - f x)).
-    - intuition.
-    - apply ex_RInt_opp with (f0 := f) (a := 0) (b := t).  trivial.
-  }
-  rewrite <- RInt_Chasles with (b := 0) by trivial.
-  rewrite <- opp_RInt_swap by trivial.
-  rewrite <- negate_arg by trivial.
-  rewrite RInt_opp; trivial.
-  rewrite opp_opp.
-  rewrite <- RInt_plus by trivial.
-  rewrite -> RInt_ext with (g:=(fun x => 0)).
-  - rewrite RInt_const; intuition.
-  - intros. rewrite H1. intuition.
-Qed.
-
-(* proves that normalized gaussian has zero mean *)
-
-Lemma zero_mean_standard_gaussian_symmetric (t:R):
-  0 <= t -> RInt (fun t => t * (Standard_Gaussian_PDF t)) (-t) t = 0.
-Proof.
-  intros.
-  apply odd_integral; trivial.
-  apply ex_RInt_Standard_Gaussian_mean_PDF; lra.
-  apply odd_mean_standard_gaussian.
 Qed.
 
 Lemma variance_exint0 (a b:Rbar) :
@@ -614,8 +537,6 @@ Proof.
   field_simplify; lra.
 Qed.
 
-
-
 Lemma limxexp_inv_inf : is_lim (fun t => exp(t^2/2) / t) p_infty p_infty.
 Proof.
   eapply is_lim_le_p_loc; [idtac | apply is_lim_div_exp_p].
@@ -673,7 +594,7 @@ Proof.
     exists 0; intros; discriminate.
 Qed.
 
-Lemma continuous_derive_gaussian_mean x :
+Lemma continuous_derive_gaussian_opp_mean x :
   continuous (Derive (fun t : R => - t * Standard_Gaussian_PDF t)) x.
 Proof.
   apply (continuous_ext (fun t => (t^2-1)*Standard_Gaussian_PDF t)).
@@ -690,7 +611,7 @@ Proof.
   apply continuous_Standard_Gaussian_PDF.
 Qed.
 
-Lemma plim_gaussian_mean : is_lim (fun t => - t*(Standard_Gaussian_PDF t)) p_infty 0.
+Lemma plim_gaussian_opp_mean : is_lim (fun t => - t*(Standard_Gaussian_PDF t)) p_infty 0.
 Proof.
   replace (0) with ((- / sqrt (2*PI)) * 0) by lra.  
   unfold Standard_Gaussian_PDF.
@@ -703,7 +624,7 @@ Proof.
   apply limxexp_inf.  
 Qed.  
 
-Lemma mlim_gaussian_mean : is_lim (fun t => - t*(Standard_Gaussian_PDF t)) m_infty 0.
+Lemma mlim_gaussian_opp_mean : is_lim (fun t => - t*(Standard_Gaussian_PDF t)) m_infty 0.
 Proof.
   replace (0) with ((- / sqrt (2*PI)) * 0) by lra.  
   unfold Standard_Gaussian_PDF.
@@ -735,9 +656,9 @@ Proof.
     + eapply (Filter_prod _ _ _ (fun _ => True) (fun _ => True))
       ; simpl; eauto.
       intros; simpl.
-      apply continuous_derive_gaussian_mean.
-    + apply mlim_gaussian_mean.
-    + apply plim_gaussian_mean.
+      apply continuous_derive_gaussian_opp_mean.
+    + apply mlim_gaussian_opp_mean.
+    + apply plim_gaussian_opp_mean.
   Unshelve.
   exact 0.
   exact 0.
@@ -753,7 +674,7 @@ Proof.
   apply is_lim_ext with (f:=fun x => / 2  + /2 * erf (x/sqrt 2)).
   intros.
   symmetry.
-  - rewrite std'_from_erf.
+  - rewrite std_CDF_from_erf.
     simpl.
     reflexivity.
   - eapply is_lim_plus.
@@ -776,7 +697,6 @@ Proof.
       do 2 f_equal.
       lra.
 Qed.
-
 
 Lemma lim_rint_gen_p_infty (f : R->R) (a:R) (l:R):
   (forall x y, ex_RInt f x y) ->
@@ -830,6 +750,36 @@ Proof.
     apply (@RInt_correct R_CompleteNormedModule); trivial.
 Qed.
 
+Lemma rint_gen_lim_p_infty {f : R->R} {a:R} {l:R} :
+  is_RInt_gen f (at_point a) (Rbar_locally p_infty) l -> is_lim (fun x => RInt f a x) p_infty l.
+Proof.
+  intros H P HP.
+  specialize (H _ HP).
+  destruct H as [Q R Qa Rb H].
+  simpl in H.
+  destruct Rb as [M Rb].
+  exists M.
+  intros x xlt.
+  destruct (H a x Qa (Rb _ xlt))
+    as [y [yis iP]].
+  now rewrite (is_RInt_unique _ _ _ _ yis).
+Qed.
+
+Lemma rint_gen_lim_m_infty {f : R->R} {a:R} {l:R} :
+  is_RInt_gen f (at_point a) (Rbar_locally m_infty) l -> is_lim (fun x => RInt f a x) m_infty l.
+Proof.
+  intros H P HP.
+  specialize (H _ HP).
+  destruct H as [Q R Qa Rb H].
+  simpl in H.
+  destruct Rb as [M Rb].
+  exists M.
+  intros x xlt.
+  destruct (H a x Qa (Rb _ xlt))
+    as [y [yis iP]].
+  now rewrite (is_RInt_unique _ _ _ _ yis).
+Qed.
+
 Lemma Standard_Gaussian_PDF_int1_a : 
   is_RInt_gen Standard_Gaussian_PDF (at_point 0) (Rbar_locally p_infty)  (/2).
 Proof.
@@ -874,7 +824,7 @@ Proof.
   apply Rbar_finite_eq; lra.
 Qed.
 
-Lemma Standard_Gaussian_PDF_int1 : 
+Lemma Standard_Gaussian_PDF_normed : 
   is_RInt_gen Standard_Gaussian_PDF (Rbar_locally m_infty) (Rbar_locally p_infty) 1.
 Proof.  
   replace (1) with (plus (/ 2) (/ 2)).
@@ -900,14 +850,13 @@ Proof.
       (f:=(fun t => (t^2-1)*Standard_Gaussian_PDF t)) (lf :=0)
       (g:=(fun t => Standard_Gaussian_PDF t)) (lg := 1).
   apply variance_int1_middle.
-  apply Standard_Gaussian_PDF_int1.
+  apply Standard_Gaussian_PDF_normed.
 Qed.
 
 Lemma variance_standard_gaussian :
-  RInt_gen (fun t => t^2*Standard_Gaussian_PDF t) 
-           (Rbar_locally m_infty) (Rbar_locally p_infty) = 1.
+  is_RInt_gen (fun t => t^2*Standard_Gaussian_PDF t) 
+           (Rbar_locally m_infty) (Rbar_locally p_infty) 1.
 Proof.
-  apply is_RInt_gen_unique.
   eapply is_RInt_gen_ext; try eapply variance_standard_gaussian0.
   eapply (Filter_prod _ _ _ (fun _ => True) (fun _ => True))
   ; simpl; eauto.
@@ -1061,18 +1010,23 @@ Proof.
   reflexivity.
 Qed.
 
-Lemma rint_gen_lim_p_infty {f : R->R} {a:R} {l:R} :
-  is_RInt_gen f (at_point a) (Rbar_locally p_infty) l -> is_lim (fun x => RInt f a x) p_infty l.
-Proof.
-  intros H P HP.
-  specialize (H _ HP).
-  destruct H as [Q R Qa Rb H].
-  simpl in H.
-  destruct Rb as [M Rb].
-  exists M.
-  intros x xlt.
-  destruct (H a x Qa (Rb _ xlt))
-    as [y [yis iP]].
-  now rewrite (is_RInt_unique _ _ _ _ yis).
-Qed.
+(* main results:
+  Definition Standard_Gaussian_PDF (t:R) := (/ (sqrt (2*PI))) * exp (-t^2/2).
+
+  Lemma Standard_Gaussian_PDF_normed : 
+     is_RInt_gen Standard_Gaussian_PDF (Rbar_locally m_infty) (Rbar_locally p_infty) 1.
+
+  Lemma std_CDF_from_erf :
+     forall x:R, Standard_Gaussian_CDF x = (/ 2) + (/2)*erf (x/sqrt 2).
+
+  Lemma mean_standard_gaussian :
+     is_RInt_gen (fun t => t*Standard_Gaussian_PDF t) 
+           (Rbar_locally m_infty) (Rbar_locally p_infty) 0.
+   
+  Lemma variance_standard_gaussian :
+     is_RInt_gen (fun t => t^2*Standard_Gaussian_PDF t) 
+           (Rbar_locally m_infty) (Rbar_locally p_infty) 1.
+
+  CoFixpoint mkGaussianStream (uniformStream : Stream R) : Stream R
+*)
 
