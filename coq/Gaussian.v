@@ -367,7 +367,6 @@ Proof.
   unfold filtermap, filtermapi.
   unfold filter_le; intros.
   simpl in *.
-SearchAbout ex_RInt.
   specialize (H P H0).
   replace (Rbar_locally' m_infty) with (Rbar_locally m_infty)  in * by reflexivity.
   replace (Rbar_locally' p_infty) with (Rbar_locally p_infty)  in * by reflexivity.
@@ -1060,5 +1059,20 @@ Proof.
   apply limexp_neg_inf.
   unfold is_lim.
   reflexivity.
+Qed.
+
+Lemma rint_gen_lim_p_infty {f : R->R} {a:R} {l:R} :
+  is_RInt_gen f (at_point a) (Rbar_locally p_infty) l -> is_lim (fun x => RInt f a x) p_infty l.
+Proof.
+  intros H P HP.
+  specialize (H _ HP).
+  destruct H as [Q R Qa Rb H].
+  simpl in H.
+  destruct Rb as [M Rb].
+  exists M.
+  intros x xlt.
+  destruct (H a x Qa (Rb _ xlt))
+    as [y [yis iP]].
+  now rewrite (is_RInt_unique _ _ _ _ yis).
 Qed.
 
