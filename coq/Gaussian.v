@@ -709,7 +709,7 @@ Proof.
   exact 0.
 Qed.
 
-Lemma Standard_Gaussian_PDF_int1_a : 
+Lemma Standard_Gaussian_PDF_int1_pinf : 
   is_RInt_gen Standard_Gaussian_PDF (at_point 0) (Rbar_locally p_infty)  (/2).
 Proof.
   apply lim_rint_gen_p_infty.
@@ -731,7 +731,7 @@ Proof.
   apply Rbar_finite_eq; lra.
 Qed.
 
-Lemma Standard_Gaussian_PDF_int1_b : 
+Lemma Standard_Gaussian_PDF_int1_minf : 
   is_RInt_gen Standard_Gaussian_PDF (at_point 0) (Rbar_locally m_infty)  (-/2).
 Proof.
   apply lim_rint_gen_m_infty.
@@ -764,7 +764,7 @@ Proof.
   apply (@is_RInt_gen_swap R_CompleteNormedModule).
   apply Rbar_locally_filter.
   apply at_point_filter.
-  apply Standard_Gaussian_PDF_int1_b.
+  apply Standard_Gaussian_PDF_int1_minf.
   compute; field_simplify; auto.
   rewrite is_RInt_gen_at_point.
   replace (/ 2 * erf (x / sqrt 2)) with (RInt Standard_Gaussian_PDF 0 x).
@@ -793,9 +793,9 @@ Proof.
   apply (@is_RInt_gen_swap R_CompleteNormedModule) with (l := (opp (/2))).
   apply Rbar_locally_filter.  
   apply at_point_filter.
-  apply Standard_Gaussian_PDF_int1_b.
+  apply Standard_Gaussian_PDF_int1_minf.
   apply opp_opp.
-  apply Standard_Gaussian_PDF_int1_a.
+  apply Standard_Gaussian_PDF_int1_pinf.
   compute; lra.
 Qed.
 
@@ -975,7 +975,7 @@ Qed.
      is_RInt_gen Standard_Gaussian_PDF (Rbar_locally m_infty) (Rbar_locally p_infty) 1.
 
   Definition Standard_Gaussian_CDF (t:Rbar) := 
-      RInt_gen Standard_Gaussian_PDF (Rbar_locally m_infty) (Rbar_locally t).
+      RInt_gen Standard_Gaussian_PDF (Rbar_locally m_infty) (at_point t).
 
   Lemma std_CDF_from_erf :
      forall x:R, Standard_Gaussian_CDF x = (/ 2) + (/2)*erf (x/sqrt 2).
