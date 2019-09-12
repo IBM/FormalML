@@ -286,7 +286,7 @@ Proof.
 Qed.
 
 Lemma rint_gen_lim_Rbar {f : R->R} {a:R} {b:Rbar} {l:R} :
-  is_RInt_gen f (at_point a) (Rbar_locally b) l -> is_lim (fun x => RInt f a x) b l.
+  is_RInt_gen f (at_point a) (Rbar_locally' b) l -> is_lim (fun x => RInt f a x) b l.
 Proof.
   intros H P HP.
   specialize (H _ HP).
@@ -295,8 +295,8 @@ Proof.
   destruct b.
   - destruct Rb as [M Rb].
     exists M.
-    intros x xlt.
-    destruct (H a x Qa (Rb _ xlt))
+    intros x xlt xne.
+    destruct (H a x Qa (Rb _ xlt xne))
       as [y [yis iP]].
     now rewrite (is_RInt_unique _ _ _ _ yis).
   - destruct Rb as [M Rb].
