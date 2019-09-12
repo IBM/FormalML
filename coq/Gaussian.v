@@ -991,3 +991,40 @@ Qed.
   CoFixpoint mkGaussianStream (uniformStream : Stream R) : Stream R
 *)
 
+Lemma lim_rint_gen_R (f : R->R) (a:R) (b:R) (l:R):
+  (forall x y, ex_RInt f x y) ->
+  is_lim (fun x => RInt f a x) b l -> is_RInt_gen f (at_point a) (Rbar_locally' b) l.
+Proof.
+  intros fex.
+  unfold is_lim.
+  intros.
+  unfold filterlim in H.
+  unfold filter_le in H.
+  unfold filtermap in H.
+  simpl in *.
+  intros P Plocal.
+  specialize (H P Plocal).
+  destruct H as [M PltM].
+  eexists (fun x => x=a) (fun y => P (RInt f a y)); try easy.
+  - simpl.
+    unfold locally', within, locally in *.
+    eauto.
+  - simpl.
+    intros.
+    subst.
+    simpl in *.
+    exists (RInt f a y).  
+    split; trivial.
+    now apply (@RInt_correct R_CompleteNormedModule).
+Qed.
+
+Lemma lim_rint_gen (f : R->R) (a:R) (b:Rbar) (l:R):
+  (forall x y, ex_RInt f x y) ->
+  is_lim (fun x => RInt f a x) b l -> is_RInt_gen f (at_point a) (Rbar_locally' b) l.
+Proof.
+  intros fex isl.
+  destruct b.
+  - now apply lim_rint_gen_R.
+  - now apply lim_rint_gen_p_infty.
+  - now apply lim_rint_gen_m_infty.
+Qed.
