@@ -285,34 +285,32 @@ Proof.
     apply (@RInt_correct R_CompleteNormedModule); trivial.
 Qed.
 
-Lemma rint_gen_lim_p_infty {f : R->R} {a:R} {l:R} :
-  is_RInt_gen f (at_point a) (Rbar_locally p_infty) l -> is_lim (fun x => RInt f a x) p_infty l.
+Lemma rint_gen_lim_Rbar {f : R->R} {a:R} {b:Rbar} {l:R} :
+  is_RInt_gen f (at_point a) (Rbar_locally b) l -> is_lim (fun x => RInt f a x) b l.
 Proof.
   intros H P HP.
   specialize (H _ HP).
   destruct H as [Q R Qa Rb H].
   simpl in H.
-  destruct Rb as [M Rb].
-  exists M.
-  intros x xlt.
-  destruct (H a x Qa (Rb _ xlt))
-    as [y [yis iP]].
-  now rewrite (is_RInt_unique _ _ _ _ yis).
-Qed.
-
-Lemma rint_gen_lim_m_infty {f : R->R} {a:R} {l:R} :
-  is_RInt_gen f (at_point a) (Rbar_locally m_infty) l -> is_lim (fun x => RInt f a x) m_infty l.
-Proof.
-  intros H P HP.
-  specialize (H _ HP).
-  destruct H as [Q R Qa Rb H].
-  simpl in H.
-  destruct Rb as [M Rb].
-  exists M.
-  intros x xlt.
-  destruct (H a x Qa (Rb _ xlt))
-    as [y [yis iP]].
-  now rewrite (is_RInt_unique _ _ _ _ yis).
+  destruct b.
+  - destruct Rb as [M Rb].
+    exists M.
+    intros x xlt.
+    destruct (H a x Qa (Rb _ xlt))
+      as [y [yis iP]].
+    now rewrite (is_RInt_unique _ _ _ _ yis).
+  - destruct Rb as [M Rb].
+    exists M.
+    intros x xlt.
+    destruct (H a x Qa (Rb _ xlt))
+      as [y [yis iP]].
+    now rewrite (is_RInt_unique _ _ _ _ yis).
+  - destruct Rb as [M Rb].
+    exists M.
+    intros x xlt.
+    destruct (H a x Qa (Rb _ xlt))
+      as [y [yis iP]].
+    now rewrite (is_RInt_unique _ _ _ _ yis).
 Qed.
 
 Lemma Rbar_mult_p_infty_pos (z:R) :
