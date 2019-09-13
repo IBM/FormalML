@@ -332,7 +332,7 @@ Proof.
 Qed.
 
 Lemma ex_RInt_Standard_Gaussian_mean_PDF (a b:R) :
-    a <= b -> ex_RInt (fun t => t * (Standard_Gaussian_PDF t)) a b.
+    ex_RInt (fun t => t * (Standard_Gaussian_PDF t)) a b.
 Proof.
   intros.
   apply ex_RInt_continuous with (f := fun t => t * (Standard_Gaussian_PDF t)).
@@ -341,7 +341,7 @@ Proof.
 Qed.
 
 Lemma ex_RInt_Standard_Gaussian_variance_PDF (a b:R) :
-    a <= b -> ex_RInt (fun t => t^2 * (Standard_Gaussian_PDF t)) a b.
+    ex_RInt (fun t => t^2 * (Standard_Gaussian_PDF t)) a b.
 Proof.
   intros.
   apply ex_RInt_continuous with (f := fun t => t^2 * (Standard_Gaussian_PDF t)).
@@ -350,7 +350,6 @@ Proof.
 Qed.
 
 Lemma variance_exint0 (a b:Rbar) :
-  a <= b ->
   ex_RInt (fun t => (t^2-1)*Standard_Gaussian_PDF t) a b.
 Proof.
   intros.
@@ -366,7 +365,6 @@ Proof.
 Qed.  
 
 Lemma variance_int0 (a b:Rbar) :
-  a <= b -> 
   RInt (fun t => t^2*Standard_Gaussian_PDF t) a b =
   RInt (fun t => (t^2-1)*Standard_Gaussian_PDF t) a b +
   RInt (fun t => Standard_Gaussian_PDF t) a b.
@@ -397,7 +395,6 @@ Proof.
          | apply derivable_pt_exp
          ].
 Qed.
-
 
 Ltac solve_derive := try solve [auto_derive; trivial | lra].
 
@@ -747,18 +744,10 @@ Proof.
   rewrite Derive_pow.
   simpl.
   rewrite Derive_id.
+  apply Rminus_diag_uniq.
   field_simplify.
-  unfold Rdiv at 1.
-  unfold Rdiv at 2.
-  replace (2 * x * exp (- (x * (x * 1)) / 2) * / (2 * sqrt (2 * PI))) with 
-      (x * exp (- (x * (x * 1)) / 2) * (2 * / (2 * sqrt (2 * PI)))) by lra.
-  apply Rmult_eq_compat_l.
-  field_simplify.
-  reflexivity.
+  lra.
   apply sqrt_2PI_nzero.
-  apply sqrt_2PI_nzero.
-  apply sqrt_2PI_nzero.
-  apply sqrt_2PI_nzero.  
   apply ex_derive_id.
   solve_derive.
   solve_derive.  
@@ -824,6 +813,308 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma Derive_General_Gaussian_PDF (mu sigma x:R):
+  sigma > 0 -> Derive (General_Gaussian_PDF mu sigma) x = / (sigma^2)*(mu-x)*General_Gaussian_PDF mu sigma x.
+Proof.
+  intros.
+  assert (sigma <> 0).
+  apply Rgt_not_eq; trivial.
+  unfold General_Gaussian_PDF.
+  rewrite Derive_scal.
+  rewrite Derive_comp.
+  rewrite <- Derive_Reals with (pr := derivable_pt_exp (-(x-mu)^2/(2*sigma^2))).
+  rewrite derive_pt_exp.
+  unfold Rdiv at 1.
+  rewrite Derive_scal_l.
+  rewrite Derive_opp.
+  rewrite Derive_pow.
+  rewrite Derive_minus.
+  rewrite Derive_id.
+  rewrite Derive_const.
+  apply Rminus_diag_uniq.
+  simpl.
+  field_simplify.
+  lra.
+  split.
+  apply sqrt_2PI_nzero.
+  trivial.
+  apply ex_derive_id.
+  apply ex_derive_const.
+  solve_derive.
+  solve_derive.
+  solve_derive.  
+Qed.  
+
+Lemma ex_derive_General_Gaussian_PDF (mu sigma:R) (x:R):
+  sigma > 0 -> ex_derive (General_Gaussian_PDF mu sigma) x.
+Proof.
+  intros.
+  unfold General_Gaussian_PDF.
+  solve_derive.
+Qed.
+
+Lemma continuous_General_Gaussian_PDF (mu sigma : R) :
+  forall (x:R), continuous (General_Gaussian_PDF mu sigma) x.
+Proof.
+  intros.
+  unfold General_Gaussian_PDF.
+  apply continuous_mult with (f:= fun t => / (sigma * sqrt (2*PI))).
+  apply continuous_const.
+  apply continuous_comp with (g := exp).
+  unfold Rdiv.
+  apply continuous_mult with (f := fun t => -(t-mu)^2) (g := fun t => /(2*sigma^2)).
+  apply continuous_opp with (f := fun t =>  (t-mu)^2).
+  apply continuous_mult with (f := fun t => t - mu).
+  apply continuous_minus with (f := id).
+  apply continuous_id.
+  apply continuous_const.
+  apply continuous_mult with (f := fun t => t-mu).
+  apply continuous_minus with (f := id).
+  apply continuous_id.
+  apply continuous_const.
+  apply continuous_const.
+  apply continuous_const.    
+  apply ex_derive_continuous with (f := exp) (x0 := -(x-mu)^2/(2*sigma^2)).
+  apply ex_derive_Reals_1.
+  unfold derivable_pt.
+  unfold derivable_pt_abs.
+  exists (exp (- (x-mu) ^ 2 / (2*sigma^2))).
+  apply derivable_pt_lim_exp.
+Qed.
+
+Lemma continuous_Derive_General_Gaussian_PDF (mu sigma x:R):
+  sigma > 0 -> continuous (Derive (General_Gaussian_PDF mu sigma)) x.
+Proof.
+  intros.
+  apply (continuous_ext (fun x => / (sigma^2)*((mu-x)*General_Gaussian_PDF mu sigma x))).
+  intros.
+  rewrite Derive_General_Gaussian_PDF.
+  rewrite Rmult_assoc; trivial.
+  trivial.
+  apply continuous_scal_r with (k := / sigma^2) (f := fun x => (mu-x)*General_Gaussian_PDF mu sigma x).
+  apply continuous_mult with (f := fun t => mu-t).
+  apply continuous_minus with (f := fun t => mu).
+  apply continuous_const.
+  apply continuous_id.
+  apply continuous_General_Gaussian_PDF.
+Qed.
+
+Lemma General_Gaussian_PDF_normed (mu sigma:R) : 
+  sigma>0 ->
+  ex_RInt_gen Standard_Gaussian_PDF (Rbar_locally' m_infty) (at_point (- mu / sigma)) ->
+  ex_RInt_gen Standard_Gaussian_PDF (at_point (- mu / sigma)) (Rbar_locally' p_infty) ->
+  is_RInt_gen (General_Gaussian_PDF mu sigma) (Rbar_locally' m_infty) (Rbar_locally' p_infty) 1.
+Proof.
+  intros.
+  assert (Rbar_plus (Rbar_mult (/ sigma) m_infty) (- mu / sigma) = m_infty).
+  rewrite Rbar_mult_comm.
+  rewrite Rbar_mult_m_infty_pos.
+  compute; trivial.
+  apply Rinv_0_lt_compat; lra.  
+  assert (Rbar_plus (Rbar_mult (/ sigma) p_infty) (- mu / sigma) = p_infty).
+  rewrite Rbar_mult_comm.
+  rewrite Rbar_mult_p_infty_pos.
+  compute; trivial.
+  apply Rinv_0_lt_compat; lra.  
+  
+  apply (is_RInt_gen_ext (fun x =>  / sigma * Standard_Gaussian_PDF (/sigma *x + (-mu/sigma)))).
+  apply filter_forall.
+  intros.
+  rewrite gen_from_std.
+  apply Rmult_eq_compat_l.
+  apply f_equal; lra.
+  trivial.
+  apply is_RInt_gen_comp_lin with (u := /sigma) (v := -mu/sigma) 
+                                  (f:=Standard_Gaussian_PDF).
+  apply Rinv_neq_0_compat.
+  apply Rgt_not_eq; trivial.
+  replace (Rbar_locally' (Rbar_plus (Rbar_mult (/ sigma) m_infty) (- mu / sigma))) with
+          (Rbar_locally' m_infty).
+  replace (at_point (/ sigma * 0 + - mu / sigma)) with (at_point (-mu/sigma)).
+  trivial.
+  apply f_equal; lra.
+  apply f_equal; symmetry; trivial.
+  replace (at_point (/ sigma * 0 + - mu / sigma)) with (at_point (-mu/sigma)).  
+  replace (Rbar_locally' (Rbar_plus (Rbar_mult (/ sigma) p_infty) (- mu / sigma))) with
+          (Rbar_locally' p_infty).
+  trivial.
+  apply f_equal; symmetry; trivial.
+  apply f_equal; lra.
+  apply ex_RInt_Standard_Gaussian_PDF.
+  replace (Rbar_locally' (Rbar_plus (Rbar_mult (/ sigma) m_infty) (- mu / sigma))) with
+          (Rbar_locally' m_infty).
+  replace (Rbar_locally' (Rbar_plus (Rbar_mult (/ sigma) p_infty) (- mu / sigma))) with
+          (Rbar_locally' p_infty).
+  apply Standard_Gaussian_PDF_normed.
+  rewrite Rbar_mult_comm.
+  rewrite Rbar_mult_p_infty_pos.
+  compute; trivial.
+  apply Rinv_0_lt_compat; lra.  
+  rewrite Rbar_mult_comm.
+  rewrite Rbar_mult_m_infty_pos.
+  compute; trivial.
+  apply Rinv_0_lt_compat; lra.  
+Qed.  
+
+Lemma mean_general_gaussian (mu sigma:R) :
+  sigma > 0 ->
+    ex_RInt_gen Standard_Gaussian_PDF (Rbar_locally' m_infty) (at_point (- mu / sigma)) ->
+    ex_RInt_gen Standard_Gaussian_PDF (at_point (- mu / sigma)) (Rbar_locally' p_infty) ->
+
+    is_RInt_gen (fun t => t*General_Gaussian_PDF mu sigma t) 
+                           (Rbar_locally' m_infty) (Rbar_locally' p_infty) mu.
+Proof.
+  intros.
+  assert (sigma <> 0).
+  apply Rgt_not_eq; trivial.
+  apply (is_RInt_gen_ext (fun t => mu*General_Gaussian_PDF mu sigma t - (mu-t)*General_Gaussian_PDF mu sigma t)). 
+  apply filter_forall.
+  intros.
+  apply Rminus_diag_uniq; lra.
+  replace (mu) with (mu*1 - 0) at 1.
+  apply (@is_RInt_gen_minus R_CompleteNormedModule).
+  apply Rbar_locally'_filter.
+  apply Rbar_locally'_filter.  
+  apply (@is_RInt_gen_scal R_CompleteNormedModule).  
+  apply Rbar_locally'_filter.
+  apply Rbar_locally'_filter.  
+  apply General_Gaussian_PDF_normed.
+  trivial.
+  trivial.
+  trivial.
+  apply (is_RInt_gen_ext (fun t => sigma^2 * Derive (General_Gaussian_PDF mu sigma) t)).
+  apply filter_forall.
+  intros.
+  rewrite Derive_General_Gaussian_PDF.
+  apply Rminus_diag_uniq.
+  field_simplify; lra.
+  trivial.
+  replace (0) with (sigma^2 * 0).
+  apply (@is_RInt_gen_scal R_CompleteNormedModule).
+  apply Rbar_locally'_filter.
+  apply Rbar_locally'_filter.    
+  replace (0) with (0 - 0).
+  apply is_RInt_gen_Derive.
+  apply filter_forall.
+  intros.
+  apply ex_derive_General_Gaussian_PDF.
+  trivial.
+  apply filter_forall.
+  intros.
+  apply continuous_Derive_General_Gaussian_PDF.
+  unfold General_Gaussian_PDF.
+  trivial.
+  replace (0) with ( / (sigma * sqrt (2*PI)) * 0) by lra.  
+  apply is_lim_scal_l with (a:= / (sigma * sqrt (2 * PI))) (l := 0).
+  apply (is_lim_ext (fun t => exp(-((/sigma * t)+ (-mu/sigma))^2/2))).
+  intros.
+  apply f_equal.
+  field_simplify; trivial.
+  apply is_lim_comp_lin with (f := fun t => exp(-t^2/2)) (a := /sigma) (b:= -mu/sigma).
+  replace (Rbar_plus (Rbar_mult (/ sigma) m_infty) (- mu / sigma)) with (m_infty).
+  apply limexp_neg_minf.
+  rewrite Rbar_mult_comm.
+  rewrite Rbar_mult_m_infty_pos.
+  compute; trivial.
+  apply Rinv_0_lt_compat; lra.
+  apply Rinv_neq_0_compat; trivial.
+  unfold General_Gaussian_PDF.
+  replace (0) with ( / (sigma * sqrt (2*PI)) * 0) by lra.  
+  apply is_lim_scal_l with (a:= / (sigma * sqrt (2 * PI))) (l := 0).
+  apply (is_lim_ext (fun t => exp(-((/sigma * t)+ (-mu/sigma))^2/2))).
+  intros.
+  apply f_equal.
+  field_simplify; trivial.
+  apply is_lim_comp_lin with (f := fun t => exp(-t^2/2)) (a := /sigma) (b:= -mu/sigma).
+  replace (Rbar_plus (Rbar_mult (/ sigma) p_infty) (- mu / sigma)) with (p_infty).  
+  apply limexp_neg_inf.
+  rewrite Rbar_mult_comm.
+  rewrite Rbar_mult_p_infty_pos.
+  compute; trivial.
+  apply Rinv_0_lt_compat; lra.
+  apply Rinv_neq_0_compat; trivial.
+  lra.
+  lra.
+  lra.
+Qed.
+  
+Lemma variance_general_gaussian (mu sigma : R) :
+  sigma > 0 ->
+  ex_RInt_gen (fun t : R => sigma ^ 2 * t ^ 2 * Standard_Gaussian_PDF t)
+              (Rbar_locally' m_infty) (at_point (- mu / sigma)) ->
+  ex_RInt_gen (fun t : R => sigma ^ 2 * t ^ 2 * Standard_Gaussian_PDF t)
+              (at_point (- mu / sigma)) (Rbar_locally' p_infty) ->
+  is_RInt_gen (fun t => (t-mu)^2*General_Gaussian_PDF mu sigma t) 
+              (Rbar_locally' m_infty) (Rbar_locally' p_infty) (sigma^2).
+Proof.
+  intros.
+  assert (sigma <> 0).
+  apply Rgt_not_eq; trivial.
+  assert (Rbar_plus (Rbar_mult (/ sigma) m_infty) (- mu / sigma) = m_infty).
+  rewrite Rbar_mult_comm.
+  rewrite Rbar_mult_m_infty_pos.
+  compute; trivial.
+  apply Rinv_0_lt_compat; lra.  
+  assert (Rbar_plus (Rbar_mult (/ sigma) p_infty) (- mu / sigma) = p_infty).
+  rewrite Rbar_mult_comm.
+  rewrite Rbar_mult_p_infty_pos.
+  compute; trivial.
+  apply Rinv_0_lt_compat; lra.  
+  apply (is_RInt_gen_ext (fun t => /sigma * (sigma^2 * (/sigma * t + (-mu/sigma))^2 * Standard_Gaussian_PDF(/sigma*t + (-mu/sigma))))).
+  apply filter_forall.
+  intros.
+  rewrite gen_from_std.
+  replace (/sigma * x0 + - mu/sigma) with ((x0-mu)/sigma).
+  apply Rminus_diag_uniq.
+  field_simplify; lra.
+  lra.
+  trivial.
+  apply is_RInt_gen_comp_lin with (u := /sigma) (v := -mu/sigma) 
+                                  (f:=fun t => sigma^2 * t^2 * Standard_Gaussian_PDF t).
+  apply Rinv_neq_0_compat; trivial.
+  replace (Rbar_locally' (Rbar_plus (Rbar_mult (/ sigma) m_infty) (- mu / sigma))) with
+          (Rbar_locally' m_infty).
+  replace (at_point (/ sigma * 0 + - mu / sigma)) with (at_point (-mu/sigma)).
+  trivial.
+  apply f_equal; lra.
+  apply f_equal; symmetry; trivial.
+  replace (at_point (/ sigma * 0 + - mu / sigma)) with (at_point (-mu/sigma)).
+  replace (Rbar_locally' (Rbar_plus (Rbar_mult (/ sigma) p_infty) (- mu / sigma))) with
+          (Rbar_locally' p_infty).
+  trivial.
+  apply f_equal; symmetry; trivial.
+  apply f_equal; lra.  
+  intros.
+  apply (ex_RInt_ext (fun t => sigma^2 * (t^2 * Standard_Gaussian_PDF t))).
+  intros.
+  lra.
+  apply (@ex_RInt_scal R_CompleteNormedModule) with (k := sigma^2) (f := fun t => t^2 * Standard_Gaussian_PDF t).
+  apply ex_RInt_Standard_Gaussian_variance_PDF.
+  replace (sigma^2) with (sigma^2 * 1) at 1.
+  apply (is_RInt_gen_ext (fun t=>sigma^2 * (t^2 * Standard_Gaussian_PDF t))).
+  apply filter_forall.
+  intros.
+  lra.
+  apply (@is_RInt_gen_scal R_CompleteNormedModule).
+  apply Rbar_locally'_filter.
+  apply Rbar_locally'_filter.      
+  replace (Rbar_locally' (Rbar_plus (Rbar_mult (/ sigma) m_infty) (- mu / sigma))) with 
+      (Rbar_locally' m_infty).
+  replace (Rbar_locally' (Rbar_plus (Rbar_mult (/ sigma) p_infty) (- mu / sigma))) with 
+      (Rbar_locally' p_infty).
+  apply variance_standard_gaussian.
+  apply f_equal.
+  rewrite Rbar_mult_comm.
+  rewrite Rbar_mult_p_infty_pos.
+  compute; trivial.
+  apply Rinv_0_lt_compat; lra.  
+  rewrite Rbar_mult_comm.
+  rewrite Rbar_mult_m_infty_pos.
+  compute; trivial.
+  apply Rinv_0_lt_compat; lra.  
+  lra.
+Qed.
+
 (* main results:
   Definition Standard_Gaussian_PDF (t:R) := (/ (sqrt (2*PI))) * exp (-t^2/2).
 
@@ -845,75 +1136,29 @@ Qed.
            (Rbar_locally m_infty) (Rbar_locally p_infty) 1.
 
   CoFixpoint mkGaussianStream (uniformStream : Stream R) : Stream R
+
+  Lemma General_Gaussian_PDF_normed (mu sigma:R) : 
+     sigma>0 ->
+     ex_RInt_gen Standard_Gaussian_PDF (Rbar_locally' m_infty) (at_point (- mu / sigma)) ->
+     ex_RInt_gen Standard_Gaussian_PDF (at_point (- mu / sigma)) (Rbar_locally' p_infty) ->
+     is_RInt_gen (General_Gaussian_PDF mu sigma) (Rbar_locally' m_infty) (Rbar_locally' p_infty) 1.
+
+  Lemma mean_general_gaussian (mu sigma:R) :
+    sigma > 0 ->
+    ex_RInt_gen Standard_Gaussian_PDF (Rbar_locally' m_infty) (at_point (- mu / sigma)) ->
+    ex_RInt_gen Standard_Gaussian_PDF (at_point (- mu / sigma)) (Rbar_locally' p_infty) ->
+
+    is_RInt_gen (fun t => t*General_Gaussian_PDF mu sigma t) 
+                           (Rbar_locally' m_infty) (Rbar_locally' p_infty) mu.
+ 
+  Lemma variance_general_gaussian (mu sigma : R) :
+    sigma > 0 ->
+    ex_RInt_gen (fun t : R => sigma ^ 2 * t ^ 2 * Standard_Gaussian_PDF t)
+              (Rbar_locally' m_infty) (at_point (- mu / sigma)) ->
+    ex_RInt_gen (fun t : R => sigma ^ 2 * t ^ 2 * Standard_Gaussian_PDF t)
+              (at_point (- mu / sigma)) (Rbar_locally' p_infty) ->
+    is_RInt_gen (fun t => (t-mu)^2*General_Gaussian_PDF mu sigma t) 
+              (Rbar_locally' m_infty) (Rbar_locally' p_infty) (sigma^2).
+
 *)
 
-(*
-Lemma mean_general_gaussian (mu sigma:R) :
-  sigma > 0 -> is_RInt_gen (fun t => t*General_Gaussian_PDF mu sigma t) 
-                           (Rbar_locally' m_infty) (Rbar_locally' p_infty) mu.
-Proof.
-  intros.
-  assert (sigma <> 0).
-  apply Rgt_not_eq; trivial.
-  apply (is_RInt_gen_ext (fun t => / sigma * t * Standard_Gaussian_PDF ((t-mu)/sigma))).
-  apply filter_forall.
-  intros.
-  rewrite Rmult_assoc.
-  rewrite Rmult_comm.
-  rewrite Rmult_assoc.
-  apply Rmult_eq_compat_l.
-  rewrite Rmult_comm.
-  symmetry.
-  apply gen_from_std; trivial.
-  apply (is_RInt_gen_ext (fun t : R => /sigma * (((/ sigma * t + (-mu/sigma))+(mu/sigma)) * sigma *Standard_Gaussian_PDF ((/sigma * t + (-mu / sigma)))))).
-  apply filter_forall.
-  intros.
-  field_simplify.
-  unfold Rdiv.
-  rewrite Rmult_assoc.
-  rewrite Rmult_assoc.
-  apply Rmult_eq_compat_l.
-  apply Rmult_eq_compat_r.
-  apply f_equal.
-  field_simplify; trivial.
-  auto.
-  auto.
-  apply is_RInt_gen_comp_lin with (u:=/sigma) (v:=-mu/sigma) (f:= fun t => (t+mu/sigma)*sigma*Standard_Gaussian_PDF(t)) (a:=m_infty) (b:=p_infty) .
-  apply Rinv_neq_0_compat; auto.
-  admit.
-  admit.
-  admit.
-  replace (Rbar_locally' (Rbar_plus (Rbar_mult (/ sigma) m_infty) (- mu / sigma))) with
-      (Rbar_locally' m_infty).
-  replace (Rbar_locally' (Rbar_plus (Rbar_mult (/ sigma) p_infty) (- mu / sigma))) with
-      (Rbar_locally' p_infty).
-  apply (is_RInt_gen_ext (fun t : R => (sigma*(t*Standard_Gaussian_PDF t)) + mu * Standard_Gaussian_PDF t)).
-  apply filter_forall.               
-  intros.
-  field_simplify; trivial.
-  replace (mu) with (0 + mu) at 1.
-  apply is_RInt_gen_plus with (f:=fun t => sigma*(t*Standard_Gaussian_PDF t)) (lf := 0)
-                              (g:=fun t => mu * Standard_Gaussian_PDF t) (lg := mu).
-  replace (0) with (scal sigma 0).
-  apply is_RInt_gen_scal with (k:=sigma) (l:=0) (f := fun t => t*Standard_Gaussian_PDF t).
-  apply mean_standard_gaussian.
-  compute; lra.
-  replace mu with (scal mu 1) at 1.
-  apply is_RInt_gen_scal with (k:=mu) (l:=1) (f := fun t => Standard_Gaussian_PDF t).  
-  apply Standard_Gaussian_PDF_normed.
-  compute; lra.
-  lra.
-  apply f_equal.
-  rewrite Rbar_mult_comm.
-  rewrite Rbar_mult_p_infty_pos.
-  unfold Rbar_plus.
-  unfold Rbar_plus'; trivial.
-  apply Rinv_0_lt_compat; lra.
-  rewrite Rbar_mult_comm.
-  rewrite Rbar_mult_m_infty_pos.
-  unfold Rbar_plus.
-  unfold Rbar_plus'; trivial.
-  apply Rinv_0_lt_compat; lra.
-Admitted.
-  
-*)
