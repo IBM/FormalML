@@ -24,6 +24,53 @@ Require Import Utils.
 
 Set Bullet Behavior "Strict Subproofs".
 
+(* main results:
+  Definition Standard_Gaussian_PDF (t:R) := (/ (sqrt (2*PI))) * exp (-t^2/2).
+
+  Lemma Standard_Gaussian_PDF_normed : 
+     is_RInt_gen Standard_Gaussian_PDF (Rbar_locally m_infty) (Rbar_locally p_infty) 1.
+
+  Definition Standard_Gaussian_CDF (t:Rbar) := 
+      RInt_gen Standard_Gaussian_PDF (Rbar_locally m_infty) (at_point t).
+
+  Lemma std_CDF_from_erf :
+     forall x:R, Standard_Gaussian_CDF x = (/ 2) + (/2)*erf (x/sqrt 2).
+
+  Lemma mean_standard_gaussian :
+     is_RInt_gen (fun t => t*Standard_Gaussian_PDF t) 
+           (Rbar_locally m_infty) (Rbar_locally p_infty) 0.
+   
+  Lemma variance_standard_gaussian :
+     is_RInt_gen (fun t => t^2*Standard_Gaussian_PDF t) 
+           (Rbar_locally m_infty) (Rbar_locally p_infty) 1.
+
+  CoFixpoint mkGaussianStream (uniformStream : Stream R) : Stream R
+
+  Lemma General_Gaussian_PDF_normed (mu sigma:R) : 
+     sigma>0 ->
+     ex_RInt_gen Standard_Gaussian_PDF (Rbar_locally' m_infty) (at_point (- mu / sigma)) ->
+     ex_RInt_gen Standard_Gaussian_PDF (at_point (- mu / sigma)) (Rbar_locally' p_infty) ->
+     is_RInt_gen (General_Gaussian_PDF mu sigma) (Rbar_locally' m_infty) (Rbar_locally' p_infty) 1.
+
+  Lemma mean_general_gaussian (mu sigma:R) :
+    sigma > 0 ->
+    ex_RInt_gen Standard_Gaussian_PDF (Rbar_locally' m_infty) (at_point (- mu / sigma)) ->
+    ex_RInt_gen Standard_Gaussian_PDF (at_point (- mu / sigma)) (Rbar_locally' p_infty) ->
+
+    is_RInt_gen (fun t => t*General_Gaussian_PDF mu sigma t) 
+                           (Rbar_locally' m_infty) (Rbar_locally' p_infty) mu.
+ 
+  Lemma variance_general_gaussian (mu sigma : R) :
+    sigma > 0 ->
+    ex_RInt_gen (fun t : R => sigma ^ 2 * t ^ 2 * Standard_Gaussian_PDF t)
+              (Rbar_locally' m_infty) (at_point (- mu / sigma)) ->
+    ex_RInt_gen (fun t : R => sigma ^ 2 * t ^ 2 * Standard_Gaussian_PDF t)
+              (at_point (- mu / sigma)) (Rbar_locally' p_infty) ->
+    is_RInt_gen (fun t => (t-mu)^2*General_Gaussian_PDF mu sigma t) 
+              (Rbar_locally' m_infty) (Rbar_locally' p_infty) (sigma^2).
+
+*)
+
 Local Open Scope R_scope.
 Implicit Type f : R -> R.
 
@@ -1115,50 +1162,97 @@ Proof.
   lra.
 Qed.
 
-(* main results:
-  Definition Standard_Gaussian_PDF (t:R) := (/ (sqrt (2*PI))) * exp (-t^2/2).
+Definition Uniform_PDF (a b t:R) := 
+  (if Rlt_dec t a then 0 else 
+     (if Rgt_dec t b then 0 else (/ (b-a)))).
 
-  Lemma Standard_Gaussian_PDF_normed : 
-     is_RInt_gen Standard_Gaussian_PDF (Rbar_locally m_infty) (Rbar_locally p_infty) 1.
+Lemma Uniform_normed (a b:R) :
+  a < b -> is_RInt (Uniform_PDF a b) a b 1.
+Proof.  
+  intros.
+  unfold Uniform_PDF.
+  apply (is_RInt_ext (fun x => (/ (b-a)))).
+  replace (Rmin a b) with (a).
+  replace (Rmax a b) with (b).
+  intros.
+  replace (is_left (Rlt_dec x a)) with false.
+  replace (is_left (Rgt_dec x b)) with false; trivial.
+  destruct (Rgt_dec x b).
+  lra.
+  reflexivity.  
+  destruct (Rlt_dec x a).
+  lra.
+  reflexivity.  
+  symmetry.
+  apply Rmax_right; lra.
+  symmetry.
+  apply Rmin_left; lra.
+  replace (1) with (scal (b-a) (/ (b-a))).
+  apply (@is_RInt_const R_CompleteNormedModule).
+  compute.
+  field_simplify; lra.
+Qed.
 
-  Definition Standard_Gaussian_CDF (t:Rbar) := 
-      RInt_gen Standard_Gaussian_PDF (Rbar_locally m_infty) (at_point t).
+Lemma Uniform_mean (a b:R) :
+  a < b -> is_RInt (fun t => t*(Uniform_PDF a b t)) a b ((b+a)/2).
+Proof.  
+  intros.
+  replace ((b+a)/2) with  (/(b-a)*(b^2/2) - (/(b-a)*(a^2/2))).
+  apply (@is_RInt_derive R_CompleteNormedModule) with (f := fun t => (/(b-a))*(t^2/2)).
+  replace (Rmin a b) with (a).
+  replace (Rmax a b) with (b).
+  intros.
+  unfold Uniform_PDF.
+  replace (is_left (Rlt_dec x a)) with false.
+  replace (is_left (Rgt_dec x b)) with false.
+  replace (x * / (b-a)) with (/(b-a) * x).
+  apply is_derive_scal with (k := /(b-a)) (f:= (fun t => t^2/2)).
+  apply (is_derive_ext (fun t => t * ((/2) * t))).
+  intros.
+  field_simplify; trivial.
+  replace (x) with (1 * (/2 * x) + x * /2) at 2.
+  apply (@is_derive_mult R_AbsRing) with (f := id) (g:= fun t => (/2) * t).
+  apply (@is_derive_id R_AbsRing).
+  replace (/2) with (/2 * 1) at 1.
+  apply is_derive_scal.
+  apply (@is_derive_id R_AbsRing).
+  lra.
+  intros.
+  apply Rmult_comm.
+  apply Rminus_diag_uniq.
+  field_simplify; lra.
+  apply Rmult_comm.  
+  destruct (Rgt_dec x b).
+  lra.
+  reflexivity.  
+  destruct (Rlt_dec x a).
+  lra.
+  reflexivity.  
+  symmetry.
+  apply Rmax_right; lra.
+  symmetry.
+  apply Rmin_left; lra.
+  replace (Rmin a b) with (a).
+  replace (Rmax a b) with (b).
+  intros.
+  unfold Uniform_PDF.
+  destruct H0.
+  destruct H0.
+  destruct H1.
+  Admitted.
+(*
+apply (locally_interval _ _ a b).
+  
+  replace (is_left (Rlt_dec t a)) with false.
+  replace (is_left (Rgt_dec t b)) with false.
 
-  Lemma std_CDF_from_erf :
-     forall x:R, Standard_Gaussian_CDF x = (/ 2) + (/2)*erf (x/sqrt 2).
 
-  Lemma mean_standard_gaussian :
-     is_RInt_gen (fun t => t*Standard_Gaussian_PDF t) 
-           (Rbar_locally m_infty) (Rbar_locally p_infty) 0.
-   
-  Lemma variance_standard_gaussian :
-     is_RInt_gen (fun t => t^2*Standard_Gaussian_PDF t) 
-           (Rbar_locally m_infty) (Rbar_locally p_infty) 1.
+  admit.
+  apply Rminus_diag_uniq.
+  field_simplify; lra.
+  Admitted.
 
-  CoFixpoint mkGaussianStream (uniformStream : Stream R) : Stream R
-
-  Lemma General_Gaussian_PDF_normed (mu sigma:R) : 
-     sigma>0 ->
-     ex_RInt_gen Standard_Gaussian_PDF (Rbar_locally' m_infty) (at_point (- mu / sigma)) ->
-     ex_RInt_gen Standard_Gaussian_PDF (at_point (- mu / sigma)) (Rbar_locally' p_infty) ->
-     is_RInt_gen (General_Gaussian_PDF mu sigma) (Rbar_locally' m_infty) (Rbar_locally' p_infty) 1.
-
-  Lemma mean_general_gaussian (mu sigma:R) :
-    sigma > 0 ->
-    ex_RInt_gen Standard_Gaussian_PDF (Rbar_locally' m_infty) (at_point (- mu / sigma)) ->
-    ex_RInt_gen Standard_Gaussian_PDF (at_point (- mu / sigma)) (Rbar_locally' p_infty) ->
-
-    is_RInt_gen (fun t => t*General_Gaussian_PDF mu sigma t) 
-                           (Rbar_locally' m_infty) (Rbar_locally' p_infty) mu.
- 
-  Lemma variance_general_gaussian (mu sigma : R) :
-    sigma > 0 ->
-    ex_RInt_gen (fun t : R => sigma ^ 2 * t ^ 2 * Standard_Gaussian_PDF t)
-              (Rbar_locally' m_infty) (at_point (- mu / sigma)) ->
-    ex_RInt_gen (fun t : R => sigma ^ 2 * t ^ 2 * Standard_Gaussian_PDF t)
-              (at_point (- mu / sigma)) (Rbar_locally' p_infty) ->
-    is_RInt_gen (fun t => (t-mu)^2*General_Gaussian_PDF mu sigma t) 
-              (Rbar_locally' m_infty) (Rbar_locally' p_infty) (sigma^2).
-
+Lemma Uniform_variance (a b:R) :
+  a < b -> is_RInt (fun t => (t-(b+a)/2)^2*(Uniform_PDF a b t)) a b ((b-a)^2/12).
+                        
 *)
-
