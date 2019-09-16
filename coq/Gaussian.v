@@ -1190,7 +1190,108 @@ Proof.
   compute; field_simplify; lra.
 Qed.
 
-(*
+Lemma Uniform_left (a b:R) (f : R -> R) :
+  a < b -> is_RInt_gen (fun t => (f t) * (Uniform_PDF a b t)) (Rbar_locally' m_infty) (at_point a) 0.
+Proof.  
+  intros.
+  unfold Uniform_PDF.
+  apply (is_RInt_gen_ext (fun _ =>  0)).
+  exists (fun y => y<a) (fun x => x=a).
+  unfold Rbar_locally'.
+  exists (a).
+  intros.
+  trivial.
+  unfold at_point.
+  reflexivity.
+  intros.
+  replace (fst (x, y)) with (x) in H2 by trivial.
+  replace (snd (x, y)) with (y) in H2 by trivial.
+  replace (Rmin x y) with (x) in H2.
+  replace (Rmax x y) with (y) in H2.
+  replace (y) with (a) in H2.
+  destruct H2.
+  assert  (Rlt_dec x0 a).
+  destruct (Rlt_dec x0 a); trivial.
+  contradiction.
+  replace (is_left (Rlt_dec x0 a)) with true.
+  lra.
+  replace (y) with (a) in H2.
+  rewrite Rmax_right; trivial.
+  replace (y) with (a).
+  lra.
+  rewrite Rmin_left; trivial.
+  replace (y) with (a).
+  lra.
+  apply (is_RInt_gen_ext (Derive (fun _ => 0))).
+  apply filter_forall.
+  intros.
+  apply Derive_const.
+  replace (0) with (0 - 0) at 1.
+  apply is_RInt_gen_Derive with (f0 := fun _ => 0) (la := 0) (lb := 0).
+  apply filter_forall.
+  intros.
+  apply ex_derive_const.
+  apply filter_forall.
+  intros.
+  apply continuous_const.
+  apply filterlim_const.
+  apply filterlim_const.
+  lra.
+Qed.
+
+Lemma Uniform_right (a b:R) (f : R -> R) :
+  a < b -> is_RInt_gen (fun t => (f t) * (Uniform_PDF a b t)) (at_point b) (Rbar_locally' p_infty)  0.
+Proof.  
+  intros.
+  unfold Uniform_PDF.
+  apply (is_RInt_gen_ext (fun _ =>  0)).
+  exists (fun x => x=b) (fun y => b<y).
+  unfold at_point.
+  reflexivity.
+  unfold Rbar_locally'.
+  exists (b).
+  intros.
+  trivial.
+  intros.
+  replace (fst (x, y)) with (x) in H2 by trivial.
+  replace (snd (x, y)) with (y) in H2 by trivial.
+  replace (Rmin x y) with (x) in H2.
+  replace (Rmax x y) with (y) in H2.
+  replace (x) with (b) in H2.
+  destruct H2.
+  replace (is_left (Rlt_dec x0 a)) with false.
+  replace (is_left (Rgt_dec x0 b)) with true.
+  lra.
+  destruct (Rgt_dec x0 b).
+  tauto.
+  contradiction.
+  destruct (Rlt_dec x0 a).
+  lra.
+  intuition.
+  replace (x) with (b) in H2.
+  rewrite Rmax_right; trivial.
+  replace (x) with (b).
+  lra.
+  rewrite Rmin_left; trivial.
+  replace (x) with (b).
+  lra.
+  apply (is_RInt_gen_ext (Derive (fun _ => 0))).
+  apply filter_forall.
+  intros.
+  apply Derive_const.
+  replace (0) with (0 - 0) at 1.
+  apply is_RInt_gen_Derive with (f0 := fun _ => 0) (la := 0) (lb := 0).
+  apply filter_forall.
+  intros.
+  apply ex_derive_const.
+  apply filter_forall.
+  intros.
+  apply continuous_const.
+  apply filterlim_const.
+  apply filterlim_const.
+  lra.
+Qed.
+
 Lemma Uniform_normed_full (a b:R) :
   a < b -> is_RInt_gen (Uniform_PDF a b) (Rbar_locally' m_infty) (Rbar_locally' p_infty) 1.
 Proof.
@@ -1198,10 +1299,26 @@ Proof.
   replace (1) with (0 + 1).
   apply (@is_RInt_gen_Chasles R_CompleteNormedModule) with (b:=a).
   apply Rbar_locally'_filter.
+  apply Rbar_locally'_filter.    
+  apply (is_RInt_gen_ext (fun t => 1 * (Uniform_PDF a b t))).
+  apply filter_forall.
+  intros.
+  apply Rmult_1_l.
+  apply Uniform_left with (f := fun _ => 1); trivial.
+  replace (1) with (1 + 0).
+  apply (@is_RInt_gen_Chasles R_CompleteNormedModule) with (b:=b).
+  apply at_point_filter.
   apply Rbar_locally'_filter.  
-  apply (is_RInt_gen_ext (fun _ => 0)).
-*)  
-  
+  apply is_RInt_gen_at_point.
+  apply Uniform_normed; trivial.
+  apply (is_RInt_gen_ext (fun t => 1 * (Uniform_PDF a b t))).  
+  apply filter_forall.
+  intros.
+  apply Rmult_1_l.
+  apply Uniform_right; trivial.
+  lra.
+  lra.
+Qed.
 
 Lemma Uniform_mean0 (a b:R) :
   a < b -> is_RInt (fun t => t*(/ (b-a))) a b ((b+a)/2).
@@ -1281,6 +1398,34 @@ Qed.
           - admit.
         } 
 *)
+
+Lemma Uniform_mean_full (a b:R) :
+  a < b -> is_RInt_gen (fun t => t*(Uniform_PDF a b t)) (Rbar_locally' m_infty) (Rbar_locally' p_infty) ((b+a)/2).
+Proof.
+  intros.
+  replace ((b+a)/2) with (0 + ((b+a)/2)).
+  apply (@is_RInt_gen_Chasles R_CompleteNormedModule) with (b:=a).
+  apply Rbar_locally'_filter.
+  apply Rbar_locally'_filter.    
+  apply (is_RInt_gen_ext (fun t => t * (Uniform_PDF a b t))).
+  apply filter_forall.
+  intros.
+  apply Rmult_eq_compat_l; trivial.
+  apply Uniform_left; trivial.
+  replace ((b+a)/2) with (((b+a)/2) + 0).
+  apply (@is_RInt_gen_Chasles R_CompleteNormedModule) with (b:=b).
+  apply at_point_filter.
+  apply Rbar_locally'_filter.  
+  apply is_RInt_gen_at_point.
+  apply Uniform_mean; trivial.
+  apply (is_RInt_gen_ext (fun t => t * (Uniform_PDF a b t))).  
+  apply filter_forall.
+  intros.
+  apply Rmult_eq_compat_l; trivial.
+  apply Uniform_right; trivial.
+  lra.
+  lra.
+Qed.
 
 Lemma Uniform_variance0 (a b:R) :
   a < b -> is_RInt (fun t => (/ (b-a)) * (t-(b+a)/2)^2) a b ((b-a)^2/12).
@@ -1384,5 +1529,33 @@ Proof.
   lra.
   apply Uniform_variance0.
   trivial.
+Qed.
+
+Lemma Uniform_variance_full (a b:R) :
+  a < b -> is_RInt_gen (fun t => (t-(b+a)/2)^2*(Uniform_PDF a b t)) (Rbar_locally' m_infty) (Rbar_locally' p_infty) ((b-a)^2/12).
+Proof.
+  intros.
+  replace ((b-a)^2/12) with (0 + ((b-a)^2/12)).
+  apply (@is_RInt_gen_Chasles R_CompleteNormedModule) with (b:=a).
+  apply Rbar_locally'_filter.
+  apply Rbar_locally'_filter.    
+  apply (is_RInt_gen_ext (fun t => (t-(b+a)/2)^2 * (Uniform_PDF a b t))).
+  apply filter_forall.
+  intros.
+  apply Rmult_eq_compat_l; trivial.
+  apply Uniform_left; trivial.
+  replace ((b-a)^2/12) with (((b-a)^2/12) + 0).
+  apply (@is_RInt_gen_Chasles R_CompleteNormedModule) with (b:=b).
+  apply at_point_filter.
+  apply Rbar_locally'_filter.  
+  apply is_RInt_gen_at_point.
+  apply Uniform_variance; trivial.
+  apply (is_RInt_gen_ext (fun t => (t-(b+a)/2)^2 * (Uniform_PDF a b t))).  
+  apply filter_forall.
+  intros.
+  apply Rmult_eq_compat_l; trivial.
+  apply Uniform_right; trivial.
+  lra.
+  lra.
 Qed.
 
