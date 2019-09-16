@@ -1172,8 +1172,8 @@ Proof.
   intros.
   unfold Uniform_PDF.
   apply (is_RInt_ext (fun x => (/ (b-a)))).
-  replace (Rmin a b) with (a).
-  replace (Rmax a b) with (b).
+  rewrite Rmin_left.
+  rewrite Rmax_right.
   intros.
   replace (is_left (Rlt_dec x a)) with false.
   replace (is_left (Rgt_dec x b)) with false; trivial.
@@ -1182,30 +1182,37 @@ Proof.
   reflexivity.  
   destruct (Rlt_dec x a).
   lra.
-  reflexivity.  
-  symmetry.
-  apply Rmax_right; lra.
-  symmetry.
-  apply Rmin_left; lra.
+  reflexivity.
+  lra.
+  lra.
   replace (1) with (scal (b-a) (/ (b-a))).
   apply (@is_RInt_const R_CompleteNormedModule).
-  compute.
-  field_simplify; lra.
+  compute; field_simplify; lra.
 Qed.
 
-Lemma Uniform_mean (a b:R) :
-  a < b -> is_RInt (fun t => t*(Uniform_PDF a b t)) a b ((b+a)/2).
+(*
+Lemma Uniform_normed_full (a b:R) :
+  a < b -> is_RInt_gen (Uniform_PDF a b) (Rbar_locally' m_infty) (Rbar_locally' p_infty) 1.
+Proof.
+  intros.
+  replace (1) with (0 + 1).
+  apply (@is_RInt_gen_Chasles R_CompleteNormedModule) with (b:=a).
+  apply Rbar_locally'_filter.
+  apply Rbar_locally'_filter.  
+  apply (is_RInt_gen_ext (fun _ => 0)).
+*)  
+  
+
+Lemma Uniform_mean0 (a b:R) :
+  a < b -> is_RInt (fun t => t*(/ (b-a))) a b ((b+a)/2).
 Proof.  
   intros.
   replace ((b+a)/2) with  (/(b-a)*(b^2/2) - (/(b-a)*(a^2/2))).
   apply (@is_RInt_derive R_CompleteNormedModule) with (f := fun t => (/(b-a))*(t^2/2)).
-  replace (Rmin a b) with (a).
-  replace (Rmax a b) with (b).
+  rewrite Rmin_left.
+  rewrite Rmax_right.
   intros.
-  unfold Uniform_PDF.
-  replace (is_left (Rlt_dec x a)) with false.
-  replace (is_left (Rgt_dec x b)) with false.
-  replace (x * / (b-a)) with (/(b-a) * x).
+  replace (x * (/ (b-a))) with (/(b-a) * x).
   apply is_derive_scal with (k := /(b-a)) (f:= (fun t => t^2/2)).
   apply (is_derive_ext (fun t => t * ((/2) * t))).
   intros.
@@ -1222,37 +1229,160 @@ Proof.
   apply Rminus_diag_uniq.
   field_simplify; lra.
   apply Rmult_comm.  
+  lra.
+  lra.
+  rewrite Rmin_left.
+  rewrite Rmax_right.
+  intros.
+  apply (@continuous_scal_l R_CompleteNormedModule) with (f := id).
+  apply continuous_id.
+  lra.
+  lra.
+  apply Rminus_diag_uniq.
+  field_simplify; lra.
+Qed.
+
+Lemma Uniform_mean (a b:R) :
+  a < b -> is_RInt (fun t => t*(Uniform_PDF a b t)) a b ((b+a)/2).
+Proof.  
+  intros.
+  apply (is_RInt_ext (fun t =>  t * (/ (b-a)))).
+  rewrite Rmin_left.
+  rewrite Rmax_right.
+  intros.
+  unfold Uniform_PDF.
+  apply Rmult_eq_compat_l.
+  replace (is_left (Rlt_dec x a)) with false.
+  replace (is_left (Rgt_dec x b)) with false; trivial.
   destruct (Rgt_dec x b).
   lra.
   reflexivity.  
   destruct (Rlt_dec x a).
   lra.
   reflexivity.  
-  symmetry.
-  apply Rmax_right; lra.
-  symmetry.
-  apply Rmin_left; lra.
-  replace (Rmin a b) with (a).
-  replace (Rmax a b) with (b).
-  intros.
-  unfold Uniform_PDF.
-  destruct H0.
-  destruct H0.
-  destruct H1.
-  Admitted.
+  lra.
+  lra.
+  apply Uniform_mean0.
+  trivial.
+Qed.
+
 (*
-apply (locally_interval _ _ a b).
-  
-  replace (is_left (Rlt_dec t a)) with false.
-  replace (is_left (Rgt_dec t b)) with false.
+  - intros.
+    destruct H0.
+    destruct H0.
+    + destruct H1.
+      * { unfold Uniform_PDF.
+          apply (continuous_ext_loc _ (fun t => t/(b-a))).
+          - apply (locally_interval _ _ a b); try (red; lra).
+            simpl; intros.
+            destruct (Rlt_dec y a); try lra.
+            destruct (Rgt_dec y b); try lra.
+            simpl; reflexivity.
+          - admit.
+        } 
+*)
 
-
-  admit.
+Lemma Uniform_variance0 (a b:R) :
+  a < b -> is_RInt (fun t => (/ (b-a)) * (t-(b+a)/2)^2) a b ((b-a)^2/12).
+Proof.
+  intros.
+  replace ((b-a)^2/12) with (scal (/(b-a)) ((b-a)^3/12)).
+  apply (@is_RInt_scal  R_CompleteNormedModule) with (k := /(b-a)) (f := fun t => (t - (b+a)/2)^2) (If := (b-a)^3/12).
+  apply (is_RInt_ext (fun t => t^2 - (b+a)*t + (b+a)^2/4)).
+  intros.
+  field_simplify; trivial.
+  replace ((b-a)^3/12) with ((a-b)*(b^2+4*a*b+a^2)/6 + ((b+a)^2/4)*(b-a)).
+  apply is_RInt_plus with (f:= fun t=> t^2 - (b+a)*t) (g := fun t=> (b+a)^2/4).
+  replace ((a - b) * (b ^ 2 + 4 * a * b + a ^ 2) / 6) with ((b^3/3-a^3/3) - (b-a)*(b+a)^2/2).
+  apply is_RInt_minus with (f := fun t => t^2) (g := fun t => (b+a)*t).
+  apply (@is_RInt_derive R_CompleteNormedModule) with (f := fun t => t^3/3).
+  intros.
+  apply (is_derive_ext (fun t => (/3) * t^3)).
+  intros.
+  field_simplify; trivial.
+  replace (x^2) with (/3 * (INR(3%nat) * 1 * x^2)).
+  apply is_derive_scal.
+  apply is_derive_pow with (f:=id) (n := 3%nat) (l:=1).
+  apply (@is_derive_id R_AbsRing).
+  simpl; field_simplify; trivial.
+  rewrite Rmax_right.
+  rewrite Rmin_left.
+  intros.
+  simpl.
+  apply continuous_mult with (f := id).
+  apply continuous_id.
+  apply (@continuous_scal_l R_UniformSpace) with (f := id ) (k := 1).
+  apply continuous_id.
+  lra.
+  lra.
+  replace ((b - a) * (b + a) ^ 2 / 2) with ((b+a)*((b^2/2-a^2/2))).
+  apply (@is_RInt_scal  R_CompleteNormedModule) with (k := b+a).
+  apply is_RInt_derive with (f:=fun x => x^2/2).
+  rewrite Rmax_right.
+  rewrite Rmin_left.
+  intros.
+  apply (is_derive_ext (fun t => (/2) * t^2)).
+  intros.
+  field_simplify; trivial.
+  replace (x) with (/2 * (2 * x)) at 2.
+  apply is_derive_scal.
+  replace (2 * x) with (INR(2%nat) * 1 * x^1).
+  apply is_derive_pow with (f:=id) (n := 2%nat) (l:=1).
+  apply (@is_derive_id R_AbsRing).
+  simpl; field_simplify; lra.
+  lra.
+  lra.
+  lra.
+  rewrite Rmax_right.
+  rewrite Rmin_left.
+  intros.
+  apply continuous_id.
+  lra.
+  lra.
+  field_simplify ; trivial.
+  apply Rminus_diag_uniq.
+  compute.
+  field_simplify; lra.
+  replace ((b + a) ^ 2 / 4 * (b - a)) with (scal (b-a) ((b+a)^2/4)).
+  apply (@is_RInt_const R_NormedModule).
+  compute.
+  field_simplify; trivial.
   apply Rminus_diag_uniq.
   field_simplify; lra.
-  Admitted.
+  compute.
+  field_simplify; lra.
+Qed.
 
 Lemma Uniform_variance (a b:R) :
   a < b -> is_RInt (fun t => (t-(b+a)/2)^2*(Uniform_PDF a b t)) a b ((b-a)^2/12).
-                        
-*)
+Proof.  
+  intros.
+  apply (is_RInt_ext (fun t =>  (t-(b+a)/2)^2*(/(b-a)))).
+  rewrite Rmin_left.
+  rewrite Rmax_right.
+  intros.
+  unfold Uniform_PDF.
+  apply Rmult_eq_compat_l.
+  replace (is_left (Rlt_dec x a)) with false.
+  replace (is_left (Rgt_dec x b)) with false; trivial.
+  destruct (Rgt_dec x b).
+  lra.
+  reflexivity.  
+  destruct (Rlt_dec x a).
+  lra.
+  reflexivity.  
+  lra.
+  lra.
+  apply (is_RInt_ext (fun t => (/ (b-a)) * (t-(b+a)/2)^2)).
+  rewrite Rmin_left.
+  rewrite Rmax_right.
+  intros.
+  field_simplify; trivial.
+  apply Rgt_not_eq; lra.
+  apply Rgt_not_eq; lra.
+  lra.
+  lra.
+  apply Uniform_variance0.
+  trivial.
+Qed.
+
