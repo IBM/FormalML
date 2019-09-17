@@ -69,6 +69,22 @@ Set Bullet Behavior "Strict Subproofs".
     is_RInt_gen (fun t => (t-mu)^2*General_Gaussian_PDF mu sigma t) 
               (Rbar_locally' m_infty) (Rbar_locally' p_infty) (sigma^2).
 
+  Definition Indicator (a b t:R) :=
+    (if Rlt_dec t a then 0 else 
+     (if Rgt_dec t b then 0 else 1)).
+
+  Definition Uniform_PDF (a b t:R) := 
+    (/ (b-a)) * Indicator a b t.
+
+  Lemma Uniform_normed (a b:R) :
+    a < b -> is_RInt_gen (Uniform_PDF a b) (Rbar_locally' m_infty) (Rbar_locally' p_infty) 1.
+
+  Lemma Uniform_mean (a b:R) :
+    a < b -> is_RInt_gen (fun t => t*(Uniform_PDF a b t)) (Rbar_locally' m_infty) (Rbar_locally' p_infty) ((b+a)/2).
+
+  Lemma Uniform_variance (a b:R) :
+    a < b -> is_RInt_gen (fun t => (t-(b+a)/2)^2*(Uniform_PDF a b t)) (Rbar_locally' m_infty) (Rbar_locally' p_infty) ((b-a)^2/12).
+
 *)
 
 Local Open Scope R_scope.
@@ -1181,135 +1197,131 @@ Qed.
 Lemma Indicator_left (a b:R) (f : R -> R) :
   a < b -> is_RInt_gen (fun t => (f t) * (Indicator a b t)) (Rbar_locally' m_infty) (at_point a) 0.
 Proof.  
-  intros.
-  unfold Indicator.
-  apply (is_RInt_gen_ext (fun _ =>  0)).
-  exists (fun y => y<a) (fun x => x=a).
-  unfold Rbar_locally'.
-  exists (a).
-  intros.
-  trivial.
-  unfold at_point.
-  reflexivity.
-  intros x y H0 H1.
-  replace (fst (x, y)) with (x) by trivial.
-  replace (snd (x, y)) with (y) by trivial.
-  replace (y) with (a).
-  rewrite Rmin_left.
-  rewrite Rmax_right.
-  intros.
-  destruct H2.
-  replace (is_left (Rlt_dec x0 a)) with true.
-  lra.
-  destruct (Rlt_dec x0 a); trivial.
-  contradiction.
-  lra.
-  lra.
-  apply (is_RInt_gen_ext (Derive (fun _ => 0))).
-  apply filter_forall.
-  intros.
-  apply Derive_const.
-  replace (0) with (0 - 0) at 1.
-  apply is_RInt_gen_Derive with (f0 := fun _ => 0) (la := 0) (lb := 0).
-  apply filter_forall.
-  intros.
-  apply ex_derive_const.
-  apply filter_forall.
-  intros.
-  apply continuous_const.
-  apply filterlim_const.
-  apply filterlim_const.
-  lra.
+  - intros.
+    unfold Indicator.
+    apply (is_RInt_gen_ext (fun _ =>  0)).
+    + exists (fun y => y<a) (fun x => x=a).
+      unfold Rbar_locally'.
+      exists (a).
+      intros.
+      trivial.
+      unfold at_point.
+      reflexivity.
+      intros x y H0 H1.
+      replace (fst (x, y)) with (x) by trivial.
+      replace (snd (x, y)) with (y) by trivial.
+      replace (y) with (a).
+      rewrite Rmin_left.
+      rewrite Rmax_right.
+      intros.
+      replace (is_left (Rlt_dec x0 a)) with true.
+      lra.
+      destruct (Rlt_dec x0 a); trivial.
+      intuition.
+      lra.
+      lra.
+    + apply (is_RInt_gen_ext (Derive (fun _ => 0))).
+      * apply filter_forall.
+        intros.
+        apply Derive_const.
+      * replace (0) with (0 - 0) at 1.
+        apply is_RInt_gen_Derive with (f0 := fun _ => 0) (la := 0) (lb := 0).
+        ++ apply filter_forall.
+           intros.
+           apply ex_derive_const.
+        ++ apply filter_forall.
+           intros.
+           apply continuous_const.
+        ++ apply filterlim_const.
+        ++ apply filterlim_const.
+        ++ lra.
 Qed.
 
 Lemma Indicator_right (a b:R) (f : R -> R) :
   a < b -> is_RInt_gen (fun t => (f t) * (Indicator a b t)) (at_point b) (Rbar_locally' p_infty)  0.
 Proof.  
-  intros.
-  unfold Indicator.
-  apply (is_RInt_gen_ext (fun _ =>  0)).
-  exists (fun x => x=b) (fun y => b<y).
-  unfold at_point.
-  reflexivity.
-  unfold Rbar_locally'.
-  exists (b).
-  intros.
-  trivial.
-  intros x y H0 H1.
-  replace (fst (x, y)) with (x) by trivial.
-  replace (snd (x, y)) with (y) by trivial.
-  replace (x) with (b).
-  rewrite Rmin_left.
-  rewrite Rmax_right.
-  intros.
-  replace (is_left (Rlt_dec x0 a)) with false.
-  replace (is_left (Rgt_dec x0 b)) with true.
-  lra.
-  destruct H2.
-  destruct (Rgt_dec x0 b).
-  tauto.
-  contradiction.
-  destruct (Rlt_dec x0 a).
-  lra.
-  intuition.
-  lra.
-  lra.
-  apply (is_RInt_gen_ext (Derive (fun _ => 0))).
-  apply filter_forall.
-  intros.
-  apply Derive_const.
-  replace (0) with (0 - 0) at 1.
-  apply is_RInt_gen_Derive with (f0 := fun _ => 0) (la := 0) (lb := 0).
-  apply filter_forall.
-  intros.
-  apply ex_derive_const.
-  apply filter_forall.
-  intros.
-  apply continuous_const.
-  apply filterlim_const.
-  apply filterlim_const.
-  lra.
+  - intros.
+    unfold Indicator.
+    apply (is_RInt_gen_ext (fun _ =>  0)).
+    + exists (fun x => x=b) (fun y => b<y).
+      unfold at_point.
+      reflexivity.
+      unfold Rbar_locally'.
+      exists (b).
+      intros; trivial.
+      intros x y H0 H1.
+      replace (fst (x, y)) with (x) by trivial.
+      replace (snd (x, y)) with (y) by trivial.
+      replace (x) with (b).
+      rewrite Rmin_left.
+      rewrite Rmax_right.
+      intros.
+      replace (is_left (Rlt_dec x0 a)) with false.
+      replace (is_left (Rgt_dec x0 b)) with true.
+      lra.
+      destruct (Rgt_dec x0 b).
+      intuition.
+      intuition.
+      destruct (Rlt_dec x0 a).
+      lra.
+      intuition.
+      lra.
+      lra.
+    + apply (is_RInt_gen_ext (Derive (fun _ => 0))).
+      apply filter_forall.
+      intros.
+      apply Derive_const.
+      replace (0) with (0 - 0) at 1.
+      apply is_RInt_gen_Derive with (f0 := fun _ => 0) (la := 0) (lb := 0).
+      * apply filter_forall.
+        intros.
+        apply ex_derive_const.
+      * apply filter_forall.
+        intros.
+        apply continuous_const.
+      * apply filterlim_const.
+      * apply filterlim_const.
+      * lra.
 Qed.
 
 Lemma Indicator_full (a b:R) (f : R -> R) (l:R):
   a < b -> is_RInt f a b l -> is_RInt_gen (fun t => (f t) * (Indicator a b t)) (Rbar_locally' m_infty) (Rbar_locally' p_infty) l.
 Proof.
-  intros.
-  replace (l) with (0 + l).
-  apply (@is_RInt_gen_Chasles R_CompleteNormedModule) with (b:=a).
-  apply Rbar_locally'_filter.
-  apply Rbar_locally'_filter.    
-  apply (is_RInt_gen_ext (fun t => (f t) * (Indicator a b t))).
-  apply filter_forall.
-  intros.
-  apply Rmult_eq_compat_l; trivial.
-  apply Indicator_left with (f := f); trivial.
-  replace (l) with (l + 0).
-  apply (@is_RInt_gen_Chasles R_CompleteNormedModule) with (b:=b).
-  apply at_point_filter.
-  apply Rbar_locally'_filter.  
-  apply is_RInt_gen_at_point.
-  apply (is_RInt_ext f).
-  rewrite Rmin_left.
-  rewrite Rmax_right.
-  intros.
-  unfold Indicator.
-  destruct H1.
-  replace (is_left (Rlt_dec x a)) with false.
-  replace (is_left (Rgt_dec x b)) with false.
-  lra.
-  destruct (Rgt_dec x b).
-  lra.
-  tauto.
-  destruct (Rlt_dec x a).
-  lra.
-  tauto.
-  lra.
-  lra.
-  trivial.
-  apply Indicator_right; trivial.
-  lra.
-  lra.
+  - intros.
+    replace (l) with (0 + l).
+    apply (@is_RInt_gen_Chasles R_CompleteNormedModule) with (b:=a).
+    + apply Rbar_locally'_filter.
+    + apply Rbar_locally'_filter.    
+    + apply (is_RInt_gen_ext (fun t => (f t) * (Indicator a b t))).
+      * apply filter_forall.
+        intros.
+        apply Rmult_eq_compat_l; trivial.
+      * apply Indicator_left with (f := f); trivial.
+    + replace (l) with (l + 0).
+      apply (@is_RInt_gen_Chasles R_CompleteNormedModule) with (b:=b).
+      * apply at_point_filter.
+      * apply Rbar_locally'_filter.  
+      * apply is_RInt_gen_at_point.
+        apply (is_RInt_ext f).
+        rewrite Rmin_left.
+        rewrite Rmax_right.
+        intros.
+        ++ unfold Indicator.
+           replace (is_left (Rlt_dec x a)) with false.
+           replace (is_left (Rgt_dec x b)) with false.
+           lra.
+           destruct (Rgt_dec x b).
+           lra.
+           tauto.
+           destruct (Rlt_dec x a).
+           lra.
+           tauto.
+        ++ lra.
+        ++ lra.
+        ++ trivial.
+      * apply Indicator_right; trivial.
+      * lra.
+    + lra.
 Qed.
 
 Lemma Uniform_full (a b:R) (f : R -> R) (l:R):
@@ -1343,57 +1355,35 @@ Qed.
 Lemma Uniform_mean0 (a b:R) :
   a < b -> is_RInt (fun t => t*(/ (b-a))) a b ((b+a)/2).
 Proof.  
-  intros.
-  replace ((b+a)/2) with  (/(b-a)*(b^2/2) - (/(b-a)*(a^2/2))).
-  apply (@is_RInt_derive R_CompleteNormedModule) with (f := fun t => (/(b-a))*(t^2/2)).
-  rewrite Rmin_left.
-  rewrite Rmax_right.
-  intros.
-  replace (x * (/ (b-a))) with (/(b-a) * x).
-  apply is_derive_scal with (k := /(b-a)) (f:= (fun t => t^2/2)).
-  apply (is_derive_ext (fun t => t * ((/2) * t))).
-  intros.
-  field_simplify; trivial.
-  replace (x) with (1 * (/2 * x) + x * /2) at 2.
-  apply (@is_derive_mult R_AbsRing) with (f := id) (g:= fun t => (/2) * t).
-  apply (@is_derive_id R_AbsRing).
-  replace (/2) with (/2 * 1) at 1.
-  apply is_derive_scal.
-  apply (@is_derive_id R_AbsRing).
-  lra.
-  intros.
-  apply Rmult_comm.
-  apply Rminus_diag_uniq.
-  field_simplify; lra.
-  apply Rmult_comm.  
-  lra.
-  lra.
-  rewrite Rmin_left.
-  rewrite Rmax_right.
-  intros.
-  apply (@continuous_scal_l R_CompleteNormedModule) with (f := id).
-  apply continuous_id.
-  lra.
-  lra.
-  apply Rminus_diag_uniq.
-  field_simplify; lra.
-Qed.
-
-(*
   - intros.
-    destruct H0.
-    destruct H0.
-    + destruct H1.
-      * { unfold Uniform_PDF.
-          apply (continuous_ext_loc _ (fun t => t/(b-a))).
-          - apply (locally_interval _ _ a b); try (red; lra).
-            simpl; intros.
-            destruct (Rlt_dec y a); try lra.
-            destruct (Rgt_dec y b); try lra.
-            simpl; reflexivity.
-          - admit.
-        } 
-*)
+    replace ((b+a)/2) with  (/(b-a)*(b^2/2) - (/(b-a)*(a^2/2))).
+    + apply (@is_RInt_derive R_CompleteNormedModule) with (f := fun t => (/(b-a))*(t^2/2)).
+      rewrite Rmin_left.
+      rewrite Rmax_right.
+      intros.
+      replace (x * (/ (b-a))) with (/(b-a) * x).
+      apply is_derive_scal with (k := /(b-a)) (f:= (fun t => t^2/2)).
+      apply (is_derive_ext (fun t => t * ((/2) * t))).
+      intros.
+      field_simplify; trivial.
+      replace (x) with (1 * (/2 * x) + x * /2) at 2.
+      apply (@is_derive_mult R_AbsRing) with (f := id) (g:= fun t => (/2) * t).
+      apply (@is_derive_id R_AbsRing).
+      replace (/2) with (/2 * 1) at 1.
+      apply is_derive_scal.
+      apply (@is_derive_id R_AbsRing).
+      lra.
+      intros.
+      apply Rmult_comm.
+      ring_simplify; lra.
+      apply Rmult_comm.  
+      lra.
+      lra.
+      intros.
+      apply (@continuous_scal_l R_CompleteNormedModule) with (f := id).
+      apply continuous_id.
+    + apply Rminus_diag_uniq; field_simplify; lra.
+Qed.
 
 Lemma Uniform_mean (a b:R) :
   a < b -> is_RInt_gen (fun t => t*(Uniform_PDF a b t)) (Rbar_locally' m_infty) (Rbar_locally' p_infty) ((b+a)/2).
@@ -1406,72 +1396,71 @@ Qed.
 Lemma Uniform_variance0 (a b:R) :
   a < b -> is_RInt (fun t => (/ (b-a)) * (t-(b+a)/2)^2) a b ((b-a)^2/12).
 Proof.
-  intros.
-  replace ((b-a)^2/12) with (scal (/(b-a)) ((b-a)^3/12)).
-  apply (@is_RInt_scal  R_CompleteNormedModule) with (k := /(b-a)) (f := fun t => (t - (b+a)/2)^2) (If := (b-a)^3/12).
-  apply (is_RInt_ext (fun t => t^2 - (b+a)*t + (b+a)^2/4)).
-  intros.
-  field_simplify; trivial.
-  replace ((b-a)^3/12) with ((a-b)*(b^2+4*a*b+a^2)/6 + ((b+a)^2/4)*(b-a)).
-  apply is_RInt_plus with (f:= fun t=> t^2 - (b+a)*t) (g := fun t=> (b+a)^2/4).
-  replace ((a - b) * (b ^ 2 + 4 * a * b + a ^ 2) / 6) with ((b^3/3-a^3/3) - (b-a)*(b+a)^2/2).
-  apply is_RInt_minus with (f := fun t => t^2) (g := fun t => (b+a)*t).
-  apply (@is_RInt_derive R_CompleteNormedModule) with (f := fun t => t^3/3).
-  intros.
-  apply (is_derive_ext (fun t => (/3) * t^3)).
-  intros.
-  field_simplify; trivial.
-  replace (x^2) with (/3 * (INR(3%nat) * 1 * x^2)).
-  apply is_derive_scal.
-  apply is_derive_pow with (f:=id) (n := 3%nat) (l:=1).
-  apply (@is_derive_id R_AbsRing).
-  simpl; field_simplify; trivial.
-  rewrite Rmax_right.
-  rewrite Rmin_left.
-  intros.
-  simpl.
-  apply continuous_mult with (f := id).
-  apply continuous_id.
-  apply (@continuous_scal_l R_UniformSpace) with (f := id ) (k := 1).
-  apply continuous_id.
-  lra.
-  lra.
-  replace ((b - a) * (b + a) ^ 2 / 2) with ((b+a)*((b^2/2-a^2/2))).
-  apply (@is_RInt_scal  R_CompleteNormedModule) with (k := b+a).
-  apply is_RInt_derive with (f:=fun x => x^2/2).
-  rewrite Rmax_right.
-  rewrite Rmin_left.
-  intros.
-  apply (is_derive_ext (fun t => (/2) * t^2)).
-  intros.
-  field_simplify; trivial.
-  replace (x) with (/2 * (2 * x)) at 2.
-  apply is_derive_scal.
-  replace (2 * x) with (INR(2%nat) * 1 * x^1).
-  apply is_derive_pow with (f:=id) (n := 2%nat) (l:=1).
-  apply (@is_derive_id R_AbsRing).
-  simpl; field_simplify; lra.
-  lra.
-  lra.
-  lra.
-  rewrite Rmax_right.
-  rewrite Rmin_left.
-  intros.
-  apply continuous_id.
-  lra.
-  lra.
-  field_simplify ; trivial.
-  apply Rminus_diag_uniq.
-  compute.
-  field_simplify; lra.
-  replace ((b + a) ^ 2 / 4 * (b - a)) with (scal (b-a) ((b+a)^2/4)).
-  apply (@is_RInt_const R_NormedModule).
-  compute.
-  field_simplify; trivial.
-  apply Rminus_diag_uniq.
-  field_simplify; lra.
-  compute.
-  field_simplify; lra.
+  - intros.
+    replace ((b-a)^2/12) with (scal (/(b-a)) ((b-a)^3/12)).
+    + apply (@is_RInt_scal  R_CompleteNormedModule) with (k := /(b-a)) (f := fun t => (t - (b+a)/2)^2) (If := (b-a)^3/12).
+      apply (is_RInt_ext (fun t => t^2 - (b+a)*t + (b+a)^2/4)).
+      * intros.
+        field_simplify; trivial.
+      * replace ((b-a)^3/12) with ((a-b)*(b^2+4*a*b+a^2)/6 + ((b+a)^2/4)*(b-a)).
+        apply is_RInt_plus with (f:= fun t=> t^2 - (b+a)*t) (g := fun t=> (b+a)^2/4).
+        -- replace ((a - b) * (b ^ 2 + 4 * a * b + a ^ 2) / 6) with ((b^3/3-a^3/3) - (b-a)*(b+a)^2/2).
+           apply is_RInt_minus with (f := fun t => t^2) (g := fun t => (b+a)*t).
+           apply (@is_RInt_derive R_CompleteNormedModule) with (f := fun t => t^3/3).
+           ++ intros.
+              apply (is_derive_ext (fun t => (/3) * t^3)).
+              intros; field_simplify; trivial.
+              replace (x^2) with (/3 * (INR(3%nat) * 1 * x^2)).
+              apply is_derive_scal.
+              apply is_derive_pow with (f:=id) (n := 3%nat) (l:=1).
+              apply (@is_derive_id R_AbsRing).
+              simpl; field_simplify; trivial.
+           ++ rewrite Rmax_right.
+              rewrite Rmin_left.
+              intros.
+              simpl.
+              apply continuous_mult with (f := id).
+              apply continuous_id.
+              apply (@continuous_scal_l R_UniformSpace) with (f := id ) (k := 1).
+              apply continuous_id.
+              lra.
+              lra.
+           ++ replace ((b - a) * (b + a) ^ 2 / 2) with ((b+a)*((b^2/2-a^2/2))).
+              apply (@is_RInt_scal  R_CompleteNormedModule) with (k := b+a).
+              apply is_RInt_derive with (f:=fun x => x^2/2).
+              rewrite Rmax_right.
+              rewrite Rmin_left.
+              ** intros.
+                 apply (is_derive_ext (fun t => (/2) * t^2)).
+                 intros.
+                 field_simplify; trivial.
+                 replace (x) with (/2 * (2 * x)) at 2.
+                 apply is_derive_scal.
+                 replace (2 * x) with (INR(2%nat) * 1 * x^1).
+                 apply is_derive_pow with (f:=id) (n := 2%nat) (l:=1).
+                 apply (@is_derive_id R_AbsRing).
+                 simpl; field_simplify; lra.
+                 lra.
+              ** lra.
+              ** lra.
+              ** rewrite Rmax_right.
+                 rewrite Rmin_left.
+                 intros.
+                 apply continuous_id.
+                 lra.
+                 lra.
+              ** field_simplify ; trivial.
+           ++ apply Rminus_diag_uniq.
+              compute.
+              field_simplify; lra.
+        -- replace ((b + a) ^ 2 / 4 * (b - a)) with (scal (b-a) ((b+a)^2/4)).
+           apply (@is_RInt_const R_NormedModule).
+           compute.
+           field_simplify; trivial.
+        -- apply Rminus_diag_uniq.
+           field_simplify; lra.
+    + compute.
+      field_simplify; lra.
 Qed.
 
 Lemma Uniform_variance (a b:R) :
