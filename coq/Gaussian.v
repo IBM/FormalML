@@ -1191,24 +1191,19 @@ Proof.
   trivial.
   unfold at_point.
   reflexivity.
+  intros x y H0 H1.
+  replace (fst (x, y)) with (x) by trivial.
+  replace (snd (x, y)) with (y) by trivial.
+  replace (y) with (a).
+  rewrite Rmin_left.
+  rewrite Rmax_right.
   intros.
-  replace (fst (x, y)) with (x) in H2 by trivial.
-  replace (snd (x, y)) with (y) in H2 by trivial.
-  replace (Rmin x y) with (x) in H2.
-  replace (Rmax x y) with (y) in H2.
-  replace (y) with (a) in H2.
   destruct H2.
-  assert  (Rlt_dec x0 a).
-  destruct (Rlt_dec x0 a); trivial.
-  contradiction.
   replace (is_left (Rlt_dec x0 a)) with true.
   lra.
-  replace (y) with (a) in H2.
-  rewrite Rmax_right; trivial.
-  replace (y) with (a).
+  destruct (Rlt_dec x0 a); trivial.
+  contradiction.
   lra.
-  rewrite Rmin_left; trivial.
-  replace (y) with (a).
   lra.
   apply (is_RInt_gen_ext (Derive (fun _ => 0))).
   apply filter_forall.
@@ -1240,28 +1235,24 @@ Proof.
   exists (b).
   intros.
   trivial.
+  intros x y H0 H1.
+  replace (fst (x, y)) with (x) by trivial.
+  replace (snd (x, y)) with (y) by trivial.
+  replace (x) with (b).
+  rewrite Rmin_left.
+  rewrite Rmax_right.
   intros.
-  replace (fst (x, y)) with (x) in H2 by trivial.
-  replace (snd (x, y)) with (y) in H2 by trivial.
-  replace (Rmin x y) with (x) in H2.
-  replace (Rmax x y) with (y) in H2.
-  replace (x) with (b) in H2.
-  destruct H2.
   replace (is_left (Rlt_dec x0 a)) with false.
   replace (is_left (Rgt_dec x0 b)) with true.
   lra.
+  destruct H2.
   destruct (Rgt_dec x0 b).
   tauto.
   contradiction.
   destruct (Rlt_dec x0 a).
   lra.
   intuition.
-  replace (x) with (b) in H2.
-  rewrite Rmax_right; trivial.
-  replace (x) with (b).
   lra.
-  rewrite Rmin_left; trivial.
-  replace (x) with (b).
   lra.
   apply (is_RInt_gen_ext (Derive (fun _ => 0))).
   apply filter_forall.
@@ -1299,10 +1290,10 @@ Proof.
   apply Rbar_locally'_filter.  
   apply is_RInt_gen_at_point.
   apply (is_RInt_ext f).
+  rewrite Rmin_left.
+  rewrite Rmax_right.
   intros.
   unfold Indicator.
-  replace (Rmin a b) with (a) in H1.
-  replace (Rmax a b) with (b) in H1.  
   destruct H1.
   replace (is_left (Rlt_dec x a)) with false.
   replace (is_left (Rgt_dec x b)) with false.
@@ -1313,8 +1304,8 @@ Proof.
   destruct (Rlt_dec x a).
   lra.
   tauto.
-  rewrite Rmax_right; lra; lra.
-  rewrite Rmin_left; lra; lra.
+  lra.
+  lra.
   trivial.
   apply Indicator_right; trivial.
   lra.
