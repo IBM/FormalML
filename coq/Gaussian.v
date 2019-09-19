@@ -876,6 +876,21 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma Positive_General_Gaussian_PDF (mu sigma x : R):
+  sigma > 0 -> General_Gaussian_PDF mu sigma x > 0.
+Proof.  
+  intros.
+  unfold General_Gaussian_PDF.
+  apply Rmult_gt_0_compat.
+  apply Rinv_0_lt_compat.
+  apply Rmult_gt_0_compat; trivial.
+  apply sqrt_lt_R0.
+  apply Rmult_gt_0_compat.
+  apply Rle_lt_0_plus_1; lra.
+  apply PI_RGT_0.
+  apply exp_pos.
+Qed.
+
 Lemma Derive_General_Gaussian_PDF (mu sigma x:R):
   sigma > 0 -> Derive (General_Gaussian_PDF mu sigma) x = / (sigma^2)*(mu-x)*General_Gaussian_PDF mu sigma x.
 Proof.
@@ -1334,6 +1349,23 @@ Proof.
   unfold Uniform_PDF.
   ring_simplify; trivial.
   apply Indicator_full with (f := fun t => f t * (/ (b - a))); trivial.
+Qed.
+
+Lemma Uniform_PDF_non_neg (a b t :R) :
+  a < b -> Uniform_PDF a b t >= 0.
+Proof.  
+  intros.
+  unfold Uniform_PDF.
+  replace (0) with ((/ (b-a)) * 0) by lra.
+  apply Rmult_ge_compat_l with (r2 := 0).
+  left.
+  apply Rinv_0_lt_compat; lra.
+  unfold Indicator.
+  destruct (is_left (Rlt_dec t a)).
+  lra.
+  destruct (is_left (Rgt_dec t b)).
+  lra.
+  lra.
 Qed.
 
 Lemma Uniform_normed (a b:R) :
