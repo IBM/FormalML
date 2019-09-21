@@ -428,41 +428,6 @@ Proof.
    apply Rinv_le_contravar; lra.
 Qed.
 
-
-Definition f_opp_inv := (fun x : R =>  - / x).
-
-Lemma derivable_pt_ln x: (0 < x) -> derivable_pt ln x.
-Proof.
-  intros.
-  unfold derivable_pt.
-  exists (/ x).
-  unfold derivable_pt_abs.
-  apply derivable_pt_lim_ln; trivial.
-Defined.
-
-Lemma Newton_integrable_inv (b:R) : (1 <= b) -> Newton_integrable Rinv 1 b.
-Proof.
-  intros.
-  unfold Newton_integrable.
-  exists ln.
-  left.
-  unfold antiderivative.
-  split; trivial.
-  intros.
-  cut (0 < x); [ | lra ].
-  intros xg0.
-  exists (derivable_pt_ln x xg0).
-  reflexivity.
-Defined.
-
-Lemma NewtonInt_inv (b:R) (pr:1 <= b) :
-    (NewtonInt Rinv 1 b (Newton_integrable_inv b pr)) = (ln b) - (ln 1).
-Proof.
-  unfold NewtonInt.
-  unfold Newton_integrable_inv.
-  reflexivity.
-Qed.
-
 Lemma ln_int_unbounded : forall x:R, 0 < x -> { y | ln y - ln 1 > x}.
 Proof.
   intros.
@@ -471,95 +436,6 @@ Proof.
   rewrite ln_exp.
   rewrite <- (Rplus_0_r x) at 2.
   replace (1-0) with 1; lra.
-Qed.
-
-(* next 5 functions copied from COQ library with Qed replaced by Defined *)
-
-Lemma derivable_pt_opp :
-  forall f (x:R), derivable_pt f x -> derivable_pt (- f) x.
-Proof.
-  unfold derivable_pt; intros f x X.
-  elim X; intros.
-  exists (- x0).
-  apply derivable_pt_lim_opp; assumption.
-Defined.
-
-Lemma derivable_pt_id : forall x:R, derivable_pt id x.
-Proof.
-  unfold derivable_pt; intro.
-  exists 1.
-  apply derivable_pt_lim_id.
-Defined.
-
-Lemma derivable_pt_const : forall a x:R, derivable_pt (fct_cte a) x.
-Proof.
-  intros; unfold derivable_pt.
-  exists 0.
-  apply derivable_pt_lim_const.
-Defined.
-
-Lemma derivable_pt_div :
-  forall (f1 f2:R -> R) (x:R),
-    derivable_pt f1 x ->
-    derivable_pt f2 x -> f2 x <> 0 -> derivable_pt (f1 / f2) x.
-Proof.
-  unfold derivable_pt.
-  intros f1 f2 x X X0 H.
-  elim X; intros.
-  elim X0; intros.
-  exists ((x0 * f2 x - x1 * f1 x) / Rsqr (f2 x)).
-  apply derivable_pt_lim_div; assumption.
-Defined.
-
-Lemma derivable_pt_inv :
-  forall (f:R -> R) (x:R),
-    f x <> 0 -> derivable_pt f x -> derivable_pt (/ f) x.
-Proof.
-  intros f x H X; cut (derivable_pt (fct_cte 1 / f) x -> derivable_pt (/ f) x).
-  intro X0; apply X0.
-  apply derivable_pt_div.
-  apply derivable_pt_const.
-  assumption.
-  assumption.
-  unfold div_fct, inv_fct, fct_cte; intros (x0,p);
-    unfold derivable_pt; exists x0;
-      unfold derivable_pt_abs; unfold derivable_pt_lim;
-        unfold derivable_pt_abs in p; unfold derivable_pt_lim in p;
-          intros; elim (p eps H0); intros; exists x1; intros;
-            unfold Rdiv in H1; unfold Rdiv; rewrite <- (Rmult_1_l (/ f x));
-              rewrite <- (Rmult_1_l (/ f (x + h))).
-  apply H1; assumption.
-Defined.
-
-Lemma derivable_pt_opp_inv x: (x <> 0) -> derivable_pt f_opp_inv x.
-Proof.
-  intros.
-  apply derivable_pt_opp.
-  apply derivable_pt_inv; trivial.
-  apply derivable_pt_id.
-Defined.
-
-Lemma Newton_integrable_inv_Rsqr (b:R) : 
-  (1 <= b) -> Newton_integrable (fun x:R => / Rsqr x) 1 b.
-Proof.
-  intros.
-  unfold Newton_integrable.
-  exists f_opp_inv.
-  left.
-  unfold antiderivative.
-  split; trivial.
-  intros.
-  cut (x <> 0); [ | lra ].
-  intros xn0.
-  exists (derivable_pt_opp_inv x xn0).
-  vm_compute; lra.
-Defined.
-
-Lemma NewtonInt_inv_Rsqr (b:R) (pr:1 <= b) :
-    (NewtonInt (fun x:R => / Rsqr x) 1 b (Newton_integrable_inv_Rsqr b pr)) = 1 - 1 / b.
-Proof.
-  unfold NewtonInt, Newton_integrable_inv_Rsqr, f_opp_inv.
-  lra.
 Qed.
 
 Lemma inv_int_bounded : forall x:R, 0 < x -> 1 - (/ x) < 1.
@@ -579,8 +455,106 @@ Require Import Coquelicot.Lim_seq.
 (*from coquelicot*)
 Require Import Coquelicot.Rcomplements.
 Require Import Coquelicot.Lub.
+Require Import Coquelicot.RInt.
+Require Import Coquelicot.RInt_analysis.
+Require Import Coquelicot.RInt_gen.
+Require Import Coquelicot.Derive.
+Require Import Coquelicot.Continuity.
+Require Import Coquelicot.ElemFct.
 
 Set Bullet Behavior "Strict Subproofs".
+
+Lemma is_RInt_inv (b:R) (pr:1 <= b) :
+    is_RInt Rinv 1 b ((ln b) - (ln 1)).
+Proof.
+  apply (@is_RInt_derive R_CompleteNormedModule).
+  rewrite Rmin_left.
+  rewrite Rmax_right; intuition.
+  apply is_derive_Reals.
+  apply derivable_pt_lim_ln; lra.
+  lra.
+  rewrite Rmin_left.
+  rewrite Rmax_right; intuition.
+  unfold continuous.
+  apply continuity_pt_filterlim.
+  apply continuity_pt_inv.
+  apply continuity_pt_id.
+  lra.
+  lra.
+Qed.
+
+Lemma is_lim_RInt_inv:
+  is_lim (fun b => (ln b) - (ln 1)) p_infty p_infty.
+Proof.
+  apply is_lim_minus with (lf := p_infty) (lg := 0).
+  apply is_lim_ln_p.
+  apply (is_lim_ext (fun _ =>  0)).
+  rewrite ln_1.
+  trivial.
+  apply is_lim_const.
+  unfold is_Rbar_minus.
+  simpl.
+  replace (- 0) with (0) by lra.
+  unfold is_Rbar_plus.
+  unfold Rbar_plus'.
+  trivial.
+Qed.
+
+Lemma is_RInt_inv_Rsqr (b:R) (pr:1 <= b) :
+    is_RInt (fun x:R => / Rsqr x) 1 b (1 - 1 / b).
+Proof.
+  replace (1 - 1/b) with ((- Rinv b) - (- Rinv 1)).
+  apply (@is_RInt_derive R_CompleteNormedModule) with (f:= fun x => - Rinv x).
+  rewrite Rmin_left.
+  rewrite Rmax_right; intuition.
+  replace (/ (Rsqr x)) with (- (- 1 / x^2)).
+  apply is_derive_opp with (f := fun x => / x).
+  apply is_derive_inv with (f := id).
+  apply (@is_derive_id R_AbsRing).
+  unfold id; lra.
+  unfold Rsqr.
+  field_simplify; trivial.
+  lra.
+  lra.
+  lra.
+  rewrite Rmin_left.
+  rewrite Rmax_right; intuition.
+  unfold continuous.
+  apply (continuity_pt_filterlim (fun x => / (Rsqr x))).
+  apply continuity_pt_inv.  
+  unfold Rsqr.
+  apply continuity_pt_mult.
+  apply continuity_pt_id.
+  apply continuity_pt_id.
+  unfold Rsqr.
+  apply Rmult_integral_contrapositive_currified.
+  lra.
+  lra.
+  lra.
+  field_simplify; trivial.
+  lra.
+  lra.
+Qed.
+
+Lemma is_lim_Rint_inv_Rsqr :
+  is_lim (fun b => (1 - 1 / b)) p_infty 1.
+Proof.
+  apply is_lim_minus with (lf := 1) (lg := 0).
+  apply is_lim_const.
+  apply (is_lim_ext Rinv).
+  intros.
+  unfold Rdiv.
+  lra.
+  replace (Finite 0) with (Rbar_inv p_infty).
+  apply is_lim_inv.
+  apply is_lim_id.
+  discriminate.
+  unfold Rbar_inv; trivial.
+  compute.
+  apply f_equal.
+  replace (Rplus R1 (Ropp R0)) with (R1); trivial.
+  lra.
+Qed.
 
 Lemma ex_finite_lim_seq_correct (u : nat -> R) :
   ex_finite_lim_seq u <-> ex_lim_seq u /\ is_finite (Lim_seq u).
