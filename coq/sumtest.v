@@ -483,7 +483,7 @@ Proof.
   lra.
 Qed.
 
-Lemma is_lim_RInt_inv:
+Lemma is_lim_RInt_inv0:
   is_lim (fun b => (ln b) - (ln 1)) p_infty p_infty.
 Proof.
   apply is_lim_minus with (lf := p_infty) (lg := 0).
@@ -498,6 +498,19 @@ Proof.
   unfold is_Rbar_plus.
   unfold Rbar_plus'.
   trivial.
+Qed.
+
+Lemma is_lim_RInt_inv:
+  is_lim (fun b => (RInt Rinv 1 b)) p_infty p_infty.
+Proof.
+  apply (is_lim_ext_loc (fun b => (ln b) - (ln 1))).
+  exists 2.
+  intros.
+  symmetry.
+  apply is_RInt_unique.
+  apply is_RInt_inv.
+  lra.
+  apply is_lim_RInt_inv0.
 Qed.
 
 Lemma is_RInt_inv_Rsqr (b:R) (pr:1 <= b) :
@@ -536,7 +549,7 @@ Proof.
   lra.
 Qed.
 
-Lemma is_lim_Rint_inv_Rsqr :
+Lemma is_lim_Rint_inv_Rsqr0 :
   is_lim (fun b => (1 - 1 / b)) p_infty 1.
 Proof.
   apply is_lim_minus with (lf := 1) (lg := 0).
@@ -555,6 +568,19 @@ Proof.
   replace (Rplus R1 (Ropp R0)) with (R1); trivial.
   lra.
 Qed.
+
+Lemma is_lim_Rint_inv_Rsqr :
+  is_lim (fun b => RInt (fun x:R => / Rsqr x) 1 b) p_infty 1.
+Proof.
+  apply (is_lim_ext_loc (fun b => 1 - 1/b)).
+  exists 2.
+  intros.
+  symmetry.
+  apply is_RInt_unique.
+  apply is_RInt_inv_Rsqr.
+  lra.
+  apply is_lim_Rint_inv_Rsqr0.
+Qed.  
 
 Lemma ex_finite_lim_seq_correct (u : nat -> R) :
   ex_finite_lim_seq u <-> ex_lim_seq u /\ is_finite (Lim_seq u).
