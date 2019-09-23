@@ -1530,15 +1530,6 @@ Proof.
   apply sqr_plus1_gt.
 Qed.
 
-Lemma two_sqr_plus2_neq (x:R):
-  2*x^2 + 2 <> 0.
-Proof.
-  replace (2*x^2+2) with (2*(x^2+1)) by lra.
-  apply Rmult_integral_contrapositive_currified.
-  lra.
-  apply sqr_plus1_neq.
-Qed.
-
 Lemma deriv_erf00 (x0 x2:R) :
   Derive (fun u : R => - / (2 * x0 ^ 2 + 2) * exp (- (u ^ 2 + (u * x0) ^ 2))) x2 =
     x2 * exp (- (x2 ^ 2 + (x2 * x0) ^ 2)). 
@@ -1558,8 +1549,10 @@ Proof.
   simpl.
   apply Rminus_diag_uniq.
   field_simplify; try lra.
-  replace (2*(x0 * x0) + 2) with (2*x0^2 + 2) by lra.
-  apply two_sqr_plus2_neq.
+  replace (2*(x0 * x0) + 2) with (2*(x0^2 + 1)) by lra.
+  apply Rmult_integral_contrapositive_currified.
+  lra.
+  apply sqr_plus1_neq.
 Qed.
 
 Lemma lim_atan0:
