@@ -12,6 +12,7 @@ Require Import Coquelicot.ElemFct.
 Require Import Reals.Rbase.
 Require Import Reals.Rfunctions.
 Require Import Reals.R_sqrt.
+Require Import Reals.Ratan.
 Require Import Streams.
 Require Import Ranalysis_reg.
 Require Import Reals.Integration.
@@ -1460,27 +1461,22 @@ Proof.
            ++ replace ((b - a) * (b + a) ^ 2 / 2) with ((b+a)*((b^2/2-a^2/2))).
               apply (@is_RInt_scal  R_CompleteNormedModule) with (k := b+a).
               apply is_RInt_derive with (f:=fun x => x^2/2).
-              rewrite Rmax_right.
-              rewrite Rmin_left.
+              rewrite Rmax_right; try lra.
+              rewrite Rmin_left; try lra.
               ** intros.
                  apply (is_derive_ext (fun t => (/2) * t^2)).
                  intros.
                  field_simplify; trivial.
-                 replace (x) with (/2 * (2 * x)) at 2.
+                 replace (x) with (/2 * (2 * x)) at 2 by lra.
                  apply is_derive_scal.
-                 replace (2 * x) with (INR(2%nat) * 1 * x^1).
+                 replace (2 * x) with (INR(2%nat) * 1 * x^1) by
+                 (simpl; field_simplify; lra).
                  apply is_derive_pow with (f:=id) (n := 2%nat) (l:=1).
                  apply (@is_derive_id R_AbsRing).
-                 simpl; field_simplify; lra.
-                 lra.
-              ** lra.
-              ** lra.
-              ** rewrite Rmax_right.
-                 rewrite Rmin_left.
+              ** rewrite Rmax_right; try lra.
+                 rewrite Rmin_left; try lra.
                  intros.
                  apply continuous_id.
-                 lra.
-                 lra.
               ** field_simplify ; trivial.
            ++ apply Rminus_diag_uniq.
               compute.
@@ -1506,3 +1502,348 @@ Proof.
   apply Uniform_variance0; trivial.
 Qed.
 
+Axiom Fubini:
+  forall (a b c d: R) (f: R -> R -> R) (x y: R), 
+    a < x < b -> c < y < d -> 
+    continuity_2d_pt f x y -> 
+    RInt (fun u => RInt (fun v => f u v) a b) c d =  RInt (fun v => RInt (fun u => f u v) c d) a b.
+
+(* also need convergent and (continuous?), incorrect since missing hypotheses *)
+Axiom Fubini_gen :
+  forall (Fa Fb Fc Fd: (R -> Prop) -> Prop)
+      (f: R -> R -> R) ,
+  RInt_gen (fun u => RInt_gen (fun v => f u v) Fa Fb) Fc Fd =  RInt_gen (fun v => RInt_gen (fun u => f u v) Fc Fd) Fa Fb.
+
+Lemma sqr_plus1_gt (x:R):
+  x^2 + 1 > 0.
+Proof.
+  intros.
+  apply Rplus_le_lt_0_compat.
+  apply pow2_ge_0.
+  lra.
+Qed.  
+
+Lemma sqr_plus1_neq (x:R):
+  x^2 + 1 <> 0.
+Proof.
+  apply Rgt_not_eq.  
+  apply sqr_plus1_gt.
+Qed.
+
+Lemma two_sqr_plus2_neq (x:R):
+  2*x^2 + 2 <> 0.
+Proof.
+  replace (2*x^2+2) with (2*(x^2+1)) by lra.
+  apply Rmult_integral_contrapositive_currified.
+  lra.
+  apply sqr_plus1_neq.
+Qed.
+
+Lemma deriv_erf00 (x0 x2:R) :
+  Derive (fun u : R => - / (2 * x0 ^ 2 + 2) * exp (- (u ^ 2 + (u * x0) ^ 2))) x2 =
+    x2 * exp (- (x2 ^ 2 + (x2 * x0) ^ 2)). 
+Proof.
+  rewrite Derive_scal; solve_derive.
+  rewrite Derive_comp; solve_derive.
+  rewrite Derive_opp; solve_derive.
+  rewrite Derive_plus; solve_derive.
+  rewrite Derive_pow; solve_derive.
+  rewrite Derive_id; solve_derive.
+  rewrite Derive_pow; solve_derive.
+  rewrite Derive_mult; solve_derive.
+  rewrite Derive_id.
+  rewrite Derive_const.
+  rewrite <- Derive_Reals with (pr := derivable_pt_exp (- (x2 ^ 2 + (x2 * x0) ^ 2))).
+  rewrite derive_pt_exp.
+  simpl.
+  apply Rminus_diag_uniq.
+  field_simplify; try lra.
+  replace (2*(x0 * x0) + 2) with (2*x0^2 + 2) by lra.
+  apply two_sqr_plus2_neq.
+Qed.
+
+Lemma lim_atan0:
+  is_lim atan 0 0.
+Proof.
+  assert (continuity_pt atan 0).
+  apply derivable_continuous_pt.
+  apply derivable_pt_atan.
+  apply is_lim_continuity in H.   
+  rewrite atan_0 in H; trivial.
+Qed.
+
+Axiom lim_atan_inf:
+  is_lim atan p_infty (PI/2).
+
+Lemma erf_atan:
+  is_RInt_gen (fun s : R => / (2 * s ^ 2 + 2)) (Rbar_locally' 0) 
+              (Rbar_locally' p_infty) (PI / 4).
+Proof.
+    + apply (is_RInt_gen_ext (Derive (fun s => /2 * atan s))).
+      * apply filter_forall.
+        intros.
+        replace (/ (2 * x0^2 + 2)) with ( (/2) * (/ (x0^2+1))).
+        rewrite Derive_scal.
+        apply Rmult_eq_compat_l.
+        rewrite <- Derive_Reals with (pr := derivable_pt_atan x0).
+        rewrite derive_pt_atan.
+        unfold Rsqr.
+        field_simplify; trivial.
+        apply sqr_plus1_neq.
+        replace (x0 * x0) with (x0^2) by lra.
+        rewrite Rplus_comm; trivial.
+        apply sqr_plus1_neq.
+        replace (2*x0^2 + 2) with (2*(x0^2+1)) by lra.
+        rewrite Rinv_mult_distr; trivial.
+        apply sqr_plus1_neq.        
+      * replace (PI/4) with (PI/4 - 0).
+        apply is_RInt_gen_Derive.
+        - apply filter_forall.
+           intros.
+           apply ex_derive_scal.
+           apply ex_derive_Reals_1.
+           apply derivable_pt_atan.
+        - apply filter_forall.
+           intros.
+           apply (continuous_ext (fun s => /2 * /(s^2+1))).
+           intros.
+           symmetry.
+           replace (/ (x1^2+1)) with (Derive atan x1).
+           apply Derive_scal with (f := atan ) (k := /2) (x := x1).
+           rewrite <- Derive_Reals with (pr := derivable_pt_atan x1).
+           rewrite derive_pt_atan.
+           unfold Rsqr.
+           replace (1 + x1*x1) with (x1^2 + 1) by lra; lra.
+           apply continuous_scal_r with (k := /2) (f := fun s => /(s^2+1)).
+           apply continuous_comp.
+           apply continuous_plus with (f := fun x1 => x1^2) (g := fun _ => 1).
+           simpl.
+           apply continuous_mult with (f := id).
+           apply continuous_id.
+           apply continuous_mult with (f := id).
+           apply continuous_id.
+           apply continuous_const.
+           apply continuous_const.
+           unfold continuous.
+           apply continuity_pt_filterlim.
+           apply continuity_pt_inv.
+           apply continuity_pt_id.
+           apply sqr_plus1_neq.
+        - replace (filterlim (fun s : R => / 2 * atan s) (Rbar_locally' 0) (locally 0)) with (is_lim (fun s : R => / 2 * atan s) (Finite 0) (Rbar_mult (/2) 0)).
+           apply is_lim_scal_l with (a := /2) (f := atan).
+           apply lim_atan0.
+           unfold is_lim.
+           simpl.
+           replace (/2 * 0) with (0) by lra.
+           trivial.
+        - replace (filterlim (fun s : R => / 2 * atan s) (Rbar_locally' p_infty) (locally (PI / 4))) with (is_lim (fun s : R => / 2 * atan s) p_infty (Rbar_mult (/2) (PI/2))).
+           apply is_lim_scal_l with (a := /2) (f := atan).
+           apply lim_atan_inf.
+           unfold is_lim.
+           replace (Rbar_locally (Rbar_mult (/2) (PI/2))) with (Rbar_locally (PI/4)).
+           trivial.
+           f_equal.
+           unfold Rbar_mult.
+           unfold Rbar_mult'.
+           rewrite Rmult_comm.
+           unfold Rdiv.
+           rewrite Rmult_assoc.
+           replace (/2 * /2) with (/4).
+           trivial.
+           lra.
+        - apply Rminus_0_r.
+Qed.
+
+Lemma erf_int00 : 
+  is_RInt_gen (fun s => RInt_gen (fun u => u*exp(-(u^2+(u*s)^2))) (Rbar_locally' 0)  (Rbar_locally' p_infty)) (Rbar_locally' 0) (Rbar_locally' p_infty) (PI / 4).
+Proof.
+  - apply (is_RInt_gen_ext (fun s => / (2*s^2+2))).
+    apply filter_forall.
+    + intros.
+      symmetry.
+      apply is_RInt_gen_unique.
+      replace (/ (2*x0^2+2)) with (0 - (- / (2*x0^2+2))).
+      * apply (is_RInt_gen_ext (Derive (fun u => -/(2*x0^2+2) * exp(-(u^2+(u*x0)^2))))).
+        -- apply filter_forall.
+           intros.
+           apply deriv_erf00.
+        -- apply is_RInt_gen_Derive with (f := fun u => -/(2*x0^2+2)* exp(-(u^2+(u*x0)^2))) (lb:=0) (la := - / (2*x0^2+2)).
+           ++ apply filter_forall.
+              intros.
+              solve_derive.
+           ++ apply filter_forall.
+              intros.
+              apply (continuous_ext (fun x2 => x2 * exp (- (x2 ^ 2 + (x2 * x0) ^ 2)))).
+              ** intros.
+                 symmetry.
+                 apply deriv_erf00.
+              ** apply continuous_mult with (f := id).
+                 apply continuous_id.
+                 apply continuous_comp with (g := exp).
+                 apply continuous_opp with (f := fun x3 => (x3 ^ 2 + (x3 * x0) ^ 2)).
+                 apply continuous_plus with (f := fun x3 => x3^2).
+                 simpl.
+                 apply continuous_mult with (f := id).
+                 apply continuous_id.
+                 apply continuous_mult with (f := id).
+                 apply continuous_id.
+                 apply continuous_const.
+                 simpl.
+                 apply continuous_mult with (f := fun x => x * x0).
+                 apply continuous_mult with (f := id).
+                 apply continuous_id.
+                 apply continuous_const.
+                 apply continuous_mult with (f := fun x => x * x0).
+                 apply continuous_mult with (f := id).
+                 apply continuous_id.
+                 apply continuous_const.
+                 apply continuous_const.    
+                 apply ex_derive_continuous with (f := exp).
+                 apply ex_derive_Reals_1.
+                 apply derivable_pt_exp.
+           ++ replace (filterlim (fun u : R => - / (2 * x0 ^ 2 + 2) * exp (- (u ^ 2 + (u * x0) ^ 2)))
+                                 (Rbar_locally' 0) (locally (- / (2 * x0 ^ 2 + 2)))) with 
+                  (is_lim (fun u : R => - / (2 * x0 ^ 2 + 2) * exp (- (u ^ 2 + (u * x0) ^ 2))) 0 (- / (2 * x0 ^ 2 + 2))).
+              ** replace  (Finite (- / (2 * x0 ^ 2 + 2))) with (Rbar_mult  (- / (2 * x0 ^ 2 + 2)) 1).
+                 apply is_lim_scal_l with (a := - / (2 * x0 ^ 2 + 2) ).
+                 replace (1) with (exp 0).
+                 apply is_lim_comp_continuous with (l := 0).
+                 replace (Finite 0) with (Rbar_opp (Rbar_plus 0 0)) at 2.
+                 apply is_lim_opp with (f := fun x1 => (x1 ^ 2 + (x1 * x0) ^ 2)).
+                 apply is_lim_plus with (lf := 0) (lg := 0).
+                 simpl.
+                 replace (Finite 0) with (Rbar_mult 0 (Rbar_mult 0 1)) at 2.
+                 apply is_lim_mult with (f := id).
+                 apply is_lim_id.
+                 apply is_lim_mult with (f := id).
+                 apply is_lim_id.
+                 apply is_lim_const.
+                 compute; trivial.
+                 compute; trivial.
+                 compute; trivial.
+                 rewrite Rmult_0_l; trivial.
+                 simpl.
+                 replace (Finite 0) with (Rbar_mult 0 0) at 2.
+                 apply is_lim_mult with (f := fun y => y * x0).
+                 replace (Finite 0) with (Rbar_mult 0 x0) at 2.  
+                 apply is_lim_mult with (f := id).
+                 apply is_lim_id.
+                 apply is_lim_const.
+                 compute; trivial.
+                 compute.
+                 rewrite Rmult_0_l; trivial.
+                 replace (Finite 0) with (Rbar_mult (Rbar_mult 0 x0) 1) at 2.
+                 apply is_lim_mult with (f := fun y => y * x0).
+                 apply is_lim_mult with (f := id).
+                 apply is_lim_id.
+                 apply is_lim_const.
+                 compute; trivial.
+                 apply is_lim_const.
+                 compute; trivial.
+                 compute; rewrite Rmult_0_l; rewrite Rmult_0_l; trivial.  
+                 compute; trivial.
+                 compute; rewrite Rmult_0_l; trivial.  
+                 compute.
+                 trivial.
+                 compute.
+                 rewrite Rplus_0_r.
+                 rewrite Ropp_0; trivial.
+                 apply ex_derive_continuous with (f := exp).
+                 apply ex_derive_Reals_1.
+                 apply derivable_pt_exp.
+                 apply exp_0.
+                 compute.
+                 rewrite Rmult_1_r; trivial.
+              ** unfold is_lim.
+                 reflexivity.
+           ++ replace (filterlim (fun u : R => - / (2 * x0 ^ 2 + 2) * exp (- (u ^ 2 + (u * x0) ^ 2)))
+                                 (Rbar_locally' p_infty) (locally 0)) with 
+                  (is_lim (fun u : R => - / (2 * x0 ^ 2 + 2) * exp (- (u ^ 2 + (u * x0) ^ 2))) p_infty 0).
+              ** replace  (Finite 0) with (Rbar_mult  (- / (2 * x0 ^ 2 + 2)) 0).
+                 apply is_lim_scal_l with (a := - / (2 * x0 ^ 2 + 2) ).
+                 apply is_lim_comp with (l:=m_infty).
+                 apply is_lim_exp_m.
+                 replace (m_infty) with (Rbar_opp p_infty).
+                 apply is_lim_opp.
+                 apply (is_lim_ext (fun y => y * y * (1 + Rsqr x0))).
+                 intros.
+                 unfold Rsqr.
+                 ring_simplify; trivial.
+                 replace (p_infty) with (Rbar_mult (Rbar_mult p_infty p_infty) (1 + Rsqr x0)) at 2.
+                 apply is_lim_mult.
+                 apply is_lim_mult.
+                 apply is_lim_id.
+                 apply is_lim_id.
+                 compute; trivial.
+                 apply is_lim_const.
+                 compute.
+                 replace (x0 * x0) with (x0^2) by lra.
+                 rewrite Rplus_comm.
+                 apply sqr_plus1_neq.
+                 replace (Rbar_mult p_infty p_infty) with (p_infty).
+                 apply is_Rbar_mult_unique.
+                 apply is_Rbar_mult_p_infty_pos.                 
+                 compute.
+                 replace (x0 * x0) with (x0^2) by lra.
+                 apply Rgt_lt.
+                 rewrite Rplus_comm.
+                 apply sqr_plus1_gt.
+                 compute; trivial.
+                 compute; trivial.
+                 unfold Rbar_locally'.
+                 exists x0.
+                 intros.
+                 discriminate.
+                 unfold Rbar_mult.
+                 unfold Rbar_mult'.
+                 rewrite Rmult_0_r; trivial.
+              ** unfold is_lim.
+                 trivial.
+      * ring_simplify; trivial.
+    + apply erf_atan.
+Qed.           
+
+Lemma erf_int0  :
+  is_RInt_gen (fun u => RInt_gen (fun v => exp(-(u^2+v^2))) (at_point 0)  (Rbar_locally' p_infty)) (at_point 0) (Rbar_locally' p_infty) (PI / 4).
+Proof.
+  apply (is_RInt_gen_ext (fun u => RInt_gen (fun v => u*exp(-(u^2+(u*v+0)^2))) (at_point 0) (Rbar_locally' p_infty))).
+  apply filter_forall.
+  intros.
+  apply is_RInt_gen_unique.
+  apply is_RInt_gen_comp_lin0 with (u:=x0) (v:=0) (f := fun v => exp(-(x0^2 + v^2))).
+  admit.
+  intros.
+  apply ex_RInt_continuous with (f:= (fun v : R => exp (- (x0 ^ 2 + v ^ 2)))).
+  intros.
+  apply continuous_comp.
+  apply continuous_opp with (f := fun x2 => x0^2 + x2^2).
+  apply continuous_plus with (f := fun _ => x0^2) (g := fun x2 => x2^2).
+  apply continuous_const.
+  simpl.
+  apply continuous_mult with (f := id).
+  apply continuous_id.
+  apply continuous_mult with (f := id).
+  apply continuous_id.
+  apply continuous_const.
+  apply (@ex_derive_continuous R_AbsRing).
+  apply ex_derive_Reals_1.
+  apply derivable_pt_exp.
+  replace (at_point (x0*0 + 0)) with (at_point 0).
+  replace (Rbar_locally' (Rbar_plus (Rbar_mult x0 p_infty) 0)) with (Rbar_locally' p_infty).
+  apply (@RInt_gen_correct R_CompleteNormedModule).
+  apply Proper_StrongProper.
+  apply at_point_filter.
+  apply Proper_StrongProper.
+  apply Rbar_locally'_filter.
+  admit.
+  f_equal.
+  rewrite Rbar_plus_0_r.
+  rewrite Rbar_mult_comm.
+  rewrite Rbar_mult_p_infty_pos; trivial.
+  admit.
+  f_equal; lra.
+(*
+  apply is_RInt_gen_unique.
+rewrite <- Fubini_gen with (Fa := at_point 0) (Fc := at_point 0) (Fb := Rbar_locally' p_infty) (Fd := Rbar_locally' p_infty) (f := fun x0 => fun v => exp (- (x0 ^ 2 + v ^ 2))).
+*)
+Admitted.
