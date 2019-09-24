@@ -1508,10 +1508,14 @@ Axiom Fubini:
     continuity_2d_pt f x y -> 
     RInt (fun u => RInt (fun v => f u v) a b) c d =  RInt (fun v => RInt (fun u => f u v) c d) a b.
 
-(* also need convergent and (continuous?), incorrect since missing hypotheses *)
+(* also need integral convergent, incomplete since missing hypotheses *)
 Axiom Fubini_gen :
   forall (Fa Fb Fc Fd: (R -> Prop) -> Prop)
-      (f: R -> R -> R) ,
+         (f: R -> R -> R) ,
+ filter_prod Fa Fb
+             (fun ab => forall (x : R), Rmin (fst ab) (snd ab) <= x <= Rmax (fst ab) (snd ab) ->
+                                filter_prod Fc Fd
+                                            (fun bc => forall (y : R), Rmin (fst bc) (snd bc) <= y <= Rmax (fst bc) (snd bc) -> continuity_2d_pt f x y)) ->    
   RInt_gen (fun u => RInt_gen (fun v => f u v) Fa Fb) Fc Fd =  RInt_gen (fun v => RInt_gen (fun u => f u v) Fc Fd) Fa Fb.
 
 Lemma sqr_plus1_gt (x:R):
@@ -1555,7 +1559,7 @@ Proof.
   apply sqr_plus1_neq.
 Qed.
 
-Lemma lim_atan0:
+Lemma lim_atan_0:
   is_lim atan 0 0.
 Proof.
   assert (continuity_pt atan 0).
@@ -1565,9 +1569,43 @@ Proof.
   rewrite atan_0 in H; trivial.
 Qed.
 
-Axiom lim_atan_inf:
-  is_lim atan p_infty (PI/2).
+Lemma atan_tan_inv (x:R) :
+  -PI/2 < x < PI/2 -> atan (tan x) = x.
+Proof.
+  intros.
+  unfold atan.
+  destruct (pre_atan (tan x)) as [y [yrang yinv]].
+  now apply tan_is_inj in yinv.
+Qed.
 
+Lemma lim_atan_inf:
+  is_lim atan p_infty (PI/2).
+Proof.
+  apply is_lim_spec.
+  unfold is_lim'.
+  intros.
+  assert(atan_upper:forall x, atan x < PI/2)
+    by apply atan_bound.
+  unfold Rbar_locally'.
+  destruct (Rlt_dec (PI/2-eps) 0).
+  - exists (0).
+    intros.
+    rewrite Rabs_left.
+    + assert (atan 0 < atan x)
+             by now apply atan_increasing.
+      rewrite atan_0 in H0; try lra.
+    + now apply Rlt_minus.
+  - exists (tan (PI/2 - eps)).
+    assert (eps > 0)
+      by now destruct eps.
+    intros.
+    rewrite Rabs_left; try lra.
+    + assert (atan (tan (PI/2 - eps)) < atan x)
+       by now apply atan_increasing.
+      rewrite atan_tan_inv in H1; try lra.
+    + now apply Rlt_minus.
+Qed.
+                                          
 Lemma erf_atan:
   is_RInt_gen (fun s : R => / (2 * s ^ 2 + 2)) (Rbar_locally' 0) 
               (Rbar_locally' p_infty) (PI / 4).
@@ -1609,8 +1647,7 @@ Proof.
            replace (1 + x1*x1) with (x1^2 + 1) by lra; lra.
            apply continuous_scal_r with (k := /2) (f := fun s => /(s^2+1)).
            apply continuous_comp.
-           apply continuous_plus with (f := fun x1 => x1^2) (g := fun _ => 1).
-           simpl.
+           apply continuous_plus with (f := fun x1 => x1^2) (g := fun _ => 1); simpl.
            apply continuous_mult with (f := id).
            apply continuous_id.
            apply continuous_mult with (f := id).
@@ -1624,11 +1661,9 @@ Proof.
            apply sqr_plus1_neq.
         - replace (filterlim (fun s : R => / 2 * atan s) (Rbar_locally' 0) (locally 0)) with (is_lim (fun s : R => / 2 * atan s) (Finite 0) (Rbar_mult (/2) 0)).
            apply is_lim_scal_l with (a := /2) (f := atan).
-           apply lim_atan0.
-           unfold is_lim.
-           simpl.
-           replace (/2 * 0) with (0) by lra.
-           trivial.
+           apply lim_atan_0.
+           unfold is_lim; simpl.
+           now replace (/2 * 0) with (0) by lra.
         - replace (filterlim (fun s : R => / 2 * atan s) (Rbar_locally' p_infty) (locally (PI / 4))) with (is_lim (fun s : R => / 2 * atan s) p_infty (Rbar_mult (/2) (PI/2))).
            apply is_lim_scal_l with (a := /2) (f := atan).
            apply lim_atan_inf.
@@ -1641,9 +1676,8 @@ Proof.
            rewrite Rmult_comm.
            unfold Rdiv.
            rewrite Rmult_assoc.
-           replace (/2 * /2) with (/4).
-           trivial.
-           lra.
+           replace (/2 * /2) with (/4); try lra.
+           easy.
         - apply Rminus_0_r.
 Qed.
 
@@ -1674,14 +1708,12 @@ Proof.
                  apply continuous_id.
                  apply continuous_comp with (g := exp).
                  apply continuous_opp with (f := fun x3 => (x3 ^ 2 + (x3 * x0) ^ 2)).
-                 apply continuous_plus with (f := fun x3 => x3^2).
-                 simpl.
+                 apply continuous_plus with (f := fun x3 => x3^2); simpl.
                  apply continuous_mult with (f := id).
                  apply continuous_id.
                  apply continuous_mult with (f := id).
                  apply continuous_id.
-                 apply continuous_const.
-                 simpl.
+                 apply continuous_const; simpl.
                  apply continuous_mult with (f := fun x => x * x0).
                  apply continuous_mult with (f := id).
                  apply continuous_id.
@@ -1703,26 +1735,24 @@ Proof.
                  apply is_lim_comp_continuous with (l := 0).
                  replace (Finite 0) with (Rbar_opp (Rbar_plus 0 0)) at 2.
                  apply is_lim_opp with (f := fun x1 => (x1 ^ 2 + (x1 * x0) ^ 2)).
-                 apply is_lim_plus with (lf := 0) (lg := 0).
-                 simpl.
+                 apply is_lim_plus with (lf := 0) (lg := 0); simpl.
                  replace (Finite 0) with (Rbar_mult 0 (Rbar_mult 0 1)) at 2.
                  apply is_lim_mult with (f := id).
                  apply is_lim_id.
                  apply is_lim_mult with (f := id).
                  apply is_lim_id.
                  apply is_lim_const.
-                 compute; trivial.
-                 compute; trivial.
+                 now compute.
+                 now compute.
                  compute; trivial.
                  rewrite Rmult_0_l; trivial.
-                 simpl.
                  replace (Finite 0) with (Rbar_mult 0 0) at 2.
                  apply is_lim_mult with (f := fun y => y * x0).
                  replace (Finite 0) with (Rbar_mult 0 x0) at 2.  
                  apply is_lim_mult with (f := id).
                  apply is_lim_id.
                  apply is_lim_const.
-                 compute; trivial.
+                 now compute.
                  compute.
                  rewrite Rmult_0_l; trivial.
                  replace (Finite 0) with (Rbar_mult (Rbar_mult 0 x0) 1) at 2.
@@ -1730,14 +1760,13 @@ Proof.
                  apply is_lim_mult with (f := id).
                  apply is_lim_id.
                  apply is_lim_const.
-                 compute; trivial.
+                 now compute.
                  apply is_lim_const.
                  compute; trivial.
                  compute; rewrite Rmult_0_l; rewrite Rmult_0_l; trivial.  
                  compute; trivial.
                  compute; rewrite Rmult_0_l; trivial.  
-                 compute.
-                 trivial.
+                 now compute.
                  compute.
                  rewrite Rplus_0_r.
                  rewrite Ropp_0; trivial.
@@ -1747,8 +1776,7 @@ Proof.
                  apply exp_0.
                  compute.
                  rewrite Rmult_1_r; trivial.
-              ** unfold is_lim.
-                 reflexivity.
+              ** now unfold is_lim.
            ++ replace (filterlim (fun u : R => - / (2 * x0 ^ 2 + 2) * exp (- (u ^ 2 + (u * x0) ^ 2)))
                                  (Rbar_locally' p_infty) (locally 0)) with 
                   (is_lim (fun u : R => - / (2 * x0 ^ 2 + 2) * exp (- (u ^ 2 + (u * x0) ^ 2))) p_infty 0).
@@ -1767,7 +1795,7 @@ Proof.
                  apply is_lim_mult.
                  apply is_lim_id.
                  apply is_lim_id.
-                 compute; trivial.
+                 now compute.
                  apply is_lim_const.
                  compute.
                  replace (x0 * x0) with (x0^2) by lra.
@@ -1781,17 +1809,16 @@ Proof.
                  apply Rgt_lt.
                  rewrite Rplus_comm.
                  apply sqr_plus1_gt.
-                 compute; trivial.
-                 compute; trivial.
+                 now compute.
+                 now compute.
                  unfold Rbar_locally'.
                  exists x0.
                  intros.
                  discriminate.
                  unfold Rbar_mult.
                  unfold Rbar_mult'.
-                 rewrite Rmult_0_r; trivial.
-              ** unfold is_lim.
-                 trivial.
+                 now rewrite Rmult_0_r.
+              ** now unfold is_lim.
       * ring_simplify; trivial.
     + apply erf_atan.
 Qed.           
@@ -1800,11 +1827,20 @@ Lemma erf_int0  :
   is_RInt_gen (fun u => RInt_gen (fun v => exp(-(u^2+v^2))) (at_point 0)  (Rbar_locally' p_infty)) (at_point 0) (Rbar_locally' p_infty) (PI / 4).
 Proof.
   apply (is_RInt_gen_ext (fun u => RInt_gen (fun v => u*exp(-(u^2+(u*v+0)^2))) (at_point 0) (Rbar_locally' p_infty))).
-  apply filter_forall.
+  exists (fun x => x=0) (fun y => y>1000).
+  unfold at_point; trivial.
+  unfold Rbar_locally'.
+  exists 1000.
+  auto.
   intros.
+  unfold fst in H1.
+  unfold snd in H1.
+  rewrite Rmin_left in H1.
+  rewrite Rmax_right in H1.
+  replace (x) with (0) in H1 by trivial.
   apply is_RInt_gen_unique.
   apply is_RInt_gen_comp_lin0 with (u:=x0) (v:=0) (f := fun v => exp(-(x0^2 + v^2))).
-  admit.
+  lra.
   intros.
   apply ex_RInt_continuous with (f:= (fun v : R => exp (- (x0 ^ 2 + v ^ 2)))).
   intros.
@@ -1833,10 +1869,20 @@ Proof.
   rewrite Rbar_plus_0_r.
   rewrite Rbar_mult_comm.
   rewrite Rbar_mult_p_infty_pos; trivial.
-  admit.
+  lra.
   f_equal; lra.
-(*
+  lra.
+  lra.
   apply is_RInt_gen_unique.
 rewrite <- Fubini_gen with (Fa := at_point 0) (Fc := at_point 0) (Fb := Rbar_locally' p_infty) (Fd := Rbar_locally' p_infty) (f := fun x0 => fun v => exp (- (x0 ^ 2 + v ^ 2))).
 *)
 Admitted.
+
+Axiom Fubini_gen :
+  forall (Fa Fb Fc Fd: (R -> Prop) -> Prop)
+         (f: R -> R -> R) ,
+ filter_prod Fa Fb
+             (fun ab => forall (x : R), Rmin (fst ab) (snd ab) <= x <= Rmax (fst ab) (snd ab) ->
+                                filter_prod Fc Fd
+                                            (fun bc => forall (y : R), Rmin (fst bc) (snd bc) <= y <= Rmax (fst bc) (snd bc) -> continuity_2d_pt f x y)) ->    
+  RInt_gen (fun u => RInt_gen (fun v => f u v) Fa Fb) Fc Fd =  RInt_gen (fun v => RInt_gen (fun u => f u v) Fc Fd) Fa Fb.
