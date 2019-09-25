@@ -38,12 +38,12 @@ Require Import Utils.
 
   Notation "0" := (B754_zero 53 1024 false) : float.
   Notation "1" := (b64_succ (B754_zero 53 1024 false)) : float.
-  Notation "2" := (b64_succ (b64_succ (B754_zero 53 1024 false))) : float.  
-  Notation "- a" := (b64_opp a) : float.
-  Notation "a + b" := (b64_plus mode_NE a b)  : float.
-  Notation "a - b" := (b64_minus mode_NE a b) : float.
-  Notation "a * b" := (b64_mult mode_NE a b)  : float.
-  Notation "a / b" := (b64_div mode_NE a b) : float.
+  Notation "2" := (b64_succ (b64_succ (B754_zero 53 1024 false))) : float.
+  Notation "- x" := (b64_opp x) (at level 35, right associativity) : float.
+  Notation "x + y" := (b64_plus mode_NE x y) (at level 50, left associativity) : float.
+  Notation "x - y" := (b64_minus mode_NE x y) (at level 50, left associativity) : float.
+  Notation "x * y" := (b64_mult mode_NE x y) (at level 40, left associativity) : float.
+  Notation "x / y" := (b64_div mode_NE x y) (at level 40, left associativity) : float.
 
   Open Scope float.
   Section Definitions.
@@ -124,7 +124,7 @@ Require Import Utils.
 
   Definition pos_sign (e:float)
     := (match b64_compare e 0 with
-          | Some Lt => 0 - 1
+          | Some Lt =>  0 - 1
           | _  => 1
         end).
 
@@ -184,6 +184,12 @@ Require Import Utils.
           | Some Eq => true
           | _ => false
        end).                               
+
+  Notation "x = y" := (Feq x y)  : float.
+  Notation "x < y" := (Flt x y)  : float.
+  Notation "x > y" := (Fgt x y)  : float.
+  Notation "x <= y" := (Fle x y) : float.
+  Notation "x >= y" := (Fge x y) : float.
 
   Definition df_plus (df1 df2 : DefinedFunction) : DefinedFunction :=
     Plus df1 df2.
@@ -342,13 +348,13 @@ Require Import Utils.
     | is_deriv_Max_l l le l' re r :
         df_eval σ l = Some le ->
         df_eval σ r = Some re ->
-        (Fgt le re) = true ->
+        (le > re) = true ->
         is_deriv l l' ->
         is_deriv (Max l r) l'
     | is_deriv_Max_r l le r re r' :
         df_eval σ l = Some le ->
         df_eval σ r = Some re ->
-        (Fge re le) = true ->
+        (re >= le) = true ->
         is_deriv r r' ->
         is_deriv (Max l r) r'.
    (*
@@ -415,7 +421,7 @@ Require Import Utils.
          | Max l r =>
            match df_eval σ l, df_eval_deriv σ l v, df_eval σ r, df_eval_deriv σ r v with
            | Some le, Some ld, Some re, Some rd =>
-             if Fle le re then Some rd else Some ld
+             if le <= re then Some rd else Some ld
            | _, _, _, _ => None
            end
           end).
@@ -474,7 +480,7 @@ Require Import Utils.
          | Abs e =>
            match df_eval σ e, df_eval_subgradient σ e lv with
            | Some ee, Some ed => 
-              if Feq ee 0 then Some (ed ++ (map (map (fun ep => -ep)) ed))
+              if ee = 0 then Some (ed ++ (map (map (fun ep => -ep)) ed))
               else Some (map (map (fun ed => (ed * (sign ee)))) ed)
            | _, _ => None
            end
@@ -491,8 +497,8 @@ Require Import Utils.
          | Max l r =>
            match df_eval σ l, df_eval_subgradient σ l lv, df_eval σ r, df_eval_subgradient σ r lv with
            | Some le, Some ld, Some re, Some rd =>
-             if Feq le re then Some (ld ++ rd)
-             else if Fgt le re then Some ld
+             if le = re then Some (ld ++ rd)
+             else if le > re then Some ld
                   else Some rd
            | _, _, _, _ => None
            end
