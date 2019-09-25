@@ -185,7 +185,6 @@ Require Import Utils.
           | _ => false
        end).                               
 
-  Notation "x = y" := (Feq x y)  : float.
   Notation "x < y" := (Flt x y)  : float.
   Notation "x > y" := (Fgt x y)  : float.
   Notation "x <= y" := (Fle x y) : float.
@@ -480,7 +479,7 @@ Require Import Utils.
          | Abs e =>
            match df_eval σ e, df_eval_subgradient σ e lv with
            | Some ee, Some ed => 
-              if ee = 0 then Some (ed ++ (map (map (fun ep => -ep)) ed))
+              if Feq ee 0 then Some (ed ++ (map (map (fun ep => -ep)) ed))
               else Some (map (map (fun ed => (ed * (sign ee)))) ed)
            | _, _ => None
            end
@@ -497,7 +496,7 @@ Require Import Utils.
          | Max l r =>
            match df_eval σ l, df_eval_subgradient σ l lv, df_eval σ r, df_eval_subgradient σ r lv with
            | Some le, Some ld, Some re, Some rd =>
-             if le = re then Some (ld ++ rd)
+             if Feq le re then Some (ld ++ rd)
              else if le > re then Some ld
                   else Some rd
            | _, _, _, _ => None
