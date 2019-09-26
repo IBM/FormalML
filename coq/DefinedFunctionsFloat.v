@@ -36,9 +36,13 @@ Require Import Utils.
   Definition b64_compare : binary64 → binary64 → option comparison := Bcompare 53 1024.
 *)
 
+  Context { prec_gt_0_ : FLX.Prec_gt_0 53}.
+  Hypothesis Hmax : (53 < 1024)%Z.
+  Definition Z2F (i:Z) := binary_normalize 53 1024 prec_gt_0_ Hmax mode_NE i 0 false.
+
   Notation "0" := (B754_zero 53 1024 false) : float.
-  Notation "1" := (b64_succ (B754_zero 53 1024 false)) : float.
-  Notation "2" := (b64_succ (b64_succ (B754_zero 53 1024 false))) : float.
+  Notation "1" := (Z2F 1) : float.
+  Notation "2" := (Z2F 2) : float.
   Notation "- x" := (b64_opp x) (at level 35, right associativity) : float.
   Notation "x + y" := (b64_plus mode_NE x y) (at level 50, left associativity) : float.
   Notation "x - y" := (b64_minus mode_NE x y) (at level 50, left associativity) : float.
@@ -139,12 +143,6 @@ Require Import Utils.
           | Some Lt => b64_opp 1
           | Some Gt => 1
           | _ => 0
-       end).                               
-
-  Definition Fabs (x:float)
-    := (match b64_compare x 0 with
-          | Some Lt => b64_opp x
-          | _ => x
        end).                               
 
   Definition Fmax (x y:float)
@@ -269,7 +267,7 @@ Require Import Utils.
 *)
          | Abs e =>
            match df_eval σ e with
-           | Some v => Some (Fabs v) 
+           | Some v => Some (b64_abs v) 
            | _ => None
            end
 

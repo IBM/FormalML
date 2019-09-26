@@ -200,25 +200,10 @@ Definition update_firstp {A B:Type} (dec:forall a a':A, {a=a'} + {a<>a'}) := fun
 Definition update_list {A B:Type} (dec:forall a a':A, {a=a'} + {a<>a'}) (l up:list (A*B))  : list (A*B)
       := fold_left (update_firstp dec) l up.
 
-(*
-Definition optimize_step (step : nat) (df : DefinedFunction) (σ:df_env) (lvar : list SubVar) (noise_st : Stream float) : (option df_env)*(Stream R) :=
-  let ogradvec := df_eval_gradient σ df lvar in
-  let alpha   := 1 / (INR (S step)) in
-  let '(lnoise, nst) := streamtake (length lvar) noise_st in
-  let olvals := lookup_list σ lvar in
-  match (ogradvec, olvals) with
-    | (Some gradvec, Some lvals) => 
-      (Some (update_list var_dec σ 
-                         (combine lvar (combine3_with 
-                                          (fun val grad noise => val - alpha*(grad + noise))
-                                          lvals gradvec lnoise))), nst)
-    | (_, _) => (None, nst)
-  end.                  
- *)
 
-Definition optimize_step (step : float) (df : DefinedFunction) (σ:df_env) (lvar : list SubVar) (noise_st : Stream float) : (option df_env)*(Stream float) :=
+Definition optimize_step (step : nat) (df : DefinedFunction) (σ:df_env) (lvar : list SubVar) (noise_st : Stream float) : (option df_env)*(Stream float) :=
   let ogradvec := df_eval_gradient σ df lvar in
-  let alpha   := 1 / (b64_succ step) in
+  let alpha   := 1 / (Z2F (Z.of_nat (S step))) in
   let '(lnoise, nst) := streamtake (length lvar) noise_st in
   let olvals := lookup_list σ lvar in
   match (ogradvec, olvals) with
