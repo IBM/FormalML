@@ -39,6 +39,7 @@ MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	DefinedFunctionsFloat \
 	Gaussian \
 	Gen_NN \
+	Gen_NN_Float \
 	ProbSpace \
 	SigmaAlgebras \
 	sumtest
