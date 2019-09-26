@@ -4,6 +4,7 @@ Require Import RelationClasses.
 Require Import List.
 Require Import Rbase Rtrigo Rpower Rbasic_fun.
 Require Import Lra.
+Require Import Omega.
 Require Import Flocq.IEEE754.Binary.
 Require Import Flocq.IEEE754.Bits.
 
@@ -22,13 +23,9 @@ Require Import Utils.
 
 
 (* float ops:
-  Definition b64_erase : binary64 → binary64 := erase 53 1024.
   Definition b64_opp : binary64 → binary64 := Bopp 53 1024 unop_nan_pl64.
   Definition b64_abs : binary64 → binary64 := Babs 53 1024 unop_nan_pl64.
-  Definition b64_pred : binary64 → binary64 := Bpred _ _ Hprec Hprec_emax Hemax unop_nan_pl64.
-  Definition b64_succ : binary64 → binary64 := Bsucc _ _ Hprec Hprec_emax Hemax unop_nan_pl64.
   Definition b64_sqrt : mode → binary64 → binary64 := Bsqrt _ _ Hprec Hprec_emax unop_nan_pl64.
-
   Definition b64_plus : mode → binary64 → binary64 → binary64 := Bplus _ _ Hprec Hprec_emax binop_nan_pl64.
   Definition b64_minus : mode → binary64 → binary64 → binary64 := Bminus _ _ Hprec Hprec_emax binop_nan_pl64.
   Definition b64_mult : mode → binary64 → binary64 → binary64 := Bmult _ _ Hprec Hprec_emax binop_nan_pl64.
@@ -36,24 +33,48 @@ Require Import Utils.
   Definition b64_compare : binary64 → binary64 → option comparison := Bcompare 53 1024.
 *)
 
-  Context { prec_gt_0_ : FLX.Prec_gt_0 53}.
-  Hypothesis Hmax : (53 < 1024)%Z.
-  Definition Z2F (i:Z) := binary_normalize 53 1024 prec_gt_0_ Hmax mode_NE i 0 false.
+  Definition float : Set := binary64.
 
-  Notation "0" := (B754_zero 53 1024 false) : float.
+  Definition Fzero := B754_zero 53 1024 false.
+  Definition Fopp (x : float) := b64_opp x.
+  Definition Fplus (x y : float) := b64_plus mode_NE x y.
+  Definition Fminus (x y : float) := b64_minus mode_NE x y.
+  Definition Fmult (x y : float) := b64_mult mode_NE x y.
+  Definition Fdiv (x y : float) := b64_div mode_NE x y.  
+  Definition Fsqrt (x : float) := b64_sqrt mode_NE x.
+  
+  (* following function will be defined only in OCaml *)
+  Axiom FPI : float.
+  Axiom exp : float -> float.
+  Axiom ln : float -> float.
+  Axiom sin : float -> float.
+  Axiom cos : float -> float.  
+
+  Lemma prec_gt_0_ : FLX.Prec_gt_0 53.
+  Proof.
+    red.
+    omega.
+  Qed.
+
+  Lemma lt53_1024 : (53 < 1024)%Z.
+  Proof.
+    omega.
+  Qed.
+  
+  Definition Z2F (i:Z) := binary_normalize 53 1024 prec_gt_0_ lt53_1024 mode_NE i 0 false.
+
+  Notation "0" := (Fzero) : float.
   Notation "1" := (Z2F 1) : float.
   Notation "2" := (Z2F 2) : float.
-  Notation "- x" := (b64_opp x) (at level 35, right associativity) : float.
-  Notation "x + y" := (b64_plus mode_NE x y) (at level 50, left associativity) : float.
-  Notation "x - y" := (b64_minus mode_NE x y) (at level 50, left associativity) : float.
-  Notation "x * y" := (b64_mult mode_NE x y) (at level 40, left associativity) : float.
-  Notation "x / y" := (b64_div mode_NE x y) (at level 40, left associativity) : float.
+  Notation "- x" := (Fopp x) (at level 35, right associativity) : float.
+  Notation "x + y" := (Fplus x y) (at level 50, left associativity) : float.
+  Notation "x - y" := (Fminus x y) (at level 50, left associativity) : float.
+  Notation "x * y" := (Fmult x y) (at level 40, left associativity) : float.
+  Notation "x / y" := (Fdiv x y) (at level 40, left associativity) : float.
 
   Open Scope float.
   Section Definitions.
     
-    Definition float : Set := binary64.
-
     Definition var := string.
     
     Inductive SubVar : Set :=
@@ -83,16 +104,15 @@ Require Import Utils.
     | Minus (l r : DefinedFunction)
     | Times (l r : DefinedFunction)
     | Divide (l r : DefinedFunction)
-(*
     | Exp (e : DefinedFunction)
     | Log (e : DefinedFunction)
-*)
     | Abs (e : DefinedFunction)
     | Sign (e : DefinedFunction)
     | PSign (e : DefinedFunction)
     | Max (l r : DefinedFunction).
 
   End Definitions.
+
 
   Tactic Notation "DefinedFunction_cases" tactic(first) ident(c) :=
   first;
@@ -102,10 +122,8 @@ Require Import Utils.
   | Case_aux c "Minus"%string
   | Case_aux c "Times"%string
   | Case_aux c "Divide"%string
-(*
   | Case_aux c "Exp"%string
   | Case_aux c "Log"%string
-*)
   | Case_aux c "Abs"%string
   | Case_aux c "Sign"%string
   | Case_aux c "PSign"%string
@@ -208,10 +226,8 @@ Require Import Utils.
                               (Times (df_deriv l v) r)
                               (Times l (df_deriv r v)))
                            (Times r r)
-(*
          | Exp e => Times (df_deriv e v) (Exp e)
          | Log e => Divide (df_deriv e v) e
-*)
          | Abs e => Times (df_deriv e v) (Sign e) 
          | Sign e => Number 0
          | PSign e => Number 0
@@ -253,7 +269,6 @@ Require Import Utils.
            | Some l', Some r' => Some (l' / r')
            | _, _ => None
            end
-(*
          | Exp e => 
            match df_eval σ e with
            | Some v => Some (exp v)
@@ -264,7 +279,6 @@ Require Import Utils.
            | Some v => Some (ln v) 
            | _ => None
            end
-*)
          | Abs e =>
            match df_eval σ e with
            | Some v => Some (b64_abs v) 
@@ -325,7 +339,6 @@ Require Import Utils.
         is_deriv (Times l r)
                  (((l' * re ) - (le  * r'))
                     / (re * re))
-(*
     | is_deriv_Exp e ee e' :
         df_eval σ e = Some ee ->
         is_deriv e e' ->
@@ -334,7 +347,6 @@ Require Import Utils.
         df_eval σ e = Some ee ->
         is_deriv e e' ->
         is_deriv (Exp e) (e' / ee)
-*)
     | is_deriv_Abs e ee e' :
         df_eval σ e = Some ee ->
         is_deriv e e' -> is_deriv (Abs e) (e' * (sign ee))
@@ -396,7 +408,6 @@ Require Import Utils.
              Some (((ld * re) - (le * rd)) / (re * re))
            | _, _, _, _ => None
            end
-(*
          | Exp e =>
            match df_eval σ e, df_eval_deriv σ e v with
            | Some ee, Some ed => Some (ed * exp ee)
@@ -407,7 +418,6 @@ Require Import Utils.
            | Some ee, Some ed => Some (ed / ee)
            | _, _ => None
            end
-*)
          | Abs e =>
            match df_eval σ e, df_eval_deriv σ e v with
            | Some ee, Some ed => Some (ed * (sign ee))
@@ -462,7 +472,6 @@ Require Import Utils.
              Some (map (map (fun '(lp,rp) => (lp*re - le*rp)/(re * re))) (combine_prod ld rd))
            | _, _, _, _ => None
            end
-(*
          | Exp e =>
            match df_eval σ e, df_eval_subgradient σ e lv with
            | Some ee, Some ed => Some (map (map (fun pd => pd * exp ee)) ed)
@@ -473,7 +482,6 @@ Require Import Utils.
            | Some ee, Some ed => Some (map (map (fun pd => (pd / ee))) ed)
            | _, _ => None
            end
-*)
          | Abs e =>
            match df_eval σ e, df_eval_subgradient σ e lv with
            | Some ee, Some ed => 
@@ -593,10 +601,9 @@ Require Import Utils.
          | Abs e => df_free_variables e
          | Sign e => df_free_variables e
          | PSign e => df_free_variables e
-  (*
          | Log e => df_free_variables e
          | Exp e => df_free_variables e
-  *)
+
          end.
 
     Definition df_closed (f: DefinedFunction) : Prop
@@ -696,10 +703,8 @@ Require Import Utils.
       | Times l r => Times (df_apply l args) (df_apply r args)
       | Minus l r => Minus (df_apply l args) (df_apply r args)
       | Divide l r => Divide (df_apply l args) (df_apply r args)
-(*
       | Exp e => Exp (df_apply e args)
       | Log e => Log (df_apply e args)
-*)
       | Abs e => Abs (df_apply e args)
       | Sign e => Sign (df_apply e args)
       | PSign e => PSign (df_apply e args)
@@ -721,10 +726,8 @@ Require Import Utils.
       | Times l r => Times (df_subst l v e') (df_subst r v e')
       | Minus l r => Minus (df_subst l v e') (df_subst r v e')
       | Divide l r => Divide (df_subst l v e') (df_subst r v e')
-(*
       | Exp e => Exp (df_subst e v e')
       | Log e => Log (df_subst e v e')
-*)
       | Abs e => Abs (df_subst e v e')
       | Sign e => Sign (df_subst e v e')
       | PSign e => PSign (df_subst e v e')
@@ -776,10 +779,8 @@ Tactic Notation "DefinedFunction_cases" tactic(first) ident(c) :=
   | Case_aux c "Minus"%string
   | Case_aux c "Times"%string
   | Case_aux c "Divide"%string
-(*
   | Case_aux c "Exp"%string
   | Case_aux c "Log"%string
-*)
   | Case_aux c "Abs"%string
   | Case_aux c "Sign"%string
   | Case_aux c "PSign"%string

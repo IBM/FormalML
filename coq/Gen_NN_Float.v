@@ -200,6 +200,18 @@ Definition update_firstp {A B:Type} (dec:forall a a':A, {a=a'} + {a<>a'}) := fun
 Definition update_list {A B:Type} (dec:forall a a':A, {a=a'} + {a<>a'}) (l up:list (A*B))  : list (A*B)
       := fold_left (update_firstp dec) l up.
 
+Definition Box_Muller_Float (uniform1 uniform2: float) : (float * float) :=
+  let r := Fsqrt ((Fopp 2) * (ln uniform1)) in
+  let theta := 2 * FPI * uniform2 in
+  (r * cos theta, r * sin theta).
+
+CoFixpoint mkGaussianFloatStream (uniformStream : Stream float) : Stream float :=
+  let u1 := Streams.hd uniformStream in
+  let ust2 := Streams.tl uniformStream in
+  let u2 := Streams.hd ust2 in
+  let ust3 := Streams.tl ust2 in
+  let '(g1,g2) := Box_Muller_Float u1 u2 in
+  Cons g1 (Cons g2 (mkGaussianFloatStream ust3)).
 
 Definition optimize_step (step : nat) (df : DefinedFunction) (σ:df_env) (lvar : list SubVar) (noise_st : Stream float) : (option df_env)*(Stream float) :=
   let ogradvec := df_eval_gradient σ df lvar in
@@ -214,3 +226,4 @@ Definition optimize_step (step : nat) (df : DefinedFunction) (σ:df_env) (lvar :
                                           lvals gradvec lnoise))), nst)
     | (_, _) => (None, nst)
   end.                  
+
