@@ -1,12 +1,10 @@
 Require Import String.
 Require Import RelationClasses.
 Require Import Streams.
+Require Import ZArith.
 Require Import List.
 Require Import ListAdd.
-Require Import Rbase Rtrigo Rpower Rbasic_fun.
-Require Import Flocq.IEEE754.Binary.
-Require Import Flocq.IEEE754.Bits.
-Require Import DefinedFunctionsFloat.
+Require Import DefinedFunctionsIFloat.
 Require Import Lra.
 
 Require Import Utils.
@@ -86,7 +84,7 @@ Definition mkNN_gen (n1:nat) (nlist : list nat) (ivar wvar : SubVar)
   mkNN_gen_0 n1 (combine nlist vlist) ivec f_activ.
 
 Record testcases : Type := mkTest {ninput: nat; noutput: nat; ntest: nat; 
-                                   data : list ((list R) * (list R))}.
+                                   data : list ((list float) * (list float))}.
 
 Definition deltalosses (df : DefinedFunction) (losses : list DefinedFunction) : option DefinedFunction :=
   let losslist : option (list DefinedFunction) :=

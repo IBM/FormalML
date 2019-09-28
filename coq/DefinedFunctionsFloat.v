@@ -2,7 +2,6 @@ Require Import String.
 Require Import EquivDec.
 Require Import RelationClasses.
 Require Import List.
-Require Import Rbase Rtrigo Rpower Rbasic_fun.
 Require Import Lra.
 Require Import Omega.
 Require Import Flocq.IEEE754.Binary.
@@ -64,7 +63,7 @@ Require Import Utils.
   Definition Z2F (i:Z) := binary_normalize 53 1024 prec_gt_0_ lt53_1024 mode_NE i 0 false.
 
   Notation "0" := (Fzero) : float.
-  Notation "1" := (Z2F 1) : float.
+  Notation "1" := (Bone 53 1024 prec_gt_0_ lt53_1024) : float.
   Notation "2" := (Z2F 2) : float.
   Notation "- x" := (Fopp x) (at level 35, right associativity) : float.
   Notation "x + y" := (Fplus x y) (at level 50, left associativity) : float.

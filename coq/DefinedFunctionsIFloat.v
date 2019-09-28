@@ -2,7 +2,7 @@ Require Import String.
 Require Import EquivDec.
 Require Import RelationClasses.
 Require Import List.
-Require Import Rbase Rtrigo Rpower Rbasic_fun.
+
 Require Import Lra.
 Require Import Omega.
 
@@ -62,6 +62,7 @@ Module A := TranscendentalFloatFast F.
   Notation "x / y" := (Fdiv x y) (at level 40, left associativity) : float.
 
   Open Scope float.
+
   Section Definitions.
     
     Definition var := string.
@@ -135,7 +136,6 @@ Module A := TranscendentalFloatFast F.
 
  *)
 
-  Print F.cmp.
   Definition pos_sign (e:float)
     := (match F.cmp e 0 with
           | Xlt =>  F.neg 1
