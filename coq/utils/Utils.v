@@ -19,6 +19,7 @@
 Require Export LibUtils.
 Require Export Assoc.
 Require Export CoquelicotAdd.
+Require Export improper_integrals.
 Require Export Isomorphism.
 Require Export ListAdd.
 Require Export PairEncoding.
