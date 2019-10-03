@@ -112,7 +112,7 @@ Lemma gen_from_std (mu sigma : R) :
 Proof.
   intros.
   assert (sigma <> 0).
-  apply Rgt_not_eq; trivial.
+  now apply Rgt_not_eq.
   generalize sqrt_2PI_nzero; intros.
 
   unfold General_Gaussian_PDF.
@@ -121,7 +121,7 @@ Proof.
   unfold Rdiv.
   apply Rmult_eq_compat_r.
   apply f_equal.
-  field_simplify; trivial.
+  now field_simplify.
   lra.
   lra.
 Qed.  
@@ -176,7 +176,7 @@ Proof.
   rewrite Derive_mult.
   rewrite Derive_id.
   rewrite Derive_const.
-  field_simplify; trivial.
+  now field_simplify.
   apply ex_derive_id.
   apply ex_derive_const.
 Qed.
@@ -242,7 +242,7 @@ Proof.
   rewrite Derive_RInt.
   rewrite derive_xover_sqrt2.
   rewrite std_pdf_from_erf'.
-  field_simplify; trivial.
+  now field_simplify.
   apply locally_open with (D:=fun _ => True); trivial.
   apply open_true.
   apply continuous_erf'.
@@ -252,7 +252,7 @@ Proof.
   apply locally_open with (D:=fun _ => True); trivial.
   apply open_true.
   intros.
-  apply RInt_correct with (f:=erf') (a:=0) (b:=x0); trivial.
+  now apply RInt_correct with (f:=erf') (a:=0) (b:=x0).
   apply continuous_erf'.
   unfold Rdiv.
   apply ex_derive_mult.
@@ -307,7 +307,7 @@ Proof.
     auto with Rarith.
   }
   rewrite (Lim_comp erf (fun x => x / sqrt 2)).
-  - rewrite A1 erf_pinfty; trivial.
+  - now rewrite A1 erf_pinfty.
   - rewrite A1.
     apply erf_ex_lim.
   - apply ex_lim_scal_r.
@@ -329,7 +329,7 @@ Proof.
     auto with Rarith.
   }
   rewrite (Lim_comp erf (fun x => x / sqrt 2)).
-  - rewrite A1 erf_minfty; trivial.
+  - now rewrite A1 erf_minfty.
   - rewrite A1.
     apply erf_ex_lim.
   - apply ex_lim_scal_r.
@@ -420,8 +420,8 @@ Proof.
   assert (ex_RInt (fun t => t^2*Standard_Gaussian_PDF t - Standard_Gaussian_PDF t) a b).
   apply ex_RInt_minus with (f := fun t=> t^2*Standard_Gaussian_PDF t)
                            (g := Standard_Gaussian_PDF).
-  apply ex_RInt_Standard_Gaussian_variance_PDF; trivial.
-  apply ex_RInt_Standard_Gaussian_PDF; trivial.
+  now apply ex_RInt_Standard_Gaussian_variance_PDF.
+  now apply ex_RInt_Standard_Gaussian_PDF.
   apply ex_RInt_ext with (f := (fun t : R => t ^ 2 * Standard_Gaussian_PDF t - Standard_Gaussian_PDF t)) (g := (fun t : R => (t ^ 2 - 1) * Standard_Gaussian_PDF t)).
   intros.
   lra.
@@ -439,7 +439,7 @@ Proof.
   apply RInt_plus with (f := (fun t => (t^2-1)*Standard_Gaussian_PDF t))
                        (g := (fun t => Standard_Gaussian_PDF t)).
   apply variance_exint0; trivial.
-  apply ex_RInt_Standard_Gaussian_PDF; trivial.
+  now apply ex_RInt_Standard_Gaussian_PDF.
   apply RInt_ext.
   intros.
   lra.
@@ -556,7 +556,7 @@ Lemma continuous_derive_gaussian_opp_mean x :
 Proof.
   apply (continuous_ext (fun t => (t^2-1)*Standard_Gaussian_PDF t)).
   intros.
-  rewrite variance_derive; trivial.
+  now rewrite variance_derive.
   apply continuous_mult with (f := fun t => t^2-1).
   apply continuous_minus with (f := fun t => t^2).
   apply continuous_mult with (f:=id).
@@ -602,14 +602,14 @@ Proof.
     eapply (Filter_prod _ _ _ (fun _ => True) (fun _ => True))
     ; simpl; eauto.
     intros.
-    rewrite variance_derive; trivial.
+    now rewrite variance_derive.
   - replace 0 with (0 - 0) by lra.
     apply is_RInt_gen_Derive.
     + eapply (Filter_prod _ _ _ (fun _ => True) (fun _ => True))
       ; simpl; eauto.
       intros; simpl.
       unfold Standard_Gaussian_PDF.
-      auto_derive; trivial.
+      now auto_derive.
     + eapply (Filter_prod _ _ _ (fun _ => True) (fun _ => True))
       ; simpl; eauto.
       intros; simpl.
@@ -767,7 +767,7 @@ Proof.
   apply is_lim_inv.
   apply limexp_inf.
   discriminate.
-  compute; trivial.
+  now compute.
 Qed.
 
 Lemma limexp_neg_minf : is_lim (fun t => exp(-t^2/2)) m_infty 0.
@@ -776,7 +776,7 @@ Proof.
   apply (is_lim_ext (fun t => exp(-(-1*t+0)^2/2))).
   intros.
   apply f_equal.
-  field_simplify; trivial.
+  now field_simplify.
   apply is_lim_comp_lin with (a := -1) (b := 0) (f := fun t => exp(-t^2/2)).
   replace (Rbar_plus (Rbar_mult (-1) m_infty) 0) with (p_infty).
   replace (-1 * 0 + 0) with (0) by lra.
@@ -897,7 +897,7 @@ Lemma Derive_General_Gaussian_PDF (mu sigma x:R):
 Proof.
   intros.
   assert (sigma <> 0).
-  apply Rgt_not_eq; trivial.
+  now apply Rgt_not_eq.
   unfold General_Gaussian_PDF.
   rewrite Derive_scal.
   rewrite Derive_comp.
@@ -968,7 +968,7 @@ Proof.
   apply (continuous_ext (fun x => / (sigma^2)*((mu-x)*General_Gaussian_PDF mu sigma x))).
   intros.
   rewrite Derive_General_Gaussian_PDF.
-  rewrite Rmult_assoc; trivial.
+  now rewrite Rmult_assoc.
   trivial.
   apply continuous_scal_r with (k := / sigma^2) (f := fun x => (mu-x)*General_Gaussian_PDF mu sigma x).
   apply continuous_mult with (f := fun t => mu-t).
@@ -988,12 +988,12 @@ Proof.
   assert (Rbar_plus (Rbar_mult (/ sigma) m_infty) (- mu / sigma) = m_infty).
   rewrite Rbar_mult_comm.
   rewrite Rbar_mult_m_infty_pos.
-  compute; trivial.
+  now compute.
   apply Rinv_0_lt_compat; lra.  
   assert (Rbar_plus (Rbar_mult (/ sigma) p_infty) (- mu / sigma) = p_infty).
   rewrite Rbar_mult_comm.
   rewrite Rbar_mult_p_infty_pos.
-  compute; trivial.
+  now compute.
   apply Rinv_0_lt_compat; lra.  
   
   apply (is_RInt_gen_ext (fun x =>  / sigma * Standard_Gaussian_PDF (/sigma *x + (-mu/sigma)))).
@@ -1006,18 +1006,18 @@ Proof.
   apply is_RInt_gen_comp_lin with (u := /sigma) (v := -mu/sigma) 
                                   (f:=Standard_Gaussian_PDF).
   apply Rinv_neq_0_compat.
-  apply Rgt_not_eq; trivial.
+  now apply Rgt_not_eq.
   replace (Rbar_locally' (Rbar_plus (Rbar_mult (/ sigma) m_infty) (- mu / sigma))) with
           (Rbar_locally' m_infty).
   replace (at_point (/ sigma * 0 + - mu / sigma)) with (at_point (-mu/sigma)).
   trivial.
   apply f_equal; lra.
-  apply f_equal; symmetry; trivial.
+  now apply f_equal; symmetry.
   replace (at_point (/ sigma * 0 + - mu / sigma)) with (at_point (-mu/sigma)).  
   replace (Rbar_locally' (Rbar_plus (Rbar_mult (/ sigma) p_infty) (- mu / sigma))) with
           (Rbar_locally' p_infty).
   trivial.
-  apply f_equal; symmetry; trivial.
+  apply f_equal; now symmetry.
   apply f_equal; lra.
   apply ex_RInt_Standard_Gaussian_PDF.
   replace (Rbar_locally' (Rbar_plus (Rbar_mult (/ sigma) m_infty) (- mu / sigma))) with
@@ -1027,11 +1027,11 @@ Proof.
   apply Standard_Gaussian_PDF_normed.
   rewrite Rbar_mult_comm.
   rewrite Rbar_mult_p_infty_pos.
-  compute; trivial.
+  now compute.
   apply Rinv_0_lt_compat; lra.  
   rewrite Rbar_mult_comm.
   rewrite Rbar_mult_m_infty_pos.
-  compute; trivial.
+  now compute.
   apply Rinv_0_lt_compat; lra.  
 Qed.  
 
@@ -1045,7 +1045,7 @@ Lemma mean_general_gaussian (mu sigma:R) :
 Proof.
   intros.
   assert (sigma <> 0).
-  apply Rgt_not_eq; trivial.
+  now apply Rgt_not_eq.
   apply (is_RInt_gen_ext (fun t => mu*General_Gaussian_PDF mu sigma t - (mu-t)*General_Gaussian_PDF mu sigma t)). 
   apply filter_forall.
   intros.
@@ -1088,13 +1088,13 @@ Proof.
   apply (is_lim_ext (fun t => exp(-((/sigma * t)+ (-mu/sigma))^2/2))).
   intros.
   apply f_equal.
-  field_simplify; trivial.
+  now field_simplify.
   apply is_lim_comp_lin with (f := fun t => exp(-t^2/2)) (a := /sigma) (b:= -mu/sigma).
   replace (Rbar_plus (Rbar_mult (/ sigma) m_infty) (- mu / sigma)) with (m_infty).
   apply limexp_neg_minf.
   rewrite Rbar_mult_comm.
   rewrite Rbar_mult_m_infty_pos.
-  compute; trivial.
+  now compute.
   apply Rinv_0_lt_compat; lra.
   apply Rinv_neq_0_compat; trivial.
   unfold General_Gaussian_PDF.
@@ -1103,7 +1103,7 @@ Proof.
   apply (is_lim_ext (fun t => exp(-((/sigma * t)+ (-mu/sigma))^2/2))).
   intros.
   apply f_equal.
-  field_simplify; trivial.
+  now field_simplify.
   apply is_lim_comp_lin with (f := fun t => exp(-t^2/2)) (a := /sigma) (b:= -mu/sigma).
   replace (Rbar_plus (Rbar_mult (/ sigma) p_infty) (- mu / sigma)) with (p_infty).  
   apply limexp_neg_inf.
@@ -1111,7 +1111,7 @@ Proof.
   rewrite Rbar_mult_p_infty_pos.
   compute; trivial.
   apply Rinv_0_lt_compat; lra.
-  apply Rinv_neq_0_compat; trivial.
+  now apply Rinv_neq_0_compat.
   lra.
   lra.
   lra.
@@ -1128,16 +1128,16 @@ Lemma variance_general_gaussian (mu sigma : R) :
 Proof.
   intros.
   assert (sigma <> 0).
-  apply Rgt_not_eq; trivial.
+  now apply Rgt_not_eq.
   assert (Rbar_plus (Rbar_mult (/ sigma) m_infty) (- mu / sigma) = m_infty).
   rewrite Rbar_mult_comm.
   rewrite Rbar_mult_m_infty_pos.
-  compute; trivial.
+  now compute.
   apply Rinv_0_lt_compat; lra.  
   assert (Rbar_plus (Rbar_mult (/ sigma) p_infty) (- mu / sigma) = p_infty).
   rewrite Rbar_mult_comm.
   rewrite Rbar_mult_p_infty_pos.
-  compute; trivial.
+  now compute.
   apply Rinv_0_lt_compat; lra.  
   apply (is_RInt_gen_ext (fun t => /sigma * (sigma^2 * (/sigma * t + (-mu/sigma))^2 * Standard_Gaussian_PDF(/sigma*t + (-mu/sigma))))).
   apply filter_forall.
@@ -1156,12 +1156,12 @@ Proof.
   replace (at_point (/ sigma * 0 + - mu / sigma)) with (at_point (-mu/sigma)).
   trivial.
   apply f_equal; lra.
-  apply f_equal; symmetry; trivial.
+  apply f_equal; now symmetry.
   replace (at_point (/ sigma * 0 + - mu / sigma)) with (at_point (-mu/sigma)).
   replace (Rbar_locally' (Rbar_plus (Rbar_mult (/ sigma) p_infty) (- mu / sigma))) with
           (Rbar_locally' p_infty).
   trivial.
-  apply f_equal; symmetry; trivial.
+  apply f_equal; now symmetry.
   apply f_equal; lra.  
   intros.
   apply (ex_RInt_ext (fun t => sigma^2 * (t^2 * Standard_Gaussian_PDF t))).
@@ -1185,11 +1185,11 @@ Proof.
   apply f_equal.
   rewrite Rbar_mult_comm.
   rewrite Rbar_mult_p_infty_pos.
-  compute; trivial.
+  now compute.
   apply Rinv_0_lt_compat; lra.  
   rewrite Rbar_mult_comm.
   rewrite Rbar_mult_m_infty_pos.
-  compute; trivial.
+  now compute.
   apply Rinv_0_lt_compat; lra.  
   lra.
 Qed.
@@ -1312,7 +1312,7 @@ Proof.
       * apply filter_forall.
         intros.
         apply Rmult_eq_compat_l; trivial.
-      * apply Indicator_left with (f := f); trivial.
+      * now apply Indicator_left with (f := f).
     + replace (l) with (l + 0).
       apply (@is_RInt_gen_Chasles R_CompleteNormedModule) with (b:=b).
       * apply at_point_filter.
@@ -1335,7 +1335,7 @@ Proof.
         ++ lra.
         ++ lra.
         ++ trivial.
-      * apply Indicator_right; trivial.
+      * now apply Indicator_right.
       * lra.
     + lra.
 Qed.
@@ -1348,8 +1348,8 @@ Proof.
   apply filter_forall.
   intros.
   unfold Uniform_PDF.
-  ring_simplify; trivial.
-  apply Indicator_full with (f := fun t => f t * (/ (b - a))); trivial.
+  now ring_simplify.
+  now apply Indicator_full with (f := fun t => f t * (/ (b - a))).
 Qed.
 
 Lemma Uniform_PDF_non_neg (a b t :R) :
@@ -1381,8 +1381,8 @@ Proof.
   trivial.
   apply (is_RInt_ext (fun t => (/ (b-a)))).
   intros.
-  ring_simplify; trivial.
-  apply Uniform_normed0; trivial.
+  now ring_simplify.
+  now apply Uniform_normed0.
 Qed.
 
 Lemma Uniform_mean0 (a b:R) :
@@ -1398,7 +1398,7 @@ Proof.
       apply is_derive_scal with (k := /(b-a)) (f:= (fun t => t^2/2)).
       apply (is_derive_ext (fun t => t * ((/2) * t))).
       intros.
-      field_simplify; trivial.
+      now field_simplify.
       replace (x) with (1 * (/2 * x) + x * /2) at 2.
       apply (@is_derive_mult R_AbsRing) with (f := id) (g:= fun t => (/2) * t).
       apply (@is_derive_id R_AbsRing).
@@ -1423,7 +1423,7 @@ Lemma Uniform_mean (a b:R) :
 Proof.
   intros.
   apply Uniform_full with (f := fun t => t); trivial.
-  apply Uniform_mean0; trivial.
+  now apply Uniform_mean0.
 Qed.
 
 Lemma Uniform_variance0 (a b:R) :
@@ -1434,7 +1434,7 @@ Proof.
     + apply (@is_RInt_scal  R_CompleteNormedModule) with (k := /(b-a)) (f := fun t => (t - (b+a)/2)^2) (If := (b-a)^3/12).
       apply (is_RInt_ext (fun t => t^2 - (b+a)*t + (b+a)^2/4)).
       * intros.
-        field_simplify; trivial.
+        now field_simplify.
       * replace ((b-a)^3/12) with ((a-b)*(b^2+4*a*b+a^2)/6 + ((b+a)^2/4)*(b-a)).
         apply is_RInt_plus with (f:= fun t=> t^2 - (b+a)*t) (g := fun t=> (b+a)^2/4).
         -- replace ((a - b) * (b ^ 2 + 4 * a * b + a ^ 2) / 6) with ((b^3/3-a^3/3) - (b-a)*(b+a)^2/2).
@@ -1442,12 +1442,12 @@ Proof.
            apply (@is_RInt_derive R_CompleteNormedModule) with (f := fun t => t^3/3).
            ++ intros.
               apply (is_derive_ext (fun t => (/3) * t^3)).
-              intros; field_simplify; trivial.
+              intros; now field_simplify.
               replace (x^2) with (/3 * (INR(3%nat) * 1 * x^2)).
               apply is_derive_scal.
               apply is_derive_pow with (f:=id) (n := 3%nat) (l:=1).
               apply (@is_derive_id R_AbsRing).
-              simpl; field_simplify; trivial.
+              simpl; now field_simplify.
            ++ rewrite Rmax_right.
               rewrite Rmin_left.
               intros.
@@ -1466,7 +1466,7 @@ Proof.
               ** intros.
                  apply (is_derive_ext (fun t => (/2) * t^2)).
                  intros.
-                 field_simplify; trivial.
+                 now field_simplify.
                  replace (x) with (/2 * (2 * x)) at 2 by lra.
                  apply is_derive_scal.
                  replace (2 * x) with (INR(2%nat) * 1 * x^1) by
@@ -1477,14 +1477,14 @@ Proof.
                  rewrite Rmin_left; try lra.
                  intros.
                  apply continuous_id.
-              ** field_simplify ; trivial.
+              ** now field_simplify.
            ++ apply Rminus_diag_uniq.
               compute.
               field_simplify; lra.
         -- replace ((b + a) ^ 2 / 4 * (b - a)) with (scal (b-a) ((b+a)^2/4)).
            apply (@is_RInt_const R_NormedModule).
            compute.
-           field_simplify; trivial.
+           now field_simplify.
         -- apply Rminus_diag_uniq.
            field_simplify; lra.
     + compute.
@@ -1498,8 +1498,8 @@ Proof.
   apply Uniform_full with (f := (fun t => (t-(b+a)/2)^2)); trivial.
   apply (is_RInt_ext (fun t => (/ (b-a)) * (t-(b+a)/2)^2)).
   intros.
-  ring_simplify; trivial.
-  apply Uniform_variance0; trivial.
+  now ring_simplify.
+  now apply Uniform_variance0.
 Qed.
 
 Axiom Fubini:
@@ -1508,7 +1508,8 @@ Axiom Fubini:
     continuity_2d_pt f x y -> 
     RInt (fun u => RInt (fun v => f u v) a b) c d =  RInt (fun v => RInt (fun u => f u v) c d) a b.
 
-(* also need integral convergent, incomplete since missing hypotheses *)
+(* the iterated integrals below are equal in the sense either they are both infinite, or they are both finite with the same value *)
+SearchAbout iota.
 Axiom Fubini_gen :
   forall (Fa Fb Fc Fd: (R -> Prop) -> Prop)
          (f: R -> R -> R) ,
@@ -1516,6 +1517,10 @@ Axiom Fubini_gen :
              (fun ab => forall (x : R), Rmin (fst ab) (snd ab) <= x <= Rmax (fst ab) (snd ab) ->
                                 filter_prod Fc Fd
                                             (fun bc => forall (y : R), Rmin (fst bc) (snd bc) <= y <= Rmax (fst bc) (snd bc) -> continuity_2d_pt f x y)) ->    
+ filter_prod Fa Fb
+             (fun ab => forall (x : R), Rmin (fst ab) (snd ab) <= x <= Rmax (fst ab) (snd ab) ->
+                                filter_prod Fc Fd
+                                            (fun bc => forall (y : R), Rmin (fst bc) (snd bc) <= y <= Rmax (fst bc) (snd bc) -> f x y >= 0)) ->    
   RInt_gen (fun u => RInt_gen (fun v => f u v) Fa Fb) Fc Fd =  RInt_gen (fun v => RInt_gen (fun u => f u v) Fc Fd) Fa Fb.
 
 Lemma sqr_plus1_gt (x:R):
@@ -1566,7 +1571,7 @@ Proof.
   apply derivable_continuous_pt.
   apply derivable_pt_atan.
   apply is_lim_continuity in H.   
-  rewrite atan_0 in H; trivial.
+  now rewrite atan_0 in H.
 Qed.
 
 Lemma atan_tan_inv (x:R) :
@@ -1745,7 +1750,7 @@ Proof.
                  now compute.
                  now compute.
                  compute; trivial.
-                 rewrite Rmult_0_l; trivial.
+                 now rewrite Rmult_0_l.
                  replace (Finite 0) with (Rbar_mult 0 0) at 2.
                  apply is_lim_mult with (f := fun y => y * x0).
                  replace (Finite 0) with (Rbar_mult 0 x0) at 2.  
@@ -1754,7 +1759,7 @@ Proof.
                  apply is_lim_const.
                  now compute.
                  compute.
-                 rewrite Rmult_0_l; trivial.
+                 now rewrite Rmult_0_l.
                  replace (Finite 0) with (Rbar_mult (Rbar_mult 0 x0) 1) at 2.
                  apply is_lim_mult with (f := fun y => y * x0).
                  apply is_lim_mult with (f := id).
@@ -1762,20 +1767,20 @@ Proof.
                  apply is_lim_const.
                  now compute.
                  apply is_lim_const.
-                 compute; trivial.
-                 compute; rewrite Rmult_0_l; rewrite Rmult_0_l; trivial.  
-                 compute; trivial.
-                 compute; rewrite Rmult_0_l; trivial.  
+                 now compute.
+                 compute; rewrite Rmult_0_l; now rewrite Rmult_0_l.
+                 now compute.
+                 compute; now rewrite Rmult_0_l.
                  now compute.
                  compute.
                  rewrite Rplus_0_r.
-                 rewrite Ropp_0; trivial.
+                 now rewrite Ropp_0.
                  apply ex_derive_continuous with (f := exp).
                  apply ex_derive_Reals_1.
                  apply derivable_pt_exp.
                  apply exp_0.
                  compute.
-                 rewrite Rmult_1_r; trivial.
+                 now rewrite Rmult_1_r.
               ** now unfold is_lim.
            ++ replace (filterlim (fun u : R => - / (2 * x0 ^ 2 + 2) * exp (- (u ^ 2 + (u * x0) ^ 2)))
                                  (Rbar_locally' p_infty) (locally 0)) with 
@@ -1789,7 +1794,7 @@ Proof.
                  apply (is_lim_ext (fun y => y * y * (1 + Rsqr x0))).
                  intros.
                  unfold Rsqr.
-                 ring_simplify; trivial.
+                 now ring_simplify.
                  replace (p_infty) with (Rbar_mult (Rbar_mult p_infty p_infty) (1 + Rsqr x0)) at 2.
                  apply is_lim_mult.
                  apply is_lim_mult.
@@ -1819,7 +1824,7 @@ Proof.
                  unfold Rbar_mult'.
                  now rewrite Rmult_0_r.
               ** now unfold is_lim.
-      * ring_simplify; trivial.
+      * now ring_simplify.
     + apply erf_atan.
 Qed.           
 
@@ -1828,7 +1833,7 @@ Lemma erf_int0  :
 Proof.
   apply (is_RInt_gen_ext (fun u => RInt_gen (fun v => u*exp(-(u^2+(u*v+0)^2))) (at_point 0) (Rbar_locally' p_infty))).
   exists (fun x => x=0) (fun y => y>1000).
-  unfold at_point; trivial.
+  now unfold at_point.
   unfold Rbar_locally'.
   exists 1000.
   auto.
@@ -1864,6 +1869,12 @@ Proof.
   apply at_point_filter.
   apply Proper_StrongProper.
   apply Rbar_locally'_filter.
+  apply (ex_RInt_gen_ext (fun v => exp(-(x0^2))*exp(-v^2))).
+  apply filter_forall.
+  intros.
+  replace (-(x0^2 + x2^2)) with ((-x0^2) + (-x2^2)) by lra.
+  symmetry.
+  apply exp_plus.
   admit.
   f_equal.
   rewrite Rbar_plus_0_r.
@@ -1873,16 +1884,35 @@ Proof.
   f_equal; lra.
   lra.
   lra.
+  replace (PI/4) with (RInt_gen
+                         (fun u : R =>
+                            RInt_gen (fun v : R => u * exp (- (u ^ 2 + (u * v + 0) ^ 2))) 
+                                     (at_point 0) (Rbar_locally' p_infty)) (at_point 0) (Rbar_locally' p_infty)).
+  apply RInt_gen_correct.
+  admit.
+  rewrite -> Fubini_gen with (Fa := at_point 0) (Fc := at_point 0) (Fb := Rbar_locally' p_infty) (Fd := Rbar_locally' p_infty) (f := fun u => fun v => u* exp (- (u^2 + (u*v+0) ^ 2))).
   apply is_RInt_gen_unique.
-rewrite <- Fubini_gen with (Fa := at_point 0) (Fc := at_point 0) (Fb := Rbar_locally' p_infty) (Fd := Rbar_locally' p_infty) (f := fun x0 => fun v => exp (- (x0 ^ 2 + v ^ 2))).
-*)
+  apply (is_RInt_gen_ext (fun v : R =>
+     RInt_gen (fun u : R => u * exp (- (u ^ 2 + (u * v) ^ 2))) 
+       (at_point 0) (Rbar_locally' p_infty))).
+  apply filter_forall.
+  intros.
+  apply (RInt_gen_ext (fun u : R => u * exp (- (u ^ 2 + (u * x0) ^ 2)))).
+  apply filter_forall.
+  intros.
+  now replace (x2*x0+0) with (x2*x0) by lra.
+  admit.
+  replace (at_point 0) with (Rbar_locally' 0).
+  apply erf_int00.
+  admit.
+  apply filter_forall.  
+  intros.
+  apply filter_forall.  
+  intros.
+  admit.
+  apply filter_forall.
+  intros.
+  apply filter_forall.
+  intros.
+  
 Admitted.
-
-Axiom Fubini_gen :
-  forall (Fa Fb Fc Fd: (R -> Prop) -> Prop)
-         (f: R -> R -> R) ,
- filter_prod Fa Fb
-             (fun ab => forall (x : R), Rmin (fst ab) (snd ab) <= x <= Rmax (fst ab) (snd ab) ->
-                                filter_prod Fc Fd
-                                            (fun bc => forall (y : R), Rmin (fst bc) (snd bc) <= y <= Rmax (fst bc) (snd bc) -> continuity_2d_pt f x y)) ->    
-  RInt_gen (fun u => RInt_gen (fun v => f u v) Fa Fb) Fc Fd =  RInt_gen (fun v => RInt_gen (fun u => f u v) Fc Fd) Fa Fb.
