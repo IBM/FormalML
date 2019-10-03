@@ -1902,17 +1902,29 @@ Proof.
   intros.
   now replace (x2*x0+0) with (x2*x0) by lra.
   admit.
-  replace (at_point 0) with (Rbar_locally' 0).
-  apply erf_int00.
   admit.
   apply filter_forall.  
   intros.
   apply filter_forall.  
   intros.
   admit.
-  apply filter_forall.
-  intros.
-  apply filter_forall.
-  intros.
-  
+  eapply Filter_prod with (Q:=(eq 0)) (R:=fun x => x > 1000).
+  - now red.
+  - simpl;
+      exists 1000; trivial.
+  - intros.
+    simpl in *.
+    subst.
+    eapply Filter_prod with (Q:=(eq 0)) (R:=fun x => x > 1000).
+    + now red.
+    + simpl;
+        exists 1000; trivial.
+    + intros.
+      simpl in *.
+      subst.
+      rewrite Rmin_left in H1; try lra.
+      apply Rle_ge.
+      apply Rmult_le_pos; try lra.
+      left.
+      apply exp_pos.
 Admitted.
