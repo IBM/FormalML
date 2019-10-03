@@ -66,3 +66,24 @@ rewrite -> (is_RInt_gen_unique _ _ Pv) at 1; split;[assumption | ].
 now intros v' Pv'; rewrite -> (is_RInt_gen_unique _ _ Pv').
 Qed.
 
+Lemma RInt_gen_comp {Fa Fb : (R -> Prop) -> Prop} {FFa : ProperFilter' Fa}
+  {FFb : ProperFilter' Fb} (f : R -> R) (dg g : R -> R) :
+  filter_prod Fa Fb (fun p =>
+      forall y, Rmin (fst p) (snd p) <= y <= Rmax (fst p) (snd p) ->
+             continuous f (g y) /\
+             is_derive g y (dg y) /\ continuous dg y) ->
+  ex_RInt_gen f (filtermap g Fa) (filtermap g Fb) ->
+  RInt_gen f (filtermap g Fa) (filtermap g Fb) =
+  RInt_gen (fun x => scal (dg x) (f (g x))) Fa Fb.
+Proof.
+  intros.
+  destruct H0 as [l lpf].
+  generalize (is_RInt_gen_comp f dg g l H lpf); intros HH.
+  apply (@is_RInt_gen_unique) in HH
+  ; trivial.
+  apply (@is_RInt_gen_unique) in lpf
+  ; trivial.
+  congruence.
+  now apply filtermap_proper_filter'.
+  now apply filtermap_proper_filter'.
+Qed.
