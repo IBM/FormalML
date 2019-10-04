@@ -1509,7 +1509,7 @@ Axiom Fubini:
     RInt (fun u => RInt (fun v => f u v) a b) c d =  RInt (fun v => RInt (fun u => f u v) c d) a b.
 
 (* the iterated integrals below are equal in the sense either they are both infinite, or they are both finite with the same value *)
-SearchAbout iota.
+
 Axiom Fubini_gen :
   forall (Fa Fb Fc Fd: (R -> Prop) -> Prop)
          (f: R -> R -> R) ,
@@ -1564,16 +1564,6 @@ Proof.
   apply sqr_plus1_neq.
 Qed.
 
-Lemma lim_atan_0:
-  is_lim atan 0 0.
-Proof.
-  assert (continuity_pt atan 0).
-  apply derivable_continuous_pt.
-  apply derivable_pt_atan.
-  apply is_lim_continuity in H.   
-  now rewrite atan_0 in H.
-Qed.
-
 Lemma atan_tan_inv (x:R) :
   -PI/2 < x < PI/2 -> atan (tan x) = x.
 Proof.
@@ -1612,7 +1602,7 @@ Proof.
 Qed.
                                           
 Lemma erf_atan:
-  is_RInt_gen (fun s : R => / (2 * s ^ 2 + 2)) (Rbar_locally' 0) 
+  is_RInt_gen (fun s : R => / (2 * s ^ 2 + 2)) (at_point 0) 
               (Rbar_locally' p_infty) (PI / 4).
 Proof.
     + apply (is_RInt_gen_ext (Derive (fun s => /2 * atan s))).
@@ -1664,11 +1654,15 @@ Proof.
            apply continuity_pt_inv.
            apply continuity_pt_id.
            apply sqr_plus1_neq.
-        - replace (filterlim (fun s : R => / 2 * atan s) (Rbar_locally' 0) (locally 0)) with (is_lim (fun s : R => / 2 * atan s) (Finite 0) (Rbar_mult (/2) 0)).
-           apply is_lim_scal_l with (a := /2) (f := atan).
-           apply lim_atan_0.
-           unfold is_lim; simpl.
-           now replace (/2 * 0) with (0) by lra.
+        - unfold filterlim.
+          unfold filter_le.
+          intros.
+          unfold filtermap.
+          unfold at_point.
+          replace (/2 * atan 0) with (0).
+          now apply locally_singleton.
+          rewrite atan_0.
+          lra.
         - replace (filterlim (fun s : R => / 2 * atan s) (Rbar_locally' p_infty) (locally (PI / 4))) with (is_lim (fun s : R => / 2 * atan s) p_infty (Rbar_mult (/2) (PI/2))).
            apply is_lim_scal_l with (a := /2) (f := atan).
            apply lim_atan_inf.
@@ -1687,7 +1681,7 @@ Proof.
 Qed.
 
 Lemma erf_int00 : 
-  is_RInt_gen (fun s => RInt_gen (fun u => u*exp(-(u^2+(u*s)^2))) (Rbar_locally' 0)  (Rbar_locally' p_infty)) (Rbar_locally' 0) (Rbar_locally' p_infty) (PI / 4).
+  is_RInt_gen (fun s => RInt_gen (fun u => u*exp(-(u^2+(u*s)^2))) (at_point 0)  (Rbar_locally' p_infty)) (at_point 0) (Rbar_locally' p_infty) (PI / 4).
 Proof.
   - apply (is_RInt_gen_ext (fun s => / (2*s^2+2))).
     apply filter_forall.
@@ -1731,57 +1725,16 @@ Proof.
                  apply ex_derive_continuous with (f := exp).
                  apply ex_derive_Reals_1.
                  apply derivable_pt_exp.
-           ++ replace (filterlim (fun u : R => - / (2 * x0 ^ 2 + 2) * exp (- (u ^ 2 + (u * x0) ^ 2)))
-                                 (Rbar_locally' 0) (locally (- / (2 * x0 ^ 2 + 2)))) with 
-                  (is_lim (fun u : R => - / (2 * x0 ^ 2 + 2) * exp (- (u ^ 2 + (u * x0) ^ 2))) 0 (- / (2 * x0 ^ 2 + 2))).
-              ** replace  (Finite (- / (2 * x0 ^ 2 + 2))) with (Rbar_mult  (- / (2 * x0 ^ 2 + 2)) 1).
-                 apply is_lim_scal_l with (a := - / (2 * x0 ^ 2 + 2) ).
-                 replace (1) with (exp 0).
-                 apply is_lim_comp_continuous with (l := 0).
-                 replace (Finite 0) with (Rbar_opp (Rbar_plus 0 0)) at 2.
-                 apply is_lim_opp with (f := fun x1 => (x1 ^ 2 + (x1 * x0) ^ 2)).
-                 apply is_lim_plus with (lf := 0) (lg := 0); simpl.
-                 replace (Finite 0) with (Rbar_mult 0 (Rbar_mult 0 1)) at 2.
-                 apply is_lim_mult with (f := id).
-                 apply is_lim_id.
-                 apply is_lim_mult with (f := id).
-                 apply is_lim_id.
-                 apply is_lim_const.
-                 now compute.
-                 now compute.
-                 compute; trivial.
-                 now rewrite Rmult_0_l.
-                 replace (Finite 0) with (Rbar_mult 0 0) at 2.
-                 apply is_lim_mult with (f := fun y => y * x0).
-                 replace (Finite 0) with (Rbar_mult 0 x0) at 2.  
-                 apply is_lim_mult with (f := id).
-                 apply is_lim_id.
-                 apply is_lim_const.
-                 now compute.
-                 compute.
-                 now rewrite Rmult_0_l.
-                 replace (Finite 0) with (Rbar_mult (Rbar_mult 0 x0) 1) at 2.
-                 apply is_lim_mult with (f := fun y => y * x0).
-                 apply is_lim_mult with (f := id).
-                 apply is_lim_id.
-                 apply is_lim_const.
-                 now compute.
-                 apply is_lim_const.
-                 now compute.
-                 compute; rewrite Rmult_0_l; now rewrite Rmult_0_l.
-                 now compute.
-                 compute; now rewrite Rmult_0_l.
-                 now compute.
-                 compute.
-                 rewrite Rplus_0_r.
-                 now rewrite Ropp_0.
-                 apply ex_derive_continuous with (f := exp).
-                 apply ex_derive_Reals_1.
-                 apply derivable_pt_exp.
-                 apply exp_0.
-                 compute.
-                 now rewrite Rmult_1_r.
-              ** now unfold is_lim.
+           ++ unfold filterlim.
+              unfold filter_le.
+              intros.
+              unfold filtermap.
+              unfold at_point.
+              replace (- / (2 * x0 ^ 2 + 2) * exp (- (0 ^ 2 + (0 * x0) ^ 2))) with (- / (2 * x0 ^ 2 + 2)).
+              now apply locally_singleton.
+              replace (- (0 ^ 2 + (0 * x0) ^ 2)) with (0) by lra.
+              rewrite exp_0.
+              lra.
            ++ replace (filterlim (fun u : R => - / (2 * x0 ^ 2 + 2) * exp (- (u ^ 2 + (u * x0) ^ 2)))
                                  (Rbar_locally' p_infty) (locally 0)) with 
                   (is_lim (fun u : R => - / (2 * x0 ^ 2 + 2) * exp (- (u ^ 2 + (u * x0) ^ 2))) p_infty 0).
@@ -1902,12 +1855,24 @@ Proof.
   intros.
   now replace (x2*x0+0) with (x2*x0) by lra.
   admit.
-  admit.
+  apply erf_int00.
   apply filter_forall.  
   intros.
   apply filter_forall.  
   intros.
-  admit.
+  apply continuity_2d_pt_mult.
+  apply continuity_2d_pt_id1.
+  apply continuity_1d_2d_pt_comp.
+  apply derivable_continuous_pt.
+  apply derivable_pt_exp.
+  repeat first [
+           apply continuity_2d_pt_opp
+         | apply continuity_2d_pt_plus
+         | apply continuity_2d_pt_mult
+         | apply continuity_2d_pt_id1
+         | apply continuity_2d_pt_id2
+         | apply continuity_2d_pt_const
+         ].
   eapply Filter_prod with (Q:=(eq 0)) (R:=fun x => x > 1000).
   - now red.
   - simpl;
