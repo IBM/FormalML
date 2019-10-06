@@ -734,3 +734,18 @@ Proof.
   now apply filtermap_proper_filter'.
   now apply filtermap_proper_filter'.
 Qed.
+
+Lemma RInt_gen_scal {Fa Fb : (R -> Prop) -> Prop}
+  {FFa : ProperFilter' Fa} {FFb : ProperFilter' Fb} (f : R -> R) (k : R) :
+  ex_RInt_gen f Fa Fb ->
+  RInt_gen (fun y => scal k (f y)) Fa Fb  = scal k (RInt_gen f Fa Fb).
+Proof.
+  intros.
+  apply (@is_RInt_gen_unique).
+  easy.
+  easy.
+  apply (@is_RInt_gen_scal).
+  apply filter_filter'.
+  apply filter_filter'.  
+  now apply RInt_gen_correct.
+Qed.

@@ -1924,46 +1924,11 @@ Proof.
   now unfold is_lim.
 Qed.
 
-Lemma erf_int1  :
-  is_RInt_gen (fun u => RInt_gen (fun v => exp(-(u^2+v^2))) (at_point 0)  (Rbar_locally' p_infty)) (at_point 0) (Rbar_locally' p_infty) (PI / 4).
+Lemma erf_ex_RInt1 (x0:R):
+  ex_RInt_gen
+   (fun v : R => exp(-(x0^2 + v^2)))
+   (at_point 0) (Rbar_locally' p_infty).
 Proof.
-  apply (is_RInt_gen_ext (fun u => RInt_gen (fun v => u*exp(-(u^2+(u*v+0)^2))) (at_point 0) (Rbar_locally' p_infty))).
-  - exists (fun x => x=0) (fun y => y>1000).
-    now unfold at_point.
-    unfold Rbar_locally'.
-    now exists 1000.
-    intros.
-    unfold fst in H1.
-    unfold snd in H1.
-    subst.
-    rewrite Rmin_left in H1.
-    rewrite Rmax_right in H1.
-    apply is_RInt_gen_unique.
-    apply is_RInt_gen_comp_lin0 with (u:=x0) (v:=0) (f := fun v => exp(-(x0^2 + v^2))).
-    lra.
-    intros.
-    apply ex_RInt_continuous with (f:= (fun v : R => exp (- (x0 ^ 2 + v ^ 2)))).
-    intros.
-    apply continuous_comp.
-    apply continuous_opp with (f := fun x2 => x0^2 + x2^2).
-    apply continuous_plus with (f := fun _ => x0^2) (g := fun x2 => x2^2).
-    apply continuous_const.
-    simpl.
-    apply continuous_mult with (f := id).
-    apply continuous_id.
-    apply continuous_mult with (f := id).
-    apply continuous_id.
-    apply continuous_const.
-    apply (@ex_derive_continuous R_AbsRing).
-    apply ex_derive_Reals_1.
-    apply derivable_pt_exp.
-    replace (at_point (x0*0 + 0)) with (at_point 0).
-    replace (Rbar_locally' (Rbar_plus (Rbar_mult x0 p_infty) 0)) with (Rbar_locally' p_infty).
-    apply (@RInt_gen_correct).
-    apply Proper_StrongProper.
-    apply at_point_filter.
-    apply Proper_StrongProper.
-    apply Rbar_locally'_filter.
     apply (ex_RInt_gen_ext (fun v => exp(-(x0^2))*exp(-v^2))).
     apply filter_forall.
     intros.
@@ -2038,6 +2003,70 @@ Proof.
     apply (@ex_derive_continuous R_AbsRing).
     apply ex_derive_Reals_1.
     apply derivable_pt_exp.
+Qed.
+
+Lemma erf_ex_RInt2:
+  ex_RInt_gen
+   (fun v : R => exp(-v^2))
+   (at_point 0) (Rbar_locally' p_infty).
+Proof.
+  apply (ex_RInt_gen_ext (fun v => exp(-(0^2 + v^2)))).  
+  apply filter_forall.
+  intros.
+  f_equal.
+  lra.
+  apply erf_ex_RInt1.
+Qed.  
+
+Lemma erf_ex_RInt3 :
+  ex_RInt_gen
+    (fun u : R =>
+     RInt_gen (fun v : R => u * exp (- (u ^ 2 + (u * v + 0) ^ 2))) 
+       (at_point 0) (Rbar_locally' p_infty)) (at_point 0) (Rbar_locally' p_infty).
+Proof.
+  Admitted.
+
+Lemma erf_int1  :
+  is_RInt_gen (fun u => RInt_gen (fun v => exp(-(u^2+v^2))) (at_point 0)  (Rbar_locally' p_infty)) (at_point 0) (Rbar_locally' p_infty) (PI / 4).
+Proof.
+  apply (is_RInt_gen_ext (fun u => RInt_gen (fun v => u*exp(-(u^2+(u*v+0)^2))) (at_point 0) (Rbar_locally' p_infty))).
+  - exists (fun x => x=0) (fun y => y>1000).
+    now unfold at_point.
+    unfold Rbar_locally'.
+    now exists 1000.
+    intros.
+    unfold fst in H1.
+    unfold snd in H1.
+    subst.
+    rewrite Rmin_left in H1.
+    rewrite Rmax_right in H1.
+    apply is_RInt_gen_unique.
+    apply is_RInt_gen_comp_lin0 with (u:=x0) (v:=0) (f := fun v => exp(-(x0^2 + v^2))).
+    lra.
+    intros.
+    apply ex_RInt_continuous with (f:= (fun v : R => exp (- (x0 ^ 2 + v ^ 2)))).
+    intros.
+    apply continuous_comp.
+    apply continuous_opp with (f := fun x2 => x0^2 + x2^2).
+    apply continuous_plus with (f := fun _ => x0^2) (g := fun x2 => x2^2).
+    apply continuous_const.
+    simpl.
+    apply continuous_mult with (f := id).
+    apply continuous_id.
+    apply continuous_mult with (f := id).
+    apply continuous_id.
+    apply continuous_const.
+    apply (@ex_derive_continuous R_AbsRing).
+    apply ex_derive_Reals_1.
+    apply derivable_pt_exp.
+    replace (at_point (x0*0 + 0)) with (at_point 0).
+    replace (Rbar_locally' (Rbar_plus (Rbar_mult x0 p_infty) 0)) with (Rbar_locally' p_infty).
+    apply (@RInt_gen_correct).
+    apply Proper_StrongProper.
+    apply at_point_filter.
+    apply Proper_StrongProper.
+    apply Rbar_locally'_filter.
+    apply erf_ex_RInt1.
     f_equal.
     rewrite Rbar_plus_0_r.
     rewrite Rbar_mult_comm.
@@ -2051,7 +2080,7 @@ Proof.
                               RInt_gen (fun v : R => u * exp (- (u ^ 2 + (u * v + 0) ^ 2))) 
                                        (at_point 0) (Rbar_locally' p_infty)) (at_point 0) (Rbar_locally' p_infty)).
     apply RInt_gen_correct.
-    admit.
+    apply erf_ex_RInt3.
     rewrite -> Fubini_gen with (Fa := at_point 0) (Fc := at_point 0) (Fb := Rbar_locally' p_infty) (Fd := Rbar_locally' p_infty) (f := fun u => fun v => u* exp (- (u^2 + (u*v+0) ^ 2))).
     apply is_RInt_gen_unique.
     apply (is_RInt_gen_ext (fun v : R =>
@@ -2103,11 +2132,35 @@ Proof.
            apply Rmult_le_pos; try lra.
            left.
            apply exp_pos.
-Admitted.
+Qed.
 
 
-Lemma erf_int  :
-  is_RInt_gen (fun u => exp(-(u^2))) (at_point 0)  (Rbar_locally' p_infty) (sqrt PI/2).
+Lemma erf_int_sq :
+  Rsqr (RInt_gen (fun u => exp(-(u^2))) (at_point 0) (Rbar_locally' p_infty)) = PI/4.
 Proof.
-  assert ( (RInt_gen (fun u => exp(-(u^2))) (at_point 0)  (Rbar_locally' p_infty))*(RInt_gen (fun v => exp(-(v^2))) (at_point 0)  (Rbar_locally' p_infty))= PI/4).
-  Admitted.
+  unfold Rsqr.
+  rewrite <- RInt_gen_scal.
+  rewrite <- (RInt_gen_ext (fun u => RInt_gen (fun v => exp(-(u^2+v^2))) (at_point 0)  (Rbar_locally' p_infty)) ).
+  apply is_RInt_gen_unique.
+  apply erf_int1.
+  apply filter_forall.
+  intros.
+  rewrite scale_mult.
+  rewrite Rmult_comm.
+  rewrite <- RInt_gen_scal.
+  symmetry.
+  rewrite <- (RInt_gen_ext (fun y => exp (-(x0^2 + y^2)))).
+  trivial.
+  apply filter_forall.
+  intros.
+  rewrite scale_mult.
+  replace (-(x0^2 + x2^2)) with ((-x0^2)+(-x2^2)).
+  apply exp_plus.
+  lra.
+  apply erf_ex_RInt1.
+  apply erf_ex_RInt2.  
+  unfold ex_RInt_gen.
+  exists (PI/4).
+  apply erf_int1.
+  apply erf_ex_RInt2.  
+Qed.
