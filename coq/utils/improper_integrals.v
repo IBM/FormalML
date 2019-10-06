@@ -749,3 +749,17 @@ Proof.
   apply filter_filter'.  
   now apply RInt_gen_correct.
 Qed.
+
+Context {V : NormedModule R_AbsRing}.
+
+Lemma ex_RInt_gen_Chasles {Fa Fc : (R -> Prop) -> Prop}
+  {FFa : Filter Fa} {FFc : Filter Fc}
+  (f : R -> V) (b : R) :
+  ex_RInt_gen f Fa (at_point b) -> ex_RInt_gen f (at_point b) Fc
+  -> ex_RInt_gen f Fa Fc .
+Proof.
+  intros [l1 H1] [l2 H2].
+  exists (plus l1 l2).  
+  by apply is_RInt_gen_Chasles with b.
+Qed.
+
