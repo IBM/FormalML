@@ -2166,7 +2166,7 @@ Proof.
 Qed.
 
 Lemma erf_int2: 
-  RInt_gen (fun u => exp(-(u^2))) (at_point 0) (Rbar_locally' p_infty) = sqrt PI/2.
+  RInt_gen (fun u => exp(-(u^2))) (at_point 0) (Rbar_locally' p_infty) = (sqrt PI/2).
 Proof.
   replace (sqrt PI/2) with (Rabs (sqrt PI/2)).
   replace ( RInt_gen (fun u => exp(-(u^2))) (at_point 0) (Rbar_locally' p_infty)) with
@@ -2195,6 +2195,94 @@ Proof.
   lra.
   left.
   replace (0 * 2) with (0) by lra.
+  apply sqrt_lt_R0.
+  apply PI_RGT_0.
+Qed.
+
+Lemma erf_int21: 
+  is_RInt_gen (fun u => exp(-(u^2))) (at_point 0) (Rbar_locally' p_infty) (sqrt PI/2).
+Proof.
+  replace (sqrt PI/2) with (RInt_gen (fun u => exp(-(u^2))) (at_point 0) (Rbar_locally' p_infty)).
+  apply (@RInt_gen_correct).
+  apply Proper_StrongProper.
+  apply at_point_filter.
+  apply Proper_StrongProper.
+  apply Rbar_locally'_filter.
+  apply erf_ex_RInt2.
+  apply erf_int2.
+Qed.
+
+
+Lemma erf_int31: 
+  is_RInt_gen (fun u => exp(-(u^2))) (at_point 0) (Rbar_locally' m_infty) ( -sqrt PI/2).
+Proof.
+  apply (is_RInt_gen_ext (fun y => (-1) * ((-1) * (exp (-((-1*y+0)^2)))))).
+  apply filter_forall.
+  intros.
+  replace ((-1*x0+0)^2) with (x0^2).
+  now ring_simplify.
+  now ring_simplify.
+  replace (-sqrt PI/2) with (scal  (-1) (sqrt PI/2)).
+  apply (@is_RInt_gen_scal).
+  apply at_point_filter.
+  apply Rbar_locally'_filter.
+  apply is_RInt_gen_comp_lin0 with (f := fun y => exp(-y^2)).
+  lra.
+  intros.
+  apply (@ex_RInt_continuous).
+  intros.
+  apply continuous_comp.
+  apply (@continuous_opp).
+  apply (@continuous_mult).
+  apply continuous_id.
+  apply (@continuous_mult).
+  apply continuous_id.
+  apply continuous_const.
+  apply (@ex_derive_continuous).
+  apply ex_derive_Reals_1.
+  apply derivable_pt_exp.
+  replace (-1*0+0) with (0) by lra.
+  replace  (Rbar_plus (Rbar_mult (-1) m_infty) 0) with (p_infty).
+  apply erf_int21.
+  rewrite Rbar_plus_0_r.
+  symmetry.
+  rewrite Rbar_mult_comm.
+  apply Rbar_mult_m_infty_neg.
+  lra.
+  replace (- sqrt PI/2) with ((-1)*(sqrt PI/2)).
+  apply scale_mult.
+  lra.
+Qed.
+
+Lemma erf_p_infty : 
+  is_RInt_gen erf' (at_point 0) (Rbar_locally' p_infty) 1.
+Proof.
+  unfold erf'.
+  replace (1) with ((2 / sqrt PI)*(sqrt PI/2)).
+  apply (@is_RInt_gen_scal).
+  apply at_point_filter.
+  apply Rbar_locally'_filter.
+  apply erf_int21.
+  field_simplify.
+  lra.
+  apply Rgt_not_eq.
+  apply sqrt_lt_R0.
+  apply PI_RGT_0.
+Qed.
+
+Lemma erf_m_infty : 
+  is_RInt_gen erf' (at_point 0) (Rbar_locally' m_infty) (-1).
+Proof.
+  unfold erf'.
+  replace (-1) with ((2 / sqrt PI)*(-sqrt PI/2)).
+  apply (@is_RInt_gen_scal).
+  apply at_point_filter.
+  apply Rbar_locally'_filter.
+  apply erf_int31.
+  apply Rminus_diag_uniq.
+  field_simplify.
+  lra.
+  apply Rgt_not_eq.
   apply sqrt_lt_R0.
   apply PI_RGT_0.
 Qed.
