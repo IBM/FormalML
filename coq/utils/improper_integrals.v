@@ -713,6 +713,68 @@ rewrite -> (is_RInt_gen_unique _ _ Pv) at 1; split;[assumption | ].
 now intros v' Pv'; rewrite -> (is_RInt_gen_unique _ _ Pv').
 Qed.
 
+(* extensions to improper integral package *)
+
+
+Lemma is_RInt_gen_Rle0 (g : R -> R) gl F G
+  {PF : ProperFilter F} {PG : ProperFilter G} :
+  filter_Rlt F G ->
+  is_RInt_gen g F G gl ->
+  filter_prod F G
+    (fun p => (forall x, fst p < x < snd p -> 0 <= g x)) ->
+    0 <= gl.
+Proof.
+  intros.
+  apply is_RInt_gen_Rle with (g := g) (f := fun _ => 0) (F := F) (G := G).
+  trivial.
+  trivial.
+  trivial.
+  trivial.
+  apply (is_RInt_gen_ext (Derive (fun _ => 0))).
+  apply filter_forall.
+  intros.
+  apply Derive_const.
+  replace (0) with (0 - 0) at 1.
+  apply is_RInt_gen_Derive.
+  apply filter_forall.
+  intros.
+  apply ex_derive_const.
+  apply filter_forall.
+  intros.
+  apply (continuous_ext (fun _ => 0)).
+  intros.
+  symmetry.
+  apply Derive_const.
+  apply continuous_const.
+  apply filterlim_const.
+  apply filterlim_const.
+  lra.
+  trivial.
+Qed.
+
+Lemma RInt_gen_Rle0 (g : R -> R) F G
+  {PF : ProperFilter F} {PG : ProperFilter G} :
+  filter_Rlt F G ->
+  ex_RInt_gen g F G ->
+  filter_prod F G
+    (fun p => (forall x, fst p < x < snd p -> 0 <= g x)) ->
+    0 <= RInt_gen g F G.
+Proof.
+  intros.
+  unfold ex_RInt_gen in H0.
+  destruct H0.
+  replace (RInt_gen g F G) with (x).
+  apply is_RInt_gen_Rle0 with (g := g) (F := F) (G := G).
+  trivial.
+  trivial.
+  trivial.
+  trivial.
+  trivial.
+  symmetry.
+  apply is_RInt_gen_unique.
+  trivial.
+Qed.  
+
 Lemma RInt_gen_comp {Fa Fb : (R -> Prop) -> Prop} {FFa : ProperFilter' Fa}
   {FFb : ProperFilter' Fb} (f : R -> R) (dg g : R -> R) :
   filter_prod Fa Fb (fun p =>
@@ -750,6 +812,8 @@ Proof.
   now apply RInt_gen_correct.
 Qed.
 
+Section integrals_over_V.
+  
 Context {V : NormedModule R_AbsRing}.
 
 Lemma ex_RInt_gen_Chasles {Fa Fc : (R -> Prop) -> Prop}
@@ -763,3 +827,4 @@ Proof.
   by apply is_RInt_gen_Chasles with b.
 Qed.
 
+End integrals_over_V.
