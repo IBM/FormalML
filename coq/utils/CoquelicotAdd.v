@@ -132,7 +132,7 @@ Proof.
       simpl in *.
       exists (RInt f a y).  
       split; trivial.
-      now apply (@RInt_correct R_CompleteNormedModule).
+      now apply (@RInt_correct).
   - destruct H as [M PltM].
     eexists (fun x => x=a) (fun y => _); try easy.
     + simpl.
@@ -143,7 +143,7 @@ Proof.
       simpl in *.
       exists (RInt f a y).  
       split; trivial.
-      apply (@RInt_correct R_CompleteNormedModule); trivial.
+      now apply (@RInt_correct).
   - destruct H as [M PltM].
     eexists (fun x => x=a) (fun y => _); try easy.
     + simpl.
@@ -154,7 +154,7 @@ Proof.
       simpl in *.
       exists (RInt f a y).  
       split; trivial.
-      apply (@RInt_correct R_CompleteNormedModule); trivial.
+      now apply (@RInt_correct).
 Qed.
   
 Lemma rint_gen_lim_Rbar {f : R->R} {a:R} {b:Rbar} {l:R} :
@@ -194,12 +194,12 @@ Proof.
   intros.
   apply lim_rint_gen_Rbar.
   intros.
-  apply (@ex_RInt_comp_lin R_CompleteNormedModule); trivial.
+  now apply (@ex_RInt_comp_lin).
   apply (is_lim_ext (fun x : R => RInt f (u*a+v) (u*x+v))).
   intros.
-  rewrite RInt_comp_lin; trivial.
+  now rewrite RInt_comp_lin.
   apply is_lim_comp_lin.
-  apply rint_gen_lim_Rbar; trivial.
+  now apply rint_gen_lim_Rbar.
   trivial.
 Qed.  
 
@@ -211,10 +211,10 @@ Lemma RInt_gen_Chasles {Fa Fc : (R -> Prop) -> Prop}
 Proof.
   intros.
   apply sym_eq.
-  apply (@is_RInt_gen_unique R_CompleteNormedModule).
+  apply (@is_RInt_gen_unique).
   trivial.
   trivial.
-  apply (@is_RInt_gen_Chasles R_CompleteNormedModule) with (b:=b).
+  apply (@is_RInt_gen_Chasles) with (b:=b).
   apply filter_filter'.
   apply filter_filter'.
   now apply RInt_gen_correct.
@@ -250,16 +250,17 @@ Proof.
   apply Rbar_locally'_filter.
   apply RInt_gen_correct.
   trivial.
-  rewrite opp_opp; trivial.
+  now rewrite opp_opp.
   apply is_RInt_gen_comp_lin0; trivial.
-  apply (@RInt_gen_correct R_CompleteNormedModule).
+  apply (@RInt_gen_correct).
   apply Proper_StrongProper.
   apply at_point_filter.
   apply Proper_StrongProper.
   apply Rbar_locally'_filter.
   trivial.
   rewrite RInt_gen_Chasles.
-  apply is_RInt_gen_unique; trivial.
+  now apply is_RInt_gen_unique.
   trivial.
   trivial.
 Qed.  
+
