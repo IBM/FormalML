@@ -2056,7 +2056,7 @@ Proof.
     apply continuous_mult with (f := id).
     apply continuous_id.
     apply continuous_const.
-    apply (@ex_derive_continuous R_AbsRing).
+    apply (@ex_derive_continuous).
     apply ex_derive_Reals_1.
     apply derivable_pt_exp.
     replace (at_point (x0*0 + 0)) with (at_point 0).
@@ -2164,3 +2164,98 @@ Proof.
   apply erf_int1.
   apply erf_ex_RInt2.  
 Qed.
+
+Lemma is_RInt_gen_Rle0 (g : R -> R) gl F G
+  {PF : ProperFilter F} {PG : ProperFilter G} :
+  filter_Rlt F G ->
+  is_RInt_gen g F G gl ->
+  filter_prod F G
+    (fun p => (forall x, fst p < x < snd p -> 0 <= g x)) ->
+    0 <= gl.
+Proof.
+  intros.
+  apply is_RInt_gen_Rle with (g := g) (f := fun _ => 0) (F := F) (G := G).
+  trivial.
+  trivial.
+  trivial.
+  trivial.
+  apply (is_RInt_gen_ext (Derive (fun _ => 0))).
+  apply filter_forall.
+  intros.
+  apply Derive_const.
+  replace (0) with (0 - 0) at 1.
+  apply is_RInt_gen_Derive.
+  apply filter_forall.
+  intros.
+  apply ex_derive_const.
+  apply filter_forall.
+  intros.
+  apply (continuous_ext (fun _ => 0)).
+  intros.
+  symmetry.
+  apply Derive_const.
+  apply continuous_const.
+  apply filterlim_const.
+  apply filterlim_const.
+  lra.
+  trivial.
+Qed.
+
+Lemma RInt_gen_Rle0 (g : R -> R) F G
+  {PF : ProperFilter F} {PG : ProperFilter G} :
+  filter_Rlt F G ->
+  ex_RInt_gen g F G ->
+  filter_prod F G
+    (fun p => (forall x, fst p < x < snd p -> 0 <= g x)) ->
+    0 <= RInt_gen g F G.
+Proof.
+  intros.
+  unfold ex_RInt_gen in H0.
+  destruct H0.
+  replace (RInt_gen g F G) with (x).
+  apply is_RInt_gen_Rle0 with (g := g) (F := F) (G := G).
+  trivial.
+  trivial.
+  trivial.
+  trivial.
+  trivial.
+  symmetry.
+  apply is_RInt_gen_unique.
+  trivial.
+Qed.  
+
+Lemma erf_int2: 
+  RInt_gen (fun u => exp(-(u^2))) (at_point 0) (Rbar_locally' p_infty) = sqrt PI/2.
+Proof.
+  replace (sqrt PI/2) with (Rabs (sqrt PI/2)).
+  replace ( RInt_gen (fun u => exp(-(u^2))) (at_point 0) (Rbar_locally' p_infty)) with
+      (Rabs ( RInt_gen (fun u => exp(-(u^2))) (at_point 0) (Rbar_locally' p_infty))).
+  apply Rsqr_eq_abs_0.
+  replace (Rsqr (sqrt PI/2)) with (PI/4).
+  apply erf_int_sq.
+  rewrite Rsqr_div.
+  rewrite Rsqr_sqrt.
+  unfold Rsqr; lra.
+  left.
+  apply PI_RGT_0.
+  lra.
+  rewrite Rabs_pos_eq; trivial.
+  apply RInt_gen_Rle0.
+  apply at_point_filter.
+  apply Rbar_locally'_filter.
+  apply filter_Rlt_at_point_p_infty.
+  apply erf_ex_RInt2.
+  apply filter_forall.
+  intros.
+  left.
+  apply exp_pos.
+  rewrite Rabs_pos_eq; trivial.
+  apply Rcomplements.Rle_div_r.
+  lra.
+  left.
+  replace (0 * 2) with (0) by lra.
+  apply sqrt_lt_R0.
+  apply PI_RGT_0.
+Qed.
+
+
