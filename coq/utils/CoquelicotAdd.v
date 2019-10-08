@@ -23,7 +23,14 @@ Qed.
 Lemma sqrt_2PI_nzero : sqrt(2*PI) <> 0.
 Proof.
   assert (PI > 0) by apply PI_RGT_0.
+  apply Rgt_not_eq.
+  apply sqrt_lt_R0.
+  lra.
+Qed.
 
+Lemma sqrt_PI_neq0 : sqrt(PI) <> 0.
+Proof.
+  assert (PI > 0) by apply PI_RGT_0.
   apply Rgt_not_eq.
   apply sqrt_lt_R0.
   lra.
@@ -201,6 +208,26 @@ Proof.
   apply is_lim_comp_lin.
   now apply rint_gen_lim_Rbar.
   trivial.
+Qed.  
+
+Lemma is_RInt_gen_comp_lin_point_0
+  (f : R -> R) (u : R) (a:R) (b : Rbar) (l : R) :
+  u<>0 -> (forall x y, ex_RInt f x y) ->
+  is_RInt_gen f (at_point (u * a)) (Rbar_locally' (Rbar_mult u b)) l
+    -> is_RInt_gen (fun y => scal u (f (u * y))) (at_point a) (Rbar_locally' b) l.
+Proof.
+  intros.
+  apply (is_RInt_gen_ext (fun y => scal u (f (u*y + 0)))).
+  apply filter_forall.
+  intros.
+  now replace (u * x0 + 0) with (u * x0) by lra.
+  apply is_RInt_gen_comp_lin0.
+  trivial.
+  trivial.
+  replace (u*a+0) with (u*a) by lra.
+  replace (Rbar_plus (Rbar_mult u b) 0) with (Rbar_mult u b).
+  trivial.
+  now rewrite Rbar_plus_0_r.
 Qed.  
 
 Lemma RInt_gen_Chasles {Fa Fc : (R -> Prop) -> Prop}
