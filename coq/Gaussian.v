@@ -159,12 +159,10 @@ Lemma derive_xover_sqrt2 (x:R):
 Proof.
   generalize sqrt2_neq0; intros.
   unfold Rdiv.
-  rewrite Derive_mult.
+  rewrite Derive_mult; solve_derive.
   rewrite Derive_id.
   rewrite Derive_const.
   now field_simplify.
-  apply ex_derive_id.
-  apply ex_derive_const.
 Qed.
   
 Lemma continuous_erf' :
@@ -214,7 +212,7 @@ Proof.
   apply (@ex_RInt_continuous).
   intros.
   apply continuous_erf'.
-  rewrite Derive_comp.
+  rewrite Derive_comp; solve_derive.
   rewrite Derive_RInt.
   rewrite derive_xover_sqrt2.
   rewrite std_pdf_from_erf'.
@@ -230,10 +228,6 @@ Proof.
   intros.
   now apply RInt_correct with (f:=erf') (a:=0) (b:=x0).
   apply continuous_erf'.
-  unfold Rdiv.
-  apply ex_derive_mult.
-  apply ex_derive_id.
-  apply ex_derive_const.
 Qed.
 
 Lemma scale_mult (a x : R) : (scal a x) = (a * x).
@@ -405,20 +399,6 @@ Proof.
   apply RInt_ext.
   intros.
   lra.
-Qed.
-
-Lemma derivable_pt_std_nmean (x:R) : 
-  derivable_pt (fun t => -t*Standard_Gaussian_PDF t) x.
-Proof.
-  repeat first [
-           apply derivable_pt_mult
-         | apply derivable_pt_opp
-         | apply derivable_pt_id
-         | apply derivable_pt_const
-         | apply derivable_pt_div
-         | apply derivable_pt_comp with (f1 := (fun t => -t^2/2))
-         | apply derivable_pt_exp
-         ].
 Qed.
 
 Lemma variance_derive (x:R) : 
@@ -758,22 +738,19 @@ Proof.
   rewrite Derive_opp.
   unfold Standard_Gaussian_PDF.
   rewrite Derive_scal.
-  rewrite Derive_comp.
+  rewrite Derive_comp; solve_derive.
   rewrite <- Derive_Reals with (pr := derivable_pt_exp (-x^2/2)).
   rewrite derive_pt_exp.
   unfold Rdiv at 1.
   rewrite Derive_scal_l.
   rewrite Derive_opp.
-  rewrite Derive_pow.
+  rewrite Derive_pow; solve_derive.
   simpl.
   rewrite Derive_id.
   apply Rminus_diag_uniq.
   field_simplify.
   lra.
   apply sqrt_2PI_nzero.
-  apply ex_derive_id.
-  solve_derive.
-  solve_derive.  
 Qed.
   
 Lemma ex_derive_opp_Standard_Gaussian_PDF (x:R):
@@ -859,14 +836,14 @@ Proof.
   now apply Rgt_not_eq.
   unfold General_Gaussian_PDF.
   rewrite Derive_scal.
-  rewrite Derive_comp.
+  rewrite Derive_comp; solve_derive.
   rewrite <- Derive_Reals with (pr := derivable_pt_exp (-(x-mu)^2/(2*sigma^2))).
   rewrite derive_pt_exp.
   unfold Rdiv at 1.
   rewrite Derive_scal_l.
   rewrite Derive_opp.
-  rewrite Derive_pow.
-  rewrite Derive_minus.
+  rewrite Derive_pow; solve_derive.
+  rewrite Derive_minus; solve_derive.
   rewrite Derive_id.
   rewrite Derive_const.
   apply Rminus_diag_uniq.
@@ -876,11 +853,6 @@ Proof.
   split.
   apply sqrt_2PI_nzero.
   trivial.
-  apply ex_derive_id.
-  apply ex_derive_const.
-  solve_derive.
-  solve_derive.
-  solve_derive.  
 Qed.  
 
 Lemma ex_derive_General_Gaussian_PDF (mu sigma:R) (x:R):
@@ -1327,11 +1299,11 @@ Proof.
       intros.
       now field_simplify.
       replace (x) with (1 * (/2 * x) + x * /2) at 2.
-      apply (@is_derive_mult R_AbsRing) with (f := id) (g:= fun t => (/2) * t).
-      apply (@is_derive_id R_AbsRing).
+      apply (@is_derive_mult) with (f := id) (g:= fun t => (/2) * t).
+      apply (@is_derive_id).
       replace (/2) with (/2 * 1) at 1.
-      apply is_derive_scal.
-      apply (@is_derive_id R_AbsRing).
+      apply (@is_derive_scal).
+      apply (@is_derive_id).
       lra.
       intros.
       apply Rmult_comm.
