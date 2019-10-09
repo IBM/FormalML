@@ -70,13 +70,6 @@ Set Bullet Behavior "Strict Subproofs".
     is_RInt_gen (fun t => (t-mu)^2*General_Gaussian_PDF mu sigma t) 
               (Rbar_locally' m_infty) (Rbar_locally' p_infty) (sigma^2).
 
-  Definition Indicator (a b t:R) :=
-    (if Rlt_dec t a then 0 else 
-     (if Rgt_dec t b then 0 else 1)).
-
-  Definition Uniform_PDF (a b t:R) := 
-    (/ (b-a)) * Indicator a b t.
-
   Lemma Uniform_normed (a b:R) :
     a < b -> is_RInt_gen (Uniform_PDF a b) (Rbar_locally' m_infty) (Rbar_locally' p_infty) 1.
 
@@ -92,6 +85,13 @@ Ltac solve_derive := try solve [auto_derive; trivial | lra].
 
 Local Open Scope R_scope.
 Implicit Type f : R -> R.
+
+Definition inf_sign (r:Rbar) :=
+  match r with
+  | p_infty => 1
+  | m_infty => -1
+  | _ => 0
+  end.                
 
 Definition erf' (x:R) := (2 / sqrt PI) * exp(-x^2).
 Definition erf (x:R) := RInt erf' 0 x.
@@ -211,7 +211,7 @@ Proof.
   unfold erf.
   assert (forall y:R, ex_RInt erf' 0 y).
   intros.
-  apply (@ex_RInt_continuous R_CompleteNormedModule).
+  apply (@ex_RInt_continuous).
   intros.
   apply continuous_erf'.
   rewrite Derive_comp.
@@ -349,35 +349,15 @@ CoFixpoint mkGaussianStream (uniformStream : Stream R) : Stream R :=
   let '(g1,g2) := Box_Muller u1 u2 in
   Cons g1 (Cons g2 (mkGaussianStream ust3)).
 
-Lemma continuous_Standard_Gaussian_mean_PDF : 
-  forall (x:R), continuous (fun t => t * (Standard_Gaussian_PDF t)) x.
-Proof.  
-  intros.
-  apply (@continuous_scal).
-  apply continuous_id.
-  apply continuous_Standard_Gaussian_PDF.
-Qed.
-
-Lemma continuous_Standard_Gaussian_variance_PDF : 
-  forall (x:R), continuous (fun t => t^2 * (Standard_Gaussian_PDF t)) x.
-Proof.  
-  intros.
-  apply (@continuous_scal).
-  apply (@continuous_scal).
-  apply continuous_id.
-  apply (@continuous_scal).
-  apply continuous_id.
-  apply continuous_const.
-  apply continuous_Standard_Gaussian_PDF.
-Qed.
-
 Lemma ex_RInt_Standard_Gaussian_mean_PDF (a b:R) :
     ex_RInt (fun t => t * (Standard_Gaussian_PDF t)) a b.
 Proof.
   intros.
   apply ex_RInt_continuous with (f := fun t => t * (Standard_Gaussian_PDF t)).
   intros.
-  apply continuous_Standard_Gaussian_mean_PDF.
+  apply (@continuous_scal).
+  apply continuous_id.
+  apply continuous_Standard_Gaussian_PDF.
 Qed.
 
 Lemma ex_RInt_Standard_Gaussian_variance_PDF (a b:R) :
@@ -386,7 +366,13 @@ Proof.
   intros.
   apply ex_RInt_continuous with (f := fun t => t^2 * (Standard_Gaussian_PDF t)).
   intros.
-  apply continuous_Standard_Gaussian_variance_PDF.
+  apply (@continuous_scal).
+  apply (@continuous_scal).
+  apply continuous_id.
+  apply (@continuous_scal).
+  apply continuous_id.
+  apply continuous_const.
+  apply continuous_Standard_Gaussian_PDF.
 Qed.
 
 Lemma variance_exint0 (a b:Rbar) :
@@ -646,18 +632,18 @@ Lemma std_CDF_from_erf0 :
   forall x:R, is_RInt_gen Standard_Gaussian_PDF (Rbar_locally' m_infty) (at_point x)  ((/ 2) + (/2)*erf (x/sqrt 2)).
 Proof.
   intros.
-  apply (@is_RInt_gen_Chasles R_CompleteNormedModule) with (b := 0) (l1 := /2) (l2 := /2 * erf (x / sqrt 2)).
+  apply (@is_RInt_gen_Chasles) with (b := 0) (l1 := /2) (l2 := /2 * erf (x / sqrt 2)).  
   apply Rbar_locally'_filter.
   apply at_point_filter.
   replace (/2) with (opp (- /2)).
-  apply (@is_RInt_gen_swap R_CompleteNormedModule).
+  apply (@is_RInt_gen_swap).
   apply Rbar_locally'_filter.
   apply at_point_filter.
   apply Standard_Gaussian_PDF_int1_minf.
   compute; field_simplify; auto.
   rewrite is_RInt_gen_at_point.
   replace (/ 2 * erf (x / sqrt 2)) with (RInt Standard_Gaussian_PDF 0 x).
-  apply RInt_correct.
+  apply (@RInt_correct).
   apply ex_RInt_Standard_Gaussian_PDF.
   apply std_from_erf0.
 Qed.
@@ -675,11 +661,11 @@ Lemma Standard_Gaussian_PDF_normed :
   is_RInt_gen Standard_Gaussian_PDF (Rbar_locally m_infty) (Rbar_locally p_infty) 1.
 Proof.  
   replace (1) with (plus (/ 2) (/ 2)).
-  apply (@is_RInt_gen_Chasles R_CompleteNormedModule) with (b := 0) (l1 := /2) (l2 := /2).  
+  apply (@is_RInt_gen_Chasles) with (b := 0) (l1 := /2) (l2 := /2).
   apply Rbar_locally_filter.
   apply Rbar_locally_filter.  
   replace (/ 2) with (opp (opp (/2))).
-  apply (@is_RInt_gen_swap R_CompleteNormedModule) with (l := (opp (/2))).
+  apply (@is_RInt_gen_swap) with (l := (opp (/2))).
   apply Rbar_locally_filter.  
   apply at_point_filter.
   apply Standard_Gaussian_PDF_int1_minf.
@@ -905,15 +891,6 @@ Proof.
   now auto_derive.
 Qed.
 
-Lemma continuous_General_Gaussian_PDF (mu sigma : R) :
-  forall (x:R), continuous (General_Gaussian_PDF mu sigma) x.
-Proof.
-  intros.
-  unfold General_Gaussian_PDF.
-  apply (@ex_derive_continuous).
-  now auto_derive.
-Qed.
-
 Lemma continuous_Derive_General_Gaussian_PDF (mu sigma x:R):
   sigma > 0 -> continuous (Derive (General_Gaussian_PDF mu sigma)) x.
 Proof.
@@ -923,12 +900,9 @@ Proof.
   rewrite Derive_General_Gaussian_PDF.
   now rewrite Rmult_assoc.
   trivial.
-  apply (@continuous_scal_r).
-  apply (@continuous_mult).
-  apply (@continuous_minus).
-  apply continuous_const.
-  apply continuous_id.
-  apply continuous_General_Gaussian_PDF.
+  unfold General_Gaussian_PDF.
+  apply (@ex_derive_continuous).
+  now auto_derive.
 Qed.
 
 Lemma General_Gaussian_PDF_normed (mu sigma:R) : 
@@ -1120,14 +1094,14 @@ Proof.
   apply (ex_RInt_ext (fun t => sigma^2 * (t^2 * Standard_Gaussian_PDF t))).
   intros.
   lra.
-  apply (@ex_RInt_scal R_CompleteNormedModule) with (k := sigma^2) (f := fun t => t^2 * Standard_Gaussian_PDF t).
+  apply (@ex_RInt_scal) with (k := sigma^2) (f := fun t => t^2 * Standard_Gaussian_PDF t).
   apply ex_RInt_Standard_Gaussian_variance_PDF.
   replace (sigma^2) with (sigma^2 * 1) at 1.
   apply (is_RInt_gen_ext (fun t=>sigma^2 * (t^2 * Standard_Gaussian_PDF t))).
   apply filter_forall.
   intros.
   lra.
-  apply (@is_RInt_gen_scal R_CompleteNormedModule).
+  apply (@is_RInt_gen_scal).
   apply Rbar_locally'_filter.
   apply Rbar_locally'_filter.      
   replace (Rbar_locally' (Rbar_plus (Rbar_mult (/ sigma) m_infty) (- mu / sigma))) with 
@@ -1159,7 +1133,7 @@ Lemma Uniform_normed0 (a b:R) :
 Proof.  
   intros.
   replace (1) with (scal (b-a) (/ (b-a))).
-  apply (@is_RInt_const R_CompleteNormedModule).
+  apply (@is_RInt_const).
   compute; field_simplify; lra.
 Qed.
 
@@ -1258,7 +1232,7 @@ Lemma Indicator_full (a b:R) (f : R -> R) (l:R):
 Proof.
   - intros.
     replace (l) with (0 + l).
-    apply (@is_RInt_gen_Chasles R_CompleteNormedModule) with (b:=a).
+    apply (@is_RInt_gen_Chasles) with (b:=a).
     + apply Rbar_locally'_filter.
     + apply Rbar_locally'_filter.    
     + apply (is_RInt_gen_ext (fun t => (f t) * (Indicator a b t))).
@@ -1267,7 +1241,7 @@ Proof.
         apply Rmult_eq_compat_l; trivial.
       * now apply Indicator_left with (f := f).
     + replace (l) with (l + 0).
-      apply (@is_RInt_gen_Chasles R_CompleteNormedModule) with (b:=b).
+      apply (@is_RInt_gen_Chasles) with (b:=b).
       * apply at_point_filter.
       * apply Rbar_locally'_filter.  
       * apply is_RInt_gen_at_point.
@@ -1343,7 +1317,7 @@ Lemma Uniform_mean0 (a b:R) :
 Proof.  
   - intros.
     replace ((b+a)/2) with  (/(b-a)*(b^2/2) - (/(b-a)*(a^2/2))).
-    + apply (@is_RInt_derive R_CompleteNormedModule) with (f := fun t => (/(b-a))*(t^2/2)).
+    + apply (@is_RInt_derive) with (f := fun t => (/(b-a))*(t^2/2)).      
       rewrite Rmin_left.
       rewrite Rmax_right.
       intros.
@@ -1366,7 +1340,7 @@ Proof.
       lra.
       lra.
       intros.
-      apply (@continuous_scal_l R_CompleteNormedModule) with (f := id).
+      apply (@continuous_scal_l).
       apply continuous_id.
     + apply Rminus_diag_uniq; field_simplify; lra.
 Qed.
@@ -1384,7 +1358,7 @@ Lemma Uniform_variance0 (a b:R) :
 Proof.
   - intros.
     replace ((b-a)^2/12) with (scal (/(b-a)) ((b-a)^3/12)).
-    + apply (@is_RInt_scal  R_CompleteNormedModule) with (k := /(b-a)) (f := fun t => (t - (b+a)/2)^2) (If := (b-a)^3/12).
+    + apply (@is_RInt_scal) with (k := /(b-a)) (f := fun t => (t - (b+a)/2)^2) (If := (b-a)^3/12).
       apply (is_RInt_ext (fun t => t^2 - (b+a)*t + (b+a)^2/4)).
       * intros.
         now field_simplify.
@@ -1392,7 +1366,7 @@ Proof.
         apply is_RInt_plus with (f:= fun t=> t^2 - (b+a)*t) (g := fun t=> (b+a)^2/4).
         -- replace ((a - b) * (b ^ 2 + 4 * a * b + a ^ 2) / 6) with ((b^3/3-a^3/3) - (b-a)*(b+a)^2/2).
            apply is_RInt_minus with (f := fun t => t^2) (g := fun t => (b+a)*t).
-           apply (@is_RInt_derive R_CompleteNormedModule) with (f := fun t => t^3/3).
+           apply (@is_RInt_derive) with (f := fun t => t^3/3).
            ++ intros.
               apply (is_derive_ext (fun t => (/3) * t^3)).
               intros; now field_simplify.
@@ -1412,7 +1386,7 @@ Proof.
               lra.
               lra.
            ++ replace ((b - a) * (b + a) ^ 2 / 2) with ((b+a)*((b^2/2-a^2/2))).
-              apply (@is_RInt_scal  R_CompleteNormedModule) with (k := b+a).
+              apply (@is_RInt_scal).
               apply is_RInt_derive with (f:=fun x => x^2/2).
               rewrite Rmax_right; try lra.
               rewrite Rmin_left; try lra.
@@ -1435,7 +1409,7 @@ Proof.
               compute.
               field_simplify; lra.
         -- replace ((b + a) ^ 2 / 4 * (b - a)) with (scal (b-a) ((b+a)^2/4)).
-           apply (@is_RInt_const R_NormedModule).
+           apply (@is_RInt_const).
            compute.
            now field_simplify.
         -- apply Rminus_diag_uniq.
@@ -1593,19 +1567,8 @@ Proof.
            rewrite derive_pt_atan.
            unfold Rsqr.
            replace (1 + x1*x1) with (x1^2 + 1) by lra; lra.
-           apply (@continuous_scal_r). 
-           apply continuous_comp.
-           apply (@continuous_plus). 
-           apply (@continuous_mult).
-           apply continuous_id.
-           apply (@continuous_mult). 
-           apply continuous_id.
-           apply continuous_const.
-           apply continuous_const.
-           unfold continuous.
-           apply continuity_pt_filterlim.
-           apply continuity_pt_inv.
-           apply continuity_pt_id.
+           apply (@ex_derive_continuous).
+           auto_derive.
            apply sqr_plus1_neq.
         - unfold filterlim.
           unfold filter_le.
@@ -1744,7 +1707,7 @@ Proof.
   lra.
   lra.
   replace (exp(-x0^2)) with ((1 - 0) * (exp(-x0^2))) at 1.
-  apply (@is_RInt_const R_CompleteNormedModule).
+  apply (@is_RInt_const).
   lra.
   apply (is_RInt_gen_ext (fun v => v* exp(-v^2)*exp(-x0^2))).  
   exists (fun a => a = 1) (fun b => b>1000).
@@ -2134,6 +2097,22 @@ Proof.
   lra.
 Qed.
 
+Lemma erf_int3 (r:Rbar): 
+  r = p_infty \/ r= m_infty ->
+  is_RInt_gen (fun u => exp(-(u^2))) (at_point 0) (Rbar_locally' r) ( inf_sign r * sqrt PI/2).
+Proof.
+  intros.
+  destruct H.
+  subst.
+  unfold inf_sign.
+  replace (1 * sqrt PI /2) with (sqrt PI / 2) by lra.
+  apply erf_int21.
+  subst.
+  unfold inf_sign.
+  replace (-1 * sqrt PI /2) with (-sqrt PI / 2) by lra.  
+  apply erf_int31.
+Qed.
+
 Lemma erf_p_infty : 
   is_RInt_gen erf' (at_point 0) (Rbar_locally' p_infty) 1.
 Proof.
@@ -2163,65 +2142,10 @@ Proof.
   apply sqrt_PI_neq0.
 Qed.
 
-Lemma Standard_Gaussian_PDF_int1_pinf2 : 
-  is_RInt_gen Standard_Gaussian_PDF (at_point 0) (Rbar_locally' p_infty)  (/2).
-Proof.  
-  unfold Standard_Gaussian_PDF.
-  apply (is_RInt_gen_ext (fun y => /(sqrt 2) * ( (/sqrt PI) * exp (- ((/sqrt 2)*y)^2)))).
-  apply filter_forall.
-  intros.
-  apply Rminus_diag_uniq.
-  replace (/sqrt(2*PI)) with (/sqrt(2)*/sqrt(PI)).
-  replace (-(/ sqrt 2 * x0) ^ 2) with (-x0^2/2).
-  now ring_simplify.
-  rewrite Rpow_mult_distr.
-  replace ((/ sqrt 2)^2) with (/2).
-  now field_simplify.
-  rewrite <- Rsqr_pow2.
-  rewrite Rsqr_inv.
-  rewrite Rsqr_sqrt.
-  easy.
-  lra.
-  apply sqrt2_neq0.
-  rewrite sqrt_mult_alt.
-  field_simplify.
-  easy.
-  split.
-  apply sqrt_PI_neq0.
-  apply sqrt2_neq0.
-  split.
-  apply sqrt_PI_neq0.
-  apply sqrt2_neq0.
-  lra.
-  apply is_RInt_gen_comp_lin_point_0 with (f := fun y => (/ sqrt PI) * exp (- y^2)).
-  apply Rinv_neq_0_compat.
-  apply sqrt2_neq0.
-  intros.
-  apply (@ex_RInt_continuous).
-  intros.
-  apply (@ex_derive_continuous).
-  now auto_derive.
-  replace (/sqrt 2 * 0) with (0) by lra.
-  replace (Rbar_mult (/ sqrt 2) p_infty) with (p_infty).
-  replace (/2) with (/ sqrt PI * (sqrt PI/2)).
-  apply (@is_RInt_gen_scal).
-  apply at_point_filter.
-  apply Rbar_locally'_filter.
-  apply erf_int21.
-  field_simplify.
-  reflexivity.
-  apply sqrt_PI_neq0.
-  symmetry.
-  rewrite Rbar_mult_comm.
-  apply Rbar_mult_p_infty_pos.
-  apply Rgt_lt.
-  apply Rinv_0_lt_compat.
-  apply sqrt_lt_R0; lra.
-Qed.
-
-Lemma Standard_Gaussian_PDF_int1_minf2 : 
-  is_RInt_gen Standard_Gaussian_PDF (at_point 0) (Rbar_locally' m_infty)  (-/2).
+Lemma Standard_Gaussian_PDF_int1_pm (r : Rbar): 
+  r = p_infty \/ r = m_infty -> is_RInt_gen Standard_Gaussian_PDF (at_point 0) (Rbar_locally' r)  (inf_sign r * /2).
 Proof.
+  intros.
   unfold Standard_Gaussian_PDF.
   apply (is_RInt_gen_ext (fun y => /(sqrt 2) * ( (/sqrt PI) * exp (- ((/sqrt 2)*y)^2)))).
   apply filter_forall.
@@ -2258,20 +2182,26 @@ Proof.
   apply (@ex_derive_continuous).
   now auto_derive.
   replace (/sqrt 2 * 0) with (0) by lra.
-  replace (Rbar_mult (/ sqrt 2) m_infty) with (m_infty).
-  replace (-/2) with (/ sqrt PI * (-sqrt PI/2)).
+  replace (Rbar_mult (/ sqrt 2) r) with (r).
+  replace (inf_sign r * /2) with (/ sqrt PI * (inf_sign r * sqrt PI/2)).
   apply (@is_RInt_gen_scal).
   apply at_point_filter.
   apply Rbar_locally'_filter.
-  apply erf_int31.
+  apply erf_int3.
+  trivial.
   apply Rminus_diag_uniq.
   field_simplify.
   lra.
   apply sqrt_PI_neq0.
   symmetry.
   rewrite Rbar_mult_comm.
-  apply Rbar_mult_m_infty_pos.
+  assert (0 < / sqrt 2).
   apply Rgt_lt.
   apply Rinv_0_lt_compat.
   apply sqrt_lt_R0; lra.
+  destruct H.
+  subst.
+  now apply Rbar_mult_p_infty_pos.
+  subst.
+  now apply Rbar_mult_m_infty_pos.  
 Qed.
