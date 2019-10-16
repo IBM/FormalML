@@ -363,7 +363,7 @@ Proof.
   apply ex_RInt_ext with (f := (fun t : R => t ^ 2 * Standard_Gaussian_PDF t - Standard_Gaussian_PDF t)) (g := (fun t : R => (t ^ 2 - 1) * Standard_Gaussian_PDF t)).
   intros.
   lra.
-  trivial.
+  assumption.
 Qed.  
 
 Lemma variance_int0 (a b:Rbar) :
@@ -422,8 +422,7 @@ Proof.
   exists 3; intros.
   apply Rmult_le_compat_r.
   - left.
-    apply Rinv_0_lt_compat.
-    lra.
+    apply Rinv_0_lt_compat; lra.
   - left.
     apply exp_increasing.
     simpl.
@@ -447,8 +446,7 @@ Proof.
   rewrite exp_Ropp.
   field.
   split; try lra.
-  generalize (exp_pos (x * (x * 1) / 2)).
-  lra.
+  generalize (exp_pos (x * (x * 1) / 2)); lra.
 Qed.
 
 Lemma limxexp_minf : is_lim (fun t => t*exp(-t^2/2)) m_infty 0.
@@ -1464,8 +1462,7 @@ Proof.
           unfold at_point.
           replace (/2 * atan 0) with (0).
           now apply locally_singleton.
-          rewrite atan_0.
-          lra.
+          rewrite atan_0; lra.
         - replace (filterlim (fun s : R => / 2 * atan s) (Rbar_locally' p_infty) (locally (PI / 4))) with (is_lim (fun s : R => / 2 * atan s) p_infty (Rbar_mult (/2) (PI/2))).
            apply is_lim_scal_l with (a := /2) (f := atan).
            apply lim_atan_inf.
@@ -1575,8 +1572,7 @@ Proof.
   rewrite Rmin_left in H; try lra.
   rewrite Rmax_right in H; try lra.
   destruct (Rlt_dec x 1).
-  unfold is_left.
-  lra.
+  unfold is_left; lra.
   lra.
   replace (exp(-x0^2)) with ((1 - 0) * (exp(-x0^2))) at 1.
   apply (@is_RInt_const).
@@ -1592,8 +1588,7 @@ Proof.
   unfold fst, snd in H1.
   rewrite Rmin_left in H1; try lra.
   rewrite Rmax_right in H1; try lra.
-  destruct (Rlt_dec x1 1).
-  lra.
+  destruct (Rlt_dec x1 1); try lra.
   now unfold is_left.
   apply (is_RInt_gen_ext (Derive (fun v => -(/2)*exp(-x0^2) * exp(-v^2)))).  
   apply filter_forall.
@@ -1883,13 +1878,11 @@ Proof.
   unfold is_lim.
   trivial.
   field_simplify; trivial.
-  apply Rgt_not_eq.
-  apply sqr_plus1_gt.
+  apply sqr_plus1_neq.
   split.
   now apply Rgt_not_eq.
   rewrite Rplus_comm.
-  apply Rgt_not_eq.  
-  now apply sqr_plus1_gt.  
+  now apply sqr_plus1_neq.  
 Qed.
 
 Lemma erf_ex_RInt33 (u:R) :
@@ -1998,12 +1991,8 @@ Proof.
   apply exp_increasing.
   apply Ropp_gt_lt_contravar.
   apply Rplus_lt_compat_r.
-  rewrite <- Rsqr_pow2.
-  rewrite <- Rsqr_pow2.  
-  apply Rsqr_incrst_1.
-  lra.
-  lra.
-  lra.
+  rewrite <- Rsqr_pow2; rewrite <- Rsqr_pow2.  
+  apply Rsqr_incrst_1; lra; lra.
   subst.
   lra.
 Qed.
@@ -2039,10 +2028,8 @@ Proof.
   subst.
   unfold Rdiv.
   rewrite Rmult_assoc.
-  apply erf_ex_bound3.
-  lra.
-  unfold fst in H3.
-  lra.
+  apply erf_ex_bound3; try lra.
+  unfold fst in H3; try lra.
 Qed.
 
 Lemma erf_ex_RInt3_bound_int :
@@ -2059,8 +2046,7 @@ Proof.
   apply Rgt_not_eq.  
   now apply sqr_plus1_gt.  
   replace (1 + x0*x0) with (x0^2+1).
-  apply Rgt_not_eq.  
-  now apply sqr_plus1_gt.  
+  now apply sqr_plus1_neq.  
   ring.
   replace (PI^2/4) with (PI^2/4 - 0).
   apply is_RInt_gen_Derive.
@@ -2077,18 +2063,15 @@ Proof.
   unfold Rsqr.
   field_simplify; trivial.
   replace (1+x1*x1) with (x1^2+1).
-  apply Rgt_not_eq.  
-  now apply sqr_plus1_gt.  
+  now apply sqr_plus1_neq.  
   ring.
-  apply Rgt_not_eq.  
-  now apply sqr_plus1_gt.  
+  now apply sqr_plus1_neq.  
   apply (@ex_derive_continuous).
   auto_derive.
   apply Rgt_not_eq.  
   ring_simplify.
   replace (2 * x0 ^ 2 + 2) with (2*(x0^2+1)) by lra.
-  apply Rmult_gt_0_compat.
-  lra.
+  apply Rmult_gt_0_compat; try lra.
   now apply sqr_plus1_gt.  
   unfold filterlim, filter_le.
   intros.
@@ -2137,8 +2120,7 @@ Proof.
   apply Rbar_locally'_filter.
   apply filter_Rlt_at_point_p_infty.
   apply erf_ex_RInt33.
-  unfold fst in H1.
-  lra.
+  unfold fst in H1; try lra.
   exists (fun a => a=0) (fun b => b>1000).
   now unfold at_point.
   unfold Rbar_locally'.
@@ -2147,15 +2129,12 @@ Proof.
   intros.
   unfold fst in H1.
   left.
-  apply Rmult_lt_0_compat.
-  lra.
+  apply Rmult_lt_0_compat; try lra.
   apply exp_pos.
   apply erf_ex_RInt3_bound.
-  unfold fst in H1.
-  lra.
+  unfold fst in H1; try lra.
   apply erf_ex_RInt33.
-  unfold fst in H1.
-  lra.
+  unfold fst in H1; try lra.
   unfold fst, snd.
   subst.
   apply (ex_RInt_ext (fun u : R =>
@@ -2180,13 +2159,10 @@ Proof.
   apply Proper_StrongProper, Rbar_locally'_filter.
   apply erf_ex_RInt1.
   symmetry.
-  apply Rbar_mult_p_infty_pos.
-  lra.
+  apply Rbar_mult_p_infty_pos; try lra.
   apply ex_RInt_Reals_1.
-  apply RiemannInt_decreasing.
-  lra.
-  apply erf_decr_RInt30.
-  lra.
+  apply RiemannInt_decreasing; try lra.
+  apply erf_decr_RInt30; try lra.
 Qed.
 
 Lemma erf_int1  :
