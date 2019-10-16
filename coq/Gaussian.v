@@ -133,7 +133,7 @@ Lemma ex_RInt_Standard_Gaussian_PDF (a b:R) :
   ex_RInt Standard_Gaussian_PDF a b.
 Proof.
   intros.
-  apply ex_RInt_continuous with (f:=Standard_Gaussian_PDF).
+  apply (@ex_RInt_continuous).
   intros.
   apply continuous_Standard_Gaussian_PDF.
 Qed.
@@ -164,16 +164,14 @@ Proof.
   unfold Standard_Gaussian_PDF.
   unfold erf'.
   field_simplify.
-  replace (sqrt (2*PI)) with (sqrt(2)*sqrt(PI)).
+  rewrite sqrt_mult_alt; trivial; try lra.
   unfold Rdiv.
   apply Rmult_eq_compat_r.
-  apply f_equal.
-  field_simplify.
+  f_equal; field_simplify.
   replace (sqrt 2 ^ 2) with (2); trivial.
   rewrite <- Rsqr_pow2.  
   rewrite -> Rsqr_sqrt with (x:=2); trivial; lra.
   apply sqrt2_neq0.
-  rewrite sqrt_mult_alt; trivial; lra.
   split.
   assert (PI > 0) by apply PI_RGT_0.
   apply Rgt_not_eq.
@@ -241,10 +239,10 @@ Proof.
         }
       * apply ex_RInt_scal with (f := erf').
         field_simplify; auto with Rarith.
-        apply ex_RInt_continuous with (f := erf') (a:=0 / sqrt 2) (b := x /sqrt 2).
+        apply (@ex_RInt_continuous).
         intros.
         apply continuous_erf'.
-    + apply ex_RInt_continuous with (f := erf') (a:=0) (b := x /sqrt 2).  
+    + apply (@ex_RInt_continuous).
       intros.
       apply continuous_erf'.
   - reflexivity.
@@ -331,7 +329,7 @@ Lemma ex_RInt_Standard_Gaussian_mean_PDF (a b:R) :
     ex_RInt (fun t => t * (Standard_Gaussian_PDF t)) a b.
 Proof.
   intros.
-  apply ex_RInt_continuous with (f := fun t => t * (Standard_Gaussian_PDF t)).
+  apply (@ex_RInt_continuous).
   intros.
   apply (@continuous_scal).
   apply continuous_id.
@@ -342,7 +340,7 @@ Lemma ex_RInt_Standard_Gaussian_variance_PDF (a b:R) :
     ex_RInt (fun t => t^2 * (Standard_Gaussian_PDF t)) a b.
 Proof.
   intros.
-  apply ex_RInt_continuous with (f := fun t => t^2 * (Standard_Gaussian_PDF t)).
+  apply (@ex_RInt_continuous).
   intros.
   apply (@continuous_scal).
   apply (@continuous_scal).
@@ -881,32 +879,20 @@ Proof.
                                   (f:=Standard_Gaussian_PDF).
   apply Rinv_neq_0_compat.
   now apply Rgt_not_eq.
-  replace (Rbar_locally' (Rbar_plus (Rbar_mult (/ sigma) m_infty) (- mu / sigma))) with
-          (Rbar_locally' m_infty).
-  replace (at_point (/ sigma * 0 + - mu / sigma)) with (at_point (-mu/sigma)).
+  replace (Rbar_plus (Rbar_mult (/ sigma) m_infty) (- mu / sigma)) with
+          (m_infty).
+  replace (/ sigma * 0 + - mu / sigma) with (-mu/sigma) by lra.
   trivial.
-  apply f_equal; lra.
-  now apply f_equal; symmetry.
-  replace (at_point (/ sigma * 0 + - mu / sigma)) with (at_point (-mu/sigma)).  
-  replace (Rbar_locally' (Rbar_plus (Rbar_mult (/ sigma) p_infty) (- mu / sigma))) with
-          (Rbar_locally' p_infty).
+  replace (/ sigma * 0 + - mu / sigma) with (-mu/sigma) by lra.  
+  replace (Rbar_plus (Rbar_mult (/ sigma) p_infty) (- mu / sigma)) with
+          (p_infty).
   trivial.
-  apply f_equal; now symmetry.
-  apply f_equal; lra.
   apply ex_RInt_Standard_Gaussian_PDF.
-  replace (Rbar_locally' (Rbar_plus (Rbar_mult (/ sigma) m_infty) (- mu / sigma))) with
-          (Rbar_locally' m_infty).
-  replace (Rbar_locally' (Rbar_plus (Rbar_mult (/ sigma) p_infty) (- mu / sigma))) with
-          (Rbar_locally' p_infty).
+  replace (Rbar_plus (Rbar_mult (/ sigma) m_infty) (- mu / sigma)) with
+          (m_infty).
+  replace (Rbar_plus (Rbar_mult (/ sigma) p_infty) (- mu / sigma)) with
+          (p_infty).
   apply Standard_Gaussian_PDF_normed.
-  rewrite Rbar_mult_comm.
-  rewrite Rbar_mult_p_infty_pos.
-  now compute.
-  apply Rinv_0_lt_compat; lra.  
-  rewrite Rbar_mult_comm.
-  rewrite Rbar_mult_m_infty_pos.
-  now compute.
-  apply Rinv_0_lt_compat; lra.  
 Qed.  
 
 Lemma mean_general_gaussian (mu sigma:R) :
@@ -1021,18 +1007,14 @@ Proof.
   apply is_RInt_gen_comp_lin with (u := /sigma) (v := -mu/sigma) 
                                   (f:=fun t => sigma^2 * t^2 * Standard_Gaussian_PDF t).
   apply Rinv_neq_0_compat; trivial.
-  replace (Rbar_locally' (Rbar_plus (Rbar_mult (/ sigma) m_infty) (- mu / sigma))) with
-          (Rbar_locally' m_infty).
-  replace (at_point (/ sigma * 0 + - mu / sigma)) with (at_point (-mu/sigma)).
+  replace (Rbar_plus (Rbar_mult (/ sigma) m_infty) (- mu / sigma)) with
+          (m_infty).
+  replace (/ sigma * 0 + - mu / sigma) with (-mu/sigma) by lra.
   trivial.
-  apply f_equal; lra.
-  apply f_equal; now symmetry.
-  replace (at_point (/ sigma * 0 + - mu / sigma)) with (at_point (-mu/sigma)).
-  replace (Rbar_locally' (Rbar_plus (Rbar_mult (/ sigma) p_infty) (- mu / sigma))) with
-          (Rbar_locally' p_infty).
+  replace (/ sigma * 0 + - mu / sigma) with (-mu/sigma) by lra.
+  replace (Rbar_plus (Rbar_mult (/ sigma) p_infty) (- mu / sigma)) with
+          (p_infty).
   trivial.
-  apply f_equal; now symmetry.
-  apply f_equal; lra.  
   intros.
   apply (ex_RInt_ext (fun t => sigma^2 * (t^2 * Standard_Gaussian_PDF t))).
   intros.
@@ -1047,20 +1029,11 @@ Proof.
   apply (@is_RInt_gen_scal).
   apply Rbar_locally'_filter.
   apply Rbar_locally'_filter.      
-  replace (Rbar_locally' (Rbar_plus (Rbar_mult (/ sigma) m_infty) (- mu / sigma))) with 
-      (Rbar_locally' m_infty).
-  replace (Rbar_locally' (Rbar_plus (Rbar_mult (/ sigma) p_infty) (- mu / sigma))) with 
-      (Rbar_locally' p_infty).
+  replace (Rbar_plus (Rbar_mult (/ sigma) m_infty) (- mu / sigma)) with 
+      (m_infty).
+  replace (Rbar_plus (Rbar_mult (/ sigma) p_infty) (- mu / sigma)) with 
+      (p_infty).
   apply variance_standard_gaussian.
-  apply f_equal.
-  rewrite Rbar_mult_comm.
-  rewrite Rbar_mult_p_infty_pos.
-  now compute.
-  apply Rinv_0_lt_compat; lra.  
-  rewrite Rbar_mult_comm.
-  rewrite Rbar_mult_m_infty_pos.
-  now compute.
-  apply Rinv_0_lt_compat; lra.  
   lra.
 Qed.
 
@@ -1093,9 +1066,8 @@ Proof.
       trivial.
       now unfold at_point.
       intros x y H0 H1.
-      replace (fst (x, y)) with (x) by trivial.
-      replace (snd (x, y)) with (y) by trivial.
-      replace (y) with (a).
+      unfold fst, snd.
+      subst.
       rewrite Rmin_left; try lra.
       rewrite Rmax_right; try lra.
       intros.
@@ -1132,26 +1104,25 @@ Proof.
       exists (b).
       intros; trivial.
       intros x y H0 H1.
-      replace (fst (x, y)) with (x) by trivial.
-      replace (snd (x, y)) with (y) by trivial.
-      replace (x) with (b).
-      rewrite Rmin_left; try lra
+      unfold fst, snd.
+      subst.
+      rewrite Rmin_left; try lra.
       rewrite Rmax_right; try lra.
       intros.
-      replace (is_left (Rlt_dec x0 a)) with false.
-      replace (is_left (Rgt_dec x0 b)) with true.
+      replace (is_left (Rlt_dec x a)) with false.
+      replace (is_left (Rgt_dec x b)) with true.
       lra.
-      destruct (Rgt_dec x0 b).
+      destruct (Rgt_dec x b).
       intuition.
       intuition.
-      destruct (Rlt_dec x0 a).
+      destruct (Rlt_dec x a).
       lra.
       intuition.
     + apply (is_RInt_gen_ext (Derive (fun _ => 0))).
       apply filter_forall.
       intros.
       apply Derive_const.
-      replace (0) with (0 - 0) at 1.
+      replace (0) with (0 - 0) at 1 by lra.
       apply is_RInt_gen_Derive with (f0 := fun _ => 0) (la := 0) (lb := 0).
       * apply filter_forall.
         intros.
@@ -1161,7 +1132,6 @@ Proof.
         apply continuous_const.
       * apply filterlim_const.
       * apply filterlim_const.
-      * lra.
 Qed.
 
 Lemma Indicator_full (a b:R) (f : R -> R) (l:R):
@@ -1596,9 +1566,7 @@ Proof.
                  exists x0.
                  intros.
                  discriminate.
-                 unfold Rbar_mult.
-                 unfold Rbar_mult'.
-                 now rewrite Rmult_0_r.
+                 simpl; f_equal; ring.
               ** now unfold is_lim.
       * now ring_simplify.
 Qed.
@@ -1646,8 +1614,7 @@ Proof.
   trivial.
   intros.
   subst.
-  unfold fst in H1.
-  unfold snd in H1.
+  unfold fst, snd in H1.
   rewrite Rmin_left in H1; try lra.
   rewrite Rmax_right in H1; try lra.
   destruct (Rlt_dec x1 1).
@@ -1751,8 +1718,7 @@ Proof.
     now exists 1000.
     intros.
     subst.
-    unfold fst.
-    unfold snd.
+    unfold fst, snd.
     lra.
     apply erf_ex_RInt0.
     exists (fun x => x=0) (fun y => y>1000).
@@ -1761,8 +1727,7 @@ Proof.
     now exists 1000.
     intros.
     subst.
-    unfold fst.
-    unfold snd.
+    unfold fst, snd.
     split.
     intros.
     split.
@@ -1809,17 +1774,6 @@ Proof.
   f_equal; lra.
   apply erf_ex_RInt1.
 Qed.  
-
-Lemma erf_ex_RInt300 (u a:R) :
-  is_RInt (fun v : R => u * exp (- (u ^ 2 + (u * v) ^ 2))) 0 a 
-          (RInt (fun v : R => u * exp (- (u ^ 2 + (u * v) ^ 2))) 0 a).
-Proof.
-  apply (@RInt_correct).
-  apply (@ex_RInt_continuous).
-  intros.
-  apply (@ex_derive_continuous).
-  solve_derive.
-Qed.
 
 Lemma erf_ex_bound1 (u:R) :
   u>=0 -> exp (- (u ^ 2)) <= /(1+u^2).
@@ -1955,7 +1909,6 @@ Proof.
   trivial.
   field_simplify; trivial.
   apply Rgt_not_eq.
-  SearchAbout pow.
   apply sqr_plus1_gt.
   split.
   now apply Rgt_not_eq.
@@ -1997,8 +1950,7 @@ Proof.
   lra.
   unfold fst in H2.
   lra.
-  unfold fst.
-  unfold snd.
+  unfold fst, snd.
   apply (@ex_RInt_continuous).
   intros.
   apply (@ex_derive_continuous).
@@ -2053,16 +2005,12 @@ Proof.
   apply Rbar_locally'_filter.
   apply filter_Rlt_at_point_p_infty.  
   apply (@RInt_gen_correct).
-  apply Proper_StrongProper.
-  apply at_point_filter.
-  apply Proper_StrongProper.  
-  apply Rbar_locally'_filter.
+  apply Proper_StrongProper, at_point_filter.
+  apply Proper_StrongProper, Rbar_locally'_filter.
   apply erf_ex_RInt1.
   apply (@RInt_gen_correct).
-  apply Proper_StrongProper.
-  apply at_point_filter.
-  apply Proper_StrongProper.  
-  apply Rbar_locally'_filter.
+  apply Proper_StrongProper, at_point_filter.
+  apply Proper_StrongProper, Rbar_locally'_filter.
   apply erf_ex_RInt1.
   exists (fun a => a=0) (fun b => b>1000).
   now unfold at_point.
@@ -2104,10 +2052,8 @@ Proof.
   apply filter_Rlt_at_point_p_infty.  
   now apply int_bound3.
   apply (@RInt_gen_correct).
-  apply Proper_StrongProper.
-  apply at_point_filter.
-  apply Proper_StrongProper.  
-  apply Rbar_locally'_filter.
+  apply Proper_StrongProper, at_point_filter.
+  apply Proper_StrongProper, Rbar_locally'_filter.
   trivial.
   exists (fun a => a = 0) (fun b => b>1000).
   now unfold at_point.
@@ -2235,8 +2181,7 @@ Proof.
   apply erf_ex_RInt33.
   unfold fst in H1.
   lra.
-  unfold fst.
-  unfold snd.
+  unfold fst, snd.
   subst.
   apply (ex_RInt_ext (fun u : R =>
      RInt_gen (fun w : R => exp (- (u ^ 2 + w ^ 2))) (at_point 0)
@@ -2256,21 +2201,18 @@ Proof.
   replace (x*0) with (0) by lra.
   replace (Rbar_mult x p_infty) with (p_infty).
   apply (@RInt_gen_correct).
-  apply Proper_StrongProper.
-  apply at_point_filter.
-  apply Proper_StrongProper.  
-  apply Rbar_locally'_filter.
+  apply Proper_StrongProper, at_point_filter.
+  apply Proper_StrongProper, Rbar_locally'_filter.
   apply erf_ex_RInt1.
   symmetry.
   apply Rbar_mult_p_infty_pos.
   lra.
   apply ex_RInt_Reals_1.
-  apply  RiemannInt_decreasing.
+  apply RiemannInt_decreasing.
   lra.
   apply erf_decr_RInt30.
   lra.
 Qed.
-
 
 Lemma erf_int1  :
   is_RInt_gen (fun u => RInt_gen (fun v => exp(-(u^2+v^2))) (at_point 0)  (Rbar_locally' p_infty)) (at_point 0) (Rbar_locally' p_infty) (PI / 4).
@@ -2281,8 +2223,7 @@ Proof.
     + unfold Rbar_locally'.
       now exists 1000.
     + intros.
-      unfold fst in H1.
-      unfold snd in H1.
+      unfold fst, snd in H1.
       subst.
       rewrite Rmin_left in H1; try lra.
       rewrite Rmax_right in H1; try lra.
@@ -2294,18 +2235,15 @@ Proof.
         intros.
         apply (@ex_derive_continuous).
         now auto_derive.
-      * replace (at_point (x0*0)) with (at_point 0).
+      * replace (x0*0) with (0) by lra.
         replace (Rbar_mult x0 p_infty) with (p_infty).
         ++ apply (@RInt_gen_correct).
-           apply Proper_StrongProper.
-           apply at_point_filter.
-           apply Proper_StrongProper.
-           apply Rbar_locally'_filter.
+           apply Proper_StrongProper, at_point_filter.
+           apply Proper_StrongProper, Rbar_locally'_filter.
            apply erf_ex_RInt1.
         ++ rewrite Rbar_mult_comm.
            rewrite Rbar_mult_p_infty_pos; trivial.
            lra.
-        ++ f_equal; lra.
   - replace (PI/4) with 
         (RInt_gen
            (fun u : R =>
@@ -2422,10 +2360,8 @@ Lemma erf_int21:
 Proof.
   replace (sqrt PI/2) with (RInt_gen (fun u => exp(-(u^2))) (at_point 0) (Rbar_locally' p_infty)).
   apply (@RInt_gen_correct).
-  apply Proper_StrongProper.
-  apply at_point_filter.
-  apply Proper_StrongProper.
-  apply Rbar_locally'_filter.
+  apply Proper_StrongProper, at_point_filter.
+  apply Proper_StrongProper, Rbar_locally'_filter.
   apply erf_ex_RInt2.
   apply erf_int2.
 Qed.
@@ -2547,8 +2483,7 @@ Proof.
   apply (@is_RInt_gen_scal).
   apply at_point_filter.
   apply Rbar_locally'_filter.
-  apply erf_int3.
-  trivial.
+  now apply erf_int3.
   apply Rminus_diag_uniq; field_simplify; try lra.
   apply sqrt_PI_neq0.
   symmetry.
