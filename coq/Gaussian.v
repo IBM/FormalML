@@ -906,7 +906,7 @@ Proof.
   apply (@is_RInt_gen_scal).
   apply Rbar_locally'_filter.
   apply Rbar_locally'_filter.  
-  apply General_Gaussian_PDF_normed; trivial.
+  now apply General_Gaussian_PDF_normed.
   apply (is_RInt_gen_ext (fun t => sigma^2 * Derive (General_Gaussian_PDF mu sigma) t)).
   apply filter_forall.
   intros.
@@ -921,11 +921,11 @@ Proof.
   apply is_RInt_gen_Derive.
   apply filter_forall.
   intros.
-  apply ex_derive_General_Gaussian_PDF; trivial.
+  now apply ex_derive_General_Gaussian_PDF.
   apply filter_forall.
   intros.
   apply continuous_Derive_General_Gaussian_PDF.
-  unfold General_Gaussian_PDF; trivial.
+  now unfold General_Gaussian_PDF.
   replace (0) with ( / (sigma * sqrt (2*PI)) * 0) by lra.  
   apply is_lim_scal_l with (a:= / (sigma * sqrt (2 * PI))) (l := 0).
   apply (is_lim_ext (fun t => exp(-((/sigma * t)+ (-mu/sigma))^2/2))).
@@ -938,7 +938,7 @@ Proof.
   rewrite Rbar_mult_m_infty_pos.
   now compute.
   apply Rinv_0_lt_compat; lra.
-  apply Rinv_neq_0_compat; trivial.
+  now apply Rinv_neq_0_compat.
   unfold General_Gaussian_PDF.
   replace (0) with ( / (sigma * sqrt (2*PI)) * 0) by lra.  
   apply is_lim_scal_l with (a:= / (sigma * sqrt (2 * PI))) (l := 0).
@@ -950,7 +950,7 @@ Proof.
   apply limexp_neg_inf.
   rewrite Rbar_mult_comm.
   rewrite Rbar_mult_p_infty_pos.
-  compute; trivial.
+  now compute.
   apply Rinv_0_lt_compat; lra.
   now apply Rinv_neq_0_compat.
 Qed.
@@ -986,7 +986,7 @@ Proof.
   lra.
   apply is_RInt_gen_comp_lin with (u := /sigma) (v := -mu/sigma) 
                                   (f:=fun t => sigma^2 * t^2 * Standard_Gaussian_PDF t).
-  apply Rinv_neq_0_compat; trivial.
+  now apply Rinv_neq_0_compat.
   replace (Rbar_plus (Rbar_mult (/ sigma) m_infty) (- mu / sigma)) with
           (m_infty).
   replace (/ sigma * 0 + - mu / sigma) with (-mu/sigma) by lra.
@@ -1041,8 +1041,7 @@ Proof.
     + exists (fun y => y<a) (fun x => x=a).
       unfold Rbar_locally'.
       exists (a).
-      intros.
-      trivial.
+      intros; assumption.
       now unfold at_point.
       intros x y H0 H1.
       unfold fst, snd.
@@ -1052,8 +1051,7 @@ Proof.
       intros.
       replace (is_left (Rlt_dec x0 a)) with true.
       lra.
-      destruct (Rlt_dec x0 a); trivial.
-      intuition.
+      now destruct (Rlt_dec x0 a).
     + apply (is_RInt_gen_ext (Derive (fun _ => 0))).
       * apply filter_forall.
         intros.
@@ -1123,7 +1121,7 @@ Proof.
     + apply (is_RInt_gen_ext (fun t => (f t) * (Indicator a b t))).
       * apply filter_forall.
         intros.
-        apply Rmult_eq_compat_l; trivial.
+        now apply Rmult_eq_compat_l.
       * now apply Indicator_left with (f := f).
     + replace (l) with (l + 0) by lra.
       apply (@is_RInt_gen_Chasles) with (b:=b).
@@ -1185,8 +1183,7 @@ Proof.
   apply filter_forall.
   intros.
   lra.
-  apply Uniform_full with (f := fun _ => 1) (l := 1).
-  trivial.
+  apply Uniform_full with (f := fun _ => 1) (l := 1); try lra.
   apply (is_RInt_ext (fun t => (/ (b-a)))).
   intros.
   now ring_simplify.
@@ -1458,7 +1455,7 @@ Proof.
            apply lim_atan_inf.
            unfold is_lim.
            replace (Rbar_locally (Rbar_mult (/2) (PI/2))) with (Rbar_locally (PI/4)).
-           trivial.
+           reflexivity.
            f_equal; simpl; f_equal; field.
 Qed.
 
@@ -1570,7 +1567,7 @@ Proof.
   apply (is_RInt_gen_ext (fun v => v* exp(-v^2)*exp(-x0^2))).  
   exists (fun a => a = 1) (fun b => b>1000).
   now unfold at_point.
-  unfold Rbar_locally'; exists 1000; trivial.
+  unfold Rbar_locally'; now exists 1000.
   intros.
   subst.
   unfold fst, snd in H1.
@@ -1795,8 +1792,7 @@ Proof.
   rewrite <- Derive_Reals with (pr := derivable_pt_atan (u * x1)).
   rewrite derive_pt_atan.
   unfold Rsqr.
-  field_simplify.
-  trivial.
+  field_simplify; trivial.
   apply Rgt_not_eq.
   apply plus_Rsqr_gt_0.
   split.
@@ -1891,14 +1887,11 @@ Proof.
   intros.
   split.
   replace (0) with (u * 0) by lra.
-  apply Rmult_le_compat_l.
-  lra.
-  left.
-  apply exp_pos.
+  apply Rmult_le_compat_l; try lra.
+  left; apply exp_pos.
   unfold Rdiv.
   rewrite Rmult_assoc.
-  apply erf_ex_bound3.
-  lra.
+  apply erf_ex_bound3; try lra.
   unfold fst in H2; lra.
   unfold fst, snd.
   apply (@ex_RInt_continuous).
@@ -1929,8 +1922,7 @@ Proof.
   now apply locally_singleton.
   unfold filterlim, filter_le.
   intros.
-  unfold filtermap.
-  unfold Rbar_locally'.
+  unfold filtermap, Rbar_locally'.
   exists 0.
   intros.
   now apply locally_singleton.
@@ -1972,8 +1964,7 @@ Proof.
   apply Rplus_lt_compat_r.
   rewrite <- Rsqr_pow2; rewrite <- Rsqr_pow2.  
   apply Rsqr_incrst_1; lra; lra.
-  subst.
-  lra.
+  subst; lra.
 Qed.
 
 Lemma erf_ex_RInt3_bound (u:R) :
@@ -2066,7 +2057,7 @@ Proof.
   simpl.
   f_equal; now field_simplify.
   unfold is_lim.
-  trivial.
+  reflexivity.
   now field_simplify.
 Qed.
 
@@ -2165,8 +2156,7 @@ Proof.
            apply Proper_StrongProper, Rbar_locally'_filter.
            apply erf_ex_RInt1.
         ++ rewrite Rbar_mult_comm.
-           rewrite Rbar_mult_p_infty_pos; trivial.
-           lra.
+           now rewrite Rbar_mult_p_infty_pos.
   - replace (PI/4) with 
         (RInt_gen
            (fun u : R =>
@@ -2230,7 +2220,7 @@ Proof.
   rewrite <- RInt_gen_scal.
   symmetry.
   rewrite <- (RInt_gen_ext (fun y => exp (-(x0^2 + y^2)))).
-  trivial.
+  reflexivity.
   apply filter_forall.
   intros.
   rewrite scale_mult.
