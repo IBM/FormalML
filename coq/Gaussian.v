@@ -334,19 +334,28 @@ Proof.
   apply continuous_Standard_Gaussian_PDF.
 Qed.
 
-Lemma ex_RInt_Standard_Gaussian_variance_PDF (a b:R) :
+  Ltac cont_helper
+    :=
+      repeat (match goal with
+  | [|- continuous (fun _ => _ * _ ) _ ] => apply @continuous_scal
+  | [|- continuous (fun _ => _ ^ 2 ) _ ] => apply @continuous_scal
+  | [|- continuous (fun _ => Hierarchy.mult _ _ ) _ ] => apply @continuous_mult
+  | [|- continuous (fun _ => _ + _ ) _ ] => apply @continuous_plus
+  | [|- continuous (fun _ => _ - _ ) _ ] => apply @continuous_minus
+  end
+ || apply continuous_id
+ || apply continuous_const
+ || apply continuous_Standard_Gaussian_PDF).
+
+
+  Lemma ex_RInt_Standard_Gaussian_variance_PDF (a b:R) :
     ex_RInt (fun t => t^2 * (Standard_Gaussian_PDF t)) a b.
 Proof.
   intros.
   apply (@ex_RInt_continuous).
   intros.
-  apply (@continuous_scal).
-  apply (@continuous_scal).
-  apply continuous_id.
-  apply (@continuous_scal).
-  apply continuous_id.
-  apply continuous_const.
-  apply continuous_Standard_Gaussian_PDF.
+
+  cont_helper.
 Qed.
 
 Lemma variance_exint0 (a b:Rbar) :
@@ -472,15 +481,7 @@ Proof.
   apply (continuous_ext (fun t => (t^2-1)*Standard_Gaussian_PDF t)).
   intros.
   now rewrite variance_derive.
-  apply (@continuous_mult).
-  apply (@continuous_minus).
-  apply (@continuous_mult).
-  apply continuous_id.
-  apply (@continuous_mult).
-  apply continuous_id.
-  apply continuous_const.
-  apply continuous_const.
-  apply continuous_Standard_Gaussian_PDF.
+  cont_helper.
 Qed.
 
 Lemma plim_gaussian_opp_mean : is_lim (fun t => - t*(Standard_Gaussian_PDF t)) p_infty 0.
@@ -737,9 +738,7 @@ Proof.
   apply continuous_ext with (f:=fun t => t*Standard_Gaussian_PDF t).
   symmetry.
   apply Derive_opp_Standard_Gaussian_PDF.
-  apply (@continuous_mult).
-  apply continuous_id.
-  apply continuous_Standard_Gaussian_PDF.
+  cont_helper.
 Qed.
 
 Lemma mean_standard_gaussian :
@@ -1248,10 +1247,7 @@ Proof.
            ++ rewrite Rmax_right; try lra.
               rewrite Rmin_left; try lra.
               intros.
-              apply continuous_mult with (f := id).
-              apply continuous_id.
-              apply (@continuous_scal_l) with (f := id ) (k := 1).
-              apply continuous_id.
+              cont_helper.
            ++ replace ((b - a) * (b + a) ^ 2 / 2) with ((b+a)*((b^2/2-a^2/2))).
               apply (@is_RInt_scal).
               apply is_RInt_derive with (f:=fun x => x^2/2).
