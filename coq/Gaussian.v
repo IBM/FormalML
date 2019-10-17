@@ -299,7 +299,7 @@ Proof.
   symmetry.
   replace (erf(/sqrt 2 * y + 0) ) with (erf(y/sqrt 2)).
   apply std_from_erf0.
-  apply f_equal.
+  f_equal.
   field.
   apply sqrt2_neq0.
   apply ex_lim_comp_lin with (f := fun x => /2 * erf x) (a := /sqrt 2) (b := 0).
@@ -555,7 +555,7 @@ Proof.
   apply Lim_correct.
   apply ex_lim_ext with (f := fun x => erf ((/ sqrt 2) * x + 0)).
   intros.
-  apply f_equal; lra.
+  f_equal; lra.
   apply ex_lim_comp_lin with (f := erf) (a := / sqrt 2) (b:=0).
   apply erf_ex_lim.
   apply erf0_limit_p_infty.
@@ -577,7 +577,7 @@ Proof.
   apply Lim_correct.
   apply ex_lim_ext with (f := fun x => erf ((/ sqrt 2) * x + 0)).
   intros.
-  apply f_equal; lra.
+  f_equal; lra.
   apply ex_lim_comp_lin with (f := erf) (a := / sqrt 2) (b:=0).
   apply erf_ex_lim.
   apply erf0_limit_m_infty.
@@ -690,7 +690,7 @@ Proof.
   replace (0) with ((-1) * 0 + 0).
   apply (is_lim_ext (fun t => exp(-(-1*t+0)^2/2))).
   intros.
-  apply f_equal; now field_simplify.
+  f_equal; now field_simplify.
   apply is_lim_comp_lin with (a := -1) (b := 0) (f := fun t => exp(-t^2/2)).
   replace (Rbar_plus (Rbar_mult (-1) m_infty) 0) with (p_infty).
   replace (-1 * 0 + 0) with (0) by lra.
@@ -862,7 +862,7 @@ Proof.
   intros.
   rewrite gen_from_std.
   apply Rmult_eq_compat_l.
-  apply f_equal; lra.
+  f_equal; lra.
   trivial.
   apply is_RInt_gen_comp_lin with (u := /sigma) (v := -mu/sigma) 
                                   (f:=Standard_Gaussian_PDF).
@@ -930,7 +930,7 @@ Proof.
   apply is_lim_scal_l with (a:= / (sigma * sqrt (2 * PI))) (l := 0).
   apply (is_lim_ext (fun t => exp(-((/sigma * t)+ (-mu/sigma))^2/2))).
   intros.
-  apply f_equal; now field_simplify.
+  f_equal; now field_simplify.
   apply is_lim_comp_lin with (f := fun t => exp(-t^2/2)) (a := /sigma) (b:= -mu/sigma).
   replace (Rbar_plus (Rbar_mult (/ sigma) m_infty) (- mu / sigma)) with (m_infty).
   apply limexp_neg_minf.
@@ -944,7 +944,7 @@ Proof.
   apply is_lim_scal_l with (a:= / (sigma * sqrt (2 * PI))) (l := 0).
   apply (is_lim_ext (fun t => exp(-((/sigma * t)+ (-mu/sigma))^2/2))).
   intros.
-  apply f_equal; now field_simplify.
+  f_equal; now field_simplify.
   apply is_lim_comp_lin with (f := fun t => exp(-t^2/2)) (a := /sigma) (b:= -mu/sigma).
   replace (Rbar_plus (Rbar_mult (/ sigma) p_infty) (- mu / sigma)) with (p_infty).  
   apply limexp_neg_inf.
@@ -1168,11 +1168,8 @@ Proof.
   left.
   apply Rinv_0_lt_compat; lra.
   unfold Indicator.
-  destruct (is_left (Rlt_dec t a)).
-  lra.
-  destruct (is_left (Rgt_dec t b)).
-  lra.
-  lra.
+  destruct (is_left (Rlt_dec t a)); try lra.
+  destruct (is_left (Rgt_dec t b)); try lra.
 Qed.
 
 Lemma Uniform_normed (a b:R) :
@@ -1306,21 +1303,23 @@ Axiom Fubini:
 Axiom Fubini_gen :
   forall (Fa Fb Fc Fd: (R -> Prop) -> Prop)
          (f: R -> R -> R) ,
- filter_prod Fa Fb
-   (fun ab => forall (x : R), Rmin (fst ab) (snd ab) <= x <= Rmax (fst ab) (snd ab) ->
-     filter_prod Fc Fd
-       (fun bc => forall (y : R), 
-            Rmin (fst bc) (snd bc) <= y <= Rmax (fst bc) (snd bc) -> 
-            continuity_2d_pt f x y)) ->
- filter_prod Fa Fb
-   (fun ab => forall (x : R), 
-        Rmin (fst ab) (snd ab) <= x <= Rmax (fst ab) (snd ab) ->
-        filter_prod Fc Fd
-                    (fun bc => forall (y : R), 
-                         Rmin (fst bc) (snd bc) <= y <= Rmax (fst bc) (snd bc) ->
-                         f x y >= 0)) ->    
-   RInt_gen (fun u => RInt_gen (fun v => f u v) Fa Fb) Fc Fd =
-   RInt_gen (fun v => RInt_gen (fun u => f u v) Fc Fd) Fa Fb.
+  filter_prod Fa Fb
+    (fun ab => forall (x : R), Rmin (fst ab) (snd ab) <= x <= Rmax (fst ab) (snd ab) ->
+           filter_prod Fc Fd
+                       (fun bc => forall (y : R), 
+                            Rmin (fst bc) (snd bc) <= y <= Rmax (fst bc) (snd bc) -> 
+                            continuity_2d_pt f x y)) ->
+  filter_prod Fa Fb
+    (fun ab => forall (x : R), 
+         Rmin (fst ab) (snd ab) <= x <= Rmax (fst ab) (snd ab) ->
+         filter_prod Fc Fd
+                     (fun bc => forall (y : R), 
+                          Rmin (fst bc) (snd bc) <= y <= Rmax (fst bc) (snd bc) ->
+                          f x y >= 0)) ->    
+  ex_RInt_gen (fun u => RInt_gen (fun v => f u v) Fa Fb) Fc Fd ->
+  ex_RInt_gen (fun v => RInt_gen (fun u => f u v) Fc Fd) Fa Fb ->
+  RInt_gen (fun u => RInt_gen (fun v => f u v) Fa Fb) Fc Fd =
+    RInt_gen (fun v => RInt_gen (fun u => f u v) Fc Fd) Fa Fb.
 
 Lemma sqr_plus1_gt (x:R):
   x^2 + 1 > 0.
@@ -1445,8 +1444,7 @@ Proof.
            apply sqr_plus1_neq.
         - unfold filterlim, filter_le.
           intros.
-          unfold filtermap.
-          unfold at_point.
+          unfold filtermap, at_point.
           replace (/2 * atan 0) with (0).
           now apply locally_singleton.
           rewrite atan_0; lra.
@@ -1482,8 +1480,7 @@ Proof.
                  solve_derive.
            ++ unfold filterlim, filter_le.
               intros.
-              unfold filtermap.
-              unfold at_point.
+              unfold filtermap, at_point.
               replace (- / (2 * x0 ^ 2 + 2) * exp (- (0 ^ 2 + (0 * x0) ^ 2))) with (- / (2 * x0 ^ 2 + 2)).
               now apply locally_singleton.
               replace (- (0 ^ 2 + (0 * x0) ^ 2)) with (0) by lra.
@@ -1613,8 +1610,7 @@ Proof.
   now auto_derive.
   unfold filterlim, filter_le.
   intros.
-  unfold filtermap.
-  unfold at_point.
+  unfold filtermap, at_point.
   apply locally_singleton.
   replace (- / 2 * exp (- x0 ^ 2) * exp (- 1 ^ 2)) with (- (/ (2 * exp 1) * exp (- x0 ^ 2))); trivial.
   apply Rminus_diag_uniq; field_simplify.
@@ -1829,8 +1825,7 @@ Proof.
   now ring_simplify.
   unfold filterlim, filter_le.
   intros.
-  unfold filtermap.
-  unfold at_point.
+  unfold filtermap, at_point.
   replace (u * 0) with (0) by lra.
   rewrite atan_0.
   replace (0 / u) with (0) by lra.
@@ -1857,7 +1852,7 @@ Proof.
   now apply Rgt_not_eq.
   now apply Rgt_not_eq.
   unfold is_lim.
-  trivial.
+  reflexivity.
   field_simplify; trivial.
   apply sqr_plus1_neq.
   split.
@@ -2043,8 +2038,7 @@ Proof.
   now apply sqr_plus1_gt.  
   unfold filterlim, filter_le.
   intros.
-  unfold filtermap.
-  unfold at_point.
+  unfold filtermap, at_point.
   replace (PI/2 * atan 0) with (0).
   now apply locally_singleton.
   rewrite atan_0.
@@ -2142,8 +2136,7 @@ Proof.
       rewrite Rmin_left in H1; try lra.
       rewrite Rmax_right in H1; try lra.
       apply is_RInt_gen_unique.
-      apply is_RInt_gen_comp_lin_point_0 with (u:=x0) (f := fun v => exp(-(x0^2 + v^2))).
-      * lra.
+      apply is_RInt_gen_comp_lin_point_0 with (f := fun v => exp(-(x0^2 + v^2))); try lra.
       * intros.
         apply (@ex_RInt_continuous).
         intros.
@@ -2203,6 +2196,10 @@ Proof.
            apply Rmult_le_pos; try lra.
            left.
            apply exp_pos.
+      * apply erf_ex_RInt3.
+      * unfold ex_RInt_gen.
+        exists (PI/4).
+        apply erf_int00.
 Qed.
 
 Lemma erf_int_sq :
@@ -2247,8 +2244,7 @@ Proof.
   rewrite Rsqr_div.
   rewrite Rsqr_sqrt.
   unfold Rsqr; lra.
-  left.
-  apply PI_RGT_0.
+  left; apply PI_RGT_0.
   lra.
   rewrite Rabs_pos_eq; trivial.
   apply RInt_gen_Rle0.
@@ -2258,13 +2254,11 @@ Proof.
   apply erf_ex_RInt2.
   apply filter_forall.
   intros.
-  left.
-  apply exp_pos.
+  left; apply exp_pos.
   rewrite Rabs_pos_eq; trivial.
   apply Rle_div_r; try lra.
-  left.
   replace (0 * 2) with (0) by lra.
-  apply sqrt_lt_R0.
+  left; apply sqrt_lt_R0.
   apply PI_RGT_0.
 Qed.
 
