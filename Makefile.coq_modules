@@ -34,6 +34,11 @@ MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	utils/StreamLimits \
 	utils/Sums \
 	utils/Utils \
+	utils/Floatish/FloatishDef \
+	utils/Floatish/FloatishInterval \
+	utils/Floatish/FloatishIEEE \
+	utils/Floatish/FloatishReal \
+	utils/Floatish \
 	AxiomaticNormedRealVectorSpace \
 	BorelSigmaAlgebra \
 	DefinedFunctions \
