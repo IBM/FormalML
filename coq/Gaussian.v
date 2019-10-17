@@ -66,6 +66,7 @@ Set Bullet Behavior "Strict Subproofs".
 *)
 
 Ltac solve_derive := try solve [auto_derive; trivial | lra].
+Ltac equation_simplifier := apply Rminus_diag_uniq; simpl; field_simplify; try lra; auto with Rarith.
 
 Local Open Scope R_scope.
 Implicit Type f : R -> R.
@@ -128,6 +129,20 @@ Proof.
   now auto_derive.
 Qed.
 
+Ltac cont_helper
+  :=
+    repeat (match goal with
+            | [|- continuous (fun _ => _ * _ ) _ ] => apply @continuous_scal
+            | [|- continuous (fun _ => _ ^ 2 ) _ ] => apply @continuous_scal
+            | [|- continuous (fun _ => Hierarchy.mult _ _ ) _ ] => apply @continuous_mult
+            | [|- continuous (fun _ => _ + _ ) _ ] => apply @continuous_plus
+            | [|- continuous (fun _ => _ - _ ) _ ] => apply @continuous_minus
+            end
+            || apply continuous_id
+            || apply continuous_const
+            || apply continuous_Standard_Gaussian_PDF).
+
+
 Lemma ex_RInt_Standard_Gaussian_PDF (a b:R) :
   ex_RInt Standard_Gaussian_PDF a b.
 Proof.
@@ -137,15 +152,35 @@ Proof.
   apply continuous_Standard_Gaussian_PDF.
 Qed.
 
+Lemma Derive_exp g z : ex_derive g z -> Derive (fun x => exp (g x)) z = Derive g z * exp (g z).
+Proof.
+  intros.
+  rewrite Derive_comp; solve_derive; trivial.
+  rewrite <- Derive_Reals with (pr := derivable_pt_exp (g z)).
+  now rewrite derive_pt_exp.
+Qed.
+
+Hint Resolve Rgt_not_eq : Rarith.
+
+Ltac Derive_helper
+  := intros; repeat ((rewrite Derive_mult; [ | solve[solve_derive]..])
+                     || (rewrite Derive_div; [ | solve[solve_derive]..])
+             || (rewrite Derive_plus; [ | solve[solve_derive]..])
+             || (rewrite Derive_minus; [ | solve[solve_derive]..])
+             || (rewrite Derive_pow; [ | solve[solve_derive]..])
+             || rewrite Derive_id
+             || rewrite Derive_const
+             || (rewrite Derive_exp; [ | solve[solve_derive]..])
+             || rewrite Derive_opp
+            )
+     ; try equation_simplifier; auto 3 with Rarith.
+
 Lemma derive_xover_sqrt2 (x:R):
   Derive (fun x => x/sqrt 2) x = /sqrt 2.
 Proof.
   generalize sqrt2_neq0; intros.
   unfold Rdiv.
-  rewrite Derive_mult; solve_derive.
-  rewrite Derive_id.
-  rewrite Derive_const.
-  now field_simplify.
+  Derive_helper.
 Qed.
   
 Lemma continuous_erf' :
@@ -162,31 +197,19 @@ Lemma std_pdf_from_erf' (x:R):
 Proof.
   unfold Standard_Gaussian_PDF.
   unfold erf'.
-  field_simplify.
+  field_simplify; auto with Rarith.
   rewrite sqrt_mult_alt; trivial; try lra.
   unfold Rdiv.
   apply Rmult_eq_compat_r.
-  f_equal; field_simplify.
+  f_equal; field_simplify; auto with Rarith.
   replace (sqrt 2 ^ 2) with (2); trivial.
   rewrite <- Rsqr_pow2.  
   rewrite -> Rsqr_sqrt with (x:=2); trivial; lra.
-  apply sqrt2_neq0.
-  split.
-  assert (PI > 0) by apply PI_RGT_0.
-  apply Rgt_not_eq.
-  apply sqrt_lt_R0; lra.
-  apply sqrt2_neq0.
-  apply sqrt_2PI_nzero.
 Qed.
 
 Lemma std_pdf_from_erf (x:R):
   Derive (fun t=> erf (t/sqrt 2)) x = 2 * Standard_Gaussian_PDF x.
 Proof.
-  generalize sqrt2_neq0; intros.
-  assert (PI > 0) by apply PI_RGT_0.
-  assert (sqrt PI <> 0).
-  apply Rgt_not_eq.
-  apply sqrt_lt_R0; lra.
   unfold erf.
   assert (forall y:R, ex_RInt erf' 0 y).
   intros.
@@ -197,7 +220,7 @@ Proof.
   rewrite Derive_RInt.
   rewrite derive_xover_sqrt2.
   rewrite std_pdf_from_erf'.
-  now field_simplify.
+  equation_simplifier.
   apply locally_open with (D:=fun _ => True); trivial.
   apply open_true.
   apply continuous_erf'.
@@ -329,32 +352,15 @@ Proof.
   intros.
   apply (@ex_RInt_continuous).
   intros.
-  apply (@continuous_scal).
-  apply continuous_id.
-  apply continuous_Standard_Gaussian_PDF.
+  cont_helper.
 Qed.
 
-  Ltac cont_helper
-    :=
-      repeat (match goal with
-  | [|- continuous (fun _ => _ * _ ) _ ] => apply @continuous_scal
-  | [|- continuous (fun _ => _ ^ 2 ) _ ] => apply @continuous_scal
-  | [|- continuous (fun _ => Hierarchy.mult _ _ ) _ ] => apply @continuous_mult
-  | [|- continuous (fun _ => _ + _ ) _ ] => apply @continuous_plus
-  | [|- continuous (fun _ => _ - _ ) _ ] => apply @continuous_minus
-  end
- || apply continuous_id
- || apply continuous_const
- || apply continuous_Standard_Gaussian_PDF).
-
-
-  Lemma ex_RInt_Standard_Gaussian_variance_PDF (a b:R) :
+Lemma ex_RInt_Standard_Gaussian_variance_PDF (a b:R) :
     ex_RInt (fun t => t^2 * (Standard_Gaussian_PDF t)) a b.
 Proof.
   intros.
   apply (@ex_RInt_continuous).
   intros.
-
   cont_helper.
 Qed.
 
@@ -390,36 +396,12 @@ Proof.
   lra.
 Qed.
 
+
 Lemma variance_derive (x:R) : 
       Derive (fun t => -t*Standard_Gaussian_PDF t) x = (x^2-1)*Standard_Gaussian_PDF x.
 Proof.
-
-  generalize sqrt_2PI_nzero; intros.
-
-  rewrite -> Derive_mult with (f := fun t => -t) (g := Standard_Gaussian_PDF)
-  ; try solve [unfold Standard_Gaussian_PDF; solve_derive].
-  rewrite Derive_opp.
-  rewrite Derive_id.
-  ring_simplify.
-  unfold Rminus.
-  rewrite -> Rplus_comm with (r1 := Standard_Gaussian_PDF x * x ^ 2).
-  apply Rplus_eq_compat_l.
   unfold Standard_Gaussian_PDF.
-  rewrite Derive_mult; solve_derive.
-  rewrite Derive_const; solve_derive.
-  ring_simplify.
-  rewrite Derive_comp; solve_derive.
-  rewrite Derive_div; solve_derive.
-  rewrite Derive_const.
-  rewrite Derive_opp.
-  rewrite Derive_mult; solve_derive.
-  rewrite Derive_mult; solve_derive.
-  rewrite Derive_id.
-  rewrite Derive_const.
-  field_simplify; try lra. 
-  rewrite <- Derive_Reals with (pr := derivable_pt_exp (-x^2/2)).
-  rewrite derive_pt_exp.
-  field_simplify; lra.
+  Derive_helper.
 Qed.
 
 Lemma limxexp_inv_inf : is_lim (fun t => exp(t^2/2) / t) p_infty p_infty.
@@ -709,20 +691,8 @@ Qed.
 Lemma Derive_opp_Standard_Gaussian_PDF (x:R):
   Derive (fun t => - Standard_Gaussian_PDF t) x = x*Standard_Gaussian_PDF x.
 Proof.
-  rewrite Derive_opp.
   unfold Standard_Gaussian_PDF.
-  rewrite Derive_scal.
-  rewrite Derive_comp; solve_derive.
-  rewrite <- Derive_Reals with (pr := derivable_pt_exp (-x^2/2)).
-  rewrite derive_pt_exp.
-  unfold Rdiv at 1.
-  rewrite Derive_scal_l.
-  rewrite Derive_opp.
-  rewrite Derive_pow; solve_derive.
-  simpl.
-  rewrite Derive_id.
-  apply Rminus_diag_uniq; field_simplify; try lra.
-  apply sqrt_2PI_nzero.
+  Derive_helper.
 Qed.
   
 Lemma ex_derive_opp_Standard_Gaussian_PDF (x:R):
@@ -795,26 +765,9 @@ Qed.
 Lemma Derive_General_Gaussian_PDF (mu sigma x:R):
   sigma > 0 -> Derive (General_Gaussian_PDF mu sigma) x = / (sigma^2)*(mu-x)*General_Gaussian_PDF mu sigma x.
 Proof.
-  intros.
-  assert (sigma <> 0).
-  now apply Rgt_not_eq.
   unfold General_Gaussian_PDF.
-  rewrite Derive_scal.
-  rewrite Derive_comp; solve_derive.
-  rewrite <- Derive_Reals with (pr := derivable_pt_exp (-(x-mu)^2/(2*sigma^2))).
-  rewrite derive_pt_exp.
-  unfold Rdiv at 1.
-  rewrite Derive_scal_l.
-  rewrite Derive_opp.
-  rewrite Derive_pow; solve_derive.
-  rewrite Derive_minus; solve_derive.
-  rewrite Derive_id.
-  rewrite Derive_const.
-  apply Rminus_diag_uniq; simpl; field_simplify; try lra.
-  split.
-  apply sqrt_2PI_nzero.
-  trivial.
-Qed.  
+  Derive_helper.
+Qed.
 
 Lemma ex_derive_General_Gaussian_PDF (mu sigma:R) (x:R):
   sigma > 0 -> ex_derive (General_Gaussian_PDF mu sigma) x.
@@ -1268,7 +1221,8 @@ Proof.
                  intros.
                  apply continuous_id.
               ** now field_simplify.
-           ++ apply Rminus_diag_uniq; compute; field_simplify; lra.
+           ++
+              equation_simplifier.
         -- replace ((b + a) ^ 2 / 4 * (b - a)) with (scal (b-a) ((b+a)^2/4)).
            apply (@is_RInt_const).
            compute; now field_simplify.
@@ -1337,20 +1291,8 @@ Lemma deriv_erf00 (x0 x2:R) :
   Derive (fun u : R => - / (2 * x0 ^ 2 + 2) * exp (- (u ^ 2 + (u * x0) ^ 2))) x2 =
     x2 * exp (- (x2 ^ 2 + (x2 * x0) ^ 2)). 
 Proof.
-  rewrite Derive_scal; solve_derive.
-  rewrite Derive_comp; solve_derive.
-  rewrite Derive_opp; solve_derive.
-  rewrite Derive_plus; solve_derive.
-  rewrite Derive_pow; solve_derive.
-  rewrite Derive_id; solve_derive.
-  rewrite Derive_pow; solve_derive.
-  rewrite Derive_mult; solve_derive.
-  rewrite Derive_id.
-  rewrite Derive_const.
-  rewrite <- Derive_Reals with (pr := derivable_pt_exp (- (x2 ^ 2 + (x2 * x0) ^ 2))).
-  rewrite derive_pt_exp.
-  simpl.
-  apply Rminus_diag_uniq; field_simplify; try lra.
+  Derive_helper.
+
   replace (2*(x0 * x0) + 2) with (2*(x0^2 + 1)) by lra.
   apply Rmult_integral_contrapositive_currified; try lra.
   apply sqr_plus1_neq.
@@ -1570,18 +1512,8 @@ Proof.
   now unfold is_left.
   apply (is_RInt_gen_ext (Derive (fun v => -(/2)*exp(-x0^2) * exp(-v^2)))).  
   apply filter_forall.
-  intros.
-  rewrite Derive_scal.  
-  rewrite Derive_comp; solve_derive.
-  rewrite Derive_opp; solve_derive.
-  rewrite Derive_mult; solve_derive.    
-  rewrite Derive_id.
-  rewrite Derive_mult; solve_derive.
-  rewrite Derive_id.
-  rewrite Derive_const.
-  rewrite <- Derive_Reals with (pr := derivable_pt_exp (- (x1 ^ 2))).
-  rewrite derive_pt_exp.
-  ring_simplify; try lra.
+  Derive_helper.
+
   replace  (/ (2 * exp 1) * exp (- x0 ^ 2)) with (0 - -  (/ (2 * exp 1) * exp (- x0 ^ 2))) by lra.
   apply is_RInt_gen_Derive.
   apply filter_forall.
@@ -1590,18 +1522,8 @@ Proof.
   apply filter_forall.  
   intros.
   apply (continuous_ext (fun v => exp(-x0^2)*v*exp(-v^2))).
-  intros.
-  rewrite Derive_scal.
-  rewrite Derive_comp; solve_derive.  
-  rewrite Derive_opp; solve_derive.
-  rewrite Derive_mult; solve_derive.    
-  rewrite Derive_id.
-  rewrite Derive_mult; solve_derive.
-  rewrite Derive_id.
-  rewrite Derive_const.
-  rewrite <- Derive_Reals with (pr := derivable_pt_exp (- (x2 ^ 2))).
-  rewrite derive_pt_exp.
-  ring_simplify; try lra.
+  Derive_helper.
+
   apply (@ex_derive_continuous).
   now auto_derive.
   unfold filterlim, filter_le.
