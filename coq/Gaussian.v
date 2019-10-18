@@ -1,4 +1,3 @@
-Require Import mathcomp.ssreflect.ssreflect mathcomp.ssreflect.ssrbool mathcomp.ssreflect.eqtype mathcomp.ssreflect.seq.
 
 Require Import Reals Coquelicot.Coquelicot.
 Require Import Streams.
@@ -151,10 +150,9 @@ Proof.
       rewrite Rmin_left; try lra.
       rewrite Rmax_right; try lra.
       intros.
-      replace (is_left (Rlt_dec x0 a)) with true.
+      destruct (Rlt_dec x0 a).
       lra.
-      destruct (Rlt_dec x0 a); trivial.
-      intuition.
+      lra.
     + apply (is_RInt_gen_ext (Derive (fun _ => 0))).
       * apply filter_forall.
         intros.
@@ -188,15 +186,11 @@ Proof.
       rewrite Rmin_left; try lra.
       rewrite Rmax_right; try lra.
       intros.
-      replace (is_left (Rlt_dec x a)) with false.
-      replace (is_left (Rgt_dec x b)) with true.
-      lra.
-      destruct (Rgt_dec x b).
-      intuition.
-      intuition.
       destruct (Rlt_dec x a).
       lra.
-      intuition.
+      destruct (Rgt_dec x b).      
+      lra.
+      lra.
     + apply (is_RInt_gen_ext (Derive (fun _ => 0))).
       apply filter_forall.
       intros.
@@ -236,15 +230,11 @@ Proof.
         rewrite Rmax_right; try lra.
         intros.
         ++ unfold Indicator.
-           replace (is_left (Rlt_dec x a)) with false.
-           replace (is_left (Rgt_dec x b)) with false.
+           destruct (Rlt_dec x a).
            lra.
            destruct (Rgt_dec x b).
            lra.
-           tauto.
-           destruct (Rlt_dec x a).
            lra.
-           tauto.
         ++ trivial.
       * now apply Indicator_right.
 Qed.
@@ -271,8 +261,8 @@ Proof.
   left.
   apply Rinv_0_lt_compat; lra.
   unfold Indicator.
-  destruct (is_left (Rlt_dec t a)); try lra.
-  destruct (is_left (Rgt_dec t b)); try lra.
+  destruct (Rlt_dec t a); try lra.
+  destruct (Rgt_dec t b); try lra.
 Qed.
 
 Lemma Uniform_normed (a b:R) :
@@ -438,9 +428,11 @@ Qed.
 
 Hint Resolve Rgt_not_eq : Rarith.
 
+(*                     || (rewrite Derive_div; [ | solve[solve_derive]..])*)
+
 Ltac Derive_helper
   := intros; repeat ((rewrite Derive_mult; [ | solve[solve_derive]..])
-                     || (rewrite Derive_div; [ | solve[solve_derive]..])
+                     || (rewrite Derive_div; solve_derive)
                      || (rewrite Derive_plus; [ | solve[solve_derive]..])
                      || (rewrite Derive_minus; [ | solve[solve_derive]..])
                      || (rewrite Derive_pow; [ | solve[solve_derive]..])
@@ -511,11 +503,6 @@ Proof.
   apply continuous_erf'.
 Qed.
 
-Lemma scale_mult (a x : R) : (scal a x) = (a * x).
-Proof.
-  reflexivity.
-Qed.
-
 Hint Resolve Rlt_sqrt2_0 sqrt2_neq0 Rinv_pos : Rarith.
 
 Lemma std_from_erf0 (x:R) : 
@@ -530,11 +517,11 @@ Proof.
       * apply RInt_ext.
         intros.
         rewrite std_pdf_from_erf'.
-        { replace (erf'(/ sqrt 2 * x0 + 0)) with (erf' (x0/sqrt 2)).
-          - repeat rewrite scale_mult.
-            field_simplify; auto with Rarith.
-          - f_equal; field_simplify; auto with Rarith.
-        }
+        replace (/ sqrt 2 * x0 + 0) with  (x0/sqrt 2) by lra.
+        rewrite scal_assoc.
+        apply Rmult_eq_compat_r.
+        rewrite Rinv_mult_distr; auto with Rarith.
+        now rewrite Rmult_comm.
       * apply ex_RInt_scal with (f := erf').
         field_simplify; auto with Rarith.
         apply (@ex_RInt_continuous).
@@ -880,6 +867,10 @@ Lemma Derive_General_Gaussian_PDF (mu sigma x:R):
 Proof.
   unfold General_Gaussian_PDF.
   Derive_helper.
+  apply Rgt_not_eq.
+  apply Rmult_gt_0_compat; try lra.
+  simpl.
+  apply Rmult_gt_0_compat; try lra.
 Qed.
 
 Lemma ex_derive_General_Gaussian_PDF (mu sigma:R) (x:R):
@@ -1157,9 +1148,7 @@ Proof.
   intros.
   rewrite Rmin_left in H; try lra.
   rewrite Rmax_right in H; try lra.
-  destruct (Rlt_dec x 1).
-  unfold is_left; lra.
-  lra.
+  destruct (Rlt_dec x 1); lra.
   replace (exp(-x0^2)) with ((1 - 0) * (exp(-x0^2))) at 1.
   apply (@is_RInt_const).
   lra.
@@ -1173,7 +1162,6 @@ Proof.
   rewrite Rmin_left in H1; try lra.
   rewrite Rmax_right in H1; try lra.
   destruct (Rlt_dec x1 1); try lra.
-  now unfold is_left.
   apply (is_RInt_gen_ext (Derive (fun v => -(/2)*exp(-x0^2) * exp(-v^2)))).  
   apply filter_forall.
   Derive_helper.
@@ -1195,24 +1183,19 @@ Proof.
   unfold filtermap, at_point.
   apply locally_singleton.
   replace (- / 2 * exp (- x0 ^ 2) * exp (- 1 ^ 2)) with (- (/ (2 * exp 1) * exp (- x0 ^ 2))); trivial.
+  replace (exp(-1^2)) with (/ exp(1)).
   equation_simplifier.
-  replace (exp (-(1 * (1 * 1)))) with (/ exp 1).
-  field_simplify; try lra.
   apply Rgt_not_eq.  
   apply exp_pos.
-  replace (-(1 * (1 * 1))) with (-1) by lra.
-  rewrite exp_Ropp.
-  now unfold IPR.
-  apply Rgt_not_eq.  
-  apply exp_pos.
+  replace (-1^2) with (-1) by lra.  
+  symmetry; apply exp_Ropp.
   replace (filterlim (fun v : R => - / 2 * exp (- x0 ^ 2) * exp (- v ^ 2))
     (Rbar_locally' p_infty) (locally 0)) with (is_lim (fun v : R => - / 2 * exp (- x0 ^ 2) * exp (- v ^ 2)) p_infty 0).
   replace (Finite 0) with (Rbar_mult (-/2 * exp(-x0^2)) 0).
   apply is_lim_scal_l.
   apply (is_lim_ext (fun t => / exp(t^2))).
   intros.
-  symmetry.
-  apply exp_Ropp.
+  symmetry; apply exp_Ropp.
   replace (Finite 0) with (Rbar_inv p_infty).
   apply is_lim_inv.
   eapply is_lim_le_p_loc; [idtac | apply is_lim_exp_p].
@@ -1270,7 +1253,6 @@ Proof.
     left.
     apply exp_pos.
     destruct (Rlt_dec x 1).
-    unfold is_left.
     rewrite exp_Ropp.
     replace (1) with (/ 1) by lra.
     apply Rinv_le_contravar; try lra.
@@ -1280,7 +1262,6 @@ Proof.
     rewrite <- Rsqr_pow2.
     apply Rlt_0_sqr; lra.
     apply exp_0.
-    unfold is_left.
     replace (exp(-x^2)) with (1 * exp(-x^2)) at 1 by lra.
     apply  Rmult_le_compat_r.
     left.
@@ -1774,7 +1755,6 @@ Proof.
   apply erf_int1.
   apply filter_forall.
   intros.
-  rewrite scale_mult.
   rewrite Rmult_comm.
   rewrite <- RInt_gen_scal.
   symmetry.
@@ -1782,7 +1762,6 @@ Proof.
   reflexivity.
   apply filter_forall.
   intros.
-  rewrite scale_mult.
   replace (-(x0^2 + x2^2)) with ((-x0^2)+(-x2^2)).
   apply exp_plus.
   lra.
@@ -1862,7 +1841,7 @@ Proof.
   rewrite Rbar_mult_comm.
   apply Rbar_mult_m_infty_neg; lra.
   replace (- sqrt PI/2) with ((-1)*(sqrt PI/2)).
-  apply scale_mult.
+  reflexivity.
   lra.
 Qed.
 
