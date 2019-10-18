@@ -4,7 +4,7 @@ Require Import RelationClasses.
 Require Import List.
 Require Import NPeano.
 
-Require Import FloatishDef.
+Require Import FloatishDef FloatishOps.
 Require Import Utils.
 
 Section DefinedFunctions.
@@ -12,24 +12,6 @@ Section DefinedFunctions.
   Context {floatish_impl:floatish}.
   Local Open Scope float.
 
-  (* These should move to FloatishOps *)
-  Definition pos_sign (e:float)
-    := if e >= 0 then 1 else Fopp 1.
-
-  Definition neg_sign (e:float)
-    := if e <= 0 then Fopp 1 else 1.
-
-  Definition sign (e:float)
-    := if e < 0 then Fopp 1
-       else if e > 0 then 1
-            else 0.
-
-  Definition Fmax (x y:float)
-    := if x < y then y else x.
-
-  Definition Fmin (x y:float)
-    := if x > y then y else x.
-  
 (* Declare Scope df_scope. *)
 
 (* in pytorch relu(f)' if f <=0 then 0 else f' *)
