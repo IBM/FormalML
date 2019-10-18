@@ -2,12 +2,34 @@ Require Import String.
 Require Import EquivDec.
 Require Import RelationClasses.
 Require Import List.
-Require Import Rbase Rtrigo Rpower Rbasic_fun.
-Require Import Lra.
+Require Import NPeano.
 
-
+Require Import FloatishDef.
 Require Import Utils.
 
+Section DefinedFunctions.
+
+  Context {floatish_impl:floatish}.
+  Local Open Scope float.
+
+  (* These should move to FloatishOps *)
+  Definition pos_sign (e:float)
+    := if e >= 0 then 1 else Fopp 1.
+
+  Definition neg_sign (e:float)
+    := if e <= 0 then Fopp 1 else 1.
+
+  Definition sign (e:float)
+    := if e < 0 then Fopp 1
+       else if e > 0 then 1
+            else 0.
+
+  Definition Fmax (x y:float)
+    := if x < y then y else x.
+
+  Definition Fmin (x y:float)
+    := if x > y then y else x.
+  
 (* Declare Scope df_scope. *)
 
 (* in pytorch relu(f)' if f <=0 then 0 else f' *)
@@ -18,6 +40,7 @@ Require Import Utils.
 (* z = torch.min(x*x, x); z.backward(); print(x.grad) = 1 *)
 (* x.grad.data.zero_() between tests *)
 (* relu behaves like max(x, 0), not max(0,x), i.e. relu(x)' at 0 = 0 *)
+
 
   Section Definitions.
     
@@ -43,8 +66,8 @@ Require Import Utils.
     
     (* A subset of defined functions *)
 
-    Inductive DefinedFunction : Set :=
-    | Number (x : R)
+    Inductive DefinedFunction : Type :=
+    | Number (x : float)
     | Var (v : SubVar)
     | Plus (l r : DefinedFunction)
     | Minus (l r : DefinedFunction)
@@ -58,6 +81,7 @@ Require Import Utils.
     | Max (l r : DefinedFunction).
 
   End Definitions.
+
 
   Tactic Notation "DefinedFunction_cases" tactic(first) ident(c) :=
   first;
@@ -73,16 +97,6 @@ Require Import Utils.
   | Case_aux c "Sign"%string
   | Case_aux c "PSign"%string
   | Case_aux c "Max"%string].
-
-  Definition pos_sign (e:R)
-    := (if Rge_dec e 0 then 1 else -1)%R.
-
-  Definition neg_sign (e:R)
-    := (if Rle_dec e 0 then -1 else 1)%R.
-
-  Definition sign (e:R)
-    := (if Rlt_dec e 0 then -1 else 
-        if Rgt_dec e 0 then 1 else 0)%R.
 
   Definition df_plus (df1 df2 : DefinedFunction) : DefinedFunction :=
     Plus df1 df2.
@@ -112,7 +126,7 @@ Require Import Utils.
          | Max l r => Divide (Plus (Times (Minus (df_deriv r v) (df_deriv l v)) (PSign (Minus r l)))
                                    (Plus (df_deriv r v) (df_deriv l v)))
                              (Number 2)
-          end)%R.
+          end).
 
     Definition df_gradient (df:DefinedFunction) (lv:list SubVar) : list DefinedFunction
       := map (df_deriv df) lv.
@@ -121,47 +135,48 @@ Require Import Utils.
   
   Section eval.
     
-    Definition df_env := list (SubVar * R).
+    Definition df_env := list (SubVar * float).
 
-    Fixpoint df_eval (σ:df_env) (df:DefinedFunction) : option R
+    Fixpoint df_eval (σ:df_env) (df:DefinedFunction) : option float
       := match df with
          | Number r => Some r
          | Var x => lookup var_dec σ x
          | Plus l r =>
            match df_eval σ l, df_eval σ r with
-           | Some l', Some r' => Some (l' + r')%R
+           | Some l', Some r' => Some (l' + r')
            | _, _ => None
            end
          | Minus l r =>
            match df_eval σ l, df_eval σ r with
-           | Some l', Some r' => Some (l' - r')%R
+           | Some l', Some r' => Some (l' - r')
            | _, _ => None
            end
          | Times l r =>
            match df_eval σ l, df_eval σ r with
-           | Some l', Some r' => Some (l' * r')%R
+           | Some l', Some r' => Some (l' * r')
            | _, _ => None
            end
          | Divide l r =>
            match df_eval σ l, df_eval σ r with
-           | Some l', Some r' => Some (l' / r')%R
+           | Some l', Some r' => Some (l' / r')
            | _, _ => None
            end
-         | Exp e =>
+         | Exp e => 
            match df_eval σ e with
-           | Some v => Some (exp v)
+           | Some v => Some (Fexp v)
            | _ => None
            end
          | Log e => 
            match df_eval σ e with
-           | Some v => Some (ln v)
+           | Some v => Some (Fln v) 
            | _ => None
            end
          | Abs e =>
            match df_eval σ e with
-           | Some v => Some (Rabs v)
+           | Some v => Some (Fabs v) 
            | _ => None
            end
+
          | Sign e =>
            match df_eval σ e with
            | Some v => Some (sign v)
@@ -174,12 +189,12 @@ Require Import Utils.
            end
          | Max l r =>
            match df_eval σ l, df_eval σ r with
-           | Some l', Some r' => Some (Rmax l' r')
+           | Some l', Some r' => Some (Fmax l' r')
            | _, _ => None
            end
          end.
 
-    Definition df_eval_symbolic_gradient (σ:df_env) (df:DefinedFunction) (lv:list SubVar) : option (list R)
+    Definition df_eval_symbolic_gradient (σ:df_env) (df:DefinedFunction) (lv:list SubVar) : option (list float)
       := listo_to_olist (map (df_eval σ) (df_gradient df lv)).
     
   End eval.
@@ -189,11 +204,11 @@ Require Import Utils.
   Context (σ:df_env).
   Context (v:SubVar).
 
-  Inductive is_deriv : DefinedFunction -> R -> Prop
+  Inductive is_deriv : DefinedFunction -> float -> Prop
     := 
-    | is_deriv_Number (x : R) : is_deriv (Number x) R0
-    | is_deriv_Var_eq : is_deriv (Var v) R1
-    | is_deriv_Var_neq (sv : SubVar) : sv <> v -> is_deriv (Var sv) R0
+    | is_deriv_Number (x : float) : is_deriv (Number x) 0
+    | is_deriv_Var_eq : is_deriv (Var v) 1
+    | is_deriv_Var_neq (sv : SubVar) : sv <> v -> is_deriv (Var sv) 0
     | is_deriv_Plus l l' r r' :
         is_deriv l l' ->
         is_deriv r r' ->
@@ -219,7 +234,7 @@ Require Import Utils.
     | is_deriv_Exp e ee e' :
         df_eval σ e = Some ee ->
         is_deriv e e' ->
-        is_deriv (Exp e) (e' * (exp ee))
+        is_deriv (Exp e) (e' * (Fexp ee))
     | is_deriv_Log e ee e' :
         df_eval σ e = Some ee ->
         is_deriv e e' ->
@@ -228,19 +243,19 @@ Require Import Utils.
         df_eval σ e = Some ee ->
         is_deriv e e' -> is_deriv (Abs e) (e' * (sign ee))
     | is_deriv_Sign (e : DefinedFunction) :
-        is_deriv (Sign e) R0
+        is_deriv (Sign e) 0
     | is_deriv_PSign (e : DefinedFunction) :
-        is_deriv (PSign e) R0
+        is_deriv (PSign e) 0
     | is_deriv_Max_l l le l' re r :
         df_eval σ l = Some le ->
         df_eval σ r = Some re ->
-        (le > re)%R ->
+        (le > re) = true ->
         is_deriv l l' ->
         is_deriv (Max l r) l'
     | is_deriv_Max_r l le r re r' :
         df_eval σ l = Some le ->
         df_eval σ r = Some re ->
-        (re >= le)%R ->
+        (re >= le) = true ->
         is_deriv r r' ->
         is_deriv (Max l r) r'.
    (*
@@ -256,7 +271,7 @@ Require Import Utils.
   
   Section deriv2.
 
-    Fixpoint df_eval_deriv (σ:df_env) (df:DefinedFunction) (v:SubVar) : option R
+    Fixpoint df_eval_deriv (σ:df_env) (df:DefinedFunction) (v:SubVar) : option float
       := (match df with
          | Number _ => Some 0
          | Var x => if x == v
@@ -287,7 +302,7 @@ Require Import Utils.
            end
          | Exp e =>
            match df_eval σ e, df_eval_deriv σ e v with
-           | Some ee, Some ed => Some (ed * exp ee)
+           | Some ee, Some ed => Some (ed * Fexp ee)
            | _, _  => None
            end
          | Log e =>
@@ -305,25 +320,25 @@ Require Import Utils.
          | Max l r =>
            match df_eval σ l, df_eval_deriv σ l v, df_eval σ r, df_eval_deriv σ r v with
            | Some le, Some ld, Some re, Some rd =>
-             if Rle_dec le re then Some rd else Some ld
+             if le <= re then Some rd else Some ld
            | _, _, _, _ => None
            end
-          end)%R.
+          end).
 
-    Definition df_eval_gradient σ (df:DefinedFunction) (lv:list SubVar) : option (list R)
+    Definition df_eval_gradient σ (df:DefinedFunction) (lv:list SubVar) : option (list float)
       := listo_to_olist (map (df_eval_deriv σ df) lv).
     
-    Definition single_olist (ol : option (list R)) : option (list (list R)) :=
+    Definition single_olist (ol : option (list float)) : option (list (list float)) :=
       match ol with
       | Some l => Some (l::nil)
       | _      => None
       end.
 
-   Definition combine_prod (l1 l2 : list (list R)) : list (list (R * R))
+   Definition combine_prod (l1 l2 : list (list float)) : list (list (float * float))
      := let l12 := list_prod l1 l2
         in map (fun '(x,y) => combine x y) l12.
 
-    Fixpoint df_eval_subgradient (σ:df_env) (df:DefinedFunction) (lv:list SubVar) : option (list (list R))
+    Fixpoint df_eval_subgradient (σ:df_env) (df:DefinedFunction) (lv:list SubVar) : option (list (list float))
       := (match df with
          | Number _ => Some ( (map (fun v:SubVar => 0) lv) :: nil )
          | Var x => single_olist (df_eval_gradient σ df lv)
@@ -346,12 +361,12 @@ Require Import Utils.
          | Divide l r =>
            match df_eval σ l, df_eval_subgradient σ l lv, df_eval σ r, df_eval_subgradient σ r lv with
            | Some le, Some ld, Some re, Some rd =>
-             Some (map (map (fun '(lp,rp) => (lp*re - le*rp)/(Rsqr re))) (combine_prod ld rd))
+             Some (map (map (fun '(lp,rp) => (lp*re - le*rp)/(re * re))) (combine_prod ld rd))
            | _, _, _, _ => None
            end
          | Exp e =>
            match df_eval σ e, df_eval_subgradient σ e lv with
-           | Some ee, Some ed => Some (map (map (fun pd => pd * exp ee)) ed)
+           | Some ee, Some ed => Some (map (map (fun pd => pd * Fexp ee)) ed)
            | _, _  => None
            end
          | Log e =>
@@ -362,7 +377,7 @@ Require Import Utils.
          | Abs e =>
            match df_eval σ e, df_eval_subgradient σ e lv with
            | Some ee, Some ed => 
-              if Req_EM_T ee 0 then Some (ed ++ (map (map (fun ep => -ep)) ed))
+              if Feq ee 0 then Some (ed ++ (map (map (fun ep => -ep)) ed))
               else Some (map (map (fun ed => (ed * (sign ee)))) ed)
            | _, _ => None
            end
@@ -379,17 +394,18 @@ Require Import Utils.
          | Max l r =>
            match df_eval σ l, df_eval_subgradient σ l lv, df_eval σ r, df_eval_subgradient σ r lv with
            | Some le, Some ld, Some re, Some rd =>
-             if Req_EM_T le re then Some (ld ++ rd)
-             else if Rgt_dec le re then Some ld
+             if Feq le re then Some (ld ++ rd)
+             else if le > re then Some ld
                   else Some rd
            | _, _, _, _ => None
            end
-          end)%R.
+          end).
 
     End deriv2.
 
     Section deriv_deriv.
 
+(*
       Theorem df_eval_deriv_same (σ:df_env) (df:DefinedFunction) (v:SubVar) :
         df_eval_deriv σ df v = df_eval σ (df_deriv df v).
       Proof.
@@ -425,7 +441,7 @@ Require Import Utils.
             f_equal.
             lra.
       Qed.
-
+*)
       End deriv_deriv.
         
   Section max_derived.
@@ -444,6 +460,7 @@ Require Import Utils.
     
 (*    Eval vm_compute in (df_deriv (MaxDerived (Var ("hi"%string)) (Var ("hello"%string))) "hi"%string)%df. *)
     
+(*
     Lemma MaxDerivedMax_eq (a b : DefinedFunction) :
       forall σ, df_eval σ (Max a b) = df_eval σ (MaxDerived a b).
     Proof.
@@ -459,7 +476,7 @@ Require Import Utils.
         rewrite Rabs_pos_eq by lra.
         lra.
     Qed.
-
+*)
   End max_derived.
 
   Section fv.
@@ -478,6 +495,7 @@ Require Import Utils.
          | PSign e => df_free_variables e
          | Log e => df_free_variables e
          | Exp e => df_free_variables e
+
          end.
 
     Definition df_closed (f: DefinedFunction) : Prop
@@ -510,7 +528,7 @@ Require Import Utils.
       - apply in_dom_lookup_strong.
         specialize (inc v); simpl in *.
         intuition.
-    Qed.
+     Admitted.
 
     (* This version has better computational properties *)
     Lemma df_eval_complete (σ:df_env) (f:DefinedFunction) :
@@ -627,6 +645,7 @@ Require Import Utils.
 
     End subst.
 
+End DefinedFunctions.
 
 (*
   Section FreeVariablesExample.

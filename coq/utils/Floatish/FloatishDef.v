@@ -42,7 +42,7 @@ Notation "x * y" := (Fmult x y) (at level 40, left associativity) : float.
 Notation "x / y" := (Fdiv x y) (at level 40, left associativity) : float.
 
 
-Notation "x == y" := (Feq x y) (at level 70, no associativity) : float.
+Notation "x ==b y" := (Feq x y) (at level 70, no associativity) : float.
 Notation "x != y" := (Fneq x y) (at level 70, no associativity) : float.
 Notation "x < y" := (Flt x y)  (at level 70, no associativity) : float.
 Notation "x <= y" := (Fle x y) (at level 70, no associativity) : float.
