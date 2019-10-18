@@ -4,6 +4,7 @@ Require Import Ranalysis_reg.
 Require Import Reals.Integration.
 Require Import Rtrigo_def.
 Require Import SeqProp.
+Require Import Coquelicot.Coquelicot.
 
 Require Import Lra Omega.
 Require Import Utils.
@@ -447,22 +448,7 @@ Proof.
   apply Rinv_0_lt_compat; trivial.
 Qed.
 
-Require Import mathcomp.ssreflect.ssreflect mathcomp.ssreflect.ssrbool mathcomp.ssreflect.eqtype mathcomp.ssreflect.seq.
-Require Import Coquelicot.Hierarchy.
-Require Import Coquelicot.Rbar.
-Require Import Coquelicot.Lim_seq.
 
-(*from coquelicot*)
-Require Import Coquelicot.Rcomplements.
-Require Import Coquelicot.Lub.
-Require Import Coquelicot.RInt.
-Require Import Coquelicot.RInt_analysis.
-Require Import Coquelicot.RInt_gen.
-Require Import Coquelicot.Derive.
-Require Import Coquelicot.Continuity.
-Require Import Coquelicot.ElemFct.
-
-Set Bullet Behavior "Strict Subproofs".
 
 Lemma is_RInt_inv (b:R) (pr:1 <= b) :
     is_RInt Rinv 1 b ((ln b) - (ln 1)).
@@ -581,132 +567,6 @@ Proof.
   lra.
   apply is_lim_Rint_inv_Rsqr0.
 Qed.  
-
-Lemma ex_finite_lim_seq_correct (u : nat -> R) :
-  ex_finite_lim_seq u <-> ex_lim_seq u /\ is_finite (Lim_seq u).
-Proof.
-  split.
-  case => l Hl.
-  split.
-  by exists l.
-  by rewrite (is_lim_seq_unique _ _ Hl).
-  case ; case => l Hl H.
-  exists l.
-  rewrite -(is_lim_seq_unique _ _ Hl).
-  by rewrite H (is_lim_seq_unique _ _ Hl).
-Defined.
-
-Lemma is_lim_seq_unique (u : nat -> R) (l : Rbar) :
-  is_lim_seq u l -> Lim_seq u = l.
-Proof.
-  move => Hu.
-  rewrite /Lim_seq.
-  replace l with (Rbar_div_pos (Rbar_plus l l) {| pos := 2; cond_pos := Rlt_R0_R2 |})
-    by (case: (l) => [x | | ] //= ; apply f_equal ; field).
-  apply (f_equal (fun x => Rbar_div_pos x _)).
-  apply f_equal2.
-  apply is_LimSup_seq_unique.
-  by apply is_lim_LimSup_seq.
-  apply is_LimInf_seq_unique.
-  by apply is_lim_LimInf_seq.
-Defined.
-
-Lemma is_lim_seq_spec :
-  forall u l,
-  is_lim_seq' u l <-> is_lim_seq u l.
-Proof.
-destruct l as [l| |] ; split.
-- intros H P [eps LP].
-  destruct (H eps) as [N HN].
-  exists N => n Hn.
-  apply LP.
-  now apply HN.
-- intros LP eps.
-  specialize (LP (fun y => Rabs (y - l) < eps)).
-  apply LP.
-  now exists eps.
-- intros H P [M LP].
-  destruct (H M) as [N HN].
-  exists N => n Hn.
-  apply LP.
-  now apply HN.
-- intros LP M.
-  specialize (LP (fun y => M < y)).
-  apply LP.
-  now exists M.
-- intros H P [M LP].
-  destruct (H M) as [N HN].
-  exists N => n Hn.
-  apply LP.
-  now apply HN.
-- intros LP M.
-  specialize (LP (fun y => y < M)).
-  apply LP.
-  now exists M.
-Defined.
-
-Lemma ex_finite_lim_seq_decr (u : nat -> R) (M : R) :
-  (forall n, (u (S n)) <= (u n)) -> (forall n, M <= u n)
-    -> ex_finite_lim_seq u.
-Proof.
-  intros.
-  apply ex_finite_lim_seq_correct.
-  have H1 : ex_lim_seq u.
-  exists (real (Inf_seq u)).
-  apply is_lim_seq_spec.
-  rewrite /Inf_seq ; case: ex_inf_seq ; case => [l | | ] //= Hl.
-  move => eps ; case: (Hl eps) => Hl1 [N Hl2].
-  exists N => n Hn.
-  apply Rabs_lt_between' ; split.
-  by apply Hl1.
-  apply Rle_lt_trans with (2 := Hl2).
-  elim: n N {Hl2} Hn => [ | n IH] N Hn.
-  rewrite (le_n_O_eq _ Hn).
-  apply Rle_refl.
-  apply le_lt_eq_dec in Hn.
-  case: Hn => [Hn | ->].
-  apply Rle_trans with (1 := H _), IH ; intuition.
-  by apply Rle_refl.
-  move: (Hl (u O) O) => H1 ; by apply Rlt_irrefl in H1.
-  case: (Hl M) => {Hl} n Hl.
-  apply Rlt_not_le in Hl.
-  by move: (Hl (H0 n)).
-  split => //.
-  apply Lim_seq_correct in H1.
-  case: (Lim_seq u) H1 => [l | | ] /= Hu.
-  by [].
-  apply is_lim_seq_spec in Hu.
-  case: (Hu (u O)) => {Hu} N Hu.
-  move: (Hu N (le_refl _)) => {Hu} Hu.
-  contradict Hu ; apply Rle_not_lt.
-  elim: N => [ | N IH].
-  by apply Rle_refl.
-  by apply Rle_trans with (1 := H _).
-  apply is_lim_seq_spec in Hu.
-  case: (Hu M) => {Hu} N Hu.
-  move: (Hu N (le_refl _)) => {Hu} Hu.
-  contradict Hu ; by apply Rle_not_lt.
-Defined.
-
-Lemma ex_finite_lim_seq_incr (u : nat -> R) (M : R) :
-  (forall n, (u n) <= (u (S n))) -> (forall n, u n <= M)
-    -> ex_finite_lim_seq u.
-Proof.
-  intros.
-  case: (ex_finite_lim_seq_decr (fun n => - u n) (- M)).
-  move => n ; by apply Ropp_le_contravar.
-  move => n ; by apply Ropp_le_contravar.
-  move => l ; move => Hu.
-  exists (- l).
-  apply is_lim_seq_spec in Hu.
-  apply is_lim_seq_spec.
-  intros eps.
-  case: (Hu eps) => {Hu} N Hu.
-  exists N => n Hn.
-  replace (u n - - l) with (-(- u n - l)) by ring.
-  rewrite Rabs_Ropp ; by apply Hu.
-Defined.
-
 
 (* this proves sum 1/i^2 converges to a finite limit *)
 Lemma sum_inv_sqr_bounded : 
