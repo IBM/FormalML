@@ -9,6 +9,8 @@ Require Import Coquelicot.Coquelicot.
 Require Import Lra Omega.
 Require Import Utils.
 
+Set Bullet Behavior "Strict Subproofs".
+
 Local Open Scope R_scope.
 Implicit Type f : R -> R.
 
@@ -382,7 +384,6 @@ Proof.
   apply continuity_pt_inv. 
   apply derivable_continuous_pt.
   apply derivable_pt_Rsqr.
-  unfold Rsqr.
   apply Rmult_integral_contrapositive; lra.
 Qed.
 
@@ -391,8 +392,7 @@ Proof.
   intros.
   apply continuity_implies_RiemannInt; trivial.
   intros.
-  apply continuity_pt_inv_x.
-  lra.
+  apply continuity_pt_inv_x; lra.
 Qed.
 
 Lemma integrable_inv_sq a : 1 <= a -> Riemann_integrable f_inv_sq 1 a.
@@ -413,10 +413,7 @@ Proof.
    unfold f_inv_sq.
    apply Rinv_le_contravar; trivial.
    apply Rmult_lt_0_compat; lra.
-   unfold Rsqr.
-   cut (0 <= x); intros.
-   apply Rmult_le_compat; trivial.
-   lra.
+   apply Rmult_le_compat; lra.
 Qed.
 
 Lemma lb_sum_inv (n:nat) :
@@ -448,25 +445,20 @@ Proof.
   apply Rinv_0_lt_compat; trivial.
 Qed.
 
-
-
 Lemma is_RInt_inv (b:R) (pr:1 <= b) :
     is_RInt Rinv 1 b ((ln b) - (ln 1)).
 Proof.
-  apply (@is_RInt_derive R_CompleteNormedModule).
-  rewrite Rmin_left.
+  apply (@is_RInt_derive).
+  rewrite Rmin_left by lra.
   rewrite Rmax_right; intuition.
   apply is_derive_Reals.
   apply derivable_pt_lim_ln; lra.
-  lra.
-  rewrite Rmin_left.
+  rewrite Rmin_left by lra.
   rewrite Rmax_right; intuition.
   unfold continuous.
   apply continuity_pt_filterlim.
-  apply continuity_pt_inv.
+  apply continuity_pt_inv; try lra.
   apply continuity_pt_id.
-  lra.
-  lra.
 Qed.
 
 Lemma is_lim_RInt_inv0:
@@ -475,15 +467,13 @@ Proof.
   apply is_lim_minus with (lf := p_infty) (lg := 0).
   apply is_lim_ln_p.
   apply (is_lim_ext (fun _ =>  0)).
-  rewrite ln_1.
-  trivial.
+  rewrite ln_1; trivial.
   apply is_lim_const.
   unfold is_Rbar_minus.
   simpl.
   replace (- 0) with (0) by lra.
   unfold is_Rbar_plus.
-  unfold Rbar_plus'.
-  trivial.
+  now unfold Rbar_plus'.
 Qed.
 
 Lemma is_lim_RInt_inv:
@@ -494,8 +484,7 @@ Proof.
   intros.
   symmetry.
   apply is_RInt_unique.
-  apply is_RInt_inv.
-  lra.
+  apply is_RInt_inv; lra.
   apply is_lim_RInt_inv0.
 Qed.
 
@@ -503,20 +492,18 @@ Lemma is_RInt_inv_Rsqr (b:R) (pr:1 <= b) :
     is_RInt (fun x:R => / Rsqr x) 1 b (1 - 1 / b).
 Proof.
   replace (1 - 1/b) with ((- Rinv b) - (- Rinv 1)).
-  apply (@is_RInt_derive R_CompleteNormedModule) with (f:= fun x => - Rinv x).
-  rewrite Rmin_left.
-  rewrite Rmax_right; intuition.
+  apply (@is_RInt_derive) with (f:= fun x => - Rinv x).
+  rewrite Rmin_left by lra.
+  rewrite Rmax_right by lra.
+  intros.
   replace (/ (Rsqr x)) with (- (- 1 / x^2)).
   apply is_derive_opp with (f := fun x => / x).
   apply is_derive_inv with (f := id).
-  apply (@is_derive_id R_AbsRing).
+  apply (@is_derive_id).
   unfold id; lra.
   unfold Rsqr.
-  field_simplify; trivial.
-  lra.
-  lra.
-  lra.
-  rewrite Rmin_left.
+  field_simplify; trivial; lra.
+  rewrite Rmin_left by lra.
   rewrite Rmax_right; intuition.
   unfold continuous.
   apply (continuity_pt_filterlim (fun x => / (Rsqr x))).
@@ -525,14 +512,9 @@ Proof.
   apply continuity_pt_mult.
   apply continuity_pt_id.
   apply continuity_pt_id.
-  unfold Rsqr.
-  apply Rmult_integral_contrapositive_currified.
-  lra.
-  lra.
-  lra.
-  field_simplify; trivial.
-  lra.
-  lra.
+  apply Rgt_not_eq.
+  apply Rmult_gt_0_compat; lra.
+  field_simplify; trivial; lra.
 Qed.
 
 Lemma is_lim_Rint_inv_Rsqr0 :
@@ -542,7 +524,6 @@ Proof.
   apply is_lim_const.
   apply (is_lim_ext Rinv).
   intros.
-  unfold Rdiv.
   lra.
   replace (Finite 0) with (Rbar_inv p_infty).
   apply is_lim_inv.
@@ -551,8 +532,7 @@ Proof.
   unfold Rbar_inv; trivial.
   compute.
   apply f_equal.
-  replace (Rplus R1 (Ropp R0)) with (R1); trivial.
-  lra.
+  replace (Rplus R1 (Ropp R0)) with (R1); trivial; lra.
 Qed.
 
 Lemma is_lim_Rint_inv_Rsqr :
@@ -568,7 +548,95 @@ Proof.
   apply is_lim_Rint_inv_Rsqr0.
 Qed.  
 
-(* this proves sum 1/i^2 converges to a finite limit *)
+Lemma is_RInt_gen_inv_Rsqr :
+  is_RInt_gen (fun x:R => / Rsqr x) (at_point 1) (Rbar_locally' p_infty) 1.  
+Proof.
+  apply (is_RInt_gen_ext (Derive (fun x => - / x))).
+  - exists (fun a => a=1) (fun b => b>1000).
+      now unfold at_point.
+      unfold Rbar_locally'.
+      now exists 1000.
+      unfold fst, snd. 
+      intros.
+      subst.
+      rewrite Rmin_left in H1 by lra.
+      rewrite Rmax_right in H1 by lra.
+      assert (x0 <> 0).
+      apply Rgt_not_eq; lra.
+      rewrite Derive_opp.
+      rewrite Derive_inv; try lra.
+      rewrite Derive_id.
+      unfold Rsqr.
+      field_simplify; try lra.
+      now auto_derive.
+  - replace (1) with (0 - (-1)) at 2 by lra.
+    apply is_RInt_gen_Derive.
+    + exists (fun a => a=1) (fun b => b>1000).
+      now unfold at_point.
+      unfold Rbar_locally'.
+      now exists 1000.
+      intros.
+      unfold fst, snd in H1.
+      subst.
+      rewrite Rmin_left in H1 by lra.
+      rewrite Rmax_right in H1 by lra.
+      assert (x0 <> 0).
+      apply Rgt_not_eq; lra.
+      auto_derive; try lra.
+    + exists (fun a => a=1) (fun b => b>1000).
+      now unfold at_point.
+      unfold Rbar_locally'.
+      now exists 1000.
+      intros.
+      unfold fst, snd in H1.
+      subst.
+      rewrite Rmin_left in H1 by lra.
+      rewrite Rmax_right in H1 by lra.
+      assert (x0 <> 0).
+      apply Rgt_not_eq; lra.
+      apply continuous_continuous_on with (D:=fun x => x>0).
+      assert (0 < 1/2) by lra.
+      exists (mkposreal (1/2) H2).
+      intros.
+      cut (Rabs (y0-x0) < 1/2).
+      unfold Rabs.
+      destruct (Rcase_abs (y0-x0)); lra.
+      apply -> ball_Rabs; trivial.
+      apply (continuous_on_ext (fun x => x > 0) (fun x => / Rsqr x)).
+      * intros.
+        assert (x <> 0).
+        apply Rgt_not_eq; lra.
+        rewrite Derive_opp.
+        rewrite Derive_inv; try lra.
+        rewrite Derive_id.
+        unfold Rsqr.
+        field_simplify; try lra.
+        apply ex_derive_id.
+      * apply continuous_on_forall.
+        intros.
+        apply (@ex_derive_continuous).
+        auto_derive.
+        apply Rgt_not_eq.
+        now apply Rmult_gt_0_compat. 
+    + unfold filterlim, filter_le.
+      intros.
+      unfold filtermap, at_point.
+      replace (- / 1) with (-1) by lra.
+      now apply locally_singleton.
+    + replace (filterlim (fun x : R => - / x) (Rbar_locally' p_infty) (locally 0)) with 
+          (is_lim (fun x : R => - / x) p_infty 0).
+      replace (Finite 0) with (Rbar_opp 0).
+      * apply is_lim_opp.
+        replace (Finite 0) with (Rbar_inv p_infty).
+        -- apply is_lim_inv.
+           apply is_lim_id.
+           discriminate.
+        -- now compute.
+      * compute; f_equal; lra.
+      * unfold is_lim; trivial.
+Qed.
+
+(* this proves sum 1/i^2 converges to a finite limit  *)
 Lemma sum_inv_sqr_bounded : 
   ex_finite_lim_seq (fun n => sum_f_R0 (fun i => 1 / Rsqr (INR i + 1)) n).
 Proof.
@@ -585,13 +653,11 @@ Proof.
   rewrite (Rmult_1_l).
   apply Rinv_0_lt_compat.
   destruct n.
-  compute.
-  lra.
+  compute; lra.
   replace (INR (S n) + 1 + 1) with (INR (S n) + 2) by lra.
   apply Rlt_0_sqr.
   apply Rgt_not_eq.
-  cut (0 <= INR (S n)).
-  lra.
+  cut (0 <= INR (S n)); try lra.
   apply pos_INR.
   intros.
   apply Rle_trans with (r2 := 2 - 1 / INR (n+1)) (r3 := 2).
