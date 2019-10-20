@@ -136,7 +136,7 @@ Qed.
 Lemma Indicator_left (a b:R) (f : R -> R) :
   a < b -> is_RInt_gen (fun t => (f t) * (Indicator a b t)) (Rbar_locally' m_infty) (at_point a) 0.
 Proof.  
-  - intros.
+    intros.
     unfold Indicator.
     apply (is_RInt_gen_ext (fun _ =>  0)).
     + exists (fun y => y<a) (fun x => x=a).
@@ -150,29 +150,27 @@ Proof.
       rewrite Rmin_left; try lra.
       rewrite Rmax_right; try lra.
       intros.
-      destruct (Rlt_dec x0 a).
-      lra.
-      lra.
+      destruct (Rlt_dec x0 a); try lra.
     + apply (is_RInt_gen_ext (Derive (fun _ => 0))).
       * apply filter_forall.
         intros.
         apply Derive_const.
       * replace (0) with (0 - 0) at 1 by lra.
         apply is_RInt_gen_Derive with (f0 := fun _ => 0) (la := 0) (lb := 0).
-        ++ apply filter_forall.
+        - apply filter_forall.
            intros.
            apply ex_derive_const.
-        ++ apply filter_forall.
+        - apply filter_forall.
            intros.
            apply continuous_const.
-        ++ apply filterlim_const.
-        ++ apply filterlim_const.
+        - apply filterlim_const.
+        - apply filterlim_const.
 Qed.
 
 Lemma Indicator_right (a b:R) (f : R -> R) :
   a < b -> is_RInt_gen (fun t => (f t) * (Indicator a b t)) (at_point b) (Rbar_locally' p_infty)  0.
 Proof.  
-  - intros.
+    intros.
     unfold Indicator.
     apply (is_RInt_gen_ext (fun _ =>  0)).
     + exists (fun x => x=b) (fun y => b<y).
@@ -186,11 +184,8 @@ Proof.
       rewrite Rmin_left; try lra.
       rewrite Rmax_right; try lra.
       intros.
-      destruct (Rlt_dec x a).
-      lra.
-      destruct (Rgt_dec x b).      
-      lra.
-      lra.
+      destruct (Rlt_dec x a); try lra.
+      destruct (Rgt_dec x b); try lra.
     + apply (is_RInt_gen_ext (Derive (fun _ => 0))).
       apply filter_forall.
       intros.
@@ -210,7 +205,7 @@ Qed.
 Lemma Indicator_full (a b:R) (f : R -> R) (l:R):
   a < b -> is_RInt f a b l -> is_RInt_gen (fun t => (f t) * (Indicator a b t)) (Rbar_locally' m_infty) (Rbar_locally' p_infty) l.
 Proof.
-  - intros.
+    intros.
     replace (l) with (0 + l) by lra.
     apply (@is_RInt_gen_Chasles) with (b:=a).
     + apply Rbar_locally'_filter.
@@ -229,13 +224,13 @@ Proof.
         rewrite Rmin_left; try lra.
         rewrite Rmax_right; try lra.
         intros.
-        ++ unfold Indicator.
+        - unfold Indicator.
            destruct (Rlt_dec x a).
            lra.
            destruct (Rgt_dec x b).
            lra.
            lra.
-        ++ trivial.
+        - trivial.
       * now apply Indicator_right.
 Qed.
 
@@ -283,7 +278,7 @@ Qed.
 Lemma Uniform_mean0 (a b:R) :
   a < b -> is_RInt (fun t => t*(/ (b-a))) a b ((b+a)/2).
 Proof.  
-  - intros.
+    intros.
     replace ((b+a)/2) with  (/(b-a)*(b^2/2) - (/(b-a)*(a^2/2))).
     + apply (@is_RInt_derive) with (f := fun t => (/(b-a))*(t^2/2)).      
       rewrite Rmin_left; try lra.
@@ -319,7 +314,7 @@ Qed.
 Lemma Uniform_variance0 (a b:R) :
   a < b -> is_RInt (fun t => (/ (b-a)) * (t-(b+a)/2)^2) a b ((b-a)^2/12).
 Proof.
-  - intros.
+    intros.
     replace ((b-a)^2/12) with (scal (/(b-a)) ((b-a)^3/12)).
     + apply (@is_RInt_scal) with (k := /(b-a)) (f := fun t => (t - (b+a)/2)^2) (If := (b-a)^3/12).
       apply (is_RInt_ext (fun t => t^2 - (b+a)*t + (b+a)^2/4)).
@@ -327,7 +322,7 @@ Proof.
         now field_simplify.
       * replace ((b-a)^3/12) with ((a-b)*(b^2+4*a*b+a^2)/6 + ((b+a)^2/4)*(b-a)).
         apply is_RInt_plus with (f:= fun t=> t^2 - (b+a)*t) (g := fun t=> (b+a)^2/4).
-        -- replace ((a - b) * (b ^ 2 + 4 * a * b + a ^ 2) / 6) with ((b^3/3-a^3/3) - (b-a)*(b+a)^2/2).
+        -  replace ((a - b) * (b ^ 2 + 4 * a * b + a ^ 2) / 6) with ((b^3/3-a^3/3) - (b-a)*(b+a)^2/2).
            apply is_RInt_minus with (f := fun t => t^2) (g := fun t => (b+a)*t).
            apply (@is_RInt_derive) with (f := fun t => t^3/3).
            ++ intros.
@@ -364,10 +359,10 @@ Proof.
               ** now field_simplify.
            ++
               equation_simplifier.
-        -- replace ((b + a) ^ 2 / 4 * (b - a)) with (scal (b-a) ((b+a)^2/4)).
+        -  replace ((b + a) ^ 2 / 4 * (b - a)) with (scal (b-a) ((b+a)^2/4)).
            apply (@is_RInt_const).
            compute; now field_simplify.
-        -- equation_simplifier.
+        -  equation_simplifier.
     + compute; field_simplify; lra.
 Qed.
 
@@ -382,10 +377,7 @@ Proof.
   now apply Uniform_variance0.
 Qed.
 
-
-
 End Uniform_Distribution.
-
 
 Section Gaussian_Distribution.
 (* standard normal distribution *)
@@ -1123,7 +1115,7 @@ Qed.
 Lemma erf_int00 : 
   is_RInt_gen (fun s => RInt_gen (fun u => u*exp(-(u^2+(u*s)^2))) (at_point 0)  (Rbar_locally' p_infty)) (at_point 0) (Rbar_locally' p_infty) (PI / 4).
 Proof.
-  - apply (is_RInt_gen_ext (fun s => / (2*s^2+2))).
+    apply (is_RInt_gen_ext (fun s => / (2*s^2+2))).
     apply filter_forall.
     + intros.
       symmetry.
@@ -2012,8 +2004,7 @@ Proof.
   eapply (Filter_prod _ _ _ (fun _ => True) (fun _ => True))
   ; simpl; eauto.
   intros; simpl.
-  unfold Standard_Gaussian_PDF.
-  lra.
+  unfold Standard_Gaussian_PDF; lra.
   Unshelve.
   exact 0.
   exact 0.
