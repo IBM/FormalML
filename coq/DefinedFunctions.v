@@ -7,6 +7,8 @@ Require Import NPeano.
 Require Import FloatishDef FloatishOps.
 Require Import Utils.
 
+Set Bullet Behavior "Strict Subproofs".
+
 Section DefinedFunctions.
 
   Context {floatish_impl:floatish}.
@@ -498,19 +500,19 @@ Section DefinedFunctions.
       induction f; simpl; intros inc
       ;  try solve [rewrite <- incl_app_iff in inc
                     ; intuition
-                    ; destruct H1 as [v1 ev1]
-                    ; destruct H2 as [v2 ev2]
+                    ; destruct X as [v1 ev1]
+                    ; destruct X0 as [v2 ev2]
                     ; rewrite ev1; rewrite ev2
                     ; eauto
                    | intuition
-                     ; destruct H as [v1 ev1]
+                     ; destruct X as [v1 ev1]
                      ; rewrite ev1
                      ; eauto].
       - eauto.
       - apply in_dom_lookup_strong.
         specialize (inc v); simpl in *.
         intuition.
-     Admitted.
+    Qed.
 
     (* This version has better computational properties *)
     Lemma df_eval_complete (σ:df_env) (f:DefinedFunction) :
