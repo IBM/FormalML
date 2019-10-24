@@ -198,8 +198,9 @@ Definition randvec (n : nat ) (st : RND_state) (randgen : RND_state -> (R * RND_
 
   Definition update_firstp {A B:Type} (dec:forall a a':A, {a=a'} + {a<>a'}) := fun (l:list (A*B)) '(v,e') => update_first dec l v  e'.
 
+  
   Definition update_list {A B:Type} (dec:forall a a':A, {a=a'} + {a<>a'}) (l up:list (A*B))  : list (A*B)
-    := fold_left (update_firstp dec) l up.
+    := fold_left (update_firstp dec) up l.
 
 
   Definition optimize_step (step : nat) (df : DefinedFunction) (σ:df_env) (lvar : list SubVar) (noise_st : Stream float) : (option df_env)*(Stream float) :=
