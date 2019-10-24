@@ -291,5 +291,109 @@ Proof.
   trivial.
 Qed.  
 
+Lemma increasing_bounded_limit (M:R) (f: R->R):
+  Ranalysis1.increasing f -> 
+  (forall x:R, f x <= M) -> ex_finite_lim f p_infty.
+Proof.
+  unfold Ranalysis1.increasing.
+  intros.
+  unfold ex_finite_lim.
+  assert { m:R | is_lub (fun y : R => (exists x:R, y = f x)) m }.
+  - apply completeness.
+    + unfold bound.
+      exists M.
+      unfold is_upper_bound.
+      intros.
+      destruct H1.
+      now subst.
+    + exists (f 0); now exists (0).
+  - destruct H1 as [L HH].
+    exists L.
+    rewrite <- is_lim_spec.
+    unfold is_lim'.
+    intros.
+    unfold Rbar_locally'.
+    unfold is_lub in HH.
+    destruct HH.
+    unfold is_upper_bound in H1.
+    unfold is_upper_bound in H2.
+    (* since L-eps is not an upper bound, there exists (f x0) > L-eps *)
+    assert (exists x0, Rabs(f x0 - L) < eps).
+    + eexists.
+      admit.
+    + destruct H3 as [x0 H4].
+      exists (x0).
+      intros.
+      * assert ((f x)>=(f x0)).
+        -- apply Rle_ge.
+           unfold Ranalysis1.increasing in H.
+           apply H.
+           lra.
+        -- unfold is_upper_bound in H1.
+           assert (f x <= L).
+           apply H1.
+           now exists x.
+           replace (f x - L) with (- (L - f x)) by lra.
+           rewrite (Rabs_Ropp).
+           rewrite Rabs_pos_eq.
+           assert (f x0 <= L).
+           apply H1.
+           now exists x0.
+           assert (L - f x0 < eps).
+           replace (L - f x0) with (Rabs (L - f x0)).
+           replace (L - f x0) with (- (f x0 - L)) by lra.
+           now rewrite (Rabs_Ropp).
+           rewrite Rabs_pos_eq; trivial.
+           lra.
+           lra.
+           lra.
+  Admitted.
 
+Lemma ex_lim_rint_gen_Rbar (f : R->R) (a:R) (b:Rbar):
+  (forall y, ex_RInt f a y) ->
+  ex_finite_lim (fun x => RInt f a x) b -> ex_RInt_gen f (at_point a) (Rbar_locally' b).
+Proof.
+  intros.
+  unfold ex_RInt_gen.
+  unfold ex_finite_lim in H0.
+  destruct H0.
+  exists (x).
+  apply lim_rint_gen_Rbar; trivial.
+Qed.
+
+Lemma ex_RInt_gen_bounded (M:R) (f : R -> R) (a:R) :
+  (forall (b:R), f b >= 0) -> 
+  (forall (b:R), ex_RInt f a b) -> 
+  (forall (b:R), RInt f a b <= M) -> ex_RInt_gen f (at_point a) (Rbar_locally' p_infty).
+Proof.
+  intros.
+  assert ( Ranalysis1.increasing (fun z => RInt f a z)).
+  - intros.
+    unfold Ranalysis1.increasing.
+    intros.
+    replace (RInt f a x) with (plus (RInt f a x) 0).
+    + rewrite <- RInt_Chasles with (b:=x) (c:=y).
+      * apply Rplus_le_compat_l.
+        apply RInt_ge_0; trivial.
+        -- apply ex_RInt_Chasles with (b := a).
+           ++ apply ex_RInt_swap.
+              trivial.
+           ++ trivial.
+        -- intros.
+           apply Rge_le.
+           apply H.
+      * trivial.
+      * apply ex_RInt_Chasles with (b := a).
+        -- apply ex_RInt_swap.
+           trivial.
+        -- trivial.
+    + apply Rplus_0_r.
+  - apply ex_lim_rint_gen_Rbar.
+    trivial.
+    apply increasing_bounded_limit with (M:=M).
+    trivial.
+    trivial.
+Qed.
+  
 Hint Resolve sqrt2_neq0 sqrt_PI_neq0 sqrt_2PI_nzero : Rarith.
+
