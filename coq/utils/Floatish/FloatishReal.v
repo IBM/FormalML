@@ -1,4 +1,4 @@
-Require Import BinInt Rbase Rbasic_fun R_sqrt Rtrigo_def Rtrigo1 Rpower.
+Require Import BinInt Reals Lra.
 
 Require Import FloatishDef.
 
@@ -31,4 +31,3 @@ Local Instance floatish_R : floatish :=
     ; Fgt x y := if Rgt_dec x y then true else false
     ; Fge x y := if Rge_dec x y then true else false
   }.
-

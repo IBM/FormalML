@@ -3,8 +3,10 @@ Require Import EquivDec.
 Require Import RelationClasses.
 Require Import List.
 Require Import NPeano.
+Require Import Lra.
+Require Reals.
 
-Require Import FloatishDef FloatishOps.
+Require Import Floatish.
 Require Import Utils.
 
 Set Bullet Behavior "Strict Subproofs".
@@ -444,23 +446,6 @@ Section DefinedFunctions.
     
 (*    Eval vm_compute in (df_deriv (MaxDerived (Var ("hi"%string)) (Var ("hello"%string))) "hi"%string)%df. *)
     
-(*
-    Lemma MaxDerivedMax_eq (a b : DefinedFunction) :
-      forall σ, df_eval σ (Max a b) = df_eval σ (MaxDerived a b).
-    Proof.
-      simpl; intros σ.
-      destruct (df_eval σ a); destruct (df_eval σ b); trivial.
-      f_equal.
-      destruct (Rle_dec r r0).
-      - rewrite Rmax_right by trivial.
-        rewrite Rabs_pos_eq by lra.
-        lra.
-      - rewrite Rmax_left by lra.
-        rewrite Rabs_minus_sym.
-        rewrite Rabs_pos_eq by lra.
-        lra.
-    Qed.
-*)
   End max_derived.
 
   Section fv.
@@ -630,6 +615,30 @@ Section DefinedFunctions.
     End subst.
 
 End DefinedFunctions.
+
+Section real_pfs.
+
+  Import Reals.
+  Local Existing Instance floatish_R.
+  
+  Lemma MaxDerivedMax_eq (a b : DefinedFunction) :
+    forall σ, df_eval σ (Max a b) = df_eval σ (MaxDerived a b).
+  Proof.
+    simpl; intros σ.
+    destruct (df_eval σ a); destruct (df_eval σ b); trivial.
+    f_equal.
+    autorewrite with Rarith in *.
+    destruct (Rle_dec f f0).
+    - rewrite Rmax_right by trivial.
+      rewrite Rabs_pos_eq by lra.
+      lra.
+    - rewrite Rmax_left by lra.
+      rewrite Rabs_minus_sym.
+      rewrite Rabs_pos_eq by lra.
+      lra.
+  Qed.
+
+End real_pfs.
 
 (*
   Section FreeVariablesExample.

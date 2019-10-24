@@ -36,6 +36,7 @@ MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	utils/Utils \
 	utils/Floatish/FloatishDef \
 	utils/Floatish/FloatishOps \
+	utils/Floatish/FloatishRealOps \
 	utils/Floatish/FloatishInterval \
 	utils/Floatish/FloatishIEEE \
 	utils/Floatish/FloatishReal \
