@@ -215,6 +215,16 @@ Definition randvec (n : nat ) (st : RND_state) (randgen : RND_state -> (R * RND_
                                           (fun val grad noise => val - alpha*(grad + noise))
                                           lvals gradvec lnoise))), nst)
     | (_, _) => (None, nst)
-    end.                  
+    end.
+
+  Fixpoint optimize_steps (start count:nat) (df : DefinedFunction) (σ:df_env) (lvar : list SubVar) (noise_st : Stream float) : (option df_env)*(Stream float) :=
+    match count with
+    | 0 => (Some σ, noise_st)
+    | S n =>
+      match optimize_step start df σ lvar noise_st with
+      | (Some σ', noise_st') => optimize_steps (S start) n df σ' lvar noise_st'
+      | (None, noise_st') => (None, noise_st')
+      end
+    end.
 
 End GenNN.
