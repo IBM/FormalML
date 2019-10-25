@@ -291,6 +291,50 @@ Proof.
   trivial.
 Qed.  
 
+Theorem contrapos : forall p q:Prop, (p->q)->(~q->~p).
+Proof. 
+intros. 
+intro. 
+apply H0. 
+apply H. 
+exact H1. 
+Qed.
+
+Require Import Sets.Ensembles.
+
+Lemma contains_lub (S1  S2 : Ensemble R) (L1 L2:R) :
+  (is_lub S1 L1) /\ (is_upper_bound S2 L2) -> Included R S1 S2 -> L1 <= L2.
+Proof.  
+  unfold is_lub, is_upper_bound.
+  intros.
+  destruct H.
+  destruct H.
+  unfold Included, In in H0.
+  auto.
+Qed.
+
+Lemma not_contains_lub (S1  S2 : Ensemble R) (L1 L2:R) :
+  (is_lub S1 L1) /\ (is_upper_bound S2 L2) -> ~(L1 <= L2) -> ~ Included R S1 S2.
+Proof.
+  intro.
+  apply contrapos.
+  apply contains_lub.
+  trivial.
+Qed.
+  
+Lemma not_included0 (S1  S2 : Ensemble R) :
+  ~ Included R S1 S2 -> exists x:R, ~(In R S1 x -> In R S2 x).
+Proof.
+  unfold Included.
+  apply Classical_Pred_Type.not_all_ex_not.
+Qed.
+
+Lemma not_included (S1  S2 : Ensemble R) :
+  ~ Included R S1 S2 -> exists x:R, (In R S1 x /\ ~ In R S2 x).
+Proof.
+  unfold Included.
+  Admitted.
+
 Lemma increasing_bounded_limit (M:R) (f: R->R):
   Ranalysis1.increasing f -> 
   (forall x:R, f x <= M) -> ex_finite_lim f p_infty.
@@ -319,8 +363,7 @@ Proof.
     unfold is_upper_bound in H2.
     (* since L-eps is not an upper bound, there exists (f x0) > L-eps *)
     assert (exists x0, Rabs(f x0 - L) < eps).
-    + eexists.
-      admit.
+    + admit.
     + destruct H3 as [x0 H4].
       exists (x0).
       intros.
