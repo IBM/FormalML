@@ -291,15 +291,6 @@ Proof.
   trivial.
 Qed.  
 
-Theorem contrapos : forall p q:Prop, (p->q)->(~q->~p).
-Proof. 
-intros. 
-intro. 
-apply H0. 
-apply H. 
-exact H1. 
-Qed.
-
 Require Import Sets.Ensembles.
 
 Lemma contains_lub (S1  S2 : Ensemble R) (L1 L2:R) :
@@ -314,12 +305,12 @@ Proof.
 Qed.
 
 Lemma not_contains_lub (S1  S2 : Ensemble R) (L1 L2:R) :
-  (is_lub S1 L1) /\ (is_upper_bound S2 L2) -> ~(L1 <= L2) -> ~ Included R S1 S2.
+  (is_lub S1 L1) /\ (is_upper_bound S2 L2) -> L1 > L2 -> ~ Included R S1 S2.
 Proof.
-  intro.
-  apply contrapos.
-  apply contains_lub.
-  trivial.
+  unfold is_lub, is_upper_bound, Included, In.
+  intuition.
+  assert (~ (L1 <= L2)) by lra.
+  intuition.
 Qed.
   
 Lemma not_included0 (S1  S2 : Ensemble R) :
@@ -333,7 +324,13 @@ Lemma not_included (S1  S2 : Ensemble R) :
   ~ Included R S1 S2 -> exists x:R, (In R S1 x /\ ~ In R S2 x).
 Proof.
   unfold Included.
-  Admitted.
+  intros.
+  apply not_included0 in H.
+  destruct H.
+  exists x.
+  apply Classical_Prop.imply_to_and in H.
+  trivial.
+Qed.
 
 Lemma increasing_bounded_limit (M:R) (f: R->R):
   Ranalysis1.increasing f -> 
