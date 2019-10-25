@@ -293,18 +293,7 @@ Qed.
 
 Require Import Sets.Ensembles.
 
-Lemma contains_lub (S1  S2 : Ensemble R) (L1 L2:R) :
-  (is_lub S1 L1) /\ (is_upper_bound S2 L2) -> Included R S1 S2 -> L1 <= L2.
-Proof.  
-  unfold is_lub, is_upper_bound.
-  intros.
-  destruct H.
-  destruct H.
-  unfold Included, In in H0.
-  auto.
-Qed.
-
-Lemma not_contains_lub (S1  S2 : Ensemble R) (L1 L2:R) :
+Lemma lub_not_contains (S1  S2 : Ensemble R) (L1 L2:R) :
   (is_lub S1 L1) /\ (is_upper_bound S2 L2) -> L1 > L2 -> ~ Included R S1 S2.
 Proof.
   unfold is_lub, is_upper_bound, Included, In.
@@ -313,25 +302,53 @@ Proof.
   intuition.
 Qed.
   
-Lemma not_included0 (S1  S2 : Ensemble R) :
-  ~ Included R S1 S2 -> exists x:R, ~(In R S1 x -> In R S2 x).
-Proof.
-  unfold Included.
-  apply Classical_Pred_Type.not_all_ex_not.
-Qed.
-
+(* this lemma needs Classical results, i.e. exluded middle *)
 Lemma not_included (S1  S2 : Ensemble R) :
-  ~ Included R S1 S2 -> exists x:R, (In R S1 x /\ ~ In R S2 x).
+  ~ Included R S1 S2 -> exists x:R, In R S1 x /\ ~ In R S2 x.
 Proof.
   unfold Included.
   intros.
-  apply not_included0 in H.
+  apply Classical_Pred_Type.not_all_ex_not in H.  
   destruct H.
   exists x.
   apply Classical_Prop.imply_to_and in H.
   trivial.
 Qed.
 
+Lemma lub_witness0 (S1 : Ensemble R) (L1 L2:R) :
+  let S2 :Ensemble R := (fun x:R => In R S1 x /\ x <= L2) in
+  (is_lub S1 L1) -> L1 > L2 -> exists x:R, In R S1 x /\ ~In R S2 x.
+Proof.
+  intros.
+  apply not_included.
+  apply lub_not_contains with (L1 := L1) (L2 := L2).
+  split.
+  trivial.
+  unfold is_upper_bound.
+  unfold S2.
+  intros.
+  destruct H1.
+  trivial.
+  trivial.
+Qed.  
+
+Lemma lub_witness (S1 : Ensemble R) (L1 L2:R) :
+  let S2 :Ensemble R := (fun x:R => In R S1 x /\ x <= L2) in
+  (is_lub S1 L1) -> L1 > L2 -> exists x:R, In R S1 x /\ x > L2.
+Proof.
+  intros.
+  assert (exists x:R, In R S1 x /\ ~In R S2 x).
+  apply lub_witness0 with (L1 := L1); trivial.
+  destruct H1.
+  exists x.
+  destruct H1.
+  split.
+  trivial.
+  unfold S2 in H2.
+  unfold In in H2.
+  intuition.
+Qed.
+  
 Lemma increasing_bounded_limit (M:R) (f: R->R):
   Ranalysis1.increasing f -> 
   (forall x:R, f x <= M) -> ex_finite_lim f p_infty.
@@ -356,38 +373,33 @@ Proof.
     unfold Rbar_locally'.
     unfold is_lub in HH.
     destruct HH.
-    unfold is_upper_bound in H1.
-    unfold is_upper_bound in H2.
     (* since L-eps is not an upper bound, there exists (f x0) > L-eps *)
-    assert (exists x0, Rabs(f x0 - L) < eps).
-    + admit.
-    + destruct H3 as [x0 H4].
-      exists (x0).
+    assert (exists y0, (exists x0, y0 = f x0) /\ y0 > L-eps).
+    + apply lub_witness with (L1 := L) (L2 := L-eps).
+      * unfold is_lub.
+        split; trivial.
+      * apply Rminus_gt.
+        replace (L - (L - (pos eps))) with (pos eps) by lra.
+        apply eps.
+    + destruct H3.
+      destruct H3.
+      destruct H3.
+      exists x0.
       intros.
-      * assert ((f x)>=(f x0)).
-        -- apply Rle_ge.
-           unfold Ranalysis1.increasing in H.
-           apply H.
-           lra.
-        -- unfold is_upper_bound in H1.
-           assert (f x <= L).
-           apply H1.
-           now exists x.
-           replace (f x - L) with (- (L - f x)) by lra.
-           rewrite (Rabs_Ropp).
-           rewrite Rabs_pos_eq.
-           assert (f x0 <= L).
-           apply H1.
-           now exists x0.
-           assert (L - f x0 < eps).
-           replace (L - f x0) with (Rabs (L - f x0)).
-           replace (L - f x0) with (- (f x0 - L)) by lra.
-           now rewrite (Rabs_Ropp).
-           rewrite Rabs_pos_eq; trivial.
-           lra.
-           lra.
-           lra.
-  Admitted.
+      replace (f x1 - L) with (- (L - f x1)) by lra.
+      rewrite (Rabs_Ropp).
+      rewrite Rabs_pos_eq.
+      * assert (f x0 <= f x1).
+        -- apply H.
+           now left.
+        -- lra.
+      * unfold is_upper_bound in H1.
+        apply Rge_le.
+        apply Rge_minus.
+        apply Rle_ge.    
+        apply H1.
+        now exists x1.
+Qed.
 
 Lemma ex_lim_rint_gen_Rbar (f : R->R) (a:R) (b:Rbar):
   (forall y, ex_RInt f a y) ->
