@@ -311,8 +311,7 @@ Proof.
   apply Classical_Pred_Type.not_all_ex_not in H.  
   destruct H.
   exists x.
-  apply Classical_Prop.imply_to_and in H.
-  trivial.
+  now apply Classical_Prop.imply_to_and in H.
 Qed.
 
 Lemma lub_witness0 (S1 : Ensemble R) (L1 L2:R) :
@@ -322,13 +321,10 @@ Proof.
   intros.
   apply not_included.
   apply lub_not_contains with (L1 := L1) (L2 := L2).
-  split.
-  trivial.
-  unfold is_upper_bound.
-  unfold S2.
+  split; trivial.
+  unfold is_upper_bound, S2.
   intros.
-  destruct H1.
-  trivial.
+  now destruct H1.
   trivial.
 Qed.  
 
@@ -342,8 +338,7 @@ Proof.
   destruct H1.
   exists x.
   destruct H1.
-  split.
-  trivial.
+  split; trivial.
   unfold S2 in H2.
   unfold In in H2.
   intuition.
