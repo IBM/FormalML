@@ -314,36 +314,27 @@ Proof.
   now apply Classical_Prop.imply_to_and in H.
 Qed.
 
-Lemma lub_witness0 (S1 : Ensemble R) (L1 L2:R) :
-  let S2 :Ensemble R := (fun x:R => In R S1 x /\ x <= L2) in
-  (is_lub S1 L1) -> L1 > L2 -> exists x:R, In R S1 x /\ ~In R S2 x.
-Proof.
-  intros.
-  apply not_included.
-  apply lub_not_contains with (L1 := L1) (L2 := L2).
-  split; trivial.
-  unfold is_upper_bound, S2.
-  intros.
-  now destruct H1.
-  trivial.
-Qed.  
-
 Lemma lub_witness (S1 : Ensemble R) (L1 L2:R) :
   let S2 :Ensemble R := (fun x:R => In R S1 x /\ x <= L2) in
   (is_lub S1 L1) -> L1 > L2 -> exists x:R, In R S1 x /\ x > L2.
 Proof.
   intros.
   assert (exists x:R, In R S1 x /\ ~In R S2 x).
-  apply lub_witness0 with (L1 := L1); trivial.
-  destruct H1.
-  exists x.
-  destruct H1.
-  split; trivial.
-  unfold S2 in H2.
-  unfold In in H2.
-  intuition.
+  - apply not_included.
+    apply lub_not_contains with (L1 := L1) (L2 := L2).
+    + split; trivial.
+      unfold is_upper_bound, S2.
+      intros.
+      now destruct H1.
+    + trivial.
+  - destruct H1.
+    exists x.
+    destruct H1.
+    split; trivial.
+    unfold S2, In in H2.
+    intuition.
 Qed.
-  
+
 Lemma increasing_bounded_limit (M:R) (f: R->R):
   Ranalysis1.increasing f -> 
   (forall x:R, f x <= M) -> ex_finite_lim f p_infty.
