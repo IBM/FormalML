@@ -167,22 +167,6 @@ Section GenNN.
   Definition lookup_list (σ:df_env) (lvar : list SubVar) : option (list float) :=
     listo_to_olist (map (fun v => lookup var_dec σ v) lvar).
 
-  (*
-(* we don't know what a random state type is yet *)
-Definition RND_state := Type.
-
-Fixpoint randvecst (n : nat) (st : RND_state ) (randgen : RND_state -> (R * RND_state)) : list (R * RND_state) := 
-  match n with
-  | 0 => nil
-  | S n' => let rst :=  randgen st in
-            rst :: randvecst n' (snd rst) randgen
-  end.
-
-Definition randvec (n : nat ) (st : RND_state) (randgen : RND_state -> (R * RND_state)) : list (R) * RND_state := 
-  let rstlist := randvecst n st randgen in
-  (map fst rstlist, snd(last rstlist (R0,st))).
-   *)
-
   Definition combine_with {A:Type} {B:Type} {C:Type} (f: A -> B -> C ) (lA : list A) (lB : list B) : list C :=
     map (fun '(a, b) => f a b) (combine lA lB).
 
@@ -201,7 +185,6 @@ Definition randvec (n : nat ) (st : RND_state) (randgen : RND_state -> (R * RND_
   
   Definition update_list {A B:Type} (dec:forall a a':A, {a=a'} + {a<>a'}) (l up:list (A*B))  : list (A*B)
     := fold_left (update_firstp dec) up l.
-
 
   Definition optimize_step (step : nat) (df : DefinedFunction) (σ:df_env) (lvar : list SubVar) (noise_st : Stream float) : (option df_env)*(Stream float) :=
     let ogradvec := df_eval_gradient σ df lvar in
@@ -227,4 +210,11 @@ Definition randvec (n : nat ) (st : RND_state) (randgen : RND_state -> (R * RND_
       end
     end.
 
+Example xvar := Name "x".
+Example xfun:DefinedFunction := Var xvar.
+Example quad:DefinedFunction := Minus (Times xfun xfun) (Number 1).
+CoFixpoint noise : Stream float := Cons 0 noise.
+Example env : df_env := (xvar, FfromZ 5)::nil.
+Example opt := fst (optimize_steps 0 2 quad env (xvar :: nil) noise).
 End GenNN.
+
