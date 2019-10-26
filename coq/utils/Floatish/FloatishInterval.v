@@ -77,4 +77,8 @@ Local Instance floatish_interval_gen (prec:Z) : floatish :=
           end)
   }.
 
+
 Local Instance floatish_interval : floatish := floatish_interval_gen 53.
+
+Definition FZF (r:float) := F.nearbyint rnd_NE r.
+Definition FZFscale (n:Z) (r:float) := FZF (Fmult (FfromZ n) r).
