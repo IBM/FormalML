@@ -297,7 +297,7 @@ Lemma lub_not_contains (S1  S2 : Ensemble R) (L1 L2:R) :
   (is_lub S1 L1) /\ (is_upper_bound S2 L2) -> L1 > L2 -> ~ Included R S1 S2.
 Proof.
   unfold is_lub, is_upper_bound, Included, In.
-  intuition.
+  intros.
   assert (~ (L1 <= L2)) by lra.
   intuition.
 Qed.
