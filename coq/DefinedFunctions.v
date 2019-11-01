@@ -115,28 +115,8 @@ Section DefinedFunctions.
  *)
   Section deriv.
 
-    Print fold_right.
-    
-    Definition vector_fold_right_bounded {A B} (f:B->A->A) {m:nat} (init:A) (v:Vector B m) (n:nat) (pf:(n<=m)%nat)
-    : A.
-    Proof.
-      induction n.
-      - exact init.
-      - assert (pf2:(n <= m)%nat) by omega.
-          assert (pf3:(n < m)%nat) by omega.
-          apply f.
-          * exact (v (exist _ n pf3)).
-          * apply IHn.
-            apply pf2.
-    Defined.
-
-    Definition vector_fold_right {A B} (f:B->A->A) (init:A) {m:nat} (v:Vector B m) 
-      := vector_fold_right_bounded f init v m (le_refl _).
-
-    (* If we want to more efficiently handle non-empty cases, and not have to add the empty case *)
-    
-    Definition vector_fold_right1_bounded {A B} (f:B->A->A) (init:A) (singleton:B->A) {m:nat} (v:Vector B m) (n:nat) (pf:(n<=m)%nat)
-    : A.
+    Definition vector_fold_right1_bounded_dep {A:nat->Type} {B} (f:forall n,B->A n->A (S n)) (init:A 0%nat) (singleton:B->A 1%nat) {m:nat} (v:Vector B m) (n:nat) (pf:(n<=m)%nat)
+    : A n.
     Proof.
       induction n.
       - exact init.
@@ -151,39 +131,44 @@ Section DefinedFunctions.
             apply pf2.
     Defined.
 
-    Definition vector_fold_right1 {A B} (f:B->A->A) (init:A) (singleton:B->A) {m:nat} (v:Vector B m)
-      := vector_fold_right1_bounded f init singleton v m (le_refl _).
+    Definition vector_fold_right1_dep {A:nat->Type} {B} (f:forall n, B->A n->A (S n)) (init:A 0%nat) (singleton:B->A 1%nat) {m:nat} (v:Vector B m) : A m
+      := vector_fold_right1_bounded_dep f init singleton v m (le_refl _).
+
+    Definition vector_fold_right_dep {A:nat->Type} {B} (f:forall n, B->A n->A (S n)) (init:A 0%nat) {m:nat} (v:Vector B m) : A m
+      := vector_fold_right1_dep f init (fun a => f _ a init) v.
+
+    Definition vector_fold_right1 {A B:Type} (f:B->A->A) (init:A) (singleton:B->A) {m:nat} (v:Vector B m)
+      := vector_fold_right1_dep (fun _ => f) init singleton v.
+
+    Definition vector_fold_right {A B:Type} (f:B->A->A) (init:A) {m:nat} (v:Vector B m)
+      := vector_fold_right_dep (fun _ => f) init v.
+
 
     Definition defined_sum {m} (v:Vector (DefinedFunction float) m) : DefinedFunction float
       := vector_fold_right1 Plus (Number 0) id v.
 
     Definition vsum {m:nat} (v:Vector float m) : float
       := vector_fold_right1 Fplus 0 id v.
-    
-    Definition vectoro_to_ovector_bounded {T} (m:nat) (v:Vector (option T) m) (n:nat) (pf:(n<=m)%nat) :
-      option (Vector T n).
-    Proof.
-      induction n.
-      - apply Some.
-        intros [??].
-        omega.
-      - assert (pf1: (n < m)%nat) by omega.
-        destruct (v (exist _ n pf1)).
-        + assert (pf2:(n <= m)%nat) by omega.
-          destruct (IHn pf2).
-          * apply Some.
-            intros [??].
-            { destruct (Nat.eq_dec x n).
-              - exact t.
-              - assert (pf3:(x<n)%nat) by omega.
-                exact (v0 (exist _ x pf3)).
-            } 
-          * exact None.
-        + exact None.
-    Defined.
 
-    Definition vectoro_to_ovector {T} {n} (v:Vector (option T) n) : option (Vector T n)
-      := vectoro_to_ovector_bounded n v n (le_refl n).
+    
+    Definition vectoro_to_ovector {T} {n} (v:Vector (option T) n) : option (Vector T n).
+    Proof.
+      apply @vector_fold_right_dep with (B:=option T) (m:=n).
+      - intros m a b.
+        destruct a; [ | exact None].
+        destruct b; [ | exact None].
+        apply Some.
+        intros [i pf].
+        destruct (Nat.eq_dec i m).
+        + exact t.
+        + apply v0.
+          exists i.
+          omega.
+      - apply Some.
+        intros [i pf].
+        omega.
+      - exact v.
+    Defined.
 
     Definition matrixo_to_omatrix {T} {m n} (v:Matrix (option T) m n) : option (Matrix T m n)
       := vectoro_to_ovector (fun i => vectoro_to_ovector (v i)).
