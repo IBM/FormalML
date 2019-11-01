@@ -115,24 +115,51 @@ Section DefinedFunctions.
  *)
   Section deriv.
 
-    Definition defined_sum_bounded (m:nat) (f:Vector (DefinedFunction float) m) (n:nat)(pf:(n<=m)%nat)
-    : DefinedFunction float.
+    Print fold_right.
+    
+    Definition vector_fold_right_bounded {A B} (f:B->A->A) {m:nat} (init:A) (v:Vector B m) (n:nat) (pf:(n<=m)%nat)
+    : A.
     Proof.
       induction n.
-      - exact (Number 0).
-      - destruct n.
-        + assert (pf2:(0 < m)%nat) by omega.
-          exact (f (exist _ 0 pf2)%nat).
-        + assert (pf2:(S n <= m)%nat) by omega.
-          assert (pf3:(S n < m)%nat) by omega.
-          apply Plus.
-          * exact (f (exist _ (S n) pf3)).
+      - exact init.
+      - assert (pf2:(n <= m)%nat) by omega.
+          assert (pf3:(n < m)%nat) by omega.
+          apply f.
+          * exact (v (exist _ n pf3)).
           * apply IHn.
             apply pf2.
     Defined.
-    
-    Definition defined_sum n (f:Vector (DefinedFunction float) n) := defined_sum_bounded n f n (le_refl _).
 
+    Definition vector_fold_right {A B} (f:B->A->A) (init:A) {m:nat} (v:Vector B m) 
+      := vector_fold_right_bounded f init v m (le_refl _).
+
+    (* If we want to more efficiently handle non-empty cases, and not have to add the empty case *)
+    
+    Definition vector_fold_right1_bounded {A B} (f:B->A->A) (init:A) (singleton:B->A) {m:nat} (v:Vector B m) (n:nat) (pf:(n<=m)%nat)
+    : A.
+    Proof.
+      induction n.
+      - exact init.
+      - destruct n.
+        + assert (pf2:(0 < m)%nat) by omega.
+          exact (singleton (v (exist _ 0 pf2)%nat)).
+        + assert (pf2:(S n <= m)%nat) by omega.
+          assert (pf3:(S n < m)%nat) by omega.
+          apply f.
+          * exact (v (exist _ (S n) pf3)).
+          * apply IHn.
+            apply pf2.
+    Defined.
+
+    Definition vector_fold_right1 {A B} (f:B->A->A) (init:A) (singleton:B->A) {m:nat} (v:Vector B m)
+      := vector_fold_right1_bounded f init singleton v m (le_refl _).
+
+    Definition defined_sum {m} (v:Vector (DefinedFunction float) m) : DefinedFunction float
+      := vector_fold_right1 Plus (Number 0) id v.
+
+    Definition vsum_bounded {m:nat} (v:Vector float m) : float
+      := vector_fold_right1 Fplus 0 id v.
+    
     Definition vectoro_to_ovector_bounded {T} (m:nat) (v:Vector (option T) m) (n:nat) (pf:(n<=m)%nat) :
       option (Vector T n).
     Proof.
