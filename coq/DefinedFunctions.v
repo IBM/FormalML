@@ -76,19 +76,18 @@ Section DefinedFunctions.
         DefinedFunction float
     | MatrixVectorMult n m (l : DefinedFunction (Matrix float n m)) (r : DefinedFunction (Vector float m)) :
         DefinedFunction (Vector float n)
-    .
-    (*
-    | MatrixAdd {n m} (l r : DefinedFunction (Matrix float n m)) : DefinedFunction (Matrix float n m)
     | MatrixMult {n p m} (l : DefinedFunction (Matrix float n p)) (r : DefinedFunction (Matrix float p m)) :
         DefinedFunction (Matrix float n m)
-    | MatrixDet {n m} (m:DefinedFunction (Matrix float n m)) : DefinedFunction float
-    | VectorAdd {n} (l r: DefinedFunction (Vector float n)) : DefinedFunction (Vector float n)
-    | VectorApply {n} (x:SubVar) (s:DefinedFunction float) (l: DefinedFunction (Vector float n)) :
+    | VectorAdd {n} (l r: DefinedFunction (Vector float n)) : DefinedFunction (Vector float n)    
+    | MatrixAdd {n m} (l r : DefinedFunction (Matrix float n m)) : DefinedFunction (Matrix float n m)
+    | VectorScalMult {n} (x:DefinedFunction float) (l : DefinedFunction (Vector float n)) :
         DefinedFunction (Vector float n)
     | MatrixScalMult {n m} (x:DefinedFunction float) (l : DefinedFunction (Matrix float n m)) :
         DefinedFunction (Matrix float n m)
+    | VectorApply {n} (v:SubVar) (s:DefinedFunction float) (l: DefinedFunction (Vector float n)) :
+        DefinedFunction (Vector float n)
     .
-*)
+
 
   End Definitions.
 
@@ -154,11 +153,10 @@ Section DefinedFunctions.
       := vector_fold_right1_dep f init (fun a => f _ a init) v.
 
     Definition vector_fold_right1 {A B:Type} (f:B->A->A) (init:A) (singleton:B->A) {m:nat} (v:Vector B m)
-      := vector_fold_right1_dep (fun _ => f) init singleton v.
+      := vector_fold_right1_dep (A:=fun _ => A) (fun _ => f) init singleton v.
 
     Definition vector_fold_right {A B:Type} (f:B->A->A) (init:A) {m:nat} (v:Vector B m)
       := vector_fold_right_dep (fun _ => f) init v.
-
 
     Definition defined_sum {m} (v:Vector (DefinedFunction float) m) : DefinedFunction float
       := vector_fold_right1 Plus (Number 0) id v.
@@ -172,6 +170,72 @@ Section DefinedFunctions.
     Definition matrixo_to_omatrix {T} {m n} (v:Matrix (option T) m n) : option (Matrix T m n)
       := vectoro_to_ovector (fun i => vectoro_to_ovector (v i)).
     
+
+    Fixpoint df_subst {T} (df: DefinedFunction T) (v:SubVar) (e':DefinedFunction float): DefinedFunction T :=
+      match df with
+      | Number x => Number x
+      | DVector n df => DVector (fun x => df_subst (df x) v e')
+      | DMatrix n m df => DMatrix (fun i j => df_subst (df i j) v e')
+      | Var name =>
+        if var_dec name v
+        then e'
+        else Var name
+      | Plus l r => Plus (df_subst l v e') (df_subst r v e')
+      | Times l r => Times (df_subst l v e') (df_subst r v e')
+      | Minus l r => Minus (df_subst l v e') (df_subst r v e')
+      | Divide l r => Divide (df_subst l v e') (df_subst r v e')
+      | Exp e => Exp (df_subst e v e')
+      | Log e => Log (df_subst e v e')
+      | Abs e => Abs (df_subst e v e')
+      | Sign e => Sign (df_subst e v e')
+      | PSign e => PSign (df_subst e v e')
+      | Max l r => Max (df_subst l v e') (df_subst r v e')
+      | VectorElem n l i => VectorElem (df_subst l v e') i
+      | MatrixElem m n l i j => MatrixElem (df_subst l v e') i j
+      | VectorDot n l r =>
+        let ll := df_subst l v e' in
+        let rr := df_subst r v e' in
+        defined_sum 
+          (fun (i:{x:nat|x<n}%nat) =>
+             (Times (VectorElem ll i) (VectorElem rr i)))
+      | VectorScalMult n x r => 
+        let xx := df_subst x v e' in 
+        let rr := df_subst r v e' in
+        DVector (fun i => Times xx (VectorElem rr i))
+      | MatrixScalMult n m x r => 
+        let xx := df_subst x v e' in 
+        let rr := df_subst r v e' in
+        DMatrix (fun i j  => Times xx (MatrixElem rr i j))
+      | MatrixVectorMult n m l r =>
+        let ll := df_subst l v e' in
+        let rr := df_subst r v e' in
+        DVector (fun i =>
+                   defined_sum 
+                     (fun (j:{x:nat|x<m}%nat) =>
+                        (Times (MatrixElem ll i j) (VectorElem rr j))))
+                                      
+      | MatrixMult n m p l r =>
+        let ll := df_subst l v e' in
+        let rr := df_subst r v e' in
+        DMatrix (fun i k =>
+                   defined_sum 
+                     (fun (j:{x:nat|x<m}%nat) =>
+                              (Times (MatrixElem ll i j) (MatrixElem rr j k))))
+      | VectorAdd n l r =>
+        let ll := df_subst l v e' in
+        let rr := df_subst r v e' in
+        DVector (fun i => Plus (VectorElem ll i) (VectorElem rr i))
+      | MatrixAdd n m l r =>
+        let ll := df_subst l v e' in
+        let rr := df_subst r v e' in
+        DMatrix (fun i j => Plus (MatrixElem ll i j) (MatrixElem rr i j))
+      | VectorApply n x s l => 
+        VectorApply x (df_subst s v e') (df_subst l v e')
+      end.
+
+
+
+
     Fixpoint df_deriv {T} (df:DefinedFunction T) (v:SubVar) {struct df} : DefinedFunction T
       := (match df with
           | Number _ => Number 0
@@ -200,36 +264,73 @@ Section DefinedFunctions.
           | VectorDot n l r =>
             let ll := df_deriv l v in
             let rr := df_deriv r v in
-            defined_sum n
-                                 (fun (i:{x:nat|x<n}%nat) =>
+                 defined_sum 
+                           (fun (i:{x:nat|x<n}%nat) =>
                                     Plus (Times (VectorElem ll i) (VectorElem r i))
-
                                          (Times (VectorElem l i) (VectorElem rr i)))
+          | VectorScalMult n x r => 
+            let xx := df_deriv x v in 
+            let rr := df_deriv r v in
+            DVector (fun i =>
+                         Plus (Times xx (VectorElem r i))
+                              (Times x  (VectorElem rr i)))
+          | MatrixScalMult n m x r => 
+            let xx := df_deriv x v in 
+            let rr := df_deriv r v in
+            DMatrix (fun i j  =>
+                         Plus (Times xx (MatrixElem r i j))
+                              (Times x  (MatrixElem rr i j)))
           | MatrixVectorMult n m l r =>
             let ll := df_deriv l v in
             let rr := df_deriv r v in
             DVector (fun i =>
-                         defined_sum m
+                         defined_sum 
                                  (fun (j:{x:nat|x<m}%nat) =>
                                     Plus (Times (MatrixElem ll i j) (VectorElem r j))
 
                                          (Times (MatrixElem l i j) (VectorElem rr j))))
-
+          | MatrixMult n m p l r =>
+            let ll := df_deriv l v in
+            let rr := df_deriv r v in
+            DMatrix (fun i k =>
+                         defined_sum 
+                                 (fun (j:{x:nat|x<m}%nat) =>
+                                    Plus (Times (MatrixElem ll i j) (MatrixElem r j k))
+                                         (Times (MatrixElem l i j) (MatrixElem rr j k))))
+          | VectorAdd n l r =>
+            let ll := df_deriv l v in
+            let rr := df_deriv r v in
+            DVector (fun i => Plus (VectorElem ll i) (VectorElem rr i))
+          | MatrixAdd n m l r =>
+            let ll := df_deriv l v in
+            let rr := df_deriv r v in
+            DMatrix (fun i j => Plus (MatrixElem ll i j) (MatrixElem rr i j))
+          | VectorApply n x s r => 
+            let rr := df_deriv r v in
+            let ss := df_deriv s v in
+            DVector (fun i => Times (VectorElem rr i) (df_subst ss x (VectorElem r i)))
           end).
 
-    (* Definition df_gradient (df:DefinedFunction) (lv:list SubVar) : list DefinedFunction
+    Definition df_gradient {T} (df:DefinedFunction T) (lv:list SubVar) : list (DefinedFunction T)
       := map (df_deriv df) lv.
-    *)
+
   End deriv.
   
   Section eval.
     
     Definition df_env := list (SubVar * float).
 
+    Definition matrix_vector_mult {m n} (l : Matrix float n m)(r : Vector float m) : Vector float n :=
+      fun i => vsum (fun j => (l i j) * (r j)).
+
+    Definition matrix_mult {m n p} (l : Matrix float n m)(r : Matrix float m p) : Matrix float n p :=
+      fun i k => vsum (fun j => (l i j) * (r j k)).
+
     Fixpoint df_eval {T} (σ:df_env) (df:DefinedFunction T) : option T
       := match df with
          | Number r => Some r
          | DVector n dfs => vectoro_to_ovector (fun i => df_eval σ (dfs i))
+         | DMatrix n m df => matrixo_to_omatrix (fun i j => df_eval σ (df i j))
          | Var x => lookup var_dec σ x
          | Plus l r =>
            match df_eval σ l, df_eval σ r with
@@ -266,7 +367,6 @@ Section DefinedFunctions.
            | Some v => Some (Fabs v) 
            | _ => None
            end
-
          | Sign e =>
            match df_eval σ e with
            | Some v => Some (sign v)
@@ -282,9 +382,59 @@ Section DefinedFunctions.
            | Some l', Some r' => Some (Fmax l' r')
            | _, _ => None
            end
+         | VectorElem n l i => 
+           match (df_eval σ l)  with
+           | Some l' => Some (l' i)
+           | _ => None
+           end
+         | MatrixElem m n l i j =>
+           match (df_eval σ l)  with
+           | Some l' => Some (l' i j)
+           | _ => None
+           end
+         | VectorDot n l r =>
+           match df_eval σ l, df_eval σ r with
+           | Some l', Some r' => Some (vsum (fun i => (l' i) * (r' i)))
+           | _, _ => None
+           end
+         | VectorScalMult n x r =>
+           match df_eval σ x, df_eval σ r with
+           | Some x', Some r' => Some (fun j => x' * (r' j))
+           | _, _ => None
+           end
+         | MatrixScalMult n m x r =>            
+           match df_eval σ x, df_eval σ r with
+           | Some x', Some r' => Some (fun i j => x' * (r' i j))
+           | _, _ => None
+           end
+         | MatrixVectorMult n m l r =>
+           match df_eval σ l, df_eval σ r with
+           | Some l', Some r' => Some (matrix_vector_mult l' r')
+           | _, _ => None
+           end
+         | MatrixMult n m p l r =>
+           match df_eval σ l, df_eval σ r with
+           | Some l', Some r' => Some (matrix_mult l' r')
+           | _, _ => None
+           end
+         | VectorAdd n l r =>
+           match df_eval σ l, df_eval σ r with           
+           | Some l', Some r' => Some (fun i => (l' i) + (r' i))
+           | _, _ => None
+           end
+         | MatrixAdd n m l r =>
+           match df_eval σ l, df_eval σ r with           
+           | Some l', Some r' => Some (fun i j => (l' i j) + (r' i j))
+           | _, _ => None
+           end
+         | VectorApply n x s r => 
+           match df_eval σ r with           
+           | Some r' => vectoro_to_ovector (fun i => df_eval (cons (x, r' i) σ) s)
+           | _ => None
+           end
          end.
 
-    Definition df_eval_symbolic_gradient (σ:df_env) (df:DefinedFunction) (lv:list SubVar) : option (list float)
+    Definition df_eval_symbolic_gradient {T} (σ:df_env) (df:DefinedFunction T) (lv:list SubVar) : option (list T)
       := listo_to_olist (map (df_eval σ) (df_gradient df lv)).
     
   End eval.
@@ -293,7 +443,7 @@ Section DefinedFunctions.
     
   Context (σ:df_env).
   Context (v:SubVar).
-
+(*
   Inductive is_deriv : DefinedFunction -> float -> Prop
     := 
     | is_deriv_Number (x : float) : is_deriv (Number x) 0
@@ -356,14 +506,16 @@ Section DefinedFunctions.
         is_deriv r r' ->
         is_deriv (Max l r) ((l' + r')/2) *)
 
-
+*)
   End isderiv.
   
   Section deriv2.
 
-    Fixpoint df_eval_deriv (σ:df_env) (df:DefinedFunction) (v:SubVar) : option float
+    Fixpoint df_eval_deriv {T} (σ:df_env) (df:DefinedFunction T) (v:SubVar) : option T
       := (match df with
          | Number _ => Some 0
+         | DVector n dfs => vectoro_to_ovector (fun i => df_eval_deriv σ (dfs i) v)
+         | DMatrix n m df => matrixo_to_omatrix (fun i j => df_eval_deriv σ (df i j) v)
          | Var x => if x == v
                     then Some 1
                     else Some 0
@@ -413,12 +565,71 @@ Section DefinedFunctions.
              if le <= re then Some rd else Some ld
            | _, _, _, _ => None
            end
+         | VectorElem n l i => 
+           match (df_eval_deriv σ l v)  with
+           | Some l' => Some (l' i)
+           | _ => None
+           end
+         | MatrixElem m n l i j =>
+           match (df_eval_deriv σ l v)  with
+           | Some l' => Some (l' i j)
+           | _ => None
+           end
+         | VectorDot n l r =>
+           match df_eval σ l, df_eval_deriv σ l v, df_eval σ r, df_eval_deriv σ r v with
+           | Some le, Some ld, Some re, Some rd => 
+               Some (vsum (fun j => (le j) * (rd j) + (ld j) * (re j)))
+           | _, _, _, _ => None
+           end
+         | VectorScalMult n x r =>
+           match df_eval σ x, df_eval_deriv σ x v, df_eval σ r, df_eval_deriv σ r v with
+           | Some xe, Some xd, Some re, Some rd => Some (fun j => xe * (rd j) + xd * (re j))
+           | _, _, _, _ => None
+           end
+         | MatrixScalMult n m x r =>            
+           match df_eval σ x, df_eval_deriv σ x v, df_eval σ r, df_eval_deriv σ r v with
+           | Some xe, Some xd, Some re, Some rd => Some (fun i j => xe * (rd i j) + xd * (re i j))
+           | _, _, _, _ => None
+           end
+         | MatrixVectorMult n m l r =>
+           match df_eval σ l, df_eval_deriv σ l v, df_eval σ r, df_eval_deriv σ r v with
+           | Some le, Some ld, Some re, Some rd =>
+             Some (fun i => vsum (fun j => (le i j)*(rd j) + (ld i j)*(re j)))
+           | _, _, _, _ => None
+           end
+         | MatrixMult n m p l r =>
+           match df_eval σ l, df_eval_deriv σ l v, df_eval σ r, df_eval_deriv σ r v with
+           | Some le, Some ld, Some re, Some rd =>
+             Some (fun i k => vsum (fun j => (le i j)*(rd j k) + (ld i j)*(re j k)))
+           | _, _, _, _ => None
+           end
+         | VectorAdd n l r =>
+           match df_eval_deriv σ l v, df_eval_deriv σ r v with           
+           | Some l', Some r' => Some (fun i => (l' i) + (r' i))
+           | _, _ => None
+           end
+         | MatrixAdd n m l r =>
+           match df_eval_deriv σ l v, df_eval_deriv σ r v with           
+           | Some l', Some r' => Some (fun i j => (l' i j) + (r' i j))
+           | _, _ => None
+           end
+         | VectorApply n x s r =>
+           match df_eval σ r, df_eval_deriv σ r v with                      
+           | Some re, Some rd => 
+             vectoro_to_ovector 
+               (fun i => match df_eval_deriv (cons (x, re i) σ) s v with
+                         | Some sd => Some ((rd i) * sd)
+                         | _ => None
+                         end)
+           | _, _ => None                                                    
+           end
+
           end).
 
-    Definition df_eval_gradient σ (df:DefinedFunction) (lv:list SubVar) : option (list float)
+    Definition df_eval_gradient {T} σ (df:DefinedFunction T) (lv:list SubVar) : option (list T)
       := listo_to_olist (map (df_eval_deriv σ df) lv).
     
-    Definition single_olist (ol : option (list float)) : option (list (list float)) :=
+    Definition single_olist {T} (ol : option (list T)) : option (list (list T)) :=
       match ol with
       | Some l => Some (l::nil)
       | _      => None
@@ -428,7 +639,8 @@ Section DefinedFunctions.
      := let l12 := list_prod l1 l2
         in map (fun '(x,y) => combine x y) l12.
 
-    Fixpoint df_eval_subgradient (σ:df_env) (df:DefinedFunction) (lv:list SubVar) : option (list (list float))
+(*
+    Fixpoint df_eval_subgradient {T} (σ:df_env) (df:DefinedFunction T) (lv:list SubVar) : option (list (list T))
       := (match df with
          | Number _ => Some ( (map (fun v:SubVar => 0) lv) :: nil )
          | Var x => single_olist (df_eval_gradient σ df lv)
@@ -490,7 +702,7 @@ Section DefinedFunctions.
            | _, _, _, _ => None
            end
           end).
-
+*)
     End deriv2.
 
     Section deriv_deriv.
@@ -535,7 +747,7 @@ Section DefinedFunctions.
       End deriv_deriv.
         
   Section max_derived.
-    Definition MaxDerived (a b : DefinedFunction) :=
+    Definition MaxDerived (a b : DefinedFunction float) :=
       Divide (Plus (Plus (Abs (Minus b a)) b) a) (Number 2).
 
     Delimit Scope df_scope with df.
@@ -554,7 +766,7 @@ Section DefinedFunctions.
 
   Section fv.
 
-    Fixpoint df_free_variables (f : DefinedFunction) : list SubVar
+    Fixpoint df_free_variables {T} (f : DefinedFunction T) : list SubVar
       := match f with
          | Number x => nil
          | Var name => name::nil
@@ -659,10 +871,12 @@ Section DefinedFunctions.
   End fv.
 
   Section apply.
-    
-    Fixpoint df_apply (e: DefinedFunction) (args: SubVar -> DefinedFunction) :=
+
+    Fixpoint df_apply {T} (e: DefinedFunction T) (args: SubVar -> DefinedFunction float) : DefinedFunction T :=
       match e with
       | Number x => Number x
+      | DVector n df => DVector (fun x => df_apply (df x) args)
+      | DMatrix n m df => DMatrix (fun i j => df_apply (df i j) args)
       | Var name => args name
       | Plus l r => Plus (df_apply l args) (df_apply r args)
       | Times l r => Times (df_apply l args) (df_apply r args)
@@ -674,12 +888,56 @@ Section DefinedFunctions.
       | Sign e => Sign (df_apply e args)
       | PSign e => PSign (df_apply e args)
       | Max l r => Max (df_apply l args) (df_apply r args)
+      | VectorElem n l i => VectorElem (df_apply l args) i
+      | MatrixElem m n l i j => MatrixElem (df_apply l args) i j
+      | VectorDot n l r =>
+        let ll := df_apply l args in
+        let rr := df_apply r args in
+        defined_sum 
+          (fun (i:{x:nat|x<n}%nat) =>
+             (Times (VectorElem ll i) (VectorElem rr i)))
+      | VectorScalMult n x r => 
+        let xx := df_apply x args in 
+        let rr := df_apply r args in
+        DVector (fun i => Times xx (VectorElem rr i))
+      | MatrixScalMult n m x r => 
+        let xx := df_apply x args in 
+        let rr := df_apply r args in
+        DMatrix (fun i j  => Times xx (MatrixElem rr i j))
+      | MatrixVectorMult n m l r =>
+        let ll := df_apply l args in
+        let rr := df_apply r args in
+        DVector (fun i =>
+                   defined_sum 
+                     (fun (j:{x:nat|x<m}%nat) =>
+                        (Times (MatrixElem ll i j) (VectorElem rr j))))
+                                      
+      | MatrixMult n m p l r =>
+        let ll := df_apply l args in
+        let rr := df_apply r args in
+        DMatrix (fun i k =>
+                   defined_sum 
+                     (fun (j:{x:nat|x<m}%nat) =>
+                              (Times (MatrixElem ll i j) (MatrixElem rr j k))))
+      | VectorAdd n l r =>
+        let ll := df_apply l args in
+        let rr := df_apply r args in
+        DVector (fun i => Plus (VectorElem ll i) (VectorElem rr i))
+      | MatrixAdd n m l r =>
+        let ll := df_apply l args in
+        let rr := df_apply r args in
+        DMatrix (fun i j => Plus (MatrixElem ll i j) (MatrixElem rr i j))
+      | VectorApply n x s l => 
+        VectorApply x (df_apply s args) (df_apply l args)
+
       end.
-    
+
  End apply.
 
     
   Section subst.
+(* df_subst moved before df_deriv
+
     Fixpoint df_subst (e: DefinedFunction) (v:SubVar) (e':DefinedFunction) :=
       match e with
       | Number x => Number x
@@ -698,7 +956,7 @@ Section DefinedFunctions.
       | PSign e => PSign (df_subst e v e')
       | Max l r => Max (df_subst l v e') (df_subst r v e')
       end.
-
+*)
 
    Definition df_substp := fun e '(v,e') => df_subst e v  e'.
 
