@@ -769,6 +769,9 @@ Section DefinedFunctions.
     Fixpoint df_free_variables {T} (f : DefinedFunction T) : list SubVar
       := match f with
          | Number x => nil
+         | DVector n x => vector_fold_right (fun b a => (df_free_variables b) ++  a) nil x
+           
+         | DMatrix n m x => vector_fold_right (fun b a => (vector_fold_right (fun b0 a0 => (df_free_variables b0) ++ a0) nil b) ++ a) nil x
          | Var name => name::nil
          | Plus l r => (df_free_variables l) ++ (df_free_variables r)
          | Minus l r => (df_free_variables l) ++ (df_free_variables r)
@@ -780,22 +783,31 @@ Section DefinedFunctions.
          | PSign e => df_free_variables e
          | Log e => df_free_variables e
          | Exp e => df_free_variables e
-
+         | VectorElem n l i => df_free_variables l
+         | MatrixElem m n l i j => df_free_variables l
+         | VectorDot n l r => (df_free_variables l) ++ (df_free_variables r)
+         | VectorScalMult n x r => (df_free_variables x) ++ (df_free_variables r)
+         | MatrixScalMult n m x r => (df_free_variables x) ++ (df_free_variables r)
+         | MatrixVectorMult n m l r => (df_free_variables l) ++ (df_free_variables r)
+         | MatrixMult n m p l r => (df_free_variables l) ++ (df_free_variables r)
+         | VectorAdd n l r => (df_free_variables l) ++ (df_free_variables r)
+         | MatrixAdd n m l r => (df_free_variables l) ++ (df_free_variables r)
+         | VectorApply n x s l => (df_free_variables l)
          end.
 
-    Definition df_closed (f: DefinedFunction) : Prop
+    Definition df_closed {T} (f: DefinedFunction T) : Prop
       := match df_free_variables f with
          | nil => True
          | _ => False
          end.
 
-    Lemma df_closed_nil (f: DefinedFunction) : df_closed f -> df_free_variables f = nil.
+    Lemma df_closed_nil {T} (f: DefinedFunction T) : df_closed f -> df_free_variables f = nil.
     Proof.
       unfold df_closed.
       destruct (df_free_variables f); tauto.
     Qed.
 
-    Lemma df_eval_complete' (σ:df_env) (f:DefinedFunction) :
+    Lemma df_eval_complete' {T} (σ:df_env) (f:DefinedFunction T) :
       incl (df_free_variables f) (domain σ) -> {v | df_eval σ f = Some v}.
     Proof.
       induction f; simpl; intros inc
