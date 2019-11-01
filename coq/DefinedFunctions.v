@@ -131,6 +131,22 @@ Section DefinedFunctions.
             apply pf2.
     Defined.
 
+    Definition vnil {T} : Vector T 0.
+    Proof.
+      intros [i pf].
+      omega.
+    Defined.
+
+    Definition vcons {T} {n} (x:T) (v:Vector T n) : (Vector T (S n)).
+    Proof.
+      intros [i pf].
+      destruct (Nat.eq_dec i n).
+      + exact x.
+      + apply v.
+        exists i.
+        omega.
+    Defined.
+
     Definition vector_fold_right1_dep {A:nat->Type} {B} (f:forall n, B->A n->A (S n)) (init:A 0%nat) (singleton:B->A 1%nat) {m:nat} (v:Vector B m) : A m
       := vector_fold_right1_bounded_dep f init singleton v m (le_refl _).
 
@@ -150,25 +166,8 @@ Section DefinedFunctions.
     Definition vsum {m:nat} (v:Vector float m) : float
       := vector_fold_right1 Fplus 0 id v.
 
-    
-    Definition vectoro_to_ovector {T} {n} (v:Vector (option T) n) : option (Vector T n).
-    Proof.
-      apply @vector_fold_right_dep with (B:=option T) (m:=n).
-      - intros m a b.
-        destruct a; [ | exact None].
-        destruct b; [ | exact None].
-        apply Some.
-        intros [i pf].
-        destruct (Nat.eq_dec i m).
-        + exact t.
-        + apply v0.
-          exists i.
-          omega.
-      - apply Some.
-        intros [i pf].
-        omega.
-      - exact v.
-    Defined.
+    Definition vectoro_to_ovector {T} {n} (v:Vector (option T) n) : option (Vector T n)
+      := vector_fold_right_dep (fun n => lift2 (@vcons _ n)) (Some vnil) v.
 
     Definition matrixo_to_omatrix {T} {m n} (v:Matrix (option T) m n) : option (Matrix T m n)
       := vectoro_to_ovector (fun i => vectoro_to_ovector (v i)).
