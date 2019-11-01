@@ -157,7 +157,10 @@ Section DefinedFunctions.
 
     Definition vectoro_to_ovector {T} {n} (v:Vector (option T) n) : option (Vector T n)
       := vectoro_to_ovector_bounded n v n (le_refl n).
-        
+
+    Definition matrixo_to_omatrix {T} {m n} (v:Matrix (option T) m n) : option (Matrix T m n)
+      := vectoro_to_ovector (fun i => vectoro_to_ovector (v i)).
+    
     Fixpoint df_deriv {T} (df:DefinedFunction T) (v:SubVar) {struct df} : DefinedFunction T
       := (match df with
           | Number _ => Number 0
