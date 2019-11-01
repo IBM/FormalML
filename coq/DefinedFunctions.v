@@ -106,12 +106,12 @@ Section DefinedFunctions.
   | Case_aux c "PSign"%string
   | Case_aux c "Max"%string].
 
-(*  Definition df_plus (df1 df2 : DefinedFunction) : DefinedFunction :=
+  Definition df_plus (df1 df2 : DefinedFunction float) : DefinedFunction float :=
     Plus df1 df2.
 
-  Definition df_times (df1 df2 : DefinedFunction) : DefinedFunction :=
+  Definition df_times (df1 df2 : DefinedFunction float) : DefinedFunction float :=
     Times df1 df2.
- *)
+
   Section deriv.
 
     Definition vector_fold_right1_bounded_dep {A:nat->Type} {B} (f:forall n,B->A n->A (S n)) (init:A 0%nat) (singleton:B->A 1%nat) {m:nat} (v:Vector B m) (n:nat) (pf:(n<=m)%nat)
@@ -170,6 +170,8 @@ Section DefinedFunctions.
     Definition matrixo_to_omatrix {T} {m n} (v:Matrix (option T) m n) : option (Matrix T m n)
       := vectoro_to_ovector (fun i => vectoro_to_ovector (v i)).
     
+
+  Section subst.
 
     Fixpoint df_subst {T} (df: DefinedFunction T) (v:SubVar) (e':DefinedFunction float): DefinedFunction T :=
       match df with
@@ -233,6 +235,12 @@ Section DefinedFunctions.
         VectorApply x (df_subst s v e') (df_subst l v e')
       end.
 
+    Definition df_substp {T} := fun e '(v,e') => @df_subst T e v  e'.
+
+    Definition df_subst_list {T} (e:DefinedFunction T) (l:list (SubVar*DefinedFunction float)) : DefinedFunction T
+      := fold_left (@df_substp T) l e.
+
+  End subst.
 
 
 
@@ -795,6 +803,18 @@ Section DefinedFunctions.
          | VectorApply n x s l => (df_free_variables l)
          end.
 
+(*
+    Lemma df_subst_nfree {T} (e: DefinedFunction T) (v:SubVar) (e':DefinedFunction float) :
+      ~ In v (df_free_variables e) ->
+      df_subst e v e' = e.
+    Proof.
+      induction e; simpl; trivial; intros nin
+      ; try solve [try rewrite in_app_iff in nin
+                   ; intuition congruence].
+      - destruct (var_dec v0 v); intuition.
+    Qed.
+*)
+
     Definition df_closed {T} (f: DefinedFunction T) : Prop
       := match df_free_variables f with
          | nil => True
@@ -945,48 +965,6 @@ Section DefinedFunctions.
       end.
 
  End apply.
-
-    
-  Section subst.
-(* df_subst moved before df_deriv
-
-    Fixpoint df_subst (e: DefinedFunction) (v:SubVar) (e':DefinedFunction) :=
-      match e with
-      | Number x => Number x
-      | Var name =>
-        if var_dec name v
-        then e'
-        else Var name
-      | Plus l r => Plus (df_subst l v e') (df_subst r v e')
-      | Times l r => Times (df_subst l v e') (df_subst r v e')
-      | Minus l r => Minus (df_subst l v e') (df_subst r v e')
-      | Divide l r => Divide (df_subst l v e') (df_subst r v e')
-      | Exp e => Exp (df_subst e v e')
-      | Log e => Log (df_subst e v e')
-      | Abs e => Abs (df_subst e v e')
-      | Sign e => Sign (df_subst e v e')
-      | PSign e => PSign (df_subst e v e')
-      | Max l r => Max (df_subst l v e') (df_subst r v e')
-      end.
-*)
-
-   Definition df_substp := fun e '(v,e') => df_subst e v  e'.
-
-   Definition df_subst_list (e:DefinedFunction) (l:list (SubVar*DefinedFunction)) : DefinedFunction
-      := fold_left df_substp l e.
-
-
-    Lemma df_subst_nfree (e: DefinedFunction) (v:SubVar) (e':DefinedFunction) :
-      ~ In v (df_free_variables e) ->
-      df_subst e v e' = e.
-    Proof.
-      induction e; simpl; trivial; intros nin
-      ; try solve [try rewrite in_app_iff in nin
-                   ; intuition congruence].
-      - destruct (var_dec v0 v); intuition.
-    Qed.
-
-    End subst.
 
 End DefinedFunctions.
 
