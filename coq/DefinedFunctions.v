@@ -157,7 +157,7 @@ Section DefinedFunctions.
     Definition defined_sum {m} (v:Vector (DefinedFunction float) m) : DefinedFunction float
       := vector_fold_right1 Plus (Number 0) id v.
 
-    Definition vsum_bounded {m:nat} (v:Vector float m) : float
+    Definition vsum {m:nat} (v:Vector float m) : float
       := vector_fold_right1 Fplus 0 id v.
     
     Definition vectoro_to_ovector_bounded {T} (m:nat) (v:Vector (option T) m) (n:nat) (pf:(n<=m)%nat) :
