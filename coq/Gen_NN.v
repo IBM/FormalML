@@ -67,10 +67,19 @@ Section GenNN.
     let N1 := mkNN_bias_step n1 n2 ivec mat1 b1 f_activ_var f_activ in
     mkNN_bias_step n2 n3 N1 mat2 b2 f_activ_var f_activ.
 
+ Lemma vector_float_map_last_rewrite {B nvlist1 n2 v n1} :
+   (Vector float (last ((@domain _ B) nvlist1) n2)) = 
+   (Vector float (last (domain((n2, v) :: nvlist1)) n1)).
+ Proof.
+   rewrite domain_cons.
+   rewrite last_cons.
+   reflexivity.
+ Qed.
+
   Fixpoint mkNN_gen_0 (n1:nat) (nvlist : list (nat * SubVar)) 
            (ivec : (DefinedFunction (Vector float n1)))
            (f_activ_var : SubVar ) (f_activ : DefinedFunction float) :
-    DefinedFunction (Vector float (last (map fst nvlist) n1))
+    DefinedFunction (Vector float (last (domain nvlist) n1))
 := 
     match nvlist with
     | nil => ivec
@@ -78,15 +87,22 @@ Section GenNN.
       let mat := mkSubVarMatrix v n2 n1 in
       let b := mkSubVarVector v n2 in
       let N := mkNN_bias_step n1 n2 ivec mat b f_activ_var f_activ in
-      mkNN_gen_0 n2 nvlist1 N f_activ_var f_activ
+      eq_rect _ DefinedFunction (mkNN_gen_0 n2 nvlist1 N f_activ_var f_activ) _ vector_float_map_last_rewrite
     end.
 
-  Definition mkNN_gen (n1:nat) (nlist : list nat) (ivar wvar f_activ_var : SubVar) 
+  Program Definition mkNN_gen (n1:nat) (nlist : list nat) (ivar wvar f_activ_var : SubVar) 
              (f_activ : DefinedFunction float) : 
     DefinedFunction (Vector float (last nlist n1)) :=
     let vlist := map (fun i => Sub wvar i) (seq 1 (length nlist)) in
-    let ivec := map (fun i => Var (Sub ivar i)) (seq 1 n1) in
-    mkNN_gen_0 n1 (combine nlist vlist) ivec f_activ_var f_activ.
+    let ivec := DVector (vmap (fun i => Var (Sub ivar i)) (vseq 1 n1)) in
+    eq_rect _ DefinedFunction
+            (mkNN_gen_0 n1 (combine nlist vlist) ivec f_activ_var f_activ) _ _.
+  Next Obligation.
+    f_equal.
+    f_equal.
+    rewrite combine_domain_eq; trivial.
+    now rewrite map_length, seq_length.
+  Qed.
 
   Record testcases : Type := mkTest {ninput: nat; noutput: nat; ntest: nat; 
                                      data : list ((list float) * (list float))}.
@@ -121,13 +137,14 @@ Section GenNN.
     rewrite eqq; reflexivity.
   Qed.
 
+
   Definition NNinstance (n1 n2 n3 : nat) (ivar : SubVar) (f_loss : DefinedFunction float) 
              (NN2 : DefinedFunction (Vector float n3)) (inputs : (list float)) 
              (outputs : Vector float n3): option (DefinedFunction float) :=
     let ipairs := (list_prod (map (fun n => (Sub ivar n)) (seq 1 n1))
                              (map Number inputs)) in
     let inputVector := df_subst_list NN2 ipairs in
-    let losses := VectorMinus n3 NN2 outputs in
+    let losses := VectorMinus NN2 (DVector (vmap Number outputs)) in
     deltalosses f_loss losses.
 
 

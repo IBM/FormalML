@@ -222,6 +222,15 @@ Proof.
   trivial.
 Qed.
 
+Lemma last_cons {A} (x:A) l y : last (x::l) y = last l x.
+Proof.
+  revert y.
+  induction l; simpl; trivial; intros.
+  destruct l; trivial.
+  simpl in *.
+  apply IHl.
+Qed.
+
 Lemma seq_last s n d :
   (n > 0)%nat ->
   last (seq s n) d = (s+n-1)%nat.
@@ -660,6 +669,16 @@ Proof.
   ; destruct l2; simpl; trivial.
   rewrite IHl1; trivial.
 Qed.
+
+Lemma combine_domain_eq {A B} (x:list A) (y:list B) :
+  length x = length y -> domain (combine x y) = x.
+Proof.
+  revert y.
+  induction x; destruct y; simpl in *; intros
+  ; try easy.
+  inversion H.
+  rewrite IHx; trivial.
+Qed.    
 
 Lemma list_prod_map {A B C D:Type} (f:A->C) (g:B->D) (l1:list A) (l2:list B) :
   list_prod (map f l1) (map g l2) = map (fun '(x,y) => (f x, g y)) (list_prod l1 l2).
