@@ -94,7 +94,7 @@ Section GenNN.
              (f_activ : DefinedFunction float) : 
     DefinedFunction (Vector float (last nlist n1)) :=
     let vlist := map (fun i => Sub wvar i) (seq 1 (length nlist)) in
-    let ivec := DVector (vmap (fun i => Var (Sub ivar i)) (vseq 1 n1)) in
+    let ivec := mkSubVarVector ivar n1 in
     eq_rect _ DefinedFunction
             (mkNN_gen_0 n1 (combine nlist vlist) ivec f_activ_var f_activ) _ _.
   Next Obligation.
@@ -107,18 +107,14 @@ Section GenNN.
   Record testcases : Type := mkTest {ninput: nat; noutput: nat; ntest: nat; 
                                      data : list ((list float) * (list float))}.
 
-  Definition deltalosses (df : DefinedFunction float) (losses : list (DefinedFunction float)) : option (DefinedFunction float) :=
-    let losslist : option (list (DefinedFunction float)) :=
-        match unique_var df with
-        | Some v => Some (map (fun dfj => df_subst df v dfj) losses)
-        | None => None
-        end 
-    in
-    match losslist with
-    | Some l => Some (fold_right Plus (Number 0) l)
+  Definition deltalosses {n:nat} (df : DefinedFunction float)
+             (lossvec : DefinedFunction (Vector float n)) : option (DefinedFunction float) :=
+    match unique_var df with
+    | Some v => Some (VectorSum (VectorApply v df lossvec))
     | None => None
-    end.
+    end .
 
+(*
   Lemma deltalosses_unique_var {df : DefinedFunction float} {v:SubVar} :
     unique_var df = Some v ->
     forall  (losses : list (DefinedFunction float)),
@@ -136,7 +132,7 @@ Section GenNN.
     unfold deltalosses; intros eqq.
     rewrite eqq; reflexivity.
   Qed.
-
+*)
 
   Definition NNinstance (n1 n2 n3 : nat) (ivar : SubVar) (f_loss : DefinedFunction float) 
              (NN2 : DefinedFunction (Vector float n3)) (inputs : (list float)) 
@@ -147,7 +143,7 @@ Section GenNN.
     let losses := VectorMinus NN2 (DVector (vmap Number outputs)) in
     deltalosses f_loss losses.
 
-
+(*
   Lemma NNinstance_unique_var (n1 n2 n3 : nat) (ivar : SubVar) (f_loss : DefinedFunction float) 
         (NN2 : list (DefinedFunction float)) (inputs : (list float)) 
         (outputs : (list float)) (v:SubVar) :
@@ -179,7 +175,7 @@ Section GenNN.
     rewrite (deltalosses_None H).
     reflexivity.
   Qed.
-
+*)
   Definition lookup_list (σ:df_env) (lvar : list SubVar) : option (list float) :=
     listo_to_olist (map (fun v => lookup var_dec σ v) lvar).
 
