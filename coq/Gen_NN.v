@@ -50,7 +50,11 @@ Section GenNN.
     let N1 := VectorApply f_activ_var f_activ (MatrixVectorMult n2 n1 mat1 ivec) in 
     VectorApply f_activ_var f_activ (MatrixVectorMult n3 n2 mat2 N1).
 
-  Definition mkNN_bias_step (n1 n2 : nat) (ivec : DefinedFunction (Vector float n1)) (mat : DefinedFunction (Matrix float n2 n1)) (bias : DefinedFunction (Vector float n2)) (f_activ : DefinedFunction float) (f_activ_var : SubVar) : DefinedFunction (Vector float n2) :=
+  Definition mkNN_bias_step (n1 n2 : nat) (ivec : DefinedFunction (Vector float n1)) 
+             (mat : DefinedFunction (Matrix float n2 n1)) 
+             (bias : DefinedFunction (Vector float n2)) 
+             (f_activ_var : SubVar) (f_activ : DefinedFunction float) 
+              : DefinedFunction (Vector float n2) :=
     VectorApply f_activ_var f_activ (VectorAdd (MatrixVectorMult n2 n1 mat ivec) bias).
 
 
@@ -60,8 +64,8 @@ Section GenNN.
     let mat2 := mkSubVarMatrix (Sub wvar 2) n3 n2 in
     let b2 := mkSubVarVector (Sub wvar 2) n3 in
     let ivec := mkSubVarVector ivar n1 in
-    let N1 := mkNN_bias_step n1 n2 ivec mat1 b1 f_activ f_activ_var in
-    mkNN_bias_step n2 n3 N1 mat2 b2 f_activ f_activ_var.
+    let N1 := mkNN_bias_step n1 n2 ivec mat1 b1 f_activ_var f_activ in
+    mkNN_bias_step n2 n3 N1 mat2 b2 f_activ_var f_activ.
 
   Fixpoint mkNN_gen_0 (n1:nat) (nvlist : list (nat * SubVar)) 
            (ivec : (DefinedFunction (Vector float n1)))
@@ -73,7 +77,7 @@ Section GenNN.
     | cons (n2,v) nvlist1 => 
       let mat := mkSubVarMatrix v n2 n1 in
       let b := mkSubVarVector v n2 in
-      let N := VectorApply f_activ_var f_activ (VectorAdd (MatrixVectorMult n2 n1 mat ivec) b) in 
+      let N := mkNN_bias_step n1 n2 ivec mat b f_activ_var f_activ in
       mkNN_gen_0 n2 nvlist1 N f_activ_var f_activ
     end.
 
