@@ -174,8 +174,44 @@ Section DefinedFunctions.
 
     Definition matrixo_to_omatrix {T} {m n} (v:Matrix (option T) m n) : option (Matrix T m n)
       := vectoro_to_ovector (fun i => vectoro_to_ovector (v i)).
-    
 
+    Definition vmap {A B} {n} (f:A->B) (v:Vector A n) : Vector B n
+      := vector_fold_right_dep (fun n x y => vcons (n:=n) (f x) y) vnil v.
+
+    Definition list_fold_right1_bounded_dep {A:nat->Type} {B} (f:forall n,B->A n->A (S n)) (init:A 0%nat) (singleton:B->A 1%nat) (l:list B) (n:nat) (pf:(n<=length l)%nat)
+    : A n.
+    Proof.
+      induction n.
+      - exact init.
+      - destruct n.
+        + assert (pf2:(0 < length l)%nat) by omega.
+          destruct l.
+          * simpl in pf; omega.
+          * exact (singleton b).
+        + assert (pf2:(S n <= length l)%nat) by omega.
+          apply f.
+          * destruct l; simpl in *; try omega.
+            apply b.
+          * apply IHn.
+            apply pf2.
+    Defined.
+
+    Definition list_fold_right1_dep {A:nat->Type} {B} (f:forall n, B->A n->A (S n)) (init:A 0%nat) (singleton:B->A 1%nat) (l:list B) : A (length l)
+      := list_fold_right1_bounded_dep f init singleton l (length l) (le_refl _).
+
+    Definition list_fold_right_dep {A:nat->Type} {B} (f:forall n, B->A n->A (S n)) (init:A 0%nat) (l:list B) : A (length l)
+      := list_fold_right1_dep f init (fun a => f _ a init) l.
+
+    Definition list_to_vector {A} (l:list A) : Vector A (length l)
+      := list_fold_right_dep (@vcons _) vnil l.
+
+    Definition vector_to_list {A} {n} (v:Vector A n) : list A
+      := vector_fold_right cons nil v.
+    
+    Definition vseq start len : Vector nat len
+      := eq_rect _ _ (list_to_vector (seq start len)) _ (seq_length _ _).
+
+    
   Section subst.
 
     Fixpoint df_subst {T} (df: DefinedFunction T) (v:SubVar) (e':DefinedFunction float): DefinedFunction T :=
