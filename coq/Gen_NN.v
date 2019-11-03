@@ -112,8 +112,7 @@ Section GenNN.
              (outputs : Vector float n3): option (DefinedFunction float) :=
     let ipairs := (list_prod (map (fun n => (Sub ivar n)) (seq 1 n1))
                              (map Number inputs)) in
-    let inputVector := df_subst_list NN2 ipairs in
-    let losses := VectorMinus NN2 (DVector (vmap Number outputs)) in
+    let losses := VectorMinus (df_subst_list NN2 ipairs) (DVector (vmap Number outputs)) in
     match unique_var f_loss with
     | Some v => Some (VectorSum (VectorApply v f_loss losses))
     | None => None
