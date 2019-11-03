@@ -71,6 +71,7 @@ Section DefinedFunctions.
     | PSign (e : DefinedFunction float) : DefinedFunction float
     | Max (l r : DefinedFunction float) : DefinedFunction float
     | VectorDot {n} (l r: DefinedFunction (Vector float n)) : DefinedFunction float
+    | VectorSum {n} (v: DefinedFunction (Vector float n)) : DefinedFunction float
     | VectorElem {n} (l:DefinedFunction (Vector float n)) (i:{x:nat|x<n}%nat) : DefinedFunction float
     | MatrixElem {m n} (l:DefinedFunction (Matrix float m n)) (i:{x:nat|x<m}%nat) (j:{x:nat|x<n}%nat) :
         DefinedFunction float
@@ -78,9 +79,10 @@ Section DefinedFunctions.
         DefinedFunction (Vector float n)
     | MatrixMult {n p m} (l : DefinedFunction (Matrix float n p)) (r : DefinedFunction (Matrix float p m)) :
         DefinedFunction (Matrix float n m)
-    | VectorAdd {n} (l r: DefinedFunction (Vector float n)) : DefinedFunction (Vector float n)    
-    | MatrixAdd {n m} (l r : DefinedFunction (Matrix float n m)) : DefinedFunction (Matrix float n m)
-    | VectorScalMult {n} (x:DefinedFunction float) (l : DefinedFunction (Vector float n)) :
+    | VectorPlus {n} (l r: DefinedFunction (Vector float n)) : DefinedFunction (Vector float n)
+    | VectorMinus {n} (l r: DefinedFunction (Vector float n)) : DefinedFunction (Vector float n)                                                                                   
+    | MatrixPlus {n m} (l r : DefinedFunction (Matrix float n m)) : DefinedFunction (Matrix float n m)
+    | MatrixMinus {n m} (l r : DefinedFunction (Matrix float n m)) : DefinedFunction (Matrix float n m)                                                                                      | VectorScalMult {n} (x:DefinedFunction float) (l : DefinedFunction (Vector float n)) :
         DefinedFunction (Vector float n)
     | MatrixScalMult {n m} (x:DefinedFunction float) (l : DefinedFunction (Matrix float n m)) :
         DefinedFunction (Matrix float n m)
@@ -203,6 +205,9 @@ Section DefinedFunctions.
         defined_sum 
           (fun (i:{x:nat|x<n}%nat) =>
              (Times (VectorElem ll i) (VectorElem rr i)))
+      | VectorSum n e =>
+        let ee := df_subst e v e' in
+        defined_sum (fun (i:{x:nat|x<n}%nat) => VectorElem ee i)
       | VectorScalMult n x r => 
         let xx := df_subst x v e' in 
         let rr := df_subst r v e' in
@@ -226,14 +231,22 @@ Section DefinedFunctions.
                    defined_sum 
                      (fun (j:{x:nat|x<m}%nat) =>
                               (Times (MatrixElem ll i j) (MatrixElem rr j k))))
-      | VectorAdd n l r =>
+      | VectorPlus n l r =>
         let ll := df_subst l v e' in
         let rr := df_subst r v e' in
         DVector (fun i => Plus (VectorElem ll i) (VectorElem rr i))
-      | MatrixAdd n m l r =>
+      | VectorMinus n l r =>
+        let ll := df_subst l v e' in
+        let rr := df_subst r v e' in
+        DVector (fun i => Minus (VectorElem ll i) (VectorElem rr i))
+      | MatrixPlus n m l r =>
         let ll := df_subst l v e' in
         let rr := df_subst r v e' in
         DMatrix (fun i j => Plus (MatrixElem ll i j) (MatrixElem rr i j))
+      | MatrixMinus n m l r =>
+        let ll := df_subst l v e' in
+        let rr := df_subst r v e' in
+        DMatrix (fun i j => Minus (MatrixElem ll i j) (MatrixElem rr i j))
       | VectorApply n x s l => 
         VectorApply x (df_subst s v e') (df_subst l v e')
       end.
@@ -279,6 +292,9 @@ Section DefinedFunctions.
                            (fun (i:{x:nat|x<n}%nat) =>
                                     Plus (Times (VectorElem ll i) (VectorElem r i))
                                          (Times (VectorElem l i) (VectorElem rr i)))
+          | VectorSum n l =>
+            let ll := df_deriv l v in 
+            defined_sum (fun (i:{x:nat|x<n}%nat) => VectorElem ll i)
           | VectorScalMult n x r => 
             let xx := df_deriv x v in 
             let rr := df_deriv r v in
@@ -308,14 +324,22 @@ Section DefinedFunctions.
                                  (fun (j:{x:nat|x<m}%nat) =>
                                     Plus (Times (MatrixElem ll i j) (MatrixElem r j k))
                                          (Times (MatrixElem l i j) (MatrixElem rr j k))))
-          | VectorAdd n l r =>
+          | VectorPlus n l r =>
             let ll := df_deriv l v in
             let rr := df_deriv r v in
             DVector (fun i => Plus (VectorElem ll i) (VectorElem rr i))
-          | MatrixAdd n m l r =>
+          | VectorMinus n l r =>
+            let ll := df_deriv l v in
+            let rr := df_deriv r v in
+            DVector (fun i => Minus (VectorElem ll i) (VectorElem rr i))
+          | MatrixPlus n m l r =>
             let ll := df_deriv l v in
             let rr := df_deriv r v in
             DMatrix (fun i j => Plus (MatrixElem ll i j) (MatrixElem rr i j))
+          | MatrixMinus n m l r =>
+            let ll := df_deriv l v in
+            let rr := df_deriv r v in
+            DMatrix (fun i j => Minus (MatrixElem ll i j) (MatrixElem rr i j))
           | VectorApply n x s r => 
             let rr := df_deriv r v in
             let ss := df_deriv s v in
@@ -408,6 +432,11 @@ Section DefinedFunctions.
            | Some l', Some r' => Some (vsum (fun i => (l' i) * (r' i)))
            | _, _ => None
            end
+         | VectorSum n l =>
+           match df_eval σ l with
+           | Some l' => Some (vsum (fun i => l' i))
+           | _ => None
+           end
          | VectorScalMult n x r =>
            match df_eval σ x, df_eval σ r with
            | Some x', Some r' => Some (fun j => x' * (r' j))
@@ -428,14 +457,24 @@ Section DefinedFunctions.
            | Some l', Some r' => Some (matrix_mult l' r')
            | _, _ => None
            end
-         | VectorAdd n l r =>
+         | VectorPlus n l r =>
            match df_eval σ l, df_eval σ r with           
            | Some l', Some r' => Some (fun i => (l' i) + (r' i))
            | _, _ => None
            end
-         | MatrixAdd n m l r =>
+         | VectorMinus n l r =>
+           match df_eval σ l, df_eval σ r with           
+           | Some l', Some r' => Some (fun i => (l' i) - (r' i))
+           | _, _ => None
+           end
+         | MatrixPlus n m l r =>
            match df_eval σ l, df_eval σ r with           
            | Some l', Some r' => Some (fun i j => (l' i j) + (r' i j))
+           | _, _ => None
+           end
+         | MatrixMinus n m l r =>
+           match df_eval σ l, df_eval σ r with           
+           | Some l', Some r' => Some (fun i j => (l' i j) - (r' i j))
            | _, _ => None
            end
          | VectorApply n x s r => 
@@ -592,6 +631,12 @@ Section DefinedFunctions.
                Some (vsum (fun j => (le j) * (rd j) + (ld j) * (re j)))
            | _, _, _, _ => None
            end
+         | VectorSum n l =>
+           match df_eval_deriv σ l v with
+           | Some ld =>
+               Some (vsum (fun j => ld j))
+           | _ => None
+           end
          | VectorScalMult n x r =>
            match df_eval σ x, df_eval_deriv σ x v, df_eval σ r, df_eval_deriv σ r v with
            | Some xe, Some xd, Some re, Some rd => Some (fun j => xe * (rd j) + xd * (re j))
@@ -614,14 +659,24 @@ Section DefinedFunctions.
              Some (fun i k => vsum (fun j => (le i j)*(rd j k) + (ld i j)*(re j k)))
            | _, _, _, _ => None
            end
-         | VectorAdd n l r =>
+         | VectorPlus n l r =>
            match df_eval_deriv σ l v, df_eval_deriv σ r v with           
            | Some l', Some r' => Some (fun i => (l' i) + (r' i))
            | _, _ => None
            end
-         | MatrixAdd n m l r =>
+         | VectorMinus n l r =>
+           match df_eval_deriv σ l v, df_eval_deriv σ r v with           
+           | Some l', Some r' => Some (fun i => (l' i) - (r' i))
+           | _, _ => None
+           end
+         | MatrixPlus n m l r =>
            match df_eval_deriv σ l v, df_eval_deriv σ r v with           
            | Some l', Some r' => Some (fun i j => (l' i j) + (r' i j))
+           | _, _ => None
+           end
+         | MatrixMinus n m l r =>
+           match df_eval_deriv σ l v, df_eval_deriv σ r v with           
+           | Some l', Some r' => Some (fun i j => (l' i j) - (r' i j))
            | _, _ => None
            end
          | VectorApply n x s r =>
@@ -797,12 +852,15 @@ Section DefinedFunctions.
          | VectorElem n l i => df_free_variables l
          | MatrixElem m n l i j => df_free_variables l
          | VectorDot n l r => (df_free_variables l) ++ (df_free_variables r)
+         | VectorSum n l => df_free_variables l
          | VectorScalMult n x r => (df_free_variables x) ++ (df_free_variables r)
          | MatrixScalMult n m x r => (df_free_variables x) ++ (df_free_variables r)
          | MatrixVectorMult n m l r => (df_free_variables l) ++ (df_free_variables r)
          | MatrixMult n m p l r => (df_free_variables l) ++ (df_free_variables r)
-         | VectorAdd n l r => (df_free_variables l) ++ (df_free_variables r)
-         | MatrixAdd n m l r => (df_free_variables l) ++ (df_free_variables r)
+         | VectorPlus n l r => (df_free_variables l) ++ (df_free_variables r)
+         | VectorMinus n l r => (df_free_variables l) ++ (df_free_variables r)
+         | MatrixPlus n m l r => (df_free_variables l) ++ (df_free_variables r)
+         | MatrixMinus n m l r => (df_free_variables l) ++ (df_free_variables r)
          | VectorApply n x s l => (df_free_variables l)
          end.
 
@@ -930,6 +988,10 @@ Section DefinedFunctions.
         defined_sum 
           (fun (i:{x:nat|x<n}%nat) =>
              (Times (VectorElem ll i) (VectorElem rr i)))
+      | VectorSum n l =>
+        let ll := df_apply l args in
+        defined_sum 
+          (fun (i:{x:nat|x<n}%nat) => VectorElem ll i)
       | VectorScalMult n x r => 
         let xx := df_apply x args in 
         let rr := df_apply r args in
@@ -953,14 +1015,22 @@ Section DefinedFunctions.
                    defined_sum 
                      (fun (j:{x:nat|x<m}%nat) =>
                               (Times (MatrixElem ll i j) (MatrixElem rr j k))))
-      | VectorAdd n l r =>
+      | VectorPlus n l r =>
         let ll := df_apply l args in
         let rr := df_apply r args in
         DVector (fun i => Plus (VectorElem ll i) (VectorElem rr i))
-      | MatrixAdd n m l r =>
+      | VectorMinus n l r =>
+        let ll := df_apply l args in
+        let rr := df_apply r args in
+        DVector (fun i => Minus (VectorElem ll i) (VectorElem rr i))
+      | MatrixPlus n m l r =>
         let ll := df_apply l args in
         let rr := df_apply r args in
         DMatrix (fun i j => Plus (MatrixElem ll i j) (MatrixElem rr i j))
+      | MatrixMinus n m l r =>
+        let ll := df_apply l args in
+        let rr := df_apply r args in
+        DMatrix (fun i j => Minus (MatrixElem ll i j) (MatrixElem rr i j))
       | VectorApply n x s l => 
         VectorApply x (df_apply s args) (df_apply l args)
 

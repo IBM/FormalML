@@ -55,7 +55,7 @@ Section GenNN.
              (bias : DefinedFunction (Vector float n2)) 
              (f_activ_var : SubVar) (f_activ : DefinedFunction float) 
               : DefinedFunction (Vector float n2) :=
-    VectorApply f_activ_var f_activ (VectorAdd (MatrixVectorMult n2 n1 mat ivec) bias).
+    VectorApply f_activ_var f_activ (VectorPlus (MatrixVectorMult n2 n1 mat ivec) bias).
 
 
  Definition mkNN2_bias (n1 n2 n3 : nat) (ivar wvar : SubVar) (f_activ : DefinedFunction float) (f_activ_var : SubVar) : DefinedFunction (Vector float n3) :=
@@ -122,13 +122,12 @@ Section GenNN.
   Qed.
 
   Definition NNinstance (n1 n2 n3 : nat) (ivar : SubVar) (f_loss : DefinedFunction float) 
-             (NN2 : list (DefinedFunction float)) (inputs : (list float)) 
-             (outputs : (list float)): option (DefinedFunction float) :=
+             (NN2 : DefinedFunction (Vector float n3)) (inputs : (list float)) 
+             (outputs : Vector float n3): option (DefinedFunction float) :=
     let ipairs := (list_prod (map (fun n => (Sub ivar n)) (seq 1 n1))
                              (map Number inputs)) in
-    let inputFunctions := (map (fun df => df_subst_list df ipairs) NN2) in
-    let losses := (map (fun '(df,outval) =>  (Minus df (Number outval)))
-                       (list_prod inputFunctions outputs)) in
+    let inputVector := df_subst_list NN2 ipairs in
+    let losses := VectorMinus n3 NN2 outputs in
     deltalosses f_loss losses.
 
 
