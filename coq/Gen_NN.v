@@ -118,39 +118,36 @@ Section GenNN.
     | None => None
     end.
 
-(*
   Lemma NNinstance_unique_var (n1 n2 n3 : nat) (ivar : SubVar) (f_loss : DefinedFunction float) 
-        (NN2 : list (DefinedFunction float)) (inputs : (list float)) 
-        (outputs : (list float)) (v:SubVar) :
+        (NN2 : DefinedFunction (Vector float n3)) (inputs : (list float)) 
+        (outputs : Vector float n3) (v:SubVar) :
     unique_var f_loss = Some v ->
     NNinstance n1 n2 n3 ivar f_loss NN2 inputs outputs =
     Some (
         let ipairs := (list_prod (map (fun n => (Sub ivar n)) (seq 1 n1))
                                  (map Number inputs)) in
-        let inputFunctions := (map (fun df => df_subst_list df ipairs) NN2) in
-        let losses := (map (fun '(df,outval) =>  (Minus df (Number outval)))
-                           (list_prod inputFunctions outputs)) in
-        (fold_right Plus (Number 0) (map (fun dfj => df_subst f_loss v dfj) losses))
+        let losses := VectorMinus (df_subst_list NN2 ipairs) 
+                                  (DVector (vmap Number outputs)) in
+        (VectorSum (VectorApply v f_loss losses))
       ).
   Proof.
     unfold NNinstance.
     intros.
-    rewrite (deltalosses_unique_var H).
+    rewrite H.
     reflexivity.
   Qed.
 
   Lemma NNinstance_None (n1 n2 n3 : nat) (ivar : SubVar) (f_loss : DefinedFunction float) 
-        (NN2 : list (DefinedFunction float)) (inputs : (list float)) 
-        (outputs : (list float)) :
+        (NN2 : DefinedFunction (Vector float n3)) (inputs : (list float)) 
+        (outputs : Vector float n3) :
     unique_var f_loss = None ->
     NNinstance n1 n2 n3 ivar f_loss NN2 inputs outputs = None.
   Proof.
     unfold NNinstance.
     intros.
-    rewrite (deltalosses_None H).
-    reflexivity.
+    now rewrite H.
   Qed.
-*)
+
   Definition lookup_list (σ:df_env) (lvar : list SubVar) : option (list float) :=
     listo_to_olist (map (fun v => lookup var_dec σ v) lvar).
 
