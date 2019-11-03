@@ -107,33 +107,6 @@ Section GenNN.
   Record testcases : Type := mkTest {ninput: nat; noutput: nat; ntest: nat; 
                                      data : list ((list float) * (list float))}.
 
-  Definition deltalosses {n:nat} (df : DefinedFunction float)
-             (lossvec : DefinedFunction (Vector float n)) : option (DefinedFunction float) :=
-    match unique_var df with
-    | Some v => Some (VectorSum (VectorApply v df lossvec))
-    | None => None
-    end .
-
-(*
-  Lemma deltalosses_unique_var {df : DefinedFunction float} {v:SubVar} :
-    unique_var df = Some v ->
-    forall  (losses : list (DefinedFunction float)),
-      deltalosses df losses = Some (fold_right Plus (Number 0) (map (fun dfj => df_subst df v dfj) losses)).
-  Proof.
-    unfold deltalosses; intros eqq.
-    rewrite eqq; reflexivity.
-  Qed.
-
-  Lemma deltalosses_None {df : DefinedFunction float} :
-    unique_var df = None ->
-    forall (losses : list (DefinedFunction float)),
-      deltalosses df losses = None.
-  Proof.
-    unfold deltalosses; intros eqq.
-    rewrite eqq; reflexivity.
-  Qed.
-*)
-
   Definition NNinstance (n1 n2 n3 : nat) (ivar : SubVar) (f_loss : DefinedFunction float) 
              (NN2 : DefinedFunction (Vector float n3)) (inputs : (list float)) 
              (outputs : Vector float n3): option (DefinedFunction float) :=
@@ -141,7 +114,10 @@ Section GenNN.
                              (map Number inputs)) in
     let inputVector := df_subst_list NN2 ipairs in
     let losses := VectorMinus NN2 (DVector (vmap Number outputs)) in
-    deltalosses f_loss losses.
+    match unique_var f_loss with
+    | Some v => Some (VectorSum (VectorApply v f_loss losses))
+    | None => None
+    end.
 
 (*
   Lemma NNinstance_unique_var (n1 n2 n3 : nat) (ivar : SubVar) (f_loss : DefinedFunction float) 
