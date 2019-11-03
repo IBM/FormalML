@@ -104,7 +104,10 @@ Section DefinedFunctions.
   | Case_aux c "Abs"%string
   | Case_aux c "Sign"%string
   | Case_aux c "PSign"%string
-  | Case_aux c "Max"%string].
+  | Case_aux c "Max"%string
+  | Case_aux c "VectorDot"%string
+  | Case_aux c "VectorElem"%string
+  | Case_aux c "MatrixElem"%string].
 
   Definition df_plus (df1 df2 : DefinedFunction float) : DefinedFunction float :=
     Plus df1 df2.
@@ -803,18 +806,6 @@ Section DefinedFunctions.
          | VectorApply n x s l => (df_free_variables l)
          end.
 
-(*
-    Lemma df_subst_nfree {T} (e: DefinedFunction T) (v:SubVar) (e':DefinedFunction float) :
-      ~ In v (df_free_variables e) ->
-      df_subst e v e' = e.
-    Proof.
-      induction e; simpl; trivial; intros nin
-      ; try solve [try rewrite in_app_iff in nin
-                   ; intuition congruence].
-      - destruct (var_dec v0 v); intuition.
-    Qed.
-*)
-
     Definition df_closed {T} (f: DefinedFunction T) : Prop
       := match df_free_variables f with
          | nil => True
@@ -825,6 +816,17 @@ Section DefinedFunctions.
     Proof.
       unfold df_closed.
       destruct (df_free_variables f); tauto.
+    Qed.
+
+(*
+    Lemma df_subst_nfree {T} (e: DefinedFunction T) (v:SubVar) (e':DefinedFunction float) :
+      ~ In v (df_free_variables e) ->
+      df_subst e v e' = e.
+    Proof.
+      induction e; simpl; trivial; intros nin
+      ; try solve [try rewrite in_app_iff in nin
+                   ; intuition congruence].
+      - destruct (var_dec v0 v); intuition.
     Qed.
 
     Lemma df_eval_complete' {T} (σ:df_env) (f:DefinedFunction T) :
@@ -899,7 +901,7 @@ Section DefinedFunctions.
                    | rewrite IHf; trivial].
       - apply lookeq; simpl; tauto.
     Qed.
-
+*)
   End fv.
 
   Section apply.
@@ -973,7 +975,8 @@ Section real_pfs.
   Import Reals.
   Local Existing Instance floatish_R.
   
-  Lemma MaxDerivedMax_eq (a b : DefinedFunction) :
+(*
+  Lemma MaxDerivedMax_eq (a b : DefinedFunction float) :
     forall σ, df_eval σ (Max a b) = df_eval σ (MaxDerived a b).
   Proof.
     simpl; intros σ.
@@ -989,7 +992,7 @@ Section real_pfs.
       rewrite Rabs_pos_eq by lra.
       lra.
   Qed.
-
+*)
 End real_pfs.
 
 (*
