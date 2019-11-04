@@ -55,66 +55,90 @@ Section DefinedFunctions.
     Definition Vector (T:Type) (n : nat) := {n':nat | n' < n}%nat -> T.
     Definition Matrix (T:Type) (n m : nat) := {n':nat | n' < n}%nat -> {m':nat | m' < m}%nat -> T.
 
-    Inductive DefinedFunction : Type -> Type :=
-    | Number (x : float) : DefinedFunction float
-    | DVector {n} (x : Vector (DefinedFunction float) n) : DefinedFunction (Vector float n)
-    | DMatrix {n m} (x : Matrix (DefinedFunction float) n m) : DefinedFunction (Matrix float n m)
-    | Var (v : SubVar) : DefinedFunction float
-    | Plus (l r : DefinedFunction float) : DefinedFunction float
-    | Minus (l r : DefinedFunction float) : DefinedFunction float
-    | Times (l r : DefinedFunction float) : DefinedFunction float
-    | Divide (l r : DefinedFunction float) : DefinedFunction float
-    | Exp (e : DefinedFunction float) : DefinedFunction float
-    | Log (e : DefinedFunction float) : DefinedFunction float
-    | Abs (e : DefinedFunction float) : DefinedFunction float
-    | Sign (e : DefinedFunction float) : DefinedFunction float
-    | PSign (e : DefinedFunction float) : DefinedFunction float
-    | Max (l r : DefinedFunction float) : DefinedFunction float
-    | VectorDot {n} (l r: DefinedFunction (Vector float n)) : DefinedFunction float
-    | VectorSum {n} (v: DefinedFunction (Vector float n)) : DefinedFunction float
-    | VectorElem {n} (l:DefinedFunction (Vector float n)) (i:{x:nat|x<n}%nat) : DefinedFunction float
-    | MatrixElem {m n} (l:DefinedFunction (Matrix float m n)) (i:{x:nat|x<m}%nat) (j:{x:nat|x<n}%nat) :
-        DefinedFunction float
-    | MatrixVectorMult n m (l : DefinedFunction (Matrix float n m)) (r : DefinedFunction (Vector float m)) :
-        DefinedFunction (Vector float n)
-    | MatrixMult {n p m} (l : DefinedFunction (Matrix float n p)) (r : DefinedFunction (Matrix float p m)) :
-        DefinedFunction (Matrix float n m)
-    | VectorPlus {n} (l r: DefinedFunction (Vector float n)) : DefinedFunction (Vector float n)
-    | VectorMinus {n} (l r: DefinedFunction (Vector float n)) : DefinedFunction (Vector float n)                                                                                   
-    | MatrixPlus {n m} (l r : DefinedFunction (Matrix float n m)) : DefinedFunction (Matrix float n m)
-    | MatrixMinus {n m} (l r : DefinedFunction (Matrix float n m)) : DefinedFunction (Matrix float n m)                                                                                      | VectorScalMult {n} (x:DefinedFunction float) (l : DefinedFunction (Vector float n)) :
-        DefinedFunction (Vector float n)
-    | MatrixScalMult {n m} (x:DefinedFunction float) (l : DefinedFunction (Matrix float n m)) :
-        DefinedFunction (Matrix float n m)
-    | VectorApply {n} (v:SubVar) (s:DefinedFunction float) (l: DefinedFunction (Vector float n)) :
-        DefinedFunction (Vector float n)
-    .
+    Inductive definition_function_types
+     := DTfloat
+      | DTVector (n:nat)
+      | DTMatrix (m n:nat).
+   
+    Definition definition_function_types_interp (dft:definition_function_types) : Type
+     := match dft with
+        | DTfloat => float
+        | DTVector n => Vector float n
+        | DTMatrix m n => Matrix float m n
+        end.
 
+    Inductive DefinedFunction : definition_function_types -> Type :=
+    | Number (x : float) : DefinedFunction DTfloat
+    | DVector {n} (x : Vector (DefinedFunction DTfloat) n) : DefinedFunction (DTVector n)
+    | DMatrix {n m} (x : Matrix (DefinedFunction DTfloat) n m) : DefinedFunction (DTMatrix n m)
+    | Var (v : SubVar) : DefinedFunction DTfloat
+    | Plus (l r : DefinedFunction DTfloat) : DefinedFunction DTfloat
+    | Minus (l r : DefinedFunction DTfloat) : DefinedFunction DTfloat
+    | Times (l r : DefinedFunction DTfloat) : DefinedFunction DTfloat
+    | Divide (l r : DefinedFunction DTfloat) : DefinedFunction DTfloat
+    | Exp (e : DefinedFunction DTfloat) : DefinedFunction DTfloat
+    | Log (e : DefinedFunction DTfloat) : DefinedFunction DTfloat
+    | Abs (e : DefinedFunction DTfloat) : DefinedFunction DTfloat
+    | Sign (e : DefinedFunction DTfloat) : DefinedFunction DTfloat
+    | PSign (e : DefinedFunction DTfloat) : DefinedFunction DTfloat
+    | Max (l r : DefinedFunction DTfloat) : DefinedFunction DTfloat
+    | VectorDot {n} (l r: DefinedFunction (DTVector n)) : DefinedFunction DTfloat
+    | VectorSum {n} (v: DefinedFunction (DTVector n)) : DefinedFunction DTfloat
+    | VectorElem {n} (l:DefinedFunction (DTVector n)) (i:{x:nat|x<n}%nat) : DefinedFunction DTfloat
+    | MatrixElem {m n} (l:DefinedFunction (DTMatrix m n)) (i:{x:nat|x<m}%nat) (j:{x:nat|x<n}%nat) :
+        DefinedFunction DTfloat
+    | MatrixVectorMult {m n} (l : DefinedFunction (DTMatrix m n)) (r : DefinedFunction (DTVector n)) :
+        DefinedFunction (DTVector m)
+    | MatrixMult {m p n} (l : DefinedFunction (DTMatrix m p)) (r : DefinedFunction (DTMatrix p n)) :
+        DefinedFunction (DTMatrix m n)
+    | VectorPlus {n} (l r: DefinedFunction (DTVector n)) : DefinedFunction (DTVector n)
+    | VectorMinus {n} (l r: DefinedFunction (DTVector n)) : DefinedFunction (DTVector n)                                                                                   
+    | MatrixPlus {n m} (l r : DefinedFunction (DTMatrix n m)) : DefinedFunction (DTMatrix n m)
+    | MatrixMinus {n m} (l r : DefinedFunction (DTMatrix n m)) : DefinedFunction (DTMatrix n m)
+    | VectorScalMult {n} (x:DefinedFunction DTfloat) (l : DefinedFunction (DTVector n)) :
+        DefinedFunction (DTVector n)
+    | MatrixScalMult {n m} (x:DefinedFunction DTfloat) (l : DefinedFunction (DTMatrix n m)) :
+        DefinedFunction (DTMatrix n m)
+    | VectorApply {n} (v:SubVar) (s:DefinedFunction DTfloat) (l: DefinedFunction (DTVector n)) :
+        DefinedFunction (DTVector n)
+    .
 
   End Definitions.
 
-  Tactic Notation "DefinedFunction_cases" tactic(first) ident(c) :=
-  first;
-  [ Case_aux c "Number"%string
-  | Case_aux c "Var"%string
-  | Case_aux c "Plus"%string
-  | Case_aux c "Minus"%string
-  | Case_aux c "Times"%string
-  | Case_aux c "Divide"%string
-  | Case_aux c "Exp"%string
-  | Case_aux c "Log"%string
-  | Case_aux c "Abs"%string
-  | Case_aux c "Sign"%string
-  | Case_aux c "PSign"%string
-  | Case_aux c "Max"%string
-  | Case_aux c "VectorDot"%string
-  | Case_aux c "VectorElem"%string
-  | Case_aux c "MatrixElem"%string].
+    Tactic Notation "DefinedFunction_cases" tactic(first) ident(c) :=
+      first;
+      [ Case_aux c "Number"%string
+      | Case_aux c "DVector"%string
+      | Case_aux c "DMatrix"%string
+      | Case_aux c "Var"%string
+      | Case_aux c "Plus"%string
+      | Case_aux c "Minus"%string
+      | Case_aux c "Times"%string
+      | Case_aux c "Divide"%string
+      | Case_aux c "Exp"%string
+      | Case_aux c "Log"%string
+      | Case_aux c "Abs"%string
+      | Case_aux c "Sign"%string
+      | Case_aux c "PSign"%string
+      | Case_aux c "Max"%string
+      | Case_aux c "VectorDot"%string
+      | Case_aux c "VectorSum"%string
+      | Case_aux c "VectorElem"%string
+      | Case_aux c "MatrixElem"%string
+      | Case_aux c "MatrixVectorMult"%string
+      | Case_aux c "MatrixMult"%string
+      | Case_aux c "VectorPlus"%string
+      | Case_aux c "VectorMinus"%string
+      | Case_aux c "MatrixPlus"%string
+      | Case_aux c "MatrixMinus"%string
+      | Case_aux c "VectorScalMult"%string
+      | Case_aux c "MatrixScalMult"%string
+      | Case_aux c "VectorApply"%string].
 
-  Definition df_plus (df1 df2 : DefinedFunction float) : DefinedFunction float :=
+  Definition df_plus (df1 df2 : DefinedFunction DTfloat) : DefinedFunction DTfloat :=
     Plus df1 df2.
 
-  Definition df_times (df1 df2 : DefinedFunction float) : DefinedFunction float :=
+  Definition df_times (df1 df2 : DefinedFunction DTfloat) : DefinedFunction DTfloat :=
     Times df1 df2.
 
   Section deriv.
@@ -133,6 +157,18 @@ Section DefinedFunctions.
           * exact (v (exist _ (S n) pf3)).
           * apply IHn.
             apply pf2.
+    Defined.
+
+    Definition vector_fold_right_bounded_dep {A:nat->Type} {B} (f:forall n,B->A n->A (S n)) (init:A 0%nat) {m:nat} (v:Vector B m) (n:nat) (pf:(n<=m)%nat)
+    : A n.
+    Proof.
+      induction n.
+      - exact init.
+      - apply f.
+        + assert (pf2:(n < m)%nat) by omega.
+          exact (v (exist _ n pf2)).
+        + apply IHn.
+          omega.
     Defined.
 
     Definition vnil {T} : Vector T 0.
@@ -155,7 +191,7 @@ Section DefinedFunctions.
       := vector_fold_right1_bounded_dep f init singleton v m (le_refl _).
 
     Definition vector_fold_right_dep {A:nat->Type} {B} (f:forall n, B->A n->A (S n)) (init:A 0%nat) {m:nat} (v:Vector B m) : A m
-      := vector_fold_right1_dep f init (fun a => f _ a init) v.
+      := vector_fold_right_bounded_dep f init v m (le_refl _).
 
     Definition vector_fold_right1 {A B:Type} (f:B->A->A) (init:A) (singleton:B->A) {m:nat} (v:Vector B m)
       := vector_fold_right1_dep (A:=fun _ => A) (fun _ => f) init singleton v.
@@ -163,7 +199,7 @@ Section DefinedFunctions.
     Definition vector_fold_right {A B:Type} (f:B->A->A) (init:A) {m:nat} (v:Vector B m)
       := vector_fold_right_dep (fun _ => f) init v.
 
-    Definition defined_sum {m} (v:Vector (DefinedFunction float) m) : DefinedFunction float
+    Definition defined_sum {m} (v:Vector (DefinedFunction DTfloat) m) : DefinedFunction DTfloat
       := vector_fold_right1 Plus (Number 0) id v.
 
     Definition vsum {m:nat} (v:Vector float m) : float
@@ -211,10 +247,9 @@ Section DefinedFunctions.
     Definition vseq start len : Vector nat len
       := eq_rect _ _ (list_to_vector (seq start len)) _ (seq_length _ _).
 
-    
   Section subst.
 
-    Fixpoint df_subst {T} (df: DefinedFunction T) (v:SubVar) (e':DefinedFunction float): DefinedFunction T :=
+    Fixpoint df_subst {T} (df: DefinedFunction T) (v:SubVar) (e':DefinedFunction DTfloat): DefinedFunction T :=
       match df with
       | Number x => Number x
       | DVector n df => DVector (fun x => df_subst (df x) v e')
@@ -236,65 +271,35 @@ Section DefinedFunctions.
       | VectorElem n l i => VectorElem (df_subst l v e') i
       | MatrixElem m n l i j => MatrixElem (df_subst l v e') i j
       | VectorDot n l r =>
-        let ll := df_subst l v e' in
-        let rr := df_subst r v e' in
-        defined_sum 
-          (fun (i:{x:nat|x<n}%nat) =>
-             (Times (VectorElem ll i) (VectorElem rr i)))
+        VectorDot (df_subst l v e') (df_subst r v e')
       | VectorSum n e =>
-        let ee := df_subst e v e' in
-        defined_sum (fun (i:{x:nat|x<n}%nat) => VectorElem ee i)
-      | VectorScalMult n x r => 
-        let xx := df_subst x v e' in 
-        let rr := df_subst r v e' in
-        DVector (fun i => Times xx (VectorElem rr i))
-      | MatrixScalMult n m x r => 
-        let xx := df_subst x v e' in 
-        let rr := df_subst r v e' in
-        DMatrix (fun i j  => Times xx (MatrixElem rr i j))
+        VectorSum (df_subst e v e')
+      | VectorScalMult n x r =>
+        VectorScalMult (df_subst x v e') (df_subst r v e')
+      | MatrixScalMult n m x r =>
+        MatrixScalMult (df_subst x v e') (df_subst r v e')
       | MatrixVectorMult n m l r =>
-        let ll := df_subst l v e' in
-        let rr := df_subst r v e' in
-        DVector (fun i =>
-                   defined_sum 
-                     (fun (j:{x:nat|x<m}%nat) =>
-                        (Times (MatrixElem ll i j) (VectorElem rr j))))
-                                      
+        MatrixVectorMult (df_subst l v e') (df_subst r v e')
       | MatrixMult n m p l r =>
-        let ll := df_subst l v e' in
-        let rr := df_subst r v e' in
-        DMatrix (fun i k =>
-                   defined_sum 
-                     (fun (j:{x:nat|x<m}%nat) =>
-                              (Times (MatrixElem ll i j) (MatrixElem rr j k))))
+        MatrixMult (df_subst l v e') (df_subst r v e')
       | VectorPlus n l r =>
-        let ll := df_subst l v e' in
-        let rr := df_subst r v e' in
-        DVector (fun i => Plus (VectorElem ll i) (VectorElem rr i))
+        VectorPlus (df_subst l v e') (df_subst r v e')
       | VectorMinus n l r =>
-        let ll := df_subst l v e' in
-        let rr := df_subst r v e' in
-        DVector (fun i => Minus (VectorElem ll i) (VectorElem rr i))
+        VectorMinus (df_subst l v e') (df_subst r v e')
       | MatrixPlus n m l r =>
-        let ll := df_subst l v e' in
-        let rr := df_subst r v e' in
-        DMatrix (fun i j => Plus (MatrixElem ll i j) (MatrixElem rr i j))
+        MatrixPlus (df_subst l v e') (df_subst r v e')
       | MatrixMinus n m l r =>
-        let ll := df_subst l v e' in
-        let rr := df_subst r v e' in
-        DMatrix (fun i j => Minus (MatrixElem ll i j) (MatrixElem rr i j))
+        MatrixMinus (df_subst l v e') (df_subst r v e')
       | VectorApply n x s l => 
         VectorApply x (df_subst s v e') (df_subst l v e')
       end.
 
     Definition df_substp {T} := fun e '(v,e') => @df_subst T e v  e'.
 
-    Definition df_subst_list {T} (e:DefinedFunction T) (l:list (SubVar*DefinedFunction float)) : DefinedFunction T
+    Definition df_subst_list {T} (e:DefinedFunction T) (l:list (SubVar*DefinedFunction DTfloat)) : DefinedFunction T
       := fold_left (@df_substp T) l e.
 
   End subst.
-
-
 
     Fixpoint df_deriv {T} (df:DefinedFunction T) (v:SubVar) {struct df} : DefinedFunction T
       := (match df with
@@ -397,7 +402,7 @@ Section DefinedFunctions.
     Definition matrix_mult {m n p} (l : Matrix float n m)(r : Matrix float m p) : Matrix float n p :=
       fun i k => vsum (fun j => (l i j) * (r j k)).
 
-    Fixpoint df_eval {T} (σ:df_env) (df:DefinedFunction T) : option T
+    Fixpoint df_eval {T} (σ:df_env) (df:DefinedFunction T) : option (definition_function_types_interp T)
       := match df with
          | Number r => Some r
          | DVector n dfs => vectoro_to_ovector (fun i => df_eval σ (dfs i))
@@ -520,7 +525,7 @@ Section DefinedFunctions.
            end
          end.
 
-    Definition df_eval_symbolic_gradient {T} (σ:df_env) (df:DefinedFunction T) (lv:list SubVar) : option (list T)
+    Definition df_eval_symbolic_gradient {T} (σ:df_env) (df:DefinedFunction T) (lv:list SubVar) : option (list (definition_function_types_interp T))
       := listo_to_olist (map (df_eval σ) (df_gradient df lv)).
     
   End eval.
@@ -597,7 +602,7 @@ Section DefinedFunctions.
   
   Section deriv2.
 
-    Fixpoint df_eval_deriv {T} (σ:df_env) (df:DefinedFunction T) (v:SubVar) : option T
+    Fixpoint df_eval_deriv {T} (σ:df_env) (df:DefinedFunction T) (v:SubVar) : option (definition_function_types_interp T)
       := (match df with
          | Number _ => Some 0
          | DVector n dfs => vectoro_to_ovector (fun i => df_eval_deriv σ (dfs i) v)
@@ -728,7 +733,7 @@ Section DefinedFunctions.
 
           end).
 
-    Definition df_eval_gradient {T} σ (df:DefinedFunction T) (lv:list SubVar) : option (list T)
+    Definition df_eval_gradient {T} σ (df:DefinedFunction T) (lv:list SubVar) : option (list (definition_function_types_interp T))
       := listo_to_olist (map (df_eval_deriv σ df) lv).
     
     Definition single_olist {T} (ol : option (list T)) : option (list (list T)) :=
@@ -741,11 +746,23 @@ Section DefinedFunctions.
      := let l12 := list_prod l1 l2
         in map (fun '(x,y) => combine x y) l12.
 
-(*
-    Fixpoint df_eval_subgradient {T} (σ:df_env) (df:DefinedFunction T) (lv:list SubVar) : option (list (list T))
-      := (match df with
-         | Number _ => Some ( (map (fun v:SubVar => 0) lv) :: nil )
-         | Var x => single_olist (df_eval_gradient σ df lv)
+
+   Definition definition_function_types_map_base (f:Type->Type) (dft:definition_function_types): Type
+     := match dft with
+        | DTfloat => f float
+        | DTVector n => Vector (f float) n
+        | DTMatrix m n => Matrix (f float) m n
+        end.
+
+   Definition definition_function_types_subgradient (dft:definition_function_types)
+     := definition_function_types_map_base (fun t => list (list t)) dft.
+
+   Fixpoint df_eval_subgradient {dft:definition_function_types} (σ:df_env) (df:DefinedFunction dft) (lv:list SubVar) : option (definition_function_types_subgradient dft)
+    := (match df with
+        | Number _ => Some ((map (fun v:SubVar => 0) lv) :: nil)
+        | DVector n v => vectoro_to_ovector (vmap (fun x => df_eval_subgradient σ x lv) v)
+        | DMatrix _ _ _ => None
+         | Var x => single_olist (df_eval_gradient σ (Var x) lv)
          | Plus l r => 
            match df_eval_subgradient σ l lv, df_eval_subgradient σ r lv with
            | Some ld, Some rd => Some (map (map (fun '(x, y) => x+y)) (combine_prod ld rd))
@@ -803,6 +820,7 @@ Section DefinedFunctions.
                   else Some rd
            | _, _, _, _ => None
            end
+         | _ => None
           end).
 *)
     End deriv2.
@@ -866,14 +884,37 @@ Section DefinedFunctions.
     
   End max_derived.
 
+  Definition vlconcat {A n} (v:Vector (list A) n) : list A
+    := concat (vector_to_list v).
+
+  Definition vlconcat_map {A B n} (f:A->list B) (v:Vector A n) : list B
+    := vlconcat (vmap f v).
+
+  Definition vin {A n} (x:A) (v:Vector A n) : Prop
+    := exists i, v i = x.
+
+  Lemma vector_to_list_In {A} (x:A) {n} (v:Vector A n) :
+    vin x v -> In x (vector_to_list v).
+  Proof.
+    induction n.
+    - intros [[i pf] eqqi].
+      omega.
+    - intros [[i pf] eqqi].
+  Admitted.
+
+  Lemma vector_to_list_vin {A} (x:A) {n} (v:Vector A n) :
+    In x (vector_to_list v) -> vin x v.
+  Proof.
+  Admitted.
+
   Section fv.
 
     Fixpoint df_free_variables {T} (f : DefinedFunction T) : list SubVar
       := match f with
          | Number x => nil
-         | DVector n x => vector_fold_right (fun b a => (df_free_variables b) ++  a) nil x
+         | DVector n x => vlconcat_map df_free_variables x
            
-         | DMatrix n m x => vector_fold_right (fun b a => (vector_fold_right (fun b0 a0 => (df_free_variables b0) ++ a0) nil b) ++ a) nil x
+         | DMatrix n m x => vlconcat_map (fun a => vlconcat_map df_free_variables a) x
          | Var name => name::nil
          | Plus l r => (df_free_variables l) ++ (df_free_variables r)
          | Minus l r => (df_free_variables l) ++ (df_free_variables r)
@@ -897,7 +938,7 @@ Section DefinedFunctions.
          | VectorMinus n l r => (df_free_variables l) ++ (df_free_variables r)
          | MatrixPlus n m l r => (df_free_variables l) ++ (df_free_variables r)
          | MatrixMinus n m l r => (df_free_variables l) ++ (df_free_variables r)
-         | VectorApply n x s l => (df_free_variables l)
+         | VectorApply n x s l => (df_free_variables s) ++ (df_free_variables l)
          end.
 
     Definition df_closed {T} (f: DefinedFunction T) : Prop
@@ -912,15 +953,54 @@ Section DefinedFunctions.
       destruct (df_free_variables f); tauto.
     Qed.
 
-(*
+    Lemma vmap_nth {A B : Type} (f : A -> B) {n} (v : Vector A n) i : 
+      vmap f v i = f (v i).
+    Proof.
+      unfold vmap.
+      unfold vector_fold_right_dep, vector_fold_right1_dep.
+      induction n; simpl.
+      - admit.
+      - destruct n; simpl.
+    Admitted.
+
+    (*
+    Lemma vin_vmap {A B : Type} (f : A -> B) {n} (v : Vector A n) (y : B) :
+      vin y (vmap f v) -> (exists x : A, f x = y /\ vin x v).
+    Proof.
+      intros [i ieq].
+
+      
+      unfold vector_fold_right_dep.
+      induction n; simpl; intros.
+    Qed.
+     *)
+    Require Import FunctionalExtensionality.
+
+
     Lemma df_subst_nfree {T} (e: DefinedFunction T) (v:SubVar) (e':DefinedFunction float) :
       ~ In v (df_free_variables e) ->
       df_subst e v e' = e.
     Proof.
-      induction e; simpl; trivial; intros nin
+      DefinedFunction_cases (induction e) Case; simpl; trivial; intros nin
       ; try solve [try rewrite in_app_iff in nin
                    ; intuition congruence].
-      - destruct (var_dec v0 v); intuition.
+      - Case "DVector"%string.
+        f_equal.
+        apply functional_extensionality.
+        intros x0.
+        apply H.
+        intros inn.
+        apply nin.
+        unfold vlconcat_map, vlconcat.
+        apply concat_In.
+        exists ((df_free_variables (x x0))).
+        split; trivial.
+        apply vector_to_list_In.
+        
+      - Case "DMatrix"%string.
+
+      - Case "Var"%string.
+        destruct (var_dec v0 v); intuition.
     Qed.
 
     Lemma df_eval_complete' {T} (σ:df_env) (f:DefinedFunction T) :
@@ -1121,6 +1201,8 @@ End real_pfs.
 Tactic Notation "DefinedFunction_cases" tactic(first) ident(c) :=
   first;
   [ Case_aux c "Number"%string
+  | Case_aux c "DVector"%string
+  | Case_aux c "DMatrix"%string
   | Case_aux c "Var"%string
   | Case_aux c "Plus"%string
   | Case_aux c "Minus"%string
@@ -1131,4 +1213,17 @@ Tactic Notation "DefinedFunction_cases" tactic(first) ident(c) :=
   | Case_aux c "Abs"%string
   | Case_aux c "Sign"%string
   | Case_aux c "PSign"%string
-  | Case_aux c "Max"%string].
+  | Case_aux c "Max"%string
+  | Case_aux c "VectorDot"%string
+  | Case_aux c "VectorSum"%string
+  | Case_aux c "VectorElem"%string
+  | Case_aux c "MatrixElem"%string
+  | Case_aux c "MatrixVectorMult"%string
+  | Case_aux c "MatrixMult"%string
+  | Case_aux c "VectorPlus"%string
+  | Case_aux c "VectorMinus"%string
+  | Case_aux c "MatrixPlus"%string
+  | Case_aux c "MatrixMinus"%string
+  | Case_aux c "VectorScalMult"%string
+  | Case_aux c "MatrixScalMult"%string
+  | Case_aux c "VectorApply"%string].
