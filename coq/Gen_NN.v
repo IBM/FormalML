@@ -68,8 +68,8 @@ Section GenNN.
     mkNN_bias_step n2 n3 N1 mat2 b2 f_activ_var f_activ.
 
  Lemma vector_float_map_last_rewrite {B nvlist1 n2 v n1} :
-   (Vector float (last ((@domain _ B) nvlist1) n2)) = 
-   (Vector float (last (domain((n2, v) :: nvlist1)) n1)).
+   (DTVector (last ((@domain _ B) nvlist1) n2)) = 
+   (DTVector (last (domain((n2, v) :: nvlist1)) n1)).
  Proof.
    rewrite domain_cons.
    rewrite last_cons.
