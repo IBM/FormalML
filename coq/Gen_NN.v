@@ -15,15 +15,15 @@ Section GenNN.
   Local Open Scope float.
 
   Record FullNN : Type := mkNN { ldims : list nat; param_var : SubVar; 
-                                 f_activ : DefinedFunction float; f_loss : DefinedFunction float }.
+                                 f_activ : DefinedFunction DTfloat; f_loss : DefinedFunction DTfloat }.
 
-  Definition mkSubVarVector (v : SubVar) (n : nat) : DefinedFunction (Vector float n) :=
+  Definition mkSubVarVector (v : SubVar) (n : nat) : DefinedFunction (DTVector n) :=
     DVector (fun i => Var (Sub v (proj1_sig i))).
 
-  Definition mkSubVarMatrix (v : SubVar) (n m : nat) : DefinedFunction (Matrix float n m) :=
+  Definition mkSubVarMatrix (v : SubVar) (n m : nat) : DefinedFunction (DTMatrix n m) :=
     DMatrix (fun i j => Var (Sub (Sub v (proj1_sig i)) (proj1_sig j))).
 
-  Definition unique_var (df : DefinedFunction float) : option SubVar :=
+  Definition unique_var (df : DefinedFunction DTfloat) : option SubVar :=
     let fv := nodup var_dec (df_free_variables df) in
     match fv with
     | nil => None
@@ -31,34 +31,34 @@ Section GenNN.
     | _ => None
     end.   
 
-  Definition activation (df : DefinedFunction float) (vec : list (DefinedFunction float)) : option (list (DefinedFunction float)) :=
+  Definition activation (df : DefinedFunction DTfloat) (vec : list (DefinedFunction DTfloat)) : option (list (DefinedFunction DTfloat)) :=
     match unique_var df with
     | Some v => Some (map (fun dfj => df_subst df v dfj) vec)
     | None => None
     end.
 
-  Definition create_activation_fun (df : DefinedFunction float) : option (DefinedFunction float -> DefinedFunction float) :=
+  Definition create_activation_fun (df : DefinedFunction DTfloat) : option (DefinedFunction DTfloat -> DefinedFunction DTfloat) :=
     match unique_var df with
     | Some v => Some (fun val => df_subst df v val)
     | None => None
     end.
 
-  Definition mkNN2 (n1 n2 n3 : nat) (ivar wvar : SubVar) (f_activ : DefinedFunction float) (f_activ_var : SubVar) : (DefinedFunction (Vector float n3)) :=
+  Definition mkNN2 (n1 n2 n3 : nat) (ivar wvar : SubVar) (f_activ : DefinedFunction DTfloat) (f_activ_var : SubVar) : (DefinedFunction (DTVector n3)) :=
     let mat1 := mkSubVarMatrix (Sub wvar 1) n2 n1 in
     let mat2 := mkSubVarMatrix (Sub wvar 2) n3 n2 in
     let ivec := mkSubVarVector ivar n1 in
-    let N1 := VectorApply f_activ_var f_activ (MatrixVectorMult n2 n1 mat1 ivec) in 
-    VectorApply f_activ_var f_activ (MatrixVectorMult n3 n2 mat2 N1).
+    let N1 := VectorApply f_activ_var f_activ (MatrixVectorMult  mat1 ivec) in 
+    VectorApply f_activ_var f_activ (MatrixVectorMult mat2 N1).
 
-  Definition mkNN_bias_step (n1 n2 : nat) (ivec : DefinedFunction (Vector float n1)) 
-             (mat : DefinedFunction (Matrix float n2 n1)) 
-             (bias : DefinedFunction (Vector float n2)) 
-             (f_activ_var : SubVar) (f_activ : DefinedFunction float) 
-              : DefinedFunction (Vector float n2) :=
-    VectorApply f_activ_var f_activ (VectorPlus (MatrixVectorMult n2 n1 mat ivec) bias).
+  Definition mkNN_bias_step (n1 n2 : nat) (ivec : DefinedFunction (DTVector n1)) 
+             (mat : DefinedFunction (DTMatrix n2 n1)) 
+             (bias : DefinedFunction (DTVector n2)) 
+             (f_activ_var : SubVar) (f_activ : DefinedFunction DTfloat) 
+              : DefinedFunction (DTVector n2) :=
+    VectorApply f_activ_var f_activ (VectorPlus (MatrixVectorMult mat ivec) bias).
 
 
- Definition mkNN2_bias (n1 n2 n3 : nat) (ivar wvar : SubVar) (f_activ : DefinedFunction float) (f_activ_var : SubVar) : DefinedFunction (Vector float n3) :=
+ Definition mkNN2_bias (n1 n2 n3 : nat) (ivar wvar : SubVar) (f_activ : DefinedFunction DTfloat) (f_activ_var : SubVar) : DefinedFunction (DTVector n3) :=
     let mat1 := mkSubVarMatrix (Sub wvar 1) n2 n1 in
     let b1 := mkSubVarVector (Sub wvar 1) n2 in
     let mat2 := mkSubVarMatrix (Sub wvar 2) n3 n2 in
@@ -77,9 +77,9 @@ Section GenNN.
  Qed.
 
   Fixpoint mkNN_gen_0 (n1:nat) (nvlist : list (nat * SubVar)) 
-           (ivec : (DefinedFunction (Vector float n1)))
-           (f_activ_var : SubVar ) (f_activ : DefinedFunction float) :
-    DefinedFunction (Vector float (last (domain nvlist) n1))
+           (ivec : (DefinedFunction (DTVector n1)))
+           (f_activ_var : SubVar ) (f_activ : DefinedFunction DTfloat) :
+    DefinedFunction (DTVector (last (domain nvlist) n1))
 := 
     match nvlist with
     | nil => ivec
@@ -91,8 +91,8 @@ Section GenNN.
     end.
 
   Program Definition mkNN_gen (n1:nat) (nlist : list nat) (ivar wvar f_activ_var : SubVar) 
-             (f_activ : DefinedFunction float) : 
-    DefinedFunction (Vector float (last nlist n1)) :=
+             (f_activ : DefinedFunction DTfloat) : 
+    DefinedFunction (DTVector (last nlist n1)) :=
     let vlist := map (fun i => Sub wvar i) (seq 1 (length nlist)) in
     let ivec := mkSubVarVector ivar n1 in
     eq_rect _ DefinedFunction
@@ -107,9 +107,9 @@ Section GenNN.
   Record testcases : Type := mkTest {ninput: nat; noutput: nat; ntest: nat; 
                                      data : list ((list float) * (list float))}.
 
-  Definition NNinstance (n1 n2 n3 : nat) (ivar : SubVar) (f_loss : DefinedFunction float) 
-             (NN2 : DefinedFunction (Vector float n3)) (inputs : (list float)) 
-             (outputs : Vector float n3): option (DefinedFunction float) :=
+  Definition NNinstance (n1 n2 n3 : nat) (ivar : SubVar) (f_loss : DefinedFunction DTfloat) 
+             (NN2 : DefinedFunction (DTVector n3)) (inputs : (list float)) 
+             (outputs : Vector float n3): option (DefinedFunction DTfloat) :=
     let ipairs := (list_prod (map (fun n => (Sub ivar n)) (seq 1 n1))
                              (map Number inputs)) in
     let losses := VectorMinus (df_subst_list NN2 ipairs) (DVector (vmap Number outputs)) in
@@ -118,8 +118,8 @@ Section GenNN.
     | None => None
     end.
 
-  Lemma NNinstance_unique_var (n1 n2 n3 : nat) (ivar : SubVar) (f_loss : DefinedFunction float) 
-        (NN2 : DefinedFunction (Vector float n3)) (inputs : (list float)) 
+  Lemma NNinstance_unique_var (n1 n2 n3 : nat) (ivar : SubVar) (f_loss : DefinedFunction DTfloat) 
+        (NN2 : DefinedFunction (DTVector n3)) (inputs : (list float)) 
         (outputs : Vector float n3) (v:SubVar) :
     unique_var f_loss = Some v ->
     NNinstance n1 n2 n3 ivar f_loss NN2 inputs outputs =
@@ -137,8 +137,8 @@ Section GenNN.
     reflexivity.
   Qed.
 
-  Lemma NNinstance_None (n1 n2 n3 : nat) (ivar : SubVar) (f_loss : DefinedFunction float) 
-        (NN2 : DefinedFunction (Vector float n3)) (inputs : (list float)) 
+  Lemma NNinstance_None (n1 n2 n3 : nat) (ivar : SubVar) (f_loss : DefinedFunction DTfloat) 
+        (NN2 : DefinedFunction (DTVector n3)) (inputs : (list float)) 
         (outputs : Vector float n3) :
     unique_var f_loss = None ->
     NNinstance n1 n2 n3 ivar f_loss NN2 inputs outputs = None.
@@ -170,7 +170,7 @@ Section GenNN.
   Definition update_list {A B:Type} (dec:forall a a':A, {a=a'} + {a<>a'}) (l up:list (A*B))  : list (A*B)
     := fold_left (update_firstp dec) up l.
 
-  Definition optimize_step (step : nat) (df : DefinedFunction float) (σ:df_env) (lvar : list SubVar) (noise_st : Stream float) : (option df_env)*(Stream float) :=
+  Definition optimize_step (step : nat) (df : DefinedFunction DTfloat) (σ:df_env) (lvar : list SubVar) (noise_st : Stream float) : (option df_env)*(Stream float) :=
     let ogradvec := df_eval_gradient σ df lvar in
     let alpha   :=  1 / (FfromZ (Z.of_nat (S step))) in
     let '(lnoise, nst) := streamtake (length lvar) noise_st in
@@ -184,7 +184,7 @@ Section GenNN.
     | (_, _) => (None, nst)
     end.
 
-  Fixpoint optimize_steps (start count:nat) (df : DefinedFunction float) (σ:df_env) (lvar : list SubVar) (noise_st : Stream float) : (option df_env)*(Stream float) :=
+  Fixpoint optimize_steps (start count:nat) (df : DefinedFunction DTfloat) (σ:df_env) (lvar : list SubVar) (noise_st : Stream float) : (option df_env)*(Stream float) :=
     match count with
     | 0 => (Some σ, noise_st)
     | S n =>
@@ -195,8 +195,8 @@ Section GenNN.
     end.
 
 Example xvar := Name "x".
-Example xfun:DefinedFunction float := Var xvar.
-Example quad:DefinedFunction float := Minus (Times xfun xfun) (Number 1).
+Example xfun:DefinedFunction DTfloat := Var xvar.
+Example quad:DefinedFunction DTfloat := Minus (Times xfun xfun) (Number 1).
 CoFixpoint noise : Stream float := Cons 0 noise.
 Example env : df_env := (xvar, FfromZ 5)::nil.
 Example opt := fst (optimize_steps 0 2 quad env (xvar :: nil) noise).

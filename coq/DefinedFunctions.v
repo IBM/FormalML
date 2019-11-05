@@ -761,7 +761,7 @@ Section DefinedFunctions.
     := (match df with
         | Number _ => Some ((map (fun v:SubVar => 0) lv) :: nil)
         | DVector n v => vectoro_to_ovector (vmap (fun x => df_eval_subgradient σ x lv) v)
-        | DMatrix _ _ _ => None
+        | DMatrix n m df => matrixo_to_omatrix (vmap (fun x => vmap (fun y => df_eval_subgradient σ y lv) x) df)
          | Var x => single_olist (df_eval_gradient σ (Var x) lv)
          | Plus l r => 
            match df_eval_subgradient σ l lv, df_eval_subgradient σ r lv with
@@ -820,9 +820,102 @@ Section DefinedFunctions.
                   else Some rd
            | _, _, _, _ => None
            end
-         | _ => None
+         | VectorElem n l i => 
+           match (df_eval_subgradient σ l lv)  with
+           | Some l' => Some (l' i)
+           | _ => None
+           end
+         | MatrixElem m n l i j =>
+           match (df_eval_subgradient σ l lv)  with
+           | Some l' => Some (l' i j)
+           | _ => None
+           end
+         | VectorSum n l => 
+           match df_eval_subgradient σ l lv with
+           | Some l' =>
+             Some (vector_fold_right (fun a b => map (map (fun '(xp,rp) => xp + rp)) 
+                                                     (combine_prod a b)) 
+                                     ((map (fun v:SubVar => 0) lv)::nil) l')
+           | _ => None
+           end 
+         | VectorDot n l r => 
+           match df_eval σ l, df_eval_subgradient σ l lv, df_eval σ r, df_eval_subgradient σ r lv with
+           | Some le, Some ld, Some re, Some rd =>
+             Some (vector_fold_right (fun a b => map (map (fun '(xp,rp) => xp + rp)) 
+                                                     (combine_prod a b)) 
+                                     ((map (fun v:SubVar => 0) lv)::nil) 
+                                     (fun i => map (map (fun '(lp,rp) => lp*(re i) + (le i)*rp)) 
+                                                   (combine_prod (ld i) (rd i))))
+           | _, _, _, _ => None
+           end
+         | VectorScalMult n x r =>
+           match df_eval σ x, df_eval_subgradient σ x lv, df_eval σ r, df_eval_subgradient σ r lv with
+           | Some xe, Some xd, Some re, Some rd => 
+             Some (fun j => map (map (fun '(xp,rp) => xe * rp + xp * (re j))) (combine_prod xd (rd j)))
+           | _, _, _, _ => None
+           end
+         | MatrixScalMult n m x r =>
+           match df_eval σ x, df_eval_subgradient σ x lv, df_eval σ r, df_eval_subgradient σ r lv with
+           | Some xe, Some xd, Some re, Some rd => 
+             Some (fun i j => map (map (fun '(xp,rp) => xe * rp + xp * (re i j))) (combine_prod xd (rd i j)))
+
+           | _, _, _, _ => None
+           end
+         | MatrixVectorMult n m l r => 
+           match df_eval σ l, df_eval_subgradient σ l lv, df_eval σ r, df_eval_subgradient σ r lv with
+           | Some le, Some ld, Some re, Some rd =>
+             Some (fun i => 
+                     (vector_fold_right (fun a b => map (map (fun '(xp,rp) => xp + rp)) 
+                                                        (combine_prod a b)) 
+                                        ((map (fun v:SubVar => 0) lv)::nil) 
+                                        (fun j => map (map (fun '(lp,rp) => lp*(re j) + (le i j)*rp)) 
+                                                      (combine_prod (ld i j) (rd j)))))
+           | _, _, _, _ => None
+           end
+         | MatrixMult n m p l r =>
+           match df_eval σ l, df_eval_subgradient σ l lv, df_eval σ r, df_eval_subgradient σ r lv with
+           | Some le, Some ld, Some re, Some rd =>
+             Some (fun i k => 
+                     (vector_fold_right (fun a b => map (map (fun '(xp,rp) => xp + rp)) 
+                                                        (combine_prod a b)) 
+                                        ((map (fun v:SubVar => 0) lv)::nil) 
+                                        (fun j => map (map (fun '(lp,rp) => lp*(re j k) + (le i j)*rp)) 
+                                                      (combine_prod (ld i j) (rd j k)))))
+           | _, _, _, _ => None
+           end
+         | VectorPlus n l r =>
+           match df_eval_subgradient σ l lv, df_eval_subgradient σ r lv with           
+           | Some ld, Some rd => Some (fun i => (map (map (fun '(x, y) => x+y)) (combine_prod (ld i) (rd i))))
+           | _, _ => None
+           end
+         | VectorMinus n l r =>
+           match df_eval_subgradient σ l lv, df_eval_subgradient σ r lv with           
+           | Some ld, Some rd => Some (fun i => (map (map (fun '(x, y) => x-y)) (combine_prod (ld i) (rd i))))
+           | _, _ => None
+           end
+         | MatrixPlus n m l r =>
+           match df_eval_subgradient σ l lv, df_eval_subgradient σ r lv with           
+           | Some ld, Some rd => Some (fun i j => (map (map (fun '(x, y) => x+y)) (combine_prod (ld i j) (rd i j))))
+           | _, _ => None
+           end
+         | MatrixMinus n m l r =>
+           match df_eval_subgradient σ l lv, df_eval_subgradient σ r lv with           
+           | Some ld, Some rd => Some (fun i j => (map (map (fun '(x, y) => x-y)) (combine_prod (ld i j) (rd i j))))
+           | _, _ => None
+           end
+         | VectorApply n x s r => 
+           match df_eval σ r, df_eval_subgradient σ r lv with                      
+           | Some re, Some rd => 
+             vectoro_to_ovector 
+               (fun i => match df_eval_subgradient (cons (x, re i) σ) s lv with
+                         | Some sd => 
+                           Some (map (map (fun '(x, y) => x*y)) (combine_prod (rd i) sd))
+                         | _ => None
+                         end)
+           | _, _ => None                                                    
+           end
           end).
-*)
+
     End deriv2.
 
     Section deriv_deriv.
@@ -867,7 +960,7 @@ Section DefinedFunctions.
       End deriv_deriv.
         
   Section max_derived.
-    Definition MaxDerived (a b : DefinedFunction float) :=
+    Definition MaxDerived (a b : DefinedFunction  DTfloat) :=
       Divide (Plus (Plus (Abs (Minus b a)) b) a) (Number 2).
 
     Delimit Scope df_scope with df.
@@ -976,8 +1069,8 @@ Section DefinedFunctions.
      *)
     Require Import FunctionalExtensionality.
 
-
-    Lemma df_subst_nfree {T} (e: DefinedFunction T) (v:SubVar) (e':DefinedFunction float) :
+(*
+    Lemma df_subst_nfree {T} (e: DefinedFunction T) (v:SubVar) (e':DefinedFunction DTfloat) :
       ~ In v (df_free_variables e) ->
       df_subst e v e' = e.
     Proof.
@@ -1080,7 +1173,7 @@ Section DefinedFunctions.
 
   Section apply.
 
-    Fixpoint df_apply {T} (e: DefinedFunction T) (args: SubVar -> DefinedFunction float) : DefinedFunction T :=
+    Fixpoint df_apply {T} (e: DefinedFunction T) (args: SubVar -> DefinedFunction DTfloat) : DefinedFunction T :=
       match e with
       | Number x => Number x
       | DVector n df => DVector (fun x => df_apply (df x) args)
@@ -1098,58 +1191,17 @@ Section DefinedFunctions.
       | Max l r => Max (df_apply l args) (df_apply r args)
       | VectorElem n l i => VectorElem (df_apply l args) i
       | MatrixElem m n l i j => MatrixElem (df_apply l args) i j
-      | VectorDot n l r =>
-        let ll := df_apply l args in
-        let rr := df_apply r args in
-        defined_sum 
-          (fun (i:{x:nat|x<n}%nat) =>
-             (Times (VectorElem ll i) (VectorElem rr i)))
-      | VectorSum n l =>
-        let ll := df_apply l args in
-        defined_sum 
-          (fun (i:{x:nat|x<n}%nat) => VectorElem ll i)
-      | VectorScalMult n x r => 
-        let xx := df_apply x args in 
-        let rr := df_apply r args in
-        DVector (fun i => Times xx (VectorElem rr i))
-      | MatrixScalMult n m x r => 
-        let xx := df_apply x args in 
-        let rr := df_apply r args in
-        DMatrix (fun i j  => Times xx (MatrixElem rr i j))
-      | MatrixVectorMult n m l r =>
-        let ll := df_apply l args in
-        let rr := df_apply r args in
-        DVector (fun i =>
-                   defined_sum 
-                     (fun (j:{x:nat|x<m}%nat) =>
-                        (Times (MatrixElem ll i j) (VectorElem rr j))))
-                                      
-      | MatrixMult n m p l r =>
-        let ll := df_apply l args in
-        let rr := df_apply r args in
-        DMatrix (fun i k =>
-                   defined_sum 
-                     (fun (j:{x:nat|x<m}%nat) =>
-                              (Times (MatrixElem ll i j) (MatrixElem rr j k))))
-      | VectorPlus n l r =>
-        let ll := df_apply l args in
-        let rr := df_apply r args in
-        DVector (fun i => Plus (VectorElem ll i) (VectorElem rr i))
-      | VectorMinus n l r =>
-        let ll := df_apply l args in
-        let rr := df_apply r args in
-        DVector (fun i => Minus (VectorElem ll i) (VectorElem rr i))
-      | MatrixPlus n m l r =>
-        let ll := df_apply l args in
-        let rr := df_apply r args in
-        DMatrix (fun i j => Plus (MatrixElem ll i j) (MatrixElem rr i j))
-      | MatrixMinus n m l r =>
-        let ll := df_apply l args in
-        let rr := df_apply r args in
-        DMatrix (fun i j => Minus (MatrixElem ll i j) (MatrixElem rr i j))
-      | VectorApply n x s l => 
-        VectorApply x (df_apply s args) (df_apply l args)
-
+      | VectorDot n l r => VectorDot (df_apply l args) (df_apply r args)
+      | VectorSum n l => VectorSum (df_apply l args)
+      | VectorScalMult n x r => VectorScalMult (df_apply x args) (df_apply r args)
+      | MatrixScalMult n m x r => MatrixScalMult (df_apply x args) (df_apply r args)
+      | MatrixVectorMult n m l r => MatrixVectorMult (df_apply l args) (df_apply r args)
+      | MatrixMult n m p l r => MatrixMult (df_apply l args) (df_apply r args)
+      | VectorPlus n l r => VectorPlus (df_apply l args) (df_apply r args)
+      | VectorMinus n l r => VectorMinus (df_apply l args) (df_apply r args)
+      | MatrixPlus n m l r => MatrixPlus (df_apply l args) (df_apply r args)
+      | MatrixMinus n m l r => MatrixMinus (df_apply l args) (df_apply r args)
+      | VectorApply n x s l => VectorApply x (df_apply s args) (df_apply l args)
       end.
 
  End apply.
