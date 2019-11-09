@@ -104,20 +104,32 @@ Section GenNN.
     now rewrite map_length, seq_length.
   Qed.
 
+  Definition softmax {n:nat} (NN : DefinedFunction (DTVector n)) : DefinedFunction (DTVector n) :=
+    let expvar := Name "expvar" in
+    let NNexp := VectorApply expvar (Exp (Var expvar)) NN in
+    let NNexpscale := Divide (Number 1) (VectorSum NNexp) in
+    VectorScalMult NNexpscale NNexp.
+
   Record testcases : Type := mkTest {ninput: nat; noutput: nat; ntest: nat; 
                                      data : list ((list float) * (list float))}.
 
-  Definition NNinstance (n1 n2 n3 : nat) (ivar : SubVar) (f_loss : DefinedFunction DTfloat) 
-             (NN2 : DefinedFunction (DTVector n3)) (inputs : (list float)) 
-             (outputs : Vector float n3): option (DefinedFunction DTfloat) :=
-    let ipairs := (list_prod (map (fun n => (Sub ivar n)) (seq 1 n1))
-                             (map Number inputs)) in
-    let losses := VectorMinus (df_subst_list NN2 ipairs) (DVector (vmap Number outputs)) in
-    match unique_var f_loss with
-    | Some v => Some (VectorSum (VectorApply v f_loss losses))
-    | None => None
-    end.
+(* loss should be a function of both (NN output vector and desired output vector),
+   not necessarily just a function of their difference
+   in particular when used as a classifier
+ *)
+  Definition loss_fun_type {n:nat} : Type :=
+     Vector float n -> Vector float n -> float.
 
+  Definition NNinstance (n1 n2 n3 : nat) (ivar : SubVar) (f_loss : DefinedFunction DTfloat)
+             (f_loss_NNvar f_loss_outvar : SubVar) 
+             (NN2 : DefinedFunction (DTVector n3)) (σ:df_env) (inputs : (list float)) 
+             (outvec : Vector float n3)
+             : option float :=
+    let ipairs := (list_prod (map (fun n => (Sub ivar n)) (seq 1 n1))
+                             inputs) in
+    df_eval (ipairs ++ σ) (Lossfun f_loss_NNvar f_loss_outvar f_loss NN2 outvec).
+
+  (*
   Lemma NNinstance_unique_var (n1 n2 n3 : nat) (ivar : SubVar) (f_loss : DefinedFunction DTfloat) 
         (NN2 : DefinedFunction (DTVector n3)) (inputs : (list float)) 
         (outputs : Vector float n3) (v:SubVar) :
@@ -147,7 +159,7 @@ Section GenNN.
     intros.
     now rewrite H.
   Qed.
-
+*)
   Definition lookup_list (σ:df_env) (lvar : list SubVar) : option (list float) :=
     listo_to_olist (map (fun v => lookup var_dec σ v) lvar).
 

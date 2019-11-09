@@ -101,6 +101,7 @@ Section DefinedFunctions.
         DefinedFunction (DTMatrix n m)
     | VectorApply {n} (v:SubVar) (s:DefinedFunction DTfloat) (l: DefinedFunction (DTVector n)) :
         DefinedFunction (DTVector n)
+    | Lossfun {n} (v1 v2:SubVar) (s:DefinedFunction DTfloat) (l: DefinedFunction (DTVector n)) (r:Vector float n) : DefinedFunction DTfloat
     .
 
   End Definitions.
@@ -133,7 +134,8 @@ Section DefinedFunctions.
       | Case_aux c "MatrixMinus"%string
       | Case_aux c "VectorScalMult"%string
       | Case_aux c "MatrixScalMult"%string
-      | Case_aux c "VectorApply"%string].
+      | Case_aux c "VectorApply"%string
+      | Case_aux c "Lossfun"%string].    
 
   Definition df_plus (df1 df2 : DefinedFunction DTfloat) : DefinedFunction DTfloat :=
     Plus df1 df2.
@@ -292,6 +294,8 @@ Section DefinedFunctions.
         MatrixMinus (df_subst l v e') (df_subst r v e')
       | VectorApply n x s l => 
         VectorApply x (df_subst s v e') (df_subst l v e')
+      | Lossfun n v1 v2 s l r =>
+        Lossfun v1 v2 (df_subst s v e') (df_subst l v e') r
       end.
 
     Definition df_substp {T} := fun e '(v,e') => @df_subst T e v  e'.
@@ -383,8 +387,15 @@ Section DefinedFunctions.
             DMatrix (fun i j => Minus (MatrixElem ll i j) (MatrixElem rr i j))
           | VectorApply n x s r => 
             let rr := df_deriv r v in
-            let ss := df_deriv s v in
+            let ss := df_deriv s x in
             DVector (fun i => Times (VectorElem rr i) (df_subst ss x (VectorElem r i)))
+          | Lossfun n v1 v2 s l r =>
+            let ll := df_deriv l v in
+            let ss := df_deriv s v1 in
+            
+            VectorDot ll (DVector (fun i => Times (VectorElem ll i)
+                                                  (df_subst (df_subst ss v1 (VectorElem l i))
+                                                            v2 (Number (r i)))))
           end).
 
     Definition df_gradient {T} (df:DefinedFunction T) (lv:list SubVar) : list (DefinedFunction T)
@@ -521,6 +532,16 @@ Section DefinedFunctions.
          | VectorApply n x s r => 
            match df_eval σ r with           
            | Some r' => vectoro_to_ovector (fun i => df_eval (cons (x, r' i) σ) s)
+           | _ => None
+           end
+         | Lossfun n v1 v2 s l r =>
+           match df_eval σ l with
+           | Some l' => 
+             match (vectoro_to_ovector 
+                      (fun i => df_eval (cons (v1, (l' i)) (cons (v2, r i) σ)) s)) with
+             | Some vv => Some (vsum vv)
+             | _ => None
+             end
            | _ => None
            end
          end.
@@ -730,7 +751,19 @@ Section DefinedFunctions.
                          end)
            | _, _ => None                                                    
            end
-
+         | Lossfun n v1 v2 s l r =>
+           match df_eval σ l, df_eval_deriv σ l v with                      
+           | Some le, Some ld => 
+             match (vectoro_to_ovector 
+                      (fun i => match df_eval_deriv (cons (v1, (le i)) (cons (v2, r i) σ)) s v with
+                         | Some sd => Some ((ld i) * sd)
+                         | _ => None
+                         end)) with
+             | Some vv => Some (vsum vv)
+             | _ => None
+             end
+           | _, _ => None
+           end
           end).
 
    Definition definition_function_types_map_base (f:Type->Type) (dft:definition_function_types): Type
@@ -900,6 +933,21 @@ Section DefinedFunctions.
                          end)
            | _, _ => None                                                    
            end
+         | Lossfun n v1 v2 s l r =>
+           match df_eval σ l, df_eval_gradient_alt σ l lv with                      
+           | Some le, Some ld => 
+             match (vectoro_to_ovector 
+                      (fun i => match df_eval_gradient_alt (cons (v1, (le i)) (cons (v2, r i) σ)) s lv with
+                         | Some sd => Some (map (fun '(x, y) => x*y) (combine (ld i) sd))
+                         | _ => None
+                         end)) with
+             | Some vv => Some (vector_fold_right (fun a b => map (fun '(xp,rp) => xp + rp)
+                                                     (combine a b)) 
+                                     (map (fun _ => 0) lv) vv)
+             | _ => None
+             end
+           | _, _ => None
+           end
           end).
 
    Definition combine_prod (l1 l2 : list (list float)) : list (list (float * float))
@@ -1063,6 +1111,21 @@ Section DefinedFunctions.
                          end)
            | _, _ => None                                                    
            end
+         | Lossfun n v1 v2 s l r => 
+           match df_eval σ l, df_eval_subgradient σ l lv with                      
+           | Some le, Some ld => 
+             match (vectoro_to_ovector 
+                      (fun i => match df_eval_subgradient (cons (v1, (le i)) (cons (v2, r i) σ)) s lv with
+                         | Some sd => Some (map (map (fun '(x, y) => x*y)) (combine_prod (ld i) sd))
+                         | _ => None
+                         end)) with
+             | Some vv => Some (vector_fold_right (fun a b => map (map (fun '(xp,rp) => xp + rp)) 
+                                                     (combine_prod a b)) 
+                                     ((map (fun _ => 0) lv)::nil) vv)
+             | _ => None
+             end
+           | _, _ => None
+           end
           end).
 
     End deriv2.
@@ -1181,6 +1244,7 @@ Section DefinedFunctions.
          | MatrixPlus n m l r => (df_free_variables l) ++ (df_free_variables r)
          | MatrixMinus n m l r => (df_free_variables l) ++ (df_free_variables r)
          | VectorApply n x s l => (df_free_variables s) ++ (df_free_variables l)
+         | Lossfun n v1 v2 s l r => (df_free_variables s) ++ (df_free_variables l)
          end.
 
     Definition df_closed {T} (f: DefinedFunction T) : Prop
@@ -1351,6 +1415,7 @@ Section DefinedFunctions.
       | MatrixPlus n m l r => MatrixPlus (df_apply l args) (df_apply r args)
       | MatrixMinus n m l r => MatrixMinus (df_apply l args) (df_apply r args)
       | VectorApply n x s l => VectorApply x (df_apply s args) (df_apply l args)
+      | Lossfun n v1 v2 s l r => Lossfun v1 v2 (df_apply s args) (df_apply l args) r
       end.
 
  End apply.
@@ -1427,4 +1492,5 @@ Tactic Notation "DefinedFunction_cases" tactic(first) ident(c) :=
   | Case_aux c "MatrixMinus"%string
   | Case_aux c "VectorScalMult"%string
   | Case_aux c "MatrixScalMult"%string
-  | Case_aux c "VectorApply"%string].
+  | Case_aux c "VectorApply"%string
+  | Case_aux c "Lossfun"%string].
