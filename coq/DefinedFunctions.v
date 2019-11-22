@@ -76,6 +76,7 @@ Section DefinedFunctions.
     | Minus (l r : DefinedFunction DTfloat) : DefinedFunction DTfloat
     | Times (l r : DefinedFunction DTfloat) : DefinedFunction DTfloat
     | Divide (l r : DefinedFunction DTfloat) : DefinedFunction DTfloat
+    | Square (e : DefinedFunction DTfloat) : DefinedFunction DTfloat
     | Exp (e : DefinedFunction DTfloat) : DefinedFunction DTfloat
     | Log (e : DefinedFunction DTfloat) : DefinedFunction DTfloat
     | Abs (e : DefinedFunction DTfloat) : DefinedFunction DTfloat
@@ -116,6 +117,7 @@ Section DefinedFunctions.
       | Case_aux c "Minus"%string
       | Case_aux c "Times"%string
       | Case_aux c "Divide"%string
+      | Case_aux c "Square"%string
       | Case_aux c "Exp"%string
       | Case_aux c "Log"%string
       | Case_aux c "Abs"%string
@@ -264,7 +266,8 @@ Section DefinedFunctions.
       | Times l r => Times (df_subst l v e') (df_subst r v e')
       | Minus l r => Minus (df_subst l v e') (df_subst r v e')
       | Divide l r => Divide (df_subst l v e') (df_subst r v e')
-      | Exp e => Exp (df_subst e v e')
+      | Square e => Square (df_subst e v e')
+      | Exp e => Exp (df_subst e v e')                     
       | Log e => Log (df_subst e v e')
       | Abs e => Abs (df_subst e v e')
       | Sign e => Sign (df_subst e v e')
@@ -320,6 +323,7 @@ Section DefinedFunctions.
                                (Times (df_deriv l v) r)
                                (Times l (df_deriv r v)))
                             (Times r r)
+          | Square e => Times (Times (Number 2) e) (df_deriv e v)
           | Exp e => Times (df_deriv e v) (Exp e)
           | Log e => Divide (df_deriv e v) e
           | Abs e => Times (df_deriv e v) (Sign e) 
@@ -438,6 +442,11 @@ Section DefinedFunctions.
            match df_eval σ l, df_eval σ r with
            | Some l', Some r' => Some (l' / r')
            | _, _ => None
+           end
+         | Square e => 
+           match df_eval σ e with
+           | Some v => Some (v * v)
+           | _ => None
            end
          | Exp e => 
            match df_eval σ e with
@@ -654,6 +663,11 @@ Section DefinedFunctions.
              Some (((ld * re) - (le * rd)) / (re * re))
            | _, _, _, _ => None
            end
+         | Square e =>
+           match df_eval σ e, df_eval_deriv σ e v with
+           | Some ee, Some ed => Some (2 * ee * ed)
+           | _, _  => None
+           end
          | Exp e =>
            match df_eval σ e, df_eval_deriv σ e v with
            | Some ee, Some ed => Some (ed * Fexp ee)
@@ -807,6 +821,11 @@ Section DefinedFunctions.
            | Some le, Some ld, Some re, Some rd =>
              Some (map (fun '(lp,rp) => (lp*re - le*rp)/(re * re)) (combine ld rd))
            | _, _, _, _ => None
+           end
+         | Square e =>
+           match df_eval σ e, df_eval_gradient_alt σ e lv with
+           | Some ee, Some ed => Some (map (fun pd => 2 * ee * pd) ed)
+           | _, _  => None
            end
          | Exp e =>
            match df_eval σ e, df_eval_gradient_alt σ e lv with
@@ -981,6 +1000,11 @@ Section DefinedFunctions.
            | Some le, Some ld, Some re, Some rd =>
              Some (map (map (fun '(lp,rp) => (lp*re - le*rp)/(re * re))) (combine_prod ld rd))
            | _, _, _, _ => None
+           end
+         | Square e =>
+           match df_eval σ e, df_eval_subgradient σ e lv with
+           | Some ee, Some ed => Some (map (map (fun pd => 2 * ee * pd)) ed)
+           | _, _  => None
            end
          | Exp e =>
            match df_eval σ e, df_eval_subgradient σ e lv with
@@ -1230,6 +1254,7 @@ Section DefinedFunctions.
          | Sign e => df_free_variables e
          | PSign e => df_free_variables e
          | Log e => df_free_variables e
+         | Square e => df_free_variables e
          | Exp e => df_free_variables e
          | VectorElem n l i => df_free_variables l
          | MatrixElem m n l i j => df_free_variables l
@@ -1396,6 +1421,7 @@ Section DefinedFunctions.
       | Times l r => Times (df_apply l args) (df_apply r args)
       | Minus l r => Minus (df_apply l args) (df_apply r args)
       | Divide l r => Divide (df_apply l args) (df_apply r args)
+      | Square e => Square (df_apply e args)
       | Exp e => Exp (df_apply e args)
       | Log e => Log (df_apply e args)
       | Abs e => Abs (df_apply e args)
@@ -1474,6 +1500,7 @@ Tactic Notation "DefinedFunction_cases" tactic(first) ident(c) :=
   | Case_aux c "Minus"%string
   | Case_aux c "Times"%string
   | Case_aux c "Divide"%string
+  | Case_aux c "Square"%string
   | Case_aux c "Exp"%string
   | Case_aux c "Log"%string
   | Case_aux c "Abs"%string
