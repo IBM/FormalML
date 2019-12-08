@@ -84,12 +84,12 @@ Section DefinedFunctions.
       apply var_dec.
     Defined.
 
-    (*
-    Definition env := list ({v:var_type & data_type (snd v)}).
-    *)
-    Definition env := list ({v:var_type & definition_function_types_interp (snd v)}).    
-    
-    Definition env_type := list (var * definition_function_types).
+    Definition env_entry_type := {v:var_type & definition_function_types_interp (snd v)}.
+    Definition df_env := list env_entry_type.
+
+    Definition mk_env_entry v e : env_entry_type
+    := let P := fun xv => definition_function_types_interp (snd xv) in
+       existT P v e.
 
     Inductive DefinedFunction : definition_function_types -> Type :=
     | Number (x : float) : DefinedFunction DTfloat
@@ -328,9 +328,12 @@ Section DefinedFunctions.
         Lossfun v1 v2 (df_subst s v e') (df_subst l v e') r
       end.
 
-    Definition df_substp {T} := fun e (ve':{v:var_type & DefinedFunction (snd v)}) => @df_subst T e (projT1 ve') (projT2 ve').
+    Definition df_substp {T} := 
+      fun e (ve':{v:var_type & DefinedFunction (snd v)}) => 
+        @df_subst T e (projT1 ve') (projT2 ve').
 
-    Definition df_subst_list {T} (e:DefinedFunction T) (l:list {v:var_type & DefinedFunction (snd v)}) : DefinedFunction T
+    Definition df_subst_list {T} (e:DefinedFunction T)
+               (l:list {v:var_type & DefinedFunction (snd v)}) : DefinedFunction T
       := fold_left (@df_substp T) l e.
 
   End subst.
@@ -454,8 +457,6 @@ Section DefinedFunctions.
 
     Definition matrix_mult {m n p} (l : Matrix float n m)(r : Matrix float m p) : Matrix float n p :=
       fun i k => vsum (fun j => (l i j) * (r j k)).
-
-    Definition df_env := list ({v:var_type & definition_function_types_interp (snd v)}).
 
     Program
       Fixpoint vartlookup (l:df_env) (a:var_type) : 
@@ -594,8 +595,7 @@ Section DefinedFunctions.
            | Some r' => vectoro_to_ovector 
                           (fun i => 
                              let xv := (x, DTfloat):var_type in
-                             let P := fun xv => definition_function_types_interp (snd xv) in                                    
-                             df_eval (cons (existT P xv (r' i)) σ) s)
+                             df_eval (cons (mk_env_entry xv (r' i)) σ) s)
            | _ => None
            end
          | Lossfun n v1 v2 s l r => 
@@ -605,9 +605,8 @@ Section DefinedFunctions.
                       (fun i => 
                          let xv1 := (v1,DTfloat):var_type in
                          let xv2 := (v2,DTfloat):var_type in
-                         let P := fun xv => definition_function_types_interp (snd xv) in
-                         df_eval (cons (existT P xv1 (l' i)) 
-                                       (cons (existT P xv2 (r i)) σ)) s)) with
+                         df_eval (cons (mk_env_entry xv1 (l' i)) 
+                                       (cons (mk_env_entry xv2 (r i)) σ)) s)) with
              | Some vv => Some (vsum vv)
              | _ => None
              end
@@ -830,8 +829,7 @@ Section DefinedFunctions.
              vectoro_to_ovector 
                (fun i => 
                   let xv := (x, DTfloat):var_type in
-                  let P := fun xv => definition_function_types_interp (snd xv) in
-                  match df_eval_deriv (cons (existT P xv (re i)) σ) s v with
+                  match df_eval_deriv (cons (mk_env_entry xv (re i)) σ) s v with
                          | Some sd => Some ((rd i) * sd)
                          | _ => None
                          end)
@@ -844,9 +842,8 @@ Section DefinedFunctions.
                       (fun i => 
                          let xv1 := (v1, DTfloat):var_type in
                          let xv2 := (v2, DTfloat):var_type in                         
-                         let P := fun xv => definition_function_types_interp (snd xv) in
-                         match df_eval_deriv (cons (existT P xv1 (le i)) 
-                                                   (cons (existT P xv2 (r i)) σ)) s v with
+                         match df_eval_deriv (cons (mk_env_entry xv1 (le i)) 
+                                                   (cons (mk_env_entry xv2 (r i)) σ)) s v with
                          | Some sd => Some ((ld i) * sd)
                          | _ => None
                          end)) with
