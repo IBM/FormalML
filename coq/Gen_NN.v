@@ -139,17 +139,13 @@ Section GenNN.
   Record testcases : Type := mkTest {ninput: nat; noutput: nat; ntest: nat; 
                                      datavec : Vector ((Vector float ninput) * (Vector float noutput)) ntest}.
 
-  Definition dfenv_P (xv:var_type) := definition_function_types_interp (snd xv).
-
   Definition NNinstance {ninput noutput : nat} (ivar : SubVar) (f_loss : DefinedFunction DTfloat)
              (f_loss_NNvar f_loss_outvar : SubVar) 
              (NN : DefinedFunction (DTVector noutput)) (σ:df_env) 
              (data: (Vector float ninput) * (Vector float noutput))
              : option float :=
-    let P := fun xv => definition_function_types_interp (snd xv) in
-    let ipair := existT P (ivar, DTVector ninput) (fst data) in
+    let ipair := mk_env_entry (ivar, DTVector ninput) (fst data) in
     df_eval (cons ipair σ) (Lossfun f_loss_NNvar f_loss_outvar f_loss NN (snd data)).
-
 
   (*
   Lemma NNinstance_unique_var (n1 n2 n3 : nat) (ivar : SubVar) (f_loss : DefinedFunction DTfloat) 
@@ -215,12 +211,11 @@ Section GenNN.
     let ogradvec := df_eval_gradient σ df lvart in
     let alpha   :=  1 / (FfromZ (Z.of_nat (S step))) in
     let '(lnoise, nst) := streamtake (length lvar) noise_st in
-    let P := fun xv => definition_function_types_interp (snd xv) in
     let olvals := lookup_list σ lvar in
     (match (ogradvec, olvals) with
     | (Some gradvec, Some lvals) => 
       Some (env_update_list σ 
-                   (map (fun '(v,e) => existT P (v, DTfloat) (e:float))
+                   (map (fun '(v,e) => mk_env_entry (v, DTfloat) (e:float))
                          (combine lvar (combine3_with 
                                           (fun val grad noise => val - alpha*(grad + noise))
                                           lvals gradvec lnoise))))
@@ -241,9 +236,7 @@ Example xvar:var_type := (Name "x", DTfloat).
 Example xfun:DefinedFunction DTfloat := Var xvar.
 Example quad:DefinedFunction DTfloat := Minus (Times xfun xfun) (Number 1).
 CoFixpoint noise : Stream float := Cons 0 noise.
-Example env : df_env := 
-    let P := fun xv => definition_function_types_interp (snd xv) in
-    (existT P xvar (FfromZ 5))::nil.
+Example env : df_env := (mk_env_entry xvar (FfromZ 5))::nil.
 Example opt := fst (optimize_steps 0 2 quad env ((fst xvar) :: nil) noise).
 End GenNN.
 
