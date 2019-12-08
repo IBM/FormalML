@@ -67,11 +67,36 @@ Section DefinedFunctions.
         | DTMatrix m n => Matrix float m n
         end.
 
+    Inductive data_type : definition_function_types -> Type
+     := DataFloat : data_type DTfloat
+     | DataVector n (v:Vector float n) : data_type (DTVector n)
+     | DataMatrix m n (mat:Matrix float m n) : data_type (DTMatrix m n).
+
+    Definition var_type := (SubVar * definition_function_types)%type.
+    
+    Definition vart_dec : forall v1 v2 : var_type, {v1 = v2} + {v1 <> v2}.
+    Proof.
+      decide equality.
+      decide equality.
+      apply Nat.eq_dec.
+      apply Nat.eq_dec.
+      apply Nat.eq_dec.            
+      apply var_dec.
+    Defined.
+
+    (*
+    Definition env := list ({v:var_type & data_type (snd v)}).
+    *)
+    Definition env := list ({v:var_type & definition_function_types_interp (snd v)}).    
+    
+    Definition env_type := list (var * definition_function_types).
+
     Inductive DefinedFunction : definition_function_types -> Type :=
     | Number (x : float) : DefinedFunction DTfloat
+    | Constant {t:definition_function_types} (x : definition_function_types_interp t) : DefinedFunction t
     | DVector {n} (x : Vector (DefinedFunction DTfloat) n) : DefinedFunction (DTVector n)
     | DMatrix {n m} (x : Matrix (DefinedFunction DTfloat) n m) : DefinedFunction (DTMatrix n m)
-    | Var (v : SubVar) : DefinedFunction DTfloat
+    | Var (v : var_type) : DefinedFunction (snd v)
     | Plus (l r : DefinedFunction DTfloat) : DefinedFunction DTfloat
     | Minus (l r : DefinedFunction DTfloat) : DefinedFunction DTfloat
     | Times (l r : DefinedFunction DTfloat) : DefinedFunction DTfloat
@@ -110,6 +135,7 @@ Section DefinedFunctions.
     Tactic Notation "DefinedFunction_cases" tactic(first) ident(c) :=
       first;
       [ Case_aux c "Number"%string
+      | Case_aux c "Constant"%string                 
       | Case_aux c "DVector"%string
       | Case_aux c "DMatrix"%string
       | Case_aux c "Var"%string
@@ -253,15 +279,16 @@ Section DefinedFunctions.
 
   Section subst.
 
-    Fixpoint df_subst {T} (df: DefinedFunction T) (v:SubVar) (e':DefinedFunction DTfloat): DefinedFunction T :=
+  Program Definition substvar (v vv:var_type) (e':DefinedFunction (snd v)) (e:DefinedFunction (snd vv)): (DefinedFunction (snd vv)) :=
+    if vart_dec v vv then eq_rect _ DefinedFunction e' _ _ else e.
+
+ Fixpoint df_subst {T} (df: DefinedFunction T) (v:var_type) (e':DefinedFunction (snd v)) :=
       match df with
       | Number x => Number x
+      | Constant t x => Constant x
       | DVector n df => DVector (fun x => df_subst (df x) v e')
       | DMatrix n m df => DMatrix (fun i j => df_subst (df i j) v e')
-      | Var name =>
-        if var_dec name v
-        then e'
-        else Var name
+      | Var vvar => substvar v vvar e' (Var vvar)
       | Plus l r => Plus (df_subst l v e') (df_subst r v e')
       | Times l r => Times (df_subst l v e') (df_subst r v e')
       | Minus l r => Minus (df_subst l v e') (df_subst r v e')
@@ -301,19 +328,33 @@ Section DefinedFunctions.
         Lossfun v1 v2 (df_subst s v e') (df_subst l v e') r
       end.
 
-    Definition df_substp {T} := fun e '(v,e') => @df_subst T e v  e'.
+    Definition df_substp {T} := fun e (ve':{v:var_type & DefinedFunction (snd v)}) => @df_subst T e (projT1 ve') (projT2 ve').
 
-    Definition df_subst_list {T} (e:DefinedFunction T) (l:list (SubVar*DefinedFunction DTfloat)) : DefinedFunction T
+    Definition df_subst_list {T} (e:DefinedFunction T) (l:list {v:var_type & DefinedFunction (snd v)}) : DefinedFunction T
       := fold_left (@df_substp T) l e.
 
   End subst.
 
-    Fixpoint df_deriv {T} (df:DefinedFunction T) (v:SubVar) {struct df} : DefinedFunction T
+  Definition ConstVector {T} (n:nat) (c:T) : (Vector T n) := fun (n': {n':nat | n' < n}%nat) => c.
+  Definition ConstMatrix {T} (n m : nat) (c:T) : (Matrix T n m) := fun (n': {n':nat | n' < n}%nat) (m':{m':nat | m' < m}%nat) => c.
+  
+    Fixpoint df_deriv {T} (df:DefinedFunction T) (v:var_type) {struct df} : DefinedFunction T
       := (match df with
           | Number _ => Number 0
+          | Constant t x => Constant 
+            match t return definition_function_types_interp t with
+            | DTfloat => 0
+            | DTVector n => ConstVector n 0
+            | DTMatrix m n => ConstMatrix m n 0
+            end
           | DVector n df => DVector (fun x => df_deriv (df x) v)
           | DMatrix n m df => DMatrix (fun i j => df_deriv (df i j) v)
-          | Var x => if x == v then Number 1 else Number 0
+          | Var x => let t:=snd x in Constant 
+               match t return definition_function_types_interp t with
+               | DTfloat => if vart_dec x v then 1 else 0
+               | DTVector n => ConstVector n (if vart_dec x v then 1 else 0)
+               | DTMatrix m n => ConstMatrix m n (if vart_dec x v then 1 else 0)
+               end
           | Plus l r => Plus (df_deriv l v) (df_deriv r v)
           | Minus l r => Minus (df_deriv l v) (df_deriv r v)
           | Times l r => Plus (Times l (df_deriv r v))
@@ -391,38 +432,48 @@ Section DefinedFunctions.
             DMatrix (fun i j => Minus (MatrixElem ll i j) (MatrixElem rr i j))
           | VectorApply n x s r => 
             let rr := df_deriv r v in
-            let ss := df_deriv s x in
-            DVector (fun i => Times (VectorElem rr i) (df_subst ss x (VectorElem r i)))
+            let ss := df_deriv s (x, DTfloat) in
+            DVector (fun i => Times (VectorElem rr i) (df_subst ss (x, DTfloat) (VectorElem r i)))
           | Lossfun n v1 v2 s l r =>
             let ll := df_deriv l v in
-            let ss := df_deriv s v1 in
-            
+            let ss := df_deriv s (v1, DTfloat) in
             VectorDot ll (DVector (fun i => Times (VectorElem ll i)
-                                                  (df_subst (df_subst ss v1 (VectorElem l i))
-                                                            v2 (Number (r i)))))
+                                                  (df_subst (df_subst ss (v1, DTfloat) (VectorElem l i))
+                                                            (v2, DTfloat) (Number (r i)))))
           end).
 
-    Definition df_gradient {T} (df:DefinedFunction T) (lv:list SubVar) : list (DefinedFunction T)
+    Definition df_gradient {T} (df:DefinedFunction T) (lv:list var_type) : list (DefinedFunction T)
       := map (df_deriv df) lv.
 
   End deriv.
   
   Section eval.
     
-    Definition df_env := list (SubVar * float).
-
     Definition matrix_vector_mult {m n} (l : Matrix float n m)(r : Vector float m) : Vector float n :=
       fun i => vsum (fun j => (l i j) * (r j)).
 
     Definition matrix_mult {m n p} (l : Matrix float n m)(r : Matrix float m p) : Matrix float n p :=
       fun i k => vsum (fun j => (l i j) * (r j k)).
 
+    Definition df_env := list ({v:var_type & definition_function_types_interp (snd v)}).
+
+    Program
+      Fixpoint vartlookup (l:df_env) (a:var_type) : 
+      option (definition_function_types_interp (snd a))
+      := match l with
+         | nil => None
+         | fv::os => if vart_dec a (projT1 fv) then 
+                       Some (eq_rect _ definition_function_types_interp (projT2 fv) _ _) 
+                     else vartlookup os a
+         end.
+
     Fixpoint df_eval {T} (σ:df_env) (df:DefinedFunction T) : option (definition_function_types_interp T)
       := match df with
          | Number r => Some r
+         | Constant t x => Some x
          | DVector n dfs => vectoro_to_ovector (fun i => df_eval σ (dfs i))
          | DMatrix n m df => matrixo_to_omatrix (fun i j => df_eval σ (df i j))
-         | Var x => lookup var_dec σ x
+         | Var x => vartlookup  σ x
          | Plus l r =>
            match df_eval σ l, df_eval σ r with
            | Some l', Some r' => Some (l' + r')
@@ -540,14 +591,23 @@ Section DefinedFunctions.
            end
          | VectorApply n x s r => 
            match df_eval σ r with           
-           | Some r' => vectoro_to_ovector (fun i => df_eval (cons (x, r' i) σ) s)
+           | Some r' => vectoro_to_ovector 
+                          (fun i => 
+                             let xv := (x, DTfloat):var_type in
+                             let P := fun xv => definition_function_types_interp (snd xv) in                                    
+                             df_eval (cons (existT P xv (r' i)) σ) s)
            | _ => None
            end
-         | Lossfun n v1 v2 s l r =>
+         | Lossfun n v1 v2 s l r => 
            match df_eval σ l with
            | Some l' => 
              match (vectoro_to_ovector 
-                      (fun i => df_eval (cons (v1, (l' i)) (cons (v2, r i) σ)) s)) with
+                      (fun i => 
+                         let xv1 := (v1,DTfloat):var_type in
+                         let xv2 := (v2,DTfloat):var_type in
+                         let P := fun xv => definition_function_types_interp (snd xv) in
+                         df_eval (cons (existT P xv1 (l' i)) 
+                                       (cons (existT P xv2 (r i)) σ)) s)) with
              | Some vv => Some (vsum vv)
              | _ => None
              end
@@ -555,7 +615,7 @@ Section DefinedFunctions.
            end
          end.
 
-    Definition df_eval_symbolic_gradient {T} (σ:df_env) (df:DefinedFunction T) (lv:list SubVar) : option (list (definition_function_types_interp T))
+    Definition df_eval_symbolic_gradient {T} (σ:df_env) (df:DefinedFunction T) (lv:list var_type) : option (list (definition_function_types_interp T))
       := listo_to_olist (map (df_eval σ) (df_gradient df lv)).
     
   End eval.
@@ -632,14 +692,23 @@ Section DefinedFunctions.
   
   Section deriv2.
 
-    Fixpoint df_eval_deriv {T} (σ:df_env) (df:DefinedFunction T) (v:SubVar) : option (definition_function_types_interp T)
+    Fixpoint df_eval_deriv {T} (σ:df_env) (df:DefinedFunction T) (v:var_type) : option (definition_function_types_interp T)
       := (match df with
          | Number _ => Some 0
+         | Constant t x => Some
+            match t return definition_function_types_interp t with
+            | DTfloat => 0
+            | DTVector n => ConstVector n 0
+            | DTMatrix m n => ConstMatrix m n 0
+            end
          | DVector n dfs => vectoro_to_ovector (fun i => df_eval_deriv σ (dfs i) v)
          | DMatrix n m df => matrixo_to_omatrix (fun i j => df_eval_deriv σ (df i j) v)
-         | Var x => if x == v
-                    then Some 1
-                    else Some 0
+         | Var x => Some (let t:=snd x in 
+               match t return definition_function_types_interp t with
+               | DTfloat => if vart_dec x v then 1 else 0
+               | DTVector n => ConstVector n (if vart_dec x v then 1 else 0)
+               | DTMatrix m n => ConstMatrix m n (if vart_dec x v then 1 else 0)
+               end)
          | Plus l r => 
            match df_eval_deriv σ l v, df_eval_deriv σ r v with
            | Some le, Some lr => Some (le + lr)
@@ -759,17 +828,25 @@ Section DefinedFunctions.
            match df_eval σ r, df_eval_deriv σ r v with                      
            | Some re, Some rd => 
              vectoro_to_ovector 
-               (fun i => match df_eval_deriv (cons (x, re i) σ) s v with
+               (fun i => 
+                  let xv := (x, DTfloat):var_type in
+                  let P := fun xv => definition_function_types_interp (snd xv) in
+                  match df_eval_deriv (cons (existT P xv (re i)) σ) s v with
                          | Some sd => Some ((rd i) * sd)
                          | _ => None
                          end)
            | _, _ => None                                                    
            end
-         | Lossfun n v1 v2 s l r =>
+         | Lossfun n v1 v2 s l r => 
            match df_eval σ l, df_eval_deriv σ l v with                      
            | Some le, Some ld => 
              match (vectoro_to_ovector 
-                      (fun i => match df_eval_deriv (cons (v1, (le i)) (cons (v2, r i) σ)) s v with
+                      (fun i => 
+                         let xv1 := (v1, DTfloat):var_type in
+                         let xv2 := (v2, DTfloat):var_type in                         
+                         let P := fun xv => definition_function_types_interp (snd xv) in
+                         match df_eval_deriv (cons (existT P xv1 (le i)) 
+                                                   (cons (existT P xv2 (r i)) σ)) s v with
                          | Some sd => Some ((ld i) * sd)
                          | _ => None
                          end)) with
@@ -791,12 +868,19 @@ Section DefinedFunctions.
      := definition_function_types_map_base (fun t => list (list t)) dft.
 
 
-    Definition df_eval_gradient {T} σ (df:DefinedFunction T) (lv:list SubVar) : option (list (definition_function_types_interp T))
+    Definition df_eval_gradient {T} σ (df:DefinedFunction T) (lv:list var_type) : option (list (definition_function_types_interp T))
       := listo_to_olist (map (df_eval_deriv σ df) lv).
     
-   Fixpoint df_eval_gradient_alt {dft:definition_function_types} (σ:df_env) (df:DefinedFunction dft) (lv:list SubVar) : option (definition_function_types_map_base (fun t => list t) dft)
+(*
+   Fixpoint df_eval_gradient_alt {dft:definition_function_types} (σ:df_env) (df:DefinedFunction dft) (lv:list var_type) : option (definition_function_types_map_base list dft)
     := (match df with
         | Number _ => Some (map (fun _ => 0) lv)
+        | Constant t x => Some 
+            match t return definition_function_types_map_base list t with
+            | DTfloat => map (fun _ => 0) lv
+            | DTVector n => map (fun _ => ConstVector n 0) lv
+            | DTMatrix m n => map (fun _ => ConstMatrix m n 0) lv
+            end
         | DVector n v => vectoro_to_ovector (vmap (fun x => df_eval_gradient_alt σ x lv) v)
         | DMatrix n m df => matrixo_to_omatrix (vmap (fun x => vmap (fun y => df_eval_gradient_alt σ y lv) x) df)
          | Var x => Some (map (fun v => if x == v then 1 else 0) lv)
@@ -968,11 +1052,11 @@ Section DefinedFunctions.
            | _, _ => None
            end
           end).
-
+*)
    Definition combine_prod (l1 l2 : list (list float)) : list (list (float * float))
      := let l12 := list_prod l1 l2
         in map (fun '(x,y) => combine x y) l12.
-
+(*
    Fixpoint df_eval_subgradient {dft:definition_function_types} (σ:df_env) (df:DefinedFunction dft) (lv:list SubVar) : option (definition_function_types_subgradient dft)
     := (match df with
         | Number _ => Some ((map (fun _ => 0) lv) :: nil)
@@ -1151,7 +1235,7 @@ Section DefinedFunctions.
            | _, _ => None
            end
           end).
-
+*)
     End deriv2.
 
     Section deriv_deriv.
@@ -1209,8 +1293,6 @@ Section DefinedFunctions.
     Notation "x" := (Var x) (only printing, at level 0) : df_scope.
     Notation "'|' x '|'" := (Abs x) (only printing, at level 0) : df_scope.
     
-(*    Eval vm_compute in (df_deriv (MaxDerived (Var ("hi"%string)) (Var ("hello"%string))) "hi"%string)%df. *)
-    
   End max_derived.
 
   Definition vlconcat {A n} (v:Vector (list A) n) : list A
@@ -1242,9 +1324,9 @@ Section DefinedFunctions.
       := match f with
          | Number x => nil
          | DVector n x => vlconcat_map df_free_variables x
-           
+         | Constant t x => nil
          | DMatrix n m x => vlconcat_map (fun a => vlconcat_map df_free_variables a) x
-         | Var name => name::nil
+         | Var v => (fst v)::nil
          | Plus l r => (df_free_variables l) ++ (df_free_variables r)
          | Minus l r => (df_free_variables l) ++ (df_free_variables r)
          | Times l r => (df_free_variables l) ++ (df_free_variables r)
@@ -1411,12 +1493,14 @@ Section DefinedFunctions.
 
   Section apply.
 
-    Fixpoint df_apply {T} (e: DefinedFunction T) (args: SubVar -> DefinedFunction DTfloat) : DefinedFunction T :=
+    Fixpoint df_apply {T} (e: DefinedFunction T) 
+             (args: forall (v:var_type),  DefinedFunction (snd v)) : DefinedFunction T :=
       match e with
       | Number x => Number x
+      | Constant t x => Constant x
       | DVector n df => DVector (fun x => df_apply (df x) args)
       | DMatrix n m df => DMatrix (fun i j => df_apply (df i j) args)
-      | Var name => args name
+      | Var v => args v
       | Plus l r => Plus (df_apply l args) (df_apply r args)
       | Times l r => Times (df_apply l args) (df_apply r args)
       | Minus l r => Minus (df_apply l args) (df_apply r args)
@@ -1452,16 +1536,15 @@ Section real_pfs.
 
   Import Reals.
   Local Existing Instance floatish_R.
-  
-(*
-  Lemma MaxDerivedMax_eq (a b : DefinedFunction float) :
+
+  Lemma MaxDerivedMax_eq (a b : DefinedFunction DTfloat) :
     forall σ, df_eval σ (Max a b) = df_eval σ (MaxDerived a b).
   Proof.
     simpl; intros σ.
     destruct (df_eval σ a); destruct (df_eval σ b); trivial.
     f_equal.
     autorewrite with Rarith in *.
-    destruct (Rle_dec f f0).
+    destruct (Rle_dec d d0).
     - rewrite Rmax_right by trivial.
       rewrite Rabs_pos_eq by lra.
       lra.
@@ -1470,7 +1553,7 @@ Section real_pfs.
       rewrite Rabs_pos_eq by lra.
       lra.
   Qed.
-*)
+
 End real_pfs.
 
 (*
@@ -1493,6 +1576,7 @@ End real_pfs.
 Tactic Notation "DefinedFunction_cases" tactic(first) ident(c) :=
   first;
   [ Case_aux c "Number"%string
+  | Case_aux c "Constant"%string                 
   | Case_aux c "DVector"%string
   | Case_aux c "DMatrix"%string
   | Case_aux c "Var"%string
