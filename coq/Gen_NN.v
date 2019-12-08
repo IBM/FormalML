@@ -195,8 +195,7 @@ Section GenNN.
               ((Streams.hd st)::(fst rst), snd rst)
     end.
 
-  Fixpoint env_update_first (l:df_env) 
-           (an:{v:var_type & definition_function_types_interp (snd v)}) : df_env
+  Fixpoint env_update_first (l:df_env) (an:env_entry_type) : df_env
     := match l with 
        | nil => nil
        | fv::os => if vart_dec (projT1 an) (projT1 fv) then an::os 
