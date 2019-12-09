@@ -84,6 +84,12 @@ Section DefinedFunctions.
       apply var_dec.
     Defined.
 
+    Global Instance vart_eqdec : EqDec var_type eq. 
+    Proof.
+      intros ??.
+      apply vart_dec.
+    Defined.
+
     Definition env_entry_type := {v:var_type & definition_function_types_interp (snd v)}.
     Definition df_env := list env_entry_type.
 
@@ -279,9 +285,13 @@ Section DefinedFunctions.
 
   Section subst.
 
-  Program Definition substvar (v vv:var_type) (e':DefinedFunction (snd v)) (e:DefinedFunction (snd vv)): (DefinedFunction (snd vv)) :=
-    if vart_dec v vv then eq_rect _ DefinedFunction e' _ _ else e.
-
+    Program Definition substvar (v vv:var_type) (e':DefinedFunction (snd v)) (e:DefinedFunction (snd vv)): (DefinedFunction (snd vv)) :=
+      
+      match v == vv with
+      | left pf => eq_rect _ DefinedFunction e' _ _
+      | right pf => e
+      end.
+  
  Fixpoint df_subst {T} (df: DefinedFunction T) (v:var_type) (e':DefinedFunction (snd v)) :=
       match df with
       | Number x => Number x
@@ -352,8 +362,8 @@ Section DefinedFunctions.
             end
           | DVector n df => DVector (fun x => df_deriv (df x) v)
           | DMatrix n m df => DMatrix (fun i j => df_deriv (df i j) v)
-          | Var x => let t:=snd x in Constant 
-               match t return definition_function_types_interp t with
+          | Var x => Constant 
+               match snd x as y return definition_function_types_interp y with
                | DTfloat => if vart_dec x v then 1 else 0
                | DTVector n => ConstVector n (if vart_dec x v then 1 else 0)
                | DTMatrix m n => ConstMatrix m n (if vart_dec x v then 1 else 0)
@@ -444,6 +454,21 @@ Section DefinedFunctions.
                                                   (df_subst (df_subst ss (v1, DTfloat) (VectorElem l i))
                                                             (v2, DTfloat) (Number (r i)))))
           end).
+
+    Print eq.
+
+(*    Inductive eq (A : Type) : forall (x y:A), Prop :=
+      eq_refl (x:A) : eq A x x
+    .
+*)
+    Lemma pf : (2 = 1 + 1)%nat.
+    Proof.
+      simpl.
+      apply @eq_refl.
+    Qed.
+
+    Eval vm_compute in (2==1+1)%nat.
+    
 
     Definition df_gradient {T} (df:DefinedFunction T) (lv:list var_type) : list (DefinedFunction T)
       := map (df_deriv df) lv.
