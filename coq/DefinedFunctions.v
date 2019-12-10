@@ -351,6 +351,7 @@ Section DefinedFunctions.
   Definition ConstVector {T} (n:nat) (c:T) : (Vector T n) := fun (n': {n':nat | n' < n}%nat) => c.
   Definition ConstMatrix {T} (n m : nat) (c:T) : (Matrix T n m) := fun (n': {n':nat | n' < n}%nat) (m':{m':nat | m' < m}%nat) => c.
   
+(* restrict to scalar v? *)
     Fixpoint df_deriv {T} (df:DefinedFunction T) (v:var_type) {struct df} : DefinedFunction T
       := (match df with
           | Number _ => Number 0
@@ -364,9 +365,9 @@ Section DefinedFunctions.
           | DMatrix n m df => DMatrix (fun i j => df_deriv (df i j) v)
           | Var x => Constant 
                match snd x as y return definition_function_types_interp y with
-               | DTfloat => if vart_dec x v then 1 else 0
-               | DTVector n => ConstVector n (if vart_dec x v then 1 else 0)
-               | DTMatrix m n => ConstMatrix m n (if vart_dec x v then 1 else 0)
+               | DTfloat => if x == v then 1 else 0
+               | DTVector n => ConstVector n (if x == v then 1 else 0)
+               | DTMatrix m n => ConstMatrix m n (if x == v then 1 else 0)
                end
           | Plus l r => Plus (df_deriv l v) (df_deriv r v)
           | Minus l r => Minus (df_deriv l v) (df_deriv r v)
@@ -391,58 +392,42 @@ Section DefinedFunctions.
           | VectorDot n l r =>
             let ll := df_deriv l v in
             let rr := df_deriv r v in
-                 defined_sum 
-                           (fun (i:{x:nat|x<n}%nat) =>
-                                    Plus (Times (VectorElem ll i) (VectorElem r i))
-                                         (Times (VectorElem l i) (VectorElem rr i)))
+            Plus (VectorDot ll r) (VectorDot l rr)
           | VectorSum n l =>
             let ll := df_deriv l v in 
-            defined_sum (fun (i:{x:nat|x<n}%nat) => VectorElem ll i)
+            VectorSum ll
           | VectorScalMult n x r => 
             let xx := df_deriv x v in 
             let rr := df_deriv r v in
-            DVector (fun i =>
-                         Plus (Times xx (VectorElem r i))
-                              (Times x  (VectorElem rr i)))
+            VectorPlus (VectorScalMult xx r) (VectorScalMult x rr)
           | MatrixScalMult n m x r => 
             let xx := df_deriv x v in 
             let rr := df_deriv r v in
-            DMatrix (fun i j  =>
-                         Plus (Times xx (MatrixElem r i j))
-                              (Times x  (MatrixElem rr i j)))
+            MatrixPlus (MatrixScalMult xx r) (MatrixScalMult x rr)            
           | MatrixVectorMult n m l r =>
             let ll := df_deriv l v in
             let rr := df_deriv r v in
-            DVector (fun i =>
-                         defined_sum 
-                                 (fun (j:{x:nat|x<m}%nat) =>
-                                    Plus (Times (MatrixElem ll i j) (VectorElem r j))
-
-                                         (Times (MatrixElem l i j) (VectorElem rr j))))
+            VectorPlus (MatrixVectorMult ll r) (MatrixVectorMult l rr)
           | MatrixMult n m p l r =>
             let ll := df_deriv l v in
             let rr := df_deriv r v in
-            DMatrix (fun i k =>
-                         defined_sum 
-                                 (fun (j:{x:nat|x<m}%nat) =>
-                                    Plus (Times (MatrixElem ll i j) (MatrixElem r j k))
-                                         (Times (MatrixElem l i j) (MatrixElem rr j k))))
+            MatrixPlus (MatrixMult ll r) (MatrixMult l rr)
           | VectorPlus n l r =>
             let ll := df_deriv l v in
             let rr := df_deriv r v in
-            DVector (fun i => Plus (VectorElem ll i) (VectorElem rr i))
+            VectorPlus ll rr
           | VectorMinus n l r =>
             let ll := df_deriv l v in
             let rr := df_deriv r v in
-            DVector (fun i => Minus (VectorElem ll i) (VectorElem rr i))
+            VectorMinus ll rr
           | MatrixPlus n m l r =>
             let ll := df_deriv l v in
             let rr := df_deriv r v in
-            DMatrix (fun i j => Plus (MatrixElem ll i j) (MatrixElem rr i j))
+            MatrixPlus ll rr
           | MatrixMinus n m l r =>
             let ll := df_deriv l v in
             let rr := df_deriv r v in
-            DMatrix (fun i j => Minus (MatrixElem ll i j) (MatrixElem rr i j))
+            MatrixMinus ll rr
           | VectorApply n x s r => 
             let rr := df_deriv r v in
             let ss := df_deriv s (x, DTfloat) in
@@ -450,25 +435,10 @@ Section DefinedFunctions.
           | Lossfun n v1 v2 s l r =>
             let ll := df_deriv l v in
             let ss := df_deriv s (v1, DTfloat) in
-            VectorDot ll (DVector (fun i => Times (VectorElem ll i)
-                                                  (df_subst (df_subst ss (v1, DTfloat) (VectorElem l i))
-                                                            (v2, DTfloat) (Number (r i)))))
+            VectorDot ll (DVector (fun i => 
+                                     df_subst (df_subst ss (v1, DTfloat) (VectorElem l i))
+                                              (v2, DTfloat) (Number (r i))))
           end).
-
-    Print eq.
-
-(*    Inductive eq (A : Type) : forall (x y:A), Prop :=
-      eq_refl (x:A) : eq A x x
-    .
-*)
-    Lemma pf : (2 = 1 + 1)%nat.
-    Proof.
-      simpl.
-      apply @eq_refl.
-    Qed.
-
-    Eval vm_compute in (2==1+1)%nat.
-    
 
     Definition df_gradient {T} (df:DefinedFunction T) (lv:list var_type) : list (DefinedFunction T)
       := map (df_deriv df) lv.
@@ -488,7 +458,7 @@ Section DefinedFunctions.
       option (definition_function_types_interp (snd a))
       := match l with
          | nil => None
-         | fv::os => if vart_dec a (projT1 fv) then 
+         | fv::os => if a == (projT1 fv) then 
                        Some (eq_rect _ definition_function_types_interp (projT2 fv) _ _) 
                      else vartlookup os a
          end.
@@ -729,9 +699,9 @@ Section DefinedFunctions.
          | DMatrix n m df => matrixo_to_omatrix (fun i j => df_eval_deriv σ (df i j) v)
          | Var x => Some (let t:=snd x in 
                match t return definition_function_types_interp t with
-               | DTfloat => if vart_dec x v then 1 else 0
-               | DTVector n => ConstVector n (if vart_dec x v then 1 else 0)
-               | DTMatrix m n => ConstMatrix m n (if vart_dec x v then 1 else 0)
+               | DTfloat => if x == v then 1 else 0
+               | DTVector n => ConstVector n (if x == v then 1 else 0)
+               | DTMatrix m n => ConstMatrix m n (if x == v then 1 else 0)
                end)
          | Plus l r => 
            match df_eval_deriv σ l v, df_eval_deriv σ r v with

@@ -205,23 +205,28 @@ Section GenNN.
   Definition env_update_list (l up:df_env) : df_env
     := fold_left (env_update_first) up l.
 
-  Definition optimize_step (step : nat) (df : DefinedFunction DTfloat) (σ:df_env) (lvar : list SubVar) (noise_st : Stream float) : (option df_env)*(Stream float) :=
+  Definition optimize_step 
+             (step : nat) (df : DefinedFunction DTfloat) (σ:df_env) (lvar : list SubVar)
+             (noise_st : Stream float) : (option df_env)*(Stream float) :=
     let lvart:list var_type := (map (fun v => (v, DTfloat)) lvar) in
     let ogradvec := df_eval_gradient σ df lvart in
-    let alpha   :=  1 / (FfromZ (Z.of_nat (S step))) in
+    let alpha := 1 / (FfromZ (Z.of_nat (S step))) in
     let '(lnoise, nst) := streamtake (length lvar) noise_st in
     let olvals := lookup_list σ lvar in
     (match (ogradvec, olvals) with
-    | (Some gradvec, Some lvals) => 
-      Some (env_update_list σ 
-                   (map (fun '(v,e) => mk_env_entry (v, DTfloat) (e:float))
-                         (combine lvar (combine3_with 
-                                          (fun val grad noise => val - alpha*(grad + noise))
-                                          lvals gradvec lnoise))))
-    | (_, _) => None
-    end, nst).
+     | (Some gradvec, Some lvals) => 
+       Some (env_update_list 
+               σ 
+               (map (fun '(v,e) => mk_env_entry (v, DTfloat) (e:float))
+                    (combine lvar (combine3_with 
+                                     (fun val grad noise => val - alpha*(grad + noise))
+                                     lvals gradvec lnoise))))
+     | (_, _) => None
+     end, nst).
 
-  Fixpoint optimize_steps (start count:nat) (df : DefinedFunction DTfloat) (σ:df_env) (lvar : list SubVar) (noise_st : Stream float) : (option df_env)*(Stream float) :=
+  Fixpoint optimize_steps 
+           (start count:nat) (df : DefinedFunction DTfloat) (σ:df_env) (lvar : list SubVar)
+           (noise_st : Stream float) : (option df_env)*(Stream float) :=
     match count with
     | 0 => (Some σ, noise_st)
     | S n =>
