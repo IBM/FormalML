@@ -1,5 +1,6 @@
 Require Import String.
 Require Import RelationClasses.
+Require Import EquivDec.
 Require Import Streams.
 Require Import List.
 Require Import ListAdd.
@@ -198,7 +199,7 @@ Section GenNN.
   Fixpoint env_update_first (l:df_env) (an:env_entry_type) : df_env
     := match l with 
        | nil => nil
-       | fv::os => if vart_dec (projT1 an) (projT1 fv) then an::os 
+       | fv::os => if (projT1 an) == (projT1 fv) then an::os 
                    else fv::(env_update_first os an)
        end.
 
