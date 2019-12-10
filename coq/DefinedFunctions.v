@@ -1564,7 +1564,6 @@ End real_pfs.
   End FreeVariablesExample.
 *)            
 
-
 Tactic Notation "DefinedFunction_cases" tactic(first) ident(c) :=
   first;
   [ Case_aux c "Number"%string
