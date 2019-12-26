@@ -327,6 +327,29 @@ Section DefinedFunctions.
 
     Definition vector_zip {A B} {m:nat} (v1:Vector A m) (v2:Vector B m) : Vector (A*B) m
       := vector_zip_bounded v1 v2 _ (le_refl _).
+
+    Definition matrix_zip {A B} {m n:nat} (mat1:Matrix A m n) (mat2:Matrix B m n) : Matrix (A*B) m n
+      := let mat12:Vector (Vector A n*Vector B n) m := vector_zip mat1 mat2 in
+         vmap (fun '(a,b) => vector_zip a b) mat12.
+                                 
+    (*
+    Definition vector_split_bounded {A B} {m:nat} (v1:Vector (A*B) m) (v2:Vector B m) (n:nat) (pf:(n<=m)%nat)
+    : Vector A n * Vector B n.
+    Proof.
+      induction n.
+      - exact (vnil, vnil).
+      - constructor.
+        + apply vcons.
+          assert (pf2:(n < m)%nat) by omega.
+          exact (fst (v (exist _ n pf2))).
+          * exact (v2 (exist _ n pf2)).
+        + apply IHn.
+          omega.
+    Defined.
+
+    Definition vector_zip {A B} {m:nat} (v1:Vector A m) (v2:Vector B m) : Vector (A*B) m
+      := vector_zip_bounded v1 v2 _ (le_refl _).
+     *)
     
   Section subst.
 
@@ -1153,24 +1176,35 @@ Section DefinedFunctions.
       | _, _ => oenv
       end.         
 
-    Definition two_vector_env_iter {n} {A B} (f: A -> B -> df_env -> option df_env)
-             (env: df_env) (v: Vector A n) (w: Vector B n) : option df_env :=
-      list_env_iter (fun '(a,b) env => f a b env) (Some env) 
-                    (combine (vector_to_list v) (vector_to_list w)).
 
+    Definition two_vector_env_iter {n} {A B} (f: A -> B -> df_env -> option df_env)
+               (env: df_env) (v: Vector A n) (w: Vector B n) : option df_env :=
+      vector_env_iter (fun '(a,b) env => f a b env) env 
+                      (vector_zip v w).
+
+    Definition matrix_env_iter {m n} {A} (f: A -> df_env -> option df_env)
+               (env: option df_env) (mat : Matrix A m n) : option df_env :=
+      vector_fold_right
+        (fun vec oenv =>
+           vector_fold_right (fun a oenv => match oenv with
+                                      | Some env => f a env
+                                      | _ => None
+                                      end) oenv vec
+        ) env mat.
+    
+    Definition two_matrix_env_iter {n m} {A B} (f: A -> B -> df_env -> option df_env)
+               (env: option df_env) (v: Matrix A n m) (w: Matrix B n m) : option df_env :=
+      let vw := matrix_zip v w in
+      matrix_env_iter (fun '(a,b) e => f a b e) env vw.
+          
     Definition matrix_to_list_list {T} {m n} (v:Matrix T m n) : (list (list T))
       := vector_to_list (fun i => vector_to_list (v i)).
 
     Definition matrix_to_list {T} {m n} (v:Matrix T m n) : (list T)
       := concat (matrix_to_list_list v).
 
-    Definition two_matrix_env_iter {n m} {A B} (f: A -> B -> df_env -> option df_env)
-               (env: df_env) (v: Matrix A n m) (w: Matrix B n m) : option df_env :=
-      list_env_iter (fun '(a,b) env => f a b env) (Some env) 
-                    (combine (matrix_to_list v) (matrix_to_list w)).
-    
     Definition msum {m n:nat} (v:Matrix float m n) : float :=
-      fold_right (fun x y => x+y) 0 (matrix_to_list v).
+      vsum (vmap vsum v).
 
     Fixpoint df_eval_backprop_deriv {T} (σ:df_env) (df:DefinedFunction T) (grad_env:df_env) (grad:definition_function_types_interp T) : option df_env
       := match df with
