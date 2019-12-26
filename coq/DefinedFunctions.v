@@ -311,6 +311,23 @@ Section DefinedFunctions.
     Definition vseq start len : Vector nat len
       := eq_rect _ _ (list_to_vector (seq start len)) _ (seq_length _ _).
 
+    Definition vector_zip_bounded {A B} {m:nat} (v1:Vector A m) (v2:Vector B m) (n:nat) (pf:(n<=m)%nat)
+    : Vector (A*B) n.
+    Proof.
+      induction n.
+      - exact vnil.
+      - apply vcons.
+        + assert (pf2:(n < m)%nat) by omega.
+          constructor.
+          * exact (v1 (exist _ n pf2)).
+          * exact (v2 (exist _ n pf2)).
+        + apply IHn.
+          omega.
+    Defined.
+
+    Definition vector_zip {A B} {m:nat} (v1:Vector A m) (v2:Vector B m) : Vector (A*B) m
+      := vector_zip_bounded v1 v2 _ (le_refl _).
+    
   Section subst.
 
     Program Definition substvar (v vv:var_type) (e':DefinedFunction (snd v)) (e:DefinedFunction (snd vv)): (DefinedFunction (snd vv)) :=
