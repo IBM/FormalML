@@ -136,6 +136,34 @@ Section DefinedFunctions.
     | Lossfun {n} (v1 v2:SubVar) (s:DefinedFunction DTfloat) (l: DefinedFunction (DTVector n)) (r:Vector float n) : DefinedFunction DTfloat
     .
 
+    Definition dft_eq_dec :
+            forall (t1 t2 : definition_function_types), {t1 = t2} + {t1 <> t2}.
+    Proof.
+      decide equality.
+      decide equality.
+      apply Nat.eq_dec.
+      apply Nat.eq_dec.
+    Defined.
+
+    Global Instance dft_eqdec : EqDec definition_function_types eq. 
+    Proof.
+      intros ??.
+      apply dft_eq_dec.
+    Defined.
+
+    Definition df_eq_dec {t: definition_function_types} : 
+      forall (v1 v2 : DefinedFunction t), {v1 = v2} + {v1 <> v2}.
+    Proof.
+      destruct t.
+      destruct v1.
+    Admitted.
+
+    Global Instance df_eqdec {t:definition_function_types} : EqDec (DefinedFunction t) eq. 
+    Proof.
+      intros ??.
+      apply df_eq_dec.
+    Defined.
+
   End Definitions.
 
     Tactic Notation "DefinedFunction_cases" tactic(first) ident(c) :=
@@ -609,6 +637,250 @@ Section DefinedFunctions.
            end
          end.
 
+    Definition eval_env_entry_type := {T:definition_function_types & DefinedFunction T & definition_function_types_interp T}.
+    Definition df_eval_env := list eval_env_entry_type.
+    
+    Definition mk_eval_env_entry {T} df val : eval_env_entry_type
+      := let P := fun t => DefinedFunction t in
+         let Q := fun t => definition_function_types_interp t in
+       existT2 P Q T df val.
+
+    Definition pair_update_evals {T} (df:DefinedFunction T) (val:definition_function_types_interp T) (dfevals : df_eval_env) : (definition_function_types_interp T * df_eval_env) :=
+      (val, (mk_eval_env_entry df val)::dfevals).
+
+    Fixpoint df_evals_list {T} (σ:df_env) (df:DefinedFunction T) (dfevals : df_eval_env) : option (definition_function_types_interp T * df_eval_env)
+      := match df with
+         | Number r => Some (pair_update_evals (Number r) r dfevals)
+         | Constant t x => Some (pair_update_evals (Constant x) x dfevals)
+         | DVector n dfs => None (*vectoro_to_ovector (fun i => df_eval σ (dfs i))*)
+         | DMatrix n m df => None (*matrixo_to_omatrix (fun i j => df_eval σ (df i j))*)
+         | Var x => 
+           match vartlookup σ x with
+           | Some val => Some (pair_update_evals (Var x) val dfevals)
+           | _ => None
+           end                    
+         | Plus l r =>
+           match df_evals_list σ l dfevals with
+           | Some (l', dfevals') => 
+             match df_evals_list σ r dfevals' with
+               Some (r', dfevals'') => Some (pair_update_evals (Plus l r) (l'+r') dfevals'')
+             | _ => None
+             end
+           | _ => None
+           end
+         | Minus l r =>
+           match df_evals_list σ l dfevals with
+           | Some (l', dfevals') => 
+             match df_evals_list σ r dfevals' with
+               Some (r', dfevals'') => Some (pair_update_evals (Minus l r) (l'-r') dfevals'')
+             | _ => None
+             end
+           | _ => None
+           end
+         | Times l r =>
+           match df_evals_list σ l dfevals with
+           | Some (l', dfevals') => 
+             match df_evals_list σ r dfevals' with
+               Some (r', dfevals'') => Some (pair_update_evals (Times l r) (l'*r') dfevals'')
+             | _ => None
+             end
+           | _ => None
+           end
+         | Divide l r =>
+           match df_evals_list σ l dfevals with
+           | Some (l', dfevals') => 
+             match df_evals_list σ r dfevals' with
+               Some (r', dfevals'') => Some (pair_update_evals (Divide l r) (l'/r') dfevals'')
+             | _ => None
+             end
+           | _ => None
+           end
+         | Square e => 
+           match df_evals_list σ e dfevals with
+           | Some (v, dfevals') => Some (pair_update_evals (Square e) (v * v) dfevals')
+           | _ => None
+           end
+         | Exp e => 
+           match df_evals_list σ e dfevals with
+           | Some (v, dfevals') => Some (pair_update_evals (Exp e) (Fexp v) dfevals')
+           | _ => None
+           end
+         | Log e => 
+           match df_evals_list σ e dfevals with
+           | Some (v, dfevals') => Some (pair_update_evals (Log e) (Fln v) dfevals')
+           | _ => None
+           end
+         | Abs e =>
+           match df_evals_list σ e dfevals with
+           | Some (v, dfevals') => Some (pair_update_evals (Abs e) (Fabs v) dfevals')
+           | _ => None
+           end
+         | Sign e =>
+           match df_evals_list σ e dfevals with
+           | Some (v, dfevals') => Some (pair_update_evals (Sign e) (sign v) dfevals')
+           | _ => None
+           end
+         | PSign e =>
+           match df_evals_list σ e dfevals with
+           | Some (v, dfevals') => Some (pair_update_evals (PSign e) (pos_sign v) dfevals')
+           | _ => None
+           end
+         | Max l r =>
+           match df_evals_list σ l dfevals with
+           | Some (l', dfevals') => 
+             match df_evals_list σ r dfevals' with
+               Some (r', dfevals'') => Some (pair_update_evals (Max l r) (Fmax l' r') dfevals'')
+             | _ => None
+             end
+           | _ => None
+           end
+         | VectorElem n l i => 
+           match (df_evals_list σ l dfevals)  with
+           | Some (l', dfevals') => Some (pair_update_evals (VectorElem l i) (l' i) dfevals')
+           | _ => None
+           end
+         | MatrixElem m n l i j =>
+           match (df_evals_list σ l dfevals)  with
+           | Some (l', dfevals') => Some (pair_update_evals (MatrixElem l i j) (l' i j) dfevals')
+           | _ => None
+           end
+         | VectorDot n l r =>
+           match df_evals_list σ l dfevals with
+           | Some (l', dfevals') => 
+             match df_evals_list σ r dfevals' with
+               Some (r', dfevals'') => 
+                  Some (pair_update_evals (VectorDot l r) 
+                                          (vsum (fun i => (l' i) * (r' i))) dfevals'')
+             | _ => None
+             end
+           | _ => None
+           end
+         | VectorSum n l =>
+           match df_evals_list σ l dfevals with
+           | Some (l',dfevals') => Some (pair_update_evals (VectorSum l) (vsum (fun i => l' i)) dfevals')
+           | _ => None
+           end
+         | VectorScalMult n l r =>
+           match df_evals_list σ l dfevals with
+           | Some (l', dfevals') => 
+             match df_evals_list σ r dfevals' with
+               Some (r', dfevals'') => 
+                  Some (pair_update_evals (VectorScalMult l r) (fun j => l' * (r' j)) dfevals'')
+             | _ => None
+             end
+           | _ => None
+           end
+         | MatrixScalMult n m l r =>
+           match df_evals_list σ l dfevals with
+           | Some (l', dfevals') => 
+             match df_evals_list σ r dfevals' with
+               Some (r', dfevals'') => 
+                  Some (pair_update_evals (MatrixScalMult l r) (fun i j => l' * (r' i j)) dfevals'')
+             | _ => None
+             end
+           | _ => None
+           end
+         | MatrixVectorMult n m l r =>
+           match df_evals_list σ l dfevals with
+           | Some (l', dfevals') => 
+             match df_evals_list σ r dfevals' with
+               Some (r', dfevals'') => 
+                  Some (pair_update_evals (MatrixVectorMult l r) 
+                                          (matrix_vector_mult l' r') dfevals'')
+             | _ => None
+             end
+           | _ => None
+           end
+         | MatrixMult n m p l r =>
+           match df_evals_list σ l dfevals with
+           | Some (l', dfevals') => 
+             match df_evals_list σ r dfevals' with
+               Some (r', dfevals'') => 
+                  Some (pair_update_evals (MatrixMult l r) (matrix_mult l' r') dfevals'')
+             | _ => None
+             end
+           | _ => None
+           end
+         | VectorPlus n l r =>
+           match df_evals_list σ l dfevals with
+           | Some (l', dfevals') => 
+             match df_evals_list σ r dfevals' with
+               Some (r', dfevals'') => 
+                  Some (pair_update_evals (VectorPlus l r) 
+                                          (fun i => (l' i) + (r' i)) dfevals'')
+             | _ => None
+             end
+           | _ => None
+           end
+         | VectorMinus n l r =>
+           match df_evals_list σ l dfevals with
+           | Some (l', dfevals') => 
+             match df_evals_list σ r dfevals' with
+               Some (r', dfevals'') => 
+                  Some (pair_update_evals (VectorMinus l r) 
+                                          (fun i => (l' i) - (r' i)) dfevals'')
+             | _ => None
+             end
+           | _ => None
+           end
+         | MatrixPlus n m l r =>
+           match df_evals_list σ l dfevals with
+           | Some (l', dfevals') => 
+             match df_evals_list σ r dfevals' with
+               Some (r', dfevals'') => 
+                  Some (pair_update_evals (MatrixPlus l r) 
+                                          (fun i j => (l' i j) + (r' i j)) dfevals'')
+             | _ => None
+             end
+           | _ => None
+           end
+         | MatrixMinus n m l r =>
+           match df_evals_list σ l dfevals with
+           | Some (l', dfevals') => 
+             match df_evals_list σ r dfevals' with
+               Some (r', dfevals'') => 
+                  Some (pair_update_evals (MatrixMinus l r) 
+                                          (fun i j => (l' i j) - (r' i j)) dfevals'')
+             | _ => None
+             end
+           | _ => None
+           end
+         | VectorApply n x s r => 
+           match df_evals_list σ r dfevals with           
+(*           | Some r' => vectoro_to_ovector 
+                          (fun i => 
+                             let xv := (x, DTfloat):var_type in
+                             df_eval (cons (mk_env_entry xv (r' i)) σ) s) *)
+           | _ => None
+           end
+         | Lossfun n v1 v2 s l r => 
+           match df_evals_list σ l dfevals with
+(*           | Some l' => 
+             match (vectoro_to_ovector 
+                      (fun i => 
+                         let xv1 := (v1,DTfloat):var_type in
+                         let xv2 := (v2,DTfloat):var_type in
+                         df_eval (cons (mk_env_entry xv1 (l' i)) 
+                                       (cons (mk_env_entry xv2 (r i)) σ)) s)) with
+             | Some vv => Some (vsum vv)
+             | _ => None
+             end *)
+           | _ => None
+           end
+         end.
+
+    Program
+      Fixpoint evalslookup {T} (l:df_eval_env) (df:DefinedFunction T) : 
+      option (definition_function_types_interp T)
+      := match l with
+         | nil => None
+         | fv::os => if T == (projT1 (sigT_of_sigT2 fv)) then
+                       if df == (projT2 (sigT_of_sigT2 fv)) then 
+                         Some (eq_rect _ definition_function_types_interp (projT3 fv) _ _) 
+                       else evalslookup os df
+                     else evalslookup os df
+         end.
+
     Definition df_eval_symbolic_gradient {T} (σ:df_env) (df:DefinedFunction T) (lv:list var_type) : option (list (definition_function_types_interp T))
       := listo_to_olist (map (df_eval σ) (df_gradient df lv)).
     
@@ -848,6 +1120,227 @@ Section DefinedFunctions.
            | _, _ => None
            end
           end).
+
+    Definition vector_env_iter {n} {A} (f: A -> df_env -> option df_env)
+             (env: df_env) (v : Vector A n) : option df_env :=
+      vector_fold_right (fun a oenv => match oenv with
+                                      | Some env => f a env
+                                      | _ => None
+                                      end)
+                        (Some env) v.
+    
+    Fixpoint list_env_iter {A} (f: A -> df_env -> option df_env)
+             (oenv:option df_env) (l: list A) : option df_env :=
+      match oenv, l with
+      | Some env, x :: l' => list_env_iter f (f x env) l'
+      | _, _ => oenv
+      end.         
+
+    Definition two_vector_env_iter {n} {A B} (f: A -> B -> df_env -> option df_env)
+             (env: df_env) (v: Vector A n) (w: Vector B n) : option df_env :=
+      list_env_iter (fun '(a,b) env => f a b env) (Some env) 
+                    (combine (vector_to_list v) (vector_to_list w)).
+
+    Definition matrix_to_list_list {T} {m n} (v:Matrix T m n) : (list (list T))
+      := vector_to_list (fun i => vector_to_list (v i)).
+
+    Definition matrix_to_list {T} {m n} (v:Matrix T m n) : (list T)
+      := concat (matrix_to_list_list v).
+
+    Definition two_matrix_env_iter {n m} {A B} (f: A -> B -> df_env -> option df_env)
+               (env: df_env) (v: Matrix A n m) (w: Matrix B n m) : option df_env :=
+      list_env_iter (fun '(a,b) env => f a b env) (Some env) 
+                    (combine (matrix_to_list v) (matrix_to_list w)).
+    
+    Definition msum {m n:nat} (v:Matrix float m n) : float :=
+      fold_right (fun x y => x+y) 0 (matrix_to_list v).
+
+    Fixpoint df_eval_backprop_deriv {T} (σ:df_env) (df:DefinedFunction T) (grad_env:df_env) (grad:definition_function_types_interp T) : option df_env
+      := match df with
+         | Number _ => Some grad_env
+         | Constant _ _ => Some grad_env
+         | DVector n dfs => two_vector_env_iter (fun x g genv => df_eval_backprop_deriv σ x genv g) grad_env dfs grad 
+         | DMatrix n m dfs => two_matrix_env_iter (fun x g genv => df_eval_backprop_deriv σ x genv g) dfs grad
+         | Var x => (* Some (( mk_env_entry x grad)::grad_env) *)
+            Some ((mk_env_entry x 
+               match snd x as y return definition_function_types_interp y with
+               | DTfloat => match vartlookup grad_env x return float with
+                            | Some val => val + grad
+                            | _ => grad
+                            end
+               | DTVector n =>  match vartlookup grad_env x with
+                                | Some val => (fun i => (val i) + (grad i))
+                                | _ => grad
+                                end
+               | DTMatrix m n =>  match vartlookup grad_env x with
+                                  | Some val => (fun i j => (val i j) + (grad i j))
+                                  | _ => grad
+                                  end 
+               end)::grad_env)
+         | Plus l r => 
+           match df_eval_backprop_deriv σ l grad_env grad with
+           | Some grad_env' => df_eval_backprop_deriv σ r grad_env' grad
+           | _ => None
+           end
+         | Minus l r =>
+           match df_eval_backprop_deriv σ l grad_env grad with
+           | Some grad_env' => df_eval_backprop_deriv σ r grad_env' (-grad)
+           | _ => None
+           end
+         | Times l r =>
+           match df_eval σ l, df_eval σ r with
+               | Some le, Some re =>
+                 match df_eval_backprop_deriv σ l grad_env (re * grad) with                 
+                 | Some grad_env' => df_eval_backprop_deriv σ r grad_env' (le * grad)
+                 | _ => None
+                 end
+           | _, _ => None
+           end
+         | Divide l r =>
+           match df_eval σ l, df_eval σ r with
+               | Some le, Some re =>
+                 match df_eval_backprop_deriv σ l grad_env (grad / re) with                 
+                 | Some grad_env' => df_eval_backprop_deriv σ r grad_env' (- le * grad / (re * re))
+                 | _ => None
+                 end
+           | _, _ => None
+           end
+         | Square e =>
+           match df_eval σ e with
+           | Some ee => df_eval_backprop_deriv σ e grad_env (2 * ee * grad)
+           | _  => None
+           end
+         | Exp e =>
+           match df_eval σ e with
+           | Some ee => df_eval_backprop_deriv σ e grad_env (grad * Fexp ee)
+           | _  => None
+           end
+         | Log e =>
+           match df_eval σ e with
+           | Some ee => df_eval_backprop_deriv σ e grad_env (grad / ee)
+           | _  => None
+           end
+         | Abs e =>
+           match df_eval σ e with
+           | Some ee => df_eval_backprop_deriv σ e grad_env (grad * (sign ee))
+           | _  => None
+           end
+         | Sign e => df_eval_backprop_deriv σ e grad_env 0
+         | PSign e => df_eval_backprop_deriv σ e grad_env 0
+         | Max l r =>
+           match df_eval σ l, df_eval σ r with
+           | Some le, Some re =>
+             if le <= re then 
+               Some (df_eval_backprop_deriv σ r grad_env grad) else
+               Some (df_eval_backprop_deriv σ l grad_env grad)
+           | _, _ => None
+           end
+         | VectorElem n l i => None
+           (* match (df_eval_deriv σ l v)  with
+           | Some l' => Some (l' i) 
+           | _ => None
+           end *)
+         | MatrixElem m n l i j => None
+           (* match (df_eval_deriv σ l v)  with
+           | Some l' => Some (l' i j)
+           | _ => None
+           end *)
+         | VectorDot n l r =>
+           match df_eval σ l, df_eval σ r with
+           | Some le, Some re =>
+             match df_eval_backprop_deriv σ l grad_env (vmap (fun rv => rv*grad) re) with
+             | Some grad_env' => 
+               df_eval_backprop_deriv σ r grad_env' (vmap (fun lv => lv*grad) le)
+             | _ => None
+             end
+           | _, _ => None
+           end
+         | VectorSum n l => 
+           df_eval_backprop_deriv σ l grad_env (ConstVector n grad)
+         | VectorScalMult n x r =>
+           match df_eval σ x, df_eval σ r with
+           | Some xe, Some re => 
+             match df_eval_backprop_deriv σ x grad_env (vsum (fun j => (re j) * (grad j))) with
+             | Some grad_env' => 
+               df_eval_backprop_deriv σ r grad_env' (fun j => xe * (grad j))
+             | _ => None
+             end
+           | _, _ => None
+           end
+         | MatrixScalMult n m x r => 
+           match df_eval σ x, df_eval σ r with
+           | Some xe, Some re => 
+             match df_eval_backprop_deriv σ x grad_env (msum (fun i j => (re i j) * (grad i j))) with
+             | Some grad_env' => 
+               df_eval_backprop_deriv σ r grad_env' (fun i j => (grad i j) * xe)
+             | _ => None
+             end
+           | _, _ => None
+           end
+         | MatrixVectorMult n m l r =>
+           match df_eval σ l, df_eval σ r with
+           | Some le, Some re => 
+             match df_eval_backprop_deriv σ l grad_env (fun i j => (grad i) * (re j)) with
+
+
+             | Some grad_env' => 
+               df_eval_backprop_deriv σ r grad_env' (matrix_vector_mult (fun i j => le j i) grad)
+             | _ => None
+             end
+           | _, _ => None
+           end
+         | MatrixMult n m p l r => None
+           match df_eval σ l, df_eval σ r with
+           | Some le, Some re => 
+             match df_eval_backprop_deriv σ l grad_env (matrix_mult grad (fun i j => (re j i))) with
+
+
+             | Some grad_env' => 
+               df_eval_backprop_deriv σ r grad_env' (matrix_mult (fun i j => le j i) grad)
+             | _ => None
+             end
+           | _, _ => None
+           end
+         | VectorPlus n l r =>
+           match df_eval_backprop_deriv σ l grad_env grad with
+           | Some grad_env' => df_eval_backprop_deriv σ r grad_env' grad
+           | _ => None
+           end
+         | VectorMinus n l r =>
+           match df_eval_backprop_deriv σ l grad_env grad with
+           | Some grad_env' => df_eval_backprop_deriv σ r grad_env' (fun i => - (grad i))
+           | _ => None
+           end
+         | MatrixPlus n m l r =>
+           match df_eval_backprop_deriv σ l grad_env grad with
+           | Some grad_env' => df_eval_backprop_deriv σ r grad_env' grad
+           | _ => None
+           end
+         | MatrixMinus n m l r =>
+           match df_eval_backprop_deriv σ l grad_env grad with
+           | Some grad_env' => df_eval_backprop_deriv σ r grad_env' (fun i j => - (grad i j))
+           | _ => None
+           end
+         | VectorApply n x s r =>
+           match df_eval σ r with
+           | Some re => 
+             two_vector_env_iter 
+               (fun rei g  genv =>
+                  let xv := (x, DTfloat):var_type in
+                  df_eval_backprop_deriv (cons (mk_env_entry xv rei) σ) s genv g)
+               grad_env re grad
+           | _ => None                                                    
+           end
+         | Lossfun n v1 v2 s l r => 
+           two_vector_env_iter 
+             (fun li ri env => 
+                let xv1 := (v1, DTfloat):var_type in
+                let xv2 := (v2, DTfloat):var_type in                         
+                df_eval_backprop_deriv 
+                  (cons (mk_env_entry xv2 ri) σ)
+                  (df_subst li xv1 s) env grad)
+             grad_env l r
+          end.
 
    Definition definition_function_types_map_base (f:Type->Type) (dft:definition_function_types): Type
      := match dft with
