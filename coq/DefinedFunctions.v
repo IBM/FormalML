@@ -1206,39 +1206,56 @@ Section DefinedFunctions.
     Definition msum {m n:nat} (v:Matrix float m n) : float :=
       vsum (vmap vsum v).
 
-    Fixpoint df_eval_backprop_deriv {T} (σ:df_env) (df:DefinedFunction T) (grad_env:df_env) (grad:definition_function_types_interp T) : option df_env
+    Lemma lemma1 {x} : x = DTfloat -> definition_function_types_interp x = float.
+    Proof.
+      intros.
+      subst.
+      reflexivity.
+    Defined.
+    Print lemma1.
+
+    Definition coerce {A B} (pf:A=B) : forall x:A, B.
+    Proof.
+      intros a.
+      destruct pf.
+      exact a.
+    Defined.
+
+    
+    Program Fixpoint df_eval_backprop_deriv {T} (σ:df_env) (df:DefinedFunction T) (grad_env:df_env) {struct df} : definition_function_types_interp T -> option df_env
       := match df with
-         | Number _ => Some grad_env
-         | Constant _ _ => Some grad_env
-         | DVector n dfs => two_vector_env_iter (fun x g genv => df_eval_backprop_deriv σ x genv g) grad_env dfs grad 
-         | DMatrix n m dfs => two_matrix_env_iter (fun x g genv => df_eval_backprop_deriv σ x genv g) dfs grad
-         | Var x => (* Some (( mk_env_entry x grad)::grad_env) *)
-            Some ((mk_env_entry x 
-               match snd x as y return definition_function_types_interp y with
-               | DTfloat => match vartlookup grad_env x return float with
-                            | Some val => val + grad
-                            | _ => grad
+         | Number _ => fun grad => Some grad_env
+         | Constant _ _ => fun grad => Some grad_env
+(*         | DVector n dfs => fun grad => two_vector_env_iter (fun x g genv => df_eval_backprop_deriv σ x genv g) grad_env dfs grad  *)
+(*         | DMatrix n m dfs => fun grad => two_matrix_env_iter (fun x g genv => df_eval_backprop_deriv σ x genv g) (Some grad_env) dfs grad
+ *)
+         | Var x => fun grad => Some ((mk_env_entry x grad)::grad_env)
+
+         (* | Var x => (match snd x as y return snd x = y -> definition_function_types_interp y -> option df_env with
+               | DTfloat => fun pf => match vartlookup grad_env x with
+                            | Some val => fun grad => Some ((mk_env_entry x (coerce (symmetry (lemma1 pf)) (coerce (lemma1 pf) val + grad)))::grad_env)
+                            | _ => fun grad => Some (mk_env_entry x ((coerce (symmetry (lemma1 pf)) grad))::grad_env)
                             end
-               | DTVector n =>  match vartlookup grad_env x with
-                                | Some val => (fun i => (val i) + (grad i))
-                                | _ => grad
+               | DTVector n => fun pf => match vartlookup grad_env x with
+                                | Some val => fun grad => Some ((mk_env_entry x (coerce _ (fun i => al i + (grad i))))::grad_env)
+                                | _ => fun grad => Some ((mk_env_entry x grad)::grad_env)
                                 end
-               | DTMatrix m n =>  match vartlookup grad_env x with
+               | DTMatrix m n => fun grad => Some (mk_env_entry x match vartlookup grad_env x with
                                   | Some val => (fun i j => (val i j) + (grad i j))
                                   | _ => grad
-                                  end 
-               end)::grad_env)
-         | Plus l r => 
+                end) end) (eq_refl _)
+          *)
+         | Plus l r => fun grad => 
            match df_eval_backprop_deriv σ l grad_env grad with
            | Some grad_env' => df_eval_backprop_deriv σ r grad_env' grad
            | _ => None
            end
-         | Minus l r =>
+         | Minus l r => fun grad => 
            match df_eval_backprop_deriv σ l grad_env grad with
            | Some grad_env' => df_eval_backprop_deriv σ r grad_env' (-grad)
            | _ => None
            end
-         | Times l r =>
+         | Times l r => fun grad => 
            match df_eval σ l, df_eval σ r with
                | Some le, Some re =>
                  match df_eval_backprop_deriv σ l grad_env (re * grad) with                 
@@ -1247,7 +1264,7 @@ Section DefinedFunctions.
                  end
            | _, _ => None
            end
-         | Divide l r =>
+         | Divide l r => fun grad => 
            match df_eval σ l, df_eval σ r with
                | Some le, Some re =>
                  match df_eval_backprop_deriv σ l grad_env (grad / re) with                 
@@ -1256,47 +1273,47 @@ Section DefinedFunctions.
                  end
            | _, _ => None
            end
-         | Square e =>
+         | Square e => fun grad => 
            match df_eval σ e with
            | Some ee => df_eval_backprop_deriv σ e grad_env (2 * ee * grad)
            | _  => None
            end
-         | Exp e =>
+         | Exp e => fun grad => 
            match df_eval σ e with
            | Some ee => df_eval_backprop_deriv σ e grad_env (grad * Fexp ee)
            | _  => None
            end
-         | Log e =>
+         | Log e => fun grad => 
            match df_eval σ e with
            | Some ee => df_eval_backprop_deriv σ e grad_env (grad / ee)
            | _  => None
            end
-         | Abs e =>
+         | Abs e => fun grad => 
            match df_eval σ e with
            | Some ee => df_eval_backprop_deriv σ e grad_env (grad * (sign ee))
            | _  => None
            end
-         | Sign e => df_eval_backprop_deriv σ e grad_env 0
-         | PSign e => df_eval_backprop_deriv σ e grad_env 0
-         | Max l r =>
+         | Sign e => fun grad => df_eval_backprop_deriv σ e grad_env 0
+         | PSign e => fun grad => df_eval_backprop_deriv σ e grad_env 0
+         | Max l r => fun grad => 
            match df_eval σ l, df_eval σ r with
            | Some le, Some re =>
              if le <= re then 
-               Some (df_eval_backprop_deriv σ r grad_env grad) else
-               Some (df_eval_backprop_deriv σ l grad_env grad)
+               (df_eval_backprop_deriv σ r grad_env grad) else
+               (df_eval_backprop_deriv σ l grad_env grad)
            | _, _ => None
            end
-         | VectorElem n l i => None
+         | VectorElem n l i => fun grad => None
            (* match (df_eval_deriv σ l v)  with
            | Some l' => Some (l' i) 
            | _ => None
            end *)
-         | MatrixElem m n l i j => None
+         | MatrixElem m n l i j => fun grad => None
            (* match (df_eval_deriv σ l v)  with
            | Some l' => Some (l' i j)
            | _ => None
            end *)
-         | VectorDot n l r =>
+         | VectorDot n l r => fun grad =>
            match df_eval σ l, df_eval σ r with
            | Some le, Some re =>
              match df_eval_backprop_deriv σ l grad_env (vmap (fun rv => rv*grad) re) with
@@ -1306,9 +1323,9 @@ Section DefinedFunctions.
              end
            | _, _ => None
            end
-         | VectorSum n l => 
+         | VectorSum n l => fun grad =>
            df_eval_backprop_deriv σ l grad_env (ConstVector n grad)
-         | VectorScalMult n x r =>
+         | VectorScalMult n x r => fun grad =>
            match df_eval σ x, df_eval σ r with
            | Some xe, Some re => 
              match df_eval_backprop_deriv σ x grad_env (vsum (fun j => (re j) * (grad j))) with
@@ -1318,7 +1335,7 @@ Section DefinedFunctions.
              end
            | _, _ => None
            end
-         | MatrixScalMult n m x r => 
+         | MatrixScalMult n m x r => fun grad =>
            match df_eval σ x, df_eval σ r with
            | Some xe, Some re => 
              match df_eval_backprop_deriv σ x grad_env (msum (fun i j => (re i j) * (grad i j))) with
@@ -1328,7 +1345,7 @@ Section DefinedFunctions.
              end
            | _, _ => None
            end
-         | MatrixVectorMult n m l r =>
+         | MatrixVectorMult n m l r => fun grad =>
            match df_eval σ l, df_eval σ r with
            | Some le, Some re => 
              match df_eval_backprop_deriv σ l grad_env (fun i j => (grad i) * (re j)) with
@@ -1340,7 +1357,7 @@ Section DefinedFunctions.
              end
            | _, _ => None
            end
-         | MatrixMult n m p l r => None
+         | MatrixMult n m p l r => fun grad =>
            match df_eval σ l, df_eval σ r with
            | Some le, Some re => 
              match df_eval_backprop_deriv σ l grad_env (matrix_mult grad (fun i j => (re j i))) with
@@ -1352,27 +1369,27 @@ Section DefinedFunctions.
              end
            | _, _ => None
            end
-         | VectorPlus n l r =>
+         | VectorPlus n l r => fun grad =>
            match df_eval_backprop_deriv σ l grad_env grad with
            | Some grad_env' => df_eval_backprop_deriv σ r grad_env' grad
            | _ => None
            end
-         | VectorMinus n l r =>
+         | VectorMinus n l r => fun grad => 
            match df_eval_backprop_deriv σ l grad_env grad with
            | Some grad_env' => df_eval_backprop_deriv σ r grad_env' (fun i => - (grad i))
            | _ => None
            end
-         | MatrixPlus n m l r =>
+         | MatrixPlus n m l r => fun grad =>
            match df_eval_backprop_deriv σ l grad_env grad with
            | Some grad_env' => df_eval_backprop_deriv σ r grad_env' grad
            | _ => None
            end
-         | MatrixMinus n m l r =>
+         | MatrixMinus n m l r => fun grad =>
            match df_eval_backprop_deriv σ l grad_env grad with
            | Some grad_env' => df_eval_backprop_deriv σ r grad_env' (fun i j => - (grad i j))
            | _ => None
            end
-         | VectorApply n x s r =>
+         | VectorApply n x s r => fun grad =>
            match df_eval σ r with
            | Some re => 
              two_vector_env_iter 
@@ -1382,7 +1399,7 @@ Section DefinedFunctions.
                grad_env re grad
            | _ => None                                                    
            end
-         | Lossfun n v1 v2 s l r => 
+(*         | Lossfun n v1 v2 s l r => fun grad =>
            two_vector_env_iter 
              (fun li ri env => 
                 let xv1 := (v1, DTfloat):var_type in
@@ -1391,6 +1408,8 @@ Section DefinedFunctions.
                   (cons (mk_env_entry xv2 ri) σ)
                   (df_subst li xv1 s) env grad)
              grad_env l r
+ *)
+         | _ => fun grad => None
           end.
 
    Definition definition_function_types_map_base (f:Type->Type) (dft:definition_function_types): Type
