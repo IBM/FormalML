@@ -1176,7 +1176,6 @@ Section DefinedFunctions.
       | _, _ => oenv
       end.         
 
-
     Definition two_vector_env_iter {n} {A B} (f: A -> B -> df_env -> option df_env)
                (env: df_env) (v: Vector A n) (w: Vector B n) : option df_env :=
       vector_env_iter (fun '(a,b) env => f a b env) env 
@@ -1234,8 +1233,7 @@ Section DefinedFunctions.
       exact a.
     Defined.
 
-    Definition addvar (x : var_type) (grad_env:df_env)
-    :=
+    Definition addvar (x : var_type) (grad_env:df_env) :=
       (match snd x as y return snd x = y -> definition_function_types_interp y -> definition_function_types_interp y with
        | DTfloat =>  fun pf => match vartlookup grad_env x with
                      | Some val => fun grad => (coerce (lemma1 pf) val) + grad
@@ -1251,13 +1249,15 @@ Section DefinedFunctions.
                          end
        end) (eq_refl _).
 
+Print two_vector_env_iter.
+
     Fixpoint df_eval_backprop_deriv {T} (σ:df_env) (df:DefinedFunction T) (grad_env:df_env) {struct df} : definition_function_types_interp T -> option df_env
       := match df with
          | Number _ => fun grad => Some grad_env
          | Constant _ _ => fun grad => Some grad_env
 (*
          | DVector n dfs => fun grad => two_vector_env_iter (fun x g genv => df_eval_backprop_deriv σ x genv g) grad_env dfs grad 
- *)
+*)
 (*         | DMatrix n m dfs => fun grad => two_matrix_env_iter (fun x g genv => df_eval_backprop_deriv σ x genv g) (Some grad_env) dfs grad
  *)
          | Var x => fun grad => Some ((mk_env_entry x (addvar x grad_env grad))::grad_env)
@@ -1408,28 +1408,42 @@ Section DefinedFunctions.
          | VectorApply n x s r => fun grad =>
            match df_eval σ r with
            | Some re => 
-             two_vector_env_iter 
-               (fun rei g  genv =>
-                  let xv := (x, DTfloat):var_type in
-                  df_eval_backprop_deriv (cons (mk_env_entry xv rei) σ) s genv g)
-               grad_env re grad
+             let xv := (x, DTfloat):var_type in
+             let s' := df_deriv s xv in
+             let ograd := 
+                 vmap (fun '(rei, g) => 
+                         match df_eval (cons (mk_env_entry xv rei) σ) s' with
+                         | Some se => Some (g * se)
+                         | _ => None
+                         end)
+                      (vector_zip re grad) in
+             match vectoro_to_ovector ograd with 
+             | Some grad' => df_eval_backprop_deriv σ r grad_env grad'
+             | _ => None
+             end
            | _ => None                                                    
            end
-(*
-         | Lossfun n v1 v2 s l r => fun grad =>
-           match l return option df_env with
-           | DVector n ll =>  
-             two_vector_env_iter 
-               (fun li ri env => 
-                  let xv1 := (v1, DTfloat):var_type in
-                  let xv2 := (v2, DTfloat):var_type in                         
-                  df_eval_backprop_deriv 
-                    (cons (mk_env_entry xv2 ri) σ)
-                    (df_subst li xv1 s) env grad)
-               grad_env ll r
-           | _ => None 
+         | Lossfun n v1 v2 s l re => fun grad =>
+           match df_eval σ l with
+           | Some le => 
+             let xv1 := (v1, DTfloat):var_type in
+             let xv2 := (v2, DTfloat):var_type in                         
+             let s' := df_deriv s xv1 in
+             let ograd := 
+                 vmap (fun '(lei, rei) => 
+                         let senv := cons (mk_env_entry xv1 lei) 
+                                          (cons (mk_env_entry xv2 rei) σ) in
+                         match df_eval senv s' with
+                         | Some se => Some (grad * se)
+                         | _ => None
+                         end)
+                      (vector_zip le re) in
+             match vectoro_to_ovector ograd with 
+             | Some grad' => df_eval_backprop_deriv σ l grad_env grad'
+             | _ => None
+             end
+           | _ => None                                                    
            end
-*)
          | _ => fun grad => None
           end.
 
