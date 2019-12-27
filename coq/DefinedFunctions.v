@@ -515,8 +515,6 @@ Section DefinedFunctions.
     Definition matrix_mult {m n p} (l : Matrix float n m)(r : Matrix float m p) : Matrix float n p :=
       fun i k => vsum (fun j => (l i j) * (r j k)).
 
-Locate lookup.
-
     Program
       Fixpoint vartlookup (l:df_env) (a:var_type) : 
       option (definition_function_types_interp (snd a))
@@ -1184,6 +1182,24 @@ Locate lookup.
       vector_env_iter (fun '(a,b) env => f a b env) env 
                       (vector_zip v w).
 
+    Fixpoint bounded_seq (start len : nat) {struct len} : list {n':nat | n' < start+len}%nat.
+    Proof.
+      revert start.
+      induction len; intros start.
+      - exact nil.
+      - apply cons.
+        + exists start.
+          omega.
+        + rewrite Nat.add_succ_r.
+          exact (IHlen (S start)).
+    Defined.
+
+    Definition bounded_seq0 len : list {n':nat | n' < len}%nat := bounded_seq 0 len.
+
+    Definition two_vector_env_iter_alt {n} {A B} (f: A -> B -> df_env -> option df_env)
+               (env: df_env) (v: Vector A n) (w: Vector B n) : option df_env :=
+      list_env_iter (fun i env => f (v i) (w i) env) (Some env) (bounded_seq0 n).
+
     Definition matrix_env_iter {m n} {A} (f: A -> df_env -> option df_env)
                (env: option df_env) (mat : Matrix A m n) : option df_env :=
       vector_fold_right
@@ -1207,6 +1223,7 @@ Locate lookup.
 
     Definition msum {m n:nat} (v:Matrix float m n) : float :=
       vsum (vmap vsum v).
+
 
     Lemma lemma1 {x} : x = DTfloat -> definition_function_types_interp x = float.
     Proof.
@@ -1256,10 +1273,11 @@ Locate lookup.
       := match df with
          | Number _ => fun grad => Some grad_env
          | Constant _ _ => fun grad => Some grad_env
-(*
-         | DVector n dfs => fun grad => two_vector_env_iter (fun x g genv => df_eval_backprop_deriv σ x genv g) grad_env dfs grad 
-*)
-(*         | DMatrix n m dfs => fun grad => two_matrix_env_iter (fun x g genv => df_eval_backprop_deriv σ x genv g) (Some grad_env) dfs grad
+         | DVector n dfs => fun grad => 
+             two_vector_env_iter_alt (fun x g genv => df_eval_backprop_deriv σ x genv g) 
+                                     grad_env dfs grad 
+
+ (*         | DMatrix n m dfs => fun grad => two_matrix_env_iter (fun x g genv => df_eval_backprop_deriv σ x genv g) (Some grad_env) dfs grad
  *)
 
          | Var x => fun grad => Some (vart_update_first grad_env x (addvar x grad_env grad))
