@@ -1212,7 +1212,20 @@ Section DefinedFunctions.
       subst.
       reflexivity.
     Defined.
-    Print lemma1.
+
+    Lemma lemma2 {x} {n} : x = DTVector n -> definition_function_types_interp x = Vector float n.
+    Proof.
+      intros.
+      subst.
+      reflexivity.
+    Defined.
+
+    Lemma lemma3 {x} {n m} : x = DTMatrix n m -> definition_function_types_interp x = Matrix float n m.
+    Proof.
+      intros.
+      subst.
+      reflexivity.
+    Defined.
 
     Definition coerce {A B} (pf:A=B) : forall x:A, B.
     Proof.
@@ -1221,30 +1234,33 @@ Section DefinedFunctions.
       exact a.
     Defined.
 
-    
-    Program Fixpoint df_eval_backprop_deriv {T} (σ:df_env) (df:DefinedFunction T) (grad_env:df_env) {struct df} : definition_function_types_interp T -> option df_env
+    Definition addvar (x : var_type) (grad_env:df_env)
+    :=
+      (match snd x as y return snd x = y -> definition_function_types_interp y -> definition_function_types_interp y with
+       | DTfloat =>  fun pf => match vartlookup grad_env x with
+                     | Some val => fun grad => (coerce (lemma1 pf) val) + grad
+                     | _ => fun grad => grad
+                     end
+       | DTVector n => fun pf => match vartlookup grad_env x with
+                       | Some val => fun grad => fun i => ((coerce (lemma2 pf) val) i) + (grad i)
+                       | _ => fun grad => grad
+                       end
+       | DTMatrix m n => fun pf => match vartlookup grad_env x with
+                         | Some val => fun grad => fun i j => ((coerce (lemma3 pf) val) i j) + (grad i j)
+                         | _ => fun grad => grad
+                         end
+       end) (eq_refl _).
+
+    Fixpoint df_eval_backprop_deriv {T} (σ:df_env) (df:DefinedFunction T) (grad_env:df_env) {struct df} : definition_function_types_interp T -> option df_env
       := match df with
          | Number _ => fun grad => Some grad_env
          | Constant _ _ => fun grad => Some grad_env
-(*         | DVector n dfs => fun grad => two_vector_env_iter (fun x g genv => df_eval_backprop_deriv σ x genv g) grad_env dfs grad  *)
+(*
+         | DVector n dfs => fun grad => two_vector_env_iter (fun x g genv => df_eval_backprop_deriv σ x genv g) grad_env dfs grad 
+ *)
 (*         | DMatrix n m dfs => fun grad => two_matrix_env_iter (fun x g genv => df_eval_backprop_deriv σ x genv g) (Some grad_env) dfs grad
  *)
-         | Var x => fun grad => Some ((mk_env_entry x grad)::grad_env)
-
-         (* | Var x => (match snd x as y return snd x = y -> definition_function_types_interp y -> option df_env with
-               | DTfloat => fun pf => match vartlookup grad_env x with
-                            | Some val => fun grad => Some ((mk_env_entry x (coerce (symmetry (lemma1 pf)) (coerce (lemma1 pf) val + grad)))::grad_env)
-                            | _ => fun grad => Some (mk_env_entry x ((coerce (symmetry (lemma1 pf)) grad))::grad_env)
-                            end
-               | DTVector n => fun pf => match vartlookup grad_env x with
-                                | Some val => fun grad => Some ((mk_env_entry x (coerce _ (fun i => al i + (grad i))))::grad_env)
-                                | _ => fun grad => Some ((mk_env_entry x grad)::grad_env)
-                                end
-               | DTMatrix m n => fun grad => Some (mk_env_entry x match vartlookup grad_env x with
-                                  | Some val => (fun i j => (val i j) + (grad i j))
-                                  | _ => grad
-                end) end) (eq_refl _)
-          *)
+         | Var x => fun grad => Some ((mk_env_entry x (addvar x grad_env grad))::grad_env)
          | Plus l r => fun grad => 
            match df_eval_backprop_deriv σ l grad_env grad with
            | Some grad_env' => df_eval_backprop_deriv σ r grad_env' grad
@@ -1399,16 +1415,21 @@ Section DefinedFunctions.
                grad_env re grad
            | _ => None                                                    
            end
-(*         | Lossfun n v1 v2 s l r => fun grad =>
-           two_vector_env_iter 
-             (fun li ri env => 
-                let xv1 := (v1, DTfloat):var_type in
-                let xv2 := (v2, DTfloat):var_type in                         
-                df_eval_backprop_deriv 
-                  (cons (mk_env_entry xv2 ri) σ)
-                  (df_subst li xv1 s) env grad)
-             grad_env l r
- *)
+(*
+         | Lossfun n v1 v2 s l r => fun grad =>
+           match l return option df_env with
+           | DVector n ll =>  
+             two_vector_env_iter 
+               (fun li ri env => 
+                  let xv1 := (v1, DTfloat):var_type in
+                  let xv2 := (v2, DTfloat):var_type in                         
+                  df_eval_backprop_deriv 
+                    (cons (mk_env_entry xv2 ri) σ)
+                    (df_subst li xv1 s) env grad)
+               grad_env ll r
+           | _ => None 
+           end
+*)
          | _ => fun grad => None
           end.
 
