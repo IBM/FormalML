@@ -515,6 +515,8 @@ Section DefinedFunctions.
     Definition matrix_mult {m n p} (l : Matrix float n m)(r : Matrix float m p) : Matrix float n p :=
       fun i k => vsum (fun j => (l i j) * (r j k)).
 
+Locate lookup.
+
     Program
       Fixpoint vartlookup (l:df_env) (a:var_type) : 
       option (definition_function_types_interp (snd a))
@@ -523,6 +525,13 @@ Section DefinedFunctions.
          | fv::os => if a == (projT1 fv) then 
                        Some (eq_rect _ definition_function_types_interp (projT2 fv) _ _) 
                      else vartlookup os a
+         end.
+
+    Fixpoint vart_update_first (l:df_env) (a:var_type) (n:definition_function_types_interp (snd a)) : df_env
+      := match l with 
+         | nil => nil
+         | fv::os => if a == (projT1 fv) then 
+                       (mk_env_entry a n)::os else fv::(vart_update_first os a n)
          end.
 
     Fixpoint df_eval {T} (σ:df_env) (df:DefinedFunction T) : option (definition_function_types_interp T)
@@ -1243,8 +1252,6 @@ Section DefinedFunctions.
                          end
        end) (eq_refl _).
 
-Print two_vector_env_iter.
-
     Fixpoint df_eval_backprop_deriv {T} (σ:df_env) (df:DefinedFunction T) (grad_env:df_env) {struct df} : definition_function_types_interp T -> option df_env
       := match df with
          | Number _ => fun grad => Some grad_env
@@ -1254,7 +1261,8 @@ Print two_vector_env_iter.
 *)
 (*         | DMatrix n m dfs => fun grad => two_matrix_env_iter (fun x g genv => df_eval_backprop_deriv σ x genv g) (Some grad_env) dfs grad
  *)
-         | Var x => fun grad => Some ((mk_env_entry x (addvar x grad_env grad))::grad_env)
+
+         | Var x => fun grad => Some (vart_update_first grad_env x (addvar x grad_env grad))
          | Plus l r => fun grad => 
            match df_eval_backprop_deriv σ l grad_env grad with
            | Some grad_env' => df_eval_backprop_deriv σ r grad_env' grad
