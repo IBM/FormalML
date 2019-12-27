@@ -1217,10 +1217,10 @@ Section DefinedFunctions.
       matrix_env_iter (fun '(a,b) e => f a b e) env vw.
           
     Definition two_matrix_env_iter_alt {n m} {A B} (f: A -> B -> df_env -> option df_env)
-               (env: option df_env) (v: Matrix A n m) (w: Matrix B n m) : option df_env :=
+               (env: df_env) (v: Matrix A n m) (w: Matrix B n m) : option df_env :=
       list_env_iter (fun i env => list_env_iter (fun j env => f (v i j) (w i j) env)
                                                 (Some env) (bounded_seq0 m))
-                    env (bounded_seq0 n).
+                    (Some env) (bounded_seq0 n).
 
     Definition matrix_to_list_list {T} {m n} (v:Matrix T m n) : (list (list T))
       := vector_to_list (fun i => vector_to_list (v i)).
@@ -1286,7 +1286,7 @@ Section DefinedFunctions.
 
          | DMatrix n m dfs => fun grad => 
              two_matrix_env_iter_alt (fun x g genv => df_eval_backprop_deriv σ x genv g) 
-                                     (Some grad_env) dfs grad
+                                     grad_env dfs grad
          | Var x => fun grad => Some (vart_update_first grad_env x (addvar x grad_env grad))
          | Plus l r => fun grad => 
            match df_eval_backprop_deriv σ l grad_env grad with
