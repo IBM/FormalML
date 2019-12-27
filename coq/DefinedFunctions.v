@@ -311,45 +311,39 @@ Section DefinedFunctions.
     Definition vseq start len : Vector nat len
       := eq_rect _ _ (list_to_vector (seq start len)) _ (seq_length _ _).
 
-    Definition vector_zip_bounded {A B} {m:nat} (v1:Vector A m) (v2:Vector B m) (n:nat) (pf:(n<=m)%nat)
-    : Vector (A*B) n.
-    Proof.
-      induction n.
-      - exact vnil.
-      - apply vcons.
-        + assert (pf2:(n < m)%nat) by omega.
-          constructor.
-          * exact (v1 (exist _ n pf2)).
-          * exact (v2 (exist _ n pf2)).
-        + apply IHn.
-          omega.
-    Defined.
-
     Definition vector_zip {A B} {m:nat} (v1:Vector A m) (v2:Vector B m) : Vector (A*B) m
-      := vector_zip_bounded v1 v2 _ (le_refl _).
+      := fun i => (v1 i, v2 i).
 
     Definition matrix_zip {A B} {m n:nat} (mat1:Matrix A m n) (mat2:Matrix B m n) : Matrix (A*B) m n
       := let mat12:Vector (Vector A n*Vector B n) m := vector_zip mat1 mat2 in
          vmap (fun '(a,b) => vector_zip a b) mat12.
                                  
-    (*
-    Definition vector_split_bounded {A B} {m:nat} (v1:Vector (A*B) m) (v2:Vector B m) (n:nat) (pf:(n<=m)%nat)
-    : Vector A n * Vector B n.
-    Proof.
-      induction n.
-      - exact (vnil, vnil).
-      - constructor.
-        + apply vcons.
-          assert (pf2:(n < m)%nat) by omega.
-          exact (fst (v (exist _ n pf2))).
-          * exact (v2 (exist _ n pf2)).
-        + apply IHn.
-          omega.
+    Definition vector_split {A B} {m:nat} (v:Vector (A*B) m) : Vector A m * Vector B m
+      := (fun i => fst (v i), fun i => snd (v i)).
+
+    Program Definition vtake {A} {m:nat} (v:Vector (A) m) (n:nat) (pf:(n<=m)%nat) : Vector A n
+      := fun i => v i.
+    Next Obligation.
+      omega.
     Defined.
 
-    Definition vector_zip {A B} {m:nat} (v1:Vector A m) (v2:Vector B m) : Vector (A*B) m
-      := vector_zip_bounded v1 v2 _ (le_refl _).
-     *)
+    Require Import FunctionalExtensionality.
+
+    Lemma vector_split_zip {A B} {m:nat} (v:Vector (A*B) m) :
+      let '(va,vb):=vector_split v in vector_zip va vb = v.
+    Proof.
+      simpl.
+      apply functional_extensionality; intros i.
+      vm_compute.
+      now destruct (v i).
+    Qed.
+
+    Lemma split_vector_zip {A B} {m:nat} (va:Vector A m) (vb:Vector B m) :
+      vector_split (vector_zip va vb) = (va,vb).
+    Proof.
+      vm_compute.
+      f_equal.
+    Qed.
     
   Section subst.
 
