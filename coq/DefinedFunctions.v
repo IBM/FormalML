@@ -1231,7 +1231,7 @@ Section DefinedFunctions.
     Definition msum {m n:nat} (v:Matrix float m n) : float :=
       vsum (vmap vsum v).
 
-
+(*
     Lemma lemma1 {x} : x = DTfloat -> definition_function_types_interp x = float.
     Proof.
       intros.
@@ -1262,19 +1262,36 @@ Section DefinedFunctions.
 
     Definition addvar (x : var_type) (grad_env:df_env) :=
       (match snd x as y return snd x = y -> definition_function_types_interp y -> definition_function_types_interp y with
-       | DTfloat =>  fun pf => match vartlookup grad_env x with
-                     | Some val => fun grad => (coerce (lemma1 pf) val) + grad
-                     | _ => fun grad => grad
+       | DTfloat =>  fun pf grad => match vartlookup grad_env x with
+                     | Some val => (coerce (lemma1 pf) val) + grad
+                     | _ => grad
                      end
-       | DTVector n => fun pf => match vartlookup grad_env x with
-                       | Some val => fun grad => fun i => ((coerce (lemma2 pf) val) i) + (grad i)
-                       | _ => fun grad => grad
+       | DTVector n => fun pf grad => match vartlookup grad_env x with
+                       | Some val => fun i => ((coerce (lemma2 pf) val) i) + (grad i)
+                       | _ => grad
                        end
-       | DTMatrix m n => fun pf => match vartlookup grad_env x with
-                         | Some val => fun grad => fun i j => ((coerce (lemma3 pf) val) i j) + (grad i j)
-                         | _ => fun grad => grad
+       | DTMatrix m n => fun pf grad => match vartlookup grad_env x with
+                         | Some val => fun i j => ((coerce (lemma3 pf) val) i j) + (grad i j)
+                         | _ => grad
                          end
        end) (eq_refl _).
+*)
+    Program Definition addvar (x : var_type) (grad_env:df_env) :=
+      (match snd x as y return definition_function_types_interp y -> 
+                               definition_function_types_interp y with
+       | DTfloat =>  fun grad => match vartlookup grad_env x with
+                     | Some val => ((_ val):float) + grad
+                     | _ => grad
+                     end
+       | DTVector n => fun grad => match vartlookup grad_env x with
+                       | Some val => fun i => (((_ val):Vector float n) i) + (grad i)
+                       | _ =>  grad
+                       end
+       | DTMatrix m n => fun grad => match vartlookup grad_env x with
+                         | Some val => fun i j => (((_ val):Matrix float m n) i j) + (grad i j)
+                         | _ => grad
+                         end
+       end).
 
     Fixpoint df_eval_backprop_deriv {T} (σ:df_env) (df:DefinedFunction T) (grad_env:df_env) {struct df} : definition_function_types_interp T -> option df_env
       := match df with
@@ -1283,7 +1300,6 @@ Section DefinedFunctions.
          | DVector n dfs => fun grad => 
              two_vector_env_iter_alt (fun x g genv => df_eval_backprop_deriv σ x genv g) 
                                      grad_env dfs grad 
-
          | DMatrix n m dfs => fun grad => 
              two_matrix_env_iter_alt (fun x g genv => df_eval_backprop_deriv σ x genv g) 
                                      grad_env dfs grad
@@ -1346,16 +1362,15 @@ Section DefinedFunctions.
                (df_eval_backprop_deriv σ l grad_env grad)
            | _, _ => None
            end
-         | VectorElem n l i => fun grad => None
-           (* match (df_eval_deriv σ l v)  with
-           | Some l' => Some (l' i) 
-           | _ => None
-           end *)
-         | MatrixElem m n l i j => fun grad => None
-           (* match (df_eval_deriv σ l v)  with
-           | Some l' => Some (l' i j)
-           | _ => None
-           end *)
+         | VectorElem n l i => fun grad => 
+           let grad' := fun k => if proj1_sig k == proj1_sig i then grad else 0 in
+           df_eval_backprop_deriv σ l grad_env grad'
+         | MatrixElem m n l i j => fun grad => 
+           let grad' := fun k1 k2 => 
+                          if (proj1_sig k1 == proj1_sig i) then
+                            if (proj1_sig k2 == proj1_sig j) then grad else 0
+                            else 0 in
+           df_eval_backprop_deriv σ l grad_env grad'
          | VectorDot n l r => fun grad =>
            match df_eval σ l, df_eval σ r with
            | Some le, Some re =>
