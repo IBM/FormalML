@@ -525,11 +525,11 @@ Section DefinedFunctions.
                      else vartlookup os a
          end.
 
-    Fixpoint vart_update_first (l:df_env) (a:var_type) (n:definition_function_types_interp (snd a)) : df_env
+    Fixpoint vart_update (l:df_env) (a:var_type) (n:definition_function_types_interp (snd a)) : df_env
       := match l with 
-         | nil => nil
+         | nil =>  (mk_env_entry a n)::nil
          | fv::os => if a == (projT1 fv) then 
-                       (mk_env_entry a n)::os else fv::(vart_update_first os a n)
+                       (mk_env_entry a n)::os else fv::(vart_update os a n)
          end.
 
     Fixpoint df_eval {T} (σ:df_env) (df:DefinedFunction T) : option (definition_function_types_interp T)
@@ -1303,7 +1303,8 @@ Section DefinedFunctions.
          | DMatrix n m dfs => fun grad => 
              two_matrix_env_iter_alt (fun x g genv => df_eval_backprop_deriv σ x genv g) 
                                      grad_env dfs grad
-         | Var x => fun grad => Some (vart_update_first grad_env x (addvar x grad_env grad))
+         | Var x => fun grad => Some (vart_update grad_env x (addvar x grad_env grad))
+             (* Some ((mk_env_entry x (addvar x grad_env grad))::grad_env) *)
          | Plus l r => fun grad => 
            match df_eval_backprop_deriv σ l grad_env grad with
            | Some grad_env' => df_eval_backprop_deriv σ r grad_env' grad
