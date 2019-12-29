@@ -1280,11 +1280,11 @@ Section DefinedFunctions.
       (match snd x as y return definition_function_types_interp y -> 
                                definition_function_types_interp y with
        | DTfloat =>  fun grad => match vartlookup grad_env x with
-                     | Some val => ((_ val):float) + grad
+                     | Some val => grad + ((_ val):float) + grad
                      | _ => grad
                      end
        | DTVector n => fun grad => match vartlookup grad_env x with
-                       | Some val => fun i => (((_ val):Vector float n) i) + (grad i)
+                       | Some val => fun i => (grad i) + (((_ val):Vector float n) i)
                        | _ =>  grad
                        end
        | DTMatrix m n => fun grad => match vartlookup grad_env x with

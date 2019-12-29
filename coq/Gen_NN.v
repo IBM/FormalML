@@ -8,11 +8,12 @@ Require Import Rbase Rtrigo Rpower Rbasic_fun.
 Require Import DefinedFunctions.
 Require Import Lra Omega.
 
-Require Import FloatishDef Utils.
+Require Import Floatish Utils.
 
 Section GenNN.
 
   Context {floatish_impl:floatish}.
+  
   Local Open Scope float.
 
   Record FullNN : Type := mkNN { ldims : list nat; param_var : SubVar; 
@@ -123,20 +124,6 @@ Section GenNN.
   Definition L1loss (nnvar ovar : SubVar) : DefinedFunction DTfloat :=
     Abs (Minus (Var (nnvar, DTfloat)) (Var (ovar, DTfloat))).
 
-    Fixpoint bounded_seq (start len : nat) {struct len} : list {n':nat | n' < start+len}%nat.
-    Proof.
-      revert start.
-      induction len; intros start.
-      - exact nil.
-      - apply cons.
-        + exists start.
-          omega.
-        + rewrite Nat.add_succ_r.
-          exact (IHlen (S start)).
-    Defined.
-
-    Definition bounded_seq0 len : list {n':nat | n' < len}%nat := bounded_seq 0 len.
-
   Record testcases : Type := mkTest {ninput: nat; noutput: nat; ntest: nat; 
                                      datavec : Vector ((Vector float ninput) * (Vector float noutput)) ntest}.
 
@@ -179,6 +166,8 @@ Section GenNN.
     now rewrite H.
   Qed.
    *)
+
+(*  Local Existing Instance floatish_interval. *)
   
   Definition lookup_list (σ:df_env) (lvar : list SubVar) : option (list float) :=
     listo_to_olist (map (fun v => (vartlookup σ (v, DTfloat)):option float) lvar).
@@ -195,6 +184,16 @@ Section GenNN.
     | S n' => let rst := streamtake n' (Streams.tl st) in
               ((Streams.hd st)::(fst rst), snd rst)
     end.
+
+  Lemma streamtake_n (n : nat) (A : Type) (st : Stream A) :
+    length (fst (streamtake n st)) = n.
+  Proof.
+    induction n.
+    reflexivity.
+    simpl.
+    f_equal.
+    Admitted.
+
 
   Fixpoint env_update_first (l:df_env) (an:env_entry_type) : df_env
     := match l with 
@@ -225,6 +224,87 @@ Section GenNN.
      | (_, _) => None
      end, nst).
 
+  Fixpoint get_noise_vector (n: nat) (noise_st: Stream float) : 
+    (Vector float n) * (Stream float) :=
+    match n with
+    | 0 => (vnil, noise_st)
+    | S n' => 
+      let noise := Streams.hd noise_st in
+      let nst := Streams.tl noise_st in
+      let '(vec, nst') := get_noise_vector n' nst in
+      (vcons noise vec, nst')
+    end.
+
+  Fixpoint get_noise_matrix (n m: nat) (noise_st: Stream float) :
+    (Matrix float n m) * (Stream float) :=
+    let '(vec, nst) := get_noise_vector m noise_st in
+    match n with
+    | 0 => (fun i => vec, nst)
+    | S n' => 
+      let '(mat, nst') := get_noise_matrix n' m nst in
+      (vcons vec mat, nst')
+    end.
+
+  Definition get_noise (t:definition_function_types) (noise_st:Stream float) : 
+    (definition_function_types_interp t) * (Stream float) :=
+    match t with
+    | DTfloat => (Streams.hd noise_st, Streams.tl noise_st)
+    | DTVector n => get_noise_vector n noise_st
+    | DTMatrix m n => get_noise_matrix m n noise_st
+    end.
+
+    Program Definition update_val_gradenv (grad_env:df_env) (x:var_type) (alpha:float) :=
+      (match snd x as y return definition_function_types_interp y ->
+                               definition_function_types_interp y ->
+                               definition_function_types_interp y with
+       | DTfloat =>  fun val noise => 
+                       match vartlookup grad_env x with
+                       | Some grad => val - alpha * ((_ grad) + noise)
+                       | _ => val
+                       end
+       | DTVector n => fun val noise =>
+                         match vartlookup grad_env x with
+                         | Some grad => 
+                           fun i => 
+                             (val i) - alpha * (((_ grad) i) + (noise i))
+                         | _ => val
+                         end
+       | DTMatrix m n => fun val noise =>
+                           match vartlookup grad_env x with
+                           | Some grad =>
+                             fun i j =>
+                               (val i j) - alpha * (((_ grad) i j) + (noise i j))
+                         | _ => val
+                         end
+       end).
+
+  Definition update_entry (entry: env_entry_type) (grad_env:df_env) (alpha:float) (noise_st : Stream float) : (env_entry_type*Stream float) :=
+    let x := projT1 entry in
+    let val := projT2 entry in
+    let '(noise, nst) := get_noise (snd x) noise_st in
+    (mk_env_entry x (update_val_gradenv grad_env x alpha val noise), nst).
+
+  Fixpoint list_arg_iter {A B} (f: A -> B -> A * B)
+             (l:list A) (b: B) : (list A)*B :=
+      match l with
+      | nil => (l, b)
+      | a :: l' => 
+        let '(na, b') := f a b in
+        let '(nl, nb) := list_arg_iter f l' b' in
+        (na::nl, nb)
+      end.         
+
+  Definition optimize_step_backprop
+             (step : nat) (df : DefinedFunction DTfloat) (σ:df_env)
+             (noise_st : Stream float) : (option df_env)*(Stream float) :=
+    match df_eval_backprop_deriv σ df nil 1 with
+    | Some gradenv => 
+      let alpha := 1 / (FfromZ (Z.of_nat (S step))) in
+      let '(env, nst) := list_arg_iter (fun a b => update_entry a gradenv alpha b) σ noise_st in
+      (Some env, nst)
+    | _ => (None, noise_st)
+    end.
+
   Fixpoint optimize_steps 
            (start count:nat) (df : DefinedFunction DTfloat) (σ:df_env) (lvar : list SubVar)
            (noise_st : Stream float) : (option df_env)*(Stream float) :=
@@ -237,11 +317,26 @@ Section GenNN.
       end
     end.
 
+  Fixpoint optimize_steps_backprop
+           (start count:nat) (df : DefinedFunction DTfloat) (σ:df_env) 
+           (noise_st : Stream float) : (option df_env)*(Stream float) :=
+    match count with
+    | 0 => (Some σ, noise_st)
+    | S n =>
+      match optimize_step_backprop start df σ noise_st with
+      | (Some σ', noise_st') => optimize_steps_backprop (S start) n df σ' noise_st'
+      | (None, noise_st') => (None, noise_st')
+      end
+    end.
+
 Example xvar:var_type := (Name "x", DTfloat).
 Example xfun:DefinedFunction DTfloat := Var xvar.
 Example quad:DefinedFunction DTfloat := Minus (Times xfun xfun) (Number 1).
-CoFixpoint noise : Stream float := Cons 0 noise.
+Example squad:DefinedFunction DTfloat := Minus (Square xfun) (Number 1).
 Example env : df_env := (mk_env_entry xvar (FfromZ 5))::nil.
+Example gradenv := df_eval_backprop_deriv env quad nil 1.
+(* Compute gradenv. *)
+CoFixpoint noise : Stream float := Cons 0 noise.
 Example opt := fst (optimize_steps 0 2 quad env ((fst xvar) :: nil) noise).
 End GenNN.
 
