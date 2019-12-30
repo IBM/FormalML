@@ -58,6 +58,13 @@ Section GenNN.
     let N1 := VectorApply f_activ_var f_activ (MatrixVectorMult  mat1 ivec) in 
     VectorApply f_activ_var f_activ (MatrixVectorMult mat2 N1).
 
+  Definition mkVarNN2 (n1 n2 n3 : nat) (ivar wvar : SubVar) (f_activ : DefinedFunction DTfloat) (f_activ_var : SubVar) : (DefinedFunction (DTVector n3)) :=
+    let mat1 := mkVarMatrix (Sub wvar 1) n2 n1 in
+    let mat2 := mkVarMatrix (Sub wvar 2) n3 n2 in
+    let ivec := mkVarVector ivar n1 in
+    let N1 := VectorApply f_activ_var f_activ (MatrixVectorMult  mat1 ivec) in 
+    VectorApply f_activ_var f_activ (MatrixVectorMult mat2 N1).
+
   Definition mkNN_bias_step (n1 n2 : nat) (ivec : DefinedFunction (DTVector n1)) 
              (mat : DefinedFunction (DTMatrix n2 n1)) 
              (bias : DefinedFunction (DTVector n2)) 
@@ -71,6 +78,15 @@ Section GenNN.
     let b1 := mkSubVarVector (Sub wvar 1) n2 in
     let mat2 := mkSubVarMatrix (Sub wvar 2) n3 n2 in
     let b2 := mkSubVarVector (Sub wvar 2) n3 in
+    let ivec := mkVarVector ivar n1 in
+    let N1 := mkNN_bias_step n1 n2 ivec mat1 b1 f_activ_var f_activ in
+    mkNN_bias_step n2 n3 N1 mat2 b2 f_activ_var f_activ.
+
+ Definition mkNN2_Var_bias (n1 n2 n3 : nat) (ivar wvar : SubVar) (f_activ : DefinedFunction DTfloat) (f_activ_var : SubVar) : DefinedFunction (DTVector n3) :=
+    let mat1 := mkVarMatrix (Sub wvar 1) n2 n1 in
+    let b1 := mkVarVector (Sub wvar 1) n2 in
+    let mat2 := mkVarMatrix (Sub wvar 2) n3 n2 in
+    let b2 := mkVarVector (Sub wvar 2) n3 in
     let ivec := mkVarVector ivar n1 in
     let N1 := mkNN_bias_step n1 n2 ivec mat1 b1 f_activ_var f_activ in
     mkNN_bias_step n2 n3 N1 mat2 b2 f_activ_var f_activ.
@@ -98,6 +114,21 @@ Section GenNN.
       eq_rect _ DefinedFunction (mkNN_gen_0 n2 nvlist1 N f_activ_var f_activ) _ vector_float_map_last_rewrite
     end.
 
+  Fixpoint mkNN_Var_gen_0 (n1:nat) (nvlist : list (nat * SubVar)) 
+           (ivec : (DefinedFunction (DTVector n1)))
+           (f_activ_var : SubVar ) (f_activ : DefinedFunction DTfloat) :
+    DefinedFunction (DTVector (last (domain nvlist) n1))
+:= 
+    match nvlist with
+    | nil => ivec
+    | cons (n2,v) nvlist1 => 
+      let mat := mkVarMatrix v n2 n1 in
+      let b := mkVarVector v n2 in
+      let N := mkNN_bias_step n1 n2 ivec mat b f_activ_var f_activ in
+      eq_rect _ DefinedFunction (mkNN_Var_gen_0 n2 nvlist1 N f_activ_var f_activ) _ vector_float_map_last_rewrite
+    end.
+
+
   Program Definition mkNN_gen (n1:nat) (nlist : list nat) (ivar wvar f_activ_var : SubVar) 
              (f_activ : DefinedFunction DTfloat) : 
     DefinedFunction (DTVector (last nlist n1)) :=
@@ -105,6 +136,20 @@ Section GenNN.
     let ivec := mkVarVector ivar n1 in
     eq_rect _ DefinedFunction
             (mkNN_gen_0 n1 (combine nlist vlist) ivec f_activ_var f_activ) _ _.
+  Next Obligation.
+    f_equal.
+    f_equal.
+    rewrite combine_domain_eq; trivial.
+    now rewrite map_length, seq_length.
+  Qed.
+
+  Program Definition mkNN_Var_gen (n1:nat) (nlist : list nat) (ivar wvar f_activ_var : SubVar) 
+             (f_activ : DefinedFunction DTfloat) : 
+    DefinedFunction (DTVector (last nlist n1)) :=
+    let vlist := map (fun i => Sub wvar i) (seq 1 (length nlist)) in
+    let ivec := mkVarVector ivar n1 in
+    eq_rect _ DefinedFunction
+            (mkNN_Var_gen_0 n1 (combine nlist vlist) ivec f_activ_var f_activ) _ _.
   Next Obligation.
     f_equal.
     f_equal.
@@ -188,12 +233,15 @@ Section GenNN.
   Lemma streamtake_n (n : nat) (A : Type) (st : Stream A) :
     length (fst (streamtake n st)) = n.
   Proof.
+    generalize st.
     induction n.
     reflexivity.
+    intros.
     simpl.
     f_equal.
-    Admitted.
-
+    specialize IHn with (st := Streams.tl st0).
+    apply IHn.
+  Qed.
 
   Fixpoint env_update_first (l:df_env) (an:env_entry_type) : df_env
     := match l with 
