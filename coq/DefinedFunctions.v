@@ -1436,6 +1436,183 @@ Section DefinedFunctions.
            end
           end).
 
+    Fixpoint df_eval_tree_deriv {T} (σ:df_env) (df:@DefinedFunction EvalAnn T) (v:var_type) : option (definition_function_types_interp T)
+      := (match df with
+         | Number _ _ => Some 0
+         | Constant t _ x => Some
+            match t return definition_function_types_interp t with
+            | DTfloat => 0
+            | DTVector n => ConstVector n 0
+            | DTMatrix m n => ConstMatrix m n 0
+            end
+         | DVector n _ dfs => vectoro_to_ovector (fun i => df_eval_tree_deriv σ (dfs i) v)
+         | DMatrix n m _ df => matrixo_to_omatrix (fun i j => df_eval_tree_deriv σ (df i j) v)
+         | Var x _ => Some (let t:=snd x in 
+               match t return definition_function_types_interp t with
+               | DTfloat => if x == v then 1 else 0
+               | DTVector n => ConstVector n (if x == v then 1 else 0)
+               | DTMatrix m n => ConstMatrix m n (if x == v then 1 else 0)
+               end)
+         | Plus _ l r => 
+           match df_eval_tree_deriv σ l v, df_eval_tree_deriv σ r v with
+           | Some le, Some lr => Some (le + lr)
+           | _, _ => None
+           end
+         | Minus _ l r =>
+           match df_eval_tree_deriv σ l v, df_eval_tree_deriv σ r v with
+           | Some le, Some lr => Some (le - lr)
+           | _, _ => None
+           end
+         | Times _ l r =>
+           let '(le,re) := (get_annotation l, get_annotation r) in 
+           match df_eval_tree_deriv σ l v, df_eval_tree_deriv σ r v with
+           | Some ld, Some rd =>
+             Some (le * rd + 
+                   (ld * re))
+           | _, _ => None
+           end
+         | Divide _ l r =>
+           let '(le,re) := (get_annotation l, get_annotation r) in            
+           match df_eval_tree_deriv σ l v, df_eval_tree_deriv σ r v with
+           | Some ld, Some rd =>
+             Some (((ld * re) - (le * rd)) / (re * re))
+           | _, _ => None
+           end
+         | Square _ e =>
+           let ee := get_annotation e in
+           match df_eval_tree_deriv σ e v with
+           | Some ed => Some (2 * ee * ed)
+           | _  => None
+           end
+         | Exp _ e =>
+           let ee := get_annotation e in           
+           match df_eval_tree_deriv σ e v with
+           | Some ed => Some (ed * Fexp ee)
+           | _  => None
+           end
+         | Log _ e =>
+           let ee := get_annotation e in                      
+           match df_eval_tree_deriv σ e v with
+           | Some ed => Some (ed / ee)
+           | _ => None
+           end
+         | Abs _ e =>
+           let ee := get_annotation e in                                 
+           match df_eval_tree_deriv σ e v with
+           | Some ed => Some (ed * (sign ee))
+           | _ => None
+           end
+         | Sign _ e => Some 0
+         | PSign _ e => Some 0
+         | Max _ l r =>
+           let '(le,re) := (get_annotation l, get_annotation r) in                       
+           match df_eval_tree_deriv σ l v, df_eval_tree_deriv σ r v with
+           | Some ld, Some rd =>
+             if le <= re then Some rd else Some ld
+           | _, _ => None
+           end
+         | VectorElem n _ l i => 
+           match (df_eval_tree_deriv σ l v)  with
+           | Some l' => Some (l' i)
+           | _ => None
+           end
+         | MatrixElem m n _ l i j =>
+           match (df_eval_tree_deriv σ l v)  with
+           | Some l' => Some (l' i j)
+           | _ => None
+           end
+         | VectorDot n _ l r =>
+           let '(le,re) := (get_annotation l, get_annotation r) in
+           match df_eval_tree_deriv σ l v, df_eval_tree_deriv σ r v with
+           | Some ld, Some rd => 
+               Some (vsum (fun j => (le j) * (rd j) + (ld j) * (re j)))
+           | _, _ => None
+           end
+         | VectorSum n _ l =>
+           match df_eval_tree_deriv σ l v with
+           | Some ld =>
+               Some (vsum (fun j => ld j))
+           | _ => None
+           end
+         | VectorScalMult n _ x r =>
+           let '(xe,re) := (get_annotation x, get_annotation r) in
+           match df_eval_tree_deriv σ x v, df_eval_tree_deriv σ r v with
+           | Some xd, Some rd => Some (fun j => xe * (rd j) + xd * (re j))
+           | _, _ => None
+           end
+         | MatrixScalMult n m _ x r =>
+           let '(xe,re) := (get_annotation x, get_annotation r) in           
+           match df_eval_tree_deriv σ x v, df_eval_tree_deriv σ r v with
+           | Some xd, Some rd => Some (fun i j => xe * (rd i j) + xd * (re i j))
+           | _, _ => None
+           end
+         | MatrixVectorMult n m _ l r =>
+           let '(le,re) := (get_annotation l, get_annotation r) in           
+           match df_eval_tree_deriv σ l v, df_eval_tree_deriv σ r v with
+           | Some ld, Some rd =>
+             Some (fun i => vsum (fun j => (le i j)*(rd j) + (ld i j)*(re j)))
+           | _, _ => None
+           end
+         | MatrixMult n m p _ l r =>
+           let '(le,re) := (get_annotation l, get_annotation r) in                      
+           match df_eval_tree_deriv σ l v, df_eval_tree_deriv σ r v with
+           | Some ld, Some rd =>
+             Some (fun i k => vsum (fun j => (le i j)*(rd j k) + (ld i j)*(re j k)))
+           | _, _ => None
+           end
+         | VectorPlus n _ l r =>
+           match df_eval_tree_deriv σ l v, df_eval_tree_deriv σ r v with           
+           | Some l', Some r' => Some (fun i => (l' i) + (r' i))
+           | _, _ => None
+           end
+         | VectorMinus n _ l r =>
+           match df_eval_tree_deriv σ l v, df_eval_tree_deriv σ r v with           
+           | Some l', Some r' => Some (fun i => (l' i) - (r' i))
+           | _, _ => None
+           end
+         | MatrixPlus n m _ l r =>
+           match df_eval_tree_deriv σ l v, df_eval_tree_deriv σ r v with           
+           | Some l', Some r' => Some (fun i j => (l' i j) + (r' i j))
+           | _, _ => None
+           end
+         | MatrixMinus n m _ l r =>
+           match df_eval_tree_deriv σ l v, df_eval_tree_deriv σ r v with           
+           | Some l', Some r' => Some (fun i j => (l' i j) - (r' i j))
+           | _, _ => None
+           end
+         | VectorApply n _ x s r =>
+           let re := get_annotation r in 
+           match df_eval_tree_deriv σ r v with                      
+           | Some rd => 
+             vectoro_to_ovector 
+               (fun i => 
+                  let xv := (x, DTfloat):var_type in
+                  match df_eval_deriv (cons (mk_env_entry xv (re i)) (* σ *) nil) s v with
+                         | Some sd => Some ((rd i) * sd)
+                         | _ => None
+                         end)
+           | _ => None                                                    
+           end
+         | Lossfun n _ v1 v2 s l r => 
+           let le := get_annotation l in 
+           match df_eval_tree_deriv σ l v with                      
+           | Some ld => 
+             match (vectoro_to_ovector 
+                      (fun i => 
+                         let xv1 := (v1, DTfloat):var_type in
+                         let xv2 := (v2, DTfloat):var_type in                         
+                         match df_eval_deriv (cons (mk_env_entry xv1 (le i)) 
+                                                   (cons (mk_env_entry xv2 (r i)) (* σ *) nil)) s v with
+                         | Some sd => Some ((ld i) * sd)
+                         | _ => None
+                         end)) with
+             | Some vv => Some (vsum vv)
+             | _ => None
+             end
+           | _ => None
+           end
+          end).
+    
     Definition vector_env_iter {n} {A} (f: A -> df_env -> option df_env)
              (env: df_env) (v : Vector A n) : option df_env :=
       vector_fold_right (fun a oenv => match oenv with
