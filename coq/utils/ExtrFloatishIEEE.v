@@ -26,7 +26,7 @@ Extract Inlined Constant IEEE_cos   => "Float.cos".
 Extract Inlined Constant IEEE_fromZ => "Float.of_int".
 
 Extract Inlined Constant IEEE_eq    => "Float.equal".
-Extract Inlined Constant IEEE_neq   => "(fun x y -> x = y)".
+Extract Inlined Constant IEEE_neq   => "(fun x y -> x <> y)".
 Extract Inlined Constant IEEE_lt    => "(fun x y -> x < y)".
 Extract Inlined Constant IEEE_le    => "(fun x y -> x <= y)".
 Extract Inlined Constant IEEE_gt    => "(fun x y -> x > y)".
