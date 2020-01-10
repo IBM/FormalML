@@ -24,6 +24,7 @@ QCERT_LIB_UTILS = LibUtilsAssoc LibUtilsBag LibUtilsBindings LibUtilsBindingsNat
 MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	utils/Assoc \
 	utils/CoquelicotAdd \
+	utils/ExtrFloatishIEEE \
 	utils/improper_integrals \
 	utils/Isomorphism \
 	utils/ListAdd \
