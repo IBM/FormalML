@@ -4,7 +4,7 @@ FROM ${coq_image}
 RUN ["/bin/bash", "--login", "-c", "set -x \
   && if [ -n \"${COMPILER_EDGE}\" ]; then opam switch ${COMPILER_EDGE} && eval $(opam env); fi \
   && opam update -y \
-  && opam install -y -j ${NJOBS} coq-mathcomp-ssreflect coq-coquelicot \ 
+  && opam install -y -j ${NJOBS} coq-mathcomp-ssreflect coq-coquelicot coq-flocq coq-interval ocamlbuild base64 menhir csv \ 
   && opam config list && opam repo list && opam list \
   && opam clean -a -c -s --logs"]
 
@@ -15,3 +15,6 @@ COPY --chown=coq:coq coq coq
 
 RUN ["/bin/bash", "--login", "-c", "set -x \
       && make coq"]
+
+RUN ["/bin/bash", "--login", "-c", "set -x \
+      && make"]
