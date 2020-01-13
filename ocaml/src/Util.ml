@@ -8,3 +8,7 @@ let char_list_of_string s =
   let l = ref [] in
   String.iter (fun c -> l := c :: !l) s;
   List.rev !l
+
+let read_int_matrix_from_csv name =
+  let sdata = Csv.load name in
+  List.map (List.map int_of_string) sdata
