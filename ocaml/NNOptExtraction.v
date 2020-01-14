@@ -29,8 +29,8 @@ Module API.
   Example test_env := test.
 
   Example discard_first {A} (l:list (list A)) : list (list A) := List.map (@List.tl A) l.
-  
+
   End API.
 
-Extraction "NnoptExtracted" API.
+Extraction "extracted/NnoptExtracted" API.
 
