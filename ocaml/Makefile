@@ -50,7 +50,7 @@ extracted/StaticConfig.ml extracted/NnoptExtracted.ml extracted/NnoptExtracted.m
 	mkdir -p extracted
 	echo "(* This file is generated *)" > extracted/StaticConfig.ml
 	echo "let nnopt_home = \"$(NNOPT_HOME)\"" >> extracted/StaticConfig.ml
-	(cd extracted; coqc -R ../../coq nn_s_opt ../NnoptExtraction.v)
+	(coqc -R ../coq nn_s_opt NnoptExtraction.v)
 
 ## Native
 ../bin/$(MAIN): extracted $(MAIN).$(TARGET) ../bin
