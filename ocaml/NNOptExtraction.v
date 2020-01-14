@@ -27,7 +27,10 @@ Example test :=
 Module API.
   Example opt := @Gen_NN.opt floatish_IEEE.
   Example test_env := test.
-End API.
+
+  Example discard_first {A} (l:list (list A)) : list (list A) := List.map (@List.tl A) l.
+  
+  End API.
 
 Extraction "NnoptExtracted" API.
 
