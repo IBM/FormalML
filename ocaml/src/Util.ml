@@ -12,3 +12,16 @@ let char_list_of_string s =
 let read_int_matrix_from_csv name =
   let sdata = Csv.load name in
   List.map (List.map int_of_string) sdata
+
+let rec memoized_vector f = 
+  let cache = Hashtbl.create 10 in
+  begin fun n ->
+    try Hashtbl.find cache n
+    with Not_found -> begin
+        let x = f n in
+        Hashtbl.add cache n x; x
+    end
+  end
+
+let random_float_vector () = memoized_vector (fun _ -> Random.float 1.0)
+let random_float_matrix () = memoized_vector (fun _ -> random_float_vector ())
