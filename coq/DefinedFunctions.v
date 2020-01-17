@@ -274,8 +274,7 @@ Section DefinedFunctions.
           assert (pf3:(S n < m)%nat) by omega.
           apply f.
           * exact (v (exist _ (S n) pf3)).
-          * apply IHn.
-            apply pf2.
+          * exact (IHn pf2).
     Defined.
 
     Definition vector_fold_right_bounded_dep {A:nat->Type} {B} (f:forall n,B->A n->A (S n)) (init:A 0%nat) {m:nat} (v:Vector B m) (n:nat) (pf:(n<=m)%nat)

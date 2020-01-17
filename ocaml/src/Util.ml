@@ -25,3 +25,4 @@ let rec memoized_vector f =
 
 let random_float_vector () = memoized_vector (fun _ -> Random.float 1.0)
 let random_float_matrix () = memoized_vector (fun _ -> random_float_vector ())
+

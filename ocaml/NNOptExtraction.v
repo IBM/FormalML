@@ -16,6 +16,7 @@ Require Import DefinedFunctions.
 Require Import FloatishDef.
 Require Import BinInt.
 Require Import String.
+Require Import Streams.
 Local Open Scope list.
 
 Existing Instance floatish_IEEE.
@@ -29,7 +30,14 @@ Module API.
   Example test_env := test.
 
   Example discard_first {A} (l:list (list A)) : list (list A) := List.map (@List.tl A) l.
-
+  Definition normalizeIntData := Gen_NN.normalizeIntData.
+  Definition init_env2 := Gen_NN.init_env2.
+  CoFixpoint mkIndexedStream {A} (i : nat) (ran : nat -> A) : Stream A :=
+    Cons (ran i) (mkIndexedStream (S i) ran).
+  Definition streamlist {A} (n:nat) (st : Stream A) : list A :=
+    fst (Gen_NN.streamtake n st).
+  Definition streamhd {A} (st : Stream A) : A := hd st.
+  Definition streamtl {A} (st : Stream A) : Stream A := tl st.
   End API.
 
 Extraction "extracted/NnoptExtracted" API.
