@@ -11,7 +11,7 @@ let rec subVar_to_list sv =
 
 let pretty_const_string s ff _ = pp_print_string ff s
 
-let pretty_blist pp ?(bstart="[") ?(bend="]") ?(bsep=",") ff l =
+let pretty_blist ?(bstart="[") ?(bend="]") ?(bsep=",") pp ff l =
   pp_print_string ff bstart ;
   (pp_print_list ~pp_sep:(pretty_const_string bsep)) pp ff l ;
   pp_print_string ff bend
