@@ -14,4 +14,4 @@ val pretty_df_env : Format.formatter -> df_env -> unit
 
 val pretty_visible_option : (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a option -> unit
 
-val pretty_blist : (Format.formatter -> 'a -> unit) -> ?bstart:string -> ?bend:string -> ?bsep:string -> Format.formatter -> 'a list -> unit
+val pretty_blist : ?bstart:string -> ?bend:string -> ?bsep:string -> (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a list -> unit
