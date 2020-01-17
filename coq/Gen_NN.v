@@ -170,10 +170,16 @@ Section GenNN.
   Definition L1loss (nnvar ovar : SubVar) : UnitDefinedFunction DTfloat :=
     Abs tt (Minus tt (Var (nnvar, DTfloat) tt) (Var (ovar, DTfloat) tt)).
 
+  Definition CrossEntropy (nnvar ovar : SubVar) : UnitDefinedFunction DTfloat :=
+    let nnvar' := Var (nnvar, DTfloat) tt in
+    let ovar' := Var (ovar, DTfloat) tt in
+    Minus tt (Times tt (Minus tt nnvar' (Number tt 1)) (Log tt (Minus tt (Number tt 1) ovar')))
+             (Times tt ovar' (Log tt nnvar')).
+
   Record testcases : Type := mkTest {ninput: nat; noutput: nat; ntest: nat; 
                                      datavec : Vector ((Vector float ninput) * (Vector float noutput)) ntest}.
 
-  Definition NNinstance {ninput noutput : nat} (ivar : SubVar) (f_loss : DefinedFunction DTfloat)
+  Definition NNinstance1samp {ninput noutput : nat} (ivar : SubVar) (f_loss : DefinedFunction DTfloat)
              (f_loss_NNvar f_loss_outvar : SubVar) 
              (NN : UnitDefinedFunction (DTVector noutput)) (σ:df_env) 
              (data: (Vector float ninput) * (Vector float noutput))
@@ -181,6 +187,15 @@ Section GenNN.
     let ipair := mk_env_entry (ivar, DTVector ninput) (fst data) in
     df_eval (cons ipair σ) (Lossfun tt f_loss_NNvar f_loss_outvar f_loss NN (snd data)).
 
+(*
+  Definition NNinstancebatch {ninput nsamp noutput : nat} (ivar : SubVar) (f_loss : DefinedFunction DTfloat)
+             (f_loss_NNvar f_loss_outvar : SubVar) 
+             (NN : UnitDefinedFunction (DTVector noutput)) (σ:df_env) 
+             (data: (Matrix float nsamp ninput) * (Matrix float nsamp noutput))
+             : option float :=
+    let ipair := mk_env_entry (ivar, DTMatrix nsamp ninput) (fst data) in
+    df_eval (cons ipair σ) (Lossfun tt f_loss_NNvar f_loss_outvar f_loss NN (snd data)).
+*)
   (*
   Lemma NNinstance_unique_var (n1 n2 n3 : nat) (ivar : SubVar) (f_loss : DefinedFunction DTfloat) 
         (NN2 : DefinedFunction (DTVector n3)) (inputs : (list float)) 
@@ -404,6 +419,50 @@ Section GenNN.
       | (None, noise_st') => (None, noise_st')
       end
     end.
+
+Definition transpose {A} {n m:nat} (mat:Matrix A n m) :=
+  fun i j => mat j i.
+
+Definition Fmax (a b:float) : float :=
+  if Fgt a b then a else b.
+
+Definition Fmin (a b:float) : float :=
+  if Flt a b then a else b.
+
+Definition vmax {n : nat} (vec : Vector float n)
+          := vector_fold_right1 Fmax (FfromZ 0) id vec.
+
+Definition vmin {n : nat} (vec : Vector float n)
+          := vector_fold_right1 Fmin (FfromZ 0) id vec.
+
+Definition nrows {A} (l : list (list A)) := List.length l.
+
+Definition ncols {A} (l : list (list A)) :=
+      match l with
+      | nil => 0%nat
+      | r :: _ => List.length r
+      end.
+
+Definition normalizeIntData (l:list (list Z)) : Matrix float (nrows l) (ncols l) :=
+  let mat : Matrix float (nrows l) (ncols l) := 
+      fun i j => FfromZ (List.nth (proj1_sig j) (List.nth (proj1_sig i) l nil) (0)%Z) in
+  let tmat := transpose mat in
+  let maxes := vmap vmax tmat in
+  let mins := vmap vmin tmat in
+  fun i j => ((mat i j) - (mins j))/((maxes j)- (mins j)).
+
+Definition init_env2 (dim1 dim2 dim3 : nat) (w b : string) 
+        (ranm1 : Matrix float dim2 dim1)
+        (ranm2 : Matrix float dim3 dim2) : df_env :=
+  let wvar := Name w in
+  let bvar := Name b in
+  let wvar1 := (Sub wvar 1, DTMatrix dim2 dim1) in
+  let wvar2 := (Sub wvar 2, DTMatrix dim3 dim2) in
+  let bvar1 := (Sub bvar 1, DTVector dim2) in
+  let bvar2 := (Sub bvar 2, DTVector dim3) in
+  (mk_env_entry wvar1 ranm1) :: (mk_env_entry wvar2 ranm2) :: 
+  (mk_env_entry bvar1 (ConstVector dim2 0)) :: 
+  (mk_env_entry bvar2 (ConstVector dim3 0)) :: nil.
 
 Example xvar:var_type := (Name "x", DTfloat).
 Example xfun:UnitDefinedFunction DTfloat := Var xvar tt.
