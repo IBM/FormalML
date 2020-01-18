@@ -252,10 +252,12 @@ Section GenNN.
   Definition lookup_list (σ:df_env) (lvar : list SubVar) : option (list float) :=
     listo_to_olist (map (fun v => (vartlookup σ (v, DTfloat)):option float) lvar).
 
-  Definition combine_with {A:Type} {B:Type} {C:Type} (f: A -> B -> C ) (lA : list A) (lB : list B) : list C :=
+  Definition combine_with {A:Type} {B:Type} {C:Type} (f: A -> B -> C ) 
+             (lA : list A) (lB : list B) : list C :=
     map (fun '(a, b) => f a b) (combine lA lB).
 
-  Definition combine3_with {A:Type} {B:Type} {C:Type} {D:Type} (f: A -> B -> C -> D) (lA : list A) (lB : list B) (lC : list C) : list D :=
+  Definition combine3_with {A:Type} {B:Type} {C:Type} {D:Type} (f: A -> B -> C -> D) 
+             (lA : list A) (lB : list B) (lC : list C) : list D :=
     map (fun '(a, bc) => f a (fst bc) (snd bc)) (combine lA (combine lB lC)).
 
   Fixpoint streamtake (n : nat) {A : Type} (st : Stream A) : (list A) * (Stream A) :=
