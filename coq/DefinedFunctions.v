@@ -597,10 +597,12 @@ Section DefinedFunctions.
             let ss := df_deriv s (v1, DTfloat) in
             MatrixSum tt
                (DMatrix tt 
-                        (fun i j => 
-                           (Times tt (MatrixElem tt ll i j)
-                                  (df_subst (df_subst ss (v1, DTfloat) (MatrixElem tt l i j))
-                                            (v2, DTfloat) (Number tt (r i j))))))
+                  (fun i j => 
+                     (Divide tt 
+                          (Times tt (MatrixElem tt ll i j)
+                                 (df_subst (df_subst ss (v1, DTfloat) (MatrixElem tt l i j))
+                                           (v2, DTfloat) (Number tt (r i j))))
+                     (Number tt (FfromZ (Z.of_nat n))))))
           end).
 
     Definition df_gradient {T} (df:DefinedFunction T) (lv:list var_type) : list (DefinedFunction T)
@@ -809,7 +811,7 @@ Section DefinedFunctions.
                          let xv2 := (v2,DTfloat):var_type in
                          df_eval (cons (mk_env_entry xv1 (l' i j)) 
                                        (cons (mk_env_entry xv2 (r i j)) σ)) s)) with
-             | Some vv => Some (msum vv)
+             | Some vv => Some ((msum vv) / (FfromZ (Z.of_nat n)))
              | _ => None
              end
            | _ => None
@@ -1052,7 +1054,7 @@ Section DefinedFunctions.
                          let xv2 := (v2,DTfloat):var_type in
                          df_eval (cons (mk_env_entry xv1 (vl' i j)) 
                                        (cons (mk_env_entry xv2 (r i j)) σ)) s)) with
-             | Some vv => Some (MLossfun (msum vv) v1 v2 s l' r)
+             | Some vv => Some (MLossfun ((msum vv)/(FfromZ (Z.of_nat n))) v1 v2 s l' r)
              | _ => None
              end
            | _ => None
@@ -1595,7 +1597,7 @@ Section DefinedFunctions.
                          | Some sd => Some ((ld i j) * sd)
                          | _ => None
                          end)) with
-             | Some vv => Some (msum vv)
+             | Some vv => Some ((msum vv)/(FfromZ (Z.of_nat n)))
              | _ => None
              end
            | _, _ => None
@@ -1815,7 +1817,7 @@ Section DefinedFunctions.
                          | Some sd => Some ((ld i j) * sd)
                          | _ => None
                          end)) with
-             | Some vv => Some (msum vv)
+             | Some vv => Some ((msum vv) / (FfromZ (Z.of_nat n)))
              | _ => None
              end
            | _ => None
@@ -2186,7 +2188,7 @@ Section DefinedFunctions.
                          let senv := cons (mk_env_entry xv1 lei) 
                                           (cons (mk_env_entry xv2 rei) σ) in
                          match df_eval senv s' with
-                         | Some se => Some (grad * se)
+                         | Some se => Some ((grad * se)/(FfromZ (Z.of_nat n)))
                          | _ => None
                          end)
                       (matrix_zip le re) in
@@ -2387,7 +2389,7 @@ Section DefinedFunctions.
                        let senv := cons (mk_env_entry xv1 lei) 
                                         (cons (mk_env_entry xv2 rei) σ) in
                        match df_eval senv s' with
-                       | Some se => Some (grad * se)
+                       | Some se => Some ((grad * se) / (FfromZ (Z.of_nat n)))
                        | _ => None
                        end)
                     (matrix_zip le re) in
