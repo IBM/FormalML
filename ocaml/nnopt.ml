@@ -21,10 +21,10 @@ let init_env = init_env2 9 15 1 (char_list_of_string "w") (char_list_of_string "
     (Obj.magic (random_float_matrix ())) (Obj.magic (random_float_matrix ())) ;;
 let () = Format.printf "Init environment: %a\n" pretty_df_env init_env ;;
 let randomStream = mkIndexedStream 0 (Obj.magic (random_float_vector ())) ;;
-let randomval = streamhd(randomStream) ;;
-let st2 = streamtl(randomStream) ;;
-let randomval2 = streamhd(st2) ;;
-let () = print_float randomval; print_string "\n"; print_float randomval2; print_string "\n"
-;;
-let vals = streamlist 3 randomStream ;;
-let () = Format.printf "random list : %a\n" (pretty_blist pp_print_float) vals ;;
+let fvals = fst(streamtake 5 randomStream) ;;
+let () = Format.printf "random list : %a\n" (pretty_blist pp_print_float) fvals ;;
+
+
+
+
+

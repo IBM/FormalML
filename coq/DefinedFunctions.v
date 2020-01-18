@@ -53,7 +53,8 @@ Section DefinedFunctions.
     (* A subset of defined functions *)
 
     Definition Vector (T:Type) (n : nat) := {n':nat | n' < n}%nat -> T.
-    Definition Matrix (T:Type) (n m : nat) := {n':nat | n' < n}%nat -> {m':nat | m' < m}%nat -> T.
+    Definition Matrix (T:Type) (n m : nat) := 
+      {n':nat | n' < n}%nat -> {m':nat | m' < m}%nat -> T.
 
     Inductive definition_function_types
      := DTfloat
@@ -97,13 +98,8 @@ Section DefinedFunctions.
     := let P := fun xv => definition_function_types_interp (snd xv) in
        existT P v e.
 
-  Definition UnitAnn: definition_function_types->Type := fun _ => unit.
-  Definition EvalAnn: definition_function_types->Type := definition_function_types_interp.
-
-  Definition Floatfun := float -> float.
-  Definition Floatfun2:= float -> float -> float.
-  Record fun_deriv : Type := mkfunderiv {func : Floatfun; deriv : Floatfun}.
-  Record fun_deriv2 : Type := mkfunderiv2 {func2: Floatfun2; deriv1: Floatfun2; deriv2 : Floatfun2}.
+    Definition UnitAnn: definition_function_types->Type := fun _ => unit.
+    Definition EvalAnn: definition_function_types->Type := definition_function_types_interp.
 
     Inductive DefinedFunction {Ann:definition_function_types->Type} : definition_function_types -> Type :=
     | Number (ann:Ann DTfloat) (x : float) : DefinedFunction DTfloat
@@ -124,11 +120,13 @@ Section DefinedFunctions.
     | Max (ann:Ann DTfloat) (l r : DefinedFunction DTfloat) : DefinedFunction DTfloat
     | VectorDot {n} (ann:Ann DTfloat) (l r: DefinedFunction (DTVector n)) : DefinedFunction DTfloat
     | VectorSum {n} (ann:Ann DTfloat) (v: DefinedFunction (DTVector n)) : DefinedFunction DTfloat
-    | VectorElem {n} (ann:Ann DTfloat) (l:DefinedFunction (DTVector n)) (i:{x:nat|x<n}%nat) : DefinedFunction DTfloat
+    | MatrixSum {m n} (ann:Ann DTfloat) (v: DefinedFunction (DTMatrix m n)) : DefinedFunction DTfloat                                                                                       | VectorElem {n} (ann:Ann DTfloat) (l:DefinedFunction (DTVector n)) (i:{x:nat|x<n}%nat) : DefinedFunction DTfloat
     | MatrixElem {m n} (ann:Ann DTfloat) (l:DefinedFunction (DTMatrix m n)) (i:{x:nat|x<m}%nat) (j:{x:nat|x<n}%nat) :
         DefinedFunction DTfloat
     | MatrixVectorMult {m n} (ann:Ann (DTVector m)) (l : DefinedFunction (DTMatrix m n)) (r : DefinedFunction (DTVector n)) :
         DefinedFunction (DTVector m)
+    | MatrixVectorAdd {m n} (ann:Ann (DTMatrix m n)) (l : DefinedFunction (DTMatrix m n)) (r : DefinedFunction (DTVector m)) :
+        DefinedFunction (DTMatrix m n)                        
     | MatrixMult {m p n} (ann:Ann (DTMatrix m n)) (l : DefinedFunction (DTMatrix m p)) (r : DefinedFunction (DTMatrix p n)) :
         DefinedFunction (DTMatrix m n)
     | VectorPlus {n} (ann:Ann (DTVector n)) (l r: DefinedFunction (DTVector n)) : DefinedFunction (DTVector n)
@@ -139,14 +137,13 @@ Section DefinedFunctions.
         DefinedFunction (DTVector n)
     | MatrixScalMult {n m} (ann:Ann (DTMatrix n m)) (x:DefinedFunction DTfloat) (l : DefinedFunction (DTMatrix n m)) :
         DefinedFunction (DTMatrix n m)
-(*
-    | VectorApply {n} (ann:Ann (DTVector n)) (fd:fun_deriv) (l: DefinedFunction (DTVector n)) :
-        DefinedFunction (DTVector n)
-    | Lossfun {n} (ann:Ann DTfloat) (fd2:fun_deriv2) (l: DefinedFunction (DTVector n)) (r:Vector float n) : DefinedFunction DTfloat
-*)
     | VectorApply {n} (ann:Ann (DTVector n)) (v:SubVar) (s:@DefinedFunction UnitAnn DTfloat) (l: DefinedFunction (DTVector n)) :
         DefinedFunction (DTVector n)
-    | Lossfun {n} (ann:Ann DTfloat) (v1 v2:SubVar) (s:@DefinedFunction UnitAnn DTfloat) (l: DefinedFunction (DTVector n)) (r:Vector float n) : DefinedFunction DTfloat
+    | MatrixApply {m n} (ann:Ann (DTMatrix m n)) (v:SubVar) (s:@DefinedFunction UnitAnn DTfloat) (l: DefinedFunction (DTMatrix m n)) :
+        DefinedFunction (DTMatrix m n)
+
+    | VLossfun {n} (ann:Ann DTfloat) (v1 v2:SubVar) (s:@DefinedFunction UnitAnn DTfloat) (l: DefinedFunction (DTVector n)) (r:Vector float n) : DefinedFunction DTfloat
+    | MLossfun {m n} (ann:Ann DTfloat) (v1 v2:SubVar) (s:@DefinedFunction UnitAnn DTfloat) (l: DefinedFunction (DTMatrix m n)) (r:Matrix float m n) : DefinedFunction DTfloat
     .
 
 
@@ -170,9 +167,11 @@ Section DefinedFunctions.
          | Max ann _ _ => ann                            
          | VectorDot _ ann _ _ => ann
          | VectorSum _ ann _ => ann
+         | MatrixSum _ _ ann _ => ann                                  
          | VectorElem _ ann _ _ => ann
          | MatrixElem _ _ ann _ _ _ => ann                                     
          | MatrixVectorMult _ _ ann _ _ => ann
+         | MatrixVectorAdd _ _ ann _ _ => ann                                             
          | MatrixMult _ _ _ ann _ _ => ann
          | VectorPlus _ ann _ _ => ann
          | VectorMinus _ ann _ _ => ann                                     
@@ -180,12 +179,10 @@ Section DefinedFunctions.
          | MatrixMinus _ _ ann _ _ => ann                                       
          | VectorScalMult _ ann _ _ => ann
          | MatrixScalMult _ _ ann _ _ => ann                                          
-(*
-         | VectorApply _ ann _ _ => ann
-         | Lossfun _ ann _ _ _ => ann
-*)
          | VectorApply _ ann _ _ _ => ann
-         | Lossfun _ ann _ _ _ _ _ => ann
+         | MatrixApply _ _ ann _ _ _ => ann                                        
+         | VLossfun _ ann _ _ _ _ _ => ann
+         | MLossfun _ _ ann _ _ _ _ _ => ann                                         
      end.
 
     Definition dft_eq_dec :
@@ -239,9 +236,11 @@ Section DefinedFunctions.
       | Case_aux c "Max"%string
       | Case_aux c "VectorDot"%string
       | Case_aux c "VectorSum"%string
+      | Case_aux c "MatrixSum"%string                 
       | Case_aux c "VectorElem"%string
       | Case_aux c "MatrixElem"%string
       | Case_aux c "MatrixVectorMult"%string
+      | Case_aux c "MatrixVectorAdd"%string                 
       | Case_aux c "MatrixMult"%string
       | Case_aux c "VectorPlus"%string
       | Case_aux c "VectorMinus"%string
@@ -250,7 +249,9 @@ Section DefinedFunctions.
       | Case_aux c "VectorScalMult"%string
       | Case_aux c "MatrixScalMult"%string
       | Case_aux c "VectorApply"%string
-      | Case_aux c "Lossfun"%string].    
+      | Case_aux c "MatrixApply"%string                 
+      | Case_aux c "VLossfun"%string
+      | Case_aux c "MLossfun"%string].        
 
 
 
@@ -331,6 +332,12 @@ Section DefinedFunctions.
 
     Definition vmap {A B} {n} (f:A->B) (v:Vector A n) : Vector B n
       := vector_fold_right_dep (fun n x y => vcons (n:=n) (f x) y) vnil v.
+
+    Definition msum {m n:nat} (v:Matrix float m n) : float :=
+      vsum (vmap vsum v).
+
+    Definition mmap {A B} {m n} (f:A->B) (mat:Matrix A m n) : Matrix B m n
+      := vmap (fun mrow => vmap f mrow) mat.
 
     Definition list_fold_right1_bounded_dep {A:nat->Type} {B} (f:forall n,B->A n->A (S n)) (init:A 0%nat) (singleton:B->A 1%nat) (l:list B) (n:nat) (pf:(n<=length l)%nat)
     : A n.
@@ -432,12 +439,16 @@ Section DefinedFunctions.
         VectorDot tt (df_subst l v e') (df_subst r v e')
       | VectorSum n _ e =>
         VectorSum tt (df_subst e v e')
+      | MatrixSum n m _ e =>
+        MatrixSum tt (df_subst e v e')
       | VectorScalMult n _ x r =>
         VectorScalMult tt (df_subst x v e') (df_subst r v e')
       | MatrixScalMult n m _ x r =>
         MatrixScalMult tt (df_subst x v e') (df_subst r v e')
       | MatrixVectorMult n m _ l r =>
         MatrixVectorMult tt (df_subst l v e') (df_subst r v e')
+      | MatrixVectorAdd n m _ l r =>
+        MatrixVectorAdd tt (df_subst l v e') (df_subst r v e')
       | MatrixMult n m p _ l r =>
         MatrixMult tt (df_subst l v e') (df_subst r v e')
       | VectorPlus n _ l r =>
@@ -448,16 +459,14 @@ Section DefinedFunctions.
         MatrixPlus tt (df_subst l v e') (df_subst r v e')
       | MatrixMinus n m _ l r =>
         MatrixMinus tt (df_subst l v e') (df_subst r v e')
-(*
-      | VectorApply n _ fd l => 
-        VectorApply tt fd (df_subst l v e')
-      | Lossfun n _ fd2 l r =>
-        Lossfun tt fd2 (df_subst l v e') r
-*)
       | VectorApply n _ x s l => 
         VectorApply tt x (df_subst s v e') (df_subst l v e')
-      | Lossfun n _ v1 v2 s l r =>
-        Lossfun tt v1 v2 (df_subst s v e') (df_subst l v e') r
+      | MatrixApply n m _ x s l => 
+        MatrixApply tt x (df_subst s v e') (df_subst l v e')
+      | VLossfun n _ v1 v2 s l r =>
+        VLossfun tt v1 v2 (df_subst s v e') (df_subst l v e') r
+      | MLossfun n m _ v1 v2 s l r =>
+        MLossfun tt v1 v2 (df_subst s v e') (df_subst l v e') r
       end.
 
     Definition df_substp {T Ann} := 
@@ -473,6 +482,7 @@ Section DefinedFunctions.
   Definition ConstVector {T} (n:nat) (c:T) : (Vector T n) := fun (n': {n':nat | n' < n}%nat) => c.
   Definition ConstMatrix {T} (n m : nat) (c:T) : (Matrix T n m) := fun (n': {n':nat | n' < n}%nat) (m':{m':nat | m' < m}%nat) => c.
   
+
 (* restrict to scalar v? *)
     Fixpoint df_deriv {T} (df:@DefinedFunction UnitAnn T) (v:var_type) {struct df} : @DefinedFunction UnitAnn T
       := (match df with
@@ -524,6 +534,9 @@ Section DefinedFunctions.
           | VectorSum n _ l =>
             let ll := df_deriv l v in 
             VectorSum tt ll
+          | MatrixSum m n _ l =>
+            let ll := df_deriv l v in 
+            MatrixSum tt ll
           | VectorScalMult n _ x r => 
             let xx := df_deriv x v in 
             let rr := df_deriv r v in
@@ -540,6 +553,10 @@ Section DefinedFunctions.
             let rr := df_deriv r v in
             VectorPlus tt (MatrixVectorMult tt ll r) 
                        (MatrixVectorMult tt l rr)
+          | MatrixVectorAdd n m _ l r =>
+            let ll := df_deriv l v in
+            let rr := df_deriv r v in
+            MatrixVectorAdd tt ll rr
           | MatrixMult n m p _ l r =>
             let ll := df_deriv l v in
             let rr := df_deriv r v in
@@ -564,13 +581,26 @@ Section DefinedFunctions.
             let rr := df_deriv r v in
             let ss := df_deriv s (x, DTfloat) in
             DVector tt (fun i => Times tt (VectorElem tt rr i) (df_subst ss (x, DTfloat) (VectorElem tt r i)))
-          | Lossfun n _ v1 v2 s l r =>
+          | MatrixApply n m _ x s r => 
+            let rr := df_deriv r v in
+            let ss := df_deriv s (x, DTfloat) in
+            DMatrix tt (fun i j => Times tt (MatrixElem tt rr i j) (df_subst ss (x, DTfloat) (MatrixElem tt r i j)))
+          | VLossfun n _ v1 v2 s l r =>
             let ll := df_deriv l v in
             let ss := df_deriv s (v1, DTfloat) in
             VectorDot tt ll 
                       (DVector tt (fun i => 
                                      df_subst (df_subst ss (v1, DTfloat) (VectorElem tt l i))
                                               (v2, DTfloat) (Number tt (r i))))
+          | MLossfun n m _ v1 v2 s l r =>
+            let ll := df_deriv l v in
+            let ss := df_deriv s (v1, DTfloat) in
+            MatrixSum tt
+               (DMatrix tt 
+                        (fun i j => 
+                           (Times tt (MatrixElem tt ll i j)
+                                  (df_subst (df_subst ss (v1, DTfloat) (MatrixElem tt l i j))
+                                            (v2, DTfloat) (Number tt (r i j))))))
           end).
 
     Definition df_gradient {T} (df:DefinedFunction T) (lv:list var_type) : list (DefinedFunction T)
@@ -580,8 +610,13 @@ Section DefinedFunctions.
   
   Section eval.
     
-    Definition matrix_vector_mult {m n} (l : Matrix float n m)(r : Vector float m) : Vector float n :=
+    Definition transpose {A} {n m:nat} (mat:Matrix A n m) :=
+      fun i j => mat j i.
+
+    Definition matrix_vector_mult {n m} (l : Matrix float n m)(r : Vector float m) : Vector float n :=
       fun i => vsum (fun j => (l i j) * (r j)).
+
+    Definition matrix_vector_add {n m} (l : Matrix float n m) (r : Vector float n) : Matrix float n m := fun i j => (l i j) + (r i).
 
     Definition matrix_mult {m n p} (l : Matrix float n m)(r : Matrix float m p) : Matrix float n p :=
       fun i k => vsum (fun j => (l i j) * (r j k)).
@@ -682,7 +717,12 @@ Section DefinedFunctions.
            end
          | VectorSum n _ l =>
            match df_eval σ l with
-           | Some l' => Some (vsum (fun i => l' i))
+           | Some l' => Some (vsum l')
+           | _ => None
+           end
+         | MatrixSum n m _ l =>
+           match df_eval σ l with
+           | Some l' => Some (msum l')
            | _ => None
            end
          | VectorScalMult n _ x r =>
@@ -698,6 +738,11 @@ Section DefinedFunctions.
          | MatrixVectorMult n m _ l r =>
            match df_eval σ l, df_eval σ r with
            | Some l', Some r' => Some (matrix_vector_mult l' r')
+           | _, _ => None
+           end
+         | MatrixVectorAdd n m _ l r =>
+           match df_eval σ l, df_eval σ r with
+           | Some l', Some r' => Some (matrix_vector_add l' r')
            | _, _ => None
            end
          | MatrixMult n m p _ l r =>
@@ -733,7 +778,15 @@ Section DefinedFunctions.
                              df_eval (cons (mk_env_entry xv (r' i)) σ) s)
            | _ => None
            end
-         | Lossfun n _ v1 v2 s l r => 
+         | MatrixApply n m _ x s r => 
+           match df_eval σ r with           
+           | Some r' => matrixo_to_omatrix
+                          (fun i j => 
+                             let xv := (x, DTfloat):var_type in
+                             df_eval (cons (mk_env_entry xv (r' i j)) σ) s)
+           | _ => None
+           end
+         | VLossfun n _ v1 v2 s l r => 
            match df_eval σ l with
            | Some l' => 
              match (vectoro_to_ovector 
@@ -747,6 +800,21 @@ Section DefinedFunctions.
              end
            | _ => None
            end
+         | MLossfun n m _ v1 v2 s l r => 
+           match df_eval σ l with
+           | Some l' => 
+             match (matrixo_to_omatrix
+                      (fun i j => 
+                         let xv1 := (v1,DTfloat):var_type in
+                         let xv2 := (v2,DTfloat):var_type in
+                         df_eval (cons (mk_env_entry xv1 (l' i j)) 
+                                       (cons (mk_env_entry xv2 (r i j)) σ)) s)) with
+             | Some vv => Some (msum vv)
+             | _ => None
+             end
+           | _ => None
+           end
+
          end.
 
     Fixpoint df_eval_tree {T Ann} (σ:df_env) (df:@DefinedFunction Ann T) : option (@DefinedFunction EvalAnn T)
@@ -850,7 +918,13 @@ Section DefinedFunctions.
          | VectorSum n _ l =>
            match df_eval_tree σ l with
            | Some l' => let vl' := get_annotation l' in
-                        Some (VectorSum (vsum (fun i => vl' i)) l')
+                        Some (VectorSum (vsum vl') l')
+           | _ => None
+           end
+         | MatrixSum n m _ l =>
+           match df_eval_tree σ l with
+           | Some l' => let vl' := get_annotation l' in
+                        Some (MatrixSum (msum vl') l')
            | _ => None
            end
          | VectorScalMult n _ x r =>
@@ -874,6 +948,13 @@ Section DefinedFunctions.
            | Some l', Some r' => let vl' := get_annotation l' in
                                  let vr' := get_annotation r' in
                                  Some (MatrixVectorMult (matrix_vector_mult vl' vr') l' r')
+           | _, _ => None
+           end
+         | MatrixVectorAdd n m _ l r =>
+           match df_eval_tree σ l, df_eval_tree σ r with
+           | Some l', Some r' => let vl' := get_annotation l' in
+                                 let vr' := get_annotation r' in
+                                 Some (MatrixVectorAdd (matrix_vector_add vl' vr') l' r')
            | _, _ => None
            end
          | MatrixMult n m p _ l r =>
@@ -933,7 +1014,20 @@ Section DefinedFunctions.
              end
            | _ => None
            end
-         | Lossfun n _ v1 v2 s l r => 
+         | MatrixApply n m _ x s r => 
+           match df_eval_tree σ r with           
+           | Some r' => 
+             let vr' := get_annotation r' in
+             match matrixo_to_omatrix
+                     (fun i j => 
+                        let xv := (x, DTfloat):var_type in
+                        df_eval (cons (mk_env_entry xv (vr' i j)) σ) s) with
+             | Some val => Some (MatrixApply val x s r')
+             | _ => None
+             end
+           | _ => None
+           end
+         | VLossfun n _ v1 v2 s l r => 
            match df_eval_tree σ l with
            | Some l' => 
              let vl' := get_annotation l' in
@@ -943,7 +1037,22 @@ Section DefinedFunctions.
                          let xv2 := (v2,DTfloat):var_type in
                          df_eval (cons (mk_env_entry xv1 (vl' i)) 
                                        (cons (mk_env_entry xv2 (r i)) σ)) s)) with
-             | Some vv => Some (Lossfun (vsum vv) v1 v2 s l' r)
+             | Some vv => Some (VLossfun (vsum vv) v1 v2 s l' r)
+             | _ => None
+             end
+           | _ => None
+           end
+         | MLossfun n m _ v1 v2 s l r => 
+           match df_eval_tree σ l with
+           | Some l' => 
+             let vl' := get_annotation l' in
+             match (matrixo_to_omatrix
+                      (fun i j => 
+                         let xv1 := (v1,DTfloat):var_type in
+                         let xv2 := (v2,DTfloat):var_type in
+                         df_eval (cons (mk_env_entry xv1 (vl' i j)) 
+                                       (cons (mk_env_entry xv2 (r i j)) σ)) s)) with
+             | Some vv => Some (MLossfun (msum vv) v1 v2 s l' r)
              | _ => None
              end
            | _ => None
@@ -1070,7 +1179,12 @@ Section DefinedFunctions.
            end
          | VectorSum n _ l =>
            match df_evals_list σ l dfevals with
-           | Some (l',dfevals') => Some (pair_update_evals (VectorSum tt l) (vsum (fun i => l' i)) dfevals')
+           | Some (l',dfevals') => Some (pair_update_evals (VectorSum tt l) (vsum l') dfevals')
+           | _ => None
+           end
+         | MatrixSum n m _ l =>
+           match df_evals_list σ l dfevals with
+           | Some (l',dfevals') => Some (pair_update_evals (MatrixSum tt l) (msum l') dfevals')
            | _ => None
            end
          | VectorScalMult n _ l r =>
@@ -1100,6 +1214,17 @@ Section DefinedFunctions.
                Some (r', dfevals'') => 
                   Some (pair_update_evals (MatrixVectorMult tt l r) 
                                           (matrix_vector_mult l' r') dfevals'')
+             | _ => None
+             end
+           | _ => None
+           end
+         | MatrixVectorAdd n m _ l r =>
+           match df_evals_list σ l dfevals with
+           | Some (l', dfevals') => 
+             match df_evals_list σ r dfevals' with
+               Some (r', dfevals'') => 
+                  Some (pair_update_evals (MatrixVectorAdd tt l r) 
+                                          (matrix_vector_add l' r') dfevals'')
              | _ => None
              end
            | _ => None
@@ -1166,7 +1291,7 @@ Section DefinedFunctions.
                              df_eval (cons (mk_env_entry xv (r' i)) σ) s) *)
            | _ => None
            end
-         | Lossfun n _ v1 v2 s l r => 
+         | VLossfun n _ v1 v2 s l r => 
            match df_evals_list σ l dfevals with
 (*           | Some l' => 
              match (vectoro_to_ovector 
@@ -1180,6 +1305,7 @@ Section DefinedFunctions.
              end *)
            | _ => None
            end
+           | _ => None
          end.
 
 (*
@@ -1359,7 +1485,13 @@ Section DefinedFunctions.
          | VectorSum n _ l =>
            match df_eval_deriv σ l v with
            | Some ld =>
-               Some (vsum (fun j => ld j))
+               Some (vsum ld)
+           | _ => None
+           end
+         | MatrixSum n m _ l =>
+           match df_eval_deriv σ l v with
+           | Some ld =>
+               Some (msum ld)
            | _ => None
            end
          | VectorScalMult n _ x r =>
@@ -1377,6 +1509,12 @@ Section DefinedFunctions.
            | Some le, Some ld, Some re, Some rd =>
              Some (fun i => vsum (fun j => (le i j)*(rd j) + (ld i j)*(re j)))
            | _, _, _, _ => None
+           end
+         | MatrixVectorAdd n m _ l r =>
+           match df_eval_deriv σ l v, df_eval_deriv σ r v with
+           | Some le, Some re =>
+             Some (fun i j => (le i j) + (re i))
+           | _, _ => None
            end
          | MatrixMult n m p _ l r =>
            match df_eval σ l, df_eval_deriv σ l v, df_eval σ r, df_eval_deriv σ r v with
@@ -1416,7 +1554,19 @@ Section DefinedFunctions.
                          end)
            | _, _ => None                                                    
            end
-         | Lossfun n _ v1 v2 s l r => 
+         | MatrixApply n m _ x s r =>
+           match df_eval σ r, df_eval_deriv σ r v with                      
+           | Some re, Some rd => 
+             matrixo_to_omatrix
+               (fun i j => 
+                  let xv := (x, DTfloat):var_type in
+                  match df_eval_deriv (cons (mk_env_entry xv (re i j)) σ) s v with
+                         | Some sd => Some ((rd i j) * sd)
+                         | _ => None
+                         end)
+           | _, _ => None                                                    
+           end
+         | VLossfun n _ v1 v2 s l r => 
            match df_eval σ l, df_eval_deriv σ l v with                      
            | Some le, Some ld => 
              match (vectoro_to_ovector 
@@ -1429,6 +1579,23 @@ Section DefinedFunctions.
                          | _ => None
                          end)) with
              | Some vv => Some (vsum vv)
+             | _ => None
+             end
+           | _, _ => None
+           end
+         | MLossfun n m _ v1 v2 s l r => 
+           match df_eval σ l, df_eval_deriv σ l v with                      
+           | Some le, Some ld => 
+             match (matrixo_to_omatrix
+                      (fun i j => 
+                         let xv1 := (v1, DTfloat):var_type in
+                         let xv2 := (v2, DTfloat):var_type in                         
+                         match df_eval_deriv (cons (mk_env_entry xv1 (le i j)) 
+                                                   (cons (mk_env_entry xv2 (r i j)) σ)) s v with
+                         | Some sd => Some ((ld i j) * sd)
+                         | _ => None
+                         end)) with
+             | Some vv => Some (msum vv)
              | _ => None
              end
            | _, _ => None
@@ -1530,7 +1697,13 @@ Section DefinedFunctions.
          | VectorSum n _ l =>
            match df_eval_tree_deriv σ l v with
            | Some ld =>
-               Some (vsum (fun j => ld j))
+               Some (vsum ld)
+           | _ => None
+           end
+         | MatrixSum n m _ l =>
+           match df_eval_tree_deriv σ l v with
+           | Some ld =>
+               Some (msum ld)
            | _ => None
            end
          | VectorScalMult n _ x r =>
@@ -1550,6 +1723,12 @@ Section DefinedFunctions.
            match df_eval_tree_deriv σ l v, df_eval_tree_deriv σ r v with
            | Some ld, Some rd =>
              Some (fun i => vsum (fun j => (le i j)*(rd j) + (ld i j)*(re j)))
+           | _, _ => None
+           end
+         | MatrixVectorAdd n m _ l r =>
+           match df_eval_tree_deriv σ l v, df_eval_tree_deriv σ r v with
+           | Some ld, Some rd =>
+             Some (fun i j => (ld i j) + (rd i))
            | _, _ => None
            end
          | MatrixMult n m p _ l r =>
@@ -1592,7 +1771,20 @@ Section DefinedFunctions.
                          end)
            | _ => None                                                    
            end
-         | Lossfun n _ v1 v2 s l r => 
+         | MatrixApply n m _ x s r =>
+           let re := get_annotation r in 
+           match df_eval_tree_deriv σ r v with                      
+           | Some rd => 
+             matrixo_to_omatrix
+               (fun i j => 
+                  let xv := (x, DTfloat):var_type in
+                  match df_eval_deriv (cons (mk_env_entry xv (re i j)) (* σ *) nil) s v with
+                         | Some sd => Some ((rd i j) * sd)
+                         | _ => None
+                         end)
+           | _ => None                                                    
+           end
+         | VLossfun n _ v1 v2 s l r => 
            let le := get_annotation l in 
            match df_eval_tree_deriv σ l v with                      
            | Some ld => 
@@ -1606,6 +1798,24 @@ Section DefinedFunctions.
                          | _ => None
                          end)) with
              | Some vv => Some (vsum vv)
+             | _ => None
+             end
+           | _ => None
+           end
+         | MLossfun n m _ v1 v2 s l r => 
+           let le := get_annotation l in 
+           match df_eval_tree_deriv σ l v with                      
+           | Some ld => 
+             match (matrixo_to_omatrix
+                      (fun i j => 
+                         let xv1 := (v1, DTfloat):var_type in
+                         let xv2 := (v2, DTfloat):var_type in                         
+                         match df_eval_deriv (cons (mk_env_entry xv1 (le i j)) 
+                                                   (cons (mk_env_entry xv2 (r i j)) (* σ *) nil)) s v with
+                         | Some sd => Some ((ld i j) * sd)
+                         | _ => None
+                         end)) with
+             | Some vv => Some (msum vv)
              | _ => None
              end
            | _ => None
@@ -1678,8 +1888,6 @@ Section DefinedFunctions.
     Definition matrix_to_list {T} {m n} (v:Matrix T m n) : (list T)
       := concat (matrix_to_list_list v).
 
-    Definition msum {m n:nat} (v:Matrix float m n) : float :=
-      vsum (vmap vsum v).
 
 (*
     Lemma lemma1 {x} : x = DTfloat -> definition_function_types_interp x = float.
@@ -1833,6 +2041,8 @@ Section DefinedFunctions.
            end
          | VectorSum n _ l => fun grad =>
            df_eval_backprop_deriv σ l grad_env (ConstVector n grad)
+         | MatrixSum n m _ l => fun grad =>
+           df_eval_backprop_deriv σ l grad_env (ConstMatrix n m grad)
          | VectorScalMult n _ x r => fun grad =>
            match df_eval σ x, df_eval σ r with
            | Some xe, Some re => 
@@ -1864,6 +2074,17 @@ Section DefinedFunctions.
              | _ => None
              end
            | _, _ => None
+           end
+         | MatrixVectorAdd n m _ l r => fun grad =>
+           match df_eval_backprop_deriv σ l grad_env grad with
+           | Some grad_env' => 
+             match list_env_iter 
+                     (fun i env => df_eval_backprop_deriv σ r env ((transpose grad) i))
+                     (Some grad_env') (bounded_seq0 m) with
+               | Some grad_env'' => Some grad_env''
+               | _ => None
+               end
+           | _ => None
            end
          | MatrixMult n m p _ l r => fun grad =>
            match df_eval σ l, df_eval σ r with
@@ -1915,7 +2136,25 @@ Section DefinedFunctions.
              end
            | _ => None                                                    
            end
-         | Lossfun n _ v1 v2 s l re => fun grad =>
+         | MatrixApply n m _ x s r => fun grad =>
+           match df_eval σ r with
+           | Some re => 
+             let xv := (x, DTfloat):var_type in
+             let s' := df_deriv s xv in
+             let ograd := 
+                 mmap (fun '(rei, g) => 
+                         match df_eval (cons (mk_env_entry xv rei) σ) s' with
+                         | Some se => Some (g * se)
+                         | _ => None
+                         end)
+                      (matrix_zip re grad) in
+             match matrixo_to_omatrix ograd with 
+             | Some grad' => df_eval_backprop_deriv σ r grad_env grad'
+             | _ => None
+             end
+           | _ => None                                                    
+           end
+         | VLossfun n _ v1 v2 s l re => fun grad =>
            match df_eval σ l with
            | Some le => 
              let xv1 := (v1, DTfloat):var_type in
@@ -1931,6 +2170,27 @@ Section DefinedFunctions.
                          end)
                       (vector_zip le re) in
              match vectoro_to_ovector ograd with 
+             | Some grad' => df_eval_backprop_deriv σ l grad_env grad'
+             | _ => None
+             end
+           | _ => None                                                    
+           end
+         | MLossfun n m _ v1 v2 s l re => fun grad =>
+           match df_eval σ l with
+           | Some le => 
+             let xv1 := (v1, DTfloat):var_type in
+             let xv2 := (v2, DTfloat):var_type in                         
+             let s' := df_deriv s xv1 in
+             let ograd := 
+                 mmap (fun '(lei, rei) => 
+                         let senv := cons (mk_env_entry xv1 lei) 
+                                          (cons (mk_env_entry xv2 rei) σ) in
+                         match df_eval senv s' with
+                         | Some se => Some (grad * se)
+                         | _ => None
+                         end)
+                      (matrix_zip le re) in
+             match matrixo_to_omatrix ograd with 
              | Some grad' => df_eval_backprop_deriv σ l grad_env grad'
              | _ => None
              end
@@ -2008,6 +2268,8 @@ Section DefinedFunctions.
            end
          | VectorSum n _ l => fun grad =>
            df_eval_tree_backprop_deriv σ l grad_env (ConstVector n grad)
+         | MatrixSum n m _ l => fun grad =>
+           df_eval_tree_backprop_deriv σ l grad_env (ConstMatrix n m grad)
          | VectorScalMult n _ x r => fun grad =>
            let '(xe,re) := (get_annotation x, get_annotation r) in 
            match df_eval_tree_backprop_deriv σ x grad_env (vsum (fun j => (re j) * (grad j))) with
@@ -2027,6 +2289,17 @@ Section DefinedFunctions.
            match df_eval_tree_backprop_deriv σ l grad_env (fun i j => (grad i) * (re j)) with
            | Some grad_env' => 
              df_eval_tree_backprop_deriv σ r grad_env' (matrix_vector_mult (fun i j => le j i) grad)
+           | _ => None
+           end
+         | MatrixVectorAdd n m _ l r => fun grad =>
+           match df_eval_tree_backprop_deriv σ l grad_env grad with
+           | Some grad_env' => 
+             match list_env_iter 
+                     (fun i env => df_eval_tree_backprop_deriv σ r env ((transpose grad) i))
+                     (Some grad_env') (bounded_seq0 m) with
+               | Some grad_env'' => Some grad_env''
+               | _ => None
+               end
            | _ => None
            end
          | MatrixMult n m p _ l r => fun grad =>
@@ -2071,7 +2344,22 @@ Section DefinedFunctions.
            | Some grad' => df_eval_tree_backprop_deriv σ r grad_env grad'
            | _ => None
            end
-         | Lossfun n _ v1 v2 s l re => fun grad =>
+         | MatrixApply n m _ x s r => fun grad =>
+           let re := get_annotation r in 
+           let xv := (x, DTfloat):var_type in
+           let s' := df_deriv s xv in
+           let ograd := 
+               mmap (fun '(rei, g) => 
+                       match df_eval (cons (mk_env_entry xv rei) σ) s' with
+                       | Some se => Some (g * se)
+                       | _ => None
+                       end)
+                    (matrix_zip re grad) in
+           match matrixo_to_omatrix ograd with 
+           | Some grad' => df_eval_backprop_deriv σ r grad_env grad'
+           | _ => None
+           end
+         | VLossfun n _ v1 v2 s l re => fun grad =>
            let le := get_annotation l in
            let xv1 := (v1, DTfloat):var_type in
            let xv2 := (v2, DTfloat):var_type in                         
@@ -2087,6 +2375,24 @@ Section DefinedFunctions.
                     (vector_zip le re) in
            match vectoro_to_ovector ograd with 
            | Some grad' => df_eval_tree_backprop_deriv σ l grad_env grad'
+           | _ => None
+           end
+         | MLossfun n m _ v1 v2 s l re => fun grad =>
+           let le := get_annotation l in
+           let xv1 := (v1, DTfloat):var_type in
+           let xv2 := (v2, DTfloat):var_type in                         
+           let s' := df_deriv s xv1 in
+           let ograd := 
+               mmap (fun '(lei, rei) => 
+                       let senv := cons (mk_env_entry xv1 lei) 
+                                        (cons (mk_env_entry xv2 rei) σ) in
+                       match df_eval senv s' with
+                       | Some se => Some (grad * se)
+                       | _ => None
+                       end)
+                    (matrix_zip le re) in
+           match matrixo_to_omatrix ograd with 
+           | Some grad' => df_eval_backprop_deriv σ l grad_env grad'
            | _ => None
            end
           end.
@@ -2601,16 +2907,20 @@ Section DefinedFunctions.
          | MatrixElem m n _ l i j => df_free_variables l
          | VectorDot n _ l r => (df_free_variables l) ++ (df_free_variables r)
          | VectorSum n _ l => df_free_variables l
+         | MatrixSum n m _ l => df_free_variables l
          | VectorScalMult n _ x r => (df_free_variables x) ++ (df_free_variables r)
          | MatrixScalMult n m _ x r => (df_free_variables x) ++ (df_free_variables r)
          | MatrixVectorMult n m _ l r => (df_free_variables l) ++ (df_free_variables r)
+         | MatrixVectorAdd n m _ l r => (df_free_variables l) ++ (df_free_variables r)
          | MatrixMult n m p _ l r => (df_free_variables l) ++ (df_free_variables r)
          | VectorPlus n _ l r => (df_free_variables l) ++ (df_free_variables r)
          | VectorMinus n _ l r => (df_free_variables l) ++ (df_free_variables r)
          | MatrixPlus n m _ l r => (df_free_variables l) ++ (df_free_variables r)
          | MatrixMinus n m _ l r => (df_free_variables l) ++ (df_free_variables r)
          | VectorApply n _ x s l => (df_free_variables s) ++ (df_free_variables l)
-         | Lossfun n _ v1 v2 s l r => (df_free_variables s) ++ (df_free_variables l)
+         | MatrixApply n m _ x s l => (df_free_variables s) ++ (df_free_variables l)
+         | VLossfun n _ v1 v2 s l r => (df_free_variables s) ++ (df_free_variables l)
+         | MLossfun n m _ v1 v2 s l r => (df_free_variables s) ++ (df_free_variables l)
          end.
 
     Definition df_closed {T} (f: DefinedFunction T) : Prop
@@ -2775,16 +3085,20 @@ Section DefinedFunctions.
       | MatrixElem m n _ l i j => MatrixElem tt (df_apply l args) i j
       | VectorDot n _ l r => VectorDot tt (df_apply l args) (df_apply r args)
       | VectorSum n _ l => VectorSum tt (df_apply l args)
+      | MatrixSum n m _ l => MatrixSum tt (df_apply l args)                                     
       | VectorScalMult n _ x r => VectorScalMult tt (df_apply x args) (df_apply r args)
       | MatrixScalMult n m _ x r => MatrixScalMult tt (df_apply x args) (df_apply r args)
       | MatrixVectorMult n m _ l r => MatrixVectorMult tt (df_apply l args) (df_apply r args)
+      | MatrixVectorAdd n m _ l r => MatrixVectorAdd tt (df_apply l args) (df_apply r args)
       | MatrixMult n m p _ l r => MatrixMult tt (df_apply l args) (df_apply r args)
       | VectorPlus n _ l r => VectorPlus tt (df_apply l args) (df_apply r args)
       | VectorMinus n _ l r => VectorMinus tt (df_apply l args) (df_apply r args)
       | MatrixPlus n m _ l r => MatrixPlus tt (df_apply l args) (df_apply r args)
       | MatrixMinus n m _ l r => MatrixMinus tt (df_apply l args) (df_apply r args)
       | VectorApply n _ x s l => VectorApply tt x (df_apply s args) (df_apply l args)
-      | Lossfun n _ v1 v2 s l r => Lossfun tt v1 v2 (df_apply s args) (df_apply l args) r
+      | MatrixApply n m _ x s l => MatrixApply tt x (df_apply s args) (df_apply l args)
+      | VLossfun n _ v1 v2 s l r => VLossfun tt v1 v2 (df_apply s args) (df_apply l args) r
+      | MLossfun n m _ v1 v2 s l r => MLossfun tt v1 v2 (df_apply s args) (df_apply l args) r
       end.
 
  End apply.
@@ -2851,9 +3165,11 @@ Tactic Notation "DefinedFunction_cases" tactic(first) ident(c) :=
   | Case_aux c "Max"%string
   | Case_aux c "VectorDot"%string
   | Case_aux c "VectorSum"%string
+  | Case_aux c "MatrixSum"%string             
   | Case_aux c "VectorElem"%string
   | Case_aux c "MatrixElem"%string
   | Case_aux c "MatrixVectorMult"%string
+  | Case_aux c "MatrixVectorAdd"%string             
   | Case_aux c "MatrixMult"%string
   | Case_aux c "VectorPlus"%string
   | Case_aux c "VectorMinus"%string
@@ -2862,4 +3178,6 @@ Tactic Notation "DefinedFunction_cases" tactic(first) ident(c) :=
   | Case_aux c "VectorScalMult"%string
   | Case_aux c "MatrixScalMult"%string
   | Case_aux c "VectorApply"%string
-  | Case_aux c "Lossfun"%string].
+  | Case_aux c "MatrixApply"%string             
+  | Case_aux c "VLossfun"%string
+  | Case_aux c "MLossfun"%string].

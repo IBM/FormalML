@@ -34,10 +34,7 @@ Module API.
   Definition init_env2 := Gen_NN.init_env2.
   CoFixpoint mkIndexedStream {A} (i : nat) (ran : nat -> A) : Stream A :=
     Cons (ran i) (mkIndexedStream (S i) ran).
-  Definition streamlist {A} (n:nat) (st : Stream A) : list A :=
-    fst (Gen_NN.streamtake n st).
-  Definition streamhd {A} (st : Stream A) : A := hd st.
-  Definition streamtl {A} (st : Stream A) : Stream A := tl st.
+  Definition streamtake := Gen_NN.streamtake.
   End API.
 
 Extraction "extracted/NnoptExtracted" API.

@@ -179,23 +179,42 @@ Section GenNN.
   Record testcases : Type := mkTest {ninput: nat; noutput: nat; ntest: nat; 
                                      datavec : Vector ((Vector float ninput) * (Vector float noutput)) ntest}.
 
-  Definition NNinstance1samp {ninput noutput : nat} (ivar : SubVar) (f_loss : DefinedFunction DTfloat)
+  Definition NNinstance1samp {ninput noutput : nat} (ivar : SubVar) 
+             (f_loss : DefinedFunction DTfloat)
+             (f_loss_NNvar f_loss_outvar : SubVar) 
+             (NN : UnitDefinedFunction (DTVector noutput)) (σ:df_env) 
+             (data: (Vector float ninput) * (Vector float noutput))
+             : df_env * (DefinedFunction DTfloat) :=
+    let ipair := mk_env_entry (ivar, DTVector ninput) (fst data) in
+    (cons ipair σ, VLossfun tt f_loss_NNvar f_loss_outvar f_loss NN (snd data)).
+
+  Definition NNinstancebatch {ninput nsamp noutput : nat} (ivar : SubVar) 
+             (f_loss : DefinedFunction DTfloat)
+             (f_loss_NNvar f_loss_outvar : SubVar) 
+             (NN : UnitDefinedFunction (DTMatrix nsamp noutput)) (σ:df_env) 
+             (data: (Matrix float nsamp ninput) * (Matrix float nsamp noutput))
+             : df_env * (DefinedFunction DTfloat) :=             
+    let ipair := mk_env_entry (ivar, DTMatrix nsamp ninput) (fst data) in
+    (cons ipair σ, MLossfun tt f_loss_NNvar f_loss_outvar f_loss NN (snd data)).
+
+  Definition EvalNNinstance1samp {ninput noutput : nat} (ivar : SubVar) 
+             (f_loss : DefinedFunction DTfloat)
              (f_loss_NNvar f_loss_outvar : SubVar) 
              (NN : UnitDefinedFunction (DTVector noutput)) (σ:df_env) 
              (data: (Vector float ninput) * (Vector float noutput))
              : option float :=
     let ipair := mk_env_entry (ivar, DTVector ninput) (fst data) in
-    df_eval (cons ipair σ) (Lossfun tt f_loss_NNvar f_loss_outvar f_loss NN (snd data)).
+    df_eval (cons ipair σ) (VLossfun tt f_loss_NNvar f_loss_outvar f_loss NN (snd data)).
 
-(*
-  Definition NNinstancebatch {ninput nsamp noutput : nat} (ivar : SubVar) (f_loss : DefinedFunction DTfloat)
+  Definition EvalNNinstancebatch {ninput nsamp noutput : nat} (ivar : SubVar) 
+             (f_loss : DefinedFunction DTfloat)
              (f_loss_NNvar f_loss_outvar : SubVar) 
-             (NN : UnitDefinedFunction (DTVector noutput)) (σ:df_env) 
+             (NN : UnitDefinedFunction (DTMatrix nsamp noutput)) (σ:df_env) 
              (data: (Matrix float nsamp ninput) * (Matrix float nsamp noutput))
              : option float :=
     let ipair := mk_env_entry (ivar, DTMatrix nsamp ninput) (fst data) in
-    df_eval (cons ipair σ) (Lossfun tt f_loss_NNvar f_loss_outvar f_loss NN (snd data)).
-*)
+    df_eval (cons ipair σ) (MLossfun tt f_loss_NNvar f_loss_outvar f_loss NN (snd data)).
+
   (*
   Lemma NNinstance_unique_var (n1 n2 n3 : nat) (ivar : SubVar) (f_loss : DefinedFunction DTfloat) 
         (NN2 : DefinedFunction (DTVector n3)) (inputs : (list float)) 
@@ -342,7 +361,8 @@ Section GenNN.
                          end
        end).
 
-  Definition update_entry (entry: env_entry_type) (grad_env:df_env) (alpha:float) (noise_st : Stream float) : (env_entry_type*Stream float) :=
+  Definition update_entry (entry: env_entry_type) (grad_env:df_env) (alpha:float) 
+             (noise_st : Stream float) : (env_entry_type*Stream float) :=
     let x := projT1 entry in
     let val := projT2 entry in
     let '(noise, nst) := get_noise (snd x) noise_st in
@@ -420,8 +440,6 @@ Section GenNN.
       end
     end.
 
-Definition transpose {A} {n m:nat} (mat:Matrix A n m) :=
-  fun i j => mat j i.
 
 Definition Fmax (a b:float) : float :=
   if Fgt a b then a else b.
