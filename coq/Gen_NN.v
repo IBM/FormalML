@@ -67,6 +67,13 @@ Section GenNN.
     let N1 := VectorApply tt f_activ_var f_activ (MatrixVectorMult tt mat1 ivec) in 
     VectorApply tt f_activ_var f_activ (MatrixVectorMult tt mat2 N1).
 
+  Definition mkVarMatNN2 (n1 n2 n3 nsamp: nat) (ivar wvar : SubVar) (f_activ : DefinedFunction DTfloat) (f_activ_var : SubVar) : (DefinedFunction (DTMatrix n3 nsamp)) :=
+    let mat1 := mkVarMatrix (Sub wvar 1) n2 n1 in
+    let mat2 := mkVarMatrix (Sub wvar 2) n3 n2 in
+    let imat := mkVarMatrix ivar n1 nsamp in
+    let N1 := MatrixApply tt f_activ_var f_activ (MatrixMult tt mat1 imat) in 
+    MatrixApply tt f_activ_var f_activ (MatrixMult tt mat2 N1).
+
   Definition mkNN_bias_step (n1 n2 : nat) (ivec : DefinedFunction (DTVector n1)) 
              (mat : DefinedFunction (DTMatrix n2 n1)) 
              (bias : DefinedFunction (DTVector n2)) 
@@ -92,9 +99,34 @@ Section GenNN.
     let N1 := mkNN_bias_step n1 n2 ivec mat1 b1 f_activ_var f_activ in
     mkNN_bias_step n2 n3 N1 mat2 b2 f_activ_var f_activ.
 
+  Definition mkNN_Mat_bias_step (n1 n2 nsamp : nat) (imat : DefinedFunction (DTMatrix n1 nsamp)) 
+             (mat : DefinedFunction (DTMatrix n2 n1)) 
+             (bias : DefinedFunction (DTVector n2)) 
+             (f_activ_var : SubVar) (f_activ : DefinedFunction DTfloat) 
+              : UnitDefinedFunction (DTMatrix n2 nsamp) :=
+    MatrixApply tt f_activ_var f_activ (MatrixVectorAdd tt (MatrixMult tt mat imat) bias).
+
+ Definition mkNN2_Var_Mat_bias (n1 n2 n3 nsamp: nat) (ivar wvar : SubVar) (f1_activ f2_activ : DefinedFunction DTfloat) (f1_activ_var f2_activ_var : SubVar) : DefinedFunction (DTMatrix n3 nsamp) :=
+    let mat1 := mkVarMatrix (Sub wvar 1) n2 n1 in
+    let b1 := mkVarVector (Sub wvar 1) n2 in
+    let mat2 := mkVarMatrix (Sub wvar 2) n3 n2 in
+    let b2 := mkVarVector (Sub wvar 2) n3 in
+    let imat := mkVarMatrix ivar n1 nsamp in
+    let N1 := mkNN_Mat_bias_step n1 n2 nsamp imat mat1 b1 f1_activ_var f1_activ in
+    mkNN_Mat_bias_step n2 n3 nsamp N1 mat2 b2 f2_activ_var f2_activ.
+
  Lemma vector_float_map_last_rewrite {B nvlist1 n2 v n1} :
    (DTVector (last ((@domain _ B) nvlist1) n2)) = 
    (DTVector (last (domain((n2, v) :: nvlist1)) n1)).
+ Proof.
+   rewrite domain_cons.
+   rewrite last_cons.
+   reflexivity.
+ Qed.
+
+ Lemma matrix_float_map_last_rewrite {B nvlist1 n2 v n1 nsamp} :
+   (DTMatrix (last ((@domain _ B) nvlist1) n2) nsamp) = 
+   (DTMatrix (last (domain((n2, v) :: nvlist1)) n1) nsamp).
  Proof.
    rewrite domain_cons.
    rewrite last_cons.
@@ -129,6 +161,19 @@ Section GenNN.
       eq_rect _ DefinedFunction (mkNN_Var_gen_0 n2 nvlist1 N f_activ_var f_activ) _ vector_float_map_last_rewrite
     end.
 
+  Fixpoint mkNN_Mat_Var_gen_0 (nsamp n1:nat) (nvlist : list (nat * SubVar)) 
+           (imat : (DefinedFunction (DTMatrix n1 nsamp)))
+           (f_activ_var : SubVar ) (f_activ : DefinedFunction DTfloat) :
+    DefinedFunction (DTMatrix (last (domain nvlist) n1) nsamp)
+:= 
+    match nvlist with
+    | nil => imat
+    | cons (n2,v) nvlist1 => 
+      let mat := mkVarMatrix v n2 n1 in
+      let b := mkVarVector v n2 in
+      let N := mkNN_Mat_bias_step n1 n2 nsamp imat mat b f_activ_var f_activ in
+      eq_rect _ DefinedFunction (mkNN_Mat_Var_gen_0 nsamp n2 nvlist1 N f_activ_var f_activ) _ matrix_float_map_last_rewrite
+    end.
 
   Program Definition mkNN_gen (n1:nat) (nlist : list nat) (ivar wvar f_activ_var : SubVar) 
              (f_activ : DefinedFunction DTfloat) : 
@@ -158,6 +203,20 @@ Section GenNN.
     now rewrite map_length, seq_length.
   Qed.
 
+  Program Definition mkNN_Mat_Var_gen (nsamp n1:nat) (nlist : list nat) (ivar wvar f_activ_var : SubVar) 
+             (f_activ : DefinedFunction DTfloat) : 
+    DefinedFunction (DTMatrix (last nlist n1) nsamp) :=
+    let vlist := map (fun i => Sub wvar i) (seq 1 (length nlist)) in
+    let imat := mkVarMatrix ivar n1 nsamp in
+    eq_rect _ DefinedFunction
+            (mkNN_Mat_Var_gen_0 nsamp n1 (combine nlist vlist) imat f_activ_var f_activ) _ _.
+  Next Obligation.
+    f_equal.
+    f_equal.
+    rewrite combine_domain_eq; trivial.
+    now rewrite map_length, seq_length.
+  Qed.
+
   Definition softmax {n:nat} (NN : DefinedFunction (DTVector n)) : UnitDefinedFunction (DTVector n) :=
     let expvar := Name "expvar" in
     let NNexp := VectorApply tt expvar (Exp tt (Var (expvar, DTfloat) tt)) NN in
@@ -169,6 +228,10 @@ Section GenNN.
 
   Definition L1loss (nnvar ovar : SubVar) : UnitDefinedFunction DTfloat :=
     Abs tt (Minus tt (Var (nnvar, DTfloat) tt) (Var (ovar, DTfloat) tt)).
+
+  Definition Sigmoid (var : SubVar) : UnitDefinedFunction DTfloat :=
+    Divide tt (Number tt 1) 
+           (Plus tt (Number tt 1) (Exp tt (Minus tt (Number tt 0) (Var (var, DTfloat) tt)))).
 
   Definition CrossEntropy (nnvar ovar : SubVar) : UnitDefinedFunction DTfloat :=
     let nnvar' := Var (nnvar, DTfloat) tt in
@@ -209,10 +272,10 @@ Section GenNN.
   Definition EvalNNinstancebatch {ninput nsamp noutput : nat} (ivar : SubVar) 
              (f_loss : DefinedFunction DTfloat)
              (f_loss_NNvar f_loss_outvar : SubVar) 
-             (NN : UnitDefinedFunction (DTMatrix nsamp noutput)) (σ:df_env) 
-             (data: (Matrix float nsamp ninput) * (Matrix float nsamp noutput))
+             (NN : UnitDefinedFunction (DTMatrix noutput nsamp)) (σ:df_env) 
+             (data: (Matrix float ninput nsamp) * (Matrix float noutput nsamp))
              : option float :=
-    let ipair := mk_env_entry (ivar, DTMatrix nsamp ninput) (fst data) in
+    let ipair := mk_env_entry (ivar, DTMatrix ninput nsamp) (fst data) in
     df_eval (cons ipair σ) (MLossfun tt f_loss_NNvar f_loss_outvar f_loss NN (snd data)).
 
   (*
@@ -471,6 +534,17 @@ Definition normalizeIntData (l:list (list Z)) : Matrix float (nrows l) (ncols l)
   let mins := vmap vmin tmat in
   fun i j => ((mat i j) - (mins j))/((maxes j)- (mins j)).
 
+Program Definition splitLastCol {nsamp ncols : nat}  (data : Matrix float nsamp ncols)
+        (pf : (ncols > 0)%nat)
+        : (Matrix float (ncols-1) nsamp) * (Matrix float 1 nsamp) :=
+  (fun i j => data j i, fun i j => data j (i + ncols-1)%nat).
+Next Obligation.
+  omega.
+Defined.
+Next Obligation.
+  omega.
+Defined.
+  
 Definition init_env2 (dim1 dim2 dim3 : nat) (w b : string) 
         (ranm1 : Matrix float dim2 dim1)
         (ranm2 : Matrix float dim3 dim2) : df_env :=
@@ -480,9 +554,30 @@ Definition init_env2 (dim1 dim2 dim3 : nat) (w b : string)
   let wvar2 := (Sub wvar 2, DTMatrix dim3 dim2) in
   let bvar1 := (Sub bvar 1, DTVector dim2) in
   let bvar2 := (Sub bvar 2, DTVector dim3) in
-  (mk_env_entry wvar1 ranm1) :: (mk_env_entry wvar2 ranm2) :: 
+  (*  (mk_env_entry wvar1 ranm1) :: (mk_env_entry wvar2 ranm2) :: *)
+  (mk_env_entry wvar1 (fun i j => (ranm1 i j) / (Fsqrt (FfromZ (Z.of_nat dim1))))) :: 
+  (mk_env_entry wvar2 (fun i j => (ranm2 i j) / (Fsqrt (FfromZ (Z.of_nat dim2))))) ::
   (mk_env_entry bvar1 (ConstVector dim2 0)) :: 
   (mk_env_entry bvar2 (ConstVector dim3 0)) :: nil.
+
+ Definition mkNN_wisconsin (nsamp:nat) (ivar wvar f1v f2v : SubVar) : DefinedFunction (DTMatrix 1 nsamp) :=
+   let f1_activ := Max tt (Var (f1v,DTfloat) tt) (Number tt 0) in
+   let f2_activ := Sigmoid f2v in
+   mkNN2_Var_Mat_bias 9 15 1 nsamp ivar wvar f1_activ f2_activ f1v f2v.
+
+ Program Definition eval_wisconsin_batch (nsamp : nat)
+            (σ:df_env) 
+            (normaldata: Matrix float nsamp 10)   : option float :=
+   let ivar := (Name "ivar") in
+   let flnnv := (Name "NNv") in
+   let outnnv := (Name "outnnv") in
+   @EvalNNinstancebatch 9 nsamp 1 ivar (CrossEntropy flnnv outnnv) flnnv outnnv
+             (mkNN_wisconsin nsamp ivar (Name "wvar") (Name "f1v") (Name "f2v"))
+             σ
+             (splitLastCol normaldata _).
+ Next Obligation.
+   omega.
+ Qed.
 
 Example xvar:var_type := (Name "x", DTfloat).
 Example xfun:UnitDefinedFunction DTfloat := Var xvar tt.

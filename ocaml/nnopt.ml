@@ -17,12 +17,19 @@ let () = Format.printf "first 10 rows of normalized data without the first colum
 
 let () = Random.self_init()
 
-let init_env = init_env2 9 15 1 (char_list_of_string "w") (char_list_of_string "b") 
-    (Obj.magic (random_float_matrix ())) (Obj.magic (random_float_matrix ())) ;;
-let () = Format.printf "Init environment: %a\n" pretty_df_env init_env ;;
 let randomStream = mkIndexedStream 0 (Obj.magic (random_float_vector ())) ;;
 let fvals = fst(streamtake 5 randomStream) ;;
 let () = Format.printf "random list : %a\n" (pretty_blist pp_print_float) fvals ;;
+
+let init_env = init_env2 9 15 1 (char_list_of_string "w") (char_list_of_string "b") 
+    (Obj.magic (random_float_matrix ())) (Obj.magic (random_float_matrix ())) ;;
+let () = Format.printf "Init environment: %a\n" pretty_df_env init_env ;;
+
+let wval = eval_wisconsin_batch 500 (Obj.magic init_env) (Obj.magic normalized_data) ;;
+
+
+
+
 
 
 
