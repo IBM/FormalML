@@ -35,7 +35,11 @@ Module API.
   CoFixpoint mkIndexedStream {A} (i : nat) (ran : nat -> A) : Stream A :=
     Cons (ran i) (mkIndexedStream (S i) ran).
   Definition streamtake := Gen_NN.streamtake.
+  Definition eval_wisconsin_batch := Gen_NN.eval_wisconsin_batch.
+
   End API.
+
+
 
 Extraction "extracted/NnoptExtracted" API.
 
