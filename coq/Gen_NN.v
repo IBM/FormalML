@@ -400,32 +400,48 @@ Section GenNN.
     | DTVector n => get_noise_vector n noise_st
     | DTMatrix m n => get_noise_matrix m n noise_st
     end.
-
-    Program Definition update_val_gradenv (grad_env:df_env) (x:var_type) (alpha:float) :=
-      (match snd x as y return definition_function_types_interp y ->
-                               definition_function_types_interp y ->
-                               definition_function_types_interp y with
-       | DTfloat =>  fun val noise => 
+  
+  Program Definition update_val_gradenv (grad_env:df_env) (x:var_type) (alpha:float) :
+    definition_function_types_interp (snd x) ->
+    definition_function_types_interp (snd x) ->
+    definition_function_types_interp (snd x) :=
+    (match snd x as y return snd x = y ->
+                          definition_function_types_interp y ->
+                          definition_function_types_interp y ->
+                          definition_function_types_interp y with
+       | DTfloat =>  fun pf val noise => 
                        match vartlookup grad_env x with
-                       | Some grad => val - alpha * ((_ grad) + noise)
+                       | Some grad => val - alpha * (coerce _ grad + noise)
                        | _ => val
                        end
-       | DTVector n => fun val noise =>
+       | DTVector n => fun pf val noise =>
                          match vartlookup grad_env x with
                          | Some grad => 
                            fun i => 
-                             (val i) - alpha * (((_ grad) i) + (noise i))
+                             (val i) - alpha * (((coerce _ grad) i) + (noise i))
                          | _ => val
                          end
-       | DTMatrix m n => fun val noise =>
+       | DTMatrix m n => fun pf val noise =>
                            match vartlookup grad_env x with
                            | Some grad =>
                              fun i j =>
-                               (val i j) - alpha * (((_ grad) i j) + (noise i j))
+                               (val i j) - alpha * (((coerce _ grad) i j) + (noise i j))
                          | _ => val
                          end
-       end).
+     end) (eq_refl _)
+  .
+    Next Obligation.
+      rewrite pf; reflexivity.
+    Qed.
+    Next Obligation.
+      rewrite pf; reflexivity.
+    Qed.
+    Next Obligation.
+      rewrite pf; reflexivity.
+    Qed.
 
+    
+                                                
   Definition update_entry (entry: env_entry_type) (grad_env:df_env) (alpha:float) 
              (noise_st : Stream float) : (env_entry_type*Stream float) :=
     let x := projT1 entry in
@@ -632,7 +648,10 @@ Example gradenv_tree :=
   | _ => nil
   end.
 
-Definition test_update := 
+Definition test_update_val_gradenv
+  := update_val_gradenv gradenv xvar 1 (FfromZ 5) 0.
+
+Definition test_update : df_env := 
   (fst (update_entry (mk_env_entry xvar (FfromZ 5)) gradenv 1 zeronoise))::nil.
 
 Definition test_optimize_step_backprop
@@ -642,6 +661,7 @@ Definition test_optimize_step_backprop
   | Some env => env
   | _ => nil
   end.
+
 Definition test_optimize_step_tree_backprop
              (step : nat) (df : UnitDefinedFunction DTfloat) (σ:df_env)
              (noise_st : Stream float) : df_env :=
@@ -658,4 +678,3 @@ Example opt2 := fst (optimize_steps_tree_backprop 0 2 quad env zeronoise).
 
 
 End GenNN.
-
