@@ -1937,21 +1937,31 @@ Section DefinedFunctions.
        end) (eq_refl _).
 *)
     Program Definition addvar (x : var_type) (grad_env:df_env) :=
-      (match snd x as y return definition_function_types_interp y -> 
+      (match snd x as y return snd x = y ->
+                               definition_function_types_interp y -> 
                                definition_function_types_interp y with
-       | DTfloat =>  fun grad => match vartlookup grad_env x with
-                     | Some val => grad + ((_ val):float)
+       | DTfloat =>  fun pf grad => match vartlookup grad_env x with
+                     | Some val => grad + ((coerce _ val):float)
                      | _ => grad
                      end
-       | DTVector n => fun grad => match vartlookup grad_env x with
-                       | Some val => fun i => (grad i) + (((_ val):Vector float n) i)
+       | DTVector n => fun pf grad => match vartlookup grad_env x with
+                       | Some val => fun i => (grad i) + (((coerce _ val):Vector float n) i)
                        | _ =>  grad
                        end
-       | DTMatrix m n => fun grad => match vartlookup grad_env x with
-                         | Some val => fun i j => (((_ val):Matrix float m n) i j) + (grad i j)
+       | DTMatrix m n => fun pf grad => match vartlookup grad_env x with
+                         | Some val => fun i j => (((coerce _ val):Matrix float m n) i j) + (grad i j)
                          | _ => grad
                          end
-       end).
+       end) (eq_refl _).
+    Next Obligation.
+      rewrite pf; reflexivity.
+    Qed.
+    Next Obligation.
+      rewrite pf; reflexivity.
+    Qed.
+    Next Obligation.
+      rewrite pf; reflexivity.
+    Qed.
 
     Fixpoint df_eval_backprop_deriv {T Ann} (σ:df_env) (df:@DefinedFunction Ann T) (grad_env:df_env) {struct df} : definition_function_types_interp T -> option df_env
       := match df with

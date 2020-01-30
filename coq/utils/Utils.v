@@ -17,6 +17,7 @@
 (** Gathers all exports needed to access the utility modules. *)
 
 Require Export LibUtils.
+Require Export BasicUtils.
 Require Export Assoc.
 Require Export CoquelicotAdd.
 Require Export improper_integrals.
