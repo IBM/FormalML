@@ -852,7 +852,7 @@ Section DefinedFunctions.
            end
          | Times _ l r =>
            match df_eval_tree σ l, df_eval_tree σ r with
-           | Some l', Some r' => Some (Minus ((get_annotation l') * (get_annotation r'))
+           | Some l', Some r' => Some (Times ((get_annotation l') * (get_annotation r'))
                                              l' r')
            | _, _ => None
            end
@@ -1940,7 +1940,7 @@ Section DefinedFunctions.
       (match snd x as y return definition_function_types_interp y -> 
                                definition_function_types_interp y with
        | DTfloat =>  fun grad => match vartlookup grad_env x with
-                     | Some val => grad + ((_ val):float) + grad
+                     | Some val => grad + ((_ val):float)
                      | _ => grad
                      end
        | DTVector n => fun grad => match vartlookup grad_env x with

@@ -27,6 +27,12 @@ Example test :=
                mk_env_entry (Name "m", DTMatrix 2 3) (ConstMatrix 2 3 (FfromZ 3))%Z :: nil.
 Module API.
   Example opt := @Gen_NN.opt floatish_IEEE.
+  Example opt2 := @Gen_NN.opt2 floatish_IEEE.
+  Example test_update := @Gen_NN.test_update floatish_IEEE.
+  Example testopt := @Gen_NN.testopt floatish_IEEE.
+  Example testreeopt := @Gen_NN.testreeopt floatish_IEEE.  
+  Example gradenv := @Gen_NN.gradenv floatish_IEEE.
+  Example gradenv_tree := @Gen_NN.gradenv_tree floatish_IEEE.
   Example test_env := test.
 
   Example discard_first {A} (l:list (list A)) : list (list A) := List.map (@List.tl A) l.
@@ -35,7 +41,15 @@ Module API.
   CoFixpoint mkIndexedStream {A} (i : nat) (ran : nat -> A) : Stream A :=
     Cons (ran i) (mkIndexedStream (S i) ran).
   Definition streamtake := Gen_NN.streamtake.
-  Definition eval_wisconsin_batch := Gen_NN.eval_wisconsin_batch.
+  Definition df_env := DefinedFunctions.df_env.
+  Definition eval_wisconsin_batch (nsamp:nat) 
+             (env:df_env) (data : Matrix float nsamp 10) : list float  := 
+    match Gen_NN.eval_wisconsin_batch nsamp env data with
+    | Some val => val :: nil
+    | _ => nil                      
+    end.
+
+  Definition wisconsin_test := Gen_NN.wisconsin_test.
 
   End API.
 
