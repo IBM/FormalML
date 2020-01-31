@@ -37,8 +37,19 @@ let () = Format.printf "Init environment: %a\n" pretty_df_env init_env ;;
 let wval = eval_wisconsin_batch 500 (Obj.magic init_env) (Obj.magic normalized_data) ;;
 let () = Format.printf "wisconsin lost value : %a\n" (pretty_blist pp_print_float) (Obj.magic wval) ;;
 
-let wval2 = wisconsin_test 500 10 (Obj.magic init_env) (Obj.magic normalized_data) ;;
-let () = Format.printf "wisconsin lost value : %a\n" (pretty_blist pp_print_float) (Obj.magic wval) ;;
+let wval2 = wisconsin_test 1 5 (Obj.magic init_env) (Obj.magic normalized_data) ;;
+let () = Format.printf "wisconsin lost value : %a\n" (pretty_blist pp_print_float) (Obj.magic wval2) ;;
+
+let wenv = wisconsin_test_env 1 5 (Obj.magic init_env) (Obj.magic normalized_data) ;;
+let () = Format.printf "wisconsin test env: %a\n" pretty_df_env wenv ;;
+
+
+
+let gradenvtree = wisconsin_gradenv_tree 1 (Obj.magic init_env) (Obj.magic normalized_data) ;;
+let () = Format.printf "wisconsin gradenv_tree : %a\n" pretty_df_env gradenvtree ;;
+
+let gradenv = wisconsin_gradenv 1 (Obj.magic init_env) (Obj.magic normalized_data) ;;
+let () = Format.printf "wisconsin gradenv : %a\n" pretty_df_env gradenv ;;
 
 
 
