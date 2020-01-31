@@ -2410,7 +2410,7 @@ Section DefinedFunctions.
                        end)
                     (matrix_zip re grad) in
            match matrixo_to_omatrix ograd with 
-           | Some grad' => df_eval_backprop_deriv σ r grad_env grad'
+           | Some grad' => df_eval_tree_backprop_deriv σ r grad_env grad'
            | _ => None
            end
          | VLossfun n _ v1 v2 s l re => fun grad =>
@@ -2446,7 +2446,7 @@ Section DefinedFunctions.
                        end)
                     (matrix_zip le re) in
            match matrixo_to_omatrix ograd with 
-           | Some grad' => df_eval_backprop_deriv σ l grad_env grad'
+           | Some grad' => df_eval_tree_backprop_deriv σ l grad_env grad'
            | _ => None
            end
           end.

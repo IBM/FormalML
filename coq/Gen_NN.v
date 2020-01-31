@@ -597,7 +597,8 @@ Definition init_env2 (dim1 dim2 dim3 : nat) (w b : string)
 
 Program Definition wisconsin_instance_batch (nsamp : nat)
             (σ:df_env) 
-            (normaldata: Matrix float nsamp 10): df_env * (DefinedFunction DTfloat) :=
+            (normaldata: Matrix float nsamp 10)
+             : df_env * (DefinedFunction DTfloat) := 
    let ivar := (Name "i") in
    let flnnv := (Name "NNv") in
    let outnnv := (Name "outnnv") in
@@ -625,6 +626,18 @@ Definition wisconsin_test (nsamp count : nat)
   | _ => nil
   end.
 
+Definition wisconsin_test_env (nsamp count : nat) 
+            (σ:df_env) 
+            (normaldata: Matrix float nsamp 10): df_env :=
+  let nninst := wisconsin_instance_batch nsamp σ normaldata in
+  let onenv := fst (optimize_steps_backprop 0 count (snd nninst) (fst nninst)
+                                                zeronoise) in
+  match onenv with
+  | Some nenv => nenv
+  | _ => nil
+  end.
+
+
 Example xvar:var_type := (Name "x", DTfloat).
 Example xfun:UnitDefinedFunction DTfloat := Var xvar tt.
 Example tquad:UnitDefinedFunction DTfloat := Times tt xfun xfun.
@@ -640,6 +653,28 @@ Example gradenv := match df_eval_backprop_deriv env quad nil 1 with
 
 Example gradenv_tree := 
   match df_eval_tree env quad with
+  | Some df_tree =>
+    match df_eval_tree_backprop_deriv nil df_tree nil 1 with
+    | Some gradenv => gradenv
+    | _ => nil                    
+    end
+  | _ => nil
+  end.
+
+Example wisconsin_gradenv (nsamp : nat)
+            (σ:df_env) 
+            (normaldata: Matrix float nsamp 10) : df_env :=
+  let '(env,nn) := wisconsin_instance_batch nsamp σ normaldata in 
+  match df_eval_backprop_deriv env nn nil 1 with
+  | Some gradenv => gradenv
+  | _ => nil
+  end.
+
+Example wisconsin_gradenv_tree (nsamp : nat)
+            (σ:df_env) 
+            (normaldata: Matrix float nsamp 10) : df_env :=
+  let '(env,nn) := wisconsin_instance_batch nsamp σ normaldata in 
+  match df_eval_tree env nn with
   | Some df_tree =>
     match df_eval_tree_backprop_deriv nil df_tree nil 1 with
     | Some gradenv => gradenv

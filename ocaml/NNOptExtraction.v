@@ -50,6 +50,9 @@ Module API.
     end.
 
   Definition wisconsin_test := Gen_NN.wisconsin_test.
+  Definition wisconsin_test_env := Gen_NN.wisconsin_test_env.  
+  Definition wisconsin_gradenv_tree := Gen_NN.wisconsin_gradenv_tree.
+  Definition wisconsin_gradenv := Gen_NN.wisconsin_gradenv.
 
   End API.
 
