@@ -2005,32 +2005,35 @@ Section DefinedFunctions.
       rewrite pf; reflexivity.
     Qed.
 
-    Fixpoint df_eval_backprop_deriv {T Ann} (σ:df_env) (df:@DefinedFunction Ann T) (grad_env:df_env) {struct df} : definition_function_types_interp T -> option df_env
+    Fixpoint df_eval_backprop_deriv {T Ann} (σ:df_env) (df:@DefinedFunction Ann T) (grad_env:df_env) (dvars : list var_type) {struct df} : definition_function_types_interp T -> option df_env
       := match df with
          | Number _ _ => fun grad => Some grad_env
          | Constant _ _ _ => fun grad => Some grad_env
          | DVector n _ dfs => fun grad => 
-             two_vector_env_iter_alt (fun x g genv => df_eval_backprop_deriv σ x genv g) 
+             two_vector_env_iter_alt (fun x g genv => df_eval_backprop_deriv σ x genv dvars g) 
                                      grad_env dfs grad 
          | DMatrix n m _ dfs => fun grad => 
-             two_matrix_env_iter_alt (fun x g genv => df_eval_backprop_deriv σ x genv g) 
+             two_matrix_env_iter_alt (fun x g genv => df_eval_backprop_deriv σ x genv dvars g) 
                                      grad_env dfs grad
-         | Var x _ => fun grad => Some (vart_update grad_env x (addvar x grad_env grad))
+         | Var x _ => fun grad => 
+                        if in_dec vart_dec x dvars then 
+                          Some (vart_update grad_env x (addvar x grad_env grad))
+                        else Some grad_env
          | Plus _ l r => fun grad => 
-           match df_eval_backprop_deriv σ l grad_env grad with
-           | Some grad_env' => df_eval_backprop_deriv σ r grad_env' grad
+           match df_eval_backprop_deriv σ l grad_env dvars grad with
+           | Some grad_env' => df_eval_backprop_deriv σ r grad_env' dvars grad
            | _ => None
            end
          | Minus _ l r => fun grad => 
-           match df_eval_backprop_deriv σ l grad_env grad with
-           | Some grad_env' => df_eval_backprop_deriv σ r grad_env' (-grad)
+           match df_eval_backprop_deriv σ l grad_env dvars grad with
+           | Some grad_env' => df_eval_backprop_deriv σ r grad_env' dvars (-grad)
            | _ => None
            end
          | Times _ l r => fun grad => 
            match df_eval σ l, df_eval σ r with
                | Some le, Some re =>
-                 match df_eval_backprop_deriv σ l grad_env (re * grad) with                 
-                 | Some grad_env' => df_eval_backprop_deriv σ r grad_env' (le * grad)
+                 match df_eval_backprop_deriv σ l grad_env dvars (re * grad) with                 
+                 | Some grad_env' => df_eval_backprop_deriv σ r grad_env' dvars (le * grad)
                  | _ => None
                  end
            | _, _ => None
@@ -2038,71 +2041,71 @@ Section DefinedFunctions.
          | Divide _ l r => fun grad => 
            match df_eval σ l, df_eval σ r with
                | Some le, Some re =>
-                 match df_eval_backprop_deriv σ l grad_env (grad / re) with                 
-                 | Some grad_env' => df_eval_backprop_deriv σ r grad_env' (- le * grad / (re * re))
+                 match df_eval_backprop_deriv σ l grad_env dvars (grad / re) with                 
+                 | Some grad_env' => df_eval_backprop_deriv σ r grad_env' dvars (- le * grad / (re * re))
                  | _ => None
                  end
            | _, _ => None
            end
          | Square _ e => fun grad => 
            match df_eval σ e with
-           | Some ee => df_eval_backprop_deriv σ e grad_env (2 * ee * grad)
+           | Some ee => df_eval_backprop_deriv σ e grad_env dvars (2 * ee * grad)
            | _  => None
            end
          | Exp _ e => fun grad => 
            match df_eval σ e with
-           | Some ee => df_eval_backprop_deriv σ e grad_env (grad * Fexp ee)
+           | Some ee => df_eval_backprop_deriv σ e grad_env dvars (grad * Fexp ee)
            | _  => None
            end
          | Log _ e => fun grad => 
            match df_eval σ e with
-           | Some ee => df_eval_backprop_deriv σ e grad_env (grad / ee)
+           | Some ee => df_eval_backprop_deriv σ e grad_env dvars (grad / ee)
            | _  => None
            end
          | Abs _ e => fun grad => 
            match df_eval σ e with
-           | Some ee => df_eval_backprop_deriv σ e grad_env (grad * (sign ee))
+           | Some ee => df_eval_backprop_deriv σ e grad_env dvars (grad * (sign ee))
            | _  => None
            end
-         | Sign _ e => fun grad => df_eval_backprop_deriv σ e grad_env 0
-         | PSign _ e => fun grad => df_eval_backprop_deriv σ e grad_env 0
+         | Sign _ e => fun grad => df_eval_backprop_deriv σ e grad_env dvars 0
+         | PSign _ e => fun grad => df_eval_backprop_deriv σ e grad_env dvars 0
          | Max _ l r => fun grad => 
            match df_eval σ l, df_eval σ r with
            | Some le, Some re =>
              if le <= re then 
-               (df_eval_backprop_deriv σ r grad_env grad) else
-               (df_eval_backprop_deriv σ l grad_env grad)
+               (df_eval_backprop_deriv σ r grad_env dvars grad) else
+               (df_eval_backprop_deriv σ l grad_env dvars grad)
            | _, _ => None
            end
          | VectorElem n _ l i => fun grad => 
            let grad' := fun k => if proj1_sig k == proj1_sig i then grad else 0 in
-           df_eval_backprop_deriv σ l grad_env grad'
+           df_eval_backprop_deriv σ l grad_env dvars grad'
          | MatrixElem m n _ l i j => fun grad => 
            let grad' := fun k1 k2 => 
                           if (proj1_sig k1 == proj1_sig i) then
                             if (proj1_sig k2 == proj1_sig j) then grad else 0
                             else 0 in
-           df_eval_backprop_deriv σ l grad_env grad'
+           df_eval_backprop_deriv σ l grad_env dvars grad'
          | VectorDot n _ l r => fun grad =>
            match df_eval σ l, df_eval σ r with
            | Some le, Some re =>
-             match df_eval_backprop_deriv σ l grad_env (vmap (fun rv => rv*grad) re) with
+             match df_eval_backprop_deriv σ l grad_env dvars (vmap (fun rv => rv*grad) re) with
              | Some grad_env' => 
-               df_eval_backprop_deriv σ r grad_env' (vmap (fun lv => lv*grad) le)
+               df_eval_backprop_deriv σ r grad_env' dvars (vmap (fun lv => lv*grad) le)
              | _ => None
              end
            | _, _ => None
            end
          | VectorSum n _ l => fun grad =>
-           df_eval_backprop_deriv σ l grad_env (ConstVector n grad)
+           df_eval_backprop_deriv σ l grad_env dvars (ConstVector n grad)
          | MatrixSum n m _ l => fun grad =>
-           df_eval_backprop_deriv σ l grad_env (ConstMatrix n m grad)
+           df_eval_backprop_deriv σ l grad_env dvars (ConstMatrix n m grad)
          | VectorScalMult n _ x r => fun grad =>
            match df_eval σ x, df_eval σ r with
            | Some xe, Some re => 
-             match df_eval_backprop_deriv σ x grad_env (vsum (fun j => (re j) * (grad j))) with
+             match df_eval_backprop_deriv σ x grad_env dvars (vsum (fun j => (re j) * (grad j))) with
              | Some grad_env' => 
-               df_eval_backprop_deriv σ r grad_env' (fun j => xe * (grad j))
+               df_eval_backprop_deriv σ r grad_env' dvars (fun j => xe * (grad j))
              | _ => None
              end
            | _, _ => None
@@ -2110,9 +2113,9 @@ Section DefinedFunctions.
          | MatrixScalMult n m _ x r => fun grad =>
            match df_eval σ x, df_eval σ r with
            | Some xe, Some re => 
-             match df_eval_backprop_deriv σ x grad_env (msum (fun i j => (re i j) * (grad i j))) with
+             match df_eval_backprop_deriv σ x grad_env dvars (msum (fun i j => (re i j) * (grad i j))) with
              | Some grad_env' => 
-               df_eval_backprop_deriv σ r grad_env' (fun i j => (grad i j) * xe)
+               df_eval_backprop_deriv σ r grad_env' dvars (fun i j => (grad i j) * xe)
              | _ => None
              end
            | _, _ => None
@@ -2120,20 +2123,20 @@ Section DefinedFunctions.
          | MatrixVectorMult n m _ l r => fun grad =>
            match df_eval σ l, df_eval σ r with
            | Some le, Some re => 
-             match df_eval_backprop_deriv σ l grad_env (fun i j => (grad i) * (re j)) with
+             match df_eval_backprop_deriv σ l grad_env dvars (fun i j => (grad i) * (re j)) with
 
 
              | Some grad_env' => 
-               df_eval_backprop_deriv σ r grad_env' (matrix_vector_mult (fun i j => le j i) grad)
+               df_eval_backprop_deriv σ r grad_env' dvars (matrix_vector_mult (fun i j => le j i) grad)
              | _ => None
              end
            | _, _ => None
            end
          | MatrixVectorAdd n m _ l r => fun grad =>
-           match df_eval_backprop_deriv σ l grad_env grad with
+           match df_eval_backprop_deriv σ l grad_env dvars grad with
            | Some grad_env' => 
              match list_env_iter 
-                     (fun i env => df_eval_backprop_deriv σ r env ((transpose grad) i))
+                     (fun i env => df_eval_backprop_deriv σ r env dvars ((transpose grad) i))
                      (Some grad_env') (bounded_seq0 m) with
                | Some grad_env'' => Some grad_env''
                | _ => None
@@ -2143,33 +2146,33 @@ Section DefinedFunctions.
          | MatrixMult n m p _ l r => fun grad =>
            match df_eval σ l, df_eval σ r with
            | Some le, Some re => 
-             match df_eval_backprop_deriv σ l grad_env (matrix_mult grad (fun i j => (re j i))) with
+             match df_eval_backprop_deriv σ l grad_env dvars (matrix_mult grad (fun i j => (re j i))) with
 
 
              | Some grad_env' => 
-               df_eval_backprop_deriv σ r grad_env' (matrix_mult (fun i j => le j i) grad)
+               df_eval_backprop_deriv σ r grad_env' dvars (matrix_mult (fun i j => le j i) grad)
              | _ => None
              end
            | _, _ => None
            end
          | VectorPlus n _ l r => fun grad =>
-           match df_eval_backprop_deriv σ l grad_env grad with
-           | Some grad_env' => df_eval_backprop_deriv σ r grad_env' grad
+           match df_eval_backprop_deriv σ l grad_env dvars grad with
+           | Some grad_env' => df_eval_backprop_deriv σ r grad_env' dvars grad
            | _ => None
            end
          | VectorMinus n _ l r => fun grad => 
-           match df_eval_backprop_deriv σ l grad_env grad with
-           | Some grad_env' => df_eval_backprop_deriv σ r grad_env' (fun i => - (grad i))
+           match df_eval_backprop_deriv σ l grad_env dvars grad with
+           | Some grad_env' => df_eval_backprop_deriv σ r grad_env' dvars (fun i => - (grad i))
            | _ => None
            end
          | MatrixPlus n m _ l r => fun grad =>
-           match df_eval_backprop_deriv σ l grad_env grad with
-           | Some grad_env' => df_eval_backprop_deriv σ r grad_env' grad
+           match df_eval_backprop_deriv σ l grad_env dvars grad with
+           | Some grad_env' => df_eval_backprop_deriv σ r grad_env' dvars grad
            | _ => None
            end
          | MatrixMinus n m _ l r => fun grad =>
-           match df_eval_backprop_deriv σ l grad_env grad with
-           | Some grad_env' => df_eval_backprop_deriv σ r grad_env' (fun i j => - (grad i j))
+           match df_eval_backprop_deriv σ l grad_env dvars grad with
+           | Some grad_env' => df_eval_backprop_deriv σ r grad_env' dvars (fun i j => - (grad i j))
            | _ => None
            end
          | VectorApply n _ x s r => fun grad =>
@@ -2185,7 +2188,7 @@ Section DefinedFunctions.
                          end)
                       (vector_zip re grad) in
              match vectoro_to_ovector ograd with 
-             | Some grad' => df_eval_backprop_deriv σ r grad_env grad'
+             | Some grad' => df_eval_backprop_deriv σ r grad_env dvars grad'
              | _ => None
              end
            | _ => None                                                    
@@ -2203,7 +2206,7 @@ Section DefinedFunctions.
                          end)
                       (matrix_zip re grad) in
              match matrixo_to_omatrix ograd with 
-             | Some grad' => df_eval_backprop_deriv σ r grad_env grad'
+             | Some grad' => df_eval_backprop_deriv σ r grad_env dvars grad'
              | _ => None
              end
            | _ => None                                                    
@@ -2224,7 +2227,7 @@ Section DefinedFunctions.
                          end)
                       (vector_zip le re) in
              match vectoro_to_ovector ograd with 
-             | Some grad' => df_eval_backprop_deriv σ l grad_env grad'
+             | Some grad' => df_eval_backprop_deriv σ l grad_env dvars grad'
              | _ => None
              end
            | _ => None                                                    
@@ -2245,111 +2248,114 @@ Section DefinedFunctions.
                          end)
                       (matrix_zip le re) in
              match matrixo_to_omatrix ograd with 
-             | Some grad' => df_eval_backprop_deriv σ l grad_env grad'
+             | Some grad' => df_eval_backprop_deriv σ l grad_env dvars grad'
              | _ => None
              end
            | _ => None                                                    
            end
           end.
 
-    Fixpoint df_eval_tree_backprop_deriv {T} (σ:df_env) (df:@DefinedFunction EvalAnn T) (grad_env:df_env) {struct df} : definition_function_types_interp T -> option df_env
+    Fixpoint df_eval_tree_backprop_deriv {T} (σ:df_env) (df:@DefinedFunction EvalAnn T) (grad_env:df_env) (dvars : list var_type) {struct df} : definition_function_types_interp T -> option df_env
       := match df with
          | Number _ _ => fun grad => Some grad_env
          | Constant _ _ _ => fun grad => Some grad_env
          | DVector n _ dfs => fun grad => 
-             two_vector_env_iter_alt (fun x g genv => df_eval_tree_backprop_deriv σ x genv g) 
+             two_vector_env_iter_alt (fun x g genv => df_eval_tree_backprop_deriv σ x genv dvars g) 
                                      grad_env dfs grad 
          | DMatrix n m _ dfs => fun grad => 
-             two_matrix_env_iter_alt (fun x g genv => df_eval_tree_backprop_deriv σ x genv g) 
+             two_matrix_env_iter_alt (fun x g genv => df_eval_tree_backprop_deriv σ x genv dvars g) 
                                      grad_env dfs grad
-         | Var x _ => fun grad => Some (vart_update grad_env x (addvar x grad_env grad))
+         | Var x _ => fun grad => 
+                        if in_dec vart_dec x dvars then 
+                          Some (vart_update grad_env x (addvar x grad_env grad))
+                        else Some grad_env
          | Plus _ l r => fun grad => 
-           match df_eval_tree_backprop_deriv σ l grad_env grad with
-           | Some grad_env' => df_eval_tree_backprop_deriv σ r grad_env' grad
+           match df_eval_tree_backprop_deriv σ l grad_env dvars grad with
+           | Some grad_env' => df_eval_tree_backprop_deriv σ r grad_env' dvars grad
            | _ => None
            end
          | Minus _ l r => fun grad => 
-           match df_eval_tree_backprop_deriv σ l grad_env grad with
-           | Some grad_env' => df_eval_tree_backprop_deriv σ r grad_env' (-grad)
+           match df_eval_tree_backprop_deriv σ l grad_env dvars grad with
+           | Some grad_env' => df_eval_tree_backprop_deriv σ r grad_env' dvars (-grad)
            | _ => None
            end
          | Times _ l r => fun grad => 
            let '(le,re) := (get_annotation l, get_annotation r) in 
-           match df_eval_tree_backprop_deriv σ l grad_env (re * grad) with                 
-           | Some grad_env' => df_eval_tree_backprop_deriv σ r grad_env' (le * grad)
+           match df_eval_tree_backprop_deriv σ l grad_env dvars (re * grad) with                 
+           | Some grad_env' => df_eval_tree_backprop_deriv σ r grad_env' dvars (le * grad)
            | _ => None
            end
          | Divide _ l r => fun grad =>
            let '(le,re) := (get_annotation l, get_annotation r) in 
-           match df_eval_tree_backprop_deriv σ l grad_env (grad / re) with                 
-           | Some grad_env' => df_eval_tree_backprop_deriv σ r grad_env' (- le * grad / (re * re))
+           match df_eval_tree_backprop_deriv σ l grad_env dvars (grad / re) with                 
+           | Some grad_env' => df_eval_tree_backprop_deriv σ r grad_env' dvars (- le * grad / (re * re))
            | _ => None
            end
          | Square _ e => fun grad => 
            let ee := get_annotation e in
-           df_eval_tree_backprop_deriv σ e grad_env (2 * ee * grad)
+           df_eval_tree_backprop_deriv σ e grad_env dvars (2 * ee * grad)
          | Exp _ e => fun grad => 
            let ee := get_annotation e in
-           df_eval_tree_backprop_deriv σ e grad_env (grad * Fexp ee)
+           df_eval_tree_backprop_deriv σ e grad_env dvars (grad * Fexp ee)
          | Log _ e => fun grad => 
            let ee := get_annotation e in
-           df_eval_tree_backprop_deriv σ e grad_env (grad / ee)
+           df_eval_tree_backprop_deriv σ e grad_env dvars (grad / ee)
          | Abs _ e => fun grad => 
            let ee := get_annotation e in
-           df_eval_tree_backprop_deriv σ e grad_env (grad * (sign ee))
-         | Sign _ e => fun grad => df_eval_tree_backprop_deriv σ e grad_env 0
-         | PSign _ e => fun grad => df_eval_tree_backprop_deriv σ e grad_env 0
+           df_eval_tree_backprop_deriv σ e grad_env dvars (grad * (sign ee))
+         | Sign _ e => fun grad => df_eval_tree_backprop_deriv σ e grad_env dvars 0
+         | PSign _ e => fun grad => df_eval_tree_backprop_deriv σ e grad_env dvars 0
          | Max _ l r => fun grad => 
            let '(le,re) := (get_annotation l, get_annotation r) in 
            if le <= re then 
-             (df_eval_tree_backprop_deriv σ r grad_env grad) else
-             (df_eval_tree_backprop_deriv σ l grad_env grad)
+             (df_eval_tree_backprop_deriv σ r grad_env dvars grad) else
+             (df_eval_tree_backprop_deriv σ l grad_env dvars grad)
          | VectorElem n _ l i => fun grad => 
            let grad' := fun k => if proj1_sig k == proj1_sig i then grad else 0 in
-           df_eval_tree_backprop_deriv σ l grad_env grad'
+           df_eval_tree_backprop_deriv σ l grad_env dvars grad'
          | MatrixElem m n _ l i j => fun grad => 
            let grad' := fun k1 k2 => 
                           if (proj1_sig k1 == proj1_sig i) then
                             if (proj1_sig k2 == proj1_sig j) then grad else 0
                             else 0 in
-           df_eval_tree_backprop_deriv σ l grad_env grad'
+           df_eval_tree_backprop_deriv σ l grad_env dvars grad'
          | VectorDot n _ l r => fun grad =>
            let '(le,re) := (get_annotation l, get_annotation r) in 
-           match df_eval_tree_backprop_deriv σ l grad_env (vmap (fun rv => rv*grad) re) with
+           match df_eval_tree_backprop_deriv σ l grad_env dvars (vmap (fun rv => rv*grad) re) with
            | Some grad_env' => 
-             df_eval_tree_backprop_deriv σ r grad_env' (vmap (fun lv => lv*grad) le)
+             df_eval_tree_backprop_deriv σ r grad_env' dvars (vmap (fun lv => lv*grad) le)
            | _ => None
            end
          | VectorSum n _ l => fun grad =>
-           df_eval_tree_backprop_deriv σ l grad_env (ConstVector n grad)
+           df_eval_tree_backprop_deriv σ l grad_env dvars (ConstVector n grad)
          | MatrixSum n m _ l => fun grad =>
-           df_eval_tree_backprop_deriv σ l grad_env (ConstMatrix n m grad)
+           df_eval_tree_backprop_deriv σ l grad_env dvars (ConstMatrix n m grad)
          | VectorScalMult n _ x r => fun grad =>
            let '(xe,re) := (get_annotation x, get_annotation r) in 
-           match df_eval_tree_backprop_deriv σ x grad_env (vsum (fun j => (re j) * (grad j))) with
+           match df_eval_tree_backprop_deriv σ x grad_env dvars (vsum (fun j => (re j) * (grad j))) with
            | Some grad_env' => 
-             df_eval_tree_backprop_deriv σ r grad_env' (fun j => xe * (grad j))
+             df_eval_tree_backprop_deriv σ r grad_env' dvars (fun j => xe * (grad j))
            | _ => None
            end
          | MatrixScalMult n m _ x r => fun grad =>
            let '(xe,re) := (get_annotation x, get_annotation r) in 
-           match df_eval_tree_backprop_deriv σ x grad_env (msum (fun i j => (re i j) * (grad i j))) with
+           match df_eval_tree_backprop_deriv σ x grad_env dvars (msum (fun i j => (re i j) * (grad i j))) with
            | Some grad_env' => 
-             df_eval_tree_backprop_deriv σ r grad_env' (fun i j => (grad i j) * xe)
+             df_eval_tree_backprop_deriv σ r grad_env' dvars (fun i j => (grad i j) * xe)
            | _ => None
            end
          | MatrixVectorMult n m _ l r => fun grad =>
            let '(le,re) := (get_annotation l, get_annotation r) in 
-           match df_eval_tree_backprop_deriv σ l grad_env (fun i j => (grad i) * (re j)) with
+           match df_eval_tree_backprop_deriv σ l grad_env dvars (fun i j => (grad i) * (re j)) with
            | Some grad_env' => 
-             df_eval_tree_backprop_deriv σ r grad_env' (matrix_vector_mult (fun i j => le j i) grad)
+             df_eval_tree_backprop_deriv σ r grad_env' dvars (matrix_vector_mult (fun i j => le j i) grad)
            | _ => None
            end
          | MatrixVectorAdd n m _ l r => fun grad =>
-           match df_eval_tree_backprop_deriv σ l grad_env grad with
+           match df_eval_tree_backprop_deriv σ l grad_env dvars grad with
            | Some grad_env' => 
              match list_env_iter 
-                     (fun i env => df_eval_tree_backprop_deriv σ r env ((transpose grad) i))
+                     (fun i env => df_eval_tree_backprop_deriv σ r env dvars ((transpose grad) i))
                      (Some grad_env') (bounded_seq0 m) with
                | Some grad_env'' => Some grad_env''
                | _ => None
@@ -2358,29 +2364,29 @@ Section DefinedFunctions.
            end
          | MatrixMult n m p _ l r => fun grad =>
            let '(le,re) := (get_annotation l, get_annotation r) in 
-           match df_eval_tree_backprop_deriv σ l grad_env (matrix_mult grad (fun i j => (re j i))) with
+           match df_eval_tree_backprop_deriv σ l grad_env dvars (matrix_mult grad (fun i j => (re j i))) with
            | Some grad_env' => 
-             df_eval_tree_backprop_deriv σ r grad_env' (matrix_mult (fun i j => le j i) grad)
+             df_eval_tree_backprop_deriv σ r grad_env' dvars (matrix_mult (fun i j => le j i) grad)
            | _ => None
            end
          | VectorPlus n _ l r => fun grad =>
-           match df_eval_tree_backprop_deriv σ l grad_env grad with
-           | Some grad_env' => df_eval_tree_backprop_deriv σ r grad_env' grad
+           match df_eval_tree_backprop_deriv σ l grad_env dvars grad with
+           | Some grad_env' => df_eval_tree_backprop_deriv σ r grad_env' dvars grad
            | _ => None
            end
          | VectorMinus n _ l r => fun grad => 
-           match df_eval_tree_backprop_deriv σ l grad_env grad with
-           | Some grad_env' => df_eval_tree_backprop_deriv σ r grad_env' (fun i => - (grad i))
+           match df_eval_tree_backprop_deriv σ l grad_env dvars grad with
+           | Some grad_env' => df_eval_tree_backprop_deriv σ r grad_env' dvars (fun i => - (grad i))
            | _ => None
            end
          | MatrixPlus n m _ l r => fun grad =>
-           match df_eval_tree_backprop_deriv σ l grad_env grad with
-           | Some grad_env' => df_eval_tree_backprop_deriv σ r grad_env' grad
+           match df_eval_tree_backprop_deriv σ l grad_env dvars grad with
+           | Some grad_env' => df_eval_tree_backprop_deriv σ r grad_env' dvars grad
            | _ => None
            end
          | MatrixMinus n m _ l r => fun grad =>
-           match df_eval_tree_backprop_deriv σ l grad_env grad with
-           | Some grad_env' => df_eval_tree_backprop_deriv σ r grad_env' (fun i j => - (grad i j))
+           match df_eval_tree_backprop_deriv σ l grad_env dvars grad with
+           | Some grad_env' => df_eval_tree_backprop_deriv σ r grad_env' dvars (fun i j => - (grad i j))
            | _ => None
            end
          | VectorApply n _ x s r => fun grad =>
@@ -2395,7 +2401,7 @@ Section DefinedFunctions.
                        end)
                     (vector_zip re grad) in
            match vectoro_to_ovector ograd with 
-           | Some grad' => df_eval_tree_backprop_deriv σ r grad_env grad'
+           | Some grad' => df_eval_tree_backprop_deriv σ r grad_env dvars grad'
            | _ => None
            end
          | MatrixApply n m _ x s r => fun grad =>
@@ -2410,7 +2416,7 @@ Section DefinedFunctions.
                        end)
                     (matrix_zip re grad) in
            match matrixo_to_omatrix ograd with 
-           | Some grad' => df_eval_tree_backprop_deriv σ r grad_env grad'
+           | Some grad' => df_eval_tree_backprop_deriv σ r grad_env dvars grad'
            | _ => None
            end
          | VLossfun n _ v1 v2 s l re => fun grad =>
@@ -2428,7 +2434,7 @@ Section DefinedFunctions.
                        end)
                     (vector_zip le re) in
            match vectoro_to_ovector ograd with 
-           | Some grad' => df_eval_tree_backprop_deriv σ l grad_env grad'
+           | Some grad' => df_eval_tree_backprop_deriv σ l grad_env dvars grad'
            | _ => None
            end
          | MLossfun n m _ v1 v2 s l re => fun grad =>
@@ -2446,7 +2452,7 @@ Section DefinedFunctions.
                        end)
                     (matrix_zip le re) in
            match matrixo_to_omatrix ograd with 
-           | Some grad' => df_eval_tree_backprop_deriv σ l grad_env grad'
+           | Some grad' => df_eval_tree_backprop_deriv σ l grad_env dvars grad'
            | _ => None
            end
           end.
