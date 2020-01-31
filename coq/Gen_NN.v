@@ -60,19 +60,21 @@ Section GenNN.
     let N1 := VectorApply tt f_activ_var f_activ (MatrixVectorMult  tt mat1 ivec) in 
     VectorApply tt f_activ_var f_activ (MatrixVectorMult tt mat2 N1).
 
-  Definition mkVarNN2 (n1 n2 n3 : nat) (ivar wvar : SubVar) (f_activ : DefinedFunction DTfloat) (f_activ_var : SubVar) : (DefinedFunction (DTVector n3)) :=
-    let mat1 := mkVarMatrix (Sub wvar 1) n2 n1 in
-    let mat2 := mkVarMatrix (Sub wvar 2) n3 n2 in
-    let ivec := mkVarVector ivar n1 in
-    let N1 := VectorApply tt f_activ_var f_activ (MatrixVectorMult tt mat1 ivec) in 
-    VectorApply tt f_activ_var f_activ (MatrixVectorMult tt mat2 N1).
+  Definition mkVarNN2 (n1 n2 n3 : nat) (ivar wvar : SubVar) (f_activ : DefinedFunction DTfloat) (f_activ_var : SubVar) : (UnitDefinedFunction (DTVector n3) * list var_type) :=
+    let mat1 := (Sub wvar 1, DTMatrix n2 n1) in
+    let mat2 := (Sub wvar 2, DTMatrix n3 n2) in
+    let ivec := Var (ivar, DTVector n1) tt in
+    let N1 := VectorApply tt f_activ_var f_activ (MatrixVectorMult tt (Var mat1 tt) ivec) in 
+    (VectorApply tt f_activ_var f_activ (MatrixVectorMult tt (Var mat2 tt) N1),
+        mat1 :: mat2 :: nil).
 
-  Definition mkVarMatNN2 (n1 n2 n3 nsamp: nat) (ivar wvar : SubVar) (f_activ : DefinedFunction DTfloat) (f_activ_var : SubVar) : (DefinedFunction (DTMatrix n3 nsamp)) :=
-    let mat1 := mkVarMatrix (Sub wvar 1) n2 n1 in
-    let mat2 := mkVarMatrix (Sub wvar 2) n3 n2 in
-    let imat := mkVarMatrix ivar n1 nsamp in
-    let N1 := MatrixApply tt f_activ_var f_activ (MatrixMult tt mat1 imat) in 
-    MatrixApply tt f_activ_var f_activ (MatrixMult tt mat2 N1).
+  Definition mkVarMatNN2 (n1 n2 n3 nsamp: nat) (ivar wvar : SubVar) (f_activ : DefinedFunction DTfloat) (f_activ_var : SubVar) : (UnitDefinedFunction (DTMatrix n3 nsamp) * list var_type) :=
+    let mat1 := (Sub wvar 1, DTMatrix n2 n1) in
+    let mat2 := (Sub wvar 2, DTMatrix n3 n2) in
+    let imat := Var (ivar, DTMatrix n1 nsamp) tt in
+    let N1 := MatrixApply tt f_activ_var f_activ (MatrixMult tt (Var mat1 tt) imat) in 
+    (MatrixApply tt f_activ_var f_activ (MatrixMult tt (Var mat2 tt) N1), 
+     mat1 :: mat2 :: nil).
 
   Definition mkNN_bias_step (n1 n2 : nat) (ivec : DefinedFunction (DTVector n1)) 
              (mat : DefinedFunction (DTMatrix n2 n1)) 
@@ -90,14 +92,15 @@ Section GenNN.
     let N1 := mkNN_bias_step n1 n2 ivec mat1 b1 f_activ_var f_activ in
     mkNN_bias_step n2 n3 N1 mat2 b2 f_activ_var f_activ.
 
- Definition mkNN2_Var_bias (n1 n2 n3 : nat) (ivar wvar : SubVar) (f_activ : DefinedFunction DTfloat) (f_activ_var : SubVar) : DefinedFunction (DTVector n3) :=
-    let mat1 := mkVarMatrix (Sub wvar 1) n2 n1 in
-    let b1 := mkVarVector (Sub wvar 1) n2 in
-    let mat2 := mkVarMatrix (Sub wvar 2) n3 n2 in
-    let b2 := mkVarVector (Sub wvar 2) n3 in
-    let ivec := mkVarVector ivar n1 in
-    let N1 := mkNN_bias_step n1 n2 ivec mat1 b1 f_activ_var f_activ in
-    mkNN_bias_step n2 n3 N1 mat2 b2 f_activ_var f_activ.
+ Definition mkNN2_Var_bias (n1 n2 n3 : nat) (ivar wvar bvar : SubVar) (f_activ : DefinedFunction DTfloat) (f_activ_var : SubVar) : (UnitDefinedFunction (DTVector n3) * list var_type) :=
+    let mat1 := (Sub wvar 1, DTMatrix n2 n1) in
+    let b1 :=  (Sub bvar 1, DTVector n2) in
+    let mat2 := (Sub wvar 2, DTMatrix n3 n2) in
+    let b2 :=  (Sub bvar 2, DTVector n3) in
+    let ivec := Var (ivar, DTVector n1) tt in
+    let N1 := mkNN_bias_step n1 n2 ivec (Var mat1 tt) (Var b1 tt) f_activ_var f_activ in
+    (mkNN_bias_step n2 n3 N1 (Var mat2 tt) (Var b2 tt) f_activ_var f_activ,
+     mat1 :: b1 :: mat2 :: b2 :: nil).
 
   Definition mkNN_Mat_bias_step (n1 n2 nsamp : nat) (imat : DefinedFunction (DTMatrix n1 nsamp)) 
              (mat : DefinedFunction (DTMatrix n2 n1)) 
@@ -106,14 +109,15 @@ Section GenNN.
               : UnitDefinedFunction (DTMatrix n2 nsamp) :=
     MatrixApply tt f_activ_var f_activ (MatrixVectorAdd tt (MatrixMult tt mat imat) bias).
 
- Definition mkNN2_Var_Mat_bias (n1 n2 n3 nsamp: nat) (ivar wvar bvar: SubVar) (f1_activ f2_activ : DefinedFunction DTfloat) (f1_activ_var f2_activ_var : SubVar) : DefinedFunction (DTMatrix n3 nsamp) :=
-    let mat1 := mkVarMatrix (Sub wvar 1) n2 n1 in
-    let b1 := mkVarVector (Sub bvar 1) n2 in
-    let mat2 := mkVarMatrix (Sub wvar 2) n3 n2 in
-    let b2 := mkVarVector (Sub bvar 2) n3 in
-    let imat := mkVarMatrix ivar n1 nsamp in
-    let N1 := mkNN_Mat_bias_step n1 n2 nsamp imat mat1 b1 f1_activ_var f1_activ in
-    mkNN_Mat_bias_step n2 n3 nsamp N1 mat2 b2 f2_activ_var f2_activ.
+ Definition mkNN2_Var_Mat_bias (n1 n2 n3 nsamp: nat) (ivar wvar bvar: SubVar) (f1_activ f2_activ : DefinedFunction DTfloat) (f1_activ_var f2_activ_var : SubVar) : (DefinedFunction (DTMatrix n3 nsamp) * list var_type)  :=
+    let mat1 := (Sub wvar 1, DTMatrix n2 n1) in
+    let b1 :=  (Sub bvar 1, DTVector n2) in
+    let mat2 := (Sub wvar 2, DTMatrix n3 n2) in
+    let b2 :=  (Sub bvar 2, DTVector n3) in
+    let imat := Var (ivar, DTMatrix n1 nsamp) tt in
+    let N1 := mkNN_Mat_bias_step n1 n2 nsamp imat (Var mat1 tt) (Var b1 tt) f1_activ_var f1_activ in
+    (mkNN_Mat_bias_step n2 n3 nsamp N1 (Var mat2 tt) (Var b2 tt) f2_activ_var f2_activ,
+     mat1 :: b1 :: mat2 :: b2 :: nil).
 
  Lemma vector_float_map_last_rewrite {B nvlist1 n2 v n1} :
    (DTVector (last ((@domain _ B) nvlist1) n2)) = 
@@ -461,8 +465,9 @@ Section GenNN.
 
   Definition optimize_step_backprop
              (step : nat) (df : UnitDefinedFunction DTfloat) (σ:df_env)
-             (noise_st : Stream float) : (option df_env)*(Stream float) :=
-    match df_eval_backprop_deriv σ df nil 1 with
+             (noise_st : Stream float) (dvars : list var_type) 
+    : (option df_env)*(Stream float) :=
+    match df_eval_backprop_deriv σ df nil dvars 1 with
     | Some gradenv => 
       let alpha := 1 / (FfromZ (Z.of_nat (S step))) in
       let '(env, nst) := list_arg_iter (fun a b => update_entry a gradenv alpha b) σ noise_st in
@@ -472,10 +477,11 @@ Section GenNN.
 
   Definition optimize_step_tree_backprop
              (step : nat) (df : UnitDefinedFunction DTfloat) (σ:df_env)
-             (noise_st : Stream float) : (option df_env)*(Stream float) :=
+             (noise_st : Stream float) (dvars : list var_type) 
+    : (option df_env)*(Stream float) :=
     match df_eval_tree σ df with
     | Some df_tree =>
-      match df_eval_tree_backprop_deriv (* σ not-needed *) nil df_tree nil 1 with
+      match df_eval_tree_backprop_deriv (* σ not-needed *) nil df_tree nil dvars 1 with
       | Some gradenv => 
         let alpha := 1 / (FfromZ (Z.of_nat (S step))) in
         let '(env, nst) := list_arg_iter (fun a b => update_entry a gradenv alpha b) σ noise_st in
@@ -499,24 +505,26 @@ Section GenNN.
 
   Fixpoint optimize_steps_backprop
            (start count:nat) (df : DefinedFunction DTfloat) (σ:df_env) 
-           (noise_st : Stream float) : (option df_env)*(Stream float) :=
+           (noise_st : Stream float) (dvars : list var_type) 
+    : (option df_env)*(Stream float) :=
     match count with
     | 0 => (Some σ, noise_st)
     | S n =>
-      match optimize_step_backprop start df σ noise_st with
-      | (Some σ', noise_st') => optimize_steps_backprop (S start) n df σ' noise_st'
+      match optimize_step_backprop start df σ noise_st dvars with
+      | (Some σ', noise_st') => optimize_steps_backprop (S start) n df σ' noise_st' dvars
       | (None, noise_st') => (None, noise_st')
       end
     end.
 
   Fixpoint optimize_steps_tree_backprop
            (start count:nat) (df : DefinedFunction DTfloat) (σ:df_env) 
-           (noise_st : Stream float) : (option df_env)*(Stream float) :=
+           (noise_st : Stream float) (dvars : list var_type) 
+    : (option df_env)*(Stream float) :=
     match count with
     | 0 => (Some σ, noise_st)
     | S n =>
-      match optimize_step_tree_backprop start df σ noise_st with
-      | (Some σ', noise_st') => optimize_steps_backprop (S start) n df σ' noise_st'
+      match optimize_step_tree_backprop start df σ noise_st dvars with
+      | (Some σ', noise_st') => optimize_steps_tree_backprop (S start) n df σ' noise_st' dvars
       | (None, noise_st') => (None, noise_st')
       end
     end.
@@ -576,7 +584,7 @@ Definition init_env2 (dim1 dim2 dim3 : nat) (w b : string)
   (mk_env_entry bvar1 (ConstVector dim2 0)) :: 
   (mk_env_entry bvar2 (ConstVector dim3 0)) :: nil.
 
- Definition mkNN_wisconsin (nsamp:nat) (ivar wvar bvar f1v f2v : SubVar) : UnitDefinedFunction (DTMatrix 1 nsamp) :=
+ Definition mkNN_wisconsin (nsamp:nat) (ivar wvar bvar f1v f2v : SubVar) : (UnitDefinedFunction (DTMatrix 1 nsamp) * list var_type) :=
    let f1_activ := Max tt (Var (f1v,DTfloat) tt) (Number tt 0) in
    let f2_activ := Sigmoid f2v in
    mkNN2_Var_Mat_bias 9 15 1 nsamp ivar wvar bvar f1_activ f2_activ f1v f2v.
@@ -587,10 +595,9 @@ Definition init_env2 (dim1 dim2 dim3 : nat) (w b : string)
    let ivar := (Name "i") in
    let flnnv := (Name "NNv") in
    let outnnv := (Name "outnnv") in
+   let '(NN, dvars) := mkNN_wisconsin nsamp ivar (Name "w") (Name "b") (Name "f1v") (Name "f2v") in
    @EvalNNinstancebatch 9 nsamp 1 ivar (CrossEntropy flnnv outnnv) flnnv outnnv
-             (mkNN_wisconsin nsamp ivar (Name "w") (Name "b") (Name "f1v") (Name "f2v"))
-             σ
-             (splitLastCol normaldata _).
+             NN σ (splitLastCol normaldata _).
  Next Obligation.
    omega.
  Qed.
@@ -598,14 +605,15 @@ Definition init_env2 (dim1 dim2 dim3 : nat) (w b : string)
 Program Definition wisconsin_instance_batch (nsamp : nat)
             (σ:df_env) 
             (normaldata: Matrix float nsamp 10)
-             : df_env * (DefinedFunction DTfloat) := 
+             : (df_env * (DefinedFunction DTfloat)) * (list var_type) := 
    let ivar := (Name "i") in
    let flnnv := (Name "NNv") in
    let outnnv := (Name "outnnv") in
-   @NNinstancebatch 9 nsamp 1 ivar (CrossEntropy flnnv outnnv) flnnv outnnv
-             (mkNN_wisconsin nsamp ivar (Name "w") (Name "b") (Name "f1v") (Name "f2v"))
+   let '(NN, dvars) := mkNN_wisconsin nsamp ivar (Name "w") (Name "b") (Name "f1v") (Name "f2v") in
+   (@NNinstancebatch 9 nsamp 1 ivar (CrossEntropy flnnv outnnv) flnnv outnnv
+             NN
              σ
-             (splitLastCol normaldata _).
+             (splitLastCol normaldata _), dvars).
 Next Obligation.
   omega.
 Qed.
@@ -615,9 +623,9 @@ CoFixpoint zeronoise : Stream float := Cons 0 zeronoise.
 Definition wisconsin_test (nsamp count : nat) 
             (σ:df_env) 
             (normaldata: Matrix float nsamp 10): list float :=
-  let nninst := wisconsin_instance_batch nsamp σ normaldata in
+  let '(nninst, dvars) := wisconsin_instance_batch nsamp σ normaldata in
   let onenv := fst (optimize_steps_tree_backprop 0 count (snd nninst) (fst nninst)
-                                                zeronoise) in
+                                                zeronoise dvars) in
   match onenv with
   | Some nenv => match df_eval nenv (snd nninst) with
                  | Some val => val :: nil
@@ -629,9 +637,9 @@ Definition wisconsin_test (nsamp count : nat)
 Definition wisconsin_test_env (nsamp count : nat) 
             (σ:df_env) 
             (normaldata: Matrix float nsamp 10): df_env :=
-  let nninst := wisconsin_instance_batch nsamp σ normaldata in
-  let onenv := fst (optimize_steps_backprop 0 count (snd nninst) (fst nninst)
-                                                zeronoise) in
+  let '(nninst, dvars) := wisconsin_instance_batch nsamp σ normaldata in
+  let onenv := fst (optimize_steps_tree_backprop 0 count (snd nninst) (fst nninst)
+                                                zeronoise dvars) in
   match onenv with
   | Some nenv => nenv
   | _ => nil
@@ -646,7 +654,7 @@ Example squad:UnitDefinedFunction DTfloat := Minus tt (Square tt xfun) (Number t
 Example env : df_env := (mk_env_entry xvar (FfromZ 5))::nil.
 
 
-Example gradenv := match df_eval_backprop_deriv env quad nil 1 with
+Example gradenv := match df_eval_backprop_deriv env quad nil (xvar :: nil) 1 with
                    | Some gradenv => gradenv
                    | _ => nil
                    end.
@@ -654,7 +662,7 @@ Example gradenv := match df_eval_backprop_deriv env quad nil 1 with
 Example gradenv_tree := 
   match df_eval_tree env quad with
   | Some df_tree =>
-    match df_eval_tree_backprop_deriv nil df_tree nil 1 with
+    match df_eval_tree_backprop_deriv nil df_tree nil (xvar :: nil) 1 with
     | Some gradenv => gradenv
     | _ => nil                    
     end
@@ -664,8 +672,8 @@ Example gradenv_tree :=
 Example wisconsin_gradenv (nsamp : nat)
             (σ:df_env) 
             (normaldata: Matrix float nsamp 10) : df_env :=
-  let '(env,nn) := wisconsin_instance_batch nsamp σ normaldata in 
-  match df_eval_backprop_deriv env nn nil 1 with
+  let '((env,nn),dvars) := wisconsin_instance_batch nsamp σ normaldata in 
+  match df_eval_backprop_deriv env nn nil dvars 1 with
   | Some gradenv => gradenv
   | _ => nil
   end.
@@ -673,10 +681,10 @@ Example wisconsin_gradenv (nsamp : nat)
 Example wisconsin_gradenv_tree (nsamp : nat)
             (σ:df_env) 
             (normaldata: Matrix float nsamp 10) : df_env :=
-  let '(env,nn) := wisconsin_instance_batch nsamp σ normaldata in 
+  let '((env,nn),dvars) := wisconsin_instance_batch nsamp σ normaldata in 
   match df_eval_tree env nn with
   | Some df_tree =>
-    match df_eval_tree_backprop_deriv nil df_tree nil 1 with
+    match df_eval_tree_backprop_deriv nil df_tree nil dvars 1 with
     | Some gradenv => gradenv
     | _ => nil                    
     end
@@ -691,25 +699,25 @@ Definition test_update : df_env :=
 
 Definition test_optimize_step_backprop
              (step : nat) (df : UnitDefinedFunction DTfloat) (σ:df_env)
-             (noise_st : Stream float) : df_env :=
-  match fst (optimize_step_backprop step df σ noise_st) with
+             (noise_st : Stream float) (dvars : list var_type) : df_env :=
+  match fst (optimize_step_backprop step df σ noise_st dvars) with
   | Some env => env
   | _ => nil
   end.
 
 Definition test_optimize_step_tree_backprop
              (step : nat) (df : UnitDefinedFunction DTfloat) (σ:df_env)
-             (noise_st : Stream float) : df_env :=
-  match fst (optimize_step_tree_backprop step df σ noise_st) with
+             (noise_st : Stream float) (dvars : list var_type) : df_env :=
+  match fst (optimize_step_tree_backprop step df σ noise_st dvars) with
   | Some env => env
   | _ => nil
   end.
 
-Example testopt := test_optimize_step_backprop 0 quad env zeronoise.
-Example testreeopt := test_optimize_step_tree_backprop 0 quad env zeronoise.
+Example testopt := test_optimize_step_backprop 0 quad env zeronoise (xvar :: nil).
+Example testreeopt := test_optimize_step_tree_backprop 0 quad env zeronoise (xvar :: nil).
 
 Example opt := fst (optimize_steps 0 2 quad env ((fst xvar) :: nil) zeronoise).
-Example opt2 := fst (optimize_steps_tree_backprop 0 2 quad env zeronoise).
+Example opt2 := fst (optimize_steps_tree_backprop 0 2 quad env zeronoise (xvar :: nil)).
 
 
 End GenNN.
