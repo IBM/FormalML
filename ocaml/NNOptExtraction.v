@@ -53,7 +53,12 @@ Module API.
   Definition wisconsin_test_env := Gen_NN.wisconsin_test_env.  
   Definition wisconsin_gradenv_tree := Gen_NN.wisconsin_gradenv_tree.
   Definition wisconsin_gradenv := Gen_NN.wisconsin_gradenv.
-
+  Definition nn_test := Gen_NN.NN_test.
+  Definition nn_test_val := Gen_NN.NN_test_val.  
+  Definition nn_test_env := Gen_NN.NN_test_env.  
+  Definition nn_test_gradenv_tree := Gen_NN.NN_test_gradenv_tree.
+  Definition nn_test_gradenv := Gen_NN.NN_test_gradenv.
+  
   End API.
 
 
