@@ -2479,10 +2479,9 @@ Section DefinedFunctions.
      simpl.
      unfold equiv_dec.
      unfold vart_eqdec.
-     simpl vart_dec.
-     destruct (var_dec x x); [| congruence].
-     simpl.
+     destruct (vart_dec (x,DTfloat) (x,DTfloat)); [| congruence].
      f_equal.
+     replace (addvar (x, DTfloat) nil 1) with (1) by reflexivity.
      unfold eq_rect.
      unfold vartlookup_obligation_1.
      simpl.
