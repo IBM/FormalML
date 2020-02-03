@@ -644,7 +644,7 @@ Section DefinedFunctions.
                           (Times tt (MatrixElem tt ll i j)
                                  (df_subst (df_subst ss (v1, DTfloat) (MatrixElem tt l i j))
                                            (v2, DTfloat) (Number tt (r i j))))
-                     (Number tt (FfromZ (Z.of_nat n))))))
+                     (Number tt (FfromZ (Z.of_nat m))))))
           end).
 
     Definition df_gradient {T} (df:DefinedFunction T) (lv:list var_type) : list (DefinedFunction T)
@@ -853,7 +853,7 @@ Section DefinedFunctions.
                          let xv2 := (v2,DTfloat):var_type in
                          df_eval (cons (mk_env_entry xv1 (l' i j)) 
                                        (cons (mk_env_entry xv2 (r i j)) σ)) s)) with
-             | Some vv => Some ((msum vv) / (FfromZ (Z.of_nat n)))
+             | Some vv => Some ((msum vv) / (FfromZ (Z.of_nat m)))
              | _ => None
              end
            | _ => None
@@ -1096,7 +1096,7 @@ Section DefinedFunctions.
                          let xv2 := (v2,DTfloat):var_type in
                          df_eval (cons (mk_env_entry xv1 (vl' i j)) 
                                        (cons (mk_env_entry xv2 (r i j)) σ)) s)) with
-             | Some vv => Some (MLossfun ((msum vv)/(FfromZ (Z.of_nat n))) v1 v2 s l' r)
+             | Some vv => Some (MLossfun ((msum vv)/(FfromZ (Z.of_nat m))) v1 v2 s l' r)
              | _ => None
              end
            | _ => None
@@ -1639,7 +1639,7 @@ Section DefinedFunctions.
                          | Some sd => Some ((ld i j) * sd)
                          | _ => None
                          end)) with
-             | Some vv => Some ((msum vv)/(FfromZ (Z.of_nat n)))
+             | Some vv => Some ((msum vv)/(FfromZ (Z.of_nat m)))
              | _ => None
              end
            | _, _ => None
@@ -1859,7 +1859,7 @@ Section DefinedFunctions.
                          | Some sd => Some ((ld i j) * sd)
                          | _ => None
                          end)) with
-             | Some vv => Some ((msum vv) / (FfromZ (Z.of_nat n)))
+             | Some vv => Some ((msum vv) / (FfromZ (Z.of_nat m)))
              | _ => None
              end
            | _ => None
@@ -2243,7 +2243,7 @@ Section DefinedFunctions.
                          let senv := cons (mk_env_entry xv1 lei) 
                                           (cons (mk_env_entry xv2 rei) σ) in
                          match df_eval senv s' with
-                         | Some se => Some ((grad * se)/(FfromZ (Z.of_nat n)))
+                         | Some se => Some ((grad * se)/(FfromZ (Z.of_nat m)))
                          | _ => None
                          end)
                       (matrix_zip le re) in
@@ -2254,6 +2254,7 @@ Section DefinedFunctions.
            | _ => None                                                    
            end
           end.
+
 
     Fixpoint df_eval_tree_backprop_deriv {T} (σ:df_env) (df:@DefinedFunction EvalAnn T) (grad_env:df_env) (dvars : list var_type) {struct df} : definition_function_types_interp T -> option df_env
       := match df with
@@ -2447,7 +2448,7 @@ Section DefinedFunctions.
                        let senv := cons (mk_env_entry xv1 lei) 
                                         (cons (mk_env_entry xv2 rei) σ) in
                        match df_eval senv s' with
-                       | Some se => Some ((grad * se) / (FfromZ (Z.of_nat n)))
+                       | Some se => Some ((grad * se) / (FfromZ (Z.of_nat m)))
                        | _ => None
                        end)
                     (matrix_zip le re) in
@@ -2456,6 +2457,37 @@ Section DefinedFunctions.
            | _ => None
            end
           end.
+
+    Definition o_df_env_to_df_env (oenv : option df_env) : df_env :=
+      match oenv with
+      | Some env => env
+      | _ => nil
+      end.
+
+   Lemma backpropeq1 (x : SubVar) (env : df_env) :
+      df_eval_deriv env (@Var UnitAnn (x,DTfloat) tt) (x,DTfloat)  =  
+      vartlookup (o_df_env_to_df_env 
+                    (df_eval_backprop_deriv env (@Var UnitAnn (x,DTfloat) tt) nil ((x,DTfloat)::nil) 1)) 
+                 (x, DTfloat).
+   Proof.
+     unfold df_eval_deriv.
+     unfold df_eval_backprop_deriv.
+     simpl.
+     destruct (var_dec x x); [| congruence].
+     simpl.
+     unfold equiv_dec.
+     unfold vart_eqdec.
+     simpl vart_dec.
+     destruct (var_dec x x); [| congruence].
+     simpl.
+     f_equal.
+     unfold eq_rect.
+     simpl.
+     unfold vartlookup_obligation_1.
+     simpl.
+     Admitted.
+
+
 
    Definition definition_function_types_map_base (f:Type->Type) (dft:definition_function_types): Type
      := match dft with

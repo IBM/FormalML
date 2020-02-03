@@ -34,16 +34,31 @@ let init_env = init_env2 9 15 1 (char_list_of_string "w") (char_list_of_string "
     (Obj.magic (random_float_matrix ())) (Obj.magic (random_float_matrix ())) ;;
 let () = Format.printf "Init environment: %a\n" pretty_df_env init_env ;;
 
-let wval = eval_wisconsin_batch 5 (Obj.magic init_env) (Obj.magic normalized_data) ;;
+let wval = eval_wisconsin_batch 30 (Obj.magic init_env) (Obj.magic normalized_data) ;;
 let () = Format.printf "wisconsin init loss value : %a\n" (pretty_blist pp_print_float) (Obj.magic wval) ;;
 
-let wval2 = wisconsin_test 5 20 (Obj.magic init_env) (Obj.magic normalized_data) ;;
+let wval2 = wisconsin_test 6 550 (Obj.magic init_env) (Obj.magic normalized_data) ;;
 let () = Format.printf "wisconsin loss value : %a\n" (pretty_blist pp_print_float) (Obj.magic wval2) ;;
 
-(*
-let wenv = wisconsin_test_env 5 25 (Obj.magic init_env) (Obj.magic normalized_data) ;;
+let wenv = wisconsin_test_env 6 550 (Obj.magic init_env) (Obj.magic normalized_data) ;;
 let () = Format.printf "wisconsin test env: %a\n" pretty_df_env wenv ;;
 
+let nnval = nn_test_val ;;
+let () = Format.printf "nn test init loss value : %a\n" (pretty_blist pp_print_float) (Obj.magic nnval) ;;
+
+let wval3 = nn_test 1 ;;
+let () = Format.printf "NN test loss value : %a\n" (pretty_blist pp_print_float) (Obj.magic wval3) ;;
+
+let wenv3 = nn_test_env 1 ;;
+let () = Format.printf "NN test env: %a\n" pretty_df_env wenv3 ;;
+
+let wenv4 = nn_test_gradenv ;;
+let () = Format.printf "NN gradenv env: %a\n" pretty_df_env wenv4 ;;
+
+let wenv5 = nn_test_gradenv_tree ;;
+let () = Format.printf "NN gradenv env tree: %a\n" pretty_df_env wenv5 ;;
+
+(*
 let gradenvtree = wisconsin_gradenv_tree 1 (Obj.magic init_env) (Obj.magic normalized_data) ;;
 let () = Format.printf "wisconsin gradenv_tree : %a\n" pretty_df_env gradenvtree ;;
 

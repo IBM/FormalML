@@ -624,7 +624,7 @@ Definition wisconsin_test (nsamp count : nat)
             (σ:df_env) 
             (normaldata: Matrix float nsamp 10): list float :=
   let '(nninst, dvars) := wisconsin_instance_batch nsamp σ normaldata in
-  let onenv := fst (optimize_steps_tree_backprop 0 count (snd nninst) (fst nninst)
+  let onenv := fst (optimize_steps_backprop 0 count (snd nninst) (fst nninst)
                                                 zeronoise dvars) in
   match onenv with
   | Some nenv => match df_eval nenv (snd nninst) with
@@ -638,7 +638,7 @@ Definition wisconsin_test_env (nsamp count : nat)
             (σ:df_env) 
             (normaldata: Matrix float nsamp 10): df_env :=
   let '(nninst, dvars) := wisconsin_instance_batch nsamp σ normaldata in
-  let onenv := fst (optimize_steps_tree_backprop 0 count (snd nninst) (fst nninst)
+  let onenv := fst (optimize_steps_backprop 0 count (snd nninst) (fst nninst)
                                                 zeronoise dvars) in
   match onenv with
   | Some nenv => nenv
@@ -691,6 +691,95 @@ Example wisconsin_gradenv_tree (nsamp : nat)
   | _ => nil
   end.
 
+ Definition mkperceptron (n1 n2 : nat) (ivar wvar bvar : SubVar) (f_activ : DefinedFunction DTfloat) (f_activ_var : SubVar) : (UnitDefinedFunction (DTVector n2) * list var_type) :=
+    let mat1 := (wvar, DTMatrix n2 n1) in
+    let b1 :=  (bvar, DTVector n2) in
+    let ivec := Var (ivar, DTVector n1) tt in
+    let N1 := mkNN_bias_step n1 n2 ivec (Var mat1 tt) (Var b1 tt) f_activ_var f_activ in
+    (N1,  mat1 :: b1 :: nil).
+
+ Definition mkNN_test1 :=
+   let ivar := Name "i" in
+   let wvar := Name "w" in
+   let bvar := Name "b" in 
+   let f1v := Name "f1" in
+   let f1_activ := Max tt (Var (f1v,DTfloat) tt) (Number tt 0) in
+   let '(nn, dvars) := mkperceptron 2 2 ivar wvar bvar f1_activ f1v in
+   let winit := mk_env_entry (wvar, DTMatrix 2 2) (ConstMatrix 2 2 1) in
+   let binit := mk_env_entry (bvar, DTVector 2) (ConstVector 2 1) in
+   let datain := ConstVector 2 1 in
+   let env := (mk_env_entry (ivar, DTVector 2) (ConstVector 2 1)):: winit :: binit :: nil in 
+   (env, nn).
+
+ Definition mkNN_test :=
+   let ivar := Name "i" in
+   let wvar := Name "w" in
+   let bvar := Name "b" in 
+   let f1v := Name "f1" in
+(*   let f1_activ := Max tt (Var (f1v,DTfloat) tt) (Number tt 0) in *)
+   let f1_activ := Sigmoid f1v in
+   let '(nn, dvars) := mkperceptron 2 2 ivar wvar bvar f1_activ f1v in
+   let datain := ConstVector 2 1 in
+   let dataout := ConstVector 2 0 in
+   let loss_nnvar := Name "lv" in 
+   let loss_ovar := Name "ov" in
+   let floss := CrossEntropy loss_nnvar loss_ovar in
+   let winit := mk_env_entry (wvar, DTMatrix 2 2) (ConstMatrix 2 2 (FfromZ 2)) in
+   let binit := mk_env_entry (bvar, DTVector 2) (ConstVector 2 (FfromZ 3)) in
+   let env := winit :: binit :: nil in 
+   (NNinstance1samp ivar floss loss_nnvar loss_ovar nn env (datain, dataout), dvars).
+
+Definition NN_test (count : nat) : list float :=
+  let '(nninst, dvars) := mkNN_test in
+  let onenv := fst (optimize_steps_tree_backprop 0 count (snd nninst) (fst nninst)
+                                                zeronoise dvars) in
+  match onenv with
+  | Some nenv => match df_eval nenv (snd nninst) with
+                 | Some val => val :: nil
+                 | _ => nil                  
+                 end
+  | _ => nil
+  end.
+
+Example NN_test_gradenv : df_env := 
+  let '((env, nn), dvars) := mkNN_test in
+  match df_eval_backprop_deriv env nn nil dvars 1 with
+  | Some gradenv => gradenv
+  | _ => nil
+  end.
+
+Example NN_test_gradenv_tree :df_env := 
+  let '((env, nn), dvars) := mkNN_test in
+  match df_eval_tree env nn with
+  | Some df_tree =>
+    match df_eval_tree_backprop_deriv nil df_tree nil dvars 1 with
+    | Some gradenv => gradenv
+    | _ => nil                    
+    end
+  | _ => nil
+  end.
+
+
+Definition NN_test_env (count : nat) : df_env :=
+  let '(nninst, dvars) := mkNN_test in
+  let onenv := fst (optimize_steps_tree_backprop 0 count (snd nninst) (fst nninst)
+                                                zeronoise dvars) in
+  match onenv with
+  | Some nenv => nenv
+  | _ => nil
+  end.
+
+Definition NN_test_NN  :=
+  let '((env,nn), dvars) := mkNN_test in
+  nn.
+
+Definition NN_test_val : list float :=
+  let '((env,nn), dvars) := mkNN_test in
+  match df_eval env nn with
+  | Some val => val :: nil
+  | _ => nil
+  end.
+
 Definition test_update_val_gradenv
   := update_val_gradenv gradenv xvar 1 (FfromZ 5) 0.
 
@@ -719,5 +808,11 @@ Example testreeopt := test_optimize_step_tree_backprop 0 quad env zeronoise (xva
 Example opt := fst (optimize_steps 0 2 quad env ((fst xvar) :: nil) zeronoise).
 Example opt2 := fst (optimize_steps_tree_backprop 0 2 quad env zeronoise (xvar :: nil)).
 
+Example val := 1+1.
 
 End GenNN.
+
+(*
+Local Instance floatish_interval : floatish := floatish_interval_gen 53.
+Compute df_eval NN_test_env NN_test_NN.
+*)
