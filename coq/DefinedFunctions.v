@@ -5,6 +5,7 @@ Require Import List.
 Require Import NPeano.
 Require Import Lra Omega.
 Require Reals.
+Require Import Eqdep_dec.
 
 Require Import Floatish.
 Require Import Utils.
@@ -2485,7 +2486,11 @@ Section DefinedFunctions.
      unfold eq_rect.
      unfold vartlookup_obligation_1.
      simpl.
-     Admitted.
+     assert (pfeq:e0 = eq_refl _)
+       by apply (UIP_dec vart_dec).
+     rewrite pfeq.
+     reflexivity.
+   Qed.
 
 
    Definition definition_function_types_map_base (f:Type->Type) (dft:definition_function_types): Type
