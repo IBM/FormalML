@@ -2465,9 +2465,11 @@ Section DefinedFunctions.
       end.
 
    Lemma backpropeq1 (x : SubVar) (env : df_env) :
-      df_eval_deriv env (@Var UnitAnn (x,DTfloat) tt) (x,DTfloat)  =  
+      let xvar := (x, DTfloat) in 
+      let dfexpr := (@Var UnitAnn xvar tt) in
+      df_eval_deriv env dfexpr xvar  =  
       vartlookup (o_df_env_to_df_env 
-                    (df_eval_backprop_deriv env (@Var UnitAnn (x,DTfloat) tt) nil ((x,DTfloat)::nil) 1)) 
+                    (df_eval_backprop_deriv env dfexpr nil (xvar::nil) 1)) 
                  (x, DTfloat).
    Proof.
      unfold df_eval_deriv.
@@ -2482,11 +2484,9 @@ Section DefinedFunctions.
      simpl.
      f_equal.
      unfold eq_rect.
-     simpl.
      unfold vartlookup_obligation_1.
      simpl.
      Admitted.
-
 
 
    Definition definition_function_types_map_base (f:Type->Type) (dft:definition_function_types): Type
