@@ -3019,8 +3019,36 @@ Section DefinedFunctions.
                                                         | _ => fun _ => False
                                                     end)); trivial.
    Qed.
-     
 
+
+   Program
+      Fixpoint vartlookup (l:df_env) (a:var_type) : 
+      option (definition_function_types_interp (snd a))
+      := match l with
+         | nil => None
+         | fv::os => if a == (projT1 fv) then 
+                       Some (eq_rect _ definition_function_types_interp (projT2 fv) _ _) 
+                     else vartlookup os a
+         end.
+
+   Definition vartlookup_eq (l1 l2:df_env) : Prop := forall a, vartlookup l1 a = vartlookup l2 a.
+
+   Global Instance vartlookup_eq_equiv : Equivalence vartlookup_eq.
+   Proof.
+     unfold vartlookup_eq.
+     constructor; red.
+     - intros; reflexivity.
+     - intros; eauto.
+     - intro; etransitivity; eauto.
+   Qed.
+
+   (*
+   Lemma vart_update_lookup_ext (l1 l2:df_env) (a:var_type) (n:definition_function_types_interp (snd a)) : vartlookup_eq l1 l2 -> vart_update l1 a n = vart_update l2 a n.
+   Proof.
+   Admitted.
+    *)
+
+                                     
    Lemma backpropeq_gen (x : SubVar) (env : df_env) (dfexpr : @DefinedFunction UnitAnn DTfloat) :
       let xvar := (x, DTfloat) in 
       is_scalar_function dfexpr ->
@@ -3033,7 +3061,33 @@ Section DefinedFunctions.
       apply is_scalar_function_ind; simpl.
       - reflexivity.
       - reflexivity.
-      Admitted.
+      - intros.
+        destruct (@equiv_dec var_type _ _ _ (sv, DTfloat) (x, DTfloat)).
+        + inversion e; subst.
+          destruct (var_dec x x); [| congruence].
+          simpl.
+          destruct (@equiv_dec var_type _ _ _ (x, DTfloat) (x, DTfloat)); [| congruence].
+          rewrite (var_type_UIP_refl e1); simpl.
+          reflexivity.
+        + destruct (var_dec x sv); [congruence | ].
+          reflexivity.
+    Admitted.
+(*
+      - intros.
+        rewrite H, H0; clear H H0.
+        (* need lemma here *)
+        case_eq (df_eval_backprop_deriv env l nil ((x, DTfloat) :: nil) 1)
+        ; simpl in *; trivial; intros d eqd.
+        
+        
+        case_eq (df_eval_backprop_deriv env r d ((x, DTfloat) :: nil) 1)
+        ; simpl in *; trivial; intros dd eqdd.
+        
+        
+
+   Qed.
+*)
+          
 
 
    Lemma tree_backpropeq_gen (x : SubVar) (env : df_env) (dfexpr : @DefinedFunction EvalAnn DTfloat) :
