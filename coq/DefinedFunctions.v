@@ -2478,18 +2478,10 @@ Section DefinedFunctions.
                     (df_eval_backprop_deriv env dfexpr nil (xvar::nil) 1)) 
                  (x, DTfloat).
    Proof.
-     unfold df_eval_deriv.
-     unfold df_eval_backprop_deriv.
      simpl.
      destruct (var_dec x x); [| congruence].
      simpl.
-     unfold equiv_dec.
-     unfold vart_eqdec.
-     destruct (vart_dec (x,DTfloat) (x,DTfloat)); [| congruence].
-     f_equal.
-     replace (addvar (x, DTfloat) nil 1) with (1) by reflexivity.
-     unfold eq_rect.
-     unfold vartlookup_obligation_1.
+     destruct (@equiv_dec var_type _ _ _ (x, DTfloat) (x, DTfloat)); [| congruence].
      simpl.
      rewrite (var_type_UIP_refl e0).
      reflexivity.
@@ -2543,6 +2535,28 @@ Section DefinedFunctions.
      induction df; simpl; trivial.
    Qed.
    
+
+   Lemma backpropeq_gen (x : SubVar) (env : df_env) (dfexpr : @DefinedFunction UnitAnn DTfloat) :
+      let xvar := (x, DTfloat) in 
+      is_scalar_function dfexpr ->
+      df_eval_deriv env dfexpr xvar  =  
+      vartlookup (o_df_env_to_df_env 
+                    (df_eval_backprop_deriv env dfexpr nil (xvar::nil) 1)) 
+                 xvar.
+   Proof.
+     simpl.
+     Admitted.
+
+   Lemma tree_backpropeq_gen (x : SubVar) (env : df_env) (dfexpr : @DefinedFunction EvalAnn DTfloat) :
+      let xvar := (x, DTfloat) in 
+      is_scalar_function dfexpr ->
+      df_eval_tree_deriv env dfexpr xvar  =  
+      vartlookup (o_df_env_to_df_env 
+                    (df_eval_tree_backprop_deriv env dfexpr nil (xvar::nil) 1)) 
+                 xvar.
+   Proof.
+     simpl.
+     Admitted.
 
    Definition definition_function_types_map_base (f:Type->Type) (dft:definition_function_types): Type
      := match dft with
