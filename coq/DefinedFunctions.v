@@ -676,6 +676,7 @@ Section DefinedFunctions.
                      else vartlookup os a
          end.
 
+
     Fixpoint vart_update (l:df_env) (a:var_type) (n:definition_function_types_interp (snd a)) : df_env
       := match l with 
          | nil =>  (mk_env_entry a n)::nil
@@ -2470,13 +2471,27 @@ Section DefinedFunctions.
       apply (UIP_dec vart_dec).
     Qed.
     
+    Definition backprop_lookup (oenv:option df_env) (a:var_type) : 
+      option (definition_function_types_interp (snd a)) :=
+      match oenv with
+      | Some env =>        
+        match vartlookup env a with
+        | Some val => Some val
+        | _ => match (snd a) with
+               | DTfloat => Some 0
+               | DTVector n => Some (ConstVector n 0)
+               | DTMatrix m n => Some (ConstMatrix m n 0)
+               end
+        end
+      | _ => None
+     end.          
+
    Lemma backpropeq1 (x : SubVar) (env : df_env) :
       let xvar := (x, DTfloat) in 
       let dfexpr := (@Var UnitAnn xvar tt) in
       df_eval_deriv env dfexpr xvar  =  
-      vartlookup (o_df_env_to_df_env 
-                    (df_eval_backprop_deriv env dfexpr nil (xvar::nil) 1)) 
-                 (x, DTfloat).
+      backprop_lookup (df_eval_backprop_deriv env dfexpr nil (xvar::nil) 1)
+                      (x, DTfloat).
    Proof.
      simpl.
      destruct (var_dec x x); [| congruence].
@@ -2491,9 +2506,8 @@ Section DefinedFunctions.
       let xvar := (x, DTfloat) in 
       let dfexpr := (@Square UnitAnn tt (@Var UnitAnn xvar tt)) in
       df_eval_deriv env dfexpr xvar  =  
-      vartlookup (o_df_env_to_df_env 
-                    (df_eval_backprop_deriv env dfexpr nil (xvar::nil) 1)) 
-                 xvar.
+      backprop_lookup (df_eval_backprop_deriv env dfexpr nil (xvar::nil) 1)
+                      xvar.
    Proof.
      simpl.
      destruct (vartlookup env (x, DTfloat)); simpl; trivial.
@@ -2536,27 +2550,6 @@ Section DefinedFunctions.
    Qed.
    
 
-   Lemma backpropeq_gen (x : SubVar) (env : df_env) (dfexpr : @DefinedFunction UnitAnn DTfloat) :
-      let xvar := (x, DTfloat) in 
-      is_scalar_function dfexpr ->
-      df_eval_deriv env dfexpr xvar  =  
-      vartlookup (o_df_env_to_df_env 
-                    (df_eval_backprop_deriv env dfexpr nil (xvar::nil) 1)) 
-                 xvar.
-   Proof.
-     simpl.
-     Admitted.
-
-   Lemma tree_backpropeq_gen (x : SubVar) (env : df_env) (dfexpr : @DefinedFunction EvalAnn DTfloat) :
-      let xvar := (x, DTfloat) in 
-      is_scalar_function dfexpr ->
-      df_eval_tree_deriv env dfexpr xvar  =  
-      vartlookup (o_df_env_to_df_env 
-                    (df_eval_tree_backprop_deriv env dfexpr nil (xvar::nil) 1)) 
-                 xvar.
-   Proof.
-     simpl.
-     Admitted.
 
    Definition definition_function_types_map_base (f:Type->Type) (dft:definition_function_types): Type
      := match dft with
@@ -3027,21 +3020,39 @@ Section DefinedFunctions.
                                                     end)); trivial.
    Qed.
      
-     (*
+
    Lemma backpropeq_gen (x : SubVar) (env : df_env) (dfexpr : @DefinedFunction UnitAnn DTfloat) :
       let xvar := (x, DTfloat) in 
       is_scalar_function dfexpr ->
       df_eval_deriv env dfexpr xvar  =  
-      vartlookup (o_df_env_to_df_env 
-                    (df_eval_backprop_deriv env dfexpr nil (xvar::nil) 1)) 
-                 xvar.
+      backprop_lookup (df_eval_backprop_deriv env dfexpr nil (xvar::nil) 1)
+                      xvar.
     Proof.
       simpl.
       revert dfexpr.
       apply is_scalar_function_ind; simpl.
-      - simpl.
-    Qed.
-      *)
+      - reflexivity.
+      - reflexivity.
+      Admitted.
+
+
+   Lemma tree_backpropeq_gen (x : SubVar) (env : df_env) (dfexpr : @DefinedFunction EvalAnn DTfloat) :
+      let xvar := (x, DTfloat) in 
+      is_scalar_function dfexpr ->
+      df_eval_tree_deriv env dfexpr xvar  =  
+      backprop_lookup (df_eval_tree_backprop_deriv env dfexpr nil (xvar::nil) 1) 
+                      xvar.
+   Proof.
+     simpl.
+     revert dfexpr.
+     apply is_scalar_function_ind; simpl.
+     - reflexivity.
+     - reflexivity.
+     Admitted.
+
+
+   End scalar_ind.
+
 
     Section deriv_deriv.
 
