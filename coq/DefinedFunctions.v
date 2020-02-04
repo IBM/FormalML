@@ -2923,7 +2923,111 @@ Section DefinedFunctions.
            end
           end).
 *)
-    End deriv2.
+   End deriv2.
+
+   Definition dft_one (dft:definition_function_types) : definition_function_types_interp dft
+     := match dft with
+        | DTfloat => 1
+        | DTVector n => fun _ => 1
+        | DTMatrix m n => fun _ _ => 1
+        end.
+
+   Section scalar_ind.
+     
+   Fixpoint is_scalar_function_ind_gen {Ann}
+             {P:forall {T}, @DefinedFunction Ann T->Prop}
+             (fnumber:forall ann x, P (Number ann x))
+             (fconstant:forall (ann:Ann DTfloat) x, P (@Constant _ DTfloat ann x))
+             (fvar:forall sv ann, P (@Var _ (sv,DTfloat) ann))
+             (fplus:forall a l r, P l -> P r -> P (Plus a l r))
+             (fminus:forall a l r, P l -> P r -> P (Minus a l r))
+             (ftimes:forall a l r, P l -> P r -> P (Times a l r))
+             (fdivide:forall a l r, P l -> P r -> P (Divide a l r))
+             (fsquare:forall a e, P e -> P (Square a e))
+             (fexp:forall a e, P e -> P (Exp a e))
+             (flog:forall a e, P e -> P (Log a e))
+             (fabs:forall a e, P e -> P (Abs a e))
+             (fsign:forall a e, P e -> P (Sign a e))
+             (fpsign:forall a e, P e -> P (PSign a e))
+             (fmax:forall a l r, P l -> P r -> P (Max a l r))
+             {T}
+            (df:@DefinedFunction Ann T) {struct df} : is_scalar_function df -> P df.
+   Proof.
+     induction df; simpl; intros isc; try tauto.
+     - apply fnumber.
+     - destruct t; simpl in isc; try tauto.
+       apply fconstant.
+     - destruct v.
+       destruct d; simpl in isc; try tauto.
+       apply fvar.
+     - apply fplus.
+       + apply IHdf1; tauto.
+       + apply IHdf2; tauto.
+     - apply fminus.
+       + apply IHdf1; tauto.
+       + apply IHdf2; tauto.
+     - apply ftimes.
+       + apply IHdf1; tauto.
+       + apply IHdf2; tauto.
+     - apply fdivide.
+       + apply IHdf1; tauto.
+       + apply IHdf2; tauto.
+     - apply fsquare.
+       + apply IHdf; tauto.
+     - apply fexp.
+       + apply IHdf; tauto.
+     - apply flog.
+       + apply IHdf; tauto.
+     - apply fabs.
+       + apply IHdf; tauto.
+     - apply fsign.
+       + apply IHdf; tauto.
+     - apply fpsign.
+       + apply IHdf; tauto.
+     - apply fmax.
+       + apply IHdf1; tauto.
+       + apply IHdf2; tauto.
+   Qed.
+
+   Definition is_scalar_function_ind {Ann}
+             {P:@DefinedFunction Ann DTfloat->Prop}
+             (fnumber:forall ann x, P (Number ann x))
+             (fconstant:forall (ann:Ann DTfloat) x, P (@Constant _ DTfloat ann x))
+             (fvar:forall sv ann, P (@Var _ (sv,DTfloat) ann))
+             (fplus:forall a l r, P l -> P r -> P (Plus a l r))
+             (fminus:forall a l r, P l -> P r -> P (Minus a l r))
+             (ftimes:forall a l r, P l -> P r -> P (Times a l r))
+             (fdivide:forall a l r, P l -> P r -> P (Divide a l r))
+             (fsquare:forall a e, P e -> P (Square a e))
+             (fexp:forall a e, P e -> P (Exp a e))
+             (flog:forall a e, P e -> P (Log a e))
+             (fabs:forall a e, P e -> P (Abs a e))
+             (fsign:forall a e, P e -> P (Sign a e))
+             (fpsign:forall a e, P e -> P (PSign a e))
+             (fmax:forall a l r, P l -> P r -> P (Max a l r))
+             (df:@DefinedFunction Ann DTfloat) : is_scalar_function df -> P df.
+   Proof.
+     apply (@is_scalar_function_ind_gen _ (fun t => match t with
+                                                        | DTfloat => fun df => P df
+                                                        | _ => fun _ => False
+                                                    end)); trivial.
+   Qed.
+     
+     (*
+   Lemma backpropeq_gen (x : SubVar) (env : df_env) (dfexpr : @DefinedFunction UnitAnn DTfloat) :
+      let xvar := (x, DTfloat) in 
+      is_scalar_function dfexpr ->
+      df_eval_deriv env dfexpr xvar  =  
+      vartlookup (o_df_env_to_df_env 
+                    (df_eval_backprop_deriv env dfexpr nil (xvar::nil) 1)) 
+                 xvar.
+    Proof.
+      simpl.
+      revert dfexpr.
+      apply is_scalar_function_ind; simpl.
+      - simpl.
+    Qed.
+      *)
 
     Section deriv_deriv.
 
