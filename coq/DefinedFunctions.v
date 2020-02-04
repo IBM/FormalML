@@ -2465,6 +2465,11 @@ Section DefinedFunctions.
       | _ => nil
       end.
 
+    Lemma var_type_UIP_refl {x:var_type} (e:x=x) : e = eq_refl x.
+    Proof.
+      apply (UIP_dec vart_dec).
+    Qed.
+    
    Lemma backpropeq1 (x : SubVar) (env : df_env) :
       let xvar := (x, DTfloat) in 
       let dfexpr := (@Var UnitAnn xvar tt) in
@@ -2486,12 +2491,26 @@ Section DefinedFunctions.
      unfold eq_rect.
      unfold vartlookup_obligation_1.
      simpl.
-     assert (pfeq:e0 = eq_refl _)
-       by apply (UIP_dec vart_dec).
-     rewrite pfeq.
+     rewrite (var_type_UIP_refl e0).
      reflexivity.
    Qed.
 
+   Lemma backpropeq2 (x : SubVar) (env : df_env) :
+      let xvar := (x, DTfloat) in 
+      let dfexpr := (@Square UnitAnn tt (@Var UnitAnn xvar tt)) in
+      df_eval_deriv env dfexpr xvar  =  
+      vartlookup (o_df_env_to_df_env 
+                    (df_eval_backprop_deriv env dfexpr nil (xvar::nil) 1)) 
+                 xvar.
+   Proof.
+     simpl.
+     destruct (vartlookup env (x, DTfloat)); simpl; trivial.
+     destruct (var_dec x x); [| congruence].
+     simpl.
+     destruct (@equiv_dec var_type _ _ _ (x, DTfloat) (x, DTfloat)); [| congruence].
+     rewrite (var_type_UIP_refl e0).
+     reflexivity.
+   Qed.
 
    Definition definition_function_types_map_base (f:Type->Type) (dft:definition_function_types): Type
      := match dft with
