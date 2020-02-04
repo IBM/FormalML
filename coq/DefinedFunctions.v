@@ -3048,7 +3048,41 @@ Section DefinedFunctions.
    Admitted.
     *)
 
-                                     
+   Lemma lookup_update (xv : var_type) (gradenv : df_env) 
+         (val : definition_function_types_interp (snd xv)) :
+     vartlookup (vart_update gradenv xv val) xv = Some val.
+   Proof.
+     induction gradenv; simpl.
+     - destruct (@equiv_dec var_type _ _ _ xv xv); [| congruence].
+       rewrite (var_type_UIP_refl e); simpl.
+       reflexivity.
+     - destruct a; simpl.
+       case_eq (@equiv_dec var_type _ _ _ xv x); simpl; intros.
+       + destruct (@equiv_dec var_type _ _ _ xv xv); [| congruence].
+         rewrite (var_type_UIP_refl e0); simpl.
+         reflexivity.
+       + rewrite H; trivial.
+   Qed.
+   
+(*
+   Lemma backpropeq_gen (x : SubVar) (env gradenv : df_env) (dfexpr : @DefinedFunction UnitAnn DTfloat) (grad : float) :
+      let xvar := (x, DTfloat) in 
+      is_scalar_function dfexpr ->
+      match df_eval_deriv env dfexpr xvar, 
+            backprop_lookup (Some gradenv) xvar,
+            backprop_lookup (df_eval_backprop_deriv env dfexpr gradenv (xvar::nil) grad) xvar
+      with
+      | Some dval, Some bval0, Some bval1 =>  dval*grad + bval0 = bval1
+      | None, _, None => True
+      | _, _, _ => False
+      end.
+   Proof.
+     simpl.
+     revert dfexpr.
+     apply is_scalar_function_ind; simpl.
+     - destruct (vartlookup gradenv (x, DTfloat)); simpl; intros.
+     *)  
+     
    Lemma backpropeq_gen (x : SubVar) (env : df_env) (dfexpr : @DefinedFunction UnitAnn DTfloat) :
       let xvar := (x, DTfloat) in 
       is_scalar_function dfexpr ->
