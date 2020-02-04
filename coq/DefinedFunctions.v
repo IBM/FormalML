@@ -2512,6 +2512,38 @@ Section DefinedFunctions.
      reflexivity.
    Qed.
 
+   Definition is_scalar_df_type (dft:definition_function_types) : Prop
+     := match dft with
+        | DTfloat => True
+        | _ => False
+        end.
+
+   Fixpoint is_scalar_function {Ann} {T} (df:@DefinedFunction Ann T) : Prop
+     := match df with
+        | Number _ _ => True
+        | Constant t _ _ => is_scalar_df_type t
+        | Var v _ => is_scalar_df_type (snd v)
+        | Plus _ l r => is_scalar_function l /\ is_scalar_function r
+        | Minus _ l r => is_scalar_function l /\ is_scalar_function r
+        | Times _ l r => is_scalar_function l /\ is_scalar_function r
+        | Divide _ l r => is_scalar_function l /\ is_scalar_function r
+        | Square _ e => is_scalar_function e
+        | Exp _ e => is_scalar_function e
+        | Log _ e => is_scalar_function e
+        | Abs _ e => is_scalar_function e
+        | Sign _ e => is_scalar_function e
+        | PSign _ e => is_scalar_function e
+        | Max _ l r => is_scalar_function l /\ is_scalar_function r
+        | _ => False
+        end.
+
+   Lemma is_scalar_function_scalar {Ann} {T} (df:@DefinedFunction Ann T) :
+     is_scalar_function df -> is_scalar_df_type T.
+   Proof.
+     induction df; simpl; trivial.
+   Qed.
+   
+
    Definition definition_function_types_map_base (f:Type->Type) (dft:definition_function_types): Type
      := match dft with
         | DTfloat => f float
