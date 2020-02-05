@@ -3625,6 +3625,23 @@ Section DefinedFunctions.
 
 End DefinedFunctions.
 
+Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
+  first;
+  [ Case_aux c "Number"%string
+  | Case_aux c "Constant"%string                 
+  | Case_aux c "Var"%string
+  | Case_aux c "Plus"%string
+  | Case_aux c "Minus"%string
+  | Case_aux c "Times"%string
+  | Case_aux c "Divide"%string
+  | Case_aux c "Square"%string
+  | Case_aux c "Exp"%string
+  | Case_aux c "Log"%string
+  | Case_aux c "Abs"%string
+  | Case_aux c "Sign"%string
+  | Case_aux c "PSign"%string
+  | Case_aux c "Max"%string].
+
 Section real_pfs.
 
   Local Existing Instance floatish_R.
@@ -3731,12 +3748,15 @@ Section real_pfs.
      revert grad gradenv.
      pattern dfexpr.
      revert dfexpr is_scalar.
-     apply is_scalar_function_ind; simpl.
-     - intros _ _ grad gradenv xinn.
+     DefinedFunction_scalar_cases (apply is_scalar_function_ind) Case; simpl.
+     - Case "Number"%string.
+       intros _ _ grad gradenv xinn.
        destruct (vartlookup gradenv (x, DTfloat)); simpl; intros; [| tauto]; lra.
-     - intros _ _ grad gradenv xinn.
+     - Case "Constant"%string.
+       intros _ _ grad gradenv xinn.
        destruct (vartlookup gradenv (x, DTfloat)); simpl; intros; [| tauto]; lra.
-     - intros sv _ grad gradenv xinn. (* case Var *)
+     - Case "Var"%string.
+       intros sv _ grad gradenv xinn.
        case_eq (vartlookup gradenv (x, DTfloat)); simpl; intros; [| tauto].
        destruct (var_dec x sv); simpl.
        + subst.
@@ -3753,7 +3773,8 @@ Section real_pfs.
            lra.
          * rewrite H.
            lra.
-     - intros _ l r IHl IHr grad gradenv xinn. (* case Plus *)
+     - Case "Plus"%string.
+       intros _ l r IHl IHr grad gradenv xinn. 
        case_eq (df_eval_deriv env l (x, DTfloat))
        ; [intros dl eqdl | intros eqdl]
        ; rewrite eqdl in IHl.
@@ -3788,7 +3809,8 @@ Section real_pfs.
          simpl in IHl.
          generalize (df_eval_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn); intros.
          destruct (vartlookup d (x, DTfloat)); tauto.
-     - intros _ l r IHl IHr grad gradenv xinn. (* case Minus *)
+     - Case "Minus"%string.
+       intros _ l r IHl IHr grad gradenv xinn.
        case_eq (df_eval_deriv env l (x, DTfloat))
        ; [intros dl eqdl | intros eqdl]
        ; rewrite eqdl in IHl.
@@ -3823,14 +3845,16 @@ Section real_pfs.
          simpl in IHl.
          generalize (df_eval_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn); intros.
          destruct (vartlookup d (x, DTfloat)); tauto.
-     - intros _ l r IHl IHr grad gradenv xinn. (* case Times *)
+     - Case "Times"%string.
+       intros _ l r IHl IHr grad gradenv xinn. 
        case_eq (df_eval env l);
-       [ intros le eqle | intros eqle].
+       [ intros le eqle | intros eqle]; simpl; trivial.
        case_eq (df_eval_deriv env l (x, DTfloat))
        ; [intros dl eqdl | intros eqdl]
        ; rewrite eqdl in IHl.
        + case_eq (df_eval env r);
-         [ intros re eqre | intros eqre].
+           [ intros re eqre | intros eqre]
+           ; simpl; trivial.
          case_eq (df_eval_deriv env r (x, DTfloat))
          ; [intros dr eqdr | intros eqdr]
          ; rewrite eqdr in IHr.
@@ -3856,14 +3880,17 @@ Section real_pfs.
          * case_eq ( df_eval_backprop_deriv env l gradenv (re * grad)%R ); simpl; trivial; intros.
            apply IHr.
            apply (df_eval_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn).
-         * now simpl.
        + case_eq (df_eval env r);
-         [ intros re eqre | intros eqre].
-         specialize (IHl (re * grad)%R gradenv xinn).
-         case_eq (df_eval_backprop_deriv env l gradenv (re * grad)%R); simpl; trivial; intros.
-         case_eq (df_eval_backprop_deriv env r gradenv (le * grad)%R); simpl; trivial; intros.
-         rewrite H in IHl.
-         simpl in IHl.
+           [ intros re eqre | intros eqre]
+           ; simpl; trivial.
+           specialize (IHl (re * grad)%R gradenv xinn).
+           case_eq (df_eval_backprop_deriv env l gradenv (re * grad)%R); simpl; trivial; intros.
+           rewrite H in IHl.
+           simpl in IHl.
+           generalize (df_eval_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn); intros.
+           destruct (vartlookup d (x, DTfloat)); tauto.
+     - Case "Divide"%string.
+           
  Admitted.
 
 
