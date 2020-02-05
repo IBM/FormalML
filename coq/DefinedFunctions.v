@@ -676,7 +676,6 @@ Section DefinedFunctions.
                      else vartlookup os a
          end.
 
-
     Fixpoint vart_update (l:df_env) (a:var_type) (n:definition_function_types_interp (snd a)) : df_env
       := match l with 
          | nil =>  (mk_env_entry a n)::nil
@@ -1999,13 +1998,13 @@ Section DefinedFunctions.
        end) (eq_refl _).
     Next Obligation.
       rewrite pf; reflexivity.
-    Qed.
+    Defined.
     Next Obligation.
       rewrite pf; reflexivity.
-    Qed.
+    Defined.
     Next Obligation.
       rewrite pf; reflexivity.
-    Qed.
+    Defined.
 
     Fixpoint df_eval_backprop_deriv {T Ann} (σ:df_env) (df:@DefinedFunction Ann T) (grad_env:df_env) (dvars : list var_type) {struct df} : definition_function_types_interp T -> option df_env
       := match df with
@@ -3020,17 +3019,6 @@ Section DefinedFunctions.
                                                     end)); trivial.
    Qed.
 
-
-   Program
-      Fixpoint vartlookup (l:df_env) (a:var_type) : 
-      option (definition_function_types_interp (snd a))
-      := match l with
-         | nil => None
-         | fv::os => if a == (projT1 fv) then 
-                       Some (eq_rect _ definition_function_types_interp (projT2 fv) _ _) 
-                     else vartlookup os a
-         end.
-
    Definition vartlookup_eq (l1 l2:df_env) : Prop := forall a, vartlookup l1 a = vartlookup l2 a.
 
    Global Instance vartlookup_eq_equiv : Equivalence vartlookup_eq.
@@ -3042,6 +3030,7 @@ Section DefinedFunctions.
      - intro; etransitivity; eauto.
    Qed.
 
+   End scalar_ind.
    (*
    Lemma vart_update_lookup_ext (l1 l2:df_env) (a:var_type) (n:definition_function_types_interp (snd a)) : vartlookup_eq l1 l2 -> vart_update l1 a n = vart_update l2 a n.
    Proof.
@@ -3063,26 +3052,8 @@ Section DefinedFunctions.
          reflexivity.
        + rewrite H; trivial.
    Qed.
-   
-(*
-   Lemma backpropeq_gen (x : SubVar) (env gradenv : df_env) (dfexpr : @DefinedFunction UnitAnn DTfloat) (grad : float) :
-      let xvar := (x, DTfloat) in 
-      is_scalar_function dfexpr ->
-      match df_eval_deriv env dfexpr xvar, 
-            backprop_lookup (Some gradenv) xvar,
-            backprop_lookup (df_eval_backprop_deriv env dfexpr gradenv (xvar::nil) grad) xvar
-      with
-      | Some dval, Some bval0, Some bval1 =>  dval*grad + bval0 = bval1
-      | None, _, None => True
-      | _, _, _ => False
-      end.
-   Proof.
-     simpl.
-     revert dfexpr.
-     apply is_scalar_function_ind; simpl.
-     - destruct (vartlookup gradenv (x, DTfloat)); simpl; intros.
-     *)  
-     
+
+(*     
    Lemma backpropeq_gen (x : SubVar) (env : df_env) (dfexpr : @DefinedFunction UnitAnn DTfloat) :
       let xvar := (x, DTfloat) in 
       is_scalar_function dfexpr ->
@@ -3106,6 +3077,7 @@ Section DefinedFunctions.
         + destruct (var_dec x sv); [congruence | ].
           reflexivity.
     Admitted.
+*)
 (*
       - intros.
         rewrite H, H0; clear H H0.
@@ -3137,9 +3109,6 @@ Section DefinedFunctions.
      - reflexivity.
      - reflexivity.
      Admitted.
-
-
-   End scalar_ind.
 
 
     Section deriv_deriv.
@@ -3633,9 +3602,10 @@ End DefinedFunctions.
 
 Section real_pfs.
 
-  Import Reals.
   Local Existing Instance floatish_R.
-
+  Import Reals.
+  Import List.
+  
   Lemma MaxDerivedMax_eq (a b : @DefinedFunction floatish_R UnitAnn DTfloat) :
     forall σ, df_eval σ (Max tt a b) = df_eval σ (MaxDerived a b).
   Proof.
@@ -3653,6 +3623,64 @@ Section real_pfs.
       lra.
   Qed.
 
+(*  Lemma coerce_dec_id {A} (dec:forall x y:A, {x=y}+{x<>y}) (x:A) (pf:x=x) : coerce pf x = x.
+  Proof.
+    unfold coerce.
+    replace pf with (eq_refl A); trivial.
+    apply UIP_dec.
+    apply dec.
+    generalize (@UIP_dec A dec pf).
+        Lemma var_type_UIP_refl {x:var_type} (e:x=x) : e = eq_refl x.
+        Proof.
+      apply (UIP_dec vart_dec x x pf).
+    Qed.
+
+    unfold coerce.
+    destruct pf.
+      destruct pf.
+      exact a.
+    Defined.
+*)
+
+   Lemma backpropeq_gen (x : SubVar) (env gradenv : df_env) (dfexpr : @DefinedFunction _ UnitAnn DTfloat) (grad : float) :
+      let xvar := (x, DTfloat) in 
+      is_scalar_function dfexpr ->
+      match df_eval_deriv env dfexpr xvar, 
+            backprop_lookup (Some gradenv) xvar,
+            backprop_lookup (df_eval_backprop_deriv env dfexpr gradenv (xvar::nil) grad) xvar
+      with
+      | Some dval, Some bval0, Some bval1 => (dval*grad + bval0)%R = bval1
+      | None, _, None => True
+      | _, _, _ => False
+      end.
+   Proof.
+     simpl.
+     revert dfexpr.
+     apply is_scalar_function_ind; simpl.
+     - destruct (vartlookup gradenv (x, DTfloat)); simpl; intros; lra.
+     - destruct (vartlookup gradenv (x, DTfloat)); simpl; intros; lra.
+     - intros sv _.
+       destruct (var_dec x sv); simpl.
+       + destruct (@equiv_dec var_type _ _ _ (sv, DTfloat) (x, DTfloat)); [| congruence].
+         subst.
+         rewrite lookup_update.
+         unfold addvar; simpl.
+         case_eq (vartlookup gradenv (sv, DTfloat)); simpl; intros; lra.
+       + destruct (@equiv_dec var_type _ _ _ (sv, DTfloat) (x, DTfloat)); [congruence | ].
+         case_eq (vartlookup gradenv (x, DTfloat)); simpl; intros; lra.
+     - intros _ l r IHl IHr.
+       case_eq (df_eval_deriv env l (x, DTfloat))
+       ; [intros dl eqdl | intros eqdl]
+       ; rewrite eqdl in IHl.
+       + case_eq (df_eval_deriv env r (x, DTfloat))
+         ; [intros dr eqdr | intros eqdr]
+         ; rewrite eqdr in IHr.
+         * admit.
+         * destruct ( df_eval_backprop_deriv env l gradenv ((x, DTfloat) :: Datatypes.nil) grad)
+           ; simpl in *; trivial.
+           
+   Admitted.
+       
 End real_pfs.
 
 (*
