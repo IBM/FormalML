@@ -2279,7 +2279,7 @@ Section DefinedFunctions.
              two_matrix_env_iter_alt (fun x g genv => df_eval_tree_backprop_deriv σ x genv  g) 
                                      grad_env dfs grad
          | Var x _ => fun grad => 
-                        if in_dec vart_dec x (map (@projT1 var_type _) grad_env) then 
+                        if vartlookup grad_env x then 
                           Some (vart_update grad_env x (addvar x grad_env grad))
                         else Some grad_env
          | Plus _ l r => fun grad => 
@@ -3067,6 +3067,14 @@ Section DefinedFunctions.
    Proof.
    Admitted.
 
+   Lemma df_eval_tree_backprop_deriv_preserves_lookup_not_none {T} {env} {df:@DefinedFunction EvalAnn T} {gradenv grad d} :
+     df_eval_tree_backprop_deriv env df gradenv grad = Some d ->
+     forall xv,
+     vartlookup gradenv xv <> None ->
+     vartlookup d xv <> None.
+   Proof.
+   Admitted.
+
 
 
 (*     
@@ -3704,6 +3712,7 @@ Section real_pfs.
      lra.
    Qed.
 
+
    Lemma backpropeq_gen (x : SubVar) (env gradenv : df_env) (dfexpr : @DefinedFunction _ UnitAnn DTfloat) (grad : float) :
       let xvar := (x, DTfloat) in 
       is_scalar_function dfexpr -> 
@@ -3727,7 +3736,7 @@ Section real_pfs.
        destruct (vartlookup gradenv (x, DTfloat)); simpl; intros; [| tauto]; lra.
      - intros _ _ grad gradenv xinn.
        destruct (vartlookup gradenv (x, DTfloat)); simpl; intros; [| tauto]; lra.
-     - intros sv _ grad gradenv xinn.
+     - intros sv _ grad gradenv xinn. (* case Var *)
        case_eq (vartlookup gradenv (x, DTfloat)); simpl; intros; [| tauto].
        destruct (var_dec x sv); simpl.
        + subst.
@@ -3744,7 +3753,7 @@ Section real_pfs.
            lra.
          * rewrite H.
            lra.
-     - intros _ l r IHl IHr grad gradenv xinn.
+     - intros _ l r IHl IHr grad gradenv xinn. (* case Plus *)
        case_eq (df_eval_deriv env l (x, DTfloat))
        ; [intros dl eqdl | intros eqdl]
        ; rewrite eqdl in IHl.
@@ -3779,15 +3788,95 @@ Section real_pfs.
          simpl in IHl.
          generalize (df_eval_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn); intros.
          destruct (vartlookup d (x, DTfloat)); tauto.
-   Admitted.
-       
+     - intros _ l r IHl IHr grad gradenv xinn. (* case Minus *)
+       case_eq (df_eval_deriv env l (x, DTfloat))
+       ; [intros dl eqdl | intros eqdl]
+       ; rewrite eqdl in IHl.
+       + case_eq (df_eval_deriv env r (x, DTfloat))
+         ; [intros dr eqdr | intros eqdr]
+         ; rewrite eqdr in IHr.
+         * specialize (IHl grad gradenv xinn).
+           case_eq (vartlookup gradenv (x, DTfloat))
+           ; [intros xv xveqq | intros xveqq]
+           ; rewrite xveqq in IHl
+           ; [ | tauto].
+           case_eq (df_eval_backprop_deriv env l gradenv grad)
+           ; [intros ge' ge'eq | intros ge'eq]
+           ; rewrite ge'eq in IHl
+           ; [ | tauto].
+           simpl in IHl.
+           case_eq (vartlookup ge' (x, DTfloat))
+           ; [intros xv' xv'eqq | intros xv'eqq]
+           ; rewrite xv'eqq in IHl
+           ; [ | tauto].
+           specialize (IHr (- grad)%R ge').
+           cut_to IHr; [ | congruence ].
+           rewrite xv'eqq in IHr.
+           destruct (backprop_lookup (df_eval_backprop_deriv env r ge' (- grad)%R) (x, DTfloat)); trivial.
+           lra.
+         * case_eq ( df_eval_backprop_deriv env l gradenv grad ); simpl; trivial; intros.
+           apply IHr.
+           apply (df_eval_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn).
+       + specialize (IHl grad gradenv xinn).
+         case_eq (df_eval_backprop_deriv env l gradenv grad); simpl; trivial; intros.
+         rewrite H in IHl.
+         simpl in IHl.
+         generalize (df_eval_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn); intros.
+         destruct (vartlookup d (x, DTfloat)); tauto.
+     - intros _ l r IHl IHr grad gradenv xinn. (* case Times *)
+       case_eq (df_eval env l);
+       [ intros le eqle | intros eqle].
+       case_eq (df_eval_deriv env l (x, DTfloat))
+       ; [intros dl eqdl | intros eqdl]
+       ; rewrite eqdl in IHl.
+       + case_eq (df_eval env r);
+         [ intros re eqre | intros eqre].
+         case_eq (df_eval_deriv env r (x, DTfloat))
+         ; [intros dr eqdr | intros eqdr]
+         ; rewrite eqdr in IHr.
+         * specialize (IHl (re * grad)%R gradenv xinn).
+           case_eq (vartlookup gradenv (x, DTfloat))
+           ; [intros xv xveqq | intros xveqq]
+           ; rewrite xveqq in IHl
+           ; [ | tauto].
+           case_eq (df_eval_backprop_deriv env l gradenv (re * grad)%R)
+           ; [intros ge' ge'eq | intros ge'eq]
+           ; rewrite ge'eq in IHl
+           ; [ | tauto].
+           simpl in IHl.
+           case_eq (vartlookup ge' (x, DTfloat))
+           ; [intros xv' xv'eqq | intros xv'eqq]
+           ; rewrite xv'eqq in IHl
+           ; [ | tauto].
+           specialize (IHr (le * grad)%R ge').
+           cut_to IHr; [ | congruence ].
+           rewrite xv'eqq in IHr.
+           destruct (backprop_lookup (df_eval_backprop_deriv env r ge' (le * grad)%R) (x, DTfloat)); trivial.
+           lra.
+         * case_eq ( df_eval_backprop_deriv env l gradenv (re * grad)%R ); simpl; trivial; intros.
+           apply IHr.
+           apply (df_eval_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn).
+         * now simpl.
+       + case_eq (df_eval env r);
+         [ intros re eqre | intros eqre].
+         specialize (IHl (re * grad)%R gradenv xinn).
+         case_eq (df_eval_backprop_deriv env l gradenv (re * grad)%R); simpl; trivial; intros.
+         case_eq (df_eval_backprop_deriv env r gradenv (le * grad)%R); simpl; trivial; intros.
+         rewrite H in IHl.
+         simpl in IHl.
+ Admitted.
+
+
+  
+(*
  Lemma tree_backpropeq_gen (x : SubVar) (env gradenv : df_env) 
        (dfexpr : @DefinedFunction _ EvalAnn DTfloat) (grad : float) :
    let xvar := (x, DTfloat) in 
    is_scalar_function dfexpr ->
+   vartlookup gradenv (x,DTfloat) <> None ->
    match df_eval_tree_deriv env dfexpr xvar, 
          backprop_lookup (Some gradenv) xvar,
-         backprop_lookup (df_eval_tree_backprop_deriv env dfexpr gradenv (xvar::nil) grad) xvar
+         backprop_lookup (df_eval_tree_backprop_deriv env dfexpr gradenv grad) xvar
       with
       | Some dval, Some bval0, Some bval1 => (dval*grad + bval0)%R = bval1
       | None, _, None => True
@@ -3795,29 +3884,140 @@ Section real_pfs.
       end.
    Proof.
      simpl.
-     revert dfexpr.
+     intros is_scalar.
+     revert grad gradenv.
+     pattern dfexpr.
+     revert dfexpr is_scalar.
      apply is_scalar_function_ind; simpl.
-     - destruct (vartlookup gradenv (x, DTfloat)); simpl; intros; lra.
-     - destruct (vartlookup gradenv (x, DTfloat)); simpl; intros; lra.
-     - intros sv _.
+     - intros _ _ grad gradenv xinn.
+       destruct (vartlookup gradenv (x, DTfloat)); simpl; intros; [| tauto]; lra.
+     - intros _ _ grad gradenv xinn.
+       destruct (vartlookup gradenv (x, DTfloat)); simpl; intros; [| tauto]; lra.
+     - intros sv _ grad gradenv xinn.
+       case_eq (vartlookup gradenv (x, DTfloat)); simpl; intros; [| tauto].
        destruct (var_dec x sv); simpl.
-       + destruct (@equiv_dec var_type _ _ _ (sv, DTfloat) (x, DTfloat)); [| congruence].
-         subst.
+       + subst.
+         rewrite H; simpl.
          rewrite lookup_update.
+         destruct (@equiv_dec var_type _ _ _ (sv, DTfloat) (sv, DTfloat)); [| congruence].
          unfold addvar; simpl.
-         case_eq (vartlookup gradenv (sv, DTfloat)); simpl; intros; lra.
+         rewrite H.
+         lra.
        + destruct (@equiv_dec var_type _ _ _ (sv, DTfloat) (x, DTfloat)); [congruence | ].
-         case_eq (vartlookup gradenv (x, DTfloat)); simpl; intros; lra.
-     - intros _ l r IHl IHr.
+         case_eq (vartlookup gradenv (sv, DTfloat)); simpl; intros.
+         * rewrite lookup_update_neq by congruence.
+           rewrite H.
+           lra.
+         * rewrite H.
+           lra.
+     - intros _ l r IHl IHr grad gradenv xinn.
        case_eq (df_eval_tree_deriv env l (x, DTfloat))
        ; [intros dl eqdl | intros eqdl]
        ; rewrite eqdl in IHl.
        + case_eq (df_eval_tree_deriv env r (x, DTfloat))
          ; [intros dr eqdr | intros eqdr]
          ; rewrite eqdr in IHr.
-         * admit.
-         * destruct ( df_eval_backprop_deriv env l gradenv ((x, DTfloat) :: Datatypes.nil) grad)
-           ; simpl in *; trivial.
+         * specialize (IHl grad gradenv xinn).
+           case_eq (vartlookup gradenv (x, DTfloat))
+           ; [intros xv xveqq | intros xveqq]
+           ; rewrite xveqq in IHl
+           ; [ | tauto].
+           case_eq (df_eval_tree_backprop_deriv env l gradenv grad)
+           ; [intros ge' ge'eq | intros ge'eq]
+           ; rewrite ge'eq in IHl
+           ; [ | tauto].
+           simpl in IHl.
+           case_eq (vartlookup ge' (x, DTfloat))
+           ; [intros xv' xv'eqq | intros xv'eqq]
+           ; rewrite xv'eqq in IHl
+           ; [ | tauto].
+           specialize (IHr grad ge').
+           cut_to IHr; [ | congruence ].
+           rewrite xv'eqq in IHr.
+           destruct (backprop_lookup (df_eval_tree_backprop_deriv env r ge' grad) (x, DTfloat)); trivial.
+           lra.
+         * case_eq ( df_eval_tree_backprop_deriv env l gradenv grad ); simpl; trivial; intros.
+           apply IHr.
+           apply (df_eval_tree_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn).
+       + specialize (IHl grad gradenv xinn).
+         case_eq (df_eval_tree_backprop_deriv env l gradenv grad); simpl; trivial; intros.
+         rewrite H in IHl.
+         simpl in IHl.
+         generalize (df_eval_tree_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn); intros.
+         destruct (vartlookup d (x, DTfloat)); tauto.
+     - intros _ l r IHl IHr grad gradenv xinn.
+       case_eq (df_eval_tree_deriv env l (x, DTfloat))
+       ; [intros dl eqdl | intros eqdl]
+       ; rewrite eqdl in IHl.
+       + case_eq (df_eval_tree_deriv env r (x, DTfloat))
+         ; [intros dr eqdr | intros eqdr]
+         ; rewrite eqdr in IHr.
+         * specialize (IHl grad gradenv xinn).
+           case_eq (vartlookup gradenv (x, DTfloat))
+           ; [intros xv xveqq | intros xveqq]
+           ; rewrite xveqq in IHl
+           ; [ | tauto].
+           case_eq (df_eval_tree_backprop_deriv env l gradenv grad)
+           ; [intros ge' ge'eq | intros ge'eq]
+           ; rewrite ge'eq in IHl
+           ; [ | tauto].
+           simpl in IHl.
+           case_eq (vartlookup ge' (x, DTfloat))
+           ; [intros xv' xv'eqq | intros xv'eqq]
+           ; rewrite xv'eqq in IHl
+           ; [ | tauto].
+           specialize (IHr (- grad)%R ge').
+           cut_to IHr; [ | congruence ].
+           rewrite xv'eqq in IHr.
+           destruct (backprop_lookup (df_eval_tree_backprop_deriv env r ge' (- grad)%R) (x, DTfloat)); trivial.
+           lra.
+         * case_eq ( df_eval_tree_backprop_deriv env l gradenv grad ); simpl; trivial; intros.
+           apply IHr.
+           apply (df_eval_tree_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn).
+       + specialize (IHl grad gradenv xinn).
+         case_eq (df_eval_tree_backprop_deriv env l gradenv grad); simpl; trivial; intros.
+         rewrite H in IHl.
+         simpl in IHl.
+         generalize (df_eval_tree_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn); intros.
+         destruct (vartlookup d (x, DTfloat)); tauto.
+
+     - intros _ l r IHl IHr grad gradenv xinn. (* Times *)
+       case_eq (df_eval_tree_deriv env l (x, DTfloat))
+       ; [intros dl eqdl | intros eqdl]
+       ; rewrite eqdl in IHl.
+       + case_eq (df_eval_tree_deriv env r (x, DTfloat))
+         ; [intros dr eqdr | intros eqdr]
+         ; rewrite eqdr in IHr.
+         * specialize (IHl grad gradenv xinn).
+           case_eq (vartlookup gradenv (x, DTfloat))
+           ; [intros xv xveqq | intros xveqq]
+           ; rewrite xveqq in IHl
+           ; [ | tauto].
+           case_eq (df_eval_tree_backprop_deriv env l gradenv grad)
+           ; [intros ge' ge'eq | intros ge'eq]
+           ; rewrite ge'eq in IHl
+           ; [ | tauto].
+           simpl in IHl.
+           case_eq (vartlookup ge' (x, DTfloat))
+           ; [intros xv' xv'eqq | intros xv'eqq]
+           ; rewrite xv'eqq in IHl
+           ; [ | tauto].
+           specialize (IHr (- grad)%R ge').
+           cut_to IHr; [ | congruence ].
+           rewrite xv'eqq in IHr.
+           destruct (backprop_lookup (df_eval_tree_backprop_deriv env r ge' (- grad)%R) (x, DTfloat)); trivial.
+           lra.
+         * case_eq ( df_eval_tree_backprop_deriv env l gradenv grad ); simpl; trivial; intros.
+           apply IHr.
+           apply (df_eval_tree_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn).
+       + specialize (IHl grad gradenv xinn).
+         case_eq (df_eval_tree_backprop_deriv env l gradenv grad); simpl; trivial; intros.
+         rewrite H in IHl.
+         simpl in IHl.
+         generalize (df_eval_tree_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn); intros.
+         destruct (vartlookup d (x, DTfloat)); tauto.
+
+
            
    Admitted.
 *)
