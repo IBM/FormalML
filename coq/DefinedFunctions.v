@@ -3890,9 +3890,122 @@ Section real_pfs.
            generalize (df_eval_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn); intros.
            destruct (vartlookup d (x, DTfloat)); tauto.
      - Case "Divide"%string.
-           
- Admitted.
+       admit.
+     - Case "Square"%string.
+       intros _ e IHe grad gradenv xinn. 
+       case_eq (df_eval env e);
+         [ intros le eqee | intros eqee]; simpl; trivial.
+       
+       specialize (IHe (2 * le * grad)%R gradenv xinn).
+       case_eq (df_eval_deriv env e (x, DTfloat))
+       ; [intros de eqde | intros eqde]
+       ; rewrite eqde in IHe
+       ; trivial.
 
+       case_eq (vartlookup gradenv (x, DTfloat))
+       ; [intros xv xveqq | intros xveqq]
+       ; rewrite xveqq in IHe
+       ; [ | tauto].
+       case_eq (df_eval_backprop_deriv env e gradenv (2 * le * grad)%R)
+       ; [intros ge' ge'eq | intros ge'eq]
+       ; rewrite ge'eq in IHe
+       ; [ | tauto].
+       simpl in IHe.
+       case_eq (vartlookup ge' (x, DTfloat))
+       ; [intros xv' xv'eqq | intros xv'eqq]
+       ; rewrite xv'eqq in IHe
+       ; [ | tauto].
+       simpl.
+       rewrite xv'eqq.
+       lra.
+     - Case "Exp"%string.
+       admit.
+     - Case "Log"%string.
+       admit.
+     - Case "Abs"%string.
+       admit.
+     - Case "Sign"%string.
+       admit.
+     - Case "PSign"%string.
+       admit.
+     - Case "Max"%string.
+       intros _ l r IHl IHr grad gradenv xinn.
+       specialize (IHl grad gradenv xinn).
+       specialize (IHr grad gradenv xinn).
+       
+       case_eq (df_eval env l); simpl; trivial
+       ; intros eld eqeld.
+       case_eq (df_eval env r ); simpl; intros
+       ; case_eq (df_eval_deriv env l (x, DTfloat))
+       ; trivial
+       ; [intros dl eqdl | intros eqdl]
+       ; rewrite eqdl in IHl.
+       + case_eq (df_eval_deriv env r (x, DTfloat))
+         ; trivial
+         ; [intros dr eqdr | intros eqdr]
+         ; rewrite eqdr in IHr
+         ; trivial.
+         * { destruct (Rle_dec eld d); simpl.
+             -  case_eq (vartlookup gradenv (x, DTfloat))
+                ; [intros xv xveqq | intros xveqq]
+                ; rewrite xveqq in IHr
+                ; [ | tauto].
+                case_eq (df_eval_backprop_deriv env r gradenv grad)
+                ; [intros ge' ge'eq | intros ge'eq]
+                ; rewrite ge'eq in IHr
+                ; [ | tauto].
+                simpl.
+                simpl in IHr.
+                case_eq (vartlookup ge' (x, DTfloat))
+                ; [intros xv' xv'eqq | intros xv'eqq]
+                ; rewrite xv'eqq in IHr
+                ; [ | tauto].
+                congruence.
+             -  case_eq (vartlookup gradenv (x, DTfloat))
+                ; [intros xv xveqq | intros xveqq]
+                ; rewrite xveqq in IHl
+                ; [ | tauto].
+                case_eq (df_eval_backprop_deriv env l gradenv grad)
+                ; [intros ge' ge'eq | intros ge'eq]
+                ; rewrite ge'eq in IHl
+                ; [ | tauto].
+                simpl.
+                simpl in IHl.
+                case_eq (vartlookup ge' (x, DTfloat))
+                ; [intros xv' xv'eqq | intros xv'eqq]
+                ; rewrite xv'eqq in IHl
+                ; [ | tauto].
+                congruence.
+           } 
+         * admit.
+       + destruct (Rle_dec eld d).
+         * case_eq (df_eval_deriv env r (x, DTfloat))
+           ; trivial
+           ; [intros dr eqdr | intros eqdr]
+           ; rewrite eqdr in IHr
+           ; trivial.
+           case_eq (vartlookup gradenv (x, DTfloat))
+           ; [intros xv xveqq | intros xveqq]
+           ; rewrite xveqq in IHr
+           ; [ | tauto].
+           case_eq (df_eval_backprop_deriv env r gradenv grad)
+           ; [intros ge' ge'eq | intros ge'eq]
+           ; rewrite ge'eq in IHr
+           ; [ | tauto].
+           simpl.
+           simpl in IHr.
+           case_eq (vartlookup ge' (x, DTfloat))
+           ; [intros xv' xv'eqq | intros xv'eqq]
+           ; rewrite xv'eqq in IHr
+           ; [ | tauto].
+           subst.
+           admit.
+         * case_eq (df_eval_backprop_deriv env l gradenv grad); simpl; trivial; intros.
+           rewrite H0 in IHl.
+           simpl in IHl.
+           generalize (df_eval_backprop_deriv_preserves_lookup_not_none H0 (x, DTfloat) xinn); intros.
+           destruct (vartlookup d0 (x, DTfloat)); tauto.
+   Admitted.
 
   
 (*
