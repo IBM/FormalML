@@ -37,10 +37,10 @@ let () = Format.printf "Init environment: %a\n" pretty_df_env init_env ;;
 let wval = eval_wisconsin_batch 30 (Obj.magic init_env) (Obj.magic normalized_data) ;;
 let () = Format.printf "wisconsin init loss value : %a\n" (pretty_blist pp_print_float) (Obj.magic wval) ;;
 
-let wval2 = wisconsin_test 6 550 (Obj.magic init_env) (Obj.magic normalized_data) ;;
+let wval2 = wisconsin_test 6 10 (Obj.magic init_env) (Obj.magic normalized_data) ;;
 let () = Format.printf "wisconsin loss value : %a\n" (pretty_blist pp_print_float) (Obj.magic wval2) ;;
 
-let wenv = wisconsin_test_env 6 550 (Obj.magic init_env) (Obj.magic normalized_data) ;;
+let wenv = wisconsin_test_env 6 10 (Obj.magic init_env) (Obj.magic normalized_data) ;;
 let () = Format.printf "wisconsin test env: %a\n" pretty_df_env wenv ;;
 
 let nnval = nn_test_val ;;

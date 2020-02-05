@@ -467,7 +467,7 @@ Section GenNN.
              (step : nat) (df : UnitDefinedFunction DTfloat) (σ:df_env)
              (noise_st : Stream float) (dvars : list var_type) 
     : (option df_env)*(Stream float) :=
-    match df_eval_backprop_deriv σ df nil dvars 1 with
+    match df_eval_backprop_deriv σ df (gradenv_init dvars) 1 with
     | Some gradenv => 
       let alpha := 1 / (FfromZ (Z.of_nat (S step))) in
       let '(env, nst) := list_arg_iter (fun a b => update_entry a gradenv alpha b) σ noise_st in
@@ -481,7 +481,7 @@ Section GenNN.
     : (option df_env)*(Stream float) :=
     match df_eval_tree σ df with
     | Some df_tree =>
-      match df_eval_tree_backprop_deriv (* σ not-needed *) nil df_tree nil dvars 1 with
+      match df_eval_tree_backprop_deriv (* σ not-needed *) nil df_tree (gradenv_init dvars) 1 with
       | Some gradenv => 
         let alpha := 1 / (FfromZ (Z.of_nat (S step))) in
         let '(env, nst) := list_arg_iter (fun a b => update_entry a gradenv alpha b) σ noise_st in
@@ -654,7 +654,7 @@ Example squad:UnitDefinedFunction DTfloat := Minus tt (Square tt xfun) (Number t
 Example env : df_env := (mk_env_entry xvar (FfromZ 5))::nil.
 
 
-Example gradenv := match df_eval_backprop_deriv env quad nil (xvar :: nil) 1 with
+Example gradenv := match df_eval_backprop_deriv env quad (gradenv_init (xvar :: nil)) 1 with
                    | Some gradenv => gradenv
                    | _ => nil
                    end.
@@ -662,7 +662,7 @@ Example gradenv := match df_eval_backprop_deriv env quad nil (xvar :: nil) 1 wit
 Example gradenv_tree := 
   match df_eval_tree env quad with
   | Some df_tree =>
-    match df_eval_tree_backprop_deriv nil df_tree nil (xvar :: nil) 1 with
+    match df_eval_tree_backprop_deriv nil df_tree (gradenv_init (xvar :: nil)) 1 with
     | Some gradenv => gradenv
     | _ => nil                    
     end
@@ -673,7 +673,7 @@ Example wisconsin_gradenv (nsamp : nat)
             (σ:df_env) 
             (normaldata: Matrix float nsamp 10) : df_env :=
   let '((env,nn),dvars) := wisconsin_instance_batch nsamp σ normaldata in 
-  match df_eval_backprop_deriv env nn nil dvars 1 with
+  match df_eval_backprop_deriv env nn (gradenv_init dvars) 1 with
   | Some gradenv => gradenv
   | _ => nil
   end.
@@ -684,7 +684,7 @@ Example wisconsin_gradenv_tree (nsamp : nat)
   let '((env,nn),dvars) := wisconsin_instance_batch nsamp σ normaldata in 
   match df_eval_tree env nn with
   | Some df_tree =>
-    match df_eval_tree_backprop_deriv nil df_tree nil dvars 1 with
+    match df_eval_tree_backprop_deriv nil df_tree (gradenv_init dvars) 1 with
     | Some gradenv => gradenv
     | _ => nil                    
     end
@@ -743,7 +743,7 @@ Definition NN_test (count : nat) : list float :=
 
 Example NN_test_gradenv : df_env := 
   let '((env, nn), dvars) := mkNN_test in
-  match df_eval_backprop_deriv env nn nil dvars 1 with
+  match df_eval_backprop_deriv env nn (gradenv_init dvars) 1 with
   | Some gradenv => gradenv
   | _ => nil
   end.
@@ -752,7 +752,7 @@ Example NN_test_gradenv_tree :df_env :=
   let '((env, nn), dvars) := mkNN_test in
   match df_eval_tree env nn with
   | Some df_tree =>
-    match df_eval_tree_backprop_deriv nil df_tree nil dvars 1 with
+    match df_eval_tree_backprop_deriv nil df_tree (gradenv_init dvars) 1 with
     | Some gradenv => gradenv
     | _ => nil                    
     end
