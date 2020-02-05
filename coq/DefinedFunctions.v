@@ -1506,10 +1506,10 @@ Section DefinedFunctions.
          | Sign _ e => Some 0
          | PSign _ e => Some 0
          | Max _ l r =>
-           match df_eval σ l, df_eval_deriv σ l v, df_eval σ r, df_eval_deriv σ r v with
-           | Some le, Some ld, Some re, Some rd =>
-             if le <= re then Some rd else Some ld
-           | _, _, _, _ => None
+           match df_eval σ l, df_eval σ r with
+           | Some le, Some re =>
+             if le <= re then df_eval_deriv σ r v else df_eval_deriv σ l v
+           | _, _ => None
            end
          | VectorElem n _ l i => 
            match (df_eval_deriv σ l v)  with
@@ -2082,11 +2082,12 @@ Section DefinedFunctions.
          | Sign _ e => fun grad => df_eval_backprop_deriv σ e grad_env  0
          | PSign _ e => fun grad => df_eval_backprop_deriv σ e grad_env  0
          | Max _ l r => fun grad => 
-           match df_eval σ l, df_eval σ r with
+                          match df_eval σ l,
+                                df_eval σ r with
            | Some le, Some re =>
              if le <= re then 
-               (df_eval_backprop_deriv σ r grad_env  grad) else
-               (df_eval_backprop_deriv σ l grad_env  grad)
+               (df_eval_backprop_deriv σ r grad_env grad) else
+               (df_eval_backprop_deriv σ l grad_env grad)
            | _, _ => None
            end
          | VectorElem n _ l i => fun grad => 
@@ -3935,76 +3936,10 @@ Section real_pfs.
        
        case_eq (df_eval env l); simpl; trivial
        ; intros eld eqeld.
-       case_eq (df_eval env r ); simpl; intros
-       ; case_eq (df_eval_deriv env l (x, DTfloat))
-       ; trivial
-       ; [intros dl eqdl | intros eqdl]
-       ; rewrite eqdl in IHl.
-       + case_eq (df_eval_deriv env r (x, DTfloat))
-         ; trivial
-         ; [intros dr eqdr | intros eqdr]
-         ; rewrite eqdr in IHr
-         ; trivial.
-         * { destruct (Rle_dec eld d); simpl.
-             -  case_eq (vartlookup gradenv (x, DTfloat))
-                ; [intros xv xveqq | intros xveqq]
-                ; rewrite xveqq in IHr
-                ; [ | tauto].
-                case_eq (df_eval_backprop_deriv env r gradenv grad)
-                ; [intros ge' ge'eq | intros ge'eq]
-                ; rewrite ge'eq in IHr
-                ; [ | tauto].
-                simpl.
-                simpl in IHr.
-                case_eq (vartlookup ge' (x, DTfloat))
-                ; [intros xv' xv'eqq | intros xv'eqq]
-                ; rewrite xv'eqq in IHr
-                ; [ | tauto].
-                congruence.
-             -  case_eq (vartlookup gradenv (x, DTfloat))
-                ; [intros xv xveqq | intros xveqq]
-                ; rewrite xveqq in IHl
-                ; [ | tauto].
-                case_eq (df_eval_backprop_deriv env l gradenv grad)
-                ; [intros ge' ge'eq | intros ge'eq]
-                ; rewrite ge'eq in IHl
-                ; [ | tauto].
-                simpl.
-                simpl in IHl.
-                case_eq (vartlookup ge' (x, DTfloat))
-                ; [intros xv' xv'eqq | intros xv'eqq]
-                ; rewrite xv'eqq in IHl
-                ; [ | tauto].
-                congruence.
-           } 
-         * admit.
-       + destruct (Rle_dec eld d).
-         * case_eq (df_eval_deriv env r (x, DTfloat))
-           ; trivial
-           ; [intros dr eqdr | intros eqdr]
-           ; rewrite eqdr in IHr
-           ; trivial.
-           case_eq (vartlookup gradenv (x, DTfloat))
-           ; [intros xv xveqq | intros xveqq]
-           ; rewrite xveqq in IHr
-           ; [ | tauto].
-           case_eq (df_eval_backprop_deriv env r gradenv grad)
-           ; [intros ge' ge'eq | intros ge'eq]
-           ; rewrite ge'eq in IHr
-           ; [ | tauto].
-           simpl.
-           simpl in IHr.
-           case_eq (vartlookup ge' (x, DTfloat))
-           ; [intros xv' xv'eqq | intros xv'eqq]
-           ; rewrite xv'eqq in IHr
-           ; [ | tauto].
-           subst.
-           admit.
-         * case_eq (df_eval_backprop_deriv env l gradenv grad); simpl; trivial; intros.
-           rewrite H0 in IHl.
-           simpl in IHl.
-           generalize (df_eval_backprop_deriv_preserves_lookup_not_none H0 (x, DTfloat) xinn); intros.
-           destruct (vartlookup d0 (x, DTfloat)); tauto.
+       case_eq (df_eval env r ); simpl; intros; trivial.
+       destruct (Rle_dec eld d); simpl.
+       + destruct (df_eval_deriv env r (x, DTfloat)); simpl; trivial.
+       + destruct (df_eval_deriv env l (x, DTfloat)); simpl; trivial.
    Admitted.
 
   
