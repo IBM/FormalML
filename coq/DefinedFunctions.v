@@ -2061,8 +2061,8 @@ Section DefinedFunctions.
          | Divide _ l r => fun grad => 
            match df_eval σ l, df_eval σ r with
                | Some le, Some re =>
-                 match df_eval_backprop_deriv σ l grad_env  (grad / re) with                 
-                 | Some grad_env' => df_eval_backprop_deriv σ r grad_env'  (- le * grad / (re * re))
+                 match df_eval_backprop_deriv σ l grad_env  (re/(re * re) * grad) with
+                 | Some grad_env' => df_eval_backprop_deriv σ r grad_env'  (- le / (re * re) * grad)
                  | _ => None
                  end
            | _, _ => None
@@ -3084,67 +3084,6 @@ Section DefinedFunctions.
    Proof.
    Admitted.
 
-
-
-(*     
-   Lemma backpropeq_gen (x : SubVar) (env : df_env) (dfexpr : @DefinedFunction UnitAnn DTfloat) :
-      let xvar := (x, DTfloat) in 
-      is_scalar_function dfexpr ->
-      df_eval_deriv env dfexpr xvar  =  
-      backprop_lookup (df_eval_backprop_deriv env dfexpr nil (xvar::nil) 1)
-                      xvar.
-    Proof.
-      simpl.
-      revert dfexpr.
-      apply is_scalar_function_ind; simpl.
-      - reflexivity.
-      - reflexivity.
-      - intros.
-        destruct (@equiv_dec var_type _ _ _ (sv, DTfloat) (x, DTfloat)).
-        + inversion e; subst.
-          destruct (var_dec x x); [| congruence].
-          simpl.
-          destruct (@equiv_dec var_type _ _ _ (x, DTfloat) (x, DTfloat)); [| congruence].
-          rewrite (var_type_UIP_refl e1); simpl.
-          reflexivity.
-        + destruct (var_dec x sv); [congruence | ].
-          reflexivity.
-    Admitted.
-*)
-(*
-      - intros.
-        rewrite H, H0; clear H H0.
-        (* need lemma here *)
-        case_eq (df_eval_backprop_deriv env l nil ((x, DTfloat) :: nil) 1)
-        ; simpl in *; trivial; intros d eqd.
-        
-        
-        case_eq (df_eval_backprop_deriv env r d ((x, DTfloat) :: nil) 1)
-        ; simpl in *; trivial; intros dd eqdd.
-        
-        
-
-   Qed.
-*)
-          
-
-
-(*
-   Lemma tree_backpropeq_gen (x : SubVar) (env : df_env) (dfexpr : @DefinedFunction EvalAnn DTfloat) :
-      let xvar := (x, DTfloat) in 
-      is_scalar_function dfexpr ->
-      df_eval_tree_deriv env dfexpr xvar  =  
-      backprop_lookup (df_eval_tree_backprop_deriv env dfexpr nil (xvar::nil) 1) 
-                      xvar.
-   Proof.
-     simpl.
-     revert dfexpr.
-     apply is_scalar_function_ind; simpl.
-     - reflexivity.
-     - reflexivity.
-     Admitted.
-*)
-
     Section deriv_deriv.
 
 (*
@@ -3899,7 +3838,49 @@ Section real_pfs.
            generalize (df_eval_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn); intros.
            destruct (vartlookup d (x, DTfloat)); tauto.
      - Case "Divide"%string.
-       admit.
+       intros _ l r IHl IHr grad gradenv xinn. 
+       case_eq (df_eval env l);
+       [ intros le eqle | intros eqle]; simpl; trivial.
+       case_eq (df_eval_deriv env l (x, DTfloat))
+       ; [intros dl eqdl | intros eqdl]
+       ; rewrite eqdl in IHl.
+       + case_eq (df_eval env r);
+           [ intros re eqre | intros eqre]
+           ; simpl; trivial.
+         case_eq (df_eval_deriv env r (x, DTfloat))
+         ; [intros dr eqdr | intros eqdr]
+         ; rewrite eqdr in IHr.
+         * specialize (IHl (re/(re*re) * grad )%R gradenv xinn).
+           case_eq (vartlookup gradenv (x, DTfloat))
+           ; [intros xv xveqq | intros xveqq]
+           ; rewrite xveqq in IHl
+           ; [ | tauto].
+           case_eq (df_eval_backprop_deriv env l gradenv (re / (re*re) * grad)%R)
+           ; [intros ge' ge'eq | intros ge'eq]
+           ; rewrite ge'eq in IHl
+           ; [ | tauto].
+           simpl in IHl.
+           case_eq (vartlookup ge' (x, DTfloat))
+           ; [intros xv' xv'eqq | intros xv'eqq]
+           ; rewrite xv'eqq in IHl
+           ; [ | tauto].
+           specialize (IHr (- le / (re * re) * grad)%R ge').
+           cut_to IHr; [ | congruence ].
+           rewrite xv'eqq in IHr.
+           destruct (backprop_lookup (df_eval_backprop_deriv env r ge' (- le  / (re * re) * grad)%R) (x, DTfloat)); trivial.
+           lra.
+         * case_eq ( df_eval_backprop_deriv env l gradenv (re / (re * re) *grad)%R ); simpl; trivial; intros.
+           apply IHr.
+           apply (df_eval_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn).
+       + case_eq (df_eval env r);
+           [ intros re eqre | intros eqre]
+           ; simpl; trivial.
+           specialize (IHl (re / (re * re) * grad)%R gradenv xinn).
+           case_eq (df_eval_backprop_deriv env l gradenv (re / (re * re) * grad)%R); simpl; trivial; intros.
+           rewrite H in IHl.
+           simpl in IHl.
+           generalize (df_eval_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn); intros.
+           destruct (vartlookup d (x, DTfloat)); tauto.
      - Case "Square"%string.
        intros _ e IHe grad gradenv xinn. 
        case_eq (df_eval env e);
@@ -4063,8 +4044,7 @@ Section real_pfs.
        destruct (Rle_dec eld d); simpl.
        + destruct (df_eval_deriv env r (x, DTfloat)); simpl; trivial.
        + destruct (df_eval_deriv env l (x, DTfloat)); simpl; trivial.
-   Admitted.
-
+ Qed.
   
 (*
  Lemma tree_backpropeq_gen (x : SubVar) (env gradenv : df_env) 
