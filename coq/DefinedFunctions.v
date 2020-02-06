@@ -903,7 +903,7 @@ Section DefinedFunctions.
            end
          | Divide _ l r =>
            match df_eval_tree σ l, df_eval_tree σ r with
-           | Some l', Some r' => Some (Minus ((get_annotation l') / (get_annotation r'))
+           | Some l', Some r' => Some (Divide ((get_annotation l') / (get_annotation r'))
                                              l' r')
            | _, _ => None
            end
@@ -2582,7 +2582,71 @@ Section DefinedFunctions.
          | VLossfun _ _ _ _ _ l _ => is_df_rec_prop prop l
          | MLossfun _ _ _ _ _ _ l _ => is_df_rec_prop prop l
          end.
-(*
+
+
+   Definition is_df_evalann_correct_top (σ:df_env) {T} (df:DefinedFunction EvalAnn T)
+     := df_eval σ df = Some (get_annotation df). 
+
+   Definition is_df_evalann_correct (σ:df_env) {T} (df:DefinedFunction EvalAnn T)
+     := is_df_rec_prop (@is_df_evalann_correct_top σ) df.
+
+   Lemma is_df_rec_prop_top {Ann} {T} 
+            {prop : forall TT:definition_function_types, 
+                (DefinedFunction Ann TT) -> Prop}
+            {df:DefinedFunction Ann T} :
+     is_df_rec_prop prop df ->
+     prop _ df.
+   Proof.
+     destruct df; simpl; tauto.
+   Qed.
+     
+   Lemma df_eval_tree_correct {T Ann} (σ:df_env) (df:DefinedFunction Ann T) (dfann:DefinedFunction EvalAnn T):
+     df_eval_tree σ df = Some dfann ->
+     is_df_evalann_correct σ dfann.
+   Proof.
+     unfold is_df_evalann_correct, is_df_evalann_correct_top.
+     revert dfann.
+     DefinedFunction_cases (induction df) Case; simpl; intros dfann eqq
+     ; try solve[case_eq (df_eval_tree σ df1)
+       ; [intros adf1 a1eqq | intros a1eqq]
+       ; rewrite a1eqq in eqq
+       ; [| congruence]
+       ; (case_eq (df_eval_tree σ df2)
+       ; [intros adf2 a2eqq | intros a2eqq]
+       ; rewrite a2eqq in eqq
+       ; [| congruence]
+       ; inversion eqq; simpl
+       ; specialize (IHdf1 _ a1eqq)
+       ; specialize (IHdf2 _ a2eqq)
+       ; split; [| tauto]
+       ; apply is_df_rec_prop_top in IHdf1
+       ; apply is_df_rec_prop_top in IHdf2
+       ; simpl in IHdf1, IHdf2
+       ; rewrite IHdf1, IHdf2
+       ; trivial)
+
+                |
+        case_eq (df_eval_tree σ df)
+       ; [intros adf aeqq | intros aeqq]
+       ; rewrite aeqq in eqq
+       ; [| congruence]
+       ; inversion eqq; simpl
+       ; specialize (IHdf _ aeqq)
+       ; split; [| tauto]
+       ; apply is_df_rec_prop_top in IHdf
+       ; simpl in IHdf
+       ; rewrite IHdf
+       ; trivial].
+     - Case "Number"%string.
+       inversion eqq; subst; simpl.
+       tauto.
+     - Case "Constant"%string.
+       
+   Admitted.
+   
+   Lemma df_eval_tree {T Ann} (σ:df_env) (df:DefinedFunction Ann T) : option (DefinedFunction EvalAnn T)
+
+   (*
       Definition annotations_correct
      := is_df_rec_prop ()
               
