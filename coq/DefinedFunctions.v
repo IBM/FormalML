@@ -1503,8 +1503,16 @@ Section DefinedFunctions.
            | Some ee, Some ed => Some (ed * (sign ee))
            | _, _ => None
            end
-         | Sign _ e => Some 0
-         | PSign _ e => Some 0
+         | Sign _ e =>
+           match df_eval_deriv σ e v with
+           | Some _ => Some 0
+           | None => None
+           end
+         | PSign _ e =>
+           match df_eval_deriv σ e v with
+           | Some _ => Some 0
+           | None => None
+           end
          | Max _ l r =>
            match df_eval σ l, df_eval σ r with
            | Some le, Some re =>
@@ -4003,57 +4011,47 @@ Section real_pfs.
      - Case "Sign"%string.
        intros _ e IHe grad gradenv xinn. 
        specialize (IHe 0%R gradenv xinn).
-       case_eq (df_eval_deriv env e (x, DTfloat))
-       ; [intros de eqde | intros eqde]
-       ; rewrite eqde in IHe
-       ; trivial.
        case_eq (vartlookup gradenv (x, DTfloat))
        ; [intros xv xveqq | intros xveqq]
        ; rewrite xveqq in IHe
        ; [ | tauto].
-       case_eq (df_eval_backprop_deriv env e gradenv 0%R)
-       ; [intros ge' ge'eq | intros ge'eq]
-       ; rewrite ge'eq in IHe
-       ; [ | tauto].
-       simpl in IHe.
-       case_eq (vartlookup ge' (x, DTfloat))
-       ; [intros xv' xv'eqq | intros xv'eqq]
-       ; rewrite xv'eqq in IHe
-       ; [ | tauto].
-       simpl.
-       rewrite xv'eqq.
-       lra.
-       case_eq (vartlookup gradenv (x, DTfloat))
-       ; [intros xv' xv'eqq | intros xv'eqq]
-       ; [ | tauto].
-       
-       admit.
-
+       case_eq (df_eval_deriv env e (x, DTfloat))
+       ; [intros de eqde | intros eqde]
+       ; rewrite eqde in IHe
+       ; trivial.
+       + case_eq (df_eval_backprop_deriv env e gradenv 0%R)
+         ; [intros ge' ge'eq | intros ge'eq]
+         ; rewrite ge'eq in IHe
+         ; [ | tauto].
+         simpl in IHe.
+         simpl.
+         case_eq (vartlookup ge' (x, DTfloat))
+         ; [intros xv' xv'eqq | intros xv'eqq]
+         ; rewrite xv'eqq in IHe
+         ; [ | tauto].
+         lra.
      - Case "PSign"%string.
        intros _ e IHe grad gradenv xinn. 
        specialize (IHe 0%R gradenv xinn).
-       case_eq (df_eval_deriv env e (x, DTfloat))
-       ; [intros de eqde | intros eqde]
-       ; rewrite eqde in IHe
-       ; trivial.
        case_eq (vartlookup gradenv (x, DTfloat))
        ; [intros xv xveqq | intros xveqq]
        ; rewrite xveqq in IHe
        ; [ | tauto].
-       case_eq (df_eval_backprop_deriv env e gradenv 0%R)
-       ; [intros ge' ge'eq | intros ge'eq]
-       ; rewrite ge'eq in IHe
-       ; [ | tauto].
-       simpl in IHe.
-       case_eq (vartlookup ge' (x, DTfloat))
-       ; [intros xv' xv'eqq | intros xv'eqq]
-       ; rewrite xv'eqq in IHe
-       ; [ | tauto].
-       simpl.
-       rewrite xv'eqq.
-       lra.
-       admit.
-
+       case_eq (df_eval_deriv env e (x, DTfloat))
+       ; [intros de eqde | intros eqde]
+       ; rewrite eqde in IHe
+       ; trivial.
+       + case_eq (df_eval_backprop_deriv env e gradenv 0%R)
+         ; [intros ge' ge'eq | intros ge'eq]
+         ; rewrite ge'eq in IHe
+         ; [ | tauto].
+         simpl in IHe.
+         simpl.
+         case_eq (vartlookup ge' (x, DTfloat))
+         ; [intros xv' xv'eqq | intros xv'eqq]
+         ; rewrite xv'eqq in IHe
+         ; [ | tauto].
+         lra.
      - Case "Max"%string.
        intros _ l r IHl IHr grad gradenv xinn.
        specialize (IHl grad gradenv xinn).
@@ -4065,7 +4063,7 @@ Section real_pfs.
        destruct (Rle_dec eld d); simpl.
        + destruct (df_eval_deriv env r (x, DTfloat)); simpl; trivial.
        + destruct (df_eval_deriv env l (x, DTfloat)); simpl; trivial.
-   Admitted.
+   Qed.
 
   
 (*
