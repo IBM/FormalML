@@ -121,7 +121,8 @@ Section DefinedFunctions.
     | Max (ann:Ann DTfloat) (l r : DefinedFunction DTfloat) : DefinedFunction DTfloat
     | VectorDot {n} (ann:Ann DTfloat) (l r: DefinedFunction (DTVector n)) : DefinedFunction DTfloat
     | VectorSum {n} (ann:Ann DTfloat) (v: DefinedFunction (DTVector n)) : DefinedFunction DTfloat
-    | MatrixSum {m n} (ann:Ann DTfloat) (v: DefinedFunction (DTMatrix m n)) : DefinedFunction DTfloat                                                                                       | VectorElem {n} (ann:Ann DTfloat) (l:DefinedFunction (DTVector n)) (i:{x:nat|x<n}%nat) : DefinedFunction DTfloat
+    | MatrixSum {m n} (ann:Ann DTfloat) (v: DefinedFunction (DTMatrix m n)) : DefinedFunction DTfloat
+    | VectorElem {n} (ann:Ann DTfloat) (l:DefinedFunction (DTVector n)) (i:{x:nat|x<n}%nat) : DefinedFunction DTfloat
     | MatrixElem {m n} (ann:Ann DTfloat) (l:DefinedFunction (DTMatrix m n)) (i:{x:nat|x<m}%nat) (j:{x:nat|x<n}%nat) :
         DefinedFunction DTfloat
     | MatrixVectorMult {m n} (ann:Ann (DTVector m)) (l : DefinedFunction (DTMatrix m n)) (r : DefinedFunction (DTVector n)) :
@@ -1480,7 +1481,7 @@ Section DefinedFunctions.
          | Divide _ l r =>
            match df_eval σ l, df_eval_deriv σ l v, df_eval σ r, df_eval_deriv σ r v with
            | Some le, Some ld, Some re, Some rd =>
-             Some (((ld * re) - (le * rd)) / (re * re))
+             Some ((ld / re) - ((le * rd) / (re * re)))
            | _, _, _, _ => None
            end
          | Square _ e =>
@@ -2061,8 +2062,8 @@ Section DefinedFunctions.
          | Divide _ l r => fun grad => 
            match df_eval σ l, df_eval σ r with
                | Some le, Some re =>
-                 match df_eval_backprop_deriv σ l grad_env  (re/(re * re) * grad) with
-                 | Some grad_env' => df_eval_backprop_deriv σ r grad_env'  (- le / (re * re) * grad)
+                 match df_eval_backprop_deriv σ l grad_env (grad / re) with
+                 | Some grad_env' => df_eval_backprop_deriv σ r grad_env' (- le / (re * re) * grad)
                  | _ => None
                  end
            | _, _ => None
@@ -2525,6 +2526,62 @@ Section DefinedFunctions.
         | Max _ l r => is_scalar_function l /\ is_scalar_function r
         | _ => False
         end.
+
+   Fixpoint is_df_rec_prop {Ann} {T} 
+            (prop : forall TT:definition_function_types, 
+                (@DefinedFunction Ann TT) -> Prop)
+            (df:@DefinedFunction Ann T) {struct df}: Prop
+     := prop T df /\
+        match df with
+         | Number _ _ => True
+         | Constant _ _ _ => True
+         | DVector n _ vec => 
+           vector_fold_right (fun x p => (is_df_rec_prop prop x) /\ p) True vec
+         | DMatrix n m _ mat => 
+           vector_fold_right 
+             (fun vec p => (vector_fold_right (fun x p => (is_df_rec_prop prop x) /\ p) True vec) /\ p) True mat
+         | Var _ _ => True
+         | Plus _ l r => (is_df_rec_prop prop l) /\ (is_df_rec_prop prop r)
+         | Minus _ l r => (is_df_rec_prop prop l) /\ (is_df_rec_prop prop r)
+         | Times _ l r => (is_df_rec_prop prop l) /\ (is_df_rec_prop prop r)
+         | Divide _ l r => (is_df_rec_prop prop l) /\ (is_df_rec_prop prop r)
+         | Square _ l => is_df_rec_prop prop l
+         | Exp _ l => is_df_rec_prop prop l
+         | Log _ l => is_df_rec_prop prop l
+         | Abs _ l => is_df_rec_prop prop l
+         | Sign _ l => is_df_rec_prop prop l
+         | PSign _ l => is_df_rec_prop prop l
+         | Max _ l r => (is_df_rec_prop prop l) /\ (is_df_rec_prop prop r)
+         | VectorDot n _ l r => (is_df_rec_prop prop l) /\ 
+                                (is_df_rec_prop prop r)
+         | VectorSum _ _ l => is_df_rec_prop prop l
+         | MatrixSum _ _ _ l => is_df_rec_prop prop l
+         | VectorElem _ _ vec i => is_df_rec_prop prop vec
+         | MatrixElem _ _ _ mat i j => is_df_rec_prop prop mat
+         | MatrixVectorMult _ _ _ l r => (is_df_rec_prop prop l) /\ 
+                                         (is_df_rec_prop prop r)
+         | MatrixVectorAdd _ _ _ l r =>  (is_df_rec_prop prop l) /\ 
+                                         (is_df_rec_prop prop r)
+         | MatrixMult _ _ _ _ l r => (is_df_rec_prop prop l) /\ 
+                                     (is_df_rec_prop prop r)
+         | VectorPlus _ _ l r =>  (is_df_rec_prop prop l) /\ 
+                                  (is_df_rec_prop prop r)
+         | VectorMinus _ _ l r =>  (is_df_rec_prop prop l) /\ 
+                                   (is_df_rec_prop prop r)
+         | MatrixPlus _ _ _ l r => (is_df_rec_prop prop l) /\ 
+                                   (is_df_rec_prop prop r)
+         | MatrixMinus _ _ _ l r => (is_df_rec_prop prop l) /\ 
+                                    (is_df_rec_prop prop r)
+         | VectorScalMult _ _ l r => (is_df_rec_prop prop l) /\ 
+                                    (is_df_rec_prop prop r)
+         | MatrixScalMult _ _ _ l r => (is_df_rec_prop prop l) /\ 
+                                       (is_df_rec_prop prop r)
+         | VectorApply _ _ _ _ l => is_df_rec_prop prop l
+         | MatrixApply _ _ _ _ _ l => is_df_rec_prop prop l
+         | VLossfun _ _ _ _ _ l _ => is_df_rec_prop prop l
+         | MLossfun _ _ _ _ _ _ l _ => is_df_rec_prop prop l
+         end.
+
 
    Lemma is_scalar_function_scalar {Ann} {T} (df:@DefinedFunction Ann T) :
      is_scalar_function df -> is_scalar_df_type T.
@@ -3632,52 +3689,6 @@ Section real_pfs.
     Defined.
 *)
 
-   Lemma backpropeq1 (x : SubVar) (env : df_env) :
-      let xvar := (x, DTfloat) in 
-      let dfexpr := (@Var _ UnitAnn xvar tt) in
-      df_eval_deriv env dfexpr xvar  =  
-      backprop_lookup (df_eval_backprop_deriv env dfexpr ((mk_env_entry xvar 0%R)::nil) 1%R)
-                      (x, DTfloat).
-   Proof.
-     simpl.
-     destruct (var_dec x x); [| congruence].
-     simpl.
-     case_eq (@equiv_dec var_type _ _ _ (x, DTfloat) (x, DTfloat)); [| congruence]; intros.
-     simpl.
-     rewrite H.
-     f_equal.
-     unfold addvar, vartlookup_obligation_1 .
-     simpl.
-     rewrite H.
-     rewrite (var_type_UIP_refl e0).
-     simpl.
-     lra.
-   Qed.
-
-   Lemma backpropeq2 (x : SubVar) (env : df_env) :
-      let xvar := (x, DTfloat) in 
-      let dfexpr := (@Square _ UnitAnn tt (@Var _ UnitAnn xvar tt)) in
-      df_eval_deriv env dfexpr xvar  =  
-      backprop_lookup (df_eval_backprop_deriv env dfexpr ((mk_env_entry xvar 0%R)::nil) 1%R)
-                      xvar.
-   Proof.
-     simpl.
-     destruct (vartlookup env (x, DTfloat)); simpl; trivial.
-     destruct (var_dec x x); [| congruence].
-     simpl.
-     case_eq (@equiv_dec var_type _ _ _ (x, DTfloat) (x, DTfloat)); [| congruence]; intros.
-     unfold addvar, vartlookup_obligation_1.
-     simpl.
-     rewrite H.
-     unfold addvar, vartlookup_obligation_1.
-     simpl.
-     rewrite (var_type_UIP_refl e0).
-     simpl.
-     f_equal.
-     lra.
-   Qed.
-
-
    Lemma backpropeq_gen (x : SubVar) (env gradenv : df_env) (dfexpr : @DefinedFunction _ UnitAnn DTfloat) (grad : float) :
       let xvar := (x, DTfloat) in 
       is_scalar_function dfexpr -> 
@@ -3850,12 +3861,12 @@ Section real_pfs.
          case_eq (df_eval_deriv env r (x, DTfloat))
          ; [intros dr eqdr | intros eqdr]
          ; rewrite eqdr in IHr.
-         * specialize (IHl (re/(re*re) * grad )%R gradenv xinn).
+         * specialize (IHl (grad / re)%R gradenv xinn).
            case_eq (vartlookup gradenv (x, DTfloat))
            ; [intros xv xveqq | intros xveqq]
            ; rewrite xveqq in IHl
            ; [ | tauto].
-           case_eq (df_eval_backprop_deriv env l gradenv (re / (re*re) * grad)%R)
+           case_eq (df_eval_backprop_deriv env l gradenv (grad / re)%R)
            ; [intros ge' ge'eq | intros ge'eq]
            ; rewrite ge'eq in IHl
            ; [ | tauto].
@@ -3869,14 +3880,14 @@ Section real_pfs.
            rewrite xv'eqq in IHr.
            destruct (backprop_lookup (df_eval_backprop_deriv env r ge' (- le  / (re * re) * grad)%R) (x, DTfloat)); trivial.
            lra.
-         * case_eq ( df_eval_backprop_deriv env l gradenv (re / (re * re) *grad)%R ); simpl; trivial; intros.
+         * case_eq ( df_eval_backprop_deriv env l gradenv (grad / re)%R ); simpl; trivial; intros.
            apply IHr.
            apply (df_eval_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn).
        + case_eq (df_eval env r);
            [ intros re eqre | intros eqre]
            ; simpl; trivial.
-           specialize (IHl (re / (re * re) * grad)%R gradenv xinn).
-           case_eq (df_eval_backprop_deriv env l gradenv (re / (re * re) * grad)%R); simpl; trivial; intros.
+           specialize (IHl (grad / re)%R gradenv xinn).
+           case_eq (df_eval_backprop_deriv env l gradenv (grad / re)%R); simpl; trivial; intros.
            rewrite H in IHl.
            simpl in IHl.
            generalize (df_eval_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn); intros.
