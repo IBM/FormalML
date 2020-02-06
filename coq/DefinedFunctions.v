@@ -148,8 +148,9 @@ Section DefinedFunctions.
     | MLossfun {m n} (ann:Ann DTfloat) (v1 v2:SubVar) (s:@DefinedFunction UnitAnn DTfloat) (l: DefinedFunction (DTMatrix m n)) (r:Matrix float m n) : DefinedFunction DTfloat
     .
 
+    Global Arguments DefinedFunction : clear implicits.
 
-    Fixpoint get_annotation {Ann T} (df:DefinedFunction T) : Ann T
+    Fixpoint get_annotation {Ann T} (df:DefinedFunction Ann T) : Ann T
       := match df with
          | Number ann _ => ann
          | Constant _ ann _ => ann
@@ -257,10 +258,10 @@ Section DefinedFunctions.
 
 
 
-  Definition df_plus  (df1 df2 : DefinedFunction DTfloat) : @DefinedFunction UnitAnn DTfloat :=
+  Definition df_plus  (df1 df2 : DefinedFunction UnitAnn DTfloat) : DefinedFunction UnitAnn DTfloat :=
     Plus tt df1 df2.
 
-  Definition df_times (df1 df2 : DefinedFunction DTfloat) : @DefinedFunction UnitAnn DTfloat :=
+  Definition df_times (df1 df2 : DefinedFunction UnitAnn DTfloat) : DefinedFunction UnitAnn DTfloat :=
     Times tt df1 df2.
 
   Section deriv.
@@ -332,7 +333,7 @@ Section DefinedFunctions.
     Definition vector_fold_right {A B:Type} (f:B->A->A) (init:A) {m:nat} (v:Vector B m)
       := vector_fold_right_dep (fun _ => f) init v.
 
-    Definition defined_sum {m} (v:Vector (DefinedFunction DTfloat) m) : @DefinedFunction UnitAnn DTfloat
+    Definition defined_sum {m} (v:Vector (DefinedFunction UnitAnn DTfloat) m) : DefinedFunction UnitAnn DTfloat
       := vector_fold_right1 (fun a b => Plus tt a b) (Number tt 0) id v.
 
     Definition vsum {m:nat} (v:Vector float m) : float
@@ -452,14 +453,14 @@ Section DefinedFunctions.
     
   Section subst.
 
-    Program Definition substvar {Ann} (v vv:var_type) (e':@DefinedFunction Ann (snd v)) (e:@DefinedFunction Ann (snd vv)) : (@DefinedFunction Ann (snd vv)) :=
+    Program Definition substvar {Ann} (v vv:var_type) (e':DefinedFunction Ann (snd v)) (e:DefinedFunction Ann (snd vv)) : (DefinedFunction Ann (snd vv)) :=
       
       match v == vv with
-      | left pf => eq_rect _ (fun t => DefinedFunction t) e' _ _
+      | left pf => eq_rect _ (fun t => DefinedFunction Ann t) e' _ _
       | right pf => e
       end.
   
- Fixpoint df_subst {T Ann} (df: @DefinedFunction Ann T) (v:var_type) (e':@DefinedFunction UnitAnn (snd v)) :=
+ Fixpoint df_subst {T Ann} (df: DefinedFunction Ann T) (v:var_type) (e':DefinedFunction UnitAnn (snd v)) :=
       match df with
       | Number _ x => Number tt x
       | Constant t _ x => Constant tt x
@@ -514,11 +515,11 @@ Section DefinedFunctions.
       end.
 
     Definition df_substp {T Ann} := 
-      fun e (ve':{v:var_type & @DefinedFunction UnitAnn (snd v)}) => 
+      fun e (ve':{v:var_type & DefinedFunction UnitAnn (snd v)}) => 
         @df_subst T Ann e (projT1 ve') (projT2 ve').
 
-    Definition df_subst_list {T} (e:DefinedFunction T)
-               (l:list {v:var_type & DefinedFunction (snd v)}) : @DefinedFunction UnitAnn T
+    Definition df_subst_list {T} (e:DefinedFunction UnitAnn T)
+               (l:list {v:var_type & DefinedFunction UnitAnn (snd v)}) : DefinedFunction UnitAnn T
       := fold_left (@df_substp T UnitAnn) l e.
 
   End subst.
@@ -528,7 +529,7 @@ Section DefinedFunctions.
   
 
 (* restrict to scalar v? *)
-    Fixpoint df_deriv {T} (df:@DefinedFunction UnitAnn T) (v:var_type) {struct df} : @DefinedFunction UnitAnn T
+    Fixpoint df_deriv {T} (df:DefinedFunction UnitAnn T) (v:var_type) {struct df} : DefinedFunction UnitAnn T
       := (match df with
           | Number _ _ => Number tt 0
           | Constant t _ x => Constant tt
@@ -649,7 +650,7 @@ Section DefinedFunctions.
                      (Number tt (FfromZ (Z.of_nat m))))))
           end).
 
-    Definition df_gradient {T} (df:DefinedFunction T) (lv:list var_type) : list (DefinedFunction T)
+    Definition df_gradient {T} (df:DefinedFunction UnitAnn T) (lv:list var_type) : list (DefinedFunction UnitAnn T)
       := map (df_deriv df) lv.
 
   End deriv.
@@ -684,7 +685,7 @@ Section DefinedFunctions.
                        (mk_env_entry a n)::os else fv::(vart_update os a n)
          end.
 
-    Fixpoint df_eval {T Ann} (σ:df_env) (df:@DefinedFunction Ann T) : option (definition_function_types_interp T)
+    Fixpoint df_eval {T Ann} (σ:df_env) (df:DefinedFunction Ann T) : option (definition_function_types_interp T)
       := match df with
          | Number _ r => Some r
          | Constant t _ x => Some x
@@ -863,7 +864,7 @@ Section DefinedFunctions.
 
          end.
 
-    Fixpoint df_eval_tree {T Ann} (σ:df_env) (df:@DefinedFunction Ann T) : option (@DefinedFunction EvalAnn T)
+    Fixpoint df_eval_tree {T Ann} (σ:df_env) (df:DefinedFunction Ann T) : option (DefinedFunction EvalAnn T)
       := match df with
          | Number _ r => Some (Number r r)
          | Constant t _ x => Some (Constant x x)
@@ -1105,18 +1106,18 @@ Section DefinedFunctions.
            end
          end.
 
-    Definition eval_env_entry_type := {T:definition_function_types & (@DefinedFunction UnitAnn T) & definition_function_types_interp T}.
+    Definition eval_env_entry_type := {T:definition_function_types & (DefinedFunction UnitAnn T) & definition_function_types_interp T}.
     Definition df_eval_env := list eval_env_entry_type.
     
     Definition mk_eval_env_entry {T} df val : eval_env_entry_type
-      := let P := fun t => @DefinedFunction UnitAnn t in
+      := let P := fun t => DefinedFunction UnitAnn t in
          let Q := fun t => definition_function_types_interp t in
        existT2 P Q T df val.
 
-    Definition pair_update_evals {T} (df:@DefinedFunction UnitAnn T) (val:definition_function_types_interp T) (dfevals : df_eval_env) : (definition_function_types_interp T * df_eval_env) :=
+    Definition pair_update_evals {T} (df:DefinedFunction UnitAnn T) (val:definition_function_types_interp T) (dfevals : df_eval_env) : (definition_function_types_interp T * df_eval_env) :=
       (val, (mk_eval_env_entry df val)::dfevals).
 
-    Fixpoint df_evals_list {T} (σ:df_env) (df:@DefinedFunction UnitAnn T) (dfevals : df_eval_env) : option (definition_function_types_interp T * df_eval_env)
+    Fixpoint df_evals_list {T} (σ:df_env) (df:DefinedFunction UnitAnn T) (dfevals : df_eval_env) : option (definition_function_types_interp T * df_eval_env)
       := match df with
          | Number _ r => Some (pair_update_evals (Number tt r) r dfevals)
          | Constant t _ x => Some (pair_update_evals (Constant tt x) x dfevals)
@@ -1356,7 +1357,7 @@ Section DefinedFunctions.
 
 (*
     Program
-      Fixpoint evalslookup {T} (l:df_eval_env) (df:@DefinedFunction UnitAnn T) : 
+      Fixpoint evalslookup {T} (l:df_eval_env) (df:DefinedFunction UnitAnn T) : 
       option (definition_function_types_interp T)
       := match l with
          | nil => None
@@ -1367,7 +1368,7 @@ Section DefinedFunctions.
                      else evalslookup os df
          end.
 *)
-    Definition df_eval_symbolic_gradient {T} (σ:df_env) (df:@DefinedFunction UnitAnn T) (lv:list var_type) : option (list (definition_function_types_interp T))
+    Definition df_eval_symbolic_gradient {T} (σ:df_env) (df:DefinedFunction UnitAnn T) (lv:list var_type) : option (list (definition_function_types_interp T))
       := listo_to_olist (map (df_eval σ) (df_gradient df lv)).
     
   End eval.
@@ -1444,7 +1445,7 @@ Section DefinedFunctions.
   
   Section deriv2.
 
-    Fixpoint df_eval_deriv {T} (σ:df_env) (df:DefinedFunction T) (v:var_type) : option (definition_function_types_interp T)
+    Fixpoint df_eval_deriv {T} (σ:df_env) (df:DefinedFunction UnitAnn T) (v:var_type) : option (definition_function_types_interp T)
       := (match df with
          | Number _ _ => Some 0
          | Constant t _ x => Some
@@ -1656,7 +1657,7 @@ Section DefinedFunctions.
            end
           end).
 
-    Fixpoint df_eval_tree_deriv {T} (σ:df_env) (df:@DefinedFunction EvalAnn T) (v:var_type) : option (definition_function_types_interp T)
+    Fixpoint df_eval_tree_deriv {T} (σ:df_env) (df:DefinedFunction EvalAnn T) (v:var_type) : option (definition_function_types_interp T)
       := (match df with
          | Number _ _ => Some 0
          | Constant t _ x => Some
@@ -2026,7 +2027,7 @@ Section DefinedFunctions.
     Definition gradenv_init (dvars : list var_type) : df_env :=
          map gradenv_init1 dvars.
 
-    Fixpoint df_eval_backprop_deriv {T Ann} (σ:df_env) (df:@DefinedFunction Ann T) (grad_env:df_env) {struct df} : definition_function_types_interp T -> option df_env
+    Fixpoint df_eval_backprop_deriv {T Ann} (σ:df_env) (df:DefinedFunction Ann T) (grad_env:df_env) {struct df} : definition_function_types_interp T -> option df_env
       := match df with
          | Number _ _ => fun grad => Some grad_env
          | Constant _ _ _ => fun grad => Some grad_env
@@ -2278,7 +2279,7 @@ Section DefinedFunctions.
           end.
 
 
-    Fixpoint df_eval_tree_backprop_deriv {T} (σ:df_env) (df:@DefinedFunction EvalAnn T) (grad_env:df_env)  {struct df} : definition_function_types_interp T -> option df_env
+    Fixpoint df_eval_tree_backprop_deriv {T} (σ:df_env) (df:DefinedFunction EvalAnn T) (grad_env:df_env)  {struct df} : definition_function_types_interp T -> option df_env
       := match df with
          | Number _ _ => fun grad => Some grad_env
          | Constant _ _ _ => fun grad => Some grad_env
@@ -2508,7 +2509,7 @@ Section DefinedFunctions.
         | _ => False
         end.
 
-   Fixpoint is_scalar_function {Ann} {T} (df:@DefinedFunction Ann T) : Prop
+   Fixpoint is_scalar_function {Ann} {T} (df:DefinedFunction Ann T) : Prop
      := match df with
         | Number _ _ => True
         | Constant t _ _ => is_scalar_df_type t
@@ -2529,8 +2530,8 @@ Section DefinedFunctions.
 
    Fixpoint is_df_rec_prop {Ann} {T} 
             (prop : forall TT:definition_function_types, 
-                (@DefinedFunction Ann TT) -> Prop)
-            (df:@DefinedFunction Ann T) {struct df}: Prop
+                (DefinedFunction Ann TT) -> Prop)
+            (df:DefinedFunction Ann T) {struct df}: Prop
      := prop T df /\
         match df with
          | Number _ _ => True
@@ -2581,9 +2582,16 @@ Section DefinedFunctions.
          | VLossfun _ _ _ _ _ l _ => is_df_rec_prop prop l
          | MLossfun _ _ _ _ _ _ l _ => is_df_rec_prop prop l
          end.
-
-
-   Lemma is_scalar_function_scalar {Ann} {T} (df:@DefinedFunction Ann T) :
+(*
+      Definition annotations_correct
+     := is_df_rec_prop ()
+              
+    is_df_rec_prop {Ann} {T} 
+            (prop : forall TT:definition_function_types, 
+                (DefinedFunction Ann TT) -> Prop)
+            (df:DefinedFunction Ann T) {struct df}: Prop
+*)
+   Lemma is_scalar_function_scalar {Ann} {T} (df:DefinedFunction Ann T) :
      is_scalar_function df -> is_scalar_df_type T.
    Proof.
      induction df; simpl; trivial.
@@ -2602,7 +2610,7 @@ Section DefinedFunctions.
      := definition_function_types_map_base (fun t => list (list t)) dft.
 
 
-    Definition df_eval_gradient {T} σ (df:DefinedFunction T) (lv:list var_type) : option (list (definition_function_types_interp T))
+    Definition df_eval_gradient {T} σ (df:DefinedFunction UnitAnn T) (lv:list var_type) : option (list (definition_function_types_interp T))
       := listo_to_olist (map (df_eval_deriv σ df) lv).
     
 (*
@@ -2971,7 +2979,7 @@ Section DefinedFunctions.
           end).
 *)
    End deriv2.
-
+   
    Definition dft_one (dft:definition_function_types) : definition_function_types_interp dft
      := match dft with
         | DTfloat => 1
@@ -2982,7 +2990,7 @@ Section DefinedFunctions.
    Section scalar_ind.
      
    Fixpoint is_scalar_function_ind_gen {Ann}
-             {P:forall {T}, @DefinedFunction Ann T->Prop}
+             {P:forall {T}, DefinedFunction Ann T->Prop}
              (fnumber:forall ann x, P (Number ann x))
              (fconstant:forall (ann:Ann DTfloat) x, P (@Constant _ DTfloat ann x))
              (fvar:forall sv ann, P (@Var _ (sv,DTfloat) ann))
@@ -2998,7 +3006,7 @@ Section DefinedFunctions.
              (fpsign:forall a e, P e -> P (PSign a e))
              (fmax:forall a l r, P l -> P r -> P (Max a l r))
              {T}
-            (df:@DefinedFunction Ann T) {struct df} : is_scalar_function df -> P df.
+            (df:DefinedFunction Ann T) {struct df} : is_scalar_function df -> P df.
    Proof.
      induction df; simpl; intros isc; try tauto.
      - apply fnumber.
@@ -3037,7 +3045,7 @@ Section DefinedFunctions.
    Qed.
 
    Definition is_scalar_function_ind {Ann}
-             {P:@DefinedFunction Ann DTfloat->Prop}
+             {P:DefinedFunction Ann DTfloat->Prop}
              (fnumber:forall ann x, P (Number ann x))
              (fconstant:forall (ann:Ann DTfloat) x, P (@Constant _ DTfloat ann x))
              (fvar:forall sv ann, P (@Var _ (sv,DTfloat) ann))
@@ -3052,7 +3060,7 @@ Section DefinedFunctions.
              (fsign:forall a e, P e -> P (Sign a e))
              (fpsign:forall a e, P e -> P (PSign a e))
              (fmax:forall a l r, P l -> P r -> P (Max a l r))
-             (df:@DefinedFunction Ann DTfloat) : is_scalar_function df -> P df.
+             (df:DefinedFunction Ann DTfloat) : is_scalar_function df -> P df.
    Proof.
      apply (@is_scalar_function_ind_gen _ (fun t => match t with
                                                         | DTfloat => fun df => P df
@@ -3125,7 +3133,7 @@ Section DefinedFunctions.
          now rewrite (var_type_UIP_refl e); simpl.         
    Qed.
 
-   Lemma df_eval_backprop_deriv_preserves_lookup_not_none {Ann T} {env} {df:@DefinedFunction Ann T} {gradenv grad d} :
+   Lemma df_eval_backprop_deriv_preserves_lookup_not_none {Ann T} {env} {df:DefinedFunction Ann T} {gradenv grad d} :
      df_eval_backprop_deriv env df gradenv grad = Some d ->
      forall xv,
      vartlookup gradenv xv <> None ->
@@ -3133,7 +3141,7 @@ Section DefinedFunctions.
    Proof.
    Admitted.
 
-   Lemma df_eval_tree_backprop_deriv_preserves_lookup_not_none {T} {env} {df:@DefinedFunction EvalAnn T} {gradenv grad d} :
+   Lemma df_eval_tree_backprop_deriv_preserves_lookup_not_none {T} {env} {df:DefinedFunction EvalAnn T} {gradenv grad d} :
      df_eval_tree_backprop_deriv env df gradenv grad = Some d ->
      forall xv,
      vartlookup gradenv xv <> None ->
@@ -3183,7 +3191,7 @@ Section DefinedFunctions.
       End deriv_deriv.
         
   Section max_derived.
-    Definition MaxDerived (a b : @DefinedFunction UnitAnn  DTfloat) :=
+    Definition MaxDerived (a b : DefinedFunction UnitAnn  DTfloat) :=
       Divide tt (Plus tt (Plus tt (Abs tt (Minus tt b a)) b) a) (Number tt 2).
 
     Delimit Scope df_scope with df.
@@ -3391,7 +3399,7 @@ Section DefinedFunctions.
 
   Section fv.
 
-    Fixpoint df_free_variables {T} (f : DefinedFunction T) : list SubVar
+    Fixpoint df_free_variables {Ann} {T} (f : DefinedFunction Ann T) : list SubVar
       := match f with
          | Number _ x => nil
          | DVector n _ x => vlconcat_map df_free_variables x
@@ -3429,13 +3437,13 @@ Section DefinedFunctions.
          | MLossfun n m _ v1 v2 s l r => (df_free_variables s) ++ (df_free_variables l)
          end.
 
-    Definition df_closed {T} (f: DefinedFunction T) : Prop
+    Definition df_closed {Ann} {T} (f: DefinedFunction Ann T) : Prop
       := match df_free_variables f with
          | nil => True
          | _ => False
          end.
 
-    Lemma df_closed_nil {T} (f: DefinedFunction T) : df_closed f -> df_free_variables f = nil.
+    Lemma df_closed_nil {T} (f: DefinedFunction UnitAnn T) : df_closed f -> df_free_variables f = nil.
     Proof.
       unfold df_closed.
       destruct (df_free_variables f); tauto.
@@ -3587,8 +3595,8 @@ Section DefinedFunctions.
 
   Section apply.
 
-    Fixpoint df_apply {T} (e: DefinedFunction T) 
-             (args: forall (v:var_type),  DefinedFunction (snd v)) : @DefinedFunction UnitAnn T :=
+    Fixpoint df_apply {T} (e: DefinedFunction UnitAnn T) 
+             (args: forall (v:var_type),  DefinedFunction UnitAnn (snd v)) : DefinedFunction UnitAnn T :=
       match e with
       | Number _ x => Number tt x
       | Constant t _ x => Constant tt x 
@@ -3653,7 +3661,7 @@ Section real_pfs.
   Import Reals.
   Import List.
   
-  Lemma MaxDerivedMax_eq (a b : @DefinedFunction floatish_R UnitAnn DTfloat) :
+  Lemma MaxDerivedMax_eq (a b : DefinedFunction UnitAnn DTfloat) :
     forall σ, df_eval σ (Max tt a b) = df_eval σ (MaxDerived a b).
   Proof.
     simpl; intros σ.
@@ -3689,7 +3697,7 @@ Section real_pfs.
     Defined.
 *)
 
-   Lemma backpropeq_gen (x : SubVar) (env gradenv : df_env) (dfexpr : @DefinedFunction _ UnitAnn DTfloat) (grad : float) :
+   Lemma backpropeq_gen (x : SubVar) (env gradenv : df_env) (dfexpr : DefinedFunction UnitAnn DTfloat) (grad : float) :
       let xvar := (x, DTfloat) in 
       is_scalar_function dfexpr -> 
       vartlookup gradenv (x,DTfloat) <> None ->
@@ -4059,7 +4067,7 @@ Section real_pfs.
   
 (*
  Lemma tree_backpropeq_gen (x : SubVar) (env gradenv : df_env) 
-       (dfexpr : @DefinedFunction _ EvalAnn DTfloat) (grad : float) :
+       (dfexpr : DefinedFunction _ EvalAnn DTfloat) (grad : float) :
    let xvar := (x, DTfloat) in 
    is_scalar_function dfexpr ->
    vartlookup gradenv (x,DTfloat) <> None ->
