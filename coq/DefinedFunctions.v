@@ -4063,7 +4063,7 @@ Section real_pfs.
        destruct (Rle_dec eld d); simpl.
        + destruct (df_eval_deriv env r (x, DTfloat)); simpl; trivial.
        + destruct (df_eval_deriv env l (x, DTfloat)); simpl; trivial.
-   Qed.
+   Admitted.
 
   
 (*
