@@ -53,9 +53,6 @@ Section DefinedFunctions.
     
     (* A subset of defined functions *)
 
-    Definition Vector (T:Type) (n : nat) := {n':nat | n' < n}%nat -> T.
-    Definition Matrix (T:Type) (n m : nat) := 
-      {n':nat | n' < n}%nat -> {m':nat | m' < m}%nat -> T.
 
     Inductive definition_function_types
      := DTfloat
@@ -264,193 +261,12 @@ Section DefinedFunctions.
   Definition df_times (df1 df2 : DefinedFunction UnitAnn DTfloat) : DefinedFunction UnitAnn DTfloat :=
     Times tt df1 df2.
 
-  Section deriv.
+  Definition defined_sum {m} (v:Vector (DefinedFunction UnitAnn DTfloat) m) : DefinedFunction UnitAnn DTfloat
+    := vector_fold_right1 (fun a b => Plus tt a b) (Number tt 0) id v.
 
-    Definition vector_fold_right1_bounded_dep {A:nat->Type} {B} (f:forall n,B->A n->A (S n)) (init:A 0%nat) (singleton:B->A 1%nat) {m:nat} (v:Vector B m) (n:nat) (pf:(n<=m)%nat)
-    : A n.
-    Proof.
-      induction n.
-      - exact init.
-      - destruct n.
-        + assert (pf2:(0 < m)%nat) by omega.
-          exact (singleton (v (exist _ 0 pf2)%nat)).
-        + assert (pf2:(S n <= m)%nat) by omega.
-          assert (pf3:(S n < m)%nat) by omega.
-          apply f.
-          * exact (v (exist _ (S n) pf3)).
-          * exact (IHn pf2).
-    Defined.
-
-    Definition vector_fold_right_bounded_dep {A:nat->Type} {B} (f:forall n,B->A n->A (S n)) (init:A 0%nat) {m:nat} (v:Vector B m) (n:nat) (pf:(n<=m)%nat)
-    : A n.
-    Proof.
-      induction n.
-      - exact init.
-      - apply f.
-        + assert (pf2:(n < m)%nat) by omega.
-          exact (v (exist _ n pf2)).
-        + apply IHn.
-          omega.
-    Defined.
-
-    Definition vnil {T} : Vector T 0.
-    Proof.
-      intros [i pf].
-      omega.
-    Defined.
-
-    Definition vcons {T} {n} (x:T) (v:Vector T n) : (Vector T (S n)).
-    Proof.
-      intros [i pf].
-      destruct (Nat.eq_dec i n).
-      + exact x.
-      + apply v.
-        exists i.
-        omega.
-    Defined.
-
+ Section deriv.
     
-    Definition vhd {T} {n} (v:Vector T (S n)) : T := v (exist _ (0%nat) (Nat.lt_0_succ n)).
-    Definition vlast {T} {n} (v:Vector T (S n)) : T := v (exist _ (n%nat) (Nat.lt_succ_diag_r n)).
 
-    Definition vdrop_last {T} {n} (v:Vector T (S n)) : Vector T n.
-    Proof.
-      intros [i pf]; apply v.
-      exists i.
-      apply NPeano.Nat.lt_lt_succ_r; trivial.
-    Defined.
-
-
-    Definition vector_fold_right1_dep {A:nat->Type} {B} (f:forall n, B->A n->A (S n)) (init:A 0%nat) (singleton:B->A 1%nat) {m:nat} (v:Vector B m) : A m
-      := vector_fold_right1_bounded_dep f init singleton v m (le_refl _).
-
-    Definition vector_fold_right_dep {A:nat->Type} {B} (f:forall n, B->A n->A (S n)) (init:A 0%nat) {m:nat} (v:Vector B m) : A m
-      := vector_fold_right_bounded_dep f init v m (le_refl _).
-
-    Definition vector_fold_right1 {A B:Type} (f:B->A->A) (init:A) (singleton:B->A) {m:nat} (v:Vector B m)
-      := vector_fold_right1_dep (A:=fun _ => A) (fun _ => f) init singleton v.
-
-    Definition vector_fold_right {A B:Type} (f:B->A->A) (init:A) {m:nat} (v:Vector B m)
-      := vector_fold_right_dep (fun _ => f) init v.
-
-    Definition defined_sum {m} (v:Vector (DefinedFunction UnitAnn DTfloat) m) : DefinedFunction UnitAnn DTfloat
-      := vector_fold_right1 (fun a b => Plus tt a b) (Number tt 0) id v.
-
-    Definition vsum {m:nat} (v:Vector float m) : float
-      := vector_fold_right1 Fplus 0 id v.
-
-    Definition vectoro_to_ovector {T} {n} (v:Vector (option T) n) : option (Vector T n)
-      := vector_fold_right_dep (fun n => lift2 (@vcons _ n)) (Some vnil) v.
-
-    Definition matrixo_to_omatrix {T} {m n} (v:Matrix (option T) m n) : option (Matrix T m n)
-      := vectoro_to_ovector (fun i => vectoro_to_ovector (v i)).
-
-    Definition vmap {A B} {n} (f:A->B) (v:Vector A n) : Vector B n
-      := vector_fold_right_dep (fun n x y => vcons (n:=n) (f x) y) vnil v.
-
-    Definition msum {m n:nat} (v:Matrix float m n) : float :=
-      vsum (vmap vsum v).
-
-    Definition mmap {A B} {m n} (f:A->B) (mat:Matrix A m n) : Matrix B m n
-      := vmap (fun mrow => vmap f mrow) mat.
-
-    Definition list_fold_right1_bounded_dep {A:nat->Type} {B} (f:forall n,B->A n->A (S n)) (init:A 0%nat) (singleton:B->A 1%nat) (l:list B) (n:nat) (pf:(n<=length l)%nat)
-    : A n.
-    Proof.
-      induction n.
-      - exact init.
-      - destruct n.
-        + assert (pf2:(0 < length l)%nat) by omega.
-          destruct l.
-          * simpl in pf; omega.
-          * exact (singleton b).
-        + assert (pf2:(S n <= length l)%nat) by omega.
-          apply f.
-          * destruct l; simpl in *; try omega.
-            apply b.
-          * apply IHn.
-            apply pf2.
-    Defined.
-
-    Definition list_fold_right1_dep {A:nat->Type} {B} (f:forall n, B->A n->A (S n)) (init:A 0%nat) (singleton:B->A 1%nat) (l:list B) : A (length l)
-      := list_fold_right1_bounded_dep f init singleton l (length l) (le_refl _).
-
-    Definition list_fold_right_dep {A:nat->Type} {B} (f:forall n, B->A n->A (S n)) (init:A 0%nat) (l:list B) : A (length l)
-      := list_fold_right1_dep f init (fun a => f _ a init) l.
-
-    Definition list_to_vector {A} (l:list A) : Vector A (length l)
-      := list_fold_right_dep (@vcons _) vnil l.
-
-    Definition vector_to_list {A} {n} (v:Vector A n) : list A
-      := vector_fold_right cons nil v.
-    
-    Definition vseq start len : Vector nat len
-      := eq_rect _ _ (list_to_vector (seq start len)) _ (seq_length _ _).
-
-    Definition vector_zip {A B} {m:nat} (v1:Vector A m) (v2:Vector B m) : Vector (A*B) m
-      := fun i => (v1 i, v2 i).
-
-    Definition matrix_zip {A B} {m n:nat} (mat1:Matrix A m n) (mat2:Matrix B m n) : Matrix (A*B) m n
-      := let mat12:Vector (Vector A n*Vector B n) m := vector_zip mat1 mat2 in
-         vmap (fun '(a,b) => vector_zip a b) mat12.
-                                 
-    Definition vector_split {A B} {m:nat} (v:Vector (A*B) m) : Vector A m * Vector B m
-      := (fun i => fst (v i), fun i => snd (v i)).
-
-    Program Definition vtake {A} {m:nat} (v:Vector (A) m) (n:nat) (pf:(n<=m)%nat) : Vector A n
-      := fun i => v i.
-    Next Obligation.
-      omega.
-    Defined.
-
-    Definition vec_eq {A} {m:nat} (x y:Vector A m) := forall i, x i = y i.
-    Notation "x =v= y" := (vec_eq x y) (at level 70).
-    
-    (* If we are willing to assume an axiom *)
-    (*
-    Lemma vec_eq_eq {A} {m:nat} (x y:Vector A m) : vec_eq x y -> x = y.
-    Proof.
-      Require Import FunctionalExtensionality.
-      intros.
-      apply functional_extensionality.
-      apply H.
-    Qed.
-     *)
-
-    Lemma index_pf_irrel n m pf1 pf2 : 
-      exist (fun n' : nat => (n' < n)%nat) m pf1 =
-      exist (fun n' : nat => (n' < n)%nat) m pf2.
-      f_equal.
-      apply digit_pf_irrel.
-    Qed.
-    
-    Lemma vector_Sn_split {T} {n} (v:Vector T (S n)) :
-      v =v= vcons (vlast v) (vdrop_last v).
-    Proof.
-      intros [i pf].
-      unfold vcons, vlast, vdrop_last.
-      destruct (Nat.eq_dec i n)
-      ; subst
-      ; f_equal
-      ; apply index_pf_irrel.
-    Qed.
-
-    Lemma vector_split_zip {A B} {m:nat} (v:Vector (A*B) m) :
-      let '(va,vb):=vector_split v in vector_zip va vb =v= v.
-    Proof.
-      simpl.
-      intros i.
-      vm_compute.
-      now destruct (v i).
-    Qed.
-
-    Lemma split_vector_zip {A B} {m:nat} (va:Vector A m) (vb:Vector B m) :
-      vector_split (vector_zip va vb) = (va,vb).
-    Proof.
-      vm_compute.
-      f_equal.
-    Qed.
-    
   Section subst.
 
     Program Definition substvar {Ann} (v vv:var_type) (e':DefinedFunction Ann (snd v)) (e:DefinedFunction Ann (snd vv)) : (DefinedFunction Ann (snd vv)) :=
@@ -524,9 +340,6 @@ Section DefinedFunctions.
 
   End subst.
 
-  Definition ConstVector {T} (n:nat) (c:T) : (Vector T n) := fun (n': {n':nat | n' < n}%nat) => c.
-  Definition ConstMatrix {T} (n m : nat) (c:T) : (Matrix T n m) := fun (n': {n':nat | n' < n}%nat) (m':{m':nat | m' < m}%nat) => c.
-  
 
 (* restrict to scalar v? *)
     Fixpoint df_deriv {T} (df:DefinedFunction UnitAnn T) (v:var_type) {struct df} : DefinedFunction UnitAnn T
@@ -2593,10 +2406,9 @@ Section DefinedFunctions.
        ; trivial].
      - Case "Number"%string.
        inversion eqq; subst.
-       simpl.
-       tauto.
+       simpl; tauto.
      - Case "Constant"%string.
-       inversion eqq; subst.
+       inversion eqq; subst. 
        simpl; tauto.
      - Case "DVector"%string.
        admit.
@@ -2606,34 +2418,26 @@ Section DefinedFunctions.
        revert eqq.
        case_eq (vartlookup σ v) ; [| congruence].
        intros.
-       inversion eqq.
-       subst.
-       simpl.
-       admit.
+       inversion eqq; subst; simpl.
+       rewrite H; tauto.
      - Case "VectorApply"%string.
+       case_eq (df_eval_tree σ df2)
+       ; [intros adf2 a2eqq | intros a2eqq]
+       ; rewrite a2eqq in eqq 
+       ; [| congruence].
+       specialize (IHdf2 _ a2eqq).
+       apply is_df_rec_prop_top in IHdf2.
        revert eqq.
-       case_eq (df_eval_tree σ df2)  ; [| congruence].
+       case_eq ( @vectoro_to_ovector (@float floatish_impl) n
+              (fun i : @sig nat (fun n' : nat => lt n' n) =>
+               @df_eval DTfloat UnitAnn
+                 (@cons env_entry_type
+                    (mk_env_entry (@pair SubVar definition_function_types v DTfloat)
+                                  (@get_annotation EvalAnn (DTVector n) adf2 i)) σ) df1))
+              ; [| congruence].
        intros.
-       case_eq ( vectoro_to_ovector
-            (fun i : {n' : nat | (n' < n)%nat} =>
-             df_eval
-               (mk_env_entry (v, DTfloat)
-                  (match d as _ in (DefinedFunction _ d) return (EvalAnn d) with
-                   | Number ann _ | @Constant _ _ ann _ | @DVector _ _ ann _ | @DMatrix _ _
-                     _ ann _ | Var _ ann | Plus ann _ _ | Minus ann _ _ | Times ann _ _ |
-                     Divide ann _ _ | Square ann _ | Exp ann _ | Log ann _ | Abs ann _ |
-                     Sign ann _ | PSign ann _ | Max ann _ _ | @VectorDot _ _ ann _ _ |
-                     @VectorSum _ _ ann _ | @MatrixSum _ _ _ ann _ | @VectorElem _ _ ann _
-                     _ | @MatrixElem _ _ _ ann _ _ _ | @MatrixVectorMult _ _ _ ann _ _ |
-                     @MatrixVectorAdd _ _ _ ann _ _ | @MatrixMult _ _ _ _ ann _ _ |
-                     @VectorPlus _ _ ann _ _ | @VectorMinus _ _ ann _ _ | @MatrixPlus _ _ _
-                     ann _ _ | @MatrixMinus _ _ _ ann _ _ | @VectorScalMult _ _ ann _ _ |
-                     @MatrixScalMult _ _ _ ann _ _ | @VectorApply _ _ ann _ _ _ |
-                     @MatrixApply _ _ _ ann _ _ _ | @VLossfun _ _ ann _ _ _ _ _ | @MLossfun
-                     _ _ _ ann _ _ _ _ _ => ann
-                   end i) :: σ) df1)).
-       intros.
-       admit.
+       inversion eqq; subst.
+       simpl.
        admit.
      - Case "MatrixApply"%string.
        admit.
@@ -3944,9 +3748,9 @@ Section real_pfs.
        + destruct (df_eval_deriv env l (x, DTfloat)); simpl; trivial.
  Qed.
   
-(*
+
  Lemma tree_backpropeq_gen (x : SubVar) (env gradenv : df_env) 
-       (dfexpr : DefinedFunction _ EvalAnn DTfloat) (grad : float) :
+       (dfexpr : DefinedFunction EvalAnn DTfloat) (grad : float) :
    let xvar := (x, DTfloat) in 
    is_scalar_function dfexpr ->
    vartlookup gradenv (x,DTfloat) <> None ->
@@ -3964,12 +3768,16 @@ Section real_pfs.
      revert grad gradenv.
      pattern dfexpr.
      revert dfexpr is_scalar.
-     apply is_scalar_function_ind; simpl.
-     - intros _ _ grad gradenv xinn.
+     DefinedFunction_scalar_cases (apply is_scalar_function_ind) Case; simpl.
+
+     - Case "Number"%string.
+       intros _ _ grad gradenv xinn.
        destruct (vartlookup gradenv (x, DTfloat)); simpl; intros; [| tauto]; lra.
-     - intros _ _ grad gradenv xinn.
+     - Case "Constant"%string.
+       intros _ _ grad gradenv xinn.
        destruct (vartlookup gradenv (x, DTfloat)); simpl; intros; [| tauto]; lra.
-     - intros sv _ grad gradenv xinn.
+     - Case "Var"%string.
+       intros sv _ grad gradenv xinn.
        case_eq (vartlookup gradenv (x, DTfloat)); simpl; intros; [| tauto].
        destruct (var_dec x sv); simpl.
        + subst.
@@ -3986,7 +3794,8 @@ Section real_pfs.
            lra.
          * rewrite H.
            lra.
-     - intros _ l r IHl IHr grad gradenv xinn.
+     - Case "Plus"%string.
+       intros _ l r IHl IHr grad gradenv xinn.
        case_eq (df_eval_tree_deriv env l (x, DTfloat))
        ; [intros dl eqdl | intros eqdl]
        ; rewrite eqdl in IHl.
@@ -4021,7 +3830,8 @@ Section real_pfs.
          simpl in IHl.
          generalize (df_eval_tree_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn); intros.
          destruct (vartlookup d (x, DTfloat)); tauto.
-     - intros _ l r IHl IHr grad gradenv xinn.
+     - Case "Minus"%string.
+       intros _ l r IHl IHr grad gradenv xinn.
        case_eq (df_eval_tree_deriv env l (x, DTfloat))
        ; [intros dl eqdl | intros eqdl]
        ; rewrite eqdl in IHl.
@@ -4056,20 +3866,20 @@ Section real_pfs.
          simpl in IHl.
          generalize (df_eval_tree_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn); intros.
          destruct (vartlookup d (x, DTfloat)); tauto.
-
-     - intros _ l r IHl IHr grad gradenv xinn. (* Times *)
+     - Case "Times"%string.
+       intros _ l r IHl IHr grad gradenv xinn. 
        case_eq (df_eval_tree_deriv env l (x, DTfloat))
        ; [intros dl eqdl | intros eqdl]
        ; rewrite eqdl in IHl.
        + case_eq (df_eval_tree_deriv env r (x, DTfloat))
          ; [intros dr eqdr | intros eqdr]
          ; rewrite eqdr in IHr.
-         * specialize (IHl grad gradenv xinn).
+         * specialize (IHl (get_annotation r * grad)%R gradenv xinn).
            case_eq (vartlookup gradenv (x, DTfloat))
            ; [intros xv xveqq | intros xveqq]
            ; rewrite xveqq in IHl
            ; [ | tauto].
-           case_eq (df_eval_tree_backprop_deriv env l gradenv grad)
+           case_eq (df_eval_tree_backprop_deriv env l gradenv (get_annotation r * grad)%R)
            ; [intros ge' ge'eq | intros ge'eq]
            ; rewrite ge'eq in IHl
            ; [ | tauto].
@@ -4078,25 +3888,59 @@ Section real_pfs.
            ; [intros xv' xv'eqq | intros xv'eqq]
            ; rewrite xv'eqq in IHl
            ; [ | tauto].
-           specialize (IHr (- grad)%R ge').
+           specialize (IHr (get_annotation l * grad)%R ge').
            cut_to IHr; [ | congruence ].
            rewrite xv'eqq in IHr.
-           destruct (backprop_lookup (df_eval_tree_backprop_deriv env r ge' (- grad)%R) (x, DTfloat)); trivial.
+           destruct (backprop_lookup (df_eval_tree_backprop_deriv env r ge' (get_annotation l * grad)%R) (x, DTfloat)); trivial.
            lra.
-         * case_eq ( df_eval_tree_backprop_deriv env l gradenv grad ); simpl; trivial; intros.
+         * case_eq ( df_eval_tree_backprop_deriv env l gradenv (get_annotation r * grad)%R ); simpl; trivial; intros.
            apply IHr.
            apply (df_eval_tree_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn).
-       + specialize (IHl grad gradenv xinn).
-         case_eq (df_eval_tree_backprop_deriv env l gradenv grad); simpl; trivial; intros.
-         rewrite H in IHl.
-         simpl in IHl.
-         generalize (df_eval_tree_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn); intros.
-         destruct (vartlookup d (x, DTfloat)); tauto.
-
-
+       + admit.
+           
+     - Case "Divide"%string.
+       intros _ l r IHl IHr grad gradenv xinn. 
+       case_eq (df_eval_tree_deriv env l (x, DTfloat))
+       ; [intros dl eqdl | intros eqdl]
+       ; rewrite eqdl in IHl.
+       + case_eq (df_eval_tree_deriv env r (x, DTfloat))
+         ; [intros dr eqdr | intros eqdr]
+         ; rewrite eqdr in IHr.
+         * specialize (IHl (grad / get_annotation r)%R gradenv xinn).
+           case_eq (vartlookup gradenv (x, DTfloat))
+           ; [intros xv xveqq | intros xveqq]
+           ; rewrite xveqq in IHl
+           ; [ | tauto].
+           case_eq (df_eval_tree_backprop_deriv env l gradenv (grad / get_annotation r)%R)
+           ; [intros ge' ge'eq | intros ge'eq]
+           ; rewrite ge'eq in IHl
+           ; [ | tauto].
+           simpl in IHl.
+           case_eq (vartlookup ge' (x, DTfloat))
+           ; [intros xv' xv'eqq | intros xv'eqq]
+           ; rewrite xv'eqq in IHl
+           ; [ | tauto].
+           specialize (IHr (- get_annotation l / ((get_annotation r) * (get_annotation r)) * grad)%R ge').
+           cut_to IHr; [ | congruence ].
+           rewrite xv'eqq in IHr.
+           destruct (backprop_lookup (df_eval_tree_backprop_deriv env r ge' (- get_annotation l  / ((get_annotation r) * (get_annotation r)) * grad)%R) (x, DTfloat)); trivial.
+           lra.
+         * case_eq ( df_eval_tree_backprop_deriv env l gradenv (grad / get_annotation r)%R ); simpl; trivial; intros.
+           apply IHr.
+           apply (df_eval_tree_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn).
+       + case_eq (df_eval env r);
+           [ intros re eqre | intros eqre]
+           ; simpl; trivial.
+           specialize (IHl (grad / get_annotation r)%R gradenv xinn).
+           case_eq (df_eval_tree_backprop_deriv env l gradenv (grad / get_annotation r )%R); simpl; trivial; intros.
+           rewrite H in IHl.
+           simpl in IHl.
+           generalize (df_eval_tree_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn); intros.
+           destruct (vartlookup d (x, DTfloat)); tauto.
+           admit.
+       - Case "Square"%string.
            
    Admitted.
-*)
 
 End real_pfs.
 

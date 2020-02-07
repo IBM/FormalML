@@ -35,6 +35,7 @@ MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	utils/StreamAdd \
 	utils/StreamLimits \
 	utils/Sums \
+	utils/Vector \
 	utils/Utils \
 	utils/Floatish/FloatishDef \
 	utils/Floatish/FloatishOps \
