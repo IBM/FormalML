@@ -150,7 +150,7 @@ Section DefinedFunctions.
 
     Global Arguments DefinedFunction : clear implicits.
 
-    Fixpoint get_annotation {Ann T} (df:DefinedFunction Ann T) : Ann T
+    Definition get_annotation {Ann T} (df:DefinedFunction Ann T) : Ann T
       := match df with
          | Number ann _ => ann
          | Constant _ ann _ => ann
@@ -2597,8 +2597,7 @@ Section DefinedFunctions.
        tauto.
      - Case "Constant"%string.
        inversion eqq; subst.
-       simpl.
-       admit.
+       simpl; tauto.
      - Case "DVector"%string.
        admit.
      - Case "DMatrix"%string.
