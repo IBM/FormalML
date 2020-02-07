@@ -1696,7 +1696,7 @@ Section DefinedFunctions.
            let '(le,re) := (get_annotation l, get_annotation r) in            
            match df_eval_tree_deriv σ l v, df_eval_tree_deriv σ r v with
            | Some ld, Some rd =>
-             Some (((ld * re) - (le * rd)) / (re * re))
+             Some ((ld / re) - ((le * rd) / (re * re)))
            | _, _ => None
            end
          | Square _ e =>
@@ -1943,52 +1943,6 @@ Section DefinedFunctions.
     Definition matrix_to_list {T} {m n} (v:Matrix T m n) : (list T)
       := concat (matrix_to_list_list v).
 
-
-(*
-    Lemma lemma1 {x} : x = DTfloat -> definition_function_types_interp x = float.
-    Proof.
-      intros.
-      subst.
-      reflexivity.
-    Defined.
-
-    Lemma lemma2 {x} {n} : x = DTVector n -> definition_function_types_interp x = Vector float n.
-    Proof.
-      intros.
-      subst.
-      reflexivity.
-    Defined.
-
-    Lemma lemma3 {x} {n m} : x = DTMatrix n m -> definition_function_types_interp x = Matrix float n m.
-    Proof.
-      intros.
-      subst.
-      reflexivity.
-    Defined.
-
-    Definition coerce {A B} (pf:A=B) : forall x:A, B.
-    Proof.
-      intros a.
-      destruct pf.
-      exact a.
-    Defined.
-
-    Definition addvar (x : var_type) (grad_env:df_env) :=
-      (match snd x as y return snd x = y -> definition_function_types_interp y -> definition_function_types_interp y with
-       | DTfloat =>  fun pf grad => match vartlookup grad_env x with
-                     | Some val => (coerce (lemma1 pf) val) + grad
-                     | _ => grad
-                     end
-       | DTVector n => fun pf grad => match vartlookup grad_env x with
-                       | Some val => fun i => ((coerce (lemma2 pf) val) i) + (grad i)
-                       | _ => grad
-                       end
-       | DTMatrix m n => fun pf grad => match vartlookup grad_env x with
-                         | Some val => fun i j => ((coerce (lemma3 pf) val) i j) + (grad i j)
-                         | _ => grad
-                         end
-       end) (eq_refl _).
-*)
     Program Definition addvar (x : var_type) (grad_env:df_env) :=
       (match snd x as y return snd x = y ->
                                definition_function_types_interp y -> 
@@ -2312,7 +2266,7 @@ Section DefinedFunctions.
          | Divide _ l r => fun grad =>
            let '(le,re) := (get_annotation l, get_annotation r) in 
            match df_eval_tree_backprop_deriv σ l grad_env  (grad / re) with                 
-           | Some grad_env' => df_eval_tree_backprop_deriv σ r grad_env'  (- le * grad / (re * re))
+           | Some grad_env' => df_eval_tree_backprop_deriv σ r grad_env' (- le / (re * re) * grad)
            | _ => None
            end
          | Square _ e => fun grad => 
@@ -2638,14 +2592,58 @@ Section DefinedFunctions.
        ; rewrite IHdf
        ; trivial].
      - Case "Number"%string.
-       inversion eqq; subst; simpl.
+       inversion eqq; subst.
+       simpl.
        tauto.
      - Case "Constant"%string.
-       
+       inversion eqq; subst.
+       simpl.
+       admit.
+     - Case "DVector"%string.
+       admit.
+     - Case "DMatrix"%string.
+       admit.
+     - Case "Var"%string.
+       revert eqq.
+       case_eq (vartlookup σ v) ; [| congruence].
+       intros.
+       inversion eqq.
+       subst.
+       simpl.
+       admit.
+     - Case "VectorApply"%string.
+       revert eqq.
+       case_eq (df_eval_tree σ df2)  ; [| congruence].
+       intros.
+       case_eq ( vectoro_to_ovector
+            (fun i : {n' : nat | (n' < n)%nat} =>
+             df_eval
+               (mk_env_entry (v, DTfloat)
+                  (match d as _ in (DefinedFunction _ d) return (EvalAnn d) with
+                   | Number ann _ | @Constant _ _ ann _ | @DVector _ _ ann _ | @DMatrix _ _
+                     _ ann _ | Var _ ann | Plus ann _ _ | Minus ann _ _ | Times ann _ _ |
+                     Divide ann _ _ | Square ann _ | Exp ann _ | Log ann _ | Abs ann _ |
+                     Sign ann _ | PSign ann _ | Max ann _ _ | @VectorDot _ _ ann _ _ |
+                     @VectorSum _ _ ann _ | @MatrixSum _ _ _ ann _ | @VectorElem _ _ ann _
+                     _ | @MatrixElem _ _ _ ann _ _ _ | @MatrixVectorMult _ _ _ ann _ _ |
+                     @MatrixVectorAdd _ _ _ ann _ _ | @MatrixMult _ _ _ _ ann _ _ |
+                     @VectorPlus _ _ ann _ _ | @VectorMinus _ _ ann _ _ | @MatrixPlus _ _ _
+                     ann _ _ | @MatrixMinus _ _ _ ann _ _ | @VectorScalMult _ _ ann _ _ |
+                     @MatrixScalMult _ _ _ ann _ _ | @VectorApply _ _ ann _ _ _ |
+                     @MatrixApply _ _ _ ann _ _ _ | @VLossfun _ _ ann _ _ _ _ _ | @MLossfun
+                     _ _ _ ann _ _ _ _ _ => ann
+                   end i) :: σ) df1)).
+       intros.
+       admit.
+       admit.
+     - Case "MatrixApply"%string.
+       admit.
+     - Case "VLossfun"%string.
+       admit.
+     - Case "MLossfun"%string.
+       admit.
    Admitted.
    
-   Lemma df_eval_tree {T Ann} (σ:df_env) (df:DefinedFunction Ann T) : option (DefinedFunction EvalAnn T)
-
    (*
       Definition annotations_correct
      := is_df_rec_prop ()
@@ -2677,189 +2675,7 @@ Section DefinedFunctions.
     Definition df_eval_gradient {T} σ (df:DefinedFunction UnitAnn T) (lv:list var_type) : option (list (definition_function_types_interp T))
       := listo_to_olist (map (df_eval_deriv σ df) lv).
     
-(*
-   Fixpoint df_eval_gradient_alt {dft:definition_function_types} (σ:df_env) (df:DefinedFunction dft) (lv:list var_type) : option (definition_function_types_map_base list dft)
-    := (match df with
-        | Number _ => Some (map (fun _ => 0) lv)
-        | Constant t x => Some 
-            match t return definition_function_types_map_base list t with
-            | DTfloat => map (fun _ => 0) lv
-            | DTVector n => map (fun _ => ConstVector n 0) lv
-            | DTMatrix m n => map (fun _ => ConstMatrix m n 0) lv
-            end
-        | DVector n v => vectoro_to_ovector (vmap (fun x => df_eval_gradient_alt σ x lv) v)
-        | DMatrix n m df => matrixo_to_omatrix (vmap (fun x => vmap (fun y => df_eval_gradient_alt σ y lv) x) df)
-         | Var x => Some (map (fun v => if x == v then 1 else 0) lv)
-         | Plus l r => 
-           match df_eval_gradient_alt σ l lv, df_eval_gradient_alt σ r lv with
-           | Some ld, Some rd => Some  (map (fun '(x, y) => x+y) (combine ld rd))
-           | _, _ => None
-           end
-         | Minus l r =>
-           match df_eval_gradient_alt σ l lv, df_eval_gradient_alt σ r lv with
-           | Some ld, Some rd => Some (map (fun '(x, y) => x-y) (combine ld rd))
-           | _, _ => None
-           end
-         | Times l r =>
-           match df_eval σ l, df_eval_gradient_alt σ l lv, df_eval σ r, df_eval_gradient_alt σ r lv with
-           | Some le, Some ld, Some re, Some rd =>
-             Some (map (fun '(lp,rp) => lp*re + le*rp) (combine ld rd))
-           | _, _, _, _ => None
-           end
-         | Divide l r =>
-           match df_eval σ l, df_eval_gradient_alt σ l lv, df_eval σ r, df_eval_gradient_alt σ r lv with
-           | Some le, Some ld, Some re, Some rd =>
-             Some (map (fun '(lp,rp) => (lp*re - le*rp)/(re * re)) (combine ld rd))
-           | _, _, _, _ => None
-           end
-         | Square e =>
-           match df_eval σ e, df_eval_gradient_alt σ e lv with
-           | Some ee, Some ed => Some (map (fun pd => 2 * ee * pd) ed)
-           | _, _  => None
-           end
-         | Exp e =>
-           match df_eval σ e, df_eval_gradient_alt σ e lv with
-           | Some ee, Some ed => Some (map (fun pd => pd * Fexp ee) ed)
-           | _, _  => None
-           end
-         | Log e =>
-           match df_eval σ e, df_eval_gradient_alt σ e lv with
-           | Some ee, Some ed => Some (map (fun pd => (pd / ee)) ed)
-           | _, _ => None
-           end
-         | Abs e =>
-           match df_eval σ e, df_eval_gradient_alt σ e lv with
-           | Some ee, Some ed => Some (map (fun d => d * (sign ee)) ed)
-           | _, _ => None
-           end
-         | Sign e =>
-           match df_eval σ e with
-           | Some ee => Some (map (fun _ => 0) lv)
-           | _ => None
-           end
-         | PSign e =>
-           match df_eval σ e with
-           | Some ee => Some (map (fun _ => 0) lv)
-           | _ => None
-           end
-         | Max l r =>
-           match df_eval σ l, df_eval_gradient_alt σ l lv, df_eval σ r, df_eval_gradient_alt σ r lv with
-           | Some le, Some ld, Some re, Some rd =>
-             if le <= re then Some rd else Some ld
-           | _, _, _, _ => None
-           end
-         | VectorElem n l i => 
-           match (df_eval_gradient_alt σ l lv)  with
-           | Some l' => Some (l' i)
-           | _ => None
-           end
-         | MatrixElem m n l i j =>
-           match (df_eval_gradient_alt σ l lv)  with
-           | Some l' => Some (l' i j)
-           | _ => None
-           end
-         | VectorSum n l => 
-           match df_eval_gradient_alt σ l lv with
-           | Some l' =>
-             Some (vector_fold_right (fun a b => map (fun '(xp,rp) => xp + rp)
-                                                     (combine a b)) 
-                                     (map (fun _ => 0) lv) l')
-           | _ => None
-           end 
-         | VectorDot n l r => 
-           match df_eval σ l, df_eval_gradient_alt σ l lv, df_eval σ r, df_eval_gradient_alt σ r lv with
-           | Some le, Some ld, Some re, Some rd =>
-             Some (vector_fold_right (fun a b => map (fun '(xp,rp) => xp + rp)
-                                                     (combine a b)) 
-                                     (map (fun _ => 0) lv)
-                                     (fun i => map (fun '(lp,rp) => lp*(re i) + (le i)*rp) 
-                                                   (combine (ld i) (rd i))))
-           | _, _, _, _ => None
-           end
-         | VectorScalMult n x r =>
-           match df_eval σ x, df_eval_gradient_alt σ x lv, df_eval σ r, df_eval_gradient_alt σ r lv with
-           | Some xe, Some xd, Some re, Some rd => 
-             Some (fun j => map (fun '(xp,rp) => xe * rp + xp * (re j)) (combine xd (rd j)))
-           | _, _, _, _ => None
-           end
-         | MatrixScalMult n m x r =>
-           match df_eval σ x, df_eval_gradient_alt σ x lv, df_eval σ r, df_eval_gradient_alt σ r lv with
-           | Some xe, Some xd, Some re, Some rd => 
-             Some (fun i j => map (fun '(xp,rp) => xe * rp + xp * (re i j)) (combine xd (rd i j)))
-
-           | _, _, _, _ => None
-           end
-         | MatrixVectorMult n m l r => 
-           match df_eval σ l, df_eval_gradient_alt σ l lv, df_eval σ r, df_eval_gradient_alt σ r lv with
-           | Some le, Some ld, Some re, Some rd =>
-             Some (fun i => 
-                     (vector_fold_right (fun a b => map (fun '(xp,rp) => xp + rp)
-                                                        (combine a b))
-                                        (map (fun _ => 0) lv)
-                                        (fun j => map (fun '(lp,rp) => lp*(re j) + (le i j)*rp) 
-                                                      (combine (ld i j) (rd j)))))
-           | _, _, _, _ => None
-           end
-         | MatrixMult n m p l r =>
-           match df_eval σ l, df_eval_gradient_alt σ l lv, df_eval σ r, df_eval_gradient_alt σ r lv with
-           | Some le, Some ld, Some re, Some rd =>
-             Some (fun i k => 
-                     (vector_fold_right (fun a b => map (fun '(xp,rp) => xp + rp)
-                                                        (combine a b)) 
-                                        (map (fun _ => 0) lv)
-                                        (fun j => map (fun '(lp,rp) => lp*(re j k) + (le i j)*rp) 
-                                                      (combine (ld i j) (rd j k)))))
-           | _, _, _, _ => None
-           end
-         | VectorPlus n l r =>
-           match df_eval_gradient_alt σ l lv, df_eval_gradient_alt σ r lv with           
-           | Some ld, Some rd => Some (fun i => map (fun '(x, y) => x+y) (combine (ld i) (rd i)))
-           | _, _ => None
-           end
-         | VectorMinus n l r =>
-           match df_eval_gradient_alt σ l lv, df_eval_gradient_alt σ r lv with           
-           | Some ld, Some rd => Some (fun i => map (fun '(x, y) => x-y) (combine (ld i) (rd i)))
-           | _, _ => None
-           end
-         | MatrixPlus n m l r =>
-           match df_eval_gradient_alt σ l lv, df_eval_gradient_alt σ r lv with           
-           | Some ld, Some rd => Some (fun i j => map (fun '(x, y) => x+y) (combine (ld i j) (rd i j)))
-           | _, _ => None
-           end
-         | MatrixMinus n m l r =>
-           match df_eval_gradient_alt σ l lv, df_eval_gradient_alt σ r lv with           
-           | Some ld, Some rd => Some (fun i j => map (fun '(x, y) => x-y) (combine (ld i j) (rd i j)))
-           | _, _ => None
-           end
-         | VectorApply n x s r => 
-           match df_eval σ r, df_eval_gradient_alt σ r lv with                      
-           | Some re, Some rd => 
-             vectoro_to_ovector 
-               (fun i => match df_eval_gradient_alt (cons (x, re i) σ) s lv with
-                         | Some sd => 
-                           Some (map (fun '(x, y) => x*y) (combine (rd i) sd))
-                         | _ => None
-                         end)
-           | _, _ => None                                                    
-           end
-         | Lossfun n v1 v2 s l r =>
-           match df_eval σ l, df_eval_gradient_alt σ l lv with                      
-           | Some le, Some ld => 
-             match (vectoro_to_ovector 
-                      (fun i => match df_eval_gradient_alt (cons (v1, (le i)) (cons (v2, r i) σ)) s lv with
-                         | Some sd => Some (map (fun '(x, y) => x*y) (combine (ld i) sd))
-                         | _ => None
-                         end)) with
-             | Some vv => Some (vector_fold_right (fun a b => map (fun '(xp,rp) => xp + rp)
-                                                     (combine a b)) 
-                                     (map (fun _ => 0) lv) vv)
-             | _ => None
-             end
-           | _, _ => None
-           end
-          end).
-*)
-   Definition combine_prod (l1 l2 : list (list float)) : list (list (float * float))
+    Definition combine_prod (l1 l2 : list (list float)) : list (list (float * float))
      := let l12 := list_prod l1 l2
         in map (fun '(x,y) => combine x y) l12.
 (*

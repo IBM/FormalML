@@ -33,7 +33,7 @@ Section GenNN.
   Definition mkVarMatrix (v : SubVar) (n m : nat) : UnitDefinedFunction (DTMatrix n m) :=
     Var (v, DTMatrix n m) tt.
 
-  Definition unique_var (df : DefinedFunction DTfloat) : option SubVar :=
+  Definition unique_var {Ann} (df : DefinedFunction Ann DTfloat) : option SubVar :=
     let fv := nodup var_dec (df_free_variables df) in
     match fv with
     | nil => None
@@ -41,26 +41,26 @@ Section GenNN.
     | _ => None
     end.   
 
-  Definition activation (df : DefinedFunction DTfloat) (vec : list (DefinedFunction DTfloat)) : option (list (DefinedFunction DTfloat)) :=
+  Definition activation (df : UnitDefinedFunction DTfloat) (vec : list (UnitDefinedFunction DTfloat)) : option (list (UnitDefinedFunction DTfloat)) :=
     match unique_var df with
     | Some v => Some (map (fun dfj => df_subst df (v, DTfloat) dfj) vec)
     | None => None
     end.
 
-  Definition create_activation_fun (df : DefinedFunction DTfloat) : option (DefinedFunction DTfloat -> DefinedFunction DTfloat) :=
+  Definition create_activation_fun (df : UnitDefinedFunction DTfloat) : option (UnitDefinedFunction DTfloat -> UnitDefinedFunction DTfloat) :=
     match unique_var df with
     | Some v => Some (fun val => df_subst df (v, DTfloat) val)
     | None => None
     end.
 
-  Definition mkNN2 (n1 n2 n3 : nat) (ivar wvar : SubVar) (f_activ : DefinedFunction DTfloat) (f_activ_var : SubVar) : (DefinedFunction (DTVector n3)) :=
+  Definition mkNN2 (n1 n2 n3 : nat) (ivar wvar : SubVar) (f_activ : UnitDefinedFunction DTfloat) (f_activ_var : SubVar) : (UnitDefinedFunction (DTVector n3)) :=
     let mat1 := mkSubVarMatrix (Sub wvar 1) n2 n1 in
     let mat2 := mkSubVarMatrix (Sub wvar 2) n3 n2 in
     let ivec := mkVarVector ivar n1 in
     let N1 := VectorApply tt f_activ_var f_activ (MatrixVectorMult  tt mat1 ivec) in 
     VectorApply tt f_activ_var f_activ (MatrixVectorMult tt mat2 N1).
 
-  Definition mkVarNN2 (n1 n2 n3 : nat) (ivar wvar : SubVar) (f_activ : DefinedFunction DTfloat) (f_activ_var : SubVar) : (UnitDefinedFunction (DTVector n3) * list var_type) :=
+  Definition mkVarNN2 (n1 n2 n3 : nat) (ivar wvar : SubVar) (f_activ : UnitDefinedFunction DTfloat) (f_activ_var : SubVar) : (UnitDefinedFunction (DTVector n3) * list var_type) :=
     let mat1 := (Sub wvar 1, DTMatrix n2 n1) in
     let mat2 := (Sub wvar 2, DTMatrix n3 n2) in
     let ivec := Var (ivar, DTVector n1) tt in
@@ -68,7 +68,7 @@ Section GenNN.
     (VectorApply tt f_activ_var f_activ (MatrixVectorMult tt (Var mat2 tt) N1),
         mat1 :: mat2 :: nil).
 
-  Definition mkVarMatNN2 (n1 n2 n3 nsamp: nat) (ivar wvar : SubVar) (f_activ : DefinedFunction DTfloat) (f_activ_var : SubVar) : (UnitDefinedFunction (DTMatrix n3 nsamp) * list var_type) :=
+  Definition mkVarMatNN2 (n1 n2 n3 nsamp: nat) (ivar wvar : SubVar) (f_activ : UnitDefinedFunction DTfloat) (f_activ_var : SubVar) : (UnitDefinedFunction (DTMatrix n3 nsamp) * list var_type) :=
     let mat1 := (Sub wvar 1, DTMatrix n2 n1) in
     let mat2 := (Sub wvar 2, DTMatrix n3 n2) in
     let imat := Var (ivar, DTMatrix n1 nsamp) tt in
@@ -76,14 +76,14 @@ Section GenNN.
     (MatrixApply tt f_activ_var f_activ (MatrixMult tt (Var mat2 tt) N1), 
      mat1 :: mat2 :: nil).
 
-  Definition mkNN_bias_step (n1 n2 : nat) (ivec : DefinedFunction (DTVector n1)) 
-             (mat : DefinedFunction (DTMatrix n2 n1)) 
-             (bias : DefinedFunction (DTVector n2)) 
-             (f_activ_var : SubVar) (f_activ : DefinedFunction DTfloat) 
+  Definition mkNN_bias_step (n1 n2 : nat) (ivec : UnitDefinedFunction (DTVector n1)) 
+             (mat : UnitDefinedFunction (DTMatrix n2 n1)) 
+             (bias : UnitDefinedFunction (DTVector n2)) 
+             (f_activ_var : SubVar) (f_activ : UnitDefinedFunction DTfloat) 
               : UnitDefinedFunction (DTVector n2) :=
     VectorApply tt f_activ_var f_activ (VectorPlus tt (MatrixVectorMult tt mat ivec) bias).
 
- Definition mkNN2_bias (n1 n2 n3 : nat) (ivar wvar : SubVar) (f_activ : DefinedFunction DTfloat) (f_activ_var : SubVar) : DefinedFunction (DTVector n3) :=
+ Definition mkNN2_bias (n1 n2 n3 : nat) (ivar wvar : SubVar) (f_activ : UnitDefinedFunction DTfloat) (f_activ_var : SubVar) : UnitDefinedFunction (DTVector n3) :=
     let mat1 := mkSubVarMatrix (Sub wvar 1) n2 n1 in
     let b1 := mkSubVarVector (Sub wvar 1) n2 in
     let mat2 := mkSubVarMatrix (Sub wvar 2) n3 n2 in
@@ -92,7 +92,7 @@ Section GenNN.
     let N1 := mkNN_bias_step n1 n2 ivec mat1 b1 f_activ_var f_activ in
     mkNN_bias_step n2 n3 N1 mat2 b2 f_activ_var f_activ.
 
- Definition mkNN2_Var_bias (n1 n2 n3 : nat) (ivar wvar bvar : SubVar) (f_activ : DefinedFunction DTfloat) (f_activ_var : SubVar) : (UnitDefinedFunction (DTVector n3) * list var_type) :=
+ Definition mkNN2_Var_bias (n1 n2 n3 : nat) (ivar wvar bvar : SubVar) (f_activ : UnitDefinedFunction DTfloat) (f_activ_var : SubVar) : (UnitDefinedFunction (DTVector n3) * list var_type) :=
     let mat1 := (Sub wvar 1, DTMatrix n2 n1) in
     let b1 :=  (Sub bvar 1, DTVector n2) in
     let mat2 := (Sub wvar 2, DTMatrix n3 n2) in
@@ -102,14 +102,14 @@ Section GenNN.
     (mkNN_bias_step n2 n3 N1 (Var mat2 tt) (Var b2 tt) f_activ_var f_activ,
      mat1 :: b1 :: mat2 :: b2 :: nil).
 
-  Definition mkNN_Mat_bias_step (n1 n2 nsamp : nat) (imat : DefinedFunction (DTMatrix n1 nsamp)) 
-             (mat : DefinedFunction (DTMatrix n2 n1)) 
-             (bias : DefinedFunction (DTVector n2)) 
-             (f_activ_var : SubVar) (f_activ : DefinedFunction DTfloat) 
+  Definition mkNN_Mat_bias_step (n1 n2 nsamp : nat) (imat : UnitDefinedFunction (DTMatrix n1 nsamp)) 
+             (mat : UnitDefinedFunction (DTMatrix n2 n1)) 
+             (bias : UnitDefinedFunction (DTVector n2)) 
+             (f_activ_var : SubVar) (f_activ : UnitDefinedFunction DTfloat) 
               : UnitDefinedFunction (DTMatrix n2 nsamp) :=
     MatrixApply tt f_activ_var f_activ (MatrixVectorAdd tt (MatrixMult tt mat imat) bias).
 
- Definition mkNN2_Var_Mat_bias (n1 n2 n3 nsamp: nat) (ivar wvar bvar: SubVar) (f1_activ f2_activ : DefinedFunction DTfloat) (f1_activ_var f2_activ_var : SubVar) : (DefinedFunction (DTMatrix n3 nsamp) * list var_type)  :=
+ Definition mkNN2_Var_Mat_bias (n1 n2 n3 nsamp: nat) (ivar wvar bvar: SubVar) (f1_activ f2_activ : UnitDefinedFunction DTfloat) (f1_activ_var f2_activ_var : SubVar) : (UnitDefinedFunction (DTMatrix n3 nsamp) * list var_type)  :=
     let mat1 := (Sub wvar 1, DTMatrix n2 n1) in
     let b1 :=  (Sub bvar 1, DTVector n2) in
     let mat2 := (Sub wvar 2, DTMatrix n3 n2) in
@@ -138,9 +138,9 @@ Section GenNN.
  Qed.
 
   Fixpoint mkNN_gen_0 (n1:nat) (nvlist : list (nat * SubVar)) 
-           (ivec : (DefinedFunction (DTVector n1)))
-           (f_activ_var : SubVar ) (f_activ : DefinedFunction DTfloat) :
-    DefinedFunction (DTVector (last (domain nvlist) n1))
+           (ivec : (UnitDefinedFunction (DTVector n1)))
+           (f_activ_var : SubVar ) (f_activ : UnitDefinedFunction DTfloat) :
+    UnitDefinedFunction (DTVector (last (domain nvlist) n1))
 := 
     match nvlist with
     | nil => ivec
@@ -148,13 +148,13 @@ Section GenNN.
       let mat := mkSubVarMatrix v n2 n1 in
       let b := mkSubVarVector v n2 in
       let N := mkNN_bias_step n1 n2 ivec mat b f_activ_var f_activ in
-      eq_rect _ DefinedFunction (mkNN_gen_0 n2 nvlist1 N f_activ_var f_activ) _ vector_float_map_last_rewrite
+      eq_rect _ UnitDefinedFunction (mkNN_gen_0 n2 nvlist1 N f_activ_var f_activ) _ vector_float_map_last_rewrite
     end.
 
   Fixpoint mkNN_Var_gen_0 (n1:nat) (nvlist : list (nat * SubVar)) 
-           (ivec : (DefinedFunction (DTVector n1)))
-           (f_activ_var : SubVar ) (f_activ : DefinedFunction DTfloat) :
-    DefinedFunction (DTVector (last (domain nvlist) n1))
+           (ivec : (UnitDefinedFunction (DTVector n1)))
+           (f_activ_var : SubVar ) (f_activ : UnitDefinedFunction DTfloat) :
+    UnitDefinedFunction (DTVector (last (domain nvlist) n1))
 := 
     match nvlist with
     | nil => ivec
@@ -162,13 +162,13 @@ Section GenNN.
       let mat := mkVarMatrix v n2 n1 in
       let b := mkVarVector v n2 in
       let N := mkNN_bias_step n1 n2 ivec mat b f_activ_var f_activ in
-      eq_rect _ DefinedFunction (mkNN_Var_gen_0 n2 nvlist1 N f_activ_var f_activ) _ vector_float_map_last_rewrite
+      eq_rect _ UnitDefinedFunction (mkNN_Var_gen_0 n2 nvlist1 N f_activ_var f_activ) _ vector_float_map_last_rewrite
     end.
 
   Fixpoint mkNN_Mat_Var_gen_0 (nsamp n1:nat) (nvlist : list (nat * SubVar)) 
-           (imat : (DefinedFunction (DTMatrix n1 nsamp)))
-           (f_activ_var : SubVar ) (f_activ : DefinedFunction DTfloat) :
-    DefinedFunction (DTMatrix (last (domain nvlist) n1) nsamp)
+           (imat : (UnitDefinedFunction (DTMatrix n1 nsamp)))
+           (f_activ_var : SubVar ) (f_activ : UnitDefinedFunction DTfloat) :
+    UnitDefinedFunction (DTMatrix (last (domain nvlist) n1) nsamp)
 := 
     match nvlist with
     | nil => imat
@@ -176,15 +176,15 @@ Section GenNN.
       let mat := mkVarMatrix v n2 n1 in
       let b := mkVarVector v n2 in
       let N := mkNN_Mat_bias_step n1 n2 nsamp imat mat b f_activ_var f_activ in
-      eq_rect _ DefinedFunction (mkNN_Mat_Var_gen_0 nsamp n2 nvlist1 N f_activ_var f_activ) _ matrix_float_map_last_rewrite
+      eq_rect _ UnitDefinedFunction (mkNN_Mat_Var_gen_0 nsamp n2 nvlist1 N f_activ_var f_activ) _ matrix_float_map_last_rewrite
     end.
 
   Program Definition mkNN_gen (n1:nat) (nlist : list nat) (ivar wvar f_activ_var : SubVar) 
-             (f_activ : DefinedFunction DTfloat) : 
-    DefinedFunction (DTVector (last nlist n1)) :=
+             (f_activ : UnitDefinedFunction DTfloat) : 
+    UnitDefinedFunction (DTVector (last nlist n1)) :=
     let vlist := map (fun i => Sub wvar i) (seq 1 (length nlist)) in
     let ivec := mkVarVector ivar n1 in
-    eq_rect _ DefinedFunction
+    eq_rect _ UnitDefinedFunction
             (mkNN_gen_0 n1 (combine nlist vlist) ivec f_activ_var f_activ) _ _.
   Next Obligation.
     f_equal.
@@ -194,11 +194,11 @@ Section GenNN.
   Qed.
 
   Program Definition mkNN_Var_gen (n1:nat) (nlist : list nat) (ivar wvar f_activ_var : SubVar) 
-             (f_activ : DefinedFunction DTfloat) : 
-    DefinedFunction (DTVector (last nlist n1)) :=
+             (f_activ : UnitDefinedFunction DTfloat) : 
+    UnitDefinedFunction (DTVector (last nlist n1)) :=
     let vlist := map (fun i => Sub wvar i) (seq 1 (length nlist)) in
     let ivec := mkVarVector ivar n1 in
-    eq_rect _ DefinedFunction
+    eq_rect _ UnitDefinedFunction
             (mkNN_Var_gen_0 n1 (combine nlist vlist) ivec f_activ_var f_activ) _ _.
   Next Obligation.
     f_equal.
@@ -208,11 +208,11 @@ Section GenNN.
   Qed.
 
   Program Definition mkNN_Mat_Var_gen (nsamp n1:nat) (nlist : list nat) (ivar wvar f_activ_var : SubVar) 
-             (f_activ : DefinedFunction DTfloat) : 
-    DefinedFunction (DTMatrix (last nlist n1) nsamp) :=
+             (f_activ : UnitDefinedFunction DTfloat) : 
+    UnitDefinedFunction (DTMatrix (last nlist n1) nsamp) :=
     let vlist := map (fun i => Sub wvar i) (seq 1 (length nlist)) in
     let imat := mkVarMatrix ivar n1 nsamp in
-    eq_rect _ DefinedFunction
+    eq_rect _ UnitDefinedFunction
             (mkNN_Mat_Var_gen_0 nsamp n1 (combine nlist vlist) imat f_activ_var f_activ) _ _.
   Next Obligation.
     f_equal.
@@ -221,7 +221,7 @@ Section GenNN.
     now rewrite map_length, seq_length.
   Qed.
 
-  Definition softmax {n:nat} (NN : DefinedFunction (DTVector n)) : UnitDefinedFunction (DTVector n) :=
+  Definition softmax {n:nat} (NN : UnitDefinedFunction (DTVector n)) : UnitDefinedFunction (DTVector n) :=
     let expvar := Name "expvar" in
     let NNexp := VectorApply tt expvar (Exp tt (Var (expvar, DTfloat) tt)) NN in
     let NNexpscale := Divide tt (Number tt 1) (VectorSum tt NNexp) in
@@ -247,25 +247,25 @@ Section GenNN.
                                      datavec : Vector ((Vector float ninput) * (Vector float noutput)) ntest}.
 
   Definition NNinstance1samp {ninput noutput : nat} (ivar : SubVar) 
-             (f_loss : DefinedFunction DTfloat)
+             (f_loss : UnitDefinedFunction DTfloat)
              (f_loss_NNvar f_loss_outvar : SubVar) 
              (NN : UnitDefinedFunction (DTVector noutput)) (σ:df_env) 
              (data: (Vector float ninput) * (Vector float noutput))
-             : df_env * (DefinedFunction DTfloat) :=
+             : df_env * (UnitDefinedFunction DTfloat) :=
     let ipair := mk_env_entry (ivar, DTVector ninput) (fst data) in
     (cons ipair σ, VLossfun tt f_loss_NNvar f_loss_outvar f_loss NN (snd data)).
 
   Definition NNinstancebatch {ninput nsamp noutput : nat} (ivar : SubVar) 
-             (f_loss : DefinedFunction DTfloat)
+             (f_loss : UnitDefinedFunction DTfloat)
              (f_loss_NNvar f_loss_outvar : SubVar) 
              (NN : UnitDefinedFunction (DTMatrix noutput nsamp)) (σ:df_env) 
              (data: (Matrix float ninput nsamp) * (Matrix float noutput nsamp))
-             : df_env * (DefinedFunction DTfloat) :=             
+             : df_env * (UnitDefinedFunction DTfloat) :=             
     let ipair := mk_env_entry (ivar, DTMatrix ninput nsamp) (fst data) in
     (cons ipair σ, MLossfun tt f_loss_NNvar f_loss_outvar f_loss NN (snd data)).
 
   Definition EvalNNinstance1samp {ninput noutput : nat} (ivar : SubVar) 
-             (f_loss : DefinedFunction DTfloat)
+             (f_loss : UnitDefinedFunction DTfloat)
              (f_loss_NNvar f_loss_outvar : SubVar) 
              (NN : UnitDefinedFunction (DTVector noutput)) (σ:df_env) 
              (data: (Vector float ninput) * (Vector float noutput))
@@ -274,7 +274,7 @@ Section GenNN.
     df_eval (cons ipair σ) (VLossfun tt f_loss_NNvar f_loss_outvar f_loss NN (snd data)).
 
   Definition EvalNNinstancebatch {ninput nsamp noutput : nat} (ivar : SubVar) 
-             (f_loss : DefinedFunction DTfloat)
+             (f_loss : UnitDefinedFunction DTfloat)
              (f_loss_NNvar f_loss_outvar : SubVar) 
              (NN : UnitDefinedFunction (DTMatrix noutput nsamp)) (σ:df_env) 
              (data: (Matrix float ninput nsamp) * (Matrix float noutput nsamp))
@@ -357,8 +357,8 @@ Section GenNN.
   Definition env_update_list (l up:df_env) : df_env
     := fold_left (env_update_first) up l.
 
-  Definition optimize_step 
-             (step : nat) (df : DefinedFunction DTfloat) (σ:df_env) (lvar : list SubVar)
+  Definition optimize_step
+             (step : nat) (df : UnitDefinedFunction DTfloat) (σ:df_env) (lvar : list SubVar)
              (noise_st : Stream float) : (option df_env)*(Stream float) :=
     let lvart:list var_type := (map (fun v => (v, DTfloat)) lvar) in
     let ogradvec := df_eval_gradient σ df lvart in
@@ -492,7 +492,7 @@ Section GenNN.
     end.
 
   Fixpoint optimize_steps 
-           (start count:nat) (df : DefinedFunction DTfloat) (σ:df_env) (lvar : list SubVar)
+           (start count:nat) (df : UnitDefinedFunction DTfloat) (σ:df_env) (lvar : list SubVar)
            (noise_st : Stream float) : (option df_env)*(Stream float) :=
     match count with
     | 0 => (Some σ, noise_st)
@@ -504,7 +504,7 @@ Section GenNN.
     end.
 
   Fixpoint optimize_steps_backprop
-           (start count:nat) (df : DefinedFunction DTfloat) (σ:df_env) 
+           (start count:nat) (df : UnitDefinedFunction DTfloat) (σ:df_env) 
            (noise_st : Stream float) (dvars : list var_type) 
     : (option df_env)*(Stream float) :=
     match count with
@@ -517,7 +517,7 @@ Section GenNN.
     end.
 
   Fixpoint optimize_steps_tree_backprop
-           (start count:nat) (df : DefinedFunction DTfloat) (σ:df_env) 
+           (start count:nat) (df : UnitDefinedFunction DTfloat) (σ:df_env) 
            (noise_st : Stream float) (dvars : list var_type) 
     : (option df_env)*(Stream float) :=
     match count with
@@ -605,7 +605,7 @@ Definition init_env2 (dim1 dim2 dim3 : nat) (w b : string)
 Program Definition wisconsin_instance_batch (nsamp : nat)
             (σ:df_env) 
             (normaldata: Matrix float nsamp 10)
-             : (df_env * (DefinedFunction DTfloat)) * (list var_type) := 
+             : (df_env * (UnitDefinedFunction DTfloat)) * (list var_type) := 
    let ivar := (Name "i") in
    let flnnv := (Name "NNv") in
    let outnnv := (Name "outnnv") in
@@ -691,7 +691,7 @@ Example wisconsin_gradenv_tree (nsamp : nat)
   | _ => nil
   end.
 
- Definition mkperceptron (n1 n2 : nat) (ivar wvar bvar : SubVar) (f_activ : DefinedFunction DTfloat) (f_activ_var : SubVar) : (UnitDefinedFunction (DTVector n2) * list var_type) :=
+ Definition mkperceptron (n1 n2 : nat) (ivar wvar bvar : SubVar) (f_activ : UnitDefinedFunction DTfloat) (f_activ_var : SubVar) : (UnitDefinedFunction (DTVector n2) * list var_type) :=
     let mat1 := (wvar, DTMatrix n2 n1) in
     let b1 :=  (bvar, DTVector n2) in
     let ivec := Var (ivar, DTVector n1) tt in
