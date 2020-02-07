@@ -27,3 +27,4 @@ Require Export PairEncoding.
 Require Export RealAdd.
 Require Export RiemannAdd.
 Require Export Sums.
+Require Export Vector.
