@@ -1536,15 +1536,19 @@ Section DefinedFunctions.
            | Some ed => Some (ed * (sign ee))
            | _ => None
            end
-         | Sign _ e => Some 0
-         | PSign _ e => Some 0
+         | Sign _ e => 
+           match df_eval_tree_deriv σ e v with
+           | Some _ => Some 0
+           | None => None
+           end
+         | PSign _ e => 
+           match df_eval_tree_deriv σ e v with
+           | Some _ => Some 0
+           | None => None
+           end
          | Max _ l r =>
            let '(le,re) := (get_annotation l, get_annotation r) in                       
-           match df_eval_tree_deriv σ l v, df_eval_tree_deriv σ r v with
-           | Some ld, Some rd =>
-             if le <= re then Some rd else Some ld
-           | _, _ => None
-           end
+           if le <= re then df_eval_tree_deriv σ r v else df_eval_tree_deriv σ l v
          | VectorElem n _ l i => 
            match (df_eval_tree_deriv σ l v)  with
            | Some l' => Some (l' i)
@@ -2426,7 +2430,7 @@ Section DefinedFunctions.
        ; rewrite a2eqq in eqq 
        ; [| congruence].
        specialize (IHdf2 _ a2eqq).
-       apply is_df_rec_prop_top in IHdf2.
+
        revert eqq.
        case_eq ( @vectoro_to_ovector (@float floatish_impl) n
               (fun i : @sig nat (fun n' : nat => lt n' n) =>
@@ -2438,7 +2442,14 @@ Section DefinedFunctions.
        intros.
        inversion eqq; subst.
        simpl.
+       apply is_df_rec_prop_top in IHdf2.
+       rewrite  IHdf2.
+       split.
+       
        admit.
+       
+       admit.
+
      - Case "MatrixApply"%string.
        admit.
      - Case "VLossfun"%string.
@@ -3702,17 +3713,17 @@ Section real_pfs.
        ; [intros de eqde | intros eqde]
        ; rewrite eqde in IHe
        ; trivial.
-       + case_eq (df_eval_backprop_deriv env e gradenv 0%R)
-         ; [intros ge' ge'eq | intros ge'eq]
-         ; rewrite ge'eq in IHe
-         ; [ | tauto].
-         simpl in IHe.
-         simpl.
-         case_eq (vartlookup ge' (x, DTfloat))
-         ; [intros xv' xv'eqq | intros xv'eqq]
-         ; rewrite xv'eqq in IHe
-         ; [ | tauto].
-         lra.
+       case_eq (df_eval_backprop_deriv env e gradenv 0%R)
+       ; [intros ge' ge'eq | intros ge'eq]
+       ; rewrite ge'eq in IHe
+       ; [ | tauto].
+       simpl in IHe.
+       simpl.
+       case_eq (vartlookup ge' (x, DTfloat))
+       ; [intros xv' xv'eqq | intros xv'eqq]
+       ; rewrite xv'eqq in IHe
+       ; [ | tauto].
+       lra.
      - Case "PSign"%string.
        intros _ e IHe grad gradenv xinn. 
        specialize (IHe 0%R gradenv xinn).
@@ -3724,17 +3735,17 @@ Section real_pfs.
        ; [intros de eqde | intros eqde]
        ; rewrite eqde in IHe
        ; trivial.
-       + case_eq (df_eval_backprop_deriv env e gradenv 0%R)
-         ; [intros ge' ge'eq | intros ge'eq]
-         ; rewrite ge'eq in IHe
-         ; [ | tauto].
-         simpl in IHe.
-         simpl.
-         case_eq (vartlookup ge' (x, DTfloat))
-         ; [intros xv' xv'eqq | intros xv'eqq]
-         ; rewrite xv'eqq in IHe
-         ; [ | tauto].
-         lra.
+       case_eq (df_eval_backprop_deriv env e gradenv 0%R)
+       ; [intros ge' ge'eq | intros ge'eq]
+       ; rewrite ge'eq in IHe
+       ; [ | tauto].
+       simpl in IHe.
+       simpl.
+       case_eq (vartlookup ge' (x, DTfloat))
+       ; [intros xv' xv'eqq | intros xv'eqq]
+       ; rewrite xv'eqq in IHe
+       ; [ | tauto].
+       lra.
      - Case "Max"%string.
        intros _ l r IHl IHr grad gradenv xinn.
        specialize (IHl grad gradenv xinn).
@@ -3896,8 +3907,12 @@ Section real_pfs.
          * case_eq ( df_eval_tree_backprop_deriv env l gradenv (get_annotation r * grad)%R ); simpl; trivial; intros.
            apply IHr.
            apply (df_eval_tree_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn).
-       + admit.
-           
+       +   specialize (IHl (get_annotation r * grad)%R gradenv xinn).
+           case_eq (df_eval_tree_backprop_deriv env l gradenv (get_annotation r * grad)%R); simpl; trivial; intros.
+           rewrite H in IHl.
+           simpl in IHl.
+           generalize (df_eval_tree_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn); intros.
+           destruct (vartlookup d (x, DTfloat)); tauto.
      - Case "Divide"%string.
        intros _ l r IHl IHr grad gradenv xinn. 
        case_eq (df_eval_tree_deriv env l (x, DTfloat))
@@ -3928,19 +3943,156 @@ Section real_pfs.
          * case_eq ( df_eval_tree_backprop_deriv env l gradenv (grad / get_annotation r)%R ); simpl; trivial; intros.
            apply IHr.
            apply (df_eval_tree_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn).
-       + case_eq (df_eval env r);
-           [ intros re eqre | intros eqre]
-           ; simpl; trivial.
-           specialize (IHl (grad / get_annotation r)%R gradenv xinn).
+       +   specialize (IHl (grad / get_annotation r)%R gradenv xinn).
            case_eq (df_eval_tree_backprop_deriv env l gradenv (grad / get_annotation r )%R); simpl; trivial; intros.
            rewrite H in IHl.
            simpl in IHl.
            generalize (df_eval_tree_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn); intros.
            destruct (vartlookup d (x, DTfloat)); tauto.
-           admit.
-       - Case "Square"%string.
-           
-   Admitted.
+     - Case "Square"%string.
+       intros _ e IHe grad gradenv xinn. 
+       
+       specialize (IHe (2 * (get_annotation e) * grad)%R gradenv xinn).
+       case_eq (df_eval_tree_deriv env e (x, DTfloat))
+       ; [intros de eqde | intros eqde]
+       ; rewrite eqde in IHe
+       ; trivial.
+
+       case_eq (vartlookup gradenv (x, DTfloat))
+       ; [intros xv xveqq | intros xveqq]
+       ; rewrite xveqq in IHe
+       ; [ | tauto].
+       case_eq (df_eval_tree_backprop_deriv env e gradenv (2 * (get_annotation e) * grad)%R)
+       ; [intros ge' ge'eq | intros ge'eq]
+       ; rewrite ge'eq in IHe
+       ; [ | tauto].
+       simpl in IHe.
+       case_eq (vartlookup ge' (x, DTfloat))
+       ; [intros xv' xv'eqq | intros xv'eqq]
+       ; rewrite xv'eqq in IHe
+       ; [ | tauto].
+       simpl.
+       rewrite xv'eqq.
+       lra.
+     - Case "Exp"%string.
+       intros _ e IHe grad gradenv xinn. 
+       specialize (IHe (grad * exp (get_annotation e))%R gradenv xinn).
+       case_eq (df_eval_tree_deriv env e (x, DTfloat))
+       ; [intros de eqde | intros eqde]
+       ; rewrite eqde in IHe
+       ; trivial.
+       case_eq (vartlookup gradenv (x, DTfloat))
+       ; [intros xv xveqq | intros xveqq]
+       ; rewrite xveqq in IHe
+       ; [ | tauto].
+       case_eq (df_eval_tree_backprop_deriv env e gradenv (grad * exp (get_annotation e))%R)
+       ; [intros ge' ge'eq | intros ge'eq]
+       ; rewrite ge'eq in IHe
+       ; [ | tauto].
+       simpl in IHe.
+       case_eq (vartlookup ge' (x, DTfloat))
+       ; [intros xv' xv'eqq | intros xv'eqq]
+       ; rewrite xv'eqq in IHe
+       ; [ | tauto].
+       simpl.
+       rewrite xv'eqq.
+       lra.
+
+     - Case "Log"%string.
+       intros _ e IHe grad gradenv xinn. 
+       specialize (IHe (grad / get_annotation e)%R gradenv xinn).
+       case_eq (df_eval_tree_deriv env e (x, DTfloat))
+       ; [intros de eqde | intros eqde]
+       ; rewrite eqde in IHe
+       ; trivial.
+       case_eq (vartlookup gradenv (x, DTfloat))
+       ; [intros xv xveqq | intros xveqq]
+       ; rewrite xveqq in IHe
+       ; [ | tauto].
+       case_eq (df_eval_tree_backprop_deriv env e gradenv (grad / get_annotation e)%R)
+       ; [intros ge' ge'eq | intros ge'eq]
+       ; rewrite ge'eq in IHe
+       ; [ | tauto].
+       simpl in IHe.
+       case_eq (vartlookup ge' (x, DTfloat))
+       ; [intros xv' xv'eqq | intros xv'eqq]
+       ; rewrite xv'eqq in IHe
+       ; [ | tauto].
+       simpl.
+       rewrite xv'eqq.
+       lra.
+
+     - Case "Abs"%string.
+       intros _ e IHe grad gradenv xinn. 
+       specialize (IHe (grad * (sign (get_annotation e)))%R gradenv xinn).
+       case_eq (df_eval_tree_deriv env e (x, DTfloat))
+       ; [intros de eqde | intros eqde]
+       ; rewrite eqde in IHe
+       ; trivial.
+       case_eq (vartlookup gradenv (x, DTfloat))
+       ; [intros xv xveqq | intros xveqq]
+       ; rewrite xveqq in IHe
+       ; [ | tauto].
+       case_eq (df_eval_tree_backprop_deriv env e gradenv (grad * (sign (get_annotation e)))%R)
+       ; [intros ge' ge'eq | intros ge'eq]
+       ; rewrite ge'eq in IHe
+       ; [ | tauto].
+       simpl in IHe.
+       case_eq (vartlookup ge' (x, DTfloat))
+       ; [intros xv' xv'eqq | intros xv'eqq]
+       ; rewrite xv'eqq in IHe
+       ; [ | tauto].
+       simpl.
+       rewrite xv'eqq.
+       lra.
+     - Case "Sign"%string.
+       intros _ e IHe grad gradenv xinn. 
+       specialize (IHe 0%R gradenv xinn).
+       case_eq (vartlookup gradenv (x, DTfloat))
+       ; [intros xv xveqq | intros xveqq]
+       ; rewrite xveqq in IHe
+       ; [ | tauto].
+       case_eq (df_eval_tree_deriv env e (x, DTfloat))
+       ; [intros de eqde | intros eqde]
+       ; rewrite eqde in IHe
+       ; trivial.
+       case_eq (df_eval_tree_backprop_deriv env e gradenv 0%R)
+       ; [intros ge' ge'eq | intros ge'eq]
+       ; rewrite ge'eq in IHe
+       ; [ | tauto].
+       simpl in IHe.
+       simpl.
+       replace (de * 0)%R with (0)%R in IHe by lra.
+       replace (0 * grad)%R with (0)%R by lra.
+       apply IHe.
+     - Case "PSign"%string.
+       intros _ e IHe grad gradenv xinn. 
+       specialize (IHe 0%R gradenv xinn).
+       case_eq (vartlookup gradenv (x, DTfloat))
+       ; [intros xv xveqq | intros xveqq]
+       ; rewrite xveqq in IHe
+       ; [ | tauto].
+       case_eq (df_eval_tree_deriv env e (x, DTfloat))
+       ; [intros de eqde | intros eqde]
+       ; rewrite eqde in IHe
+       ; trivial.
+       case_eq (df_eval_tree_backprop_deriv env e gradenv 0%R)
+       ; [intros ge' ge'eq | intros ge'eq]
+       ; rewrite ge'eq in IHe
+       ; [ | tauto].
+       simpl in IHe.
+       simpl.
+       replace (de * 0)%R with (0)%R in IHe by lra.
+       replace (0 * grad)%R with (0)%R by lra.
+       apply IHe.
+     - Case "Max"%string.
+       intros _ l r IHl IHr grad gradenv xinn.
+       specialize (IHl grad gradenv xinn).
+       specialize (IHr grad gradenv xinn).
+       destruct (Rle_dec (get_annotation l) (get_annotation r)); simpl.
+       destruct (df_eval_tree_deriv env r (x, DTfloat)); simpl; trivial.
+       destruct (df_eval_tree_deriv env l (x, DTfloat)); simpl; trivial.
+ Qed.
 
 End real_pfs.
 

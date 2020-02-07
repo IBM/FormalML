@@ -624,7 +624,7 @@ Definition wisconsin_test (nsamp count : nat)
             (σ:df_env) 
             (normaldata: Matrix float nsamp 10): list float :=
   let '(nninst, dvars) := wisconsin_instance_batch nsamp σ normaldata in
-  let onenv := fst (optimize_steps_backprop 0 count (snd nninst) (fst nninst)
+  let onenv := fst (optimize_steps_tree_backprop 0 count (snd nninst) (fst nninst)
                                                 zeronoise dvars) in
   match onenv with
   | Some nenv => match df_eval nenv (snd nninst) with
@@ -638,7 +638,7 @@ Definition wisconsin_test_env (nsamp count : nat)
             (σ:df_env) 
             (normaldata: Matrix float nsamp 10): df_env :=
   let '(nninst, dvars) := wisconsin_instance_batch nsamp σ normaldata in
-  let onenv := fst (optimize_steps_backprop 0 count (snd nninst) (fst nninst)
+  let onenv := fst (optimize_steps_tree_backprop 0 count (snd nninst) (fst nninst)
                                                 zeronoise dvars) in
   match onenv with
   | Some nenv => nenv
