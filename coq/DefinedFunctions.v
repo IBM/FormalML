@@ -271,6 +271,18 @@ Section DefinedFunctions.
     vsum (vmap vsum v).
 
 
+  Definition transpose {A} {n m:nat} (mat:Matrix A n m) :=
+      fun i j => mat j i.
+
+  Definition matrix_vector_mult {n m} (l : Matrix float n m)(r : Vector float m) : Vector float n :=
+      fun i => vsum (fun j => (l i j) * (r j)).
+
+  Definition matrix_vector_add {n m} (l : Matrix float n m) (r : Vector float n) : Matrix float n m := fun i j => (l i j) + (r i).
+
+  Definition matrix_mult {m n p} (l : Matrix float n m)(r : Matrix float m p) : Matrix float n p :=
+      fun i k => vsum (fun j => (l i j) * (r j k)).
+
+
  Section deriv.
     
 
@@ -477,17 +489,6 @@ Section DefinedFunctions.
   
   Section eval.
     
-    Definition transpose {A} {n m:nat} (mat:Matrix A n m) :=
-      fun i j => mat j i.
-
-    Definition matrix_vector_mult {n m} (l : Matrix float n m)(r : Vector float m) : Vector float n :=
-      fun i => vsum (fun j => (l i j) * (r j)).
-
-    Definition matrix_vector_add {n m} (l : Matrix float n m) (r : Vector float n) : Matrix float n m := fun i j => (l i j) + (r i).
-
-    Definition matrix_mult {m n p} (l : Matrix float n m)(r : Matrix float m p) : Matrix float n p :=
-      fun i k => vsum (fun j => (l i j) * (r j k)).
-
     Program
       Fixpoint vartlookup (l:df_env) (a:var_type) : 
       option (definition_function_types_interp (snd a))
@@ -2817,6 +2818,102 @@ Section DefinedFunctions.
    Qed.
 
 
+Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
+  first;
+  [ Case_aux c "Number"%string
+  | Case_aux c "Constant"%string                 
+  | Case_aux c "Var"%string
+  | Case_aux c "Plus"%string
+  | Case_aux c "Minus"%string
+  | Case_aux c "Times"%string
+  | Case_aux c "Divide"%string
+  | Case_aux c "Square"%string
+  | Case_aux c "Exp"%string
+  | Case_aux c "Log"%string
+  | Case_aux c "Abs"%string
+  | Case_aux c "Sign"%string
+  | Case_aux c "PSign"%string
+  | Case_aux c "Max"%string].
+
+   Lemma scalar_df_eval_backprop_deriv_preserves_lookup_not_none {Ann} {env} {df:DefinedFunction Ann DTfloat} {gradenv grad d} :
+     is_scalar_function df ->
+     df_eval_backprop_deriv env df gradenv grad = Some d ->
+     forall xv,
+     vartlookup gradenv xv <> None ->
+     vartlookup d xv <> None.
+   Proof.
+     simpl.
+     intros is_scalar.
+     revert grad gradenv.
+     pattern df.
+     revert df is_scalar.
+     DefinedFunction_scalar_cases (apply is_scalar_function_ind) Case; simpl.
+     - Case "Number"%string; intros.
+       inversion H.
+       subst; trivial.
+     - Case "Constant"%string; intros.
+       inversion H.
+       subst; trivial.
+     - Case "Var"%string; intros.
+       destruct (vartlookup gradenv (sv, DTfloat)).
+       intros.
+       inversion H.
+       assert (((sv, DTfloat) = xv) \/ ((sv, DTfloat) <> xv)).
+       apply Classical_Prop.classic.
+       destruct H1.
+       subst.
+       rewrite lookup_update.
+       discriminate.
+       rewrite lookup_update_neq.
+       trivial.
+       trivial.
+       inversion H.
+       subst.
+       trivial.
+     - Case "Plus"%string; intros.
+       specialize (H grad gradenv).
+       destruct (df_eval_backprop_deriv env l gradenv grad); [|congruence].
+       specialize (H0 grad d0).
+       apply H0.
+       trivial.
+       assert (Some d0 = Some d).
+       admit.
+       inversion H3.
+       subst.
+       apply H.
+       trivial.
+       trivial.
+     - Case "Minus"%string; admit.
+     - Case "Times"%string; admit.
+     - Case "Divide"%string; admit. 
+     - Case "Square"%string; intros.
+       destruct (df_eval env e); [|congruence].
+       specialize (H (2 * d0 * grad) gradenv).
+       now apply H.
+     - Case "Exp"%string; intros.  
+       destruct (df_eval env e); [|congruence].
+       specialize (H (grad * Fexp d0) gradenv).
+       now apply H.
+     - Case "Log"%string; intros.
+       destruct (df_eval env e); [|congruence].
+       specialize (H (grad / d0) gradenv).
+       now apply H.
+     - Case "Abs"%string; intros.
+       destruct (df_eval env e); [|congruence].
+       specialize (H (grad * sign d0) gradenv).
+       now apply H.
+     - Case "Sign"%string; intros.
+       specialize (H 0 gradenv).
+       now apply H.
+     - Case "PSign"%string; intros.
+       specialize (H 0 gradenv).
+       now apply H.
+     - Case "Max"%string; intros.
+       admit.
+Admitted.
+     
+
+
    Lemma df_eval_backprop_deriv_preserves_lookup_not_none {Ann T} {env} {df:DefinedFunction Ann T} {gradenv grad d} :
      df_eval_backprop_deriv env df gradenv grad = Some d ->
      forall xv,
@@ -3255,23 +3352,6 @@ Section DefinedFunctions.
 
 End DefinedFunctions.
 
-Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
-  first;
-  [ Case_aux c "Number"%string
-  | Case_aux c "Constant"%string                 
-  | Case_aux c "Var"%string
-  | Case_aux c "Plus"%string
-  | Case_aux c "Minus"%string
-  | Case_aux c "Times"%string
-  | Case_aux c "Divide"%string
-  | Case_aux c "Square"%string
-  | Case_aux c "Exp"%string
-  | Case_aux c "Log"%string
-  | Case_aux c "Abs"%string
-  | Case_aux c "Sign"%string
-  | Case_aux c "PSign"%string
-  | Case_aux c "Max"%string].
-
 Section real_pfs.
 
   Local Existing Instance floatish_R.
@@ -3313,6 +3393,24 @@ Section real_pfs.
       exact a.
     Defined.
 *)
+
+Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
+  first;
+  [ Case_aux c "Number"%string
+  | Case_aux c "Constant"%string                 
+  | Case_aux c "Var"%string
+  | Case_aux c "Plus"%string
+  | Case_aux c "Minus"%string
+  | Case_aux c "Times"%string
+  | Case_aux c "Divide"%string
+  | Case_aux c "Square"%string
+  | Case_aux c "Exp"%string
+  | Case_aux c "Log"%string
+  | Case_aux c "Abs"%string
+  | Case_aux c "Sign"%string
+  | Case_aux c "PSign"%string
+  | Case_aux c "Max"%string].
+
 
    Lemma backpropeq_gen (x : SubVar) (env gradenv : df_env) (dfexpr : DefinedFunction UnitAnn DTfloat) (grad : float) :
       let xvar := (x, DTfloat) in 
