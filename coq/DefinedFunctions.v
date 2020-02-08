@@ -2865,10 +2865,6 @@ Section DefinedFunctions.
      - Case "Plus"%string.
        specialize (IHdf1 grad).
        specialize (IHdf2 grad).
-       rewrite IHdf1.
-       apply H.
-       revert H.
-       admit.
        admit.
      - Case "Minus"%string; admit.
      - Case "Times"%string.
@@ -2878,6 +2874,9 @@ Section DefinedFunctions.
        
        specialize (IHdf1 (d1*grad)).
        specialize (IHdf2 (d0*grad)).
+       admit.
+       admit.
+       admit.
      - Case "Divide"%string; admit.
      - Case "Square"%string; intros.
        destruct (df_eval env df).
