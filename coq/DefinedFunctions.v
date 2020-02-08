@@ -2827,12 +2827,178 @@ Section DefinedFunctions.
          now rewrite (var_type_UIP_refl e); simpl.         
    Qed.
 
+
+   Locate eq_dec.
+
    Lemma df_eval_backprop_deriv_preserves_lookup_not_none {Ann T} {env} {df:DefinedFunction Ann T} {gradenv grad d} :
      df_eval_backprop_deriv env df gradenv grad = Some d ->
      forall xv,
      vartlookup gradenv xv <> None ->
      vartlookup d xv <> None.
    Proof.
+     DefinedFunction_cases (induction df) Case; simpl.
+     intros.
+     - Case "Number"%string; intros; inversion H; subst; easy.
+     - Case "Constant"%string; intros; inversion H; subst; easy.
+     - Case "DVector"%string.
+       intros.
+       unfold two_vector_env_iter_alt in H0.
+       admit.
+     - Case "DMatrix"%string; admit.
+     - Case "Var"%string.
+       destruct (vartlookup gradenv v).
+       intros.
+       inversion H.
+       assert ((v = xv) \/ (v <> xv)).
+       apply Classical_Prop.classic.
+       destruct H1.
+       subst.
+       rewrite lookup_update.
+       discriminate.
+       rewrite lookup_update_neq.
+       trivial.
+       trivial.
+       intros.
+       inversion H.
+       subst.
+       trivial.
+     - Case "Plus"%string.
+       specialize (IHdf1 grad).
+       specialize (IHdf2 grad).
+       rewrite IHdf1.
+       apply H.
+       revert H.
+       admit.
+       admit.
+     - Case "Minus"%string; admit.
+     - Case "Times"%string.
+       intros.
+       destruct (df_eval env df1).       
+       destruct (df_eval env df2).  
+       
+       specialize (IHdf1 (d1*grad)).
+       specialize (IHdf2 (d0*grad)).
+     - Case "Divide"%string; admit.
+     - Case "Square"%string; intros.
+       destruct (df_eval env df).
+       specialize (IHdf (2 * d0 * grad)).
+       apply IHdf.
+       apply H.
+       apply H0.
+       discriminate.
+     - Case "Exp"%string; intros.
+       destruct (df_eval env df).
+       specialize (IHdf (grad * Fexp d0)).
+       apply IHdf.
+       apply H.
+       apply H0.
+       discriminate.
+     - Case "Log"%string; intros.
+       destruct (df_eval env df).
+       specialize (IHdf (grad / d0)).
+       apply IHdf.
+       apply H.
+       apply H0.
+       discriminate.
+     - Case "Abs"%string; intros.
+       destruct (df_eval env df).
+       specialize (IHdf (grad * sign d0)).
+       apply IHdf.
+       apply H.
+       apply H0.
+       discriminate.
+     - Case "Sign"%string; intros.
+       specialize (IHdf 0).
+       apply IHdf.
+       apply H.
+       apply H0.
+     - Case "PSign"%string; intros.
+       specialize (IHdf 0).
+       apply IHdf.
+       apply H.
+       apply H0.
+     - Case "Max"%string; destruct (df_eval env df1).
+       destruct (df_eval env df2).       
+       destruct (d0 <= d1).
+       specialize (IHdf2 grad).
+       apply IHdf2.
+       specialize (IHdf1 grad).
+       apply IHdf1.
+       discriminate.
+       discriminate.
+     - Case "VectorDot"%string.
+       intros.
+       destruct (df_eval env df1).
+       destruct (df_eval env df2).       
+       specialize (IHdf1 (vmap (fun rv : float => rv * grad) d1)).
+       specialize (IHdf2 (vmap (fun lv : float => lv * grad) d0)).
+       apply IHdf1.
+       admit.
+       admit.
+       admit.
+       admit.
+     - Case "VectorSum"%string.
+       intros.
+       specialize (IHdf (ConstVector n grad)).
+       apply IHdf.
+       apply H.
+       apply H0.
+     - Case "MatrixSum"%string.
+       intros.
+       specialize (IHdf (ConstMatrix m n grad)).
+       apply IHdf.
+       apply H.
+       apply H0.
+     - Case "VectorElem"%string.
+       intros.
+       specialize (IHdf (fun k : {n' : nat | (n' < n)%nat} =>
+         if equiv_dec (proj1_sig k) (proj1_sig i) then grad else 0)).
+       apply IHdf.
+       apply H.
+       apply H0.
+     - Case "MatrixElem"%string.
+       intros.
+       specialize (IHdf (fun (k1 : {n' : nat | (n' < m)%nat}) (k2 : {m' : nat | (m' < n)%nat}) =>
+         if equiv_dec (proj1_sig k1) (proj1_sig i)
+         then if equiv_dec (proj1_sig k2) (proj1_sig j) then grad else 0
+         else 0)).
+       apply IHdf.
+       apply H.
+       apply H0.
+     - Case "MatrixVectorMult"%string.
+       intros.
+       admit.
+     - Case "MatrixVectorAdd"%string.
+       intros.
+       admit.
+     - Case "MatrixMult"%string.
+       admit.
+     - Case "VectorPlus"%string.
+       intros.
+       specialize (IHdf1 grad).
+       specialize (IHdf2 grad).
+       apply IHdf2.
+      admit.
+      admit.
+     - Case "VectorMinus"%string.
+       admit.
+     - Case "MatrixPlus"%string.
+       admit.
+     - Case "MatrixMinus"%string.
+       admit.
+     - Case "VectorScalMult"%string.
+       admit.
+     - Case "MatrixScalMult"%string.
+       admit.
+     - Case "VectorApply"%string.
+       admit.
+     - Case "MatrixApply"%string.
+       admit.
+     - Case "VLossfun"%string.
+       admit.
+     - Case "MLossfun"%string.
+       admit.
+
    Admitted.
 
    Lemma df_eval_tree_backprop_deriv_preserves_lookup_not_none {T} {env} {df:DefinedFunction EvalAnn T} {gradenv grad d} :
@@ -2841,6 +3007,7 @@ Section DefinedFunctions.
      vartlookup gradenv xv <> None ->
      vartlookup d xv <> None.
    Proof.
+
    Admitted.
 
     Section deriv_deriv.
