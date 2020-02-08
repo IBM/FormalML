@@ -264,6 +264,13 @@ Section DefinedFunctions.
   Definition defined_sum {m} (v:Vector (DefinedFunction UnitAnn DTfloat) m) : DefinedFunction UnitAnn DTfloat
     := vector_fold_right1 (fun a b => Plus tt a b) (Number tt 0) id v.
 
+  Definition vsum {m:nat} (v:Vector float m) : float
+      := vector_fold_right1 Fplus 0 id v.
+
+  Definition msum {m n:nat} (v:Matrix float m n) : float :=
+    vsum (vmap vsum v).
+
+
  Section deriv.
     
 
@@ -2828,8 +2835,6 @@ Section DefinedFunctions.
    Qed.
 
 
-   Locate eq_dec.
-
    Lemma df_eval_backprop_deriv_preserves_lookup_not_none {Ann T} {env} {df:DefinedFunction Ann T} {gradenv grad d} :
      df_eval_backprop_deriv env df gradenv grad = Some d ->
      forall xv,
@@ -3349,8 +3354,9 @@ Section DefinedFunctions.
       induction n; simpl; intros.
     Qed.
 *)
+(*
     Require Import FunctionalExtensionality.
-
+*)
 (*
     Lemma df_subst_nfree {T} (e: DefinedFunction T) (v:SubVar) (e':DefinedFunction DTfloat) :
       ~ In v (df_free_variables e) ->
