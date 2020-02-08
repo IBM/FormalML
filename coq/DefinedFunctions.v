@@ -2835,7 +2835,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
   | Case_aux c "PSign"%string
   | Case_aux c "Max"%string].
 
-   Lemma scalar_df_eval_backprop_deriv_preserves_lookup_not_none {Ann} {env} {df:DefinedFunction Ann DTfloat} {gradenv grad d} :
+   Lemma scalar_df_eval_backprop_deriv_preserves_lookup_not_none {Ann} {env} {df:DefinedFunction Ann DTfloat} {gradenv grad d}:
      is_scalar_function df ->
      df_eval_backprop_deriv env df gradenv grad = Some d ->
      forall xv,
@@ -2844,48 +2844,65 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
    Proof.
      simpl.
      intros is_scalar.
-     revert grad gradenv.
+     revert grad gradenv d.
      pattern df.
      revert df is_scalar.
      DefinedFunction_scalar_cases (apply is_scalar_function_ind) Case; simpl.
      - Case "Number"%string; intros.
-       inversion H.
-       subst; trivial.
+       inversion H; subst; trivial.
      - Case "Constant"%string; intros.
-       inversion H.
-       subst; trivial.
+       inversion H; subst; trivial.
      - Case "Var"%string; intros.
        destruct (vartlookup gradenv (sv, DTfloat)).
        intros.
        inversion H.
        assert (((sv, DTfloat) = xv) \/ ((sv, DTfloat) <> xv)).
        apply Classical_Prop.classic.
-       destruct H1.
-       subst.
+       destruct H1; subst.
        rewrite lookup_update.
        discriminate.
-       rewrite lookup_update_neq.
-       trivial.
-       trivial.
-       inversion H.
-       subst.
-       trivial.
-     - Case "Plus"%string; intros.
-       specialize (H grad gradenv).
-       destruct (df_eval_backprop_deriv env l gradenv grad); [|congruence].
-       specialize (H0 grad d0).
-       apply H0.
-       trivial.
-       assert (Some d0 = Some d).
-       admit.
-       inversion H3.
-       subst.
-       apply H.
-       trivial.
-       trivial.
-     - Case "Minus"%string; admit.
-     - Case "Times"%string; admit.
-     - Case "Divide"%string; admit. 
+       rewrite lookup_update_neq; trivial.
+       inversion H; subst; trivial.
+     - Case "Plus"%string.
+       intros an l r Hl Hr grad gradenv d.
+       case_eq (df_eval_backprop_deriv env l gradenv grad) ; [|congruence].
+       intros d0.
+       specialize (Hl grad gradenv d0).
+       specialize (Hr grad d0 d).
+       intros.
+       apply Hr; trivial.
+       apply Hl; trivial.
+     - Case "Minus"%string.
+       intros an l r Hl Hr grad gradenv d.
+       case_eq (df_eval_backprop_deriv env l gradenv grad) ; [|congruence].
+       intros d0.
+       specialize (Hl grad gradenv d0).
+       specialize (Hr (-grad) d0 d).       
+       intros.
+       apply Hr; trivial.
+       apply Hl; trivial.
+     - Case "Times"%string.
+       intros an l r Hl Hr grad gradenv d.
+       destruct (df_eval env l); [|congruence].
+       destruct (df_eval env r); [|congruence].              
+       case_eq (df_eval_backprop_deriv env l gradenv (d1 * grad)) ; [|congruence].       
+       intros d2.
+       specialize (Hl (d1 * grad) gradenv d2).
+       specialize (Hr (d0 * grad) d2 d).       
+       intros.
+       apply Hr; trivial.
+       apply Hl; trivial.
+     - Case "Divide"%string.
+       intros an l r Hl Hr grad gradenv d.       
+       destruct (df_eval env l); [|congruence].
+       destruct (df_eval env r); [|congruence].              
+       case_eq (df_eval_backprop_deriv env l gradenv (grad / d1)) ; [|congruence].
+       intros d2.
+       specialize (Hl (grad / d1) gradenv d2).
+       specialize (Hr ( - d0 / (d1 * d1) * grad) d2 d).       
+       intros.
+       apply Hr; trivial.
+       apply Hl; trivial.
      - Case "Square"%string; intros.
        destruct (df_eval env e); [|congruence].
        specialize (H (2 * d0 * grad) gradenv).
@@ -2908,9 +2925,16 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
      - Case "PSign"%string; intros.
        specialize (H 0 gradenv).
        now apply H.
-     - Case "Max"%string; intros.
-       admit.
-Admitted.
+     - Case "Max"%string.
+       intros an l r Hl Hr grad gradenv d.              
+       destruct (df_eval env l); [|congruence].
+       destruct (df_eval env r); [|congruence].              
+       destruct (d0 <= d1).
+       specialize (Hr grad gradenv d).
+       apply Hr.
+       specialize (Hl grad gradenv d).
+       apply Hl.
+Qed.
      
 
 
