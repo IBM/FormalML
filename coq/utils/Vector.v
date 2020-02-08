@@ -1,22 +1,10 @@
-Require Import String.
-Require Import EquivDec.
-Require Import RelationClasses.
 Require Import List.
-Require Import NPeano.
 Require Import Lra Omega.
-Require Reals.
-Require Import Eqdep_dec.
 Require Import LibUtils.
-
-Require Import Floatish.
-
 
 Set Bullet Behavior "Strict Subproofs".
 
 Section Vector.
-
-  Context {floatish_impl:floatish}.
-  Local Open Scope float.
 
     Definition Vector (T:Type) (n : nat) := {n':nat | n' < n}%nat -> T.
     Definition Matrix (T:Type) (n m : nat) := 
@@ -95,10 +83,6 @@ Section Vector.
     Definition vector_fold_right {A B:Type} (f:B->A->A) (init:A) {m:nat} (v:Vector B m)
       := vector_fold_right_dep (fun _ => f) init v.
 
-
-    Definition vsum {m:nat} (v:Vector float m) : float
-      := vector_fold_right1 Fplus 0 id v.
-
     Definition vectoro_to_ovector {T} {n} (v:Vector (option T) n) : option (Vector T n)
       := vector_fold_right_dep (fun n => lift2 (@vcons _ n)) (Some vnil) v.
 
@@ -108,8 +92,6 @@ Section Vector.
     Definition vmap {A B} {n} (f:A->B) (v:Vector A n) : Vector B n
       := vector_fold_right_dep (fun n x y => vcons (n:=n) (f x) y) vnil v.
 
-    Definition msum {m n:nat} (v:Matrix float m n) : float :=
-      vsum (vmap vsum v).
 
     Definition mmap {A B} {m n} (f:A->B) (mat:Matrix A m n) : Matrix B m n
       := vmap (fun mrow => vmap f mrow) mat.
