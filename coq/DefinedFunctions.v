@@ -2935,175 +2935,301 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        specialize (Hl grad gradenv d).
        apply Hl.
 Qed.
-     
 
-
-   Lemma df_eval_backprop_deriv_preserves_lookup_not_none {Ann T} {env} {df:DefinedFunction Ann T} {gradenv grad d} :
+   Lemma df_eval_backprop_deriv_preserves_lookup_not_none {Ann T} {env} {df:DefinedFunction Ann T} :
+     forall {grad gradenv d},
      df_eval_backprop_deriv env df gradenv grad = Some d ->
      forall xv,
      vartlookup gradenv xv <> None ->
      vartlookup d xv <> None.
    Proof.
+     simpl.
      DefinedFunction_cases (induction df) Case; simpl.
-     intros.
      - Case "Number"%string; intros; inversion H; subst; easy.
      - Case "Constant"%string; intros; inversion H; subst; easy.
-     - Case "DVector"%string.
-       intros.
+     - Case "DVector"%string; intros.
        unfold two_vector_env_iter_alt in H0.
        admit.
      - Case "DMatrix"%string; admit.
      - Case "Var"%string.
-       destruct (vartlookup gradenv v).
+       intros.
+       destruct (vartlookup gradenv v)  ; [|congruence].
        intros.
        inversion H.
        assert ((v = xv) \/ (v <> xv)).
        apply Classical_Prop.classic.
-       destruct H1.
-       subst.
+       destruct H1; subst.
        rewrite lookup_update.
        discriminate.
-       rewrite lookup_update_neq.
-       trivial.
-       trivial.
-       intros.
-       inversion H.
-       subst.
-       trivial.
+       rewrite lookup_update_neq; trivial.
      - Case "Plus"%string.
-       specialize (IHdf1 grad).
-       specialize (IHdf2 grad).
-       admit.
-     - Case "Minus"%string; admit.
-     - Case "Times"%string.
+       intros grad gradenv.
+       case_eq (df_eval_backprop_deriv env df1 gradenv grad) ; [|congruence].
        intros.
-       destruct (df_eval env df1).       
-       destruct (df_eval env df2).  
-       
-       specialize (IHdf1 (d1*grad)).
-       specialize (IHdf2 (d0*grad)).
-       admit.
-       admit.
-       admit.
-     - Case "Divide"%string; admit.
+       specialize (IHdf1 grad gradenv d).
+       specialize (IHdf2 grad d d0).
+       apply IHdf2; trivial.
+       apply IHdf1; trivial.
+     - Case "Minus"%string.
+       intros grad gradenv.
+       case_eq (df_eval_backprop_deriv env df1 gradenv grad) ; [|congruence].
+       intros.
+       specialize (IHdf1 grad gradenv d).
+       specialize (IHdf2 (-grad) d d0).
+       apply IHdf2; trivial.
+       apply IHdf1; trivial.
+     - Case "Times"%string.
+       intros grad gradenv d.
+       destruct (df_eval env df1)  ; [|congruence].
+       destruct (df_eval env df2)  ; [|congruence].
+       case_eq (df_eval_backprop_deriv env df1 gradenv (d1 * grad)) ; [|congruence].
+       intros d2.
+       specialize (IHdf1 (d1 * grad) gradenv d2).
+       specialize (IHdf2 (d0 * grad) d2 d).       
+       intros.
+       apply IHdf2; trivial.
+       apply IHdf1; trivial.
+     - Case "Divide"%string.
+       intros grad gradenv d.
+       destruct (df_eval env df1)  ; [|congruence].
+       destruct (df_eval env df2)  ; [|congruence].
+       case_eq (df_eval_backprop_deriv env df1 gradenv (grad / d1)) ; [|congruence].
+       intros d2.
+       specialize (IHdf1 (grad / d1) gradenv d2).
+       specialize (IHdf2 (- d0 / (d1 * d1) * grad) d2 d).       
+       intros.
+       apply IHdf2; trivial.
+       apply IHdf1; trivial.
      - Case "Square"%string; intros.
-       destruct (df_eval env df).
-       specialize (IHdf (2 * d0 * grad)).
+       destruct (df_eval env df) ; [|congruence]. 
+       specialize (IHdf (2 * d0 * grad) gradenv d).
        apply IHdf.
        apply H.
        apply H0.
-       discriminate.
      - Case "Exp"%string; intros.
-       destruct (df_eval env df).
-       specialize (IHdf (grad * Fexp d0)).
+       destruct (df_eval env df) ; [|congruence]. 
+       specialize (IHdf (grad * Fexp d0) gradenv d).
        apply IHdf.
        apply H.
        apply H0.
-       discriminate.
      - Case "Log"%string; intros.
-       destruct (df_eval env df).
-       specialize (IHdf (grad / d0)).
+       destruct (df_eval env df) ; [|congruence]. 
+       specialize (IHdf (grad / d0) gradenv d).
        apply IHdf.
        apply H.
        apply H0.
-       discriminate.
      - Case "Abs"%string; intros.
-       destruct (df_eval env df).
-       specialize (IHdf (grad * sign d0)).
+       destruct (df_eval env df) ; [|congruence]. 
+       specialize (IHdf (grad * sign d0) gradenv d).
        apply IHdf.
        apply H.
        apply H0.
-       discriminate.
      - Case "Sign"%string; intros.
-       specialize (IHdf 0).
+       specialize (IHdf 0 gradenv d).
        apply IHdf.
        apply H.
        apply H0.
      - Case "PSign"%string; intros.
-       specialize (IHdf 0).
+       specialize (IHdf 0 gradenv d).
        apply IHdf.
        apply H.
        apply H0.
-     - Case "Max"%string; destruct (df_eval env df1).
-       destruct (df_eval env df2).       
+     - Case "Max"%string; intros.
+       destruct (df_eval env df1) ; [|congruence]. 
+       destruct (df_eval env df2) ; [|congruence]. 
        destruct (d0 <= d1).
-       specialize (IHdf2 grad).
+       specialize (IHdf2 grad gradenv d).
        apply IHdf2.
-       specialize (IHdf1 grad).
+       apply H.
+       trivial.
+       specialize (IHdf1 grad gradenv d).
        apply IHdf1.
-       discriminate.
-       discriminate.
+       apply H.
+       trivial.
      - Case "VectorDot"%string.
+       intros grad gradenv d.
+       destruct (df_eval env df1) ; [|congruence]. 
+       destruct (df_eval env df2)  ; [|congruence]. 
+       case_eq (df_eval_backprop_deriv env df1 gradenv 
+                     (vmap (fun rv : float => rv * grad) d1));  [|congruence]. 
        intros.
-       destruct (df_eval env df1).
-       destruct (df_eval env df2).       
-       specialize (IHdf1 (vmap (fun rv : float => rv * grad) d1)).
-       specialize (IHdf2 (vmap (fun lv : float => lv * grad) d0)).
+       specialize (IHdf1 (vmap (fun rv : float => rv * grad) d1) gradenv d2).
+       specialize (IHdf2 (vmap (fun lv : float => lv * grad) d0) d2 d).
+       apply IHdf2.
+       apply H0.
        apply IHdf1.
-       admit.
-       admit.
-       admit.
-       admit.
+       apply H.
+       apply H1.
      - Case "VectorSum"%string.
        intros.
-       specialize (IHdf (ConstVector n grad)).
+       specialize (IHdf (ConstVector n grad) gradenv d).
        apply IHdf.
        apply H.
        apply H0.
      - Case "MatrixSum"%string.
        intros.
-       specialize (IHdf (ConstMatrix m n grad)).
+       specialize (IHdf (ConstMatrix m n grad) gradenv d).
        apply IHdf.
        apply H.
        apply H0.
      - Case "VectorElem"%string.
        intros.
        specialize (IHdf (fun k : {n' : nat | (n' < n)%nat} =>
-         if equiv_dec (proj1_sig k) (proj1_sig i) then grad else 0)).
+                           if equiv_dec (proj1_sig k) (proj1_sig i) 
+                           then grad else 0) gradenv d).
        apply IHdf.
        apply H.
        apply H0.
      - Case "MatrixElem"%string.
        intros.
-       specialize (IHdf (fun (k1 : {n' : nat | (n' < m)%nat}) (k2 : {m' : nat | (m' < n)%nat}) =>
-         if equiv_dec (proj1_sig k1) (proj1_sig i)
-         then if equiv_dec (proj1_sig k2) (proj1_sig j) then grad else 0
-         else 0)).
+       specialize (IHdf (fun (k1 : {n' : nat | (n' < m)%nat}) 
+                             (k2 : {m' : nat | (m' < n)%nat}) =>
+                           if equiv_dec (proj1_sig k1) (proj1_sig i)
+                           then if equiv_dec (proj1_sig k2) (proj1_sig j) then grad else 0
+                           else 0) gradenv d).
        apply IHdf.
        apply H.
        apply H0.
      - Case "MatrixVectorMult"%string.
+       intros grad gradenv d.
+       destruct (df_eval env df1)  ; [|congruence].
+       destruct (df_eval env df2)  ; [|congruence].
+       case_eq (df_eval_backprop_deriv env df1 gradenv 
+                    (fun (i : {n' : nat | (n' < m)%nat}) 
+                         (j : {m' : nat | (m' < n)%nat}) => grad i * d1 j)) ; [|congruence].
+       intros d2.
+       specialize (IHdf1 (fun (i : {n' : nat | (n' < m)%nat}) 
+                              (j : {m' : nat | (m' < n)%nat}) => grad i * d1 j) gradenv d2).
+       specialize (IHdf2 (matrix_vector_mult
+                            (fun (i : {n' : nat | (n' < n)%nat}) 
+                                 (j : {m' : nat | (m' < m)%nat}) => d0 j i) grad) d2 d).
        intros.
-       admit.
+       apply IHdf2; trivial.
+       apply IHdf1; trivial.
      - Case "MatrixVectorAdd"%string.
+       intros grad gradenv d.
+       case_eq (df_eval_backprop_deriv env df1 gradenv grad) ; [|congruence].
        intros.
+       specialize (IHdf1 grad gradenv d0).
        admit.
      - Case "MatrixMult"%string.
-       admit.
-     - Case "VectorPlus"%string.
+       intros grad gradenv d.
+       destruct (df_eval env df1)  ; [|congruence].
+       destruct (df_eval env df2)  ; [|congruence].
+       case_eq (df_eval_backprop_deriv env df1 gradenv 
+                    (matrix_mult grad
+                                 (fun (i : {n' : nat | (n' < n)%nat}) 
+                                      (j : {m' : nat | (m' < p)%nat}) => d1 j i)))
+                ; [|congruence].
+       intros d2.
+       specialize (IHdf1 (matrix_mult grad
+                                      (fun (i : {n' : nat | (n' < n)%nat}) 
+                                           (j : {m' : nat | (m' < p)%nat}) => d1 j i))
+                         gradenv d2).
+       specialize (IHdf2 (matrix_mult
+                            (fun (i : {n' : nat | (n' < p)%nat}) 
+                                 (j : {m' : nat | (m' < m)%nat}) => d0 j i) grad) d2 d).
        intros.
-       specialize (IHdf1 grad).
-       specialize (IHdf2 grad).
+       apply IHdf2; trivial.
+       apply IHdf1; trivial.
+     - Case "VectorPlus"%string.
+       intros grad gradenv d.
+       case_eq (df_eval_backprop_deriv env df1 gradenv grad) ; [|congruence].
+       intros.
+       specialize (IHdf1 grad gradenv d0).
+       specialize (IHdf2 grad d0 d).
        apply IHdf2.
-      admit.
-      admit.
+       apply H0.
+       apply IHdf1.
+       apply H.
+       apply H1.
      - Case "VectorMinus"%string.
-       admit.
+       intros grad gradenv d.
+       case_eq (df_eval_backprop_deriv env df1 gradenv grad) ; [|congruence].
+       intros.
+       specialize (IHdf1 grad gradenv d0).
+       specialize (IHdf2 (fun i : {n' : nat | (n' < n)%nat} => - grad i) d0 d).
+       apply IHdf2.
+       apply H0.
+       apply IHdf1.
+       apply H.
+       apply H1.
      - Case "MatrixPlus"%string.
-       admit.
+       intros grad gradenv d.
+       case_eq (df_eval_backprop_deriv env df1 gradenv grad) ; [|congruence].
+       intros.
+       specialize (IHdf1 grad gradenv d0).
+       specialize (IHdf2 grad d0 d).
+       apply IHdf2.
+       apply H0.
+       apply IHdf1.
+       apply H.
+       apply H1.
      - Case "MatrixMinus"%string.
-       admit.
+       intros grad gradenv d.
+       case_eq (df_eval_backprop_deriv env df1 gradenv grad) ; [|congruence].
+       intros.
+       specialize (IHdf1 grad gradenv d0).
+       specialize (IHdf2 (fun (i : {n' : nat | (n' < n)%nat}) 
+                              (j : {m' : nat | (m' < m)%nat}) => - grad i j)
+                         d0 d).
+       apply IHdf2.
+       apply H0.
+       apply IHdf1.
+       apply H.
+       apply H1.
      - Case "VectorScalMult"%string.
-       admit.
+       intros grad gradenv d.
+       destruct (df_eval env df1)  ; [|congruence].
+       destruct (df_eval env df2)  ; [|congruence].
+       case_eq (df_eval_backprop_deriv env df1 gradenv
+                          (vsum (fun j : {n' : nat | (n' < n)%nat} => d1 j * grad j)))
+                ; [|congruence].
+       intros d2.
+       specialize (IHdf1 (vsum (fun j : {n' : nat | (n' < n)%nat} => d1 j * grad j))
+                         gradenv d2).
+       specialize (IHdf2 (fun j : {n' : nat | (n' < n)%nat} => d0 * grad j)
+                         d2 d).
+       intros.
+       apply IHdf2; trivial.
+       apply IHdf1; trivial.
      - Case "MatrixScalMult"%string.
-       admit.
+       intros grad gradenv d.
+       destruct (df_eval env df1)  ; [|congruence].
+       destruct (df_eval env df2)  ; [|congruence].
+       case_eq (df_eval_backprop_deriv env df1 gradenv
+                   (msum
+                      (fun (i : {n' : nat | (n' < n)%nat}) 
+                           (j : {m' : nat | (m' < m)%nat}) =>
+                         d1 i j * grad i j)))
+                ; [|congruence].
+       intros d2.
+       specialize (IHdf1 (msum
+                            (fun (i : {n' : nat | (n' < n)%nat}) 
+                                 (j : {m' : nat | (m' < m)%nat}) =>
+                               d1 i j * grad i j))
+                  gradenv d2).
+       specialize (IHdf2 (fun (i : {n' : nat | (n' < n)%nat}) 
+                              (j : {m' : nat | (m' < m)%nat}) => grad i j * d0)
+                         d2 d).
+       intros.
+       apply IHdf2; trivial.
+       apply IHdf1; trivial.
      - Case "VectorApply"%string.
+       intros grad gradenv d.
+       destruct (df_eval env df2)  ; [|congruence].
        admit.
      - Case "MatrixApply"%string.
+       intros grad gradenv d.
+       destruct (df_eval env df2)  ; [|congruence].
        admit.
      - Case "VLossfun"%string.
+       intros grad gradenv d.
+       destruct (df_eval env df2)  ; [|congruence].
        admit.
      - Case "MLossfun"%string.
+       intros grad gradenv d.
+       destruct (df_eval env df2)  ; [|congruence].
        admit.
 
    Admitted.
