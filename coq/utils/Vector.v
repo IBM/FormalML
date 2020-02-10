@@ -1,8 +1,6 @@
 Require Import List.
-Require Import Lra Omega.
+Require Import Omega.
 Require Import LibUtils.
-
-Set Bullet Behavior "Strict Subproofs".
 
 Section Vector.
 
