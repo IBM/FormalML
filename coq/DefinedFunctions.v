@@ -3737,10 +3737,10 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
          case_eq (df_eval_backprop_deriv env l gradenv grad); simpl; trivial; intros.
          rewrite H in IHl.
          simpl in IHl.
-         generalize (df_eval_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn); intros.
+         generalize (scalar_df_eval_backprop_deriv_preserves_lookup_not_none isc1 H (x, DTfloat) xinn); intros.
          destruct (vartlookup d (x, DTfloat)); tauto.
      - Case "Times"%string.
-       intros _ l r IHl IHr grad gradenv xinn. 
+       intros _ l r IHl IHr grad gradenv [isc1 isc2] xinn. 
        case_eq (df_eval env l);
        [ intros le eqle | intros eqle]; simpl; trivial.
        case_eq (df_eval_deriv env l (x, DTfloat))
@@ -3752,7 +3752,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
          case_eq (df_eval_deriv env r (x, DTfloat))
          ; [intros dr eqdr | intros eqdr]
          ; rewrite eqdr in IHr.
-         * specialize (IHl (re * grad)%R gradenv xinn).
+         * specialize (IHl (re * grad)%R gradenv isc1 xinn).
            case_eq (vartlookup gradenv (x, DTfloat))
            ; [intros xv xveqq | intros xveqq]
            ; rewrite xveqq in IHl
@@ -3766,25 +3766,25 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
            ; [intros xv' xv'eqq | intros xv'eqq]
            ; rewrite xv'eqq in IHl
            ; [ | tauto].
-           specialize (IHr (le * grad)%R ge').
+           specialize (IHr (le * grad)%R ge' isc2).
            cut_to IHr; [ | congruence ].
            rewrite xv'eqq in IHr.
            destruct (backprop_lookup (df_eval_backprop_deriv env r ge' (le * grad)%R) (x, DTfloat)); trivial.
            lra.
          * case_eq ( df_eval_backprop_deriv env l gradenv (re * grad)%R ); simpl; trivial; intros.
-           apply IHr.
-           apply (df_eval_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn).
+           apply IHr; trivial.
+           apply (scalar_df_eval_backprop_deriv_preserves_lookup_not_none isc1 H (x, DTfloat) xinn).
        + case_eq (df_eval env r);
            [ intros re eqre | intros eqre]
            ; simpl; trivial.
-           specialize (IHl (re * grad)%R gradenv xinn).
+           specialize (IHl (re * grad)%R gradenv isc1 xinn).
            case_eq (df_eval_backprop_deriv env l gradenv (re * grad)%R); simpl; trivial; intros.
            rewrite H in IHl.
            simpl in IHl.
-           generalize (df_eval_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn); intros.
+           generalize (scalar_df_eval_backprop_deriv_preserves_lookup_not_none isc1 H (x, DTfloat) xinn); intros.
            destruct (vartlookup d (x, DTfloat)); tauto.
      - Case "Divide"%string.
-       intros _ l r IHl IHr grad gradenv xinn. 
+       intros _ l r IHl IHr grad gradenv [isc1 isc2] xinn. 
        case_eq (df_eval env l);
        [ intros le eqle | intros eqle]; simpl; trivial.
        case_eq (df_eval_deriv env l (x, DTfloat))
@@ -3796,7 +3796,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
          case_eq (df_eval_deriv env r (x, DTfloat))
          ; [intros dr eqdr | intros eqdr]
          ; rewrite eqdr in IHr.
-         * specialize (IHl (grad / re)%R gradenv xinn).
+         * specialize (IHl (grad / re)%R gradenv isc1 xinn).
            case_eq (vartlookup gradenv (x, DTfloat))
            ; [intros xv xveqq | intros xveqq]
            ; rewrite xveqq in IHl
@@ -3810,29 +3810,29 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
            ; [intros xv' xv'eqq | intros xv'eqq]
            ; rewrite xv'eqq in IHl
            ; [ | tauto].
-           specialize (IHr (- le / (re * re) * grad)%R ge').
+           specialize (IHr (- le / (re * re) * grad)%R ge' isc2).
            cut_to IHr; [ | congruence ].
            rewrite xv'eqq in IHr.
            destruct (backprop_lookup (df_eval_backprop_deriv env r ge' (- le  / (re * re) * grad)%R) (x, DTfloat)); trivial.
            lra.
          * case_eq ( df_eval_backprop_deriv env l gradenv (grad / re)%R ); simpl; trivial; intros.
-           apply IHr.
-           apply (df_eval_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn).
+           apply IHr; trivial.
+           apply (scalar_df_eval_backprop_deriv_preserves_lookup_not_none isc1 H (x, DTfloat) xinn).
        + case_eq (df_eval env r);
            [ intros re eqre | intros eqre]
            ; simpl; trivial.
-           specialize (IHl (grad / re)%R gradenv xinn).
+           specialize (IHl (grad / re)%R gradenv isc1 xinn).
            case_eq (df_eval_backprop_deriv env l gradenv (grad / re)%R); simpl; trivial; intros.
            rewrite H in IHl.
            simpl in IHl.
-           generalize (df_eval_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn); intros.
+           generalize (scalar_df_eval_backprop_deriv_preserves_lookup_not_none isc1 H (x, DTfloat) xinn); intros.
            destruct (vartlookup d (x, DTfloat)); tauto.
      - Case "Square"%string.
-       intros _ e IHe grad gradenv xinn. 
+       intros _ e IHe grad gradenv isc xinn. 
        case_eq (df_eval env e);
          [ intros le eqee | intros eqee]; simpl; trivial.
        
-       specialize (IHe (2 * le * grad)%R gradenv xinn).
+       specialize (IHe (2 * le * grad)%R gradenv isc xinn).
        case_eq (df_eval_deriv env e (x, DTfloat))
        ; [intros de eqde | intros eqde]
        ; rewrite eqde in IHe
@@ -3855,11 +3855,11 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        rewrite xv'eqq.
        lra.
      - Case "Exp"%string.
-       intros _ e IHe grad gradenv xinn. 
+       intros _ e IHe grad gradenv isc xinn. 
        case_eq (df_eval env e);
          [ intros le eqee | intros eqee]; simpl; trivial.
        
-       specialize (IHe (grad * exp le)%R gradenv xinn).
+       specialize (IHe (grad * exp le)%R gradenv isc xinn).
        case_eq (df_eval_deriv env e (x, DTfloat))
        ; [intros de eqde | intros eqde]
        ; rewrite eqde in IHe
@@ -3882,11 +3882,11 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        rewrite xv'eqq.
        lra.
      - Case "Log"%string.
-       intros _ e IHe grad gradenv xinn. 
+       intros _ e IHe grad gradenv isc xinn. 
        case_eq (df_eval env e);
          [ intros le eqee | intros eqee]; simpl; trivial.
        
-       specialize (IHe (grad / le)%R gradenv xinn).
+       specialize (IHe (grad / le)%R gradenv isc xinn).
        case_eq (df_eval_deriv env e (x, DTfloat))
        ; [intros de eqde | intros eqde]
        ; rewrite eqde in IHe
@@ -3909,11 +3909,11 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        rewrite xv'eqq.
        lra.
      - Case "Abs"%string.
-       intros _ e IHe grad gradenv xinn. 
+       intros _ e IHe grad gradenv isc xinn. 
        case_eq (df_eval env e);
          [ intros le eqee | intros eqee]; simpl; trivial.
        
-       specialize (IHe (grad * (sign le))%R gradenv xinn).
+       specialize (IHe (grad * (sign le))%R gradenv isc xinn).
        case_eq (df_eval_deriv env e (x, DTfloat))
        ; [intros de eqde | intros eqde]
        ; rewrite eqde in IHe
@@ -3936,8 +3936,8 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        rewrite xv'eqq.
        lra.
      - Case "Sign"%string.
-       intros _ e IHe grad gradenv xinn. 
-       specialize (IHe 0%R gradenv xinn).
+       intros _ e IHe grad gradenv isc xinn. 
+       specialize (IHe 0%R gradenv isc xinn).
        case_eq (vartlookup gradenv (x, DTfloat))
        ; [intros xv xveqq | intros xveqq]
        ; rewrite xveqq in IHe
@@ -3958,8 +3958,8 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        ; [ | tauto].
        lra.
      - Case "PSign"%string.
-       intros _ e IHe grad gradenv xinn. 
-       specialize (IHe 0%R gradenv xinn).
+       intros _ e IHe grad gradenv isc xinn. 
+       specialize (IHe 0%R gradenv isc xinn).
        case_eq (vartlookup gradenv (x, DTfloat))
        ; [intros xv xveqq | intros xveqq]
        ; rewrite xveqq in IHe
@@ -3980,9 +3980,9 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        ; [ | tauto].
        lra.
      - Case "Max"%string.
-       intros _ l r IHl IHr grad gradenv xinn.
-       specialize (IHl grad gradenv xinn).
-       specialize (IHr grad gradenv xinn).
+       intros _ l r IHl IHr grad gradenv [isc1 isc2] xinn.
+       specialize (IHl grad gradenv isc1 xinn).
+       specialize (IHr grad gradenv isc2 xinn).
        
        case_eq (df_eval env l); simpl; trivial
        ; intros eld eqeld.
