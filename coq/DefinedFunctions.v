@@ -2988,25 +2988,41 @@ Qed.
      - Case "DMatrix"%string.
        intros grad.
        unfold two_matrix_env_iter_alt.
-       induction (bounded_seq0 n).
-       simpl.
-       intros.
-       inversion H0; subst; trivial.
-       simpl.
-       intro gradenv.
-
-       admit.
+       induction (bounded_seq0 n); simpl.
+       {  simpl; intros; inversion H0; subst; trivial. }
+       intros gradenv d eqq.
+       case_eq ((list_env_iter
+             (fun (j : {m' : nat | (m' < m)%nat}) (env0 : df_env) =>
+              df_eval_backprop_deriv env (x a j) env0 (grad a j)) (Some gradenv) 
+             (bounded_seq0 m)))
+       ; [ intros dd ddeqq | intros ddeqq]
+       ; rewrite ddeqq in eqq
+       ; simpl in eqq
+       ; [| destruct l; simpl; discriminate].
+       specialize (IHl _ _ eqq).
+       cut (forall xv : var_type, vartlookup gradenv xv <> None -> vartlookup dd xv <> None)
+       ; [ eauto | ].
+       clear d IHl eqq.
+       revert gradenv dd ddeqq.
+       induction (bounded_seq0 m); simpl
+       ; intros gradenv dd ddeqq
+       ; simpl in ddeqq.
+       { inversion ddeqq; subst; trivial. }
+       case_eq (df_eval_backprop_deriv env (x a a0) gradenv (grad a a0))
+       ; [intros dd2 ddeqq2 | intros ddeqq2]
+       ; rewrite ddeqq2 in ddeqq
+       ; simpl in ddeqq
+       ; [| destruct l0; simpl; discriminate].
+       eauto.
      - Case "Var"%string.
        intros.
        destruct (vartlookup gradenv v)  ; [|congruence].
        intros.
        inversion H.
-       assert ((v = xv) \/ (v <> xv)).
-       apply Classical_Prop.classic.
-       destruct H1; subst.
-       rewrite lookup_update.
-       discriminate.
-       rewrite lookup_update_neq; trivial.
+       destruct (vart_dec v xv).
+       + subst; rewrite lookup_update.
+         discriminate.
+       + rewrite lookup_update_neq; trivial.
      - Case "Plus"%string.
        intros grad gradenv.
        case_eq (df_eval_backprop_deriv env df1 gradenv grad) ; [|congruence].
@@ -3279,21 +3295,21 @@ Qed.
      - Case "VectorApply"%string.
        intros grad gradenv d.
        destruct (df_eval env df2)  ; [|congruence].
-       admit.
+       simpl in *.
+       match_destr; simpl; eauto.
      - Case "MatrixApply"%string.
        intros grad gradenv d.
        destruct (df_eval env df2)  ; [|congruence].
-       admit.
+       match_destr; simpl; eauto.
      - Case "VLossfun"%string.
        intros grad gradenv d.
        destruct (df_eval env df2)  ; [|congruence].
-       admit.
+       match_destr; simpl; eauto.
      - Case "MLossfun"%string.
        intros grad gradenv d.
        destruct (df_eval env df2)  ; [|congruence].
-       admit.
-
-   Admitted.
+       match_destr; simpl; eauto.
+   Qed.
 
    Lemma df_eval_tree_backprop_deriv_preserves_lookup_not_none {T} {env} {df:DefinedFunction EvalAnn T} {gradenv grad d} :
      df_eval_tree_backprop_deriv env df gradenv grad = Some d ->
