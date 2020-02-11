@@ -2304,11 +2304,10 @@ Section DefinedFunctions.
         match df with
          | Number _ _ => True
          | Constant _ _ _ => True
-         | DVector n _ vec => 
-           vector_fold_right (fun x p => (is_df_rec_prop prop x) /\ p) True vec
+         | DVector n _ vec =>
+           vforall (is_df_rec_prop prop) vec
          | DMatrix n m _ mat => 
-           vector_fold_right 
-             (fun vec p => (vector_fold_right (fun x p => (is_df_rec_prop prop x) /\ p) True vec) /\ p) True mat
+             vforall (vforall (is_df_rec_prop prop)) mat
          | Var _ _ => True
          | Plus _ l r => (is_df_rec_prop prop l) /\ (is_df_rec_prop prop r)
          | Minus _ l r => (is_df_rec_prop prop l) /\ (is_df_rec_prop prop r)
@@ -2367,7 +2366,7 @@ Section DefinedFunctions.
    Proof.
      destruct df; simpl; tauto.
    Qed.
-     
+   
    Lemma df_eval_tree_correct {T Ann} (σ:df_env) (df:DefinedFunction Ann T) (dfann:DefinedFunction EvalAnn T):
      df_eval_tree σ df = Some dfann ->
      is_df_evalann_correct σ dfann.
@@ -2404,7 +2403,9 @@ Section DefinedFunctions.
        ; apply is_df_rec_prop_top in IHdf
        ; simpl in IHdf
        ; rewrite IHdf
-       ; trivial].
+       ; trivial
+                ].
+     
      - Case "Number"%string.
        inversion eqq; subst.
        simpl; tauto.
@@ -2412,18 +2413,46 @@ Section DefinedFunctions.
        inversion eqq; subst. 
        simpl; tauto.
      - Case "DVector"%string.
-       revert eqq.
-       case_eq (vectoro_to_ovector (fun i : {n' : nat | (n' < n)%nat} => df_eval_tree σ (x i)))
-       ; [| congruence].
-       intros.
-       inversion eqq; subst.
+       match_option_in eqq.
+       invcs eqq.
        simpl.
+       specialize (vectoro_to_ovector_forall_some_f eqq0)
+       ; simpl
+       ; clear eqq0; intros eqq0.
        split.
-       revert H0.
-       admit.
-       admit.
+       + apply vectoro_to_ovector_forall_some_b_strong; intros i.
+         specialize (H _ _ (eqq0 i)).
+         apply is_df_rec_prop_top in H.
+         simpl in *.
+         rewrite vmap_nth; trivial.
+       + apply vforall_forall; eauto.
      - Case "DMatrix"%string.
-       admit.
+       match_option_in eqq.
+       invcs eqq.
+       simpl.
+       unfold matrixo_to_omatrix in *.
+       specialize (vectoro_to_ovector_forall_some_f eqq0)
+       ; simpl
+       ; clear eqq0; intros eqq0.
+       split.
+       + apply vectoro_to_ovector_forall_some_b_strong; intros i.
+         apply vectoro_to_ovector_forall_some_b_strong; intros j.
+         specialize (eqq0 i).
+       specialize (vectoro_to_ovector_forall_some_f eqq0)
+       ; simpl
+       ; clear eqq0; intros eqq0.
+       specialize (eqq0 j).
+       specialize (H _ _ _ eqq0).
+       apply is_df_rec_prop_top in H.
+       simpl in *.
+       repeat rewrite vmap_nth; trivial.
+       + apply vforall_forall; intros.
+         apply vforall_forall; intros.
+         specialize (eqq0 i).
+         specialize (vectoro_to_ovector_forall_some_f eqq0)
+       ; simpl
+       ; clear eqq0; intros eqq0.
+         eauto.
      - Case "Var"%string.
        revert eqq.
        case_eq (vartlookup σ v) ; [| congruence].
@@ -2436,33 +2465,53 @@ Section DefinedFunctions.
        ; rewrite a2eqq in eqq 
        ; [| congruence].
        specialize (IHdf2 _ a2eqq).
-
-       revert eqq.
-       case_eq ( @vectoro_to_ovector (@float floatish_impl) n
-              (fun i : @sig nat (fun n' : nat => lt n' n) =>
-               @df_eval DTfloat UnitAnn
-                 (@cons env_entry_type
-                    (mk_env_entry (@pair SubVar definition_function_types v DTfloat)
-                                  (@get_annotation EvalAnn (DTVector n) adf2 i)) σ) df1))
-              ; [| congruence].
-       intros.
-       inversion eqq; subst.
+       match_option_in eqq.
+       invcs eqq.
        simpl.
+       split; trivial.
        apply is_df_rec_prop_top in IHdf2.
-       rewrite  IHdf2.
-       split.
-       
-       admit.
-       
-       admit.
-
+       simpl in IHdf2.
+       rewrite IHdf2; trivial.
      - Case "MatrixApply"%string.
-       admit.
+       case_eq (df_eval_tree σ df2)
+       ; [intros adf2 a2eqq | intros a2eqq]
+       ; rewrite a2eqq in eqq 
+       ; [| congruence].
+       specialize (IHdf2 _ a2eqq).
+       match_option_in eqq.
+       invcs eqq.
+       simpl.
+       split; trivial.
+       apply is_df_rec_prop_top in IHdf2.
+       simpl in IHdf2.
+       rewrite IHdf2; trivial.
      - Case "VLossfun"%string.
-       admit.
+       case_eq (df_eval_tree σ df2)
+       ; [intros adf2 a2eqq | intros a2eqq]
+       ; rewrite a2eqq in eqq 
+       ; [| congruence].
+       specialize (IHdf2 _ a2eqq).
+       match_option_in eqq.
+       invcs eqq.
+       simpl.
+       split; trivial.
+       apply is_df_rec_prop_top in IHdf2.
+       simpl in IHdf2.
+       rewrite IHdf2, eqq0; trivial.
      - Case "MLossfun"%string.
-       admit.
-   Admitted.
+       case_eq (df_eval_tree σ df2)
+       ; [intros adf2 a2eqq | intros a2eqq]
+       ; rewrite a2eqq in eqq 
+       ; [| congruence].
+       specialize (IHdf2 _ a2eqq).
+       match_option_in eqq.
+       invcs eqq.
+       simpl.
+       split; trivial.
+       apply is_df_rec_prop_top in IHdf2.
+       simpl in IHdf2.
+       rewrite IHdf2, eqq0; trivial.
+   Qed.
    
    (*
       Definition annotations_correct

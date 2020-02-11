@@ -161,7 +161,6 @@ Section Vector.
 
     Definition vec_eq {A} {m:nat} (x y:Vector A m) := forall i, x i = y i.
     Notation "x =v= y" := (vec_eq x y) (at level 70).
-
     
     (* If we are willing to assume an axiom *)
     (*
@@ -295,6 +294,14 @@ Section Vector.
   Lemma veq_trans {T} {n} {x y z:Vector T n} : x =v= y -> y =v= z -> x =v= z.
   Proof.
     intros eqq1 eqq2 i; etransitivity; eauto.
+  Qed.
+
+  Lemma vcons_proper {T} {n} a b (x y:Vector T n) : a = b -> x =v= y -> vcons a x =v= vcons b y.
+  Proof.
+    intros; subst.
+    intros [i pf].
+    unfold vcons.
+    destruct (Nat.eq_dec i n); simpl; trivial.
   Qed.
 
   Lemma vdrop_last_proper {T} {n} (x y:Vector T (S n)) : x =v= y -> vdrop_last x =v= vdrop_last y.
@@ -463,7 +470,101 @@ Section Vector.
     Defined.
 
     Definition bounded_seq0 len : list {n':nat | n' < len}%nat := bounded_seq 0 len.
+      
+    Definition vforall {A n} (P:A->Prop) (v:Vector A n) :=
+      vector_fold_right (fun x p => P x /\ p) True v.
 
+   Lemma vforall_forall {A n} (P:A->Prop) (v:Vector A n) :
+     vforall P v <-> forall i, P (v i).
+   Proof.
+     unfold vforall.
+     split.
+     - induction n.
+       + intros ? [??].
+         omega.
+       + rewrite vector_fold_right_Sn.
+         intros [Plast Pdrop].
+         intros [i pf].
+         destruct (Nat.eq_dec i n).
+         * unfold vlast in Plast.
+           subst.
+           erewrite index_pf_irrel; eauto.
+         * assert (pf2:(i < n)%nat) by omega.
+           specialize (IHn _ Pdrop (exist _ i pf2)).
+           erewrite index_pf_irrel; eauto.
+     - induction n.
+       + vm_compute; trivial.
+       + rewrite vector_fold_right_Sn.
+         intros.
+         split.
+         * eauto.
+         * eapply IHn.
+           intros [i pf].
+           assert (pf2 : (i < S n)%nat) by omega.
+           specialize (H (exist _ i pf2)).
+           simpl in *.
+           erewrite index_pf_irrel; eauto.
+   Qed.
 
+   Lemma vectoro_to_ovector_forall_some_f {A n} {vo:Vector (option A) n} {v:Vector A n} :
+     vectoro_to_ovector vo = Some v ->
+     (forall i, vo i = Some (v i)).
+   Proof.
+     unfold vectoro_to_ovector.
+     induction n; simpl.
+     - intros ? [??]; omega.
+     - rewrite vector_fold_right_dep_Sn.
+       intros eqq.
+       apply some_lift2 in eqq.
+       destruct eqq as [x [y eqq1 [eqq2 eqq3]]].
+       subst.
+       intros [i pf].
+       rewrite vector_Sn_split.
+       specialize (IHn _ _ eqq2).
+       rewrite eqq1.
+       unfold vcons.
+       destruct (Nat.eq_dec i n); trivial.
+   Qed.
+
+   Lemma vectoro_to_ovector_forall_some_b {A n} (vo:Vector (option A) n) (v:Vector A n) :
+     (forall i, vo i = Some (v i)) ->
+     exists v', vectoro_to_ovector vo = Some v' /\ v =v= v'.
+   Proof.
+     unfold vectoro_to_ovector.
+     induction n; simpl.
+     - intros eqq.
+       unfold vector_fold_right_dep.
+       simpl.
+       exists vnil; split; trivial.
+       intros [??]; omega.
+     - rewrite vector_fold_right_dep_Sn.
+       intros eqq.
+       specialize (IHn (vdrop_last vo) (vdrop_last v)).
+       destruct IHn as [v' [eqq2 eqq3]].
+       + intros [i pf].
+         simpl; eauto.
+       + rewrite eqq2.
+         unfold vlast.
+         rewrite eqq.
+         simpl.
+         eexists; split; [reflexivity | ].
+         eapply veq_trans; [eapply (vector_Sn_split v) | ].
+         apply vcons_proper; simpl; trivial.
+   Qed.
+
+   Lemma vectoro_to_ovector_forall_some_b_strong {A n} (vo:Vector (option A) n) (v:Vector A n) :
+     (forall i, vo i = Some (v i)) ->
+     vectoro_to_ovector vo = Some v.
+   Proof.
+     Require Import FunctionalExtensionality.
+     intros.
+     destruct (vectoro_to_ovector_forall_some_b _ _ H) as [? [??]].
+     rewrite H0.
+     f_equal.
+     apply functional_extensionality.
+     intros.
+     symmetry.
+     apply H1.
+   Qed.
 
 End Vector.
