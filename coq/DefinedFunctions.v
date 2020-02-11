@@ -2851,108 +2851,6 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
   | Case_aux c "PSign"%string
   | Case_aux c "Max"%string].
 
-   Lemma scalar_df_eval_backprop_deriv_preserves_lookup_not_none {Ann} {env} {df:DefinedFunction Ann DTfloat} {gradenv grad d}:
-     is_scalar_function df ->
-     df_eval_backprop_deriv env df gradenv grad = Some d ->
-     forall xv,
-     vartlookup gradenv xv <> None ->
-     vartlookup d xv <> None.
-   Proof.
-     simpl.
-     intros is_scalar.
-     revert grad gradenv d.
-     pattern df.
-     revert df is_scalar.
-     DefinedFunction_scalar_cases (apply is_scalar_function_ind) Case; simpl.
-     - Case "Number"%string; intros.
-       inversion H; subst; trivial.
-     - Case "Constant"%string; intros.
-       inversion H; subst; trivial.
-     - Case "Var"%string; intros.
-       destruct (vartlookup gradenv (sv, DTfloat)).
-       intros.
-       inversion H.
-       assert (((sv, DTfloat) = xv) \/ ((sv, DTfloat) <> xv)).
-       apply Classical_Prop.classic.
-       destruct H1; subst.
-       rewrite lookup_update.
-       discriminate.
-       rewrite lookup_update_neq; trivial.
-       inversion H; subst; trivial.
-     - Case "Plus"%string.
-       intros an l r Hl Hr grad gradenv d.
-       case_eq (df_eval_backprop_deriv env l gradenv grad) ; [|congruence].
-       intros d0.
-       specialize (Hl grad gradenv d0).
-       specialize (Hr grad d0 d).
-       intros.
-       apply Hr; trivial.
-       apply Hl; trivial.
-     - Case "Minus"%string.
-       intros an l r Hl Hr grad gradenv d.
-       case_eq (df_eval_backprop_deriv env l gradenv grad) ; [|congruence].
-       intros d0.
-       specialize (Hl grad gradenv d0).
-       specialize (Hr (-grad) d0 d).       
-       intros.
-       apply Hr; trivial.
-       apply Hl; trivial.
-     - Case "Times"%string.
-       intros an l r Hl Hr grad gradenv d.
-       destruct (df_eval env l); [|congruence].
-       destruct (df_eval env r); [|congruence].              
-       case_eq (df_eval_backprop_deriv env l gradenv (d1 * grad)) ; [|congruence].       
-       intros d2.
-       specialize (Hl (d1 * grad) gradenv d2).
-       specialize (Hr (d0 * grad) d2 d).       
-       intros.
-       apply Hr; trivial.
-       apply Hl; trivial.
-     - Case "Divide"%string.
-       intros an l r Hl Hr grad gradenv d.       
-       destruct (df_eval env l); [|congruence].
-       destruct (df_eval env r); [|congruence].              
-       case_eq (df_eval_backprop_deriv env l gradenv (grad / d1)) ; [|congruence].
-       intros d2.
-       specialize (Hl (grad / d1) gradenv d2).
-       specialize (Hr ( - d0 / (d1 * d1) * grad) d2 d).       
-       intros.
-       apply Hr; trivial.
-       apply Hl; trivial.
-     - Case "Square"%string; intros.
-       destruct (df_eval env e); [|congruence].
-       specialize (H (2 * d0 * grad) gradenv).
-       now apply H.
-     - Case "Exp"%string; intros.  
-       destruct (df_eval env e); [|congruence].
-       specialize (H (grad * Fexp d0) gradenv).
-       now apply H.
-     - Case "Log"%string; intros.
-       destruct (df_eval env e); [|congruence].
-       specialize (H (grad / d0) gradenv).
-       now apply H.
-     - Case "Abs"%string; intros.
-       destruct (df_eval env e); [|congruence].
-       specialize (H (grad * sign d0) gradenv).
-       now apply H.
-     - Case "Sign"%string; intros.
-       specialize (H 0 gradenv).
-       now apply H.
-     - Case "PSign"%string; intros.
-       specialize (H 0 gradenv).
-       now apply H.
-     - Case "Max"%string.
-       intros an l r Hl Hr grad gradenv d.              
-       destruct (df_eval env l); [|congruence].
-       destruct (df_eval env r); [|congruence].              
-       destruct (d0 <= d1).
-       specialize (Hr grad gradenv d).
-       apply Hr.
-       specialize (Hl grad gradenv d).
-       apply Hl.
-Qed.
-
-
    Lemma df_eval_backprop_deriv_preserves_lookup_not_none {Ann T} {env} {grad gradenv d} {df:DefinedFunction Ann T} :
      df_eval_backprop_deriv env df gradenv grad = Some d ->
      forall xv,
@@ -2989,7 +2887,7 @@ Qed.
        intros grad.
        unfold two_matrix_env_iter_alt.
        induction (bounded_seq0 n); simpl.
-       {  simpl; intros; inversion H0; subst; trivial. }
+       {  intros; inversion H0; subst; trivial. }
        intros gradenv d eqq.
        case_eq ((list_env_iter
              (fun (j : {m' : nat | (m' < m)%nat}) (env0 : df_env) =>
@@ -3712,12 +3610,12 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
            lra.
          * case_eq ( df_eval_backprop_deriv env l gradenv grad ); simpl; trivial; intros.
            apply IHr; trivial.
-           apply (scalar_df_eval_backprop_deriv_preserves_lookup_not_none isc1 H (x, DTfloat) xinn).
+           apply (df_eval_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn).
        + specialize (IHl grad gradenv isc1 xinn).
          case_eq (df_eval_backprop_deriv env l gradenv grad); simpl; trivial; intros.
          rewrite H in IHl.
          simpl in IHl.
-         generalize (scalar_df_eval_backprop_deriv_preserves_lookup_not_none isc1 H (x, DTfloat) xinn); intros.
+         generalize (df_eval_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn); intros.
          destruct (vartlookup d (x, DTfloat)); tauto.
      - Case "Minus"%string.
        intros _ l r IHl IHr grad gradenv [isc1 isc2] xinn.
@@ -3748,12 +3646,12 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
            lra.
          * case_eq ( df_eval_backprop_deriv env l gradenv grad ); simpl; trivial; intros.
            apply IHr; trivial.
-           apply (scalar_df_eval_backprop_deriv_preserves_lookup_not_none isc1 H (x, DTfloat) xinn).
+           apply (df_eval_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn).
        + specialize (IHl grad gradenv isc1 xinn).
          case_eq (df_eval_backprop_deriv env l gradenv grad); simpl; trivial; intros.
          rewrite H in IHl.
          simpl in IHl.
-         generalize (scalar_df_eval_backprop_deriv_preserves_lookup_not_none isc1 H (x, DTfloat) xinn); intros.
+         generalize (df_eval_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn); intros.
          destruct (vartlookup d (x, DTfloat)); tauto.
      - Case "Times"%string.
        intros _ l r IHl IHr grad gradenv [isc1 isc2] xinn. 
@@ -3789,7 +3687,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
            lra.
          * case_eq ( df_eval_backprop_deriv env l gradenv (re * grad)%R ); simpl; trivial; intros.
            apply IHr; trivial.
-           apply (scalar_df_eval_backprop_deriv_preserves_lookup_not_none isc1 H (x, DTfloat) xinn).
+           apply (df_eval_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn).
        + case_eq (df_eval env r);
            [ intros re eqre | intros eqre]
            ; simpl; trivial.
@@ -3797,7 +3695,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
            case_eq (df_eval_backprop_deriv env l gradenv (re * grad)%R); simpl; trivial; intros.
            rewrite H in IHl.
            simpl in IHl.
-           generalize (scalar_df_eval_backprop_deriv_preserves_lookup_not_none isc1 H (x, DTfloat) xinn); intros.
+           generalize (df_eval_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn); intros.
            destruct (vartlookup d (x, DTfloat)); tauto.
      - Case "Divide"%string.
        intros _ l r IHl IHr grad gradenv [isc1 isc2] xinn. 
@@ -3833,7 +3731,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
            lra.
          * case_eq ( df_eval_backprop_deriv env l gradenv (grad / re)%R ); simpl; trivial; intros.
            apply IHr; trivial.
-           apply (scalar_df_eval_backprop_deriv_preserves_lookup_not_none isc1 H (x, DTfloat) xinn).
+           apply (df_eval_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn).
        + case_eq (df_eval env r);
            [ intros re eqre | intros eqre]
            ; simpl; trivial.
@@ -3841,7 +3739,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
            case_eq (df_eval_backprop_deriv env l gradenv (grad / re)%R); simpl; trivial; intros.
            rewrite H in IHl.
            simpl in IHl.
-           generalize (scalar_df_eval_backprop_deriv_preserves_lookup_not_none isc1 H (x, DTfloat) xinn); intros.
+           generalize (df_eval_backprop_deriv_preserves_lookup_not_none H (x, DTfloat) xinn); intros.
            destruct (vartlookup d (x, DTfloat)); tauto.
      - Case "Square"%string.
        intros _ e IHe grad gradenv isc xinn. 
