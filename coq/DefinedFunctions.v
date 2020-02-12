@@ -147,6 +147,370 @@ Section DefinedFunctions.
 
     Global Arguments DefinedFunction : clear implicits.
 
+Definition DefinedFunction_ind_unit
+  (P : forall (d : definition_function_types), DefinedFunction UnitAnn d -> Prop)
+  (f : forall (ann : UnitAnn DTfloat) (x : float),
+       P DTfloat (Number ann x))
+  (f0 : forall (t : definition_function_types) 
+          (ann : UnitAnn t) (x : definition_function_types_interp t), P t (Constant ann x))
+  (f1 : forall (n : nat) (ann : UnitAnn (DTVector n))
+          (x : Vector (DefinedFunction UnitAnn DTfloat) n),
+        (forall s : {n' : nat | (n' < n)%nat}, P DTfloat (x s)) ->
+        P (DTVector n) (DVector ann x))
+  (f2 : forall (n m : nat) (ann : UnitAnn (DTMatrix n m))
+          (x : Matrix (DefinedFunction UnitAnn DTfloat) n m),
+        (forall (s : {n' : nat | (n' < n)%nat}) (s0 : {m' : nat | (m' < m)%nat}),
+         P DTfloat (x s s0)) -> P (DTMatrix n m) (DMatrix ann x))
+  (f3 : forall (v : var_type) (ann : UnitAnn (snd v)),
+        P (snd v) (Var v ann))
+  (f4 : forall (ann : UnitAnn DTfloat)
+          (l : DefinedFunction UnitAnn DTfloat),
+        P DTfloat l ->
+        forall r : DefinedFunction UnitAnn DTfloat, P DTfloat r -> P DTfloat (Plus ann l r))
+  (f5 : forall (ann : UnitAnn DTfloat)
+          (l : DefinedFunction UnitAnn DTfloat),
+        P DTfloat l ->
+        forall r : DefinedFunction UnitAnn DTfloat, P DTfloat r -> P DTfloat (Minus ann l r))
+  (f6 : forall (ann : UnitAnn DTfloat)
+          (l : DefinedFunction UnitAnn DTfloat),
+        P DTfloat l ->
+        forall r : DefinedFunction UnitAnn DTfloat, P DTfloat r -> P DTfloat (Times ann l r))
+  (f7 : forall (ann : UnitAnn DTfloat)
+          (l : DefinedFunction UnitAnn DTfloat),
+        P DTfloat l ->
+        forall r : DefinedFunction UnitAnn DTfloat, P DTfloat r -> P DTfloat (Divide ann l r))
+  (f8 : forall (ann : UnitAnn DTfloat)
+          (e : DefinedFunction UnitAnn DTfloat), P DTfloat e -> P DTfloat (Square ann e))
+  (f9 : forall (ann : UnitAnn DTfloat)
+          (e : DefinedFunction UnitAnn DTfloat), P DTfloat e -> P DTfloat (Exp ann e))
+  (f10 : forall (ann : UnitAnn DTfloat)
+           (e : DefinedFunction UnitAnn DTfloat), P DTfloat e -> P DTfloat (Log ann e))
+  (f11 : forall (ann : UnitAnn DTfloat)
+           (e : DefinedFunction UnitAnn DTfloat), P DTfloat e -> P DTfloat (Abs ann e))
+  (f12 : forall (ann : UnitAnn DTfloat)
+           (e : DefinedFunction UnitAnn DTfloat), P DTfloat e -> P DTfloat (Sign ann e))
+  (f13 : forall (ann : UnitAnn DTfloat)
+           (e : DefinedFunction UnitAnn DTfloat), P DTfloat e -> P DTfloat (PSign ann e))
+  (f14 : forall (ann : UnitAnn DTfloat)
+           (l : DefinedFunction UnitAnn DTfloat),
+         P DTfloat l ->
+         forall r : DefinedFunction UnitAnn DTfloat, P DTfloat r -> P DTfloat (Max ann l r))
+  (f15 : forall (n : nat) (ann : UnitAnn DTfloat)
+           (l : DefinedFunction UnitAnn (DTVector n)),
+         P (DTVector n) l ->
+         forall r : DefinedFunction UnitAnn (DTVector n),
+         P (DTVector n) r -> P DTfloat (VectorDot ann l r))
+  (f16 : forall (n : nat) (ann : UnitAnn DTfloat)
+           (v : DefinedFunction UnitAnn (DTVector n)), P (DTVector n) v -> P DTfloat (VectorSum ann v))
+  (f17 : forall (m n : nat) (ann : UnitAnn DTfloat)
+           (v : DefinedFunction UnitAnn (DTMatrix m n)),
+         P (DTMatrix m n) v -> P DTfloat (MatrixSum ann v))
+  (f18 : forall (n : nat) (ann : UnitAnn DTfloat)
+           (l : DefinedFunction UnitAnn (DTVector n)),
+         P (DTVector n) l ->
+         forall i : {x : nat | (x < n)%nat}, P DTfloat (VectorElem ann l i))
+  (f19 : forall (m n : nat) (ann : UnitAnn DTfloat)
+           (l : DefinedFunction UnitAnn (DTMatrix m n)),
+         P (DTMatrix m n) l ->
+         forall (i : {x : nat | (x < m)%nat}) (j : {x : nat | (x < n)%nat}),
+         P DTfloat (MatrixElem ann l i j))
+  (f20 : forall (m n : nat) (ann : UnitAnn (DTVector m))
+           (l : DefinedFunction UnitAnn (DTMatrix m n)),
+         P (DTMatrix m n) l ->
+         forall r : DefinedFunction UnitAnn (DTVector n),
+         P (DTVector n) r -> P (DTVector m) (MatrixVectorMult ann l r))
+  (f21 : forall (m n : nat) (ann : UnitAnn (DTMatrix m n))
+           (l : DefinedFunction UnitAnn (DTMatrix m n)),
+         P (DTMatrix m n) l ->
+         forall r : DefinedFunction UnitAnn (DTVector m),
+         P (DTVector m) r -> P (DTMatrix m n) (MatrixVectorAdd ann l r))
+  (f22 : forall (m p n : nat) (ann : UnitAnn (DTMatrix m n))
+           (l : DefinedFunction UnitAnn (DTMatrix m p)),
+         P (DTMatrix m p) l ->
+         forall r : DefinedFunction UnitAnn (DTMatrix p n),
+         P (DTMatrix p n) r -> P (DTMatrix m n) (MatrixMult ann l r))
+  (f23 : forall (n : nat) (ann : UnitAnn (DTVector n))
+           (l : DefinedFunction UnitAnn (DTVector n)),
+         P (DTVector n) l ->
+         forall r : DefinedFunction UnitAnn (DTVector n),
+         P (DTVector n) r -> P (DTVector n) (VectorPlus ann l r))
+  (f24 : forall (n : nat) (ann : UnitAnn (DTVector n))
+           (l : DefinedFunction UnitAnn (DTVector n)),
+         P (DTVector n) l ->
+         forall r : DefinedFunction UnitAnn (DTVector n),
+         P (DTVector n) r -> P (DTVector n) (VectorMinus ann l r))
+  (f25 : forall (n m : nat) (ann : UnitAnn (DTMatrix n m))
+           (l : DefinedFunction UnitAnn (DTMatrix n m)),
+         P (DTMatrix n m) l ->
+         forall r : DefinedFunction UnitAnn (DTMatrix n m),
+         P (DTMatrix n m) r -> P (DTMatrix n m) (MatrixPlus ann l r))
+  (f26 : forall (n m : nat) (ann : UnitAnn (DTMatrix n m))
+           (l : DefinedFunction UnitAnn (DTMatrix n m)),
+         P (DTMatrix n m) l ->
+         forall r : DefinedFunction UnitAnn (DTMatrix n m),
+         P (DTMatrix n m) r -> P (DTMatrix n m) (MatrixMinus ann l r))
+  (f27 : forall (n : nat) (ann : UnitAnn (DTVector n))
+           (x : DefinedFunction UnitAnn DTfloat),
+         P DTfloat x ->
+         forall l : DefinedFunction UnitAnn (DTVector n),
+         P (DTVector n) l -> P (DTVector n) (VectorScalMult ann x l))
+  (f28 : forall (n m : nat) (ann : UnitAnn (DTMatrix n m))
+           (x : DefinedFunction UnitAnn DTfloat),
+         P DTfloat x ->
+         forall l : DefinedFunction UnitAnn (DTMatrix n m),
+         P (DTMatrix n m) l -> P (DTMatrix n m) (MatrixScalMult ann x l))
+  (f29 : forall (n : nat) (ann : UnitAnn (DTVector n))
+           (v : SubVar) (s : DefinedFunction UnitAnn DTfloat),
+      P DTfloat s ->
+         forall l : DefinedFunction UnitAnn (DTVector n),
+         P (DTVector n) l -> P (DTVector n) (VectorApply ann v s l))
+  (f30 : forall (m n : nat) (ann : UnitAnn (DTMatrix m n))
+           (v : SubVar) (s : DefinedFunction UnitAnn DTfloat),
+         P DTfloat s ->
+         forall l : DefinedFunction UnitAnn (DTMatrix m n),
+         P (DTMatrix m n) l -> P (DTMatrix m n) (MatrixApply ann v s l))
+  (f31 : forall (n : nat) (ann : UnitAnn DTfloat)
+           (v1 v2 : SubVar) (s : DefinedFunction UnitAnn DTfloat),
+         P DTfloat s ->
+         forall l : DefinedFunction UnitAnn (DTVector n),
+         P (DTVector n) l -> forall r : Vector float n, P DTfloat (VLossfun ann v1 v2 s l r))
+  (f32 : forall (m n : nat) (ann : UnitAnn DTfloat)
+           (v1 v2 : SubVar) (s : DefinedFunction UnitAnn DTfloat),
+         P DTfloat s ->
+         forall l : DefinedFunction UnitAnn (DTMatrix m n),
+         P (DTMatrix m n) l ->
+         forall r : Matrix float m n, P DTfloat (MLossfun ann v1 v2 s l r))
+  := 
+fix
+F (d : definition_function_types) 
+  (d0 : DefinedFunction UnitAnn d) {struct d0} : P d d0 :=
+  match d0 as d2 in (DefinedFunction _ d1) return (P d1 d2) with
+  | Number ann x => f ann x
+  | @Constant _ t ann x => f0 t ann x
+  | @DVector _ n ann x => f1 n ann x (fun s : {n' : nat | (n' < n)%nat} => F DTfloat (x s))
+  | @DMatrix _ n m ann x =>
+      f2 n m ann x
+        (fun (s : {n' : nat | (n' < n)%nat}) (s0 : {m' : nat | (m' < m)%nat}) =>
+         F DTfloat (x s s0))
+  | Var v ann => f3 v ann
+  | Plus ann l r => f4 ann l (F DTfloat l) r (F DTfloat r)
+  | Minus ann l r => f5 ann l (F DTfloat l) r (F DTfloat r)
+  | Times ann l r => f6 ann l (F DTfloat l) r (F DTfloat r)
+  | Divide ann l r => f7 ann l (F DTfloat l) r (F DTfloat r)
+  | Square ann e => f8 ann e (F DTfloat e)
+  | Exp ann e => f9 ann e (F DTfloat e)
+  | Log ann e => f10 ann e (F DTfloat e)
+  | Abs ann e => f11 ann e (F DTfloat e)
+  | Sign ann e => f12 ann e (F DTfloat e)
+  | PSign ann e => f13 ann e (F DTfloat e)
+  | Max ann l r => f14 ann l (F DTfloat l) r (F DTfloat r)
+  | @VectorDot _ n ann l r => f15 n ann l (F (DTVector n) l) r (F (DTVector n) r)
+  | @VectorSum _ n ann v => f16 n ann v (F (DTVector n) v)
+  | @MatrixSum _ m n ann v => f17 m n ann v (F (DTMatrix m n) v)
+  | @VectorElem _ n ann l i => f18 n ann l (F (DTVector n) l) i
+  | @MatrixElem _ m n ann l i j => f19 m n ann l (F (DTMatrix m n) l) i j
+  | @MatrixVectorMult _ m n ann l r =>
+      f20 m n ann l (F (DTMatrix m n) l) r (F (DTVector n) r)
+  | @MatrixVectorAdd _ m n ann l r =>
+      f21 m n ann l (F (DTMatrix m n) l) r (F (DTVector m) r)
+  | @MatrixMult _ m p n ann l r =>
+      f22 m p n ann l (F (DTMatrix m p) l) r (F (DTMatrix p n) r)
+  | @VectorPlus _ n ann l r => f23 n ann l (F (DTVector n) l) r (F (DTVector n) r)
+  | @VectorMinus _ n ann l r => f24 n ann l (F (DTVector n) l) r (F (DTVector n) r)
+  | @MatrixPlus _ n m ann l r => f25 n m ann l (F (DTMatrix n m) l) r (F (DTMatrix n m) r)
+  | @MatrixMinus _ n m ann l r =>
+      f26 n m ann l (F (DTMatrix n m) l) r (F (DTMatrix n m) r)
+  | @VectorScalMult _ n ann x l => f27 n ann x (F DTfloat x) l (F (DTVector n) l)
+  | @MatrixScalMult _ n m ann x l => f28 n m ann x (F DTfloat x) l (F (DTMatrix n m) l)
+  | @VectorApply _ n ann v s l => f29 n ann v s (F DTfloat s) l (F (DTVector n) l)
+  | @MatrixApply _ m n ann v s l =>
+      f30 m n ann v s (F DTfloat s) l (F (DTMatrix m n) l)
+  | @VLossfun _ n ann v1 v2 s l r =>
+      f31 n ann v1 v2 s (F DTfloat s) l (F (DTVector n) l) r
+  | @MLossfun _ m n ann v1 v2 s l r =>
+      f32 m n ann v1 v2 s (F DTfloat s) l (F (DTMatrix m n) l) r
+  end.
+
+Definition DefinedFunction_ind_simpl {Ann}
+  (P : forall (d : definition_function_types), DefinedFunction Ann d -> Prop)
+  (f : forall (ann : Ann DTfloat) (x : float),
+       P DTfloat (Number ann x))
+  (f0 : forall (t : definition_function_types) 
+          (ann : Ann t) (x : definition_function_types_interp t), P t (Constant ann x))
+  (f1 : forall (n : nat) (ann : Ann (DTVector n))
+          (x : Vector (DefinedFunction Ann DTfloat) n),
+        (forall s : {n' : nat | (n' < n)%nat}, P DTfloat (x s)) ->
+        P (DTVector n) (DVector ann x))
+  (f2 : forall (n m : nat) (ann : Ann (DTMatrix n m))
+          (x : Matrix (DefinedFunction Ann DTfloat) n m),
+        (forall (s : {n' : nat | (n' < n)%nat}) (s0 : {m' : nat | (m' < m)%nat}),
+         P DTfloat (x s s0)) -> P (DTMatrix n m) (DMatrix ann x))
+  (f3 : forall (v : var_type) (ann : Ann (snd v)),
+        P (snd v) (Var v ann))
+  (f4 : forall (ann : Ann DTfloat)
+          (l : DefinedFunction Ann DTfloat),
+        P DTfloat l ->
+        forall r : DefinedFunction Ann DTfloat, P DTfloat r -> P DTfloat (Plus ann l r))
+  (f5 : forall (ann : Ann DTfloat)
+          (l : DefinedFunction Ann DTfloat),
+        P DTfloat l ->
+        forall r : DefinedFunction Ann DTfloat, P DTfloat r -> P DTfloat (Minus ann l r))
+  (f6 : forall (ann : Ann DTfloat)
+          (l : DefinedFunction Ann DTfloat),
+        P DTfloat l ->
+        forall r : DefinedFunction Ann DTfloat, P DTfloat r -> P DTfloat (Times ann l r))
+  (f7 : forall (ann : Ann DTfloat)
+          (l : DefinedFunction Ann DTfloat),
+        P DTfloat l ->
+        forall r : DefinedFunction Ann DTfloat, P DTfloat r -> P DTfloat (Divide ann l r))
+  (f8 : forall (ann : Ann DTfloat)
+          (e : DefinedFunction Ann DTfloat), P DTfloat e -> P DTfloat (Square ann e))
+  (f9 : forall (ann : Ann DTfloat)
+          (e : DefinedFunction Ann DTfloat), P DTfloat e -> P DTfloat (Exp ann e))
+  (f10 : forall (ann : Ann DTfloat)
+           (e : DefinedFunction Ann DTfloat), P DTfloat e -> P DTfloat (Log ann e))
+  (f11 : forall (ann : Ann DTfloat)
+           (e : DefinedFunction Ann DTfloat), P DTfloat e -> P DTfloat (Abs ann e))
+  (f12 : forall (ann : Ann DTfloat)
+           (e : DefinedFunction Ann DTfloat), P DTfloat e -> P DTfloat (Sign ann e))
+  (f13 : forall (ann : Ann DTfloat)
+           (e : DefinedFunction Ann DTfloat), P DTfloat e -> P DTfloat (PSign ann e))
+  (f14 : forall (ann : Ann DTfloat)
+           (l : DefinedFunction Ann DTfloat),
+         P DTfloat l ->
+         forall r : DefinedFunction Ann DTfloat, P DTfloat r -> P DTfloat (Max ann l r))
+  (f15 : forall (n : nat) (ann : Ann DTfloat)
+           (l : DefinedFunction Ann (DTVector n)),
+         P (DTVector n) l ->
+         forall r : DefinedFunction Ann (DTVector n),
+         P (DTVector n) r -> P DTfloat (VectorDot ann l r))
+  (f16 : forall (n : nat) (ann : Ann DTfloat)
+           (v : DefinedFunction Ann (DTVector n)), P (DTVector n) v -> P DTfloat (VectorSum ann v))
+  (f17 : forall (m n : nat) (ann : Ann DTfloat)
+           (v : DefinedFunction Ann (DTMatrix m n)),
+         P (DTMatrix m n) v -> P DTfloat (MatrixSum ann v))
+  (f18 : forall (n : nat) (ann : Ann DTfloat)
+           (l : DefinedFunction Ann (DTVector n)),
+         P (DTVector n) l ->
+         forall i : {x : nat | (x < n)%nat}, P DTfloat (VectorElem ann l i))
+  (f19 : forall (m n : nat) (ann : Ann DTfloat)
+           (l : DefinedFunction Ann (DTMatrix m n)),
+         P (DTMatrix m n) l ->
+         forall (i : {x : nat | (x < m)%nat}) (j : {x : nat | (x < n)%nat}),
+         P DTfloat (MatrixElem ann l i j))
+  (f20 : forall (m n : nat) (ann : Ann (DTVector m))
+           (l : DefinedFunction Ann (DTMatrix m n)),
+         P (DTMatrix m n) l ->
+         forall r : DefinedFunction Ann (DTVector n),
+         P (DTVector n) r -> P (DTVector m) (MatrixVectorMult ann l r))
+  (f21 : forall (m n : nat) (ann : Ann (DTMatrix m n))
+           (l : DefinedFunction Ann (DTMatrix m n)),
+         P (DTMatrix m n) l ->
+         forall r : DefinedFunction Ann (DTVector m),
+         P (DTVector m) r -> P (DTMatrix m n) (MatrixVectorAdd ann l r))
+  (f22 : forall (m p n : nat) (ann : Ann (DTMatrix m n))
+           (l : DefinedFunction Ann (DTMatrix m p)),
+         P (DTMatrix m p) l ->
+         forall r : DefinedFunction Ann (DTMatrix p n),
+         P (DTMatrix p n) r -> P (DTMatrix m n) (MatrixMult ann l r))
+  (f23 : forall (n : nat) (ann : Ann (DTVector n))
+           (l : DefinedFunction Ann (DTVector n)),
+         P (DTVector n) l ->
+         forall r : DefinedFunction Ann (DTVector n),
+         P (DTVector n) r -> P (DTVector n) (VectorPlus ann l r))
+  (f24 : forall (n : nat) (ann : Ann (DTVector n))
+           (l : DefinedFunction Ann (DTVector n)),
+         P (DTVector n) l ->
+         forall r : DefinedFunction Ann (DTVector n),
+         P (DTVector n) r -> P (DTVector n) (VectorMinus ann l r))
+  (f25 : forall (n m : nat) (ann : Ann (DTMatrix n m))
+           (l : DefinedFunction Ann (DTMatrix n m)),
+         P (DTMatrix n m) l ->
+         forall r : DefinedFunction Ann (DTMatrix n m),
+         P (DTMatrix n m) r -> P (DTMatrix n m) (MatrixPlus ann l r))
+  (f26 : forall (n m : nat) (ann : Ann (DTMatrix n m))
+           (l : DefinedFunction Ann (DTMatrix n m)),
+         P (DTMatrix n m) l ->
+         forall r : DefinedFunction Ann (DTMatrix n m),
+         P (DTMatrix n m) r -> P (DTMatrix n m) (MatrixMinus ann l r))
+  (f27 : forall (n : nat) (ann : Ann (DTVector n))
+           (x : DefinedFunction Ann DTfloat),
+         P DTfloat x ->
+         forall l : DefinedFunction Ann (DTVector n),
+         P (DTVector n) l -> P (DTVector n) (VectorScalMult ann x l))
+  (f28 : forall (n m : nat) (ann : Ann (DTMatrix n m))
+           (x : DefinedFunction Ann DTfloat),
+         P DTfloat x ->
+         forall l : DefinedFunction Ann (DTMatrix n m),
+         P (DTMatrix n m) l -> P (DTMatrix n m) (MatrixScalMult ann x l))
+  (f29 : forall (n : nat) (ann : Ann (DTVector n))
+           (v : SubVar) (s : DefinedFunction UnitAnn DTfloat),
+         forall l : DefinedFunction Ann (DTVector n),
+         P (DTVector n) l -> P (DTVector n) (VectorApply ann v s l))
+  (f30 : forall (m n : nat) (ann : Ann (DTMatrix m n))
+           (v : SubVar) (s : DefinedFunction UnitAnn DTfloat),
+         forall l : DefinedFunction Ann (DTMatrix m n),
+         P (DTMatrix m n) l -> P (DTMatrix m n) (MatrixApply ann v s l))
+  (f31 : forall (n : nat) (ann : Ann DTfloat)
+           (v1 v2 : SubVar) (s : DefinedFunction UnitAnn DTfloat),
+         forall l : DefinedFunction Ann (DTVector n),
+         P (DTVector n) l -> forall r : Vector float n, P DTfloat (VLossfun ann v1 v2 s l r))
+  (f32 : forall (m n : nat) (ann : Ann DTfloat)
+           (v1 v2 : SubVar) (s : DefinedFunction UnitAnn DTfloat),
+         forall l : DefinedFunction Ann (DTMatrix m n),
+         P (DTMatrix m n) l ->
+         forall r : Matrix float m n, P DTfloat (MLossfun ann v1 v2 s l r))
+  := 
+fix
+F (d : definition_function_types) 
+  (d0 : DefinedFunction Ann d) {struct d0} : P d d0 :=
+  match d0 as d2 in (DefinedFunction _ d1) return (P d1 d2) with
+  | Number ann x => f ann x
+  | @Constant _ t ann x => f0 t ann x
+  | @DVector _ n ann x => f1 n ann x (fun s : {n' : nat | (n' < n)%nat} => F DTfloat (x s))
+  | @DMatrix _ n m ann x =>
+      f2 n m ann x
+        (fun (s : {n' : nat | (n' < n)%nat}) (s0 : {m' : nat | (m' < m)%nat}) =>
+         F DTfloat (x s s0))
+  | Var v ann => f3 v ann
+  | Plus ann l r => f4 ann l (F DTfloat l) r (F DTfloat r)
+  | Minus ann l r => f5 ann l (F DTfloat l) r (F DTfloat r)
+  | Times ann l r => f6 ann l (F DTfloat l) r (F DTfloat r)
+  | Divide ann l r => f7 ann l (F DTfloat l) r (F DTfloat r)
+  | Square ann e => f8 ann e (F DTfloat e)
+  | Exp ann e => f9 ann e (F DTfloat e)
+  | Log ann e => f10 ann e (F DTfloat e)
+  | Abs ann e => f11 ann e (F DTfloat e)
+  | Sign ann e => f12 ann e (F DTfloat e)
+  | PSign ann e => f13 ann e (F DTfloat e)
+  | Max ann l r => f14 ann l (F DTfloat l) r (F DTfloat r)
+  | @VectorDot _ n ann l r => f15 n ann l (F (DTVector n) l) r (F (DTVector n) r)
+  | @VectorSum _ n ann v => f16 n ann v (F (DTVector n) v)
+  | @MatrixSum _ m n ann v => f17 m n ann v (F (DTMatrix m n) v)
+  | @VectorElem _ n ann l i => f18 n ann l (F (DTVector n) l) i
+  | @MatrixElem _ m n ann l i j => f19 m n ann l (F (DTMatrix m n) l) i j
+  | @MatrixVectorMult _ m n ann l r =>
+      f20 m n ann l (F (DTMatrix m n) l) r (F (DTVector n) r)
+  | @MatrixVectorAdd _ m n ann l r =>
+      f21 m n ann l (F (DTMatrix m n) l) r (F (DTVector m) r)
+  | @MatrixMult _ m p n ann l r =>
+      f22 m p n ann l (F (DTMatrix m p) l) r (F (DTMatrix p n) r)
+  | @VectorPlus _ n ann l r => f23 n ann l (F (DTVector n) l) r (F (DTVector n) r)
+  | @VectorMinus _ n ann l r => f24 n ann l (F (DTVector n) l) r (F (DTVector n) r)
+  | @MatrixPlus _ n m ann l r => f25 n m ann l (F (DTMatrix n m) l) r (F (DTMatrix n m) r)
+  | @MatrixMinus _ n m ann l r =>
+      f26 n m ann l (F (DTMatrix n m) l) r (F (DTMatrix n m) r)
+  | @VectorScalMult _ n ann x l => f27 n ann x (F DTfloat x) l (F (DTVector n) l)
+  | @MatrixScalMult _ n m ann x l => f28 n m ann x (F DTfloat x) l (F (DTMatrix n m) l)
+  | @VectorApply _ n ann v s l => f29 n ann v s l (F (DTVector n) l)
+  | @MatrixApply _ m n ann v s l =>
+      f30 m n ann v s l (F (DTMatrix m n) l)
+  | @VLossfun _ n ann v1 v2 s l r =>
+      f31 n ann v1 v2 s l (F (DTVector n) l) r
+  | @MLossfun _ m n ann v1 v2 s l r =>
+      f32 m n ann v1 v2 s l (F (DTMatrix m n) l) r
+  end.
+    
     Definition get_annotation {Ann T} (df:DefinedFunction Ann T) : Ann T
       := match df with
          | Number ann _ => ann
@@ -288,6 +652,7 @@ Section DefinedFunctions.
 
   Section subst.
 
+    
     Program Definition substvar {Ann} (v vv:var_type) (e':DefinedFunction Ann (snd v)) (e:DefinedFunction Ann (snd vv)) : (DefinedFunction Ann (snd vv)) :=
       
       match v == vv with
@@ -1266,7 +1631,7 @@ Section DefinedFunctions.
   
   Section deriv2.
 
-    Fixpoint df_eval_deriv {T} (σ:df_env) (df:DefinedFunction UnitAnn T) (v:var_type) : option (definition_function_types_interp T)
+    Fixpoint df_eval_deriv {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (v:var_type) : option (definition_function_types_interp T)
       := (match df with
          | Number _ _ => Some 0
          | Constant t _ x => Some
@@ -2348,8 +2713,74 @@ Section DefinedFunctions.
          | MatrixApply _ _ _ _ _ l => is_df_rec_prop prop l
          | VLossfun _ _ _ _ _ l _ => is_df_rec_prop prop l
          | MLossfun _ _ _ _ _ _ l _ => is_df_rec_prop prop l
-         end.
+        end.
 
+      Fixpoint df_strip_annotations {Ann} {T} 
+               (df:DefinedFunction Ann T) {struct df}: DefinedFunction UnitAnn T
+     := 
+        match df with
+         | Number _ x1 => Number tt x1
+         | Constant t _ x => Constant tt x
+         | DVector n _ vec => DVector tt (vmap df_strip_annotations vec)
+         | DMatrix n m _ mat => DMatrix tt (vmap (vmap df_strip_annotations) mat)
+         | Var v _ => Var v tt
+         | Plus _ l r => Plus tt (df_strip_annotations l) (df_strip_annotations r)
+         | Minus _ l r => Minus tt (df_strip_annotations l) (df_strip_annotations r)
+         | Times _ l r => Times tt (df_strip_annotations l) (df_strip_annotations r)
+         | Divide _ l r => Divide tt (df_strip_annotations l) (df_strip_annotations r)
+         | Square _ l => Square tt (df_strip_annotations l)
+         | Exp _ l => Exp tt (df_strip_annotations l)
+         | Log _ l => Log tt (df_strip_annotations l)
+         | Abs _ l => Abs tt (df_strip_annotations l)
+         | Sign _ l => Sign tt (df_strip_annotations l)
+         | PSign _ l => PSign tt (df_strip_annotations l)
+         | Max _ l r => Max tt (df_strip_annotations l) (df_strip_annotations r)
+         | VectorDot n _ l r => VectorDot tt (df_strip_annotations l) (df_strip_annotations r)
+         | VectorSum n _ l => VectorSum tt (df_strip_annotations l) 
+         | MatrixSum m n _ l => MatrixSum tt (df_strip_annotations l) 
+         | VectorElem n _ vec i => VectorElem tt (df_strip_annotations vec) i
+         | MatrixElem m n _ mat i j => MatrixElem tt (df_strip_annotations mat) i j
+         | MatrixVectorMult m n _ l r => MatrixVectorMult tt (df_strip_annotations l) (df_strip_annotations r)
+         | MatrixVectorAdd m n _ l r =>  MatrixVectorAdd tt (df_strip_annotations l) (df_strip_annotations r)
+         | MatrixMult m p n _ l r => MatrixMult tt (df_strip_annotations l) (df_strip_annotations r)
+         | VectorPlus n _ l r => VectorPlus tt (df_strip_annotations l) (df_strip_annotations r)
+         | VectorMinus n _ l r => VectorMinus tt (df_strip_annotations l) (df_strip_annotations r)
+         | MatrixPlus m n _ l r =>  MatrixPlus tt (df_strip_annotations l) (df_strip_annotations r)
+         | MatrixMinus m n _ l r =>  MatrixMinus tt (df_strip_annotations l) (df_strip_annotations r)
+         | VectorScalMult n _ l r => VectorScalMult tt (df_strip_annotations l) (df_strip_annotations r)
+         | MatrixScalMult m n _ l r => MatrixScalMult tt (df_strip_annotations l) (df_strip_annotations r)
+         | VectorApply n _ v s l => VectorApply tt v (df_strip_annotations s) (df_strip_annotations l)
+         | MatrixApply m n _ v s l => MatrixApply tt v (df_strip_annotations s) (df_strip_annotations l)
+         | VLossfun n _ v1 v2 s l r => VLossfun tt v1 v2 (df_strip_annotations s) (df_strip_annotations l) r
+         | MLossfun m n _ v1 v2 s l r => MLossfun tt v1 v2 (df_strip_annotations s) (df_strip_annotations l) r
+         end.        
+
+      Require Import Program.
+
+      Lemma df_strip_annotations_id {T} (df:DefinedFunction UnitAnn T) : df_strip_annotations df = df.
+      Proof.
+        DefinedFunction_cases (induction T, df using DefinedFunction_ind_unit) Case; simpl; trivial
+        ; destruct ann; trivial; try congruence.
+        - Case "DVector"%string.
+          f_equal.
+          erewrite vmap_ext; [apply vmap_id | ]; intros.
+          simpl.
+          destruct H0 as [??]; subst.
+          eapply H; eauto.
+        - Case "DMatrix"%string.
+          f_equal.
+          erewrite vmap_ext; [apply vmap_id | ]; intros.
+          simpl.
+          erewrite vmap_ext; [apply vmap_id | ]; intros.
+          simpl.
+          destruct H0 as [??]; subst.
+          destruct H1 as [??]; subst.
+          eapply H; eauto.
+      Qed.
+
+      Definition df_eq_upto_annotations {Ann1 Ann2 T}
+                 (df1:DefinedFunction Ann1 T) (df2:DefinedFunction Ann2 T) : Prop
+        := df_strip_annotations df1 = df_strip_annotations df2.
 
    Definition is_df_evalann_correct_top (σ:df_env) {T} (df:DefinedFunction EvalAnn T)
      := df_eval σ df = Some (get_annotation df). 
@@ -2512,7 +2943,238 @@ Section DefinedFunctions.
        simpl in IHdf2.
        rewrite IHdf2, eqq0; trivial.
    Qed.
-   
+
+   (*
+   Definition DefinedFunction_ind_equpto {Ann1 Ann2}
+  (P : forall (d : definition_function_types), DefinedFunction Ann1 d -> DefinedFunction Ann2 d -> Prop)
+  (f : forall (ann1 : Ann1 DTfloat) (ann2:Ann2 DTfloat) (x : float),
+       P DTfloat (Number ann1 x) (Number ann2 x))
+  (f0 : forall (t : definition_function_types) 
+               (ann1 : Ann1 t) (ann2 : Ann2 t) (x : definition_function_types_interp t),
+      P t (Constant ann1 x) (Constant ann2 x))
+(*  (f1 : forall (n : nat) (ann : Ann (DTVector n))
+          (x : Vector (DefinedFunction Ann DTfloat) n),
+        (forall s : {n' : nat | (n' < n)%nat}, P DTfloat (x s)) ->
+        P (DTVector n) (DVector ann x))
+  (f2 : forall (n m : nat) (ann : Ann (DTMatrix n m))
+          (x : Matrix (DefinedFunction Ann DTfloat) n m),
+        (forall (s : {n' : nat | (n' < n)%nat}) (s0 : {m' : nat | (m' < m)%nat}),
+         P DTfloat (x s s0)) -> P (DTMatrix n m) (DMatrix ann x))
+  (f3 : forall (v : var_type) (ann : Ann (snd v)),
+        P (snd v) (Var v ann))
+  (f4 : forall (ann : Ann DTfloat)
+          (l : DefinedFunction Ann DTfloat),
+        P DTfloat l ->
+        forall r : DefinedFunction Ann DTfloat, P DTfloat r -> P DTfloat (Plus ann l r))
+  (f5 : forall (ann : Ann DTfloat)
+          (l : DefinedFunction Ann DTfloat),
+        P DTfloat l ->
+        forall r : DefinedFunction Ann DTfloat, P DTfloat r -> P DTfloat (Minus ann l r))
+  (f6 : forall (ann : Ann DTfloat)
+          (l : DefinedFunction Ann DTfloat),
+        P DTfloat l ->
+        forall r : DefinedFunction Ann DTfloat, P DTfloat r -> P DTfloat (Times ann l r))
+  (f7 : forall (ann : Ann DTfloat)
+          (l : DefinedFunction Ann DTfloat),
+        P DTfloat l ->
+        forall r : DefinedFunction Ann DTfloat, P DTfloat r -> P DTfloat (Divide ann l r))
+  (f8 : forall (ann : Ann DTfloat)
+          (e : DefinedFunction Ann DTfloat), P DTfloat e -> P DTfloat (Square ann e))
+  (f9 : forall (ann : Ann DTfloat)
+          (e : DefinedFunction Ann DTfloat), P DTfloat e -> P DTfloat (Exp ann e))
+  (f10 : forall (ann : Ann DTfloat)
+           (e : DefinedFunction Ann DTfloat), P DTfloat e -> P DTfloat (Log ann e))
+  (f11 : forall (ann : Ann DTfloat)
+           (e : DefinedFunction Ann DTfloat), P DTfloat e -> P DTfloat (Abs ann e))
+  (f12 : forall (ann : Ann DTfloat)
+           (e : DefinedFunction Ann DTfloat), P DTfloat e -> P DTfloat (Sign ann e))
+  (f13 : forall (ann : Ann DTfloat)
+           (e : DefinedFunction Ann DTfloat), P DTfloat e -> P DTfloat (PSign ann e))
+  (f14 : forall (ann : Ann DTfloat)
+           (l : DefinedFunction Ann DTfloat),
+         P DTfloat l ->
+         forall r : DefinedFunction Ann DTfloat, P DTfloat r -> P DTfloat (Max ann l r))
+  (f15 : forall (n : nat) (ann : Ann DTfloat)
+           (l : DefinedFunction Ann (DTVector n)),
+         P (DTVector n) l ->
+         forall r : DefinedFunction Ann (DTVector n),
+         P (DTVector n) r -> P DTfloat (VectorDot ann l r))
+  (f16 : forall (n : nat) (ann : Ann DTfloat)
+           (v : DefinedFunction Ann (DTVector n)), P (DTVector n) v -> P DTfloat (VectorSum ann v))
+  (f17 : forall (m n : nat) (ann : Ann DTfloat)
+           (v : DefinedFunction Ann (DTMatrix m n)),
+         P (DTMatrix m n) v -> P DTfloat (MatrixSum ann v))
+  (f18 : forall (n : nat) (ann : Ann DTfloat)
+           (l : DefinedFunction Ann (DTVector n)),
+         P (DTVector n) l ->
+         forall i : {x : nat | (x < n)%nat}, P DTfloat (VectorElem ann l i))
+  (f19 : forall (m n : nat) (ann : Ann DTfloat)
+           (l : DefinedFunction Ann (DTMatrix m n)),
+         P (DTMatrix m n) l ->
+         forall (i : {x : nat | (x < m)%nat}) (j : {x : nat | (x < n)%nat}),
+         P DTfloat (MatrixElem ann l i j))
+  (f20 : forall (m n : nat) (ann : Ann (DTVector m))
+           (l : DefinedFunction Ann (DTMatrix m n)),
+         P (DTMatrix m n) l ->
+         forall r : DefinedFunction Ann (DTVector n),
+         P (DTVector n) r -> P (DTVector m) (MatrixVectorMult ann l r))
+  (f21 : forall (m n : nat) (ann : Ann (DTMatrix m n))
+           (l : DefinedFunction Ann (DTMatrix m n)),
+         P (DTMatrix m n) l ->
+         forall r : DefinedFunction Ann (DTVector m),
+         P (DTVector m) r -> P (DTMatrix m n) (MatrixVectorAdd ann l r))
+  (f22 : forall (m p n : nat) (ann : Ann (DTMatrix m n))
+           (l : DefinedFunction Ann (DTMatrix m p)),
+         P (DTMatrix m p) l ->
+         forall r : DefinedFunction Ann (DTMatrix p n),
+         P (DTMatrix p n) r -> P (DTMatrix m n) (MatrixMult ann l r))
+  (f23 : forall (n : nat) (ann : Ann (DTVector n))
+           (l : DefinedFunction Ann (DTVector n)),
+         P (DTVector n) l ->
+         forall r : DefinedFunction Ann (DTVector n),
+         P (DTVector n) r -> P (DTVector n) (VectorPlus ann l r))
+  (f24 : forall (n : nat) (ann : Ann (DTVector n))
+           (l : DefinedFunction Ann (DTVector n)),
+         P (DTVector n) l ->
+         forall r : DefinedFunction Ann (DTVector n),
+         P (DTVector n) r -> P (DTVector n) (VectorMinus ann l r))
+  (f25 : forall (n m : nat) (ann : Ann (DTMatrix n m))
+           (l : DefinedFunction Ann (DTMatrix n m)),
+         P (DTMatrix n m) l ->
+         forall r : DefinedFunction Ann (DTMatrix n m),
+         P (DTMatrix n m) r -> P (DTMatrix n m) (MatrixPlus ann l r))
+  (f26 : forall (n m : nat) (ann : Ann (DTMatrix n m))
+           (l : DefinedFunction Ann (DTMatrix n m)),
+         P (DTMatrix n m) l ->
+         forall r : DefinedFunction Ann (DTMatrix n m),
+         P (DTMatrix n m) r -> P (DTMatrix n m) (MatrixMinus ann l r))
+  (f27 : forall (n : nat) (ann : Ann (DTVector n))
+           (x : DefinedFunction Ann DTfloat),
+         P DTfloat x ->
+         forall l : DefinedFunction Ann (DTVector n),
+         P (DTVector n) l -> P (DTVector n) (VectorScalMult ann x l))
+  (f28 : forall (n m : nat) (ann : Ann (DTMatrix n m))
+           (x : DefinedFunction Ann DTfloat),
+         P DTfloat x ->
+         forall l : DefinedFunction Ann (DTMatrix n m),
+         P (DTMatrix n m) l -> P (DTMatrix n m) (MatrixScalMult ann x l))
+  (f29 : forall (n : nat) (ann : Ann (DTVector n))
+           (v : SubVar) (s : DefinedFunction UnitAnn DTfloat),
+         forall l : DefinedFunction Ann (DTVector n),
+         P (DTVector n) l -> P (DTVector n) (VectorApply ann v s l))
+  (f30 : forall (m n : nat) (ann : Ann (DTMatrix m n))
+           (v : SubVar) (s : DefinedFunction UnitAnn DTfloat),
+         forall l : DefinedFunction Ann (DTMatrix m n),
+         P (DTMatrix m n) l -> P (DTMatrix m n) (MatrixApply ann v s l))
+  (f31 : forall (n : nat) (ann : Ann DTfloat)
+           (v1 v2 : SubVar) (s : DefinedFunction UnitAnn DTfloat),
+         forall l : DefinedFunction Ann (DTVector n),
+         P (DTVector n) l -> forall r : Vector float n, P DTfloat (VLossfun ann v1 v2 s l r))
+  (f32 : forall (m n : nat) (ann : Ann DTfloat)
+           (v1 v2 : SubVar) (s : DefinedFunction UnitAnn DTfloat),
+         forall l : DefinedFunction Ann (DTMatrix m n),
+         P (DTMatrix m n) l ->
+         forall r : Matrix float m n, P DTfloat (MLossfun ann v1 v2 s l r))
+*) 
+     : forall (d:definition_function_types) (df1:DefinedFunction Ann1 d) (df2:DefinedFunction Ann2 d)
+              (eqq:df_eq_upto_annotations df1 df2), P d df1 df2.
+     
+
+fix
+F (d : definition_function_types) 
+  (d0 : DefinedFunction Ann d) {struct d0} : P d d0 :=
+  match d0 as d2 in (DefinedFunction _ d1) return (P d1 d2) with
+  | Number ann x => f ann x
+  | @Constant _ t ann x => f0 t ann x
+  | @DVector _ n ann x => f1 n ann x (fun s : {n' : nat | (n' < n)%nat} => F DTfloat (x s))
+  | @DMatrix _ n m ann x =>
+      f2 n m ann x
+        (fun (s : {n' : nat | (n' < n)%nat}) (s0 : {m' : nat | (m' < m)%nat}) =>
+         F DTfloat (x s s0))
+  | Var v ann => f3 v ann
+  | Plus ann l r => f4 ann l (F DTfloat l) r (F DTfloat r)
+  | Minus ann l r => f5 ann l (F DTfloat l) r (F DTfloat r)
+  | Times ann l r => f6 ann l (F DTfloat l) r (F DTfloat r)
+  | Divide ann l r => f7 ann l (F DTfloat l) r (F DTfloat r)
+  | Square ann e => f8 ann e (F DTfloat e)
+  | Exp ann e => f9 ann e (F DTfloat e)
+  | Log ann e => f10 ann e (F DTfloat e)
+  | Abs ann e => f11 ann e (F DTfloat e)
+  | Sign ann e => f12 ann e (F DTfloat e)
+  | PSign ann e => f13 ann e (F DTfloat e)
+  | Max ann l r => f14 ann l (F DTfloat l) r (F DTfloat r)
+  | @VectorDot _ n ann l r => f15 n ann l (F (DTVector n) l) r (F (DTVector n) r)
+  | @VectorSum _ n ann v => f16 n ann v (F (DTVector n) v)
+  | @MatrixSum _ m n ann v => f17 m n ann v (F (DTMatrix m n) v)
+  | @VectorElem _ n ann l i => f18 n ann l (F (DTVector n) l) i
+  | @MatrixElem _ m n ann l i j => f19 m n ann l (F (DTMatrix m n) l) i j
+  | @MatrixVectorMult _ m n ann l r =>
+      f20 m n ann l (F (DTMatrix m n) l) r (F (DTVector n) r)
+  | @MatrixVectorAdd _ m n ann l r =>
+      f21 m n ann l (F (DTMatrix m n) l) r (F (DTVector m) r)
+  | @MatrixMult _ m p n ann l r =>
+      f22 m p n ann l (F (DTMatrix m p) l) r (F (DTMatrix p n) r)
+  | @VectorPlus _ n ann l r => f23 n ann l (F (DTVector n) l) r (F (DTVector n) r)
+  | @VectorMinus _ n ann l r => f24 n ann l (F (DTVector n) l) r (F (DTVector n) r)
+  | @MatrixPlus _ n m ann l r => f25 n m ann l (F (DTMatrix n m) l) r (F (DTMatrix n m) r)
+  | @MatrixMinus _ n m ann l r =>
+      f26 n m ann l (F (DTMatrix n m) l) r (F (DTMatrix n m) r)
+  | @VectorScalMult _ n ann x l => f27 n ann x (F DTfloat x) l (F (DTVector n) l)
+  | @MatrixScalMult _ n m ann x l => f28 n m ann x (F DTfloat x) l (F (DTMatrix n m) l)
+  | @VectorApply _ n ann v s l => f29 n ann v s l (F (DTVector n) l)
+  | @MatrixApply _ m n ann v s l =>
+      f30 m n ann v s l (F (DTMatrix m n) l)
+  | @VLossfun _ n ann v1 v2 s l r =>
+      f31 n ann v1 v2 s l (F (DTVector n) l) r
+  | @MLossfun _ m n ann v1 v2 s l r =>
+      f32 m n ann v1 v2 s l (F (DTMatrix m n) l) r
+  end.
+
+   Lemma df_eval_proper_annot {Ann1 Ann2 T} {df1:DefinedFunction Ann1 T} {df2:DefinedFunction Ann2 T} : 
+     df_eq_upto_annotations df1 df2 ->
+     forall σ,
+       df_eval σ df1 = df_eval σ df2.
+   Proof.
+     unfold df_eq_upto_annotations.
+     revert df2.
+     DefinedFunction_cases (induction T, df1 using DefinedFunction_ind_simpl) Case.
+     - intros.
+       simpl.
+       
+       intros df2.
+       dependent destruction df2; simpl; intros; try discriminate.
+       + admit.
+       + cut False; [tauto | ].
+         revert H x.
+         clear.
+         revert ann0.
+         generalize v (snd v).
+         intros.
+
+         congruence.
+     DefinedFunction_cases (induction T, df2 using DefinedFunction_ind_simpl) Case.
+     
+     ; 
+     - Case "Number"%string.
+       simpl.
+       
+       
+   Qed.
+
+
+
+   Lemma df_eval_deriv_annot σ df v :
+     df_eval_deriv σ df v =  df_eval_deriv σ df v.
+
+   Lemma df_eval_tree_deriv_correct {T} {σ:df_env} {df:DefinedFunction EvalAnn T} :
+      is_df_evalann_correct_top σ df ->
+      forall (v:var_type),
+        df_eval_tree_deriv σ df v = df_eval_deriv σ df v.
+   Proof.
+     
+   Qed.
+
+
    (*
       Definition annotations_correct
      := is_df_rec_prop ()
@@ -2521,6 +3183,7 @@ Section DefinedFunctions.
             (prop : forall TT:definition_function_types, 
                 (DefinedFunction Ann TT) -> Prop)
             (df:DefinedFunction Ann T) {struct df}: Prop
+*)
 *)
    Lemma is_scalar_function_scalar {Ann} {T} (df:DefinedFunction Ann T) :
      is_scalar_function df -> is_scalar_df_type T.

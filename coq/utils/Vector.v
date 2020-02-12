@@ -163,7 +163,6 @@ Section Vector.
     Notation "x =v= y" := (vec_eq x y) (at level 70).
     
     (* If we are willing to assume an axiom *)
-    (*
     Lemma vec_eq_eq {A} {m:nat} (x y:Vector A m) : vec_eq x y -> x = y.
     Proof.
       Require Import FunctionalExtensionality.
@@ -171,7 +170,6 @@ Section Vector.
       apply functional_extensionality.
       apply H.
     Qed.
-     *)
 
     Lemma index_pf_irrel n m pf1 pf2 : 
       exist (fun n' : nat => (n' < n)%nat) m pf1 =
@@ -309,7 +307,14 @@ Section Vector.
     intros eqq [i pf].
     apply eqq.
   Qed.
-  
+
+  Lemma vector_fold_right_dep_0 {A:nat->Type} {B} (f:forall n,B->A n->A (S n)) 
+        (init:A 0%nat) (v:Vector B 0) : 
+    vector_fold_right_dep f init v = init.
+  Proof.
+    reflexivity.
+  Qed.
+
   Lemma vector_fold_right_dep_Sn {A:nat->Type} {B} (f:forall n,B->A n->A (S n)) 
         (init:A 0%nat) {m:nat} (v:Vector B (S m)) : 
     vector_fold_right_dep f init v = f m (vlast v) (vector_fold_right_dep f init (vdrop_last v)).
@@ -423,7 +428,19 @@ Section Vector.
       erewrite index_pf_irrel; eauto.
     Qed.
 
-    
+    Lemma vin_vlast {A n} (v:Vector A (S n)) : vin (vlast v) v.
+    Proof.
+      unfold vin, vlast.
+      eauto.
+    Qed.
+
+    Lemma vin_vdrop_last {A n} x (v:Vector A (S n)) : vin x (vdrop_last v) -> vin x v.
+    Proof.
+      unfold vin, vdrop_last.
+      intros [[??]?].
+      eauto.
+    Qed.
+
     Lemma vmap_nth {A B : Type} (f : A -> B) {n} (v : Vector A n) i : 
       vmap f v i = f (v i).
     Proof.
@@ -445,17 +462,43 @@ Section Vector.
           omega.
     Qed.
 
-(*
-    Lemma vin_vmap {A B : Type} (f : A -> B) {n} (v : Vector A n) (y : B) :
-      vin y (vmap f v) -> (exists x : A, f x = y /\ vin x v).
+    Lemma vmap_ext {A B n} (f1 f2:A->B) (df:Vector A n) :
+      (forall x, vin x df -> f1 x = f2 x) ->
+      vmap f1 df = vmap f2 df.
     Proof.
-      intros [i ieq].
-      unfold vin.
-      unfold vector_fold_right_dep.
-      induction n; simpl; intros.
+      unfold vmap.
+      induction n.
+      - reflexivity.
+      - intros.
+        repeat rewrite vector_fold_right_dep_Sn.
+        f_equal.
+        + eapply H.
+          eapply vin_vlast.
+        + rewrite IHn; trivial.
+          intros.
+          eapply H.
+          now apply vin_vdrop_last.
     Qed.
-*)
 
+    Lemma vnil0 {A} (v:Vector A 0) : v = vnil.
+    Proof.
+     Require Import FunctionalExtensionality.
+     apply functional_extensionality.
+     intros [i pf].
+     omega.
+    Qed.
+
+    Lemma vmap_id {A n} (df:Vector A n) :
+      vmap (fun x => x) df = df.
+    Proof.
+      unfold vmap.
+      induction n; simpl.
+      - now rewrite vnil0, vector_fold_right_dep_0.
+      - rewrite vector_fold_right_dep_Sn, IHn.
+        apply vec_eq_eq.
+        apply veq_sym.
+        apply vector_Sn_split.
+    Qed.
 
     Fixpoint bounded_seq (start len : nat) {struct len} : list {n':nat | n' < start+len}%nat.
     Proof.
