@@ -2944,6 +2944,38 @@ F (d : definition_function_types)
        rewrite IHdf2, eqq0; trivial.
    Qed.
 
+   Lemma df_eval_tree_deriv_correct {T} {σ:df_env} {df:DefinedFunction EvalAnn T} :
+     is_df_evalann_correct_top σ df ->
+     forall (v:SubVar),
+       let xv := (v, DTfloat) in
+       df_eval_tree_deriv σ df xv = df_eval_deriv σ df xv.
+   Proof.
+     DefinedFunction_cases (induction T, df using DefinedFunction_ind_simpl) Case; simpl; intros;trivial.
+     - Case "DVector"%string.
+       f_equal.
+       apply FunctionalExtensionality.functional_extensionality.
+       intro.
+       apply H.
+       admit.
+     - Case "DMatrix"%string.
+       f_equal.
+       apply FunctionalExtensionality.functional_extensionality.
+       intro.
+       apply FunctionalExtensionality.functional_extensionality.
+       intro.
+       apply H.
+       admit.
+     - Case "Plus"%string.
+       rewrite IHdf1.
+       rewrite IHdf2.
+       easy.
+       +  unfold is_df_evalann_correct_top in H.
+          unfold is_df_evalann_correct_top.
+          admit.
+       + admit.
+Admitted.   
+       
+         
    (*
    Definition DefinedFunction_ind_equpto {Ann1 Ann2}
   (P : forall (d : definition_function_types), DefinedFunction Ann1 d -> DefinedFunction Ann2 d -> Prop)
