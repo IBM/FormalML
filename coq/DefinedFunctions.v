@@ -2010,7 +2010,7 @@ F (d : definition_function_types)
              vectoro_to_ovector 
                (fun i => 
                   let xv := (x, DTfloat):var_type in
-                  match df_eval_deriv (cons (mk_env_entry xv (re i)) (* σ *) nil) s v with
+                  match df_eval_deriv (cons (mk_env_entry xv (re i)) σ (* nil *)) s v with
                          | Some sd => Some ((rd i) * sd)
                          | _ => None
                          end)
@@ -2023,7 +2023,7 @@ F (d : definition_function_types)
              matrixo_to_omatrix
                (fun i j => 
                   let xv := (x, DTfloat):var_type in
-                  match df_eval_deriv (cons (mk_env_entry xv (re i j)) (* σ *) nil) s v with
+                  match df_eval_deriv (cons (mk_env_entry xv (re i j)) σ  (* nil *)) s v with
                          | Some sd => Some ((rd i j) * sd)
                          | _ => None
                          end)
@@ -2038,7 +2038,7 @@ F (d : definition_function_types)
                          let xv1 := (v1, DTfloat):var_type in
                          let xv2 := (v2, DTfloat):var_type in                         
                          match df_eval_deriv (cons (mk_env_entry xv1 (le i)) 
-                                                   (cons (mk_env_entry xv2 (r i)) (* σ *) nil)) s v with
+                                                   (cons (mk_env_entry xv2 (r i)) σ (* nil *))) s v with
                          | Some sd => Some ((ld i) * sd)
                          | _ => None
                          end)) with
@@ -2056,7 +2056,7 @@ F (d : definition_function_types)
                          let xv1 := (v1, DTfloat):var_type in
                          let xv2 := (v2, DTfloat):var_type in                         
                          match df_eval_deriv (cons (mk_env_entry xv1 (le i j)) 
-                                                   (cons (mk_env_entry xv2 (r i j)) (* σ *) nil)) s v with
+                                                   (cons (mk_env_entry xv2 (r i j)) σ (* nil *))) s v with
                          | Some sd => Some ((ld i j) * sd)
                          | _ => None
                          end)) with
@@ -2973,7 +2973,243 @@ F (d : definition_function_types)
           unfold is_df_evalann_correct_top.
           admit.
        + admit.
+    - Case "Minus"%string.
+      rewrite IHdf1.
+      rewrite IHdf2.
+      easy.
+      admit.
+      admit.
+    - Case "Times"%string.
+      cut (is_df_evalann_correct_top σ df1).
+      cut (is_df_evalann_correct_top σ df2).      
+      intros.
+      unfold is_df_evalann_correct_top in *.
+      rewrite H1 in *.
+      rewrite H0 in *.
+      rewrite IHdf1; trivial.
+      rewrite IHdf2; trivial.
+      admit.
+      admit.
+    - Case "Divide"%string.      
+      cut (is_df_evalann_correct_top σ df1).
+      cut (is_df_evalann_correct_top σ df2).      
+      intros.
+      unfold is_df_evalann_correct_top in *.
+      rewrite H1 in *.
+      rewrite H0 in *.
+      rewrite IHdf1; trivial.
+      rewrite IHdf2; trivial.
+      admit.
+      admit.
+    - Case "Square"%string.
+      cut (is_df_evalann_correct_top σ df).
+      intros.
+      unfold is_df_evalann_correct_top in *.
+      rewrite IHdf; trivial.
+      rewrite H0; trivial.
+      admit.
+    - Case "Exp"%string.
+      cut (is_df_evalann_correct_top σ df).
+      intros.
+      unfold is_df_evalann_correct_top in *.
+      rewrite IHdf; trivial.
+      rewrite H0; trivial.
+      admit.
+    - Case "Log"%string.      
+      cut (is_df_evalann_correct_top σ df).
+      intros.
+      unfold is_df_evalann_correct_top in *.
+      rewrite IHdf; trivial.
+      rewrite H0; trivial.
+      admit.
+    - Case "Abs"%string.
+      cut (is_df_evalann_correct_top σ df).
+      intros.
+      unfold is_df_evalann_correct_top in *.
+      rewrite IHdf; trivial.
+      rewrite H0; trivial.
+      admit.
+    - Case "Sign"%string.
+      cut (is_df_evalann_correct_top σ df).
+      intros.
+      rewrite IHdf; trivial.
+      admit.
+    - Case "PSign"%string.      
+      cut (is_df_evalann_correct_top σ df).
+      intros.
+      rewrite IHdf; trivial.
+      admit.
+    - Case "Max"%string.
+      cut (is_df_evalann_correct_top σ df1).
+      cut (is_df_evalann_correct_top σ df2).      
+      intros.
+      unfold is_df_evalann_correct_top in *.
+      rewrite H1 in *.
+      rewrite H0 in *.
+      rewrite IHdf1; trivial.
+      rewrite IHdf2; trivial.
+      admit.
+      admit.
+    - Case "VectorDot"%string.
+      cut (is_df_evalann_correct_top σ df1).
+      cut (is_df_evalann_correct_top σ df2).      
+      intros.
+      unfold is_df_evalann_correct_top in *.
+      rewrite H1 in *.
+      rewrite H0 in *.
+      rewrite IHdf1; trivial.
+      rewrite IHdf2; trivial.
+      admit.
+      admit.
+    - Case "VectorSum"%string.
+      cut (is_df_evalann_correct_top σ df).
+      intros.
+      rewrite IHdf; trivial.
+      admit.
+    - Case "MatrixSum"%string.
+      cut (is_df_evalann_correct_top σ df).
+      intros.
+      rewrite IHdf; trivial.
+      admit.
+    - Case "VectorElem"%string.
+      cut (is_df_evalann_correct_top σ df).
+      intros.
+      rewrite IHdf; trivial.
+      admit.
+    - Case "MatrixElem"%string.
+      cut (is_df_evalann_correct_top σ df).
+      intros.
+      rewrite IHdf; trivial.
+      admit.
+    - Case "MatrixVectorMult"%string.
+      cut (is_df_evalann_correct_top σ df1).
+      cut (is_df_evalann_correct_top σ df2).      
+      intros.
+      unfold is_df_evalann_correct_top in *.
+      rewrite H1 in *.
+      rewrite H0 in *.
+      rewrite IHdf1; trivial.
+      rewrite IHdf2; trivial.
+      admit.
+      admit.
+    - Case "MatrixVectorAdd"%string.
+      cut (is_df_evalann_correct_top σ df1).
+      cut (is_df_evalann_correct_top σ df2).      
+      intros.
+      unfold is_df_evalann_correct_top in *.
+      rewrite H1 in *.
+      rewrite H0 in *.
+      rewrite IHdf1; trivial.
+      rewrite IHdf2; trivial.
+      admit.
+      admit.
+    - Case "MatrixMult"%string.
+      cut (is_df_evalann_correct_top σ df1).
+      cut (is_df_evalann_correct_top σ df2).      
+      intros.
+      unfold is_df_evalann_correct_top in *.
+      rewrite H1 in *.
+      rewrite H0 in *.
+      rewrite IHdf1; trivial.
+      rewrite IHdf2; trivial.
+      admit.
+      admit.
+    - Case "VectorPlus"%string.
+      cut (is_df_evalann_correct_top σ df1).
+      cut (is_df_evalann_correct_top σ df2).      
+      intros.
+      unfold is_df_evalann_correct_top in *.
+      rewrite H1 in *.
+      rewrite H0 in *.
+      rewrite IHdf1; trivial.
+      rewrite IHdf2; trivial.
+      admit.
+      admit.
+    - Case "VectorMinus"%string.
+      cut (is_df_evalann_correct_top σ df1).
+      cut (is_df_evalann_correct_top σ df2).      
+      intros.
+      unfold is_df_evalann_correct_top in *.
+      rewrite H1 in *.
+      rewrite H0 in *.
+      rewrite IHdf1; trivial.
+      rewrite IHdf2; trivial.
+      admit.
+      admit.
+    - Case "MatrixPlus"%string.
+      cut (is_df_evalann_correct_top σ df1).
+      cut (is_df_evalann_correct_top σ df2).      
+      intros.
+      unfold is_df_evalann_correct_top in *.
+      rewrite H1 in *.
+      rewrite H0 in *.
+      rewrite IHdf1; trivial.
+      rewrite IHdf2; trivial.
+      admit.
+      admit.
+    - Case "MatrixMinus"%string.
+      cut (is_df_evalann_correct_top σ df1).
+      cut (is_df_evalann_correct_top σ df2).      
+      intros.
+      unfold is_df_evalann_correct_top in *.
+      rewrite H1 in *.
+      rewrite H0 in *.
+      rewrite IHdf1; trivial.
+      rewrite IHdf2; trivial.
+      admit.
+      admit.
+    - Case "VectorScalMult"%string.
+      cut (is_df_evalann_correct_top σ df1).
+      cut (is_df_evalann_correct_top σ df2).      
+      intros.
+      unfold is_df_evalann_correct_top in *.
+      rewrite H1 in *.
+      rewrite H0 in *.
+      rewrite IHdf1; trivial.
+      rewrite IHdf2; trivial.
+      admit.
+      admit.
+    - Case "MatrixScalMult"%string.
+      cut (is_df_evalann_correct_top σ df1).
+      cut (is_df_evalann_correct_top σ df2).      
+      intros.
+      unfold is_df_evalann_correct_top in *.
+      rewrite H1 in *.
+      rewrite H0 in *.
+      rewrite IHdf1; trivial.
+      rewrite IHdf2; trivial.
+      admit.
+      admit.
+    - Case "VectorApply"%string.
+      cut (is_df_evalann_correct_top σ df2).
+      intros.
+      unfold is_df_evalann_correct_top in *.
+      rewrite H0 in *.
+      rewrite IHdf1; trivial.
+      admit.
+    - Case "MatrixApply"%string.
+      cut (is_df_evalann_correct_top σ df2).
+      intros.
+      unfold is_df_evalann_correct_top in *.
+      rewrite H0 in *.
+      rewrite IHdf1; trivial.
+      admit.
+    - Case "VLossfun"%string.
+      cut (is_df_evalann_correct_top σ df2).
+      intros.
+      unfold is_df_evalann_correct_top in *.
+      rewrite H0 in *.
+      rewrite IHdf1; trivial.
+      admit.
+    - Case "MLossfun"%string.
+      cut (is_df_evalann_correct_top σ df2).
+      intros.
+      unfold is_df_evalann_correct_top in *.
+      rewrite H0 in *.
+      rewrite IHdf1; trivial.
+      admit.
 Admitted.   
+
        
          
    (*
