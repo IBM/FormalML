@@ -2950,18 +2950,15 @@ F (d : definition_function_types)
        let xv := (v, DTfloat) in
        df_eval_tree_deriv σ df xv = df_eval_deriv σ df xv.
    Proof.
-     DefinedFunction_cases (induction T, df using DefinedFunction_ind_simpl) Case; 
-       simpl; intros; trivial; unfold is_df_evalann_correct in *
+     DefinedFunction_cases (induction T, df using DefinedFunction_ind_simpl) Case;
+      intro iscor; destruct iscor;
+      simpl; intros; trivial; unfold is_df_evalann_correct in *
      ; try solve 
            [
-             simpl in H
-             ; destruct H
-             ; rewrite IHdf
+             rewrite IHdf
              ; trivial
            |
-           simpl in H
-           ; destruct H
-           ; assert (is_df_evalann_correct_top σ df)
+           assert (is_df_evalann_correct_top σ df)
            ; [ apply is_df_rec_prop_top; trivial |
                unfold is_df_evalann_correct_top in H1
                ; rewrite H1
@@ -2969,8 +2966,7 @@ F (d : definition_function_types)
                ; trivial
              ]
            |
-           simpl in H
-           ; rewrite IHdf1;
+           rewrite IHdf1;
              [ rewrite IHdf2
                ; trivial
                ; tauto 
@@ -2978,15 +2974,29 @@ F (d : definition_function_types)
              tauto
              ]
            |
-           simpl in H; destruct H; rewrite IHdf1;
+           rewrite IHdf1;
              [ assert (is_df_evalann_correct_top σ df2);
                  [ apply is_df_rec_prop_top; trivial
                  | unfold is_df_evalann_correct_top in H1;
                      rewrite H1; trivial]
              | tauto]
+           |
+           destruct H0; rewrite IHdf1;
+             [rewrite IHdf2;
+                [assert (is_df_evalann_correct_top σ df1);
+                   [apply is_df_rec_prop_top; trivial 
+                   | assert (is_df_evalann_correct_top σ df2);
+                       [  apply is_df_rec_prop_top; trivial
+                        |                                                   
+                        unfold is_df_evalann_correct_top in H2;
+                          unfold is_df_evalann_correct_top in H3;
+                          rewrite H2; rewrite H3; trivial ]]
+                |
+                tauto]
+             |
+             tauto]
            ].
      - Case "DVector"%string.
-       simpl in H0.
        f_equal.
        apply FunctionalExtensionality.functional_extensionality.
        intro.
@@ -2995,7 +3005,6 @@ F (d : definition_function_types)
        rewrite vforall_forall in H1.
        eauto.
      - Case "DMatrix"%string.
-       simpl in H0.
        f_equal.
        apply FunctionalExtensionality.functional_extensionality.
        intro.
@@ -3007,116 +3016,6 @@ F (d : definition_function_types)
        specialize (H1 x0).
        rewrite vforall_forall in H1.
        eauto.
-    - Case "Times"%string.
-      simpl in H; destruct H; destruct H0; rewrite IHdf1.
-      + rewrite IHdf2.
-        * assert (is_df_evalann_correct_top σ df1).
-          -- apply is_df_rec_prop_top; trivial.
-          -- assert (is_df_evalann_correct_top σ df2).
-             ++ apply is_df_rec_prop_top; trivial.
-             ++ unfold is_df_evalann_correct_top in H2;
-                unfold is_df_evalann_correct_top in H3;      
-                rewrite H2; rewrite H3; trivial.
-        * tauto.
-      + tauto.
-    - Case "Divide"%string.      
-      simpl in H; destruct H; destruct H0.
-      rewrite IHdf1.
-      rewrite IHdf2.
-      assert (is_df_evalann_correct_top σ df1).
-      apply is_df_rec_prop_top; trivial.
-      assert (is_df_evalann_correct_top σ df2).
-      apply is_df_rec_prop_top; trivial.
-      unfold is_df_evalann_correct_top in H2.
-      unfold is_df_evalann_correct_top in H3.      
-      rewrite H2.
-      rewrite H3; trivial.
-      tauto.
-      tauto.
-    - Case "Max"%string.
-      simpl in H; destruct H; destruct H0.
-      rewrite IHdf1.
-      rewrite IHdf2.
-      assert (is_df_evalann_correct_top σ df1).
-      apply is_df_rec_prop_top; trivial.
-      assert (is_df_evalann_correct_top σ df2).
-      apply is_df_rec_prop_top; trivial.
-      unfold is_df_evalann_correct_top in H2.
-      unfold is_df_evalann_correct_top in H3.      
-      rewrite H2.
-      rewrite H3; trivial.
-      tauto.
-      tauto.
-    - Case "VectorDot"%string.
-      simpl in H; destruct H; destruct H0.
-      rewrite IHdf1.
-      rewrite IHdf2.
-      assert (is_df_evalann_correct_top σ df1).
-      apply is_df_rec_prop_top; trivial.
-      assert (is_df_evalann_correct_top σ df2).
-      apply is_df_rec_prop_top; trivial.
-      unfold is_df_evalann_correct_top in H2.
-      unfold is_df_evalann_correct_top in H3.      
-      rewrite H2.
-      rewrite H3; trivial.
-      tauto.
-      tauto.
-    - Case "MatrixVectorMult"%string.
-      simpl in H; destruct H; destruct H0.
-      rewrite IHdf1.
-      rewrite IHdf2.
-      assert (is_df_evalann_correct_top σ df1).
-      apply is_df_rec_prop_top; trivial.
-      assert (is_df_evalann_correct_top σ df2).
-      apply is_df_rec_prop_top; trivial.
-      unfold is_df_evalann_correct_top in H2.
-      unfold is_df_evalann_correct_top in H3.      
-      rewrite H2.
-      rewrite H3; trivial.
-      tauto.
-      tauto.
-    - Case "MatrixMult"%string.
-      simpl in H; destruct H; destruct H0.
-      rewrite IHdf1.
-      rewrite IHdf2.
-      assert (is_df_evalann_correct_top σ df1).
-      apply is_df_rec_prop_top; trivial.
-      assert (is_df_evalann_correct_top σ df2).
-      apply is_df_rec_prop_top; trivial.
-      unfold is_df_evalann_correct_top in H2.
-      unfold is_df_evalann_correct_top in H3.      
-      rewrite H2.
-      rewrite H3; trivial.
-      tauto.
-      tauto.
-    - Case "VectorScalMult"%string.
-      simpl in H; destruct H; destruct H0.
-      rewrite IHdf1.
-      rewrite IHdf2.
-      assert (is_df_evalann_correct_top σ df1).
-      apply is_df_rec_prop_top; trivial.
-      assert (is_df_evalann_correct_top σ df2).
-      apply is_df_rec_prop_top; trivial.
-      unfold is_df_evalann_correct_top in H2.
-      unfold is_df_evalann_correct_top in H3.      
-      rewrite H2.
-      rewrite H3; trivial.
-      tauto.
-      tauto.
-    - Case "MatrixScalMult"%string.
-      simpl in H; destruct H; destruct H0.
-      rewrite IHdf1.
-      rewrite IHdf2.
-      assert (is_df_evalann_correct_top σ df1).
-      apply is_df_rec_prop_top; trivial.
-      assert (is_df_evalann_correct_top σ df2).
-      apply is_df_rec_prop_top; trivial.
-      unfold is_df_evalann_correct_top in H2.
-      unfold is_df_evalann_correct_top in H3.      
-      rewrite H2.
-      rewrite H3; trivial.
-      tauto.
-      tauto.
 Qed.
 
    (*
