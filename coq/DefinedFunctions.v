@@ -3018,6 +3018,113 @@ F (d : definition_function_types)
        eauto.
 Qed.
 
+   Lemma df_eval_tree_backprop_deriv_correct {T} (σ gradenv:df_env) (df:DefinedFunction EvalAnn T) (grad : definition_function_types_interp T) : 
+     is_df_evalann_correct σ df ->
+       df_eval_tree_backprop_deriv σ df gradenv grad = df_eval_backprop_deriv σ df gradenv grad.
+   Proof.
+     revert gradenv grad.
+     DefinedFunction_cases (induction T, df using DefinedFunction_ind_simpl) Case;
+      intros; simpl;trivial
+     ; try solve [
+       destruct H;
+       assert (is_df_evalann_correct σ df);
+       [ unfold is_df_evalann_correct; trivial
+       | apply is_df_rec_prop_top in H0;
+         rewrite IHdf;
+         [ unfold is_df_evalann_correct_top in H0;
+           rewrite H0; trivial
+         | trivial]]
+           |
+       destruct H;
+       apply IHdf;
+       unfold is_df_evalann_correct; trivial
+           |
+       destruct H; destruct H0; rewrite IHdf1;
+       [ case_eq (df_eval_backprop_deriv σ df1 gradenv grad); [|congruence];
+         intros;
+         rewrite IHdf2; trivial
+       | unfold is_df_evalann_correct; trivial]
+
+           |
+       destruct H;
+       assert (is_df_evalann_correct σ df2);
+       [ unfold is_df_evalann_correct; trivial
+       | apply is_df_rec_prop_top in H0;
+         unfold is_df_evalann_correct_top in H0;
+         rewrite H0;
+         match_destr;
+         rewrite IHdf1; trivial]
+       ].
+     - Case "DVector"%string.
+       destruct H0.
+       rewrite vforall_forall in H1.
+       unfold two_vector_env_iter_alt.
+       f_equal.
+       apply FunctionalExtensionality.functional_extensionality.
+       intros.
+       apply FunctionalExtensionality.functional_extensionality.
+       intros.
+       apply H.
+       unfold is_df_evalann_correct.
+       apply H1.
+     - Case "DMatrix"%string.
+       destruct H0.
+       rewrite vforall_forall in H1.       
+       unfold two_matrix_env_iter_alt.
+       f_equal.
+       apply FunctionalExtensionality.functional_extensionality.
+       intros.
+       apply FunctionalExtensionality.functional_extensionality.
+       intros.
+       f_equal.
+       apply FunctionalExtensionality.functional_extensionality.
+       intros.
+       apply FunctionalExtensionality.functional_extensionality.
+       intros.
+       apply H.
+       unfold is_df_evalann_correct.
+       specialize (H1 x0).
+       rewrite vforall_forall in H1.              
+       apply H1.
+     - Case "Times"%string.
+       destruct H.
+       destruct H0.
+       rewrite IHdf1.
+       assert (is_df_evalann_correct σ df1).
+       unfold is_df_evalann_correct; trivial.
+       assert (is_df_evalann_correct σ df2).
+       unfold is_df_evalann_correct; trivial.
+       shelve.
+       unfold is_df_evalann_correct; trivial.
+       Unshelve.
+       unfold is_df_evalann_correct in *.
+       apply is_df_rec_prop_top in H0.
+       apply is_df_rec_prop_top in H1.
+       unfold is_df_evalann_correct_top in H0.
+       unfold is_df_evalann_correct_top in H1.
+       rewrite H0.
+       rewrite H1.
+       case_eq (df_eval_backprop_deriv σ df1 gradenv (get_annotation df2 * grad)); [|congruence].
+       intros.
+       specialize (IHdf2 d (get_annotation df1 * grad)).       
+       rewrite IHdf2; trivial.
+     - Case "Divide"%string.
+       admit.
+     - Case "Max"%string.
+       admit.
+     - Case "VectorDot"%string.
+       admit.
+     - Case "MatrixVectorMult"%string.
+       admit.
+     - Case "MatrixVectorAdd"%string.
+       admit.
+     - Case "MatrixMult"%string.
+       admit.
+     - Case "VectorScalMult"%string.
+       admit.
+     - Case "MatrixScalMult"%string.
+       admit.
+Admitted.
    (*
    Definition DefinedFunction_ind_equpto {Ann1 Ann2}
   (P : forall (d : definition_function_types), DefinedFunction Ann1 d -> DefinedFunction Ann2 d -> Prop)
