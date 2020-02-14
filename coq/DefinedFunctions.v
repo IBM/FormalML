@@ -2946,8 +2946,8 @@ F (d : definition_function_types)
 
    Lemma df_eval_tree_deriv_correct {T} {σ:df_env} {df:DefinedFunction EvalAnn T} :
      is_df_evalann_correct σ df ->
-     forall (v:SubVar),
-       let xv := (v, DTfloat) in
+     forall (xv:var_type),
+      (* let xv := (v, DTfloat) in *)
        df_eval_tree_deriv σ df xv = df_eval_deriv σ df xv.
    Proof.
      DefinedFunction_cases (induction T, df using DefinedFunction_ind_simpl) Case;
@@ -3016,7 +3016,7 @@ F (d : definition_function_types)
        specialize (H1 x0).
        rewrite vforall_forall in H1.
        eauto.
-Qed.
+   Qed.
 
    Lemma df_eval_tree_backprop_deriv_correct {T} (σ gradenv:df_env) (df:DefinedFunction EvalAnn T) (grad : definition_function_types_interp T) : 
      is_df_evalann_correct σ df ->
@@ -3111,7 +3111,128 @@ Qed.
        rewrite H4; trivial.
    Qed.
 
-   
+   Lemma df_eval_ignores_ann {Ann T} {σ:df_env} 
+          (df:DefinedFunction Ann T) :
+     df_eval σ df = df_eval σ (df_strip_annotations df).
+   Proof.
+     DefinedFunction_cases (induction T, df using DefinedFunction_ind_simpl) Case; simpl; trivial
+     ; try solve [
+             rewrite IHdf; trivial
+           |                             
+             rewrite IHdf1;
+             case_eq (df_eval σ (df_strip_annotations df1)); [|congruence];
+             intros; rewrite IHdf2; trivial
+           |
+             rewrite IHdf1; trivial;
+             case_eq (df_eval σ (df_strip_annotations df2)); [|congruence];
+             intros; f_equal;
+             apply FunctionalExtensionality.functional_extensionality; intros;
+             f_equal; rewrite df_strip_annotations_id; trivial
+           |
+             rewrite IHdf1; trivial;
+             case_eq (df_eval σ (df_strip_annotations df2)); [|congruence];
+             intros; f_equal;
+             rewrite df_strip_annotations_id; trivial
+           ].
+
+     - Case "DVector"%string.
+       f_equal.
+       apply FunctionalExtensionality.functional_extensionality; intros.
+       rewrite H.
+       rewrite vmap_nth; trivial.
+     - Case "DMatrix"%string.
+       f_equal.
+       apply FunctionalExtensionality.functional_extensionality; intros.
+       apply FunctionalExtensionality.functional_extensionality; intros.       
+       specialize (H x0).
+       rewrite H.
+       rewrite vmap_nth.
+       rewrite vmap_nth; trivial.       
+   Qed.
+
+   Lemma df_eval_ignores_ann2 {Ann1 Ann2 T} {σ:df_env} 
+         (df1:DefinedFunction Ann1 T) (df2:DefinedFunction Ann2 T) :
+     df_eq_upto_annotations df1 df2 ->
+     df_eval σ df1 = df_eval σ df2.
+   Proof.
+     assert (df_eval σ df1 = df_eval σ (df_strip_annotations df1)) by apply df_eval_ignores_ann.
+     assert (df_eval σ df2 = df_eval σ (df_strip_annotations df2)) by apply df_eval_ignores_ann.
+     congruence.
+   Qed.
+
+   Lemma df_eval_deriv_ignores_ann {Ann T} {σ:df_env} 
+          (df:DefinedFunction Ann T) :
+     forall (xv:var_type),
+       df_eval_deriv σ df xv = df_eval_deriv σ (df_strip_annotations df) xv.
+   Proof.
+     DefinedFunction_cases (induction T, df using DefinedFunction_ind_simpl) Case; simpl; trivial
+     ; try solve 
+           [
+             intro; rewrite IHdf1;
+             case_eq (df_eval_deriv σ (df_strip_annotations df1) xv); [|congruence];
+             intros;
+             rewrite IHdf2; trivial
+           |
+             intro; rewrite df_eval_ignores_ann;
+             case_eq (df_eval σ (df_strip_annotations df1)); [|congruence];
+             intros; rewrite IHdf1; intros;
+             case_eq (df_eval_deriv σ (df_strip_annotations df1) xv); [|congruence];
+             intros; rewrite df_eval_ignores_ann;
+             case_eq (df_eval σ (df_strip_annotations df2)); [|congruence];
+             intros; rewrite IHdf2; trivial
+           |
+             intros; rewrite df_eval_ignores_ann;
+             case_eq (df_eval σ (df_strip_annotations df)); [|congruence];
+             intros; rewrite IHdf; intros;
+             case_eq (df_eval_deriv σ (df_strip_annotations df) xv); [|congruence];
+             trivial
+           | 
+             intros; rewrite IHdf; trivial
+           |
+             intro; rewrite df_eval_ignores_ann;
+             case_eq (df_eval σ (df_strip_annotations df2)); [|congruence];
+             intros; rewrite IHdf1; intros;
+             rewrite df_strip_annotations_id; trivial
+           ].
+
+     - Case "DVector"%string.
+       intros.
+       f_equal.
+       apply FunctionalExtensionality.functional_extensionality; intros.
+       rewrite H.
+       rewrite vmap_nth; trivial.
+     - Case "DMatrix"%string.
+       intros.
+       f_equal.
+       apply FunctionalExtensionality.functional_extensionality; intros.
+       apply FunctionalExtensionality.functional_extensionality; intros.       
+       specialize (H x0).
+       rewrite H.
+       rewrite vmap_nth.
+       rewrite vmap_nth; trivial.
+     - Case "Max"%string.
+       intro; rewrite df_eval_ignores_ann.
+       case_eq (df_eval σ (df_strip_annotations df1)); [|congruence].
+       intros.
+       rewrite df_eval_ignores_ann.
+       case_eq (df_eval σ (df_strip_annotations df2)); [|congruence].
+       intros.
+       rewrite IHdf1.
+       rewrite IHdf2; trivial.
+    Qed.
+
+   Lemma df_eval_deriv_ignores_ann2 {Ann1 Ann2 T} {σ:df_env} 
+         (df1:DefinedFunction Ann1 T) (df2:DefinedFunction Ann2 T) :
+     forall (xv:var_type),
+            df_eq_upto_annotations df1 df2 ->
+            df_eval_deriv σ df1 xv = df_eval_deriv σ df2 xv.
+   Proof.
+     intro.
+     assert (df_eval_deriv σ df1 xv = df_eval_deriv σ (df_strip_annotations df1) xv) by  apply df_eval_deriv_ignores_ann.
+     assert (df_eval_deriv σ df2 xv = df_eval_deriv σ (df_strip_annotations df2) xv) by  apply df_eval_deriv_ignores_ann.     
+     congruence.
+   Qed.
+
    (*
    Definition DefinedFunction_ind_equpto {Ann1 Ann2}
   (P : forall (d : definition_function_types), DefinedFunction Ann1 d -> DefinedFunction Ann2 d -> Prop)
@@ -5159,8 +5280,10 @@ Tactic Notation "DefinedFunction_cases" tactic(first) ident(c) :=
   | Case_aux c "VLossfun"%string
   | Case_aux c "MLossfun"%string].
 
- Lemma tree_backpropeq_complte_gen (x : SubVar) (env gradenv : df_env) 
-       (dfexpr : DefinedFunction EvalAnn DTfloat) (grad : float) :
+
+ Lemma tree_backpropeq_complete_gen {T} (env gradenv : df_env) 
+       (dfexpr : DefinedFunction EvalAnn T) (grad : definition_function_types_interp T) : 
+   forall (x : SubVar), 
    let xvar := (x, DTfloat) in 
    vartlookup gradenv (x,DTfloat) <> None ->
    match df_eval_tree_deriv env dfexpr xvar, 
@@ -5173,7 +5296,7 @@ Tactic Notation "DefinedFunction_cases" tactic(first) ident(c) :=
       end.
    Proof.
      simpl.
-     DefinedFunction_cases (induction dfexpr) Case; simpl.
+     DefinedFunction_cases (induction T, df using DefinedFunction_ind_simpl) Case.
 
      - Case "Number"%string.
        intros _ _ grad gradenv xinn.
