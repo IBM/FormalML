@@ -855,6 +855,13 @@ F (d : definition_function_types)
   Section eval.
     
     Program
+      Definition vartmatch (fv:env_entry_type) (a:var_type) : 
+      option (definition_function_types_interp (snd a)) :=
+       if a == (projT1 fv) then 
+         Some (eq_rect _ definition_function_types_interp (projT2 fv) _ _) 
+       else None.
+
+    Program
       Fixpoint vartlookup (l:df_env) (a:var_type) : 
       option (definition_function_types_interp (snd a))
       := match l with
@@ -1843,6 +1850,255 @@ F (d : definition_function_types)
            end
           end).
 
+    Fixpoint df_eval_deriv_genvar {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (v:env_entry_type) : option (definition_function_types_interp T)
+      := (match df with
+         | Number _ _ => Some 0
+         | Constant t _ x => Some
+            match t return definition_function_types_interp t with
+            | DTfloat => 0
+            | DTVector n => ConstVector n 0
+            | DTMatrix m n => ConstMatrix m n 0
+            end
+         | DVector n _ dfs => vectoro_to_ovector (fun i => df_eval_deriv_genvar σ (dfs i) v)
+         | DMatrix n m _ df => matrixo_to_omatrix (fun i j => df_eval_deriv_genvar σ (df i j) v)
+         | Var x _ => Some (
+           match vartmatch v x with
+           | Some val => val
+           | _ => 
+             match (snd x) with
+             | DTfloat => 0
+             | DTVector n => ConstVector n 0
+             | DTMatrix m n => ConstMatrix m n 0
+             end
+           end)
+         | Plus _ l r => 
+           match df_eval_deriv_genvar σ l v, df_eval_deriv_genvar σ r v with
+           | Some le, Some lr => Some (le + lr)
+           | _, _ => None
+           end
+         | Minus _ l r =>
+           match df_eval_deriv_genvar σ l v, df_eval_deriv_genvar σ r v with
+           | Some le, Some lr => Some (le - lr)
+           | _, _ => None
+           end
+         | Times _ l r =>
+           match df_eval σ l, df_eval_deriv_genvar σ l v, df_eval σ r, df_eval_deriv_genvar σ r v with
+           | Some le, Some ld, Some re, Some rd =>
+             Some (le * rd + 
+                   (ld * re))
+           | _, _, _, _ => None
+           end
+         | Divide _ l r =>
+           match df_eval σ l, df_eval_deriv_genvar σ l v, df_eval σ r, df_eval_deriv_genvar σ r v with
+           | Some le, Some ld, Some re, Some rd =>
+             Some ((ld / re) - ((le * rd) / (re * re)))
+           | _, _, _, _ => None
+           end
+         | Square _ e =>
+           match df_eval σ e, df_eval_deriv_genvar σ e v with
+           | Some ee, Some ed => Some (2 * ee * ed)
+           | _, _  => None
+           end
+         | Exp _ e =>
+           match df_eval σ e, df_eval_deriv_genvar σ e v with
+           | Some ee, Some ed => Some (ed * Fexp ee)
+           | _, _  => None
+           end
+         | Log _ e =>
+           match df_eval σ e, df_eval_deriv_genvar σ e v with
+           | Some ee, Some ed => Some (ed / ee)
+           | _, _ => None
+           end
+         | Abs _ e =>
+           match df_eval σ e, df_eval_deriv_genvar σ e v with
+           | Some ee, Some ed => Some (ed * (sign ee))
+           | _, _ => None
+           end
+         | Sign _ e =>
+           match df_eval_deriv_genvar σ e v with
+           | Some _ => Some 0
+           | None => None
+           end
+         | PSign _ e =>
+           match df_eval_deriv_genvar σ e v with
+           | Some _ => Some 0
+           | None => None
+           end
+         | Max _ l r =>
+           match df_eval σ l, df_eval σ r with
+           | Some le, Some re =>
+             if le <= re then df_eval_deriv_genvar σ r v else df_eval_deriv_genvar σ l v
+           | _, _ => None
+           end
+         | VectorElem n _ l i => 
+           match (df_eval_deriv_genvar σ l v)  with
+           | Some l' => Some (l' i)
+           | _ => None
+           end
+         | MatrixElem m n _ l i j =>
+           match (df_eval_deriv_genvar σ l v)  with
+           | Some l' => Some (l' i j)
+           | _ => None
+           end
+         | VectorDot n _ l r =>
+           match df_eval σ l, df_eval_deriv_genvar σ l v, df_eval σ r, df_eval_deriv_genvar σ r v with
+           | Some le, Some ld, Some re, Some rd => 
+               Some (vsum (fun j => (le j) * (rd j) + (ld j) * (re j)))
+           | _, _, _, _ => None
+           end
+         | VectorSum n _ l =>
+           match df_eval_deriv_genvar σ l v with
+           | Some ld =>
+               Some (vsum ld)
+           | _ => None
+           end
+         | MatrixSum n m _ l =>
+           match df_eval_deriv_genvar σ l v with
+           | Some ld =>
+               Some (msum ld)
+           | _ => None
+           end
+         | VectorScalMult n _ x r =>
+           match df_eval σ x, df_eval_deriv_genvar σ x v, df_eval σ r, df_eval_deriv_genvar σ r v with
+           | Some xe, Some xd, Some re, Some rd => Some (fun j => xe * (rd j) + xd * (re j))
+           | _, _, _, _ => None
+           end
+         | MatrixScalMult n m _ x r =>            
+           match df_eval σ x, df_eval_deriv_genvar σ x v, df_eval σ r, df_eval_deriv_genvar σ r v with
+           | Some xe, Some xd, Some re, Some rd => Some (fun i j => xe * (rd i j) + xd * (re i j))
+           | _, _, _, _ => None
+           end
+         | MatrixVectorMult n m _ l r =>
+           match df_eval σ l, df_eval_deriv_genvar σ l v, df_eval σ r, df_eval_deriv_genvar σ r v with
+           | Some le, Some ld, Some re, Some rd =>
+             Some (fun i => vsum (fun j => (le i j)*(rd j) + (ld i j)*(re j)))
+           | _, _, _, _ => None
+           end
+         | MatrixVectorAdd n m _ l r =>
+           match df_eval_deriv_genvar σ l v, df_eval_deriv_genvar σ r v with
+           | Some le, Some re =>
+             Some (fun i j => (le i j) + (re i))
+           | _, _ => None
+           end
+         | MatrixMult n m p _ l r =>
+           match df_eval σ l, df_eval_deriv_genvar σ l v, df_eval σ r, df_eval_deriv_genvar σ r v with
+           | Some le, Some ld, Some re, Some rd =>
+             Some (fun i k => vsum (fun j => (le i j)*(rd j k) + (ld i j)*(re j k)))
+           | _, _, _, _ => None
+           end
+         | VectorPlus n _ l r =>
+           match df_eval_deriv_genvar σ l v, df_eval_deriv_genvar σ r v with           
+           | Some l', Some r' => Some (fun i => (l' i) + (r' i))
+           | _, _ => None
+           end
+         | VectorMinus n _ l r =>
+           match df_eval_deriv_genvar σ l v, df_eval_deriv_genvar σ r v with           
+           | Some l', Some r' => Some (fun i => (l' i) - (r' i))
+           | _, _ => None
+           end
+         | MatrixPlus n m _ l r =>
+           match df_eval_deriv_genvar σ l v, df_eval_deriv_genvar σ r v with           
+           | Some l', Some r' => Some (fun i j => (l' i j) + (r' i j))
+           | _, _ => None
+           end
+         | MatrixMinus n m _ l r =>
+           match df_eval_deriv_genvar σ l v, df_eval_deriv_genvar σ r v with           
+           | Some l', Some r' => Some (fun i j => (l' i j) - (r' i j))
+           | _, _ => None
+           end
+         | VectorApply n _ x s r =>
+           match df_eval σ r, df_eval_deriv_genvar σ r v with                      
+           | Some re, Some rd => 
+             vectoro_to_ovector 
+               (fun i => 
+                  let xv := (x, DTfloat):var_type in
+                  match df_eval_deriv_genvar (cons (mk_env_entry xv (re i)) σ) s v with
+                         | Some sd => Some ((rd i) * sd)
+                         | _ => None
+                         end)
+           | _, _ => None                                                    
+           end
+         | MatrixApply n m _ x s r =>
+           match df_eval σ r, df_eval_deriv_genvar σ r v with                      
+           | Some re, Some rd => 
+             matrixo_to_omatrix
+               (fun i j => 
+                  let xv := (x, DTfloat):var_type in
+                  match df_eval_deriv_genvar (cons (mk_env_entry xv (re i j)) σ) s v with
+                         | Some sd => Some ((rd i j) * sd)
+                         | _ => None
+                         end)
+           | _, _ => None                                                    
+           end
+         | VLossfun n _ v1 v2 s l r => 
+           match df_eval σ l, df_eval_deriv_genvar σ l v with                      
+           | Some le, Some ld => 
+             match (vectoro_to_ovector 
+                      (fun i => 
+                         let xv1 := (v1, DTfloat):var_type in
+                         let xv2 := (v2, DTfloat):var_type in                         
+                         match df_eval_deriv_genvar (cons (mk_env_entry xv1 (le i)) 
+                                                   (cons (mk_env_entry xv2 (r i)) σ)) s v with
+                         | Some sd => Some ((ld i) * sd)
+                         | _ => None
+                         end)) with
+             | Some vv => Some (vsum vv)
+             | _ => None
+             end
+           | _, _ => None
+           end
+         | MLossfun n m _ v1 v2 s l r => 
+           match df_eval σ l, df_eval_deriv_genvar σ l v with                      
+           | Some le, Some ld => 
+             match (matrixo_to_omatrix
+                      (fun i j => 
+                         let xv1 := (v1, DTfloat):var_type in
+                         let xv2 := (v2, DTfloat):var_type in                         
+                         match df_eval_deriv_genvar (cons (mk_env_entry xv1 (le i j)) 
+                                                   (cons (mk_env_entry xv2 (r i j)) σ)) s v with
+                         | Some sd => Some ((ld i j) * sd)
+                         | _ => None
+                         end)) with
+             | Some vv => Some ((msum vv)/(FfromZ (Z.of_nat m)))
+             | _ => None
+             end
+           | _, _ => None
+           end
+          end).
+
+
+    Definition definition_function_types_interp_prod (vart dft:definition_function_types) : Type
+     := match vart with
+        | DTfloat => definition_function_types_interp dft
+        | DTVector n => Vector (definition_function_types_interp dft) n
+        | DTMatrix m n => Matrix (definition_function_types_interp dft) m n
+        end.
+
+
+    Definition UnitVector (n:nat) (j : {n':nat | (n' < n)%nat}) : Vector float n :=
+      fun i => if (proj1_sig i) == (proj1_sig j) then 1 else 0.
+
+    Definition UnitMatrix (n m: nat) 
+               (i : {n':nat | (n' < n)%nat}) 
+               (j : {m':nat | (m' < m)%nat}) : Matrix float n m :=
+      fun a b => if (proj1_sig a) == (proj1_sig i) then 
+                   (if (proj1_sig b) == (proj1_sig j) then 1 else 0)
+                 else  0.
+
+(*
+    Definition df_eval_deriv_gen_top {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (v: var_type) :
+      option (definition_function_types_interp_prod (snd v) T) :=
+      match snd v as vt return option (definition_function_types_interp_prod vt T) with
+        | DTfloat => df_eval_deriv_genvar σ df (mk_env_entry v 1)
+        | DTVector n => 
+          vectoro_to_ovector 
+            (fun i => df_eval_deriv_genvar σ df (mk_env_entry v (UnitVector n i)))
+        | DTMatrix n m => 
+          matrixo_to_omatrix
+            (fun i j => df_eval_deriv_genvar σ df (mk_env_entry v (UnitMatrix n m i j)))
+        end.
+ *)
+    
     Fixpoint df_eval_tree_deriv {T} (σ:df_env) (df:DefinedFunction EvalAnn T) (v:var_type) : option (definition_function_types_interp T)
       := (match df with
          | Number _ _ => Some 0
