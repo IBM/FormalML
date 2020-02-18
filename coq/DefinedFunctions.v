@@ -2085,19 +2085,18 @@ F (d : definition_function_types)
                    (if (proj1_sig b) == (proj1_sig j) then 1 else 0)
                  else  0.
 
-(*
     Definition df_eval_deriv_gen_top {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (v: var_type) :
       option (definition_function_types_interp_prod (snd v) T) :=
-      match snd v as vt return option (definition_function_types_interp_prod vt T) with
-        | DTfloat => df_eval_deriv_genvar σ df (mk_env_entry v 1)
+      match (snd v) as vt return option (definition_function_types_interp_prod vt T) with
+        | DTfloat => df_eval_deriv_genvar σ df (mk_env_entry ((fst v), DTfloat) 1)
         | DTVector n => 
           vectoro_to_ovector 
-            (fun i => df_eval_deriv_genvar σ df (mk_env_entry v (UnitVector n i)))
+            (fun i => df_eval_deriv_genvar σ df (mk_env_entry ((fst v), DTVector n) (UnitVector n i)))
         | DTMatrix n m => 
           matrixo_to_omatrix
-            (fun i j => df_eval_deriv_genvar σ df (mk_env_entry v (UnitMatrix n m i j)))
+            (fun i j => df_eval_deriv_genvar σ df (mk_env_entry ((fst v), DTMatrix n m) (UnitMatrix n m i j)))
         end.
- *)
+
     
     Fixpoint df_eval_tree_deriv {T} (σ:df_env) (df:DefinedFunction EvalAnn T) (v:var_type) : option (definition_function_types_interp T)
       := (match df with
