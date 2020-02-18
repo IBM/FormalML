@@ -463,27 +463,29 @@ Section GenNN.
         (na::nl, nb)
       end.         
 
+  Definition harmonic_lr (step : nat) : float := 1 / (FfromZ (Z.of_nat (S step))).
+
   Definition optimize_step_backprop
-             (step : nat) (df : UnitDefinedFunction DTfloat) (σ:df_env)
+             (step : nat) (df : UnitDefinedFunction DTfloat) (σ:df_env) (lr : nat -> float)
              (noise_st : Stream float) (dvars : list var_type) 
     : (option df_env)*(Stream float) :=
     match df_eval_backprop_deriv σ df (gradenv_init dvars) 1 with
     | Some gradenv => 
-      let alpha := 1 / (FfromZ (Z.of_nat (S step))) in
+      let alpha := lr step in
       let '(env, nst) := list_arg_iter (fun a b => update_entry a gradenv alpha b) σ noise_st in
       (Some env, nst)
     | _ => (None, noise_st)
     end.
 
   Definition optimize_step_tree_backprop
-             (step : nat) (df : UnitDefinedFunction DTfloat) (σ:df_env)
+             (step : nat) (df : UnitDefinedFunction DTfloat) (σ:df_env) (lr : nat -> float)
              (noise_st : Stream float) (dvars : list var_type) 
     : (option df_env)*(Stream float) :=
     match df_eval_tree σ df with
     | Some df_tree =>
       match df_eval_tree_backprop_deriv (* σ not-needed *) nil df_tree (gradenv_init dvars) 1 with
       | Some gradenv => 
-        let alpha := 1 / (FfromZ (Z.of_nat (S step))) in
+        let alpha := lr step in 
         let '(env, nst) := list_arg_iter (fun a b => update_entry a gradenv alpha b) σ noise_st in
         (Some env, nst)
       | _ => (None, noise_st)
@@ -504,27 +506,27 @@ Section GenNN.
     end.
 
   Fixpoint optimize_steps_backprop
-           (start count:nat) (df : UnitDefinedFunction DTfloat) (σ:df_env) 
+           (start count:nat) (df : UnitDefinedFunction DTfloat) (σ:df_env) (lr : nat -> float)
            (noise_st : Stream float) (dvars : list var_type) 
     : (option df_env)*(Stream float) :=
     match count with
     | 0 => (Some σ, noise_st)
     | S n =>
-      match optimize_step_backprop start df σ noise_st dvars with
-      | (Some σ', noise_st') => optimize_steps_backprop (S start) n df σ' noise_st' dvars
+      match optimize_step_backprop start df σ lr noise_st dvars with
+      | (Some σ', noise_st') => optimize_steps_backprop (S start) n df σ' lr noise_st' dvars
       | (None, noise_st') => (None, noise_st')
       end
     end.
 
   Fixpoint optimize_steps_tree_backprop
-           (start count:nat) (df : UnitDefinedFunction DTfloat) (σ:df_env) 
+           (start count:nat) (df : UnitDefinedFunction DTfloat) (σ:df_env) (lr : nat -> float)
            (noise_st : Stream float) (dvars : list var_type) 
     : (option df_env)*(Stream float) :=
     match count with
     | 0 => (Some σ, noise_st)
     | S n =>
-      match optimize_step_tree_backprop start df σ noise_st dvars with
-      | (Some σ', noise_st') => optimize_steps_tree_backprop (S start) n df σ' noise_st' dvars
+      match optimize_step_tree_backprop start df σ lr noise_st dvars with
+      | (Some σ', noise_st') => optimize_steps_tree_backprop (S start) n df σ' lr noise_st' dvars
       | (None, noise_st') => (None, noise_st')
       end
     end.
@@ -624,7 +626,8 @@ Definition wisconsin_test (nsamp count : nat)
             (σ:df_env) 
             (normaldata: Matrix float nsamp 10): list float :=
   let '(nninst, dvars) := wisconsin_instance_batch nsamp σ normaldata in
-  let onenv := fst (optimize_steps_tree_backprop 0 count (snd nninst) (fst nninst)
+  let lr := fun _ => 1 / (FfromZ 100) in
+  let onenv := fst (optimize_steps_tree_backprop 0 count (snd nninst) (fst nninst) lr
                                                 zeronoise dvars) in
   match onenv with
   | Some nenv => match df_eval nenv (snd nninst) with
@@ -638,7 +641,8 @@ Definition wisconsin_test_env (nsamp count : nat)
             (σ:df_env) 
             (normaldata: Matrix float nsamp 10): df_env :=
   let '(nninst, dvars) := wisconsin_instance_batch nsamp σ normaldata in
-  let onenv := fst (optimize_steps_tree_backprop 0 count (snd nninst) (fst nninst)
+  let lr := fun _ => 1 / (FfromZ 100) in
+  let onenv := fst (optimize_steps_tree_backprop 0 count (snd nninst) (fst nninst) lr
                                                 zeronoise dvars) in
   match onenv with
   | Some nenv => nenv
@@ -731,7 +735,7 @@ Example wisconsin_gradenv_tree (nsamp : nat)
 
 Definition NN_test (count : nat) : list float :=
   let '(nninst, dvars) := mkNN_test in
-  let onenv := fst (optimize_steps_tree_backprop 0 count (snd nninst) (fst nninst)
+  let onenv := fst (optimize_steps_tree_backprop 0 count (snd nninst) (fst nninst) harmonic_lr
                                                 zeronoise dvars) in
   match onenv with
   | Some nenv => match df_eval nenv (snd nninst) with
@@ -763,7 +767,7 @@ Example NN_test_gradenv_tree :df_env :=
 Definition NN_test_env (count : nat) : df_env :=
   let '(nninst, dvars) := mkNN_test in
   let onenv := fst (optimize_steps_tree_backprop 0 count (snd nninst) (fst nninst)
-                                                zeronoise dvars) in
+                                  harmonic_lr zeronoise dvars) in
   match onenv with
   | Some nenv => nenv
   | _ => nil
@@ -789,7 +793,7 @@ Definition test_update : df_env :=
 Definition test_optimize_step_backprop
              (step : nat) (df : UnitDefinedFunction DTfloat) (σ:df_env)
              (noise_st : Stream float) (dvars : list var_type) : df_env :=
-  match fst (optimize_step_backprop step df σ noise_st dvars) with
+  match fst (optimize_step_backprop step df σ harmonic_lr noise_st dvars) with
   | Some env => env
   | _ => nil
   end.
@@ -797,7 +801,7 @@ Definition test_optimize_step_backprop
 Definition test_optimize_step_tree_backprop
              (step : nat) (df : UnitDefinedFunction DTfloat) (σ:df_env)
              (noise_st : Stream float) (dvars : list var_type) : df_env :=
-  match fst (optimize_step_tree_backprop step df σ noise_st dvars) with
+  match fst (optimize_step_tree_backprop step df σ harmonic_lr noise_st dvars) with
   | Some env => env
   | _ => nil
   end.
@@ -806,7 +810,7 @@ Example testopt := test_optimize_step_backprop 0 quad env zeronoise (xvar :: nil
 Example testreeopt := test_optimize_step_tree_backprop 0 quad env zeronoise (xvar :: nil).
 
 Example opt := fst (optimize_steps 0 2 quad env ((fst xvar) :: nil) zeronoise).
-Example opt2 := fst (optimize_steps_tree_backprop 0 2 quad env zeronoise (xvar :: nil)).
+Example opt2 := fst (optimize_steps_tree_backprop 0 2 quad env harmonic_lr zeronoise (xvar :: nil)).
 
 Example val := 1+1.
 

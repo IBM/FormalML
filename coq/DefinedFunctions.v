@@ -855,13 +855,6 @@ F (d : definition_function_types)
   Section eval.
     
     Program
-      Definition vartmatch (fv:env_entry_type) (a:var_type) : 
-      option (definition_function_types_interp (snd a)) :=
-       if a == (projT1 fv) then 
-         Some (eq_rect _ definition_function_types_interp (projT2 fv) _ _) 
-       else None.
-
-    Program
       Fixpoint vartlookup (l:df_env) (a:var_type) : 
       option (definition_function_types_interp (snd a))
       := match l with
@@ -1850,7 +1843,9 @@ F (d : definition_function_types)
            end
           end).
 
-    Fixpoint df_eval_deriv_genvar {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (v:env_entry_type) : option (definition_function_types_interp T)
+     (* the v environment below pairs variables with their derivatives *)
+     (* in some sense this is giving a directional derivative defined by v *)
+    Fixpoint df_eval_deriv_genvar {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (v:df_env) : option (definition_function_types_interp T)
       := (match df with
          | Number _ _ => Some 0
          | Constant t _ x => Some
@@ -1862,7 +1857,7 @@ F (d : definition_function_types)
          | DVector n _ dfs => vectoro_to_ovector (fun i => df_eval_deriv_genvar σ (dfs i) v)
          | DMatrix n m _ df => matrixo_to_omatrix (fun i j => df_eval_deriv_genvar σ (df i j) v)
          | Var x _ => Some (
-           match vartmatch v x with
+           match vartlookup v x with
            | Some val => val
            | _ => 
              match (snd x) with
@@ -2088,15 +2083,14 @@ F (d : definition_function_types)
     Definition df_eval_deriv_gen_top {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (v: var_type) :
       option (definition_function_types_interp_prod (snd v) T) :=
       match (snd v) as vt return option (definition_function_types_interp_prod vt T) with
-        | DTfloat => df_eval_deriv_genvar σ df (mk_env_entry ((fst v), DTfloat) 1)
+        | DTfloat => df_eval_deriv_genvar σ df ((mk_env_entry (fst v, DTfloat) 1)::nil)
         | DTVector n => 
           vectoro_to_ovector 
-            (fun i => df_eval_deriv_genvar σ df (mk_env_entry ((fst v), DTVector n) (UnitVector n i)))
+            (fun i => df_eval_deriv_genvar σ df ((mk_env_entry (fst v, DTVector n) (UnitVector n i))::nil))
         | DTMatrix n m => 
           matrixo_to_omatrix
-            (fun i j => df_eval_deriv_genvar σ df (mk_env_entry ((fst v), DTMatrix n m) (UnitMatrix n m i j)))
+            (fun i j => df_eval_deriv_genvar σ df ((mk_env_entry (fst v, DTMatrix n m) (UnitMatrix n m i j))::nil))
         end.
-
     
     Fixpoint df_eval_tree_deriv {T} (σ:df_env) (df:DefinedFunction EvalAnn T) (v:var_type) : option (definition_function_types_interp T)
       := (match df with
@@ -2322,6 +2316,234 @@ F (d : definition_function_types)
            end
           end).
     
+    Fixpoint df_eval_tree_deriv_genvar {T} (σ:df_env) (df:DefinedFunction EvalAnn T) (v:df_env) : option (definition_function_types_interp T)
+      := (match df with
+         | Number _ _ => Some 0
+         | Constant t _ x => Some
+            match t return definition_function_types_interp t with
+            | DTfloat => 0
+            | DTVector n => ConstVector n 0
+            | DTMatrix m n => ConstMatrix m n 0
+            end
+         | DVector n _ dfs => vectoro_to_ovector (fun i => df_eval_tree_deriv_genvar σ (dfs i) v)
+         | DMatrix n m _ df => matrixo_to_omatrix (fun i j => df_eval_tree_deriv_genvar σ (df i j) v)
+         | Var x _ => Some (
+           match vartlookup v x with
+           | Some val => val
+           | _ => 
+             match (snd x) with
+             | DTfloat => 0
+             | DTVector n => ConstVector n 0
+             | DTMatrix m n => ConstMatrix m n 0
+             end
+           end)
+         | Plus _ l r => 
+           match df_eval_tree_deriv_genvar σ l v, df_eval_tree_deriv_genvar σ r v with
+           | Some le, Some lr => Some (le + lr)
+           | _, _ => None
+           end
+         | Minus _ l r =>
+           match df_eval_tree_deriv_genvar σ l v, df_eval_tree_deriv_genvar σ r v with
+           | Some le, Some lr => Some (le - lr)
+           | _, _ => None
+           end
+         | Times _ l r =>
+           let '(le,re) := (get_annotation l, get_annotation r) in 
+           match df_eval_tree_deriv_genvar σ l v, df_eval_tree_deriv_genvar σ r v with
+           | Some ld, Some rd =>
+             Some (le * rd + 
+                   (ld * re))
+           | _, _ => None
+           end
+         | Divide _ l r =>
+           let '(le,re) := (get_annotation l, get_annotation r) in            
+           match df_eval_tree_deriv_genvar σ l v, df_eval_tree_deriv_genvar σ r v with
+           | Some ld, Some rd =>
+             Some ((ld / re) - ((le * rd) / (re * re)))
+           | _, _ => None
+           end
+         | Square _ e =>
+           let ee := get_annotation e in
+           match df_eval_tree_deriv_genvar σ e v with
+           | Some ed => Some (2 * ee * ed)
+           | _  => None
+           end
+         | Exp _ e =>
+           let ee := get_annotation e in           
+           match df_eval_tree_deriv_genvar σ e v with
+           | Some ed => Some (ed * Fexp ee)
+           | _  => None
+           end
+         | Log _ e =>
+           let ee := get_annotation e in                      
+           match df_eval_tree_deriv_genvar σ e v with
+           | Some ed => Some (ed / ee)
+           | _ => None
+           end
+         | Abs _ e =>
+           let ee := get_annotation e in                                 
+           match df_eval_tree_deriv_genvar σ e v with
+           | Some ed => Some (ed * (sign ee))
+           | _ => None
+           end
+         | Sign _ e => 
+           match df_eval_tree_deriv_genvar σ e v with
+           | Some _ => Some 0
+           | None => None
+           end
+         | PSign _ e => 
+           match df_eval_tree_deriv_genvar σ e v with
+           | Some _ => Some 0
+           | None => None
+           end
+         | Max _ l r =>
+           let '(le,re) := (get_annotation l, get_annotation r) in                       
+           if le <= re then df_eval_tree_deriv_genvar σ r v else df_eval_tree_deriv_genvar σ l v
+         | VectorElem n _ l i => 
+           match (df_eval_tree_deriv_genvar σ l v)  with
+           | Some l' => Some (l' i)
+           | _ => None
+           end
+         | MatrixElem m n _ l i j =>
+           match (df_eval_tree_deriv_genvar σ l v)  with
+           | Some l' => Some (l' i j)
+           | _ => None
+           end
+         | VectorDot n _ l r =>
+           let '(le,re) := (get_annotation l, get_annotation r) in
+           match df_eval_tree_deriv_genvar σ l v, df_eval_tree_deriv_genvar σ r v with
+           | Some ld, Some rd => 
+               Some (vsum (fun j => (le j) * (rd j) + (ld j) * (re j)))
+           | _, _ => None
+           end
+         | VectorSum n _ l =>
+           match df_eval_tree_deriv_genvar σ l v with
+           | Some ld =>
+               Some (vsum ld)
+           | _ => None
+           end
+         | MatrixSum n m _ l =>
+           match df_eval_tree_deriv_genvar σ l v with
+           | Some ld =>
+               Some (msum ld)
+           | _ => None
+           end
+         | VectorScalMult n _ x r =>
+           let '(xe,re) := (get_annotation x, get_annotation r) in
+           match df_eval_tree_deriv_genvar σ x v, df_eval_tree_deriv_genvar σ r v with
+           | Some xd, Some rd => Some (fun j => xe * (rd j) + xd * (re j))
+           | _, _ => None
+           end
+         | MatrixScalMult n m _ x r =>
+           let '(xe,re) := (get_annotation x, get_annotation r) in           
+           match df_eval_tree_deriv_genvar σ x v, df_eval_tree_deriv_genvar σ r v with
+           | Some xd, Some rd => Some (fun i j => xe * (rd i j) + xd * (re i j))
+           | _, _ => None
+           end
+         | MatrixVectorMult n m _ l r =>
+           let '(le,re) := (get_annotation l, get_annotation r) in           
+           match df_eval_tree_deriv_genvar σ l v, df_eval_tree_deriv_genvar σ r v with
+           | Some ld, Some rd =>
+             Some (fun i => vsum (fun j => (le i j)*(rd j) + (ld i j)*(re j)))
+           | _, _ => None
+           end
+         | MatrixVectorAdd n m _ l r =>
+           match df_eval_tree_deriv_genvar σ l v, df_eval_tree_deriv_genvar σ r v with
+           | Some ld, Some rd =>
+             Some (fun i j => (ld i j) + (rd i))
+           | _, _ => None
+           end
+         | MatrixMult n m p _ l r =>
+           let '(le,re) := (get_annotation l, get_annotation r) in                      
+           match df_eval_tree_deriv_genvar σ l v, df_eval_tree_deriv_genvar σ r v with
+           | Some ld, Some rd =>
+             Some (fun i k => vsum (fun j => (le i j)*(rd j k) + (ld i j)*(re j k)))
+           | _, _ => None
+           end
+         | VectorPlus n _ l r =>
+           match df_eval_tree_deriv_genvar σ l v, df_eval_tree_deriv_genvar σ r v with           
+           | Some l', Some r' => Some (fun i => (l' i) + (r' i))
+           | _, _ => None
+           end
+         | VectorMinus n _ l r =>
+           match df_eval_tree_deriv_genvar σ l v, df_eval_tree_deriv_genvar σ r v with           
+           | Some l', Some r' => Some (fun i => (l' i) - (r' i))
+           | _, _ => None
+           end
+         | MatrixPlus n m _ l r =>
+           match df_eval_tree_deriv_genvar σ l v, df_eval_tree_deriv_genvar σ r v with           
+           | Some l', Some r' => Some (fun i j => (l' i j) + (r' i j))
+           | _, _ => None
+           end
+         | MatrixMinus n m _ l r =>
+           match df_eval_tree_deriv_genvar σ l v, df_eval_tree_deriv_genvar σ r v with           
+           | Some l', Some r' => Some (fun i j => (l' i j) - (r' i j))
+           | _, _ => None
+           end
+         | VectorApply n _ x s r =>
+           let re := get_annotation r in 
+           match df_eval_tree_deriv_genvar σ r v with                      
+           | Some rd => 
+             vectoro_to_ovector 
+               (fun i => 
+                  let xv := (x, DTfloat):var_type in
+                  match df_eval_deriv_genvar (cons (mk_env_entry xv (re i)) σ (* nil *)) s v with
+                         | Some sd => Some ((rd i) * sd)
+                         | _ => None
+                         end)
+           | _ => None                                                    
+           end
+         | MatrixApply n m _ x s r =>
+           let re := get_annotation r in 
+           match df_eval_tree_deriv_genvar σ r v with                      
+           | Some rd => 
+             matrixo_to_omatrix
+               (fun i j => 
+                  let xv := (x, DTfloat):var_type in
+                  match df_eval_deriv_genvar (cons (mk_env_entry xv (re i j)) σ  (* nil *)) s v with
+                         | Some sd => Some ((rd i j) * sd)
+                         | _ => None
+                         end)
+           | _ => None                                                    
+           end
+         | VLossfun n _ v1 v2 s l r => 
+           let le := get_annotation l in 
+           match df_eval_tree_deriv_genvar σ l v with                      
+           | Some ld => 
+             match (vectoro_to_ovector 
+                      (fun i => 
+                         let xv1 := (v1, DTfloat):var_type in
+                         let xv2 := (v2, DTfloat):var_type in                         
+                         match df_eval_deriv_genvar (cons (mk_env_entry xv1 (le i)) 
+                                                   (cons (mk_env_entry xv2 (r i)) σ (* nil *))) s v with
+                         | Some sd => Some ((ld i) * sd)
+                         | _ => None
+                         end)) with
+             | Some vv => Some (vsum vv)
+             | _ => None
+             end
+           | _ => None
+           end
+         | MLossfun n m _ v1 v2 s l r => 
+           let le := get_annotation l in 
+           match df_eval_tree_deriv_genvar σ l v with                      
+           | Some ld => 
+             match (matrixo_to_omatrix
+                      (fun i j => 
+                         let xv1 := (v1, DTfloat):var_type in
+                         let xv2 := (v2, DTfloat):var_type in                         
+                         match df_eval_deriv_genvar (cons (mk_env_entry xv1 (le i j)) 
+                                                   (cons (mk_env_entry xv2 (r i j)) σ (* nil *))) s v with
+                         | Some sd => Some ((ld i j) * sd)
+                         | _ => None
+                         end)) with
+             | Some vv => Some ((msum vv) / (FfromZ (Z.of_nat m)))
+             | _ => None
+             end
+           | _ => None
+           end
+          end).
+
     Definition vector_env_iter {n} {A} (f: A -> df_env -> option df_env)
              (env: df_env) (v : Vector A n) : option df_env :=
       vector_fold_right (fun a oenv => match oenv with
