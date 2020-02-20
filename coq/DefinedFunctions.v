@@ -2080,18 +2080,13 @@ F (d : definition_function_types)
                    (if (proj1_sig b) == (proj1_sig j) then 1 else 0)
                  else  0.
 
-    Definition df_eval_deriv_gen_top {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (v: var_type) :
-      option (definition_function_types_interp_prod (snd v) T) :=
-      match (snd v) as vt return option (definition_function_types_interp_prod vt T) with
-        | DTfloat => df_eval_deriv_genvar σ df ((mk_env_entry (fst v, DTfloat) 1)::nil)
-        | DTVector n => 
-          vectoro_to_ovector 
-            (fun i => df_eval_deriv_genvar σ df ((mk_env_entry (fst v, DTVector n) (UnitVector n i))::nil))
-        | DTMatrix n m => 
-          matrixo_to_omatrix
-            (fun i j => df_eval_deriv_genvar σ df ((mk_env_entry (fst v, DTMatrix n m) (UnitMatrix n m i j))::nil))
-        end.
-    
+    Definition const_env (v : var_type) : df_env
+      := match (snd v) with
+         | DTfloat => ((mk_env_entry (fst v, DTfloat) 0)::nil)
+         | DTVector n => ((mk_env_entry (fst v, DTVector n) (ConstVector n 0))::nil)
+         | DTMatrix m n =>  ((mk_env_entry (fst v, DTMatrix m n) (ConstMatrix m n 0))::nil)
+         end.
+
     Fixpoint df_eval_tree_deriv {T} (σ:df_env) (df:DefinedFunction EvalAnn T) (v:var_type) : option (definition_function_types_interp T)
       := (match df with
          | Number _ _ => Some 0
@@ -2888,6 +2883,82 @@ F (d : definition_function_types)
            end
           end.
 
+    Definition lifted_type (B:Type) T 
+      := match T with
+         | DTfloat => B
+         | DTVector n => Vector B n
+         | DTMatrix m n => Matrix B m n 
+         end.
+
+    Definition definition_function_types_interp_prod_alt (vart dft:definition_function_types) :=
+      lifted_type (definition_function_types_interp dft) vart.
+
+
+    Definition df_eval_deriv_gen_top {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (v: var_type) :
+      option (lifted_type (definition_function_types_interp T) (snd v)) :=
+      match (snd v) as vt return option (lifted_type (definition_function_types_interp T) vt) with
+        | DTfloat => df_eval_deriv_genvar σ df ((mk_env_entry (fst v, DTfloat) 1)::nil)
+        | DTVector n => 
+          vectoro_to_ovector 
+            (fun i => df_eval_deriv_genvar σ df ((mk_env_entry (fst v, DTVector n) (UnitVector n i))::nil))
+        | DTMatrix n m => 
+          matrixo_to_omatrix
+            (fun i j => df_eval_deriv_genvar σ df ((mk_env_entry (fst v, DTMatrix n m) (UnitMatrix n m i j))::nil))
+      end.
+
+    Program Definition df_eval_backward_gen_top {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (v: var_type) :
+      option (lifted_type (definition_function_types_interp (snd v)) T) :=
+      let grad_env := const_env v in
+      (match T as vt return T = vt -> option (lifted_type (definition_function_types_interp (snd v)) vt) with
+      | DTfloat => fun pf => olift (fun e => vartlookup e v) (df_eval_backprop_deriv σ df grad_env (coerce _ 1))
+      | DTVector n => fun pf =>
+        vectoro_to_ovector 
+          (fun i => olift (fun e => vartlookup e v) (df_eval_backprop_deriv σ df grad_env (coerce _ (UnitVector n i))))
+      | DTMatrix m n => fun pf =>
+        matrixo_to_omatrix
+          (fun i j => olift (fun e => vartlookup e v) (df_eval_backprop_deriv σ df grad_env (coerce _ (UnitMatrix m n i j))))
+      end) (eq_refl _).
+
+    Definition transpose_lifted_type {T1 T2} :
+               lifted_type (definition_function_types_interp T1) T2 ->
+      lifted_type (definition_function_types_interp T2) T1
+      := match T1, T2 with
+         | DTfloat, _ => fun inp => inp
+         | _, DTfloat => fun inp => inp
+         | DTVector n1, DTVector n2 => fun inp => fun i j => inp j i
+         | DTMatrix m1 n1, DTMatrix m2 n2 => fun inp => fun i j p q => inp p q i j
+         | DTVector n1, DTMatrix m2 n2 => fun inp => fun i p q => inp p q i
+         | DTMatrix m1 n1, DTVector n2 => fun inp => fun i j p => inp p i j
+         end.
+        
+    Lemma yay {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (v: var_type) :
+      let forward := df_eval_deriv_gen_top σ df v in
+      let backward := df_eval_backward_gen_top σ df v in
+      lift transpose_lifted_type forward = backward.
+    Proof.
+      simpl.
+      unfold df_eval_deriv_gen_top, df_eval_backward_gen_top.
+      revert σ.
+      DefinedFunction_cases (induction T, df using DefinedFunction_ind_simpl) Case
+      ; simpl; intros σ.
+      - Case "Number"%string.
+        destruct v; simpl.
+        destruct d; simpl.
+        + match_destr; [ | congruence].
+          admit.
+        + match_destr; [ | congruence].
+          admit.
+        + match_destr; [ | congruence].
+          admit.
+      - admit.
+      - admit.
+      - admit.
+      - admit.
+      - Case "Plus"%string.
+        
+        
+      
+    Qed.
 
     Fixpoint df_eval_tree_backprop_deriv {T} (σ:df_env) (df:DefinedFunction EvalAnn T) (grad_env:df_env)  {struct df} : definition_function_types_interp T -> option df_env
       := match df with
