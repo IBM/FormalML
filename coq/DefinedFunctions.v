@@ -89,6 +89,11 @@ Section DefinedFunctions.
       apply vart_dec.
     Defined.
 
+    Lemma var_type_UIP_refl {x:var_type} (e:x=x) : e = eq_refl x.
+    Proof.
+      apply (UIP_dec vart_dec).
+    Qed.
+
     Definition env_entry_type := {v:var_type & definition_function_types_interp (snd v)}.
     Definition df_env := list env_entry_type.
 
@@ -617,6 +622,13 @@ F (d : definition_function_types)
       | Case_aux c "VLossfun"%string
       | Case_aux c "MLossfun"%string].        
 
+
+    Ltac refl_simpler := 
+      repeat
+        match goal with
+        | [H: @eq var_type _ _ |- _ ] => rewrite (var_type_UIP_refl H)
+        | [H: @equiv var_type _ _ _ _ |- _ ] => rewrite (var_type_UIP_refl H)
+        end.
 
 
   Definition df_plus  (df1 df2 : DefinedFunction UnitAnn DTfloat) : DefinedFunction UnitAnn DTfloat :=
@@ -2944,21 +2956,23 @@ F (d : definition_function_types)
       - Case "Number"%string.
         destruct v; simpl.
         destruct d; simpl.
-        + match_destr; [ | congruence].
-          admit.
-        + match_destr; [ | congruence].
-          admit.
-        + match_destr; [ | congruence].
-          admit.
+        + match_destr; [ | congruence]
+          ; refl_simpler; simpl; trivial.
+        + match_destr; [ | congruence]
+          ; refl_simpler; simpl; trivial.
+          erewrite vectoro_to_ovector_forall_some_b_strong
+          ; simpl; trivial.
+        + match_destr; [ | congruence]
+          ; refl_simpler; simpl; trivial.
+          unfold matrixo_to_omatrix.
+          repeat (erewrite vectoro_to_ovector_forall_some_b_strong
+          ; simpl; trivial; intros).
       - admit.
       - admit.
       - admit.
       - admit.
       - Case "Plus"%string.
-        
-        
-      
-    Qed.
+    Admitted.
 
     Fixpoint df_eval_tree_backprop_deriv {T} (σ:df_env) (df:DefinedFunction EvalAnn T) (grad_env:df_env)  {struct df} : definition_function_types_interp T -> option df_env
       := match df with
@@ -3168,10 +3182,6 @@ F (d : definition_function_types)
       | _ => nil
       end.
 
-    Lemma var_type_UIP_refl {x:var_type} (e:x=x) : e = eq_refl x.
-    Proof.
-      apply (UIP_dec vart_dec).
-    Qed.
     
     Definition backprop_lookup (oenv:option df_env) (a:var_type) : 
       option (definition_function_types_interp (snd a)) :=
@@ -4341,13 +4351,11 @@ F (d : definition_function_types)
    Proof.
      induction gradenv; simpl.
      - destruct (@equiv_dec var_type _ _ _ xv xv); [| congruence].
-       rewrite (var_type_UIP_refl e); simpl.
-       reflexivity.
+       refl_simpler; simpl; trivial.
      - destruct a; simpl.
        case_eq (@equiv_dec var_type _ _ _ xv x); simpl; intros.
        + destruct (@equiv_dec var_type _ _ _ xv xv); [| congruence].
-         rewrite (var_type_UIP_refl e0); simpl.
-         reflexivity.
+         refl_simpler; simpl; trivial.
        + rewrite H; trivial.
    Qed.
 
@@ -4371,15 +4379,13 @@ F (d : definition_function_types)
    Proof.
      induction gradenv; simpl.
      - destruct (@equiv_dec var_type _ _ _ xv xv); [| congruence].
-       rewrite (var_type_UIP_refl e); simpl.
-       reflexivity.
+       refl_simpler; simpl; trivial.
      - destruct a; simpl.
        case_eq (@equiv_dec var_type _ _ _ xv x); simpl; intros.
        + destruct (@equiv_dec var_type _ _ _ xv xv); [| congruence].
-         rewrite (var_type_UIP_refl e0); simpl.
-         reflexivity.
+         refl_simpler; simpl; trivial.
        + destruct (@equiv_dec var_type _ _ _ xv xv); [| congruence].
-         now rewrite (var_type_UIP_refl e); simpl.         
+         refl_simpler; simpl; trivial.
    Qed.
 
 
