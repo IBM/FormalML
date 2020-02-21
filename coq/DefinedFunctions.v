@@ -2902,47 +2902,6 @@ F (d : definition_function_types)
          | DTMatrix m n => Matrix B m n 
          end.
 
-    Definition definition_function_types_interp_prod_alt (vart dft:definition_function_types) :=
-      lifted_type (definition_function_types_interp dft) vart.
-
-
-    Definition df_eval_deriv_gen_top {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (v: var_type) :
-      option (lifted_type (definition_function_types_interp T) (snd v)) :=
-      match (snd v) as vt return option (lifted_type (definition_function_types_interp T) vt) with
-        | DTfloat => df_eval_deriv_genvar σ df ((mk_env_entry (fst v, DTfloat) 1)::nil)
-        | DTVector n => 
-          vectoro_to_ovector 
-            (fun i => df_eval_deriv_genvar σ df ((mk_env_entry (fst v, DTVector n) (UnitVector n i))::nil))
-        | DTMatrix n m => 
-          matrixo_to_omatrix
-            (fun i j => df_eval_deriv_genvar σ df ((mk_env_entry (fst v, DTMatrix n m) (UnitMatrix n m i j))::nil))
-      end.
-
-    Program Definition df_eval_backward_gen_top {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (v: var_type) :
-      option (lifted_type (definition_function_types_interp (snd v)) T) :=
-      let grad_env := const_env v in
-      (match T as vt return T = vt -> option (lifted_type (definition_function_types_interp (snd v)) vt) with
-      | DTfloat => fun pf => olift (fun e => vartlookup e v) (df_eval_backprop_deriv σ df grad_env (coerce _ 1))
-      | DTVector n => fun pf =>
-        vectoro_to_ovector 
-          (fun i => olift (fun e => vartlookup e v) (df_eval_backprop_deriv σ df grad_env (coerce _ (UnitVector n i))))
-      | DTMatrix m n => fun pf =>
-        matrixo_to_omatrix
-          (fun i j => olift (fun e => vartlookup e v) (df_eval_backprop_deriv σ df grad_env (coerce _ (UnitMatrix m n i j))))
-      end) (eq_refl _).
-
-    Definition transpose_lifted_type {T1 T2} :
-               lifted_type (definition_function_types_interp T1) T2 ->
-      lifted_type (definition_function_types_interp T2) T1
-      := match T1, T2 with
-         | DTfloat, _ => fun inp => inp
-         | _, DTfloat => fun inp => inp
-         | DTVector n1, DTVector n2 => fun inp => fun i j => inp j i
-         | DTMatrix m1 n1, DTMatrix m2 n2 => fun inp => fun i j p q => inp p q i j
-         | DTVector n1, DTMatrix m2 n2 => fun inp => fun i p q => inp p q i
-         | DTMatrix m1 n1, DTVector n2 => fun inp => fun i j p => inp p i j
-         end.
-
     Fixpoint df_eval_tree_backprop_deriv {T} (σ:df_env) (df:DefinedFunction EvalAnn T) (grad_env:df_env)  {struct df} : definition_function_types_interp T -> option df_env
       := match df with
          | Number _ _ => fun grad => Some grad_env
@@ -4733,81 +4692,81 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        match_destr; simpl; eauto.
    Qed.
 
-   Lemma yay {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (v: var_type) :
-      let forward := df_eval_deriv_gen_top σ df v in
-      let backward := df_eval_backward_gen_top σ df v in
-      lift transpose_lifted_type forward = backward.
-    Proof.
-      simpl.
-      unfold df_eval_deriv_gen_top, df_eval_backward_gen_top.
-      revert σ.
-      DefinedFunction_cases (induction T, df using DefinedFunction_ind_simpl) Case
-      ; simpl; intros σ.
-      - Case "Number"%string.
-        destruct v; simpl.
-        destruct d; simpl.
-        + match_destr; [ | congruence]
-          ; refl_simpler; simpl; trivial.
-        + match_destr; [ | congruence]
-          ; refl_simpler; simpl; trivial.
-          erewrite vectoro_to_ovector_forall_some_b_strong
-          ; simpl; trivial.
-        + match_destr; [ | congruence]
-          ; refl_simpler; simpl; trivial.
-          unfold matrixo_to_omatrix.
-          repeat (erewrite vectoro_to_ovector_forall_some_b_strong
-          ; simpl; trivial; intros).
-      - admit.
-      - admit.
-      - admit.
-      - admit.
-      - Case "Plus"%string.
-        specialize (IHdf1 σ).
-        specialize (IHdf2 σ).
-        destruct v as [sv tv]; simpl in *.
-        destruct tv.
-        + match_option
-          ; rewrite eqq in IHdf1
-          ; simpl in *.
-          * case_eq (df_eval_backprop_deriv σ df1 (const_env (sv, DTfloat)) 1)
-            ; [intros ? eqq1 | intros eqq1]
-            ; rewrite eqq1 in IHdf1
-            ; simpl in *
-            ; try discriminate.
-            { match_option
-              ; rewrite eqq0 in IHdf2
-              ; simpl in *.
-              -  unfold olift in IHdf2
-                 ; match_option_in IHdf2.
-                 (***** HERE *******)
-                 admit.
-              - unfold olift in IHdf2
-                ; match_option_in IHdf2.
-                + elim (df_eval_backprop_deriv_preserves_lookup_not_none eqq2 (sv, DTfloat)); eauto.
-                  simpl.
-                  match_destr; congruence.
-                +  (***** HERE *******)
-                  admit.
-            } 
-          * unfold olift in IHdf1
-            ; match_option_in IHdf1.
-            elim (df_eval_backprop_deriv_preserves_lookup_not_none eqq0 (sv, DTfloat)); eauto.
-            simpl.
-            match_destr; congruence.
-        + 
+    Definition df_eval_deriv_gen_top {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (v: var_type) :
+      option (lifted_type (definition_function_types_interp T) (snd v)) :=
+      match (snd v) as vt return option (lifted_type (definition_function_types_interp T) vt) with
+        | DTfloat => df_eval_deriv_genvar σ df ((mk_env_entry (fst v, DTfloat) 1)::nil)
+        | DTVector n => 
+          vectoro_to_ovector 
+            (fun i => df_eval_deriv_genvar σ df ((mk_env_entry (fst v, DTVector n) (UnitVector n i))::nil))
+        | DTMatrix n m => 
+          matrixo_to_omatrix
+            (fun i j => df_eval_deriv_genvar σ df ((mk_env_entry (fst v, DTMatrix n m) (UnitMatrix n m i j))::nil))
+      end.
 
-        
-    Admitted.
+    Program Definition subvar (x : var_type) (grad_env:df_env) :=
+      (match snd x as y return snd x = y ->
+                               definition_function_types_interp y -> 
+                               definition_function_types_interp y with
+       | DTfloat =>  fun pf grad => match vartlookup grad_env x with
+                     | Some val => ((coerce _ val):float) - grad
+                     | _ => Fopp grad
+                     end
+       | DTVector n => fun pf grad => match vartlookup grad_env x with
+                       | Some val => fun i => (((coerce _ val):Vector float n) i) - (grad i) 
+                       | _ => vmap Fopp grad
+                       end
+       | DTMatrix m n => fun pf grad => match vartlookup grad_env x with
+                         | Some val => fun i j => (((coerce _ val):Matrix float m n) i j) - (grad i j)
+                         | _ => vmap (vmap Fopp) grad
+                         end
+       end) (eq_refl _).
+    Next Obligation.
+      rewrite pf; reflexivity.
+    Defined.
+    Next Obligation.
+      rewrite pf; reflexivity.
+    Defined.
+    Next Obligation.
+      rewrite pf; reflexivity.
+    Defined.
     
-   Lemma df_eval_tree_backprop_deriv_preserves_lookup_not_none {T} {env} {df:DefinedFunction EvalAnn T} {gradenv grad d} :
-     df_eval_tree_backprop_deriv env df gradenv grad = Some d ->
-     forall xv,
-     vartlookup gradenv xv <> None ->
-     vartlookup d xv <> None.
-   Proof.
+    Program Definition df_eval_backward_gen_top {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (v: var_type) (grad_env:df_env) :
+      option (lifted_type (definition_function_types_interp (snd v)) T) :=
+      match vartlookup grad_env v with
+      | Some old =>
+        (match T as vt return T = vt -> option (lifted_type (definition_function_types_interp (snd v)) vt) with
+         | DTfloat => fun pf => (lift (fun e => subvar v e old) (df_eval_backprop_deriv σ df grad_env (coerce _ 1)))
+         | DTVector n => fun pf =>
+                           vectoro_to_ovector 
+                             (fun i => lift (fun e => subvar v e old) (df_eval_backprop_deriv σ df grad_env (coerce _ (UnitVector n i))))
+         | DTMatrix m n => fun pf =>
+                             matrixo_to_omatrix
+                               (fun i j => lift (fun e => subvar v e old) (df_eval_backprop_deriv σ df grad_env (coerce _ (UnitMatrix m n i j))))
+         end) (eq_refl _)
+      | None => None
+      end.
 
-   Admitted.
+    (*
+    Lemma df_eval_backward_gen_top_same {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (v: var_type) (grad_env1 grad_env2:df_env) :
+      (vartlookup grad_env1 v <> None <-> vartlookup grad_env1 v <> None) ->
+      df_eval_backward_gen_top σ df v grad_env1 = df_eval_backward_gen_top σ df v grad_env2.
+    Proof.
+    Admitted.
+     *)
 
+
+    Definition transpose_lifted_type {T1 T2} :
+               lifted_type (definition_function_types_interp T1) T2 ->
+      lifted_type (definition_function_types_interp T2) T1
+      := match T1, T2 with
+         | DTfloat, _ => fun inp => inp
+         | _, DTfloat => fun inp => inp
+         | DTVector n1, DTVector n2 => fun inp => fun i j => inp j i
+         | DTMatrix m1 n1, DTMatrix m2 n2 => fun inp => fun i j p q => inp p q i j
+         | DTVector n1, DTMatrix m2 n2 => fun inp => fun i p q => inp p q i
+         | DTMatrix m1 n1, DTVector n2 => fun inp => fun i j p => inp p i j
+         end.
     Section deriv_deriv.
 
 (*
@@ -5066,6 +5025,50 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
  End apply.
 
 End DefinedFunctions.
+
+Tactic Notation "DefinedFunction_cases" tactic(first) ident(c) :=
+  first;
+  [ Case_aux c "Number"%string
+  | Case_aux c "Constant"%string                 
+  | Case_aux c "DVector"%string
+  | Case_aux c "DMatrix"%string
+  | Case_aux c "Var"%string
+  | Case_aux c "Plus"%string
+  | Case_aux c "Minus"%string
+  | Case_aux c "Times"%string
+  | Case_aux c "Divide"%string
+  | Case_aux c "Square"%string
+  | Case_aux c "Exp"%string
+  | Case_aux c "Log"%string
+  | Case_aux c "Abs"%string
+  | Case_aux c "Sign"%string
+  | Case_aux c "PSign"%string
+  | Case_aux c "Max"%string
+  | Case_aux c "VectorDot"%string
+  | Case_aux c "VectorSum"%string
+  | Case_aux c "MatrixSum"%string             
+  | Case_aux c "VectorElem"%string
+  | Case_aux c "MatrixElem"%string
+  | Case_aux c "MatrixVectorMult"%string
+  | Case_aux c "MatrixVectorAdd"%string             
+  | Case_aux c "MatrixMult"%string
+  | Case_aux c "VectorPlus"%string
+  | Case_aux c "VectorMinus"%string
+  | Case_aux c "MatrixPlus"%string
+  | Case_aux c "MatrixMinus"%string
+  | Case_aux c "VectorScalMult"%string
+  | Case_aux c "MatrixScalMult"%string
+  | Case_aux c "VectorApply"%string
+  | Case_aux c "MatrixApply"%string             
+  | Case_aux c "VLossfun"%string
+  | Case_aux c "MLossfun"%string].
+
+Ltac refl_simpler := 
+  repeat
+    match goal with
+    | [H: @eq var_type _ _ |- _ ] => rewrite (var_type_UIP_refl H)
+    | [H: @equiv var_type _ _ _ _ |- _ ] => rewrite (var_type_UIP_refl H)
+    end.
 
 Section real_pfs.
 
@@ -5495,7 +5498,8 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        + destruct (df_eval_deriv env r (x, DTfloat)); simpl; trivial.
        + destruct (df_eval_deriv env l (x, DTfloat)); simpl; trivial.
  Qed.
-  
+
+   (*
 
  Lemma tree_backpropeq_gen (x : SubVar) (env gradenv : df_env) 
        (dfexpr : DefinedFunction EvalAnn DTfloat) (grad : float) :
@@ -5830,6 +5834,92 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        destruct (df_eval_tree_deriv env r (x, DTfloat)); simpl; trivial.
        destruct (df_eval_tree_deriv env l (x, DTfloat)); simpl; trivial.
  Qed.
+*)
+   
+    Lemma yay {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (v: var_type) grad_env :
+      vartlookup grad_env v <> None ->
+      let forward := df_eval_deriv_gen_top σ df v in
+      let backward := df_eval_backward_gen_top σ df v grad_env in
+      lift transpose_lifted_type forward = backward.
+    Proof.
+      simpl.
+      revert grad_env.
+      unfold df_eval_deriv_gen_top, df_eval_backward_gen_top.
+      DefinedFunction_cases (induction T, df using DefinedFunction_ind_simpl) Case
+      ; simpl; intros grad_env vin.
+      - Case "Number"%string.
+        destruct v; simpl.
+        destruct d; simpl.
+        + unfold subvar; simpl.
+          match_destr; [ | congruence]
+          ; refl_simpler; simpl; trivial.
+          f_equal; lra.
+        + unfold subvar.
+          match_destr; [ | congruence]
+          ; refl_simpler; simpl; trivial.
+          erewrite vectoro_to_ovector_forall_some_b_strong
+          ; simpl; trivial; intros.
+          admit.
+        + match_destr; [ | congruence]
+          ; refl_simpler; simpl; trivial.
+          unfold matrixo_to_omatrix.
+          repeat (erewrite vectoro_to_ovector_forall_some_b_strong
+                  ; simpl; trivial; intros).
+          admit.
+      - admit.
+      - admit.
+      - admit.
+      - admit.
+      - Case "Plus"%string.
+        specialize (IHdf1 grad_env vin).
+        destruct v as [sv tv]; simpl in *.
+        destruct tv.
+        + match_option
+          ; rewrite eqq in IHdf1
+          ; simpl in *.
+          * match_option_in IHdf1. 
+            case_eq (df_eval_backprop_deriv σ df1 grad_env 1%R)
+            ; [intros ? eqq1 | intros eqq1]
+            ; rewrite eqq1 in IHdf1
+            ; simpl in *
+            ; try discriminate.
+            invcs IHdf1.
+            { specialize (IHdf2 d1).
+              cut_to IHdf2;
+                [| now apply (df_eval_backprop_deriv_preserves_lookup_not_none eqq1 (sv, DTfloat))].
+              match_option
+              ; rewrite eqq2 in IHdf2
+              ; simpl in *.
+              - match_option_in IHdf2.
+                unfold lift in IHdf2.
+                match_option_in IHdf2.
+                invcs IHdf2.
+                simpl.
+                f_equal.
+                unfold subvar; simpl.
+                rewrite eqq3.
+                match_option; lra.
+              - match_option_in IHdf2; simpl.
+                + unfold lift in *.
+                  match_option_in IHdf2.
+                + elim (df_eval_backprop_deriv_preserves_lookup_not_none eqq1 (sv, DTfloat) vin eqq3).
+            }
+          * match_option_in IHdf1.
+            unfold lift in *.
+            match_option_in IHdf1.
+        + 
+        
+    Admitted.
+    
+   Lemma df_eval_tree_backprop_deriv_preserves_lookup_not_none {T} {env} {df:DefinedFunction EvalAnn T} {gradenv grad d} :
+     df_eval_tree_backprop_deriv env df gradenv grad = Some d ->
+     forall xv,
+     vartlookup gradenv xv <> None ->
+     vartlookup d xv <> None.
+   Proof.
+
+   Admitted.
+
 
 (*
 Tactic Notation "DefinedFunction_cases" tactic(first) ident(c) :=
@@ -6218,39 +6308,3 @@ End real_pfs.
   End FreeVariablesExample.
 *)            
 
-Tactic Notation "DefinedFunction_cases" tactic(first) ident(c) :=
-  first;
-  [ Case_aux c "Number"%string
-  | Case_aux c "Constant"%string                 
-  | Case_aux c "DVector"%string
-  | Case_aux c "DMatrix"%string
-  | Case_aux c "Var"%string
-  | Case_aux c "Plus"%string
-  | Case_aux c "Minus"%string
-  | Case_aux c "Times"%string
-  | Case_aux c "Divide"%string
-  | Case_aux c "Square"%string
-  | Case_aux c "Exp"%string
-  | Case_aux c "Log"%string
-  | Case_aux c "Abs"%string
-  | Case_aux c "Sign"%string
-  | Case_aux c "PSign"%string
-  | Case_aux c "Max"%string
-  | Case_aux c "VectorDot"%string
-  | Case_aux c "VectorSum"%string
-  | Case_aux c "MatrixSum"%string             
-  | Case_aux c "VectorElem"%string
-  | Case_aux c "MatrixElem"%string
-  | Case_aux c "MatrixVectorMult"%string
-  | Case_aux c "MatrixVectorAdd"%string             
-  | Case_aux c "MatrixMult"%string
-  | Case_aux c "VectorPlus"%string
-  | Case_aux c "VectorMinus"%string
-  | Case_aux c "MatrixPlus"%string
-  | Case_aux c "MatrixMinus"%string
-  | Case_aux c "VectorScalMult"%string
-  | Case_aux c "MatrixScalMult"%string
-  | Case_aux c "VectorApply"%string
-  | Case_aux c "MatrixApply"%string             
-  | Case_aux c "VLossfun"%string
-  | Case_aux c "MLossfun"%string].
