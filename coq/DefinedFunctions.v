@@ -5907,7 +5907,49 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
           * match_option_in IHdf1.
             unfold lift in *.
             match_option_in IHdf1.
-        + 
+        + admit.
+        + admit.
+      - Case "Minus"%string.
+        specialize (IHdf1 grad_env vin).
+        destruct v as [sv tv]; simpl in *.
+        destruct tv.
+        + match_option
+          ; rewrite eqq in IHdf1
+          ; simpl in *.
+          * match_option_in IHdf1. 
+            case_eq (df_eval_backprop_deriv σ df1 grad_env 1%R)
+            ; [intros ? eqq1 | intros eqq1]
+            ; rewrite eqq1 in IHdf1
+            ; simpl in *
+            ; try discriminate.
+            invcs IHdf1.
+            { specialize (IHdf2 d1).
+              cut_to IHdf2;
+                [| now apply (df_eval_backprop_deriv_preserves_lookup_not_none eqq1 (sv, DTfloat))].
+              match_option
+              ; rewrite eqq2 in IHdf2
+              ; simpl in *.
+              - match_option_in IHdf2.
+                unfold lift in IHdf2.
+                match_option_in IHdf2.
+                invcs IHdf2.
+                simpl.
+                f_equal.
+                unfold subvar; simpl.
+                rewrite eqq3.
+                
+                match_option.
+              - match_option_in IHdf2; simpl. simpl.
+                + unfold lift in *.
+                  match_option_in IHdf2.
+                + elim (df_eval_backprop_deriv_preserves_lookup_not_none eqq1 (sv, DTfloat) vin eqq3).
+            }
+          * match_option_in IHdf1.
+            unfold lift in *.
+            match_option_in IHdf1.
+        + admit.
+        + admit.
+      - 
         
     Admitted.
     
