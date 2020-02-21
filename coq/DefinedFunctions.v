@@ -2942,37 +2942,6 @@ F (d : definition_function_types)
          | DTVector n1, DTMatrix m2 n2 => fun inp => fun i p q => inp p q i
          | DTMatrix m1 n1, DTVector n2 => fun inp => fun i j p => inp p i j
          end.
-        
-    Lemma yay {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (v: var_type) :
-      let forward := df_eval_deriv_gen_top σ df v in
-      let backward := df_eval_backward_gen_top σ df v in
-      lift transpose_lifted_type forward = backward.
-    Proof.
-      simpl.
-      unfold df_eval_deriv_gen_top, df_eval_backward_gen_top.
-      revert σ.
-      DefinedFunction_cases (induction T, df using DefinedFunction_ind_simpl) Case
-      ; simpl; intros σ.
-      - Case "Number"%string.
-        destruct v; simpl.
-        destruct d; simpl.
-        + match_destr; [ | congruence]
-          ; refl_simpler; simpl; trivial.
-        + match_destr; [ | congruence]
-          ; refl_simpler; simpl; trivial.
-          erewrite vectoro_to_ovector_forall_some_b_strong
-          ; simpl; trivial.
-        + match_destr; [ | congruence]
-          ; refl_simpler; simpl; trivial.
-          unfold matrixo_to_omatrix.
-          repeat (erewrite vectoro_to_ovector_forall_some_b_strong
-          ; simpl; trivial; intros).
-      - admit.
-      - admit.
-      - admit.
-      - admit.
-      - Case "Plus"%string.
-    Admitted.
 
     Fixpoint df_eval_tree_backprop_deriv {T} (σ:df_env) (df:DefinedFunction EvalAnn T) (grad_env:df_env)  {struct df} : definition_function_types_interp T -> option df_env
       := match df with
@@ -4764,6 +4733,72 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        match_destr; simpl; eauto.
    Qed.
 
+   Lemma yay {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (v: var_type) :
+      let forward := df_eval_deriv_gen_top σ df v in
+      let backward := df_eval_backward_gen_top σ df v in
+      lift transpose_lifted_type forward = backward.
+    Proof.
+      simpl.
+      unfold df_eval_deriv_gen_top, df_eval_backward_gen_top.
+      revert σ.
+      DefinedFunction_cases (induction T, df using DefinedFunction_ind_simpl) Case
+      ; simpl; intros σ.
+      - Case "Number"%string.
+        destruct v; simpl.
+        destruct d; simpl.
+        + match_destr; [ | congruence]
+          ; refl_simpler; simpl; trivial.
+        + match_destr; [ | congruence]
+          ; refl_simpler; simpl; trivial.
+          erewrite vectoro_to_ovector_forall_some_b_strong
+          ; simpl; trivial.
+        + match_destr; [ | congruence]
+          ; refl_simpler; simpl; trivial.
+          unfold matrixo_to_omatrix.
+          repeat (erewrite vectoro_to_ovector_forall_some_b_strong
+          ; simpl; trivial; intros).
+      - admit.
+      - admit.
+      - admit.
+      - admit.
+      - Case "Plus"%string.
+        specialize (IHdf1 σ).
+        specialize (IHdf2 σ).
+        destruct v as [sv tv]; simpl in *.
+        destruct tv.
+        + match_option
+          ; rewrite eqq in IHdf1
+          ; simpl in *.
+          * case_eq (df_eval_backprop_deriv σ df1 (const_env (sv, DTfloat)) 1)
+            ; [intros ? eqq1 | intros eqq1]
+            ; rewrite eqq1 in IHdf1
+            ; simpl in *
+            ; try discriminate.
+            { match_option
+              ; rewrite eqq0 in IHdf2
+              ; simpl in *.
+              -  unfold olift in IHdf2
+                 ; match_option_in IHdf2.
+                 (***** HERE *******)
+                 admit.
+              - unfold olift in IHdf2
+                ; match_option_in IHdf2.
+                + elim (df_eval_backprop_deriv_preserves_lookup_not_none eqq2 (sv, DTfloat)); eauto.
+                  simpl.
+                  match_destr; congruence.
+                +  (***** HERE *******)
+                  admit.
+            } 
+          * unfold olift in IHdf1
+            ; match_option_in IHdf1.
+            elim (df_eval_backprop_deriv_preserves_lookup_not_none eqq0 (sv, DTfloat)); eauto.
+            simpl.
+            match_destr; congruence.
+        + 
+
+        
+    Admitted.
+    
    Lemma df_eval_tree_backprop_deriv_preserves_lookup_not_none {T} {env} {df:DefinedFunction EvalAnn T} {gradenv grad d} :
      df_eval_tree_backprop_deriv env df gradenv grad = Some d ->
      forall xv,
