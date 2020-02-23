@@ -5892,25 +5892,40 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         lra.
       Qed.
 
+      Lemma split_subvar (env1 env2: df_env) (oval val1 : float) (s : SubVar) :
+        let v := (s, DTfloat) in
+        vartlookup env1 v = Some val1 ->
+        subvar v env2 oval = (subvar v env2 val1 + subvar v env1 oval)%R.
+      Proof.
+        intros.
+        unfold subvar; simpl.
+        rewrite H.
+        case_eq (vartlookup env2 v); intros.
+        lra.
+        lra.
+      Qed.
+
     Lemma scalarMult_backprop_grad_scalar {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (s: SubVar) (grad_env1 grad_env2:df_env) (grad : definition_function_types_interp T) (c:float) :
       let v := (s, DTfloat) in
-      (forall (vv : var_type), vartlookup grad_env1 vv <> None <-> vartlookup grad_env2 vv <> None) ->
+
       vartlookup grad_env1 v <> None -> vartlookup grad_env2 v <> None ->
+      df_eval_backprop_deriv σ df grad_env1 (scalarMult T c grad) <> None ->
+      df_eval_backprop_deriv σ df grad_env2 grad <> None ->
       df_eval_backprop_delta σ df v grad_env1 (scalarMult T c grad) =
       lift (fun e => scalarMult (snd v) c e) (df_eval_backprop_delta σ df v grad_env2 grad).
     Proof.
       revert grad_env1 grad_env2.
       unfold df_eval_backprop_delta.
       DefinedFunction_cases (induction T, df using DefinedFunction_ind_simpl) Case
-      ; simpl; intros grad_env1 grad_env2 vvcond neq1 neq2; intros.
+      ; simpl; intros grad_env1 grad_env2 neq1 neq2; intros.
        - Case "Number"%string.
         case_eq (vartlookup grad_env1 (s, DTfloat)); [|tauto].
         case_eq (vartlookup grad_env2 (s, DTfloat)); [|tauto].
         intros; simpl; f_equal.
         unfold subvar; simpl.
         match_destr; match_destr.
-        inversion H0; subst.
-        inversion H; subst.
+        inversion H1; subst.
+        inversion H2; subst.
         lra.
       - Case "Constant"%string.
         case_eq (vartlookup grad_env1 (s, DTfloat)); [ |tauto].
@@ -5918,8 +5933,8 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         intros; simpl; f_equal.
         unfold subvar; simpl.
         match_destr; match_destr.
-        inversion H0; subst.
-        inversion H; subst.
+        inversion H1; subst.
+        inversion H2; subst.
         lra.
       - Case "DVector"%string.
         case_eq (vartlookup grad_env1 (s, DTfloat)); [ |tauto].
@@ -5928,75 +5943,63 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         admit.
       - Case "DMatrix"%string; admit.
       - Case "Var"%string.
-        specialize (vvcond v).
         case_eq (vartlookup grad_env1 (s, DTfloat)); [ |tauto].
         case_eq (vartlookup grad_env2 (s, DTfloat)); [ |tauto].        
         intros.
-        case_eq (vartlookup grad_env1 v); intros; simpl.
-        case_eq (vartlookup grad_env2 v); intros; simpl; f_equal.
-        + destruct (vart_dec v (s, DTfloat)).
-          * subst; simpl.
-            rewrite subvar_addvar_scalar_eq; [|apply H0].
-            now rewrite subvar_addvar_scalar_eq.
-          * rewrite subvar_addvar_scalar_neq; [| apply H0 | apply n].
-            rewrite subvar_addvar_scalar_neq; [| apply H | apply n].
-            lra.
-        + assert (vartlookup grad_env1 v <> None).
-          * rewrite H1; discriminate.
-          * tauto.
-        + case_eq (vartlookup grad_env2 v); intros; simpl; f_equal.
-          * assert (vartlookup grad_env2 v <> None).
-            -- rewrite H2; discriminate.
-            -- tauto.
-          * unfold subvar; simpl.
-            rewrite H0.
-            rewrite H.
-            lra.
+        destruct (vart_dec v (s, DTfloat)).
+        + subst; simpl.
+          rewrite H2; simpl.
+          rewrite subvar_addvar_scalar_eq; trivial.
+          rewrite H1; simpl.
+          now rewrite subvar_addvar_scalar_eq.
+        + case_eq (vartlookup grad_env1 v); intros; simpl.
+          * case_eq (vartlookup grad_env2 v); intros; simpl; f_equal.
+            -- rewrite subvar_addvar_scalar_neq; trivial.
+               rewrite subvar_addvar_scalar_neq; trivial.
+               lra.
+            -- rewrite subvar_addvar_scalar_neq; trivial.
+               unfold subvar; simpl.
+               rewrite H1.
+               lra.
+          * case_eq (vartlookup grad_env2 v); intros; simpl; f_equal.
+            -- rewrite subvar_addvar_scalar_neq; trivial.
+               unfold subvar; simpl.
+               rewrite H2.
+               lra.
+            -- unfold subvar; simpl.
+               rewrite H2; rewrite H1.
+               lra.
       - Case "Plus"%string.
         case_eq (vartlookup grad_env1 (s, DTfloat)); [ |tauto].
         case_eq (vartlookup grad_env2 (s, DTfloat)); [ |tauto].        
-        specialize (IHdf1 grad grad_env1 grad_env2); simpl in *.
-        intros.
-        rewrite H in IHdf1.
-        rewrite H0 in IHdf1.
-        simpl in *.
+        specialize (IHdf1 grad grad_env1 grad_env2); intros.
+        rewrite H1 in IHdf1; rewrite H2 in IHdf1; simpl in *.
         case_eq (df_eval_backprop_deriv σ df1 grad_env1 (c * grad)%R); intros.
-        case_eq (df_eval_backprop_deriv σ df1 grad_env2 grad); intros.        
-        + specialize (IHdf2 grad d1).
-          rewrite H1 in IHdf1.
-          case_eq (vartlookup d1 (s, DTfloat)).
-          * intros.
-            rewrite H3 in IHdf2; simpl in *.
-            rewrite H2 in IHdf1; simpl in *.
-            specialize (IHdf2 d2).
-            case_eq (df_eval_backprop_deriv σ df2 d1 (c * grad)%R). 
-            case_eq (df_eval_backprop_deriv σ df2 d2 grad).
-            intros; unfold lift; f_equal.
-            rewrite H5 in IHdf2; rewrite H4 in IHdf2; simpl in *.
-            replace (subvar (s, DTfloat) d5 d0) with 
-                ((subvar (s, DTfloat) d5 d3) + (subvar (s, DTfloat) d1 d0))%R.
-            assert (Some (subvar (s, DTfloat) d1 d0) = Some (c * subvar (s, DTfloat) d2 d)%R).
-            now apply IHdf1.
-            inversion H6; rewrite H8.
-            case_eq (vartlookup d2 (s, DTfloat)).
-            intros.
-            rewrite H7 in IHdf2.
-            simpl in *.
-            assert ( Some (subvar (s, DTfloat) d5 d3) = Some (c * subvar (s, DTfloat) d4 d6)%R).
-            apply IHdf2.
-            admit.
-            discriminate.
-            discriminate.
-            inversion H9.
-            rewrite H11.
-            admit.
-            admit.
-            admit.
-            admit.
-            admit.
-          * admit.
-        + admit.
-        + admit.
+        rewrite H3 in H; simpl in H.
+        case_eq (df_eval_backprop_deriv σ df1 grad_env2 grad); intros.
+        rewrite H4 in H0; simpl in H0.
+        + specialize (IHdf2 grad d1 d2).
+          rewrite H3 in IHdf1; rewrite H4 in IHdf1.
+          assert (vartlookup d1 (s, DTfloat) <> None) by
+              apply (df_eval_backprop_deriv_preserves_lookup_not_none H3 (s, DTfloat) neq1).
+          case_eq (vartlookup d1 (s, DTfloat)); [ |tauto]; intros.
+          assert (vartlookup d2 (s, DTfloat) <> None) by
+              apply (df_eval_backprop_deriv_preserves_lookup_not_none H4 (s, DTfloat) neq2).
+          case_eq (vartlookup d2 (s, DTfloat)); [ |tauto]; intros.
+          rewrite H6 in IHdf2; rewrite H8 in IHdf2; simpl in *.
+          case_eq (df_eval_backprop_deriv σ df2 d1 (c * grad)%R); [|tauto]; intros.
+          case_eq (df_eval_backprop_deriv σ df2 d2 grad); [|tauto]; intros; simpl; f_equal.
+          rewrite (split_subvar d1 d5 d0 d3) by trivial.
+          rewrite (split_subvar d2 d6 d d4) by trivial.
+          rewrite H9 in IHdf2; rewrite H10 in IHdf2; simpl in *.
+          assert (Some (subvar (s, DTfloat) d1 d0) = Some (c * subvar (s, DTfloat) d2 d)%R) by
+              (apply IHdf1; trivial; discriminate).
+          assert (Some (subvar (s, DTfloat) d5 d3) = Some (c * subvar (s, DTfloat) d6 d4)%R) by
+              (apply IHdf2; trivial; discriminate).
+          inversion H11; inversion H12.
+          rewrite H14; rewrite H15; lra.
+        + now rewrite H4 in H0.
+        + now rewrite H3 in H.
       - Case "Minus"%string; admit.
       - Case "Times"%string; admit.
       - Case "Divide"%string; admit.                
@@ -6005,8 +6008,10 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         case_eq (vartlookup grad_env2 (s, DTfloat)); [ |tauto]; intros.        
         case_eq (df_eval σ df); [ | tauto]; intros.
         specialize (IHdf (2 * d1 * grad)%R grad_env1 grad_env2); simpl in *.
-        rewrite H in IHdf; rewrite H0 in IHdf.
+        rewrite H1 in IHdf; rewrite H2 in IHdf.
         replace (2 * d1 * (c * grad))%R with (c * (2 * d1 * grad))%R by lra.
+        rewrite H3 in H; rewrite H3 in H0; simpl in *.
+        replace (2 * d1 * (c * grad))%R with (c * (2 * d1 * grad))%R in H by lra.
         now apply IHdf.
       - Case "Exp"%string.
         case_eq (vartlookup grad_env1 (s, DTfloat)); [ |tauto]; intros.
@@ -6014,7 +6019,9 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         case_eq (df_eval σ df); [ | tauto]; intros.
         specialize (IHdf (grad * exp d1)%R grad_env1 grad_env2); simpl in *.
         replace (c * grad * exp d1)%R with (c * (grad * exp d1))%R by lra.
-        rewrite H in IHdf; rewrite H0 in IHdf.
+        rewrite H1 in IHdf; rewrite H2 in IHdf.
+        rewrite H3 in H; rewrite H3 in H0.
+        replace (c * grad * exp d1)%R with (c * (grad * exp d1))%R in H by lra.
         now apply IHdf.
       - Case "Log"%string.
         case_eq (vartlookup grad_env1 (s, DTfloat)); [ |tauto]; intros.
@@ -6022,7 +6029,9 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         case_eq (df_eval σ df); [ | tauto]; intros.
         specialize (IHdf (grad / d1)%R grad_env1 grad_env2 ); simpl in *.
         replace (c * grad / d1)%R with (c * (grad / d1))%R by lra.
-        rewrite H in IHdf; rewrite H0 in IHdf.
+        rewrite H1 in IHdf; rewrite H2 in IHdf.
+        rewrite H3 in H; rewrite H3 in H0.
+        replace (c * grad / d1)%R with (c * (grad / d1))%R in H by lra.
         now apply IHdf.
       - Case "Abs"%string.
         case_eq (vartlookup grad_env1 (s, DTfloat)); [ |tauto]; intros.
@@ -6031,33 +6040,42 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         specialize (IHdf (grad * sign d1)%R grad_env1 grad_env2); simpl in *.
         replace (c * grad * (@sign floatish_R d1))%R 
           with (c * (grad * (@sign floatish_R d1)))%R by lra.
-        rewrite H in IHdf; rewrite H0 in IHdf.
+        rewrite H1 in IHdf; rewrite H2 in IHdf.
+        rewrite H3 in H; rewrite H3 in H0.
+        replace (c * grad * (@sign floatish_R d1))%R 
+          with (c * (grad * (@sign floatish_R d1)))%R in H by lra.
         now apply IHdf.
       - Case "Sign"%string.
         case_eq (vartlookup grad_env1 (s, DTfloat)); [ |tauto]; intros.
         case_eq (vartlookup grad_env2 (s, DTfloat)); [ |tauto]; intros.        
         specialize (IHdf (0)%R grad_env1 grad_env2); simpl in *.
         replace (0%R) with (c * 0)%R at 1 by lra.
-        rewrite H in IHdf; rewrite H0 in IHdf.
+        rewrite H1 in IHdf; rewrite H2 in IHdf.
+        replace (0%R) with (c * 0)%R in H by lra.
         now apply IHdf.
       - Case "PSign"%string.
         case_eq (vartlookup grad_env1 (s, DTfloat)); [ |tauto]; intros.
         case_eq (vartlookup grad_env2 (s, DTfloat)); [ |tauto]; intros.        
         specialize (IHdf (0)%R grad_env1 grad_env2); simpl in *.
         replace (0%R) with (c * 0)%R at 1 by lra.
-        rewrite H in IHdf; rewrite H0 in IHdf.
+        rewrite H1 in IHdf; rewrite H2 in IHdf.
+        replace (0%R) with (c * 0)%R in H by lra.
         now apply IHdf.
       - Case "Max"%string.
         case_eq (vartlookup grad_env1 (s, DTfloat)); [ |tauto]; intros.
         case_eq (vartlookup grad_env2 (s, DTfloat)); [ |tauto]; intros.        
         case_eq (df_eval σ df1); [ | tauto]; intros.
         case_eq (df_eval σ df2); [ | tauto]; intros.        
-        destruct (Rle_dec d1 d2).
+        rewrite H3 in H; rewrite H3 in H0.
+        rewrite H4 in H; rewrite H4 in H0.
+        case_eq  (Rle_dec d1 d2); intros.
         + specialize (IHdf2 grad grad_env1 grad_env2); simpl in *.
-          rewrite H in IHdf2; rewrite H0 in IHdf2.
+          rewrite H1 in IHdf2; rewrite H2 in IHdf2.
+          rewrite H5 in H; rewrite H5 in H0.
           now apply IHdf2.
         + specialize (IHdf1 grad grad_env1 grad_env2); simpl in *.
-          rewrite H in IHdf1; rewrite H0 in IHdf1.
+          rewrite H1 in IHdf1; rewrite H2 in IHdf1.
+          rewrite H5 in H; rewrite H5 in H0.
           now apply IHdf1.
       - Case "VectorDot"%string.
         case_eq (vartlookup grad_env1 (s, DTfloat)); [ |tauto]; intros.
@@ -6069,7 +6087,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         case_eq (vartlookup grad_env1 (s, DTfloat)); [ |tauto]; intros.
         case_eq (vartlookup grad_env2 (s, DTfloat)); [ |tauto]; intros.        
         specialize (IHdf (ConstVector n grad) grad_env1 grad_env2).
-        rewrite H in IHdf; rewrite H0 in IHdf; simpl in IHdf.
+        rewrite H1 in IHdf; rewrite H2 in IHdf; simpl in IHdf.
         replace (ConstVector n (c * grad)%R) with 
             (fun i : {n' : nat | n' < n} => (c * ConstVector n grad i)%R).
         now apply IHdf.
@@ -6078,7 +6096,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         case_eq (vartlookup grad_env1 (s, DTfloat)); [ |tauto]; intros.
         case_eq (vartlookup grad_env2 (s, DTfloat)); [ |tauto]; intros.        
         specialize (IHdf (ConstMatrix m n grad) grad_env1 grad_env2).
-        rewrite H in IHdf; rewrite H0 in IHdf; simpl in IHdf.
+        rewrite H1 in IHdf; rewrite H2 in IHdf; simpl in IHdf.
         replace (ConstMatrix m n (c * grad)%R) with 
             (fun (i : {n' : nat | n' < m}) (j : {m' : nat | m' < n}) =>
                (c * ConstMatrix m n grad i j)%R).
@@ -6089,11 +6107,11 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         case_eq (vartlookup grad_env2 (s, DTfloat)); [ |tauto]; intros.        
         specialize (IHdf (fun k : {n' : nat | n' < n} => 
                             if equiv_dec (` k) (` i) then grad else 0%R) grad_env1 grad_env2).
-        rewrite H in IHdf; rewrite H0 in IHdf; simpl in *.
+        rewrite H1 in IHdf; rewrite H2 in IHdf; simpl in *.
         replace (fun k : {n' : nat | n' < n} => 
                    if equiv_dec (` k) (` i) then (c * grad)%R else 0%R) with 
             (fun i0 : {n' : nat | n' < n} =>
-               (c * (if equiv_dec (` i0) (` i) then grad else 0))%R).
+               (c * (if equiv_dec (` i0) (` i) then grad else 0))%R) in *.
         now rewrite IHdf.
         apply FunctionalExtensionality.functional_extensionality; intros.
         destruct (equiv_dec (` x) (` i)); lra.
@@ -6104,7 +6122,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                             if equiv_dec (` k1) (` i)
                             then if equiv_dec (` k2) (` j) then grad else 0%R else 0%R)
                          grad_env1 grad_env2).
-        rewrite H in IHdf; rewrite H0 in IHdf; simpl in *.
+        rewrite H1 in IHdf; rewrite H2 in IHdf; simpl in *.
         replace (fun (k1 : {n' : nat | n' < m}) (k2 : {m' : nat | m' < n}) =>
                    if equiv_dec (` k1) (` i)
                    then if equiv_dec (` k2) (` j) then (c * grad)%R else 0%R else 0%R) with
@@ -6112,7 +6130,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                (c *
                 (if equiv_dec (` i0) (` i)
                  then if equiv_dec (` j0) (` j) then  grad else 0
-                 else 0))%R).
+                 else 0))%R) in *.
         + now rewrite IHdf.
         + apply FunctionalExtensionality.functional_extensionality; intros.
           apply FunctionalExtensionality.functional_extensionality; intros. 
