@@ -6375,14 +6375,12 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         rewrite H1 in IHdf1; rewrite H2 in IHdf1; simpl in *.
         case_eq (df_eval_backprop_deriv σ df1 grad_env1 (fun i j => (c * grad i j)%R))
           ; intros.
-        rewrite H3 in H; simpl in H.
-        case_eq (df_eval_backprop_deriv σ df1 grad_env2 grad); intros.
-        rewrite H4 in H0; simpl in H0.
-        admit.
-        admit.
-        admit.
+        + rewrite H3 in H; simpl in H.
+          case_eq (df_eval_backprop_deriv σ df1 grad_env2 grad); intros.
+          * rewrite H4 in H0; simpl in H0.
+            match_option_in H0; [|tauto].
         (*
-        + specialize (IHdf2 grad d1 d2).
+        + specialize (IHdf2 ? d1 d2).
           rewrite H3 in IHdf1; rewrite H4 in IHdf1.
           assert (vartlookup d1 (s, DTfloat) <> None) by
               apply (df_eval_backprop_deriv_preserves_lookup_not_none H3 (s, DTfloat) neq1).
@@ -6406,6 +6404,9 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         + now rewrite H4 in H0.
         + now rewrite H3 in H.
      *)        
+           admit.
+        * admit.
+      + admit.
       - Case "MatrixMult"%string.
         case_eq (vartlookup grad_env1 (s, DTfloat)); [ |tauto].
         case_eq (vartlookup grad_env2 (s, DTfloat)); [ |tauto].        
@@ -6756,19 +6757,15 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         simpl in *.
         case_eq (df_eval σ df2); [ | tauto].
         intros.
-        rewrite H3 in H. rewrite H3 in H0; simpl in *.
-        (*
-        specialize (IHdf1 (lift (fun og => vectoro_to_ovector og) 
-                                (vmap (fun '(rei, g) => 
-                                         match df_eval (cons (mk_env_entry (v,DTfloat) rei) σ) 
-                                                       (df_deriv df1 (v,DTfloat)) with
-                                         | Some se => Some (g * se)%R
-                                         | _ => None
-                                         end)
-                                      (vector_zip d1 grad)))
-                          grad_env1 grad_env2). 
-       *)
+        rewrite H3 in H; rewrite H3 in H0; simpl in *.
+        match_option_in H0; [|tauto].
+        specialize (IHdf1 v0 grad_env1 grad_env2). 
+        rewrite H1 in IHdf1; rewrite H2 in IHdf1; simpl in IHdf1.
+        match_option_in H; [|tauto].
+        assert (v1 = fun i => (c * v0 i)%R).
         admit.
+        subst.
+        apply IHdf1; trivial; discriminate.
       - Case "MatrixApply"%string; admit.     
       - Case "VLossfun"%string; admit.
       - Case "MLossfun"%string; admit.        
