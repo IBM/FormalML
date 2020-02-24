@@ -655,7 +655,7 @@ F (d : definition_function_types)
 
   Definition matrix_vector_add {n m} (l : Matrix float n m) (r : Vector float n) : Matrix float n m := fun i j => (l i j) + (r i).
 
-  Definition matrix_mult {m n p} (l : Matrix float n m)(r : Matrix float m p) : Matrix float n p :=
+  Definition matrix_mult {n m p} (l : Matrix float n m)(r : Matrix float m p) : Matrix float n p :=
       fun i k => vsum (fun j => (l i j) * (r j k)).
 
 
@@ -5905,6 +5905,17 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         lra.
       Qed.
 
+     Lemma vsum_mult {n} (v : Vector float n) (c : float) :
+       (c * vsum v)%R = vsum (fun j => (c * v j)%R).
+     Proof.
+     Admitted.
+
+     Lemma vmap_mult {n} (f: float -> float) (v : Vector float n) (c : float) :
+       forall i : {n' : nat | n' < n},
+       (c * (vmap f v) i)%R = (vmap (fun x => (c * f x)%R) v) i.
+     Proof.
+     Admitted.
+
     Lemma scalarMult_backprop_grad_scalar {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (s: SubVar) (grad_env1 grad_env2:df_env) (grad : definition_function_types_interp T) (c:float) :
       let v := (s, DTfloat) in
       vartlookup grad_env1 v <> None -> vartlookup grad_env2 v <> None ->
@@ -6186,7 +6197,58 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         case_eq (vartlookup grad_env2 (s, DTfloat)); [ |tauto]; intros.        
         case_eq (df_eval σ df1); [ | tauto]; intros.
         case_eq (df_eval σ df2); [ | tauto]; intros.        
-        admit.
+        specialize (IHdf1 (vmap (fun rv => (rv * grad)%R) d2) grad_env1 grad_env2).
+        rewrite H1 in IHdf1; rewrite H2 in IHdf1; simpl in *.
+        case_eq (df_eval_backprop_deriv σ df1 grad_env1
+                                        (vmap (fun rv : R => (rv * (c * grad))%R) d2)); intros.
+        rewrite H3 in H; rewrite  H4 in H; rewrite H5 in H; simpl in H.
+        rewrite H3 in H0; rewrite H4 in H0; simpl in H0.        
+        case_eq (df_eval_backprop_deriv σ df1 grad_env2
+                                        (vmap (fun rv : R => (rv * grad)%R) d2)); intros.
+        rewrite H6 in H0; simpl in H0.
+        + specialize (IHdf2 (vmap (fun lv => (lv *grad)%R) d1) d3 d4).
+          replace (fun i => (c * vmap (fun rv : R => rv * grad) d2 i)%R) with
+              (vmap (fun rv : R => (rv * (c * grad))%R) d2) in IHdf1.
+          rewrite H5 in IHdf1; rewrite H6 in IHdf1; simpl in IHdf1.
+          assert (vartlookup d3 (s, DTfloat) <> None) by
+              apply (df_eval_backprop_deriv_preserves_lookup_not_none H5 (s, DTfloat) neq1).
+          case_eq (vartlookup d3 (s, DTfloat)); [ |tauto]; intros.
+          assert (vartlookup d4 (s, DTfloat) <> None) by
+              apply (df_eval_backprop_deriv_preserves_lookup_not_none H6 (s, DTfloat) neq2).
+          case_eq (vartlookup d4 (s, DTfloat)); [ |tauto]; intros.
+          rewrite H8 in IHdf2; rewrite H10 in IHdf2; simpl in *.
+          case_eq (df_eval_backprop_deriv σ df2 d3
+                                          (vmap (fun lv : R => (lv * (c * grad))%R) d1))
+          ; [|tauto]; intros.
+          case_eq (df_eval_backprop_deriv σ df2 d4 (vmap (fun lv : R => (lv * grad)%R) d1))
+          ; [|tauto]; intros; simpl; f_equal.
+          rewrite (split_subvar d3 d7 d d5) by trivial.
+          rewrite (split_subvar d4 d8 d0 d6) by trivial.
+          replace
+            (fun i : {n' : nat | n' < n} => (c * vmap (fun lv : R => lv * grad) d1 i)%R) with
+              (vmap (fun lv : R => (lv * (c * grad))%R) d1) in IHdf2.
+          rewrite H11 in IHdf2; rewrite H12 in IHdf2; simpl in *.
+          assert (Some (subvar (s, DTfloat) d3 d) = Some (c * subvar (s, DTfloat) d4 d0)%R) by
+              (apply IHdf1; trivial; discriminate).
+          assert (Some (subvar (s, DTfloat) d7 d5) = Some (c * subvar (s, DTfloat) d8 d6)%R) by
+              (apply IHdf2; trivial; discriminate).
+          inversion H13; inversion H14.
+          rewrite H16; rewrite H17; lra.
+          apply FunctionalExtensionality.functional_extensionality; intros.
+          rewrite vmap_mult.
+          assert ((fun lv => (lv * (c * grad))%R) = (fun x0 => (c * (x0 * grad))%R)).
+          apply FunctionalExtensionality.functional_extensionality; intros.
+          lra.
+          now rewrite H13.
+          apply FunctionalExtensionality.functional_extensionality; intros.
+          rewrite vmap_mult.          
+          assert ((fun rv => (rv * (c * grad))%R) = (fun x0 => (c * (x0 * grad))%R)).
+          apply FunctionalExtensionality.functional_extensionality; intros.
+          lra.
+          now rewrite H7.
+        + now rewrite H6 in H0.
+        + rewrite H3 in H; rewrite H4 in H.
+          now rewrite H5 in H.
       - Case "VectorSum"%string.
         case_eq (vartlookup grad_env1 (s, DTfloat)); [ |tauto]; intros.
         case_eq (vartlookup grad_env2 (s, DTfloat)); [ |tauto]; intros.        
@@ -6239,8 +6301,111 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
           apply FunctionalExtensionality.functional_extensionality; intros. 
           destruct (equiv_dec (` x) (` i)); [|lra].
           destruct (equiv_dec (` x0) (` j)); lra.
-      - Case "MatrixVectorMult"%string; admit.
-      - Case "MatrixVectorAdd"%string; admit.
+      - Case "MatrixVectorMult"%string.
+        case_eq (vartlookup grad_env1 (s, DTfloat)); [ |tauto].
+        case_eq (vartlookup grad_env2 (s, DTfloat)); [ |tauto].        
+        case_eq ( df_eval σ df1); [|tauto].
+        case_eq ( df_eval σ df2); [|tauto]; intros.
+        specialize (IHdf1 (fun i j => (grad i * d j)%R) grad_env1 grad_env2).
+        rewrite H4 in IHdf1; rewrite H3 in IHdf1; simpl in *.
+        case_eq (df_eval_backprop_deriv σ df1 grad_env1 
+                                        (fun i j => (c * grad i * d j)%R)); intros.
+        rewrite H1 in H; rewrite  H2 in H; simpl in H.
+        rewrite H1 in H0; rewrite  H2 in H0; simpl in H0.        
+        rewrite H5 in H; simpl in H.
+        case_eq (df_eval_backprop_deriv σ df1 grad_env2 
+                                        (fun i j => (grad i * d j)%R)); intros.
+        rewrite H6 in H0; simpl in H0.
+        + specialize (IHdf2 (matrix_vector_mult (fun i j => d0 j i) grad) d3 d4).
+          replace
+            (fun (i : {n' : nat | n' < m}) (j : {m' : nat | m' < n}) =>
+                (c * (grad i * d j))%R) with
+            (fun (i : {n' : nat | n' < m}) (j : {m' : nat | m' < n}) =>
+                (c * grad i * d j)%R) in IHdf1.
+          * rewrite H5 in IHdf1; rewrite H6 in IHdf1; simpl in IHdf1.
+            assert (vartlookup d3 (s, DTfloat) <> None) by
+                apply (df_eval_backprop_deriv_preserves_lookup_not_none H5 (s, DTfloat) neq1).
+            case_eq (vartlookup d3 (s, DTfloat)); [ |tauto]; intros.
+            assert (vartlookup d4 (s, DTfloat) <> None) by
+                apply (df_eval_backprop_deriv_preserves_lookup_not_none H6 (s, DTfloat) neq2).
+            case_eq (vartlookup d4 (s, DTfloat)); [ |tauto]; intros.
+            rewrite H8 in IHdf2; rewrite H10 in IHdf2; simpl in *.
+            case_eq (df_eval_backprop_deriv σ df2 d3
+                 (matrix_vector_mult
+                    (fun (i : {n' : nat | n' < n}) (j : {m' : nat | m' < m}) => d0 j i)
+                    (fun i : {n' : nat | n' < m} => (c * grad i)%R)))
+               ; [|tauto]; intros.
+            case_eq (df_eval_backprop_deriv σ df2 d4 
+                                            (matrix_vector_mult (fun i j => d0 j i) grad))
+              ; [|tauto]; intros; simpl; f_equal.
+            rewrite (split_subvar d3 d7 d2 d5) by trivial.
+            rewrite (split_subvar d4 d8 d1 d6) by trivial.
+            replace  (fun i : {n' : nat | n' < n} =>
+                (c *
+                 (@matrix_vector_mult floatish_R _ _
+                   (fun (i0 : {n' : nat | (n' < n)%nat}) (j : {m' : nat | (m' < m)%nat}) =>
+                      d0 j i0) grad) i)%R) with
+                 (matrix_vector_mult
+                    (fun (i : {n' : nat | n' < n}) (j : {m' : nat | m' < m}) => d0 j i)
+                    (fun i : {n' : nat | n' < m} => (c * grad i)%R)) in IHdf2.
+            -- rewrite H11 in IHdf2; rewrite H12 in IHdf2; simpl in *.
+               assert (Some (subvar (s, DTfloat) d3 d2) = 
+                       Some (c * subvar (s, DTfloat) d4 d1)%R) by
+                   (apply IHdf1; trivial; discriminate).
+               assert (Some (subvar (s, DTfloat) d7 d5) = 
+                       Some (c * subvar (s, DTfloat) d8 d6)%R) by
+                   (apply IHdf2; trivial; discriminate).
+               inversion H13; inversion H14.
+               rewrite H16; rewrite H17; lra.
+            -- unfold matrix_vector_mult.
+               apply FunctionalExtensionality.functional_extensionality; intros.
+               rewrite vsum_mult; f_equal.
+               apply FunctionalExtensionality.functional_extensionality; intros.               
+               simpl; lra.
+          * apply FunctionalExtensionality.functional_extensionality; intros.
+            apply FunctionalExtensionality.functional_extensionality; intros.
+            lra.
+        + now rewrite H6 in H0.
+        + rewrite H2 in H; rewrite H1 in H.
+          now rewrite H5 in H.
+      - Case "MatrixVectorAdd"%string.
+        case_eq (vartlookup grad_env1 (s, DTfloat)); [ |tauto].
+        case_eq (vartlookup grad_env2 (s, DTfloat)); [ |tauto].        
+        specialize (IHdf1 grad grad_env1 grad_env2); intros.
+        rewrite H1 in IHdf1; rewrite H2 in IHdf1; simpl in *.
+        case_eq (df_eval_backprop_deriv σ df1 grad_env1 (fun i j => (c * grad i j)%R))
+          ; intros.
+        rewrite H3 in H; simpl in H.
+        case_eq (df_eval_backprop_deriv σ df1 grad_env2 grad); intros.
+        rewrite H4 in H0; simpl in H0.
+        admit.
+        admit.
+        admit.
+        (*
+        + specialize (IHdf2 grad d1 d2).
+          rewrite H3 in IHdf1; rewrite H4 in IHdf1.
+          assert (vartlookup d1 (s, DTfloat) <> None) by
+              apply (df_eval_backprop_deriv_preserves_lookup_not_none H3 (s, DTfloat) neq1).
+          case_eq (vartlookup d1 (s, DTfloat)); [ |tauto]; intros.
+          assert (vartlookup d2 (s, DTfloat) <> None) by
+              apply (df_eval_backprop_deriv_preserves_lookup_not_none H4 (s, DTfloat) neq2).
+          case_eq (vartlookup d2 (s, DTfloat)); [ |tauto]; intros.
+          rewrite H6 in IHdf2; rewrite H8 in IHdf2; simpl in *.
+          case_eq (df_eval_backprop_deriv σ df2 d1 (fun i j => (c * grad i j)%R))
+             ; [|tauto]; intros.
+          case_eq (df_eval_backprop_deriv σ df2 d2 grad); [|tauto]; intros; simpl; f_equal.
+          rewrite (split_subvar d1 d5 d0 d3) by trivial.
+          rewrite (split_subvar d2 d6 d d4) by trivial.
+          rewrite H9 in IHdf2; rewrite H10 in IHdf2; simpl in *.
+          assert (Some (subvar (s, DTfloat) d1 d0) = Some (c * subvar (s, DTfloat) d2 d)%R) by
+              (apply IHdf1; trivial; discriminate).
+          assert (Some (subvar (s, DTfloat) d5 d3) = Some (c * subvar (s, DTfloat) d6 d4)%R) by
+              (apply IHdf2; trivial; discriminate).
+          inversion H11; inversion H12.
+          rewrite H14; rewrite H15; lra.
+        + now rewrite H4 in H0.
+        + now rewrite H3 in H.
+     *)        
       - Case "MatrixMult"%string.
         case_eq (vartlookup grad_env1 (s, DTfloat)); [ |tauto].
         case_eq (vartlookup grad_env2 (s, DTfloat)); [ |tauto].        
@@ -6257,40 +6422,65 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         case_eq (df_eval_backprop_deriv σ df1 grad_env2 
                                         (matrix_mult grad (fun i j => d j i))); intros.
         rewrite H6 in H0; simpl in H0.
-        (*
         + specialize (IHdf2 (matrix_mult (fun i j => d0 j i)  grad) d3 d4).
-          replace (fun i j => 
-                     (c * matrix_mult grad (fun i0 j0 => d j0 i0) i j)%R) with
+          replace (fun (i : {n' : nat | n' < m}) (j : {m' : nat | m' < p}) =>
+              (c *
+               (@matrix_mult floatish_R m n p grad
+                 (fun (i0 : {n' : nat | (n' < n)%nat}) (j0 : {m' : nat | (m' < p)%nat}) =>
+                  d j0 i0)) i j)%R) with
               (matrix_mult (fun i j => (c * grad i j)%R) 
-                           (fun i j => d j i)).
-
-          rewrite H5 in IHdf1; rewrite H6 in IHdf1; simpl in IHdf1.
-          assert (vartlookup d3 (s, DTfloat) <> None) by
-              apply (df_eval_backprop_deriv_preserves_lookup_not_none H5 (s, DTfloat) neq1).
-          case_eq (vartlookup d3 (s, DTfloat)); [ |tauto]; intros.
-          assert (vartlookup d4 (s, DTfloat) <> None) by
-              apply (df_eval_backprop_deriv_preserves_lookup_not_none H6 (s, DTfloat) neq2).
-          case_eq (vartlookup d4 (s, DTfloat)); [ |tauto]; intros.
-          rewrite H8 in IHdf2; rewrite H10 in IHdf2; simpl in *.
-          case_eq (df_eval_backprop_deriv σ df2 d3 (d0 * (c * grad))%R); [|tauto]; intros.
-          case_eq (df_eval_backprop_deriv σ df2 d4 (d0 * grad)%R); [|tauto]; intros; simpl; f_equal.
-          rewrite (split_subvar d3 d7 d2 d5) by trivial.
-          rewrite (split_subvar d4 d8 d1 d6) by trivial.
-          replace (c * (d0 * grad))%R with (d0 * (c*grad))%R in IHdf2 by lra.
-          rewrite H11 in IHdf2; rewrite H12 in IHdf2; simpl in *.
-          assert (Some (subvar (s, DTfloat) d3 d2) = Some (c * subvar (s, DTfloat) d4 d1)%R) by
-              (apply IHdf1; trivial; discriminate).
-          assert (Some (subvar (s, DTfloat) d7 d5) = Some (c * subvar (s, DTfloat) d8 d6)%R) by
-              (apply IHdf2; trivial; discriminate).
-          inversion H13; inversion H14.
-          rewrite H16; rewrite H17; lra.
+                           (fun i j => d j i)) in IHdf1.
+          * rewrite H5 in IHdf1; rewrite H6 in IHdf1; simpl in IHdf1.
+            assert (vartlookup d3 (s, DTfloat) <> None) by
+                apply (df_eval_backprop_deriv_preserves_lookup_not_none H5 (s, DTfloat) neq1).
+            case_eq (vartlookup d3 (s, DTfloat)); [ |tauto]; intros.
+            assert (vartlookup d4 (s, DTfloat) <> None) by
+                apply (df_eval_backprop_deriv_preserves_lookup_not_none H6 (s, DTfloat) neq2).
+            case_eq (vartlookup d4 (s, DTfloat)); [ |tauto]; intros.
+            rewrite H8 in IHdf2; rewrite H10 in IHdf2; simpl in *.
+            case_eq (df_eval_backprop_deriv σ df2 d3
+                 (matrix_mult (fun (i : {n' : nat | n' < p}) 
+                                   (j : {m' : nat | m' < m}) => d0 j i)
+                              (fun (i : {n' : nat | n' < m}) 
+                                   (j : {m' : nat | m' < n}) => (c * grad i j)%R)))
+               ; [|tauto]; intros.
+            case_eq (df_eval_backprop_deriv σ df2 d4 (matrix_mult (fun i j => d0 j i) grad))
+              ; [|tauto]; intros; simpl; f_equal.
+            rewrite (split_subvar d3 d7 d2 d5) by trivial.
+            rewrite (split_subvar d4 d8 d1 d6) by trivial.
+            replace (fun (i : {n' : nat | n' < p}) (j : {m' : nat | m' < n}) =>
+                (c *
+                 (@matrix_mult floatish_R p m n
+                               (fun (i0 : {n' : nat | (n' < p)%nat}) 
+                                    (j0 : {m' : nat | (m' < m)%nat}) =>
+                                  d0 j0 i0) grad) i j)%R) with
+               (matrix_mult (fun (i : {n' : nat | n' < p}) (j : {m' : nat | m' < m}) => d0 j i)
+                            (fun (i : {n' : nat | n' < m}) (j : {m' : nat | m' < n}) => 
+                               (c * grad i j)%R)) in IHdf2.
+            -- rewrite H11 in IHdf2; rewrite H12 in IHdf2; simpl in *.
+               assert (Some (subvar (s, DTfloat) d3 d2) = 
+                       Some (c * subvar (s, DTfloat) d4 d1)%R) by
+                   (apply IHdf1; trivial; discriminate).
+               assert (Some (subvar (s, DTfloat) d7 d5) = 
+                       Some (c * subvar (s, DTfloat) d8 d6)%R) by
+                   (apply IHdf2; trivial; discriminate).
+               inversion H13; inversion H14.
+               rewrite H16; rewrite H17; lra.
+            -- unfold matrix_mult.
+               apply FunctionalExtensionality.functional_extensionality; intros.
+               apply FunctionalExtensionality.functional_extensionality; intros.
+               rewrite vsum_mult; f_equal.
+               apply FunctionalExtensionality.functional_extensionality; intros.               
+               simpl; lra.
+          * unfold matrix_mult.
+            apply FunctionalExtensionality.functional_extensionality; intros.
+            apply FunctionalExtensionality.functional_extensionality; intros.
+            rewrite vsum_mult; f_equal.
+            apply FunctionalExtensionality.functional_extensionality; intros.
+            simpl; lra.
         + now rewrite H6 in H0.
         + rewrite H2 in H; rewrite H1 in H.
           now rewrite H5 in H.
-        *)
-        admit.
-        admit.
-        admit.        
       - Case "VectorPlus"%string.
         case_eq (vartlookup grad_env1 (s, DTfloat)); [ |tauto].
         case_eq (vartlookup grad_env2 (s, DTfloat)); [ |tauto].        
@@ -6430,8 +6620,136 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
             lra.
         + now rewrite H4 in H0.
         + now rewrite H3 in H.
-      - Case "VectorScalMult"%string; admit.
-      - Case "MatrixScalMult"%string; admit.
+      - Case "VectorScalMult"%string.
+        case_eq (vartlookup grad_env1 (s, DTfloat)); [ |tauto].
+        case_eq (vartlookup grad_env2 (s, DTfloat)); [ |tauto].        
+        case_eq ( df_eval σ df1); [|tauto].
+        case_eq ( df_eval σ df2); [|tauto]; intros.
+        specialize (IHdf1 (vsum (fun j => (d j * grad j)%R)) grad_env1 grad_env2).
+        rewrite H4 in IHdf1; rewrite H3 in IHdf1; simpl in *.
+        case_eq (df_eval_backprop_deriv σ df1 grad_env1 
+                                        (vsum (fun j => (d j * (c * grad j))%R)))
+                                        
+        ; intros.
+        rewrite H1 in H; rewrite  H2 in H; simpl in H.
+        rewrite H1 in H0; rewrite  H2 in H0; simpl in H0.        
+        rewrite H5 in H; simpl in H.
+        case_eq (df_eval_backprop_deriv σ df1 grad_env2 
+                                        (vsum (fun j => (d j * grad j)%R)))
+        ; intros.
+        rewrite H6 in H0; simpl in H0.
+        + specialize (IHdf2 (fun j => (grad j * d0)%R) d3 d4).
+          replace 
+            (c *
+             (@vsum floatish_R _
+               (fun  (j : {n' : nat | (n' < n)%nat}) =>
+                  d j * grad j)))%R with
+              (vsum
+                 (fun (j : {n' : nat | n' < n})  =>
+                    (d j * (c * grad j))%R)) in IHdf1.
+          * rewrite H5 in IHdf1; rewrite H6 in IHdf1; simpl in IHdf1.
+            assert (vartlookup d3 (s, DTfloat) <> None) by
+                apply (df_eval_backprop_deriv_preserves_lookup_not_none H5 (s, DTfloat) neq1).
+            case_eq (vartlookup d3 (s, DTfloat)); [ |tauto]; intros.
+            assert (vartlookup d4 (s, DTfloat) <> None) by
+                apply (df_eval_backprop_deriv_preserves_lookup_not_none H6 (s, DTfloat) neq2).
+            case_eq (vartlookup d4 (s, DTfloat)); [ |tauto]; intros.
+            rewrite H8 in IHdf2; rewrite H10 in IHdf2; simpl in *.
+            case_eq (df_eval_backprop_deriv σ df2 d3
+                    (fun (j : {n' : nat | n' < n}) => 
+                       (d0 * (c * grad j))%R))
+               ; [|tauto]; intros.
+            case_eq (df_eval_backprop_deriv σ df2 d4 (fun j => (d0 * grad j)%R))
+              ; [|tauto]; intros; simpl; f_equal.
+            rewrite (split_subvar d3 d7 d2 d5) by trivial.
+            rewrite (split_subvar d4 d8 d1 d6) by trivial.
+            replace  (fun i => (c * (grad i * d0))%R) with 
+                (fun j => (d0 * (c * grad j))%R) in IHdf2.
+            replace (fun j => (grad j * d0)%R) with (fun j => (d0 * grad j)%R) in IHdf2.
+            -- rewrite H11 in IHdf2; rewrite H12 in IHdf2; simpl in *.
+               assert (Some (subvar (s, DTfloat) d3 d2) = 
+                       Some (c * subvar (s, DTfloat) d4 d1)%R) by
+                   (apply IHdf1; trivial; discriminate).
+               assert (Some (subvar (s, DTfloat) d7 d5) = 
+                       Some (c * subvar (s, DTfloat) d8 d6)%R) by
+                   (apply IHdf2; trivial; discriminate).
+               inversion H13; inversion H14.
+               rewrite H16; rewrite H17; lra.
+            -- apply FunctionalExtensionality.functional_extensionality; intros.
+               lra.
+            -- apply FunctionalExtensionality.functional_extensionality; intros.
+               lra.
+          * rewrite vsum_mult; f_equal.
+            apply FunctionalExtensionality.functional_extensionality; intros.
+            lra.
+        + now rewrite H6 in H0.
+        + rewrite H2 in H; rewrite H1 in H.
+          now rewrite H5 in H.
+      - Case "MatrixScalMult"%string.
+        case_eq (vartlookup grad_env1 (s, DTfloat)); [ |tauto].
+        case_eq (vartlookup grad_env2 (s, DTfloat)); [ |tauto].        
+        case_eq ( df_eval σ df1); [|tauto].
+        case_eq ( df_eval σ df2); [|tauto]; intros.
+        specialize (IHdf1 (msum (fun i j => (d i j * grad i j)%R)) grad_env1 grad_env2).
+        rewrite H4 in IHdf1; rewrite H3 in IHdf1; simpl in *.
+        case_eq (df_eval_backprop_deriv σ df1 grad_env1 
+                                        (msum (fun i j => (d i j * (c * grad i j))%R)))
+                                        
+        ; intros.
+        rewrite H1 in H; rewrite  H2 in H; simpl in H.
+        rewrite H1 in H0; rewrite  H2 in H0; simpl in H0.        
+        rewrite H5 in H; simpl in H.
+        case_eq (df_eval_backprop_deriv σ df1 grad_env2 
+                                        (msum (fun i j => (d i j * grad i j)%R)))
+        ; intros.
+        rewrite H6 in H0; simpl in H0.
+        + specialize (IHdf2 (fun i j => (grad i j * d0)%R) d3 d4).
+          replace 
+            (c *
+             (@msum floatish_R _ _
+               (fun (i : {n' : nat | (n' < n)%nat}) (j : {m' : nat | (m' < m)%nat}) =>
+                  d i j * grad i j)))%R with
+
+              (msum
+                 (fun (i : {n' : nat | n' < n}) (j : {m' : nat | m' < m}) =>
+                    (d i j * (c * grad i j))%R)) in IHdf1.
+          * rewrite H5 in IHdf1; rewrite H6 in IHdf1; simpl in IHdf1.
+            assert (vartlookup d3 (s, DTfloat) <> None) by
+                apply (df_eval_backprop_deriv_preserves_lookup_not_none H5 (s, DTfloat) neq1).
+            case_eq (vartlookup d3 (s, DTfloat)); [ |tauto]; intros.
+            assert (vartlookup d4 (s, DTfloat) <> None) by
+                apply (df_eval_backprop_deriv_preserves_lookup_not_none H6 (s, DTfloat) neq2).
+            case_eq (vartlookup d4 (s, DTfloat)); [ |tauto]; intros.
+            rewrite H8 in IHdf2; rewrite H10 in IHdf2; simpl in *.
+            case_eq (df_eval_backprop_deriv σ df2 d3
+                    (fun (i : {n' : nat | n' < n}) (j : {m' : nat | m' < m}) => 
+                       (c * grad i j * d0)%R))
+               ; [|tauto]; intros.
+            case_eq (df_eval_backprop_deriv σ df2 d4 (fun i j => (grad i j * d0)%R))
+              ; [|tauto]; intros; simpl; f_equal.
+            rewrite (split_subvar d3 d7 d2 d5) by trivial.
+            rewrite (split_subvar d4 d8 d1 d6) by trivial.
+            replace  (fun i j => (c * (grad i j * d0))%R) with 
+                (fun i j => (c * grad i j * d0)%R) in IHdf2.
+            -- rewrite H11 in IHdf2; rewrite H12 in IHdf2; simpl in *.
+               assert (Some (subvar (s, DTfloat) d3 d2) = 
+                       Some (c * subvar (s, DTfloat) d4 d1)%R) by
+                   (apply IHdf1; trivial; discriminate).
+               assert (Some (subvar (s, DTfloat) d7 d5) = 
+                       Some (c * subvar (s, DTfloat) d8 d6)%R) by
+                   (apply IHdf2; trivial; discriminate).
+               inversion H13; inversion H14.
+               rewrite H16; rewrite H17; lra.
+            -- apply FunctionalExtensionality.functional_extensionality; intros.
+               apply FunctionalExtensionality.functional_extensionality; intros.
+               lra.
+          * unfold msum.
+            rewrite vsum_mult; f_equal.
+            apply FunctionalExtensionality.functional_extensionality; intros.
+            admit.
+        + now rewrite H6 in H0.
+        + rewrite H2 in H; rewrite H1 in H.
+          now rewrite H5 in H.
       - Case "VectorApply"%string.
         case_eq (vartlookup grad_env1 (s, DTfloat)); [ |tauto]; intros.
         case_eq (vartlookup grad_env2 (s, DTfloat)); [ |tauto]; intros.        
