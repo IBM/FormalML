@@ -4,207 +4,227 @@ Require Import LibUtils.
 
 Section Vector.
 
-    Definition Vector (T:Type) (n : nat) := {n':nat | n' < n}%nat -> T.
-    Definition Matrix (T:Type) (n m : nat) := 
-      {n':nat | n' < n}%nat -> {m':nat | m' < m}%nat -> T.
+  Definition Vector (T:Type) (n : nat) := {n':nat | n' < n}%nat -> T.
+  Definition Matrix (T:Type) (n m : nat) := 
+    {n':nat | n' < n}%nat -> {m':nat | m' < m}%nat -> T.
 
 
-    Definition ConstVector {T} (n:nat) (c:T) : (Vector T n) := 
-      fun (n': {n':nat | n' < n}%nat) => c.
-    Definition ConstMatrix {T} (n m : nat) (c:T) : (Matrix T n m) := 
-      fun (n': {n':nat | n' < n}%nat) (m':{m':nat | m' < m}%nat) => c.
-  
+  Definition ConstVector {T} (n:nat) (c:T) : (Vector T n) := 
+    fun (n': {n':nat | n' < n}%nat) => c.
+  Definition ConstMatrix {T} (n m : nat) (c:T) : (Matrix T n m) := 
+    fun (n': {n':nat | n' < n}%nat) (m':{m':nat | m' < m}%nat) => c.
 
-    Definition vector_fold_right1_bounded_dep {A:nat->Type} {B} 
-               (f:forall n,B->A n->A (S n)) (init:A 0%nat) (singleton:B->A 1%nat) {m:nat} 
-               (v:Vector B m) (n:nat) (pf:(n<=m)%nat)
-      : A n.
-    Proof.
-      induction n.
-      - exact init.
-      - destruct n.
-        + assert (pf2:(0 < m)%nat) by omega.
-          exact (singleton (v (exist _ 0 pf2)%nat)).
-        + assert (pf2:(S n <= m)%nat) by omega.
-          assert (pf3:(S n < m)%nat) by omega.
-          apply f.
-          * exact (v (exist _ (S n) pf3)).
-          * exact (IHn pf2).
-    Defined.
+(*  Definition vector_fold_right1_bounded_dep {A:nat->Type} {B} 
+             (f:forall n,B->A n->A (S n)) (init:A 0%nat) (singleton:B->A 1%nat) {m:nat} 
+             (v:Vector B m) (n:nat) (pf:(n<=m)%nat) {struct n}
+    : A n.
+  Proof.
+    destruct n.
+    - exact init.
+    - specialize (vector_fold_right1_bounded_dep A B f init singleton m v n (le_Sn_le _ _ pf)).
+      destruct n; intros.
+      + exact (singleton (v (exist _ 0 pf)%nat)).
+      + apply f.
+        * exact (v (exist _ n (le_Sn_le _ _ pf))).
+        * exact vector_fold_right1_bounded_dep.
+  Defined.
+*)
 
-    Definition vector_fold_right_bounded_dep {A:nat->Type} {B} 
-               (f:forall n,B->A n->A (S n)) (init:A 0%nat) {m:nat} (v:Vector B m) (n:nat) 
+  Fixpoint vector_fold_right1_bounded_dep {A:nat->Type} {B} 
+           (f:forall n,B->A n->A (S n)) (init:A 0%nat) (singleton:B->A 1%nat) {m:nat} 
+           (v:Vector B m) (bound:nat) {struct bound}
+    : (bound <= m)%nat -> A bound :=
+    match bound as bound' return (bound' <= m -> A bound') with
+    | 0 => fun _ =>
+             init
+    | S bound1 =>
+      fun pf0 : S bound1 <= m =>
+        let an := vector_fold_right1_bounded_dep f init singleton v bound1 (le_Sn_le bound1 m pf0) in
+
+        match bound1 as bound1' return (A bound1' -> S bound1' <= m -> A (S bound1')) with
+        | 0 => fun (_ : A 0) (pf1 : 1 <= m) =>
+                 singleton (v (exist _ 0 pf1))
+        | S bound2 => fun (an' : A (S bound2)) (pf1 : S (S bound2) <= m) =>
+                        f (S bound2) (v (exist _ bound1 pf0)) an'
+        end an pf0
+    end.
+
+  Definition vector_fold_right_bounded_dep {A:nat->Type} {B}
+               (f:forall n,B->A n->A (S n)) (init:A 0%nat) {m:nat} (v:Vector B m) (n:nat)
                (pf:(n<=m)%nat)
       : A n.
     Proof.
       induction n.
       - exact init.
       - apply f.
-        + assert (pf2:(n < m)%nat) by omega.
-          exact (v (exist _ n pf2)).
+        + exact (v (exist _ n pf)).
         + apply IHn.
-          omega.
+          exact (le_Sn_le _ _ pf).
     Defined.
 
-    Definition vnil {T} : Vector T 0.
-    Proof.
-      intros [i pf].
-      omega.
-    Defined.
+  Definition vnil {T} : Vector T 0.
+  Proof.
+    intros [i pf].
+    omega.
+  Defined.
 
-    Definition vcons {T} {n} (x:T) (v:Vector T n) : (Vector T (S n)).
-    Proof.
-      intros [i pf].
-      destruct (Nat.eq_dec i n).
-      + exact x.
-      + apply v.
-        exists i.
-        omega.
-    Defined.
-
-    
-    Definition vhd {T} {n} (v:Vector T (S n)) : T := v (exist _ (0%nat) (Nat.lt_0_succ n)).
-    Definition vlast {T} {n} (v:Vector T (S n)) : T := v (exist _ (n%nat) (Nat.lt_succ_diag_r n)).
-
-    Definition vdrop_last {T} {n} (v:Vector T (S n)) : Vector T n.
-    Proof.
-      intros [i pf]; apply v.
+  Definition vcons {T} {n} (x:T) (v:Vector T n) : (Vector T (S n)).
+  Proof.
+    intros [i pf].
+    destruct (Nat.eq_dec i n).
+    + exact x.
+    + apply v.
       exists i.
-      apply NPeano.Nat.lt_lt_succ_r; trivial.
-    Defined.
+      apply NPeano.Nat.le_neq.
+      split; trivial.
+      now apply le_S_n in pf.
+  Defined.
+
+  
+  Definition vhd {T} {n} (v:Vector T (S n)) : T := v (exist _ (0%nat) (Nat.lt_0_succ n)).
+  Definition vlast {T} {n} (v:Vector T (S n)) : T := v (exist _ (n%nat) (Nat.lt_succ_diag_r n)).
+
+  Definition vdrop_last {T} {n} (v:Vector T (S n)) : Vector T n.
+  Proof.
+    intros [i pf]; apply v.
+    exists i.
+    apply NPeano.Nat.lt_lt_succ_r; trivial.
+  Defined.
 
 
-    Definition vector_fold_right1_dep {A:nat->Type} {B} (f:forall n, B->A n->A (S n)) 
-               (init:A 0%nat) (singleton:B->A 1%nat) {m:nat} (v:Vector B m) : A m
-      := vector_fold_right1_bounded_dep f init singleton v m (le_refl _).
+  Definition vector_fold_right1_dep {A:nat->Type} {B} (f:forall n, B->A n->A (S n)) 
+             (init:A 0%nat) (singleton:B->A 1%nat) {m:nat} (v:Vector B m) : A m
+    := vector_fold_right1_bounded_dep f init singleton v m (le_refl _).
 
-    Definition vector_fold_right_dep {A:nat->Type} {B} (f:forall n, B->A n->A (S n)) 
-               (init:A 0%nat) {m:nat} (v:Vector B m) : A m
-      := vector_fold_right_bounded_dep f init v m (le_refl _).
+  Definition vector_fold_right_dep {A:nat->Type} {B} (f:forall n, B->A n->A (S n)) 
+             (init:A 0%nat) {m:nat} (v:Vector B m) : A m
+    := vector_fold_right_bounded_dep f init v m (le_refl _).
 
-    Definition vector_fold_right1 {A B:Type} (f:B->A->A) (init:A) (singleton:B->A) {m:nat} (v:Vector B m)
-      := vector_fold_right1_dep (A:=fun _ => A) (fun _ => f) init singleton v.
+  Definition vector_fold_right1 {A B:Type} (f:B->A->A) (init:A) (singleton:B->A) {m:nat} (v:Vector B m)
+    := vector_fold_right1_dep (A:=fun _ => A) (fun _ => f) init singleton v.
 
-    Definition vector_fold_right {A B:Type} (f:B->A->A) (init:A) {m:nat} (v:Vector B m)
-      := vector_fold_right_dep (fun _ => f) init v.
+  Definition vector_fold_right {A B:Type} (f:B->A->A) (init:A) {m:nat} (v:Vector B m)
+    := vector_fold_right_dep (fun _ => f) init v.
 
-    Definition vectoro_to_ovector {T} {n} (v:Vector (option T) n) : option (Vector T n)
-      := vector_fold_right_dep (fun n => lift2 (@vcons _ n)) (Some vnil) v.
+  Definition vectoro_to_ovector {T} {n} (v:Vector (option T) n) : option (Vector T n)
+    := vector_fold_right_dep (fun n => lift2 (@vcons _ n)) (Some vnil) v.
 
-    Definition matrixo_to_omatrix {T} {m n} (v:Matrix (option T) m n) : option (Matrix T m n)
-      := vectoro_to_ovector (fun i => vectoro_to_ovector (v i)).
+  Definition matrixo_to_omatrix {T} {m n} (v:Matrix (option T) m n) : option (Matrix T m n)
+    := vectoro_to_ovector (fun i => vectoro_to_ovector (v i)).
 
-    Definition vmap {A B} {n} (f:A->B) (v:Vector A n) : Vector B n
-      := vector_fold_right_dep (fun n x y => vcons (n:=n) (f x) y) vnil v.
+  Definition vmap {A B} {n} (f:A->B) (v:Vector A n) : Vector B n
+    := vector_fold_right_dep (fun n x y => vcons (n:=n) (f x) y) vnil v.
 
 
-    Definition mmap {A B} {m n} (f:A->B) (mat:Matrix A m n) : Matrix B m n
-      := vmap (fun mrow => vmap f mrow) mat.
+  Definition mmap {A B} {m n} (f:A->B) (mat:Matrix A m n) : Matrix B m n
+    := vmap (fun mrow => vmap f mrow) mat.
 
-    Definition list_fold_right1_bounded_dep {A:nat->Type} {B} (f:forall n,B->A n->A (S n)) 
-               (init:A 0%nat) (singleton:B->A 1%nat) (l:list B) (n:nat) (pf:(n<=length l)%nat)
+  Definition list_fold_right1_bounded_dep {A:nat->Type} {B} (f:forall n,B->A n->A (S n)) 
+             (init:A 0%nat) (singleton:B->A 1%nat) (l:list B) (n:nat) (pf:(n<=length l)%nat)
     : A n.
-    Proof.
-      induction n.
-      - exact init.
-      - destruct n.
-        + assert (pf2:(0 < length l)%nat) by omega.
-          destruct l.
-          * simpl in pf; omega.
-          * exact (singleton b).
-        + assert (pf2:(S n <= length l)%nat) by omega.
-          apply f.
-          * destruct l; simpl in *; try omega.
-            apply b.
-          * apply IHn.
-            apply pf2.
-    Defined.
+  Proof.
+    induction n.
+    - exact init.
+    - destruct n.
+      + assert (pf2:(0 < length l)%nat) by omega.
+        destruct l.
+        * simpl in pf; omega.
+        * exact (singleton b).
+      + assert (pf2:(S n <= length l)%nat) by omega.
+        apply f.
+        * destruct l; simpl in *; try omega.
+          apply b.
+        * apply IHn.
+          apply pf2.
+  Defined.
 
-    Definition list_fold_right1_dep {A:nat->Type} {B} (f:forall n, B->A n->A (S n)) 
-               (init:A 0%nat) (singleton:B->A 1%nat) (l:list B) : A (length l)
-      := list_fold_right1_bounded_dep f init singleton l (length l) (le_refl _).
+  Definition list_fold_right1_dep {A:nat->Type} {B} (f:forall n, B->A n->A (S n)) 
+             (init:A 0%nat) (singleton:B->A 1%nat) (l:list B) : A (length l)
+    := list_fold_right1_bounded_dep f init singleton l (length l) (le_refl _).
 
-    Definition list_fold_right_dep {A:nat->Type} {B} (f:forall n, B->A n->A (S n)) 
-               (init:A 0%nat) (l:list B) : A (length l)
-      := list_fold_right1_dep f init (fun a => f _ a init) l.
+  Definition list_fold_right_dep {A:nat->Type} {B} (f:forall n, B->A n->A (S n)) 
+             (init:A 0%nat) (l:list B) : A (length l)
+    := list_fold_right1_dep f init (fun a => f _ a init) l.
 
-    Definition list_to_vector {A} (l:list A) : Vector A (length l)
-      := list_fold_right_dep (@vcons _) vnil l.
+  Definition list_to_vector {A} (l:list A) : Vector A (length l)
+    := list_fold_right_dep (@vcons _) vnil l.
 
-    Definition vector_to_list {A} {n} (v:Vector A n) : list A
-      := vector_fold_right cons nil v.
-    
-    Definition matrix_to_list_list {T} {m n} (v:Matrix T m n) : (list (list T))
-      := vector_to_list (fun i => vector_to_list (v i)).
+  Definition vector_to_list {A} {n} (v:Vector A n) : list A
+    := vector_fold_right cons nil v.
+  
+  Definition matrix_to_list_list {T} {m n} (v:Matrix T m n) : (list (list T))
+    := vector_to_list (fun i => vector_to_list (v i)).
 
-    Definition matrix_to_list {T} {m n} (v:Matrix T m n) : (list T)
-      := concat (matrix_to_list_list v).
+  Definition matrix_to_list {T} {m n} (v:Matrix T m n) : (list T)
+    := concat (matrix_to_list_list v).
 
-    Definition vseq start len : Vector nat len
-      := eq_rect _ _ (list_to_vector (seq start len)) _ (seq_length _ _).
+  Definition vseq start len : Vector nat len
+    := eq_rect _ _ (list_to_vector (seq start len)) _ (seq_length _ _).
 
-    Definition vector_zip {A B} {m:nat} (v1:Vector A m) (v2:Vector B m) : Vector (A*B) m
-      := fun i => (v1 i, v2 i).
+  Definition vector_zip {A B} {m:nat} (v1:Vector A m) (v2:Vector B m) : Vector (A*B) m
+    := fun i => (v1 i, v2 i).
 
-    Definition matrix_zip {A B} {m n:nat} (mat1:Matrix A m n) (mat2:Matrix B m n) : Matrix (A*B) m n
-      := let mat12:Vector (Vector A n*Vector B n) m := vector_zip mat1 mat2 in
-         vmap (fun '(a,b) => vector_zip a b) mat12.
-                                 
-    Definition vector_split {A B} {m:nat} (v:Vector (A*B) m) : Vector A m * Vector B m
-      := (fun i => fst (v i), fun i => snd (v i)).
+  Definition matrix_zip {A B} {m n:nat} (mat1:Matrix A m n) (mat2:Matrix B m n) : Matrix (A*B) m n
+    := let mat12:Vector (Vector A n*Vector B n) m := vector_zip mat1 mat2 in
+       vmap (fun '(a,b) => vector_zip a b) mat12.
+  
+  Definition vector_split {A B} {m:nat} (v:Vector (A*B) m) : Vector A m * Vector B m
+    := (fun i => fst (v i), fun i => snd (v i)).
 
-    Program Definition vtake {A} {m:nat} (v:Vector (A) m) (n:nat) (pf:(n<=m)%nat) : Vector A n
-      := fun i => v i.
-    Next Obligation.
-      omega.
-    Defined.
+  Program Definition vtake {A} {m:nat} (v:Vector (A) m) (n:nat) (pf:(n<=m)%nat) : Vector A n
+    := fun i => v i.
+  Next Obligation.
+    omega.
+  Defined.
 
-    Definition vec_eq {A} {m:nat} (x y:Vector A m) := forall i, x i = y i.
-    Notation "x =v= y" := (vec_eq x y) (at level 70).
-    
-    (* If we are willing to assume an axiom *)
-    Lemma vec_eq_eq {A} {m:nat} (x y:Vector A m) : vec_eq x y -> x = y.
-    Proof.
-      Require Import FunctionalExtensionality.
-      intros.
-      apply functional_extensionality.
-      apply H.
-    Qed.
+  Definition vec_eq {A} {m:nat} (x y:Vector A m) := forall i, x i = y i.
+  Notation "x =v= y" := (vec_eq x y) (at level 70).
+  
+  (* If we are willing to assume an axiom *)
+  Lemma vec_eq_eq {A} {m:nat} (x y:Vector A m) : vec_eq x y -> x = y.
+  Proof.
+    Require Import FunctionalExtensionality.
+    intros.
+    apply functional_extensionality.
+    apply H.
+  Qed.
 
-    Lemma index_pf_irrel n m pf1 pf2 : 
-      exist (fun n' : nat => (n' < n)%nat) m pf1 =
-      exist (fun n' : nat => (n' < n)%nat) m pf2.
-      f_equal.
-      apply digit_pf_irrel.
-    Qed.
-    
-    Lemma vector_Sn_split {T} {n} (v:Vector T (S n)) :
-      v =v= vcons (vlast v) (vdrop_last v).
-    Proof.
-      intros [i pf].
-      unfold vcons, vlast, vdrop_last.
-      destruct (Nat.eq_dec i n)
-      ; subst
-      ; f_equal
-      ; apply index_pf_irrel.
-    Qed.
+  Lemma index_pf_irrel n m pf1 pf2 : 
+    exist (fun n' : nat => (n' < n)%nat) m pf1 =
+    exist (fun n' : nat => (n' < n)%nat) m pf2.
+    f_equal.
+    apply digit_pf_irrel.
+  Qed.
 
-    Lemma vector_split_zip {A B} {m:nat} (v:Vector (A*B) m) :
-      let '(va,vb):=vector_split v in vector_zip va vb =v= v.
-    Proof.
-      simpl.
-      intros i.
-      vm_compute.
-      now destruct (v i).
-    Qed.
+  Ltac index_prover := erewrite index_pf_irrel; reflexivity.
 
-    Lemma split_vector_zip {A B} {m:nat} (va:Vector A m) (vb:Vector B m) :
-      vector_split (vector_zip va vb) = (va,vb).
-    Proof.
-      vm_compute.
-      f_equal.
-    Qed.
-    
+  Lemma vector_Sn_split {T} {n} (v:Vector T (S n)) :
+    v =v= vcons (vlast v) (vdrop_last v).
+  Proof.
+    intros [i pf].
+    unfold vcons, vlast, vdrop_last.
+    destruct (Nat.eq_dec i n)
+    ; subst
+    ; f_equal
+    ; apply index_pf_irrel.
+  Qed.
+
+  Lemma vector_split_zip {A B} {m:nat} (v:Vector (A*B) m) :
+    let '(va,vb):=vector_split v in vector_zip va vb =v= v.
+  Proof.
+    simpl.
+    intros i.
+    vm_compute.
+    now destruct (v i).
+  Qed.
+
+  Lemma split_vector_zip {A B} {m:nat} (va:Vector A m) (vb:Vector B m) :
+    vector_split (vector_zip va vb) = (va,vb).
+  Proof.
+    vm_compute.
+    f_equal.
+  Qed.
+  
 
   Definition vlconcat {A n} (v:Vector (list A) n) : list A
     := concat (vector_to_list v).
@@ -215,36 +235,36 @@ Section Vector.
   Definition vin {A n} (x:A) (v:Vector A n) : Prop
     := exists i, v i = x.
 
-(*
+  (*
   Lemma nth_In :
     forall (n:nat) (l:list A) (d:A), n < length l -> In (nth n l d) l.
 
   Lemma In_nth l x d : In x l ->
     exists n, n < length l /\ nth n l d = x.
- *)
+   *)
   
-(*
+  (*
   Lemma vector_list_n (n : nat) (A : Type) (v : Vector A n) :
     length (vector_to_list v) = n.
   Proof.
     induction n.
     reflexivity.
     intros.
-*)
+   *)
 
   Notation "x =v= y" := (vec_eq x y) (at level 70).
 
-    Lemma vector_fold_right_dep_bounded_pf_ext {A:nat->Type} {B} (f:forall n,B->A n->A (S n)) 
-          (init:A 0%nat) {m:nat} (v:Vector B m) bound pf1 pf2 :
-      vector_fold_right_bounded_dep f init v bound pf1 = vector_fold_right_bounded_dep f init v bound pf2.
-    Proof.
-      revert pf1 pf2.
-      induction bound; trivial; intros.
-      simpl.
-      f_equal.
-      f_equal.
-      apply index_pf_irrel.
-      trivial.
+  Lemma vector_fold_right_dep_bounded_pf_ext {A:nat->Type} {B} (f:forall n,B->A n->A (S n)) 
+        (init:A 0%nat) {m:nat} (v:Vector B m) bound pf1 pf2 :
+    vector_fold_right_bounded_dep f init v bound pf1 = vector_fold_right_bounded_dep f init v bound pf2.
+  Proof.
+    revert pf1 pf2.
+    induction bound; trivial; intros.
+    simpl.
+    f_equal.
+    f_equal.
+    apply index_pf_irrel.
+    trivial.
   Qed.
   
   Lemma vector_fold_right_dep_bounded_ext {A:nat->Type} {B} (f:forall n,B->A n->A (S n)) 
@@ -340,6 +360,199 @@ Section Vector.
     unfold vector_fold_right.
     apply (@vector_fold_right_dep_Sn (fun _ => A)).
   Qed.
+
+  
+  Lemma vector_fold_right1_dep_bounded_ext {A:nat->Type} {B} (f:forall n,B->A n->A (S n)) 
+        (init:A 0%nat) sing {m:nat} (x y:Vector B m) bound pf :
+    x =v= y -> vector_fold_right1_bounded_dep f init sing x bound pf = vector_fold_right1_bounded_dep f init sing y bound pf.
+  Proof.
+    intros eqq.
+    induction bound; simpl; trivial.
+    destruct bound; trivial.
+    - congruence.
+    - f_equal.
+      + erewrite index_pf_irrel; eauto.
+      + apply IHbound.
+    Unshelve.
+    omega.
+  Qed.
+
+  Lemma vector_fold_right1_dep_ext {A:nat->Type} {B} (f:forall n,B->A n->A (S n)) 
+        (init:A 0%nat) sing {m:nat} {x y:Vector B m} :
+    x =v= y -> vector_fold_right1_dep f init sing x = vector_fold_right1_dep f init sing y.
+  Proof.
+    apply vector_fold_right1_dep_bounded_ext.
+  Qed.
+
+  Lemma vector_fold_right1_ext {A:Type} {B} (f:B->A->A) (init:A) sing {m:nat} {x y:Vector B m} :
+    x =v= y -> vector_fold_right1 f init sing x = vector_fold_right1 f init sing y.
+  Proof.
+    apply (@vector_fold_right1_dep_ext (fun _ => A)).
+  Qed.
+
+  Lemma vector_fold_right1_dep_0 {A:nat->Type} {B} (f:forall n,B->A n->A (S n)) 
+        (init:A 0%nat) sing (v:Vector B 0) : 
+    vector_fold_right1_dep f init sing v = init.
+  Proof.
+    reflexivity.
+  Qed.
+  
+  Lemma vector_fold_right1_dep_1 {A:nat->Type} {B} (f:forall n,B->A n->A (S n)) 
+        (init:A 0%nat) sing (v:Vector B 1) : 
+    vector_fold_right1_dep f init sing v = sing (v (exist _ 0 Nat.lt_0_1)).
+  Proof.
+    unfold vector_fold_right1_dep.
+    simpl.
+    f_equal.
+    erewrite index_pf_irrel; eauto.
+  Qed.
+
+    Lemma vector_fold_right1_bounded_dep_pf_ext {A:nat->Type} {B} (f:forall n,B->A n->A (S n)) 
+        (init:A 0%nat) sing {m:nat} (v:Vector B m) bound pf1 pf2 :
+    vector_fold_right1_bounded_dep f init sing v bound pf1 = vector_fold_right1_bounded_dep f init sing v bound pf2.
+  Proof.
+    revert pf1 pf2.
+    induction bound; trivial; intros.
+    simpl.
+    destruct bound; simpl.
+    - f_equal; index_prover.
+    - f_equal; try index_prover.
+      apply IHbound.
+  Qed.
+
+  Lemma vector_fold_right1_bounded_dep_SSn {A:nat->Type} {B} (f:forall n,B->A n->A (S n)) 
+        (init:A 0%nat) sing {m:nat} (v:Vector B (S m)) bound pf1 pf2 pf4: 
+    vector_fold_right1_bounded_dep f init sing v (S (S bound)) pf1 = f _ (v (exist _ (S bound) pf4)) (vector_fold_right1_bounded_dep f init sing v (S bound) pf2).
+  Proof.
+    revert pf4.
+    induction bound; simpl; trivial; intros.
+    f_equal; try index_prover.
+    simpl in *.
+    f_equal; try index_prover.
+    destruct bound.
+    - f_equal; try index_prover.
+    - destruct bound.
+      apply IHbound.
+      f_equal; try index_prover.
+      f_equal; try index_prover.
+      apply vector_fold_right1_bounded_dep_pf_ext.
+  Qed.
+
+  Lemma vector_fold_right1_bounded_dep_relevant {A:nat->Type} {B} (f:forall n,B->A n->A (S n)) 
+        (init:A 0%nat) sing {m1:nat} (v1:Vector B m1) {m2:nat} (v2:Vector B m2) bound pf1 pf2:
+    (forall i, i <= bound -> forall pf1 pf2, v1 (exist _ i pf1) = v2 (exist _ i pf2)) ->
+    vector_fold_right1_bounded_dep f init sing v1 bound pf1 =
+    vector_fold_right1_bounded_dep f init sing v2 bound pf2.
+  Proof.
+    intros eqq.
+    induction bound; simpl; trivial.
+    destruct bound; simpl.
+    - f_equal; try index_prover.
+      apply eqq.
+      omega.
+    - f_equal.
+      + apply eqq.
+        omega.
+      + apply IHbound; auto.
+  Qed.
+
+  Lemma vector_fold_right1_bounded_dep_droplast {A:nat->Type} {B} (f:forall n,B->A n->A (S n)) 
+        (init:A 0%nat) sing {m:nat} (v:Vector B (S m)) bound pf1 pf2:
+    bound < S m ->
+    vector_fold_right1_bounded_dep f init sing (vdrop_last v) bound pf1 =
+    vector_fold_right1_bounded_dep f init sing v bound pf2.
+  Proof.
+    intros.
+    apply vector_fold_right1_bounded_dep_relevant; intros.
+    unfold vdrop_last.
+    index_prover.
+  Qed.
+  
+  Lemma vector_fold_right1_dep_SSn {A:nat->Type} {B} (f:forall n,B->A n->A (S n)) 
+        (init:A 0%nat) sing {m:nat} (v:Vector B (S (S m))) : 
+    vector_fold_right1_dep f init sing v = f (S m) (vlast v) (vector_fold_right1_dep f init sing (vdrop_last v)).
+  Proof.
+    unfold vector_fold_right1_dep.
+    unfold vlast.
+    erewrite vector_fold_right1_bounded_dep_SSn.
+    f_equal.
+    erewrite vector_fold_right1_bounded_dep_droplast; trivial.
+    omega.
+    Unshelve.
+    omega.
+  Qed.
+
+  Lemma vector_fold_right_bounded_dep_ind {A:nat->Type} {B} {P:forall m, A m -> Prop} (f:forall n,B->A n->A (S n)) 
+        (init:A 0%nat)
+        (finit : P 0 init)
+        (ff: forall n b v, P n v -> P (S n) (f n b v)) :
+    forall {m:nat} (v:Vector B m) bound pf, P bound (vector_fold_right_bounded_dep f init v bound pf).
+  Proof.
+    intros m v bound pf.
+    revert m pf v.
+    induction bound; simpl; trivial; intros.
+    apply ff.
+    apply IHbound.
+  Qed.
+
+  Lemma vector_fold_right_dep_ind {A:nat->Type} {B} {P:forall m, A m -> Prop} (f:forall n,B->A n->A (S n)) 
+        (init:A 0%nat) 
+        (finit : P 0 init)
+      (ff: forall n b v, P n v -> P (S n) (f n b v)) :
+    forall {m:nat} (v:Vector B m), P m (vector_fold_right_dep f init v).
+  Proof.
+    intros.
+    apply vector_fold_right_bounded_dep_ind; trivial.
+  Qed.
+
+  Lemma vector_fold_right_ind {A:Type} {B} {P:A -> Prop} (f:B->A ->A) 
+        (init:A)
+        (finit : P init)
+      (ff: forall b v, P v -> P (f b v)) :
+    forall {m:nat} (v:Vector B m), P (vector_fold_right f init v).
+  Proof.
+    intros.
+    apply (vector_fold_right_dep_ind (P:=fun _ => P)); trivial.
+  Qed.
+
+
+  Lemma vector_fold_right1_bounded_dep_ind {A:nat->Type} {B} {P:forall m, A m -> Prop} (f:forall n,B->A n->A (S n)) 
+        (init:A 0%nat) sing
+        (finit : P 0 init)
+        (fsing: forall b, P 1 (sing b))
+        (ff: forall n b v, P n v -> P (S n) (f n b v)) :
+    forall {m:nat} (v:Vector B m) bound pf, P bound (vector_fold_right1_bounded_dep f init sing v bound pf).
+  Proof.
+    intros m v bound pf.
+    revert m pf v.
+    induction bound; simpl; trivial; intros.
+    destruct bound; simpl; trivial.
+    apply ff.
+    apply IHbound.
+  Qed.
+
+  Lemma vector_fold_right1_dep_ind {A:nat->Type} {B} {P:forall m, A m -> Prop} (f:forall n,B->A n->A (S n)) 
+        (init:A 0%nat) sing
+        (finit : P 0 init)
+       (fsing: forall b, P 1 (sing b))
+      (ff: forall n b v, P n v -> P (S n) (f n b v)) :
+    forall {m:nat} (v:Vector B m), P m (vector_fold_right1_dep f init sing v).
+  Proof.
+    intros.
+    apply vector_fold_right1_bounded_dep_ind; trivial.
+  Qed.
+
+  Lemma vector_fold_right1_ind {A:Type} {B} {P:A -> Prop} (f:B->A ->A) 
+        (init:A) sing
+        (finit : P init)
+       (fsing: forall b, P (sing b))
+      (ff: forall b v, P v -> P (f b v)) :
+    forall {m:nat} (v:Vector B m), P (vector_fold_right1 f init sing v).
+  Proof.
+    intros.
+    apply (vector_fold_right1_dep_ind (P:=fun _ => P)); trivial.
+  Qed.
+
   
   Lemma vector_to_list_In {A} (x:A) {n} (v:Vector A n) :
     vin x v -> In x (vector_to_list v).
@@ -402,7 +615,7 @@ Section Vector.
     exists i.
     rewrite <- eqq1; trivial.
   Qed.
-    
+  
   Lemma vector_to_list_vin {A} (x:A) {n} (v:Vector A n) :
     In x (vector_to_list v) -> vin x v.
   Proof.
@@ -420,194 +633,194 @@ Section Vector.
   Qed.
 
 
-    Lemma vdrop_last_i {A} {n} (v:Vector A (S n)) i pf1 pf2 :
-      vdrop_last v (exist (fun n' : nat => (n' < n)%nat) i pf1) =
-      v (exist (fun n' : nat => (n' < S n)%nat) i pf2).
-    Proof.
-      unfold vdrop_last.
-      erewrite index_pf_irrel; eauto.
-    Qed.
+  Lemma vdrop_last_i {A} {n} (v:Vector A (S n)) i pf1 pf2 :
+    vdrop_last v (exist (fun n' : nat => (n' < n)%nat) i pf1) =
+    v (exist (fun n' : nat => (n' < S n)%nat) i pf2).
+  Proof.
+    unfold vdrop_last.
+    erewrite index_pf_irrel; eauto.
+  Qed.
 
-    Lemma vin_vlast {A n} (v:Vector A (S n)) : vin (vlast v) v.
-    Proof.
-      unfold vin, vlast.
-      eauto.
-    Qed.
+  Lemma vin_vlast {A n} (v:Vector A (S n)) : vin (vlast v) v.
+  Proof.
+    unfold vin, vlast.
+    eauto.
+  Qed.
 
-    Lemma vin_vdrop_last {A n} x (v:Vector A (S n)) : vin x (vdrop_last v) -> vin x v.
-    Proof.
-      unfold vin, vdrop_last.
-      intros [[??]?].
-      eauto.
-    Qed.
+  Lemma vin_vdrop_last {A n} x (v:Vector A (S n)) : vin x (vdrop_last v) -> vin x v.
+  Proof.
+    unfold vin, vdrop_last.
+    intros [[??]?].
+    eauto.
+  Qed.
 
-    Lemma vmap_nth {A B : Type} (f : A -> B) {n} (v : Vector A n) i : 
-      vmap f v i = f (v i).
-    Proof.
-      revert v i.
-      unfold vmap.
-      induction n; intros v [i pf].
-      - omega.
-      - rewrite vector_fold_right_dep_Sn.
-        simpl.
+  Lemma vmap_nth {A B : Type} (f : A -> B) {n} (v : Vector A n) i : 
+    vmap f v i = f (v i).
+  Proof.
+    revert v i.
+    unfold vmap.
+    induction n; intros v [i pf].
+    - omega.
+    - rewrite vector_fold_right_dep_Sn.
+      simpl.
+      destruct (Nat.eq_dec i n).
+      + subst.
+        unfold vlast.
+        erewrite index_pf_irrel; eauto.
+      + specialize (IHn (vdrop_last v)).
+        unfold vdrop_last.
+        erewrite index_pf_irrel; rewrite IHn.
+        erewrite vdrop_last_i; eauto.
+        Unshelve.
+        omega.
+  Qed.
+
+  Lemma vmap_ext {A B n} (f1 f2:A->B) (df:Vector A n) :
+    (forall x, vin x df -> f1 x = f2 x) ->
+    vmap f1 df = vmap f2 df.
+  Proof.
+    unfold vmap.
+    induction n.
+    - reflexivity.
+    - intros.
+      repeat rewrite vector_fold_right_dep_Sn.
+      f_equal.
+      + eapply H.
+        eapply vin_vlast.
+      + rewrite IHn; trivial.
+        intros.
+        eapply H.
+        now apply vin_vdrop_last.
+  Qed.
+
+  Lemma vnil0 {A} (v:Vector A 0) : v = vnil.
+  Proof.
+    Require Import FunctionalExtensionality.
+    apply functional_extensionality.
+    intros [i pf].
+    omega.
+  Qed.
+
+  Lemma vmap_id {A n} (df:Vector A n) :
+    vmap (fun x => x) df = df.
+  Proof.
+    unfold vmap.
+    induction n; simpl.
+    - now rewrite vnil0, vector_fold_right_dep_0.
+    - rewrite vector_fold_right_dep_Sn, IHn.
+      apply vec_eq_eq.
+      apply veq_sym.
+      apply vector_Sn_split.
+  Qed.
+
+  Fixpoint bounded_seq (start len : nat) {struct len} : list {n':nat | n' < start+len}%nat.
+  Proof.
+    revert start.
+    induction len; intros start.
+    - exact nil.
+    - apply cons.
+      + exists start.
+        omega.
+      + rewrite Nat.add_succ_r.
+        exact (IHlen (S start)).
+  Defined.
+
+  Definition bounded_seq0 len : list {n':nat | n' < len}%nat := bounded_seq 0 len.
+  
+  Definition vforall {A n} (P:A->Prop) (v:Vector A n) :=
+    vector_fold_right (fun x p => P x /\ p) True v.
+
+  Lemma vforall_forall {A n} (P:A->Prop) (v:Vector A n) :
+    vforall P v <-> forall i, P (v i).
+  Proof.
+    unfold vforall.
+    split.
+    - induction n.
+      + intros ? [??].
+        omega.
+      + rewrite vector_fold_right_Sn.
+        intros [Plast Pdrop].
+        intros [i pf].
         destruct (Nat.eq_dec i n).
-        + subst.
-          unfold vlast.
+        * unfold vlast in Plast.
+          subst.
           erewrite index_pf_irrel; eauto.
-        + specialize (IHn (vdrop_last v)).
-          unfold vdrop_last.
-          erewrite index_pf_irrel; rewrite IHn.
-          erewrite vdrop_last_i; eauto.
-          Unshelve.
-          omega.
-    Qed.
+        * assert (pf2:(i < n)%nat) by omega.
+          specialize (IHn _ Pdrop (exist _ i pf2)).
+          erewrite index_pf_irrel; eauto.
+    - induction n.
+      + vm_compute; trivial.
+      + rewrite vector_fold_right_Sn.
+        intros.
+        split.
+        * eauto.
+        * eapply IHn.
+          intros [i pf].
+          assert (pf2 : (i < S n)%nat) by omega.
+          specialize (H (exist _ i pf2)).
+          simpl in *.
+          erewrite index_pf_irrel; eauto.
+  Qed.
 
-    Lemma vmap_ext {A B n} (f1 f2:A->B) (df:Vector A n) :
-      (forall x, vin x df -> f1 x = f2 x) ->
-      vmap f1 df = vmap f2 df.
-    Proof.
-      unfold vmap.
-      induction n.
-      - reflexivity.
-      - intros.
-        repeat rewrite vector_fold_right_dep_Sn.
-        f_equal.
-        + eapply H.
-          eapply vin_vlast.
-        + rewrite IHn; trivial.
-          intros.
-          eapply H.
-          now apply vin_vdrop_last.
-    Qed.
+  Lemma vectoro_to_ovector_forall_some_f {A n} {vo:Vector (option A) n} {v:Vector A n} :
+    vectoro_to_ovector vo = Some v ->
+    (forall i, vo i = Some (v i)).
+  Proof.
+    unfold vectoro_to_ovector.
+    induction n; simpl.
+    - intros ? [??]; omega.
+    - rewrite vector_fold_right_dep_Sn.
+      intros eqq.
+      apply some_lift2 in eqq.
+      destruct eqq as [x [y eqq1 [eqq2 eqq3]]].
+      subst.
+      intros [i pf].
+      rewrite vector_Sn_split.
+      specialize (IHn _ _ eqq2).
+      rewrite eqq1.
+      unfold vcons.
+      destruct (Nat.eq_dec i n); trivial.
+  Qed.
 
-    Lemma vnil0 {A} (v:Vector A 0) : v = vnil.
-    Proof.
-     Require Import FunctionalExtensionality.
-     apply functional_extensionality.
-     intros [i pf].
-     omega.
-    Qed.
+  Lemma vectoro_to_ovector_forall_some_b {A n} (vo:Vector (option A) n) (v:Vector A n) :
+    (forall i, vo i = Some (v i)) ->
+    exists v', vectoro_to_ovector vo = Some v' /\ v =v= v'.
+  Proof.
+    unfold vectoro_to_ovector.
+    induction n; simpl.
+    - intros eqq.
+      unfold vector_fold_right_dep.
+      simpl.
+      exists vnil; split; trivial.
+      intros [??]; omega.
+    - rewrite vector_fold_right_dep_Sn.
+      intros eqq.
+      specialize (IHn (vdrop_last vo) (vdrop_last v)).
+      destruct IHn as [v' [eqq2 eqq3]].
+      + intros [i pf].
+        simpl; eauto.
+      + rewrite eqq2.
+        unfold vlast.
+        rewrite eqq.
+        simpl.
+        eexists; split; [reflexivity | ].
+        eapply veq_trans; [eapply (vector_Sn_split v) | ].
+        apply vcons_proper; simpl; trivial.
+  Qed.
 
-    Lemma vmap_id {A n} (df:Vector A n) :
-      vmap (fun x => x) df = df.
-    Proof.
-      unfold vmap.
-      induction n; simpl.
-      - now rewrite vnil0, vector_fold_right_dep_0.
-      - rewrite vector_fold_right_dep_Sn, IHn.
-        apply vec_eq_eq.
-        apply veq_sym.
-        apply vector_Sn_split.
-    Qed.
+  Lemma vectoro_to_ovector_forall_some_b_strong {A n} (vo:Vector (option A) n) (v:Vector A n) :
+    (forall i, vo i = Some (v i)) ->
+    vectoro_to_ovector vo = Some v.
+  Proof.
+    Require Import FunctionalExtensionality.
+    intros.
+    destruct (vectoro_to_ovector_forall_some_b _ _ H) as [? [??]].
+    rewrite H0.
+    f_equal.
+    apply functional_extensionality.
+    intros.
+    symmetry.
+    apply H1.
+  Qed.
 
-    Fixpoint bounded_seq (start len : nat) {struct len} : list {n':nat | n' < start+len}%nat.
-    Proof.
-      revert start.
-      induction len; intros start.
-      - exact nil.
-      - apply cons.
-        + exists start.
-          omega.
-        + rewrite Nat.add_succ_r.
-          exact (IHlen (S start)).
-    Defined.
-
-    Definition bounded_seq0 len : list {n':nat | n' < len}%nat := bounded_seq 0 len.
-      
-    Definition vforall {A n} (P:A->Prop) (v:Vector A n) :=
-      vector_fold_right (fun x p => P x /\ p) True v.
-
-   Lemma vforall_forall {A n} (P:A->Prop) (v:Vector A n) :
-     vforall P v <-> forall i, P (v i).
-   Proof.
-     unfold vforall.
-     split.
-     - induction n.
-       + intros ? [??].
-         omega.
-       + rewrite vector_fold_right_Sn.
-         intros [Plast Pdrop].
-         intros [i pf].
-         destruct (Nat.eq_dec i n).
-         * unfold vlast in Plast.
-           subst.
-           erewrite index_pf_irrel; eauto.
-         * assert (pf2:(i < n)%nat) by omega.
-           specialize (IHn _ Pdrop (exist _ i pf2)).
-           erewrite index_pf_irrel; eauto.
-     - induction n.
-       + vm_compute; trivial.
-       + rewrite vector_fold_right_Sn.
-         intros.
-         split.
-         * eauto.
-         * eapply IHn.
-           intros [i pf].
-           assert (pf2 : (i < S n)%nat) by omega.
-           specialize (H (exist _ i pf2)).
-           simpl in *.
-           erewrite index_pf_irrel; eauto.
-   Qed.
-
-   Lemma vectoro_to_ovector_forall_some_f {A n} {vo:Vector (option A) n} {v:Vector A n} :
-     vectoro_to_ovector vo = Some v ->
-     (forall i, vo i = Some (v i)).
-   Proof.
-     unfold vectoro_to_ovector.
-     induction n; simpl.
-     - intros ? [??]; omega.
-     - rewrite vector_fold_right_dep_Sn.
-       intros eqq.
-       apply some_lift2 in eqq.
-       destruct eqq as [x [y eqq1 [eqq2 eqq3]]].
-       subst.
-       intros [i pf].
-       rewrite vector_Sn_split.
-       specialize (IHn _ _ eqq2).
-       rewrite eqq1.
-       unfold vcons.
-       destruct (Nat.eq_dec i n); trivial.
-   Qed.
-
-   Lemma vectoro_to_ovector_forall_some_b {A n} (vo:Vector (option A) n) (v:Vector A n) :
-     (forall i, vo i = Some (v i)) ->
-     exists v', vectoro_to_ovector vo = Some v' /\ v =v= v'.
-   Proof.
-     unfold vectoro_to_ovector.
-     induction n; simpl.
-     - intros eqq.
-       unfold vector_fold_right_dep.
-       simpl.
-       exists vnil; split; trivial.
-       intros [??]; omega.
-     - rewrite vector_fold_right_dep_Sn.
-       intros eqq.
-       specialize (IHn (vdrop_last vo) (vdrop_last v)).
-       destruct IHn as [v' [eqq2 eqq3]].
-       + intros [i pf].
-         simpl; eauto.
-       + rewrite eqq2.
-         unfold vlast.
-         rewrite eqq.
-         simpl.
-         eexists; split; [reflexivity | ].
-         eapply veq_trans; [eapply (vector_Sn_split v) | ].
-         apply vcons_proper; simpl; trivial.
-   Qed.
-
-   Lemma vectoro_to_ovector_forall_some_b_strong {A n} (vo:Vector (option A) n) (v:Vector A n) :
-     (forall i, vo i = Some (v i)) ->
-     vectoro_to_ovector vo = Some v.
-   Proof.
-     Require Import FunctionalExtensionality.
-     intros.
-     destruct (vectoro_to_ovector_forall_some_b _ _ H) as [? [??]].
-     rewrite H0.
-     f_equal.
-     apply functional_extensionality.
-     intros.
-     symmetry.
-     apply H1.
-   Qed.
-
-End Vector.
+  End Vector.

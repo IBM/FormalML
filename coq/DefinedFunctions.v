@@ -3155,9 +3155,9 @@ F (d : definition_function_types)
         match df with
          | Number _ _ => True
          | Constant _ _ _ => True
-         | DVector n _ vec =>
+         | DVector n _ vec => 
            vforall (is_df_rec_prop prop) vec
-         | DMatrix n m _ mat => 
+         | DMatrix n m _ mat =>  
              vforall (vforall (is_df_rec_prop prop)) mat
          | Var _ _ => True
          | Plus _ l r => (is_df_rec_prop prop l) /\ (is_df_rec_prop prop r)
@@ -5904,11 +5904,22 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         lra.
         lra.
       Qed.
-
-     Lemma vsum_mult {n} (v : Vector float n) (c : float) :
-       (c * vsum v)%R = vsum (fun j => (c * v j)%R).
-     Proof.
-     Admitted.
+  
+      Lemma vsum_mult {n} (v : Vector float n) (c : float) :
+        (c * vsum v)%R = vsum (fun j => (c * v j)%R).
+      Proof.
+        unfold vsum, vector_fold_right1, Datatypes.id; simpl.
+        induction n; [ | destruct n].
+        - repeat rewrite vector_fold_right1_dep_0; lra.
+        - repeat rewrite vector_fold_right1_dep_1; lra.
+        - repeat rewrite vector_fold_right1_dep_SSn.
+          rewrite Rmult_plus_distr_l.
+          specialize (IHn (vdrop_last v)); simpl in IHn.
+          rewrite IHn.
+          f_equal.
+          apply vector_fold_right1_dep_ext.
+          intros [i pf]; trivial.
+      Qed.
 
      Lemma vmap_mult {n} (f: float -> float) (v : Vector float n) (c : float) :
        forall i : {n' : nat | n' < n},
