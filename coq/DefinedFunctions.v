@@ -5914,7 +5914,10 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        forall i : {n' : nat | n' < n},
        (c * (vmap f v) i)%R = (vmap (fun x => (c * f x)%R) v) i.
      Proof.
-     Admitted.
+       intros.
+       rewrite vmap_nth.
+       now rewrite vmap_nth.       
+     Qed.
 
     Lemma scalarMult_backprop_grad_scalar {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (s: SubVar) (grad_env1 grad_env2:df_env) (grad : definition_function_types_interp T) (c:float) :
       let v := (s, DTfloat) in
@@ -6747,7 +6750,12 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
           * unfold msum.
             rewrite vsum_mult; f_equal.
             apply FunctionalExtensionality.functional_extensionality; intros.
-            admit.
+            rewrite vmap_nth.
+            rewrite vmap_nth.
+            rewrite vsum_mult.
+            f_equal.
+            apply FunctionalExtensionality.functional_extensionality; intros.
+            lra.
         + now rewrite H6 in H0.
         + rewrite H2 in H; rewrite H1 in H.
           now rewrite H5 in H.
