@@ -5953,6 +5953,15 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         case_eq (vartlookup grad_env1 (s, DTfloat)); [ |tauto].
         case_eq (vartlookup grad_env2 (s, DTfloat)); [ |tauto].        
         intros; simpl.
+        unfold lift.
+        match_option; [|tauto].
+        case_eq (two_vector_env_iter_alt
+                   (fun (x0 : DefinedFunction Ann DTfloat) (g : R) (genv : df_env) =>
+                      df_eval_backprop_deriv σ x0 genv g) grad_env2 x grad); [|tauto].
+        intros.
+        f_equal.
+        unfold two_vector_env_iter_alt in eqq.
+        unfold two_vector_env_iter_alt in H4.
         admit.
       - Case "DMatrix"%string; admit.
       - Case "Var"%string.
@@ -6878,6 +6887,20 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
             unfold subvar; simpl.
             rewrite eqq3.
             match_option.
+            + case_eq (df_eval_backprop_deriv σ df2 d1 (- (1))%R); intros.
+              * unfold lift.
+                f_equal.
+                match_option.
+                -- assert ((d2 - d5)%R = (d - d2)%R).                
+                   admit.
+                   rewrite <- H0.
+                   lra.
+                -- admit.
+              * admit.
+            + admit.
+         - admit.
+        }
+        
     Admitted.
             
 (*   
