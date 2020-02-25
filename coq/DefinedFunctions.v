@@ -6382,34 +6382,26 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
           case_eq (df_eval_backprop_deriv σ df1 grad_env2 grad); intros.
           * rewrite H4 in H0; simpl in H0.
             match_option_in H0; [|tauto].
-        (*
-        + specialize (IHdf2 ? d1 d2).
-          rewrite H3 in IHdf1; rewrite H4 in IHdf1.
-          assert (vartlookup d1 (s, DTfloat) <> None) by
-              apply (df_eval_backprop_deriv_preserves_lookup_not_none H3 (s, DTfloat) neq1).
-          case_eq (vartlookup d1 (s, DTfloat)); [ |tauto]; intros.
-          assert (vartlookup d2 (s, DTfloat) <> None) by
+            match_option_in H; [|tauto].
+            rewrite H3 in IHdf1.
+            unfold lift.
+            f_equal.
+            rewrite H4 in IHdf1.
+            unfold lift in IHdf1.
+            assert (vartlookup d1 (s, DTfloat) <> None) by
+                apply (df_eval_backprop_deriv_preserves_lookup_not_none H3 (s, DTfloat) neq1).
+            case_eq (vartlookup d1 (s, DTfloat)); [ |tauto]; intros.
+            assert (vartlookup d2 (s, DTfloat) <> None) by
               apply (df_eval_backprop_deriv_preserves_lookup_not_none H4 (s, DTfloat) neq2).
-          case_eq (vartlookup d2 (s, DTfloat)); [ |tauto]; intros.
-          rewrite H6 in IHdf2; rewrite H8 in IHdf2; simpl in *.
-          case_eq (df_eval_backprop_deriv σ df2 d1 (fun i j => (c * grad i j)%R))
-             ; [|tauto]; intros.
-          case_eq (df_eval_backprop_deriv σ df2 d2 grad); [|tauto]; intros; simpl; f_equal.
-          rewrite (split_subvar d1 d5 d0 d3) by trivial.
-          rewrite (split_subvar d2 d6 d d4) by trivial.
-          rewrite H9 in IHdf2; rewrite H10 in IHdf2; simpl in *.
-          assert (Some (subvar (s, DTfloat) d1 d0) = Some (c * subvar (s, DTfloat) d2 d)%R) by
-              (apply IHdf1; trivial; discriminate).
-          assert (Some (subvar (s, DTfloat) d5 d3) = Some (c * subvar (s, DTfloat) d6 d4)%R) by
-              (apply IHdf2; trivial; discriminate).
-          inversion H11; inversion H12.
-          rewrite H14; rewrite H15; lra.
-        + now rewrite H4 in H0.
-        + now rewrite H3 in H.
-     *)        
-           admit.
-        * admit.
-      + admit.
+            case_eq (vartlookup d2 (s, DTfloat)); [ |tauto]; intros.
+            rewrite (split_subvar d1 d4 d0 d5) by trivial.
+            rewrite (split_subvar d2 d3 d d6) by trivial.
+            assert (Some (subvar (s, DTfloat) d1 d0) = Some (c * subvar (s, DTfloat) d2 d)%R) 
+              by (apply IHdf1; trivial; discriminate). 
+            inversion H9; rewrite H11.
+            admit.
+          * rewrite H4 in H0; tauto.
+        + rewrite H3 in H; tauto.
       - Case "MatrixMult"%string.
         case_eq (vartlookup grad_env1 (s, DTfloat)); [ |tauto].
         case_eq (vartlookup grad_env2 (s, DTfloat)); [ |tauto].        
