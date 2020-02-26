@@ -5969,12 +5969,16 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         case_eq (two_vector_env_iter_alt
                    (fun (x0 : DefinedFunction Ann DTfloat) (g : R) (genv : df_env) =>
                       df_eval_backprop_deriv σ x0 genv g) grad_env2 x grad); [|tauto].
-        intros.
-        f_equal.
-        unfold two_vector_env_iter_alt in eqq.
-        unfold two_vector_env_iter_alt in H4.
+        unfold two_vector_env_iter_alt in *.
+        intros; f_equal.
+        unfold snd in *; simpl in *.
         admit.
-      - Case "DMatrix"%string; admit.
+      - Case "DMatrix"%string.
+        case_eq (vartlookup grad_env1 (s, DTfloat)); [ |tauto].
+        case_eq (vartlookup grad_env2 (s, DTfloat)); [ |tauto].        
+        intros; simpl.
+        unfold lift.
+        admit.
       - Case "Var"%string.
         case_eq (vartlookup grad_env1 (s, DTfloat)); [ |tauto].
         case_eq (vartlookup grad_env2 (s, DTfloat)); [ |tauto].        
@@ -6419,6 +6423,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
             assert (Some (subvar (s, DTfloat) d1 d0) = Some (c * subvar (s, DTfloat) d2 d)%R) 
               by (apply IHdf1; trivial; discriminate). 
             inversion H9; rewrite H11.
+            
             admit.
           * rewrite H4 in H0; tauto.
         + rewrite H3 in H; tauto.
@@ -6782,13 +6787,253 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         specialize (IHdf1 v0 grad_env1 grad_env2). 
         rewrite H1 in IHdf1; rewrite H2 in IHdf1; simpl in IHdf1.
         match_option_in H; [|tauto].
-        assert (v1 = fun i => (c * v0 i)%R).
-        admit.
+        assert (forall i, (vmap
+             (fun '(rei, g) =>
+              match
+                df_eval (mk_env_entry (v, DTfloat) rei :: σ) (df_deriv df1 (v, DTfloat))
+              with
+              | Some se => Some (g * se)%R
+              | None => None
+              end) (vector_zip d1 grad)) i = Some (v0 i)).
+        apply vectoro_to_ovector_forall_some_f; trivial.
+        assert (forall i,  (vmap
+              (fun '(rei, g) =>
+               match
+                 df_eval (mk_env_entry (v, DTfloat) rei :: σ) (df_deriv df1 (v, DTfloat))
+               with
+               | Some se => Some (g * se)%R
+               | None => None
+               end) (vector_zip d1 (fun i : {n' : nat | n' < n} => (c * grad i)%R))) i =
+                           Some (v1 i)).
+        apply vectoro_to_ovector_forall_some_f; trivial.
+        assert (v1 = (fun i => (c * v0 i)%R)).
+        apply FunctionalExtensionality.functional_extensionality; intros.        
+        specialize (H4 x).
+        specialize (H5 x).
+        rewrite vmap_nth in H4; simpl in H4.
+        rewrite vmap_nth in H5; simpl in H5.
+        match_option_in H4.
+        match_option_in H5.
+        inversion H4; inversion H5; subst.
+        assert (Some d2 = Some d3).
+        rewrite <- eqq1.
+        rewrite <- eqq2; trivial.
+        inversion H6; subst; lra.
         subst.
         apply IHdf1; trivial; discriminate.
-      - Case "MatrixApply"%string; admit.     
-      - Case "VLossfun"%string; admit.
-      - Case "MLossfun"%string; admit.        
+      - Case "MatrixApply"%string.
+        case_eq (vartlookup grad_env1 (s, DTfloat)); [ |tauto]; intros.
+        case_eq (vartlookup grad_env2 (s, DTfloat)); [ |tauto]; intros.        
+        simpl in *.
+        case_eq (df_eval σ df2); [ | tauto].
+        intros.
+        rewrite H3 in H; rewrite H3 in H0; simpl in *.
+        match_option_in H0; [|tauto].
+        match_option_in H; [|tauto].
+        unfold matrixo_to_omatrix in eqq.
+        unfold matrixo_to_omatrix in eqq0.
+        assert (forall i,
+           vectoro_to_ovector
+             (mmap
+                (fun '(rei, g) =>
+                 match
+                   df_eval (mk_env_entry (v, DTfloat) rei :: σ) (df_deriv df1 (v, DTfloat))
+                 with
+                 | Some se => Some (g * se)%R
+                 | None => None
+                 end) (matrix_zip d1 grad) i) = Some (m0 i)).
+        apply vectoro_to_ovector_forall_some_f; trivial.
+        assert (forall i,
+          vectoro_to_ovector
+              (mmap
+                 (fun '(rei, g) =>
+                  match
+                    df_eval (mk_env_entry (v, DTfloat) rei :: σ) (df_deriv df1 (v, DTfloat))
+                  with
+                  | Some se => Some (g * se)%R
+                  | None => None
+                  end)
+                 (matrix_zip d1
+                    (fun (i0 : {n' : nat | n' < m}) (j : {m' : nat | m' < n}) =>
+                     (c * grad i0 j)%R)) i) = Some (m1 i)).
+        apply vectoro_to_ovector_forall_some_f; trivial.
+        assert (m1 = (fun i j => (c * m0 i j)%R)).
+        apply FunctionalExtensionality.functional_extensionality; intros.
+        apply FunctionalExtensionality.functional_extensionality; intros. 
+        specialize (H4 x); specialize (H5 x).
+        assert (forall j, (mmap
+            (fun '(rei, g) =>
+             match
+               df_eval (mk_env_entry (v, DTfloat) rei :: σ) (df_deriv df1 (v, DTfloat))
+             with
+             | Some se => Some (g * se)%R
+             | None => None
+             end) (matrix_zip d1 grad) x j) = Some (m0 x j)).
+        apply vectoro_to_ovector_forall_some_f; trivial.
+        assert (forall j, (mmap
+            (fun '(rei, g) =>
+             match
+               df_eval (mk_env_entry (v, DTfloat) rei :: σ) (df_deriv df1 (v, DTfloat))
+             with
+             | Some se => Some (g * se)%R
+             | None => None
+             end)
+            (matrix_zip d1
+               (fun (i0 : {n' : nat | n' < m}) (j : {m' : nat | m' < n}) => (c * grad i0 j)%R))
+            x j) = Some (m1 x j)).
+        apply vectoro_to_ovector_forall_some_f; trivial.
+        specialize (H6 x0); specialize (H7 x0).
+        unfold mmap in H6; unfold mmap in H7.
+        rewrite vmap_nth in H6; rewrite vmap_nth in H6; simpl in H6.
+        rewrite vmap_nth in H7; rewrite vmap_nth in H7; simpl in H7.
+        match_case_in H6; intros.
+        rewrite H8 in H6; simpl in H6.
+        match_case_in H7; intros.
+        rewrite H9 in H7; simpl in H7.
+        match_option_in H6.
+        match_option_in H7.
+        inversion H6; inversion H7.
+        unfold matrix_zip in H8.
+        unfold matrix_zip in H9.
+        rewrite vmap_nth in H8.
+        rewrite vmap_nth in H9.
+        unfold vector_zip in H8.
+        unfold vector_zip in H9.
+        inversion H8; subst r r0.
+        inversion H9; subst r1 r2.
+        assert (Some d2 = Some d3).
+        rewrite <- eqq1; rewrite <- eqq2; trivial.
+        inversion H10; subst; lra.
+        specialize (IHdf1 m0 grad_env1 grad_env2).
+        rewrite H1 in IHdf1; rewrite H2 in IHdf1; simpl in IHdf1.
+        subst m1.
+        apply IHdf1; trivial; discriminate.
+      - Case "VLossfun"%string.
+        case_eq (vartlookup grad_env1 (s, DTfloat)); [ |tauto]; intros.
+        case_eq (vartlookup grad_env2 (s, DTfloat)); [ |tauto]; intros.        
+        simpl in *.
+        case_eq (df_eval σ df2); [ | tauto].
+        intros.
+        rewrite H3 in H; rewrite H3 in H0; simpl in *.
+        match_option_in H0; [|tauto].
+        match_option_in H; [|tauto].
+        assert (forall i, (vmap
+             (fun '(lei, rei) =>
+              match
+                df_eval
+                  (mk_env_entry (v1, DTfloat) lei :: mk_env_entry (v2, DTfloat) rei :: σ)
+                  (df_deriv df1 (v1, DTfloat))
+              with
+              | Some se => Some (grad * se)%R
+              | None => None
+              end) (vector_zip d1 r)) i = Some (v i)).
+        apply vectoro_to_ovector_forall_some_f; trivial.
+        assert (forall i, (vmap
+              (fun '(lei, rei) =>
+               match
+                 df_eval
+                   (mk_env_entry (v1, DTfloat) lei :: mk_env_entry (v2, DTfloat) rei :: σ)
+                   (df_deriv df1 (v1, DTfloat))
+               with
+               | Some se => Some (c * grad * se)%R
+               | None => None
+               end) (vector_zip d1 r)) i = Some (v0 i)).
+        apply vectoro_to_ovector_forall_some_f; trivial.
+        assert (v0 = (fun i => (c * v i)%R)).
+        apply FunctionalExtensionality.functional_extensionality; intros. 
+        specialize (H4 x); specialize (H5 x).
+        rewrite vmap_nth in H4; simpl in H4.
+        rewrite vmap_nth in H5; simpl in H5.
+        match_option_in H4.
+        match_option_in H5.
+        assert (Some d2 = Some d3).
+        rewrite <- eqq1; rewrite <- eqq2; trivial.
+        inversion H6; subst.
+        inversion H4; inversion H5; lra.
+        subst.
+        specialize (IHdf1 v grad_env1 grad_env2).
+        rewrite H1 in IHdf1; rewrite H2 in IHdf1; simpl in IHdf1.
+        apply IHdf1; trivial; discriminate.
+      - Case "MLossfun"%string.
+        case_eq (vartlookup grad_env1 (s, DTfloat)); [ |tauto]; intros.
+        case_eq (vartlookup grad_env2 (s, DTfloat)); [ |tauto]; intros.        
+        simpl in *.
+        case_eq (df_eval σ df2); [ | tauto].
+        intros.
+        rewrite H3 in H; rewrite H3 in H0; simpl in *.
+        match_option_in H0; [|tauto].
+        match_option_in H; [|tauto].
+        unfold matrixo_to_omatrix in eqq.
+        unfold matrixo_to_omatrix in eqq0.
+        assert (forall i, 
+           vectoro_to_ovector
+             (mmap
+                (fun '(lei, rei) =>
+                 match
+                   df_eval
+                     (mk_env_entry (v1, DTfloat) lei :: mk_env_entry (v2, DTfloat) rei :: σ)
+                     (df_deriv df1 (v1, DTfloat))
+                 with
+                 | Some se => Some (grad * se / IZR (Z.of_nat n))%R
+                 | None => None
+                 end) (matrix_zip d1 r) i) = Some (m0 i)).
+        apply vectoro_to_ovector_forall_some_f; trivial.
+        assert (forall i, 
+            vectoro_to_ovector
+              (mmap
+                 (fun '(lei, rei) =>
+                  match
+                    df_eval
+                      (mk_env_entry (v1, DTfloat) lei :: mk_env_entry (v2, DTfloat) rei :: σ)
+                      (df_deriv df1 (v1, DTfloat))
+                  with
+                  | Some se => Some (c * grad * se / IZR (Z.of_nat n))%R
+                  | None => None
+                  end) (matrix_zip d1 r) i) = Some (m1 i)).
+        apply vectoro_to_ovector_forall_some_f; trivial.
+        assert (m1 = (fun i j => (c * m0 i j)%R)).
+        apply FunctionalExtensionality.functional_extensionality; intros.
+        apply FunctionalExtensionality.functional_extensionality; intros. 
+        specialize (H4 x); specialize (H5 x).
+        assert (forall j, (mmap
+            (fun '(lei, rei) =>
+             match
+               df_eval
+                 (mk_env_entry (v1, DTfloat) lei :: mk_env_entry (v2, DTfloat) rei :: σ)
+                 (df_deriv df1 (v1, DTfloat))
+             with
+             | Some se => Some (grad * se / IZR (Z.of_nat n))%R
+             | None => None
+             end) (matrix_zip d1 r) x j) = Some (m0 x j)).
+        apply vectoro_to_ovector_forall_some_f; trivial.
+        assert (forall j, (mmap
+            (fun '(lei, rei) =>
+             match
+               df_eval
+                 (mk_env_entry (v1, DTfloat) lei :: mk_env_entry (v2, DTfloat) rei :: σ)
+                 (df_deriv df1 (v1, DTfloat))
+             with
+             | Some se => Some (c * grad * se / IZR (Z.of_nat n))%R
+             | None => None
+             end) (matrix_zip d1 r) x j) = Some (m1 x j)).
+        apply vectoro_to_ovector_forall_some_f; trivial.
+        specialize (H6 x0); specialize (H7 x0).
+        unfold mmap in H6; unfold mmap in H7.
+        rewrite vmap_nth in H6; rewrite vmap_nth in H6; simpl in H6.
+        rewrite vmap_nth in H7; rewrite vmap_nth in H7; simpl in H7.
+        match_destr_in H6.
+        match_option_in H6.
+        match_option_in H7.
+        assert (Some d2 = Some d3).
+        rewrite <- eqq1; rewrite <- eqq2; trivial.
+        inversion H8; subst.
+        inversion H6; inversion H7.
+        lra.
+        rewrite H6.
+        specialize (IHdf1 m0 grad_env1 grad_env2).
+        rewrite H1 in IHdf1; rewrite H2 in IHdf1; simpl in IHdf1.
+        subst.
+        apply IHdf1; trivial; discriminate.
     Admitted.
         
 (*
