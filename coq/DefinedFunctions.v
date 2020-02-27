@@ -6097,9 +6097,8 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         specialize (IHdf1 (d * grad)%R grad_env1 grad_env2).
         rewrite H4 in IHdf1; rewrite H3 in IHdf1; simpl in *.
         case_eq (df_eval_backprop_deriv σ df1 grad_env1 (d * (c * grad))%R); intros.
-        rewrite H1 in H; rewrite  H2 in H; simpl in H.
-        rewrite H1 in H0; rewrite  H2 in H0; simpl in H0.        
-        rewrite H5 in H; simpl in H.
+        rewrite H1, H2, H5 in H; simpl in H.
+        rewrite H1, H2 in H0; simpl in H0.        
         case_eq (df_eval_backprop_deriv σ df1 grad_env2 (d * grad)%R); intros.
         rewrite H6 in H0; simpl in H0.
         + specialize (IHdf2 (d0 * grad)%R d3 d4).
@@ -6727,9 +6726,8 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                                         (msum (fun i j => (d i j * (c * grad i j))%R)))
                                         
         ; intros.
-        rewrite H1 in H; rewrite  H2 in H; simpl in H.
-        rewrite H1 in H0; rewrite  H2 in H0; simpl in H0.        
-        rewrite H5 in H; simpl in H.
+        rewrite H1, H2, H5 in H; simpl in H.
+        rewrite H1, H2 in H0; simpl in H0.        
         case_eq (df_eval_backprop_deriv σ df1 grad_env2 
                                         (msum (fun i j => (d i j * grad i j)%R)))
         ; intros.
@@ -6862,7 +6860,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         rewrite <- eqq1; rewrite <- eqq2; trivial.
         inversion H10; subst; lra.
         specialize (IHdf1 m0 grad_env1 grad_env2).
-        rewrite H1 in IHdf1; rewrite H2 in IHdf1; simpl in IHdf1.
+        rewrite H1, H2 in IHdf1; simpl in IHdf1.
         subst m1.
         apply IHdf1; trivial; discriminate.
       - Case "VLossfun"%string.
@@ -7046,38 +7044,31 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
               * unfold lift.
                 f_equal.
                 match_option.
-                -- assert ((df_eval_backprop_delta σ df2 (s, DTfloat) d1 (scalarMult DTfloat (-1)%R (1%R))) = 
-                           (lift (fun e => scalarMult DTfloat (-1)%R e) (df_eval_backprop_delta σ df2 (s, DTfloat) d1 1%R))).
-                   ++ apply scalarMult_backprop_grad_scalar.
-                      rewrite eqq3; discriminate.
-                      rewrite eqq3; discriminate.
-                      simpl; replace (-1 * 1)%R with (- (1))%R by lra.
-                      rewrite H; discriminate.
-                      rewrite eqq4; discriminate.
-                   ++ simpl in H0.
-                      unfold df_eval_backprop_delta in H0.
+                -- generalize (scalarMult_backprop_grad_scalar σ df2 s d1 d1 1%R (-1)%R)
+                   ; intros; simpl in H0.
+                   cut_to H0.
+                   ++ unfold df_eval_backprop_delta in H0.
                       rewrite eqq3 in H0; unfold lift in H0; simpl in H0.
                       replace (-1 * 1)%R with (- (1))%R in H0 by lra.
-                      rewrite H in H0.
-                      rewrite eqq4 in H0; inversion H0.
+                      rewrite H, eqq4 in H0; inversion H0.
                       unfold subvar in H2; simpl in H2.
-                      rewrite eqq6 in H2; rewrite eqq5 in H2.
+                      rewrite eqq6, eqq5 in H2.
                       lra.
-                -- assert (vartlookup d4 (s, DTfloat) <> None).
-                   apply (df_eval_backprop_deriv_preserves_lookup_not_none H).
-                   rewrite eqq3; discriminate.
-                   rewrite eqq6 in H0.
-                   tauto.
+                  ++ congruence.
+                  ++ congruence.
+                  ++ simpl; replace (-1 * 1)%R with (- (1))%R by lra; congruence.
+                  ++ congruence.
+                -- generalize (df_eval_backprop_deriv_preserves_lookup_not_none H (s,DTfloat))
+                   ; intros.
+                   cut_to H0; congruence.
               * admit.
-            + assert (vartlookup d3 (s, DTfloat) <> None).
-              apply (df_eval_backprop_deriv_preserves_lookup_not_none eqq4).
-              rewrite eqq3; discriminate.
-              rewrite eqq5 in H; tauto.
+            + generalize (df_eval_backprop_deriv_preserves_lookup_not_none eqq4 (s,DTfloat)); intros.
+              cut_to H; congruence.
          - match_option_in IHdf2.
            + admit.
-           + assert (vartlookup d1 (s, DTfloat) <> None).
-             apply (df_eval_backprop_deriv_preserves_lookup_not_none eqq1); trivial.
-             rewrite eqq3 in H; tauto.
+           + generalize (df_eval_backprop_deriv_preserves_lookup_not_none eqq1 (s,DTfloat))
+             ; intros.
+             cut_to H; congruence.
         } unfold lift in IHdf1; simpl in IHdf1.
           match_option_in IHdf1.
     - Case "Times"%string; admit.
