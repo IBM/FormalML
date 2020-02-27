@@ -33,8 +33,8 @@ Section GenNN.
   Definition mkVarMatrix (v : SubVar) (n m : nat) : UnitDefinedFunction (DTMatrix n m) :=
     Var (v, DTMatrix n m) tt.
 
-  Definition unique_var {Ann} (df : DefinedFunction Ann DTfloat) : option SubVar :=
-    let fv := nodup var_dec (df_free_variables df) in
+  Definition unique_var {Ann} (df : DefinedFunction Ann DTfloat) : option var_type :=
+    let fv := nodup vart_dec (df_free_variables df) in
     match fv with
     | nil => None
     | v :: nil => Some v
@@ -43,14 +43,14 @@ Section GenNN.
 
   Definition activation (df : UnitDefinedFunction DTfloat) (vec : list (UnitDefinedFunction DTfloat)) : option (list (UnitDefinedFunction DTfloat)) :=
     match unique_var df with
-    | Some v => Some (map (fun dfj => df_subst df (v, DTfloat) dfj) vec)
-    | None => None
+    | Some (v, DTfloat) => Some (map (fun dfj => df_subst df (v, DTfloat) dfj) vec)
+    | _ => None
     end.
 
   Definition create_activation_fun (df : UnitDefinedFunction DTfloat) : option (UnitDefinedFunction DTfloat -> UnitDefinedFunction DTfloat) :=
     match unique_var df with
-    | Some v => Some (fun val => df_subst df (v, DTfloat) val)
-    | None => None
+    | Some (v, DTfloat) => Some (fun val => df_subst df (v, DTfloat) val)
+    | _ => None
     end.
 
   Definition mkNN2 (n1 n2 n3 : nat) (ivar wvar : SubVar) (f_activ : UnitDefinedFunction DTfloat) (f_activ_var : SubVar) : (UnitDefinedFunction (DTVector n3)) :=
@@ -621,6 +621,10 @@ Next Obligation.
 Qed.
 
 CoFixpoint zeronoise : Stream float := Cons 0 zeronoise.
+
+(*
+https://towardsdatascience.com/predict-malignancy-in-breast-cancer-tumors-with-your-own-neural-network-and-the-wisconsin-dataset-76271a05e941
+*)
 
 Definition wisconsin_test (nsamp count : nat) 
             (σ:df_env) 
