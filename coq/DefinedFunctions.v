@@ -5901,14 +5901,23 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        destruct (df_eval_tree_deriv env r (x, DTfloat)); simpl; trivial.
        destruct (df_eval_tree_deriv env l (x, DTfloat)); simpl; trivial.
  Qed.
+    *)
+
+(*
+   Lemma eval_fully_closed_total2 {T} (σ:df_env) (df:DefinedFunction UnitAnn T) :
+      let vl := map (fun ve => projT1 ve) σ in
+      fully_closed_over df vl -> {d | df_eval σ df = Some d}.
+   Proof.
+      DefinedFunction_cases (induction T, df using DefinedFunction_ind_unit) Case.
+      ; simpl; intros.
 *)
 
-    Lemma eval_fully_closed_total {T Ann} (σ:df_env) (df:DefinedFunction Ann T) :
+    Lemma eval_fully_closed_total {T} (σ:df_env) (df:DefinedFunction UnitAnn T) :
       let vl := map (fun ve => projT1 ve) σ in
       fully_closed_over df vl -> df_eval σ df <> None.
     Proof.
       revert σ.
-      DefinedFunction_cases (induction T, df using DefinedFunction_ind_simpl) Case
+      DefinedFunction_cases (induction T, df using DefinedFunction_ind_unit) Case
       ; simpl; intros;
         try solve 
             [congruence
@@ -5934,50 +5943,82 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         apply vectoro_to_ovector_not_none; intro.        
         specialize (H i i0 σ); simpl in H; apply H.
         rewrite vforall_forall in H0; specialize (H0 i).
-        rewrite vforall_forall in H0; specialize (H0 i0).        
-        easy.
+        rewrite vforall_forall in H0; now specialize (H0 i0).        
       - Case "Var"%string.
         induction σ.
-        simpl in H; tauto.
-        simpl in *.
-        match_case; intros.
-        destruct H.
-        congruence.
-        now apply IHσ.
+        + simpl in H; tauto.
+        + simpl in *.
+          match_case; intros.
+          destruct H.
+          * congruence.
+          * now apply IHσ.
       - Case "VectorApply"%string.
         destruct H; simpl in *.
-        specialize (IHdf1 σ).
-        cut_to IHdf1.
+        specialize (IHdf2 σ).
+        cut_to IHdf2; trivial.
         match_option; [|tauto].
         apply vectoro_to_ovector_not_none; intro.
-        admit.
-        admit.
-      - Case "MatrixApply"%string; admit. 
-      - Case "VLossfun"%string; admit.
-      - Case "MLossfun"%string; admit.               
-    Admitted.
+        specialize (IHdf1  (mk_env_entry (v, DTfloat) (d i) :: σ)).
+        now apply IHdf1.
+      - Case "MatrixApply"%string.
+        destruct H; simpl in *.
+        specialize (IHdf2 σ).
+        cut_to IHdf2; trivial.
+        match_option; [|tauto].
+        unfold matrixo_to_omatrix.
+        apply vectoro_to_ovector_not_none; intro.
+        apply vectoro_to_ovector_not_none; intro.
+        specialize (IHdf1 (mk_env_entry (v, DTfloat) (d i i0) :: σ)).
+        now apply IHdf1.
+      - Case "VLossfun"%string.
+        destruct H; simpl in *.
+        specialize (IHdf2 σ).
+        cut_to IHdf2; trivial.
+        match_option; [|tauto].
+        match_option.
+        apply vectoro_to_ovector_not_none in eqq0.
+        + tauto.
+        + intros.
+          specialize (IHdf1 (mk_env_entry (v1, DTfloat) (d i) :: mk_env_entry (v2, DTfloat) (r i) :: σ)).
+          now apply IHdf1.
+      - Case "MLossfun"%string.
+        destruct H; simpl in *.
+        specialize (IHdf2 σ).
+        cut_to IHdf2; trivial.
+        match_option; [|tauto].
+        unfold matrixo_to_omatrix.
+        match_option.
+        apply vectoro_to_ovector_not_none in eqq0.
+        + tauto.
+        + intros.
+          apply vectoro_to_ovector_not_none; intros.
+          specialize (IHdf1 (mk_env_entry (v1, DTfloat) (d i i0) :: mk_env_entry (v2, DTfloat) (r i i0) :: σ)).
+          now apply IHdf1.
+    Qed.
 
-    Lemma backprop_deriv_fully_closed_total {T Ann} (σ:df_env) (df:DefinedFunction Ann T) 
+    Lemma backprop_deriv_fully_closed_total {T} (σ:df_env) (df:DefinedFunction UnitAnn T) 
           (grad_env:df_env) (grad: definition_function_types_interp T):
       let vl := map (fun ve => projT1 ve) σ in
       fully_closed_over df vl -> df_eval_backprop_deriv σ df grad_env grad <> None.
     Proof.
       revert grad_env.
-      DefinedFunction_cases (induction T, df using DefinedFunction_ind_simpl) Case
+      DefinedFunction_cases (induction T, df using DefinedFunction_ind_unit) Case
       ; simpl; intros;
-        try solve [congruence].
+        try solve [congruence 
+                  | 
+                  specialize (IHdf1 grad grad_env); simpl in IHdf1; destruct H;
+                  match_option; [|tauto];
+                  specialize (IHdf2 grad d); simpl in IHdf2;
+                  now apply IHdf2
+                  ].
       - Case "DVector"%string.
         unfold two_vector_env_iter_alt.
         rewrite vforall_forall in H0.
         admit.
       - Case "DMatrix"%string.
         admit.
-      - Case "Var"%string; admit.
-      - Case "Plus"%string.
-        specialize (IHdf1 grad grad_env); simpl in IHdf1; destruct H;
-        match_option; [|tauto];
-        specialize (IHdf2 grad d); simpl in IHdf2;
-        now apply IHdf2.
+      - Case "Var"%string.
+        match_destr.
       - Case "Minus"%string.
         specialize (IHdf1 grad grad_env); simpl in IHdf1; destruct H;
         match_option; [|tauto];
@@ -6013,9 +6054,146 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         match_option; [|tauto].
         specialize (IHdf (grad * exp d)%R grad_env); simpl in IHdf.
         now apply IHdf.
+      - Case "Log"%string.
+        generalize (eval_fully_closed_total σ df); intros; simpl in H0.        
+        match_option; [|tauto].
+        specialize (IHdf (grad / d)%R grad_env); simpl in IHdf.        
+        now apply IHdf.
+      - Case "Abs"%string.
+        generalize (eval_fully_closed_total σ df); intros; simpl in H0.        
+        match_option; [|tauto].
+        specialize (IHdf (grad * sign d)%R grad_env); simpl in IHdf.        
+        now apply IHdf.
+      - Case "Sign"%string.
+        specialize (IHdf (0)%R grad_env); simpl in IHdf.        
+        now apply IHdf.
+      - Case "PSign"%string.
+        specialize (IHdf (0)%R grad_env); simpl in IHdf.        
+        now apply IHdf.
+      - Case "Max"%string.
+        generalize (eval_fully_closed_total σ df1); intros; simpl in H0.
+        match_option; [|tauto].
+        generalize (eval_fully_closed_total σ df2); intros; simpl in H1.
+        match_option; [|tauto].
+        match_destr.
+        specialize (IHdf2 grad grad_env).
+        now apply IHdf2.
+        specialize (IHdf1 grad grad_env).
+        now apply IHdf1.        
+      - Case "VectorDot"%string.
+        generalize (eval_fully_closed_total σ df1); intros; simpl in H0.
+        match_option; [|tauto].
+        generalize (eval_fully_closed_total σ df2); intros; simpl in H1.
+        match_option; [|tauto].
+        specialize (IHdf1 (vmap (fun rv : R => (rv * grad)%R) d0) grad_env); simpl in IHdf1.
+        match_option; [|tauto].
+        specialize (IHdf2 (vmap (fun lv : R => (lv * grad)%R) d) d1).
+        now apply IHdf2.
+      - Case "VectorSum"%string.
+        specialize (IHdf (ConstVector n grad) grad_env).
+        now apply IHdf.
+      - Case "MatrixSum"%string.
+        specialize (IHdf (ConstMatrix m n grad) grad_env).
+        now apply IHdf.
+      - Case "VectorElem"%string.
+        specialize (IHdf (fun k : {n' : nat | n' < n} => if equiv_dec (` k) (` i) then grad else 0%R) grad_env).
+        now apply IHdf.
+      - Case "MatrixElem"%string.
+        specialize (IHdf (fun (k1 : {n' : nat | n' < m}) 
+                              (k2 : {m' : nat | m' < n}) =>
+                            if equiv_dec (` k1) (` i) then if
+                                equiv_dec (` k2) (` j) then grad else 0%R else 0%R)
+                         grad_env).
+        now apply IHdf.
+      - Case "MatrixVectorMult"%string.
+        generalize (eval_fully_closed_total σ df1); intros; simpl in H0.
+        match_option; [|tauto].
+        generalize (eval_fully_closed_total σ df2); intros; simpl in H1.
+        match_option; [|tauto].
+        specialize (IHdf1  (fun (i : {n' : nat | n' < m}) (j : {m' : nat | m' < n}) => (grad i * d0 j)%R)
+                           grad_env); simpl in IHdf1.
+        match_option; [|tauto].
+        specialize (IHdf2 (matrix_vector_mult 
+                             (fun (i : {n' : nat | n' < n}) 
+                                  (j : {m' : nat | m' < m}) => d j i)
+                             grad)
+                          d1).
+        now apply IHdf2.
+      - Case "MatrixVectorAdd"%string.
+        specialize (IHdf1 grad grad_env); simpl in IHdf1.
+        match_option; [|tauto].
+        admit.
+      - Case "MatrixMult"%string.
+        generalize (eval_fully_closed_total σ df1); intros; simpl in H0.
+        match_option; [|tauto].
+        generalize (eval_fully_closed_total σ df2); intros; simpl in H1.
+        match_option; [|tauto].
+        specialize (IHdf1 (matrix_mult grad (fun (i : {n' : nat | n' < n}) 
+                                                 (j : {m' : nat | m' < p}) => d0 j i)) 
+                          grad_env); simpl in IHdf1.
+        match_option; [|tauto].
+        specialize (IHdf2 (matrix_mult (fun (i : {n' : nat | n' < p}) 
+                                            (j : {m' : nat | m' < m}) => d j i) grad) 
+                          d1).
+        now apply IHdf2.
+      - Case "VectorMinus"%string.
+        specialize (IHdf1 grad grad_env); simpl in IHdf1.
+        match_option; [|tauto].
+        specialize (IHdf2 (fun i : {n' : nat | n' < n} => (- grad i)%R) d).
+        now apply IHdf2.
+      - Case "MatrixMinus"%string.
+        specialize (IHdf1 grad grad_env); simpl in IHdf1.
+        match_option; [|tauto].
+        specialize (IHdf2 (fun (i : {n' : nat | n' < n}) 
+                               (j : {m' : nat | m' < m}) => (- grad i j)%R)
+                          d).
+        now apply IHdf2.
+      - Case "VectorScalMult"%string.
+        generalize (eval_fully_closed_total σ df1); intros; simpl in H0.
+        match_option; [|tauto].
+        generalize (eval_fully_closed_total σ df2); intros; simpl in H1.
+        match_option; [|tauto].
+        specialize (IHdf1 (vsum (fun j : {n' : nat | n' < n} => (d0 j * grad j)%R))
+                          grad_env); simpl in IHdf1.
+        match_option; [|tauto].
+        specialize (IHdf2 (fun j : {n' : nat | n' < n} => (d * grad j)%R) d1).
+        now apply IHdf2.
+      - Case "MatrixScalMult"%string.
+        generalize (eval_fully_closed_total σ df1); intros; simpl in H0.
+        match_option; [|tauto].
+        generalize (eval_fully_closed_total σ df2); intros; simpl in H1.
+        match_option; [|tauto].
+        specialize (IHdf1 (msum
+                             (fun (i : {n' : nat | n' < n}) 
+                                  (j : {m' : nat | m' < m}) => (d0 i j * grad i j)%R))
+                          grad_env); simpl in IHdf1.
+        match_option; [|tauto].
+        specialize (IHdf2 (fun (i : {n' : nat | n' < n}) 
+                               (j : {m' : nat | m' < m}) => (grad i j * d)%R)
+                          d1).
+        now apply IHdf2.
+      - Case "VectorApply"%string.
+        generalize (eval_fully_closed_total σ df2); intros; simpl in H0.
+        match_option; [|tauto].
+        match_option.
+        + specialize (IHdf2 v0 grad_env).
+          now apply IHdf2.
+        + admit.
+      - Case "MatrixApply"%string.     
+        generalize (eval_fully_closed_total σ df2); intros; simpl in H0.
+        match_option; [|tauto].
+        match_option.
+        + specialize (IHdf2 m0 grad_env).
+          now apply IHdf2.
+        + admit.
+      - Case "VLossfun"%string.
+        generalize (eval_fully_closed_total σ df2); intros; simpl in H0.
+        match_option; [|tauto].
+        match_option.
+        + specialize (IHdf2 v grad_env).
+          now apply IHdf2.
+        + admit.
 Admitted.
-
-
 
 
     Definition scalarMult (T : definition_function_types) (c : float) :=
