@@ -6003,7 +6003,8 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
    Lemma fully_closed_subst {T} (σ:df_env) (df:DefinedFunction UnitAnn T) (v:var_type)
      (e':DefinedFunction UnitAnn (snd v)):
      let vl := map (fun ve => projT1 ve) σ in
-     fully_closed_over df vl -> 
+     fully_closed_over df (v::vl) -> 
+     fully_closed_over e' vl ->
      fully_closed_over (df_subst df v e') vl.
    Proof.
       DefinedFunction_cases (induction T, df using DefinedFunction_ind_unit) Case
@@ -6012,14 +6013,19 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         apply vforall_forall; intros; simpl in *.
         specialize (H i); apply H.
         rewrite vforall_forall in H0.
-        now specialize (H0 i).
+        specialize (H0 i). 
+        apply H0.
+        apply H1.
      - Case "DMatrix"%string.
        apply vforall_forall; intros.
        apply vforall_forall; intros; simpl in *.
        specialize (H i i0); apply H.
        rewrite vforall_forall in H0; specialize (H0 i).
-       rewrite vforall_forall in H0; now specialize (H0 i0).
+       rewrite vforall_forall in H0; specialize (H0 i0).
+       apply H0.
+       apply H1.
      - Case "Var"%string.
+       destruct H.
        unfold substvar.
        unfold equiv_dec.
        unfold vart_eqdec.
