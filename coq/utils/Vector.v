@@ -839,6 +839,24 @@ Section Vector.
         now intros [i pf].
       + unfold vlast in eqq0.
         elim (eqq _ eqq0).
-  Qed.        
+  Qed.
 
+  Lemma vectoro_to_ovector_exists_None {A n} {vo:Vector (option A) n} :
+    vectoro_to_ovector vo = None ->
+    (exists i, vo i = None).
+  Proof.
+    unfold vectoro_to_ovector.
+    induction n; simpl.
+    - unfold vector_fold_right_dep; simpl.
+      discriminate.
+    - rewrite vector_fold_right_dep_Sn.
+      intros eqq.
+      specialize (IHn (vdrop_last vo)).
+      unfold lift2 in *.
+      repeat match_option_in eqq.
+      + destruct (IHn eqq1) as [[i pf] ?].
+        eauto.
+      + eauto.
+  Qed.
+    
   End Vector.
