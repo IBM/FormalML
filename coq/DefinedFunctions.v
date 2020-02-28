@@ -73,14 +73,16 @@ Section DefinedFunctions.
 
     Definition var_type := (SubVar * definition_function_types)%type.
     
+    Definition definition_function_types_dec : forall v1 v2 : definition_function_types, {v1 = v2} + {v1 <> v2}.
+    Proof.
+      decide equality; apply Nat.eq_dec.
+    Defined.
+
     Definition vart_dec : forall v1 v2 : var_type, {v1 = v2} + {v1 <> v2}.
     Proof.
       decide equality.
-      decide equality.
-      apply Nat.eq_dec.
-      apply Nat.eq_dec.
-      apply Nat.eq_dec.            
-      apply var_dec.
+      - apply definition_function_types_dec.
+      - apply var_dec.
     Defined.
 
     Global Instance vart_eqdec : EqDec var_type eq. 
@@ -92,6 +94,11 @@ Section DefinedFunctions.
     Lemma var_type_UIP_refl {x:var_type} (e:x=x) : e = eq_refl x.
     Proof.
       apply (UIP_dec vart_dec).
+    Qed.
+
+    Lemma definition_function_types_UIP_refl {x:definition_function_types} (e:x=x) : e = eq_refl x.
+    Proof.
+      apply (UIP_dec definition_function_types_dec).
     Qed.
 
     Definition env_entry_type := {v:var_type & definition_function_types_interp (snd v)}.
@@ -628,6 +635,8 @@ F (d : definition_function_types)
         match goal with
         | [H: @eq var_type _ _ |- _ ] => rewrite (var_type_UIP_refl H)
         | [H: @equiv var_type _ _ _ _ |- _ ] => rewrite (var_type_UIP_refl H)
+        | [H: @eq definition_function_types _ _ |- _ ] => rewrite (definition_function_types_UIP_refl H)
+        | [H: @equiv definition_function_types _ _ _ _ |- _ ] => rewrite (definition_function_types_UIP_refl H)
         end.
 
 
@@ -662,16 +671,14 @@ F (d : definition_function_types)
  Section deriv.
     
 
-  Section subst.
-
-    
-    Program Definition substvar {Ann} (v vv:var_type) (e':DefinedFunction Ann (snd v)) (e:DefinedFunction Ann (snd vv)) : (DefinedFunction Ann (snd vv)) :=
-      
-      match v == vv with
-      | left pf => eq_rect _ (fun t => DefinedFunction Ann t) e' _ _
+   Section subst.
+     
+     Definition substvar {Ann} (v vv:var_type) (e':DefinedFunction Ann (snd v)) (e:DefinedFunction Ann (snd vv)) : (DefinedFunction Ann (snd vv)) :=
+      match snd v == snd vv  with
+      | left pf => eq_rect _ (fun t => DefinedFunction Ann t) e' _ pf
       | right pf => e
       end.
-  
+
  Fixpoint df_subst {T Ann} (df: DefinedFunction Ann T) (v:var_type) (e':DefinedFunction UnitAnn (snd v)) :=
       match df with
       | Number _ x => Number tt x
@@ -5135,6 +5142,8 @@ Ltac refl_simpler :=
     match goal with
     | [H: @eq var_type _ _ |- _ ] => rewrite (var_type_UIP_refl H)
     | [H: @equiv var_type _ _ _ _ |- _ ] => rewrite (var_type_UIP_refl H)
+    | [H: @eq definition_function_types _ _ |- _ ] => rewrite (definition_function_types_UIP_refl H)
+    | [H: @equiv definition_function_types _ _ _ _ |- _ ] => rewrite (definition_function_types_UIP_refl H)
     end.
 
 Section real_pfs.
@@ -6000,9 +6009,8 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        cut_to H1; tauto.
   Qed.
 
-   Lemma fully_closed_subst {T} (σ:df_env) (df:DefinedFunction UnitAnn T) (v:var_type)
+   Lemma fully_closed_subst {T} vl (σ:df_env) (df:DefinedFunction UnitAnn T) (v:var_type)
      (e':DefinedFunction UnitAnn (snd v)):
-     let vl := map (fun ve => projT1 ve) σ in
      fully_closed_over df (v::vl) -> 
      fully_closed_over e' vl ->
      fully_closed_over (df_subst df v e') vl.
@@ -6025,10 +6033,19 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        apply H0.
        apply H1.
      - Case "Var"%string.
-       destruct H.
        unfold substvar.
-       unfold equiv_dec.
-       unfold vart_eqdec.
+       destruct H.
+       + subst.
+         unfold substvar.
+         match_destr; [ | congruence].
+         refl_simpler.
+         simpl; trivial.
+       + destruct v; destruct v0.
+         simpl in *.
+         match_destr.
+         red in e; subst.
+         simpl; trivial.
+
 (*
        destruct (vart_dec v v0).
 *)
