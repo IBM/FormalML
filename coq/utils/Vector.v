@@ -183,9 +183,8 @@ Section Vector.
   (* If we are willing to assume an axiom *)
   Lemma vec_eq_eq {A} {m:nat} (x y:Vector A m) : vec_eq x y -> x = y.
   Proof.
-    Require Import FunctionalExtensionality.
     intros.
-    apply functional_extensionality.
+    apply FunctionalExtensionality.functional_extensionality.
     apply H.
   Qed.
 
@@ -695,8 +694,7 @@ Section Vector.
 
   Lemma vnil0 {A} (v:Vector A 0) : v = vnil.
   Proof.
-    Require Import FunctionalExtensionality.
-    apply functional_extensionality.
+    apply FunctionalExtensionality.functional_extensionality.
     intros [i pf].
     omega.
   Qed.
@@ -812,12 +810,11 @@ Section Vector.
     (forall i, vo i = Some (v i)) ->
     vectoro_to_ovector vo = Some v.
   Proof.
-    Require Import FunctionalExtensionality.
     intros.
     destruct (vectoro_to_ovector_forall_some_b _ _ H) as [? [??]].
     rewrite H0.
     f_equal.
-    apply functional_extensionality.
+    apply FunctionalExtensionality.functional_extensionality.
     intros.
     symmetry.
     apply H1.
