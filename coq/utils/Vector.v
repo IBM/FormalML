@@ -843,7 +843,7 @@ Section Vector.
 
   Lemma vectoro_to_ovector_exists_None {A n} {vo:Vector (option A) n} :
     vectoro_to_ovector vo = None ->
-    (exists i, vo i = None).
+    {i | vo i = None}.
   Proof.
     unfold vectoro_to_ovector.
     induction n; simpl.
