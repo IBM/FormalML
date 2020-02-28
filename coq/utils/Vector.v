@@ -823,4 +823,25 @@ Section Vector.
     apply H1.
   Qed.
 
+  Lemma vectoro_to_ovector_not_none {A n} (vo : Vector (option A) n) :
+    (forall i, vo i <> None) -> vectoro_to_ovector vo <> None.
+  Proof.
+    unfold vectoro_to_ovector.
+    induction n; simpl.
+    - intros eqq.
+      unfold vector_fold_right_dep.
+      simpl.
+      congruence.
+    - rewrite vector_fold_right_dep_Sn.
+      intros eqq.
+      specialize (IHn (vdrop_last vo)).
+      unfold lift2 in *.
+      repeat match_option.
+      + elim IHn; trivial.
+        unfold vdrop_last.
+        now intros [i pf].
+      + unfold vlast in eqq0.
+        elim (eqq _ eqq0).
+  Qed.        
+
   End Vector.

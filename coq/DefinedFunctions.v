@@ -5902,19 +5902,6 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        destruct (df_eval_tree_deriv env l (x, DTfloat)); simpl; trivial.
  Qed.
 *)
-   Lemma vectoro_to_ovector_not_none {A n} (vo : Vector (option A) n) :
-     (forall i, vo i <> None) -> vectoro_to_ovector vo <> None.
-   Proof.
-     unfold vectoro_to_ovector.
-     induction n; simpl.
-     - intros eqq.
-       unfold vector_fold_right_dep.
-       simpl.
-       discriminate.
-    - rewrite vector_fold_right_dep_Sn.
-      intros eqq.
-      unfold vector_fold_right_dep.
-     Admitted.
 
     Lemma eval_fully_closed_total {T Ann} (σ:df_env) (df:DefinedFunction Ann T) :
       let vl := map (fun ve => projT1 ve) σ in
