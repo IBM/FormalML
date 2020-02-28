@@ -5903,15 +5903,6 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
  Qed.
     *)
 
-(*
-   Lemma eval_fully_closed_total2 {T} (σ:df_env) (df:DefinedFunction UnitAnn T) :
-      let vl := map (fun ve => projT1 ve) σ in
-      fully_closed_over df vl -> {d | df_eval σ df = Some d}.
-   Proof.
-      DefinedFunction_cases (induction T, df using DefinedFunction_ind_unit) Case.
-      ; simpl; intros.
-*)
-
     Lemma eval_fully_closed_total {T} (σ:df_env) (df:DefinedFunction UnitAnn T) :
       let vl := map (fun ve => projT1 ve) σ in
       fully_closed_over df vl -> df_eval σ df <> None.
@@ -5995,6 +5986,94 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
           specialize (IHdf1 (mk_env_entry (v1, DTfloat) (d i i0) :: mk_env_entry (v2, DTfloat) (r i i0) :: σ)).
           now apply IHdf1.
     Qed.
+
+   Lemma eval_fully_closed_total2 {T} (σ:df_env) (df:DefinedFunction UnitAnn T) :
+      let vl := map (fun ve => projT1 ve) σ in
+      fully_closed_over df vl -> 
+      {d:definition_function_types_interp T | df_eval σ df = Some d}.
+   Proof.
+     intros.
+     case_eq (df_eval σ df); intros.
+     - now exists d.
+     - generalize (eval_fully_closed_total σ df).
+       intros; simpl in *.
+       cut_to H1; tauto.
+  Qed.
+
+   Lemma fully_closed_subst {T} (σ:df_env) (df:DefinedFunction UnitAnn T) (v:var_type)
+     (e':DefinedFunction UnitAnn (snd v)):
+     let vl := map (fun ve => projT1 ve) σ in
+     fully_closed_over df vl -> 
+     fully_closed_over (df_subst df v e') vl.
+   Proof.
+      DefinedFunction_cases (induction T, df using DefinedFunction_ind_unit) Case
+      ; simpl; intros; try easy.
+      - Case "DVector"%string.
+        apply vforall_forall; intros; simpl in *.
+        specialize (H i); apply H.
+        rewrite vforall_forall in H0.
+        now specialize (H0 i).
+     - Case "DMatrix"%string.
+       apply vforall_forall; intros.
+       apply vforall_forall; intros; simpl in *.
+       specialize (H i i0); apply H.
+       rewrite vforall_forall in H0; specialize (H0 i).
+       rewrite vforall_forall in H0; now specialize (H0 i0).
+     - Case "Var"%string.
+       unfold substvar.
+       unfold equiv_dec.
+       unfold vart_eqdec.
+(*
+       destruct (vart_dec v v0).
+*)
+Admitted.
+
+   Lemma fully_closed_deriv {T} (σ:df_env) (df:DefinedFunction UnitAnn T) (s:SubVar):
+     let vl := map (fun ve => projT1 ve) σ in
+     fully_closed_over df vl -> 
+     fully_closed_over (df_deriv df (s, DTfloat)) vl.
+   Proof.
+      DefinedFunction_cases (induction T, df using DefinedFunction_ind_unit) Case
+      ; simpl; intros; try solve 
+        [easy
+            |
+        apply IHdf,H
+            |             
+        split; try easy; now apply IHdf
+            |
+        destruct H; repeat split; try easy;
+        [apply IHdf2, H0 |  apply IHdf1, H]
+            |
+        destruct H; repeat split; try easy;
+        [ apply IHdf1, H |  apply IHdf2, H0]
+            ].
+      - Case "DVector"%string.
+        apply vforall_forall; intros.
+        specialize (H i); simpl in H.
+        apply H.
+        rewrite vforall_forall in H0.
+        now specialize (H0 i).
+      - Case "DMatrix"%string.
+        apply vforall_forall; intros.
+        apply vforall_forall; intros.        
+        specialize (H i i0); simpl in H.
+        apply H.
+        rewrite vforall_forall in H0. 
+        specialize (H0 i).
+        rewrite vforall_forall in H0. 
+        now specialize (H0 i0).
+      - Case "Max"%string.
+        destruct H; repeat split; try easy.
+        apply IHdf2, H0.
+        apply IHdf1, H.        
+        apply IHdf2, H0.        
+        apply IHdf1, H.        
+      - Case "VectorApply"%string.
+        apply vforall_forall; intros; simpl in *.
+        split; destruct H.
+        apply IHdf2, H0.
+Admitted.       
+
 
     Lemma backprop_deriv_fully_closed_total {T} (σ:df_env) (df:DefinedFunction UnitAnn T) 
           (grad_env:df_env) (grad: definition_function_types_interp T):
@@ -6178,7 +6257,11 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         match_option.
         + specialize (IHdf2 v0 grad_env).
           now apply IHdf2.
-        + admit.
+        + generalize (vectoro_to_ovector_exists_None eqq0); intros.
+          destruct H1.
+          rewrite vmap_nth in e; simpl in e.
+          
+admit.
       - Case "MatrixApply"%string.     
         generalize (eval_fully_closed_total σ df2); intros; simpl in H0.
         match_option; [|tauto].
@@ -6193,6 +6276,14 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         + specialize (IHdf2 v grad_env).
           now apply IHdf2.
         + admit.
+      - Case "MLossfun"%string.
+        generalize (eval_fully_closed_total σ df2); intros; simpl in H0.
+        match_option; [|tauto].
+        match_option.
+        + specialize (IHdf2 m0 grad_env).
+          now apply IHdf2.
+        + admit.
+
 Admitted.
 
 
