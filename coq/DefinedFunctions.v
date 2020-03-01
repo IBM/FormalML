@@ -6464,6 +6464,124 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
           * trivial.
 Admitted.
 
+    Lemma eval_deriv_fully_closed_total {T} (σ:df_env) (df:DefinedFunction UnitAnn T) 
+          (v:var_type):
+      let vl := map (fun ve => projT1 ve) σ in
+      fully_closed_over df vl -> df_eval_deriv σ df v <> None.
+    Proof.
+      revert σ.
+      DefinedFunction_cases (induction T, df using DefinedFunction_ind_unit) Case
+      ; intros; simpl in *;
+        try solve [
+        congruence 
+            |
+        destruct H
+        ; specialize (IHdf1 σ); specialize (IHdf2 σ)
+        ;cut_to IHdf1; trivial
+        ;match_option; [|tauto]
+        ;cut_to IHdf2; trivial
+        ;match_option; tauto
+            |
+        destruct H;
+        specialize (IHdf1 σ); specialize (IHdf2 σ);
+        generalize (eval_fully_closed_total  σ df1); intros; simpl in H1;
+        cut_to H1; trivial;
+        match_option; [|tauto];
+        cut_to IHdf1; trivial;
+        match_option; [|tauto];
+        generalize (eval_fully_closed_total  σ df2); intros; simpl in H2;
+        match_option; [|tauto];
+        cut_to IHdf2; trivial;
+        match_option; tauto
+            |
+        generalize (eval_fully_closed_total σ df); intros; 
+        specialize (IHdf σ);
+        simpl in H0; cut_to H0; trivial;
+        match_option; [|tauto];
+        cut_to IHdf; trivial;
+        match_option; tauto
+            |
+        specialize (IHdf σ);
+        generalize (eval_fully_closed_total σ df); intros;
+        simpl in H0; cut_to H0; trivial;
+        match_option; tauto
+            ].
+      - Case "DVector"%string.
+        apply vectoro_to_ovector_not_none; intros; apply H.
+        rewrite vforall_forall in H0; apply H0.
+      - Case "DMatrix"%string.
+        apply vectoro_to_ovector_not_none; intros.
+        apply vectoro_to_ovector_not_none; intros; apply H.
+        rewrite vforall_forall in H0; specialize (H0 i).
+        rewrite vforall_forall in H0; apply H0.
+      - Case "Max"%string.
+        destruct H;
+        specialize (IHdf1 σ); specialize (IHdf2 σ);
+        generalize (eval_fully_closed_total  σ df1); intros; simpl in H1;
+        cut_to H1; trivial;
+        match_option; [|tauto].
+        generalize (eval_fully_closed_total  σ df2); intros; simpl in H2;
+        match_option; [|tauto].
+        case_eq ( Rle_dec d d0 ); intros.
+        cut_to IHdf2; trivial.
+        cut_to IHdf1; trivial.
+      - Case "VectorApply"%string.
+        destruct H.
+        specialize (IHdf2 σ);
+        generalize (eval_fully_closed_total  σ df2); intros; simpl in H1.
+        cut_to H1; trivial.
+        match_option; [|tauto].
+        cut_to IHdf2; trivial.
+        match_option; [|tauto].
+        apply vectoro_to_ovector_not_none; intros.
+        specialize (IHdf1 (mk_env_entry (v0, DTfloat) (d i) :: σ)).
+        cut_to IHdf1; trivial.
+        match_option; tauto.
+      - Case "MatrixApply"%string.
+        destruct H.
+        specialize (IHdf2 σ);
+        generalize (eval_fully_closed_total  σ df2); intros; simpl in H1.
+        cut_to H1; trivial.
+        match_option; [|tauto].
+        cut_to IHdf2; trivial.
+        match_option; [|tauto].
+        apply vectoro_to_ovector_not_none; intros.
+        apply vectoro_to_ovector_not_none; intros.        
+        specialize (IHdf1 (mk_env_entry (v0, DTfloat) (d i i0) :: σ)).
+        cut_to IHdf1; trivial.
+        match_option; tauto.
+      - Case "VLossfun"%string.
+        destruct H.
+        specialize (IHdf2 σ);
+        generalize (eval_fully_closed_total  σ df2); intros; simpl in H1.
+        cut_to H1; trivial.
+        match_option; [|tauto].
+        cut_to IHdf2; trivial.
+        match_option; [|tauto].
+        match_option.
+        apply vectoro_to_ovector_not_none in eqq1.
+        tauto.
+        intros.
+        specialize (IHdf1 (mk_env_entry (v1, DTfloat) (d i) :: mk_env_entry (v2, DTfloat) (r i) :: σ)).
+        cut_to IHdf1; trivial.
+        match_option; tauto.
+      - Case "MLossfun"%string.
+        destruct H.
+        specialize (IHdf2 σ);
+        generalize (eval_fully_closed_total  σ df2); intros; simpl in H1.
+        cut_to H1; trivial.
+        match_option; [|tauto].
+        cut_to IHdf2; trivial.
+        match_option; [|tauto].
+        match_option.
+        apply vectoro_to_ovector_not_none in eqq1.
+        tauto.
+        intros.
+        apply vectoro_to_ovector_not_none; intros.
+        specialize (IHdf1 (mk_env_entry (v1, DTfloat) (d i i0) :: mk_env_entry (v2, DTfloat) (r i i0) :: σ)).
+        cut_to IHdf1; trivial.
+        match_option; tauto.
+    Qed.
 
     Definition scalarMult (T : definition_function_types) (c : float) :=
       match T return 
