@@ -6314,6 +6314,12 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         now simpl.
    Qed.        
 
+   Lemma list_env_iter_total_fun {A} (f : A -> df_env -> option df_env) (env : df_env) (l : list A) :
+     (forall (a:A) (env0: df_env), (f a env0) <> None) ->
+     list_env_iter f (Some env) l <> None.
+   Proof.
+     Admitted.
+
     Lemma backprop_deriv_fully_closed_not_none {T} (σ:df_env) (df:DefinedFunction UnitAnn T) 
           (grad_env:df_env) (grad: definition_function_types_interp T):
       let vl := map (fun ve => projT1 ve) σ in
@@ -6332,9 +6338,31 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
       - Case "DVector"%string.
         unfold two_vector_env_iter_alt.
         rewrite vforall_forall in H0.
-        admit.
+        apply (list_env_iter_total_fun 
+                 (fun i env => df_eval_backprop_deriv σ (x i) env (grad i))    
+                 grad_env (bounded_seq0 n)).
+        intros.
+        apply (H a (grad a) env0).
+        apply (H0 a).
       - Case "DMatrix"%string.
-        admit.
+        unfold two_matrix_env_iter_alt.
+        rewrite vforall_forall in H0.
+        apply (list_env_iter_total_fun 
+                 (fun i env => 
+                    list_env_iter
+                      (fun j env0 =>
+                         df_eval_backprop_deriv σ (x i j) env0 (grad i j))
+                      (Some env) (bounded_seq0 m))
+                 grad_env (bounded_seq0 n)).
+        intros.
+        apply (list_env_iter_total_fun 
+                 (fun j env => df_eval_backprop_deriv σ (x a j) env (grad a j))    
+                 env0 (bounded_seq0 m)).
+        intros.
+        apply (H a a0  (grad a a0) env1).
+        specialize (H0 a).
+        rewrite vforall_forall in H0.
+        apply (H0 a0).
       - Case "Var"%string.
         match_destr.
       - Case "Minus"%string.
@@ -6440,7 +6468,14 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
       - Case "MatrixVectorAdd"%string.
         specialize (IHdf1 grad grad_env); simpl in IHdf1.
         match_option; [|tauto].
-        admit.
+        match_option.
+        generalize (list_env_iter_total_fun
+                       (fun (i : {m' : nat | m' < n}) (env : df_env) =>
+                          df_eval_backprop_deriv σ df2 env (@transpose R m n grad i))
+                       d (bounded_seq0 n)); intros.
+        cut_to H0; [congruence|].
+        intros; destruct H.
+        now apply IHdf2.
       - Case "MatrixMult"%string.
         generalize (eval_fully_closed_not_none σ df1); intros; simpl in H0.
         match_option; [|tauto].
@@ -6572,7 +6607,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                                               (df_deriv df1 (v1, DTfloat))); intros.
           * simpl in H3; cut_to H3; tauto.
           * trivial.
-Admitted.
+    Qed.
 
     Lemma backprop_deriv_fully_closed_total {T} (σ:df_env) (df:DefinedFunction UnitAnn T) 
           (grad_env:df_env) (grad: definition_function_types_interp T):
@@ -7824,7 +7859,7 @@ Admitted.
                   ; simpl; trivial; intros).
            unfold ConstMatrix.
            f_equal; lra.
-       - Case "DVector"%string; admit.
+       - Case "DVector"%string. admit.
        - Case "DMatrix"%string; admit.         
        - Case "Var"%string; admit.
        - Case "Plus"%string.
