@@ -6318,7 +6318,15 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
      (forall (a:A) (env0: df_env), (f a env0) <> None) ->
      list_env_iter f (Some env) l <> None.
    Proof.
-     Admitted.
+     intros.
+     generalize env.
+     induction l; [simpl; congruence|].
+     simpl; intros.
+     specialize (H a env0).
+     case_eq (f a env0).
+     - intros; apply (IHl d).
+     - tauto.
+   Qed.
 
     Lemma backprop_deriv_fully_closed_not_none {T} (σ:df_env) (df:DefinedFunction UnitAnn T) 
           (grad_env:df_env) (grad: definition_function_types_interp T):
@@ -6873,6 +6881,11 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         intros; f_equal.
         unfold snd in *; simpl in *.
         unfold subvar; simpl.
+        match_option.
+        match_option.
+        
+        admit.
+        admit.
         admit.
       - Case "DMatrix"%string.
         case_eq (vartlookup grad_env1 (s, DTfloat)); [ |tauto].
