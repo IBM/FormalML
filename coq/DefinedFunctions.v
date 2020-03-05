@@ -8490,7 +8490,7 @@ Tactic Notation "DefinedFunction_cases" tactic(first) ident(c) :=
    Definition is_deriv_df {Ann} σ (df:DefinedFunction Ann DTfloat) v (x y:R)
      :=  fully_closed_over df ((v,DTfloat)::map (@projT1 _ _) σ) /\
          is_derive (df_R σ df v) x y.
-
+      
    Lemma eval_at_point_fully_closed_total {T} (σ:df_env) (df:DefinedFunction UnitAnn T) v x :
       let vl := (v,DTfloat)::map (fun ve => projT1 ve) σ in
       fully_closed_over df vl -> 
@@ -8571,6 +8571,15 @@ Tactic Notation "DefinedFunction_cases" tactic(first) ident(c) :=
        unfold mult; simpl.
        lra.
    Qed.
+
+   Theorem df_eval_deriv_correct σ (df:DefinedFunction UnitAnn DTfloat) v (x y:R)
+     : is_deriv_df σ df v x y ->
+       df_eval_deriv σ df v x = Some y.
+   Proof.
+   Admitted.
+
+
+
 
    
 End real_pfs.
