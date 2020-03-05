@@ -47,6 +47,7 @@ MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	AxiomaticNormedRealVectorSpace \
 	BorelSigmaAlgebra \
 	DefinedFunctions \
+	derivlemmas \
 	Gaussian \
 	Gen_NN \
 	ProbSpace \
