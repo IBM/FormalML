@@ -10,6 +10,10 @@ Lemma is_derive_comp :
   is_derive g x dg ->
   is_derive (fun x => f (g x)) x (dg  * df).
 
+Lemma Derive_comp (f g : R -> R) (x : R) :
+  ex_derive f (g x) -> ex_derive g x
+    -> Derive (fun x => f (g x)) x = Derive g x * Derive f (g x).
+
 Lemma is_derive_plus :
   forall (f g : K -> V) (x : K) (df dg : V),
   is_derive f x df ->

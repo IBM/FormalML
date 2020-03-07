@@ -211,7 +211,215 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
          cut_to H12; [|apply H1].
          match_option; [|tauto].
          case_eq (df_eval (addBinding σ v x0) r); [|tauto]; trivial.
-     - 
-
+     - Case "Minus"%string.
+       unfold ex_deriv_df in H1.
+       destruct H1.
+       destruct is_scalar.
+       assert ((ex_deriv_df σ l v x) /\  (ex_deriv_df σ r v x)).
+       admit.
+       destruct H5.
+       generalize (eval_deriv_fully_closed_not_none (addBinding σ v x) l (v,DTfloat)); simpl; intros.
+       cut_to H7; [|apply H1].
+       match_option; [|tauto].
+       generalize (eval_deriv_fully_closed_not_none (addBinding σ v x) r (v,DTfloat)); simpl; intros.       
+       cut_to H8; [|apply H1].
+       match_option; [|tauto].
+       rewrite eqq in H.
+       rewrite eqq0 in H0.
+       cut_to H; trivial.
+       cut_to H0; trivial.
+       unfold ex_deriv_df in H5; destruct H5.
+       unfold ex_deriv_df in H6; destruct H6.
+       replace (df_R σ (Minus a l r) v) with (fun x0 => ((df_R σ l v)x0) - ((df_R σ r v)x0)).
+       + rewrite Derive_minus; trivial.
+         inversion H; inversion H0.
+         now subst.
+       + unfold df_R.
+         apply FunctionalExtensionality.functional_extensionality; intros.
+         unfold df_eval_at_point.
+         generalize (eval_fully_closed_not_none (addBinding σ v x0) l); simpl; intros.
+         generalize (eval_fully_closed_not_none (addBinding σ v x0) r); simpl; intros.
+         cut_to H11; [|apply H1].
+         cut_to H12; [|apply H1].
+         match_option; [|tauto].
+         case_eq (df_eval (addBinding σ v x0) r); [|tauto]; trivial.
+     - Case "Times"%string.
+       unfold ex_deriv_df in H1.
+       destruct H1.
+       destruct is_scalar.
+       assert ((ex_deriv_df σ l v x) /\  (ex_deriv_df σ r v x)).
+       admit.
+       destruct H5.
+       generalize (eval_fully_closed_not_none (addBinding σ v x) l); simpl; intros.
+       generalize (eval_fully_closed_not_none (addBinding σ v x) r); simpl; intros.
+       cut_to H7; [|apply H1].
+       cut_to H8; [|apply H1].
+       match_option; [|tauto].
+       generalize (eval_deriv_fully_closed_not_none (addBinding σ v x) l (v,DTfloat)); simpl; intros.
+       cut_to H9; [|apply H1].
+       match_option; [|tauto].
+       match_option; [|tauto].       
+       generalize (eval_deriv_fully_closed_not_none (addBinding σ v x) r (v,DTfloat)); simpl; intros.       
+       cut_to H10; [|apply H1].
+       match_option; [|tauto].       
+       cut_to H; trivial.
+       cut_to H0; trivial.
+       unfold ex_deriv_df in H5; destruct H5.
+       unfold ex_deriv_df in H6; destruct H6.
+       replace (df_R σ (Times a l r) v) with (fun x0 => ((df_R σ l v)x0) * ((df_R σ r v)x0)).
+       + rewrite Derive_mult; trivial.
+         rewrite eqq0 in H.
+         rewrite eqq2 in H0.
+         inversion H; inversion H0.
+         rewrite <- H14.
+         rewrite <- H15.
+         unfold df_R.
+         unfold df_eval_at_point.
+         rewrite eqq, eqq1.
+         f_equal; lra.
+       + apply FunctionalExtensionality.functional_extensionality; intros.
+         unfold df_R.
+         unfold df_eval_at_point.
+         generalize (eval_fully_closed_not_none (addBinding σ v x0) l); simpl; intros.
+         generalize (eval_fully_closed_not_none (addBinding σ v x0) r); simpl; intros.
+         cut_to H13; [|apply H1].
+         cut_to H14; [|apply H1].
+         match_option; [|tauto].
+         case_eq (df_eval (addBinding σ v x0) r); [|tauto]; trivial.
+     - Case "Divide"%string.
+       unfold ex_deriv_df in H1.
+       destruct H1.
+       destruct is_scalar.
+       assert ((ex_deriv_df σ l v x) /\  (ex_deriv_df σ r v x)).
+       admit.
+       destruct H5.
+       generalize (eval_fully_closed_not_none (addBinding σ v x) l); simpl; intros.
+       generalize (eval_fully_closed_not_none (addBinding σ v x) r); simpl; intros.
+       cut_to H7; [|apply H1].
+       cut_to H8; [|apply H1].
+       match_option; [|tauto].
+       generalize (eval_deriv_fully_closed_not_none (addBinding σ v x) l (v,DTfloat)); simpl; intros.
+       cut_to H9; [|apply H1].
+       match_option; [|tauto].
+       match_option; [|tauto].       
+       generalize (eval_deriv_fully_closed_not_none (addBinding σ v x) r (v,DTfloat)); simpl; intros.       
+       cut_to H10; [|apply H1].
+       match_option; [|tauto].       
+       cut_to H; trivial.
+       cut_to H0; trivial.
+       unfold ex_deriv_df in H5; destruct H5.
+       unfold ex_deriv_df in H6; destruct H6.
+       assert (d1 <> 0).
+       admit.
+       replace (df_R σ (Divide a l r) v) with (fun x0 => ((df_R σ l v)x0) / ((df_R σ r v)x0)).
+       + rewrite Derive_div; trivial.
+         rewrite eqq0 in H.
+         rewrite eqq2 in H0.
+         inversion H; inversion H0.
+         rewrite <- H15.
+         rewrite <- H16.
+         unfold df_R.
+         unfold df_eval_at_point.
+         rewrite eqq, eqq1.
+         f_equal; field; trivial.
+         unfold df_R.
+         unfold df_eval_at_point.
+         now rewrite eqq1.
+       + apply FunctionalExtensionality.functional_extensionality; intros.
+         unfold df_R.
+         unfold df_eval_at_point.
+         generalize (eval_fully_closed_not_none (addBinding σ v x0) l); simpl; intros.
+         generalize (eval_fully_closed_not_none (addBinding σ v x0) r); simpl; intros.
+         cut_to H14; [|apply H1].
+         cut_to H15; [|apply H1].
+         match_option; [|tauto].
+         case_eq (df_eval (addBinding σ v x0) r); [|tauto]; trivial.
+     - Case "Square"%string.
+       assert (ex_deriv_df σ e v x).
+       admit.
+       generalize (eval_fully_closed_not_none (addBinding σ v x) e); simpl; intros.       
+       assert (H1c := H1).
+       unfold ex_deriv_df in H1.
+       destruct H1.
+       match_option; [|tauto].
+       generalize (eval_deriv_fully_closed_not_none (addBinding σ v x) e (v,DTfloat)); simpl; intros.
+       match_option; [|tauto].
+       unfold ex_deriv_df in H0.
+       destruct H0.
+       replace (df_R σ (Square a e) v) with (fun x0 => Rsqr ((df_R σ e v) x0)).
+       + rewrite Derive_comp; trivial.
+         * rewrite Derive_sqr.
+           rewrite eqq0 in H.
+           cut_to H; trivial; inversion H.
+           rewrite <- H7.
+           unfold df_R, df_eval_at_point.
+           rewrite eqq; f_equal.
+           now lra.
+         * unfold ex_derive; eexists; eapply is_derive_sqr.
+       + apply FunctionalExtensionality.functional_extensionality; intros.
+         unfold df_R, df_eval_at_point; simpl.
+         match_option.
+         unfold Rsqr.
+         lra.
+     - Case "Exp"%string.
+       assert (ex_deriv_df σ e v x).
+       admit.
+       generalize (eval_fully_closed_not_none (addBinding σ v x) e); simpl; intros.       
+       assert (H1c := H1).
+       unfold ex_deriv_df in H1; destruct H1.
+       match_option; [|tauto].
+       generalize (eval_deriv_fully_closed_not_none (addBinding σ v x) e (v,DTfloat)); simpl; intros.
+       match_option; [|tauto].
+       unfold ex_deriv_df in H0.
+       destruct H0.
+       replace (df_R σ (Exp a e) v) with (fun x0 => exp ((df_R σ e v) x0)).
+       + rewrite Derive_comp; trivial.
+         * rewrite Derive_exp.
+           cut_to H; trivial.
+           rewrite eqq0 in H.
+           inversion H.
+           rewrite <- H7.
+           unfold df_R, df_eval_at_point.
+           now rewrite eqq.
+         * unfold ex_derive; eexists; eapply is_derive_exp.
+       + apply FunctionalExtensionality.functional_extensionality; intros.
+         unfold df_R, df_eval_at_point; simpl.
+         generalize (eval_fully_closed_not_none (addBinding σ v x0) e); simpl; intros.       
+         match_option; tauto.
+     - Case "Log"%string.
+       assert (ex_deriv_df σ e v x).
+       admit.
+       generalize (eval_fully_closed_not_none (addBinding σ v x) e); simpl; intros.       
+       assert (H1c := H1).
+       unfold ex_deriv_df in H1; destruct H1.
+       match_option; [|tauto].
+       generalize (eval_deriv_fully_closed_not_none (addBinding σ v x) e (v,DTfloat)); simpl; intros.
+       match_option; [|tauto].
+       unfold ex_deriv_df in H0.
+       destruct H0.
+       assert (0 < df_R σ e v x).
+       admit.
+       replace (df_R σ (Log a e) v) with (fun x0 => ln ((df_R σ e v) x0)).
+       + rewrite Derive_comp; trivial.
+         * rewrite Derive_ln; trivial.
+           cut_to H; trivial.
+           rewrite eqq0 in H.
+           inversion H.
+           rewrite <- H8.
+           unfold df_R, df_eval_at_point.
+           now rewrite eqq.
+         * unfold ex_derive; eexists; eapply is_derive_ln; trivial.
+       + apply FunctionalExtensionality.functional_extensionality; intros.
+         unfold df_R, df_eval_at_point; simpl.
+         generalize (eval_fully_closed_not_none (addBinding σ v x0) e); simpl; intros.       
+         match_option; tauto.
+     - Case "Abs"%string.
+       admit.
+     - Case "Sign"%string.
+       admit.
+     - Case "PSign"%string.
+       admit.
+     - Case "Max"%string.
+       admit.
    Admitted.
 
