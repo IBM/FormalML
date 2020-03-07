@@ -299,15 +299,18 @@ Proof.
 Qed.
 
 Lemma Derive_max : 
-  forall (f g : R -> R) (x : R) (df dg: R),
+  forall (f g : R -> R) (x : R),
   (f x) <> (g x) ->
-  is_derive f x df ->
-  is_derive g x dg ->
-  Derive (fun x => Rmax (f x) (g x)) x  = (df + dg + (df-dg)*sign(f x - g x))/2.
+  ex_derive f x ->
+  ex_derive g x ->
+  Derive (fun x => Rmax (f x) (g x)) x  = 
+  (Derive f x + Derive g x + (Derive f x - Derive g x)*sign(f x - g x))/2.
 Proof.
   intros.
   apply is_derive_unique.
-  now apply is_derive_max.
+  apply is_derive_max; trivial.
+  apply Derive_correct; trivial.
+  apply Derive_correct; trivial.
 Qed.
 
 (*
