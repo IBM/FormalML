@@ -146,16 +146,18 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
   | Case_aux c "Max"%string].
 
 
+   Require FunctionalExtensionality.
+
    Theorem df_eval_deriv_correct σ (df:DefinedFunction UnitAnn DTfloat) v (x y:R)
      : is_scalar_function df -> 
        ex_deriv_df σ df v x  ->
        df_eval_deriv (addBinding σ v x) df (v,DTfloat) = Some (Derive (df_R σ df v) x).
    Proof.
      simpl.
-     intros is_scalar ex_deriv.
+     intros is_scalar.
      generalize is_scalar.
      pattern df.
-     revert df is_scalar ex_deriv.
+     revert df is_scalar.
      DefinedFunction_scalar_cases (apply is_scalar_function_ind) Case; simpl; intros.
      - Case "Number"%string.
        unfold df_R; simpl.
@@ -181,18 +183,35 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        unfold ex_deriv_df in H1.
        destruct H1.
        destruct is_scalar.
-       match_option.
-       + match_option.
-         replace (df_R σ (Plus a l r) v) with (fun x0 => ((df_R σ l v)x0) + ((df_R σ r v)x0)).
-         rewrite Derive_plus.
-         rewrite eqq in H.
-         rewrite eqq0 in H0.
-         cut_to H; trivial.
-         cut_to H0; trivial.
-         inversion H.
-         inversion H0.
+       assert ((ex_deriv_df σ l v x) /\  (ex_deriv_df σ r v x)).
+       admit.
+       destruct H5.
+       generalize (eval_deriv_fully_closed_not_none (addBinding σ v x) l (v,DTfloat)); simpl; intros.
+       cut_to H7; [|apply H1].
+       match_option; [|tauto].
+       generalize (eval_deriv_fully_closed_not_none (addBinding σ v x) r (v,DTfloat)); simpl; intros.       
+       cut_to H8; [|apply H1].
+       match_option; [|tauto].
+       rewrite eqq in H.
+       rewrite eqq0 in H0.
+       cut_to H; trivial.
+       cut_to H0; trivial.
+       unfold ex_deriv_df in H5; destruct H5.
+       unfold ex_deriv_df in H6; destruct H6.
+       replace (df_R σ (Plus a l r) v) with (fun x0 => ((df_R σ l v)x0) + ((df_R σ r v)x0)).
+       + rewrite Derive_plus; trivial.
+         inversion H; inversion H0.
          now subst.
-         
+       + unfold df_R.
+         apply FunctionalExtensionality.functional_extensionality; intros.
+         unfold df_eval_at_point.
+         generalize (eval_fully_closed_not_none (addBinding σ v x0) l); simpl; intros.
+         generalize (eval_fully_closed_not_none (addBinding σ v x0) r); simpl; intros.
+         cut_to H11; [|apply H1].
+         cut_to H12; [|apply H1].
+         match_option; [|tauto].
+         case_eq (df_eval (addBinding σ v x0) r); [|tauto]; trivial.
+     - 
 
    Admitted.
 
