@@ -512,6 +512,61 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
          * destruct (Rge_dec d0 0); lra.
          * destruct (Rge_dec d0 0); lra.
      - Case "Max"%string.
+       destruct H1.
+       destruct is_scalar.
+       assert ((ex_deriv_df σ l v x) /\  (ex_deriv_df σ r v x)).
        admit.
+       destruct H5.
+       generalize (eval_fully_closed_not_none (addBinding σ v x) l); simpl; intros.
+       generalize (eval_fully_closed_not_none (addBinding σ v x) r); simpl; intros.
+       cut_to H7; [|apply H1].
+       cut_to H8; [|apply H1].
+       match_option; [|tauto].
+       generalize (eval_deriv_fully_closed_not_none (addBinding σ v x) l (v,DTfloat)); simpl; intros.
+       generalize (eval_deriv_fully_closed_not_none (addBinding σ v x) r (v,DTfloat)); simpl; intros.       
+       match_option; [|tauto].
+       assert (df_R σ l v x <> df_R σ r v x).
+       admit.
+       cut_to H; trivial.
+       cut_to H0; trivial.
+
+       replace (df_R σ (Max a l r) v) with (fun x0 => Rmax ((df_R σ l v)x0) ((df_R σ r v)x0)).       
+       + unfold ex_deriv_df in H5; destruct H5.
+         unfold ex_deriv_df in H6; destruct H6.
+         case_eq (df_eval_deriv (addBinding σ v x) l (v, DTfloat)); intros; [|tauto].
+         case_eq (df_eval_deriv (addBinding σ v x) r (v, DTfloat)); intros; [|tauto].
+         rewrite Derive_max; trivial.
+         rewrite H14 in H.
+         rewrite H15 in H0.
+         inversion H; inversion H0.
+         rewrite <- H17.
+         rewrite <- H18.
+         unfold df_R, df_eval_at_point.
+         rewrite eqq0; rewrite eqq.
+         unfold df_R,df_eval_at_point in H11.
+         rewrite eqq in H11; rewrite eqq0 in H11.
+         case_eq (Rle_dec d d0); intros.
+         * f_equal; unfold sign.
+           match_case; intros.
+           -- destruct s; lra.
+           -- lra.
+         * f_equal; unfold sign.
+           match_case; intros.
+           -- destruct s; lra.
+           -- lra.
+       + apply FunctionalExtensionality.functional_extensionality; intros.
+         unfold df_R.
+         unfold df_eval_at_point.
+         generalize (eval_fully_closed_not_none (addBinding σ v x0) l); simpl; intros.
+         generalize (eval_fully_closed_not_none (addBinding σ v x0) r); simpl; intros.
+         cut_to H13; [|apply H1].
+         cut_to H12; [|apply H1].
+         match_option; [|tauto].
+         case_eq (df_eval (addBinding σ v x0) r); [|tauto]; trivial.
+         intros.
+         unfold Rmax, Fmax.
+         case_eq (Rle_dec d1 d2); intros; simpl.
+         case_eq (Rlt_dec d1 d2); intros; simpl; trivial; lra.
+         case_eq (Rlt_dec d1 d2); intros; simpl; lra.
    Admitted.
 
