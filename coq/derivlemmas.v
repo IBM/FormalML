@@ -247,93 +247,67 @@ Proof.
   now apply is_derive_psign.
 Qed.
 
-Lemma is_derive_max_1_pos (y:R) :
-  forall (x:R), y<x -> is_derive (fun x => Rmax x y) x 1.
+Lemma max_abs (x y:R) :
+  Rmax x y  = (x + y + Rabs(x-y))/2.
 Proof.
-  intros.
-  apply (is_derive_ext_loc id (fun x => Rmax x y) x 1).
-  - unfold locally.
-    assert ( 0 < (x-y)/2) by lra.
-    exists (mkposreal ((x-y)/2) H0).
-    intro.
-    rewrite ball_abs; simpl.
-    unfold Rabs, Rmax, id; intros.
-    case_eq (Rcase_abs (y0 - x)); intros
-    ; rewrite H2 in H1
-    ; destruct (Rle_dec y0 y); lra.
-  - apply (@is_derive_id R_AbsRing).
+  unfold Rmax, Rabs.
+  destruct (Rle_dec x y);destruct (Rcase_abs (x - y)); lra.
 Qed.
 
-Lemma Derive_max_1_pos (y:R) : 
-  forall (x:R), y<x -> Derive (fun x => Rmax x y) x = 1.
+Lemma is_derive_max_abs :
+  forall (f g : R -> R) (x : R) (df dg da: R),
+  (f x) <> (g x) ->
+  is_derive f x df ->
+  is_derive g x dg ->
+  is_derive (fun x => (f x + g x + Rabs(f x - g x))/2) x da ->
+  is_derive (fun x => Rmax (f x) (g x)) x da.
+Proof.
+  intros.
+  apply (is_derive_ext (fun x => (f x + g x + Rabs(f x - g x))/2)
+                       (fun x => Rmax (f x) (g x))); trivial.
+  intros.
+  now rewrite max_abs.
+Qed.
+
+Lemma is_derive_scal_div :
+  forall (f : R -> R) (x k df : R),
+  is_derive f x df ->
+  is_derive (fun x : R => (f x)/k) x (df/k).
+Proof.
+  intros.
+  apply (is_derive_ext (fun x0 => (/k)*f x0) (fun x0 : R => f x0 / k)); intros.
+  lra.
+  replace (df / k) with (/k * df) by lra.
+  apply is_derive_scal; trivial.
+Qed.
+  
+Lemma is_derive_max :
+  forall (f g : R -> R) (x : R) (df dg: R),
+  (f x) <> (g x) ->
+  is_derive f x df ->
+  is_derive g x dg ->
+  is_derive (fun x => Rmax (f x) (g x)) x ((df + dg + (df-dg)*sign(f x - g x))/2).
+Proof.
+  intros.
+  apply is_derive_max_abs with (df := df) (dg := dg); trivial.
+  apply is_derive_scal_div.
+  apply is_derive_plus with (f0 := fun x0 => f x0 + g x0) (g0 := fun x0 => Rabs(f x0 - g x0)).
+  apply is_derive_plus with (f0 := f) (g0 := g); trivial.
+  apply is_derive_comp with (f0 := Rabs) (g0 := fun x0 => f x0 - g x0).
+  apply is_derive_abs; lra.
+  apply is_derive_minus with (f0 := f) (g0 := g); trivial.
+Qed.
+
+Lemma Derive_max : 
+  forall (f g : R -> R) (x : R) (df dg: R),
+  (f x) <> (g x) ->
+  is_derive f x df ->
+  is_derive g x dg ->
+  Derive (fun x => Rmax (f x) (g x)) x  = (df + dg + (df-dg)*sign(f x - g x))/2.
 Proof.
   intros.
   apply is_derive_unique.
-  now apply is_derive_max_1_pos.
-Qed.
-
-
-Lemma is_derive_max_1_neg (y:R) :
-  forall (x:R), y>x -> is_derive (fun x => Rmax x y) x 0.
-Proof.
-  intros.
-  apply (is_derive_ext_loc (fun _ => y) (fun x => Rmax x y) x 0).
-  - unfold locally.
-    assert ( 0 < (y-x)/2) by lra.
-    exists (mkposreal ((y-x)/2) H0).
-    intro.
-    rewrite ball_abs; simpl.
-    unfold Rabs, Rmax, id; intros.
-    case_eq (Rcase_abs (y0 - x)); intros
-    ; rewrite H2 in H1
-    ; destruct (Rle_dec y0 y); lra.
-  - apply (@is_derive_const R_AbsRing).
-Qed.
-
-Lemma Derive_max_1_neg (y:R) : 
-  forall (x:R), y>x -> Derive (fun x => Rmax x y) x = 0.
-Proof.
-  intros.
-  apply is_derive_unique.
-  now apply is_derive_max_1_neg.
-Qed.
-
-Require FunctionalExtensionality.
-
-Lemma is_derive_max_2_pos (y:R) :
-  forall (x:R), y<x -> is_derive (fun x => Rmax y x) x 1.
-Proof.
-  intros.
-  replace (fun x0 : AbsRing.sort R_AbsRing => Rmax y x0) with (fun x0 => Rmax x0 y).
-  - now apply (is_derive_max_1_pos y x).
-  - apply FunctionalExtensionality.functional_extensionality; intros.
-    apply Rmax_comm.
-Qed.
-
-Lemma Derive_max_2_pos (y:R) : 
-  forall (x:R), y<x -> Derive (fun x => Rmax y x ) x = 1.
-Proof.
-  intros.
-  apply is_derive_unique.
-  now apply is_derive_max_2_pos.
-Qed.
-
-Lemma is_derive_max_2_neg (y:R) :
-  forall (x:R), y>x -> is_derive (fun x => Rmax y x) x 0.
-Proof.
-  intros.
-  replace (fun x0 : AbsRing.sort R_AbsRing => Rmax y x0) with (fun x0 => Rmax x0 y).
-  - now apply (is_derive_max_1_neg y x).
-  - apply FunctionalExtensionality.functional_extensionality; intros.
-    apply Rmax_comm.
-Qed.
-
-Lemma Derive_max_2_neg (y:R) : 
-  forall (x:R), y>x -> Derive (fun x => Rmax y x ) x = 0.
-Proof.
-  intros.
-  apply is_derive_unique.
-  now apply is_derive_max_2_neg.
+  now apply is_derive_max.
 Qed.
 
 (*
