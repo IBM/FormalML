@@ -34,6 +34,9 @@ Lemma is_derive_div :
   is_derive g x dg ->
   g x <> 0 ->
   is_derive (fun t : R => f t / g t) x ((df * g x - f x * dg) / (g x ^ 2)).
+
+Lemma is_derive_unique f x l :
+  is_derive f x l -> Derive f x = l.
 *)
 
 Lemma is_derive_exp (x:R) : is_derive exp x (exp x).
@@ -42,16 +45,36 @@ Proof.
   apply derivable_pt_lim_exp.
 Qed.
 
+Lemma Derive_exp (x:R) : Derive exp x = exp x.
+Proof.
+  apply is_derive_unique.
+  apply is_derive_exp.
+Qed.
+
 Lemma is_derive_ln (x:R) : 0 < x -> is_derive ln x (/ x).
 Proof.
   rewrite is_derive_Reals.
   apply (derivable_pt_lim_ln x).
 Qed.
   
+Lemma Derive_ln (x:R) : 0 < x -> Derive ln x = /x.
+Proof.
+  intros.
+  apply is_derive_unique.
+  now apply is_derive_ln.
+Qed.
+
 Lemma is_derive_abs_pos (x:R): 0 < x -> is_derive Rabs x 1.
 Proof.
   rewrite is_derive_Reals.
   apply Rabs_derive_1.
+Qed.
+
+Lemma Derive_abs_pos (x:R): 0 < x -> Derive Rabs x = 1.
+Proof.
+  intros.
+  apply is_derive_unique.
+  now apply is_derive_abs_pos.
 Qed.
 
 Lemma is_derive_abs_neg (x:R): 0 > x -> is_derive Rabs x (-1).
@@ -60,12 +83,25 @@ Proof.
   apply Rabs_derive_2.
 Qed.
 
+Lemma Derive_abs_neg (x:R): 0 > x -> Derive Rabs x = -1.
+Proof.
+  intros.
+  apply is_derive_unique.
+  now apply is_derive_abs_neg.
+Qed.
+
 Lemma is_derive_sqr (x:R): is_derive Rsqr x (2 * x).
 Proof.
   rewrite is_derive_Reals.
   apply derivable_pt_lim_Rsqr.
 Qed.
 
+Lemma Derive_sqr (x:R): Derive Rsqr x = 2 * x.
+Proof.
+  apply is_derive_unique.
+  now apply is_derive_sqr.
+Qed.
+  
 Lemma ball_abs (x y:R_AbsRing) (eps : posreal):
   ball x eps y <-> Rabs(y - x) < eps.
 Proof.
@@ -91,6 +127,13 @@ Proof.
   - apply (@is_derive_const R_AbsRing).
 Qed.
 
+Lemma Derive_sign_pos (x:R) :  0<x -> Derive sign x = 0.
+Proof.
+  intros.
+  apply is_derive_unique.
+  now apply is_derive_sign_pos.
+Qed.
+
 Lemma is_derive_sign_neg :
   forall (x:R), 0>x -> is_derive sign x 0.
 Proof.
@@ -108,6 +151,14 @@ Proof.
     ; now apply sign_eq_m1.
   - apply (@is_derive_const R_AbsRing).
 Qed.
+
+Lemma Derive_sign_neg (x:R) :  0>x -> Derive sign x = 0.
+Proof.
+  intros.
+  apply is_derive_unique.
+  now apply is_derive_sign_neg.
+Qed.
+
 
 (* same proofs work for psign *)
 
@@ -128,6 +179,15 @@ Proof.
   - apply (@is_derive_id R_AbsRing).
 Qed.
 
+Lemma Derive_max_1_pos (y:R) : 
+  forall (x:R), y<x -> Derive (fun x => Rmax x y) x = 1.
+Proof.
+  intros.
+  apply is_derive_unique.
+  now apply is_derive_max_1_pos.
+Qed.
+
+
 Lemma is_derive_max_1_neg (y:R) :
   forall (x:R), y>x -> is_derive (fun x => Rmax x y) x 0.
 Proof.
@@ -145,6 +205,15 @@ Proof.
   - apply (@is_derive_const R_AbsRing).
 Qed.
 
+Lemma Derive_max_1_neg (y:R) : 
+  forall (x:R), y>x -> Derive (fun x => Rmax x y) x = 0.
+Proof.
+  intros.
+  apply is_derive_unique.
+  now apply is_derive_max_1_neg.
+Qed.
+
+
 Require FunctionalExtensionality.
 
 Lemma is_derive_max_2_pos (y:R) :
@@ -157,6 +226,14 @@ Proof.
     apply Rmax_comm.
 Qed.
 
+Lemma Derive_max_2_pos (y:R) : 
+  forall (x:R), y<x -> Derive (fun x => Rmax y x ) x = 1.
+Proof.
+  intros.
+  apply is_derive_unique.
+  now apply is_derive_max_2_pos.
+Qed.
+
 Lemma is_derive_max_2_neg (y:R) :
   forall (x:R), y>x -> is_derive (fun x => Rmax y x) x 0.
 Proof.
@@ -167,6 +244,13 @@ Proof.
     apply Rmax_comm.
 Qed.
 
+Lemma Derive_max_2_neg (y:R) : 
+  forall (x:R), y>x -> Derive (fun x => Rmax y x ) x = 0.
+Proof.
+  intros.
+  apply is_derive_unique.
+  now apply is_derive_max_2_neg.
+Qed.
 
 (*
 (* Ranalysis1 *)
