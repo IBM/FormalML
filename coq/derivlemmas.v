@@ -94,6 +94,28 @@ Proof.
   now apply is_derive_abs_neg.
 Qed.
 
+Lemma is_derive_abs (x:R): 0 <> x -> is_derive Rabs x (sign x).
+Proof.
+  intros.
+  generalize (Rdichotomy); trivial; intros.
+  apply H0 in H.
+  unfold sign.
+  destruct H.
+  - destruct (total_order_T 0 x); trivial; [|lra].
+    destruct s; [|lra].
+    now apply is_derive_abs_pos.
+  - destruct (total_order_T 0 x).
+    + destruct s; [lra|lra].
+    + now apply is_derive_abs_neg.
+Qed.
+
+Lemma Derive_abs (x:R): 0 <> x -> Derive Rabs x = sign x.
+Proof.
+  intros.
+  apply is_derive_unique.
+  now apply is_derive_abs.
+Qed.
+
 Lemma is_derive_sqr (x:R): is_derive Rsqr x (2 * x).
 Proof.
   rewrite is_derive_Reals.
@@ -131,13 +153,6 @@ Proof.
   - apply (@is_derive_const R_AbsRing).
 Qed.
 
-Lemma Derive_sign_pos (x:R) :  0<x -> Derive sign x = 0.
-Proof.
-  intros.
-  apply is_derive_unique.
-  now apply is_derive_sign_pos.
-Qed.
-
 Lemma is_derive_sign_neg :
   forall (x:R), 0>x -> is_derive sign x 0.
 Proof.
@@ -156,15 +171,81 @@ Proof.
   - apply (@is_derive_const R_AbsRing).
 Qed.
 
-Lemma Derive_sign_neg (x:R) :  0>x -> Derive sign x = 0.
+Lemma is_derive_sign (x:R) : 0 <> x -> is_derive sign x 0.
+Proof.
+  intros.
+  generalize (Rdichotomy); trivial; intros.
+  apply H0 in H.
+  destruct H.
+  + now apply is_derive_sign_pos.
+  + now apply is_derive_sign_neg.
+Qed.
+
+Lemma Derive_sign (x:R) : 0 <> x -> Derive sign x = 0.
 Proof.
   intros.
   apply is_derive_unique.
-  now apply is_derive_sign_neg.
+  now apply is_derive_sign.
 Qed.
 
+Definition psign (x:R) := if Rge_dec x 0 then 1 else -1.
 
-(* same proofs work for psign *)
+Lemma is_derive_psign_pos :
+  forall (x:R), 0<x -> is_derive psign x 0.
+Proof.
+  intros.
+  apply (is_derive_ext_loc (fun _ => 1) psign x 0).
+  - unfold locally.
+    assert ( 0 < x/2) by lra.
+    exists (mkposreal (x/2) H0).
+    intro.
+    rewrite ball_abs; simpl.
+    unfold Rabs; intros.
+    unfold psign.
+    destruct (Rcase_abs (y - x)) in H1
+    ; assert (0<y) by lra
+    ; apply sym_eq.
+    + now destruct Rge_dec; [|lra].
+    + now destruct Rge_dec; [|lra].
+  - apply (@is_derive_const R_AbsRing).
+Qed.
+
+Lemma is_derive_psign_neg :
+  forall (x:R), 0>x -> is_derive psign x 0.
+Proof.
+  intros.
+  apply (is_derive_ext_loc (fun _ => -1) psign x 0).
+  - unfold locally.
+    assert ( 0 < -x/2) by lra.
+    exists (mkposreal (-x/2) H0).
+    intro.
+    rewrite ball_abs; simpl.
+    unfold Rabs; intros.
+    unfold psign.
+    destruct (Rcase_abs (y - x)) in H1
+    ; assert (0>y) by lra
+    ; apply sym_eq.
+    + now destruct Rge_dec; [lra|].
+    + now destruct Rge_dec; [lra|].
+  - apply (@is_derive_const R_AbsRing).
+Qed.
+
+Lemma is_derive_psign (x:R) : 0 <> x -> is_derive psign x 0.
+Proof.
+  intros.
+  generalize (Rdichotomy); trivial; intros.
+  apply H0 in H.
+  destruct H.
+  + now apply is_derive_psign_pos.
+  + now apply is_derive_psign_neg.
+Qed.
+
+Lemma Derive_psign (x:R) : 0 <> x -> Derive psign x = 0.
+Proof.
+  intros.
+  apply is_derive_unique.
+  now apply is_derive_psign.
+Qed.
 
 Lemma is_derive_max_1_pos (y:R) :
   forall (x:R), y<x -> is_derive (fun x => Rmax x y) x 1.
@@ -216,7 +297,6 @@ Proof.
   apply is_derive_unique.
   now apply is_derive_max_1_neg.
 Qed.
-
 
 Require FunctionalExtensionality.
 

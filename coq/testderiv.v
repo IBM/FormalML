@@ -414,11 +414,103 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
          generalize (eval_fully_closed_not_none (addBinding σ v x0) e); simpl; intros.       
          match_option; tauto.
      - Case "Abs"%string.
+       assert (ex_deriv_df σ e v x).
        admit.
+       assert (H1c := H1).
+       unfold ex_deriv_df in H1; destruct H1.
+       generalize (eval_fully_closed_not_none (addBinding σ v x) e ); simpl; intros.
+       match_option; [|tauto].
+       generalize (eval_deriv_fully_closed_not_none (addBinding σ v x) e (v,DTfloat)); simpl; intros.
+       match_option; [|tauto].
+       unfold ex_deriv_df in H0.
+       destruct H0.
+       assert (0 <> df_R σ e v x).
+       admit.
+       replace (df_R σ (Abs a e) v) with (fun x0 => abs ((df_R σ e v) x0)).
+       + rewrite Derive_comp; trivial.
+         * rewrite Derive_abs; trivial.
+           cut_to H; trivial.
+           rewrite eqq0 in H.
+           inversion H.
+           rewrite <- H8; f_equal.
+           unfold df_R, df_eval_at_point.
+           rewrite eqq.
+           unfold sign, FloatishOps.sign.
+           destruct (total_order_T 0 d).
+           -- destruct s; simpl.
+              ++ destruct (Rlt_dec d 0); [lra|].
+                 destruct (Rgt_dec d 0); lra.
+              ++ destruct (Rlt_dec d 0); [lra|].
+                 destruct (Rgt_dec d 0); lra.
+           -- simpl; destruct (Rlt_dec d 0); lra.
+         * unfold ex_derive; eexists; eapply is_derive_abs; trivial.
+       + apply FunctionalExtensionality.functional_extensionality; intros.
+         unfold df_R, df_eval_at_point; simpl.
+         generalize (eval_fully_closed_not_none (addBinding σ v x0) e); simpl; intros. 
+         match_option.
+         unfold abs; simpl.
+         unfold Rabs.
+         match_case; intros; lra.
      - Case "Sign"%string.
+       assert (ex_deriv_df σ e v x).
        admit.
+       assert (H1c := H1).
+       unfold ex_deriv_df in H1; destruct H1.
+       generalize (eval_deriv_fully_closed_not_none (addBinding σ v x) e (v,DTfloat)); simpl; intros.
+       match_option; [|tauto].
+       unfold ex_deriv_df in H0.
+       destruct H0.
+       assert (0 <> df_R σ e v x).
+       admit.
+       replace (df_R σ (Sign a e) v) with (fun x0 => sign ((df_R σ e v) x0)).
+       + rewrite Derive_comp; trivial.
+         * rewrite Derive_sign; trivial.
+           cut_to H; trivial.
+           rewrite eqq in H.
+           inversion H.
+           rewrite <- H7; f_equal; lra.
+         * unfold ex_derive; eexists; eapply is_derive_sign; trivial.
+       + apply FunctionalExtensionality.functional_extensionality; intros.
+         unfold df_R, df_eval_at_point; simpl.
+         generalize (eval_fully_closed_not_none (addBinding σ v x0) e); simpl; intros. 
+         match_option; [|tauto].
+         unfold sign.
+         unfold FloatishOps.sign.
+         match_case; intros; simpl.
+         * destruct s; simpl.
+           -- destruct (Rlt_dec d0 0); [lra|].
+              now destruct (Rgt_dec d0 0); [|lra].
+           -- destruct (Rlt_dec d0 0); [lra|].
+              now destruct (Rgt_dec d0 0); [lra|].
+         * destruct (Rlt_dec d0 0); [lra|].
+           now destruct (Rgt_dec d0 0); [|lra].
      - Case "PSign"%string.
+       assert (ex_deriv_df σ e v x).
        admit.
+       assert (H1c := H1).
+       unfold ex_deriv_df in H1; destruct H1.
+       generalize (eval_deriv_fully_closed_not_none (addBinding σ v x) e (v,DTfloat)); simpl; intros.
+       match_option; [|tauto].
+       unfold ex_deriv_df in H0.
+       destruct H0.
+       assert (0 <> df_R σ e v x).
+       admit.
+       replace (df_R σ (PSign a e) v) with (fun x0 => psign ((df_R σ e v) x0)).
+       + rewrite Derive_comp; trivial.
+         * rewrite Derive_psign; trivial.
+           cut_to H; trivial.
+           rewrite eqq in H.
+           inversion H.
+           rewrite <- H7; f_equal; lra.
+         * unfold ex_derive; eexists; eapply is_derive_psign; trivial.
+       + apply FunctionalExtensionality.functional_extensionality; intros.
+         unfold df_R, df_eval_at_point; simpl.
+         generalize (eval_fully_closed_not_none (addBinding σ v x0) e); simpl; intros. 
+         match_option; [|tauto].
+         unfold psign, pos_sign.
+         match_case; intros; simpl.
+         * destruct (Rge_dec d0 0); lra.
+         * destruct (Rge_dec d0 0); lra.
      - Case "Max"%string.
        admit.
    Admitted.
