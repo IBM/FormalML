@@ -39,10 +39,23 @@ Lemma is_derive_div :
   g x <> 0 ->
   is_derive (fun t : R => f t / g t) x ((df * g x - f x * dg) / (g x ^ 2)).
 
+Lemma is_derive_Rabs (f : R -> R) (x df : R) :
+  is_derive f x df -> f x <> 0
+    -> is_derive (fun x => Rabs (f x)) x (sign (f x) * df).
+
 Lemma is_derive_unique f x l :
   is_derive f x l -> Derive f x = l.
 *)
 
+Lemma Derive_Rabs (f : R -> R) (x : R) :
+  ex_derive f x -> f x <> 0 -> Derive (fun x => Rabs (f x)) x = sign (f x) * Derive f x.
+Proof.
+  intros.
+  apply is_derive_unique.
+  apply is_derive_Rabs; trivial.
+  apply Derive_correct; trivial.
+Qed.
+  
 Lemma is_derive_exp (x:R) : is_derive exp x (exp x).
 Proof.
   rewrite is_derive_Reals.
