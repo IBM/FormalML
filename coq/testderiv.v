@@ -158,6 +158,19 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         end.
 
 
+    Lemma df_R_total_plus σ a (l r:DefinedFunction UnitAnn DTfloat) v x :
+      fully_closed_over l ((v,DTfloat)::map (@projT1 _ _) σ) ->
+      fully_closed_over r ((v,DTfloat)::map (@projT1 _ _) σ) ->
+      df_R σ (Plus a l r) v x = df_R σ l v x + df_R σ r v x.
+    Proof.
+      simpl.
+      intros.
+      destruct (eval_fully_closed_total (addBinding σ v x) l); simpl; trivial.
+      destruct (eval_fully_closed_total (addBinding σ v x) r); simpl; trivial.
+      unfold df_R, df_eval_at_point; simpl.
+      now rewrite e, e0.
+    Qed.
+
    Theorem df_eval_deriv_correct σ (df:DefinedFunction UnitAnn DTfloat) v (x:R) y
      : is_scalar_function df ->
        fully_closed_over df ((v,DTfloat)::map (@projT1 _ _) σ) ->
@@ -194,12 +207,14 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        invcs H2.
        destruct is_scalar as [isc1 isc2].
        specialize (H _ isc1 H1 eqq).
-       specialize (H0 _ isc2 H3 eqq0).         
-       unfold df_R, df_eval_at_point; simpl.
-       generalize (eval_fully_closed_not_none (addBinding σ v x) l); simpl; intros.
-       generalize (eval_fully_closed_not_none (addBinding σ v x) r); simpl; intros.
-       cut_to H2; [| apply H1].
-       cut_to H4; [| apply H3].
+       specialize (H0 _ isc2 H3 eqq0).
+       eapply is_derive_ext.
+       + intros.
+         symmetry.
+         now apply df_R_total_plus.
+       + generalize (is_derive_plus (fun t => df_R σ l v t)); unfold plus; simpl
+         ; intros HH; now apply HH.
+     - Case "Minus"%string.
    Admitted.
        
  
@@ -718,6 +733,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        + destruct (equiv_dec (s, DTfloat) (v, DTfloat)); simpl.
          * admit.
          * admit.
+       + admit.
        + admit.
      - Case "Plus"%string.
        unfold ex_deriv_df in H.
