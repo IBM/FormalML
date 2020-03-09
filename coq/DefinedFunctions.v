@@ -633,10 +633,10 @@ F (d : definition_function_types)
     Ltac refl_simpler := 
       repeat
         match goal with
-        | [H: @eq var_type _ _ |- _ ] => rewrite (var_type_UIP_refl H)
-        | [H: @equiv var_type _ _ _ _ |- _ ] => rewrite (var_type_UIP_refl H)
-        | [H: @eq definition_function_types _ _ |- _ ] => rewrite (definition_function_types_UIP_refl H)
-        | [H: @equiv definition_function_types _ _ _ _ |- _ ] => rewrite (definition_function_types_UIP_refl H)
+        | [H: @eq var_type _ _ |- _ ] => try (inversion H; subst); rewrite (var_type_UIP_refl H)
+        | [H: @equiv var_type _ _ _ _ |- _ ] => try (inversion H; subst); rewrite (var_type_UIP_refl H)
+        | [H: @eq definition_function_types _ _ |- _ ] => try (inversion H; subst); rewrite (definition_function_types_UIP_refl H)
+        | [H: @equiv definition_function_types _ _ _ _ |- _ ] => try (inversion H; subst); rewrite (definition_function_types_UIP_refl H)
         end.
 
 
@@ -5227,10 +5227,10 @@ Tactic Notation "DefinedFunction_cases" tactic(first) ident(c) :=
 Ltac refl_simpler := 
   repeat
     match goal with
-    | [H: @eq var_type _ _ |- _ ] => rewrite (var_type_UIP_refl H)
-    | [H: @equiv var_type _ _ _ _ |- _ ] => rewrite (var_type_UIP_refl H)
-    | [H: @eq definition_function_types _ _ |- _ ] => rewrite (definition_function_types_UIP_refl H)
-    | [H: @equiv definition_function_types _ _ _ _ |- _ ] => rewrite (definition_function_types_UIP_refl H)
+    | [H: @eq var_type _ _ |- _ ] => try (inversion H; subst); rewrite (var_type_UIP_refl H)
+    | [H: @equiv var_type _ _ _ _ |- _ ] => try (inversion H; subst); rewrite (var_type_UIP_refl H)
+    | [H: @eq definition_function_types _ _ |- _ ] => try (inversion H; subst); rewrite (definition_function_types_UIP_refl H)
+    | [H: @equiv definition_function_types _ _ _ _ |- _ ] => try (inversion H; subst); rewrite (definition_function_types_UIP_refl H)
     end.
 
 Section real_pfs.
@@ -8493,4 +8493,3 @@ End real_pfs.
 
   End FreeVariablesExample.
 *)            
-
