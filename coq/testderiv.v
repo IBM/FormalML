@@ -148,8 +148,19 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
 
    Require FunctionalExtensionality.
 
+    Ltac refl_simpler := 
+      repeat
+        match goal with
+        | [H: @eq var_type _ _ |- _ ] => try (inversion H; subst); rewrite (var_type_UIP_refl H)
+        | [H: @equiv var_type _ _ _ _ |- _ ] => try (inversion H; subst); rewrite (var_type_UIP_refl H)
+        | [H: @eq definition_function_types _ _ |- _ ] => try (inversion H; subst); rewrite (definition_function_types_UIP_refl H)
+        | [H: @equiv definition_function_types _ _ _ _ |- _ ] => try (inversion H; subst); rewrite (definition_function_types_UIP_refl H)
+        end.
+
+
    Theorem df_eval_deriv_correct σ (df:DefinedFunction UnitAnn DTfloat) v (x:R) y
      : is_scalar_function df ->
+       fully_closed_over df ((v,DTfloat)::map (@projT1 _ _) σ) ->
        df_eval_deriv (addBinding σ v x) df (v,DTfloat) = Some y ->
        is_derive (df_R σ df v) x y.
    Proof.
@@ -160,15 +171,35 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
      pattern df.
      revert df is_scalar.
      DefinedFunction_scalar_cases (apply is_scalar_function_ind) Case; simpl; intros.
-     admit.
-     admit.
-     admit.
+     - Case "Number"%string.
+       unfold df_R, df_eval_at_point; simpl.
+       inversion H0; subst.
+       now apply (@is_derive_const R_AbsRing).
+     - Case "Constant"%string.
+       unfold df_R, df_eval_at_point; simpl.
+       inversion H0; subst.
+       now apply (@is_derive_const R_AbsRing).
+     - Case "Var"%string.
+       unfold df_R, df_eval_at_point; simpl.
+       inversion H0; subst.
+       simpl.
+       unfold equiv_dec, vart_eqdec.
+       destruct (vart_dec (sv, DTfloat) (v, DTfloat)).
+       + refl_simpler; simpl.
+         now apply (@is_derive_id R_AbsRing).
+       + now apply (@is_derive_const R_AbsRing).
      - Case "Plus"%string.
-       do 2 match_option_in H1.
-       invcs H1.
+       destruct H1.
+       do 2 match_option_in H2.
+       invcs H2.
        destruct is_scalar as [isc1 isc2].
-       specialize (H _ isc1 eqq).
-       specialize (H0 _ isc2 eqq0).         
+       specialize (H _ isc1 H1 eqq).
+       specialize (H0 _ isc2 H3 eqq0).         
+       unfold df_R, df_eval_at_point; simpl.
+       generalize (eval_fully_closed_not_none (addBinding σ v x) l); simpl; intros.
+       generalize (eval_fully_closed_not_none (addBinding σ v x) r); simpl; intros.
+       cut_to H2; [| apply H1].
+       cut_to H4; [| apply H3].
    Admitted.
        
  
