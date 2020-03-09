@@ -148,7 +148,32 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
 
    Require FunctionalExtensionality.
 
-   Theorem df_eval_deriv_correct σ (df:DefinedFunction UnitAnn DTfloat) v (x:R)
+   Theorem df_eval_deriv_correct σ (df:DefinedFunction UnitAnn DTfloat) v (x:R) y
+     : is_scalar_function df ->
+       df_eval_deriv (addBinding σ v x) df (v,DTfloat) = Some y ->
+       is_derive (df_R σ df v) x y.
+   Proof.
+     simpl.
+     intros is_scalar.
+     generalize is_scalar.
+     revert y.
+     pattern df.
+     revert df is_scalar.
+     DefinedFunction_scalar_cases (apply is_scalar_function_ind) Case; simpl; intros.
+     admit.
+     admit.
+     admit.
+     - Case "Plus"%string.
+       do 2 match_option_in H1.
+       invcs H1.
+       destruct is_scalar as [isc1 isc2].
+       specialize (H _ isc1 eqq).
+       specialize (H0 _ isc2 eqq0).         
+   Admitted.
+       
+ 
+
+   Theorem df_eval_deriv_complete σ (df:DefinedFunction UnitAnn DTfloat) v (x:R)
      : is_scalar_function df -> 
        ex_deriv_df σ df v x  ->
        df_eval_deriv (addBinding σ v x) df (v,DTfloat) = Some (Derive (df_R σ df v) x).
@@ -173,7 +198,8 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        match_case; intros.
        + unfold df_eval_at_point; simpl.
          rewrite H1; simpl.
-         admit.
+         refl_simpler; simpl.
+         now rewrite Derive_id.
        + unfold df_eval_at_point; simpl.
          rewrite H1; simpl.
          match_option.
@@ -655,7 +681,13 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        f_equal.
        unfold Derive_gen.
        unfold var_type in v0.
-       admit.
+       destruct v0.
+       simpl.
+       destruct d; simpl; unfold var_type.
+       + destruct (equiv_dec (s, DTfloat) (v, DTfloat)); simpl.
+         * admit.
+         * admit.
+       + admit.
      - Case "Plus"%string.
        unfold ex_deriv_df in H.
        destruct H.
