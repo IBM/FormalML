@@ -45,7 +45,14 @@ Lemma is_derive_Rabs (f : R -> R) (x df : R) :
 
 Lemma is_derive_unique f x l :
   is_derive f x l -> Derive f x = l.
-*)
+ *)
+
+Lemma ball_abs (x y:R_AbsRing) (eps : posreal):
+  ball x eps y <-> Rabs(y - x) < eps.
+Proof.
+  unfold ball; simpl.
+  unfold AbsRing_ball; simpl; tauto.
+Qed.
 
 Lemma Derive_Rabs (f : R -> R) (x : R) :
   ex_derive f x -> f x <> 0 -> Derive (fun x => Rabs (f x)) x = sign (f x) * Derive f x.
@@ -55,7 +62,54 @@ Proof.
   apply is_derive_Rabs; trivial.
   apply Derive_correct; trivial.
 Qed.
-  
+
+Lemma derivable_pt_lim_Rabs_df0 (f : R -> R) (x : R) :
+  f x = 0 -> derivable_pt_lim f x 0 
+    -> derivable_pt_lim (fun x => Rabs (f x)) x 0.
+Proof.
+  unfold derivable_pt_lim; intros.
+  specialize (H0 eps H1);  destruct H0.
+  exists x0; intros.
+  specialize (H0 h H2 H3).
+  rewrite H; rewrite H in H0.
+  rewrite Rabs_R0.
+  do 2 rewrite Rminus_0_r.
+  do 2 rewrite Rminus_0_r in H0.
+  rewrite Rabs_div; trivial.
+  rewrite Rabs_Rabsolu.
+  rewrite <- Rabs_div; trivial.
+Qed.
+
+Lemma is_derive_Rabs_df0 (f : R -> R) (x : R) :
+  is_derive f x 0 -> is_derive (fun x => Rabs (f x)) x 0.
+Proof.
+  generalize (Req_EM_T (f x) 0).
+  intro.
+  destruct H.
+  - do 2 rewrite is_derive_Reals.
+    now apply derivable_pt_lim_Rabs_df0.
+  - intros. 
+    replace (0) with ((sign (f x)) * 0) by lra.
+    apply is_derive_Rabs; trivial.
+Qed.
+
+Lemma not_ex_derive_Rabs_f0_1 (f : R -> R) (x df : R) :
+  f x = 0 -> is_derive f x df -> df > 0 ->
+  ~ ex_derive (fun x0 => Rabs (f x0)) x.
+Proof.
+  rewrite is_derive_Reals.
+  unfold derivable_pt_lim.
+  intros.
+  rewrite H in H0.
+  Admitted.
+
+Lemma not_ex_derive_Rabs_f0 (f : R -> R) (x df : R) :
+  f x = 0 -> is_derive f x df -> df <> 0 ->
+  ~ ex_derive (fun x0 => Rabs (f x0)) x.
+Proof.
+  Admitted.
+
+
 Lemma is_derive_exp (x:R) : is_derive exp x (exp x).
 Proof.
   rewrite is_derive_Reals.
@@ -141,12 +195,6 @@ Proof.
   now apply is_derive_sqr.
 Qed.
   
-Lemma ball_abs (x y:R_AbsRing) (eps : posreal):
-  ball x eps y <-> Rabs(y - x) < eps.
-Proof.
-  unfold ball; simpl.
-  unfold AbsRing_ball; simpl; tauto.
-Qed.
 
 Lemma is_derive_sign_pos :
   forall (x:R), 0<x -> is_derive sign x 0.
@@ -309,6 +357,103 @@ Proof.
   apply is_derive_comp with (f0 := Rabs) (g0 := fun x0 => f x0 - g x0).
   apply is_derive_abs; lra.
   apply is_derive_minus with (f0 := f) (g0 := g); trivial.
+Qed.
+
+Lemma locally_gt (x:R) : 
+  x > 0 -> locally x (fun t => t>0).
+Proof.
+  intros.
+  unfold locally.
+  assert (0 < x/2) by lra.
+  exists (mkposreal (x/2) H0).
+  intro.
+  rewrite ball_abs; simpl.
+  unfold Rabs; intros.
+  destruct (Rcase_abs(y - x)); lra.
+Qed.
+
+Lemma locally_lt (x:R) : 
+  x < 0 -> locally x (fun t => t<0).
+Proof.
+  intros.
+  unfold locally.
+  assert (0 < -x/2) by lra.
+  exists (mkposreal (-x/2) H0).
+  intro.
+  rewrite ball_abs; simpl.
+  unfold Rabs; intros.
+  destruct (Rcase_abs(y - x)); lra.
+Qed.
+
+Lemma is_derive_max2 :
+  forall (f g : R -> R) (x : R) (dfg: R),
+    continuous (fun x0 => f x0 - g x0) x ->
+    (f x) > (g x) -> is_derive f x dfg 
+    -> is_derive (fun x => Rmax (f x) (g x)) x dfg.
+Proof.
+  intros.
+  assert (f x - g x > 0) by lra.
+  apply (is_derive_ext_loc f (fun x0 : R_AbsRing => Rmax (f x0) (g x0)) x dfg); trivial. 
+  unfold continuous in H.
+  unfold filterlim, filter_le,filtermap in H.
+  specialize (H (fun t => t > 0)); simpl in *.
+  assert (locally (f x - g x) (fun t => t > 0)) by (apply locally_gt; trivial).
+  specialize (H H3).
+  apply filter_imp with (P := fun t => f t - g t > 0); trivial.
+  intros.
+  unfold Rmax.
+  destruct (Rle_dec (f x0) (g x0)); lra.
+Qed.
+
+Lemma is_derive_max3 :
+  forall (f g : R -> R) (x : R) (dfg: R),
+    continuous (fun x0 => f x0 - g x0) x ->
+    (f x) < (g x) -> is_derive g x dfg 
+    -> is_derive (fun x => Rmax (f x) (g x)) x dfg.
+Proof.
+  intros.
+  assert (f x - g x < 0) by lra.
+  apply (is_derive_ext_loc g (fun x0 : R_AbsRing => Rmax (f x0) (g x0)) x dfg); trivial. 
+  unfold continuous in H.
+  unfold filterlim, filter_le,filtermap in H.
+  specialize (H (fun t => t < 0)); simpl in *.
+  assert (locally (f x - g x) (fun t => t < 0)) by (apply locally_lt; trivial).
+  specialize (H H3).
+  apply filter_imp with (P := fun t => f t - g t < 0); trivial.
+  intros.
+  unfold Rmax.
+  destruct (Rle_dec (f x0) (g x0)); lra.
+Qed.
+
+Lemma is_derive_max_alt :
+  forall (f g : R -> R) (x : R) (dfg: R),
+    continuous (fun x0 => f x0 - g x0) x ->
+    (f x) <> (g x) -> 
+    ((f x > g x) /\ is_derive f x dfg) \/ ((f x < g x) /\ is_derive g x dfg) 
+    -> is_derive (fun x => Rmax (f x) (g x)) x dfg.
+Proof.
+  intros.
+  do 2 destruct H1.
+  - now apply is_derive_max2.
+  - now apply is_derive_max3.
+Qed.
+
+Lemma is_derive_max_alt2 :
+  forall (f g : R -> R) (x : R) (dfg: R),
+    is_derive f x dfg -> is_derive g x dfg 
+    -> is_derive (fun x => Rmax (f x) (g x)) x dfg.
+Proof.
+  intros.
+  apply (is_derive_ext (fun t => (f t + g t + Rabs(f t - g t))/2) (fun t => Rmax (f t) (g t))).
+  - intros.
+    now rewrite max_abs.
+  - replace dfg with (((dfg + dfg)+0)/2) by lra.
+    apply is_derive_scal_div.
+    apply (@is_derive_plus R_AbsRing).
+    apply (@is_derive_plus R_AbsRing); trivial.
+    apply is_derive_Rabs_df0.
+    replace 0 with (dfg - dfg) by lra.
+    now apply (@is_derive_minus R_AbsRing).
 Qed.
 
 Lemma Derive_max : 
