@@ -93,22 +93,297 @@ Proof.
     apply is_derive_Rabs; trivial.
 Qed.
 
+Lemma at_left_close (f : R -> R) (x l1 l2 : R) :
+  filterlim f (at_left x) (locally l1) -> filterlim f (locally x) (locally l2) ->
+  close l2 l1.
+Proof.
+  intros.
+  revert H.
+  apply filterlim_locally_close.
+  revert H0.
+  apply filterlim_filter_le_1.
+  unfold at_left.
+  apply filter_le_within.
+Qed.
+  
+Lemma at_right_close (f : R -> R) (x l1 l2 : R) :
+  filterlim f (at_right x) (locally l1) -> filterlim f (locally x) (locally l2) ->
+  close l2 l1.
+Proof.
+  intros.
+  revert H.
+  apply filterlim_locally_close.
+  revert H0.
+  apply filterlim_filter_le_1.
+  unfold at_right.
+  apply filter_le_within.
+Qed.
+
+Lemma one_sided_limits_differ (f : R -> R) (x l1 l2 : R) :
+  filterlim f (at_left x) (locally l1) ->
+  filterlim f (at_right x) (locally l2) ->  
+  l1 <> l2 -> ~ (exists l:R, filterlim f (locally x) (locally l)).
+Proof.
+  intros.
+  intro.
+  destruct H2.
+  assert (l1 = l2).
+  - apply eq_close.
+    apply (close_trans l1 x0 l2).
+    + apply close_sym.
+      now apply (at_left_close f x l1 x0).
+    + now apply (at_right_close f x l2 x0).
+  - easy.
+Qed.
+
+Lemma locally'_proper_filter : forall (x : R),
+  ProperFilter (locally' x).
+Proof.
+  constructor.
+  intros P [d Hd].
+  exists (x + d / 2).
+  apply Hd.
+  apply @norm_compat1.
+  unfold norm, minus, plus, opp; simpl.
+  ring_simplify (x + d / 2 + - x).
+  rewrite Rabs_pos_eq.
+  apply Rlt_div_l.
+  now apply Rlt_0_2.
+  apply Rminus_lt_0 ; ring_simplify ; now apply d.
+  apply Rlt_le, is_pos_div_2.
+  apply Rgt_not_eq; apply Rminus_lt_0 ; ring_simplify; now apply is_pos_div_2.
+  apply within_filter, locally_filter.
+Qed.
+
+Lemma locally'_within_pos_proper_filter : forall (x : R),
+  ProperFilter (within (fun t => t> x) (locally' x)).
+Proof.
+  constructor.
+  intros P [d Hd].
+  exists (x + d / 2).
+  apply Hd.
+  apply @norm_compat1.
+  unfold norm, minus, plus, opp; simpl.
+  ring_simplify (x + d / 2 + - x).
+  rewrite Rabs_pos_eq.
+  apply Rlt_div_l.
+  now apply Rlt_0_2.
+  apply Rminus_lt_0 ; ring_simplify ; now apply d.
+  apply Rlt_le, is_pos_div_2.
+  apply Rgt_not_eq; apply Rminus_lt_0; ring_simplify; now apply is_pos_div_2.
+  apply Rminus_lt_0; ring_simplify; now apply is_pos_div_2.  
+  apply within_filter, within_filter, locally_filter.
+Qed.
+
+Lemma locally'_within_neg_proper_filter : forall (x : R),
+  ProperFilter (within (fun t => t< x) (locally' x)).
+Proof.
+  constructor.
+  intros P [d Hd].
+  exists (x - d / 2).
+  apply Hd.
+  apply @norm_compat1.
+  unfold norm, minus, plus, opp; simpl.
+  ring_simplify (x - d / 2 + - x).
+  rewrite Rabs_Ropp, Rabs_pos_eq.
+  apply Rlt_div_l.
+  now apply Rlt_0_2.
+  apply Rminus_lt_0 ; ring_simplify ; now apply d.
+  apply Rlt_le, is_pos_div_2.
+  apply Rlt_not_eq, Rminus_lt_0 ; ring_simplify ; now apply is_pos_div_2.
+  apply Rminus_lt_0 ; ring_simplify ; now apply is_pos_div_2.  
+  apply within_filter, within_filter, locally_filter.
+Qed.
+
+Lemma locally_pos (x : R) :
+  x > 0 -> locally x (fun t:R => t>0).
+  Proof.
+    intros.
+    unfold locally.
+    assert (x/2 > 0) by lra.
+    exists (mkposreal (x/2) H0); intro.
+    rewrite ball_abs; simpl.
+    unfold Rabs; intros.
+    destruct (Rcase_abs (y-x)); lra.
+Qed.
+
+Lemma locally_neg (x : R) :
+  x < 0 -> locally x (fun t:R => t<0).
+Proof.
+    intros.
+    unfold locally.
+    assert ((-x/2) > 0) by lra.
+    exists (mkposreal (-x/2) H0); intro.
+    rewrite ball_abs; simpl.
+    unfold Rabs; intros.
+    destruct (Rcase_abs (y-x)); lra.
+Qed.
+
 Lemma not_ex_derive_Rabs_f0_1 (f : R -> R) (x df : R) :
   f x = 0 -> is_derive f x df -> df > 0 ->
   ~ ex_derive (fun x0 => Rabs (f x0)) x.
 Proof.
+  unfold ex_derive.
   rewrite is_derive_Reals.
-  unfold derivable_pt_lim.
-  intros.
-  rewrite H in H0.
-  Admitted.
+  intros; intro.
+  destruct H2.
+  rewrite is_derive_Reals in H2.
+  apply uniqueness_step2, is_lim_Reals_1 in H0.
+  apply uniqueness_step2, is_lim_Reals_1 in H2.  
+  unfold is_lim in H0.
+  unfold is_lim in H2.
+  replace (Rbar_locally df) with (locally df) in H0 by trivial.
+  replace (Rbar_locally' 0) with (locally' 0) in H0 by trivial.
+  replace (Rbar_locally x0) with (locally x0) in H2 by trivial.
+  replace (Rbar_locally' 0) with (locally' 0) in H2 by trivial.
+  assert (H0b := H0);  assert (H2b := H2).
+  generalize (locally_pos df H1); intro.
+  apply (@filterlim_filter_le_1 _ _ _ (within (fun t => t> 0) (locally' 0))) in H2; [| apply filter_le_within].
+  apply (@filterlim_filter_le_1 _ _ _ (within (fun t => t> 0) (locally' 0))) in H0; [| apply filter_le_within].  
+  apply (@filterlim_filter_le_1 _ _ _ (within (fun t => t< 0) (locally' 0))) in H2b; [| apply filter_le_within].
+  apply (@filterlim_filter_le_1 _ _ _ (within (fun t => t< 0) (locally' 0))) in H0b; [| apply filter_le_within].  
+  generalize (locally'_within_pos_proper_filter 0); intro.
+  generalize (locally'_within_neg_proper_filter 0); intro.  
+  rewrite H, Rabs_R0 in *.
+  apply filterlim_ext_loc with (g :=(fun h : R => f (x + h)/h)) in H2.
+  apply filterlim_within_ext with (g :=(fun h : R => f (x + h)/h)) in H0.
+  apply filterlim_ext_loc with (g :=(fun h : R => opp (f (x + h)/h))) in H2b.
+  apply filterlim_within_ext with (g :=(fun h : R => f (x + h)/h)) in H0b.
+  - apply filterlim_locally_close with (l := df) in H2; trivial.
+    generalize (filterlim_opp x0); intro.
+    assert (filterlim (fun h : R => opp (opp (f (x + h) / h)))
+          (within (fun t : R => t < 0) (locally' 0)) (locally (-x0))).
+    + revert H6; revert H2b; apply filterlim_comp.
+    + apply filterlim_within_ext with (g :=(fun h : R => (f (x + h)/h))) in H7.
+      * apply filterlim_locally_close with (l := df) in H7; trivial.
+        assert (df = -x0); [now apply eq_close|].
+        assert (df = x0); [now apply eq_close|].
+        lra.
+      * now intros; rewrite opp_opp.
+  - now intros; rewrite Rminus_0_r.
+  - unfold within, locally', within; unfold opp; simpl.
+    unfold filterlim, filter_le, filtermap in H0b.
+    specialize (H0b (fun t => t > 0)).
+    unfold within, locally', within in H0b.
+    specialize (H0b H3).
+    revert H0b.
+    apply filter_imp; intros.
+    specialize (H6 H7 H8).
+    rewrite Rminus_0_r; rewrite Rminus_0_r in H6.
+    unfold Rabs.
+    unfold Rdiv in H6.
+    apply Rinv_lt_0_compat in H8.
+    replace (f (x + x1) * / x1) with ((-f (x + x1)) * (-/ x1)) in H6 by lra.
+    replace (0) with (0 * (-/ x1)) in H6 by lra.
+    apply Rmult_lt_reg_r in H6; [|lra].
+    destruct (Rcase_abs (f (x + x1))); lra.
+  - now intros; rewrite Rminus_0_r.
+  - unfold within, locally', within.
+    unfold filterlim, filter_le, filtermap in H0.
+    specialize (H0 (fun t => t > 0)).
+    unfold within, locally', within in H0.
+    specialize (H0 H3).
+    revert H0.
+    apply filter_imp; intros.
+    specialize (H0 H6 H7).
+    rewrite Rminus_0_r; rewrite Rminus_0_r in H0.
+    unfold Rabs.
+    unfold Rdiv in H0.
+    apply Rinv_0_lt_compat in H7.
+    rewrite Rmult_comm in H0.
+    replace (0) with (/ x1 * 0) in H0 by lra.
+    apply Rmult_lt_reg_l in H0; trivial.
+    destruct (Rcase_abs (f (x + x1))); lra.
+Qed.
+
+Lemma not_ex_derive_Rabs_f0_2 (f : R -> R) (x df : R) :
+  f x = 0 -> is_derive f x df -> df < 0 ->
+  ~ ex_derive (fun x0 => Rabs (f x0)) x.
+Proof.
+  unfold ex_derive.
+  rewrite is_derive_Reals.
+  intros; intro.
+  destruct H2.
+  rewrite is_derive_Reals in H2.
+  apply uniqueness_step2, is_lim_Reals_1 in H0.
+  apply uniqueness_step2, is_lim_Reals_1 in H2.  
+  unfold is_lim in H0.
+  unfold is_lim in H2.
+  replace (Rbar_locally df) with (locally df) in H0 by trivial.
+  replace (Rbar_locally' 0) with (locally' 0) in H0 by trivial.
+  replace (Rbar_locally x0) with (locally x0) in H2 by trivial.
+  replace (Rbar_locally' 0) with (locally' 0) in H2 by trivial.
+  assert (H0b := H0);  assert (H2b := H2).
+  generalize (locally_neg df H1); intro.
+  apply (@filterlim_filter_le_1 _ _ _ (within (fun t => t> 0) (locally' 0))) in H2; [| apply filter_le_within].
+  apply (@filterlim_filter_le_1 _ _ _ (within (fun t => t> 0) (locally' 0))) in H0; [| apply filter_le_within].  
+  apply (@filterlim_filter_le_1 _ _ _ (within (fun t => t< 0) (locally' 0))) in H2b; [| apply filter_le_within].
+  apply (@filterlim_filter_le_1 _ _ _ (within (fun t => t< 0) (locally' 0))) in H0b; [| apply filter_le_within].  
+  generalize (locally'_within_pos_proper_filter 0); intro.
+  generalize (locally'_within_neg_proper_filter 0); intro.  
+  rewrite H, Rabs_R0 in *.
+  apply filterlim_ext_loc with (g :=(fun h : R => opp (f (x + h)/h))) in H2.
+  apply filterlim_within_ext with (g :=(fun h : R => f (x + h)/h)) in H0.
+  apply filterlim_ext_loc with (g :=(fun h : R => (f (x + h)/h))) in H2b.
+  apply filterlim_within_ext with (g :=(fun h : R => f (x + h)/h)) in H0b.
+  - apply filterlim_locally_close with (l := df) in H2b; trivial.
+    generalize (filterlim_opp x0); intro.
+    assert (filterlim (fun h : R => opp (opp (f (x + h) / h)))
+          (within (fun t : R => t > 0) (locally' 0)) (locally (-x0))).
+    + revert H6; revert H2; apply filterlim_comp.
+    + apply filterlim_within_ext with (g :=(fun h : R => (f (x + h)/h))) in H7.
+      * apply filterlim_locally_close with (l := df) in H7; trivial.
+        assert (df = -x0); [now apply eq_close|].
+        assert (df = x0); [now apply eq_close|].
+        lra.
+      * now intros; rewrite opp_opp.
+  - now intros; rewrite Rminus_0_r.
+  - unfold within, locally', within; unfold opp; simpl.
+    unfold filterlim, filter_le, filtermap in H0b.
+    specialize (H0b (fun t => t < 0)).
+    unfold within, locally', within in H0b.
+    specialize (H0b H3).
+    revert H0b.
+    apply filter_imp; intros.
+    specialize (H6 H7 H8).
+    rewrite Rminus_0_r; rewrite Rminus_0_r in H6.
+    unfold Rabs.
+    unfold Rdiv in H6.
+    apply Rinv_lt_0_compat in H8.
+    replace (f (x + x1) * / x1) with ((-f (x + x1)) * (-/ x1)) in H6 by lra.
+    replace (0) with (0 * (-/ x1)) in H6 by lra.
+    apply Rmult_lt_reg_r in H6; [|lra].
+    destruct (Rcase_abs (f (x + x1))); lra.
+  - now intros; rewrite Rminus_0_r.
+  - unfold within, locally', within.
+    unfold filterlim, filter_le, filtermap in H0.
+    specialize (H0 (fun t => t < 0)).
+    unfold within, locally', within in H0.
+    specialize (H0 H3).
+    revert H0.
+    apply filter_imp; intros.
+    specialize (H0 H6 H7).
+    rewrite Rminus_0_r; rewrite Rminus_0_r in H0.
+    unfold Rabs.
+    unfold Rdiv in H0.
+    apply Rinv_0_lt_compat in H7.
+    rewrite Rmult_comm in H0.
+    replace (0) with (/ x1 * 0) in H0 by lra.
+    apply Rmult_lt_reg_l in H0; trivial; unfold opp; simpl.
+    destruct (Rcase_abs (f (x + x1))); lra.
+Qed.
 
 Lemma not_ex_derive_Rabs_f0 (f : R -> R) (x df : R) :
   f x = 0 -> is_derive f x df -> df <> 0 ->
   ~ ex_derive (fun x0 => Rabs (f x0)) x.
 Proof.
-  Admitted.
-
+  intros.
+  generalize (Rdichotomy df 0); intro.
+  specialize (H2 H1).
+  destruct H2.
+  - revert H2; apply not_ex_derive_Rabs_f0_2; trivial.
+  - revert H2; apply not_ex_derive_Rabs_f0_1; trivial.  
+Qed.
 
 Lemma is_derive_exp (x:R) : is_derive exp x (exp x).
 Proof.
