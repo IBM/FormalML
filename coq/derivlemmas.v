@@ -238,10 +238,14 @@ Proof.
   replace (Rbar_locally' 0) with (locally' 0) in H2 by trivial.
   assert (H0b := H0);  assert (H2b := H2).
   generalize (locally_pos df H1); intro.
-  apply (@filterlim_filter_le_1 _ _ _ (within (fun t => t> 0) (locally' 0))) in H2; [| apply filter_le_within].
-  apply (@filterlim_filter_le_1 _ _ _ (within (fun t => t> 0) (locally' 0))) in H0; [| apply filter_le_within].  
-  apply (@filterlim_filter_le_1 _ _ _ (within (fun t => t< 0) (locally' 0))) in H2b; [| apply filter_le_within].
-  apply (@filterlim_filter_le_1 _ _ _ (within (fun t => t< 0) (locally' 0))) in H0b; [| apply filter_le_within].  
+  apply (@filterlim_filter_le_1 _ _ _ (within (fun t => t> 0) (locally' 0))) in H2
+  ; [| apply filter_le_within].
+  apply (@filterlim_filter_le_1 _ _ _ (within (fun t => t> 0) (locally' 0))) in H0
+  ; [| apply filter_le_within].  
+  apply (@filterlim_filter_le_1 _ _ _ (within (fun t => t< 0) (locally' 0))) in H2b
+  ; [| apply filter_le_within].
+  apply (@filterlim_filter_le_1 _ _ _ (within (fun t => t< 0) (locally' 0))) in H0b
+  ; [| apply filter_le_within].  
   generalize (locally'_within_pos_proper_filter 0); intro.
   generalize (locally'_within_neg_proper_filter 0); intro.  
   rewrite H, Rabs_R0 in *.
@@ -266,8 +270,7 @@ Proof.
     specialize (H0b (fun t => t > 0)).
     unfold within, locally', within in H0b.
     specialize (H0b H3).
-    revert H0b.
-    apply filter_imp; intros.
+    revert H0b; apply filter_imp; intros.
     specialize (H6 H7 H8).
     rewrite Rminus_0_r; rewrite Rminus_0_r in H6.
     unfold Rabs.
@@ -283,8 +286,7 @@ Proof.
     specialize (H0 (fun t => t > 0)).
     unfold within, locally', within in H0.
     specialize (H0 H3).
-    revert H0.
-    apply filter_imp; intros.
+    revert H0; apply filter_imp; intros.
     specialize (H0 H6 H7).
     rewrite Rminus_0_r; rewrite Rminus_0_r in H0.
     unfold Rabs.
@@ -594,29 +596,23 @@ Lemma not_ex_derive_Rmax_eq (f g: R-> R) (x df dg : R) :
   f x - g x = 0 -> is_derive f x df -> is_derive g x dg -> df - dg <> 0 ->
   ~ex_derive (fun x0 => Rmax (f x0) (g x0)) x.
 Proof.
-  intros.
-  unfold ex_derive.
-  intro.
-  destruct H3.
-  apply is_derive_ext with (g0:= (fun x => (f x + g x + Rabs(f x - g x))/2)) in H3.
+  intros; unfold ex_derive; intro; destruct H3.
+  apply is_derive_ext with (g0:= (fun x => (f x + g x + Rabs(f x - g x))/2)) in H3
+  ; [|intro; apply max_abs].
   apply is_derive_scal with (k := 2) in H3.
-  apply is_derive_ext with (g0 := (fun x => (f x + g x) + Rabs (f x - g x))) in H3.
-  generalize (is_derive_plus f g x df dg).
-  intro.
+  apply is_derive_ext with (g0 := (fun x => (f x + g x) + Rabs (f x - g x))) in H3
+  ; [|intro; lra].
+  generalize (is_derive_plus f g x df dg); intro.
   specialize (H4 H0 H1); unfold plus in H4; simpl in H4.
-  apply is_derive_minus with (f0 := (fun x : R => f x + g x + Rabs (f x - g x))) (df0 := 2*x0) in H4; trivial.
+  apply is_derive_minus with 
+      (f0 := (fun x : R => f x + g x + Rabs (f x - g x))) (df0 := 2*x0) in H4; trivial.
   apply is_derive_ext with (g0 := (fun x => Rabs (f x - g x))) in H4.
-  generalize (not_ex_derive_Rabs_f0 (fun x => f x - g x) x (df - dg)).
-  intros.
-  generalize (is_derive_minus f g x df dg); intros.
-  specialize (H6 H0 H1).
-  specialize (H5 H H6 H2).
-  unfold ex_derive in H5.
-  destruct H5.
-  exists (minus (2 * x0) (df + dg)); tauto.
-  intro; unfold minus, plus, opp; simpl; lra.
-  intro; lra.
-  intro; apply max_abs.
+  - generalize (not_ex_derive_Rabs_f0 (fun x => f x - g x) x (df - dg)); intros.
+    generalize (is_derive_minus f g x df dg); intros.
+    specialize (H6 H0 H1); specialize (H5 H H6 H2).
+    unfold ex_derive in H5; destruct H5.
+    exists (minus (2 * x0) (df + dg)); tauto.
+  - intro; unfold minus, plus, opp; simpl; lra.
 Qed.
 
 Lemma is_derive_max_abs :
