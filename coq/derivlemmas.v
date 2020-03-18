@@ -212,7 +212,7 @@ Lemma locally_neg (x : R) :
 Proof.
     intros.
     unfold locally.
-    assert ((-x/2) > 0) by lra.
+    assert (-x/2 > 0) by lra.
     exists (mkposreal (-x/2) H0); intro.
     rewrite ball_abs; simpl.
     unfold Rabs; intros.
@@ -588,6 +588,35 @@ Lemma max_abs (x y:R) :
 Proof.
   unfold Rmax, Rabs.
   destruct (Rle_dec x y);destruct (Rcase_abs (x - y)); lra.
+Qed.
+
+Lemma not_ex_derive_Rmax_eq (f g: R-> R) (x df dg : R) :
+  f x - g x = 0 -> is_derive f x df -> is_derive g x dg -> df - dg <> 0 ->
+  ~ex_derive (fun x0 => Rmax (f x0) (g x0)) x.
+Proof.
+  intros.
+  unfold ex_derive.
+  intro.
+  destruct H3.
+  apply is_derive_ext with (g0:= (fun x => (f x + g x + Rabs(f x - g x))/2)) in H3.
+  apply is_derive_scal with (k := 2) in H3.
+  apply is_derive_ext with (g0 := (fun x => (f x + g x) + Rabs (f x - g x))) in H3.
+  generalize (is_derive_plus f g x df dg).
+  intro.
+  specialize (H4 H0 H1); unfold plus in H4; simpl in H4.
+  apply is_derive_minus with (f0 := (fun x : R => f x + g x + Rabs (f x - g x))) (df0 := 2*x0) in H4; trivial.
+  apply is_derive_ext with (g0 := (fun x => Rabs (f x - g x))) in H4.
+  generalize (not_ex_derive_Rabs_f0 (fun x => f x - g x) x (df - dg)).
+  intros.
+  generalize (is_derive_minus f g x df dg); intros.
+  specialize (H6 H0 H1).
+  specialize (H5 H H6 H2).
+  unfold ex_derive in H5.
+  destruct H5.
+  exists (minus (2 * x0) (df + dg)); tauto.
+  intro; unfold minus, plus, opp; simpl; lra.
+  intro; lra.
+  intro; apply max_abs.
 Qed.
 
 Lemma is_derive_max_abs :
