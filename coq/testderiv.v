@@ -802,22 +802,45 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
            end) f df.
 
 
-    Definition vec_to_nat_fun {n:nat} (v:Vector R n) : nat -> R.
-     (*
-      := fun (i : nat) => if (i<n)%nat then v i else 0.
-     *)
+    Program Definition vec_to_nat_fun {n:nat} (v:Vector R n) : nat -> R :=
+      fun (i : nat) => if (lt_dec i n) then (v i) else 0.
+
+    Lemma sum_n_vsum {n:nat} (v:Vector R n) :
+      sum_n (vec_to_nat_fun v) (n-1)%nat = vsum v.
       Admitted.
 
     Lemma is_derive_vsum {n} (vf : R -> Vector R n) (x:R) (df : Vector R n) :
       is_derive_vec vf x df ->
       is_derive (fun x0 => vsum (vf x0)) x (vsum df).
-    Admitted.
+    Proof.
+      unfold is_derive_vec; intro.
+      apply (is_derive_ext (fun x0 => sum_n (vec_to_nat_fun (vf x0)) (n-1)%nat))
+      ; [intros; apply sum_n_vsum |].
+      replace  (@vsum floatish_R n df) with (sum_n (vec_to_nat_fun df) (n-1)%nat)
+      ; [|intros; apply sum_n_vsum ].
+      apply (@is_derive_sum_n R_AbsRing); intros.
+      unfold vec_to_nat_fun.
+      destruct (lt_dec k n).
+      - unfold vec_to_nat_fun_obligation_1; simpl.
+        apply H.
+      - apply (@is_derive_const R_AbsRing).
+    Qed.
 
     Lemma is_derive_msum {n m} (mf : R -> Matrix R n m) (x:R) (df : Matrix R n m) :
       is_derive_mat mf x df ->
       is_derive (fun x0 => msum (mf x0)) x (msum df).
-    Admitted.
-
+    Proof.
+      simpl.
+      unfold is_derive_mat; intro.
+      unfold msum.
+      apply is_derive_vsum.
+      unfold is_derive_vec; simpl; intro.
+      rewrite vmap_nth.
+      apply (is_derive_ext (fun x0 => (@vsum floatish_R m) (mf x0 i))).
+      - intro; now rewrite vmap_nth.
+      - apply is_derive_vsum.
+        now unfold is_derive_vec.
+    Qed.
 
     Theorem df_eval_deriv_exact_gen_correct {T} σ (df:DefinedFunction UnitAnn T) v (x:R) y
      : fully_closed_over df ((v,DTfloat)::map (@projT1 _ _) σ) ->
