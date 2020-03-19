@@ -888,8 +888,8 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        + unfold df_R_gen; simpl.
          invcs H0.
          destruct (vart_dec (s, DTfloat) (v, DTfloat)).
-         inversion e.
          * unfold equiv_dec, vart_eqdec.
+           inversion e.
            destruct (vart_dec (v, DTfloat) (v, DTfloat)); [|congruence].
            apply (is_derive_ext id); [|apply (@is_derive_id R_AbsRing)].
            intro.
@@ -897,12 +897,31 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
            simpl.
            unfold equiv_dec, vart_eqdec.
            destruct (vart_dec (v, DTfloat) (v, DTfloat)); [|congruence].
-           admit.
+           now refl_simpler.
          * unfold equiv_dec, vart_eqdec.
            destruct (vart_dec (s, DTfloat) (v, DTfloat)); [congruence|].
-           admit.
-       + admit.
-       + admit.
+           invcs H; [congruence | ].
+           unfold df_R, df_eval_at_point.
+           simpl.
+           unfold equiv_dec, vart_eqdec.
+           destruct (vart_dec (s, DTfloat) (v, DTfloat)); [congruence|].
+           apply (@is_derive_const R_AbsRing).
+       + simpl.
+         invcs H0.
+         unfold is_derive_vec; simpl; intros.
+         unfold ConstVector.
+         unfold df_R_vec, df_eval_at_point; simpl.
+         unfold equiv_dec, vart_eqdec.
+         destruct (vart_dec (s, DTVector n) (v, DTfloat)); [congruence |].
+         apply (@is_derive_const R_AbsRing).
+       + simpl.
+         invcs H0.
+         unfold is_derive_mat; simpl; intros.
+         unfold ConstMatrix.
+         unfold df_R_mat, df_eval_at_point; simpl.
+         unfold equiv_dec, vart_eqdec.
+         destruct (vart_dec (s, DTMatrix m n) (v, DTfloat)); [congruence |].
+         apply (@is_derive_const R_AbsRing).
      - Case "Plus"%string.
        destruct H.
        do 2 match_option_in H0.
