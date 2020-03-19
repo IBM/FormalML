@@ -25,6 +25,227 @@ Section real_pfs.
   Import Reals.
   Import List.
 
+
+  (* following returns None if not-differentiable *)
+    Fixpoint df_eval_deriv_exact {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (v:var_type) : option (definition_function_types_interp T)
+      := (match df with
+         | Number _ _ => Some 0
+         | Constant t _ x => Some
+            match t return definition_function_types_interp t with
+            | DTfloat => 0
+            | DTVector n => ConstVector n 0
+            | DTMatrix m n => ConstMatrix m n 0
+            end
+         | DVector n _ dfs => vectoro_to_ovector (fun i => df_eval_deriv_exact σ (dfs i) v)
+         | DMatrix n m _ df => matrixo_to_omatrix (fun i j => df_eval_deriv_exact σ (df i j) v)
+         | Var x _ => Some (let t:=snd x in 
+               match t return definition_function_types_interp t with
+               | DTfloat => if x == v then 1 else 0
+               | DTVector n => ConstVector n (if x == v then 1 else 0)
+               | DTMatrix m n => ConstMatrix m n (if x == v then 1 else 0)
+               end)
+         | Plus _ l r => 
+           match df_eval_deriv_exact σ l v, df_eval_deriv_exact σ r v with
+           | Some le, Some lr => Some (le + lr)
+           | _, _ => None
+           end
+         | Minus _ l r =>
+           match df_eval_deriv_exact σ l v, df_eval_deriv_exact σ r v with
+           | Some le, Some lr => Some (le - lr)
+           | _, _ => None
+           end
+         | Times _ l r =>
+           match df_eval σ l, df_eval_deriv_exact σ l v, df_eval σ r, df_eval_deriv_exact σ r v with
+           | Some le, Some ld, Some re, Some rd =>
+             Some (le * rd + 
+                   (ld * re))
+           | _, _, _, _ => None
+           end
+         | Divide _ l r =>
+           match df_eval σ l, df_eval_deriv_exact σ l v, df_eval σ r, df_eval_deriv_exact σ r v with
+           | Some le, Some ld, Some re, Some rd =>
+             if Feq re 0 then None else 
+               Some ((ld / re) - ((le * rd) / (re * re)))
+           | _, _, _, _ => None
+           end
+         | Square _ e =>
+           match df_eval σ e, df_eval_deriv_exact σ e v with
+           | Some ee, Some ed => Some (2 * ee * ed)
+           | _, _  => None
+           end
+         | Exp _ e =>
+           match df_eval σ e, df_eval_deriv_exact σ e v with
+           | Some ee, Some ed => Some (ed * Fexp ee)
+           | _, _  => None
+           end
+         | Log _ e =>
+           match df_eval σ e, df_eval_deriv_exact σ e v with
+           | Some ee, Some ed => 
+             if ee > 0 then Some (ed / ee) else None
+           | _, _ => None
+           end
+         | Abs _ e =>
+           match df_eval σ e, df_eval_deriv_exact σ e v with
+           | Some ee, Some ed => 
+             if Feq ee 0 then None else Some (ed * (sign ee))
+           | _, _ => None
+           end
+         | Sign _ e =>
+           match df_eval σ e, df_eval_deriv_exact σ e v with
+           | Some ee, Some ed => 
+             if Feq ee 0 then None else Some 0
+           | _, _ => None
+           end
+         | PSign _ e =>
+           match df_eval σ e, df_eval_deriv_exact σ e v with
+           | Some ee, Some ed => 
+             if Feq ee 0 then None else Some 0
+           | _, _ => None
+           end
+         | Max _ l r =>
+           match df_eval σ l, df_eval σ r, df_eval_deriv_exact σ l v, df_eval_deriv_exact σ r v with
+           | Some le, Some re, Some ld, Some rd =>
+             if Feq le re then None else
+               if le < re then Some rd else Some ld
+           | _, _, _, _=> None
+           end
+         | VectorElem n _ l i => 
+           match (df_eval_deriv_exact σ l v)  with
+           | Some l' => Some (l' i)
+           | _ => None
+           end
+         | MatrixElem m n _ l i j =>
+           match (df_eval_deriv_exact σ l v)  with
+           | Some l' => Some (l' i j)
+           | _ => None
+           end
+         | VectorDot n _ l r =>
+           match df_eval σ l, df_eval_deriv_exact σ l v, df_eval σ r, df_eval_deriv_exact σ r v with
+           | Some le, Some ld, Some re, Some rd => 
+               Some (vsum (fun j => (le j) * (rd j) + (ld j) * (re j)))
+           | _, _, _, _ => None
+           end
+         | VectorSum n _ l =>
+           match df_eval_deriv_exact σ l v with
+           | Some ld =>
+               Some (vsum ld)
+           | _ => None
+           end
+         | MatrixSum n m _ l =>
+           match df_eval_deriv_exact σ l v with
+           | Some ld =>
+               Some (msum ld)
+           | _ => None
+           end
+         | VectorScalMult n _ x r =>
+           match df_eval σ x, df_eval_deriv_exact σ x v, df_eval σ r, df_eval_deriv_exact σ r v with
+           | Some xe, Some xd, Some re, Some rd => Some (fun j => xe * (rd j) + xd * (re j))
+           | _, _, _, _ => None
+           end
+         | MatrixScalMult n m _ x r =>            
+           match df_eval σ x, df_eval_deriv_exact σ x v, df_eval σ r, df_eval_deriv_exact σ r v with
+           | Some xe, Some xd, Some re, Some rd => Some (fun i j => xe * (rd i j) + xd * (re i j))
+           | _, _, _, _ => None
+           end
+         | MatrixVectorMult n m _ l r =>
+           match df_eval σ l, df_eval_deriv_exact σ l v, df_eval σ r, df_eval_deriv_exact σ r v with
+           | Some le, Some ld, Some re, Some rd =>
+             Some (fun i => vsum (fun j => (le i j)*(rd j) + (ld i j)*(re j)))
+           | _, _, _, _ => None
+           end
+         | MatrixVectorAdd n m _ l r =>
+           match df_eval_deriv_exact σ l v, df_eval_deriv_exact σ r v with
+           | Some le, Some re =>
+             Some (fun i j => (le i j) + (re i))
+           | _, _ => None
+           end
+         | MatrixMult n m p _ l r =>
+           match df_eval σ l, df_eval_deriv_exact σ l v, df_eval σ r, df_eval_deriv_exact σ r v with
+           | Some le, Some ld, Some re, Some rd =>
+             Some (fun i k => vsum (fun j => (le i j)*(rd j k) + (ld i j)*(re j k)))
+           | _, _, _, _ => None
+           end
+         | VectorPlus n _ l r =>
+           match df_eval_deriv_exact σ l v, df_eval_deriv_exact σ r v with           
+           | Some l', Some r' => Some (fun i => (l' i) + (r' i))
+           | _, _ => None
+           end
+         | VectorMinus n _ l r =>
+           match df_eval_deriv_exact σ l v, df_eval_deriv_exact σ r v with           
+           | Some l', Some r' => Some (fun i => (l' i) - (r' i))
+           | _, _ => None
+           end
+         | MatrixPlus n m _ l r =>
+           match df_eval_deriv_exact σ l v, df_eval_deriv_exact σ r v with           
+           | Some l', Some r' => Some (fun i j => (l' i j) + (r' i j))
+           | _, _ => None
+           end
+         | MatrixMinus n m _ l r =>
+           match df_eval_deriv_exact σ l v, df_eval_deriv_exact σ r v with           
+           | Some l', Some r' => Some (fun i j => (l' i j) - (r' i j))
+           | _, _ => None
+           end
+         | VectorApply n _ x s r =>
+           match df_eval σ r, df_eval_deriv_exact σ r v with                      
+           | Some re, Some rd => 
+             vectoro_to_ovector 
+               (fun i => 
+                  let xv := (x, DTfloat):var_type in
+                  match df_eval_deriv_exact (cons (mk_env_entry xv (re i)) σ) s v with
+                         | Some sd => Some ((rd i) * sd)
+                         | _ => None
+                         end)
+           | _, _ => None                                                    
+           end
+         | MatrixApply n m _ x s r =>
+           match df_eval σ r, df_eval_deriv_exact σ r v with                      
+           | Some re, Some rd => 
+             matrixo_to_omatrix
+               (fun i j => 
+                  let xv := (x, DTfloat):var_type in
+                  match df_eval_deriv_exact (cons (mk_env_entry xv (re i j)) σ) s v with
+                         | Some sd => Some ((rd i j) * sd)
+                         | _ => None
+                         end)
+           | _, _ => None                                                    
+           end
+         | VLossfun n _ v1 v2 s l r => 
+           match df_eval σ l, df_eval_deriv_exact σ l v with                      
+           | Some le, Some ld => 
+             match (vectoro_to_ovector 
+                      (fun i => 
+                         let xv1 := (v1, DTfloat):var_type in
+                         let xv2 := (v2, DTfloat):var_type in                         
+                         match df_eval_deriv_exact (cons (mk_env_entry xv1 (le i)) 
+                                                   (cons (mk_env_entry xv2 (r i)) σ)) s v with
+                         | Some sd => Some ((ld i) * sd)
+                         | _ => None
+                         end)) with
+             | Some vv => Some (vsum vv)
+             | _ => None
+             end
+           | _, _ => None
+           end
+         | MLossfun n m _ v1 v2 s l r => 
+           match df_eval σ l, df_eval_deriv_exact σ l v with                      
+           | Some le, Some ld => 
+             match (matrixo_to_omatrix
+                      (fun i j => 
+                         let xv1 := (v1, DTfloat):var_type in
+                         let xv2 := (v2, DTfloat):var_type in                         
+                         match df_eval_deriv_exact (cons (mk_env_entry xv1 (le i j)) 
+                                                   (cons (mk_env_entry xv2 (r i j)) σ)) s v with
+                         | Some sd => Some ((ld i j) * sd)
+                         | _ => None
+                         end)) with
+             | Some vv => Some ((msum vv)/(FfromZ (Z.of_nat m)))
+             | _ => None
+             end
+           | _, _ => None
+           end
+          end).
+
+
    Definition addBinding σ v x := (mk_env_entry (v,DTfloat) x)::σ.
 
    Definition df_eval_at_point {Ann T} σ (df:DefinedFunction Ann T) v x
@@ -171,10 +392,109 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
       now rewrite e, e0.
     Qed.
 
-   Theorem df_eval_deriv_correct σ (df:DefinedFunction UnitAnn DTfloat) v (x:R) y
+    Lemma df_R_total_minus σ a (l r:DefinedFunction UnitAnn DTfloat) v x :
+      fully_closed_over l ((v,DTfloat)::map (@projT1 _ _) σ) ->
+      fully_closed_over r ((v,DTfloat)::map (@projT1 _ _) σ) ->
+      df_R σ (Minus a l r) v x = df_R σ l v x - df_R σ r v x.
+    Proof.
+      simpl.
+      intros.
+      destruct (eval_fully_closed_total (addBinding σ v x) l); simpl; trivial.
+      destruct (eval_fully_closed_total (addBinding σ v x) r); simpl; trivial.
+      unfold df_R, df_eval_at_point; simpl.
+      now rewrite e, e0.
+    Qed.
+
+    Lemma df_R_total_times σ a (l r:DefinedFunction UnitAnn DTfloat) v x :
+      fully_closed_over l ((v,DTfloat)::map (@projT1 _ _) σ) ->
+      fully_closed_over r ((v,DTfloat)::map (@projT1 _ _) σ) ->
+      df_R σ (Times a l r) v x = df_R σ l v x * df_R σ r v x.
+    Proof.
+      simpl.
+      intros.
+      destruct (eval_fully_closed_total (addBinding σ v x) l); simpl; trivial.
+      destruct (eval_fully_closed_total (addBinding σ v x) r); simpl; trivial.
+      unfold df_R, df_eval_at_point; simpl.
+      now rewrite e, e0.
+    Qed.
+
+    Lemma df_R_total_divide σ a (l r:DefinedFunction UnitAnn DTfloat) v x :
+      fully_closed_over l ((v,DTfloat)::map (@projT1 _ _) σ) ->
+      fully_closed_over r ((v,DTfloat)::map (@projT1 _ _) σ) ->
+      df_R σ (Divide a l r) v x = df_R σ l v x / df_R σ r v x.
+    Proof.
+      simpl.
+      intros.
+      destruct (eval_fully_closed_total (addBinding σ v x) l); simpl; trivial.
+      destruct (eval_fully_closed_total (addBinding σ v x) r); simpl; trivial.
+      unfold df_R, df_eval_at_point; simpl.
+      now rewrite e, e0.
+    Qed.
+
+    Lemma ex_deriv_div (f g :R ->R) (x:R) :
+      ex_derive (fun t => (f t)/(g t)) x -> (g x) <> 0.
+      Admitted.
+
+    Lemma ex_deriv_log (f : R -> R) (x:R) :
+      ex_derive (fun t => ln (f t)) x -> (f x) > 0.
+      Admitted.
+
+    Lemma ex_deriv_abs (f : R -> R) (x:R) :
+      ex_derive f x -> ex_derive (fun t => Rabs (f t)) x ->
+      f x <> 0 \/ is_derive f x 0.
+      Admitted.
+
+    Lemma ex_deriv_sign (f : R -> R) (x:R) :
+      ex_derive f x -> ex_derive (fun t => sign (f t)) x ->
+      f x <> 0 \/ locally x (fun t => f t = 0).
+      Admitted.
+
+    Lemma ex_deriv_psign (f : R -> R) (x:R) :
+      ex_derive f x -> ex_derive (fun t => psign (f t)) x ->
+      f x <> 0 \/ locally x (fun t => f t >= 0).
+      Admitted.
+     
+    Lemma ex_deriv_max (f g : R -> R) (x: R) :
+      ex_derive f x -> ex_derive g x -> ex_derive (fun t => Rmax (f t) (g t)) x ->
+      (f x) <> (g x) \/ is_derive (fun t => (f t) - (g t)) x 0.
+    Admitted.
+    
+    Lemma floatish_sign :
+      forall (x:R), sign x = FloatishOps.sign x.
+    Proof.
+      intros.
+      unfold sign, FloatishOps.sign; simpl.
+      case_eq (Rlt_dec x 0); intros.
+      - match_case; intros.
+        destruct s; lra.
+      - match_case; intros.
+        + destruct s; case_eq (Rgt_dec x 0); simpl; intros; lra.
+        + lra.
+    Qed.
+    
+    Lemma pos_sign_psign:
+      forall (x:R), psign x = pos_sign x.      
+    Proof.
+      unfold psign, pos_sign.
+      intros.
+      simpl.
+      now destruct (Rge_dec x 0).
+    Qed.
+
+    Lemma Rmax_Fmax :
+      forall (x y:R), Rmax x y = Fmax x y.
+      unfold Rmax, Fmax; simpl; intros.
+      match_case; intros.
+      - case_eq (Rlt_dec x y); intros; trivial.
+        lra.
+      - case_eq (Rlt_dec x y); intros; trivial.
+        lra.
+    Qed.
+  
+    Theorem df_eval_deriv_exact_correct σ (df:DefinedFunction UnitAnn DTfloat) v (x:R) y
      : is_scalar_function df ->
        fully_closed_over df ((v,DTfloat)::map (@projT1 _ _) σ) ->
-       df_eval_deriv (addBinding σ v x) df (v,DTfloat) = Some y ->
+       df_eval_deriv_exact (addBinding σ v x) df (v,DTfloat) = Some y ->
        is_derive (df_R σ df v) x y.
    Proof.
      simpl.
@@ -212,17 +532,622 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        + intros.
          symmetry.
          now apply df_R_total_plus.
-       + generalize (is_derive_plus (fun t => df_R σ l v t)); unfold plus; simpl
+       + generalize (@is_derive_plus R_AbsRing); simpl
          ; intros HH; now apply HH.
      - Case "Minus"%string.
-   Admitted.
-       
- 
+       destruct H1.
+       do 2 match_option_in H2.
+       invcs H2.
+       destruct is_scalar as [isc1 isc2].
+       specialize (H _ isc1 H1 eqq).
+       specialize (H0 _ isc2 H3 eqq0).
+       eapply is_derive_ext.
+       + intros.
+         symmetry.
+         now apply df_R_total_minus.
+       + generalize (@is_derive_minus R_AbsRing); simpl
+         ; intros HH; now apply HH.
+     - Case "Times"%string.
+       destruct H1.
+       do 4 match_option_in H2.
+       invcs H2.
+       destruct is_scalar as [isc1 isc2].
+       specialize (H _ isc1 H1 eqq0).
+       specialize (H0 _ isc2 H3 eqq2).
+       eapply is_derive_ext.
+       + intros.
+         symmetry.
+         now apply df_R_total_times.
+       + generalize Derive.is_derive_mult
+         ; unfold plus, mult; simpl; intros HH.
+         replace (d * d2 + d0 * d1) with
+                 (d0 * (df_R σ r v x) + (df_R σ l v x) * d2).
+         * apply HH; trivial.
+         * unfold df_R, df_eval_at_point; simpl.         
+           rewrite eqq; rewrite eqq1.
+           lra.
+     - Case "Divide"%string.
+       destruct H1.
+       do 4 match_option_in H2.
+       invcs H2.
+       destruct is_scalar as [isc1 isc2].
+       specialize (H _ isc1 H1 eqq0).
+       specialize (H0 _ isc2 H3 eqq2).
+       eapply is_derive_ext.
+       + intros.
+         symmetry.
+         now apply df_R_total_divide.
+       + generalize is_derive_div; simpl; intros HH.
+         replace (d0 / d1 - d * d2 / (d1 * d1)) with
+             ((d0 * (df_R σ r v x) - (df_R σ l v x) * d2) / ((df_R σ r v x)*((df_R σ r v x)*1))).
+         * destruct (Req_EM_T d1 0); [congruence |].
+           inversion H5.
+           specialize (HH (df_R σ l v) (df_R σ r v) x d0 d2).
+           replace (d0 / d1 - d * d2 / (d1 * d1)) with
+             ((d0 * df_R σ r v x - df_R σ l v x * d2) / (df_R σ r v x * (df_R σ r v x * 1))).
+           apply HH; trivial.
+           unfold df_R, df_eval_at_point; simpl.
+           now rewrite eqq1.
+           unfold df_R, df_eval_at_point; simpl.           
+           rewrite eqq; rewrite eqq1.
+           now field.
+         * unfold df_R, df_eval_at_point; simpl.         
+           rewrite eqq; rewrite eqq1.
+           destruct (Req_EM_T d1 0); [congruence |].           
+           now field; trivial.
+     - Case "Square"%string.
+       do 2 match_option_in H1.
+       invcs H1.
+       specialize (H _ is_scalar H0 eqq0).
+       assert (forall t, (Rsqr (df_R σ e v t) = df_R σ (Square a e) v t)).
+       + intros; simpl.
+         unfold df_R, df_eval_at_point; simpl.
+         destruct (eval_fully_closed_total (addBinding σ v t) e); simpl; trivial.
+         rewrite e0; unfold Rsqr; trivial.
+       + eapply is_derive_ext.
+         * intros; simpl.
+           now rewrite H1.
+         * replace (2 * d * d0) with (d0 * (2 * d)) by lra.
+           apply (@is_derive_comp R_AbsRing); trivial.
+           replace (d) with (df_R σ e v x).
+           --  apply is_derive_sqr.
+           --  unfold df_R, df_eval_at_point; simpl.
+               now rewrite eqq.
+     - Case "Exp"%string.
+       do 2 match_option_in H1.
+       invcs H1.
+       specialize (H _ is_scalar H0 eqq0).
+       assert (forall t, (exp (df_R σ e v t) = df_R σ (Exp a e) v t)).
+       + intros; simpl.
+         unfold df_R, df_eval_at_point; simpl.
+         destruct (eval_fully_closed_total (addBinding σ v t) e); simpl; trivial.
+         rewrite e0; trivial.
+       + eapply is_derive_ext.
+         * intros; simpl.
+           now rewrite H1.
+         * apply (@is_derive_comp R_AbsRing); trivial.
+           replace (d) with (df_R σ e v x).
+           --  apply is_derive_exp.
+           --  unfold df_R, df_eval_at_point; simpl.
+               now rewrite eqq.
+     - Case "Log"%string.               
+       do 2 match_option_in H1.
+       invcs H1.
+       specialize (H _ is_scalar H0 eqq0).
+       assert (forall t, (ln (df_R σ e v t) = df_R σ (Log a e) v t)).
+       + intros; simpl.
+         unfold df_R, df_eval_at_point; simpl.
+         destruct (eval_fully_closed_total (addBinding σ v t) e); simpl; trivial.
+         rewrite e0; trivial.
+       + eapply is_derive_ext.
+         * intros; simpl.
+           now rewrite H1.
+         * destruct (Rgt_dec d 0); [|congruence].
+           inversion H3.
+           apply (@is_derive_comp R_AbsRing); trivial.
+           replace (d) with (df_R σ e v x).
+           --  apply is_derive_ln.
+               unfold df_R, df_eval_at_point; simpl.
+               rewrite eqq.
+               lra.
+           --  unfold df_R, df_eval_at_point; simpl.
+               now rewrite eqq.
+     - Case "Abs"%string.         
+       do 2 match_option_in H1.
+       invcs H1.
+       specialize (H _ is_scalar H0 eqq0).
+       assert (forall t, (Rabs (df_R σ e v t) = df_R σ (Abs a e) v t)).
+       + intros; simpl.
+         unfold df_R, df_eval_at_point; simpl.
+         destruct (eval_fully_closed_total (addBinding σ v t) e); simpl; trivial.
+         rewrite e0; trivial.
+       + eapply is_derive_ext.
+         * intros; simpl.
+           now rewrite H1.
+         * destruct ( Req_EM_T d 0 ); [congruence |].
+           inversion H3.
+           apply (@is_derive_comp R_AbsRing); trivial.
+           replace (d) with (df_R σ e v x).
+           -- replace (@FloatishOps.sign floatish_R (df_R σ e v x)) with (sign (df_R σ e v x)).
+              ++ apply is_derive_abs.
+                 unfold df_R, df_eval_at_point; simpl.
+                 rewrite eqq.
+                 lra.
+              ++ apply floatish_sign.
+           --  unfold df_R, df_eval_at_point; simpl.
+               now rewrite eqq.
+     - Case "Sign"%string.         
+       match_option_in H1.
+       match_option_in H1.
+       destruct (Req_EM_T d 0); [congruence|].
+       invcs H1.
+       specialize (H _ is_scalar H0 eqq0).
+       assert (forall t, (sign (df_R σ e v t) = df_R σ (Sign a e) v t)).
+       + intros; simpl.
+         unfold df_R, df_eval_at_point; simpl.
+         destruct (eval_fully_closed_total (addBinding σ v t) e); simpl; trivial.
+         rewrite e0; trivial.
+         apply floatish_sign.
+       + eapply is_derive_ext.
+         * intros; simpl.
+           now rewrite H1.
+         * replace (0) with (d0 * 0) by lra.
+           apply (@is_derive_comp R_AbsRing); trivial.           
+           apply is_derive_sign.
+           unfold df_R, df_eval_at_point; simpl.           
+           rewrite eqq; lra.
+     - Case "PSign"%string.         
+       match_option_in H1.
+       match_option_in H1.
+       destruct (Req_EM_T d 0); [congruence|].
+       invcs H1.
+       specialize (H _ is_scalar H0 eqq0).
+       assert (forall t, (psign (df_R σ e v t) = df_R σ (PSign a e) v t)).
+       + intros; simpl.
+         unfold df_R, df_eval_at_point; simpl.
+         destruct (eval_fully_closed_total (addBinding σ v t) e); simpl; trivial.
+         rewrite e0; trivial.
+         apply pos_sign_psign.
+       + eapply is_derive_ext.
+         * intros; simpl.
+           now rewrite H1.
+         * replace (0) with (d0 * 0) by lra.
+           apply (@is_derive_comp R_AbsRing); trivial.           
+           apply is_derive_psign.
+           unfold df_R, df_eval_at_point; simpl.           
+           rewrite eqq; lra.
+     - Case "Max"%string.
+       do 2 match_option_in H2.
+       destruct H1.
+       destruct is_scalar as [isc1  isc2].
+       assert (forall t, (Rmax (df_R σ l v t) (df_R σ r v t)) = df_R σ (Max a l r) v t).
+       + intros; simpl.
+         unfold df_R, df_eval_at_point; simpl.
+         destruct (eval_fully_closed_total (addBinding σ v t) l); simpl; trivial.
+         destruct (eval_fully_closed_total (addBinding σ v t) r); simpl; trivial. 
+         rewrite e, e0; trivial.
+         apply Rmax_Fmax.
+       + eapply is_derive_ext.
+         * intros; simpl.
+           now rewrite H4.
+         * match_option_in H2.
+           match_option_in H2.           
+           destruct (Req_EM_T d d0); [congruence |].
+           destruct (Rlt_dec d d0).
+           -- invcs H2.
+              specialize (H _ isc1 H1 eqq1).
+              specialize (H0 _ isc2 H3 eqq2).
+              replace (y) with ((d1 + y + (d1-y)*sign(df_R σ l v x - df_R σ r v x))/2).
+              ++ apply is_derive_max; trivial.
+                 unfold df_R, df_eval_at_point; simpl.           
+                 now rewrite eqq, eqq0.
+              ++ unfold df_R, df_eval_at_point; simpl.           
+                 rewrite eqq, eqq0.
+                 unfold sign; simpl.
+                 destruct (total_order_T 0 (d - d0)).
+                 ** destruct s; lra.
+                 ** lra.
+           -- invcs H2.
+              specialize (H _ isc1 H1 eqq1).
+              specialize (H0 _ isc2 H3 eqq2).
+              replace (y) with ((y + d2 + (y - d2)*sign(df_R σ l v x - df_R σ r v x))/2).
+              ++ apply is_derive_max; trivial.
+                 unfold df_R, df_eval_at_point; simpl.           
+                 now rewrite eqq, eqq0.
+              ++ unfold df_R, df_eval_at_point; simpl.           
+                 rewrite eqq, eqq0.
+                 unfold sign; simpl.
+                 destruct (total_order_T 0 (d - d0)).
+                 ** destruct s; lra.
+                 ** lra.
+   Qed.
+   
+   Definition df_R_vec {Ann} {n} (σ:df_env) (df:DefinedFunction Ann (DTVector n)) v : 
+     R -> Vector R n
+     := fun x => match df_eval_at_point σ df v x with
+        | Some y => y
+        | None => ConstVector n 0
+        end.
 
+   Definition df_R_mat {Ann} {n m} (σ:df_env) (df:DefinedFunction Ann (DTMatrix n m)) v : 
+     R -> Matrix R n m
+     := fun x => match df_eval_at_point σ df v x with
+        | Some y => y
+        | None => ConstMatrix n m 0
+        end.
+
+   Definition df_R_gen Ann T σ :
+     (DefinedFunction Ann T) -> SubVar -> R -> (definition_function_types_interp T) :=
+     match T with
+     | DTfloat => fun df v => df_R σ df v
+     | DTVector n => fun df v => df_R_vec σ df v 
+     | DTMatrix n m => fun df v => df_R_mat σ df v                      
+     end.
+
+    Definition is_derive_vec {n} (f : R -> Vector R n) (x:R) (df : Vector R n) :=
+      forall i, is_derive (fun x0 => f x0 i) x (df i).
+
+    Definition is_derive_mat {n m} (f : R -> Matrix R n m) (x:R) (df : Matrix R n m) :=
+      forall i j, is_derive (fun x0 => f x0 i j) x (df i j).
+
+    Definition is_derive_gen {T} (f: R->definition_function_types_interp T) (x:R)
+               (df : definition_function_types_interp T)
+        :=
+          (match T return (R -> definition_function_types_interp T) ->
+                     definition_function_types_interp T -> Prop
+           with
+           | DTfloat => fun f df =>  is_derive f x df
+           | DTVector n => fun f df => is_derive_vec f x df
+           | DTMatrix n m => fun f df => is_derive_mat f x df
+           end) f df.
+
+    Theorem df_eval_deriv_exact_gen_correct {T} σ (df:DefinedFunction UnitAnn T) v (x:R) y
+     : fully_closed_over df ((v,DTfloat)::map (@projT1 _ _) σ) ->
+       df_eval_deriv_exact (addBinding σ v x) df (v,DTfloat) = Some y ->
+       is_derive_gen (df_R_gen UnitAnn T σ df v) x y.
+   Proof.
+     DefinedFunction_cases (induction T, df using DefinedFunction_ind_unit) Case; simpl; intros.
+     - Case "Number"%string.
+       unfold df_R, df_eval_at_point; simpl.
+       inversion H0; subst.
+       now apply (@is_derive_const R_AbsRing).
+     - Case "Constant"%string.
+       unfold df_R_gen, is_derive_gen; simpl.
+       destruct t.
+       + unfold df_R; simpl; invcs H0.
+         now apply (@is_derive_const R_AbsRing).
+       + unfold df_R_vec; simpl; invcs H0.
+         unfold is_derive_vec, ConstVector; intro.
+         now apply (@is_derive_const R_AbsRing).         
+       + unfold df_R_mat; simpl; invcs H0.
+         unfold is_derive_mat, ConstMatrix; intros.
+         now apply (@is_derive_const R_AbsRing).                  
+     - Case "DVector"%string.
+       unfold is_derive_vec; intros.
+       specialize (vectoro_to_ovector_forall_some_f H1); intros.
+       specialize (H2 i); simpl in H2.
+       rewrite vforall_forall in H0.
+       assert (H0c := H0).
+       specialize (H0 i).
+       specialize (H i (y i) H0 H2); simpl in *.
+       apply (is_derive_ext (df_R σ (x0 i) v) ); trivial; intros.
+       unfold df_R_vec, df_R, df_eval_at_point; simpl.
+       match_option.
+       + match_option.
+         * specialize (vectoro_to_ovector_forall_some_f eqq0); intros.       
+           specialize (H3 i); simpl in H3.
+           now rewrite eqq in H3; invcs H3.
+         * unfold ConstVector.
+           apply vectoro_to_ovector_exists_None in eqq0; destruct eqq0.
+           specialize (H0c x1).
+           apply (eval_fully_closed_not_none (addBinding σ v t) (x0 x1)) in H0c; tauto.
+       + match_option.
+         specialize (vectoro_to_ovector_forall_some_f eqq0); intros.
+         specialize (H3 i); simpl in H3; congruence.
+     - Case "DMatrix"%string.
+       unfold is_derive_mat; intros.
+       unfold matrixo_to_omatrix in H1.
+       specialize (vectoro_to_ovector_forall_some_f H1); intros.
+       specialize (H2 i); simpl in H2.
+       specialize (vectoro_to_ovector_forall_some_f H2); intros.       
+       specialize (H3 j); simpl in H3.
+       rewrite vforall_forall in H0.
+       assert (H0c := H0).
+       specialize (H0 i).
+       rewrite vforall_forall in H0.
+       specialize (H0 j).
+       specialize (H i j (y i j) H0 H3); simpl in H.
+       apply (is_derive_ext (df_R σ (x0 i j) v)); trivial; intros.
+       unfold df_R_mat, df_R, df_eval_at_point; simpl.
+       match_option.
+       + match_option.
+         * unfold matrixo_to_omatrix in eqq0.
+           specialize (vectoro_to_ovector_forall_some_f eqq0); intros.       
+           specialize (H4 i); simpl in H4.
+           specialize (vectoro_to_ovector_forall_some_f H4); intros.                  
+           specialize (H5 j); simpl in H5.
+           now rewrite eqq in H5; invcs H5.
+         * unfold ConstMatrix.
+           unfold matrixo_to_omatrix in eqq0.
+           apply vectoro_to_ovector_exists_None in eqq0; destruct eqq0.
+           apply vectoro_to_ovector_exists_None in e; destruct e.
+           specialize (H0c x1).
+           rewrite vforall_forall in H0c.
+           specialize (H0c x2).
+           apply (eval_fully_closed_not_none (addBinding σ v t) (x0 x1 x2)) in H0c; tauto.
+       + match_option.
+         unfold matrixo_to_omatrix in eqq0.
+         specialize (vectoro_to_ovector_forall_some_f eqq0); intros.
+         specialize (H4 i); simpl in H4.
+         specialize (vectoro_to_ovector_forall_some_f H4); intros.
+         specialize (H5 j); simpl in H5; congruence.
+     - Case "Var"%string.
+       unfold is_derive_gen.
+       destruct v0; unfold snd in *.
+       destruct d.
+       + unfold df_R_gen; simpl.
+         invcs H0.
+         destruct (vart_dec (s, DTfloat) (v, DTfloat)).
+         inversion e.
+         * unfold equiv_dec, vart_eqdec.
+           destruct (vart_dec (v, DTfloat) (v, DTfloat)); [|congruence].
+           apply (is_derive_ext id); [|apply (@is_derive_id R_AbsRing)].
+           intro.
+           unfold id, df_R, df_eval_at_point.
+           simpl.
+           unfold equiv_dec, vart_eqdec.
+           destruct (vart_dec (v, DTfloat) (v, DTfloat)); [|congruence].
+           admit.
+         * unfold equiv_dec, vart_eqdec.
+           destruct (vart_dec (s, DTfloat) (v, DTfloat)); [congruence|].
+           admit.
+       + admit.
+       + admit.
+     - Case "Plus"%string.
+       destruct H.
+       do 2 match_option_in H0.
+       invcs H0.
+       specialize (IHdf1 _ H eqq).
+       specialize (IHdf2 _ H1 eqq0).
+       eapply is_derive_ext.
+       + intros.
+         symmetry.
+         now apply df_R_total_plus.
+       + generalize (@is_derive_plus R_AbsRing); simpl
+         ; intros HH; now apply HH.
+     - Case "Minus"%string.
+       destruct H.
+       do 2 match_option_in H0.
+       invcs H0.
+       specialize (IHdf1 _ H eqq).
+       specialize (IHdf2 _ H1 eqq0).
+       eapply is_derive_ext.
+       + intros.
+         symmetry.
+         now apply df_R_total_minus.
+       + generalize (@is_derive_minus R_AbsRing); simpl
+         ; intros HH; now apply HH.
+     - Case "Times"%string.
+       destruct H.
+       do 4 match_option_in H0.
+       invcs H0.
+       specialize (IHdf1 _ H eqq0).
+       specialize (IHdf2 _ H1 eqq2).
+       eapply is_derive_ext.
+       + intros.
+         symmetry.
+         now apply df_R_total_times.
+       + generalize Derive.is_derive_mult
+         ; unfold plus, mult; simpl; intros HH.
+         replace (d * d2 + d0 * d1) with
+                 (d0 * (df_R σ df2 v x) + (df_R σ df1 v x) * d2).
+         * apply HH; trivial.
+         * unfold df_R, df_eval_at_point; simpl.         
+           rewrite eqq; rewrite eqq1.
+           lra.
+     - Case "Divide"%string.
+       destruct H.
+       do 4 match_option_in H0.
+       invcs H0.
+       destruct is_scalar as [isc1 isc2].
+       specialize (H _ isc1 H1 eqq0).
+       specialize (H0 _ isc2 H3 eqq2).
+       eapply is_derive_ext.
+       + intros.
+         symmetry.
+         now apply df_R_total_divide.
+       + generalize is_derive_div; simpl; intros HH.
+         replace (d0 / d1 - d * d2 / (d1 * d1)) with
+             ((d0 * (df_R σ r v x) - (df_R σ l v x) * d2) / ((df_R σ r v x)*((df_R σ r v x)*1))).
+         * destruct (Req_EM_T d1 0); [congruence |].
+           inversion H5.
+           specialize (HH (df_R σ l v) (df_R σ r v) x d0 d2).
+           replace (d0 / d1 - d * d2 / (d1 * d1)) with
+             ((d0 * df_R σ r v x - df_R σ l v x * d2) / (df_R σ r v x * (df_R σ r v x * 1))).
+           apply HH; trivial.
+           unfold df_R, df_eval_at_point; simpl.
+           now rewrite eqq1.
+           unfold df_R, df_eval_at_point; simpl.           
+           rewrite eqq; rewrite eqq1.
+           now field.
+         * unfold df_R, df_eval_at_point; simpl.         
+           rewrite eqq; rewrite eqq1.
+           destruct (Req_EM_T d1 0); [congruence |].           
+           now field; trivial.
+     - Case "Square"%string.
+       do 2 match_option_in H1.
+       invcs H1.
+       specialize (H _ is_scalar H0 eqq0).
+       assert (forall t, (Rsqr (df_R σ e v t) = df_R σ (Square a e) v t)).
+       + intros; simpl.
+         unfold df_R, df_eval_at_point; simpl.
+         destruct (eval_fully_closed_total (addBinding σ v t) e); simpl; trivial.
+         rewrite e0; unfold Rsqr; trivial.
+       + eapply is_derive_ext.
+         * intros; simpl.
+           now rewrite H1.
+         * replace (2 * d * d0) with (d0 * (2 * d)) by lra.
+           apply (@is_derive_comp R_AbsRing); trivial.
+           replace (d) with (df_R σ e v x).
+           --  apply is_derive_sqr.
+           --  unfold df_R, df_eval_at_point; simpl.
+               now rewrite eqq.
+     - Case "Exp"%string.
+       do 2 match_option_in H1.
+       invcs H1.
+       specialize (H _ is_scalar H0 eqq0).
+       assert (forall t, (exp (df_R σ e v t) = df_R σ (Exp a e) v t)).
+       + intros; simpl.
+         unfold df_R, df_eval_at_point; simpl.
+         destruct (eval_fully_closed_total (addBinding σ v t) e); simpl; trivial.
+         rewrite e0; trivial.
+       + eapply is_derive_ext.
+         * intros; simpl.
+           now rewrite H1.
+         * apply (@is_derive_comp R_AbsRing); trivial.
+           replace (d) with (df_R σ e v x).
+           --  apply is_derive_exp.
+           --  unfold df_R, df_eval_at_point; simpl.
+               now rewrite eqq.
+     - Case "Log"%string.               
+       do 2 match_option_in H1.
+       invcs H1.
+       specialize (H _ is_scalar H0 eqq0).
+       assert (forall t, (ln (df_R σ e v t) = df_R σ (Log a e) v t)).
+       + intros; simpl.
+         unfold df_R, df_eval_at_point; simpl.
+         destruct (eval_fully_closed_total (addBinding σ v t) e); simpl; trivial.
+         rewrite e0; trivial.
+       + eapply is_derive_ext.
+         * intros; simpl.
+           now rewrite H1.
+         * destruct (Rgt_dec d 0); [|congruence].
+           inversion H3.
+           apply (@is_derive_comp R_AbsRing); trivial.
+           replace (d) with (df_R σ e v x).
+           --  apply is_derive_ln.
+               unfold df_R, df_eval_at_point; simpl.
+               rewrite eqq.
+               lra.
+           --  unfold df_R, df_eval_at_point; simpl.
+               now rewrite eqq.
+     - Case "Abs"%string.         
+       do 2 match_option_in H1.
+       invcs H1.
+       specialize (H _ is_scalar H0 eqq0).
+       assert (forall t, (Rabs (df_R σ e v t) = df_R σ (Abs a e) v t)).
+       + intros; simpl.
+         unfold df_R, df_eval_at_point; simpl.
+         destruct (eval_fully_closed_total (addBinding σ v t) e); simpl; trivial.
+         rewrite e0; trivial.
+       + eapply is_derive_ext.
+         * intros; simpl.
+           now rewrite H1.
+         * destruct ( Req_EM_T d 0 ); [congruence |].
+           inversion H3.
+           apply (@is_derive_comp R_AbsRing); trivial.
+           replace (d) with (df_R σ e v x).
+           -- replace (@FloatishOps.sign floatish_R (df_R σ e v x)) with (sign (df_R σ e v x)).
+              ++ apply is_derive_abs.
+                 unfold df_R, df_eval_at_point; simpl.
+                 rewrite eqq.
+                 lra.
+              ++ apply floatish_sign.
+           --  unfold df_R, df_eval_at_point; simpl.
+               now rewrite eqq.
+     - Case "Sign"%string.         
+       match_option_in H1.
+       match_option_in H1.
+       destruct (Req_EM_T d 0); [congruence|].
+       invcs H1.
+       specialize (H _ is_scalar H0 eqq0).
+       assert (forall t, (sign (df_R σ e v t) = df_R σ (Sign a e) v t)).
+       + intros; simpl.
+         unfold df_R, df_eval_at_point; simpl.
+         destruct (eval_fully_closed_total (addBinding σ v t) e); simpl; trivial.
+         rewrite e0; trivial.
+         apply floatish_sign.
+       + eapply is_derive_ext.
+         * intros; simpl.
+           now rewrite H1.
+         * replace (0) with (d0 * 0) by lra.
+           apply (@is_derive_comp R_AbsRing); trivial.           
+           apply is_derive_sign.
+           unfold df_R, df_eval_at_point; simpl.           
+           rewrite eqq; lra.
+     - Case "PSign"%string.         
+       match_option_in H1.
+       match_option_in H1.
+       destruct (Req_EM_T d 0); [congruence|].
+       invcs H1.
+       specialize (H _ is_scalar H0 eqq0).
+       assert (forall t, (psign (df_R σ e v t) = df_R σ (PSign a e) v t)).
+       + intros; simpl.
+         unfold df_R, df_eval_at_point; simpl.
+         destruct (eval_fully_closed_total (addBinding σ v t) e); simpl; trivial.
+         rewrite e0; trivial.
+         apply pos_sign_psign.
+       + eapply is_derive_ext.
+         * intros; simpl.
+           now rewrite H1.
+         * replace (0) with (d0 * 0) by lra.
+           apply (@is_derive_comp R_AbsRing); trivial.           
+           apply is_derive_psign.
+           unfold df_R, df_eval_at_point; simpl.           
+           rewrite eqq; lra.
+     - Case "Max"%string.
+       do 2 match_option_in H2.
+       destruct H1.
+       destruct is_scalar as [isc1  isc2].
+       assert (forall t, (Rmax (df_R σ l v t) (df_R σ r v t)) = df_R σ (Max a l r) v t).
+       + intros; simpl.
+         unfold df_R, df_eval_at_point; simpl.
+         destruct (eval_fully_closed_total (addBinding σ v t) l); simpl; trivial.
+         destruct (eval_fully_closed_total (addBinding σ v t) r); simpl; trivial. 
+         rewrite e, e0; trivial.
+         apply Rmax_Fmax.
+       + eapply is_derive_ext.
+         * intros; simpl.
+           now rewrite H4.
+         * match_option_in H2.
+           match_option_in H2.           
+           destruct (Req_EM_T d d0); [congruence |].
+           destruct (Rlt_dec d d0).
+           -- invcs H2.
+              specialize (H _ isc1 H1 eqq1).
+              specialize (H0 _ isc2 H3 eqq2).
+              replace (y) with ((d1 + y + (d1-y)*sign(df_R σ l v x - df_R σ r v x))/2).
+              ++ apply is_derive_max; trivial.
+                 unfold df_R, df_eval_at_point; simpl.           
+                 now rewrite eqq, eqq0.
+              ++ unfold df_R, df_eval_at_point; simpl.           
+                 rewrite eqq, eqq0.
+                 unfold sign; simpl.
+                 destruct (total_order_T 0 (d - d0)).
+                 ** destruct s; lra.
+                 ** lra.
+           -- invcs H2.
+              specialize (H _ isc1 H1 eqq1).
+              specialize (H0 _ isc2 H3 eqq2).
+              replace (y) with ((y + d2 + (y - d2)*sign(df_R σ l v x - df_R σ r v x))/2).
+              ++ apply is_derive_max; trivial.
+                 unfold df_R, df_eval_at_point; simpl.           
+                 now rewrite eqq, eqq0.
+              ++ unfold df_R, df_eval_at_point; simpl.           
+                 rewrite eqq, eqq0.
+                 unfold sign; simpl.
+                 destruct (total_order_T 0 (d - d0)).
+                 ** destruct s; lra.
+                 ** lra.
+   Qed.
+   
+
+
+(*
    Theorem df_eval_deriv_complete σ (df:DefinedFunction UnitAnn DTfloat) v (x:R)
      : is_scalar_function df -> 
        ex_deriv_df σ df v x  ->
-       df_eval_deriv (addBinding σ v x) df (v,DTfloat) = Some (Derive (df_R σ df v) x).
+       df_eval_deriv_exact (addBinding σ v x) df (v,DTfloat) = Some (Derive (df_R σ df v) x).
    Proof.
      simpl.
      intros is_scalar.
@@ -605,8 +1530,8 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        replace (df_R σ (Max a l r) v) with (fun x0 => Rmax ((df_R σ l v)x0) ((df_R σ r v)x0)).       
        + unfold ex_deriv_df in H5; destruct H5.
          unfold ex_deriv_df in H6; destruct H6.
-         case_eq (df_eval_deriv (addBinding σ v x) l (v, DTfloat)); intros; [|tauto].
-         case_eq (df_eval_deriv (addBinding σ v x) r (v, DTfloat)); intros; [|tauto].
+         case_eq (df_eval_deriv_exact (addBinding σ v x) l (v, DTfloat)); intros; [|tauto].
+         case_eq (df_eval_deriv_exact (addBinding σ v x) r (v, DTfloat)); intros; [|tauto].
          rewrite Derive_max; trivial.
          rewrite H14 in H.
          rewrite H15 in H0.
@@ -641,28 +1566,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
          case_eq (Rlt_dec d1 d2); intros; simpl; trivial; lra.
          case_eq (Rlt_dec d1 d2); intros; simpl; lra.
    Admitted.
-
-   Definition df_R_vec {Ann} {n} (σ:df_env) (df:DefinedFunction Ann (DTVector n)) v : 
-     R -> Vector R n
-     := fun x => match df_eval_at_point σ df v x with
-        | Some y => y
-        | None => ConstVector n 0
-        end.
-
-   Definition df_R_mat {Ann} {n m} (σ:df_env) (df:DefinedFunction Ann (DTMatrix n m)) v : 
-     R -> Matrix R n m
-     := fun x => match df_eval_at_point σ df v x with
-        | Some y => y
-        | None => ConstMatrix n m 0
-        end.
-
-   Definition df_R_gen Ann T σ :
-     (DefinedFunction Ann T) -> SubVar -> R -> (definition_function_types_interp T) :=
-     match T with
-     | DTfloat => fun df v => df_R σ df v
-     | DTVector n => fun df v => df_R_vec σ df v 
-     | DTMatrix n m => fun df v => df_R_mat σ df v                      
-     end.
+*)
    
     Definition ex_deriv_df_vec {Ann} {n} σ (df:DefinedFunction Ann (DTVector n)) v (x:R)
      :=  fully_closed_over df ((v,DTfloat)::map (@projT1 _ _) σ) /\
@@ -696,9 +1600,9 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
            | DTMatrix n m => fun f => Derive_mat f x
            end) f.
     
-   Theorem df_eval_deriv_correct_gen {T} (σ:df_env) (df:DefinedFunction UnitAnn T) v (x:R) :
+   Theorem df_eval_deriv_exact_correct_gen {T} (σ:df_env) (df:DefinedFunction UnitAnn T) v (x:R) :
        ex_deriv_df_gen T σ df v x  ->
-       df_eval_deriv (addBinding σ v x) df (v,DTfloat) =
+       df_eval_deriv_exact (addBinding σ v x) df (v,DTfloat) =
        Some (Derive_gen (df_R_gen UnitAnn T σ df v) x).
    Proof.
      DefinedFunction_cases (induction T, df using DefinedFunction_ind_simpl) Case; simpl; intros.
