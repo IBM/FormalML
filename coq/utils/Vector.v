@@ -858,5 +858,94 @@ Section Vector.
         eauto.
       + eauto.
   Qed.
-    
+
+
+  Definition vfirstn {T} {n} (v:Vector T n) m (pf:(m<=n)%nat): Vector T m.
+  Proof.
+    intros [i pf2].
+    apply v.
+    exists i.
+    eapply NPeano.Nat.lt_le_trans; eassumption.
+  Defined.
+
+  Definition vfirstn_eq {T} {n} (v:Vector T n) pf : vfirstn v n pf = v.
+  Proof.
+    unfold vfirstn.
+    apply FunctionalExtensionality.functional_extensionality; intros [??].
+    erewrite index_pf_irrel; eauto.
+  Qed.
+
+  Lemma vfirstn_vdrop_last {T} {n} (v:Vector T n) bound pf pf2 :
+    vdrop_last (vfirstn v (S (S bound)) pf) = vfirstn v (S bound) pf2.
+  Proof.
+    apply FunctionalExtensionality.functional_extensionality; intros [??]; simpl.
+    erewrite index_pf_irrel; eauto.
+  Qed.
+
+  Lemma vector_fold_right1_bounded_dep_gen_ind {A:nat->Type} {B} {P:forall m, Vector B m -> A m -> Prop} (f:forall n,B->A n->A (S n)) 
+        (init:A 0%nat) sing
+        (finit : P 0%nat vnil init)
+        (fsing: forall b, P 1%nat (vcons b vnil) (sing b))
+        (ff: forall n b v r, P n v r -> P (S n) (vcons b v) (f n b r)) :
+    forall {m:nat} (v:Vector B m) bound pf, P bound (vfirstn v _ pf) (vector_fold_right1_bounded_dep f init sing v bound pf).
+  Proof.
+    intros m v bound pf.
+    revert m pf v.
+    induction bound; simpl; trivial; intros.
+    - generalize (vfirstn v 0 pf); intros.
+      rewrite (vnil0 v0); trivial.
+    - destruct m; [omega | ].
+      destruct bound; simpl; trivial.
+      + replace (vfirstn v 1 pf) with (vcons (v (exist (fun n' : nat => (n' < S m)%nat) 0%nat pf)) vnil)
+        ; trivial.
+        apply FunctionalExtensionality.functional_extensionality; intros [??]; simpl.
+        destruct x; [ | omega].
+        simpl.
+        erewrite index_pf_irrel; eauto.
+      + assert (pf2:(S bound <= S m)%nat) by omega.
+        replace (vfirstn v (S (S bound)) pf)
+          with (vcons (v (exist (fun n' : nat => (n' < S m)%nat) (S bound) pf)) (vfirstn v (S bound) pf2)).
+        * apply ff.
+          replace (match bound as bound1' return (A bound1' -> (S bound1' <= S m)%nat -> A (S bound1')) with
+                   | 0%nat =>
+                     fun (_ : A 0%nat) (pf1 : (1 <= S m)%nat) =>
+                       sing (v (exist (fun n' : nat => (n' < S m)%nat) 0%nat pf1))
+                   | S bound2 =>
+                     fun (an' : A (S bound2)) (_ : (S (S bound2) <= S m)%nat) =>
+                       f (S bound2) (v (exist (fun n' : nat => (n' < S m)%nat) bound (le_Sn_le (S bound) (S m) pf))) an'
+                   end
+                     (vector_fold_right1_bounded_dep f init sing v bound
+                                                     (le_Sn_le bound (S m) (le_Sn_le (S bound) (S m) pf))) (le_Sn_le (S bound) (S m) pf)) with (vector_fold_right1_bounded_dep f init sing v (S bound) pf2); try eapply IHbound.
+          clear.
+          destruct bound; simpl.
+          -- erewrite index_pf_irrel; eauto.
+          -- f_equal.
+             ++ erewrite index_pf_irrel; eauto.
+             ++ destruct bound.
+                ** erewrite index_pf_irrel; eauto.
+                ** { f_equal.
+                     -- erewrite index_pf_irrel; eauto.
+                     -- apply vector_fold_right1_bounded_dep_pf_ext.
+                   } 
+        * generalize (vector_Sn_split (vfirstn v (S (S bound)) pf)); intros eqq.
+          apply vec_eq_eq in eqq.
+          rewrite eqq.
+          f_equal.
+          -- unfold vlast; simpl.
+             erewrite index_pf_irrel; eauto.
+          -- erewrite vfirstn_vdrop_last; eauto.
+  Qed.
+
+  Lemma vector_fold_right1_dep_gen_ind {A:nat->Type} {B} {P:forall m, Vector B m -> A m -> Prop} (f:forall n,B->A n->A (S n)) 
+        (init:A 0%nat) sing
+        (finit : P 0%nat vnil init)
+        (fsing: forall b, P 1%nat (vcons b vnil) (sing b))
+        (ff: forall n b v r, P n v r -> P (S n) (vcons b v) (f n b r)) :
+    forall {m:nat} (v:Vector B m), P m v (vector_fold_right1_dep f init sing v).
+  Proof.
+    intros.
+    rewrite <- (vfirstn_eq v (le_refl m)) at 1.
+    apply vector_fold_right1_bounded_dep_gen_ind; trivial.
+  Qed.
+
   End Vector.

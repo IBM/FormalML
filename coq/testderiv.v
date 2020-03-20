@@ -807,9 +807,54 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         | right _ => 0
         end.
 
+    Lemma vec_to_nat_fun_vcons_end {n} (v : Vector R n) b : 
+      vec_to_nat_fun (vcons b v) n = b.
+    Proof.
+      unfold vec_to_nat_fun; simpl.
+      destruct (lt_dec n (S n)); [ | omega].
+      destruct (Nat.eq_dec n n); [ | omega].
+      trivial.
+    Qed.
+
+    Lemma vec_to_nat_fun_vcons_nend {n} (v : Vector R n) b m (pf:(m<n)%nat) : 
+      vec_to_nat_fun (vcons b v) m = vec_to_nat_fun v m.
+    Proof.
+      unfold vec_to_nat_fun; simpl.
+      destruct (lt_dec m (S n)); [ | omega].
+      destruct (Nat.eq_dec m n); [omega | ].
+      destruct (lt_dec m n); [| omega].
+      erewrite index_pf_irrel; eauto.
+    Qed.
+
     Lemma sum_n_vsum {n:nat} (v:Vector R n) :
-      sum_n (vec_to_nat_fun v) (n-1)%nat = vsum v.
-      Admitted.
+      sum_n (vec_to_nat_fun v) (n-1) = vsum v.
+    Proof.
+      unfold vsum, vector_fold_right1.
+      apply (vector_fold_right1_dep_gen_ind (P:=fun n v r => sum_n (vec_to_nat_fun v) (n-1) = r)).
+      - unfold vec_to_nat_fun, sum_n, sum_n_m, Iter.iter, Iter.iter_nat, plus, zero.
+        simpl.
+        lra.
+      - unfold vec_to_nat_fun, sum_n, sum_n_m, Iter.iter, Iter.iter_nat, plus, zero, Datatypes.id.
+        simpl; intros.
+        lra.
+      - intros.
+        simpl.
+        rewrite <- H.
+        destruct n0.
+        + unfold vec_to_nat_fun, sum_n, sum_n_m, Iter.iter, Iter.iter_nat, plus, zero, Datatypes.id.
+          simpl.
+          lra.
+        + simpl.
+          rewrite Nat.sub_0_r.
+          rewrite sum_Sn.
+          unfold plus; simpl.
+          rewrite vec_to_nat_fun_vcons_end.
+          rewrite Rplus_comm.
+          f_equal; simpl.
+          erewrite sum_n_ext_loc; [ reflexivity | ]; intros.
+          apply vec_to_nat_fun_vcons_nend.
+          omega.
+    Qed.
 
     Lemma is_derive_vsum {n} (vf : R -> Vector R n) (x:R) (df : Vector R n) :
       is_derive_vec vf x df ->
