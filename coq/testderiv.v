@@ -1523,8 +1523,8 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
      - Case "VectorApply"%string.
        destruct H.
        do 2 match_option_in H0.
-       specialize (IHdf2 d0 H1 eqq0).
        specialize (vectoro_to_ovector_forall_some_f H0); intros.
+       specialize (IHdf2 d0 H1 eqq0).
        unfold is_derive_vec; intro.
        specialize (H2 i); simpl in H2.
        match_option_in H2.
@@ -1532,6 +1532,26 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        simpl in IHdf2.
        simpl in IHdf1.
        specialize (IHdf1 d1).
+       simpl.
+       unfold df_R_vec, df_eval_at_point.
+       simpl.
+       unfold is_derive_vec in IHdf2.
+       specialize (IHdf2 i).
+       generalize (@is_derive_comp R_AbsRing R_NormedModule
+                                   (fun r' => match df_eval (mk_env_entry (v0, DTfloat) r' :: addBinding σ v x) df1 with
+                                             | Some y => y
+                                             | None => 0
+                                             end)
+
+                                   
+                                   (fun x0 => match df_eval (addBinding σ v x0) df2 with
+                                              | Some y => y i
+                                              | None => 0
+                                              end)
+                  )
+       ; simpl; intros.
+       
+       
        admit.
      - Case "MatrixApply"%string.
        admit.
