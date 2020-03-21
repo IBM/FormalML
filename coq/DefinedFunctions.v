@@ -724,13 +724,13 @@ F (d : definition_function_types)
       | MatrixMinus n m _ l r =>
         MatrixMinus tt (df_subst l v e') (df_subst r v e')
       | VectorApply n _ x s l => 
-        VectorApply tt x (df_subst s v e') (df_subst l v e')
+        VectorApply tt x s (df_subst l v e')
       | MatrixApply n m _ x s l => 
-        MatrixApply tt x (df_subst s v e') (df_subst l v e')
+        MatrixApply tt x s (df_subst l v e')
       | VLossfun n _ v1 v2 s l r =>
-        VLossfun tt v1 v2 (df_subst s v e') (df_subst l v e') r
+        VLossfun tt v1 v2 s (df_subst l v e') r
       | MLossfun n m _ v1 v2 s l r =>
-        MLossfun tt v1 v2 (df_subst s v e') (df_subst l v e') r
+        MLossfun tt v1 v2 s (df_subst l v e') r
       end.
 
     Definition df_substp {T Ann} := 
@@ -1027,7 +1027,7 @@ F (d : definition_function_types)
            | Some r' => vectoro_to_ovector 
                           (fun i => 
                              let xv := (x, DTfloat):var_type in
-                             df_eval (cons (mk_env_entry xv (r' i)) σ) s)
+                             df_eval (cons (mk_env_entry xv (r' i)) nil) s)
            | _ => None
            end
          | MatrixApply n m _ x s r => 
@@ -1035,7 +1035,7 @@ F (d : definition_function_types)
            | Some r' => matrixo_to_omatrix
                           (fun i j => 
                              let xv := (x, DTfloat):var_type in
-                             df_eval (cons (mk_env_entry xv (r' i j)) σ) s)
+                             df_eval (cons (mk_env_entry xv (r' i j)) nil) s)
            | _ => None
            end
          | VLossfun n _ v1 v2 s l r => 
@@ -1046,7 +1046,7 @@ F (d : definition_function_types)
                          let xv1 := (v1,DTfloat):var_type in
                          let xv2 := (v2,DTfloat):var_type in
                          df_eval (cons (mk_env_entry xv1 (l' i)) 
-                                       (cons (mk_env_entry xv2 (r i)) σ)) s)) with
+                                       (cons (mk_env_entry xv2 (r i)) nil)) s)) with
              | Some vv => Some (vsum vv)
              | _ => None
              end
@@ -1060,7 +1060,7 @@ F (d : definition_function_types)
                          let xv1 := (v1,DTfloat):var_type in
                          let xv2 := (v2,DTfloat):var_type in
                          df_eval (cons (mk_env_entry xv1 (l' i j)) 
-                                       (cons (mk_env_entry xv2 (r i j)) σ)) s)) with
+                                       (cons (mk_env_entry xv2 (r i j)) nil)) s)) with
              | Some vv => Some ((msum vv) / (FfromZ (Z.of_nat m)))
              | _ => None
              end
@@ -1260,7 +1260,7 @@ F (d : definition_function_types)
              match vectoro_to_ovector 
                      (fun i => 
                         let xv := (x, DTfloat):var_type in
-                        df_eval (cons (mk_env_entry xv (vr' i)) σ) s) with
+                        df_eval (cons (mk_env_entry xv (vr' i)) nil) s) with
              | Some val => Some (VectorApply val x s r')
              | _ => None
              end
@@ -1273,7 +1273,7 @@ F (d : definition_function_types)
              match matrixo_to_omatrix
                      (fun i j => 
                         let xv := (x, DTfloat):var_type in
-                        df_eval (cons (mk_env_entry xv (vr' i j)) σ) s) with
+                        df_eval (cons (mk_env_entry xv (vr' i j)) nil) s) with
              | Some val => Some (MatrixApply val x s r')
              | _ => None
              end
@@ -1288,7 +1288,7 @@ F (d : definition_function_types)
                          let xv1 := (v1,DTfloat):var_type in
                          let xv2 := (v2,DTfloat):var_type in
                          df_eval (cons (mk_env_entry xv1 (vl' i)) 
-                                       (cons (mk_env_entry xv2 (r i)) σ)) s)) with
+                                       (cons (mk_env_entry xv2 (r i)) nil)) s)) with
              | Some vv => Some (VLossfun (vsum vv) v1 v2 s l' r)
              | _ => None
              end
@@ -1303,7 +1303,7 @@ F (d : definition_function_types)
                          let xv1 := (v1,DTfloat):var_type in
                          let xv2 := (v2,DTfloat):var_type in
                          df_eval (cons (mk_env_entry xv1 (vl' i j)) 
-                                       (cons (mk_env_entry xv2 (r i j)) σ)) s)) with
+                                       (cons (mk_env_entry xv2 (r i j)) nil)) s)) with
              | Some vv => Some (MLossfun ((msum vv)/(FfromZ (Z.of_nat m))) v1 v2 s l' r)
              | _ => None
              end
@@ -1808,7 +1808,7 @@ F (d : definition_function_types)
              vectoro_to_ovector 
                (fun i => 
                   let xv := (x, DTfloat):var_type in
-                  match df_eval_deriv (cons (mk_env_entry xv (re i)) σ) s v with
+                  match df_eval_deriv (cons (mk_env_entry xv (re i)) nil) s xv with
                          | Some sd => Some ((rd i) * sd)
                          | _ => None
                          end)
@@ -1820,7 +1820,7 @@ F (d : definition_function_types)
              matrixo_to_omatrix
                (fun i j => 
                   let xv := (x, DTfloat):var_type in
-                  match df_eval_deriv (cons (mk_env_entry xv (re i j)) σ) s v with
+                  match df_eval_deriv (cons (mk_env_entry xv (re i j)) nil) s xv with
                          | Some sd => Some ((rd i j) * sd)
                          | _ => None
                          end)
@@ -1834,7 +1834,7 @@ F (d : definition_function_types)
                          let xv1 := (v1, DTfloat):var_type in
                          let xv2 := (v2, DTfloat):var_type in                         
                          match df_eval_deriv (cons (mk_env_entry xv1 (le i)) 
-                                                   (cons (mk_env_entry xv2 (r i)) σ)) s v with
+                                                   (cons (mk_env_entry xv2 (r i)) nil)) s xv1 with
                          | Some sd => Some ((ld i) * sd)
                          | _ => None
                          end)) with
@@ -1851,7 +1851,7 @@ F (d : definition_function_types)
                          let xv1 := (v1, DTfloat):var_type in
                          let xv2 := (v2, DTfloat):var_type in                         
                          match df_eval_deriv (cons (mk_env_entry xv1 (le i j)) 
-                                                   (cons (mk_env_entry xv2 (r i j)) σ)) s v with
+                                                   (cons (mk_env_entry xv2 (r i j)) nil)) s xv1 with
                          | Some sd => Some ((ld i j) * sd)
                          | _ => None
                          end)) with
@@ -1862,7 +1862,7 @@ F (d : definition_function_types)
            end
           end).
 
-     (* the v environment below pairs variables with their derivatives *)
+ (* the v environment below pairs variables with their derivatives *)
      (* in some sense this is giving a directional derivative defined by v *)
     Fixpoint df_eval_deriv_genvar {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (v:df_env) : option (definition_function_types_interp T)
       := (match df with
@@ -2026,7 +2026,7 @@ F (d : definition_function_types)
              vectoro_to_ovector 
                (fun i => 
                   let xv := (x, DTfloat):var_type in
-                  match df_eval_deriv_genvar (cons (mk_env_entry xv (re i)) σ) s v with
+                  match df_eval_deriv_genvar (cons (mk_env_entry xv (re i)) nil) s v with
                          | Some sd => Some ((rd i) * sd)
                          | _ => None
                          end)
@@ -2038,7 +2038,7 @@ F (d : definition_function_types)
              matrixo_to_omatrix
                (fun i j => 
                   let xv := (x, DTfloat):var_type in
-                  match df_eval_deriv_genvar (cons (mk_env_entry xv (re i j)) σ) s v with
+                  match df_eval_deriv_genvar (cons (mk_env_entry xv (re i j)) nil) s v with
                          | Some sd => Some ((rd i j) * sd)
                          | _ => None
                          end)
@@ -2052,7 +2052,7 @@ F (d : definition_function_types)
                          let xv1 := (v1, DTfloat):var_type in
                          let xv2 := (v2, DTfloat):var_type in                         
                          match df_eval_deriv_genvar (cons (mk_env_entry xv1 (le i)) 
-                                                   (cons (mk_env_entry xv2 (r i)) σ)) s v with
+                                                   (cons (mk_env_entry xv2 (r i)) nil)) s v with
                          | Some sd => Some ((ld i) * sd)
                          | _ => None
                          end)) with
@@ -2069,7 +2069,7 @@ F (d : definition_function_types)
                          let xv1 := (v1, DTfloat):var_type in
                          let xv2 := (v2, DTfloat):var_type in                         
                          match df_eval_deriv_genvar (cons (mk_env_entry xv1 (le i j)) 
-                                                   (cons (mk_env_entry xv2 (r i j)) σ)) s v with
+                                                   (cons (mk_env_entry xv2 (r i j)) nil)) s v with
                          | Some sd => Some ((ld i j) * sd)
                          | _ => None
                          end)) with
@@ -2273,7 +2273,7 @@ F (d : definition_function_types)
              vectoro_to_ovector 
                (fun i => 
                   let xv := (x, DTfloat):var_type in
-                  match df_eval_deriv (cons (mk_env_entry xv (re i)) σ (* nil *)) s v with
+                  match df_eval_deriv (cons (mk_env_entry xv (re i)) nil ) s xv with
                          | Some sd => Some ((rd i) * sd)
                          | _ => None
                          end)
@@ -2286,7 +2286,7 @@ F (d : definition_function_types)
              matrixo_to_omatrix
                (fun i j => 
                   let xv := (x, DTfloat):var_type in
-                  match df_eval_deriv (cons (mk_env_entry xv (re i j)) σ  (* nil *)) s v with
+                  match df_eval_deriv (cons (mk_env_entry xv (re i j)) nil ) s xv with
                          | Some sd => Some ((rd i j) * sd)
                          | _ => None
                          end)
@@ -2301,7 +2301,7 @@ F (d : definition_function_types)
                          let xv1 := (v1, DTfloat):var_type in
                          let xv2 := (v2, DTfloat):var_type in                         
                          match df_eval_deriv (cons (mk_env_entry xv1 (le i)) 
-                                                   (cons (mk_env_entry xv2 (r i)) σ (* nil *))) s v with
+                                                   (cons (mk_env_entry xv2 (r i)) nil)) s xv1 with
                          | Some sd => Some ((ld i) * sd)
                          | _ => None
                          end)) with
@@ -2319,7 +2319,7 @@ F (d : definition_function_types)
                          let xv1 := (v1, DTfloat):var_type in
                          let xv2 := (v2, DTfloat):var_type in                         
                          match df_eval_deriv (cons (mk_env_entry xv1 (le i j)) 
-                                                   (cons (mk_env_entry xv2 (r i j)) σ (* nil *))) s v with
+                                                   (cons (mk_env_entry xv2 (r i j)) nil )) s xv1 with
                          | Some sd => Some ((ld i j) * sd)
                          | _ => None
                          end)) with
@@ -2501,7 +2501,7 @@ F (d : definition_function_types)
              vectoro_to_ovector 
                (fun i => 
                   let xv := (x, DTfloat):var_type in
-                  match df_eval_deriv_genvar (cons (mk_env_entry xv (re i)) σ (* nil *)) s v with
+                  match df_eval_deriv_genvar (cons (mk_env_entry xv (re i)) nil ) s v with
                          | Some sd => Some ((rd i) * sd)
                          | _ => None
                          end)
@@ -2514,7 +2514,7 @@ F (d : definition_function_types)
              matrixo_to_omatrix
                (fun i j => 
                   let xv := (x, DTfloat):var_type in
-                  match df_eval_deriv_genvar (cons (mk_env_entry xv (re i j)) σ  (* nil *)) s v with
+                  match df_eval_deriv_genvar (cons (mk_env_entry xv (re i j)) nil) s v with
                          | Some sd => Some ((rd i j) * sd)
                          | _ => None
                          end)
@@ -2529,7 +2529,7 @@ F (d : definition_function_types)
                          let xv1 := (v1, DTfloat):var_type in
                          let xv2 := (v2, DTfloat):var_type in                         
                          match df_eval_deriv_genvar (cons (mk_env_entry xv1 (le i)) 
-                                                   (cons (mk_env_entry xv2 (r i)) σ (* nil *))) s v with
+                                                   (cons (mk_env_entry xv2 (r i)) nil )) s v with
                          | Some sd => Some ((ld i) * sd)
                          | _ => None
                          end)) with
@@ -2547,7 +2547,7 @@ F (d : definition_function_types)
                          let xv1 := (v1, DTfloat):var_type in
                          let xv2 := (v2, DTfloat):var_type in                         
                          match df_eval_deriv_genvar (cons (mk_env_entry xv1 (le i j)) 
-                                                   (cons (mk_env_entry xv2 (r i j)) σ (* nil *))) s v with
+                                                   (cons (mk_env_entry xv2 (r i j)) nil)) s v with
                          | Some sd => Some ((ld i j) * sd)
                          | _ => None
                          end)) with
@@ -2830,7 +2830,7 @@ F (d : definition_function_types)
              let ograd := 
                  vmap (fun '(rei, g) => 
 
-                         match df_eval (cons (mk_env_entry xv rei) σ) s' with
+                         match df_eval (cons (mk_env_entry xv rei) nil) s' with
                          | Some se => Some (g * se)
                          | _ => None
                          end)
@@ -2848,7 +2848,7 @@ F (d : definition_function_types)
              let s' := df_deriv s xv in
              let ograd := 
                  mmap (fun '(rei, g) => 
-                         match df_eval (cons (mk_env_entry xv rei) σ) s' with
+                         match df_eval (cons (mk_env_entry xv rei) nil) s' with
                          | Some se => Some (g * se)
                          | _ => None
                          end)
@@ -2868,7 +2868,7 @@ F (d : definition_function_types)
              let ograd := 
                  vmap (fun '(lei, rei) => 
                          let senv := cons (mk_env_entry xv1 lei) 
-                                          (cons (mk_env_entry xv2 rei) σ) in
+                                          (cons (mk_env_entry xv2 rei) nil) in
                          match df_eval senv s' with
                          | Some se => Some (grad * se)
                          | _ => None
@@ -2889,7 +2889,7 @@ F (d : definition_function_types)
              let ograd := 
                  mmap (fun '(lei, rei) => 
                          let senv := cons (mk_env_entry xv1 lei) 
-                                          (cons (mk_env_entry xv2 rei) σ) in
+                                          (cons (mk_env_entry xv2 rei) nil) in
                          match df_eval senv s' with
                          | Some se => Some ((grad * se)/(FfromZ (Z.of_nat m)))
                          | _ => None
@@ -3050,7 +3050,7 @@ F (d : definition_function_types)
            let s' := df_deriv s xv in
            let ograd := 
                vmap (fun '(rei, g) => 
-                       match df_eval (cons (mk_env_entry xv rei) σ) s' with
+                       match df_eval (cons (mk_env_entry xv rei) nil) s' with
                        | Some se => Some (g * se)
                        | _ => None
                        end)
@@ -3065,7 +3065,7 @@ F (d : definition_function_types)
            let s' := df_deriv s xv in
            let ograd := 
                mmap (fun '(rei, g) => 
-                       match df_eval (cons (mk_env_entry xv rei) σ) s' with
+                       match df_eval (cons (mk_env_entry xv rei) nil) s' with
                        | Some se => Some (g * se)
                        | _ => None
                        end)
@@ -3082,7 +3082,7 @@ F (d : definition_function_types)
            let ograd := 
                vmap (fun '(lei, rei) => 
                        let senv := cons (mk_env_entry xv1 lei) 
-                                        (cons (mk_env_entry xv2 rei) σ) in
+                                        (cons (mk_env_entry xv2 rei) nil) in
                        match df_eval senv s' with
                        | Some se => Some (grad * se)
                        | _ => None
@@ -3100,7 +3100,7 @@ F (d : definition_function_types)
            let ograd := 
                mmap (fun '(lei, rei) => 
                        let senv := cons (mk_env_entry xv1 lei) 
-                                        (cons (mk_env_entry xv2 rei) σ) in
+                                        (cons (mk_env_entry xv2 rei) nil) in
                        match df_eval senv s' with
                        | Some se => Some ((grad * se) / (FfromZ (Z.of_nat m)))
                        | _ => None
@@ -3437,6 +3437,7 @@ F (d : definition_function_types)
        simpl in IHdf2.
        rewrite IHdf2, eqq0; trivial.
    Qed.
+
 
    Lemma df_eval_tree_deriv_correct {T} {σ:df_env} {df:DefinedFunction EvalAnn T} :
      is_df_evalann_correct σ df ->
@@ -4947,13 +4948,13 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
          | VectorMinus n _ l r => (fully_closed_over l vl) /\ (fully_closed_over r vl)
          | MatrixPlus n m _ l r => (fully_closed_over l vl) /\ (fully_closed_over r vl)
          | MatrixMinus n m _ l r => (fully_closed_over l vl) /\ (fully_closed_over r vl)
-         | VectorApply n _ x s l => (fully_closed_over s ((x,DTfloat)::vl)) /\ 
+         | VectorApply n _ x s l => (fully_closed_over s ((x,DTfloat)::nil)) /\ 
                                     (fully_closed_over l vl)
-         | MatrixApply n m _ x s l => (fully_closed_over s ((x,DTfloat)::vl)) /\ 
+         | MatrixApply n m _ x s l => (fully_closed_over s ((x,DTfloat)::nil)) /\ 
                                       (fully_closed_over l vl)
-         | VLossfun n _ v1 v2 s l r => (fully_closed_over s ((v1,DTfloat)::(v2,DTfloat)::vl))
+         | VLossfun n _ v1 v2 s l r => (fully_closed_over s ((v1,DTfloat)::(v2,DTfloat)::nil))
                                        /\ (fully_closed_over l vl)
-         | MLossfun n m _ v1 v2 s l r => (fully_closed_over s ((v1,DTfloat)::(v2,DTfloat)::vl))
+         | MLossfun n m _ v1 v2 s l r => (fully_closed_over s ((v1,DTfloat)::(v2,DTfloat)::nil))
                                          /\ (fully_closed_over l vl)
          end.
         
@@ -5006,33 +5007,18 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         now rewrite vforall_forall in H1.
       - now apply H.
       - Case "VectorApply"%string.
-        split; destruct H0.
-        apply (IHdf1 ((v,DTfloat)::vl) (map_tl f)).
-        now apply In_compat_map_tl.
-        trivial.
+        split; destruct H0; trivial.
         now apply IHdf2.
       - Case "MatrixApply"%string.
-        split; destruct H0.
-        apply (IHdf1 ((v,DTfloat)::vl) (map_tl f)).
-        now apply In_compat_map_tl.
-        trivial.
+        split; destruct H0; trivial.
         now apply IHdf2.
       - Case "VLossfun"%string.
-        split; destruct H0.
-        apply (IHdf1 ((v1,DTfloat)::(v2,DTfloat)::vl) (map_tl (map_tl f))).
-        apply In_compat_map_tl.
-        now apply In_compat_map_tl.        
-        trivial.
+        split; destruct H0; trivial.
         now apply IHdf2.
       - Case "MLossfun"%string.
-        split; destruct H0.
-        apply (IHdf1 ((v1,DTfloat)::(v2,DTfloat)::vl) (map_tl (map_tl f))).
-        apply In_compat_map_tl.
-        now apply In_compat_map_tl.        
-        trivial.
+        split; destruct H0; trivial.
         now apply IHdf2.
     Qed.
-
 
   (*
     Lemma closed_is_fully_closed {Ann} {T} (df : DefinedFunction Ann T) (vl : list var_type) : 
@@ -6045,7 +6031,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         cut_to IHdf2; trivial.
         match_option; [|tauto].
         apply vectoro_to_ovector_not_none; intro.
-        specialize (IHdf1  (mk_env_entry (v, DTfloat) (d i) :: σ)).
+        specialize (IHdf1  (mk_env_entry (v, DTfloat) (d i) :: nil)).
         now apply IHdf1.
       - Case "MatrixApply"%string.
         destruct H; simpl in *.
@@ -6055,7 +6041,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         unfold matrixo_to_omatrix.
         apply vectoro_to_ovector_not_none; intro.
         apply vectoro_to_ovector_not_none; intro.
-        specialize (IHdf1 (mk_env_entry (v, DTfloat) (d i i0) :: σ)).
+        specialize (IHdf1 (mk_env_entry (v, DTfloat) (d i i0) :: nil)).
         now apply IHdf1.
       - Case "VLossfun"%string.
         destruct H; simpl in *.
@@ -6066,7 +6052,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         apply vectoro_to_ovector_not_none in eqq0.
         + tauto.
         + intros.
-          specialize (IHdf1 (mk_env_entry (v1, DTfloat) (d i) :: mk_env_entry (v2, DTfloat) (r i) :: σ)).
+          specialize (IHdf1 (mk_env_entry (v1, DTfloat) (d i) :: mk_env_entry (v2, DTfloat) (r i) :: nil)).
           now apply IHdf1.
       - Case "MLossfun"%string.
         destruct H; simpl in *.
@@ -6079,7 +6065,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         + tauto.
         + intros.
           apply vectoro_to_ovector_not_none; intros.
-          specialize (IHdf1 (mk_env_entry (v1, DTfloat) (d i i0) :: mk_env_entry (v2, DTfloat) (r i i0) :: σ)).
+          specialize (IHdf1 (mk_env_entry (v1, DTfloat) (d i i0) :: mk_env_entry (v2, DTfloat) (r i i0) :: nil)).
           now apply IHdf1.
     Qed.
 
@@ -6135,6 +6121,16 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        tauto.
      Qed.
 
+   Lemma fully_closed_over_singleton {T} (df:DefinedFunction UnitAnn T) (v:var_type) 
+         (vl : list var_type): 
+     fully_closed_over df (v::nil) -> fully_closed_over df (v::vl).
+   Proof.
+     intros.
+     induction vl; trivial.
+     apply fully_closed_over_exchange_vars.
+     now apply fully_closed_over_cons.
+   Qed.
+
    Lemma fully_closed_over_exchange_2vars {T} (df:DefinedFunction UnitAnn T) 
          (v1 v2 v:var_type) (vl : list var_type): 
      fully_closed_over df (v1 :: v2 :: v:: vl) -> fully_closed_over df (v :: v1 :: v2 :: vl).
@@ -6154,6 +6150,17 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        unfold In in H0.
        tauto.
      Qed.
+
+   Lemma fully_closed_over_pair {T} (df:DefinedFunction UnitAnn T) (v1 v2:var_type) 
+         (vl : list var_type): 
+     fully_closed_over df (v1::v2::nil) -> fully_closed_over df (v1::v2::vl).
+   Proof.
+     intros.
+     induction vl; trivial.
+     apply fully_closed_over_exchange_2vars.
+     apply fully_closed_over_exchange_2vars.     
+     now apply fully_closed_over_cons.
+   Qed.
 
    Lemma fully_closed_subst {T} (vl:list var_type) (df:DefinedFunction UnitAnn T) (v:var_type)
      (e':DefinedFunction UnitAnn (snd v)):
@@ -6201,36 +6208,22 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
          red in e; subst.
          simpl; trivial.
      - Case "VectorApply"%string.
-       destruct H; split.
-       + apply IHdf1.
-         * apply fully_closed_over_exchange_vars; apply H.
-         * apply fully_closed_over_cons; apply H0.
+       destruct H; split; trivial.
        + apply IHdf2.
          * apply H1.
          * apply H0.
      - Case "MatrixApply"%string.
-       destruct H; split.
-       + apply IHdf1.
-         * apply fully_closed_over_exchange_vars; apply H.
-         * apply fully_closed_over_cons; apply H0.
+       destruct H; split; trivial.
        + apply IHdf2.
          * apply H1.
          * apply H0.
      - Case "VLossfun"%string.
-       destruct H; split.
-       + apply IHdf1.
-         * apply fully_closed_over_exchange_2vars; apply H.
-         * apply fully_closed_over_cons.
-           apply fully_closed_over_cons; apply H0.
+       destruct H; split; trivial.
        + apply IHdf2.
          * apply H1.
          * apply H0.
      - Case "MLossfun"%string.
-       destruct H; split.
-       + apply IHdf1.
-         * apply fully_closed_over_exchange_2vars; apply H.
-         * apply fully_closed_over_cons.
-           apply fully_closed_over_cons; apply H0.
+       destruct H; split; trivial.
        + apply IHdf2.
          * apply H1.
          * apply H0.
@@ -6280,16 +6273,18 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         split; destruct H.
         apply IHdf2, H0.
         apply fully_closed_subst.
-        apply IHdf1, H.
-        simpl; apply H0.
+        + apply IHdf1.
+          now apply fully_closed_over_singleton.
+        + simpl; apply H0.
       - Case "MatrixApply"%string.
         apply vforall_forall; intros; simpl in *.
         apply vforall_forall; intros; simpl in *.        
         split; destruct H.
         apply IHdf2, H0.
         apply fully_closed_subst.
-        apply IHdf1, H.
-        simpl; apply H0.
+        + apply IHdf1.
+          now apply fully_closed_over_singleton.
+        + simpl; apply H0.
       - Case "VLossfun"%string.        
         intros; simpl in *.
         split; destruct H.
@@ -6297,9 +6292,10 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         apply vforall_forall; intros; simpl in *.        
         apply fully_closed_subst.
         apply fully_closed_subst.
-        apply IHdf1, H.
-        simpl; apply fully_closed_over_cons; apply H0.
-        now simpl.
+        + apply IHdf1.
+          now apply fully_closed_over_pair.
+        + simpl; apply fully_closed_over_cons; apply H0.
+        + now simpl.
       - Case "MLossfun"%string.
         intros; simpl in *.
         apply vforall_forall; intros; simpl in *.        
@@ -6309,9 +6305,10 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         apply IHdf2, H0.
         apply fully_closed_subst.
         apply fully_closed_subst.
-        apply IHdf1, H.
-        simpl; apply fully_closed_over_cons; apply H0.
-        now simpl.
+        + apply IHdf1.
+          now apply fully_closed_over_pair.
+        + simpl; apply fully_closed_over_cons; apply H0.
+        + now simpl.
    Qed.        
 
    Lemma list_env_iter_total_fun {A} (f : A -> df_env -> option df_env) (env : df_env) (l : list A) :
@@ -6544,13 +6541,11 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
           rewrite vmap_nth in e; simpl in e.
           destruct H.
           match_option_in e.
-          generalize (fully_closed_deriv df1 v 
-                                     ((v,DTfloat):: (map (fun ve => projT1 ve) σ))).
-          intros; cut_to H2.
-          generalize (eval_fully_closed_not_none (mk_env_entry (v, DTfloat) (d x) :: σ)
+          generalize (fully_closed_deriv df1 v ((v,DTfloat):: nil)); intros.
+          cut_to H2; trivial.
+          generalize (eval_fully_closed_not_none (mk_env_entry (v, DTfloat) (d x) :: nil)
                                               (df_deriv df1 (v, DTfloat))); intros.
-          * simpl in H3; cut_to H3; tauto.
-          * trivial.
+          simpl in H3; cut_to H3; tauto.
       - Case "MatrixApply"%string.     
         generalize (eval_fully_closed_not_none σ df2); intros; simpl in H0.
         match_option; [|tauto].
@@ -6567,13 +6562,11 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
           unfold matrix_zip in e.
           rewrite vmap_nth in e; simpl in e.
           match_option_in e.
-          generalize (fully_closed_deriv df1 v 
-                                     ((v,DTfloat):: (map (fun ve => projT1 ve) σ))).
-          intros; cut_to H2.
-          generalize (eval_fully_closed_not_none (mk_env_entry (v, DTfloat) (d x x0) :: σ)
+          generalize (fully_closed_deriv df1 v ((v,DTfloat):: nil)).
+          intros; cut_to H2; trivial.
+          generalize (eval_fully_closed_not_none (mk_env_entry (v, DTfloat) (d x x0) :: nil)
                                               (df_deriv df1 (v, DTfloat))); intros.
-          * simpl in H3; cut_to H3; tauto.
-          * trivial.
+          simpl in H3; cut_to H3; tauto.
       - Case "VLossfun"%string.
         generalize (eval_fully_closed_not_none σ df2); intros; simpl in H0.
         match_option; [|tauto].
@@ -6585,14 +6578,12 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
           rewrite vmap_nth in e; simpl in e.
           destruct H.
           match_option_in e.
-          generalize (fully_closed_deriv df1 v1
-                                     ((v1,DTfloat)::(v2,DTfloat)::(map (fun ve => projT1 ve) σ))).
-          intros; cut_to H2.
+          generalize (fully_closed_deriv df1 v1 ((v1,DTfloat)::(v2,DTfloat)::nil)).
+          intros; cut_to H2; trivial.
           generalize (eval_fully_closed_not_none (mk_env_entry (v1, DTfloat) (d x) ::
-                                                        mk_env_entry (v2, DTfloat) (r x) :: σ)
+                                                        mk_env_entry (v2, DTfloat) (r x) :: nil)
                                               (df_deriv df1 (v1, DTfloat))); intros.
-          * simpl in H3; cut_to H3; tauto.
-          * trivial.
+          simpl in H3; cut_to H3; tauto.
       - Case "MLossfun"%string.
         generalize (eval_fully_closed_not_none σ df2); intros; simpl in H0.
         match_option; [|tauto].
@@ -6609,14 +6600,12 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
           unfold matrix_zip in e.
           rewrite vmap_nth in e; simpl in e.
           match_option_in e.
-          generalize (fully_closed_deriv df1 v1
-                                     ((v1,DTfloat)::(v2,DTfloat)::(map (fun ve => projT1 ve) σ))).
-          intros; cut_to H2.
+          generalize (fully_closed_deriv df1 v1 ((v1,DTfloat)::(v2,DTfloat)::nil)).
+          intros; cut_to H2; trivial.
           generalize (eval_fully_closed_not_none (mk_env_entry (v1, DTfloat) (d x x0) ::
-                                                        mk_env_entry (v2, DTfloat) (r x x0) :: σ)
+                                                        mk_env_entry (v2, DTfloat) (r x x0) :: nil)
                                               (df_deriv df1 (v1, DTfloat))); intros.
-          * simpl in H3; cut_to H3; tauto.
-          * trivial.
+          simpl in H3; cut_to H3; tauto.
     Qed.
 
     Lemma backprop_deriv_fully_closed_total {T} (σ:df_env) (df:DefinedFunction UnitAnn T) 
@@ -6637,21 +6626,21 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
       let vl := map (fun ve => projT1 ve) σ in
       fully_closed_over df vl -> df_eval_deriv σ df v <> None.
     Proof.
-      revert σ.
+      revert σ v.
       DefinedFunction_cases (induction T, df using DefinedFunction_ind_unit) Case
       ; intros; simpl in *;
         try solve [
         congruence 
             |
         destruct H
-        ; specialize (IHdf1 σ); specialize (IHdf2 σ)
+        ; specialize (IHdf1 σ v); specialize (IHdf2 σ v)
         ;cut_to IHdf1; trivial
         ;match_option; [|tauto]
         ;cut_to IHdf2; trivial
         ;match_option; tauto
             |
         destruct H;
-        specialize (IHdf1 σ); specialize (IHdf2 σ);
+        specialize (IHdf1 σ v); specialize (IHdf2 σ v);
         generalize (eval_fully_closed_not_none  σ df1); intros; simpl in H1;
         cut_to H1; trivial;
         match_option; [|tauto];
@@ -6663,13 +6652,13 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         match_option; tauto
             |
         generalize (eval_fully_closed_not_none σ df); intros; 
-        specialize (IHdf σ);
+        specialize (IHdf σ v);
         simpl in H0; cut_to H0; trivial;
         match_option; [|tauto];
         cut_to IHdf; trivial;
         match_option; tauto
             |
-        specialize (IHdf σ);
+        specialize (IHdf σ v);
         generalize (eval_fully_closed_not_none σ df); intros;
         simpl in H0; cut_to H0; trivial;
         match_option; tauto
@@ -6684,7 +6673,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         rewrite vforall_forall in H0; apply H0.
       - Case "Max"%string.
         destruct H;
-        specialize (IHdf1 σ); specialize (IHdf2 σ);
+        specialize (IHdf1 σ v); specialize (IHdf2 σ v);
         generalize (eval_fully_closed_not_none  σ df1); intros; simpl in H1;
         cut_to H1; trivial;
         match_option; [|tauto].
@@ -6695,19 +6684,20 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         cut_to IHdf1; trivial.
       - Case "VectorApply"%string.
         destruct H.
-        specialize (IHdf2 σ);
+        specialize (IHdf2 σ v0);
         generalize (eval_fully_closed_not_none  σ df2); intros; simpl in H1.
         cut_to H1; trivial.
         match_option; [|tauto].
         cut_to IHdf2; trivial.
         match_option; [|tauto].
         apply vectoro_to_ovector_not_none; intros.
-        specialize (IHdf1 (mk_env_entry (v0, DTfloat) (d i) :: σ)).
+        match_option.
+        specialize (IHdf1 (mk_env_entry (v, DTfloat) (d i) :: nil) (v, DTfloat)).
         cut_to IHdf1; trivial.
-        match_option; tauto.
+        tauto.
       - Case "MatrixApply"%string.
         destruct H.
-        specialize (IHdf2 σ);
+        specialize (IHdf2 σ v0);
         generalize (eval_fully_closed_not_none  σ df2); intros; simpl in H1.
         cut_to H1; trivial.
         match_option; [|tauto].
@@ -6715,12 +6705,12 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         match_option; [|tauto].
         apply vectoro_to_ovector_not_none; intros.
         apply vectoro_to_ovector_not_none; intros.        
-        specialize (IHdf1 (mk_env_entry (v0, DTfloat) (d i i0) :: σ)).
+        specialize (IHdf1 (mk_env_entry (v, DTfloat) (d i i0) :: nil) (v, DTfloat)).
         cut_to IHdf1; trivial.
         match_option; tauto.
       - Case "VLossfun"%string.
         destruct H.
-        specialize (IHdf2 σ);
+        specialize (IHdf2 σ v);
         generalize (eval_fully_closed_not_none  σ df2); intros; simpl in H1.
         cut_to H1; trivial.
         match_option; [|tauto].
@@ -6730,12 +6720,12 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         apply vectoro_to_ovector_not_none in eqq1.
         tauto.
         intros.
-        specialize (IHdf1 (mk_env_entry (v1, DTfloat) (d i) :: mk_env_entry (v2, DTfloat) (r i) :: σ)).
+        specialize (IHdf1 (mk_env_entry (v1, DTfloat) (d i) :: mk_env_entry (v2, DTfloat) (r i) :: nil) (v1, DTfloat)).
         cut_to IHdf1; trivial.
         match_option; tauto.
       - Case "MLossfun"%string.
         destruct H.
-        specialize (IHdf2 σ);
+        specialize (IHdf2 σ v);
         generalize (eval_fully_closed_not_none  σ df2); intros; simpl in H1.
         cut_to H1; trivial.
         match_option; [|tauto].
@@ -6747,7 +6737,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         tauto.
         intros.
         apply vectoro_to_ovector_not_none; intros.
-        specialize (IHdf1 (mk_env_entry (v1, DTfloat) (d i i0) :: mk_env_entry (v2, DTfloat) (r i i0) :: σ)).
+        specialize (IHdf1 (mk_env_entry (v1, DTfloat) (d i i0) :: mk_env_entry (v2, DTfloat) (r i i0) :: nil)(v1, DTfloat)).
         cut_to IHdf1; trivial.
         match_option; tauto.
     Qed.
