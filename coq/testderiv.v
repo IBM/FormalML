@@ -1589,19 +1589,18 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        specialize (IHdf1 d1).
        unfold df_R_vec, df_eval_at_point; simpl.
        unfold is_derive_vec in IHdf2; specialize (IHdf2 i).
-       generalize (@is_derive_comp R_AbsRing R_NormedModule
-                                   (fun r' => match df_eval 
-                                                      (mk_env_entry (v, DTfloat) r' :: 
-                                                                    nil) df1 with
-                                             | Some y => y
-                                             | None => 0
-                                             end)
+       generalize 
+         (@is_derive_comp R_AbsRing R_NormedModule
+                          (fun r' => match df_eval 
+                                             (mk_env_entry (v, DTfloat) r' :: nil) df1 with
+                                     | Some y => y
+                                     | None => 0
+                                     end)
                                    
-                                   (fun x0 => match df_eval (addBinding σ v0 x0) df2 with
-                                              | Some y => y i
-                                              | None => 0
-                                              end)
-                  )
+                          (fun x0 => match df_eval (addBinding σ v0 x0) df2 with
+                                     | Some y => y i
+                                     | None => 0
+                                     end) )
        ; simpl; intros.
        specialize (H2 xx d1 (d0 i)).
        apply (is_derive_ext  (fun x : R =>
@@ -1644,7 +1643,54 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
            -- match_option.
            -- apply IHdf2.
      - Case "MatrixApply"%string.
-       admit.
+       destruct H.
+       do 2 match_option_in H0.
+       specialize (vectoro_to_ovector_forall_some_f H0); intros.
+       specialize (IHdf2 d0 σ v0 xx H1 eqq0).
+       unfold is_derive_mat; intros.
+       specialize (H2 i); simpl in H2.
+       unfold matrixo_to_omatrix in H0.
+       specialize (vectoro_to_ovector_forall_some_f H2); intros.       
+       specialize (H3 j); simpl in H3.
+       match_option_in H3; invcs H3.
+       simpl in IHdf2; simpl in IHdf1.
+       specialize (IHdf1 d1).
+       unfold is_derive_mat in IHdf2; specialize (IHdf2 i j).
+       generalize 
+         (@is_derive_comp R_AbsRing R_NormedModule 
+                          (df_R nil df1 v)
+                          (fun x0 => (df_R_mat σ df2 v0 x0 i j)))
+       ; simpl; intros.
+       specialize (H3 xx d1 (d0 i j)).
+       apply (is_derive_ext  (fun x : R => df_R Datatypes.nil df1 v (df_R_mat σ df2 v0 x i j))); intros.
+       + destruct (eval_fully_closed_total (addBinding σ v0 t) df2); simpl; trivial.
+         unfold df_R_mat, df_eval_at_point; simpl.
+         rewrite e.
+         unfold matrixo_to_omatrix.
+         destruct (eval_fully_closed_total (mk_env_entry (v, DTfloat) (x i j) :: nil) df1); simpl; trivial.
+         unfold df_R, df_eval_at_point, addBinding; simpl.
+         rewrite e0.
+         match_option.
+         * specialize (vectoro_to_ovector_forall_some_f eqq2); intros.
+           specialize (H4 i); simpl in H4.
+           specialize (vectoro_to_ovector_forall_some_f H4); intros.           
+           specialize (H6 j); simpl in H6.
+           congruence.
+         * apply vectoro_to_ovector_exists_None in eqq2.
+           destruct eqq2.
+           apply vectoro_to_ovector_exists_None in e1.
+           destruct e1.
+           destruct (eval_fully_closed_total (mk_env_entry (v, DTfloat) (x x1 x2) :: nil) df1); simpl; trivial.
+           congruence.
+       + apply H3.
+         * unfold df_R_mat, df_R, df_eval_at_point; simpl.
+           rewrite eqq.
+           specialize (IHdf1 nil v (d i j)).
+           unfold df_R, df_eval_at_point in IHdf1; simpl in IHdf1.
+           apply IHdf1; trivial.
+           destruct (eval_fully_closed_total (mk_env_entry (v, DTfloat) (d i j) :: nil) df1); simpl; trivial.           
+           admit.
+         * apply IHdf2.
      - Case "VLossfun"%string.
        admit.
      - Case "MLossfun"%string.
