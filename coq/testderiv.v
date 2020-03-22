@@ -29,7 +29,6 @@ Section real_pfs.
   Import Reals.
   Import List.
 
-
   (* following returns None if not-differentiable *)
     Fixpoint df_eval_deriv_exact {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (v:var_type) : option (definition_function_types_interp T)
       := (match df with
@@ -242,7 +241,8 @@ Section real_pfs.
                          | Some sd => Some ((ld i j) * sd)
                          | _ => None
                          end)) with
-             | Some vv => Some ((msum vv)/(FfromZ (Z.of_nat m)))
+             | Some vv => 
+               if Nat.eq_dec m 0%nat then None else Some ((msum vv) / (FfromZ (Z.of_nat m)))
              | _ => None
              end
            | _, _ => None
@@ -877,93 +877,31 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         now unfold is_derive_vec.
     Qed.
 
-    Lemma apply_vector_correct (v v0 : SubVar) (x:R) :
-      let vec : Vector (DefinedFunction UnitAnn DTfloat) 2 :=
-          fun _ => Var (v, DTfloat) tt in
-      let dfvec := DVector tt vec in
-      let env := addBinding nil v 1 in
-      df_eval_deriv_exact env (VectorSum tt dfvec) (v,DTfloat) =
-      df_eval_deriv_exact env (VectorSum tt (VectorApply tt v0 (Var (v0, DTfloat) tt) dfvec)) 
-                          (v,DTfloat).
-   Proof.
-      intros.
-      simpl.
-      match_option.
-      - match_option_in eqq.
-        f_equal; f_equal.
-        unfold vectoro_to_ovector in eqq.
-        unfold vector_fold_right_dep in eqq.
-        unfold vector_fold_right_bounded_dep in eqq.        
-        simpl in eqq.
-        unfold equiv_dec, vart_eqdec in *.
-        destruct (vart_dec (v, DTfloat) (v,DTfloat)).
-        destruct (vart_dec (v0, DTfloat) (v0, DTfloat)).
-        replace (1*1)%R with 1 in eqq.
-        inversion eqq; trivial.
-        simpl; lra.
-        tauto.
-        congruence.
-      - match_option_in eqq.
-        apply vectoro_to_ovector_exists_None in eqq0.
-        destruct eqq0.
-        unfold equiv_dec, vart_eqdec in *.
-        destruct (vart_dec (v, DTfloat) (v,DTfloat)).
-        congruence.
-        tauto.
-   Qed.
+    Lemma vsum_ext {n} (v v':Vector float n) : vec_eq v v' -> vsum v = vsum v'.
+    Proof.
+      apply vector_fold_right1_ext.
+    Qed.
    
-    Lemma apply_vector_correct2 (v v0 : SubVar) (x:R) :
-      let vec : Vector (DefinedFunction UnitAnn DTfloat) 2 :=
-          fun _ => Var (v, DTfloat) tt in
-      let dfvec := DVector tt vec in
-      let env := addBinding nil v 1 in
-      df_eval_deriv_exact env (VectorSum tt (VectorApply tt v0 (Var (v0, DTfloat) tt) dfvec)) 
-                          (v,DTfloat) = Some (1 + 1)%R.
-   Proof.
-      intros.
-      simpl.
-      match_option.
-      - match_option_in eqq.
-        f_equal; f_equal.
-        unfold vectoro_to_ovector in eqq.
-        unfold vector_fold_right_dep in eqq.
-        unfold vector_fold_right_bounded_dep in eqq.        
-        simpl in eqq.
-        unfold equiv_dec, vart_eqdec in *.
-        destruct (vart_dec (v, DTfloat) (v,DTfloat)); [|congruence].
-        destruct (vart_dec (v0, DTfloat) (v0, DTfloat)); [|congruence].
-        replace (1*1)%R with 1 in eqq.
-        + inversion eqq; trivial.
-        + simpl; lra.
-      - match_option_in eqq.
-        apply vectoro_to_ovector_exists_None in eqq0.
-        destruct eqq0.
-        unfold equiv_dec, vart_eqdec in e.
-        destruct (vart_dec (v, DTfloat) (v,DTfloat)); congruence.
-   Qed.
+    Lemma vsum0 n : vsum (fun _ : {n' : nat | (n' < n)%nat} => 0) = 0.
+    Proof.
+      generalize (vsum_mult (fun _ : {n' : nat | (n' < n)%nat} => 0) 0); intros HH.
+      rewrite Rmult_0_l in HH.
+      symmetry.
+      simpl in *.
+      erewrite vsum_ext; [eassumption | ].
+      intro; simpl; lra.
+    Qed.
 
-   Lemma vsum_ext {n} (v v':Vector float n) : vec_eq v v' -> vsum v = vsum v'.
-   Proof.
-     apply vector_fold_right1_ext.
-   Qed.
-   
-   Lemma vsum0 n : vsum (fun _ : {n' : nat | (n' < n)%nat} => 0) = 0.
-   Proof.
-     generalize (vsum_mult (fun _ : {n' : nat | (n' < n)%nat} => 0) 0); intros HH.
-     rewrite Rmult_0_l in HH.
-     symmetry.
-     simpl in *.
-     erewrite vsum_ext; [eassumption | ].
-     intro; simpl; lra.
-   Qed.
-
+    Locate lt_dec.
+    
     Theorem df_eval_deriv_exact_gen_correct {T} σ (df:DefinedFunction UnitAnn T) v (x:R) y
      : fully_closed_over df ((v,DTfloat)::map (@projT1 _ _) σ) ->
        df_eval_deriv_exact (addBinding σ v x) df (v,DTfloat) = Some y ->
        is_derive_gen (df_R_gen UnitAnn T σ df v) x y.
-   Proof.
-     revert  σ v x.
-     DefinedFunction_cases (induction T, df using DefinedFunction_ind_unit) Case; simpl; intros σ v0 xx; intros.
+    Proof.
+      revert  σ v x.
+      DefinedFunction_cases (induction T, df using DefinedFunction_ind_unit) Case
+      ; simpl; intros σ v0 xx; intros.
      - Case "Number"%string.
        unfold df_R, df_eval_at_point; simpl.
        inversion H0; subst.
@@ -1691,15 +1629,196 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        simpl in IHdf2; simpl in IHdf1.
        unfold is_derive_vec in IHdf2.
        unfold df_R, df_eval_at_point; simpl.
-       apply is_derive_vsum.
-       generalize 
-         (@is_derive_comp R_AbsRing R_NormedModule); intros HH.
-       
-       
-                          (df_R nil df1 v)
-                          (fun x0 => (df_R_mat σ df2 v0 x0 i j))).
-
-       admit.
+       generalize (is_derive_vsum 
+                     (fun x : R =>
+                        match df_eval (addBinding σ v0 x) df2 with
+                        | Some l' =>
+                          match
+                            vectoro_to_ovector
+                              (fun i : {n' : nat | (n' < n)%nat} =>
+                                 df_eval
+                                   (mk_env_entry (v1, DTfloat) (l' i)
+                                                 :: mk_env_entry (v2, DTfloat) (r i) 
+                                                 :: Datatypes.nil) df1)
+                          with
+                          | Some vv => vv
+                          | None => fun _ => 0%R
+                          end
+                        | None => fun _ => 0%R
+                        end)
+                     xx v); intros.
+       apply (is_derive_ext
+                (fun x0 : R_AbsRing =>
+                   vsum
+                     match df_eval (addBinding σ v0 x0) df2 with
+                     | Some l' =>
+                       match
+                         vectoro_to_ovector
+                           (fun i : {n' : nat | (n' < n)%nat} =>
+                              df_eval
+                                (mk_env_entry (v1, DTfloat) (l' i)
+                                              :: mk_env_entry (v2, DTfloat) (r i) 
+                                              :: Datatypes.nil) df1)
+                       with
+                       | Some vv => vv
+                       | None => fun _ : {n' : nat | (n' < n)%nat} => 0
+                       end
+                     | None => fun _ : {n' : nat | (n' < n)%nat} => 0
+                     end)); intros.
+       + destruct (eval_fully_closed_total (addBinding σ v0 t) df2); simpl; trivial.
+         rewrite e.
+         match_option.
+         apply vsum0.
+       + apply H2.
+         unfold is_derive_vec; simpl; intros.
+         generalize 
+           (@is_derive_comp R_AbsRing R_NormedModule 
+                            (df_R (addBinding nil v2 (r i)) df1 v1)
+                            (fun x0 => (df_R_vec σ df2 v0 x0 i))); simpl; intros.
+         apply (is_derive_ext
+                  (fun x0 : R =>
+                     df_R (addBinding Datatypes.nil v2 (r i)) df1 v1 (df_R_vec σ df2 v0 x0 i)));intros.
+         * unfold df_R_vec, df_R, df_eval_at_point; simpl.
+           destruct (eval_fully_closed_total (addBinding σ v0 t) df2); simpl; trivial.       
+           rewrite e.
+           destruct (eval_fully_closed_total 
+                       (addBinding (addBinding Datatypes.nil v2 (r i)) v1 (x i)) df1); simpl; trivial.       
+           rewrite e0.
+           match_option.
+           -- specialize (vectoro_to_ovector_forall_some_f eqq2); intros.
+              specialize (H4 i); simpl in H4.
+              unfold addBinding in e0.
+              congruence.
+           -- apply vectoro_to_ovector_exists_None in eqq2.
+              destruct eqq2.
+              destruct (eval_fully_closed_total
+                          (mk_env_entry (v1, DTfloat) (x x1)
+                                        :: mk_env_entry (v2, DTfloat) (r x1) 
+                                        :: Datatypes.nil) df1); trivial.
+              congruence.
+         * specialize (H0 i).
+           match_option_in H0.
+           inversion H0.
+           apply H3; trivial.
+           apply IHdf1; trivial.
+           unfold addBinding, df_R_vec, df_eval_at_point; simpl.
+           rewrite eqq.
+           apply eqq2.
      - Case "MLossfun"%string.
-       admit.
+       destruct H.
+       do 3 match_option_in H0.
+       invcs H0.
+       destruct (Nat.eq_dec n 0); [congruence|].
+       invcs H3.
+       specialize (vectoro_to_ovector_forall_some_f eqq1); simpl; intros.
+       specialize (IHdf2 d0 σ v0 xx H1 eqq0).
+       simpl in IHdf2; simpl in IHdf1.
+       unfold is_derive_mat in IHdf2.
+       replace ((@msum floatish_R m n m0) / IZR (Z.of_nat n))%R with (/ (IZR (Z.of_nat n))%R * msum m0)%R by lra.
+       apply (is_derive_ext (fun x0 =>  scal (Rinv (IZR (Z.of_nat n))%R) 
+                                        (scal (IZR (Z.of_nat n))%R 
+                                         (df_R σ (MLossfun ann v1 v2 df1 df2 r) v0 x0)))); intros.
+       + unfold scal; simpl.
+         unfold mult; simpl.
+         field.
+         admit.
+       + apply is_derive_scal.
+         unfold df_R, df_eval_at_point; simpl.
+         generalize (is_derive_msum 
+                       (fun x : R =>
+                          match df_eval (addBinding σ v0 x) df2 with
+                          | Some l' =>
+                          match
+                            matrixo_to_omatrix
+                              (fun (i : {n' : nat | (n' < m)%nat}) 
+                                   (j : {m' : nat | (m' < n)%nat}) =>
+                                 df_eval
+                                   (mk_env_entry (v1, DTfloat) (l' i j)
+                                                 :: mk_env_entry (v2, DTfloat) (r i j) 
+                                                 :: Datatypes.nil) df1)
+                          with
+                          | Some vv => vv
+                          | None => fun _ _ => 0%R
+                          end
+                        | None => fun _ _ => 0%R
+                        end)
+                     xx m0); intros.
+         apply (is_derive_ext
+                (fun x0 : R_AbsRing =>
+                   msum
+                     match df_eval (addBinding σ v0 x0) df2 with
+                     | Some l' =>
+                       match
+                         matrixo_to_omatrix
+                           (fun (i : {n' : nat | (n' < m)%nat}) 
+                                (j : {m' : nat | (m' < n)%nat}) =>
+                              df_eval
+                                (mk_env_entry (v1, DTfloat) (l' i j)
+                                              :: mk_env_entry (v2, DTfloat) (r i j) 
+                                              :: Datatypes.nil) df1)
+                       with
+                       | Some vv => vv
+                       | None =>
+                         fun (_ : {n' : nat | (n' < m)%nat}) 
+                             (_ : {m' : nat | (m' < n)%nat}) => 0
+                       end
+                     | None => fun (_ : {n' : nat | (n' < m)%nat}) 
+                                   (_ : {m' : nat | (m' < n)%nat}) => 0
+                     end)); intros.
+         * destruct (eval_fully_closed_total (addBinding σ v0 t) df2); simpl; trivial.
+           rewrite e.
+           unfold matrixo_to_omatrix; simpl.
+           match_option.
+           -- unfold scal; simpl.
+              unfold mult; simpl.
+              admit.
+           -- unfold scal; simpl.
+              unfold mult; simpl.
+              replace (IZR (Z.of_nat n) * 0)%R with (0)%R by lra.
+              admit.
+         * apply H2.
+           unfold is_derive_mat; simpl; intros.
+           generalize 
+             (@is_derive_comp R_AbsRing R_NormedModule 
+                              (df_R (addBinding nil v2 (r i j)) df1 v1)
+                              (fun x0 => (df_R_mat σ df2 v0 x0 i j))); simpl; intros.
+           apply (is_derive_ext
+                    (fun x0 : R =>
+                       df_R (addBinding Datatypes.nil v2 (r i j)) df1 v1 
+                            (df_R_mat σ df2 v0 x0 i j)));intros.
+           -- unfold df_R_mat, df_R, df_eval_at_point; simpl.
+              destruct (eval_fully_closed_total (addBinding σ v0 t) df2); simpl; trivial.       
+              rewrite e.
+              destruct (eval_fully_closed_total 
+                          (addBinding (addBinding Datatypes.nil v2 (r i j)) v1 (x i j)) df1)
+              ; simpl; trivial.       
+              rewrite e0.
+              match_option.
+              ++ specialize (vectoro_to_ovector_forall_some_f eqq2); intros.
+                 specialize (H4 i); simpl in H4.
+                 specialize (vectoro_to_ovector_forall_some_f H4); intros.                 
+                 specialize (H5 j); simpl in H5.
+                 unfold addBinding in e0.
+                 congruence.
+              ++ unfold matrixo_to_omatrix in eqq2.
+                 apply vectoro_to_ovector_exists_None in eqq2.
+                 destruct eqq2.
+                 apply vectoro_to_ovector_exists_None in e1.                 
+                 destruct e1.
+                 destruct (eval_fully_closed_total
+                             (mk_env_entry (v1, DTfloat) (x x1 x2)
+                                        :: mk_env_entry (v2, DTfloat) (r x1 x2) 
+                                        :: Datatypes.nil) df1); trivial.
+                 congruence.
+           -- specialize (H0 i).
+              specialize (vectoro_to_ovector_forall_some_f H0); intros.              
+              specialize (H4 j); simpl in H4.
+              match_option_in H4.
+              inversion H4.
+              apply H3; trivial.
+              apply IHdf1; trivial.
+              unfold addBinding, df_R_vec, df_eval_at_point; simpl.
+              unfold df_R_mat, df_eval_at_point; simpl.
+              rewrite eqq.
+              apply eqq2.
 Admitted.       
