@@ -1771,12 +1771,18 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
            match_option.
            -- unfold scal; simpl.
               unfold mult; simpl.
-              unfold Rdiv.
-              admit.
+              generalize (msum v); unfold float; simpl; intros.
+              field.
+              rewrite <- INR_IZR_INZ.
+              now apply INR_nzero_eq.
            -- unfold scal; simpl.
               unfold mult; simpl.
               replace (IZR (Z.of_nat n) * 0)%R with (0)%R by lra.
-              admit.
+              unfold msum.
+              erewrite vsum_ext; try apply vsum0; intro.
+              rewrite vmap_nth.
+              erewrite vsum_ext; try apply vsum0; intro.
+              trivial.
          * apply H2.
            unfold is_derive_mat; simpl; intros.
            generalize 
@@ -1822,4 +1828,4 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
               unfold df_R_mat, df_eval_at_point; simpl.
               rewrite eqq.
               apply eqq2.
-Admitted.       
+    Qed.
