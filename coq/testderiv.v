@@ -1639,12 +1639,14 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                           (fun x0 => (df_R_mat σ df2 v0 x0 i j)))
        ; simpl; intros.
        specialize (H3 xx d1 (d0 i j)).
-       apply (is_derive_ext  (fun x : R => df_R Datatypes.nil df1 v (df_R_mat σ df2 v0 x i j))); intros.
+       apply (is_derive_ext  (fun x : R => df_R Datatypes.nil df1 v (df_R_mat σ df2 v0 x i j)))
+       ; intros.
        + destruct (eval_fully_closed_total (addBinding σ v0 t) df2); simpl; trivial.
          unfold df_R_mat, df_eval_at_point; simpl.
          rewrite e.
          unfold matrixo_to_omatrix.
-         destruct (eval_fully_closed_total (mk_env_entry (v, DTfloat) (x i j) :: nil) df1); simpl; trivial.
+         destruct (eval_fully_closed_total (mk_env_entry (v, DTfloat) (x i j) :: nil) df1)
+         ; simpl; trivial.
          unfold df_R, df_eval_at_point, addBinding; simpl.
          rewrite e0.
          match_option.
@@ -1657,7 +1659,8 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
            destruct eqq2.
            apply vectoro_to_ovector_exists_None in e1.
            destruct e1.
-           destruct (eval_fully_closed_total (mk_env_entry (v, DTfloat) (x x1 x2) :: nil) df1); simpl; trivial.
+           destruct (eval_fully_closed_total (mk_env_entry (v, DTfloat) (x x1 x2) :: nil) df1)
+           ; simpl; trivial.
            congruence.
        + apply H3.
          * unfold df_R_mat, df_R, df_eval_at_point; simpl.
@@ -1667,6 +1670,14 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
            apply IHdf1; trivial.
          * apply IHdf2.
      - Case "VLossfun"%string.
+       destruct H.
+       do 3 match_option_in H0.
+       invcs H0.
+       specialize (vectoro_to_ovector_forall_some_f eqq1); simpl; intros.
+       specialize (IHdf2 d0 σ v0 xx H1 eqq0).
+       simpl in IHdf2; simpl in IHdf1.
+       unfold is_derive_vec in IHdf2.
+       
        admit.
      - Case "MLossfun"%string.
        admit.
