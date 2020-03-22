@@ -892,8 +892,8 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
       intro; simpl; lra.
     Qed.
 
-    Locate lt_dec.
-    
+    SearchAbout IZR.
+
     Theorem df_eval_deriv_exact_gen_correct {T} σ (df:DefinedFunction UnitAnn T) v (x:R) y
      : fully_closed_over df ((v,DTfloat)::map (@projT1 _ _) σ) ->
        df_eval_deriv_exact (addBinding σ v x) df (v,DTfloat) = Some y ->
@@ -1721,7 +1721,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        + unfold scal; simpl.
          unfold mult; simpl.
          field.
-         admit.
+         apply IZR_neq; omega.
        + apply is_derive_scal.
          unfold df_R, df_eval_at_point; simpl.
          generalize (is_derive_msum 
@@ -1771,6 +1771,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
            match_option.
            -- unfold scal; simpl.
               unfold mult; simpl.
+              unfold Rdiv.
               admit.
            -- unfold scal; simpl.
               unfold mult; simpl.
