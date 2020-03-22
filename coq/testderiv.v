@@ -942,7 +942,20 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         destruct (vart_dec (v, DTfloat) (v,DTfloat)); congruence.
    Qed.
 
-
+   Lemma vsum_ext {n} (v v':Vector float n) : vec_eq v v' -> vsum v = vsum v'.
+   Proof.
+     apply vector_fold_right1_ext.
+   Qed.
+   
+   Lemma vsum0 n : vsum (fun _ : {n' : nat | (n' < n)%nat} => 0) = 0.
+   Proof.
+     generalize (vsum_mult (fun _ : {n' : nat | (n' < n)%nat} => 0) 0); intros HH.
+     rewrite Rmult_0_l in HH.
+     symmetry.
+     simpl in *.
+     erewrite vsum_ext; [eassumption | ].
+     intro; simpl; lra.
+   Qed.
 
     Theorem df_eval_deriv_exact_gen_correct {T} σ (df:DefinedFunction UnitAnn T) v (x:R) y
      : fully_closed_over df ((v,DTfloat)::map (@projT1 _ _) σ) ->
@@ -1677,7 +1690,15 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        specialize (IHdf2 d0 σ v0 xx H1 eqq0).
        simpl in IHdf2; simpl in IHdf1.
        unfold is_derive_vec in IHdf2.
+       unfold df_R, df_eval_at_point; simpl.
+       apply is_derive_vsum.
+       generalize 
+         (@is_derive_comp R_AbsRing R_NormedModule); intros HH.
        
+       
+                          (df_R nil df1 v)
+                          (fun x0 => (df_R_mat σ df2 v0 x0 i j))).
+
        admit.
      - Case "MLossfun"%string.
        admit.
