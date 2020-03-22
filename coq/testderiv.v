@@ -207,7 +207,7 @@ Section real_pfs.
              matrixo_to_omatrix
                (fun i j => 
                   let xv := (x, DTfloat):var_type in
-                  match df_eval_deriv_exact (cons (mk_env_entry xv (re i j)) σ) s xv with
+                  match df_eval_deriv_exact (cons (mk_env_entry xv (re i j)) nil) s xv with
                          | Some sd => Some ((rd i j) * sd)
                          | _ => None
                          end)
@@ -221,7 +221,7 @@ Section real_pfs.
                          let xv1 := (v1, DTfloat):var_type in
                          let xv2 := (v2, DTfloat):var_type in                         
                          match df_eval_deriv_exact (cons (mk_env_entry xv1 (le i)) 
-                                                   (cons (mk_env_entry xv2 (r i)) σ)) s xv1 with
+                                                   (cons (mk_env_entry xv2 (r i)) nil)) s xv1 with
                          | Some sd => Some ((ld i) * sd)
                          | _ => None
                          end)) with
@@ -238,7 +238,7 @@ Section real_pfs.
                          let xv1 := (v1, DTfloat):var_type in
                          let xv2 := (v2, DTfloat):var_type in                         
                          match df_eval_deriv_exact (cons (mk_env_entry xv1 (le i j)) 
-                                                   (cons (mk_env_entry xv2 (r i j)) σ)) s xv1 with
+                                                   (cons (mk_env_entry xv2 (r i j)) nil)) s xv1 with
                          | Some sd => Some ((ld i j) * sd)
                          | _ => None
                          end)) with
@@ -1587,61 +1587,38 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        match_option_in H2; invcs H2.
        simpl in IHdf2; simpl in IHdf1.
        specialize (IHdf1 d1).
-       unfold df_R_vec, df_eval_at_point; simpl.
        unfold is_derive_vec in IHdf2; specialize (IHdf2 i).
        generalize 
-         (@is_derive_comp R_AbsRing R_NormedModule
-                          (fun r' => match df_eval 
-                                             (mk_env_entry (v, DTfloat) r' :: nil) df1 with
-                                     | Some y => y
-                                     | None => 0
-                                     end)
-                                   
-                          (fun x0 => match df_eval (addBinding σ v0 x0) df2 with
-                                     | Some y => y i
-                                     | None => 0
-                                     end) )
-       ; simpl; intros.
+         (@is_derive_comp R_AbsRing R_NormedModule 
+                          (df_R nil df1 v)
+                          (fun x0 => (df_R_vec σ df2 v0 x0 i))); simpl; intros.
        specialize (H2 xx d1 (d0 i)).
-       apply (is_derive_ext  (fun x : R =>
-          match
-            df_eval
-              (mk_env_entry (v, DTfloat)
-                 match df_eval (addBinding σ v0 x) df2 with
-                 | Some y => y i
-                 | None => 0
-                 end :: Datatypes.nil) df1
-          with
-          | Some y => y
-          | None => 0%R
-          end)); intros.
+       apply (is_derive_ext  (fun x : R => df_R Datatypes.nil df1 v (df_R_vec σ df2 v0 x i)))
+       ; intros.
        + destruct (eval_fully_closed_total (addBinding σ v0 t) df2); simpl; trivial.
+         unfold df_R_vec, df_eval_at_point; simpl.
          rewrite e.
-         destruct (eval_fully_closed_total (mk_env_entry (v, DTfloat) (x i) :: nil) df1); simpl; trivial.
+         unfold df_R, df_eval_at_point; simpl.
+         destruct (eval_fully_closed_total (mk_env_entry (v, DTfloat) (x i) :: nil) df1)
+         ; simpl; trivial.
+         unfold addBinding.
          rewrite e0.
          match_option.
          * specialize (vectoro_to_ovector_forall_some_f eqq2); intros.
-           specialize (H3 i).
-           simpl in H3.
+           specialize (H3 i);simpl in H3.
            congruence.
          * apply vectoro_to_ovector_exists_None in eqq2.
            destruct eqq2.
-           destruct (eval_fully_closed_total (mk_env_entry (v, DTfloat) (x x1) :: nil) df1); simpl; trivial.
+           destruct (eval_fully_closed_total (mk_env_entry (v, DTfloat) (x x1) :: nil) df1)
+           ; simpl; trivial.
            congruence.
        + apply H2.
-         * rewrite eqq.
+         * unfold df_R_vec, df_R, df_eval_at_point; simpl.
+           rewrite eqq.
            unfold df_R, df_eval_at_point in IHdf1.
            specialize (IHdf1 nil v (d i)).
            apply IHdf1; trivial.
-         * unfold df_R_vec, df_R, df_eval_at_point in IHdf2; simpl in IHdf2.
-
-           apply (is_derive_ext (fun x0 : R =>
-                                   match df_eval (addBinding σ v0 x0) df2 with
-                                   | Some y => y
-                                   | None => ConstVector n 0
-                                   end i)); intros.
-           -- match_option.
-           -- apply IHdf2.
+         * apply IHdf2.
      - Case "MatrixApply"%string.
        destruct H.
        do 2 match_option_in H0.
@@ -1688,8 +1665,6 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
            specialize (IHdf1 nil v (d i j)).
            unfold df_R, df_eval_at_point in IHdf1; simpl in IHdf1.
            apply IHdf1; trivial.
-           destruct (eval_fully_closed_total (mk_env_entry (v, DTfloat) (d i j) :: nil) df1); simpl; trivial.           
-           admit.
          * apply IHdf2.
      - Case "VLossfun"%string.
        admit.
