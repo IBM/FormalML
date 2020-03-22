@@ -1621,13 +1621,14 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
          destruct (eval_fully_closed_total (mk_env_entry (v, DTfloat) (x i) :: nil) df1); simpl; trivial.
          rewrite e0.
          match_option.
-         specialize (vectoro_to_ovector_forall_some_f eqq2); intros.
-         specialize (H3 i).
-         admit.
-         apply vectoro_to_ovector_exists_None in eqq2.
-         destruct eqq2.
-         destruct (eval_fully_closed_total (mk_env_entry (v, DTfloat) (x x1) :: nil) df1); simpl; trivial.
-         congruence.
+         * specialize (vectoro_to_ovector_forall_some_f eqq2); intros.
+           specialize (H3 i).
+           simpl in H3.
+           congruence.
+         * apply vectoro_to_ovector_exists_None in eqq2.
+           destruct eqq2.
+           destruct (eval_fully_closed_total (mk_env_entry (v, DTfloat) (x x1) :: nil) df1); simpl; trivial.
+           congruence.
        + apply H2.
          * rewrite eqq.
            unfold df_R, df_eval_at_point in IHdf1.
