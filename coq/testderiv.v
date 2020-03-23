@@ -90,7 +90,9 @@ Section real_pfs.
          | Abs _ e =>
            match df_eval σ e, df_eval_deriv_exact σ e v with
            | Some ee, Some ed => 
-             if Feq ee 0 then None else Some (ed * (sign ee))
+             if Feq ee 0 then 
+               (if Feq ed 0 then Some 0 else None)
+             else Some (ed * (sign ee))
            | _, _ => None
            end
          | Sign _ e =>
@@ -108,8 +110,10 @@ Section real_pfs.
          | Max _ l r =>
            match df_eval σ l, df_eval σ r, df_eval_deriv_exact σ l v, df_eval_deriv_exact σ r v with
            | Some le, Some re, Some ld, Some rd =>
-             if Feq le re then None else
-               if le < re then Some rd else Some ld
+             if Feq le re then 
+               (if Feq ld rd then Some ld else None) 
+             else
+               (if le < re then Some rd else Some ld)
            | _, _, _, _=> None
            end
          | VectorElem n _ l i => 
@@ -659,12 +663,18 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        + eapply is_derive_ext.
          * intros; simpl.
            now rewrite H1.
-         * destruct ( Req_EM_T d 0 ); [congruence |].
-           inversion H3.
-           apply (@is_derive_comp R_AbsRing); trivial.
-           replace (d) with (df_R σ e v x)
-           ; unfold df_R, df_eval_at_point; simpl; rewrite eqq; trivial.
-           apply is_derive_abs; lra.
+         * destruct ( Req_EM_T d 0 ).
+           -- destruct (Req_EM_T d0 0).
+              ++inversion H3.
+                apply is_derive_Rabs_df0.
+                rewrite e1 in H.
+                apply H.
+              ++ congruence.
+           -- inversion H3.
+              apply (@is_derive_comp R_AbsRing); trivial.
+              replace (d) with (df_R σ e v x)
+              ; unfold df_R, df_eval_at_point; simpl; rewrite eqq; trivial.
+              apply is_derive_abs; lra.
      - Case "Sign"%string.         
        match_option_in H1.
        match_option_in H1.
@@ -721,34 +731,36 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
            now rewrite H4.
          * match_option_in H2.
            match_option_in H2.           
-           destruct (Req_EM_T d d0); [congruence |].
-           destruct (Rlt_dec d d0).
-           -- invcs H2.
-              specialize (H _ isc1 H1 eqq1).
-              specialize (H0 _ isc2 H3 eqq2).
-              replace (y) with ((d1 + y + (d1-y)*sign(df_R σ l v x - df_R σ r v x))/2).
-              ++ apply is_derive_max; trivial.
-                 unfold df_R, df_eval_at_point; simpl.           
-                 now rewrite eqq, eqq0.
-              ++ unfold df_R, df_eval_at_point; simpl.           
-                 rewrite eqq, eqq0.
-                 unfold sign; simpl.
-                 destruct (total_order_T 0 (d - d0)).
-                 ** destruct s; lra.
-                 ** lra.
-           -- invcs H2.
-              specialize (H _ isc1 H1 eqq1).
-              specialize (H0 _ isc2 H3 eqq2).
-              replace (y) with ((y + d2 + (y - d2)*sign(df_R σ l v x - df_R σ r v x))/2).
-              ++ apply is_derive_max; trivial.
-                 unfold df_R, df_eval_at_point; simpl.           
-                 now rewrite eqq, eqq0.
-              ++ unfold df_R, df_eval_at_point; simpl.           
-                 rewrite eqq, eqq0.
-                 unfold sign; simpl.
-                 destruct (total_order_T 0 (d - d0)).
-                 ** destruct s; lra.
-                 ** lra.
+           destruct (Req_EM_T d d0).
+           -- destruct (Req_EM_T d1 d2).
+              ++ invcs H2.
+                 apply is_derive_max_alt2.
+                 apply H; trivial.
+                 apply H0; trivial.
+              ++ congruence.
+           -- destruct (Rlt_dec d d0).
+              ++ invcs H2.
+                 specialize (H _ isc1 H1 eqq1).
+                 specialize (H0 _ isc2 H3 eqq2).
+                 replace (y) with ((d1 + y + (d1-y)*sign(df_R σ l v x - df_R σ r v x))/2).
+                 ** apply is_derive_max; trivial.
+                    unfold df_R, df_eval_at_point; simpl.           
+                    now rewrite eqq, eqq0.
+                 ** unfold df_R, df_eval_at_point; simpl.           
+                    rewrite eqq, eqq0.
+                    unfold sign; simpl.
+                    destruct (total_order_T 0 (d - d0)); [destruct s; lra|lra].
+              ++ invcs H2.
+                 specialize (H _ isc1 H1 eqq1).
+                 specialize (H0 _ isc2 H3 eqq2).
+                 replace (y) with ((y + d2 + (y - d2)*sign(df_R σ l v x - df_R σ r v x))/2).
+                 ** apply is_derive_max; trivial.
+                    unfold df_R, df_eval_at_point; simpl.           
+                    now rewrite eqq, eqq0.
+                 ** unfold df_R, df_eval_at_point; simpl.           
+                    rewrite eqq, eqq0.
+                    unfold sign; simpl.
+                    destruct (total_order_T 0 (d - d0)); [destruct s; lra | lra].
    Qed.
    
    Definition df_R_vec {Ann} {n} (σ:df_env) (df:DefinedFunction Ann (DTVector n)) v : 
@@ -891,8 +903,6 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
       erewrite vsum_ext; [eassumption | ].
       intro; simpl; lra.
     Qed.
-
-    SearchAbout IZR.
 
     Theorem df_eval_deriv_exact_gen_correct {T} σ (df:DefinedFunction UnitAnn T) v (x:R) y
      : fully_closed_over df ((v,DTfloat)::map (@projT1 _ _) σ) ->
@@ -1150,18 +1160,23 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        + eapply is_derive_ext.
          * intros; simpl.
            now rewrite H0.
-         * destruct ( Req_EM_T d 0 ); [congruence |].
-           inversion H2.
-           apply (@is_derive_comp R_AbsRing); trivial.
-           replace (d) with (df_R σ df v0 xx).
-           -- replace (@FloatishOps.sign floatish_R (df_R σ df v0 xx)) with (sign (df_R σ df v0 xx)).
-              ++ apply is_derive_abs.
-                 unfold df_R, df_eval_at_point; simpl.
-                 rewrite eqq.
-                 lra.
-              ++ apply floatish_sign.
-           --  unfold df_R, df_eval_at_point; simpl.
-               now rewrite eqq.
+         * destruct ( Req_EM_T d 0 ).
+           -- destruct ( Req_EM_T d0 0 ).
+              ++ invcs H2.
+                 apply is_derive_Rabs_df0.
+                 apply IHdf.
+              ++ congruence.
+           -- inversion H2.
+              apply (@is_derive_comp R_AbsRing); trivial.
+              replace (d) with (df_R σ df v0 xx).
+              ++ replace (@FloatishOps.sign floatish_R (df_R σ df v0 xx)) with (sign (df_R σ df v0 xx)).
+                 ** apply is_derive_abs.
+                    unfold df_R, df_eval_at_point; simpl.
+                    rewrite eqq.
+                    lra.
+                 ** apply floatish_sign.
+              ++ unfold df_R, df_eval_at_point; simpl.
+                 now rewrite eqq.
      - Case "Sign"%string.         
        do 2 match_option_in H0.
        destruct (Req_EM_T d 0); [congruence|].
@@ -1213,34 +1228,36 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        + eapply is_derive_ext.
          * intros; simpl.
            now rewrite H2.
-         * destruct (Req_EM_T d d0); [congruence |].
-           destruct (Rlt_dec d d0).
-           -- invcs H0.
-              specialize (IHdf1 _  σ v0 xx H eqq1).
-              specialize (IHdf2 _  σ v0 xx H1 eqq2).
-              replace (y) with ((d1 + y + (d1-y)*sign(df_R σ df1 v0 xx - df_R σ df2 v0 xx))/2).
-              ++ apply is_derive_max; trivial.
-                 unfold df_R, df_eval_at_point; simpl.           
-                 now rewrite eqq, eqq0.
-              ++ unfold df_R, df_eval_at_point; simpl.           
-                 rewrite eqq, eqq0.
-                 unfold sign; simpl.
-                 destruct (total_order_T 0 (d - d0)).
-                 ** destruct s; lra.
-                 ** lra.
-           -- invcs H0.
-              specialize (IHdf1 _  σ v0 xx H eqq1).
-              specialize (IHdf2 _  σ v0 xx H1 eqq2).
-              replace (y) with ((y + d2 + (y - d2)*sign(df_R σ df1 v0 xx - df_R σ df2 v0 xx))/2).
-              ++ apply is_derive_max; trivial.
-                 unfold df_R, df_eval_at_point; simpl.           
-                 now rewrite eqq, eqq0.
-              ++ unfold df_R, df_eval_at_point; simpl.           
-                 rewrite eqq, eqq0.
-                 unfold sign; simpl.
-                 destruct (total_order_T 0 (d - d0)).
-                 ** destruct s; lra.
-                 ** lra.
+         * destruct (Req_EM_T d d0).
+           -- destruct (Req_EM_T d1 d2).
+              ++ invcs H0.
+                 apply is_derive_max_alt2.
+                 apply IHdf1; trivial.
+                 apply IHdf2; trivial.
+              ++ congruence.
+           -- destruct (Rlt_dec d d0).
+              ++ invcs H0.
+                 specialize (IHdf1 _  σ v0 xx H eqq1).
+                 specialize (IHdf2 _  σ v0 xx H1 eqq2).
+                 replace (y) with ((d1 + y + (d1-y)*sign(df_R σ df1 v0 xx - df_R σ df2 v0 xx))/2).
+                 ** apply is_derive_max; trivial.
+                    unfold df_R, df_eval_at_point; simpl.           
+                    now rewrite eqq, eqq0.
+                 ** unfold df_R, df_eval_at_point; simpl.           
+                    rewrite eqq, eqq0.
+                    unfold sign; simpl.
+                    destruct (total_order_T 0 (d - d0)); [destruct s; lra | lra].
+              ++ invcs H0.
+                 specialize (IHdf1 _  σ v0 xx H eqq1).
+                 specialize (IHdf2 _  σ v0 xx H1 eqq2).
+                 replace (y) with ((y + d2 + (y - d2)*sign(df_R σ df1 v0 xx - df_R σ df2 v0 xx))/2).
+                 ** apply is_derive_max; trivial.
+                    unfold df_R, df_eval_at_point; simpl.           
+                    now rewrite eqq, eqq0.
+                 ** unfold df_R, df_eval_at_point; simpl.           
+                    rewrite eqq, eqq0.
+                    unfold sign; simpl.
+                    destruct (total_order_T 0 (d - d0)); [destruct s; lra | lra].
      - Case "VectorDot"%string.
        do 4 match_option_in H0.
        invcs H0.
