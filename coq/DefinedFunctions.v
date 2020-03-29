@@ -8053,53 +8053,89 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
            unfold ConstMatrix.
            f_equal; lra.
        - Case "DVector"%string.
-         unfold lift.
+         unfold lift, two_vector_env_iter_alt.
          case_eq (vartlookup grad_env (s, DTfloat)); [intros|tauto].
          match_option.
          + specialize (apply vectoro_to_ovector_forall_some_f eqq); intros.
            symmetry.
            apply vectoro_to_ovector_forall_some_b_strong; intros.
-           unfold two_vector_env_iter_alt.
-           match_option.
-           * specialize (H1 i); simpl in H1.
-            unfold subvar; simpl.
-             match_case; intros.
-             specialize (H i grad_env).
-             unfold lift in H; simpl in H.
-             rewrite H1 in H.
-             specialize (H vin).
-             rewrite vforall_forall in closed.
-             specialize (closed i).
-             specialize (H closed).
-             rewrite H0 in H.
-             generalize (backprop_deriv_fully_closed_not_none σ (x i) grad_env (1%R)); intros.
-             specialize (H3 closed).
-             match_option_in H.
-             admit.
-             admit.
-           * rewrite vforall_forall in closed.
-             generalize 
-               (list_env_iter_total_fun
-                  (fun (i0 : {n' : nat | n' < n}) (env : df_env) =>
-                     df_eval_backprop_deriv σ (x i0) env
-                        (coerce
-                           (df_eval_backward_gen_top_obligation_2 
-                              UnitAnn (DTVector n) 
-                              (DVector ann x) n eq_refl i) (UnitVector n i) i0)) ); intros.
-             admit.
-              (*
-             specialize (H i grad_env).
-             cut_to H; [tauto |].
-             intros.
-             apply backprop_deriv_fully_closed_not_none; trivial.
-             *)
-         + specialize (vectoro_to_ovector_exists_None eqq).
-           intros.
-           destruct H0.
-           symmetry.
+           unfold snd in H.
+           specialize (H i grad_env); simpl in H.
            rewrite vforall_forall in closed.
+           specialize (closed i).
+           specialize (H vin closed); simpl in H.
+           rewrite H0 in H.
+           specialize (H1 i); simpl in H1.
+           rewrite H1 in H; simpl in H.
+           unfold lift in H.
+           match_option_in H.
+           rewrite H.
+           destruct i.
+           unfold lift, df_eval_backward_gen_top_obligation_2, eq_ind_r, coerce; simpl.
            admit.
-       - Case "DMatrix"%string; admit.         
+         + specialize (vectoro_to_ovector_exists_None eqq); intros.
+           destruct H1.
+           symmetry.
+           unfold snd in H.
+           specialize (H x0 grad_env); simpl in H.
+           rewrite vforall_forall in closed.
+           specialize (closed x0).
+           specialize (H vin closed); simpl in H.
+           rewrite H0 in H.
+           rewrite e in H.
+           simpl in H.
+           unfold lift in H.
+           match_case_in H; intros.
+           * rewrite H1 in H; congruence.
+           * generalize (backprop_deriv_fully_closed_not_none σ (x x0) grad_env (1%R)); intros.
+             destruct H2; trivial.
+       - Case "DMatrix"%string.
+         unfold lift, matrixo_to_omatrix.
+         case_eq (vartlookup grad_env (s, DTfloat)); [intros|tauto].         
+         match_option.
+         + specialize (apply vectoro_to_ovector_forall_some_f eqq); intros.
+           symmetry.
+           apply vectoro_to_ovector_forall_some_b_strong; intros.
+           apply vectoro_to_ovector_forall_some_b_strong; intros.           
+           specialize (H1 i); simpl in H1.
+           specialize (apply vectoro_to_ovector_forall_some_f H1); intros.           
+           specialize (H2 i0); simpl in H2.
+           unfold two_matrix_env_iter_alt.
+           specialize (H i i0 grad_env); simpl in H.
+           rewrite vforall_forall in closed.
+           specialize (closed i).
+           rewrite vforall_forall in closed.
+           specialize (closed i0).           
+           specialize (H vin closed); simpl in H.
+           rewrite H2 in H; simpl in H.
+           rewrite H0 in H; simpl in H.
+           unfold lift in H.
+           match_option_in H.
+           rewrite H.
+           destruct i.
+           destruct i0.
+           unfold lift, df_eval_backward_gen_top_obligation_2, eq_ind_r, coerce; simpl.
+           admit.
+         + specialize (vectoro_to_ovector_exists_None eqq); intros.
+           destruct H1.
+           specialize (vectoro_to_ovector_exists_None e); intros.
+           destruct H1.
+           symmetry.
+           unfold snd in H.
+           specialize (H x0 x1 grad_env); simpl in H.
+           rewrite vforall_forall in closed.
+           specialize (closed x0).
+           rewrite vforall_forall in closed.
+           specialize (closed x1).           
+           specialize (H vin closed); simpl in H.
+           rewrite H0 in H.
+           rewrite e0 in H.
+           simpl in H.
+           unfold lift in H.
+           match_case_in H; intros.
+           * rewrite H1 in H; congruence.
+           * generalize (backprop_deriv_fully_closed_not_none σ (x x0 x1) grad_env (1%R)); intros.
+             destruct H2; trivial.
        - Case "Var"%string.
          unfold equiv_dec, vart_eqdec; simpl.
          destruct (vart_dec v (s, DTfloat)).
