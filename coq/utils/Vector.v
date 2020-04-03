@@ -859,6 +859,28 @@ Section Vector.
       + eauto.
   Qed.
 
+  Lemma vectoro_to_ovector_None_None {A n} {vo:Vector (option A) n} i :
+    vo i = None ->
+    vectoro_to_ovector vo = None.
+  Proof.
+    destruct i as [i pf].
+    unfold vectoro_to_ovector.
+    induction n; simpl.
+    - omega.
+    - intros eqq.
+      rewrite vector_fold_right_dep_Sn.
+      unfold vlast.
+      destruct (Nat.eq_dec i n).
+      + subst.
+        erewrite index_pf_irrel.
+        rewrite eqq; simpl; trivial.
+      + unfold lift2.
+        erewrite IHn; simpl.
+        * match_destr.
+        * erewrite index_pf_irrel; eauto.
+   Unshelve.
+   omega.
+  Qed.
 
   Definition vfirstn {T} {n} (v:Vector T n) m (pf:(m<=n)%nat): Vector T m.
   Proof.
