@@ -8814,7 +8814,51 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                               UnitAnn (DTVector n) df n eq_refl x)
                            (UnitVector n x))); intros.
           specialize (H closed); tauto.
-      - Case "MatrixElem"%string; admit.
+      - Case "MatrixElem"%string.
+        specialize (IHdf grad_env vin).
+        simpl in *.
+        match_option
+        ; rewrite eqq in IHdf
+        ; simpl in *; match_option_in IHdf; [|tauto|].
+        + specialize (IHdf closed).
+          symmetry in IHdf.
+          specialize (apply vectoro_to_ovector_forall_some_f IHdf); intros; simpl in H.
+          unfold lift.
+          replace
+            (fun (k1 : {n' : nat | n' < m}) (k2 : {m' : nat | m' < n}) =>
+               if equiv_dec (` k1) (` i) then 
+                 if equiv_dec (` k2) (` j) then 1%R else 0%R else 0%R)
+            with (UnitMatrix m n i j).
+          generalize (backprop_deriv_fully_closed_not_none 
+                        σ df grad_env (UnitMatrix m n i j)); intros.
+          specialize (H0 closed).
+          specialize (H i).
+          specialize (apply vectoro_to_ovector_forall_some_f H); intros; simpl in H1.    
+          specialize (H1 j).
+          match_option; symmetry; [|tauto].
+          destruct i; destruct j; simpl in *.
+          unfold lift in H1; f_equal.
+          rewrite eqq1 in H1.
+          now invcs H1.
+          unfold UnitMatrix.
+          apply FunctionalExtensionality.functional_extensionality; intros.
+          apply FunctionalExtensionality.functional_extensionality; intros.           
+          trivial.
+        + specialize (IHdf closed).
+          symmetry in IHdf.
+          specialize (vectoro_to_ovector_exists_None IHdf); intros.
+          destruct H.
+          unfold lift in e.
+          specialize (vectoro_to_ovector_exists_None e); intros.
+          destruct H.          
+          match_option_in e0.
+          generalize (backprop_deriv_fully_closed_not_none 
+                        σ df grad_env
+                        (coerce
+                           (df_eval_backward_gen_top_obligation_3 
+                              UnitAnn (DTMatrix m n) df m n eq_refl x x0)
+                           (UnitMatrix m n x x0))); intros.
+          specialize (H closed); tauto.
       - Case "MatrixVectorMult"%string; admit.
       - Case "MatrixVectorAdd"%string; admit.
       - Case "MatrixMult"%string; admit.
