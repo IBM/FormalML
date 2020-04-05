@@ -6827,6 +6827,63 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        now rewrite vmap_nth.       
      Qed.
 
+    Lemma vsum_ext {n} (v v':Vector float n) : vec_eq v v' -> vsum v = vsum v'.
+    Proof.
+      apply vector_fold_right1_ext.
+    Qed.
+   
+    Lemma vsum0 n : vsum (fun _ : {n' : nat | (n' < n)%nat} => 0%R) = 0%R.
+    Proof.
+      generalize (vsum_mult (fun _ : {n' : nat | (n' < n)%nat} => 0%R) 0%R); intros HH.
+      rewrite Rmult_0_l in HH.
+      symmetry.
+      simpl in *.
+      erewrite vsum_ext; [eassumption | ].
+      intro; simpl; lra.
+    Qed.
+
+     Lemma vsum_unitvector {n} (v:Vector R n) i :
+       vsum (fun j => (v j * UnitVector n i j)%R) = v i.
+     Proof.
+       unfold vsum, vector_fold_right1, Datatypes.id, UnitVector; simpl.
+       revert n v i.
+       destruct i.
+       induction n; [ | destruct n].
+       - omega.
+       - repeat rewrite vector_fold_right1_dep_1.
+         destruct x; [ | omega]; simpl.
+         field_simplify.
+         now erewrite index_pf_irrel.
+       - repeat rewrite vector_fold_right1_dep_SSn.
+         unfold vlast, vdrop_last; simpl.
+         destruct (equiv_dec (S n) x).
+         + ring_simplify.
+           simpl.
+           destruct e.
+           match goal with
+           | [|- (_ + ?x)%R = _ ] => replace x with 0%R
+           end.
+           * ring_simplify.
+             now erewrite index_pf_irrel.
+           * rewrite <- (vsum0 (S n)) at 1.
+             unfold vsum, vector_fold_right1, Fzero, Datatypes.id; simpl.
+             apply (@vector_fold_right1_dep_ext (fun _ => R)).
+             intros [??].
+             destruct (equiv_dec x (S n)).
+             -- destruct e.
+                omega.
+             -- lra.
+         + ring_simplify.
+           unfold equiv, complement in c.
+           assert (pf:x < S n) by omega.
+           specialize (IHn (vdrop_last v) pf).
+           simpl in IHn.
+           erewrite index_pf_irrel.
+           rewrite <- IHn.
+           apply (@vector_fold_right1_dep_ext (fun _ => R)).
+           now intros [??].
+     Qed.
+       
      Ltac vectoro_assert_forall_in H i
        := match type of H with vectoro_to_ovector ?x = Some ?y => 
                                assert (forall i, x i = Some (y i)) end.

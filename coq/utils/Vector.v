@@ -176,7 +176,13 @@ Section Vector.
   Next Obligation.
     omega.
   Defined.
-
+  
+  Program Definition vskip {A} {m:nat} (v:Vector (A) m) (n:nat) (pf:(n<=m)%nat) : Vector A (m-n)
+    := fun i => v (i+n).
+  Next Obligation.
+    omega.
+  Defined.
+  
   Definition vec_eq {A} {m:nat} (x y:Vector A m) := forall i, x i = y i.
   Notation "x =v= y" := (vec_eq x y) (at level 70).
   
@@ -223,7 +229,6 @@ Section Vector.
     vm_compute.
     f_equal.
   Qed.
-  
 
   Definition vlconcat {A n} (v:Vector (list A) n) : list A
     := concat (vector_to_list v).
@@ -387,6 +392,31 @@ Section Vector.
     x =v= y -> vector_fold_right1 f init sing x = vector_fold_right1 f init sing y.
   Proof.
     apply (@vector_fold_right1_dep_ext (fun _ => A)).
+  Qed.
+
+  Lemma vector_fold_right1_dep_bounded_f_ext {A:nat->Type} {B} (f1 f2:forall n,B->A n->A (S n)) 
+        (init:A 0%nat) sing {m:nat} (v:Vector B m) bound pf :
+    (forall n pf a, f1 n (v (exist _ n pf)) a = f2 n (v (exist _ n pf)) a) -> vector_fold_right1_bounded_dep f1 init sing v bound pf = vector_fold_right1_bounded_dep f2 init sing v bound pf.
+  Proof.
+    intros eqq.
+    induction bound; simpl; trivial.
+    destruct bound; trivial.
+    f_equal.
+    eauto.
+  Qed.
+
+  Lemma vector_fold_right1_dep_f_ext {A:nat->Type} {B} (f1 f2:forall n,B->A n->A (S n)) 
+        (init:A 0%nat) sing {m:nat} {v:Vector B m} :
+    (forall n pf a, f1 n (v (exist _ n pf)) a = f2 n (v (exist _ n pf)) a) -> vector_fold_right1_dep f1 init sing v = vector_fold_right1_dep f2 init sing v.
+  Proof.
+    apply vector_fold_right1_dep_bounded_f_ext.
+  Qed.
+
+  Lemma vector_fold_right1_f_ext {A:Type} {B} (f1 f2:B->A->A) (init:A) sing {m:nat} {v:Vector B m} :
+   (forall i a, f1 (v i) a = f2 (v i) a) -> vector_fold_right1 f1 init sing v = vector_fold_right1 f2 init sing v.
+  Proof.
+    intros.
+    apply (@vector_fold_right1_dep_f_ext (fun _ => A)); eauto.
   Qed.
 
   Lemma vector_fold_right1_dep_0 {A:nat->Type} {B} (f:forall n,B->A n->A (S n)) 
@@ -970,4 +1000,39 @@ Section Vector.
     apply vector_fold_right1_bounded_dep_gen_ind; trivial.
   Qed.
 
-  End Vector.
+  Program Definition vapp {A} {m n} (v1:Vector A m) (v2:Vector A n) : Vector A (m+n)
+    := fun i => if lt_dec i m then v1 i else v2 (i-m).
+  Next Obligation.
+    omega.
+  Defined.  
+
+  Lemma vtake_skip_app_eq_pf n m (pf:(n<=m)%nat) : n + (m - n) = m.
+  Proof.
+    rewrite Nat.add_sub_assoc by trivial.
+    now rewrite minus_plus.
+  Defined.
+
+  Lemma vtake_skip_app_lt_pf {m n i} (pf:(n<=m)%nat) (p2f:i < m) : i < n + (m - n).
+  Proof.
+    now rewrite vtake_skip_app_eq_pf.
+  Defined.
+
+  Lemma vtake_skip_app {A} {m:nat} (v:Vector (A) m) (n:nat) (pf:(n<=m)%nat) :
+    forall i, v i = vapp (vtake v n pf) (vskip v n pf) (exist _ (proj1_sig i) (vtake_skip_app_lt_pf pf (proj2_sig i))).
+  Proof.
+    intros.
+    unfold vapp, vtake, vskip.
+    destruct i; simpl.
+    match_destr.
+    - now erewrite index_pf_irrel.
+    -
+      match goal with
+        [|- _ = v (exist _ _ ?pff)] => generalize pff
+      end.
+      assert (HH:x - n + n = x) by omega.
+      rewrite HH.
+      intros.
+      now erewrite index_pf_irrel.
+  Qed.
+
+End Vector.

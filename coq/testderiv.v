@@ -889,21 +889,6 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         now unfold is_derive_vec.
     Qed.
 
-    Lemma vsum_ext {n} (v v':Vector float n) : vec_eq v v' -> vsum v = vsum v'.
-    Proof.
-      apply vector_fold_right1_ext.
-    Qed.
-   
-    Lemma vsum0 n : vsum (fun _ : {n' : nat | (n' < n)%nat} => 0) = 0.
-    Proof.
-      generalize (vsum_mult (fun _ : {n' : nat | (n' < n)%nat} => 0) 0); intros HH.
-      rewrite Rmult_0_l in HH.
-      symmetry.
-      simpl in *.
-      erewrite vsum_ext; [eassumption | ].
-      intro; simpl; lra.
-    Qed.
-
     Theorem df_eval_deriv_exact_gen_correct {T} σ (df:DefinedFunction UnitAnn T) v (x:R) y
      : fully_closed_over df ((v,DTfloat)::map (@projT1 _ _) σ) ->
        df_eval_deriv_exact (addBinding σ v x) df (v,DTfloat) = Some y ->
