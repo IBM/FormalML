@@ -8775,7 +8775,36 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                               UnitAnn (DTVector n) df n eq_refl x)
                            (UnitVector n x))); intros.
           specialize (H closed); tauto.
-      - Case "MatrixSum"%string; admit.
+      - Case "MatrixSum"%string.
+        specialize (IHdf grad_env vin).
+        simpl in *.
+        match_option
+        ; rewrite eqq in IHdf
+        ; simpl in *; match_option_in IHdf; [|tauto|].
+        + specialize (IHdf closed).
+          symmetry in IHdf.
+          specialize (apply vectoro_to_ovector_forall_some_f IHdf); intros; simpl in H.
+          unfold lift.
+          generalize (backprop_deriv_fully_closed_not_none σ df grad_env
+                        (ConstMatrix m n 1%R)); intros.
+          specialize (H0 closed).
+          match_option; symmetry; [|tauto].
+          admit.
+        + specialize (IHdf closed).
+          symmetry in IHdf.
+          specialize (vectoro_to_ovector_exists_None IHdf); intros.
+          destruct H.
+          unfold lift in e.
+          specialize (vectoro_to_ovector_exists_None e); intros.
+          destruct H.
+          match_option_in e0.
+          generalize (backprop_deriv_fully_closed_not_none 
+                        σ df grad_env
+                        (coerce
+                           (df_eval_backward_gen_top_obligation_3 
+                              UnitAnn (DTMatrix m n) df m n eq_refl x x0)
+                           (UnitMatrix m n x x0))); intros.
+          specialize (H closed); tauto.
       - Case "VectorElem"%string.
         specialize (IHdf grad_env vin).
         simpl in *.
