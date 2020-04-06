@@ -6883,7 +6883,51 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
            apply (@vector_fold_right1_dep_ext (fun _ => R)).
            now intros [??].
      Qed.
-       
+
+     Lemma msum_unitmatrix {m n} (v:Matrix R m n) i j :
+       msum (fun k l => (v k l * UnitMatrix m n i j k l)%R) = v i j.
+     Proof.
+       unfold msum.
+       unfold UnitMatrix.
+       rewrite (vsum_ext _ (
+                       (fun (k : {n' : nat | n' < m}) => @vsum floatish_R _ 
+                                                           (fun (l : {m' : nat | m' < n}) =>
+                          (v k l *
+                           (if equiv_dec (` k) (` i) then if equiv_dec (` l) (` j) then 1%R else 0%R else 0%R))%R))
+                   
+               ))
+       by (intros ?; now rewrite vmap_nth).
+       rewrite (vsum_ext _ (
+                             (fun (k : {n' : nat | n' < m}) => (if equiv_dec (` k) (` i) then
+                                                                  @vsum floatish_R _ 
+                                                                        (fun (l : {m' : nat | m' < n}%nat) =>
+                                                                           ((v k) l *
+                           if equiv_dec (` l) (` j) then 1%R else 0%R))%R else 0%R))
+                   
+               )).
+       - rewrite (vsum_ext _ (
+                             (fun (k : {n' : nat | n' < m}) => (if equiv_dec (` k) (` i) then
+                                                                  v k j else 0%R))
+                   
+                 )).
+         + rewrite (vsum_ext _ (
+                             (fun (k : {n' : nat | n' < m}) => ((transpose v) j k * @UnitVector floatish_R m i k)%R)
+                   
+                   )).
+           * now rewrite vsum_unitvector.
+           * unfold UnitVector; intros ?; simpl.
+             dest_eqdec; unfold transpose; simpl
+             ; lra.
+         + intros ?.
+           dest_eqdec; trivial.
+           apply vsum_unitvector.
+       - intros ?.
+         dest_eqdec; trivial.
+         rewrite <- (vsum0 n) at 1.
+         apply vsum_ext.
+         intros ?; lra.
+     Qed.
+
      Ltac vectoro_assert_forall_in H i
        := match type of H with vectoro_to_ovector ?x = Some ?y => 
                                assert (forall i, x i = Some (y i)) end.
