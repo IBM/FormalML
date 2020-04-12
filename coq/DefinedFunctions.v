@@ -9340,10 +9340,6 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                      (Some env) l = Some env.
        Admitted.
        
-     Lemma vsum_plus {m:nat} (v1 v2:Vector R m) :
-       (vsum v1 + vsum v2)%R = vsum (fun i => (v1 i + v2 i)%R).
-     Admitted.
-
 
 
     Lemma backprop_grad_sum {T} (σ:df_env) (df:DefinedFunction UnitAnn T) (s: SubVar) 
