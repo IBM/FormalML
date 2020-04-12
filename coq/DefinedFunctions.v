@@ -6960,6 +6960,26 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
           intros [i pf]; trivial.
       Qed.
 
+      Lemma vsum_plus {m:nat} (v1 v2:Vector R m) :
+        (vsum v1 + vsum v2)%R = vsum (fun i => (v1 i + v2 i)%R).
+      Proof.
+        unfold vsum, vector_fold_right1, Datatypes.id; simpl.
+        induction m; [ | destruct m].
+        - repeat rewrite vector_fold_right1_dep_0; lra.
+        - repeat rewrite vector_fold_right1_dep_1; lra.
+        - repeat rewrite vector_fold_right1_dep_SSn.
+          specialize (IHm (vdrop_last v1) (vdrop_last v2)); simpl in IHm.
+          rewrite (Rplus_comm (vlast v2)).
+          rewrite (Rplus_assoc (vlast v1)).
+          rewrite <- (Rplus_assoc _ _ (vlast v2)).
+          rewrite IHm.
+          rewrite (Rplus_comm _ (vlast v2)).
+          rewrite <- Rplus_assoc.
+          f_equal.
+          apply vector_fold_right1_dep_ext.
+          intros [i pf]; trivial.
+      Qed.
+      
      Lemma vmap_mult {n} (f: float -> float) (v : Vector float n) (c : float) :
        forall i : {n' : nat | n' < n},
        (c * (vmap f v) i)%R = (vmap (fun x => (c * f x)%R) v) i.
