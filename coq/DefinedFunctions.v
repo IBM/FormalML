@@ -9338,9 +9338,9 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
      Lemma list_env_iter_id {A} (env : df_env) (l : list A) :
        list_env_iter (fun (_ : A) (env : df_env) => Some env) 
                      (Some env) l = Some env.
-       Admitted.
-       
-
+     Proof.
+       now induction l.
+     Qed.
 
     Lemma backprop_grad_sum {T} (σ:df_env) (df:DefinedFunction UnitAnn T) (s: SubVar) 
           (grad_env1 grad_env2 grad_env3:df_env) 
