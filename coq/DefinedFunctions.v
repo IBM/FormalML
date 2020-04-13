@@ -9342,6 +9342,137 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        now induction l.
      Qed.
 
+
+    Lemma backprop_grad_sum_list_env_iter {m} (σ:df_env) 
+          (vecdf:Vector (DefinedFunction UnitAnn DTfloat) m) (s: SubVar) 
+          (grad_env1 grad_env2 grad_env3:df_env) 
+          (grad1 grad2 : (Vector float m))
+          (val1 val2 val3 : float)
+          (l : list {m' | m' < m} )
+      :
+     let v := (s, DTfloat) in
+     (forall (i:{m' | m' < m}), 
+         let vl := map (fun ve => projT1 ve) σ in
+         fully_closed_over (vecdf i) vl) ->
+     (forall (i:{m' | m' < m}) (env1 env2 env3 : df_env),
+         vartlookup env1 v <> None ->
+         vartlookup env2 v <> None ->
+         vartlookup env3 v <> None ->     
+         
+         df_eval_backprop_delta σ (vecdf i) v env3 
+                                (grad1 i + grad2 i)%R =
+         lift2 dfti_gen_plus
+               (df_eval_backprop_delta σ (vecdf i) v env1 (grad1 i))
+               (df_eval_backprop_delta σ (vecdf i) v env2 (grad2 i))) ->
+     
+     vartlookup grad_env1 v = Some val1 ->
+     vartlookup grad_env2 v = Some val2 ->
+     vartlookup grad_env3 v = Some val3 ->     
+
+     lift (fun e : df_env => subvar v e val3)
+          (list_env_iter
+             (fun (j : {m' : nat | m' < m}) (env : df_env) =>
+                df_eval_backprop_deriv σ (vecdf j) env (grad1 j + grad2 j)%R) 
+             (Some grad_env3) l) = 
+     lift2 dfti_gen_plus
+           (lift (fun e : df_env => subvar v e val1)
+                 (list_env_iter
+                    (fun (j : {m' : nat | m' < m}) (env : df_env) =>
+                       df_eval_backprop_deriv σ (vecdf j) env (grad1 j)) (Some grad_env1) l))
+           (lift (fun e : df_env => subvar v e val2)
+                 (list_env_iter
+                    (fun (j : {m' : nat | m' < m}) (env : df_env) =>
+                       df_eval_backprop_deriv σ (vecdf j) env (grad2 j)) (Some grad_env2) l)).
+    Proof.
+      intros.
+      revert val1 val2 val3 grad_env1 grad_env2 grad_env3 H1 H2 H3.
+      induction l.
+      - intros.
+        simpl; f_equal.
+        unfold subvar; simpl.
+        rewrite H1,H2,H3.
+        lra.
+      - intros.
+        simpl.
+        unfold df_eval_backprop_delta in H0.
+        assert (df_eval_backprop_deriv σ (vecdf a) grad_env3 (grad1 a + grad2 a)%R <> None).
+        apply backprop_deriv_fully_closed_not_none.  
+        apply H.
+        case_eq (df_eval_backprop_deriv σ (vecdf a) grad_env3 (grad1 a + grad2 a)%R)
+        ; [intros | tauto].
+        assert (df_eval_backprop_deriv σ (vecdf a) grad_env1 (grad1 a)%R <> None).
+        apply backprop_deriv_fully_closed_not_none.  
+        apply H.
+        case_eq (df_eval_backprop_deriv σ (vecdf a) grad_env1 (grad1 a)%R)
+        ; [intros | tauto].
+        assert (df_eval_backprop_deriv σ (vecdf a) grad_env2 (grad2 a)%R <> None).
+        apply backprop_deriv_fully_closed_not_none.  
+        apply H.
+        case_eq (df_eval_backprop_deriv σ (vecdf a) grad_env2 (grad2 a)%R)
+        ; [intros | tauto].
+        
+        assert (vartlookup d v <> None).
+        apply (df_eval_backprop_deriv_preserves_lookup_not_none H5 v); congruence.
+        assert (vartlookup d0 v <> None).
+        apply (df_eval_backprop_deriv_preserves_lookup_not_none H7 v); congruence.
+        assert (vartlookup d1 v <> None).                    
+        apply (df_eval_backprop_deriv_preserves_lookup_not_none H9 v); congruence.
+
+        case_eq (vartlookup d v); [intros v3 eq3  |tauto].
+        case_eq (vartlookup d0 v); [intros v1 eq1 |tauto].
+        case_eq (vartlookup d1 v); [intros v2 eq2 |tauto].          
+
+        specialize (IHl v1 v2 v3 d0 d1 d eq1 eq2 eq3).
+        unfold lift, lift2.
+        match_option.
+        case_eq (list_env_iter
+                   (fun (j : {m' : nat | m' < m}) (env : df_env) =>
+                      df_eval_backprop_deriv σ (vecdf j) env (grad1 j)) (Some d0) l).
+        case_eq (list_env_iter
+                   (fun (j : {m' : nat | m' < m}) (env : df_env) =>
+                      df_eval_backprop_deriv σ (vecdf j) env (grad2 j)) (Some d1) l).
+        + intros.
+          rewrite eqq, H13, H14 in IHl.
+          unfold lift, lift2 in IHl; simpl in IHl.
+          f_equal.
+          subst v.
+          rewrite (split_subvar d d2 val3 v3); trivial.
+          rewrite (split_subvar d0 d4 val1 v1); trivial.
+          rewrite (split_subvar d1 d3 val2 v2); trivial.          
+          inversion IHl.
+          rewrite H16.
+          specialize (H0 a grad_env1 grad_env2 grad_env3).
+          cut_to H0; try congruence.
+          rewrite H1,H2,H3 in H0.
+          rewrite H5,H7,H9 in H0.
+          unfold lift, lift2 in H0.
+          inversion H0.
+          rewrite H17; lra.
+        + intros.
+          assert (list_env_iter
+                    (fun (j : {m' : nat | m' < m}) (env : df_env) =>
+                       df_eval_backprop_deriv σ (vecdf j) env (grad2 j)) (Some d1) l <> None).
+          apply list_env_iter_total_fun; intros.
+          apply backprop_deriv_fully_closed_not_none.
+          apply H.
+          tauto.
+        + intros.
+          assert (list_env_iter
+                    (fun (j : {m' : nat | m' < m}) (env : df_env) =>
+                       df_eval_backprop_deriv σ (vecdf j) env (grad1 j)) (Some d0) l <> None).
+          apply list_env_iter_total_fun; intros.
+          apply backprop_deriv_fully_closed_not_none.
+          apply H.
+          tauto.
+        + assert (list_env_iter
+                    (fun (j : {m' : nat | m' < m}) (env : df_env) =>
+                       df_eval_backprop_deriv σ (vecdf j) env (grad1 j + grad2 j)%R) (Some d) l <> None).
+          apply list_env_iter_total_fun; intros.
+          apply backprop_deriv_fully_closed_not_none.
+          apply H.
+          tauto.
+    Qed.
+          
     Lemma backprop_grad_sum {T} (σ:df_env) (df:DefinedFunction UnitAnn T) (s: SubVar) 
           (grad_env1 grad_env2 grad_env3:df_env) 
           (grad1 grad2 : definition_function_types_interp T) :
@@ -9617,6 +9748,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
           case_eq (vartlookup d3 (s, DTfloat)); [intros|tauto].
           case_eq (vartlookup d4 (s, DTfloat)); [intros|tauto].
 
+          assert (Hc := H).
           assert (H3c := H3).
             
           specialize (H a a0 (grad1 a a0) (grad2 a a0) grad_env1 grad_env2 grad_env3 
@@ -9667,9 +9799,25 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
           inversion H.
           inversion IHl.
           rewrite H32, H33.
-            
-          admit.
 
+          generalize (backprop_grad_sum_list_env_iter 
+                        σ (x a) s d3 d4 d2 (grad1 a) (grad2 a)
+                        d12 d13 d11 l0); intros.
+          specialize (H31 H3).
+          cut_to H31.
+          * rewrite H11,H13,H15 in H31.
+            unfold lift, lift2 in H31.
+            inversion H31.
+            rewrite H35; lra.
+          * intros.
+            unfold df_eval_backprop_delta.
+            specialize (Hc a i (grad1 a i) (grad2 a i) env1 env2 env3).
+            specialize (Hc H34 H35 H36).
+            specialize (Hc (H3 i)).
+            apply Hc.
+          * trivial.
+          * trivial.  
+          * trivial.
       - Case "Var"%string.
         match_option; [|tauto].
         case_eq (vartlookup grad_env1 (s, DTfloat)); [intros| tauto].
@@ -10365,35 +10513,105 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         apply H2.
         match_option; [|tauto].        
         match_option.
-        match_option; [|tauto].
-        assert (df_eval_backprop_deriv σ df1 grad_env1 (grad1)%R <> None).
-        apply backprop_deriv_fully_closed_not_none.          
-        apply H2.
-        match_option; [|tauto].
-        match_option.
-        match_option; [|tauto].
-        assert (df_eval_backprop_deriv σ df1 grad_env2 (grad2)%R <> None).
-        apply backprop_deriv_fully_closed_not_none.          
-        apply H2.
-        match_option; [|tauto].
-        specialize (IHdf1 grad1 grad2 grad_env1 grad_env2 grad_env3 H H0 H1 H2).
-        rewrite eqq, eqq2, eqq5 in IHdf1.
-        simpl in IHdf1.
-        rewrite eqq0, eqq3, eqq6 in IHdf1.
-        unfold lift, lift2 in IHdf1; simpl in IHdf1.
-        inversion IHdf1.
-        match_option.
-        unfold lift, lift2; simpl.
-        assert (vartlookup d0 (s, DTfloat) <> None).
-        apply (df_eval_backprop_deriv_preserves_lookup_not_none eqq0 (s, DTfloat) H1).
-        assert (vartlookup d3 (s, DTfloat) <> None).
-        apply (df_eval_backprop_deriv_preserves_lookup_not_none eqq3 (s, DTfloat) H).
-        assert (vartlookup d6 (s, DTfloat) <> None).
-        apply (df_eval_backprop_deriv_preserves_lookup_not_none eqq6 (s, DTfloat) H0).
-        admit.
-        admit.
-        admit.
-        admit.
+        + match_option; [|tauto].
+          assert (df_eval_backprop_deriv σ df1 grad_env1 (grad1)%R <> None).
+          apply backprop_deriv_fully_closed_not_none.          
+          apply H2.
+          match_option; [|tauto].
+          match_option.
+          * match_option; [|tauto].
+            assert (df_eval_backprop_deriv σ df1 grad_env2 (grad2)%R <> None).
+            apply backprop_deriv_fully_closed_not_none.          
+            apply H2.
+            match_option; [|tauto].
+            specialize (IHdf1 grad1 grad2 grad_env1 grad_env2 grad_env3 H H0 H1 H2).
+            rewrite eqq, eqq2, eqq5 in IHdf1.
+            simpl in IHdf1.
+            rewrite eqq0, eqq3, eqq6 in IHdf1.
+            unfold lift, lift2 in IHdf1; simpl in IHdf1.
+            inversion IHdf1.
+            match_option.
+            -- unfold lift, lift2; simpl; f_equal.
+               assert (vartlookup d0 (s, DTfloat) <> None).
+               apply (df_eval_backprop_deriv_preserves_lookup_not_none eqq0 (s, DTfloat) H1).
+               assert (vartlookup d3 (s, DTfloat) <> None).
+               apply (df_eval_backprop_deriv_preserves_lookup_not_none eqq3 (s, DTfloat) H).
+               assert (vartlookup d6 (s, DTfloat) <> None).
+               apply (df_eval_backprop_deriv_preserves_lookup_not_none eqq6 (s, DTfloat) H0).
+               case_eq (vartlookup d0 (s, DTfloat)); [intros|tauto].
+               case_eq (vartlookup d3 (s, DTfloat)); [intros|tauto].
+               case_eq (vartlookup d6 (s, DTfloat)); [intros|tauto].
+               rewrite (split_subvar d0 d1 d d8); trivial.
+               rewrite (split_subvar d3 d4 d2 d9); trivial.
+               rewrite (split_subvar d6 d7 d5 d10); trivial.
+               rewrite H8.
+               assert (forall (env1 env2 env3 : df_env) 
+                              (val1 val2 val3 : float),
+                          vartlookup env1 (s,DTfloat) = Some val1 ->
+                          vartlookup env2 (s,DTfloat) = Some val2 ->
+                          vartlookup env3 (s,DTfloat) = Some val3 ->     
+
+                   lift (fun e : df_env => subvar (s,DTfloat) e val3)
+                        (list_env_iter
+                           (fun (i : {m' : nat | m' < n}) (env : df_env) =>
+                              df_eval_backprop_deriv 
+                                σ df2 env
+                                (transpose
+                                   (fun (i0 : {n' : nat | n' < m}) 
+                                        (j : {m' : nat | m' < n}) =>
+                                      (grad1 i0 j + grad2 i0 j)%R) i)) 
+                           (Some env3) (bounded_seq0 n)) = 
+                        
+                   lift2 dfti_gen_plus
+                         (lift (fun e : df_env => subvar (s,DTfloat) e val1)
+                               (list_env_iter
+                                  (fun (i : {m' : nat | m' < n}) (env : df_env) =>
+                                     df_eval_backprop_deriv σ df2 env (transpose grad1 i)) 
+                                  (Some env1) (bounded_seq0 n))) 
+                         (lift (fun e : df_env => subvar (s,DTfloat) e val2)
+                               (list_env_iter
+                                  (fun (i : {m' : nat | m' < n}) (env : df_env) =>
+                                     df_eval_backprop_deriv σ df2 env (transpose grad2 i)) 
+                                  (Some env2) (bounded_seq0 n)))).
+               induction (bounded_seq0 n).
+               ++ intros.
+                  simpl; f_equal.
+                  unfold subvar; simpl.
+                  rewrite H14,H15,H16; lra.
+               ++ intros; simpl.
+                  assert (df_eval_backprop_deriv 
+                            σ df2 env3
+                            (transpose
+                               (fun (i0 : {n' : nat | n' < m}) (j : {m' : nat | m' < n}) =>
+                                  (grad1 i0 j + grad2 i0 j)%R) a) <> None).
+                  apply backprop_deriv_fully_closed_not_none; apply H3.
+                  case_eq (df_eval_backprop_deriv 
+                             σ df2 env3
+                             (transpose
+                                (fun (i0 : {n' : nat | n' < m}) (j : {m' : nat | m' < n}) =>
+                                   (grad1 i0 j + grad2 i0 j)%R) a)); [intros|tauto].
+                  assert (df_eval_backprop_deriv σ df2 env1 (transpose grad1 a)<> None).
+                  apply backprop_deriv_fully_closed_not_none; apply H3.
+                  case_eq (df_eval_backprop_deriv σ df2 env1 
+                                                  (@transpose R m n grad1 a))
+                  ; [intros|tauto].
+                  assert (df_eval_backprop_deriv σ df2 env2 (transpose grad2 a)<> None).
+                  apply backprop_deriv_fully_closed_not_none; apply H3.
+                  case_eq (df_eval_backprop_deriv σ df2 env2 
+                                                  (@transpose R m n grad2 a))
+                  ; [intros|tauto].
+                  cut_to IHl.
+                  apply IHl.
+                  admit.
+                  admit.
+                  admit.
+                  admit.
+                  admit.
+                  admit.
+               ++ admit.
+            -- admit.
+          * admit.
+        + admit.     
       - Case "MatrixMult"%string.
         destruct H2.
         match_option; [|tauto].
@@ -11057,8 +11275,24 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         specialize (H4 H3).
         match_option; [|tauto].
         match_option.
-        admit.
-        admit.
+        match_option; [|tauto].
+        match_option.
+        match_option; [|tauto].
+        match_option.
+        + unfold lift, lift2; simpl.
+          assert (df_eval_backprop_deriv σ df2 grad_env3 v0 <> None).
+          apply backprop_deriv_fully_closed_not_none; apply H3.          
+          match_option; [|tauto].
+          assert (df_eval_backprop_deriv σ df2 grad_env1 v1 <> None).
+          apply backprop_deriv_fully_closed_not_none; apply H3.          
+          case_eq (df_eval_backprop_deriv σ df2 grad_env1 v1); [intros|tauto].
+          assert (df_eval_backprop_deriv σ df2 grad_env2 v2 <> None).
+          apply backprop_deriv_fully_closed_not_none; apply H3.          
+          case_eq (df_eval_backprop_deriv σ df2 grad_env2 v2); [intros|tauto].          
+          admit.
+        + admit.
+        + admit.
+        + admit.
       - Case "MatrixApply"%string; admit.
       - Case "VLossfun"%string; admit.
       - Case "MLossfun"%string; admit.
