@@ -8376,7 +8376,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
             let d := fresh "val" in
             let eqq := fresh "eqq" in
             intros d eqq; simpl in d 
-          | intros ?; eelim H; solve[auto]]
+          | intros ?; eelim H; solve[auto || congruence]]
         | [H: df_eval_backprop_deriv ?σ ?df1 ?grad_env1 _ = Some ?grad_env2
            |- context [vartlookup ?grad_env2 ?a]] =>
           case_eq (vartlookup grad_env2 a); [
@@ -8384,7 +8384,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
             let eqq := fresh "eqq" in
             intros d eqq; simpl in d 
           | let eqq := fresh "eqq" in
-            intros eqq; eelim df_eval_backprop_deriv_preserves_lookup_not_none; [apply H | idtac | apply eqq]; solve[auto]
+            intros eqq; eelim df_eval_backprop_deriv_preserves_lookup_not_none; [apply H | idtac | apply eqq]; solve[auto || congruence]
           ]
         | [H:vartlookup ?grad_env ?a <> None,
              H2:context [match vartlookup ?grad_env ?a with | _ => _ end] |- _] =>
@@ -8392,7 +8392,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
             let d := fresh "val" in
             let eqq := fresh "eqq" in
             intros d eqq; simpl in d; rewrite eqq in H2
-          | intros ?; eelim H; solve[auto]]
+          | intros ?; eelim H; solve[auto || congruence]]
         | [H: df_eval_backprop_deriv ?σ ?df1 ?grad_env1 _ = Some ?grad_env2,
            H2: context [match vartlookup ?grad_env2 ?a with _ => _ end] |- _] =>
           case_eq (vartlookup grad_env2 a); [
@@ -8400,10 +8400,9 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
             let eqq := fresh "eqq" in
             intros d eqq; simpl in d; rewrite eqq in H2
           | let eqq := fresh "eqq" in
-            intros eqq; eelim df_eval_backprop_deriv_preserves_lookup_not_none; [apply H | idtac | apply eqq]; solve[auto]]
+            intros eqq; eelim df_eval_backprop_deriv_preserves_lookup_not_none; [apply H | idtac | apply eqq]; solve[auto || congruence]]
 
         end.
-
     
     Lemma backprop_indep_env {T} (σ:df_env) (df:DefinedFunction UnitAnn T) (s: SubVar) 
           (grad_env1 grad_env2:df_env) (grad : definition_function_types_interp T) :
@@ -8596,16 +8595,10 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         f_equal.
         specialize (IHdf1 grad grad_env1 grad_env2 neq1 neq2 H).
         rewrite eqq, eqq1 in IHdf1.
+        specialize (IHdf2 grad env env0).
+        cut_to IHdf2; simpler2.
         admit.
         (*
-        specialize (IHdf2 grad d0 d2).
-        assert (vartlookup d0 (s, DTfloat) <> None) by
-            apply (df_eval_backprop_deriv_preserves_lookup_not_none eqq0 (s, DTfloat) neq1).
-        assert (vartlookup d2 (s, DTfloat) <> None) by
-            apply (df_eval_backprop_deriv_preserves_lookup_not_none eqq2 (s, DTfloat) neq2).
-        specialize (IHdf2 H5 H6 H0).
-        match_option_in IHdf2; [|tauto].
-        match_option_in IHdf2; [|tauto].        
         rewrite eqq0, eqq2 in IHdf1; unfold lift in IHdf1; inversion IHdf1.
         rewrite eqq3, eqq4 in IHdf2; unfold lift in IHdf2; inversion IHdf2.
         rewrite (split_subvar d0 d3 d d5); trivial.
