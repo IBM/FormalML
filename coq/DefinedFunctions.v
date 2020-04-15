@@ -9611,7 +9611,10 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
     Proof.
       unfold df_eval_backprop_delta.
       revert grad_env1 grad_env2 grad_env3.
+      DefinedFunction_cases (induction T, df using DefinedFunction_ind_unit) Case
+(*
       DefinedFunction_cases (induction T, df using DefinedFunction_ind_simpl) Case
+*)
       ; simpl; intros.
       - Case "Number"%string.
         match_option; [|tauto].
@@ -11105,29 +11108,44 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
           lra.
       - Case "VectorApply"%string.
         destruct H2.
-        match_option; [|tauto].
+        simpler2.
         generalize (eval_fully_closed_not_none σ df2); intros.
         specialize (H4 H3).
-        match_option; [|tauto].
         match_option.
-        match_option; [|tauto].
         match_option.
-        match_option; [|tauto].
-        match_option.
-        + unfold lift, lift2; simpl.
-          assert (df_eval_backprop_deriv σ df2 grad_env3 v0 <> None).
-          apply backprop_deriv_fully_closed_not_none; apply H3.          
-          match_option; [|tauto].
-          assert (df_eval_backprop_deriv σ df2 grad_env1 v1 <> None).
-          apply backprop_deriv_fully_closed_not_none; apply H3.          
-          case_eq (df_eval_backprop_deriv σ df2 grad_env1 v1); [intros|tauto].
-          assert (df_eval_backprop_deriv σ df2 grad_env2 v2 <> None).
-          apply backprop_deriv_fully_closed_not_none; apply H3.          
-          case_eq (df_eval_backprop_deriv σ df2 grad_env2 v2); [intros|tauto].          
-          admit.
-        + admit.
-        + admit.
-        + admit.
+        + match_option.
+          * match_option.
+            -- unfold lift.
+               repeat simpl_closed_backprop.
+               unfold lift2; f_equal.
+               specialize (apply vectoro_to_ovector_forall_some_f eqq3);intros.          
+               specialize (apply vectoro_to_ovector_forall_some_f eqq4);intros.          
+               specialize (apply vectoro_to_ovector_forall_some_f eqq5);intros.
+               admit.
+            -- specialize (apply vectoro_to_ovector_exists_None eqq5); intros.
+               destruct H5.
+               rewrite vmap_nth in e; simpl in e.
+               match_option_in e.
+               assert (df_eval [mk_env_entry (v, DTfloat) (d x)] (df_deriv df1 (v, DTfloat)) <> None).
+               apply eval_fully_closed_not_none.
+               now apply fully_closed_deriv.
+               tauto.
+          * specialize (apply vectoro_to_ovector_exists_None eqq4); intros.
+            destruct H5.
+            rewrite vmap_nth in e; simpl in e.
+            match_option_in e.
+            assert (df_eval [mk_env_entry (v, DTfloat) (d x)] (df_deriv df1 (v, DTfloat)) <> None).
+            apply eval_fully_closed_not_none.
+            now apply fully_closed_deriv.
+            tauto.
+        + specialize (apply vectoro_to_ovector_exists_None eqq3); intros.
+          destruct H5.
+          rewrite vmap_nth in e; simpl in e.
+          match_option_in e.
+          assert (df_eval [mk_env_entry (v, DTfloat) (d x)] (df_deriv df1 (v, DTfloat)) <> None).
+          apply eval_fully_closed_not_none.
+          now apply fully_closed_deriv.
+          tauto.
       - Case "MatrixApply"%string; admit.
       - Case "VLossfun"%string; admit.
       - Case "MLossfun"%string; admit.
