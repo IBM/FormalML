@@ -11117,11 +11117,27 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
           * match_option.
             -- unfold lift.
                repeat simpl_closed_backprop.
-               unfold lift2; f_equal.
+               unfold lift2.
                specialize (apply vectoro_to_ovector_forall_some_f eqq3);intros.          
                specialize (apply vectoro_to_ovector_forall_some_f eqq4);intros.          
                specialize (apply vectoro_to_ovector_forall_some_f eqq5);intros.
-               admit.
+               specialize (IHdf2 v1 v2 grad_env1 grad_env2 grad_env3).
+               cut_to IHdf2; try congruence.
+               rewrite eqq, eqq0, eqq1, eqq7, eqq8 in IHdf2; simpl in IHdf2.
+               replace (fun i : {n' : nat | n' < n} => (v1 i + v2 i)%R) with v0 in IHdf2.
+               rewrite eqq6 in IHdf2.
+               unfold lift, lift2 in IHdf2.
+               apply IHdf2.
+               apply FunctionalExtensionality.functional_extensionality; intros.
+               specialize (H5 x);rewrite vmap_nth in H5; simpl in H5.
+               specialize (H6 x);rewrite vmap_nth in H6; simpl in H6.
+               specialize (H7 x);rewrite vmap_nth in H7; simpl in H7.               
+               match_option_in H5; invcs H5.
+               match_option_in H6; invcs H6.
+               match_option_in H7; invcs H7.
+               rewrite eqq9 in eqq10; invcs eqq10.
+               rewrite eqq9 in eqq11; invcs eqq11.
+               lra.
             -- specialize (apply vectoro_to_ovector_exists_None eqq5); intros.
                destruct H5.
                rewrite vmap_nth in e; simpl in e.
@@ -11146,8 +11162,119 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
           apply eval_fully_closed_not_none.
           now apply fully_closed_deriv.
           tauto.
-      - Case "MatrixApply"%string; admit.
-      - Case "VLossfun"%string; admit.
+      - Case "MatrixApply"%string.
+        destruct H2.
+        simpler2.
+        generalize (eval_fully_closed_not_none σ df2); intros.
+        specialize (H4 H3).
+        match_option.
+        match_option.
+        + match_option.
+          * match_option.
+            -- unfold lift.
+               repeat simpl_closed_backprop.
+               unfold lift2.
+               unfold matrixo_to_omatrix in *.
+               specialize (apply vectoro_to_ovector_forall_some_f eqq3);intros.          
+               specialize (apply vectoro_to_ovector_forall_some_f eqq4);intros.          
+               specialize (apply vectoro_to_ovector_forall_some_f eqq5);intros.
+               specialize (IHdf2 m1 m2 grad_env1 grad_env2 grad_env3).
+               cut_to IHdf2; try congruence.
+               rewrite eqq, eqq0, eqq1, eqq7, eqq8 in IHdf2; simpl in IHdf2.
+               replace (fun (i : {n' : nat | n' < m}) (j : {m' : nat | m' < n}) =>
+                          (m1 i j + m2 i j)%R) with m0 in IHdf2.
+               rewrite eqq6 in IHdf2.
+               unfold lift, lift2 in IHdf2.
+               apply IHdf2.
+               apply FunctionalExtensionality.functional_extensionality; intros.
+               apply FunctionalExtensionality.functional_extensionality; intros.               
+               specialize (H5 x); specialize (H6 x); specialize (H7 x).
+               unfold mmap in H5; unfold mmap in H6; unfold mmap in H7.
+               specialize (apply vectoro_to_ovector_forall_some_f H5);intros.          
+               specialize (apply vectoro_to_ovector_forall_some_f H6);intros.          
+               specialize (apply vectoro_to_ovector_forall_some_f H7);intros.
+               specialize (H8 x0); do 2 rewrite vmap_nth in H8.
+               specialize (H9 x0); do 2 rewrite vmap_nth in H9.
+               specialize (H10 x0); do 2 rewrite vmap_nth in H10.
+               admit.
+            -- specialize (apply vectoro_to_ovector_exists_None eqq5); intros; destruct H5.
+               specialize (apply vectoro_to_ovector_exists_None e); intros; destruct H5.
+               unfold mmap in e0.
+               do 2 rewrite vmap_nth in e0; simpl in e0.
+               admit.
+          * specialize (apply vectoro_to_ovector_exists_None eqq4); intros; destruct H5.
+            specialize (apply vectoro_to_ovector_exists_None e); intros; destruct H5.
+            unfold mmap in e0.
+            do 2 rewrite vmap_nth in e0; simpl in e0.
+            admit.
+        + specialize (apply vectoro_to_ovector_exists_None eqq3); intros; destruct H5.
+          specialize (apply vectoro_to_ovector_exists_None e); intros; destruct H5.          
+          unfold mmap in e0.
+          do 2 rewrite vmap_nth in e0; simpl in e0.
+          admit.
+      - Case "VLossfun"%string.
+        destruct H2.
+        simpler2.
+        generalize (eval_fully_closed_not_none σ df2); intros.
+        specialize (H4 H3).
+        match_option.
+        match_option.
+        + match_option.
+          * match_option.
+            -- unfold lift.
+               repeat simpl_closed_backprop.
+               unfold lift2.
+               specialize (apply vectoro_to_ovector_forall_some_f eqq3);intros.
+               specialize (apply vectoro_to_ovector_forall_some_f eqq4);intros.
+               specialize (apply vectoro_to_ovector_forall_some_f eqq5);intros.
+               specialize (IHdf2 v0 v3 grad_env1 grad_env2 grad_env3).               
+               cut_to IHdf2; try congruence.
+               rewrite eqq, eqq0, eqq1 in IHdf2.
+               rewrite eqq7, eqq8 in IHdf2.
+               simpl in IHdf2.
+               replace (fun i : {n' : nat | n' < n} => (v0 i + v3 i)%R) with v in IHdf2.
+               rewrite eqq6 in IHdf2.
+               unfold lift, lift2 in IHdf2.
+               apply IHdf2.
+               apply FunctionalExtensionality.functional_extensionality; intros.
+               specialize (H5 x);rewrite vmap_nth in H5; simpl in H5.
+               specialize (H6 x);rewrite vmap_nth in H6; simpl in H6.
+               specialize (H7 x);rewrite vmap_nth in H7; simpl in H7.               
+               match_option_in H5; invcs H5.
+               match_option_in H6; invcs H6.
+               match_option_in H7; invcs H7.
+               rewrite eqq9 in eqq10; invcs eqq10.
+               rewrite eqq9 in eqq11; invcs eqq11.
+               lra.
+            -- specialize (apply vectoro_to_ovector_exists_None eqq5); intros.
+               destruct H5.
+               rewrite vmap_nth in e; simpl in e.
+               match_option_in e.
+               assert ( df_eval [mk_env_entry (v1, DTfloat) (d x); 
+                                 mk_env_entry (v2, DTfloat) (r x)]
+                                (df_deriv df1 (v1, DTfloat)) <> None).
+               apply eval_fully_closed_not_none.
+               now apply fully_closed_deriv.
+               tauto.
+          * specialize (apply vectoro_to_ovector_exists_None eqq4); intros.
+            destruct H5.
+            rewrite vmap_nth in e; simpl in e.
+            match_option_in e.
+            assert (df_eval [mk_env_entry (v1, DTfloat) (d x); 
+                             mk_env_entry (v2, DTfloat) (r x)]
+                            (df_deriv df1 (v1, DTfloat)) <> None).
+            apply eval_fully_closed_not_none.
+            now apply fully_closed_deriv.
+            tauto.
+        + specialize (apply vectoro_to_ovector_exists_None eqq3); intros.
+          destruct H5.
+          rewrite vmap_nth in e; simpl in e.
+          match_option_in e.
+          assert (df_eval [mk_env_entry (v1, DTfloat) (d x); mk_env_entry (v2, DTfloat) (r x)]
+                          (df_deriv df1 (v1, DTfloat)) <> None).
+          apply eval_fully_closed_not_none.
+          now apply fully_closed_deriv.
+          tauto.
       - Case "MLossfun"%string; admit.
 
 Admitted.
