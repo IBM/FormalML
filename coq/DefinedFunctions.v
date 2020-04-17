@@ -11250,6 +11250,116 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
       now apply (vectoro_to_ovector_None_None x).
     Qed.
 
+    Definition ConstSplitVector {T} (middle theend:nat)  (part1 part2:T)  : (Vector T theend) :=
+      fun (i: {n':nat | n' < theend}%nat) =>
+        if lt_dec (proj1_sig i) middle then part1 else part2.
+
+    Lemma ConstSplitVectorSzero bound n (pf:bound < n) :
+          (ConstSplitVector (S bound) n 1%R 0%R) =
+          dfti_gen_plus (T:=DTVector n) (ConstSplitVector bound n 1%R 0%R) (UnitVector n (exist _ bound pf)).
+    Proof.
+      simpl.
+      apply functional_extensionality.
+      intros.
+      unfold ConstSplitVector, UnitVector, equiv_dec, nat_eq_eqdec; simpl.
+      destruct x as [x pff]; simpl.
+      destruct (lt_dec x (S bound))
+      ; destruct (lt_dec x bound)
+      ; destruct (Nat.eq_dec x bound)
+      ; try omega; try lra.
+    Qed.
+
+    Lemma vfirstn_vdrop_last {T} {n} (v:Vector T n) bound pf pf2 :
+      vdrop_last (vfirstn v (S bound) pf) = vfirstn v bound pf2.
+    Proof.
+      apply FunctionalExtensionality.functional_extensionality; intros [??]; simpl.
+      erewrite index_pf_irrel; eauto.
+    Qed.
+
+    Lemma vlast_vfirstn {T} {n} (d:Vector T n) bound pf pf2 :
+      (vlast (vfirstn d (S bound) pf)) = d ((exist _ bound pf2)).
+    Proof.
+    Admitted.
+
+    Lemma vsum_cons {m:nat} x (v:Vector R m) :
+      vsum (vcons x v) = (x + vsum v)%R.
+    Proof.
+    Admitted.
+
+    Lemma df_eval_backprop_delta_by_unit_parts_bounded {n} bound (pf:(bound<=n)%nat)
+          (σ:df_env) (df:DefinedFunction UnitAnn (DTVector n)) (s: SubVar) grad_env (d:Vector float n):
+
+           fully_closed_over df
+                             (map (fun ve : {v : var_type & definition_function_types_interp (snd v)} => projT1 ve) σ) ->
+           vartlookup grad_env (s, DTfloat) <> None ->
+           
+           (forall i : {n' : nat | n' < n},
+         (df_eval_backprop_delta σ df (s, DTfloat) grad_env
+            
+                    (UnitVector n i)) = Some (d i)) ->
+         (df_eval_backprop_delta σ df (s, DTfloat) grad_env
+                                 (ConstSplitVector bound n 1%R 0%R)) = Some (vsum (vfirstn d bound pf)).
+    Proof.
+      intros closed lo fa.
+      induction bound.
+      - replace (ConstSplitVector 0 n 1%R 0%R) with (scalarMult (DTVector n) 0%R (ConstSplitVector 0 n 1%R 0%R)).
+        + erewrite scalarMult_backprop_grad_scalar; try eassumption.
+          * simpl.
+            unfold df_eval_backprop_delta.
+            simpler2.
+            unfold lift.
+            simpl_closed_backprop.
+            f_equal.
+            vm_compute; lra.
+          * apply backprop_deriv_fully_closed_not_none; trivial. 
+          * apply backprop_deriv_fully_closed_not_none; trivial. 
+        + unfold scalarMult, ConstSplitVector.
+          apply functional_extensionality; intros; simpl.
+          lra.
+      - assert (pf2:bound < n) by omega.
+        assert (pf3:bound <= n) by omega.
+        rewrite (ConstSplitVectorSzero _ _ pf2).
+        erewrite backprop_grad_sum; try eassumption.
+        rewrite (IHbound pf3).
+        rewrite fa.
+        simpl.
+        f_equal.
+        destruct n; [omega | ].
+        generalize (vector_Sn_split (vfirstn d (S bound) pf)); intros eqq1.
+        apply vec_eq_eq in eqq1.
+        simpl in *.
+        rewrite eqq1.
+        erewrite vfirstn_vdrop_last.
+        erewrite vlast_vfirstn.
+        rewrite vsum_cons.
+        rewrite Rplus_comm.
+        f_equal.
+    Qed.
+
+    Lemma df_eval_backprop_delta_by_unit_parts {n} 
+          (σ:df_env) (df:DefinedFunction UnitAnn (DTVector n)) (s: SubVar) grad_env (d:Vector float n):
+
+      fully_closed_over df
+                        (map (fun ve : {v : var_type & definition_function_types_interp (snd v)} => projT1 ve) σ) ->
+      vartlookup grad_env (s, DTfloat) <> None ->
+      
+      (forall i : {n' : nat | n' < n},
+          (df_eval_backprop_delta σ df (s, DTfloat) grad_env
+                                  
+                                  (UnitVector n i)) = Some (d i)) ->
+      (df_eval_backprop_delta σ df (s, DTfloat) grad_env
+                              (ConstVector n 1%R)) = Some (vsum d).
+    Proof.
+      intros.
+      replace (ConstVector n 1%R) with (ConstSplitVector n n 1%R 0%R).
+      - erewrite df_eval_backprop_delta_by_unit_parts_bounded; try eassumption.
+        now rewrite vfirstn_eq.
+      - apply functional_extensionality; unfold ConstSplitVector, ConstVector; intros [x pff]; simpl.
+        destruct (lt_dec x n); trivial; omega.
+        Unshelve.
+        omega.
+    Qed.
+
     Lemma yay {T} (σ:df_env) (df:DefinedFunction UnitAnn T) (s: SubVar) grad_env :
       let v := (s, DTfloat) in 
       vartlookup grad_env v <> None ->
@@ -11945,11 +12055,17 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         ; simpl in *; match_option_in IHdf; [|tauto|].
         + specialize (IHdf closed).
           symmetry in IHdf.
-          specialize (apply vectoro_to_ovector_forall_some_f IHdf); intros; simpl in H.
+          generalize (vectoro_to_ovector_forall_some_f IHdf); intros HH; clear IHdf.
           unfold lift.
           simpl_closed_backprop.
           f_equal.
-          admit.
+          rewrite df_eval_backprop_delta_by_unit_parts in eqq1.
+
+          
+          
+          unfold subvar; simpl.
+          simpler2.
+          
 
 
 
