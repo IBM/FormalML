@@ -11416,7 +11416,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         omega.
     Qed.
 
-    Lemma list_env_iter_delta {n} (σ:df_env) 
+    Lemma list_env_iter_vec_delta {n} (σ:df_env) 
           (x:Vector (DefinedFunction UnitAnn DTfloat) n) (s: SubVar) grad_env 
           (i0 :  {n' : nat | n' < n}) (old : float) :
       let v := (s, DTfloat) in 
@@ -11436,7 +11436,42 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         intros.
         unfold lift.
         simpl_closed_backprop.
+        generalize (list_env_iter_total_fun
+                      (fun (i : {n' : nat | n' < n}) (env : df_env) =>
+                         df_eval_backprop_deriv σ (x i) env 
+                                                (if equiv_dec (` i) (` i0) then 1%R else 0%R))
+                      grad_env (bounded_seq0 n)); intros.
+        cut_to H1; [|intros; apply backprop_deriv_fully_closed_not_none; apply H0].
+        match_option; [|tauto].
+        f_equal.
         Admitted.
+
+    Lemma list_env_iter_mat_delta {n m} (σ:df_env) 
+          (x:Matrix (DefinedFunction UnitAnn DTfloat) n m) (s: SubVar) grad_env 
+          (i0 :  {n' : nat | n' < n}) 
+          (j0 :  {m' : nat | m' < m}) (old : float) :      
+      let v := (s, DTfloat) in 
+      vartlookup grad_env v = Some old ->
+      (forall (i: {n' : nat | n' < n}) (j: {m' : nat | m' < m}) ,
+          let vl := map (fun ve => projT1 ve) σ in
+          fully_closed_over (x i j) vl) -> 
+      lift (fun e => subvar v e old) 
+           (df_eval_backprop_deriv σ (x i0 j0) grad_env 1%R) = 
+      lift (fun e => subvar v e old) 
+           (list_env_iter
+              (fun (i : {n' : nat | n' < n}) (env : df_env) =>
+                 list_env_iter
+                   (fun (j : {m' : nat | m' < m}) (env0 : df_env) =>
+                      df_eval_backprop_deriv 
+                        σ (x i j) env0
+                        (UnitMatrix n m i0 j0 i j)) (Some env) 
+                   (bounded_seq0 m)) (Some grad_env) (bounded_seq0 n)).
+      Proof.
+        intros.
+        unfold lift.
+        simpl_closed_backprop.
+        Admitted.
+
 
     Lemma yay {T} (σ:df_env) (df:DefinedFunction UnitAnn T) (s: SubVar) grad_env :
       let v := (s, DTfloat) in 
@@ -11502,8 +11537,8 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
            cut_to H3.
            match_option; [|tauto].
            * rewrite H.
-             generalize (list_env_iter_delta σ x s grad_env 
-                                             (exist (fun n' : nat => n' < n) x0 l) d).
+             generalize (list_env_iter_vec_delta σ x s grad_env 
+                                                 (exist (fun n' : nat => n' < n) x0 l) d).
              intros.
              simpl in H4.
              specialize (H4 H0 closedb).
@@ -11533,7 +11568,8 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
            unfold two_matrix_env_iter_alt.
            specialize (H i i0 grad_env); simpl in H.
            rewrite vforall_forall in closed.
-           specialize (closed i).
+           assert (closedb := closed).
+           specialize (closed i). 
            rewrite vforall_forall in closed.
            specialize (closed i0).           
            specialize (H vin closed); simpl in H.
@@ -11544,8 +11580,41 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
            rewrite H.
            destruct i.
            destruct i0.
-           unfold lift, df_eval_backward_gen_top_obligation_2, eq_ind_r, coerce; simpl.
-           admit.
+           unfold lift; simpl.
+           generalize (list_env_iter_total_fun
+                         (fun (i : {n' : nat | n' < n}) (env : df_env) =>
+                            list_env_iter
+                              (fun (j : {m' : nat | m' < m}) (env0 : df_env) =>
+                                 df_eval_backprop_deriv 
+                                   σ (x i j) env0
+                                   (UnitMatrix n m (exist (fun n' : nat => n' < n) x0 l)
+                                               (exist (fun n' : nat => n' < m) x1 l0) i j)) 
+                              (Some env) 
+                              (bounded_seq0 m))
+                         grad_env (bounded_seq0 n)); intros.
+           cut_to H3.
+           match_option; [|tauto].
+           * generalize (list_env_iter_mat_delta σ x s grad_env 
+                                                 (exist (fun n' : nat => n' < n) x0 l)
+                                                 (exist (fun n' : nat => n' < m) x1 l0) d).
+             intros.
+             simpl in H4.
+             specialize (H4 H0).
+             cut_to H4.
+             rewrite eqq0 in H4.
+             rewrite eqq1 in H4.
+             unfold lift in H4.
+             symmetry; trivial.
+             intros.
+             specialize (closedb i).
+             rewrite vforall_forall in closedb.
+             apply closedb.
+           * intros.
+             apply list_env_iter_total_fun; intros.
+             apply backprop_deriv_fully_closed_not_none.
+             specialize (closedb a).
+             rewrite vforall_forall in closedb.
+             apply closedb.
          + specialize (vectoro_to_ovector_exists_None eqq); intros.
            destruct H1.
            specialize (vectoro_to_ovector_exists_None e); intros.
@@ -12462,7 +12531,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
             admit.
           * admit.
           +  admit.
-    - Case "MatrixMult"%string; admit.
+      - Case "MatrixMult"%string; admit.
       - Case "VectorPlus"%string.
         destruct closed.
         specialize (IHdf1 grad_env vin).
@@ -13024,6 +13093,12 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
           unfold lift; simpl.
           match_option.
           * specialize (apply vectoro_to_ovector_forall_some_f eqq0); intros; simpl in H5.
+            symmetry.
+            apply vectoro_to_ovector_forall_some_b_strong; intros.
+            specialize (H5 i).
+            specialize (H4 i).
+            destruct i.
+            simpl.
             admit.
           * specialize (apply vectoro_to_ovector_exists_None eqq0); intros.
             destruct H5.
