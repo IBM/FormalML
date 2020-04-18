@@ -11254,6 +11254,13 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
       fun (i: {n':nat | n' < theend}%nat) =>
         if lt_dec (proj1_sig i) middle then part1 else part2.
 
+    Definition mergeVectorZero {float} {n} (middle:nat) (part1 : Vector float n) (c:float) : (Vector float n) :=
+      fun (i: {n':nat | n' < n}%nat) =>
+        if lt_dec (proj1_sig i) middle then (part1 i) else c.
+
+    Definition scaleUnitVector (n:nat) (j : {n':nat | (n' < n)%nat}) (c:float) : Vector float n :=
+      fun i => if (proj1_sig i) == (proj1_sig j) then c else 0%R.      
+
     Lemma ConstSplitVectorSzero bound n (pf:bound < n) :
           (ConstSplitVector (S bound) n 1%R 0%R) =
           dfti_gen_plus (T:=DTVector n) (ConstSplitVector bound n 1%R 0%R) (UnitVector n (exist _ bound pf)).
@@ -11268,6 +11275,25 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
       ; destruct (Nat.eq_dec x bound)
       ; try omega; try lra.
     Qed.
+
+    Lemma mergeVectorSzero {n} (bound:nat) (pf:bound < n) (part1 : Vector R n):
+      let ind := (exist _ bound pf) in
+          (@mergeVectorZero (@float floatish_R) n (S bound) part1 0%R) =
+          dfti_gen_plus (T:=DTVector n) (@mergeVectorZero (@float floatish_R) n bound part1 0%R)
+                        (scaleUnitVector n ind (part1 ind)).
+    Proof.
+      simpl.
+      apply functional_extensionality.
+      intros.
+      unfold mergeVectorZero, scaleUnitVector, equiv_dec, nat_eq_eqdec; simpl.
+      destruct x as [x pff]; simpl.
+      destruct (lt_dec x (S bound))
+      ; destruct (lt_dec x bound)
+      ; destruct (Nat.eq_dec x bound)
+      ; try omega; try lra.
+      subst; simpl.
+      replace pff with pf; [lra | ].
+    Admitted.
 
     Lemma vfirstn_vdrop_last {T} {n} (v:Vector T n) bound pf pf2 :
       vdrop_last (vfirstn v (S bound) pf) = vfirstn v bound pf2.
@@ -11286,8 +11312,15 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
     Proof.
     Admitted.
 
-    Lemma df_eval_backprop_delta_by_unit_parts_bounded {n} bound (pf:(bound<=n)%nat)
-          (σ:df_env) (df:DefinedFunction UnitAnn (DTVector n)) (s: SubVar) grad_env (d:Vector float n):
+    Lemma constSplitVectorZero {n} :
+      ConstSplitVector 0 n 1%R 0%R = ConstVector n 0%R.
+    Proof.
+      unfold ConstSplitVector, ConstVector; simpl.
+      now apply functional_extensionality.
+    Qed.
+
+    Lemma df_eval_backprop_delta_by_unit_partvec_bounded {n} bound (pf:(bound<=n)%nat)
+          (σ:df_env) (df:DefinedFunction UnitAnn (DTVector n)) (s: SubVar) grad_env (grad d:Vector float n):
 
            fully_closed_over df
                              (map (fun ve : {v : var_type & definition_function_types_interp (snd v)} => projT1 ve) σ) ->
@@ -11295,14 +11328,13 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
            
            (forall i : {n' : nat | n' < n},
          (df_eval_backprop_delta σ df (s, DTfloat) grad_env
-            
-                    (UnitVector n i)) = Some (d i)) ->
+                                 (scaleUnitVector n i (grad i))) = Some (d i)) ->
          (df_eval_backprop_delta σ df (s, DTfloat) grad_env
-                                 (ConstSplitVector bound n 1%R 0%R)) = Some (vsum (vfirstn d bound pf)).
+                                 (mergeVectorZero bound grad 0%R)) = Some (vsum (vfirstn d bound pf)).
     Proof.
       intros closed lo fa.
       induction bound.
-      - replace (ConstSplitVector 0 n 1%R 0%R) with (scalarMult (DTVector n) 0%R (ConstSplitVector 0 n 1%R 0%R)).
+      - replace (mergeVectorZero 0 grad 0%R) with (scalarMult (DTVector n) 0%R (mergeVectorZero 0 grad 0%R)).
         + erewrite scalarMult_backprop_grad_scalar; try eassumption.
           * simpl.
             unfold df_eval_backprop_delta.
@@ -11313,14 +11345,15 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
             vm_compute; lra.
           * apply backprop_deriv_fully_closed_not_none; trivial. 
           * apply backprop_deriv_fully_closed_not_none; trivial. 
-        + unfold scalarMult, ConstSplitVector.
+        + unfold scalarMult, mergeVectorZero.
           apply functional_extensionality; intros; simpl.
           lra.
       - assert (pf2:bound < n) by omega.
         assert (pf3:bound <= n) by omega.
-        rewrite (ConstSplitVectorSzero _ _ pf2).
+        rewrite (mergeVectorSzero _ pf2 _ ).
         erewrite backprop_grad_sum; try eassumption.
-        rewrite (IHbound pf3).
+        specialize (IHbound pf3).
+        rewrite IHbound.
         rewrite fa.
         simpl.
         f_equal.
@@ -11334,6 +11367,29 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         rewrite vsum_cons.
         rewrite Rplus_comm.
         f_equal.
+    Qed.
+
+    Lemma df_eval_backprop_delta_by_unit_partvec {n} 
+          (σ:df_env) (df:DefinedFunction UnitAnn (DTVector n)) (s: SubVar) grad_env (grad d:Vector float n):
+
+           fully_closed_over df
+                             (map (fun ve : {v : var_type & definition_function_types_interp (snd v)} => projT1 ve) σ) ->
+           vartlookup grad_env (s, DTfloat) <> None ->
+           
+           (forall i : {n' : nat | n' < n},
+               (df_eval_backprop_delta σ df (s, DTfloat) grad_env
+                                       (scaleUnitVector n i (grad i))) = Some (d i)) ->
+           df_eval_backprop_delta σ df (s, DTfloat) grad_env grad = 
+           Some (vsum d).
+      Proof.
+      intros.
+      replace (grad) with (mergeVectorZero n grad 0%R).
+      - erewrite df_eval_backprop_delta_by_unit_partvec_bounded; try eassumption.
+        now rewrite vfirstn_eq.
+      - apply functional_extensionality; unfold mergeVectorZero; intros [x pff]; simpl.
+        destruct (lt_dec x n); trivial; omega.
+        Unshelve.
+        omega.
     Qed.
 
     Lemma df_eval_backprop_delta_by_unit_parts {n} 
@@ -11351,14 +11407,36 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                               (ConstVector n 1%R)) = Some (vsum d).
     Proof.
       intros.
-      replace (ConstVector n 1%R) with (ConstSplitVector n n 1%R 0%R).
-      - erewrite df_eval_backprop_delta_by_unit_parts_bounded; try eassumption.
+      replace (ConstVector n 1%R) with (mergeVectorZero n (ConstVector n 1%R) 0%R).
+      - erewrite df_eval_backprop_delta_by_unit_partvec_bounded; try eassumption.
         now rewrite vfirstn_eq.
-      - apply functional_extensionality; unfold ConstSplitVector, ConstVector; intros [x pff]; simpl.
+      - apply functional_extensionality; unfold mergeVectorZero, ConstVector; intros [x pff]; simpl.
         destruct (lt_dec x n); trivial; omega.
         Unshelve.
         omega.
     Qed.
+
+    Lemma list_env_iter_delta {n} (σ:df_env) 
+          (x:Vector (DefinedFunction UnitAnn DTfloat) n) (s: SubVar) grad_env 
+          (i0 :  {n' : nat | n' < n}) (old : float) :
+      let v := (s, DTfloat) in 
+      vartlookup grad_env v = Some old ->
+      (forall (j: {n' : nat | n' < n}) ,
+          let vl := map (fun ve => projT1 ve) σ in
+          fully_closed_over (x j) vl) -> 
+      lift (fun e => subvar v e old) 
+           (df_eval_backprop_deriv σ (x i0) grad_env 1%R) = 
+      lift (fun e => subvar v e old) 
+           (list_env_iter
+              (fun (i : {n' : nat | n' < n}) (env : df_env) =>
+                 df_eval_backprop_deriv σ (x i) env 
+                                        (if equiv_dec (` i) (` i0) then 1%R else 0%R))
+           (Some grad_env) (bounded_seq0 n)).
+      Proof.
+        intros.
+        unfold lift.
+        simpl_closed_backprop.
+        Admitted.
 
     Lemma yay {T} (σ:df_env) (df:DefinedFunction UnitAnn T) (s: SubVar) grad_env :
       let v := (s, DTfloat) in 
@@ -11412,7 +11490,8 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
            rewrite H1 in H; simpl in H.
            unfold lift in H.
            match_option_in H.
-           rewrite H.
+           specialize (apply vectoro_to_ovector_forall_some_f eqq); intros.
+           specialize (H2 i); simpl in H2.
            destruct i; simpl.
            unfold UnitVector; simpl.
            generalize (list_env_iter_total_fun
@@ -11420,11 +11499,18 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                             df_eval_backprop_deriv σ (x i) env 
                                                    (if equiv_dec (` i) x0 then 1%R else 0%R))
                          grad_env (bounded_seq0 n)); intros.
-           cut_to H2.
+           cut_to H3.
            match_option; [|tauto].
-           * specialize (apply vectoro_to_ovector_forall_some_f eqq); intros.
-
-             admit.
+           * rewrite H.
+             generalize (list_env_iter_delta σ x s grad_env 
+                                             (exist (fun n' : nat => n' < n) x0 l) d).
+             intros.
+             simpl in H4.
+             specialize (H4 H0 closedb).
+             rewrite eqq0 in H4.
+             rewrite eqq1 in H4.
+             unfold lift in H4.
+             symmetry; trivial.
            * intros.
              apply backprop_deriv_fully_closed_not_none.
              apply closedb.
@@ -12039,8 +12125,63 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
           unfold lift in H5.
           rewrite (split_subvar d4 d5 d1 d6); trivial.
           unfold lift in H6.
-          
-          admit.
+          rewrite <- vsum_plus.
+          generalize (df_eval_backprop_delta_by_unit_partvec σ df1 s grad_env d0 
+                                                             (fun i => (d2 i * d0 i)%R)); intros.
+          specialize (H10 H vin).
+          generalize (df_eval_backprop_delta_by_unit_partvec σ df2 s d4 d 
+                                                             (fun i => (d i * d3 i)%R)); intros.
+          specialize (H11 H0 H8).
+          cut_to H10.
+          cut_to H11.
+          * unfold df_eval_backprop_delta in H10.
+            rewrite eqq1 in H10.
+            unfold df_eval_backprop_delta in H11.
+            rewrite eqq4 in H11.
+            unfold lift in H10.
+            unfold lift in H11.
+            rewrite eqq2 in H10.
+            rewrite eqq3 in H11.
+            invcs H10; invcs H11.
+            rewrite H12, H13; lra.
+          * intros.
+            replace (scaleUnitVector n i (d i)) with
+                (scalarMult (DTVector n) (d i) (UnitVector n i)). 
+            rewrite scalarMult_backprop_grad_scalar with (grad_env1 := d4) (grad_env2:=d4);trivial.
+            unfold df_eval_backprop_delta, lift.
+            rewrite eqq4.
+            specialize (H9 i).
+            destruct i; simpl in H9.
+            simpl_closed_backprop.
+            f_equal.
+            rewrite eqq5 in H9.
+            invcs H9.
+            rewrite H13.
+            now unfold scalarMult; simpl.
+            apply backprop_deriv_fully_closed_not_none; trivial.
+            apply backprop_deriv_fully_closed_not_none; trivial.            
+            unfold scalarMult, UnitVector, scaleUnitVector; simpl.
+            apply functional_extensionality; intros.
+            destruct (equiv_dec (` x) (` i)); lra.
+          * intros.
+            replace (scaleUnitVector n i (d0 i)) with
+                (scalarMult (DTVector n) (d0 i) (UnitVector n i)). 
+            rewrite scalarMult_backprop_grad_scalar with (grad_env1 := grad_env) (grad_env2:=grad_env);trivial.        
+            unfold df_eval_backprop_delta, lift.            
+            rewrite eqq1.
+            specialize (H6 i).
+            destruct i; simpl in H6.
+            simpl_closed_backprop.
+            f_equal.
+            rewrite eqq5 in H6.
+            invcs H6.
+            rewrite H13.
+            now unfold scalarMult; simpl; lra.
+            apply backprop_deriv_fully_closed_not_none; trivial.
+            apply backprop_deriv_fully_closed_not_none; trivial.            
+            unfold scalarMult, UnitVector, scaleUnitVector; simpl.
+            apply functional_extensionality; intros.
+            destruct (equiv_dec (` x) (` i)); lra.
         + generalize (eval_deriv_genvar_fully_closed_not_none σ df2 [mk_env_entry (s, DTfloat) 1%R]); intros.
           now specialize (H7 H0).
         + generalize (eval_deriv_genvar_fully_closed_not_none σ df1 [mk_env_entry (s, DTfloat) 1%R]); intros.
@@ -12056,20 +12197,26 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         + specialize (IHdf closed).
           symmetry in IHdf.
           generalize (vectoro_to_ovector_forall_some_f IHdf); intros HH; clear IHdf.
-          unfold lift.
-          simpl_closed_backprop.
-          f_equal.
-          rewrite df_eval_backprop_delta_by_unit_parts in eqq1.
-
-          
-          
-          unfold subvar; simpl.
-          simpler2.
-          
-
-
-
-          
+          replace (@lift (@df_env floatish_R) R
+                         (fun e : df_env => subvar (s, DTfloat) e d0)
+                         (df_eval_backprop_deriv σ df grad_env
+                                                  (ConstVector n 1%R)))
+                   with
+                     (df_eval_backprop_delta σ df (s, DTfloat) grad_env
+                              (ConstVector n 1%R)).
+          rewrite df_eval_backprop_delta_by_unit_parts with (d1 := d); trivial.
+          * intros.
+            specialize (HH i).
+            unfold df_eval_backprop_delta.
+            rewrite eqq0.
+            replace (UnitVector n i) with 
+                (coerce
+                   (df_eval_backward_gen_top_obligation_2 UnitAnn (DTVector n) df n eq_refl i)
+                   (UnitVector n i)); trivial.
+            destruct i.
+            now simpl.
+          * unfold df_eval_backprop_delta.
+            now rewrite eqq0.
         + specialize (IHdf closed).
           symmetry in IHdf.
           specialize (vectoro_to_ovector_exists_None IHdf); intros.
@@ -12196,7 +12343,37 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                               UnitAnn (DTMatrix m n) df m n eq_refl x x0)
                            (UnitMatrix m n x x0))); intros.
           specialize (H closed); tauto.
-      - Case "MatrixVectorMult"%string; admit.
+      - Case "MatrixVectorMult"%string.
+        destruct closed.
+        specialize (IHdf1 grad_env vin H).
+        simpl in *.
+        generalize (eval_fully_closed_not_none σ df1); intros.
+        specialize (H1 H).
+        match_case; [intros|tauto].
+        generalize (eval_fully_closed_not_none σ df2); intros.
+        specialize (H3 H0).
+        case_eq (df_eval σ df2); [intros | tauto].
+        assert (df_eval_deriv_genvar σ df1 [mk_env_entry (s, DTfloat) 1%R] <> None).
+        apply eval_deriv_genvar_fully_closed_not_none; trivial.
+        match_option; [|tauto].
+        assert (df_eval_deriv_genvar σ df2 [mk_env_entry (s, DTfloat) 1%R] <> None).
+        apply eval_deriv_genvar_fully_closed_not_none; trivial.
+        match_option; [|tauto].
+        match_option; [|tauto].
+        unfold lift.
+        symmetry.
+        apply vectoro_to_ovector_forall_some_b_strong; intros.
+        simpl_closed_backprop.
+        simpl_closed_backprop.
+        f_equal.
+        rewrite eqq1, eqq in IHdf1.
+        unfold lift in IHdf1; symmetry in IHdf1.
+        specialize (vectoro_to_ovector_forall_some_f IHdf1); intros.
+        specialize (IHdf2 env).
+        simpler2.
+        cut_to IHdf2; try congruence.
+        rewrite eqq0 in IHdf2.
+        admit.
       - Case "MatrixVectorAdd"%string.
         destruct closed.
         specialize (IHdf1 grad_env vin).
