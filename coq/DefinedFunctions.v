@@ -12473,64 +12473,55 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
             specialize (H4 i).
             destruct i; destruct i0;  simpl; simpl in eqq2; simpl in H4.
             rewrite eqq2.
-(*
-            generalize (backprop_deriv_fully_closed_not_none 
-                          σ df2 d2
-                          (UnitMatrix n m (exist (fun n' : nat => n' < n) x l)
-                                      (exist (fun n' : nat => n' < m) x0 l0)))
-            ; intros;  specialize (H6 H0).
-            match_option; [|tauto]; f_equal.
-            rewrite eqq4 in H5; inversion H5.
-            rewrite (split_subvar d2 d4 d0 d3); trivial.
-            inversion H2; lra.
-          * rewrite eqq1 in IHdf2.
-            unfold lift at 1 in IHdf2; simpl in IHdf2.
-            cut (0 < n); intros.
-            specialize (H1 (exist (fun n' : nat => n' < n) 0 H2)).
-            specialize (apply vectoro_to_ovector_forall_some_f H1); intros; simpl in H2.
-            cut (0 < m); intros.
-            specialize (H3 (exist (fun m' : nat => m' < m) 0 H4)).
-            unfold lift in H3.
-            match_option_in H3.
-            generalize (df_eval_backprop_deriv_preserves_lookup_not_none eqq2 (s, DTfloat))
-            ;intros.
-            specialize (H5 vin).
-            specialize (IHdf2 d1 H5 H0).
-            match_option_in IHdf2; [|congruence].
-            symmetry in IHdf2.
-            specialize (vectoro_to_ovector_exists_None IHdf2); intros.
-            destruct H6.
-            specialize (vectoro_to_ovector_exists_None e); intros.            
-            destruct H6.            
-            unfold lift in e0.
-            match_option_in e0.
-            generalize (backprop_deriv_fully_closed_not_none 
-                          σ df2 d1
-                          (coerce
-              (df_eval_backward_gen_top_obligation_3 UnitAnn (DTMatrix n m) df2 n m eq_refl x
-                 x0) (UnitMatrix n m x x0))); intros.
-            specialize (H6 H0).
+            match_option_in H4.
+            generalize (list_env_iter_total_fun
+                          (fun (i : {m' : nat | m' < n}) (env : df_env) =>
+                             df_eval_backprop_deriv 
+                               σ df2 env
+                               (transpose
+                                  (UnitMatrix m n (exist (fun n' : nat => n' < m) x l)
+                                              (exist (fun n' : nat => n' < n) x0 l0)) i)) 
+                          d2 (bounded_seq0 n)); intros.
+            cut_to H5.
+            -- case_eq (list_env_iter
+                          (fun (i : {m' : nat | m' < n}) (env : df_env) =>
+                             df_eval_backprop_deriv 
+                               σ df2 env
+                               (@transpose R m n
+                                  (UnitMatrix m n (exist (fun n' : nat => n' < m) x l)
+                                              (exist (fun n' : nat => n' < n) x0 l0)) i)) 
+                          (Some d2) 
+                          (bounded_seq0 n)); [intros |tauto].
+               f_equal.
+               rewrite (split_subvar d2 d5 d0 d3); trivial.
+               invcs H2.
+               invcs H4.
+               assert (lift (fun e => subvar (s, DTfloat) e d3)
+                            (df_eval_backprop_deriv 
+                               σ df2 d2 
+                               (UnitVector m (exist (fun n' : nat => n' < m) x l))) = 
+                       (lift (fun e => subvar (s, DTfloat) e d3)
+                             (list_env_iter
+                                (fun (i : {m' : nat | m' < n}) (env : df_env) =>
+                                   df_eval_backprop_deriv 
+                                     σ df2 env
+                                     (@transpose R m n
+                                        (UnitMatrix m n (exist (fun n' : nat => n' < m) x l)
+                                                    (exist (fun n' : nat => n' < n) x0 l0)) i))
+                                (Some d2) 
+                                (bounded_seq0 n)))).
+               admit.
+               rewrite eqq4, H6 in H2.
+               unfold lift in H2.
+               invcs H2; lra.
+            -- intros.
+               apply backprop_deriv_fully_closed_not_none; trivial.
+          * assert (df_eval_deriv_genvar σ df2 [mk_env_entry (s, DTfloat) 1%R] <> None).
+            apply eval_deriv_genvar_fully_closed_not_none; trivial.
             tauto.
-            admit.
-            admit.
-        + specialize (IHdf1 H).
-          symmetry in IHdf1.
-          specialize (apply vectoro_to_ovector_exists_None IHdf1); intros.
-          destruct H1.
-          specialize (apply vectoro_to_ovector_exists_None e); intros.
-          destruct H1.
-          unfold lift in e0.
-          match_option_in e0.
-          generalize (backprop_deriv_fully_closed_not_none 
-                        σ df1 grad_env
-                         (coerce
-              (df_eval_backward_gen_top_obligation_3 UnitAnn (DTMatrix n m) df1 n m eq_refl x
-                 x0) (UnitMatrix n m x x0))); intros.
-          specialize (H1 H); tauto.
-*)
-            admit.
-          * admit.
-          +  admit.
+        + assert (df_eval_deriv_genvar σ df1 [mk_env_entry (s, DTfloat) 1%R] <> None).
+          apply eval_deriv_genvar_fully_closed_not_none; trivial.
+          tauto.
       - Case "MatrixMult"%string; admit.
       - Case "VectorPlus"%string.
         destruct closed.
@@ -13099,7 +13090,35 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
             specialize (H4 i).
             destruct i.
             simpl.
-            admit.
+            case_eq (vectoro_to_ovector
+                       (vmap
+                          (fun '(rei, g) =>
+                             match df_eval [mk_env_entry (v, DTfloat) rei] 
+                                           (df_deriv df1 (v, DTfloat)) with
+                             | Some se => Some (g * se)%R
+                             | None => None
+                             end) 
+                          (vector_zip d (UnitVector n (exist (fun n' : nat => n' < n) x l)))));
+              intros .
+            -- admit.
+            -- assert (vectoro_to_ovector
+                         (vmap
+                            (fun '(rei, g) =>
+                               match df_eval [mk_env_entry (v, DTfloat) rei] 
+                                             (df_deriv df1 (v, DTfloat)) with
+                               | Some se => Some (g * se)%R
+                               | None => None
+                               end) 
+                            (vector_zip d (UnitVector 
+                                             n (exist (fun n' : nat => n' < n) x l)))) <> None); [|tauto].
+               apply vectoro_to_ovector_not_none; intros.
+               rewrite vmap_nth; simpl.
+               match_option.
+               assert (df_eval [mk_env_entry (v, DTfloat) (d i)] 
+                               (df_deriv df1 (v, DTfloat)) <> None).
+               ++ apply eval_fully_closed_not_none.
+                  apply fully_closed_deriv; trivial.
+               ++ tauto.
           * specialize (apply vectoro_to_ovector_exists_None eqq0); intros.
             destruct H5.
             generalize (eval_deriv_genvar_fully_closed_not_none
