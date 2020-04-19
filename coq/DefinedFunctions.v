@@ -11470,6 +11470,29 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         Admitted.
 
 
+    Lemma list_env_iter_matvec_delta {m n} (σ:df_env) 
+          (df2:DefinedFunction UnitAnn (DTVector m)) (s: SubVar) grad_env 
+          (i0 :  {n' : nat | n' < n}) 
+          (j0 :  {m' : nat | m' < m}) (old : float) :      
+      vartlookup grad_env (s, DTfloat) = Some old ->
+      let vl := map (fun ve => projT1 ve) σ in
+      fully_closed_over df2 vl -> 
+      (lift (fun e => subvar (s, DTfloat) e old)
+            (df_eval_backprop_deriv 
+               σ df2 grad_env 
+               (UnitVector m j0)) = 
+       (lift (fun e => subvar (s, DTfloat) e old)
+             (list_env_iter
+                (fun (i : {m' : nat | m' < n}) (env : df_env) =>
+                   df_eval_backprop_deriv 
+                     σ df2 env
+                     (@transpose R m n
+                                 (UnitMatrix m n j0 i0) i))
+                (Some grad_env) 
+                (bounded_seq0 n)))).
+      Proof.
+      Admitted.
+
     Lemma yay {T} (σ:df_env) (df:DefinedFunction UnitAnn T) (s: SubVar) grad_env :
       let v := (s, DTfloat) in 
       vartlookup grad_env v <> None ->
@@ -12445,6 +12468,9 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         replace (@vsum floatish_R n (fun j : {n' : nat | n' < n} => (d i j * d2 j + d1 i j * d0 j)%R))
           with ((vsum (fun j => (d i j * d2 j)%R)) + (vsum (fun j => (d1 i j * d0 j)%R)))%R
         ; [|rewrite vsum_plus; f_equal].
+        unfold lift in IHdf2; symmetry in IHdf2.
+        specialize (vectoro_to_ovector_forall_some_f IHdf2); intros.        
+        simpl in H9; simpl in H8.
         admit.
       - Case "MatrixVectorAdd"%string.
         destruct closed.
@@ -12499,21 +12525,12 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                rewrite (split_subvar d2 d5 d0 d3); trivial.
                invcs H2.
                invcs H4.
-               assert (lift (fun e => subvar (s, DTfloat) e d3)
-                            (df_eval_backprop_deriv 
-                               σ df2 d2 
-                               (UnitVector m (exist (fun n' : nat => n' < m) x l))) = 
-                       (lift (fun e => subvar (s, DTfloat) e d3)
-                             (list_env_iter
-                                (fun (i : {m' : nat | m' < n}) (env : df_env) =>
-                                   df_eval_backprop_deriv 
-                                     σ df2 env
-                                     (@transpose R m n
-                                        (UnitMatrix m n (exist (fun n' : nat => n' < m) x l)
-                                                    (exist (fun n' : nat => n' < n) x0 l0)) i))
-                                (Some d2) 
-                                (bounded_seq0 n)))).
-               admit.
+               generalize (list_env_iter_matvec_delta
+                             σ df2 s d2
+                             (exist (fun n' : nat => n' < n) x0 l0)
+                             (exist (fun n' : nat => n' < m) x l) d3).
+               intros.
+               specialize (H2 eqq3 H0).
                rewrite eqq4, H6 in H2.
                unfold lift in H2.
                invcs H2; lra.
@@ -12562,6 +12579,9 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         replace (@vsum floatish_R p (fun j  => (d i j * d2 j i0 + d1 i j * d0 j i0)%R))
           with ((vsum (fun j => (d i j * d2 j i0)%R)) + (vsum (fun j => (d1 i j * d0 j i0)%R)))%R
         ; [|rewrite vsum_plus; f_equal].
+        unfold lift in IHdf2; symmetry in IHdf2.
+        specialize (vectoro_to_ovector_forall_some_f IHdf2); intros.        
+        simpl in H8; simpl in H9.
         admit.
       - Case "VectorPlus"%string.
         destruct closed.
