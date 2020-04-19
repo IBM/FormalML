@@ -11292,25 +11292,22 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
       ; destruct (Nat.eq_dec x bound)
       ; try omega; try lra.
       subst; simpl.
-      replace pff with pf; [lra | ].
-    Admitted.
-
-    Lemma vfirstn_vdrop_last {T} {n} (v:Vector T n) bound pf pf2 :
-      vdrop_last (vfirstn v (S bound) pf) = vfirstn v bound pf2.
-    Proof.
-      apply FunctionalExtensionality.functional_extensionality; intros [??]; simpl.
+      ring_simplify.
       erewrite index_pf_irrel; eauto.
     Qed.
 
-    Lemma vlast_vfirstn {T} {n} (d:Vector T n) bound pf pf2 :
-      (vlast (vfirstn d (S bound) pf)) = d ((exist _ bound pf2)).
+    Lemma vsum_alt_eq {m:nat} (v:Vector R m) : vsum v = vector_fold_right Fplus 0%R v.
     Proof.
-    Admitted.
-
+      apply vector_fold_right1_as_vector_fold_right.
+      unfold Datatypes.id; simpl; intros; lra.
+    Qed.
+    
     Lemma vsum_cons {m:nat} x (v:Vector R m) :
       vsum (vcons x v) = (x + vsum v)%R.
     Proof.
-    Admitted.
+      repeat rewrite vsum_alt_eq.
+      apply vector_fold_right_vcons.
+    Qed.      
 
     Lemma constSplitVectorZero {n} :
       ConstSplitVector 0 n 1%R 0%R = ConstVector n 0%R.
