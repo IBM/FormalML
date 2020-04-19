@@ -12439,6 +12439,12 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         simpler2.
         cut_to IHdf2; try congruence.
         rewrite eqq0 in IHdf2.
+        rewrite (split_subvar env env0 d3 val); trivial.
+        specialize (H7 i); simpl in H7.
+        specialize (vectoro_to_ovector_forall_some_f H7); intros.
+        replace (@vsum floatish_R n (fun j : {n' : nat | n' < n} => (d i j * d2 j + d1 i j * d0 j)%R))
+          with ((vsum (fun j => (d i j * d2 j)%R)) + (vsum (fun j => (d1 i j * d0 j)%R)))%R
+        ; [|rewrite vsum_plus; f_equal].
         admit.
       - Case "MatrixVectorAdd"%string.
         destruct closed.
@@ -12519,7 +12525,44 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         + assert (df_eval_deriv_genvar σ df1 [mk_env_entry (s, DTfloat) 1%R] <> None).
           apply eval_deriv_genvar_fully_closed_not_none; trivial.
           tauto.
-      - Case "MatrixMult"%string; admit.
+      - Case "MatrixMult"%string.
+        destruct closed.
+        specialize (IHdf1 grad_env vin H).
+        simpl in *.
+        generalize (eval_fully_closed_not_none σ df1); intros.
+        specialize (H1 H).
+        match_case; [intros|tauto].
+        generalize (eval_fully_closed_not_none σ df2); intros.
+        specialize (H3 H0).
+        case_eq (df_eval σ df2); [intros | tauto].
+        assert (df_eval_deriv_genvar σ df1 [mk_env_entry (s, DTfloat) 1%R] <> None).
+        apply eval_deriv_genvar_fully_closed_not_none; trivial.
+        match_option; [|tauto].
+        assert (df_eval_deriv_genvar σ df2 [mk_env_entry (s, DTfloat) 1%R] <> None).
+        apply eval_deriv_genvar_fully_closed_not_none; trivial.
+        match_option; [|tauto].
+        match_option; [|tauto].
+        unfold lift.
+        symmetry.
+        apply vectoro_to_ovector_forall_some_b_strong; intros.
+        apply vectoro_to_ovector_forall_some_b_strong; intros.        
+        simpl_closed_backprop.
+        simpl_closed_backprop.
+        f_equal.
+        rewrite eqq1, eqq in IHdf1.
+        unfold lift in IHdf1; symmetry in IHdf1.
+        specialize (vectoro_to_ovector_forall_some_f IHdf1); intros.
+        specialize (IHdf2 env).
+        simpler2.
+        cut_to IHdf2; try congruence.
+        rewrite eqq0 in IHdf2.
+        rewrite (split_subvar env env0 d3 val); trivial.
+        specialize (H7 i); simpl in H7.
+        specialize (vectoro_to_ovector_forall_some_f H7); intros.
+        replace (@vsum floatish_R p (fun j  => (d i j * d2 j i0 + d1 i j * d0 j i0)%R))
+          with ((vsum (fun j => (d i j * d2 j i0)%R)) + (vsum (fun j => (d1 i j * d0 j i0)%R)))%R
+        ; [|rewrite vsum_plus; f_equal].
+        admit.
       - Case "VectorPlus"%string.
         destruct closed.
         specialize (IHdf1 grad_env vin).
