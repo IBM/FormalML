@@ -92,6 +92,34 @@ Section Vector.
   Defined.
 
 
+  Lemma vector_fold_right1_bounded_dep_as_vector_fold_right_bounded_dep {A:nat->Type} {B} 
+           (f:forall n,B->A n->A (S n)) (init:A 0%nat) (singleton:B->A 1%nat) {m:nat} 
+           (v:Vector B m) (bound:nat) pf
+    :
+      (forall x, singleton x = f _ x init) ->
+        vector_fold_right1_bounded_dep f init singleton v bound pf = 
+        vector_fold_right_bounded_dep f init v bound pf.
+  Proof.
+    intros feq.
+    unfold vector_fold_right_bounded_dep.
+    induction bound; simpl; trivial.
+    rewrite IHbound.
+    destruct bound; simpl; auto.
+  Qed.
+
+  Lemma vector_fold_right_bounded_dep_as_vector_fold_right1_bounded_dep {A:nat->Type} {B} 
+        (f:forall n,B->A n->A (S n)) (init:A 0%nat) {m:nat} 
+        (v:Vector B m) (bound:nat) pf
+    :
+      vector_fold_right_bounded_dep f init v bound pf = 
+      vector_fold_right1_bounded_dep f init (fun x => f 0 x init) v bound pf.
+  Proof.
+    unfold vector_fold_right_bounded_dep.
+    induction bound; simpl; trivial.
+    rewrite IHbound.
+    destruct bound; simpl; auto.
+  Qed.
+
   Definition vector_fold_right1_dep {A:nat->Type} {B} (f:forall n, B->A n->A (S n)) 
              (init:A 0%nat) (singleton:B->A 1%nat) {m:nat} (v:Vector B m) : A m
     := vector_fold_right1_bounded_dep f init singleton v m (le_refl _).
@@ -105,6 +133,49 @@ Section Vector.
 
   Definition vector_fold_right {A B:Type} (f:B->A->A) (init:A) {m:nat} (v:Vector B m)
     := vector_fold_right_dep (fun _ => f) init v.
+
+
+  Lemma vector_fold_right1_dep_as_vector_fold_right_dep {A:nat->Type} {B} 
+        (f:forall n,B->A n->A (S n)) (init:A 0%nat) (singleton:B->A 1%nat) {m:nat} 
+        (v:Vector B m)
+    :
+      (forall x, singleton x = f _ x init) ->
+        vector_fold_right1_dep f init singleton v  = 
+        vector_fold_right_dep f init v.
+  Proof.
+    apply vector_fold_right1_bounded_dep_as_vector_fold_right_bounded_dep.
+  Qed.
+
+  Lemma vector_fold_right_dep_as_vector_fold_right1_dep {A:nat->Type} {B} 
+        (f:forall n,B->A n->A (S n)) (init:A 0%nat) {m:nat} 
+        (v:Vector B m)
+    :
+      vector_fold_right_dep f init v = 
+      vector_fold_right1_dep f init (fun x => f 0 x init) v.
+  Proof.
+    apply vector_fold_right_bounded_dep_as_vector_fold_right1_bounded_dep.
+  Qed.
+
+  Lemma vector_fold_right1_as_vector_fold_right {A:Type} {B} 
+        (f:B->A->A) (init:A) (singleton:B->A) {m:nat} 
+        (v:Vector B m)
+    :
+      (forall x, singleton x = f x init) ->
+        vector_fold_right1 f init singleton v  = 
+        vector_fold_right f init v.
+  Proof.
+    apply (vector_fold_right1_dep_as_vector_fold_right_dep (fun _ => f)).
+  Qed.
+
+  Lemma vector_fold_right_as_vector_fold_right1 {A:Type} {B} 
+        (f:B->A->A) (init:A) {m:nat} 
+        (v:Vector B m)
+    :
+      vector_fold_right f init v = 
+      vector_fold_right1 f init (fun x => f x init) v.
+  Proof.
+    apply (vector_fold_right_dep_as_vector_fold_right1_dep (fun _ => f)).
+  Qed.
 
   Definition vectoro_to_ovector {T} {n} (v:Vector (option T) n) : option (Vector T n)
     := vector_fold_right_dep (fun n => lift2 (@vcons _ n)) (Some vnil) v.
@@ -332,6 +403,20 @@ Section Vector.
     apply eqq.
   Qed.
 
+  Lemma vlast_vcons {T} {n} x (d:Vector T n) : vlast (vcons x d) = x.
+  Proof.
+    unfold vlast, vcons.
+    match_destr; congruence.
+  Qed.
+
+  Lemma vdrop_last_vcons {T} {n} x (d:Vector T n) : vdrop_last (vcons x d) = d.
+  Proof.
+    unfold vdrop_last, vcons.
+    apply vec_eq_eq; intros [i pf].
+    match_destr; [omega | ].
+    erewrite index_pf_irrel; eauto.
+  Qed.
+
   Lemma vector_fold_right_dep_0 {A:nat->Type} {B} (f:forall n,B->A n->A (S n)) 
         (init:A 0%nat) (v:Vector B 0) : 
     vector_fold_right_dep f init v = init.
@@ -365,7 +450,22 @@ Section Vector.
     apply (@vector_fold_right_dep_Sn (fun _ => A)).
   Qed.
 
-  
+  Lemma vector_fold_right_dep_vcons {A:nat->Type} {B}
+        (f:forall n,B->A n->A (S n)) (init:A 0%nat) {m:nat} 
+        x (v:Vector B m) :
+    vector_fold_right_dep f init (vcons x v) = f m x (vector_fold_right_dep f init v).
+  Proof.
+    now rewrite vector_fold_right_dep_Sn, vlast_vcons, vdrop_last_vcons.
+  Qed.
+
+  Lemma vector_fold_right_vcons {A:Type} {B}
+        (f:B->A->A) (init:A) {m:nat} 
+        x (v:Vector B m)  :
+    vector_fold_right f init (vcons x v) = f x (vector_fold_right f init v).
+  Proof.
+    apply (vector_fold_right_dep_vcons (fun _ => f)).
+  Qed.
+
   Lemma vector_fold_right1_dep_bounded_ext {A:nat->Type} {B} (f:forall n,B->A n->A (S n)) 
         (init:A 0%nat) sing {m:nat} (x y:Vector B m) bound pf :
     x =v= y -> vector_fold_right1_bounded_dep f init sing x bound pf = vector_fold_right1_bounded_dep f init sing y bound pf.
@@ -581,7 +681,6 @@ Section Vector.
     intros.
     apply (vector_fold_right1_dep_ind (P:=fun _ => P)); trivial.
   Qed.
-
   
   Lemma vector_to_list_In {A} (x:A) {n} (v:Vector A n) :
     vin x v -> In x (vector_to_list v).
@@ -928,9 +1027,17 @@ Section Vector.
   Qed.
 
   Lemma vfirstn_vdrop_last {T} {n} (v:Vector T n) bound pf pf2 :
-    vdrop_last (vfirstn v (S (S bound)) pf) = vfirstn v (S bound) pf2.
+      vdrop_last (vfirstn v (S bound) pf) = vfirstn v bound pf2.
   Proof.
     apply FunctionalExtensionality.functional_extensionality; intros [??]; simpl.
+    erewrite index_pf_irrel; eauto.
+  Qed.
+
+  
+  Lemma vlast_vfirstn {T} {n} (d:Vector T n) bound pf pf2 :
+    (vlast (vfirstn d (S bound) pf)) = d ((exist _ bound pf2)).
+  Proof.
+    unfold vfirstn, vlast.
     erewrite index_pf_irrel; eauto.
   Qed.
 
