@@ -11413,6 +11413,24 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         omega.
     Qed.
 
+    Lemma df_eval_backprop_delta_by_unit_parts_mat {n m} 
+          (σ:df_env) (df:DefinedFunction UnitAnn (DTMatrix n m)) (s: SubVar) grad_env (d:Matrix float n m):
+
+      fully_closed_over df
+                        (map (fun ve : {v : var_type & definition_function_types_interp (snd v)} => projT1 ve) σ) ->
+      vartlookup grad_env (s, DTfloat) <> None ->
+      
+      (forall (i : {n' : nat | n' < n})  (j : {m' : nat | m' < m}) ,
+          (df_eval_backprop_delta σ df (s, DTfloat) grad_env
+                                  
+                                  (UnitMatrix n m i j)) = Some (d i j)) ->
+      (df_eval_backprop_delta σ df (s, DTfloat) grad_env
+                              (ConstMatrix n m 1%R)) = Some (msum d).
+    Proof.
+      intros.
+      Admitted.
+
+
     Lemma list_env_iter_vec_delta {n} (σ:df_env) 
           (x:Vector (DefinedFunction UnitAnn DTfloat) n) (s: SubVar) grad_env 
           (i0 :  {n' : nat | n' < n}) (old : float) :
@@ -12327,13 +12345,30 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         ; simpl in *; match_option_in IHdf; [|tauto|].
         + specialize (IHdf closed).
           symmetry in IHdf.
-          specialize (apply vectoro_to_ovector_forall_some_f IHdf); intros; simpl in H.
-          unfold lift.
-          generalize (backprop_deriv_fully_closed_not_none σ df grad_env
-                        (ConstMatrix m n 1%R)); intros.
-          specialize (H0 closed).
-          match_option; symmetry; [|tauto].
-          admit.
+          specialize (apply vectoro_to_ovector_forall_some_f IHdf); intros HH; simpl in HH.
+          replace (@lift (@df_env floatish_R) R
+                         (fun e : df_env => subvar (s, DTfloat) e d0)
+                         (df_eval_backprop_deriv σ df grad_env
+                                                  (ConstMatrix m n 1%R)))
+                   with
+                     (df_eval_backprop_delta σ df (s, DTfloat) grad_env
+                              (ConstMatrix m n 1%R)).
+          rewrite df_eval_backprop_delta_by_unit_parts_mat with (d1 := d); trivial.
+          * intros.
+            specialize (HH i).
+            specialize (apply vectoro_to_ovector_forall_some_f HH); intros.
+            specialize (H j); simpl in H.
+            unfold df_eval_backprop_delta.
+            rewrite eqq0.
+            replace (UnitMatrix m n i j) with
+                (coerce
+                   (df_eval_backward_gen_top_obligation_3 
+                      UnitAnn (DTMatrix m n) df m n eq_refl i j) 
+                   (UnitMatrix m n i j)); trivial.
+            destruct i; destruct j.
+            now simpl.
+          * unfold df_eval_backprop_delta.
+            now rewrite eqq0.
         + specialize (IHdf closed).
           symmetry in IHdf.
           specialize (vectoro_to_ovector_exists_None IHdf); intros.
@@ -12471,7 +12506,20 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         unfold lift in IHdf2; symmetry in IHdf2.
         specialize (vectoro_to_ovector_forall_some_f IHdf2); intros.        
         simpl in H9; simpl in H8.
+        destruct i; simpl in eqq2; simpl in eqq3.
+        unfold matrix_vector_mult in eqq3; simpl in eqq3.
+        unfold UnitVector in eqq2; simpl in eqq2.
+        replace (fun i : {n' : nat | n' < n} =>
+                   (@vsum floatish_R m
+                          (fun j : {n' : nat | n' < m} =>
+                             (d j i * (@UnitVector floatish_R m (exist (fun n' : nat => (n' < m)%nat) x l)
+                                                 j)%R)%R)))
+          with
+            (fun i : {n' : nat | n' < n} =>
+               (d (exist (fun n' : nat => (n' < m)%nat) x l) i)) in eqq3.
         admit.
+        apply FunctionalExtensionality.functional_extensionality; intros.
+        now rewrite vsum_unitvector.
       - Case "MatrixVectorAdd"%string.
         destruct closed.
         specialize (IHdf1 grad_env vin).
@@ -12582,6 +12630,9 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         unfold lift in IHdf2; symmetry in IHdf2.
         specialize (vectoro_to_ovector_forall_some_f IHdf2); intros.        
         simpl in H8; simpl in H9.
+        destruct i; destruct i0; simpl in eqq2; simpl in eqq3.
+        unfold matrix_mult,UnitMatrix in eqq3; simpl in eqq3.
+        unfold matrix_mult,UnitMatrix in eqq2; simpl in eqq2.
         admit.
       - Case "VectorPlus"%string.
         destruct closed.
