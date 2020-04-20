@@ -12876,13 +12876,12 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                      (fun j0 : {n' : nat | n' < n} =>
                         ((d1 x2 x1 * d0 x1 j0) * (UnitVector n (exist _ x0 l0) j0))%R).
                   ** rewrite vsum_unitvector.
+                     red in e.
                      subst.
-                     destruct e.
+                     f_equal.
                      destruct x2.
                      simpl.
-                     replace l1 with l.
-                     reflexivity.
-                     admit.
+                     erewrite index_pf_irrel; eauto.
                   ** apply FunctionalExtensionality.functional_extensionality; intros.
                      unfold UnitVector; simpl.
                      destruct (equiv_dec (` x3) x0); lra.
@@ -13547,53 +13546,78 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
             specialize (H4 i).
             destruct i.
             simpl.
-            --
-
-              match_nested_case.
-            
-            match_option.
-            -- match_option_in eqq2.
-               admit.
-            -- match_option_in eqq2.
-               assert ( df_eval_backprop_deriv σ df2 grad_env v1 <> None).
+            match_nested_case.
+            -- assert ( df_eval_backprop_deriv σ df2 grad_env v1 <> None).
+               apply backprop_deriv_fully_closed_not_none; trivial.
+               match_option; [|tauto].
+               f_equal.
                
-               admit
-               ++ assert (vectoro_to_ovector
-                         (vmap
-                            (fun '(rei, g) =>
-                               match df_eval [mk_env_entry (v, DTfloat) rei] 
-                                             (df_deriv df1 (v, DTfloat)) with
-                               | Some se => Some (g * se)%R
-                               | None => None
-                               end) 
-                            (vector_zip d (UnitVector 
-                                             n (exist (fun n' : nat => n' < n) x l)))) <> None); [|tauto].
-               apply vectoro_to_ovector_not_none; intros.
-               rewrite vmap_nth; simpl.
-               match_option.
-               assert (df_eval [mk_env_entry (v, DTfloat) (d i)] 
+               admit.
+            -- apply vectoro_to_ovector_exists_None in eqq2; destruct eqq2.
+               rewrite vmap_nth in e; simpl in e.
+               assert (df_eval [mk_env_entry (v, DTfloat) (d x0)] 
                                (df_deriv df1 (v, DTfloat)) <> None).
-               ++ apply eval_fully_closed_not_none.
-                  apply fully_closed_deriv; trivial.
-               ++ tauto.
-          * specialize (apply vectoro_to_ovector_exists_None eqq0); intros.
-            destruct H5.
-            generalize (eval_deriv_genvar_fully_closed_not_none
-                          [mk_env_entry (v, DTfloat) (d x)] df1
-                          [mk_env_entry (s, DTfloat) 1%R]); intros.
-            specialize (H5 H).
-            now match_option_in e.
-        + specialize (apply vectoro_to_ovector_exists_None IHdf2); intros.
-          destruct H4.
-          generalize (backprop_deriv_fully_closed_not_none 
-                        σ df2 grad_env 
-                        (coerce
-                           (df_eval_backward_gen_top_obligation_2 
-                              UnitAnn (DTVector n) df2 n eq_refl x)
-                           (UnitVector n x))); intros.
-          specialize (H4 H0).
-          match_option_in e; tauto.
-      - Case "MatrixApply"%string; admit.
+               apply eval_fully_closed_not_none.
+               apply fully_closed_deriv; trivial.
+               match_option_in e; tauto.
+          * apply vectoro_to_ovector_exists_None in eqq0; destruct eqq0.
+            assert (df_eval_deriv_genvar [mk_env_entry (v, DTfloat) (d x)] df1
+                                         [mk_env_entry (s, DTfloat) 1%R] <> None).
+            apply eval_deriv_genvar_fully_closed_not_none; trivial.
+            match_option_in e; tauto.
+        + assert (df_eval_deriv_genvar σ df2 [mk_env_entry (s, DTfloat) 1%R] <> None).
+          apply eval_deriv_genvar_fully_closed_not_none; trivial.          
+          tauto.
+      - Case "MatrixApply"%string.
+        destruct closed.
+        generalize (eval_fully_closed_not_none (mk_env_entry (v, DTfloat) (0%R) :: nil) df1); intros.
+        specialize (H1 H).
+        generalize (eval_fully_closed_not_none σ df2); intros.
+        specialize (H2 H0).
+        match_case; [intros|tauto].
+        specialize (IHdf2 grad_env vin H0).
+        case_eq (vartlookup grad_env (s, DTfloat)); [intros d1 eqq1 | tauto].
+        rewrite eqq1 in IHdf2; simpl in IHdf2.
+        match_option
+        ; rewrite eqq in IHdf2; unfold lift in IHdf2; symmetry in IHdf2.
+        + specialize (apply vectoro_to_ovector_forall_some_f IHdf2); intros; simpl in H4.
+          unfold lift; simpl.
+          match_option.
+          * specialize (apply vectoro_to_ovector_forall_some_f eqq0); intros; simpl in H5.
+            symmetry.
+            apply vectoro_to_ovector_forall_some_b_strong; intros.
+            apply vectoro_to_ovector_forall_some_b_strong; intros.            
+            specialize (H5 i).
+            specialize (H4 i).
+            destruct i; destruct i0.
+            simpl.
+            match_nested_case.
+            -- assert ( df_eval_backprop_deriv σ df2 grad_env m1 <> None).
+               apply backprop_deriv_fully_closed_not_none; trivial.
+               match_option; [|tauto].
+               f_equal.
+               
+               admit.
+            -- apply vectoro_to_ovector_exists_None in eqq2; destruct eqq2.
+               apply vectoro_to_ovector_exists_None in e; destruct e.
+               unfold mmap in e.
+               rewrite vmap_nth in e; simpl in e.
+               rewrite vmap_nth in e; simpl in e.
+               rewrite matrix_zip_m_n in e.
+               assert (df_eval [mk_env_entry (v, DTfloat) (d x1 x2)] 
+                               (df_deriv df1 (v, DTfloat)) <> None).
+               apply eval_fully_closed_not_none.
+               apply fully_closed_deriv; trivial.
+               match_option_in e; tauto.
+          * apply vectoro_to_ovector_exists_None in eqq0; destruct eqq0.
+            apply vectoro_to_ovector_exists_None in e; destruct e.            
+            assert (df_eval_deriv_genvar [mk_env_entry (v, DTfloat) (d x x0)] df1
+                                         [mk_env_entry (s, DTfloat) 1%R] <> None).
+            apply eval_deriv_genvar_fully_closed_not_none; trivial.
+            match_option_in e; tauto.
+        + assert (df_eval_deriv_genvar σ df2 [mk_env_entry (s, DTfloat) 1%R] <> None).
+          apply eval_deriv_genvar_fully_closed_not_none; trivial.          
+          tauto.
       - Case "VLossfun"%string; admit.
       - Case "MLossfun"%string; admit.
     Admitted.
