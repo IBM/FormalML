@@ -11511,6 +11511,55 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
       Proof.
       Admitted.
 
+      Lemma vmap_eta {A B} {n} (f:A->B) (d:Vector A n) : vmap f d = vmap (fun x => f x) d.
+      Proof.
+        now apply vmap_ext.
+      Qed.
+
+      Lemma vsum_eta {n} (d:Vector float n) : vsum d = vsum (fun i => d i).
+      Proof.
+        now apply vsum_ext.
+      Qed.
+
+      Lemma msum_unitvector m n x d1 d0 :
+        msum
+          (fun (i : {n' : nat | n' < m}) (j : {m' : nat | m' < n}) =>
+             (UnitVector m x i * d1 i j * d0 j)%R) =
+        vsum
+          (fun j : {n' : nat | n' < n} =>
+             (d1 x j * d0 j)%R).
+      Proof.
+        unfold msum.
+
+        transitivity (
+            vsum
+              (fun i : {n' : nat | n' < m} =>
+                 vsum
+                      (fun (j : {m' : nat | m' < n}) => (UnitVector m x i * d1 i j * d0 j)%R))).
+        { apply vsum_ext; intros ?.
+          now rewrite vmap_nth.
+        }
+        transitivity (
+          vsum
+            (fun i : {n' : nat | n' < m} =>
+               ((UnitVector m x i * vsum
+                 (fun (j : {m' : nat | m' < n}%nat) => d1 i j * d0 j))%R))).
+        {
+          apply vsum_ext; intros ?.
+          rewrite vsum_mult.
+          apply vsum_ext; intros ?.
+          lra.
+        }
+        transitivity (
+          vsum
+            (fun i : {n' : nat | n' < m} =>
+               (vsum (fun j : {m' : nat | (m' < n)%nat} => d1 i j * d0 j) * UnitVector m x i)%R)).
+        {
+          apply vsum_ext; intros ?; lra.
+        }
+        now rewrite vsum_unitvector.
+      Qed.
+
     Lemma yay {T} (σ:df_env) (df:DefinedFunction UnitAnn T) (s: SubVar) grad_env :
       let v := (s, DTfloat) in 
       vartlookup grad_env v <> None ->
