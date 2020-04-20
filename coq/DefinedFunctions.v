@@ -11590,7 +11590,25 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
     Lemma msum_transpose {m n} (mat : Matrix float m n) :
       msum mat = msum (transpose mat).
     Proof.
-      Admitted.
+    Admitted.
+
+
+    Ltac match_nested_case :=
+      match goal with
+      | [|- context[match match ?x with _ => _ end with _ => _ end]] =>
+        let eqq := fresh "eqq" in
+        case_eq x
+        ; [intros ? eqq | intros eqq]
+      end.
+
+    Ltac match_nested_case_in H :=
+      match H with
+      | context[match match ?x with _ => _ end with _ => _ end] =>
+        let eqq := fresh "eqq" in
+        case_eq x
+        ; [intros ? eqq | intros eqq]
+        ; rewrite eqq in H
+      end.
 
     Lemma yay {T} (σ:df_env) (df:DefinedFunction UnitAnn T) (s: SubVar) grad_env :
       let v := (s, DTfloat) in 
@@ -13529,6 +13547,10 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
             specialize (H4 i).
             destruct i.
             simpl.
+            --
+
+              match_nested_case.
+            
             match_option.
             -- match_option_in eqq2.
                admit.
