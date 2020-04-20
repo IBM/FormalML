@@ -11413,11 +11413,31 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         omega.
     Qed.
 
-    Lemma df_eval_backprop_delta_by_unit_parts_mat {n m} 
-          (σ:df_env) (df:DefinedFunction UnitAnn (DTMatrix n m)) (s: SubVar) grad_env (d:Matrix float n m):
+    Lemma df_eval_backprop_delta_by_unit_partmat {n m} 
+          (σ:df_env) (df:DefinedFunction UnitAnn (DTMatrix n m)) (s: SubVar) grad_env
+          (grad d:Matrix float n m):
+      fully_closed_over 
+        df
+        (map (fun ve : {v : var_type & definition_function_types_interp (snd v)} => projT1 ve)
+             σ) ->
+      vartlookup grad_env (s, DTfloat) <> None ->
+      (forall (i : {n' : nat | n' < n}) (j : {m' : nat | m' < m}) ,
+          (df_eval_backprop_delta σ df (s, DTfloat) grad_env
+                                  (scalarMult (DTMatrix n m) (grad i j) 
+                                              (UnitMatrix n m i j))) = 
+          Some (d i j)) ->
+      df_eval_backprop_delta σ df (s, DTfloat) grad_env grad = 
+      Some (msum d).
+    Proof.
+      Admitted.
 
-      fully_closed_over df
-                        (map (fun ve : {v : var_type & definition_function_types_interp (snd v)} => projT1 ve) σ) ->
+    Lemma df_eval_backprop_delta_by_unit_parts_mat {n m} 
+          (σ:df_env) (df:DefinedFunction UnitAnn (DTMatrix n m)) (s: SubVar) grad_env
+          (d:Matrix float n m):
+      fully_closed_over 
+        df
+        (map (fun ve : {v : var_type & definition_function_types_interp (snd v)} => projT1 ve)
+             σ) ->
       vartlookup grad_env (s, DTfloat) <> None ->
       
       (forall (i : {n' : nat | n' < n})  (j : {m' : nat | m' < m}) ,
@@ -11428,8 +11448,16 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                               (ConstMatrix n m 1%R)) = Some (msum d).
     Proof.
       intros.
-      Admitted.
-
+      apply df_eval_backprop_delta_by_unit_partmat; trivial.
+      intros.
+      rewrite scalarMult_backprop_grad_scalar with (grad_env2 := grad_env); trivial.
+      unfold lift.
+      rewrite H1.
+      f_equal.
+      unfold scalarMult, ConstMatrix; simpl; lra.
+      apply backprop_deriv_fully_closed_not_none; trivial.
+      apply backprop_deriv_fully_closed_not_none; trivial.      
+    Qed.
 
     Lemma list_env_iter_vec_delta {n} (σ:df_env) 
           (x:Vector (DefinedFunction UnitAnn DTfloat) n) (s: SubVar) grad_env 
@@ -11486,7 +11514,6 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         unfold lift.
         simpl_closed_backprop.
         Admitted.
-
 
     Lemma list_env_iter_matvec_delta {m n} (σ:df_env) 
           (df2:DefinedFunction UnitAnn (DTVector m)) (s: SubVar) grad_env 
@@ -12563,12 +12590,83 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                           (fun j : {n' : nat | n' < m} =>
                              (d j i * (@UnitVector floatish_R m (exist (fun n' : nat => (n' < m)%nat) x l)
                                                  j)%R)%R)))
-          with
-            (fun i : {n' : nat | n' < n} =>
-               (d (exist (fun n' : nat => (n' < m)%nat) x l) i)) in eqq3.
-        admit.
-        apply FunctionalExtensionality.functional_extensionality; intros.
-        now rewrite vsum_unitvector.
+          with (d (exist (fun n' : nat => (n' < m)%nat) x l)) in eqq3.
+        + generalize (df_eval_backprop_delta_by_unit_partvec 
+                        σ df2 s env (d (exist (fun n' : nat => n' < m) x l ))  
+                        (fun i => ((d (exist (fun n' : nat => (n' < m)%nat) x l ) i) * (d2 i))%R))
+          ; intros.
+          specialize (H10 H0).
+          cut_to H10; try congruence.
+          * unfold df_eval_backprop_delta in H10.
+            rewrite eqq3, eqq4 in H10.
+            unfold lift in H10.
+            invcs H10.
+            apply Rplus_eq_compat_l.
+            generalize (df_eval_backprop_delta_by_unit_partmat
+                          σ df1 s grad_env
+                          (fun (i : {n' : nat | n' < m}) (j : {m' : nat | m' < n}) =>
+                             ((if equiv_dec (` i) x then 1 else 0) * d0 j)%R)
+                          (fun (i : {n' : nat | n' < m}) (j : {m' : nat | m' < n}) =>
+                             ((if equiv_dec (` i) x then 1 else 0) * (d1 i j) * (d0 j))%R))
+            ; intros.
+            specialize (H10 H).
+            cut_to H10; try congruence.
+            -- unfold df_eval_backprop_delta in H10.
+               rewrite eqq1 in H10.
+               unfold lift in H10.
+               rewrite eqq2 in H10.
+               invcs H10.
+               rewrite H13.
+               replace 
+                 (fun (i : {n' : nat | n' < m}) (j : {m' : nat | m' < n}) =>
+                    ((if equiv_dec (` i) x then 1 else 0) * d1 i j * d0 j)%R)  with
+                   (fun (i : {n' : nat | n' < m}) (j : {m' : nat | m' < n}) =>
+                      (UnitVector m (exist _ x l) i * d1 i j * d0 j)%R).
+               now rewrite msum_unitvector.
+               apply FunctionalExtensionality.functional_extensionality; intros.
+               apply FunctionalExtensionality.functional_extensionality; intros.               
+               now unfold UnitVector; simpl.
+            -- intros.
+               rewrite scalarMult_backprop_grad_scalar with (grad_env2:=grad_env)
+               ;trivial; try congruence.               
+               unfold lift.
+               unfold df_eval_backprop_delta.
+               rewrite eqq1.
+               unfold lift.
+               specialize (vectoro_to_ovector_forall_some_f IHdf1); intros.
+               specialize (H11 i); simpl in H11.
+               specialize (vectoro_to_ovector_forall_some_f H11); intros.               
+               specialize (H13 j); intros; simpl in H13.
+               destruct i; destruct j; simpl in H13.
+               match_option_in H13.
+               f_equal; simpl.
+               destruct (equiv_dec x0 x).
+               invcs H13.
+               rewrite H15; lra.
+               lra.
+               apply backprop_deriv_fully_closed_not_none; trivial.
+               apply backprop_deriv_fully_closed_not_none; trivial.               
+          * intros.
+            replace (scaleUnitVector n i (d (exist (fun n' : nat => n' < m) x l) i)) with
+                (scalarMult (DTVector n) (d (exist (fun n' : nat => n' < m) x l) i) (UnitVector n i)). 
+            rewrite scalarMult_backprop_grad_scalar with (grad_env1 := env) (grad_env2:=env);trivial; try congruence.
+            unfold scalarMult; simpl.
+            unfold lift; simpl.
+            specialize (H9 i).
+            destruct i; simpl in H9.
+            match_option_in H9.
+            unfold df_eval_backprop_delta.
+            rewrite eqq4,eqq5.
+            unfold lift; f_equal.
+            now invcs H9.
+            apply backprop_deriv_fully_closed_not_none; trivial.
+            apply backprop_deriv_fully_closed_not_none; trivial.
+            unfold scalarMult, scaleUnitVector.
+            apply FunctionalExtensionality.functional_extensionality; intros.
+            unfold UnitVector.
+            destruct (equiv_dec (` x0) (` i)); simpl; lra.
+        + apply FunctionalExtensionality.functional_extensionality; intros.
+          now rewrite vsum_unitvector.
       - Case "MatrixVectorAdd"%string.
         destruct closed.
         specialize (IHdf1 grad_env vin).
@@ -12682,7 +12780,107 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         destruct i; destruct i0; simpl in eqq2; simpl in eqq3.
         unfold matrix_mult,UnitMatrix in eqq3; simpl in eqq3.
         unfold matrix_mult,UnitMatrix in eqq2; simpl in eqq2.
-        admit.
+        generalize (df_eval_backprop_delta_by_unit_partmat
+                      σ df1 s grad_env
+                      (fun (i : {n' : nat | n' < m}) (k : {m' : nat | m' < p}) =>
+                         vsum
+                           (fun j : {n' : nat | n' < n} =>
+                              ((if equiv_dec (` i) x then 
+                                  if equiv_dec (` j) x0 then 1 else 0 else 0) * d0 k j)%R))
+                      (fun (i : {n' : nat | n' < m}) (k : {m' : nat | m' < p}) =>
+                         vsum
+                           (fun j : {n' : nat | n' < n} =>
+                              ((if equiv_dec (` i) x then 
+                                  if equiv_dec (` j) x0 then 1 else 0 else 0) * 
+                               (d1 i k) * d0 k j)%R)))
+        ; intros.
+        specialize (H10 H vin).
+        cut_to H10; try congruence.
+        + unfold df_eval_backprop_delta in H10.
+          rewrite eqq1 in H10.
+          unfold lift in H10.
+          rewrite eqq2 in H10.
+          invcs H10.
+          rewrite H12.
+          assert  (msum
+                     (fun (i : {n' : nat | (n' < m)%nat}) (k : {m' : nat | (m' < p)%nat}) =>
+                        vsum
+                          (fun j : {n' : nat | (n' < n)%nat} =>
+                             (if equiv_dec (` i) x then 
+                                if equiv_dec (` j) x0 then 1 else 0 else 0) 
+                             * d1 i k * d0 k j))%R =
+                   vsum
+                     (fun j : {n' : nat | (n' < p)%nat} =>
+                        d1 (exist (fun n' : nat => (n' < m)%nat) x l) j *
+                        d0 j (exist (fun n' : nat => (n' < n)%nat) x0 l0))%R).
+          admit.
+          rewrite H10.
+          apply Rplus_eq_compat_r.
+          generalize (df_eval_backprop_delta_by_unit_partmat
+                        σ df2 s env
+                      (fun (i : {n' : nat | n' < p}) (k : {m' : nat | m' < n}) =>
+                         vsum
+                           (fun j : {n' : nat | n' < m} =>
+                              (d j i *
+                               (if equiv_dec (` j) x then 
+                                  if equiv_dec (` k) x0 then 1 else 0 else 0))%R))
+                      (fun (i : {n' : nat | n' < p}) (k : {m' : nat | m' < n}) =>
+                         vsum
+                           (fun j : {n' : nat | n' < m} =>
+                              (d j i * d2 i k * 
+                               (if equiv_dec (` j) x then 
+                                  if equiv_dec (` k) x0 then 1 else 0 else 0))%R)))
+          ; intros.
+          specialize (H11 H0).
+          cut_to H11; try congruence.
+          * unfold df_eval_backprop_delta in H11.
+            rewrite eqq4 in H11.
+            unfold lift in H11.
+            rewrite eqq3 in H11.
+            invcs H11.
+            rewrite H14.
+            admit.
+          * intros.
+            rewrite scalarMult_backprop_grad_scalar with (grad_env2:=env); trivial; try congruence.
+            -- unfold lift.
+               unfold df_eval_backprop_delta.
+               rewrite eqq4.
+               unfold lift.
+               specialize (H9 i); simpl in H9.
+               specialize (vectoro_to_ovector_forall_some_f H9); intros.               
+               specialize (H13 j); intros; simpl in H13.
+               destruct i; destruct j; simpl in H13.
+               match_option_in H13.
+               f_equal; simpl.
+               invcs H13.
+               rewrite H15.
+               rewrite Rmult_comm.
+               rewrite vsum_mult.
+               f_equal.
+               apply FunctionalExtensionality.functional_extensionality; intros. 
+               lra.
+            -- apply backprop_deriv_fully_closed_not_none; trivial.
+            -- apply backprop_deriv_fully_closed_not_none; trivial.
+        + intros.
+          rewrite scalarMult_backprop_grad_scalar with (grad_env2:=grad_env); trivial; try congruence.
+          * unfold lift.
+            unfold df_eval_backprop_delta.
+            rewrite eqq1.
+            unfold lift.
+            specialize (vectoro_to_ovector_forall_some_f IHdf1 i); intros; simpl in H11.
+            specialize (vectoro_to_ovector_forall_some_f H11 j); intros; simpl in H12.
+            destruct i; destruct j; simpl in H12.
+            match_option_in H12.
+            f_equal; simpl.
+            invcs H12.
+            rewrite H14.
+            rewrite Rmult_comm.
+            rewrite vsum_mult.
+            f_equal.
+            apply FunctionalExtensionality.functional_extensionality; intros. 
+            lra.
+          * apply backprop_deriv_fully_closed_not_none; trivial.
+          * apply backprop_deriv_fully_closed_not_none; trivial.
       - Case "VectorPlus"%string.
         destruct closed.
         specialize (IHdf1 grad_env vin).
