@@ -13551,8 +13551,54 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                apply backprop_deriv_fully_closed_not_none; trivial.
                match_option; [|tauto].
                f_equal.
-               
-               admit.
+               simpl in H4.
+               match_option_in H5.
+               specialize (vectoro_to_ovector_forall_some_f eqq2); intros.
+               assert (H7c := H7).
+               specialize (H7 (exist _ x l)).
+               rewrite vmap_nth in H7; simpl in H7.
+               match_option_in H7; simpl in H7.
+               unfold UnitVector in H7; simpl in H7.
+               destruct (equiv_dec x x); [|congruence].
+               invcs H7; invcs H5.
+               assert (v1 = 
+                       scalarMult (DTVector n) d4
+                                  (UnitVector n (exist (fun n' : nat => n' < n) x l))).
+               ++ unfold scalarMult; simpl.
+                  apply FunctionalExtensionality.functional_extensionality; intros.
+                  specialize (H7c x0); simpl in H7c.
+                  rewrite vmap_nth in H7c; simpl in H7c.
+                  match_option_in H7c.
+                  invcs H7c.
+                  destruct x0.
+                  unfold UnitVector; simpl.
+                  destruct (equiv_dec x0 x).
+                  ** red in e0.
+                     subst.
+                     erewrite index_pf_irrel in eqq6.
+                     rewrite eqq5 in eqq6.
+                     invcs eqq6; lra.
+                  ** lra.
+               ++ replace (1 * d4)%R with d4 in H9 by lra.
+                  generalize (scalarMult_backprop_grad_scalar 
+                                σ df2 s grad_env grad_env
+                                (UnitVector n (exist (fun n' : nat => n' < n) x l)) d4)
+                  ; intros.
+                  simpl in H7; cut_to H7; trivial; try congruence.
+                  ** unfold df_eval_backprop_delta in H7.
+                     rewrite eqq1 in H7.
+                     unfold lift in H7; simpl in H7.
+                     rewrite H5 in eqq3.
+                     unfold scalarMult in eqq3; simpl in eqq3.
+                     match_option_in H4.
+                     rewrite eqq3, eqq6 in H7.
+                     replace d3 with d4.
+                     --- invcs H7; rewrite H11.
+                         invcs H4; rewrite H9.
+                         lra.
+                     --- admit.
+                  ** apply backprop_deriv_fully_closed_not_none; trivial.
+                  ** apply backprop_deriv_fully_closed_not_none; trivial.               
             -- apply vectoro_to_ovector_exists_None in eqq2; destruct eqq2.
                rewrite vmap_nth in e; simpl in e.
                assert (df_eval [mk_env_entry (v, DTfloat) (d x0)] 
@@ -13596,7 +13642,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                apply backprop_deriv_fully_closed_not_none; trivial.
                match_option; [|tauto].
                f_equal.
-               
+               simpl in H4.               
                admit.
             -- apply vectoro_to_ovector_exists_None in eqq2; destruct eqq2.
                apply vectoro_to_ovector_exists_None in e; destruct e.
