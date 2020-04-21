@@ -13635,22 +13635,95 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
             apply vectoro_to_ovector_forall_some_b_strong; intros.            
             specialize (H5 i).
             specialize (H4 i).
-            destruct i; destruct i0.
-            simpl.
             match_nested_case.
             -- assert ( df_eval_backprop_deriv σ df2 grad_env m1 <> None).
                apply backprop_deriv_fully_closed_not_none; trivial.
                match_option; [|tauto].
                f_equal.
                simpl in H4.               
-               admit.
+               specialize (vectoro_to_ovector_forall_some_f H5); intros.
+               specialize (vectoro_to_ovector_forall_some_f H4); intros.               
+               specialize (H7 i0); simpl in H7.
+               match_option_in H7.
+               specialize (vectoro_to_ovector_forall_some_f eqq2); intros.
+               assert (H9c := H9).
+               specialize (H9 i); simpl in H9.
+               specialize (vectoro_to_ovector_forall_some_f H9); intros.               
+               specialize (H10 i0); simpl in H10; unfold mmap in H10.
+               rewrite vmap_nth in H10; simpl in H10.
+               rewrite vmap_nth in H10; simpl in H10.
+               destruct i; destruct i0; simpl in H10.
+               simpl in H8; simpl in H9; simpl in H9c; simpl in H4.
+               unfold matrix_zip in H10.
+               rewrite vmap_nth in H10; simpl in H10.
+               match_option_in H10; simpl in H10.
+               unfold UnitMatrix in H10; simpl in H10.
+               destruct (equiv_dec x x); [|congruence].
+               destruct (equiv_dec x0 x0); [|congruence].               
+               invcs H10; invcs H7.
+               assert (m1 = 
+                       scalarMult (DTMatrix m n) d4
+                                  (UnitMatrix m n 
+                                              (exist (fun n' : nat => n' < m) x l)
+                                              (exist (fun n' : nat => n' < n) x0 l0))).
+               ++ unfold scalarMult; simpl.
+                  apply FunctionalExtensionality.functional_extensionality; intros.
+                  apply FunctionalExtensionality.functional_extensionality; intros.
+                  specialize (H9c x1); simpl in H9c.
+                  specialize (vectoro_to_ovector_forall_some_f H9c); intros.               
+                  specialize (H7 x2); simpl in H7; unfold mmap in H7.
+
+                  rewrite vmap_nth in H7; simpl in H7.
+                  rewrite vmap_nth in H7; simpl in H7.
+                  unfold matrix_zip in H7.
+                  rewrite vmap_nth in H7; simpl in H7.
+                  match_option_in H7.
+                  invcs H7.
+                  destruct x1; destruct x2.
+                  unfold UnitMatrix; simpl.
+                  destruct (equiv_dec x1 x).
+                  ** red in e1; subst.
+                     destruct (equiv_dec x2 x0).
+                     --- red in e1; subst.
+                         rewrite index_pf_irrel with (pf2 := l) in eqq6.
+                         rewrite index_pf_irrel with (pf1 := l2) (pf2 := l0) in eqq6.
+                         rewrite eqq5 in eqq6.
+                         invcs eqq6; lra.
+                     --- lra.
+                  ** lra.
+               ++ replace (1 * d4)%R with d4 in H11 by lra.
+                  generalize (scalarMult_backprop_grad_scalar 
+                                σ df2 s grad_env grad_env
+                                (UnitMatrix m n (exist (fun n' : nat => n' < m) x l)
+                                            (exist (fun n' : nat => n' < n) x0 l0)) d4)
+                  ; intros.
+                  simpl in H10; cut_to H10; trivial; try congruence.
+                  ** unfold df_eval_backprop_delta in H10.
+                     rewrite eqq1 in H10.
+                     unfold lift in H10; simpl in H10.
+                     rewrite H7 in eqq3.
+                     unfold scalarMult in eqq3; simpl in eqq3.
+                     specialize (H8  (exist (fun n' : nat => n' < n) x0 l0)).
+                     simpl in H8.
+                     match_option_in H8.
+                     rewrite eqq3, eqq6 in H10.
+                     replace d3 with d4.
+                     --- invcs H10; rewrite H14.
+                         invcs H8; rewrite H10.
+                         lra.
+                     --- admit.
+                  ** apply backprop_deriv_fully_closed_not_none; trivial.
+                  ** apply backprop_deriv_fully_closed_not_none; trivial.               
             -- apply vectoro_to_ovector_exists_None in eqq2; destruct eqq2.
                apply vectoro_to_ovector_exists_None in e; destruct e.
                unfold mmap in e.
                rewrite vmap_nth in e; simpl in e.
                rewrite vmap_nth in e; simpl in e.
                rewrite matrix_zip_m_n in e.
-               assert (df_eval [mk_env_entry (v, DTfloat) (d x1 x2)] 
+               destruct i; destruct i0.
+               simpl in e.
+               assert (df_eval [mk_env_entry (v, DTfloat) 
+                                             (d x x0)] 
                                (df_deriv df1 (v, DTfloat)) <> None).
                apply eval_fully_closed_not_none.
                apply fully_closed_deriv; trivial.
