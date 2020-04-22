@@ -1142,4 +1142,30 @@ Section Vector.
       now erewrite index_pf_irrel.
   Qed.
 
+  Lemma vmap_vdrop_last {A B} {n} (f:A->B) (v:Vector A (S n))  : vmap f (vdrop_last v) = vdrop_last (vmap f v).
+  Proof.
+    unfold vdrop_last.
+    apply vec_eq_eq; intros [??]; simpl.
+    now repeat rewrite vmap_nth.
+  Qed.
+
+  Lemma map_vector_to_list_vmap {A B} {n}  (f:A->B) (v:Vector A n) :
+    map f (vector_to_list v) = vector_to_list (vmap f v).
+  Proof.
+    unfold vector_to_list, vector_fold_right.
+    induction n.
+    - rewrite vector_fold_right_dep_0; trivial.
+    - repeat rewrite vector_fold_right_dep_Sn.
+      simpl.
+      rewrite IHn, vmap_vdrop_last.
+      unfold vlast.
+      now rewrite vmap_nth.
+  Qed.
+
+  Lemma vector_to_list_ext {A} {n} (x y:Vector A n) :
+    vec_eq x y -> vector_to_list x = vector_to_list y.
+  Proof.
+    apply vector_fold_right_ext.
+  Qed.
+  
 End Vector.

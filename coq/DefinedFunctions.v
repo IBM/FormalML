@@ -2,6 +2,7 @@ Require Import String.
 Require Import EquivDec.
 Require Import RelationClasses.
 Require Import List.
+Require Import Permutation.
 Require Import NPeano.
 Require Import Lra Omega.
 Require Reals.
@@ -11429,7 +11430,8 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
       df_eval_backprop_delta σ df (s, DTfloat) grad_env grad = 
       Some (msum d).
     Proof.
-      Admitted.
+      intros closed lo fa.
+    Admitted.
 
     Lemma df_eval_backprop_delta_by_unit_parts_mat {n m} 
           (σ:df_env) (df:DefinedFunction UnitAnn (DTMatrix n m)) (s: SubVar) grad_env
@@ -11459,22 +11461,91 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
       apply backprop_deriv_fully_closed_not_none; trivial.      
     Qed.
 
+    (*
+         Lemma scalarMult_backprop_grad_scalar {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (s: SubVar) (grad_env1 grad_env2:df_env) (grad : definition_function_types_interp T) (c:float) :
+      let v := (s, DTfloat) in
+      vartlookup grad_env1 v <> None -> vartlookup grad_env2 v <> None ->
+      df_eval_backprop_deriv σ df grad_env1 (scalarMult T c grad) <> None ->
+      df_eval_backprop_deriv σ df grad_env2 grad <> None ->
+      df_eval_backprop_delta σ df v grad_env1 (scalarMult T c grad) =
+      lift (fun e => scalarMult (snd v) c e) (df_eval_backprop_delta σ df v grad_env2 grad).
+         Proof.
+     *)
+
+    Corollary scalarMult_backprop_grad0 {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (s: SubVar) (grad_env1 grad_env2:df_env) (grad : definition_function_types_interp T) (c:float) :
+      let v := (s, DTfloat) in
+      vartlookup grad_env1 v <> None -> vartlookup grad_env2 v <> None ->
+      df_eval_backprop_deriv σ df grad_env1 (scalarMult T c grad) <> None ->
+      df_eval_backprop_deriv σ df grad_env2 grad <> None ->
+      df_eval_backprop_delta σ df v grad_env1 (scalarMult T 0%R grad) = Some 0%R.
+    Proof.
+      intros.
+    Admitted.
+    
+    (*
+      Lemma df_eval_backprop_deriv_iter_unitvector {n} (σ:df_env) 
+          (x:Vector (DefinedFunction UnitAnn DTfloat) n) grad_env env
+          (i0 :  {n' : nat | n' < n}) :
+        (forall (j: {n' : nat | n' < n}) ,
+            let vl := map (fun ve => projT1 ve) σ in
+            fully_closed_over (x j) vl) -> 
+        list_env_iter
+          (fun (i : {n' : nat | n' < n}) (env : df_env) =>
+             df_eval_backprop_deriv σ (x i) env (UnitVector n i0 i)) (Some grad_env) 
+          (bounded_seq0 n) = Some env
+        ->
+        df_eval_backprop_deriv σ (x i0) grad_env 1%R = Some env.
+      Proof.
+        
+      Qed.
+     *) 
+
+    Lemma list_env_iter_backprop_deriv_reorder {T} {n} (σ:df_env) 
+       (x:Vector (DefinedFunction UnitAnn T) n) grad grad_env l1 l2 :
+      Permutation l1 l2 ->
+      list_env_iter
+        (fun (i : {n' : nat | n' < n}) (env : df_env) =>
+           df_eval_backprop_deriv σ (x i) env grad) grad_env l1
+      = 
+      list_env_iter
+        (fun (i : {n' : nat | n' < n}) (env : df_env) =>
+           df_eval_backprop_deriv σ (x i) env grad) grad_env l2.
+    Proof.
+      intros perm.
+      revert grad_env.
+      revert l1 l2 perm.
+      apply (@Permutation_ind_bis _ (fun l1 l2 =>
+                                       forall grad_env,
+                                         list_env_iter (fun (i : {n' : nat | n' < n}) (env : df_env) => df_eval_backprop_deriv σ (x i) env grad)
+                                                       grad_env l1 =
+                                         list_env_iter (fun (i : {n' : nat | n' < n}) (env : df_env) => df_eval_backprop_deriv σ (x i) env grad)
+                                                       grad_env l2))
+      ; intros.
+      - trivial.
+      - simpl.
+        match_destr.
+      - simpl.
+        match_destr.
+        admit.
+      - etransitivity; eauto.
+    Admitted.
+    
     Lemma list_env_iter_vec_delta {n} (σ:df_env) 
-          (x:Vector (DefinedFunction UnitAnn DTfloat) n) (s: SubVar) grad_env 
-          (i0 :  {n' : nat | n' < n}) (old : float) :
+          (x:Vector (DefinedFunction UnitAnn DTfloat) n) (s: SubVar) grad_env1 grad_env2
+          (i0 :  {n' : nat | n' < n}) (old1 old2 : float) :
       let v := (s, DTfloat) in 
-      vartlookup grad_env v = Some old ->
+      vartlookup grad_env1 v = Some old1 ->
+      vartlookup grad_env2 v = Some old2 ->
       (forall (j: {n' : nat | n' < n}) ,
           let vl := map (fun ve => projT1 ve) σ in
           fully_closed_over (x j) vl) -> 
-      lift (fun e => subvar v e old) 
-           (df_eval_backprop_deriv σ (x i0) grad_env 1%R) = 
-      lift (fun e => subvar v e old) 
+      lift (fun e => subvar v e old1) 
+           (df_eval_backprop_deriv σ (x i0) grad_env1 1%R) = 
+      lift (fun e => subvar v e old2) 
            (list_env_iter
               (fun (i : {n' : nat | n' < n}) (env : df_env) =>
-                 df_eval_backprop_deriv σ (x i) env 
-                                        (if equiv_dec (` i) (` i0) then 1%R else 0%R))
-           (Some grad_env) (bounded_seq0 n)).
+                 df_eval_backprop_deriv σ (x i) env (UnitVector n i0 i))
+           (Some grad_env2) (bounded_seq0 n)).
       Proof.
         intros.
         unfold lift.
@@ -11482,12 +11553,25 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         generalize (list_env_iter_total_fun
                       (fun (i : {n' : nat | n' < n}) (env : df_env) =>
                          df_eval_backprop_deriv σ (x i) env 
-                                                (if equiv_dec (` i) (` i0) then 1%R else 0%R))
-                      grad_env (bounded_seq0 n)); intros.
-        cut_to H1; [|intros; apply backprop_deriv_fully_closed_not_none; apply H0].
+                                                (UnitVector n i0 i))
+                      grad_env2 (bounded_seq0 n)); intros.
+        cut_to H2; [|intros; apply backprop_deriv_fully_closed_not_none; apply H1].
         match_option; [|tauto].
         f_equal.
-        Admitted.
+(*
+        # i0 needs to appear exactly once
+        
+        revert H2 eqq0.
+        induction (bounded_seq0 n).
+        Show 2.
+        revert d H eqq.
+        induction l; intros; simpl.
+        - 
+        cut (vartlookup env v = vartlookup d v).
+        unfold subvar; simpl.
+*)
+      Admitted.
+
 
     Lemma list_env_iter_mat_delta {n m} (σ:df_env) 
           (x:Matrix (DefinedFunction UnitAnn DTfloat) n m) (s: SubVar) grad_env 
@@ -11587,11 +11671,73 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         now rewrite vsum_unitvector.
       Qed.
 
-    Lemma msum_transpose {m n} (mat : Matrix float m n) :
-      msum mat = msum (transpose mat).
-    Proof.
-    Admitted.
+      Lemma vsum_as_sum {n} (v:Vector float n) : vsum v = fold_right Rplus R0 (vector_to_list v).
+      Proof.
+        rewrite vsum_alt_eq.
+        unfold vector_to_list, vector_fold_right.
+        induction n.
+        - rewrite vector_fold_right_dep_0; trivial.
+        - repeat rewrite vector_fold_right_dep_Sn.
+          now rewrite IHn.
+      Qed.
 
+      Lemma msum_as_sum {m n} (mat:Matrix float m n) : msum mat = fold_right Rplus R0 (matrix_to_list mat).
+      Proof.
+        unfold msum, matrix_to_list, matrix_to_list_list.
+        transitivity
+          (vsum (fun i => fold_right Rplus R0 (vector_to_list (mat i)))).
+        { apply vsum_ext; intros [??].
+          now rewrite vmap_nth, vsum_as_sum.
+        }
+        rewrite vsum_as_sum.
+        rewrite fold_right_plus_concat.
+        rewrite map_vector_to_list_vmap.
+        f_equal.
+        apply vector_to_list_ext.
+        intros [??].
+        now rewrite vmap_nth.
+      Qed.
+      
+      Lemma transpose_perm_bounded {m n : nat} (mat : Matrix float m n) bound_m pf_m bound_n pf_n:
+        Permutation
+          (concat
+             (vector_fold_right_bounded_dep (fun _ : nat => Datatypes.cons) []
+                                            (fun i : {n' : nat | n' < m} =>
+                                               vector_fold_right_bounded_dep (fun _ : nat => Datatypes.cons) [] (mat i) bound_n pf_n) bound_m pf_m))
+          (concat
+             (vector_fold_right_bounded_dep (fun _ : nat => Datatypes.cons) []
+                                            (fun i : {n' : nat | n' < n} =>
+                                               vector_fold_right_bounded_dep (fun _ : nat => Datatypes.cons) [] (transpose mat i) bound_m pf_m) bound_n pf_n)).
+      Proof.
+        Hint Constructors Permutation.
+        revert bound_n pf_n.
+        induction bound_m; intros; simpl.
+        - induction bound_n; simpl; trivial.
+        - rewrite IHbound_m.
+          clear IHbound_m.
+          induction bound_n; simpl; trivial.
+          rewrite <- IHbound_n.
+          clear IHbound_n.
+          apply Permutation_cons; trivial.
+          unfold transpose; simpl.
+          repeat rewrite <- app_ass.
+          apply Permutation_app; trivial.
+          apply Permutation_app_comm.
+      Qed.
+    
+      Lemma transpose_perm {m n} (mat : Matrix float m n) :
+        Permutation (matrix_to_list mat) (matrix_to_list (transpose mat)).
+      Proof.
+        apply transpose_perm_bounded.
+      Qed.
+      
+      Lemma msum_transpose {m n} (mat : Matrix float m n) :
+        msum mat = msum (transpose mat).
+      Proof.
+        repeat rewrite msum_as_sum.
+        apply fold_right_perm; intros; try lra.
+        apply transpose_perm.
+      Qed.
 
     Ltac match_nested_case :=
       match goal with
@@ -12876,12 +13022,13 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                      (fun j0 : {n' : nat | n' < n} =>
                         ((d1 x2 x1 * d0 x1 j0) * (UnitVector n (exist _ x0 l0) j0))%R).
                   ** rewrite vsum_unitvector.
-                     red in e.
                      subst.
-                     f_equal.
+                     destruct e.
                      destruct x2.
                      simpl.
-                     erewrite index_pf_irrel; eauto.
+                     replace l1 with l.
+                     reflexivity.
+                     admit.
                   ** apply FunctionalExtensionality.functional_extensionality; intros.
                      unfold UnitVector; simpl.
                      destruct (equiv_dec (` x3) x0); lra.
@@ -13725,18 +13872,27 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                assert (df_eval [mk_env_entry (v, DTfloat) 
                                              (d x x0)] 
                                (df_deriv df1 (v, DTfloat)) <> None).
-               apply eval_fully_closed_not_none.
-               apply fully_closed_deriv; trivial.
-               match_option_in e; tauto.
-          * apply vectoro_to_ovector_exists_None in eqq0; destruct eqq0.
-            apply vectoro_to_ovector_exists_None in e; destruct e.            
-            assert (df_eval_deriv_genvar [mk_env_entry (v, DTfloat) (d x x0)] df1
-                                         [mk_env_entry (s, DTfloat) 1%R] <> None).
-            apply eval_deriv_genvar_fully_closed_not_none; trivial.
-            match_option_in e; tauto.
-        + assert (df_eval_deriv_genvar σ df2 [mk_env_entry (s, DTfloat) 1%R] <> None).
-          apply eval_deriv_genvar_fully_closed_not_none; trivial.          
-          tauto.
+               ++ apply eval_fully_closed_not_none.
+                  apply fully_closed_deriv; trivial.
+               ++ tauto.
+          * specialize (apply vectoro_to_ovector_exists_None eqq0); intros.
+            destruct H5.
+            generalize (eval_deriv_genvar_fully_closed_not_none
+                          [mk_env_entry (v, DTfloat) (d x)] df1
+                          [mk_env_entry (s, DTfloat) 1%R]); intros.
+            specialize (H5 H).
+            now match_option_in e.
+        + specialize (apply vectoro_to_ovector_exists_None IHdf2); intros.
+          destruct H4.
+          generalize (backprop_deriv_fully_closed_not_none 
+                        σ df2 grad_env 
+                        (coerce
+                           (df_eval_backward_gen_top_obligation_2 
+                              UnitAnn (DTVector n) df2 n eq_refl x)
+                           (UnitVector n x))); intros.
+          specialize (H4 H0).
+          match_option_in e; tauto.
+      - Case "MatrixApply"%string; admit.
       - Case "VLossfun"%string; admit.
       - Case "MLossfun"%string; admit.
     Admitted.
