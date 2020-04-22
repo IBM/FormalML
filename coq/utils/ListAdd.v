@@ -40,7 +40,7 @@ Section Fold.
 End Fold.
 
 Lemma fold_right_assoc_abs {A} (f:A->A->A) (init:A) (l : list (list A))
-      (comm:forall x y z : A, f x (f y z) = f (f x y) z) 
+      (assoc:forall x y z : A, f x (f y z) = f (f x y) z) 
       (abs:forall x, f init x = x) :
   fold_right f init (concat l) =
   fold_right f init (map (fold_right f init) l).
@@ -54,7 +54,7 @@ Proof.
   - auto.
   - rewrite IHa.
     generalize (fold_right f init a1); intros.
-    now rewrite comm.
+    now rewrite assoc.
 Qed.
 
 Lemma fold_right_plus_concat (l : list (list R)) :
