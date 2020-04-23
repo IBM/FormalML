@@ -6955,7 +6955,45 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
     Proof.
       apply vector_fold_right1_ext.
     Qed.
-   
+
+    Lemma msum_ext {m n} (mat mat':Matrix float m n) :
+      (forall i j, mat i j = mat' i j) -> msum mat = msum mat'.
+    Proof.
+      intros.
+      apply vsum_ext; intros ?.
+      repeat rewrite vmap_nth.
+      apply vsum_ext; intros ?; auto.
+    Qed.
+
+    Lemma msum_mult {m n} (mat : Matrix float m n) (c : float) :
+       (c * msum mat)%R = msum (fun i j => (c * mat i j)%R).
+     Proof.
+       unfold msum.
+       rewrite vsum_mult.
+       apply vsum_ext; intros i.
+       repeat rewrite vmap_nth.
+       now rewrite vsum_mult.
+     Qed.
+
+     Lemma msum_mmap_mult {m n} (mat : Matrix float m n) (c : float) :
+       (c * msum mat)%R = msum (mmap (fun x => c * x)%R mat).
+     Proof.
+       rewrite msum_mult.
+       apply msum_ext; intros i j.
+       now rewrite mmap_nth.
+     Qed.
+
+     Lemma msum_mmap_div_denom {m n} (mat : Matrix float m n) (c : float) : 
+       msum (mmap (fun u : R => (u / c)%R) mat) = (msum mat / c)%R.
+     Proof.
+       transitivity (msum (mmap (fun u : R => (/ c * u)%R) mat)).
+       - apply msum_ext; intros i j.
+         repeat rewrite mmap_nth.
+         lra.
+       - rewrite <- msum_mmap_mult.
+         lra.
+     Qed.
+
     Lemma vsum0 n : vsum (fun _ : {n' : nat | (n' < n)%nat} => 0%R) = 0%R.
     Proof.
       generalize (vsum_mult (fun _ : {n' : nat | (n' < n)%nat} => 0%R) 0%R); intros HH.

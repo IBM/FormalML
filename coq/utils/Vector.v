@@ -803,6 +803,14 @@ Section Vector.
         omega.
   Qed.
 
+  Lemma mmap_nth {A B : Type} (f : A -> B) {m n} (mat : Matrix A m n) i j : 
+    mmap f mat i j = f (mat i j).
+  Proof.
+    unfold mmap.
+    now repeat rewrite vmap_nth.
+  Qed.
+     
+
   Lemma vmap_ext {A B n} (f1 f2:A->B) (df:Vector A n) :
     (forall x, vin x df -> f1 x = f2 x) ->
     vmap f1 df = vmap f2 df.
@@ -820,6 +828,8 @@ Section Vector.
         eapply H.
         now apply vin_vdrop_last.
   Qed.
+
+  
 
   Lemma vnil0 {A} (v:Vector A 0) : v = vnil.
   Proof.
