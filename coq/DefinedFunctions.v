@@ -12319,7 +12319,7 @@ match_option.
             [| now apply (df_eval_backprop_deriv_preserves_lookup_not_none eqq1 (s, DTfloat))
              | apply H0].
            unfold lift in H5; simpl in H5.
-           match_option_in H5.
+           match_option_in H5. 
            generalize (df_eval_backprop_deriv_preserves_lookup_not_none eqq1 (s, DTfloat))
            ;intros.
            specialize (H7 vin).
@@ -13170,7 +13170,7 @@ match_option.
                      subst.
                      destruct x2.
                      simpl.
-                     admit.
+                     erewrite index_pf_irrel; eauto.
                   ** apply FunctionalExtensionality.functional_extensionality; intros.
                      unfold UnitVector; simpl.
                      destruct (equiv_dec (` x3) x0); lra.
@@ -14018,7 +14018,8 @@ match_option.
                      invcs H13; lra.
                   ** apply backprop_deriv_fully_closed_not_none; trivial.
                   ** apply backprop_deriv_fully_closed_not_none; trivial.               
-            -- apply vectoro_to_ovector_exists_None in eqq2; destruct eqq2.
+            -- unfold matrixo_to_omatrix in eqq2.
+               apply vectoro_to_ovector_exists_None in eqq2; destruct eqq2.
                apply vectoro_to_ovector_exists_None in e; destruct e.
                unfold mmap in e.
                rewrite vmap_nth in e; simpl in e.
@@ -14032,7 +14033,8 @@ match_option.
                apply eval_fully_closed_not_none.
                apply fully_closed_deriv; trivial.
                match_option_in e; tauto.
-          * apply vectoro_to_ovector_exists_None in eqq0; destruct eqq0.
+          * unfold matrixo_to_omatrix in eqq0.
+            apply vectoro_to_ovector_exists_None in eqq0; destruct eqq0.
             apply vectoro_to_ovector_exists_None in e; destruct e.            
             assert (df_eval_deriv_genvar [mk_env_entry (v, DTfloat) (d x x0)] df1
                                          [mk_env_entry (s, DTfloat) 1%R] <> None).
