@@ -11852,14 +11852,14 @@ match_option.
         ; rewrite eqq in H
       end.
 
-(*
-    Theorem df_eval_deriv_genvar_same {T} (σ:df_env) (df:DefinedFunction UnitAnn T) (s:SubVar) :
-      let v := (s, DTfloat) in 
+
+    Theorem df_eval_deriv_genvar_same {T} (σ:df_env) (df:DefinedFunction UnitAnn T) (s v:SubVar) :
       let vl := map (fun ve => projT1 ve) σ in
       fully_closed_over df vl -> 
-      let forward := df_eval_deriv_gen_top σ df v in
-      lift transpose_lifted_type forward = df_eval σ (df_deriv df v).
-*)
+      let forward := df_eval_deriv_gen_top σ df (s, DTfloat) in
+      lift transpose_lifted_type forward = df_eval σ (df_deriv df (v,DTfloat)).
+    Proof.
+      Admitted.
 
     Lemma yay {T} (σ:df_env) (df:DefinedFunction UnitAnn T) (s: SubVar) grad_env :
       let v := (s, DTfloat) in 
@@ -13128,12 +13128,10 @@ match_option.
                      (fun j0 : {n' : nat | n' < n} =>
                         ((d1 x2 x1 * d0 x1 j0) * (UnitVector n (exist _ x0 l0) j0))%R).
                   ** rewrite vsum_unitvector.
+                     red in e.
                      subst.
-                     destruct e.
                      destruct x2.
                      simpl.
-                     replace l1 with l.
-                     reflexivity.
                      admit.
                   ** apply FunctionalExtensionality.functional_extensionality; intros.
                      unfold UnitVector; simpl.
@@ -13845,11 +13843,17 @@ match_option.
                      unfold scalarMult in eqq3; simpl in eqq3.
                      match_option_in H4.
                      rewrite eqq3, eqq6 in H7.
-                     replace d3 with d4.
-                     --- invcs H7; rewrite H11.
-                         invcs H4; rewrite H9.
-                         lra.
-                     --- admit.
+                     generalize 
+                       (df_eval_deriv_genvar_same
+                          [mk_env_entry (v, DTfloat)
+                                        (d (exist (fun n' : nat => n' < n) x l) )]
+                          df1 s v); simpl; intros.
+                     specialize (H10 H).
+                     unfold lift, df_eval_deriv_gen_top in H10; simpl in H10.
+                     rewrite eqq4, eqq5 in H10.
+                     invcs H7; rewrite H12.
+                     invcs H4; rewrite H9.
+                     invcs H10; lra.
                   ** apply backprop_deriv_fully_closed_not_none; trivial.
                   ** apply backprop_deriv_fully_closed_not_none; trivial.               
             -- apply vectoro_to_ovector_exists_None in eqq2; destruct eqq2.
@@ -13960,11 +13964,20 @@ match_option.
                      simpl in H8.
                      match_option_in H8.
                      rewrite eqq3, eqq6 in H10.
-                     replace d3 with d4.
-                     --- invcs H10; rewrite H14.
-                         invcs H8; rewrite H10.
-                         lra.
-                     --- admit.
+                     
+                     generalize 
+                       (df_eval_deriv_genvar_same
+                          [mk_env_entry (v, DTfloat)
+                                        (d (exist (fun n' : nat => n' < m) x l) 
+                                           (exist (fun n' : nat => n' < n) x0 l0))]
+                          df1 s v).
+                     simpl; intros.
+                     specialize (H13 H).
+                     unfold lift, df_eval_deriv_gen_top in H13; simpl in H13.
+                     rewrite eqq4, eqq5 in H13.
+                     invcs H10; rewrite H15.
+                     invcs H8; rewrite H10.
+                     invcs H13; lra.
                   ** apply backprop_deriv_fully_closed_not_none; trivial.
                   ** apply backprop_deriv_fully_closed_not_none; trivial.               
             -- apply vectoro_to_ovector_exists_None in eqq2; destruct eqq2.
