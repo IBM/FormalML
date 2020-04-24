@@ -7155,12 +7155,10 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         intros; do 4 match_option.
       - Case "Sign"%string.
         match_option.
-        generalize (eval_deriv_fully_closed_not_none  σ df (s, DTfloat)).
-        tauto.
+        generalize (eval_deriv_fully_closed_not_none  σ df (s, DTfloat)); tauto.
       - Case "PSign"%string.
         match_option.
-        generalize (eval_deriv_fully_closed_not_none  σ df (s, DTfloat)).
-        tauto.
+        generalize (eval_deriv_fully_closed_not_none  σ df (s, DTfloat)); tauto.
       - Case "Max"%string.
         assert (df_eval σ df1 <> None) by (apply eval_fully_closed_not_none; trivial).
         assert (df_eval σ df2 <> None) by (apply eval_fully_closed_not_none; trivial).        
@@ -7227,10 +7225,9 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                                        (VectorElem () df2 x))).
           admit.
           now rewrite H2.
-        + assert ( df_eval σ (df_deriv df2 (s, DTfloat)) <> None ).
+        + assert ( df_eval σ (df_deriv df2 (s, DTfloat)) <> None ); [|tauto].
           apply eval_fully_closed_not_none.
           apply fully_closed_deriv; trivial.
-          tauto.
       - Case "MatrixApply"%string.
         destruct H.
         assert (df_eval σ df2 <> None) by (apply eval_fully_closed_not_none; trivial).        
@@ -7245,10 +7242,9 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                                        (MatrixElem () df2 x x0))).
           admit.
           now rewrite H2.
-        + assert ( df_eval σ (df_deriv df2 (s, DTfloat)) <> None ).
+        + assert ( df_eval σ (df_deriv df2 (s, DTfloat)) <> None ); [|tauto].
           apply eval_fully_closed_not_none.
           apply fully_closed_deriv; trivial.
-          tauto.
       - Case "VLossfun"%string.
         destruct H.
         assert (df_eval σ df2 <> None) by (apply eval_fully_closed_not_none; trivial).        
@@ -7264,17 +7260,19 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
           assert (df_eval 
                     σ
                     (df_subst (df_subst (df_deriv df1 (v1, DTfloat)) (v1, DTfloat) (VectorElem () df2 x))
-                              (v2, DTfloat) (Number () (r x))) <> None).
+                              (v2, DTfloat) (Number () (r x))) <> None); [|tauto].
           apply eval_fully_closed_not_none.
-          admit.
-          tauto.
+          apply fully_closed_subst; simpl; [|trivial].
+          apply fully_closed_subst; simpl.
+          * apply fully_closed_deriv.
+            now apply fully_closed_over_pair.
+          * now apply fully_closed_over_cons.
         + generalize (vectoro_to_ovector_exists_None eqq1).
           intros; destruct H2.
           match_option_in e.
           assert (df_eval_deriv [mk_env_entry (v1, DTfloat) (d x); mk_env_entry (v2, DTfloat) (r x)]
-           df1 (v1, DTfloat) <> None).
+           df1 (v1, DTfloat) <> None); [|tauto].
           apply eval_deriv_fully_closed_not_none; trivial.
-          tauto.
       - Case "MLossfun"%string.
         destruct H.
         assert (df_eval σ df2 <> None) by (apply eval_fully_closed_not_none; trivial).        
@@ -7286,7 +7284,18 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
           admit.
         + generalize (vectoro_to_ovector_exists_None eqq2); intros; destruct H2.
           generalize (vectoro_to_ovector_exists_None e); intros; destruct H2.
-          admit.
+          match_option_in e0.
+          match_option_in eqq3.
+          assert (df_eval σ
+           (df_subst
+              (df_subst (df_deriv df1 (v1, DTfloat)) (v1, DTfloat) (MatrixElem () df2 x x0))
+              (v2, DTfloat) (Number () (r x x0))) <> None); [|tauto].
+          apply eval_fully_closed_not_none.
+          apply fully_closed_subst; simpl; [|trivial].
+          apply fully_closed_subst; simpl.
+          * apply fully_closed_deriv.
+            now apply fully_closed_over_pair.
+          * now apply fully_closed_over_cons.
         + generalize (vectoro_to_ovector_exists_None eqq1).
           intros; destruct H2.
           generalize (vectoro_to_ovector_exists_None e).          
@@ -7294,9 +7303,8 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
           match_option_in e0.
           assert (df_eval_deriv [mk_env_entry (v1, DTfloat) (d x x0); 
                                  mk_env_entry (v2, DTfloat) (r x x0)]
-           df1 (v1, DTfloat) <> None).
+           df1 (v1, DTfloat) <> None); [|tauto].
           apply eval_deriv_fully_closed_not_none; trivial.
-          tauto.
       Admitted.          
      
      Lemma vartlookup_list_env_iter2 {A}
