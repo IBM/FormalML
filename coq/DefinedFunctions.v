@@ -14268,18 +14268,7 @@ match_option.
         + assert (df_eval_deriv_genvar σ df2 [mk_env_entry (s, DTfloat) 1%R] <> None).
           apply eval_deriv_genvar_fully_closed_not_none; trivial.          
           tauto.
-
-    Admitted.
-            
-    Lemma df_eval_tree_backprop_deriv_preserves_lookup_not_none {T} {env} {df:DefinedFunction EvalAnn T} {gradenv grad d} :
-      df_eval_tree_backprop_deriv env df gradenv grad = Some d ->
-      forall xv,
-        vartlookup gradenv xv <> None ->
-        vartlookup d xv <> None.
-    Proof.
-
-   Admitted.
-
+    Qed.
 
 (*
 Tactic Notation "DefinedFunction_cases" tactic(first) ident(c) :=
