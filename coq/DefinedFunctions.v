@@ -11972,27 +11972,35 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
       apply backprop_deriv_fully_closed_not_none; trivial.      
     Qed.
 
-    (*
-         Lemma scalarMult_backprop_grad_scalar {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (s: SubVar) (grad_env1 grad_env2:df_env) (grad : definition_function_types_interp T) (c:float) :
-      let v := (s, DTfloat) in
-      vartlookup grad_env1 v <> None -> vartlookup grad_env2 v <> None ->
-      df_eval_backprop_deriv σ df grad_env1 (scalarMult T c grad) <> None ->
-      df_eval_backprop_deriv σ df grad_env2 grad <> None ->
-      df_eval_backprop_delta σ df v grad_env1 (scalarMult T c grad) =
-      lift (fun e => scalarMult (snd v) c e) (df_eval_backprop_delta σ df v grad_env2 grad).
-         Proof.
-     *)
-
-    Corollary scalarMult_backprop_grad0 {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (s: SubVar) (grad_env1 grad_env2:df_env) (grad : definition_function_types_interp T) (c:float) :
-      let v := (s, DTfloat) in
-      vartlookup grad_env1 v <> None -> vartlookup grad_env2 v <> None ->
-      df_eval_backprop_deriv σ df grad_env1 (scalarMult T c grad) <> None ->
-      df_eval_backprop_deriv σ df grad_env2 grad <> None ->
-      df_eval_backprop_delta σ df v grad_env1 (scalarMult T 0%R grad) = Some 0%R.
+    Lemma scalarMult_mult {T} a b grad : scalarMult T a (scalarMult T b grad) = scalarMult T (a*b)%R grad.
     Proof.
-      intros.
-    Admitted.
+      destruct T; simpl.
+      - lra.
+      - apply vec_eq_eq; intros ?; lra.
+      - do 2 (apply vec_eq_eq; intros ?); lra.
+    Qed.
     
+    Corollary scalarMult_backprop_grad0 {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (s: SubVar) (grad_env :df_env) (grad : definition_function_types_interp T) :
+      let v := (s, DTfloat) in
+      vartlookup grad_env v <> None -> 
+      df_eval_backprop_deriv σ df grad_env (scalarMult T 0%R grad) <> None ->
+      df_eval_backprop_delta σ df v grad_env (scalarMult T 0%R grad) = Some 0%R.
+    Proof.
+      simpl; intros.
+      (* This allows us to drop the (unneeded) assumption
+         df_eval_backprop_deriv σ df grad_env1 grad <> None
+       *)
+      replace (scalarMult T 0%R grad) with (scalarMult T 0%R (scalarMult T 0%R grad)).
+      - erewrite scalarMult_backprop_grad_scalar; try eassumption.
+        + simpl.
+          unfold df_eval_backprop_delta.
+          simpler2; simpl.
+          destruct (df_eval_backprop_deriv σ df grad_env (scalarMult T 0%R grad)); simpl; [| congruence].
+          f_equal; lra.
+        + now rewrite scalarMult_mult, Rmult_0_l.
+      - now rewrite scalarMult_mult, Rmult_0_l.
+    Qed.
+
     (*
       Lemma df_eval_backprop_deriv_iter_unitvector {n} (σ:df_env) 
           (x:Vector (DefinedFunction UnitAnn DTfloat) n) grad_env env
