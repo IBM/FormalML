@@ -1861,6 +1861,8 @@ F (d : definition_function_types)
            end
           end).
 
+    Definition mk_genvar_env (s:SubVar) := mk_env_entry (s, DTfloat) (FfromZ (Z.of_nat 1)) :: nil.
+
  (* the v environment below pairs variables with their derivatives *)
      (* in some sense this is giving a directional derivative defined by v *)
     Fixpoint df_eval_deriv_genvar {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (v:df_env) : option (definition_function_types_interp T)
@@ -2025,7 +2027,8 @@ F (d : definition_function_types)
              vectoro_to_ovector 
                (fun i => 
                   let xv := (x, DTfloat):var_type in
-                  match df_eval_deriv_genvar (cons (mk_env_entry xv (re i)) nil) s v with
+                  match df_eval_deriv_genvar (mk_env_entry xv (re i) :: nil) s 
+                                             (mk_genvar_env x) with
                          | Some sd => Some ((rd i) * sd)
                          | _ => None
                          end)
@@ -2037,7 +2040,8 @@ F (d : definition_function_types)
              matrixo_to_omatrix
                (fun i j => 
                   let xv := (x, DTfloat):var_type in
-                  match df_eval_deriv_genvar (cons (mk_env_entry xv (re i j)) nil) s v with
+                  match df_eval_deriv_genvar  (mk_env_entry xv (re i j) :: nil) s 
+                                              (mk_genvar_env x) with
                          | Some sd => Some ((rd i j) * sd)
                          | _ => None
                          end)
@@ -2050,8 +2054,9 @@ F (d : definition_function_types)
                       (fun i => 
                          let xv1 := (v1, DTfloat):var_type in
                          let xv2 := (v2, DTfloat):var_type in                         
-                         match df_eval_deriv_genvar (cons (mk_env_entry xv1 (le i)) 
-                                                   (cons (mk_env_entry xv2 (r i)) nil)) s v with
+                         match df_eval_deriv_genvar ( mk_env_entry xv1 (le i) ::
+                                                      mk_env_entry xv2 (r i) :: nil) s
+                                                     (mk_genvar_env v1) with
                          | Some sd => Some ((ld i) * sd)
                          | _ => None
                          end)) with
@@ -2067,8 +2072,9 @@ F (d : definition_function_types)
                       (fun i j => 
                          let xv1 := (v1, DTfloat):var_type in
                          let xv2 := (v2, DTfloat):var_type in                         
-                         match df_eval_deriv_genvar (cons (mk_env_entry xv1 (le i j)) 
-                                                   (cons (mk_env_entry xv2 (r i j)) nil)) s v with
+                         match df_eval_deriv_genvar  ( mk_env_entry xv1 (le i j) ::
+                                                      mk_env_entry xv2 (r i j) :: nil) s 
+                                                     ( mk_genvar_env v1) with
                          | Some sd => Some ((ld i j) * sd)
                          | _ => None
                          end)) with
@@ -2500,7 +2506,8 @@ F (d : definition_function_types)
              vectoro_to_ovector 
                (fun i => 
                   let xv := (x, DTfloat):var_type in
-                  match df_eval_deriv_genvar (cons (mk_env_entry xv (re i)) nil ) s v with
+                  match df_eval_deriv_genvar (cons (mk_env_entry xv (re i)) nil ) s 
+                                             (mk_genvar_env x) with
                          | Some sd => Some ((rd i) * sd)
                          | _ => None
                          end)
@@ -2513,7 +2520,8 @@ F (d : definition_function_types)
              matrixo_to_omatrix
                (fun i j => 
                   let xv := (x, DTfloat):var_type in
-                  match df_eval_deriv_genvar (cons (mk_env_entry xv (re i j)) nil) s v with
+                  match df_eval_deriv_genvar (cons (mk_env_entry xv (re i j)) nil) s 
+                                             (mk_genvar_env x) with
                          | Some sd => Some ((rd i j) * sd)
                          | _ => None
                          end)
@@ -2528,7 +2536,8 @@ F (d : definition_function_types)
                          let xv1 := (v1, DTfloat):var_type in
                          let xv2 := (v2, DTfloat):var_type in                         
                          match df_eval_deriv_genvar (cons (mk_env_entry xv1 (le i)) 
-                                                   (cons (mk_env_entry xv2 (r i)) nil )) s v with
+                                                   (cons (mk_env_entry xv2 (r i)) nil )) s 
+                                                    (mk_genvar_env v1) with
                          | Some sd => Some ((ld i) * sd)
                          | _ => None
                          end)) with
@@ -2546,7 +2555,8 @@ F (d : definition_function_types)
                          let xv1 := (v1, DTfloat):var_type in
                          let xv2 := (v2, DTfloat):var_type in                         
                          match df_eval_deriv_genvar (cons (mk_env_entry xv1 (le i j)) 
-                                                   (cons (mk_env_entry xv2 (r i j)) nil)) s v with
+                                                   (cons (mk_env_entry xv2 (r i j)) nil)) s 
+                                                    (mk_genvar_env v1) with
                          | Some sd => Some ((ld i j) * sd)
                          | _ => None
                          end)) with
@@ -3423,8 +3433,6 @@ F (d : definition_function_types)
          exact hs.
  Defined.
 
-
-   
    Fixpoint is_df_rec_prop {Ann} {T} 
             (prop : forall TT:definition_function_types, 
                 (DefinedFunction Ann TT) -> Prop)
@@ -7058,7 +7066,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         match_option; [|tauto].
         apply vectoro_to_ovector_not_none; intros.
         match_option.
-        specialize (IHdf1 (mk_env_entry (v, DTfloat) (d i) :: nil) v0).
+        specialize (IHdf1 (mk_env_entry (v, DTfloat) (d i) :: nil) (mk_genvar_env v)).
         cut_to IHdf1; trivial.
         tauto.
       - Case "MatrixApply"%string.
@@ -7071,7 +7079,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         match_option; [|tauto].
         apply vectoro_to_ovector_not_none; intros.
         apply vectoro_to_ovector_not_none; intros.        
-        specialize (IHdf1 (mk_env_entry (v, DTfloat) (d i i0) :: nil) v0).
+        specialize (IHdf1 (mk_env_entry (v, DTfloat) (d i i0) :: nil) (mk_genvar_env v)).
         cut_to IHdf1; trivial.
         match_option; tauto.
       - Case "VLossfun"%string.
@@ -7086,7 +7094,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         apply vectoro_to_ovector_not_none in eqq1.
         tauto.
         intros.
-        specialize (IHdf1 (mk_env_entry (v1, DTfloat) (d i) :: mk_env_entry (v2, DTfloat) (r i) :: nil) v).
+        specialize (IHdf1 (mk_env_entry (v1, DTfloat) (d i) :: mk_env_entry (v2, DTfloat) (r i) :: nil) (mk_genvar_env v1)).
         cut_to IHdf1; trivial.
         match_option; tauto.
       - Case "MLossfun"%string.
@@ -7103,12 +7111,10 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         tauto.
         intros.
         apply vectoro_to_ovector_not_none; intros.
-        specialize (IHdf1 (mk_env_entry (v1, DTfloat) (d i i0) :: mk_env_entry (v2, DTfloat) (r i i0) :: nil) v).
+        specialize (IHdf1 (mk_env_entry (v1, DTfloat) (d i i0) :: mk_env_entry (v2, DTfloat) (r i i0) :: nil) (mk_genvar_env v1)).
         cut_to IHdf1; trivial.
         match_option; tauto.
     Qed.
-
-
 
     Definition scalarMult (T : definition_function_types) (c : float) :=
       match T return 
@@ -7567,6 +7573,68 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
           apply eval_deriv_fully_closed_not_none; trivial.
       Admitted.          
      
+     Theorem df_eval_deriv_scalar_same (σ:df_env) (df:DefinedFunction UnitAnn DTfloat) (s:SubVar) :
+        let v := (s, DTfloat) in 
+        let vl := map (fun ve => projT1 ve) σ in
+        is_scalar_function df ->
+        fully_closed_over df vl -> 
+        df_eval_deriv σ df v = df_eval σ (df_deriv df v).
+      Proof.
+        simpl.
+        intros is_scalar.
+        generalize is_scalar.
+        pattern df.
+        revert df is_scalar.
+        DefinedFunction_scalar_cases (apply is_scalar_function_ind) Case
+        ; simpl; trivial; intros 
+        ; try (destruct H1; destruct is_scalar; 
+                 specialize (H H3 H1); specialize (H0 H4 H2); now rewrite H, H0)
+        ; try (rewrite H; trivial; do 2 match_option).
+        - Case "Times"%string.
+          destruct H1.
+          destruct is_scalar.
+          cut_to H; trivial.
+          cut_to H0; trivial.
+          rewrite H, H0.
+          do 4 match_option.
+        - Case "Divide"%string.
+          destruct H1.
+          destruct is_scalar.
+          cut_to H; trivial.
+          cut_to H0; trivial.
+          rewrite H, H0.
+          do 4 match_option.
+        - Case "Sign"%string.
+          match_option.
+          assert ( df_eval_deriv σ e (s, DTfloat) <> None); [|tauto].
+          apply eval_deriv_fully_closed_not_none; trivial.
+        - Case "PSign"%string.
+          match_option.
+          assert ( df_eval_deriv σ e (s, DTfloat) <> None); [|tauto].
+          apply eval_deriv_fully_closed_not_none; trivial.
+        - Case "Max"%string.
+          destruct is_scalar; destruct H1.
+          cut_to H; trivial.
+          cut_to H0; trivial.
+          rewrite H, H0.
+          assert (df_eval σ l <> None) by (apply eval_fully_closed_not_none; trivial).
+          assert (df_eval σ r <> None) by (apply eval_fully_closed_not_none; trivial).
+          match_option; [|congruence].
+          match_option; [|congruence].        
+          assert (df_eval σ (df_deriv l (s, DTfloat)) <> None).
+          apply eval_fully_closed_not_none.
+          apply fully_closed_deriv; trivial.
+          assert (df_eval σ (df_deriv r (s, DTfloat)) <> None).
+          apply eval_fully_closed_not_none.
+          apply fully_closed_deriv; trivial.
+          destruct (df_eval σ (df_deriv l (s, DTfloat))); [|congruence].
+          destruct (df_eval σ (df_deriv r (s, DTfloat))); [|congruence].        
+          unfold pos_sign; simpl.
+          case_eq (Rle_dec d d0); intros; f_equal.
+          destruct (Rge_dec (d0 - d) 0); lra.
+          destruct (Rge_dec (d0 - d) 0); lra.        
+     Qed.
+
      Lemma vartlookup_list_env_iter2 {A}
            (s: SubVar) 
            {f : A -> df_env -> option df_env} 
@@ -12199,14 +12267,131 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         ; rewrite eqq in H
       end.
 
-
-    Theorem df_eval_deriv_genvar_same {T} (σ:df_env) (df:DefinedFunction UnitAnn T) (s v:SubVar) :
+    Theorem df_eval_deriv_genvar_same (σ:df_env) (df:DefinedFunction UnitAnn DTfloat) (v:SubVar) :
       let vl := map (fun ve => projT1 ve) σ in
+      is_scalar_function df ->
       fully_closed_over df vl -> 
-      let forward := df_eval_deriv_gen_top σ df (s, DTfloat) in
+      let forward := df_eval_deriv_gen_top σ df (v, DTfloat) in
       lift transpose_lifted_type forward = df_eval σ (df_deriv df (v,DTfloat)).
     Proof.
-      Admitted.
+     simpl.
+     intros is_scalar.
+     generalize is_scalar.
+     pattern df.
+     revert df is_scalar.
+     DefinedFunction_scalar_cases (apply is_scalar_function_ind) Case; simpl; trivial; intros
+     ; try
+       (  cut_to H; trivial
+       ;rewrite <- H
+       ;assert (df_eval σ e <> None) by (apply eval_fully_closed_not_none; trivial)
+       ;unfold lift, df_eval_deriv_gen_top; simpl
+       ;match_nested_case; [|tauto]
+       ;now match_nested_case).
+
+     - Case "Var"%string.
+       match_nested_case.
+       + red in e.
+         inversion e; subst.
+         now refl_simpler; simpl.
+       + now intros.
+     - Case "Plus"%string.
+       destruct H1.
+       destruct is_scalar.
+       cut_to H; trivial.
+       cut_to H0; trivial.
+       unfold lift, df_eval_deriv_gen_top in *; simpl in *.
+       match_option_in H.
+       + match_option_in H0.                       
+         * rewrite <- H.
+           now rewrite <- H0.
+         * assert ( df_eval_deriv_genvar σ r [mk_env_entry (v, DTfloat) 1%R] <> None); [|tauto].
+           apply eval_deriv_genvar_fully_closed_not_none; trivial.
+       + assert (df_eval_deriv_genvar σ l [mk_env_entry (v, DTfloat) 1%R] <> None); [|tauto].
+         apply eval_deriv_genvar_fully_closed_not_none; trivial.
+     - Case "Minus"%string.
+       destruct H1.
+       destruct is_scalar.
+       cut_to H; trivial.
+       cut_to H0; trivial.
+       unfold lift, df_eval_deriv_gen_top in *; simpl in *.
+       match_option_in H.
+       + match_option_in H0.                       
+         * rewrite <- H.
+           now rewrite <- H0.
+         * assert ( df_eval_deriv_genvar σ r [mk_env_entry (v, DTfloat) 1%R] <> None); [|tauto].
+           apply eval_deriv_genvar_fully_closed_not_none; trivial.
+       + assert (df_eval_deriv_genvar σ l [mk_env_entry (v, DTfloat) 1%R] <> None); [|tauto].
+         apply eval_deriv_genvar_fully_closed_not_none; trivial.
+     - Case "Times"%string.
+       destruct H1.
+       destruct is_scalar.
+       cut_to H; trivial.
+       cut_to H0; trivial.
+       unfold lift, df_eval_deriv_gen_top in *; simpl in *.
+       match_nested_case; trivial.
+       match_option_in H.
+       + match_nested_case.
+         * match_option_in H0.
+           -- rewrite <- H.
+              now rewrite <- H0.
+           -- assert ( df_eval_deriv_genvar σ r [mk_env_entry (v, DTfloat) 1%R] <> None); [|tauto].
+              apply eval_deriv_genvar_fully_closed_not_none; trivial.
+         * assert (df_eval σ r <> None)
+           ; [apply eval_fully_closed_not_none; trivial | tauto].
+       + assert (df_eval_deriv_genvar σ l [mk_env_entry (v, DTfloat) 1%R] <> None); [|tauto].
+         apply eval_deriv_genvar_fully_closed_not_none; trivial.
+     - Case "Divide"%string.
+       destruct H1.
+       destruct is_scalar.
+       cut_to H; trivial.
+       cut_to H0; trivial.
+       unfold lift, df_eval_deriv_gen_top in *; simpl in *.
+       match_nested_case; trivial.
+       match_option_in H.
+       + match_nested_case.
+         * match_option_in H0.
+           -- rewrite <- H.
+              now rewrite <- H0.
+           -- assert ( df_eval_deriv_genvar σ r [mk_env_entry (v, DTfloat) 1%R] <> None); [|tauto].
+              apply eval_deriv_genvar_fully_closed_not_none; trivial.
+         * assert (df_eval σ r <> None)
+           ; [apply eval_fully_closed_not_none; trivial | tauto].
+       + assert (df_eval_deriv_genvar σ l [mk_env_entry (v, DTfloat) 1%R] <> None); [|tauto].
+         apply eval_deriv_genvar_fully_closed_not_none; trivial.
+       + assert (df_eval σ l <> None)
+           ; [apply eval_fully_closed_not_none; trivial | tauto].
+     - Case "Sign"%string.
+       unfold lift, df_eval_deriv_gen_top in *; simpl in *.
+       match_nested_case; [trivial|].
+       assert (df_eval_deriv_genvar σ e [mk_env_entry (v, DTfloat) 1%R] <> None); [|tauto].
+       apply eval_deriv_genvar_fully_closed_not_none; trivial.
+     - Case "PSign"%string.
+       unfold lift, df_eval_deriv_gen_top in *; simpl in *.
+       match_nested_case; [trivial|].
+       assert (df_eval_deriv_genvar σ e [mk_env_entry (v, DTfloat) 1%R] <> None); [|tauto].
+       apply eval_deriv_genvar_fully_closed_not_none; trivial.
+     - Case "Max"%string.
+       destruct is_scalar; destruct H1.
+       cut_to H; trivial.
+       cut_to H0; trivial.
+       unfold lift, df_eval_deriv_gen_top in *; simpl in *.
+       assert (df_eval σ l <> None) by (apply eval_fully_closed_not_none; trivial).
+       assert (df_eval σ r <> None) by (apply eval_fully_closed_not_none; trivial).
+       match_nested_case; [|tauto].
+       match_nested_case; [|tauto].
+       match_option_in H.
+       match_option_in H0.
+       + rewrite <- H.
+         rewrite <- H0.
+         unfold pos_sign; simpl.
+         case_eq (Rle_dec d d0); intros; f_equal.
+         destruct (Rge_dec (d0 - d) 0); lra.
+         destruct (Rge_dec (d0 - d) 0); lra.        
+       + assert (df_eval_deriv_genvar σ r [mk_env_entry (v, DTfloat) 1%R] <> None); [|tauto].
+         apply eval_deriv_genvar_fully_closed_not_none; trivial.
+       + assert (df_eval_deriv_genvar σ l [mk_env_entry (v, DTfloat) 1%R] <> None); [|tauto].
+         apply eval_deriv_genvar_fully_closed_not_none; trivial.
+    Qed.
 
     Lemma yay {T} (σ:df_env) (df:DefinedFunction UnitAnn T) (hs:has_scalar_functions df) (s: SubVar) grad_env :
       let v := (s, DTfloat) in 
@@ -12408,563 +12593,562 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                 unfold subvar; simpl.
                 rewrite H; lra.
        - Case "Plus"%string.
-        specialize (IHdf1 grad_env vin).
+        specialize (H grad_env vin).
         simpl in *.
         match_option
-        ; rewrite eqq in IHdf1
-        ; simpl in *; match_option_in IHdf1.
-        case_eq (df_eval_backprop_deriv σ df1 grad_env 1%R)
+        ; rewrite eqq in H
+        ; simpl in *; match_option_in H.
+        case_eq (df_eval_backprop_deriv σ l grad_env 1%R)
           ; [intros ? eqq1 | intros eqq1]
-          ; rewrite eqq1 in IHdf1
+          ; rewrite eqq1 in H
           ; simpl in *
           ; try discriminate.
         destruct closed.
-        specialize (IHdf1 H).
-        invcs IHdf1.
-        { specialize (IHdf2 d1).
-          cut_to IHdf2;
-            [| now apply (df_eval_backprop_deriv_preserves_lookup_not_none eqq1 (s, DTfloat))| apply H0].
+        specialize (H H1).
+        invcs H.
+        { specialize (H0 d1).
+          cut_to H0;
+            [| now apply (df_eval_backprop_deriv_preserves_lookup_not_none eqq1 (s, DTfloat))| apply H2].
           match_option
-          ; rewrite eqq2 in IHdf2
+          ; rewrite eqq2 in H0
           ; simpl in *.
-          - match_option_in IHdf2.
-            unfold lift in IHdf2.
-            match_option_in IHdf2.
-            invcs IHdf2.
+          - match_option_in H0.
+            unfold lift in H0.
+            match_option_in H0.
+            invcs H0.
             simpl.
             f_equal.
             unfold subvar; simpl.
             rewrite eqq3.
             match_option; lra.
-          - match_option_in IHdf2; simpl.
+          - match_option_in H0; simpl.
             + unfold lift in *.
-              match_option_in IHdf2.
+              match_option_in H0.
             + elim (df_eval_backprop_deriv_preserves_lookup_not_none eqq1 (s, DTfloat) vin eqq3).
         }
          + destruct closed.
-           specialize (IHdf1 H).
+           specialize (H H1).
            congruence.
          + destruct closed.
-           specialize (IHdf1 H).
+           specialize (H H1).
            congruence.
          + destruct closed.
-           specialize (IHdf1 H).           
-           case_eq (df_eval_backprop_deriv σ df1 grad_env 1%R)
+           specialize (H H1).           
+           case_eq (df_eval_backprop_deriv σ l grad_env 1%R)
            ; [intros ? eqq2 | intros eqq2].
-           rewrite eqq2 in IHdf1.
+           rewrite eqq2 in H.
            simpl in *.
            congruence.
-           rewrite eqq2 in IHdf1.
-           now apply IHdf1.
+           rewrite eqq2 in H.
+           now apply H.
        - Case "Minus"%string.          
         destruct closed.
-        specialize (IHdf1 grad_env vin H).
+        specialize (H grad_env vin H1).
         simpl in *.
         match_option
-        ; rewrite eqq in IHdf1
-        ; simpl in *; match_option_in IHdf1.
-        case_eq (df_eval_backprop_deriv σ df1 grad_env 1%R)
+        ; rewrite eqq in H
+        ; simpl in *; match_option_in H.
+        case_eq (df_eval_backprop_deriv σ l grad_env 1%R)
           ; [intros ? eqq1 | intros eqq1]
-          ; rewrite eqq1 in IHdf1
+          ; rewrite eqq1 in H
           ; simpl in *
           ; try discriminate.
-        invcs IHdf1.
-        { specialize (IHdf2 d1).
-          cut_to IHdf2;
+        invcs H.
+        { specialize (H0 d1).
+          cut_to H0;
             [| now apply (df_eval_backprop_deriv_preserves_lookup_not_none eqq1 (s, DTfloat))
-             | apply H0].
+             | apply H2].
           match_option
-          ; rewrite eqq2 in IHdf2
+          ; rewrite eqq2 in H0
           ; simpl in *.
-          - match_option_in IHdf2.
-            unfold lift in IHdf2.
-            match_option_in IHdf2.
-            invcs IHdf2.
+          - match_option_in H0.
+            unfold lift in H0.
+            match_option_in H0.
+            invcs H0.
             simpl.
             f_equal.
             unfold subvar; simpl.
             rewrite eqq3.
             match_option.
-            + case_eq (df_eval_backprop_deriv σ df2 d1 (- (1))%R); intros.
+            + case_eq (df_eval_backprop_deriv σ r d1 (- (1))%R); intros.
               * unfold lift.
                 f_equal.
                 match_option.
-                -- generalize (scalarMult_backprop_grad_scalar σ df2 s d1 d1 1%R (-1)%R)
-                   ; intros; simpl in H2.
-                   cut_to H2.
-                   ++ unfold df_eval_backprop_delta in H2.
-                      rewrite eqq3 in H2; unfold lift in H2; simpl in H2.
-                      replace (-1 * 1)%R with (- (1))%R in H2 by lra.
-                      rewrite H1, eqq4 in H2; inversion H2.
-                      unfold subvar in H2; simpl in H2.
-                      rewrite eqq6, eqq5 in H2.
-                      inversion H2.
+                -- generalize (scalarMult_backprop_grad_scalar σ r s d1 d1 1%R (-1)%R)
+                   ; intros; simpl in H0.
+                   cut_to H0.
+                   ++ unfold df_eval_backprop_delta in H0.
+                      rewrite eqq3 in H0; unfold lift in H0; simpl in H0.
+                      replace (-1 * 1)%R with (- (1))%R in H0 by lra.
+                      rewrite H, eqq4 in H0; inversion H0.
+                      unfold subvar in H0; simpl in H0.
+                      rewrite eqq6, eqq5 in H0.
+                      inversion H0.
                       lra.
                   ++ congruence.
                   ++ congruence.
                   ++ simpl; replace (-1 * 1)%R with (- (1))%R by lra; congruence.
                   ++ congruence.
-                -- generalize (df_eval_backprop_deriv_preserves_lookup_not_none H1 (s,DTfloat))
+                -- generalize (df_eval_backprop_deriv_preserves_lookup_not_none H (s,DTfloat))
                    ; intros.
-                   cut_to H2; congruence.
-              * generalize (backprop_deriv_fully_closed_not_none σ df2 d1 (- (1))%R); intros.
-                destruct H2; trivial.
+                   cut_to H0; congruence.
+              * generalize (backprop_deriv_fully_closed_not_none σ r d1 (- (1))%R); intros.
+                destruct H0; trivial.
             + generalize (df_eval_backprop_deriv_preserves_lookup_not_none eqq4 (s,DTfloat))
               ; intros.
-              cut_to H1; congruence.
-          - match_option_in IHdf2.
+              cut_to H; congruence.
+          - match_option_in H0.
             + unfold lift.
-              unfold lift in IHdf2.
-              match_option_in IHdf2.
+              unfold lift in H0.
+              match_option_in H0.
               match_option.
               specialize (df_eval_backprop_deriv_preserves_lookup_not_none  eqq5).
               intros.
-              specialize (H1 (s, DTfloat)).
-              generalize (backprop_deriv_fully_closed_not_none σ df2 d1 (1%R)); intros.
-              now destruct H2.
+              specialize (H (s, DTfloat)).
+              generalize (backprop_deriv_fully_closed_not_none σ r d1 (1%R)); intros.
+              now destruct H3.
            + generalize (df_eval_backprop_deriv_preserves_lookup_not_none eqq1 (s,DTfloat))
              ; intros.
-             cut_to H1; congruence.
+             cut_to H; congruence.
         } 
-         + unfold lift in IHdf1; simpl in IHdf1.
-           match_option_in IHdf1.
+         + unfold lift in H; simpl in H.
+           match_option_in H.
     - Case "Times"%string.
         destruct closed.
-        specialize (IHdf1 grad_env vin H).
+        specialize (H grad_env vin H1).
         simpl in *.
-        generalize (eval_fully_closed_not_none σ df1); intros.
-        specialize (H1 H).
+        generalize (eval_fully_closed_not_none σ l); intros.
+        specialize (H3 H1).
         match_case; [intros|tauto].
         case_eq (vartlookup grad_env (s, DTfloat)); [intros d0 eqq0|tauto].
-        generalize (eval_fully_closed_not_none σ df2); intros.
-        specialize (H3 H0).
-        case_eq (df_eval σ df2); [intros|tauto].
+        generalize (eval_fully_closed_not_none σ r); intros.
+        specialize (H5 H2).
+        case_eq (df_eval σ r); [intros|tauto].
         match_option
-        ; rewrite eqq in IHdf1
-        ; simpl in *; rewrite eqq0 in IHdf1.
-        case_eq (df_eval_backprop_deriv σ df1 grad_env 1%R)
+        ; rewrite eqq in H
+        ; simpl in *; rewrite eqq0 in H.
+        case_eq (df_eval_backprop_deriv σ l grad_env 1%R)
           ; [intros ? eqq1 | intros eqq1]
-          ; rewrite eqq1 in IHdf1
+          ; rewrite eqq1 in H
           ; simpl in *
           ; try discriminate.
-        generalize (scalarMult_backprop_grad_scalar σ df1 s grad_env grad_env 1%R d1)
-        ; intros; simpl in H5.
-        unfold df_eval_backprop_delta in H5.
-        rewrite eqq1 in H5; simpl in H5.
-        specialize (H5 vin vin).
-        rewrite eqq0 in H5.
-        generalize (backprop_deriv_fully_closed_not_none σ df1 grad_env (d1 * 1)%R); intros.
-        specialize (H6 H); specialize (H5 H6).
-        cut_to H5; try discriminate.
-        invcs IHdf1.
-        { specialize (IHdf2 d3).
-          cut_to IHdf2;
+        generalize (scalarMult_backprop_grad_scalar σ l s grad_env grad_env 1%R d1)
+        ; intros; simpl in H7.
+        unfold df_eval_backprop_delta in H7.
+        rewrite eqq1 in H7; simpl in H7.
+        specialize (H7 vin vin).
+        rewrite eqq0 in H7.
+        generalize (backprop_deriv_fully_closed_not_none σ l grad_env (d1 * 1)%R); intros.
+        specialize (H8 H1); specialize (H7 H8).
+        cut_to H7; try discriminate.
+        invcs H.
+        { specialize (H0 d3).
+          cut_to H0;
             [| now apply (df_eval_backprop_deriv_preserves_lookup_not_none eqq1 (s, DTfloat))
-             | apply H0].
-           unfold lift in H5; simpl in H5.
-           match_option_in H5.
+             | apply H2].
+           unfold lift in H7; simpl in H7.
+           match_option_in H7.
            generalize (df_eval_backprop_deriv_preserves_lookup_not_none eqq1 (s, DTfloat))
            ;intros.
-           specialize (H7 vin).
-           generalize (backprop_deriv_fully_closed_not_none σ df2 d3 1%R); intros.
-           specialize (H8 H0).           
+           specialize (H vin).
+           generalize (backprop_deriv_fully_closed_not_none σ r d3 1%R); intros.
+           specialize (H9 H2).           
            case_eq (vartlookup d3 (s, DTfloat)); [intros | congruence].
-           rewrite H9 in IHdf2.
+           rewrite H10 in H0.
            unfold lift; simpl.
-           unfold lift in IHdf2.
-           match_option_in IHdf2.
-           - generalize (scalarMult_backprop_grad_scalar σ df2 s d2 d3 1%R d)
-             ; intros; simpl in H10.
-             unfold df_eval_backprop_delta in H10; simpl in H10.
+           unfold lift in H0.
+           match_option_in H0.
+           - generalize (scalarMult_backprop_grad_scalar σ r s d2 d3 1%R d)
+             ; intros.
+             unfold df_eval_backprop_delta in H11; simpl in H11.
              generalize (df_eval_backprop_deriv_preserves_lookup_not_none eqq2 (s, DTfloat));intros.
-             specialize (H11 vin).
+             specialize (H12 vin).
              case_eq (vartlookup d2 (s, DTfloat)); [intros | congruence].
-             specialize (H10 H11 H7).
-             rewrite H9, H12 in H10.
-             generalize (backprop_deriv_fully_closed_not_none σ df2 d2 (d * 1)%R); intros.
-             specialize (H13 H0); specialize (H10 H13 H8).
-             unfold lift in H10.
-             match_option_in H10; [|congruence]; f_equal.
+             specialize (H11 H12 H).
+             rewrite H10, H13 in H11.
+             generalize (backprop_deriv_fully_closed_not_none σ r d2 (d * 1)%R); intros.
+             specialize (H14 H2); specialize (H11 H14 H9).
+             unfold lift in H11.
+             match_option_in H11; [|congruence]; f_equal.
              rewrite (split_subvar d2 d7 d0 d6); trivial.
-             match_option_in IHdf2; invcs IHdf2.
-             rewrite eqq5 in H10; invcs H10; invcs H5.
+             match_option_in H0; invcs H0.
+             rewrite eqq5 in H11; invcs H11; invcs H7.
              lra.
-           - now match_option_in IHdf2.
+           - now match_option_in H0.
          }   
-        unfold lift in IHdf1.
-        match_case_in IHdf1; intros.
-        rewrite H5 in IHdf1; congruence.
-        generalize (backprop_deriv_fully_closed_not_none σ df1 grad_env 1%R); intros.        
-        now specialize (H6 H).
+        unfold lift in H.
+        match_case_in H; intros.
+        rewrite H7 in H; congruence.
+        generalize (backprop_deriv_fully_closed_not_none σ l grad_env 1%R); intros.        
+        now specialize (H8 H1).
      - Case "Divide"%string.
         destruct closed.
-        specialize (IHdf1 grad_env vin H).
+        specialize (H grad_env vin H1).
         simpl in *.
-        generalize (eval_fully_closed_not_none σ df1); intros.
-        specialize (H1 H).
+        generalize (eval_fully_closed_not_none σ l); intros.
+        specialize (H3 H1).
         match_case; [intros|tauto].
         case_eq (vartlookup grad_env (s, DTfloat)); [intros d0 eqq0|tauto].
-        generalize (eval_fully_closed_not_none σ df2); intros.
-        specialize (H3 H0).
-        case_eq (df_eval σ df2); [intros|tauto].
+        generalize (eval_fully_closed_not_none σ r); intros.
+        specialize (H5 H2).
+        case_eq (df_eval σ r); [intros|tauto].
         match_option
-        ; rewrite eqq in IHdf1
-        ; simpl in *; rewrite eqq0 in IHdf1.
-        case_eq (df_eval_backprop_deriv σ df1 grad_env 1%R)
+        ; rewrite eqq in H
+        ; simpl in *; rewrite eqq0 in H.
+        case_eq (df_eval_backprop_deriv σ l grad_env 1%R)
           ; [intros ? eqq1 | intros eqq1]
-          ; rewrite eqq1 in IHdf1
+          ; rewrite eqq1 in H
           ; simpl in *
           ; try discriminate.
-        generalize (scalarMult_backprop_grad_scalar σ df1 s grad_env grad_env 1%R (1 / d1)%R)
-        ; intros; simpl in H5.
-        unfold df_eval_backprop_delta in H5.
-        rewrite eqq1 in H5; simpl in H5.
-        specialize (H5 vin vin).
-        rewrite eqq0 in H5.
-        generalize (backprop_deriv_fully_closed_not_none σ df1 grad_env (1 / d1 * 1)%R); intros.
-        specialize (H6 H) ; specialize (H5 H6).
-        cut_to H5; try discriminate.
-        replace (1 / d1 * 1)%R with (1/d1)%R in H5 by lra.
-        invcs IHdf1.
-        { specialize (IHdf2 d3).
-          cut_to IHdf2;
+        generalize (scalarMult_backprop_grad_scalar σ l s grad_env grad_env 1%R (1 / d1)%R)
+        ; intros; simpl in H7.
+        unfold df_eval_backprop_delta in H7.
+        rewrite eqq1 in H7; simpl in H7.
+        specialize (H7 vin vin).
+        rewrite eqq0 in H7.
+        generalize (backprop_deriv_fully_closed_not_none σ l grad_env (1 / d1 * 1)%R); intros.
+        specialize (H8 H1) ; specialize (H7 H8).
+        cut_to H7; try discriminate.
+        replace (1 / d1 * 1)%R with (1/d1)%R in H7 by lra.
+        invcs H.
+        { specialize (H0 d3).
+          cut_to H0;
             [| now apply (df_eval_backprop_deriv_preserves_lookup_not_none eqq1 (s, DTfloat))
-             | apply H0].
-           unfold lift in H5; simpl in H5.
-           match_option_in H5. 
+             | apply H2].
+           unfold lift in H7; simpl in H7.
+           match_option_in H7. 
            generalize (df_eval_backprop_deriv_preserves_lookup_not_none eqq1 (s, DTfloat))
            ;intros.
-           specialize (H7 vin).
-           generalize (backprop_deriv_fully_closed_not_none σ df2 d3 1%R); intros.
-           specialize (H8 H0).           
+           specialize (H vin).
+           generalize (backprop_deriv_fully_closed_not_none σ r d3 1%R); intros.
+           specialize (H9 H2).           
            case_eq (vartlookup d3 (s, DTfloat)); [intros | congruence].
-           rewrite H9 in IHdf2.
+           rewrite H10 in H0.
            unfold lift; simpl.
-           unfold lift in IHdf2.
-           match_option_in IHdf2.
-           - generalize (scalarMult_backprop_grad_scalar σ df2 s d2 d3 1%R (- d / (d1 * d1))%R)
-             ; intros; simpl in H10.
-             unfold df_eval_backprop_delta in H10; simpl in H10.
+           unfold lift in H0.
+           match_option_in H0.
+           - generalize (scalarMult_backprop_grad_scalar σ r s d2 d3 1%R (- d / (d1 * d1))%R)
+             ; intros; simpl in H11.
+             unfold df_eval_backprop_delta in H11; simpl in H11.
              generalize (df_eval_backprop_deriv_preserves_lookup_not_none eqq2 (s, DTfloat));intros.
-             specialize (H11 vin).
+             specialize (H12 vin).
              case_eq (vartlookup d2 (s, DTfloat)); [intros | congruence].
-             specialize (H10 H11 H7).
-             rewrite H9, H12 in H10.
-             generalize (backprop_deriv_fully_closed_not_none σ df2 d2 (- d / (d1 * d1) * 1)%R); intros.
-             specialize (H13 H0); specialize (H10 H13 H8).
-             unfold lift in H10.
-             match_option_in H10; [|congruence]; f_equal.
+             specialize (H11 H12 H).
+             rewrite H10, H13 in H11.
+             generalize (backprop_deriv_fully_closed_not_none σ r d2 (- d / (d1 * d1) * 1)%R); intros.
+             specialize (H14 H2); specialize (H11 H14 H9).
+             unfold lift in H11.
+             match_option_in H11; [|congruence]; f_equal.
              rewrite (split_subvar d2 d7 d0 d6); trivial.
-             match_option_in IHdf2; invcs IHdf2.
-             rewrite eqq5 in H10; invcs H10; invcs H5.
+             match_option_in H0; invcs H0.
+             rewrite eqq5 in H11; invcs H11; invcs H7.
              lra.
-           - now match_option_in IHdf2.
+           - now match_option_in H0.
          }   
-        unfold lift in IHdf1.
-        match_case_in IHdf1; intros.
-        rewrite H5 in IHdf1; congruence.
-        generalize (backprop_deriv_fully_closed_not_none σ df1 grad_env 1%R); intros.        
-        now specialize (H6 H).
+        unfold lift in H.
+        match_case_in H; intros.
+        rewrite H7 in H; congruence.
+        generalize (backprop_deriv_fully_closed_not_none σ l grad_env 1%R); intros.        
+        now specialize (H8 H1).
       - Case "Square"%string.
-        specialize (IHdf grad_env vin closed).
+        specialize (H grad_env vin closed).
         simpl in *.
-        generalize (eval_fully_closed_not_none σ df); intros.
-        specialize (H closed).
+        generalize (eval_fully_closed_not_none σ e); intros.
+        specialize (H0 closed).
         match_case; [intros|tauto].
         case_eq (vartlookup grad_env (s, DTfloat)); [intros d0 eqq0|tauto].
         match_option
-        ; rewrite eqq in IHdf
-        ; simpl in *; rewrite eqq0 in IHdf.
-        + case_eq (df_eval_backprop_deriv σ df grad_env 1%R)
+        ; rewrite eqq in H
+        ; simpl in *; rewrite eqq0 in H.
+        + case_eq (df_eval_backprop_deriv σ e grad_env 1%R)
           ; [intros ? eqq1 | intros eqq1]
-          ; rewrite eqq1 in IHdf
+          ; rewrite eqq1 in H
           ; simpl in *
           ; try discriminate.
-          generalize (scalarMult_backprop_grad_scalar σ df s grad_env grad_env 1%R (2 * d)%R)
-          ; intros; simpl in H1.
-          unfold df_eval_backprop_delta in H1.
-          rewrite eqq1 in H1; simpl in H1.
-          specialize (H1 vin vin).
-          rewrite eqq0 in H1.
-          generalize (backprop_deriv_fully_closed_not_none σ df grad_env (2 * d * 1)%R); intros.
-          specialize (H2 closed); specialize (H1 H2).
-          cut_to H1; try discriminate.
-          invcs IHdf.
-          unfold lift in H1; match_option_in H1.
+          generalize (scalarMult_backprop_grad_scalar σ e s grad_env grad_env 1%R (2 * d)%R)
+          ; intros; simpl in H2.
+          unfold df_eval_backprop_delta in H2.
+          rewrite eqq1 in H2; simpl in H2.
+          specialize (H2 vin vin).
+          rewrite eqq0 in H2.
+          generalize (backprop_deriv_fully_closed_not_none σ e grad_env (2 * d * 1)%R); intros.
+          specialize (H3 closed); specialize (H2 H3).
+          cut_to H2; try discriminate.
+          invcs H.
+          unfold lift in H2; match_option_in H2.
           generalize (df_eval_backprop_deriv_preserves_lookup_not_none eqq1 (s, DTfloat))
           ;intros.
-          unfold lift; now rewrite H1.
-        + unfold lift in IHdf.
-          match_case_in IHdf; intros.
-          rewrite H1 in IHdf; congruence.
-          generalize (backprop_deriv_fully_closed_not_none σ df grad_env 1%R); intros.        
-          now specialize (H2 closed).
+          unfold lift; now rewrite H2.
+        + unfold lift in H.
+          match_case_in H; intros.
+          rewrite H2 in H; congruence.
+          generalize (backprop_deriv_fully_closed_not_none σ e grad_env 1%R); intros.        
+          now specialize (H3 closed).
       - Case "Exp"%string.
-        specialize (IHdf grad_env vin closed).
+        specialize (H grad_env vin closed).
         simpl in *.
-        generalize (eval_fully_closed_not_none σ df); intros.
-        specialize (H closed).
+        generalize (eval_fully_closed_not_none σ e); intros.
+        specialize (H0 closed).
         match_case; [intros|tauto].
         case_eq (vartlookup grad_env (s, DTfloat)); [intros d0 eqq0|tauto].
         match_option
-        ; rewrite eqq in IHdf
-        ; simpl in *; rewrite eqq0 in IHdf.
-        + case_eq (df_eval_backprop_deriv σ df grad_env 1%R)
+        ; rewrite eqq in H
+        ; simpl in *; rewrite eqq0 in H.
+        + case_eq (df_eval_backprop_deriv σ e grad_env 1%R)
           ; [intros ? eqq1 | intros eqq1]
-          ; rewrite eqq1 in IHdf
+          ; rewrite eqq1 in H
           ; simpl in *
           ; try discriminate.
-          generalize (scalarMult_backprop_grad_scalar σ df s grad_env grad_env 1%R (exp d)%R)
-          ; intros; simpl in H1.
-          unfold df_eval_backprop_delta in H1.
-          rewrite eqq1 in H1; simpl in H1.
-          specialize (H1 vin vin).
-          rewrite eqq0 in H1.
-          generalize (backprop_deriv_fully_closed_not_none σ df grad_env (exp d * 1)%R); intros.
-          specialize (H2 closed); specialize (H1 H2).
-          cut_to H1; try discriminate.
-          invcs IHdf.
+          generalize (scalarMult_backprop_grad_scalar σ e s grad_env grad_env 1%R (exp d)%R)
+          ; intros; simpl in H2.
+          unfold df_eval_backprop_delta in H2.
+          rewrite eqq1 in H2; simpl in H2.
+          specialize (H2 vin vin).
+          rewrite eqq0 in H2.
+          generalize (backprop_deriv_fully_closed_not_none σ e grad_env (exp d * 1)%R); intros.
+          specialize (H3 closed); specialize (H2 H3).
+          cut_to H2; try discriminate.
+          invcs H.
           replace (1 * exp d)%R with (exp d * 1)%R by lra.
-          unfold lift in H1; match_option_in H1.
+          unfold lift in H2; match_option_in H2.
           generalize (df_eval_backprop_deriv_preserves_lookup_not_none eqq1 (s, DTfloat))
           ;intros.
-          unfold lift; rewrite H1.
+          unfold lift; rewrite H2.
           f_equal; lra.
-        + unfold lift in IHdf.
-          match_case_in IHdf; intros.
-          rewrite H1 in IHdf; congruence.
-          generalize (backprop_deriv_fully_closed_not_none σ df grad_env 1%R); intros.        
-          now specialize (H2 closed).
+        + unfold lift in H.
+          match_case_in H; intros.
+          rewrite H2 in H; congruence.
+          generalize (backprop_deriv_fully_closed_not_none σ e grad_env 1%R); intros.        
+          now specialize (H3 closed).
       - Case "Log"%string.
-        specialize (IHdf grad_env vin closed).
+        specialize (H grad_env vin closed).
         simpl in *.
-        generalize (eval_fully_closed_not_none σ df); intros.
-        specialize (H closed).
+        generalize (eval_fully_closed_not_none σ e); intros.
+        specialize (H0 closed).
         match_case; [intros|tauto].
         case_eq (vartlookup grad_env (s, DTfloat)); [intros d0 eqq0|tauto].
         match_option
-        ; rewrite eqq in IHdf
-        ; simpl in *; rewrite eqq0 in IHdf.
-        + case_eq (df_eval_backprop_deriv σ df grad_env 1%R)
+        ; rewrite eqq in H
+        ; simpl in *; rewrite eqq0 in H.
+        + case_eq (df_eval_backprop_deriv σ e grad_env 1%R)
           ; [intros ? eqq1 | intros eqq1]
-          ; rewrite eqq1 in IHdf
+          ; rewrite eqq1 in H
           ; simpl in *
           ; try discriminate.
-          generalize (scalarMult_backprop_grad_scalar σ df s grad_env grad_env 1%R (1 / d)%R)
-          ; intros; simpl in H1.
-          unfold df_eval_backprop_delta in H1.
-          rewrite eqq1 in H1; simpl in H1.
-          specialize (H1 vin vin).
-          rewrite eqq0 in H1.
-          generalize (backprop_deriv_fully_closed_not_none σ df grad_env (1 / d * 1)%R); intros.
-          specialize (H2 closed); specialize (H1 H2).
-          cut_to H1; try discriminate.
-          invcs IHdf.
+          generalize (scalarMult_backprop_grad_scalar σ e s grad_env grad_env 1%R (1 / d)%R)
+          ; intros; simpl in H2.
+          unfold df_eval_backprop_delta in H2.
+          rewrite eqq1 in H2; simpl in H2.
+          specialize (H2 vin vin).
+          rewrite eqq0 in H2.
+          generalize (backprop_deriv_fully_closed_not_none σ e grad_env (1 / d * 1)%R); intros.
+          specialize (H3 closed); specialize (H2 H3).
+          cut_to H2; try discriminate.
+          invcs H.
           replace (1 / d)%R with (1 /  d * 1)%R by lra.
-          unfold lift in H1; match_option_in H1.
+          unfold lift in H2; match_option_in H2.
           generalize (df_eval_backprop_deriv_preserves_lookup_not_none eqq1 (s, DTfloat))
           ;intros.
-          unfold lift; rewrite H1.
+          unfold lift; rewrite H2.
           f_equal; lra.
-        + unfold lift in IHdf.
-          match_case_in IHdf; intros.
-          rewrite H1 in IHdf; congruence.
-          generalize (backprop_deriv_fully_closed_not_none σ df grad_env 1%R); intros.        
-          now specialize (H2 closed).
+        + unfold lift in H.
+          match_case_in H; intros.
+          rewrite H2 in H; congruence.
+          generalize (backprop_deriv_fully_closed_not_none σ e grad_env 1%R); intros.        
+          now specialize (H3 closed).
       - Case "Abs"%string.
-        specialize (IHdf grad_env vin closed).
+        specialize (H grad_env vin closed).
         simpl in *.
-        generalize (eval_fully_closed_not_none σ df); intros.
-        specialize (H closed).
+        generalize (eval_fully_closed_not_none σ e); intros.
+        specialize (H0 closed).
         match_case; [intros|tauto].
         case_eq (vartlookup grad_env (s, DTfloat)); [intros d0 eqq0|tauto].
         match_option
-        ; rewrite eqq in IHdf
-        ; simpl in *; rewrite eqq0 in IHdf.
-        + case_eq (df_eval_backprop_deriv σ df grad_env 1%R)
+        ; rewrite eqq in H
+        ; simpl in *; rewrite eqq0 in H.
+        + case_eq (df_eval_backprop_deriv σ e grad_env 1%R)
           ; [intros ? eqq1 | intros eqq1]
-          ; rewrite eqq1 in IHdf
+          ; rewrite eqq1 in H
           ; simpl in *
           ; try discriminate.
-          generalize (scalarMult_backprop_grad_scalar σ df s grad_env grad_env 1%R (sign d)%R)
-          ; intros; simpl in H1.
+          generalize (scalarMult_backprop_grad_scalar σ e s grad_env grad_env 1%R (sign d)%R)
+          ; intros; simpl in H2.
+          unfold df_eval_backprop_delta in H2.
+          rewrite eqq1 in H2; simpl in H2.
+          specialize (H2 vin vin).
+          rewrite eqq0 in H2.
+          generalize (backprop_deriv_fully_closed_not_none σ e grad_env (sign d * 1)%R); intros.
+          specialize (H3 closed); specialize (H2 H3).
+          cut_to H2; try discriminate.
+          invcs H.
+          replace (1 * (@sign floatish_R d))%R with ((@sign floatish_R d) * 1)%R by lra.
+          unfold lift in H2; match_option_in H2.
+          generalize (df_eval_backprop_deriv_preserves_lookup_not_none eqq1 (s, DTfloat))
+          ;intros.
+          unfold lift; rewrite H2.
+          f_equal; lra.
+        + unfold lift in H.
+          match_case_in H; intros.
+          rewrite H2 in H; congruence.
+          generalize (backprop_deriv_fully_closed_not_none σ e grad_env 1%R); intros.        
+          now specialize (H3 closed).
+      - Case "Sign"%string.        
+        specialize (H grad_env vin closed).
+        simpl in *.
+        generalize (eval_fully_closed_not_none σ e); intros.
+        specialize (H0 closed).
+        case_eq (vartlookup grad_env (s, DTfloat)); [intros d0 eqq0|tauto].
+        match_option
+        ; rewrite eqq in H
+        ; simpl in *; rewrite eqq0 in H.
+        + case_eq (df_eval_backprop_deriv σ e grad_env 1%R)
+          ; [intros ? eqq1 | intros eqq1]
+          ; rewrite eqq1 in H
+          ; simpl in *
+          ; try discriminate.
+          generalize (scalarMult_backprop_grad_scalar σ e s grad_env grad_env 1%R (0)%R)
+          ; intros H1; simpl in H1.
           unfold df_eval_backprop_delta in H1.
           rewrite eqq1 in H1; simpl in H1.
           specialize (H1 vin vin).
           rewrite eqq0 in H1.
-          generalize (backprop_deriv_fully_closed_not_none σ df grad_env (sign d * 1)%R); intros.
+          generalize (backprop_deriv_fully_closed_not_none σ e grad_env (0 * 1)%R); intros.
           specialize (H2 closed); specialize (H1 H2).
           cut_to H1; try discriminate.
-          invcs IHdf.
-          replace (1 * (@sign floatish_R d))%R with ((@sign floatish_R d) * 1)%R by lra.
+          invcs H.
+          replace (0)%R with (0 * 1)%R by lra.
           unfold lift in H1; match_option_in H1.
           generalize (df_eval_backprop_deriv_preserves_lookup_not_none eqq1 (s, DTfloat))
           ;intros.
           unfold lift; rewrite H1.
           f_equal; lra.
-        + unfold lift in IHdf.
-          match_case_in IHdf; intros.
-          rewrite H1 in IHdf; congruence.
-          generalize (backprop_deriv_fully_closed_not_none σ df grad_env 1%R); intros.        
+        + unfold lift in H.
+          match_case_in H; intros.
+          rewrite H1 in H; congruence.
+          generalize (backprop_deriv_fully_closed_not_none σ e grad_env 1%R); intros.        
           now specialize (H2 closed).
-      - Case "Sign"%string.        
-        specialize (IHdf grad_env vin closed).
-        simpl in *.
-        generalize (eval_fully_closed_not_none σ df); intros.
-        specialize (H closed).
-        case_eq (vartlookup grad_env (s, DTfloat)); [intros d0 eqq0|tauto].
-        match_option
-        ; rewrite eqq in IHdf
-        ; simpl in *; rewrite eqq0 in IHdf.
-        + case_eq (df_eval_backprop_deriv σ df grad_env 1%R)
-          ; [intros ? eqq1 | intros eqq1]
-          ; rewrite eqq1 in IHdf
-          ; simpl in *
-          ; try discriminate.
-          generalize (scalarMult_backprop_grad_scalar σ df s grad_env grad_env 1%R (0)%R)
-          ; intros H1; simpl in H1.
-          unfold df_eval_backprop_delta in H1.
-          rewrite eqq1 in H1; simpl in H1.
-          specialize (H1 vin vin).
-          rewrite eqq0 in H1.
-          generalize (backprop_deriv_fully_closed_not_none σ df grad_env (0 * 1)%R); intros.
-          specialize (H0 closed); specialize (H1 H0).
-          cut_to H1; try discriminate.
-          invcs IHdf.
-          replace (0)%R with (0 * 1)%R by lra.
-          unfold lift in H1; match_option_in H1.
-          generalize (df_eval_backprop_deriv_preserves_lookup_not_none eqq1 (s, DTfloat))
-          ;intros.
-          unfold lift; rewrite H1.
-          f_equal; lra.
-        + unfold lift in IHdf.
-          match_case_in IHdf; intros.
-          rewrite H0 in IHdf; congruence.
-          generalize (backprop_deriv_fully_closed_not_none σ df grad_env 1%R); intros.        
-          now specialize (H1 closed).
       - Case "PSign"%string.        
-        specialize (IHdf grad_env vin closed).
+        specialize (H grad_env vin closed).
         simpl in *.
-        generalize (eval_fully_closed_not_none σ df); intros.
-        specialize (H closed).
+        generalize (eval_fully_closed_not_none σ e); intros.
+        specialize (H0 closed).
         case_eq (vartlookup grad_env (s, DTfloat)); [intros d0 eqq0|tauto].
         match_option
-        ; rewrite eqq in IHdf
-        ; simpl in *; rewrite eqq0 in IHdf.
-        + case_eq (df_eval_backprop_deriv σ df grad_env 1%R)
+        ; rewrite eqq in H
+        ; simpl in *; rewrite eqq0 in H.
+        + case_eq (df_eval_backprop_deriv σ e grad_env 1%R)
           ; [intros ? eqq1 | intros eqq1]
-          ; rewrite eqq1 in IHdf
+          ; rewrite eqq1 in H
           ; simpl in *
           ; try discriminate.
-          generalize (scalarMult_backprop_grad_scalar σ df s grad_env grad_env 1%R (0)%R)
+          generalize (scalarMult_backprop_grad_scalar σ e s grad_env grad_env 1%R (0)%R)
           ; intros H1; simpl in H1.
           unfold df_eval_backprop_delta in H1.
           rewrite eqq1 in H1; simpl in H1.
           specialize (H1 vin vin).
           rewrite eqq0 in H1.
-          generalize (backprop_deriv_fully_closed_not_none σ df grad_env (0 * 1)%R); intros.
-          specialize (H0 closed); specialize (H1 H0).
+          generalize (backprop_deriv_fully_closed_not_none σ e grad_env (0 * 1)%R); intros.
+          specialize (H2 closed); specialize (H1 H2).
           cut_to H1; try discriminate.
-          invcs IHdf.
+          invcs H.
           replace (0)%R with (0 * 1)%R by lra.
           unfold lift in H1; match_option_in H1.
           generalize (df_eval_backprop_deriv_preserves_lookup_not_none eqq1 (s, DTfloat))
           ;intros.
           unfold lift; rewrite H1.
           f_equal; lra.
-        + unfold lift in IHdf.
-          match_case_in IHdf; intros.
-          rewrite H0 in IHdf; congruence.
-          generalize (backprop_deriv_fully_closed_not_none σ df grad_env 1%R); intros.        
-          now specialize (H1 closed).
+        + unfold lift in H.
+          match_case_in H; intros.
+          rewrite H1 in H; congruence.
+          generalize (backprop_deriv_fully_closed_not_none σ e grad_env 1%R); intros.        
+          now specialize (H2 closed).
       - Case "Max"%string.
         destruct closed.
-        specialize (IHdf1 grad_env vin H).
-        specialize (IHdf2 grad_env vin H0).        
+        specialize (H grad_env vin H1).
+        specialize (H0 grad_env vin H2).        
         simpl in *.
-        generalize (eval_fully_closed_not_none σ df1); intros.
-        specialize (H1 H).
+        generalize (eval_fully_closed_not_none σ l); intros.
+        specialize (H3 H1).
         match_case; [intros|tauto].
         case_eq (vartlookup grad_env (s, DTfloat)); [intros d0 eqq0|tauto].
-        generalize (eval_fully_closed_not_none σ df2); intros.
-        specialize (H3 H0).
-        case_eq (df_eval σ df2); [intros|tauto].
-        rewrite eqq0 in IHdf1.
-        rewrite eqq0 in IHdf2.        
+        generalize (eval_fully_closed_not_none σ r); intros.
+        specialize (H5 H2).
+        case_eq (df_eval σ r); [intros|tauto].
+        rewrite eqq0 in H.
+        rewrite eqq0 in H0.        
         destruct (Rle_dec d d1).
-        + apply IHdf2.
-        + apply IHdf1.
+        + apply H0.
+        + apply H.
       - Case "VectorDot"%string.
         destruct closed.
-        specialize (IHdf1 grad_env vin H).
+        specialize (H grad_env vin H1).
         simpl in *.
-        generalize (eval_fully_closed_not_none σ df1); intros.
-        specialize (H1 H).
+        generalize (eval_fully_closed_not_none σ l); intros.
+        specialize (H3 H1).
         match_case; [intros|tauto].
-        generalize (eval_fully_closed_not_none σ df2); intros.
-        specialize (H3 H0).
-        case_eq (df_eval σ df2); [intros | tauto].
+        generalize (eval_fully_closed_not_none σ r); intros.
+        specialize (H5 H2).
+        case_eq (df_eval σ r); [intros | tauto].
         replace (fun rv : R => (rv * 1)%R) with id.
         rewrite vmap_id; rewrite vmap_id.
         case_eq (vartlookup grad_env (s, DTfloat)); [intros d1 eqq1 | tauto].
-        symmetry in IHdf1.
-        generalize (backprop_deriv_fully_closed_not_none σ df1 grad_env d0); intros.
-        specialize (H5 H).
+        symmetry in H.
+        generalize (backprop_deriv_fully_closed_not_none σ l grad_env d0); intros.
+        specialize (H7 H1).
         match_option
-        ; rewrite eqq in IHdf1
-        ; simpl in *; rewrite eqq1 in IHdf1.
-        specialize (apply vectoro_to_ovector_forall_some_f IHdf1); intros; simpl in H6.
+        ; rewrite eqq in H
+        ; simpl in *; rewrite eqq1 in H.
+        specialize (apply vectoro_to_ovector_forall_some_f H); intros; simpl in H8.
         match_option.
         + match_option; [|tauto].
-          generalize (backprop_deriv_fully_closed_not_none σ df2 d4 d); intros.        
-          specialize (H7 H0).
+          generalize (backprop_deriv_fully_closed_not_none σ r d4 d); intros.        
+          specialize (H9 H2).
           unfold lift.
           match_option; [|tauto].
           generalize (df_eval_backprop_deriv_preserves_lookup_not_none eqq2 (s, DTfloat));intros.
-          specialize (H8 vin).
-          specialize (IHdf2 d4 H8 H0).
-          rewrite eqq0 in IHdf2.
-          match_option_in IHdf2.
-          symmetry in IHdf2.
-          unfold lift in IHdf2.
-          specialize (apply vectoro_to_ovector_forall_some_f IHdf2); intros.
-          simpl in H9.
+          specialize (H10 vin).
+          specialize (H0 d4 H10 H2).
+          rewrite eqq0 in H0.
+          match_option_in H0.
+          symmetry in H0.
+          unfold lift in H0.
+          specialize (apply vectoro_to_ovector_forall_some_f H0); intros.
+          simpl in H11.
           f_equal.
-          unfold lift in H5.
+          unfold lift in H8.
           rewrite (split_subvar d4 d5 d1 d6); trivial.
-          unfold lift in H6.
           rewrite <- vsum_plus.
-          generalize (df_eval_backprop_delta_by_unit_partvec σ df1 s grad_env d0 
+          generalize (df_eval_backprop_delta_by_unit_partvec σ l s grad_env d0 
                                                              (fun i => (d2 i * d0 i)%R)); intros.
-          specialize (H10 H vin).
-          generalize (df_eval_backprop_delta_by_unit_partvec σ df2 s d4 d 
+          specialize (H12 H1 vin).
+          generalize (df_eval_backprop_delta_by_unit_partvec σ r s d4 d 
                                                              (fun i => (d i * d3 i)%R)); intros.
-          specialize (H11 H0 H8).
-          cut_to H10.
-          cut_to H11.
-          * unfold df_eval_backprop_delta in H10.
-            rewrite eqq1 in H10.
-            unfold df_eval_backprop_delta in H11.
-            rewrite eqq4 in H11.
-            unfold lift in H10.
-            unfold lift in H11.
-            rewrite eqq2 in H10.
-            rewrite eqq3 in H11.
-            invcs H10; invcs H11.
-            rewrite H12, H13; lra.
+          specialize (H13 H2 H10).
+          cut_to H12.
+          cut_to H13.
+          * unfold df_eval_backprop_delta in H12.
+            rewrite eqq1 in H12.
+            unfold df_eval_backprop_delta in H13.
+            rewrite eqq4 in H13.
+            unfold lift in H12.
+            unfold lift in H13.
+            rewrite eqq2 in H12.
+            rewrite eqq3 in H13.
+            invcs H12; invcs H13.
+            rewrite H14, H15; lra.
           * intros.
             replace (scaleUnitVector n i (d i)) with
                 (scalarMult (DTVector n) (d i) (UnitVector n i)). 
             rewrite scalarMult_backprop_grad_scalar with (grad_env1 := d4) (grad_env2:=d4);trivial.
             unfold df_eval_backprop_delta, lift.
             rewrite eqq4.
-            specialize (H9 i).
-            destruct i; simpl in H9.
+            specialize (H11 i).
+            destruct i; simpl in H11.
             simpl_closed_backprop.
             f_equal.
-            rewrite eqq5 in H9.
-            invcs H9.
-            rewrite H13.
+            rewrite eqq5 in H11.
+            invcs H11.
+            rewrite H15.
             now unfold scalarMult; simpl.
             apply backprop_deriv_fully_closed_not_none; trivial.
             apply backprop_deriv_fully_closed_not_none; trivial.            
@@ -12977,40 +13161,40 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
             rewrite scalarMult_backprop_grad_scalar with (grad_env1 := grad_env) (grad_env2:=grad_env);trivial.        
             unfold df_eval_backprop_delta, lift.            
             rewrite eqq1.
-            specialize (H6 i).
-            destruct i; simpl in H6.
+            specialize (H8 i).
+            destruct i; simpl in H8.
             simpl_closed_backprop.
             f_equal.
-            rewrite eqq5 in H6.
-            invcs H6.
-            rewrite H13.
+            rewrite eqq5 in H8.
+            invcs H8.
+            rewrite H15.
             now unfold scalarMult; simpl; lra.
             apply backprop_deriv_fully_closed_not_none; trivial.
             apply backprop_deriv_fully_closed_not_none; trivial.            
             unfold scalarMult, UnitVector, scaleUnitVector; simpl.
             apply functional_extensionality; intros.
             destruct (equiv_dec (` x) (` i)); lra.
-        + generalize (eval_deriv_genvar_fully_closed_not_none σ df2 [mk_env_entry (s, DTfloat) 1%R]); intros.
-          now specialize (H7 H0).
-        + generalize (eval_deriv_genvar_fully_closed_not_none σ df1 [mk_env_entry (s, DTfloat) 1%R]); intros.
-          now specialize (H6 H).
+        + generalize (eval_deriv_genvar_fully_closed_not_none σ r [mk_env_entry (s, DTfloat) 1%R]); intros.
+          now specialize (H9 H2).
+        + generalize (eval_deriv_genvar_fully_closed_not_none σ l [mk_env_entry (s, DTfloat) 1%R]); intros.
+          now specialize (H8 H1).
         + apply FunctionalExtensionality.functional_extensionality.
           intros; unfold id; lra.
       - Case "VectorSum"%string.
-        specialize (IHdf grad_env vin).
+        specialize (H grad_env vin).
         simpl in *.
         match_option
-        ; rewrite eqq in IHdf
-        ; simpl in *; match_option_in IHdf; [|tauto|].
-        + specialize (IHdf closed).
-          symmetry in IHdf.
-          generalize (vectoro_to_ovector_forall_some_f IHdf); intros HH; clear IHdf.
+        ; rewrite eqq in H
+        ; simpl in *; match_option_in H; [|tauto|].
+        + specialize (H closed).
+          symmetry in H.
+          generalize (vectoro_to_ovector_forall_some_f H); intros HH; clear H.
           replace (@lift (@df_env floatish_R) R
                          (fun e : df_env => subvar (s, DTfloat) e d0)
-                         (df_eval_backprop_deriv σ df grad_env
+                         (df_eval_backprop_deriv σ v grad_env
                                                   (ConstVector n 1%R)))
                    with
-                     (df_eval_backprop_delta σ df (s, DTfloat) grad_env
+                     (df_eval_backprop_delta σ v (s, DTfloat) grad_env
                               (ConstVector n 1%R)).
           rewrite df_eval_backprop_delta_by_unit_parts with (d1 := d); trivial.
           * intros.
@@ -13019,119 +13203,119 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
             rewrite eqq0.
             replace (UnitVector n i) with 
                 (coerce
-                   (df_eval_backward_gen_top_obligation_2 UnitAnn (DTVector n) df n eq_refl i)
+                   (df_eval_backward_gen_top_obligation_2 UnitAnn (DTVector n) v n eq_refl i)
                    (UnitVector n i)); trivial.
             destruct i.
             now simpl.
           * unfold df_eval_backprop_delta.
             now rewrite eqq0.
-        + specialize (IHdf closed).
-          symmetry in IHdf.
-          specialize (vectoro_to_ovector_exists_None IHdf); intros.
-          destruct H.
+        + specialize (H closed).
+          symmetry in H.
+          specialize (vectoro_to_ovector_exists_None H); intros.
+          destruct H0.
           unfold lift in e.
           match_option_in e.
           generalize (backprop_deriv_fully_closed_not_none 
-                        σ df grad_env
+                        σ v grad_env
                         (coerce
                            (df_eval_backward_gen_top_obligation_2
-                              UnitAnn (DTVector n) df n eq_refl x)
+                              UnitAnn (DTVector n) v n eq_refl x)
                            (UnitVector n x))); intros.
-          specialize (H closed); tauto.
+          specialize (H0 closed); tauto.
       - Case "MatrixSum"%string.
-        specialize (IHdf grad_env vin).
+        specialize (H grad_env vin).
         simpl in *.
         match_option
-        ; rewrite eqq in IHdf
-        ; simpl in *; match_option_in IHdf; [|tauto|].
-        + specialize (IHdf closed).
-          symmetry in IHdf.
-          specialize (apply vectoro_to_ovector_forall_some_f IHdf); intros HH; simpl in HH.
+        ; rewrite eqq in H
+        ; simpl in *; match_option_in H; [|tauto|].
+        + specialize (H closed).
+          symmetry in H.
+          specialize (apply vectoro_to_ovector_forall_some_f H); intros HH; simpl in HH.
           replace (@lift (@df_env floatish_R) R
                          (fun e : df_env => subvar (s, DTfloat) e d0)
-                         (df_eval_backprop_deriv σ df grad_env
+                         (df_eval_backprop_deriv σ v grad_env
                                                   (ConstMatrix m n 1%R)))
                    with
-                     (df_eval_backprop_delta σ df (s, DTfloat) grad_env
+                     (df_eval_backprop_delta σ v (s, DTfloat) grad_env
                               (ConstMatrix m n 1%R)).
           rewrite df_eval_backprop_delta_by_unit_parts_mat with (d1 := d); trivial.
           * intros.
             specialize (HH i).
             specialize (apply vectoro_to_ovector_forall_some_f HH); intros.
-            specialize (H j); simpl in H.
+            specialize (H0 j); simpl in H0.
             unfold df_eval_backprop_delta.
             rewrite eqq0.
             replace (UnitMatrix m n i j) with
                 (coerce
                    (df_eval_backward_gen_top_obligation_3 
-                      UnitAnn (DTMatrix m n) df m n eq_refl i j) 
+                      UnitAnn (DTMatrix m n) v m n eq_refl i j) 
                    (UnitMatrix m n i j)); trivial.
             destruct i; destruct j.
             now simpl.
           * unfold df_eval_backprop_delta.
             now rewrite eqq0.
-        + specialize (IHdf closed).
-          symmetry in IHdf.
-          specialize (vectoro_to_ovector_exists_None IHdf); intros.
-          destruct H.
+        + specialize (H closed).
+          symmetry in H.
+          specialize (vectoro_to_ovector_exists_None H); intros.
+          destruct H0.
           unfold lift in e.
           specialize (vectoro_to_ovector_exists_None e); intros.
-          destruct H.
+          destruct H0.
           match_option_in e0.
           generalize (backprop_deriv_fully_closed_not_none 
-                        σ df grad_env
+                        σ v grad_env
                         (coerce
                            (df_eval_backward_gen_top_obligation_3 
-                              UnitAnn (DTMatrix m n) df m n eq_refl x x0)
+                              UnitAnn (DTMatrix m n) v m n eq_refl x x0)
                            (UnitMatrix m n x x0))); intros.
-          specialize (H closed); tauto.
+          specialize (H0 closed); tauto.
       - Case "VectorElem"%string.
-        specialize (IHdf grad_env vin).
+        specialize (H grad_env vin).
         simpl in *.
         match_option
-        ; rewrite eqq in IHdf
-        ; simpl in *; match_option_in IHdf; [|tauto|].
-        + specialize (IHdf closed).
-          symmetry in IHdf.
-          specialize (apply vectoro_to_ovector_forall_some_f IHdf); intros; simpl in H.
+        ; rewrite eqq in H
+        ; simpl in *; match_option_in H; [|tauto|].
+        + specialize (H closed).
+          symmetry in H.
+          specialize (apply vectoro_to_ovector_forall_some_f H); intros; simpl in H.
           unfold lift.
           replace (fun k : {n' : nat | n' < n} => if equiv_dec (` k) (` i) then 1%R else 0%R)
             with
               (UnitVector n i).
           generalize (backprop_deriv_fully_closed_not_none 
-                        σ df grad_env (UnitVector n i)); intros.
-          specialize (H0 closed).
-          specialize (H i).
+                        σ l grad_env (UnitVector n i)); intros.
+          specialize (H1 closed).
+          specialize (H0 i).
           match_option; symmetry; [|tauto].
           destruct i; simpl in *.
-          unfold lift in H; f_equal.
-          rewrite eqq1 in H.
-          now invcs H.
+          unfold lift in H0; f_equal.
+          rewrite eqq1 in H0.
+          now invcs H0.
           unfold UnitVector.
           apply FunctionalExtensionality.functional_extensionality; intros. 
           trivial.
-        + specialize (IHdf closed).
-          symmetry in IHdf.
-          specialize (vectoro_to_ovector_exists_None IHdf); intros.
-          destruct H.
+        + specialize (H closed).
+          symmetry in H.
+          specialize (vectoro_to_ovector_exists_None H); intros.
+          destruct H0.
           unfold lift in e.
           match_option_in e.
           generalize (backprop_deriv_fully_closed_not_none 
-                        σ df grad_env
+                        σ l grad_env
                         (coerce
                            (df_eval_backward_gen_top_obligation_2
-                              UnitAnn (DTVector n) df n eq_refl x)
+                              UnitAnn (DTVector n) l n eq_refl x)
                            (UnitVector n x))); intros.
-          specialize (H closed); tauto.
+          specialize (H0 closed); tauto.
       - Case "MatrixElem"%string.
-        specialize (IHdf grad_env vin).
+        specialize (H grad_env vin).
         simpl in *.
         match_option
-        ; rewrite eqq in IHdf
-        ; simpl in *; match_option_in IHdf; [|tauto|].
-        + specialize (IHdf closed).
-          symmetry in IHdf.
-          specialize (apply vectoro_to_ovector_forall_some_f IHdf); intros; simpl in H.
+        ; rewrite eqq in H
+        ; simpl in *; match_option_in H; [|tauto|].
+        + specialize (H closed).
+          symmetry in H.
+          specialize (apply vectoro_to_ovector_forall_some_f H); intros; simpl in H.
           unfold lift.
           replace
             (fun (k1 : {n' : nat | n' < m}) (k2 : {m' : nat | m' < n}) =>
@@ -13139,49 +13323,49 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                  if equiv_dec (` k2) (` j) then 1%R else 0%R else 0%R)
             with (UnitMatrix m n i j).
           generalize (backprop_deriv_fully_closed_not_none 
-                        σ df grad_env (UnitMatrix m n i j)); intros.
-          specialize (H0 closed).
-          specialize (H i).
-          specialize (apply vectoro_to_ovector_forall_some_f H); intros; simpl in H1.    
-          specialize (H1 j).
+                        σ l grad_env (UnitMatrix m n i j)); intros.
+          specialize (H1 closed).
+          specialize (H0 i).
+          specialize (apply vectoro_to_ovector_forall_some_f H0); intros; simpl in H2.    
+          specialize (H2 j).
           match_option; symmetry; [|tauto].
           destruct i; destruct j; simpl in *.
-          unfold lift in H1; f_equal.
-          rewrite eqq1 in H1.
-          now invcs H1.
+          unfold lift in H2; f_equal.
+          rewrite eqq1 in H2.
+          now invcs H2.
           unfold UnitMatrix.
           apply FunctionalExtensionality.functional_extensionality; intros.
           apply FunctionalExtensionality.functional_extensionality; intros.           
           trivial.
-        + specialize (IHdf closed).
-          symmetry in IHdf.
-          specialize (vectoro_to_ovector_exists_None IHdf); intros.
-          destruct H.
+        + specialize (H closed).
+          symmetry in H.
+          specialize (vectoro_to_ovector_exists_None H); intros.
+          destruct H0.
           unfold lift in e.
           specialize (vectoro_to_ovector_exists_None e); intros.
-          destruct H.          
+          destruct H0.          
           match_option_in e0.
           generalize (backprop_deriv_fully_closed_not_none 
-                        σ df grad_env
+                        σ l grad_env
                         (coerce
                            (df_eval_backward_gen_top_obligation_3 
-                              UnitAnn (DTMatrix m n) df m n eq_refl x x0)
+                              UnitAnn (DTMatrix m n) l m n eq_refl x x0)
                            (UnitMatrix m n x x0))); intros.
-          specialize (H closed); tauto.
+          specialize (H0 closed); tauto.
       - Case "MatrixVectorMult"%string.
         destruct closed.
-        specialize (IHdf1 grad_env vin H).
+        specialize (H grad_env vin H1).
         simpl in *.
-        generalize (eval_fully_closed_not_none σ df1); intros.
-        specialize (H1 H).
+        generalize (eval_fully_closed_not_none σ l); intros.
+        specialize (H3 H1).
         match_case; [intros|tauto].
-        generalize (eval_fully_closed_not_none σ df2); intros.
-        specialize (H3 H0).
-        case_eq (df_eval σ df2); [intros | tauto].
-        assert (df_eval_deriv_genvar σ df1 [mk_env_entry (s, DTfloat) 1%R] <> None).
+        generalize (eval_fully_closed_not_none σ r); intros.
+        specialize (H5 H2).
+        case_eq (df_eval σ r); [intros | tauto].
+        assert (df_eval_deriv_genvar σ l [mk_env_entry (s, DTfloat) 1%R] <> None).
         apply eval_deriv_genvar_fully_closed_not_none; trivial.
         match_option; [|tauto].
-        assert (df_eval_deriv_genvar σ df2 [mk_env_entry (s, DTfloat) 1%R] <> None).
+        assert (df_eval_deriv_genvar σ r [mk_env_entry (s, DTfloat) 1%R] <> None).
         apply eval_deriv_genvar_fully_closed_not_none; trivial.
         match_option; [|tauto].
         match_option; [|tauto].
@@ -13191,62 +13375,62 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         simpl_closed_backprop.
         simpl_closed_backprop.
         f_equal.
-        rewrite eqq1, eqq in IHdf1.
-        unfold lift in IHdf1; symmetry in IHdf1.
-        specialize (vectoro_to_ovector_forall_some_f IHdf1); intros.
-        specialize (IHdf2 env).
+        rewrite eqq1, eqq in H.
+        unfold lift in H; symmetry in H.
+        specialize (vectoro_to_ovector_forall_some_f H); intros.
+        specialize (H0 env).
         simpler2.
-        cut_to IHdf2; try congruence.
-        rewrite eqq0 in IHdf2.
+        cut_to H0; try congruence.
+        rewrite eqq0 in H0.
         rewrite (split_subvar env env0 d3 val); trivial.
-        specialize (H7 i); simpl in H7.
-        specialize (vectoro_to_ovector_forall_some_f H7); intros.
+        specialize (H9 i); simpl in H9.
+        specialize (vectoro_to_ovector_forall_some_f H9); intros.
         replace (@vsum floatish_R n (fun j : {n' : nat | n' < n} => (d i j * d2 j + d1 i j * d0 j)%R))
           with ((vsum (fun j => (d i j * d2 j)%R)) + (vsum (fun j => (d1 i j * d0 j)%R)))%R
         ; [|rewrite vsum_plus; f_equal].
-        unfold lift in IHdf2; symmetry in IHdf2.
-        specialize (vectoro_to_ovector_forall_some_f IHdf2); intros.        
-        simpl in H9; simpl in H8.
+        unfold lift in H0; symmetry in H0.
+        specialize (vectoro_to_ovector_forall_some_f H0); intros.        
+        simpl in H11; simpl in H10.
         destruct i; simpl in eqq2; simpl in eqq3.
         unfold matrix_vector_mult in eqq3; simpl in eqq3.
         unfold UnitVector in eqq2; simpl in eqq2.
         replace (fun i : {n' : nat | n' < n} =>
                    (@vsum floatish_R m
                           (fun j : {n' : nat | n' < m} =>
-                             (d j i * (@UnitVector floatish_R m (exist (fun n' : nat => (n' < m)%nat) x l)
+                             (d j i * (@UnitVector floatish_R m (exist (fun n' : nat => (n' < m)%nat) x l0)
                                                  j)%R)%R)))
-          with (d (exist (fun n' : nat => (n' < m)%nat) x l)) in eqq3.
+          with (d (exist (fun n' : nat => (n' < m)%nat) x l0)) in eqq3.
         + generalize (df_eval_backprop_delta_by_unit_partvec 
-                        σ df2 s env (d (exist (fun n' : nat => n' < m) x l ))  
-                        (fun i => ((d (exist (fun n' : nat => (n' < m)%nat) x l ) i) * (d2 i))%R))
+                        σ r s env (d (exist (fun n' : nat => n' < m) x l0 ))  
+                        (fun i => ((d (exist (fun n' : nat => (n' < m)%nat) x l0 ) i) * (d2 i))%R))
           ; intros.
-          specialize (H10 H0).
-          cut_to H10; try congruence.
-          * unfold df_eval_backprop_delta in H10.
-            rewrite eqq3, eqq4 in H10.
-            unfold lift in H10.
-            invcs H10.
+          specialize (H12 H2).
+          cut_to H12; try congruence.
+          * unfold df_eval_backprop_delta in H12.
+            rewrite eqq3, eqq4 in H12.
+            unfold lift in H12.
+            invcs H12.
             apply Rplus_eq_compat_l.
             generalize (df_eval_backprop_delta_by_unit_partmat
-                          σ df1 s grad_env
+                          σ l s grad_env
                           (fun (i : {n' : nat | n' < m}) (j : {m' : nat | m' < n}) =>
                              ((if equiv_dec (` i) x then 1 else 0) * d0 j)%R)
                           (fun (i : {n' : nat | n' < m}) (j : {m' : nat | m' < n}) =>
                              ((if equiv_dec (` i) x then 1 else 0) * (d1 i j) * (d0 j))%R))
             ; intros.
-            specialize (H10 H).
-            cut_to H10; try congruence.
-            -- unfold df_eval_backprop_delta in H10.
-               rewrite eqq1 in H10.
-               unfold lift in H10.
-               rewrite eqq2 in H10.
-               invcs H10.
-               rewrite H13.
+            specialize (H12 H1).
+            cut_to H12; try congruence.
+            -- unfold df_eval_backprop_delta in H12.
+               rewrite eqq1 in H12.
+               unfold lift in H12.
+               rewrite eqq2 in H12.
+               invcs H12.
+               rewrite H15.
                replace 
                  (fun (i : {n' : nat | n' < m}) (j : {m' : nat | m' < n}) =>
                     ((if equiv_dec (` i) x then 1 else 0) * d1 i j * d0 j)%R)  with
                    (fun (i : {n' : nat | n' < m}) (j : {m' : nat | m' < n}) =>
-                      (UnitVector m (exist _ x l) i * d1 i j * d0 j)%R).
+                      (UnitVector m (exist _ x l0) i * d1 i j * d0 j)%R).
                now rewrite msum_unitvector.
                apply FunctionalExtensionality.functional_extensionality; intros.
                apply FunctionalExtensionality.functional_extensionality; intros.               
@@ -13258,32 +13442,32 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                unfold df_eval_backprop_delta.
                rewrite eqq1.
                unfold lift.
-               specialize (vectoro_to_ovector_forall_some_f IHdf1); intros.
-               specialize (H11 i); simpl in H11.
-               specialize (vectoro_to_ovector_forall_some_f H11); intros.               
-               specialize (H13 j); intros; simpl in H13.
-               destruct i; destruct j; simpl in H13.
-               match_option_in H13.
+               specialize (vectoro_to_ovector_forall_some_f H); intros.
+               specialize (H13 i); simpl in H13.
+               specialize (vectoro_to_ovector_forall_some_f H13); intros.               
+               specialize (H15 j); intros; simpl in H15.
+               destruct i; destruct j; simpl in H15.
+               match_option_in H15.
                f_equal; simpl.
                destruct (equiv_dec x0 x).
-               invcs H13.
-               rewrite H15; lra.
+               invcs H15.
+               rewrite H17; lra.
                lra.
                apply backprop_deriv_fully_closed_not_none; trivial.
                apply backprop_deriv_fully_closed_not_none; trivial.               
           * intros.
-            replace (scaleUnitVector n i (d (exist (fun n' : nat => n' < m) x l) i)) with
-                (scalarMult (DTVector n) (d (exist (fun n' : nat => n' < m) x l) i) (UnitVector n i)). 
+            replace (scaleUnitVector n i (d (exist (fun n' : nat => n' < m) x l0) i)) with
+                (scalarMult (DTVector n) (d (exist (fun n' : nat => n' < m) x l0) i) (UnitVector n i)). 
             rewrite scalarMult_backprop_grad_scalar with (grad_env1 := env) (grad_env2:=env);trivial; try congruence.
             unfold scalarMult; simpl.
             unfold lift; simpl.
-            specialize (H9 i).
-            destruct i; simpl in H9.
-            match_option_in H9.
+            specialize (H11 i).
+            destruct i; simpl in H11.
+            match_option_in H11.
             unfold df_eval_backprop_delta.
             rewrite eqq4,eqq5.
             unfold lift; f_equal.
-            now invcs H9.
+            now invcs H11.
             apply backprop_deriv_fully_closed_not_none; trivial.
             apply backprop_deriv_fully_closed_not_none; trivial.
             unfold scalarMult, scaleUnitVector.
@@ -13294,88 +13478,88 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
           now rewrite vsum_unitvector.
       - Case "MatrixVectorAdd"%string.
         destruct closed.
-        specialize (IHdf1 grad_env vin).
+        specialize (H grad_env vin).
         simpl in *.
         match_option
-        ; rewrite eqq in IHdf1
-        ; simpl in *; match_option_in IHdf1; [|tauto|].
-        + specialize (IHdf1 H).
-          symmetry in IHdf1.
-          specialize (apply vectoro_to_ovector_forall_some_f IHdf1); intros; simpl in H1.
+        ; rewrite eqq in H
+        ; simpl in *; match_option_in H; [|tauto|].
+        + specialize (H H1).
+          symmetry in H.
+          specialize (apply vectoro_to_ovector_forall_some_f H); intros; simpl in H3.
           match_option; symmetry.
           * apply vectoro_to_ovector_forall_some_b_strong; intros.
-            specialize (H1 i).
-            specialize (apply vectoro_to_ovector_forall_some_f H1); intros; simpl in H2.
+            specialize (H3 i).
+            specialize (apply vectoro_to_ovector_forall_some_f H3); intros; simpl in H4.
             apply vectoro_to_ovector_forall_some_b_strong; intros.
-            specialize (H2 i0).
-            unfold lift in H2; unfold lift.
-            match_option_in H2.
-            unfold lift in IHdf2.
-            rewrite eqq1 in IHdf2.
+            specialize (H4 i0).
+            unfold lift in H4; unfold lift.
+            match_option_in H4.
+            unfold lift in H0.
+            rewrite eqq1 in H0.
             generalize (df_eval_backprop_deriv_preserves_lookup_not_none eqq2 (s, DTfloat))
             ;intros.
-            specialize (H3 vin).
-            specialize (IHdf2 d2 H3 H0).
-            match_option_in IHdf2.
-            symmetry in IHdf2.
-            specialize (apply vectoro_to_ovector_forall_some_f IHdf2); intros; simpl in H4.
-            specialize (H4 i).
-            destruct i; destruct i0;  simpl; simpl in eqq2; simpl in H4.
+            specialize (H5 vin).
+            specialize (H0 d2 H5 H2).
+            match_option_in H0.
+            symmetry in H0.
+            specialize (apply vectoro_to_ovector_forall_some_f H0); intros; simpl in H6.
+            specialize (H6 i).
+            destruct i; destruct i0;  simpl; simpl in eqq2; simpl in H6.
             rewrite eqq2.
-            match_option_in H4.
+            match_option_in H6.
             generalize (list_env_iter_total_fun
                           (fun (i : {m' : nat | m' < n}) (env : df_env) =>
                              df_eval_backprop_deriv 
-                               σ df2 env
+                               σ r env
                                (transpose
-                                  (UnitMatrix m n (exist (fun n' : nat => n' < m) x l)
-                                              (exist (fun n' : nat => n' < n) x0 l0)) i)) 
+                                  (UnitMatrix m n (exist (fun n' : nat => n' < m) x l0)
+                                              (exist (fun n' : nat => n' < n) x0 l1)) i)) 
                           d2 (bounded_seq0 n)); intros.
-            cut_to H5.
+            cut_to H7.
             -- case_eq (list_env_iter
                           (fun (i : {m' : nat | m' < n}) (env : df_env) =>
                              df_eval_backprop_deriv 
-                               σ df2 env
+                               σ r env
                                (@transpose R m n
-                                  (UnitMatrix m n (exist (fun n' : nat => n' < m) x l)
-                                              (exist (fun n' : nat => n' < n) x0 l0)) i)) 
+                                  (UnitMatrix m n (exist (fun n' : nat => n' < m) x l0)
+                                              (exist (fun n' : nat => n' < n) x0 l1)) i)) 
                           (Some d2) 
                           (bounded_seq0 n)); [intros |tauto].
                f_equal.
                rewrite (split_subvar d2 d5 d0 d3); trivial.
-               invcs H2.
                invcs H4.
+               invcs H6.
                generalize (list_env_iter_matvec_delta
-                             σ df2 s d2
-                             (exist (fun n' : nat => n' < n) x0 l0)
-                             (exist (fun n' : nat => n' < m) x l) d3).
+                             σ r s d2
+                             (exist (fun n' : nat => n' < n) x0 l1)
+                             (exist (fun n' : nat => n' < m) x l0) d3).
                intros.
-               specialize (H2 eqq3 H0).
-               rewrite eqq4, H6 in H2.
-               unfold lift in H2.
-               invcs H2; lra.
+               specialize (H4 eqq3 H2).
+               rewrite eqq4, H8 in H4.
+               unfold lift in H4.
+               invcs H4; lra.
             -- intros.
                apply backprop_deriv_fully_closed_not_none; trivial.
-          * assert (df_eval_deriv_genvar σ df2 [mk_env_entry (s, DTfloat) 1%R] <> None).
+          * assert (df_eval_deriv_genvar σ r [mk_env_entry (s, DTfloat) 1%R] <> None).
             apply eval_deriv_genvar_fully_closed_not_none; trivial.
             tauto.
-        + assert (df_eval_deriv_genvar σ df1 [mk_env_entry (s, DTfloat) 1%R] <> None).
+        + assert (df_eval_deriv_genvar σ l [mk_env_entry (s, DTfloat) 1%R] <> None).
           apply eval_deriv_genvar_fully_closed_not_none; trivial.
           tauto.
       - Case "MatrixMult"%string.
         destruct closed.
-        specialize (IHdf1 grad_env vin H).
+        specialize (H grad_env vin H1).
         simpl in *.
-        generalize (eval_fully_closed_not_none σ df1); intros.
-        specialize (H1 H).
+        generalize (eval_fully_closed_not_none σ l); intros.
+        specialize (H3 H1).
         match_case; [intros|tauto].
-        generalize (eval_fully_closed_not_none σ df2); intros.
-        specialize (H3 H0).
-        case_eq (df_eval σ df2); [intros | tauto].
-        assert (df_eval_deriv_genvar σ df1 [mk_env_entry (s, DTfloat) 1%R] <> None).
+        generalize (eval_fully_closed_not_none σ r); intros.
+        specialize (H5 H2).
+        case_eq (df_eval σ r); [intros | tauto].
+        assert (df_eval_deriv_genvar σ l [mk_env_entry (s, DTfloat) 1%R] <> None).
         apply eval_deriv_genvar_fully_closed_not_none; trivial.
         match_option; [|tauto].
-        assert (df_eval_deriv_genvar σ df2 [mk_env_entry (s, DTfloat) 1%R] <> None).
+        assert (df_eval_deriv_genvar σ r [mk_env_entry (s, DTfloat) 1%R] <> None).
         apply eval_deriv_genvar_fully_closed_not_none; trivial.
         match_option; [|tauto].
         match_option; [|tauto].
@@ -13386,27 +13570,27 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         simpl_closed_backprop.
         simpl_closed_backprop.
         f_equal.
-        rewrite eqq1, eqq in IHdf1.
-        unfold lift in IHdf1; symmetry in IHdf1.
-        specialize (vectoro_to_ovector_forall_some_f IHdf1); intros.
-        specialize (IHdf2 env).
+        rewrite eqq1, eqq in H.
+        unfold lift in H; symmetry in H.
+        specialize (vectoro_to_ovector_forall_some_f H); intros.
+        specialize (H0 env).
         simpler2.
-        cut_to IHdf2; try congruence.
-        rewrite eqq0 in IHdf2.
+        cut_to H0; try congruence.
+        rewrite eqq0 in H0.
         rewrite (split_subvar env env0 d3 val); trivial.
-        specialize (H7 i); simpl in H7.
-        specialize (vectoro_to_ovector_forall_some_f H7); intros.
+        specialize (H9 i); simpl in H9.
+        specialize (vectoro_to_ovector_forall_some_f H9); intros.
         replace (@vsum floatish_R p (fun j  => (d i j * d2 j i0 + d1 i j * d0 j i0)%R))
           with ((vsum (fun j => (d i j * d2 j i0)%R)) + (vsum (fun j => (d1 i j * d0 j i0)%R)))%R
         ; [|rewrite vsum_plus; f_equal].
-        unfold lift in IHdf2; symmetry in IHdf2.
-        specialize (vectoro_to_ovector_forall_some_f IHdf2); intros.        
-        simpl in H8; simpl in H9.
+        unfold lift in H0; symmetry in H0.
+        specialize (vectoro_to_ovector_forall_some_f H0); intros.        
+        simpl in H10; simpl in H11.
         destruct i; destruct i0; simpl in eqq2; simpl in eqq3.
         unfold matrix_mult,UnitMatrix in eqq3; simpl in eqq3.
         unfold matrix_mult,UnitMatrix in eqq2; simpl in eqq2.
         generalize (df_eval_backprop_delta_by_unit_partmat
-                      σ df1 s grad_env
+                      σ l s grad_env
                       (fun (i : {n' : nat | n' < m}) (k : {m' : nat | m' < p}) =>
                          vsum
                            (fun j : {n' : nat | n' < n} =>
@@ -13419,14 +13603,14 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                                   if equiv_dec (` j) x0 then 1 else 0 else 0) * 
                                (d1 i k) * d0 k j)%R)))
         ; intros.
-        specialize (H10 H vin).
-        cut_to H10; try congruence.
-        + unfold df_eval_backprop_delta in H10.
-          rewrite eqq1 in H10.
-          unfold lift in H10.
-          rewrite eqq2 in H10.
-          invcs H10.
-          rewrite H12.
+        specialize (H12 H1 vin).
+        cut_to H12; try congruence.
+        + unfold df_eval_backprop_delta in H12.
+          rewrite eqq1 in H12.
+          unfold lift in H12.
+          rewrite eqq2 in H12.
+          invcs H12.
+          rewrite H14.
           assert  (msum
                      (fun (i : {n' : nat | (n' < m)%nat}) (k : {m' : nat | (m' < p)%nat}) =>
                         vsum
@@ -13436,8 +13620,8 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                              * d1 i k * d0 k j))%R =
                    vsum
                      (fun j : {n' : nat | (n' < p)%nat} =>
-                        d1 (exist (fun n' : nat => (n' < m)%nat) x l) j *
-                        d0 j (exist (fun n' : nat => (n' < n)%nat) x0 l0))%R).
+                        d1 (exist (fun n' : nat => (n' < m)%nat) x l0) j *
+                        d0 j (exist (fun n' : nat => (n' < n)%nat) x0 l1))%R).
           * rewrite msum_transpose.
             unfold msum.
             f_equal.
@@ -13450,20 +13634,20 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                                else 0) * d1 j i * d0 i j0)%R))) with
                 (fun (i : {m' : nat | m' < p}) (j : {n' : nat | n' < m}) =>
                    if equiv_dec (` j) x then
-                     (d1 (exist _ x l) i * d0 i (exist _ x0 l0))%R
+                     (d1 (exist _ x l0) i * d0 i (exist _ x0 l1))%R
                    else 0%R).
             -- apply FunctionalExtensionality.functional_extensionality; intros.
                rewrite vmap_nth.
                replace  (fun j : {n' : nat | n' < m} =>
                            if equiv_dec (` j) x
                            then
-                             (d1 (exist (fun n' : nat => (n' < m)%nat) x l) x1 *
-                              d0 x1 (exist (fun m' : nat => (m' < n)%nat) x0 l0))%R
+                             (d1 (exist (fun n' : nat => (n' < m)%nat) x l0) x1 *
+                              d0 x1 (exist (fun m' : nat => (m' < n)%nat) x0 l1))%R
                            else 0%R) with
                    (fun j : {n' : nat | n' < m} =>
-                      ((d1 (exist (fun n' : nat => (n' < m)%nat) x l) x1 *
-                        d0 x1 (exist (fun m' : nat => (m' < n)%nat) x0 l0))%R *
-                       (@UnitVector floatish_R m (exist _ x l) j))%R).
+                      ((d1 (exist (fun n' : nat => (n' < m)%nat) x l0) x1 *
+                        d0 x1 (exist (fun m' : nat => (m' < n)%nat) x0 l1))%R *
+                       (@UnitVector floatish_R m (exist _ x l0) j))%R).
                now rewrite vsum_unitvector.
                apply FunctionalExtensionality.functional_extensionality; intros.
                unfold UnitVector; simpl.
@@ -13476,7 +13660,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                         ((if equiv_dec (` j0) x0 then 1 else 0) * d1 x2 x1 * d0 x1 j0)%R)
                      with
                      (fun j0 : {n' : nat | n' < n} =>
-                        ((d1 x2 x1 * d0 x1 j0) * (UnitVector n (exist _ x0 l0) j0))%R).
+                        ((d1 x2 x1 * d0 x1 j0) * (UnitVector n (exist _ x0 l1) j0))%R).
                   ** rewrite vsum_unitvector.
                      red in e.
                      subst.
@@ -13488,10 +13672,10 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                      destruct (equiv_dec (` x3) x0); lra.
                ++ rewrite <- vsum_mult.
                   lra.
-          * rewrite H10.
+          * rewrite H12.
             apply Rplus_eq_compat_r.
             generalize (df_eval_backprop_delta_by_unit_partmat
-                          σ df2 s env
+                          σ r s env
                           (fun (i : {n' : nat | n' < p}) (k : {m' : nat | m' < n}) =>
                              vsum
                                (fun j : {n' : nat | n' < m} =>
@@ -13505,14 +13689,14 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                                    (if equiv_dec (` j) x then 
                                       if equiv_dec (` k) x0 then 1 else 0 else 0))%R)))
             ; intros.
-            specialize (H11 H0).
-            cut_to H11; try congruence.
-            -- unfold df_eval_backprop_delta in H11.
-               rewrite eqq4 in H11.
-               unfold lift in H11.
-               rewrite eqq3 in H11.
-               invcs H11.
-               rewrite H14.
+            specialize (H13 H2).
+            cut_to H13; try congruence.
+            -- unfold df_eval_backprop_delta in H13.
+               rewrite eqq4 in H13.
+               unfold lift in H13.
+               rewrite eqq3 in H13.
+               invcs H13.
+               rewrite H16.
                unfold msum; f_equal.
                apply FunctionalExtensionality.functional_extensionality; intros.
                rewrite vmap_nth.
@@ -13527,8 +13711,8 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                      (vsum
                        (fun j =>
                           (d j x1 * d2 x1 k *
-                           (UnitVector m (exist _ x l) j))%R)
-                       * (UnitVector n (exist _ x0 l0) k))%R).
+                           (UnitVector m (exist _ x l0) j))%R)
+                       * (UnitVector n (exist _ x0 l1) k))%R).
                ++ rewrite vsum_unitvector.
                   rewrite vsum_unitvector.
                   lra.
@@ -13545,14 +13729,14 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                   unfold df_eval_backprop_delta.
                   rewrite eqq4.
                   unfold lift.
-                  specialize (H9 i); simpl in H9.
-                  specialize (vectoro_to_ovector_forall_some_f H9); intros.               
-                  specialize (H13 j); intros; simpl in H13.
-                  destruct i; destruct j; simpl in H13.
-                  match_option_in H13.
+                  specialize (H11 i); simpl in H11.
+                  specialize (vectoro_to_ovector_forall_some_f H11); intros.               
+                  specialize (H15 j); intros; simpl in H15.
+                  destruct i; destruct j; simpl in H15.
+                  match_option_in H15.
                   f_equal; simpl.
-                  invcs H13.
-                  rewrite H15.
+                  invcs H15.
+                  rewrite H17.
                   rewrite Rmult_comm.
                   rewrite vsum_mult.
                   f_equal.
@@ -13566,13 +13750,13 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
             unfold df_eval_backprop_delta.
             rewrite eqq1.
             unfold lift.
-            specialize (vectoro_to_ovector_forall_some_f IHdf1 i); intros; simpl in H11.
-            specialize (vectoro_to_ovector_forall_some_f H11 j); intros; simpl in H12.
-            destruct i; destruct j; simpl in H12.
-            match_option_in H12.
+            specialize (vectoro_to_ovector_forall_some_f H i); intros; simpl in H11.
+            specialize (vectoro_to_ovector_forall_some_f H13 j); intros; simpl in H14.
+            destruct i; destruct j; simpl in H14.
+            match_option_in H14.
             f_equal; simpl.
-            invcs H12.
-            rewrite H14.
+            invcs H14.
+            rewrite H16.
             rewrite Rmult_comm.
             rewrite vsum_mult.
             f_equal.
@@ -13582,293 +13766,293 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
           * apply backprop_deriv_fully_closed_not_none; trivial.
       - Case "VectorPlus"%string.
         destruct closed.
-        specialize (IHdf1 grad_env vin).
+        specialize (H grad_env vin).
         simpl in *.
         match_option
-        ; rewrite eqq in IHdf1
-        ; simpl in *; match_option_in IHdf1; [|tauto|].
-        + specialize (IHdf1 H).
-          symmetry in IHdf1.
-          specialize (apply vectoro_to_ovector_forall_some_f IHdf1); intros; simpl in H1.
+        ; rewrite eqq in H
+        ; simpl in *; match_option_in H; [|tauto|].
+        + specialize (H H1).
+          symmetry in H.
+          specialize (apply vectoro_to_ovector_forall_some_f H); intros; simpl in H3.
           match_option; symmetry.
           * apply vectoro_to_ovector_forall_some_b_strong; intros.
-            specialize (H1 i).
-            unfold lift in H1; unfold lift.
-            match_option_in H1.
-            unfold lift in IHdf2.
-            rewrite eqq1 in IHdf2.
-            generalize (df_eval_backprop_deriv_preserves_lookup_not_none eqq2 (s, DTfloat))
-            ;intros.
-            specialize (H2 vin).
-            specialize (IHdf2 d2 H2 H0).
-            match_option_in IHdf2.
-            symmetry in IHdf2.
-            specialize (apply vectoro_to_ovector_forall_some_f IHdf2); intros; simpl in H3.
             specialize (H3 i).
-            destruct i; simpl in H1; simpl; simpl in eqq2; simpl in H3.
-            rewrite eqq2.
-            generalize (backprop_deriv_fully_closed_not_none 
-                          σ df2 d2 
-                          (UnitVector n (exist (fun n' : nat => n' < n) x l)))
-            ; intros;  specialize (H4 H0).
-            match_option; [|tauto]; f_equal.
-            rewrite eqq4 in H3; inversion H3.
-            rewrite (split_subvar d2 d4 d0 d3); trivial.
-            inversion H1; lra.
-          * generalize (eval_deriv_genvar_fully_closed_not_none σ df2 [mk_env_entry (s, DTfloat) 1%R]); intros.
-            specialize (H2 H0).
-            tauto.
-        + specialize (IHdf1 H).
-          symmetry in IHdf1.
-          specialize (apply vectoro_to_ovector_exists_None IHdf1); intros.
-          destruct H1.
-          unfold lift in e.
-          match_option_in e.
-          generalize (backprop_deriv_fully_closed_not_none 
-                        σ df1 grad_env
-                        (coerce
-                           (df_eval_backward_gen_top_obligation_2
-                              UnitAnn (DTVector n) df1 n eq_refl x)
-                           (UnitVector n x))); intros.
-          specialize (H1 H); tauto.
-      - Case "VectorMinus"%string.
-        destruct closed.
-        specialize (IHdf1 grad_env vin).
-        simpl in *.
-        match_option
-        ; rewrite eqq in IHdf1
-        ; simpl in *; match_option_in IHdf1; [|tauto|].
-        + specialize (IHdf1 H).
-          symmetry in IHdf1.
-          specialize (apply vectoro_to_ovector_forall_some_f IHdf1); intros; simpl in H1.
-          match_option; symmetry.
-          * apply vectoro_to_ovector_forall_some_b_strong; intros.
-            specialize (H1 i).
-            unfold lift in H1; unfold lift.
-            match_option_in H1.
-            unfold lift in IHdf2.
-            rewrite eqq1 in IHdf2.
+            unfold lift in H3; unfold lift.
+            match_option_in H3.
+            unfold lift in H0.
+            rewrite eqq1 in H0.
             generalize (df_eval_backprop_deriv_preserves_lookup_not_none eqq2 (s, DTfloat))
             ;intros.
-            specialize (H2 vin).
-            specialize (IHdf2 d2 H2 H0).
-            match_option_in IHdf2.
-            symmetry in IHdf2.
-            specialize (apply vectoro_to_ovector_forall_some_f IHdf2); intros; simpl in H3.
-            specialize (H3 i).
-            destruct i; simpl in H1; simpl; simpl in eqq2; simpl in H3.
+            specialize (H4 vin).
+            specialize (H0 d2 H4 H2).
+            match_option_in H0.
+            symmetry in H0.
+            specialize (apply vectoro_to_ovector_forall_some_f H0); intros; simpl in H5.
+            specialize (H5 i).
+            destruct i; simpl in H1; simpl; simpl in eqq2; simpl in H5.
             rewrite eqq2.
             generalize (backprop_deriv_fully_closed_not_none 
-                          σ df2 d2 
-                          (UnitVector n (exist (fun n' : nat => n' < n) x l)))
-            ; intros;  specialize (H4 H0).
-            generalize (scalarMult_backprop_grad_scalar 
-                          σ df2 s d2 d2
-                          (UnitVector n (exist (fun n' : nat => n' < n) x l))
-                          (-1)%R ); intros.
-            specialize (H5 H2 H2).
-            generalize (backprop_deriv_fully_closed_not_none 
-                          σ df2 d2
-                          (scalarMult (DTVector n) (-1)%R 
-                                      (UnitVector n (exist (fun n' : nat => n' < n) x l))))
-            ; intros;  specialize (H6 H0).
-            specialize (H5 H6 H4).
-            unfold df_eval_backprop_delta in H5; simpl in H5.
-            rewrite eqq3 in H5.
-            unfold lift in H5; simpl in H5.
-            replace (fun i : {n' : nat | n' < n} =>
-                       (- (@UnitVector floatish_R n (exist (fun n' : nat => (n' < n)%nat) x l)) i)%R)
-                    with
-                      (fun i : {n' : nat | n' < n} =>
-                         (-1 * UnitVector n (exist (fun n' : nat => (n' < n)%nat) x l) i)%R).
-            match_option; [|tauto]; f_equal.
-            rewrite eqq4 in H5.
-            rewrite (split_subvar d2 d4 d0 d3); trivial.
-            rewrite H3 in H5.
-            inversion H5.
-            rewrite H8.
-            inversion H1; lra.
-            apply FunctionalExtensionality.functional_extensionality; intros. 
-            lra.
-          * generalize (eval_deriv_genvar_fully_closed_not_none σ df2 [mk_env_entry (s, DTfloat) 1%R]); intros.
-            specialize (H2 H0).
-            tauto.
-        + specialize (IHdf1 H).
-          symmetry in IHdf1.
-          specialize (apply vectoro_to_ovector_exists_None IHdf1); intros.
-          destruct H1.
-          unfold lift in e.
-          match_option_in e.
-          generalize (backprop_deriv_fully_closed_not_none 
-                        σ df1 grad_env
-                        (coerce
-                           (df_eval_backward_gen_top_obligation_2 UnitAnn (DTVector n) df1 n eq_refl x)
-                           (UnitVector n x))); intros.
-          specialize (H1 H); tauto.
-      - Case "MatrixPlus"%string.
-        destruct closed.
-        specialize (IHdf1 grad_env vin).
-        simpl in *.
-        match_option
-        ; rewrite eqq in IHdf1
-        ; simpl in *; match_option_in IHdf1; [|tauto|].
-        + specialize (IHdf1 H).
-          symmetry in IHdf1.
-          specialize (apply vectoro_to_ovector_forall_some_f IHdf1); intros; simpl in H1.
-          match_option; symmetry.
-          * apply vectoro_to_ovector_forall_some_b_strong; intros.
-            specialize (H1 i).
-            specialize (apply vectoro_to_ovector_forall_some_f H1); intros; simpl in H2.
-            apply vectoro_to_ovector_forall_some_b_strong; intros.
-            specialize (H2 i0).
-            unfold lift in H2; unfold lift.
-            match_option_in H2.
-            unfold lift in IHdf2.
-            rewrite eqq1 in IHdf2.
-            generalize (df_eval_backprop_deriv_preserves_lookup_not_none eqq2 (s, DTfloat))
-            ;intros.
-            specialize (H3 vin).
-            specialize (IHdf2 d2 H3 H0).
-            match_option_in IHdf2.
-            symmetry in IHdf2.
-            specialize (apply vectoro_to_ovector_forall_some_f IHdf2); intros; simpl in H4.
-            specialize (H4 i).
-            specialize (apply vectoro_to_ovector_forall_some_f H4); intros; simpl in H5.
-            specialize (H5 i0).
-            destruct i; destruct i0;  simpl; simpl in eqq2; simpl in H5.
-            rewrite eqq2.
-            generalize (backprop_deriv_fully_closed_not_none 
-                          σ df2 d2
-                          (UnitMatrix n m (exist (fun n' : nat => n' < n) x l)
-                                      (exist (fun n' : nat => n' < m) x0 l0)))
-            ; intros;  specialize (H6 H0).
+                          σ r d2 
+                          (UnitVector n (exist (fun n' : nat => n' < n) x l0)))
+            ; intros;  specialize (H6 H2).
             match_option; [|tauto]; f_equal.
             rewrite eqq4 in H5; inversion H5.
             rewrite (split_subvar d2 d4 d0 d3); trivial.
-            inversion H2; lra.
-          * generalize (eval_deriv_genvar_fully_closed_not_none σ df2 [mk_env_entry (s, DTfloat) 1%R]); intros.
-            now specialize (H2 H0).
-        + specialize (IHdf1 H).
-          symmetry in IHdf1.
-          specialize (apply vectoro_to_ovector_exists_None IHdf1); intros.
-          destruct H1.
-          specialize (apply vectoro_to_ovector_exists_None e); intros.
-          destruct H1.
-          unfold lift in e0.
-          match_option_in e0.
+            inversion H3; lra.
+          * generalize (eval_deriv_genvar_fully_closed_not_none σ r [mk_env_entry (s, DTfloat) 1%R]); intros.
+            specialize (H4 H2).
+            tauto.
+        + specialize (H H1).
+          symmetry in H.
+          specialize (apply vectoro_to_ovector_exists_None H); intros.
+          destruct H3.
+          unfold lift in e.
+          match_option_in e.
           generalize (backprop_deriv_fully_closed_not_none 
-                        σ df1 grad_env
-                         (coerce
-              (df_eval_backward_gen_top_obligation_3 UnitAnn (DTMatrix n m) df1 n m eq_refl x
-                 x0) (UnitMatrix n m x x0))); intros.
-          specialize (H1 H); tauto.
-      - Case "MatrixMinus"%string.
+                        σ l grad_env
+                        (coerce
+                           (df_eval_backward_gen_top_obligation_2
+                              UnitAnn (DTVector n) l n eq_refl x)
+                           (UnitVector n x))); intros.
+          specialize (H3 H1); tauto.
+      - Case "VectorMinus"%string.
         destruct closed.
-        specialize (IHdf1 grad_env vin).
+        specialize (H grad_env vin).
         simpl in *.
         match_option
-        ; rewrite eqq in IHdf1
-        ; simpl in *; match_option_in IHdf1; [|tauto|].
-        + specialize (IHdf1 H).
-          symmetry in IHdf1.
-          specialize (apply vectoro_to_ovector_forall_some_f IHdf1); intros; simpl in H1.
+        ; rewrite eqq in H
+        ; simpl in *; match_option_in H; [|tauto|].
+        + specialize (H H1).
+          symmetry in H.
+          specialize (apply vectoro_to_ovector_forall_some_f H); intros; simpl in H3.
           match_option; symmetry.
           * apply vectoro_to_ovector_forall_some_b_strong; intros.
-            specialize (H1 i).
-            specialize (apply vectoro_to_ovector_forall_some_f H1); intros; simpl in H2.
-            apply vectoro_to_ovector_forall_some_b_strong; intros.
-            specialize (H2 i0).
-            unfold lift in H2; unfold lift.
-            match_option_in H2.
-            unfold lift in IHdf2.
-            rewrite eqq1 in IHdf2.
+            specialize (H3 i).
+            unfold lift in H3; unfold lift.
+            match_option_in H3.
+            unfold lift in H0.
+            rewrite eqq1 in H0.
             generalize (df_eval_backprop_deriv_preserves_lookup_not_none eqq2 (s, DTfloat))
             ;intros.
-            specialize (H3 vin).
-            specialize (IHdf2 d2 H3 H0).
-            match_option_in IHdf2.
-            symmetry in IHdf2.
-            specialize (apply vectoro_to_ovector_forall_some_f IHdf2); intros; simpl in H4.
-            specialize (H4 i).
-            specialize (apply vectoro_to_ovector_forall_some_f H4); intros; simpl in H5.
-            specialize (H5 i0).
-            destruct i; destruct i0;  simpl; simpl in eqq2; simpl in H5.
+            specialize (H4 vin).
+            specialize (H0 d2 H4 H2).
+            match_option_in H0.
+            symmetry in H0.
+            specialize (apply vectoro_to_ovector_forall_some_f H0); intros; simpl in H5.
+            specialize (H5 i).
+            destruct i; simpl in H0; simpl; simpl in eqq2; simpl in H5.
             rewrite eqq2.
             generalize (backprop_deriv_fully_closed_not_none 
-                          σ df2 d2
-                          (UnitMatrix n m (exist (fun n' : nat => n' < n) x l)
-                                      (exist (fun n' : nat => n' < m) x0 l0)))
-            ; intros;  specialize (H6 H0).
-
+                          σ r d2 
+                          (UnitVector n (exist (fun n' : nat => n' < n) x l0)))
+            ; intros;  specialize (H6 H2).
             generalize (scalarMult_backprop_grad_scalar 
-                          σ df2 s d2 d2
-                          (UnitMatrix n  m (exist (fun n' : nat => n' < n) x l)
-                                      (exist (fun n' : nat => n' < m) x0 l0))
+                          σ r s d2 d2
+                          (UnitVector n (exist (fun n' : nat => n' < n) x l0))
                           (-1)%R ); intros.
-            specialize (H7 H3 H3).
+            specialize (H7 H4 H4).
             generalize (backprop_deriv_fully_closed_not_none 
-                          σ df2 d2
-                           (scalarMult (DTMatrix n m) (-1)%R
-                                       (UnitMatrix n m (exist (fun n' : nat => n' < n) x l)
-                                                   (exist (fun n' : nat => n' < m) x0 l0))))
-            ; intros;  specialize (H8 H0).
+                          σ r d2
+                          (scalarMult (DTVector n) (-1)%R 
+                                      (UnitVector n (exist (fun n' : nat => n' < n) x l0))))
+            ; intros;  specialize (H8 H2).
             specialize (H7 H8 H6).
             unfold df_eval_backprop_delta in H7; simpl in H7.
             rewrite eqq3 in H7.
             unfold lift in H7; simpl in H7.
-            replace
-              (fun (i : {n' : nat | n' < n}) (j : {m' : nat | m' < m}) =>
-                 (-
-                  (@UnitMatrix floatish_R n m (exist (fun n' : nat => (n' < n)%nat) x l)
-                             (exist (fun n' : nat => (n' < m)%nat) x0 l0)) i j)%R)
-              with
-                (fun (i : {n' : nat | n' < n}) (j : {m' : nat | m' < m}) =>
-                   (-1 *
-                     UnitMatrix n m (exist (fun n' : nat => (n' < n)%nat) x l)
-                                (exist (fun n' : nat => (n' < m)%nat) x0 l0) i j)%R).
+            replace (fun i : {n' : nat | n' < n} =>
+                       (- (@UnitVector floatish_R n (exist (fun n' : nat => (n' < n)%nat) x l0)) i)%R)
+                    with
+                      (fun i : {n' : nat | n' < n} =>
+                         (-1 * UnitVector n (exist (fun n' : nat => (n' < n)%nat) x l0) i)%R).
             match_option; [|tauto]; f_equal.
             rewrite eqq4 in H7.
             rewrite (split_subvar d2 d4 d0 d3); trivial.
             rewrite H5 in H7.
             inversion H7.
             rewrite H10.
-            inversion H2; lra.
-            apply FunctionalExtensionality.functional_extensionality; intros.
-            apply FunctionalExtensionality.functional_extensionality; intros.             
+            inversion H3; lra.
+            apply FunctionalExtensionality.functional_extensionality; intros. 
             lra.
-          * generalize (eval_deriv_genvar_fully_closed_not_none σ df2 [mk_env_entry (s, DTfloat) 1%R]); intros.
-            now specialize (H2 H0).
-        + specialize (IHdf1 H).
-          symmetry in IHdf1.
-          specialize (apply vectoro_to_ovector_exists_None IHdf1); intros.
-          destruct H1.
+          * generalize (eval_deriv_genvar_fully_closed_not_none σ r [mk_env_entry (s, DTfloat) 1%R]); intros.
+            specialize (H4 H2).
+            tauto.
+        + specialize (H H1).
+          symmetry in H.
+          specialize (apply vectoro_to_ovector_exists_None H); intros.
+          destruct H3.
+          unfold lift in e.
+          match_option_in e.
+          generalize (backprop_deriv_fully_closed_not_none 
+                        σ l grad_env
+                        (coerce
+                           (df_eval_backward_gen_top_obligation_2 UnitAnn (DTVector n) l n eq_refl x)
+                           (UnitVector n x))); intros.
+          specialize (H3 H1); tauto.
+      - Case "MatrixPlus"%string.
+        destruct closed.
+        specialize (H grad_env vin).
+        simpl in *.
+        match_option
+        ; rewrite eqq in H
+        ; simpl in *; match_option_in H; [|tauto|].
+        + specialize (H H1).
+          symmetry in H.
+          specialize (apply vectoro_to_ovector_forall_some_f H); intros; simpl in H1.
+          match_option; symmetry.
+          * apply vectoro_to_ovector_forall_some_b_strong; intros.
+            specialize (H3 i).
+            specialize (apply vectoro_to_ovector_forall_some_f H3); intros; simpl in H4.
+            apply vectoro_to_ovector_forall_some_b_strong; intros.
+            specialize (H4 i0).
+            unfold lift in H4; unfold lift.
+            match_option_in H4.
+            unfold lift in H0.
+            rewrite eqq1 in H0.
+            generalize (df_eval_backprop_deriv_preserves_lookup_not_none eqq2 (s, DTfloat))
+            ;intros.
+            specialize (H5 vin).
+            specialize (H0 d2 H5 H2).
+            match_option_in H0.
+            symmetry in H0.
+            specialize (apply vectoro_to_ovector_forall_some_f H0); intros; simpl in H6.
+            specialize (H6 i).
+            specialize (apply vectoro_to_ovector_forall_some_f H6); intros; simpl in H7.
+            specialize (H7 i0).
+            destruct i; destruct i0;  simpl; simpl in eqq2; simpl in H7.
+            rewrite eqq2.
+            generalize (backprop_deriv_fully_closed_not_none 
+                          σ r d2
+                          (UnitMatrix n m (exist (fun n' : nat => n' < n) x l0)
+                                      (exist (fun n' : nat => n' < m) x0 l1)))
+            ; intros;  specialize (H8 H2).
+            match_option; [|tauto]; f_equal.
+            rewrite eqq4 in H7; inversion H7.
+            rewrite (split_subvar d2 d4 d0 d3); trivial.
+            inversion H4; lra.
+          * generalize (eval_deriv_genvar_fully_closed_not_none σ r [mk_env_entry (s, DTfloat) 1%R]); intros.
+            now specialize (H4 H2).
+        + specialize (H H1).
+          symmetry in H.
+          specialize (apply vectoro_to_ovector_exists_None H); intros.
+          destruct H3.
           specialize (apply vectoro_to_ovector_exists_None e); intros.
-          destruct H1.
+          destruct H3.
           unfold lift in e0.
           match_option_in e0.
           generalize (backprop_deriv_fully_closed_not_none 
-                        σ df1 grad_env
+                        σ l grad_env
                          (coerce
-              (df_eval_backward_gen_top_obligation_3 UnitAnn (DTMatrix n m) df1 n m eq_refl x
+              (df_eval_backward_gen_top_obligation_3 UnitAnn (DTMatrix n m) l n m eq_refl x
                  x0) (UnitMatrix n m x x0))); intros.
-          specialize (H1 H); tauto.
+          specialize (H3 H1); tauto.
+      - Case "MatrixMinus"%string.
+        destruct closed.
+        specialize (H grad_env vin).
+        simpl in *.
+        match_option
+        ; rewrite eqq in H
+        ; simpl in *; match_option_in H; [|tauto|].
+        + specialize (H H1).
+          symmetry in H.
+          specialize (apply vectoro_to_ovector_forall_some_f H); intros; simpl in H1.
+          match_option; symmetry.
+          * apply vectoro_to_ovector_forall_some_b_strong; intros.
+            specialize (H3 i).
+            specialize (apply vectoro_to_ovector_forall_some_f H3); intros; simpl in H4.
+            apply vectoro_to_ovector_forall_some_b_strong; intros.
+            specialize (H4 i0).
+            unfold lift in H4; unfold lift.
+            match_option_in H4.
+            unfold lift in H0.
+            rewrite eqq1 in H0.
+            generalize (df_eval_backprop_deriv_preserves_lookup_not_none eqq2 (s, DTfloat))
+            ;intros.
+            specialize (H5 vin).
+            specialize (H0 d2 H5 H2).
+            match_option_in H0.
+            symmetry in H0.
+            specialize (apply vectoro_to_ovector_forall_some_f H0); intros; simpl in H6.
+            specialize (H6 i).
+            specialize (apply vectoro_to_ovector_forall_some_f H6); intros; simpl in H7.
+            specialize (H7 i0).
+            destruct i; destruct i0;  simpl; simpl in eqq2; simpl in H7.
+            rewrite eqq2.
+            generalize (backprop_deriv_fully_closed_not_none 
+                          σ r d2
+                          (UnitMatrix n m (exist (fun n' : nat => n' < n) x l0)
+                                      (exist (fun n' : nat => n' < m) x0 l1)))
+            ; intros;  specialize (H8 H2).
+
+            generalize (scalarMult_backprop_grad_scalar 
+                          σ r s d2 d2
+                          (UnitMatrix n  m (exist (fun n' : nat => n' < n) x l0)
+                                      (exist (fun n' : nat => n' < m) x0 l1))
+                          (-1)%R ); intros.
+            specialize (H9 H5 H5).
+            generalize (backprop_deriv_fully_closed_not_none 
+                          σ r d2
+                           (scalarMult (DTMatrix n m) (-1)%R
+                                       (UnitMatrix n m (exist (fun n' : nat => n' < n) x l0)
+                                                   (exist (fun n' : nat => n' < m) x0 l1))))
+            ; intros;  specialize (H10 H2).
+            specialize (H9 H10 H8).
+            unfold df_eval_backprop_delta in H9; simpl in H9.
+            rewrite eqq3 in H9.
+            unfold lift in H9; simpl in H9.
+            replace
+              (fun (i : {n' : nat | n' < n}) (j : {m' : nat | m' < m}) =>
+                 (-
+                  (@UnitMatrix floatish_R n m (exist (fun n' : nat => (n' < n)%nat) x l0)
+                             (exist (fun n' : nat => (n' < m)%nat) x0 l1)) i j)%R)
+              with
+                (fun (i : {n' : nat | n' < n}) (j : {m' : nat | m' < m}) =>
+                   (-1 *
+                     UnitMatrix n m (exist (fun n' : nat => (n' < n)%nat) x l0)
+                                (exist (fun n' : nat => (n' < m)%nat) x0 l1) i j)%R).
+            match_option; [|tauto]; f_equal.
+            rewrite eqq4 in H9.
+            rewrite (split_subvar d2 d4 d0 d3); trivial.
+            rewrite H7 in H9.
+            inversion H9.
+            rewrite H12.
+            inversion H4; lra.
+            apply FunctionalExtensionality.functional_extensionality; intros.
+            apply FunctionalExtensionality.functional_extensionality; intros.             
+            lra.
+          * generalize (eval_deriv_genvar_fully_closed_not_none σ r [mk_env_entry (s, DTfloat) 1%R]); intros.
+            now specialize (H4 H2).
+        + specialize (H H1).
+          symmetry in H.
+          specialize (apply vectoro_to_ovector_exists_None H); intros.
+          destruct H3.
+          specialize (apply vectoro_to_ovector_exists_None e); intros.
+          destruct H3.
+          unfold lift in e0.
+          match_option_in e0.
+          generalize (backprop_deriv_fully_closed_not_none 
+                        σ l grad_env
+                         (coerce
+              (df_eval_backward_gen_top_obligation_3 UnitAnn (DTMatrix n m) l n m eq_refl x
+                 x0) (UnitMatrix n m x x0))); intros.
+          specialize (H3 H1); tauto.
       - Case "VectorScalMult"%string.
         destruct closed.
-        specialize (IHdf1 grad_env vin H).
+        specialize (H grad_env vin H1).
         simpl in *.
-        generalize (eval_fully_closed_not_none σ df1); intros.
-        specialize (H1 H).
+        generalize (eval_fully_closed_not_none σ x); intros.
+        specialize (H3 H1).
         match_case; [intros|tauto].
         case_eq (vartlookup grad_env (s, DTfloat)); [intros d0 eqq0|tauto].
-        generalize (eval_fully_closed_not_none σ df2); intros.
-        specialize (H3 H0).
-        case_eq (df_eval σ df2); [intros|tauto].
+        generalize (eval_fully_closed_not_none σ l); intros.
+        specialize (H5 H2).
+        case_eq (df_eval σ l); [intros|tauto].
         match_option
-        ; rewrite eqq in IHdf1
-        ; simpl in *; rewrite eqq0 in IHdf1.
-        case_eq (df_eval_backprop_deriv σ df1 grad_env 1%R)
+        ; rewrite eqq in H
+        ; simpl in *; rewrite eqq0 in H.
+        case_eq (df_eval_backprop_deriv σ x grad_env 1%R)
           ; [intros ? eqq1 | intros eqq1]
-          ; rewrite eqq1 in IHdf1
+          ; rewrite eqq1 in H
           ; simpl in *
           ; try discriminate.
         match_option; unfold lift; symmetry.
@@ -13881,73 +14065,73 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                                      (@df_eval_backward_gen_top_obligation_2 
                                         floatish_R UnitAnn 
                                         (DTVector n) 
-                                        (@VectorScalMult floatish_R UnitAnn n ann df1 df2) n
+                                        (@VectorScalMult floatish_R UnitAnn n ann x l) n
                                         (@eq_refl definition_function_types (DTVector n)) i)
                                      (@UnitVector floatish_R n i) j)))
                 with (d1 i).
         generalize (scalarMult_backprop_grad_scalar 
-                      σ df1 s grad_env grad_env 1%R (d1 i)); intros; simpl in H5.
-        unfold df_eval_backprop_delta in H5.
-        rewrite eqq1 in H5; simpl in H5.
-        specialize (H5 vin vin).
-        rewrite eqq0 in H5.
+                      σ x s grad_env grad_env 1%R (d1 i)); intros; simpl in H7.
+        unfold df_eval_backprop_delta in H7.
+        rewrite eqq1 in H7; simpl in H7.
+        specialize (H7 vin vin).
+        rewrite eqq0 in H7.
         generalize (backprop_deriv_fully_closed_not_none 
-                      σ df1 grad_env (d1 i * 1)%R ); intros.
-        specialize (H6 H); specialize (H5 H6).
-        cut_to H5; try discriminate.
-        invcs IHdf1.
-        { specialize (IHdf2 d3).
-          cut_to IHdf2;
+                      σ x grad_env (d1 i * 1)%R ); intros.
+        specialize (H8 H1); specialize (H7 H8).
+        cut_to H7; try discriminate.
+        invcs H.
+        { specialize (H0 d3).
+          cut_to H0;
             [| now apply (df_eval_backprop_deriv_preserves_lookup_not_none eqq1 (s, DTfloat))
-             | apply H0].
-           unfold lift in H5; simpl in H5.
-           match_option_in H5.
+             | apply H2].
+           unfold lift in H7; simpl in H7.
+           match_option_in H7.
            replace (d1 i) with (d1 i * 1)%R  by lra.
            rewrite eqq3.
            generalize (df_eval_backprop_deriv_preserves_lookup_not_none eqq1 (s, DTfloat)); intros.
-           specialize (H7 vin).
+           specialize (H vin).
            case_eq (vartlookup d3 (s, DTfloat)); [intros | congruence].
-           rewrite H8 in IHdf2.
+           rewrite H9 in H0.
            unfold lift; simpl.
-           unfold lift in IHdf2.
-           rewrite eqq2 in IHdf2.
-           generalize (scalarMult_backprop_grad_scalar σ df2 s d2 d3 (UnitVector n i) d)
-           ; intros; simpl in H9.
-           unfold df_eval_backprop_delta in H9; simpl in H9.
+           unfold lift in H0.
+           rewrite eqq2 in H0.
+           generalize (scalarMult_backprop_grad_scalar σ l s d2 d3 (UnitVector n i) d)
+           ; intros; simpl in H10.
+           unfold df_eval_backprop_delta in H10; simpl in H10.
            generalize (df_eval_backprop_deriv_preserves_lookup_not_none eqq3 (s, DTfloat));intros.
-           specialize (H10 vin).
+           specialize (H11 vin).
            case_eq (vartlookup d2 (s, DTfloat)); [intros | congruence].
-           specialize (H9 H10 H7).
-           rewrite H8, H11 in H9.
-           symmetry in IHdf2.
-           specialize (apply vectoro_to_ovector_forall_some_f IHdf2); intros.
-           specialize (H12 i); simpl in H12.
+           specialize (H10 H11 H).
+           rewrite H9, H12 in H10.
+           symmetry in H0.
+           specialize (apply vectoro_to_ovector_forall_some_f H0); intros.
+           specialize (H13 i); simpl in H13.
            generalize (backprop_deriv_fully_closed_not_none 
-                           σ df2 d2
+                           σ l d2
                            (fun i0 : {n' : nat | n' < n} => (d * UnitVector n i i0)%R)); intros.                                   
-           specialize (H13 H0); specialize (H9 H13).
+           specialize (H14 H2); specialize (H10 H14).
            generalize (backprop_deriv_fully_closed_not_none 
-                           σ df2 d3 (UnitVector n i)); intros.
-           specialize (H14 H0); specialize (H9 H14).
-           unfold lift in H9.
-           match_option_in H9; [|congruence]; f_equal.
+                           σ l d3 (UnitVector n i)); intros.
+           specialize (H15 H2); specialize (H10 H15).
+           unfold lift in H10.
+           match_option_in H10; [|congruence]; f_equal.
            replace
                (fun j : @sig nat (fun n' : nat => lt n' n) =>
                   Rmult d
                         (@coerce (Vector R n) (Vector R n)
                                  (@df_eval_backward_gen_top_obligation_2 
                                     floatish_R UnitAnn 
-                                    (DTVector n) (@VectorScalMult floatish_R UnitAnn n ann df1 df2) n
+                                    (DTVector n) (@VectorScalMult floatish_R UnitAnn n ann x l) n
                                     (@eq_refl definition_function_types (DTVector n)) i)
                                  (@UnitVector floatish_R n i) j))
                with 
                (fun i0 : {n' : nat | n' < n} => (d * UnitVector n i i0)%R).
            rewrite eqq4.
            rewrite (split_subvar d2 d7 d0 d6); trivial; f_equal.
-           match_option_in H9; inversion H9.
-           match_option_in H12.
-           invcs H5; invcs H12.
-           rewrite H16.
+           match_option_in H10; inversion H10.
+           match_option_in H13.
+           invcs H7; invcs H13.
+           rewrite H17.
            destruct i; simpl in eqq6.
            rewrite eqq6 in eqq5.
            invcs eqq5.
@@ -13958,49 +14142,49 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         + symmetry.
           destruct i; simpl.
           apply vsum_unitvector.
-        + specialize (IHdf2 d3).
+        + specialize (H0 d3).
           generalize (df_eval_backprop_deriv_preserves_lookup_not_none eqq1 (s, DTfloat)); intros.
-          specialize (H5 vin).
-          specialize (IHdf2 H5 H0).
-          rewrite eqq2 in IHdf2.
-          unfold lift in IHdf2.
-          symmetry in IHdf2.
+          specialize (H7 vin).
+          specialize (H0 H7 H2).
+          rewrite eqq2 in H0.
+          unfold lift in H0.
+          symmetry in H0.
           case_eq (vartlookup d3 (s, DTfloat)); [intros | congruence].
-          rewrite H6 in IHdf2; simpl in IHdf2.
-          specialize (apply vectoro_to_ovector_exists_None IHdf2); intros.
-          destruct H7.
+          rewrite H8 in H0; simpl in H0.
+          specialize (apply vectoro_to_ovector_exists_None H0); intros.
+          destruct H9.
           generalize (backprop_deriv_fully_closed_not_none 
-                        σ df2 d3
+                        σ l d3
                         (coerce
                            (df_eval_backward_gen_top_obligation_2 
-                              UnitAnn (DTVector n) df2 n eq_refl x)
-                           (UnitVector n x))); intros.                                      
-          specialize (H7 H0).
+                              UnitAnn (DTVector n) l n eq_refl x0)
+                           (UnitVector n x0))); intros.
+          specialize (H9 H2).
           match_option_in e.
           tauto.
-        + unfold lift in IHdf1.
+        + unfold lift in H.
           generalize (backprop_deriv_fully_closed_not_none 
-                        σ df1 grad_env 1%R); intros.
-          specialize (H5 H).
-          match_option_in IHdf1.
+                        σ x grad_env 1%R); intros.
+          specialize (H7 H1).
+          match_option_in H.
           tauto.
       - Case "MatrixScalMult"%string.
         destruct closed.
-        specialize (IHdf1 grad_env vin H).
+        specialize (H grad_env vin H1).
         simpl in *.
-        generalize (eval_fully_closed_not_none σ df1); intros.
-        specialize (H1 H).
+        generalize (eval_fully_closed_not_none σ x); intros.
+        specialize (H3 H1).
         match_case; [intros|tauto].
         case_eq (vartlookup grad_env (s, DTfloat)); [intros d0 eqq0|tauto].
-        generalize (eval_fully_closed_not_none σ df2); intros.
-        specialize (H3 H0).
-        case_eq (df_eval σ df2); [intros|tauto].
+        generalize (eval_fully_closed_not_none σ l); intros.
+        specialize (H5 H2).
+        case_eq (df_eval σ l); [intros|tauto].
         match_option
-        ; rewrite eqq in IHdf1
-        ; simpl in *; rewrite eqq0 in IHdf1.
-        case_eq (df_eval_backprop_deriv σ df1 grad_env 1%R)
+        ; rewrite eqq in H
+        ; simpl in *; rewrite eqq0 in H.
+        case_eq (df_eval_backprop_deriv σ x grad_env 1%R)
           ; [intros ? eqq1 | intros eqq1]
-          ; rewrite eqq1 in IHdf1
+          ; rewrite eqq1 in H
           ; simpl in *
           ; try discriminate.
         match_option; unfold lift; symmetry.
@@ -14013,59 +14197,59 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
               Rmult (d1 i1 j)
                 (@coerce (Matrix R n m) (Matrix R n m)
                    (@df_eval_backward_gen_top_obligation_3 floatish_R UnitAnn 
-                      (DTMatrix n m) (@MatrixScalMult floatish_R UnitAnn n m ann df1 df2) n m
+                      (DTMatrix n m) (@MatrixScalMult floatish_R UnitAnn n m ann x l) n m
                       (@eq_refl definition_function_types (DTMatrix n m)) i i0)
                    (@UnitMatrix floatish_R n m i i0) i1 j)))
           with (d1 i i0).
         generalize (scalarMult_backprop_grad_scalar 
-                      σ df1 s grad_env grad_env 1%R (d1 i i0)); intros; simpl in H5.
-        unfold df_eval_backprop_delta in H5.
+                      σ x s grad_env grad_env 1%R (d1 i i0)); intros; simpl in H7.
+        unfold df_eval_backprop_delta in H7.
 
-        rewrite eqq1 in H5; simpl in H5.
-        specialize (H5 vin vin).
-        rewrite eqq0 in H5.
+        rewrite eqq1 in H7; simpl in H7.
+        specialize (H7 vin vin).
+        rewrite eqq0 in H7.
         generalize (backprop_deriv_fully_closed_not_none 
-                      σ df1 grad_env (d1 i i0 * 1)%R ); intros.
-        specialize (H6 H); specialize (H5 H6).
-        cut_to H5; try discriminate.
-        invcs IHdf1.
-        { specialize (IHdf2 d3).
-          cut_to IHdf2;
+                      σ x grad_env (d1 i i0 * 1)%R ); intros.
+        specialize (H8 H1); specialize (H7 H8).
+        cut_to H7; try discriminate.
+        invcs H.
+        { specialize (H0 d3).
+          cut_to H0;
             [| now apply (df_eval_backprop_deriv_preserves_lookup_not_none eqq1 (s, DTfloat))
-             | apply H0].
-           unfold lift in H5; simpl in H5.
-           match_option_in H5.
+             | apply H2].
+           unfold lift in H7; simpl in H7.
+           match_option_in H7.
            replace (d1 i i0) with (d1 i i0 * 1)%R  by lra.
            rewrite eqq3.
            generalize (df_eval_backprop_deriv_preserves_lookup_not_none eqq1 (s, DTfloat)); intros.
-           specialize (H7 vin).
+           specialize (H vin).
            case_eq (vartlookup d3 (s, DTfloat)); [intros | congruence].
-           rewrite H8 in IHdf2.
-           unfold lift in IHdf2.
-           rewrite eqq2 in IHdf2.
-           generalize (scalarMult_backprop_grad_scalar σ df2 s d2 d3 (UnitMatrix n m i i0) d)
-           ; intros; simpl in H9.
-           unfold df_eval_backprop_delta in H9; simpl in H9.
+           rewrite H9 in H0.
+           unfold lift in H0.
+           rewrite eqq2 in H0.
+           generalize (scalarMult_backprop_grad_scalar σ l s d2 d3 (UnitMatrix n m i i0) d)
+           ; intros; simpl in H10.
+           unfold df_eval_backprop_delta in H10; simpl in H10.
            generalize (df_eval_backprop_deriv_preserves_lookup_not_none eqq3 (s, DTfloat));intros.
-           specialize (H10 vin).
+           specialize (H11 vin).
            case_eq (vartlookup d2 (s, DTfloat)); [intros | congruence].
-           specialize (H9 H10 H7).
-           rewrite H8, H11 in H9.
-           symmetry in IHdf2.
-           specialize (apply vectoro_to_ovector_forall_some_f IHdf2); intros.
-           specialize (H12 i); simpl in H12.
-           specialize (apply vectoro_to_ovector_forall_some_f H12); intros.           
-           specialize (H13 i0); simpl in H13.
+           specialize (H10 H11 H).
+           rewrite H9, H12 in H10.
+           symmetry in H0.
+           specialize (apply vectoro_to_ovector_forall_some_f H0); intros.
+           specialize (H13 i); simpl in H13.
+           specialize (apply vectoro_to_ovector_forall_some_f H13); intros.           
+           specialize (H14 i0); simpl in H14.
            generalize (backprop_deriv_fully_closed_not_none 
-                         σ df2 d2
+                         σ l d2
                          (fun (i1 : {n' : nat | n' < n}) (j : {m' : nat | m' < m}) =>
                             (d * UnitMatrix n m i i0 i1 j)%R)); intros.
-           specialize (H14 H0); specialize (H9 H14).
+           specialize (H15 H2); specialize (H10 H15).
            generalize (backprop_deriv_fully_closed_not_none 
-                           σ df2 d3 (UnitMatrix n m i i0)); intros.
-           specialize (H15 H0); specialize (H9 H15).
-           unfold lift in H9.
-           match_option_in H9; [|congruence]; f_equal.
+                           σ l d3 (UnitMatrix n m i i0)); intros.
+           specialize (H16 H2); specialize (H10 H16).
+           unfold lift in H10.
+           match_option_in H10; [|congruence]; f_equal.
            replace
              (fun (i1 : @sig nat (fun n' : nat => lt n' n))
                   (j : @sig nat (fun m' : nat => lt m' m)) =>
@@ -14073,21 +14257,21 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                   (@coerce (Matrix R n m) (Matrix R n m)
                            (@df_eval_backward_gen_top_obligation_3 
                               floatish_R UnitAnn 
-                              (DTMatrix n m) (@MatrixScalMult floatish_R UnitAnn n m ann df1 df2) n m
+                              (DTMatrix n m) (@MatrixScalMult floatish_R UnitAnn n m ann x l) n m
                               (@eq_refl definition_function_types (DTMatrix n m)) i i0)
                            (@UnitMatrix floatish_R n m i i0) i1 j) d)
                with 
                (fun i1 j => (d * UnitMatrix n m i i0 i1 j)%R).
            rewrite eqq4.
            rewrite (split_subvar d2 d7 d0 d6); trivial; f_equal.
-           match_option_in H9; inversion H9.
-           match_option_in H13.
-           rewrite H17.
-           invcs H5; invcs H13.
+           match_option_in H10; inversion H10.
+           match_option_in H14.
+           rewrite H18.
+           invcs H7; invcs H14.
            destruct i; destruct i0; simpl in eqq6.
            rewrite eqq6 in eqq5.
            invcs eqq5.
-           rewrite H16.
+           rewrite H17.
            lra.
            apply FunctionalExtensionality.functional_extensionality; intros.
            apply FunctionalExtensionality.functional_extensionality; intros.
@@ -14097,80 +14281,80 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         + symmetry.
           destruct i; destruct i0; simpl.
           apply msum_unitmatrix.
-        + specialize (IHdf2 d3).
+        + specialize (H0 d3).
           generalize (df_eval_backprop_deriv_preserves_lookup_not_none eqq1 (s, DTfloat)); intros.
-          specialize (H5 vin).
-          specialize (IHdf2 H5 H0).
-          rewrite eqq2 in IHdf2.
-          unfold lift in IHdf2.
-          symmetry in IHdf2.
+          specialize (H7 vin).
+          specialize (H0 H7 H2).
+          rewrite eqq2 in H0.
+          unfold lift in H0.
+          symmetry in H0.
           case_eq (vartlookup d3 (s, DTfloat)); [intros | congruence].
-          rewrite H6 in IHdf2; simpl in IHdf2.
-          specialize (apply vectoro_to_ovector_exists_None IHdf2); intros.
-          destruct H7.
+          rewrite H8 in H0; simpl in H0.
+          specialize (apply vectoro_to_ovector_exists_None H0); intros.
+          destruct H9.
           specialize (apply vectoro_to_ovector_exists_None e); intros.
-          destruct H7.
+          destruct H9.
           generalize (backprop_deriv_fully_closed_not_none 
-                        σ df2 d3
+                        σ l d3
                         (coerce
                            (df_eval_backward_gen_top_obligation_3 
-                              UnitAnn (DTMatrix n m) df2 n m eq_refl x x0) 
-                           (UnitMatrix n m x x0))); intros.
-          specialize (H7 H0).
+                              UnitAnn (DTMatrix n m) l n m eq_refl x0 x1) 
+                           (UnitMatrix n m x0 x1))); intros.
+          specialize (H9 H2).
           match_option_in e0.
           tauto.
-        + unfold lift in IHdf1.
+        + unfold lift in H.
           generalize (backprop_deriv_fully_closed_not_none 
-                        σ df1 grad_env 1%R); intros.
-          specialize (H5 H).
-          match_option_in IHdf1.
+                        σ x grad_env 1%R); intros.
+          specialize (H7 H1).
+          match_option_in H.
           tauto.
       - Case "VectorApply"%string.
         destruct closed.
-        generalize (eval_fully_closed_not_none (mk_env_entry (v, DTfloat) (0%R) :: nil) df1); intros.
-        specialize (H1 H).
-        generalize (eval_fully_closed_not_none σ df2); intros.
-        specialize (H2 H0).
+        generalize (eval_fully_closed_not_none (mk_env_entry (v, DTfloat) (0%R) :: nil) s0); intros.
+        specialize (H4 H2).
+        generalize (eval_fully_closed_not_none σ l); intros.
+        specialize (H5 H3).
         match_case; [intros|tauto].
-        specialize (IHdf2 grad_env vin H0).
+        specialize (H1 grad_env vin H3).
         case_eq (vartlookup grad_env (s, DTfloat)); [intros d1 eqq1 | tauto].
-        rewrite eqq1 in IHdf2; simpl in IHdf2.
+        rewrite eqq1 in H1; simpl in H1.
         match_option
-        ; rewrite eqq in IHdf2; unfold lift in IHdf2; symmetry in IHdf2.
-        + specialize (apply vectoro_to_ovector_forall_some_f IHdf2); intros; simpl in H4.
+        ; rewrite eqq in H1; unfold lift in H1; symmetry in H1.
+        + specialize (apply vectoro_to_ovector_forall_some_f H1); intros; simpl in H7.
           unfold lift; simpl.
           match_option.
-          * specialize (vectoro_to_ovector_forall_some_f eqq0); intros; simpl in H5.
+          * specialize (vectoro_to_ovector_forall_some_f eqq0); intros; simpl in H8.
             symmetry.
             apply vectoro_to_ovector_forall_some_b_strong; intros.
-            specialize (H5 i).
-            specialize (H4 i).
+            specialize (H8 i).
+            specialize (H7 i).
             destruct i.
             simpl.
             match_nested_case.
-            -- assert ( df_eval_backprop_deriv σ df2 grad_env v1 <> None).
+            -- assert ( df_eval_backprop_deriv σ l grad_env v1 <> None).
                apply backprop_deriv_fully_closed_not_none; trivial.
                match_option; [|tauto].
                f_equal.
-               simpl in H4.
-               match_option_in H5.
+               simpl in H7.
+               match_option_in H8.
                specialize (vectoro_to_ovector_forall_some_f eqq2); intros.
-               assert (H7c := H7).
-               specialize (H7 (exist _ x l)).
-               rewrite vmap_nth in H7; simpl in H7.
-               match_option_in H7; simpl in H7.
-               unfold UnitVector in H7; simpl in H7.
+               assert (H10c := H10).
+               specialize (H10 (exist _ x l0)).
+               rewrite vmap_nth in H10; simpl in H10.
+               match_option_in H10; simpl in H10.
+               unfold UnitVector in H10; simpl in H10.
                destruct (equiv_dec x x); [|congruence].
-               invcs H7; invcs H5.
+               invcs H8; rewrite H12.
                assert (v1 = 
                        scalarMult (DTVector n) d4
-                                  (UnitVector n (exist (fun n' : nat => n' < n) x l))).
+                                  (UnitVector n (exist (fun n' : nat => n' < n) x l0))).
                ++ unfold scalarMult; simpl.
                   apply FunctionalExtensionality.functional_extensionality; intros.
-                  specialize (H7c x0); simpl in H7c.
-                  rewrite vmap_nth in H7c; simpl in H7c.
-                  match_option_in H7c.
-                  invcs H7c.
+                  specialize (H10c x0); simpl in H10c.
+                  rewrite vmap_nth in H10c; simpl in H10c.
+                  match_option_in H10c.
+                  invcs H10c.
                   destruct x0.
                   unfold UnitVector; simpl.
                   destruct (equiv_dec x0 x).
@@ -14180,154 +14364,157 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                      rewrite eqq5 in eqq6.
                      invcs eqq6; lra.
                   ** lra.
-               ++ replace (1 * d4)%R with d4 in H9 by lra.
+               ++ replace (1 * d4)%R with d4 in H10 by lra.
                   generalize (scalarMult_backprop_grad_scalar 
-                                σ df2 s grad_env grad_env
-                                (UnitVector n (exist (fun n' : nat => n' < n) x l)) d4)
+                                σ l s grad_env grad_env
+                                (UnitVector n (exist (fun n' : nat => n' < n) x l0)) d4)
                   ; intros.
-                  simpl in H7; cut_to H7; trivial; try congruence.
-                  ** unfold df_eval_backprop_delta in H7.
-                     rewrite eqq1 in H7.
-                     unfold lift in H7; simpl in H7.
-                     rewrite H5 in eqq3.
+                  simpl in H11; cut_to H11; trivial; try congruence.
+                  ** unfold df_eval_backprop_delta in H11.
+                     rewrite eqq1 in H11.
+                     unfold lift in H11; simpl in H11.
+                     rewrite H8 in eqq3.
                      unfold scalarMult in eqq3; simpl in eqq3.
-                     match_option_in H4.
-                     rewrite eqq3, eqq6 in H7.
+                     match_option_in H7.
+                     rewrite eqq3, eqq6 in H11.
+                     invcs H11; rewrite H14.
+                     invcs H7; rewrite H11.
                      generalize 
                        (df_eval_deriv_genvar_same
                           [mk_env_entry (v, DTfloat)
-                                        (d (exist (fun n' : nat => n' < n) x l) )]
-                          df1 s v); simpl; intros.
-                     specialize (H10 H).
-                     unfold lift, df_eval_deriv_gen_top in H10; simpl in H10.
-                     rewrite eqq4, eqq5 in H10.
-                     invcs H7; rewrite H12.
-                     invcs H4; rewrite H9.
-                     invcs H10; lra.
+                                        (d (exist (fun n' : nat => n' < n) x l0) )]
+                          s0 v); simpl; intros.
+                     specialize (H7 H H2).
+                     unfold lift, df_eval_deriv_gen_top in H7; simpl in H7.
+                     rewrite <- H12.
+                     unfold mk_genvar_env in eqq4; simpl in eqq4.
+                     rewrite eqq4, eqq5 in H7.
+                     invcs H7; lra.
                   ** apply backprop_deriv_fully_closed_not_none; trivial.
                   ** apply backprop_deriv_fully_closed_not_none; trivial.               
             -- apply vectoro_to_ovector_exists_None in eqq2; destruct eqq2.
                rewrite vmap_nth in e; simpl in e.
                assert (df_eval [mk_env_entry (v, DTfloat) (d x0)] 
-                               (df_deriv df1 (v, DTfloat)) <> None).
+                               (df_deriv s0 (v, DTfloat)) <> None).
                apply eval_fully_closed_not_none.
                apply fully_closed_deriv; trivial.
                match_option_in e; tauto.
           * apply vectoro_to_ovector_exists_None in eqq0; destruct eqq0.
-            assert (df_eval_deriv_genvar [mk_env_entry (v, DTfloat) (d x)] df1
-                                         [mk_env_entry (s, DTfloat) 1%R] <> None).
+            assert (df_eval_deriv_genvar [mk_env_entry (v, DTfloat) (d x)] s0
+                                         [mk_env_entry (v, DTfloat) 1%R] <> None).
             apply eval_deriv_genvar_fully_closed_not_none; trivial.
             match_option_in e; tauto.
-        + assert (df_eval_deriv_genvar σ df2 [mk_env_entry (s, DTfloat) 1%R] <> None).
+        + assert (df_eval_deriv_genvar σ l [mk_env_entry (s, DTfloat) 1%R] <> None).
           apply eval_deriv_genvar_fully_closed_not_none; trivial.          
           tauto.
       - Case "MatrixApply"%string.
         destruct closed.
-        generalize (eval_fully_closed_not_none (mk_env_entry (v, DTfloat) (0%R) :: nil) df1); intros.
-        specialize (H1 H).
-        generalize (eval_fully_closed_not_none σ df2); intros.
-        specialize (H2 H0).
+        generalize (eval_fully_closed_not_none (mk_env_entry (v, DTfloat) (0%R) :: nil) s0); intros.
+        specialize (H4 H2).
+        generalize (eval_fully_closed_not_none σ l); intros.
+        specialize (H5 H3).
         match_case; [intros|tauto].
-        specialize (IHdf2 grad_env vin H0).
+        specialize (H1 grad_env vin H3).
         case_eq (vartlookup grad_env (s, DTfloat)); [intros d1 eqq1 | tauto].
-        rewrite eqq1 in IHdf2; simpl in IHdf2.
+        rewrite eqq1 in H1; simpl in H1.
         match_option
-        ; rewrite eqq in IHdf2; unfold lift in IHdf2; symmetry in IHdf2.
-        + specialize (apply vectoro_to_ovector_forall_some_f IHdf2); intros; simpl in H4.
+        ; rewrite eqq in H1; unfold lift in H1; symmetry in H1.
+        + specialize (apply vectoro_to_ovector_forall_some_f H1); intros; simpl in H7.
           unfold lift; simpl.
           match_option.
-          * specialize (apply vectoro_to_ovector_forall_some_f eqq0); intros; simpl in H5.
+          * specialize (apply vectoro_to_ovector_forall_some_f eqq0); intros; simpl in H8.
             symmetry.
             apply vectoro_to_ovector_forall_some_b_strong; intros.
             apply vectoro_to_ovector_forall_some_b_strong; intros.            
-            specialize (H5 i).
-            specialize (H4 i).
+            specialize (H8 i).
+            specialize (H7 i).
             match_nested_case.
-            -- assert ( df_eval_backprop_deriv σ df2 grad_env m1 <> None).
+            -- assert ( df_eval_backprop_deriv σ l grad_env m1 <> None).
                apply backprop_deriv_fully_closed_not_none; trivial.
                match_option; [|tauto].
                f_equal.
-               simpl in H4.               
-               specialize (vectoro_to_ovector_forall_some_f H5); intros.
-               specialize (vectoro_to_ovector_forall_some_f H4); intros.               
-               specialize (H7 i0); simpl in H7.
-               match_option_in H7.
+               simpl in H7.               
+               specialize (vectoro_to_ovector_forall_some_f H8); intros.
+               specialize (vectoro_to_ovector_forall_some_f H7); intros.               
+               specialize (H10 i0); simpl in H10.
+               match_option_in H10.
                specialize (vectoro_to_ovector_forall_some_f eqq2); intros.
-               assert (H9c := H9).
-               specialize (H9 i); simpl in H9.
-               specialize (vectoro_to_ovector_forall_some_f H9); intros.               
-               specialize (H10 i0); simpl in H10; unfold mmap in H10.
-               rewrite vmap_nth in H10; simpl in H10.
-               rewrite vmap_nth in H10; simpl in H10.
-               destruct i; destruct i0; simpl in H10.
-               simpl in H8; simpl in H9; simpl in H9c; simpl in H4.
-               unfold matrix_zip in H10.
-               rewrite vmap_nth in H10; simpl in H10.
-               match_option_in H10; simpl in H10.
-               unfold UnitMatrix in H10; simpl in H10.
+               assert (H12c := H12).
+               specialize (H12 i); simpl in H12.
+               specialize (vectoro_to_ovector_forall_some_f H12); intros.               
+               specialize (H13 i0); simpl in H13; unfold mmap in H13.
+               rewrite vmap_nth in H13; simpl in H13.
+               rewrite vmap_nth in H13; simpl in H13.
+               destruct i; destruct i0; simpl in H13.
+               simpl in *.
+               unfold matrix_zip in H13.
+               rewrite vmap_nth in H13; simpl in H13.
+               match_option_in H13; simpl in H13.
+               unfold UnitMatrix in H13; simpl in H13.
                destruct (equiv_dec x x); [|congruence].
                destruct (equiv_dec x0 x0); [|congruence].               
-               invcs H10; invcs H7.
+               invcs H13; invcs H10.
                assert (m1 = 
                        scalarMult (DTMatrix m n) d4
                                   (UnitMatrix m n 
-                                              (exist (fun n' : nat => n' < m) x l)
-                                              (exist (fun n' : nat => n' < n) x0 l0))).
+                                              (exist (fun n' : nat => n' < m) x l0)
+                                              (exist (fun n' : nat => n' < n) x0 l1))).
                ++ unfold scalarMult; simpl.
                   apply FunctionalExtensionality.functional_extensionality; intros.
                   apply FunctionalExtensionality.functional_extensionality; intros.
-                  specialize (H9c x1); simpl in H9c.
-                  specialize (vectoro_to_ovector_forall_some_f H9c); intros.               
-                  specialize (H7 x2); simpl in H7; unfold mmap in H7.
+                  specialize (H12c x1); simpl in H12c.
+                  specialize (vectoro_to_ovector_forall_some_f H12c); intros.               
+                  specialize (H10 x2); simpl in H10; unfold mmap in H10.
 
-                  rewrite vmap_nth in H7; simpl in H7.
-                  rewrite vmap_nth in H7; simpl in H7.
-                  unfold matrix_zip in H7.
-                  rewrite vmap_nth in H7; simpl in H7.
-                  match_option_in H7.
-                  invcs H7.
+                  rewrite vmap_nth in H10; simpl in H10.
+                  rewrite vmap_nth in H10; simpl in H10.
+                  unfold matrix_zip in H10.
+                  rewrite vmap_nth in H10; simpl in H10.
+                  match_option_in H10.
+                  invcs H10.
                   destruct x1; destruct x2.
                   unfold UnitMatrix; simpl.
                   destruct (equiv_dec x1 x).
                   ** red in e1; subst.
                      destruct (equiv_dec x2 x0).
                      --- red in e1; subst.
-                         rewrite index_pf_irrel with (pf2 := l) in eqq6.
-                         rewrite index_pf_irrel with (pf1 := l2) (pf2 := l0) in eqq6.
+                         rewrite index_pf_irrel with (pf2 := l0) in eqq6.
+                         rewrite index_pf_irrel with (pf1 := l3) (pf2 := l1) in eqq6.
                          rewrite eqq5 in eqq6.
                          invcs eqq6; lra.
                      --- lra.
                   ** lra.
-               ++ replace (1 * d4)%R with d4 in H11 by lra.
+               ++ replace (1 * d4)%R with d4 in H15 by lra.
                   generalize (scalarMult_backprop_grad_scalar 
-                                σ df2 s grad_env grad_env
-                                (UnitMatrix m n (exist (fun n' : nat => n' < m) x l)
-                                            (exist (fun n' : nat => n' < n) x0 l0)) d4)
+                                σ l s grad_env grad_env
+                                (UnitMatrix m n (exist (fun n' : nat => n' < m) x l0)
+                                            (exist (fun n' : nat => n' < n) x0 l1)) d4)
                   ; intros.
-                  simpl in H10; cut_to H10; trivial; try congruence.
-                  ** unfold df_eval_backprop_delta in H10.
-                     rewrite eqq1 in H10.
-                     unfold lift in H10; simpl in H10.
-                     rewrite H7 in eqq3.
+                  simpl in H13; cut_to H13; trivial; try congruence.
+                  ** unfold df_eval_backprop_delta in H13.
+                     rewrite eqq1 in H13.
+                     unfold lift in H13; simpl in H13.
+                     rewrite H10 in eqq3.
                      unfold scalarMult in eqq3; simpl in eqq3.
-                     specialize (H8  (exist (fun n' : nat => n' < n) x0 l0)).
-                     simpl in H8.
-                     match_option_in H8.
-                     rewrite eqq3, eqq6 in H10.
+                     specialize (H11  (exist (fun n' : nat => n' < n) x0 l1)).
+                     simpl in H11.
+                     match_option_in H11.
+                     rewrite eqq3, eqq6 in H13.
                      
                      generalize 
                        (df_eval_deriv_genvar_same
                           [mk_env_entry (v, DTfloat)
-                                        (d (exist (fun n' : nat => n' < m) x l) 
-                                           (exist (fun n' : nat => n' < n) x0 l0))]
-                          df1 s v).
+                                        (d (exist (fun n' : nat => n' < m) x l0) 
+                                           (exist (fun n' : nat => n' < n) x0 l1))]
+                          s0 v).
                      simpl; intros.
-                     specialize (H13 H).
-                     unfold lift, df_eval_deriv_gen_top in H13; simpl in H13.
-                     rewrite eqq4, eqq5 in H13.
-                     invcs H10; rewrite H15.
-                     invcs H8; rewrite H10.
-                     invcs H13; lra.
+                     specialize (H16 H H2).
+                     unfold lift, df_eval_deriv_gen_top in H16; simpl in H16.
+                     unfold mk_genvar_env in eqq4; simpl in eqq4.
+                     rewrite eqq4, eqq5 in H16.
+                     invcs H13; rewrite H18.
+                     invcs H16.
+                     invcs H11; rewrite H15; lra.
                   ** apply backprop_deriv_fully_closed_not_none; trivial.
                   ** apply backprop_deriv_fully_closed_not_none; trivial.               
             -- unfold matrixo_to_omatrix in eqq2.
@@ -14341,60 +14528,60 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                simpl in e.
                assert (df_eval [mk_env_entry (v, DTfloat) 
                                              (d x x0)] 
-                               (df_deriv df1 (v, DTfloat)) <> None).
+                               (df_deriv s0 (v, DTfloat)) <> None).
                apply eval_fully_closed_not_none.
                apply fully_closed_deriv; trivial.
                match_option_in e; tauto.
           * unfold matrixo_to_omatrix in eqq0.
             apply vectoro_to_ovector_exists_None in eqq0; destruct eqq0.
             apply vectoro_to_ovector_exists_None in e; destruct e.            
-            assert (df_eval_deriv_genvar [mk_env_entry (v, DTfloat) (d x x0)] df1
-                                         [mk_env_entry (s, DTfloat) 1%R] <> None).
+            assert (df_eval_deriv_genvar [mk_env_entry (v, DTfloat) (d x x0)] s0
+                                         [mk_env_entry (v, DTfloat) 1%R] <> None).
             apply eval_deriv_genvar_fully_closed_not_none; trivial.
             match_option_in e; tauto.
-        + assert (df_eval_deriv_genvar σ df2 [mk_env_entry (s, DTfloat) 1%R] <> None).
+        + assert (df_eval_deriv_genvar σ l [mk_env_entry (s, DTfloat) 1%R] <> None).
           apply eval_deriv_genvar_fully_closed_not_none; trivial.          
           tauto.
       - Case "VLossfun"%string.
         destruct closed.
         generalize (eval_fully_closed_not_none 
                       (mk_env_entry (v1, DTfloat) (0%R) :: 
-                                    (mk_env_entry (v2, DTfloat) (0%R) :: nil)) df1); intros.
-        specialize (H1 H).
-        generalize (eval_fully_closed_not_none σ df2); intros.
-        specialize (H2 H0).
+                                    (mk_env_entry (v2, DTfloat) (0%R) :: nil)) s0); intros.
+        specialize (H4 H2).
+        generalize (eval_fully_closed_not_none σ l); intros.
+        specialize (H5 H3).
         match_case; [intros|tauto].
-        specialize (IHdf2 grad_env vin H0).
+        specialize (H1 grad_env vin H3).
         case_eq (vartlookup grad_env (s, DTfloat)); [intros d1 eqq1 | tauto].
-        rewrite eqq1 in IHdf2; simpl in IHdf2.
+        rewrite eqq1 in H1; simpl in H1.
         match_option
-        ; rewrite eqq in IHdf2; unfold lift in IHdf2; symmetry in IHdf2.
-        + specialize (vectoro_to_ovector_forall_some_f IHdf2); intros; simpl in H4.
+        ; rewrite eqq in H1; unfold lift in H1; symmetry in H1.
+        + specialize (vectoro_to_ovector_forall_some_f H1); intros; simpl in H7.
           unfold lift; simpl.
           match_nested_case.
-          * specialize (vectoro_to_ovector_forall_some_f eqq0); intros; simpl in H5.
+          * specialize (vectoro_to_ovector_forall_some_f eqq0); intros; simpl in H8.
             symmetry.
             match_nested_case.
-            -- specialize (vectoro_to_ovector_forall_some_f eqq2); intros; simpl in H6.
-               assert ( df_eval_backprop_deriv σ df2 grad_env v0 <> None).
+            -- specialize (vectoro_to_ovector_forall_some_f eqq2); intros; simpl in H9.
+               assert ( df_eval_backprop_deriv σ l grad_env v0 <> None).
                apply backprop_deriv_fully_closed_not_none; trivial.
                match_option; [|tauto].
                unfold snd in d1; simpl in d1.
                assert (forall i : {n' : nat | n' < n},
                           df_eval [mk_env_entry (v1, DTfloat) (d i); mk_env_entry (v2, DTfloat) (r i)]
-                                  (df_deriv df1 (v1, DTfloat))
+                                  (df_deriv s0 (v1, DTfloat))
                           = Some (v0 i)).
-               intros ; specialize (H6 i)
-               ; rewrite vmap_nth in H6
-               ; simpl in H6
-               ; match_option_in H6
-               ;inversion H6 ;f_equal; lra.
-               generalize (df_eval_backprop_delta_by_unit_partvec σ df2 s grad_env v0 v).
+               intros ; specialize (H9 i)
+               ; rewrite vmap_nth in H9
+               ; simpl in H9
+               ; match_option_in H9
+               ;inversion H9 ;f_equal; lra.
+               generalize (df_eval_backprop_delta_by_unit_partvec σ l s grad_env v0 v).
                intros.
-               specialize (H9 H0 vin).
-               cut_to H9.
-               ++ unfold df_eval_backprop_delta, lift in H9.
-                  now rewrite eqq1, eqq3 in H9.
+               specialize (H12 H3 vin).
+               cut_to H12.
+               ++ unfold df_eval_backprop_delta, lift in H12.
+                  now rewrite eqq1, eqq3 in H12.
                ++ intros.
                   replace (scaleUnitVector n i (v0 i)) with 
                       (scalarMult (DTVector n) (v0 i) (UnitVector n i)) by 
@@ -14404,31 +14591,34 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                   rewrite scalarMult_backprop_grad_scalar with (grad_env2 := grad_env); trivial.
                   ** unfold df_eval_backprop_delta.
                      rewrite eqq1.
-                     specialize (H4 i); simpl in H4.
-                     specialize (H5 i); simpl in H5.
+                     specialize (H7 i); simpl in H7.
                      specialize (H8 i); simpl in H8.
+                     specialize (H9 i); simpl in H9.
                      generalize 
                        (df_eval_deriv_genvar_same
                           [mk_env_entry (v1, DTfloat) (d i); mk_env_entry (v2, DTfloat) (r i)]
-                          df1 s v1); simpl; intros.
-                     specialize (H10 H).
-                     unfold df_eval_deriv_gen_top in H10; simpl in H10.
-                     unfold lift in H10; simpl in H10.
-                     match_option_in H10.
-                     --- rewrite eqq4 in H5.
-                         destruct i; simpl in H4.
-                         match_option_in H4.
+                          s0 v1); simpl; intros.
+                     specialize (H13 H H2).
+                     unfold df_eval_deriv_gen_top in H13; simpl in H13.
+                     unfold lift in H13; simpl in H13.
+                     match_option_in H13.
+                     --- unfold mk_genvar_env in H8; simpl in H8.
+                         rewrite eqq4 in H8.
+                         specialize (H11 i).
+                         destruct i; simpl in H7.
+                         match_option_in H7.
                          unfold lift; f_equal.
                          unfold scalarMult; simpl.
-                         invcs H5.
-                         invcs H4.
-                         rewrite H8 in H10.
-                         invcs H10.
+                         invcs H8.
+                         invcs H7.
+                         rewrite H14.
+                         rewrite <- H13 in H11.
+                         invcs H11.
                          lra.
                      --- assert (df_eval_deriv_genvar
                                    [mk_env_entry (v1, DTfloat) (d i); 
-                                    mk_env_entry (v2, DTfloat) (r i)] df1
-                                   [mk_env_entry (s, DTfloat) 1%R] <> None).
+                                    mk_env_entry (v2, DTfloat) (r i)] s0
+                                   [mk_env_entry (v1, DTfloat) 1%R] <> None).
                          apply eval_deriv_genvar_fully_closed_not_none; trivial.          
                          tauto.
                   ** apply backprop_deriv_fully_closed_not_none; trivial.
@@ -14439,7 +14629,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                match_option_in e.
                assert (df_eval [mk_env_entry (v1, DTfloat) (d x); 
                                 mk_env_entry (v2, DTfloat) (r x)]
-                               (df_deriv df1 (v1, DTfloat)) <> None).
+                               (df_deriv s0 (v1, DTfloat)) <> None).
                apply eval_fully_closed_not_none; simpl.
                apply fully_closed_deriv; trivial.
                tauto.
@@ -14448,35 +14638,35 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
             match_option_in e.
             assert (df_eval_deriv_genvar
                       [mk_env_entry (v1, DTfloat) (d x); 
-                       mk_env_entry (v2, DTfloat) (r x)] df1
-                      [mk_env_entry (s, DTfloat) 1%R] <> None).
+                       mk_env_entry (v2, DTfloat) (r x)] s0
+                      [mk_env_entry (v1, DTfloat) 1%R] <> None).
             apply eval_deriv_genvar_fully_closed_not_none; trivial.
             tauto.
-        + assert (df_eval_deriv_genvar σ df2 [mk_env_entry (s, DTfloat) 1%R] <> None).
+        + assert (df_eval_deriv_genvar σ l [mk_env_entry (s, DTfloat) 1%R] <> None).
           apply eval_deriv_genvar_fully_closed_not_none; trivial.          
           tauto.
       - Case "MLossfun"%string.
         destruct closed.
         generalize (eval_fully_closed_not_none 
                       (mk_env_entry (v1, DTfloat) (0%R) :: 
-                                    (mk_env_entry (v2, DTfloat) (0%R) :: nil)) df1); intros.
-        specialize (H1 H).
-        generalize (eval_fully_closed_not_none σ df2); intros.
-        specialize (H2 H0).
+                                    (mk_env_entry (v2, DTfloat) (0%R) :: nil)) s0); intros.
+        specialize (H4 H2).
+        generalize (eval_fully_closed_not_none σ l); intros.
+        specialize (H5 H3).
         match_case; [intros|tauto].
-        specialize (IHdf2 grad_env vin H0).
+        specialize (H1 grad_env vin H3).
         case_eq (vartlookup grad_env (s, DTfloat)); [intros d1 eqq1 | tauto].
-        rewrite eqq1 in IHdf2; simpl in IHdf2.
+        rewrite eqq1 in H1; simpl in H1.
         match_option
-        ; rewrite eqq in IHdf2; unfold lift in IHdf2; symmetry in IHdf2.
-        + specialize (vectoro_to_ovector_forall_some_f IHdf2); intros; simpl in H4.
+        ; rewrite eqq in H1; unfold lift in H1; symmetry in H1.
+        + specialize (vectoro_to_ovector_forall_some_f H1); intros; simpl in H7.
           unfold lift; simpl.
           match_nested_case.
-          * specialize (vectoro_to_ovector_forall_some_f eqq0); intros; simpl in H5.
+          * specialize (vectoro_to_ovector_forall_some_f eqq0); intros; simpl in H8.
             symmetry.
             match_nested_case.
-            -- specialize (vectoro_to_ovector_forall_some_f eqq2); intros; simpl in H6.
-               assert ( df_eval_backprop_deriv σ df2 grad_env m1 <> None).
+            -- specialize (vectoro_to_ovector_forall_some_f eqq2); intros; simpl in H9.
+               assert ( df_eval_backprop_deriv σ l grad_env m1 <> None).
                apply backprop_deriv_fully_closed_not_none; trivial.
                match_option; [|tauto].
                unfold snd in d1; simpl in d1.
@@ -14484,68 +14674,69 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                            match
                              df_eval [mk_env_entry (v1, DTfloat) (d i j); 
                                       mk_env_entry (v2, DTfloat) (r i j)]
-                                     (df_deriv df1 (v1, DTfloat))
+                                     (df_deriv s0 (v1, DTfloat))
                            with
                            | Some se => Some (1 * se / IZR (Z.of_nat n))%R
                            | None => None
                            end = Some (m1 i j)); intros.
-               ++ specialize (H6 i).
-                  specialize (vectoro_to_ovector_forall_some_f H6); intros.
-                  specialize (H8 j); simpl in H8; unfold mmap in H8.
-                  do 2 rewrite vmap_nth in H8; simpl in H8.
-                  unfold matrix_zip, vector_zip in H8; simpl in H8.
-                  rewrite vmap_nth in H8; simpl in H8.
-                  match_option; rewrite eqq4 in H8; apply H8.
+               ++ specialize (H9 i).
+                  specialize (vectoro_to_ovector_forall_some_f H9); intros.
+                  specialize (H11 j); simpl in H11; unfold mmap in H11.
+                  do 2 rewrite vmap_nth in H11; simpl in H11.
+                  unfold matrix_zip, vector_zip in H11; simpl in H11.
+                  rewrite vmap_nth in H11; simpl in H11.
+                  match_option; rewrite eqq4 in H11; apply H11.
                ++ generalize (df_eval_backprop_delta_by_unit_partmat 
-                                σ df2 s grad_env m1 
+                                σ l s grad_env m1 
                                 (mmap (fun u => u / IZR (Z.of_nat n))%R m0)); intros.
-                  specialize (H9 H0 vin).
-                  cut_to H9.
-                  ** unfold df_eval_backprop_delta, lift in H9.
-                     rewrite eqq1, eqq3 in H9.
+                  specialize (H12 H3 vin).
+                  cut_to H12.
+                  ** unfold df_eval_backprop_delta, lift in H12.
+                     rewrite eqq1, eqq3 in H12.
                      replace ((@msum floatish_R m n m0) / IZR (Z.of_nat n))%R with 
                          (msum (mmap (fun u : R => (u / IZR (Z.of_nat n))%R) m0)).
-                     --- apply H9.
+                     --- apply H12.
                      --- now rewrite msum_mmap_div_denom.
                   ** intros.
                      rewrite scalarMult_backprop_grad_scalar with (grad_env2 := grad_env)
                      ; trivial.
                      --- unfold df_eval_backprop_delta.
                          rewrite eqq1.
-                         specialize (H4 i); simpl in H4.
-                         specialize (H5 i); simpl in H5.
-                         specialize (H8 i j); simpl in H8.
-                         specialize (vectoro_to_ovector_forall_some_f H4); intros.
-                         specialize (H10 j); simpl in H10.
-                         specialize (vectoro_to_ovector_forall_some_f H5); intros.
-                         specialize (H11 j); simpl in H11.
+                         specialize (H7 i); simpl in H7.
+                         specialize (H8 i); simpl in H8.
+                         specialize (H11 i j); simpl in H11.
+                         specialize (vectoro_to_ovector_forall_some_f H7); intros.
+                         specialize (H13 j); simpl in H13.
+                         specialize (vectoro_to_ovector_forall_some_f H8); intros.
+                         specialize (H14 j); simpl in H14.
                          generalize 
                            (df_eval_deriv_genvar_same
                               [mk_env_entry (v1, DTfloat) (d i j); 
                                mk_env_entry (v2, DTfloat) (r i j)]
-                              df1 s v1); simpl; intros.
-                         specialize (H12 H).
-                         unfold df_eval_deriv_gen_top in H12; simpl in H12.
-                         unfold lift in H12; simpl in H12.
-                         match_option_in H12.
-                         +++ rewrite eqq4 in H11.
-                             destruct i; destruct j; simpl in H10.
-                             match_option_in H10.
+                              s0 v1); simpl; intros.
+                         specialize (H15 H H2).
+                         unfold df_eval_deriv_gen_top in H15; simpl in H15.
+                         unfold lift in H15; simpl in H15.
+                         match_option_in H15.
+                         +++ unfold mk_genvar_env in H14; simpl in H14.
+                             rewrite eqq4 in H14.
+                             destruct i; destruct j; simpl in H13.
+                             match_option_in H13.
                              unfold lift; f_equal.
-                             invcs H10.
-                             invcs H11.
-                             rewrite H14.
+                             invcs H13.
+                             invcs H14.
+                             rewrite H17.
                              unfold mmap.
                              rewrite vmap_nth.
                              rewrite vmap_nth.
-                             rewrite <- H13.
-                             rewrite <- H12 in H8.
-                             invcs H8.
+                             rewrite <- H16.
+                             rewrite <- H15 in H11.
+                             invcs H11.
                              lra.
                          +++ assert (df_eval_deriv_genvar
                                        [mk_env_entry (v1, DTfloat) (d i j); 
-                                        mk_env_entry (v2, DTfloat) (r i j)] df1
-                                       [mk_env_entry (s, DTfloat) 1%R] <> None).
+                                        mk_env_entry (v2, DTfloat) (r i j)] s0
+                                       [mk_env_entry (v1, DTfloat) 1%R] <> None).
                              apply eval_deriv_genvar_fully_closed_not_none; trivial.          
                              tauto.
                      --- apply backprop_deriv_fully_closed_not_none; trivial.
@@ -14562,7 +14753,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                match_option_in e.
                assert (df_eval [mk_env_entry (v1, DTfloat) (d x x0); 
                                 mk_env_entry (v2, DTfloat) (r x x0)]
-                               (df_deriv df1 (v1, DTfloat)) <> None).
+                               (df_deriv s0 (v1, DTfloat)) <> None).
                apply eval_fully_closed_not_none; simpl.
                apply fully_closed_deriv; trivial.
                tauto.
@@ -14573,11 +14764,11 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
             match_option_in e.
             assert (df_eval_deriv_genvar
                       [mk_env_entry (v1, DTfloat) (d x x0); 
-                       mk_env_entry (v2, DTfloat) (r x x0)] df1
-                      [mk_env_entry (s, DTfloat) 1%R] <> None).
+                       mk_env_entry (v2, DTfloat) (r x x0)] s0
+                      [mk_env_entry (v1, DTfloat) 1%R] <> None).
             apply eval_deriv_genvar_fully_closed_not_none; trivial.
             tauto.
-        + assert (df_eval_deriv_genvar σ df2 [mk_env_entry (s, DTfloat) 1%R] <> None).
+        + assert (df_eval_deriv_genvar σ l [mk_env_entry (s, DTfloat) 1%R] <> None).
           apply eval_deriv_genvar_fully_closed_not_none; trivial.          
           tauto.
     Qed.
