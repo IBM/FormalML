@@ -12325,7 +12325,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         simpl_closed_backprop.
         Admitted.
 
-    Lemma list_env_iter_matvec_delta1 {m n} (σ:df_env) 
+    Lemma list_env_iter_matvec_delta {m n} (σ:df_env) 
           (df2:DefinedFunction UnitAnn (DTVector m)) (s: SubVar) grad_env 
           (i0 :  {n' : nat | n' < n}) 
           (j0 :  {m' : nat | m' < m}) (old : float) :      
@@ -12391,19 +12391,20 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
               f_equal.
               rewrite Forall_forall in fa2.
               specialize (fa2 _ H1).
-              unfold UnitVector; simpl.
+              unfold ConstVector, UnitMatrix; simpl.
               destruct x as [xx ?]; destruct i0 as [yy ?]; simpl in *.
+              apply functional_extensionality; intros.
               destruct (xx == yy); [ | lra].
               red in e; subst.
               omega.
             }
-            generalize (backprop_indep_env σ df2 s d grad_env1 1%R); simpl; intros HH.
+            generalize (backprop_indep_env σ df2 s d grad_env (UnitVector m j0)); simpl; intros HH.
             case_eq (vartlookup d (s, DTfloat)); intros.
             2: {
               intros.
               cut False; [tauto | ].
-              eapply vartlookup_list_env_iter; try eapply eqq'; try eapply H2; try congruence; intros.
-              simpl in H4.
+              eapply vartlookup_list_env_iter; try eapply eqq'; try eapply H1; try congruence; intros.
+              simpl in H3.
               eapply df_eval_backprop_deriv_preserves_lookup_not_none; eauto.
             }
             cut_to HH; auto; try congruence.
@@ -12411,16 +12412,17 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
             rewrite H in HH.
             simpl in *.
             rewrite <- HH; clear HH.
-            rewrite H2.
-            unfold UnitVector in eq1.
+            rewrite H1.
+            unfold UnitMatrix in eq1.
             destruct (`i0 == `i0); [ | congruence].
             simpl in eq1.
+            unfold UnitVector; simpl.
             rewrite eq1.
             simpl.
             f_equal.
-            unfold subvar in H3; simpl in H3.
-            rewrite H2 in H3.
-            assert (d2 = old2) by lra.
+            unfold subvar in H2; simpl in H2.
+            rewrite H1 in H2.
+            assert (d2 = old) by lra.
             subst.
             case_eq (vartlookup d0 (s, DTfloat)); intros.
             2: {
@@ -12433,23 +12435,24 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
             2: {
               intros.
               cut False; [tauto | ].
-              eapply vartlookup_list_env_iter; try eapply eqq0'; try eapply H5; try congruence; intros.
-              simpl in H6.
+              eapply vartlookup_list_env_iter; try eapply eqq0'; try eapply H4; try congruence; intros.
+              simpl in H5.
               eapply df_eval_backprop_deriv_preserves_lookup_not_none; eauto.
             }
             
-            generalize (scalarMult_backprop_list_env_iter_vec_grad0 (T:=DTfloat) σ s d0 0%R d2 n df2 c)
+            generalize (scalarMult_backprop_list_env_iter_vec_grad0 (T:=DTVector m) σ s d0 
+                                                                    (ConstVector m 0%R) d2 n df2 c)
             ; simpl; intros HH.
-            specialize (HH H1 H4).
+            specialize (HH H0 H3).
             simpl in eqq0'.
             rewrite eqq0' in HH; simpl in HH.
             invcs HH.
-            unfold subvar in H7; simpl in H7.
-            rewrite H5 in H7.
+            unfold subvar in H6; simpl in H6.
+            rewrite H4 in H6.
             assert (d3 = d2) by lra.
-            clear H7; subst.
+            clear H6; subst.
             unfold subvar; simpl.
-            rewrite H4, H5.
+            rewrite H3, H4.
             trivial.
           * eelim list_env_iter_total_fun; try eapply eqq0; simpl.
             intros.
@@ -12458,9 +12461,9 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
       - eelim list_env_iter_total_fun; try eapply eqq; simpl.
         intros.
         apply backprop_deriv_fully_closed_not_none; auto.
+     Qed.
 
-      Admitted.
-
+(*
     Lemma list_env_iter_matvec_delta {m n} (σ:df_env) 
           (df2:DefinedFunction UnitAnn (DTVector m)) (s: SubVar) grad_env 
           (i0 :  {n' : nat | n' < n}) 
@@ -12483,7 +12486,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                 (bounded_seq0 n)))).
       Proof.
       Admitted.
-
+*)
 
       Lemma vmap_eta {A B} {n} (f:A->B) (d:Vector A n) : vmap f d = vmap (fun x => f x) d.
       Proof.
@@ -13887,9 +13890,29 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                              (exist (fun n' : nat => n' < m) x l0) d3).
                intros.
                specialize (H4 eqq3 H2).
-               rewrite eqq4, H8 in H4.
-               unfold lift in H4.
-               invcs H4; lra.
+               rewrite eqq4 in H4.
+               replace  (fun (i : {m' : nat | m' < n}) (env : df_env) =>
+                           df_eval_backprop_deriv 
+                             σ r env
+                             (UnitMatrix n m (exist (fun n' : nat => n' < n) x0 l1)
+                                         (exist (fun n' : nat => n' < m) x l0) i)) with
+                   (fun (i : {m' : nat | m' < n}) (env : df_env) =>
+                      df_eval_backprop_deriv 
+                        σ r env
+                        (@transpose R m n
+                           (UnitMatrix m n (exist (fun n' : nat => n' < m) x l0)
+                                       (exist (fun n' : nat => n' < n) x0 l1)) i)) in H4.
+               ++ rewrite H8 in H4.
+                  unfold lift in H4.
+                  invcs H4; lra.
+               ++ apply FunctionalExtensionality.functional_extensionality; intros.
+                  apply FunctionalExtensionality.functional_extensionality; intros.
+                  f_equal.
+                  unfold transpose, UnitMatrix.
+                  apply FunctionalExtensionality.functional_extensionality; intros.
+                  simpl.
+                  match_case; intros.
+                  match_case; intros.
             -- intros.
                apply backprop_deriv_fully_closed_not_none; trivial.
           * assert (df_eval_deriv_genvar σ r [mk_env_entry (s, DTfloat) 1%R] <> None).
