@@ -12076,25 +12076,6 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
       - now rewrite scalarMult_mult, Rmult_0_l.
     Qed.
 
-    (*
-      Lemma df_eval_backprop_deriv_iter_unitvector {n} (σ:df_env) 
-          (x:Vector (DefinedFunction UnitAnn DTfloat) n) grad_env env
-          (i0 :  {n' : nat | n' < n}) :
-        (forall (j: {n' : nat | n' < n}) ,
-            let vl := map (fun ve => projT1 ve) σ in
-            fully_closed_over (x j) vl) -> 
-        list_env_iter
-          (fun (i : {n' : nat | n' < n}) (env : df_env) =>
-             df_eval_backprop_deriv σ (x i) env (UnitVector n i0 i)) (Some grad_env) 
-          (bounded_seq0 n) = Some env
-        ->
-        df_eval_backprop_deriv σ (x i0) grad_env 1%R = Some env.
-      Proof.
-        
-      Qed.
-     *) 
-
-
     Corollary scalarMult_backprop_list_env_iter_grad0 {T} (σ:df_env) (s: SubVar) (grad_env :df_env) (grad : definition_function_types_interp T) old n x l :
           let v := (s, DTfloat) in
           (forall j : {n' : nat | n' < n},
@@ -12463,30 +12444,6 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         apply backprop_deriv_fully_closed_not_none; auto.
      Qed.
 
-(*
-    Lemma list_env_iter_matvec_delta {m n} (σ:df_env) 
-          (df2:DefinedFunction UnitAnn (DTVector m)) (s: SubVar) grad_env 
-          (i0 :  {n' : nat | n' < n}) 
-          (j0 :  {m' : nat | m' < m}) (old : float) :      
-      vartlookup grad_env (s, DTfloat) = Some old ->
-      let vl := map (fun ve => projT1 ve) σ in
-      fully_closed_over df2 vl -> 
-      (lift (fun e => subvar (s, DTfloat) e old)
-            (df_eval_backprop_deriv 
-               σ df2 grad_env 
-               (UnitVector m j0)) = 
-       (lift (fun e => subvar (s, DTfloat) e old)
-             (list_env_iter
-                (fun (i : {m' : nat | m' < n}) (env : df_env) =>
-                   df_eval_backprop_deriv 
-                     σ df2 env
-                     (@transpose R m n
-                                 (UnitMatrix m n j0 i0) i))
-                (Some grad_env) 
-                (bounded_seq0 n)))).
-      Proof.
-      Admitted.
-*)
 
       Lemma vmap_eta {A B} {n} (f:A->B) (d:Vector A n) : vmap f d = vmap (fun x => f x) d.
       Proof.
