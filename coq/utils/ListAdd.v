@@ -385,6 +385,40 @@ Proof.
   eapply StronglySorted_map_in; eauto.
 Qed.
 
+Lemma StronglySorted_compose {A B} R (f:A->B) (l:list A) :
+  StronglySorted R (map f l) <->
+  StronglySorted (fun x y => R (f x) (f y)) l.
+Proof.
+  induction l; simpl.
+  - intuition.
+  - split; inversion 1; subst; constructor; intuition.
+    + now rewrite Forall_map in H3.
+    + now rewrite Forall_map.
+Qed.
+
+Lemma StronglySorted_break {A} R (l:list A) x :
+  StronglySorted R l ->
+  In x l ->
+  exists b c, l = b++x::c /\ Forall (fun y => R y x) b /\ Forall (R x) c.
+Proof.
+  induction l; simpl; intros ss inn; [tauto | ].
+  invcs ss.
+  destruct inn.
+  - subst.
+    exists nil, l.
+    simpl.
+    intuition.
+  - destruct IHl as [b [c [p1 [p2 p3]]]]; trivial.
+    subst.
+    exists (a::b), c.
+    simpl; intuition.
+    constructor; trivial.
+    rewrite Forall_forall in H2.
+    specialize (H2 x).
+    rewrite in_app_iff in H2; simpl in H2.
+    eauto.
+Qed.
+
 Lemma StronglySorted_nth_lt {A} R (l:list A) idx1 idx2 d1 d2 :
   StronglySorted R l ->
   (idx2 < length l)%nat ->
