@@ -2,6 +2,8 @@ Require Import List.
 Require Import Omega.
 Require Import LibUtils.
 
+Require Import ListAdd.
+
 Section Vector.
 
   Definition Vector (T:Type) (n : nat) := {n':nat | n' < n}%nat -> T.
@@ -27,7 +29,7 @@ Section Vector.
       + apply f.
         * exact (v (exist _ n (le_Sn_le _ _ pf))).
         * exact vector_fold_right1_bounded_dep.
-  Defined.
+  Defined.c
 *)
 
   Fixpoint vector_fold_right1_bounded_dep {A:nat->Type} {B} 
@@ -850,19 +852,73 @@ Section Vector.
       apply vector_Sn_split.
   Qed.
 
-  Fixpoint bounded_seq (start len : nat) {struct len} : list {n':nat | n' < start+len}%nat.
+  Definition bounded_seq_bounded (start len : nat) : forall bound, bound<=len -> list {n':nat | n' < start+len}%nat.
   Proof.
-    revert start.
-    induction len; intros start.
-    - exact nil.
-    - apply cons.
-      + exists start.
-        omega.
-      + rewrite Nat.add_succ_r.
-        exact (IHlen (S start)).
+    refine (fix F bound :=
+             match bound as bound_ return bound_ <= len -> list {n':nat | n' < start+len}%nat with
+             | 0 => fun _ => nil
+             | S bound' => fun _ => exist _ (start + len-(S bound')) _ :: F bound' _
+             end); omega.
   Defined.
 
+  Lemma bounded_seq_bounded_ext (start len : nat) (bound:nat) (pf1 pf2:bound<=len) :
+    bounded_seq_bounded start len bound pf1 = bounded_seq_bounded start len bound pf2.
+  Proof.
+    induction bound; simpl; trivial.
+    f_equal.
+    - eapply index_pf_irrel; eauto.
+    - eapply IHbound.
+  Qed.
+
+  Definition bounded_seq (start len : nat) : list {n':nat | n' < start+len}%nat
+    := bounded_seq_bounded start len len (le_refl _).
+
   Definition bounded_seq0 len : list {n':nat | n' < len}%nat := bounded_seq 0 len.
+
+  Lemma bounded_seq_bounded_domain start len (bound:nat) (pf:bound<=len) : map (@proj1_sig _ _) (bounded_seq_bounded start len bound pf) = seq (start+(len-bound)) bound.
+  Proof.
+    revert start.
+    induction bound; simpl; intros start; trivial.
+    rewrite IHbound.
+    f_equal.
+    - omega.
+    - f_equal.
+      omega.
+  Qed.
+
+  Lemma bounded_seq_domain start len : map (@proj1_sig _ _) (bounded_seq start len) = seq start len.
+  Proof.
+    unfold bounded_seq.
+    rewrite bounded_seq_bounded_domain.
+    f_equal.
+    omega.
+  Qed.
+  
+  Lemma bounded_seq_strongly_sorted start len:
+    StronglySorted (fun x y => proj1_sig x < proj1_sig y) (bounded_seq start len).
+  Proof.
+    apply StronglySorted_compose.
+    rewrite bounded_seq_domain.
+    apply StronglySorted_seq.
+  Qed.
+
+  Lemma bounded_seq_break_at start len x :
+    proj1_sig x >= start ->
+    exists b c, bounded_seq start len = b++x::c /\ Forall (fun y => (proj1_sig y) < (proj1_sig x)) b /\ Forall (fun y => (proj1_sig x) < (proj1_sig y)) c.
+  Proof.
+    intros xge.
+    apply (StronglySorted_break (fun y x => (proj1_sig y) < (proj1_sig x)) (bounded_seq start len)).
+    - apply bounded_seq_strongly_sorted.
+    - destruct x as [x pf]; simpl in *.
+      assert (inn:In x (map (@proj1_sig _ _) (bounded_seq start len))).
+      + rewrite bounded_seq_domain.
+        apply in_seq.
+        omega.
+      + apply in_map_iff in inn.
+        destruct inn as [[??] [??]].
+        subst.
+        erewrite index_pf_irrel; eauto.
+  Qed.
   
   Definition vforall {A n} (P:A->Prop) (v:Vector A n) :=
     vector_fold_right (fun x p => P x /\ p) True v.
