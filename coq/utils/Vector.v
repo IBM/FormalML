@@ -1085,6 +1085,12 @@ Section Vector.
     eapply NPeano.Nat.lt_le_trans; eassumption.
   Defined.
 
+  Lemma vfirstn0 {T} {n} (v:Vector T n) pf : vfirstn v 0 pf = vnil.
+  Proof.
+    apply vec_eq_eq; intros [??]; simpl.
+    omega.
+  Qed.
+
   Definition vfirstn_eq {T} {n} (v:Vector T n) pf : vfirstn v n pf = v.
   Proof.
     unfold vfirstn.
