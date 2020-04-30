@@ -7197,6 +7197,11 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         lra.
         lra.
       Qed.
+      
+      Lemma vsum_nil : vsum vnil = 0%R.
+      Proof.
+        reflexivity.
+      Qed.
   
       Lemma vsum_mult {n} (v : Vector float n) (c : float) :
         (c * vsum v)%R = vsum (fun j => (c * v j)%R).
@@ -11841,12 +11846,12 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
       fun (i: {n':nat | n' < theend}%nat) =>
         if lt_dec (proj1_sig i) middle then part1 else part2.
 
-    Definition mergeVectorZero {float} {n} (middle:nat) (part1 : Vector float n) (c:float) : (Vector float n) :=
+    Definition mergeVectorZero {T} {n} (middle:nat) (part1 : Vector T n) (c:T) : (Vector T n) :=
       fun (i: {n':nat | n' < n}%nat) =>
         if lt_dec (proj1_sig i) middle then (part1 i) else c.
 
-    Definition scaleUnitVector (n:nat) (j : {n':nat | (n' < n)%nat}) (c:float) : Vector float n :=
-      fun i => if (proj1_sig i) == (proj1_sig j) then c else 0%R.      
+    Definition scaleUnitVector {T} (n:nat) (j : {n':nat | (n' < n)%nat}) (c:T) (zero:T) : Vector T n :=
+      fun i => if (proj1_sig i) == (proj1_sig j) then c else zero%R.
 
     Lemma ConstSplitVectorSzero bound n (pf:bound < n) :
           (ConstSplitVector (S bound) n 1%R 0%R) =
@@ -11867,7 +11872,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
       let ind := (exist _ bound pf) in
           (@mergeVectorZero (@float floatish_R) n (S bound) part1 0%R) =
           dfti_gen_plus (T:=DTVector n) (@mergeVectorZero (@float floatish_R) n bound part1 0%R)
-                        (scaleUnitVector n ind (part1 ind)).
+                        (scaleUnitVector n ind (part1 ind) 0%R).
     Proof.
       simpl.
       apply functional_extensionality.
@@ -11880,6 +11885,26 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
       ; try omega; try lra.
       subst; simpl.
       ring_simplify.
+      erewrite index_pf_irrel; eauto.
+    Qed.
+
+    Lemma mergeVectorSzero_mat {n m} (bound:nat) pf (part1 : Matrix float n m) :
+      let ind := (exist _ bound pf) in 
+          (@mergeVectorZero (Vector float m) n (S bound) part1 (ConstVector m 0%R)) =
+          dfti_gen_plus (T:=DTMatrix n m) (@mergeVectorZero (Vector float m) n bound part1 (ConstVector m 0%R))
+                        (scaleUnitVector (T:=Vector float m) n ind (part1 ind) (ConstVector m 0%R)).
+    Proof.
+      simpl.
+      do 2 (apply functional_extensionality; intros).
+      unfold mergeVectorZero, scaleUnitVector, ConstVector, equiv_dec, nat_eq_eqdec; simpl.
+      destruct x as [x pff]; simpl.
+      destruct (lt_dec x (S bound))
+      ; destruct (lt_dec x bound)
+      ; destruct (Nat.eq_dec x bound)
+      ; simpl
+      ; try omega; try lra.
+      subst; simpl.
+      rewrite Rplus_0_l.
       erewrite index_pf_irrel; eauto.
     Qed.
 
@@ -11912,7 +11937,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
            
            (forall i : {n' : nat | n' < n},
          (df_eval_backprop_delta σ df (s, DTfloat) grad_env
-                                 (scaleUnitVector n i (grad i))) = Some (d i)) ->
+                                 (scaleUnitVector n i (grad i) 0%R)) = Some (d i)) ->
          (df_eval_backprop_delta σ df (s, DTfloat) grad_env
                                  (mergeVectorZero bound grad 0%R)) = Some (vsum (vfirstn d bound pf)).
     Proof.
@@ -11962,7 +11987,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
            
            (forall i : {n' : nat | n' < n},
                (df_eval_backprop_delta σ df (s, DTfloat) grad_env
-                                       (scaleUnitVector n i (grad i))) = Some (d i)) ->
+                                       (scaleUnitVector n i (grad i) 0%R)) = Some (d i)) ->
            df_eval_backprop_delta σ df (s, DTfloat) grad_env grad = 
            Some (vsum d).
       Proof.
@@ -12000,6 +12025,149 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         omega.
     Qed.
 
+    Lemma scalarMult_mult {T} a b grad : scalarMult T a (scalarMult T b grad) = scalarMult T (a*b)%R grad.
+    Proof.
+      destruct T; simpl.
+      - lra.
+      - apply vec_eq_eq; intros ?; lra.
+      - do 2 (apply vec_eq_eq; intros ?); lra.
+    Qed.
+
+    Corollary scalarMult_backprop_grad0 {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (s: SubVar) (grad_env :df_env) (grad : definition_function_types_interp T) :
+      let v := (s, DTfloat) in
+      vartlookup grad_env v <> None -> 
+      df_eval_backprop_deriv σ df grad_env (scalarMult T 0%R grad) <> None ->
+      df_eval_backprop_delta σ df v grad_env (scalarMult T 0%R grad) = Some 0%R.
+    Proof.
+      simpl; intros.
+      (* This allows us to drop the (unneeded) assumption
+         df_eval_backprop_deriv σ df grad_env1 grad <> None
+       *)
+      replace (scalarMult T 0%R grad) with (scalarMult T 0%R (scalarMult T 0%R grad)).
+      - erewrite scalarMult_backprop_grad_scalar; try eassumption.
+        + simpl.
+          unfold df_eval_backprop_delta.
+          simpler2; simpl.
+          destruct (df_eval_backprop_deriv σ df grad_env (scalarMult T 0%R grad)); simpl; [| congruence].
+          f_equal; lra.
+        + now rewrite scalarMult_mult, Rmult_0_l.
+      - now rewrite scalarMult_mult, Rmult_0_l.
+    Qed.
+    
+    Lemma scaleUnitVec_vec_plus_distr m n i (x y:Vector float m) c :
+      vec_eq c (dfti_gen_plus (T:=DTVector m) c c) ->
+      (scaleUnitVector n i (dfti_gen_plus (T:=DTVector m) x y) c) =
+      (dfti_gen_plus (T:=DTMatrix n m) (scaleUnitVector n i x c) (scaleUnitVector n i y c)).
+    Proof.
+      intros fa.
+      do 2 (apply functional_extensionality; intro).
+      unfold scaleUnitVector; simpl.
+      match_destr.
+      now specialize (fa x1); simpl in fa.
+    Qed.
+
+
+    Lemma df_eval_backprop_delta_by_unit_partmat_outer_bounded {n m} bound (pf:(bound<=n)%nat)
+          (σ:df_env) (df:DefinedFunction UnitAnn (DTMatrix n m)) (s: SubVar) grad_env (grad d:Matrix float n m):
+      
+
+           fully_closed_over df
+                             (map (fun ve : {v : var_type & definition_function_types_interp (snd v)} => projT1 ve) σ) ->
+           vartlookup grad_env (s, DTfloat) <> None ->
+           
+           (forall (i : {n' : nat | n' < n}),
+         (df_eval_backprop_delta σ df (s, DTfloat) grad_env
+                                 (scaleUnitVector n i (grad i) (ConstVector m 0%R))) = Some (vsum (d i))) ->
+
+           (df_eval_backprop_delta σ df (s, DTfloat) grad_env
+                                   (mergeVectorZero bound grad (ConstVector m 0%R))) = Some (vsum (vfirstn (vmap vsum d) bound pf)).
+    Proof.
+      intros closed lo fa.
+      induction bound.
+      - rewrite vfirstn0, vsum_nil.
+        
+        replace (mergeVectorZero 0 grad (ConstVector m 0%R)) with (scalarMult (DTMatrix n m) 0%R (mergeVectorZero 0 grad (ConstVector m 0%R))).
+        + apply scalarMult_backprop_grad0; simpl in *; trivial.
+          apply backprop_deriv_fully_closed_not_none; trivial. 
+        + unfold scalarMult, ConstVector, mergeVectorZero.
+          do 2 (apply functional_extensionality; intros); simpl.
+          lra.
+      - assert (pf2:bound < n) by omega.
+        assert (pf3:bound <= n) by omega.
+        simpl.
+        generalize (mergeVectorSzero_mat (m:=m) _ pf2 grad ); intros HH; unfold Vector in HH.
+        simpl float in *.
+        rewrite HH; clear HH.
+        erewrite backprop_grad_sum; try eassumption.
+        specialize (IHbound pf3).
+        rewrite IHbound.
+        rewrite fa.
+        simpl.
+        f_equal.
+        generalize (vector_Sn_split (vfirstn (vmap vsum d) (S bound) pf)); intros eqq1.
+        apply vec_eq_eq in eqq1.
+        simpl in *.
+        rewrite eqq1.
+        erewrite vfirstn_vdrop_last.
+        erewrite vlast_vfirstn.
+        rewrite vsum_cons.
+        rewrite Rplus_comm.
+        f_equal.
+        rewrite vmap_nth.
+        eauto.
+    Qed.
+
+    Lemma df_eval_backprop_delta_by_unit_partmat_inner_bounded {n m} bound (pf:(bound<=m)%nat)
+          (σ:df_env) (df:DefinedFunction UnitAnn (DTMatrix n m)) (s: SubVar) grad_env (grad d:Matrix float n m) i:
+      
+
+           fully_closed_over df
+                             (map (fun ve : {v : var_type & definition_function_types_interp (snd v)} => projT1 ve) σ) ->
+           vartlookup grad_env (s, DTfloat) <> None ->
+           
+           (forall j : {n' : nat | n' < m},
+         (df_eval_backprop_delta σ df (s, DTfloat) grad_env
+                                 ((scaleUnitVector n i
+         (scaleUnitVector m j (grad i j) 0%R) (ConstVector m 0%R)))) = Some (d i j)) ->
+
+           (df_eval_backprop_delta σ df (s, DTfloat) grad_env
+                                   (scaleUnitVector n i (mergeVectorZero bound (grad i) 0%R) (ConstVector m 0%R))) = Some (vsum (vfirstn (d i) bound pf)).
+    Proof.
+      intros closed lo fa.
+      induction bound.
+      - rewrite vfirstn0, vsum_nil.
+        replace (scaleUnitVector n i (mergeVectorZero 0 (grad i) 0%R) (ConstVector m 0%R)) with (scalarMult (DTMatrix n m) 0%R (mergeVectorZero 0 grad (ConstVector m 0%R))).
+        + apply scalarMult_backprop_grad0; simpl in *; trivial.
+          apply backprop_deriv_fully_closed_not_none; trivial. 
+        + unfold scalarMult, ConstVector, mergeVectorZero, scaleUnitVector.
+          do 2 (apply functional_extensionality; intros); simpl.
+          match_destr; lra.
+      - assert (pf2:bound < m) by omega.
+        assert (pf3:bound <= m) by omega.
+        simpl.
+        generalize (mergeVectorSzero _ pf2 (grad i) ); intros HH; unfold Vector in HH.
+        simpl float in *.
+        rewrite HH; clear HH.
+        rewrite (scaleUnitVec_vec_plus_distr m n i) by (intros ?; unfold ConstVector; simpl; lra).
+        erewrite backprop_grad_sum; try eassumption.
+        specialize (IHbound pf3).
+        simpl in *.
+        rewrite IHbound.
+        simpl.
+        rewrite fa.
+        simpl.
+        f_equal.
+        generalize (vector_Sn_split (vfirstn (d i) (S bound) pf)); intros eqq1.
+        apply vec_eq_eq in eqq1.
+        simpl in *.
+        rewrite eqq1.
+        erewrite vfirstn_vdrop_last.
+        erewrite vlast_vfirstn.
+        rewrite vsum_cons.
+        rewrite Rplus_comm.
+        f_equal.
+    Qed.
+    
     Lemma df_eval_backprop_delta_by_unit_partmat {n m} 
           (σ:df_env) (df:DefinedFunction UnitAnn (DTMatrix n m)) (s: SubVar) grad_env
           (grad d:Matrix float n m):
@@ -12017,7 +12185,34 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
       Some (msum d).
     Proof.
       intros closed lo fa.
-    Admitted.
+      replace (grad) with (mergeVectorZero n grad (ConstVector m 0%R)).
+      - erewrite df_eval_backprop_delta_by_unit_partmat_outer_bounded; try eassumption.
+        + now rewrite vfirstn_eq.
+        + intros i.
+          specialize (fa i).
+          simpl in fa.
+          replace (grad i) with (mergeVectorZero m (grad i) 0%R).
+          2: {
+            unfold mergeVectorZero; simpl; apply functional_extensionality; intros; destruct x.
+            simpl.
+            match_destr; omega.
+          }
+
+          erewrite (df_eval_backprop_delta_by_unit_partmat_inner_bounded m (le_refl m) σ df s grad_env)
+          ; try eassumption.
+          * now rewrite vfirstn_eq.
+          * intros j.
+            specialize (fa j); simpl in *.
+            rewrite <- fa.
+            f_equal.
+            do 2 (apply functional_extensionality; intros).
+            unfold scaleUnitVector, ConstVector, UnitMatrix; simpl.
+            repeat match_destr; lra.
+      - apply functional_extensionality; unfold mergeVectorZero; intros [x pff]; simpl.
+        destruct (lt_dec x n); trivial; omega.
+        Unshelve.
+        omega.
+    Qed.
 
     Lemma df_eval_backprop_delta_by_unit_parts_mat {n m} 
           (σ:df_env) (df:DefinedFunction UnitAnn (DTMatrix n m)) (s: SubVar) grad_env
@@ -12046,36 +12241,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
       apply backprop_deriv_fully_closed_not_none; trivial.
       apply backprop_deriv_fully_closed_not_none; trivial.      
     Qed.
-
-    Lemma scalarMult_mult {T} a b grad : scalarMult T a (scalarMult T b grad) = scalarMult T (a*b)%R grad.
-    Proof.
-      destruct T; simpl.
-      - lra.
-      - apply vec_eq_eq; intros ?; lra.
-      - do 2 (apply vec_eq_eq; intros ?); lra.
-    Qed.
     
-    Corollary scalarMult_backprop_grad0 {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (s: SubVar) (grad_env :df_env) (grad : definition_function_types_interp T) :
-      let v := (s, DTfloat) in
-      vartlookup grad_env v <> None -> 
-      df_eval_backprop_deriv σ df grad_env (scalarMult T 0%R grad) <> None ->
-      df_eval_backprop_delta σ df v grad_env (scalarMult T 0%R grad) = Some 0%R.
-    Proof.
-      simpl; intros.
-      (* This allows us to drop the (unneeded) assumption
-         df_eval_backprop_deriv σ df grad_env1 grad <> None
-       *)
-      replace (scalarMult T 0%R grad) with (scalarMult T 0%R (scalarMult T 0%R grad)).
-      - erewrite scalarMult_backprop_grad_scalar; try eassumption.
-        + simpl.
-          unfold df_eval_backprop_delta.
-          simpler2; simpl.
-          destruct (df_eval_backprop_deriv σ df grad_env (scalarMult T 0%R grad)); simpl; [| congruence].
-          f_equal; lra.
-        + now rewrite scalarMult_mult, Rmult_0_l.
-      - now rewrite scalarMult_mult, Rmult_0_l.
-    Qed.
-
     Corollary scalarMult_backprop_list_env_iter_grad0 {T} (σ:df_env) (s: SubVar) (grad_env :df_env) (grad : definition_function_types_interp T) old n x l :
           let v := (s, DTfloat) in
           (forall j : {n' : nat | n' < n},
@@ -13449,8 +13615,8 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
             invcs H12; invcs H13.
             rewrite H14, H15; lra.
           * intros.
-            replace (scaleUnitVector n i (d i)) with
-                (scalarMult (DTVector n) (d i) (UnitVector n i)). 
+            replace (@scaleUnitVector (@float floatish_R) n i (d i) (IZR Z0)) with
+                (scalarMult (DTVector n) (d i) (UnitVector n i)).
             rewrite scalarMult_backprop_grad_scalar with (grad_env1 := d4) (grad_env2:=d4);trivial.
             unfold df_eval_backprop_delta, lift.
             rewrite eqq4.
@@ -13468,7 +13634,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
             apply functional_extensionality; intros.
             destruct (equiv_dec (` x) (` i)); lra.
           * intros.
-            replace (scaleUnitVector n i (d0 i)) with
+            replace (@scaleUnitVector (@float floatish_R) n i (d0 i) (IZR Z0)) with
                 (scalarMult (DTVector n) (d0 i) (UnitVector n i)). 
             rewrite scalarMult_backprop_grad_scalar with (grad_env1 := grad_env) (grad_env2:=grad_env);trivial.        
             unfold df_eval_backprop_delta, lift.            
@@ -13768,8 +13934,8 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                apply backprop_deriv_fully_closed_not_none; trivial.
                apply backprop_deriv_fully_closed_not_none; trivial.               
           * intros.
-            replace (scaleUnitVector n i (d (exist (fun n' : nat => n' < m) x l0) i)) with
-                (scalarMult (DTVector n) (d (exist (fun n' : nat => n' < m) x l0) i) (UnitVector n i)). 
+            replace (@scaleUnitVector (@float floatish_R) n i (d (@exist nat (fun n' : nat => lt n' m) x l0) i) (IZR Z0)) with
+                    (scalarMult (DTVector n) (d (exist (fun n' : nat => n' < m) x l0) i) (UnitVector n i)). 
             rewrite scalarMult_backprop_grad_scalar with (grad_env1 := env) (grad_env2:=env);trivial; try congruence.
             unfold scalarMult; simpl.
             unfold lift; simpl.
@@ -14915,7 +15081,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                ++ unfold df_eval_backprop_delta, lift in H12.
                   now rewrite eqq1, eqq3 in H12.
                ++ intros.
-                  replace (scaleUnitVector n i (v0 i)) with 
+                  replace (@scaleUnitVector (@float floatish_R) n i (v0 i) (IZR Z0)) with 
                       (scalarMult (DTVector n) (v0 i) (UnitVector n i)) by 
                       (unfold scalarMult, scaleUnitVector, UnitVector;
                        apply FunctionalExtensionality.functional_extensionality; intros; 
