@@ -12278,48 +12278,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
             lra.
         + eelim backprop_deriv_fully_closed_not_none; eauto.
     Qed.
-(*        
-    Corollary scalarMult_backprop_list_env_iter_mat_grad0 {T} (σ:df_env) (s: SubVar) (grad_env :df_env) (grad : definition_function_types_interp T) old n m x l :
-          let v := (s, DTfloat) in
-          (forall (i : {n' : nat | n' < n}) (j : {n' : nat | n' < m}),
-              fully_closed_over (x i j)
-                                (map (fun ve : {v : var_type & definition_function_types_interp (snd v)} => projT1 ve) σ)) ->
-      vartlookup grad_env v = Some old -> 
-      lift (fun e => subvar v e old)
-           (list_env_iter
-           (fun (i : {n' : nat | n' < n}) (env : df_env) =>
-              list_env_iter
-                (fun (j : {m' : nat | m' < m}) (env0 : df_env) =>
-                   df_eval_backprop_deriv (Ann := UnitAnn) σ (x i j) env0 
-                                          (scalarMult T 0%R grad))
-                (Some env) (bounded_seq 0 m)) (Some grad_env) l) = Some 0%R.
-    Proof.
-      simpl; intros.
-      revert grad_env old H0.
-      induction l; simpl; intros.
-      - unfold subvar; simpl.
-        rewrite H0; f_equal.
-        lra.
-      - unfold lift in *.
-        case_eq (df_eval_backprop_deriv σ (x a) grad_env (scalarMult T 0%R grad))
-        ; intros.
-        + apply IHl.
-          * generalize (scalarMult_backprop_grad0 σ (x a) s grad_env grad); intros HH.
-            simpl in HH.
-            cut_to HH; try congruence.
-            unfold df_eval_backprop_delta in HH.
-            rewrite H0 in HH.
-            rewrite H1 in HH.
-            simpl in HH.
-            invcs HH.
-            unfold subvar in H3; simpl in H3.
-            simpler2.
-            rewrite eqq in eqq0; invcs eqq0; subst.
-            f_equal.
-            lra.
-        + eelim backprop_deriv_fully_closed_not_none; eauto.
-    Qed.
-*)
+
     Corollary scalarMult_backprop_list_env_iter_vec_grad0 {T} (σ:df_env) (s: SubVar) (grad_env :df_env) (grad : definition_function_types_interp T) old n df l :
           let v := (s, DTfloat) in
           fully_closed_over df
