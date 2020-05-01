@@ -12278,7 +12278,48 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
             lra.
         + eelim backprop_deriv_fully_closed_not_none; eauto.
     Qed.
-        
+(*        
+    Corollary scalarMult_backprop_list_env_iter_mat_grad0 {T} (σ:df_env) (s: SubVar) (grad_env :df_env) (grad : definition_function_types_interp T) old n m x l :
+          let v := (s, DTfloat) in
+          (forall (i : {n' : nat | n' < n}) (j : {n' : nat | n' < m}),
+              fully_closed_over (x i j)
+                                (map (fun ve : {v : var_type & definition_function_types_interp (snd v)} => projT1 ve) σ)) ->
+      vartlookup grad_env v = Some old -> 
+      lift (fun e => subvar v e old)
+           (list_env_iter
+           (fun (i : {n' : nat | n' < n}) (env : df_env) =>
+              list_env_iter
+                (fun (j : {m' : nat | m' < m}) (env0 : df_env) =>
+                   df_eval_backprop_deriv (Ann := UnitAnn) σ (x i j) env0 
+                                          (scalarMult T 0%R grad))
+                (Some env) (bounded_seq 0 m)) (Some grad_env) l) = Some 0%R.
+    Proof.
+      simpl; intros.
+      revert grad_env old H0.
+      induction l; simpl; intros.
+      - unfold subvar; simpl.
+        rewrite H0; f_equal.
+        lra.
+      - unfold lift in *.
+        case_eq (df_eval_backprop_deriv σ (x a) grad_env (scalarMult T 0%R grad))
+        ; intros.
+        + apply IHl.
+          * generalize (scalarMult_backprop_grad0 σ (x a) s grad_env grad); intros HH.
+            simpl in HH.
+            cut_to HH; try congruence.
+            unfold df_eval_backprop_delta in HH.
+            rewrite H0 in HH.
+            rewrite H1 in HH.
+            simpl in HH.
+            invcs HH.
+            unfold subvar in H3; simpl in H3.
+            simpler2.
+            rewrite eqq in eqq0; invcs eqq0; subst.
+            f_equal.
+            lra.
+        + eelim backprop_deriv_fully_closed_not_none; eauto.
+    Qed.
+*)
     Corollary scalarMult_backprop_list_env_iter_vec_grad0 {T} (σ:df_env) (s: SubVar) (grad_env :df_env) (grad : definition_function_types_interp T) old n df l :
           let v := (s, DTfloat) in
           fully_closed_over df
@@ -12446,6 +12487,218 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         apply backprop_deriv_fully_closed_not_none; auto.
     Qed.
 
+    Lemma list_env_iter_gen_delta0 {n}  (s: SubVar) (init_env : df_env)
+          (f:  {n' : nat | n' < n} -> df_env -> option df_env) (l : list {n' : nat | n' < n}):
+      let v := (s,DTfloat) in 
+      vartlookup init_env v <> None ->
+      (forall (i :  {n' : nat | n' < n}) (env : df_env),
+          (f i env) <> None /\
+          (vartlookup env v <> None -> 
+           match f i env with
+           | Some xenv => vartlookup xenv v <> None
+           | _ => True
+           end ) /\
+          (In i l -> vartlookup env v <> None ->
+           lift2  (fun e val => subvar v e val) (f i env) 
+                  (vartlookup env v) = Some 0%R)) -> 
+           lift2 (fun e old => subvar v e old) 
+                 (list_env_iter f (Some init_env) l)
+                 (vartlookup init_env v) = Some 0%R.
+      Proof.
+        simpl; intros.
+        revert init_env H H0.
+        induction l.
+        - intros.
+          simpl; f_equal.
+          unfold subvar; simpl.
+          match_option; [|tauto].
+          f_equal.
+          lra.
+        - intros.
+          assert (H0c := H0).
+          specialize (H0 a init_env).
+          destruct H0; destruct H1.
+          simpl.
+          case_eq (f a init_env); [intros|tauto].
+          specialize (IHl d).
+          replace (vartlookup init_env (s, DTfloat)) with (vartlookup d (s, DTfloat)).
+          + apply IHl.
+            * specialize (H1 H).
+              now rewrite H3 in H1.
+            * intros.
+              specialize (H0c i env).
+              destruct H0c; destruct H5.
+              split; trivial.
+              split; trivial.
+              intros.
+              cut_to H6; trivial.
+              simpl; tauto.
+          + case_eq (vartlookup init_env (s, DTfloat)); [intros|tauto].
+            rewrite H3, H4 in H2; simpl in H2.
+            cut_to H2; try tauto.
+            unfold lift2 in H2; simpl in H2.
+            inversion H2.
+            unfold subvar in H6; simpl in H6.
+            rewrite H3 in H1.
+            specialize (H1 H).
+            case_eq ( vartlookup d (s, DTfloat)); [intros|tauto].
+            rewrite H5 in H6.
+            f_equal; lra.
+            congruence.
+       Qed.
+
+    Lemma list_env_iter_gen_delta {n}  (s: SubVar) (init_env : df_env) (old : float)
+          (f:  {n' : nat | n' < n} -> df_env -> option df_env) (i0 :  {n' : nat | n' < n}):
+      let v := (s,DTfloat) in 
+      vartlookup init_env v = Some old ->
+      (forall (i :  {n' : nat | n' < n}) (env : df_env),
+          (f i env) <> None /\
+          (vartlookup env v <> None -> 
+           match f i env with
+           | Some xenv => vartlookup xenv v <> None
+           | _ => True
+           end ) /\
+          (forall (env2 : df_env),
+              match vartlookup env v, vartlookup env2 v, f i env, f i env2 with
+              | Some val1, Some val2, Some xenv, Some xenv2 =>
+                subvar v xenv val1 = subvar v xenv2 val2
+              | _, _, _, _ => True
+              end) /\
+          ( i <> i0 -> vartlookup env v <> None ->
+            lift2  (fun e val => subvar v e val) (f i env) 
+                    (vartlookup env v) = Some 0%R)) ->
+      lift (fun e => subvar v e old) (f i0 init_env) = 
+      lift (fun e => subvar v e old) 
+           (list_env_iter f 
+                          (Some init_env) (bounded_seq0 n)).
+    Proof.
+      simpl; intros.
+      unfold bounded_seq0.
+      destruct (bounded_seq_break_at 0 n i0) as [b [c [eqq1 [fa1 fa2]]]]; [omega |].
+      rewrite eqq1.
+      rewrite list_env_iter_app; simpl.
+      match_option.
+      -
+        assert (eqq': subvar (s, DTfloat) d old = 0%R).
+        + generalize (list_env_iter_gen_delta0 s init_env f b); intros.
+          simpl in H1.
+          cut_to H1; try congruence.
+          * unfold lift2 in H1.
+            rewrite H, eqq in H1.
+            now inversion H1.
+          * intros.
+            specialize (H0 i env).
+            destruct H0; destruct H2; destruct H3.
+            split; trivial.
+            split; trivial.
+            intros.
+            cut_to H4; trivial.
+            rewrite Forall_forall in fa1.
+            specialize (fa1 i H5).
+            intro eq1; rewrite eq1 in fa1; omega.
+        + generalize (vartlookup_list_env_iter s f b); intros vart.
+          * specialize (vart init_env d eqq).
+            assert (vartinit: vartlookup init_env (s, DTfloat) <> None) by congruence.
+            specialize (vart vartinit).
+            assert (f i0 d <> None) by apply H0.
+            case_eq (f i0 d); [intros | tauto].
+            generalize (list_env_iter_gen_delta0 s d0 f c); simpl; intros.
+            cut_to H3; try congruence.
+            -- unfold lift at 2.
+               unfold lift2 in H3.
+               match_option.
+               ++ rewrite eqq0 in H3.
+                  match_option_in H3.
+                  rewrite (split_subvar d0 d1 old d2);trivial.
+                  inversion H3.
+                  rewrite H5.
+                  unfold lift.
+                  match_option.
+                  ** f_equal.
+                     case_eq (vartlookup d (s, DTfloat)); intros.
+                     --- rewrite (split_subvar d d0 old d4); trivial.
+                         rewrite eqq'.
+                         specialize (H0 i0 init_env).
+                         destruct H0; destruct H6; destruct H7.
+                         specialize (H7 d).
+                         rewrite H, H4, eqq3, H2 in H7.
+                         rewrite H7; lra.
+                     --- cut_to vart; [tauto|].
+                         intros.
+                         specialize (H0 i env).
+                         destruct H0; destruct H8.
+                         specialize (H8 H7).
+                         now rewrite H6 in H8.
+                  ** specialize (H0 i0 init_env).
+                     destruct H0; congruence.
+               ++ generalize (list_env_iter_total_fun f d0 c); intros.
+                  cut_to H4; try congruence.
+                  apply H0.
+            -- cut_to vart.
+               ++ specialize (H0 i0 d).
+                  destruct H0; destruct H4.
+                  rewrite H2 in H4.
+                  apply H4; trivial.
+               ++ intros.
+                  specialize (H0 i env).
+                  destruct H0;destruct H6.
+                  specialize (H6 H5).
+                  now rewrite H4 in H6.
+            -- intros.
+               specialize (H0 i env).
+               split.
+               apply H0.
+               split.
+               apply H0.
+               intros.
+               assert (i <> i0).
+               ++ rewrite Forall_forall in fa2.
+                  specialize (fa2 i H4).
+                  intro eq1; rewrite eq1 in fa2; omega.
+               ++ now apply H0.
+        - generalize (list_env_iter_total_fun f init_env b); intros.
+          cut_to H1; trivial.
+          tauto.
+          intros.
+          apply H0.
+    Qed.
+
+    Lemma list_env_iter_backprop_indep_env_vec {m} (σ:df_env) 
+          (vecdf: Vector (DefinedFunction UnitAnn DTfloat) m) 
+          (s:SubVar) (env env2:df_env) (grad: Vector float m)
+          (old1 old2: float) :
+      let v := (s, DTfloat) in
+      vartlookup env v = Some old1 ->
+      vartlookup env2 v = Some old2 ->     
+      (let vl := map (fun ve => projT1 ve) σ in
+      forall j : {m' : nat | m' < m},
+               fully_closed_over (vecdf j) vl) ->
+      lift (fun e => subvar (s, DTfloat) e old1)
+           (list_env_iter
+              (fun (j : {m' : nat | m' < m}) (env0 : df_env) =>
+                 df_eval_backprop_deriv σ (vecdf j) env0 (grad j))
+              (Some env) (bounded_seq0 m)) = 
+      lift (fun e => subvar (s, DTfloat) e old2)
+           (list_env_iter
+              (fun (j : {m' : nat | m' < m}) (env0 : df_env) =>
+                 df_eval_backprop_deriv σ (vecdf j) env0 (grad j))
+              (Some env2) (bounded_seq0 m)).
+    Proof.
+      Admitted.
+
+(*
+    Lemma backprop_indep_env {T} (σ:df_env) (df:DefinedFunction UnitAnn T) (s:SubVar) 
+          (grad_env1 grad_env2:df_env) (grad : definition_function_types_interp T) :
+     let v := (s, DTfloat) in
+     vartlookup grad_env1 v <> None ->
+     vartlookup grad_env2 v <> None ->     
+     let vl := map (fun ve => projT1 ve) σ in
+     fully_closed_over df vl ->
+     df_eval_backprop_delta σ df v grad_env1 grad =
+     df_eval_backprop_delta σ df v grad_env2 grad.
+*)
+
+
     Lemma list_env_iter_mat_delta {n m} (σ:df_env) 
           (x:Matrix (DefinedFunction UnitAnn DTfloat) n m) (s: SubVar) grad_env 
           (i0 :  {n' : nat | n' < n}) 
@@ -12467,11 +12720,119 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                         (UnitMatrix n m i0 j0 i j)) (Some env) 
                    (bounded_seq0 m)) (Some grad_env) (bounded_seq0 n)).
       Proof.
+      simpl; intros.
+      generalize (list_env_iter_gen_delta 
+                    s grad_env old
+                    (fun (i : {n' : nat | n' < n}) (env : df_env) =>
+                       list_env_iter
+                         (fun (j : {m' : nat | m' < m}) (env0 : df_env) =>
+                            df_eval_backprop_deriv 
+                              σ (x i j) env0
+                              (UnitMatrix n m i0 j0 i j)) (Some env) 
+                         (bounded_seq0 m)) i0); simpl.
+      intros.
+      specialize (H1 H).
+      rewrite <- H1.
+      - clear H1.
+        generalize (list_env_iter_gen_delta 
+                      s grad_env old
+                      (fun (j : {m' : nat | m' < m}) (env0 : df_env) =>
+                         df_eval_backprop_deriv σ (x i0 j) env0 (UnitMatrix n m i0 j0 i0 j))
+                      j0); simpl.
         intros.
-        unfold lift.
-        simpl_closed_backprop.
-        Admitted.
-
+        specialize (H1 H).
+        rewrite <- H1.
+        + unfold UnitMatrix; simpl.
+          destruct (equiv_dec (` i0) (` i0)); [|congruence].
+          now destruct (equiv_dec (` j0) (` j0)); [|congruence].
+        + clear H1.
+          intros.
+          split; [|split].
+          * apply backprop_deriv_fully_closed_not_none; auto.
+          * intros.
+            match_option.
+            now apply df_eval_backprop_deriv_preserves_lookup_not_none with (xv := (s,DTfloat)) in eqq;trivial.
+         * split.
+           -- intros.
+              do 4 match_option.
+              generalize (backprop_indep_env σ (x i0 i) s env env2 
+                                             (UnitMatrix n m i0 j0 i0 i)); simpl; intros HH.
+              cut_to HH; trivial; try congruence.
+              unfold df_eval_backprop_delta in HH.
+              rewrite eqq,eqq0,eqq1,eqq2 in HH.
+              unfold lift in HH.
+              now inversion HH.
+           -- intros.
+              unfold UnitMatrix; simpl.
+              destruct (equiv_dec (` i0) (` i0)); [|congruence].
+              destruct (equiv_dec (` i) (` j0)).
+              elim H1; destruct i; destruct j0; simpl in *; red in e0; subst; apply index_pf_irrel.
+              unfold lift2.
+              generalize (scalarMult_backprop_grad0 σ (x i0 i) s env 0%R); simpl; intros.
+              unfold lift2.
+              replace (0 * 0)%R with 0%R in H3 by lra.
+              unfold df_eval_backprop_delta in H3.
+              match_option.
+              match_option.
+              rewrite eqq0, eqq in H3; unfold lift in H3.
+              cut_to H3; congruence.
+              rewrite eqq0 in H3.
+              apply H3; trivial.
+              tauto.
+              congruence.
+              assert (df_eval_backprop_deriv σ (x i0 i) env 0%R <> None).
+              apply backprop_deriv_fully_closed_not_none; trivial.
+              tauto.
+      - split.
+        generalize (list_env_iter_total_fun 
+                      (fun (j : {m' : nat | m' < m}) (env0 : df_env) =>
+                         df_eval_backprop_deriv σ (x i j) env0 (UnitMatrix n m i0 j0 i j))
+                      env (bounded_seq0 m)); intros.
+        apply H2.
+        intros.
+        apply backprop_deriv_fully_closed_not_none; trivial.
+        split.
+        + intros.
+          match_option.
+          apply (vartlookup_list_env_iter 
+                   s (fun (j : {m' : nat | m' < m})
+                          (env0 : df_env) =>
+                        df_eval_backprop_deriv σ (x i j) env0 (UnitMatrix n m i0 j0 i j))
+                   (bounded_seq0 m) env d); trivial.
+          intros.
+          apply df_eval_backprop_deriv_preserves_lookup_not_none with (xv := (s,DTfloat)) in H3; trivial.
+        + split.
+          * intros.
+            do 4 match_option.
+            generalize (list_env_iter_backprop_indep_env_vec 
+                          σ (x i) s env env2 
+                          (UnitMatrix n m i0 j0 i)
+                          d d0); simpl; intros.
+            specialize (H2 eqq eqq0).
+            specialize (H2 (H0 i)).
+            rewrite eqq1, eqq2 in H2.
+            unfold lift in H2.
+            now inversion H2.
+          * intros.
+            replace (fun (j : {m' : nat | m' < m}) (env0 : df_env) =>
+                       df_eval_backprop_deriv σ (x i j) env0 (UnitMatrix n m i0 j0 i j))
+                    with
+                      (fun (j : {m' : nat | m' < m}) (env0 : df_env) =>
+                         df_eval_backprop_deriv σ (x i j) env0 
+                                                (scalarMult DTfloat 0%R 0%R)).
+            case_eq (vartlookup env (s, DTfloat)); [intros | tauto].
+            apply scalarMult_backprop_list_env_iter_grad0; trivial.
+            apply functional_extensionality; intros.
+            apply functional_extensionality; intros.            
+            f_equal.
+            unfold scalarMult, UnitMatrix; simpl.
+            destruct (equiv_dec (` i) (` i0)).
+            red in e.
+            elim H2; destruct i; destruct i0; simpl in *; subst.
+            apply index_pf_irrel.
+            lra.
+      Qed.
+               
     Lemma list_env_iter_matvec_delta {m n} (σ:df_env) 
           (df2:DefinedFunction UnitAnn (DTVector m)) (s: SubVar) grad_env 
           (i0 :  {n' : nat | n' < n}) 
