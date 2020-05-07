@@ -1,4 +1,4 @@
-Require Import Reals.Rbase.
+Require Import Reals.Rbase Coq.Reals.RList.
 Require Import Reals.Rfunctions.
 Require Import Ranalysis_reg.
 Require Import Reals.Integration.
