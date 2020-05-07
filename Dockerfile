@@ -12,6 +12,7 @@ WORKDIR /home/coq
 
 COPY --chown=coq:coq _CoqProject Makefile Makefile.coq_modules ./
 COPY --chown=coq:coq coq coq
+COPY --chown=coq:coq ocaml ocaml
 
 RUN ["/bin/bash", "--login", "-c", "set -x \
       && make coq"]
