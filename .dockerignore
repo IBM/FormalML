@@ -1,3 +1,6 @@
 **/*.vo
 **/*.glob
 **/*.aux
+extracted
+ocaml/_build
+bin

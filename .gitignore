@@ -5,3 +5,6 @@
 .#*
 Makefile.coq
 Makefile.coq.conf
+extracted
+ocaml/_build
+bin
