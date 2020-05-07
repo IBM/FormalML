@@ -1,4 +1,4 @@
-ARG coq_image="coqorg/coq:dev"
+ARG coq_image="coqorg/coq:8.9.1"
 FROM ${coq_image}
 
 RUN ["/bin/bash", "--login", "-c", "set -x \
