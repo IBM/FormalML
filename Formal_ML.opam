@@ -1,0 +1,26 @@
+opam-version: "2.0"
+name: "Formal_ML"
+version: "~dev"
+synopsis: "Exploring formal verification for symbolic neural networks"
+maintainer: "Avi Shinnar <shinnar@us.ibm.com>"
+authors: "Avi Shinnar <shinnar@us.ibm.com>"
+homepage: "https://github.ibm.com/formal-ml/Formal_ML/"
+bug-reports: "https://github.ibm.com/formal-ml/Formal_ML/issues"
+depends: [
+  "ocaml" {>= "4.07.0"}
+  "coq" {>= "8.9.1"}
+  "coq-mathcomp-ssreflect"
+  "coq-coquelicot"
+  "coq-flocq"
+  "coq-interval"
+  "ocamlbuild"
+  "base64"
+  "menhir"
+  "csv"
+]
+build: make
+install: [make]
+dev-repo: "git+https://"
+url {
+  src: "git+file:///Users/shinnar/workspaces/formal-ml/Formal_ML#matrix_ops"
+}

@@ -1,14 +1,16 @@
 ARG coq_image="coqorg/coq:8.9.1"
 FROM ${coq_image}
 
+WORKDIR /home/coq
+
+COPY --chown=coq:coq Formal_ML.opam ./
+
 RUN ["/bin/bash", "--login", "-c", "set -x \
   && if [ -n \"${COMPILER_EDGE}\" ]; then opam switch ${COMPILER_EDGE} && eval $(opam env); fi \
   && opam update -y \
-  && opam install -y -j ${NJOBS} coq-mathcomp-ssreflect coq-coquelicot coq-flocq coq-interval ocamlbuild base64 menhir csv \ 
-  && opam config list && opam repo list && opam list \
+  && opam install -y -j ${NJOBS} .
   && opam clean -a -c -s --logs"]
 
-WORKDIR /home/coq
 
 COPY --chown=coq:coq _CoqProject Makefile Makefile.coq_modules ./
 COPY --chown=coq:coq coq coq
