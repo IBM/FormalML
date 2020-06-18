@@ -11,7 +11,7 @@ coq: Makefile.coq
 Makefile.coq: Makefile Makefile.coq_modules $(FILES)
 	@coq_makefile -f _CoqProject $(FILES) -o Makefile.coq
 
-ocaml:
+ocaml: coq
 	@$(MAKE) -C ocaml native
 
 clean-coq:
