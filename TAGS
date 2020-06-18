@@ -1,0 +1,774 @@
+
+./ocaml/NnoptExtraction.v,518
+  Definition normalizeIntData40,1297
+  Definition init_env241,1355
+  Definition streamtake44,1519
+  Definition df_env45,1565
+  Definition eval_wisconsin_batch46,1613
+  Definition wisconsin_test53,1869
+  Definition wisconsin_test_env54,1923
+  Definition wisconsin_gradenv_tree55,1987
+  Definition wisconsin_gradenv56,2057
+  Definition nn_test57,2117
+  Definition nn_test_val58,2157
+  Definition nn_test_env59,2207
+  Definition nn_test_gradenv_tree60,2257
+  Definition nn_test_gradenv61,2323
+
+./coq/NN.v,260
+Definition converges13,218
+Definition diverges16,293
+Definition diverges_right19,356
+Definition diverges_left25,494
+Definition Assumption_C_136,701
+Definition Assumption_C_244,883
+Definition Assumption_C_349,1015
+Definition Assumption_C52,1101
+
+./coq/Gen_NN.v,2390
+  Definition UnitDefinedFunction19,371
+  Definition mkSubVarVector24,633
+  Definition mkVarVector27,788
+  Definition mkSubVarMatrix30,903
+  Definition mkVarMatrix33,1084
+  Definition unique_var36,1205
+  Definition activation44,1436
+  Definition create_activation_fun50,1726
+  Definition mkNN256,1998
+  Definition mkVarNN263,2461
+  Definition mkVarMatNN271,2988
+  Definition mkNN_bias_step79,3521
+ Definition mkNN2_bias86,3946
+ Definition mkNN2_Var_bias95,4479
+  Definition mkNN_Mat_bias_step105,5104
+ Definition mkNN2_Var_Mat_bias112,5550
+  Fixpoint mkNN_gen_0140,6744
+  Fixpoint mkNN_Var_gen_0154,7350
+  Fixpoint mkNN_Mat_Var_gen_0168,7958
+  Definition softmax224,10327
+  Definition L2loss230,10661
+  Definition L1loss233,10816
+  Definition Sigmoid236,10966
+  Definition CrossEntropy240,11159
+  Definition NNinstance1samp249,11661
+  Definition NNinstancebatch258,12182
+  Definition EvalNNinstance1samp267,12746
+  Definition EvalNNinstancebatch276,13254
+  Definition combine_with322,15118
+  Definition combine3_with326,15292
+  Fixpoint streamtake330,15524
+  Fixpoint env_update_first350,16037
+  Definition env_update_list357,16274
+  Definition optimize_step360,16369
+  Fixpoint get_noise_vector379,17276
+  Fixpoint get_noise_matrix390,17617
+  Definition get_noise400,17936
+  Fixpoint list_arg_iter456,20246
+  Definition harmonic_lr466,20532
+  Definition optimize_step_backprop468,20616
+  Definition optimize_step_tree_backprop480,21127
+  Fixpoint optimize_steps496,21781
+  Fixpoint optimize_steps_backprop508,22249
+  Fixpoint optimize_steps_tree_backprop521,22779
+Definition Fmax535,23325
+Definition Fmin538,23393
+Definition vmax541,23461
+Definition vmin544,23567
+Definition nrows547,23673
+Definition ncols549,23733
+Definition normalizeIntData555,23861
+ Definition mkNN_wisconsin589,25300
+Definition wisconsin_test629,26925
+Definition wisconsin_test_env644,27532
+ Definition mkperceptron702,29605
+ Definition mkNN_test1709,30036
+ Definition mkNN_test722,30595
+Definition NN_test740,31386
+Definition NN_test_env771,32343
+Definition NN_test_NN780,32642
+Definition NN_test_val784,32716
+Definition test_update_val_gradenv791,32872
+Definition test_update794,32961
+Definition test_optimize_step_backprop797,33078
+Definition test_optimize_step_tree_backprop805,33386
+
+./coq/ProbSpace.v,765
+  Definition event14,274
+  Definition event_sub16,310
+  Definition event_equiv17,376
+  Definition event_none42,947
+  Definition event_diff54,1272
+  Definition event_lem57,1361
+Definition event_disjoint61,1447
+Definition collection_is_pairwise_disjoint409,8647
+Definition union_of_collection414,8946
+Definition inter_of_collection417,9073
+Definition list_collection527,12089
+Definition list_union530,12194
+Definition list_inter533,12289
+Definition sum_of_probs_equals748,17890
+Definition make_collection_disjoint1037,26952
+  Definition preimage1123,29645
+  Definition F_star1172,31246
+  Definition Lebesgue_integrable_pos1178,31613
+  Definition Pr1207,32445
+  Definition independent1221,32864
+  Lemma pr_allpr_all1226,33019
+
+./coq/derivlemmas.v,763
+Lemma locally'_proper_filterlocally'_proper_filter139,3652
+Lemma locally'_within_pos_proper_filterlocally'_within_pos_proper_filter158,4169
+Lemma locally'_within_neg_proper_filterlocally'_within_neg_proper_filter178,4798
+Lemma is_derive_sign_negis_derive_sign_neg494,15534
+Definition psign529,16338
+Lemma is_derive_psign_posis_derive_psign_pos531,16396
+Lemma is_derive_psign_negis_derive_psign_neg551,16906
+Lemma is_derive_max_absis_derive_max_abs618,19053
+Lemma is_derive_scal_divis_derive_scal_div633,19483
+Lemma is_derive_max2is_derive_max2688,20955
+Lemma is_derive_max3is_derive_max3708,21652
+Lemma is_derive_max_altis_derive_max_alt728,22349
+Lemma is_derive_max_alt2is_derive_max_alt2741,22717
+Lemma Derive_maxDerive_max759,23317
+
+./coq/AxiomaticNormedRealVectorSpace.v,25
+Inductive rvector8,208
+
+./coq/DefinedFunctions.v,3227
+    Definition var_dec42,1016
+    Inductive definition_function_types58,1347
+    Inductive data_type70,1693
+    Definition var_type75,1929
+    Definition vart_dec82,2183
+    Definition env_entry_type105,2784
+    Definition df_env106,2874
+    Definition mk_env_entry108,2921
+    Definition UnitAnn112,3063
+    Definition EvalAnn113,3137
+    Inductive DefinedFunction115,3231
+Definition DefinedFunction_ind_unit163,7382
+Definition DefinedFunction_ind_simpl347,17347
+    Definition dft_eq_dec565,28580
+  Definition df_plus644,31283
+  Definition df_times647,31408
+  Definition defined_sum650,31534
+  Definition vsum653,31716
+  Definition msum656,31812
+  Definition transpose659,31897
+  Definition matrix_vector_mult662,31983
+  Definition matrix_vector_add665,32133
+  Definition matrix_mult667,32265
+ Fixpoint df_subst682,32752
+    Definition df_substp736,35330
+    Definition df_subst_list740,35490
+    Fixpoint df_deriv748,35743
+    Definition df_gradient868,41453
+    Fixpoint vart_update885,41998
+    Fixpoint df_eval892,42305
+    Fixpoint df_eval_tree1071,48769
+    Definition eval_env_entry_type1313,59420
+    Definition df_eval_env1314,59556
+    Definition pair_update_evals1321,59834
+    Fixpoint df_evals_list1324,60074
+    Definition df_eval_symbolic_gradient1575,70342
+    Fixpoint df_eval_deriv1652,72750
+    Definition mk_genvar_env1864,81815
+    Definition definition_function_types_interp_prod2089,91693
+    Definition UnitVector2097,92035
+    Definition UnitMatrix2100,92184
+    Definition const_env2107,92488
+    Fixpoint df_eval_tree_deriv2114,92820
+    Definition vector_env_iter2570,112624
+    Definition two_vector_env_iter_alt2636,114720
+    Definition matrix_env_iter2640,114971
+    Definition gradenv_init12689,117215
+    Definition gradenv_init2697,117491
+    Fixpoint df_eval_backprop_deriv2700,117590
+    Definition lifted_type2952,128799
+    Fixpoint df_eval_tree_backprop_deriv2959,128976
+    Definition o_df_env_to_df_env3161,139101
+   Definition is_scalar_df_type3179,139565
+   Fixpoint is_scalar_function3185,139720
+ Definition DefinedFunction_ind_unit_has_scalar_functions3263,143745
+   Fixpoint is_df_rec_prop3462,156766
+      Fixpoint df_strip_annotations3516,159656
+      Definition df_eq_upto_annotations3579,163422
+   Definition is_df_evalann_correct_top3583,163623
+   Definition is_df_evalann_correct3586,163762
+   Definition definition_function_types_subgradient4291,191591
+    Definition df_eval_gradient4295,191750
+   Definition is_scalar_function_ind4547,203514
+   Definition vartlookup_eq4571,204845
+    Definition df_eval_deriv_gen_top5008,221085
+    Definition transpose_lifted_type5094,225529
+    Definition MaxDerived5109,226211
+    Fixpoint df_free_variables5126,226913
+    Definition df_closed5168,229603
+    Definition df_closed_over5180,229965
+    Fixpoint fully_closed_over5183,230102
+    Fixpoint df_apply5399,238653
+    Definition scalarMult7145,308611
+    Definition dfti_gen_plus7153,308956
+    Definition ConstSplitVector11845,535009
+    Definition mergeVectorZero11849,535214
+    Definition scaleUnitVector11853,535414
+
+./coq/sumtest.v,543
+Definition f_inv368,11819
+Definition f_inv_sq369,11860
+Lemma ln_int_unboundedln_int_unbounded429,13288
+Lemma inv_int_boundedinv_int_bounded439,13498
+Lemma is_lim_RInt_inv0is_lim_RInt_inv0464,14124
+Lemma is_lim_RInt_invis_lim_RInt_inv479,14485
+Lemma is_lim_Rint_inv_Rsqr0is_lim_Rint_inv_Rsqr0520,15587
+Lemma is_lim_Rint_inv_Rsqris_lim_Rint_inv_Rsqr538,15999
+Lemma is_RInt_gen_inv_Rsqris_RInt_gen_inv_Rsqr551,16272
+Lemma sum_inv_sqr_boundedsum_inv_sqr_bounded640,19039
+Lemma converges_2harmonicconverges_2harmonic678,19886
+
+./coq/testderiv.v,565
+    Fixpoint df_eval_deriv_exact33,720
+   Definition addBinding257,10608
+   Definition df_eval_at_point259,10678
+    Definition ex_deriv_df268,10989
+   Definition is_deriv_df272,11173
+   Definition eval_differentiable_at_point296,12091
+    Lemma floatish_signfloatish_sign460,18445
+    Lemma Rmax_FmaxRmax_Fmax482,18998
+   Definition df_R_mat773,30431
+   Definition df_R_gen780,30673
+    Definition is_derive_vec788,30991
+    Definition is_derive_mat791,31129
+    Definition is_derive_gen794,31279
+    Definition vec_to_nat_fun805,31779
+
+./coq/pmf_monad.v,62
+Definition Pmf_pure45,1269
+Definition Pmf_bind_aux52,1390
+
+./coq/Gaussian.v,1773
+Definition erf'72,2748
+Definition erf73,2800
+Definition Standard_Gaussian_PDF77,2996
+Definition General_Gaussian_PDF80,3135
+Definition Standard_Gaussian_CDF83,3253
+Definition General_Gaussian_CDF86,3367
+Lemma continuous_Standard_Gaussian_PDFcontinuous_Standard_Gaussian_PDF91,3525
+Definition Indicator120,4530
+Definition Uniform_PDF124,4634
+Definition inf_sign385,13466
+Definition Box_Muller530,17822
+Lemma limxexp_inv_inflimxexp_inv_inf601,20074
+Lemma limxexp_minflimxexp_minf634,20931
+Lemma plim_gaussian_opp_meanplim_gaussian_opp_mean663,21749
+Lemma mlim_gaussian_opp_meanmlim_gaussian_opp_mean674,22138
+Lemma variance_int1_middlevariance_int1_middle685,22526
+Lemma limexp_inflimexp_inf716,23433
+Lemma limexp_neg_inflimexp_neg_inf729,23777
+Lemma limexp_neg_minflimexp_neg_minf744,24118
+Lemma mean_standard_gaussianmean_standard_gaussian787,25326
+Axiom FubiniFubini891,28631
+Axiom Fubini_genFubini_gen901,29164
+Lemma lim_atan_inflim_atan_inf958,30901
+Lemma erf_int00erf_int001115,36977
+Lemma erf_ex_RInt2erf_ex_RInt21268,41531
+Lemma erf_ex_RInt3_bound_interf_ex_RInt3_bound_int1536,49331
+Lemma erf_ex_RInt3erf_ex_RInt31593,51009
+Lemma erf_int1erf_int11661,52939
+Lemma erf_int_sqerf_int_sq1740,55870
+Lemma erf_int2erf_int21768,56598
+Lemma erf_int21erf_int211798,57475
+Lemma erf_int31erf_int311809,57858
+Lemma erf_p_inftyerf_p_infty1856,59121
+Lemma erf_m_inftyerf_m_infty1868,59403
+Lemma std_CDF_from_erf0std_CDF_from_erf01932,61480
+Lemma std_CDF_from_erfstd_CDF_from_erf1955,62233
+Lemma Standard_Gaussian_PDF_normedStandard_Gaussian_PDF_normed1964,62438
+Lemma variance_standard_gaussian0variance_standard_gaussian01987,63158
+Lemma variance_standard_gaussianvariance_standard_gaussian1999,63608
+
+./coq/lib_utils/LibUtilsBindingsNat.v,0
+
+./coq/lib_utils/LibUtilsBindings.v,297
+  Definition rec_field_lt93,2845
+  Definition rec_sort137,4040
+  Definition rec_concat_sort140,4127
+    Lemma domain_rec_concat_sort_app_commdomain_rec_concat_sort_app_comm1549,49863
+  Definition edot1679,54069
+  Definition merge_bindings1705,54795
+  Definition compatible1863,59727
+
+./coq/lib_utils/LibUtilsClosure.v,121
+  Definition code_closed_for_params26,815
+  Definition closure_is_closed35,1089
+  Definition closed_closure38,1217
+
+./coq/lib_utils/LibUtilsSublist.v,31
+    Inductive sublist40,1149
+
+./coq/lib_utils/LibUtilsCompat.v,71
+  Definition compatible_with38,1194
+  Definition compatible45,1459
+
+./coq/lib_utils/LibUtilsLiftIterators.v,284
+    Fixpoint lift_map40,1131
+    Fixpoint listo_to_olist119,3478
+    Fixpoint lift_flat_map234,6824
+    Fixpoint lift_filter275,7998
+    Definition orfilter330,9575
+    Definition lift_app370,10784
+    Definition lift_flatten391,11478
+    Definition lift_err417,12326
+
+./coq/lib_utils/LibUtilsFresh.v,264
+  Definition find_bounded_S_nin_finds104,2996
+  Definition find_fresh_string139,4387
+  Definition fresh_var154,4804
+  Definition fresh_var2206,6137
+  Definition fresh_var3218,6488
+  Definition get_var_base240,7341
+  Definition fresh_var_from255,7760
+
+./coq/lib_utils/LibUtilsSortingAdd.v,174
+    Fixpoint insertion_sort_insert39,1180
+    Fixpoint insertion_sort49,1492
+    Fixpoint is_list_sorted72,2262
+    Lemma is_list_sorted_extis_list_sorted_ext93,2898
+
+./coq/lib_utils/LibUtilsGroupByDomain.v,105
+  Fixpoint groupby_domain43,1332
+  Definition grouped_equiv54,1675
+  Definition list_unnest57,1806
+
+./coq/lib_utils/LibUtilsBag.v,2940
+  Definition rbag40,1116
+  Definition bunion42,1146
+  Lemma bunion_nil_rbunion_nil_r58,1694
+  Lemma bunion_nil_lbunion_nil_l65,1838
+  Lemma bunion_assocbunion_assoc70,1934
+  Fixpoint remove_one92,2457
+  Fixpoint bminus139,4462
+  Lemma bminus_over_app_deltabminus_over_app_delta147,4722
+  Lemma bminus_to_nilbminus_to_nil154,4888
+  Lemma bminus_nil_to_selfbminus_nil_to_self160,4992
+  Lemma remove_one_commremove_one_comm174,5312
+  Lemma remove_one_not_firstremove_one_not_first183,5520
+  Lemma bminus_selfbminus_self206,6077
+  Lemma bminus_naughtbminus_naught211,6182
+  Lemma bunion_bminusbunion_bminus227,6545
+  Lemma remove_one_consedremove_one_consed235,6711
+  Lemma pick_an_apick_an_a299,8226
+    Fixpoint mult323,8886
+    Definition mult_equiv329,9056
+    Lemma bags_equal_same_mult1bags_equal_same_mult1352,9811
+    Fixpoint groupby362,10009
+    Fixpoint rep380,10691
+    Fixpoint smush386,10808
+    Lemma pick_an_a_or_absentpick_an_a_or_absent424,12237
+  Definition bmin579,18478
+  Definition bmax584,18696
+  Definition bcount590,18865
+  Fixpoint bdistinct593,18977
+  Lemma bdistinct_exactly_zero_backbdistinct_exactly_zero_back725,23862
+  Lemma bdistinct_exactly_onebdistinct_exactly_one752,24606
+  Lemma bdistinct_exactly_one_backbdistinct_exactly_one_back767,24949
+  Lemma bdistinct_exactly_one_back_diffbdistinct_exactly_one_back_diff788,25526
+  Lemma exist_or_zeroexist_or_zero798,25778
+  Lemma bdistinct_multbdistinct_mult819,26358
+  Lemma mult_pos_equiv_inmult_pos_equiv_in848,27345
+  Lemma bdistinct_same_elemtsbdistinct_same_elemts881,28066
+  Lemma remove_one_multremove_one_mult993,31118
+  Lemma mult_on_removemult_on_remove1007,31433
+  Lemma bminus_multbminus_mult1022,31896
+  Lemma bmin_on_nil_lbmin_on_nil_l1054,32786
+  Lemma bmax_on_nil_rbmax_on_nil_r1061,32948
+  Lemma bmax_on_nil_lbmax_on_nil_l1070,33207
+  Lemma minus_minminus_min1093,33726
+  Lemma minus_maxminus_max1110,34264
+  Lemma bmin_multbmin_mult1126,34748
+  Lemma bmax_multbmax_mult1141,35259
+  Lemma bmin_commbmin_comm1157,35861
+  Lemma bmax_commbmax_comm1169,36111
+  Lemma select_not_selectselect_not_select1183,36391
+  Lemma bdistinct_over_bunion_empty_rbdistinct_over_bunion_empty_r1197,36797
+  Lemma bdistinct_over_bunion_empty_lbdistinct_over_bunion_empty_l1226,37719
+  Lemma bdistinct_over_bunion_singleton2bdistinct_over_bunion_singleton21238,38140
+  Lemma bmin_zerobmin_zero1290,40070
+  Lemma bmin_zero_backbmin_zero_back1306,40537
+  Lemma bdistinct_over_bminbdistinct_over_bmin1324,41165
+  Lemma split_selectsplit_select1353,42354
+  Definition bminus_delta21393,43531
+  Definition bplus_delta21396,43608
+  Definition apply_deltas1399,43684
+  Lemma theorem2_atheorem2_a1402,43759
+  Lemma theorem2_btheorem2_b1423,44451
+  Lemma theorem2_ctheorem2_c1441,45004
+  Definition bnummin1543,48035
+  Definition bnummax1550,48176
+
+./coq/lib_utils/LibUtilsLattice.v,625
+  Definition part_le28,923
+  Definition associative31,1056
+  Definition commutative34,1223
+  Definition idempotent37,1364
+  Definition absorptive40,1477
+    Definition is_unit_r44,1615
+    Definition is_unit_l48,1750
+    Lemma consistent_joinconsistent_join91,3116
+    Lemma join_bottom_ljoin_bottom_l228,6695
+    Lemma meet_top_lmeet_top_l235,6854
+    Lemma meet_bottom_rmeet_bottom_r242,7004
+    Lemma meet_bottom_lmeet_bottom_l252,7265
+    Lemma join_top_rjoin_top_r259,7429
+    Lemma join_top_ljoin_top_l269,7675
+    Lemma le_tople_top286,8081
+    Lemma bottom_le_topbottom_le_top300,8376
+
+./coq/lib_utils/LibUtilsListAdd.v,1150
+    Definition singleton109,3157
+    Fixpoint lflatten118,3353
+    Lemma filter_lengthfilter_length384,10785
+    Lemma filter_smallerfilter_smaller394,11048
+    Lemma filter_filterfilter_filter413,11561
+    Lemma filter_not_filterfilter_not_filter424,11893
+    Lemma filter_id_implies_predfilter_id_implies_pred435,12223
+    Lemma filter_nil_implies_not_predfilter_nil_implies_not_pred456,12802
+    Lemma filter_commfilter_comm469,13224
+    Lemma filter_andfilter_and486,13948
+    Lemma filter_eqfilter_eq499,14393
+    Definition ldeqA580,16473
+      Fixpoint forallb2601,16969
+    Fixpoint forallb_ordpairs861,25206
+    Fixpoint forallb_ordpairs_refl897,26244
+    Lemma list_remove_idempotentlist_remove_idempotent986,28823
+    Lemma list_remove_commutelist_remove_commute999,29126
+    Lemma not_in_remove_impl_not_innot_in_remove_impl_not_in1045,30536
+    Fixpoint remove_all1100,32009
+    Definition replace_all1165,33820
+    Definition cut_down_to1337,38914
+    Definition equivlist1445,41901
+    Definition disjoint1834,53362
+  Definition not_nil2123,61546
+    Definition all_disjoint2178,62966
+
+./coq/lib_utils/LibUtilsCoqLibAdd.v,226
+    Inductive Forallt313,8422
+    Lemma Forallt_invForallt_inv354,9665
+    Lemma min_zeromin_zero545,14892
+    Lemma min_against_onemin_against_one558,15215
+    Fixpoint iter723,19784
+    Definition holds808,22103
+
+./coq/lib_utils/LibUtilsResult.v,269
+    Inductive Result22,715
+    Definition lift_failure28,844
+    Definition lift_failure_in35,1059
+    Definition raise_failure39,1224
+    Definition lift_failure_in_two43,1354
+    Definition result_of_option86,2762
+    Definition option_of_result92,2933
+
+./coq/lib_utils/LibUtilsInterleaved.v,36
+  Inductive is_interleaved38,1122
+
+./coq/lib_utils/LibUtilsDigits.v,2418
+  Theorem K_natK_nat39,1181
+  Theorem eq_rect_eq_nateq_rect_eq_nat47,1376
+  Theorem le_uniqueness_proofle_uniqueness_proof55,1596
+  Definition maxbase81,2516
+  Definition digit84,2586
+  Definition digit_proj86,2629
+    Definition digits_to_nat119,3474
+    Definition digit_to_char625,18918
+    Definition char_to_digit_aux666,19963
+    Fixpoint string_to_digits756,22729
+    Fixpoint list_to_string770,23148
+    Definition digits_to_string_aux776,23320
+    Definition digits_to_string779,23430
+    Lemma string_to_digits_emptystring_to_digits_empty827,25065
+    Fixpoint iszeros832,25175
+    Fixpoint trim_extra_stringdigits838,25333
+    Definition trim_stringdigits851,25656
+    Lemma digit0pfdigit0pf854,25760
+    Definition digit0859,25825
+    Definition default_to_digits0861,25879
+    Lemma char_to_digit0char_to_digit0867,26004
+    Definition nat_to_string1009,30445
+    Definition string_to_nat1012,30537
+    Definition Z_to_string1133,34521
+    Definition string_to_Z1140,34727
+    Definition trim_stringZdigits1164,35443
+  Definition le_decider1299,39758
+    Definition base2valid1311,39967
+    Definition base2small1312,40020
+      Definition nat_to_string21315,40104
+      Definition string2_to_nat1316,40167
+      Definition nat_to_string2_to_nat1318,40220
+      Definition Z_to_string21331,40626
+      Definition string2_to_Z1332,40685
+      Definition Z_to_string2_to_Z1334,40734
+    Definition base8valid1350,41149
+    Definition base8small1351,41202
+      Definition nat_to_string81354,41286
+      Definition string8_to_nat1355,41349
+      Definition nat_to_string8_to_nat1357,41402
+      Definition Z_to_string81370,41802
+      Definition string8_to_Z1371,41861
+      Definition Z_to_string8_to_Z1373,41910
+    Definition base10valid1390,42334
+    Definition base10small1391,42390
+      Definition nat_to_string101394,42477
+      Definition string10_to_nat1395,42543
+      Definition Z_to_string101410,43018
+      Definition string10_to_Z1411,43080
+    Definition base16valid1429,43577
+    Definition base16small1430,43633
+      Definition nat_to_string161433,43720
+      Definition string16_to_nat1434,43786
+      Definition nat_to_string16_to_nat1437,43842
+      Definition Z_to_string161450,44256
+      Definition string16_to_Z1451,44318
+      Definition Z_to_string16_to_Z1453,44369
+
+./coq/lib_utils/LibUtils.v,0
+
+./coq/lib_utils/LibUtilsStringAdd.v,1109
+  Definition t35,1080
+  Definition eq36,1104
+  Definition eq_equiv37,1130
+  Definition eq_dec38,1190
+  Definition compare41,1285
+  Definition lt44,1386
+  Lemma lt_strorderlt_strorder46,1436
+  Lemma lt_compatlt_compat55,1738
+  Lemma compare_speccompare_spec72,2220
+  Definition le93,2859
+  Lemma le_lteqle_lteq100,2979
+  Definition t119,3485
+  Definition eq120,3510
+  Definition eq_equiv121,3536
+  Definition eq_dec122,3596
+  Fixpoint compare124,3632
+  Definition lt137,3983
+  Lemma compare_speccompare_spec139,4034
+  Lemma lt_compatlt_compat195,6010
+  Definition le219,6703
+  Lemma le_lteqle_lteq226,6824
+  Fixpoint string_reverse_helper265,7822
+  Definition string_reverse271,8004
+  Fixpoint string_to_list273,8084
+  Fixpoint list_to_string279,8246
+  Fixpoint map_string551,15057
+  Fixpoint flat_map_string557,15231
+  Definition map_concat570,15547
+  Inductive like_clause583,15906
+  Fixpoint make_like_clause588,16049
+  Fixpoint  string_exists_suffix629,18177
+  Fixpoint like_clause_matches_string638,18513
+  Definition string_like654,19181
+
+./coq/lib_utils/LibUtilsLift.v,355
+  Definition lift29,895
+  Definition olift36,1072
+  Definition bind42,1210
+  Definition lift244,1265
+  Definition olift_some50,1441
+  Definition olift254,1553
+  Definition rif232,6218
+  Definition liftP239,6397
+  Definition lift2P245,6537
+  Definition lift2Pl253,6798
+  Definition lift2Pr261,7057
+  Definition mk_lazy_lift295,8050
+
+./coq/lib_utils/LibUtilsAssoc.v,1099
+    Fixpoint lookup45,1262
+    Fixpoint update_first51,1426
+    Definition domain57,1620
+    Definition codomain58,1678
+    Definition map_codomain60,1739
+    Lemma in_domin_dom106,2931
+    Lemma in_domain_inin_domain_in122,3345
+    Lemma lookup_none_ninlookup_none_nin130,3586
+    Lemma lookup_inlookup_in155,4311
+    Lemma lookup_in_domainlookup_in_domain164,4565
+    Lemma nodup_in_eqnodup_in_eq220,6611
+    Lemma in_dom_lookup_strongin_dom_lookup_strong233,7032
+    Lemma in_dom_lookupin_dom_lookup242,7296
+    Lemma in_lookup_strongin_lookup_strong250,7547
+    Lemma in_lookupin_lookup256,7751
+    Lemma in_lookup_nodupin_lookup_nodup262,7945
+  Fixpoint assoc_lookupr766,23453
+  Fixpoint projectr780,23893
+  Definition permutation_dec986,30920
+    Fixpoint bdistinct_domain1068,33382
+    Definition lookup_incl1151,36095
+  Definition swap1589,48781
+    Fixpoint lookup_diff1618,49550
+    Definition lookup_equiv_on1785,55030
+    Definition substlist_subst1960,60887
+    Definition ascii_mk_lower1980,61566
+    Definition mk_lower1983,61669
+
+./coq/utils/CoquelicotAdd.v,117
+Lemma sqrt2_neq0sqrt2_neq015,423
+Lemma sqrt_2PI_nzerosqrt_2PI_nzero23,527
+Lemma sqrt_PI_neq0sqrt_PI_neq031,664
+
+./coq/utils/Sums.v,114
+  Fixpoint sum_f_R0'24,749
+  Definition infinite_sum'276,6793
+  Lemma infinite_sum'0infinite_sum'0517,13990
+
+./coq/utils/Floatish/FloatishDef.v,0
+
+./coq/utils/Floatish/FloatishOps.v,137
+  Definition pos_sign8,116
+  Definition neg_sign11,186
+  Definition sign14,256
+  Definition Fmax19,361
+  Definition Fmin22,423
+
+./coq/utils/Floatish/FloatishInterval.v,53
+Definition FZF83,2013
+Definition FZFscale84,2063
+
+./coq/utils/Floatish/FloatishReal.v,0
+
+./coq/utils/Floatish/FloatishRealOps.v,0
+
+./coq/utils/Floatish/FloatishIEEE.v,610
+Definition IEEE_float8,127
+Definition IEEE_zero9,162
+Definition IEEE_opp10,211
+Definition IEEE_plus11,243
+Definition IEEE_minus12,285
+Definition IEEE_mult13,329
+Definition IEEE_div14,371
+Definition IEEE_sqrt15,411
+Definition IEEE_abs16,453
+Definition IEEE_fromZ18,486
+Definition IEEE_eq20,582
+Definition IEEE_neq26,713
+Definition IEEE_lt33,869
+Definition IEEE_le39,1025
+Definition IEEE_gt47,1231
+Definition IEEE_ge54,1388
+Axiom IEEE_expIEEE_exp62,1654
+Axiom IEEE_lnIEEE_ln63,1697
+Axiom IEEE_piIEEE_pi64,1739
+Axiom IEEE_sinIEEE_sin65,1767
+Axiom IEEE_cosIEEE_cos66,1810
+
+./coq/utils/BasicUtils.v,23
+Definition coerce1,1
+
+./coq/utils/RiemannAdd.v,103
+Definition Partition16,380
+Definition find_pt_le_psi412,10506
+Definition list_map_diffs418,10687
+
+./coq/utils/RealAdd.v,201
+Lemma Rlt_le_subRlt_le_sub72,1306
+Definition interval_increasing148,3157
+Definition interval_decreasing151,3266
+Fixpoint Int_SF'223,4878
+Definition Int_SF'_alt244,5297
+Lemma up0up0267,5839
+
+./coq/utils/Vector.v,1287
+  Definition Vector9,112
+  Definition Matrix10,182
+  Definition ConstVector14,286
+  Definition ConstMatrix16,390
+  Fixpoint vector_fold_right1_bounded_dep35,1103
+  Definition vector_fold_right_bounded_dep54,1953
+  Definition vnil67,2321
+  Definition vcons73,2408
+  Definition vlast87,2769
+  Definition vdrop_last89,2867
+  Definition vector_fold_right1_dep125,4085
+  Definition vector_fold_right_dep129,4323
+  Definition vector_fold_right1133,4526
+  Definition vector_fold_right136,4708
+  Definition vectoro_to_ovector182,6302
+  Definition matrixo_to_omatrix185,6463
+  Definition vmap188,6619
+  Definition mmap192,6759
+  Definition list_fold_right1_bounded_dep195,6876
+  Definition list_fold_right1_dep214,7451
+  Definition list_fold_right_dep218,7691
+  Definition list_to_vector222,7888
+  Definition vector_to_list225,8000
+  Definition matrix_to_list231,8234
+  Definition vseq234,8340
+  Definition vector_zip237,8458
+  Definition matrix_zip240,8576
+  Definition vlconcat306,10475
+  Definition vlconcat_map309,10569
+  Definition vin312,10670
+  Definition bounded_seq_bounded855,27752
+  Definition bounded_seq873,28457
+  Definition bounded_seq0876,28592
+  Definition vfirstn1080,34606
+  Definition vfirstn_eq1094,34934
+
+./coq/utils/StreamAdd.v,80
+Fixpoint ConsList18,336
+  Fixpoint firstn42,899
+    Fixpoint skipn60,1355
+
+./coq/utils/improper_integrals.v,150
+Definition filter_Rlt8,217
+Lemma filter_Rlt_m_infty_p_inftyfilter_Rlt_m_infty_p_infty17,492
+Lemma Rplus_minus_cancel1Rplus_minus_cancel185,2324
+
+./coq/utils/PairEncoding.v,650
+Inductive BinaryDigit8,134
+Fixpoint pos_to_digits11,189
+Definition N_to_digits18,397
+Fixpoint digits_to_pos24,524
+Fixpoint cleanup_zeros32,742
+Definition fixup_trailing_zeros39,908
+Definition digits_to_N80,1965
+Definition canon_digits92,2276
+Fixpoint interleave348,8735
+Fixpoint uninterleave366,9154
+Definition interleave_with_end_padding462,11628
+Definition encode_digits_pair502,13023
+Definition decode_digits_pair505,13158
+Definition encode_pair508,13275
+Definition make_even_digits511,13386
+Definition decode_pair_to_digits514,13498
+Definition decode_pair519,13701
+Definition padded_interleave_result816,21815
+
+./coq/utils/Isomorphism.v,0
+
+./coq/utils/ListAdd.v,112
+  Fixpoint find_bucket472,11167
+Definition adjacent_pairs827,20859
+Definition adjacent_pairs_alt829,20929
+
+./coq/utils/Utils.v,0
+
+./coq/utils/Floatish.v,0
+
+./coq/utils/StreamLimits.v,30
+Definition Stream_limit6,82
+
+./coq/utils/ExtrFloatishIEEE.v,0
+
+./coq/utils/Assoc.v,0
+
+./coq/SigmaAlgebras.v,276
+Definition is_partition127,3010
+Definition sub_partition131,3143
+Definition in_partition_union147,3538
+Definition all_included291,7378
+Definition event_set_product313,8129
+Definition event_pullback322,8608
+Definition is_countable333,8998
+Definition F373,10078
+
+./coq/BorelSigmaAlgebra.v,0

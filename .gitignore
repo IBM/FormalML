@@ -1,7 +1,13 @@
 *.vo
+*.vos
+*.vok
 *.glob
 *.aux
 .coqdeps.d
 .#*
 Makefile.coq
 Makefile.coq.conf
+.Makefile.coq.d
+extracted
+ocaml/_build
+bin
