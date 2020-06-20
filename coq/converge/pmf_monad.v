@@ -56,7 +56,7 @@ Definition dist_bind_aux :=
     | (r, x) :: l => map (fun py => (r * py.1, py.2)%R) (f x) ++ go l
     end.
 
-Check dist_bind_aux.
+(*Check dist_bind_aux.
 Check allP.
 
 Lemma dist_bind_pf1 {A B} (f: A -> Pmf B) d:
@@ -69,4 +69,4 @@ Definition Pmf_bind {A B} (p : Pmf A) (f : A -> Pmf B) : Pmf B := {|
   outcomes := dist_bind_aux f p.(outcomes);
   nonneg := dist_bind_pf1 f p;
   sum1 := _
-  |}.
+  |}.*)
