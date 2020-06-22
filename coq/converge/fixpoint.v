@@ -19,12 +19,15 @@ library where they proved the Lax-Milgram Theorem.
 
 (* Note:  `ball x eps y` states that y lies in a ball of center x and radius eps.*)
 
+
+Section iter_props.
 Context {V : CompleteSpace}.
 
 
-Definition is_lipschitz (f : V -> V) (k : R):= k > 0 /\ forall x y eps, eps > 0 -> ball x eps y -> ball (f x) (k*eps) (f y).
+Definition is_lipschitz (f : V -> V) (k : R) (P : V -> Prop):= k >= 0 /\ forall x y eps, eps > 0 -> P x -> P y -> ball x eps y -> ball (f x) (k*eps) (f y).
 
-Definition is_contractive (f : V -> V) := exists k0 , k0 < 1 /\ is_lipschitz f k0.
+
+Definition is_contractive (f : V -> V) (P : V -> Prop) := exists k0 , k0 < 1 /\ is_lipschitz f k0 P.
 
 
 Fixpoint iter_fun (n : nat) (f : V -> V) (v : V) :=
@@ -34,12 +37,13 @@ Fixpoint iter_fun (n : nat) (f : V -> V) (v : V) :=
   end.
 
 
+
 (* Helper lemmas. *)
 
 Lemma Rpow_gt_0 (n0 : nat) {k : R} (hk : k > 0) : k^n0 > 0.
 Proof.
   induction n0 as [| n0 iH0].
-  simpl. firstorder. 
+  simpl. exact Rlt_0_1.
   simpl. exact (Rmult_gt_0_compat _ _ hk iH0).
 Qed.
 
@@ -65,21 +69,45 @@ Proof.
   apply Ropp_lt_gt_0_contravar. apply Rpow_gt_0. firstorder.
 Qed.
 
-Lemma dist_iter_fun_aux_1 {f : V -> V}{k eps : R} (x : V) (hk : 0 < k < 1) (Hf : is_lipschitz f k) : forall (n : nat) , (eps > 0) -> 
+Variable f: V -> V.
+Variable phi: V -> Prop.
+Hypothesis phi_f: forall x:V, phi x -> phi (f x).
+
+
+Definition lim : ((V -> Prop) -> Prop) -> V := CompleteSpace.lim _ (CompleteSpace.class V).
+
+
+Definition complete_subset (phi : V -> Prop) :=
+  forall (F : (V -> Prop) -> Prop), ProperFilter F -> cauchy F
+                       -> (forall P, F P -> (exists x, P x /\ phi x)) -> phi (lim F).
+
+
+
+Lemma phi_iter_f (a : V) (n : nat) : phi a -> phi (iter_fun n f a).
+Proof.
+  intros Hphi.
+  induction n as [| n0 iH0].
+  now simpl.
+  simpl. now apply phi_f.
+Qed.
+
+Lemma dist_iter_fun_aux_1 {k eps : R} (x : V) (hk : 0 < k < 1) (Hf : is_lipschitz f k phi)  : forall (n : nat) , (eps > 0) -> phi x -> 
       ball x eps (f x) -> ball (iter_fun n f x) ((k^n)*eps) (iter_fun (n+1) f x).
 Proof.
-  intros n Heps H.
+  intros n Heps HP Hxfx.
   destruct Hf as [Hk Hp].
+  case Hk. clear Hk. intro Hkk.
   induction n as [| n0 iH].
   *
-    simpl. assert (1*eps = eps) by ring. now rewrite H0.
+    simpl. assert (1*eps = eps) by ring. now rewrite H.
   *
     simpl. 
     specialize (Hp (iter_fun n0 f x) (iter_fun (n0+1) f x) ((k^n0 * eps))).
-    assert (k * k^n0 * eps = k*(k^n0 * eps)) by ring. rewrite H0. apply Hp.
-    apply (Rmult_gt_0_compat _ _). exact (Rpow_gt_0 _ Hk).
-    assumption.
-    exact iH.
+    assert (k * k^n0 * eps = k*(k^n0 * eps)) by ring. rewrite H. apply Hp.
+    apply (Rmult_gt_0_compat _ _). exact (Rpow_gt_0 _ Hkk).
+    assumption. exact (phi_iter_f x n0 HP). exact  (phi_iter_f x (n0+1) HP).
+    apply iH.
+  * intro Keq. intuition. rewrite Keq in H. exfalso. exact (Rlt_irrefl _ H).
 Qed.
 
 
@@ -95,17 +123,18 @@ Proof.
 Qed.
 
 
-Lemma dist_iter_fun_aux_2 {f : V -> V}{k eps : R} (x : V) (hk : 0 < k < 1)(Hf : is_lipschitz f k) :
-  forall (m  n : nat), (m > 0)%nat -> (eps > 0) ->
+Lemma dist_iter_fun_aux_2 {k eps : R} (x : V) (hk : 0 < k < 1)(Hf : is_lipschitz f k phi) :
+  forall (m  n : nat), (m > 0)%nat -> (eps > 0) -> phi x ->
                 let D := k^n * (k^m - 1)/(k-1) in
                 ball x eps (f x) -> ball (iter_fun n f x) (D*eps) (iter_fun (n+m) f x).
 Proof.
-  intros m n Hm0 eps0 D Hxfx.
+  intros m n Hm0 eps0 Hphi D Hxfx.
   induction m as [ | m0 IHm0].
   *
     exfalso. omega.
   *
-    destruct m0. replace D with (k^n). exact (dist_iter_fun_aux_1 x hk Hf _ eps0 Hxfx).
+    destruct m0. replace D with (k^n).
+    exact (dist_iter_fun_aux_1 x hk Hf _ eps0 Hphi Hxfx).
     unfold D. field_simplify. reflexivity.
     exact (k_le_one_ne_one hk).
     rewrite Nat.add_succ_r.
@@ -113,14 +142,15 @@ Proof.
     rewrite (Rmult_plus_distr_r). eapply (ball_triangle _ (iter_fun (n+ S m0) f x) _ _ _).
     (* `intuition` here simplifies the context*)
     exact (IHm0 H). assert (Heq : (S (n + S m0))%nat = (n + S m0 + 1)%nat) by ring.
-    rewrite Heq. exact (dist_iter_fun_aux_1 x hk Hf _ eps0 Hxfx).
+    rewrite Heq. exact (dist_iter_fun_aux_1 x hk Hf _ eps0 Hphi Hxfx).
 Qed.
 
 
-Lemma dist_iter_fun {f : V -> V} {k eps : R} (x : V) (m n : nat) (hk : 0 < k < 1) (Hf : is_lipschitz f k):
-  eps > 0 -> ball x eps (f x) -> let D:= k^n /(1-k) in ball (iter_fun n f x) (D*eps) (iter_fun (n+m) f x).
+Lemma dist_iter_fun {k eps : R}(x : V)(m n : nat)(hk : 0 < k < 1)(Hf : is_lipschitz f k phi):
+  eps > 0 -> phi x ->
+  ball x eps (f x) -> let D:= k^n /(1-k) in ball (iter_fun n f x) (D*eps) (iter_fun (n+m) f x).
 Proof.  
-  intros Heps Hxfx D.
+  intros Heps Hphi Hxfx D.
   case_eq m.
   *
     intro Heq. assert ((n+0 = n)%nat) by omega. rewrite H.
@@ -145,6 +175,8 @@ Proof.
     assert (-(k-1) = 1 - k) by ring. rewrite <- H.
     exact (Ropp_neq_0_compat (k-1) (k_le_one_ne_one hk)).
     exact (k_le_one_ne_one hk).
-   rewrite <- Hn0. refine (dist_iter_fun_aux_2 _ hk Hf _ _ _ Heps Hxfx). 
+    rewrite <- Hn0. refine (dist_iter_fun_aux_2 _ hk Hf _ _ _ Heps Hphi Hxfx). 
     rewrite Hn0. omega.
 Qed.        
+
+End iter_props.
