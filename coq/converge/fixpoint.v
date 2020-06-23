@@ -77,10 +77,9 @@ Hypothesis phi_f: forall x:V, phi x -> phi (f x).
 Definition lim : ((V -> Prop) -> Prop) -> V := CompleteSpace.lim _ (CompleteSpace.class V).
 
 
-Definition complete_subset (phi : V -> Prop) :=
+Definition is_complete (phi : V -> Prop) :=
   forall (F : (V -> Prop) -> Prop), ProperFilter F -> cauchy F
                        -> (forall P, F P -> (exists x, P x /\ phi x)) -> phi (lim F).
-
 
 
 Lemma phi_iter_f (a : V) (n : nat) : phi a -> phi (iter_fun n f a).
@@ -179,4 +178,37 @@ Proof.
     rewrite Hn0. omega.
 Qed.        
 
+Lemma iter_is_proper (a : V) : ProperFilter (fun P => Hierarchy.eventually (fun n => P (iter_fun n f a))).
+Proof.
+  split. intros P He.
+  destruct He as [x hb].
+  exists (iter_fun x f a).
+  apply hb. omega.
+  split.
+  *
+    exists 1%nat. intros n Hn. trivial.
+  *
+    intros P Q (p,hp) (q,hq).
+    exists (max p q). intros n Hmax.
+    split.
+    apply hp. etransitivity.
+    assert ((p <= Init.Nat.max p q)%nat) by (apply Nat.le_max_l); apply H.
+    assumption.
+    apply hq. etransitivity.
+    assert ((q <= Init.Nat.max p q)%nat) by (apply Nat.le_max_r); apply H.
+    assumption.
+  *
+    intros P Q Hpq (nep,Hnep).
+    exists nep. intros n Hn. intuition.
+Qed.
+
+(*Lemma iter_is_cauchy (a : V) :
+ is_contractive f phi ->  phi a -> cauchy (fun P => Hierarchy.eventually (fun n => P(iter_fun n f a))).
+Proof.
+  intros Hf Hphi.
+  generalize (@cauchy_distance V _ (iter_is_proper a)).
+  unfold cauchy. intros (_,T). apply T. clear T.
+ *)
+
 End iter_props.
+
