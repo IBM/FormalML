@@ -1,6 +1,6 @@
 Require Import Reals Coquelicot.Coquelicot Sums.
-Require Import Fourier FunctionalExtensionality Psatz ProofIrrelevance.
-From mathcomp Require Import ssreflect ssrbool ssrfun eqtype ssrnat seq div choice fintype finset finfun bigop.
+Require Import Fourier FunctionalExtensionality Psatz ProofIrrelevance Coq.Bool.Bool.
+From mathcomp Require Import ssreflect ssrbool ssrfun eqtype ssrnat div seq.
 
 
 Set Bullet Behavior "Strict Subproofs".
@@ -17,9 +17,8 @@ since that is what we will use in our construction of MDPs.
 
  *)
 
-Check finset.
-Check powerset.
-Check cond_pos.
+
+Open Scope list_scope. 
 
 Fixpoint list_fst_sum {A : Type} (l : list (nonnegreal*A)): R  :=
   match l with
@@ -35,6 +34,15 @@ Proof.
   assert (0 <= n) by apply (cond_nonneg n).
   apply (Rplus_le_le_0_compat _ _ H).
   lra.
+Qed.
+
+
+Lemma list_sum_cat {A : Type} (l1 l2 : list (nonnegreal * A)) :
+  list_fst_sum (l1 ++ l2) = (list_fst_sum l1) + (list_fst_sum l2).
+Proof.
+  induction l1.
+  * simpl ; nra.
+  * simpl ; destruct a; nra.
 Qed.
 
 
@@ -73,10 +81,45 @@ outcomes := [::(mknonnegreal R1 (Rlt_le _ _ Rlt_0_1),a)];
 sum1 := pure_sum1 _
 |}.
 
+Lemma prod_nonnegreal : forall (a b : nonnegreal), 0 <= a*b.
+Proof.
+  intros (a,ha) (b,hb).
+  exact (Rmult_le_pos a b ha hb).
+Qed.
+
 
 Fixpoint dist_bind_outcomes
-         {A B : Type} (f : A -> list(nonnegreal*B)) (p : list (nonnegreal*A)) : list(R*B) :=
+         {A B : Type} (f : A -> Pmf B) (p : list (nonnegreal*A)) : list(nonnegreal*B) :=
   match p with
    | nil => nil
-   | (n,a) :: ps => map (fun (py:nonnegreal*B) => (n*py.1,py.2)) (f a) ++ (dist_bind_outcomes f ps)
+   | (n,a) :: ps =>
+     map (fun (py:nonnegreal*B) => (mknonnegreal _ (prod_nonnegreal n py.1),py.2)) (f a).(outcomes) ++ (dist_bind_outcomes f ps)
   end.
+
+
+Lemma list_fst_sum_eq {A B : Type} (f : A -> Pmf B) (n : nonnegreal) (a : A):
+  list_fst_sum [seq (mknonnegreal _ (prod_nonnegreal n py.1), py.2) | py <- f a] = n*list_fst_sum [seq py | py <- f a].
+Proof.
+  induction (f a) as [ p Hp].
+  simpl.
+Admitted.
+
+Lemma dist_bind_sum1 {A B : Type} (f : A -> Pmf B) (p : Pmf A) : list_fst_sum (dist_bind_outcomes f p.(outcomes)) = R1.
+Proof.
+  destruct p as [p Hp]. simpl.
+  revert Hp.
+  generalize R1 as t.
+  induction p.
+  simpl; intuition. 
+  simpl in *. destruct a as [n a].
+  rewrite list_sum_cat. intro t.
+  rewrite (IHp (t-n)). 
+  * intro Hat.
+Admitted.
+  
+Definition Pmf_bind {A B : Type} (f : A -> Pmf B) (p : Pmf A) : Pmf B :={|
+  outcomes := dist_bind_outcomes f p.(outcomes);
+  sum1 := _
+  |}.
+
+  
