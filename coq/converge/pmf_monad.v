@@ -1,10 +1,14 @@
-Require Import Reals Coquelicot.Coquelicot Sums.
-Require Import Fourier FunctionalExtensionality Psatz ProofIrrelevance Coq.Bool.Bool.
+Require Import Reals Coquelicot.Coquelicot.
+Require Import ProofIrrelevance.
+Require Import micromega.Lra.
+Require Import Coq.Logic.FunctionalExtensionality.
 From mathcomp Require Import ssreflect ssrbool ssrfun eqtype ssrnat div seq.
+Require Import ExtLib.Structures.Monad.
 
-
+Import MonadNotation. 
 Set Bullet Behavior "Strict Subproofs".
 
+Set Universe Polymorphism.
 
 (*
 
@@ -58,6 +62,8 @@ Definition nonneg_list_sum {A : Type} (l : list (nonnegreal * A)) : nonnegreal
   cond_nonneg := (list_sum_is_nonneg l)
 |}.
 
+Section Pmf.
+  
 (* Defines the record of discrete probability measures on a type. *)
 Record Pmf (A : Type) := mkPmf {
   outcomes :> list (nonnegreal * A);
@@ -82,11 +88,13 @@ Lemma pure_sum1 {A} (a : A) : list_fst_sum [::(mknonnegreal R1 (Rlt_le _ _ Rlt_0
 Proof.
   simpl. lra.
 Qed.
+ 
 
-Definition Pmf_pure {A} (a : A) : Pmf A := {|
+Definition Pmf_pure : forall {A : Type}, A -> Pmf A := fun {A} (a:A) => {|
 outcomes := [::(mknonnegreal R1 (Rlt_le _ _ Rlt_0_1),a)];
 sum1 := pure_sum1 _
 |}.
+
 
 
 Fixpoint dist_bind_outcomes
@@ -126,9 +134,38 @@ Proof.
     lra.
 Qed.
 
-Definition Pmf_bind {A B : Type} (f : A -> Pmf B) (p : Pmf A) : Pmf B :={|
+
+Definition Pmf_bind {A B : Type} (p : Pmf A) (f : A -> Pmf B)  : Pmf B :={|
   outcomes := dist_bind_outcomes f p.(outcomes);
   sum1 := dist_bind_sum1 f p
   |}.
 
+Global Instance Monad_Pmf : Monad Pmf := {|
+  ret := @Pmf_pure;
+  bind := @Pmf_bind;
+|}.
+
+Open Scope monad_scope.
+
+(*
+We can use the nice bind and return syntax, since Pmf is now part of the Monad typeclass. 
+
+Variable (A B : Type).
+Variable (p : Pmf A).
+Variable (f g : A -> Pmf B). 
+Check (p >>= f).
+*)
+
+
+Lemma Pmf_bind_of_ret {A B : Type} (a : A) (f : A -> Pmf B) : (ret a) >>= f = f a.
+Proof.
+  apply Pmf_ext.
+  simpl. rewrite cats0.
+  rewrite <- map_id. apply eq_map.
+  assert (forall a : nonnegreal, R1 * a = a). intros a0 ; lra.
+  intros py. destruct py. simpl. f_equal.
+  destruct n. simpl.
+Admitted.
+
   
+End Pmf.
