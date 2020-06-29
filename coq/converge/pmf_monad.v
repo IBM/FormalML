@@ -46,6 +46,15 @@ Proof.
   exact (Rmult_le_pos _ _ ha hb).
 Qed.
 
+Lemma Rone_mult_nonnegreal (r : nonnegreal) (hr : 0 <= R1*r) : mknonnegreal (R1*r) hr = r.
+Proof. 
+  destruct r as [r hr'].
+  simpl. assert (r = R1 * r) by lra.
+  simpl in hr. revert hr.
+  rewrite <- H. intros.
+  f_equal. apply proof_irrelevance.
+Qed.
+
 
 Lemma list_sum_cat {A : Type} (l1 l2 : list (nonnegreal * A)) :
   list_fst_sum (l1 ++ l2) = (list_fst_sum l1) + (list_fst_sum l2).
@@ -156,16 +165,14 @@ Variable (f g : A -> Pmf B).
 Check (p >>= f).
 *)
 
-
 Lemma Pmf_bind_of_ret {A B : Type} (a : A) (f : A -> Pmf B) : (ret a) >>= f = f a.
 Proof.
   apply Pmf_ext.
   simpl. rewrite cats0.
   rewrite <- map_id. apply eq_map.
-  assert (forall a : nonnegreal, R1 * a = a). intros a0 ; lra.
-  intros py. destruct py. simpl. f_equal.
-  destruct n. simpl.
-Admitted.
+  intros (n,b). simpl.
+  now rewrite Rone_mult_nonnegreal.
+Qed.
 
   
 End Pmf.
