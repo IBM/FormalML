@@ -96,30 +96,36 @@ Fixpoint dist_bind_outcomes
      map (fun (py:nonnegreal*B) => (mknonnegreal _ (prod_nonnegreal n py.1),py.2)) (f a).(outcomes) ++ (dist_bind_outcomes f ps)
   end.
 
-
 Lemma list_fst_sum_eq {A B : Type} (f : A -> Pmf B) (n : nonnegreal) (a : A):
   list_fst_sum [seq (mknonnegreal _ (prod_nonnegreal n py.1), py.2) | py <- f a] = n*list_fst_sum [seq py | py <- f a].
 Proof.
-  induction (f a) as [ p Hp].
-  simpl.
-Admitted.
+  destruct (f a) as [fa Hfa]. simpl. revert Hfa.
+  generalize R1 as t. induction fa. 
+  * firstorder.
+  *
+    simpl in *. destruct a0. intros t Htn0.
+    rewrite (IHfa (t - n0)).
+    specialize (IHfa (t-n0)). firstorder.
+    rewrite <- Htn0. lra.
+Qed.
+
 
 Lemma dist_bind_sum1 {A B : Type} (f : A -> Pmf B) (p : Pmf A) : list_fst_sum (dist_bind_outcomes f p.(outcomes)) = R1.
 Proof.
   destruct p as [p Hp]. simpl.
-  revert Hp.
-  generalize R1 as t.
+  revert Hp. generalize R1 as t.
   induction p.
-  simpl; intuition. 
-  simpl in *. destruct a as [n a].
-  rewrite list_sum_cat. intro t.
-  rewrite (IHp (t-n)). 
-  * intro Hat.
-Admitted.
-  
+ *  simpl; intuition. 
+ *  simpl in *. destruct a as [n a]. intros t0 Hnt0.
+  rewrite list_sum_cat.  rewrite (IHp (t0-n)). 
+  rewrite list_fst_sum_eq. destruct (f a) as [fp Hfp]. simpl.
+  rewrite map_id Hfp. lra.
+  lra.
+Qed.
+
 Definition Pmf_bind {A B : Type} (f : A -> Pmf B) (p : Pmf A) : Pmf B :={|
   outcomes := dist_bind_outcomes f p.(outcomes);
-  sum1 := _
+  sum1 := dist_bind_sum1 f p
   |}.
 
   
