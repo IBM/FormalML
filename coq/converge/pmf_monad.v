@@ -1,13 +1,11 @@
 Require Import Reals Coquelicot.Coquelicot.
 Require Import ProofIrrelevance.
 Require Import micromega.Lra.
-From mathcomp Require Import ssreflect ssrbool ssrfun eqtype ssrnat div seq.
+From mathcomp Require Import ssreflect ssrfun seq.
 Require Import ExtLib.Structures.Monad ExtLib.Structures.MonadLaws. 
 
 Import MonadNotation. 
 Set Bullet Behavior "Strict Subproofs".
-
-Set Universe Polymorphism.
 
 (*
 
@@ -241,6 +239,7 @@ Proof.
       lra.
 Qed.
 
+Check MonadLaws.
 Global Instance Pmf_MonadLaws : MonadLaws Monad_Pmf := {|
   bind_of_return := @Pmf_bind_of_ret;
   bind_associativity := @Pmf_bind_of_bind;
