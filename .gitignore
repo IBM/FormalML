@@ -11,3 +11,7 @@ Makefile.coq.conf
 extracted
 ocaml/_build
 bin
+.DS_Store
+*.cache
+*.d
+*.cache
