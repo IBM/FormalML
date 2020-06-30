@@ -1,9 +1,8 @@
 Require Import Reals Coquelicot.Coquelicot.
 Require Import ProofIrrelevance.
 Require Import micromega.Lra.
-Require Import Coq.Logic.FunctionalExtensionality.
 From mathcomp Require Import ssreflect ssrbool ssrfun eqtype ssrnat div seq.
-Require Import ExtLib.Structures.Monad.
+Require Import ExtLib.Structures.Monad ExtLib.Structures.MonadLaws. 
 
 Import MonadNotation. 
 Set Bullet Behavior "Strict Subproofs".
@@ -46,6 +45,29 @@ Proof.
   exact (Rmult_le_pos _ _ ha hb).
 Qed.
 
+
+Lemma nonneg_pf_irrel r1 (cond1 cond2:0 <= r1) : 
+  mknonnegreal r1 cond1 = mknonnegreal r1 cond2.
+Proof.
+  f_equal.
+  apply proof_irrelevance.
+Qed.
+
+Lemma nonneg_ext r1 cond1 r2 cond2: 
+  r1 = r2 ->
+  mknonnegreal r1 cond1 = mknonnegreal r2 cond2.
+Proof.
+  intros; subst.
+  apply nonneg_pf_irrel.
+Qed.
+
+Lemma mknonnegreal_assoc (r1 r2 r3 : nonnegreal) :
+  mknonnegreal _ (prod_nonnegreal (mknonnegreal _ (prod_nonnegreal r1 r2) ) r3) = mknonnegreal _ (prod_nonnegreal r1 (mknonnegreal _ (prod_nonnegreal r2 r3))).
+Proof.
+  apply nonneg_ext; simpl.
+  lra.
+Qed.
+
 Lemma Rone_mult_nonnegreal (r : nonnegreal) (hr : 0 <= R1*r) : mknonnegreal (R1*r) hr = r.
 Proof. 
   destruct r as [r hr'].
@@ -54,7 +76,6 @@ Proof.
   rewrite <- H. intros.
   f_equal. apply proof_irrelevance.
 Qed.
-
 
 Lemma list_sum_cat {A : Type} (l1 l2 : list (nonnegreal * A)) :
   list_fst_sum (l1 ++ l2) = (list_fst_sum l1) + (list_fst_sum l2).
@@ -114,6 +135,24 @@ Fixpoint dist_bind_outcomes
      map (fun (py:nonnegreal*B) => (mknonnegreal _ (prod_nonnegreal n py.1),py.2)) (f a).(outcomes) ++ (dist_bind_outcomes f ps)
   end.
 
+Fixpoint dist_bind_outcomes'
+         {A B : Type} (f : A -> Pmf B) (p : list (nonnegreal*A)) : list(R*B) :=
+  match p with
+   | nil => nil
+   | (n,a) :: ps =>
+     map (fun (py:nonnegreal*B) => (n*py.1,py.2)) (f a).(outcomes) ++ (dist_bind_outcomes' f ps)
+  end.
+
+Lemma dist_bind_outcomes_cat {A B : Type} (f : A -> Pmf B) (l1 l2 : list(nonnegreal*A)) :
+  dist_bind_outcomes f (l1 ++ l2) = (dist_bind_outcomes f l1) ++ (dist_bind_outcomes f l2).
+Proof.
+  induction l1.
+  * simpl; easy.
+  * destruct a as [an aa]. simpl.
+    rewrite <- catA. rewrite IHl1.
+    reflexivity.
+Qed.
+
 Lemma list_fst_sum_eq {A B : Type} (f : A -> Pmf B) (n : nonnegreal) (a : A):
   list_fst_sum [seq (mknonnegreal _ (prod_nonnegreal n py.1), py.2) | py <- f a]
   = n*list_fst_sum [seq py | py <- f a].
@@ -156,15 +195,16 @@ Global Instance Monad_Pmf : Monad Pmf := {|
 
 Open Scope monad_scope.
 
-(*
-We can use the nice bind and return syntax, since Pmf is now part of the Monad typeclass. 
+
+(*We can use the nice bind and return syntax, since Pmf is now part of the Monad typeclass.
 
 Variable (A B : Type).
 Variable (p : Pmf A).
+Variable (b : B).
 Variable (f g : A -> Pmf B). 
-Check (p >>= f).
-*)
+Check (p >>= f).*)
 
+  
 Lemma Pmf_bind_of_ret {A B : Type} (a : A) (f : A -> Pmf B) : (ret a) >>= f = f a.
 Proof.
   apply Pmf_ext.
@@ -174,5 +214,36 @@ Proof.
   now rewrite Rone_mult_nonnegreal.
 Qed.
 
-  
+Lemma Pmf_bind_of_bind {A B C : Type} (p : Pmf A) (f : A -> Pmf B) (g : B -> Pmf C) :
+  (p >>= f) >>= g = p >>= (fun a => (f a) >>= g).
+Proof.
+  apply Pmf_ext.
+  destruct p as [pout Hp].
+  revert Hp. simpl. generalize R1 as t.
+  induction pout.
+  * simpl ; easy.
+  * simpl. destruct a as [an aa].
+    intros t Ht. rewrite dist_bind_outcomes_cat. simpl.
+    rewrite <- (IHpout (t-an)). 
+    destruct (f aa) as [faa Hfaa]. f_equal.
+    revert Hfaa. simpl. generalize R1 as u.
+    induction faa.
+    - simpl. reflexivity.
+    - destruct a as [an1 aa1].
+      simpl. intros u Hu. rewrite map_cat.
+      rewrite (IHfaa (u-an1)); clear IHfaa. f_equal. rewrite <- map_comp.
+      unfold comp. simpl.
+      apply List.map_ext; intros.
+      f_equal.
+      apply nonneg_ext. apply Rmult_assoc.
+      lra.
+    -
+      lra.
+Qed.
+
+Global Instance Pmf_MonadLaws : MonadLaws Monad_Pmf := {|
+  bind_of_return := @Pmf_bind_of_ret;
+  bind_associativity := @Pmf_bind_of_bind;
+|}.
+
 End Pmf.
