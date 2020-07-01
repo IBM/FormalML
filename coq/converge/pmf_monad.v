@@ -133,14 +133,6 @@ Fixpoint dist_bind_outcomes
      map (fun (py:nonnegreal*B) => (mknonnegreal _ (prod_nonnegreal n py.1),py.2)) (f a).(outcomes) ++ (dist_bind_outcomes f ps)
   end.
 
-Fixpoint dist_bind_outcomes'
-         {A B : Type} (f : A -> Pmf B) (p : list (nonnegreal*A)) : list(R*B) :=
-  match p with
-   | nil => nil
-   | (n,a) :: ps =>
-     map (fun (py:nonnegreal*B) => (n*py.1,py.2)) (f a).(outcomes) ++ (dist_bind_outcomes' f ps)
-  end.
-
 Lemma dist_bind_outcomes_cat {A B : Type} (f : A -> Pmf B) (l1 l2 : list(nonnegreal*A)) :
   dist_bind_outcomes f (l1 ++ l2) = (dist_bind_outcomes f l1) ++ (dist_bind_outcomes f l2).
 Proof.
@@ -239,7 +231,6 @@ Proof.
       lra.
 Qed.
 
-Check MonadLaws.
 Global Instance Pmf_MonadLaws : MonadLaws Monad_Pmf := {|
   bind_of_return := @Pmf_bind_of_ret;
   bind_associativity := @Pmf_bind_of_bind;
