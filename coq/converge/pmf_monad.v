@@ -183,6 +183,7 @@ Global Instance Monad_Pmf : Monad Pmf := {|
   bind := @Pmf_bind;
 |}.
 
+
 Open Scope monad_scope.
 
 
@@ -235,5 +236,7 @@ Global Instance Pmf_MonadLaws : MonadLaws Monad_Pmf := {|
   bind_of_return := @Pmf_bind_of_ret;
   bind_associativity := @Pmf_bind_of_bind;
 |}.
+
+
 
 End Pmf.
