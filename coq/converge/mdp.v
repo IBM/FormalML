@@ -7,6 +7,26 @@ Require Import ExtLib.Structures.Monad.
 Import MonadNotation.
 
 
+Section m.
+Open Scope monad_scope.
+
+(* Applies a function to an initial argument n times *)
+Fixpoint applyn {A} init g (n : nat) : A :=
+  match n with
+  | 0 => init
+  | S k => g (applyn init g k)
+  end.
+
+
+Context {M:Type->Type}.
+Context {Mm:Monad M}.
+Context {A:Type}.
+Context (unit:A) (f:A->M A).
+
+End m.
+
+Definition bind_iter {M:Type->Type} {Mm:Monad M} {A:Type} (unit:A) f := applyn (ret unit) (fun y => bind y f).
+
 Section MDPs.
 
 Open Scope monad_scope.
@@ -29,19 +49,6 @@ Definition policy (M : MDP) := M.(state) -> M.(act).
 
 Definition stoch_mx {M : MDP} (σ : policy M): M.(state) -> Pmf M.(state) := fun s => M.(t) s (σ s).
 
-Variable (M : MDP).
-Variable (s : M.(state)).
-Variable (σ : policy M).
-Check (Pmf_pure s >>= (stoch_mx σ)). 
-Check (Pmf_pure s >>= (stoch_mx σ)) >>= (stoch_mx σ). 
-Check Pmf_bind.
-
-
-Fixpoint bind_iter {M : MDP} (σ : policy M) (n : nat) (s : M.(state)) : Pmf M.(state) :=
-  match n with
-  | 0 => Pmf_pure s
-  | S k => Pmf_bind (stoch_mx σ) (bind_iter σ k s) (* can't use bind notation here why?? *)
-  end.
-
+Definition bind_stoch_iter {M : MDP} (s : M.(state)) (σ : policy M) := bind_iter s (stoch_mx σ).
 
 End MDPs.
