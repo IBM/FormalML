@@ -2,6 +2,7 @@
 Require Import Reals Coq.Lists.List.
 Require Import pmf_monad.
 Require Import domfct.
+Require Import Sums.
 Require Import micromega.Lra.
 Require Import Coq.Logic.FunctionalExtensionality.
 Require Import ExtLib.Structures.Monad.
@@ -97,19 +98,37 @@ Definition unitMDP {st0 act0 : Type} (t0 : st0 -> act0 -> Pmf st0) : MDP :=
     reward := fun s => R1
 |}.
 
+Check Rmult_1_l.
 (* The expected reward for an arbitrary initial state and arbitrary policy is unity for a unit MDP. *)
 Lemma expt_reward_unitMDP {t0 : R -> R -> Pmf R} :
   let M0 := unitMDP t0 in
   forall (σ0 : policy M0) (init0 : M0.(state)) (n:nat), expt_reward σ0 init0 n = R1. 
 Proof.
   intros M0 σ0 init0 n. unfold expt_reward.
-  simpl.
-  assert (H : (fun y : nonnegreal * R => (R1 * fst y)%R) = fun y => (fst y)%R).
-  apply functional_extensionality. intro x ; lra. 
-  rewrite H. now rewrite sum1_compat.
+  simpl. rewrite <- (sum1_compat (bind_stoch_iter σ0 n init0)).
+  f_equal. apply map_ext. rewrite sum1_compat.
+  intros a. now rewrite Rmult_1_l.
 Qed. 
 
 End egs.
+
+Section ltv.
+
+Open Scope R_scope. 
+Context {M : MDP} {γ : R}.
+Context (σ : policy M) (init : M.(state)) (hγ : (0 <= γ < 1)%R).
+
+Definition ltv_part (n : nat) := sum_f_R0 (expt_reward σ init) n. 
+Definition ltv_part' (n : nat) := sum_f_R0' (expt_reward σ init) n. 
+
+Lemma ltv_part0_eq_reward : ltv_part 0 = reward _ init.
+Proof.
+  simpl ; apply expt_reward0_eq_reward. 
+Qed.
+
+End ltv.
+
+  
 
 
 
