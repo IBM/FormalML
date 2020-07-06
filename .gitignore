@@ -15,3 +15,4 @@ bin
 *.cache
 *.d
 *.cache
+*.v#
