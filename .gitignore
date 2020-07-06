@@ -16,3 +16,4 @@ bin
 *.d
 *.cache
 *.v#
+.Makefile.coq.d
