@@ -12,6 +12,7 @@ Import MonadNotation.
 
 Section extra.
 Open Scope list_scope.
+Open Scope R_scope.
 
 Import ListNotations.
 (* Applies a function to an initial argument n times *)
@@ -22,12 +23,39 @@ Fixpoint applyn {A} (init : A) (g : A -> A) (n : nat) : A :=
   end.
 
 
+  
 Fixpoint Rmax_list (l : list R) : R :=
   match l with
   | nil => 0
   | (x :: xs) => Rmax x (Rmax_list xs)
   end.
-  
+
+Lemma list_sum_mult_const (c : R) (l : list R) :
+  list_sum (map (fun z => c*z) l) = c*list_sum (map (fun z => z) l).
+Proof. 
+  induction l.
+  simpl; lra.
+  simpl in *. rewrite IHl. 
+  lra. 
+Qed.   
+
+Lemma list_sum_const_mult_le {x y : R} (l : list R) (hl : list_sum l = R1) (hxy : x <= y) :
+  list_sum (map (fun z => x*z) l) <= y.
+Proof.
+  rewrite list_sum_mult_const. rewrite map_id. 
+  rewrite hl. lra. 
+Qed. 
+
+Lemma list_sum_fun_mult_le {x y D : R} {f g : R -> R}(l : list R)(hf : forall z, f z <= D) (hg : forall z , 0 <= g z) :
+  list_sum (map (fun z => (f z)*(g z)) l) <= D*list_sum (map (fun z => g z) l).
+Proof.
+  induction l.
+  simpl. lra.
+  simpl. rewrite Rmult_plus_distr_l.
+  assert (f a * g a <= D * g a). apply Rmult_le_compat_r. exact (hg a). exact (hf a).
+  exact (Rplus_le_compat _ _ _ _ H IHl).   
+Qed. 
+
 (*
 Context {M:Type->Type}.
 Context {Mm:Monad M}.
@@ -73,7 +101,7 @@ Definition stoch_mx : M.(state) -> Pmf M.(state) := fun s => t _ s (σ s).
 Definition bind_stoch_iter (n : nat) (init : M.(state)):= bind_iter init (stoch_mx) n.
 
 Definition expt_reward (init : M.(state)) (n : nat) : R :=
- list_sum (seq.map (fun y : nonnegreal * state _ => reward _ (snd y) * (fst y)) (bind_stoch_iter n init).(outcomes)).
+ list_sum (map (fun y : nonnegreal * state _ => reward _ (snd y) * (fst y)) (bind_stoch_iter n init).(outcomes)).
 
   
 (* Expected reward at time 0 is equal to the reward. *)
@@ -85,6 +113,20 @@ Proof.
 Qed.
 
 
+Lemma expt_reward_le_max(init : M.(state)) (n : nat) :
+  (exists D, forall s : M.(state), (0 <= D) /\ reward _ s <= D)  -> (exists D:R, expt_reward init n <= D). 
+Proof. 
+  intros (D,H). specialize (H init).
+  destruct H as [Hge Hle].
+  exists D. unfold expt_reward.
+  generalize (bind_stoch_iter n init) as l.
+  intros l. 
+  induction l.(outcomes). simpl;assumption. 
+  simpl in *. 
+Admitted.
+
+
+  
 End MDPs.
 
 Section egs.
@@ -98,7 +140,6 @@ Definition unitMDP {st0 act0 : Type} (t0 : st0 -> act0 -> Pmf st0) : MDP :=
     reward := fun s => R1
 |}.
 
-Check Rmult_1_l.
 (* The expected reward for an arbitrary initial state and arbitrary policy is unity for a unit MDP. *)
 Lemma expt_reward_unitMDP {t0 : R -> R -> Pmf R} :
   let M0 := unitMDP t0 in
@@ -125,6 +166,7 @@ Lemma ltv_part0_eq_reward : ltv_part 0 = reward _ init.
 Proof.
   simpl ; apply expt_reward0_eq_reward. 
 Qed.
+
 
 End ltv.
 
