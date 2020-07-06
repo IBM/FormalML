@@ -10,7 +10,8 @@ env:
   - COQ_IMAGE="coqorg/coq:8.8.2"
   - COQ_IMAGE="coqorg/coq:8.9"
   - COQ_IMAGE="coqorg/coq:8.9.1"
-  - COQ_IMAGE="coqorg/coq:dev"
+  - COQ_IMAGE="coqorg/coq:8.11.1"
+
 
 script:
 - echo -e "${ANSI_YELLOW}Building Coq code...${ANSI_RESET}" && echo -en 'travis_fold:start:script\\r'
