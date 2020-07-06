@@ -88,6 +88,7 @@ End MDPs.
 
 Section egs.
 
+(* This defines a "unit reward" MDP.*)
 Definition unitMDP {st0 act0 : Type} (t0 : st0 -> act0 -> Pmf st0) : MDP :=
 {|
     state := st0;
@@ -96,6 +97,7 @@ Definition unitMDP {st0 act0 : Type} (t0 : st0 -> act0 -> Pmf st0) : MDP :=
     reward := fun s => R1
 |}.
 
+(* The expected reward for an arbitrary initial state and arbitrary policy is unity for a unit MDP. *)
 Lemma expt_reward_unitMDP {t0 : R -> R -> Pmf R} :
   let M0 := unitMDP t0 in
   forall (σ0 : policy M0) (init0 : M0.(state)) (n:nat), expt_reward σ0 init0 n = R1. 
@@ -104,7 +106,7 @@ Proof.
   simpl.
   assert (H : (fun y : nonnegreal * R => (R1 * fst y)%R) = fun y => (fst y)%R).
   apply functional_extensionality. intro x ; lra. 
-  rewrite H.  rewrite sum1_compat. reflexivity.
+  rewrite H. now rewrite sum1_compat.
 Qed. 
 
 End egs.
