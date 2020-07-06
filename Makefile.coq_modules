@@ -41,6 +41,8 @@ MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	utils/Floatish/FloatishIEEE \
 	utils/Floatish/FloatishReal \
 	utils/Floatish \
+	converge/pmf_monad \
+	converge/mdp \
 	AxiomaticNormedRealVectorSpace \
 	BorelSigmaAlgebra \
 	DefinedFunctions \
