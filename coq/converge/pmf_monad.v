@@ -20,11 +20,28 @@ to define and reason about Markov Decision Processes.
 
 (* Helper lemmas. *)
 
+Fixpoint list_sum (l : list R) : R :=
+  match l with
+  | nil => 0
+  | x :: xs => x + list_sum xs
+  end.
+
 Fixpoint list_fst_sum {A : Type} (l : list (nonnegreal*A)): R  :=
   match l with
   | nil => 0
   | (n,_) :: ns => n + list_fst_sum ns                
   end.
+
+Definition list_fst_sum' {A : Type} (l : list (nonnegreal*A)) : R :=
+  list_sum (map (fun x => nonneg (fst x)) l).
+
+Lemma list_fst_sum_compat {A : Type} (l : list (nonnegreal*A)) : list_fst_sum l = list_fst_sum' l.
+Proof.
+  induction l.
+  * unfold list_fst_sum' ; simpl ; reflexivity.
+  * unfold list_fst_sum'. destruct a. simpl.
+    rewrite IHl. f_equal. 
+Qed. 
 
 Lemma list_sum_is_nonneg {A : Type} (l : list(nonnegreal*A)) : 0 <= list_fst_sum l. 
 Proof.
@@ -101,7 +118,6 @@ Record Pmf (A : Type) := mkPmf {
  Arguments outcomes {_}.
  Arguments sum1 {_}.
  Arguments mkPmf {_}.
- 
 
 Lemma Pmf_ext  {A} (p q : Pmf A)  : outcomes p = outcomes q -> p = q.
 Proof.
@@ -110,6 +126,14 @@ destruct q as [oq sq].
 rewrite /outcomes => ?. (* what's happening here? *)
 subst. f_equal. apply proof_irrelevance.
 Qed.
+
+Lemma sum1_compat {B} (p : Pmf B) :
+  list_sum (seq.map (fun y : nonnegreal * B => nonneg (fst y)) (p.(outcomes))) = R1. 
+Proof.
+  rewrite <- p.(sum1).
+  rewrite list_fst_sum_compat.
+  unfold list_fst_sum'. reflexivity.
+Qed. 
 
 
 Lemma pure_sum1 {A} (a : A) : list_fst_sum [::(mknonnegreal R1 (Rlt_le _ _ Rlt_0_1),a)] = R1. 
@@ -171,6 +195,13 @@ Proof.
     rewrite map_id Hfp. lra.
     lra.
 Qed.
+
+Lemma dist_bind_sum1_compat {A B : Type} (f : A -> Pmf B) (p : Pmf A) :
+  list_fst_sum' (dist_bind_outcomes f p.(outcomes)) = R1.
+Proof.
+  rewrite <-list_fst_sum_compat. apply dist_bind_sum1.
+Qed.
+
 
 
 Definition Pmf_bind {A B : Type} (p : Pmf A) (f : A -> Pmf B)  : Pmf B :={|
@@ -237,6 +268,5 @@ Global Instance Pmf_MonadLaws : MonadLaws Monad_Pmf := {|
   bind_associativity := @Pmf_bind_of_bind;
 |}.
 
-
-
+ 
 End Pmf.
