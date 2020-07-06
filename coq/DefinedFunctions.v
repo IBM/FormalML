@@ -922,8 +922,8 @@ F (d : definition_function_types)
  Section foreign_ops.
    Context {foreign:Foreign}.
    Class ForeignEval : Type := {
-     foreign_scalar_eval {T Ann} (σ:df_env) (fsf:foreign_scalar_fun T)
-                          (x:DefinedFunction Ann T) 
+     foreign_scalar_eval {T} (σ:df_env) (fsf:foreign_scalar_fun T)
+                          (x:DefinedFunction UnitAnn T) 
                           (x_eval: definition_function_types_interp T) :  option float
                               }.
  End foreign_ops.
@@ -948,6 +948,48 @@ F (d : definition_function_types)
          end.
 
     Context {foreign:Foreign}.
+
+          Fixpoint df_strip_annotations {Ann} {T} 
+               (df:DefinedFunction Ann T) {struct df}: DefinedFunction UnitAnn T
+     := 
+        match df with
+         | Number _ x1 => Number tt x1
+         | Constant t _ x => Constant tt x
+         | DVector n _ vec => DVector tt (vmap df_strip_annotations vec)
+         | DMatrix n m _ mat => DMatrix tt (vmap (vmap df_strip_annotations) mat)
+         | Var v _ => Var v tt
+         | Plus _ l r => Plus tt (df_strip_annotations l) (df_strip_annotations r)
+         | Minus _ l r => Minus tt (df_strip_annotations l) (df_strip_annotations r)
+         | Times _ l r => Times tt (df_strip_annotations l) (df_strip_annotations r)
+         | Divide _ l r => Divide tt (df_strip_annotations l) (df_strip_annotations r)
+         | Square _ l => Square tt (df_strip_annotations l)
+         | Exp _ l => Exp tt (df_strip_annotations l)
+         | Log _ l => Log tt (df_strip_annotations l)
+         | Abs _ l => Abs tt (df_strip_annotations l)
+         | Sign _ l => Sign tt (df_strip_annotations l)
+         | PSign _ l => PSign tt (df_strip_annotations l)
+         | Max _ l r => Max tt (df_strip_annotations l) (df_strip_annotations r)
+         | VectorDot n _ l r => VectorDot tt (df_strip_annotations l) (df_strip_annotations r)
+         | VectorSum n _ l => VectorSum tt (df_strip_annotations l) 
+         | MatrixSum m n _ l => MatrixSum tt (df_strip_annotations l) 
+         | VectorElem n _ vec i => VectorElem tt (df_strip_annotations vec) i
+         | MatrixElem m n _ mat i j => MatrixElem tt (df_strip_annotations mat) i j
+         | MatrixVectorMult m n _ l r => MatrixVectorMult tt (df_strip_annotations l) (df_strip_annotations r)
+         | MatrixVectorAdd m n _ l r =>  MatrixVectorAdd tt (df_strip_annotations l) (df_strip_annotations r)
+         | MatrixMult m p n _ l r => MatrixMult tt (df_strip_annotations l) (df_strip_annotations r)
+         | VectorPlus n _ l r => VectorPlus tt (df_strip_annotations l) (df_strip_annotations r)
+         | VectorMinus n _ l r => VectorMinus tt (df_strip_annotations l) (df_strip_annotations r)
+         | MatrixPlus m n _ l r =>  MatrixPlus tt (df_strip_annotations l) (df_strip_annotations r)
+         | MatrixMinus m n _ l r =>  MatrixMinus tt (df_strip_annotations l) (df_strip_annotations r)
+         | VectorScalMult n _ l r => VectorScalMult tt (df_strip_annotations l) (df_strip_annotations r)
+         | MatrixScalMult m n _ l r => MatrixScalMult tt (df_strip_annotations l) (df_strip_annotations r)
+         | VectorApply n _ v s l => VectorApply tt v (df_strip_annotations s) (df_strip_annotations l)
+         | MatrixApply m n _ v s l => MatrixApply tt v (df_strip_annotations s) (df_strip_annotations l)
+         | VLossfun n _ v1 v2 s l r => VLossfun tt v1 v2 (df_strip_annotations s) (df_strip_annotations l) r
+         | MLossfun m n _ v1 v2 s l r => MLossfun tt v1 v2 (df_strip_annotations s) (df_strip_annotations l) r
+         | ForeignScalarFun ann t fsf x => ForeignScalarFun tt fsf (df_strip_annotations x)
+         end.        
+
     Context {foreign_eval:ForeignEval}.
 
     Fixpoint df_eval {T Ann} (σ:df_env) (df:DefinedFunction Ann T) : option (definition_function_types_interp T)
@@ -1128,7 +1170,7 @@ F (d : definition_function_types)
            end
          | ForeignScalarFun _ _ fsf x =>
            match (df_eval σ x) with
-           | Some x_eval => foreign_scalar_eval σ fsf x x_eval
+           | Some x_eval => foreign_scalar_eval σ fsf (df_strip_annotations x) x_eval
            | None => None
            end
          end.
@@ -1376,7 +1418,7 @@ F (d : definition_function_types)
          | ForeignScalarFun _ _ fsf x =>
            match df_eval_tree σ x with
            | Some x_eval =>
-             match foreign_scalar_eval σ fsf x_eval (get_annotation x_eval) with
+             match foreign_scalar_eval σ fsf (df_strip_annotations x_eval) (get_annotation x_eval) with
              | Some val => Some (ForeignScalarFun val fsf x_eval)
              | None => None
              end
@@ -1726,18 +1768,18 @@ F (d : definition_function_types)
   Section foreign_ops.
    Context {foreign:Foreign}.
    Class ForeignEvalDeriv : Type := {
-     foreign_scalar_eval_deriv {T Ann} (σ:df_env) (fsf:foreign_scalar_fun T)
-                               (x:DefinedFunction Ann T)
+     foreign_scalar_eval_deriv {T} (σ:df_env) (fsf:foreign_scalar_fun T)
+                               (x:DefinedFunction UnitAnn T)
                                (v:var_type)
                                (x_eval: definition_function_types_interp T)
                                (x_eval_deriv: definition_function_types_interp T) :  option float ;
-     foreign_scalar_eval_deriv_genvar {T Ann} (σ:df_env)  (fsf:foreign_scalar_fun T)
-                                      (x:DefinedFunction Ann T)
+     foreign_scalar_eval_deriv_genvar {T} (σ:df_env)  (fsf:foreign_scalar_fun T)
+                                      (x:DefinedFunction UnitAnn T)
                                       (v:df_env)
                                       (x_eval: definition_function_types_interp T)
                                       (x_eval_deriv: definition_function_types_interp T) :  option float ;
-     foreign_scalar_backprop_deriv {T Ann} (σ:df_env) (fsf:foreign_scalar_fun T)
-                                   (x:DefinedFunction Ann T)
+     foreign_scalar_backprop_deriv {T} (σ:df_env) (fsf:foreign_scalar_fun T)
+                                   (x:DefinedFunction UnitAnn T)
                                    (grad_env:df_env)
                                    (grad:float)
                                    (x_eval: definition_function_types_interp T)
@@ -1963,7 +2005,7 @@ F (d : definition_function_types)
            end
          | ForeignScalarFun _ _ fsf x =>
            match (df_eval σ x, df_eval_deriv σ x v) with
-           | (Some x_eval, Some x_eval_deriv) => foreign_scalar_eval_deriv σ fsf x v  x_eval x_eval_deriv
+           | (Some x_eval, Some x_eval_deriv) => foreign_scalar_eval_deriv σ fsf (df_strip_annotations x) v  x_eval x_eval_deriv
            | (_, _) => None
            end
 
@@ -2193,7 +2235,7 @@ F (d : definition_function_types)
            end
          | ForeignScalarFun _ _ fsf x =>
            match (df_eval σ x, df_eval_deriv_genvar σ x v) with
-           | (Some x_eval, Some x_eval_deriv) => foreign_scalar_eval_deriv_genvar σ fsf x v  x_eval x_eval_deriv
+           | (Some x_eval, Some x_eval_deriv) => foreign_scalar_eval_deriv_genvar σ fsf (df_strip_annotations x) v  x_eval x_eval_deriv
            | (_, _) => None
            end
 
@@ -2449,7 +2491,7 @@ F (d : definition_function_types)
            end
          | ForeignScalarFun _ _ fsf x =>
            match (df_eval_tree_deriv σ x v) with
-           | Some x_eval_deriv => foreign_scalar_eval_deriv σ fsf x v (get_annotation x) x_eval_deriv
+           | Some x_eval_deriv => foreign_scalar_eval_deriv σ fsf (df_strip_annotations x) v (get_annotation x) x_eval_deriv
            | None => None
            end
 
@@ -2687,7 +2729,7 @@ F (d : definition_function_types)
            end
          | ForeignScalarFun _ _ fsf x =>
            match (df_eval_tree_deriv_genvar σ x v) with
-           | Some x_eval_deriv => foreign_scalar_eval_deriv_genvar σ fsf x v (get_annotation x) x_eval_deriv
+           | Some x_eval_deriv => foreign_scalar_eval_deriv_genvar σ fsf (df_strip_annotations x) v (get_annotation x) x_eval_deriv
            | None => None
            end
 
@@ -3076,7 +3118,7 @@ F (d : definition_function_types)
          | ForeignScalarFun _ _ fsf x => fun grad =>
            match df_eval σ x with
            | Some x_eval =>
-             foreign_scalar_backprop_deriv σ fsf x grad_env grad x_eval
+             foreign_scalar_backprop_deriv σ fsf (df_strip_annotations x) grad_env grad x_eval
                                            (fun grad => df_eval_backprop_deriv σ x grad_env grad)
            | _ => None
            end
@@ -3290,7 +3332,7 @@ F (d : definition_function_types)
            | _ => None
            end
          | ForeignScalarFun _ _ fsf x => fun grad =>
-             foreign_scalar_backprop_deriv σ fsf x grad_env grad (get_annotation x)
+             foreign_scalar_backprop_deriv σ fsf (df_strip_annotations x) grad_env grad (get_annotation x)
                                            (fun grad => df_eval_backprop_deriv σ x grad_env grad)
           end.
 
@@ -3661,46 +3703,6 @@ F (d : definition_function_types)
          | ForeignScalarFun ann t fsf x => is_df_rec_prop prop x
         end.
 
-      Fixpoint df_strip_annotations {Ann} {T} 
-               (df:DefinedFunction Ann T) {struct df}: DefinedFunction UnitAnn T
-     := 
-        match df with
-         | Number _ x1 => Number tt x1
-         | Constant t _ x => Constant tt x
-         | DVector n _ vec => DVector tt (vmap df_strip_annotations vec)
-         | DMatrix n m _ mat => DMatrix tt (vmap (vmap df_strip_annotations) mat)
-         | Var v _ => Var v tt
-         | Plus _ l r => Plus tt (df_strip_annotations l) (df_strip_annotations r)
-         | Minus _ l r => Minus tt (df_strip_annotations l) (df_strip_annotations r)
-         | Times _ l r => Times tt (df_strip_annotations l) (df_strip_annotations r)
-         | Divide _ l r => Divide tt (df_strip_annotations l) (df_strip_annotations r)
-         | Square _ l => Square tt (df_strip_annotations l)
-         | Exp _ l => Exp tt (df_strip_annotations l)
-         | Log _ l => Log tt (df_strip_annotations l)
-         | Abs _ l => Abs tt (df_strip_annotations l)
-         | Sign _ l => Sign tt (df_strip_annotations l)
-         | PSign _ l => PSign tt (df_strip_annotations l)
-         | Max _ l r => Max tt (df_strip_annotations l) (df_strip_annotations r)
-         | VectorDot n _ l r => VectorDot tt (df_strip_annotations l) (df_strip_annotations r)
-         | VectorSum n _ l => VectorSum tt (df_strip_annotations l) 
-         | MatrixSum m n _ l => MatrixSum tt (df_strip_annotations l) 
-         | VectorElem n _ vec i => VectorElem tt (df_strip_annotations vec) i
-         | MatrixElem m n _ mat i j => MatrixElem tt (df_strip_annotations mat) i j
-         | MatrixVectorMult m n _ l r => MatrixVectorMult tt (df_strip_annotations l) (df_strip_annotations r)
-         | MatrixVectorAdd m n _ l r =>  MatrixVectorAdd tt (df_strip_annotations l) (df_strip_annotations r)
-         | MatrixMult m p n _ l r => MatrixMult tt (df_strip_annotations l) (df_strip_annotations r)
-         | VectorPlus n _ l r => VectorPlus tt (df_strip_annotations l) (df_strip_annotations r)
-         | VectorMinus n _ l r => VectorMinus tt (df_strip_annotations l) (df_strip_annotations r)
-         | MatrixPlus m n _ l r =>  MatrixPlus tt (df_strip_annotations l) (df_strip_annotations r)
-         | MatrixMinus m n _ l r =>  MatrixMinus tt (df_strip_annotations l) (df_strip_annotations r)
-         | VectorScalMult n _ l r => VectorScalMult tt (df_strip_annotations l) (df_strip_annotations r)
-         | MatrixScalMult m n _ l r => MatrixScalMult tt (df_strip_annotations l) (df_strip_annotations r)
-         | VectorApply n _ v s l => VectorApply tt v (df_strip_annotations s) (df_strip_annotations l)
-         | MatrixApply m n _ v s l => MatrixApply tt v (df_strip_annotations s) (df_strip_annotations l)
-         | VLossfun n _ v1 v2 s l r => VLossfun tt v1 v2 (df_strip_annotations s) (df_strip_annotations l) r
-         | MLossfun m n _ v1 v2 s l r => MLossfun tt v1 v2 (df_strip_annotations s) (df_strip_annotations l) r
-         | ForeignScalarFun ann t fsf x => ForeignScalarFun tt fsf (df_strip_annotations x)
-         end.        
 
       Require Import Program.
 
@@ -4118,7 +4120,9 @@ F (d : definition_function_types)
        rewrite vmap_nth.
        rewrite vmap_nth; trivial.
      - Case "ForeignScalarFun"%string.
-       
+       rewrite df_strip_annotations_id.
+       rewrite IHdf.
+       trivial.
    Qed.
 
    Lemma df_eval_ignores_ann2 {Ann1 Ann2 T} {σ:df_env} 
@@ -4190,6 +4194,12 @@ F (d : definition_function_types)
        intros.
        rewrite IHdf1.
        rewrite IHdf2; trivial.
+     - Case "ForeignScalarFun"%string.
+       intro; rewrite df_eval_ignores_ann.
+       case_eq (df_eval σ (df_strip_annotations df)); [|congruence].
+       intros.
+       rewrite IHdf.
+       rewrite df_strip_annotations_id; trivial.
     Qed.
 
    Lemma df_eval_deriv_ignores_ann2 {Ann1 Ann2 T} {σ:df_env} 
@@ -4661,11 +4671,12 @@ F (d : definition_function_types)
 
    Section scalar_ind.
      
+   Context {foreign:Foreign}.
    Fixpoint is_scalar_function_ind_gen {Ann}
              {P:forall {T}, DefinedFunction Ann T->Prop}
              (fnumber:forall ann x, P (Number ann x))
-             (fconstant:forall (ann:Ann DTfloat) x, P (@Constant _ DTfloat ann x))
-             (fvar:forall sv ann, P (@Var _ (sv,DTfloat) ann))
+             (fconstant:forall (ann:Ann DTfloat) x, P (@Constant _ _ DTfloat ann x))
+             (fvar:forall sv ann, P (@Var _ _ (sv,DTfloat) ann))
              (fplus:forall a l r, P l -> P r -> P (Plus a l r))
              (fminus:forall a l r, P l -> P r -> P (Minus a l r))
              (ftimes:forall a l r, P l -> P r -> P (Times a l r))
@@ -4719,8 +4730,8 @@ F (d : definition_function_types)
    Definition is_scalar_function_ind {Ann}
              {P:DefinedFunction Ann DTfloat->Prop}
              (fnumber:forall ann x, P (Number ann x))
-             (fconstant:forall (ann:Ann DTfloat) x, P (@Constant _ DTfloat ann x))
-             (fvar:forall sv ann, P (@Var _ (sv,DTfloat) ann))
+             (fconstant:forall (ann:Ann DTfloat) x, P (@Constant _ _ DTfloat ann x))
+             (fvar:forall sv ann, P (@Var _ _ (sv,DTfloat) ann))
              (fplus:forall a l r, P l -> P r -> P (Plus a l r))
              (fminus:forall a l r, P l -> P r -> P (Minus a l r))
              (ftimes:forall a l r, P l -> P r -> P (Times a l r))
@@ -4752,6 +4763,197 @@ F (d : definition_function_types)
    Qed.
 
    End scalar_ind.
+
+     Section fv.
+
+       Context {foreign:Foreign}.
+    Fixpoint df_free_variables {Ann} {T} (f : DefinedFunction Ann T) : list var_type
+      := match f with
+         | Number _ x => nil
+         | DVector n _ x => vlconcat_map df_free_variables x
+         | Constant t _ x => nil
+         | DMatrix n m _ x => vlconcat_map (fun a => vlconcat_map df_free_variables a) x
+         | Var v _ => v::nil
+         | Plus _ l r => (df_free_variables l) ++ (df_free_variables r)
+         | Minus _ l r => (df_free_variables l) ++ (df_free_variables r)
+         | Times _ l r => (df_free_variables l) ++ (df_free_variables r)
+         | Divide _ l r => (df_free_variables l) ++ (df_free_variables r)
+         | Max _ l r => (df_free_variables l) ++ (df_free_variables r)
+         | Abs _ e => df_free_variables e
+         | Sign _ e => df_free_variables e
+         | PSign _ e => df_free_variables e
+         | Log _ e => df_free_variables e
+         | Square _ e => df_free_variables e
+         | Exp _ e => df_free_variables e
+         | VectorElem n _ l i => df_free_variables l
+         | MatrixElem m n _ l i j => df_free_variables l
+         | VectorDot n _ l r => (df_free_variables l) ++ (df_free_variables r)
+         | VectorSum n _ l => df_free_variables l
+         | MatrixSum n m _ l => df_free_variables l
+         | VectorScalMult n _ x r => (df_free_variables x) ++ (df_free_variables r)
+         | MatrixScalMult n m _ x r => (df_free_variables x) ++ (df_free_variables r)
+         | MatrixVectorMult n m _ l r => (df_free_variables l) ++ (df_free_variables r)
+         | MatrixVectorAdd n m _ l r => (df_free_variables l) ++ (df_free_variables r)
+         | MatrixMult n m p _ l r => (df_free_variables l) ++ (df_free_variables r)
+         | VectorPlus n _ l r => (df_free_variables l) ++ (df_free_variables r)
+         | VectorMinus n _ l r => (df_free_variables l) ++ (df_free_variables r)
+         | MatrixPlus n m _ l r => (df_free_variables l) ++ (df_free_variables r)
+         | MatrixMinus n m _ l r => (df_free_variables l) ++ (df_free_variables r)
+         | VectorApply n _ x s l => (remove_all (x,DTfloat) (df_free_variables s)) 
+                                      ++ (df_free_variables l)
+         | MatrixApply n m _ x s l => (remove_all (x,DTfloat) (df_free_variables s)) 
+                                        ++ (df_free_variables l)
+         | VLossfun n _ v1 v2 s l r => (remove_all (v1,DTfloat) (remove_all (v2,DTfloat) (df_free_variables s)))
+                                         ++ (df_free_variables l)
+         | MLossfun n m _ v1 v2 s l r => (remove_all (v1,DTfloat) (remove_all (v2,DTfloat) (df_free_variables s)))
+                                          ++ (df_free_variables l)
+         | ForeignScalarFun _ _ _ x => df_free_variables x
+
+         end.
+
+    Definition df_closed {Ann} {T} (f: DefinedFunction Ann T) : Prop
+      := match df_free_variables f with
+         | nil => True
+         | _ => False
+         end.
+
+    Lemma df_closed_nil {T} (f: DefinedFunction UnitAnn T) : df_closed f -> df_free_variables f = nil.
+    Proof.
+      unfold df_closed.
+      destruct (df_free_variables f); tauto.
+    Qed.
+
+    Definition df_closed_over {Ann} {T} (f : DefinedFunction Ann T) (vl : list var_type) : Prop
+      := incl (df_free_variables f) vl.
+
+    Fixpoint fully_closed_over {Ann} {T} (df : DefinedFunction Ann T) (vl : list var_type) : Prop
+      := 
+         match df with
+         | Number _ x => True
+         | DVector n _ x => vforall (fun f => fully_closed_over f vl) x
+         | Constant t _ x => True
+         | DMatrix n m _ x => vforall (fun row => 
+                                         (vforall (fun f => fully_closed_over f vl) row)) x
+         | Var v _ => In v vl
+         | Plus _ l r => (fully_closed_over l vl) /\ (fully_closed_over r vl)
+         | Minus _ l r => (fully_closed_over l vl) /\ (fully_closed_over r vl)
+         | Times _ l r => (fully_closed_over l vl) /\ (fully_closed_over r vl)
+         | Divide _ l r => (fully_closed_over l vl) /\ (fully_closed_over r vl)
+         | Max _ l r => (fully_closed_over l vl) /\ (fully_closed_over r vl)
+         | Abs _ e => fully_closed_over e vl
+         | Sign _ e => fully_closed_over e vl
+         | PSign _ e => fully_closed_over e vl
+         | Log _ e => fully_closed_over e vl
+         | Square _ e => fully_closed_over e vl
+         | Exp _ e => fully_closed_over e vl
+         | VectorElem n _ l i => fully_closed_over l vl
+         | MatrixElem m n _ l i j => fully_closed_over l vl
+         | VectorDot n _ l r => (fully_closed_over l vl) /\ (fully_closed_over r vl)
+         | VectorSum n _ l => fully_closed_over l vl
+         | MatrixSum n m _ l => fully_closed_over l vl
+         | VectorScalMult n _ x r => (fully_closed_over x vl) /\ (fully_closed_over r vl)
+         | MatrixScalMult n m _ x r => (fully_closed_over x vl) /\ (fully_closed_over r vl)
+         | MatrixVectorMult n m _ l r => (fully_closed_over l vl) /\ (fully_closed_over r vl)
+         | MatrixVectorAdd n m _ l r => (fully_closed_over l vl) /\ (fully_closed_over r vl)
+         | MatrixMult n m p _ l r => (fully_closed_over l vl) /\ (fully_closed_over r vl)
+         | VectorPlus n _ l r => (fully_closed_over l vl) /\ (fully_closed_over r vl)
+         | VectorMinus n _ l r => (fully_closed_over l vl) /\ (fully_closed_over r vl)
+         | MatrixPlus n m _ l r => (fully_closed_over l vl) /\ (fully_closed_over r vl)
+         | MatrixMinus n m _ l r => (fully_closed_over l vl) /\ (fully_closed_over r vl)
+         | VectorApply n _ x s l => (fully_closed_over s ((x,DTfloat)::nil)) /\ 
+                                    (fully_closed_over l vl)
+         | MatrixApply n m _ x s l => (fully_closed_over s ((x,DTfloat)::nil)) /\ 
+                                      (fully_closed_over l vl)
+         | VLossfun n _ v1 v2 s l r => (fully_closed_over s ((v1,DTfloat)::(v2,DTfloat)::nil))
+                                       /\ (fully_closed_over l vl)
+         | MLossfun n m _ v1 v2 s l r => (fully_closed_over s ((v1,DTfloat)::(v2,DTfloat)::nil))
+                                        /\ (fully_closed_over l vl)
+         | ForeignScalarFun _ _ _ x => fully_closed_over x vl
+         end.
+        
+    Definition In_compat_map (f : list var_type -> list var_type) : Prop :=
+      forall (v : var_type) (vl : list var_type), 
+        In v vl -> In v (f vl).
+    
+    Definition map_tl (f : list var_type -> list var_type) (vl : list var_type) :=
+        match vl with
+        | a :: vl1 => a :: f vl1 
+        | _ => f vl
+        end.
+
+    Lemma In_compat_map_tl (f : list var_type -> list var_type) :
+      In_compat_map f -> In_compat_map (map_tl f).
+    Proof.
+      unfold In_compat_map; intros.
+      destruct vl.
+      + now simpl.
+      + simpl in *.
+        destruct H0.
+        * now left.
+        * right; now apply H.
+    Qed.
+
+    Lemma fully_closed_over_map {T} (df : DefinedFunction UnitAnn T) (vl : list var_type) (f : list var_type -> list var_type) :
+      In_compat_map f -> fully_closed_over df vl -> fully_closed_over df (f vl).
+    Proof.
+      revert f; revert vl.
+      DefinedFunction_cases (induction T, df using DefinedFunction_ind_unit) Case
+      ; simpl; intros; try solve [
+                       trivial
+                         |
+                    apply IHdf; trivial
+                         |
+                    split; destruct H0;
+                    [apply IHdf1; trivial
+                    | apply IHdf2; trivial]
+                         ].
+      - Case "DVector"%string.
+        apply vforall_forall; intros.
+        apply H; trivial.
+        now rewrite vforall_forall in H1.
+      - Case "DMatrix"%string.
+        apply vforall_forall; intros.
+        apply vforall_forall; intros.                
+        apply H; trivial.
+        rewrite vforall_forall in H1.
+        specialize (H1 i).
+        now rewrite vforall_forall in H1.
+      - now apply H.
+      - Case "VectorApply"%string.
+        split; destruct H0; trivial.
+        now apply IHdf2.
+      - Case "MatrixApply"%string.
+        split; destruct H0; trivial.
+        now apply IHdf2.
+      - Case "VLossfun"%string.
+        split; destruct H0; trivial.
+        now apply IHdf2.
+      - Case "MLossfun"%string.
+        split; destruct H0; trivial.
+        now apply IHdf2.
+    Qed.
+
+     End fv.
+
+   Class ForeignEvalDerivProps
+         {foreign:Foreign}
+         {foreign_eval:ForeignEval}
+         {foreign_deriv:ForeignDeriv}
+         {foreign_eval_deriv:ForeignEvalDeriv}
+     := {
+     foreign_eval_backprop_deriv_preserves_lookup_not_none :
+     forall t f env fsf df grad (gradenv d : df_env) xv d0,
+       
+       (forall (grad : definition_function_types_interp t),
+           f grad = Some d ->
+           forall xv : var_type, vartlookup gradenv xv <> None -> vartlookup d xv <> None) ->
+       foreign_scalar_backprop_deriv env fsf df gradenv grad d0 f
+       = Some d ->
+       vartlookup gradenv xv <> None ->
+       vartlookup d xv <> None
+   }.
+
+
    (*
    Lemma vart_update_lookup_ext (l1 l2:df_env) (a:var_type) (n:definition_function_types_interp (snd a)) : vartlookup_eq l1 l2 -> vart_update l1 a n = vart_update l2 a n.
    Proof.
@@ -4819,6 +5021,12 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
   | Case_aux c "PSign"%string
   | Case_aux c "Max"%string].
 
+   Context {foreign:Foreign}.
+   Context {foreign_eval:ForeignEval}.
+   Context {foreign_deriv:ForeignDeriv}.
+   Context {foreign_eval_deriv:ForeignEvalDeriv}.
+   Context {foreign_eval_deriv_props:ForeignEvalDerivProps}.
+   
    Lemma df_eval_backprop_deriv_preserves_lookup_not_none {Ann T} {env} {grad gradenv d} {df:DefinedFunction Ann T} :
      df_eval_backprop_deriv env df gradenv grad = Some d ->
      forall xv,
@@ -5175,6 +5383,11 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        intros grad gradenv d.
        destruct (df_eval env df2)  ; [|congruence].
        match_destr; simpl; eauto.
+     - Case "ForeignScalarFun"%string.
+       intros grad gradenv d.
+       destruct (df_eval env df)  ; [|congruence]; intros.
+
+       eapply foreign_eval_backprop_deriv_preserves_lookup_not_none; try eapply H; eauto.
    Qed.
 
     Definition df_eval_deriv_gen_top {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (v: var_type) :
@@ -5293,170 +5506,6 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
     
   End max_derived.
 
-  Section fv.
-
-    Fixpoint df_free_variables {Ann} {T} (f : DefinedFunction Ann T) : list var_type
-      := match f with
-         | Number _ x => nil
-         | DVector n _ x => vlconcat_map df_free_variables x
-         | Constant t _ x => nil
-         | DMatrix n m _ x => vlconcat_map (fun a => vlconcat_map df_free_variables a) x
-         | Var v _ => v::nil
-         | Plus _ l r => (df_free_variables l) ++ (df_free_variables r)
-         | Minus _ l r => (df_free_variables l) ++ (df_free_variables r)
-         | Times _ l r => (df_free_variables l) ++ (df_free_variables r)
-         | Divide _ l r => (df_free_variables l) ++ (df_free_variables r)
-         | Max _ l r => (df_free_variables l) ++ (df_free_variables r)
-         | Abs _ e => df_free_variables e
-         | Sign _ e => df_free_variables e
-         | PSign _ e => df_free_variables e
-         | Log _ e => df_free_variables e
-         | Square _ e => df_free_variables e
-         | Exp _ e => df_free_variables e
-         | VectorElem n _ l i => df_free_variables l
-         | MatrixElem m n _ l i j => df_free_variables l
-         | VectorDot n _ l r => (df_free_variables l) ++ (df_free_variables r)
-         | VectorSum n _ l => df_free_variables l
-         | MatrixSum n m _ l => df_free_variables l
-         | VectorScalMult n _ x r => (df_free_variables x) ++ (df_free_variables r)
-         | MatrixScalMult n m _ x r => (df_free_variables x) ++ (df_free_variables r)
-         | MatrixVectorMult n m _ l r => (df_free_variables l) ++ (df_free_variables r)
-         | MatrixVectorAdd n m _ l r => (df_free_variables l) ++ (df_free_variables r)
-         | MatrixMult n m p _ l r => (df_free_variables l) ++ (df_free_variables r)
-         | VectorPlus n _ l r => (df_free_variables l) ++ (df_free_variables r)
-         | VectorMinus n _ l r => (df_free_variables l) ++ (df_free_variables r)
-         | MatrixPlus n m _ l r => (df_free_variables l) ++ (df_free_variables r)
-         | MatrixMinus n m _ l r => (df_free_variables l) ++ (df_free_variables r)
-         | VectorApply n _ x s l => (remove_all (x,DTfloat) (df_free_variables s)) 
-                                      ++ (df_free_variables l)
-         | MatrixApply n m _ x s l => (remove_all (x,DTfloat) (df_free_variables s)) 
-                                        ++ (df_free_variables l)
-         | VLossfun n _ v1 v2 s l r => (remove_all (v1,DTfloat) (remove_all (v2,DTfloat) (df_free_variables s)))
-                                         ++ (df_free_variables l)
-         | MLossfun n m _ v1 v2 s l r => (remove_all (v1,DTfloat) (remove_all (v2,DTfloat) (df_free_variables s)))
-                                           ++ (df_free_variables l)
-         end.
-
-    Definition df_closed {Ann} {T} (f: DefinedFunction Ann T) : Prop
-      := match df_free_variables f with
-         | nil => True
-         | _ => False
-         end.
-
-    Lemma df_closed_nil {T} (f: DefinedFunction UnitAnn T) : df_closed f -> df_free_variables f = nil.
-    Proof.
-      unfold df_closed.
-      destruct (df_free_variables f); tauto.
-    Qed.
-
-    Definition df_closed_over {Ann} {T} (f : DefinedFunction Ann T) (vl : list var_type) : Prop
-      := incl (df_free_variables f) vl.
-
-    Fixpoint fully_closed_over {Ann} {T} (df : DefinedFunction Ann T) (vl : list var_type) : Prop
-      := 
-         match df with
-         | Number _ x => True
-         | DVector n _ x => vforall (fun f => fully_closed_over f vl) x
-         | Constant t _ x => True
-         | DMatrix n m _ x => vforall (fun row => 
-                                         (vforall (fun f => fully_closed_over f vl) row)) x
-         | Var v _ => In v vl
-         | Plus _ l r => (fully_closed_over l vl) /\ (fully_closed_over r vl)
-         | Minus _ l r => (fully_closed_over l vl) /\ (fully_closed_over r vl)
-         | Times _ l r => (fully_closed_over l vl) /\ (fully_closed_over r vl)
-         | Divide _ l r => (fully_closed_over l vl) /\ (fully_closed_over r vl)
-         | Max _ l r => (fully_closed_over l vl) /\ (fully_closed_over r vl)
-         | Abs _ e => fully_closed_over e vl
-         | Sign _ e => fully_closed_over e vl
-         | PSign _ e => fully_closed_over e vl
-         | Log _ e => fully_closed_over e vl
-         | Square _ e => fully_closed_over e vl
-         | Exp _ e => fully_closed_over e vl
-         | VectorElem n _ l i => fully_closed_over l vl
-         | MatrixElem m n _ l i j => fully_closed_over l vl
-         | VectorDot n _ l r => (fully_closed_over l vl) /\ (fully_closed_over r vl)
-         | VectorSum n _ l => fully_closed_over l vl
-         | MatrixSum n m _ l => fully_closed_over l vl
-         | VectorScalMult n _ x r => (fully_closed_over x vl) /\ (fully_closed_over r vl)
-         | MatrixScalMult n m _ x r => (fully_closed_over x vl) /\ (fully_closed_over r vl)
-         | MatrixVectorMult n m _ l r => (fully_closed_over l vl) /\ (fully_closed_over r vl)
-         | MatrixVectorAdd n m _ l r => (fully_closed_over l vl) /\ (fully_closed_over r vl)
-         | MatrixMult n m p _ l r => (fully_closed_over l vl) /\ (fully_closed_over r vl)
-         | VectorPlus n _ l r => (fully_closed_over l vl) /\ (fully_closed_over r vl)
-         | VectorMinus n _ l r => (fully_closed_over l vl) /\ (fully_closed_over r vl)
-         | MatrixPlus n m _ l r => (fully_closed_over l vl) /\ (fully_closed_over r vl)
-         | MatrixMinus n m _ l r => (fully_closed_over l vl) /\ (fully_closed_over r vl)
-         | VectorApply n _ x s l => (fully_closed_over s ((x,DTfloat)::nil)) /\ 
-                                    (fully_closed_over l vl)
-         | MatrixApply n m _ x s l => (fully_closed_over s ((x,DTfloat)::nil)) /\ 
-                                      (fully_closed_over l vl)
-         | VLossfun n _ v1 v2 s l r => (fully_closed_over s ((v1,DTfloat)::(v2,DTfloat)::nil))
-                                       /\ (fully_closed_over l vl)
-         | MLossfun n m _ v1 v2 s l r => (fully_closed_over s ((v1,DTfloat)::(v2,DTfloat)::nil))
-                                         /\ (fully_closed_over l vl)
-         end.
-        
-    Definition In_compat_map (f : list var_type -> list var_type) : Prop :=
-      forall (v : var_type) (vl : list var_type), 
-        In v vl -> In v (f vl).
-    
-    Definition map_tl (f : list var_type -> list var_type) (vl : list var_type) :=
-        match vl with
-        | a :: vl1 => a :: f vl1 
-        | _ => f vl
-        end.
-
-    Lemma In_compat_map_tl (f : list var_type -> list var_type) :
-      In_compat_map f -> In_compat_map (map_tl f).
-    Proof.
-      unfold In_compat_map; intros.
-      destruct vl.
-      + now simpl.
-      + simpl in *.
-        destruct H0.
-        * now left.
-        * right; now apply H.
-    Qed.
-
-    Lemma fully_closed_over_map {T} (df : DefinedFunction UnitAnn T) (vl : list var_type) (f : list var_type -> list var_type) :
-      In_compat_map f -> fully_closed_over df vl -> fully_closed_over df (f vl).
-    Proof.
-      revert f; revert vl.
-      DefinedFunction_cases (induction T, df using DefinedFunction_ind_unit) Case
-      ; simpl; intros; try solve [
-                       trivial
-                         |
-                    apply IHdf; trivial
-                         |
-                    split; destruct H0;
-                    [apply IHdf1; trivial
-                    | apply IHdf2; trivial]
-                         ].
-      - Case "DVector"%string.
-        apply vforall_forall; intros.
-        apply H; trivial.
-        now rewrite vforall_forall in H1.
-      - Case "DMatrix"%string.
-        apply vforall_forall; intros.
-        apply vforall_forall; intros.                
-        apply H; trivial.
-        rewrite vforall_forall in H1.
-        specialize (H1 i).
-        now rewrite vforall_forall in H1.
-      - now apply H.
-      - Case "VectorApply"%string.
-        split; destruct H0; trivial.
-        now apply IHdf2.
-      - Case "MatrixApply"%string.
-        split; destruct H0; trivial.
-        now apply IHdf2.
-      - Case "VLossfun"%string.
-        split; destruct H0; trivial.
-        now apply IHdf2.
-      - Case "MLossfun"%string.
-        split; destruct H0; trivial.
-        now apply IHdf2.
-    Qed.
 
   (*
     Lemma closed_is_fully_closed {Ann} {T} (df : DefinedFunction Ann T) (vl : list var_type) : 
@@ -5564,8 +5613,6 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
       - apply lookeq; simpl; tauto.
     Qed.
 *)
-  End fv.
-
   Section apply.
 
     Fixpoint df_apply {T} (e: DefinedFunction UnitAnn T) 
@@ -5605,6 +5652,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
       | MatrixApply n m _ x s l => MatrixApply tt x (df_apply s args) (df_apply l args)
       | VLossfun n _ v1 v2 s l r => VLossfun tt v1 v2 (df_apply s args) (df_apply l args) r
       | MLossfun n m _ v1 v2 s l r => MLossfun tt v1 v2 (df_apply s args) (df_apply l args) r
+      | ForeignScalarFun _ _ fsf x => ForeignScalarFun tt fsf (df_apply x args)
       end.
 
  End apply.
@@ -5664,6 +5712,13 @@ Section real_pfs.
   Local Existing Instance floatish_R.
   Import Reals.
   Import List.
+
+  Context {foreign:Foreign}.
+  Context {foreign_eval:ForeignEval}.
+  Context {foreign_deriv:ForeignDeriv}.
+  Context {foreign_eval_deriv:ForeignEvalDeriv}.
+  Context {foreign_eval_deriv_props:ForeignEvalDerivProps}.
+
   
   Lemma MaxDerivedMax_eq (a b : DefinedFunction UnitAnn DTfloat) :
     forall σ, df_eval σ (Max tt a b) = df_eval σ (MaxDerived a b).
@@ -6507,6 +6562,17 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
           apply vectoro_to_ovector_not_none; intros.
           specialize (IHdf1 (mk_env_entry (v1, DTfloat) (d i i0) :: mk_env_entry (v2, DTfloat) (r i i0) :: nil)).
           now apply IHdf1.
+      - Case "ForeignScalarFun"%string.
+        specialize (IHdf σ H).
+        match_destr; [ | congruence].
+        
+        foreign_scalar_eval σ fsf (df_strip_annotations df) d <> None
+        
+
+        Lemma eval_fully_closed_not_none {T} (σ:df_env) (df:DefinedFunction UnitAnn T) :
+      let vl := map (fun ve => projT1 ve) σ in
+      fully_closed_over df vl -> df_eval σ df <> None.
+
     Qed.
 
    Lemma eval_fully_closed_total {T} (σ:df_env) (df:DefinedFunction UnitAnn T) :
