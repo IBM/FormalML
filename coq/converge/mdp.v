@@ -1,5 +1,5 @@
 
-Require Import Reals Coq.Lists.List.
+Require Import Reals Coq.Lists.List Coquelicot.Series Coquelicot.Hierarchy.
 Require Import pmf_monad.
 Require Import domfct.
 Require Import Sums.
@@ -112,12 +112,13 @@ Proof.
   lra.
 Qed.
 
-Lemma expt_reward_le_max (init : M.(state)) (n : nat) :
+(* Bounded rewards imply bounded expected rewards for all iterations and all states. *)
+Lemma expt_reward_le_max (init : M.(state)) :
   (exists D, forall s : M.(state), reward _ s <= D)  ->
-  (exists D:R, expt_reward init n <= D). 
+  (exists D:R, forall n:nat, expt_reward init n <= D). 
 Proof. 
   intros (D,H). 
-  exists D. unfold expt_reward.
+  exists D. unfold expt_reward. intros n. 
   generalize (bind_stoch_iter n init) as l.
   intros l.
   rewrite <- Rmult_1_r.
@@ -163,15 +164,42 @@ Open Scope R_scope.
 Context {M : MDP} {γ : R}.
 Context (σ : policy M) (init : M.(state)) (hγ : (0 <= γ < 1)%R).
 
-Definition ltv_part (n : nat) := sum_f_R0 (expt_reward σ init) n. 
-Definition ltv_part' (n : nat) := sum_f_R0' (expt_reward σ init) n. 
+Definition ltv_part (N : nat) := sum_f_R0 (fun n => γ^n * (expt_reward σ init n)) N. 
+Definition ltv_part' (N : nat) := sum_f_R0' (fun n => γ^n * (expt_reward σ init n)) N. 
 
 Lemma ltv_part0_eq_reward : ltv_part 0 = reward _ init.
 Proof.
-  simpl ; apply expt_reward0_eq_reward. 
+  unfold ltv_part;simpl.
+  rewrite expt_reward0_eq_reward. lra.
+Qed.
+
+Check sum_n_m.
+Lemma ltv_part_le (N : nat) :  (exists D, forall s : M.(state), reward _ s <= D) -> exists D : R , (ltv_part N) <= sum_f_R0 (fun n => γ^n * D) N.
+Proof.
+  intros Hd.
+  destruct (expt_reward_le_max σ init Hd) as [D HD]. 
+  exists D. unfold ltv_part.  apply sum_Rle. 
+  intros n0 Hn0. 
+  apply Rmult_le_compat_l.
+  apply pow_le ; firstorder.
+  apply HD. 
+Qed. 
+
+
+Lemma sum_geom (D : R) : infinite_sum (fun n => D*γ^n) (D/(1 - γ)).
+Proof.
+  rewrite infinite_sum_infinite_sum'.
+  apply infinite_sum'_mult_const.
+  rewrite <- infinite_sum_infinite_sum'.
+  apply is_series_Reals. apply is_series_geom.
+  rewrite Rabs_pos_eq. lra. lra. 
 Qed.
 
 
+Lemma ltv : exists D, infinite_sum ltv_part D. 
+Proof.
+  
+Admitted. 
 End ltv.
 
   
