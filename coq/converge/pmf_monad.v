@@ -128,7 +128,7 @@ subst. f_equal. apply proof_irrelevance.
 Qed.
 
 Lemma sum1_compat {B} (p : Pmf B) :
-  list_sum (seq.map (fun y : nonnegreal * B => nonneg (fst y)) (p.(outcomes))) = R1. 
+  list_sum (map (fun y : nonnegreal * B => nonneg (fst y)) (p.(outcomes))) = R1. 
 Proof.
   rewrite <- p.(sum1).
   rewrite list_fst_sum_compat.

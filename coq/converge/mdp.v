@@ -112,21 +112,25 @@ Proof.
   lra.
 Qed.
 
-
-Lemma expt_reward_le_max(init : M.(state)) (n : nat) :
-  (exists D, forall s : M.(state), (0 <= D) /\ reward _ s <= D)  -> (exists D:R, expt_reward init n <= D). 
+Lemma expt_reward_le_max (init : M.(state)) (n : nat) :
+  (exists D, forall s : M.(state), reward _ s <= D)  ->
+  (exists D:R, expt_reward init n <= D). 
 Proof. 
-  intros (D,H). specialize (H init).
-  destruct H as [Hge Hle].
+  intros (D,H). 
   exists D. unfold expt_reward.
   generalize (bind_stoch_iter n init) as l.
-  intros l. 
-  induction l.(outcomes). simpl;assumption. 
-  simpl in *. 
-Admitted.
+  intros l.
+  rewrite <- Rmult_1_r.
+  change (D*1) with (D*R1). 
+  rewrite <- (sum1_compat l). 
+  induction l.(outcomes). 
+  * simpl; lra.
+  * simpl in *. rewrite Rmult_plus_distr_l.
+    assert (reward M (snd a) * fst a  <=  D * fst a). apply Rmult_le_compat_r. apply cond_nonneg.
+    apply H. 
+    now apply Rplus_le_compat. 
+Qed.
 
-
-  
 End MDPs.
 
 Section egs.
