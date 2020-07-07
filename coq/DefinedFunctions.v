@@ -120,7 +120,9 @@ Section DefinedFunctions.
   Section Definitions.
 
     Context {foreign:Foreign}.
+    
 
+      
     Inductive DefinedFunction {Ann:definition_function_types->Type} : definition_function_types -> Type :=
     | Number (ann:Ann DTfloat) (x : float) : DefinedFunction DTfloat
     | Constant {t:definition_function_types} (ann:Ann t) (x : definition_function_types_interp t) : DefinedFunction t
@@ -924,7 +926,7 @@ F (d : definition_function_types)
    Class ForeignEval : Type := {
      foreign_scalar_eval {T} (σ:df_env) (fsf:foreign_scalar_fun T)
                           (x:DefinedFunction UnitAnn T) 
-                          (x_eval: definition_function_types_interp T) :  option float
+                          (x_eval: definition_function_types_interp T) : float
                               }.
  End foreign_ops.
 
@@ -1170,7 +1172,7 @@ F (d : definition_function_types)
            end
          | ForeignScalarFun _ _ fsf x =>
            match (df_eval σ x) with
-           | Some x_eval => foreign_scalar_eval σ fsf (df_strip_annotations x) x_eval
+           | Some x_eval => Some (foreign_scalar_eval σ fsf (df_strip_annotations x) x_eval)
            | None => None
            end
          end.
@@ -1418,10 +1420,8 @@ F (d : definition_function_types)
          | ForeignScalarFun _ _ fsf x =>
            match df_eval_tree σ x with
            | Some x_eval =>
-             match foreign_scalar_eval σ fsf (df_strip_annotations x_eval) (get_annotation x_eval) with
-             | Some val => Some (ForeignScalarFun val fsf x_eval)
-             | None => None
-             end
+             let val := foreign_scalar_eval σ fsf (df_strip_annotations x_eval) (get_annotation x_eval) in
+             Some (ForeignScalarFun val fsf x_eval)
            | None => None
            end
          end.
@@ -1772,12 +1772,12 @@ F (d : definition_function_types)
                                (x:DefinedFunction UnitAnn T)
                                (v:var_type)
                                (x_eval: definition_function_types_interp T)
-                               (x_eval_deriv: definition_function_types_interp T) :  option float ;
+                               (x_eval_deriv: definition_function_types_interp T) :  float ;
      foreign_scalar_eval_deriv_genvar {T} (σ:df_env)  (fsf:foreign_scalar_fun T)
                                       (x:DefinedFunction UnitAnn T)
                                       (v:df_env)
                                       (x_eval: definition_function_types_interp T)
-                                      (x_eval_deriv: definition_function_types_interp T) :  option float ;
+                                      (x_eval_deriv: definition_function_types_interp T) :  float ;
      foreign_scalar_backprop_deriv {T} (σ:df_env) (fsf:foreign_scalar_fun T)
                                    (x:DefinedFunction UnitAnn T)
                                    (grad_env:df_env)
@@ -2005,7 +2005,7 @@ F (d : definition_function_types)
            end
          | ForeignScalarFun _ _ fsf x =>
            match (df_eval σ x, df_eval_deriv σ x v) with
-           | (Some x_eval, Some x_eval_deriv) => foreign_scalar_eval_deriv σ fsf (df_strip_annotations x) v  x_eval x_eval_deriv
+           | (Some x_eval, Some x_eval_deriv) => Some (foreign_scalar_eval_deriv σ fsf (df_strip_annotations x) v  x_eval x_eval_deriv)
            | (_, _) => None
            end
 
@@ -2235,7 +2235,7 @@ F (d : definition_function_types)
            end
          | ForeignScalarFun _ _ fsf x =>
            match (df_eval σ x, df_eval_deriv_genvar σ x v) with
-           | (Some x_eval, Some x_eval_deriv) => foreign_scalar_eval_deriv_genvar σ fsf (df_strip_annotations x) v  x_eval x_eval_deriv
+           | (Some x_eval, Some x_eval_deriv) => Some (foreign_scalar_eval_deriv_genvar σ fsf (df_strip_annotations x) v  x_eval x_eval_deriv)
            | (_, _) => None
            end
 
@@ -2491,7 +2491,7 @@ F (d : definition_function_types)
            end
          | ForeignScalarFun _ _ fsf x =>
            match (df_eval_tree_deriv σ x v) with
-           | Some x_eval_deriv => foreign_scalar_eval_deriv σ fsf (df_strip_annotations x) v (get_annotation x) x_eval_deriv
+           | Some x_eval_deriv => Some (foreign_scalar_eval_deriv σ fsf (df_strip_annotations x) v (get_annotation x) x_eval_deriv)
            | None => None
            end
 
@@ -2729,7 +2729,7 @@ F (d : definition_function_types)
            end
          | ForeignScalarFun _ _ fsf x =>
            match (df_eval_tree_deriv_genvar σ x v) with
-           | Some x_eval_deriv => foreign_scalar_eval_deriv_genvar σ fsf (df_strip_annotations x) v (get_annotation x) x_eval_deriv
+           | Some x_eval_deriv => Some (foreign_scalar_eval_deriv_genvar σ fsf (df_strip_annotations x) v (get_annotation x) x_eval_deriv)
            | None => None
            end
 
@@ -3891,19 +3891,6 @@ F (d : definition_function_types)
        apply is_df_rec_prop_top in IHdf2.
        simpl in IHdf2.
        rewrite IHdf2, eqq0; trivial.
-     - Case "ForeignScalarFun"%string.
-       case_eq (df_eval_tree σ df)
-       ; [intros adf aeqq | intros aeqq]
-       ; rewrite aeqq in eqq 
-       ; [| congruence].
-       specialize (IHdf _ aeqq).
-       match_option_in eqq.
-       invcs eqq.
-       simpl.
-       split; trivial.
-       apply is_df_rec_prop_top in IHdf.
-       simpl in IHdf.
-       rewrite IHdf; trivial.
    Qed.
 
 
@@ -4951,6 +4938,17 @@ F (d : definition_function_types)
        = Some d ->
        vartlookup gradenv xv <> None ->
        vartlookup d xv <> None
+
+     ; foreign_fully_closed_over_deriv {T} fsf (df:DefinedFunction UnitAnn T) (s:SubVar) 
+              (vl : list var_type):
+         fully_closed_over df vl ->
+         fully_closed_over (df_deriv df (s, DTfloat)) vl ->
+        fully_closed_over (foreign_scalar_deriv fsf df (s, DTfloat) (df_deriv df (s, DTfloat))) vl
+
+     ; foreign_backprop_deriv_preserves_not_none {T} σ fsf (df:DefinedFunction UnitAnn T) f d grad_env grad :
+         (forall grad, f grad <> None) -> 
+         foreign_scalar_backprop_deriv σ fsf df grad_env grad d f <> None
+
    }.
 
 
@@ -6562,18 +6560,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
           apply vectoro_to_ovector_not_none; intros.
           specialize (IHdf1 (mk_env_entry (v1, DTfloat) (d i i0) :: mk_env_entry (v2, DTfloat) (r i i0) :: nil)).
           now apply IHdf1.
-      - Case "ForeignScalarFun"%string.
-        specialize (IHdf σ H).
-        match_destr; [ | congruence].
-        
-        foreign_scalar_eval σ fsf (df_strip_annotations df) d <> None
-        
-
-        Lemma eval_fully_closed_not_none {T} (σ:df_env) (df:DefinedFunction UnitAnn T) :
-      let vl := map (fun ve => projT1 ve) σ in
-      fully_closed_over df vl -> df_eval σ df <> None.
-
-    Qed.
+    Qed.        
 
    Lemma eval_fully_closed_total {T} (σ:df_env) (df:DefinedFunction UnitAnn T) :
       let vl := map (fun ve => projT1 ve) σ in
@@ -6815,6 +6802,9 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
           now apply fully_closed_over_pair.
         + simpl; apply fully_closed_over_cons; apply H0.
         + now simpl.
+      - Case "ForeignScalarFun"%string.
+        apply foreign_fully_closed_over_deriv; trivial.
+        now apply IHdf.
    Qed.        
 
    Lemma list_env_iter_total_fun {A} (f : A -> df_env -> option df_env) (env : df_env) (l : list A) :
@@ -7112,6 +7102,10 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                                                         mk_env_entry (v2, DTfloat) (r x x0) :: nil)
                                               (df_deriv df1 (v1, DTfloat))); intros.
           simpl in H3; cut_to H3; tauto.
+      - Case "ForeignScalarFun"%string.
+         generalize (eval_fully_closed_not_none σ df H).
+         match_case; [ | congruence]; intros.
+         apply foreign_backprop_deriv_preserves_not_none; eauto.
     Qed.
 
     Lemma backprop_deriv_fully_closed_total {T} (σ:df_env) (df:DefinedFunction UnitAnn T) 
@@ -9113,6 +9107,75 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         rewrite H1 in IHdf1; rewrite H2 in IHdf1; simpl in IHdf1.
         subst.
         apply IHdf1; trivial; discriminate.
+      - case_eq (vartlookup grad_env1 (s, DTfloat)); [ |tauto]; intros.
+        case_eq (vartlookup grad_env2 (s, DTfloat)); [ |tauto]; intros.        
+        simpl in *.
+        case_eq (df_eval σ df); [ | tauto].
+        intros.
+        rewrite H3 in H; rewrite H3 in H0; simpl in *.
+        unfold lift.
+        match_option; [ | congruence].
+        case_eq (foreign_scalar_backprop_deriv σ fsf (df_strip_annotations df) grad_env2 grad d1
+                                               (fun grad0 : definition_function_types_interp t => df_eval_backprop_deriv σ df grad_env2 grad0))
+        ; [ | congruence].
+        intros.
+
+
+        foreign_scalar_backprop_deriv σ fsf df grad_env2 grad d1 f = Some d3
+
+             
+      Lemma scalarMult_backprop_grad_scalar {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (s: SubVar) (grad_env1 grad_env2:df_env) (grad : definition_function_types_interp T) (c:float) :
+      let v := (s, DTfloat) in
+      vartlookup grad_env1 v <> None -> vartlookup grad_env2 v <> None ->
+      df_eval_backprop_deriv σ df grad_env1 (scalarMult T c grad) <> None ->
+      df_eval_backprop_deriv σ df grad_env2 grad <> None ->
+
+      
+      df_eval_backprop_delta σ df v grad_env1 (scalarMult T c grad) =
+      lift (fun e => scalarMult (snd v) c e) (df_eval_backprop_delta σ df v grad_env2 grad).
+
+               
+        specialize (IHdf grad grad_env1 grad_env2).
+        
+        
+
+        
+        
+        match_option; [ | congruence].
+        match_option_in H0; [|tauto].
+        match_option_in H; [|tauto].
+        unfold matrixo_to_omatrix in eqq.
+        unfold matrixo_to_omatrix in eqq0.
+        vectoro_assert_forall_in eqq i.
+        apply vectoro_to_ovector_forall_some_f; trivial.
+        vectoro_assert_forall_in eqq0 i.
+        apply vectoro_to_ovector_forall_some_f; trivial.
+        assert (m1 = (fun i j => (c * m0 i j)%R)).
+        apply FunctionalExtensionality.functional_extensionality; intros.
+        apply FunctionalExtensionality.functional_extensionality; intros. 
+        specialize (H4 x); specialize (H5 x); simpl in H4; simpl in H5.
+        vectoro_assert_forall_in H4 j.
+        apply vectoro_to_ovector_forall_some_f; trivial.
+        vectoro_assert_forall_in H5 j.
+        apply vectoro_to_ovector_forall_some_f; trivial.
+        specialize (H6 x0); specialize (H7 x0).
+        unfold mmap in H6; unfold mmap in H7.
+        rewrite vmap_nth in H6; rewrite vmap_nth in H6; simpl in H6.
+        rewrite vmap_nth in H7; rewrite vmap_nth in H7; simpl in H7.
+        match_destr_in H6.
+        match_option_in H6.
+        match_option_in H7.
+        assert (Some d2 = Some d3).
+        rewrite <- eqq1; rewrite <- eqq2; trivial.
+        inversion H8; subst.
+        inversion H6; inversion H7.
+        lra.
+        rewrite H6.
+        specialize (IHdf1 m0 grad_env1 grad_env2).
+        rewrite H1 in IHdf1; rewrite H2 in IHdf1; simpl in IHdf1.
+        subst.
+        apply IHdf1; trivial; discriminate.
+      -  
     Qed.
 
     Ltac simpl_closed_backprop :=
