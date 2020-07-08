@@ -132,6 +132,34 @@ Proof.
     now apply Rplus_le_compat. 
 Qed.
 
+(* Bounded rewards imply bounded expected rewards for all iterations and all states. *)
+Lemma expt_reward_le_max_Rabs {D : R} (init : M.(state)) :
+  (forall s : M.(state),Rabs (reward _ s) <= D)  ->
+  (forall n:nat, Rabs (expt_reward init n) <= D). 
+Proof. 
+  intros H. 
+  unfold expt_reward. intros n. 
+  generalize (bind_stoch_iter n init) as l.
+  intros l.
+  rewrite <- Rmult_1_r.
+  change (D*1) with (D*R1). 
+  rewrite <- (sum1_compat l). 
+  induction l.(outcomes). 
+  * simpl. right. rewrite Rabs_R0. lra. 
+  * simpl in *. rewrite Rmult_plus_distr_l.
+    assert (reward M (snd a) * fst a  <=  D * fst a). apply Rmult_le_compat_r. apply cond_nonneg.
+    refine (Rle_trans _ _ _ _ _).
+    apply Rle_abs. 
+    apply H.
+    refine (Rle_trans _ _ _ _ _).
+    apply Rabs_triang. rewrite Rabs_mult.
+    apply Rplus_le_compat.
+    enough (Rabs (fst a) = fst a).  rewrite H1. apply Rmult_le_compat_r. 
+    apply cond_nonneg. apply H. apply Rabs_pos_eq. apply cond_nonneg.
+    apply IHl0.  
+Qed.
+
+
 End MDPs.
 
 Section egs.
@@ -217,7 +245,7 @@ refine (ex_series_le_Reals a (fun n => Rabs(a n)) _ Habs).
 intros n. now right.
 Qed.
 
-Lemma ltv_part_le_norm {D : R} (N : nat) :  (forall s : M.(state), reward _ s <= D) -> Rabs(ltv_part N) <= sum_f_R0 (fun n => Rabs(γ^n * D)) N.
+Lemma ltv_part_le_norm {D : R} (N : nat) :  (forall s : M.(state), Rabs (reward _ s) <= D) -> Rabs(ltv_part N) <= sum_f_R0 (fun n => γ^n * D) N.
 Proof.
   intros Hd.
   unfold ltv_part. rewrite sum_n_Reals.
@@ -225,11 +253,16 @@ Proof.
   apply sum_f_R0_triangle. 
   apply sum_Rle. 
   intros n0 Hn0. 
-  rewrite Rabs_mult. rewrite Rabs_mult.
+  rewrite Rabs_mult.
   enough (Hγ : Rabs (γ^n0) = γ^n0). rewrite Hγ.
   apply Rmult_le_compat_l.
   apply pow_le ; firstorder.
-  Admitted. 
+  apply expt_reward_le_max_Rabs ; try assumption.
+  apply Rabs_pos_eq. apply pow_le. firstorder. 
+Qed.
+
+Theorem ex_series_ltv : ex_series ltv_part.
+Proof.   
 
 
 End ltv.
