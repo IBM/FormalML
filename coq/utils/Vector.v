@@ -319,15 +319,6 @@ Section Vector.
   Lemma In_nth l x d : In x l ->
     exists n, n < length l /\ nth n l d = x.
    *)
-  
-  (*
-  Lemma vector_list_n (n : nat) (A : Type) (v : Vector A n) :
-    length (vector_to_list v) = n.
-  Proof.
-    induction n.
-    reflexivity.
-    intros.
-   *)
 
   Notation "x =v= y" := (vec_eq x y) (at level 70).
 
@@ -1239,5 +1230,19 @@ Section Vector.
   Proof.
     apply vector_fold_right_ext.
   Qed.
-  
+
+    
+  Lemma vector_to_list_length (n : nat) (A : Type) (v : Vector.Vector A n) :
+    length (Vector.vector_to_list v) = n.
+  Proof.
+    unfold vector_to_list, vector_fold_right.
+    revert v.
+    induction n; intros.
+    - simpl; trivial.
+    - rewrite vector_fold_right_dep_Sn.
+      simpl.
+      now rewrite IHn.
+  Qed.
+
 End Vector.
+
