@@ -121,8 +121,6 @@ Section DefinedFunctions.
 
     Context {foreign:Foreign}.
     
-
-      
     Inductive DefinedFunction {Ann:definition_function_types->Type} : definition_function_types -> Type :=
     | Number (ann:Ann DTfloat) (x : float) : DefinedFunction DTfloat
     | Constant {t:definition_function_types} (ann:Ann t) (x : definition_function_types_interp t) : DefinedFunction t
@@ -9119,10 +9117,45 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                                                (fun grad0 : definition_function_types_interp t => df_eval_backprop_deriv σ df grad_env2 grad0))
         ; [ | congruence].
         intros.
+        admit.
+    Admitted.
 
 
-        foreign_scalar_backprop_deriv σ fsf df grad_env2 grad d1 f = Some d3
+    Definition vector A (n:nat) := { l : list A | length l = n }.
+    Fixpoint tensor T (l:list nat) : Type
+      := match l with
+         | nil => T
+         | x::l' => vector (tensor T l') x
+         end.
+    Lemma tensor0 T : tensor T nil = T.
+    Proof.
+      reflexivity.
+    Qed.
+    Lemma tensor1 T n : tensor T (n::nil) = vector T n.
+    Proof.
+      reflexivity.
+    Qed.
+    Lemma tensor_app T l1 l2 : tensor (tensor T l1) l2 = tensor T (l2++l1).
+    Proof.
+      revert l1.
+      induction l2; intros l1; simpl; trivial.
+      now rewrite IHl2.
+    Qed.
 
+    Definition ConstVector {T} (n:nat) (c:T) : vector T n
+      := exist _ (repeat c n) (repeat_length _ _).
+
+    Program Definition ConstVector {T} (n:nat) (c:T) : vector T n
+      := repeat c n.
+    Next Obligation.
+      apply repeat_length.
+    Qed.
+
+    Fixpoint ConstTensor {T} (l : list nat) (c:T) : (tensor T l) := 
+    match l as l' return tensor T l' with
+    | nil => c
+    | x::l'' => ConstVector x (ConstTensor l'' c)
+    end.
              
       Lemma scalarMult_backprop_grad_scalar {Ann} {T} (σ:df_env) (df:DefinedFunction Ann T) (s: SubVar) (grad_env1 grad_env2:df_env) (grad : definition_function_types_interp T) (c:float) :
       let v := (s, DTfloat) in
