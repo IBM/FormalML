@@ -56,12 +56,23 @@ Proof.
   exact (Rplus_le_compat _ _ _ _ H IHl).   
 Qed. 
 
-(*
-Context {M:Type->Type}.
-Context {Mm:Monad M}.
-Context {A:Type}.
-Context (unit:A) (f:A->M A).
-*)
+
+Lemma ex_series_le_Reals
+     : forall (a : nat -> R) (b : nat -> R),
+    (forall n : nat, Rabs (a n) <= b n) -> ex_series b -> ex_series a.
+Proof.
+  intros a b Hab Hexb.  
+  apply (@ex_series_le _ _ a b).
+  now apply Hab. assumption.
+Qed.
+
+
+Lemma abs_convg_implies_convg : forall (a : nat -> R), ex_series (fun n => Rabs(a n)) -> ex_series a. 
+Proof.
+intros a Habs.   
+refine (ex_series_le_Reals a (fun n => Rabs(a n)) _ Habs).
+intros n. now right.
+Qed.
 
 End extra.
 
@@ -112,27 +123,7 @@ Proof.
   lra.
 Qed.
 
-(* Bounded rewards imply bounded expected rewards for all iterations and all states. *)
-Lemma expt_reward_le_max {D : R} (init : M.(state)) :
-  (forall s : M.(state), reward _ s <= D)  ->
-  (forall n:nat, expt_reward init n <= D). 
-Proof. 
-  intros H. 
-  unfold expt_reward. intros n. 
-  generalize (bind_stoch_iter n init) as l.
-  intros l.
-  rewrite <- Rmult_1_r.
-  change (D*1) with (D*R1). 
-  rewrite <- (sum1_compat l). 
-  induction l.(outcomes). 
-  * simpl; lra.
-  * simpl in *. rewrite Rmult_plus_distr_l.
-    assert (reward M (snd a) * fst a  <=  D * fst a). apply Rmult_le_compat_r. apply cond_nonneg.
-    apply H. 
-    now apply Rplus_le_compat. 
-Qed.
-
-(* Bounded rewards imply bounded expected rewards for all iterations and all states. *)
+(* Bounded rewards (in absolute value) imply bounded expected rewards for all iterations and all states. *)
 Lemma expt_reward_le_max_Rabs {D : R} (init : M.(state)) :
   (forall s : M.(state),Rabs (reward _ s) <= D)  ->
   (forall n:nat, Rabs (expt_reward init n) <= D). 
@@ -193,7 +184,6 @@ Context {M : MDP} {γ : R}.
 Context (σ : policy M) (init : M.(state)) (hγ : (0 <= γ < 1)%R).
 
 Definition ltv_part (N : nat) := sum_n (fun n => γ^n * (expt_reward σ init n)) N. 
-Definition ltv_part' (N : nat) := sum_f_R0' (fun n => γ^n * (expt_reward σ init n)) N. 
 
 Lemma ltv_part0_eq_reward : ltv_part 0 = reward _ init.
 Proof.
@@ -217,35 +207,9 @@ Proof.
   apply sum_mult_geom.
 Qed.
 
-Lemma ltv_part_le {D : R} (N : nat) :  (forall s : M.(state), reward _ s <= D) -> ltv_part N <= sum_f_R0 (fun n => γ^n * D) N.
-Proof.
-  intros Hd.
-  unfold ltv_part.  rewrite sum_n_Reals. apply sum_Rle. 
-  intros n0 Hn0. 
-  apply Rmult_le_compat_l.
-  apply pow_le ; firstorder.
-  now apply (expt_reward_le_max).
-Qed. 
 
-
-Lemma ex_series_le_Reals
-     : forall (a : nat -> R) (b : nat -> R),
-    (forall n : nat, Rabs (a n) <= b n) -> ex_series b -> ex_series a.
-Proof.
-  intros a b Hab Hexb.  
-  apply (@ex_series_le _ _ a b).
-  now apply Hab. assumption.
-Qed.
-
-
-Lemma abs_convg_implies_convg : forall (a : nat -> R), ex_series (fun n => Rabs(a n)) -> ex_series a. 
-Proof.
-intros a Habs.   
-refine (ex_series_le_Reals a (fun n => Rabs(a n)) _ Habs).
-intros n. now right.
-Qed.
-
-Lemma ltv_part_le_norm {D : R} (N : nat) :  (forall s : M.(state), Rabs (reward _ s) <= D) -> Rabs(ltv_part N) <= sum_f_R0 (fun n => γ^n * D) N.
+Lemma ltv_part_le_norm {D : R} (N : nat) :
+  (forall s : M.(state), Rabs (reward _ s) <= D) -> Rabs(ltv_part N) <= sum_f_R0 (fun n => γ^n * D) N.
 Proof.
   intros Hd.
   unfold ltv_part. rewrite sum_n_Reals.
@@ -261,18 +225,19 @@ Proof.
   apply Rabs_pos_eq. apply pow_le. firstorder. 
 Qed.
 
-Theorem ex_series_ltv {D : R} : (forall s : M.(state), Rabs (reward _ s) <= D) -> ex_series (fun n => γ^n * (expt_reward σ init n)).
+Theorem ex_series_ltv {D : R} :
+  (forall s : M.(state), Rabs (reward _ s) <= D) -> ex_series (fun n => γ^n * (expt_reward σ init n)).
 Proof.
-intros Hbdd. 
-refine (ex_series_le_Reals _ _ _ _). 
-intros n. rewrite Rabs_mult.
-enough (Rabs (γ ^ n) * Rabs (expt_reward σ init n) <= D*γ^n). apply H.
-enough (Hγ : Rabs (γ^n) = γ^n). rewrite Hγ.
-rewrite Rmult_comm. apply Rmult_le_compat_r.
-apply pow_le; firstorder.
-apply (expt_reward_le_max_Rabs) ; try assumption. 
-apply Rabs_pos_eq ; apply pow_le; firstorder.
-apply (ex_series_mult_geom D). 
+  intros Hbdd. 
+  refine (ex_series_le_Reals _ _ _ _). 
+  intros n. rewrite Rabs_mult.
+  enough (Rabs (γ ^ n) * Rabs (expt_reward σ init n) <= D*γ^n). apply H.
+  enough (Hγ : Rabs (γ^n) = γ^n). rewrite Hγ.
+  rewrite Rmult_comm. apply Rmult_le_compat_r.
+  apply pow_le; firstorder.
+  apply (expt_reward_le_max_Rabs) ; try assumption. 
+  apply Rabs_pos_eq ; apply pow_le; firstorder.
+  apply (ex_series_mult_geom D). 
 Qed.
 
 End ltv.
