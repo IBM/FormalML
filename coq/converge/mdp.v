@@ -261,9 +261,19 @@ Proof.
   apply Rabs_pos_eq. apply pow_le. firstorder. 
 Qed.
 
-Theorem ex_series_ltv : ex_series ltv_part.
-Proof.   
-
+Theorem ex_series_ltv {D : R} : (forall s : M.(state), Rabs (reward _ s) <= D) -> ex_series (fun n => γ^n * (expt_reward σ init n)).
+Proof.
+intros Hbdd. 
+refine (ex_series_le_Reals _ _ _ _). 
+intros n. rewrite Rabs_mult.
+enough (Rabs (γ ^ n) * Rabs (expt_reward σ init n) <= D*γ^n). apply H.
+enough (Hγ : Rabs (γ^n) = γ^n). rewrite Hγ.
+rewrite Rmult_comm. apply Rmult_le_compat_r.
+apply pow_le; firstorder.
+apply (expt_reward_le_max_Rabs) ; try assumption. 
+apply Rabs_pos_eq ; apply pow_le; firstorder.
+apply (ex_series_mult_geom D). 
+Qed.
 
 End ltv.
 
