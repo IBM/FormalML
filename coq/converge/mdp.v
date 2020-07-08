@@ -113,12 +113,12 @@ Proof.
 Qed.
 
 (* Bounded rewards imply bounded expected rewards for all iterations and all states. *)
-Lemma expt_reward_le_max (init : M.(state)) :
-  (exists D, forall s : M.(state), reward _ s <= D)  ->
-  (exists D:R, forall n:nat, expt_reward init n <= D). 
+Lemma expt_reward_le_max {D : R} (init : M.(state)) :
+  (forall s : M.(state), reward _ s <= D)  ->
+  (forall n:nat, expt_reward init n <= D). 
 Proof. 
-  intros (D,H). 
-  exists D. unfold expt_reward. intros n. 
+  intros H. 
+  unfold expt_reward. intros n. 
   generalize (bind_stoch_iter n init) as l.
   intros l.
   rewrite <- Rmult_1_r.
@@ -164,29 +164,16 @@ Open Scope R_scope.
 Context {M : MDP} {γ : R}.
 Context (σ : policy M) (init : M.(state)) (hγ : (0 <= γ < 1)%R).
 
-Definition ltv_part (N : nat) := sum_f_R0 (fun n => γ^n * (expt_reward σ init n)) N. 
+Definition ltv_part (N : nat) := sum_n (fun n => γ^n * (expt_reward σ init n)) N. 
 Definition ltv_part' (N : nat) := sum_f_R0' (fun n => γ^n * (expt_reward σ init n)) N. 
 
 Lemma ltv_part0_eq_reward : ltv_part 0 = reward _ init.
 Proof.
-  unfold ltv_part;simpl.
+  unfold ltv_part. rewrite sum_n_Reals. simpl.  
   rewrite expt_reward0_eq_reward. lra.
 Qed.
 
-Check sum_n_m.
-Lemma ltv_part_le (N : nat) :  (exists D, forall s : M.(state), reward _ s <= D) -> exists D : R , (ltv_part N) <= sum_f_R0 (fun n => γ^n * D) N.
-Proof.
-  intros Hd.
-  destruct (expt_reward_le_max σ init Hd) as [D HD]. 
-  exists D. unfold ltv_part.  apply sum_Rle. 
-  intros n0 Hn0. 
-  apply Rmult_le_compat_l.
-  apply pow_le ; firstorder.
-  apply HD. 
-Qed. 
-
-
-Lemma sum_geom (D : R) : infinite_sum (fun n => D*γ^n) (D/(1 - γ)).
+Lemma sum_mult_geom (D : R) : infinite_sum (fun n => D*γ^n) (D/(1 - γ)).
 Proof.
   rewrite infinite_sum_infinite_sum'.
   apply infinite_sum'_mult_const.
@@ -195,11 +182,56 @@ Proof.
   rewrite Rabs_pos_eq. lra. lra. 
 Qed.
 
-
-Lemma ltv : exists D, infinite_sum ltv_part D. 
+Lemma ex_series_mult_geom (D:R) : ex_series (fun n => D*γ^n).
 Proof.
-  
-Admitted. 
+  exists (D/(1-γ)). 
+  rewrite is_series_Reals. 
+  apply sum_mult_geom.
+Qed.
+
+Lemma ltv_part_le {D : R} (N : nat) :  (forall s : M.(state), reward _ s <= D) -> ltv_part N <= sum_f_R0 (fun n => γ^n * D) N.
+Proof.
+  intros Hd.
+  unfold ltv_part.  rewrite sum_n_Reals. apply sum_Rle. 
+  intros n0 Hn0. 
+  apply Rmult_le_compat_l.
+  apply pow_le ; firstorder.
+  now apply (expt_reward_le_max).
+Qed. 
+
+
+Lemma ex_series_le_Reals
+     : forall (a : nat -> R) (b : nat -> R),
+    (forall n : nat, Rabs (a n) <= b n) -> ex_series b -> ex_series a.
+Proof.
+  intros a b Hab Hexb.  
+  apply (@ex_series_le _ _ a b).
+  now apply Hab. assumption.
+Qed.
+
+
+Lemma abs_convg_implies_convg : forall (a : nat -> R), ex_series (fun n => Rabs(a n)) -> ex_series a. 
+Proof.
+intros a Habs.   
+refine (ex_series_le_Reals a (fun n => Rabs(a n)) _ Habs).
+intros n. now right.
+Qed.
+
+Lemma ltv_part_le_norm {D : R} (N : nat) :  (forall s : M.(state), reward _ s <= D) -> Rabs(ltv_part N) <= sum_f_R0 (fun n => Rabs(γ^n * D)) N.
+Proof.
+  intros Hd.
+  unfold ltv_part. rewrite sum_n_Reals.
+  refine (Rle_trans _ _ _ _ _ ).
+  apply sum_f_R0_triangle. 
+  apply sum_Rle. 
+  intros n0 Hn0. 
+  rewrite Rabs_mult. rewrite Rabs_mult.
+  enough (Hγ : Rabs (γ^n0) = γ^n0). rewrite Hγ.
+  apply Rmult_le_compat_l.
+  apply pow_le ; firstorder.
+  Admitted. 
+
+
 End ltv.
 
   
