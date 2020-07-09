@@ -111,8 +111,10 @@ Definition stoch_mx : M.(state) -> Pmf M.(state) := fun s => t _ s (σ s).
 
 Definition bind_stoch_iter (n : nat) (init : M.(state)):= bind_iter init (stoch_mx) n.
 
+(* Expected reward after n-steps, starting at initial state, following policy sigma. *)
+
 Definition expt_reward (init : M.(state)) (n : nat) : R :=
- list_sum (map (fun y : nonnegreal * state _ => reward _ (snd y) * (fst y)) (bind_stoch_iter n init).(outcomes)).
+ expt_value (bind_stoch_iter n init) M.(reward).
 
   
 (* Expected reward at time 0 is equal to the reward. *)
@@ -120,6 +122,7 @@ Lemma expt_reward0_eq_reward : forall init : M.(state), expt_reward init 0 = rew
 Proof.
   intros init.
   unfold expt_reward ; simpl.
+  unfold expt_value ; simpl. 
   lra.
 Qed.
 
@@ -129,7 +132,7 @@ Lemma expt_reward_le_max_Rabs {D : R} (init : M.(state)) :
   (forall n:nat, Rabs (expt_reward init n) <= D). 
 Proof. 
   intros H. 
-  unfold expt_reward. intros n. 
+  unfold expt_reward ; unfold expt_value. intros n. 
   generalize (bind_stoch_iter n init) as l.
   intros l.
   rewrite <- Rmult_1_r.
@@ -169,7 +172,7 @@ Lemma expt_reward_unitMDP {t0 : R -> R -> Pmf R} :
   let M0 := unitMDP t0 in
   forall (σ0 : policy M0) (init0 : M0.(state)) (n:nat), expt_reward σ0 init0 n = R1. 
 Proof.
-  intros M0 σ0 init0 n. unfold expt_reward.
+  intros M0 σ0 init0 n. unfold expt_reward ; unfold expt_value.
   simpl. rewrite <- (sum1_compat (bind_stoch_iter σ0 n init0)).
   f_equal. apply map_ext. rewrite sum1_compat.
   intros a. now rewrite Rmult_1_l.
@@ -240,10 +243,10 @@ Proof.
   apply (ex_series_mult_geom D). 
 Qed.
 
+Definition ltv : R := Series (fun n => γ^n * (expt_reward σ init n)). 
+
+
 End ltv.
-
-  
-
 
 
         

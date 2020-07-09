@@ -268,5 +268,8 @@ Global Instance Pmf_MonadLaws : MonadLaws Monad_Pmf := {|
   bind_associativity := @Pmf_bind_of_bind;
 |}.
 
- 
+
+Definition expt_value {A : Type} (p : Pmf A) (f : A -> R): R :=
+  list_sum (map (fun x => (f x.2) * nonneg x.1) p.(outcomes)). 
+
 End Pmf.
