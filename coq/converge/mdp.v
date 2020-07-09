@@ -15,14 +15,6 @@ Open Scope list_scope.
 Open Scope R_scope.
 
 Import ListNotations.
-(* Applies a function to an initial argument n times *)
-Fixpoint applyn {A} (init : A) (g : A -> A) (n : nat) : A :=
-  match n with
-  | 0 => init
-  | S k => g (applyn init g k)
-  end.
-
-
   
 Fixpoint Rmax_list (l : list R) : R :=
   match l with
@@ -74,6 +66,13 @@ refine (ex_series_le_Reals a (fun n => Rabs(a n)) _ Habs).
 intros n. now right.
 Qed.
 
+(* Applies a function to an initial argument n times *)
+Fixpoint applyn {A} (init : A) (g : A -> A) (n : nat) : A :=
+  match n with
+  | 0 => init
+  | S k => g (applyn init g k)
+  end.
+
 End extra.
 
 Definition bind_iter {M:Type->Type} {Mm:Monad M} {A:Type} (unit:A) (f : A -> M A) :=
@@ -98,6 +97,8 @@ Record MDP := mkMDP {
 }.
 
 Arguments outcomes {_}.
+Arguments t {_}.
+Arguments reward {_}. 
 
 Definition policy (M : MDP) := M.(state) -> M.(act).
 
@@ -107,18 +108,33 @@ Context (σ : policy M).
 (* Construction of a Kliesli arrow out of a policy. 
    This can be interpreted as a |S| × |S| stochastic matrix. *)
 
-Definition stoch_mx : M.(state) -> Pmf M.(state) := fun s => t _ s (σ s).
+Definition stoch_mx : M.(state) -> Pmf M.(state) := fun s => t s (σ s).
 
 Definition bind_stoch_iter (n : nat) (init : M.(state)):= bind_iter init (stoch_mx) n.
 
-(* Expected reward after n-steps, starting at initial state, following policy sigma. *)
+(* 
+   It is helpful to see what happens in the above definition for n=1, and starting at init.
+   We get the transition probability structure applied to the initial state, init, and upon
+   taking the action σ(init) as prescribed by the policy sigma. So we recover the entire 
+   transition structure after one step. Similar remarks apply for n-steps.
+*)
 
+Lemma bind_stoch_iter_1 (init : M.(state)) : bind_stoch_iter 1 init = t init (σ init).
+Proof. 
+  unfold bind_stoch_iter.
+  unfold bind_iter. 
+  simpl. rewrite Pmf_bind_of_ret.
+  reflexivity.
+Qed.
+
+
+(* Expected reward after n-steps, starting at initial state, following policy sigma. *)
 Definition expt_reward (init : M.(state)) (n : nat) : R :=
- expt_value (bind_stoch_iter n init) M.(reward).
+ expt_value (bind_stoch_iter n init) reward.
 
   
 (* Expected reward at time 0 is equal to the reward. *)
-Lemma expt_reward0_eq_reward : forall init : M.(state), expt_reward init 0 = reward _ init.
+Lemma expt_reward0_eq_reward : forall init : M.(state), expt_reward init 0 = reward init.
 Proof.
   intros init.
   unfold expt_reward ; simpl.
@@ -128,7 +144,7 @@ Qed.
 
 (* Bounded rewards (in absolute value) imply bounded expected rewards for all iterations and all states. *)
 Lemma expt_reward_le_max_Rabs {D : R} (init : M.(state)) :
-  (forall s : M.(state),Rabs (reward _ s) <= D)  ->
+  (forall s : M.(state),Rabs (reward s) <= D)  ->
   (forall n:nat, Rabs (expt_reward init n) <= D). 
 Proof. 
   intros H. 
@@ -141,7 +157,7 @@ Proof.
   induction l.(outcomes). 
   * simpl. right. rewrite Rabs_R0. lra. 
   * simpl in *. rewrite Rmult_plus_distr_l.
-    assert (reward M (snd a) * fst a  <=  D * fst a). apply Rmult_le_compat_r. apply cond_nonneg.
+    assert (reward (snd a) * fst a  <=  D * fst a). apply Rmult_le_compat_r. apply cond_nonneg.
     refine (Rle_trans _ _ _ _ _).
     apply Rle_abs. 
     apply H.
