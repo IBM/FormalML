@@ -42,7 +42,9 @@ Next Obligation.
 Qed.
 
 Lemma to_list_length {T} {n:nat} (v : vector T n) : length (to_list v) = n.
-Admitted.
+  induction v; simpl; trivial.
+  now f_equal.
+Qed.
 
 Program Definition vcombine {T} {n:nat} (v1 v2:vector T n) : vector (T*T) n :=
   of_list (combine (to_list v1) (to_list v2)).
