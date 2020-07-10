@@ -92,7 +92,15 @@ Proof.
   f_equal. apply proof_irrelevance.
 Qed.
 
-Lemma list_sum_cat {A : Type} (l1 l2 : list (nonnegreal * A)) :
+Lemma list_sum_cat (l1 l2 : list R) :
+  list_sum (l1 ++ l2) = (list_sum l1) + (list_sum l2).
+Proof.
+  induction l1.
+  * simpl ; nra.
+  * simpl.  nra.
+Qed.
+
+Lemma list_fst_sum_cat {A : Type} (l1 l2 : list (nonnegreal * A)) :
   list_fst_sum (l1 ++ l2) = (list_fst_sum l1) + (list_fst_sum l2).
 Proof.
   induction l1.
@@ -190,7 +198,7 @@ Proof.
   induction p.
  *  simpl; intuition. 
  *  simpl in *. destruct a as [n a]. intros t0 Hnt0.
-    rewrite list_sum_cat.  rewrite (IHp (t0-n)). 
+    rewrite list_fst_sum_cat.  rewrite (IHp (t0-n)). 
     rewrite list_fst_sum_eq. destruct (f a) as [fp Hfp]. simpl.
     rewrite map_id Hfp. lra.
     lra.
@@ -270,6 +278,40 @@ Global Instance Pmf_MonadLaws : MonadLaws Monad_Pmf := {|
 
 
 Definition expt_value {A : Type} (p : Pmf A) (f : A -> R): R :=
-  list_sum (map (fun x => (f x.2) * nonneg x.1) p.(outcomes)). 
+  list_sum (map (fun x => (f x.2) * nonneg x.1) p.(outcomes)).
+
+
+
+Lemma expt_value_pure {A : Type} (a : A) (f : A -> R) :
+  expt_value (Pmf_pure a) f = f a.
+Proof. 
+  unfold expt_value ; unfold Pmf_pure ; simpl. 
+  lra.
+Qed. 
+ 
+Lemma expt_value_bind_aux {A B : Type} (p : Pmf A) (g : A -> Pmf B) (f : B -> R) (n : nonnegreal) :
+forall a : A,  list_sum [seq (f x.2) * nonneg(x.1) * n | x <- (g a).(outcomes)] = list_sum [seq (f x.2) * nonneg(x.1) | x <- (g a).(outcomes)] * n. 
+Proof.
+  intros a. 
+  induction (g a).(outcomes).
+  * simpl ; lra. 
+  * rewrite map_cons. simpl. rewrite IHl. lra. 
+Qed.
+
+Lemma expt_value_bind {A B : Type} (filler : R) (p : Pmf A) (g : A -> Pmf B) (f : B -> R) :
+  expt_value (Pmf_bind p g) f = expt_value p (fun a => expt_value (g a) f).
+Proof.
+  unfold Pmf_bind.
+  unfold expt_value. simpl. 
+  induction (p.(outcomes)).
+  simpl ; reflexivity.
+  destruct a. simpl. rewrite <-IHl. rewrite map_cat.
+  rewrite list_sum_cat. f_equal. 
+  rewrite <-map_comp. rewrite <- (expt_value_bind_aux p). 
+  f_equal. apply List.map_ext.
+  intros a0. simpl.
+  lra.
+Qed.
+
 
 End Pmf.
