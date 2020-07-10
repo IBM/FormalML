@@ -3,8 +3,6 @@ Require Import Omega.
 Require Import VectorDef.
 Require Vector.
 
-Print Vector.t.
-
 Section Vector.
   
 Definition vector (T:Type) (n:nat) := Vector.t T n.
@@ -25,11 +23,11 @@ Definition vtl {T} {n:nat} (v : vector T (S n)) : vector T n := tl v.
 
 Definition vlast {T} {n:nat} (v : vector T (S n)) := last v.
 
-Definition vnth {T} {n:nat} (i:nat | i<n) (v : vector T n) : T
+Definition vnth {T} {n:nat}  (v : vector T n) (i:nat | i<n) : T
   := nth v (Fin.of_nat_lt (proj2_sig i)).
 
 Definition vec_fun {T} {n:nat} (v:vector T n) : {i:nat | i<n} -> T :=
-  fun i => vnth i v.
+  fun i => vnth v i.
 
 Program Definition ConstVector {T} (n:nat) (c:T) : vector T n
   := of_list (repeat c n).
@@ -64,10 +62,13 @@ Definition matrix (T:Type) (n m : nat) := vector (vector T m) n.
 
 Definition mat_fun {T:Type} (n m : nat) (mat : matrix T n m ) :
   {n':nat | n' < n}%nat -> {m':nat | m' < m}%nat -> T :=
-  fun i => fun j => vnth j (vnth i mat).
+  fun i => fun j => vnth (vnth mat i) j.
 
 Definition mmap {A B} {n m} (f:A->B) (mat : matrix A n m) : matrix B n m :=
   vmap (vmap f) mat.
+
+Definition mnth {T} {n m :nat}  (v : matrix T n m) (i:nat | i<n) (j:nat | j<m) : T
+  := vnth (vnth v i) j.
 
 Definition mcombine {T} {n m : nat} (mat1 mat2 : matrix T n m) : matrix (T*T) n m :=
   vmap (fun '(a,b) => vcombine a b) (vcombine mat1 mat2).
@@ -78,7 +79,7 @@ Definition build_matrix {T} {n m:nat}
   := vmap build_vector (build_vector mat).
 
 Definition transpose {T} {m n : nat} (mat:matrix T m n) : matrix T n m
-  := build_matrix (fun i j => vnth i (vnth j mat)).
+  := build_matrix (fun i j => vnth (vnth mat j) i).
 
 End Matrix.
 
@@ -209,7 +210,7 @@ Require Import Floatish.
     vmap (fun l1 => vdot l1 r) l.
 
   Definition matrix_vector_add {n m} (l : matrix float n m) (r : vector float n) : matrix float n m := 
-    build_matrix (fun i j => (vnth j (vnth i l)) + (vnth i r)).
+    build_matrix (fun i j => (vnth (vnth l i) j) + (vnth r i)).
     
 (*
     transpose (vmap (fun l1 => vadd l1 r) (transpose l)).
@@ -217,7 +218,8 @@ Require Import Floatish.
   
   Definition matrix_mult {n m p} (l : matrix float n m)(r : matrix float m p) : matrix float n p :=
       build_matrix (fun i k => vsum (build_vector 
-                                       (fun j => (vnth j (vnth i l)) * (vnth k (vnth j r))))).
+                                       (fun j => (vnth (vnth l i) j) * 
+                                                 (vnth (vnth r j) k)))).
 
 (*
     transpose (vmap (fun r1 => matrix_vector_mult l r1) (transpose r)).
