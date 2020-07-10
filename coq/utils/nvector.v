@@ -1,92 +1,55 @@
 Require Import List.
 Require Import Omega.
+Require Import VectorDef.
 Require Vector.
 
 Section Vector.
   
-Definition vector (T:Type) (n:nat) := { l : list T | length l = n }.
+Definition vector (T:Type) (n:nat) := Vector.t T n.
 
-Program Definition vnil {T} : vector T 0 := exist _ nil _.
+Definition vnil {T} : vector T 0 := nil T.
 
-Program Definition vcons {T} (n:nat) (c:T) (v:vector T n) : vector T (S n) :=
-  exist _ (c::proj1_sig v) _.
-Next Obligation.
-  destruct v; simpl.
-  now rewrite e.
-Qed.
+Definition vcons {T} (n:nat) (c:T) (v:vector T n) : vector T (S n) :=
+  cons T c n v.
 
-Program Definition vappend {T} (n1 n2:nat) (v1:vector T n1) (v2:vector T n2) : vector T (n1 + n2) :=
-  exist _ (proj1_sig v1 ++ proj1_sig v2) _ .
-Next Obligation.
-  destruct v1.
-  destruct v2.
-  simpl.
-  now rewrite app_length, e, e0.
-Qed.
+Definition vappend {T} (n1 n2:nat) (v1:vector T n1) (v2:vector T n2) : vector T (n1 + n2) 
+  := append v1 v2.
 
-Program Definition vmap {A B} {n} (f:A->B) (v : vector A n) : vector B n :=
-  exist _ (map f (proj1_sig v)) _.
-Next Obligation.
-  destruct v; simpl.
-  now rewrite map_length.
-Qed.
+Definition vmap {A B} {n} (f:A->B) (v : vector A n) : vector B n :=  map f v.
 
-Program Definition vhd {T} {n:nat} (v : vector T (S n)):T := 
-  match proj1_sig v with
-  | c :: l => c
-  | nil => _
-  end.
-Next Obligation.
-  destruct v; simpl in *.
-  subst; simpl in *.
-  congruence.
-Qed.
+Definition vhd {T} {n:nat} (v : vector T (S n)):T := hd v.
 
-Program Definition vtl {T} {n:nat} (v : vector T (S n)) : vector T n :=
-  exist _ (tl (proj1_sig v)) _.
-Next Obligation.
-  destruct v; simpl.
-  destruct x; simpl in *.
-  omega.
-  now inversion e.
-Qed.
+Definition vtl {T} {n:nat} (v : vector T (S n)) : vector T n := tl v.
 
-Program Definition vnth {T} {n:nat} (i:nat | i<n) (v : vector T n) : T
-  := match nth_error v i with
-     | None => _
-     | Some t => t
-     end.
-Next Obligation.
-  symmetry in Heq_anonymous.
-  apply nth_error_None in Heq_anonymous.
-  destruct v; simpl in *.
-  omega.
-Qed.
+Definition vlast {T} {n:nat} (v : vector T (S n)) := last v.
 
-Program Definition vlast {T} {n:nat} (v : vector T (S n)) := 
-  vnth (exist _ n _) v.
-
-Definition ConstVector {T} (n:nat) (c:T) : vector T n
-  := exist _ (repeat c n) (repeat_length _ _).
+Definition vnth {T} {n:nat} (i:nat | i<n) (v : vector T n) : T
+  := nth v (Fin.of_nat_lt (proj2_sig i)).
 
 Definition vec_fun {T} {n:nat} (v:vector T n) : {i:nat | i<n} -> T :=
   fun i => vnth i v.
 
-Program Definition vcombine {T} {n:nat} (v1 v2:vector T n) : vector (T*T) n :=
-  exist _ (combine (proj1_sig v1) (proj1_sig v2)) _.
+Program Definition ConstVector {T} (n:nat) (c:T) : vector T n
+  := of_list (repeat c n).
 Next Obligation.
-  destruct v1.
-  destruct v2.
-  simpl.
-  rewrite combine_length.
-  rewrite e, e0.
-  apply Nat.min_id.
-Qed.
+  now rewrite repeat_length.
+Qed.  
 
 Program Definition build_vector {T} {n:nat} (v:{n':nat | n' < n}%nat -> T) : vector T n
-  := Vector.vector_to_list v.
+  := of_list (Vector.vector_to_list v).
 Next Obligation.
   apply Vector.vector_to_list_length.
+Qed.
+
+Lemma to_list_length {T} {n:nat} (v : vector T n) : length (to_list v) = n.
+Admitted.
+
+Program Definition vcombine {T} {n:nat} (v1 v2:vector T n) : vector (T*T) n :=
+  of_list (combine (to_list v1) (to_list v2)).
+Next Obligation.
+  rewrite combine_length.
+  rewrite to_list_length, to_list_length.
+  apply Nat.min_id.
 Qed.
 
 End Vector.
@@ -105,6 +68,7 @@ Definition mmap {A B} {n m} (f:A->B) (mat : matrix A n m) : matrix B n m :=
 Definition mcombine {T} {n m : nat} (mat1 mat2 : matrix T n m) : matrix (T*T) n m :=
   vmap (fun '(a,b) => vcombine a b) (vcombine mat1 mat2).
 
+
 Definition build_matrix {T} {n m:nat} 
         (mat:{n':nat | n' < n}%nat -> {m':nat | m' < m}%nat -> T) : matrix T n m
   := vmap build_vector (build_vector mat).
@@ -117,16 +81,16 @@ End Matrix.
 Section Tensor.
 Fixpoint tensor T (l:list nat) : Type
   := match l with
-     | nil => T
+     | List.nil => T
      | x::l' => vector (tensor T l') x
      end.
 
-Lemma tensor0 T : tensor T nil = T.
+Lemma tensor0 T : tensor T List.nil = T.
 Proof.
   reflexivity.
 Qed.
 
-Lemma tensor1 T n : tensor T (n::nil) = vector T n.
+Lemma tensor1 T n : tensor T (n::List.nil) = vector T n.
 Proof.
   reflexivity.
 Qed.
@@ -140,11 +104,11 @@ Qed.
 
 Fixpoint ConstTensor {T} (l : list nat) (c:T) : (tensor T l) := 
   match l with 
-  | nil => c
+  | List.nil => c
   | x::l' => ConstVector x (ConstTensor l' c)
   end.
 
-Definition scalar {T} (c:T) : tensor T nil := c.
+Definition scalar {T} (c:T) : tensor T List.nil := c.
 
 End Tensor.
 
@@ -156,15 +120,15 @@ Require Import Floatish.
   Local Open Scope float.
 
   Definition vsum {m:nat} (v:vector float m) : float
-      := fold_right Fplus 0 (proj1_sig v).
+      := List.fold_right Fplus 0 (to_list v).
 
   Definition msum {m n:nat} (v:matrix float m n) : float :=
     vsum (vmap vsum v).
 
   Definition vdot {m:nat} (v1 v2 : vector float m) : float :=
-    fold_right Fplus 0
-               (map (fun '(a,b) => a * b) 
-                    (combine (proj1_sig v1) (proj1_sig v2))).
+    List.fold_right Fplus 0
+               (List.map (fun '(a,b) => a * b) 
+                    (combine (to_list v1) (to_list v2))).
 
   Definition vadd {m:nat} (v1 v2 : vector float m) :=
     vmap (fun '(a,b) => a+b) (vcombine v1 v2).
