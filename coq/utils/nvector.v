@@ -3,6 +3,8 @@ Require Import Omega.
 Require Import VectorDef.
 Require Vector.
 
+Print Vector.t.
+
 Section Vector.
   
 Definition vector (T:Type) (n:nat) := Vector.t T n.
@@ -110,31 +112,74 @@ Fixpoint ConstTensor {T} (l : list nat) (c:T) : (tensor T l) :=
   | x::l' => ConstVector x (ConstTensor l' c)
   end.
 
-Fixpoint tensor_map {A B} {dims:list nat} (f:A->B) : tensor A dims -> tensor B dims
+Fixpoint Tensor_map {A B} {dims:list nat} (f:A->B) : tensor A dims -> tensor B dims
   := match dims with
      | List.nil => fun x => f x
-     | x::l' => vmap (tensor_map f)
+     | x::l' => vmap (Tensor_map f)
      end.
 
 Definition scalar {T} (c:T) : tensor T List.nil := c.
 
 End Tensor.
 
+Inductive NumericType
+  := FloatType
+   | IntTYpe.
+
+Definition ntype_interp (n:NumericType) : Type
+  := match n with
+     | FloatType => nat
+     | IntType => Z
+     end.
+
+Definition tensor_abs_type  (T:NumericType) (dims:list nat) := tensor (ntype_interp T) dims.
+
 Class TensorDef :=
   {
-  tensor_t (T:Type) (dims:list nat) : Type
-  ; tensor_repr {T:Type} {dims:list nat} : tensor_t T dims -> tensor T dims -> Prop
+  tensor_t (T:NumericType) (dims:list nat) : Type
+  ; tensor_repr {T:NumericType} {dims:list nat} : tensor_t T dims -> tensor_abs_type T dims -> Prop
 
-  ; tensor_const {T} (dims : list nat) (c:T) : tensor_t T dims
-  ; tensor_const_p {T} (dims : list nat) (c:T) : tensor_repr (tensor_const dims c) (ConstTensor dims c)
+  ; tensor_const {T} (dims : list nat) (c:ntype_interp T) : tensor_t T dims
+  ; tensor_const_p {T} (dims : list nat) (c:ntype_interp T) : tensor_repr (tensor_const dims c) (ConstTensor dims c)
 
-  ; vector_map {A B} {dims : list nat} (f:A->B) (t:tensor_t A dims) : tensor_t B dims
-  ; vector_map_prop {A B} {dims : list nat} (f:A->B) (t:tensor_t A dims) :
+  ; tensor_map {A B} {dims : list nat} (f:ntype_interp A-> ntype_interp B) (t:tensor_t A dims) : tensor_t B dims
+  ; tensor_map_p {A B} {dims : list nat} (f:ntype_interp A-> ntype_interp B)  (t:tensor_t A dims) :
       forall r, tensor_repr t r ->
-           tensor_repr (vector_map f t) (tensor_map f r)
+           tensor_repr (tensor_map f t) (Tensor_map f r)
+
+  (* ; tensor_nth {A} {dims : list nat} (indices:list nat) (indices_in_range:True) (t:tensor A dims) : A *)
+  (* ; tensor_nth_p {A:Type} {dims : list nat} (indices:list nat) (indices_in_range:True) (t:tensor_t A dims) : *)
+  (*   forall r, tensor_repr t r -> *)
+  (*          tensor_repr (tensor_nth indices indices_in_range t) (tensor_nth indices indices_in_range r) *)
   }.
 
+(*
+Class TensorDefExt {base:TensorDef} :=
+  {
+  tensor_transpose;
+  }.
+*)
+  (* ; tensor_nth {A} {dims : list nat} (indices:list nat) (indices_in_range:True) (t:tensor A dims) : A *)
+  (* ; tensor_nth_p {A:Type} {dims : list nat} (indices:list nat) (indices_in_range:True) (t:tensor_t A dims) : *)
+  (*   forall r, tensor_repr t r -> *)
+  (*          tensor_repr (tensor_nth indices indices_in_range t) (tensor_nth indices indices_in_range r) *)
 
+(* Instance trivial_TensorDef : TensorDef := *)
+(*   { *)
+(*   tensor_t := tensor; *)
+(*   tensor_repr _ _ a b := a = b *)
+(*   }. *)
+(*
+Fixpoint flat_list_represent_tensor {T} {dims} (l:list A) (t:tensor T dims) : Prop
+  := 
+         
+Instance BigArray_TensorDef : TensorDef
+  := {
+  tensor_t A dims := list A;
+  tensor_repr T dims (l:list A) (tensor T dims)
+  := fix 
+    }.
+*)
 
 Section float_ops.
 
