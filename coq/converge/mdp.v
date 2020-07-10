@@ -91,7 +91,7 @@ Record MDP := mkMDP {
     t(s,a,s') is the probability that the next state is s' given that you take action a in state s.
     One can also consider to to be an act-indexed collection of Kliesli arrows of Pmf. 
  *)
- t :>  state -> act -> Pmf state;
+ t :  state -> act -> Pmf state;
  (* Reward when you are at state s. *)
  reward : state -> R                                
 }.
@@ -108,9 +108,10 @@ Context (σ : policy M).
 (* Construction of a Kliesli arrow out of a policy. 
    This can be interpreted as a |S| × |S| stochastic matrix. *)
 
-Definition stoch_mx : M.(state) -> Pmf M.(state) := fun s => t s (σ s).
+(*Definition state_policy_kleisli : M.(state) -> Pmf M.(state) := fun s => t s (σ s).*)
 
-Definition bind_stoch_iter (n : nat) (init : M.(state)):= bind_iter init (stoch_mx) n.
+Definition bind_stoch_iter (n : nat) (init : M.(state)):=
+  applyn (ret init) (fun y => Pmf_bind y (fun s => t s (σ s))) n.
 
 (* 
    It is helpful to see what happens in the above definition for n=1, and starting at init.
@@ -140,6 +141,17 @@ Proof.
   unfold expt_reward ; simpl.
   unfold expt_value ; simpl. 
   lra.
+Qed.
+
+(*
+ With every iteration, the reward changes to the average of the rewards of the previous transition states.
+*)
+Lemma expt_reward_succ (n : nat) : forall init : M.(state), expt_reward init (S n) =  expt_value (bind_stoch_iter n init) (fun s : state M => expt_value (t s (σ s)) reward).
+Proof.
+  intros init. 
+  unfold expt_reward. unfold bind_stoch_iter. 
+  simpl.
+  rewrite expt_value_bind. reflexivity. 
 Qed.
 
 (* Bounded rewards (in absolute value) imply bounded expected rewards for all iterations and all states. *)
@@ -201,10 +213,13 @@ Section ltv.
 Open Scope R_scope. 
 Context {M : MDP} {γ : R}.
 Context (σ : policy M) (init : M.(state)) (hγ : (0 <= γ < 1)%R).
+Arguments reward {_}.
+Arguments outcomes {_}.
+Arguments t {_}.
 
 Definition ltv_part (N : nat) := sum_n (fun n => γ^n * (expt_reward σ init n)) N. 
 
-Lemma ltv_part0_eq_reward : ltv_part 0 = reward _ init.
+Lemma ltv_part0_eq_reward : ltv_part 0 = reward init.
 Proof.
   unfold ltv_part. rewrite sum_n_Reals. simpl.  
   rewrite expt_reward0_eq_reward. lra.
@@ -228,7 +243,7 @@ Qed.
 
 
 Lemma ltv_part_le_norm {D : R} (N : nat) :
-  (forall s : M.(state), Rabs (reward _ s) <= D) -> Rabs(ltv_part N) <= sum_f_R0 (fun n => γ^n * D) N.
+  (forall s : M.(state), Rabs (reward s) <= D) -> Rabs(ltv_part N) <= sum_f_R0 (fun n => γ^n * D) N.
 Proof.
   intros Hd.
   unfold ltv_part. rewrite sum_n_Reals.
@@ -245,7 +260,7 @@ Proof.
 Qed.
 
 Theorem ex_series_ltv {D : R} :
-  (forall s : M.(state), Rabs (reward _ s) <= D) -> ex_series (fun n => γ^n * (expt_reward σ init n)).
+  (forall s : M.(state), Rabs (reward s) <= D) -> ex_series (fun n => γ^n * (expt_reward σ init n)).
 Proof.
   intros Hbdd. 
   refine (ex_series_le_Reals _ _ _ _). 
@@ -259,10 +274,34 @@ Proof.
   apply (ex_series_mult_geom D). 
 Qed.
 
-Definition ltv : R := Series (fun n => γ^n * (expt_reward σ init n)). 
-
+Definition ltv (init : M.(state)) : R := Series (fun n => γ^n * (expt_reward σ init n)).
 
 End ltv.
 
 
-        
+Definition expt_ltv {M : MDP} {γ : R} (σ : policy M) (p : Pmf M.(state)) (hγ : 0 <= γ < 1): R :=
+  expt_value p (@ltv _ γ σ). 
+
+Lemma ltv_corec {M : MDP} {γ : R} (σ : policy M) (hγ : 0 <= γ < 1) (init : M.(state)) :
+   @ltv _ γ σ init = (reward _ init) + γ*expt_value (t M init (σ init)) (@ltv _ γ σ). 
+Proof.
+  rewrite <-(@expt_reward0_eq_reward _ σ init).
+  unfold ltv.
+  rewrite Series_incr_1. simpl. rewrite Rmult_1_l. f_equal.
+  assert (Series (fun k : nat => γ * γ ^ k * expt_reward σ init (S k))  =  Series (fun k : nat => γ * (γ ^ k * expt_reward σ init (S k)))).   apply Series_ext. intros n. now rewrite Rmult_assoc.
+  rewrite H. clear H.
+  rewrite Series_scal_l. f_equal.
+  assert ( Series (fun n : nat => γ ^ n * expt_reward σ init (S n)) = Series (fun n : nat => γ ^ n * expt_value (bind_stoch_iter σ n init) (fun s : state M => expt_value (t M s (σ s)) (@reward M)))).
+  apply Series_ext. intros n. f_equal. 
+  now rewrite expt_reward_succ.
+  rewrite H ; clear H.
+  unfold expt_reward. 
+  rewrite expt_value_Series.
+  apply Series_ext.
+  intros n. rewrite expt_value_const_mul. 
+  f_equal. unfold bind_stoch_iter.
+  induction n.
+  * simpl. rewrite expt_value_pure. f_equal. apply functional_extensionality.
+    intros x. now rewrite expt_value_pure.
+  * simpl in *. rewrite expt_value_bind. 
+Admitted. 

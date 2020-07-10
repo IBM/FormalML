@@ -1,5 +1,6 @@
-Require Import Reals Coquelicot.Coquelicot.
+Require Import Reals Coquelicot.Coquelicot Coquelicot.Series.
 Require Import ProofIrrelevance.
+Require Import Sums.
 Require Import micromega.Lra.
 From mathcomp Require Import ssreflect ssrfun seq.
 Require Import ExtLib.Structures.Monad ExtLib.Structures.MonadLaws. 
@@ -276,12 +277,53 @@ Global Instance Pmf_MonadLaws : MonadLaws Monad_Pmf := {|
   bind_associativity := @Pmf_bind_of_bind;
 |}.
 
+End Pmf.
+
+
+Section expected_value.
+
+Open Scope fun_scope. 
+Arguments outcomes {_}. 
+
+(* TODO(Kody): Notation 𝔼_{} [ _ ] to make this nicer? *)
 
 Definition expt_value {A : Type} (p : Pmf A) (f : A -> R): R :=
   list_sum (map (fun x => (f x.2) * nonneg x.1) p.(outcomes)).
 
 
+Lemma expt_value_const_mul {A : Type} (p : Pmf A) (f : A -> R) (c : R):
+  expt_value p (fun a => c * (f a)) = c * expt_value p (fun a => f a).
+Proof. 
+  unfold expt_value.
+  induction p.(outcomes).
+  simpl ; lra.
+  simpl. rewrite IHl. lra. 
+Qed.
 
+Lemma expt_value_add {A : Type} (p : Pmf A) (f1 f2 : A -> R) :
+  expt_value p (fun x => f1 x + f2 x) = (expt_value p f1) + (expt_value p f2).
+Proof.
+  unfold expt_value.
+  induction p.(outcomes).
+  * simpl ; lra.
+  * simpl. rewrite IHl. lra. 
+Qed. 
+
+Lemma expt_value_sum_f_R0 {A : Type} (p : Pmf A) (f : nat -> A -> R) (N : nat) :
+  expt_value p (fun a => sum_f_R0 (fun n => f n a) N) = sum_f_R0 (fun n => expt_value p (f n)) N.
+Proof.
+  unfold expt_value.
+  induction p.(outcomes).
+  * simpl. now rewrite sum_eq_R0.
+  * simpl. rewrite IHl. rewrite sum_plus. f_equal.
+    destruct a. simpl. rewrite <- scal_sum. apply Rmult_comm.
+Qed. 
+
+(* This is only true for bounded f. *)
+Lemma expt_value_Series {A : Type} (p : Pmf A) (f : nat -> A -> R) :
+  expt_value p (fun a => Series (fun n => f n a)) = Series (fun n => expt_value p (f n)).
+Admitted. 
+  
 Lemma expt_value_pure {A : Type} (a : A) (f : A -> R) :
   expt_value (Pmf_pure a) f = f a.
 Proof. 
@@ -298,20 +340,28 @@ Proof.
   * rewrite map_cons. simpl. rewrite IHl. lra. 
 Qed.
 
-Lemma expt_value_bind {A B : Type} (filler : R) (p : Pmf A) (g : A -> Pmf B) (f : B -> R) :
+Lemma expt_value_bind {A B : Type} (p : Pmf A) (g : A -> Pmf B) (f : B -> R) :
   expt_value (Pmf_bind p g) f = expt_value p (fun a => expt_value (g a) f).
 Proof.
   unfold Pmf_bind.
   unfold expt_value. simpl. 
   induction (p.(outcomes)).
-  simpl ; reflexivity.
-  destruct a. simpl. rewrite <-IHl. rewrite map_cat.
-  rewrite list_sum_cat. f_equal. 
-  rewrite <-map_comp. rewrite <- (expt_value_bind_aux p). 
-  f_equal. apply List.map_ext.
-  intros a0. simpl.
-  lra.
+  * simpl ; reflexivity.
+  * destruct a. simpl. rewrite <-IHl. rewrite map_cat.
+    rewrite list_sum_cat. f_equal. 
+    rewrite <-map_comp. rewrite <- (expt_value_bind_aux p). 
+    f_equal. apply List.map_ext.
+    intros a0. simpl. lra.
+Qed.
+
+Lemma expt_value_bind_ret {A B : Type} (a : A) (g : A -> Pmf B) (f : B -> R) :
+  expt_value (Pmf_bind (Pmf_pure a) g) f = expt_value (g a) f.
+Proof.   
+  rewrite expt_value_bind. 
+  rewrite expt_value_pure.
+  reflexivity.
 Qed.
 
 
-End Pmf.
+End expected_value. 
+
