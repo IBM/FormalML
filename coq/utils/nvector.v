@@ -110,9 +110,31 @@ Fixpoint ConstTensor {T} (l : list nat) (c:T) : (tensor T l) :=
   | x::l' => ConstVector x (ConstTensor l' c)
   end.
 
+Fixpoint tensor_map {A B} {dims:list nat} (f:A->B) : tensor A dims -> tensor B dims
+  := match dims with
+     | List.nil => fun x => f x
+     | x::l' => vmap (tensor_map f)
+     end.
+
 Definition scalar {T} (c:T) : tensor T List.nil := c.
 
 End Tensor.
+
+Class TensorDef :=
+  {
+  tensor_t (T:Type) (dims:list nat) : Type
+  ; tensor_repr {T:Type} {dims:list nat} : tensor_t T dims -> tensor T dims -> Prop
+
+  ; tensor_const {T} (dims : list nat) (c:T) : tensor_t T dims
+  ; tensor_const_p {T} (dims : list nat) (c:T) : tensor_repr (tensor_const dims c) (ConstTensor dims c)
+
+  ; vector_map {A B} {dims : list nat} (f:A->B) (t:tensor_t A dims) : tensor_t B dims
+  ; vector_map_prop {A B} {dims : list nat} (f:A->B) (t:tensor_t A dims) :
+      forall r, tensor_repr t r ->
+           tensor_repr (vector_map f t) (tensor_map f r)
+  }.
+
+
 
 Section float_ops.
 
