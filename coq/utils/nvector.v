@@ -48,7 +48,7 @@ Lemma to_list_length {T} {n:nat} (v : vector T n) : length (to_list v) = n.
   now f_equal.
 Qed.
 
-Program Definition vcombine {T} {n:nat} (v1 v2:vector T n) : vector (T*T) n :=
+Program Definition vcombine {T1 T2} {n:nat} (v1:vector T1 n) (v2:vector T2 n): vector (T1*T2) n :=
   of_list (combine (to_list v1) (to_list v2)).
 Next Obligation.
   rewrite combine_length.
@@ -56,9 +56,12 @@ Next Obligation.
   apply Nat.min_id.
 Qed.
 
+Definition vmap2 {A B C} {n} (f:A->B->C) (v1 : vector A n) (v2 : vector B n) : vector C n :=  vmap (fun '(x,y) => f x y) (vcombine v1 v2).
+
+Program Definition vectoro_to_ovector {T} {n} (v:vector (option T) n) : option (vector T n).
+Admitted.
 (*
-Definition vectoro_to_ovector {T} {n} (v:vector (option T) n) : option (vector T n)
-  := Vector.fold_right (fun n => lift2 (@vcons _ n)) v (Some vnil).
+  := Vector.fold_right (fun x => lift2 (vcons _ x)) v (Some vnil).
 *)
 
 End Vector.
@@ -77,9 +80,8 @@ Definition mmap {A B} {n m} (f:A->B) (mat : matrix A n m) : matrix B n m :=
 Definition mnth {T} {n m :nat}  (v : matrix T n m) (i:nat | i<n) (j:nat | j<m) : T
   := vnth (vnth v i) j.
 
-Definition mcombine {T} {n m : nat} (mat1 mat2 : matrix T n m) : matrix (T*T) n m :=
+Definition mcombine {T1 T2} {n m : nat} (mat1 : matrix T1 n m) (mat2 : matrix T2 n m) : matrix (T1*T2) n m :=
   vmap (fun '(a,b) => vcombine a b) (vcombine mat1 mat2).
-
 
 Definition build_matrix {T} {n m:nat} 
         (mat:{n':nat | n' < n}%nat -> {m':nat | m' < m}%nat -> T) : matrix T n m
@@ -90,6 +92,11 @@ Definition transpose {T} {m n : nat} (mat:matrix T m n) : matrix T n m
 
 Fixpoint ConstMatrix {T} (n m : nat) (c:T) : matrix T n m := 
   ConstVector n (ConstVector m c).
+
+Definition matrixo_to_omatrix {T} {m n} (v:matrix (option T) m n) : option (matrix T m n)
+  := vectoro_to_ovector (vmap vectoro_to_ovector v).
+
+Definition mmap2 {A B C} {n m} (f:A->B->C) (v1 : matrix A n m) (v2 : matrix B n m) : matrix C n m :=  mmap (fun '(x,y) => f x y) (mcombine v1 v2).
 
 End Matrix.
 
