@@ -1,5 +1,7 @@
 Require Import List.
 Require Import Omega.
+Require Import LibUtils.
+
 Require Import VectorDef.
 Require Vector.
 
@@ -54,6 +56,11 @@ Next Obligation.
   apply Nat.min_id.
 Qed.
 
+(*
+Definition vectoro_to_ovector {T} {n} (v:vector (option T) n) : option (vector T n)
+  := Vector.fold_right (fun n => lift2 (@vcons _ n)) v (Some vnil).
+*)
+
 End Vector.
 
 Section Matrix.
@@ -80,6 +87,9 @@ Definition build_matrix {T} {n m:nat}
 
 Definition transpose {T} {m n : nat} (mat:matrix T m n) : matrix T n m
   := build_matrix (fun i j => vnth (vnth mat j) i).
+
+Fixpoint ConstMatrix {T} (n m : nat) (c:T) : matrix T n m := 
+  ConstVector n (ConstVector m c).
 
 End Matrix.
 
