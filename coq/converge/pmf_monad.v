@@ -235,7 +235,18 @@ Variable (b : B).
 Variable (f g : A -> Pmf B). 
 Check (p >>= f).*)
 
-  
+
+Lemma Pmf_ret_of_bind {A : Type} (p : Pmf A) : p >>= (fun a => ret a) = p.
+Proof.
+  apply Pmf_ext ; simpl.
+  induction p.(outcomes). 
+  simpl. reflexivity.
+  simpl. destruct a. rewrite IHl. 
+  f_equal. f_equal.
+  destruct n.  apply nonneg_ext.
+  apply Rmult_1_r. 
+Qed.
+
 Lemma Pmf_bind_of_ret {A B : Type} (a : A) (f : A -> Pmf B) : (ret a) >>= f = f a.
 Proof.
   apply Pmf_ext.
@@ -276,6 +287,18 @@ Global Instance Pmf_MonadLaws : MonadLaws Monad_Pmf := {|
   bind_of_return := @Pmf_bind_of_ret;
   bind_associativity := @Pmf_bind_of_bind;
 |}.
+
+
+(*Lemma Pmf_bind_comm {A B C : Type} (p : Pmf A) (q : Pmf B) (f : A -> B -> Pmf C) :
+  Pmf_bind p (fun a => Pmf_bind q (f a)) = Pmf_bind q (fun b => Pmf_bind p (fun a => f a b)).
+Proof.
+  apply Pmf_ext ; simpl.
+  revert q.
+  induction p.(outcomes).
+  simpl. intros q. induction q.(outcomes). simpl. reflexivity.
+  simpl. rewrite <-IHl. destruct a. 
+Admitted.*)
+
 
 End Pmf.
 
@@ -319,7 +342,7 @@ Proof.
     destruct a. simpl. rewrite <- scal_sum. apply Rmult_comm.
 Qed. 
 
-(* This is only true for bounded f. *)
+(* This is only true for bounded f.*)
 Lemma expt_value_Series {A : Type} (p : Pmf A) (f : nat -> A -> R) :
   expt_value p (fun a => Series (fun n => f n a)) = Series (fun n => expt_value p (f n)).
 Admitted. 
@@ -362,6 +385,4 @@ Proof.
   reflexivity.
 Qed.
 
-
 End expected_value. 
-

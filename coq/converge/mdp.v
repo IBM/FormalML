@@ -276,32 +276,32 @@ Qed.
 
 Definition ltv (init : M.(state)) : R := Series (fun n => γ^n * (expt_reward σ init n)).
 
-End ltv.
 
+End ltv.
 
 Definition expt_ltv {M : MDP} {γ : R} (σ : policy M) (p : Pmf M.(state)) (hγ : 0 <= γ < 1): R :=
   expt_value p (@ltv _ γ σ). 
 
-Lemma ltv_corec {M : MDP} {γ : R} (σ : policy M) (hγ : 0 <= γ < 1) (init : M.(state)) :
-   @ltv _ γ σ init = (reward _ init) + γ*expt_value (t M init (σ init)) (@ltv _ γ σ). 
+Lemma ltv_corec {M : MDP} {γ D : R} (σ : policy M) (hγ : 0 <= γ < 1) (init : M.(state)) :
+  (forall s : M.(state), Rabs (reward _ s) <= D) -> @ltv _ γ σ init = (reward _ init) + γ*expt_value (t M init (σ init)) (@ltv _ γ σ). 
 Proof.
+  intros bdd.
   rewrite <-(@expt_reward0_eq_reward _ σ init).
   unfold ltv.
-  rewrite Series_incr_1. simpl. rewrite Rmult_1_l. f_equal.
+  rewrite Series_incr_1. simpl. rewrite Rmult_1_l.
   assert (Series (fun k : nat => γ * γ ^ k * expt_reward σ init (S k))  =  Series (fun k : nat => γ * (γ ^ k * expt_reward σ init (S k)))).   apply Series_ext. intros n. now rewrite Rmult_assoc.
   rewrite H. clear H.
-  rewrite Series_scal_l. f_equal.
-  assert ( Series (fun n : nat => γ ^ n * expt_reward σ init (S n)) = Series (fun n : nat => γ ^ n * expt_value (bind_stoch_iter σ n init) (fun s : state M => expt_value (t M s (σ s)) (@reward M)))).
-  apply Series_ext. intros n. f_equal. 
-  now rewrite expt_reward_succ.
-  rewrite H ; clear H.
-  unfold expt_reward. 
+  rewrite Series_scal_l. f_equal. f_equal. 
   rewrite expt_value_Series.
-  apply Series_ext.
-  intros n. rewrite expt_value_const_mul. 
-  f_equal. unfold bind_stoch_iter.
+  apply Series_ext. intros n.
+  rewrite expt_reward_succ. rewrite expt_value_const_mul.
+  f_equal. unfold expt_reward.
+  rewrite <-expt_value_bind.
+  rewrite <-expt_value_bind. 
+  f_equal.
   induction n.
-  * simpl. rewrite expt_value_pure. f_equal. apply functional_extensionality.
-    intros x. now rewrite expt_value_pure.
-  * simpl in *. rewrite expt_value_bind. 
-Admitted. 
+  * unfold bind_stoch_iter. simpl. rewrite Pmf_bind_of_ret.  now rewrite Pmf_ret_of_bind.
+  * unfold bind_stoch_iter in *. simpl.  setoid_rewrite IHn.
+    rewrite Pmf_bind_of_bind. reflexivity.
+  apply (ex_series_ltv σ init hγ bdd).
+Qed. 
