@@ -65,12 +65,10 @@ Program Definition vectoro_to_ovector {T} {n} (v:vector (option T) n) : option (
      end.
 Next Obligation.
   symmetry in Heq_anonymous.
-  assert (to_list v = List.map Some l).
-  apply listo_to_olist_some; trivial.
-  assert (length (to_list v) = n).
-  apply to_list_length.
+  apply listo_to_olist_some in Heq_anonymous.
   rewrite <- map_length with (f := Some).
-  now rewrite <- H.
+  rewrite <- Heq_anonymous.
+  now apply to_list_length.
 Qed.
 
 (*
