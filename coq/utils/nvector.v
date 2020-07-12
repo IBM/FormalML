@@ -56,7 +56,11 @@ Next Obligation.
   apply Nat.min_id.
 Qed.
 
-Definition vmap2 {A B C} {n} (f:A->B->C) (v1 : vector A n) (v2 : vector B n) : vector C n :=  Vector.map2 f v1 v2.
+Definition vmap2 {A B C} {n} (f:A->B->C) (v1 : vector A n) (v2 : vector B n) : vector C n
+  :=  Vector.map2 f v1 v2.
+
+Definition vmap4 {A B} {n} (f:A->A->A->A->B) (v1 v2 v3 v4 : vector A n) : vector B n :=
+  vmap2 (fun '(a1,a2) '(a3,a4) => f a1 a2 a3 a4) (vcombine v1 v2) (vcombine v3 v4).
 
 Program Definition vectoro_to_ovector {T} {n} (v:vector (option T) n) : option (vector T n) 
   := match listo_to_olist (to_list v) with
@@ -99,7 +103,7 @@ Definition build_matrix {T} {n m:nat}
   := vmap build_vector (build_vector mat).
 
 Definition transpose {T} {m n : nat} (mat:matrix T m n) : matrix T n m
-  := build_matrix (fun i j => vnth (vnth mat j) i).
+  := build_matrix (fun i j => mnth mat j i).
 
 Fixpoint ConstMatrix {T} (n m : nat) (c:T) : matrix T n m := 
   ConstVector n (ConstVector m c).
