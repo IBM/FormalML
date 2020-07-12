@@ -56,10 +56,23 @@ Next Obligation.
   apply Nat.min_id.
 Qed.
 
-Definition vmap2 {A B C} {n} (f:A->B->C) (v1 : vector A n) (v2 : vector B n) : vector C n :=  vmap (fun '(x,y) => f x y) (vcombine v1 v2).
+Definition vmap2 {A B C} {n} (f:A->B->C) (v1 : vector A n) (v2 : vector B n) : vector C n :=  Vector.map2 f v1 v2.
 
-Program Definition vectoro_to_ovector {T} {n} (v:vector (option T) n) : option (vector T n).
-Admitted.
+Program Definition vectoro_to_ovector {T} {n} (v:vector (option T) n) : option (vector T n) 
+  := match listo_to_olist (to_list v) with
+     | None => None
+     | Some l => Some (of_list l)
+     end.
+Next Obligation.
+  symmetry in Heq_anonymous.
+  assert (to_list v = List.map Some l).
+  apply listo_to_olist_some; trivial.
+  assert (length (to_list v) = n).
+  apply to_list_length.
+  rewrite <- map_length with (f := Some).
+  now rewrite <- H.
+Qed.
+
 (*
   := Vector.fold_right (fun x => lift2 (vcons _ x)) v (Some vnil).
 *)
@@ -96,7 +109,7 @@ Fixpoint ConstMatrix {T} (n m : nat) (c:T) : matrix T n m :=
 Definition matrixo_to_omatrix {T} {m n} (v:matrix (option T) m n) : option (matrix T m n)
   := vectoro_to_ovector (vmap vectoro_to_ovector v).
 
-Definition mmap2 {A B C} {n m} (f:A->B->C) (v1 : matrix A n m) (v2 : matrix B n m) : matrix C n m :=  mmap (fun '(x,y) => f x y) (mcombine v1 v2).
+Definition mmap2 {A B C} {n m} (f:A->B->C) (v1 : matrix A n m) (v2 : matrix B n m) : matrix C n m :=  vmap2 (fun r1 r2 => vmap2 f r1 r2) v1 v2.
 
 End Matrix.
 
