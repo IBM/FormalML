@@ -330,7 +330,31 @@ Proof.
   induction p.(outcomes).
   * simpl ; lra.
   * simpl. rewrite IHl. lra. 
-Qed. 
+Qed.
+
+Lemma expt_value_sub {A : Type} (p : Pmf A) (f1 f2 : A -> R) :
+  expt_value p (fun x => f1 x - f2 x) = (expt_value p f1) - (expt_value p f2).
+Proof.
+  unfold expt_value.
+  induction p.(outcomes).
+  * simpl ; lra.
+  * simpl. rewrite IHl. lra. 
+Qed.
+
+
+
+Lemma expt_value_le {A : Type} (p : Pmf A) (f1 f2 : A -> R) :
+  (forall a : A, f1 a <= f2 a) -> expt_value p f1 <= expt_value p f2.
+Proof.
+  intros Hf1f2. unfold expt_value. 
+  induction p.(outcomes). 
+  * simpl ; lra.
+  * simpl. enough (f1 a.2 * a.1 <= f2 a.2 * a.1). 
+    apply (Rplus_le_compat _ _ _ _ H IHl).
+    apply Rmult_le_compat_r. apply cond_nonneg. 
+    exact (Hf1f2 a.2).
+Qed.
+
 
 Lemma expt_value_sum_f_R0 {A : Type} (p : Pmf A) (f : nat -> A -> R) (N : nat) :
   expt_value p (fun a => sum_f_R0 (fun n => f n a) N) = sum_f_R0 (fun n => expt_value p (f n)) N.
@@ -340,20 +364,150 @@ Proof.
   * simpl. now rewrite sum_eq_R0.
   * simpl. rewrite IHl. rewrite sum_plus. f_equal.
     destruct a. simpl. rewrite <- scal_sum. apply Rmult_comm.
+Qed.
+
+Lemma sum_f_R0_Rabs_Series_aux_1 {A : Type} (p : Pmf A) (f : nat -> A -> R) (N : nat):
+  sum_f_R0 (fun n => expt_value p (fun a => f n a)) N <= Rabs (sum_f_R0 (fun n => expt_value p (fun a => f n a)) N).
+Proof.
+  apply Rle_abs. 
+Qed.
+
+Lemma sum_f_R0_Rabs_Series_aux_2 {A : Type} (p : Pmf A) (f : nat -> A -> R) (N : nat):
+  Rabs (sum_f_R0 (fun n => expt_value p (fun a => f n a)) N) <= sum_f_R0 (fun n => Rabs (expt_value p (fun a => f n a))) N.
+Proof.
+  apply Rabs_triang_gen. 
+Qed.
+
+Lemma expt_value_Rabs_Rle {A : Type} (p : Pmf A) (f : A -> R):
+  Rabs (expt_value p f) <= expt_value p (fun a => Rabs (f a)).
+Proof.
+  unfold expt_value.
+  induction p.(outcomes).
+  * simpl. rewrite Rabs_R0 ; lra.
+  * simpl. refine (Rle_trans _ _ _ _ _). 
+    apply Rabs_triang. rewrite Rabs_mult. 
+    rewrite (Rabs_pos_eq a.1). apply Rplus_le_compat.
+    apply Rmult_le_compat_r. apply cond_nonneg. now right.
+    apply IHl. apply cond_nonneg.
+Qed.
+
+
+Lemma ex_series_le_Reals
+     : forall (a : nat -> R) (b : nat -> R),
+    (forall n : nat, Rabs (a n) <= b n) -> ex_series b -> ex_series a.
+Proof.
+  intros a b Hab Hexb.  
+  apply (@ex_series_le _ _ a b).
+  now apply Hab. assumption.
+Qed.
+
+
+Lemma expt_value_ex_series {A : Type} (p : Pmf A) (f : nat -> A -> R) :
+  ex_series (fun n => expt_value p (fun a => Rabs (f n a))) ->
+         ex_series (fun n => expt_value p (f n)).
+Proof.
+  intros Hex.
+  refine (@ex_series_le_Reals _ _ _ _).
+  intros n. apply expt_value_Rabs_Rle.  
+  assumption.
 Qed. 
 
-(* This is only true for bounded f.*)
+Lemma expt_val_bdd_aux {A : Type} (g : nat -> A -> R) (p : Pmf A):
+  (forall (a : A), is_lim_seq (fun n => g n a) 0) -> is_lim_seq (fun n => expt_value p (fun x => g n x)) 0.
+Proof.
+  intros H. 
+  unfold expt_value. rewrite is_lim_seq_Reals.
+  unfold Un_cv. 
+  induction p.(outcomes). 
+  * simpl. intros eps0 H0. exists 0%nat.  rewrite R_dist_eq. intros n Hn. apply H0. 
+  * simpl in *. intros eps0 H0.
+    enough (H0': eps0/4 > 0). 
+    specialize (IHl (eps0/4)%R H0').  destruct IHl as [N0 HN0].
+    specialize (H a.2).
+    revert H. rewrite is_lim_seq_Reals.
+    intros H. unfold Un_cv in H.
+    set (Ha := cond_nonneg a.1). case Ha.
+    intro Ha1. clear Ha.
+    enough (H1': eps0/(4 * a.1) > 0). 
+    specialize (H (eps0/(4 * a.1))%R H1').
+    destruct H as [N1 HN1].
+    exists (N0 + N1)%nat. intros n Hn.
+    specialize (HN0 n).
+    specialize (HN1 n). 
+    assert (Hn0 : (n >= N0)%nat) by firstorder.
+    assert (Hn1 : (n >= N1)%nat) by firstorder. 
+    specialize (HN1 Hn1). specialize (HN0 Hn0).
+    clear Hn0 ; clear Hn1.
+    revert HN0. revert HN1. 
+    unfold R_dist. rewrite Rminus_0_r ; rewrite Rminus_0_r ; rewrite Rminus_0_r.
+    intros HN0 HN1. refine (Rle_lt_trans _ _ _ _ _).
+    apply Rabs_triang. rewrite Rabs_mult. rewrite (Rabs_pos_eq a.1).
+    eapply Rlt_trans. 
+    assert ((eps0 / (4 * a.1))*a.1 + (eps0 / 4) = eps0/2). field ; lra.
+    assert (Rabs (g n a.2) * a.1 + Rabs (list_sum [seq g n x.2 * nonneg (x.1) | x <- l])  < eps0/2).
+    rewrite <-H. 
+    refine (Rplus_lt_compat _ _ _ _ _ _).
+    now apply Rmult_lt_compat_r. assumption. 
+    apply H1. lra.
+    now left. apply Rlt_gt. apply RIneq.Rdiv_lt_0_compat. assumption.
+    lra. 
+    intros Ha1. rewrite <-Ha1. setoid_rewrite Rmult_0_r. 
+    setoid_rewrite Rplus_0_l. exists N0. intros n Hn. 
+    eapply Rlt_trans. specialize (HN0 n Hn). apply HN0. 
+    lra. lra. 
+Qed. 
+
+    
+Lemma expt_value_bdd {A : Type} {g : nat -> A -> R} (p : Pmf A)
+      (hf : forall (a : A) (eps : R), eps > 0 -> exists N : nat, forall n : nat, (n >= N)%nat -> Rabs (g n a) < eps) :
+    forall (eps : R),
+         eps > 0 -> exists N : nat, forall n : nat, (n >= N)%nat -> Rabs(expt_value p (fun x => g n x)) < eps.
+Proof.
+  assert (H : forall x, Rabs x = R_dist x 0). intros x. unfold R_dist. f_equal ; lra. 
+  setoid_rewrite H. intros eps Heps. set (He := expt_val_bdd_aux g).
+  setoid_rewrite H in hf.
+  setoid_rewrite is_lim_seq_Reals in He. 
+  unfold Un_cv in He.
+  specialize (He p hf eps Heps). assumption.
+Qed.
+
 Lemma expt_value_Series {A : Type} (p : Pmf A) (f : nat -> A -> R) :
-  expt_value p (fun a => Series (fun n => f n a)) = Series (fun n => expt_value p (f n)).
-Admitted. 
-  
+  (forall a:A, ex_series (fun n => f n a)) ->
+         expt_value p (fun a => Series (fun n => f n a)) = Series (fun n => expt_value p (f n)).
+Proof.
+  intros Hex. 
+  symmetry. 
+  apply is_series_unique.   
+  rewrite is_series_Reals. 
+  unfold infinite_sum.
+  intros eps Heps. 
+  setoid_rewrite <- expt_value_sum_f_R0.
+  unfold R_dist. unfold Series. setoid_rewrite <-expt_value_sub.
+  assert (Ha : forall a:A, is_series (fun n => f n a) (Series (fun n => f n a)) ).
+  intros a. eapply (Series_correct _). apply (Hex a).
+  assert (Hinf : forall a:A, infinite_sum (fun n => f n a) (Series (fun n => f n a)) ).
+  intros a. rewrite <- is_series_Reals. apply Ha. clear Ha.
+  unfold infinite_sum in Hinf. unfold Series in Hinf. unfold R_dist in Hinf. now apply expt_value_bdd. 
+Qed. 
+
 Lemma expt_value_pure {A : Type} (a : A) (f : A -> R) :
   expt_value (Pmf_pure a) f = f a.
 Proof. 
   unfold expt_value ; unfold Pmf_pure ; simpl. 
   lra.
 Qed. 
- 
+
+
+Lemma expt_value_Series_aux_2 {A : Type} (p : Pmf A) (f : nat -> A -> R) (N : nat):
+  expt_value p (fun a => sum_f_R0 (fun n => f n a) N) <= expt_value p (fun a => sum_f_R0 (fun n => Rabs (f n a)) N).
+Proof. 
+  apply expt_value_le. 
+  intros a. induction N. 
+  * simpl. apply Rle_abs. 
+  * simpl. apply Rplus_le_compat ; try assumption. 
+    apply Rle_abs.
+Qed.
+
 Lemma expt_value_bind_aux {A B : Type} (p : Pmf A) (g : A -> Pmf B) (f : B -> R) (n : nonnegreal) :
 forall a : A,  list_sum [seq (f x.2) * nonneg(x.1) * n | x <- (g a).(outcomes)] = list_sum [seq (f x.2) * nonneg(x.1) | x <- (g a).(outcomes)] * n. 
 Proof.

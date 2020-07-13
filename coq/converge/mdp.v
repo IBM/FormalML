@@ -48,17 +48,6 @@ Proof.
   exact (Rplus_le_compat _ _ _ _ H IHl).   
 Qed. 
 
-
-Lemma ex_series_le_Reals
-     : forall (a : nat -> R) (b : nat -> R),
-    (forall n : nat, Rabs (a n) <= b n) -> ex_series b -> ex_series a.
-Proof.
-  intros a b Hab Hexb.  
-  apply (@ex_series_le _ _ a b).
-  now apply Hab. assumption.
-Qed.
-
-
 Lemma abs_convg_implies_convg : forall (a : nat -> R), ex_series (fun n => Rabs(a n)) -> ex_series a. 
 Proof.
 intros a Habs.   
@@ -303,5 +292,6 @@ Proof.
   * unfold bind_stoch_iter. simpl. rewrite Pmf_bind_of_ret.  now rewrite Pmf_ret_of_bind.
   * unfold bind_stoch_iter in *. simpl.  setoid_rewrite IHn.
     rewrite Pmf_bind_of_bind. reflexivity.
-  apply (ex_series_ltv σ init hγ bdd).
+    intros a. apply (ex_series_ltv σ _ hγ bdd).
+    apply (ex_series_ltv σ _  hγ bdd). 
 Qed. 
