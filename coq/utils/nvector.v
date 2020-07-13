@@ -56,6 +56,9 @@ Next Obligation.
   apply Nat.min_id.
 Qed.
 
+Definition vector_zip {T1 T2} {n:nat} (v1:vector T1 n) (v2:vector T2 n): vector (T1*T2) n :=
+  vcombine v1 v2.
+
 Definition vmap2 {A B C} {n} (f:A->B->C) (v1 : vector A n) (v2 : vector B n) : vector C n
   :=  Vector.map2 f v1 v2.
 
@@ -75,9 +78,8 @@ Next Obligation.
   now apply to_list_length.
 Qed.
 
-(*
-  := Vector.fold_right (fun x => lift2 (vcons _ x)) v (Some vnil).
-*)
+Definition vforall {A} {m:nat} (P: A -> Prop) (v:vector A m) : Prop
+  := Vector.Forall P v.
 
 End Vector.
 
@@ -98,6 +100,8 @@ Definition mnth {T} {n m :nat}  (v : matrix T n m) (i:nat | i<n) (j:nat | j<m) :
 Definition mcombine {T1 T2} {n m : nat} (mat1 : matrix T1 n m) (mat2 : matrix T2 n m) : matrix (T1*T2) n m :=
   vmap (fun '(a,b) => vcombine a b) (vcombine mat1 mat2).
 
+Definition matrix_zip {T1 T2} {n m : nat} (mat1 : matrix T1 n m) (mat2 : matrix T2 n m) : matrix (T1*T2) n m := mcombine mat1 mat2.
+
 Definition build_matrix {T} {n m:nat} 
         (mat:{n':nat | n' < n}%nat -> {m':nat | m' < m}%nat -> T) : matrix T n m
   := vmap build_vector (build_vector mat).
@@ -112,6 +116,9 @@ Definition matrixo_to_omatrix {T} {m n} (v:matrix (option T) m n) : option (matr
   := vectoro_to_ovector (vmap vectoro_to_ovector v).
 
 Definition mmap2 {A B C} {n m} (f:A->B->C) (v1 : matrix A n m) (v2 : matrix B n m) : matrix C n m :=  vmap2 (fun r1 r2 => vmap2 f r1 r2) v1 v2.
+
+Definition mforall {A} {m n:nat} (P: A -> Prop) (m:matrix A m n) : Prop
+  := vforall (fun x => vforall P x) m.
 
 End Matrix.
 
