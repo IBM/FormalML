@@ -172,11 +172,14 @@ Definition ntype_interp (n:NumericType) : Type
      | IntType => Z
      end.
 
-  Structure BigArray (ln : list nat) (T : Type) : Type := Tensor { tdata :> list T; _ : length tdata = List.fold_right Nat.mul 1%nat ln }.
+  Structure BigArray (ln : list nat) (T : NumericType) : Type := 
+    Tensor { tdata :> list (ntype_interp T); _ : length tdata = List.fold_right Nat.mul 1%nat ln }.
 
-  Structure Array1 (n : nat) (T : Type) : Type := array1 { a1data :> list T; _ : length a1data = n}.
+  Structure Array1 (n : nat) (T : NumericType) : Type := 
+    array1 { a1data :> list (ntype_interp T); _ : length a1data = n}.
 
-  Structure Array2 (n m : nat) (T : Type) : Type := array2 { a2data :> list T; _ : length a2data = n * m}.
+  Structure Array2 (n m : nat) (T : NumericType) : Type := 
+    array2 { a2data :> list (ntype_interp T); _ : length a2data = n * m}.
 
 Definition tensor_abs_type  (T:NumericType) (dims:list nat) := tensor (ntype_interp T) dims.
 
