@@ -249,12 +249,12 @@ Proof.
 Qed.
 
 Theorem ex_series_ltv {D : R} :
-  (forall s : M.(state), Rabs (reward s) <= D) -> ex_series (fun n => γ^n * (expt_reward σ init n)).
+  (forall s : M.(state), Rabs (reward s) <= D) -> (forall s0, ex_series (fun n => γ^n * (expt_reward σ s0 n))).
 Proof.
-  intros Hbdd. 
+  intros Hbdd s0. 
   refine (ex_series_le_Reals _ _ _ _). 
   intros n. rewrite Rabs_mult.
-  enough (Rabs (γ ^ n) * Rabs (expt_reward σ init n) <= D*γ^n). apply H.
+  enough (Rabs (γ ^ n) * Rabs (expt_reward σ s0 n) <= D*γ^n). apply H.
   enough (Hγ : Rabs (γ^n) = γ^n). rewrite Hγ.
   rewrite Rmult_comm. apply Rmult_le_compat_r.
   apply pow_le; firstorder.
@@ -263,16 +263,14 @@ Proof.
   apply (ex_series_mult_geom D). 
 Qed.
 
-Definition ltv (init : M.(state)) : R := Series (fun n => γ^n * (expt_reward σ init n)).
+Definition ltv : M.(state) -> R := fun s => Series (fun n => γ^n * (expt_reward σ s n)).
+
+Definition expt_ltv (p : Pmf M.(state)) : R :=
+  expt_value p ltv.
 
 
-End ltv.
-
-Definition expt_ltv {M : MDP} {γ : R} (σ : policy M) (p : Pmf M.(state)) (hγ : 0 <= γ < 1): R :=
-  expt_value p (@ltv _ γ σ). 
-
-Lemma ltv_corec {M : MDP} {γ D : R} (σ : policy M) (hγ : 0 <= γ < 1) (init : M.(state)) :
-  (forall s : M.(state), Rabs (reward _ s) <= D) -> @ltv _ γ σ init = (reward _ init) + γ*expt_value (t M init (σ init)) (@ltv _ γ σ). 
+Lemma ltv_corec {D : R} :
+  (forall s : M.(state), Rabs (reward s) <= D) -> ltv init = (reward init) + γ*expt_value (t init (σ init)) ltv. 
 Proof.
   intros bdd.
   rewrite <-(@expt_reward0_eq_reward _ σ init).
@@ -292,6 +290,8 @@ Proof.
   * unfold bind_stoch_iter. simpl. rewrite Pmf_bind_of_ret.  now rewrite Pmf_ret_of_bind.
   * unfold bind_stoch_iter in *. simpl.  setoid_rewrite IHn.
     rewrite Pmf_bind_of_bind. reflexivity.
-    intros a. apply (ex_series_ltv σ _ hγ bdd).
-    apply (ex_series_ltv σ _  hγ bdd). 
+    apply (ex_series_ltv bdd).
+    apply (ex_series_ltv bdd). 
 Qed. 
+
+End ltv.
