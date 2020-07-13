@@ -457,20 +457,6 @@ Proof.
     lra. lra. 
 Qed. 
 
-    
-Lemma expt_value_bdd {A : Type} {g : nat -> A -> R} (p : Pmf A)
-      (hf : forall (a : A) (eps : R), eps > 0 -> exists N : nat, forall n : nat, (n >= N)%nat -> Rabs (g n a) < eps) :
-    forall (eps : R),
-         eps > 0 -> exists N : nat, forall n : nat, (n >= N)%nat -> Rabs(expt_value p (fun x => g n x)) < eps.
-Proof.
-  assert (H : forall x, Rabs x = R_dist x 0). intros x. unfold R_dist. f_equal ; lra. 
-  setoid_rewrite H. intros eps Heps. set (He := expt_val_bdd_aux g).
-  setoid_rewrite H in hf.
-  setoid_rewrite is_lim_seq_Reals in He. 
-  unfold Un_cv in He.
-  specialize (He p hf eps Heps). assumption.
-Qed.
-
 Lemma expt_value_Series {A : Type} (p : Pmf A) (f : nat -> A -> R) :
   (forall a:A, ex_series (fun n => f n a)) ->
          expt_value p (fun a => Series (fun n => f n a)) = Series (fun n => expt_value p (f n)).
@@ -487,7 +473,13 @@ Proof.
   intros a. eapply (Series_correct _). apply (Hex a).
   assert (Hinf : forall a:A, infinite_sum (fun n => f n a) (Series (fun n => f n a)) ).
   intros a. rewrite <- is_series_Reals. apply Ha. clear Ha.
-  unfold infinite_sum in Hinf. unfold Series in Hinf. unfold R_dist in Hinf. now apply expt_value_bdd. 
+  unfold infinite_sum in Hinf. unfold Series in Hinf. unfold R_dist in Hinf.
+  assert (H : forall x, Rabs x = R_dist x 0). intros x. unfold R_dist. f_equal ; lra. 
+  setoid_rewrite H. 
+  setoid_rewrite H in Hinf.
+  set (He := @expt_val_bdd_aux A).
+  setoid_rewrite is_lim_seq_Reals in He. 
+  unfold Un_cv in He. apply He. apply Hinf. assumption. 
 Qed. 
 
 Lemma expt_value_pure {A : Type} (a : A) (f : A -> R) :
