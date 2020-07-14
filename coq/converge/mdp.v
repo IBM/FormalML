@@ -269,6 +269,15 @@ Definition expt_ltv (p : Pmf M.(state)) : R :=
   expt_value p ltv.
 
 
+Require Import Morphisms.
+
+Global Instance Series_proper :
+  Proper (pointwise_relation _ eq  ==> eq) (Series).
+Proof.
+  unfold Proper, pointwise_relation, respectful.
+  apply Series_ext.
+Qed.
+
 Lemma ltv_corec {D : R} :
   (forall s : M.(state), Rabs (reward s) <= D) -> ltv init = (reward init) + γ*expt_value (t init (σ init)) ltv. 
 Proof.
@@ -276,7 +285,8 @@ Proof.
   rewrite <-(@expt_reward0_eq_reward _ σ init).
   unfold ltv.
   rewrite Series_incr_1. simpl. rewrite Rmult_1_l.
-  assert (Series (fun k : nat => γ * γ ^ k * expt_reward σ init (S k))  =  Series (fun k : nat => γ * (γ ^ k * expt_reward σ init (S k)))).   apply Series_ext. intros n. now rewrite Rmult_assoc.
+  assert (Series (fun k : nat => γ * γ ^ k * expt_reward σ init (S k))  =  Series (fun k : nat => γ * (γ ^ k * expt_reward σ init (S k)))).
+  apply Series_ext. intros n. now rewrite Rmult_assoc.
   rewrite H. clear H.
   rewrite Series_scal_l. f_equal. f_equal. 
   rewrite expt_value_Series.

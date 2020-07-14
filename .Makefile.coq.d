@@ -58,18 +58,12 @@ coq/lib_utils/LibUtilsSublist.vos coq/lib_utils/LibUtilsSublist.vok coq/lib_util
 coq/lib_utils/LibUtils.vo coq/lib_utils/LibUtils.glob coq/lib_utils/LibUtils.v.beautified coq/lib_utils/LibUtils.required_vo: coq/lib_utils/LibUtils.v coq/lib_utils/LibUtilsAssoc.vo coq/lib_utils/LibUtilsBag.vo coq/lib_utils/LibUtilsBindings.vo coq/lib_utils/LibUtilsBindingsNat.vo coq/lib_utils/LibUtilsClosure.vo coq/lib_utils/LibUtilsCompat.vo coq/lib_utils/LibUtilsCoqLibAdd.vo coq/lib_utils/LibUtilsDigits.vo coq/lib_utils/LibUtilsFresh.vo coq/lib_utils/LibUtilsGroupByDomain.vo coq/lib_utils/LibUtilsInterleaved.vo coq/lib_utils/LibUtilsLattice.vo coq/lib_utils/LibUtilsLift.vo coq/lib_utils/LibUtilsLiftIterators.vo coq/lib_utils/LibUtilsListAdd.vo coq/lib_utils/LibUtilsResult.vo coq/lib_utils/LibUtilsSortingAdd.vo coq/lib_utils/LibUtilsStringAdd.vo coq/lib_utils/LibUtilsSublist.vo
 coq/lib_utils/LibUtils.vio: coq/lib_utils/LibUtils.v coq/lib_utils/LibUtilsAssoc.vio coq/lib_utils/LibUtilsBag.vio coq/lib_utils/LibUtilsBindings.vio coq/lib_utils/LibUtilsBindingsNat.vio coq/lib_utils/LibUtilsClosure.vio coq/lib_utils/LibUtilsCompat.vio coq/lib_utils/LibUtilsCoqLibAdd.vio coq/lib_utils/LibUtilsDigits.vio coq/lib_utils/LibUtilsFresh.vio coq/lib_utils/LibUtilsGroupByDomain.vio coq/lib_utils/LibUtilsInterleaved.vio coq/lib_utils/LibUtilsLattice.vio coq/lib_utils/LibUtilsLift.vio coq/lib_utils/LibUtilsLiftIterators.vio coq/lib_utils/LibUtilsListAdd.vio coq/lib_utils/LibUtilsResult.vio coq/lib_utils/LibUtilsSortingAdd.vio coq/lib_utils/LibUtilsStringAdd.vio coq/lib_utils/LibUtilsSublist.vio
 coq/lib_utils/LibUtils.vos coq/lib_utils/LibUtils.vok coq/lib_utils/LibUtils.required_vos: coq/lib_utils/LibUtils.v coq/lib_utils/LibUtilsAssoc.vos coq/lib_utils/LibUtilsBag.vos coq/lib_utils/LibUtilsBindings.vos coq/lib_utils/LibUtilsBindingsNat.vos coq/lib_utils/LibUtilsClosure.vos coq/lib_utils/LibUtilsCompat.vos coq/lib_utils/LibUtilsCoqLibAdd.vos coq/lib_utils/LibUtilsDigits.vos coq/lib_utils/LibUtilsFresh.vos coq/lib_utils/LibUtilsGroupByDomain.vos coq/lib_utils/LibUtilsInterleaved.vos coq/lib_utils/LibUtilsLattice.vos coq/lib_utils/LibUtilsLift.vos coq/lib_utils/LibUtilsLiftIterators.vos coq/lib_utils/LibUtilsListAdd.vos coq/lib_utils/LibUtilsResult.vos coq/lib_utils/LibUtilsSortingAdd.vos coq/lib_utils/LibUtilsStringAdd.vos coq/lib_utils/LibUtilsSublist.vos
-coq/utils/BasicUtils.vo coq/utils/BasicUtils.glob coq/utils/BasicUtils.v.beautified coq/utils/BasicUtils.required_vo: coq/utils/BasicUtils.v 
-coq/utils/BasicUtils.vio: coq/utils/BasicUtils.v 
-coq/utils/BasicUtils.vos coq/utils/BasicUtils.vok coq/utils/BasicUtils.required_vos: coq/utils/BasicUtils.v 
 coq/utils/Assoc.vo coq/utils/Assoc.glob coq/utils/Assoc.v.beautified coq/utils/Assoc.required_vo: coq/utils/Assoc.v 
 coq/utils/Assoc.vio: coq/utils/Assoc.v 
 coq/utils/Assoc.vos coq/utils/Assoc.vok coq/utils/Assoc.required_vos: coq/utils/Assoc.v 
 coq/utils/CoquelicotAdd.vo coq/utils/CoquelicotAdd.glob coq/utils/CoquelicotAdd.v.beautified coq/utils/CoquelicotAdd.required_vo: coq/utils/CoquelicotAdd.v coq/lib_utils/LibUtils.vo
 coq/utils/CoquelicotAdd.vio: coq/utils/CoquelicotAdd.v coq/lib_utils/LibUtils.vio
 coq/utils/CoquelicotAdd.vos coq/utils/CoquelicotAdd.vok coq/utils/CoquelicotAdd.required_vos: coq/utils/CoquelicotAdd.v coq/lib_utils/LibUtils.vos
-coq/utils/ExtrFloatishIEEE.vo coq/utils/ExtrFloatishIEEE.glob coq/utils/ExtrFloatishIEEE.v.beautified coq/utils/ExtrFloatishIEEE.required_vo: coq/utils/ExtrFloatishIEEE.v coq/utils/Floatish/FloatishIEEE.vo
-coq/utils/ExtrFloatishIEEE.vio: coq/utils/ExtrFloatishIEEE.v coq/utils/Floatish/FloatishIEEE.vio
-coq/utils/ExtrFloatishIEEE.vos coq/utils/ExtrFloatishIEEE.vok coq/utils/ExtrFloatishIEEE.required_vos: coq/utils/ExtrFloatishIEEE.v coq/utils/Floatish/FloatishIEEE.vos
 coq/utils/improper_integrals.vo coq/utils/improper_integrals.glob coq/utils/improper_integrals.v.beautified coq/utils/improper_integrals.required_vo: coq/utils/improper_integrals.v 
 coq/utils/improper_integrals.vio: coq/utils/improper_integrals.v 
 coq/utils/improper_integrals.vos coq/utils/improper_integrals.vok coq/utils/improper_integrals.required_vos: coq/utils/improper_integrals.v 
@@ -97,12 +91,9 @@ coq/utils/StreamLimits.vos coq/utils/StreamLimits.vok coq/utils/StreamLimits.req
 coq/utils/Sums.vo coq/utils/Sums.glob coq/utils/Sums.v.beautified coq/utils/Sums.required_vo: coq/utils/Sums.v coq/lib_utils/LibUtils.vo coq/utils/ListAdd.vo coq/utils/RealAdd.vo
 coq/utils/Sums.vio: coq/utils/Sums.v coq/lib_utils/LibUtils.vio coq/utils/ListAdd.vio coq/utils/RealAdd.vio
 coq/utils/Sums.vos coq/utils/Sums.vok coq/utils/Sums.required_vos: coq/utils/Sums.v coq/lib_utils/LibUtils.vos coq/utils/ListAdd.vos coq/utils/RealAdd.vos
-coq/utils/Vector.vo coq/utils/Vector.glob coq/utils/Vector.v.beautified coq/utils/Vector.required_vo: coq/utils/Vector.v coq/lib_utils/LibUtils.vo coq/utils/ListAdd.vo
-coq/utils/Vector.vio: coq/utils/Vector.v coq/lib_utils/LibUtils.vio coq/utils/ListAdd.vio
-coq/utils/Vector.vos coq/utils/Vector.vok coq/utils/Vector.required_vos: coq/utils/Vector.v coq/lib_utils/LibUtils.vos coq/utils/ListAdd.vos
-coq/utils/Utils.vo coq/utils/Utils.glob coq/utils/Utils.v.beautified coq/utils/Utils.required_vo: coq/utils/Utils.v coq/lib_utils/LibUtils.vo coq/utils/BasicUtils.vo coq/utils/Assoc.vo coq/utils/CoquelicotAdd.vo coq/utils/improper_integrals.vo coq/utils/Isomorphism.vo coq/utils/ListAdd.vo coq/utils/PairEncoding.vo coq/utils/RealAdd.vo coq/utils/RiemannAdd.vo coq/utils/Sums.vo coq/utils/Vector.vo
-coq/utils/Utils.vio: coq/utils/Utils.v coq/lib_utils/LibUtils.vio coq/utils/BasicUtils.vio coq/utils/Assoc.vio coq/utils/CoquelicotAdd.vio coq/utils/improper_integrals.vio coq/utils/Isomorphism.vio coq/utils/ListAdd.vio coq/utils/PairEncoding.vio coq/utils/RealAdd.vio coq/utils/RiemannAdd.vio coq/utils/Sums.vio coq/utils/Vector.vio
-coq/utils/Utils.vos coq/utils/Utils.vok coq/utils/Utils.required_vos: coq/utils/Utils.v coq/lib_utils/LibUtils.vos coq/utils/BasicUtils.vos coq/utils/Assoc.vos coq/utils/CoquelicotAdd.vos coq/utils/improper_integrals.vos coq/utils/Isomorphism.vos coq/utils/ListAdd.vos coq/utils/PairEncoding.vos coq/utils/RealAdd.vos coq/utils/RiemannAdd.vos coq/utils/Sums.vos coq/utils/Vector.vos
+coq/utils/Utils.vo coq/utils/Utils.glob coq/utils/Utils.v.beautified coq/utils/Utils.required_vo: coq/utils/Utils.v coq/lib_utils/LibUtils.vo coq/utils/Assoc.vo coq/utils/CoquelicotAdd.vo coq/utils/improper_integrals.vo coq/utils/Isomorphism.vo coq/utils/ListAdd.vo coq/utils/PairEncoding.vo coq/utils/RealAdd.vo coq/utils/RiemannAdd.vo coq/utils/Sums.vo
+coq/utils/Utils.vio: coq/utils/Utils.v coq/lib_utils/LibUtils.vio coq/utils/Assoc.vio coq/utils/CoquelicotAdd.vio coq/utils/improper_integrals.vio coq/utils/Isomorphism.vio coq/utils/ListAdd.vio coq/utils/PairEncoding.vio coq/utils/RealAdd.vio coq/utils/RiemannAdd.vio coq/utils/Sums.vio
+coq/utils/Utils.vos coq/utils/Utils.vok coq/utils/Utils.required_vos: coq/utils/Utils.v coq/lib_utils/LibUtils.vos coq/utils/Assoc.vos coq/utils/CoquelicotAdd.vos coq/utils/improper_integrals.vos coq/utils/Isomorphism.vos coq/utils/ListAdd.vos coq/utils/PairEncoding.vos coq/utils/RealAdd.vos coq/utils/RiemannAdd.vos coq/utils/Sums.vos
 coq/utils/Floatish/FloatishDef.vo coq/utils/Floatish/FloatishDef.glob coq/utils/Floatish/FloatishDef.v.beautified coq/utils/Floatish/FloatishDef.required_vo: coq/utils/Floatish/FloatishDef.v 
 coq/utils/Floatish/FloatishDef.vio: coq/utils/Floatish/FloatishDef.v 
 coq/utils/Floatish/FloatishDef.vos coq/utils/Floatish/FloatishDef.vok coq/utils/Floatish/FloatishDef.required_vos: coq/utils/Floatish/FloatishDef.v 
@@ -124,24 +115,27 @@ coq/utils/Floatish/FloatishReal.vos coq/utils/Floatish/FloatishReal.vok coq/util
 coq/utils/Floatish.vo coq/utils/Floatish.glob coq/utils/Floatish.v.beautified coq/utils/Floatish.required_vo: coq/utils/Floatish.v coq/utils/Floatish/FloatishDef.vo coq/utils/Floatish/FloatishOps.vo coq/utils/Floatish/FloatishInterval.vo coq/utils/Floatish/FloatishIEEE.vo coq/utils/Floatish/FloatishReal.vo coq/utils/Floatish/FloatishRealOps.vo
 coq/utils/Floatish.vio: coq/utils/Floatish.v coq/utils/Floatish/FloatishDef.vio coq/utils/Floatish/FloatishOps.vio coq/utils/Floatish/FloatishInterval.vio coq/utils/Floatish/FloatishIEEE.vio coq/utils/Floatish/FloatishReal.vio coq/utils/Floatish/FloatishRealOps.vio
 coq/utils/Floatish.vos coq/utils/Floatish.vok coq/utils/Floatish.required_vos: coq/utils/Floatish.v coq/utils/Floatish/FloatishDef.vos coq/utils/Floatish/FloatishOps.vos coq/utils/Floatish/FloatishInterval.vos coq/utils/Floatish/FloatishIEEE.vos coq/utils/Floatish/FloatishReal.vos coq/utils/Floatish/FloatishRealOps.vos
+coq/converge/pmf_monad.vo coq/converge/pmf_monad.glob coq/converge/pmf_monad.v.beautified coq/converge/pmf_monad.required_vo: coq/converge/pmf_monad.v coq/utils/Sums.vo
+coq/converge/pmf_monad.vio: coq/converge/pmf_monad.v coq/utils/Sums.vio
+coq/converge/pmf_monad.vos coq/converge/pmf_monad.vok coq/converge/pmf_monad.required_vos: coq/converge/pmf_monad.v coq/utils/Sums.vos
+coq/converge/mdp.vo coq/converge/mdp.glob coq/converge/mdp.v.beautified coq/converge/mdp.required_vo: coq/converge/mdp.v coq/converge/pmf_monad.vo coq/converge/domfct.vo coq/utils/Sums.vo
+coq/converge/mdp.vio: coq/converge/mdp.v coq/converge/pmf_monad.vio coq/converge/domfct.vio coq/utils/Sums.vio
+coq/converge/mdp.vos coq/converge/mdp.vok coq/converge/mdp.required_vos: coq/converge/mdp.v coq/converge/pmf_monad.vos coq/converge/domfct.vos coq/utils/Sums.vos
 coq/AxiomaticNormedRealVectorSpace.vo coq/AxiomaticNormedRealVectorSpace.glob coq/AxiomaticNormedRealVectorSpace.v.beautified coq/AxiomaticNormedRealVectorSpace.required_vo: coq/AxiomaticNormedRealVectorSpace.v 
 coq/AxiomaticNormedRealVectorSpace.vio: coq/AxiomaticNormedRealVectorSpace.v 
 coq/AxiomaticNormedRealVectorSpace.vos coq/AxiomaticNormedRealVectorSpace.vok coq/AxiomaticNormedRealVectorSpace.required_vos: coq/AxiomaticNormedRealVectorSpace.v 
 coq/BorelSigmaAlgebra.vo coq/BorelSigmaAlgebra.glob coq/BorelSigmaAlgebra.v.beautified coq/BorelSigmaAlgebra.required_vo: coq/BorelSigmaAlgebra.v coq/ProbSpace.vo coq/SigmaAlgebras.vo
 coq/BorelSigmaAlgebra.vio: coq/BorelSigmaAlgebra.v coq/ProbSpace.vio coq/SigmaAlgebras.vio
 coq/BorelSigmaAlgebra.vos coq/BorelSigmaAlgebra.vok coq/BorelSigmaAlgebra.required_vos: coq/BorelSigmaAlgebra.v coq/ProbSpace.vos coq/SigmaAlgebras.vos
-coq/DefinedFunctions.vo coq/DefinedFunctions.glob coq/DefinedFunctions.v.beautified coq/DefinedFunctions.required_vo: coq/DefinedFunctions.v coq/utils/Floatish.vo coq/utils/Utils.vo coq/derivlemmas.vo
-coq/DefinedFunctions.vio: coq/DefinedFunctions.v coq/utils/Floatish.vio coq/utils/Utils.vio coq/derivlemmas.vio
-coq/DefinedFunctions.vos coq/DefinedFunctions.vok coq/DefinedFunctions.required_vos: coq/DefinedFunctions.v coq/utils/Floatish.vos coq/utils/Utils.vos coq/derivlemmas.vos
-coq/derivlemmas.vo coq/derivlemmas.glob coq/derivlemmas.v.beautified coq/derivlemmas.required_vo: coq/derivlemmas.v 
-coq/derivlemmas.vio: coq/derivlemmas.v 
-coq/derivlemmas.vos coq/derivlemmas.vok coq/derivlemmas.required_vos: coq/derivlemmas.v 
+coq/DefinedFunctions.vo coq/DefinedFunctions.glob coq/DefinedFunctions.v.beautified coq/DefinedFunctions.required_vo: coq/DefinedFunctions.v coq/utils/Floatish.vo coq/utils/Utils.vo
+coq/DefinedFunctions.vio: coq/DefinedFunctions.v coq/utils/Floatish.vio coq/utils/Utils.vio
+coq/DefinedFunctions.vos coq/DefinedFunctions.vok coq/DefinedFunctions.required_vos: coq/DefinedFunctions.v coq/utils/Floatish.vos coq/utils/Utils.vos
 coq/Gaussian.vo coq/Gaussian.glob coq/Gaussian.v.beautified coq/Gaussian.required_vo: coq/Gaussian.v coq/utils/Utils.vo
 coq/Gaussian.vio: coq/Gaussian.v coq/utils/Utils.vio
 coq/Gaussian.vos coq/Gaussian.vok coq/Gaussian.required_vos: coq/Gaussian.v coq/utils/Utils.vos
-coq/Gen_NN.vo coq/Gen_NN.glob coq/Gen_NN.v.beautified coq/Gen_NN.required_vo: coq/Gen_NN.v coq/utils/ListAdd.vo coq/DefinedFunctions.vo coq/utils/Floatish.vo coq/utils/Utils.vo
-coq/Gen_NN.vio: coq/Gen_NN.v coq/utils/ListAdd.vio coq/DefinedFunctions.vio coq/utils/Floatish.vio coq/utils/Utils.vio
-coq/Gen_NN.vos coq/Gen_NN.vok coq/Gen_NN.required_vos: coq/Gen_NN.v coq/utils/ListAdd.vos coq/DefinedFunctions.vos coq/utils/Floatish.vos coq/utils/Utils.vos
+coq/Gen_NN.vo coq/Gen_NN.glob coq/Gen_NN.v.beautified coq/Gen_NN.required_vo: coq/Gen_NN.v coq/utils/ListAdd.vo coq/DefinedFunctions.vo coq/utils/Floatish/FloatishDef.vo coq/utils/Utils.vo
+coq/Gen_NN.vio: coq/Gen_NN.v coq/utils/ListAdd.vio coq/DefinedFunctions.vio coq/utils/Floatish/FloatishDef.vio coq/utils/Utils.vio
+coq/Gen_NN.vos coq/Gen_NN.vok coq/Gen_NN.required_vos: coq/Gen_NN.v coq/utils/ListAdd.vos coq/DefinedFunctions.vos coq/utils/Floatish/FloatishDef.vos coq/utils/Utils.vos
 coq/ProbSpace.vo coq/ProbSpace.glob coq/ProbSpace.v.beautified coq/ProbSpace.required_vo: coq/ProbSpace.v coq/utils/Utils.vo
 coq/ProbSpace.vio: coq/ProbSpace.v coq/utils/Utils.vio
 coq/ProbSpace.vos coq/ProbSpace.vok coq/ProbSpace.required_vos: coq/ProbSpace.v coq/utils/Utils.vos
