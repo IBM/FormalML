@@ -6,7 +6,7 @@ Require Import Sums.
 Require Import micromega.Lra.
 Require Import Coq.Logic.FunctionalExtensionality.
 Require Import ExtLib.Structures.Monad.
-
+Require Import Morphisms.
 Import MonadNotation.
 
 
@@ -96,8 +96,6 @@ Context (σ : policy M).
 
 (* Construction of a Kliesli arrow out of a policy. 
    This can be interpreted as a |S| × |S| stochastic matrix. *)
-
-(*Definition state_policy_kleisli : M.(state) -> Pmf M.(state) := fun s => t s (σ s).*)
 
 Definition bind_stoch_iter (n : nat) (init : M.(state)):=
   applyn (ret init) (fun y => Pmf_bind y (fun s => t s (σ s))) n.
@@ -206,6 +204,14 @@ Arguments reward {_}.
 Arguments outcomes {_}.
 Arguments t {_}.
 
+
+Global Instance Series_proper :
+  Proper (pointwise_relation _ eq  ==> eq) (Series).
+Proof.
+  unfold Proper, pointwise_relation, respectful.
+  apply Series_ext.
+Qed.
+
 Definition ltv_part (N : nat) := sum_n (fun n => γ^n * (expt_reward σ init n)) N. 
 
 Lemma ltv_part0_eq_reward : ltv_part 0 = reward init.
@@ -269,25 +275,14 @@ Definition expt_ltv (p : Pmf M.(state)) : R :=
   expt_value p ltv.
 
 
-Require Import Morphisms.
-
-Global Instance Series_proper :
-  Proper (pointwise_relation _ eq  ==> eq) (Series).
-Proof.
-  unfold Proper, pointwise_relation, respectful.
-  apply Series_ext.
-Qed.
-
+(* Long-Term Values satisfy the Bellman equation. *)
 Lemma ltv_corec {D : R} :
   (forall s : M.(state), Rabs (reward s) <= D) -> ltv init = (reward init) + γ*expt_value (t init (σ init)) ltv. 
 Proof.
   intros bdd.
   rewrite <-(@expt_reward0_eq_reward _ σ init).
   unfold ltv.
-  rewrite Series_incr_1. simpl. rewrite Rmult_1_l.
-  assert (Series (fun k : nat => γ * γ ^ k * expt_reward σ init (S k))  =  Series (fun k : nat => γ * (γ ^ k * expt_reward σ init (S k)))).
-  apply Series_ext. intros n. now rewrite Rmult_assoc.
-  rewrite H. clear H.
+  rewrite Series_incr_1. simpl. rewrite Rmult_1_l. setoid_rewrite Rmult_assoc.   
   rewrite Series_scal_l. f_equal. f_equal. 
   rewrite expt_value_Series.
   apply Series_ext. intros n.
@@ -302,6 +297,8 @@ Proof.
     rewrite Pmf_bind_of_bind. reflexivity.
     apply (ex_series_ltv bdd).
     apply (ex_series_ltv bdd). 
-Qed. 
+Qed.
+
+
 
 End ltv.
