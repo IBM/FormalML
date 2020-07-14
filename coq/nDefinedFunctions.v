@@ -2769,15 +2769,17 @@ F (d : definition_function_types)
              ((fix tv_env_iter {n1 n2} {A B} (f: A -> B -> df_env -> option df_env)
                (oenv: option df_env) (v: vector A n1) (w: vector B n2) : option df_env :=
                  match oenv,v,w with
-                 | Some env, Vector.cons vx _ v', Vector.cons wx _ w'  => two_vector_env_iter_alt2 f (f vx wx env) v' w'
+                 | Some env, Vector.cons vx _ v', Vector.cons wx _ w'  => 
+                   tv_env_iter f (f vx wx env) v' w'
                  | oenv',_,_ => oenv'
                  end) 
-                                  n n _ _   
-                                  (fun x g genv => df_eval_backprop_deriv σ x genv  g)
-                                  (Some grad_env) dfs grad  )
+                n n _ _   
+                (fun x g genv => df_eval_backprop_deriv σ x genv  g)
+                (Some grad_env) dfs grad  )
          | DMatrix n m _ dfs => fun grad => Some grad_env
 (*
              two_matrix_env_iter_alt 
+                                  (fun x g genv => df_eval_backprop_deriv σ x genv  g)
                                      grad_env dfs grad
 *)
          | Var x _ => fun grad => 
