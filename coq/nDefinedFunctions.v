@@ -3318,9 +3318,26 @@ F (d : definition_function_types)
          | Number _ _ => True
          | Constant _ _ _ => True
          | DVector n _ vec => 
-           vforall (has_scalar_functions) vec 
-         | DMatrix n m _ mat =>
-           mforall (has_scalar_functions) mat 
+           ((fix vforal  {n'} (v:vector (DefinedFunction Ann DTfloat) n') : Prop :=
+               match v with
+               | Vector.nil => True
+               | Vector.cons vx _ v' => (has_scalar_functions vx) /\ (vforal v')
+               end)
+               n vec)
+         | DMatrix n m _ mat => 
+           ((fix mforall {n' m'} (mat:matrix (DefinedFunction Ann DTfloat) n' m') : Prop :=
+               match mat with
+               | Vector.nil => True
+               | Vector.cons matr _ mat' => 
+                 (mforall mat') /\
+                 ((fix vforal  {n'} (v:vector (DefinedFunction Ann DTfloat) n') : Prop :=
+                     match v with
+                     | Vector.nil => True
+                     | Vector.cons vx _ v' => (has_scalar_functions vx) /\ (vforal v')
+                     end)
+                    m' matr)
+               end)
+               n m mat)
          | Var _ _ => True
          | Plus _ l r => (has_scalar_functions l) /\ (has_scalar_functions r)
          | Minus _ l r => (has_scalar_functions l) /\ (has_scalar_functions r)
@@ -3378,13 +3395,13 @@ F (d : definition_function_types)
               (f0 : forall (t : definition_function_types) 
                            (ann : UnitAnn t) (x : definition_function_types_interp t), P t (Constant ann x))
               (f1 : forall (n : nat) (ann : UnitAnn (DTVector n))
-                           (x : Vector (DefinedFunction UnitAnn DTfloat) n),
-                  (forall s : {n' : nat | (n' < n)%nat}, P DTfloat (x s)) ->
+                           (x : vector (DefinedFunction UnitAnn DTfloat) n)
+                           (f: vforall (P DTfloat) x),
                   P (DTVector n) (DVector ann x))
               (f2 : forall (n m : nat) (ann : UnitAnn (DTMatrix n m))
-                           (x : Matrix (DefinedFunction UnitAnn DTfloat) n m),
-                  (forall (s : {n' : nat | (n' < n)%nat}) (s0 : {m' : nat | (m' < m)%nat}),
-                      P DTfloat (x s s0)) -> P (DTMatrix n m) (DMatrix ann x))
+                           (x : matrix (DefinedFunction UnitAnn DTfloat) n m)
+                           (f: mforall (P DTfloat) x),
+                  P (DTMatrix n m) (DMatrix ann x))
               (f3 : forall (v : var_type) (ann : UnitAnn (snd v)),
                   P (snd v) (Var v ann))
               (f4 : forall (ann : UnitAnn DTfloat)
@@ -3500,14 +3517,14 @@ F (d : definition_function_types)
                   is_scalar_function s ->
                   P DTfloat s ->
                   forall l : DefinedFunction UnitAnn (DTVector n),
-                    P (DTVector n) l -> forall r : Vector float n, P DTfloat (VLossfun ann v1 v2 s l r))
+                    P (DTVector n) l -> forall r : vector float n, P DTfloat (VLossfun ann v1 v2 s l r))
               (f32 : forall (m n : nat) (ann : UnitAnn DTfloat)
                             (v1 v2 : SubVar) (s : DefinedFunction UnitAnn DTfloat),
                   is_scalar_function s ->
                   P DTfloat s ->
                   forall l : DefinedFunction UnitAnn (DTMatrix m n),
                     P (DTMatrix m n) l ->
-                    forall r : Matrix float m n, P DTfloat (MLossfun ann v1 v2 s l r))
+                    forall r : matrix float m n, P DTfloat (MLossfun ann v1 v2 s l r))
    : forall (d : definition_function_types) 
          (d0 : DefinedFunction UnitAnn d)
          (hs:has_scalar_functions d0), P d d0.
@@ -3519,11 +3536,30 @@ F (d : definition_function_types)
          match d0 as d2 in (DefinedFunction _ d1) return has_scalar_functions d2 -> (P d1 d2) with
          | Number ann x => fun hs => f ann x
          | @Constant _ t ann x => fun hs => f0 t ann x
-         | @DVector _ n ann x => fun hs => f1 n ann x (fun s : {n' : nat | (n' < n)%nat} => F DTfloat (x s) _)
-         | @DMatrix _ n m ann x => fun hs => 
-           f2 n m ann x
-              (fun (s : {n' : nat | (n' < n)%nat}) (s0 : {m' : nat | (m' < m)%nat}) =>
-                 F DTfloat (x s s0) _)
+         | @DVector _ n ann x => 
+           fun hs =>
+             f1 n ann x        
+                ((fix F1 n (x:vector (DefinedFunction UnitAnn DTfloat) n)  : vforall (P DTfloat) x :=
+                    match x with
+                    | Vector.nil => Vector.Forall_nil (P DTfloat)
+                    | Vector.cons h _ tl => Vector.Forall_cons _ _ _ (F DTfloat h _) (F1 _ tl)
+                    end) n x) 
+         | @DMatrix _ n m ann x => 
+           fun hs => 
+             f2 n m ann x
+                ((fix F2 n m (x:matrix (DefinedFunction UnitAnn DTfloat) n m)  : mforall (P DTfloat) x :=
+                    match x with
+                    | Vector.nil => Vector.Forall_nil (vforall (P DTfloat))
+
+                    | Vector.cons h _ tl => 
+                      Vector.Forall_cons _ _ _ 
+                        ((fix F1 m (x:vector (DefinedFunction UnitAnn DTfloat) m)  : vforall (P DTfloat) x :=
+                            match x with
+                            | Vector.nil => Vector.Forall_nil (P DTfloat)
+                            | Vector.cons h _ tl => Vector.Forall_cons _ _ _ (F DTfloat h _) (F1 _ tl)
+                            end) m h)
+                        (F2 _ _ tl)
+                    end) n m x)
          | Var v ann => fun hs => f3 v ann
          | Plus ann l r => fun hs => f4 ann l (F DTfloat l (proj1 hs)) r (F DTfloat r (proj2 hs))
          | Minus ann l r => fun hs => f5 ann l (F DTfloat l _) r (F DTfloat r _)
