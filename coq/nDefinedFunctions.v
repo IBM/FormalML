@@ -2688,6 +2688,13 @@ F (d : definition_function_types)
       vector_env_iter (fun '(a,b) env => f a b env) env 
                       (vector_zip v w).
 
+    Fixpoint two_vector_env_iter_alt2 {n1 n2} {A B} (f: A -> B -> df_env -> option df_env)
+               (oenv: option df_env) (v: vector A n1) (w: vector B n2) : option df_env :=
+      match oenv,v,w with
+      | Some env, Vector.cons vx _ v', Vector.cons wx _ w'  => two_vector_env_iter_alt2 f (f vx wx env) v' w'
+      | oenv',_,_ => oenv'
+      end.
+
     Definition two_vector_env_iter_alt {n} {A B} (f: A -> B -> df_env -> option df_env)
                (env: df_env) (v: vector A n) (w: vector B n) : option df_env :=
       list_env_iter (fun '(a,b) env => f a b env) (Some env) (combine (Vector.to_list v) (Vector.to_list w)).
@@ -2752,16 +2759,27 @@ F (d : definition_function_types)
     Definition gradenv_init (dvars : list var_type) : df_env :=
          map gradenv_init1 dvars.
 
+
     Fixpoint df_eval_backprop_deriv {T Ann} (σ:df_env) (df:DefinedFunction Ann T) (grad_env:df_env) {struct df} : definition_function_types_interp T -> option df_env
       := match df with
          | Number _ _ => fun grad => Some grad_env
          | Constant _ _ _ => fun grad => Some grad_env
-         | DVector n _ dfs => fun grad =>
-             two_vector_env_iter_alt (fun x g genv => df_eval_backprop_deriv σ x genv g) 
-                                     grad_env dfs grad  
-         | DMatrix n m _ dfs => fun grad => 
-             two_matrix_env_iter_alt (fun x g genv => df_eval_backprop_deriv σ x genv  g) 
+         | DVector n _ dfs => 
+           fun grad =>
+             ((fix tv_env_iter {n1 n2} {A B} (f: A -> B -> df_env -> option df_env)
+               (oenv: option df_env) (v: vector A n1) (w: vector B n2) : option df_env :=
+                 match oenv,v,w with
+                 | Some env, Vector.cons vx _ v', Vector.cons wx _ w'  => two_vector_env_iter_alt2 f (f vx wx env) v' w'
+                 | oenv',_,_ => oenv'
+                 end) 
+                                  n n _ _   
+                                  (fun x g genv => df_eval_backprop_deriv σ x genv  g)
+                                  (Some grad_env) dfs grad  )
+         | DMatrix n m _ dfs => fun grad => Some grad_env
+(*
+             two_matrix_env_iter_alt 
                                      grad_env dfs grad
+*)
          | Var x _ => fun grad => 
                         if vartlookup grad_env x then 
                           Some (vart_update grad_env x (addvar x grad_env grad))
