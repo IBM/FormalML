@@ -2,6 +2,7 @@ Require Import Reals Coquelicot.Coquelicot Coquelicot.Series.
 Require Import ProofIrrelevance.
 Require Import Sums.
 Require Import micromega.Lra.
+Require Import Coq.Logic.FunctionalExtensionality.
 From mathcomp Require Import ssreflect ssrfun seq.
 Require Import ExtLib.Structures.Monad ExtLib.Structures.MonadLaws. 
 
@@ -312,8 +313,7 @@ Arguments outcomes {_}.
 
 Definition expt_value {A : Type} (p : Pmf A) (f : A -> R): R :=
   list_sum (map (fun x => (f x.2) * nonneg x.1) p.(outcomes)).
-
-
+  
 Lemma expt_value_const_mul {A : Type} (p : Pmf A) (f : A -> R) (c : R):
   expt_value p (fun a => c * (f a)) = c * expt_value p (fun a => f a).
 Proof. 
@@ -523,6 +523,21 @@ Proof.
     intros a0. simpl. lra.
 Qed.
 
+Lemma expt_value_bind' {A B : Type} (p : Pmf A) (g : A -> Pmf B) (f : A -> B -> R) :
+ forall init:A, expt_value (Pmf_bind p g) (f init) = expt_value p (fun a => expt_value (g a) (f init)).
+Proof.
+  intros init. 
+  unfold Pmf_bind.
+  unfold expt_value. simpl. 
+  induction (p.(outcomes)).
+  * simpl ; reflexivity.
+  * destruct a. simpl. rewrite <-IHl. rewrite map_cat.
+    rewrite list_sum_cat. f_equal. 
+    rewrite <-map_comp. rewrite <- (expt_value_bind_aux p). 
+    f_equal. apply List.map_ext.
+    intros a0. simpl. lra.
+Qed.
+
 Lemma expt_value_bind_ret {A B : Type} (a : A) (g : A -> Pmf B) (f : B -> R) :
   expt_value (Pmf_bind (Pmf_pure a) g) f = expt_value (g a) f.
 Proof.   
@@ -531,4 +546,42 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma expt_value_expt_value {A : Type} (p q : Pmf A) (f : A -> R) :
+  expt_value p (fun a => expt_value q f) = (expt_value q f)*(expt_value p (fun a => 1)).
+Proof.
+  unfold expt_value. 
+  induction p.(outcomes).
+  simpl ; lra.
+  simpl. rewrite IHl. lra.
+Qed.
+
+Lemma expt_value_expt_value_pure {A : Type} (a : A) (p : Pmf A) (f : A -> R):
+  expt_value p (fun a => expt_value (Pmf_pure a) f) = (expt_value p f).
+Proof.
+  f_equal. apply functional_extensionality. intros x. 
+  now rewrite expt_value_pure.
+Qed.
+
+Lemma expt_value_Rle {A : Type} {D : R} {f : A -> R} (hf : forall a:A, Rabs (f a) <= D) (p : Pmf A) :
+  Rabs(expt_value p f) <= D.
+Proof.
+  eapply Rle_trans. 
+  apply expt_value_Rabs_Rle.
+  unfold expt_value. rewrite <- Rmult_1_r.
+  change (D*1) with (D*R1).  rewrite <- (sum1_compat p). 
+  induction p.(outcomes).
+  * simpl ; lra.
+  * simpl in *. rewrite Rmult_plus_distr_l.
+    assert ( Rabs (f a.2) * a.1  <=  D * a.1). apply Rmult_le_compat_r. apply cond_nonneg.
+    refine (Rle_trans _ _ _ _ _).
+    apply Rle_abs. rewrite Rabs_Rabsolu. 
+    apply hf.
+    refine (Rle_trans _ _ _ _ _).
+    apply Rplus_le_compat.
+    apply Rmult_le_compat_r. 
+    apply cond_nonneg. apply hf. apply IHl.
+    now right.
+Qed.
+
 End expected_value. 
+

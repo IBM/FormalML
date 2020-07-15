@@ -4,7 +4,6 @@ Require Import pmf_monad.
 Require Import domfct.
 Require Import Sums.
 Require Import micromega.Lra.
-Require Import Coq.Logic.FunctionalExtensionality.
 Require Import ExtLib.Structures.Monad.
 Require Import Morphisms.
 Import MonadNotation.
@@ -82,7 +81,7 @@ Record MDP := mkMDP {
  *)
  t :  state -> act -> Pmf state;
  (* Reward when you are at state s. *)
- reward : state -> R                                
+ reward : state -> act -> state -> R                                
 }.
 
 Arguments outcomes {_}.
@@ -115,57 +114,43 @@ Proof.
   reflexivity.
 Qed.
 
-
 (* Expected reward after n-steps, starting at initial state, following policy sigma. *)
+Definition step_expt_reward : state M -> R :=
+ (fun s => expt_value (t s (σ s)) (reward s (σ s))).
+
 Definition expt_reward (init : M.(state)) (n : nat) : R :=
- expt_value (bind_stoch_iter n init) reward.
+ expt_value (bind_stoch_iter n init) step_expt_reward.
 
   
 (* Expected reward at time 0 is equal to the reward. *)
-Lemma expt_reward0_eq_reward : forall init : M.(state), expt_reward init 0 = reward init.
+Lemma expt_reward0_eq_reward : forall init : M.(state), expt_reward init 0 = step_expt_reward init.
 Proof.
   intros init.
-  unfold expt_reward ; simpl.
-  unfold expt_value ; simpl. 
-  lra.
+  unfold expt_reward. unfold bind_stoch_iter ; simpl.
+  now rewrite expt_value_pure. 
 Qed.
 
 (*
  With every iteration, the reward changes to the average of the rewards of the previous transition states.
 *)
-Lemma expt_reward_succ (n : nat) : forall init : M.(state), expt_reward init (S n) =  expt_value (bind_stoch_iter n init) (fun s : state M => expt_value (t s (σ s)) reward).
+Lemma expt_reward_succ (n : nat) : forall init : M.(state), expt_reward init (S n) =  expt_value (bind_stoch_iter n init) (fun s : state M => expt_value (t s (σ s)) (step_expt_reward)).
 Proof.
   intros init. 
   unfold expt_reward. unfold bind_stoch_iter. 
-  simpl.
-  rewrite expt_value_bind. reflexivity. 
+  simpl. rewrite expt_value_bind.
+  f_equal.
 Qed.
+
 
 (* Bounded rewards (in absolute value) imply bounded expected rewards for all iterations and all states. *)
 Lemma expt_reward_le_max_Rabs {D : R} (init : M.(state)) :
-  (forall s : M.(state),Rabs (reward s) <= D)  ->
+  (forall s s': M.(state) ,Rabs (reward s (σ s) s') <= D)  ->
   (forall n:nat, Rabs (expt_reward init n) <= D). 
 Proof. 
   intros H. 
-  unfold expt_reward ; unfold expt_value. intros n. 
-  generalize (bind_stoch_iter n init) as l.
-  intros l.
-  rewrite <- Rmult_1_r.
-  change (D*1) with (D*R1). 
-  rewrite <- (sum1_compat l). 
-  induction l.(outcomes). 
-  * simpl. right. rewrite Rabs_R0. lra. 
-  * simpl in *. rewrite Rmult_plus_distr_l.
-    assert (reward (snd a) * fst a  <=  D * fst a). apply Rmult_le_compat_r. apply cond_nonneg.
-    refine (Rle_trans _ _ _ _ _).
-    apply Rle_abs. 
-    apply H.
-    refine (Rle_trans _ _ _ _ _).
-    apply Rabs_triang. rewrite Rabs_mult.
-    apply Rplus_le_compat.
-    enough (Rabs (fst a) = fst a).  rewrite H1. apply Rmult_le_compat_r. 
-    apply cond_nonneg. apply H. apply Rabs_pos_eq. apply cond_nonneg.
-    apply IHl0.  
+  unfold expt_reward. intros n. apply expt_value_Rle.
+  unfold step_expt_reward. intros a.
+  apply expt_value_Rle. apply H. 
 Qed.
 
 
@@ -179,7 +164,7 @@ Definition unitMDP {st0 act0 : Type} (t0 : st0 -> act0 -> Pmf st0) : MDP :=
     state := st0;
     act := act0;
     t := t0;
-    reward := fun s => R1
+    reward := fun s a s' => R1
 |}.
 
 (* The expected reward for an arbitrary initial state and arbitrary policy is unity for a unit MDP. *)
@@ -189,10 +174,10 @@ Lemma expt_reward_unitMDP {t0 : R -> R -> Pmf R} :
 Proof.
   intros M0 σ0 init0 n. unfold expt_reward ; unfold expt_value.
   simpl. rewrite <- (sum1_compat (bind_stoch_iter σ0 n init0)).
-  f_equal. apply map_ext. rewrite sum1_compat.
-  intros a. now rewrite Rmult_1_l.
-Qed. 
-
+  f_equal. apply map_ext. intro a. unfold step_expt_reward. simpl.
+  unfold expt_value. (* Need an assumption that state space is nonempty. *)
+  Admitted.
+  
 End egs.
 
 Section ltv.
@@ -214,7 +199,7 @@ Qed.
 
 Definition ltv_part (N : nat) := sum_n (fun n => γ^n * (expt_reward σ init n)) N. 
 
-Lemma ltv_part0_eq_reward : ltv_part 0 = reward init.
+Lemma ltv_part0_eq_reward : ltv_part 0 = step_expt_reward σ init.
 Proof.
   unfold ltv_part. rewrite sum_n_Reals. simpl.  
   rewrite expt_reward0_eq_reward. lra.
@@ -238,7 +223,7 @@ Qed.
 
 
 Lemma ltv_part_le_norm {D : R} (N : nat) :
-  (forall s : M.(state), Rabs (reward s) <= D) -> Rabs(ltv_part N) <= sum_f_R0 (fun n => γ^n * D) N.
+  (forall s s': M.(state), Rabs (reward s (σ s) s') <= D) -> Rabs(ltv_part N) <= sum_f_R0 (fun n => γ^n * D) N.
 Proof.
   intros Hd.
   unfold ltv_part. rewrite sum_n_Reals.
@@ -255,7 +240,7 @@ Proof.
 Qed.
 
 Theorem ex_series_ltv {D : R} :
-  (forall s : M.(state), Rabs (reward s) <= D) -> (forall s0, ex_series (fun n => γ^n * (expt_reward σ s0 n))).
+  (forall s s' : M.(state), Rabs (reward s (σ s) s') <= D) -> (forall s0, ex_series (fun n => γ^n * (expt_reward σ s0 n))).
 Proof.
   intros Hbdd s0. 
   refine (ex_series_le_Reals _ _ _ _). 
@@ -274,31 +259,47 @@ Definition ltv : M.(state) -> R := fun s => Series (fun n => γ^n * (expt_reward
 Definition expt_ltv (p : Pmf M.(state)) : R :=
   expt_value p ltv.
 
-
-(* Long-Term Values satisfy the Bellman equation. *)
-Lemma ltv_corec {D : R} :
-  (forall s : M.(state), Rabs (reward s) <= D) -> ltv init = (reward init) + γ*expt_value (t init (σ init)) ltv. 
+Lemma Pmf_bind_comm_stoch_bind (n : nat) :
+  Pmf_bind (bind_stoch_iter σ n init) (fun a : state M => t a (σ a)) =
+  Pmf_bind (t init (σ init)) (fun a : state M => bind_stoch_iter σ n a).
 Proof.
-  intros bdd.
-  rewrite <-(@expt_reward0_eq_reward _ σ init).
-  unfold ltv.
-  rewrite Series_incr_1. simpl. rewrite Rmult_1_l. setoid_rewrite Rmult_assoc.   
-  rewrite Series_scal_l. f_equal. f_equal. 
-  rewrite expt_value_Series.
-  apply Series_ext. intros n.
-  rewrite expt_reward_succ. rewrite expt_value_const_mul.
-  f_equal. unfold expt_reward.
-  rewrite <-expt_value_bind.
-  rewrite <-expt_value_bind. 
-  f_equal.
-  induction n.
+    induction n.
   * unfold bind_stoch_iter. simpl. rewrite Pmf_bind_of_ret.  now rewrite Pmf_ret_of_bind.
   * unfold bind_stoch_iter in *. simpl.  setoid_rewrite IHn.
     rewrite Pmf_bind_of_bind. reflexivity.
-    apply (ex_series_ltv bdd).
-    apply (ex_series_ltv bdd). 
 Qed.
 
-
+(* Long-Term Values satisfy the Bellman equation. *)
+Lemma ltv_corec {D : R} :
+  (forall s s' : M.(state), Rabs (reward s (σ s) s') <= D) ->
+  ltv init = step_expt_reward σ init + γ*expt_value (t init (σ init)) ltv. 
+Proof.
+  intros bdd. 
+  rewrite <-(@expt_reward0_eq_reward _ σ init).
+  unfold ltv.
+  rewrite Series_incr_1. simpl. rewrite Rmult_1_l. setoid_rewrite Rmult_assoc.   
+  rewrite Series_scal_l.
+  setoid_rewrite expt_reward_succ. 
+  rewrite expt_value_Series. f_equal. f_equal. 
+  apply Series_ext. intros n.
+  rewrite expt_value_const_mul. f_equal. 
+  rewrite <-expt_value_bind. rewrite Pmf_bind_comm_stoch_bind.
+  unfold expt_reward. 
+  rewrite expt_value_bind.  reflexivity.
+  apply (ex_series_ltv bdd).
+  apply (ex_series_ltv bdd). 
+Qed.
 
 End ltv.
+
+Section order.
+Open Scope R_scope. 
+Context {M : MDP} {γ : R}.
+Context (σ : policy M) (init : M.(state)) (hγ : (0 <= γ < 1)%R).
+Arguments reward {_}.
+Arguments outcomes {_}.
+Arguments t {_}.
+
+
+
+End order.
