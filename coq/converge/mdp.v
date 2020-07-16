@@ -8,6 +8,7 @@ Require Import ExtLib.Structures.Monad.
 Require Import Morphisms.
 Import MonadNotation.
 
+Set Bullet Behavior "Strict Subproofs".
 
 Section extra.
 Open Scope list_scope.
@@ -294,12 +295,53 @@ End ltv.
 
 Section order.
 Open Scope R_scope. 
-Context {M : MDP} {γ : R}.
+Context {M : MDP} (γ : R).
 Context (σ : policy M) (init : M.(state)) (hγ : (0 <= γ < 1)%R).
 Arguments reward {_}.
 Arguments outcomes {_}.
 Arguments t {_}.
 
+Require Import ROrderedType.
+Require Import Equivalence RelationClasses EquivDec Morphisms.
 
+Definition policy_eq (σ τ : state M -> act M) : Prop
+  := forall s, (@ltv M γ σ s) = (@ltv M γ τ s).
+
+Global Instance policy_eq_equiv : Equivalence policy_eq.
+constructor; repeat red; intros.
+reflexivity.
+now symmetry.
+etransitivity; eauto.
+Qed.
+
+Definition policy_le (σ τ : state M -> act M) : Prop
+  := forall s, (@ltv M γ σ s) <= (@ltv M γ τ s).
+
+Global Instance event_equiv_sub : subrelation policy_eq policy_le.
+Proof.
+  unfold policy_eq, policy_le, subrelation; intros.
+  specialize (H s); lra.
+Qed.
+
+Global Instance Rle_trans : Transitive Rle.
+Proof.
+  repeat red; intros.
+  eapply Rle_trans; eauto.
+Qed.
+
+Global Instance policy_le_pre : PreOrder policy_le.
+Proof.
+  unfold policy_eq, policy_le.
+  constructor; red; intros.
+  - lra.
+  - etransitivity; eauto. 
+Qed.
+
+Global Instance policy_le_part : PartialOrder policy_eq policy_le.
+Proof.
+  unfold policy_eq, policy_le.
+  unfold PartialOrder, relation_equivalence, predicate_equivalence, relation_conjunction, Basics.flip, predicate_intersection; simpl.
+  intuition.
+Qed.
 
 End order.
