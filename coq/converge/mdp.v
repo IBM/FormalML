@@ -1,11 +1,12 @@
 
-Require Import Reals Coq.Lists.List Coquelicot.Series Coquelicot.Hierarchy.
-Require Import pmf_monad.
-Require Import domfct.
-Require Import Sums.
+Require Import Reals Coq.Lists.List Coquelicot.Series Coquelicot.Hierarchy Coquelicot.SF_seq.
+Require Import pmf_monad Orders.
+Require Import domfct Coq.Structures.GenericMinMax.
+Require Import Sums Coq.Reals.ROrderedType.
 Require Import micromega.Lra.
+Require Import Coq.Logic.FunctionalExtensionality.
+Require Import Equivalence RelationClasses EquivDec Morphisms.
 Require Import ExtLib.Structures.Monad.
-Require Import Morphisms.
 Import MonadNotation.
 
 Set Bullet Behavior "Strict Subproofs".
@@ -81,7 +82,7 @@ Record MDP := mkMDP {
     One can also consider to to be an act-indexed collection of Kliesli arrows of Pmf. 
  *)
  t :  state -> act -> Pmf state;
- (* Reward when you are at state s. *)
+ (* Reward when you move to s' from s by taking action a. *)
  reward : state -> act -> state -> R                                
 }.
 
@@ -115,10 +116,12 @@ Proof.
   reflexivity.
 Qed.
 
-(* Expected reward after n-steps, starting at initial state, following policy sigma. *)
+(* Expected immediate reward for performing action (σ s) when at state s. *)
 Definition step_expt_reward : state M -> R :=
  (fun s => expt_value (t s (σ s)) (reward s (σ s))).
 
+
+(* Expected reward after n-steps, starting at initial state, following policy sigma. *)
 Definition expt_reward (init : M.(state)) (n : nat) : R :=
  expt_value (bind_stoch_iter n init) step_expt_reward.
 
@@ -165,26 +168,29 @@ Definition unitMDP {st0 act0 : Type} (t0 : st0 -> act0 -> Pmf st0) : MDP :=
     state := st0;
     act := act0;
     t := t0;
-    reward := fun s a s' => R1
+    reward := fun s a s' => R0
 |}.
 
 (* The expected reward for an arbitrary initial state and arbitrary policy is unity for a unit MDP. *)
 Lemma expt_reward_unitMDP {t0 : R -> R -> Pmf R} :
   let M0 := unitMDP t0 in
-  forall (σ0 : policy M0) (init0 : M0.(state)) (n:nat), expt_reward σ0 init0 n = R1. 
+  forall (σ0 : policy M0) (init0 : M0.(state)) (n:nat), expt_reward σ0 init0 n = R0. 
 Proof.
-  intros M0 σ0 init0 n. unfold expt_reward ; unfold expt_value.
-  simpl. rewrite <- (sum1_compat (bind_stoch_iter σ0 n init0)).
-  f_equal. apply map_ext. intro a. unfold step_expt_reward. simpl.
-  unfold expt_value. (* Need an assumption that state space is nonempty. *)
-  Admitted.
-  
+  intros M0 σ0 init0 n.
+  assert (expt_value (bind_stoch_iter σ0 n init0) (fun s => R0) = R0). apply expt_value_zero.
+  rewrite <-H.
+  unfold expt_reward.
+  unfold step_expt_reward. simpl.
+  f_equal. apply functional_extensionality. intros x.
+  apply expt_value_zero. 
+Qed.
+
 End egs.
 
 Section ltv.
 
 Open Scope R_scope. 
-Context {M : MDP} {γ : R}.
+Context {M : MDP} (γ : R).
 Context (σ : policy M) (init : M.(state)) (hγ : (0 <= γ < 1)%R).
 Arguments reward {_}.
 Arguments outcomes {_}.
@@ -293,31 +299,33 @@ Qed.
 
 End ltv.
 
+
+
+
 Section order.
+  
 Open Scope R_scope. 
 Context {M : MDP} (γ : R).
-Context (σ : policy M) (init : M.(state)) (hγ : (0 <= γ < 1)%R).
+Context (hγ : (0 <= γ < 1)%R).
 Arguments reward {_}.
 Arguments outcomes {_}.
 Arguments t {_}.
-
-Require Import ROrderedType.
-Require Import Equivalence RelationClasses EquivDec Morphisms.
 
 Definition policy_eq (σ τ : state M -> act M) : Prop
   := forall s, (@ltv M γ σ s) = (@ltv M γ τ s).
 
 Global Instance policy_eq_equiv : Equivalence policy_eq.
-constructor; repeat red; intros.
-reflexivity.
-now symmetry.
-etransitivity; eauto.
+Proof.
+  constructor; repeat red; intros.
+  reflexivity.
+  now symmetry.
+  etransitivity; eauto.
 Qed.
 
 Definition policy_le (σ τ : state M -> act M) : Prop
-  := forall s, (@ltv M γ σ s) <= (@ltv M γ τ s).
+  := forall s, (ltv γ σ s) <= (ltv γ τ s).
 
-Global Instance event_equiv_sub : subrelation policy_eq policy_le.
+Global Instance policy_equiv_sub : subrelation policy_eq policy_le.
 Proof.
   unfold policy_eq, policy_le, subrelation; intros.
   specialize (H s); lra.

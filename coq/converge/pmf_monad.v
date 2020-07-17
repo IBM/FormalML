@@ -313,7 +313,16 @@ Arguments outcomes {_}.
 
 Definition expt_value {A : Type} (p : Pmf A) (f : A -> R): R :=
   list_sum (map (fun x => (f x.2) * nonneg x.1) p.(outcomes)).
-  
+
+Lemma expt_value_zero {A : Type} (p : Pmf A) :
+  expt_value p (fun a => 0) = 0.
+Proof.
+  unfold expt_value. 
+  induction p.(outcomes).
+  - simpl;lra.
+  - simpl. rewrite IHl. lra.
+Qed. 
+    
 Lemma expt_value_const_mul {A : Type} (p : Pmf A) (f : A -> R) (c : R):
   expt_value p (fun a => c * (f a)) = c * expt_value p (fun a => f a).
 Proof. 
@@ -582,6 +591,7 @@ Proof.
     apply cond_nonneg. apply hf. apply IHl.
     now right.
 Qed.
+
 
 End expected_value. 
 
