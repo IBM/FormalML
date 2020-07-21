@@ -1,5 +1,5 @@
 Require Import Reals Coquelicot.Coquelicot Coquelicot.Series.
-Require Import ProofIrrelevance.
+Require Import ProofIrrelevance EquivDec.
 Require Import Sums.
 Require Import micromega.Lra.
 Require Import Coq.Logic.FunctionalExtensionality.
@@ -595,3 +595,16 @@ Qed.
 
 End expected_value. 
 
+Section cond_expt.
+
+Arguments outcomes {_}.
+  
+Instance EqDecR : EqDec R eq := Req_EM_T. 
+
+(* Conditional expectation of f wrt p given that g(a) = r. *)
+Definition cond_expt_value {A : Type} (p : Pmf A) (f g : A -> R) (r : R) : R :=
+  list_sum (map (fun x => (f x.2) * nonneg x.1) (filter (fun x => (g x.2 ==b r)) p.(outcomes))).
+
+  
+
+End cond_expt. 

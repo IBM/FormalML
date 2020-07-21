@@ -299,8 +299,27 @@ Qed.
 
 End ltv.
 
+Class NonEmpty (A : Type) :=
+  ex : A.
+    
+Class Finite (A:Type) : Prop :=
+  finite : exists (l:list A), forall x:A, In x l.
 
-
+ 
+Lemma finite_has_max {A:Type} {ne : NonEmpty A} {fin:Finite A} (R:A->A->Prop) `{part: PartialOrder _ eq R} :
+  exists x:A, forall y:A, R y x.
+Proof.
+  destruct fin as [l Hl].
+  induction l. 
+  * simpl in *. exfalso. apply Hl. apply ne. 
+  * simpl in *.
+    unfold PartialOrder, relation_equivalence, predicate_equivalence, relation_conjunction, Basics.flip, predicate_intersection in part. simpl in part.
+    case (Hl a). 
+    set (lem_for_the_win (forall y : A, R y a)).
+    case o. intros H. exists a. assumption. 
+    intros H. set (Classical_Pred_Type.not_all_ex_not _ _ H). 
+    destruct e as [a0 Ha0].
+Admitted.
 
 Section order.
   
@@ -351,5 +370,7 @@ Proof.
   unfold PartialOrder, relation_equivalence, predicate_equivalence, relation_conjunction, Basics.flip, predicate_intersection; simpl.
   intuition.
 Qed.
+
+
 
 End order.
