@@ -303,11 +303,15 @@ Class NonEmpty (A : Type) :=
   ex : A.
     
 Class Finite (A:Type) : Prop :=
-  {l : list A ;
-  finite : forall x:A, In x l }.
+  finite : exists l : list A, forall x:A, In x l.
 
-Axiom lem : forall p:Prop, p \/ not p. 
-
+Lemma finite_has_max_aux {A:Type} {ne : NonEmpty A} (l1 l2:list A) (finite:forall x:A, In x l1) (R:A->A->Prop) (dec:forall x y, R x y \/ R y x) `{part: PartialOrder _ eq R} (sub:forall x, In x l2 -> In x l1) :
+  exists x:A, forall y:A, R y x.
+Proof.
+  
+Lemma finite_has_max {A:Type} {ne : NonEmpty A} {fin:Finite A} (R:A->A->Prop) (dec:forall x y, R x y \/ R y x) `{part: PartialOrder _ eq R} :
+  exists x:A, forall y:A, R y x.
+Proof.
 
 Lemma finite_has_max {A:Type} {ne : NonEmpty A} {fin:Finite A} (R:A->A->Prop) `{part: PartialOrder _ eq R} :
   exists x:A, forall y:A, R y x.
