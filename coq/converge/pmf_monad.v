@@ -62,6 +62,19 @@ Proof.
   exact (Rmult_le_pos _ _ ha hb).
 Qed.
 
+Lemma div_nonnegreal : forall (a b : nonnegreal), 0 <> b -> 0 <= a/b.
+Proof.
+  intros (a,ha) (b,hb) Hb.
+  apply (Rdiv_le_0_compat).
+  apply ha. simpl in *. case hb. 
+  trivial. intros H. firstorder.
+Qed.
+
+
+Lemma inv_nonnegreal : forall (a : nonnegreal), 0 <> a -> 0 <= /a.
+Proof.
+  intros a Ha.  
+Admitted.
 
 Lemma nonneg_pf_irrel r1 (cond1 cond2:0 <= r1) : 
   mknonnegreal r1 cond1 = mknonnegreal r1 cond2.
@@ -191,6 +204,20 @@ Proof.
     rewrite <- Htn0. lra.
 Qed.
 
+
+Lemma list_fst_sum_eq' {A B : Type} (f : A -> Pmf B) (n : nonnegreal) (a : A):
+  list_fst_sum [seq (mknonnegreal _ (prod_nonnegreal py.1 n), py.2) | py <- f a]
+  = n*list_fst_sum [seq py | py <- f a].
+Proof.
+  destruct (f a) as [fa Hfa]. simpl. revert Hfa.
+  generalize R1 as t. induction fa. 
+  * firstorder.
+  *
+    simpl in *. destruct a0. intros t Htn0.
+    rewrite (IHfa (t - n0)).
+    specialize (IHfa (t-n0)). firstorder. simpl. 
+    lra. lra. 
+Qed.
 
 Lemma dist_bind_sum1 {A B : Type} (f : A -> Pmf B) (p : Pmf A) :
   list_fst_sum (dist_bind_outcomes f p.(outcomes)) = R1.
@@ -598,13 +625,44 @@ End expected_value.
 Section cond_expt.
 
 Arguments outcomes {_}.
-  
+    
 Instance EqDecR : EqDec R eq := Req_EM_T. 
 
-(* Conditional expectation of f wrt p given that g(a) = r. *)
-Definition cond_expt_value {A : Type} (p : Pmf A) (f g : A -> R) (r : R) : R :=
-  list_sum (map (fun x => (f x.2) * nonneg x.1) (filter (fun x => (g x.2 ==b r)) p.(outcomes))).
+
+Definition cond_prob_evnts {A : Type} (p : Pmf A) (g : A -> R) (r : R) :=
+  (filter (fun x => (g x.2 ==b r)) p.(outcomes)).
+
+Definition prob_of {A : Type} (p : Pmf A) (g : A -> R) (r : R) : nonnegreal :=
+ mknonnegreal (list_fst_sum (filter (fun x => (g x.2 ==b r)) p.(outcomes))) (list_sum_is_nonneg _).
+
+Definition cond_prob_outcomes {A : Type} {p : Pmf A} {g : A -> R} {r : R} (hne : 0 <> nonneg(prob_of p g r)) : seq (nonnegreal*A) :=
+  map (fun y : nonnegreal*A => (mknonnegreal (y.1 / (prob_of p g r)) (div_nonnegreal _ _ hne), y.2)) (cond_prob_evnts p g r).
+
+Lemma cond_prob_sum1 {A : Type} {p : Pmf A} {g : A -> R} {r : R} (hne : 0 <> nonneg(prob_of p g r)) :
+  list_fst_sum (cond_prob_outcomes hne) = 1.
+Proof.
+  unfold cond_prob_outcomes.
+  simpl. unfold Rdiv.
+Admitted.
+
 
   
+(* Conditional expectation of f wrt p given that g(a) = r. *)
+Definition cond_expt_value {A : Type} (p : Pmf A) (f g : A -> R) (r:R) : R :=
+  list_sum (map (fun x => (f x.2) * nonneg x.1) (filter (fun x => (g x.2 ==b r)) p.(outcomes))).
+
+Lemma cond_expt_value_const_fun {A : Type} (p:Pmf A) (f : A -> R) (r : R) :
+  cond_expt_value p f (fun x => r) r = expt_value p f. 
+Proof.
+  unfold cond_expt_value; unfold expt_value.
+  f_equal. f_equal.
+  induction p.(outcomes). 
+  - simpl ; reflexivity.
+  - simpl. rewrite IHl.
+  unfold equiv_decb. destruct (equiv_dec r r); [ | congruence].
+  reflexivity. 
+Qed. 
+
+
 
 End cond_expt. 
