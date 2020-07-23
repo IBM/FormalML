@@ -16,6 +16,9 @@ This file defines the pmf monad (also called the finitary Giry monad) which is a
 of finitely supported probability measures on a set. The construction is very general, 
 and we don't need to work in that generality. Our main application is to use this monad 
 to define and reason about Markov Decision Processes. 
+
+We also add results on conditional probability and conditional expectation, everything 
+tailored to the discrete case. 
 ****************************************************************************************
 
  *)
@@ -184,7 +187,7 @@ Proof.
     reflexivity.
 Qed.
 
-Lemma list_fst_sum_eq {A B : Type} (f : A -> Pmf B) (n : nonnegreal) (a : A):
+Lemma list_fst_sum_const_mult {A B : Type} (f : A -> Pmf B) (n : nonnegreal) (a : A):
   list_fst_sum [seq (mknonnegreal _ (prod_nonnegreal n py.1), py.2) | py <- f a]
   = n*list_fst_sum [seq py | py <- f a].
 Proof.
@@ -199,6 +202,19 @@ Proof.
 Qed.
 
 
+Lemma list_fst_sum_const_div {A : Type} (l : list (nonnegreal*A)) {n : nonnegreal} (hn : 0 <> nonneg n) :
+  list_fst_sum [seq (mknonnegreal _ (div_nonnegreal py.1 _ hn), py.2) | py <- l]
+  = list_fst_sum [seq py | py <- l]/n.
+Proof.
+  generalize R1 as t. induction l. 
+  * simpl. intros H. lra. 
+  * simpl in *. destruct a. intros t. simpl. 
+    rewrite (IHl (t - n)).
+    specialize (IHl (t-n)). simpl. 
+    lra.  
+Qed.
+
+
 Lemma dist_bind_sum1 {A B : Type} (f : A -> Pmf B) (p : Pmf A) :
   list_fst_sum (dist_bind_outcomes f p.(outcomes)) = R1.
 Proof.
@@ -208,7 +224,7 @@ Proof.
  *  simpl; intuition. 
  *  simpl in *. destruct a as [n a]. intros t0 Hnt0.
     rewrite list_fst_sum_cat.  rewrite (IHp (t0-n)). 
-    rewrite list_fst_sum_eq. destruct (f a) as [fp Hfp]. simpl.
+    rewrite list_fst_sum_const_mult. destruct (f a) as [fp Hfp]. simpl.
     rewrite map_id Hfp. lra.
     lra.
 Qed.
@@ -618,58 +634,114 @@ Definition preim_evnts_of {A : Type} (p : Pmf A) (g : A -> R) (r : R) :=
   filter (fun x => (g x.2 ==b r)) p.(outcomes).
 
 Definition preim_evnts_of_And {A : Type} (p : Pmf A) (f g: A -> R) (r1 r2 : R) :=
-  filter (fun x => andb (g x.2 ==b r1) (f x.2 ==b r2)) p.(outcomes).
+  filter (fun x => andb (f x.2 ==b r1) (g x.2 ==b r2)) p.(outcomes).
 
-Definition independent {A : Type} (p : Pmf A) (g f : A -> R):=
+Definition independent {A : Type} (p : Pmf A) (f g : A -> R):=
   forall r1 r2 : R, 𝕡[preim_evnts_of_And p f g r1 r2] = 𝕡[preim_evnts_of p f r1]*𝕡[preim_evnts_of p g r2].
-  
 
-(* 
-Sum of the probabilities of events which are r-preimages of g equals the total probability that g=r. 
-*)
-Lemma tot_prob_eq_prob_of {A : Type} {p : Pmf A} {g : A -> R} {r : R} (hne : 0 <> 𝕡[preim_evnts_of p g r]) : list_fst_sum [seq py | py <- preim_evnts_of p g r] =  𝕡[preim_evnts_of p g r].
+
+Lemma filter_true {A} :  forall p:list A, filter (fun _ => true) p = p.
 Proof.
-  unfold prob,preim_evnts_of.
+  induction p.
+    - simpl; reflexivity.
+    - simpl. rewrite IHp. reflexivity.
+Qed.
+
+Lemma filter_false {A} :  forall p:list A, filter (fun _ => false) p = [::].
+Proof.
+  induction p.
+    - simpl; reflexivity.
+    - simpl. rewrite IHp. reflexivity.
+Qed.
+
+Lemma independent_const_fun {A : Type} (p : Pmf A) (g : A -> R) (c : R) : 
+  independent p (fun _ => c) g.
+Proof.
+  unfold independent.
+  intros r1 r2. 
+  unfold prob,preim_evnts_of,preim_evnts_of_And ; simpl.
+  unfold equiv_decb. destruct (equiv_dec c r1).
+  + simpl. 
+    enough (filter (fun _ => true) p = p). 
+    rewrite H. destruct p as [s0 s1]. rewrite s1 ; lra.
+    induction p.(outcomes).
+    - simpl; reflexivity.
+    - simpl. rewrite IHl. reflexivity.
+  + simpl.
+    enough (filter (fun _ => false) p = [::]). 
+    rewrite H. simpl;lra. 
+    induction p.(outcomes).
+    - simpl;reflexivity.
+    - simpl; assumption.
+Qed.
+
+
+(* A ∩ Ω = A *)
+Lemma prim_evnts_of_And_cancel {A : Type} (p : Pmf A) (g : A -> R) (r1 r2 : R) :
+  preim_evnts_of_And p (fun _ => r1) g r1 r2 =  preim_evnts_of p g r2.
+Proof.
+  unfold preim_evnts_of, preim_evnts_of_And.
+  unfold equiv_decb. destruct (equiv_dec r1 r1); [| congruence].
+  simpl. reflexivity.
+Qed.
+
+        
+
+Lemma tot_prob_eq_prob_of {A : Type} (p : Pmf A) (g : A -> R) (r1 r2 : R) :
+   𝕡[preim_evnts_of_And p (fun _ => r1) g r1 r2] =  𝕡[preim_evnts_of p g r2].
+Proof.
+  rewrite prim_evnts_of_And_cancel. reflexivity.
+Qed.
+
+
+Lemma tot_prob_eq_prob_of_const_fun
+  {A : Type} {p : Pmf A} {g : A -> R} {r : R} (hne : 0 <> 𝕡[preim_evnts_of p g r]) (r1 : R):
+  list_fst_sum [seq py | py <- preim_evnts_of_And p (fun _ => r1) g r1 r] =  𝕡[preim_evnts_of p g r].
+Proof.
+  unfold prob,preim_evnts_of,preim_evnts_of_And.
   simpl.
   f_equal.
   induction p.(outcomes).
   - simpl. reflexivity.
-  - simpl.
-    destruct equiv_decb. rewrite map_cons. now f_equal. 
-    assumption. 
+  - simpl. rewrite <-IHl. 
+    unfold equiv_decb. destruct (equiv_dec r1 r1); [| congruence].
+    destruct equiv_dec. reflexivity.
+    simpl. reflexivity.
 Qed.
 
 
 End events.
 
 Section cond_prob.
+(*
+ This section defines conditional probabilities. The formulation is slightly awkward, since 
+ we deal only with random variables and not sets, as is done classically. The reason for this is that 
+ we started out with the definition of Pmf as a list of events, paired with probabilities which sum to
+ 1. So the events are given to us a priori, and we have to make use of them. 
 
+ Sets (events) of the underlying space are now defined as preimages of real random variables. For 
+ example, to talk of the universal set Ω, we fix a real number r and work with it's preimage under 
+ the constant function (fun _ => r). 
+*)
 Arguments outcomes {_}.
 
-(* Assigning the actual probability weights to events. We divide by the total probability that g=r.*)
-Definition cond_prob_outcomes {A : Type} {p : Pmf A} {g : A -> R} {r : R} (hne : 0 <> 𝕡[preim_evnts_of p g r]) : seq (nonnegreal*A) :=
-  map (fun y : nonnegreal*A => (mknonnegreal (y.1 / 𝕡[preim_evnts_of p g r]) (div_nonnegreal _ _ hne), y.2)) (preim_evnts_of p g r).
+(* Assigning the actual probability weights to events. We divide by the total probability that g=r2.*)
+Definition cond_prob_outcomes
+           {A : Type} {p : Pmf A} {g : A -> R} {r2 : R} (hne : 0 <> 𝕡[preim_evnts_of p g r2])
+           (f : A -> R) (r1 : R) : seq (nonnegreal*A) :=
+   map
+   (fun y : nonnegreal*A => (mknonnegreal (y.1 / 𝕡[preim_evnts_of p g r2]) (div_nonnegreal _ _ hne), y.2))
+   (preim_evnts_of_And p f g r1 r2).
 
 
-Lemma list_fst_sum_const_div {A : Type} (l : list (nonnegreal*A)) {n : nonnegreal} (hn : 0 <> nonneg n) :
-  list_fst_sum [seq (mknonnegreal _ (div_nonnegreal py.1 _ hn), py.2) | py <- l]
-  = list_fst_sum [seq py | py <- l]/n.
+Lemma cond_prob_sum1 {A : Type} {p : Pmf A} {g : A -> R} {r : R} (hne : 0 <> 𝕡[preim_evnts_of p g r])
+   :
+  𝕡[cond_prob_outcomes hne (fun _ => r) r] = 1.
 Proof.
-  generalize R1 as t. induction l. 
-  * simpl. intros H. lra. 
-  * simpl in *. destruct a. intros t. simpl. 
-    rewrite (IHl (t - n)).
-    specialize (IHl (t-n)). simpl. 
-    lra.  
-Qed.
-
-Lemma cond_prob_sum1 {A : Type} {p : Pmf A} {g : A -> R} {r : R}  (hne : 0 <> 𝕡[preim_evnts_of p g r]) :
-  list_fst_sum (cond_prob_outcomes hne) = 1.
-Proof.
-  unfold cond_prob_outcomes.
-  simpl.
-  rewrite (list_fst_sum_const_div (preim_evnts_of p g r) hne). 
-  rewrite (tot_prob_eq_prob_of hne).  
+  unfold cond_prob_outcomes,prob ; simpl. 
+  simpl. 
+  rewrite (list_fst_sum_const_div (preim_evnts_of_And p (fun _ => r) g r r) hne). 
+  rewrite (tot_prob_eq_prob_of_const_fun hne r).  
   field. firstorder.
 Qed. 
 
@@ -680,14 +752,29 @@ Qed.
 *)
 Definition Pmf_cond {A : Type} {p : Pmf A} {r : R} {g : A -> R} (hne : 0 <> 𝕡[preim_evnts_of p g r])
   : Pmf A :={|
-  outcomes := cond_prob_outcomes hne;
+  outcomes := cond_prob_outcomes hne (fun _ => r) r;
   sum1 := cond_prob_sum1 hne
   |}.
-           
+
+
 (* Conditional expectation of f wrt the conditional probabilty p given that g(a) = r. *)
 Definition cond_expt_value{A : Type}{r : R} {g : A -> R}{p : Pmf A} (hne : 0 <> 𝕡[preim_evnts_of p g r])(f : A -> R)  : R :=
-expt_value (Pmf_cond hne) f.
+  expt_value (Pmf_cond hne) f.
 
+Lemma cond_expt_value_indep
+{A : Type} {r : R} {f g : A -> R} {p : Pmf A}(hne : 0 <> 𝕡[preim_evnts_of p g r]) (Hi : independent p f g) :
+cond_expt_value hne f = expt_value p f.
+Proof.
+  unfold cond_expt_value, expt_value, Pmf_cond; simpl.
+  unfold cond_prob_outcomes. simpl.
+  setoid_rewrite prim_evnts_of_And_cancel.
+  simpl. 
+  f_equal. f_equal.
+  unfold Pmf_cond. simpl.
+Admitted.
+
+  
+         
 (* Lemma cond_expt_value_const_fun  {A : Type}{r : R} {g : A -> R}{p : Pmf A}(hne : 0 <> nonneg(prob_of p g r)) (f : A -> R)  :
   cond_expt_value hne f = expt_value p f. 
 Proof.
