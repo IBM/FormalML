@@ -70,12 +70,6 @@ Proof.
   trivial. intros H. firstorder.
 Qed.
 
-
-Lemma inv_nonnegreal : forall (a : nonnegreal), 0 <> a -> 0 <= /a.
-Proof.
-  intros a Ha.  
-Admitted.
-
 Lemma nonneg_pf_irrel r1 (cond1 cond2:0 <= r1) : 
   mknonnegreal r1 cond1 = mknonnegreal r1 cond2.
 Proof.
@@ -316,6 +310,11 @@ Admitted.*)
 
 End Pmf.
 
+
+Definition prob {A : Type} (l : seq(nonnegreal*A)) : nonnegreal :=
+ mknonnegreal (list_fst_sum l) (list_sum_is_nonneg _).
+
+Notation "𝕡[ x ]" := (nonneg (prob x)) (at level 75, right associativity).
 
 Section expected_value.
 
@@ -608,26 +607,29 @@ Qed.
 
 End expected_value. 
 
-Section cond_expt.
+Section events.
 
 Arguments outcomes {_}.
     
 Instance EqDecR : EqDec R eq := Req_EM_T. 
 
+(* All p.(outcomes) which are preimages of a fixed r in R under the random variable g. *)
+Definition preim_evnts_of {A : Type} (p : Pmf A) (g : A -> R) (r : R) :=
+  filter (fun x => (g x.2 ==b r)) p.(outcomes).
 
-Definition cond_prob_evnts {A : Type} (p : Pmf A) (g : A -> R) (r : R) :=
-  (filter (fun x => (g x.2 ==b r)) p.(outcomes)).
+Definition preim_evnts_of_And {A : Type} (p : Pmf A) (f g: A -> R) (r1 r2 : R) :=
+  filter (fun x => andb (g x.2 ==b r1) (f x.2 ==b r2)) p.(outcomes).
 
-Definition prob_of {A : Type} (p : Pmf A) (g : A -> R) (r : R) : nonnegreal :=
- mknonnegreal (list_fst_sum (filter (fun x => (g x.2 ==b r)) p.(outcomes))) (list_sum_is_nonneg _).
+Definition independent {A : Type} (p : Pmf A) (g f : A -> R):=
+  forall r1 r2 : R, 𝕡[preim_evnts_of_And p f g r1 r2] = 𝕡[preim_evnts_of p f r1]*𝕡[preim_evnts_of p g r2].
+  
 
-Definition cond_prob_outcomes {A : Type} {p : Pmf A} {g : A -> R} {r : R} (hne : 0 <> nonneg(prob_of p g r)) : seq (nonnegreal*A) :=
-  map (fun y : nonnegreal*A => (mknonnegreal (y.1 / (prob_of p g r)) (div_nonnegreal _ _ hne), y.2)) (cond_prob_evnts p g r).
-
-
-Lemma cond_prob_sum_aux {A : Type} {p : Pmf A} {g : A -> R} {r : R} (hne : 0 <> nonneg(prob_of p g r)) : list_fst_sum [seq py | py <- cond_prob_evnts p g r] = prob_of p g r.
+(* 
+Sum of the probabilities of events which are r-preimages of g equals the total probability that g=r. 
+*)
+Lemma tot_prob_eq_prob_of {A : Type} {p : Pmf A} {g : A -> R} {r : R} (hne : 0 <> 𝕡[preim_evnts_of p g r]) : list_fst_sum [seq py | py <- preim_evnts_of p g r] =  𝕡[preim_evnts_of p g r].
 Proof.
-  unfold prob_of,cond_prob_evnts.
+  unfold prob,preim_evnts_of.
   simpl.
   f_equal.
   induction p.(outcomes).
@@ -637,26 +639,37 @@ Proof.
     assumption. 
 Qed.
 
+
+End events.
+
+Section cond_prob.
+
+Arguments outcomes {_}.
+
+(* Assigning the actual probability weights to events. We divide by the total probability that g=r.*)
+Definition cond_prob_outcomes {A : Type} {p : Pmf A} {g : A -> R} {r : R} (hne : 0 <> 𝕡[preim_evnts_of p g r]) : seq (nonnegreal*A) :=
+  map (fun y : nonnegreal*A => (mknonnegreal (y.1 / 𝕡[preim_evnts_of p g r]) (div_nonnegreal _ _ hne), y.2)) (preim_evnts_of p g r).
+
+
 Lemma list_fst_sum_const_div {A : Type} (l : list (nonnegreal*A)) {n : nonnegreal} (hn : 0 <> nonneg n) :
   list_fst_sum [seq (mknonnegreal _ (div_nonnegreal py.1 _ hn), py.2) | py <- l]
   = list_fst_sum [seq py | py <- l]/n.
 Proof.
   generalize R1 as t. induction l. 
   * simpl. intros H. lra. 
-  *
-    simpl in *. destruct a. intros t. simpl. 
+  * simpl in *. destruct a. intros t. simpl. 
     rewrite (IHl (t - n)).
     specialize (IHl (t-n)). simpl. 
     lra.  
 Qed.
 
-Lemma cond_prob_sum1 {A : Type} {p : Pmf A} {g : A -> R} {r : R} (hne : 0 <> nonneg(prob_of p g r)) :
+Lemma cond_prob_sum1 {A : Type} {p : Pmf A} {g : A -> R} {r : R}  (hne : 0 <> 𝕡[preim_evnts_of p g r]) :
   list_fst_sum (cond_prob_outcomes hne) = 1.
 Proof.
   unfold cond_prob_outcomes.
   simpl.
-  rewrite (list_fst_sum_const_div (cond_prob_evnts p g r) hne). 
-  rewrite (cond_prob_sum_aux hne).  
+  rewrite (list_fst_sum_const_div (preim_evnts_of p g r) hne). 
+  rewrite (tot_prob_eq_prob_of hne).  
   field. firstorder.
 Qed. 
 
@@ -665,14 +678,14 @@ Qed.
    Conditional probability measure. Depends on a random variable, a real number and 
    a proof that the random variable attains that value almost surely. 
 *)
-Definition Pmf_cond {A : Type} {p : Pmf A} {r : R} {g : A -> R} (hne : 0 <> nonneg(prob_of p g r))
+Definition Pmf_cond {A : Type} {p : Pmf A} {r : R} {g : A -> R} (hne : 0 <> 𝕡[preim_evnts_of p g r])
   : Pmf A :={|
   outcomes := cond_prob_outcomes hne;
   sum1 := cond_prob_sum1 hne
   |}.
-  
+           
 (* Conditional expectation of f wrt the conditional probabilty p given that g(a) = r. *)
-Definition cond_expt_value  {A : Type}{r : R} {g : A -> R}{p : Pmf A}(hne : 0 <> nonneg(prob_of p g r)) (f : A -> R)  : R :=
+Definition cond_expt_value{A : Type}{r : R} {g : A -> R}{p : Pmf A} (hne : 0 <> 𝕡[preim_evnts_of p g r])(f : A -> R)  : R :=
 expt_value (Pmf_cond hne) f.
 
 (* Lemma cond_expt_value_const_fun  {A : Type}{r : R} {g : A -> R}{p : Pmf A}(hne : 0 <> nonneg(prob_of p g r)) (f : A -> R)  :
