@@ -305,14 +305,29 @@ Class NonEmpty (A : Type) :=
 Class Finite (A:Type) : Prop :=
   finite : exists l : list A, forall x:A, In x l.
 
-Lemma finite_has_max_aux {A:Type} {ne : NonEmpty A} (l1 l2:list A) (finite:forall x:A, In x l1) (R:A->A->Prop) (dec:forall x y, R x y \/ R y x) `{part: PartialOrder _ eq R} (sub:forall x, In x l2 -> In x l1) :
-  exists x:A, forall y:A, R y x.
-Proof.
-  
-Lemma finite_has_max {A:Type} {ne : NonEmpty A} {fin:Finite A} (R:A->A->Prop) (dec:forall x y, R x y \/ R y x) `{part: PartialOrder _ eq R} :
-  exists x:A, forall y:A, R y x.
-Proof.
+Axiom lem : forall p : Prop, p \/ not p.
 
+
+Lemma finite_has_max_aux {A:Type} (l1 l2:list A) (R:A->A->Prop) (sub:forall x, In x l2 -> In x l1) :
+((forall x, In x l1) ->  exists x:A, forall y:A, R y x) -> ((forall x, In x l2) -> exists x:A, forall y:A, R y x).
+Proof.
+  intros H hl2.
+  apply H. intro x. 
+  apply sub. apply hl2.
+Qed. 
+
+Lemma sub_cons {A : Type} (l : list A) (a : A) : forall x, In x l -> In x (a :: l).
+Proof.
+  intros x Hx.
+  simpl. now right. 
+Qed. 
+
+Lemma aux {A : Type} (l l0 : list A) (R : A -> A -> Prop) (sub : forall x, In x l0 -> In x l) :
+  exists a, (forall x, In x l0 -> R x a).
+Proof.
+Admitted.
+
+      
 Lemma finite_has_max {A:Type} {ne : NonEmpty A} {fin:Finite A} (R:A->A->Prop) `{part: PartialOrder _ eq R} :
   exists x:A, forall y:A, R y x.
 Proof.
@@ -321,15 +336,19 @@ Proof.
   destruct preo as [prR prT].   
   induction l. 
   * simpl in *. exfalso. apply Hl. apply ne. 
-  * simpl in *.
+  * simpl in *. 
     assert (Ha : forall x:A, a <> x -> In x l).
     intros x Hax. case (Hl x). intros Hax'. exfalso;firstorder. 
-    firstorder. 
-    set (lem (forall y : A, R y a)).
-    case o.
-    intros H0. exists a. assumption.
-    intros H1. set (Classical_Pred_Type.not_all_ex_not _ _ H1). 
-    destruct e as [b Hb].    
+    firstorder.   
+    set (lem (forall x, a = x)).
+    case o. intro Hx. exists a. intro y. specialize (Hx y). rewrite Hx. apply prR. 
+    intro H1. set (Classical_Pred_Type.not_all_ex_not _ _ H1). 
+    destruct e as [b Hb] ; clear H1;clear o.
+    apply IHl. intro x. apply Ha. intro Hax. apply H1. 
+    set (lem (R b a)).  apply Ha. case o0. 
+    intro Hab. contradiction.
+    intro Hrab. intro Hax.
+    specialize (part a x). rewrite part in Hax. 
 Admitted.
 
 Section order.
