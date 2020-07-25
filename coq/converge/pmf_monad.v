@@ -772,24 +772,33 @@ Qed.
 
 
 
-Lemma list_sum_outcomes_And {A : Type} {f g : A -> R} (r: R) (p : Pmf A) (hfg : independent p f g) :
+Lemma list_sum_outcomes_And {A : Type} {f g : A -> R} (r: R) (p : Pmf A) :
    list_sum [seq f x.2 *nonneg(x.1) | x <- preim_outcomes_of_And p f g r r] = r*list_fst_sum (preim_outcomes_of_And p f g r r).
 Proof.
 rewrite list_fst_sum_compat. unfold list_fst_sum'.
 unfold preim_outcomes_of, preim_outcomes_of_And in *.
-unfold prob in hfg. simpl in *. 
-revert hfg. induction p.(outcomes).
+simpl in *.  induction p.(outcomes).
 - simpl ; lra.
-- simpl. intro Hi.  specialize (IHl Hi). unfold equiv_decb. destruct (equiv_dec (f a.2) r).
+- simpl. unfold equiv_decb. destruct (equiv_dec (f a.2) r).
   unfold equiv_decb. destruct (equiv_dec (g a.2) r). destruct a as [n a0]. simpl.
   rewrite IHl. simpl in e. rewrite e. rewrite Rmult_plus_distr_l. reflexivity.
   simpl. rewrite IHl. reflexivity.
   simpl. rewrite IHl. reflexivity.
 Qed.
 
+Lemma list_sum_preim_outcomes {A : Type} {f : A -> R} (r: R) (p : Pmf A) :
+   list_sum [seq f x.2 *nonneg(x.1) | x <- preim_outcomes_of p f r] = r*list_sum [seq (nonneg(x.1)) | x <- p.(outcomes)].
+Proof.
+  unfold preim_outcomes_of. 
+  induction p.(outcomes).
+  - simpl; lra.
+  - simpl. unfold equiv_decb. destruct (equiv_dec (f a.2) r). simpl. rewrite e. rewrite IHl. lra.
+    rewrite IHl.
+Admitted.
+
 Lemma cond_expt_value_indep
 {A : Type} {r : R} {f g : A -> R} {p : Pmf A}(hne : 0 <> 𝕡[preim_outcomes_of p g r]) (Hi : independent p f g) :
-cond_expt_value hne f = r*expt_value p f.
+cond_expt_value hne f = expt_value p f.
 Proof.
   unfold cond_expt_value, expt_value, Pmf_cond; simpl.
   unfold independent in Hi. unfold cond_prob_outcomes.
@@ -799,9 +808,17 @@ Proof.
   specialize (Hi r r).
   rewrite list_fst_sum_compat. unfold list_fst_sum'.
   rewrite list_fst_sum_compat in Hi.   rewrite list_fst_sum_compat in Hi. 
-  rewrite list_fst_sum_compat in Hi. unfold list_fst_sum' in Hi. 
-  unfold preim_outcomes_of_And. 
-  Admitted.
+  rewrite list_fst_sum_compat in Hi. unfold list_fst_sum' in Hi.
+  rewrite list_sum_outcomes_And. rewrite list_fst_sum_compat. unfold list_fst_sum'.
+  rewrite Hi. field_simplify.
+  unfold preim_outcomes_of.  
+  induction p.(outcomes).
+  simpl; lra.
+  simpl.
+  unfold equiv_decb. destruct (equiv_dec (f a.2) r). simpl. rewrite e. rewrite <-IHl.
+  rewrite Rmult_plus_distr_l. reflexivity.
+  rewrite IHl. 
+Admitted.
 
   
          
