@@ -127,6 +127,7 @@ Definition nonneg_list_sum {A : Type} (l : list (nonnegreal * A)) : nonnegreal
   cond_nonneg := (list_sum_is_nonneg l)
 |}.
 
+
 Section Pmf.
   
 (* Defines the record of discrete probability measures on a type. *)
@@ -623,6 +624,7 @@ Qed.
 
 End expected_value. 
 
+
 Section events.
 
 Arguments outcomes {_}.
@@ -636,10 +638,60 @@ Definition preim_outcomes_of {A : Type} (p : Pmf A) (g : A -> R) (r : R) :=
 Definition preim_outcomes_of_And {A : Type} (p : Pmf A) (f g: A -> R) (r1 r2 : R) :=
   filter (fun x => andb (f x.2 ==b r1) (g x.2 ==b r2)) p.(outcomes).
 
+
+Lemma preim_outcomes_of_And_split {A : Type} (p : Pmf A) (f g : A -> R) (r1 r2 : R) :
+  preim_outcomes_of_And p f g r1 r2 = filter (fun x => f x.2 ==b r1) (preim_outcomes_of p g r2).
+Proof.
+  unfold preim_outcomes_of, preim_outcomes_of_And.
+  induction p.(outcomes).
+  - simpl ; reflexivity. 
+  - simpl.  unfold equiv_decb. destruct (equiv_dec (g a.2) r2).
+    unfold equiv_decb. destruct (equiv_dec (f a.2) r1). simpl. rewrite e0.
+    unfold equiv_decb. destruct (equiv_dec r1 r1) ; [| congruence]. 
+    rewrite IHl. reflexivity.
+    simpl. rewrite IHl. unfold equiv_decb.
+    destruct (equiv_dec (f a.2) r1) ; [contradiction|congruence].
+    unfold equiv_decb.
+    destruct (equiv_dec (f a.2) r1). simpl. rewrite IHl. reflexivity.
+    simpl. rewrite IHl. reflexivity.
+Qed.
+
+Lemma list_sum_outcomes_And {A : Type} (f g : A -> R) (r1 r2: R) (p : Pmf A) :
+   list_sum [seq f x.2 *nonneg(x.1) | x <- preim_outcomes_of_And p f g r1 r2] = r1*𝕡[preim_outcomes_of_And p f g r1 r2].
+Proof.
+unfold prob ; simpl.
+rewrite list_fst_sum_compat. unfold list_fst_sum'.
+unfold preim_outcomes_of, preim_outcomes_of_And in *.
+simpl in *.  induction p.(outcomes).
+- simpl ; lra.
+- simpl. unfold equiv_decb. destruct (equiv_dec (f a.2) r1).
+  unfold equiv_decb. destruct (equiv_dec (g a.2) r2). destruct a as [n a0]. simpl.
+  rewrite IHl. simpl in e. rewrite e. rewrite Rmult_plus_distr_l. reflexivity.
+  simpl. rewrite IHl. reflexivity.
+  simpl. rewrite IHl. reflexivity.
+Qed.
+  
+
 Definition independent {A : Type} (p : Pmf A) (f g : A -> R):=
   forall r1 r2 : R, 𝕡[preim_outcomes_of_And p f g r1 r2] = 𝕡[preim_outcomes_of p f r1]*𝕡[preim_outcomes_of p g r2].
-
-
+  
+(*Lemma list_sum_outcomes_mult {A : Type} (f g : A -> R) (r2: R) (p : Pmf A) (Hfg : independent p f g):
+   list_sum [seq f x.2 *nonneg(x.1) | x <- preim_outcomes_of p g r2] = (expt_value p f)*𝕡[preim_outcomes_of p g r2].
+Proof.
+  unfold independent, prob, preim_outcomes_of_And, preim_outcomes_of in Hfg ; simpl in Hfg. 
+  revert Hfg. 
+  induction p.(outcomes).  
+  simpl. intro H. 
+  simpl in *. intro H.
+  specialize (H a.1 r2).
+  unfold equiv_decb. destruct (equiv_dec (g a.2) r2).
+  unfold equiv_decb. destruct (equiv_dec (f a.2) a.1).
+  simpl in *. revert H. rewrite e. rewrite e0.
+  unfold equiv_decb. destruct (equiv_dec r2 r2). destruct a as [an aa]. 
+  simpl. 
+  unfold independent in Hfg. specialize (Hfg an r2).
+Admitted. *)
+   
 Lemma filter_true {A} :  forall p:list A, filter (fun _ => true) p = p.
 Proof.
   induction p.
@@ -722,7 +774,81 @@ Section cond_prob.
  Sets (events) of the underlying space are now defined as preimages of real random variables. For 
  example, to talk of the universal set Ω, we fix a real number r and work with it's preimage under 
  the constant function (fun _ => r). 
-*)
+ *)
+
+Arguments outcomes {_}.
+Lemma list_sum_const_div {A:Type}{n : nonnegreal} (hne : 0 <> nonneg n)
+      (l : seq(nonnegreal*A))(f : A -> R) :
+      list_sum [seq f x.2 * (nonneg(x.1) / nonneg(n)) | x <- l] = list_sum [seq (f x.2 * nonneg (x.1)) | x <- l]/nonneg(n).
+Proof.
+  induction l. 
+  simpl. lra.
+  simpl. rewrite IHl. lra.
+Qed.
+
+
+(* Conditional expectation of f given that g(a) = r. *)
+Definition cond_expt_value{A : Type}{r : R} {g : A -> R}{p : Pmf A} (hne : 0 <> 𝕡[preim_outcomes_of p g r])(f : A -> R)  : R :=
+  let q:= preim_outcomes_of p g r in
+  list_sum [seq f x.2 * nonneg (x.1) | x <- q]/𝕡[preim_outcomes_of p g r].
+
+
+
+
+Lemma list_sum_outcomes_aux {A : Type} (f : A -> R) (r: R) (p : Pmf A) :
+   list_sum [seq f x.2 *nonneg(x.1) | x <- preim_outcomes_of p f r] = r* 𝕡[preim_outcomes_of p f r].
+Proof.
+unfold prob;simpl.
+rewrite list_fst_sum_compat. unfold list_fst_sum'.
+unfold preim_outcomes_of, preim_outcomes_of_And in *.
+simpl in *.  induction p.(outcomes).
+- simpl ; lra.
+- simpl. unfold equiv_decb. destruct (equiv_dec (f a.2) r). simpl. 
+  rewrite IHl. simpl in e. rewrite e. rewrite Rmult_plus_distr_l. reflexivity.
+  simpl. rewrite IHl. reflexivity.
+Qed.
+
+
+Lemma list_sum_preim_outcomes_aux2 {A : Type} {f g : A -> R} (r1 r2: R){p : Pmf A}(Hi : independent p f g):
+    𝕡[preim_outcomes_of_And p f g r1 r2] =
+  list_sum [seq (f x.2)*nonneg(x.1) | x <- preim_outcomes_of p g r2].
+Proof.
+  unfold preim_outcomes_of, preim_outcomes_of_And.
+  unfold independent in Hi. specialize (Hi r1 r2). 
+  revert Hi. 
+  induction p.(outcomes).
+  - simpl; lra.
+  - intro H. specialize (IHl H). simpl. 
+    unfold equiv_decb. destruct (equiv_dec (f a.2) r1).
+    unfold equiv_decb in IHl. destruct (equiv_dec (g a.2) r2). destruct a as [n a0]. simpl.
+    unfold prob in H. simpl in H.
+    rewrite <-IHl. unfold preim_outcomes_of_And,equiv_decb in H. unfold prob. simpl. f_equal.
+    admit.  
+    simpl. unfold prob in IHl ; simpl in IHl. rewrite IHl. reflexivity.
+    destruct (equiv_dec (g a.2) r2). destruct a as [n a0]. simpl.
+    simpl. unfold prob in IHl ; simpl in IHl. rewrite IHl.
+Admitted.
+
+Lemma cond_expt_value_indep
+{A : Type} {r : R} {f g : A -> R} {p : Pmf A}(hne : 0 <> 𝕡[preim_outcomes_of p g r]) (Hi : independent p f g) :
+cond_expt_value hne f = expt_value p f.
+Proof.
+  unfold cond_expt_value, expt_value; simpl.
+  unfold independent in Hi. 
+  unfold prob in *. simpl in *.
+  specialize (Hi r r).
+  rewrite list_fst_sum_compat. unfold list_fst_sum'.
+  rewrite list_fst_sum_compat in Hi.   rewrite list_fst_sum_compat in Hi. 
+  rewrite list_fst_sum_compat in Hi. unfold list_fst_sum' in Hi.
+Admitted.
+
+
+
+
+End cond_prob. 
+
+Section crap.
+
 Arguments outcomes {_}.
 
 (* Assigning the actual probability weights to events. We divide by the total probability that g=r2.*)
@@ -756,84 +882,6 @@ Definition Pmf_cond {A : Type} {p : Pmf A} {r : R} {g : A -> R} (hne : 0 <> 𝕡
   sum1 := cond_prob_sum1 hne
   |}.
 
-(* Conditional expectation of f given that g(a) = r. *)
-Definition cond_expt_value{A : Type}{r : R} {g : A -> R}{p : Pmf A} (hne : 0 <> 𝕡[preim_outcomes_of p g r])(f : A -> R)  : R :=
-  let p:= cond_prob_outcomes hne f r in
-  list_sum [seq f x.2 * nonneg (x.1) | x <- p].
-
-Lemma list_sum_const_div {A:Type}{n : nonnegreal} (hne : 0 <> nonneg n)
-      (l : seq(nonnegreal*A))(f : A -> R) :
-      list_sum [seq f x.2 * (nonneg(x.1) / nonneg(n)) | x <- l] = list_sum [seq (f x.2 * nonneg (x.1)) | x <- l]/nonneg(n).
-Proof.
-  induction l. 
-  simpl. lra.
-  simpl. rewrite IHl. lra.
-Qed.
 
 
-
-Lemma list_sum_outcomes_And {A : Type} {f g : A -> R} (r: R) (p : Pmf A) :
-   list_sum [seq f x.2 *nonneg(x.1) | x <- preim_outcomes_of_And p f g r r] = r*list_fst_sum (preim_outcomes_of_And p f g r r).
-Proof.
-rewrite list_fst_sum_compat. unfold list_fst_sum'.
-unfold preim_outcomes_of, preim_outcomes_of_And in *.
-simpl in *.  induction p.(outcomes).
-- simpl ; lra.
-- simpl. unfold equiv_decb. destruct (equiv_dec (f a.2) r).
-  unfold equiv_decb. destruct (equiv_dec (g a.2) r). destruct a as [n a0]. simpl.
-  rewrite IHl. simpl in e. rewrite e. rewrite Rmult_plus_distr_l. reflexivity.
-  simpl. rewrite IHl. reflexivity.
-  simpl. rewrite IHl. reflexivity.
-Qed.
-
-Lemma list_sum_preim_outcomes {A : Type} {f : A -> R} (r: R) (p : Pmf A) :
-   list_sum [seq f x.2 *nonneg(x.1) | x <- preim_outcomes_of p f r] = r*list_sum [seq (nonneg(x.1)) | x <- p.(outcomes)].
-Proof.
-  unfold preim_outcomes_of. 
-  induction p.(outcomes).
-  - simpl; lra.
-  - simpl. unfold equiv_decb. destruct (equiv_dec (f a.2) r). simpl. rewrite e. rewrite IHl. lra.
-    rewrite IHl.
-Admitted.
-
-Lemma cond_expt_value_indep
-{A : Type} {r : R} {f g : A -> R} {p : Pmf A}(hne : 0 <> 𝕡[preim_outcomes_of p g r]) (Hi : independent p f g) :
-cond_expt_value hne f = expt_value p f.
-Proof.
-  unfold cond_expt_value, expt_value, Pmf_cond; simpl.
-  unfold independent in Hi. unfold cond_prob_outcomes.
-  rewrite <-map_comp. unfold comp; simpl.
-  rewrite (list_sum_const_div hne (preim_outcomes_of_And p f g r r) f).
-  unfold prob in *. simpl in *.
-  specialize (Hi r r).
-  rewrite list_fst_sum_compat. unfold list_fst_sum'.
-  rewrite list_fst_sum_compat in Hi.   rewrite list_fst_sum_compat in Hi. 
-  rewrite list_fst_sum_compat in Hi. unfold list_fst_sum' in Hi.
-  rewrite list_sum_outcomes_And. rewrite list_fst_sum_compat. unfold list_fst_sum'.
-  rewrite Hi. field_simplify.
-  unfold preim_outcomes_of.  
-  induction p.(outcomes).
-  simpl; lra.
-  simpl.
-  unfold equiv_decb. destruct (equiv_dec (f a.2) r). simpl. rewrite e. rewrite <-IHl.
-  rewrite Rmult_plus_distr_l. reflexivity.
-  rewrite IHl. 
-Admitted.
-
-  
-         
-(* Lemma cond_expt_value_const_fun  {A : Type}{r : R} {g : A -> R}{p : Pmf A}(hne : 0 <> nonneg(prob_of p g r)) (f : A -> R)  :
-  cond_expt_value hne f = expt_value p f. 
-Proof.
-  unfold cond_expt_value; unfold expt_value.
-  f_equal. f_equal.
-  induction p.(outcomes). 
-  - simpl ; reflexivity.
-  - simpl. rewrite IHl.
-  unfold equiv_decb. destruct (equiv_dec r r); [ | congruence].
-  reflexivity. 
-Qed. *)
-
-
-
-End cond_prob. 
+End crap.
