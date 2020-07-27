@@ -74,8 +74,27 @@ Arguments outcomes {_}.
 Definition preim_outcomes_of {A : Type} (p : Pmf A) (g : A -> R) (r : R) :=
   filter (fun x => (g x.2 ==b r)) p.(outcomes).
 
+Definition cond_prob {A : Type} (p : Pmf A) (f g : A -> R) (r1 r2 : R) :=
+  𝕡[[seq s <- range (preim_outcomes_of p g r2) f | s.2 ==b r1]].
+
 Definition preim_outcomes_of_And {A : Type} (p : Pmf A) (f g: A -> R) (r1 r2 : R) :=
   filter (fun x => andb (f x.2 ==b r1) (g x.2 ==b r2)) p.(outcomes).
+
+
+Lemma foo {A : Type} (p : Pmf A) (f g: A -> R) (r1 r2 : R) :
+  𝕡[[seq s <- range (preim_outcomes_of p g r2) f | s.2 ==b r1]] = 𝕡[filter (fun x => andb (f x.2 ==b r1) (g x.2 ==b r2)) p.(outcomes)].
+Proof.
+  unfold prob, preim_outcomes_of,range. simpl.
+  repeat (rewrite list_fst_sum_compat ; unfold list_fst_sum').
+  f_equal. rewrite map_comp.  rewrite map_comp. f_equal.
+  induction p.(outcomes).
+  simpl ; reflexivity.
+  simpl. unfold equiv_decb ; destruct (equiv_dec (g a.2) r2) ; [simpl| simpl;rewrite IHl].
+  unfold equiv_decb ; destruct (equiv_dec (f a.2) r1) ; [simpl | rewrite IHl].
+  rewrite IHl.  reflexivity.
+  simpl.  reflexivity.
+  destruct (equiv_dec (f a.2) r1) ; [simpl; reflexivity | simpl ;reflexivity].
+Qed.
 
 Lemma preim_outcomes_of_And_split {A : Type} (p : Pmf A) (f g : A -> R) (r1 r2 : R) :
   preim_outcomes_of_And p f g r1 r2 = filter (fun x => f x.2 ==b r1) (preim_outcomes_of p g r2).
@@ -110,27 +129,29 @@ Qed.
 
     
 Definition independent {A : Type} (p : Pmf A) (f g : A -> R):=
-  forall r1 r2 : R, 𝕡[preim_outcomes_of_And p f g r1 r2] = 𝕡[preim_outcomes_of p f r1]*𝕡[preim_outcomes_of p g r2].
+  forall r : R,
+    list_sum [seq f x.2 * nonneg(x.1) | x <- p & g x.2 ==b r] =
+    list_sum [seq f x.2 * nonneg(x.1) | x <- p.(outcomes)]*list_sum [seq nonneg(x.1) | x<-p.(outcomes) & g x.2 ==b r].
+
 
 Lemma independent_const_fun {A : Type} (p : Pmf A) (g : A -> R) (c : R) : 
   independent p (fun _ => c) g.
 Proof.
   unfold independent.
-  intros r1 r2. 
-  unfold prob,preim_outcomes_of,preim_outcomes_of_And ; simpl.
-  unfold equiv_decb. destruct (equiv_dec c r1).
-  + simpl. 
-    enough (filter (fun _ => true) p = p). 
-    rewrite H. destruct p as [s0 s1]. rewrite s1 ; lra.
-    induction p.(outcomes).
-    - simpl; reflexivity.
-    - simpl. rewrite IHl. reflexivity.
-  + simpl.
-    enough (filter (fun _ => false) p = [::]). 
-    rewrite H. simpl;lra. 
-    induction p.(outcomes).
-    - simpl;reflexivity.
-    - simpl; assumption.
+  intros r. 
+  enough (H :  list_sum [seq c * nonneg(x.1) | x <- p.(outcomes) & g x.2 ==b r] = c* list_sum [seq nonneg(x.1) | x <- p.(outcomes) & g x.2 ==b r]).
+  rewrite H.
+  enough (H1 : forall p:Pmf A, list_sum [seq c * nonneg(x.1) | x <- p] = c*list_sum [seq nonneg(x.1) | x <- p]).
+  rewrite (H1 p). f_equal. destruct p as [p0 sum1]. simpl in *.
+  revert sum1. rewrite list_fst_sum_compat. unfold list_fst_sum'. intro H2. rewrite H2 ;lra.
+  intro p0.
+  induction p0.(outcomes). 
+  simpl ; lra.
+  simpl. simpl in H. rewrite IHl. lra.
+  induction p.(outcomes).
+  simpl ; lra.
+  simpl. unfold equiv_decb ; destruct (equiv_dec (g a.2) r);[ | rewrite IHl;reflexivity].
+  simpl. rewrite IHl. rewrite Rmult_plus_distr_l. reflexivity.
 Qed.
 
 End events.
@@ -162,6 +183,12 @@ Proof.
   apply List.map_ext. intro a. apply Rmult_comm.
 Qed.
 
-Lemma cond_expt_value_and
-      {A : Type}{r : R} {g : A -> R}{p : Pmf A} (hne : 0 <> 𝕡[preim_outcomes_of p g r])(f : A -> R):
-  cond_expt_value hne f = list_sum (map (fun x => x.1 * )).
+
+Lemma cond_expt_value_indep
+{A : Type} {r : R} {f g : A -> R} {p : Pmf A}(hne : 0 <> 𝕡[preim_outcomes_of p g r]) (Hi : independent p f g) :
+  cond_expt_value hne f = expt_value p f.
+Proof.
+  unfold cond_expt_value. unfold independent in Hi. specialize (Hi r).
+  rewrite Hi. unfold prob,preim_outcomes_of. simpl. rewrite list_fst_sum_compat. unfold list_fst_sum'.
+  field_simplify. reflexivity.  intro H. unfold prob in hne. simpl in hne. rewrite list_fst_sum_compat in hne. unfold list_fst_sum' in hne. firstorder.
+Qed.   
