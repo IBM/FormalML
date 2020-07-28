@@ -313,7 +313,6 @@ Global Instance Pmf_MonadLaws : MonadLaws Monad_Pmf := {|
   bind_associativity := @Pmf_bind_of_bind;
 |}.
 
-
 (*Lemma Pmf_bind_comm {A B C : Type} (p : Pmf A) (q : Pmf B) (f : A -> B -> Pmf C) :
   Pmf_bind p (fun a => Pmf_bind q (f a)) = Pmf_bind q (fun b => Pmf_bind p (fun a => f a b)).
 Proof.
