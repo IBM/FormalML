@@ -161,22 +161,25 @@ Proof.
   simpl. rewrite IHl ; lra.
 Qed.
 
-Import ListSet.
+Class Finite (A:Type) : Prop :=
+  finite : exists l : list A, forall x:A, In x l.
 
+
+Definition range' {A : Type} (f : A -> R) :=
+  {r : R | exists a : A, f a = r}.
+
+
+  
 Lemma cond_expt_value_expt_value {A : Type}(p : Pmf A)(f g : A -> R)(hi : independent p f g) :
  forall r, 𝕡[preim_outcomes_of p g r] <> 0 -> cond_expt_value p f g r = expt_value p f.
 Proof.
   intros r Hr.
   unfold cond_expt_value. rewrite (cond_expt_value_expt_value_aux _ hi _ Hr).
-  rewrite expt_value_range_sum. unfold prob. simpl. 
-  unfold preim_outcomes_of. f_equal.
-  apply List.map_ext.
-  intro a. rewrite list_fst_sum_compat; unfold list_fst_sum'.
-  
-Qed.
+  rewrite expt_value_range_sum.
+Admitted.
 
 
-Lemma cond_expt_value_range {A : Type}{r : R} {g : A -> R}{p : Pmf A} (hne : 0 <> 𝕡[preim_outcomes_of p g r])(f : A -> R):
+(*Lemma cond_expt_value_range {A : Type}{r : R} {g : A -> R}{p : Pmf A} (hne : 0 <> 𝕡[preim_outcomes_of p g r])(f : A -> R):
   cond_expt_value p f g r =
   list_sum ([seq nonneg(x.1) * x.2 | x <- range (preim_outcomes_of p g r) f])/𝕡[preim_outcomes_of p g r].
 Proof.
@@ -184,7 +187,7 @@ Proof.
   unfold range.  
   rewrite <-map_comp. unfold comp.  simpl. unfold cond_prob. f_equal.
   apply List.map_ext. intro a. apply Rmult_comm.
-Qed.
+Qed.*)
 
 
   
