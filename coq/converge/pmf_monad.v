@@ -624,6 +624,7 @@ Qed.
 End expected_value. 
 
 
+(*
 Section events.
 
 Arguments outcomes {_}.
@@ -884,3 +885,4 @@ Definition Pmf_cond {A : Type} {p : Pmf A} {r : R} {g : A -> R} (hne : 0 <> 𝕡
 
 
 End crap.
+*)
