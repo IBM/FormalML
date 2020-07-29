@@ -327,28 +327,15 @@ Lemma aux {A : Type} (l l0 : list A) (R : A -> A -> Prop) (sub : forall x, In x 
 Proof.
 Admitted.
 
-      
-Lemma finite_has_max {A:Type} {ne : NonEmpty A} {fin:Finite A} (R:A->A->Prop) `{part: PartialOrder _ eq R} :
-  exists x:A, forall y:A, R y x.
-Proof.
-  destruct fin as [l Hl].
-  unfold PartialOrder, relation_equivalence, predicate_equivalence, relation_conjunction, Basics.flip, predicate_intersection in part ; simpl in part.
-  destruct preo as [prR prT].   
-  induction l. 
-  * simpl in *. exfalso. apply Hl. apply ne. 
-  * simpl in *. 
-    assert (Ha : forall x:A, a <> x -> In x l).
-    intros x Hax. case (Hl x). intros Hax'. exfalso;firstorder. 
-    firstorder.   
-    set (lem (forall x, a = x)).
-    case o. intro Hx. exists a. intro y. specialize (Hx y). rewrite Hx. apply prR. 
-    intro H1. set (Classical_Pred_Type.not_all_ex_not _ _ H1). 
-    destruct e as [b Hb] ; clear H1;clear o.
-    apply IHl. intro x. apply Ha. intro Hax. apply H1. 
-    set (lem (R b a)).  apply Ha. case o0. 
-    intro Hab. contradiction.
-    intro Hrab. intro Hax.
-    specialize (part a x). rewrite part in Hax. 
+  * simpl in *. tauto.
+  * simpl in *.
+    unfold PartialOrder, relation_equivalence, predicate_equivalence, relation_conjunction, Basics.flip, predicate_intersection in part. simpl in part.
+    case (Hl a). 
+    set (lem_for_the_win (forall y : A, R y a)).
+    case o. intros H. exists a. assumption. 
+    intros H. set (Classical_Pred_Type.not_all_ex_not _ _ H). 
+    destruct e as [a0 Ha0].
+>>>>>>> Stashed changes
 Admitted.
 
 Section order.

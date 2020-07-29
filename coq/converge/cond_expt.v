@@ -6,7 +6,10 @@ From mathcomp Require Import ssreflect ssrfun seq.
 Set Bullet Behavior "Strict Subproofs".
 
 
-Open Scope R_scope. 
+Import ListNotations.
+Local Open Scope list_scope.
+Open Scope R_scope.
+
 
 Instance EqDecR : EqDec R eq := Req_EM_T. 
 
@@ -39,9 +42,86 @@ Proof.
 Qed.
 
 
-
 End aux.
 
+Section quotient.
+
+  Require Import Permutation.
+
+  Context {A} {R} {equiv:Equivalence R} {dec:EqDec A R}.
+
+  Fixpoint add_to_bucket (x:A) (ll:list (list A)) : list (list A)
+    := match ll with
+       | [] => [[x]]
+       | nil::ll' =>
+         add_to_bucket x ll'
+       | (y::l)::ll' =>
+         match x == y with
+         | left _ => (x::y::l)::ll'
+         | right_ => (y::l)::(add_to_bucket x ll')
+         end
+       end.
+
+  Fixpoint quotient (l:list A) : list (list A)
+    := match l with
+       | nil => nil
+       | x::l' =>
+         let q' := quotient l' in
+         add_to_bucket x q'
+       end.
+
+  Lemma add_to_bucket_perm a l :
+    Permutation (concat (add_to_bucket a l)) (a::concat l).
+  Proof.
+    induction l; simpl; trivial.
+    destruct a0.
+    - simpl; trivial.
+    - match_destr.
+      simpl.
+      rewrite IHl.
+      rewrite perm_swap.
+      apply perm_skip.
+      now rewrite Permutation_middle; simpl.
+  Qed.
+
+  Lemma unquotient_quotient l : Permutation (concat (quotient l)) l.
+  Proof.
+    induction l; simpl; trivial.
+    rewrite add_to_bucket_perm.
+    rewrite IHl.
+    reflexivity.
+  Qed.
+
+  Corollary quotient_in x l : In x l -> exists l', In l' (quotient l) /\ In x l'.
+  Proof.
+    intros.
+    apply concat_In.
+    now rewrite unquotient_quotient.
+  Qed.
+
+  Corollary in_quotient x l l' : In l' (quotient l) /\ In x l' -> In x l.
+  Proof.
+  Admitted.
+
+  Lemma quotient_buckets_correct l l' : In l' (quotient l) -> forall x y, In x l' -> In y l' -> R x y.
+  Admitted.
+
+  Lemma quotient_buckets_disjoint l ll1 l2 ll3 l4 ll5  :
+    quotient l = ll1 ++ l2 :: ll3 ++ l4 :: ll5 ->
+    forall x y, In x l2 /\ In y l4 -> ~ R x y.
+  Admitted.
+
+  Lemma quotient_pairs l : ForallOrdPairs (fun l1 l2 => forall x y, In x l1 -> In y l2 -> ~ R x y) (quotient l).
+  Admitted.
+
+Lemma quotient_buckets_disjoint_ l ll1 ll2 :
+    quotient l = ll1 ++ ll2 ->
+    forall l1 l2 x y, In l1 ll1 /\ In l2 ll2 ->
+                 In x l1 /\ In y l2 -> ~ R x y.
+  Admitted.
+
+
+End quotient.
 
 
 
