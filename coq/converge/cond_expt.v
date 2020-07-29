@@ -132,22 +132,95 @@ Section quotient.
       + constructor; trivial.
   Qed.
 
+  Hint Resolve is_partition_nil : ml.
+  Hint Resolve add_to_bucket_partition : ml.
+  
   Lemma quotient_partitions l : is_partition (quotient l).
   Proof.
-    Hint Resolve is_partition_nil : ml.
-    Hint Resolve add_to_bucket_partition : ml.
-
     induction l; simpl; auto with ml.
   Qed.
+
+  Hint Resolve quotient_partitions : ml.
   
+  Definition different_buckets l1 l2 := forall x y, In x l1 -> In y l2 -> ~ R x y.
+
+  Definition all_different l := ForallOrdPairs different_buckets l.
+
+  Lemma all_different_nil : all_different nil.
+  Proof.
+    constructor.
+  Qed.
+
+  Lemma add_to_buckets_in_one {x a l} :
+    In x (add_to_bucket a l) -> In a x \/ In x l.
+  Proof.
+    induction l; simpl; intros inn.
+    - destruct inn as [inn|inn]; [ | intuition].
+      invcs inn; simpl; intuition.
+    - match_destr_in inn.
+      + intuition.
+      + match_destr_in inn
+        ; simpl in inn.
+        * destruct inn as [inn|inn].
+          -- invcs inn.
+             simpl; eauto.
+          -- eauto.
+        * intuition.
+  Qed.
+
+  Lemma add_to_bucket_all_different a l :
+    is_partition l ->
+    all_different l ->
+    all_different (add_to_bucket a l).
+  Proof.
+    unfold all_different.
+    induction l; simpl.
+    - repeat constructor.
+    - intros isp ordp; invcs isp; invcs ordp.
+      specialize (IHl H2 H4).
+      match_destr.
+      match_destr.
+      + constructor; trivial.
+        revert H3.
+        apply Forall_impl; intros.
+        red in e.
+        unfold different_buckets in *; simpl in *.
+        intuition; subst; eauto 3.
+        * eapply H; eauto.
+          now rewrite <- e.
+      + constructor; trivial.
+        rewrite Forall_forall; intros.
+        generalize (add_to_bucket_partition a l H2); intros.
+        red in H0.
+        eapply Forall_forall in H0; eauto.
+        repeat red in H0.
+        destruct (add_to_buckets_in_one H).
+        * red; simpl; intros.
+          rewrite (H0 _ _ H7 H5).
+          destruct H6.
+          -- subst.
+             intuition.
+          -- repeat red in H1.
+             rewrite (H1 x0 a0); simpl; intuition.
+        * eapply Forall_forall in H3; eauto.
+  Qed.
+  
+  Hint Resolve all_different_nil : ml.
+  Hint Resolve add_to_bucket_all_different : ml.
+                     
+  Lemma quotient_all_different l : all_different (quotient l).
+  Proof.
+    induction l; simpl; auto with ml.
+  Qed.
+
+  Hint Resolve quotient_all_different : ml.
+
 
   Lemma quotient_buckets_disjoint l ll1 l2 ll3 l4 ll5  :
     quotient l = ll1 ++ l2 :: ll3 ++ l4 :: ll5 ->
     forall x y, In x l2 /\ In y l4 -> ~ R x y.
   Admitted.
 
-  Lemma quotient_pairs l : ForallOrdPairs (fun l1 l2 => forall x y, In x l1 -> In y l2 -> ~ R x y) (quotient l).
-  Admitted.
 
 Lemma quotient_buckets_disjoint_ l ll1 ll2 :
     quotient l = ll1 ++ ll2 ->
