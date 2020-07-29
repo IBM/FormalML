@@ -103,8 +103,43 @@ Section quotient.
   Proof.
   Admitted.
 
-  Lemma quotient_buckets_correct l l' : In l' (quotient l) -> forall x y, In x l' -> In y l' -> R x y.
-  Admitted.
+  Definition is_equiv_class (l:list A) := ForallPairs R l.
+
+  Definition is_partition (l:list (list A)) := Forall (is_equiv_class) l.
+
+
+  Lemma is_partition_nil : is_partition nil.
+  Proof.
+    now red.
+  Qed.
+  
+  Lemma add_to_bucket_partition a l : is_partition l -> is_partition (add_to_bucket a l).
+  Proof.
+    unfold is_partition, is_equiv_class, is_equiv_class, ForallPairs.
+    induction l; simpl; intros isp.
+    - (repeat constructor; simpl); intros; intuition. subst. reflexivity.
+    - invcs isp.
+      specialize (IHl H2).
+      match_destr.
+      match_destr.
+      + constructor; trivial; intros.
+        simpl in *.
+        intuition; subst; trivial.
+        * reflexivity.
+        * rewrite e; auto.
+        * rewrite <- e; reflexivity.
+        * rewrite e; auto.
+      + constructor; trivial.
+  Qed.
+
+  Lemma quotient_partitions l : is_partition (quotient l).
+  Proof.
+    Hint Resolve is_partition_nil : ml.
+    Hint Resolve add_to_bucket_partition : ml.
+
+    induction l; simpl; auto with ml.
+  Qed.
+  
 
   Lemma quotient_buckets_disjoint l ll1 l2 ll3 l4 ll5  :
     quotient l = ll1 ++ l2 :: ll3 ++ l4 :: ll5 ->
