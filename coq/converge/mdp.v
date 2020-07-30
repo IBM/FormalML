@@ -298,7 +298,7 @@ Proof.
 Qed.
 
 End ltv.
-
+(*
 Class NonEmpty (A : Type) :=
   ex : A.
     
@@ -337,7 +337,7 @@ Admitted.
     destruct e as [a0 Ha0].
 >>>>>>> Stashed changes
 Admitted.
-
+*)
 Section order.
   
 Open Scope R_scope. 
