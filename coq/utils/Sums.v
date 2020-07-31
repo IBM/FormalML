@@ -1,3 +1,4 @@
+Local Set Warnings "ambiguous-path, typechecker".
 Require Import Coquelicot.Coquelicot.
 Set Bullet Behavior "Strict Subproofs".
 

@@ -1,3 +1,4 @@
+Local Set Warnings "ambiguous-path, typechecker".
 Require Import Reals Coq.Lists.List Coquelicot.Series Coquelicot.Hierarchy Coquelicot.SF_seq.
 Require Import pmf_monad mdp Permutation fixed_point Finite LibUtils. 
 Require Import Sums Coq.Reals.ROrderedType.

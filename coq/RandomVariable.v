@@ -3,13 +3,15 @@ Require Import Reals.
 Require Import Lra Lia.
 Require Import List Permutation.
 Require Import Morphisms EquivDec Program.
-Require Import Coquelicot.Rbar.
-Require Import Coquelicot.Lub.
-Require Import Coquelicot.Lim_seq.
+Local Set Warnings "ambiguous-path, typechecker".
+Require Import Coquelicot.Rbar Coquelicot.Lub Coquelicot.Lim_seq.
 
 Require Import Utils.
 Require Import NumberIso.
 Require Import ProbSpace SigmaAlgebras BorelSigmaAlgebra.
+Require Import Classical_Prop.
+Require Import Classical.
+
 Import ListNotations.
 
 Set Bullet Behavior "Strict Subproofs".
@@ -563,7 +565,6 @@ Section SimpleExpectation.
     - now apply (sa_singleton Prts).
   Qed.
 
-  Require Import Classical_Prop.
     Lemma zero_prob_or_witness (E : event Ts) :
       ps_P E <> 0 -> exists (x:Ts), E x.
     Proof.
@@ -3413,8 +3414,6 @@ Section Expectation.
     apply scale_Rbar_diff.
   Qed.
   
-  Require Import Classical.
-
   Lemma lub_Rbar_witness (E : R -> Prop) (l : Rbar) (b:R):
     is_lub_Rbar E l -> Rbar_lt b l ->
     exists (x:R), E x /\ x > b.

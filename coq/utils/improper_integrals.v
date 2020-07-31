@@ -1,6 +1,9 @@
 (* from improper_integrals coq library *)
 From mathcomp Require Import ssreflect.
-Require Import Reals Coquelicot.Coquelicot Lra.
+Require Import Reals.
+Local Set Warnings "ambiguous-path, typechecker".
+Require Import Coquelicot.Coquelicot.
+Require Import Lra.
 
 Lemma ball_Rabs x y e : ball x e y <-> Rabs (y - x) < e.
 Proof. intros; tauto. Qed.

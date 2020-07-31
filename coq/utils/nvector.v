@@ -110,7 +110,7 @@ Definition build_matrix {T} {n m:nat}
 Definition transpose {T} {m n : nat} (mat:matrix T m n) : matrix T n m
   := build_matrix (fun i j => mnth mat j i).
 
-Fixpoint ConstMatrix {T} (n m : nat) (c:T) : matrix T n m := 
+Definition ConstMatrix {T} (n m : nat) (c:T) : matrix T n m := 
   ConstVector n (ConstVector m c).
 
 Definition matrixo_to_omatrix {T} {m n} (v:matrix (option T) m n) : option (matrix T m n)
@@ -232,10 +232,8 @@ Instance BigArray_TensorDef : TensorDef
     }.
 *)
 
-Section float_ops.
-
 Require Import Floatish.
-
+Section float_ops.
   Context {floatish_impl:floatish}.
   Local Open Scope float.
 

@@ -4,6 +4,7 @@ Require Import Ranalysis_reg.
 Require Import Reals.Integration.
 Require Import Rtrigo_def.
 Require Import SeqProp.
+Local Set Warnings "ambiguous-path, typechecker".
 Require Import Coquelicot.Coquelicot.
 
 Require Import Lra Lia.

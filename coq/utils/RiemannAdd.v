@@ -8,7 +8,6 @@ Require Import Sorted.
 
 Require Import Lra Lia.
 Require Import LibUtils Sums ListAdd RealAdd.
-Require Import Isomorphism.
 
 Local Open Scope R_scope.
 Implicit Type f : R -> R.
@@ -290,15 +289,15 @@ Qed.
 Lemma orderedPartition (a b : R) (n:nat)  :
   (n>0)%nat ->
   a <= b ->
-  let rpl := iso_b (Partition a b n) in
+  let rpl := (Partition a b n) in
            pos_Rl rpl 0 = a /\
-           pos_Rl rpl (pred (Rlength rpl)) = b /\
+           pos_Rl rpl (pred (length rpl)) = b /\
            ordered_Rlist rpl.
 Proof.
   intros.
-  unfold rpl.
-  autorewrite with R_iso.
+  unfold rpl; simpl.
   rewrite Partition_length.
+  autorewrite with R_iso in *.
   repeat rewrite Partition_nth by lia.
   split; [| split].
   - destruct n.
@@ -349,9 +348,9 @@ Lemma part2step (f:R -> R) (a b:R) (n : nat) :
 Proof.
   intros.
   unfold IsStepFun.
-  exists (iso_b (Partition a b n)).
+  exists (Partition a b n).
   unfold is_subdivision.
-  exists (iso_b (map f (tl (Partition a b n)))).
+  exists (map f (tl (Partition a b n))).
   unfold adapted_couple.
   destruct (orderedPartition a b n) as [? [??]]; trivial; try lra.
   repeat split; trivial.
@@ -450,9 +449,9 @@ Lemma part2step_psi (f:R -> R) (a b:R) (n : nat) :
 Proof.
   intros.
   unfold IsStepFun.
-  exists (iso_b (Partition a b n)).
+  exists (Partition a b n).
   unfold is_subdivision.
-  exists (iso_b (list_map_diffs f (Partition a b n))).
+  exists (list_map_diffs f (Partition a b n)).
   unfold adapted_couple.
   destruct (orderedPartition a b n) as [? [??]]; trivial; try lra.
   repeat split; trivial.
@@ -505,9 +504,8 @@ Proof.
   destruct (Rle_dec a b); [ | tauto].
   unfold subdivision_val, subdivision.
   simpl.
-  rewrite Int_SF'_eq.
-  rewrite Int_SF'_alt_eq.
-  unfold Int_SF'_alt.
+  rewrite Int_SF_alt_eq.
+  unfold Int_SF_alt.
   unfold list_map_diffs.
   rewrite combine_map.
   rewrite adjacent_pairs_map.

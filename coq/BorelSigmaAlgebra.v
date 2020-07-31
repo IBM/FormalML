@@ -5,6 +5,7 @@ Require Import Utils.
 Require Import NumberIso.
 Require Import Equivalence.
 Require Import Program.
+Require Import QArith.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -220,7 +221,6 @@ Qed.
       now apply sa_le_ge.
   Qed.
 
-  Require Import QArith.
 
   Definition Q_interval (l r : Q) (x:R) : Prop :=
     Qreals.Q2R l < x < Qreals.Q2R r.

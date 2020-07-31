@@ -1,4 +1,5 @@
 Require Import Reals Sums Lra Lia.
+Local Set Warnings "ambiguous-path, typechecker".
 Require Import Coquelicot.Coquelicot.
 Require Import LibUtils.
 Require Import ProbSpace SigmaAlgebras BorelSigmaAlgebra RandomVariable.
