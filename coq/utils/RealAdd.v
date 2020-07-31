@@ -13,8 +13,6 @@ Require Import EquivDec.
 Require Import LibUtils ListAdd.
 Require Import Relation_Definitions Sorted.
 
-Require Import Isomorphism.
-
 Set Bullet Behavior "Strict Subproofs".
 
 Import ListNotations.
@@ -61,19 +59,13 @@ Proof.
   apply Rdiv_lt_0_compat; lra.
 Qed.
 
-Lemma pos_Rl_nth (l:list R) n : pos_Rl (iso_b l) n = nth n l 0.
+Lemma pos_Rl_nth (l:list R) n : pos_Rl l n = nth n l 0.
 Proof.
   revert n.
   induction l; destruct n; simpl in *; trivial.
 Qed.
 
-Lemma Rlength_length (l:list R) : Rlength (iso_b l) = length l.
-Proof.
-  induction l; simpl in *; trivial.
-  rewrite IHl; trivial.
-Qed.
-
-Hint Rewrite pos_Rl_nth Rlength_length : R_iso.
+Hint Rewrite pos_Rl_nth  : R_iso.
 
 Lemma Rlt_le_sub : subrelation Rlt Rle.
 Proof.
@@ -226,37 +218,16 @@ Proof.
   trivial.
 Qed.
 
-Fixpoint Int_SF' (l k : list R) {struct l} : R :=
-  match l with
-  | nil => 0
-  | a::l' =>
-    match k with
-    | nil => 0
-    | x::nil => 0
-    | x::y::k' => a * (y - x) + Int_SF' l' (y:: k')
-    end
-  end.
-
-Lemma Int_SF'_eq l k : Int_SF (iso_b l) (iso_b k) = Int_SF' l k.
-Proof.
-  revert k.
-  induction l; simpl; trivial.
-  destruct k; simpl; trivial.
-  destruct k; simpl; trivial.
-  rewrite <- IHl.
-  trivial.
-Qed.
-
-Definition Int_SF'_alt l k
+Definition Int_SF_alt l k
   := fold_right Rplus 0
                 (map (fun '(x,y) => x * y)
                      (combine l
                               (map (fun '(x,y) => y - x) (adjacent_pairs k)))).
 
-Lemma Int_SF'_alt_eq l k :
-  Int_SF' l k = Int_SF'_alt l k.
+Lemma Int_SF_alt_eq l k :
+  Int_SF l k = Int_SF_alt l k.
 Proof.
-  unfold Int_SF'_alt.
+  unfold Int_SF_alt.
   revert k.
   induction l; simpl; trivial.
   destruct k; simpl; trivial.

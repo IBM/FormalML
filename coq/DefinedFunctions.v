@@ -1,3 +1,4 @@
+Require Import Program.
 Require Import String.
 Require Import EquivDec.
 Require Import RelationClasses.
@@ -11,9 +12,11 @@ Require Import Eqdep_dec.
 Require Import Floatish.
 Require Import Utils.
 Require Import derivlemmas.
+
 Import ListNotations.
 
 Local Open Scope list_scope.
+Declare Scope df_scope.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -21,8 +24,6 @@ Section DefinedFunctions.
 
   Context {floatish_impl:floatish}.
   Local Open Scope float.
-
-(* Declare Scope df_scope. *)
 
 (* in pytorch relu(f)' if f <=0 then 0 else f' *)
 (* in pytorch abs(f)' = f'*sign(f) *)
@@ -3260,7 +3261,7 @@ F (d : definition_function_types)
      induction df; firstorder.
    Qed.
 
-   Hint Resolve is_scalar_function_has_scalar_functions.
+   Hint Resolve is_scalar_function_has_scalar_functions : fml.
 
  Definition DefinedFunction_ind_unit_has_scalar_functions
               (P : forall (d : definition_function_types), DefinedFunction UnitAnn d -> Prop)
@@ -3555,7 +3556,6 @@ F (d : definition_function_types)
          | MLossfun m n _ v1 v2 s l r => MLossfun tt v1 v2 (df_strip_annotations s) (df_strip_annotations l) r
          end.        
 
-      Require Import Program.
 
       Lemma df_strip_annotations_id {T} (df:DefinedFunction UnitAnn T) : df_strip_annotations df = df.
       Proof.
@@ -12898,7 +12898,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                                             (fun i : {n' : nat | n' < n} =>
                                                vector_fold_right_bounded_dep (fun _ : nat => Datatypes.cons) [] (transpose mat i) bound_m pf_m) bound_n pf_n)).
       Proof.
-        Hint Constructors Permutation.
+        Hint Constructors Permutation : fml.
         revert bound_n pf_n.
         induction bound_m; intros; simpl.
         - induction bound_n; simpl; trivial.

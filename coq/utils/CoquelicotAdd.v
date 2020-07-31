@@ -1,4 +1,6 @@
+Local Set Warnings "notation-overridden,parsing".
 Require Import mathcomp.ssreflect.ssreflect mathcomp.ssreflect.ssrbool mathcomp.ssreflect.eqtype mathcomp.ssreflect.seq.
+Local Set Warnings "ambiguous-path, typechecker".
 Require Import Coquelicot.Coquelicot.
 Require Import Reals.Rbase.
 Require Import Reals.Rfunctions.

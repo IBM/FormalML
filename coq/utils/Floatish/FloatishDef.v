@@ -1,5 +1,7 @@
 Require Import BinInt.
 
+Declare Scope float.
+
 Class floatish : Type :=
   {
     float : Type
