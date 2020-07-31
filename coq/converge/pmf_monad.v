@@ -1,7 +1,7 @@
 Require Import Reals Coquelicot.Coquelicot Coquelicot.Series.
 Require Import ProofIrrelevance EquivDec.
 Require Import Sums Utils.
-Require Import micromega.Lra.
+Require Import Lia Lra.
 Require Import Coq.Logic.FunctionalExtensionality.
 From mathcomp Require Import ssreflect ssrfun seq.
 Require Import ExtLib.Structures.Monad ExtLib.Structures.MonadLaws. 
@@ -181,11 +181,12 @@ Lemma list_fst_sum_const_mult {A B : Type} (f : A -> Pmf B) (n : nonnegreal) (a 
 Proof.
   destruct (f a) as [fa Hfa]. simpl. revert Hfa.
   generalize R1 as t. induction fa. 
-  * firstorder.
+  * simpl; intros.
+    auto with real.
   *
     simpl in *. destruct a0. intros t Htn0.
     rewrite (IHfa (t - n0)).
-    specialize (IHfa (t-n0)). firstorder.
+    specialize (IHfa (t-n0)). simpl. auto with real.
     rewrite <- Htn0. lra.
 Qed.
 
@@ -456,9 +457,9 @@ Proof.
     destruct H as [N1 HN1].
     exists (N0 + N1)%nat. intros n Hn.
     specialize (HN0 n).
-    specialize (HN1 n). 
-    assert (Hn0 : (n >= N0)%nat) by firstorder.
-    assert (Hn1 : (n >= N1)%nat) by firstorder. 
+    specialize (HN1 n).
+    assert (Hn0 : (n >= N0)%nat) by lia.
+    assert (Hn1 : (n >= N1)%nat) by lia.
     specialize (HN1 Hn1). specialize (HN0 Hn0).
     clear Hn0 ; clear Hn1.
     revert HN0. revert HN1. 

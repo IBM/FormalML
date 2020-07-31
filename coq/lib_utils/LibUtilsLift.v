@@ -28,10 +28,10 @@ Section Lift.
 
   Definition lift {A B:Type} (f:A->B) : (option A -> option B) 
     := fun a => 
-         match a with
-         | None => None 
-         | Some a' => Some (f a')
-         end.
+        match a with
+        | None => None 
+        | Some a' => Some (f a')
+        end.
 
   Definition olift {A B} (f:A -> option B) (x:option A) : option B :=
     match x with
@@ -238,32 +238,32 @@ Section Lift.
 
   Definition liftP {A:Type} (P:A->Prop) (xo:option A) : Prop
     := match xo with
-       | Some x => P x
-       | None => True
-       end.
+      | Some x => P x
+      | None => True
+      end.
 
   Definition lift2P {A B:Type} (P:A->B->Prop) (xo:option A) (yo:option B) : Prop
     := match xo, yo with
-       | Some x, Some y => P x y
-       | None, None => True
-       | _ , _ => False
-       end.
+      | Some x, Some y => P x y
+      | None, None => True
+      | _ , _ => False
+      end.
 
   (* Right Biased lift2P: if A is None, that is fine. *)
   Definition lift2Pl {A B:Type} (P:A->B->Prop) (xo:option A) (yo:option B) : Prop
     := match xo, yo with
-       | Some x, Some y => P x y
-       | None, _ => True
-       | _ , _ => False
-       end.
+      | Some x, Some y => P x y
+      | None, _ => True
+      | _ , _ => False
+      end.
 
   (* Right Biased lift2P: if B is None, that is fine. *)
   Definition lift2Pr {A B:Type} (P:A->B->Prop) (xo:option A) (yo:option B) : Prop
     := match xo, yo with
-       | Some x, Some y => P x y
-       | _, None => True
-       | _ , _ => False
-       end.
+      | Some x, Some y => P x y
+      | _, None => True
+      | _ , _ => False
+      end.
 
   Global Instance lift2P_refl {A:Type} R {refl:@Reflexive A R} : Reflexive (lift2P R).
   Proof.
@@ -294,8 +294,8 @@ Section Lift.
   (* lazy lifting *)
   Definition mk_lazy_lift {A B:Type} {dec:EqDec A eq} (f:B->A->A->B) b a1 a2
     := if a1 == a2
-       then b
-       else f b a1 a2.
+      then b
+      else f b a1 a2.
 
   Lemma mk_lazy_lift_id {A B:Type} {dec:EqDec A eq} (f:B->A->A->B) b a :
     mk_lazy_lift f b a a = b.
@@ -347,27 +347,44 @@ Hint Rewrite @olift2_somes : alg.
 
 Ltac case_option 
   := match goal with
-       [|- context [match ?x with
-                    | Some _ => _
-                    | None => _
-                    end]] => case_eq x
-     end.
+      [|- context [match ?x with
+                  | Some _ => _
+                  | None => _
+                  end]] => case_eq x
+    end.
 
 Ltac case_lift 
   := match goal with
-       [|- context [lift _ ?x]] => case_eq x
-     end.
+      [|- context [lift _ ?x]] => case_eq x
+    end.
 
 Ltac case_option_in H
   := match type of H with
-       context [match ?x with
-                | Some _ => _
-                | None => _
-                end] => let HH:=(fresh "eqs") in case_eq x; [intros ? HH|intros HH]; try rewrite HH in H
-     end.
+      context [match ?x with
+               | Some _ => _
+               | None => _
+               end] => let HH:=(fresh "eqs") in case_eq x; [intros ? HH|intros HH]; try rewrite HH in H
+    end.
 
 Ltac case_lift_in H
   := match type of H with
-       context [lift _ ?x] => let HH:=(fresh "eqs") in case_eq x; [intros ? HH|intros HH]; try rewrite HH in H
-     end.
+      context [lift _ ?x] => let HH:=(fresh "eqs") in case_eq x; [intros ? HH|intros HH]; try rewrite HH in H
+    end.
 
+Lemma match_eq_lemma :
+  forall A B  (l1: option  A) (l2:option  A) f (z:B),
+    l1 = l2 ->
+    match l1 with
+    | Some x => f x
+    | None => z
+    end
+    =
+    match l2 with
+    | Some x => f x
+    | None => z
+    end.
+Proof.
+  do 3 intro.
+  intuition.
+  subst;apply eq_refl.
+Qed.

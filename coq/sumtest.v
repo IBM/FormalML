@@ -6,7 +6,7 @@ Require Import Rtrigo_def.
 Require Import SeqProp.
 Require Import Coquelicot.Coquelicot.
 
-Require Import Lra Omega.
+Require Import Lra Lia.
 Require Import Utils.
 
 Set Bullet Behavior "Strict Subproofs".
@@ -96,8 +96,8 @@ Proof.
     specialize (IHn pr2).
     cut_to IHn.
     + unfold sum_f in *.
-      replace ((S (n + 1) - 1)%nat) with ((S n)%nat) by omega.
-      replace ((n + 1 - 1)%nat) with (n%nat) in IHn by omega.
+      replace ((S (n + 1) - 1)%nat) with ((S n)%nat) by lia.
+      replace ((n + 1 - 1)%nat) with (n%nat) in IHn by lia.
       simpl.
       assert (eqn:match n with
                   | 0%nat => 1
@@ -190,8 +190,8 @@ Proof.
     specialize (IHn pr2).
     cut_to IHn.
     + unfold sum_f in *.
-      replace ( (S (S (S n)) - 2))%nat with ((S n)%nat) by omega.
-      replace ((2 + n - 2)%nat) with (n%nat) in IHn by omega.
+      replace ( (S (S (S n)) - 2))%nat with ((S n)%nat) by lia.
+      replace ((2 + n - 2)%nat) with (n%nat) in IHn by lia.
       simpl.
       assert (eqn:match (n + 2)%nat with
                   | 0%nat => 1

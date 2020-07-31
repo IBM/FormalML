@@ -1836,7 +1836,7 @@ Proof.
        repeat red in Hx. repeat red.
        unfold Rmax_norm in *. 
        destruct (is_nil_dec ls).
-       --- rewrite e ; simpl. apply Rmult_lt_0_compat; [firstorder |trivial].
+       --- rewrite e ; simpl. apply Rmult_lt_0_compat; [lra |trivial].
        ---
          assert (h1 :  Max_{ ls}(fun s => Rabs (minus (bellman_op π g s) (bellman_op π f s))) =  γ*Max_{ ls}(fun s => Rabs (expt_value (t s (π s)) (fun s => g s - f s)))).
        {
@@ -1849,7 +1849,7 @@ Proof.
          rewrite expt_value_sub. ring.
        }
        rewrite h1.
-       apply Rmult_lt_compat_l ; [firstorder|].
+       apply Rmult_lt_compat_l ; [lra|].
        rewrite Rmax_list_lt_iff ; [| rewrite map_not_nil ; congruence].
        intros r0 Hin. rewrite in_map_iff in Hin.
        destruct Hin as [a0 [Ha0 Hina0]].
@@ -2010,7 +2010,7 @@ Proof.
            apply Rmax_list_fun_le. intro a. apply expt_value_Rabs_Rle.
            }
            eapply Rle_lt_trans; first apply h3. clear h3.
-           apply Rmult_lt_compat_l ; [firstorder|]. (* Have to use γ <> 0 here.*)
+           apply Rmult_lt_compat_l ; [lra|]. (* Have to use γ <> 0 here.*)
            destruct (is_nil_dec (la)) ;[ rewrite e ; simpl ; assumption |]. 
            rewrite Rmax_list_lt_iff ; [| rewrite map_not_nil ; congruence].
            intros r0 Hin. rewrite in_map_iff in Hin.

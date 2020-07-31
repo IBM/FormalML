@@ -24,8 +24,8 @@ Lemma filter_Rlt_m_infty_at_left b :
   filter_Rlt (Rbar_locally m_infty) (at_left b).
 Proof.
 apply (filter_Rlt_witness (b - 1)).
-  now exists (b - 1); intros x cmpx; apply Rlt_gt.
-exists pos_half; intros x yb _.
+now exists (b - 1); intros x cmpx; apply Rlt_gt.
+exists posreal_half; intros x yb _.
 enough (b - x  < 1) by lra.
 apply Rle_lt_trans with (abs (minus b x)).
   now apply Rle_abs.
@@ -39,7 +39,7 @@ Lemma filter_Rlt_at_right_p_infty b :
   filter_Rlt (at_right b) (Rbar_locally p_infty).
 Proof.
 apply (filter_Rlt_witness (b + 1)).
-  exists pos_half; intros y yb _.
+  exists posreal_half; intros y yb _.
   enough (y - b < 1) by lra.
   apply Rle_lt_trans with (abs (minus y b)).
     now apply Rle_abs.
@@ -124,8 +124,8 @@ Qed.
 Lemma filter_Rlt_left_right  a b : a <= b ->
   filter_Rlt (at_left a) (at_right b).
 intros ab; apply (filter_Rlt_witness a).
-  now exists pos_half; intros y _; apply Rgt_lt.
-now exists pos_half; intros y _ yb ; apply Rle_lt_trans with b.
+  now exists posreal_half; intros y _; apply Rgt_lt.
+now exists posreal_half; intros y _ yb ; apply Rle_lt_trans with b.
 Qed.
 
 Lemma filter_Rlt_trans a F G {FF : Filter F} {GG : Filter G} :

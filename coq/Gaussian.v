@@ -2,7 +2,7 @@
 Require Import Reals Coquelicot.Coquelicot.
 Require Import Streams.
 
-Require Import Lra Omega.
+Require Import Lra Lia.
 
 Require Import Utils.
 

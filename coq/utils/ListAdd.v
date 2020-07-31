@@ -1,6 +1,6 @@
 Require Import List Permutation EquivDec.
 Require Import RelationClasses Morphisms.
-Require Import Omega Lia Lra Rbase.
+Require Import Lia Lra Rbase.
 Require Import Relation_Definitions Sorted.
 
 Require Import LibUtils BasicUtils.
@@ -113,12 +113,12 @@ Section Seq.
     induction n; simpl.
     - erewrite map_ext.
       + erewrite map_id; trivial.
-      + intros; omega.
+      + intros; unfold id; lia.
     - rewrite <- seq_shift.
       rewrite IHn.
       rewrite map_map.
       apply map_ext; intros.
-      omega.
+      lia.
   Qed.
 
   Lemma list_as_nthseq_start {A:Type} (l:list A) (d:A) (c:nat) : l = map (fun n => nth (n-c) l d) (seq c%nat (length l)).
@@ -127,7 +127,7 @@ Section Seq.
     rewrite <- seq_shift.
     rewrite map_map.
     simpl.
-    replace (c-c)%nat with 0%nat by omega.
+    replace (c-c)%nat with 0%nat by lia.
     rewrite IHl.
     f_equal.
     rewrite map_length.
@@ -136,24 +136,24 @@ Section Seq.
     apply in_seq in inn.
     rewrite <- IHl.
     destruct c.
-    - f_equal; omega.
-    - assert (x-c > 0)%nat by omega.
-      replace (x - S c)%nat with ((x - c) - 1)%nat by omega.
+    - f_equal; lia.
+    - assert (x-c > 0)%nat by lia.
+      replace (x - S c)%nat with ((x - c) - 1)%nat by lia.
       destruct (x-c)%nat.
-      + omega.
-      + f_equal; omega.
+      + lia.
+      + f_equal; lia.
   Qed.
   
   Lemma list_as_nthseq {A:Type} (l:list A) (d:A) : l = map (fun n => nth n l d) (seq 0%nat (length l)).
   Proof.
     rewrite (list_as_nthseq_start l d 0) at 1.
     apply map_ext; intros.
-    f_equal; omega.
+    f_equal; lia.
   Qed.
 
   Lemma seq_Sn s n : seq s (S n) = seq s n ++ [(s+n)]%nat.
   Proof.
-    replace (S n) with (n + 1)%nat by omega.
+    replace (S n) with (n + 1)%nat by lia.
     rewrite seq_plus.
     simpl; trivial.
   Qed.
@@ -230,10 +230,10 @@ Proof.
   revert idx.
   induction l; simpl; trivial; intros idx inn.
   destruct l.
-  - destruct idx; simpl in *; omega.
+  - destruct idx; simpl in *; lia.
   - simpl in *.
     destruct idx; trivial.
-    rewrite IHl by omega.
+    rewrite IHl by lia.
     trivial.
 Qed.
 
@@ -264,7 +264,7 @@ Proof.
   simpl in eqq.
   rewrite app_length in eqq.
   simpl in eqq.
-  omega.
+  lia.
 Qed.
 
 Lemma last_app {A} (l1 l2:list A) d : l2 <> nil -> last (l1 ++ l2) d = last l2 d.
@@ -294,11 +294,11 @@ Lemma seq_last s n d :
 Proof.
   intros.
   destruct n.
-  - simpl; omega.
+  - simpl; lia.
   - rewrite seq_Sn.
     rewrite last_app by congruence.
     simpl.
-    omega.
+    lia.
 Qed.
 
 Lemma last_map {A B} (f:A->B) (l:list A) d : last (map f l) (f d) = f (last l d).
@@ -313,10 +313,10 @@ Lemma map_nth_in {A B} (f:A->B) l d1 n d2 :
 Proof.
   revert n.
   induction l; simpl.
-  - destruct n; omega.
+  - destruct n; lia.
   - destruct n; trivial.
     intros; eauto.
-    rewrite IHl; trivial; omega.
+    rewrite IHl; trivial; lia.
 Qed.
 
 Lemma map_nth_in_exists {A B} (f:A->B) l d1 n :
@@ -326,12 +326,12 @@ Lemma map_nth_in_exists {A B} (f:A->B) l d1 n :
 Proof.
   revert n.
   induction l; simpl.
-  - destruct n; omega.
+  - destruct n; lia.
   - destruct n; trivial.
     + intros; eauto.
     + intros.
       destruct (IHl n).
-      * omega.
+      * lia.
       * rewrite H0.
         eauto.
 Qed.
@@ -342,11 +342,11 @@ Lemma nth_in_default {A} (l:list A) d1 d2 n :
 Proof.
   revert n.
   induction l; simpl.
-  - destruct n; omega.
+  - destruct n; lia.
   - destruct n; trivial.
     + intros; eauto.
       rewrite (IHl n); trivial.
-      omega.
+      lia.
 Qed.
 
 Lemma Forall_app_iff {A} {P:A->Prop} {l1 l2} :
@@ -459,8 +459,8 @@ Lemma StronglySorted_nth_lt {A} R (l:list A) idx1 idx2 d1 d2 :
 Proof.
   intros.
   destruct (@nth_split _ idx1 l d1)
-    as [l1 [l2 [leqq l1len]]]
-  ; [ omega | ].
+           as [l1 [l2 [leqq l1len]]]
+  ; [ lia | ].
   rewrite leqq in H.
   apply StronglySorted_app_inv in H.
   destruct H as [ _ ssl2].
@@ -474,12 +474,12 @@ Proof.
   intros a Fa.
   rewrite Forall_forall in Fa.
   apply Fa.
-  rewrite app_nth2 by omega.
+  rewrite app_nth2 by lia.
   simpl.
-  case_eq (idx2 - length l1); try omega.
+  case_eq (idx2 - length l1); try lia.
   intros.
   apply nth_In.
-  omega.
+  lia.
 Qed.
 
 Lemma StronglySorted_nth_le {A} R (l:list A) idx1 idx2 d1 d2 :
@@ -494,7 +494,7 @@ Proof.
   - erewrite nth_in_default; try apply refl.
     trivial.
   - apply StronglySorted_nth_lt; trivial.
-    omega.
+    lia.
 Qed.
 
 Section bucket.
@@ -581,17 +581,17 @@ Section bucket.
     find_bucket needle l = Some (nth idx l d1, nth (S idx) l d2).
   Proof.
     intros trans antisymm ss idx_bound.
-    assert (idx_bound':idx < length l) by omega.
+    assert (idx_bound':idx < length l) by lia.
     destruct (nth_split l d1 idx_bound') as [l1 [l2 [eqq leneq]]].
     revert eqq.
     generalize (nth idx l d1); intros a1.
     intros eqq r1 r2 nr1.
     subst.
-    rewrite app_nth2 in * by omega.
-    replace ((S (length l1) - length l1)) with 1 in * by omega.
+    rewrite app_nth2 in * by lia.
+    replace ((S (length l1) - length l1)) with 1 in * by lia.
     rewrite app_length in idx_bound.
     simpl in *.
-    destruct l2; simpl in *; [ omega | ].
+    destruct l2; simpl in *; [ lia | ].
     apply middle_find_bucket; trivial.
     replace (l1 ++ a1 :: a :: l2) with ((l1 ++ a1::nil) ++ (a :: l2)) in ss.
     - apply StronglySorted_app_inv in ss.
@@ -684,7 +684,7 @@ Proof.
   - constructor; trivial.
     rewrite Forall_forall; intros.
     apply in_seq in H.
-    omega.
+    lia.
 Qed.
 
 Lemma length_S_tl {A : Type} (l : list A) :
@@ -713,29 +713,29 @@ Qed.
 
 Section combining.
 
-  Lemma combine_nth_in {A B : Type} (l : list A) (l' : list B) (n : nat) (x : A) (y : B) :
-    n < min (length l) (length l') ->
-    nth n (combine l l') (x, y) = (nth n l x, nth n l' y).
-  Proof.
-    revert l' n.
-    induction l; simpl; intros l' n nlt.
-    - omega.
-    - destruct l'; simpl in *.
-      + omega.
-      + destruct n; simpl; trivial.
-        apply IHl.
-        omega.
-  Qed.
+Lemma combine_nth_in {A B : Type} (l : list A) (l' : list B) (n : nat) (x : A) (y : B) :
+  n < min (length l) (length l') ->
+  nth n (combine l l') (x, y) = (nth n l x, nth n l' y).
+Proof.
+  revert l' n.
+  induction l; simpl; intros l' n nlt.
+  - lia.
+  - destruct l'; simpl in *.
+    + lia.
+    + destruct n; simpl; trivial.
+      apply IHl.
+      lia.
+Qed.
 
-  Lemma combine_map {A B C D:Type} (f:A->C) (g:B->D) (l1:list A) (l2:list B) :
-    combine (map f l1) (map g l2) = map (fun '(x,y) => (f x, g y)) (combine l1 l2).
-  Proof.
-    revert l2.
-    induction l1; intros l2; simpl; trivial.
-    destruct l2; simpl; trivial.
-    f_equal.
-    auto.
-  Qed.
+Lemma combine_map {A B C D:Type} (f:A->C) (g:B->D) (l1:list A) (l2:list B) :
+  combine (map f l1) (map g l2) = map (fun '(x,y) => (f x, g y)) (combine l1 l2).
+Proof.
+  revert l2.
+  induction l1; intros l2; simpl; trivial.
+  destruct l2; simpl; trivial.
+  f_equal.
+  auto.
+Qed.
 
   Lemma combine_self {A:Type} (l:list A) :
     combine l l = map (fun x => (x,x)) l.
@@ -876,7 +876,7 @@ Proof.
   rewrite combine_length.
   rewrite tl_length.
   rewrite Nat.min_r; trivial.
-  omega.
+  lia.
 Qed.
 
 Lemma adjacent_pairs_nth_in {A:Type} n (l:list A) d1 d2 :
@@ -888,7 +888,7 @@ Proof.
   rewrite combine_nth_in.
   - rewrite nth_tl; trivial.
   - rewrite tl_length.
-    rewrite Nat.min_r; omega.
+    rewrite Nat.min_r; lia.
 Qed.
 
 Lemma adjacent_pairs_map {A B:Type} (f:A->B) (l:list A) :

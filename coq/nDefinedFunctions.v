@@ -4,7 +4,7 @@ Require Import RelationClasses.
 Require Import List.
 Require Import Permutation.
 Require Import NPeano.
-Require Import Lra Omega.
+Require Import Lra Lia.
 Require Reals.
 Require Import Eqdep_dec.
 
@@ -7455,9 +7455,9 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        revert n v i.
        destruct i.
        induction n; [ | destruct n].
-       - omega.
+       - lia.
        - repeat rewrite vector_fold_right1_dep_1.
-         destruct x; [ | omega]; simpl.
+         destruct x; [ | lia]; simpl.
          field_simplify.
          now erewrite index_pf_irrel.
        - repeat rewrite vector_fold_right1_dep_SSn.
@@ -7477,11 +7477,11 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
              intros [??].
              destruct (equiv_dec x (S n)).
              -- destruct e.
-                omega.
+                lia.
              -- lra.
          + ring_simplify.
            unfold equiv, complement in c.
-           assert (pf:x < S n) by omega.
+           assert (pf:x < S n) by lia.
            specialize (IHn (vdrop_last v) pf).
            simpl in IHn.
            erewrite index_pf_irrel.
@@ -12012,7 +12012,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
       destruct (lt_dec x (S bound))
       ; destruct (lt_dec x bound)
       ; destruct (Nat.eq_dec x bound)
-      ; try omega; try lra.
+      ; try lia; try lra.
     Qed.
 
     Lemma mergeVectorSzero {n} (bound:nat) (pf:bound < n) (part1 : Vector R n):
@@ -12029,7 +12029,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
       destruct (lt_dec x (S bound))
       ; destruct (lt_dec x bound)
       ; destruct (Nat.eq_dec x bound)
-      ; try omega; try lra.
+      ; try lia; try lra.
       subst; simpl.
       ring_simplify.
       erewrite index_pf_irrel; eauto.
@@ -12049,7 +12049,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
       ; destruct (lt_dec x bound)
       ; destruct (Nat.eq_dec x bound)
       ; simpl
-      ; try omega; try lra.
+      ; try lia; try lra.
       subst; simpl.
       rewrite Rplus_0_l.
       erewrite index_pf_irrel; eauto.
@@ -12104,8 +12104,8 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         + unfold scalarMult, mergeVectorZero.
           apply functional_extensionality; intros; simpl.
           lra.
-      - assert (pf2:bound < n) by omega.
-        assert (pf3:bound <= n) by omega.
+      - assert (pf2:bound < n) by lia.
+        assert (pf3:bound <= n) by lia.
         rewrite (mergeVectorSzero _ pf2 _ ).
         erewrite backprop_grad_sum; try eassumption.
         specialize (IHbound pf3).
@@ -12113,7 +12113,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         rewrite fa.
         simpl.
         f_equal.
-        destruct n; [omega | ].
+        destruct n; [lia | ].
         generalize (vector_Sn_split (vfirstn d (S bound) pf)); intros eqq1.
         apply vec_eq_eq in eqq1.
         simpl in *.
@@ -12143,9 +12143,9 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
       - erewrite df_eval_backprop_delta_by_unit_partvec_bounded; try eassumption.
         now rewrite vfirstn_eq.
       - apply functional_extensionality; unfold mergeVectorZero; intros [x pff]; simpl.
-        destruct (lt_dec x n); trivial; omega.
+        destruct (lt_dec x n); trivial; lia.
         Unshelve.
-        omega.
+        lia.
     Qed.
 
     Lemma df_eval_backprop_delta_by_unit_parts {n} 
@@ -12167,9 +12167,9 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
       - erewrite df_eval_backprop_delta_by_unit_partvec_bounded; try eassumption.
         now rewrite vfirstn_eq.
       - apply functional_extensionality; unfold mergeVectorZero, ConstVector; intros [x pff]; simpl.
-        destruct (lt_dec x n); trivial; omega.
+        destruct (lt_dec x n); trivial; lia.
         Unshelve.
-        omega.
+        lia.
     Qed.
 
     Lemma scalarMult_mult {T} a b grad : scalarMult T a (scalarMult T b grad) = scalarMult T (a*b)%R grad.
@@ -12239,8 +12239,8 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         + unfold scalarMult, ConstVector, mergeVectorZero.
           do 2 (apply functional_extensionality; intros); simpl.
           lra.
-      - assert (pf2:bound < n) by omega.
-        assert (pf3:bound <= n) by omega.
+      - assert (pf2:bound < n) by lia.
+        assert (pf3:bound <= n) by lia.
         simpl.
         generalize (mergeVectorSzero_mat (m:=m) _ pf2 grad ); intros HH; unfold Vector in HH.
         simpl float in *.
@@ -12289,8 +12289,8 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         + unfold scalarMult, ConstVector, mergeVectorZero, scaleUnitVector.
           do 2 (apply functional_extensionality; intros); simpl.
           match_destr; lra.
-      - assert (pf2:bound < m) by omega.
-        assert (pf3:bound <= m) by omega.
+      - assert (pf2:bound < m) by lia.
+        assert (pf3:bound <= m) by lia.
         simpl.
         generalize (mergeVectorSzero _ pf2 (grad i) ); intros HH; unfold Vector in HH.
         simpl float in *.
@@ -12342,7 +12342,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
           2: {
             unfold mergeVectorZero; simpl; apply functional_extensionality; intros; destruct x.
             simpl.
-            match_destr; omega.
+            match_destr; lia.
           }
 
           erewrite (df_eval_backprop_delta_by_unit_partmat_inner_bounded m (le_refl m) σ df s grad_env)
@@ -12356,9 +12356,9 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
             unfold scaleUnitVector, ConstVector, UnitMatrix; simpl.
             repeat match_destr; lra.
       - apply functional_extensionality; unfold mergeVectorZero; intros [x pff]; simpl.
-        destruct (lt_dec x n); trivial; omega.
+        destruct (lt_dec x n); trivial; lia.
         Unshelve.
-        omega.
+        lia.
     Qed.
 
     Lemma df_eval_backprop_delta_by_unit_parts_mat {n m} 
@@ -12513,7 +12513,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
     Proof.
       simpl; intros.
       unfold bounded_seq0.
-      destruct (bounded_seq_break_at 0 n i0) as [b [c [eqq1 [fa1 fa2]]]]; [omega |].
+      destruct (bounded_seq_break_at 0 n i0) as [b [c [eqq1 [fa1 fa2]]]]; [lia |].
       rewrite eqq1.
       rewrite list_env_iter_app; simpl.
       match_option.
@@ -12534,7 +12534,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
             cut_to H4; trivial.
             rewrite Forall_forall in fa1.
             specialize (fa1 i H5).
-            intro eq1; rewrite eq1 in fa1; omega.
+            intro eq1; rewrite eq1 in fa1; lia.
         + generalize (vartlookup_list_env_iter s f b); intros vart.
           * specialize (vart init_env d eqq).
             assert (vartinit: vartlookup init_env (s, DTfloat) <> None) by congruence.
@@ -12593,7 +12593,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                assert (i <> i0).
                ++ rewrite Forall_forall in fa2.
                   specialize (fa2 i H4).
-                  intro eq1; rewrite eq1 in fa2; omega.
+                  intro eq1; rewrite eq1 in fa2; lia.
                ++ now apply H0.
         - generalize (list_env_iter_total_fun f init_env b); intros.
           cut_to H1; trivial.

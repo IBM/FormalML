@@ -1,7 +1,7 @@
 (*
- * Copyright 2015-2016 IBM Corporation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
+* Copyright 2015-2016 IBM Corporation
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -23,7 +23,7 @@ Require Import Permutation.
 Require Import Arith Min.
 Require Import EquivDec.
 Require Import Morphisms.
-Require Import Omega.
+Require Import Lia.
 Require Import LibUtilsCoqLibAdd.
 Require Import LibUtilsListAdd.
 Require Import LibUtilsStringAdd.
@@ -68,9 +68,9 @@ Section Fresh.
     induction bound; simpl; intros.
     - discriminate.
     - match_destr_in H.
-      + inversion H; subst; omega.
+      + inversion H; subst; lia.
       + specialize (IHbound (S init) _ H).
-        omega.
+        lia.
   Qed.
 
   Lemma find_bounded_S_seq f bound init :

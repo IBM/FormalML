@@ -6,7 +6,7 @@ Require Import Rtrigo_def.
 Require Import List Permutation.
 Require Import Sorted.
 
-Require Import Lra Omega.
+Require Import Lra Lia.
 Require Import LibUtils Sums ListAdd RealAdd.
 Require Import Isomorphism.
 
@@ -37,9 +37,9 @@ Proof.
   unfold Partition.
   destruct (map_nth_in_exists (fun i : nat => a + INR i * ((b - a) / INR n)) (seq 0 (n + 1)) d nn).
   + rewrite seq_length.
-    omega.
+    lia.
   + rewrite H0.
-    rewrite seq_nth by omega.
+    rewrite seq_nth by lia.
     simpl.
     lra.
 Qed.
@@ -48,7 +48,7 @@ Lemma Partition_length a b n : length (Partition a b n) = S n.
 Proof.
   unfold Partition.
   rewrite map_length, seq_length.
-  omega.
+  lia.
 Qed.
 
 Lemma Partition_last a b n d :
@@ -72,9 +72,9 @@ Proof.
   intros.
   generalize (@app_removelast_last _ l d2); intros.
   destruct l; simpl; simpl in *.
-  - omega.
+  - lia.
   - destruct l; simpl in *.
-    + omega.
+    + lia.
     + intuition congruence.
 Qed.  
   
@@ -96,9 +96,9 @@ Proof.
     rewrite removelast_map, tl_map.
     rewrite removelast_seq, tl_seq.
     repeat f_equal.
-    omega.
+    lia.
   - rewrite Partition_length.
-    omega.
+    lia.
 Qed.
 
 Lemma Partition_func_shift_nonneg a b n i:
@@ -115,7 +115,7 @@ Proof.
         apply Rmult_lt_0_compat; trivial.
         + apply Rmult_lt_0_compat; trivial.
           * apply INR_zero_lt.
-            omega.
+            lia.
           * lra.
         + apply Rinv_pos.
           apply INR_zero_lt; trivial.
@@ -205,7 +205,7 @@ Proof.
   - repeat red; intros; eauto.
   - apply Partition_StronglySorted_le; trivial.
   - rewrite Partition_length.
-    omega.
+    lia.
 Qed.
 
 Lemma Partition_lower_bound a b n idx :
@@ -218,7 +218,7 @@ Proof.
   erewrite <- (Partition_hd a b n 0) at 1.
   rewrite <- nth_hd.
   apply Partition_nth_le; trivial.
-  omega.
+  lia.
 Qed.
 
 Lemma Partition_upper_bound a b n idx :
@@ -228,7 +228,7 @@ Lemma Partition_upper_bound a b n idx :
   nth idx (Partition a b n) 0 <= b.
 Proof.
   intros H1 H2 H3.
-  erewrite <- (Partition_last a b n 0) at 2 by omega.
+  erewrite <- (Partition_last a b n 0) at 2 by lia.
   rewrite <- nth_last.
   rewrite Partition_length.
   simpl.
@@ -254,10 +254,10 @@ Proof.
   unfold Partition.
   repeat rewrite removelast_map, tl_map.
   rewrite removelast_seq, tl_seq.
-  replace ((n + 1 - 1)%nat) with n by omega.
+  replace ((n + 1 - 1)%nat) with n by lia.
 
   (* B *)
-  destruct n ; [ omega | ].
+  destruct n ; [ lia | ].
   replace (seq 0 (S n)) with (0%nat :: seq 1 n) by reflexivity.
   rewrite seq_Sn.
   match goal with
@@ -299,10 +299,10 @@ Proof.
   unfold rpl.
   autorewrite with R_iso.
   rewrite Partition_length.
-  repeat rewrite Partition_nth by omega.
+  repeat rewrite Partition_nth by lia.
   split; [| split].
   - destruct n.
-    + omega.
+    + lia.
     + rewrite S_INR; simpl; lra.
   - simpl.
     field_simplify; [lra | ].
@@ -310,7 +310,7 @@ Proof.
   - intros i ilt.
     autorewrite with R_iso in *.
     rewrite Partition_length in ilt.
-    repeat rewrite Partition_nth by omega.
+    repeat rewrite Partition_nth by lia.
     rewrite S_INR.
     apply Rplus_le_compat_l.
     apply Rmult_le_compat_r.
@@ -331,7 +331,7 @@ Proof.
   apply find_bucket_nth_finds_Rle; trivial.
   - eapply Partition_StronglySorted_le; trivial.
   - rewrite Partition_length.
-    omega.
+    lia.
   - tauto.
   - tauto.
 Qed.
@@ -370,8 +370,8 @@ Proof.
     erewrite map_nth_in with (d2:=0). 
     + rewrite nth_tl; trivial.
     + rewrite tl_length, Partition_length.
-      omega.
-    + omega.
+      lia.
+    + lia.
     + destruct openx.
       split; eauto; lra.
 Qed.
@@ -387,9 +387,9 @@ Proof.
   intros.
   apply bounded_increasing_dist_le; trivial.
   apply (subinterval_increasing f a b); trivial.
-  - apply Partition_lower_bound; trivial; omega.
-  - apply Partition_nth_le; trivial; omega.
-  - apply Partition_upper_bound; trivial; omega.
+  - apply Partition_lower_bound; trivial; lia.
+  - apply Partition_nth_le; trivial; lia.
+  - apply Partition_upper_bound; trivial; lia.
 Qed.
 
 
@@ -404,9 +404,9 @@ Proof.
   intros.
   apply bounded_decreasing_dist_le; trivial.
   apply (subinterval_decreasing f a b); trivial.
-  - apply Partition_lower_bound; trivial; omega.
-  - apply Partition_nth_le; trivial; omega.
-  - apply Partition_upper_bound; trivial; omega.
+  - apply Partition_lower_bound; trivial; lia.
+  - apply Partition_nth_le; trivial; lia.
+  - apply Partition_upper_bound; trivial; lia.
 Qed.
 
 Definition find_pt_le_psi f a b n needle : R
@@ -432,11 +432,11 @@ Proof.
   unfold list_map_diffs; simpl.
   erewrite map_nth_in.
   - rewrite adjacent_pairs_nth_in.
-    + repeat erewrite map_nth_in by omega.
+    + repeat erewrite map_nth_in by lia.
       reflexivity.
     + rewrite map_length; trivial.
   - rewrite adjacent_pairs_length, map_length.
-    omega.
+    lia.
 
     Unshelve.
     exact d1.
@@ -473,7 +473,7 @@ Proof.
     erewrite list_map_diff_nth_in.
     + reflexivity.
     + rewrite Partition_length.
-      omega.
+      lia.
     + trivial.
     + destruct H4; split; intros; eauto.
       left; eauto.
@@ -489,10 +489,10 @@ Proof.
   rewrite adjacent_pairs_map.
   rewrite adjacent_pairs_seq.
   rewrite map_map.
-  replace (n+1)%nat with (S n) by omega.
+  replace (n+1)%nat with (S n) by lia.
   simpl pred.
   apply map_ext; intros.
-  replace (a0+1)%nat with (S a0) by omega.
+  replace (a0+1)%nat with (S a0) by lia.
   trivial.
 Qed.
 
@@ -540,7 +540,7 @@ Proof.
       * apply INR_nzero; trivial.
   - intros.
     f_equal.
-    replace (a0 + 1)%nat with (S a0) by omega.
+    replace (a0 + 1)%nat with (S a0) by lia.
     rewrite S_INR.
     field_simplify; trivial
     ; try apply INR_nzero; trivial.
@@ -590,7 +590,7 @@ Qed.
 
 Lemma natp1gz (n : nat) : (n+1 > 0)%nat.
 Proof.
-  omega.
+  lia.
 Qed.
 
 Lemma INR_up_over_cancel r (epsilon:posreal) :

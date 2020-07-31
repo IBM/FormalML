@@ -52,21 +52,23 @@ Section SortingAdd.
          | a::xs => insertion_sort_insert a (insertion_sort xs)
          end.
 
+    Hint Constructors LocallySorted : fml.
+
     Lemma insertion_sort_insert_Sorted a (l:list A) :
       Sorted R l -> Sorted R (insertion_sort_insert a l).
     Proof.
-      Hint Constructors LocallySorted : list.
       repeat rewrite Sorted_LocallySorted_iff.
       induction l; inversion 1; subst; simpl in *;
         repeat match goal with
                | [|- context [R_dec ?x ?y]] => destruct (R_dec x y)
-               end; eauto with list.
+               end; eauto with fml.
     Qed.
+
+    Hint Resolve insertion_sort_insert_Sorted : fml.
 
     Lemma insertion_sort_Sorted (l:list A) : Sorted R (insertion_sort l).
     Proof.
-      Hint Resolve insertion_sort_insert_Sorted : list.
-      induction l; simpl; eauto with list.
+      induction l; simpl; eauto with fml.
     Qed.
 
     Fixpoint is_list_sorted (l:list A) :=
@@ -295,7 +297,8 @@ Section SortingAdd.
       intuition.
     Qed.
 
-    Hint Resolve asymmetric_over_cons_inv : list.
+    Hint Resolve asymmetric_over_cons_inv : fml.
+    
     Lemma insertion_sort_insert_in_strong {A R R_dec} {x l a} 
           (contr:asymmetric_over R (a::l)) :
       a = x \/ In x l -> In x (@insertion_sort_insert A R R_dec a l).
@@ -306,9 +309,9 @@ Section SortingAdd.
       revert H0.
       case_eq (R_dec a a0); simpl; intros; intuition; subst; intuition.
       - right; apply (IHl x x); intuition.
-        apply asymmetric_over_swap in contr. eauto with list. 
+        apply asymmetric_over_swap in contr. eauto with fml. 
       - right. apply (IHl x a0); intuition.
-        apply asymmetric_over_swap in contr. eauto with list.
+        apply asymmetric_over_swap in contr. eauto with fml.
     Qed.
 
     Lemma insertion_sort_insert_in {A R R_dec} {x l a}
@@ -332,7 +335,7 @@ Section SortingAdd.
       - intuition.
     Qed.
 
-    Hint Resolve asymmetric_asymmetric_over : list.
+    Hint Resolve asymmetric_asymmetric_over : fml.
 
     Lemma insertion_sort_in {A R R_dec} {x l}
           (contr:forall x y,  ~R x y -> ~R y x -> x = y) :
@@ -578,5 +581,6 @@ Section SortingAdd.
             - destruct (dec a1 a); invcs eqq; try tauto.
           } 
   Qed.
+
 End SortingAdd.
 

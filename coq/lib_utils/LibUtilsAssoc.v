@@ -142,9 +142,11 @@ Section Assoc.
       destruct (dec x a); subst; intuition.
     Qed.
 
+    Hint Constructors NoDup : fml.
+    
     Lemma NoDup_domain_NoDup {l} : NoDup (domain l) -> NoDup l.
     Proof.
-      induction l; simpl; intros; [ constructor | ].
+      induction l; simpl; intros; trivial with fml.
       inversion H; subst.
       constructor; auto.
       intro ina; apply H2.
@@ -247,16 +249,17 @@ Section Assoc.
     Qed.
 
     (* TODO: this should just replace in_lookup *)      
+    Hint Resolve in_dom_lookup_strong in_dom : fml.
     Lemma in_lookup_strong :  forall {l} {a:A} {b0:B}, In (a,b0) l -> {v | lookup l a = Some v}.
     Proof.
-      Hint Resolve in_dom_lookup_strong in_dom : list.
-      intros. eauto with list.
+      intros. eauto with fml.
     Qed.
+
+    Hint Resolve in_dom_lookup in_dom : fml.
 
     Lemma in_lookup :  forall {l} {a:A} {b0:B}, In (a,b0) l -> exists v, lookup l a = Some v.
     Proof.
-      Hint Resolve in_dom_lookup in_dom : list.
-      intros. eauto with list.
+      intros. eauto with fml.
     Qed.
 
     Lemma in_lookup_nodup : forall {l} {a:A} {b:B}, NoDup (domain l) -> In (a,b) l -> lookup l a = Some b.
@@ -659,6 +662,15 @@ Section Assoc.
     apply map_ext; trivial.
   Qed.
 
+  Lemma lookup_map_codomain_unfolded {A B C:Type} dec (f:B->C) (l:list (A*B)) v :
+    lookup dec (map (fun b => (fst b, f (snd b))) l) v = lift f (lookup dec l v).
+  Proof.
+    generalize (lookup_map_codomain dec f l).
+    intros.
+    unfold map_codomain in H.
+    auto.
+  Qed.
+
   Lemma domain_map_codomain {A B C} (f:B->C) (l:list (A*B)) :
     domain (map_codomain f l) = domain l.
   Proof.
@@ -667,7 +679,6 @@ Section Assoc.
     rewrite map_eta_fst_domain; trivial.
   Qed.
 
-  
   Lemma cut_down_to_incl_to
         {A B} {dec:EqDec A eq}
         (l:list (A*B)) l2 :
@@ -1017,12 +1028,12 @@ Section Assoc.
       inversion H; subst; auto.
   Qed.
 
-  Hint Resolve NoDup_app_inv : list.
+  Hint Resolve NoDup_app_inv : fml.
 
   Lemma NoDup_app_inv2 {A:Type} {a b:list A} : NoDup (a++b) -> NoDup b.
   Proof.
     rewrite Permutation_app_comm.
-    eauto with list.
+    eauto with fml.
   Qed.
 
   Lemma domain_length  {A B:Type} (l:list (A*B)) :
@@ -1074,11 +1085,13 @@ Section Assoc.
           dl' else x::dl'
       end.
 
+    Hint Constructors NoDup : fml.
+
     Lemma bdistinct_domain_NoDup {A B} {dec:EqDec A eq} (l:list (A*B)) :
       NoDup (domain (bdistinct_domain l)).
     Proof.
       induction l; simpl.
-      - constructor.
+      - eauto with fml.
       - case_eq (existsb (fun z : A * B => fst a ==b fst z) (bdistinct_domain l)).
         + trivial.
         + intros; constructor; trivial.

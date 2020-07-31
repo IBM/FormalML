@@ -1,5 +1,5 @@
-Require Import BinNums Nat List.
-Require Import Omega.
+Require Import BinNums Nat List BinInt.
+Require Import Lia.
 
 Require Import LibUtils Isomorphism.
 Import ListNotations.
@@ -275,7 +275,7 @@ Proof.
     rewrite IHn.
     trivial.
   - f_equal.
-    omega.
+    lia.
 Qed.
   
 Lemma fixup_trailing_zeros_app_repeat x d : fixup_trailing_zeros (x ++ repeat bin_digit0 d) = fixup_trailing_zeros x.
@@ -360,7 +360,7 @@ Proof.
   induction l1; destruct l2; simpl in *; trivial.
   - auto.
   - rewrite IHl1.
-    omega.
+    lia.
 Qed.
 
 Fixpoint uninterleave {A:Type} (l : list A) : (list A*list A)
@@ -391,7 +391,7 @@ Qed.
 Program Fixpoint EvenList_ind {A:Type} (P:list A->Prop)
     (pfnil:P nil)
     (pfconscons:forall a b l, P l -> P (a::b::l)) l {struct l} :
-  Nat.Even (length l) -> P l
+  PeanoNat.Nat.Even (length l) -> P l
   := fun pfl =>
        match l with
        | nil => pfnil
@@ -402,20 +402,20 @@ Next Obligation.
   destruct pfl as [n npf].
   simpl in npf.
   exists (n-1).
-  destruct n; simpl; [omega | ].
-  destruct n; simpl; [omega | ].
+  destruct n; simpl; [lia | ].
+  destruct n; simpl; [lia | ].
   simpl in npf.
   inversion npf.
-  omega.
+  lia.
 Qed.
 Next Obligation.
   destruct (wildcard'0); simpl in *.
-  - destruct pfl as [? ?]; omega.
+  - destruct pfl as [? ?]; lia.
   - elim (H _ _ _ (eq_refl _)).
 Qed.
 
 Lemma uninterleave_odd_skip {A:Type} (l:list A) a :
-  Nat.Even (length l) ->
+  PeanoNat.Nat.Even (length l) ->
   (uninterleave (l ++ [a])) = uninterleave l.
 Proof.
   intros pfeven.
@@ -432,7 +432,7 @@ Proof.
 Qed.
 
 Lemma uninterleave_even_end {A:Type} (l:list A) a b :
-  Nat.Even (length l) ->
+  PeanoNat.Nat.Even (length l) ->
   (uninterleave (l ++ [a;b])) = (fst (uninterleave l) ++ [a], snd (uninterleave l) ++ [b]).
 Proof.
   intros pfeven.
@@ -449,7 +449,7 @@ Proof.
 Qed.
 
 Lemma interleave_uninterleave {A:Type} (l:list A) :
-  Nat.Even (length l) ->
+  PeanoNat.Nat.Even (length l) ->
   (interleave (fst (uninterleave l)) (snd (uninterleave l))) = l.
 Proof.
   revert l.
@@ -469,7 +469,7 @@ Proof.
   unfold interleave_with_end_padding.
   intros.
   f_equal.
-  replace (length l2 - length l1) with 0 by omega.
+  replace (length l2 - length l1) with 0 by lia.
   simpl.
   rewrite <- app_nil_end; trivial.
 Qed.
@@ -481,7 +481,7 @@ Proof.
   unfold interleave_with_end_padding.
   intros.
   f_equal.
-  replace (length l1 - length l2) with 0 by omega.
+  replace (length l1 - length l2) with 0 by lia.
   simpl.
   rewrite <- app_nil_end; trivial.
 Qed.
@@ -493,8 +493,8 @@ Proof.
   intros.
   unfold interleave_with_end_padding.
   intros.
-  replace (length l1 - length l2) with 0 by omega.
-  replace (length l2 - length l1) with 0 by omega.
+  replace (length l1 - length l2) with 0 by lia.
+  replace (length l2 - length l1) with 0 by lia.
   simpl.
   repeat rewrite <- app_nil_end; trivial.
 Qed.
@@ -517,7 +517,7 @@ Definition decode_pair_to_digits (xy:N) : (list BinaryDigit)*(list BinaryDigit)
        decode_digits_pair digits'.
 
 Definition decode_pair (xy:N) : N*N
-  := if N.eq_dec xy 0 then (0,0)%N else
+  := if BinNat.N.eq_dec xy BinNat.N.zero then (BinNat.N.zero,BinNat.N.zero)%N else
        let xypair := decode_pair_to_digits xy in
        (digits_to_N (fst xypair), digits_to_N (snd xypair)).
 
@@ -622,7 +622,7 @@ Proof.
 Qed.
 
 
-Lemma N_to_digits0 n : Forall (eq bin_digit0) (N_to_digits n) <-> n = 0%N.
+Lemma N_to_digits0 n : Forall (eq bin_digit0) (N_to_digits n) <-> n = BinNat.N.zero.
 Proof.
   rewrite Forall_forall.
   destruct n; simpl; [tauto | ].
@@ -637,8 +637,8 @@ Proof.
 Qed.
 
 Lemma digits_to_N_fixup_encode_0 n1 n2 :
-  digits_to_N (encode_digits_pair (N_to_digits n1) (N_to_digits n2)) = 0%N ->
-  n1 = 0%N /\ n2 = 0%N.
+  digits_to_N (encode_digits_pair (N_to_digits n1) (N_to_digits n2)) = BinNat.N.zero ->
+  n1 = BinNat.N.zero /\ n2 = BinNat.N.zero.
 Proof.
   intros HH.
   unfold digits_to_N in HH.
@@ -666,7 +666,7 @@ Proof.
   induction digits1; [intuition | ].
   destruct digits2; simpl; intros; [discriminate | ].
   destruct digits1; simpl.
-  - destruct digits2; simpl in *; [ | omega].
+  - destruct digits2; simpl in *; [ | lia].
     exists nil; simpl; trivial.
   - destruct digits2; simpl in *; try discriminate.
     inversion H0.
@@ -695,7 +695,7 @@ Qed.
 
 Lemma last_repeat_nzero {A:Type} (a:A) n d : n > 0 -> last (repeat a n) d = a.
 Proof.
-  induction n; [omega | ].
+  induction n; [lia | ].
   simpl.
   destruct n; simpl in *; trivial.
   intuition.
@@ -706,7 +706,7 @@ Proof.
   destruct n.
   - reflexivity.
   - rewrite last_repeat_nzero; trivial.
-    omega.
+    lia.
 Qed.
 
 Lemma interleave_with_end_padding_decompose_eq {A} (digits1:list A) defA digits2 defB :
@@ -717,7 +717,7 @@ Lemma interleave_with_end_padding_decompose_eq {A} (digits1:list A) defA digits2
     interleave_with_end_padding digits1 defA digits2 defB = l ++ [last digits1 d1; last digits2 d2].
 Proof.
   intros.
-  rewrite interleave_with_end_padding_eq by omega.
+  rewrite interleave_with_end_padding_eq by lia.
   destruct (interleave_decompose digits1 digits2)
     as [l eql]; trivial.
   eauto.
@@ -730,19 +730,19 @@ Lemma interleave_with_end_padding_decompose_gt {A} (digits1:list A) defA digits2
     interleave_with_end_padding digits1 defA digits2 defB = l ++ [last digits1 d; defB].
 Proof.
   intros.
-  rewrite interleave_with_end_padding_ge by omega.
+  rewrite interleave_with_end_padding_ge by lia.
   destruct (interleave_decompose digits1 (digits2 ++ repeat defB (length digits1 - length digits2)))
     as [l eql].
   - destruct digits1; simpl in *; try congruence.
-    omega.
+    lia.
   - rewrite app_length, repeat_length.
-    omega.
+    lia.
   - exists l.
     intros d.
     rewrite (eql d defB); simpl.
     rewrite last_app_nnil.
     + rewrite last_repeat_same; trivial.
-    + assert ((length digits1 - length digits2) <> 0) by omega.
+    + assert ((length digits1 - length digits2) <> 0) by lia.
       destruct (length digits1 - length digits2); simpl; intros; congruence.
 Qed.
 
@@ -753,21 +753,21 @@ Lemma interleave_with_end_padding_decompose_lt {A} (digits1:list A) defA digits2
     interleave_with_end_padding digits1 defA digits2 defB = l ++ [defA ; last digits2 d].
 Proof.
   intros.
-  rewrite interleave_with_end_padding_le by omega.
+  rewrite interleave_with_end_padding_le by lia.
   destruct (interleave_decompose (digits1 ++ repeat defA (length digits2 - length digits1)) digits2)
            as [l eql].
   - intros ?; subst.
     destruct digits2; simpl in *.
-    + omega.
+    + lia.
     + destruct digits1; try discriminate.
   - rewrite app_length, repeat_length.
-    omega.
+    lia.
   - exists l.
     intros d.
     rewrite (eql defA d); simpl.
     rewrite last_app_nnil.
     + rewrite last_repeat_same; trivial.
-    + assert ((length digits2 - length digits1) <> 0) by omega.
+    + assert ((length digits2 - length digits1) <> 0) by lia.
       destruct (length digits2 - length digits1); simpl; intros; congruence.
 Qed.
 
@@ -781,22 +781,22 @@ Defined.
 
 
 Lemma interleave_with_end_padding_Even {A:Type} (l1:list A) (def1:A) (l2:list A) (def2:A) :
-  Nat.Even (length (interleave_with_end_padding l1 def1 l2 def2)).
+  PeanoNat.Nat.Even (length (interleave_with_end_padding l1 def1 l2 def2)).
 Proof.
   unfold interleave_with_end_padding.
   rewrite interleave_length_eq.
   repeat rewrite app_length, repeat_length.
-  destruct (Nat.lt_trichotomy (length l1) (length l2))
+  destruct (PeanoNat.Nat.lt_trichotomy (length l1) (length l2))
     as [nlt | [neq | ngt]].
-  - exists (length l2); omega.
-  - exists (length l2); omega.
-  - exists (length l1); omega.
+  - exists (length l2); lia.
+  - exists (length l2); lia.
+  - exists (length l1); lia.
 Qed.
 
 Lemma interleave_with_end_padding_even {A:Type} (l1:list A) (def1:A) (l2:list A) (def2:A) :
   Nat.even (length (interleave_with_end_padding l1 def1 l2 def2)) = true.
 Proof.
-  apply Nat.even_spec.
+  apply PeanoNat.Nat.even_spec.
   apply interleave_with_end_padding_Even.
 Qed.
 
@@ -814,17 +814,17 @@ Proof.
 Qed.
 
 Definition padded_interleave_result n1 n2 :
-  n1 <> 0%N \/ n2 <> 0%N ->
+  n1 <> BinNat.N.zero \/ n2 <> BinNat.N.zero ->
   (exists l, (interleave_with_end_padding (N_to_digits n1) bin_digit0 (N_to_digits n2) bin_digit0) = l ++ [bin_digit1]) \/
   (exists l, (interleave_with_end_padding (N_to_digits n1) bin_digit0 (N_to_digits n2) bin_digit0) = l ++ [bin_digit1 ; bin_digit0]).
 Proof.
   simpl.
-  destruct (Nat.lt_trichotomy (length (N_to_digits n1)) (length (N_to_digits n2)))
+  destruct (PeanoNat.Nat.lt_trichotomy (length (N_to_digits n1)) (length (N_to_digits n2)))
            as [n1lt | [n1eq | n1gt]].
   - destruct (interleave_with_end_padding_decompose_lt (N_to_digits n1) bin_digit0 (N_to_digits n2) bin_digit0); trivial.
     destruct n2; simpl.
     + simpl in n1lt.
-      omega.
+      lia.
     + specialize (H bin_digit0).
       destruct (pos_to_digits_canon p) as [l leq].
       simpl in *.
@@ -859,7 +859,7 @@ Proof.
   - destruct (interleave_with_end_padding_decompose_gt (N_to_digits n1) bin_digit0 (N_to_digits n2) bin_digit0); trivial.
     destruct n1; simpl.
     + simpl in n1gt.
-      omega.
+      lia.
     + specialize (H bin_digit0).
       destruct (pos_to_digits_canon p) as [l leq].
       simpl in *.
@@ -877,8 +877,7 @@ Lemma make_even_digits_fixup_trailing_zeros n1 n2 :
 Proof.
   generalize (interleave_with_end_padding_even (N_to_digits n1) bin_digit0 (N_to_digits n2) bin_digit0)
   ; intros is_even.
-  assert (HH:n1 = 0%N /\ n2 = 0%N \/ (n1 <> 0%N \/ n2 <> 0%N)).
-  { destruct n1; destruct n2; simpl; intuition congruence. }
+  assert (HH:n1 = BinNat.N.zero /\ n2 = BinNat.N.zero \/ (n1 <> BinNat.N.zero \/ n2 <> BinNat.N.zero)) by lia.
   destruct HH.
   - destruct H; subst.
     reflexivity.
@@ -894,11 +893,11 @@ Proof.
       unfold make_even_digits.
       rewrite app_length in *.
       simpl in *.
-      replace (length l + 2) with (S (S (length l))) in is_even by omega.
-      rewrite Nat.even_succ_succ in is_even.
-      replace (length l + 1) with (S (length l)) by omega.
-      rewrite Nat.even_succ.
-      rewrite <- Nat.negb_even.
+      replace (length l + 2) with (S (S (length l))) in is_even by lia.
+      rewrite PeanoNat.Nat.even_succ_succ in is_even.
+      replace (length l + 1) with (S (length l)) by lia.
+      rewrite PeanoNat.Nat.even_succ.
+      rewrite <- PeanoNat.Nat.negb_even.
       rewrite is_even.
       simpl.
       rewrite app_ass; simpl.
@@ -909,7 +908,7 @@ Lemma decode_encode_pair (n1 n2:N) :
   decode_pair (encode_pair n1 n2) = (n1, n2).
 Proof.
   unfold decode_pair, encode_pair.
-  destruct (N.eq_dec (digits_to_N (encode_digits_pair (N_to_digits n1) (N_to_digits n2))) 0).
+  destruct (BinNat.N.eq_dec (digits_to_N (encode_digits_pair (N_to_digits n1) (N_to_digits n2))) BinNat.N.zero).
   - apply digits_to_N_fixup_encode_0 in e.
     intuition congruence.
   - unfold decode_pair_to_digits.
@@ -924,7 +923,7 @@ Proof.
       trivial.
     + repeat rewrite app_length.
       repeat rewrite repeat_length.
-      omega.
+      lia.
 Qed.
 
 Lemma canon_digits_even_break digits :
@@ -958,9 +957,9 @@ Proof.
   - simpl.
     rewrite fixup_trailing_zeros_end1.
     trivial.
-  - apply Nat.even_spec; trivial.
+  - apply PeanoNat.Nat.even_spec; trivial.
     rewrite app_length in is_even; simpl in is_even.
-    replace (length l + 2) with (2 + length l) in is_even by omega.
+    replace (length l + 2) with (2 + length l) in is_even by lia.
     simpl in is_even; trivial.
 Qed.
 
@@ -977,12 +976,12 @@ Proof.
   rewrite uninterleave_even_end.
   - simpl.
     rewrite fixup_trailing_zeros_end1; trivial.
-  - apply Nat.even_spec.
+  - apply PeanoNat.Nat.even_spec.
     rewrite app_length in is_even.
     simpl in is_even.
-    replace (length a' + 1) with (S (length a')) in is_even by omega.
-    rewrite Nat.even_succ in is_even.
-    rewrite <- Nat.negb_odd.
+    replace (length a' + 1) with (S (length a')) in is_even by lia.
+    rewrite PeanoNat.Nat.even_succ in is_even.
+    rewrite <- PeanoNat.Nat.negb_odd.
     rewrite is_even; reflexivity.
 Qed.
 
@@ -991,7 +990,7 @@ Lemma uninterleave_length_eq_even {A} (l:list A) :
   length (fst (uninterleave l)) = length (snd (uninterleave l)).
 Proof.
   intros is_even.
-  apply Nat.even_spec in is_even.
+  apply PeanoNat.Nat.even_spec in is_even.
   revert l is_even.
   apply EvenList_ind; simpl; trivial.
   intros.
@@ -1007,17 +1006,17 @@ Proof.
   destruct l.
   - vm_compute in is_odd; discriminate.
   - simpl in is_odd.
-    rewrite Nat.odd_succ in is_odd.
+    rewrite PeanoNat.Nat.odd_succ in is_odd.
     destruct (@exists_last _ (a::l))
     as [l' [a' eqq]]; [simpl; congruence | ].
     rewrite eqq.
     assert (eqlen1:length (a :: l) = length (l' ++ [a'])) by congruence.
     rewrite app_length in eqlen1; simpl in eqlen1.
-    assert (eqlen2:length l = length l') by omega.
+    assert (eqlen2:length l = length l') by lia.
     rewrite uninterleave_odd_skip.
     + apply uninterleave_length_eq_even; trivial.
       congruence.
-    + apply Nat.even_spec; trivial.
+    + apply PeanoNat.Nat.even_spec; trivial.
       congruence.
 Qed.
     
@@ -1027,7 +1026,7 @@ Proof.
   case_eq (Nat.even (length l)); intros is_even.
   - apply uninterleave_length_eq_even; trivial.
   - apply uninterleave_length_eq_odd; trivial.
-    rewrite <- Nat.negb_even.
+    rewrite <- PeanoNat.Nat.negb_even.
     rewrite is_even.
     reflexivity.
 Qed.
@@ -1089,16 +1088,16 @@ Proof.
       * simpl.
         rewrite app_nil_r.
         apply interleave_uninterleave.
-        apply Nat.even_spec.
+        apply PeanoNat.Nat.even_spec.
         trivial.
       * rewrite eqq at 2.
         rewrite app_length.
         rewrite repeat_length.
-        omega.
+        lia.
     + rewrite eqq at 1.
       rewrite app_length.
       rewrite repeat_length.
-      omega.
+      lia.
   - right.
     rewrite fixup_canon_uninterleave_odd_fst by trivial.
     destruct (fixup_trailing_zeros_repeat_form (snd (uninterleave (digits ++ [bin_digit0]))))
@@ -1116,20 +1115,20 @@ Proof.
         rewrite app_nil_r.
         rewrite <- eqq.
         rewrite interleave_uninterleave; trivial.
-        apply Nat.even_spec.
+        apply PeanoNat.Nat.even_spec.
         rewrite app_length.
         simpl.
-        replace (length digits + 1) with (S (length digits)) by omega.
-        rewrite Nat.even_succ.
-        rewrite <- Nat.negb_even.
+        replace (length digits + 1) with (S (length digits)) by lia.
+        rewrite PeanoNat.Nat.even_succ.
+        rewrite <- PeanoNat.Nat.negb_even.
         rewrite is_even; reflexivity.
       * rewrite eqq at 1.
         rewrite app_length.
         rewrite repeat_length.
-        omega.
+        lia.
     + rewrite eqq at 2.
       rewrite app_length.
-      omega.
+      lia.
 Qed.
 
 

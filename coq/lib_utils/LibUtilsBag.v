@@ -20,7 +20,7 @@ Require Import Arith.
 Require Import Min.
 Require Import Max.
 Require Import ZArith.
-Require Import Omega.
+Require Import Lia.
 Require Import Permutation.
 Require Import Equivalence.
 Require Import Morphisms.
@@ -41,6 +41,7 @@ Section Bag.
 
   Definition bunion := (@app A).
 
+  Declare Scope rbag_scope.
   Delimit Scope rbag_scope with rbag.
   Bind Scope rbag_scope with rbag.
   Open Scope rbag_scope.
@@ -95,7 +96,7 @@ Section Bag.
       | y::tl => if (x == y) then tl else y::(remove_one x tl)
     end.
 
-  Hint Unfold ldeqA : bag.
+  Hint Unfold ldeqA : fml.
 
   Ltac tac
     := repeat progress (intros; simpl in *; try autorewrite with bag in *; try match goal with
@@ -124,7 +125,7 @@ Section Bag.
            destruct (@equiv_dec A eqA eqvA eqdecA x y)
        end;
                         unfold complement, Equivalence.equiv in *;
-                          try subst; try reflexivity; eauto with bag).
+                          try subst; try reflexivity; eauto with fml).
 
   Global Instance remove_one_proper : Proper (eq ==> ldeqA ==> ldeqA) remove_one.
   Proof.
@@ -191,14 +192,12 @@ Section Bag.
 
   Global Instance bminus_proper : Proper (ldeqA ==> ldeqA ==> ldeqA) bminus.
   Proof.
-    unfold Proper, respectful, ldeqA.
+    unfold Proper, respectful.
     intros x y H.
     elim H; tac.
-    - rewrite H2; eauto.
-    - rewrite remove_one_comm.
-      rewrite H0.
-      eauto.
+    - rewrite remove_one_comm; eauto with fml.
     - rewrite H1; eauto.
+      symmetry; eauto.
   Qed. 
 
   (* some useful properties *)
@@ -302,7 +301,7 @@ Section Bag.
   Proof.
     intros; induction l; tac.
     left; exists (a0::x).
-    rewrite perm_swap, l0; eauto with bag.
+    rewrite perm_swap, l0; eauto with fml.
   Qed.
 
   (* It seems some properties are easier to check on a different representation with
@@ -330,7 +329,7 @@ Section Bag.
     
     Notation "X ≅# Y" := (mult_equiv X Y) (at level 70) : rbag_scope.                              (* ≅ = \cong *)
 
-    Hint Unfold mult_equiv : bag.
+    Hint Unfold mult_equiv : fml.
 
     Global Instance mult_proper : Proper (ldeqA ==> eq ==> eq) mult.
     Proof.
@@ -371,7 +370,8 @@ Section Bag.
 
     Lemma groupby_noDup l : NoDup (domain (groupby l)).
     Proof.
-      induction l; simpl; [constructor | ].
+      Hint Constructors NoDup : fml.
+      induction l; simpl; trivial with fml.
       case_eq (lookup equiv_dec (groupby l) a); [intros ? ?| intros neq].
       - rewrite domain_update_first; trivial.
       - simpl; constructor; auto. apply lookup_none_nin in neq; trivial.
@@ -404,13 +404,14 @@ Section Bag.
       trivial.
     Qed.
     
+    Hint Resolve groupby_noDup : fml.
+
     Lemma smush_groupby l : Permutation (smush (groupby l)) l.
     Proof.
-      Hint Resolve groupby_noDup : bag.
       induction l; simpl; trivial.
       case_eq (lookup equiv_dec (groupby l) a); [intros n eqn | intros neq].
       - destruct (lookup_to_front equiv_dec eqn).
-        assert (perm1:Permutation (update_first equiv_dec (groupby l) a (S n)) (update_first equiv_dec ((a, n) :: x) a (S n))) by (apply update_first_NoDup_perm_proper; auto with bag). 
+        assert (perm1:Permutation (update_first equiv_dec (groupby l) a (S n)) (update_first equiv_dec ((a, n) :: x) a (S n))) by (apply update_first_NoDup_perm_proper; auto with fml). 
         rewrite perm1.
         simpl. destruct (equiv_dec a a); try congruence.
         rewrite smush1.
@@ -587,7 +588,15 @@ Section Bag.
 
   (* counting *)
 
-  Definition bcount (l:list A) := length l.
+  Definition bcount {A} (l:list A) := length l.
+
+  Lemma bcount_map_id {B} (f:A -> B) (l:list A) :
+    @bcount A l = @bcount B (map f l).
+  Proof.
+    induction l; [reflexivity|].
+    simpl.
+    auto.
+  Qed.
 
   (* Formally defined with 'max' over arity in the [GL95] paper *)
   Fixpoint bdistinct (l:list A) :=
@@ -792,7 +801,7 @@ Section Bag.
     intros.
     assert ((mult l x) <> 0). 
     apply bdistinct_exactly_one_back; assumption.
-    omega.
+    lia.
   Qed.
 
   Lemma exist_or_zero:
@@ -852,7 +861,7 @@ Section Bag.
   Proof.
     split.
     - (* Case "->" *)
-      induction l; simpl; try omega.
+      induction l; simpl; try lia.
       case (equiv_dec x a).
       + intros Hx.
         rewrite Hx in *; clear Hx.
@@ -906,7 +915,7 @@ Section Bag.
     match_case; intros.
     constructor; trivial.
     rewrite <- mult_pos_equiv_in.
-    omega.
+    lia.
   Qed.
 
   Lemma NoDup_bdistinct {l:list A} :
@@ -917,7 +926,7 @@ Section Bag.
     rewrite IHl by trivial.
     rewrite <- mult_pos_equiv_in in H2.
     match_case.
-    intros; omega.
+    intros; lia.
   Qed.
 
   Lemma bdistinct_idem {l:list A} :
@@ -948,7 +957,7 @@ Section Bag.
     induction l; simpl; trivial.
     match_case; simpl; rewrite IHl; trivial; intros.
     assert (inn:In a (bdistinct l))
-      by (apply mult_pos_equiv_in; omega).
+      by (apply mult_pos_equiv_in; lia).
     destruct (in_split _ _ inn) as [t1 [t2 teq]].
     rewrite teq.
     assert (perm:Permutation (t1 ++ a :: t2) (a::t1++ t2))
@@ -1100,11 +1109,11 @@ Section Bag.
     elim (H n n0); intro; clear H.
     rewrite a in *; clear a.
     assert (n0 <= (S n0)); auto.
-    rewrite (min_l n0 (S n0) H); omega.
+    rewrite (min_l n0 (S n0) H); lia.
     generalize (compare_either n0 (S n)); intro.
     elim H; intro; clear H.
-    - rewrite min_l; try assumption; omega.
-    - rewrite min_r; try assumption; omega.
+    - rewrite min_l; try assumption; lia.
+    - rewrite min_r; try assumption; lia.
   Qed.    
 
   Lemma minus_max:
@@ -1116,11 +1125,11 @@ Section Bag.
     elim (H n n0); intro; clear H.
     rewrite a in *; clear a.
     assert (n0 <= (S n0)); auto.
-    rewrite (max_r n0 (S n0) H); omega.
+    rewrite (max_r n0 (S n0) H); lia.
     generalize (compare_either n0 (S n)); intro.
     elim H; intro; clear H.
-    - rewrite max_r; try assumption; omega.
-    - rewrite max_l; try assumption; omega.
+    - rewrite max_r; try assumption; lia.
+    - rewrite max_l; try assumption; lia.
   Qed.
 
   Lemma bmin_mult:
@@ -1279,7 +1288,7 @@ Section Bag.
       apply min_one_yields_one; assumption.
       generalize (compare_either (n+n0) 1); intro; elim H; intros; clear H.
       rewrite min_r; try reflexivity.
-      omega.
+      lia.
       rewrite <- plus_n_Sm.
       simpl.
       rewrite min_r.
@@ -1416,8 +1425,8 @@ Section Bag.
     generalize (mult dQp a) as ndQp; intro.
     generalize (compare_either nQ ndQm); intro.
     elim H; intro; clear H.
-    - rewrite min_l; try assumption; omega.
-    - rewrite min_r; try assumption; omega.
+    - rewrite min_l; try assumption; lia.
+    - rewrite min_r; try assumption; lia.
   Qed.
 
   Lemma theorem2_b:
@@ -1434,8 +1443,8 @@ Section Bag.
     generalize (mult dQp a) as ndQp; intro.
     generalize (compare_either nQ ndQm); intro.
     elim H; intro; clear H.
-    - rewrite min_l; try assumption; omega.
-    - rewrite min_r; try assumption; omega.
+    - rewrite min_l; try assumption; lia.
+    - rewrite min_r; try assumption; lia.
   Qed.
 
   Lemma theorem2_c:
@@ -1458,15 +1467,15 @@ Section Bag.
       rewrite H.
       generalize (compare_either nQ ndQp); intro.
       elim H1; intros; clear H1.
-      + rewrite min_l; omega.
-      + rewrite min_r; omega.
+      + rewrite min_l; lia.
+      + rewrite min_r; lia.
     - assert (min nQ ndQm = ndQm).
       rewrite min_r; [reflexivity|assumption].
       rewrite H.
       generalize (compare_either ndQm ndQp); intro.
       elim H1; intros; clear H1.
-      + rewrite min_l; omega.
-      + rewrite min_r; omega.
+      + rewrite min_l; lia.
+      + rewrite min_r; lia.
   Qed.
 
   Lemma remove_one_bminus r s a:
@@ -1567,6 +1576,6 @@ Hint Rewrite
      bunion_bminus 
      remove_one_consed : bag.
 
-Hint Unfold ldeqA : bag.
-Hint Unfold mult_equiv : bag.
+Hint Unfold ldeqA : fml.
+Hint Unfold mult_equiv : fml.
 

@@ -1,7 +1,7 @@
 (*
- * Copyright 2015-2016 IBM Corporation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
+* Copyright 2015-2016 IBM Corporation
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -32,7 +32,7 @@ Section BindingsNat.
 
 End BindingsNat.
 
-Hint Unfold rec_sort rec_concat_sort : list.
-Hint Resolve drec_sort_sorted drec_concat_sort_sorted : list.
-Hint Resolve is_list_sorted_NoDup_strlt : list.
+Hint Unfold rec_sort rec_concat_sort : fml.
+Hint Resolve drec_sort_sorted drec_concat_sort_sorted : fml.
+Hint Resolve is_list_sorted_NoDup_strlt : fml.
 

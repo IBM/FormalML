@@ -26,7 +26,7 @@ Require Import Min.
 Require Import Equivalence.
 Require Import EquivDec.
 Require Import Compare_dec.
-Require Import Omega.
+Require Import Lia.
 Require Import LibUtilsCoqLibAdd.
 
 (** * Total order on characters *)
@@ -49,7 +49,7 @@ Module AsciiOrder <: OrderedTypeFull with Definition t:=ascii.
       repeat match goal with 
              | [H:Nat.compare _ _ = Lt |- _ ] => apply nat_compare_lt in H
              | [|- Nat.compare _ _ = Lt ] => apply nat_compare_lt
-             end; omega.
+             end; lia.
   Qed.
 
   Lemma lt_compat : Proper (eq ==> eq ==> iff) lt.
@@ -258,9 +258,210 @@ Module StringOrder <: OrderedTypeFull with Definition t:=string.
 
 End StringOrder.
 
+(** * String prefixes *)
+
+Section Prefix.
+  Lemma substring_zero s :
+    substring 0 0 s = ""%string.
+  Proof.
+    induction s; reflexivity.
+  Qed.
+  
+  Lemma substring_S a m s :
+    substring 0 (S m) (String a s) = String a (substring 0 m s).
+  Proof.
+    reflexivity.
+  Qed.
+
+  Lemma append_string_distr a s1 s2 :
+    (String a s1 ++ s2 = String a (s1 ++ s2))%string.
+  Proof.
+    auto.
+  Qed.
+
+  Lemma append_eq_inv1 x y z : append x y = append x z -> y = z.
+  Proof.
+    revert y z.
+    induction x; simpl; trivial; intros.
+    inversion H; subst.
+    auto.
+  Qed.
+
+  Lemma prefix_refl y : prefix y y = true.
+  Proof.
+    induction y; simpl; trivial.
+    match_destr; congruence.
+  Qed.
+  
+  Lemma substring_append_cancel x y :
+    substring (String.length x) (String.length y) (append x y) = y.
+  Proof.
+    revert y.
+    induction x; simpl; intros.
+    - apply prefix_correct. apply prefix_refl.
+    - trivial.
+  Qed.
+
+  Lemma string_length_append x y :
+    String.length (append x y) = String.length x + String.length y.
+  Proof.
+    revert y.
+    induction x; simpl; auto.
+  Qed.
+
+  Lemma prefix_nil post : prefix ""%string post = true.
+  Proof.
+    destruct post; trivial.
+  Qed.
+
+  Lemma prefix_app pre post : prefix pre (append pre post) = true.
+  Proof.
+    revert post.
+    induction pre; intros; simpl.
+    - apply prefix_nil.
+    - match_destr; intuition.
+  Qed.
+
+  Lemma prefix_break {pre x} :
+    prefix pre x = true ->
+    {y | x = append pre y}.
+  Proof.
+    revert x.
+    induction pre; simpl.
+    - eauto.
+    - destruct x; simpl; try discriminate.
+      match_destr.
+      subst; intros p.
+      destruct (IHpre _ p).
+      subst.
+      eauto.
+  Qed.
+
+  
+  Lemma substring_split s n m l :
+    append (substring s n l) (substring (s+n) m l) = substring s (n+m) l.
+  Proof.
+    revert n m s.
+    induction l; simpl; destruct s; destruct n; simpl; trivial.
+    - f_equal.
+      apply IHl.
+    - rewrite IHl; simpl; trivial.
+    - rewrite IHl. simpl; trivial.
+  Qed.
+
+  Lemma substring_all l :
+    substring 0 (String.length l) l = l.
+  Proof.
+    induction l; simpl; congruence.
+  Qed.
+
+  Lemma substring_bounded s n l :
+    substring s n l = substring s (min n (String.length l - s)) l.
+  Proof.
+    revert s n.
+    induction l; destruct s; destruct n; simpl; trivial.
+    - rewrite IHl; simpl.
+      f_equal.
+      f_equal.
+      f_equal.
+      lia.
+    - rewrite IHl.
+      match_case.
+  Qed.
+
+  Lemma substring_le_prefix s n m l :
+    n <= m ->
+    prefix (substring s n l) (substring s m l) = true.
+  Proof.
+    revert s n m.
+    induction l; destruct s; destruct n; destruct m; simpl; trivial;
+      try lia; intuition.
+    match_destr; intuition.
+  Qed.
+
+  Lemma substring_prefix n l :
+    prefix (substring 0 n l) l = true.
+  Proof.
+    rewrite substring_bounded.
+    rewrite <- (substring_all l) at 3.
+    apply substring_le_prefix.
+    replace (String.length l - 0) with (String.length l) by lia.
+    apply le_min_r.
+  Qed.
+
+  Lemma in_of_append pre y l :
+    In (append pre y) l <->
+    In y (map
+            (fun x => substring (String.length pre) (String.length x - String.length pre) x)
+            (filter (prefix pre) l)).
+  Proof.
+    rewrite in_map_iff.
+    split; intros.
+    - exists (append pre y).
+      rewrite string_length_append.
+      replace ((String.length pre + String.length y - String.length pre))
+        with (String.length y) by lia.
+      rewrite substring_append_cancel.
+      split; trivial.
+      apply filter_In.
+      split; trivial.
+      apply prefix_app.
+    - destruct H as [x [subx inx]]; subst.
+      apply filter_In in inx.
+      destruct inx as [inx prex].
+      destruct (prefix_break prex).
+      subst.
+      rewrite string_length_append.
+      replace ((String.length pre + String.length x0 - String.length pre))
+        with (String.length x0) by lia.
+      rewrite substring_append_cancel.
+      trivial.
+  Qed.
+  
+  Lemma append_ass s1 s2 s3 : ((s1 ++ s2) ++ s3 = s1 ++ s2 ++ s3)%string.
+  Proof.
+    revert s2 s3.
+    induction s1; simpl.
+    - trivial.
+    - intros. rewrite IHs1; trivial.
+  Qed.
+
+End Prefix.
+
+(** * Character map over strings *)
+
+Section MapString.
+  Fixpoint map_string (f:ascii->ascii) (s:string)
+    := match s with
+       | EmptyString => EmptyString
+       | String a s' => String (f a) (map_string f s')
+       end.
+
+  Fixpoint flat_map_string (f:ascii->string) (s:string)
+    := match s with
+       | EmptyString => EmptyString
+       | String a s' => append (f a) (flat_map_string f s')
+       end.
+
+  Global Instance ascii_dec : EqDec ascii eq
+    := ascii_dec.
+End MapString.
+
+(** Support for 'like' on strings *)
+
+Section Join.
+  Definition map_concat {A} separator (f:A -> string) (elems:list A) : string :=
+    match elems with
+    | nil => ""
+    | e :: elems' =>
+      (fold_left (fun acc e => acc ++ separator ++ (f e)) elems' (f e))%string
+    end.
+  
+End Join.
+
 (** * Conversion between lists of characters and strings *)
 
-Section ToString.
+Section AsciiToString.
 
   Fixpoint string_reverse_helper (s:string) (acc:string)
     := match s with
@@ -373,208 +574,7 @@ Section ToString.
     reflexivity.
   Qed.
 
-End ToString.
-
-(** * String prefixes *)
-
-Section Prefix.
-  Lemma substring_zero s :
-    substring 0 0 s = ""%string.
-  Proof.
-    induction s; reflexivity.
-  Qed.
-  
-  Lemma substring_S a m s :
-    substring 0 (S m) (String a s) = String a (substring 0 m s).
-  Proof.
-    reflexivity.
-  Qed.
-
-  Lemma append_string_distr a s1 s2 :
-    (String a s1 ++ s2 = String a (s1 ++ s2))%string.
-  Proof.
-    auto.
-  Qed.
-
-  Lemma append_eq_inv1 x y z : append x y = append x z -> y = z.
-  Proof.
-    revert y z.
-    induction x; simpl; trivial; intros.
-    inversion H; subst.
-    auto.
-  Qed.
-
-  Lemma prefix_refl y : prefix y y = true.
-  Proof.
-    induction y; simpl; trivial.
-    match_destr; congruence.
-  Qed.
-  
-  Lemma substring_append_cancel x y :
-    substring (String.length x) (String.length y) (append x y) = y.
-  Proof.
-    revert y.
-    induction x; simpl; intros.
-    - apply prefix_correct. apply prefix_refl.
-    - trivial.
-  Qed.
-
-  Lemma string_length_append x y :
-    String.length (append x y) = String.length x + String.length y.
-  Proof.
-    revert y.
-    induction x; simpl; auto.
-  Qed.
-
-  Lemma prefix_nil post : prefix ""%string post = true.
-  Proof.
-    destruct post; trivial.
-  Qed.
-
-  Lemma prefix_app pre post : prefix pre (append pre post) = true.
-  Proof.
-    revert post.
-    induction pre; intros; simpl.
-    - apply prefix_nil.
-    - match_destr; intuition.
-  Qed.
-
-  Lemma prefix_break {pre x} :
-    prefix pre x = true ->
-    {y | x = append pre y}.
-  Proof.
-    revert x.
-    induction pre; simpl.
-    - eauto.
-    - destruct x; simpl; try discriminate.
-      match_destr.
-      subst; intros p.
-      destruct (IHpre _ p).
-      subst.
-      eauto.
-  Qed.
-
-  
-  Lemma substring_split s n m l :
-    append (substring s n l) (substring (s+n) m l) = substring s (n+m) l.
-  Proof.
-    revert n m s.
-    induction l; simpl; destruct s; destruct n; simpl; trivial.
-    - f_equal.
-      apply IHl.
-    - rewrite IHl; simpl; trivial.
-    - rewrite IHl. simpl; trivial.
-  Qed.
-
-  Lemma substring_all l :
-    substring 0 (String.length l) l = l.
-  Proof.
-    induction l; simpl; congruence.
-  Qed.
-
-  Lemma substring_bounded s n l :
-    substring s n l = substring s (min n (String.length l - s)) l.
-  Proof.
-    revert s n.
-    induction l; destruct s; destruct n; simpl; trivial.
-    - rewrite IHl; simpl.
-      f_equal.
-      f_equal.
-      f_equal.
-      omega.
-    - rewrite IHl.
-      match_case.
-  Qed.
-
-  Lemma substring_le_prefix s n m l :
-    n <= m ->
-    prefix (substring s n l) (substring s m l) = true.
-  Proof.
-    revert s n m.
-    induction l; destruct s; destruct n; destruct m; simpl; trivial;
-      try omega; intuition.
-    match_destr; intuition.
-  Qed.
-
-  Lemma substring_prefix n l :
-    prefix (substring 0 n l) l = true.
-  Proof.
-    rewrite substring_bounded.
-    rewrite <- (substring_all l) at 3.
-    apply substring_le_prefix.
-    replace (String.length l - 0) with (String.length l) by omega.
-    apply le_min_r.
-  Qed.
-
-  Lemma in_of_append pre y l :
-    In (append pre y) l <->
-    In y (map
-            (fun x => substring (String.length pre) (String.length x - String.length pre) x)
-            (filter (prefix pre) l)).
-  Proof.
-    rewrite in_map_iff.
-    split; intros.
-    - exists (append pre y).
-      rewrite string_length_append.
-      replace ((String.length pre + String.length y - String.length pre))
-        with (String.length y) by omega.
-      rewrite substring_append_cancel.
-      split; trivial.
-      apply filter_In.
-      split; trivial.
-      apply prefix_app.
-    - destruct H as [x [subx inx]]; subst.
-      apply filter_In in inx.
-      destruct inx as [inx prex].
-      destruct (prefix_break prex).
-      subst.
-      rewrite string_length_append.
-      replace ((String.length pre + String.length x0 - String.length pre))
-        with (String.length x0) by omega.
-      rewrite substring_append_cancel.
-      trivial.
-  Qed.
-  
-  Lemma append_ass s1 s2 s3 : ((s1 ++ s2) ++ s3 = s1 ++ s2 ++ s3)%string.
-  Proof.
-    revert s2 s3.
-    induction s1; simpl.
-    - trivial.
-    - intros. rewrite IHs1; trivial.
-  Qed.
-
-End Prefix.
-
-(** * Character map over strings *)
-
-Section MapString.
-  Fixpoint map_string (f:ascii->ascii) (s:string)
-    := match s with
-       | EmptyString => EmptyString
-       | String a s' => String (f a) (map_string f s')
-       end.
-
-  Fixpoint flat_map_string (f:ascii->string) (s:string)
-    := match s with
-       | EmptyString => EmptyString
-       | String a s' => append (f a) (flat_map_string f s')
-       end.
-
-  Global Instance ascii_dec : EqDec ascii eq
-    := ascii_dec.
-End MapString.
-
-(** Support for 'like' on strings *)
-
-Section Join.
-  Definition map_concat {A} separator (f:A -> string) (elems:list A) : string :=
-    match elems with
-    | nil => ""
-    | e :: elems' =>
-      (fold_left (fun acc e => acc ++ separator ++ (f e)) elems' (f e))%string
-    end.
-  
-End Join.
+End AsciiToString.
 
 Section Like.
   (* This is intended to be like the SQL like operation *)

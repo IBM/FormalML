@@ -6,7 +6,7 @@ Require Import List.
 Require Import ListAdd.
 Require Import Rbase Rtrigo Rpower Rbasic_fun.
 Require Import DefinedFunctions.
-Require Import Lra Omega.
+Require Import Lra Lia.
 
 Require Import Floatish Utils.
 
@@ -565,10 +565,10 @@ Program Definition splitLastCol {nsamp ncols : nat}  (data : Matrix float nsamp 
         : (Matrix float (ncols-1) nsamp) * (Matrix float 1 nsamp) :=
   (fun i j => data j i, fun i j => data j (i + ncols-1)%nat).
 Next Obligation.
-  omega.
+  lia.
 Defined.
 Next Obligation.
-  omega.
+  lia.
 Defined.
   
 Definition init_env2 (dim1 dim2 dim3 : nat) (w b : string) 
@@ -601,7 +601,7 @@ Definition init_env2 (dim1 dim2 dim3 : nat) (w b : string)
    @EvalNNinstancebatch 9 nsamp 1 ivar (CrossEntropy flnnv outnnv) flnnv outnnv
              NN σ (splitLastCol normaldata _).
  Next Obligation.
-   omega.
+   lia.
  Qed.
 
 Program Definition wisconsin_instance_batch (nsamp : nat)
@@ -617,7 +617,7 @@ Program Definition wisconsin_instance_batch (nsamp : nat)
              σ
              (splitLastCol normaldata _), dvars).
 Next Obligation.
-  omega.
+  lia.
 Qed.
 
 CoFixpoint zeronoise : Stream float := Cons 0 zeronoise.

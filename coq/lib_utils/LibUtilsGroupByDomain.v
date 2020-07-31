@@ -29,7 +29,7 @@ Require Import Setoid.
 Require Import EquivDec.
 Require Import Equivalence.
 Require Import RelationClasses.
-Require Import Omega.
+Require Import Lia.
 Require Import LibUtilsCoqLibAdd.
 Require Import LibUtilsLift.
 Require Import LibUtilsListAdd.

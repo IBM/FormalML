@@ -20,3 +20,6 @@ bin
 *.v#
 .Makefile.coq.d
 documentation/html
+
+.lia.cache
+.nra.cache

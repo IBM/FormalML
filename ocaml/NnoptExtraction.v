@@ -2,7 +2,7 @@
 
 Require Extraction.
 Extraction Language OCaml.
-Require Import ExtrOcamlBasic ExtrOcamlString ExtrOcamlNatInt ExtrOcamlZInt.
+Require Import ExtrOcamlBasic ExtrOcamlString ExtrOcamlZInt ExtrOcamlNatInt.
 Extraction Blacklist String List.
 
 Require Import FloatishIEEE.
@@ -61,8 +61,6 @@ Module API.
   Definition nn_test_gradenv := Gen_NN.NN_test_gradenv.
   
   End API.
-
-
 
 Extraction "extracted/NnoptExtracted" API.
 
