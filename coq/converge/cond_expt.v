@@ -294,6 +294,9 @@ Proof.
   - simpl ; rewrite list_sum_cat. now rewrite IHl. 
 Qed.
 
+Definition map_map {A} (l : list(list A)) (f : A -> R) : list(list R) := map (map f) l. 
+
+
 
 End list_sum.
   
