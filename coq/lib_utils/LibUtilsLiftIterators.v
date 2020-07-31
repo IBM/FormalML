@@ -19,7 +19,7 @@
 Require Import Arith.
 Require Import Min.
 Require Import Max.
-Require Import Omega.
+Require Import Lia.
 Require Import Permutation.
 Require Import Equivalence.
 Require Import Morphisms.
@@ -336,7 +336,7 @@ Section LiftIterators.
                  /\ sublist l' l.
     Proof.
       induction l; simpl; intros F.
-      - eauto with list.
+      - eauto with fml.
       - invcs F.
         destruct H1 as [? eqq1].
         destruct (IHl H2) as [? [eqq2 Feq]].
@@ -352,7 +352,7 @@ Section LiftIterators.
       { l' : list A | lift_filter f l = Some l' & sublist l' l}.
     Proof.
       induction l; simpl; intros F.
-      - eauto with list.
+      - eauto with fml.
       - invcs F.
         destruct H0 as [? eqq1].
         destruct (IHl X) as [? eqq2 Feq].

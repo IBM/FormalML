@@ -25,7 +25,7 @@ Require Import List.
 Require Import Equivalence.
 Require Import EquivDec.
 Require Import Compare_dec.
-Require Import Omega.
+Require Import Lia.
 Require Import Nat.
 Require Import ZArith.
 Require Import Eqdep_dec.
@@ -140,11 +140,11 @@ Section Digits.
       generalize (Nat.divmod_spec n base 0 base).
       destruct (Nat.divmod n base 0 base); intros; simpl.
       apply Nat.mod_upper_bound.
-      omega.
+      lia.
     Defined.
     Next Obligation.
       apply Nat.div_lt; trivial.
-      omega.
+      lia.
     Defined.
     Next Obligation.
       unfold digits_to_nat.
@@ -159,17 +159,17 @@ Section Digits.
         rewrite e1.
         rewrite mult_comm.
         rewrite <- Nat.div_mod; trivial.
-        omega.
+        lia.
       - intros. destruct (rev x); simpl in * .
         + inversion H0; clear H0; subst.
           simpl.
           unfold digits_to_nat in e1.
           simpl in *.
-          rewrite <- Nat.div_exact by omega.
+          rewrite <- Nat.div_exact by lia.
           rewrite <- e1.
           rewrite mult_comm.
           simpl.
-          omega.
+          lia.
         + auto.
     Defined.
 
@@ -208,9 +208,9 @@ Section Digits.
         + apply digits_to_nat_aux_acc_le_preserve.
           transitivity (acc*base).
           * transitivity (acc * 1).
-            { omega. }
+            { lia. }
             apply mult_le_compat_l.
-            omega.
+            lia.
           * apply le_plus_l.
     Qed.
 
@@ -220,11 +220,11 @@ Section Digits.
       revert c.
       induction l; simpl.
       - split.
-        + omega.
+        + lia.
         + destruct (mult_O_le c (base*1)).
-          * omega.
+          * lia.
           * rewrite mult_comm.
-            omega.
+            lia.
       - intros.
         destruct (IHl (c * base + proj1_sig a)) as [le1 le2].
         clear IHl.
@@ -273,10 +273,10 @@ Section Digits.
         apply mult_le_compat_r.
         rewrite plus_assoc_reverse.
         apply plus_le_compat_l.
-        omega.
+        lia.
       }
       eapply lt_le_trans in le13; try eapply lt1.
-      rewrite (le_plus_minus n1 n2) in le13 by omega.
+      rewrite (le_plus_minus n1 n2) in le13 by lia.
       rewrite Nat.pow_add_r in le13.
       rewrite mult_assoc in le13.
       assert (le14:c*base+base <= c*base*base).
@@ -285,14 +285,14 @@ Section Digits.
         - apply mult_le_compat_r.
           rewrite mult_comm.
           destruct base.
-          + omega.
+          + lia.
           + simpl.
             apply plus_le_compat_l.
-            destruct n. omega.
-            destruct c. omega.
+            destruct n. lia.
+            destruct c. lia.
             apply lt_le_S.
             replace 0 with (S n *0) by auto.
-            apply mult_lt_compat_l; omega.
+            apply mult_lt_compat_l; lia.
         - rewrite mult_plus_distr_r.
           rewrite mult_1_l.
           trivial.
@@ -312,7 +312,7 @@ Section Digits.
         - simpl; intros _ .
           replace base with (base*base^0) at 1.
           + apply mult_le_compat_l.
-            apply Nat.pow_le_mono_r; omega.
+            apply Nat.pow_le_mono_r; lia.
           + simpl.
             rewrite mult_1_r.
             trivial.
@@ -339,30 +339,30 @@ Section Digits.
       ; [ | eapply (digits_to_nat_aux_acc_inj_helper1 a b c n1 n2); eauto].
       red in e; subst.
       simpl in *.
-      rewrite (le_plus_minus n1 n2) in lt1 by omega.
+      rewrite (le_plus_minus n1 n2) in lt1 by lia.
       rewrite Nat.pow_add_r in lt1.
       rewrite (mult_comm (base ^ n1)) in lt1.
       rewrite mult_assoc in lt1.
       assert (le2:base*base^n1 <= a*base^(n2 - n1) * base ^ n1).
       {
         apply mult_le_compat_r.
-        replace base with (1*base) at 1 by omega.
+        replace base with (1*base) at 1 by lia.
         apply mult_le_compat.
-        - replace 1 with (1*1) by omega.
-          simpl. omega.
+        - replace 1 with (1*1) by lia.
+          simpl. lia.
         - simpl.
           replace base with (base^1) at 1.
-          + apply Nat.pow_le_mono_r; omega.
+          + apply Nat.pow_le_mono_r; lia.
           + apply Nat.pow_1_r.
       } 
       eapply le_lt_trans in lt1; try eapply le2; clear le2.
       assert (le3:(b + 1) * base ^ n1 <= base * base^n1).
       {
         apply mult_le_compat_r.
-        omega.
+        lia.
       }
       eapply le_lt_trans in lt1; try eapply le3; clear le3.
-      omega.
+      lia.
     Qed.
 
     Lemma digits_to_nat_aux_acc_inj_helper2 a b c n :
@@ -375,7 +375,7 @@ Section Digits.
       apply mult_le_compat_r.
       rewrite plus_assoc_reverse.
       apply plus_le_compat_l.
-      omega.
+      lia.
     Qed.
 
     Lemma digits_to_nat_aux_acc_inj_helper01 a b n1 n2 :
@@ -388,20 +388,20 @@ Section Digits.
       intros ? ? ? lt1 l2.
       apply lt_not_le in lt1.
       apply lt1.
-      rewrite (le_plus_minus n2 n1) by omega.
+      rewrite (le_plus_minus n2 n1) by lia.
       rewrite Nat.pow_add_r.
       rewrite (mult_comm a).
       rewrite (mult_comm (b+1)).
       rewrite <- mult_assoc.
       apply mult_le_compat_l.
-      transitivity base; try omega.
+      transitivity base; try lia.
       transitivity (base^1*a).
       - rewrite Nat.pow_1_r.
-        transitivity (base * 1); try omega.
+        transitivity (base * 1); try lia.
         apply mult_le_compat_l.
-        omega.
+        lia.
       - apply mult_le_compat_r.
-        apply Nat.pow_le_mono_r; omega.
+        apply Nat.pow_le_mono_r; lia.
     Qed.
     
     Lemma digits_to_nat_aux_acc_inj l1 l2 c (a b:digit):
@@ -426,7 +426,7 @@ Section Digits.
         generalize (digits_to_nat_aux_acc_inj_helper1 a b c n1 n2 cne0 alt blt lt1).
         generalize (digits_to_nat_aux_acc_inj_helper1 b a c n2 n1 cne0 blt alt lt2).
         intros.
-        omega.
+        lia.
       }
       subst.
       split; trivial.
@@ -434,7 +434,7 @@ Section Digits.
       simpl.
       generalize (digits_to_nat_aux_acc_inj_helper2 a b c n2 lt1).
       generalize (digits_to_nat_aux_acc_inj_helper2 b a c n2 lt2).
-      omega.
+      lia.
     Qed.
     
     Lemma digits_to_nat_aux_acc_inj2 l1 l2 c (a b:digit):
@@ -460,7 +460,7 @@ Section Digits.
         generalize (digits_to_nat_aux_acc_inj_helper12 a b c n1 n2 ane0 alt blt lt1).
         generalize (digits_to_nat_aux_acc_inj_helper12 b a c n2 n1 bne0 blt alt lt2).
         intros.
-        omega.
+        lia.
       }
       subst.
       split; trivial.
@@ -468,7 +468,7 @@ Section Digits.
       simpl.
       generalize (digits_to_nat_aux_acc_inj_helper2 a b c n2 lt1).
       generalize (digits_to_nat_aux_acc_inj_helper2 b a c n2 lt2).
-      omega.
+      lia.
     Qed.
   
     Lemma digits_to_nat_aux_digits_inj l1 l2 n :
@@ -482,23 +482,23 @@ Section Digits.
       - trivial. 
       - generalize (digits_to_nat_aux_le l2 (n * base + proj1_sig d)); intros eqq.
         rewrite <- H0 in eqq.
-        assert (le1:n * base <= n*1) by omega.
-        assert (le2:n * base <= n*1) by omega.
+        assert (le1:n * base <= n*1) by lia.
+        assert (le2:n * base <= n*1) by lia.
         destruct n; [congruence|].
         apply mult_S_le_reg_l in le2.
-        omega.
+        lia.
       - generalize (digits_to_nat_aux_le l1 (n * base + proj1_sig a)); intros eqq.
         rewrite H0 in eqq.
-        assert (le1:n * base <= n*1) by omega.
-        assert (le2:n * base <= n*1) by omega.
+        assert (le1:n * base <= n*1) by lia.
+        assert (le2:n * base <= n*1) by lia.
         destruct n; [congruence|].
         apply mult_S_le_reg_l in le2.
-        omega.
+        lia.
       - assert (lt0:0<n * base).
-        { assert (equ1:0<n) by omega.
+        { assert (equ1:0<n) by lia.
           assert (eqq1:n*0<n * base).
-          { apply Nat.mul_lt_mono_pos_l; trivial. omega. }
-          omega.
+          { apply Nat.mul_lt_mono_pos_l; trivial. lia. }
+          lia.
         } 
         assert (eql:a = d).
         + generalize (digits_to_nat_aux_acc_inj
@@ -507,11 +507,11 @@ Section Digits.
                         n
                         a d); intros eqq1.
           apply eqq1.
-          * omega.
+          * lia.
           * trivial.
         + subst. f_equal.
           revert H0. eapply IHl1.
-          omega.
+          lia.
     Qed.
 
     Lemma trim_digits_nz {y d l}: trim_digits y = d :: l -> proj1_sig d <> 0.
@@ -522,7 +522,7 @@ Section Digits.
       destruct d; simpl in *.
       intros.
       inversion H; subst.
-      omega.
+      lia.
     Qed.
 
     Lemma digits_to_nat_nzero l x :
@@ -532,10 +532,10 @@ Section Digits.
       revert x.
       induction l; simpl; trivial; intros.
       apply IHl.
-      cut (0 < x*base + proj1_sig a); try omega.
-      cut (0 < x * base); try omega.
-      cut (0*base < x*base); try omega.
-      apply mult_lt_compat_r; try omega.
+      cut (0 < x*base + proj1_sig a); [lia | ].
+      cut (0 < x * base); [lia | ].
+      cut (0*base < x*base); [lia | ].
+      apply mult_lt_compat_r; lia.
     Qed.
 
     Lemma trim_nat_to_digits x :
@@ -750,7 +750,7 @@ Section Digits.
                 ;  [apply digit_ext; simpl; trivial
                    | congruence]
               end | ]).
-      omega.
+      lia.
     Qed.
 
     Fixpoint string_to_digits (s:string) : option (list digit*string)
@@ -853,7 +853,7 @@ Section Digits.
 
     Lemma digit0pf : 0 < base.
     Proof.
-      omega.
+      lia.
     Qed.
 
     Definition digit0 : digit := exist _ 0 digit0pf.
@@ -872,7 +872,7 @@ Section Digits.
       - f_equal.
         apply digit_ext.
         simpl; trivial.
-      - omega.
+      - lia.
     Qed.
 
     Lemma char_to_digit0_inv a pf :
@@ -934,7 +934,7 @@ Section Digits.
       destruct (ascii_dec a "0"%char).
       - subst.
         unfold char_to_digit in eqq; simpl in eqq.
-        destruct (lt_dec 0 base); [ | omega].
+        destruct (lt_dec 0 base); [ | lia].
         inversion eqq; clear eqq; subst.
         case_eq (string_to_digits s)
         ; [intros ? eqq2 | intros eqq2]
@@ -1250,7 +1250,7 @@ Section Digits.
         rewrite Pos2Nat.id.
         case_eq (Pos.to_nat p); trivial.
         generalize (Pos2Nat.is_pos p).
-        omega.
+        lia.
     Qed.
 
     Theorem Z_to_string_inj_full

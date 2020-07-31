@@ -1,13 +1,11 @@
 Require Import BinInt.
 
-Require Import Interval.Interval_xreal.
-Require Import Interval.Interval_definitions.
-Require Import Interval.Interval_float_sig.
-Require Import Interval.Interval_interval.
-Require Import Interval.Interval_interval_float.
-Require Import Interval.Interval_transcend.
-Require Import Interval.Interval_specific_ops.
-Require Import Interval.Interval_stdz_carrier.
+Require Import Interval.Real.Xreal.
+
+Require Import Interval.Interval.Transcend.
+Require Import Interval.Float.Specific_ops.
+Require Import Interval.Float.Specific_stdz.
+Require Import Interval.Float.Basic.
 
 Require Import FloatishDef.
 
@@ -21,8 +19,8 @@ Local Instance floatish_interval_gen (prec:Z) : floatish :=
                  
     ; Fopp := F.neg
                 
-    ; Fplus := F.add rnd_NE prec
-    ; Fminus := F.sub rnd_NE prec
+    ; Fplus := F.add_slow rnd_NE prec
+    ; Fminus x y := F.add_slow rnd_NE prec x (F.neg y)
     ; Fmult := F.mul rnd_NE prec
     ; Fdiv := F.div rnd_NE prec
 

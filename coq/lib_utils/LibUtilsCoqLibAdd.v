@@ -21,7 +21,7 @@ Require Import Bool.
 Require Import List.
 Require Import String.
 Require Import Sumbool.
-Require Import Omega.
+Require Import Lia.
 Require Import Permutation.
 Require Import Morphisms.
 Require Import Setoid.
@@ -34,6 +34,12 @@ Require Import Zdigits.
 Require Import Znat.
 Require Import Recdef.
 Require Import Compare_dec.
+
+Create HintDb fml.
+
+Ltac qauto := auto with fml.
+Ltac qeauto := eauto with fml.
+Ltac qtrivial := trivial with fml.
 
 Section CoqLibAdd.
 
@@ -314,7 +320,9 @@ Section CoqLibAdd.
       Forallt_nil : Forallt P nil
     | Forallt_cons : forall (x : A) (l : list A),
         P x -> Forallt P l -> Forallt P (x :: l).
-    
+
+    Hint Constructors Forallt : fml.
+
     Lemma list_Forallt_eq_dec {A:Type}:
       forall (c l: list A),
         Forallt (fun x : A => forall y : A, {x = y} + {x <> y}) c -> {c = l} + {c <> l}.
@@ -335,10 +343,9 @@ Section CoqLibAdd.
     Lemma forallt_impl {A} {P1 P2:A->Type} {l:list A} :
       Forallt P1 l -> Forallt (fun x => P1 x -> P2 x) l -> Forallt P2 l.
     Proof.
-      induction l.
-      - intros; constructor.
-      - inversion 1; inversion 1; subst.
-        constructor; auto.
+      induction l; trivial with fml.
+      inversion 1; inversion 1; subst.
+      auto with fml.
     Defined.
 
     Lemma forallt_weaken {A} P : (forall x:A, P x) -> forall l, Forallt P l.
@@ -488,6 +495,24 @@ Section CoqLibAdd.
       f_equal; auto.
     Qed.
 
+    Lemma map_id {A} (c:list A) :
+      map id c = c.
+    Proof.
+      induction c; try reflexivity.
+      simpl.
+      rewrite IHc; reflexivity.
+    Qed.
+
+    Lemma map_eq_id {A} {f:A->A} {l} :
+      Forall (fun x => f x = x) l ->
+      map f l = l.
+    Proof.
+      intros.
+      rewrite <- (map_id l) at 2.
+      assert (Forall (fun x : A => f x = id x) l) by auto; clear H.
+      now rewrite (map_eq H0).
+    Qed.
+    
     Lemma map_cons {A B:Type} (f:A->B) (l:list A) (a:A) : 
       map f (a::l) = (f a)::map f l.
     Proof.
@@ -567,7 +592,7 @@ Section CoqLibAdd.
     Lemma compare_either (n1 n2:nat):
       (n1 <= n2) \/ (n2 <= n1).
     Proof.
-      omega.
+      lia.
     Qed.
     
     Lemma min_one_yields_one:
@@ -587,19 +612,19 @@ Section CoqLibAdd.
       simpl in *.
       rewrite (IHl (f a + 0)); simpl.
       rewrite (IHl (f a + x0)); simpl.
-      omega.
+      lia.
     Qed.
     
     Lemma fold_left_arith_dist2 {A} (x0 n0:nat) (l:list A) (f:A -> nat):
       fold_left (fun (x:nat) (y:A) => n0 * (f y) + x) l x0 =
       n0 * (fold_left (fun (x:nat) (y:A) => (f y) + x) l 0) + x0.
     Proof.
-      revert x0; induction l; simpl; intros; try omega.
+      revert x0; induction l; simpl; intros; try lia.
       rewrite (IHl (n0 * f a + x0)); simpl.
       rewrite (fold_left_arith_dist1 (f a + 0)).
       rewrite mult_plus_distr_l.
       rewrite mult_plus_distr_l.
-      omega.
+      lia.
     Qed.
 
     Lemma fold_left_arith_dist3 {A} (x0 n0:nat) (l:list A) (f:A -> nat):
@@ -607,7 +632,7 @@ Section CoqLibAdd.
       n0 * (fold_left (fun (x:nat) (y:A) => x + (f y)) l 0) + x0.
     Proof.
       generalize 0.
-      revert x0; induction l; simpl; intros; try omega.
+      revert x0; induction l; simpl; intros; try lia.
       assert (f a + n = n + f a) by apply plus_comm.
       rewrite H; clear H.
       rewrite (IHl x0 (n + f a)); reflexivity.

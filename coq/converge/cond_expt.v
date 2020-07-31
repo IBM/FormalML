@@ -309,7 +309,7 @@ Section conditional.
     * intuition.
     * unfold is_nil. 
       split.
-      -- simpl ; firstorder.
+      -- simpl ; intuition.
       -- intro H. symmetry in H. exfalso. apply (nil_cons H). 
   Qed. 
 
@@ -382,7 +382,7 @@ Section conditional.
       intro pa0. simpl ; intuition.
       intro pa0 ; intuition.
       rewrite <-H in pa. rewrite pa0 in pa.
-      firstorder. 
+      intuition.
   Qed.
 
   

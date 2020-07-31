@@ -1,5 +1,6 @@
 Require Import List.
-Require Import Omega.
+Require Import BinInt.
+Require Import Lia.
 Require Import LibUtils.
 
 Require Import VectorDef.
@@ -53,7 +54,7 @@ Program Definition vcombine {T1 T2} {n:nat} (v1:vector T1 n) (v2:vector T2 n): v
 Next Obligation.
   rewrite combine_length.
   rewrite to_list_length, to_list_length.
-  apply Nat.min_id.
+  apply PeanoNat.Nat.min_id.
 Qed.
 
 Definition vector_zip {T1 T2} {n:nat} (v1:vector T1 n) (v2:vector T2 n): vector (T1*T2) n :=
@@ -165,6 +166,7 @@ End Tensor.
 Inductive NumericType
   := FloatType
    | IntTYpe.
+
 
 Definition ntype_interp (n:NumericType) : Type
   := match n with

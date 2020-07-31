@@ -1,5 +1,5 @@
 Require Import List.
-Require Import Omega.
+Require Import Lia.
 Require Import LibUtils.
 
 Require Import ListAdd.
@@ -30,7 +30,7 @@ Section Vector.
         * exact (v (exist _ n (le_Sn_le _ _ pf))).
         * exact vector_fold_right1_bounded_dep.
   Defined.c
-*)
+ *)
 
   Fixpoint vector_fold_right1_bounded_dep {A:nat->Type} {B} 
            (f:forall n,B->A n->A (S n)) (init:A 0%nat) (singleton:B->A 1%nat) {m:nat} 
@@ -41,7 +41,7 @@ Section Vector.
              init
     | S bound1 =>
       fun pf0 : S bound1 <= m =>
-        let an := vector_fold_right1_bounded_dep f init singleton v bound1 (le_Sn_le bound1 m pf0) in
+        let an := vector_fold_right1_bounded_dep f init singleton v bound1 (Le.le_Sn_le bound1 m pf0) in
 
         match bound1 as bound1' return (A bound1' -> S bound1' <= m -> A (S bound1')) with
         | 0 => fun (_ : A 0) (pf1 : 1 <= m) =>
@@ -61,19 +61,19 @@ Section Vector.
       - apply f.
         + exact (v (exist _ n pf)).
         + apply IHn.
-          exact (le_Sn_le _ _ pf).
+          exact (Le.le_Sn_le _ _ pf).
     Defined.
 
   Definition vnil {T} : Vector T 0.
   Proof.
     intros [i pf].
-    omega.
+    lia.
   Defined.
 
   Definition vcons {T} {n} (x:T) (v:Vector T n) : (Vector T (S n)).
   Proof.
     intros [i pf].
-    destruct (Nat.eq_dec i n).
+    destruct (PeanoNat.Nat.eq_dec i n).
     + exact x.
     + apply v.
       exists i.
@@ -81,10 +81,9 @@ Section Vector.
       split; trivial.
       now apply le_S_n in pf.
   Defined.
-
   
-  Definition vhd {T} {n} (v:Vector T (S n)) : T := v (exist _ (0%nat) (Nat.lt_0_succ n)).
-  Definition vlast {T} {n} (v:Vector T (S n)) : T := v (exist _ (n%nat) (Nat.lt_succ_diag_r n)).
+  Definition vhd {T} {n} (v:Vector T (S n)) : T := v (exist _ (0%nat) (NPeano.Nat.lt_0_succ n)).
+  Definition vlast {T} {n} (v:Vector T (S n)) : T := v (exist _ (n%nat) (NPeano.Nat.lt_succ_diag_r n)).
 
   Definition vdrop_last {T} {n} (v:Vector T (S n)) : Vector T n.
   Proof.
@@ -124,11 +123,11 @@ Section Vector.
 
   Definition vector_fold_right1_dep {A:nat->Type} {B} (f:forall n, B->A n->A (S n)) 
              (init:A 0%nat) (singleton:B->A 1%nat) {m:nat} (v:Vector B m) : A m
-    := vector_fold_right1_bounded_dep f init singleton v m (le_refl _).
+    := vector_fold_right1_bounded_dep f init singleton v m (Le.le_refl _).
 
   Definition vector_fold_right_dep {A:nat->Type} {B} (f:forall n, B->A n->A (S n)) 
              (init:A 0%nat) {m:nat} (v:Vector B m) : A m
-    := vector_fold_right_bounded_dep f init v m (le_refl _).
+    := vector_fold_right_bounded_dep f init v m (Le.le_refl _).
 
   Definition vector_fold_right1 {A B:Type} (f:B->A->A) (init:A) (singleton:B->A) {m:nat} (v:Vector B m)
     := vector_fold_right1_dep (A:=fun _ => A) (fun _ => f) init singleton v.
@@ -200,20 +199,21 @@ Section Vector.
     induction n; intros l pf.
     - exact init.
     - destruct n.
-      + assert (pf2:(0 < length l)%nat) by omega.
+      + assert (pf2:(0 < length l)%nat) by lia.
         destruct l.
-        * simpl in pf; omega.
+        * simpl in pf; lia.
         * exact (singleton b).
-      + destruct l; simpl in *; try omega.
+      + destruct l; simpl in *; [lia | ].
         apply f.
         * apply b.
-        * apply (IHn l).
-          omega.
+        * assert (pf2:(S n <= length l)%nat) by lia.
+          eapply IHn.
+          apply pf2.
   Defined.
 
   Definition list_fold_right1_dep {A:nat->Type} {B} (f:forall n, B->A n->A (S n)) 
              (init:A 0%nat) (singleton:B->A 1%nat) (l:list B) : A (length l)
-    := list_fold_right1_bounded_dep f init singleton l (length l) (le_refl _).
+    := list_fold_right1_bounded_dep f init singleton l (length l) (Le.le_refl _).
 
   Definition list_fold_right_dep {A:nat->Type} {B} (f:forall n, B->A n->A (S n)) 
              (init:A 0%nat) (l:list B) : A (length l)
@@ -247,13 +247,13 @@ Section Vector.
   Program Definition vtake {A} {m:nat} (v:Vector (A) m) (n:nat) (pf:(n<=m)%nat) : Vector A n
     := fun i => v i.
   Next Obligation.
-    omega.
+    lia.
   Defined.
   
   Program Definition vskip {A} {m:nat} (v:Vector (A) m) (n:nat) (pf:(n<=m)%nat) : Vector A (m-n)
     := fun i => v (i+n).
   Next Obligation.
-    omega.
+    lia.
   Defined.
 
   Definition transpose {A} {n m:nat} (mat:Matrix A n m) :=
@@ -284,7 +284,7 @@ Section Vector.
   Proof.
     intros [i pf].
     unfold vcons, vlast, vdrop_last.
-    destruct (Nat.eq_dec i n)
+    destruct (NPeano.Nat.eq_dec i n)
     ; subst
     ; f_equal
     ; apply index_pf_irrel.
@@ -390,7 +390,7 @@ Section Vector.
     intros; subst.
     intros [i pf].
     unfold vcons.
-    destruct (Nat.eq_dec i n); simpl; trivial.
+    destruct (NPeano.Nat.eq_dec i n); simpl; trivial.
   Qed.
 
   Lemma vdrop_last_proper {T} {n} (x y:Vector T (S n)) : x =v= y -> vdrop_last x =v= vdrop_last y.
@@ -409,7 +409,7 @@ Section Vector.
   Proof.
     unfold vdrop_last, vcons.
     apply vec_eq_eq; intros [i pf].
-    match_destr; [omega | ].
+    match_destr; [lia | ].
     erewrite index_pf_irrel; eauto.
   Qed.
 
@@ -427,7 +427,7 @@ Section Vector.
     rewrite (vector_fold_right_dep_ext _ _ (vector_Sn_split v)).
     unfold vector_fold_right_dep.
     simpl.
-    destruct (Nat.eq_dec m m) ; [ | congruence].
+    destruct (NPeano.Nat.eq_dec m m) ; [ | congruence].
     f_equal. 
     erewrite vector_fold_right_dep_bounded_pf_ext.
     erewrite vector_fold_right_dep_bounded_cut_down.
@@ -436,7 +436,7 @@ Section Vector.
     apply veq_sym.
     apply vector_Sn_split.
     Unshelve.
-    omega.
+    lia.
   Qed.
 
   Lemma vector_fold_right_Sn {A:Type} {B} (f:B->A->A) (init:A%nat) {m:nat} (v:Vector B (S m)) : 
@@ -474,7 +474,7 @@ Section Vector.
       + erewrite index_pf_irrel; eauto.
       + apply IHbound.
     Unshelve.
-    omega.
+    lia.
   Qed.
 
   Lemma vector_fold_right1_dep_ext {A:nat->Type} {B} (f:forall n,B->A n->A (S n)) 
@@ -524,7 +524,7 @@ Section Vector.
   
   Lemma vector_fold_right1_dep_1 {A:nat->Type} {B} (f:forall n,B->A n->A (S n)) 
         (init:A 0%nat) sing (v:Vector B 1) : 
-    vector_fold_right1_dep f init sing v = sing (v (exist _ 0 Nat.lt_0_1)).
+    vector_fold_right1_dep f init sing v = sing (v (exist _ 0 NPeano.Nat.lt_0_1)).
   Proof.
     unfold vector_fold_right1_dep.
     simpl.
@@ -574,10 +574,10 @@ Section Vector.
     destruct bound; simpl.
     - f_equal; try index_prover.
       apply eqq.
-      omega.
+      lia.
     - f_equal.
       + apply eqq.
-        omega.
+        lia.
       + apply IHbound; auto.
   Qed.
 
@@ -602,9 +602,9 @@ Section Vector.
     erewrite vector_fold_right1_bounded_dep_SSn.
     f_equal.
     erewrite vector_fold_right1_bounded_dep_droplast; trivial.
-    omega.
+    lia.
     Unshelve.
-    omega.
+    lia.
   Qed.
 
   Lemma vector_fold_right_bounded_dep_ind {A:nat->Type} {B} {P:forall m, A m -> Prop} (f:forall n,B->A n->A (S n)) 
@@ -683,11 +683,11 @@ Section Vector.
   Proof.
     induction n.
     - intros [[i pf] eqqi].
-      omega.
+      lia.
     - intros [[i pf] eqqi].
       unfold vector_to_list in *.
       rewrite vector_fold_right_Sn; simpl.
-      destruct (Nat.eq_dec i n).
+      destruct (NPeano.Nat.eq_dec i n).
       + left.
         unfold vlast.
         subst.
@@ -699,7 +699,7 @@ Section Vector.
         erewrite index_pf_irrel; eauto.
         
         Unshelve.
-        simpl; omega.
+        simpl; lia.
   Qed.
 
   Lemma vin_cons {A} x (a:A) {n} {v:Vector A n} : vin x (vcons a v) <-> (x = a \/ vin x v).
@@ -707,25 +707,25 @@ Section Vector.
     unfold vcons.
     split.
     - intros [[i pf] eqq].
-      destruct (Nat.eq_dec i n).
+      destruct (NPeano.Nat.eq_dec i n).
       + subst; eauto.
       + right.
         eexists (exist _ i _).
         erewrite index_pf_irrel; eauto.
         
         Unshelve.
-        simpl; omega.
+        simpl; lia.
     - intros [eqq | inn].
       + red.
         eexists (exist _ n _).
-        destruct (Nat.eq_dec n n); congruence.
+        destruct (NPeano.Nat.eq_dec n n); congruence.
       + destruct inn as [[i pf] eqq].
         eexists (exist _ i _).
-        destruct (Nat.eq_dec i n); [omega | ].
+        destruct (NPeano.Nat.eq_dec i n); [lia | ].
         erewrite index_pf_irrel; eauto.
         Unshelve.
-        simpl; omega.
-        simpl; omega.
+        simpl; lia.
+        simpl; lia.
   Qed.        
 
   Lemma vin_proper {A} (x:A) {n} {v1 v2:Vector A n} : v1 =v= v2 -> vin x v1 <-> vin x v2.
@@ -784,10 +784,10 @@ Section Vector.
     revert v i.
     unfold vmap.
     induction n; intros v [i pf].
-    - omega.
+    - lia.
     - rewrite vector_fold_right_dep_Sn.
       simpl.
-      destruct (Nat.eq_dec i n).
+      destruct (NPeano.Nat.eq_dec i n).
       + subst.
         unfold vlast.
         erewrite index_pf_irrel; eauto.
@@ -796,7 +796,7 @@ Section Vector.
         erewrite index_pf_irrel; rewrite IHn.
         erewrite vdrop_last_i; eauto.
         Unshelve.
-        omega.
+        lia.
   Qed.
 
   Lemma mmap_nth {A B : Type} (f : A -> B) {m n} (mat : Matrix A m n) i j : 
@@ -831,7 +831,7 @@ Section Vector.
   Proof.
     apply FunctionalExtensionality.functional_extensionality.
     intros [i pf].
-    omega.
+    lia.
   Qed.
 
   Lemma vmap_id {A n} (df:Vector A n) :
@@ -852,7 +852,7 @@ Section Vector.
              match bound as bound_ return bound_ <= len -> list {n':nat | n' < start+len}%nat with
              | 0 => fun _ => nil
              | S bound' => fun _ => exist _ (start + len-(S bound')) _ :: F bound' _
-             end); omega.
+             end); lia.
   Defined.
 
   Lemma bounded_seq_bounded_ext (start len : nat) (bound:nat) (pf1 pf2:bound<=len) :
@@ -865,7 +865,7 @@ Section Vector.
   Qed.
 
   Definition bounded_seq (start len : nat) : list {n':nat | n' < start+len}%nat
-    := bounded_seq_bounded start len len (le_refl _).
+    := bounded_seq_bounded start len len (Le.le_refl _).
 
   Definition bounded_seq0 len : list {n':nat | n' < len}%nat := bounded_seq 0 len.
 
@@ -875,9 +875,9 @@ Section Vector.
     induction bound; simpl; intros start; trivial.
     rewrite IHbound.
     f_equal.
-    - omega.
+    - lia.
     - f_equal.
-      omega.
+      lia.
   Qed.
 
   Lemma bounded_seq_domain start len : map (@proj1_sig _ _) (bounded_seq start len) = seq start len.
@@ -885,7 +885,7 @@ Section Vector.
     unfold bounded_seq.
     rewrite bounded_seq_bounded_domain.
     f_equal.
-    omega.
+    lia.
   Qed.
   
   Lemma bounded_seq_strongly_sorted start len:
@@ -907,7 +907,7 @@ Section Vector.
       assert (inn:In x (map (@proj1_sig _ _) (bounded_seq start len))).
       + rewrite bounded_seq_domain.
         apply in_seq.
-        omega.
+        lia.
       + apply in_map_iff in inn.
         destruct inn as [[??] [??]].
         subst.
@@ -924,15 +924,15 @@ Section Vector.
     split.
     - induction n.
       + intros ? [??].
-        omega.
+        lia.
       + rewrite vector_fold_right_Sn.
         intros [Plast Pdrop].
         intros [i pf].
-        destruct (Nat.eq_dec i n).
+        destruct (NPeano.Nat.eq_dec i n).
         * unfold vlast in Plast.
           subst.
           erewrite index_pf_irrel; eauto.
-        * assert (pf2:(i < n)%nat) by omega.
+        * assert (pf2:(i < n)%nat) by lia.
           specialize (IHn _ Pdrop (exist _ i pf2)).
           erewrite index_pf_irrel; eauto.
     - induction n.
@@ -943,7 +943,7 @@ Section Vector.
         * eauto.
         * eapply IHn.
           intros [i pf].
-          assert (pf2 : (i < S n)%nat) by omega.
+          assert (pf2 : (i < S n)%nat) by lia.
           specialize (H (exist _ i pf2)).
           simpl in *.
           erewrite index_pf_irrel; eauto.
@@ -955,7 +955,7 @@ Section Vector.
   Proof.
     unfold vectoro_to_ovector.
     induction n; simpl.
-    - intros ? [??]; omega.
+    - intros ? [??]; lia.
     - rewrite vector_fold_right_dep_Sn.
       intros eqq.
       apply some_lift2 in eqq.
@@ -966,7 +966,7 @@ Section Vector.
       specialize (IHn _ _ eqq2).
       rewrite eqq1.
       unfold vcons.
-      destruct (Nat.eq_dec i n); trivial.
+      destruct (NPeano.Nat.eq_dec i n); trivial.
   Qed.
 
   Lemma vectoro_to_ovector_forall_some_b {A n} (vo:Vector (option A) n) (v:Vector A n) :
@@ -979,7 +979,7 @@ Section Vector.
       unfold vector_fold_right_dep.
       simpl.
       exists vnil; split; trivial.
-      intros [??]; omega.
+      intros [??]; lia.
     - rewrite vector_fold_right_dep_Sn.
       intros eqq.
       specialize (IHn (vdrop_last vo) (vdrop_last v)).
@@ -1055,11 +1055,11 @@ Section Vector.
     destruct i as [i pf].
     unfold vectoro_to_ovector.
     induction n; simpl.
-    - omega.
+    - lia.
     - intros eqq.
       rewrite vector_fold_right_dep_Sn.
       unfold vlast.
-      destruct (Nat.eq_dec i n).
+      destruct (NPeano.Nat.eq_dec i n).
       + subst.
         erewrite index_pf_irrel.
         rewrite eqq; simpl; trivial.
@@ -1068,7 +1068,7 @@ Section Vector.
         * match_destr.
         * erewrite index_pf_irrel; eauto.
    Unshelve.
-   omega.
+   lia.
   Qed.
 
   Definition vfirstn {T} {n} (v:Vector T n) m (pf:(m<=n)%nat): Vector T m.
@@ -1082,7 +1082,7 @@ Section Vector.
   Lemma vfirstn0 {T} {n} (v:Vector T n) pf : vfirstn v 0 pf = vnil.
   Proof.
     apply vec_eq_eq; intros [??]; simpl.
-    omega.
+    lia.
   Qed.
 
   Definition vfirstn_eq {T} {n} (v:Vector T n) pf : vfirstn v n pf = v.
@@ -1119,15 +1119,15 @@ Section Vector.
     induction bound; simpl; trivial; intros.
     - generalize (vfirstn v 0 pf); intros.
       rewrite (vnil0 v0); trivial.
-    - destruct m; [omega | ].
+    - destruct m; [lia | ].
       destruct bound; simpl; trivial.
       + replace (vfirstn v 1 pf) with (vcons (v (exist (fun n' : nat => (n' < S m)%nat) 0%nat pf)) vnil)
         ; trivial.
         apply FunctionalExtensionality.functional_extensionality; intros [??]; simpl.
-        destruct x; [ | omega].
+        destruct x; [ | lia].
         simpl.
         erewrite index_pf_irrel; eauto.
-      + assert (pf2:(S bound <= S m)%nat) by omega.
+      + assert (pf2:(S bound <= S m)%nat) by lia.
         replace (vfirstn v (S (S bound)) pf)
           with (vcons (v (exist (fun n' : nat => (n' < S m)%nat) (S bound) pf)) (vfirstn v (S bound) pf2)).
         * apply ff.
@@ -1137,10 +1137,10 @@ Section Vector.
                        sing (v (exist (fun n' : nat => (n' < S m)%nat) 0%nat pf1))
                    | S bound2 =>
                      fun (an' : A (S bound2)) (_ : (S (S bound2) <= S m)%nat) =>
-                       f (S bound2) (v (exist (fun n' : nat => (n' < S m)%nat) bound (le_Sn_le (S bound) (S m) pf))) an'
+                       f (S bound2) (v (exist (fun n' : nat => (n' < S m)%nat) bound (Le.le_Sn_le (S bound) (S m) pf))) an'
                    end
                      (vector_fold_right1_bounded_dep f init sing v bound
-                                                     (le_Sn_le bound (S m) (le_Sn_le (S bound) (S m) pf))) (le_Sn_le (S bound) (S m) pf)) with (vector_fold_right1_bounded_dep f init sing v (S bound) pf2); try eapply IHbound.
+                                                     (Le.le_Sn_le bound (S m) (Le.le_Sn_le (S bound) (S m) pf))) (Le.le_Sn_le (S bound) (S m) pf)) with (vector_fold_right1_bounded_dep f init sing v (S bound) pf2); try eapply IHbound.
           clear.
           destruct bound; simpl.
           -- erewrite index_pf_irrel; eauto.
@@ -1169,20 +1169,20 @@ Section Vector.
     forall {m:nat} (v:Vector B m), P m v (vector_fold_right1_dep f init sing v).
   Proof.
     intros.
-    rewrite <- (vfirstn_eq v (le_refl m)) at 1.
+    rewrite <- (vfirstn_eq v (Le.le_refl m)) at 1.
     apply vector_fold_right1_bounded_dep_gen_ind; trivial.
   Qed.
 
   Program Definition vapp {A} {m n} (v1:Vector A m) (v2:Vector A n) : Vector A (m+n)
-    := fun i => if lt_dec i m then v1 i else v2 (i-m).
+    := fun i => if Compare_dec.lt_dec i m then v1 i else v2 (i-m).
   Next Obligation.
-    omega.
-  Defined.  
+    lia.
+  Defined.
 
   Lemma vtake_skip_app_eq_pf n m (pf:(n<=m)%nat) : n + (m - n) = m.
   Proof.
-    rewrite Nat.add_sub_assoc by trivial.
-    now rewrite minus_plus.
+    rewrite NPeano.Nat.add_sub_assoc by trivial.
+    now rewrite Minus.minus_plus.
   Defined.
 
   Lemma vtake_skip_app_lt_pf {m n i} (pf:(n<=m)%nat) (p2f:i < m) : i < n + (m - n).
@@ -1202,7 +1202,7 @@ Section Vector.
       match goal with
         [|- _ = v (exist _ _ ?pff)] => generalize pff
       end.
-      assert (HH:x - n + n = x) by omega.
+      assert (HH:x - n + n = x) by lia.
       rewrite HH.
       intros.
       now erewrite index_pf_irrel.

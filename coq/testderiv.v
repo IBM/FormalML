@@ -3,7 +3,7 @@ Require Import EquivDec.
 Require Import RelationClasses.
 Require Import List.
 Require Import NPeano.
-Require Import Lra Omega.
+Require Import Lra Lia.
 Require Reals.
 Require Import Eqdep_dec.
 
@@ -812,8 +812,8 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
       vec_to_nat_fun (vcons b v) n = b.
     Proof.
       unfold vec_to_nat_fun; simpl.
-      destruct (lt_dec n (S n)); [ | omega].
-      destruct (Nat.eq_dec n n); [ | omega].
+      destruct (lt_dec n (S n)); [ | lia].
+      destruct (Nat.eq_dec n n); [ | lia].
       trivial.
     Qed.
 
@@ -821,9 +821,9 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
       vec_to_nat_fun (vcons b v) m = vec_to_nat_fun v m.
     Proof.
       unfold vec_to_nat_fun; simpl.
-      destruct (lt_dec m (S n)); [ | omega].
-      destruct (Nat.eq_dec m n); [omega | ].
-      destruct (lt_dec m n); [| omega].
+      destruct (lt_dec m (S n)); [ | lia].
+      destruct (Nat.eq_dec m n); [lia | ].
+      destruct (lt_dec m n); [| lia].
       erewrite index_pf_irrel; eauto.
     Qed.
 
@@ -854,7 +854,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
           f_equal; simpl.
           erewrite sum_n_ext_loc; [ reflexivity | ]; intros.
           apply vec_to_nat_fun_vcons_nend.
-          omega.
+          lia.
     Qed.
 
     Lemma is_derive_vsum {n} (vf : R -> Vector R n) (x:R) (df : Vector R n) :
@@ -1723,7 +1723,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
        + unfold scal; simpl.
          unfold mult; simpl.
          field.
-         apply IZR_neq; omega.
+         apply IZR_neq; lia.
        + apply is_derive_scal.
          unfold df_R, df_eval_at_point; simpl.
          generalize (is_derive_msum 
