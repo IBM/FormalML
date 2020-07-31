@@ -294,10 +294,29 @@ Proof.
   - simpl ; rewrite list_sum_cat. now rewrite IHl. 
 Qed.
 
-Definition map_map {A} (l : list(list A)) (f : A -> R) : list(list R) := map (map f) l. 
+Definition map_map {A} (f : A -> R) (l : list(list A))  : list(list R) := map (map f) l. 
+
+Lemma In_group_by_image {A} (l : list A) (f : A -> R) :
+ Forall (fun l0 => (forall a b, In a l0 -> In b l0 -> (f a = f b))) (group_by_image f l). 
+Proof.
+  apply quotient_partitions. 
+Qed.
 
 
 
+Lemma list_sum_eq_class {A : Type} (l : list A) (f : A -> R) :
+  forall l0, In l0 (group_by_image f l) -> list_sum (map f l0) = INR(length l0)*match l0 with
+                                                                          | [] => 0
+                                                                          | x :: xs => f x
+                                                                          end.
+Proof.   
+  intros l0 Hl0.
+  assert (forall x y, In x l -> In y l -> f x = f y).
+  set (In_group_by_image l f).
+Admitted.
+  
+
+      
 End list_sum.
   
 
