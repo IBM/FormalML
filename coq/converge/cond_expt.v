@@ -8,6 +8,7 @@ Set Bullet Behavior "Strict Subproofs".
 
 Import ListNotations.
 Local Open Scope list_scope.
+
 Open Scope R_scope.
 
 
@@ -296,13 +297,81 @@ Qed.
 
 Definition map_map {A} (f : A -> R) (l : list(list A))  : list(list R) := map (map f) l. 
 
-Lemma In_group_by_image {A} (l : list A) (f : A -> R) :
+Lemma Forall_group_by_image {A} (l : list A) (f : A -> R) :
  Forall (fun l0 => (forall a b, In a l0 -> In b l0 -> (f a = f b))) (group_by_image f l). 
 Proof.
   apply quotient_partitions. 
 Qed.
 
+Lemma In_group_by_image {A} {l : list A} {f : A -> R} :
+  forall l0, In l0 (group_by_image f l) -> (forall a b, In a l0 -> In b l0 -> (f a = f b)).
+Proof.
+  rewrite <- Forall_forall.
+  apply Forall_group_by_image.
+Qed.
 
+Lemma cons_In_group_by_image {A} {l : list A} {f : A -> R} {a : A} :
+ forall l0, In (a :: l0) (group_by_image f l) -> (forall b, In b l0 -> (f a = f b)).
+Proof.
+  intros l0 Hl0 b Hb.
+  set (In_group_by_image (a :: l0) Hl0). 
+  eapply e ; eauto. 
+  simpl ; intuition.
+  simpl ; intuition. 
+Qed.
+ 
+Lemma map_rep {A} {l0 : list A} {f : A -> R} {a0 : A} :
+(forall b : A, In b l0 -> f a0 = f b) -> map (fun x => f x) l0 = map (fun x => f a0) l0.
+Proof.
+  intro H.
+  induction l0.
+  - simpl ; easy.
+  - simpl in *. rewrite IHl0. 
+    f_equal. symmetry. 
+    apply H. left. reflexivity. 
+    intros b Hb.
+    apply H. right. assumption.
+Qed.
+
+Lemma eq_class_eq_rep_hd {A : Type} {l : list A} {f : A -> R} :
+  forall {l0}, In l0 (group_by_image f l) ->
+        let a := match l0 with
+                 | [] => 0
+                 | x :: xs => f x
+                 end in 
+        (map f l0) = (map (fun x => a) l0).
+Proof.
+  intros l0 Hl0 a.
+  induction l0.  
+  - simpl; easy.  
+  - simpl. f_equal. apply map_rep. 
+    apply (cons_In_group_by_image _ Hl0). 
+Qed. 
+
+Lemma length_map_const (l : list R) (a : R) :
+  length (map (fun x => a) l) = length l.
+Proof.   
+  induction l.
+  - simpl ; easy. 
+  - simpl.  now rewrite IHl.
+Qed.
+
+Lemma list_sum_map_const {A} (l : list A) (a : A) (f : A -> R) :
+  list_sum (map (fun x => f a) l) = INR(length l)* (f a).
+Proof.   
+  induction l.
+  - simpl ; lra. 
+  - simpl. rewrite IHl.
+    enough (match length l with
+            | 0%nat => 1
+            | S _ => INR (length l) + 1
+            end = INR(length l) + 1). 
+    rewrite H ; lra.
+    generalize (length l) as n.
+    intro n.  induction n.
+    + simpl ; lra.
+    + lra. 
+Qed.
 
 Lemma list_sum_eq_class {A : Type} (l : list A) (f : A -> R) :
   forall l0, In l0 (group_by_image f l) -> list_sum (map f l0) = INR(length l0)*match l0 with
@@ -310,15 +379,27 @@ Lemma list_sum_eq_class {A : Type} (l : list A) (f : A -> R) :
                                                                           | x :: xs => f x
                                                                           end.
 Proof.   
-  intros l0 Hl0.
-  assert (forall x y, In x l -> In y l -> f x = f y).
-  set (In_group_by_image l f).
-Admitted.
-  
+  intros l0 Hl0. 
+  rewrite (eq_class_eq_rep_hd Hl0).
+  induction l0. 
+  - simpl ; lra.
+  - simpl. rewrite (list_sum_map_const l0).
+    enough (match length l0 with
+            | 0%nat => 1
+            | S _ => INR (length l0) + 1
+            end = INR(length l0) + 1). 
+    rewrite H ; lra.
+    generalize (length l0) as n.
+    intro n.  induction n.
+    + simpl ; lra.
+    + lra. 
+Qed.   
 
       
 End list_sum.
-  
+
+
+
 
 Section range.
 
