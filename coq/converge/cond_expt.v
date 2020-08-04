@@ -11,7 +11,6 @@ Local Open Scope list_scope.
 
 Open Scope R_scope.
 
-
 Section aux.
 
 
@@ -149,19 +148,6 @@ Section quotient.
   Proof.
     constructor.
   Qed.
-
-  (*Lemma add_to_buckets_in_one {x a l} :
-    In x (add_to_bucket a l) -> In a x \/ In x l.
-  Proof.
-    induction l.
-    - simpl ; intuition. invcs H0 ; intuition.  
-    - simpl in *.
-      match_destr.
-       -- intro H ; intuition. 
-       -- match_destr ; intuition. 
-          + invcs H ; intuition.
-          + invcs H ; intuition. 
-  Qed.*)
   
   Lemma add_to_buckets_in_one {x a l} :
     In x (add_to_bucket a l) -> In a x \/ In x l.
@@ -231,9 +217,23 @@ Section quotient.
   Lemma quotient_buckets_disjoint l ll1 l2 ll3 l4 ll5  :
     quotient l = ll1 ++ l2 :: ll3 ++ l4 :: ll5 ->
     forall x y, In x l2 /\ In y l4 -> ~ R x y.
+  Proof.
+    set (quotient_all_different l). 
+    intro H.
+    setoid_rewrite H in a. 
+    unfold all_different in a. unfold different_buckets in a.
+    set (ForallOrdPairs_In a).  simpl in o. clear H. 
+    intros x y H0. 
+    specialize (o l2 l4). 
+    enough (h2 : In l2 (ll1 ++ l2 :: ll3 ++ l4 :: ll5)).
+    enough (h4 : In l4 (ll1 ++ l2 :: ll3 ++ l4 :: ll5)).
+    specialize (o h2 h4).
+    case o.
+    - intro H. rewrite H in H0. admit. 
+    - intro H. case H. intro H1. apply H1. now destruct H0. now destruct H0.  
+      intro G. apply G. 
   Admitted.
   
-    
 Lemma quotient_buckets_disjoint_ l ll1 ll2 :
     quotient l = ll1 ++ ll2 ->
     forall l1 l2 x y, In l1 ll1 /\ In l2 ll2 ->
@@ -257,7 +257,7 @@ Proof.
 Qed.
 
 
-Global Instance Eq_dec_im_eq (f : A -> R) : EqDec A (im_eq f) := 
+Local Instance Eq_dec_im_eq (f : A -> R) : EqDec A (im_eq f) := 
 {
   equiv_dec := fun a b => Req_EM_T (f a) (f b)
 }.
@@ -287,16 +287,6 @@ Proof.
   now rewrite H.
 Qed.
       
-Lemma list_sum_map_concat (l : list(list R)) :
-  list_sum (map list_sum l) = list_sum (concat l).
-Proof.   
-  induction l. 
-  - simpl ; reflexivity.
-  - simpl ; rewrite list_sum_cat. now rewrite IHl. 
-Qed.
-
-Definition map_map {A} (f : A -> R) (l : list(list A))  : list(list R) := map (map f) l. 
-
 Lemma Forall_group_by_image {A} (l : list A) (f : A -> R) :
  Forall (fun l0 => (forall a b, In a l0 -> In b l0 -> (f a = f b))) (group_by_image f l). 
 Proof.
@@ -381,7 +371,7 @@ Lemma list_sum_eq_class {A : Type} (l : list A) (f : A -> R) :
 Proof.   
   intros l0 Hl0. 
   rewrite (eq_class_eq_rep_hd Hl0).
-  induction l0. 
+  destruct l0. 
   - simpl ; lra.
   - simpl. rewrite (list_sum_map_const l0).
     enough (match length l0 with
@@ -393,9 +383,32 @@ Proof.
     intro n.  induction n.
     + simpl ; lra.
     + lra. 
-Qed.   
+Qed.
 
-      
+Lemma list_sum_eq_list_sum_quotient {A : Type} (l : list A) (f : A -> R):
+  list_sum (map f l) = list_sum (map f (concat (group_by_image f l))). 
+Proof.
+  now rewrite unquotient_quotient.   
+Qed.
+
+Lemma concat_map_map {A} (l : list(list A)) (f : A -> R) :
+  concat (map (map f) l) = map f (concat l).
+Proof.
+  induction l. 
+  simpl ; reflexivity. 
+  simpl. rewrite map_cat. rewrite IHl. 
+  reflexivity.
+Qed.
+
+Lemma list_sum_map_concat (l : list(list R)) :
+  list_sum (map list_sum l) = list_sum (concat l).
+Proof.   
+  induction l. 
+  - simpl ; reflexivity.
+  - simpl ; rewrite list_sum_cat. now rewrite IHl. 
+Qed.
+
+
 End list_sum.
 
 
@@ -403,7 +416,7 @@ End list_sum.
 
 Section range.
 
-Instance EqDecR : EqDec R eq := Req_EM_T. 
+Global Instance EqDecR : EqDec R eq := Req_EM_T. 
 
 Arguments outcomes {_}.
 
