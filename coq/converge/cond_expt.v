@@ -39,6 +39,15 @@ Proof.
 Qed.
 
 
+Lemma list_sum_const_mul {A : Type} (l : list (nonnegreal*R)) :
+  forall r, list_sum (map (fun x => r*x.2) l)  = r*list_sum(map (fun x => x.2) l).
+Proof.
+  intro r.
+  induction l.
+  simpl; lra.
+  simpl. rewrite IHl ; lra.
+Qed.
+
 End aux.
 
 Section quotient.
@@ -338,14 +347,6 @@ Proof.
     apply (cons_In_group_by_image _ Hl0). 
 Qed. 
 
-Lemma length_map_const (l : list R) (a : R) :
-  length (map (fun x => a) l) = length l.
-Proof.   
-  induction l.
-  - simpl ; easy. 
-  - simpl.  now rewrite IHl.
-Qed.
-
 Lemma list_sum_map_const {A} (l : list A) (a : A) (f : A -> R) :
   list_sum (map (fun x => f a) l) = INR(length l)* (f a).
 Proof.   
@@ -401,266 +402,101 @@ Proof.
 Qed.
 
 Lemma list_sum_map_concat (l : list(list R)) :
-  list_sum (map list_sum l) = list_sum (concat l).
+  list_sum (concat l) = list_sum (map list_sum l).
 Proof.   
   induction l. 
   - simpl ; reflexivity.
   - simpl ; rewrite list_sum_cat. now rewrite IHl. 
 Qed.
 
+Theorem list_sum_map_sum_eq_class {A} (l : list A) (f : A -> R) :
+  list_sum (map f l) = list_sum (map (fun l0 => INR(length l0)*match l0 with
+                                                          | [] => 0
+                                                          | x :: xs => f x
+                                                          end) (group_by_image f l)).
+Proof.
+  rewrite list_sum_eq_list_sum_quotient.
+  rewrite <-concat_map_map.
+  rewrite list_sum_map_concat.
+  rewrite <-map_comp. f_equal.
+  apply List.map_ext_in.
+  apply list_sum_eq_class. 
+Qed.
+
 
 End list_sum.
 
 
-
-
-Section range.
-
-Global Instance EqDecR : EqDec R eq := Req_EM_T. 
-
-Arguments outcomes {_}.
-
-(* Range of a random variable together with the atomic probabilities.*)
-Definition range {A : Type} (l : list(nonnegreal*A)) (f : A -> R) : list (nonnegreal*R) :=
-  map (fun x => (x.1, f x.2)) l.
-
-(* All p.(outcomes) which are preimages of a fixed r in R under the random variable g. *)
-Definition preim_outcomes_of {A : Type} (p : Pmf A) (g : A -> R) (r : R) :=
-  filter (fun x => (g x.2 ==b r)) p.(outcomes).
-
-Definition preim_outcomes_of_And {A : Type} (p : Pmf A) (f g : A -> R) (r1 r2 : R) :=
-  filter (fun x => andb (f x.2 ==b r1) (g x.2 ==b r2)) (p).(outcomes).
-
-
-Lemma expt_value_range_sum {A : Type} (p : Pmf A) (f : A -> R) :
-  expt_value p f = list_sum (map (fun p => nonneg(p.1)*p.2) (range p.(outcomes) f)).
-Proof.
-  unfold comp, expt_value,range. 
-  rewrite <-map_comp. unfold comp. simpl. f_equal.
-  apply List.map_ext. intro a. apply Rmult_comm. 
-Qed.
-
-
-(* p(f = r) *)
-Definition prob_of_event {A : Type} (p : Pmf A) (f : A -> R) (r : R) :=
-  𝕡[[seq s <- range p f | s.2 ==b r]].
-
-(* p(f = r1 /\ g = r2) *)
-Definition and_prob {A : Type} (p : Pmf A) (f g : A -> R) (r1 r2 : R) :=
-  𝕡[[seq s <- range (preim_outcomes_of p g r2) f | s.2 ==b r1]].
-
-
-(* The function f doesn't matter here as we're only summing over the probabilities (first indices)*)
-Lemma list_sum_outcomes_And {A : Type} (f : A -> R) (l : list (nonnegreal*A)) :
-   𝕡[l] = list_fst_sum (range l f).
-Proof.
-unfold prob ; simpl.
-rewrite list_fst_sum_compat. unfold list_fst_sum'.
-rewrite list_fst_sum_compat. unfold list_fst_sum'.
-simpl in *.  induction l.
-- simpl ; lra.
-- simpl. rewrite IHl. reflexivity.
-Qed.
-
-Lemma preim_outcomes_of_range {A:Type}(p : Pmf A) (f : A -> R) (r : R) :
-  𝕡[preim_outcomes_of p f r] = 𝕡[[seq s <- (range p f) | (s.2 ==b r)]].
-Proof.
-  unfold prob, preim_outcomes_of. simpl.
-  repeat (rewrite list_fst_sum_compat ; unfold list_fst_sum').
-  f_equal. unfold range.  
-  induction p.(outcomes).
-  - simpl. reflexivity.          
-  - simpl.
-    unfold equiv_decb; destruct (equiv_dec (f a.2) r).
-    simpl. rewrite IHl. f_equal.
-    rewrite IHl. reflexivity.
-Qed.
-
-
-Lemma preim_outcomes_of_range_And {A : Type} (p : Pmf A) (f g: A -> R) (r1 r2 : R) :
- 𝕡[preim_outcomes_of_And p f g r1 r2] = 𝕡[[seq s <- range (preim_outcomes_of p g r2) f | s.2 ==b r1]].
-Proof.
-  unfold prob, preim_outcomes_of,range,preim_outcomes_of_And. simpl.
-  repeat (rewrite list_fst_sum_compat ; unfold list_fst_sum').
-  f_equal. rewrite map_comp.  rewrite map_comp. f_equal.
-  induction p.(outcomes).
-  simpl ; reflexivity.
-  simpl. unfold equiv_decb. destruct (equiv_dec (g a.2) r2) ; [simpl| simpl].
-  unfold equiv_decb ; destruct (equiv_dec (f a.2) r1) ; [simpl | rewrite IHl].
-  rewrite IHl.  reflexivity.
-  simpl.  reflexivity.
-  destruct (equiv_dec (f a.2) r1) ; [simpl; now rewrite IHl | simpl; now rewrite IHl].
-Qed.
-
-Definition cond_prob {A : Type}(p : Pmf A) (f g : A -> R)(r1 r2 : R) := 𝕡[preim_outcomes_of_And p f g r1 r2]/ 𝕡[preim_outcomes_of p g r2].
-  
-           
-Definition cond_expt_value {A : Type}(p : Pmf A)(f g : A -> R) (r : R) : R := 
-  list_sum (map (fun x => (cond_prob p f g x.2 r)*(x.2)) (range p.(outcomes) f)).
-
-
-Definition independent {A : Type}(p : Pmf A) (f g : A -> R) :=
-  forall r1 r2,  𝕡[preim_outcomes_of_And p f g r1 r2] = 𝕡[preim_outcomes_of p f r1]*𝕡[preim_outcomes_of p g r2].
-
-Lemma cond_prob_eq_prob_independent {A : Type}(p : Pmf A) {f g : A -> R} (hi : independent p f g) :
-  forall r1 r2, 𝕡[preim_outcomes_of p g r2] <> 0 -> cond_prob p f g r1 r2 = 𝕡[preim_outcomes_of p f r1].
-Proof.
-  intros r1 r2 H. 
-  unfold cond_prob. specialize (hi r1 r2).
-  rewrite hi. field_simplify. reflexivity.
-  assumption.
-Qed.
-
-
-Lemma cond_expt_value_expt_value_aux {A : Type}{p : Pmf A}{f g : A -> R} (l : list(nonnegreal*R))(hi : independent p f g) :
- forall r, 𝕡[preim_outcomes_of p g r] <> 0 -> map (fun x => (cond_prob p f g x.2 r)*(x.2)) l = map (fun x => (𝕡[preim_outcomes_of p f x.2])*(x.2)) l.
-Proof.
-  intros r Hr.   
-  apply List.map_ext.
-  intro a. f_equal.
-  apply (cond_prob_eq_prob_independent p hi).
-  assumption.
-Qed.
-
-
-Lemma list_sum_const_mul {A : Type} (l : list (nonnegreal*R)) :
-  forall r, list_sum (map (fun x => r*x.2) l)  = r*list_sum(map (fun x => x.2) l).
-Proof.
-  intro r.
-  induction l.
-  simpl; lra.
-  simpl. rewrite IHl ; lra.
-Qed.
-
-
-
-(*Lemma cond_expt_value_range {A : Type}{r : R} {g : A -> R}{p : Pmf A} (hne : 0 <> 𝕡[preim_outcomes_of p g r])(f : A -> R):
-  cond_expt_value p f g r =
-  list_sum ([seq nonneg(x.1) * x.2 | x <- range (preim_outcomes_of p g r) f])/𝕡[preim_outcomes_of p g r].
-Proof.
-  unfold cond_expt_value. unfold cond_prob.
-  unfold range.  
-  rewrite <-map_comp. unfold comp.  simpl. unfold cond_prob. f_equal.
-  apply List.map_ext. intro a. apply Rmult_comm.
-Qed.*)
-
-
-  
-(*Lemma cond_expt_value_expt_value_aux {A : Type}{r2 : R} {g : A -> R}{p : Pmf A} (hne : 0 <> 𝕡[preim_outcomes_of p g r2])(f : A -> R) (r1:R): list_sum ([seq nonneg(x.1) * x.2 | x <- range (preim_outcomes_of p g r2) f]) = _.*)
-  
-End range.
-
-
-
-(*Section product_measure.
-Open Scope monad_scope.
-
-(* Not able to use the cool do notation. :-(  *)
-Definition product_measure {A:Type} (p q : Pmf A) : Pmf(A*A) :=
- Pmf_bind p (fun (x:A) => Pmf_bind q (fun (y:A) => Pmf_pure (pair x y))).
-
-End product_measure.
-
-Notation "p ⊗ q" := (product_measure p q) (at level 80, right associativity).
-
-Section crap.
+Section expt_value_quotient.
 
 Arguments outcomes {_}. 
-Definition preim_outcomes_of_And {A : Type} (p : Pmf A) (f g: A -> R) (r1 r2 : R) :=
-  filter (fun x => andb (f x.2 ==b r1) (g x.2 ==b r2)) p.(outcomes).
 
-Lemma preim_outcomes_of_And_split {A : Type} (p : Pmf A) (f g : A -> R) (r1 r2 : R) :
-  preim_outcomes_of_And p f g r1 r2 = filter (fun x => f x.2 ==b r1) (preim_outcomes_of p g r2).
+(*Variables (A : Type) (p : Pmf A) (f : A -> R).
+
+Check p.(outcomes). 
+Check group_by_image (fun x => f x.2) p.(outcomes). *)
+
+Lemma expt_value_eq_class_aux {A : Type} {f : A -> R} {p : Pmf A} :
+  forall {l0}, In l0 (group_by_image (fun x : nonnegreal * A => f x.2) p.(outcomes)) ->
+        let a := match l0 with
+                 | [] => 0
+                 | x :: xs => f x.2
+                 end in 
+        (map (fun x => f x.2 * nonneg(x.1)) l0) = (map (fun x => a*nonneg(x.1)) l0).
 Proof.
-  unfold preim_outcomes_of, preim_outcomes_of_And.
-  induction p.(outcomes).
-  - simpl ; reflexivity. 
-  - simpl.  unfold equiv_decb. destruct (equiv_dec (g a.2) r2).
-    unfold equiv_decb. destruct (equiv_dec (f a.2) r1). simpl. rewrite e0.
-    unfold equiv_decb. destruct (equiv_dec r1 r1) ; [| congruence]. 
-    rewrite IHl. reflexivity.
-    simpl. rewrite IHl. unfold equiv_decb.
-    destruct (equiv_dec (f a.2) r1) ; [contradiction|congruence].
-    unfold equiv_decb.
-    destruct (equiv_dec (f a.2) r1). simpl. rewrite IHl. reflexivity.
-    simpl. rewrite IHl. reflexivity.
-Qed. 
-
-Definition independent_aux_prop {A : Type} (p : Pmf A) (f g : A -> R):=
-  forall r : R,
-    list_sum [seq f x.2 * nonneg(x.1) | x <- p & g x.2 ==b r] =
-    list_sum [seq f x.2 * nonneg(x.1) | x <- p.(outcomes)]*list_sum [seq nonneg(x.1) | x<-p.(outcomes) & g x.2 ==b r].
-
-
-Lemma independent_aux_prop_const_fun {A : Type} (p : Pmf A) (g : A -> R) (c : R) : 
-  independent_aux_prop p (fun _ => c) g.
-Proof.
-  unfold independent.
-  intros r. 
-  enough (H :  list_sum [seq c * nonneg(x.1) | x <- p.(outcomes) & g x.2 ==b r] = c* list_sum [seq nonneg(x.1) | x <- p.(outcomes) & g x.2 ==b r]).
-  rewrite H.
-  enough (H1 : forall p:Pmf A, list_sum [seq c * nonneg(x.1) | x <- p] = c*list_sum [seq nonneg(x.1) | x <- p]).
-  rewrite (H1 p). f_equal. destruct p as [p0 sum1]. simpl in *.
-  revert sum1. rewrite list_fst_sum_compat. unfold list_fst_sum'. intro H2. rewrite H2 ;lra.
-  intro p0.
-  induction p0.(outcomes). 
-  simpl ; lra.
-  simpl. simpl in H. rewrite IHl. lra.
-  induction p.(outcomes).
-  simpl ; lra.
-  simpl. unfold equiv_decb ; destruct (equiv_dec (g a.2) r);[ | rewrite IHl;reflexivity].
-  simpl. rewrite IHl. rewrite Rmult_plus_distr_l. reflexivity.
+  intros l0 Hl0 a.
+    destruct l0.  
+  - simpl; easy.  
+  - simpl. f_equal. apply List.map_ext_in.
+    intros a0 Ha0. f_equal. symmetry. 
+    apply (cons_In_group_by_image _ Hl0).  assumption. 
 Qed.
 
-End crap.
-
-
-
-Section events.
-
-Arguments outcomes {_}.
-    
-(* All (p⊗p).(outcomes) which are preimages of a fixed r in R under the random variable g. *)
-Definition preim_outcomes_of_fst {A : Type} (p : Pmf A) (f : A -> R) (r : R) :=
-  filter (fun x => (f x.2.1 ==b r)) (p ⊗ p).(outcomes).
-
-Definition preim_outcomes_of_snd {A : Type} (p : Pmf A) (g : A -> R) (r : R) :=
-  filter (fun x => (g x.2.2 ==b r)) (p ⊗ p).(outcomes).
-
-
-Definition preim_outcomes_of_pair_And {A:Type} (p : Pmf A) (f g : A -> R) (r1 r2 : R) :=
-  filter (fun x => andb (f x.2.1 ==b r1) (g x.2.2 ==b r2)) (p ⊗ p).(outcomes).
-
-
-Theorem independent {A:Type} (p:Pmf A) (f g : A -> R) :
-  forall r1 r2, 𝕡[ preim_outcomes_of_pair_And p f g r1 r2] = 𝕡[preim_outcomes_of_fst p f r1]*𝕡[preim_outcomes_of_snd p g r2].
-  
-End events.
-
-Section cond_prob.
-
-Arguments outcomes {_}.
-
-
-(* Conditional expectation of f given that g(a) = r. *)
-Definition cond_expt_value{A : Type}{r : R} {g : A -> R}{p : Pmf A} (hne : 0 <> 𝕡[preim_outcomes_of_snd p g r])(f : A -> R)  : R :=
-  let q:= preim_outcomes_of_snd p g r in
-  list_sum [seq f x.2.1 * nonneg (x.1) | x <- q]/𝕡[preim_outcomes_of_snd p g r].
-
-Lemma cond_expt_value_indep
-{A : Type} {r : R} {f g : A -> R} {p : Pmf A}(hne : 0 <> 𝕡[preim_outcomes_of_snd p g r]) (Hi : independent p f g) :
-  cond_expt_value hne f = expt_value p f.
+Lemma list_sum_const_mul' {A:Type} (l : list (nonnegreal*A)) (a : R) :
+  list_sum [seq a* nonneg(x.1) | x <- l] = a*list_sum[seq nonneg(x.1) | x <- l].
 Proof.
-  unfold cond_expt_value. unfold prob,preim_outcomes_of_snd.
-  simpl. rewrite list_fst_sum_compat. unfold list_fst_sum'.
-  field_simplify.
-  induction p.(outcomes).
-  - simpl. admit.
-  - simpl. destruct a. simpl. 
-    rewrite filter_cat. rewrite filter_comp. rewrite IHl. 
-      reflexivity.
-  intro H. unfold prob in hne. simpl in hne.
-  rewrite list_fst_sum_compat in hne. unfold list_fst_sum' in hne. firstorder.
-Qed.   
- *)
+  induction l.
+  + simpl ; lra.
+  + simpl. rewrite IHl. lra.
+Qed.
+
+Lemma expt_value_summand {A} (p : Pmf A) (f : A -> R) : 
+forall l0, In l0 (group_by_image (fun x : nonnegreal * A => f x.2) p.(outcomes)) -> 
+      list_sum [seq f x.2 * nonneg(x.1) | x <- l0]  = 𝕡[l0]*match l0 with
+                              | [] => 0
+                              | x :: xs => f x.2 
+                              end.
+Proof.
+  intros l0 Hl0.
+  unfold prob. simpl. rewrite list_fst_sum_compat ; unfold list_fst_sum'.
+  rewrite (expt_value_eq_class_aux Hl0).
+  destruct l0.
+  - simpl ; lra.
+  - simpl in *. rewrite list_sum_const_mul'. lra. 
+Qed.    
+
+
+Lemma expt_value_eq_list_sum_quotient {A : Type} (p : Pmf A) (f : A -> R):
+  expt_value p f = list_sum (map (fun x => f x.2 * nonneg(x.1)) (concat (group_by_image (fun x => f x.2) p.(outcomes)))). 
+Proof.
+  unfold expt_value.
+  now rewrite unquotient_quotient.   
+Qed.
+
+(* Rewriting expected value of f as a sum grouped by range values of f. *)
+Theorem expt_value_eq_class {A} (f : A -> R) (p : Pmf A) :
+  expt_value p f = list_sum (map (fun l => 𝕡[l]*match l with
+                                             | [] => 0
+                                             | x :: xs => f x.2
+                                             end) (group_by_image (fun x => f x.2) p.(outcomes))).
+Proof.
+  rewrite expt_value_eq_list_sum_quotient.
+  rewrite <-concat_map_map.
+  rewrite list_sum_map_concat.
+  rewrite <-map_comp. f_equal.
+  apply List.map_ext_in.  apply expt_value_summand. 
+Qed.
+
+
+End expt_value_quotient.
 
