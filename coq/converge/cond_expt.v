@@ -528,17 +528,58 @@ Section conditional.
     := forall (l:list (list A)), is_partition R l ->
             is_partition R (f l).
 
+
+  Lemma ForallOrdPairs_filter {A} R (l : list A) (p : A -> bool) :
+    ForallOrdPairs R l -> ForallOrdPairs R (filter p l).
+  Proof.
+    intros H.
+    induction l. 
+    - simpl ; constructor.
+    - simpl. case_eq (p a).
+      + invcs H. specialize (IHl H3).
+        intro Hpa. constructor ; trivial.
+        apply Forall_filter ; trivial.
+      + intro Hpa.
+        invcs H. specialize (IHl H3). assumption. 
+  Qed.
+
+    Lemma ForallOrdPairs_map_filter {A} R (l : list(list A)) (p : A -> bool) :
+     Forall (is_equiv_class R) l -> Forall (is_equiv_class R) (map (filter p) l).
+  Proof.
+    intros H.
+    induction l. 
+    - simpl ; constructor.
+    - simpl. constructor. 
+      + invcs H. specialize (IHl H3).
+        revert IHl. 
+        rewrite Forall_forall. intro IHl.
+        specialize (IHl a). 
+  Admitted.
+  
+    
   Lemma filter_preserves_partitions {A} {R} {equiv:Equivalence R}  {dec:EqDec A R}
   (p:list A -> bool) :
   preserves_partitions (filter p).
   Proof.
-  Admitted.
+    intros l pl.
+    split. destruct pl as [Heq Had]. 
+    - apply Forall_filter ; trivial. 
+    - apply ForallOrdPairs_filter. destruct pl ; trivial. 
+  Qed.
 
- Lemma map_filter_preserves_partitions {A} {R} {equiv:Equivalence R}  {dec:EqDec A R}
+  Print is_equiv_class. 
+  Lemma map_filter_preserves_partitions {A} {R} {equiv:Equivalence R}  {dec:EqDec A R}
         (p:A -> bool) :
     preserves_partitions (map (filter p)).
   Proof.
+    intros l pl.
+    split.
+    destruct pl as [Heq Had].
+    - unfold all_equivs. 
+      unfold all_equivs in Heq.
+      revert Heq.  
   Admitted.
+
 
   Lemma Permutation_concat_is_partition {A} R {equiv:Equivalence R}  {dec:EqDec A R} l l' :
     is_partition R l ->
@@ -546,7 +587,7 @@ Section conditional.
     Permutation (concat l) (concat l') ->
     Permutation l l'.
   Admitted.
-
+  
   Lemma add_to_bucket_is_partition {A} {R} {equiv:Equivalence R}  {dec:EqDec A R} a :
     preserves_partitions (add_to_bucket R a).
   Proof.
@@ -555,8 +596,7 @@ Section conditional.
     - now apply add_to_bucket_all_equivs.
     - now apply add_to_bucket_all_different.
   Qed.
-    
-  Lemma add_to_bucket_filter_true {A} {R} {equiv:Equivalence R}  {dec:EqDec A R} (l : list(list A)) (p : A -> bool) (a : A):
+     Lemma add_to_bucket_filter_true {A} {R} {equiv:Equivalence R}  {dec:EqDec A R} (l : list(list A)) (p : A -> bool) (a : A):
     p a = true ->
     is_partition R l ->
     Permutation (add_to_bucket R a (map (filter p) l)) (map (filter p) (add_to_bucket R a l)).
@@ -654,4 +694,3 @@ Lemma cond_expt_def {A} (p : Pmf A) (f : A -> R) (g : A -> R) (r : R) :
   
       
 End conditional.
-

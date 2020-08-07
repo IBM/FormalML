@@ -70,6 +70,7 @@ Fixpoint iter_scheme (n : nat) :=
 Definition variance (p : Pmf A) (f : A -> R) :=
   expt_value p (fun a => (f a - (expt_value p f))^2). 
 
+(* Needs the tower law of expectation and also the "take-out-what-is-known" property.*)
 Lemma aux1 (hY : forall n, expt_value p (Y n) = 0) :
   forall n, expt_value p (fun a => (Y n a)*(T n (iter_scheme n a))) = 0.
 Proof.
@@ -81,6 +82,9 @@ Proof.
   intros a.
   simpl. ring.
 Qed.
+
+Lemma iter_scheme_ineq :
+forall n:nat, variance p (iter_scheme (S n)) <= (F n)^2 * (variance p (iter_scheme n)) + variance p (Y n).
 
 
 End iter.
