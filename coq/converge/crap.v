@@ -26,8 +26,8 @@ Definition range {A : Type} (l : list(nonnegreal*A)) (f : A -> R) : list (nonneg
   map (fun x => (x.1, f x.2)) l.
 
 (* All p.(outcomes) which are preimages of a fixed r in R under the random variable g. *)
-Definition preim_outcomes_of {A : Type} (p : Pmf A) (g : A -> R) (r : R) :=
-  filter (fun x => (g x.2 ==b r)) p.(outcomes).
+(*Definition preim_outcomes_of {A : Type} (p : Pmf A) (g : A -> R) (r : R) :=
+  filter (fun x => (g x.2 ==b r)) p.(outcomes).*)
 
 Definition preim_outcomes_of_And {A : Type} (p : Pmf A) (f g : A -> R) (r1 r2 : R) :=
   filter (fun x => andb (f x.2 ==b r1) (g x.2 ==b r2)) (p).(outcomes).

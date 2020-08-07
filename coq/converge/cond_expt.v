@@ -217,7 +217,7 @@ Section quotient.
                      
   Lemma quotient_all_different l : all_different (quotient l).
   Proof.
-    induction l; simpl; auto with ml.
+    induction l ; simpl ; auto with ml.
   Qed.
 
   Hint Resolve quotient_all_different : ml.
@@ -431,10 +431,6 @@ Section expt_value_quotient.
 
 Arguments outcomes {_}. 
 
-(*Variables (A : Type) (p : Pmf A) (f : A -> R).
-
-Check p.(outcomes). 
-Check group_by_image (fun x => f x.2) p.(outcomes). *)
 
 Lemma expt_value_eq_class_aux {A : Type} {f : A -> R} {p : Pmf A} :
   forall {l0}, In l0 (group_by_image (fun x : nonnegreal * A => f x.2) p.(outcomes)) ->
@@ -497,6 +493,61 @@ Proof.
   apply List.map_ext_in.  apply expt_value_summand. 
 Qed.
 
-
 End expt_value_quotient.
+
+Section conditional.
+  Local Instance EqDecR : EqDec R eq := Req_EM_T. 
+  Arguments outcomes {_}.
+
+  (* All p.(outcomes) which are preimages of a fixed r in R under the random variable g. *)
+  Definition preim_outcomes_of {A : Type} (p : Pmf A) (g : A -> R) (r : R) :=
+  filter (fun x => (g x.2 ==b r)) p.(outcomes).
+
+  Definition preim_outcomes_of_And {A : Type} (p : Pmf A) (f g : A -> R) (r1 r2 : R) :=
+  filter (fun x => andb (f x.2 ==b r1) (g x.2 ==b r2)) (p).(outcomes).
+
+  Definition hd' {A} (f : A -> R) (l : seq(nonnegreal*A)) :=
+    match l with
+    | [] => 0
+    | x :: xs => f x.2
+    end .
+  
+  Definition cond_expt {A} (p : Pmf A) (f : A -> R) (g : A -> R) (r : R) : R :=
+    list_sum (map (fun l => 𝕡[l]*(hd' f l)) (group_by_image (fun x => f x.2) (preim_outcomes_of p g r))).
+
+
+
+  Lemma add_to_bucket_filter{A} {R} {equiv:Equivalence R}  {dec:EqDec A R} (l : list(list A)) (p : list A -> bool) (a : A):
+    add_to_bucket a (filter p l) = filter_nil (filter p (add_to_bucket a l)). 
+  Proof.
+    induction l. 
+   Admitted.
+      
+  Lemma want {A : Type} (f : A -> R) (l : list A) (p : A -> bool):
+    (group_by_image f (filter p l)) =
+    filter_nil (map (filter p) (group_by_image f l)).
+  Proof.
+    induction l.
+    - simpl. reflexivity. 
+    - simpl. match_destr. simpl. rewrite IHl.
+      rewrite add_to_bucket_filter. admit.
+      rewrite IHl.
+   Admitted. 
+
+
+      
+Lemma cond_expt_def {A} (p : Pmf A) (f : A -> R) (g : A -> R) (r : R) :
+    cond_expt p f g r =
+    list_sum
+      ((map (fun l => 𝕡[(preim_outcomes_of_And p f g (hd' f l) r)]*(hd' f l)))
+         (group_by_image (fun x => f x.2) p.(outcomes))).
+  Proof.
+    unfold cond_expt,preim_outcomes_of_And, preim_outcomes_of.
+    induction p.(outcomes). 
+    - simpl ; reflexivity.
+    - simpl. match_destr. simpl. 
+  Admitted.
+  
+      
+End conditional.
 
