@@ -52,7 +52,7 @@ End aux.
 
 Section quotient.
 
-  Context {A} {R} {equiv:Equivalence R}  {dec:EqDec A R}.
+  Context {A} R {equiv:Equivalence R}  {dec:EqDec A R}.
 
   Fixpoint add_to_bucket (x:A) (ll:list (list A)) : list (list A)
     := match ll with
@@ -112,17 +112,17 @@ Section quotient.
 
   Definition is_equiv_class (l:list A) := ForallPairs R l.
 
-  Definition is_partition (l:list (list A)) := Forall (is_equiv_class) l.
+  Definition all_equivs (l:list (list A)) := Forall (is_equiv_class) l.
 
 
-  Lemma is_partition_nil : is_partition nil.
+  Lemma all_equivs_nil : all_equivs nil.
   Proof.
     now red.
   Qed.
 
-  Lemma add_to_bucket_partition a l : is_partition l -> is_partition (add_to_bucket a l).
+  Lemma add_to_bucket_all_equivs a l : all_equivs l -> all_equivs (add_to_bucket a l).
   Proof.
-    unfold is_partition, is_equiv_class, is_equiv_class, ForallPairs.
+    unfold all_equivs, is_equiv_class, is_equiv_class, ForallPairs.
     induction l; simpl; intros isp.
     - (repeat constructor); simpl ; intros ; intuition. subst ; reflexivity. 
     - invcs isp.  
@@ -139,15 +139,15 @@ Section quotient.
       + constructor; trivial.
   Qed.
 
- Lemma quotient_partitions l : is_partition (quotient l).
+ Lemma quotient_all_equivs l : all_equivs (quotient l).
   Proof.
-    Hint Resolve is_partition_nil : ml.
-    Hint Resolve add_to_bucket_partition : ml.
+    Hint Resolve all_equivs_nil : ml.
+    Hint Resolve add_to_bucket_all_equivs : ml.
 
     induction l; simpl; auto with ml.
   Qed.
 
-  Hint Resolve quotient_partitions : ml.
+  Hint Resolve quotient_all_equivs : ml.
   
   Definition different_buckets l1 l2 := forall x y, In x l1 -> In y l2 -> ~ R x y.
 
@@ -176,7 +176,7 @@ Section quotient.
   Qed.
 
   Lemma add_to_bucket_all_different a l :
-    is_partition l ->
+    all_equivs l ->
     all_different l ->
     all_different (add_to_bucket a l).
   Proof.
@@ -197,7 +197,7 @@ Section quotient.
           now rewrite <- e.
       + constructor; trivial.
         rewrite Forall_forall; intros.
-        generalize (add_to_bucket_partition a l H2); intros.
+        generalize (add_to_bucket_all_equivs a l H2); intros.
         red in H0.
         eapply Forall_forall in H0; eauto.
         repeat red in H0.
@@ -222,6 +222,14 @@ Section quotient.
 
   Hint Resolve quotient_all_different : ml.
 
+  Definition is_partition l := all_equivs l /\ all_different l.
+
+  Lemma quotient_partitions l : is_partition (quotient l).
+  Proof.
+    red; auto with ml.
+  Qed.
+
+  Hint Resolve quotient_partitions : ml.
 
   Lemma quotient_buckets_disjoint l ll1 l2 ll3 l4 ll5  :
     quotient l = ll1 ++ l2 :: ll3 ++ l4 :: ll5 ->
@@ -516,24 +524,118 @@ Section conditional.
     list_sum (map (fun l => 𝕡[l]*(hd' f l)) (group_by_image (fun x => f x.2) (preim_outcomes_of p g r))).
 
 
+  Definition preserves_partitions {A} {R} {equiv:Equivalence R}  {dec:EqDec A R} (f:list (list A)->list (list A))
+    := forall (l:list (list A)), is_partition R l ->
+            is_partition R (f l).
 
-  Lemma add_to_bucket_filter{A} {R} {equiv:Equivalence R}  {dec:EqDec A R} (l : list(list A)) (p : list A -> bool) (a : A):
-    add_to_bucket a (filter p l) = filter_nil (filter p (add_to_bucket a l)). 
+  Lemma filter_preserves_partitions {A} {R} {equiv:Equivalence R}  {dec:EqDec A R}
+  (p:list A -> bool) :
+  preserves_partitions (filter p).
   Proof.
-    induction l. 
-   Admitted.
-      
+  Admitted.
+
+ Lemma map_filter_preserves_partitions {A} {R} {equiv:Equivalence R}  {dec:EqDec A R}
+        (p:A -> bool) :
+    preserves_partitions (map (filter p)).
+  Proof.
+  Admitted.
+
+  Lemma Permutation_concat_is_partition {A} R {equiv:Equivalence R}  {dec:EqDec A R} l l' :
+    is_partition R l ->
+    is_partition R l'->
+    Permutation (concat l) (concat l') ->
+    Permutation l l'.
+  Admitted.
+
+  Lemma add_to_bucket_is_partition {A} {R} {equiv:Equivalence R}  {dec:EqDec A R} a :
+    preserves_partitions (add_to_bucket R a).
+  Proof.
+    intros ? [??].
+    split.
+    - now apply add_to_bucket_all_equivs.
+    - now apply add_to_bucket_all_different.
+  Qed.
+    
+  Lemma add_to_bucket_filter_true {A} {R} {equiv:Equivalence R}  {dec:EqDec A R} (l : list(list A)) (p : A -> bool) (a : A):
+    p a = true ->
+    is_partition R l ->
+    Permutation (add_to_bucket R a (map (filter p) l)) (map (filter p) (add_to_bucket R a l)).
+  Proof.
+    intros pa isp.
+    apply (Permutation_concat_is_partition R).
+    - apply add_to_bucket_is_partition.
+      now apply map_filter_preserves_partitions.
+    - apply map_filter_preserves_partitions.
+      now apply add_to_bucket_is_partition.
+    - rewrite add_to_bucket_perm.
+      do 2 rewrite <- concat_filter.
+      rewrite add_to_bucket_perm.
+      simpl.
+      rewrite pa.
+      reflexivity.
+  Qed.
+
+  Lemma add_to_bucket_filter_false {A} R {equiv:Equivalence R}  {dec:EqDec A R} (l : list(list A)) (p : A -> bool) (a : A):
+    p a = false ->
+    filter_nil (map (filter p) l) = filter_nil (map (filter p) (add_to_bucket R a l)).
+  Proof.
+    intros pa.
+    induction l; simpl.
+    - rewrite pa; simpl; trivial.
+    - destruct a0; simpl; trivial.
+      case_eq (p a0); intros pa0; simpl.
+      + destruct (equiv_dec a a0); simpl.
+        * rewrite pa.
+          rewrite pa0; simpl; trivial.
+        * rewrite pa0; simpl.
+          now rewrite IHl.
+      + destruct (equiv_dec a a0); simpl.
+        * rewrite pa.
+          rewrite pa0; simpl; trivial.
+        * rewrite pa0; simpl.
+          now rewrite IHl.
+  Qed.
+
+  Lemma add_to_bucket_filter_nil {A} {R0} {equiv:Equivalence R0}  {dec:EqDec A R0} (l : list (list A)) (a:A) :
+   add_to_bucket R0 a (filter_nil l) =
+  filter_nil (add_to_bucket R0 a l). 
+  Proof.
+    induction l.
+    - simpl. reflexivity.
+    - simpl. destruct a0. 
+      simpl;  trivial.
+      simpl. match_destr. simpl. rewrite IHl.
+      reflexivity.
+  Qed.
+  
   Lemma want {A : Type} (f : A -> R) (l : list A) (p : A -> bool):
-    (group_by_image f (filter p l)) =
-    filter_nil (map (filter p) (group_by_image f l)).
+    Permutation (group_by_image f (filter p l))
+                (filter_nil (map (filter p) (group_by_image f l))).
   Proof.
     induction l.
     - simpl. reflexivity. 
-    - simpl. match_destr. simpl. rewrite IHl.
-      rewrite add_to_bucket_filter. admit.
-      rewrite IHl.
-   Admitted. 
-
+    - simpl.
+      match_case; intros pa.
+      + rewrite <- add_to_bucket_filter_true; trivial.
+        *  simpl.
+           rewrite <- add_to_bucket_filter_nil.
+           eapply (Permutation_concat_is_partition (im_eq f)).
+           -- apply add_to_bucket_is_partition.
+              apply quotient_partitions.
+           -- apply add_to_bucket_is_partition.
+              eapply filter_preserves_partitions.
+              eapply map_filter_preserves_partitions.
+              apply quotient_partitions.
+           -- do 2 rewrite add_to_bucket_perm.
+              rewrite IHl.
+              reflexivity.
+        * apply quotient_partitions.
+      + erewrite <- (add_to_bucket_filter_false (im_eq f)) by eassumption.
+        trivial.
+        Unshelve.
+        all: try apply im_eq_equiv.
+        all: try apply Eq_dec_im_eq.
+  Qed.
 
       
 Lemma cond_expt_def {A} (p : Pmf A) (f : A -> R) (g : A -> R) (r : R) :
@@ -543,6 +645,8 @@ Lemma cond_expt_def {A} (p : Pmf A) (f : A -> R) (g : A -> R) (r : R) :
          (group_by_image (fun x => f x.2) p.(outcomes))).
   Proof.
     unfold cond_expt,preim_outcomes_of_And, preim_outcomes_of.
+    rewrite want.
+    
     induction p.(outcomes). 
     - simpl ; reflexivity.
     - simpl. match_destr. simpl. 
