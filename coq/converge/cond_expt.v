@@ -511,8 +511,8 @@ Section conditional.
   Definition preim_outcomes_of {A : Type} (p : Pmf A) (g : A -> R) (r : R) :=
   filter (fun x => (g x.2 ==b r)) p.(outcomes).
 
-  Definition preim_outcomes_of_And {A : Type} (p : Pmf A) (f g : A -> R) (r1 r2 : R) :=
-  filter (fun x => andb (f x.2 ==b r1) (g x.2 ==b r2)) (p).(outcomes).
+  Definition preim_outcomes_of_And {A : Type} (l : list(nonnegreal*A)) (f g : A -> R) (r1 r2 : R) :=
+  filter (fun x => andb (f x.2 ==b r1) (g x.2 ==b r2)) l.
 
   Definition hd' {A} (f : A -> R) (l : seq(nonnegreal*A)) :=
     match l with
@@ -528,7 +528,41 @@ Section conditional.
     := forall (l:list (list A)), is_partition R l ->
             is_partition R (f l).
 
-
+  Lemma In_filter_In_list {A}{l : list A} {p : A -> bool} {a : A} :
+    In a (filter p l) -> In a l.
+  Proof.
+    intros H.
+    induction l.
+    - simpl in H ; firstorder.
+    - simpl in *.
+      match_destr_in H.  
+      -- simpl in H ; intuition.
+      -- right ; intuition.
+  Qed.
+  
+  Lemma In_list_In_filter {A} {l : list A} {p : A -> bool} {a : A} :
+    p a = true -> In a l -> In a (filter p l).
+  Proof.
+    intros pa Ha. 
+    induction l.
+    - simpl in Ha ; exfalso ; assumption.
+    - simpl in Ha. simpl. case_eq (p a0).
+      intro pa0. simpl ; intuition.
+      intro pa0 ; intuition.
+      rewrite <-H in pa. rewrite pa0 in pa.
+      firstorder. 
+  Qed.
+  
+    Lemma ForallPairs_filter {A} R (l : list A) (p : A -> bool) :
+    ForallPairs R l -> ForallPairs R (filter p l).
+  Proof.
+    intros H. unfold ForallPairs in *.
+    intros a b Ha Hb.
+    set (ha := In_filter_In_list Ha).
+    set (hb := In_filter_In_list Hb).
+    now specialize (H a b ha hb).
+  Qed. 
+  
   Lemma ForallOrdPairs_filter {A} R (l : list A) (p : A -> bool) :
     ForallOrdPairs R l -> ForallOrdPairs R (filter p l).
   Proof.
@@ -543,7 +577,7 @@ Section conditional.
         invcs H. specialize (IHl H3). assumption. 
   Qed.
 
-    Lemma ForallOrdPairs_map_filter {A} R (l : list(list A)) (p : A -> bool) :
+    Lemma Forall_map_filter {A} R (l : list(list A)) (p : A -> bool) :
      Forall (is_equiv_class R) l -> Forall (is_equiv_class R) (map (filter p) l).
   Proof.
     intros H.
@@ -553,10 +587,33 @@ Section conditional.
       + invcs H. specialize (IHl H3).
         revert IHl. 
         rewrite Forall_forall. intro IHl.
-        specialize (IHl a). 
-  Admitted.
+        specialize (IHl a).
+        intros a0 b Ha0 Hb.
+        apply H2. apply (In_filter_In_list Ha0).
+        apply (In_filter_In_list Hb).
+      + invcs H. specialize (IHl H3).
+        assumption.
+   Qed.       
+
+      Lemma ForallOrdPairs_map_filter {A} R (l : list(list A)) (p : A -> bool):
+     ForallOrdPairs (different_buckets R) l -> ForallOrdPairs (different_buckets R) (map (filter p) l).
+  Proof.
+    intros H.
+    apply ListAdd.ForallOrdPairs_impl ; trivial.
+    induction  l. invcs H.
+    - simpl ; constructor.
+    - simpl in *. constructor.
+      -- invcs H. intuition.
+         rewrite Forall_forall. 
+         intros x Hxl Hax. 
+         unfold different_buckets in *. 
+         intros x0 y H0 H1.
+         specialize (Hax x0 y).
+         apply Hax. apply (In_filter_In_list H0).
+         apply (In_filter_In_list H1).
+      -- invcs H. now apply IHl. 
+  Qed.
   
-    
   Lemma filter_preserves_partitions {A} {R} {equiv:Equivalence R}  {dec:EqDec A R}
   (p:list A -> bool) :
   preserves_partitions (filter p).
@@ -567,27 +624,31 @@ Section conditional.
     - apply ForallOrdPairs_filter. destruct pl ; trivial. 
   Qed.
 
-  Print is_equiv_class. 
+
   Lemma map_filter_preserves_partitions {A} {R} {equiv:Equivalence R}  {dec:EqDec A R}
         (p:A -> bool) :
     preserves_partitions (map (filter p)).
   Proof.
     intros l pl.
-    split.
+    split. 
     destruct pl as [Heq Had].
-    - unfold all_equivs. 
-      unfold all_equivs in Heq.
-      revert Heq.  
-  Admitted.
-
+    - unfold all_equivs in *. rewrite Forall_map. 
+      revert Heq. 
+      do 2 rewrite Forall_forall.
+      intros Heq x Hin. specialize (Heq x Hin).
+      now apply ForallPairs_filter. 
+    - destruct pl as [Heq Hed].
+      apply ForallOrdPairs_map_filter. assumption.
+   Qed.
 
   Lemma Permutation_concat_is_partition {A} R {equiv:Equivalence R}  {dec:EqDec A R} l l' :
     is_partition R l ->
     is_partition R l'->
     Permutation (concat l) (concat l') ->
     Permutation l l'.
-  Admitted.
-  
+  Proof.
+  Admitted. 
+
   Lemma add_to_bucket_is_partition {A} {R} {equiv:Equivalence R}  {dec:EqDec A R} a :
     preserves_partitions (add_to_bucket R a).
   Proof.
@@ -596,6 +657,7 @@ Section conditional.
     - now apply add_to_bucket_all_equivs.
     - now apply add_to_bucket_all_different.
   Qed.
+  
      Lemma add_to_bucket_filter_true {A} {R} {equiv:Equivalence R}  {dec:EqDec A R} (l : list(list A)) (p : A -> bool) (a : A):
     p a = true ->
     is_partition R l ->
@@ -648,7 +710,7 @@ Section conditional.
       reflexivity.
   Qed.
   
-  Lemma want {A : Type} (f : A -> R) (l : list A) (p : A -> bool):
+  Lemma group_by_image_filter_nil_perm {A : Type} (f : A -> R) (l : list A) (p : A -> bool):
     Permutation (group_by_image f (filter p l))
                 (filter_nil (map (filter p) (group_by_image f l))).
   Proof.
@@ -677,19 +739,83 @@ Section conditional.
         all: try apply Eq_dec_im_eq.
   Qed.
 
+  Definition is_nil {A} (l : list A) :=
+    negb (not_nil l).
+
+  Lemma is_nil_def {A} (l : list A) :
+    is_nil l = true <-> l = [].
+  Proof.
+    induction l.
+    * intuition.
+    * unfold is_nil. 
+      split.
+      -- simpl ; firstorder.
+      -- intro H. symmetry in H. exfalso. apply (nil_cons H). 
+  Qed. 
+     
+  Lemma list_sum_map_filter_split {A} (f : (list A) -> R) (l : list(list A)):
+    list_sum(map f l) = list_sum(map f (filter_nil l)) + list_sum (map f (filter (is_nil) l)).
+  Proof.
+    unfold is_nil.
+    induction l. 
+    - simpl ; lra.
+    - simpl. match_case.
+      + intro Ha.
+        simpl; rewrite IHl;lra.
+      + intro Ha.
+        simpl; rewrite IHl;lra.
+  Qed.
+
+  Lemma list_sum_is_nil {A} {f : (list A) -> R} (l : list(list A)) :
+    (f nil = 0) -> list_sum (map f (filter (is_nil) l)) = 0.
+  Proof. 
+    induction l.
+    - simpl ; reflexivity.
+    - simpl. match_case.
+      rewrite is_nil_def.
+      intros Ha Hf.
+      rewrite Ha. simpl. specialize (IHl Hf).
+      rewrite IHl ; lra. 
+  Qed.
+
+  Lemma list_sum_filter_nil {A} {f : (list A) -> R} (l : list(list A)) :
+    (f nil = 0) -> list_sum(map f l) = list_sum(map f (filter_nil l)).
+  Proof.
+    intro H.
+    rewrite list_sum_map_filter_split.
+    rewrite (list_sum_is_nil l H). 
+    lra. 
+  Qed.
+
+  Lemma In_group_by_image_hd' {A} {f : A -> R}{l : seq(nonnegreal*A)}{l0 : seq (nonnegreal * A)}: 
+    In l0 (group_by_image (fun x : nonnegreal * A => f x.2) l) ->
+    forall a, In a l0 -> f a.2 = hd' f l0.
+  Proof.
+    intros H a Ha.
+    induction l0.
+    * simpl in Ha ; firstorder.
+    * simpl in *. intuition. now rewrite H0.
       
+  Admitted.
+
+Import Bool. 
 Lemma cond_expt_def {A} (p : Pmf A) (f : A -> R) (g : A -> R) (r : R) :
     cond_expt p f g r =
     list_sum
-      ((map (fun l => 𝕡[(preim_outcomes_of_And p f g (hd' f l) r)]*(hd' f l)))
+      ((map (fun l => 𝕡[(preim_outcomes_of_And l f g (hd' f l) r)]*(hd' f l)))
          (group_by_image (fun x => f x.2) p.(outcomes))).
   Proof.
     unfold cond_expt,preim_outcomes_of_And, preim_outcomes_of.
-    rewrite want.
-    
-    induction p.(outcomes). 
-    - simpl ; reflexivity.
-    - simpl. match_destr. simpl. 
+    rewrite group_by_image_filter_nil_perm.
+    rewrite <-list_sum_filter_nil.
+    * rewrite <-map_comp. unfold comp. simpl. f_equal. 
+      apply List.map_ext_in.
+      intros a Ha. f_equal.
+      -- f_equal. apply filter_ext. intros x Hx.
+         rewrite (In_group_by_image_hd' Ha x Hx). rewrite <-(andb_true_l (g x.2 ==b r)).
+         f_equal. unfold equiv_decb. match_destr. firstorder. 
+      -- admit.
+    * unfold prob. simpl ; lra. 
   Admitted.
   
       
