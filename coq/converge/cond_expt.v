@@ -317,6 +317,16 @@ Proof.
   apply Forall_group_by_image.
 Qed.
 
+Lemma In_group_by_image_sublist {A} {l : list A} {f : A -> R}  :
+  forall {l0 l0'}, In l0 (group_by_image f l) -> (forall c, In c l0' -> In c l0)
+            -> (forall a b, In a l0 -> In b l0' -> (f a = f b)).
+Proof.
+  intros l0 l0' H H0 a b H1 H2.
+  set (Hin := In_group_by_image _ H).
+  specialize (H0 b H2).
+  now specialize (Hin a b H1 H0).
+Qed.
+
 Lemma cons_In_group_by_image {A} {l : list A} {f : A -> R} {a : A} :
  forall l0, In (a :: l0) (group_by_image f l) -> (forall b, In b l0 -> (f a = f b)).
 Proof.
@@ -641,12 +651,21 @@ Section conditional.
       apply ForallOrdPairs_map_filter. assumption.
    Qed.
 
+  Import Permutation. 
   Lemma Permutation_concat_is_partition {A} R {equiv:Equivalence R}  {dec:EqDec A R} l l' :
     is_partition R l ->
     is_partition R l'->
     Permutation (concat l) (concat l') ->
     Permutation l l'.
   Proof.
+    intros Hl Hl' Hcll'.
+    invcs Hcll'. 
+    - assert (Forall (eq []) l') by now rewrite <-concat_nil_r. 
+      assert (Forall (eq []) l) by now rewrite <-concat_nil_r. 
+      admit.
+    - admit. 
+    - admit.
+    - admit.
   Admitted. 
 
   Lemma add_to_bucket_is_partition {A} {R} {equiv:Equivalence R}  {dec:EqDec A R} a :
@@ -795,10 +814,63 @@ Section conditional.
     induction l0.
     * simpl in Ha ; firstorder.
     * simpl in *. intuition. now rewrite H0.
+      set (cons_In_group_by_image _ H). specialize (e a).
+      simpl in e. symmetry. now apply e.
+   Qed. 
+
+   Lemma In_filter_hd' {A} {f : A -> R}{l : seq(nonnegreal*A)}{l0 : seq (nonnegreal * A)} p: 
+    In l0 (group_by_image (fun x : nonnegreal * A => f x.2) l) ->
+    forall a, In a (filter p l0) -> f a.2 = hd' f l0.
+   Proof.
+     intros H a Hin.
+     apply (In_group_by_image_hd' H).
+     apply (In_filter_In_list Hin). 
+   Qed.
+
+  Check In_group_by_image_sublist. 
+
+  Lemma In_group_by_image_sublist_hd'{A} {l : list (nonnegreal*A)} {f : A -> R} : 
+    forall {l0 l0' : seq(nonnegreal*A)}, In l0 (group_by_image (fun x : nonnegreal * A => f x.2) l)
+                                    -> (forall c, In c l0' -> In c l0)
+                                    -> (hd' f l0) = (hd' f l0').
+  Proof.
+    move=> l0 l0' H H0.
+    induction l0.
+    induction l0'.
+    - reflexivity. 
+    - simpl in *.  admit.
+    - simpl. 
       
   Admitted.
+  
+   Lemma In_filter_hd'_filter {A} {f : A -> R}{l : seq(nonnegreal*A)}{l0 : seq (nonnegreal * A)} p: 
+    In l0 (group_by_image (fun x : nonnegreal * A => f x.2) l) ->
+     hd' f l0 = hd' f (filter p l0).
+   Proof.
+     intros H. 
+     induction l0.
+     - simpl ; reflexivity.
+     - simpl in *. 
+       set (cons_In_group_by_image _ H). simpl in e. 
+       match_destr.
+   Admitted.
+   
 
-Import Bool. 
+
+   Lemma In_filter_hd'_eq {A} {f : A -> R}{l : seq(nonnegreal*A)}{l0 : seq (nonnegreal * A)} p: 
+    In l0 (group_by_image (fun x : nonnegreal * A => f x.2) l) ->
+     hd' f (filter p l0) = hd' f l0.
+   Proof.
+     intros Hin.
+     induction l0.
+     - simpl ; reflexivity.
+     - simpl. match_destr.
+       set (Hl := In_group_by_image_hd' Hin). 
+       set (Hfil := In_filter_hd' p Hin).
+       specialize (Hl a). specialize (Hfil a).
+       simpl in *.
+       
+   Qed.
 Lemma cond_expt_def {A} (p : Pmf A) (f : A -> R) (g : A -> R) (r : R) :
     cond_expt p f g r =
     list_sum
@@ -812,9 +884,14 @@ Lemma cond_expt_def {A} (p : Pmf A) (f : A -> R) (g : A -> R) (r : R) :
       apply List.map_ext_in.
       intros a Ha. f_equal.
       -- f_equal. apply filter_ext. intros x Hx.
-         rewrite (In_group_by_image_hd' Ha x Hx). rewrite <-(andb_true_l (g x.2 ==b r)).
+         rewrite (In_group_by_image_hd' Ha x Hx). rewrite <-(Bool.andb_true_l (g x.2 ==b r)).
          f_equal. unfold equiv_decb. match_destr. firstorder. 
-      -- admit.
+      -- induction a.
+         ** simpl ; reflexivity.
+         ** simpl in *. match_destr.
+            set (cons_In_group_by_image _ Ha). simpl in e.
+            symmetry. 
+            
     * unfold prob. simpl ; lra. 
   Admitted.
   
