@@ -1420,39 +1420,6 @@ Section conditional.
      apply (In_filter_In_list Hin). 
    Qed.
 
-
-  Lemma In_group_by_image_sublist_hd'{A} {l : list (nonnegreal*A)} {f : A -> R} : 
-    forall {l0 l0' : seq(nonnegreal*A)}, In l0 (group_by_image (fun x : nonnegreal * A => f x.2) l)
-                                    -> (forall c, In c l0' -> In c l0)
-                                    -> (hd' f l0) = (hd' f l0').
-  Proof.
-    move=> l0 l0' H H0.
-    induction l0.
-    destruct l0'.
-    - simpl ; reflexivity. 
-    - simpl in *.  admit.
-    - simpl. set(cons_In_group_by_image _ H). simpl in e.
-      set (In_group_by_image_sublist H H0).
-      simpl in e0. simpl in e.
-      
-    simpl in e. 
-  Admitted.
-   
-   Lemma In_filter_hd'_eq {A} {f : A -> R}{l : seq(nonnegreal*A)}{l0 : seq (nonnegreal * A)} p: 
-    In l0 (group_by_image (fun x : nonnegreal * A => f x.2) l) ->
-     hd' f (filter p l0) = hd' f l0.
-   Proof.
-     intros Hin.
-     induction l0.
-     - simpl ; reflexivity.
-     - simpl. match_case.
-       intro Hpa. 
-       set (Hl := In_group_by_image_hd' Hin). 
-       set (Hfil := In_filter_hd' p Hin).
-       simpl in Hl. simpl in Hfil. 
-       specialize (Hl a). specialize (Hfil a).
-       simpl in *.
-   Admitted.
    
   Import Bool.
 
