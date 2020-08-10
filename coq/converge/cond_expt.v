@@ -1430,6 +1430,14 @@ Section conditional.
   Proof.
   Admitted.
 
+  Lemma cond_expt_def_aux {A} f {g : A -> R} {r : R} {a} {p0} {l}:
+    [seq x <- a | g x.2 ==b r] = (p0 :: l) -> hd' f [seq x <- a | g x.2 ==b r] = hd' f a.
+  Proof.
+    intros Heq.
+    rewrite Heq. simpl. 
+    
+  Admitted.
+  
 Lemma cond_expt_def {A} (p : Pmf A) (f : A -> R) (g : A -> R) (r : R) :
     cond_expt p f g r =
     list_sum
@@ -1437,14 +1445,6 @@ Lemma cond_expt_def {A} (p : Pmf A) (f : A -> R) (g : A -> R) (r : R) :
          (group_by_image (fun x => f x.2) p.(outcomes))).
   Proof.
     unfold cond_expt,preim_outcomes_of_And, preim_outcomes_of.
-    rewrite group_by_image_filter_nil_perm.
-    rewrite <-list_sum_filter_nil.
-    * rewrite <-map_comp. unfold comp. simpl.
-      rewrite list_sum_filter_nil. symmetry. 
-      rewrite list_sum_filter_nil. f_equal. 
-      apply List.map_ext_in.
-      intros a Ha.      
-      f_equal.
     generalize (group_by_image_filter_nil_same_subsets (fun x : nonnegreal * A => f x.2) p (fun x => g x.2 ==b r))
     ; intros HH.
     destruct HH as [ll [lp lp2]].
@@ -1462,30 +1462,9 @@ Lemma cond_expt_def {A} (p : Pmf A) (f : A -> R) (g : A -> R) (r : R) :
       rewrite <- eqq.
       case_eq ([seq x <- a | g x.2 ==b r]).
       + simpl. lra.
-      + intros.
-      
-      
-      Lemma 
-      [seq x <- a | g x.2 ==b r] <> nil ->
-      hd' f [seq x <- a | g x.2 ==b r] = hd' f a
-
-                                            
-      f_equal.
-      
-      -- f_equal. apply filter_ext. intros x Hx.
-         rewrite (In_group_by_image_hd' Ha x Hx). rewrite <-(Bool.andb_true_l (g x.2 ==b r)).
-         f_equal. unfold equiv_decb. match_destr. firstorder. 
-      -- induction a.
-         ** simpl ; reflexivity.
-         ** simpl in *. match_case.
-            set (cons_In_group_by_image _ Ha). simpl in e.
-            intro H. 
-            symmetry. 
-            
-    * unfold prob. simpl ; lra. 
-      -- 
-      * unfold prob; simpl.
-        lra.
+      + intros. rewrite <-H.                              
+        now rewrite <-(cond_expt_def_aux f H).
+      * unfold prob. simpl ; lra. 
     - intros.
       assert (is_partition (im_eq (fun x : nonnegreal * A => f x.2)) ll).
       { rewrite <- lp.
