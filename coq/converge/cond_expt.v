@@ -1431,8 +1431,9 @@ Lemma cond_expt_def {A} (p : Pmf A) (f : A -> R) (g : A -> R) (r : R) :
          f_equal. unfold equiv_decb. match_destr. firstorder. 
       }
       rewrite <- eqq.
-      case_eq ([seq x <- a | g x.2 ==b r]); intros eqq2.
-      + 
+      case_eq ([seq x <- a | g x.2 ==b r]).
+      + simpl. lra.
+      + intros.
       
       
       Lemma 
