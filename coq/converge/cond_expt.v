@@ -817,7 +817,7 @@ Section conditional.
       set (cons_In_group_by_image _ H). specialize (e a).
       simpl in e. symmetry. now apply e.
    Qed. 
-
+      
    Lemma In_filter_hd' {A} {f : A -> R}{l : seq(nonnegreal*A)}{l0 : seq (nonnegreal * A)} p: 
     In l0 (group_by_image (fun x : nonnegreal * A => f x.2) l) ->
     forall a, In a (filter p l0) -> f a.2 = hd' f l0.
@@ -827,7 +827,6 @@ Section conditional.
      apply (In_filter_In_list Hin). 
    Qed.
 
-  Check In_group_by_image_sublist. 
 
   Lemma In_group_by_image_sublist_hd'{A} {l : list (nonnegreal*A)} {f : A -> R} : 
     forall {l0 l0' : seq(nonnegreal*A)}, In l0 (group_by_image (fun x : nonnegreal * A => f x.2) l)
@@ -836,27 +835,16 @@ Section conditional.
   Proof.
     move=> l0 l0' H H0.
     induction l0.
-    induction l0'.
-    - reflexivity. 
+    destruct l0'.
+    - simpl ; reflexivity. 
     - simpl in *.  admit.
-    - simpl. 
+    - simpl. set(cons_In_group_by_image _ H). simpl in e.
+      set (In_group_by_image_sublist H H0).
+      simpl in e0. simpl in e.
       
+    simpl in e. 
   Admitted.
-  
-   Lemma In_filter_hd'_filter {A} {f : A -> R}{l : seq(nonnegreal*A)}{l0 : seq (nonnegreal * A)} p: 
-    In l0 (group_by_image (fun x : nonnegreal * A => f x.2) l) ->
-     hd' f l0 = hd' f (filter p l0).
-   Proof.
-     intros H. 
-     induction l0.
-     - simpl ; reflexivity.
-     - simpl in *. 
-       set (cons_In_group_by_image _ H). simpl in e. 
-       match_destr.
-   Admitted.
    
-
-
    Lemma In_filter_hd'_eq {A} {f : A -> R}{l : seq(nonnegreal*A)}{l0 : seq (nonnegreal * A)} p: 
     In l0 (group_by_image (fun x : nonnegreal * A => f x.2) l) ->
      hd' f (filter p l0) = hd' f l0.
@@ -864,13 +852,15 @@ Section conditional.
      intros Hin.
      induction l0.
      - simpl ; reflexivity.
-     - simpl. match_destr.
+     - simpl. match_case.
+       intro Hpa. 
        set (Hl := In_group_by_image_hd' Hin). 
        set (Hfil := In_filter_hd' p Hin).
+       simpl in Hl. simpl in Hfil. 
        specialize (Hl a). specialize (Hfil a).
        simpl in *.
-       
-   Qed.
+   Admitted.
+   
 Lemma cond_expt_def {A} (p : Pmf A) (f : A -> R) (g : A -> R) (r : R) :
     cond_expt p f g r =
     list_sum
@@ -880,16 +870,20 @@ Lemma cond_expt_def {A} (p : Pmf A) (f : A -> R) (g : A -> R) (r : R) :
     unfold cond_expt,preim_outcomes_of_And, preim_outcomes_of.
     rewrite group_by_image_filter_nil_perm.
     rewrite <-list_sum_filter_nil.
-    * rewrite <-map_comp. unfold comp. simpl. f_equal. 
+    * rewrite <-map_comp. unfold comp. simpl.
+      rewrite list_sum_filter_nil. symmetry. 
+      rewrite list_sum_filter_nil. f_equal. 
       apply List.map_ext_in.
-      intros a Ha. f_equal.
+      intros a Ha.      
+      f_equal.
       -- f_equal. apply filter_ext. intros x Hx.
          rewrite (In_group_by_image_hd' Ha x Hx). rewrite <-(Bool.andb_true_l (g x.2 ==b r)).
          f_equal. unfold equiv_decb. match_destr. firstorder. 
       -- induction a.
          ** simpl ; reflexivity.
-         ** simpl in *. match_destr.
+         ** simpl in *. match_case.
             set (cons_In_group_by_image _ Ha). simpl in e.
+            intro H. 
             symmetry. 
             
     * unfold prob. simpl ; lra. 
