@@ -1428,7 +1428,20 @@ Section conditional.
     Forall2 R l1 l2 ->
     map f l1 = map f l2.
   Proof.
-  Admitted.
+    move=> H H0.
+    induction H0.
+    - simpl ; reflexivity.
+    - simpl in *. rewrite IHForall2.
+      specialize (H x y).
+      rewrite H ; trivial.
+      + left ; trivial.
+      + left ; trivial.
+      + move=> x1 x2 H2 H3 H4.
+        apply H.
+        -- now right.
+        -- now right.
+        -- assumption.
+   Qed. 
 
   Lemma cond_expt_def_aux {A} f {g : A -> R} {r : R} {a} {p0} {l}:
     [seq x <- a | g x.2 ==b r] = (p0 :: l) -> hd' f [seq x <- a | g x.2 ==b r] = hd' f a.
@@ -1436,6 +1449,33 @@ Section conditional.
     intros Heq.
     rewrite Heq. simpl. 
     
+  Admitted.
+
+  Instance list_fst_sum_proper {A} :Proper (Permutation (A:=nonnegreal * A) ==> eq) (list_fst_sum).
+  Proof.
+    unfold Proper, respectful.
+    intros x y Pxy.
+    do 2 rewrite list_fst_sum_compat.
+    unfold list_fst_sum'.
+    rewrite Pxy.
+    reflexivity.
+  Qed.
+
+
+
+  Lemma equiv_perm_hd'_eq {A} {x1 x2 : list(nonnegreal*A)} {l : list(list(nonnegreal*A))} (f : A -> R)  : all_equivs (im_eq (fun x => f x.2)) l -> (Permutation x1 x2) -> (In x1 l) -> hd' f x1 = hd' f x2.
+  Proof.
+    move=> H H0 H1.
+    red in H.
+    assert (H2 : is_equiv_class (im_eq (fun x : nonnegreal * A => f x.2)) x1).
+    revert H. rewrite Forall_forall. intros H. now apply H.
+    assert (H3 : is_equiv_class (im_eq (fun x : nonnegreal * A => f x.2)) x2).
+    now rewrite <-H0. repeat (red in H2,H3).
+    case_eq x1.
+    - intros Hx1. rewrite Hx1 in H0.
+      now rewrite (Permutation_nil H0).
+    - move=> p l0 H5.
+      simpl. apply In_group_by_image_hd'. 
   Admitted.
   
 Lemma cond_expt_def {A} (p : Pmf A) (f : A -> R) (g : A -> R) (r : R) :
@@ -1471,10 +1511,8 @@ Lemma cond_expt_def {A} (p : Pmf A) (f : A -> R) (g : A -> R) (r : R) :
         apply quotient_partitions.
       }
       invcs H2.
-      red in H3.
-      
-      
-  Admitted.
-  
+      unfold prob. simpl. f_equal. now rewrite H1.
+      now apply (equiv_perm_hd'_eq f H3).
+  Qed.  
       
 End conditional.
