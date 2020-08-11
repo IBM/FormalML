@@ -13,6 +13,64 @@ Open Scope R_scope.
 
 Section aux.
 
+  Lemma concat_map_map {A} (l : list(list A)) (f : A -> R) :
+  concat (map (map f) l) = map f (concat l).
+  Proof.
+    induction l. 
+    simpl ; reflexivity. 
+    simpl. rewrite map_cat. rewrite IHl. 
+    reflexivity.
+  Qed.
+
+    Lemma In_filter_In_list {A}{l : list A} {p : A -> bool} {a : A} :
+    In a (filter p l) -> In a l.
+  Proof.
+    intros H.
+    induction l.
+    - simpl in H ; firstorder.
+    - simpl in *.
+      match_destr_in H.  
+      -- simpl in H ; intuition.
+      -- right ; intuition.
+  Qed.
+  
+  Lemma In_list_In_filter {A} {l : list A} {p : A -> bool} {a : A} :
+    p a = true -> In a l -> In a (filter p l).
+  Proof.
+    intros pa Ha. 
+    induction l.
+    - simpl in Ha ; exfalso ; assumption.
+    - simpl in Ha. simpl. case_eq (p a0).
+      intro pa0. simpl ; intuition.
+      intro pa0 ; intuition.
+      rewrite <-H in pa. rewrite pa0 in pa.
+      firstorder. 
+  Qed.
+  
+    Lemma ForallPairs_filter {A} R (l : list A) (p : A -> bool) :
+    ForallPairs R l -> ForallPairs R (filter p l).
+  Proof.
+    intros H. unfold ForallPairs in *.
+    intros a b Ha Hb.
+    set (ha := In_filter_In_list Ha).
+    set (hb := In_filter_In_list Hb).
+    now specialize (H a b ha hb).
+  Qed. 
+  
+  Lemma ForallOrdPairs_filter {A} R (l : list A) (p : A -> bool) :
+    ForallOrdPairs R l -> ForallOrdPairs R (filter p l).
+  Proof.
+    intros H.
+    induction l. 
+    - simpl ; constructor.
+    - simpl. case_eq (p a).
+      + invcs H. specialize (IHl H3).
+        intro Hpa. constructor ; trivial.
+        apply Forall_filter ; trivial.
+      + intro Hpa.
+        invcs H. specialize (IHl H3). assumption. 
+  Qed.
+
   Lemma ForallOrdPairs_app_in {A R} {l1 l2:list A} : ForallOrdPairs R (l1 ++ l2) ->
                                                      forall x y, In x l1 -> In y l2 -> R x y.
   Proof.
@@ -23,7 +81,7 @@ Section aux.
       destruct H0.
       + subst.
         eapply (Forall_forall _ _) in H4; try eassumption.
-        rewrite in_app_iff; eauto.
+        rewrite in_app_iff ; eauto.
       + eapply IHl1; eauto.
   Qed.
   
@@ -41,25 +99,6 @@ Proof.
     - simpl. rewrite IHp. reflexivity.
 Qed.
 
-
-Lemma list_sum_const_div {A:Type}{n : nonnegreal} (hne : 0 <> nonneg n)
-      (l : seq(nonnegreal*A))(f : A -> R) :
-      list_sum [seq f x.2 * (nonneg(x.1) / nonneg(n)) | x <- l] = list_sum [seq (f x.2 * nonneg (x.1)) | x <- l]/nonneg(n).
-Proof.
-  induction l. 
-  simpl. lra.
-  simpl. rewrite IHl. lra.
-Qed.
-
-
-Lemma list_sum_const_mul {A : Type} (l : list (nonnegreal*R)) :
-  forall r, list_sum (map (fun x => r*x.2) l)  = r*list_sum(map (fun x => x.2) l).
-Proof.
-  intro r.
-  induction l.
-  simpl; lra.
-  simpl. rewrite IHl ; lra.
-Qed.
 
 End aux.
 
@@ -224,6 +263,8 @@ Section quotient.
              rewrite (H1 x0 a0); simpl; intuition.
         * eapply Forall_forall in H3; eauto.
   Qed.
+
+ 
   
   Hint Resolve all_different_nil : ml.
   Hint Resolve add_to_bucket_all_different : ml.
@@ -241,8 +282,34 @@ Section quotient.
   Proof.
     red; auto with ml.
   Qed.
-
+  
   Hint Resolve quotient_partitions : ml.
+
+  
+  Definition preserves_partitions (f:list (list A)->list (list A))
+    := forall (l:list (list A)), is_partition l ->
+            is_partition (f l).
+
+  
+  Lemma filter_preserves_partitions (p:list A -> bool) :
+  preserves_partitions (filter p).
+  Proof.
+    intros l pl.
+    split. destruct pl as [Heq Had]. 
+    - apply Forall_filter ; trivial. 
+    - apply ForallOrdPairs_filter. destruct pl ; trivial. 
+  Qed.
+
+    Lemma add_to_bucket_is_partition a :
+    preserves_partitions (add_to_bucket a).
+  Proof.
+    intros ? [??].
+    split.
+    - now apply add_to_bucket_all_equivs.
+    - now apply add_to_bucket_all_different.
+  Qed.
+  
+
 
   Lemma quotient_buckets_disjoint_app l ll1 ll2 :
     quotient l = ll1 ++ ll2 ->
@@ -250,11 +317,11 @@ Section quotient.
                  In x l1 -> In y l2 -> ~ R x y.
   Proof.
     intros eqq.
-    generalize (quotient_all_different l); intros HH.
+    generalize (quotient_all_different l) ; intros HH.
     rewrite eqq in HH.
     red in HH.
     intros.
-    generalize (ForallOrdPairs_app_in HH); intros HH2.
+    generalize (ForallOrdPairs_app_in HH) ; intros HH2.
     specialize (HH2 _ _ H H0).
     apply (HH2 _ _ H1 H2).
   Qed.
@@ -270,6 +337,58 @@ Section quotient.
     - eauto.
   Qed.
 
+  
+    Lemma Forall_map_filter (l : list(list A)) (p : A -> bool) :
+     Forall (is_equiv_class) l -> Forall (is_equiv_class) (map (filter p) l).
+  Proof.
+    intros H.
+    induction l. 
+    - simpl ; constructor.
+    - simpl. constructor. 
+      + invcs H. specialize (IHl H3).
+        revert IHl. 
+        rewrite Forall_forall. intro IHl.
+        specialize (IHl a).
+        intros a0 b Ha0 Hb.
+        apply H2. apply (In_filter_In_list Ha0).
+        apply (In_filter_In_list Hb).
+      + invcs H. specialize (IHl H3).
+        assumption.
+   Qed.       
+
+      Lemma ForallOrdPairs_map_filter (l : list(list A)) (p : A -> bool):
+     ForallOrdPairs (different_buckets) l -> ForallOrdPairs (different_buckets) (map (filter p) l).
+  Proof.
+    intros H.
+    apply ListAdd.ForallOrdPairs_impl ; trivial.
+    induction  l. invcs H.
+    - simpl ; constructor.
+    - simpl in *. constructor.
+      -- invcs H. intuition.
+         rewrite Forall_forall. 
+         intros x Hxl Hax. 
+         unfold different_buckets in *. 
+         intros x0 y H0 H1.
+         specialize (Hax x0 y).
+         apply Hax. apply (In_filter_In_list H0).
+         apply (In_filter_In_list H1).
+      -- invcs H. now apply IHl. 
+  Qed.
+
+    Lemma map_filter_preserves_partitions (p:A -> bool) :
+    preserves_partitions (map (filter p)).
+  Proof.
+    intros l pl.
+    split. 
+    destruct pl as [Heq Had].
+    - unfold all_equivs in *. rewrite Forall_map. 
+      revert Heq. 
+      do 2 rewrite Forall_forall.
+      intros Heq x Hin. specialize (Heq x Hin).
+      now apply ForallPairs_filter. 
+    - destruct pl as [Heq Hed].
+      apply ForallOrdPairs_map_filter. assumption.
+  Qed.
 End quotient.
 
 Section image_equiv.
@@ -291,13 +410,77 @@ Local Instance Eq_dec_im_eq (f : A -> R) : EqDec A (im_eq f) :=
   equiv_dec := fun a b => Req_EM_T (f a) (f b)
 }.
 
+Definition group_by_image (f : A -> R) := @quotient _ _ _ (Eq_dec_im_eq f).
+
+Lemma Forall_group_by_image (l : list A) (f : A -> R) :
+ Forall (fun l0 => (forall a b, In a l0 -> In b l0 -> (f a = f b))) (group_by_image f l). 
+Proof.
+  apply quotient_partitions. 
+Qed.
+
+Lemma In_group_by_image {l : list A} {f : A -> R} :
+  forall l0, In l0 (group_by_image f l) -> (forall a b, In a l0 -> In b l0 -> (f a = f b)).
+Proof.
+  rewrite <- Forall_forall.
+  apply Forall_group_by_image.
+Qed.
+
+Lemma In_group_by_image_sublist {l : list A} {f : A -> R}  :
+  forall {l0 l0'}, In l0 (group_by_image f l) -> (forall c, In c l0' -> In c l0)
+            -> (forall a b, In a l0 -> In b l0' -> (f a = f b)).
+Proof.
+  intros l0 l0' H H0 a b H1 H2.
+  set (Hin := In_group_by_image _ H).
+  specialize (H0 b H2).
+  now specialize (Hin a b H1 H0).
+Qed.
+
+Lemma cons_In_group_by_image {l : list A} {f : A -> R} {a : A} :
+ forall l0, In (a :: l0) (group_by_image f l) -> (forall b, In b l0 -> (f a = f b)).
+Proof.
+  intros l0 Hl0 b Hb.
+  set (In_group_by_image (a :: l0) Hl0). 
+  eapply e ; eauto. 
+  simpl ; intuition.
+  simpl ; intuition. 
+Qed.
+ 
+Lemma map_rep {l0 : list A} {f : A -> R} {a0 : A} :
+(forall b : A, In b l0 -> f a0 = f b) -> map (fun x => f x) l0 = map (fun x => f a0) l0.
+Proof.
+  intro H.
+  induction l0.
+  - simpl ; easy.
+  - simpl in *. rewrite IHl0. 
+    f_equal. symmetry. 
+    apply H. left. reflexivity. 
+    intros b Hb.
+    apply H. right. assumption.
+Qed.
+
+Lemma eq_class_eq_rep_hd  {l : list A} {f : A -> R} :
+  forall {l0}, In l0 (group_by_image f l) ->
+        let a := match l0 with
+                 | [] => 0
+                 | x :: xs => f x
+                 end in 
+        (map f l0) = (map (fun x => a) l0).
+Proof.
+  intros l0 Hl0 a.
+  induction l0.  
+  - simpl; easy.  
+  - simpl. f_equal. apply map_rep. 
+    apply (cons_In_group_by_image _ Hl0). 
+Qed. 
+
+
 End image_equiv.
 
 
 
 Section list_sum.
 
-Definition group_by_image {A} (f : A -> R) := @quotient _ _ _ (Eq_dec_im_eq f).                                                                   
+                                       
     
 Global Instance list_sum_Proper : Proper (@Permutation R ==> eq) list_sum.
 Proof.
@@ -316,67 +499,6 @@ Proof.
   now rewrite H.
 Qed.
       
-Lemma Forall_group_by_image {A} (l : list A) (f : A -> R) :
- Forall (fun l0 => (forall a b, In a l0 -> In b l0 -> (f a = f b))) (group_by_image f l). 
-Proof.
-  apply quotient_partitions. 
-Qed.
-
-Lemma In_group_by_image {A} {l : list A} {f : A -> R} :
-  forall l0, In l0 (group_by_image f l) -> (forall a b, In a l0 -> In b l0 -> (f a = f b)).
-Proof.
-  rewrite <- Forall_forall.
-  apply Forall_group_by_image.
-Qed.
-
-Lemma In_group_by_image_sublist {A} {l : list A} {f : A -> R}  :
-  forall {l0 l0'}, In l0 (group_by_image f l) -> (forall c, In c l0' -> In c l0)
-            -> (forall a b, In a l0 -> In b l0' -> (f a = f b)).
-Proof.
-  intros l0 l0' H H0 a b H1 H2.
-  set (Hin := In_group_by_image _ H).
-  specialize (H0 b H2).
-  now specialize (Hin a b H1 H0).
-Qed.
-
-Lemma cons_In_group_by_image {A} {l : list A} {f : A -> R} {a : A} :
- forall l0, In (a :: l0) (group_by_image f l) -> (forall b, In b l0 -> (f a = f b)).
-Proof.
-  intros l0 Hl0 b Hb.
-  set (In_group_by_image (a :: l0) Hl0). 
-  eapply e ; eauto. 
-  simpl ; intuition.
-  simpl ; intuition. 
-Qed.
- 
-Lemma map_rep {A} {l0 : list A} {f : A -> R} {a0 : A} :
-(forall b : A, In b l0 -> f a0 = f b) -> map (fun x => f x) l0 = map (fun x => f a0) l0.
-Proof.
-  intro H.
-  induction l0.
-  - simpl ; easy.
-  - simpl in *. rewrite IHl0. 
-    f_equal. symmetry. 
-    apply H. left. reflexivity. 
-    intros b Hb.
-    apply H. right. assumption.
-Qed.
-
-Lemma eq_class_eq_rep_hd {A : Type} {l : list A} {f : A -> R} :
-  forall {l0}, In l0 (group_by_image f l) ->
-        let a := match l0 with
-                 | [] => 0
-                 | x :: xs => f x
-                 end in 
-        (map f l0) = (map (fun x => a) l0).
-Proof.
-  intros l0 Hl0 a.
-  induction l0.  
-  - simpl; easy.  
-  - simpl. f_equal. apply map_rep. 
-    apply (cons_In_group_by_image _ Hl0). 
-Qed. 
-
 Lemma list_sum_map_const {A} (l : list A) (a : A) (f : A -> R) :
   list_sum (map (fun x => f a) l) = INR(length l)* (f a).
 Proof.   
@@ -422,14 +544,6 @@ Proof.
   now rewrite unquotient_quotient.   
 Qed.
 
-Lemma concat_map_map {A} (l : list(list A)) (f : A -> R) :
-  concat (map (map f) l) = map f (concat l).
-Proof.
-  induction l. 
-  simpl ; reflexivity. 
-  simpl. rewrite map_cat. rewrite IHl. 
-  reflexivity.
-Qed.
 
 Lemma list_sum_map_concat (l : list(list R)) :
   list_sum (concat l) = list_sum (map list_sum l).
@@ -453,6 +567,32 @@ Proof.
   apply list_sum_eq_class. 
 Qed.
 
+Lemma list_sum_const_mul' {A:Type} (l : list (nonnegreal*A)) (a : R) :
+  list_sum [seq a* nonneg(x.1) | x <- l] = a*list_sum[seq nonneg(x.1) | x <- l].
+Proof.
+  induction l.
+  + simpl ; lra.
+  + simpl. rewrite IHl. lra.
+Qed.
+
+Lemma list_sum_const_div {A:Type}{n : nonnegreal} (hne : 0 <> nonneg n)
+      (l : seq(nonnegreal*A))(f : A -> R) :
+      list_sum [seq f x.2 * (nonneg(x.1) / nonneg(n)) | x <- l] = list_sum [seq (f x.2 * nonneg (x.1)) | x <- l]/nonneg(n).
+Proof.
+  induction l. 
+  simpl. lra.
+  simpl. rewrite IHl. lra.
+Qed.
+
+
+Lemma list_sum_const_mul {A : Type} (l : list (nonnegreal*R)) :
+  forall r, list_sum (map (fun x => r*x.2) l)  = r*list_sum(map (fun x => x.2) l).
+Proof.
+  intro r.   
+  induction l.
+  simpl; lra.
+  simpl. rewrite IHl ; lra.
+Qed.
 
 End list_sum.
 
@@ -478,13 +618,6 @@ Proof.
     apply (cons_In_group_by_image _ Hl0).  assumption. 
 Qed.
 
-Lemma list_sum_const_mul' {A:Type} (l : list (nonnegreal*A)) (a : R) :
-  list_sum [seq a* nonneg(x.1) | x <- l] = a*list_sum[seq nonneg(x.1) | x <- l].
-Proof.
-  induction l.
-  + simpl ; lra.
-  + simpl. rewrite IHl. lra.
-Qed.
 
 Lemma expt_value_summand {A} (p : Pmf A) (f : A -> R) : 
 forall l0, In l0 (group_by_image (fun x : nonnegreal * A => f x.2) p.(outcomes)) -> 
@@ -525,8 +658,10 @@ Qed.
 
 End expt_value_quotient.
 
+
+
 Section conditional.
-  Local Instance EqDecR : EqDec R eq := Req_EM_T. 
+  Global Instance EqDecR : EqDec R eq := Req_EM_T. 
   Arguments outcomes {_}.
 
   (* All p.(outcomes) which are preimages of a fixed r in R under the random variable g. *)
@@ -545,123 +680,6 @@ Section conditional.
   Definition cond_expt {A} (p : Pmf A) (f : A -> R) (g : A -> R) (r : R) : R :=
     list_sum (map (fun l => 𝕡[l]*(hd' f l)) (group_by_image (fun x => f x.2) (preim_outcomes_of p g r))).
 
-
-  Definition preserves_partitions {A} {R} {equiv:Equivalence R}  {dec:EqDec A R} (f:list (list A)->list (list A))
-    := forall (l:list (list A)), is_partition R l ->
-            is_partition R (f l).
-
-  Lemma In_filter_In_list {A}{l : list A} {p : A -> bool} {a : A} :
-    In a (filter p l) -> In a l.
-  Proof.
-    intros H.
-    induction l.
-    - simpl in H ; firstorder.
-    - simpl in *.
-      match_destr_in H.  
-      -- simpl in H ; intuition.
-      -- right ; intuition.
-  Qed.
-  
-  Lemma In_list_In_filter {A} {l : list A} {p : A -> bool} {a : A} :
-    p a = true -> In a l -> In a (filter p l).
-  Proof.
-    intros pa Ha. 
-    induction l.
-    - simpl in Ha ; exfalso ; assumption.
-    - simpl in Ha. simpl. case_eq (p a0).
-      intro pa0. simpl ; intuition.
-      intro pa0 ; intuition.
-      rewrite <-H in pa. rewrite pa0 in pa.
-      firstorder. 
-  Qed.
-  
-    Lemma ForallPairs_filter {A} R (l : list A) (p : A -> bool) :
-    ForallPairs R l -> ForallPairs R (filter p l).
-  Proof.
-    intros H. unfold ForallPairs in *.
-    intros a b Ha Hb.
-    set (ha := In_filter_In_list Ha).
-    set (hb := In_filter_In_list Hb).
-    now specialize (H a b ha hb).
-  Qed. 
-  
-  Lemma ForallOrdPairs_filter {A} R (l : list A) (p : A -> bool) :
-    ForallOrdPairs R l -> ForallOrdPairs R (filter p l).
-  Proof.
-    intros H.
-    induction l. 
-    - simpl ; constructor.
-    - simpl. case_eq (p a).
-      + invcs H. specialize (IHl H3).
-        intro Hpa. constructor ; trivial.
-        apply Forall_filter ; trivial.
-      + intro Hpa.
-        invcs H. specialize (IHl H3). assumption. 
-  Qed.
-
-    Lemma Forall_map_filter {A} R (l : list(list A)) (p : A -> bool) :
-     Forall (is_equiv_class R) l -> Forall (is_equiv_class R) (map (filter p) l).
-  Proof.
-    intros H.
-    induction l. 
-    - simpl ; constructor.
-    - simpl. constructor. 
-      + invcs H. specialize (IHl H3).
-        revert IHl. 
-        rewrite Forall_forall. intro IHl.
-        specialize (IHl a).
-        intros a0 b Ha0 Hb.
-        apply H2. apply (In_filter_In_list Ha0).
-        apply (In_filter_In_list Hb).
-      + invcs H. specialize (IHl H3).
-        assumption.
-   Qed.       
-
-      Lemma ForallOrdPairs_map_filter {A} R (l : list(list A)) (p : A -> bool):
-     ForallOrdPairs (different_buckets R) l -> ForallOrdPairs (different_buckets R) (map (filter p) l).
-  Proof.
-    intros H.
-    apply ListAdd.ForallOrdPairs_impl ; trivial.
-    induction  l. invcs H.
-    - simpl ; constructor.
-    - simpl in *. constructor.
-      -- invcs H. intuition.
-         rewrite Forall_forall. 
-         intros x Hxl Hax. 
-         unfold different_buckets in *. 
-         intros x0 y H0 H1.
-         specialize (Hax x0 y).
-         apply Hax. apply (In_filter_In_list H0).
-         apply (In_filter_In_list H1).
-      -- invcs H. now apply IHl. 
-  Qed.
-  
-  Lemma filter_preserves_partitions {A} {R} {equiv:Equivalence R}  {dec:EqDec A R}
-  (p:list A -> bool) :
-  preserves_partitions (filter p).
-  Proof.
-    intros l pl.
-    split. destruct pl as [Heq Had]. 
-    - apply Forall_filter ; trivial. 
-    - apply ForallOrdPairs_filter. destruct pl ; trivial. 
-  Qed.
-
-
-  Lemma map_filter_preserves_partitions {A} {R} {equiv:Equivalence R}  {dec:EqDec A R}
-        (p:A -> bool) :
-    preserves_partitions (map (filter p)).
-  Proof.
-    intros l pl.
-    split. 
-    destruct pl as [Heq Had].
-    - unfold all_equivs in *. rewrite Forall_map. 
-      revert Heq. 
-      do 2 rewrite Forall_forall.
-      intros Heq x Hin. specialize (Heq x Hin).
-      now apply ForallPairs_filter. 
-    - destruct pl as [Heq Hed].
-      apply ForallOrdPairs_map_filter. assumption.
-  Qed.
 
   Lemma add_to_bucket_filter_nil {A} {R0} {equiv:Equivalence R0}  {dec:EqDec A R0} (l : list (list A)) (a:A) :
    add_to_bucket R0 a (filter_nil l) =
@@ -1033,16 +1051,6 @@ Section conditional.
   Qed.
 
   
-  Lemma add_to_bucket_is_partition {A} {R} {equiv:Equivalence R}  {dec:EqDec A R} a :
-    preserves_partitions (add_to_bucket R a).
-  Proof.
-    intros ? [??].
-    split.
-    - now apply add_to_bucket_all_equivs.
-    - now apply add_to_bucket_all_different.
-  Qed.
-  
-
   Lemma add_to_bucket_diff_perm_swap {A} R {equiv:Equivalence R} {dec:EqDec A R} x y l :
     is_partition R l ->
     ~ R x y ->
@@ -1382,10 +1390,10 @@ Section conditional.
 
   Instance is_partition_forall_sublist {A} R : Proper (Forall2 sublist --> Basics.impl) (@is_partition A R).
   Proof.
-    unfold Basics.flip, Basics.impl.
+    unfold Basics.flip, Basics.impl. unfold Proper,respectful. 
     intros x y f2.
     intros [??]; split.
-    - eapply all_equivs_forall_sublist; eauto.
+    - eapply all_equivs_forall_sublist; eauto.  
     - eapply all_different_forall_sublist; eauto.
   Qed.
 
@@ -1709,7 +1717,8 @@ Section conditional.
       -- simpl ; firstorder.
       -- intro H. symmetry in H. exfalso. apply (nil_cons H). 
   Qed. 
-     
+
+ 
   Lemma list_sum_map_filter_split {A} (f : (list A) -> R) (l : list(list A)):
     list_sum(map f l) = list_sum(map f (filter_nil l)) + list_sum (map f (filter (is_nil) l)).
   Proof.
