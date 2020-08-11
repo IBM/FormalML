@@ -689,12 +689,6 @@ Section conditional.
     now apply add_to_bucket_nnil.
   Qed.
   
-  Lemma quotient_unquotient {A} {R} {equiv:Equivalence R}  {dec:EqDec A R} {l} :
-    is_partition R l ->
-    filter_nil l = quotient R (concat l).
-  Proof.
-  Admitted.
-
   Lemma is_partition_cons_inv {A} {R} {x:list A} {l} :
     is_partition R (x :: l) -> is_partition R l.
   Proof.
@@ -1170,7 +1164,276 @@ Section conditional.
              apply quotient_partitions.
     - etransitivity; eauto.
   Qed.
-      
+
+  Lemma add_to_bucket_new_perm {A} {R} {equiv:Equivalence R}  {dec:EqDec A R} (l : list (list A)) a :
+    Forall (Forall (fun y => ~ R a y)) l ->
+    Permutation ([a]::filter_nil l) (filter_nil (add_to_bucket R a l)).
+  Proof.
+    induction l; simpl; intros FF.
+    - eauto.
+    - invcs FF.
+      specialize (IHl H2).
+      destruct a0; simpl; trivial.
+      invcs H1.
+      destruct (a == a0).
+      + now elim H3.
+      + simpl.
+        rewrite <- IHl.
+        apply perm_swap.
+  Qed.
+
+  Instance same_subsets_perm_sub {A} : subrelation (@Permutation (list A)) same_subsets.
+  Proof.
+    repeat red; intros.
+    exists y.
+    split; trivial.
+    reflexivity.
+  Qed.
+
+  Instance same_subsets_perm2_sub {A} : subrelation (Forall2 (@Permutation A)) same_subsets.
+  Proof.
+    repeat red; intros.
+    exists x.
+    eauto.
+  Qed.
+
+  Instance not_nil_perm_proper {A} : Proper (@Permutation A ==> eq) (not_nil).
+  Proof.
+    unfold Proper, respectful, not_nil; intros.
+    destruct x; destruct y; simpl; trivial.
+    - apply Permutation_nil in H; discriminate.
+    - symmetry in H.
+      apply Permutation_nil in H; discriminate.
+  Qed.
+             
+  Lemma add_to_bucket_same_subsets_proper {A} {R} {equiv:Equivalence R}  {dec:EqDec A R} a {l1 l2} :
+    is_partition R l1 ->
+    same_subsets (filter_nil l1) (filter_nil l2) ->
+    same_subsets (filter_nil (add_to_bucket R a l1)) (filter_nil (add_to_bucket R a l2)).
+  Proof.
+    intros isp [ll [lp lp2]].
+    assert (isp': is_partition R (filter_nil l1)) by now apply filter_preserves_partitions  .
+    generalize (add_to_bucket_perm_preserved _ a _ _ lp isp'); intros HH.
+    rewrite <- add_to_bucket_filter_nil in HH.
+    rewrite nnil_filter_nil_id in HH; [| apply filter_nil_nnil].
+    rewrite add_to_bucket_filter_nil in HH.
+    rewrite HH.
+    apply same_subsets_perm2_sub.
+    repeat rewrite <- add_to_bucket_filter_nil.
+    apply forall_perm_add_to_bucket.
+    - apply filter_preserves_partitions.
+      now rewrite <- lp.
+    - generalize (filter_nil_nnil l1); intros HH2.
+      rewrite <- lp2.
+      rewrite nnil_filter_nil_id.
+      + reflexivity.
+      + rewrite <- lp.
+        rewrite Forall_forall; intros ? inn.
+        apply filter_In in inn.
+        tauto.
+  Qed.
+
+  Lemma same_subsets_nnil {A} {R} {equiv:Equivalence R}  {dec:EqDec A R} {l1 l2:list (list A)} :
+    same_subsets l1 l2 ->
+    Forall (fun x => not_nil x = true) l1 ->
+    Forall (fun x => not_nil x = true) l2.
+  Proof.
+    intros [ll [lp lp2]].
+    rewrite lp.
+    apply Forall2_Forall_trans.
+    revert lp2.
+    apply Forall2_incl; intros.
+    now rewrite <- H1.
+  Qed.
+
+  Lemma add_to_bucket_nnil_same_subsets_proper {A} {R} {equiv:Equivalence R} {dec:EqDec A R} a {l1 l2} :
+    Forall (fun x => not_nil x = true) l1 ->
+    is_partition R l1 ->
+    same_subsets l1 l2 ->
+    same_subsets (add_to_bucket R a l1) (add_to_bucket R a l2).
+  Proof.
+    intros.
+    assert (nnil2: Forall (fun x : seq A => not_nil x = true) l2).
+    { eapply same_subsets_nnil; eauto. }
+    generalize (@add_to_bucket_same_subsets_proper _ _ _ _ a l1 l2 H0); intros HH.
+    repeat rewrite nnil_filter_nil_id in HH; auto 2.
+    - now apply add_to_bucket_nnil.
+    - now apply add_to_bucket_nnil.
+  Qed.
+  
+(*  Lemma add_to_bucket_same_subsets_proper {A} {R} {equiv:Equivalence R}  {dec:EqDec A R} a {l1 l2} :
+    is_partition R l1 ->
+    same_subsets l1 l2 ->
+    same_subsets (filter_nil (add_to_bucket R a l1)) (filter_nil (add_to_bucket R a l2)).
+  Proof.
+    intros isp [ll [lp lp2]].
+    rewrite (add_to_bucket_perm_preserved _ a _ _ lp isp).
+    apply same_subsets_perm2_sub.
+    repeat rewrite <- add_to_bucket_filter_nil.
+    apply forall_perm_add_to_bucket.
+    - apply filter_preserves_partitions.
+      now rewrite <- lp.
+    - apply filter_Forall2_same; trivial.
+      revert lp2; clear; intros lp2.
+      induction lp2; simpl; trivial.
+      f_equal; trivial.
+      now apply not_nil_perm_proper.
+  Qed.
+ *)
+
+  Global Instance ForallPairs_sublist {A} {R} : Proper (sublist --> Basics.impl) (@ForallPairs A R).
+  Proof.
+    unfold Proper, respectful, Basics.impl, ForallPairs; intros.
+    apply H0;
+      eapply sublist_In; eauto.
+  Qed.
+  
+  Lemma all_equivs_cons_sublist {A} R (x y:list A) l :
+    sublist x y ->
+    all_equivs R (y::l) -> all_equivs R (x::l).
+  Proof.
+    intros subl ale.
+    invcs ale.
+    constructor; trivial.
+    unfold is_equiv_class in *.
+    eapply ForallPairs_sublist; eauto.
+  Qed.
+
+  Lemma all_equivs_forall_sublist {A} R : Proper (Forall2 sublist --> Basics.impl) (@all_equivs A R).
+  Proof.
+    unfold Basics.flip, Basics.impl.
+    intros x y f2.
+    induction f2; simpl; trivial.
+    intros HH.
+    eapply all_equivs_cons_sublist; try eapply H.
+    invcs HH.
+    constructor; trivial.
+    now apply IHf2.
+  Qed.
+
+  Lemma  all_different_cons_sublist {A} R (x y:list A) l :
+    sublist x y ->
+     all_different R (y::l) -> all_different R (x::l).
+  Proof.
+    intros subl ale.
+    invcs ale.
+    constructor; trivial.
+    revert H1.
+    apply Forall_impl; intros.
+    unfold different_buckets in *; intros.
+    apply H; trivial.
+    eapply sublist_In; eauto.
+  Qed.
+
+  Instance different_buckets_sublist {A R} : Proper (sublist --> sublist --> Basics.impl) (@different_buckets A R).
+  Proof.
+    unfold Basics.impl, Basics.flip, different_buckets.
+    intros x1 x2 s1 y1 y2 s2 df.
+    intros.
+    apply df; eapply sublist_In; eauto. 
+  Qed.
+  
+  Lemma different_buckets_forall_sublist {A} {R} (y:list A) l l' :
+    Forall2 sublist l l' ->
+    Forall (different_buckets R y) l' ->
+    Forall (different_buckets R y) l.
+  Proof.
+    intros f2; induction f2; simpl; trivial.
+    intros f; invcs f.
+    constructor; auto.
+    eapply different_buckets_sublist; eauto.
+    reflexivity.    
+  Qed.
+
+  Instance all_different_forall_sublist {A} R : Proper (Forall2 sublist --> Basics.impl) (@all_different A R).
+  Proof.
+    unfold Basics.flip, Basics.impl.
+    intros x y f2.
+    induction f2; simpl; trivial.
+    intros HH.
+    eapply all_different_cons_sublist; try eapply H.
+    invcs HH.
+    constructor; trivial.
+    - eapply different_buckets_forall_sublist; eauto.
+    - now apply IHf2.
+  Qed.
+
+  Lemma is_partition_cons_sublist {A} R (x y:list A) l :
+    sublist y x ->
+    is_partition R (x::l) -> is_partition R (y::l).
+  Proof.
+    intros subl [leq ldiff].
+    split.
+    - eapply all_equivs_cons_sublist; eauto.
+    - eapply all_different_cons_sublist; eauto.
+  Qed.
+
+  Instance is_partition_forall_sublist {A} R : Proper (Forall2 sublist --> Basics.impl) (@is_partition A R).
+  Proof.
+    unfold Basics.flip, Basics.impl.
+    intros x y f2.
+    intros [??]; split.
+    - eapply all_equivs_forall_sublist; eauto.
+    - eapply all_different_forall_sublist; eauto.
+  Qed.
+
+  Lemma all_different_forall_cons_nin {A} R a l :
+    all_different R ([a] :: l) ->
+    Forall (Forall (fun y : A => ~ R a y)) l.
+  Proof.
+    intros HH.
+    invcs HH.
+    revert H1.
+    apply Forall_impl; intros.
+    unfold different_buckets in H.
+    rewrite Forall_forall.
+    simpl in H.
+    eauto.
+  Qed.
+               
+  Lemma is_partition_forall_cons_nin {A} R a l :
+    is_partition R ([a] :: l) ->
+    Forall (Forall (fun y : A => ~ R a y)) l.
+  Proof.
+    intros [??].
+    now apply all_different_forall_cons_nin.
+  Qed.
+
+  Lemma quotient_unquotient {A} {R} {equiv:Equivalence R}  {dec:EqDec A R} {l} :
+    is_partition R l ->
+    same_subsets (filter_nil l) (quotient R (concat l)).
+  Proof.
+    induction l; simpl; intros.
+    - reflexivity.
+    - specialize (IHl (is_partition_cons_inv H)).
+      induction a; simpl; trivial.
+      cut_to IHa.
+      + destruct a0; simpl in *.    
+        * rewrite add_to_bucket_new_perm; trivial.
+          -- rewrite <- filter_nil_quotient.
+             rewrite add_to_bucket_filter_nil.
+             apply add_to_bucket_same_subsets_proper; trivial.
+             ++ eapply is_partition_cons_inv; eauto.
+             ++ now rewrite filter_nil_quotient.
+          -- now apply is_partition_forall_cons_nin.
+        * rewrite add_to_bucket_nnil_same_subsets_proper; trivial.
+          4: symmetry; apply IHa.
+          -- simpl.
+             destruct (a == a0).
+             ++ reflexivity.
+             ++ invcs H.
+                invcs H0.
+                elim c.
+                apply H3; simpl; intuition.
+          -- apply add_to_bucket_nnil.
+             apply quotient_nnil.
+          -- apply add_to_bucket_is_partition.
+             apply quotient_partitions.
+      + eapply is_partition_cons_sublist; try eapply H.
+        apply sublist_skip.
+        reflexivity.
+  Qed.
+
   Lemma Permutation_concat_is_same_subsets {A} R {equiv:Equivalence R}  {dec:EqDec A R} l1 l2 :
     is_partition R l1 ->
     is_partition R l2 ->
@@ -1199,24 +1462,95 @@ Section conditional.
     - eapply Permutation_concat_is_same_subsets; eauto.
   Qed.
 
-  Lemma add_to_bucket_new_perm {A} {R} {equiv:Equivalence R}  {dec:EqDec A R} (l : list (list A)) a :
-    Forall (Forall (fun y => ~ R a y)) l ->
-    Permutation ([a]::filter_nil l) (filter_nil (add_to_bucket R a l)).
+  Instance is_equiv_class_f2R {A R} {equiv:Equivalence R} : Proper (Forall2 R ==> iff) (@is_equiv_class A R).
   Proof.
-    induction l; simpl; intros FF.
-    - eauto.
-    - invcs FF.
-      specialize (IHl H2).
-      destruct a0; simpl; trivial.
-      invcs H1.
-      destruct (a == a0).
-      + now elim H3.
-      + simpl.
-        rewrite <- IHl.
-        apply perm_swap.
+    cut (Proper (Forall2 R ==> Basics.impl) (@is_equiv_class A R))
+    ; unfold Basics.impl, Proper, respectful.
+    - simpl; intros; split; intros.
+      + eauto.
+      + symmetry in H0.
+        eauto.
+    - intros x y HH.
+      unfold is_equiv_class, ForallPairs; intros.
+      destruct (Forall2_In_r HH H0) as [?[? re1]].
+      destruct (Forall2_In_r HH H1) as [?[? re2]].
+      rewrite <- re1.
+      rewrite <- re2.
+      eauto.
+  Qed.
+                       
+  Instance all_equivs_ff2R {A R} {equiv:Equivalence R} : Proper (Forall2 (Forall2 R) ==> iff) (@all_equivs A R).
+  Proof.
+    cut (Proper (Forall2 (Forall2 R) ==> Basics.impl) (@all_equivs A R))
+    ; unfold Basics.impl, Proper, respectful.
+    - simpl; intros; split; intros.
+      + eauto.
+      + symmetry in H0.
+        eauto.
+    - intros x y ff2.
+      induction ff2; trivial.
+      intros HH; invcs HH.
+      constructor.
+      + symmetry in H.
+        eapply is_equiv_class_f2R; eauto.
+      + now apply IHff2.
   Qed.
 
-  Lemma add_to_bucket_filter_true {A} {R} {equiv:Equivalence R}  {dec:EqDec A R} (l : list(list A)) (p : A -> bool) (a : A):
+  Instance different_buckets_f2R {A R} {equiv:Equivalence R} : Proper (Forall2 R ==> Forall2 R ==> iff) (@different_buckets A R).
+  Proof.
+    cut (Proper (Forall2 R ==> Forall2 R ==> Basics.impl) (@different_buckets A R))
+    ; unfold Basics.impl, Proper, respectful.
+    - simpl; intros; split; intros.
+      + eauto.
+      + symmetry in H0.
+        symmetry in H1.
+        eauto.
+    - intros x y ff2.
+      unfold different_buckets; intros.
+      destruct (Forall2_In_r ff2 H1) as [?[? re1]].
+      destruct (Forall2_In_r H H2) as [?[? re2]].
+      rewrite <- re1.
+      rewrite <- re2.
+      apply H0; eauto.
+  Qed.
+  
+  Instance all_different_ff2R {A R} {equiv:Equivalence R} : Proper (Forall2 (Forall2 R) ==> iff) (@all_different A R).
+  Proof.
+    cut (Proper (Forall2 (Forall2 R) ==> Basics.impl) (@all_different A R))
+    ; unfold Basics.impl, Proper, respectful.
+    - simpl; intros; split; intros.
+      + eauto.
+      + symmetry in H0.
+        eauto.
+    - intros x y ff2.
+      unfold all_different.
+      induction ff2; trivial.
+      intros HH; invcs HH.
+      constructor.
+      + eapply Forall2_Forall_trans; [ | eapply H2].
+        revert ff2.
+        apply Forall2_incl; intros.
+        eapply different_buckets_f2R; try eapply H5; symmetry; eauto.
+      + now apply IHff2.
+  Qed.
+
+  Instance is_partition_ff2R {A R} {equiv:Equivalence R} : Proper (Forall2 (Forall2 R) ==> iff) (@is_partition A R).
+  Proof.
+    cut (Proper (Forall2 (Forall2 R) ==> Basics.impl) (@is_partition A R))
+    ; unfold Basics.impl, Proper, respectful.
+    - simpl; intros; split; intros.
+      + eauto.
+      + symmetry in H0.
+        eauto.
+    - intros x y ff2 [req rdiff].
+      split.
+      + eapply all_equivs_ff2R; eauto.
+        symmetry; eauto.
+      + eapply all_different_ff2R; eauto.
+        now symmetry.
+  Qed.      
+    
+  Lemma add_to_bucket_filter_true {A} {R} {equiv:Equivalence R} {dec:EqDec A R} (l : list(list A)) (p : A -> bool) (a : A):
     p a = true ->
     is_partition R l ->
     Permutation (filter_nil (add_to_bucket R a (map (filter p) l))) (filter_nil (map (filter p) (add_to_bucket R a l))).
@@ -1225,21 +1559,31 @@ Section conditional.
     induction l; simpl.
     - rewrite pa; eauto.
     - specialize (IHl (is_partition_cons_inv isp)).
-      induction a0; simpl; trivial.
+      destruct a0; simpl; trivial.
       case_eq (p a0); intros pa0.
       + destruct (a == a0); simpl.
         * now rewrite pa pa0.
         * rewrite pa0; simpl; eauto.
-      + induction a1; simpl.
+      + 
+        induction a1; simpl.
         * destruct (a == a0); simpl.
           -- rewrite pa pa0.
              rewrite IHl.
              simpl.
              symmetry.
              rewrite add_to_bucket_new_perm; trivial.
-             destruct isp as [? diff].
-             invcs diff.
-             admit.
+             apply is_partition_forall_cons_nin.
+             apply (is_partition_forall_sublist R ([a]::l) _).
+             ++ constructor.
+                ** reflexivity.
+                ** apply Forall2_flip.
+                   apply Forall2_map_Forall.
+                   rewrite Forall_forall; intros.
+                   apply filter_sublist.
+             ++ eapply is_partition_ff2R; try eapply isp.
+                constructor.
+                ** constructor; trivial.
+                ** reflexivity.
           -- rewrite pa0; simpl; trivial.
         * cut_to IHa1.
           -- invcs isp.
@@ -1261,9 +1605,13 @@ Section conditional.
                    now rewrite pa pa0 H; simpl.
                 ** simpl.
                    now rewrite pa0 H; simpl.
-          -- admit.
-          -- admit.
-  Admitted.
+          -- eapply is_partition_forall_sublist; try eapply isp.
+             constructor.
+             ++ apply sublist_cons.
+                apply sublist_skip.
+                reflexivity.
+             ++ reflexivity.
+  Qed.
 
   Lemma add_to_bucket_filter_false {A} R {equiv:Equivalence R}  {dec:EqDec A R} (l : list(list A)) (p : A -> bool) (a : A):
     p a = false ->
@@ -1284,21 +1632,6 @@ Section conditional.
           rewrite pa0; simpl; trivial.
         * rewrite pa0; simpl.
           now rewrite IHl.
-  Qed.
-
-  Instance same_subsets_perm_sub {A} : subrelation (@Permutation (list A)) same_subsets.
-  Proof.
-    repeat red; intros.
-    exists y.
-    split; trivial.
-    reflexivity.
-  Qed.
-
-  Instance same_subsets_perm2_sub {A} : subrelation (Forall2 (@Permutation A)) same_subsets.
-  Proof.
-    repeat red; intros.
-    exists x.
-    eauto.
   Qed.
 
   Instance perm2_concat_perm {A} : Proper (Forall2 (Permutation (A:=A)) ==> @Permutation A) (@concat A).
