@@ -1488,7 +1488,9 @@ Section conditional.
    Qed. 
    
         
-  Lemma equiv_perm_hd'_eq {A} {x1 x2 : list(nonnegreal*A)} {l : list(list(nonnegreal*A))} (f : A -> R)  : all_equivs (im_eq (fun x => f x.2)) l -> (Permutation x1 x2) -> (In x1 l) -> hd' f x1 = hd' f x2.
+   Lemma equiv_perm_hd'_eq
+         {A} {x1 x2 : list(nonnegreal*A)} {l : list(list(nonnegreal*A))} {f : A -> R} :
+     all_equivs (im_eq (fun x => f x.2)) l -> (Permutation x1 x2) -> (In x1 l) -> hd' f x1 = hd' f x2.
   Proof.
     move=> H H0 H1.
     red in H.
@@ -1545,7 +1547,7 @@ Lemma cond_expt_def {A} (p : Pmf A) (f : A -> R) (g : A -> R) (r : R) :
       }
       invcs H2.
       unfold prob. simpl. f_equal. now rewrite H1.
-      now apply (equiv_perm_hd'_eq f H3).
+      now apply (equiv_perm_hd'_eq H3).
   Qed.  
       
 End conditional.
