@@ -1766,14 +1766,6 @@ Section conditional.
         -- assumption.
    Qed. 
 
-  Lemma cond_expt_def_aux {A} f {g : A -> R} {r : R} {a} {p0} {l}:
-    [seq x <- a | g x.2 ==b r] = (p0 :: l) -> hd' f [seq x <- a | g x.2 ==b r] = hd' f a.
-  Proof.
-    intros Heq.
-    rewrite Heq. simpl. 
-    
-  Admitted.
-
   Instance list_fst_sum_proper {A} :Proper (Permutation (A:=nonnegreal * A) ==> eq) (list_fst_sum).
   Proof.
     unfold Proper, respectful.
@@ -1857,8 +1849,22 @@ Section conditional.
      all: try apply im_eq_equiv.
      all: try apply Eq_dec_im_eq.
   Qed.
+
+  Lemma cond_expt_def_aux {A} f {g : A -> R} {r : R} {a} {p0} {l:list (nonnegreal * A)}:
+    is_equiv_class (im_eq (fun x : nonnegreal * A => f x.2)) a ->
+    [seq x <- a | g x.2 ==b r] = (p0 :: l) -> (hd' f [seq x <- a | g x.2 ==b r]) = (hd' f a).
+  Proof.
+    intros ise Heq.
+    rewrite Heq. simpl.
+    destruct a; simpl; trivial.
+    simpl in Heq; discriminate.
+    apply ise.
+    - eapply In_filter_In_list.
+      erewrite Heq; simpl; eauto.
+    - simpl; eauto.
+  Qed.    
   
-Lemma cond_expt_def {A} (p : Pmf A) (f : A -> R) (g : A -> R) (r : R) :
+  Lemma cond_expt_def {A} (p : Pmf A) (f : A -> R) (g : A -> R) (r : R) :
     cond_expt p f g r =
     list_sum
       ((map (fun l => 𝕡[(preim_outcomes_of_And l f g (hd' f l) r)]*(hd' f l)))
@@ -1882,8 +1888,15 @@ Lemma cond_expt_def {A} (p : Pmf A) (f : A -> R) (g : A -> R) (r : R) :
       rewrite <- eqq.
       case_eq ([seq x <- a | g x.2 ==b r]).
       + simpl. lra.
-      + intros. rewrite <-H.                              
-        now rewrite <-(cond_expt_def_aux f H).
+      + intros. rewrite <-H.
+        assert (isp2:is_partition (im_eq (fun x : nonnegreal * A => f x.2)) (group_by_image (fun x : nonnegreal * A => f x.2) p)).
+        { 
+          apply quotient_partitions.
+        }
+        destruct isp2 as [ispe _].
+        unfold all_equivs in ispe.
+        eapply Forall_forall in ispe; try eapply Ha.
+        now rewrite <-(cond_expt_def_aux f ispe H).
       * unfold prob. simpl ; lra. 
     - intros.
       assert (is_partition (im_eq (fun x : nonnegreal * A => f x.2)) ll).
