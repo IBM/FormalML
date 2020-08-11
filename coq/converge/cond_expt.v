@@ -13,7 +13,20 @@ Open Scope R_scope.
 
 Section aux.
 
-
+  Lemma ForallOrdPairs_app_in {A R} {l1 l2:list A} : ForallOrdPairs R (l1 ++ l2) ->
+                                                     forall x y, In x l1 -> In y l2 -> R x y.
+  Proof.
+    revert l2.
+    induction l1; simpl; intros.
+    - intuition.
+    - invcs H.
+      destruct H0.
+      + subst.
+        eapply (Forall_forall _ _) in H4; try eassumption.
+        rewrite in_app_iff; eauto.
+      + eapply IHl1; eauto.
+  Qed.
+  
 Lemma filter_true {A} :  forall p:list A, filter (fun _ => true) p = p.
 Proof.
   induction p.
@@ -231,32 +244,31 @@ Section quotient.
 
   Hint Resolve quotient_partitions : ml.
 
-  Lemma quotient_buckets_disjoint l ll1 l2 ll3 l4 ll5  :
-    quotient l = ll1 ++ l2 :: ll3 ++ l4 :: ll5 ->
-    forall x y, In x l2 /\ In y l4 -> ~ R x y.
-  Proof.
-    set (quotient_all_different l). 
-    intro H.
-    setoid_rewrite H in a. 
-    unfold all_different in a. unfold different_buckets in a.
-    set (ForallOrdPairs_In a).  simpl in o. clear H. 
-    intros x y H0. 
-    specialize (o l2 l4). 
-    enough (h2 : In l2 (ll1 ++ l2 :: ll3 ++ l4 :: ll5)).
-    enough (h4 : In l4 (ll1 ++ l2 :: ll3 ++ l4 :: ll5)).
-    specialize (o h2 h4).
-    case o.
-    - intro H. rewrite H in H0. admit. 
-    - intro H. case H. intro H1. apply H1. now destruct H0. now destruct H0.  
-      intro G. apply G. 
-  Admitted.
-  
-Lemma quotient_buckets_disjoint_ l ll1 ll2 :
+  Lemma quotient_buckets_disjoint_app l ll1 ll2 :
     quotient l = ll1 ++ ll2 ->
-    forall l1 l2 x y, In l1 ll1 /\ In l2 ll2 ->
-                 In x l1 /\ In y l2 -> ~ R x y.
-  Admitted.
-
+    forall l1 l2 x y, In l1 ll1 -> In l2 ll2 ->
+                 In x l1 -> In y l2 -> ~ R x y.
+  Proof.
+    intros eqq.
+    generalize (quotient_all_different l); intros HH.
+    rewrite eqq in HH.
+    red in HH.
+    intros.
+    generalize (ForallOrdPairs_app_in HH); intros HH2.
+    specialize (HH2 _ _ H H0).
+    apply (HH2 _ _ H1 H2).
+  Qed.
+  
+  Lemma quotient_buckets_disjoint_cons l ll1 l2 ll3 l4 ll5  :
+    quotient l = ll1 ++ l2 :: ll3 ++ l4 :: ll5 ->
+    forall x y, In x l2 -> In y l4 -> ~ R x y.
+  Proof.
+    intros.
+    eapply (quotient_buckets_disjoint_app l (ll1++(l2::ll3)) (l4::ll5)); simpl; try eassumption.
+    - rewrite app_ass; simpl; trivial.
+    - rewrite in_app_iff; simpl; eauto.
+    - eauto.
+  Qed.
 
 End quotient.
 
