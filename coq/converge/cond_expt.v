@@ -1398,28 +1398,6 @@ Section conditional.
     rewrite (list_sum_is_nil l H). 
     lra. 
   Qed.
-
-  Lemma In_group_by_image_hd' {A} {f : A -> R}{l : seq(nonnegreal*A)}{l0 : seq (nonnegreal * A)}: 
-    In l0 (group_by_image (fun x : nonnegreal * A => f x.2) l) ->
-    forall a, In a l0 -> f a.2 = hd' f l0.
-  Proof.
-    intros H a Ha.
-    induction l0.
-    * simpl in Ha ; firstorder.
-    * simpl in *. intuition. now rewrite H0.
-      set (cons_In_group_by_image _ H). specialize (e a).
-      simpl in e. symmetry. now apply e.
-   Qed. 
-      
-   Lemma In_filter_hd' {A} {f : A -> R}{l : seq(nonnegreal*A)}{l0 : seq (nonnegreal * A)} p: 
-    In l0 (group_by_image (fun x : nonnegreal * A => f x.2) l) ->
-    forall a, In a (filter p l0) -> f a.2 = hd' f l0.
-   Proof.
-     intros H a Hin.
-     apply (In_group_by_image_hd' H).
-     apply (In_filter_In_list Hin). 
-   Qed.
-
    
   Import Bool.
 
@@ -1462,7 +1440,54 @@ Section conditional.
   Qed.
 
 
+  
+  Lemma In_eq_class_hd' {A} {f : A -> R}{l : seq(seq(nonnegreal*A))}{l0 : seq (nonnegreal * A)}: 
+    In l0 l ->
+    is_partition (im_eq (fun x => f x.2)) l ->
+    forall a, In a l0 -> f a.2 = hd' f l0.
+  Proof.
+    move=> H H0 a H1.
+    induction l0.
+    * simpl in H1 ; firstorder.
+    * simpl in *. intuition. now rewrite H2.
+      destruct H0. eapply Forall_forall in H0 ; eauto.
+      apply H0.
+      + simpl ; now right.
+      + simpl ; now left. 
+  Qed.
+  
+  Lemma In_group_by_image_hd' {A} {f : A -> R}{l : seq(nonnegreal*A)}{l0 : seq (nonnegreal * A)}: 
+    In l0 (group_by_image (fun x : nonnegreal * A => f x.2) l) ->
+    forall a, In a l0 -> f a.2 = hd' f l0.
+  Proof.
+    intros H a Ha.
+    induction l0.
+    * simpl in Ha ; firstorder.
+    * simpl in *. intuition. now rewrite H0.
+      set (cons_In_group_by_image _ H). specialize (e a).
+      simpl in e. symmetry. now apply e.
+   Qed. 
+      
+   Lemma In_filter_hd' {A} {f : A -> R}{l : seq(nonnegreal*A)}{l0 : seq (nonnegreal * A)} p: 
+    In l0 (group_by_image (fun x : nonnegreal * A => f x.2) l) ->
+    forall a, In a (filter p l0) -> f a.2 = hd' f l0.
+   Proof.
+     intros H a Hin.
+     apply (In_group_by_image_hd' H).
+     apply (In_filter_In_list Hin). 
+   Qed.
 
+   Lemma singleton_is_partition {A} {R} {equiv:Equivalence R}  {dec:EqDec A R} {x : list A} :
+     is_equiv_class R x ->
+     is_partition R [x].
+   Proof.
+     split.
+     -- red ; rewrite Forall_forall ; intros.
+        simpl in H0. intuition. now subst.
+     -- red. repeat constructor.
+   Qed. 
+   
+        
   Lemma equiv_perm_hd'_eq {A} {x1 x2 : list(nonnegreal*A)} {l : list(list(nonnegreal*A))} (f : A -> R)  : all_equivs (im_eq (fun x => f x.2)) l -> (Permutation x1 x2) -> (In x1 l) -> hd' f x1 = hd' f x2.
   Proof.
     move=> H H0 H1.
@@ -1475,8 +1500,16 @@ Section conditional.
     - intros Hx1. rewrite Hx1 in H0.
       now rewrite (Permutation_nil H0).
     - move=> p l0 H5.
-      simpl. apply In_group_by_image_hd'. 
-  Admitted.
+      simpl. eapply In_eq_class_hd'.
+      -- assert (In x2 [x2]). simpl ; now left. 
+         apply H4.
+      -- eapply singleton_is_partition ; eauto.
+      -- eapply Permutation_in ; eauto. rewrite H5. trivial.
+         simpl ; now left.
+     Unshelve.
+     all: try apply im_eq_equiv.
+     all: try apply Eq_dec_im_eq.
+  Qed.
   
 Lemma cond_expt_def {A} (p : Pmf A) (f : A -> R) (g : A -> R) (r : R) :
     cond_expt p f g r =
