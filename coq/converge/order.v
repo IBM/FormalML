@@ -1,9 +1,13 @@
 Require Import LibUtilsLattice.
 Require Import Sets.Ensembles.
-
+Require Import Coq.Program.Basics. 
 
 Section range. 
-  
+  Local Open Scope program_scope.
+
+  Class NonEmpty (A : Type) :=
+  ex : A.
+    
   Definition range {A B : Type} (f : A -> B): Ensemble B := fun y:B => exists x:A, f x = y.
 
   Definition mem {A : Type}(a : A) (X : Ensemble A) : Prop := X a.  
@@ -38,6 +42,7 @@ Section range.
   Proof.
     unfold range.
     apply Extensionality_Ensembles.
+
     split.
     - constructor. 
     - intros x Hx. now exists x. 
@@ -74,5 +79,63 @@ Section range.
       destruct Hx as [a Ha]. now exists a.
   Qed.
 
+  Notation "A ⊆ B" := (Included _ A B) (at level 50).
+
+  Lemma image_subset_range {A B} (f : A -> B) (s : Ensemble A) :  (f '' s) ⊆ (range f).
+  Proof.
+    intros x [x0 [H1 H2]] ; subst.
+    apply mem_range_self.
+  Qed. 
   
+  Lemma range_comp {A B C} (f : A -> B) (g: B -> C): range (fun x => g (f x)) = (g '' range f). 
+  Proof.
+    apply Extensionality_Ensembles. 
+    split. 
+    - intros x Hx. 
+      destruct Hx ; subst. 
+      exists (f x0).
+      split ; trivial ; apply mem_range_self.
+    - intros x [x0 [[x1 Hx1] H2]] ; subst.
+      exists x1 ; trivial.
+  Qed.
+
+  Lemma range_subset_iff {A B} (f : A -> B) (s : Ensemble B) : range f ⊆ s <-> forall y, f y ∈ s.
+  Proof.
+    split.
+    * intros H y.
+      specialize (H (f y)).
+      apply H. apply mem_range_self.
+    * intros H y [x Hyx] ; subst.
+      apply H.
+  Qed.
+
+  Lemma range_comp_subset_range {A B C} (f : A -> B) (g : B -> C) : range (g ∘ f) ⊆ range g.
+  Proof.
+    intros x [x0 Hx0]. 
+    now exists (f x0).
+  Qed.
+
+  Lemma range_nonempty {A B} (f : A -> B) (ne : NonEmpty A) : exists x, (x ∈ range f). 
+  Proof.
+    exists (f ne). apply mem_range_self.
+  Qed.
+
+  Notation "A ∩ B" := (Intersection _ A B) (at level 50). 
+   Lemma image_preimage_eq_subset_inter {A B} {f : A -> B} {s : Ensemble B} :
+     (f '' (f ⁻¹ s)) = s ∩ (range f).
+   Proof.
+     apply Extensionality_Ensembles. 
+     split.
+     * intros x Hx ; destruct Hx ; subst.
+       destruct H. 
+       constructor. do 2 red in H. 
+       now rewrite H0 in H.
+       rewrite <-H0 ; apply mem_range_self.
+     *  intros x Hx ; destruct Hx.
+        destruct H0 as [x0 Hx0].
+        exists x0 ; split ; trivial. 
+        red ; now subst.
+   Qed.
+
+
 End range. 
