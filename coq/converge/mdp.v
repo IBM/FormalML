@@ -6,7 +6,9 @@ Require Import Sums Coq.Reals.ROrderedType.
 Require Import micromega.Lra.
 Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Equivalence RelationClasses EquivDec Morphisms.
-Require Import ExtLib.Structures.Monad.
+Require Import ExtLib.Structures.Monad LibUtils.
+
+
 Import MonadNotation.
 
 Set Bullet Behavior "Strict Subproofs".
@@ -15,14 +17,96 @@ Section extra.
 Open Scope list_scope.
 Open Scope R_scope.
 
+Instance EqDecR : @EqDec R eq _ := Req_EM_T. 
+
 Import ListNotations.
   
 Fixpoint Rmax_list (l : list R) : R :=
   match l with
-  | nil => 0
-  | (x :: xs) => Rmax x (Rmax_list xs)
-  end.
+    | nil => 0
+    | a :: l1 =>
+      match l1 with
+        | nil => a
+        | a' :: l2 => Rmax a (Rmax_list l1)
+      end
+    end.
 
+Lemma Rmax_spec_map {A} (l : list A) (f : A -> R) : forall a:A, In a l -> f a <= Rmax_list (map f l).
+Proof.
+  intros a Ha. 
+  induction l.
+  - simpl ; firstorder.
+  - simpl in *. intuition.
+    + rewrite H. destruct l. simpl. right; reflexivity. 
+      simpl. apply Rmax_l. 
+    + destruct l. simpl in *; firstorder.
+      simpl in *. eapply Rle_trans ; eauto. apply Rmax_r.
+Qed.
+
+Lemma Rmax_spec {l : list R} : forall a:R, In a l -> a <= Rmax_list l.
+Proof.
+  intros a Ha. 
+  induction l.
+  - simpl ; firstorder.
+  - simpl in *. intuition.
+    + rewrite H. destruct l. simpl. right; reflexivity. 
+      simpl. apply Rmax_l. 
+    + destruct l. simpl in *; firstorder.
+      simpl in *. eapply Rle_trans ; eauto. apply Rmax_r.
+Qed.
+
+    
+Lemma Rmax_list_const_mul (l : list R) {r : R} (hr : 0 <= r) :
+  Rmax_list (map (fun x => r*x) l) = r*(Rmax_list l).
+Proof.
+  induction l. 
+  - simpl ; lra.
+  - simpl. rewrite IHl.
+    rewrite RmaxRmult ; trivial.
+    destruct l.  
+    + simpl ; reflexivity.
+    + simpl in *. f_equal ; trivial. 
+Qed.
+
+Lemma list_sum_map_zero {A} (s : list A)  :
+  list_sum (map (fun _ => 0) s) = 0. 
+Proof.
+  induction s.
+  - simpl; reflexivity.
+  - simpl. rewrite IHs ; lra. 
+Qed.
+
+Lemma Rmax_list_const_add (l : list R) (d : R) :
+  Rmax_list (map (fun x => x + d) l) =
+  if (l <> []) then ((Rmax_list l) + d) else 0. 
+Proof.
+  induction l. 
+  - simpl ; reflexivity.
+  - simpl in *.
+    destruct l.
+    + simpl ; reflexivity.
+    + simpl in * ; rewrite IHl. 
+      now rewrite Rcomplements.Rplus_max_distr_r.
+Qed.
+
+Lemma Rmax_list_le (l : list R) (r : R) :
+  forall x, In x l -> r <= x -> r <= Rmax_list l.
+Proof.
+  intros x Hx Hrx. 
+  eapply Rle_trans ; eauto.
+  now apply Rmax_spec.
+Qed.
+
+
+Lemma Rmax_list_app (l1 l2 : list R) :
+  Rmax_list (l1 ++ l2) = Rmax(Rmax_list l1) (Rmax_list l2).
+Admitted.
+  
+Lemma Rmax_list_sum {A B} (p : list A) (s : list B) (f : A -> R) (g : B -> R) :
+  Rmax_list (map (fun a => list_sum (map g s)) p) <= list_sum (map (fun b => Rmax_list (map f p)) s). 
+Proof.
+Admitted. 
+     
 Lemma list_sum_mult_const (c : R) (l : list R) :
   list_sum (map (fun z => c*z) l) = c*list_sum (map (fun z => z) l).
 Proof. 
@@ -66,7 +150,7 @@ Fixpoint applyn {A} (init : A) (g : A -> A) (n : nat) : A :=
 End extra.
 
 Definition bind_iter {M:Type->Type} {Mm:Monad M} {A:Type} (unit:A) (f : A -> M A) :=
-  applyn (ret unit) (fun y => bind y f).
+  applyn (ret unit) (fun y => Monad.bind y f).
 
 Section MDPs.
 
@@ -326,11 +410,19 @@ Proof.
 Admitted.
 
 
+Theorem finite_has_max' {A:Type} (R:A->A->Prop) `{part: PartialOrder _ eq R} :
+ (exists x:A, forall y:A, R y x) -> (exists x:A, forall y:A, R x y -> x = y)  .
+Proof.
+  intros [x  H].
+  exists x. intros y Hxy.
+  specialize (H y).
+  now apply antisymmetry. 
+Qed.
+
 Theorem finite_has_max {A:Type} {ne : NonEmpty A} {fin:Finite A} (R:A->A->Prop) `{part: PartialOrder _ eq R} :
-  exists x:A, forall y:A, R y x. 
+  exists x:A, forall y:A, R x y -> x = y.
 Admitted.
 
-  
 Section order.
   
 Open Scope R_scope. 
@@ -381,6 +473,10 @@ Proof.
   intuition.
 Qed.
 
+(* Optimal value of an MDP M. 
+   Gives for each state the best long-term value that can be obtained for any policy. *)
+Definition max_ltv_on (l : list (policy M)) : M.(state) -> R :=
+  fun s => Rmax_list (map (fun σ => ltv γ σ s) l).
 
 
 End order.

@@ -156,7 +156,7 @@ End product_measure.
 
 Notation "p ⊗ q" := (product_measure p q) (at level 80, right associativity).
 
-Section crap.
+Section junk.
 
 Arguments outcomes {_}. 
 Definition preim_outcomes_of_And {A : Type} (p : Pmf A) (f g: A -> R) (r1 r2 : R) :=
@@ -205,7 +205,7 @@ Proof.
   simpl. rewrite IHl. rewrite Rmult_plus_distr_l. reflexivity.
 Qed.
 
-End crap.
+End junk.
 
 
 
