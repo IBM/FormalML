@@ -1,6 +1,6 @@
 
 Require Import Reals Coq.Lists.List Coquelicot.Series Coquelicot.Hierarchy Coquelicot.SF_seq.
-Require Import pmf_monad.
+Require Import pmf_monad Permutation.
 Require Import Sums Coq.Reals.ROrderedType.
 Require Import micromega.Lra.
 Require Import Coq.Logic.FunctionalExtensionality.
@@ -203,7 +203,7 @@ Proof.
 Qed.
 
 Lemma Rmax_list_sum {A B} {la : list A} (lb : list B) (f : A -> B -> R) (Hla : [] <> la):
-  Rmax_list (map (fun a => list_sum (map (fun b => f a b) lb)) la) <=
+  Rmax_list (map (fun a => list_sum (map (f a) lb)) la) <=
   list_sum (map (fun b => Rmax_list (map (fun a => f a b) la)) lb). 
 Proof.
   rewrite Rmax_list_le_iff. 
@@ -214,10 +214,66 @@ Proof.
   * now rewrite map_not_nil. 
 Qed.
 
-Lemma Rmax_list_app (l1 l2 : list R) :
-  Rmax_list (l1 ++ l2) = Rmax(Rmax_list l1) (Rmax_list l2).
-Admitted.
 
+Lemma Rmax_list_cons_cons (l : list R) (a b : R) :
+  Rmax_list (a :: b :: l) = Rmax a (Rmax_list (b :: l)).
+Proof.
+  constructor.
+Qed.
+
+Lemma Rmax_list_Rmax_swap (l : list R) (a b : R) :
+  Rmax a (Rmax_list (b :: l)) = Rmax b (Rmax_list (a :: l)).
+Proof.
+  induction l.
+  - simpl ; apply Rmax_comm.
+  - do 2 rewrite Rmax_list_cons_cons.
+    do 2 rewrite Rmax_assoc. 
+    now rewrite (Rmax_comm _ b).
+Qed. 
+ 
+Lemma Rmax_list_cons (x0 : R)  (l1 l2 : list R) :
+  Permutation l1 l2 -> (Rmax_list l1 = Rmax_list l2) -> Rmax_list (x0 :: l1) = Rmax_list(x0 :: l2).
+Proof.
+  intros Hpl Hrl. 
+  case_eq l1.
+  * intro Hl. rewrite Hl in Hpl. set (Permutation_nil Hpl).
+    now rewrite e.
+  * case_eq l2.
+    ++ intro Hl2. rewrite Hl2 in Hpl. symmetry in Hpl. set (Permutation_nil Hpl).
+       now rewrite e.
+    ++ intros r l H r0 l0 H0. 
+       rewrite <-H0, <-H. simpl ; rewrite Hrl.
+       now rewrite H0, H.  
+Qed.
+
+Lemma Rmax_list_cons_swap (x0 y0 : R)  (l1 l2 : list R) :
+  Permutation l1 l2 -> (Rmax_list l1 = Rmax_list l2) ->
+  Rmax_list (x0 :: y0 :: l1) = Rmax_list(y0 :: x0 :: l2).
+Proof.
+  intros Hpl Hrl.
+  rewrite Rmax_list_cons_cons. rewrite Rmax_list_Rmax_swap.
+  rewrite <-Rmax_list_cons_cons.
+  case_eq l1.
+  * intro Hl. rewrite Hl in Hpl. set (Permutation_nil Hpl).
+    now rewrite e.
+  * case_eq l2.
+    ++ intro Hl2. rewrite Hl2 in Hpl. symmetry in Hpl. set (Permutation_nil Hpl).
+       now rewrite e.  
+    ++ intros r l H r0 l0 H0.  rewrite <-H0, <-H. simpl ; rewrite Hrl.
+       now rewrite H0, H.
+Qed.
+
+Global Instance Rmax_list_Proper : Proper (@Permutation R ==> eq) Rmax_list.
+Proof.
+  unfold Proper. intros x y H. 
+  apply (@Permutation_ind_bis R (fun a b => Rmax_list a = Rmax_list b)). 
+  - simpl ; lra. 
+  - intros x0. apply Rmax_list_cons.  
+  - intros x0 y0 l l' H0 H1. apply Rmax_list_cons_swap ; trivial. 
+  - intros l l' l'' H0 H1 H2 H3. rewrite H1. rewrite <-H3. reflexivity. 
+  - assumption. 
+Qed.
+    
 Lemma list_sum_mult_const (c : R) (l : list R) :
   list_sum (map (fun z => c*z) l) = c*list_sum (map (fun z => z) l).
 Proof. 
