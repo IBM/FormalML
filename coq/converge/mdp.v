@@ -13,6 +13,17 @@ Import MonadNotation.
 
 Set Bullet Behavior "Strict Subproofs".
 
+
+(*
+****************************************************************************************
+This file defines Markov Decision Processes (MDP) and proves various properties about 
+them. Included are definitions of long-term values (LTVs), proofs that LTVs are convergent
+and proofs that they satisfy the Bellman equation. 
+We also include definitions of V* and Q* and proofs about them. The goal is to prove 
+policy and value iteration algorithms correct. 
+****************************************************************************************
+*)
+
 Section extra.
 Open Scope list_scope.
 Open Scope R_scope.

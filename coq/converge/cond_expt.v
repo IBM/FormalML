@@ -11,6 +11,19 @@ Local Open Scope list_scope.
 
 Open Scope R_scope.
 
+
+(*
+****************************************************************************************
+This file has a number of auxilary results all aimed at defining and proving properties 
+about conditional expectation. In the file pmf_monad.v, we start out with a definition of 
+probability mass functions as a list(nonnegreal*A) together with a predicate that the atomic
+probabilities sum to 1. Defining conditional expectation of a random variable f needs us to
+work with sums over the range of f.
+To this end, we introduce "quotients", which is simply a bucketing operation over a type 
+A into equivalence classes based on a given equivalence relation on A.  
+****************************************************************************************
+*)
+
 Section aux.
 
   Lemma concat_map_map {A} (l : list(list A)) (f : A -> R) :
