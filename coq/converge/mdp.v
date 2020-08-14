@@ -9,7 +9,7 @@ Require Import ExtLib.Structures.Monad LibUtils.
 
 
 Import MonadNotation.
-
+Import ListNotations. 
 Set Bullet Behavior "Strict Subproofs".
 
 
@@ -23,7 +23,103 @@ policy and value iteration algorithms correct.
 ****************************************************************************************
 *)
 
+
 Section extra.
+Open Scope list_scope. 
+Lemma ne_symm {A} (x y : A) : x <> y <-> y <> x.
+Proof.
+  split; intros.
+  * intros Hxy ; symmetry in Hxy ; firstorder.
+  * intros Hxy ; symmetry in Hxy ; firstorder.
+Qed.
+
+Lemma map_nil {A B} (f : A -> B) (l : list A) :
+    map f l = (@nil B) <-> l = (@nil A).
+Proof.
+    split; intros.
+    - induction l; try reflexivity; simpl in *.
+    congruence.
+    - rewrite H; reflexivity.
+Qed.
+
+Lemma map_not_nil {A B} (l : list A) (f : A -> B):
+  [] <> map f l <-> [] <> l.  
+Proof.
+   rewrite ne_symm ; rewrite (ne_symm _ l).
+   split ; intros.
+   * intro Hl. rewrite <-(map_nil f) in Hl ; firstorder.
+   * intro Hl. rewrite (map_nil f) in Hl ; firstorder.
+Qed.
+
+Lemma abs_convg_implies_convg : forall (a : nat -> R), ex_series (fun n => Rabs(a n)) -> ex_series a. 
+Proof.
+intros a Habs.   
+refine (ex_series_le_Reals a (fun n => Rabs(a n)) _ Habs).
+intros n. now right.
+Qed.
+
+(* Applies a function to an initial argument n times *)
+Fixpoint applyn {A} (init : A) (g : A -> A) (n : nat) : A :=
+  match n with
+  | 0 => init
+  | S k => g (applyn init g k)
+  end.
+
+End extra.
+
+
+Section list_sum.
+  Lemma list_sum_map_zero {A} (s : list A)  :
+  list_sum (map (fun _ => 0) s) = 0. 
+Proof.
+  induction s.
+  - simpl; reflexivity.
+  - simpl. rewrite IHs ; lra. 
+Qed.
+
+
+Lemma list_sum_le {A} (l : list A) (f g : A -> R) :
+  (forall a, f a <= g a) ->
+  list_sum (map f l) <= list_sum (map g l).
+Proof.
+  intros Hfg.
+  induction l.
+  - simpl ; right ; trivial.
+  - simpl. specialize (Hfg a). 
+    apply Rplus_le_compat ; trivial. 
+Qed.
+
+Lemma list_sum_mult_const (c : R) (l : list R) :
+  list_sum (map (fun z => c*z) l) = c*list_sum (map (fun z => z) l).
+Proof. 
+  induction l.
+  simpl; lra.
+  simpl in *. rewrite IHl. 
+  lra. 
+Qed.   
+
+Lemma list_sum_const_mult_le {x y : R} (l : list R) (hl : list_sum l = R1) (hxy : x <= y) :
+  list_sum (map (fun z => x*z) l) <= y.
+Proof.
+  rewrite list_sum_mult_const. rewrite map_id. 
+  rewrite hl. lra. 
+Qed. 
+
+Lemma list_sum_fun_mult_le {x y D : R} {f g : R -> R}(l : list R)(hf : forall z, f z <= D) (hg : forall z , 0 <= g z) :
+  list_sum (map (fun z => (f z)*(g z)) l) <= D*list_sum (map (fun z => g z) l).
+Proof.
+  induction l.
+  simpl. lra.
+  simpl. rewrite Rmult_plus_distr_l.
+  assert (f a * g a <= D * g a). apply Rmult_le_compat_r. exact (hg a). exact (hf a).
+  exact (Rplus_le_compat _ _ _ _ H IHl).   
+Qed. 
+
+End list_sum.
+
+
+Section Rmax_list.
+  
 Open Scope list_scope.
 Open Scope R_scope.
 
@@ -95,13 +191,6 @@ Proof.
     + simpl in *. f_equal ; trivial. 
 Qed.
 
-Lemma list_sum_map_zero {A} (s : list A)  :
-  list_sum (map (fun _ => 0) s) = 0. 
-Proof.
-  induction s.
-  - simpl; reflexivity.
-  - simpl. rewrite IHs ; lra. 
-Qed.
 
 Lemma Rmax_list_const_add (l : list R) (d : R) :
   Rmax_list (map (fun x => x + d) l) =
@@ -162,44 +251,6 @@ Proof.
   split. 
   apply Rmax_list_le.
   apply Rmax_list_lub ; auto.
-Qed.
-
-
-Lemma list_sum_le {A} (l : list A) (f g : A -> R) :
-  (forall a, f a <= g a) ->
-  list_sum (map f l) <= list_sum (map g l).
-Proof.
-  intros Hfg.
-  induction l.
-  - simpl ; right ; trivial.
-  - simpl. specialize (Hfg a). 
-    apply Rplus_le_compat ; trivial. 
-Qed.
-
-
-Lemma ne_symm {A} (x y : A) : x <> y <-> y <> x.
-Proof.
-  split; intros.
-  * intros Hxy ; symmetry in Hxy ; firstorder.
-  * intros Hxy ; symmetry in Hxy ; firstorder.
-Qed.
-
-Lemma map_nil {A B} (f : A -> B) (l : list A) :
-    map f l = (@nil B) <-> l = (@nil A).
-Proof.
-    split; intros.
-    - induction l; try reflexivity; simpl in *.
-    congruence.
-    - rewrite H; reflexivity.
-Qed.
-
-Lemma map_not_nil {A B} (l : list A) (f : A -> B):
-  [] <> map f l <-> [] <> l.  
-Proof.
-   rewrite ne_symm ; rewrite (ne_symm _ l).
-   split ; intros.
-   * intro Hl. rewrite <-(map_nil f) in Hl ; firstorder.
-   * intro Hl. rewrite (map_nil f) in Hl ; firstorder.
 Qed.
 
 Lemma Rmax_list_sum {A B} {la : list A} (lb : list B) (f : A -> B -> R) (Hla : [] <> la):
@@ -263,7 +314,7 @@ Proof.
        now rewrite H0, H.
 Qed.
 
-Global Instance Rmax_list_Proper : Proper (@Permutation R ==> eq) Rmax_list.
+Global Instance Rmax_list_Proper : Proper (@Permutation R ++> eq) Rmax_list.
 Proof.
   unfold Proper. intros x y H. 
   apply (@Permutation_ind_bis R (fun a b => Rmax_list a = Rmax_list b)). 
@@ -273,48 +324,10 @@ Proof.
   - intros l l' l'' H0 H1 H2 H3. rewrite H1. rewrite <-H3. reflexivity. 
   - assumption. 
 Qed.
-    
-Lemma list_sum_mult_const (c : R) (l : list R) :
-  list_sum (map (fun z => c*z) l) = c*list_sum (map (fun z => z) l).
-Proof. 
-  induction l.
-  simpl; lra.
-  simpl in *. rewrite IHl. 
-  lra. 
-Qed.   
 
-Lemma list_sum_const_mult_le {x y : R} (l : list R) (hl : list_sum l = R1) (hxy : x <= y) :
-  list_sum (map (fun z => x*z) l) <= y.
-Proof.
-  rewrite list_sum_mult_const. rewrite map_id. 
-  rewrite hl. lra. 
-Qed. 
 
-Lemma list_sum_fun_mult_le {x y D : R} {f g : R -> R}(l : list R)(hf : forall z, f z <= D) (hg : forall z , 0 <= g z) :
-  list_sum (map (fun z => (f z)*(g z)) l) <= D*list_sum (map (fun z => g z) l).
-Proof.
-  induction l.
-  simpl. lra.
-  simpl. rewrite Rmult_plus_distr_l.
-  assert (f a * g a <= D * g a). apply Rmult_le_compat_r. exact (hg a). exact (hf a).
-  exact (Rplus_le_compat _ _ _ _ H IHl).   
-Qed. 
 
-Lemma abs_convg_implies_convg : forall (a : nat -> R), ex_series (fun n => Rabs(a n)) -> ex_series a. 
-Proof.
-intros a Habs.   
-refine (ex_series_le_Reals a (fun n => Rabs(a n)) _ Habs).
-intros n. now right.
-Qed.
-
-(* Applies a function to an initial argument n times *)
-Fixpoint applyn {A} (init : A) (g : A -> A) (n : nat) : A :=
-  match n with
-  | 0 => init
-  | S k => g (applyn init g k)
-  end.
-
-End extra.
+End Rmax_list.
 
 Definition bind_iter {M:Type->Type} {Mm:Monad M} {A:Type} (unit:A) (f : A -> M A) :=
   applyn (ret unit) (fun y => Monad.bind y f).
