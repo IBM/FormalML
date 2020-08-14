@@ -1,4 +1,3 @@
-
 Require Import Reals Coq.Lists.List Coquelicot.Series Coquelicot.Hierarchy Coquelicot.SF_seq.
 Require Import pmf_monad Permutation.
 Require Import Sums Coq.Reals.ROrderedType.
@@ -303,7 +302,7 @@ Lemma Rmax_list_cons_swap (x0 y0 : R)  (l1 l2 : list R) :
 Proof.
   intros Hpl Hrl.
   rewrite Rmax_list_cons_cons. rewrite Rmax_list_Rmax_swap.
-  rewrite <-Rmax_list_cons_cons.
+  rewrite <-Rmax_list_cons_cons.  
   case_eq l1.
   * intro Hl. rewrite Hl in Hpl. set (Permutation_nil Hpl).
     now rewrite e.
@@ -325,7 +324,11 @@ Proof.
   - assumption. 
 Qed.
 
+Variable (A : Type). 
+Variables (l : list A) (f : A -> R) (p : A -> bool).
 
+Check Rmax_list (map f (filter p l)).
+ 
 
 End Rmax_list.
 
@@ -362,7 +365,7 @@ Context (σ : policy M).
 (* Construction of a Kliesli arrow out of a policy. 
    This can be interpreted as a |S| × |S| stochastic matrix. *)
 
-Definition bind_stoch_iter (n : nat) (init : M.(state)):=
+Definition bind_stoch_iter (n : nat) (init : M.(state)) : Pmf M.(state):=
   applyn (ret init) (fun y => Pmf_bind y (fun s => t s (σ s))) n.
 
 (* 
@@ -382,7 +385,8 @@ Qed.
 
 (* Expected immediate reward for performing action (σ s) when at state s. *)
 Definition step_expt_reward : state M -> R :=
- (fun s => expt_value (t s (σ s)) (reward s (σ s))).
+  (fun s => expt_value (t s (σ s)) (reward s (σ s))).
+
 
 
 (* Expected reward after n-steps, starting at initial state, following policy sigma. *)
@@ -412,13 +416,13 @@ Qed.
 
 (* Bounded rewards (in absolute value) imply bounded expected rewards for all iterations and all states. *)
 Lemma expt_reward_le_max_Rabs {D : R} (init : M.(state)) :
-  (forall s s': M.(state) ,Rabs (reward s (σ s) s') <= D)  ->
+  (forall s s': M.(state), forall a:M.(act), Rabs (reward s a s') <= D)  ->
   (forall n:nat, Rabs (expt_reward init n) <= D). 
 Proof. 
   intros H. 
   unfold expt_reward. intros n. apply expt_value_Rle.
-  unfold step_expt_reward. intros a.
-  apply expt_value_Rle. apply H. 
+  unfold step_expt_reward. intros s.
+  apply expt_value_Rle. intro s'. apply (H s s' (σ s)). 
 Qed.
 
 
@@ -494,7 +498,7 @@ Qed.
 
 
 Lemma ltv_part_le_norm {D : R} (N : nat) :
-  (forall s s': M.(state), Rabs (reward s (σ s) s') <= D) -> Rabs(ltv_part N) <= sum_f_R0 (fun n => γ^n * D) N.
+   (forall s s': M.(state), forall a:M.(act), Rabs (reward s a s') <= D) -> Rabs(ltv_part N) <= sum_f_R0 (fun n => γ^n * D) N.
 Proof.
   intros Hd.
   unfold ltv_part. rewrite sum_n_Reals.
@@ -511,7 +515,7 @@ Proof.
 Qed.
 
 Theorem ex_series_ltv {D : R} :
-  (forall s s' : M.(state), Rabs (reward s (σ s) s') <= D) -> (forall s0, ex_series (fun n => γ^n * (expt_reward σ s0 n))).
+   (forall s s': M.(state), forall a:M.(act), Rabs (reward s a s') <= D) -> (forall s0, ex_series (fun n => γ^n * (expt_reward σ s0 n))).
 Proof.
   intros Hbdd s0. 
   refine (ex_series_le_Reals _ _ _ _). 
@@ -542,7 +546,7 @@ Qed.
 
 (* Long-Term Values satisfy the Bellman equation. *)
 Lemma ltv_corec {D : R} :
-  (forall s s' : M.(state), Rabs (reward s (σ s) s') <= D) ->
+   (forall s s': M.(state), forall a:M.(act), Rabs (reward s a s') <= D) ->
   ltv init = step_expt_reward σ init + γ*expt_value (t init (σ init)) ltv. 
 Proof.
   intros bdd. 
@@ -657,7 +661,6 @@ Qed.
    Gives for each state the best long-term value that can be obtained for any policy. *)
 Definition max_ltv_on (l : list (policy M)) : M.(state) -> R :=
   fun s => Rmax_list (map (fun σ => ltv γ σ s) l).
-
 
 
 
