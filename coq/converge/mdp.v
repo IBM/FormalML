@@ -1,7 +1,6 @@
 
 Require Import Reals Coq.Lists.List Coquelicot.Series Coquelicot.Hierarchy Coquelicot.SF_seq.
-Require Import pmf_monad Orders.
-Require Import Coq.Structures.GenericMinMax.
+Require Import pmf_monad.
 Require Import Sums Coq.Reals.ROrderedType.
 Require Import micromega.Lra.
 Require Import Coq.Logic.FunctionalExtensionality.
@@ -488,6 +487,8 @@ Qed.
    Gives for each state the best long-term value that can be obtained for any policy. *)
 Definition max_ltv_on (l : list (policy M)) : M.(state) -> R :=
   fun s => Rmax_list (map (fun σ => ltv γ σ s) l).
+
+
 
 
 End order.
