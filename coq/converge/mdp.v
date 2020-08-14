@@ -33,13 +33,30 @@ Import ListNotations.
   
 Fixpoint Rmax_list (l : list R) : R :=
   match l with
+  | nil => 0
+  | a :: nil => a
+  | a :: l1 => Rmax a (Rmax_list l1)
+  end.
+
+
+Fixpoint Rmax_list' (l : list R) : R :=
+  match l with
     | nil => 0
     | a :: l1 =>
       match l1 with
         | nil => a
-        | a' :: l2 => Rmax a (Rmax_list l1)
+        | a' :: l2 => Rmax a (Rmax_list' l1)
       end
-    end.
+  end.
+
+Lemma Rmax_list_Rmax_list' (l : list R) :
+  Rmax_list l = Rmax_list' l.
+Proof.
+  induction l. 
+  - simpl ; trivial.
+  - simpl. rewrite IHl.
+    trivial. 
+Qed.
 
 Lemma Rmax_spec_map {A} (l : list A) (f : A -> R) : forall a:A, In a l -> f a <= Rmax_list (map f l).
 Proof.
@@ -99,7 +116,7 @@ Proof.
       now rewrite Rcomplements.Rplus_max_distr_r.
 Qed.
 
-Lemma Rmax_list_le (l : list R) (r : R) :
+Lemma Rmax_list_ge (l : list R) (r : R) :
   forall x, In x l -> r <= x -> r <= Rmax_list l.
 Proof.
   intros x Hx Hrx. 
@@ -107,16 +124,100 @@ Proof.
   now apply Rmax_spec.
 Qed.
 
+Lemma Rmax_list_le (l : list R) (r : R) :
+  Rmax_list l <= r -> forall x, In x l -> x <= r.
+Proof.
+  intros H x Hx.
+  set (Rmax_spec x Hx). 
+  eapply Rle_trans; eauto.
+Qed.
+
+
+Lemma Rmax_list_In (l : list R):
+  ([] <> l) -> In (Rmax_list l) l. 
+Proof.
+  induction l.
+  - simpl ; firstorder.
+  - intros H. simpl in *.
+    destruct l.
+    -- now left. 
+    -- assert ([] <> r :: l)  by apply nil_cons. 
+       specialize (IHl H0) ; clear H0.
+       destruct (Rle_dec a (Rmax_list (r :: l))).
+       ++ rewrite Rmax_right. now right ; assumption. assumption. 
+       ++ rewrite Rmax_left. now left.
+          left ; apply ROrder.not_ge_lt ; assumption. 
+Qed.
+
+Lemma Rmax_list_lub (l : list R) (r : R):
+  ([] <> l) -> (forall x, In x l -> x <= r) -> Rmax_list l <= r. 
+Proof.
+  intros Hl H.
+  apply H. eapply Rmax_list_In ; auto.
+Qed.
+
+Lemma Rmax_list_le_iff {l : list R} (hl : [] <> l) (r : R):
+  Rmax_list l <= r <-> (forall x, In x l -> x <= r)  .
+Proof.
+  split. 
+  apply Rmax_list_le.
+  apply Rmax_list_lub ; auto.
+Qed.
+
+
+Lemma list_sum_le {A} (l : list A) (f g : A -> R) :
+  (forall a, f a <= g a) ->
+  list_sum (map f l) <= list_sum (map g l).
+Proof.
+  intros Hfg.
+  induction l.
+  - simpl ; right ; trivial.
+  - simpl. specialize (Hfg a). 
+    apply Rplus_le_compat ; trivial. 
+Qed.
+
+
+Lemma ne_symm {A} (x y : A) : x <> y <-> y <> x.
+Proof.
+  split; intros.
+  * intros Hxy ; symmetry in Hxy ; firstorder.
+  * intros Hxy ; symmetry in Hxy ; firstorder.
+Qed.
+
+Lemma map_nil {A B} (f : A -> B) (l : list A) :
+    map f l = (@nil B) <-> l = (@nil A).
+Proof.
+    split; intros.
+    - induction l; try reflexivity; simpl in *.
+    congruence.
+    - rewrite H; reflexivity.
+Qed.
+
+Lemma map_not_nil {A B} (l : list A) (f : A -> B):
+  [] <> map f l <-> [] <> l.  
+Proof.
+   rewrite ne_symm ; rewrite (ne_symm _ l).
+   split ; intros.
+   * intro Hl. rewrite <-(map_nil f) in Hl ; firstorder.
+   * intro Hl. rewrite (map_nil f) in Hl ; firstorder.
+Qed.
+
+Lemma Rmax_list_sum {A B} {la : list A} (lb : list B) (f : A -> B -> R) (Hla : [] <> la):
+  Rmax_list (map (fun a => list_sum (map (fun b => f a b) lb)) la) <=
+  list_sum (map (fun b => Rmax_list (map (fun a => f a b) la)) lb). 
+Proof.
+  rewrite Rmax_list_le_iff. 
+  * intro x. rewrite in_map_iff. 
+    intros [x0 [Hlsx Hin]].
+    rewrite <-Hlsx. apply list_sum_le. 
+    intro b. apply (Rmax_spec_map la (fun a => f a b) x0 Hin). 
+  * now rewrite map_not_nil. 
+Qed.
 
 Lemma Rmax_list_app (l1 l2 : list R) :
   Rmax_list (l1 ++ l2) = Rmax(Rmax_list l1) (Rmax_list l2).
 Admitted.
 
-Lemma Rmax_list_sum {A B} (p : list A) (s : list B) (f : A -> R) (g : B -> R) :
-  Rmax_list (map (fun a => list_sum (map g s)) p) <= list_sum (map (fun b => Rmax_list (map f p)) s). 
-Proof.
-Admitted. 
-     
 Lemma list_sum_mult_const (c : R) (l : list R) :
   list_sum (map (fun z => c*z) l) = c*list_sum (map (fun z => z) l).
 Proof. 
