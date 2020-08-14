@@ -388,14 +388,13 @@ Definition step_expt_reward : state M -> R :=
   (fun s => expt_value (t s (σ s)) (reward s (σ s))).
 
 
-
 (* Expected reward after n-steps, starting at initial state, following policy sigma. *)
 Definition expt_reward (init : M.(state)) (n : nat) : R :=
- expt_value (bind_stoch_iter n init) step_expt_reward.
+ expt_value (bind_stoch_iter n init) (step_expt_reward).
 
   
 (* Expected reward at time 0 is equal to the reward. *)
-Lemma expt_reward0_eq_reward : forall init : M.(state), expt_reward init 0 = step_expt_reward init.
+Lemma expt_reward0_eq_reward : forall init : M.(state), expt_reward init 0 = (step_expt_reward init).
 Proof.
   intros init.
   unfold expt_reward. unfold bind_stoch_iter ; simpl.
@@ -416,13 +415,13 @@ Qed.
 
 (* Bounded rewards (in absolute value) imply bounded expected rewards for all iterations and all states. *)
 Lemma expt_reward_le_max_Rabs {D : R} (init : M.(state)) :
-  (forall s s': M.(state), forall a:M.(act), Rabs (reward s a s') <= D)  ->
+  (forall s s': M.(state), Rabs (reward s (σ s) s') <= D)  ->
   (forall n:nat, Rabs (expt_reward init n) <= D). 
 Proof. 
   intros H. 
   unfold expt_reward. intros n. apply expt_value_Rle.
   unfold step_expt_reward. intros s.
-  apply expt_value_Rle. intro s'. apply (H s s' (σ s)). 
+  apply expt_value_Rle. apply H. 
 Qed.
 
 
@@ -474,7 +473,7 @@ Qed.
 
 Definition ltv_part (N : nat) := sum_n (fun n => γ^n * (expt_reward σ init n)) N. 
 
-Lemma ltv_part0_eq_reward : ltv_part 0 = step_expt_reward σ init.
+Lemma ltv_part0_eq_reward : ltv_part 0 = (step_expt_reward σ init).
 Proof.
   unfold ltv_part. rewrite sum_n_Reals. simpl.  
   rewrite expt_reward0_eq_reward. lra.
@@ -498,7 +497,7 @@ Qed.
 
 
 Lemma ltv_part_le_norm {D : R} (N : nat) :
-   (forall s s': M.(state), forall a:M.(act), Rabs (reward s a s') <= D) -> Rabs(ltv_part N) <= sum_f_R0 (fun n => γ^n * D) N.
+   (forall s s': M.(state), Rabs (reward s (σ s) s') <= D) -> Rabs(ltv_part N) <= sum_f_R0 (fun n => γ^n * D) N.
 Proof.
   intros Hd.
   unfold ltv_part. rewrite sum_n_Reals.
@@ -515,7 +514,7 @@ Proof.
 Qed.
 
 Theorem ex_series_ltv {D : R} :
-   (forall s s': M.(state), forall a:M.(act), Rabs (reward s a s') <= D) -> (forall s0, ex_series (fun n => γ^n * (expt_reward σ s0 n))).
+   (forall s s': M.(state), Rabs (reward s (σ s) s') <= D) -> (forall s0, ex_series (fun n => γ^n * (expt_reward σ s0 n))).
 Proof.
   intros Hbdd s0. 
   refine (ex_series_le_Reals _ _ _ _). 
@@ -546,16 +545,16 @@ Qed.
 
 (* Long-Term Values satisfy the Bellman equation. *)
 Lemma ltv_corec {D : R} :
-   (forall s s': M.(state), forall a:M.(act), Rabs (reward s a s') <= D) ->
-  ltv init = step_expt_reward σ init + γ*expt_value (t init (σ init)) ltv. 
+   (forall s s': M.(state), Rabs (reward s (σ s) s') <= D) ->
+  ltv init = (step_expt_reward σ init) + γ*expt_value (t init (σ init)) ltv. 
 Proof.
   intros bdd. 
   rewrite <-(@expt_reward0_eq_reward _ σ init).
   unfold ltv.
   rewrite Series_incr_1. simpl. rewrite Rmult_1_l. setoid_rewrite Rmult_assoc.   
-  rewrite Series_scal_l.
+  rewrite Series_scal_l. f_equal. 
   setoid_rewrite expt_reward_succ. 
-  rewrite expt_value_Series. f_equal. f_equal. 
+  rewrite expt_value_Series. f_equal.  
   apply Series_ext. intros n.
   rewrite expt_value_const_mul. f_equal. 
   rewrite <-expt_value_bind. rewrite Pmf_bind_comm_stoch_bind.
