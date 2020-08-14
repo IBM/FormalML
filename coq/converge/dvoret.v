@@ -1,4 +1,4 @@
-Require Import mdp pmf_monad Reals Sums.
+Require Import Reals Sums pmf_monad.
 Require Import Coquelicot.Hierarchy Coquelicot.Series Coquelicot.Lim_seq Coquelicot.Rbar.
 Require Import Omega. 
 
@@ -85,6 +85,6 @@ Qed.
 
 Lemma iter_scheme_ineq :
 forall n:nat, variance p (iter_scheme (S n)) <= (F n)^2 * (variance p (iter_scheme n)) + variance p (Y n).
-
+Admitted. 
 
 End iter.

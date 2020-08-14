@@ -1,7 +1,7 @@
 
 Require Import Reals Coq.Lists.List Coquelicot.Series Coquelicot.Hierarchy Coquelicot.SF_seq.
 Require Import pmf_monad Orders.
-Require Import domfct Coq.Structures.GenericMinMax.
+Require Import Coq.Structures.GenericMinMax.
 Require Import Sums Coq.Reals.ROrderedType.
 Require Import micromega.Lra.
 Require Import Coq.Logic.FunctionalExtensionality.
@@ -101,7 +101,7 @@ Qed.
 Lemma Rmax_list_app (l1 l2 : list R) :
   Rmax_list (l1 ++ l2) = Rmax(Rmax_list l1) (Rmax_list l2).
 Admitted.
-  
+
 Lemma Rmax_list_sum {A B} (p : list A) (s : list B) (f : A -> R) (g : B -> R) :
   Rmax_list (map (fun a => list_sum (map g s)) p) <= list_sum (map (fun b => Rmax_list (map f p)) s). 
 Proof.
