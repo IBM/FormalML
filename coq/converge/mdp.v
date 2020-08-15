@@ -50,6 +50,32 @@ Proof.
    * intro Hl. rewrite (map_nil f) in Hl ; firstorder.
 Qed.
 
+Lemma not_nil_exists {A} (l : list A) :
+  [] <> l <-> exists a, In a l.
+Proof.
+  split.
+  * intros Hl. 
+    induction l.
+    - firstorder.
+    - destruct l.
+      -- exists a. simpl; now left. 
+      -- set (Hnc := @nil_cons _ a0 l). specialize (IHl Hnc).
+         destruct IHl as [a1 Ha1]. 
+         exists a1. simpl in * ; intuition.
+  * intros [a Ha] not. rewrite <-not in Ha ; firstorder. 
+Qed.
+
+Lemma list_prod_not_nil {A B} {la : list A} {lb : list B}(Hla : [] <> la) (Hlb : [] <> lb) :
+  [] <> list_prod la lb.
+Proof.
+  rewrite not_nil_exists.
+  rewrite not_nil_exists in Hla.
+  rewrite not_nil_exists in Hlb.
+  destruct Hla as [a Hla].
+  destruct Hlb as [b Hlb].
+  exists (a,b). now apply in_prod. 
+Qed.
+
 Lemma abs_convg_implies_convg : forall (a : nat -> R), ex_series (fun n => Rabs(a n)) -> ex_series a. 
 Proof.
 intros a Habs.   
@@ -324,11 +350,99 @@ Proof.
   - assumption. 
 Qed.
 
-Variable (A : Type). 
-Variables (l : list A) (f : A -> R) (p : A -> bool).
 
-Check Rmax_list (map f (filter p l)).
- 
+
+Lemma Rmax_list_map_exist {A} (f : A -> R) (l : list A) :
+  [] <> l -> exists a:A, In a l /\ f a = Rmax_list(map f l). 
+Proof.
+  intro Hne. 
+  set (Hmap := Rmax_list_In (map f l)).
+  rewrite <-(map_not_nil l f) in Hne.
+  specialize (Hmap Hne).
+  rewrite in_map_iff in Hmap.
+  destruct Hmap as  [a [Hfa Hin]].
+  now exists a. 
+Qed.
+
+Lemma Rmax_list_prod_le {A B} (f : A -> B -> R) {la : list A} {lb : list B}
+      (Hla : [] <> la) (Hlb : [] <> lb) :
+  Rmax_list (map (fun a => Rmax_list (map (fun b => f a b) lb)) la) =
+  Rmax_list (map (fun ab => f (fst ab) (snd ab)) (list_prod la lb)). 
+Proof.
+  apply Rle_antisym.
+  ++  rewrite Rmax_list_le_iff.
+      -- intros x Hx. eapply (@Rmax_list_ge _ _ x).
+         ** rewrite in_map_iff in *. 
+            destruct Hx as [a [Hx' HInx']]. 
+            set (Hmax := Rmax_list_map_exist (fun b => f a b) lb). 
+            specialize (Hmax Hlb).
+            destruct Hmax as [b Hb].
+            exists (a,b). simpl. split; [now rewrite <-Hx' |].
+            apply in_prod ; trivial; intuition.
+         ** now right.
+      -- now rewrite map_not_nil.
+  ++ rewrite Rmax_list_le_iff.
+     * intros x Hx.
+       rewrite in_map_iff in Hx.
+       destruct Hx as [ab [Hab HInab]].
+       eapply (@Rmax_list_ge _ _ (Rmax_list (map (fun b : B => f (fst ab) b) lb))).
+       --- rewrite in_map_iff. 
+           exists (fst ab). split ; trivial.
+           setoid_rewrite surjective_pairing in HInab. 
+           rewrite in_prod_iff in HInab. destruct HInab ; trivial.
+       --- eapply (Rmax_list_ge _ _ (f (fst ab) (snd ab))).
+           +++ rewrite in_map_iff. exists (snd ab). split ; trivial.
+               setoid_rewrite surjective_pairing in HInab. 
+               rewrite in_prod_iff in HInab. destruct HInab ; trivial.
+           +++ rewrite <-Hab. right ; trivial.
+     * rewrite map_not_nil. now apply list_prod_not_nil. 
+Qed.
+
+(* There has to be a better way of doing this... *)
+Lemma Rmax_list_prod_le' {A B} (f : A -> B -> R) {la : list A} {lb : list B}
+      (Hla : [] <> la) (Hlb : [] <> lb) :
+  Rmax_list (map (fun b => Rmax_list (map (fun a => f a b) la)) lb) =
+  Rmax_list (map (fun ab => f (fst ab) (snd ab)) (list_prod la lb)).
+Proof.
+  apply Rle_antisym.
+  ++  rewrite Rmax_list_le_iff.
+      -- intros x Hx. eapply (@Rmax_list_ge _ _ x).
+         ** rewrite in_map_iff in *. 
+            destruct Hx as [b [Hx' HInx']]. 
+            set (Hmax := Rmax_list_map_exist (fun a => f a b) la). 
+            specialize (Hmax Hla).
+            destruct Hmax as [a Ha].
+            exists (a,b). simpl. split; [now rewrite <-Hx' |].
+            apply in_prod ; trivial; intuition.
+         ** now right.
+      -- now rewrite map_not_nil.
+  ++ rewrite Rmax_list_le_iff.
+     * intros x Hx.
+       rewrite in_map_iff in Hx.
+       destruct Hx as [ab [Hab HInab]].
+       eapply (@Rmax_list_ge _ _ (Rmax_list (map (fun a : A  => f a (snd ab)) la))).
+       --- rewrite in_map_iff. 
+           exists (snd ab). split ; trivial.
+           setoid_rewrite surjective_pairing in HInab. 
+           rewrite in_prod_iff in HInab. destruct HInab ; trivial.
+       --- eapply (Rmax_list_ge _ _ (f (fst ab) (snd ab))).
+           +++ rewrite in_map_iff. exists (fst ab). split ; trivial.
+               setoid_rewrite surjective_pairing in HInab. 
+               rewrite in_prod_iff in HInab. destruct HInab ; trivial.
+           +++ rewrite <-Hab. right ; trivial.
+     * rewrite map_not_nil. now apply list_prod_not_nil. 
+Qed.
+
+Hint Resolve Rmax_list_prod_le' Rmax_list_prod_le : Rmax_list.
+
+Lemma Rmax_list_map_comm {A B} (f : A -> B -> R) {la : list A} {lb : list B}
+      (Hla : [] <> la) (Hlb : [] <> lb) :
+  Rmax_list (map (fun a => Rmax_list (map (fun b => f a b) lb)) la) = Rmax_list (map (fun b => Rmax_list (map (fun a => f a b) la)) lb).
+Proof.
+  etransitivity; [|symmetry].
+  - apply Rmax_list_prod_le ; trivial. 
+  - apply Rmax_list_prod_le'; trivial.   
+Qed.
 
 End Rmax_list.
 
@@ -656,11 +770,24 @@ Proof.
   intuition.
 Qed.
 
-(* Optimal value of an MDP M. 
+(* Optimal value of an MDP, given a list of policies. 
    Gives for each state the best long-term value that can be obtained for any policy. *)
 Definition max_ltv_on (l : list (policy M)) : M.(state) -> R :=
   fun s => Rmax_list (map (fun σ => ltv γ σ s) l).
 
+(* Proceed with the assumption that rewards are bounded for any policy. *)
+Context {D : R} (bdd :  (forall s s': M.(state), forall σ : policy M, Rabs (reward s (σ s) s') <= D)).
 
+Lemma max_ltv_aux1 (l : list (policy M)): 
+  forall s : M.(state),
+    max_ltv_on l s =
+    Rmax_list (map (fun σ => (step_expt_reward σ s) + γ*expt_value (t s (σ s)) (ltv γ σ)) l).
+Proof.
+  intros s.
+  unfold max_ltv_on.
+  f_equal. apply List.map_ext.
+  intros π.
+  eapply ltv_corec ; eauto.
+Qed.
 
 End order.
