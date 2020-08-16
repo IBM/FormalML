@@ -1,4 +1,3 @@
-Require Import LibUtilsLattice.
 Require Import Sets.Ensembles.
 Require Import Coq.Program.Basics. 
 
