@@ -1,5 +1,5 @@
 Require Import Reals Coq.Lists.List Coquelicot.Series Coquelicot.Hierarchy Coquelicot.SF_seq.
-Require Import pmf_monad Permutation.
+Require Import pmf_monad Permutation orderfun.
 Require Import Sums Coq.Reals.ROrderedType.
 Require Import micromega.Lra.
 Require Import Coq.Logic.FunctionalExtensionality.
@@ -351,7 +351,7 @@ Proof.
 Qed.
 
 
-
+(* This is very important to prove existence of an optimal policy. *)
 Lemma Rmax_list_map_exist {A} (f : A -> R) (l : list A) :
   [] <> l -> exists a:A, In a l /\ f a = Rmax_list(map f l). 
 Proof.
@@ -433,8 +433,6 @@ Proof.
      * rewrite map_not_nil. now apply list_prod_not_nil. 
 Qed.
 
-Hint Resolve Rmax_list_prod_le' Rmax_list_prod_le : Rmax_list.
-
 Lemma Rmax_list_map_comm {A B} (f : A -> B -> R) {la : list A} {lb : list B}
       (Hla : [] <> la) (Hlb : [] <> lb) :
   Rmax_list (map (fun a => Rmax_list (map (fun b => f a b) lb)) la) = Rmax_list (map (fun b => Rmax_list (map (fun a => f a b) la)) lb).
@@ -444,6 +442,20 @@ Proof.
   - apply Rmax_list_prod_le'; trivial.   
 Qed.
 
+
+Lemma Rmax_list_abstr {A} (la : list A) {l : list(A -> R)} (hl : [] <> l) :
+  forall x, In x la -> Rmax_list (map (fun f => f(x)) l) <= Rmax_list (map (fun f => Rmax_list (map f la))l).
+Proof.
+  intros x Hx.
+  rewrite Rmax_list_map_comm.
+  *  rewrite Rmax_list_le_iff.
+     -- intros x0 Hx0. eapply Rmax_list_ge.
+        rewrite in_map_iff. exists x. split ; trivial. 
+        now apply Rmax_spec. 
+     -- now apply map_not_nil.
+  *  assumption.                                                       
+  * rewrite not_nil_exists. now exists x.                                                  Qed.
+     
 End Rmax_list.
 
 Definition bind_iter {M:Type->Type} {Mm:Monad M} {A:Type} (unit:A) (f : A -> M A) :=
@@ -789,5 +801,6 @@ Proof.
   intros π.
   eapply ltv_corec ; eauto.
 Qed.
+
 
 End order.
