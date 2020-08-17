@@ -355,10 +355,12 @@ Proof.
   - assumption. 
 Qed.
 
+Notation "Max_{ l } ( f )" := (Rmax_list (map f l)) (at level 50).
+
 
 (* This is very important to prove existence of an optimal policy. *)
 Lemma Rmax_list_map_exist {A} (f : A -> R) (l : list A) :
-  [] <> l -> exists a:A, In a l /\ f a = Rmax_list(map f l). 
+  [] <> l -> exists a:A, In a l /\ f a = Max_{l}(f). 
 Proof.
   intro Hne. 
   set (Hmap := Rmax_list_In (map f l)).
@@ -371,8 +373,8 @@ Qed.
 
 Lemma Rmax_list_prod_le {A B} (f : A -> B -> R) {la : list A} {lb : list B}
       (Hla : [] <> la) (Hlb : [] <> lb) :
-  Rmax_list (map (fun a => Rmax_list (map (fun b => f a b) lb)) la) =
-  Rmax_list (map (fun ab => f (fst ab) (snd ab)) (list_prod la lb)). 
+  Max_{la}(fun a => Max_{lb} (fun b => f a b)) =
+  Max_{list_prod la lb} (fun ab => f (fst ab) (snd ab)). 
 Proof.
   apply Rle_antisym.
   ++  rewrite Rmax_list_le_iff.
@@ -406,8 +408,8 @@ Qed.
 (* There has to be a better way of doing this... *)
 Lemma Rmax_list_prod_le' {A B} (f : A -> B -> R) {la : list A} {lb : list B}
       (Hla : [] <> la) (Hlb : [] <> lb) :
-  Rmax_list (map (fun b => Rmax_list (map (fun a => f a b) la)) lb) =
-  Rmax_list (map (fun ab => f (fst ab) (snd ab)) (list_prod la lb)).
+   Max_{lb}(fun b => Max_{la} (fun a => f a b))  =
+   Max_{list_prod la lb} (fun ab => f (fst ab) (snd ab)).
 Proof.
   apply Rle_antisym.
   ++  rewrite Rmax_list_le_iff.
@@ -440,7 +442,7 @@ Qed.
 
 Lemma Rmax_list_map_comm {A B} (f : A -> B -> R) {la : list A} {lb : list B}
       (Hla : [] <> la) (Hlb : [] <> lb) :
-  Rmax_list (map (fun a => Rmax_list (map (fun b => f a b) lb)) la) = Rmax_list (map (fun b => Rmax_list (map (fun a => f a b) la)) lb).
+  Max_{la}(fun a => Max_{lb} (fun b => f a b)) = Max_{lb}(fun b => Max_{la} (fun a => f a b)) .
 Proof.
   etransitivity; [|symmetry].
   - apply Rmax_list_prod_le ; trivial. 
@@ -449,7 +451,7 @@ Qed.
 
 
 Lemma Rmax_list_abstr {A} (la : list A) {l : list(A -> R)} (hl : [] <> l) :
-  forall x, In x la -> Rmax_list (map (fun f => f(x)) l) <= Rmax_list (map (fun f => Rmax_list (map f la))l).
+  forall x, In x la -> Max_{l}(fun f => f x) <= Max_{l} (fun f => Max_{la} (f) ).
 Proof.
   intros x Hx.
   rewrite Rmax_list_map_comm.
@@ -461,50 +463,24 @@ Proof.
   *  assumption.                                                       
   * rewrite not_nil_exists. now exists x.                                                  Qed.
 
-Lemma Rmax_list_prod_gen {A B} (finb : Finite B) {l : list(A -> B)} g (hl : [] <> l) :
-  exists lb : list B,
-  forall x, Rmax_list (map (fun f => g (f x) f) l) =
-       Rmax_list (map (fun π => g (fst π) (snd π)) (list_prod lb l)).
-Proof.
-  destruct finb as [lb _].
-  exists lb ; intros. 
-  apply Rle_antisym.
-  ++  rewrite Rmax_list_le_iff.
-      -- intros x0 Hx0. eapply Rmax_list_ge.
-         ** rewrite in_map_iff in *. 
-            destruct Hx0 as [f [Hf HInf]]. 
-            exists (f x, f). simpl ; split ; trivial.
-            eauto. apply in_prod ; trivial. admit.
-         ** right ; trivial.
-      -- now rewrite map_not_nil.
-         (* Doesn't look like the converse is true... we need to bake in 
-            independence of policies somehow. *)
-  ++  rewrite <-Rmax_list_prod_le. rewrite Rmax_list_le_iff.
-      -- intros x0 Hx0.
-         ** rewrite in_map_iff in *.
-            destruct Hx0 as [b0 [Hb0 Hinb0]]. rewrite <-Hb0. 
-            apply Rmax_spec. rewrite in_map_iff.
-            set (Hmax := Rmax_list_map_exist (fun b => g b0 b) l).
-            enough ([] <> l). specialize (Hmax H).
-            destruct Hmax as [f0 [Hf0 Hf0in]].
-            exists f0. Admitted.
 
-(*Lemma Rmax_list_abstr' {A} (la : list A) {l : list(A -> R)} (g : A -> R -> R) (hl : [] <> l) :
-  forall x, In x la ->
-       Rmax_list (map (fun f : A -> R => g x (f x)) l) =
-       Rmax_list (map (fun f => g x (Rmax_list (map f la))) l).
+(* max_{x:A} (max_{f:A->B}(g (f a) f)) = max_{f:A->B} (max_{a:map f A} (g (a,f))) *)
+Lemma Rmax_list_fun_swap {A B} (ne : NonEmpty A) (fina : Finite A) {l : list(A -> B)}
+      (g :B -> (A -> B) -> R)
+      (hl : [] <> l) :
+  exists la,
+      Max_{la} (fun s => Max_{l} (fun f => g (f s) f))  =
+      Max_{l} (fun f => Max_{map f la} (fun b => g b f)).
 Proof.
-  intros x Hx.
-  rewrite Rmax_list_prod_le.
-  *  rewrite Rmax_list_le_iff.
-     -- intros x0 Hx0. eapply Rmax_list_ge.
-        rewrite in_map_iff. exists x. split ; trivial. 
-        now apply Rmax_spec. 
-     -- now apply map_not_nil.
-  *  assumption.                                                       
-  * rewrite not_nil_exists. now exists x.                                                  Qed.*)
+  destruct fina as [la Inla'].
+  exists la. rewrite Rmax_list_map_comm ; trivial.
+  + f_equal. apply map_ext_in.
+    intros a Ha. 
+    now rewrite map_map.
+  + rewrite not_nil_exists. exists ne. apply Inla'.
+Qed.
 
-     
+
 End Rmax_list.
 
 Definition bind_iter {M:Type->Type} {Mm:Monad M} {A:Type} (unit:A) (f : A -> M A) :=
@@ -550,7 +526,8 @@ Definition bind_stoch_iter (n : nat) (init : M.(state)) : Pmf M.(state):=
    transition structure after one step. Similar remarks apply for n-steps.
 *)
 
-Lemma bind_stoch_iter_1 (init : M.(state)) : bind_stoch_iter 1 init = t init (σ init).
+Lemma bind_stoch_iter_1 (init : M.(state)) :
+  bind_stoch_iter 1 init = t init (σ init).
 Proof. 
   unfold bind_stoch_iter.
   unfold bind_iter. 
@@ -842,7 +819,7 @@ Lemma max_ltv_aux1 (l : list (policy M)):
     max_ltv_on l s =
     Rmax_list (map (fun σ => (step_expt_reward σ s) + γ*expt_value (t s (σ s)) (ltv γ σ)) l).
 Proof.
-  intros s.
+  intros s. unfold step_expt_reward. 
   unfold max_ltv_on.
   f_equal. apply List.map_ext.
   intros π.
