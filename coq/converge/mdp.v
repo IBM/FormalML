@@ -142,6 +142,11 @@ Qed.
 
 End list_sum.
 
+Class NonEmpty (A : Type) :=
+  ex : A.
+    
+Class Finite (A:Type) : Prop :=
+  finite : exists l : list A, forall x:A, In x l.
 
 Section Rmax_list.
   
@@ -151,7 +156,7 @@ Open Scope R_scope.
 Instance EqDecR : @EqDec R eq _ := Req_EM_T. 
 
 Import ListNotations.
-  
+
 Fixpoint Rmax_list (l : list R) : R :=
   match l with
   | nil => 0
@@ -455,6 +460,50 @@ Proof.
      -- now apply map_not_nil.
   *  assumption.                                                       
   * rewrite not_nil_exists. now exists x.                                                  Qed.
+
+Lemma Rmax_list_prod_gen {A B} (finb : Finite B) {l : list(A -> B)} g (hl : [] <> l) :
+  exists lb : list B,
+  forall x, Rmax_list (map (fun f => g (f x) f) l) =
+       Rmax_list (map (fun π => g (fst π) (snd π)) (list_prod lb l)).
+Proof.
+  destruct finb as [lb _].
+  exists lb ; intros. 
+  apply Rle_antisym.
+  ++  rewrite Rmax_list_le_iff.
+      -- intros x0 Hx0. eapply Rmax_list_ge.
+         ** rewrite in_map_iff in *. 
+            destruct Hx0 as [f [Hf HInf]]. 
+            exists (f x, f). simpl ; split ; trivial.
+            eauto. apply in_prod ; trivial. admit.
+         ** right ; trivial.
+      -- now rewrite map_not_nil.
+         (* Doesn't look like the converse is true... we need to bake in 
+            independence of policies somehow. *)
+  ++  rewrite <-Rmax_list_prod_le. rewrite Rmax_list_le_iff.
+      -- intros x0 Hx0.
+         ** rewrite in_map_iff in *.
+            destruct Hx0 as [b0 [Hb0 Hinb0]]. rewrite <-Hb0. 
+            apply Rmax_spec. rewrite in_map_iff.
+            set (Hmax := Rmax_list_map_exist (fun b => g b0 b) l).
+            enough ([] <> l). specialize (Hmax H).
+            destruct Hmax as [f0 [Hf0 Hf0in]].
+            exists f0. Admitted.
+
+(*Lemma Rmax_list_abstr' {A} (la : list A) {l : list(A -> R)} (g : A -> R -> R) (hl : [] <> l) :
+  forall x, In x la ->
+       Rmax_list (map (fun f : A -> R => g x (f x)) l) =
+       Rmax_list (map (fun f => g x (Rmax_list (map f la))) l).
+Proof.
+  intros x Hx.
+  rewrite Rmax_list_prod_le.
+  *  rewrite Rmax_list_le_iff.
+     -- intros x0 Hx0. eapply Rmax_list_ge.
+        rewrite in_map_iff. exists x. split ; trivial. 
+        now apply Rmax_spec. 
+     -- now apply map_not_nil.
+  *  assumption.                                                       
+  * rewrite not_nil_exists. now exists x.                                                  Qed.*)
+
      
 End Rmax_list.
 
@@ -691,11 +740,6 @@ Proof.
 Qed.
 
 End ltv.
-Class NonEmpty (A : Type) :=
-  ex : A.
-    
-Class Finite (A:Type) : Prop :=
-  finite : exists l : list A, forall x:A, In x l.
 
 Axiom lem : forall p : Prop, p \/ not p.
 
@@ -787,8 +831,11 @@ Qed.
 Definition max_ltv_on (l : list (policy M)) : M.(state) -> R :=
   fun s => Rmax_list (map (fun σ => ltv γ σ s) l).
 
-(* Proceed with the assumption that rewards are bounded for any policy. *)
-Context {D : R} (bdd :  (forall s s': M.(state), forall σ : policy M, Rabs (reward s (σ s) s') <= D)).
+(* Proceed with the assumption that rewards are bounded for any policy and 
+   that the set of actions is finite. *)
+Context {D : R}.
+Context (fina : Finite M.(act)). 
+Context (bdd :  (forall s s': M.(state), forall σ : policy M, Rabs (reward s (σ s) s') <= D)).
 
 Lemma max_ltv_aux1 (l : list (policy M)): 
   forall s : M.(state),
@@ -803,4 +850,19 @@ Proof.
 Qed.
 
 
+
+Lemma max_ltv_aux2 (l : list (policy M)) :
+  exists la : list (act M), 
+  forall s : M.(state),
+    let Q π := (expt_value (t s (fst π)) (reward s (fst π))) + γ*expt_value (t s (fst π)) (ltv γ (snd π)) in
+    Rmax_list (map (fun σ => (step_expt_reward σ s) + γ*expt_value (t s (σ s)) (ltv γ σ)) l) = Rmax_list
+        ((map (fun π => Q π)) (list_prod la l)).
+Proof.
+  destruct fina as [la _].
+  exists la. 
+  intros s Q. unfold step_expt_reward.
+  rewrite <-(@Rmax_list_prod_le (act M) (policy M) (fun a b =>
+        expt_value (t s a) (reward s a) +
+        γ * expt_value (t s a) (ltv γ b)) la l).
+  
 End order.
