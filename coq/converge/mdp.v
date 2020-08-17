@@ -33,7 +33,7 @@ Proof.
 Qed.
 
 Lemma map_nil {A B} (f : A -> B) (l : list A) :
-    map f l = (@nil B) <-> l = (@nil A).
+    List.map f l = (@nil B) <-> l = (@nil A).
 Proof.
     split; intros.
     - induction l; try reflexivity; simpl in *.
@@ -42,7 +42,7 @@ Proof.
 Qed.
 
 Lemma map_not_nil {A B} (l : list A) (f : A -> B):
-  [] <> map f l <-> [] <> l.  
+  [] <> List.map f l <-> [] <> l.  
 Proof.
    rewrite ne_symm ; rewrite (ne_symm _ l).
    split ; intros.
@@ -465,20 +465,25 @@ Proof.
 
 
 (* max_{x:A} (max_{f:A->B}(g (f a) f)) = max_{f:A->B} (max_{a:map f A} (g (a,f))) *)
-Lemma Rmax_list_fun_swap {A B} (ne : NonEmpty A) (fina : Finite A) {l : list(A -> B)}
+
+Lemma Rmax_list_fun_swap {A B} {l : list(A -> B)}{la : list A}
       (g :B -> (A -> B) -> R)
-      (hl : [] <> l) :
-  exists la,
+      (hl : [] <> l) (hla : [] <> la)  :
       Max_{la} (fun s => Max_{l} (fun f => g (f s) f))  =
       Max_{l} (fun f => Max_{map f la} (fun b => g b f)).
-Proof.
-  destruct fina as [la Inla'].
-  exists la. rewrite Rmax_list_map_comm ; trivial.
-  + f_equal. apply map_ext_in.
-    intros a Ha. 
-    now rewrite map_map.
-  + rewrite not_nil_exists. exists ne. apply Inla'.
+Proof. 
+  rewrite Rmax_list_map_comm; trivial.
+  f_equal. apply map_ext.
+  intros a.  
+  now rewrite map_map.
 Qed.
+
+
+(*Lemma Rmax_list_fun_filter {A B} {l : list(A -> B)}{la : list A}
+      (g :B -> (A -> B) -> R)
+      (hl : [] <> l) (hla : [] <> la) (s : A) :
+  Max_{l} (fun f => g (f s) f) = Max_{filter (fun  => la}*)
+  
 
 
 End Rmax_list.
@@ -508,13 +513,28 @@ Arguments outcomes {_}.
 Arguments t {_}.
 Arguments reward {_}. 
 
-Definition policy (M : MDP) := M.(state) -> M.(act).
+(* 
+   A decision rule is a mapping from states to actions.
+*)
+Definition dec_rule (M : MDP) := M.(state) -> M.(act).
+
+(*
+   In general,a policy is a *stream* of decision rules. 
+   A stream of constant decision rules is called a *stationary policy*. 
+   Henceforth, we shall only work with stationary policies. 
+
+Definition policy (M : MDP) := Stream (dec_rule M).
+ *)
 
 Context {M : MDP}.
-Context (σ : policy M).
+Context (σ : dec_rule M).
 
-(* Construction of a Kliesli arrow out of a policy. 
-   This can be interpreted as a |S| × |S| stochastic matrix. *)
+(* Constructing a Kliesli arrow out of a stationary policy by n-iterated binds.
+   This can be interpreted as as n-multiplications of an
+   |S| × |S| stochastic matrix. 
+   We don't explicitly construct a stationary stream -- for that we would have to 
+   update the σ after each bind.
+*)
 
 Definition bind_stoch_iter (n : nat) (init : M.(state)) : Pmf M.(state):=
   applyn (ret init) (fun y => Pmf_bind y (fun s => t s (σ s))) n.
@@ -593,7 +613,7 @@ Definition unitMDP {st0 act0 : Type} (t0 : st0 -> act0 -> Pmf st0) : MDP :=
 (* The expected reward for an arbitrary initial state and arbitrary policy is unity for a unit MDP. *)
 Lemma expt_reward_unitMDP {t0 : R -> R -> Pmf R} :
   let M0 := unitMDP t0 in
-  forall (σ0 : policy M0) (init0 : M0.(state)) (n:nat), expt_reward σ0 init0 n = R0. 
+  forall (σ0 : dec_rule M0) (init0 : M0.(state)) (n:nat), expt_reward σ0 init0 n = R0. 
 Proof.
   intros M0 σ0 init0 n.
   assert (expt_value (bind_stoch_iter σ0 n init0) (fun s => R0) = R0). apply expt_value_zero.
@@ -610,7 +630,7 @@ Section ltv.
 
 Open Scope R_scope. 
 Context {M : MDP} (γ : R).
-Context (σ : policy M) (init : M.(state)) (hγ : (0 <= γ < 1)%R).
+Context (σ : dec_rule M) (init : M.(state)) (hγ : (0 <= γ < 1)%R).
 Arguments reward {_}.
 Arguments outcomes {_}.
 Arguments t {_}.
@@ -805,16 +825,16 @@ Qed.
 
 (* Optimal value of an MDP, given a list of policies. 
    Gives for each state the best long-term value that can be obtained for any policy. *)
-Definition max_ltv_on (l : list (policy M)) : M.(state) -> R :=
+Definition max_ltv_on (l : list (dec_rule M)) : M.(state) -> R :=
   fun s => Rmax_list (map (fun σ => ltv γ σ s) l).
 
 (* Proceed with the assumption that rewards are bounded for any policy and 
    that the set of actions is finite. *)
 Context {D : R}.
 Context (fina : Finite M.(act)). 
-Context (bdd :  (forall s s': M.(state), forall σ : policy M, Rabs (reward s (σ s) s') <= D)).
+Context (bdd :  (forall s s': M.(state), forall σ : dec_rule M, Rabs (reward s (σ s) s') <= D)).
 
-Lemma max_ltv_aux1 (l : list (policy M)): 
+Lemma max_ltv_aux1 (l : list (dec_rule M)): 
   forall s : M.(state),
     max_ltv_on l s =
     Rmax_list (map (fun σ => (step_expt_reward σ s) + γ*expt_value (t s (σ s)) (ltv γ σ)) l).
@@ -828,7 +848,7 @@ Qed.
 
 
 
-Lemma max_ltv_aux2 (l : list (policy M)) :
+Lemma max_ltv_aux2 (l : list (dec_rule M)) :
   exists la : list (act M), 
   forall s : M.(state),
     let Q π := (expt_value (t s (fst π)) (reward s (fst π))) + γ*expt_value (t s (fst π)) (ltv γ (snd π)) in
