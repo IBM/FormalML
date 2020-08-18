@@ -5,6 +5,8 @@ Require Import micromega.Lra.
 Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Equivalence RelationClasses EquivDec Morphisms.
 Require Import ExtLib.Structures.Monad LibUtils.
+Require Import Streams StreamAdd. 
+
 
 
 Import MonadNotation.
@@ -95,7 +97,7 @@ End extra.
 
 Section list_sum.
   Lemma list_sum_map_zero {A} (s : list A)  :
-  list_sum (map (fun _ => 0) s) = 0. 
+  list_sum (List.map (fun _ => 0) s) = 0. 
 Proof.
   induction s.
   - simpl; reflexivity.
@@ -105,7 +107,7 @@ Qed.
 
 Lemma list_sum_le {A} (l : list A) (f g : A -> R) :
   (forall a, f a <= g a) ->
-  list_sum (map f l) <= list_sum (map g l).
+  list_sum (List.map f l) <= list_sum (List.map g l).
 Proof.
   intros Hfg.
   induction l.
@@ -115,7 +117,7 @@ Proof.
 Qed.
 
 Lemma list_sum_mult_const (c : R) (l : list R) :
-  list_sum (map (fun z => c*z) l) = c*list_sum (map (fun z => z) l).
+  list_sum (List.map (fun z => c*z) l) = c*list_sum (List.map (fun z => z) l).
 Proof. 
   induction l.
   simpl; lra.
@@ -124,14 +126,14 @@ Proof.
 Qed.   
 
 Lemma list_sum_const_mult_le {x y : R} (l : list R) (hl : list_sum l = R1) (hxy : x <= y) :
-  list_sum (map (fun z => x*z) l) <= y.
+  list_sum (List.map (fun z => x*z) l) <= y.
 Proof.
   rewrite list_sum_mult_const. rewrite map_id. 
   rewrite hl. lra. 
 Qed. 
 
 Lemma list_sum_fun_mult_le {x y D : R} {f g : R -> R}(l : list R)(hf : forall z, f z <= D) (hg : forall z , 0 <= g z) :
-  list_sum (map (fun z => (f z)*(g z)) l) <= D*list_sum (map (fun z => g z) l).
+  list_sum (List.map (fun z => (f z)*(g z)) l) <= D*list_sum (List.map (fun z => g z) l).
 Proof.
   induction l.
   simpl. lra.
@@ -148,10 +150,14 @@ Class NonEmpty (A : Type) :=
 Class Finite (A:Type) : Prop :=
   finite : exists l : list A, forall x:A, In x l.
 
+Global Declare Scope rmax_scope. 
+
 Section Rmax_list.
   
 Open Scope list_scope.
 Open Scope R_scope.
+Global Open Scope rmax_scope. 
+
 
 Instance EqDecR : @EqDec R eq _ := Req_EM_T. 
 
@@ -184,7 +190,7 @@ Proof.
     trivial. 
 Qed.
 
-Lemma Rmax_spec_map {A} (l : list A) (f : A -> R) : forall a:A, In a l -> f a <= Rmax_list (map f l).
+Lemma Rmax_spec_map {A} (l : list A) (f : A -> R) : forall a:A, In a l -> f a <= Rmax_list (List.map f l).
 Proof.
   intros a Ha. 
   induction l.
@@ -210,7 +216,7 @@ Qed.
 
     
 Lemma Rmax_list_const_mul (l : list R) {r : R} (hr : 0 <= r) :
-  Rmax_list (map (fun x => r*x) l) = r*(Rmax_list l).
+  Rmax_list (List.map (fun x => r*x) l) = r*(Rmax_list l).
 Proof.
   induction l. 
   - simpl ; lra.
@@ -223,7 +229,7 @@ Qed.
 
 
 Lemma Rmax_list_const_add (l : list R) (d : R) :
-  Rmax_list (map (fun x => x + d) l) =
+  Rmax_list (List.map (fun x => x + d) l) =
   if (l <> []) then ((Rmax_list l) + d) else 0. 
 Proof.
   induction l. 
@@ -284,8 +290,8 @@ Proof.
 Qed.
 
 Lemma Rmax_list_sum {A B} {la : list A} (lb : list B) (f : A -> B -> R) (Hla : [] <> la):
-  Rmax_list (map (fun a => list_sum (map (f a) lb)) la) <=
-  list_sum (map (fun b => Rmax_list (map (fun a => f a b) la)) lb). 
+  Rmax_list (List.map (fun a => list_sum (List.map (f a) lb)) la) <=
+  list_sum (List.map (fun b => Rmax_list (List.map (fun a => f a b) la)) lb). 
 Proof.
   rewrite Rmax_list_le_iff. 
   * intro x. rewrite in_map_iff. 
@@ -355,15 +361,15 @@ Proof.
   - assumption. 
 Qed.
 
-Notation "Max_{ l } ( f )" := (Rmax_list (map f l)) (at level 50).
 
+Notation "Max_{ l } ( f )" := (Rmax_list (List.map f l)) (at level 50) : rmax_scope.
 
 (* This is very important to prove existence of an optimal policy. *)
 Lemma Rmax_list_map_exist {A} (f : A -> R) (l : list A) :
   [] <> l -> exists a:A, In a l /\ f a = Max_{l}(f). 
 Proof.
   intro Hne. 
-  set (Hmap := Rmax_list_In (map f l)).
+  set (Hmap := Rmax_list_In (List.map f l)).
   rewrite <-(map_not_nil l f) in Hne.
   specialize (Hmap Hne).
   rewrite in_map_iff in Hmap.
@@ -392,7 +398,7 @@ Proof.
      * intros x Hx.
        rewrite in_map_iff in Hx.
        destruct Hx as [ab [Hab HInab]].
-       eapply (@Rmax_list_ge _ _ (Rmax_list (map (fun b : B => f (fst ab) b) lb))).
+       eapply (@Rmax_list_ge _ _ (Rmax_list (List.map (fun b : B => f (fst ab) b) lb))).
        --- rewrite in_map_iff. 
            exists (fst ab). split ; trivial.
            setoid_rewrite surjective_pairing in HInab. 
@@ -427,7 +433,7 @@ Proof.
      * intros x Hx.
        rewrite in_map_iff in Hx.
        destruct Hx as [ab [Hab HInab]].
-       eapply (@Rmax_list_ge _ _ (Rmax_list (map (fun a : A  => f a (snd ab)) la))).
+       eapply (@Rmax_list_ge _ _ (Rmax_list (List.map (fun a : A  => f a (snd ab)) la))).
        --- rewrite in_map_iff. 
            exists (snd ab). split ; trivial.
            setoid_rewrite surjective_pairing in HInab. 
@@ -466,11 +472,11 @@ Proof.
 
 (* max_{x:A} (max_{f:A->B}(g (f a) f)) = max_{f:A->B} (max_{a:map f A} (g (a,f))) *)
 
-Lemma Rmax_list_fun_swap {A B} {l : list(A -> B)}{la : list A}
+Lemma Rmax_list_fun_swap {A B} {lf : list(A -> B)}{la : list A}
       (g :B -> (A -> B) -> R)
-      (hl : [] <> l) (hla : [] <> la)  :
-      Max_{la} (fun s => Max_{l} (fun f => g (f s) f))  =
-      Max_{l} (fun f => Max_{map f la} (fun b => g b f)).
+      (hl : [] <> lf) (hla : [] <> la)  :
+      Max_{la} (fun s => Max_{lf} (fun f => g (f s) f))  =
+      Max_{lf} (fun f => Max_{List.map f la} (fun b => g b f)).
 Proof. 
   rewrite Rmax_list_map_comm; trivial.
   f_equal. apply map_ext.
@@ -478,14 +484,32 @@ Proof.
   now rewrite map_map.
 Qed.
 
+Lemma Rmax_list_le_range {A B} (f : A -> B) (g : B -> R) {la : list A} {lb : list B}
+      (hla : [] <> la)
+      (hf : forall {a}, In a la -> In (f a) lb) :
+  Max_{la} (fun a => g(f a)) <= Max_{lb} (fun b => g b).
+Proof.   
+  rewrite Rmax_list_le_iff. 
+  intros x Hx.
+  rewrite in_map_iff in Hx.
+  -- destruct Hx as [a [Ha Hina]].
+     eapply Rmax_list_ge.
+     rewrite in_map_iff. exists (f a). split;eauto.
+     now right.
+  -- now rewrite map_not_nil.
+Qed.
 
-(*Lemma Rmax_list_fun_filter {A B} {l : list(A -> B)}{la : list A}
+Lemma Rmax_list_fun_le {A B} {lf : list(A -> B)}{la : list A} {lb : list B}
       (g :B -> (A -> B) -> R)
-      (hl : [] <> l) (hla : [] <> la) (s : A) :
-  Max_{l} (fun f => g (f s) f) = Max_{filter (fun  => la}*)
+      (hl : [] <> lf) (hla : [] <> la) (hlb : [] <> lb)  :
+      Max_{la} (fun s => Max_{lf} (fun f => g (f s) f))  <=
+      Max_{lf} (fun f => Max_{lb} (fun b => g b f)).
+Proof.
+  rewrite Rmax_list_map_comm ; trivial. 
+  rewrite Rmax_list_prod_le ; trivial.
+  rewrite Rmax_list_prod_le ; trivial.
+Admitted. 
   
-
-
 End Rmax_list.
 
 Definition bind_iter {M:Type->Type} {Mm:Monad M} {A:Type} (unit:A) (f : A -> M A) :=
@@ -495,7 +519,7 @@ Section MDPs.
 
 Open Scope monad_scope.
 Open Scope R_scope.
-
+Open Scope rmax_scope. 
 Record MDP := mkMDP {
  (* State and action spaces. *)
  state : Type;
@@ -511,7 +535,7 @@ Record MDP := mkMDP {
 
 Arguments outcomes {_}.
 Arguments t {_}.
-Arguments reward {_}. 
+Arguments reward {_}.
 
 (* 
    A decision rule is a mapping from states to actions.
@@ -522,9 +546,10 @@ Definition dec_rule (M : MDP) := M.(state) -> M.(act).
    In general,a policy is a *stream* of decision rules. 
    A stream of constant decision rules is called a *stationary policy*. 
    Henceforth, we shall only work with stationary policies. 
+ *)
 
 Definition policy (M : MDP) := Stream (dec_rule M).
- *)
+ 
 
 Context {M : MDP}.
 Context (σ : dec_rule M).
@@ -823,10 +848,15 @@ Proof.
   intuition.
 Qed.
 
-(* Optimal value of an MDP, given a list of policies. 
-   Gives for each state the best long-term value that can be obtained for any policy. *)
+Notation "Max_{ l } ( f )" := (Rmax_list (List.map f l)) (at level 50).
+
+(* Optimal value of an MDP, given a list of policies
+   (stationary policy determined by a decision rule)
+   Denoted V*(s). We explicitly include the list of decision rules we take the 
+   max over. 
+*)
 Definition max_ltv_on (l : list (dec_rule M)) : M.(state) -> R :=
-  fun s => Rmax_list (map (fun σ => ltv γ σ s) l).
+  fun s => Max_{l} (fun σ => ltv γ σ s).
 
 (* Proceed with the assumption that rewards are bounded for any policy and 
    that the set of actions is finite. *)
@@ -837,7 +867,7 @@ Context (bdd :  (forall s s': M.(state), forall σ : dec_rule M, Rabs (reward s 
 Lemma max_ltv_aux1 (l : list (dec_rule M)): 
   forall s : M.(state),
     max_ltv_on l s =
-    Rmax_list (map (fun σ => (step_expt_reward σ s) + γ*expt_value (t s (σ s)) (ltv γ σ)) l).
+    Max_{l} (fun σ => (step_expt_reward σ s) + γ*expt_value (t s (σ s)) (ltv γ σ)).
 Proof.
   intros s. unfold step_expt_reward. 
   unfold max_ltv_on.
@@ -847,19 +877,28 @@ Proof.
 Qed.
 
 
+(* V*(s) = max_{a ∈ A} (r(x,a) + Σ_{y ∈ S} p(y | x,a) V*(y) *)
+Lemma bellman_opt_1 {la : list(act M)} (ld : list(dec_rule M)) (hla : [] <> la):
+  forall s : M.(state),
+    max_ltv_on ld s <= Max_{la}(fun a => expt_value (t s a) (reward s a) + γ * expt_value (t s a) (max_ltv_on ld)). 
+Proof.
+  intros s. rewrite max_ltv_aux1. unfold step_expt_reward.
+  eapply @Rmax_list_le_range. 
+Admitted.
 
+            
+            
 Lemma max_ltv_aux2 (l : list (dec_rule M)) :
   exists la : list (act M), 
   forall s : M.(state),
     let Q π := (expt_value (t s (fst π)) (reward s (fst π))) + γ*expt_value (t s (fst π)) (ltv γ (snd π)) in
-    Rmax_list (map (fun σ => (step_expt_reward σ s) + γ*expt_value (t s (σ s)) (ltv γ σ)) l) = Rmax_list
-        ((map (fun π => Q π)) (list_prod la l)).
+    Rmax_list (List.map (fun σ => (step_expt_reward σ s) + γ*expt_value (t s (σ s)) (ltv γ σ)) l) = Rmax_list
+        ((List.map (fun π => Q π)) (list_prod la l)).
 Proof.
   destruct fina as [la _].
   exists la. 
   intros s Q. unfold step_expt_reward.
-  rewrite <-(@Rmax_list_prod_le (act M) (policy M) (fun a b =>
-        expt_value (t s a) (reward s a) +
-        γ * expt_value (t s a) (ltv γ b)) la l).
-  
+Admitted.
+
+
 End order.
