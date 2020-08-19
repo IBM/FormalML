@@ -499,16 +499,38 @@ Proof.
   -- now rewrite map_not_nil.
 Qed.
 
-Lemma Rmax_list_fun_le {A B} {lf : list(A -> B)}{la : list A} {lb : list B}
-      (g :B -> (A -> B) -> R)
-      (hl : [] <> lf) (hla : [] <> la) (hlb : [] <> lb)  :
-      Max_{la} (fun s => Max_{lf} (fun f => g (f s) f))  <=
-      Max_{lf} (fun f => Max_{lb} (fun b => g b f)).
+Lemma Rmax_list_le_range' {A B} (g : B -> R) lf {lb : list B}
+      (hlf : [] <> lf){a : A}
+      (hfa : forall f, In (f a) lb)  :
+  Max_{lf} (fun f => g(f a)) <= Max_{lb} (fun b => g b).
 Proof.
-  rewrite Rmax_list_map_comm ; trivial. 
-  rewrite Rmax_list_prod_le ; trivial.
-  rewrite Rmax_list_prod_le ; trivial.
-Admitted. 
+  destruct (Rmax_list_map_exist (fun f => g (f a)) lf hlf) as [f [Hf Hinf]].
+  rewrite <-Hinf.
+  eapply Rmax_spec_map. apply hfa. 
+Qed.
+
+Lemma Rmax_list_le_range'' {A} g lf {lb : list R}
+      (hlf : [] <> lf){a : A}
+      (hfa : forall f, In (f a) lb)  :
+  Max_{lf} (fun f => g (f a) f) <= Max_{lb} (fun r => g r (fun a => Max_{lf}(fun f => f a))).
+Proof.
+  eapply Rle_trans.
+  apply Rmax_list_le_range ; trivial.
+  intros f Hf.  apply Hf. simpl.
+Admitted.
+
+Lemma Rmax_list_fun_le {A B} {la : list A} {lb : list B}
+      (f : A -> R) (g : B -> R)
+      (hla : [] <> la) (hlb : [] <> lb)  :
+      (forall a b, f a <= g b) ->
+      Max_{la} (fun a => f a) <= Max_{lb} (fun b => g b).
+Proof.
+  intros Hfg.
+  destruct (Rmax_list_map_exist (fun b => g b) lb hlb) as [b [Hb Hinb]].
+  destruct (Rmax_list_map_exist (fun a => f a) la hla) as [a [Ha Hina]].
+  rewrite <-Hinb, <-Hina.
+  apply Hfg.
+Qed.
   
 End Rmax_list.
 
@@ -877,28 +899,30 @@ Proof.
 Qed.
 
 
-(* V*(s) = max_{a ∈ A} (r(x,a) + Σ_{y ∈ S} p(y | x,a) V*(y) *)
-Lemma bellman_opt_1 {la : list(act M)} (ld : list(dec_rule M)) (hla : [] <> la):
-  forall s : M.(state),
+(* V*(s) <= max_{a ∈ A} (r(x,a) + Σ_{y ∈ S} p(y | x,a) V*(y) *)
+Lemma bellman_opt_1 {la : list(act M)} {ld : list(dec_rule M)} {ls : list (state M)}
+      (hla : [] <> la) (hld : [] <> ld)
+       (hp : forall π s, In π ld -> In s ls -> In (π s) la):
+  forall s : M.(state), In s ls ->
     max_ltv_on ld s <= Max_{la}(fun a => expt_value (t s a) (reward s a) + γ * expt_value (t s a) (max_ltv_on ld)). 
 Proof.
-  intros s. rewrite max_ltv_aux1. unfold step_expt_reward.
-  eapply @Rmax_list_le_range. 
-Admitted.
-
+  intros s hs. unfold step_expt_reward.
+  destruct (Rmax_list_map_exist (fun σ => ltv γ σ s) ld hld) as [π' [Hπ' Hinπ']].
+  destruct (Rmax_list_map_exist (fun a => expt_value (t s a) (reward s a) + γ * expt_value (t s a) (max_ltv_on ld)) la hla) as [a' [Ha' Hina']].
+  unfold max_ltv_on.
+  rewrite <-Hinπ'.  
+  erewrite ltv_corec ; eauto. unfold step_expt_reward.
+  assert (γ*expt_value(t s (π' s)) (ltv γ π') <= γ*expt_value(t s (π' s)) (max_ltv_on ld)).
+  apply Rmult_le_compat_l ; intuition.
+  apply expt_value_le. intros s0. 
+  unfold max_ltv_on. apply Rmax_spec.
+  rewrite in_map_iff. exists π' ; split ; trivial.
+  eapply Rle_trans.
+  apply Rplus_le_compat_l ; eauto.
+  apply Rmax_spec.
+  rewrite in_map_iff. exists (π' s). split ; trivial.
+  apply hp ; trivial.
+Qed.        
             
-            
-Lemma max_ltv_aux2 (l : list (dec_rule M)) :
-  exists la : list (act M), 
-  forall s : M.(state),
-    let Q π := (expt_value (t s (fst π)) (reward s (fst π))) + γ*expt_value (t s (fst π)) (ltv γ (snd π)) in
-    Rmax_list (List.map (fun σ => (step_expt_reward σ s) + γ*expt_value (t s (σ s)) (ltv γ σ)) l) = Rmax_list
-        ((List.map (fun π => Q π)) (list_prod la l)).
-Proof.
-  destruct fina as [la _].
-  exists la. 
-  intros s Q. unfold step_expt_reward.
-Admitted.
-
 
 End order.
