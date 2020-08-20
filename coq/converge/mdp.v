@@ -509,17 +509,20 @@ Proof.
   eapply Rmax_spec_map. apply hfa. 
 Qed.
 
-Lemma Rmax_list_le_range'' {A} g lf {lb : list R}
-      (hlf : [] <> lf){a : A}
-      (hfa : forall f, In (f a) lb)  :
-  Max_{lf} (fun f => g (f a) f) <= Max_{lb} (fun r => g r (fun a => Max_{lf}(fun f => f a))).
+Lemma Rmax_list_fun_le {A} {la : list A}
+      (f : A -> R) (g : A -> R)
+      (hla : [] <> la)  :
+      (forall a1 a2, f a1 <= g a2) ->
+      Max_{la} (fun a => f a) <= Max_{la} (fun a => g a).
 Proof.
-  eapply Rle_trans.
-  apply Rmax_list_le_range ; trivial.
-  intros f Hf.  apply Hf. simpl.
-Admitted.
+  intros Hfg.
+  destruct (Rmax_list_map_exist (fun a => g a) la hla) as [a1 [Ha1 Hina1]].
+  destruct (Rmax_list_map_exist (fun a => f a) la hla) as [a2 [Ha2 Hina2]].
+  rewrite <-Hina1, <-Hina2.
+  apply Hfg.
+Qed.
 
-Lemma Rmax_list_fun_le {A B} {la : list A} {lb : list B}
+Lemma Rmax_list_fun_le' {A B} {la : list A} {lb : list B}
       (f : A -> R) (g : B -> R)
       (hla : [] <> la) (hlb : [] <> lb)  :
       (forall a b, f a <= g b) ->
@@ -531,7 +534,8 @@ Proof.
   rewrite <-Hinb, <-Hina.
   apply Hfg.
 Qed.
-  
+
+
 End Rmax_list.
 
 Definition bind_iter {M:Type->Type} {Mm:Monad M} {A:Type} (unit:A) (f : A -> M A) :=
@@ -899,6 +903,9 @@ Proof.
 Qed.
 
 
+(* TODO(Kody): 
+   Get rid of the `In foo bar` hypotheses by adding in the Finite typeclass. *)
+
 (* V*(s) <= max_{a ∈ A} (r(x,a) + Σ_{y ∈ S} p(y | x,a) V*(y) *)
 Lemma bellman_opt_1 {la : list(act M)} {ld : list(dec_rule M)} {ls : list (state M)}
       (hla : [] <> la) (hld : [] <> ld)
@@ -912,17 +919,30 @@ Proof.
   unfold max_ltv_on.
   rewrite <-Hinπ'.  
   erewrite ltv_corec ; eauto. unfold step_expt_reward.
-  assert (γ*expt_value(t s (π' s)) (ltv γ π') <= γ*expt_value(t s (π' s)) (max_ltv_on ld)).
-  apply Rmult_le_compat_l ; intuition.
-  apply expt_value_le. intros s0. 
-  unfold max_ltv_on. apply Rmax_spec.
-  rewrite in_map_iff. exists π' ; split ; trivial.
+  assert(
+      γ*expt_value(t s (π' s)) (ltv γ π') <= γ*expt_value(t s (π' s)) (max_ltv_on ld)
+    ).
+  {
+    apply Rmult_le_compat_l ; intuition.
+    apply expt_value_le. intros s0. 
+    unfold max_ltv_on. apply Rmax_spec.
+    rewrite in_map_iff. exists π' ; split ; trivial.
+  }
   eapply Rle_trans.
-  apply Rplus_le_compat_l ; eauto.
-  apply Rmax_spec.
-  rewrite in_map_iff. exists (π' s). split ; trivial.
+  -- apply Rplus_le_compat_l ; eauto.
+  -- apply Rmax_spec.
+     rewrite in_map_iff. exists (π' s). split ; trivial.
   apply hp ; trivial.
 Qed.        
-            
 
+  
+Lemma bellman_opt {la : list(act M)} {ld : list(dec_rule M)} {ls : list (state M)}
+      (hls : [] <> ls) (hld : [] <> ld)
+       (hp : forall π s, In π ld -> In s ls -> In (π s) la):
+  forall s : M.(state), In s ls -> max_ltv_on ld s = Max_{la}(fun a => expt_value (t s a) (reward s a) + γ * expt_value (t s a) (max_ltv_on ld)).
+Admitted.
+
+
+
+  
 End order.
