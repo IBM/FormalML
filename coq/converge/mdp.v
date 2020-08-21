@@ -156,8 +156,6 @@ Section Rmax_list.
   
 Open Scope list_scope.
 Open Scope R_scope.
-Global Open Scope rmax_scope. 
-
 
 Instance EqDecR : @EqDec R eq _ := Req_EM_T. 
 
@@ -361,10 +359,9 @@ Proof.
   - assumption. 
 Qed.
 
+Notation "Max_{ l } ( f )" := (Rmax_list (List.map f l)) (at level 50).
 
-Notation "Max_{ l } ( f )" := (Rmax_list (List.map f l)) (at level 50) : rmax_scope.
-
-(* This is very important to prove existence of an optimal policy. *)
+(* This is very important. *)
 Lemma Rmax_list_map_exist {A} (f : A -> R) (l : list A) :
   [] <> l -> exists a:A, In a l /\ f a = Max_{l}(f). 
 Proof.
@@ -540,6 +537,8 @@ End Rmax_list.
 
 Definition bind_iter {M:Type->Type} {Mm:Monad M} {A:Type} (unit:A) (f : A -> M A) :=
   applyn (ret unit) (fun y => Monad.bind y f).
+
+Notation "Max_{ l } ( f )" := (Rmax_list (List.map f l)) (at level 50).
 
 Section MDPs.
 
@@ -752,7 +751,7 @@ Proof.
 Qed.
 
 Definition ltv : M.(state) -> R := fun s => Series (fun n => γ^n * (expt_reward σ s n)).
-
+  
 Definition expt_ltv (p : Pmf M.(state)) : R :=
   expt_value p ltv.
 
@@ -787,42 +786,78 @@ Proof.
   apply (ex_series_ltv bdd). 
 Qed.
 
+
+
 End ltv.
 
-Axiom lem : forall p : Prop, p \/ not p.
 
-Lemma finite_has_max_aux {A:Type} (l1 l2:list A) (R:A->A->Prop) (sub:forall x, In x l2 -> In x l1) :
-((forall x, In x l1) ->  exists x:A, forall y:A, R y x) -> ((forall x, In x l2) -> exists x:A, forall y:A, R y x).
+Section ltv_gen.
+
+
+Open Scope R_scope. 
+Context {M : MDP} (γ : R).
+Context (hγ : (0 <= γ < 1)%R).
+Arguments reward {_}.
+Arguments outcomes {_}.
+Arguments t {_}.
+
+Lemma const_stream_eq {A} (a : A) : forall n : nat, a = Str_nth n (const a).
 Proof.
-  intros H hl2.
-  apply H. intro x. 
-  apply sub. apply hl2.
-Qed. 
-
-Lemma sub_cons {A : Type} (l : list A) (a : A) : forall x, In x l -> In x (a :: l).
-Proof.
-  intros x Hx.
-  simpl. now right. 
-Qed. 
-
-Lemma aux {A : Type} (l l0 : list A) (R : A -> A -> Prop) (sub : forall x, In x l0 -> In x l) :
-  exists a, (forall x, In x l0 -> R x a).
-Proof.
-Admitted.
-
-
-Theorem finite_has_max' {A:Type} (R:A->A->Prop) `{part: PartialOrder _ eq R} :
- (exists x:A, forall y:A, R y x) -> (exists x:A, forall y:A, R x y -> x = y)  .
-Proof.
-  intros [x  H].
-  exists x. intros y Hxy.
-  specialize (H y).
-  now apply antisymmetry. 
+  unfold Str_nth ; induction n ; trivial.
 Qed.
 
-Theorem finite_has_max {A:Type} {ne : NonEmpty A} {fin:Finite A} (R:A->A->Prop) `{part: PartialOrder _ eq R} :
-  exists x:A, forall y:A, R x y -> x = y.
-Admitted.
+Definition ltv_gen (π : Stream (dec_rule M)) : M.(state) -> R :=
+  fun s => Series (fun n => γ^n * expt_reward (Str_nth n π) s n).
+
+Theorem ltv_gen_ltv : forall s : M.(state), forall σ : dec_rule M, ltv γ σ s = ltv_gen (const σ) s.
+Proof. 
+  intros s σ.
+  apply Series_ext.
+  setoid_rewrite <-const_stream_eq.
+  reflexivity. 
+Qed.
+
+
+Definition expt_ltv_gen (π : Stream (dec_rule M)) (p : Pmf M.(state)) : R :=
+  expt_value p (ltv_gen π).
+
+(* Expected reward at time 0 is equal to the reward for a nonstationary policy. *)
+
+Lemma expt_reward0_eq_reward_gen (π : Stream(dec_rule M)) : forall init : M.(state), expt_reward (hd π) init 0 = (step_expt_reward (hd π) init).
+Proof.
+  intros init.
+  unfold expt_reward. unfold bind_stoch_iter. simpl.
+  now rewrite expt_value_pure.
+Qed.
+
+ (*Long-Term Values satisfy the Bellman equation.
+Lemma ltv_gen_corec {D : R} (π : Stream (dec_rule M)) :
+  (forall s s': M.(state), forall σ, Rabs (reward s (σ s) s') <= D) ->
+  forall init : M.(state), 
+  ltv_gen π init = (step_expt_reward (hd π) init) + γ*expt_value (t init ((Str_nth 1 π) init)) (ltv_gen (tl π)). 
+Proof.
+  intros bdd init. destruct π. simpl.
+  assert (hcons : t init (Str_nth 1 (Cons d π) init) = t init (hd π init)).
+  unfold Str_nth ; simpl ; reflexivity.  
+  setoid_rewrite hcons.
+  unfold ltv_gen. 
+  rewrite Series_incr_1. simpl. rewrite Rmult_1_l. setoid_rewrite Rmult_assoc.   
+  rewrite Series_scal_l. f_equal.
+  - unfold Str_nth. simpl. unfold expt_reward.
+    unfold bind_stoch_iter. simpl. rewrite expt_value_pure. reflexivity.
+  - f_equal. rewrite expt_value_Series. setoid_rewrite expt_reward_succ.
+  setoid_rewrite expt_value_const_mul.  
+  setoid_rewrite <-expt_value_bind. setoid_rewrite Pmf_bind_comm_stoch_bind.
+  setoid_rewrite expt_value_bind.  apply Series_ext. intros n. f_equal.
+  reflexivity.
+
+  apply (ex_series_ltv bdd).
+  apply (ex_series_ltv bdd). 
+Qed.*)
+
+
+End ltv_gen.
+
 
 Section order.
   
@@ -935,14 +970,47 @@ Proof.
   apply hp ; trivial.
 Qed.        
 
-  
-Lemma bellman_opt {la : list(act M)} {ld : list(dec_rule M)} {ls : list (state M)}
+(* This is killing me. *)
+Lemma bellman_optimality {la : list(act M)} {ld : list(dec_rule M)} {ls : list (state M)}
       (hls : [] <> ls) (hld : [] <> ld)
        (hp : forall π s, In π ld -> In s ls -> In (π s) la):
   forall s : M.(state), In s ls -> max_ltv_on ld s = Max_{la}(fun a => expt_value (t s a) (reward s a) + γ * expt_value (t s a) (max_ltv_on ld)).
 Admitted.
 
-
-
-  
 End order.
+
+
+Section operator.
+Open Scope R_scope. 
+Context {M : MDP} (γ D : R).
+Context (hγ : (0 <= γ < 1)%R).
+
+Arguments reward {_}.
+Arguments outcomes {_}.
+Arguments t {_}.
+
+Context (bdd :  (forall s s': M.(state), forall σ : dec_rule M, Rabs (reward s (σ s) s') <= D)).
+
+
+Definition bellman_op (π : dec_rule M) : (M.(state) -> R) -> (M.(state) -> R) :=
+  fun W => fun s => (step_expt_reward π s + γ*(expt_value (t s (π s)) W)). 
+
+Definition bellman_max_op (π : dec_rule M) (la : list M.(act)) : (M.(state) -> R) -> (M.(state) -> R) :=
+  fun W => fun s => Max_{la}( fun a => expt_value (t s a) (reward s a) + γ*(expt_value (t s a) W)). 
+Lemma ltv_bellman_op_fixpoint : forall π, bellman_op π (ltv γ π) = ltv γ π.
+Proof.
+  intro π.
+  unfold bellman_op. simpl.
+  apply functional_extensionality.
+  intro init. symmetry.
+  eapply ltv_corec ; eauto.
+Qed.
+
+Check map. 
+Definition list_stream_to_prod {A} : list(Stream A) -> list(A)*list(Stream A) :=
+ fun l => (List.map (fun s => hd s) l,List.map (fun s => tl s) l). 
+
+Definition list_prod_to_stream {A} : list(A)*list(Stream A) -> list(Stream A) :=
+ fun l => List.map (fun x => Cons _ x) (snd l). 
+
+End operator.
