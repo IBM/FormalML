@@ -532,7 +532,22 @@ Proof.
   apply Hfg.
 Qed.
 
-
+Lemma Rmax_list_map_transf {A B} (l : list A) (f : A -> R) (f' : B -> R) (g : A -> B) :
+ (Forall(fun x => f x = f'(g x)) l) -> Max_{l}(f) = Max_{List.map g l}(f').
+Proof.
+  intros H.
+  rewrite Forall_forall in H.
+  rewrite map_map. f_equal.
+  apply List.map_ext_in. 
+  assumption.
+Qed.
+ 
+Lemma Rmax_list_pairs {A} (ls : list (Stream A)) (f : Stream A -> R) (f':A*Stream A -> R) :
+  (Forall(fun x => f x = f'(hd x, tl x)) ls) -> Max_{ls}(f) = Max_{(List.map (fun x => (hd x, tl x)) ls)}(fun x => f'(x)).
+Proof.
+  apply Rmax_list_map_transf. 
+Qed.
+      
 End Rmax_list.
 
 Definition bind_iter {M:Type->Type} {Mm:Monad M} {A:Type} (unit:A) (f : A -> M A) :=
@@ -588,6 +603,10 @@ Context (σ : dec_rule M).
 
 Definition bind_stoch_iter (n : nat) (init : M.(state)) : Pmf M.(state):=
   applyn (ret init) (fun y => Pmf_bind y (fun s => t s (σ s))) n.
+
+Definition bind_stoch_iter_str (π : Stream(dec_rule M)) (n : nat) (init : M.(state)) 
+  : Pmf M.(state):=
+  applyn (ret init) (fun y => Pmf_bind y (fun s => t s (Str_nth n π s))) n.
 
 (* 
    It is helpful to see what happens in the above definition for n=1, and starting at init.
@@ -765,6 +784,7 @@ Proof.
     rewrite Pmf_bind_of_bind. reflexivity.
 Qed.
 
+
 (* Long-Term Values satisfy the Bellman equation. *)
 Lemma ltv_corec {D : R} :
    (forall s s': M.(state), Rabs (reward s (σ s) s') <= D) ->
@@ -806,15 +826,58 @@ Proof.
   unfold Str_nth ; induction n ; trivial.
 Qed.
 
-Definition ltv_gen (π : Stream (dec_rule M)) : M.(state) -> R :=
-  fun s => Series (fun n => γ^n * expt_reward (Str_nth n π) s n).
+Lemma str_nth_cons_zero {A} (a : A) (π : Stream A) : Str_nth 0 (Cons a π) = a.
+Proof.
+  now unfold Str_nth ; simpl. 
+Qed.
 
+
+Lemma str_nth_cons_one {A} (a : A) (π : Stream A) : Str_nth 1 (Cons a π) = hd π.
+Proof.
+  now unfold Str_nth ; simpl. 
+Qed.
+
+Definition ltv_gen (π : Stream (dec_rule M)) : M.(state) -> R :=
+  fun s => Series (fun n => γ^n * expt_value (bind_stoch_iter_str π n s)
+                                       (fun s => step_expt_reward (hd π) s)).
+
+(* Fix this proof to remove funext axiom. *)
 Theorem ltv_gen_ltv : forall s : M.(state), forall σ : dec_rule M, ltv γ σ s = ltv_gen (const σ) s.
 Proof. 
   intros s σ.
-  apply Series_ext.
-  setoid_rewrite <-const_stream_eq.
-  reflexivity. 
+  apply Series_ext. unfold bind_stoch_iter_str. simpl.
+  intro n. f_equal. unfold expt_reward.
+  assert (forall n, forall s,  t s (Str_nth n (const σ) s)  = t s (σ s)).
+  intros n0 s0. f_equal. now erewrite <-const_stream_eq. 
+  f_equal. unfold bind_stoch_iter. simpl. f_equal. apply functional_extensionality.
+  intro x. f_equal. apply functional_extensionality. intros x0 ; eauto.
+Qed.
+
+Lemma Str_nth_succ_cons {A} (n : nat) (d : A) (π : Stream A) :
+  Str_nth (S n) (Cons d π) = Str_nth n π.
+Proof.
+  induction n.
+  - unfold Str_nth. simpl. reflexivity.
+  - unfold Str_nth. simpl. reflexivity.
+Qed.
+
+Lemma Str_nth_hd_tl {A} (n : nat) (π : Stream A) :
+  Str_nth (S n) π = Str_nth n (tl π).
+Proof.
+  induction n ; unfold Str_nth ; trivial. 
+Qed.
+
+Lemma Pmf_bind_comm_stoch_bind_str (n : nat) (π : Stream (dec_rule M)) (init : state M):
+  Pmf_bind (bind_stoch_iter_str π n init) (fun a : state M => t a (Str_nth n π a)) =
+  Pmf_bind (t init (Str_nth n π init)) (fun a : state M => bind_stoch_iter_str π n a).
+Proof.
+  revert π. 
+  induction n. 
+  * unfold bind_stoch_iter_str. simpl. intros π. rewrite Pmf_bind_of_ret.
+    now rewrite Pmf_ret_of_bind.
+  * unfold bind_stoch_iter_str in *. simpl. intro π. rewrite Str_nth_hd_tl. 
+    setoid_rewrite (IHn (tl π)).
+    now rewrite Pmf_bind_of_bind.
 Qed.
 
 
@@ -830,29 +893,36 @@ Proof.
   now rewrite expt_value_pure.
 Qed.
 
+
+Lemma expt_reward_gen_succ (n : nat) (π : Stream (dec_rule M)) (init: state M) :
+  expt_reward (Str_nth (S n) π) init (S n) = expt_value (t init (Str_nth n (tl π) init)) (fun s => expt_reward (Str_nth n (tl π)) s n).
+Proof.
+  rewrite expt_reward_succ.
+  rewrite <-expt_value_bind. rewrite Pmf_bind_comm_stoch_bind. 
+  rewrite Str_nth_hd_tl.
+  rewrite expt_value_bind.
+  unfold expt_reward. reflexivity.
+Qed.
+
+        
  (*Long-Term Values satisfy the Bellman equation.
 Lemma ltv_gen_corec {D : R} (π : Stream (dec_rule M)) :
   (forall s s': M.(state), forall σ, Rabs (reward s (σ s) s') <= D) ->
   forall init : M.(state), 
-  ltv_gen π init = (step_expt_reward (hd π) init) + γ*expt_value (t init ((Str_nth 1 π) init)) (ltv_gen (tl π)). 
+  ltv_gen π init = (step_expt_reward (hd π) init) + γ*expt_value (t init (hd π init)) (ltv_gen (tl π)). 
 Proof.
-  intros bdd init. destruct π. simpl.
-  assert (hcons : t init (Str_nth 1 (Cons d π) init) = t init (hd π init)).
-  unfold Str_nth ; simpl ; reflexivity.  
-  setoid_rewrite hcons.
+  intros bdd init. 
+  rewrite <-(@expt_reward0_eq_reward).
   unfold ltv_gen. 
   rewrite Series_incr_1. simpl. rewrite Rmult_1_l. setoid_rewrite Rmult_assoc.   
-  rewrite Series_scal_l. f_equal.
-  - unfold Str_nth. simpl. unfold expt_reward.
-    unfold bind_stoch_iter. simpl. rewrite expt_value_pure. reflexivity.
-  - f_equal. rewrite expt_value_Series. setoid_rewrite expt_reward_succ.
-  setoid_rewrite expt_value_const_mul.  
-  setoid_rewrite <-expt_value_bind. setoid_rewrite Pmf_bind_comm_stoch_bind.
-  setoid_rewrite expt_value_bind.  apply Series_ext. intros n. f_equal.
-  reflexivity.
-
-  apply (ex_series_ltv bdd).
-  apply (ex_series_ltv bdd). 
+  rewrite Series_scal_l. f_equal. f_equal. unfold step_expt_reward.  
+  rewrite expt_value_Series.
+  apply Series_ext. intros n. rewrite expt_value_const_mul. f_equal.
+  unfold bind_stoch_iter_str. simpl.
+  rewrite <-expt_value_bind. f_equal. 
+  rewrite Str_nth_hd_tl. 
+  induction n.
+  - unfold Str_nth. simpl. rewrite bind_stoch_iter_1. unfold bind_stoch_iter. simpl.
 Qed.*)
 
 
@@ -970,12 +1040,31 @@ Proof.
   apply hp ; trivial.
 Qed.        
 
+Import Classical_Prop.
+
+Lemma Rle_lt : forall r1 r2 : R, not (r1 >= r2) <-> r2 > r1.
+Proof.
+  split.
+  - apply Rnot_ge_gt.
+  - intros H1 H2. apply (Rgt_irrefl r2).
+    eapply Rgt_ge_trans ; eauto.
+Qed.
+
 (* This is killing me. *)
 Lemma bellman_optimality {la : list(act M)} {ld : list(dec_rule M)} {ls : list (state M)}
-      (hls : [] <> ls) (hld : [] <> ld)
+      (hls : [] <> ls) (hld : [] <> ld) (hla : [] <> la)
        (hp : forall π s, In π ld -> In s ls -> In (π s) la):
-  forall s : M.(state), In s ls -> max_ltv_on ld s = Max_{la}(fun a => expt_value (t s a) (reward s a) + γ * expt_value (t s a) (max_ltv_on ld)).
+  forall s : M.(state), In s ls -> max_ltv_on ld s >= Max_{la}(fun a => expt_value (t s a) (reward s a) + γ * expt_value (t s a) (max_ltv_on ld)).
+Proof.
+  intros s Hs. 
+  apply NNPP. intro Hnot.
+  rewrite Rle_lt in Hnot.
+  destruct (Rmax_list_map_exist (fun a => expt_value (t s a) (reward s a) + γ * expt_value (t s a) (max_ltv_on ld)) la hla) as [a' [Ha' Hina']].
+  rewrite <-Hina' in Hnot.
 Admitted.
+
+
+(*max l f == max(NoDup (map fst l)) (fun a => max (map snd (filter (fun pi' => a ==b fst pi') l)) (fun pi' => f (a,pi')))*)
 
 End order.
 
@@ -1006,11 +1095,16 @@ Proof.
   eapply ltv_corec ; eauto.
 Qed.
 
-Check map. 
+
 Definition list_stream_to_prod {A} : list(Stream A) -> list(A)*list(Stream A) :=
  fun l => (List.map (fun s => hd s) l,List.map (fun s => tl s) l). 
 
-Definition list_prod_to_stream {A} : list(A)*list(Stream A) -> list(Stream A) :=
- fun l => List.map (fun x => Cons _ x) (snd l). 
+
+(* Use unzip. 
+Definition list_stream_to_prod' {A} : list(Stream A) -> list(A)*list(Stream A) :=
+ fun l => (List.map (fun s => hd s) l,List.map (fun s => tl s) l). *)
+
+
+
 
 End operator.
