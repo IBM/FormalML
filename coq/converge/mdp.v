@@ -1,5 +1,5 @@
 Require Import Reals Coq.Lists.List Coquelicot.Series Coquelicot.Hierarchy Coquelicot.SF_seq.
-Require Import pmf_monad Permutation orderfun.
+Require Import pmf_monad Permutation.
 Require Import Sums Coq.Reals.ROrderedType.
 Require Import micromega.Lra.
 Require Import Coq.Logic.FunctionalExtensionality.
@@ -533,7 +533,7 @@ Proof.
 Qed.
 
 Lemma Rmax_list_map_transf {A B} (l : list A) (f : A -> R) (f' : B -> R) (g : A -> B) :
- (Forall(fun x => f x = f'(g x)) l) -> Max_{l}(f) = Max_{List.map g l}(f').
+ (List.Forall (fun x => f x = f'(g x)) l) -> Max_{l}(f) = Max_{List.map g l}(f').
 Proof.
   intros H.
   rewrite Forall_forall in H.
@@ -543,7 +543,7 @@ Proof.
 Qed.
  
 Lemma Rmax_list_pairs {A} (ls : list (Stream A)) (f : Stream A -> R) (f':A*Stream A -> R) :
-  (Forall(fun x => f x = f'(hd x, tl x)) ls) -> Max_{ls}(f) = Max_{(List.map (fun x => (hd x, tl x)) ls)}(fun x => f'(x)).
+  (List.Forall(fun x => f x = f'(hd x, tl x)) ls) -> Max_{ls}(f) = Max_{(List.map (fun x => (hd x, tl x)) ls)}(fun x => f'(x)).
 Proof.
   apply Rmax_list_map_transf. 
 Qed.
@@ -563,14 +563,14 @@ Open Scope rmax_scope.
 Record MDP := mkMDP {
  (* State and action spaces. *)
  state : Type;
- act  : Type;
+ act  : forall s: state, Type;
  (* Probabilistic transition structure. 
     t(s,a,s') is the probability that the next state is s' given that you take action a in state s.
     One can also consider to to be an act-indexed collection of Kliesli arrows of Pmf. 
  *)
- t :  state -> act -> Pmf state;
+ t :  forall s : state, act s -> Pmf state;
  (* Reward when you move to s' from s by taking action a. *)
- reward : state -> act -> state -> R                                
+ reward : forall s : state, act s -> state -> R                                
 }.
 
 Arguments outcomes {_}.
@@ -580,7 +580,7 @@ Arguments reward {_}.
 (* 
    A decision rule is a mapping from states to actions.
 *)
-Definition dec_rule (M : MDP) := M.(state) -> M.(act).
+Definition dec_rule (M : MDP) := forall s : M.(state), (M.(act)) s.
 
 (*
    In general,a policy is a *stream* of decision rules. 
@@ -674,7 +674,7 @@ Section egs.
 Definition unitMDP {st0 act0 : Type} (t0 : st0 -> act0 -> Pmf st0) : MDP :=
 {|
     state := st0;
-    act := act0;
+    act := _ ;
     t := t0;
     reward := fun s a s' => R0
 |}.
@@ -912,17 +912,17 @@ Lemma ltv_gen_corec {D : R} (π : Stream (dec_rule M)) :
   ltv_gen π init = (step_expt_reward (hd π) init) + γ*expt_value (t init (hd π init)) (ltv_gen (tl π)). 
 Proof.
   intros bdd init. 
-  rewrite <-(@expt_reward0_eq_reward).
+  rewrite <-(@expt_reward0_eq_reward). 
   unfold ltv_gen. 
   rewrite Series_incr_1. simpl. rewrite Rmult_1_l. setoid_rewrite Rmult_assoc.   
-  rewrite Series_scal_l. f_equal. f_equal. unfold step_expt_reward.  
+  rewrite Series_scal_l. f_equal. f_equal.
   rewrite expt_value_Series.
   apply Series_ext. intros n. rewrite expt_value_const_mul. f_equal.
-  unfold bind_stoch_iter_str. simpl.
-  rewrite <-expt_value_bind. f_equal. 
-  rewrite Str_nth_hd_tl. 
-  induction n.
-  - unfold Str_nth. simpl. rewrite bind_stoch_iter_1. unfold bind_stoch_iter. simpl.
+  simpl.
+  rewrite <-expt_value_bind. unfold bind_stoch_iter_str.
+  rewrite Str_nth_hd_tl. setoid_rewrite  Pmf_bind_comm_stoch_bind_str.
+  rewrite expt_value_bind. rewrite expt_value_bind.
+  
 Qed.*)
 
 
@@ -938,7 +938,7 @@ Arguments reward {_}.
 Arguments outcomes {_}.
 Arguments t {_}.
 
-Definition policy_eq (σ τ : state M -> act M) : Prop
+Definition policy_eq (σ τ : forall s : state M ,act M s) : Prop
   := forall s, (@ltv M γ σ s) = (@ltv M γ τ s).
 
 Global Instance policy_eq_equiv : Equivalence policy_eq.
@@ -949,7 +949,7 @@ Proof.
   etransitivity; eauto.
 Qed.
 
-Definition policy_le (σ τ : state M -> act M) : Prop
+Definition policy_le (σ τ : forall s : state M ,act M s) : Prop
   := forall s, (ltv γ σ s) <= (ltv γ τ s).
 
 Global Instance policy_equiv_sub : subrelation policy_eq policy_le.
@@ -992,7 +992,7 @@ Definition max_ltv_on (l : list (dec_rule M)) : M.(state) -> R :=
 (* Proceed with the assumption that rewards are bounded for any policy and 
    that the set of actions is finite. *)
 Context {D : R}.
-Context (fina : Finite M.(act)). 
+Context (fina : forall s : M.(state), Finite (M.(act) s)). 
 Context (bdd :  (forall s s': M.(state), forall σ : dec_rule M, Rabs (reward s (σ s) s') <= D)).
 
 Lemma max_ltv_aux1 (l : list (dec_rule M)): 
@@ -1008,19 +1008,52 @@ Proof.
 Qed.
 
 
+Lemma max_ltv_aux2 (l : list (dec_rule M)): 
+  forall s : M.(state),
+    max_ltv_on l s =
+    Max_{List.map (fun σ => (σ s,σ)) l} (fun σ => (step_expt_reward (snd σ) s) + γ*expt_value (t s (fst σ)) (ltv γ (snd σ))).
+Proof.
+  intro s.
+  rewrite max_ltv_aux1.  
+  apply Rmax_list_map_transf.
+  rewrite Forall_forall.
+  intros x Hx. simpl. reflexivity. 
+Qed.
+
+Lemma Rmax_list_split {A B} (f : A*B -> R) (l : list (A*B)) (eqA : EqDec A eq) :
+  Max_{l}(f) = Max_{List.map fst l} (fun a:A => Max_{List.map snd (filter (fun pi' => a ==b fst pi') l)} (fun pi' => f (a,pi'))).
+Proof.
+  rewrite map_map.
+  apply Rle_antisym.
+  - rewrite Rmax_list_le_iff.
+    intros x H.
+    rewrite in_map_iff in H.
+    destruct H as [ab [Hab Hinab]]. 
+Admitted.
+
+Lemma max_ltv_aux3 (l : list (dec_rule M)) (eqA : forall s : M.(state), EqDec (act M s) eq): 
+  forall s : M.(state),
+    Max_{List.map (fun σ => (σ s,σ)) l} (fun σ => (step_expt_reward (snd σ) s) + γ*expt_value (t s (fst σ)) (ltv γ (snd σ))) =  Max_{ List.map (fun σ => (σ s, σ)) l}
+  (fun x =>Max_{List.map snd (filter (fun pi' => fst x ==b fst pi')(List.map (fun σ => (σ s, σ)) l))} (fun pi' => step_expt_reward pi' s + γ * expt_value (t s (fst x)) (ltv γ pi'))).
+Proof.
+  intro s. erewrite Rmax_list_split. simpl. rewrite map_map. simpl.
+  reflexivity.
+Qed.
+
+
 (* TODO(Kody): 
    Get rid of the `In foo bar` hypotheses by adding in the Finite typeclass. *)
 
 (* V*(s) <= max_{a ∈ A} (r(x,a) + Σ_{y ∈ S} p(y | x,a) V*(y) *)
-Lemma bellman_opt_1 {la : list(act M)} {ld : list(dec_rule M)} {ls : list (state M)}
-      (hla : [] <> la) (hld : [] <> ld)
-       (hp : forall π s, In π ld -> In s ls -> In (π s) la):
+Lemma bellman_opt_1 {la : forall s: state M, list(act M s)} {ld : list(dec_rule M)} {ls : list (state M)}
+      (hla : forall s, [] <> la s) (hld : [] <> ld)
+       (hp : forall π s, In π ld -> In s ls -> In (π s) (la s)):
   forall s : M.(state), In s ls ->
-    max_ltv_on ld s <= Max_{la}(fun a => expt_value (t s a) (reward s a) + γ * expt_value (t s a) (max_ltv_on ld)). 
+    max_ltv_on ld s <= Max_{la s}(fun a => expt_value (t s a) (reward s a) + γ * expt_value (t s a) (max_ltv_on ld)). 
 Proof.
   intros s hs. unfold step_expt_reward.
   destruct (Rmax_list_map_exist (fun σ => ltv γ σ s) ld hld) as [π' [Hπ' Hinπ']].
-  destruct (Rmax_list_map_exist (fun a => expt_value (t s a) (reward s a) + γ * expt_value (t s a) (max_ltv_on ld)) la hla) as [a' [Ha' Hina']].
+  destruct (Rmax_list_map_exist (fun a => expt_value (t s a) (reward s a) + γ * expt_value (t s a) (max_ltv_on ld)) (la s) (hla s)) as [a' [Ha' Hina']].
   unfold max_ltv_on.
   rewrite <-Hinπ'.  
   erewrite ltv_corec ; eauto. unfold step_expt_reward.
@@ -1050,21 +1083,15 @@ Proof.
     eapply Rgt_ge_trans ; eauto.
 Qed.
 
+
 (* This is killing me. *)
-Lemma bellman_optimality {la : list(act M)} {ld : list(dec_rule M)} {ls : list (state M)}
-      (hls : [] <> ls) (hld : [] <> ld) (hla : [] <> la)
-       (hp : forall π s, In π ld -> In s ls -> In (π s) la):
-  forall s : M.(state), In s ls -> max_ltv_on ld s >= Max_{la}(fun a => expt_value (t s a) (reward s a) + γ * expt_value (t s a) (max_ltv_on ld)).
+Lemma bellman_optimality {la : forall s: state M, list(act M s)} {ld : list(dec_rule M)} {ls : list (state M)} (hla : forall s, [] <> la s) (hld : [] <> ld)
+   (hp : forall π s, In π ld -> In s ls -> In (π s) (la s)):
+  forall s : M.(state), In s ls -> max_ltv_on ld s = Max_{la s}(fun a => expt_value (t s a) (reward s a) + γ * expt_value (t s a) (max_ltv_on ld)).
 Proof.
-  intros s Hs. 
-  apply NNPP. intro Hnot.
-  rewrite Rle_lt in Hnot.
-  destruct (Rmax_list_map_exist (fun a => expt_value (t s a) (reward s a) + γ * expt_value (t s a) (max_ltv_on ld)) la hla) as [a' [Ha' Hina']].
-  rewrite <-Hina' in Hnot.
+  intros s Hs.
+  unfold max_ltv_on.
 Admitted.
-
-
-(*max l f == max(NoDup (map fst l)) (fun a => max (map snd (filter (fun pi' => a ==b fst pi') l)) (fun pi' => f (a,pi')))*)
 
 End order.
 
@@ -1084,8 +1111,9 @@ Context (bdd :  (forall s s': M.(state), forall σ : dec_rule M, Rabs (reward s 
 Definition bellman_op (π : dec_rule M) : (M.(state) -> R) -> (M.(state) -> R) :=
   fun W => fun s => (step_expt_reward π s + γ*(expt_value (t s (π s)) W)). 
 
-Definition bellman_max_op (π : dec_rule M) (la : list M.(act)) : (M.(state) -> R) -> (M.(state) -> R) :=
-  fun W => fun s => Max_{la}( fun a => expt_value (t s a) (reward s a) + γ*(expt_value (t s a) W)). 
+Definition bellman_max_op (π : dec_rule M) (la : forall s, list (M.(act) s)) : (M.(state) -> R) -> (M.(state) -> R) :=
+  fun W => fun s => Max_{la s}( fun a => expt_value (t s a) (reward s a) + γ*(expt_value (t s a) W)). 
+
 Lemma ltv_bellman_op_fixpoint : forall π, bellman_op π (ltv γ π) = ltv γ π.
 Proof.
   intro π.
@@ -1095,14 +1123,6 @@ Proof.
   eapply ltv_corec ; eauto.
 Qed.
 
-
-Definition list_stream_to_prod {A} : list(Stream A) -> list(A)*list(Stream A) :=
- fun l => (List.map (fun s => hd s) l,List.map (fun s => tl s) l). 
-
-
-(* Use unzip. 
-Definition list_stream_to_prod' {A} : list(Stream A) -> list(A)*list(Stream A) :=
- fun l => (List.map (fun s => hd s) l,List.map (fun s => tl s) l). *)
 
 
 
