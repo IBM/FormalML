@@ -1084,13 +1084,45 @@ Proof.
 Qed.
 
 
+Lemma bell_opt_aux {A} {B : forall a : A, Type} {la : forall a : A, list (B a)}
+      {lf : list (forall a:A, B a)} (hlf : [] <> lf)
+      (hla : forall a, [] <> la a)
+      (hp : forall π s, In π lf -> In (π s) (la s))
+      (* For every state and every action available at that state, there is atleast one
+         decision rule mapping the state to that action. *)
+      (surj : forall (a : A) (b : B a), exists f, In f lf /\ f a = b)
+      r : forall a : A, 
+    Max_{lf}(fun σ => r a (σ a)) = Max_{la a}(fun b => r a b).
+Proof.
+  intros a. 
+  apply Rle_antisym.
+  - apply Rmax_spec.
+    rewrite in_map_iff.
+    destruct (Rmax_list_map_exist (fun σ : forall x0 : A, B x0 => r a (σ a)) (lf)) as [ex Hex].
+    assumption.
+    exists (ex a). intuition.
+  - rewrite Rmax_list_le_iff.
+    intros x Hx.
+    rewrite in_map_iff in Hx.
+    destruct Hx as [b [Hb Hinb]].
+    rewrite <-Hb.
+    apply Rmax_spec. rewrite in_map_iff.  
+    specialize (surj a b). destruct surj as [f [Hfin Hfab]]. 
+    exists f. rewrite Hfab. split ; trivial.
+    rewrite map_not_nil. apply hla. 
+Qed.
+
 (* This is killing me. *)
 Lemma bellman_optimality {la : forall s: state M, list(act M s)} {ld : list(dec_rule M)} {ls : list (state M)} (hla : forall s, [] <> la s) (hld : [] <> ld)
    (hp : forall π s, In π ld -> In s ls -> In (π s) (la s)):
   forall s : M.(state), In s ls -> max_ltv_on ld s = Max_{la s}(fun a => expt_value (t s a) (reward s a) + γ * expt_value (t s a) (max_ltv_on ld)).
 Proof.
-  intros s Hs.
-  unfold max_ltv_on.
+  intros s0 Hs0.
+  rewrite max_ltv_aux1. unfold dec_rule. unfold step_expt_reward. 
+  rewrite bell_opt_aux. rewrite map_map. simpl. erewrite Rmax_list_split.  simpl.
+  rewrite map_map. unfold step_expt_reward.
+  unfold dec_rule in *. eapply bell_opt_aux. unfold step_expt_reward.
+  
 Admitted.
 
 End order.
