@@ -1,5 +1,5 @@
 Require Import Reals Coq.Lists.List Coquelicot.Series Coquelicot.Hierarchy Coquelicot.SF_seq.
-Require Import pmf_monad Permutation.
+Require Import pmf_monad Permutation fixed_point.
 Require Import Sums Coq.Reals.ROrderedType.
 Require Import micromega.Lra.
 Require Import Coq.Logic.FunctionalExtensionality.
@@ -452,21 +452,6 @@ Proof.
   - apply Rmax_list_prod_le'; trivial.   
 Qed.
 
-
-Lemma Rmax_list_abstr {A} (la : list A) {l : list(A -> R)} (hl : [] <> l) :
-  forall x, In x la -> Max_{l}(fun f => f x) <= Max_{l} (fun f => Max_{la} (f) ).
-Proof.
-  intros x Hx.
-  rewrite Rmax_list_map_comm.
-  *  rewrite Rmax_list_le_iff.
-     -- intros x0 Hx0. eapply Rmax_list_ge.
-        rewrite in_map_iff. exists x. split ; trivial. 
-        now apply Rmax_spec. 
-     -- now apply map_not_nil.
-  *  assumption.                                                       
-  * rewrite not_nil_exists. now exists x.                                                  Qed.
-
-
 (* max_{x:A} (max_{f:A->B}(g (f a) f)) = max_{f:A->B} (max_{a:map f A} (g (a,f))) *)
 
 Lemma Rmax_list_fun_swap {A B} {lf : list(A -> B)}{la : list A}
@@ -509,14 +494,23 @@ Qed.
 Lemma Rmax_list_fun_le {A} {la : list A}
       (f : A -> R) (g : A -> R)
       (hla : [] <> la)  :
-      (forall a1 a2, f a1 <= g a2) ->
+      (forall a, f a <= g a) ->
       Max_{la} (fun a => f a) <= Max_{la} (fun a => g a).
 Proof.
   intros Hfg.
   destruct (Rmax_list_map_exist (fun a => g a) la hla) as [a1 [Ha1 Hina1]].
   destruct (Rmax_list_map_exist (fun a => f a) la hla) as [a2 [Ha2 Hina2]].
-  rewrite <-Hina1, <-Hina2.
-  apply Hfg.
+  rewrite <-Hina1.
+  rewrite Rmax_list_le_iff.
+  intros x Hx. rewrite in_map_iff in Hx.
+  destruct Hx as [a0 [ha0 hina0]]. rewrite <-ha0.
+  enough (f a0 <= f a2).
+  assert (f a2 <= g a2) by (apply Hfg).
+  enough (g a2 <= g a1).
+  lra.
+  rewrite Hina1. apply Rmax_spec. rewrite in_map_iff. exists a2 ; split ; trivial.
+  rewrite Hina2. apply Rmax_spec. rewrite in_map_iff. exists a0 ; split ; trivial.
+  now rewrite map_not_nil.
 Qed.
 
 Lemma Rmax_list_fun_le' {A B} {la : list A} {lb : list B}
@@ -1073,8 +1067,6 @@ Proof.
   apply hp ; trivial.
 Qed.        
 
-Import Classical_Prop.
-
 Lemma Rle_lt : forall r1 r2 : R, not (r1 >= r2) <-> r2 > r1.
 Proof.
   split.
@@ -1112,17 +1104,34 @@ Proof.
     rewrite map_not_nil. apply hla. 
 Qed.
 
+Lemma bell_opt_aux' {A} {B : forall a : A, Type} {la : forall a : A, list (B a)}
+      (eqA : forall a : A, EqDec (B a) eq)
+      {lf : list (forall a:A, B a)} (hlf : [] <> lf)
+      (hla : forall a, [] <> la a)
+      (hp : forall π s, In π lf -> In (π s) (la s))
+      (* For every state and every action available at that state, there is atleast one
+         decision rule mapping the state to that action. *)
+      (surj : forall (a : A) (b : B a), exists f, In f lf /\ f a = b)
+      r : forall a : A, 
+    Max_{lf}(fun σ => r a (σ a) σ) = Max_{la a}(fun b => Max_{filter (fun σ => σ a ==b b) lf}(fun σ => r a b σ)).
+Proof.
+  intros a. 
+  apply Rle_antisym.
+  - apply Rmax_spec.
+    rewrite in_map_iff.
+    destruct (Rmax_list_map_exist (fun σ : forall x0 : A, B x0 => r a (σ a) σ) (lf)) as [ex Hex].
+    assumption.
+    exists (ex a). intuition.
+    rewrite <-H2. 
+Admitted.
+
 (* This is killing me. *)
 Lemma bellman_optimality {la : forall s: state M, list(act M s)} {ld : list(dec_rule M)} {ls : list (state M)} (hla : forall s, [] <> la s) (hld : [] <> ld)
-   (hp : forall π s, In π ld -> In s ls -> In (π s) (la s)):
-  forall s : M.(state), In s ls -> max_ltv_on ld s = Max_{la s}(fun a => expt_value (t s a) (reward s a) + γ * expt_value (t s a) (max_ltv_on ld)).
+      (hp : forall π s, In π ld -> In (π s) (la s))
+  (Hsurj :(forall (a : state M) (b : act M a), exists f : forall a0 : state M, act M a0, In f ld /\ f a = b)): forall s : M.(state), In s ls -> max_ltv_on ld s = Max_{la s}(fun a => expt_value (t s a) (reward s a) + γ * expt_value (t s a) (max_ltv_on ld)).
 Proof.
-  intros s0 Hs0.
-  rewrite max_ltv_aux1. unfold dec_rule. unfold step_expt_reward. 
-  rewrite bell_opt_aux. rewrite map_map. simpl. erewrite Rmax_list_split.  simpl.
-  rewrite map_map. unfold step_expt_reward.
-  unfold dec_rule in *. eapply bell_opt_aux. unfold step_expt_reward.
-  
+  intros s0 Hs0. rewrite max_ltv_aux1. unfold step_expt_reward.
+  unfold dec_rule. unfold step_expt_reward. 
 Admitted.
 
 End order.
@@ -1143,9 +1152,6 @@ Context (bdd :  (forall s s': M.(state), forall σ : dec_rule M, Rabs (reward s 
 Definition bellman_op (π : dec_rule M) : (M.(state) -> R) -> (M.(state) -> R) :=
   fun W => fun s => (step_expt_reward π s + γ*(expt_value (t s (π s)) W)). 
 
-Definition bellman_max_op (π : dec_rule M) (la : forall s, list (M.(act) s)) : (M.(state) -> R) -> (M.(state) -> R) :=
-  fun W => fun s => Max_{la s}( fun a => expt_value (t s a) (reward s a) + γ*(expt_value (t s a) W)). 
-
 Lemma ltv_bellman_op_fixpoint : forall π, bellman_op π (ltv γ π) = ltv γ π.
 Proof.
   intro π.
@@ -1155,8 +1161,41 @@ Proof.
   eapply ltv_corec ; eauto.
 Qed.
 
+Lemma bellman_op_monotone (π : dec_rule M) W1 W2: (forall s, W1 s <= W2 s) -> (forall s, bellman_op π W1 s <= bellman_op π W2 s). 
+Proof.
+  intros HW1W2 s.
+  unfold bellman_op. 
+  apply Rplus_le_compat_l.
+  apply Rmult_le_compat_l ; intuition.
+  apply expt_value_le ; eauto.
+Qed.
+
+
+Definition bellman_max_op (π : dec_rule M) (la : forall s, list (M.(act) s)) : (M.(state) -> R) -> (M.(state) -> R) :=
+  fun W => fun s => Max_{la s}( fun a => expt_value (t s a) (reward s a) + γ*(expt_value (t s a) W)). 
 
 
 
+Lemma bellman_max_op_monotone (π : dec_rule M) {la : forall s, list (M.(act) s)} (hla : forall s, [] <> la s) W1 W2: (forall s, W1 s <= W2 s) -> (forall s, bellman_max_op π la W1 s <= bellman_max_op π la W2 s). 
+Proof.
+  intros HW1W2 s.
+  unfold bellman_max_op.
+  apply Rmax_list_fun_le ; auto. 
+  intro a.
+  apply Rplus_le_compat_l.
+  apply Rmult_le_compat_l ; intuition.
+  apply expt_value_le ; eauto.
+Qed.
 
 End operator.
+
+Theorem metric_coinduction {K : AbsRing} {X : CompleteNormedModule K}
+        {f : X -> X} (ϕ : X -> Prop) (phic : closed ϕ) (phin : exists a , ϕ a)
+        (hf : is_contraction f)
+        (phip : forall x, ϕ x -> ϕ (f x)):
+  exists a, f a = a /\ ϕ a.
+Proof.
+  assert (my_complete ϕ) by (now apply closed_my_complete).                       
+  destruct (FixedPoint K f ϕ phip phin H hf) as [a [Hphi [Hfix Hsub]]].
+  exists a. split ; trivial.
+Qed.
