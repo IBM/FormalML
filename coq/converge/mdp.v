@@ -1,5 +1,5 @@
 Require Import Reals Coq.Lists.List Coquelicot.Series Coquelicot.Hierarchy Coquelicot.SF_seq.
-Require Import pmf_monad Permutation fixed_point.
+Require Import pmf_monad Permutation fixed_point continuous_linear_map.
 Require Import Sums Coq.Reals.ROrderedType.
 Require Import micromega.Lra.
 Require Import Coq.Logic.FunctionalExtensionality.
@@ -372,6 +372,22 @@ Proof.
   rewrite in_map_iff in Hmap.
   destruct Hmap as  [a [Hfa Hin]].
   now exists a. 
+Qed.
+
+Definition Rmax_list_map {A} (l : list A) (f : A -> R) := Rmax_list (List.map f l).  
+
+Global Instance Rmax_eq_Proper {A} {l : list A} (hl : [] <> l) :
+  Proper (pointwise_relation _ eq ++> eq) (@Rmax_list_map A l).
+Proof.
+  unfold Proper, respectful, pointwise_relation.
+  intros f g H.
+  unfold Rmax_list_map.
+  induction l.
+  -- simpl. reflexivity.
+  -- simpl. destruct l.
+     ++ simpl. apply H.
+     ++ simpl. rewrite H. simpl in IHl. rewrite IHl. reflexivity.
+        apply nil_cons. 
 Qed.
 
 Lemma Rmax_list_prod_le {A B} (f : A -> B -> R) {la : list A} {lb : list B}
@@ -1189,13 +1205,69 @@ Qed.
 
 End operator.
 
+Section Rfct_UniformSpace.
+
+Context {A : Type} (ls : list A).
+  
+Definition Rmax_ball :=
+  fun (f:A -> R) eps g => Max_{ls}(fun s => Rabs (minus (f s) (g s))) < eps.
+
+Lemma Rmax_ball_center : forall (f : A -> R) (e : posreal), Rmax_ball f e f.
+Proof.
+  intros f e. 
+  unfold Rmax_ball.  
+  induction ls. 
+  -- simpl. apply cond_pos.
+  -- simpl. destruct l.
+     + simpl. rewrite minus_eq_zero. apply Rabs_def1. apply cond_pos.
+       apply Ropp_lt_gt_0_contravar. apply cond_pos. 
+     + simpl in *. rewrite minus_eq_zero. apply Rmax_lub_lt.
+       ---  apply Rabs_def1. apply cond_pos.
+       apply Ropp_lt_gt_0_contravar. apply cond_pos.
+       --- assumption.
+Qed.
+
+Lemma Rmax_ball_sym : forall (f g : A -> R) (e : R), Rmax_ball f e g -> Rmax_ball g e f.
+Proof.
+  intros f g e H.
+  unfold Rmax_ball in *.
+  enough (Max_{ls}(fun s => Rabs (minus (f s) (g s))) = Max_{ls}(fun s => Rabs(minus (g s) (f s)))). 
+  now rewrite <-H0.
+  f_equal. apply List.map_ext_in.
+  intros a H0.
+  now rewrite Rabs_minus_sym.
+Qed.
+
+Lemma Rmax_ball_triangle : forall (f g h : A -> R) (e1 e2 : R),
+    Rmax_ball f e1 g -> Rmax_ball g e2 h -> Rmax_ball f (e1 + e2) h.
+Admitted.
+
+Definition Rmax_ball_UniformSpace_mixin :=
+  UniformSpace.Mixin (A -> R) Rmax_ball Rmax_ball_center Rmax_ball_sym Rmax_ball_triangle.
+
+
+Canonical Rfct_UniformSpace :=
+  UniformSpace.Pack (A -> R) (Rmax_ball_UniformSpace_mixin) (A -> R).
+
+End Rfct_UniformSpace.
+
+Section coinduction. 
+
+Open Scope R_scope. 
+Context {M : MDP} (ls : list (state M)).
+Arguments reward {_}.
+Arguments outcomes {_}.
+Arguments t {_}.
+
 Theorem metric_coinduction {K : AbsRing} {X : CompleteNormedModule K}
         {f : X -> X} (ϕ : X -> Prop) (phic : closed ϕ) (phin : exists a , ϕ a)
         (hf : is_contraction f)
         (phip : forall x, ϕ x -> ϕ (f x)):
-  exists a, f a = a /\ ϕ a.
+  exists a', f a' = a' /\ ϕ a'.
 Proof.
   assert (my_complete ϕ) by (now apply closed_my_complete).                       
   destruct (FixedPoint K f ϕ phip phin H hf) as [a [Hphi [Hfix Hsub]]].
   exists a. split ; trivial.
 Qed.
+ 
+End coinduction. 
