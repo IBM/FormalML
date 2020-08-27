@@ -1221,9 +1221,35 @@ Section Rfct_UniformSpace.
    elements of A.
 *)  
 Context {A : Type} (ls : list A).
-  
-Definition Rmax_ball :=
-  fun (f:A -> R) eps g => Max_{ls}(fun s => Rabs (minus (f s) (g s))) < eps.
+
+Definition Rmax_norm :=  fun (f:A -> R) => Max_{ls}(fun s => Rabs (f s)).
+
+Definition Rmax_ball := fun (f:A -> R) eps g => Max_{ls}(fun s => Rabs (minus (f s) (g s))) < eps.
+(*  fun (f:A -> R) eps g => ball_norm f eps g  .*)
+
+
+Lemma Rmax_ball_compat (f g : A -> R) (eps : posreal) :
+  ball f eps g -> Rmax_ball f eps g.
+Proof.
+  intros Hball. unfold Rmax_ball.
+  destruct (is_nil_dec ls).
+   - subst ; simpl. apply cond_pos. 
+   - rewrite Rmax_list_lt_iff.
+     intros x Hx.
+     rewrite in_map_iff in Hx.
+     destruct Hx as [a [Ha Hina]].
+     specialize (Hball a). rewrite <-Ha.
+     rewrite Rabs_minus_sym. apply Hball.
+     rewrite map_not_nil. now rewrite ne_symm.
+Qed.
+
+Lemma Rmax_ball_le (f g : A -> R) {eps1 eps2 : R} :
+  eps1 <= eps2 -> Rmax_ball f eps1 g -> Rmax_ball f eps2 g.
+Proof. 
+  intros Heps Hball.
+  unfold Rmax_ball in *. 
+  eapply Rlt_le_trans ; eauto.
+Qed.
 
 Lemma Rmax_ball_center : forall (f : A -> R) (e : posreal), Rmax_ball f e f.
 Proof.
@@ -1287,14 +1313,51 @@ Definition Rmax_ball_UniformSpace_mixin :=
   UniformSpace.Mixin (A -> R) Rmax_ball Rmax_ball_center Rmax_ball_sym Rmax_ball_triangle.
 
 (* 
-   There seems to be a problem defining this, since it is picking up the Uniformspace 
+   There seems to be a problem defining a `Canonical` version of this, 
+   since it is picking up the Uniformspace 
    structure inherited from R. Maybe this isn't even necessary...?
 *)
-Canonical Rfct_UniformSpace :=
+Definition Rfct_UniformSpace : UniformSpace :=
   UniformSpace.Pack (A -> R) Rmax_ball_UniformSpace_mixin (A -> R).
 
-Check fct_UniformSpace.
+
 End Rfct_UniformSpace.
+
+
+Section Rfct_CompleteSpace.
+
+  Context (A : Type) (ls : list A).
+
+  Lemma close_lim_Rfct :
+    forall F1 F2, filter_le F1 F2 -> filter_le F2 F1 -> @close (Rfct_UniformSpace ls) (lim_fct F1) (lim_fct F2).
+  Proof.
+    intros F1 F2 H H0. unfold close. intros eps.
+    apply Rmax_ball_compat.
+    apply (close_lim_fct F1 F2 H H0 eps).
+  Qed.
+
+  Lemma complete_cauchy_Rfct : forall F : (Rfct_UniformSpace ls -> Prop) -> Prop,
+      ProperFilter F ->
+      (forall (eps : posreal), exists f, F (Rmax_ball ls f eps))
+      -> forall eps : posreal, F (Rmax_ball ls (lim_fct F) eps).
+  Proof.
+    intros F ProperF CauchyF eps.
+    assert ((eps/3) > 0) by (apply Rmult_gt_0_compat ; [apply cond_pos | lra]).
+    destruct (CauchyF (mkposreal (eps/3) H)) as [f Hf]. simpl in *.
+    eapply filter_imp ; last apply Hf.
+    intros g Hg.  
+    apply Rmax_ball_le with (eps/3+eps/3+eps/3). right ; lra.
+    eapply Rmax_ball_triangle ; [ |apply Hg].
+  Admitted.
+  
+  Definition Rfct_CompleteSpace_mixin :=
+  CompleteSpace.Mixin (Rfct_UniformSpace ls) lim_fct complete_cauchy_Rfct close_lim_Rfct.
+
+  Definition Rfct_CompleteSpace :=
+  CompleteSpace.Pack (A -> R) (CompleteSpace.Class _ _ Rfct_CompleteSpace_mixin) (A -> R).
+
+End Rfct_CompleteSpace.
+
 
 Section coinduction. 
 
