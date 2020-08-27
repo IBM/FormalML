@@ -1215,7 +1215,12 @@ End operator.
 
 Section Rfct_UniformSpace.
 
-  Context {A : Type} (ls : list A).
+(* 
+   Definition of a Uniformspace structure on functionals f : A -> R where 
+   the ecart is defined as Max_{ls}(fun s => f s) where ls is a list of 
+   elements of A.
+*)  
+Context {A : Type} (ls : list A).
   
 Definition Rmax_ball :=
   fun (f:A -> R) eps g => Max_{ls}(fun s => Rabs (minus (f s) (g s))) < eps.
@@ -1281,10 +1286,14 @@ Qed.
 Definition Rmax_ball_UniformSpace_mixin :=
   UniformSpace.Mixin (A -> R) Rmax_ball Rmax_ball_center Rmax_ball_sym Rmax_ball_triangle.
 
-
+(* 
+   There seems to be a problem defining this, since it is picking up the Uniformspace 
+   structure inherited from R. Maybe this isn't even necessary...?
+*)
 Canonical Rfct_UniformSpace :=
-  UniformSpace.Pack (A -> R) (Rmax_ball_UniformSpace_mixin) (A -> R).
+  UniformSpace.Pack (A -> R) Rmax_ball_UniformSpace_mixin (A -> R).
 
+Check fct_UniformSpace.
 End Rfct_UniformSpace.
 
 Section coinduction. 
