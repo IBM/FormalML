@@ -212,7 +212,6 @@ Proof.
       simpl in *. eapply Rle_trans ; eauto. apply Rmax_r.
 Qed.
 
-    
 Lemma Rmax_list_const_mul (l : list R) {r : R} (hr : 0 <= r) :
   Rmax_list (List.map (fun x => r*x) l) = r*(Rmax_list l).
 Proof.
@@ -285,6 +284,15 @@ Proof.
   split. 
   apply Rmax_list_le.
   apply Rmax_list_lub ; auto.
+Qed.
+
+Lemma Rmax_list_lt_iff {l : list R} (hl : [] <> l) (r : R):
+  Rmax_list l < r <-> (forall x, In x l -> x < r)  .
+Proof.
+  split. 
+  -- intros Hr x Hx.
+     eapply Rle_lt_trans. eapply Rmax_spec ; eauto. assumption. 
+  -- intro H. apply H ; auto. now apply Rmax_list_In. 
 Qed.
 
 Lemma Rmax_list_sum {A B} {la : list A} (lb : list B) (f : A -> B -> R) (Hla : [] <> la):
@@ -1207,7 +1215,7 @@ End operator.
 
 Section Rfct_UniformSpace.
 
-Context {A : Type} (ls : list A).
+  Context {A : Type} {ls : list A} (ne : NonEmpty A).
   
 Definition Rmax_ball :=
   fun (f:A -> R) eps g => Max_{ls}(fun s => Rabs (minus (f s) (g s))) < eps.
@@ -1238,10 +1246,37 @@ Proof.
   now rewrite Rabs_minus_sym.
 Qed.
 
+
 Lemma Rmax_ball_triangle : forall (f g h : A -> R) (e1 e2 : R),
     Rmax_ball f e1 g -> Rmax_ball g e2 h -> Rmax_ball f (e1 + e2) h.
+Proof.
+  intros f g h e1 e2 H1 H2.
+  unfold Rmax_ball in *. 
+  assert (Hfg : forall s f g, In s ls -> Rabs (minus (f s) (g s)) <= Max_{ ls}(fun s : A => Rabs (minus (f s) (g s)))).
+  {
+    intros s f1 f2 Hs.
+    apply Rmax_spec.
+    rewrite in_map_iff.
+    exists s ; split; trivial.
+  }
+  eapply Rle_lt_trans. 
+  2 : apply (Rplus_lt_compat _ _ _ _ H1 H2).
+  rewrite Rmax_list_le_iff. 
+  intros x Hx. rewrite in_map_iff in Hx. 
+  destruct Hx as [a [Ha Hina]].
+  rewrite <-Ha.
+  eapply Rle_trans.
+  assert (minus (f a) (h a) = (minus (f a) (g a)) + (minus (g a) (h a))).
+  rewrite (minus_trans (g a)). reflexivity.
+  rewrite H. apply Rabs_triang.
+  apply Rplus_le_compat.
+  apply Rmax_spec. rewrite in_map_iff. exists a. split ; trivial. 
+  apply Rmax_spec. rewrite in_map_iff. exists a. split ; trivial. 
+  rewrite map_not_nil.
 Admitted.
 
+
+  
 Definition Rmax_ball_UniformSpace_mixin :=
   UniformSpace.Mixin (A -> R) Rmax_ball Rmax_ball_center Rmax_ball_sym Rmax_ball_triangle.
 
