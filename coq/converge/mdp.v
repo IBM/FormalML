@@ -1539,12 +1539,20 @@ Lemma Rfct_norm_ball1 : forall (f g : Rfct finA) (eps : R),
 Proof.
   intros f g eps H.
   unfold ball ; simpl. unfold fct_ball.
-  unfold Rmax_norm in H. 
-Admitted. 
+  unfold Rmax_norm in H.
+  destruct finA as [ls  Hls].
+  intro t. 
+  unfold ball ; simpl. unfold AbsRing_ball.
+  eapply Rle_lt_trans ; last apply H.
+  unfold abs.
+  simpl. apply Rmax_spec.
+  rewrite in_map_iff.  exists t.
+  split ; trivial. 
+Qed. 
 
 
 Definition Rfct_NormedModule_mixin :=
-  NormedModule.Mixin R_AbsRing Rfct_NormedModuleAux (Rmax_norm finA) 1%R Rfct_norm_triangle Rfct_norm_scal_aux Rfct_norm_ball1 Rfct_norm_ball2 _.
+  NormedModule.Mixin R_AbsRing Rfct_NormedModuleAux (Rmax_norm finA) 1%R Rfct_norm_triangle Rfct_norm_scal_aux Rfct_norm_ball1 _ _.
 
 (* Rfct_norm_triangle Rfct_norm_scal_aux Rfct_norm_ball1 Rfct_norm_ball2 Rfct_norm_eq_0 *)
 Canonical Rfct_NormedModule :=
@@ -1596,9 +1604,6 @@ Arguments reward {_}.
 Arguments outcomes {_}.
 Arguments t {_}.
 
-Variable (f : Rfct M.(state) -> Rfct M.(state)).
-Variable (ϕ : Rfct M.(state) -> Prop).
-Check @FixedPoint_C _ f ϕ. (* Works! If we remove the above canonical instance, it falls back on fct_CompleteSpace. *)
 
 Lemma phi_distanceable (ϕ : Rfct M.(state) -> Prop) :
   forall x y : Rfct M.(state), ϕ x -> ϕ y -> exists M0 : R, 0 <= M0 /\ Rmax_ball ls x M0 y. 
