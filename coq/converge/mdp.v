@@ -146,8 +146,10 @@ End list_sum.
 Class NonEmpty (A : Type) :=
   ex : A.
     
-Class Finite (A:Type) : Prop :=
-  finite : exists l : list A, forall x:A, In x l.
+Class Finite (A:Type) :=
+ { elms  : list A ;
+  finite : forall x:A, In x elms
+ }.
 
 Global Declare Scope rmax_scope. 
 
@@ -1217,24 +1219,25 @@ End operator.
 
 Section Rfct_AbelianGroup.
 
-Context (A : Type).
-  
-Definition Rfct := A -> R.
+ 
+Definition Rfct {A : Type} (fin : Finite A) := A -> R.
 
-Definition Rfct_zero : Rfct := fun x => 0. 
+Context {A : Type} (finA : Finite A). 
+                                
+Definition Rfct_zero : Rfct finA := fun x => 0. 
 
-Definition Rfct_plus (f : Rfct) (g : Rfct) := fun x => (f x) + (g x).  
+Definition Rfct_plus (f : Rfct finA) (g : Rfct finA) := fun x => (f x) + (g x).  
 
-Definition Rfct_opp (f : Rfct) := fun x => opp (f x).
+Definition Rfct_opp (f : Rfct finA) := fun x => opp (f x).
 
-Definition Rfct_scal (r : R) (f : Rfct) := fun x => scal r (f x).
+Definition Rfct_scal (r : R) (f : Rfct finA) := fun x => scal r (f x).
 
-Lemma Rfct_eq_ext: forall (f g:Rfct), (forall x, f x = g x) -> f = g.
+Lemma Rfct_eq_ext: forall (f g:Rfct finA), (forall x, f x = g x) -> f = g.
 Proof.
   intros f g. apply functional_extensionality.
 Qed.
 
-Lemma Rfct_plus_comm: forall (f g:Rfct), Rfct_plus f g = Rfct_plus g f.
+Lemma Rfct_plus_comm: forall (f g:Rfct finA), Rfct_plus f g = Rfct_plus g f.
 Proof.
   intros f g.
   apply Rfct_eq_ext. intros x.
@@ -1242,7 +1245,7 @@ Proof.
 Qed.
 
 Lemma Rfct_plus_assoc:
-  forall (x y z:Rfct), Rfct_plus x (Rfct_plus y z) = Rfct_plus (Rfct_plus x y) z.
+  forall (x y z:Rfct finA), Rfct_plus x (Rfct_plus y z) = Rfct_plus (Rfct_plus x y) z.
 Proof.
   intros f g h.
   apply Rfct_eq_ext.
@@ -1250,7 +1253,7 @@ Proof.
   lra.
 Qed.
 
-Lemma Rfct_plus_zero_r: forall x:Rfct, Rfct_plus x Rfct_zero = x.
+Lemma Rfct_plus_zero_r: forall x:Rfct finA, Rfct_plus x Rfct_zero = x.
 Proof.
   intro x ; unfold Rfct.
   apply Rfct_eq_ext ; intros.
@@ -1258,7 +1261,7 @@ Proof.
   unfold Rfct_zero. lra.
 Qed.
 
-Lemma Rfct_plus_opp_r: forall x:Rfct, Rfct_plus x (Rfct_opp x) = Rfct_zero.
+Lemma Rfct_plus_opp_r: forall x:Rfct finA, Rfct_plus x (Rfct_opp x) = Rfct_zero.
 Proof.
   intro f ; unfold Rfct.
   apply Rfct_eq_ext ; intros.
@@ -1267,86 +1270,87 @@ Proof.
   apply (plus_opp_r (f x)).
 Qed.
 
+
 Definition Rfct_AbelianGroup_mixin :=
-  AbelianGroup.Mixin Rfct Rfct_plus Rfct_opp Rfct_zero Rfct_plus_comm
+  AbelianGroup.Mixin (Rfct finA) Rfct_plus Rfct_opp Rfct_zero Rfct_plus_comm
    Rfct_plus_assoc Rfct_plus_zero_r Rfct_plus_opp_r.
 
 Canonical Rfct_AbelianGroup :=
-  AbelianGroup.Pack Rfct (Rfct_AbelianGroup_mixin) Rfct.
+  AbelianGroup.Pack (Rfct finA) (Rfct_AbelianGroup_mixin) (Rfct finA).
 
 End Rfct_AbelianGroup.
 
 Section Rfct_ModuleSpace.
 
-Context (A : Type).
+Context {A : Type} (finA : Finite A).
   
-  
-Lemma Rfct_scal_assoc: forall (x y : R) (u: Rfct A),
-   Rfct_scal A x (Rfct_scal A y u) = Rfct_scal A (x*y) u.
+Lemma Rfct_scal_assoc: forall (x y : R) (u: Rfct finA),
+   Rfct_scal finA x (Rfct_scal finA y u) = Rfct_scal finA (x*y) u.
 Proof.
   intros x y f.
   unfold Rfct_scal.
-  apply Rfct_eq_ext.
+  eapply Rfct_eq_ext.
   intro x0. unfold scal ; simpl. now rewrite Rmult_assoc.
 Qed.
 
-Lemma Rfct_scal_one: forall (u:Rfct A), Rfct_scal A R1 u = u.
+Lemma Rfct_scal_one: forall (u:Rfct finA), Rfct_scal finA R1 u = u.
 Proof.
   intros f.
   unfold Rfct_scal.
-  apply Rfct_eq_ext.
+  eapply Rfct_eq_ext.
   intro x0. unfold scal ; simpl. apply Rmult_1_l.
 Qed.
 
-Lemma Rfct_scal_distr_l: forall x (u v:Rfct A), Rfct_scal A x (Rfct_plus A u v)
-        = Rfct_plus A (Rfct_scal A x u) (Rfct_scal A x v).
+Lemma Rfct_scal_distr_l: forall x (u v:Rfct finA), Rfct_scal finA x (Rfct_plus finA u v)
+        = Rfct_plus finA (Rfct_scal finA x u) (Rfct_scal finA x v).
 Proof.
   intros x f g.
   unfold Rfct_scal.
-  apply Rfct_eq_ext.
+  eapply Rfct_eq_ext.
   intro x0. unfold Rfct_plus.
   apply Rmult_plus_distr_l.
 Qed.
 
-Lemma Rfct_scal_distr_r: forall (x y:R) (u:Rfct A), Rfct_scal A (Rplus x y) u
-         = Rfct_plus A (Rfct_scal A x u) (Rfct_scal A y u).
+Lemma Rfct_scal_distr_r: forall (x y:R) (u:Rfct finA), Rfct_scal finA (Rplus x y) u
+         = Rfct_plus finA (Rfct_scal finA x u) (Rfct_scal finA y u).
 Proof.
   intros x f g.
   unfold Rfct_scal.
-  apply Rfct_eq_ext.
+  eapply Rfct_eq_ext.
   intro x0. unfold Rfct_plus.
   apply Rmult_plus_distr_r.
 Qed.
 
 Definition Rfct_ModuleSpace_mixin :=
-  ModuleSpace.Mixin R_Ring (Rfct_AbelianGroup A) (Rfct_scal A) Rfct_scal_assoc
+  ModuleSpace.Mixin R_Ring (Rfct_AbelianGroup finA) (Rfct_scal finA) Rfct_scal_assoc
      Rfct_scal_one Rfct_scal_distr_l Rfct_scal_distr_r.
 
 Canonical Rfct_ModuleSpace :=
-  ModuleSpace.Pack R_Ring (Rfct A)
-   (ModuleSpace.Class R_Ring (Rfct A) _ Rfct_ModuleSpace_mixin) (Rfct A).
+  ModuleSpace.Pack R_Ring (Rfct finA)
+   (ModuleSpace.Class R_Ring (Rfct finA) _ Rfct_ModuleSpace_mixin) (Rfct finA).
 
 End Rfct_ModuleSpace.
 
 Section Rfct_UniformSpace.
-
  
 (* 
    Definition of a Uniformspace structure on functionals f : A -> R where 
    the ecart is defined as Max_{ls}(fun s => f s) where ls is a list of 
    elements of A.
-*)  
-Context {A : Type} (ls : list A).
+*)
+  
+Context {A : Type} (finA : Finite A).
 
-Definition Rmax_norm :=  fun (f:Rfct A) => Max_{ls}(fun s => Rabs (f s)).
+Definition Rmax_norm := let (ls,_) := finA in fun (f:Rfct finA) => Max_{ls}(fun s => Rabs (f s)).
 
-Definition Rmax_ball :=  fun (f: Rfct A) eps g => Rmax_norm (fun s => minus (g s) (f s)) < eps.
+Definition Rmax_ball :=  fun (f: Rfct finA) eps g => Rmax_norm (fun s => minus (g s) (f s)) < eps.
 
 
-Lemma Rmax_ball_compat (f g : Rfct A) (eps : posreal) :
+Lemma Rmax_ball_compat (f g : Rfct finA) (eps : posreal) :
   ball f eps g -> Rmax_ball f eps g.
 Proof.
   intros Hball. unfold Rmax_ball. unfold Rmax_norm.
+  destruct finA as [ls Hls]. 
   destruct (is_nil_dec ls).
    - subst ; simpl. apply cond_pos. 
    - rewrite Rmax_list_lt_iff.
@@ -1358,7 +1362,7 @@ Proof.
      rewrite map_not_nil. now rewrite ne_symm.
 Qed.
 
-Lemma Rmax_ball_le (f g : Rfct A) {eps1 eps2 : R} :
+Lemma Rmax_ball_le (f g : Rfct finA) {eps1 eps2 : R} :
   eps1 <= eps2 -> Rmax_ball f eps1 g -> Rmax_ball f eps2 g.
 Proof. 
   intros Heps Hball.
@@ -1366,25 +1370,28 @@ Proof.
   eapply Rlt_le_trans ; eauto.
 Qed.
 
-Lemma Rmax_ball_center : forall (f : Rfct A) (e : posreal), Rmax_ball f e f.
+Lemma Rmax_ball_center : forall (f : Rfct finA) (e : posreal), Rmax_ball f e f.
 Proof.
   intros f e. 
-  unfold Rmax_ball. unfold Rmax_norm. 
-  induction ls. 
-  -- simpl. apply cond_pos.
-  -- simpl. destruct l.
-     + simpl. rewrite minus_eq_zero. apply Rabs_def1. apply cond_pos.
-       apply Ropp_lt_gt_0_contravar. apply cond_pos. 
-     + simpl in *. rewrite minus_eq_zero. apply Rmax_lub_lt.
-       ---  apply Rabs_def1. apply cond_pos.
-       apply Ropp_lt_gt_0_contravar. apply cond_pos.
-       --- assumption.
+  unfold Rmax_ball. unfold Rmax_norm.
+  destruct finA as [ls Hls]. 
+  eapply Rle_lt_trans ; last apply cond_pos.
+  destruct (is_nil_dec ls).
+  - subst ; simpl. now right. 
+  - rewrite Rmax_list_le_iff.
+    intros x Hx. rewrite in_map_iff in Hx.
+    destruct Hx as [a [Ha Hina]].
+    rewrite minus_eq_zero in Ha. rewrite <-Ha. 
+    right. unfold zero. simpl.
+    apply Rabs_R0.
+    rewrite map_not_nil. now apply ne_symm.
 Qed.
 
-Lemma Rmax_ball_sym : forall (f g : Rfct A) (e : R), Rmax_ball f e g -> Rmax_ball g e f.
+Lemma Rmax_ball_sym : forall (f g : Rfct finA) (e : R), Rmax_ball f e g -> Rmax_ball g e f.
 Proof.
   intros f g e H.
   unfold Rmax_ball in *. unfold Rmax_norm in *.
+  destruct finA as [ls Hls]. 
   enough (Max_{ls}(fun s => Rabs (minus (f s) (g s))) = Max_{ls}(fun s => Rabs(minus (g s) (f s)))). 
   now rewrite H0.
   f_equal. apply List.map_ext_in.
@@ -1393,11 +1400,12 @@ Proof.
 Qed.
 
 
-Lemma Rmax_ball_triangle : forall (f g h : Rfct A) (e1 e2 : R),
+Lemma Rmax_ball_triangle : forall (f g h : Rfct finA) (e1 e2 : R),
     Rmax_ball f e1 g -> Rmax_ball g e2 h -> Rmax_ball f (e1 + e2) h.
 Proof.
   intros f g h e1 e2 H1 H2.
   unfold Rmax_ball in *. unfold Rmax_norm in *.
+  destruct finA as [ls Hls]. 
   destruct (is_nil_dec ls).
   - subst. simpl in *. lra. 
   - assert (Hfg : forall s f g, In s ls -> Rabs (minus (f s) (g s)) <= Max_{ ls}(fun s : A => Rabs (minus (f s) (g s)))).
@@ -1425,7 +1433,7 @@ Qed.
 
   
 Definition Rfct_UniformSpace_mixin :=
-  UniformSpace.Mixin (Rfct A) Rmax_ball Rmax_ball_center Rmax_ball_sym Rmax_ball_triangle.
+  UniformSpace.Mixin (Rfct finA) Rmax_ball Rmax_ball_center Rmax_ball_sym Rmax_ball_triangle.
 
 (* 
    There seems to be a problem defining a `Canonical` version of this, 
@@ -1433,13 +1441,7 @@ Definition Rfct_UniformSpace_mixin :=
    structure inherited from R. Maybe this isn't even necessary...?
 *)
 Definition Rfct_UniformSpace : UniformSpace :=
-  UniformSpace.Pack (Rfct A) Rfct_UniformSpace_mixin (Rfct A).
-
-Canonical Rfct_NormedModuleAux :=
-  NormedModuleAux.Pack R_AbsRing (Rfct A)
-   (NormedModuleAux.Class R_AbsRing (Rfct A)
-     (ModuleSpace.class _ (Rfct_ModuleSpace A))
-        Rfct_UniformSpace_mixin) (Rfct A).
+  UniformSpace.Pack (Rfct finA) Rfct_UniformSpace_mixin (Rfct finA).
 
 
 End Rfct_UniformSpace.
@@ -1447,13 +1449,20 @@ End Rfct_UniformSpace.
 
 Section Rfct_NormedModule.
 
-Context (A : Type) (ls : list A).
+Context (A : Type) (finA : Finite A).
 
-Lemma Rfct_norm_triangle: forall f g, 
-      (Rmax_norm ls (Rfct_plus A f g)) <= (Rmax_norm ls f) + (Rmax_norm ls g).
+Canonical Rfct_NormedModuleAux :=
+  NormedModuleAux.Pack R_AbsRing (Rfct finA)
+   (NormedModuleAux.Class R_AbsRing (Rfct finA)
+     (ModuleSpace.class _ (Rfct_ModuleSpace finA))
+        (Rfct_UniformSpace_mixin finA)) (Rfct finA).
+
+Lemma Rfct_norm_triangle: 
+      forall f g, (Rmax_norm finA (Rfct_plus finA f g)) <= (Rmax_norm finA f) + (Rmax_norm finA g).
 Proof.
   intros f g.
   unfold Rmax_norm. unfold Rfct_plus.
+  destruct finA as [ls Hls]. 
    destruct (is_nil_dec ls).
   - subst. simpl in *. lra. 
   -  rewrite Rmax_list_le_iff. 
@@ -1468,29 +1477,31 @@ Proof.
   rewrite map_not_nil. now rewrite ne_symm.  
 Qed.
 
-Lemma Rfct_norm_ball2: forall (f g : Rfct A) (eps : posreal),
-          Hierarchy.ball f eps g -> Rmax_norm ls (minus g f) < 1 * eps.
+Lemma Rfct_norm_ball2: forall (f g : Rfct finA) (eps : posreal),
+          Hierarchy.ball f eps g -> Rmax_norm finA (minus g f) < 1 * eps.
 Proof.
-    intros f g eps Hball.
-  unfold Rmax_ball. unfold Rmax_norm.
-  destruct (is_nil_dec ls).
-   - subst ; simpl. rewrite Rmult_1_l. apply cond_pos. 
-   - rewrite Rmax_list_lt_iff.
-     intros x Hx.
-     rewrite in_map_iff in Hx.
-     destruct Hx as [a [Ha Hina]].
-     specialize (Hball a). rewrite <-Ha. rewrite Rmult_1_l.
-     apply Hball.  
-     rewrite map_not_nil. now rewrite ne_symm.
+  intros f g eps Hball.
+    unfold Rmax_ball. unfold Rmax_norm.
+    destruct finA as [ls Hls]. 
+    destruct (is_nil_dec ls).
+     - subst ; simpl. rewrite Rmult_1_l. apply cond_pos. 
+     - rewrite Rmax_list_lt_iff.
+       intros x Hx.
+       rewrite in_map_iff in Hx.
+       destruct Hx as [a [Ha Hina]].
+       specialize (Hball a). rewrite <-Ha. rewrite Rmult_1_l.
+       apply Hball.  
+       rewrite map_not_nil. now rewrite ne_symm.
 Qed.
 
 
 Lemma Rfct_norm_scal_aux:
-  forall (l : R) (f : Rfct A), Rmax_norm ls (scal l f) <= Rabs l * Rmax_norm ls f .
+  forall (l : R) (f : Rfct finA), Rmax_norm finA (scal l f) <= Rabs l * Rmax_norm finA f .
 Proof.
   intros r f.
   unfold Rmax_norm.
   unfold scal. simpl. unfold Rfct_scal.
+  destruct finA as [ls Hls]. 
   destruct (is_nil_dec ls).
   - subst ; simpl. lra.  
   - rewrite Rmax_list_le_iff.
@@ -1506,20 +1517,36 @@ Proof.
 Qed.
     
   
-
-(*
-
-Lemma Rfct_norm_eq_0: forall (f:Rfct A), real (Rmax_norm ls f) = 0 -> f = zero.
-Admitted.
-
-Lemma Rfct_norm_ball1 : forall (f g : Rfct A) (eps : R),
-     Rmax_norm ls (minus g f) < eps -> Hierarchy.ball f eps g.
+Lemma Rfct_norm_eq_0: forall (f:Rfct finA), real (Rmax_norm finA f) = 0 -> f = zero.
 Proof.
+  intros f H.
+  apply Rfct_eq_ext.  
+  intro x. unfold Rmax_norm in H.
+  destruct finA as [ls Hls].
+  assert (forall s : A, Rabs (f s) <= 0).
+  intros a. 
+  rewrite <- H. simpl. apply Rmax_spec.
+  rewrite in_map_iff. exists a. split ; trivial.
+  assert (forall s : A, 0 <= Rabs (f s)). intro s. apply Rabs_pos.
+  assert (forall s : A, Rabs (f s) = 0). intro s. apply Rle_antisym ; eauto.
+  apply Rabs_eq_0 ; auto.
+Qed.
+
+Print close. 
+
+Lemma Rfct_norm_ball1 : forall (f g : Rfct finA) (eps : R),
+     Rmax_norm finA (minus g f) < eps -> Hierarchy.ball f eps g.
+Proof.
+  intros f g eps H.
+  unfold ball ; simpl. unfold fct_ball.
+  unfold Rmax_norm in H. 
 Admitted. 
 
-Definition Rfct_NormedModule_mixin :=
-  NormedModule.Mixin R_AbsRing _ _ 1%R Rfct_norm_triangle Rfct_norm_scal_aux Rfct_norm_ball1 Rfct_norm_ball2 Rfct_norm_eq_0.
 
+Definition Rfct_NormedModule_mixin :=
+  NormedModule.Mixin R_AbsRing Rfct_NormedModuleAux (Rmax_norm finA) 1%R Rfct_norm_triangle Rfct_norm_scal_aux Rfct_norm_ball1 Rfct_norm_ball2 _.
+
+(* Rfct_norm_triangle Rfct_norm_scal_aux Rfct_norm_ball1 Rfct_norm_ball2 Rfct_norm_eq_0 *)
 Canonical Rfct_NormedModule :=
   NormedModule.Pack R_AbsRing Rfct
      (NormedModule.Class _ _ _ Rfct_NormedModule_mixin) Rfct.
@@ -1557,7 +1584,7 @@ Section Rfct_CompleteSpace.
   CompleteSpace.Mixin (Rfct_UniformSpace ls) lim_fct complete_cauchy_Rfct close_lim_Rfct.
 
   Canonical Rfct_CompleteSpace :=
-  CompleteSpace.Pack (Rfct A) (CompleteSpace.Class _ _ Rfct_CompleteSpace_mixin) (Rfct A).
+  CompleteSpace.Pack (Rfct finA) (CompleteSpace.Class _ _ Rfct_CompleteSpace_mixin) (Rfct finA).
 
 End Rfct_CompleteSpace.
 
@@ -1577,7 +1604,8 @@ Lemma phi_distanceable (ϕ : Rfct M.(state) -> Prop) :
   forall x y : Rfct M.(state), ϕ x -> ϕ y -> exists M0 : R, 0 <= M0 /\ Rmax_ball ls x M0 y. 
 Proof.
 Admitted. 
-  
+
+Check @FixedPoint_C. 
 Theorem metric_coinduction_Rfct 
   {f : Rfct M.(state) -> Rfct M.(state)}
     (ϕ : Rfct M.(state) -> Prop) (phic : closed ϕ) (phin : exists a , ϕ a)
