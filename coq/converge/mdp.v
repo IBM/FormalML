@@ -1478,7 +1478,8 @@ Proof.
 Qed.
 
 Lemma Rfct_norm_ball2: forall (f g : Rfct finA) (eps : posreal),
-          Hierarchy.ball f eps g -> Rmax_norm finA (minus g f) < 1 * eps.
+    @Hierarchy.ball (NormedModuleAux.UniformSpace R_AbsRing Rfct_NormedModuleAux) f eps g ->
+    Rmax_norm finA (minus g f) < 1 * eps.
 Proof.
   intros f g eps Hball.
     unfold Rmax_ball. unfold Rmax_norm.
@@ -1486,12 +1487,19 @@ Proof.
     destruct (is_nil_dec ls).
      - subst ; simpl. rewrite Rmult_1_l. apply cond_pos. 
      - rewrite Rmax_list_lt_iff.
-       intros x Hx.
-       rewrite in_map_iff in Hx.
-       destruct Hx as [a [Ha Hina]].
-       specialize (Hball a). rewrite <-Ha. rewrite Rmult_1_l.
-       apply Hball.  
-       rewrite map_not_nil. now rewrite ne_symm.
+       + intros x Hx.
+         rewrite in_map_iff in Hx.
+         destruct Hx as [a [Ha Hina]].
+         repeat red in Hball.
+         rewrite <- Ha.
+         rewrite Rmult_1_l.
+         eapply Rle_lt_trans; [ | apply Hball].
+         destruct finA; simpl.
+         apply Rmax_spec.
+         rewrite in_map_iff.
+         exists a; now split.
+       + rewrite map_not_nil.
+         congruence.
 Qed.
 
 
@@ -1515,7 +1523,6 @@ Proof.
     -- apply Rmax_spec. rewrite in_map_iff. exists a ; split ; trivial.
     -- rewrite map_not_nil. now apply ne_symm.
 Qed.
-    
   
 Lemma Rfct_norm_eq_0: forall (f:Rfct finA), real (Rmax_norm finA f) = 0 -> f = zero.
 Proof.
@@ -1532,33 +1539,30 @@ Proof.
   apply Rabs_eq_0 ; auto.
 Qed.
 
-Print close. 
-
 Lemma Rfct_norm_ball1 : forall (f g : Rfct finA) (eps : R),
-     Rmax_norm finA (minus g f) < eps -> Hierarchy.ball f eps g.
+     Rmax_norm finA (minus g f) < eps -> @ Hierarchy.ball (NormedModuleAux.UniformSpace R_AbsRing Rfct_NormedModuleAux)  f eps g.
 Proof.
   intros f g eps H.
   unfold ball ; simpl. unfold fct_ball.
   unfold Rmax_norm in H.
   destruct finA as [ls  Hls].
-  intro t. 
-  unfold ball ; simpl. unfold AbsRing_ball.
-  eapply Rle_lt_trans ; last apply H.
-  unfold abs.
-  simpl. apply Rmax_spec.
-  rewrite in_map_iff.  exists t.
-  split ; trivial. 
-Qed. 
+  repeat red.
+  unfold Rmax_norm.
+  apply H.
+Qed.
 
+Eval compute in Rfct_NormedModuleAux.
+Eval compute in (fct_UniformSpace A R_UniformSpace).
+Eval compute in (Rfct finA).
 
 Definition Rfct_NormedModule_mixin :=
-  NormedModule.Mixin R_AbsRing Rfct_NormedModuleAux (Rmax_norm finA) 1%R Rfct_norm_triangle Rfct_norm_scal_aux Rfct_norm_ball1 _ _.
+  NormedModule.Mixin R_AbsRing Rfct_NormedModuleAux (Rmax_norm finA) 1%R Rfct_norm_triangle Rfct_norm_scal_aux 
+  Rfct_norm_ball1 Rfct_norm_ball2 Rfct_norm_eq_0.
 
 (* Rfct_norm_triangle Rfct_norm_scal_aux Rfct_norm_ball1 Rfct_norm_ball2 Rfct_norm_eq_0 *)
 Canonical Rfct_NormedModule :=
-  NormedModule.Pack R_AbsRing Rfct
-     (NormedModule.Class _ _ _ Rfct_NormedModule_mixin) Rfct.
-*)
+  NormedModule.Pack R_AbsRing (Rfct finA)
+     (NormedModule.Class _ _ _ Rfct_NormedModule_mixin) (Rfct finA).
 
 End Rfct_NormedModule.
 
