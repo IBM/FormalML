@@ -999,6 +999,19 @@ Proof.
   apply expt_value_le ; eauto.
 Qed.
 
+(* Cut down on these hypotheses. *)
+Lemma bellman_op_bellman_max_le (π : dec_rule M) {ld : list (dec_rule M)} W (la : forall s, list (M.(act) s)) (hp : forall π s, In π ld -> In (π s) (la s)) (Hπ : In π ld) :
+  forall s, bellman_op π W s <= bellman_max_op π la W s.
+Proof.
+  intro s. 
+  unfold bellman_op. 
+  unfold bellman_max_op.
+  unfold step_expt_reward.
+  apply Rmax_spec.
+  rewrite in_map_iff. exists (π s). split ; trivial.
+  apply hp. assumption. 
+Qed.
+
 End operator.
 
 
