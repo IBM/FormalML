@@ -1468,11 +1468,6 @@ Proof.
   rewrite map_not_nil. now rewrite ne_symm.  
 Qed.
 
-Lemma Rfct_norm_ball1 : forall (f g : Rfct A) (eps : R),
-     Rmax_norm ls (minus g f) < eps -> Hierarchy.ball f eps g.
-Proof.
-Admitted. 
-
 Lemma Rfct_norm_ball2: forall (f g : Rfct A) (eps : posreal),
           Hierarchy.ball f eps g -> Rmax_norm ls (minus g f) < 1 * eps.
 Proof.
@@ -1511,21 +1506,30 @@ Proof.
 Qed.
     
   
+
+(*
+
 Lemma Rfct_norm_eq_0: forall (f:Rfct A), real (Rmax_norm ls f) = 0 -> f = zero.
 Admitted.
 
-(*Definition Rfct_NormedModule_mixin :=
+Lemma Rfct_norm_ball1 : forall (f g : Rfct A) (eps : R),
+     Rmax_norm ls (minus g f) < eps -> Hierarchy.ball f eps g.
+Proof.
+Admitted. 
+
+Definition Rfct_NormedModule_mixin :=
   NormedModule.Mixin R_AbsRing _ _ 1%R Rfct_norm_triangle Rfct_norm_scal_aux Rfct_norm_ball1 Rfct_norm_ball2 Rfct_norm_eq_0.
 
 Canonical Rfct_NormedModule :=
   NormedModule.Pack R_AbsRing Rfct
-     (NormedModule.Class _ _ _ Rfct_NormedModule_mixin) Rfct.*)
+     (NormedModule.Class _ _ _ Rfct_NormedModule_mixin) Rfct.
+*)
 
 End Rfct_NormedModule.
 
 Section Rfct_CompleteSpace.
 
-  Context (A : Type) (ls : list A).
+  Context {A : Type} (ls : list A).
 
   Lemma close_lim_Rfct :
     forall F1 F2, filter_le F1 F2 -> filter_le F2 F1 -> @close (Rfct_UniformSpace ls) (lim_fct F1) (lim_fct F2).
@@ -1552,11 +1556,10 @@ Section Rfct_CompleteSpace.
   Definition Rfct_CompleteSpace_mixin :=
   CompleteSpace.Mixin (Rfct_UniformSpace ls) lim_fct complete_cauchy_Rfct close_lim_Rfct.
 
-  Definition Rfct_CompleteSpace :=
+  Canonical Rfct_CompleteSpace :=
   CompleteSpace.Pack (Rfct A) (CompleteSpace.Class _ _ Rfct_CompleteSpace_mixin) (Rfct A).
 
 End Rfct_CompleteSpace.
-
 
 Section coinduction. 
 
@@ -1566,14 +1569,24 @@ Arguments reward {_}.
 Arguments outcomes {_}.
 Arguments t {_}.
 
-Theorem metric_coinduction {K : AbsRing} {X : CompleteNormedModule K}
-        {f : X -> X} (ϕ : X -> Prop) (phic : closed ϕ) (phin : exists a , ϕ a)
-        (hf : is_contraction f)
-        (phip : forall x, ϕ x -> ϕ (f x)):
+Variable (f : Rfct M.(state) -> Rfct M.(state)).
+Variable (ϕ : Rfct M.(state) -> Prop).
+Check @FixedPoint_C _ f ϕ. (* Works! If we remove the above canonical instance, it falls back on fct_CompleteSpace. *)
+
+Lemma phi_distanceable (ϕ : Rfct M.(state) -> Prop) :
+  forall x y : Rfct M.(state), ϕ x -> ϕ y -> exists M0 : R, 0 <= M0 /\ Rmax_ball ls x M0 y. 
+Proof.
+Admitted. 
+  
+Theorem metric_coinduction_Rfct 
+  {f : Rfct M.(state) -> Rfct M.(state)}
+    (ϕ : Rfct M.(state) -> Prop) (phic : closed ϕ) (phin : exists a , ϕ a)
+    (hf : is_contraction f)
+    (phip : forall x, ϕ x -> ϕ (f x)):
   exists a', f a' = a' /\ ϕ a'.
 Proof.
   assert (my_complete ϕ) by (now apply closed_my_complete).                       
-  destruct (FixedPoint K f ϕ phip phin H hf) as [a [Hphi [Hfix Hsub]]].
+  destruct (FixedPoint_C f ϕ phip phin H hf) as [a [Hphi [Hfix Hsub]]].
   exists a. split ; trivial.
 Qed.
 
