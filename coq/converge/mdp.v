@@ -151,6 +151,7 @@ Class Finite (A:Type) :=
   finite : forall x:A, In x elms
  }.
 
+  
 Global Declare Scope rmax_scope. 
 
 Section Rmax_list.
@@ -1031,6 +1032,10 @@ Definition Rfct_opp (f : Rfct A) := fun x => opp (f x).
 
 Definition Rfct_scal (r : R) (f : Rfct A) := fun x => scal r (f x).
 
+Definition Rfct_le (f g : Rfct A) := forall a : A, f a <= g a.
+
+Definition Rfct_ge (f g : Rfct A) := forall a : A, f a >= g a.
+
 Lemma Rfct_eq_ext (f g:Rfct A) : (forall x, f x = g x) -> f = g.
 Proof.
   apply functional_extensionality.
@@ -1372,6 +1377,64 @@ Section Rfct_CompleteSpace.
 End Rfct_CompleteSpace.
 
 
+Section Rfct_open_closed.
+
+  Context (A : Type) {finA : Finite A} {ne : NonEmpty A}.
+
+  Lemma forall_lt {f g} : (forall a : A, g a < f a) -> (0 < Rmax_norm A (fun a => minus (f a) (g a))).
+  Proof.
+    intros Ha.
+    setoid_rewrite Rminus_lt_0 in Ha.
+    unfold Rmax_norm. destruct finA as [ls Hls]. 
+    destruct (Rmax_list_map_exist (fun a => Rabs (minus (f a) (g a))) ls) as [a' [Hina' Ha']].
+    - rewrite not_nil_exists. exists ne ; trivial. 
+    - rewrite <-Ha', Rabs_pos_eq. specialize (Ha a').
+      ++ apply Ha.
+      ++ now left.              
+  Qed.       
+
+  Lemma le_max {f h} : (forall a : A, h a > Rmax_norm A f) -> (forall a : A, h a > f a).
+  Proof.
+    intros Ha a.
+    destruct finA as [ls Hls]. 
+    eapply Rle_lt_trans. apply Rle_abs.
+    eapply Rle_lt_trans ; last apply Ha.
+    unfold Rmax_norm. apply Rmax_spec.
+    rewrite in_map_iff.  exists a.
+    split ; trivial.
+  Qed.
+
+  
+  Theorem le_closed (f : Rfct A) : @closed (Rfct_UniformSpace A) (fun g => Rfct_le A g f).
+    Admitted. 
+
+  Theorem ge_closed (f : Rfct A) : @closed (Rfct_UniformSpace A) (fun g => Rfct_ge A g f).
+  Admitted.
+  
+    
+  Theorem gt_open (f : Rfct A) : @open (Rfct_UniformSpace A) (fun g => (forall a, g a > f a)). 
+  Proof.
+    unfold open, locally, ball. simpl.
+    unfold Rmax_ball.
+    destruct finA as [ls Hls] ; simpl. 
+    intros g Hgf.       
+    assert (pos : 0 < Rmax_norm A (fun a : A => minus (g a) (f a))). apply forall_lt. apply Hgf.
+    assert (pos2 : let norm := mkposreal _ pos in  0 < norm / 2) by apply is_pos_div_2.
+    simpl in pos2.
+    exists (mkposreal _ pos2).
+    intros h Hballh. simpl in Hballh.
+    assert (forall r:posreal, r/2 <= r).
+    {
+      intros. rewrite <-Rmult_1_r. apply Rmult_le_compat_l.
+      left ; apply cond_pos. lra.
+    }
+    apply le_max. 
+    specialize (H (mkposreal _ pos)). simpl in H. 
+  Admitted.
+
+End Rfct_open_closed.
+
+
 Section coinduction. 
 
 Open Scope R_scope. 
@@ -1392,6 +1455,7 @@ Proof.
   destruct (FixedPoint R_AbsRing f ϕ phip phin H hf) as [a [Hphi [Hfix Hsub]]].
   exists a. split ; trivial.
 Qed.
+
 
  
 End coinduction. 
