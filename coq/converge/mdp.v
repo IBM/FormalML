@@ -950,73 +950,6 @@ Qed.*)
 End ltv_gen.
 
 
-Section operator.
-Open Scope R_scope. 
-Context {M : MDP} (γ D : R).
-Context (hγ : (0 <= γ < 1)%R).
-
-Arguments reward {_}.
-Arguments outcomes {_}.
-Arguments t {_}.
-
-Context (bdd :  (forall s s': M.(state), forall σ : dec_rule M, Rabs (reward s (σ s) s') <= D)).
-
-
-Definition bellman_op (π : dec_rule M) : (M.(state) -> R) -> (M.(state) -> R) :=
-  fun W => fun s => (step_expt_reward π s + γ*(expt_value (t s (π s)) W)). 
-
-Lemma ltv_bellman_op_fixpoint : forall π, bellman_op π (ltv γ π) = ltv γ π.
-Proof.
-  intro π.
-  unfold bellman_op. simpl.
-  apply functional_extensionality.
-  intro init. symmetry.
-  eapply ltv_corec ; eauto.
-Qed.
-
-Lemma bellman_op_monotone (π : dec_rule M) W1 W2: (forall s, W1 s <= W2 s) -> (forall s, bellman_op π W1 s <= bellman_op π W2 s). 
-Proof.
-  intros HW1W2 s.
-  unfold bellman_op. 
-  apply Rplus_le_compat_l.
-  apply Rmult_le_compat_l ; intuition.
-  apply expt_value_le ; eauto.
-Qed.
-
-
-Definition bellman_max_op (π : dec_rule M) (la : forall s, list (M.(act) s)) : (M.(state) -> R) -> (M.(state) -> R) :=
-  fun W => fun s => Max_{la s}( fun a => expt_value (t s a) (reward s a) + γ*(expt_value (t s a) W)). 
-
-
-
-Lemma bellman_max_op_monotone (π : dec_rule M) {la : forall s, list (M.(act) s)} (hla : forall s, [] <> la s) W1 W2: (forall s, W1 s <= W2 s) -> (forall s, bellman_max_op π la W1 s <= bellman_max_op π la W2 s). 
-Proof.
-  intros HW1W2 s.
-  unfold bellman_max_op.
-  apply Rmax_list_fun_le ; auto. 
-  intro a.
-  apply Rplus_le_compat_l.
-  apply Rmult_le_compat_l ; intuition.
-  apply expt_value_le ; eauto.
-Qed.
-
-(* Cut down on these hypotheses. *)
-Lemma bellman_op_bellman_max_le (π : dec_rule M) {ld : list (dec_rule M)} W (la : forall s, list (M.(act) s)) (hp : forall π s, In π ld -> In (π s) (la s)) (Hπ : In π ld) :
-  forall s, bellman_op π W s <= bellman_max_op π la W s.
-Proof.
-  intro s. 
-  unfold bellman_op. 
-  unfold bellman_max_op.
-  unfold step_expt_reward.
-  apply Rmax_spec.
-  rewrite in_map_iff. exists (π s). split ; trivial.
-  apply hp. assumption. 
-Qed.
-
-End operator.
-
-
-
 Section Rfct_AbelianGroup.
 
 
@@ -1133,7 +1066,7 @@ Section Rfct_UniformSpace.
 (* 
    Definition of a Uniformspace structure on functionals f : A -> R where 
    the ecart is defined as Max_{ls}(fun s => f s) where ls is a list of 
-   elements of A.
+   all elements of A.
 *)
   
 Context (A : Type) {finA : Finite A}.
@@ -1143,22 +1076,6 @@ Definition Rmax_norm : Rfct A -> R := let (ls,_) := finA in fun (f:Rfct A) => Ma
 
 Definition Rmax_ball :=  fun (f: Rfct A) eps g => Rmax_norm (fun s => minus (g s) (f s)) < eps.
 
-
-Lemma Rmax_ball_compat (f g : Rfct A) (eps : posreal) :
-  ball f eps g -> Rmax_ball f eps g.
-Proof.
-  intros Hball. unfold Rmax_ball. unfold Rmax_norm.
-  destruct finA as [ls Hls]. 
-  destruct (is_nil_dec ls).
-   - subst ; simpl. apply cond_pos. 
-   - rewrite Rmax_list_lt_iff.
-     intros x Hx.
-     rewrite in_map_iff in Hx.
-     destruct Hx as [a [Ha Hina]].
-     specialize (Hball a). rewrite <-Ha.
-     apply Hball.  
-     rewrite map_not_nil. now rewrite ne_symm.
-Qed.
 
 Lemma Rmax_ball_le (f g : Rfct A) {eps1 eps2 : R} :
   eps1 <= eps2 -> Rmax_ball f eps1 g -> Rmax_ball f eps2 g.
@@ -1338,6 +1255,97 @@ Canonical Rfct_NormedModule :=
 
 End Rfct_NormedModule.
 
+
+Section Rfct_open_closed.
+
+  
+  Context (A : Type) {finA : Finite A} {ne : NonEmpty A}.
+
+  (* The Max norm topology is compatible with the Euclidean topology induced from R.*)
+  Lemma Rmax_ball_compat (f g : Rfct A) (eps : posreal) :
+  ball f eps g <-> Rmax_ball A f eps g.
+  Proof.
+    split. 
+    -- intros Hball. unfold Rmax_ball. unfold Rmax_norm.
+       destruct finA as [ls Hls]. 
+       destruct (is_nil_dec ls).
+    - subst ; simpl. apply cond_pos.
+    - rewrite Rmax_list_lt_iff.
+      intros x Hx.
+      rewrite in_map_iff in Hx.
+      destruct Hx as [a [Ha Hina]].
+      specialize (Hball a). rewrite <-Ha.
+      apply Hball.  
+      rewrite map_not_nil. now rewrite ne_symm.
+      -- intros Hball. unfold Rmax_ball in Hball. unfold Rmax_norm in Hball.
+         destruct finA as [ls Hls]. intro a.
+         destruct (is_nil_dec ls).
+    - subst ; simpl. unfold Rfct in f,g.  specialize (Hls a).
+      simpl in Hls. now exfalso.
+    - repeat red. eapply Rle_lt_trans ; last apply Hball.     
+      apply Rmax_spec. rewrite in_map_iff. exists a.
+      split ; trivial.                             
+  Qed.
+
+  Lemma Rmax_open_compat (ϕ : Rfct A -> Prop) :
+    open ϕ <-> @open (Rfct_UniformSpace A) ϕ.
+  Proof.
+    unfold open, locally, ball, fct_ball. simpl.
+    setoid_rewrite Rmax_ball_compat.
+    split ; trivial. 
+  Qed.
+  
+  Lemma forall_lt {f g} : (forall a : A, g a < f a) -> (0 < Rmax_norm A (fun a => minus (f a) (g a))).
+  Proof.
+    intros Ha.
+    setoid_rewrite Rminus_lt_0 in Ha.
+    unfold Rmax_norm. destruct finA as [ls Hls]. 
+    destruct (Rmax_list_map_exist (fun a => Rabs (minus (f a) (g a))) ls) as [a' [Hina' Ha']].
+    - rewrite not_nil_exists. exists ne ; trivial. 
+    - rewrite <-Ha', Rabs_pos_eq. specialize (Ha a').
+      ++ apply Ha.
+      ++ now left.              
+  Qed.       
+
+  Lemma le_max {f h} : (forall a : A, h a > Rmax_norm A f) -> (forall a : A, h a > f a).
+  Proof.
+    intros Ha a.
+    destruct finA as [ls Hls]. 
+    eapply Rle_lt_trans. apply Rle_abs.
+    eapply Rle_lt_trans ; last apply Ha.
+    unfold Rmax_norm. apply Rmax_spec.
+    rewrite in_map_iff.  exists a.
+    split ; trivial.
+  Qed.
+
+  
+  Theorem lt_open_const (f : Rfct A) (c : R): @open (Rfct_UniformSpace A) (fun g => (forall a, g a < c)).
+  Proof.
+    rewrite <-Rmax_open_compat.
+    unfold open, locally, ball. simpl.
+    unfold fct_ball, ball. simpl.
+    intros g Hgf. unfold AbsRing_ball. simpl.
+  Admitted. 
+
+  
+  Theorem le_closed (f : Rfct A) : @closed (Rfct_UniformSpace A) (fun g => Rfct_le A g f).
+    Admitted. 
+
+  Theorem ge_closed (f : Rfct A) : @closed (Rfct_UniformSpace A) (fun g => Rfct_ge A g f).
+  Admitted.
+  
+  Theorem lt_open (f : Rfct A) : @open (Rfct_UniformSpace A) (fun g => (forall a, g a < f a)). 
+  Proof.
+    rewrite <-Rmax_open_compat.
+    unfold open, locally, ball. simpl.
+    unfold fct_ball, ball. simpl.
+    intros g Hgf. unfold AbsRing_ball. simpl.
+    setoid_rewrite Rminus_lt_0 in Hgf.
+  Admitted.
+
+End Rfct_open_closed.
+
+
 Section Rfct_CompleteSpace.
 
   Context (A : Type) {finA : Finite A}.
@@ -1364,7 +1372,7 @@ Section Rfct_CompleteSpace.
     eapply Rmax_ball_triangle ; [ |apply Hg].
     
   Admitted.
-  
+
   Definition Rfct_CompleteSpace_mixin :=
   CompleteSpace.Mixin (Rfct_UniformSpace A) lim_fct complete_cauchy_Rfct close_lim_Rfct.
 
@@ -1375,64 +1383,6 @@ Section Rfct_CompleteSpace.
   CompleteNormedModule.Pack _  (Rfct A) (CompleteNormedModule.Class R_AbsRing _ (NormedModule.class _ (Rfct_NormedModule A)) Rfct_CompleteSpace_mixin) (Rfct A).
 
 End Rfct_CompleteSpace.
-
-
-Section Rfct_open_closed.
-
-  Context (A : Type) {finA : Finite A} {ne : NonEmpty A}.
-
-  Lemma forall_lt {f g} : (forall a : A, g a < f a) -> (0 < Rmax_norm A (fun a => minus (f a) (g a))).
-  Proof.
-    intros Ha.
-    setoid_rewrite Rminus_lt_0 in Ha.
-    unfold Rmax_norm. destruct finA as [ls Hls]. 
-    destruct (Rmax_list_map_exist (fun a => Rabs (minus (f a) (g a))) ls) as [a' [Hina' Ha']].
-    - rewrite not_nil_exists. exists ne ; trivial. 
-    - rewrite <-Ha', Rabs_pos_eq. specialize (Ha a').
-      ++ apply Ha.
-      ++ now left.              
-  Qed.       
-
-  Lemma le_max {f h} : (forall a : A, h a > Rmax_norm A f) -> (forall a : A, h a > f a).
-  Proof.
-    intros Ha a.
-    destruct finA as [ls Hls]. 
-    eapply Rle_lt_trans. apply Rle_abs.
-    eapply Rle_lt_trans ; last apply Ha.
-    unfold Rmax_norm. apply Rmax_spec.
-    rewrite in_map_iff.  exists a.
-    split ; trivial.
-  Qed.
-
-  
-  Theorem le_closed (f : Rfct A) : @closed (Rfct_UniformSpace A) (fun g => Rfct_le A g f).
-    Admitted. 
-
-  Theorem ge_closed (f : Rfct A) : @closed (Rfct_UniformSpace A) (fun g => Rfct_ge A g f).
-  Admitted.
-  
-    
-  Theorem gt_open (f : Rfct A) : @open (Rfct_UniformSpace A) (fun g => (forall a, g a > f a)). 
-  Proof.
-    unfold open, locally, ball. simpl.
-    unfold Rmax_ball.
-    destruct finA as [ls Hls] ; simpl. 
-    intros g Hgf.       
-    assert (pos : 0 < Rmax_norm A (fun a : A => minus (g a) (f a))). apply forall_lt. apply Hgf.
-    assert (pos2 : let norm := mkposreal _ pos in  0 < norm / 2) by apply is_pos_div_2.
-    simpl in pos2.
-    exists (mkposreal _ pos2).
-    intros h Hballh. simpl in Hballh.
-    assert (forall r:posreal, r/2 <= r).
-    {
-      intros. rewrite <-Rmult_1_r. apply Rmult_le_compat_l.
-      left ; apply cond_pos. lra.
-    }
-    apply le_max. 
-    specialize (H (mkposreal _ pos)). simpl in H. 
-  Admitted.
-
-End Rfct_open_closed.
 
 
 Section coinduction. 
@@ -1460,6 +1410,70 @@ Qed.
  
 End coinduction. 
 
+Section operator.
+Open Scope R_scope. 
+Context {M : MDP} (γ D : R).
+Context (hγ : (0 <= γ < 1)%R).
+
+Arguments reward {_}.
+Arguments outcomes {_}.
+Arguments t {_}.
+
+Context (bdd :  (forall s s': M.(state), forall σ : dec_rule M, Rabs (reward s (σ s) s') <= D)).
+
+
+Definition bellman_op (π : dec_rule M) : (M.(state) -> R) -> (M.(state) -> R) :=
+  fun W => fun s => (step_expt_reward π s + γ*(expt_value (t s (π s)) W)). 
+
+Lemma ltv_bellman_op_fixpoint : forall π, bellman_op π (ltv γ π) = ltv γ π.
+Proof.
+  intro π.
+  unfold bellman_op. simpl.
+  apply functional_extensionality.
+  intro init. symmetry.
+  eapply ltv_corec ; eauto.
+Qed.
+
+Lemma bellman_op_monotone (π : dec_rule M) W1 W2: (forall s, W1 s <= W2 s) -> (forall s, bellman_op π W1 s <= bellman_op π W2 s). 
+Proof.
+  intros HW1W2 s.
+  unfold bellman_op. 
+  apply Rplus_le_compat_l.
+  apply Rmult_le_compat_l ; intuition.
+  apply expt_value_le ; eauto.
+Qed.
+
+
+Definition bellman_max_op (π : dec_rule M) (la : forall s, list (M.(act) s)) : (M.(state) -> R) -> (M.(state) -> R) :=
+  fun W => fun s => Max_{la s}( fun a => expt_value (t s a) (reward s a) + γ*(expt_value (t s a) W)). 
+
+
+
+Lemma bellman_max_op_monotone (π : dec_rule M) {la : forall s, list (M.(act) s)} (hla : forall s, [] <> la s) W1 W2: (forall s, W1 s <= W2 s) -> (forall s, bellman_max_op π la W1 s <= bellman_max_op π la W2 s). 
+Proof.
+  intros HW1W2 s.
+  unfold bellman_max_op.
+  apply Rmax_list_fun_le ; auto. 
+  intro a.
+  apply Rplus_le_compat_l.
+  apply Rmult_le_compat_l ; intuition.
+  apply expt_value_le ; eauto.
+Qed.
+
+(* Cut down on these hypotheses. *)
+Lemma bellman_op_bellman_max_le (π : dec_rule M) {ld : list (dec_rule M)} W (la : forall s, list (M.(act) s)) (hp : forall π s, In π ld -> In (π s) (la s)) (Hπ : In π ld) :
+  forall s, bellman_op π W s <= bellman_max_op π la W s.
+Proof.
+  intro s. 
+  unfold bellman_op. 
+  unfold bellman_max_op.
+  unfold step_expt_reward.
+  apply Rmax_spec.
+  rewrite in_map_iff. exists (π s). split ; trivial.
+  apply hp. assumption. 
+Qed.
+
+End operator.
 
 Section order.
   
