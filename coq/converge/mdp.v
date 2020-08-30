@@ -478,6 +478,28 @@ Proof.
   - apply Rmax_list_prod_le'; trivial.   
 Qed.
 
+
+
+Lemma Rmax_diff_le {A} {B : A -> Type} (f g : forall a, B a -> R) (la : forall a, list (B a)):
+ forall a:A, (Max_{la a}(f a) - Max_{la a}(g a)) <= Max_{la a}(fun x => f a x - g a x).
+Proof.
+  intro a0. 
+  destruct (is_nil_dec (la a0)).
+  - setoid_rewrite e. simpl. lra.
+  - rewrite Rle_minus_l.
+    rewrite Rmax_list_le_iff. intros x Hin.
+    rewrite in_map_iff in Hin.
+    destruct Hin as [a [Ha Hina]]. rewrite <-Ha.
+    replace (f a0 a) with ((f a0 a - g a0 a) + g a0 a) by ring. 
+    apply Rplus_le_compat.
+    -- apply Rmax_spec. rewrite in_map_iff.
+       exists a ; split ; trivial. 
+    -- apply Rmax_spec. rewrite in_map_iff.
+       exists a ; split ; trivial.
+    -- rewrite map_not_nil. congruence.
+Qed.
+
+    
 (* max_{x:A} (max_{f:A->B}(g (f a) f)) = max_{f:A->B} (max_{a:map f A} (g (a,f))) *)
 
 Lemma Rmax_list_fun_swap {A B} {lf : list(A -> B)}{la : list A}
