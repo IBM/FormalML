@@ -1057,6 +1057,40 @@ Definition Rfct_le (f g : Rfct A) := forall a : A, f a <= g a.
 
 Definition Rfct_ge (f g : Rfct A) := forall a : A, f a >= g a.
 
+Lemma Rfct_not_ge_lt (f g  : Rfct A) : not (Rfct_ge f g) <-> (exists a : A, f a < g a).
+Proof.
+  unfold Rfct_ge.
+  split.
+  - intro H. apply Classical_Pred_Type.not_all_not_ex.
+    intro H'. apply H. intro a. specialize (H' a). now apply Rnot_gt_ge.
+  - intro H. apply Classical_Pred_Type.ex_not_not_all.
+    destruct H as [a Ha]. exists a. 
+    now apply Rlt_not_ge.
+Qed.
+
+Lemma Rfct_not_le_gt (f g  : Rfct A) : not (Rfct_le f g) <-> (exists a : A, f a > g a).
+Proof.
+  unfold Rfct_le.
+  split.
+  - intro H. apply Classical_Pred_Type.not_all_not_ex.
+    intro H'. apply H. intro a. specialize (H' a). now apply Rnot_gt_le.
+  - intro H. apply Classical_Pred_Type.ex_not_not_all.
+    destruct H as [a Ha]. exists a. 
+    now apply Rgt_not_le.
+Qed.
+
+Lemma Rfct_ge_not_lt (f g  : Rfct A) : (Rfct_ge f g) <-> not (exists a : A, f a < g a).
+Proof.
+  unfold Rfct_ge.
+  split.
+  - intro H. apply Classical_Pred_Type.all_not_not_ex.
+    intro a. specialize (H a). apply Rle_not_lt.
+    lra.
+  - intro H. apply Classical_Pred_Type.not_ex_not_all.
+    intro H'. destruct H' as [a Ha]. apply H. exists a. 
+    now apply Rnot_ge_lt.
+Qed.   
+
 Lemma Rfct_eq_ext (f g:Rfct A) : (forall x, f x = g x) -> f = g.
 Proof.
   apply functional_extensionality.
@@ -1418,19 +1452,85 @@ Section Rfct_open_closed.
   
   Theorem le_closed (f : Rfct A) : @closed (Rfct_UniformSpace A) (fun g => Rfct_le A g f).
   Admitted.
+
+
+  Global Instance closed_Proper :
+    Proper (pointwise_relation (Rfct_UniformSpace A) iff ==> Basics.impl) closed.
+  Proof.
+  intros x y H H0.
+  eapply closed_ext ; eauto.
+  Qed.
+  
+  Global Instance closed_Proper_flip :
+    Proper (pointwise_relation (Rfct_UniformSpace A) iff ==> Basics.flip Basics.impl) closed.
+  Proof.
+  intros x y H H0.
+  eapply closed_ext ; eauto. symmetry.
+  apply H.
+  Qed.
+
+   Global Instance open_Proper :
+    Proper (pointwise_relation (Rfct_UniformSpace A) iff ==> Basics.impl) open.
+  Proof.
+  intros x y H H0.
+  eapply open_ext ; eauto.
+  Qed.
+  
+  Global Instance open_Proper_flip :
+    Proper (pointwise_relation (Rfct_UniformSpace A) iff ==> Basics.flip Basics.impl) open.
+  Proof.
+  intros x y H H0.
+  eapply open_ext ; eauto. symmetry.
+  apply H.
+  Qed.
+
     
-  Theorem ge_closed (f : Rfct A) : @closed (Rfct_UniformSpace A) (fun g => Rfct_ge A g f).
-  Admitted.
   
   Theorem lt_open (f : Rfct A) : @open (Rfct_UniformSpace A) (fun g => (exists a, g a < f a)). 
   Proof.
-    
     rewrite <-Rmax_open_compat.
     unfold open, locally, ball. simpl.
     unfold fct_ball, ball. simpl.
     intros g Hgf. unfold AbsRing_ball. simpl.
     setoid_rewrite Rminus_lt_0 in Hgf.
-  Admitted.
+    destruct Hgf as [a0 Ha0].
+    pose (eps := mkposreal _ Ha0).
+    exists (mkposreal _ (is_pos_div_2 eps)).
+    simpl.  intros y Hyg.
+    exists a0. rewrite Rminus_lt_0. 
+    assert (h1 : (f a0 - g a0)  = ((f a0 - y a0) + (y a0 - g a0))) by ring.
+    clear eps. 
+    rewrite h1 in Ha0.
+    assert (h2 : (f a0 - y a0) + (y a0 - g a0) <= (f a0 - y a0) + Rabs(y a0 - g a0)).
+    {
+      apply Rplus_le_compat_l. apply Rle_abs.
+    }
+    assert (h3 : (f a0 - y a0) +  Rabs (y a0 - g a0) <= (f a0 - y a0) + (f a0 - g a0) / 2).
+    {
+      apply Rplus_le_compat_l. left. apply Hyg.
+    }
+    assert (h4 : f a0 - g a0  <= f a0 - y a0 + (f a0 - g a0) / 2).
+    {
+      eapply Rle_trans. rewrite h1. apply h2.
+      apply h3. 
+    }
+    assert (h5 : (f a0 - g a0)/2 <= f a0 - y a0).
+    {
+      rewrite <-Rle_minus_l in h4. 
+      now field_simplify in h4. 
+    }
+    specialize (Hyg a0). eapply Rlt_le_trans ; last apply h5.
+    eapply Rle_lt_trans ; last apply Hyg.
+    apply Rabs_pos.
+  Qed.
+
+  Theorem ge_closed (f : Rfct A) :
+    @closed (Rfct_UniformSpace A) (fun g => Rfct_ge A g f).
+  Proof.
+    unfold Rfct_ge.
+    setoid_rewrite Rfct_ge_not_lt.
+    apply closed_not. apply lt_open.
+  Qed. 
 
 End Rfct_open_closed.
 
