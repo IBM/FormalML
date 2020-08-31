@@ -214,8 +214,8 @@ Proof.
       simpl in *. eapply Rle_trans ; eauto. apply Rmax_r.
 Qed.
 
-Lemma Rmax_list_const_mul (l : list R) {r : R} (hr : 0 <= r) :
-  Rmax_list (List.map (fun x => r*x) l) = r*(Rmax_list l).
+Lemma Rmax_list_map_const_mul {A} (l : list A) (f : A -> R) {r : R} (hr : 0 <= r) :
+  Rmax_list (List.map (fun a => r*f(a)) l) = r*(Rmax_list (List.map f l)).
 Proof.
   induction l. 
   - simpl ; lra.
@@ -480,7 +480,7 @@ Qed.
 
 
 
-Lemma Rmax_diff_le {A} {B : A -> Type} (f g : forall a, B a -> R) (la : forall a, list (B a)):
+Lemma Rmax_list_minus_le {A} {B : A -> Type} (f g : forall a, B a -> R) (la : forall a, list (B a)):
  forall a:A, (Max_{la a}(f a) - Max_{la a}(g a)) <= Max_{la a}(fun x => f a x - g a x).
 Proof.
   intro a0. 
@@ -497,6 +497,71 @@ Proof.
     -- apply Rmax_spec. rewrite in_map_iff.
        exists a ; split ; trivial.
     -- rewrite map_not_nil. congruence.
+Qed.
+
+
+Lemma Rmax_list_minus_le_abs {A} (f g : A -> R) (la : list A):
+  Rabs (Max_{la}(f) - Max_{la}(g)) <= Max_{la}(fun a => Rabs(f a - g a)).
+Proof.
+   destruct (is_nil_dec la).
+  - subst; simpl. replace (0-0) with 0 by ring. right. now apply Rabs_R0.
+  - rewrite Rabs_le_between'.
+    split.
+    -- rewrite Rle_minus_l. rewrite Rmax_list_le_iff ; [| apply map_not_nil ; congruence].
+       intros x Hin.
+       rewrite in_map_iff in Hin.
+       destruct Hin as [a [Ha Hina]]. rewrite <-Ha.
+       replace (g a) with (f a + (g a - f a)) by ring.
+       apply Rplus_le_compat.
+       --- apply Rmax_spec. rewrite in_map_iff.
+           exists a ; split ; trivial.
+       --- eapply Rle_trans ; first apply Rle_abs.
+           rewrite Rabs_minus_sym. apply Rmax_spec. rewrite in_map_iff.
+           exists a ; split ; trivial.
+    -- rewrite Rmax_list_le_iff ; [| apply map_not_nil ; congruence].
+       intros x Hin.
+       rewrite in_map_iff in Hin.
+       destruct Hin as [a [Ha Hina]]. rewrite <-Ha.
+       replace (f a) with (g a + (f a - g a)) by ring.
+       apply Rplus_le_compat.
+       --- apply Rmax_spec. rewrite in_map_iff.
+           exists a ; split ; trivial.
+       --- eapply Rle_trans ; first apply Rle_abs.
+           rewrite Rabs_minus_sym. apply Rmax_spec. rewrite in_map_iff.
+           exists a ; split ; trivial. apply Rabs_minus_sym.
+Qed.
+
+
+Lemma Rmax_list_minus_le_abs' {A} {B : A -> Type} (f g : forall a, B a -> R) (la : forall a, list (B a)):
+ forall a:A, Rabs (Max_{la a}(f a) - Max_{la a}(g a)) <= Max_{la a}(fun x => Rabs(f a x - g a x)).
+Proof.
+  intro a0. 
+  destruct (is_nil_dec (la a0)).
+  - setoid_rewrite e. simpl. replace (0-0) with 0 by ring. right. now apply Rabs_R0.
+  - rewrite Rabs_le_between'.
+    split.
+    -- rewrite Rle_minus_l. rewrite Rmax_list_le_iff ; [| apply map_not_nil ; congruence].
+       intros x Hin.
+       rewrite in_map_iff in Hin.
+       destruct Hin as [a [Ha Hina]]. rewrite <-Ha.
+       replace (g a0 a) with (f a0 a + (g a0 a - f a0 a)) by ring.
+       apply Rplus_le_compat.
+       --- apply Rmax_spec. rewrite in_map_iff.
+           exists a ; split ; trivial.
+       --- eapply Rle_trans ; first apply Rle_abs.
+           rewrite Rabs_minus_sym. apply Rmax_spec. rewrite in_map_iff.
+           exists a ; split ; trivial.
+    -- rewrite Rmax_list_le_iff ; [| apply map_not_nil ; congruence].
+       intros x Hin.
+       rewrite in_map_iff in Hin.
+       destruct Hin as [a [Ha Hina]]. rewrite <-Ha.
+       replace (f a0 a) with (g a0 a + (f a0 a - g a0 a)) by ring.
+       apply Rplus_le_compat.
+       --- apply Rmax_spec. rewrite in_map_iff.
+           exists a ; split ; trivial.
+       --- eapply Rle_trans ; first apply Rle_abs.
+           rewrite Rabs_minus_sym. apply Rmax_spec. rewrite in_map_iff.
+           exists a ; split ; trivial. apply Rabs_minus_sym.
 Qed.
 
     
@@ -540,14 +605,15 @@ Proof.
 Qed.
 
 Lemma Rmax_list_fun_le {A} {la : list A}
-      (f : A -> R) (g : A -> R)
-      (hla : [] <> la)  :
+      (f : A -> R) (g : A -> R) :
       (forall a, f a <= g a) ->
       Max_{la} (fun a => f a) <= Max_{la} (fun a => g a).
 Proof.
   intros Hfg.
-  destruct (Rmax_list_map_exist (fun a => g a) la hla) as [a1 [Ha1 Hina1]].
-  destruct (Rmax_list_map_exist (fun a => f a) la hla) as [a2 [Ha2 Hina2]].
+  destruct (is_nil_dec la) ; [subst ; simpl ; lra|].
+  rewrite ne_symm in n. 
+  destruct (Rmax_list_map_exist (fun a => g a) la n) as [a1 [Ha1 Hina1]].
+  destruct (Rmax_list_map_exist (fun a => f a) la n) as [a2 [Ha2 Hina2]].
   rewrite <-Hina1.
   rewrite Rmax_list_le_iff.
   intros x Hx. rewrite in_map_iff in Hx.
@@ -1351,8 +1417,8 @@ Section Rfct_open_closed.
 
   
   Theorem le_closed (f : Rfct A) : @closed (Rfct_UniformSpace A) (fun g => Rfct_le A g f).
-    Admitted. 
-
+  Admitted.
+    
   Theorem ge_closed (f : Rfct A) : @closed (Rfct_UniformSpace A) (fun g => Rfct_ge A g f).
   Admitted.
   
@@ -1434,7 +1500,7 @@ End coinduction.
 
 Section operator.
 Open Scope R_scope. 
-Context {M : MDP} (γ D : R).
+Context {M : MDP} (finm : Finite (state M)) (γ D : R).
 Context (hγ : (0 <= γ < 1)%R).
 
 Arguments reward {_}.
@@ -1466,12 +1532,12 @@ Proof.
 Qed.
 
 
-Definition bellman_max_op (π : dec_rule M) (la : forall s, list (M.(act) s)) : (M.(state) -> R) -> (M.(state) -> R) :=
+Definition bellman_max_op (la : forall s, list (M.(act) s)) : (M.(state) -> R) -> (M.(state) -> R) :=
   fun W => fun s => Max_{la s}( fun a => expt_value (t s a) (reward s a) + γ*(expt_value (t s a) W)). 
 
 
 
-Lemma bellman_max_op_monotone (π : dec_rule M) {la : forall s, list (M.(act) s)} (hla : forall s, [] <> la s) W1 W2: (forall s, W1 s <= W2 s) -> (forall s, bellman_max_op π la W1 s <= bellman_max_op π la W2 s). 
+Lemma bellman_max_op_monotone {la : forall s, list (M.(act) s)} W1 W2: (forall s, W1 s <= W2 s) -> (forall s, bellman_max_op la W1 s <= bellman_max_op la W2 s). 
 Proof.
   intros HW1W2 s.
   unfold bellman_max_op.
@@ -1484,7 +1550,7 @@ Qed.
 
 (* Cut down on these hypotheses. *)
 Lemma bellman_op_bellman_max_le (π : dec_rule M) {ld : list (dec_rule M)} W (la : forall s, list (M.(act) s)) (hp : forall π s, In π ld -> In (π s) (la s)) (Hπ : In π ld) :
-  forall s, bellman_op π W s <= bellman_max_op π la W s.
+  forall s, bellman_op π W s <= bellman_max_op la W s.
 Proof.
   intro s. 
   unfold bellman_op. 
@@ -1495,6 +1561,57 @@ Proof.
   apply hp. assumption. 
 Qed.
 
+
+Theorem is_contraction_bellman (ne : NonEmpty M.(state)) (la : forall s, list (M.(act) s)) :
+ (0 <> γ) -> @is_contraction (Rfct_UniformSpace M.(state)) (Rfct_UniformSpace M.(state)) (bellman_max_op la).
+Proof.
+  intro Hne. 
+  unfold is_contraction.
+  exists γ ; split.
+  - now destruct hγ.
+  - unfold is_Lipschitz. split.
+    ++ now destruct hγ.
+    ++ intros f g r Hr Hfg.
+       repeat red in Hfg. repeat red.
+       unfold Rmax_norm in *. destruct finm as [ls Hls].
+       destruct (is_nil_dec ls).
+       --- subst ; simpl in *. exfalso. apply Hls.
+           apply ne.  
+       --- rewrite Rmax_list_lt_iff ; [ | apply map_not_nil ; congruence].
+           intros r' Hr'.
+           rewrite in_map_iff in Hr'. destruct Hr' as [s [Hs Hins]].
+           rewrite <-Hs. 
+           eapply Rle_lt_trans ; first apply Rmax_list_minus_le_abs.
+           simpl. repeat red in f,g.
+           replace
+             (Max_{ la s}(fun a => Rabs (expt_value (t s a) (reward s a) + γ * expt_value (t s a) g -                                          (expt_value (t s a) (reward s a) + γ * expt_value (t s a) f))))
+             with (Max_{ la s} (fun a => γ*Rabs ((expt_value (t s a) g - expt_value (t s a) f)))).
+           rewrite Rmax_list_map_const_mul ; [|now destruct hγ].
+           replace (Max_{ la s}(fun a : act M s => Rabs (expt_value (t s a) g - expt_value (t s a) f)))
+                   with (Max_{ la s}(fun a : act M s => Rabs (expt_value (t s a)(fun s => g s - f s)))).
+           assert (γ * (Max_{ la s}(fun a : act M s => Rabs (expt_value (t s a) (fun s0 : state M => g s0 - f s0)))) <= γ*(Max_{ la s}(fun a : act M s => (expt_value (t s a) (fun s0 : state M => Rabs (g s0 - f s0)))))).
+           apply Rmult_le_compat_l; [now destruct hγ| ].
+           apply Rmax_list_fun_le. intro a. apply expt_value_Rabs_Rle.
+           eapply Rle_lt_trans; first apply H. clear H.
+           apply Rmult_lt_compat_l ; [firstorder|]. (* Have to use γ <> 0 here.*)
+           destruct (is_nil_dec (la s)) ;[ rewrite e ; simpl ; assumption |]. 
+           rewrite Rmax_list_lt_iff ; [| rewrite map_not_nil ; congruence].
+           intros r0 Hin. rewrite in_map_iff in Hin.
+           destruct Hin as [a0 [Ha0 Hina0]].
+           rewrite <-Ha0. eapply Rle_lt_trans ; last apply Hfg.
+           apply expt_value_bdd. intro s0. apply Rmax_spec.
+           rewrite in_map_iff. exists s0 ; split ; trivial.
+           f_equal. apply List.map_ext_in.
+           intros a H. f_equal. apply expt_value_sub.
+           f_equal. apply List.map_ext_in.
+           intros a H. replace (γ * Rabs (expt_value (t s a) g - expt_value (t s a) f)) with
+            (Rabs (γ) * Rabs (expt_value (t s a) g - expt_value (t s a) f)).
+           rewrite <-Rabs_mult. f_equal. ring. 
+           f_equal. apply Rabs_pos_eq ; now destruct hγ. 
+Qed. 
+
+           
+           
 End operator.
 
 Section order.

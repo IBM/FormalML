@@ -620,6 +620,18 @@ Proof.
     now right.
 Qed.
 
+Lemma expt_value_bdd {A : Type} {D : R} {f : A -> R} (hf : forall a:A, (f a) <= D) (p : Pmf A) :
+  (expt_value p f) <= D.
+Proof.
+  unfold expt_value. rewrite <- Rmult_1_r.
+  change (D*1) with (D*R1).  rewrite <- (sum1_compat p). 
+  induction p.(outcomes).
+  * simpl ; lra.
+  * simpl in *. rewrite Rmult_plus_distr_l.
+    assert ( f a.2 * a.1  <=  D * a.1). apply Rmult_le_compat_r. apply cond_nonneg.
+    apply hf.
+    now apply Rplus_le_compat.
+Qed.
 
 End expected_value. 
 
