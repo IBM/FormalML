@@ -1422,8 +1422,9 @@ Section Rfct_open_closed.
   Theorem ge_closed (f : Rfct A) : @closed (Rfct_UniformSpace A) (fun g => Rfct_ge A g f).
   Admitted.
   
-  Theorem lt_open (f : Rfct A) : @open (Rfct_UniformSpace A) (fun g => (forall a, g a < f a)). 
+  Theorem lt_open (f : Rfct A) : @open (Rfct_UniformSpace A) (fun g => (exists a, g a < f a)). 
   Proof.
+    
     rewrite <-Rmax_open_compat.
     unfold open, locally, ball. simpl.
     unfold fct_ball, ball. simpl.
@@ -1481,13 +1482,16 @@ Arguments reward {_}.
 Arguments outcomes {_}.
 Arguments t {_}.
 
+Definition fixpt {K : AbsRing}{X : CompleteNormedModule K} {f : X -> X} (hf : is_contraction f)
+           
+  := lim  (fun P => eventually (fun n => P (iter f n ne))).  
 
 Theorem metric_coinduction_Rfct 
   {f : Rfct M.(state) -> Rfct M.(state)}
     (ϕ : Rfct M.(state) -> Prop) (phic : @closed (Rfct_CompleteSpace M.(state)) ϕ) (phin : exists a , ϕ a)
     (hf : @is_contraction (Rfct_CompleteSpace M.(state)) (Rfct_CompleteSpace M.(state)) f)
     (phip : forall x, ϕ x -> ϕ (f x)):
-  exists a', f a' = a' /\ ϕ a'.
+   ϕ (fixpt ).
 Proof.
   assert (my_complete ϕ) by (now apply closed_my_complete).
   destruct (FixedPoint R_AbsRing f ϕ phip phin H hf) as [a [Hphi [Hfix Hsub]]].
@@ -1617,8 +1621,6 @@ Proof.
            rewrite in_map_iff. exists s0 ; split ; trivial.
 Qed. 
 
-           
-           
 End operator.
 
 Section order.
@@ -1712,16 +1714,6 @@ Proof.
   intros x Hx. simpl. reflexivity. 
 Qed.
 
-Lemma Rmax_list_split {A B} (f : A*B -> R) (l : list (A*B)) (eqA : EqDec A eq) :
-  Max_{l}(f) = Max_{List.map fst l} (fun a:A => Max_{List.map snd (filter (fun pi' => a ==b fst pi') l)} (fun pi' => f (a,pi'))).
-Proof.
-  rewrite map_map.
-  apply Rle_antisym.
-  - rewrite Rmax_list_le_iff.
-    intros x H.
-    rewrite in_map_iff in H.
-    destruct H as [ab [Hab Hinab]]. 
-Admitted.
 
 Lemma max_ltv_aux3 (l : list (dec_rule M)) (eqA : forall s : M.(state), EqDec (act M s) eq): 
   forall s : M.(state),
