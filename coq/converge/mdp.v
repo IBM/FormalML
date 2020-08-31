@@ -1583,16 +1583,30 @@ Proof.
            rewrite <-Hs. 
            eapply Rle_lt_trans ; first apply Rmax_list_minus_le_abs.
            simpl. repeat red in f,g.
-           replace
-             (Max_{ la s}(fun a => Rabs (expt_value (t s a) (reward s a) + γ * expt_value (t s a) g -                                          (expt_value (t s a) (reward s a) + γ * expt_value (t s a) f))))
-             with (Max_{ la s} (fun a => γ*Rabs ((expt_value (t s a) g - expt_value (t s a) f)))).
+           assert
+             (h1 : Max_{ la s}(fun a => Rabs (expt_value (t s a) (reward s a) + γ * expt_value (t s a) g - (expt_value (t s a) (reward s a) + γ * expt_value (t s a) f))) = Max_{ la s} (fun a => γ*Rabs ((expt_value (t s a) g - expt_value (t s a) f)))).
+           {
+           f_equal. apply List.map_ext_in.
+           intros a H. replace (γ * Rabs (expt_value (t s a) g - expt_value (t s a) f)) with
+            (Rabs (γ) * Rabs (expt_value (t s a) g - expt_value (t s a) f)).
+           rewrite <-Rabs_mult. f_equal. ring. 
+           f_equal. apply Rabs_pos_eq ; now destruct hγ.
+           }
+           rewrite h1; clear h1.
            rewrite Rmax_list_map_const_mul ; [|now destruct hγ].
-           replace (Max_{ la s}(fun a : act M s => Rabs (expt_value (t s a) g - expt_value (t s a) f)))
-                   with (Max_{ la s}(fun a : act M s => Rabs (expt_value (t s a)(fun s => g s - f s)))).
-           assert (γ * (Max_{ la s}(fun a : act M s => Rabs (expt_value (t s a) (fun s0 : state M => g s0 - f s0)))) <= γ*(Max_{ la s}(fun a : act M s => (expt_value (t s a) (fun s0 : state M => Rabs (g s0 - f s0)))))).
+           assert (h2: Max_{ la s}(fun a : act M s => Rabs (expt_value (t s a) g - expt_value (t s a) f))
+             = Max_{ la s}(fun a : act M s => Rabs (expt_value (t s a)(fun s => g s - f s)))).
+           {
+             symmetry. f_equal. apply List.map_ext_in.
+             intros. f_equal. apply expt_value_sub. 
+           }
+           rewrite h2 ; clear h2.
+           assert (h3 : γ * (Max_{ la s}(fun a : act M s => Rabs (expt_value (t s a) (fun s0 : state M => g s0 - f s0)))) <= γ*(Max_{ la s}(fun a : act M s => (expt_value (t s a) (fun s0 : state M => Rabs (g s0 - f s0)))))).
+           {
            apply Rmult_le_compat_l; [now destruct hγ| ].
            apply Rmax_list_fun_le. intro a. apply expt_value_Rabs_Rle.
-           eapply Rle_lt_trans; first apply H. clear H.
+           }
+           eapply Rle_lt_trans; first apply h3. clear h3.
            apply Rmult_lt_compat_l ; [firstorder|]. (* Have to use γ <> 0 here.*)
            destruct (is_nil_dec (la s)) ;[ rewrite e ; simpl ; assumption |]. 
            rewrite Rmax_list_lt_iff ; [| rewrite map_not_nil ; congruence].
@@ -1601,13 +1615,6 @@ Proof.
            rewrite <-Ha0. eapply Rle_lt_trans ; last apply Hfg.
            apply expt_value_bdd. intro s0. apply Rmax_spec.
            rewrite in_map_iff. exists s0 ; split ; trivial.
-           f_equal. apply List.map_ext_in.
-           intros a H. f_equal. apply expt_value_sub.
-           f_equal. apply List.map_ext_in.
-           intros a H. replace (γ * Rabs (expt_value (t s a) g - expt_value (t s a) f)) with
-            (Rabs (γ) * Rabs (expt_value (t s a) g - expt_value (t s a) f)).
-           rewrite <-Rabs_mult. f_equal. ring. 
-           f_equal. apply Rabs_pos_eq ; now destruct hγ. 
 Qed. 
 
            
