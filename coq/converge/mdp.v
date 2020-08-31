@@ -1091,6 +1091,19 @@ Proof.
     now apply Rnot_ge_lt.
 Qed.   
 
+Lemma Rfct_le_not_gt (f g  : Rfct A) : (Rfct_le f g) <-> not (exists a : A, f a > g a).
+Proof.
+  unfold Rfct_le.
+  split.
+  - intro H. apply Classical_Pred_Type.all_not_not_ex.
+    intro a. specialize (H a). now apply Rle_not_gt.
+  - intro H. apply Classical_Pred_Type.not_ex_not_all.
+    intro H'. apply H.
+    destruct H' as [a Ha]. exists a. 
+    now apply Rnot_le_gt.
+Qed.
+
+
 Lemma Rfct_eq_ext (f g:Rfct A) : (forall x, f x = g x) -> f = g.
 Proof.
   apply functional_extensionality.
@@ -1441,19 +1454,6 @@ Section Rfct_open_closed.
   Qed.
 
   
-  Theorem lt_open_const (f : Rfct A) (c : R): @open (Rfct_UniformSpace A) (fun g => (forall a, g a < c)).
-  Proof.
-    rewrite <-Rmax_open_compat.
-    unfold open, locally, ball. simpl.
-    unfold fct_ball, ball. simpl.
-    intros g Hgf. unfold AbsRing_ball. simpl.
-  Admitted. 
-
-  
-  Theorem le_closed (f : Rfct A) : @closed (Rfct_UniformSpace A) (fun g => Rfct_le A g f).
-  Admitted.
-
-
   Global Instance closed_Proper :
     Proper (pointwise_relation (Rfct_UniformSpace A) iff ==> Basics.impl) closed.
   Proof.
@@ -1484,8 +1484,6 @@ Section Rfct_open_closed.
   apply H.
   Qed.
 
-    
-  
   Theorem lt_open (f : Rfct A) : @open (Rfct_UniformSpace A) (fun g => (exists a, g a < f a)). 
   Proof.
     rewrite <-Rmax_open_compat.
@@ -1530,6 +1528,53 @@ Section Rfct_open_closed.
     unfold Rfct_ge.
     setoid_rewrite Rfct_ge_not_lt.
     apply closed_not. apply lt_open.
+  Qed. 
+
+    Theorem gt_open (f : Rfct A) : @open (Rfct_UniformSpace A) (fun g => (exists a, g a > f a)). 
+  Proof.
+    rewrite <-Rmax_open_compat.
+    unfold open, locally, ball. simpl.
+    unfold fct_ball, ball. simpl.
+    intros g Hgf. unfold AbsRing_ball.
+    setoid_rewrite Rminus_lt_0 in Hgf.
+    destruct Hgf as [a0 Ha0].
+    pose (eps := mkposreal _ Ha0).
+    exists (mkposreal _ (is_pos_div_2 eps)).
+    simpl.  intros y Hyg.
+    exists a0. apply Rminus_gt. 
+    assert (h1 : (g a0 - f a0)  = ((g a0 - y a0) + (y a0 - f a0))) by ring.
+    clear eps. 
+    rewrite h1 in Ha0.
+    assert (h2 : (g a0 - y a0) + (y a0 - f a0) <= Rabs(g a0 - y a0) + (y a0 - f a0)).
+    {
+      apply Rplus_le_compat_r. apply Rle_abs.
+    }
+    assert (h3 : Rabs(g a0 - y a0) + (y a0 - f a0) <= ((g a0 - f a0) / 2) + (y a0 - f a0)).
+    {
+      rewrite Rabs_minus_sym. apply Rplus_le_compat_r. left. apply Hyg.
+    }
+    assert (h4 : (g a0 - f a0)  <= (g a0 - f a0) / 2 + (y a0 - f a0)).
+    {
+      eapply Rle_trans. rewrite h1. apply h2.
+      apply h3. 
+    }
+    assert (h5 : (g a0 - f a0)/2 <= y a0 - f a0).
+    {
+      rewrite Rplus_comm in h4.
+      rewrite <-Rle_minus_l in h4. 
+      field_simplify in h4. lra.
+    }
+    specialize (Hyg a0). eapply Rlt_le_trans ; last apply h5.
+    eapply Rle_lt_trans ; last apply Hyg.
+    apply Rabs_pos.
+  Qed.
+
+    Theorem le_closed (f : Rfct A) :
+    @closed (Rfct_UniformSpace A) (fun g => Rfct_le A g f).
+  Proof.
+    unfold Rfct_le.
+    setoid_rewrite Rfct_le_not_gt.
+    apply closed_not. apply gt_open.
   Qed. 
 
 End Rfct_open_closed.
