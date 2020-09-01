@@ -921,6 +921,36 @@ Proof.
   lra.
 Qed.
 
+Theorem Dvoretzky4_8_5_max_1 (F : nat -> posreal) (sigma V: nat -> R) (n m:nat) (A sigmasum:R) :
+  (forall r s, part_prod_n (pos_sq_fun F) r s <= A) ->
+  (forall (n:nat), Rsqr (V (S n)) <= (pos_sq_fun F) n * Rsqr (V n) + Rsqr (sigma n)) ->
+  is_series (fun n => Rsqr (sigma n)) sigmasum ->   
+  (m<n)%nat ->
+   Rsqr (V (S n)) <= 
+      (sum_n_m (fun k => Rsqr (sigma k)) (S m) n) * A +
+     (Rsqr (V 0%nat) + sigmasum) * (max_prod_fun (pos_sq_fun F) (S m) n).      
+Proof.
+  intros.
+  generalize (Dvoretzky4_8_5_max F sigma V n m A H H0 H2); intros.
+  assert (sum_n (fun k : nat => (sigma k)²) m <= sigmasum).
+  assert (H1' := H1).
+  apply is_series_unique in H1.
+  assert (ex_series (fun k : nat => (sigma k)²)).
+  unfold ex_series.
+  exists sigmasum; trivial.
+  rewrite <- H1.
+  apply sub_sum_limit; trivial.
+  apply Rplus_le_compat_l with (r := Rsqr (V 0%nat)) in H4.
+  apply Rmult_le_compat_r with 
+      (r := max_prod_fun (pos_sq_fun F) (S m) n) in H4.
+  lra.
+  assert (part_prod_n (pos_sq_fun F) (S m) n <=  max_prod_fun (pos_sq_fun F) (S m) n).
+  apply max_prod_le; lia.
+  assert (0 <= part_prod_n (pos_sq_fun F) (S m) n).
+  left; apply pos_part_prod_n.
+  apply (Rle_trans  _ _ _ H6 H5).
+Qed.
+
 Theorem Dvoretzky4 (F : nat -> posreal) (sigma V: nat -> R) :
   (forall n, F n <= 1) ->
   (forall (n:nat), Rsqr (V (S n)) <= (pos_sq_fun F) n * Rsqr (V n) + Rsqr (sigma n)) ->
