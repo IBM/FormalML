@@ -927,6 +927,7 @@ Proof.
     replace (sigma_V0_2 * (eps / 2 / sigma_V0_2)) with (eps/2) in H4.
     rewrite Rplus_comm in Heqsigma_V0_2.
     rewrite <- Heqsigma_V0_2 in H11.
+    Print part_prod_pos.
     unfold part_prod_pos in H4; simpl in H4.
     replace (part_prod (fun n : nat => pos_sq_fun F (S (Nsigma + n))) (n - S Nsigma - 1))
             with (part_prod_n (pos_sq_fun F) (S Nsigma) (n - 1)) in H4.
@@ -937,10 +938,15 @@ Proof.
     apply (Rle_lt_trans  _ _ _ H11 H16).
     unfold part_prod.
     symmetry.
-    (* apply part_prod_n_shift. *)
-    admit.
+    replace (fun n0 : nat => pos_sq_fun F (S (Nsigma + n0))) with
+            (fun n0 : nat => pos_sq_fun F (S (Nsigma) + n0)).
+    replace (n-1)%nat with (n - S Nsigma - 1 + S Nsigma)%nat by lia.
+    apply part_prod_n_shift.
+    apply FunctionalExtensionality.functional_extensionality.
+    intros.
+    f_equal.
     now field_simplify.
-Admitted.
+Qed.
 
 (* needs to have positive limit as above *)
 Lemma ex_product_iff_ex_log_sum (a : nat -> posreal) (lb:posreal):
