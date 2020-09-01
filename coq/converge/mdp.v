@@ -804,122 +804,7 @@ Qed.
 
 End egs.
 
-Section ltv.
-
-Open Scope R_scope. 
-Context {M : MDP} (γ : R).
-Context (σ : dec_rule M) (init : M.(state)) (hγ : (0 <= γ < 1)%R).
-Arguments reward {_}.
-Arguments outcomes {_}.
-Arguments t {_}.
-
-
-Global Instance Series_proper :
-  Proper (pointwise_relation _ eq  ==> eq) (Series).
-Proof.
-  unfold Proper, pointwise_relation, respectful.
-  apply Series_ext.
-Qed.
-
-Definition ltv_part (N : nat) := sum_n (fun n => γ^n * (expt_reward σ init n)) N. 
-
-Lemma ltv_part0_eq_reward : ltv_part 0 = (step_expt_reward σ init).
-Proof.
-  unfold ltv_part. rewrite sum_n_Reals. simpl.  
-  rewrite expt_reward0_eq_reward. lra.
-Qed.
-
-Lemma sum_mult_geom (D : R) : infinite_sum (fun n => D*γ^n) (D/(1 - γ)).
-Proof.
-  rewrite infinite_sum_infinite_sum'.
-  apply infinite_sum'_mult_const.
-  rewrite <- infinite_sum_infinite_sum'.
-  apply is_series_Reals. apply is_series_geom.
-  rewrite Rabs_pos_eq. lra. lra. 
-Qed.
-
-Lemma ex_series_mult_geom (D:R) : ex_series (fun n => D*γ^n).
-Proof.
-  exists (D/(1-γ)). 
-  rewrite is_series_Reals. 
-  apply sum_mult_geom.
-Qed.
-
-
-Lemma ltv_part_le_norm {D : R} (N : nat) :
-   (forall s s': M.(state), Rabs (reward s (σ s) s') <= D) -> Rabs(ltv_part N) <= sum_f_R0 (fun n => γ^n * D) N.
-Proof.
-  intros Hd.
-  unfold ltv_part. rewrite sum_n_Reals.
-  refine (Rle_trans _ _ _ _ _ ).
-  apply sum_f_R0_triangle. 
-  apply sum_Rle. 
-  intros n0 Hn0. 
-  rewrite Rabs_mult.
-  enough (Hγ : Rabs (γ^n0) = γ^n0). rewrite Hγ.
-  apply Rmult_le_compat_l.
-  apply pow_le ; firstorder.
-  apply expt_reward_le_max_Rabs ; try assumption.
-  apply Rabs_pos_eq. apply pow_le. firstorder. 
-Qed.
-
-Theorem ex_series_ltv {D : R} :
-   (forall s s': M.(state), Rabs (reward s (σ s) s') <= D) -> (forall s0, ex_series (fun n => γ^n * (expt_reward σ s0 n))).
-Proof.
-  intros Hbdd s0. 
-  refine (ex_series_le_Reals _ _ _ _). 
-  intros n. rewrite Rabs_mult.
-  enough (Rabs (γ ^ n) * Rabs (expt_reward σ s0 n) <= D*γ^n). apply H.
-  enough (Hγ : Rabs (γ^n) = γ^n). rewrite Hγ.
-  rewrite Rmult_comm. apply Rmult_le_compat_r.
-  apply pow_le; firstorder.
-  apply (expt_reward_le_max_Rabs) ; try assumption. 
-  apply Rabs_pos_eq ; apply pow_le; firstorder.
-  apply (ex_series_mult_geom D). 
-Qed.
-
-Definition ltv : M.(state) -> R := fun s => Series (fun n => γ^n * (expt_reward σ s n)).
-  
-Definition expt_ltv (p : Pmf M.(state)) : R :=
-  expt_value p ltv.
-
-Lemma Pmf_bind_comm_stoch_bind (n : nat) :
-  Pmf_bind (bind_stoch_iter σ n init) (fun a : state M => t a (σ a)) =
-  Pmf_bind (t init (σ init)) (fun a : state M => bind_stoch_iter σ n a).
-Proof.
-    induction n.
-  * unfold bind_stoch_iter. simpl. rewrite Pmf_bind_of_ret.  now rewrite Pmf_ret_of_bind.
-  * unfold bind_stoch_iter in *. simpl.  setoid_rewrite IHn.
-    rewrite Pmf_bind_of_bind. reflexivity.
-Qed.
-
-
-(* Long-Term Values satisfy the Bellman equation. *)
-Lemma ltv_corec {D : R} :
-   (forall s s': M.(state), Rabs (reward s (σ s) s') <= D) ->
-  ltv init = (step_expt_reward σ init) + γ*expt_value (t init (σ init)) ltv. 
-Proof.
-  intros bdd. 
-  rewrite <-(@expt_reward0_eq_reward _ σ init).
-  unfold ltv.
-  rewrite Series_incr_1. simpl. rewrite Rmult_1_l. setoid_rewrite Rmult_assoc.   
-  rewrite Series_scal_l. f_equal. 
-  setoid_rewrite expt_reward_succ. 
-  rewrite expt_value_Series. f_equal.  
-  apply Series_ext. intros n.
-  rewrite expt_value_const_mul. f_equal. 
-  rewrite <-expt_value_bind. rewrite Pmf_bind_comm_stoch_bind.
-  unfold expt_reward. 
-  rewrite expt_value_bind.  reflexivity.
-  apply (ex_series_ltv bdd).
-  apply (ex_series_ltv bdd). 
-Qed.
-
-
-
-End ltv.
-
-
+(*
 Section ltv_gen.
 
 
@@ -1036,11 +921,14 @@ Qed.*)
 
 
 End ltv_gen.
-
+*)
 
 Section Rfct_AbelianGroup.
 
-
+ (* 
+    Additive abelian group structure on the function space A -> R. 
+    To talk about equality we use functional extensionality. 
+  *)
 Definition Rfct (A : Type) {fin : Finite A} := A -> R.
 
 Context (A : Type) {finA : Finite A}. 
@@ -1330,7 +1218,7 @@ Qed.
 
 (* These proofs are trivial since the ball is defined using the norm. *)
 Lemma Rfct_norm_ball1 : forall (f g : Rfct A) (eps : R),
-     Rmax_norm A (minus g f) < eps -> @ Hierarchy.ball (NormedModuleAux.UniformSpace R_AbsRing Rfct_NormedModuleAux)  f eps g.
+     Rmax_norm A (minus g f) < eps -> @Hierarchy.ball (NormedModuleAux.UniformSpace R_AbsRing Rfct_NormedModuleAux)  f eps g.
 Proof.
   intros f g eps H.
   unfold ball ; simpl. apply H.
@@ -1396,7 +1284,15 @@ End Rfct_NormedModule.
 
 Section Rfct_open_closed.
 
-  
+  (* 
+     Note: this section uses Classical reasoning. In particular, the theorems
+     Classical_Pred_Type.not_ex_not_all and its variants. 
+     This arises since in order to prove a set closed, we prove it's complement open. 
+     The sets in question are {g | g >= f} and {g | g <= f}. We use classical reasoning
+     to construct the existential from the negated forall. 
+     The alternative is to use filters to prove sets closed. (I don't know if this is 
+     entirely intuitionistic.)
+  *)
   Context (A : Type) {finA : Finite A} {ne : NonEmpty A}.
 
   (* The Max norm topology is compatible with the Euclidean topology induced from R.*)
@@ -1621,8 +1517,6 @@ Section Rfct_CompleteSpace.
 
 End Rfct_CompleteSpace.
 
-
-
 Section fixpt.
 
   Context {K : AbsRing}{X : CompleteNormedModule K}.
@@ -1735,10 +1629,125 @@ Section contraction_coinduction.
  
 End contraction_coinduction. 
 
+Section ltv.
+
+Open Scope R_scope. 
+Context {M : MDP} {finm : Finite (state M)} (γ : R).
+Context (σ : dec_rule M) (init : M.(state)) (hγ : (0 < γ < 1)%R).
+Arguments reward {_}.
+Arguments outcomes {_}.
+Arguments t {_}.
+
+
+Global Instance Series_proper :
+  Proper (pointwise_relation _ eq  ==> eq) (Series).
+Proof.
+  unfold Proper, pointwise_relation, respectful.
+  apply Series_ext.
+Qed.
+
+Definition ltv_part (N : nat) := sum_n (fun n => γ^n * (expt_reward σ init n)) N. 
+
+Lemma ltv_part0_eq_reward : ltv_part 0 = (step_expt_reward σ init).
+Proof.
+  unfold ltv_part. rewrite sum_n_Reals. simpl.  
+  rewrite expt_reward0_eq_reward. lra.
+Qed.
+
+Lemma sum_mult_geom (D : R) : infinite_sum (fun n => D*γ^n) (D/(1 - γ)).
+Proof.
+  rewrite infinite_sum_infinite_sum'.
+  apply infinite_sum'_mult_const.
+  rewrite <- infinite_sum_infinite_sum'.
+  apply is_series_Reals. apply is_series_geom.
+  rewrite Rabs_pos_eq. lra. lra. 
+Qed.
+
+Lemma ex_series_mult_geom (D:R) : ex_series (fun n => D*γ^n).
+Proof.
+  exists (D/(1-γ)). 
+  rewrite is_series_Reals. 
+  apply sum_mult_geom.
+Qed.
+
+
+Lemma ltv_part_le_norm {D : R} (N : nat) :
+   (forall s s': M.(state), Rabs (reward s (σ s) s') <= D) -> Rabs(ltv_part N) <= sum_f_R0 (fun n => γ^n * D) N.
+Proof.
+  intros Hd.
+  unfold ltv_part. rewrite sum_n_Reals.
+  refine (Rle_trans _ _ _ _ _ ).
+  apply sum_f_R0_triangle. 
+  apply sum_Rle. 
+  intros n0 Hn0. 
+  rewrite Rabs_mult.
+  enough (Hγ : Rabs (γ^n0) = γ^n0). rewrite Hγ.
+  apply Rmult_le_compat_l.
+  apply pow_le ; firstorder.
+  apply expt_reward_le_max_Rabs ; try assumption.
+  apply Rabs_pos_eq. apply pow_le. firstorder. 
+Qed.
+
+Theorem ex_series_ltv {D : R} :
+   (forall s s': M.(state), Rabs (reward s (σ s) s') <= D) -> (forall s0, ex_series (fun n => γ^n * (expt_reward σ s0 n))).
+Proof.
+  intros Hbdd s0. 
+  refine (ex_series_le_Reals _ _ _ _). 
+  intros n. rewrite Rabs_mult.
+  enough (Rabs (γ ^ n) * Rabs (expt_reward σ s0 n) <= D*γ^n). apply H.
+  enough (Hγ : Rabs (γ^n) = γ^n). rewrite Hγ.
+  rewrite Rmult_comm. apply Rmult_le_compat_r.
+  apply pow_le; firstorder.
+  apply (expt_reward_le_max_Rabs) ; try assumption. 
+  apply Rabs_pos_eq ; apply pow_le; firstorder.
+  apply (ex_series_mult_geom D). 
+Qed.
+
+Definition ltv : M.(state) -> R:= fun s => Series (fun n => γ^n * (expt_reward σ s n)).
+  
+Definition expt_ltv (p : Pmf M.(state)) : R :=
+  expt_value p ltv.
+
+Lemma Pmf_bind_comm_stoch_bind (n : nat) :
+  Pmf_bind (bind_stoch_iter σ n init) (fun a : state M => t a (σ a)) =
+  Pmf_bind (t init (σ init)) (fun a : state M => bind_stoch_iter σ n a).
+Proof.
+    induction n.
+  * unfold bind_stoch_iter. simpl. rewrite Pmf_bind_of_ret.  now rewrite Pmf_ret_of_bind.
+  * unfold bind_stoch_iter in *. simpl.  setoid_rewrite IHn.
+    rewrite Pmf_bind_of_bind. reflexivity.
+Qed.
+
+
+(* Long-Term Values satisfy the Bellman equation. *)
+Lemma ltv_corec {D : R} :
+   (forall s s': M.(state), Rabs (reward s (σ s) s') <= D) ->
+  ltv init = (step_expt_reward σ init) + γ*expt_value (t init (σ init)) ltv. 
+Proof.
+  intros bdd. 
+  rewrite <-(@expt_reward0_eq_reward _ σ init).
+  unfold ltv.
+  rewrite Series_incr_1. simpl. rewrite Rmult_1_l. setoid_rewrite Rmult_assoc.   
+  rewrite Series_scal_l. f_equal. 
+  setoid_rewrite expt_reward_succ. 
+  rewrite expt_value_Series. f_equal.  
+  apply Series_ext. intros n.
+  rewrite expt_value_const_mul. f_equal. 
+  rewrite <-expt_value_bind. rewrite Pmf_bind_comm_stoch_bind.
+  unfold expt_reward. 
+  rewrite expt_value_bind.  reflexivity.
+  apply (ex_series_ltv bdd).
+  apply (ex_series_ltv bdd). 
+Qed.
+
+
+
+End ltv.
+
 Section operator.
 Open Scope R_scope. 
-Context {M : MDP} (finm : Finite (state M)) (γ D : R).
-Context (hγ : (0 <= γ < 1)%R).
+Context {M : MDP} {finm : Finite (state M)} (γ D : R).
+Context (hγ : (0 < γ < 1)%R).
 
 Arguments reward {_}.
 Arguments outcomes {_}.
@@ -1747,21 +1756,62 @@ Arguments t {_}.
 Context (bdd :  (forall s s': M.(state), forall σ : dec_rule M, Rabs (reward s (σ s) s') <= D)).
 
 
-Definition bellman_op (π : dec_rule M) : (M.(state) -> R) -> (M.(state) -> R) :=
+Definition bellman_op (π : dec_rule M) : Rfct M.(state) -> Rfct M.(state) :=
   fun W => fun s => (step_expt_reward π s + γ*(expt_value (t s (π s)) W)). 
 
-Lemma ltv_bellman_op_fixpoint : forall π, bellman_op π (ltv γ π) = ltv γ π.
+
+Theorem is_contraction_bellman_op (π : dec_rule M) :
+ @is_contraction (Rfct_UniformSpace M.(state)) (Rfct_UniformSpace M.(state)) (bellman_op π).
 Proof.
-  intro π.
-  unfold bellman_op. simpl.
-  apply functional_extensionality.
-  intro init. symmetry.
-  eapply ltv_corec ; eauto.
+  unfold is_contraction.
+  exists γ ; split.
+  - now destruct hγ.
+  - unfold is_Lipschitz. split.
+    -- destruct hγ. now left.
+    -- intros f g r Hr Hx.
+       repeat red in Hx. repeat red.
+       unfold Rmax_norm in *. destruct finm as [ls Hls].
+       destruct (is_nil_dec ls).
+       --- rewrite e ; simpl. apply Rmult_lt_0_compat ; [now destruct hγ |trivial].
+       ---
+         assert (h1 :  Max_{ ls}(fun s => Rabs (minus (bellman_op π g s) (bellman_op π f s))) =  γ*Max_{ ls}(fun s => Rabs (expt_value (t s (π s)) (fun s => g s - f s)))).
+       {
+         rewrite <-Rmax_list_map_const_mul ; [| destruct hγ ; now left].
+         f_equal.
+         apply map_ext. rewrite <-(Rabs_pos_eq γ) ; [ | destruct hγ ; now left].
+         intro s. 
+         rewrite <-Rabs_mult.
+         f_equal. unfold bellman_op,minus,plus,opp ; simpl.
+         rewrite expt_value_sub. ring.
+       }
+       rewrite h1.
+       apply Rmult_lt_compat_l ; [firstorder|].
+       rewrite Rmax_list_lt_iff ; [| rewrite map_not_nil ; congruence].
+       intros r0 Hin. rewrite in_map_iff in Hin.
+       destruct Hin as [a0 [Ha0 Hina0]].
+       rewrite <-Ha0. eapply Rle_lt_trans ; last apply Hx.
+       eapply Rle_trans. apply expt_value_Rabs_Rle.
+       simpl. apply expt_value_bdd.
+       intro s. apply Rmax_spec.
+       rewrite in_map_iff. exists s ; split ; trivial.
 Qed.
 
-Lemma bellman_op_monotone (π : dec_rule M) W1 W2: (forall s, W1 s <= W2 s) -> (forall s, bellman_op π W1 s <= bellman_op π W2 s). 
+Lemma ltv_bellman_op_fixpt : forall π, ltv γ π = fixpt (bellman_op π) (ltv γ π).
 Proof.
-  intros HW1W2 s.
+  intro π.
+  apply (fixpt_is_unique (is_contraction_bellman_op π) (fun x => True)) ; intuition.
+  - exists (fun _ => γ) ; trivial.
+  - apply closed_true.
+  -  unfold bellman_op. simpl.
+     apply functional_extensionality.
+     intro init. symmetry.
+     eapply ltv_corec ; eauto.
+Qed.
+
+
+Lemma bellman_op_monotone_le (π : dec_rule M) : monotone_le M.(state) (bellman_op π). 
+Proof.
+  intros W1 W2 HW1W2 s.
   unfold bellman_op. 
   apply Rplus_le_compat_l.
   apply Rmult_le_compat_l ; intuition.
@@ -1769,14 +1819,15 @@ Proof.
 Qed.
 
 
-Definition bellman_max_op (la : forall s, list (M.(act) s)) : (M.(state) -> R) -> (M.(state) -> R) :=
+Definition bellman_max_op (la : forall s, list (M.(act) s)) : Rfct M.(state) -> Rfct M.(state)
+  :=
   fun W => fun s => Max_{la s}( fun a => expt_value (t s a) (reward s a) + γ*(expt_value (t s a) W)). 
 
 
-
-Lemma bellman_max_op_monotone {la : forall s, list (M.(act) s)} W1 W2: (forall s, W1 s <= W2 s) -> (forall s, bellman_max_op la W1 s <= bellman_max_op la W2 s). 
+Lemma bellman_max_op_monotone {la : forall s, list (M.(act) s)} :
+  (monotone_le M.(state) (bellman_max_op la)).
 Proof.
-  intros HW1W2 s.
+  intros W1 W2 HW1W2 s.
   unfold bellman_max_op.
   apply Rmax_list_fun_le ; auto. 
   intro a.
@@ -1799,15 +1850,15 @@ Proof.
 Qed.
 
 
-Theorem is_contraction_bellman (ne : NonEmpty M.(state)) (la : forall s, list (M.(act) s)) :
- (0 <> γ) -> @is_contraction (Rfct_UniformSpace M.(state)) (Rfct_UniformSpace M.(state)) (bellman_max_op la).
+Theorem is_contraction_bellman_max_op
+        (ne : NonEmpty M.(state)) (la : forall s, list (M.(act) s)) :
+ @is_contraction (Rfct_UniformSpace M.(state)) (Rfct_UniformSpace M.(state)) (bellman_max_op la).
 Proof.
-  intro Hne. 
   unfold is_contraction.
   exists γ ; split.
   - now destruct hγ.
   - unfold is_Lipschitz. split.
-    ++ now destruct hγ.
+    ++ destruct hγ ; now left.
     ++ intros f g r Hr Hfg.
        repeat red in Hfg. repeat red.
        unfold Rmax_norm in *. destruct finm as [ls Hls].
@@ -1827,10 +1878,10 @@ Proof.
            intros a H. replace (γ * Rabs (expt_value (t s a) g - expt_value (t s a) f)) with
             (Rabs (γ) * Rabs (expt_value (t s a) g - expt_value (t s a) f)).
            rewrite <-Rabs_mult. f_equal. ring. 
-           f_equal. apply Rabs_pos_eq ; now destruct hγ.
+           f_equal. apply Rabs_pos_eq. destruct hγ ; now left.
            }
            rewrite h1; clear h1.
-           rewrite Rmax_list_map_const_mul ; [|now destruct hγ].
+           rewrite Rmax_list_map_const_mul ; [|destruct hγ; now left].
            assert (h2: Max_{ la s}(fun a : act M s => Rabs (expt_value (t s a) g - expt_value (t s a) f))
              = Max_{ la s}(fun a : act M s => Rabs (expt_value (t s a)(fun s => g s - f s)))).
            {
@@ -1840,7 +1891,7 @@ Proof.
            rewrite h2 ; clear h2.
            assert (h3 : γ * (Max_{ la s}(fun a : act M s => Rabs (expt_value (t s a) (fun s0 : state M => g s0 - f s0)))) <= γ*(Max_{ la s}(fun a : act M s => (expt_value (t s a) (fun s0 : state M => Rabs (g s0 - f s0)))))).
            {
-           apply Rmult_le_compat_l; [now destruct hγ| ].
+           apply Rmult_le_compat_l; [destruct hγ ; now left| ].
            apply Rmax_list_fun_le. intro a. apply expt_value_Rabs_Rle.
            }
            eapply Rle_lt_trans; first apply h3. clear h3.
