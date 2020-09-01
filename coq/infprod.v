@@ -371,6 +371,41 @@ Qed.
 Definition max_prod_fun (a : nat -> posreal) (m n : nat) : R :=
   List.fold_right Rmax 0 (List.map (fun k => part_prod_n a k n) (List.seq 0 (S m)%nat)).
 
+Lemma fold_right_max_upper_list  acc l x :
+  List.In x l -> x <= List.fold_right Rmax acc l.
+Proof.
+  induction l; simpl; intros inn; [intuition | ].
+  destruct inn.
+  - subst.    
+    apply Rmax_l.
+  - specialize (IHl H).
+    eapply Rle_trans.
+    + eapply IHl.
+    + apply Rmax_r.
+Qed.
+
+Lemma fold_right_max_upper_acc acc l :
+  acc <= List.fold_right Rmax acc l.
+Proof.
+  induction l; simpl.
+  - lra.
+  - eapply Rle_trans.
+    + eapply IHl.
+    + apply Rmax_r.
+Qed.
+
+Lemma fold_right_max_in acc l :
+  (List.fold_right Rmax acc l) = acc \/
+  List.In (List.fold_right Rmax acc l) l.
+Proof.
+  induction l; simpl.
+  - intuition.
+  - destruct IHl.
+    + rewrite H.
+      apply Rmax_case; eauto.
+    + apply Rmax_case; eauto.
+Qed.
+
 Lemma max_prod_le (F : nat -> posreal) (k m n:nat) :
   (k <= m)%nat ->
   (m <= n)%nat ->  
@@ -378,14 +413,13 @@ Lemma max_prod_le (F : nat -> posreal) (k m n:nat) :
 Proof.
   intros.
   unfold max_prod_fun.
-  induction m.
-  - simpl.
-    replace (k) with (0%nat) by lia.
-    SearchAbout Rmax.
-    rewrite Rmax_left; [lra|].
-    left; apply pos_part_prod.
-  - replace (S (S m)) with (S m + 1)%nat by lia.
-    Admitted.
+  apply fold_right_max_upper_list.
+  apply List.in_map_iff.
+  exists k.
+  split; trivial.
+  apply List.in_seq.
+  lia.
+Qed.
     
 Lemma max_bounded1 (F : nat -> posreal) (m n:nat) :
   (forall (n:nat), F n <= 1) ->
@@ -960,23 +994,18 @@ Proof.
     replace (sigma_V0_2 * (eps / 2 / sigma_V0_2)) with (eps/2) in H4; [|now field_simplify].
     rewrite Rplus_comm in Heqsigma_V0_2.
     rewrite <- Heqsigma_V0_2 in H11.
-    unfold part_prod_pos in H4; simpl in H4.
-    replace (part_prod (fun n : nat => pos_sq_fun F (S (Nsigma + n))) (n - S Nsigma - 1))
+    unfold part_prod_pos, pos in H4.
+    replace (part_prod (fun n : nat => pos_sq_fun F (S Nsigma + n)) (n - S Nsigma - 1))
             with (part_prod_n (pos_sq_fun F) (S Nsigma) (n - 1)) in H4.
-    rewrite Heqhalf_eps in H3; simpl in H3.
-    generalize (Rplus_lt_compat _ _ _ _ H3 H4).
-    intros.
-    replace (eps/2 + eps/2) with (eps) in H16 by lra.
-    apply (Rle_lt_trans  _ _ _ H11 H16).
-    unfold part_prod.
-    symmetry.
-    replace (fun n0 : nat => pos_sq_fun F (S (Nsigma + n0))) with
-            (fun n0 : nat => pos_sq_fun F (S (Nsigma) + n0)).
-    replace (n-1)%nat with (n - S Nsigma - 1 + S Nsigma)%nat by lia.
-    apply part_prod_n_shift.
-    apply FunctionalExtensionality.functional_extensionality.
-    intros.
-    f_equal.
+    +  rewrite Heqhalf_eps in H3; simpl in H3.
+       generalize (Rplus_lt_compat _ _ _ _ H3 H4).
+       intros.
+       replace (eps/2 + eps/2) with (eps) in H16 by lra.
+       apply (Rle_lt_trans  _ _ _ H11 H16).
+    + unfold part_prod.
+      symmetry.
+      replace (n-1)%nat with (n - S Nsigma - 1 + S Nsigma)%nat by lia.
+      apply part_prod_n_shift.
 Qed.
 
 (* needs to have positive limit as above *)
