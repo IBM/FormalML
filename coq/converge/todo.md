@@ -1,5 +1,5 @@
 # Facts remaining (Urgent):
-* Prove that the space `Rfct` is complete wrt to the Max norm. (I have proven that the canonical topology and the max norm topology are equivalent, we just need to exploit that fact.)
+* Prove that the space `Rfct` is complete wrt to the Max norm. 
 * Prove that `Finite A -> Finite B -> Finite ( A -> B)` and it's dependent analogue. This helps us cut down on hypotheses where we assume that the set of decision rules is also finite/nonempty. 
 * Prove the law of total expectation and the "take out what is known" property of conditional expectations. 
 * Prove a version of contraction coinduction. 
