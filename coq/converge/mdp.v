@@ -991,6 +991,13 @@ Proof.
     now apply Rnot_le_gt.
 Qed.
 
+Lemma Rfct_le_ge_symm (f g : Rfct A) : Rfct_le f g <-> Rfct_ge g f.
+Proof.
+  split; intros.
+  - intro a. specialize (H a). now apply Rle_ge.
+  - intro a. specialize (H a). now apply Rge_le.
+Qed.  
+
 Definition monotone_le (F : Rfct A -> Rfct A) := forall f g, Rfct_le f g -> Rfct_le (F f) (F g). 
 
 Definition monotone_ge (F : Rfct A -> Rfct A) := forall f g, Rfct_ge f g -> Rfct_ge (F f) (F g). 
@@ -1518,48 +1525,49 @@ Section Rfct_CompleteSpace.
 End Rfct_CompleteSpace.
 
 Section fixpt.
-
   Context {K : AbsRing}{X : CompleteNormedModule K}.
-
+  
   Definition fixpt (F : X -> X) (init : X) :=
-    lim (fun P => eventually (fun n => P (fixed_point.iter F n init))).  
-
+    lim (fun P => eventually (fun n => P (fixed_point.iter F n init))).
+  
   Context {F : X -> X} (hF : is_contraction F) (phi : X -> Prop)
-          (fphi : forall x : X, phi x -> phi (F x)) (ne : exists a : X, phi a)
+          (fphi : forall x : X, phi x -> phi (F x))
           (phic : closed phi).
   
-  Lemma fixpt_is_fixpt {init : X} (Hphi : phi init) : F (fixpt F init) = fixpt F init.
-  Proof.
-    assert (my_complete phi) by (now apply closed_my_complete).
-    destruct (FixedPoint K F phi fphi ne H hF) as [? [? [? [? Hsub]]]].
-    specialize (Hsub init Hphi).
-    unfold fixpt. now rewrite Hsub.
-  Qed.
-
-  Lemma fixpt_is_unique {init : X} (Hphi : phi init) :
-    forall g : X, phi g -> F g = g -> g = fixpt F init.
-  Proof.
-    assert (my_complete phi) by (now apply closed_my_complete).
-    destruct (FixedPoint K F phi fphi ne H hF) as [? [? [? [? Hsub]]]].
-    specialize (Hsub init Hphi).    
-    unfold fixpt. now rewrite Hsub.
-  Qed.
-
   Lemma fixpt_init_unique {init1 init2 : X} (Hphi1 : phi init1) (Hphi2 : phi init2):
     fixpt F init1 = fixpt F init2.
   Proof.
     assert (my_complete phi) by (now apply closed_my_complete).
-    destruct (FixedPoint K F phi fphi ne H hF) as [? [? [? [? Hsub]]]].
+    destruct (FixedPoint K F phi fphi (ex_intro _ _ Hphi1) H hF) as [? [? [? [? Hsub]]]].
     unfold fixpt.
     rewrite Hsub ; auto. rewrite Hsub ; auto.
   Qed.
+  
+  Context (init:X) (init_phi: phi init).
+  
+  Lemma fixpt_is_fixpt : F (fixpt F init) = fixpt F init.
+  Proof.
+    assert (my_complete phi) by (now apply closed_my_complete).
+    destruct (FixedPoint K F phi fphi (ex_intro _ _ init_phi) H hF) as [? [? [? [? Hsub]]]].
+    specialize (Hsub init init_phi).
+    unfold fixpt. now rewrite Hsub.
+  Qed.
+  
+  Lemma fixpt_is_unique :
+    forall g : X, phi g -> F g = g -> g = fixpt F init.
+  Proof.
+    assert (my_complete phi) by (now apply closed_my_complete).
+    destruct (FixedPoint K F phi fphi (ex_intro _ _ init_phi) H hF) as [? [? [? [? Hsub]]]].
+    specialize (Hsub init init_phi).    
+    unfold fixpt. now rewrite Hsub.
+  Qed.
 
   (* Kozen's metric coinduction principle. *)
-  Theorem metric_coinduction {init : X} (Hphi : phi init) : phi (fixpt F init).
+  Theorem metric_coinduction : phi (fixpt F init).
   Proof. 
     assert (my_complete phi) by (now apply closed_my_complete).
-    destruct (FixedPoint K F phi fphi ne H hF) as [? [Hin [? [? Hsub]]]].
-    specialize (Hsub init Hphi).
+    destruct (FixedPoint K F phi fphi (ex_intro _ _ init_phi) H hF) as [? [Hin [? [? Hsub]]]].
+    specialize (Hsub init init_phi).
     rewrite <-Hsub in Hin.
     unfold fixpt.
     apply Hin. 
@@ -1575,7 +1583,7 @@ Section contraction_coinduction.
      Rfct_Uniformspace. Our subset ϕ will be the nonempty closed sets {g | g <= f} or
      {g | g >= f}. The operator F being monotonic means that it preserves these sets. 
   *)
-  Context (A : Type) {finm : Finite A}.
+  Context (A : Type) {finm : Finite A} {ne : NonEmpty A}.
 
   Lemma monotone_le_preserv (F : Rfct A -> Rfct A) (f : Rfct A) :
       monotone_le A F -> (Rfct_le A (F f) f) -> (forall g, Rfct_le A g f -> Rfct_le A (F g) f).
@@ -1602,32 +1610,35 @@ Section contraction_coinduction.
   Theorem contraction_coinduction_Rfct_le
           {F} (hF : @is_contraction (Rfct_CompleteSpace A) (Rfct_CompleteSpace A) F)
           (hM : monotone_le A F)    
-    : forall f, Rfct_le A (F f) f -> Rfct_le A (fixpt F f) f. 
+    : forall f init, Rfct_le A (F f) f -> Rfct_le A (fixpt F init) f. 
   Proof.
-    intros f Hfle.
+    intros f init Hfle.
+    replace (fixpt F init) with (fixpt F f).
     apply (metric_coinduction hF (fun g => Rfct_le _ g f)).
     - now apply monotone_le_preserv. 
-    - exists f. intro a ; now right.
     - apply le_closed.
-    - intro a ; now right. 
+    - intro a. now right.
+    - apply (fixpt_init_unique hF (fun _ => True)) ; trivial.
+      apply closed_true.
   Qed.
 
   Theorem contraction_coinduction_Rfct_ge
           {F} (hF : @is_contraction (Rfct_CompleteSpace A) (Rfct_CompleteSpace A) F)
           (hM : monotone_ge A F)    
-    : forall f, Rfct_ge A (F f) f -> Rfct_ge A (fixpt F f) f. 
+    : forall f init, Rfct_ge A (F f) f -> Rfct_ge A (fixpt F init) f. 
   Proof.
-    intros f Hfle.
+    intros f init Hfle.
+    replace (fixpt F init) with (fixpt F f).
     apply (metric_coinduction hF (fun g => Rfct_ge _ g f)).
     - now apply monotone_ge_preserv. 
-    - exists f. intro a ; now right.
     - apply ge_closed.
-    - intro a ; now right. 
+    - intro a ; now right.
+    - apply (fixpt_init_unique hF (fun _ => True)) ; trivial.
+      apply closed_true.
   Qed.
-
-    
  
 End contraction_coinduction. 
+
 
 Section ltv.
 
@@ -1796,16 +1807,21 @@ Proof.
        rewrite in_map_iff. exists s ; split ; trivial.
 Qed.
 
-Lemma ltv_bellman_op_fixpt : forall π, ltv γ π = fixpt (bellman_op π) (ltv γ π).
+Lemma ltv_bellman_eq_ltv : forall π, ltv γ π = bellman_op π (ltv γ π).
 Proof.
   intro π.
-  apply (fixpt_is_unique (is_contraction_bellman_op π) (fun x => True)) ; intuition.
-  - exists (fun _ => γ) ; trivial.
+  unfold bellman_op. simpl.
+  apply functional_extensionality.
+  intro init.
+  eapply ltv_corec ; eauto.
+Qed.
+
+Lemma ltv_bellman_op_fixpt : forall π init, ltv γ π = fixpt (bellman_op π) init.
+Proof.
+  intros π init.
+  apply (fixpt_is_unique (is_contraction_bellman_op π) (fun x => True)) ; trivial.
   - apply closed_true.
-  -  unfold bellman_op. simpl.
-     apply functional_extensionality.
-     intro init. symmetry.
-     eapply ltv_corec ; eauto.
+  - now rewrite <-ltv_bellman_eq_ltv.
 Qed.
 
 
@@ -1824,7 +1840,7 @@ Definition bellman_max_op (la : forall s, list (M.(act) s)) : Rfct M.(state) -> 
   fun W => fun s => Max_{la s}( fun a => expt_value (t s a) (reward s a) + γ*(expt_value (t s a) W)). 
 
 
-Lemma bellman_max_op_monotone {la : forall s, list (M.(act) s)} :
+Lemma bellman_max_op_monotone_le {la : forall s, list (M.(act) s)} :
   (monotone_le M.(state) (bellman_max_op la)).
 Proof.
   intros W1 W2 HW1W2 s.
@@ -1836,11 +1852,26 @@ Proof.
   apply expt_value_le ; eauto.
 Qed.
 
-(* Cut down on these hypotheses. *)
-Lemma bellman_op_bellman_max_le (π : dec_rule M) {ld : list (dec_rule M)} W (la : forall s, list (M.(act) s)) (hp : forall π s, In π ld -> In (π s) (la s)) (Hπ : In π ld) :
-  forall s, bellman_op π W s <= bellman_max_op la W s.
+Lemma bellman_max_op_monotone_ge {la : forall s, list (M.(act) s)} :
+  (monotone_ge M.(state) (bellman_max_op la)).
 Proof.
-  intro s. 
+  intros W1 W2 HW1W2 s.
+  rewrite <-Rfct_le_ge_symm in HW1W2.
+  apply Rle_ge.
+  unfold bellman_max_op.
+  apply Rmax_list_fun_le ; auto. 
+  intro a.
+  apply Rplus_le_compat_l.
+  apply Rmult_le_compat_l ; intuition.
+  apply expt_value_le ; eauto.
+Qed.
+
+
+(* Cut down on these hypotheses. *)
+Lemma bellman_op_bellman_max_le (π : dec_rule M) {ld : list (dec_rule M)} (la : forall s, list (M.(act) s)) (hp : forall π s, In π ld -> In (π s) (la s)) (Hπ : In π ld) :
+  forall W, Rfct_le M.(state) (bellman_op π W) (bellman_max_op la W).
+Proof.
+  intros W s.  
   unfold bellman_op. 
   unfold bellman_max_op.
   unfold step_expt_reward.
@@ -1905,13 +1936,26 @@ Proof.
            rewrite in_map_iff. exists s0 ; split ; trivial.
 Qed. 
 
+Lemma ltv_Rfct_le_fixpt (ne : NonEmpty M.(state)) (π : dec_rule M) {ld : list (dec_rule M)} (la : forall s, list (M.(act) s)) (hp : forall π s, In π ld -> In (π s) (la s)) (Hπ : In π ld):
+ forall init, Rfct_le M.(state) (ltv γ π) (fixpt (bellman_max_op la) init). 
+Proof.
+  intros init.
+  set (Hπ' := bellman_op_bellman_max_le π la hp Hπ (ltv γ π)).
+  rewrite <-ltv_bellman_eq_ltv in Hπ'. rewrite Rfct_le_ge_symm in Hπ'.
+  rewrite Rfct_le_ge_symm.
+  apply (contraction_coinduction_Rfct_ge).
+  - apply is_contraction_bellman_max_op ; eauto.
+  - apply bellman_max_op_monotone_ge.
+  - assumption.
+Qed.
+
 End operator.
 
 Section order.
   
 Open Scope R_scope. 
-Context {M : MDP} (γ : R).
-Context (hγ : (0 <= γ < 1)%R).
+Context {M : MDP} (γ : R) (fm : Finite (state M)).
+Context (hγ : (0 < γ < 1)%R).
 Arguments reward {_}.
 Arguments outcomes {_}.
 Arguments t {_}.
@@ -1996,16 +2040,6 @@ Proof.
   apply Rmax_list_map_transf.
   rewrite Forall_forall.
   intros x Hx. simpl. reflexivity. 
-Qed.
-
-
-Lemma max_ltv_aux3 (l : list (dec_rule M)) (eqA : forall s : M.(state), EqDec (act M s) eq): 
-  forall s : M.(state),
-    Max_{List.map (fun σ => (σ s,σ)) l} (fun σ => (step_expt_reward (snd σ) s) + γ*expt_value (t s (fst σ)) (ltv γ (snd σ))) =  Max_{ List.map (fun σ => (σ s, σ)) l}
-  (fun x =>Max_{List.map snd (filter (fun pi' => fst x ==b fst pi')(List.map (fun σ => (σ s, σ)) l))} (fun pi' => step_expt_reward pi' s + γ * expt_value (t s (fst x)) (ltv γ pi'))).
-Proof.
-  intro s. erewrite Rmax_list_split. simpl. rewrite map_map. simpl.
-  reflexivity.
 Qed.
 
 
