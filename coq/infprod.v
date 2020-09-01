@@ -319,14 +319,18 @@ Proof.
         now rewrite Rmult_0_r.
 Qed.
 
-(*
 Lemma inf_prod_n_sq_m_0 (a : nat -> posreal):
   is_lim_seq (part_prod_pos a) 0 ->
   forall (m:nat), is_lim_seq (part_prod_n_pos a m) 0.
 Proof.
   intros.
   unfold part_prod_n_pos.
-*)  
+  apply is_lim_seq_incr_n with (N := m).
+  apply (is_lim_seq_ext (fun n : nat => part_prod_pos (fun k : nat => a (m + k)%nat) n)).
+  intros.
+  now replace (n + m - m)%nat with n by lia.
+  now apply inf_prod_sq_m_0.
+Qed.  
 
 Lemma max_bounded1_pre_le (F : nat -> posreal) (m n:nat) :
   (forall (n:nat), F n <= 1) ->
@@ -745,6 +749,21 @@ Proof.
     apply Rmult_le_compat_l; trivial.
     apply Rle_0_sqr.
 Qed.
+
+Lemma sum_bound3_max (F : nat -> posreal) (sigma : nat -> R) (n m:nat) :
+  (S m <= n)%nat ->
+  sum_n (fun k => (Rsqr (sigma k))*(part_prod_n (pos_sq_fun F) (S k) n)) m <=
+  (sum_n (fun k => (Rsqr (sigma k))) m) * (max_prod_fun (pos_sq_fun F) (S m) n).
+Proof.  
+  intros.
+  rewrite <- sum_n_mult_r with (a := (max_prod_fun (pos_sq_fun F) (S m) n)).
+  apply sum_n_le_loc.
+  intros.
+  unfold Hierarchy.mult; simpl.
+  apply Rmult_le_compat_l.
+  apply Rle_0_sqr.
+  apply max_prod_le; lia.
+Qed.
     
 Theorem Dvoretzky4_8_5 (F : nat -> posreal) (sigma V: nat -> R) (n m:nat):
   (forall n, F n <= 1) ->
@@ -768,6 +787,36 @@ Proof.
   generalize (Rplus_le_compat _ _ _ _ H0 H1); intros.
   generalize (Rplus_le_compat _ _ _ _ H2 H3); intros.
   lra.
+  lia.
+Qed.
+
+Theorem Dvoretzky4_8_5_max (F : nat -> posreal) (sigma V: nat -> R) (n m:nat) (A:R):
+  (forall r s, part_prod_n (pos_sq_fun F) r s <= A) ->
+  (forall (n:nat), Rsqr (V (S n)) <= (pos_sq_fun F) n * Rsqr (V n) + Rsqr (sigma n)) ->
+  (m<n)%nat ->
+   Rsqr (V (S n)) <= 
+     ( sum_n_m (fun k => Rsqr (sigma k)) (S m) n) * A +
+     (Rsqr (V 0%nat) + sum_n (fun k => (Rsqr (sigma k))) m) *
+             (max_prod_fun (pos_sq_fun F) (S m) n).
+Proof.
+  intros F1 Vsqle mn.
+  generalize (Dvoretzky4_0 (pos_sq_fun F) (fun k => Rsqr(sigma k)) (fun k => Rsqr (V k))).
+  intros.
+  specialize (H Vsqle n).
+  unfold sum_n in H.
+  rewrite sum_split with (m := m) in H; trivial; [|lia].
+  generalize (sum_bound_prod_A F sigma A n m F1); intros.
+  generalize (max_prod_le (pos_sq_fun F) 0 (S m) n); intros.
+  generalize (sum_bound3_max F sigma n m); intros.
+  apply Rmult_le_compat_l with (r := Rsqr (V 0%nat)) in H1.
+  unfold sum_n in *.
+  assert (S m <= n)%nat by lia.
+  specialize (H2 H3).
+  generalize (Rplus_le_compat _ _ _ _ H0 H1); intros.
+  generalize (Rplus_le_compat _ _ _ _ H2 H4); intros.
+  lra.
+  apply Rle_0_sqr.
+  lia.
   lia.
 Qed.
 
