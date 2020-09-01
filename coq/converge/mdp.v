@@ -1103,6 +1103,9 @@ Proof.
     now apply Rnot_le_gt.
 Qed.
 
+Definition monotone_le (F : Rfct A -> Rfct A) := forall f g, Rfct_le f g -> Rfct_le (F f) (F g). 
+
+Definition monotone_ge (F : Rfct A -> Rfct A) := forall f g, Rfct_ge f g -> Rfct_ge (F f) (F g). 
 
 Lemma Rfct_eq_ext (f g:Rfct A) : (forall x, f x = g x) -> f = g.
 Proof.
@@ -1619,33 +1622,118 @@ Section Rfct_CompleteSpace.
 End Rfct_CompleteSpace.
 
 
-Section coinduction. 
 
-Open Scope R_scope. 
-Context {M : MDP} (finm : Finite (state M)).
-Arguments reward {_}.
-Arguments outcomes {_}.
-Arguments t {_}.
+Section fixpt.
 
-Definition fixpt {K : AbsRing}{X : CompleteNormedModule K} {f : X -> X} (hf : is_contraction f)
-           
-  := lim  (fun P => eventually (fun n => P (iter f n ne))).  
+  Context {K : AbsRing}{X : CompleteNormedModule K}.
 
-Theorem metric_coinduction_Rfct 
-  {f : Rfct M.(state) -> Rfct M.(state)}
-    (ϕ : Rfct M.(state) -> Prop) (phic : @closed (Rfct_CompleteSpace M.(state)) ϕ) (phin : exists a , ϕ a)
-    (hf : @is_contraction (Rfct_CompleteSpace M.(state)) (Rfct_CompleteSpace M.(state)) f)
-    (phip : forall x, ϕ x -> ϕ (f x)):
-   ϕ (fixpt ).
-Proof.
-  assert (my_complete ϕ) by (now apply closed_my_complete).
-  destruct (FixedPoint R_AbsRing f ϕ phip phin H hf) as [a [Hphi [Hfix Hsub]]].
-  exists a. split ; trivial.
-Qed.
+  Definition fixpt (F : X -> X) (init : X) :=
+    lim (fun P => eventually (fun n => P (fixed_point.iter F n init))).  
+
+  Context {F : X -> X} (hF : is_contraction F) (phi : X -> Prop)
+          (fphi : forall x : X, phi x -> phi (F x)) (ne : exists a : X, phi a)
+          (phic : closed phi).
+  
+  Lemma fixpt_is_fixpt {init : X} (Hphi : phi init) : F (fixpt F init) = fixpt F init.
+  Proof.
+    assert (my_complete phi) by (now apply closed_my_complete).
+    destruct (FixedPoint K F phi fphi ne H hF) as [? [? [? [? Hsub]]]].
+    specialize (Hsub init Hphi).
+    unfold fixpt. now rewrite Hsub.
+  Qed.
+
+  Lemma fixpt_is_unique {init : X} (Hphi : phi init) :
+    forall g : X, phi g -> F g = g -> g = fixpt F init.
+  Proof.
+    assert (my_complete phi) by (now apply closed_my_complete).
+    destruct (FixedPoint K F phi fphi ne H hF) as [? [? [? [? Hsub]]]].
+    specialize (Hsub init Hphi).    
+    unfold fixpt. now rewrite Hsub.
+  Qed.
+
+  Lemma fixpt_init_unique {init1 init2 : X} (Hphi1 : phi init1) (Hphi2 : phi init2):
+    fixpt F init1 = fixpt F init2.
+  Proof.
+    assert (my_complete phi) by (now apply closed_my_complete).
+    destruct (FixedPoint K F phi fphi ne H hF) as [? [? [? [? Hsub]]]].
+    unfold fixpt.
+    rewrite Hsub ; auto. rewrite Hsub ; auto.
+  Qed.
+
+  (* Kozen's metric coinduction principle. *)
+  Theorem metric_coinduction {init : X} (Hphi : phi init) : phi (fixpt F init).
+  Proof. 
+    assert (my_complete phi) by (now apply closed_my_complete).
+    destruct (FixedPoint K F phi fphi ne H hF) as [? [Hin [? [? Hsub]]]].
+    specialize (Hsub init Hphi).
+    rewrite <-Hsub in Hin.
+    unfold fixpt.
+    apply Hin. 
+  Qed.
+  
+End fixpt. 
 
 
+Section contraction_coinduction. 
+
+  (* 
+     We specialize Kozen's metric coinduction principle to our ordered uniform space
+     Rfct_Uniformspace. Our subset ϕ will be the nonempty closed sets {g | g <= f} or
+     {g | g >= f}. The operator F being monotonic means that it preserves these sets. 
+  *)
+  Context (A : Type) {finm : Finite A}.
+
+  Lemma monotone_le_preserv (F : Rfct A -> Rfct A) (f : Rfct A) :
+      monotone_le A F -> (Rfct_le A (F f) f) -> (forall g, Rfct_le A g f -> Rfct_le A (F g) f).
+  Proof.
+    intros Hm Hle g Hgf.
+    unfold monotone_le in Hm.
+    unfold Rfct_le in *.
+    specialize (Hm g f Hgf) ; clear Hgf.
+    intro a. specialize (Hm a). specialize (Hle a).
+    eapply Rle_trans ; first apply Hm. assumption.
+  Qed.
+
+  Lemma monotone_ge_preserv (F : Rfct A -> Rfct A) (f : Rfct A) :
+      monotone_ge A F -> (Rfct_ge A (F f) f) -> (forall g, Rfct_ge A g f -> Rfct_ge A (F g) f).
+  Proof.
+    intros Hm Hge g Hgf.
+    unfold monotone_ge in Hm.
+    unfold Rfct_ge in *.
+    specialize (Hm g f Hgf) ; clear Hgf.
+    intro a. specialize (Hm a). specialize (Hge a).
+    eapply Rge_trans ; first apply Hm. assumption.
+  Qed.
+
+  Theorem contraction_coinduction_Rfct_le
+          {F} (hF : @is_contraction (Rfct_CompleteSpace A) (Rfct_CompleteSpace A) F)
+          (hM : monotone_le A F)    
+    : forall f, Rfct_le A (F f) f -> Rfct_le A (fixpt F f) f. 
+  Proof.
+    intros f Hfle.
+    apply (metric_coinduction hF (fun g => Rfct_le _ g f)).
+    - now apply monotone_le_preserv. 
+    - exists f. intro a ; now right.
+    - apply le_closed.
+    - intro a ; now right. 
+  Qed.
+
+  Theorem contraction_coinduction_Rfct_ge
+          {F} (hF : @is_contraction (Rfct_CompleteSpace A) (Rfct_CompleteSpace A) F)
+          (hM : monotone_ge A F)    
+    : forall f, Rfct_ge A (F f) f -> Rfct_ge A (fixpt F f) f. 
+  Proof.
+    intros f Hfle.
+    apply (metric_coinduction hF (fun g => Rfct_ge _ g f)).
+    - now apply monotone_ge_preserv. 
+    - exists f. intro a ; now right.
+    - apply ge_closed.
+    - intro a ; now right. 
+  Qed.
+
+    
  
-End coinduction. 
+End contraction_coinduction. 
 
 Section operator.
 Open Scope R_scope. 
