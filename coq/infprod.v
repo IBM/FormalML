@@ -371,6 +371,22 @@ Qed.
 Definition max_prod_fun (a : nat -> posreal) (m n : nat) : R :=
   List.fold_right Rmax 0 (List.map (fun k => part_prod_n a k n) (List.seq 0 (S m)%nat)).
 
+Lemma max_prod_le (F : nat -> posreal) (k m n:nat) :
+  (k <= m)%nat ->
+  (m <= n)%nat ->  
+  part_prod_n F k n <= max_prod_fun F m n.
+Proof.
+  intros.
+  unfold max_prod_fun.
+  induction m.
+  - simpl.
+    replace (k) with (0%nat) by lia.
+    SearchAbout Rmax.
+    rewrite Rmax_left; [lra|].
+    left; apply pos_part_prod.
+  - replace (S (S m)) with (S m + 1)%nat by lia.
+    Admitted.
+    
 Lemma max_bounded1 (F : nat -> posreal) (m n:nat) :
   (forall (n:nat), F n <= 1) ->
   (m <= n)%nat -> max_prod_fun F m n = part_prod_n F m n.
@@ -610,6 +626,23 @@ Proof.
   intros.
   specialize (H0 H).
   replace (Rsqr (sigma k)) with (Rsqr (sigma k) * 1) at 2 by lra.
+  apply Rmult_le_compat; trivial.
+  apply Rle_0_sqr.
+  left.
+  apply pos_part_prod_n.
+  lra.
+Qed.
+
+Lemma sum_bound_prod_A (F : nat -> posreal) (sigma : nat -> R) (A : R) (n m:nat) :
+  (forall r s, part_prod_n (pos_sq_fun F) r s <= A) ->
+  sum_n_m (fun k => (Rsqr (sigma k))*(part_prod_n (pos_sq_fun F) (S k) n)) (S m) n <=
+  (sum_n_m (fun k => Rsqr (sigma k)) (S m) n) * A.
+Proof.
+  intros.
+  rewrite <- sum_n_m_mult_r with (a := A).
+  apply sum_n_m_le.
+  intros.
+  specialize (H (S k) n).
   apply Rmult_le_compat; trivial.
   apply Rle_0_sqr.
   left.
