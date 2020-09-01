@@ -924,10 +924,9 @@ Proof.
     rewrite Rabs_pos_eq in H4; [|left; apply cond_pos].
     apply Rmult_lt_compat_l with (r := sigma_V0_2) in H4; trivial.
     rewrite Heqpart_prod_eps in H4.
-    replace (sigma_V0_2 * (eps / 2 / sigma_V0_2)) with (eps/2) in H4.
+    replace (sigma_V0_2 * (eps / 2 / sigma_V0_2)) with (eps/2) in H4; [|now field_simplify].
     rewrite Rplus_comm in Heqsigma_V0_2.
     rewrite <- Heqsigma_V0_2 in H11.
-    Print part_prod_pos.
     unfold part_prod_pos in H4; simpl in H4.
     replace (part_prod (fun n : nat => pos_sq_fun F (S (Nsigma + n))) (n - S Nsigma - 1))
             with (part_prod_n (pos_sq_fun F) (S Nsigma) (n - 1)) in H4.
@@ -945,7 +944,6 @@ Proof.
     apply FunctionalExtensionality.functional_extensionality.
     intros.
     f_equal.
-    now field_simplify.
 Qed.
 
 (* needs to have positive limit as above *)
