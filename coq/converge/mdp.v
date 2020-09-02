@@ -18,13 +18,16 @@ Set Bullet Behavior "Strict Subproofs".
 This file defines Markov Decision Processes (MDP) and proves various properties about 
 them. Included are definitions of long-term values (LTVs), proofs that LTVs are convergent
 and proofs that they satisfy the Bellman equation. 
-We also include definitions of V* and Q* and proofs about them. The goal is to prove 
+We also include definitions of V* and proofs about them. The goal is to prove 
 policy and value iteration algorithms correct. 
 ****************************************************************************************
 *)
 Import ListNotations. 
 
 Section extra.
+  (* 
+     This section contains preliminary results which should go back into a Utils file.
+   *)
 Open Scope list_scope. 
 Lemma ne_symm {A} (x y : A) : x <> y <-> y <> x.
 Proof.
@@ -143,6 +146,7 @@ Qed.
 
 End list_sum.
 
+
 Class NonEmpty (A : Type) :=
   ex : A.
     
@@ -155,6 +159,10 @@ Class Finite (A:Type) :=
 Global Declare Scope rmax_scope. 
 
 Section Rmax_list.
+
+  (* 
+   Definition and properties about the maximum element of a list of real numbers.  
+   *)
   
 Open Scope list_scope.
 Open Scope R_scope.
@@ -382,6 +390,51 @@ Proof.
   rewrite in_map_iff in Hmap.
   destruct Hmap as  [a [Hfa Hin]].
   now exists a. 
+Qed.
+
+Lemma exists_in_strengthen_dec {A} (P:A->Prop) l (dec:forall x, {P x} + {~ P x})
+      (ex:exists x, In x l /\ P x) : {x | In x l /\ P x}.
+Proof.
+  induction l; simpl.
+  - elimtype False.
+    destruct ex ; intuition.
+  - destruct (dec a).
+    + exists a ; eauto.
+    + destruct IHl as [x [inx px]].
+      * destruct ex as [x [inx px]].
+        destruct inx.
+        -- congruence.
+        -- eauto.
+      * eauto.
+Qed.
+
+(* This is very important too. *)
+Lemma Rmax_list_map_exist_sig {A} (f : A -> R) {l : list A} :
+  [] <> l -> { a:A | In a l /\ f a = Max_{l}(f)}. 
+Proof.
+  intro Hne.
+  apply exists_in_strengthen_dec.
+  - intro x. apply Req_EM_T.
+  - now apply Rmax_list_map_exist.
+Qed.
+
+Definition argmax {A} {l : list A} (hl : [] <> l)(f : A -> R) : A :=
+  proj1_sig (Rmax_list_map_exist_sig f hl).
+
+Lemma argmax_is_max {A} {l : list A} (hl : [] <> l) (f : A->R) :
+  f (argmax hl f) = Max_{l}(f).
+Proof.
+  unfold argmax.
+  destruct (Rmax_list_map_exist_sig f hl).
+  simpl. now destruct a. 
+Qed.
+
+Lemma argmax_in_list {A} {l : list A} (hl : [] <> l) (f : A -> R):
+  In (argmax hl f) l.
+Proof.
+  unfold argmax.
+  destruct (Rmax_list_map_exist_sig f hl).
+  simpl. now destruct a.
 Qed.
 
 Definition Rmax_list_map {A} (l : list A) (f : A -> R) := Rmax_list (List.map f l).  
@@ -666,6 +719,10 @@ Notation "Max_{ l } ( f )" := (Rmax_list (List.map f l)) (at level 50).
 
 Section MDPs.
 
+  (* 
+   Definition of Markov Decision Processes. We crucially use the Giry monad in the 
+   definition. 
+ *)
 Open Scope monad_scope.
 Open Scope R_scope.
 Open Scope rmax_scope. 
@@ -804,129 +861,11 @@ Qed.
 
 End egs.
 
-(*
-Section ltv_gen.
-
-
-Open Scope R_scope. 
-Context {M : MDP} (γ : R).
-Context (hγ : (0 <= γ < 1)%R).
-Arguments reward {_}.
-Arguments outcomes {_}.
-Arguments t {_}.
-
-Lemma const_stream_eq {A} (a : A) : forall n : nat, a = Str_nth n (const a).
-Proof.
-  unfold Str_nth ; induction n ; trivial.
-Qed.
-
-Lemma str_nth_cons_zero {A} (a : A) (π : Stream A) : Str_nth 0 (Cons a π) = a.
-Proof.
-  now unfold Str_nth ; simpl. 
-Qed.
-
-
-Lemma str_nth_cons_one {A} (a : A) (π : Stream A) : Str_nth 1 (Cons a π) = hd π.
-Proof.
-  now unfold Str_nth ; simpl. 
-Qed.
-
-Definition ltv_gen (π : Stream (dec_rule M)) : M.(state) -> R :=
-  fun s => Series (fun n => γ^n * expt_value (bind_stoch_iter_str π n s)
-                                       (fun s => step_expt_reward (hd π) s)).
-
-(* Fix this proof to remove funext axiom. *)
-Theorem ltv_gen_ltv : forall s : M.(state), forall σ : dec_rule M, ltv γ σ s = ltv_gen (const σ) s.
-Proof. 
-  intros s σ.
-  apply Series_ext. unfold bind_stoch_iter_str. simpl.
-  intro n. f_equal. unfold expt_reward.
-  assert (forall n, forall s,  t s (Str_nth n (const σ) s)  = t s (σ s)).
-  intros n0 s0. f_equal. now erewrite <-const_stream_eq. 
-  f_equal. unfold bind_stoch_iter. simpl. f_equal. apply functional_extensionality.
-  intro x. f_equal. apply functional_extensionality. intros x0 ; eauto.
-Qed.
-
-Lemma Str_nth_succ_cons {A} (n : nat) (d : A) (π : Stream A) :
-  Str_nth (S n) (Cons d π) = Str_nth n π.
-Proof.
-  induction n.
-  - unfold Str_nth. simpl. reflexivity.
-  - unfold Str_nth. simpl. reflexivity.
-Qed.
-
-Lemma Str_nth_hd_tl {A} (n : nat) (π : Stream A) :
-  Str_nth (S n) π = Str_nth n (tl π).
-Proof.
-  induction n ; unfold Str_nth ; trivial. 
-Qed.
-
-Lemma Pmf_bind_comm_stoch_bind_str (n : nat) (π : Stream (dec_rule M)) (init : state M):
-  Pmf_bind (bind_stoch_iter_str π n init) (fun a : state M => t a (Str_nth n π a)) =
-  Pmf_bind (t init (Str_nth n π init)) (fun a : state M => bind_stoch_iter_str π n a).
-Proof.
-  revert π. 
-  induction n. 
-  * unfold bind_stoch_iter_str. simpl. intros π. rewrite Pmf_bind_of_ret.
-    now rewrite Pmf_ret_of_bind.
-  * unfold bind_stoch_iter_str in *. simpl. intro π. rewrite Str_nth_hd_tl. 
-    setoid_rewrite (IHn (tl π)).
-    now rewrite Pmf_bind_of_bind.
-Qed.
-
-
-Definition expt_ltv_gen (π : Stream (dec_rule M)) (p : Pmf M.(state)) : R :=
-  expt_value p (ltv_gen π).
-
-(* Expected reward at time 0 is equal to the reward for a nonstationary policy. *)
-
-Lemma expt_reward0_eq_reward_gen (π : Stream(dec_rule M)) : forall init : M.(state), expt_reward (hd π) init 0 = (step_expt_reward (hd π) init).
-Proof.
-  intros init.
-  unfold expt_reward. unfold bind_stoch_iter. simpl.
-  now rewrite expt_value_pure.
-Qed.
-
-
-Lemma expt_reward_gen_succ (n : nat) (π : Stream (dec_rule M)) (init: state M) :
-  expt_reward (Str_nth (S n) π) init (S n) = expt_value (t init (Str_nth n (tl π) init)) (fun s => expt_reward (Str_nth n (tl π)) s n).
-Proof.
-  rewrite expt_reward_succ.
-  rewrite <-expt_value_bind. rewrite Pmf_bind_comm_stoch_bind. 
-  rewrite Str_nth_hd_tl.
-  rewrite expt_value_bind.
-  unfold expt_reward. reflexivity.
-Qed.
-
-        
- (*Long-Term Values satisfy the Bellman equation.
-Lemma ltv_gen_corec {D : R} (π : Stream (dec_rule M)) :
-  (forall s s': M.(state), forall σ, Rabs (reward s (σ s) s') <= D) ->
-  forall init : M.(state), 
-  ltv_gen π init = (step_expt_reward (hd π) init) + γ*expt_value (t init (hd π init)) (ltv_gen (tl π)). 
-Proof.
-  intros bdd init. 
-  rewrite <-(@expt_reward0_eq_reward). 
-  unfold ltv_gen. 
-  rewrite Series_incr_1. simpl. rewrite Rmult_1_l. setoid_rewrite Rmult_assoc.   
-  rewrite Series_scal_l. f_equal. f_equal.
-  rewrite expt_value_Series.
-  apply Series_ext. intros n. rewrite expt_value_const_mul. f_equal.
-  simpl.
-  rewrite <-expt_value_bind. unfold bind_stoch_iter_str.
-  rewrite Str_nth_hd_tl. setoid_rewrite  Pmf_bind_comm_stoch_bind_str.
-  rewrite expt_value_bind. rewrite expt_value_bind.
-  
-Qed.*)
-
-
-End ltv_gen.
-*)
-
 Section Rfct_AbelianGroup.
 
  (* 
     Additive abelian group structure on the function space A -> R. 
+    Here we assume A is a finite set.
     To talk about equality we use functional extensionality. 
   *)
 Definition Rfct (A : Type) {fin : Finite A} := A -> R.
@@ -1049,6 +988,10 @@ End Rfct_AbelianGroup.
 
 Section Rfct_ModuleSpace.
 
+  (* 
+     The function type A -> R is also a module over the Real numbers.
+     Here we assume A is a finite set.     
+   *)
 Context (A : Type) {finA : Finite A}.
   
 Lemma Rfct_scal_assoc (x y : R) (u: Rfct A) :
@@ -1098,8 +1041,8 @@ Section Rfct_UniformSpace.
  
 (* 
    Definition of a Uniformspace structure on functionals f : A -> R where 
-   the ecart is defined as Max_{ls}(fun s => f s) where ls is a list of 
-   all elements of A.
+   the ecart is defined as Max_{ls}(fun s => Rabs (f s - g s)) where ls is a list of 
+   all elements of A. It exists since here we assume A is a finite set.
 *)
   
 Context (A : Type) {finA : Finite A}.
@@ -1195,6 +1138,9 @@ End Rfct_UniformSpace.
 
 Section Rfct_NormedModule.
 
+  (* 
+     The function type A -> R is a normed module. The ball is defined using the norm.
+   *)
 Context (A : Type) {finA : Finite A}.
 
 Canonical Rfct_NormedModuleAux :=
@@ -1300,7 +1246,7 @@ Section Rfct_open_closed.
      The alternative is to use filters to prove sets closed. (I don't know if this is 
      entirely intuitionistic.)
   *)
-  Context (A : Type) {finA : Finite A} {ne : NonEmpty A}.
+  Context (A : Type) {finA : Finite A}.
 
   (* The Max norm topology is compatible with the Euclidean topology induced from R.*)
   Lemma Rmax_ball_compat (f g : Rfct A) (eps : posreal) :
@@ -1336,7 +1282,7 @@ Section Rfct_open_closed.
     split ; trivial. 
   Qed.
   
-  Lemma forall_lt {f g} : (forall a : A, g a < f a) -> (0 < Rmax_norm A (fun a => minus (f a) (g a))).
+  Lemma forall_lt {f g} {ne : NonEmpty A} : (forall a : A, g a < f a) -> (0 < Rmax_norm A (fun a => minus (f a) (g a))).
   Proof.
     intros Ha.
     setoid_rewrite Rminus_lt_0 in Ha.
@@ -1488,6 +1434,8 @@ End Rfct_open_closed.
 
 Section Rfct_CompleteSpace.
 
+  (* The function type A -> R is a complete uniform space.  *)
+
   Context (A : Type) {finA : Finite A}.
 
   Lemma close_lim_Rfct :
@@ -1525,6 +1473,11 @@ Section Rfct_CompleteSpace.
 End Rfct_CompleteSpace.
 
 Section fixpt.
+
+  (* Properties about fixed points of contractive maps in complete normed modules.
+     In this section we use the banach fixed point theorem as proven in the 
+     Elfic library which proved the Lax-Milgram theorem. 
+   *)
   Context {K : AbsRing}{X : CompleteNormedModule K}.
   
   Definition fixpt (F : X -> X) (init : X) :=
@@ -1542,8 +1495,9 @@ Section fixpt.
     unfold fixpt.
     rewrite Hsub ; auto. rewrite Hsub ; auto.
   Qed.
-  
-  Context (init:X) (init_phi: phi init).
+
+  (* The subset ϕ is nonempty. *)
+  Context (init: NonEmpty X) (init_phi: phi init).
   
   Lemma fixpt_is_fixpt : F (fixpt F init) = fixpt F init.
   Proof.
@@ -1562,7 +1516,10 @@ Section fixpt.
     unfold fixpt. now rewrite Hsub.
   Qed.
 
-  (* Kozen's metric coinduction principle. *)
+  (* 
+     Kozen's metric coinduction principle. 
+     Equation (2.1) of https://arxiv.org/pdf/0908.2793.pdf
+   *)
   Theorem metric_coinduction : phi (fixpt F init).
   Proof. 
     assert (my_complete phi) by (now apply closed_my_complete).
@@ -1581,9 +1538,10 @@ Section contraction_coinduction.
   (* 
      We specialize Kozen's metric coinduction principle to our ordered uniform space
      Rfct_Uniformspace. Our subset ϕ will be the nonempty closed sets {g | g <= f} or
-     {g | g >= f}. The operator F being monotonic means that it preserves these sets. 
+     {g | g >= f}. The operator F being monotonic also means that it preserves these
+     sets. 
   *)
-  Context (A : Type) {finm : Finite A} {ne : NonEmpty A}.
+  Context (A : Type) {finm : Finite A}.
 
   Lemma monotone_le_preserv (F : Rfct A -> Rfct A) (f : Rfct A) :
       monotone_le A F -> (Rfct_le A (F f) f) -> (forall g, Rfct_le A g f -> Rfct_le A (F g) f).
@@ -1607,6 +1565,10 @@ Section contraction_coinduction.
     eapply Rge_trans ; first apply Hm. assumption.
   Qed.
 
+  (* 
+     Contraction coinduction proof principles.
+     Theorem 1 in https://homepage.tudelft.nl/c9d1n/papers/cmcs-2018.pdf
+   *)
   Theorem contraction_coinduction_Rfct_le
           {F} (hF : @is_contraction (Rfct_CompleteSpace A) (Rfct_CompleteSpace A) F)
           (hM : monotone_le A F)    
@@ -1642,6 +1604,11 @@ End contraction_coinduction.
 
 Section ltv.
 
+  (* 
+     We specialize the above theory to MDPs and long-term values. 
+     This section formalizes page 4 of 
+     https://homepage.tudelft.nl/c9d1n/papers/cmcs-2018.pdf
+   *)
 Open Scope R_scope. 
 Context {M : MDP} {finm : Finite (state M)} (γ : R).
 Context (σ : dec_rule M) (init : M.(state)) (hγ : (0 < γ < 1)%R).
@@ -1730,7 +1697,9 @@ Proof.
 Qed.
 
 
-(* Long-Term Values satisfy the Bellman equation. *)
+(* Long-Term Values satisfy the Bellman equation.
+   Proposition 3 of http://researchers.lille.inria.fr/~lazaric/Webpage/MVA-RL_Course14_files/notes-lecture-02.pdf
+ *)
 Lemma ltv_corec {D : R} :
    (forall s s': M.(state), Rabs (reward s (σ s) s') <= D) ->
   ltv init = (step_expt_reward σ init) + γ*expt_value (t init (σ init)) ltv. 
@@ -1756,6 +1725,14 @@ Qed.
 End ltv.
 
 Section operator.
+
+  (* 
+     Proofs that the bellman operator and maximal bellman operator are contractions 
+     in the Complete Normed Module M.(state) -> R. 
+     Some proofs are from 
+     http://researchers.lille.inria.fr/~lazaric/Webpage/MVA-RL_Course14_files/notes-lecture-02.pdf
+   *)
+  
 Open Scope R_scope. 
 Context {M : MDP} {finm : Finite (state M)} (γ D : R).
 Context (hγ : (0 < γ < 1)%R).
@@ -1880,7 +1857,9 @@ Proof.
   apply hp. assumption. 
 Qed.
 
-
+ (*
+   Proposition 5 of http://researchers.lille.inria.fr/~lazaric/Webpage/MVA-RL_Course14_files/notes-lecture-02.pdf
+  *)
 Theorem is_contraction_bellman_max_op
         (ne : NonEmpty M.(state)) (la : forall s, list (M.(act) s)) :
  @is_contraction (Rfct_UniformSpace M.(state)) (Rfct_UniformSpace M.(state)) (bellman_max_op la).
@@ -1936,6 +1915,11 @@ Proof.
            rewrite in_map_iff. exists s0 ; split ; trivial.
 Qed. 
 
+(*
+  Fixed Point of the maximal bellman operator is an upper bound of all long-term value
+  functions. Lemma 1 from http://researchers.lille.inria.fr/~lazaric/Webpage/MVA-RL_Course14_files/notes-lecture-02.pdf
+  The proof uses a contraction coinductive proof rule. 
+ *)
 Lemma ltv_Rfct_le_fixpt (ne : NonEmpty M.(state)) (π : dec_rule M) {ld : list (dec_rule M)} (la : forall s, list (M.(act) s)) (hp : forall π s, In π ld -> In (π s) (la s)) (Hπ : In π ld):
  forall init, Rfct_le M.(state) (ltv γ π) (fixpt (bellman_max_op la) init). 
 Proof.
@@ -1949,7 +1933,29 @@ Proof.
   - assumption.
 Qed.
 
+Definition greedy {la : forall s, list (M.(act) s)} (hla : forall s, [] <> la s) init: dec_rule M :=
+  fun s => let V' := fixpt (bellman_max_op la) in
+    argmax (hla s) (fun a => expt_value (t s a) (reward s a) +
+                          γ*(expt_value (t s a) (V' init))).
+
+Lemma greedy_aux {la : forall s, list (M.(act) s)} (hla : forall s, [] <> la s):
+forall s init,  bellman_op (greedy hla init) s = fixpt (bellman_max_op la) s.
+Proof.
+  intros s init. apply functional_extensionality.
+  intro s0. 
+  unfold bellman_op. unfold step_expt_reward.
+  unfold greedy. rewrite argmax_is_max.
+  
+Lemma exists_fixpt_policy (la : forall s, list (M.(act) s)) :
+  forall init, exists σ' : dec_rule M, ltv γ σ' = fixpt (bellman_max_op la) init.
+Proof.
+  intro init.
+  unfold bellman_max_op.
+  
+Admitted.
+           
 End operator.
+
 
 Section order.
   
