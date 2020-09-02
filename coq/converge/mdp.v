@@ -1982,7 +1982,7 @@ Qed.
   Proposition 1 from http://researchers.lille.inria.fr/~lazaric/Webpage/MVA-RL_Course14_files/notes-lecture-02.pdf
   The proof uses a contraction coinductive proof rule. 
  *)
-Lemma exists_fixpt_policy (ne : NonEmpty M.(state)) (π : dec_rule M) {ld : list (dec_rule M)} {la : forall s, list (M.(act) s)} (hp : forall π s, In π ld -> In (π s) (la s)) (hla : forall s, [] <> la s) : forall init,
+Lemma exists_fixpt_policy (ne : NonEmpty M.(state)) {ld : list (dec_rule M)} {la : forall s, list (M.(act) s)} (hp : forall π s, In π ld -> In (π s) (la s)) (hla : forall s, [] <> la s) : forall init,
   let V' :=  fixpt (bellman_max_op la) in
   let σ' := greedy hla init in
   In σ' ld -> ltv γ σ' = V' init.
@@ -2010,11 +2010,13 @@ End operator.
 Section order.
   
 Open Scope R_scope. 
-Context {M : MDP} (γ : R) (fm : Finite (state M)).
+Context {M : MDP} (γ D : R) (fm : Finite (state M)).
 Context (hγ : (0 < γ < 1)%R).
 Arguments reward {_}.
 Arguments outcomes {_}.
 Arguments t {_}.
+
+Context (bdd :  (forall s s': M.(state), forall σ : dec_rule M, Rabs (reward s (σ s) s') <= D)).
 
 Definition policy_eq (σ τ : forall s : state M ,act M s) : Prop
   := forall s, (@ltv M γ σ s) = (@ltv M γ τ s).
@@ -2066,6 +2068,31 @@ Notation "Max_{ l } ( f )" := (Rmax_list (List.map f l)) (at level 50).
 *)
 Definition max_ltv_on (l : list (dec_rule M)) : M.(state) -> R :=
   fun s => Max_{l} (fun σ => ltv γ σ s).
+
+
+Theorem max_ltv_eq_fixpt (ne : NonEmpty (state M)) (ld : list (dec_rule M)) {la : forall s, list (M.(act) s)}
+        (hp : forall π s, In π ld -> In (π s) (la s)) (hla : forall s, [] <> la s) :
+ forall init, fixpt (bellman_max_op γ la) init = max_ltv_on ld.
+Proof.
+  intros init.
+  apply functional_extensionality.
+  intros s0. 
+  apply Rle_antisym.
+  - apply Rmax_spec. rewrite in_map_iff.
+    exists (greedy γ hla init).
+    split. erewrite exists_fixpt_policy ; trivial.
+    admit.
+    admit.
+    admit.
+  - unfold max_ltv_on. rewrite Rmax_list_le_iff.
+    intros r Hr.
+    rewrite in_map_iff in Hr. destruct Hr as [π [Hπ Hin]].
+    rewrite <-Hπ. clear Hπ. revert s0. 
+    change _ with (Rfct_le M.(state) (ltv γ π) (fixpt (bellman_max_op γ la) init)).
+    eapply ltv_Rfct_le_fixpt ; eauto.
+    rewrite map_not_nil.
+    admit.
+Admitted.
 
 (* Proceed with the assumption that rewards are bounded for any policy and 
    that the set of actions is finite. *)
