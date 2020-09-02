@@ -946,6 +946,19 @@ Proof.
   apply functional_extensionality.
 Qed.
 
+Lemma Rfct_le_antisym (f g : Rfct A) : f = g <-> Rfct_le f g /\ Rfct_le g f.
+Proof.
+  split ; intros.
+  - split. 
+    ++ intros a. set (equal_f H).
+       specialize (e a). now right.
+    ++ intros a. set (equal_f H).
+       specialize (e a). now right.
+  - destruct H as [Hl Hr]. apply Rfct_eq_ext.
+    intro a. specialize (Hl a). specialize (Hr a).
+    apply Rle_antisym ; auto.
+Qed.
+    
 Lemma Rfct_plus_comm (f g:Rfct A) : Rfct_plus f g = Rfct_plus g f.
 Proof.
   apply Rfct_eq_ext. intros x.
@@ -1811,6 +1824,16 @@ Proof.
   apply expt_value_le ; eauto.
 Qed.
 
+Lemma bellman_op_monotone_ge (π : dec_rule M) : monotone_ge M.(state) (bellman_op π). 
+Proof.
+  intros W1 W2 HW1W2 s.
+  unfold bellman_op.
+  apply Rle_ge.
+  apply Rplus_le_compat_l.
+  apply Rmult_le_compat_l ; intuition.
+  apply expt_value_le ; eauto.
+  intros a. apply Rge_le. apply HW1W2.
+Qed.
 
 Definition bellman_max_op (la : forall s, list (M.(act) s)) : Rfct M.(state) -> Rfct M.(state)
   :=
@@ -1933,27 +1956,54 @@ Proof.
   - assumption.
 Qed.
 
-Definition greedy {la : forall s, list (M.(act) s)} (hla : forall s, [] <> la s) init: dec_rule M :=
+Definition greedy  {la : forall s, list (M.(act) s)} (hla : forall s, [] <> la s) init: dec_rule M :=
   fun s => let V' := fixpt (bellman_max_op la) in
     argmax (hla s) (fun a => expt_value (t s a) (reward s a) +
                           γ*(expt_value (t s a) (V' init))).
 
-Lemma greedy_aux {la : forall s, list (M.(act) s)} (hla : forall s, [] <> la s):
-forall s init,  bellman_op (greedy hla init) s = fixpt (bellman_max_op la) s.
+Lemma exists_fixpt_policy_aux (ne : NonEmpty M.(state)) {la : forall s, list (M.(act) s)} (hla : forall s, [] <> la s):
+  forall init,
+  let V' :=  fixpt (bellman_max_op la) in
+  let σ' := greedy hla init in
+    bellman_op σ' (V' init) = V' init.
 Proof.
-  intros s init. apply functional_extensionality.
+  intros init V' σ'.
+  apply functional_extensionality.
+  intro s0.
+    unfold σ', greedy, bellman_op, step_expt_reward,V'. 
+   rewrite (argmax_is_max (hla s0) (fun a =>  expt_value (t s0 a) (reward s0 a) + γ * expt_value (t s0 a) (fixpt (bellman_max_op la) init))).
+  replace ( Max_{ la s0} (fun a => expt_value (t s0 a) (reward s0 a) + γ * expt_value (t s0 a) (fixpt (bellman_max_op la) init))) with (bellman_max_op la (fixpt (bellman_max_op la) init) s0) by reflexivity.
+  apply equal_f. apply (fixpt_is_fixpt (is_contraction_bellman_max_op ne la) (fun _ => True)) ; trivial.
+  apply closed_true.
+Qed.
+
+(*
+  The greedy policy is optimal.
+  Proposition 1 from http://researchers.lille.inria.fr/~lazaric/Webpage/MVA-RL_Course14_files/notes-lecture-02.pdf
+  The proof uses a contraction coinductive proof rule. 
+ *)
+Lemma exists_fixpt_policy (ne : NonEmpty M.(state)) (π : dec_rule M) {ld : list (dec_rule M)} {la : forall s, list (M.(act) s)} (hp : forall π s, In π ld -> In (π s) (la s)) (hla : forall s, [] <> la s) : forall init,
+  let V' :=  fixpt (bellman_max_op la) in
+  let σ' := greedy hla init in
+  In σ' ld -> ltv γ σ' = V' init.
+Proof.
+  intros init V' σ' Hg. apply functional_extensionality.
   intro s0. 
-  unfold bellman_op. unfold step_expt_reward.
-  unfold greedy. rewrite argmax_is_max.
-  
-Lemma exists_fixpt_policy (la : forall s, list (M.(act) s)) :
-  forall init, exists σ' : dec_rule M, ltv γ σ' = fixpt (bellman_max_op la) init.
-Proof.
-  intro init.
-  unfold bellman_max_op.
-  
-Admitted.
-           
+  apply Rle_antisym.
+  - set (ltv_Rfct_le_fixpt ne). unfold Rfct_le in r.
+    eapply r ; eauto.
+  - revert s0.
+    change _ with (Rfct_le _ (fixpt (bellman_max_op la) init) (ltv γ (greedy hla init))).
+    rewrite Rfct_le_ge_symm.
+    rewrite (ltv_bellman_op_fixpt _ init).
+    apply contraction_coinduction_Rfct_ge.
+    ++ apply is_contraction_bellman_op.
+    ++ apply bellman_op_monotone_ge.
+    ++ intro init0. 
+       right. apply equal_f.
+       eapply exists_fixpt_policy_aux ; eauto.
+Qed.
+
 End operator.
 
 
