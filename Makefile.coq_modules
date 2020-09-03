@@ -27,6 +27,7 @@ MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	utils/improper_integrals \
 	utils/Isomorphism \
 	utils/ListAdd \
+	utils/Finite \
 	utils/PairEncoding \
 	utils/RealAdd \
 	utils/RiemannAdd \
