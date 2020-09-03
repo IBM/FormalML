@@ -23,7 +23,7 @@ tailored to the discrete case.
 
  *)
 
-(* Helper lemmas. *)
+(* Helper lemmas. Move to RealAdd. *)
 
 Fixpoint list_sum (l : list R) : R :=
   match l with
@@ -330,6 +330,7 @@ End Pmf.
 Definition prob {A : Type} (l : seq(nonnegreal*A)) : nonnegreal :=
  mknonnegreal (list_fst_sum l) (list_sum_is_nonneg _).
 
+(* Make all notations part of a single scope. *)
 Notation "𝕡[ x ]" := (nonneg (prob x)) (at level 75, right associativity).
 
 Section expected_value.
@@ -511,6 +512,7 @@ Proof.
   assert (Hinf : forall a:A, infinite_sum (fun n => f n a) (Series (fun n => f n a)) ).
   intros a. rewrite <- is_series_Reals. apply Ha. clear Ha.
   unfold infinite_sum in Hinf. unfold Series in Hinf. unfold R_dist in Hinf.
+  (* Change the name of the hypothesis from H to something else. *)
   assert (H : forall x, Rabs x = R_dist x 0). intros x. unfold R_dist. f_equal ; lra. 
   setoid_rewrite H. 
   setoid_rewrite H in Hinf.

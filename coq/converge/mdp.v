@@ -25,6 +25,7 @@ Import ListNotations.
 Section extra.
   (* 
      This section contains preliminary results which should go back into a Utils file.
+     In their appropriate directories.
    *)
 Open Scope list_scope. 
 Lemma ne_symm {A} (x y : A) : x <> y <-> y <> x.
@@ -96,6 +97,7 @@ End extra.
 
 
 Section list_sum.
+  (* Dump this into RealAdd in Utils. *)
   Lemma list_sum_map_zero {A} (s : list A)  :
   list_sum (List.map (fun _ => 0) s) = 0. 
 Proof.
@@ -144,14 +146,15 @@ Qed.
 
 End list_sum.
 
-
+(* Move this to Finite. *)
 Class NonEmpty (A : Type) :=
   ex : A.
 
 Section Rmax_list.
 
   (* 
-   Definition and properties about the maximum element of a list of real numbers.  
+   Definition and properties about the maximum element of a list of real numbers.
+   Dump this into RealAdd.
    *)
   
 Open Scope list_scope.
@@ -168,25 +171,6 @@ Fixpoint Rmax_list (l : list R) : R :=
   | a :: l1 => Rmax a (Rmax_list l1)
   end.
 
-
-Fixpoint Rmax_list' (l : list R) : R :=
-  match l with
-    | nil => 0
-    | a :: l1 =>
-      match l1 with
-        | nil => a
-        | a' :: l2 => Rmax a (Rmax_list' l1)
-      end
-  end.
-
-Lemma Rmax_list_Rmax_list' (l : list R) :
-  Rmax_list l = Rmax_list' l.
-Proof.
-  induction l. 
-  - simpl ; trivial.
-  - simpl. rewrite IHl.
-    trivial. 
-Qed.
 
 Lemma Rmax_spec_map {A} (l : list A) (f : A -> R) : forall a:A, In a l -> f a <= Rmax_list (List.map f l).
 Proof.
@@ -367,7 +351,13 @@ Proof.
   - assumption. 
 Qed.
 
-Notation "Max_{ l } ( f )" := (Rmax_list (List.map f l)) (at level 50).
+Definition Rmax_list_map {A} (l : list A) (f : A -> R) := Rmax_list (List.map f l).  
+
+Declare Scope rmax_scope.
+Notation "Max_{ l } ( f )" := (Rmax_list (List.map f l)) (at level 50) : rmax_scope.
+
+Open Scope rmax_scope.
+Delimit Scope rmax_scope with rmax.
 
 (* This is very important. *)
 Lemma Rmax_list_map_exist {A} (f : A -> R) (l : list A) :
@@ -426,8 +416,6 @@ Proof.
   destruct (Rmax_list_map_exist_sig f hl).
   simpl. now destruct a.
 Qed.
-
-Definition Rmax_list_map {A} (l : list A) (f : A -> R) := Rmax_list (List.map f l).  
 
 Global Instance Rmax_eq_Proper {A} {l : list A} (hl : [] <> l) :
   Proper (pointwise_relation _ eq ++> eq) (@Rmax_list_map A l).
@@ -718,7 +706,8 @@ Record MDP := mkMDP {
  act  : forall s: state, Type;
  
  (* The state space has decidable equality.*)
- st_eqdec : EqDec state eq;
+ st_eqdec :> EqDec state eq;
+
  (* The state and action spaces are finite. *)
  fs :> Finite (state) ;
  fa :> forall s, Finite (act s);
@@ -743,7 +732,7 @@ Definition dec_rule (M : MDP) := forall s : M.(state), (M.(act)) s.
 
 Global Instance dec_rule_finite (M : MDP) : Finite (dec_rule M).
 Proof.
-  eapply Finite_fun_dep.
+  eapply Finite_fun_dep ; eauto.
   - apply fs.
   - apply fa.
  Unshelve.
@@ -868,7 +857,8 @@ Section Rfct_AbelianGroup.
  (* 
     Additive abelian group structure on the function space A -> R. 
     Here we assume A is a finite set.
-    To talk about equality we use functional extensionality. 
+    To talk about equality we use functional extensionality.
+    Put this into it's own file.
   *)
 Definition Rfct (A : Type) {fin : Finite A} := A -> R.
 
@@ -1067,7 +1057,6 @@ Definition Rmax_norm : Rfct A -> R := let (ls,_) := finA in fun (f:Rfct A) => Ma
 
 Definition Rmax_ball :=  fun (f: Rfct A) eps g => Rmax_norm (fun s => minus (g s) (f s)) < eps.
 
-
 Lemma Rmax_ball_le (f g : Rfct A) {eps1 eps2 : R} :
   eps1 <= eps2 -> Rmax_ball f eps1 g -> Rmax_ball f eps2 g.
 Proof. 
@@ -1222,7 +1211,7 @@ Proof.
     -- rewrite map_not_nil. now apply ne_symm.
 Qed.
   
-Lemma Rfct_norm_eq_0: forall (f:Rfct A), real (Rmax_norm A f) = 0 -> f = zero.
+Lemma Rfct_norm_eq_0: forall (f:Rfct A), (Rmax_norm A f) = 0 -> f = zero.
 Proof.
   intros f H.
   apply Rfct_eq_ext.  
@@ -1503,6 +1492,7 @@ Section fixpt.
   (* Properties about fixed points of contractive maps in complete normed modules.
      In this section we use the banach fixed point theorem as proven in the 
      Elfic library which proved the Lax-Milgram theorem. 
+     Remove this into it's own metric_coinduction.v file.
    *)
   Context {K : AbsRing}{X : CompleteNormedModule K}.
   
@@ -1750,6 +1740,7 @@ Qed.
 
 End ltv.
 
+
 Section operator.
 
   (* 
@@ -1781,7 +1772,7 @@ Proof.
   exists γ ; split.
   - now destruct hγ.
   - unfold is_Lipschitz. split.
-    -- destruct hγ. now left.
+    -- destruct hγ. now left. 
     -- intros f g r Hr Hx.
        repeat red in Hx. repeat red.
        unfold Rmax_norm in *. destruct finm as [ls Hls].
@@ -1978,7 +1969,7 @@ Lemma exists_fixpt_policy_aux (ne : NonEmpty M.(state)) {la : forall s, list (M.
   forall init,
   let V' :=  fixpt (bellman_max_op la) in
   let σ' := greedy hla init in
-    bellman_op σ' (V' init) = V' init.
+  bellman_op σ' (V' init) = V' init.
 Proof.
   intros init V' σ'.
   apply functional_extensionality.
@@ -2051,6 +2042,7 @@ Proof.
   specialize (H s); lra.
 Qed.
 
+(* Shift this to RealAdd. *)
 Global Instance Rle_trans : Transitive Rle.
 Proof.
   repeat red; intros.
