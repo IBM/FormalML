@@ -1445,6 +1445,16 @@ Section Rfct_open_closed.
 End Rfct_open_closed.
 
 
+Global Instance Filter_prop {A} (fin : Finite A) (F : (Rfct_UniformSpace A -> Prop) -> Prop) (ff : Filter F) :
+Proper (pointwise_relation (Rfct_UniformSpace A) iff ==> Basics.flip Basics.impl) F.
+  Proof.
+    intros A' B' Ha.
+    unfold Basics.flip, Basics.impl.
+    apply filter_imp.
+    intro a. specialize (Ha a).
+    now destruct Ha.
+  Qed.
+  
 Section Rfct_CompleteSpace.
 
   (* The function type A -> R is a complete uniform space.  *)
@@ -1463,17 +1473,18 @@ Section Rfct_CompleteSpace.
       ProperFilter F ->
       (forall (eps : posreal), exists f, F (Rmax_ball A f eps))
       -> forall eps : posreal, F (Rmax_ball A (lim_fct F) eps).
-  Proof.
+  Proof.   
     intros F ProperF CauchyF eps.
-    assert ((eps/3) > 0) by (apply Rmult_gt_0_compat ; [apply cond_pos | lra]).
-    destruct (CauchyF (mkposreal (eps/3) H)) as [f Hf]. simpl in *.
-    eapply filter_imp ; last apply Hf.
-    intros g Hg.  
-    apply Rmax_ball_le with (eps/3+eps/3+eps/3). right ; lra.
-    eapply Rmax_ball_triangle ; [ |apply Hg].
-    
-  Admitted.
-
+    eapply filter_imp.
+    - intro f. now rewrite <-Rmax_ball_compat. 
+    - setoid_rewrite <-Rmax_ball_compat.
+      set (complete_cauchy_fct F). apply f ; trivial.
+      intros eps'. destruct (CauchyF eps') as [f' Hf'].
+      exists f'. 
+      eapply filter_imp ; last apply Hf'.
+      intros h Hmax. now apply Rmax_ball_compat.
+  Qed.
+  
   Definition Rfct_CompleteSpace_mixin :=
   CompleteSpace.Mixin (Rfct_UniformSpace A) lim_fct complete_cauchy_Rfct close_lim_Rfct.
 
@@ -2069,8 +2080,12 @@ Notation "Max_{ l } ( f )" := (Rmax_list (List.map f l)) (at level 50).
 Definition max_ltv_on (l : list (dec_rule M)) : M.(state) -> R :=
   fun s => Max_{l} (fun σ => ltv γ σ s).
 
-
-Theorem max_ltv_eq_fixpt (ne : NonEmpty (state M)) (ld : list (dec_rule M)) {la : forall s, list (M.(act) s)}
+(* TODO(Kody) : Once we have Finite A -> Finite B -> Finite (A -> B), get rid of these hypotheses. *)
+(* The optimal value function satisfies the optimal Bellman equation. *)
+Theorem max_ltv_eq_fixpt (ne : NonEmpty (state M))
+        (ld : list (dec_rule M)) {la : forall s, list (M.(act) s)}
+        (hne : [] <> ld)
+        (hall : forall π : dec_rule M, In π ld)
         (hp : forall π s, In π ld -> In (π s) (la s)) (hla : forall s, [] <> la s) :
  forall init, fixpt (bellman_max_op γ la) init = max_ltv_on ld.
 Proof.
@@ -2081,148 +2096,15 @@ Proof.
   - apply Rmax_spec. rewrite in_map_iff.
     exists (greedy γ hla init).
     split. erewrite exists_fixpt_policy ; trivial.
-    admit.
-    admit.
-    admit.
+    ++ apply hp.
+    ++ apply hall.
   - unfold max_ltv_on. rewrite Rmax_list_le_iff.
-    intros r Hr.
-    rewrite in_map_iff in Hr. destruct Hr as [π [Hπ Hin]].
-    rewrite <-Hπ. clear Hπ. revert s0. 
-    change _ with (Rfct_le M.(state) (ltv γ π) (fixpt (bellman_max_op γ la) init)).
-    eapply ltv_Rfct_le_fixpt ; eauto.
-    rewrite map_not_nil.
-    admit.
-Admitted.
-
-(* Proceed with the assumption that rewards are bounded for any policy and 
-   that the set of actions is finite. *)
-Context {D : R}.
-Context (fina : forall s : M.(state), Finite (M.(act) s)). 
-Context (bdd :  (forall s s': M.(state), forall σ : dec_rule M, Rabs (reward s (σ s) s') <= D)).
-
-Lemma max_ltv_aux1 (l : list (dec_rule M)): 
-  forall s : M.(state),
-    max_ltv_on l s =
-    Max_{l} (fun σ => (step_expt_reward σ s) + γ*expt_value (t s (σ s)) (ltv γ σ)).
-Proof.
-  intros s. unfold step_expt_reward. 
-  unfold max_ltv_on.
-  f_equal. apply List.map_ext.
-  intros π.
-  eapply ltv_corec ; eauto.
-Qed.
-
-
-Lemma max_ltv_aux2 (l : list (dec_rule M)): 
-  forall s : M.(state),
-    max_ltv_on l s =
-    Max_{List.map (fun σ => (σ s,σ)) l} (fun σ => (step_expt_reward (snd σ) s) + γ*expt_value (t s (fst σ)) (ltv γ (snd σ))).
-Proof.
-  intro s.
-  rewrite max_ltv_aux1.  
-  apply Rmax_list_map_transf.
-  rewrite Forall_forall.
-  intros x Hx. simpl. reflexivity. 
-Qed.
-
-
-(* TODO(Kody): 
-   Get rid of the `In foo bar` hypotheses by adding in the Finite typeclass. *)
-
-(* V*(s) <= max_{a ∈ A} (r(x,a) + Σ_{y ∈ S} p(y | x,a) V*(y) *)
-Lemma bellman_opt_1 {la : forall s: state M, list(act M s)} {ld : list(dec_rule M)} {ls : list (state M)}
-      (hla : forall s, [] <> la s) (hld : [] <> ld)
-       (hp : forall π s, In π ld -> In s ls -> In (π s) (la s)):
-  forall s : M.(state), In s ls ->
-    max_ltv_on ld s <= Max_{la s}(fun a => expt_value (t s a) (reward s a) + γ * expt_value (t s a) (max_ltv_on ld)). 
-Proof.
-  intros s hs. unfold step_expt_reward.
-  destruct (Rmax_list_map_exist (fun σ => ltv γ σ s) ld hld) as [π' [Hπ' Hinπ']].
-  destruct (Rmax_list_map_exist (fun a => expt_value (t s a) (reward s a) + γ * expt_value (t s a) (max_ltv_on ld)) (la s) (hla s)) as [a' [Ha' Hina']].
-  unfold max_ltv_on.
-  rewrite <-Hinπ'.  
-  erewrite ltv_corec ; eauto. unfold step_expt_reward.
-  assert(
-      γ*expt_value(t s (π' s)) (ltv γ π') <= γ*expt_value(t s (π' s)) (max_ltv_on ld)
-    ).
-  {
-    apply Rmult_le_compat_l ; intuition.
-    apply expt_value_le. intros s0. 
-    unfold max_ltv_on. apply Rmax_spec.
-    rewrite in_map_iff. exists π' ; split ; trivial.
-  }
-  eapply Rle_trans.
-  -- apply Rplus_le_compat_l ; eauto.
-  -- apply Rmax_spec.
-     rewrite in_map_iff. exists (π' s). split ; trivial.
-  apply hp ; trivial.
-Qed.        
-
-Lemma Rle_lt : forall r1 r2 : R, not (r1 >= r2) <-> r2 > r1.
-Proof.
-  split.
-  - apply Rnot_ge_gt.
-  - intros H1 H2. apply (Rgt_irrefl r2).
-    eapply Rgt_ge_trans ; eauto.
-Qed.
-
-
-Lemma bell_opt_aux {A} {B : forall a : A, Type} {la : forall a : A, list (B a)}
-      {lf : list (forall a:A, B a)} (hlf : [] <> lf)
-      (hla : forall a, [] <> la a)
-      (hp : forall π s, In π lf -> In (π s) (la s))
-      (* For every state and every action available at that state, there is atleast one
-         decision rule mapping the state to that action. *)
-      (surj : forall (a : A) (b : B a), exists f, In f lf /\ f a = b)
-      r : forall a : A, 
-    Max_{lf}(fun σ => r a (σ a)) = Max_{la a}(fun b => r a b).
-Proof.
-  intros a. 
-  apply Rle_antisym.
-  - apply Rmax_spec.
-    rewrite in_map_iff.
-    destruct (Rmax_list_map_exist (fun σ : forall x0 : A, B x0 => r a (σ a)) (lf)) as [ex Hex].
-    assumption.
-    exists (ex a). intuition.
-  - rewrite Rmax_list_le_iff.
-    intros x Hx.
-    rewrite in_map_iff in Hx.
-    destruct Hx as [b [Hb Hinb]].
-    rewrite <-Hb.
-    apply Rmax_spec. rewrite in_map_iff.  
-    specialize (surj a b). destruct surj as [f [Hfin Hfab]]. 
-    exists f. rewrite Hfab. split ; trivial.
-    rewrite map_not_nil. apply hla. 
-Qed.
-
-Lemma bell_opt_aux' {A} {B : forall a : A, Type} {la : forall a : A, list (B a)}
-      (eqA : forall a : A, EqDec (B a) eq)
-      {lf : list (forall a:A, B a)} (hlf : [] <> lf)
-      (hla : forall a, [] <> la a)
-      (hp : forall π s, In π lf -> In (π s) (la s))
-      (* For every state and every action available at that state, there is atleast one
-         decision rule mapping the state to that action. *)
-      (surj : forall (a : A) (b : B a), exists f, In f lf /\ f a = b)
-      r : forall a : A, 
-    Max_{lf}(fun σ => r a (σ a) σ) = Max_{la a}(fun b => Max_{filter (fun σ => σ a ==b b) lf}(fun σ => r a b σ)).
-Proof.
-  intros a. 
-  apply Rle_antisym.
-  - apply Rmax_spec.
-    rewrite in_map_iff.
-    destruct (Rmax_list_map_exist (fun σ : forall x0 : A, B x0 => r a (σ a) σ) (lf)) as [ex Hex].
-    assumption.
-    exists (ex a). intuition.
-    rewrite <-H2. 
-Admitted.
-
-(* This is killing me. *)
-Lemma bellman_optimality {la : forall s: state M, list(act M s)} {ld : list(dec_rule M)} {ls : list (state M)} (hla : forall s, [] <> la s) (hld : [] <> ld)
-      (hp : forall π s, In π ld -> In (π s) (la s))
-  (Hsurj :(forall (a : state M) (b : act M a), exists f : forall a0 : state M, act M a0, In f ld /\ f a = b)): forall s : M.(state), In s ls -> max_ltv_on ld s = Max_{la s}(fun a => expt_value (t s a) (reward s a) + γ * expt_value (t s a) (max_ltv_on ld)).
-Proof.
-  intros s0 Hs0. rewrite max_ltv_aux1. unfold step_expt_reward.
-  unfold dec_rule. unfold step_expt_reward. 
-Admitted.
+    ++ intros r Hr.
+       rewrite in_map_iff in Hr. destruct Hr as [π [Hπ Hin]].
+       rewrite <-Hπ. clear Hπ. revert s0. 
+       change _ with (Rfct_le M.(state) (ltv γ π) (fixpt (bellman_max_op γ la) init)). eapply ltv_Rfct_le_fixpt ; eauto.
+    ++ now rewrite map_not_nil.
+Qed.  
 
 End order.
+
