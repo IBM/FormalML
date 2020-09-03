@@ -1,14 +1,12 @@
 Require Import Reals Coq.Lists.List Coquelicot.Series Coquelicot.Hierarchy Coquelicot.SF_seq.
-Require Import pmf_monad Permutation fixed_point continuous_linear_map.
+Require Import pmf_monad Permutation fixed_point Finite LibUtils. 
 Require Import Sums Coq.Reals.ROrderedType.
 Require Import micromega.Lra.
 Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Equivalence RelationClasses EquivDec Morphisms.
-Require Import ExtLib.Structures.Monad LibUtils.
 Require Import Streams StreamAdd. 
 
 
-Import MonadNotation.
 Import ListNotations. 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -149,14 +147,6 @@ End list_sum.
 
 Class NonEmpty (A : Type) :=
   ex : A.
-    
-Class Finite (A:Type) :=
- { elms  : list A ;
-  finite : forall x:A, In x elms
- }.
-
-  
-Global Declare Scope rmax_scope. 
 
 Section Rmax_list.
 
@@ -711,10 +701,6 @@ Qed.
 
 End Rmax_list.
 
-
-Definition bind_iter {M:Type->Type} {Mm:Monad M} {A:Type} (unit:A) (f : A -> M A) :=
-  applyn (ret unit) (fun y => Monad.bind y f).
-
 Notation "Max_{ l } ( f )" := (Rmax_list (List.map f l)) (at level 50).
 
 Section MDPs.
@@ -725,11 +711,18 @@ Section MDPs.
  *)
 Open Scope monad_scope.
 Open Scope R_scope.
-Open Scope rmax_scope. 
+
 Record MDP := mkMDP {
  (* State and action spaces. *)
  state : Type;
  act  : forall s: state, Type;
+ 
+ (* The state space has decidable equality.*)
+ st_eqdec : EqDec state eq;
+ (* The state and action spaces are finite. *)
+ fs :> Finite (state) ;
+ fa :> forall s, Finite (act s);
+ 
  (* Probabilistic transition structure. 
     t(s,a,s') is the probability that the next state is s' given that you take action a in state s.
     One can also consider to to be an act-indexed collection of Kliesli arrows of Pmf. 
@@ -747,6 +740,15 @@ Arguments reward {_}.
    A decision rule is a mapping from states to actions.
 *)
 Definition dec_rule (M : MDP) := forall s : M.(state), (M.(act)) s.
+
+Global Instance dec_rule_finite (M : MDP) : Finite (dec_rule M).
+Proof.
+  eapply Finite_fun_dep.
+  - apply fs.
+  - apply fa.
+ Unshelve.
+ apply st_eqdec.
+Qed.
 
 (*
    In general,a policy is a *stream* of decision rules. 
@@ -768,11 +770,11 @@ Context (σ : dec_rule M).
 *)
 
 Definition bind_stoch_iter (n : nat) (init : M.(state)) : Pmf M.(state):=
-  applyn (ret init) (fun y => Pmf_bind y (fun s => t s (σ s))) n.
+  applyn (Pmf_pure init) (fun y => Pmf_bind y (fun s => t s (σ s))) n.
 
 Definition bind_stoch_iter_str (π : Stream(dec_rule M)) (n : nat) (init : M.(state)) 
   : Pmf M.(state):=
-  applyn (ret init) (fun y => Pmf_bind y (fun s => t s (Str_nth n π s))) n.
+  applyn (Pmf_pure init) (fun y => Pmf_bind y (fun s => t s (Str_nth n π s))) n.
 
 (* 
    It is helpful to see what happens in the above definition for n=1, and starting at init.
@@ -785,7 +787,6 @@ Lemma bind_stoch_iter_1 (init : M.(state)) :
   bind_stoch_iter 1 init = t init (σ init).
 Proof. 
   unfold bind_stoch_iter.
-  unfold bind_iter. 
   simpl. rewrite Pmf_bind_of_ret.
   reflexivity.
 Qed.
@@ -834,13 +835,14 @@ Qed.
 
 End MDPs.
 
-Section egs.
+(*Section egs.
 
 (* This defines a "unit reward" MDP.*)
 Definition unitMDP {st0 act0 : Type} (t0 : st0 -> act0 -> Pmf st0) : MDP :=
 {|
     state := st0;
     act := _ ;
+    
     t := t0;
     reward := fun s a s' => R0
 |}.
@@ -859,7 +861,7 @@ Proof.
   apply expt_value_zero. 
 Qed.
 
-End egs.
+End egs.*)
 
 Section Rfct_AbelianGroup.
 
@@ -1634,7 +1636,7 @@ Section ltv.
      https://homepage.tudelft.nl/c9d1n/papers/cmcs-2018.pdf
    *)
 Open Scope R_scope. 
-Context {M : MDP} {finm : Finite (state M)} (γ : R).
+Context {M : MDP} (γ : R).
 Context (σ : dec_rule M) (init : M.(state)) (hγ : (0 < γ < 1)%R).
 Arguments reward {_}.
 Arguments outcomes {_}.
@@ -2107,4 +2109,3 @@ Proof.
 Qed.  
 
 End order.
-
