@@ -222,7 +222,7 @@ Proof.
       now rewrite Rcomplements.Rplus_max_distr_r.
 Qed.
 
-Lemma Rmax_list_zero (l : list R) :
+Lemma Rmax_list_zero {A} (l : list A) :
   Rmax_list (List.map (fun x => 0) l) = 0.
 Proof.
   induction l.
