@@ -12,7 +12,7 @@ depends: [
   "coq-mathcomp-ssreflect"
   "coq-coquelicot"
   "coq-flocq"
-  "coq-interval"
+  "coq-interval" {<= "3.4.2"}
   "ocamlbuild"
   "base64"
   "menhir"
