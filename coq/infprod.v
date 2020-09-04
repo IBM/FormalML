@@ -951,6 +951,38 @@ Proof.
   apply (Rle_trans  _ _ _ H6 H5).
 Qed.
 
+Lemma Dvoretzky4_sigma_v0_2_0 (F : nat -> posreal) (sigma V: nat -> R) :
+  (forall (n:nat), Rsqr (V (S n)) <= (pos_sq_fun F) n * Rsqr (V n) + Rsqr (sigma n)) ->
+  ex_series (fun n => Rsqr (sigma n)) ->
+  Series (fun n => Rsqr (sigma n)) + Rsqr (V 0%nat) = 0 ->
+  forall n, V n = 0.
+Proof.
+  intros.
+  remember (Series (fun n => Rsqr (sigma n))) as sigma_sum.
+  generalize (nneg_series_sq sigma H0); simpl; intros.
+  generalize (Rle_0_sqr (V 0%nat)); intros.
+  rewrite <- Heqsigma_sum in H2.
+  generalize (Rplus_eq_R0 sigma_sum (Rsqr (V 0%nat)) H2 H3 H1); intros.
+  destruct H4.
+  generalize (lim_sq_0 sigma).
+  rewrite Heqsigma_sum in H4; intros.
+  generalize (Series_correct _ H0); intros.
+  rewrite H4 in H7.
+  specialize (H6 H7).
+  induction n.
+  - now apply Rsqr_eq_0 in H5.
+  - specialize (H n).
+    rewrite IHn in H.
+    rewrite <- H6 in H.
+    rewrite Rsqr_0 in H.
+    rewrite Rplus_0_r in H.
+    rewrite Rmult_0_r in H.
+    generalize (Rle_0_sqr (V (S n))); intros.
+    generalize (Rle_antisym _ _ H H8).
+    apply Rsqr_eq_0.
+Qed.
+  
+
 Theorem Dvoretzky4 (F : nat -> posreal) (sigma V: nat -> R) :
   (forall n, F n <= 1) ->
   (forall (n:nat), Rsqr (V (S n)) <= (pos_sq_fun F) n * Rsqr (V n) + Rsqr (sigma n)) ->
@@ -976,59 +1008,15 @@ Proof.
   destruct H2 as [sigma_sum H2].
   remember (sigma_sum + Rsqr (V 0%nat)) as sigma_V0_2.
   destruct (Req_dec sigma_V0_2 0).
-
-(*
-    generalize (Dvoretzky4_8_5_1 F sigma V); intros.
-    exists (Nsigma + 2)%nat.
-    intros.
-    specialize (H8 pred n) N(0%nat) sigma_sum H H0 H2).
-    assert (0 < pred n)%nat by lia.
-    specialize (H8 H10).
-    replace (S (pred n)) with (n) in H8 by lia.
-    rewrite Rplus_comm in Heqsigma_V0_2.
-    rewrite <- Heqsigma_V0_2 in H8.
-    rewrite H7 in H8.
-    unfold R_dist.
-    rewrite Rminus_0_r.
-    rewrite Rabs_pos_eq; [| apply Rle_0_sqr].
-    rewrite Rmult_0_l in H8.
-    rewrite Rplus_0_r in H8.
-    specialize (H3 Nsigma (S Nsigma)).
-    cut_to H3.
-*)
-
-  - generalize (nneg_series_sq sigma H2'); intros.
-    assert (H2'' := H2).
-    apply is_series_unique in H2.
-    rewrite H2 in H8.
-    generalize (Rle_0_sqr (V 0%nat)); intros.
-    generalize (Rplus_eq_R0 sigma_sum (Rsqr (V 0%nat)) H8 H9).
-    intros.
+  - exists (0%nat); intros.
     rewrite Heqsigma_V0_2 in H7.
-    specialize (H10 H7).
-    destruct H10.
-    rewrite H10 in H2''.
-    generalize (lim_sq_0 sigma H2'').
-    intros.
-    assert (forall n, Rsqr (V n) = 0).
-    + induction n.
-      * trivial.
-      * specialize (H12 n).
-        specialize (H0 n).
-        rewrite <- H12 in H0.
-        rewrite IHn in H0.
-        rewrite Rsqr_0 in H0.
-        rewrite Rplus_0_r in H0.
-        rewrite Rmult_0_r in H0.
-        apply Rle_antisym; trivial.
-        apply Rle_0_sqr.
-    + exists (0%nat).
-      intros.
-      unfold R_dist.
-      specialize (H13 n).
-      rewrite H13.
-      rewrite Rminus_0_r.
-      now rewrite Rabs_R0.
+    apply is_series_unique in H2.
+    rewrite <- H2 in H7.
+    rewrite (Dvoretzky4_sigma_v0_2_0 F sigma); trivial.
+    unfold R_dist.
+    rewrite Rsqr_0.
+    rewrite Rminus_0_r.
+    now rewrite Rabs_R0.
   - assert (0 <= sigma_V0_2).
     rewrite Heqsigma_V0_2.
     apply Rplus_le_le_0_compat.
@@ -1085,6 +1073,161 @@ Proof.
       symmetry.
       replace (n-1)%nat with (n - S Nsigma - 1 + S Nsigma)%nat by lia.
       apply part_prod_n_shift.
+Qed.
+
+Lemma max_prod_index (F : nat -> posreal) (m:nat) :
+  exists (k:nat), (k<=m)%nat /\
+                  forall (n:nat), (m <= n)%nat ->
+                  part_prod_n F k n = max_prod_fun F m n.
+Proof.
+  intros.
+  eexists.
+  split.
+  shelve.
+  unfold max_prod_fun; intros.
+  generalize (fold_right_max_in 0 (List.map (fun k : nat => part_prod_n F k n) (List.seq 0 (S m)))); intros.
+  destruct H0.
+  - rewrite H0.
+    generalize (pos_part_prod_n F).
+    intros.
+    admit.
+  - 
+  Admitted.
+
+Lemma max_prod_index_n (F : nat -> posreal) (m n:nat) :
+  (m <= n)%nat ->
+  exists (k:nat), (k<=m)%nat /\
+                  part_prod_n F k n = max_prod_fun F m n.
+Proof.
+  generalize (max_prod_index F  m); intros.
+  destruct H as [k H]; destruct H.
+  exists k.
+  split; trivial.
+  apply H1; trivial.
+Qed.
+
+Lemma part_prod_n_pos_npos (a : nat -> posreal) (m n:nat) :
+  part_prod_n a m n = part_prod_n_pos a m n.
+Proof.
+  intros.
+  unfold part_prod_n_pos.
+  unfold part_prod_pos; simpl.
+  unfold part_prod.
+Admitted.  
+  
+
+Lemma lim_max_prod_m_0 (a : nat -> posreal):
+  is_lim_seq (part_prod_pos a) 0 -> 
+  forall (m:nat), is_lim_seq (max_prod_fun a m) 0.
+Proof.
+  intros.
+  generalize (max_prod_index a m); intros.
+  destruct H0 as [k H0].
+  destruct H0.
+  apply is_lim_seq_incr_n with (N:=m).
+  apply (is_lim_seq_ext (fun n => part_prod_n a k (n+m)%nat)).
+  intros; apply H1; lia.
+  generalize (inf_prod_n_sq_m_0 a H k); intros.
+  apply is_lim_seq_incr_n.
+  apply (is_lim_seq_ext (part_prod_n_pos a k)); intros.
+  rewrite part_prod_n_pos_npos; trivial.
+  trivial.
+Qed.
+
+Theorem Dvoretzky4_A (F : nat -> posreal) (sigma V: nat -> R) (A:posreal) :
+  (forall r s, part_prod_n (pos_sq_fun F) r s <= A) ->
+  (forall (n:nat), Rsqr (V (S n)) <= (pos_sq_fun F) n * Rsqr (V n) + Rsqr (sigma n)) ->
+  is_lim_seq (part_prod F) 0 ->
+  ex_series (fun n => Rsqr (sigma n)) ->   
+  is_lim_seq (fun n => Rsqr (V n)) 0.
+Proof.
+  intros.
+  generalize (Cauchy_ex_series (fun n : nat => (sigma n)²) H2).
+  intros.
+  unfold Cauchy_series in H3.
+  generalize (inf_prod_sq_0 F H1); intros lim_prod_sq.
+  generalize (lim_max_prod_m_0 (pos_sq_fun F) lim_prod_sq); intros.
+  rewrite is_lim_seq_Reals; unfold Un_cv; intros.
+  assert (0 < eps/(2*A)).
+  apply Rdiv_lt_0_compat; trivial.
+  apply Rmult_lt_0_compat; [lra|apply cond_pos].
+  remember (mkposreal (eps/(2*A)) H6) as half_eps_div_A.
+  specialize (H3 half_eps_div_A).
+  destruct H3 as [Nsigma H3].
+  unfold norm in H3; simpl in H3.
+  unfold abs in H3; simpl in H3.
+  assert (H2' := H2).
+  unfold ex_series in H2.
+  destruct H2 as [sigma_sum H2].
+  remember (sigma_sum + Rsqr (V 0%nat)) as sigma_V0_2.
+  destruct (Req_dec sigma_V0_2 0).
+  - exists (0%nat); intros.
+    rewrite Heqsigma_V0_2 in H7.
+    apply is_series_unique in H2.
+    rewrite <- H2 in H7.
+    rewrite (Dvoretzky4_sigma_v0_2_0 F sigma); trivial.
+    unfold R_dist.
+    rewrite Rsqr_0.
+    rewrite Rminus_0_r.
+    now rewrite Rabs_R0.
+  - assert (0 <= sigma_V0_2).
+    rewrite Heqsigma_V0_2.
+    apply Rplus_le_le_0_compat.
+    assert (H2'' := H2).
+    apply is_series_unique in H2''.
+    rewrite <- H2''.
+    apply nneg_series_sq; trivial.
+    apply Rle_0_sqr.
+    destruct H8; [|congruence].
+    remember ((eps / 2) / sigma_V0_2) as part_prod_eps.
+    specialize (H4 (S Nsigma)).
+    rewrite is_lim_seq_Reals in H4; unfold Un_cv in H4.
+    specialize (H4 part_prod_eps).
+    assert (part_prod_eps > 0).
+    rewrite Heqpart_prod_eps.
+    apply  Rdiv_lt_0_compat; trivial; lra.
+    specialize (H4 H9). 
+    destruct H4 as [NH4 H4].
+    remember ( NH4 + S Nsigma)%nat as NV.
+    exists (S NV).
+    unfold R_dist in *.
+    intros.
+    rewrite Rminus_0_r.
+    rewrite Rabs_pos_eq; [| apply Rle_0_sqr].
+    generalize (Dvoretzky4_8_5_max_1 F sigma V (n-1)%nat Nsigma A sigma_sum H H0 H2).
+    replace (S (n-1)%nat) with n by lia.
+    intros.
+    assert (Nsigma < n - 1)%nat by lia.
+    specialize (H11 H12).
+    specialize (H3 (S Nsigma) (n-1)%nat).
+    assert (Nsigma <= S Nsigma)%nat by lia.
+    assert (Nsigma <= n-1)%nat by lia.
+    specialize (H3 H13 H14).
+    rewrite Rabs_pos_eq in H3; [|apply nneg_sum_n_m_sq ].
+    specialize (H4 (n - 1)%nat).
+    assert (n -1 >= NH4)%nat by lia.
+    specialize (H4 H15).
+    rewrite Rminus_0_r in H4.
+    assert (0 < max_prod_fun (pos_sq_fun F) (S Nsigma) (n - 1)).
+    + generalize (max_prod_index_n (pos_sq_fun F) (S Nsigma) (n-1)%nat); intros.
+      destruct H16 as [k H16]; [lia|].
+      destruct H16.
+      rewrite <- H17.
+      apply pos_part_prod_n.
+    + rewrite Rabs_pos_eq in H4; [|left; apply H16].
+      apply Rmult_lt_compat_l with (r := sigma_V0_2) in H4; trivial.
+      rewrite Heqpart_prod_eps in H4.
+      replace (sigma_V0_2 * (eps / 2 / sigma_V0_2)) with (eps/2) in H4; [|now field_simplify].
+      rewrite Rplus_comm in Heqsigma_V0_2.
+      rewrite <- Heqsigma_V0_2 in H11.
+      unfold part_prod_pos, pos in H4.
+      rewrite Heqhalf_eps_div_A in H3; simpl in H3.
+      apply Rmult_lt_compat_r with (r := A) in H3; [|apply cond_pos].
+      replace (eps / ( 2 * A) * A) with (eps / 2) in H3; 
+        [|field_simplify;trivial; apply Rgt_not_eq; apply cond_pos].
+      generalize (Rplus_lt_compat _ _ _ _ H3 H4); intros.
+      replace (eps/2 + eps/2) with (eps) in H17 by lra.
+      apply (Rle_lt_trans  _ _ _ H11 H17).
 Qed.
 
 (* needs to have positive limit as above *)
