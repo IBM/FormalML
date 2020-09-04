@@ -8,7 +8,7 @@ COPY --chown=coq:coq Formal_ML.opam ./
 RUN ["/bin/bash", "--login", "-c", "set -x \
   && if [ -n \"${COMPILER_EDGE}\" ]; then opam switch ${COMPILER_EDGE} && eval $(opam env); fi \
   && opam update -y \
-  && opam install -y -j ${NJOBS} .
+  && opam install -y -j ${NJOBS} . \
   && opam clean -a -c -s --logs"]
 
 
