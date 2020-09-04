@@ -1141,7 +1141,6 @@ Proof.
   - replace (m+0)%nat with (m) by lia.
     rewrite part_prod_n_k_k.
     rewrite max_prod_n_S; trivial.
-    lia.
   - rewrite part_prod_n_S; [|lia].
     rewrite max_prod_n_S; [|lia].
     replace (m + S n)%nat with (S m + n)%nat by lia.
