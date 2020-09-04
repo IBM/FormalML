@@ -51,16 +51,11 @@ Proof.
   apply pos_part_prod_n.
 Qed.
 
-Definition part_prod_pos (a : nat -> posreal) (n : nat) : posreal :=
-  mkposreal (part_prod a n) (pos_part_prod a n).
-
-(*
-Definition part_prod_n_pos (a : nat -> posreal) (n m : nat) : posreal :=
-  part_prod_pos (fun k => a (n + k)%nat) (m-n)%nat.
-*)
-
 Definition part_prod_n_pos (a : nat -> posreal) (m n : nat) : posreal :=
   mkposreal (part_prod_n a m n) (pos_part_prod_n a m n).
+
+Definition part_prod_pos (a : nat -> posreal) (n : nat) : posreal :=
+  mkposreal (part_prod a n) (pos_part_prod a n).
 
 Lemma fold_right_mult_acc (acc : R) (l : list R) :
   List.fold_right Rmult acc l =
@@ -259,6 +254,23 @@ Proof.
     rewrite part_prod_n_S; [|lia].
     rewrite IHk; simpl.
     rewrite part_prod_n_S; [|lia].
+    lra.
+Qed.
+
+Lemma initial_seg_prod_n (a : nat -> posreal) (k m n:nat):
+  (k <= m)%nat -> 
+  part_prod_n a k (S m + n)%nat = (part_prod_n a k m) * (part_prod_n a (S m) (S m + n)%nat).
+Proof.
+  intros.
+  induction n; simpl.
+  - replace (m+0)%nat with (m) by lia.
+    rewrite part_prod_n_S.
+    now rewrite part_prod_n_k_k.
+    lia.
+  - rewrite part_prod_n_S; [|lia].
+    rewrite part_prod_n_S; [|lia].
+    replace (m + S n)%nat with (S m + n)%nat by lia.
+    rewrite IHn.
     lra.
 Qed.
 
@@ -1103,14 +1115,62 @@ Proof.
     lia.
 Qed.
 
+Lemma max_prod_n_S (a: nat -> posreal) (m n : nat) :
+  (m <= S n)%nat ->
+  (max_prod_fun a m (S n)) = max_prod_fun a m n * a (S n).
+Proof.
+  intros mle.
+  unfold max_prod_fun.
+  induction m.
+  - simpl.
+    rewrite part_prod_n_S; [|lia].
+    admit.
+  - replace (S (S m)) with (S m + 1)%nat by lia.
+    rewrite seq_plus.
+    rewrite List.map_app.
+    rewrite List.fold_right_app.
+    replace (0 + S m)%nat with (S m) by lia.
+Admitted.    
+
+Lemma initial_max_prod_n (a : nat -> posreal) (k m n:nat):
+  (k <= m)%nat -> 
+  max_prod_fun a k (S m + n)%nat = (max_prod_fun a k m) * (part_prod_n a (S m) (S m + n)%nat).
+Proof.
+  intros.
+  induction n; simpl.
+  - replace (m+0)%nat with (m) by lia.
+    rewrite part_prod_n_k_k.
+    rewrite max_prod_n_S; trivial.
+    lia.
+  - rewrite part_prod_n_S; [|lia].
+    rewrite max_prod_n_S; [|lia].
+    replace (m + S n)%nat with (S m + n)%nat by lia.
+    rewrite IHn.
+    lra.
+Qed.
+
 Lemma max_prod_index (F : nat -> posreal) (m:nat) :
   exists (k:nat), (k<=m)%nat /\
                   forall (n:nat), (m <= n)%nat ->
                   part_prod_n F k n = max_prod_fun F m n.
 Proof.
   intros.
-  unfold max_prod_fun; intros.
-Admitted.
+  assert (m <= m)%nat by lia.
+  generalize (max_prod_index_n F m m H); intros.
+  destruct H0 as [k H0]; destruct H0.
+  exists k.
+  split; trivial.
+  intros.
+  destruct (lt_dec m n).
+  + remember (n - S m)%nat as nm.
+    replace (n) with (S m + nm)%nat; [|lia].
+    rewrite initial_seg_prod_n; trivial.
+    rewrite initial_max_prod_n; trivial.
+    now rewrite H1.
+  + assert (m = n)%nat by lia.
+    rewrite <- H3.
+    now rewrite H1.
+Qed.
 
 Lemma list_seq_init_map init len :
   List.seq init len = List.map (fun x => (init + x)%nat) (List.seq 0 len).
