@@ -792,6 +792,22 @@ Proof.
     now rewrite H1.
 Qed.
 
+Lemma lim_max_prod_m_0 (a : nat -> posreal):
+  is_lim_seq (part_prod_pos a) 0 -> 
+  forall (m:nat), is_lim_seq (max_prod_fun a m) 0.
+Proof.
+  intros.
+  generalize (max_prod_index a m); intros.
+  destruct H0 as [k H0].
+  destruct H0.
+  apply is_lim_seq_incr_n with (N:=m).
+  apply (is_lim_seq_ext (fun n => part_prod_n a k (n+m)%nat)).
+  intros; apply H1; lia.
+  generalize (inf_prod_n_m_0 a H k); intros.
+  apply is_lim_seq_incr_n.
+  now unfold part_prod_n_pos in H2; simpl in H2.
+Qed.
+
 End max_prod.
 
 Lemma prod_sq_bounded_1 (F : nat -> posreal) (r s :nat) :
@@ -996,21 +1012,6 @@ Proof.
     apply Rsqr_eq_0.
 Qed.
   
-Lemma lim_max_prod_m_0 (a : nat -> posreal):
-  is_lim_seq (part_prod_pos a) 0 -> 
-  forall (m:nat), is_lim_seq (max_prod_fun a m) 0.
-Proof.
-  intros.
-  generalize (max_prod_index a m); intros.
-  destruct H0 as [k H0].
-  destruct H0.
-  apply is_lim_seq_incr_n with (N:=m).
-  apply (is_lim_seq_ext (fun n => part_prod_n a k (n+m)%nat)).
-  intros; apply H1; lia.
-  generalize (inf_prod_n_m_0 a H k); intros.
-  apply is_lim_seq_incr_n.
-  now unfold part_prod_n_pos in H2; simpl in H2.
-Qed.
 
 Theorem Dvoretzky4_A (F : nat -> posreal) (sigma V: nat -> R) (A:posreal) :
   (forall r s, part_prod_n (pos_sq_fun F) r s <= A) ->
