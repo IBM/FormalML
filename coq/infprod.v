@@ -33,13 +33,13 @@ Definition part_prod_n (a : nat -> posreal) (n m : nat) :R  :=
 Definition part_prod (a : nat -> posreal) (n : nat) : R :=
   part_prod_n a 0 n.
 
-Lemma pos_part_prod_n  (a : nat -> posreal) (n m : nat) :
-  0 < part_prod_n a n m.
+Lemma pos_part_prod_n  (a : nat -> posreal) (m n : nat) :
+  0 < part_prod_n a m n.
 Proof.
   unfold part_prod_n.
-  generalize (S m - n)%nat; intros.
-  revert n.
-  induction n0; simpl; intros n.
+  generalize (S n - m)%nat; intros.
+  revert m.
+  induction n0; simpl; intros m.
   - lra.
   - apply Rmult_lt_0_compat; [|trivial].
     apply cond_pos.
@@ -54,8 +54,13 @@ Qed.
 Definition part_prod_pos (a : nat -> posreal) (n : nat) : posreal :=
   mkposreal (part_prod a n) (pos_part_prod a n).
 
+(*
 Definition part_prod_n_pos (a : nat -> posreal) (n m : nat) : posreal :=
   part_prod_pos (fun k => a (n + k)%nat) (m-n)%nat.
+*)
+
+Definition part_prod_n_pos (a : nat -> posreal) (m n : nat) : posreal :=
+  mkposreal (part_prod_n a m n) (pos_part_prod_n a m n).
 
 Lemma fold_right_mult_acc (acc : R) (l : list R) :
   List.fold_right Rmult acc l =
@@ -327,8 +332,9 @@ Proof.
   unfold part_prod_n_pos.
   apply is_lim_seq_incr_n with (N := m).
   apply (is_lim_seq_ext (fun n : nat => part_prod_pos (fun k : nat => a (m + k)%nat) n)).
-  intros.
-  now replace (n + m - m)%nat with n by lia.
+  intros; simpl.
+  unfold part_prod.
+  now rewrite part_prod_n_shift.  
   now apply inf_prod_sq_m_0.
 Qed.  
 
@@ -1075,12 +1081,12 @@ Proof.
       apply part_prod_n_shift.
 Qed.
 
-Lemma max_prod_index_aux (F : nat -> posreal) (m : nat) (n:nat) (mle:(m <= n)%nat) :
+Lemma max_prod_index_n (F : nat -> posreal) (m : nat) (n:nat) (mle:(m <= n)%nat) :
   exists k : nat,
     (k <= m)%nat /\
-     part_prod_n F k n =
-     List.fold_right Rmax 0 (List.map (fun k0 : nat => part_prod_n F k0 n) (List.seq 0 (S m))).
+     part_prod_n F k n = max_prod_fun F m n.
 Proof.
+  unfold max_prod_fun.
   destruct (fold_right_max_in 0 (List.map (fun k : nat => part_prod_n F k n) (List.seq 0 (S m)))).
   - generalize (pos_part_prod_n F).
     intros.
@@ -1097,7 +1103,6 @@ Proof.
     lia.
 Qed.
 
-      
 Lemma max_prod_index (F : nat -> posreal) (m:nat) :
   exists (k:nat), (k<=m)%nat /\
                   forall (n:nat), (m <= n)%nat ->
@@ -1106,18 +1111,6 @@ Proof.
   intros.
   unfold max_prod_fun; intros.
 Admitted.
-
-Lemma max_prod_index_n (F : nat -> posreal) (m n:nat) :
-  (m <= n)%nat ->
-  exists (k:nat), (k<=m)%nat /\
-                  part_prod_n F k n = max_prod_fun F m n.
-Proof.
-  generalize (max_prod_index F  m); intros.
-  destruct H as [k H]; destruct H.
-  exists k.
-  split; trivial.
-  apply H1; trivial.
-Qed.
 
 Lemma list_seq_init_map init len :
   List.seq init len = List.map (fun x => (init + x)%nat) (List.seq 0 len).
@@ -1129,23 +1122,6 @@ Proof.
     rewrite IHinit.
     now rewrite List.map_map.
 Qed.    
-
-Lemma part_prod_n_pos_npos (a : nat -> posreal) (m n:nat) :
-  part_prod_n a m n = part_prod_n_pos a m n.
-Proof.
-  intros.
-  destruct (le_lt_dec m n).
-  - unfold part_prod_n_pos.
-    unfold part_prod_pos; simpl.
-    unfold part_prod.
-    unfold part_prod_n.
-    rewrite (list_seq_init_map m).
-    rewrite List.map_map.
-    do 3 f_equal.
-    lia.
-  - admit.
-Admitted.
-
 
 Lemma lim_max_prod_m_0 (a : nat -> posreal):
   is_lim_seq (part_prod_pos a) 0 -> 
@@ -1161,7 +1137,7 @@ Proof.
   generalize (inf_prod_n_sq_m_0 a H k); intros.
   apply is_lim_seq_incr_n.
   apply (is_lim_seq_ext (part_prod_n_pos a k)); intros.
-  rewrite part_prod_n_pos_npos; trivial.
+  now unfold part_prod_n_pos; simpl.
   trivial.
 Qed.
 
