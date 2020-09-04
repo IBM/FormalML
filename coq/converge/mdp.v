@@ -222,6 +222,17 @@ Proof.
       now rewrite Rcomplements.Rplus_max_distr_r.
 Qed.
 
+Lemma Rmax_list_zero (l : list R) :
+  Rmax_list (List.map (fun x => 0) l) = 0.
+Proof.
+  induction l.
+  -- simpl ; reflexivity.
+  -- simpl in *. rewrite IHl.
+     replace (Rmax 0 0) with 0. 
+     destruct l ; [simpl ; reflexivity | simpl ; reflexivity] .
+     symmetry. apply Rmax_left ; lra. 
+Qed. 
+ 
 Lemma Rmax_list_ge (l : list R) (r : R) :
   forall x, In x l -> r <= x -> r <= Rmax_list l.
 Proof.
@@ -1627,7 +1638,7 @@ Section ltv.
    *)
 Open Scope R_scope. 
 Context {M : MDP} (γ : R).
-Context (σ : dec_rule M) (init : M.(state)) (hγ : (0 < γ < 1)%R).
+Context (σ : dec_rule M) (init : M.(state)) (hγ : (0 <= γ < 1)%R).
 Arguments reward {_}.
 Arguments outcomes {_}.
 Arguments t {_}.
@@ -1752,7 +1763,7 @@ Section operator.
   
 Open Scope R_scope. 
 Context {M : MDP} {finm : Finite (state M)} (γ D : R).
-Context (hγ : (0 < γ < 1)%R).
+Context (hγ : (0 <= γ < 1)%R).
 
 Arguments reward {_}.
 Arguments outcomes {_}.
@@ -1769,21 +1780,42 @@ Theorem is_contraction_bellman_op (π : dec_rule M) :
  @is_contraction (Rfct_UniformSpace M.(state)) (Rfct_UniformSpace M.(state)) (bellman_op π).
 Proof.
   unfold is_contraction.
-  exists γ ; split.
+  destruct (Req_EM_T γ 0). 
+  ++ unfold bellman_op.
+     exists (1/2). split ; [lra | ].
+     unfold is_Lipschitz. split ; trivial ; [lra | ].
+     destruct finm as [ls Hls].
+     intros f g. intros r Hr Hfgr.
+     rewrite e. unfold ball_x,ball_y, Rmax_norm.
+     simpl. unfold Rmax_ball. simpl. 
+     replace (fun s : state M => Rabs
+     (minus (step_expt_reward π s + 0 * expt_value (t s (π s)) g)
+            (step_expt_reward π s + 0 * expt_value (t s (π s)) f))) with (fun x:state M => 0).
+     rewrite Rmax_list_zero. replace 0 with (1/2 * 0) by lra.
+     apply Rmult_lt_compat_l ; [lra |trivial].
+     apply functional_extensionality. intro x.
+     do 2 rewrite Rmult_0_l. rewrite Rplus_0_r.
+     rewrite minus_eq_zero.
+     symmetry. apply Rabs_R0.
+  ++
+    exists γ ; split.
   - now destruct hγ.
-  - unfold is_Lipschitz. split.
-    -- destruct hγ. now left. 
+  - unfold is_Lipschitz.
+    unfold ball_x,ball_y. simpl.
+    destruct finm as [ls Hls].
+    split.
+    -- now destruct hγ. 
     -- intros f g r Hr Hx.
        repeat red in Hx. repeat red.
-       unfold Rmax_norm in *. destruct finm as [ls Hls].
+       unfold Rmax_norm in *. 
        destruct (is_nil_dec ls).
-       --- rewrite e ; simpl. apply Rmult_lt_0_compat ; [now destruct hγ |trivial].
+       --- rewrite e ; simpl. apply Rmult_lt_0_compat; [firstorder |trivial].
        ---
          assert (h1 :  Max_{ ls}(fun s => Rabs (minus (bellman_op π g s) (bellman_op π f s))) =  γ*Max_{ ls}(fun s => Rabs (expt_value (t s (π s)) (fun s => g s - f s)))).
        {
-         rewrite <-Rmax_list_map_const_mul ; [| destruct hγ ; now left].
+         rewrite <-Rmax_list_map_const_mul ; [| now destruct hγ].
          f_equal.
-         apply map_ext. rewrite <-(Rabs_pos_eq γ) ; [ | destruct hγ ; now left].
+         apply map_ext. rewrite <-(Rabs_pos_eq γ) ; [ | now destruct hγ].
          intro s. 
          rewrite <-Rabs_mult.
          f_equal. unfold bellman_op,minus,plus,opp ; simpl.
@@ -1884,6 +1916,16 @@ Proof.
   apply hp. assumption. 
 Qed.
 
+Lemma is_contraction_bellman_max_op_aux(la : forall s, list (M.(act) s)) f g: forall x,
+  (minus (Max_{ la x}(fun a : act M x => expt_value (t x a) (reward x a) + 0 * expt_value (t x a) g)) (Max_{ la x}(fun a : act M x => expt_value (t x a) (reward x a) + 0 * expt_value (t x a) f))) = 0.
+Proof.
+  intro x.
+  enough ((Max_{ la x}(fun a : act M x => expt_value (t x a) (reward x a) + 0 * expt_value (t x a) g) = Max_{ la x}(fun a : act M x => expt_value (t x a) (reward x a) + 0 * expt_value (t x a) f))). rewrite H. unfold minus, plus, opp. simpl. lra.
+  f_equal.
+  apply map_ext.
+  intro a. do 2 rewrite Rmult_0_l. 
+  reflexivity.
+Qed.
  (*
    Proposition 5 of http://researchers.lille.inria.fr/~lazaric/Webpage/MVA-RL_Course14_files/notes-lecture-02.pdf
   *)
@@ -1892,10 +1934,26 @@ Theorem is_contraction_bellman_max_op
  @is_contraction (Rfct_UniformSpace M.(state)) (Rfct_UniformSpace M.(state)) (bellman_max_op la).
 Proof.
   unfold is_contraction.
-  exists γ ; split.
+  destruct (Req_EM_T γ 0).
+   +++ unfold bellman_max_op.
+     exists (1/2). split ; [lra | ].
+     unfold is_Lipschitz. split ; trivial ; [lra | ].
+     destruct finm as [ls Hls].
+     intros f g. intros r Hr Hfgr.
+     rewrite e. unfold ball_x,ball_y, Rmax_norm.
+     simpl. unfold Rmax_ball. simpl. 
+     replace  (fun s : state M =>
+   Rabs
+     (minus(Max_{ la s}(fun a : act M s => expt_value (t s a) (reward s a) + 0 * expt_value (t s a) g)) (Max_{ la s}(fun a : act M s => expt_value (t s a) (reward s a) + 0 * expt_value (t s a) f)))) with (fun x:state M => 0).
+     rewrite Rmax_list_zero. replace 0 with (1/2 * 0) by lra.
+     apply Rmult_lt_compat_l ; [lra |trivial].
+     apply functional_extensionality. intro x.
+     rewrite is_contraction_bellman_max_op_aux.
+     symmetry. apply Rabs_R0.
+  +++ exists γ ; split.
   - now destruct hγ.
   - unfold is_Lipschitz. split.
-    ++ destruct hγ ; now left.
+    ++ now destruct hγ.
     ++ intros f g r Hr Hfg.
        repeat red in Hfg. repeat red.
        unfold Rmax_norm in *. destruct finm as [ls Hls].
@@ -1915,10 +1973,10 @@ Proof.
            intros a H. replace (γ * Rabs (expt_value (t s a) g - expt_value (t s a) f)) with
             (Rabs (γ) * Rabs (expt_value (t s a) g - expt_value (t s a) f)).
            rewrite <-Rabs_mult. f_equal. ring. 
-           f_equal. apply Rabs_pos_eq. destruct hγ ; now left.
+           f_equal. apply Rabs_pos_eq. now destruct hγ.
            }
            rewrite h1; clear h1.
-           rewrite Rmax_list_map_const_mul ; [|destruct hγ; now left].
+           rewrite Rmax_list_map_const_mul ; [|now destruct hγ].
            assert (h2: Max_{ la s}(fun a : act M s => Rabs (expt_value (t s a) g - expt_value (t s a) f))
              = Max_{ la s}(fun a : act M s => Rabs (expt_value (t s a)(fun s => g s - f s)))).
            {
@@ -1928,7 +1986,7 @@ Proof.
            rewrite h2 ; clear h2.
            assert (h3 : γ * (Max_{ la s}(fun a : act M s => Rabs (expt_value (t s a) (fun s0 : state M => g s0 - f s0)))) <= γ*(Max_{ la s}(fun a : act M s => (expt_value (t s a) (fun s0 : state M => Rabs (g s0 - f s0)))))).
            {
-           apply Rmult_le_compat_l; [destruct hγ ; now left| ].
+           apply Rmult_le_compat_l; [now destruct hγ| ].
            apply Rmax_list_fun_le. intro a. apply expt_value_Rabs_Rle.
            }
            eapply Rle_lt_trans; first apply h3. clear h3.
@@ -2015,7 +2073,7 @@ Section order.
   
 Open Scope R_scope. 
 Context {M : MDP} (γ D : R) (fm : Finite (state M)).
-Context (hγ : (0 < γ < 1)%R).
+Context (hγ : (0 <= γ < 1)%R).
 Arguments reward {_}.
 Arguments outcomes {_}.
 Arguments t {_}.
@@ -2101,3 +2159,6 @@ Proof.
 Qed.  
 
 End order.
+
+
+  
