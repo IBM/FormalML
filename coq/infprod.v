@@ -1115,22 +1115,32 @@ Proof.
     lia.
 Qed.
 
+Lemma fold_right_rmax_const acc l c:
+  0 <= c ->
+  List.fold_right Rmax acc l * c = List.fold_right Rmax (acc*c) (List.map (fun x => x * c) l).
+Proof.
+  induction l; simpl; trivial; intros.
+  rewrite <- IHl by trivial.
+  repeat rewrite (Rmult_comm _ c).
+  now rewrite RmaxRmult by trivial.
+Qed.
+
 Lemma max_prod_n_S (a: nat -> posreal) (m n : nat) :
   (m <= n)%nat ->
   (max_prod_fun a m (S n)) = max_prod_fun a m n * a (S n).
 Proof.
   intros mle.
   unfold max_prod_fun.
-  induction m.
-  - simpl.
-    rewrite part_prod_n_S; [|lia].
-    admit.
-  - replace (S (S m)) with (S m + 1)%nat by lia.
-    rewrite seq_plus.
-    rewrite List.map_app.
-    rewrite List.fold_right_app.
-    replace (0 + S m)%nat with (S m) by lia.
-Admitted.    
+  rewrite fold_right_rmax_const.
+  - rewrite List.map_map.
+    f_equal.
+    + lra.
+    + apply List.map_ext_in; intros.
+      apply List.in_seq in H.
+      apply part_prod_n_S.
+      lia.
+  - left. apply cond_pos. 
+Qed.  
 
 Lemma initial_max_prod_n (a : nat -> posreal) (k m n:nat):
   (k <= m)%nat -> 
