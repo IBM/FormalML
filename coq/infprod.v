@@ -226,6 +226,153 @@ Proof.
     + apply fold_right_mult_pos.
 Qed.
 
+Lemma initial_seg_prod (a : nat -> posreal) (m k:nat):
+  part_prod a (m + S k)%nat = (part_prod a m) * (part_prod_n a (S m) (m + S k)%nat).
+Proof.
+  induction k; simpl.
+  - unfold part_prod.
+    replace (m+1)%nat with (S m) by lia.
+    rewrite part_prod_n_S; [|lia].
+    rewrite part_prod_n_k_k.
+    lra.
+  - replace (m + S (S k))%nat with (S (m + S k)%nat) by lia; simpl.
+    unfold part_prod in *.
+    rewrite part_prod_n_S; [|lia].
+    rewrite IHk; simpl.
+    rewrite part_prod_n_S; [|lia].
+    lra.
+Qed.
+
+Lemma initial_seg_prod_n (a : nat -> posreal) (k m n:nat):
+  (k <= m)%nat -> 
+  part_prod_n a k (S m + n)%nat = (part_prod_n a k m) * (part_prod_n a (S m) (S m + n)%nat).
+Proof.
+  intros.
+  induction n; simpl.
+  - replace (m+0)%nat with (m) by lia.
+    rewrite part_prod_n_S.
+    now rewrite part_prod_n_k_k.
+    lia.
+  - rewrite part_prod_n_S; [|lia].
+    rewrite part_prod_n_S; [|lia].
+    replace (m + S n)%nat with (S m + n)%nat by lia.
+    rewrite IHn.
+    lra.
+Qed.
+
+Lemma part_prod_n_shift (F : nat -> posreal) (m n:nat) :
+  part_prod_n (fun k : nat => F (m + k)%nat) 0 n = part_prod_n F m (n +  m).
+Proof.
+  unfold part_prod_n.
+  f_equal.
+  replace (S n - 0)%nat with (S n) by lia.
+  replace (S (n + m) - m)%nat with (S n) by lia.
+  induction n.
+  - simpl.
+    now replace (m + 0)%nat with (m) by lia.
+  - replace (S (S n)) with (S n+1)%nat by lia.
+    rewrite seq_plus.
+    rewrite seq_plus.
+    rewrite List.map_app.
+    rewrite IHn.
+    replace (S n) with (n+1)%nat by lia.
+    simpl.
+    rewrite List.map_app.
+    now simpl.
+Qed.    
+
+Lemma initial_seg_prod2 (a : nat -> posreal) (m k:nat):
+  part_prod a (k + S m)%nat =
+  (part_prod a m) * (part_prod (fun k0 : nat => a (S m + k0)%nat) k).
+Proof.
+  generalize (initial_seg_prod a m k).
+  unfold part_prod.
+  intros.
+  replace (k + S m)%nat with (m + S k)%nat by lia.
+  rewrite H.
+  rewrite part_prod_n_shift.
+  now replace (m + S k)%nat with (k + S m)%nat by lia.
+Qed.
+
+Program Definition pos_sq (c : posreal) : posreal :=
+  mkposreal (c * c) _.
+Next Obligation.
+  apply Rmult_lt_0_compat; apply (cond_pos c).
+Qed.
+
+Definition pos_sq_fun (a : nat -> posreal) : (nat -> posreal) :=
+  fun n => pos_sq (a n).
+
+Lemma part_prod_pos_sq_pos (a : nat -> posreal) (n:nat) :
+  (part_prod_pos (pos_sq_fun a) n).(pos) = (pos_sq_fun (part_prod_pos a) n).(pos).
+Proof.
+  unfold pos_sq_fun, pos_sq, part_prod_pos; simpl.
+  induction n; simpl; trivial.
+  - unfold part_prod, part_prod_n.
+    simpl.
+    lra.
+  - unfold part_prod in *.
+    rewrite part_prod_n_S; [|lia].
+    rewrite IHn.
+    simpl.
+    rewrite part_prod_n_S; [|lia].
+    lra.
+Qed.
+
+Lemma inf_prod_sq_0 (a : nat -> posreal) :
+  is_lim_seq (part_prod_pos a) 0 ->
+  is_lim_seq (part_prod_pos (pos_sq_fun a)) 0.
+Proof.
+  intros.
+  apply (is_lim_seq_ext (fun n => pos_sq_fun (part_prod_pos a) n)).
+  intros; now rewrite (part_prod_pos_sq_pos a n).
+  simpl; replace (0) with (0 * 0) by lra.
+  now apply is_lim_seq_mult with (l1 := 0) (l2 := 0).
+Qed.
+
+
+Lemma inf_prod_m_0 (a : nat -> posreal):
+  is_lim_seq (part_prod_pos a) 0 ->
+  forall (m:nat), is_lim_seq (part_prod_pos (fun n => a (m + n)%nat)) 0.
+Proof.
+  intros.
+  destruct m.
+  - apply (is_lim_seq_ext (part_prod a)); trivial.
+  - generalize (is_lim_seq_incr_n (part_prod_pos a) (S m) 0).
+    intros.
+    destruct H0.
+    specialize (H0 H).
+    apply (is_lim_seq_ext (fun k => (/ (part_prod a m)) *
+                                  (part_prod a (k + S m)))).
+    + intros.
+      rewrite initial_seg_prod2.
+      rewrite <- Rmult_assoc.
+      rewrite Rmult_comm with (r2 := part_prod a m).
+      rewrite  Rinv_r_simpl_r; trivial.
+      apply Rgt_not_eq.
+      apply Rlt_gt.
+      apply pos_part_prod.
+    + apply is_lim_seq_mult with (l1 := / (part_prod_pos a m)) (l2 := 0).
+      * apply is_lim_seq_const.
+      * apply H0.
+      * unfold is_Rbar_mult; simpl.
+        now rewrite Rmult_0_r.
+Qed.
+
+Lemma inf_prod_n_m_0 (a : nat -> posreal):
+  is_lim_seq (part_prod_pos a) 0 ->
+  forall (m:nat), is_lim_seq (part_prod_n_pos a m) 0.
+Proof.
+  intros.
+  unfold part_prod_n_pos.
+  apply is_lim_seq_incr_n with (N := m).
+  apply (is_lim_seq_ext (fun n : nat => part_prod_pos (fun k : nat => a (m + k)%nat) n)).
+  intros; simpl.
+  unfold part_prod.
+  now rewrite part_prod_n_shift.  
+  now apply inf_prod_m_0.
+Qed.  
+
 End products.
 
 Section series_sequences.
@@ -462,173 +609,6 @@ Qed.
 
 End series_sequences.
 
-Program Definition pos_sq (c : posreal) : posreal :=
-  mkposreal (c * c) _.
-Next Obligation.
-  apply Rmult_lt_0_compat; apply (cond_pos c).
-Qed.
-
-Definition pos_sq_fun (a : nat -> posreal) : (nat -> posreal) :=
-  fun n => pos_sq (a n).
-
-Lemma part_prod_pos_sq_pos (a : nat -> posreal) (n:nat) :
-  (part_prod_pos (pos_sq_fun a) n).(pos) = (pos_sq_fun (part_prod_pos a) n).(pos).
-Proof.
-  unfold pos_sq_fun, pos_sq, part_prod_pos; simpl.
-  induction n; simpl; trivial.
-  - unfold part_prod, part_prod_n.
-    simpl.
-    lra.
-  - unfold part_prod in *.
-    rewrite part_prod_n_S; [|lia].
-    rewrite IHn.
-    simpl.
-    rewrite part_prod_n_S; [|lia].
-    lra.
-Qed.
-
-Lemma inf_prod_sq_0 (a : nat -> posreal) :
-  is_lim_seq (part_prod_pos a) 0 ->
-  is_lim_seq (part_prod_pos (pos_sq_fun a)) 0.
-Proof.
-  intros.
-  apply (is_lim_seq_ext (fun n => pos_sq_fun (part_prod_pos a) n)).
-  intros; now rewrite (part_prod_pos_sq_pos a n).
-  simpl; replace (0) with (0 * 0) by lra.
-  now apply is_lim_seq_mult with (l1 := 0) (l2 := 0).
-Qed.
-
-Lemma initial_seg_prod (a : nat -> posreal) (m k:nat):
-  part_prod a (m + S k)%nat = (part_prod a m) * (part_prod_n a (S m) (m + S k)%nat).
-Proof.
-  induction k; simpl.
-  - unfold part_prod.
-    replace (m+1)%nat with (S m) by lia.
-    rewrite part_prod_n_S; [|lia].
-    rewrite part_prod_n_k_k.
-    lra.
-  - replace (m + S (S k))%nat with (S (m + S k)%nat) by lia; simpl.
-    unfold part_prod in *.
-    rewrite part_prod_n_S; [|lia].
-    rewrite IHk; simpl.
-    rewrite part_prod_n_S; [|lia].
-    lra.
-Qed.
-
-Lemma initial_seg_prod_n (a : nat -> posreal) (k m n:nat):
-  (k <= m)%nat -> 
-  part_prod_n a k (S m + n)%nat = (part_prod_n a k m) * (part_prod_n a (S m) (S m + n)%nat).
-Proof.
-  intros.
-  induction n; simpl.
-  - replace (m+0)%nat with (m) by lia.
-    rewrite part_prod_n_S.
-    now rewrite part_prod_n_k_k.
-    lia.
-  - rewrite part_prod_n_S; [|lia].
-    rewrite part_prod_n_S; [|lia].
-    replace (m + S n)%nat with (S m + n)%nat by lia.
-    rewrite IHn.
-    lra.
-Qed.
-
-Lemma part_prod_n_shift (F : nat -> posreal) (m n:nat) :
-  part_prod_n (fun k : nat => F (m + k)%nat) 0 n = part_prod_n F m (n +  m).
-Proof.
-  unfold part_prod_n.
-  f_equal.
-  replace (S n - 0)%nat with (S n) by lia.
-  replace (S (n + m) - m)%nat with (S n) by lia.
-  induction n.
-  - simpl.
-    now replace (m + 0)%nat with (m) by lia.
-  - replace (S (S n)) with (S n+1)%nat by lia.
-    rewrite seq_plus.
-    rewrite seq_plus.
-    rewrite List.map_app.
-    rewrite IHn.
-    replace (S n) with (n+1)%nat by lia.
-    simpl.
-    rewrite List.map_app.
-    now simpl.
-Qed.    
-
-Lemma initial_seg_prod2 (a : nat -> posreal) (m k:nat):
-  part_prod a (k + S m)%nat =
-  (part_prod a m) * (part_prod (fun k0 : nat => a (S m + k0)%nat) k).
-Proof.
-  generalize (initial_seg_prod a m k).
-  unfold part_prod.
-  intros.
-  replace (k + S m)%nat with (m + S k)%nat by lia.
-  rewrite H.
-  rewrite part_prod_n_shift.
-  now replace (m + S k)%nat with (k + S m)%nat by lia.
-Qed.
-
-Lemma inf_prod_sq_m_0 (a : nat -> posreal):
-  is_lim_seq (part_prod_pos a) 0 ->
-  forall (m:nat), is_lim_seq (part_prod_pos (fun n => a (m + n)%nat)) 0.
-Proof.
-  intros.
-  destruct m.
-  - apply (is_lim_seq_ext (part_prod a)); trivial.
-  - generalize (is_lim_seq_incr_n (part_prod_pos a) (S m) 0).
-    intros.
-    destruct H0.
-    specialize (H0 H).
-    apply (is_lim_seq_ext (fun k => (/ (part_prod a m)) *
-                                  (part_prod a (k + S m)))).
-    + intros.
-      rewrite initial_seg_prod2.
-      rewrite <- Rmult_assoc.
-      rewrite Rmult_comm with (r2 := part_prod a m).
-      rewrite  Rinv_r_simpl_r; trivial.
-      apply Rgt_not_eq.
-      apply Rlt_gt.
-      apply pos_part_prod.
-    + apply is_lim_seq_mult with (l1 := / (part_prod_pos a m)) (l2 := 0).
-      * apply is_lim_seq_const.
-      * apply H0.
-      * unfold is_Rbar_mult; simpl.
-        now rewrite Rmult_0_r.
-Qed.
-
-Lemma inf_prod_n_sq_m_0 (a : nat -> posreal):
-  is_lim_seq (part_prod_pos a) 0 ->
-  forall (m:nat), is_lim_seq (part_prod_n_pos a m) 0.
-Proof.
-  intros.
-  unfold part_prod_n_pos.
-  apply is_lim_seq_incr_n with (N := m).
-  apply (is_lim_seq_ext (fun n : nat => part_prod_pos (fun k : nat => a (m + k)%nat) n)).
-  intros; simpl.
-  unfold part_prod.
-  now rewrite part_prod_n_shift.  
-  now apply inf_prod_sq_m_0.
-Qed.  
-
-Lemma max_bounded1_pre_le (F : nat -> posreal) (m n:nat) :
-  (forall (n:nat), F n <= 1) ->
-  (S m <= n)%nat ->
-  part_prod_n F m n <= part_prod_n F (S m) n.
-Proof.
-  intros.
-  unfold part_prod_n.
-  replace (S n - S m)%nat with (n - m)%nat by lia.
-  replace (S n - m)%nat with (1 + (n - m))%nat by lia.
-  rewrite seq_plus.
-  rewrite List.map_app.
-  simpl.
-  replace (m + 1)%nat with (S m) by lia.
-  specialize (H m).
-  rewrite <- Rmult_1_l.
-  apply Rmult_le_compat_r.
-  - rewrite ListAdd.fold_right_map.
-    left.
-    apply fold_right_mult_pos.
-  - trivial.
-Qed.
 
 Section max_prod.
 
@@ -651,6 +631,28 @@ Proof.
   lia.
 Qed.
     
+Lemma max_bounded1_pre_le (F : nat -> posreal) (m n:nat) :
+  (forall (n:nat), F n <= 1) ->
+  (S m <= n)%nat ->
+  part_prod_n F m n <= part_prod_n F (S m) n.
+Proof.
+  intros.
+  unfold part_prod_n.
+  replace (S n - S m)%nat with (n - m)%nat by lia.
+  replace (S n - m)%nat with (1 + (n - m))%nat by lia.
+  rewrite seq_plus.
+  rewrite List.map_app.
+  simpl.
+  replace (m + 1)%nat with (S m) by lia.
+  specialize (H m).
+  rewrite <- Rmult_1_l.
+  apply Rmult_le_compat_r.
+  - rewrite ListAdd.fold_right_map.
+    left.
+    apply fold_right_mult_pos.
+  - trivial.
+Qed.
+
 Lemma max_bounded1 (F : nat -> posreal) (m n:nat) :
   (forall (n:nat), F n <= 1) ->
   (m <= n)%nat -> max_prod_fun F m n = part_prod_n F m n.
@@ -693,7 +695,7 @@ Proof.
     rewrite max_bounded1; [|trivial|lia].
     unfold part_prod.
     apply part_prod_n_shift.
-  - now apply inf_prod_sq_m_0.
+  - now apply inf_prod_m_0.
 Qed.
 
 Lemma pos_sq_bounded1 (F : nat -> posreal) (n : nat) :
@@ -1005,10 +1007,9 @@ Proof.
   apply is_lim_seq_incr_n with (N:=m).
   apply (is_lim_seq_ext (fun n => part_prod_n a k (n+m)%nat)).
   intros; apply H1; lia.
-  generalize (inf_prod_n_sq_m_0 a H k); intros.
+  generalize (inf_prod_n_m_0 a H k); intros.
   apply is_lim_seq_incr_n.
-  unfold part_prod_n_pos in H2; simpl in H2.
-  trivial.
+  now unfold part_prod_n_pos in H2; simpl in H2.
 Qed.
 
 Theorem Dvoretzky4_A (F : nat -> posreal) (sigma V: nat -> R) (A:posreal) :
