@@ -1136,8 +1136,7 @@ Proof.
   intros; apply H1; lia.
   generalize (inf_prod_n_sq_m_0 a H k); intros.
   apply is_lim_seq_incr_n.
-  apply (is_lim_seq_ext (part_prod_n_pos a k)); intros.
-  now unfold part_prod_n_pos; simpl.
+  unfold part_prod_n_pos in H2; simpl in H2.
   trivial.
 Qed.
 
