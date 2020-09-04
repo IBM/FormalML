@@ -1116,7 +1116,7 @@ Proof.
 Qed.
 
 Lemma max_prod_n_S (a: nat -> posreal) (m n : nat) :
-  (m <= S n)%nat ->
+  (m <= n)%nat ->
   (max_prod_fun a m (S n)) = max_prod_fun a m n * a (S n).
 Proof.
   intros mle.
