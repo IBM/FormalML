@@ -75,14 +75,12 @@ Proof.
   revert acc1 acc2.
   induction l; simpl; intros acc1 acc2.
   - apply Rmax_comm.
-  - rewrite Rmax_comm.
-    rewrite <- Rmax_assoc.
+  - rewrite Rmax_comm, <- Rmax_assoc.
     rewrite (Rmax_comm _ acc2).
     rewrite IHl.
     rewrite Rmax_assoc.
     rewrite (Rmax_comm a _).
-    rewrite <- Rmax_assoc.
-    trivial.
+    now rewrite <- Rmax_assoc.
 Qed.
 
 Lemma fold_right_plus_acc (f : nat -> R) (acc : R) (l : list nat) :
@@ -170,10 +168,7 @@ Proof.
   intros mle.
   unfold part_prod_n.
   replace (S (S n) - m)%nat with ((S n - m) + 1)%nat by lia.
-  rewrite seq_plus.
-  rewrite List.map_app.
-  rewrite List.fold_right_app.
-  rewrite fold_right_mult_acc.
+  rewrite seq_plus, List.map_app, List.fold_right_app, fold_right_mult_acc.
   f_equal.
   simpl.
   destruct m; simpl.
@@ -1071,29 +1066,25 @@ Proof.
     exists (S NV).
     unfold R_dist in *.
     intros.
-    rewrite Rminus_0_r.
-    rewrite Rabs_pos_eq; [| apply Rle_0_sqr].
+    rewrite Rminus_0_r, Rabs_pos_eq; [| apply Rle_0_sqr].
     generalize (Dvoretzky4_8_5_1 F sigma V (n-1)%nat Nsigma A sigma_sum H H0 H2).
     replace (S (n-1)%nat) with n by lia.
     intros.
     assert (Nsigma < n - 1)%nat by lia.
     specialize (H11 H12).
     specialize (H3 (S Nsigma) (n-1)%nat).
-    assert (Nsigma <= S Nsigma)%nat by lia.
-    assert (Nsigma <= n-1)%nat by lia.
-    specialize (H3 H13 H14).
+    cut_to H3; try lia.
     rewrite Rabs_pos_eq in H3; [|apply nneg_sum_n_m_sq ].
     specialize (H4 (n - 1)%nat).
     assert (n -1 >= NH4)%nat by lia.
-    specialize (H4 H15).
     rewrite Rminus_0_r in H4.
     assert (0 < max_prod_fun (pos_sq_fun F) (S Nsigma) (n - 1)).
     + generalize (max_prod_index_n (pos_sq_fun F) (S Nsigma) (n-1)%nat); intros.
-      destruct H16 as [k H16]; [lia|].
-      destruct H16.
-      rewrite <- H17.
+      destruct H14 as [k H14]; [lia|].
+      destruct H14.
+      rewrite <- H15.
       apply pos_part_prod_n.
-    + rewrite Rabs_pos_eq in H4; [|left; apply H16].
+    + rewrite Rabs_pos_eq in H4; [|left; apply H14].
       apply Rmult_lt_compat_l with (r := sigma_V0_2) in H4; trivial.
       rewrite Heqpart_prod_eps in H4.
       replace (sigma_V0_2 * (eps / 2 / sigma_V0_2)) with (eps/2) in H4; [|now field_simplify].
@@ -1105,8 +1096,8 @@ Proof.
       replace (eps / ( 2 * A) * A) with (eps / 2) in H3; 
         [|field_simplify;trivial; apply Rgt_not_eq; apply cond_pos].
       generalize (Rplus_lt_compat _ _ _ _ H3 H4); intros.
-      replace (eps/2 + eps/2) with (eps) in H17 by lra.
-      apply (Rle_lt_trans  _ _ _ H11 H17).
+      replace (eps/2 + eps/2) with (eps) in H15 by lra.
+      apply (Rle_lt_trans  _ _ _ H11 H15).
 Qed.
 
 Theorem Dvoretzky4B (F : nat -> posreal) (sigma V: nat -> R) :
