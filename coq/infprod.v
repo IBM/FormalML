@@ -1075,24 +1075,37 @@ Proof.
       apply part_prod_n_shift.
 Qed.
 
+Lemma max_prod_index_aux (F : nat -> posreal) (m : nat) (n:nat) (mle:(m <= n)%nat) :
+  exists k : nat,
+    (k <= m)%nat /\
+     part_prod_n F k n =
+     List.fold_right Rmax 0 (List.map (fun k0 : nat => part_prod_n F k0 n) (List.seq 0 (S m))).
+Proof.
+  destruct (fold_right_max_in 0 (List.map (fun k : nat => part_prod_n F k n) (List.seq 0 (S m)))).
+  - generalize (pos_part_prod_n F).
+    intros.
+    simpl in H.
+    generalize (Rmax_l  (part_prod_n F 0 n) (List.fold_right Rmax 0 (List.map (fun k : nat => part_prod_n F k n) (List.seq 1 m)))); intros ineq1.
+    rewrite H in ineq1.
+    specialize (H0 0%nat n).
+    lra.
+  - rewrite List.in_map_iff in H.
+    destruct H as [k [keqq ink]].
+    apply List.in_seq in ink.
+    exists k.
+    split; trivial.
+    lia.
+Qed.
+
+      
 Lemma max_prod_index (F : nat -> posreal) (m:nat) :
   exists (k:nat), (k<=m)%nat /\
                   forall (n:nat), (m <= n)%nat ->
                   part_prod_n F k n = max_prod_fun F m n.
 Proof.
   intros.
-  eexists.
-  split.
-  shelve.
   unfold max_prod_fun; intros.
-  generalize (fold_right_max_in 0 (List.map (fun k : nat => part_prod_n F k n) (List.seq 0 (S m)))); intros.
-  destruct H0.
-  - rewrite H0.
-    generalize (pos_part_prod_n F).
-    intros.
-    admit.
-  - 
-  Admitted.
+Admitted.
 
 Lemma max_prod_index_n (F : nat -> posreal) (m n:nat) :
   (m <= n)%nat ->
@@ -1106,15 +1119,33 @@ Proof.
   apply H1; trivial.
 Qed.
 
+Lemma list_seq_init_map init len :
+  List.seq init len = List.map (fun x => (init + x)%nat) (List.seq 0 len).
+Proof.
+  induction init; simpl.
+  - now rewrite List.map_id.
+  - simpl.
+    rewrite <- List.seq_shift.
+    rewrite IHinit.
+    now rewrite List.map_map.
+Qed.    
+
 Lemma part_prod_n_pos_npos (a : nat -> posreal) (m n:nat) :
   part_prod_n a m n = part_prod_n_pos a m n.
 Proof.
   intros.
-  unfold part_prod_n_pos.
-  unfold part_prod_pos; simpl.
-  unfold part_prod.
-Admitted.  
-  
+  destruct (le_lt_dec m n).
+  - unfold part_prod_n_pos.
+    unfold part_prod_pos; simpl.
+    unfold part_prod.
+    unfold part_prod_n.
+    rewrite (list_seq_init_map m).
+    rewrite List.map_map.
+    do 3 f_equal.
+    lia.
+  - admit.
+Admitted.
+
 
 Lemma lim_max_prod_m_0 (a : nat -> posreal):
   is_lim_seq (part_prod_pos a) 0 -> 
