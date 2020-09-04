@@ -178,6 +178,59 @@ Instance Finite_fun_dep {A:Type} {dec:EqDec A eq} {B:A->Type} (finA:Finite A) (f
   ; finite := Finite_fun_dep_elems_all finA finB
 |}.
 
-Instance Finite_fun {A:Type} {dec:EqDec A eq} B (finA:Finite A) (finB:Finite B): Finite (A -> B) :=
+Instance Finite_fun {A:Type} {dec:EqDec A eq} {B} (finA:Finite A) (finB:Finite B): Finite (A -> B) :=
   @Finite_fun_dep A dec (fun _ => B) finA (fun _ => finB).
 
+Lemma concat_length {A:Type} (l:list (list A)) : length (concat l) = fold_right plus 0 (map (@length _) l).
+Proof.
+  induction l; simpl; trivial.
+  now rewrite app_length, IHl.
+Qed.
+
+Lemma fold_right_add_const {A:Type} c (l:list A) :
+  fold_right Nat.add 0
+    (map (fun _  => c) l) =  c * length l.
+Proof.
+  induction l; simpl; trivial.
+  rewrite IHl; simpl.
+  rewrite NPeano.Nat.mul_succ_r.
+  now rewrite NPeano.Nat.add_comm.
+Qed.
+
+Lemma fold_right_mult_const {A:Type} c (l:list A) :
+  fold_right Nat.mul 1
+    (map (fun _  => c) l) =  NPeano.Nat.pow c (length l).
+Proof.
+  induction l; simpl; trivial.
+  now rewrite IHl; simpl.
+Qed.
+                                                                         
+Lemma Finite_fun_dep_size {A:Type} {dec:EqDec A eq} {B:A->Type} (finA:Finite A) (finB:forall a, Finite (B a))
+  : length (@elms _ (Finite_fun_dep finA finB)) =
+    fold_right Nat.mul 1 (List.map (fun a => length (@elms _ (finB a))) (@elms _ finA)).
+Proof.
+  destruct finA.
+  unfold elms; simpl.
+  unfold Finite_fun_dep_elems.
+  rewrite map_length.
+  simpl.
+  clear finite0.
+  induction elms0; simpl; trivial; intros.
+  rewrite concat_length.
+  rewrite map_map.
+  rewrite (map_ext _ (fun x : B a =>
+        length
+          (Finite_fun_dep_elems_aux elms0 (fun (x0 : A) (_ : In_strong x0 elms0) => elms))))
+    by (intros; now rewrite map_length).
+  rewrite fold_right_add_const.
+  rewrite NPeano.Nat.mul_comm.
+  now rewrite <- IHelms0.
+Qed.
+
+Lemma Finite_fun_size {A:Type} {dec:EqDec A eq} {B:Type} (finA:Finite A) (finB:Finite B)
+  : length (@elms _ (Finite_fun finA finB)) = NPeano.pow (length (@elms _ finB)) (length (@elms _ finA)).
+Proof.
+  unfold Finite_fun.
+  rewrite Finite_fun_dep_size.
+  apply fold_right_mult_const.
+Qed.  
