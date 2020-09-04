@@ -429,9 +429,35 @@ Proof.
     intros.
     apply H; lia.
     specialize (IHk H0).
-    assert (S k <= S k)%nat by lia.
-    specialize (H (S k) H1).
-    apply  Rplus_le_compat; trivial.
+    apply Rplus_le_compat; trivial; apply H; lia.
+Qed.
+
+Lemma lim_sq_0 (a : nat -> R) :
+  is_series (fun k => Rsqr (a k)) 0 ->
+  forall n, 0 = a n.
+Proof.
+  intros.
+  assert (H' := H).
+  apply is_series_unique in H.
+  assert (ex_series (fun k : nat => (a k)²)).
+  unfold ex_series.
+  exists 0; trivial.
+  generalize (sub_sum_limit a n H0); intros.
+  rewrite H in H1.
+  generalize (nneg_sum_n_m_sq  a 0%nat n); intros.
+  unfold sum_n in H1.
+  generalize  (Rle_antisym _ _ H2 H1).
+  intros.
+  induction n.
+  - rewrite sum_n_n in H3; trivial.
+    now rewrite Rsqr_eq_0.
+  - rewrite sum_n_Sm in H3; unfold plus in H3; simpl in H3; [|lia].
+    generalize (Rle_0_sqr (a (S n))); intros.
+    generalize (nneg_sum_n_m_sq  a 0%nat n); intros.    
+    generalize (Rplus_eq_R0 _ _ H4 H5).
+    intros.
+    destruct H6; [lra|].
+    now apply Rsqr_eq_0 in H6.
 Qed.
 
 End series_sequences.
@@ -636,9 +662,7 @@ Proof.
     left.
     apply pos_part_prod_n.
   - replace (S (S m)) with (S m + 1)%nat by lia.
-    rewrite seq_plus.
-    rewrite List.map_app.
-    rewrite List.fold_right_app.
+    rewrite seq_plus, List.map_app, List.fold_right_app.
     replace (List.fold_right Rmax
     (List.fold_right Rmax 0 (List.map (fun k : nat => part_prod_n F k n) (List.seq (0 + S m) 1)))
     (List.map (fun k : nat => part_prod_n F k n) (List.seq 0 (S m))))
@@ -653,8 +677,7 @@ Proof.
       * apply Rmax_left.
         now apply max_bounded1_pre_le.
       * left; apply pos_part_prod_n.
-    + apply Rmax_right.
-      simpl.
+    + apply Rmax_right; simpl.
       apply Rle_trans with (r2 := part_prod_n F 0 n); trivial.
       left; apply pos_part_prod_n.
       apply Rmax_l.
@@ -690,7 +713,6 @@ Proof.
   intros.
   apply lim_max_bounded1.
   intros.
-  specialize (H n).
   now apply pos_sq_bounded1.
   apply inf_prod_sq_0.
   apply H0.
@@ -703,19 +725,16 @@ Lemma max_prod_index_n (F : nat -> posreal) (m : nat) (n:nat) (mle:(m <= n)%nat)
 Proof.
   unfold max_prod_fun.
   destruct (fold_right_max_in 0 (List.map (fun k : nat => part_prod_n F k n) (List.seq 0 (S m)))).
-  - generalize (pos_part_prod_n F).
-    intros.
+  - generalize (pos_part_prod_n F); intros.
     simpl in H.
     generalize (Rmax_l  (part_prod_n F 0 n) (List.fold_right Rmax 0 (List.map (fun k : nat => part_prod_n F k n) (List.seq 1 m)))); intros ineq1.
     rewrite H in ineq1.
-    specialize (H0 0%nat n).
-    lra.
+    specialize (H0 0%nat n); lra.
   - rewrite List.in_map_iff in H.
     destruct H as [k [keqq ink]].
     apply List.in_seq in ink.
     exists k.
-    split; trivial.
-    lia.
+    split; trivial; lia.
 Qed.
 
 Lemma max_prod_n_S (a: nat -> posreal) (m n : nat) :
@@ -742,13 +761,11 @@ Proof.
   intros.
   induction n; simpl.
   - replace (m+0)%nat with (m) by lia.
-    rewrite part_prod_n_k_k.
-    rewrite max_prod_n_S; trivial.
+    rewrite part_prod_n_k_k, max_prod_n_S; trivial.
   - rewrite part_prod_n_S; [|lia].
     rewrite max_prod_n_S; [|lia].
     replace (m + S n)%nat with (S m + n)%nat by lia.
-    rewrite IHn.
-    lra.
+    rewrite IHn; lra.
 Qed.
 
 Lemma max_prod_index (F : nat -> posreal) (m:nat) :
@@ -769,8 +786,7 @@ Proof.
     rewrite initial_seg_prod_n; trivial.
     rewrite initial_max_prod_n; trivial.
     now rewrite H1.
-  + assert (m = n)%nat by lia.
-    rewrite <- H3.
+  + replace (n) with (m) by lia.
     now rewrite H1.
 Qed.
 
@@ -787,21 +803,15 @@ Proof.
   - simpl.
     lra.
   - replace (S n) with (n+1)%nat by lia.
-    rewrite seq_plus.
-    rewrite List.map_app.
-    rewrite List.fold_right_app.
-    simpl.
+    rewrite seq_plus, List.map_app, List.fold_right_app; simpl.
     replace (1) with (1*1) at 2 by lra.
     rewrite fold_right_mult_acc.
     apply Rmult_le_compat; trivial.
-    + rewrite ListAdd.fold_right_map.
-      left.
+    + rewrite ListAdd.fold_right_map; left.
       apply (fold_right_mult_pos (pos_sq_fun F)).
-    + left.
-      apply Rmult_lt_0_compat; [|lra].
+    + left; apply Rmult_lt_0_compat; [|lra].
       apply Rmult_lt_0_compat; apply cond_pos.
-    + rewrite Rmult_1_r.
-      rewrite <- Rmult_1_r.
+    + rewrite Rmult_1_r, <- Rmult_1_r.
       apply Rmult_le_compat; trivial.
       left; apply cond_pos.
       left; apply cond_pos.      
@@ -841,8 +851,7 @@ Proof.
     unfold Iter.iter_nat.
     simpl.
     specialize (H 0%nat).
-    unfold plus, zero; simpl.
-    lra.
+    unfold plus, zero; simpl; lra.
   - rewrite sum_Sn.
     unfold sum_n in *.
     unfold sum_n_m in *.
@@ -860,15 +869,13 @@ Proof.
       apply Rmult_le_compat_l with (r:=F (S n)) in IHn.
       apply Rplus_le_compat_r with (r:=sigma (S n))  in IHn.
       lra.
-      left.
-      apply cond_pos.
+      left; apply cond_pos.
     + intros.
       rewrite part_prod_n_S.
       * lra.
       * generalize (Iter.In_iota 1 x n); intros HH.
         replace (S n - 1)%nat with n in HH by lia.
-        apply HH in H0.
-        lia.
+        apply HH in H0; lia.
 Qed.
 
 Lemma sum_bound_prod_A (F : nat -> posreal) (sigma : nat -> R) (A : R) (n m:nat) :
@@ -883,8 +890,7 @@ Proof.
   specialize (H (S k) n).
   apply Rmult_le_compat; trivial.
   apply Rle_0_sqr.
-  left.
-  apply pos_part_prod_n.
+  left; apply pos_part_prod_n.
   lra.
 Qed.
 
@@ -921,47 +927,14 @@ Proof.
   generalize (sum_bound_prod_A F sigma A n m F1); intros.
   generalize (max_prod_le (pos_sq_fun F) 0 (S m) n); intros.
   generalize (sum_bound3_max F sigma n m); intros.
-  apply Rmult_le_compat_l with (r := Rsqr (V 0%nat)) in H1.
+  apply Rmult_le_compat_l with (r := Rsqr (V 0%nat)) in H1; try lia; [|apply Rle_0_sqr].
   unfold sum_n in *.
   assert (S m <= n)%nat by lia.
   specialize (H2 H3).
   generalize (Rplus_le_compat _ _ _ _ H0 H1); intros.
-  generalize (Rplus_le_compat _ _ _ _ H2 H4); intros.
-  lra.
-  apply Rle_0_sqr.
-  lia.
-  lia.
+  generalize (Rplus_le_compat _ _ _ _ H2 H4); intros; lra.
 Qed.
 
-
-Lemma lim_sq_0 (a : nat -> R) :
-  is_series (fun k => Rsqr (a k)) 0 ->
-  forall n, 0 = a n.
-Proof.
-  intros.
-  assert (H' := H).
-  apply is_series_unique in H.
-  assert (ex_series (fun k : nat => (a k)²)).
-  unfold ex_series.
-  exists 0; trivial.
-  generalize (sub_sum_limit a n H0); intros.
-  rewrite H in H1.
-  generalize (nneg_sum_n_m_sq  a 0%nat n); intros.
-  unfold sum_n in H1.
-  generalize  (Rle_antisym _ _ H2 H1).
-  intros.
-  induction n.
-  - rewrite sum_n_n in H3; trivial.
-    now rewrite Rsqr_eq_0.
-  - rewrite sum_n_Sm in H3; unfold plus in H3; simpl in H3; [|lia].
-    generalize (Rle_0_sqr (a (S n))); intros.
-    generalize (nneg_sum_n_m_sq  a 0%nat n); intros.    
-    generalize (Rplus_eq_R0 _ _ H4 H5).
-    intros.
-    destruct H6.
-    lra.
-    now apply Rsqr_eq_0 in H6.
-Qed.
 
 Theorem Dvoretzky4_8_5_1 (F : nat -> posreal) (sigma V: nat -> R) (n m:nat) (A sigmasum:R) :
   (forall r s, part_prod_n (pos_sq_fun F) r s <= A) ->
@@ -1014,11 +987,8 @@ Proof.
   induction n.
   - now apply Rsqr_eq_0 in H5.
   - specialize (H n).
-    rewrite IHn in H.
-    rewrite <- H6 in H.
-    rewrite Rsqr_0 in H.
-    rewrite Rplus_0_r in H.
-    rewrite Rmult_0_r in H.
+    rewrite IHn, <- H6 in H.
+    rewrite Rsqr_0, Rplus_0_r, Rmult_0_r in H.
     generalize (Rle_0_sqr (V (S n))); intros.
     generalize (Rle_antisym _ _ H H8).
     apply Rsqr_eq_0.
