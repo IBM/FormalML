@@ -184,8 +184,7 @@ Lemma part_prod_n_k_k a k :
 Proof.
   unfold part_prod_n.
   replace (S k - k)%nat with (1%nat) by lia.
-  simpl.
-  lra.
+  simpl; lra.
 Qed.
 
 Lemma part_prod_n_1 a m n :
@@ -202,16 +201,13 @@ Qed.
 Theorem ln_part_prod (a : nat -> posreal) (n : nat) :
   ln (part_prod_pos a n) = sum_n (fun n1 => ln (a n1)) n.
 Proof.
-  unfold part_prod_pos; simpl.
-  unfold part_prod; simpl.
+  unfold part_prod_pos, part_prod; simpl.
   unfold sum_n, sum_n_m.
   unfold Iter.iter_nat.
   rewrite Iter.iter_iter'.
   rewrite iota_is_an_annoying_seq.
-  unfold Iter.iter'.
-  unfold part_prod_n.
-  generalize (List.seq 0 (S n - 0)); intros l.
-  simpl.
+  unfold Iter.iter', part_prod_n.
+  generalize (List.seq 0 (S n - 0)); intros l; simpl.
   rewrite ListAdd.fold_right_map.
   induction l; simpl.
   - apply ln_1.
@@ -228,14 +224,12 @@ Proof.
   - unfold part_prod.
     replace (m+1)%nat with (S m) by lia.
     rewrite part_prod_n_S; [|lia].
-    rewrite part_prod_n_k_k.
-    lra.
+    rewrite part_prod_n_k_k; lra.
   - replace (m + S (S k))%nat with (S (m + S k)%nat) by lia; simpl.
     unfold part_prod in *.
     rewrite part_prod_n_S; [|lia].
     rewrite IHk; simpl.
-    rewrite part_prod_n_S; [|lia].
-    lra.
+    rewrite part_prod_n_S; [|lia]; lra.
 Qed.
 
 Lemma initial_seg_prod_n (a : nat -> posreal) (k m n:nat):
@@ -251,8 +245,7 @@ Proof.
   - rewrite part_prod_n_S; [|lia].
     rewrite part_prod_n_S; [|lia].
     replace (m + S n)%nat with (S m + n)%nat by lia.
-    rewrite IHn.
-    lra.
+    rewrite IHn; lra.
 Qed.
 
 Lemma part_prod_n_shift (F : nat -> posreal) (m n:nat) :
@@ -266,12 +259,9 @@ Proof.
   - simpl.
     now replace (m + 0)%nat with (m) by lia.
   - replace (S (S n)) with (S n+1)%nat by lia.
-    rewrite seq_plus.
-    rewrite seq_plus.
-    rewrite List.map_app.
+    rewrite seq_plus, seq_plus, List.map_app.
     rewrite IHn.
     replace (S n) with (n+1)%nat by lia.
-    simpl.
     rewrite List.map_app.
     now simpl.
 Qed.    
@@ -284,8 +274,7 @@ Proof.
   unfold part_prod.
   intros.
   replace (k + S m)%nat with (m + S k)%nat by lia.
-  rewrite H.
-  rewrite part_prod_n_shift.
+  rewrite H, part_prod_n_shift.
   now replace (m + S k)%nat with (k + S m)%nat by lia.
 Qed.
 
@@ -304,14 +293,11 @@ Proof.
   unfold pos_sq_fun, pos_sq, part_prod_pos; simpl.
   induction n; simpl; trivial.
   - unfold part_prod, part_prod_n.
-    simpl.
-    lra.
+    simpl; lra.
   - unfold part_prod in *.
     rewrite part_prod_n_S; [|lia].
-    rewrite IHn.
-    simpl.
-    rewrite part_prod_n_S; [|lia].
-    lra.
+    rewrite IHn; simpl.
+    rewrite part_prod_n_S; [|lia]; lra.
 Qed.
 
 Lemma inf_prod_sq_0 (a : nat -> posreal) :
@@ -588,8 +574,7 @@ Proof.
   rewrite H in H1.
   generalize (nneg_sum_n_m_sq  a 0%nat n); intros.
   unfold sum_n in H1.
-  generalize  (Rle_antisym _ _ H2 H1).
-  intros.
+  generalize  (Rle_antisym _ _ H2 H1); intros.
   induction n.
   - rewrite sum_n_n in H3; trivial.
     now rewrite Rsqr_eq_0.
@@ -622,8 +607,7 @@ Proof.
   apply List.in_map_iff.
   exists k.
   split; trivial.
-  apply List.in_seq.
-  lia.
+  apply List.in_seq; lia.
 Qed.
     
 Lemma max_bounded1_pre_le (F : nat -> posreal) (m n:nat) :
@@ -635,17 +619,13 @@ Proof.
   unfold part_prod_n.
   replace (S n - S m)%nat with (n - m)%nat by lia.
   replace (S n - m)%nat with (1 + (n - m))%nat by lia.
-  rewrite seq_plus.
-  rewrite List.map_app.
-  simpl.
+  rewrite seq_plus, List.map_app; simpl.
   replace (m + 1)%nat with (S m) by lia.
   specialize (H m).
   rewrite <- Rmult_1_l.
-  apply Rmult_le_compat_r.
-  - rewrite ListAdd.fold_right_map.
-    left.
-    apply fold_right_mult_pos.
-  - trivial.
+  apply Rmult_le_compat_r; trivial.
+  rewrite ListAdd.fold_right_map.
+  left; apply fold_right_mult_pos.
 Qed.
 
 Lemma max_bounded1 (F : nat -> posreal) (m n:nat) :
@@ -708,8 +688,7 @@ Lemma lim_max_bounded1_sq (F : nat -> posreal) (m:nat) :
   is_lim_seq (part_prod F) 0 -> is_lim_seq (fun n => max_prod_fun (pos_sq_fun F) m (n+m)%nat) 0.
 Proof.
   intros.
-  apply lim_max_bounded1.
-  intros.
+  apply lim_max_bounded1; intros.
   now apply pos_sq_bounded1.
   apply inf_prod_sq_0.
   apply H0.
@@ -775,8 +754,7 @@ Proof.
   generalize (max_prod_index_n F m m H); intros.
   destruct H0 as [k H0]; destruct H0.
   exists k.
-  split; trivial.
-  intros.
+  split; trivial; intros.
   destruct (lt_dec m n).
   + remember (n - S m)%nat as nm.
     replace (n) with (S m + nm)%nat; [|lia].
@@ -793,8 +771,7 @@ Lemma lim_max_prod_m_0 (a : nat -> posreal):
 Proof.
   intros.
   generalize (max_prod_index a m); intros.
-  destruct H0 as [k H0].
-  destruct H0.
+  destruct H0 as [k H0]; destruct H0.
   apply is_lim_seq_incr_n with (N:=m).
   apply (is_lim_seq_ext (fun n => part_prod_n a k (n+m)%nat)).
   intros; apply H1; lia.
@@ -809,8 +786,7 @@ Lemma prod_sq_bounded_1 (F : nat -> posreal) (r s :nat) :
   (forall (n:nat), F n <= 1) -> part_prod_n (pos_sq_fun F) r s <= 1.
 Proof.
   intros.
-  generalize (pos_sq_bounded1 F).
-  intros.
+  generalize (pos_sq_bounded1 F); intros.
   unfold part_prod_n.
   induction (S s-r)%nat.
   - simpl.
@@ -859,17 +835,13 @@ Theorem Dvoretzky4_0 (F: nat -> posreal) (sigma V : nat -> R) :
 Proof.
   intros.
   induction n.
-  - unfold sum_n, part_prod_n;simpl.
-    unfold sum_n_m.
-    unfold Iter.iter_nat.
-    simpl.
+  - unfold sum_n, part_prod_n; simpl.
+    unfold sum_n_m, Iter.iter_nat; simpl.
     specialize (H 0%nat).
     unfold plus, zero; simpl; lra.
   - rewrite sum_Sn.
     unfold sum_n in *.
-    unfold sum_n_m in *.
-    unfold Iter.iter_nat in *.
-    simpl.
+    unfold sum_n_m, Iter.iter_nat in *; simpl.
     unfold plus, zero in *; simpl in *.
     rewrite (Iter.iter_ext _ _ _ (fun k : nat => sigma k * part_prod_n F (S k) (S n))
                            (fun k : nat => (sigma k * part_prod_n F (S k) n) * F (S n))).
@@ -898,8 +870,7 @@ Lemma sum_bound_prod_A (F : nat -> posreal) (sigma : nat -> R) (A : R) (n m:nat)
 Proof.
   intros.
   rewrite <- sum_n_m_mult_r with (a := A).
-  apply sum_n_m_le.
-  intros.
+  apply sum_n_m_le; intros.
   specialize (H (S k) n).
   apply Rmult_le_compat; trivial.
   apply Rle_0_sqr.
@@ -914,9 +885,7 @@ Lemma sum_bound3_max (F : nat -> posreal) (sigma : nat -> R) (n m:nat) :
 Proof.  
   intros.
   rewrite <- sum_n_mult_r with (a := (max_prod_fun (pos_sq_fun F) (S m) n)).
-  apply sum_n_le_loc.
-  intros.
-  unfold Hierarchy.mult; simpl.
+  apply sum_n_le_loc; intros.
   apply Rmult_le_compat_l.
   apply Rle_0_sqr.
   apply max_prod_le; lia.
@@ -1072,6 +1041,7 @@ Proof.
     specialize (H4 (n - 1)%nat).
     rewrite Rminus_0_r in H4.
     assert (0 < max_prod_fun (pos_sq_fun F) (S Nsigma) (n - 1)).
+
     + generalize (max_prod_index_n (pos_sq_fun F) (S Nsigma) (n-1)%nat); intros.
       destruct H12 as [k H12]; [lia|]; destruct H12.
       rewrite <- H13.
@@ -1101,9 +1071,7 @@ Theorem Dvoretzky4B (F : nat -> posreal) (sigma V: nat -> R) :
 Proof.
   intros.
   apply Dvoretzky4_A with (F := F) (sigma := sigma) (A := mkposreal _ Rlt_0_1); trivial.
-  simpl.
-  intros.
-  apply prod_sq_bounded_1; trivial.
+  intros; apply prod_sq_bounded_1; trivial.
 Qed.  
 
 End Dvoretsky.
