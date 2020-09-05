@@ -1016,8 +1016,7 @@ Theorem Dvoretzky4_A (F : nat -> posreal) (sigma V: nat -> R) (A:posreal) :
   is_lim_seq (fun n => Rsqr (V n)) 0.
 Proof.
   intros.
-  generalize (Cauchy_ex_series (fun n : nat => (sigma n)²) H2).
-  intros.
+  generalize (Cauchy_ex_series (fun n : nat => (sigma n)²) H2); intros.
   unfold Cauchy_series in H3.
   generalize (inf_prod_sq_0 F H1); intros lim_prod_sq.
   generalize (lim_max_prod_m_0 (pos_sq_fun F) lim_prod_sq); intros.
@@ -1041,9 +1040,7 @@ Proof.
     rewrite <- H2 in H7.
     rewrite (Dvoretzky4_sigma_v0_2_0 F sigma); trivial.
     unfold R_dist.
-    rewrite Rsqr_0.
-    rewrite Rminus_0_r.
-    now rewrite Rabs_R0.
+    now rewrite Rsqr_0, Rminus_0_r, Rabs_R0.
   - assert (0 <= sigma_V0_2).
     rewrite Heqsigma_V0_2.
     apply Rplus_le_le_0_compat.
@@ -1064,13 +1061,10 @@ Proof.
     destruct H4 as [NH4 H4].
     remember ( NH4 + S Nsigma)%nat as NV.
     exists (S NV).
-    unfold R_dist in *.
-    intros.
+    unfold R_dist in *; intros.
     rewrite Rminus_0_r, Rabs_pos_eq; [| apply Rle_0_sqr].
     generalize (Dvoretzky4_8_5_1 F sigma V (n-1)%nat Nsigma A sigma_sum H H0 H2).
-    replace (S (n-1)%nat) with n by lia.
-    intros.
-    assert (Nsigma < n - 1)%nat by lia.
+    replace (S (n-1)%nat) with n by lia; intros.
     cut_to H11; [|lia].
     specialize (H3 (S Nsigma) (n-1)%nat).
     cut_to H3; try lia.
@@ -1079,11 +1073,10 @@ Proof.
     rewrite Rminus_0_r in H4.
     assert (0 < max_prod_fun (pos_sq_fun F) (S Nsigma) (n - 1)).
     + generalize (max_prod_index_n (pos_sq_fun F) (S Nsigma) (n-1)%nat); intros.
-      destruct H13 as [k H13]; [lia|].
-      destruct H13.
-      rewrite <- H14.
+      destruct H12 as [k H12]; [lia|]; destruct H12.
+      rewrite <- H13.
       apply pos_part_prod_n.
-    + rewrite Rabs_pos_eq in H4; [|left; apply H13].
+    + rewrite Rabs_pos_eq in H4; [|left; apply H12].
       apply Rmult_lt_compat_l with (r := sigma_V0_2) in H4; trivial; try lia.
       rewrite Heqpart_prod_eps in H4.
       replace (sigma_V0_2 * (eps / 2 / sigma_V0_2)) with (eps/2) in H4; [|now field_simplify].
@@ -1095,8 +1088,8 @@ Proof.
       replace (eps / ( 2 * A) * A) with (eps / 2) in H3; 
         [|field_simplify;trivial; apply Rgt_not_eq; apply cond_pos].
       generalize (Rplus_lt_compat _ _ _ _ H3 H4); intros.
-      replace (eps/2 + eps/2) with (eps) in H14 by lra.
-      apply (Rle_lt_trans  _ _ _ H11 H14).
+      replace (eps/2 + eps/2) with (eps) in H13 by lra.
+      apply (Rle_lt_trans  _ _ _ H11 H13).
 Qed.
 
 Theorem Dvoretzky4B (F : nat -> posreal) (sigma V: nat -> R) :
