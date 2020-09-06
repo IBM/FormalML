@@ -21,14 +21,20 @@ QCERT_LIB_UTILS = LibUtilsAssoc LibUtilsBag LibUtilsBindings LibUtilsBindingsNat
 		  LibUtilsResult LibUtilsSortingAdd LibUtilsStringAdd LibUtilsSublist \
 		  LibUtils
 
+ELFIC_UTILS	= R_compl check_sub_structure compatible continuous_linear_map fixed_point \
+		  hierarchyD hilbert linear_map logic_tricks
+
+
 MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	utils/BasicUtils \
+	$(addprefix converge/LM/,$(ELFIC_UTILS)) \
 	utils/Assoc \
 	utils/CoquelicotAdd \
 	utils/ExtrFloatishIEEE \
 	utils/improper_integrals \
 	utils/Isomorphism \
 	utils/ListAdd \
+	utils/Finite \
 	utils/PairEncoding \
 	utils/RealAdd \
 	utils/RiemannAdd \
@@ -45,6 +51,9 @@ MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	utils/Floatish/FloatishIEEE \
 	utils/Floatish/FloatishReal \
 	utils/Floatish \
+	converge/pmf_monad \
+	converge/mdp \
+	converge/cond_expt \
 	AxiomaticNormedRealVectorSpace \
 	BorelSigmaAlgebra \
 	DefinedFunctions \

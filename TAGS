@@ -1,0 +1,856 @@
+
+./coq/NN.v,260
+Definition converges13,218
+Definition diverges16,293
+Definition diverges_right19,356
+Definition diverges_left25,494
+Definition Assumption_C_136,701
+Definition Assumption_C_244,883
+Definition Assumption_C_349,1015
+Definition Assumption_C52,1101
+
+./coq/Gen_NN.v,747
+  Definition mkRvector20,502
+  Definition mkSubVarVector23,602
+  Definition mkSubVarMatrix26,724
+  Definition vecprod29,869
+  Definition mul_mat_vec32,1048
+  Definition add_vec35,1207
+  Definition unique_var38,1345
+  Definition activation46,1555
+  Definition create_activation_fun52,1786
+  Definition mkNN258,2003
+  Definition mkNN2_bias65,2375
+  Fixpoint mkNN_gen_074,2874
+  Definition mkNN_gen85,3314
+  Definition deltalosses94,3817
+  Definition NNinstance124,4802
+  Definition lookup_list167,6622
+  Definition combine_with170,6768
+  Definition combine3_with173,6928
+  Fixpoint streamtake176,7146
+  Definition update_firstp183,7390
+  Definition optimize_step189,7679
+  Fixpoint optimize_steps203,8414
+
+./coq/ProbSpace.v,765
+  Definition event14,274
+  Definition event_sub16,310
+  Definition event_equiv17,376
+  Definition event_none42,947
+  Definition event_diff54,1272
+  Definition event_lem57,1361
+Definition event_disjoint61,1447
+Definition collection_is_pairwise_disjoint409,8647
+Definition union_of_collection414,8946
+Definition inter_of_collection417,9073
+Definition list_collection527,12089
+Definition list_union530,12194
+Definition list_inter533,12289
+Definition sum_of_probs_equals748,17890
+Definition make_collection_disjoint1037,26952
+  Definition preimage1123,29645
+  Definition F_star1172,31246
+  Definition Lebesgue_integrable_pos1178,31613
+  Definition Pr1207,32445
+  Definition independent1221,32864
+  Lemma pr_allpr_all1226,33019
+
+./coq/AxiomaticNormedRealVectorSpace.v,25
+Inductive rvector8,208
+
+./coq/DefinedFunctions.v,694
+    Definition var_dec40,929
+    Inductive DefinedFunction55,1259
+  Definition df_plus87,2141
+  Definition df_times90,2230
+    Fixpoint df_deriv94,2340
+    Definition df_gradient117,3405
+    Fixpoint df_eval126,3615
+    Definition df_eval_symbolic_gradient183,5264
+  Inductive is_deriv193,5529
+    Fixpoint df_eval_deriv260,7621
+    Definition df_eval_gradient314,9607
+   Definition combine_prod323,9937
+    Fixpoint df_eval_subgradient327,10106
+    Definition MaxDerived434,14488
+    Fixpoint df_free_variables453,15271
+    Definition df_closed470,15992
+    Fixpoint df_subst579,19675
+   Definition df_substp599,20410
+   Definition df_subst_list601,20473
+
+./coq/sumtest.v,543
+Definition f_inv368,11819
+Definition f_inv_sq369,11860
+Lemma ln_int_unboundedln_int_unbounded429,13288
+Lemma inv_int_boundedinv_int_bounded439,13498
+Lemma is_lim_RInt_inv0is_lim_RInt_inv0464,14124
+Lemma is_lim_RInt_invis_lim_RInt_inv479,14485
+Lemma is_lim_Rint_inv_Rsqr0is_lim_Rint_inv_Rsqr0520,15587
+Lemma is_lim_Rint_inv_Rsqris_lim_Rint_inv_Rsqr538,15999
+Lemma is_RInt_gen_inv_Rsqris_RInt_gen_inv_Rsqr551,16272
+Lemma sum_inv_sqr_boundedsum_inv_sqr_bounded640,19039
+Lemma converges_2harmonicconverges_2harmonic678,19886
+
+./coq/Gaussian.v,1773
+Definition erf'72,2748
+Definition erf73,2800
+Definition Standard_Gaussian_PDF77,2996
+Definition General_Gaussian_PDF80,3135
+Definition Standard_Gaussian_CDF83,3253
+Definition General_Gaussian_CDF86,3367
+Lemma continuous_Standard_Gaussian_PDFcontinuous_Standard_Gaussian_PDF91,3525
+Definition Indicator120,4530
+Definition Uniform_PDF124,4634
+Definition inf_sign385,13466
+Definition Box_Muller530,17822
+Lemma limxexp_inv_inflimxexp_inv_inf601,20074
+Lemma limxexp_minflimxexp_minf634,20931
+Lemma plim_gaussian_opp_meanplim_gaussian_opp_mean663,21749
+Lemma mlim_gaussian_opp_meanmlim_gaussian_opp_mean674,22138
+Lemma variance_int1_middlevariance_int1_middle685,22526
+Lemma limexp_inflimexp_inf716,23433
+Lemma limexp_neg_inflimexp_neg_inf729,23777
+Lemma limexp_neg_minflimexp_neg_minf744,24118
+Lemma mean_standard_gaussianmean_standard_gaussian787,25326
+Axiom FubiniFubini891,28631
+Axiom Fubini_genFubini_gen901,29164
+Lemma lim_atan_inflim_atan_inf958,30901
+Lemma erf_int00erf_int001115,36977
+Lemma erf_ex_RInt2erf_ex_RInt21268,41531
+Lemma erf_ex_RInt3_bound_interf_ex_RInt3_bound_int1536,49331
+Lemma erf_ex_RInt3erf_ex_RInt31593,51009
+Lemma erf_int1erf_int11661,52939
+Lemma erf_int_sqerf_int_sq1740,55870
+Lemma erf_int2erf_int21768,56598
+Lemma erf_int21erf_int211798,57475
+Lemma erf_int31erf_int311809,57858
+Lemma erf_p_inftyerf_p_infty1856,59121
+Lemma erf_m_inftyerf_m_infty1868,59403
+Lemma std_CDF_from_erf0std_CDF_from_erf01932,61480
+Lemma std_CDF_from_erfstd_CDF_from_erf1955,62233
+Lemma Standard_Gaussian_PDF_normedStandard_Gaussian_PDF_normed1964,62438
+Lemma variance_standard_gaussian0variance_standard_gaussian01987,63158
+Lemma variance_standard_gaussianvariance_standard_gaussian1999,63608
+
+./coq/lib_utils/LibUtilsBindingsNat.v,0
+
+./coq/lib_utils/LibUtilsBindings.v,297
+  Definition rec_field_lt93,2845
+  Definition rec_sort137,4040
+  Definition rec_concat_sort140,4127
+    Lemma domain_rec_concat_sort_app_commdomain_rec_concat_sort_app_comm1549,49863
+  Definition edot1679,54069
+  Definition merge_bindings1705,54795
+  Definition compatible1863,59727
+
+./coq/lib_utils/LibUtilsClosure.v,121
+  Definition code_closed_for_params26,815
+  Definition closure_is_closed35,1089
+  Definition closed_closure38,1217
+
+./coq/lib_utils/LibUtilsSublist.v,31
+    Inductive sublist40,1149
+
+./coq/lib_utils/LibUtilsCompat.v,71
+  Definition compatible_with38,1194
+  Definition compatible45,1459
+
+./coq/lib_utils/LibUtilsLiftIterators.v,284
+    Fixpoint lift_map40,1131
+    Fixpoint listo_to_olist119,3478
+    Fixpoint lift_flat_map234,6824
+    Fixpoint lift_filter275,7998
+    Definition orfilter330,9575
+    Definition lift_app370,10784
+    Definition lift_flatten391,11478
+    Definition lift_err417,12326
+
+./coq/lib_utils/LibUtilsFresh.v,264
+  Definition find_bounded_S_nin_finds104,2996
+  Definition find_fresh_string139,4387
+  Definition fresh_var154,4804
+  Definition fresh_var2206,6137
+  Definition fresh_var3218,6488
+  Definition get_var_base240,7341
+  Definition fresh_var_from255,7760
+
+./coq/lib_utils/LibUtilsSortingAdd.v,174
+    Fixpoint insertion_sort_insert39,1180
+    Fixpoint insertion_sort49,1492
+    Fixpoint is_list_sorted72,2262
+    Lemma is_list_sorted_extis_list_sorted_ext93,2898
+
+./coq/lib_utils/LibUtilsGroupByDomain.v,105
+  Fixpoint groupby_domain43,1332
+  Definition grouped_equiv54,1675
+  Definition list_unnest57,1806
+
+./coq/lib_utils/LibUtilsBag.v,2940
+  Definition rbag40,1116
+  Definition bunion42,1146
+  Lemma bunion_nil_rbunion_nil_r58,1694
+  Lemma bunion_nil_lbunion_nil_l65,1838
+  Lemma bunion_assocbunion_assoc70,1934
+  Fixpoint remove_one92,2457
+  Fixpoint bminus139,4462
+  Lemma bminus_over_app_deltabminus_over_app_delta147,4722
+  Lemma bminus_to_nilbminus_to_nil154,4888
+  Lemma bminus_nil_to_selfbminus_nil_to_self160,4992
+  Lemma remove_one_commremove_one_comm174,5312
+  Lemma remove_one_not_firstremove_one_not_first183,5520
+  Lemma bminus_selfbminus_self206,6077
+  Lemma bminus_naughtbminus_naught211,6182
+  Lemma bunion_bminusbunion_bminus227,6545
+  Lemma remove_one_consedremove_one_consed235,6711
+  Lemma pick_an_apick_an_a299,8226
+    Fixpoint mult323,8886
+    Definition mult_equiv329,9056
+    Lemma bags_equal_same_mult1bags_equal_same_mult1352,9811
+    Fixpoint groupby362,10009
+    Fixpoint rep380,10691
+    Fixpoint smush386,10808
+    Lemma pick_an_a_or_absentpick_an_a_or_absent424,12237
+  Definition bmin579,18478
+  Definition bmax584,18696
+  Definition bcount590,18865
+  Fixpoint bdistinct593,18977
+  Lemma bdistinct_exactly_zero_backbdistinct_exactly_zero_back725,23862
+  Lemma bdistinct_exactly_onebdistinct_exactly_one752,24606
+  Lemma bdistinct_exactly_one_backbdistinct_exactly_one_back767,24949
+  Lemma bdistinct_exactly_one_back_diffbdistinct_exactly_one_back_diff788,25526
+  Lemma exist_or_zeroexist_or_zero798,25778
+  Lemma bdistinct_multbdistinct_mult819,26358
+  Lemma mult_pos_equiv_inmult_pos_equiv_in848,27345
+  Lemma bdistinct_same_elemtsbdistinct_same_elemts881,28066
+  Lemma remove_one_multremove_one_mult993,31118
+  Lemma mult_on_removemult_on_remove1007,31433
+  Lemma bminus_multbminus_mult1022,31896
+  Lemma bmin_on_nil_lbmin_on_nil_l1054,32786
+  Lemma bmax_on_nil_rbmax_on_nil_r1061,32948
+  Lemma bmax_on_nil_lbmax_on_nil_l1070,33207
+  Lemma minus_minminus_min1093,33726
+  Lemma minus_maxminus_max1110,34264
+  Lemma bmin_multbmin_mult1126,34748
+  Lemma bmax_multbmax_mult1141,35259
+  Lemma bmin_commbmin_comm1157,35861
+  Lemma bmax_commbmax_comm1169,36111
+  Lemma select_not_selectselect_not_select1183,36391
+  Lemma bdistinct_over_bunion_empty_rbdistinct_over_bunion_empty_r1197,36797
+  Lemma bdistinct_over_bunion_empty_lbdistinct_over_bunion_empty_l1226,37719
+  Lemma bdistinct_over_bunion_singleton2bdistinct_over_bunion_singleton21238,38140
+  Lemma bmin_zerobmin_zero1290,40070
+  Lemma bmin_zero_backbmin_zero_back1306,40537
+  Lemma bdistinct_over_bminbdistinct_over_bmin1324,41165
+  Lemma split_selectsplit_select1353,42354
+  Definition bminus_delta21393,43531
+  Definition bplus_delta21396,43608
+  Definition apply_deltas1399,43684
+  Lemma theorem2_atheorem2_a1402,43759
+  Lemma theorem2_btheorem2_b1423,44451
+  Lemma theorem2_ctheorem2_c1441,45004
+  Definition bnummin1543,48035
+  Definition bnummax1550,48176
+
+./coq/lib_utils/LibUtilsLattice.v,625
+  Definition part_le28,923
+  Definition associative31,1056
+  Definition commutative34,1223
+  Definition idempotent37,1364
+  Definition absorptive40,1477
+    Definition is_unit_r44,1615
+    Definition is_unit_l48,1750
+    Lemma consistent_joinconsistent_join91,3116
+    Lemma join_bottom_ljoin_bottom_l228,6695
+    Lemma meet_top_lmeet_top_l235,6854
+    Lemma meet_bottom_rmeet_bottom_r242,7004
+    Lemma meet_bottom_lmeet_bottom_l252,7265
+    Lemma join_top_rjoin_top_r259,7429
+    Lemma join_top_ljoin_top_l269,7675
+    Lemma le_tople_top286,8081
+    Lemma bottom_le_topbottom_le_top300,8376
+
+./coq/lib_utils/LibUtilsListAdd.v,1150
+    Definition singleton109,3157
+    Fixpoint lflatten118,3353
+    Lemma filter_lengthfilter_length384,10785
+    Lemma filter_smallerfilter_smaller394,11048
+    Lemma filter_filterfilter_filter413,11561
+    Lemma filter_not_filterfilter_not_filter424,11893
+    Lemma filter_id_implies_predfilter_id_implies_pred435,12223
+    Lemma filter_nil_implies_not_predfilter_nil_implies_not_pred456,12802
+    Lemma filter_commfilter_comm469,13224
+    Lemma filter_andfilter_and486,13948
+    Lemma filter_eqfilter_eq499,14393
+    Definition ldeqA580,16473
+      Fixpoint forallb2601,16969
+    Fixpoint forallb_ordpairs861,25206
+    Fixpoint forallb_ordpairs_refl897,26244
+    Lemma list_remove_idempotentlist_remove_idempotent986,28823
+    Lemma list_remove_commutelist_remove_commute999,29126
+    Lemma not_in_remove_impl_not_innot_in_remove_impl_not_in1045,30536
+    Fixpoint remove_all1100,32009
+    Definition replace_all1165,33820
+    Definition cut_down_to1337,38914
+    Definition equivlist1445,41901
+    Definition disjoint1834,53362
+  Definition not_nil2123,61546
+    Definition all_disjoint2178,62966
+
+./coq/lib_utils/LibUtilsCoqLibAdd.v,226
+    Inductive Forallt313,8422
+    Lemma Forallt_invForallt_inv354,9665
+    Lemma min_zeromin_zero545,14892
+    Lemma min_against_onemin_against_one558,15215
+    Fixpoint iter723,19784
+    Definition holds808,22103
+
+./coq/lib_utils/LibUtilsResult.v,269
+    Inductive Result22,715
+    Definition lift_failure28,844
+    Definition lift_failure_in35,1059
+    Definition raise_failure39,1224
+    Definition lift_failure_in_two43,1354
+    Definition result_of_option86,2762
+    Definition option_of_result92,2933
+
+./coq/lib_utils/LibUtilsInterleaved.v,36
+  Inductive is_interleaved38,1122
+
+./coq/lib_utils/LibUtilsDigits.v,2418
+  Theorem K_natK_nat39,1181
+  Theorem eq_rect_eq_nateq_rect_eq_nat47,1376
+  Theorem le_uniqueness_proofle_uniqueness_proof55,1596
+  Definition maxbase81,2516
+  Definition digit84,2586
+  Definition digit_proj86,2629
+    Definition digits_to_nat119,3474
+    Definition digit_to_char625,18918
+    Definition char_to_digit_aux666,19963
+    Fixpoint string_to_digits756,22729
+    Fixpoint list_to_string770,23148
+    Definition digits_to_string_aux776,23320
+    Definition digits_to_string779,23430
+    Lemma string_to_digits_emptystring_to_digits_empty827,25065
+    Fixpoint iszeros832,25175
+    Fixpoint trim_extra_stringdigits838,25333
+    Definition trim_stringdigits851,25656
+    Lemma digit0pfdigit0pf854,25760
+    Definition digit0859,25825
+    Definition default_to_digits0861,25879
+    Lemma char_to_digit0char_to_digit0867,26004
+    Definition nat_to_string1009,30445
+    Definition string_to_nat1012,30537
+    Definition Z_to_string1133,34521
+    Definition string_to_Z1140,34727
+    Definition trim_stringZdigits1164,35443
+  Definition le_decider1299,39758
+    Definition base2valid1311,39967
+    Definition base2small1312,40020
+      Definition nat_to_string21315,40104
+      Definition string2_to_nat1316,40167
+      Definition nat_to_string2_to_nat1318,40220
+      Definition Z_to_string21331,40626
+      Definition string2_to_Z1332,40685
+      Definition Z_to_string2_to_Z1334,40734
+    Definition base8valid1350,41149
+    Definition base8small1351,41202
+      Definition nat_to_string81354,41286
+      Definition string8_to_nat1355,41349
+      Definition nat_to_string8_to_nat1357,41402
+      Definition Z_to_string81370,41802
+      Definition string8_to_Z1371,41861
+      Definition Z_to_string8_to_Z1373,41910
+    Definition base10valid1390,42334
+    Definition base10small1391,42390
+      Definition nat_to_string101394,42477
+      Definition string10_to_nat1395,42543
+      Definition Z_to_string101410,43018
+      Definition string10_to_Z1411,43080
+    Definition base16valid1429,43577
+    Definition base16small1430,43633
+      Definition nat_to_string161433,43720
+      Definition string16_to_nat1434,43786
+      Definition nat_to_string16_to_nat1437,43842
+      Definition Z_to_string161450,44256
+      Definition string16_to_Z1451,44318
+      Definition Z_to_string16_to_Z1453,44369
+
+./coq/lib_utils/LibUtils.v,0
+
+./coq/lib_utils/LibUtilsStringAdd.v,1109
+  Definition t35,1080
+  Definition eq36,1104
+  Definition eq_equiv37,1130
+  Definition eq_dec38,1190
+  Definition compare41,1285
+  Definition lt44,1386
+  Lemma lt_strorderlt_strorder46,1436
+  Lemma lt_compatlt_compat55,1738
+  Lemma compare_speccompare_spec72,2220
+  Definition le93,2859
+  Lemma le_lteqle_lteq100,2979
+  Definition t119,3485
+  Definition eq120,3510
+  Definition eq_equiv121,3536
+  Definition eq_dec122,3596
+  Fixpoint compare124,3632
+  Definition lt137,3983
+  Lemma compare_speccompare_spec139,4034
+  Lemma lt_compatlt_compat195,6010
+  Definition le219,6703
+  Lemma le_lteqle_lteq226,6824
+  Fixpoint string_reverse_helper265,7822
+  Definition string_reverse271,8004
+  Fixpoint string_to_list273,8084
+  Fixpoint list_to_string279,8246
+  Fixpoint map_string551,15057
+  Fixpoint flat_map_string557,15231
+  Definition map_concat570,15547
+  Inductive like_clause583,15906
+  Fixpoint make_like_clause588,16049
+  Fixpoint  string_exists_suffix629,18177
+  Fixpoint like_clause_matches_string638,18513
+  Definition string_like654,19181
+
+./coq/lib_utils/LibUtilsLift.v,355
+  Definition lift29,895
+  Definition olift36,1072
+  Definition bind42,1210
+  Definition lift244,1265
+  Definition olift_some50,1441
+  Definition olift254,1553
+  Definition rif232,6218
+  Definition liftP239,6397
+  Definition lift2P245,6537
+  Definition lift2Pl253,6798
+  Definition lift2Pr261,7057
+  Definition mk_lazy_lift295,8050
+
+./coq/lib_utils/LibUtilsAssoc.v,1099
+    Fixpoint lookup45,1262
+    Fixpoint update_first51,1426
+    Definition domain57,1620
+    Definition codomain58,1678
+    Definition map_codomain60,1739
+    Lemma in_domin_dom106,2931
+    Lemma in_domain_inin_domain_in122,3345
+    Lemma lookup_none_ninlookup_none_nin130,3586
+    Lemma lookup_inlookup_in155,4311
+    Lemma lookup_in_domainlookup_in_domain164,4565
+    Lemma nodup_in_eqnodup_in_eq220,6611
+    Lemma in_dom_lookup_strongin_dom_lookup_strong233,7032
+    Lemma in_dom_lookupin_dom_lookup242,7296
+    Lemma in_lookup_strongin_lookup_strong250,7547
+    Lemma in_lookupin_lookup256,7751
+    Lemma in_lookup_nodupin_lookup_nodup262,7945
+  Fixpoint assoc_lookupr766,23453
+  Fixpoint projectr780,23893
+  Definition permutation_dec986,30920
+    Fixpoint bdistinct_domain1068,33382
+    Definition lookup_incl1151,36095
+  Definition swap1589,48781
+    Fixpoint lookup_diff1618,49550
+    Definition lookup_equiv_on1785,55030
+    Definition substlist_subst1960,60887
+    Definition ascii_mk_lower1980,61566
+    Definition mk_lower1983,61669
+
+./coq/utils/CoquelicotAdd.v,117
+Lemma sqrt2_neq0sqrt2_neq015,423
+Lemma sqrt_2PI_nzerosqrt_2PI_nzero23,527
+Lemma sqrt_PI_neq0sqrt_PI_neq031,664
+
+./coq/utils/Sums.v,114
+  Fixpoint sum_f_R0'24,749
+  Definition infinite_sum'276,6793
+  Lemma infinite_sum'0infinite_sum'0517,13990
+
+./coq/utils/Floatish/FloatishDef.v,0
+
+./coq/utils/Floatish/FloatishOps.v,137
+  Definition pos_sign8,116
+  Definition neg_sign11,186
+  Definition sign14,256
+  Definition Fmax19,361
+  Definition Fmin22,423
+
+./coq/utils/Floatish/FloatishInterval.v,53
+Definition FZF83,2013
+Definition FZFscale84,2063
+
+./coq/utils/Floatish/FloatishReal.v,0
+
+./coq/utils/Floatish/FloatishRealOps.v,0
+
+./coq/utils/Floatish/FloatishIEEE.v,610
+Definition IEEE_float8,127
+Definition IEEE_zero9,162
+Definition IEEE_opp10,211
+Definition IEEE_plus11,243
+Definition IEEE_minus12,285
+Definition IEEE_mult13,329
+Definition IEEE_div14,371
+Definition IEEE_sqrt15,411
+Definition IEEE_abs16,453
+Definition IEEE_fromZ18,486
+Definition IEEE_eq20,582
+Definition IEEE_neq26,713
+Definition IEEE_lt33,869
+Definition IEEE_le39,1025
+Definition IEEE_gt47,1231
+Definition IEEE_ge54,1388
+Axiom IEEE_expIEEE_exp62,1654
+Axiom IEEE_lnIEEE_ln63,1697
+Axiom IEEE_piIEEE_pi64,1739
+Axiom IEEE_sinIEEE_sin65,1767
+Axiom IEEE_cosIEEE_cos66,1810
+
+./coq/utils/RiemannAdd.v,103
+Definition Partition16,380
+Definition find_pt_le_psi412,10506
+Definition list_map_diffs418,10687
+
+./coq/utils/RealAdd.v,201
+Lemma Rlt_le_subRlt_le_sub72,1306
+Definition interval_increasing148,3157
+Definition interval_decreasing151,3266
+Fixpoint Int_SF'223,4878
+Definition Int_SF'_alt244,5297
+Lemma up0up0267,5839
+
+./coq/utils/StreamAdd.v,80
+Fixpoint ConsList18,336
+  Fixpoint firstn42,899
+    Fixpoint skipn60,1355
+
+./coq/utils/improper_integrals.v,150
+Definition filter_Rlt8,217
+Lemma filter_Rlt_m_infty_p_inftyfilter_Rlt_m_infty_p_infty17,492
+Lemma Rplus_minus_cancel1Rplus_minus_cancel185,2324
+
+./coq/utils/PairEncoding.v,650
+Inductive BinaryDigit8,134
+Fixpoint pos_to_digits11,189
+Definition N_to_digits18,397
+Fixpoint digits_to_pos24,524
+Fixpoint cleanup_zeros32,742
+Definition fixup_trailing_zeros39,908
+Definition digits_to_N80,1965
+Definition canon_digits92,2276
+Fixpoint interleave348,8735
+Fixpoint uninterleave366,9154
+Definition interleave_with_end_padding462,11628
+Definition encode_digits_pair502,13023
+Definition decode_digits_pair505,13158
+Definition encode_pair508,13275
+Definition make_even_digits511,13386
+Definition decode_pair_to_digits514,13498
+Definition decode_pair519,13701
+Definition padded_interleave_result816,21815
+
+./coq/utils/Isomorphism.v,0
+
+./coq/utils/ListAdd.v,111
+  Fixpoint find_bucket404,9408
+Definition adjacent_pairs749,18867
+Definition adjacent_pairs_alt751,18937
+
+./coq/utils/Utils.v,0
+
+./coq/utils/Floatish.v,0
+
+./coq/utils/StreamLimits.v,30
+Definition Stream_limit6,82
+
+./coq/utils/Assoc.v,0
+
+./coq/converge/pmf_monad.v,63
+Definition Pmf_pure45,1331
+Definition dist_bind_aux51,1451
+
+./coq/converge/elfic/R_compl.v,484
+Lemma discr_negdiscr_neg23,718
+Lemma contraction_lt_anycontraction_lt_any91,2795
+Lemma contraction_lt_any'contraction_lt_any'126,3785
+Lemma Rinv_le_cancelRinv_le_cancel142,4190
+Lemma Rlt_R1_powRlt_R1_pow155,4494
+Lemma Rle_pow_leRle_pow_le173,4942
+Lemma is_finite_betwis_finite_betw184,5250
+Lemma Rplus_plus_reg_lRplus_plus_reg_l190,5394
+Lemma Rplus_plus_reg_rRplus_plus_reg_r195,5509
+Lemma norm_scal_Rnorm_scal_R202,5659
+Lemma sum_n_eq_zerosum_n_eq_zero232,6416
+
+./coq/converge/elfic/continuous_linear_map.v,5971
+Definition is_bounded29,845
+Definition is_bounded_linear_mapping33,959
+Variable EE42,1121
+Definition Is_only_zero_set44,1159
+Lemma Is_only_zero_set_correct1Is_only_zero_set_correct147,1255
+Lemma Is_only_zero_set_correct2Is_only_zero_set_correct270,1663
+Lemma Is_only_zero_set_correct3Is_only_zero_set_correct381,1857
+Lemma Is_only_zero_set_correct4Is_only_zero_set_correct489,2014
+Lemma Is_only_zero_set_decIs_only_zero_set_dec115,2499
+Lemma norm_gt_0norm_gt_0133,2802
+Lemma is_zero_decis_zero_dec141,2976
+Lemma norm_unit_vectornorm_unit_vector152,3177
+Lemma norm_of_image_of_unit_vectornorm_of_image_of_unit_vector165,3511
+Lemma norm_of_image_of_unit_vector'norm_of_image_of_unit_vector'178,3919
+Definition operator_norm201,4559
+Lemma operator_norm_ge_0operator_norm_ge_0208,4771
+Lemma operator_norm_ge_0'operator_norm_ge_0'233,5330
+Lemma operator_norm_helperoperator_norm_helper242,5522
+Lemma operator_norm_helper'operator_norm_helper'275,6404
+Lemma operator_norm_helper2operator_norm_helper2299,7093
+Lemma operator_norm_helper3operator_norm_helper3327,7888
+Lemma operator_norm_helper3'operator_norm_helper3'350,8444
+Lemma continuous_linear_map_2_1continuous_linear_map_2_1382,9494
+Lemma continuous_linear_map_3_2continuous_linear_map_3_2390,9643
+Lemma continuous_linear_map_4_3continuous_linear_map_4_3405,9965
+Lemma continuous_linear_map_5_4continuous_linear_map_5_4432,10619
+Lemma continuous_linear_map_6_5continuous_linear_map_6_5464,11502
+Lemma continuous_linear_map_7_6continuous_linear_map_7_6483,11971
+Lemma continuous_linear_map_8_7continuous_linear_map_8_7511,12681
+Lemma continuous_linear_map_1_8continuous_linear_map_1_8524,13011
+Lemma is_finite_norm_zerois_finite_norm_zero597,14869
+Lemma operator_norm_zerooperator_norm_zero606,15056
+Lemma is_finite_operator_norm_plusis_finite_operator_norm_plus617,15281
+Lemma is_finite_operator_norm_oppis_finite_operator_norm_opp632,15814
+Lemma is_finite_operator_norm_scalis_finite_operator_norm_scal643,16105
+Lemma operator_norm_triangleoperator_norm_triangle661,16605
+Lemma operator_norm_oppoperator_norm_opp675,17112
+Lemma operator_norm_scaloperator_norm_scal694,17565
+Lemma is_linear_mapping_composeis_linear_mapping_compose744,19013
+Lemma operator_norm_composeoperator_norm_compose753,19284
+Lemma is_finite_operator_norm_composeis_finite_operator_norm_compose775,20021
+Variable EE803,20878
+Variable FF804,20915
+Definition clm_zero816,21105
+Definition clm_plus819,21205
+Definition clm_opp824,21375
+Definition clm_scal829,21511
+Lemma clm_eqclm_eq834,21663
+Lemma clm_eq_extclm_eq_ext846,21885
+Lemma clm_plus_commclm_plus_comm859,22159
+Lemma clm_plus_assocclm_plus_assoc867,22307
+Lemma clm_plus_zero_rclm_plus_zero_r876,22489
+Lemma clm_plus_opp_rclm_plus_opp_r884,22632
+Definition clm_AbelianGroup_mixin892,22792
+Lemma clm_scal_oneclm_scal_one908,23212
+Lemma clm_scal_distr_lclm_scal_distr_l914,23321
+Lemma clm_scal_distr_rclm_scal_distr_r921,23499
+Definition clm_ModuleSpace_mixin928,23683
+Lemma clm_ball_centerclm_ball_center940,24070
+Lemma clm_ball_symclm_ball_sym949,24264
+Lemma clm_ball_triangleclm_ball_triangle959,24497
+Definition clm_UniformSpace_mixin979,25143
+Lemma clm_norm_triangleclm_norm_triangle993,25567
+Lemma clm_norm_ball1clm_norm_ball11001,25764
+Lemma clm_norm_ball2clm_norm_ball21008,25956
+Lemma clm_norm_scal_auxclm_norm_scal_aux1015,26176
+Lemma clm_norm_eq_0clm_norm_eq_01025,26397
+Definition clm_NormedModule_mixin1042,26844
+Variable EE1058,27255
+Variable FF1059,27292
+Variable GG1060,27329
+Lemma operator_norm_estimationoperator_norm_estimation1062,27367
+Definition compose_lcm1080,27871
+Lemma norm_compose_lcmnorm_compose_lcm1086,28121
+Definition topo_dual1105,28458
+Definition is_bounded_bi1118,28726
+Definition is_bounded_bilinear_mapping1122,28850
+Definition is_coercive1125,28966
+Lemma is_bounded_bilinear_mapping_representation'is_bounded_bilinear_mapping_representation'1136,29201
+Lemma is_bounded_bilinear_mapping_representation_uniqueis_bounded_bilinear_mapping_representation_unique1182,30341
+Lemma is_bounded_bilinear_mapping_representationis_bounded_bilinear_mapping_representation1195,30668
+Lemma is_bounded_bilinear_mapping_representation_moreoveris_bounded_bilinear_mapping_representation_moreover1214,31269
+Lemma coercivity_le_continuitycoercivity_le_continuity1248,32094
+Variable EE1286,32930
+Variable phiphi1287,32967
+Definition Is_only_zero_set_phi1289,32993
+Lemma Is_only_zero_set_dec_phiIs_only_zero_set_dec_phi1292,33103
+Lemma Is_only_zero_set_correct1_phiIs_only_zero_set_correct1_phi1299,33244
+Lemma Is_only_zero_set_correct2_phiIs_only_zero_set_correct2_phi1324,33709
+Lemma Is_only_zero_set_correct2'_phiIs_only_zero_set_correct2'_phi1335,33916
+Lemma Is_only_zero_set_correct2''_phiIs_only_zero_set_correct2''_phi1346,34132
+Lemma Is_only_zero_set_correct3_phiIs_only_zero_set_correct3_phi1357,34361
+Lemma Is_only_zero_set_correct3'_phiIs_only_zero_set_correct3'_phi1368,34585
+Lemma Is_only_zero_set_correct3''_phiIs_only_zero_set_correct3''_phi1377,34762
+Lemma Is_only_zero_set_correct4_phiIs_only_zero_set_correct4_phi1386,34939
+Variable phiphi1418,35488
+Definition operator_norm_phi1420,35514
+Lemma operator_norm_ge_0_phioperator_norm_ge_0_phi1427,35747
+Lemma operator_norm_ge_0'_phioperator_norm_ge_0'_phi1457,36398
+Lemma operator_norm_helper'_phioperator_norm_helper'_phi1466,36607
+Lemma operator_norm_helper2_phioperator_norm_helper2_phi1492,37371
+Lemma operator_norm_helper2'_phioperator_norm_helper2'_phi1521,38233
+Lemma operator_norm_helper3_phioperator_norm_helper3_phi1550,39117
+Lemma operator_norm_helper3b_phioperator_norm_helper3b_phi1573,39711
+Lemma operator_norm_helper3'_phioperator_norm_helper3'_phi1596,40295
+Lemma coercivity_le_continuity_phicoercivity_le_continuity_phi1609,40701
+Lemma op_norm_finite_phiop_norm_finite_phi1641,41475
+
+./coq/converge/elfic/fixed_point.v,2710
+Definition ball_x28,799
+Definition ball_y29,886
+Definition is_contraction38,1141
+Fixpoint iter49,1319
+Lemma dist_iter_aux_auxdist_iter_aux_aux54,1421
+Lemma dist_iter_auxdist_iter_aux72,1809
+Lemma dist_iterdist_iter101,2681
+Variable ff137,3615
+Variable phiphi138,3635
+Hypothesis phi_fphi_f139,3660
+Hypothesis phi_distanceablephi_distanceable140,3710
+Lemma phi_iter_fphi_iter_f143,3808
+Lemma dist_iter_aux_zerodist_iter_aux_zero151,3955
+Lemma dist_iter_gendist_iter_gen179,4681
+Definition lim233,6035
+Definition my_complete235,6128
+Lemma closed_my_completeclosed_my_complete239,6302
+Variable phiphi262,6800
+Lemma my_complete_closedmy_complete_closed264,6826
+Definition is_eq382,9332
+Lemma is_eq_transis_eq_trans384,9415
+Lemma is_eq_symis_eq_sym395,9667
+Variable phiphi405,9813
+Hypothesis phi_fphi_f407,9839
+Hypothesis phi_distanceablephi_distanceable408,9889
+Lemma FixedPoint_uniqueness_weakFixedPoint_uniqueness_weak411,9987
+Lemma Fixed_Point_aux_ProperFixed_Point_aux_Proper489,12137
+Lemma Fixed_Point_aux_cauchyFixed_Point_aux_cauchy515,12617
+Lemma FixedPoint_aux1FixedPoint_aux1611,15218
+Hypothesis phi_X_not_emptyphi_X_not_empty646,16167
+Hypothesis phi_closedphi_closed647,16216
+Lemma FixedPoint_aux2FixedPoint_aux2649,16257
+Theorem FixedPoint_CFixedPoint_C667,16629
+Variable KK700,17451
+Variable phiphi705,17532
+Hypothesis phi_fphi_f706,17557
+Hypothesis phi_X_not_emptyphi_X_not_empty707,17607
+Hypothesis phi_closedphi_closed708,17656
+Lemma is_eq_eqis_eq_eq710,17697
+Theorem FixedPointFixedPoint718,17846
+Definition is_Lipschitz_phi779,19197
+Definition is_contraction_phi784,19372
+Lemma dist_iter_aux_aux_phidist_iter_aux_aux_phi795,19597
+Lemma dist_iter_aux_phidist_iter_aux_phi815,20065
+Lemma dist_iter_phidist_iter_phi845,21026
+Variable ff882,22033
+Variable phiphi883,22053
+Hypothesis phi_fphi_f885,22079
+Hypothesis phi_distanceablephi_distanceable887,22130
+Lemma dist_iter_aux_zero_phidist_iter_aux_zero_phi890,22228
+Lemma dist_iter_gen_phidist_iter_gen_phi924,23039
+Variable phiphi987,24575
+Hypothesis phi_fphi_f989,24601
+Hypothesis phi_distanceablephi_distanceable990,24651
+Hypothesis phi_cphi_c992,24748
+Lemma FixedPoint_uniqueness_weak_phiFixedPoint_uniqueness_weak_phi994,24785
+Lemma Fixed_Point_aux_Proper_phiFixed_Point_aux_Proper_phi1072,26948
+Lemma Fixed_Point_aux_cauchy_phiFixed_Point_aux_cauchy_phi1098,27433
+Lemma FixedPoint_aux1_phiFixedPoint_aux1_phi1201,30179
+Hypothesis phi_X_not_emptyphi_X_not_empty1262,31628
+Hypothesis phi_closedphi_closed1263,31677
+Lemma FixedPoint_aux2_phiFixedPoint_aux2_phi1265,31718
+Theorem FixedPoint_C_phiFixedPoint_C_phi1283,32111
+
+./coq/converge/elfic/linear_map.v,1279
+Definition fct_plus32,908
+Definition fct_scal35,988
+Definition fct_opp38,1061
+Definition fct_zero41,1126
+Lemma fct_plus_commfct_plus_comm43,1170
+Lemma fct_plus_assocfct_plus_assoc50,1324
+Lemma fct_plus_zero_rfct_plus_zero_r58,1512
+Lemma fct_plus_opp_rfct_plus_opp_r65,1660
+Definition fct_AbelianGroup_mixin72,1816
+Lemma fct_scal_assocfct_scal_assoc79,2063
+Lemma fct_scal_onefct_scal_one87,2249
+Lemma fct_scal_distr_lfct_scal_distr_l94,2388
+Lemma fct_scal_distr_rfct_scal_distr_r101,2588
+Definition fct_ModuleSpace_mixin109,2799
+Definition is_linear_mapping127,3239
+Theorem compatible_g_is_linear_mappingcompatible_g_is_linear_mapping131,3411
+Lemma is_linear_mapping_zerois_linear_mapping_zero162,4136
+Lemma is_linear_mapping_oppis_linear_mapping_opp172,4349
+Lemma is_linear_mapping_f_zerois_linear_mapping_f_zero181,4538
+Lemma is_linear_mapping_f_oppis_linear_mapping_f_opp189,4697
+Lemma is_linear_mapping_f_plusis_linear_mapping_f_plus202,5004
+Lemma is_linear_mapping_f_scalis_linear_mapping_f_scal217,5476
+Definition is_bilinear_mapping239,6002
+Theorem compatible_g_is_bilinear_mappingcompatible_g_is_bilinear_mapping245,6341
+Definition is_injective286,8184
+Definition is_surjective289,8264
+Definition is_bijective292,8348
+
+./coq/converge/elfic/compatible.v,864
+Definition compatible_g25,709
+Lemma compatible_g_zerocompatible_g_zero29,843
+Lemma compatible_g_oppcompatible_g_opp37,1019
+Lemma compatible_g_pluscompatible_g_plus46,1205
+Definition compatible_m63,1527
+Lemma compatible_m_zerocompatible_m_zero67,1639
+Lemma compatible_m_pluscompatible_m_plus73,1771
+Lemma compatible_m_scalcompatible_m_scal81,1951
+Lemma compatible_m_oppcompatible_m_opp88,2085
+Variable phiphi103,2338
+Variable phi'phi'104,2360
+Definition m_plus106,2384
+Hypothesis CphiCphi109,2491
+Hypothesis Cphi'Cphi'110,2526
+Lemma compatible_m_plus2compatible_m_plus2112,2564
+Definition direct_sumable127,3073
+Lemma direct_sum_eq1direct_sum_eq1129,3142
+Lemma plus_u_opp_vplus_u_opp_v157,3782
+Lemma plus_assoc_genplus_assoc_gen163,4001
+Lemma direct_sum_eq2direct_sum_eq2174,4370
+Lemma direct_sum_eq3direct_sum_eq3192,5039
+
+./coq/converge/elfic/logic_tricks.v,277
+Lemma logic_not_notlogic_not_not24,682
+Lemma decidable_extdecidable_ext63,1301
+Lemma decidable_ext_auxdecidable_ext_aux72,1488
+Lemma decidable_anddecidable_and87,1881
+Theorem strong_inductionstrong_induction109,2230
+Lemma unique_existence1unique_existence1138,2821
+
+./coq/converge/fixpoint.v,1003
+Definition is_contractive31,940
+Fixpoint iter_fun34,1043
+Lemma Rinv_le_cancelRinv_le_cancel73,1907
+Theorem strong_inductionstrong_induction86,2211
+Lemma Rle_pow_leRle_pow_le113,2745
+Lemma contraction_lt_anycontraction_lt_any124,3053
+Lemma contraction_lt_any'contraction_lt_any'159,4043
+Variable ff188,4877
+Variable phiphi189,4897
+Hypothesis phi_fphi_f190,4922
+Hypothesis phi_distanceablephi_distanceable191,4972
+Definition lim293,8875
+Definition is_complete296,8969
+Lemma dist_iter_aux_zero_phidist_iter_aux_zero_phi325,9827
+Lemma dist_iter_gen_phidist_iter_gen_phi359,10641
+Definition is_eq407,11963
+Lemma is_eq_transis_eq_trans409,12046
+Lemma is_eq_symis_eq_sym420,12298
+Definition my_complete525,15252
+Lemma FixedPoint_aux1_phiFixedPoint_aux1_phi530,15427
+Hypothesis phi_X_not_emptyphi_X_not_empty588,16853
+Hypothesis phi_closedphi_closed589,16902
+Lemma FixedPoint_aux2_phiFixedPoint_aux2_phi591,16943
+Theorem FixedPoint_C_phiFixedPoint_C_phi609,17336
+
+./coq/SigmaAlgebras.v,276
+Definition is_partition127,3010
+Definition sub_partition131,3143
+Definition in_partition_union147,3538
+Definition all_included291,7378
+Definition event_set_product313,8129
+Definition event_pullback322,8608
+Definition is_countable333,8998
+Definition F373,10078
+
+./coq/BorelSigmaAlgebra.v,0
