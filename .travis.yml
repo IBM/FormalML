@@ -13,4 +13,5 @@ env:
 script:
 - echo -e "${ANSI_YELLOW}Building Coq code...${ANSI_RESET}" && echo -en 'travis_fold:start:script\\r'
 - docker build --build-arg=coq_image="${COQ_IMAGE}" --pull -t nn-opt .
+- docker run -t nn-opt
 - echo -en 'travis_fold:end:script\\r'
