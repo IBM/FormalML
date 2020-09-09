@@ -1,6 +1,13 @@
 **/*.vo
+**/*.vok
+**/*.vos
 **/*.glob
 **/*.aux
 extracted
 ocaml/_build
 bin
+
+.git
+**/.DS_Store
+**/*~
+**/.#*

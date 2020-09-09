@@ -4,7 +4,7 @@ version: "~dev"
 synopsis: "Exploring formal verification for symbolic neural networks"
 maintainer: "Avi Shinnar <shinnar@us.ibm.com>"
 authors: "Avi Shinnar <shinnar@us.ibm.com>"
-homepage: "https://github.com/ibm/formalml
+homepage: "https://github.com/ibm/formalml"
 bug-reports: "https://github.com/ibm/formalml/issues"
 depends: [
   "ocaml" {>= "4.07.0"}
@@ -13,6 +13,7 @@ depends: [
   "coq-coquelicot"
   "coq-flocq"
   "coq-interval" {<= "3.4.2"}
+  "coq-ext-lib"
   "ocamlbuild"
   "base64"
   "menhir"

@@ -7,10 +7,7 @@ services:
 
 env:
   matrix:
-  - COQ_IMAGE="coqorg/coq:8.8.2"
-  - COQ_IMAGE="coqorg/coq:8.9"
-  - COQ_IMAGE="coqorg/coq:8.9.1"
-  - COQ_IMAGE="coqorg/coq:8.11.1"
+  - COQ_IMAGE="coqorg/coq:8.11.2"
 
 
 script:
