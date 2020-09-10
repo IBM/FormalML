@@ -750,7 +750,10 @@ Record MDP := mkMDP {
  (* The state and action spaces are finite. *)
  fs :> Finite (state) ;
  fa :> forall s, Finite (act s);
- 
+
+ (* The state space and the fibered action spaces are nonempty. *)
+ ns : NonEmpty (state) ;
+ na : forall s, NonEmpty (act s);
  (* Probabilistic transition structure. 
     t(s,a,s') is the probability that the next state is s' given that you take action a in state s.
     One can also consider to to be an act-indexed collection of Kliesli arrows of Pmf. 
@@ -777,6 +780,9 @@ Proof.
  Unshelve.
  apply st_eqdec.
 Qed.
+
+Global Instance nonempty_dec_rule (M : MDP) : NonEmpty (dec_rule M)
+  := fun s => na M s.
 
 (*
    In general,a policy is a *stream* of decision rules. 
@@ -1899,16 +1905,17 @@ Proof.
   intros a. apply Rge_le. apply HW1W2.
 Qed.
 
-Definition bellman_max_op (la : forall s, list (M.(act) s)) : Rfct M.(state) -> Rfct M.(state)
-  :=
-  fun W => fun s => Max_{la s}( fun a => expt_value (t s a) (reward s a) + γ*(expt_value (t s a) W)). 
+Definition bellman_max_op : Rfct M.(state) -> Rfct M.(state)
+  := 
+    fun W => fun s => let (la,_) := fa M s in
+                Max_{la}( fun a => expt_value (t s a) (reward s a) + γ*(expt_value (t s a) W)). 
 
 
-Lemma bellman_max_op_monotone_le {la : forall s, list (M.(act) s)} :
-  (monotone_le M.(state) (bellman_max_op la)).
+Lemma bellman_max_op_monotone_le :
+  (monotone_le M.(state) (bellman_max_op)).
 Proof.
   intros W1 W2 HW1W2 s.
-  unfold bellman_max_op.
+  unfold bellman_max_op. destruct (fa M s) as [la Hla]. 
   apply Rmax_list_fun_le ; auto. 
   intro a.
   apply Rplus_le_compat_l.
@@ -1916,13 +1923,13 @@ Proof.
   apply expt_value_le ; eauto.
 Qed.
 
-Lemma bellman_max_op_monotone_ge {la : forall s, list (M.(act) s)} :
-  (monotone_ge M.(state) (bellman_max_op la)).
+Lemma bellman_max_op_monotone_ge :
+  (monotone_ge M.(state) bellman_max_op).
 Proof.
   intros W1 W2 HW1W2 s.
   rewrite <-Rfct_le_ge_symm in HW1W2.
   apply Rle_ge.
-  unfold bellman_max_op.
+  unfold bellman_max_op. destruct (fa M s) as [la Hla].
   apply Rmax_list_fun_le ; auto. 
   intro a.
   apply Rplus_le_compat_l.
@@ -1932,34 +1939,24 @@ Qed.
 
 
 (* Cut down on these hypotheses. *)
-Lemma bellman_op_bellman_max_le (π : dec_rule M) {ld : list (dec_rule M)} (la : forall s, list (M.(act) s)) (hp : forall π s, In π ld -> In (π s) (la s)) (Hπ : In π ld) :
-  forall W, Rfct_le M.(state) (bellman_op π W) (bellman_max_op la W).
+Lemma bellman_op_bellman_max_le (π : dec_rule M) :
+  forall W, Rfct_le M.(state) (bellman_op π W) (bellman_max_op W).
 Proof.
   intros W s.  
   unfold bellman_op. 
   unfold bellman_max_op.
-  unfold step_expt_reward.
+  unfold step_expt_reward. destruct (fa M s) as [la Hla]. 
   apply Rmax_spec.
   rewrite in_map_iff. exists (π s). split ; trivial.
-  apply hp. assumption. 
 Qed.
 
-Lemma is_contraction_bellman_max_op_aux(la : forall s, list (M.(act) s)) f g: forall x,
-  (minus (Max_{ la x}(fun a : act M x => expt_value (t x a) (reward x a) + 0 * expt_value (t x a) g)) (Max_{ la x}(fun a : act M x => expt_value (t x a) (reward x a) + 0 * expt_value (t x a) f))) = 0.
-Proof.
-  intro x.
-  enough ((Max_{ la x}(fun a : act M x => expt_value (t x a) (reward x a) + 0 * expt_value (t x a) g) = Max_{ la x}(fun a : act M x => expt_value (t x a) (reward x a) + 0 * expt_value (t x a) f))). rewrite H. unfold minus, plus, opp. simpl. lra.
-  f_equal.
-  apply map_ext.
-  intro a. do 2 rewrite Rmult_0_l. 
-  reflexivity.
-Qed.
+
  (*
    Proposition 5 of http://researchers.lille.inria.fr/~lazaric/Webpage/MVA-RL_Course14_files/notes-lecture-02.pdf
   *)
 Theorem is_contraction_bellman_max_op
-        (ne : NonEmpty M.(state)) (la : forall s, list (M.(act) s)) :
- @is_contraction (Rfct_UniformSpace M.(state)) (Rfct_UniformSpace M.(state)) (bellman_max_op la).
+        (ne : NonEmpty M.(state)) :
+ @is_contraction (Rfct_UniformSpace M.(state)) (Rfct_UniformSpace M.(state)) bellman_max_op.
 Proof.
   unfold is_contraction.
   destruct (Req_EM_T γ 0).
@@ -1969,15 +1966,17 @@ Proof.
      destruct finm as [ls Hls].
      intros f g. intros r Hr Hfgr.
      rewrite e. unfold ball_x,ball_y, Rmax_norm.
-     simpl. unfold Rmax_ball. simpl. 
-     replace  (fun s : state M =>
-   Rabs
-     (minus(Max_{ la s}(fun a : act M s => expt_value (t s a) (reward s a) + 0 * expt_value (t s a) g)) (Max_{ la s}(fun a : act M s => expt_value (t s a) (reward s a) + 0 * expt_value (t s a) f)))) with (fun x:state M => 0).
-     rewrite Rmax_list_zero. replace 0 with (1/2 * 0) by lra.
+     simpl. unfold Rmax_ball. simpl.
+     replace _ with 0. 
+     replace 0 with (1/2 * 0) by lra.
      apply Rmult_lt_compat_l ; [lra |trivial].
-     apply functional_extensionality. intro x.
-     rewrite is_contraction_bellman_max_op_aux.
-     symmetry. apply Rabs_R0.
+     symmetry. rewrite <-(Rmax_list_zero ls).
+     f_equal. apply map_ext. intro s0.
+     destruct (fa M s0) as [la Hla]. rewrite <-Rabs_R0.
+     f_equal. rewrite Rabs_R0. rewrite Rmax_list_zero.
+     unfold minus,plus,opp ; simpl. apply Rminus_diag_eq.
+     f_equal. apply map_ext.
+     intro a. ring.
   +++ exists γ ; split.
   - now destruct hγ.
   - unfold is_Lipschitz. split.
@@ -1991,11 +1990,12 @@ Proof.
        --- rewrite Rmax_list_lt_iff ; [ | apply map_not_nil ; congruence].
            intros r' Hr'.
            rewrite in_map_iff in Hr'. destruct Hr' as [s [Hs Hins]].
-           rewrite <-Hs. 
+           rewrite <-Hs. unfold minus,plus,opp,bellman_max_op ; simpl.
+           destruct (fa M s) as [la Hla]. 
            eapply Rle_lt_trans ; first apply Rmax_list_minus_le_abs.
            simpl. repeat red in f,g.
            assert
-             (h1 : Max_{ la s}(fun a => Rabs (expt_value (t s a) (reward s a) + γ * expt_value (t s a) g - (expt_value (t s a) (reward s a) + γ * expt_value (t s a) f))) = Max_{ la s} (fun a => γ*Rabs ((expt_value (t s a) g - expt_value (t s a) f)))).
+             (h1 : Max_{ la }(fun a => Rabs (expt_value (t s a) (reward s a) + γ * expt_value (t s a) g - (expt_value (t s a) (reward s a) + γ * expt_value (t s a) f))) = Max_{ la } (fun a => γ*Rabs ((expt_value (t s a) g - expt_value (t s a) f)))).
            {
            f_equal. apply List.map_ext_in.
            intros a H. replace (γ * Rabs (expt_value (t s a) g - expt_value (t s a) f)) with
@@ -2005,21 +2005,21 @@ Proof.
            }
            rewrite h1; clear h1.
            rewrite Rmax_list_map_const_mul ; [|now destruct hγ].
-           assert (h2: Max_{ la s}(fun a : act M s => Rabs (expt_value (t s a) g - expt_value (t s a) f))
-             = Max_{ la s}(fun a : act M s => Rabs (expt_value (t s a)(fun s => g s - f s)))).
+           assert (h2: Max_{ la }(fun a : act M s => Rabs (expt_value (t s a) g - expt_value (t s a) f))
+             = Max_{ la}(fun a : act M s => Rabs (expt_value (t s a)(fun s => g s - f s)))).
            {
              symmetry. f_equal. apply List.map_ext_in.
              intros. f_equal. apply expt_value_sub. 
            }
            rewrite h2 ; clear h2.
-           assert (h3 : γ * (Max_{ la s}(fun a : act M s => Rabs (expt_value (t s a) (fun s0 : state M => g s0 - f s0)))) <= γ*(Max_{ la s}(fun a : act M s => (expt_value (t s a) (fun s0 : state M => Rabs (g s0 - f s0)))))).
+           assert (h3 : γ * (Max_{ la }(fun a : act M s => Rabs (expt_value (t s a) (fun s0 : state M => g s0 - f s0)))) <= γ*(Max_{ la }(fun a : act M s => (expt_value (t s a) (fun s0 : state M => Rabs (g s0 - f s0)))))).
            {
            apply Rmult_le_compat_l; [now destruct hγ| ].
            apply Rmax_list_fun_le. intro a. apply expt_value_Rabs_Rle.
            }
            eapply Rle_lt_trans; first apply h3. clear h3.
            apply Rmult_lt_compat_l ; [firstorder|]. (* Have to use γ <> 0 here.*)
-           destruct (is_nil_dec (la s)) ;[ rewrite e ; simpl ; assumption |]. 
+           destruct (is_nil_dec (la)) ;[ rewrite e ; simpl ; assumption |]. 
            rewrite Rmax_list_lt_iff ; [| rewrite map_not_nil ; congruence].
            intros r0 Hin. rewrite in_map_iff in Hin.
            destruct Hin as [a0 [Ha0 Hina0]].
@@ -2033,11 +2033,11 @@ Qed.
   functions. Lemma 1 from http://researchers.lille.inria.fr/~lazaric/Webpage/MVA-RL_Course14_files/notes-lecture-02.pdf
   The proof uses a contraction coinductive proof rule. 
  *)
-Lemma ltv_Rfct_le_fixpt (ne : NonEmpty M.(state)) (π : dec_rule M) {ld : list (dec_rule M)} (la : forall s, list (M.(act) s)) (hp : forall π s, In π ld -> In (π s) (la s)) (Hπ : In π ld):
- forall init, Rfct_le M.(state) (ltv γ π) (fixpt (bellman_max_op la) init). 
+Lemma ltv_Rfct_le_fixpt (ne : NonEmpty M.(state)) (π : dec_rule M) :
+ forall init, Rfct_le M.(state) (ltv γ π) (fixpt (bellman_max_op) init). 
 Proof.
   intros init.
-  set (Hπ' := bellman_op_bellman_max_le π la hp Hπ (ltv γ π)).
+  set (Hπ' := bellman_op_bellman_max_le π (ltv γ π)).
   rewrite <-ltv_bellman_eq_ltv in Hπ'. rewrite Rfct_le_ge_symm in Hπ'.
   rewrite Rfct_le_ge_symm.
   apply (contraction_coinduction_Rfct_ge).
@@ -2046,25 +2046,34 @@ Proof.
   - assumption.
 Qed.
 
-Definition greedy  {la : forall s, list (M.(act) s)} (hla : forall s, [] <> la s) init: dec_rule M :=
-  fun s => let V' := fixpt (bellman_max_op la) in
-    argmax (hla s) (fun a => expt_value (t s a) (reward s a) +
+
+Definition greedy init: dec_rule M :=
+  fun s => let V' := fixpt bellman_max_op in
+        let (la,Hla) := fa M s in
+        let pt := na M s in  
+        @argmax (act M s) la (proj2 (not_nil_exists _) (ex_intro _ pt (Hla pt)))
+                (fun a => expt_value (t s a) (reward s a) +
                           γ*(expt_value (t s a) (V' init))).
 
-Lemma exists_fixpt_policy_aux (ne : NonEmpty M.(state)) {la : forall s, list (M.(act) s)} (hla : forall s, [] <> la s):
+
+Lemma exists_fixpt_policy_aux (ne : NonEmpty M.(state)):
   forall init,
-  let V' :=  fixpt (bellman_max_op la) in
-  let σ' := greedy hla init in
+  let V' :=  fixpt bellman_max_op in
+  let σ' := greedy init in
   bellman_op σ' (V' init) = V' init.
 Proof.
   intros init V' σ'.
   apply functional_extensionality.
   intro s0.
-    unfold σ', greedy, bellman_op, step_expt_reward,V'. 
-   rewrite (argmax_is_max (hla s0) (fun a =>  expt_value (t s0 a) (reward s0 a) + γ * expt_value (t s0 a) (fixpt (bellman_max_op la) init))).
-  replace ( Max_{ la s0} (fun a => expt_value (t s0 a) (reward s0 a) + γ * expt_value (t s0 a) (fixpt (bellman_max_op la) init))) with (bellman_max_op la (fixpt (bellman_max_op la) init) s0) by reflexivity.
-  apply equal_f. apply (fixpt_is_fixpt (is_contraction_bellman_max_op ne la) (fun _ => True)) ; trivial.
+  unfold σ', greedy, bellman_op, step_expt_reward,V'.
+  destruct (M s0). 
+   rewrite (argmax_is_max _ (fun a =>  expt_value (t s0 a) (reward s0 a) + γ * expt_value (t s0 a) (fixpt (bellman_max_op) init))). 
+  replace ( Max_{elms} (fun a => expt_value (t s0 a) (reward s0 a) + γ * expt_value (t s0 a) (fixpt (bellman_max_op) init))) with (bellman_max_op (fixpt (bellman_max_op) init) s0).
+  apply equal_f. apply (fixpt_is_fixpt (is_contraction_bellman_max_op ne) (fun _ => True)) ; trivial.
   apply closed_true.
+  unfold bellman_max_op. destruct (M s0).
+  assert (H : equivlist elms elms0) by (intros ; split ; trivial).
+  now rewrite H.
 Qed.
 
 (*
@@ -2072,18 +2081,18 @@ Qed.
   Proposition 1 from http://researchers.lille.inria.fr/~lazaric/Webpage/MVA-RL_Course14_files/notes-lecture-02.pdf
   The proof uses a contraction coinductive proof rule. 
  *)
-Lemma exists_fixpt_policy (ne : NonEmpty M.(state)) {ld : list (dec_rule M)} {la : forall s, list (M.(act) s)} (hp : forall π s, In π ld -> In (π s) (la s)) (hla : forall s, [] <> la s) : forall init,
-  let V' :=  fixpt (bellman_max_op la) in
-  let σ' := greedy hla init in
-  In σ' ld -> ltv γ σ' = V' init.
+Lemma exists_fixpt_policy (ne : NonEmpty M.(state)) : forall init,
+  let V' :=  fixpt (bellman_max_op) in
+  let σ' := greedy init in
+  ltv γ σ' = V' init.
 Proof.
-  intros init V' σ' Hg. apply functional_extensionality.
+  intros init V' σ'. apply functional_extensionality.
   intro s0. 
   apply Rle_antisym.
   - set (ltv_Rfct_le_fixpt ne). unfold Rfct_le in r.
     eapply r ; eauto.
   - revert s0.
-    change _ with (Rfct_le _ (fixpt (bellman_max_op la) init) (ltv γ (greedy hla init))).
+    change _ with (Rfct_le _ (fixpt (bellman_max_op) init) (ltv γ (greedy init))).
     rewrite Rfct_le_ge_symm.
     rewrite (ltv_bellman_op_fixpt _ init).
     apply contraction_coinduction_Rfct_ge.
@@ -2156,34 +2165,35 @@ Notation "Max_{ l } ( f )" := (Rmax_list (List.map f l)) (at level 50).
    (stationary policy determined by a decision rule)
    Denoted V*(s). We explicitly include the list of decision rules we take the 
    max over. 
-*)
-Definition max_ltv_on (l : list (dec_rule M)) : M.(state) -> R :=
-  fun s => Max_{l} (fun σ => ltv γ σ s).
+ *)
+Definition max_ltv : M.(state) -> R :=
+  fun s => let (ld,_) := dec_rule_finite M in
+        Max_{ld} (fun σ => ltv γ σ s).
 
 (* TODO(Kody) : Once we have Finite A -> Finite B -> Finite (A -> B), get rid of these hypotheses. *)
 (* The optimal value function satisfies the optimal Bellman equation. *)
-Theorem max_ltv_eq_fixpt (ne : NonEmpty (state M))
-        (ld : list (dec_rule M)) {la : forall s, list (M.(act) s)}
-        (hne : [] <> ld)
-        (hall : forall π : dec_rule M, In π ld)
-        (hp : forall π s, In π ld -> In (π s) (la s)) (hla : forall s, [] <> la s) :
- forall init, fixpt (bellman_max_op γ la) init = max_ltv_on ld.
+Theorem max_ltv_eq_fixpt (ne : NonEmpty (state M)) :
+ forall init, fixpt (bellman_max_op γ) init = max_ltv.
 Proof.
   intros init.
   apply functional_extensionality.
   intros s0. 
   apply Rle_antisym.
-  - apply Rmax_spec. rewrite in_map_iff.
-    exists (greedy γ hla init).
+  - unfold max_ltv. destruct (dec_rule_finite M) as [ld Hld].
+    apply Rmax_spec. rewrite in_map_iff.
+    exists (greedy γ init).
     split. erewrite exists_fixpt_policy ; trivial.
-    ++ apply hp.
-    ++ apply hall.
-  - unfold max_ltv_on. rewrite Rmax_list_le_iff.
+    ++ apply Hld.
+  - unfold max_ltv. destruct (dec_rule_finite M) as [ld Hld].
+    rewrite Rmax_list_le_iff.
     ++ intros r Hr.
        rewrite in_map_iff in Hr. destruct Hr as [π [Hπ Hin]].
        rewrite <-Hπ. clear Hπ. revert s0. 
-       change _ with (Rfct_le M.(state) (ltv γ π) (fixpt (bellman_max_op γ la) init)). eapply ltv_Rfct_le_fixpt ; eauto.
-    ++ now rewrite map_not_nil.
+       change _ with (Rfct_le M.(state) (ltv γ π) (fixpt (bellman_max_op γ) init)).
+       eapply ltv_Rfct_le_fixpt ; eauto.
+    ++ rewrite map_not_nil. apply not_nil_exists.
+       set (π := nonempty_dec_rule M). exists π.
+       apply Hld.
 Qed.  
 
 End order.
