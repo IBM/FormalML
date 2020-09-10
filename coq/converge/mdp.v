@@ -290,6 +290,34 @@ Proof.
   -- intro H. apply H ; auto. now apply Rmax_list_In. 
 Qed.
 
+Definition Rmax_list_incl l1 l2 : nil <> l1 -> incl l1 l2 -> Rmax_list l1 <= Rmax_list l2.
+Proof.
+  unfold Proper, respectful, incl
+  ; intros.
+  apply Rmax_list_le_iff; trivial.
+  intros.
+  apply Rmax_spec; auto.
+Qed.
+
+Global Instance Rmax_list_equivlist : Proper (equivlist ==> eq) Rmax_list.
+Proof.
+  unfold Proper, respectful; intros x y equivs.
+  destruct x.
+  - symmetry in equivs.
+    apply equivlist_nil in equivs.
+    subst; simpl; trivial.
+  - destruct y.
+    + apply equivlist_nil in equivs.
+      discriminate.
+    + apply equivlist_incls in equivs.
+      destruct equivs.
+      generalize (Rmax_list_incl (r::x) (r0::y)); intros HH1.
+      generalize (Rmax_list_incl (r0::y) (r::x)); intros HH2.
+      cut_to HH1; trivial; try discriminate.
+      cut_to HH2; trivial; try discriminate.
+      lra.
+Qed.
+
 Lemma Rmax_list_sum {A B} {la : list A} (lb : list B) (f : A -> B -> R) (Hla : [] <> la):
   Rmax_list (List.map (fun a => list_sum (List.map (f a) lb)) la) <=
   list_sum (List.map (fun b => Rmax_list (List.map (fun a => f a b) la)) lb). 

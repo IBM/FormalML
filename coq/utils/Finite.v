@@ -8,6 +8,14 @@ Class Finite (A:Type) :=
   finite : forall x:A, In x elms
  }.
 
+Lemma Finite_equivlist {A:Type} (fin1:Finite A) (fin2:Finite A) :
+  equivlist (@elms _ fin1) (@elms _ fin2).
+Proof.
+  destruct fin1 as [??]
+  ; destruct fin2 as [??].
+  split; intuition.
+Qed.
+
 Program Instance Finite_iso {A B} {iso:Isomorphism A B} {fin:Finite A} : Finite B
   := {
   elms:= (List.map iso_f elms)
