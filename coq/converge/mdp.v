@@ -2156,7 +2156,6 @@ Proof.
   intuition.
 Qed.
 
-Notation "Max_{ l } ( f )" := (Rmax_list (List.map f l)) (at level 50).
 
 (* Optimal value of an MDP, given a list of policies
    (stationary policy determined by a decision rule)
@@ -2167,7 +2166,6 @@ Definition max_ltv : M.(state) -> R :=
   fun s => let (ld,_) := dec_rule_finite M in
         Max_{ld} (fun σ => ltv γ σ s).
 
-(* TODO(Kody) : Once we have Finite A -> Finite B -> Finite (A -> B), get rid of these hypotheses. *)
 (* The optimal value function satisfies the optimal Bellman equation. *)
 Theorem max_ltv_eq_fixpt :
   forall init, fixpt (bellman_max_op γ) init = max_ltv.
@@ -2189,9 +2187,28 @@ Proof.
        change _ with (Rfct_le M.(state) (ltv γ π) (fixpt (bellman_max_op γ) init)).
        eapply ltv_Rfct_le_fixpt ; eauto.
     ++ rewrite map_not_nil. apply not_nil_exists.
-       set (π := nonempty_dec_rule M). exists π.
+       exists (nonempty_dec_rule M). 
        apply Hld.
 Qed.  
+
+
+Theorem bellman_iterate :
+  forall init,
+    lim (fun P => eventually (fun n : nat => P (@fixed_point.iter (CompleteNormedModule.UniformSpace R_AbsRing (@Rfct_CompleteNormedModule (state M) (fs M)))
+ (bellman_max_op γ) n init))) = max_ltv.
+Proof.
+  intros init.
+  assert (h1 : forall x : Rfct M.(state), (fun _ => True) x -> (fun _ => True) (bellman_max_op γ x)) by trivial. 
+  assert (h2 : exists a : @Rfct M.(state) (fs M), (fun _ => True) a) by (split ; trivial).
+  assert (h3 : my_complete (fun _ : @Rfct_CompleteNormedModule (state M) (fs M) => True)) by (apply closed_my_complete ; apply closed_true).
+  destruct (FixedPoint _ (bellman_max_op γ) (fun _ => True) h1 h2 h3 (is_contraction_bellman_max_op γ hγ)) as [? [? [? [? Hsub]]]].
+  specialize (Hsub init I).
+  rewrite Hsub.
+  assert (x = fixpt (bellman_max_op γ) init).
+  eapply (fixpt_is_unique (is_contraction_bellman_max_op γ hγ) (fun _ => True)) ; eauto.
+  apply closed_true.
+  now rewrite <-(max_ltv_eq_fixpt init).
+Qed.
 
 End order.
 
