@@ -752,7 +752,7 @@ Record MDP := mkMDP {
  fa :> forall s, Finite (act s);
 
  (* The state space and the fibered action spaces are nonempty. *)
- ns : NonEmpty (state) ;
+ ne : NonEmpty (state) ;
  na : forall s, NonEmpty (act s);
  (* Probabilistic transition structure. 
     t(s,a,s') is the probability that the next state is s' given that you take action a in state s.
@@ -1796,7 +1796,7 @@ Section operator.
    *)
   
 Open Scope R_scope. 
-Context {M : MDP} {finm : Finite (state M)} (γ D : R).
+Context {M : MDP} (γ D : R).
 Context (hγ : (0 <= γ < 1)%R).
 
 Arguments reward {_}.
@@ -1805,8 +1805,7 @@ Arguments t {_}.
 
 Context (bdd :  (forall s s': M.(state), forall σ : dec_rule M, Rabs (reward s (σ s) s') <= D)).
 
-
-Definition bellman_op (π : dec_rule M) : Rfct M.(state) -> Rfct M.(state) :=
+Definition bellman_op (π : dec_rule M) : @Rfct M.(state) (fs M) -> @Rfct M.(state) (fs M) :=
   fun W => fun s => (step_expt_reward π s + γ*(expt_value (t s (π s)) W)). 
 
 
@@ -1818,7 +1817,7 @@ Proof.
   ++ unfold bellman_op.
      exists (1/2). split ; [lra | ].
      unfold is_Lipschitz. split ; trivial ; [lra | ].
-     destruct finm as [ls Hls].
+     destruct (fs M) as [ls Hls].
      intros f g. intros r Hr Hfgr.
      rewrite e. unfold ball_x,ball_y, Rmax_norm.
      simpl. unfold Rmax_ball. simpl. 
@@ -1836,7 +1835,7 @@ Proof.
   - now destruct hγ.
   - unfold is_Lipschitz.
     unfold ball_x,ball_y. simpl.
-    destruct finm as [ls Hls].
+    destruct (fs M) as [ls Hls].
     split.
     -- now destruct hγ. 
     -- intros f g r Hr Hx.
@@ -1905,7 +1904,7 @@ Proof.
   intros a. apply Rge_le. apply HW1W2.
 Qed.
 
-Definition bellman_max_op : Rfct M.(state) -> Rfct M.(state)
+Definition bellman_max_op : @Rfct M.(state) (fs M) -> @Rfct M.(state) (fs M)
   := 
     fun W => fun s => let (la,_) := fa M s in
                 Max_{la}( fun a => expt_value (t s a) (reward s a) + γ*(expt_value (t s a) W)). 
@@ -1938,7 +1937,6 @@ Proof.
 Qed.
 
 
-(* Cut down on these hypotheses. *)
 Lemma bellman_op_bellman_max_le (π : dec_rule M) :
   forall W, Rfct_le M.(state) (bellman_op π W) (bellman_max_op W).
 Proof.
@@ -1955,7 +1953,7 @@ Qed.
    Proposition 5 of http://researchers.lille.inria.fr/~lazaric/Webpage/MVA-RL_Course14_files/notes-lecture-02.pdf
   *)
 Theorem is_contraction_bellman_max_op
-        (ne : NonEmpty M.(state)) :
+        :
  @is_contraction (Rfct_UniformSpace M.(state)) (Rfct_UniformSpace M.(state)) bellman_max_op.
 Proof.
   unfold is_contraction.
@@ -1963,7 +1961,7 @@ Proof.
    +++ unfold bellman_max_op.
      exists (1/2). split ; [lra | ].
      unfold is_Lipschitz. split ; trivial ; [lra | ].
-     destruct finm as [ls Hls].
+     destruct (fs M) as [ls Hls].
      intros f g. intros r Hr Hfgr.
      rewrite e. unfold ball_x,ball_y, Rmax_norm.
      simpl. unfold Rmax_ball. simpl.
@@ -1983,7 +1981,7 @@ Proof.
     ++ now destruct hγ.
     ++ intros f g r Hr Hfg.
        repeat red in Hfg. repeat red.
-       unfold Rmax_norm in *. destruct finm as [ls Hls].
+       unfold Rmax_norm in *. destruct (fs M) as [ls Hls].
        destruct (is_nil_dec ls).
        --- subst ; simpl in *. exfalso. apply Hls.
            apply ne.  
@@ -2033,7 +2031,7 @@ Qed.
   functions. Lemma 1 from http://researchers.lille.inria.fr/~lazaric/Webpage/MVA-RL_Course14_files/notes-lecture-02.pdf
   The proof uses a contraction coinductive proof rule. 
  *)
-Lemma ltv_Rfct_le_fixpt (ne : NonEmpty M.(state)) (π : dec_rule M) :
+Lemma ltv_Rfct_le_fixpt (π : dec_rule M) :
  forall init, Rfct_le M.(state) (ltv γ π) (fixpt (bellman_max_op) init). 
 Proof.
   intros init.
@@ -2056,7 +2054,7 @@ Definition greedy init: dec_rule M :=
                           γ*(expt_value (t s a) (V' init))).
 
 
-Lemma exists_fixpt_policy_aux (ne : NonEmpty M.(state)):
+Lemma exists_fixpt_policy_aux :
   forall init,
   let V' :=  fixpt bellman_max_op in
   let σ' := greedy init in
@@ -2069,7 +2067,7 @@ Proof.
   destruct (M s0). 
    rewrite (argmax_is_max _ (fun a =>  expt_value (t s0 a) (reward s0 a) + γ * expt_value (t s0 a) (fixpt (bellman_max_op) init))). 
   replace ( Max_{elms} (fun a => expt_value (t s0 a) (reward s0 a) + γ * expt_value (t s0 a) (fixpt (bellman_max_op) init))) with (bellman_max_op (fixpt (bellman_max_op) init) s0).
-  apply equal_f. apply (fixpt_is_fixpt (is_contraction_bellman_max_op ne) (fun _ => True)) ; trivial.
+  apply equal_f. apply (fixpt_is_fixpt (is_contraction_bellman_max_op) (fun _ => True)) ; trivial.
   apply closed_true.
   unfold bellman_max_op. destruct (M s0).
   assert (H : equivlist elms elms0) by (intros ; split ; trivial).
@@ -2081,7 +2079,7 @@ Qed.
   Proposition 1 from http://researchers.lille.inria.fr/~lazaric/Webpage/MVA-RL_Course14_files/notes-lecture-02.pdf
   The proof uses a contraction coinductive proof rule. 
  *)
-Lemma exists_fixpt_policy (ne : NonEmpty M.(state)) : forall init,
+Lemma exists_fixpt_policy  : forall init,
   let V' :=  fixpt (bellman_max_op) in
   let σ' := greedy init in
   ltv γ σ' = V' init.
@@ -2089,8 +2087,7 @@ Proof.
   intros init V' σ'. apply functional_extensionality.
   intro s0. 
   apply Rle_antisym.
-  - set (ltv_Rfct_le_fixpt ne). unfold Rfct_le in r.
-    eapply r ; eauto.
+  - eapply ltv_Rfct_le_fixpt ; eauto.
   - revert s0.
     change _ with (Rfct_le _ (fixpt (bellman_max_op) init) (ltv γ (greedy init))).
     rewrite Rfct_le_ge_symm.
@@ -2109,7 +2106,7 @@ End operator.
 Section order.
   
 Open Scope R_scope. 
-Context {M : MDP} (γ D : R) (fm : Finite (state M)).
+Context {M : MDP} (γ D : R).
 Context (hγ : (0 <= γ < 1)%R).
 Arguments reward {_}.
 Arguments outcomes {_}.
@@ -2172,8 +2169,8 @@ Definition max_ltv : M.(state) -> R :=
 
 (* TODO(Kody) : Once we have Finite A -> Finite B -> Finite (A -> B), get rid of these hypotheses. *)
 (* The optimal value function satisfies the optimal Bellman equation. *)
-Theorem max_ltv_eq_fixpt (ne : NonEmpty (state M)) :
- forall init, fixpt (bellman_max_op γ) init = max_ltv.
+Theorem max_ltv_eq_fixpt :
+  forall init, fixpt (bellman_max_op γ) init = max_ltv.
 Proof.
   intros init.
   apply functional_extensionality.
