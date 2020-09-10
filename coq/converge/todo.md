@@ -12,7 +12,6 @@
 * If Dvoretzky is done, Q-learning is within reach. 
 
 # Refactoring:
-* Cut down on hypotheses where we assume that the set of decision rules is also finite/nonempty. 
 * Delete the `ltv_gen` section in `mdp.v`. Break out `Rfct` stuff into a new file. Break out quotients into a new file. Delete everything related to Streams. 
 
 # Paper:
