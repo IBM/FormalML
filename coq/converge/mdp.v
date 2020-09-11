@@ -784,6 +784,19 @@ Qed.
 Global Instance nonempty_dec_rule (M : MDP) : NonEmpty (dec_rule M)
   := fun s => na M s.
 
+(* For every s, we get a list of all actions available at that state. *)
+Definition act_list (M : MDP) : forall s, list (act M s) :=
+  fun s => let (la, Hla) := fa M s in la.
+
+(* For every s, we get a proof that the list of actions is not nil. *)
+Lemma act_list_not_nil (M : MDP) : forall s, [] <> act_list M s.
+Proof. 
+  intros s.
+  apply not_nil_exists.
+  unfold act_list.
+  destruct (fa M s). now exists (na M s).
+Qed.  
+
 (*
    In general,a policy is a *stream* of decision rules. 
    A stream of constant decision rules is called a *stationary policy*. 
@@ -2221,22 +2234,6 @@ Arguments outcomes {_}.
 Arguments t {_}.
 
 
-(* π'(s) = argmax_{a ∈ A(s)} (Q^{π}(s,a)) *)
-Program Definition improved (σ : dec_rule M) : dec_rule M :=
-  fun s =>
-  let (la,Hla) := (fa M s) in
-  let pt := (na M s) in
-  @argmax _ la _
-          (fun a => expt_value (t s a) (fun s' => reward s a s' + γ*(ltv γ σ s'))). 
-Next Obligation.
-  apply not_nil_exists.
-  exists (σ s).
-  apply Hla.
-Qed.
-
-Definition improved' (σ : dec_rule M) {la} (hla : forall s, [] <> la s) : dec_rule M :=
-  fun s =>
-    argmax (hla s) (fun a => expt_value (t s a) (fun s' => reward s a s' + γ*(ltv γ σ s'))).
 
 Context {D : R} (hγ : 0<=γ<1)
         (bdd : forall s s': M.(state), forall σ, Rabs (reward s (σ s) s') <= D).
@@ -2271,6 +2268,48 @@ Proof.
     replace (ltv γ σ s) with (bellman_op γ σ (ltv γ σ) s)
       by (now rewrite <-(ltv_bellman_eq_ltv γ D hγ bdd σ)).
     apply Hexpt.
+Qed.
+
+(* In this definition we explicitly list the action space. *)
+(* π'(s) = argmax_{a ∈ A(s)} (Q^{π}(s,a)) *)
+Definition improved (σ : dec_rule M) {la : forall s, list (act M s)} (hla : forall s, [] <> la s) : dec_rule M :=
+  fun s => argmax (hla s) (fun a => expt_value (t s a) (fun s' => reward s a s' + γ*(ltv γ σ s'))). 
+
+
+Lemma improved_is_better_aux (σ : dec_rule M) la (hla : forall s, [] <> la s) :
+ forall s, bellman_op γ (improved σ hla) (ltv γ σ) s = Max_{ la s}(fun a : act M s => expt_value (t s a) (fun s' : state M => reward s a s' + γ * ltv γ σ s')).
+Proof.
+  intros s.
+  unfold bellman_op.
+  unfold step_expt_reward.
+  rewrite <-expt_value_const_mul.
+  rewrite <-expt_value_add.
+  unfold improved.
+  set (argmax_is_max (hla s)(fun a : act M s => expt_value (t s a) (fun s' : state M => reward s a s' + γ * ltv γ σ s'))). simpl in e. now rewrite e.
+Qed.
+
+Lemma improved_is_better (σ : dec_rule M) la (hla : forall s, [] <> la s)
+      (H : forall σ : dec_rule M, forall s, In (σ s) (la s)):
+  forall s, bellman_op γ (improved σ hla) (ltv γ σ) s >= bellman_op γ σ (ltv γ σ) s.
+Proof.
+  intros s.
+  rewrite improved_is_better_aux.
+  apply Rle_ge. unfold bellman_op.
+  unfold step_expt_reward.
+  rewrite <-expt_value_const_mul.
+  rewrite <-expt_value_add.
+  apply Rmax_spec.
+  rewrite in_map_iff. exists (σ s).
+  split ; trivial.
+Qed.
+
+
+Lemma improved_tot (σ : dec_rule M) : forall s, 
+    bellman_op γ (improved σ (act_list_not_nil M)) (ltv γ σ) s >= bellman_op γ σ (ltv γ σ) s.
+Proof.
+  apply improved_is_better.
+  unfold act_list. intros σ0 s.
+  now destruct (M s).
 Qed.
 
 End improve.
