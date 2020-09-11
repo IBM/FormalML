@@ -2220,32 +2220,54 @@ Arguments reward {_}.
 Arguments outcomes {_}.
 Arguments t {_}.
 
-Program Definition improvement (σ : dec_rule M) : dec_rule M :=
+
+(* π'(s) = argmax_{a ∈ A(s)} (Q^{π}(s,a)) *)
+Program Definition improved (σ : dec_rule M) : dec_rule M :=
   fun s =>
   let (la,Hla) := (fa M s) in
   let pt := (na M s) in
   @argmax _ la _
-          (fun a => expt_value (t s a) (ltv γ σ)). 
+          (fun a => expt_value (t s a) (fun s' => reward s a s' + γ*(ltv γ σ s'))). 
 Next Obligation.
   apply not_nil_exists.
   exists (σ s).
   apply Hla.
 Qed.
 
+Definition improved' (σ : dec_rule M) {la} (hla : forall s, [] <> la s) : dec_rule M :=
+  fun s =>
+    argmax (hla s) (fun a => expt_value (t s a) (fun s' => reward s a s' + γ*(ltv γ σ s'))).
+
 Context {D : R} (hγ : 0<=γ<1)
         (bdd : forall s s': M.(state), forall σ, Rabs (reward s (σ s) s') <= D).
 
-Theorem policy_improvement (σ τ : dec_rule M) :
+Theorem policy_improvement_1 (σ τ : dec_rule M) :
   (forall s, bellman_op γ τ (ltv γ σ) s >= bellman_op γ σ (ltv γ σ) s)
   -> forall s, ltv γ τ s >= ltv γ σ s.
 Proof.
-  intros Hexpt.
+  intros Hexpt. unfold bellman_op in Hexpt. unfold step_expt_reward in Hexpt.
   set (Hτ := ltv_bellman_op_fixpt γ D hγ bdd τ (ltv γ τ)).
   rewrite Hτ.
   apply contraction_coinduction_Rfct_ge.
   - apply is_contraction_bellman_op ; auto.
   - apply bellman_op_monotone_ge ; auto.
   - unfold Rfct_ge. intros s.
+    replace (ltv γ σ s) with (bellman_op γ σ (ltv γ σ) s)
+      by (now rewrite <-(ltv_bellman_eq_ltv γ D hγ bdd σ)).
+    apply Hexpt.
+Qed.
+
+Theorem policy_improvement_2 (σ τ : dec_rule M) :
+  (forall s, bellman_op γ τ (ltv γ σ) s <= bellman_op γ σ (ltv γ σ) s)
+  -> forall s, ltv γ τ s <= ltv γ σ s.
+Proof.
+  intros Hexpt.
+  set (Hτ := ltv_bellman_op_fixpt γ D hγ bdd τ (ltv γ τ)).
+  rewrite Hτ.
+  apply contraction_coinduction_Rfct_le.
+  - apply is_contraction_bellman_op ; auto.
+  - apply bellman_op_monotone_le ; auto.
+  - unfold Rfct_le. intros s.
     replace (ltv γ σ s) with (bellman_op γ σ (ltv γ σ) s)
       by (now rewrite <-(ltv_bellman_eq_ltv γ D hγ bdd σ)).
     apply Hexpt.
