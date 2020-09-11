@@ -1785,8 +1785,8 @@ Qed.
 
 End ltv.
 
-
 Section operator.
+
 
   (* 
      Proofs that the bellman operator and maximal bellman operator are contractions 
@@ -2044,15 +2044,13 @@ Proof.
   - assumption.
 Qed.
 
-
 Definition greedy init: dec_rule M :=
   fun s => let V' := fixpt bellman_max_op in
         let (la,Hla) := fa M s in
         let pt := na M s in  
         @argmax (act M s) la (proj2 (not_nil_exists _) (ex_intro _ pt (Hla pt)))
                 (fun a => expt_value (t s a) (reward s a) +
-                          γ*(expt_value (t s a) (V' init))).
-
+                       γ*(expt_value (t s a) (V' init))).
 
 Lemma exists_fixpt_policy_aux :
   forall init,
@@ -2213,4 +2211,44 @@ Qed.
 End order.
 
 
-  
+Section improve.
+
+
+
+Context {M : MDP} (γ : R).
+Arguments reward {_}.
+Arguments outcomes {_}.
+Arguments t {_}.
+
+Program Definition improvement (σ : dec_rule M) : dec_rule M :=
+  fun s =>
+  let (la,Hla) := (fa M s) in
+  let pt := (na M s) in
+  @argmax _ la _
+          (fun a => expt_value (t s a) (ltv γ σ)). 
+Next Obligation.
+  apply not_nil_exists.
+  exists (σ s).
+  apply Hla.
+Qed.
+
+Context {D : R} (hγ : 0<=γ<1)
+        (bdd : forall s s': M.(state), forall σ, Rabs (reward s (σ s) s') <= D).
+
+Theorem policy_improvement (σ τ : dec_rule M) :
+  (forall s, bellman_op γ τ (ltv γ σ) s >= bellman_op γ σ (ltv γ σ) s)
+  -> forall s, ltv γ τ s >= ltv γ σ s.
+Proof.
+  intros Hexpt.
+  set (Hτ := ltv_bellman_op_fixpt γ D hγ bdd τ (ltv γ τ)).
+  rewrite Hτ.
+  apply contraction_coinduction_Rfct_ge.
+  - apply is_contraction_bellman_op ; auto.
+  - apply bellman_op_monotone_ge ; auto.
+  - unfold Rfct_ge. intros s.
+    replace (ltv γ σ s) with (bellman_op γ σ (ltv γ σ) s)
+      by (now rewrite <-(ltv_bellman_eq_ltv γ D hγ bdd σ)).
+    apply Hexpt.
+Qed.
+
+End improve.

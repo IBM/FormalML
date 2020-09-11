@@ -7,7 +7,6 @@
 * Even without this piece, the existing proof may still be valuable (but it needs a story to tie it in with the rest). For example, consider : http://www.gatsby.ucl.ac.uk/~dayan/papers/cjch.pdf
 
 ## MDPs/RL
-* Prove the policy improvement theorem. 
 * State and prove policy+value iteration. 
 * If Dvoretzky is done, Q-learning is within reach. 
 
