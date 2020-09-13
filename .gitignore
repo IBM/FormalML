@@ -18,3 +18,4 @@ bin
 *.cache
 *.v#
 .Makefile.coq.d
+documentation/html
