@@ -2,7 +2,6 @@
 include Makefile.coq_modules
 
 COQ_FILES = $(addprefix coq/,$(MODULES:%=%.v))
-GLOB_FILES = $(addprefix coq/,$(MODULES:%=%.glob))
 
 all: coq ocaml
 
@@ -22,10 +21,13 @@ clean-ocaml:
 	@$(MAKE) -C ocaml clean
 
 
+COQ_FILES_FOR_DOC = $(MODULES:%=%.v)
+GLOB_FILES_FOR_DOC = $(MODULES:%=%.glob)
+
 doc: coq
 	mkdir -p documentation/html
 	rm -f documentation/html/*.html
-	coq2html -d documentation/html -base FormalML $(COQ_FILES) $(GLOB_FILES)
+	cd coq && coq2html -d ../documentation/html -base FormalML $(COQ_FILES_FOR_DOC) $(GLOB_FILES_FOR_DOC)
 
 test: coq ocaml
 	./bin/nnopt
