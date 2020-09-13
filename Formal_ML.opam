@@ -18,8 +18,12 @@ depends: [
   "base64"
   "menhir"
   "csv"
+  "coq-coq2html" {with-doc}
 ]
-build: make
+build: [[make]
+       [make "doc"] {with-doc}
+       [make "test"] {with-test}
+       ]
 install: [make]
 dev-repo: "git+https://github.com/IBM/FormalML.git"
 url {
