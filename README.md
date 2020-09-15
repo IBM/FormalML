@@ -1,7 +1,7 @@
 # Formal_ML [![Build Status](https://travis-ci.com/IBM/FormalML.svg?branch=master)](https://travis-ci.com/IBM/FormalML)
 Formalization of Machine Learning Theory with Applications to Program Synthesis
 
-This repository contains a partial formalization of key results from https://arxiv.org/pdf/1804.07795.pdf
+This repository contains a partial formalization of key results from https://arxiv.org/abs/1804.07795
 
 ## Getting Started
 
