@@ -740,27 +740,27 @@ Open Scope monad_scope.
 Open Scope R_scope.
 
 Record MDP := mkMDP {
- (* State and action spaces. *)
+ (** State and action spaces. *)
  state : Type;
  act  : forall s: state, Type;
  
- (* The state space has decidable equality.*)
+ (** The state space has decidable equality.*)
  st_eqdec :> EqDec state eq;
 
- (* The state and action spaces are finite. *)
+ (** The state and action spaces are finite. *)
  fs :> Finite (state) ;
  fa :> forall s, Finite (act s);
 
- (* The state space and the fibered action spaces are nonempty. *)
+ (** The state space and the fibered action spaces are nonempty. *)
  ne : NonEmpty (state) ;
  na : forall s, NonEmpty (act s);
- (* Probabilistic transition structure. 
+ (** Probabilistic transition structure. 
     t(s,a,s') is the probability that the next state is s' given that you take action a in state s.
     One can also consider to to be an act-indexed collection of Kliesli arrows of Pmf. 
  *)
- t :  forall s : state, act s -> Pmf state;
- (* Reward when you move to s' from s by taking action a. *)
- reward : forall s : state, act s -> state -> R                                
+ t :  forall s : state, (act s -> Pmf state);
+ (** Reward when you move to s' from s by taking action a. *)
+ reward : forall s : state, (act s -> state -> R)                                
 }.
 
 Arguments outcomes {_}.
@@ -2219,6 +2219,23 @@ Proof.
   eapply (fixpt_is_unique (is_contraction_bellman_max_op γ hγ) (fun _ => True)) ; eauto.
   apply closed_true.
   now rewrite <-(max_ltv_eq_fixpt init).
+Qed.
+
+Theorem bellman_op_iterate :
+  forall init π,
+    lim (fun P => eventually (fun n : nat => P (@fixed_point.iter (CompleteNormedModule.UniformSpace R_AbsRing (@Rfct_CompleteNormedModule (state M) (fs M))) (bellman_op γ π) n init))) = ltv γ π.
+Proof.
+  intros init π.
+  assert (h1 : forall x : Rfct M.(state), (fun _ => True) x -> (fun _ => True) (bellman_op γ π x)) by trivial. 
+  assert (h2 : exists a : @Rfct M.(state) (fs M), (fun _ => True) a) by (split ; trivial).
+  assert (h3 : my_complete (fun _ : @Rfct_CompleteNormedModule (state M) (fs M) => True)) by (apply closed_my_complete ; apply closed_true).
+  destruct (FixedPoint _ (bellman_op γ π) (fun _ => True) h1 h2 h3 (is_contraction_bellman_op γ hγ π)) as [? [? [? [? Hsub]]]].
+  specialize (Hsub init I).
+  rewrite Hsub.
+  assert (x = fixpt (bellman_op γ π) init).
+  eapply (fixpt_is_unique (is_contraction_bellman_op γ hγ π) (fun _ => True)) ; eauto.
+  apply closed_true. rewrite <-H0. 
+  rewrite (ltv_bellman_op_fixpt γ D hγ bdd π init) ; now subst.
 Qed.
 
 End order.
