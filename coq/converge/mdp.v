@@ -2320,10 +2320,14 @@ Proof.
   split ; trivial.
 Qed.
 
+(* Computes the greedy policy from V^σ by taking the max over all actions. *)
+Definition improved_tot (σ : dec_rule M) : dec_rule M :=
+  improved σ (act_list_not_nil M).
 
-Lemma improved_tot (σ : dec_rule M) : forall s, 
-    bellman_op γ (improved σ (act_list_not_nil M)) (ltv γ σ) s >= bellman_op γ σ (ltv γ σ) s.
+Lemma improved_tot_better (σ : dec_rule M) : forall s, 
+    bellman_op γ (improved_tot σ) (ltv γ σ) s >= bellman_op γ σ (ltv γ σ) s.
 Proof.
+  unfold improved_tot.
   apply improved_is_better.
   unfold act_list. intros σ0 s.
   now destruct (M s).
