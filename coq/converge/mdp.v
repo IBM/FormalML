@@ -2371,4 +2371,11 @@ Proof.
   now destruct (M s).
 Qed.
 
+Theorem improved_has_better_value (σ : dec_rule M) : forall s,
+    ltv γ (improved_tot σ) s >= ltv γ σ s.
+Proof.
+  apply policy_improvement_1.
+  apply improved_tot_better.
+Qed.
+
 End improve.
