@@ -934,6 +934,22 @@ Definition Rfct_le (f g : Rfct A) := forall a : A, f a <= g a.
 
 Definition Rfct_ge (f g : Rfct A) := forall a : A, f a >= g a.
 
+Global Instance Rfct_le_pre : PreOrder Rfct_le.
+Proof.
+  unfold Rfct_le.
+  split; red; intros.
+  - lra.
+  - specialize (H a); specialize (H0 a); lra.
+Qed.
+
+Global Instance Rfct_ge_pre : PreOrder Rfct_ge.
+Proof.
+  unfold Rfct_ge.
+  split; red; intros.
+  - lra.
+  - specialize (H a); specialize (H0 a); lra.
+Qed.
+
 Lemma Rfct_not_ge_lt (f g  : Rfct A) : not (Rfct_ge f g) <-> (exists a : A, f a < g a).
 Proof.
   unfold Rfct_ge.
@@ -1672,6 +1688,32 @@ Section contraction_coinduction.
     - apply (fixpt_init_unique hF (fun _ => True)) ; trivial.
       apply closed_true.
   Qed.
+
+  (* same as contraction_coinduction_Rfct_le, but expressed as a ge *)
+  Corollary contraction_coinduction_Rfct_le'
+          {F} (hF : @is_contraction (Rfct_CompleteSpace A) (Rfct_CompleteSpace A) F)
+          (hM : monotone_le A F)    
+    : forall f init, Rfct_ge A f (F f) -> Rfct_ge A f (fixpt F init). 
+  Proof.
+    intros f init Hfle.
+    apply Rfct_le_ge_symm.
+    apply Rfct_le_ge_symm in Hfle.
+    apply contraction_coinduction_Rfct_le; trivial.
+  Qed.
+
+  (* same as contraction_coinduction_Rfct_ge, but expressed as a le *)
+  Corollary contraction_coinduction_Rfct_ge'
+          {F} (hF : @is_contraction (Rfct_CompleteSpace A) (Rfct_CompleteSpace A) F)
+          (hM : monotone_ge A F)    
+    : forall f init, Rfct_le A f (F f) -> Rfct_le A f (fixpt F init). 
+  Proof.
+    intros f init Hfle.
+    apply Rfct_le_ge_symm.
+    apply Rfct_le_ge_symm in Hfle.
+    apply contraction_coinduction_Rfct_ge; trivial.
+  Qed.
+
+
  
 End contraction_coinduction. 
 
@@ -2048,13 +2090,11 @@ Lemma ltv_Rfct_le_fixpt (π : dec_rule M) :
  forall init, Rfct_le M.(state) (ltv γ π) (fixpt (bellman_max_op) init). 
 Proof.
   intros init.
-  set (Hπ' := bellman_op_bellman_max_le π (ltv γ π)).
-  rewrite <-ltv_bellman_eq_ltv in Hπ'. rewrite Rfct_le_ge_symm in Hπ'.
-  rewrite Rfct_le_ge_symm.
-  apply (contraction_coinduction_Rfct_ge).
+  apply contraction_coinduction_Rfct_ge'.
   - apply is_contraction_bellman_max_op ; eauto.
   - apply bellman_max_op_monotone_ge.
-  - assumption.
+  - rewrite ltv_bellman_eq_ltv at 1.
+    apply bellman_op_bellman_max_le.
 Qed.
 
 Definition greedy init: dec_rule M :=
@@ -2078,11 +2118,11 @@ Proof.
   destruct (M s0). 
    rewrite (argmax_is_max _ (fun a =>  expt_value (t s0 a) (reward s0 a) + γ * expt_value (t s0 a) (fixpt (bellman_max_op) init))). 
   replace ( Max_{elms} (fun a => expt_value (t s0 a) (reward s0 a) + γ * expt_value (t s0 a) (fixpt (bellman_max_op) init))) with (bellman_max_op (fixpt (bellman_max_op) init) s0).
-  apply equal_f. apply (fixpt_is_fixpt (is_contraction_bellman_max_op) (fun _ => True)) ; trivial.
-  apply closed_true.
-  unfold bellman_max_op. destruct (M s0).
-  assert (H : equivlist elms elms0) by (intros ; split ; trivial).
-  now rewrite H.
+  - apply equal_f. apply (fixpt_is_fixpt (is_contraction_bellman_max_op) (fun _ => True)) ; trivial.
+    apply closed_true.
+  - unfold bellman_max_op. destruct (M s0).
+    assert (H : equivlist elms elms0) by (intros ; split ; trivial).
+    now rewrite H.
 Qed.
 
 (*
@@ -2090,29 +2130,24 @@ Qed.
   Proposition 1 from http://researchers.lille.inria.fr/~lazaric/Webpage/MVA-RL_Course14_files/notes-lecture-02.pdf
   The proof uses a contraction coinductive proof rule. 
  *)
+
 Lemma exists_fixpt_policy  : forall init,
   let V' :=  fixpt (bellman_max_op) in
   let σ' := greedy init in
   ltv γ σ' = V' init.
 Proof.
-  intros init V' σ'. apply functional_extensionality.
-  intro s0. 
-  apply Rle_antisym.
-  - eapply ltv_Rfct_le_fixpt ; eauto.
-  - revert s0.
-    change _ with (Rfct_le _ (fixpt (bellman_max_op) init) (ltv γ (greedy init))).
-    rewrite Rfct_le_ge_symm.
-    rewrite (ltv_bellman_op_fixpt _ init).
-    apply contraction_coinduction_Rfct_ge.
-    ++ apply is_contraction_bellman_op.
-    ++ apply bellman_op_monotone_ge.
-    ++ intro init0. 
-       right. apply equal_f.
-       eapply exists_fixpt_policy_aux ; eauto.
+  intros init V' σ'.
+  apply (@Rfct_le_antisym _ (fs M)); split.  
+  - eapply ltv_Rfct_le_fixpt.
+  - rewrite (ltv_bellman_op_fixpt _ init).
+    apply contraction_coinduction_Rfct_ge'.
+    + apply is_contraction_bellman_op.
+    + apply bellman_op_monotone_ge.
+    + unfold V', σ'.
+      now rewrite exists_fixpt_policy_aux.
 Qed.
 
 End operator.
-
 
 Section order.
   
