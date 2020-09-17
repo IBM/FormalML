@@ -2091,7 +2091,7 @@ Lemma ltv_Rfct_le_fixpt (π : dec_rule M) :
 Proof.
   intros init.
   apply contraction_coinduction_Rfct_ge'.
-  - apply is_contraction_bellman_max_op ; eauto.
+  - apply is_contraction_bellman_max_op.
   - apply bellman_max_op_monotone_ge.
   - rewrite ltv_bellman_eq_ltv at 1.
     apply bellman_op_bellman_max_le.
