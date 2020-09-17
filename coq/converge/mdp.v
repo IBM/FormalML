@@ -767,6 +767,8 @@ Arguments outcomes {_}.
 Arguments t {_}.
 Arguments reward {_}.
 
+Global Existing Instance fs.
+
 (* 
    A decision rule is a mapping from states to actions.
 *)
@@ -2131,13 +2133,14 @@ Qed.
   The proof uses a contraction coinductive proof rule. 
  *)
 
+
 Lemma exists_fixpt_policy  : forall init,
   let V' :=  fixpt (bellman_max_op) in
   let σ' := greedy init in
   ltv γ σ' = V' init.
 Proof.
   intros init V' σ'.
-  apply (@Rfct_le_antisym _ (fs M)); split.  
+  eapply Rfct_le_antisym; split.
   - eapply ltv_Rfct_le_fixpt.
   - rewrite (ltv_bellman_op_fixpt _ init).
     apply contraction_coinduction_Rfct_ge'.
