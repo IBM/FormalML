@@ -2107,7 +2107,7 @@ Definition greedy init: dec_rule M :=
                 (fun a => expt_value (t s a) (reward s a) +
                        γ*(expt_value (t s a) (V' init))).
 
-Lemma exists_fixpt_policy_aux :
+Lemma greedy_argmax_is_max :
   forall init,
   let V' :=  fixpt bellman_max_op in
   let σ' := greedy init in
@@ -2147,7 +2147,7 @@ Proof.
     + apply is_contraction_bellman_op.
     + apply bellman_op_monotone_ge.
     + unfold V', σ'.
-      now rewrite exists_fixpt_policy_aux.
+      now rewrite greedy_argmax_is_max.
 Qed.
 
 End operator.
