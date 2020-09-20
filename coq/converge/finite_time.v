@@ -43,8 +43,18 @@ Definition expt_reward (Π : list(dec_rule M)) (init : M.(state)) (σ : dec_rule
 *)
 
 
+Theorem expt_reward_nil :
+  forall s (σ : dec_rule M), expt_reward nil s σ = (step_expt_reward σ s).
+Proof.
+  intros.
+  unfold expt_reward.
+  unfold kliesli_iter_left.
+  simpl. now rewrite expt_value_pure.
+Qed.
+
 Theorem expt_reward_1 π :
-  forall s (σ : dec_rule M), expt_reward [π] s σ = expt_value (t s (π s)) (step_expt_reward σ).
+  forall s (σ : dec_rule M), expt_reward [π] s σ =
+                        expt_value (t s (π s)) (step_expt_reward σ).
 Proof.
 intros.   
 unfold expt_reward.
@@ -53,42 +63,38 @@ simpl. rewrite expt_value_bind.
 now rewrite expt_value_pure.
 Qed.
 
-Theorem expt_reward_2 (π0 π1 : dec_rule M) :
-  forall s, expt_reward (π0 :: π1 :: nil) s = expt_value (t s (π0 s)) (step_expt_reward π1).
+Theorem expt_reward_2 (π0 π1 : dec_rule M) σ :
+  forall s, expt_reward (π0 :: π1 :: nil) s σ =
+       expt_value (t s (π0 s)) (fun s => expt_reward (π1::nil) s σ).
 Proof.
   intros.
   unfold expt_reward.
+  unfold kliesli_iter_left.
   simpl.
-  rewrite expt_value_bind.
-  rewrite expt_value_pure.
-  reflexivity.
-Qed.
-
-Theorem expt_reward_3 (π0 π1 π2 : dec_rule M) :
-  forall s, expt_reward (π0 :: π1 :: π2 :: nil) s =
-       expt_value (t s (π0 s)) (expt_reward (π1 :: π2 :: nil)).
-Proof.
-  intros.
-  unfold expt_reward.
-  simpl. rewrite expt_value_bind.
-  rewrite expt_value_bind.
+  do 2 rewrite expt_value_bind.
   rewrite expt_value_pure.
   f_equal.
   apply functional_extensionality.
-  intros.
-  rewrite expt_value_bind.
+  intros. rewrite expt_value_bind.
   rewrite expt_value_pure.
   reflexivity.
 Qed.
 
+(* We case on the fact that Π is nonempty becuse we need to provide a default for the `nth` function, even though the default case never actually occurs.  *)
 Definition ltv_gen (Π : list(dec_rule M)) :=
-  fun s : M.(state) =>  sum_f_R0' (fun n => γ^n*expt_reward (firstn (S n) Π) s)(length Π).
+  fun s : M.(state) =>
+    match Π with
+    | nil => 0
+    | π :: Π' => sum_f_R0' (fun n => γ^n*expt_reward (firstn n Π) s (nth n Π π))(length Π)
+    end.
+
+
 
 Lemma ltv_gen_1 π : forall s, ltv_gen [π] s = step_expt_reward π s.
 Proof.
   intros.
   unfold ltv_gen.
-  simpl. rewrite expt_reward_1.
+  simpl. rewrite expt_reward_nil.
   lra.
 Qed. 
 
@@ -132,24 +138,103 @@ Lemma ltv_gen_2 π π1 : forall s,
 Proof.
   intros.
   unfold ltv_gen.
-  simpl. rewrite expt_reward_1.
+  simpl. rewrite expt_reward_nil.
   f_equal. lra.
   f_equal. lra.
-  rewrite expt_reward_2.
+  rewrite expt_reward_1.
   f_equal. cbn. apply functional_extensionality.
   intro s0. ring.
 Qed.
 
-Lemma expt_reward_cons π πs:
-  forall s, expt_reward (π :: πs) s = expt_value (t s (π s)) (expt_reward πs).
+
+Lemma kliesli_iter_left_cons π π0 : forall s,
+    (kliesli_iter_left (π :: π0 :: nil) s) =
+    Pmf_bind (t s (π s)) (fun s0 => kliesli_iter_left [π0] s0).
 Proof.
   intros.
-  Print step_expt_reward.
+  unfold kliesli_iter_left.
+  simpl. rewrite Pmf_bind_of_bind.
+  simpl. rewrite Pmf_bind_of_ret.
+  f_equal.
+  apply functional_extensionality.
+  intros.  rewrite Pmf_bind_of_ret.
+  reflexivity.
+Qed.
+
+Check ltv_corec.
+Lemma kliesli_iter_left_cons' π πs : forall s,
+    (kliesli_iter_left (π :: πs) s) =
+    Pmf_bind (t s (π s)) (fun s0 => kliesli_iter_left πs s0).
+Proof.
+  intros.
+  induction πs.
+  - simpl. unfold kliesli_iter_left. simpl.
+    rewrite Pmf_ret_of_bind. rewrite Pmf_bind_of_ret. reflexivity.
+  - simpl.
+    unfold kliesli_iter_left in *. simpl.
+    simpl in IHπs. rewrite Pmf_bind_of_ret in IHπs.
+    rewrite Pmf_bind_of_bind.
+    rewrite Pmf_bind_of_ret. simpl.
+    assert (Hs : forall s0, Pmf_bind(Pmf_pure s0) (fun s => t s (a s)) = t s0 (a s0)).
+    intros.
+    rewrite Pmf_bind_of_ret. reflexivity.
+    assert (H : Pmf_bind (t s (π s))
+    (fun s0 : state M =>
+     fold_left
+       (fun (p : Pmf (state M)) (π0 : forall x : state M, act M x) =>
+        Pmf_bind p (fun s1 : state M => t s1 (π0 s1))) πs
+       (Pmf_bind (Pmf_pure s0) (fun s1 : state M => t s1 (a s1)))) = Pmf_bind (t s (π s))
+    (fun s0 : state M =>
+     fold_left
+       (fun (p : Pmf (state M)) (π0 : forall x : state M, act M x) =>
+        Pmf_bind p (fun s1 : state M => t s1 (π0 s1))) πs
+       (t s0 (a s0)))).
+    f_equal. apply functional_extensionality.
+    intros.  f_equal. apply Hs.
+    rewrite H. clear H.
+    assert (H1 : Pmf_bind (t s (π s))
+    (fun s0 : state M =>
+     fold_left
+       (fun (p : Pmf (state M)) (π0 : forall x : state M, act M x) =>
+          Pmf_bind p (fun s1 : state M => t s1 (π0 s1))) πs (t s0 (a s0))) =
+                 Pmf_bind (t s (π s))
+    (fun s0 : state M => Pmf_bind (t s (π s))
+           (fun s0 : state M =>
+            fold_left
+              (fun (p : Pmf (state M)) (π : forall x : state M, act M x) =>
+               Pmf_bind p (fun s : state M => t s (π s))) πs (Pmf_pure s0)))).
+    f_equal. apply functional_extensionality.
+    intros.  rewrite IHπs.
+    rewrite IHπs.
+    setoid_rewrite Hs.
+    etransitivity.
+    unfold fold_left.
+    setoid_rewrite IHπs.
+    cbn.
+    setoid_rewrite Pmf_bind_of_ret.
+    unfold kliesli_iter_left in IHπs.  simpl in IHπs.
+    rewrite Pmf_bind_of_ret in IHπs. simpl.
+    setoid_rewrite <-Pmf_bind_of_bind.
+    rewrite <-IHπs.
+    rewrite Pmf_ret_of_bind.
+    setoid_rewrite Pmf_bind_of_ret.
+    rewrite <-IHπs.
+Admitted.
+
+Lemma expt_reward_cons π πs σ:
+  forall s, expt_reward (π :: πs) s σ = expt_value (t s (π s)) (fun s => expt_reward πs s σ).
+Proof.
+  intros.
   unfold expt_reward. simpl.
   induction πs.
-  - rewrite expt_reward_1. unfold expt_reward.
-    simpl.
-    Admitted.
+  - unfold kliesli_iter_left.
+    simpl. rewrite expt_value_bind.
+    rewrite expt_value_pure.
+    f_equal. apply functional_extensionality.
+    intros. now rewrite expt_value_pure.
+  - rewrite kliesli_iter_left_cons.
+    rewrite expt_value_bind. reflexivity.
+Qed.
             
   
 Lemma ltv_gen_cons_aux π (x : nat) (d : dec_rule M) πs :
