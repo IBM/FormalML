@@ -58,10 +58,14 @@ Definition expt_reward_vector (sv : Pmf M.(state)) (Π : list(dec_rule M))  (σ 
   expt_value (kliesli_iter_left_vector sv Π ) (step_expt_reward σ).
 
 
-Definition ltv_gen (default: dec_rule M) (sv: Pmf M.(state)) (Π : list(dec_rule M)) :=
+Definition ltv_gen (sv: Pmf M.(state)) (Π : list(dec_rule M)) :=
     match Π with
     | nil => 0
-    | π :: Π' => sum_f_R0' (fun n => γ^n*expt_reward_vector sv (firstn n Π) (nth n Π default)) (length Π)
+    | π :: Π' => sum_f_R0' (fun n =>
+                            match nth_error Π n with
+                            | Some σ => γ^n*expt_reward_vector sv (firstn n Π) σ
+                            | None => 0
+                            end) (length Π)
     end.
 
 Lemma ltv_gen_cons_term1 sv π: expt_reward_vector sv [] π = expt_value sv (fun s : state M => expt_value (t s (π s)) (reward s (π s))).
@@ -82,9 +86,9 @@ Proof.
   reflexivity.
 Qed.
 
-Theorem ltv_gen_cons (default: dec_rule M) (π: dec_rule M) (πs: list(dec_rule M)) (sv: Pmf M.(state)):
-  ltv_gen default sv (π :: πs) = expt_value sv (step_expt_reward π) +
-                         γ*(ltv_gen default (Pmf_bind (sv) (fun s0 => (t s0 (π s0)))) πs).
+Theorem ltv_gen_cons (π: dec_rule M) (πs: list(dec_rule M)) (sv: Pmf M.(state)):
+  ltv_gen sv (π :: πs) = expt_value sv (step_expt_reward π) +
+                         γ*(ltv_gen (Pmf_bind (sv) (fun s0 => (t s0 (π s0)))) πs).
 Proof.
   intros.
   unfold step_expt_reward.
@@ -92,63 +96,34 @@ Proof.
   assert (Hl: length (π :: πs) = S(length (πs))) by reflexivity.
   
   rewrite Hl.
-  rewrite (sum_f_R0'_split _ _ 1).
-  { simpl.
-    assert (HH: 0 + 1 * expt_reward_vector sv [] π =  expt_reward_vector sv [] π).
-    { rewrite Rplus_comm.
-      rewrite Rplus_0_r.
-      rewrite Rmult_comm.
-      rewrite Rmult_1_r.
-      reflexivity.
-    }
-    rewrite HH.
-    rewrite <- ltv_gen_cons_term1.
-    apply Rplus_eq_compat_l.
-    assert (HH1: (length πs = length πs - 0)%nat) by lia.
-    rewrite <- HH1.
-    
-    destruct πs.
-     -  simpl. ring_simplify. reflexivity.
-     -  rewrite <- sum_f_R0'_mult_const.
-        apply sum_f_R0'_ext.
-        intros.
-        
-        rewrite <- Rmult_assoc.
-        rewrite pow_add.
-        assert (HH2: γ ^ x * γ ^ 1 = γ * γ ^ x). {
-          ring_simplify. reflexivity.
-        }
-        rewrite -> HH2.
-        apply Rmult_eq_compat_l.
-        simpl.
-        assert (HH3: firstn (x + 1) (π :: d :: πs) = π :: firstn x (d :: πs)).
-        {  assert (HH4: (x + 1) % nat = S (x)).
-           { lia. }
-           rewrite -> HH4.
-           rewrite -> firstn_cons.
-           reflexivity.
-        }
-        rewrite -> HH3.
-        simpl.
-        rewrite -> expt_reward_cons4.
-        destruct x.
-        { assert (HH5: (0 + 1)%nat = 1%nat).
-          { ring_simplify.
-            reflexivity.
-          }
-          rewrite HH5.
-          reflexivity.
-        }
-        
-        { assert (HH6: (S x + 1)%nat = S (S x)).
-          { ring_simplify.
-            reflexivity.
-          }
-          rewrite HH6.
-          reflexivity.
-        }
+  rewrite (sum_f_R0'_split _ _ 1) by lia.
+  simpl.
+  assert (HH: 0 + 1 * expt_reward_vector sv [] π =  expt_reward_vector sv [] π).
+  { rewrite Rplus_comm.
+    rewrite Rplus_0_r.
+    rewrite Rmult_comm.
+    rewrite Rmult_1_r.
+    reflexivity.
   }
-  lia.
+  rewrite HH.
+  rewrite <- ltv_gen_cons_term1.
+  apply Rplus_eq_compat_l.
+  assert (HH1: (length πs = length πs - 0)%nat) by lia.
+  rewrite <- HH1.
+  
+  destruct πs.
+  -  simpl. ring_simplify. reflexivity.
+  -  rewrite <- sum_f_R0'_mult_const.
+     apply sum_f_R0'_ext.
+     intros.
+     replace (x + 1)%nat with (S x) by lia.
+     simpl.
+     apply nth_error_Some in H.
+     match_destr; [| congruence].
+
+     rewrite <- Rmult_assoc.
+     f_equal.
+
 Qed.
 
   
