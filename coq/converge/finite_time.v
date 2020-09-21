@@ -126,42 +126,207 @@ Proof.
 
 Qed.
 
+Corollary ltv_gen_pure (π: dec_rule M) (πs: list(dec_rule M)) s:
+  ltv_gen (Pmf_pure s) (π :: πs) = expt_value (Pmf_pure s) (step_expt_reward π) +
+                                  γ*(ltv_gen (t s (π s)) πs).
+Proof.
+  now rewrite ltv_gen_cons, Pmf_bind_of_ret.
+Qed.
+
+Lemma Rmax_list_prod {A B} (f : A -> B -> R) {la : list A} {lb : list B}
+      (Hla : [] <> la) (Hlb : [] <> lb) :
+  equivlist (list_prod la lb) (combine la lb) ->
+  Max_{la}(fun a => Max_{lb} (fun b => f a b))  =
+  Max_{combine la lb} (fun ab => f (fst ab) (snd ab)).
+Proof.
+  intros. rewrite <- H.
+  now apply Rmax_list_prod_le.
+Qed.
+
+Lemma combine_map_fst_snd {A B} (l:list (A*B)) : combine (map fst l) (map snd l) = l.
+Proof.
+  induction l; simpl; trivial.
+  destruct a; rewrite IHl; simpl; trivial.
+Qed.
+
+Set Bullet Behavior "Strict Subproofs".
+
+Theorem ltv_gen_28's_aux {A} (f:list A -> R) (l:list (A * list A)) :
+  nil <> l ->
+  equivlist (list_prod (map fst l) (map snd l)) l ->
+  Max_{ l } (fun '(h,t) => f (h::t)) =
+  Max_{ map fst l } (fun h => Max_{map snd l} (fun t => f (h::t)))  
+.
+Proof.
+  intros.
+  rewrite Rmax_list_prod; trivial.
+  - rewrite combine_map_fst_snd.
+    f_equal.
+    apply map_ext; simpl; intros [??]; trivial.
+  - now apply map_not_nil.
+  - now apply map_not_nil.
+  - now rewrite combine_map_fst_snd.
+Qed.
   
+Theorem ltv_gen_28's (l:list (dec_rule M * list (dec_rule M))) s :
+  nil <> l ->
+  equivlist (list_prod (map fst l) (map snd l)) l ->
+  Max_{ l } (fun '(h,t) => ltv_gen (Pmf_pure s) (h::t)) =
+  Max_{ map fst l } (fun h => Max_{map snd l} (fun t => ltv_gen (Pmf_pure s) (h::t))).
+Proof.
+  apply ltv_gen_28's_aux.
+Qed.
 
+Fixpoint all_lists_upto {A} (l:list A) (n:nat) : list (A * list A)
+  := match n with
+     | 0 => nil
+     | 1 => map (fun x => (x,nil)) l
+     | S m => (list_prod l (map (fun '(a,b) => a::b) (all_lists_upto l m)))
+     end.
 
-          
+Lemma all_lists_upto_non_nil {A} (l:list A) n : nil <> l -> (n > 0)%nat -> nil <> all_lists_upto l n.
+Proof.
+  intros.
+  induction n; simpl.
+  - lia.
+  - case_eq n; intros.
+    + destruct l; simpl; congruence.
+    + apply list_prod_not_nil; trivial.
+      subst.
+      destruct (all_lists_upto l (S n0)); simpl.
+      * elim IHn; trivial.
+        lia.
+      * destruct p; simpl.
+        congruence.
+Qed.
 
-          
+Global Instance list_prod_equivlist {A B} :
+  Proper (equivlist ==> equivlist ==> equivlist) (@list_prod A B).
+Proof.
+  cut (Proper (equivlist ==> equivlist ==> @incl _) (@list_prod A B))
+  ; unfold Proper, respectful; intros.
+  - apply equivlist_incls.
+    split; apply H; trivial.
+    + now symmetry.
+    + now symmetry.
+  - intros [a b] inn.
+    apply in_prod_iff in inn.
+    apply in_prod_iff.
+    now rewrite <- H, <- H0.
+Qed.
 
-          
-            
-        
+Lemma all_lists_upto_total {A} (l:list A) n :
+  forall a' l', incl (a'::l') l -> length (a'::l') = n ->
+           In (a',l') (all_lists_upto l n).
+Proof.
+  induction n; simpl; intros.
+  - lia.
+  - invcs H0.
+    destruct l'; simpl; intros.
+    + red in H.
+      apply in_map_iff.
+      eexists; split; [reflexivity | ].
+      simpl in *.
+      eauto.
+    + apply in_prod_iff.
+      split.
+      * specialize (H a').
+        simpl in H; eauto.
+      * simpl in IHn.
+        apply in_map_iff.
+        exists (a,l').
+        split; trivial.
+        apply IHn; trivial.
+        unfold incl in *; simpl in *.
+        eauto.
+Qed.
 
-          
+Lemma all_lists_upto_in {A} (l:list A) n x :
+  In x (all_lists_upto l n) -> In (fst x) l /\ incl (snd x) l.
+Proof.
+  revert x.
+  induction n; simpl; intros.
+  - intuition.
+  - destruct n.
+    + apply in_map_iff in H.
+      destruct H as [? [??]]; subst; simpl.
+      split; trivial.
+      intros ?; simpl; intuition.
+    + destruct x; simpl.
+      apply in_prod_iff in H.
+      destruct H as [? inn].
+      split; trivial.
+      apply in_map_iff in inn.
+      destruct inn as [[??] [? inn]]; subst.
+      destruct (IHn _ inn).
+      simpl in *.
+      intros ?; simpl; intros inn2.
+      destruct inn2; [congruence|].
+      now specialize (H1 _ H2).
+Qed.
 
-           
-           
-           
-        
+Lemma all_lists_length {A} (l:list A) n x:
+  In x (all_lists_upto l n) -> length (fst x :: snd x) = n.
+Proof.
+  revert x.
+  induction n; simpl; intros [??] inn.
+  - intuition.
+  - f_equal.
+    destruct n.
+    + apply in_map_iff in inn.
+      destruct inn as [? [??]]; subst; simpl; trivial.
+      invcs H; simpl; trivial.
+    + simpl.
+      apply in_prod_iff in inn.
+      destruct inn as [inn1 inn2].
+      apply in_map_iff in inn2.
+      destruct inn2 as [[??] [? inn2]].
+      subst.
+      specialize (IHn _ inn2).
+      now simpl in *.
+Qed.
 
-        
-        
-        
-        
-        
-        
-    
+Lemma all_lists_upto_prod {A} (l:list A) n :
+  let l' := all_lists_upto l n in
+  equivlist (list_prod (map fst l') (map snd l')) l'.
+Proof.
+  simpl.
+  apply equivlist_incls.
+  split; intros [??] inn.
+  - apply in_prod_iff in inn.
+    destruct inn as [inn1 inn2].
+    apply in_map_iff in inn1.
+    apply in_map_iff in inn2.
+    destruct inn1 as [? [??]].
+    destruct inn2 as [? [??]].
+    subst.
+    generalize (all_lists_length l n x0 H2); simpl; intros HH.
+    apply all_lists_upto_in in H0.
+    apply all_lists_upto_in in H2.
+    apply all_lists_upto_total; simpl; trivial.
+    apply incl_cons; intuition.
+  - apply in_prod_iff.
+    split.
+    + apply in_map_iff.
+      exists (a,l0); simpl; intuition.
+    + apply in_map_iff.
+      exists (a,l0); simpl; intuition.
+Qed.      
 
-    
-    
-
-      
-    
-    
-      
-
-
-  
-  
-
+Theorem ltv_gen_29s n p :
+  (n > 0)%nat ->
+  let l' := all_lists_upto (@elms _ (dec_rule_finite M)) n in
+  Max_{ l' } (fun '(h,t) => ltv_gen p (h::t)) =
+  Max_{ map fst l' } (fun h => Max_{map snd l'} (fun t => ltv_gen p (h::t)))  
+.
+Proof.
+  intros.
+  apply ltv_gen_28's_aux.
+  - apply all_lists_upto_non_nil; trivial.
+    destruct (dec_rule_finite M); simpl.
+    generalize (nonempty_dec_rule M); intros e.
+    destruct elms; [| congruence].
+    elim (finite e).
+  - apply all_lists_upto_prod.
+Qed.
 
