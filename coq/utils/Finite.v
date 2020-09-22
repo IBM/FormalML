@@ -278,9 +278,11 @@ Qed.
 
 Global Program Instance bounded_nat_finite n : Finite {x : nat | (x < n)%nat}
   := {|
-  elms := bounded_nat_finite_list n
+  (* put them in numeric order for the convenience of users *)
+  elms := rev (bounded_nat_finite_list n) 
     |}.
 Next Obligation.
+  apply -> in_rev.
   assert (inn:In x (rev (seq 0 n))).
   - apply -> in_rev.
     apply in_seq; lia.
