@@ -656,9 +656,6 @@ F (d : definition_function_types)
   Definition msum {m n:nat} (v:Matrix float m n) : float :=
     vsum (vmap vsum v).
 
-  Definition transpose {A} {n m:nat} (mat:Matrix A n m) :=
-      fun i j => mat j i.
-
   Definition matrix_vector_mult {n m} (l : Matrix float n m)(r : Vector float m) : Vector float n :=
       fun i => vsum (fun j => (l i j) * (r j)).
 

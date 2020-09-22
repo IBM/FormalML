@@ -255,7 +255,10 @@ Section Vector.
   Next Obligation.
     omega.
   Defined.
-  
+
+  Definition transpose {A} {n m:nat} (mat:Matrix A n m) :=
+    fun i j => mat j i.
+
   Definition vec_eq {A} {m:nat} (x y:Vector A m) := forall i, x i = y i.
   Notation "x =v= y" := (vec_eq x y) (at level 70).
   
