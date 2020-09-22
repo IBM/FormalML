@@ -486,3 +486,5 @@ Proof.
       apply map_ext; intros [??].
       lra.
 Qed.      
+
+End ltv_fin.
