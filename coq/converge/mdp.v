@@ -35,6 +35,15 @@ Proof.
   * intros Hxy ; symmetry in Hxy ; firstorder.
 Qed.
 
+Lemma map_nil' {A B} (f:A->B) l :
+  List.map f l = nil <-> l = nil.
+Proof.
+  split; intros.
+  - induction l; try reflexivity; simpl in *.
+    congruence.
+  - rewrite H; reflexivity.
+Qed.
+
 Lemma map_nil {A B} (f : A -> B) (l : list A) :
     List.map f l = (@nil B) <-> l = (@nil A).
 Proof.
@@ -232,6 +241,7 @@ Proof.
      destruct l ; [simpl ; reflexivity | simpl ; reflexivity] .
      symmetry. apply Rmax_left ; lra. 
 Qed. 
+
  
 Lemma Rmax_list_ge (l : list R) (r : R) :
   forall x, In x l -> r <= x -> r <= Rmax_list l.
@@ -548,6 +558,15 @@ Proof.
   - apply Rmax_list_prod_le'; trivial.   
 Qed.
 
+Lemma Rmax_list_prod_combine {A B} (f : A -> B -> R) {la : list A} {lb : list B}
+      (Hla : [] <> la) (Hlb : [] <> lb) :
+  equivlist (list_prod la lb) (combine la lb) ->
+  Max_{la}(fun a => Max_{lb} (fun b => f a b))  =
+  Max_{combine la lb} (fun ab => f (fst ab) (snd ab)).
+Proof.
+  intros. rewrite <- H.
+  now apply Rmax_list_prod_le.
+Qed.
 
 
 Lemma Rmax_list_minus_le {A} {B : A -> Type} (f g : forall a, B a -> R) (la : forall a, list (B a)):

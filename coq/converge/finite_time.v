@@ -7,6 +7,7 @@ Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Equivalence RelationClasses EquivDec Morphisms.
 Require Import ExtLib.Structures.Monad.
 
+Set Bullet Behavior "Strict Subproofs".
 (*
 ****************************************************************************************
 In this file we only consider a finite list of policies.  
@@ -15,169 +16,95 @@ In this file we only consider a finite list of policies.
 
 Import ListNotations.
 
+Section equivlist.
 
-Section ltv_fin.
-Open Scope R_scope. 
-Context (M : MDP) (γ : R).
-Context (hγ : (0 <= γ < 1)%R).
-
-Arguments t {_}.
-Arguments reward {_}.
-
-Check step_expt_reward.
-
-Definition kliesli_iter_left (Π : list(dec_rule M)) (init : M.(state)) : Pmf M.(state):=
-  fold_left (fun p π => Pmf_bind p (fun s => t s (π s))) Π (ret init).
-
-Definition kliesli_iter_left_vector (init : Pmf M.(state)) (Π : list(dec_rule M))  : Pmf M.(state):=
-  fold_left (fun p π => Pmf_bind p (fun s => t s (π s))) Π init.
-
-
-Lemma ff_left {A B: Type} (f: A -> B -> A) (π0: B) (πs: list B) (s: A):  fold_left f πs (f s π0) = fold_left f (π0::πs) s.
+Global Instance app_equivlist_proper {A} : Proper (equivlist ==> equivlist ==> equivlist) (@app A).
 Proof.
-  simpl. reflexivity.
+  split; intros inn
+  ; apply in_app_iff
+  ; apply in_app_iff in inn.
+  - destruct inn.
+    + rewrite H in H1; tauto.
+    + rewrite H0 in H1; tauto.
+  - destruct inn.
+    + rewrite <- H in H1; tauto.
+    + rewrite <- H0 in H1; tauto.
 Qed.
 
-
-Lemma kliesli_iter_left_cons0 π πs: forall sv,
-    kliesli_iter_left_vector  (Pmf_bind sv (fun s0 => t s0 (π s0))) πs
-    = kliesli_iter_left_vector sv (π :: πs).
+Lemma equivlist_const {A B} (b:B) (l:list A) :
+  l <> nil -> 
+  equivlist (map (fun _ => b) l) (b::nil).
 Proof.
-  intros. 
-  unfold kliesli_iter_left_vector. rewrite <- ff_left. reflexivity.
+  induction l; simpl; intros.
+  - congruence.
+  - destruct l; simpl.
+    + reflexivity.
+    + simpl in IHl.
+      rewrite IHl by congruence.
+      red; simpl; tauto.
 Qed.
-
-Lemma Pmf_unity {A} (p: Pmf A): Pmf_bind p (fun s0: A => Pmf_pure s0) = p.
-Proof.
-  rewrite Pmf_ret_of_bind.
-  reflexivity.
-Qed.
-
-Definition expt_reward_vector (sv : Pmf M.(state)) (Π : list(dec_rule M))  (σ : dec_rule M)
-  : R :=
-  expt_value (kliesli_iter_left_vector sv Π ) (step_expt_reward σ).
-
-
-Definition ltv_gen (sv: Pmf M.(state)) (Π : list(dec_rule M)) :=
-    match Π with
-    | nil => 0
-    | π :: Π' => sum_f_R0' (fun n =>
-                            match nth_error Π n with
-                            | Some σ => γ^n*expt_reward_vector sv (firstn n Π) σ
-                            | None => 0
-                            end) (length Π)
-    end.
-
-Lemma ltv_gen_cons_term1 sv π: expt_reward_vector sv [] π = expt_value sv (fun s : state M => expt_value (t s (π s)) (reward s (π s))).
-Proof.
-  unfold expt_reward_vector.
-  unfold kliesli_iter_left_vector.
-  unfold fold_left.
-  unfold step_expt_reward.
-  reflexivity.
-Qed.
-
-
-Lemma expt_reward_cons4 π πs σ vs:
-  expt_reward_vector vs (π :: πs) σ =
-  expt_reward_vector (Pmf_bind vs (fun s0 => t s0 (π s0))) πs σ.
-Proof.
-  unfold expt_reward_vector. rewrite kliesli_iter_left_cons0.
-  reflexivity.
-Qed.
-
-Theorem ltv_gen_cons (π: dec_rule M) (πs: list(dec_rule M)) (sv: Pmf M.(state)):
-  ltv_gen sv (π :: πs) = expt_value sv (step_expt_reward π) +
-                         γ*(ltv_gen (Pmf_bind (sv) (fun s0 => (t s0 (π s0)))) πs).
+            
+Lemma list_prod_fst_equiv {A B} (a:list A) (b:list B) : b <> nil -> equivlist (map fst (list_prod a b)) a.
 Proof.
   intros.
-  unfold step_expt_reward.
-  unfold ltv_gen.
-  assert (Hl: length (π :: πs) = S(length (πs))) by reflexivity.
-  
-  rewrite Hl.
-  rewrite (sum_f_R0'_split _ _ 1) by lia.
-  simpl.
-  assert (HH: 0 + 1 * expt_reward_vector sv [] π =  expt_reward_vector sv [] π).
-  { rewrite Rplus_comm.
-    rewrite Rplus_0_r.
-    rewrite Rmult_comm.
-    rewrite Rmult_1_r.
+  induction a; simpl.
+  - reflexivity.
+  - intros.
+    simpl.
+    rewrite map_app.
+    rewrite map_map; simpl.
+    rewrite IHa.
+    rewrite equivlist_const by trivial.
     reflexivity.
-  }
-  rewrite HH.
-  rewrite <- ltv_gen_cons_term1.
-  apply Rplus_eq_compat_l.
-  assert (HH1: (length πs = length πs - 0)%nat) by lia.
-  rewrite <- HH1.
-  
-  destruct πs.
-  -  simpl. ring_simplify. reflexivity.
-  -  rewrite <- sum_f_R0'_mult_const.
-     apply sum_f_R0'_ext.
-     intros.
-     replace (x + 1)%nat with (S x) by lia.
-     simpl.
-     apply nth_error_Some in H.
-     match_destr; [| congruence].
-
-     rewrite <- Rmult_assoc.
-     f_equal.
-
 Qed.
 
-Corollary ltv_gen_pure (π: dec_rule M) (πs: list(dec_rule M)) s:
-  ltv_gen (Pmf_pure s) (π :: πs) = expt_value (Pmf_pure s) (step_expt_reward π) +
-                                  γ*(ltv_gen (t s (π s)) πs).
-Proof.
-  now rewrite ltv_gen_cons, Pmf_bind_of_ret.
-Qed.
-
-Lemma Rmax_list_prod {A B} (f : A -> B -> R) {la : list A} {lb : list B}
-      (Hla : [] <> la) (Hlb : [] <> lb) :
-  equivlist (list_prod la lb) (combine la lb) ->
-  Max_{la}(fun a => Max_{lb} (fun b => f a b))  =
-  Max_{combine la lb} (fun ab => f (fst ab) (snd ab)).
-Proof.
-  intros. rewrite <- H.
-  now apply Rmax_list_prod_le.
-Qed.
-
-Lemma combine_map_fst_snd {A B} (l:list (A*B)) : combine (map fst l) (map snd l) = l.
-Proof.
-  induction l; simpl; trivial.
-  destruct a; rewrite IHl; simpl; trivial.
-Qed.
-
-Set Bullet Behavior "Strict Subproofs".
-
-Theorem ltv_gen_28's_aux {A} (f:list A -> R) (l:list (A * list A)) :
-  nil <> l ->
-  equivlist (list_prod (map fst l) (map snd l)) l ->
-  Max_{ l } (fun '(h,t) => f (h::t)) =
-  Max_{ map fst l } (fun h => Max_{map snd l} (fun t => f (h::t)))  
-.
+Lemma list_prod_snd_equiv {A B} (a:list A) (b:list B) : a <> nil -> equivlist (map snd (list_prod a b)) b.
 Proof.
   intros.
-  rewrite Rmax_list_prod; trivial.
-  - rewrite combine_map_fst_snd.
-    f_equal.
-    apply map_ext; simpl; intros [??]; trivial.
-  - now apply map_not_nil.
-  - now apply map_not_nil.
-  - now rewrite combine_map_fst_snd.
-Qed.
-  
-Theorem ltv_gen_28's (l:list (dec_rule M * list (dec_rule M))) s :
-  nil <> l ->
-  equivlist (list_prod (map fst l) (map snd l)) l ->
-  Max_{ l } (fun '(h,t) => ltv_gen (Pmf_pure s) (h::t)) =
-  Max_{ map fst l } (fun h => Max_{map snd l} (fun t => ltv_gen (Pmf_pure s) (h::t))).
-Proof.
-  apply ltv_gen_28's_aux.
+  rewrite ListAdd.list_prod_swap.
+  rewrite map_map; simpl.
+  rewrite <- (list_prod_fst_equiv b a) at 2 by trivial.
+  reflexivity.
 Qed.
 
-Fixpoint all_lists_upto {A} (l:list A) (n:nat) : list (A * list A)
+
+Global Instance list_prod_equivlist {A B} :
+  Proper (equivlist ==> equivlist ==> equivlist) (@list_prod A B).
+Proof.
+  cut (Proper (equivlist ==> equivlist ==> @incl _) (@list_prod A B))
+  ; unfold Proper, respectful; intros.
+  - apply equivlist_incls.
+    split; apply H; trivial.
+    + now symmetry.
+    + now symmetry.
+  - intros [a b] inn.
+    apply in_prod_iff in inn.
+    apply in_prod_iff.
+    now rewrite <- H, <- H0.
+Qed.
+
+Global Instance map_equivlist_proper {A B}: Proper (pointwise_relation _ eq ==> equivlist ==> equivlist) (@map A B).
+Proof.
+  unfold Proper, respectful, equivlist; intros.
+  repeat rewrite in_map_iff.
+  unfold pointwise_relation in H.
+  split; intros [? [??]].
+  - subst.
+    exists x2. split.
+    + now rewrite H.
+    + now apply H0.
+  - subst.
+    exists x2. split.
+    + now rewrite H.
+    + now apply H0.
+Qed.
+ 
+End equivlist.
+
+
+Section all_lists.
+
+ Fixpoint all_lists_upto {A} (l:list A) (n:nat) : list (A * list A)
   := match n with
      | 0 => nil
      | 1 => map (fun x => (x,nil)) l
@@ -198,21 +125,6 @@ Proof.
         lia.
       * destruct p; simpl.
         congruence.
-Qed.
-
-Global Instance list_prod_equivlist {A B} :
-  Proper (equivlist ==> equivlist ==> equivlist) (@list_prod A B).
-Proof.
-  cut (Proper (equivlist ==> equivlist ==> @incl _) (@list_prod A B))
-  ; unfold Proper, respectful; intros.
-  - apply equivlist_incls.
-    split; apply H; trivial.
-    + now symmetry.
-    + now symmetry.
-  - intros [a b] inn.
-    apply in_prod_iff in inn.
-    apply in_prod_iff.
-    now rewrite <- H, <- H0.
 Qed.
 
 Lemma all_lists_upto_total {A} (l:list A) n :
@@ -312,82 +224,6 @@ Proof.
     + apply in_map_iff.
       exists (a,l0); simpl; intuition.
 Qed.      
-
-Theorem ltv_gen_29s n p :
-  (n > 0)%nat ->
-  let l' := all_lists_upto (@elms _ (dec_rule_finite M)) n in
-  Max_{ l' } (fun '(h,t) => ltv_gen p (h::t)) =
-  Max_{ map fst l' } (fun h => Max_{map snd l'} (fun t => ltv_gen p (h::t)))  
-.
-Proof.
-  intros.
-  apply ltv_gen_28's_aux.
-  - apply all_lists_upto_non_nil; trivial.
-    destruct (dec_rule_finite M); simpl.
-    generalize (nonempty_dec_rule M); intros e.
-    destruct elms; [| congruence].
-    elim (finite e).
-  - apply all_lists_upto_prod.
-Qed.
-
-Global Instance app_equivlist_proper {A} : Proper (equivlist ==> equivlist ==> equivlist) (@app A).
-Proof.
-  split; intros inn
-  ; apply in_app_iff
-  ; apply in_app_iff in inn.
-  - destruct inn.
-    + rewrite H in H1; tauto.
-    + rewrite H0 in H1; tauto.
-  - destruct inn.
-    + rewrite <- H in H1; tauto.
-    + rewrite <- H0 in H1; tauto.
-Qed.
-
-Lemma equivlist_const {A B} (b:B) (l:list A) :
-  l <> nil -> 
-  equivlist (map (fun _ => b) l) (b::nil).
-Proof.
-  induction l; simpl; intros.
-  - congruence.
-  - destruct l; simpl.
-    + reflexivity.
-    + simpl in IHl.
-      rewrite IHl by congruence.
-      red; simpl; tauto.
-Qed.
-            
-Lemma list_prod_fst_equiv {A B} (a:list A) (b:list B) : b <> nil -> equivlist (map fst (list_prod a b)) a.
-Proof.
-  intros.
-  induction a; simpl.
-  - reflexivity.
-  - intros.
-    simpl.
-    rewrite map_app.
-    rewrite map_map; simpl.
-    rewrite IHa.
-    rewrite equivlist_const by trivial.
-    reflexivity.
-Qed.
-
-Lemma list_prod_snd_equiv {A B} (a:list A) (b:list B) : a <> nil -> equivlist (map snd (list_prod a b)) b.
-Proof.
-  intros.
-  rewrite ListAdd.list_prod_swap.
-  rewrite map_map; simpl.
-  rewrite <- (list_prod_fst_equiv b a) at 2 by trivial.
-  reflexivity.
-Qed.
-
-Lemma map_nil' {A B} (f:A->B) l :
-  map f l = nil <-> l = nil.
-Proof.
-  split; intros.
-  - induction l; try reflexivity; simpl in *.
-    congruence.
-  - rewrite H; reflexivity.
-Qed.
-
 Lemma all_lists_upto_fsts {A} (l:list A) n :
   equivlist (map fst (all_lists_upto l (S n))) l.
 Proof.
@@ -417,22 +253,6 @@ Proof.
            ++ lia.
 Qed.
 
-Global Instance map_equivlist_proper {A B}: Proper (pointwise_relation _ eq ==> equivlist ==> equivlist) (@map A B).
-Proof.
-  unfold Proper, respectful, equivlist; intros.
-  repeat rewrite in_map_iff.
-  unfold pointwise_relation in H.
-  split; intros [? [??]].
-  - subst.
-    exists x2. split.
-    + now rewrite H.
-    + now apply H0.
-  - subst.
-    exists x2. split.
-    + now rewrite H.
-    + now apply H0.
-Qed.
-      
 Lemma all_lists_upto_snds {A} (l:list A) n :
   equivlist (map snd (all_lists_upto l (S (S n)))) (map (fun '(h,t) => (h::t)) (all_lists_upto l (S n))).
 Proof.
@@ -451,18 +271,171 @@ Proof.
       now apply list_prod_equivlist; [ reflexivity | ].
 Qed.
 
-Definition optimal_value_function (n:nat) p :=
-  let l' := all_lists_upto (@elms _ (dec_rule_finite M)) n in
-  Max_{ l' } (fun '(h,t) => ltv_gen p (h::t)).
 
-Lemma ltv_gen_30s n p :
-  optimal_value_function (S (S n)) p =
-  Max_{(@elms _ (dec_rule_finite M))}
-      (fun h => expt_value p (step_expt_reward h) + γ * optimal_value_function (S n) (Pmf_bind p (fun s0 => (t s0 (h s0))))).
+
+End all_lists.
+
+Section ltv_fin.
+Open Scope R_scope. 
+Context (M : MDP) (γ : R).
+Context (hγ : (0 <= γ < 1)%R).
+
+Arguments t {_}.
+Arguments reward {_}.
+
+
+Definition kliesli_iter_left (Π : list(dec_rule M)) (init : M.(state)) : Pmf M.(state):=
+  fold_left (fun p π => Pmf_bind p (fun s => t s (π s))) Π (ret init).
+
+Definition kliesli_iter_left_vector (init : Pmf M.(state)) (Π : list(dec_rule M))  : Pmf M.(state):=
+  fold_left (fun p π => Pmf_bind p (fun s => t s (π s))) Π init.
+
+
+Lemma ff_left {A B: Type} (f: A -> B -> A) (π0: B) (πs: list B) (s: A):  fold_left f πs (f s π0) = fold_left f (π0::πs) s.
 Proof.
-  unfold optimal_value_function.
+  simpl. reflexivity.
+Qed.
+
+
+Lemma kliesli_iter_left_cons0 π πs: forall p,
+    kliesli_iter_left_vector  (Pmf_bind p (fun s0 => t s0 (π s0))) πs
+    = kliesli_iter_left_vector p (π :: πs).
+Proof.
+  intros. 
+  unfold kliesli_iter_left_vector. rewrite <- ff_left. reflexivity.
+Qed.
+
+Definition expt_reward_gen (p : Pmf M.(state)) (Π : list(dec_rule M))  (σ : dec_rule M)
+  : R :=
+  expt_value (kliesli_iter_left_vector p Π ) (step_expt_reward σ).
+
+
+Definition ltv_fin (p: Pmf M.(state)) (Π : list(dec_rule M)) :=
+    match Π with
+    | nil => 0
+    | π :: Π' => sum_f_R0' (fun n =>
+                            match nth_error Π n with
+                            | Some σ => γ^n*expt_reward_gen p (firstn n Π) σ
+                            | None => 0
+                            end) (length Π)
+    end.
+
+Lemma ltv_fin_cons_term1 p π:
+  expt_reward_gen p [] π = expt_value p (fun s : state M => expt_value (t s (π s)) (reward s (π s))).
+Proof.
+  unfold expt_reward_gen.
+  unfold kliesli_iter_left_vector.
+  simpl. reflexivity.
+Qed.
+
+
+Lemma expt_reward_cons4 π πs σ vs:
+  expt_reward_gen vs (π :: πs) σ =
+  expt_reward_gen (Pmf_bind vs (fun s0 => t s0 (π s0))) πs σ.
+Proof.
+  unfold expt_reward_gen. rewrite kliesli_iter_left_cons0.
+  reflexivity.
+Qed.
+
+Theorem ltv_fin_cons (π: dec_rule M) (πs: list(dec_rule M)) (p: Pmf M.(state)):
+  ltv_fin p (π :: πs) = expt_value p (step_expt_reward π) +
+                         γ*(ltv_fin (Pmf_bind (p) (fun s0 => (t s0 (π s0)))) πs).
+Proof.
   intros.
-  generalize (ltv_gen_29s (S (S n)) p); intros HH.
+  unfold step_expt_reward.
+  unfold ltv_fin.
+  assert (Hl: length (π :: πs) = S(length (πs))) by reflexivity.
+  rewrite Hl.
+  rewrite (sum_f_R0'_split _ _ 1) by lia.
+  simpl.
+  replace (0 + 1 * expt_reward_gen p [] π) with (expt_reward_gen p [] π) by lra.
+  rewrite <- ltv_fin_cons_term1.
+  apply Rplus_eq_compat_l.
+  replace (length πs) with (length πs - 0)%nat by lia.  
+  destruct πs.
+  -  simpl. lra.
+  -  rewrite <- sum_f_R0'_mult_const.
+     apply sum_f_R0'_ext.
+     intros.
+     replace (x + 1)%nat with (S x) by lia.
+     simpl.
+     replace (length (d :: πs) - 0)%nat with (length (d :: πs)) in H by lia.
+     apply nth_error_Some in H.
+     match_destr; [| congruence].
+     rewrite <- Rmult_assoc.
+     f_equal.
+Qed.
+
+Corollary ltv_fin_pure (π: dec_rule M) (πs: list(dec_rule M)) s:
+  ltv_fin (Pmf_pure s) (π :: πs) = expt_value (Pmf_pure s) (step_expt_reward π) +
+                                  γ*(ltv_fin (t s (π s)) πs).
+Proof.
+  now rewrite ltv_fin_cons, Pmf_bind_of_ret.
+Qed.
+
+Lemma combine_map_fst_snd {A B} (l:list (A*B)) : combine (map fst l) (map snd l) = l.
+Proof.
+  induction l; simpl; trivial.
+  destruct a; rewrite IHl; simpl; trivial.
+Qed.
+
+Theorem Rmax_list_prod_equivlist_split {A} (f:list A -> R) (l:list (A * list A)) :
+  nil <> l ->
+  equivlist (list_prod (map fst l) (map snd l)) l ->
+  Max_{ l } (fun '(h,t) => f (h::t)) =
+  Max_{ map fst l } (fun h => Max_{map snd l} (fun t => f (h::t)))  
+.
+Proof.
+  intros.
+  rewrite Rmax_list_prod_combine; trivial.
+  - rewrite combine_map_fst_snd.
+    f_equal.
+    apply map_ext; simpl; intros [??]; trivial.
+  - now apply map_not_nil.
+  - now apply map_not_nil.
+  - now rewrite combine_map_fst_snd.
+Qed.
+  
+Theorem ltv_fin_28's (l:list (dec_rule M * list (dec_rule M))) s :
+  nil <> l ->
+  equivlist (list_prod (map fst l) (map snd l)) l ->
+  Max_{ l } (fun '(h,t) => ltv_fin (Pmf_pure s) (h::t)) =
+  Max_{ map fst l } (fun h => Max_{map snd l} (fun t => ltv_fin (Pmf_pure s) (h::t))).
+Proof.
+  apply Rmax_list_prod_equivlist_split.
+Qed.
+
+Theorem Rmax_list_dec_rule_split n p :
+  (n > 0)%nat ->
+  let l' := all_lists_upto (@elms _ (dec_rule_finite M)) n in
+  Max_{ l' } (fun '(h,t) => ltv_fin p (h::t)) =
+  Max_{ map fst l' } (fun h => Max_{map snd l'} (fun t => ltv_fin p (h::t)))  
+.
+Proof.
+  intros.
+  apply Rmax_list_prod_equivlist_split.
+  - apply all_lists_upto_non_nil; trivial.
+    destruct (dec_rule_finite M); simpl.
+    generalize (nonempty_dec_rule M); intros e.
+    destruct elms; [| congruence].
+    elim (finite e).
+  - apply all_lists_upto_prod.
+Qed.
+
+(* Optimal value function for a time n MDP. *)
+Definition max_ltv_fin (n:nat) p :=
+  let l' := all_lists_upto (@elms _ (dec_rule_finite M)) n in
+  Max_{ l' } (fun '(h,t) => ltv_fin p (h::t)).
+
+Theorem max_ltv_corec p n:
+  max_ltv_fin (S (S n)) p =
+  Max_{(@elms _ (dec_rule_finite M))}
+      (fun h => expt_value p (step_expt_reward h) +
+             γ * max_ltv_fin (S n) (Pmf_bind p (fun s0 => (t s0 (h s0))))).
+Proof.
+  unfold max_ltv_fin.
+  intros.
+  generalize (Rmax_list_dec_rule_split (S (S n)) p); intros HH.
   rewrite HH; [| lia].
   rewrite all_lists_upto_fsts.
   f_equal.
@@ -472,11 +445,11 @@ Proof.
   transitivity (
   (Max_{ all_lists_upto elms (S n)}
    (fun '(h, tl) => expt_value p (step_expt_reward a) +
-                γ * ltv_gen (Pmf_bind p (fun s0 : state M => t s0 (a s0))) (h :: tl)))).
+                γ * ltv_fin (Pmf_bind p (fun s0 : state M => t s0 (a s0))) (h :: tl)))).
   - f_equal.
     apply map_ext; intros.
     destruct a0.
-    apply ltv_gen_cons.
+    apply ltv_fin_cons.
   - rewrite <- Rmax_list_map_const_mul by lra.
     rewrite Rplus_comm.
     generalize (Rmax_list_const_add
@@ -485,14 +458,14 @@ Proof.
                            Rmult γ
                                  match a0 return R with
                                  | pair h tl =>
-                                   ltv_gen (@Pmf_bind (state M) (state M) p (fun s0 : state M => @t M s0 (a s0)))
+                                   ltv_fin (@Pmf_bind (state M) (state M) p (fun s0 : state M => @t M s0 (a s0)))
                                            (@cons (dec_rule M) h tl)
                                  end) (@all_lists_upto (dec_rule M) (@elms (dec_rule M) (dec_rule_finite M)) (S n)))
                   (expt_value p (step_expt_reward a))); intros HH2.
 
     case_eq ( map
             (fun a0 : dec_rule M * list (dec_rule M) =>
-             γ * (let (h, tl) := a0 in ltv_gen (Pmf_bind p (fun s0 : state M => t s0 (a s0))) (h :: tl)))
+             γ * (let (h, tl) := a0 in ltv_fin (Pmf_bind p (fun s0 : state M => t s0 (a s0))) (h :: tl)))
             (all_lists_upto elms (S n))); intros.
     + generalize (all_lists_upto_non_nil (@elms _ (dec_rule_finite M)) (S n)); intros HH3.
       destruct ((all_lists_upto (@elms _ (dec_rule_finite M)) (S n))).
