@@ -339,87 +339,71 @@ Proof.
     rewrite map_id.
     reflexivity.
 Admitted.
-  
 
-Theorem ltv_gen_30s n p :
-  let l' := all_lists_upto (@elms _ (dec_rule_finite M)) (S n) in
-  Max_{ l' } (fun '(h,t) => ltv_gen p (h::t)) =
-  Max_{ map fst l' } (fun h => Max_{map snd l'} (fun t => ltv_gen p (h::t)))  
-.
+Lemma all_lists_upto_snds {A} (l:list A) n :
+  equivlist (map snd (all_lists_upto l (S n))) (map (fun '(h,t) => (h::t)) (all_lists_upto l n)).
 Proof.
+Admitted.
+
+Definition optimal_value_function (n:nat) p :=
+  let l' := all_lists_upto (@elms _ (dec_rule_finite M)) n in
+  Max_{ l' } (fun '(h,t) => ltv_gen p (h::t)).
+
+Lemma ltv_gen_30s n p :
+  optimal_value_function (S (S n)) p =
+  Max_{(@elms _ (dec_rule_finite M))}
+      (fun h => expt_value p (step_expt_reward h) + γ * optimal_value_function (S n) (Pmf_bind p (fun s0 => (t s0 (h s0))))).
+Proof.
+  unfold optimal_value_function.
   intros.
-  unfold l'.
-  generalize (ltv_gen_29s (S n) p); intros HH.
-  transitivity (Max_{ map fst (all_lists_upto elms (S n))}
-                    (fun h : dec_rule M =>
-                       Max_{ map snd (all_lists_upto elms (S n))}(fun pl : list (dec_rule M) => expt_value p (step_expt_reward h) +
-                         γ*(ltv_gen (Pmf_bind (p) (fun s0 => (t s0 (h s0)))) pl)))).
-  - 
-    transitivity (
-        Max_{ map fst (all_lists_upto elms (S n))}
-  (fun h : dec_rule M =>
-   expt_value p (step_expt_reward h) + Max_{ map snd (all_lists_upto elms (S n))}
-   (fun pl : list (dec_rule M) =>
-     γ * ltv_gen (Pmf_bind p (fun s0 : state M => t s0 (h s0))) pl))
-      ).
-    + transitivity (Max_{ map fst (all_lists_upto elms (S n))}
-  (fun h : dec_rule M =>
-   expt_value p (step_expt_reward h) +
-   γ * (Max_{ map snd (all_lists_upto elms (S n))}
-    (fun pl : list (dec_rule M) => ltv_gen (Pmf_bind p (fun s0 : state M => t s0 (h s0))) pl)))
-                   ).
-      * 
-        transitivity (Max_{elms}
-                          (fun h : dec_rule M =>
-                             expt_value p (step_expt_reward h) +
-                             γ *
-                             (Max_{ map snd (all_lists_upto elms (S n))}
-                                  (fun pl : list (dec_rule M) => ltv_gen (Pmf_bind p (fun s0 : state M => t s0 (h s0))) pl)))).
-        -- transitivity ( Max_{ elms}
-                              (fun h : dec_rule M =>
-                                 expt_value p (step_expt_reward h) +
-                                 γ *
-                                 (Max_{ map snd (all_lists_upto elms (S n))}
-                                      (fun pl : list (dec_rule M) => ltv_gen (Pmf_bind p (fun s0 : state M => t s0 (h s0))) pl)))).
-
-                   Max_{ l } (fun pl => ltv_gen f pl) = ltv_gen f 
-          
-        -- now rewrite all_lists_upto_fsts.
-      * f_equal.
-        apply map_ext; intros.
-        f_equal.
-        rewrite Rmax_list_map_const_mul; trivial.
-        lra.
-    + f_equal.
-      apply map_ext; intros.
-      repeat rewrite map_map.
-      transitivity
-        (Rmax_list (map (fun y => Rplus y (@expt_value (state M) p (@step_expt_reward M a))) (map (fun x => Rmult γ
-                (ltv_gen (@Pmf_bind (state M) (state M) p (fun s0 : state M => @t M s0 (a s0)))
-                         (@snd (dec_rule M) (list (dec_rule M)) x)))  (@all_lists_upto (dec_rule M) (@elms (dec_rule M) (dec_rule_finite M)) n)))).
-      * rewrite Rmax_list_const_add.
-
-        generalize (all_lists_upto_non_nil (@elms _ (dec_rule_finite M)) n); intros HH2.
-        destruct ((all_lists_upto  (@elms _ (dec_rule_finite M)) n)); simpl.
-        -- elim HH2; trivial.
-           destruct (dec_rule_finite M); simpl.
-           generalize (nonempty_dec_rule M); intros e.
-           destruct elms; [| congruence].
-           elim (finite e).
-        -- lra.
-      * rewrite map_map. f_equal.
-        apply map_ext; intros.
-        lra.
+  generalize (ltv_gen_29s (S (S n)) p); intros HH.
+  rewrite HH; [| lia].
+  rewrite all_lists_upto_fsts.
+  f_equal.
+  apply map_ext; intros.
+  rewrite all_lists_upto_snds.
+  rewrite map_map.
+  transitivity (
+  (Max_{ all_lists_upto elms (S n)}
+   (fun '(h, tl) => expt_value p (step_expt_reward a) +
+                γ * ltv_gen (Pmf_bind p (fun s0 : state M => t s0 (a s0))) (h :: tl)))).
   - f_equal.
     apply map_ext; intros.
-    f_equal.
-    apply map_ext; intros.
-    now rewrite <- ltv_gen_cons.
-Qed.
+    destruct a0.
+    apply ltv_gen_cons.
+  - rewrite <- Rmax_list_map_const_mul by lra.
+    rewrite Rplus_comm.
+    generalize (Rmax_list_const_add
+                  (@map (prod (dec_rule M) (list (dec_rule M))) R
+                        (fun a0 : prod (dec_rule M) (list (dec_rule M)) =>
+                           Rmult γ
+                                 match a0 return R with
+                                 | pair h tl =>
+                                   ltv_gen (@Pmf_bind (state M) (state M) p (fun s0 : state M => @t M s0 (a s0)))
+                                           (@cons (dec_rule M) h tl)
+                                 end) (@all_lists_upto (dec_rule M) (@elms (dec_rule M) (dec_rule_finite M)) (S n)))
+                  (expt_value p (step_expt_reward a))); intros HH2.
 
-
-
-  rewrite HH by trivial.
-
-  Set Printing All.
-  setoid_rewrite ltv_gen_cons.
+    case_eq ( map
+            (fun a0 : dec_rule M * list (dec_rule M) =>
+             γ * (let (h, tl) := a0 in ltv_gen (Pmf_bind p (fun s0 : state M => t s0 (a s0))) (h :: tl)))
+            (all_lists_upto elms (S n))); intros.
+    + generalize (all_lists_upto_non_nil (@elms _ (dec_rule_finite M)) (S n)); intros HH3.
+      destruct ((all_lists_upto (@elms _ (dec_rule_finite M)) (S n))).
+      * elim HH3; trivial.
+        destruct (dec_rule_finite M); simpl.
+        generalize (nonempty_dec_rule M); intros e.
+        destruct elms; [| congruence].
+        elim (finite e).
+        lia.
+      * simpl in H; congruence.
+    + rewrite H in HH2.
+      destruct (r :: l <> []); [| congruence].
+      rewrite <- HH2.
+      rewrite <- H.
+      clear H HH2 c.
+      rewrite map_map.
+      f_equal.
+      apply map_ext; intros [??].
+      lra.
+Qed.      
