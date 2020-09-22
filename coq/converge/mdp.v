@@ -745,6 +745,27 @@ Proof.
   apply Rmax_list_map_transf. 
 Qed.
 
+Lemma fin_fun_bounded {A} (finA : Finite A) {f : A -> R} (hf : forall a, f a >= 0) : exists D, forall a, f a <= D.
+Proof.
+  exists (Max_{@elms _ finA}(f)).
+  intro a.
+  apply Rmax_spec.
+  rewrite in_map_iff.
+  exists a ; split ; trivial.
+  destruct finA ; eauto.
+Qed.
+
+Lemma fin_fun_bounded_Rabs {A} (finA : Finite A) {f : A -> R} (hf : forall a, f a >= 0) : exists D, forall a, Rabs(f a) <= D.
+Proof.
+  exists (Max_{@elms _ finA}(f)).
+  intros a.
+  apply Rmax_spec.
+  rewrite in_map_iff.
+  exists a. split.
+  symmetry. apply Rabs_right ; auto.
+  destruct finA ; auto.
+Qed.
+
 End Rmax_list.
 
 Notation "Max_{ l } ( f )" := (Rmax_list (List.map f l)) (at level 50).
