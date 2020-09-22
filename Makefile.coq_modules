@@ -53,6 +53,7 @@ MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	utils/Floatish \
 	converge/pmf_monad \
 	converge/mdp \
+	converge/mdp_turtle \
 	converge/finite_time \
 	converge/cond_expt \
 	AxiomaticNormedRealVectorSpace \

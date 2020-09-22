@@ -57,10 +57,6 @@ Section turtle.
     decide equality.
   Defined.
 
-
-  Instance bounded_nat_finite n : Finite {x : nat | (x < n)%nat}.
-  Admitted.
-
   Instance turtle_state_finite max_x max_y : Finite (turtle_state max_x max_y).
   Proof.
     apply finite_prod; apply bounded_nat_finite.
@@ -97,31 +93,66 @@ Section turtle.
        let color := grid x y in
        color_reward color.
 
-  Definition turtle_move (s:turtle_state) : option turtle_state
-    := Up
-     | Down
-     | Left
-     | Right.
-  
-  Definition turtle_prob_t (s:turtle_state) (a:turtle_action) : Pmf turtle_state
-    := let '(x,y) := s in
+  Program Definition turtle_move {max_x max_y} (s:turtle_state max_x max_y) (a:turtle_action) :
+    option (turtle_state max_x max_y)
+    := (let '(x,y) := s in
        match a with
-       | Up => 
-       | Down =>
-       | Left
-       | Right
+       | Up => if y == 0 then None else Some (x, y-1)
+       | Down => if lt_dec (y+1) max_y then Some (x, y+1) else None
+       | Left => if x == 0 then None else Some (x-1, y)
+       | Right => if lt_dec (x+1) max_x then Some (x+1, y) else None
+       end)%nat.
+  Next Obligation.
+    lia.
+  Qed.
+  Next Obligation.
+    lia.
+  Qed.
+
+  Definition turtle_action_opp (a:turtle_action) : turtle_action
+    := match a with 
+       | Up => Down
+       | Down => Up
+       | Left => Right
+       | Right => Left
        end.
 
-  Definition turtle_mdp {max_x max_y} (grid:turtle_grid max_x max_y) : MDP :=
+  Program Definition turtle_confused_outcomes {max_x max_y} (correct_s oops_s:turtle_state max_x max_y) : Pmf (turtle_state max_x max_y)
+    := {|
+    outcomes := (mknonnegreal 0.75 _, correct_s)::(mknonnegreal 0.25 _, oops_s)::nil
+      |}.
+  Next Obligation.
+    lra.
+  Qed.
+  Next Obligation.
+    lra.
+  Qed.
+  Next Obligation.
+    lra.
+  Qed.
+  
+  Definition turtle_prob_t {max_x max_y} (s:turtle_state max_x max_y) (a:turtle_action) : Pmf (turtle_state max_x max_y)
+    := let '(x,y) := s in
+       match turtle_move s a, turtle_move s (turtle_action_opp a) with
+       | Some correct_s, Some oops_s => turtle_confused_outcomes correct_s oops_s
+       | Some next_s, None => Pmf_pure next_s
+       | None, Some next_s => Pmf_pure next_s
+       (* This grid is one or zero dimensional, so just stay still *)
+       | None, None => Pmf_pure s
+       end.
+
+  Definition turtle_mdp {max_x max_y} (grid:turtle_grid (S max_x) (S max_y)) : MDP :=
     {|
-    state := turtle_state max_x max_y;
+    state := turtle_state (S max_x) (S max_y);
     act _ := turtle_action;
-    st_eqdec := turtle_state_dec max_x max_y;
-    fs := turtle_state_finite max_x max_y;
+    st_eqdec := turtle_state_dec (S max_x) (S max_y);
+    fs := turtle_state_finite (S max_x) (S max_y);
     fa _ := turtle_action_finite;
     ne := turtle_state_nonempty max_x max_y;
     na _ := turtle_action_nonempty ;
     t := turtle_prob_t ;
     reward _ _ s' := turtle_reward grid s'
     |}.
-    
+
+  
+End turtle.

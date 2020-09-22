@@ -2,6 +2,8 @@ Require Import List EquivDec FunctionalExtensionality.
 Require Import Isomorphism Eqdep_dec.
 
 Require Import LibUtils.
+Require Import Lia.
+Require Import ListAdd Vector.
 
 Class Finite (A:Type) :=
  { elms  : list A ;
@@ -248,4 +250,43 @@ Global Program Instance finite_prod {A B} (finA:Finite A) (finB:Finite B) : Fini
 Next Obligation.
   apply in_prod_iff.
   split; apply finite.
+Qed.
+
+Definition bounded_nat_finite_list n : list {x : nat | (x < n)%nat}.
+Proof.
+  induction n.
+  - exact nil.
+  - apply cons.
+    + exists n; lia.
+    + eapply List.map; [| exact IHn].
+      intros [x ?].
+      exists x; lia.
+Defined.
+
+Lemma bounded_nat_finite_list_proj n : List.map (@proj1_sig _ _) (bounded_nat_finite_list n) = rev (seq 0 n).
+Proof.
+  induction n; trivial.
+  rewrite ListAdd.seq_Sn.
+  rewrite List.rev_app_distr.
+  simpl rev.
+  simpl.
+  rewrite List.map_map; simpl.
+  rewrite <- IHn.
+  f_equal.
+  now apply map_ext; intros [??].
+Qed.
+
+Global Program Instance bounded_nat_finite n : Finite {x : nat | (x < n)%nat}
+  := {|
+  elms := bounded_nat_finite_list n
+    |}.
+Next Obligation.
+  assert (inn:In x (rev (seq 0 n))).
+  - apply -> in_rev.
+    apply in_seq; lia.
+  - rewrite <- (bounded_nat_finite_list_proj n) in inn.
+    apply in_map_iff in inn.
+    destruct inn as [[??] [??]].
+    simpl in *; subst.
+    erewrite index_pf_irrel; eauto.
 Qed.
