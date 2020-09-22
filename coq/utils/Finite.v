@@ -242,3 +242,10 @@ Proof.
   rewrite Finite_fun_dep_size.
   apply fold_right_mult_const.
 Qed.  
+
+Global Program Instance finite_prod {A B} (finA:Finite A) (finB:Finite B) : Finite (A*B)
+  := { elms := list_prod elms elms }.
+Next Obligation.
+  apply in_prod_iff.
+  split; apply finite.
+Qed.

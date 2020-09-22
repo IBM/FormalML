@@ -745,7 +745,7 @@ Proof.
   apply Rmax_list_map_transf. 
 Qed.
 
-Lemma fin_fun_bounded {A} (finA : Finite A) {f : A -> R} : {D | forall a, f a <= D}.
+Lemma fin_fun_bounded {A} (finA : Finite A) (f : A -> R) : {D | forall a, f a <= D}.
 Proof.
   exists (Max_{@elms _ finA}(f)).
   intro a.
@@ -755,7 +755,7 @@ Proof.
   destruct finA ; eauto.
 Qed.
 
-Lemma fin_fun_bounded_Rabs {A} (finA : Finite A) {f : A -> R} : { D | forall a, Rabs(f a) <= D }.
+Lemma fin_fun_bounded_Rabs {A} (finA : Finite A) (f : A -> R) : { D | forall a, Rabs(f a) <= D }.
 Proof.
   exists (Max_{@elms _ finA}(fun x => Rabs (f x))).
   intros a.
@@ -825,6 +825,22 @@ Qed.
 
 Global Instance nonempty_dec_rule (M : MDP) : NonEmpty (dec_rule M)
   := fun s => na M s.
+
+Lemma bdd {M} :  {D | (forall s s': M.(state), forall σ : dec_rule M, Rabs (reward s (σ s) s') <= D)}.
+Proof.
+  assert (fin : Finite (M.(state)*M.(state)*dec_rule M)).
+  - apply finite_prod.
+    + apply finite_prod.
+      * apply fs.
+      * apply fs.
+    + apply dec_rule_finite.
+  - destruct (fin_fun_bounded_Rabs fin (fun '(s, s', σ) => (reward s (σ s) s')))
+           as [D pf].
+    exists D.
+    intros s s' σ.
+    apply (pf (s,s',σ)).
+Qed.
+
 
 (* For every s, we get a list of all actions available at that state. *)
 Definition act_list (M : MDP) : forall s, list (act M s) :=
@@ -1807,36 +1823,42 @@ Proof.
 Qed.
 
 
-Lemma ltv_part_le_norm {D : R} (N : nat) :
-   (forall s s': M.(state), Rabs (reward s (σ s) s') <= D) -> Rabs(ltv_part N) <= sum_f_R0 (fun n => γ^n * D) N.
+Lemma ltv_part_le_norm (N : nat) :
+  Rabs(ltv_part N) <= sum_f_R0 (fun n => γ^n * (proj1_sig (@bdd M))) N.
 Proof.
-  intros Hd.
   unfold ltv_part. rewrite sum_n_Reals.
   refine (Rle_trans _ _ _ _ _ ).
   apply sum_f_R0_triangle. 
   apply sum_Rle. 
   intros n0 Hn0. 
   rewrite Rabs_mult.
-  enough (Hγ : Rabs (γ^n0) = γ^n0). rewrite Hγ.
-  apply Rmult_le_compat_l.
-  apply pow_le ; firstorder.
-  apply expt_reward_le_max_Rabs ; try assumption.
-  apply Rabs_pos_eq. apply pow_le. firstorder. 
+  enough (Hγ : Rabs (γ^n0) = γ^n0).
+  - rewrite Hγ.
+    apply Rmult_le_compat_l.
+    + apply pow_le ; firstorder.
+    + apply expt_reward_le_max_Rabs.
+      now destruct bdd.
+  - apply Rabs_pos_eq.
+    apply pow_le.
+    firstorder. 
 Qed.
 
-Theorem ex_series_ltv {D : R} :
-   (forall s s': M.(state), Rabs (reward s (σ s) s') <= D) -> (forall s0, ex_series (fun n => γ^n * (expt_reward σ s0 n))).
+Theorem ex_series_ltv s0 :
+  ex_series (fun n => γ^n * (expt_reward σ s0 n)).
 Proof.
-  intros Hbdd s0. 
   refine (ex_series_le_Reals _ _ _ _). 
-  intros n. rewrite Rabs_mult.
-  enough (Rabs (γ ^ n) * Rabs (expt_reward σ s0 n) <= D*γ^n). apply H.
-  enough (Hγ : Rabs (γ^n) = γ^n). rewrite Hγ.
-  rewrite Rmult_comm. apply Rmult_le_compat_r.
-  apply pow_le; firstorder.
-  apply (expt_reward_le_max_Rabs) ; try assumption. 
-  apply Rabs_pos_eq ; apply pow_le; firstorder.
-  apply (ex_series_mult_geom D). 
+  - intros n.
+    rewrite Rabs_mult.
+    enough (Rabs (γ ^ n) * Rabs (expt_reward σ s0 n) <= (proj1_sig (@bdd M))*γ^n).
+    + apply H.
+    + enough (Hγ : Rabs (γ^n) = γ^n).
+      * rewrite Hγ.
+        rewrite Rmult_comm. apply Rmult_le_compat_r.
+        -- apply pow_le; firstorder.
+        -- apply (expt_reward_le_max_Rabs).
+           now destruct bdd.
+      * apply Rabs_pos_eq ; apply pow_le; firstorder.
+  - apply ex_series_mult_geom.
 Qed.
 
 Definition ltv : M.(state) -> R:= fun s => Series (fun n => γ^n * (expt_reward σ s n)).
@@ -1858,11 +1880,9 @@ Qed.
 (* Long-Term Values satisfy the Bellman equation.
    Proposition 3 of http://researchers.lille.inria.fr/~lazaric/Webpage/MVA-RL_Course14_files/notes-lecture-02.pdf
  *)
-Lemma ltv_corec {D : R} :
-   (forall s s': M.(state), Rabs (reward s (σ s) s') <= D) ->
+Lemma ltv_corec :
   ltv init = (step_expt_reward σ init) + γ*expt_value (t init (σ init)) ltv. 
 Proof.
-  intros bdd. 
   rewrite <-(@expt_reward0_eq_reward _ σ init).
   unfold ltv.
   rewrite Series_incr_1. simpl. rewrite Rmult_1_l. setoid_rewrite Rmult_assoc.   
@@ -1874,16 +1894,13 @@ Proof.
   rewrite <-expt_value_bind. rewrite Pmf_bind_comm_stoch_bind.
   unfold expt_reward. 
   rewrite expt_value_bind.  reflexivity.
-  apply (ex_series_ltv bdd).
-  apply (ex_series_ltv bdd). 
+  apply ex_series_ltv.
+  apply ex_series_ltv. 
 Qed.
-
-
 
 End ltv.
 
 Section operator.
-
 
   (* 
      Proofs that the bellman operator and maximal bellman operator are contractions 
@@ -1893,14 +1910,12 @@ Section operator.
    *)
   
 Open Scope R_scope. 
-Context {M : MDP} (γ D : R).
+Context {M : MDP} (γ : R).
 Context (hγ : (0 <= γ < 1)%R).
 
 Arguments reward {_}.
 Arguments outcomes {_}.
 Arguments t {_}.
-
-Context (bdd :  (forall s s': M.(state), forall σ : dec_rule M, Rabs (reward s (σ s) s') <= D)).
 
 Definition bellman_op (π : dec_rule M) : @Rfct M.(state) (fs M) -> @Rfct M.(state) (fs M) :=
   fun W => fun s => (step_expt_reward π s + γ*(expt_value (t s (π s)) W)). 
@@ -2195,13 +2210,11 @@ End operator.
 Section order.
   
 Open Scope R_scope. 
-Context {M : MDP} (γ D : R).
+Context {M : MDP} (γ : R).
 Context (hγ : (0 <= γ < 1)%R).
 Arguments reward {_}.
 Arguments outcomes {_}.
 Arguments t {_}.
-
-Context (bdd :  (forall s s': M.(state), forall σ : dec_rule M, Rabs (reward s (σ s) s') <= D)).
 
 Definition policy_eq (σ τ : forall s : state M ,act M s) : Prop
   := forall s, (@ltv M γ σ s) = (@ltv M γ τ s).
@@ -2313,7 +2326,7 @@ Proof.
   assert (x = fixpt (bellman_op γ π) init).
   eapply (fixpt_is_unique (is_contraction_bellman_op γ hγ π) (fun _ => True)) ; eauto.
   apply closed_true. rewrite <-H0. 
-  rewrite (ltv_bellman_op_fixpt γ D hγ bdd π init) ; now subst.
+  rewrite (ltv_bellman_op_fixpt γ hγ π init) ; now subst.
 Qed.
 
 End order.
@@ -2328,24 +2341,21 @@ Arguments reward {_}.
 Arguments outcomes {_}.
 Arguments t {_}.
 
-
-
-Context {D : R} (hγ : 0<=γ<1)
-        (bdd : forall s s': M.(state), forall σ, Rabs (reward s (σ s) s') <= D).
+Context (hγ : 0<=γ<1).
 
 Theorem policy_improvement_1 (σ τ : dec_rule M) :
   (forall s, bellman_op γ τ (ltv γ σ) s >= bellman_op γ σ (ltv γ σ) s)
   -> forall s, ltv γ τ s >= ltv γ σ s.
 Proof.
   intros Hexpt. unfold bellman_op in Hexpt. unfold step_expt_reward in Hexpt.
-  set (Hτ := ltv_bellman_op_fixpt γ D hγ bdd τ (ltv γ τ)).
+  set (Hτ := ltv_bellman_op_fixpt γ hγ τ (ltv γ τ)).
   rewrite Hτ.
   apply contraction_coinduction_Rfct_ge.
   - apply is_contraction_bellman_op ; auto.
   - apply bellman_op_monotone_ge ; auto.
   - unfold Rfct_ge. intros s.
     replace (ltv γ σ s) with (bellman_op γ σ (ltv γ σ) s)
-      by (now rewrite <-(ltv_bellman_eq_ltv γ D hγ bdd σ)).
+      by (now rewrite <-(ltv_bellman_eq_ltv γ hγ σ)).
     apply Hexpt.
 Qed.
 
@@ -2354,14 +2364,14 @@ Theorem policy_improvement_2 (σ τ : dec_rule M) :
   -> forall s, ltv γ τ s <= ltv γ σ s.
 Proof.
   intros Hexpt.
-  set (Hτ := ltv_bellman_op_fixpt γ D hγ bdd τ (ltv γ τ)).
+  set (Hτ := ltv_bellman_op_fixpt γ hγ τ (ltv γ τ)).
   rewrite Hτ.
   apply contraction_coinduction_Rfct_le.
   - apply is_contraction_bellman_op ; auto.
   - apply bellman_op_monotone_le ; auto.
   - unfold Rfct_le. intros s.
     replace (ltv γ σ s) with (bellman_op γ σ (ltv γ σ) s)
-      by (now rewrite <-(ltv_bellman_eq_ltv γ D hγ bdd σ)).
+      by (now rewrite <-(ltv_bellman_eq_ltv γ hγ σ)).
     apply Hexpt.
 Qed.
 
