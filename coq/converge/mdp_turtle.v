@@ -154,5 +154,14 @@ Section turtle.
     reward _ _ s' := turtle_reward grid s'
     |}.
 
-  
+  Definition CertuRtL_grid : turtle_grid 5%nat 5%nat
+    := list_to_vector
+         [list_to_vector [turtle_white; turtle_red; turtle_white; turtle_green; turtle_white] ;
+         list_to_vector [turtle_white; turtle_red; turtle_white; turtle_red; turtle_white] ;
+          list_to_vector [turtle_white; turtle_red; turtle_star; turtle_white; turtle_white] ;
+          list_to_vector [turtle_white; turtle_star; turtle_red; turtle_white; turtle_red] ;
+         list_to_vector [turtle_white; turtle_white; turtle_white; turtle_white; turtle_white]
+         ].
+  Definition CertuRtL_mdp : MDP := turtle_mdp CertuRtL_grid.
+
 End turtle.
