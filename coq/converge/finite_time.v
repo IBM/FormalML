@@ -330,20 +330,126 @@ Proof.
   - apply all_lists_upto_prod.
 Qed.
 
+Global Instance app_equivlist_proper {A} : Proper (equivlist ==> equivlist ==> equivlist) (@app A).
+Proof.
+  split; intros inn
+  ; apply in_app_iff
+  ; apply in_app_iff in inn.
+  - destruct inn.
+    + rewrite H in H1; tauto.
+    + rewrite H0 in H1; tauto.
+  - destruct inn.
+    + rewrite <- H in H1; tauto.
+    + rewrite <- H0 in H1; tauto.
+Qed.
+
+Lemma equivlist_const {A B} (b:B) (l:list A) :
+  l <> nil -> 
+  equivlist (map (fun _ => b) l) (b::nil).
+Proof.
+  induction l; simpl; intros.
+  - congruence.
+  - destruct l; simpl.
+    + reflexivity.
+    + simpl in IHl.
+      rewrite IHl by congruence.
+      red; simpl; tauto.
+Qed.
+            
+Lemma list_prod_fst_equiv {A B} (a:list A) (b:list B) : b <> nil -> equivlist (map fst (list_prod a b)) a.
+Proof.
+  intros.
+  induction a; simpl.
+  - reflexivity.
+  - intros.
+    simpl.
+    rewrite map_app.
+    rewrite map_map; simpl.
+    rewrite IHa.
+    rewrite equivlist_const by trivial.
+    reflexivity.
+Qed.
+
+Lemma list_prod_snd_equiv {A B} (a:list A) (b:list B) : a <> nil -> equivlist (map snd (list_prod a b)) b.
+Proof.
+  intros.
+  rewrite ListAdd.list_prod_swap.
+  rewrite map_map; simpl.
+  rewrite <- (list_prod_fst_equiv b a) at 2 by trivial.
+  reflexivity.
+Qed.
+
+Lemma map_nil' {A B} (f:A->B) l :
+  map f l = nil <-> l = nil.
+Proof.
+  split; intros.
+  - induction l; try reflexivity; simpl in *.
+    congruence.
+  - rewrite H; reflexivity.
+Qed.
+
 Lemma all_lists_upto_fsts {A} (l:list A) n :
   equivlist (map fst (all_lists_upto l (S n))) l.
 Proof.
-  simpl.
-  induction n; simpl; intros.
-  - rewrite map_map; simpl.
+  induction n; intros.
+  - simpl.
+    rewrite map_map; simpl.
     rewrite map_id.
     reflexivity.
-Admitted.
+  - simpl all_lists_upto.
+    destruct l.
+    + reflexivity.
+    + apply list_prod_fst_equiv.
+      intros eqq.
+      apply map_nil' in eqq.
+      destruct n.
+      * simpl in eqq; congruence.
+      * symmetry in eqq. revert eqq.
+        apply list_prod_not_nil.
+        -- congruence.
+        -- intro eqq.
+           symmetry in eqq.
+           apply map_nil' in eqq.
+           symmetry in eqq.
+           revert eqq.
+           apply all_lists_upto_non_nil.
+           ++ congruence.
+           ++ lia.
+Qed.
 
-Lemma all_lists_upto_snds {A} (l:list A) n :
-  equivlist (map snd (all_lists_upto l (S n))) (map (fun '(h,t) => (h::t)) (all_lists_upto l n)).
+Global Instance map_equivlist_proper {A B}: Proper (pointwise_relation _ eq ==> equivlist ==> equivlist) (@map A B).
 Proof.
-Admitted.
+  unfold Proper, respectful, equivlist; intros.
+  repeat rewrite in_map_iff.
+  unfold pointwise_relation in H.
+  split; intros [? [??]].
+  - subst.
+    exists x2. split.
+    + now rewrite H.
+    + now apply H0.
+  - subst.
+    exists x2. split.
+    + now rewrite H.
+    + now apply H0.
+Qed.
+      
+Lemma all_lists_upto_snds {A} (l:list A) n :
+  equivlist (map snd (all_lists_upto l (S (S n)))) (map (fun '(h,t) => (h::t)) (all_lists_upto l (S n))).
+Proof.
+  induction n; intros; simpl.
+  - rewrite map_map.
+    destruct l.
+    + reflexivity.
+    + rewrite list_prod_snd_equiv by congruence.
+      reflexivity.
+  - simpl in IHn.
+    destruct l.
+    + simpl; reflexivity.
+    + rewrite list_prod_snd_equiv by congruence.
+      rewrite list_prod_snd_equiv in IHn by congruence.
+      apply map_equivlist_proper; [reflexivity | ].
+      now apply list_prod_equivlist; [ reflexivity | ].
+Qed.
 
 Definition optimal_value_function (n:nat) p :=
   let l' := all_lists_upto (@elms _ (dec_rule_finite M)) n in
