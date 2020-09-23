@@ -9,9 +9,10 @@ Require Import Streams StreamAdd.
 Require Import mdp.
 Require Import Vector.
 Require Import Lia.
+Require Import ListAdd.
+
 Import ListNotations. 
 Set Bullet Behavior "Strict Subproofs".
-
 
 Section turtle.
 
@@ -21,18 +22,6 @@ Section turtle.
   | turtle_star
   | turtle_red.
 
-  Instance turtle_color_tostring : ToString turtle_color
-    := {|
-    toString c := match c with
-                     turtle_green => "+"%string
-                   | turtle_white => " "%string
-                   | turtle_star => "*"%string
-                   | turtle_red  => "X"%string
-                   end
-      |}.
-
-  Definition newline := String (Ascii.ascii_of_N 10) EmptyString.
-  
   Instance turtle_color_dec : EqDec turtle_color eq.
   Proof.
     change (forall (x y:turtle_color), {x = y} + {x <> y}).
@@ -40,81 +29,42 @@ Section turtle.
   Defined.
 
   Definition turtle_grid max_x max_y := Matrix turtle_color max_x max_y.
-
-  Definition string_bracket (sstart send:string) (smiddle:string)
-    := String.append sstart (String.append smiddle send).
-
-  Definition vector_join {A} (delim:string) (f:A->string) {n} (v:Vector A n) : string
-    := String.concat delim (List.map f (vector_to_list v)).
-
-  Definition vector_enum_join {A} (delim:string) (f:nat*A->string) {n} (v:Vector A n) : string
-    := String.concat delim (List.map f (List.combine (seq 0 n) (vector_to_list v))).
-
-  Definition turtle_gridline_tostring {n} (v:Vector turtle_color n) : string
-    := string_bracket "| "%string " |"%string (vector_join " | "%string toString v).
-
-  Definition turtle_grid_vline max_x
-    := string_bracket "--"%string "--"%string (String.concat "---"%string (repeat "-"%string max_x)).
-
-  Instance turtle_grid_tostring {max_x max_y} : ToString (turtle_grid max_x max_y)
-    := {|
-    toString m :=
-      string_bracket (String.append (turtle_grid_vline max_x) newline)
-                     (String.append newline (turtle_grid_vline max_x))
-                     (vector_join (string_bracket newline newline (turtle_grid_vline max_x))
-                                  (fun line => turtle_gridline_tostring line)
-                                  (transpose m))
-      |}.
   
   Definition turtle_state max_x max_y :=  prod ({x:nat | x < max_x}%nat) ({y:nat | y < max_y}%nat).
 
-  (* add two more *)
-  Definition stately_turtle_grid_vline max_x
-    := String.append "--"%string (turtle_grid_vline max_x).
-
-  Definition stately_turtle_gridline_tostring {n} (has_turtle:bool) (x: {n':nat | n' < n}%nat) (v:Vector turtle_color n) : string
-    := string_bracket "| "%string " |"%string
-                      (vector_enum_join " | "%string
-                                        (fun '(cur_x,c) =>
-                                           if cur_x == proj1_sig x
-                                           then string_bracket
-                                                  (if has_turtle then "T"%string else " "%string)
-                                                  (if has_turtle then "T"%string else " "%string)
-                                                  (toString c)
-                                           else toString c)
-                                        v).
-
-  Definition stately_turtle_grid_turtleline {n} (x: {n':nat | n' < n}%nat) : string
-    :=
-      string_bracket "| "%string " |"%string
-                     (String.concat " | "
-                                    (List.map
-                                       (fun cur_x => if cur_x == proj1_sig x
-                                                  then "TTT"%string
-                                                  else " "%string)
-                                       (List.seq 0 n))).
-
-  Instance turtle_grid_state_tostring {max_x max_y} : ToString (turtle_grid max_x max_y * turtle_state max_x max_y)
-    := {|
-    toString '(m, (x,y)) :=
-      string_bracket (String.append (stately_turtle_grid_vline max_x) newline)
-                     (String.append newline (stately_turtle_grid_vline max_x))
-                     (vector_enum_join (string_bracket newline newline (stately_turtle_grid_vline max_x))
-                                       (fun '(cur_y,line) =>
-                                          if cur_y == proj1_sig y
-                                          then
-                                            String.concat
-                                              newline
-                                              [
-                                                stately_turtle_grid_turtleline x ;
-                                                stately_turtle_gridline_tostring true x line ;
-                                                stately_turtle_grid_turtleline x 
-                                              ]
-                                          else
-                                            stately_turtle_gridline_tostring false x line)
-                                  (transpose m))
-      |}.
+  (* Convenience method for creating a state with known in-bounds constant co-ordinates *)
+  Definition make_turtle_state max_x max_y x y : if lt_dec x max_x
+                                                 then if lt_dec y max_y
+                                                      then turtle_state max_x max_y
+                                                      else True
+                                                 else True.
+  Proof.
+    destruct (lt_dec x max_x).
+    - destruct (lt_dec y max_y).
+      + apply pair.
+        * exists x; trivial.
+        * exists y; trivial.
+      + trivial.
+    - trivial.
+  Defined.
   
+  Instance turtle_state_finite max_x max_y : Finite (turtle_state max_x max_y).
+  Proof.
+    apply finite_prod; apply bounded_nat_finite.
+  Defined.
+
+  Program Definition turtle_start_state {max_x max_y} : turtle_state (S max_x) (S max_y)
+    := ((0, 0))%nat.
+  Next Obligation.
+    lia.
+  Qed.
+  Next Obligation.
+    lia.
+  Qed.
+
+  Program Instance turtle_state_nonempty max_x max_y : NonEmpty (turtle_state (S max_x) (S max_y))
+    := turtle_start_state.
+
   Instance turtle_state_dec max_x max_y : EqDec (turtle_state max_x max_y) eq.
   Proof.
     intros [[x1 pfx1] [y1 pfy1]] [[x2 pfx2] [y2 pfy2]].
@@ -141,32 +91,23 @@ Section turtle.
     decide equality.
   Defined.
 
-  Instance turtle_state_finite max_x max_y : Finite (turtle_state max_x max_y).
-  Proof.
-    apply finite_prod; apply bounded_nat_finite.
-  Defined.
-
   Instance turtle_action_finite : Finite turtle_action.
   Proof.
     exists (Up::Down::Left::Right::nil).
     destruct x; simpl; tauto.
   Qed.
 
-  Program Definition turtle_start_state {max_x max_y} : turtle_state (S max_x) (S max_y)
-    := ((0, 0))%nat.
-  Next Obligation.
-    lia.
-  Qed.
-  Next Obligation.
-    lia.
-  Qed.
-
-  Program Instance turtle_state_nonempty max_x max_y : NonEmpty (turtle_state (S max_x) (S max_y))
-    := turtle_start_state.
-
   Instance turtle_action_nonempty : NonEmpty turtle_action
     := Up.
 
+  Definition turtle_action_opp (a:turtle_action) : turtle_action
+    := match a with 
+       | Up => Down
+       | Down => Up
+       | Left => Right
+       | Right => Left
+       end.
+  
   Definition color_reward (c:turtle_color) : R
     := match c with
          turtle_green => 2
@@ -183,26 +124,18 @@ Section turtle.
   Program Definition turtle_move {max_x max_y} (s:turtle_state max_x max_y) (a:turtle_action) :
     option (turtle_state max_x max_y)
     := (let '(x,y) := s in
-       match a with
-       | Up => if y == 0 then None else Some (x, y-1)
-       | Down => if lt_dec (y+1) max_y then Some (x, y+1) else None
-       | Left => if x == 0 then None else Some (x-1, y)
-       | Right => if lt_dec (x+1) max_x then Some (x+1, y) else None
-       end)%nat.
+        match a with
+        | Up => if y == 0 then None else Some (x, y-1)
+        | Down => if lt_dec (y+1) max_y then Some (x, y+1) else None
+        | Left => if x == 0 then None else Some (x-1, y)
+        | Right => if lt_dec (x+1) max_x then Some (x+1, y) else None
+        end)%nat.
   Next Obligation.
     lia.
   Qed.
   Next Obligation.
     lia.
   Qed.
-
-  Definition turtle_action_opp (a:turtle_action) : turtle_action
-    := match a with 
-       | Up => Down
-       | Down => Up
-       | Left => Right
-       | Right => Left
-       end.
 
   Program Definition turtle_confused_outcomes {max_x max_y} (correct_s oops_s:turtle_state max_x max_y) : Pmf (turtle_state max_x max_y)
     := {|
@@ -241,6 +174,99 @@ Section turtle.
     reward _ _ s' := turtle_reward grid s'
     |}.
 
+  Section to_string.
+    Section utils.
+
+      Definition newline := String (Ascii.ascii_of_N 10) EmptyString.
+
+      Definition string_bracket (sstart send:string) (smiddle:string)
+        := String.append sstart (String.append smiddle send).
+      
+      Definition vector_join {A} (delim:string) (f:A->string) {n} (v:Vector A n) : string
+        := String.concat delim (List.map f (vector_to_list v)).
+      
+      Definition vector_enum_join {A} (delim:string) (f:nat*A->string) {n} (v:Vector A n) : string
+        := String.concat delim (List.map f (List.combine (seq 0 n) (vector_to_list v))).
+
+    End utils.
+
+    Instance turtle_color_tostring : ToString turtle_color
+      := {|
+      toString c := match c with
+                      turtle_green => "+"%string
+                    | turtle_white => " "%string
+                    | turtle_star => "*"%string
+                    | turtle_red  => "X"%string
+                    end
+        |}.
+    
+    Definition turtle_gridline_tostring {n} (v:Vector turtle_color n) : string
+      := string_bracket "| "%string " |"%string (vector_join " | "%string toString v).
+
+    Definition turtle_grid_vline max_x
+      := string_bracket "--"%string "--"%string (String.concat "---"%string (repeat "-"%string max_x)).
+
+    Global Instance turtle_grid_tostring {max_x max_y} : ToString (turtle_grid max_x max_y)
+      := {|
+      toString m :=
+        string_bracket (String.append (turtle_grid_vline max_x) newline)
+                       (String.append newline (turtle_grid_vline max_x))
+                       (vector_join (string_bracket newline newline (turtle_grid_vline max_x))
+                                    (fun line => turtle_gridline_tostring line)
+                                    (transpose m))
+        |}.
+
+    Definition stately_turtle_grid_vline max_x
+      := String.append "--"%string (turtle_grid_vline max_x).
+
+    Definition stately_turtle_gridline_tostring {n} (has_turtle:bool) (x: {n':nat | n' < n}%nat) (v:Vector turtle_color n) : string
+      := string_bracket "| "%string " |"%string
+                        (vector_enum_join " | "%string
+                                          (fun '(cur_x,c) =>
+                                             if cur_x == proj1_sig x
+                                             then string_bracket
+                                                    (if has_turtle then "T"%string else " "%string)
+                                                    (if has_turtle then "T"%string else " "%string)
+                                                    (toString c)
+                                             else toString c)
+                                          v).
+
+    Definition stately_turtle_grid_turtleline {n} (x: {n':nat | n' < n}%nat) : string
+      :=
+        string_bracket "| "%string " |"%string
+                       (String.concat " | "
+                                      (List.map
+                                         (fun cur_x => if cur_x == proj1_sig x
+                                                    then "TTT"%string
+                                                    else " "%string)
+                                         (List.seq 0 n))).
+
+    Global Instance turtle_grid_state_tostring {max_x max_y} : ToString (turtle_grid max_x max_y * turtle_state max_x max_y)
+      := {|
+      toString '(m, (x,y)) :=
+        string_bracket (String.append (stately_turtle_grid_vline max_x) newline)
+                       (String.append newline (stately_turtle_grid_vline max_x))
+                       (vector_enum_join (string_bracket newline newline (stately_turtle_grid_vline max_x))
+                                         (fun '(cur_y,line) =>
+                                            if cur_y == proj1_sig y
+                                            then
+                                              String.concat
+                                                newline
+                                                [
+                                                  stately_turtle_grid_turtleline x ;
+                                                stately_turtle_gridline_tostring true x line ;
+                                                stately_turtle_grid_turtleline x 
+                                                ]
+                                            else
+                                              stately_turtle_gridline_tostring false x line)
+                                         (transpose m))
+        |}.
+  End to_string.
+
+End turtle.
+
+Section certl.
+
   Definition CeRtL_grid : turtle_grid 5%nat 5%nat
     := transpose (
            list_to_vector [
@@ -249,31 +275,62 @@ Section turtle.
              list_to_vector [turtle_white; turtle_white; turtle_star; turtle_red; turtle_white] ;
              list_to_vector [turtle_green; turtle_red; turtle_white; turtle_white; turtle_white] ;
              list_to_vector [turtle_white; turtle_white; turtle_white; turtle_red; turtle_white]
-             ]).
+         ]).
+
+  Lemma CeRtl_grid_correct : toString CeRtL_grid =
+                             String.concat newline [
+                                             "---------------------";
+                                           "|   |   |   |   |   |";
+                                           "---------------------";
+                                           "| X | X | X | * |   |";
+                                           "---------------------";
+                                           "|   |   | * | X |   |";
+                                           "---------------------";
+                                           "| + | X |   |   |   |";
+                                           "---------------------";
+                                           "|   |   |   | X |   |";
+                                           "---------------------"]%string.
+  Proof.
+    reflexivity.
+  Qed.
 
   Definition CeRtL_mdp : MDP := turtle_mdp CeRtL_grid.
 
-  Definition make_turtle_state max_x max_y x y : if lt_dec x max_x
-                                            then if lt_dec y max_y
-                                                 then turtle_state max_x max_y
-                                                 else True
-                                            else True.
-  Proof.
-    destruct (lt_dec x max_x).
-    - destruct (lt_dec y max_y).
-      + apply pair.
-        * exists x; trivial.
-        * exists y; trivial.
-      + trivial.
-    - trivial.
-  Defined.
-
   Definition make_CeRtL_state := make_turtle_state 5 5.
 
-  (*
-  Eval vm_compute in      
-      String.append newline (toString CeRtL_grid).
-   *)
+  Section move.
+    
+    Definition turtle_trail {max_x max_y}
+               (grid:turtle_grid max_x max_y)
+               (start:turtle_state max_x max_y)
+               (actions:list turtle_action)
+      : list (turtle_state max_x max_y)*bool
+      := match fold_left_partial_with_history (@turtle_move max_x max_y) actions start with
+         | inl s => (s,true)
+         | inr s => (s,false)
+         end.
+
+    Definition turtle_trail_to_string {max_x max_y}
+               (grid:turtle_grid max_x max_y)
+               (start:turtle_state max_x max_y)
+               (actions:list turtle_action) : string
+      := (let '(states, success) := turtle_trail grid start actions in
+         let boards := String.concat (String.append newline (String.append "====>" newline)) (List.map (fun s => toString (grid,s)) states) in
+         let end_message := if success
+                            then "and then he took a nap."
+                            else "and then he crashed...  Hey, watch where you are going!" in
+         String.append boards (String.append newline (String.append newline end_message)))%string.
+
+    Definition CeRtL_trail start actions
+      := turtle_trail CeRtL_grid start actions.
+
+    Definition CeRtL_trail_to_string start actions : string
+      := turtle_trail_to_string CeRtL_grid start actions.
+
+    Definition CeRtL_play (actions:list turtle_action) : string
+      := CeRtL_trail_to_string turtle_start_state actions.
+    
+  End move.
 
   (*
   Eval vm_compute in
@@ -283,21 +340,16 @@ Section turtle.
       String.append newline (toString (CeRtL_grid,  make_CeRtL_state 1 3)).
    *)
 
-  Lemma CeRtl_grid_correct : toString CeRtL_grid =
-                             String.concat newline [
-"---------------------";
-"|   |   |   |   |   |";
-"---------------------";
-"| X | X | X | * |   |";
-"---------------------";
-"|   |   | * | X |   |";
-"---------------------";
-"| + | X |   |   |   |";
-"---------------------";
-"|   |   |   | X |   |";
-"---------------------"]%string.
-  Proof.
-    reflexivity.
-  Qed.
+  (*
+  Eval vm_compute in
+      String.append newline
+                    (CeRtL_play
+                       [Right; Right; Right; Down; Left; Down; Right; Up; Left]).
 
-End turtle.
+    Eval vm_compute in
+      String.append newline
+                    (CeRtL_play
+                       [Right; Right; Right; Down; Left; Right; Right; Down; Right; Up; Left]).
+*)
+
+End certl.

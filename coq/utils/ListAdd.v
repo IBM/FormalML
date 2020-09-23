@@ -1,6 +1,6 @@
 Require Import List Permutation.
 Require Import RelationClasses Morphisms.
-Require Import Omega Lra Rbase.
+Require Import Omega Lia Lra Rbase.
 Require Import Relation_Definitions Sorted.
 
 Require Import LibUtils.
@@ -877,3 +877,105 @@ Proof.
   f_equal.
   apply IHn.
 Qed.
+
+Section folds_with_history.
+
+  
+  (* returns a list of all the partial folds *)
+  Definition fold_left_with_history_aux {A B : Type} (f:A -> B -> A) (l:list B) (init:A) (acc:list A) : list A
+    := rev (let '(x,y) := (fold_left (fun '(a,hs) b => (f a b, a::hs)) l (init, acc)) in
+            x::y).
+
+  Definition fold_left_with_history {A B : Type} (f:A -> B -> A) (l:list B) (init:A) : list A
+    :=  fold_left_with_history_aux f l init nil.
+
+  Lemma fold_left_with_history_aux_len {A B : Type} (f:A -> B -> A) (l:list B) (init:A) (acc:list A) :
+    (List.length (fold_left_with_history_aux f l init acc) = S (length l) + length acc)%nat.
+  Proof.
+    unfold fold_left_with_history_aux.
+    revert init acc.
+    induction l; simpl; intros init x.
+    + rewrite app_length, rev_length; simpl.
+      lia.
+    + rewrite IHl; simpl.
+      lia.
+  Qed.
+  
+  Lemma fold_left_with_history_len {A B : Type} (f:A -> B -> A) (l:list B) (init:A) :
+    List.length (fold_left_with_history f l init) = S (length l).
+  Proof.
+    unfold fold_left_with_history.
+    rewrite fold_left_with_history_aux_len; simpl.
+    lia.
+  Qed.
+
+  Fixpoint fold_left_partial_with_history_aux {A B : Type} (f : A -> B -> option A) (l:list B) (acc:A*list A) : list A + list A
+    := match l with
+       | [] => inl (rev (fst acc :: snd acc))
+       | b :: t =>
+         match f (fst acc) b with
+         | None => inr (rev (fst acc :: snd acc))
+         | Some a' => 
+           fold_left_partial_with_history_aux f t (a', fst acc::snd acc)
+         end
+       end.
+
+  Definition fold_left_partial_with_history {A B : Type} (f : A -> B -> option A) (l:list B) (init:A) : list A + list A
+    := fold_left_partial_with_history_aux f l (init,nil).
+  
+  Lemma fold_left_partial_with_history_aux_ok {A B : Type} (f : A -> B -> option A) (l:list B) (init:A) (acc:list A) l' :
+    fold_left_partial_with_history_aux f l (init,acc) = inl l' ->
+    (List.length l' = S (length l) + length acc)%nat.
+  Proof.
+    revert init acc l'.
+    induction l; simpl; intros init acc l' eqq.
+    - invcs eqq.
+      rewrite app_length, rev_length; simpl.
+      lia.
+    - match_destr_in eqq.
+      rewrite (IHl _ _ _ eqq); simpl.
+      lia.
+  Qed.
+  
+  Lemma fold_left_partial_with_history_ok {A B : Type} (f : A -> B -> option A) (l:list B) (init:A) l' :
+    fold_left_partial_with_history f l init = inl l' ->
+    List.length l' = S (length l).
+  Proof.
+    unfold fold_left_partial_with_history; intros eqq.
+    apply fold_left_partial_with_history_aux_ok in eqq.
+    simpl in eqq.
+    lia.
+  Qed.
+
+  Lemma fold_left_partial_with_history_aux_err {A B : Type} (f : A -> B -> option A) (l:list B) (init:A) (acc:list A) l' :
+    fold_left_partial_with_history_aux f l (init,acc) = inr l' ->
+    (List.length l' < S (length l) + length acc)%nat.
+  Proof.
+    revert init acc l'.
+    induction l; simpl; intros init acc l' eqq.
+    - invcs eqq.
+    - match_destr_in eqq.
+      + specialize (IHl _ _ _ eqq); simpl in IHl.
+        lia.
+      + invcs eqq.
+        rewrite app_length, rev_length; simpl.
+        lia.
+  Qed.
+
+  Lemma fold_left_partial_with_history_aux_total {A B : Type}
+        (f : A -> B -> A) (l:list B) (init:A) (acc:list A) :
+    fold_left_partial_with_history_aux (fun a b => Some (f a b)) l (init,acc) =
+    inl (fold_left_with_history_aux f l init acc).
+  Proof.
+    unfold fold_left_with_history_aux.
+    revert init acc.
+    induction l; simpl; intros init acc; trivial.
+  Qed.
+
+
+  Lemma fold_left_partial_with_history_total {A B : Type} (f : A -> B -> A) (l:list B) (init:A) :
+    fold_left_partial_with_history (fun a b => Some (f a b)) l init = inl (fold_left_with_history f l init).
+  Proof.
+    apply fold_left_partial_with_history_aux_total.
+  Qed.
+End folds_with_history.
