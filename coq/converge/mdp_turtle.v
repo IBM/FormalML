@@ -270,15 +270,17 @@ Section turtle.
 
   Definition make_CeRtL_state := make_turtle_state 5 5.
 
+  (*
+  Eval vm_compute in      
+      String.append newline (toString CeRtL_grid).
+   *)
+
+  (*
   Eval vm_compute in
       String.append newline (toString (CeRtL_grid, turtle_start_state)).
 
   Eval vm_compute in
       String.append newline (toString (CeRtL_grid,  make_CeRtL_state 1 3)).
-
-  (*
-  Eval vm_compute in      
-      String.append newline (toString CeRtL_grid).
    *)
 
   Lemma CeRtl_grid_correct : toString CeRtL_grid =
