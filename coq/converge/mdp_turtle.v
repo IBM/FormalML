@@ -43,9 +43,12 @@ Section turtle.
 
   Definition string_bracket (sstart send:string) (smiddle:string)
     := String.append sstart (String.append smiddle send).
-      
+
   Definition vector_join {A} (delim:string) (f:A->string) {n} (v:Vector A n) : string
     := String.concat delim (List.map f (vector_to_list v)).
+
+  Definition vector_enum_join {A} (delim:string) (f:nat*A->string) {n} (v:Vector A n) : string
+    := String.concat delim (List.map f (List.combine (seq 0 n) (vector_to_list v))).
 
   Definition turtle_gridline_tostring {n} (v:Vector turtle_color n) : string
     := string_bracket "| "%string " |"%string (vector_join " | "%string toString v).
@@ -64,6 +67,53 @@ Section turtle.
       |}.
   
   Definition turtle_state max_x max_y :=  prod ({x:nat | x < max_x}%nat) ({y:nat | y < max_y}%nat).
+
+  (* add two more *)
+  Definition stately_turtle_grid_vline max_x
+    := String.append "--"%string (turtle_grid_vline max_x).
+
+  Definition stately_turtle_gridline_tostring {n} (has_turtle:bool) (x: {n':nat | n' < n}%nat) (v:Vector turtle_color n) : string
+    := string_bracket "| "%string " |"%string
+                      (vector_enum_join " | "%string
+                                        (fun '(cur_x,c) =>
+                                           if cur_x == proj1_sig x
+                                           then string_bracket
+                                                  (if has_turtle then "T"%string else " "%string)
+                                                  (if has_turtle then "T"%string else " "%string)
+                                                  (toString c)
+                                           else toString c)
+                                        v).
+
+  Definition stately_turtle_grid_turtleline {n} (x: {n':nat | n' < n}%nat) : string
+    :=
+      string_bracket "| "%string " |"%string
+                     (String.concat " | "
+                                    (List.map
+                                       (fun cur_x => if cur_x == proj1_sig x
+                                                  then "TTT"%string
+                                                  else " "%string)
+                                       (List.seq 0 n))).
+
+  Instance turtle_grid_state_tostring {max_x max_y} : ToString (turtle_grid max_x max_y * turtle_state max_x max_y)
+    := {|
+    toString '(m, (x,y)) :=
+      string_bracket (String.append (stately_turtle_grid_vline max_x) newline)
+                     (String.append newline (stately_turtle_grid_vline max_x))
+                     (vector_enum_join (string_bracket newline newline (stately_turtle_grid_vline max_x))
+                                       (fun '(cur_y,line) =>
+                                          if cur_y == proj1_sig y
+                                          then
+                                            String.concat
+                                              newline
+                                              [
+                                                stately_turtle_grid_turtleline x ;
+                                                stately_turtle_gridline_tostring true x line ;
+                                                stately_turtle_grid_turtleline x 
+                                              ]
+                                          else
+                                            stately_turtle_gridline_tostring false x line)
+                                  (transpose m))
+      |}.
   
   Instance turtle_state_dec max_x max_y : EqDec (turtle_state max_x max_y) eq.
   Proof.
@@ -102,7 +152,7 @@ Section turtle.
     destruct x; simpl; tauto.
   Qed.
 
-  Program Instance turtle_state_nonempty max_x max_y : NonEmpty (turtle_state (S max_x) (S max_y))
+  Program Definition turtle_start_state {max_x max_y} : turtle_state (S max_x) (S max_y)
     := ((0, 0))%nat.
   Next Obligation.
     lia.
@@ -110,6 +160,9 @@ Section turtle.
   Next Obligation.
     lia.
   Qed.
+
+  Program Instance turtle_state_nonempty max_x max_y : NonEmpty (turtle_state (S max_x) (S max_y))
+    := turtle_start_state.
 
   Instance turtle_action_nonempty : NonEmpty turtle_action
     := Up.
@@ -199,6 +252,29 @@ Section turtle.
              ]).
 
   Definition CeRtL_mdp : MDP := turtle_mdp CeRtL_grid.
+
+  Definition make_turtle_state max_x max_y x y : if lt_dec x max_x
+                                            then if lt_dec y max_y
+                                                 then turtle_state max_x max_y
+                                                 else True
+                                            else True.
+  Proof.
+    destruct (lt_dec x max_x).
+    - destruct (lt_dec y max_y).
+      + apply pair.
+        * exists x; trivial.
+        * exists y; trivial.
+      + trivial.
+    - trivial.
+  Defined.
+
+  Definition make_CeRtL_state := make_turtle_state 5 5.
+
+  Eval vm_compute in
+      String.append newline (toString (CeRtL_grid, turtle_start_state)).
+
+  Eval vm_compute in
+      String.append newline (toString (CeRtL_grid,  make_CeRtL_state 1 3)).
 
   (*
   Eval vm_compute in      
