@@ -1,3 +1,4 @@
+Require Import String.
 Require Import Reals Coq.Lists.List Coquelicot.Series Coquelicot.Hierarchy Coquelicot.SF_seq.
 Require Import pmf_monad Permutation fixed_point Finite LibUtils. 
 Require Import Sums Coq.Reals.ROrderedType.
@@ -8,7 +9,6 @@ Require Import Streams StreamAdd.
 Require Import mdp.
 Require Import Vector.
 Require Import Lia.
-
 Import ListNotations. 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -21,6 +21,18 @@ Section turtle.
   | turtle_star
   | turtle_red.
 
+  Instance turtle_color_tostring : ToString turtle_color
+    := {|
+    toString c := match c with
+                     turtle_green => "+"%string
+                   | turtle_white => " "%string
+                   | turtle_star => "*"%string
+                   | turtle_red  => "X"%string
+                   end
+      |}.
+
+  Definition newline := String (Ascii.ascii_of_N 10) EmptyString.
+  
   Instance turtle_color_dec : EqDec turtle_color eq.
   Proof.
     change (forall (x y:turtle_color), {x = y} + {x <> y}).
@@ -29,6 +41,28 @@ Section turtle.
 
   Definition turtle_grid max_x max_y := Matrix turtle_color max_x max_y.
 
+  Definition string_bracket (sstart send:string) (smiddle:string)
+    := String.append sstart (String.append smiddle send).
+      
+  Definition vector_join {A} (delim:string) (f:A->string) {n} (v:Vector A n) : string
+    := String.concat delim (List.map f (vector_to_list v)).
+
+  Definition turtle_gridline_tostring {n} (v:Vector turtle_color n) : string
+    := string_bracket "| "%string " |"%string (vector_join " | "%string toString v).
+
+  Definition turtle_grid_vline max_x
+    := string_bracket "--"%string "--"%string (String.concat "---"%string (repeat "-"%string max_x)).
+
+  Instance turtle_grid_tostring {max_x max_y} : ToString (turtle_grid max_x max_y)
+    := {|
+    toString m :=
+      string_bracket (String.append (turtle_grid_vline max_x) newline)
+                     (String.append newline (turtle_grid_vline max_x))
+                     (vector_join (string_bracket newline newline (turtle_grid_vline max_x))
+                                  (fun line => turtle_gridline_tostring line)
+                                  (transpose m))
+      |}.
+  
   Definition turtle_state max_x max_y :=  prod ({x:nat | x < max_x}%nat) ({y:nat | y < max_y}%nat).
   
   Instance turtle_state_dec max_x max_y : EqDec (turtle_state max_x max_y) eq.
@@ -165,5 +199,27 @@ Section turtle.
              ]).
 
   Definition CeRtL_mdp : MDP := turtle_mdp CeRtL_grid.
+
+  (*
+  Eval vm_compute in      
+      String.append newline (toString CeRtL_grid).
+   *)
+
+  Lemma CeRtl_grid_correct : toString CeRtL_grid =
+                             String.concat newline [
+"---------------------";
+"|   |   |   |   |   |";
+"---------------------";
+"| X | X | X | * |   |";
+"---------------------";
+"|   |   | * | X |   |";
+"---------------------";
+"| + | X |   |   |   |";
+"---------------------";
+"|   |   |   | X |   |";
+"---------------------"]%string.
+  Proof.
+    reflexivity.
+  Qed.
 
 End turtle.

@@ -196,19 +196,19 @@ Section Vector.
              (init:A 0%nat) (singleton:B->A 1%nat) (l:list B) (n:nat) (pf:(n<=length l)%nat)
     : A n.
   Proof.
-    induction n.
+    revert l pf.
+    induction n; intros l pf.
     - exact init.
     - destruct n.
       + assert (pf2:(0 < length l)%nat) by omega.
         destruct l.
         * simpl in pf; omega.
         * exact (singleton b).
-      + assert (pf2:(S n <= length l)%nat) by omega.
+      + destruct l; simpl in *; try omega.
         apply f.
-        * destruct l; simpl in *; try omega.
-          apply b.
-        * apply IHn.
-          apply pf2.
+        * apply b.
+        * apply (IHn l).
+          omega.
   Defined.
 
   Definition list_fold_right1_dep {A:nat->Type} {B} (f:forall n, B->A n->A (S n)) 
