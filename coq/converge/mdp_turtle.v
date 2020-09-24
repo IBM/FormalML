@@ -210,20 +210,21 @@ Section turtle.
                (start:turtle_state max_x max_y)
                (dec_rule:turtle_state max_x max_y->turtle_action)
                (steps:nat)
-      : list (turtle_state max_x max_y)*bool
+      : turtle_path max_x max_y
       := turtle_path_from_dec_rules grid start (repeat dec_rule steps).
 
-(*
+    (*
     Definition turtle_path_optimal
                {max_x max_y}
                (grid:turtle_grid max_x max_y)
                (start:turtle_state max_x max_y)
                (approx_iters:nat)
                (steps:nat)
-      : list (turtle_state max_x max_y)*bool.
-    Admitted.
- *)
-    
+      : turtle_path max_x max_y
+      := let optimal_policies := ??? in
+         turtle_path_from_dec_rules grid start optimal_policies.
+     *)
+
   End move.
     
   Section to_string.
