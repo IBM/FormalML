@@ -174,6 +174,58 @@ Section turtle.
     reward _ _ s' := turtle_reward grid s'
     |}.
 
+  Section move.
+
+    Definition sum_self_to_bool {A} (a:A+A) : A*bool
+      := match a with
+         | inl a' => (a',true)
+         | inr a' => (a',false)
+         end.
+
+    Definition turtle_path max_x max_y : Set := (list (turtle_state max_x max_y)*bool)%type.
+    
+    Definition turtle_path_from_actions {max_x max_y}
+               (grid:turtle_grid max_x max_y)
+               (start:turtle_state max_x max_y)
+               (actions:list turtle_action)
+      : turtle_path max_x max_y
+      := sum_self_to_bool
+           (fold_left_partial_with_history (@turtle_move max_x max_y) actions start).
+
+    Definition turtle_path_from_dec_rules
+               {max_x max_y}
+               (grid:turtle_grid max_x max_y)
+               (start:turtle_state max_x max_y)
+               (dec_rules:list (turtle_state max_x max_y->turtle_action))
+      : turtle_path max_x max_y
+      := sum_self_to_bool
+           (fold_left_partial_with_history
+              (fun s rule => turtle_move s (rule s))
+              dec_rules start
+           ).
+
+    Definition turtle_path_from_stationary_dec_rule
+               {max_x max_y}
+               (grid:turtle_grid max_x max_y)
+               (start:turtle_state max_x max_y)
+               (dec_rule:turtle_state max_x max_y->turtle_action)
+               (steps:nat)
+      : list (turtle_state max_x max_y)*bool
+      := turtle_path_from_dec_rules grid start (repeat dec_rule steps).
+
+(*
+    Definition turtle_path_optimal
+               {max_x max_y}
+               (grid:turtle_grid max_x max_y)
+               (start:turtle_state max_x max_y)
+               (approx_iters:nat)
+               (steps:nat)
+      : list (turtle_state max_x max_y)*bool.
+    Admitted.
+ *)
+    
+  End move.
+    
   Section to_string.
     Section utils.
 
@@ -261,11 +313,21 @@ Section turtle.
                                               stately_turtle_gridline_tostring false x line)
                                          (transpose m))
         |}.
+
+
+    Definition turtle_path_to_string {max_x max_y}
+               (grid:turtle_grid max_x max_y)
+               (path:turtle_path max_x max_y)
+      := (let '(states, success) := path in
+          let boards := String.concat (String.append newline (String.append "====>" newline)) (List.map (fun s => toString (grid,s)) states) in
+          let end_message := if success
+                             then "and then he took a nap."
+                             else "and then he crashed...  Hey, watch where you are going!" in
+          String.append boards (String.append newline (String.append newline end_message)))%string.
+
   End to_string.
 
-End turtle.
-
-Section certl.
+  Section certl.
 
   Definition CeRtL_grid : turtle_grid 5%nat 5%nat
     := transpose (
@@ -298,39 +360,16 @@ Section certl.
 
   Definition make_CeRtL_state := make_turtle_state 5 5.
 
-  Section move.
-    
-    Definition turtle_trail {max_x max_y}
-               (grid:turtle_grid max_x max_y)
-               (start:turtle_state max_x max_y)
-               (actions:list turtle_action)
-      : list (turtle_state max_x max_y)*bool
-      := match fold_left_partial_with_history (@turtle_move max_x max_y) actions start with
-         | inl s => (s,true)
-         | inr s => (s,false)
-         end.
+  Definition CeRtL_run_actions (actions:list turtle_action) : string
+    := turtle_path_to_string CeRtL_grid (turtle_path_from_actions CeRtL_grid turtle_start_state actions).
 
-    Definition turtle_trail_to_string {max_x max_y}
-               (grid:turtle_grid max_x max_y)
-               (start:turtle_state max_x max_y)
-               (actions:list turtle_action) : string
-      := (let '(states, success) := turtle_trail grid start actions in
-         let boards := String.concat (String.append newline (String.append "====>" newline)) (List.map (fun s => toString (grid,s)) states) in
-         let end_message := if success
-                            then "and then he took a nap."
-                            else "and then he crashed...  Hey, watch where you are going!" in
-         String.append boards (String.append newline (String.append newline end_message)))%string.
+  Definition CeRtL_run_dec_rules dec_rules : string
+    := turtle_path_to_string CeRtL_grid (turtle_path_from_dec_rules CeRtL_grid turtle_start_state dec_rules).
 
-    Definition CeRtL_trail start actions
-      := turtle_trail CeRtL_grid start actions.
-
-    Definition CeRtL_trail_to_string start actions : string
-      := turtle_trail_to_string CeRtL_grid start actions.
-
-    Definition CeRtL_play (actions:list turtle_action) : string
-      := CeRtL_trail_to_string turtle_start_state actions.
-    
-  End move.
+(*
+  Definition CeRtL_run_optimal_play (approx_iters:nat) (steps:nat) : string
+    := turtle_path_to_string CeRtL_grid (turtle_path_optimal CeRtL_grid turtle_start_state approx_iters steps).
+*)
 
   (*
   Eval vm_compute in
@@ -343,13 +382,13 @@ Section certl.
   (*
   Eval vm_compute in
       String.append newline
-                    (CeRtL_play
+                    (CeRtL_run_actions
                        [Right; Right; Right; Down; Left; Down; Right; Up; Left]).
 
     Eval vm_compute in
       String.append newline
-                    (CeRtL_play
+                    (CeRtL_run_actions
                        [Right; Right; Right; Down; Left; Right; Right; Down; Right; Up; Left]).
-*)
+   *)
 
 End certl.
