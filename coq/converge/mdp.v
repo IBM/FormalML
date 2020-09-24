@@ -465,7 +465,7 @@ Proof.
   destruct (Rmax_list_map_exist_sig f hl).
   simpl. now destruct a.
 Qed.
-
+  
 Global Instance Rmax_eq_Proper {A} {l : list A} (hl : [] <> l) :
   Proper (pointwise_relation _ eq ++> eq) (@Rmax_list_map A l).
 Proof.

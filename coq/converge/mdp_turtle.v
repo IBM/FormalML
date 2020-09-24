@@ -369,11 +369,6 @@ Section certl.
     := turtle_path_to_string CeRtL_grid (turtle_path_from_dec_rules CeRtL_grid turtle_start_state dec_rules).
 
 (*
-  Definition CeRtL_run_optimal (approx_iters:nat) (steps:nat) : string
-    := turtle_path_to_string CeRtL_grid (turtle_path_optimal CeRtL_grid turtle_start_state approx_iters steps).
- *)
-
-(*
   Eval vm_compute in
       String.append newline (toString (CeRtL_grid, turtle_start_state)).
 
@@ -394,3 +389,38 @@ Section certl.
  *)
 
 End certl.
+
+ 
+Section optimal_path.
+
+  Context {γ : R} (hγ : 0 <= γ < 1).
+  Context (max_x max_y : nat).
+  Context (grid : turtle_grid (S max_x) (S max_y)).
+  
+  Definition turtle_Rfct :=
+    @Rfct_CompleteNormedModule (state (turtle_mdp grid)) (fs (turtle_mdp grid)).
+
+  Definition turtle_init : turtle_Rfct := fun _ => 0.  
+
+  Definition turtle_bellman_iter (n : nat) :=
+    (@fixed_point.iter (CompleteNormedModule.UniformSpace R_AbsRing _)
+ (@bellman_max_op (turtle_mdp grid) γ) n turtle_init).
+
+
+  (* Recovering the greedy policy for each iteration n. *)
+  Definition turtle_approx_dec_rule (n : nat) : dec_rule (turtle_mdp grid) :=
+    fun s => argmax (act_list_not_nil (turtle_mdp grid) s)
+                 (fun a => expt_value (t (turtle_mdp grid) s a)
+                                   (fun s' => reward (turtle_mdp grid) s a s' + γ*(turtle_bellman_iter n s'))).
+  
+  
+End optimal_path.
+
+(*
+Section CeRtL_value_iteration.
+  Definition CeRtL_run_optimal (approx_iters:nat) (steps:nat) : string
+    := turtle_path_to_string CeRtL_grid (_ CeRtL_grid turtle_start_state approx_iters steps).
+
+
+End CeRtL_value_iteration.
+*)
