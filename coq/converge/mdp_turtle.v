@@ -368,7 +368,7 @@ Section turtle.
     := turtle_path_to_string CeRtL_grid (turtle_path_from_dec_rules CeRtL_grid turtle_start_state dec_rules).
 
 (*
-  Definition CeRtL_run_optimal_play (approx_iters:nat) (steps:nat) : string
+  Definition CeRtL_run_optimal (approx_iters:nat) (steps:nat) : string
     := turtle_path_to_string CeRtL_grid (turtle_path_optimal CeRtL_grid turtle_start_state approx_iters steps).
 *)
 
