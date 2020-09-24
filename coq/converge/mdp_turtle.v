@@ -245,9 +245,9 @@ End optimal_path.
                (approx_iters:nat)
                (steps:nat)
       : turtle_path (S max_x) (S max_y)
-      := let opt_dec_rule := turtle_approx_dec_rule γ grid steps in
-        let optimal_policies := (repeat opt_dec_rule steps) in
-         turtle_path_from_dec_rules grid start optimal_policies.
+      := let opt_dec_rule := turtle_approx_dec_rule γ grid approx_iters in
+        let opt_stat_policy := (repeat opt_dec_rule steps) in
+         turtle_path_from_dec_rules grid start opt_stat_policy.
    
 
   End move.
