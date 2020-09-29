@@ -1,6 +1,7 @@
 Require Import Reals Sums Lra Lia.
 Require Import Coquelicot.Hierarchy Coquelicot.Series Coquelicot.Lim_seq Coquelicot.Rbar.
 Require Import LibUtils.
+Require Import sumtest.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -1073,5 +1074,259 @@ Proof.
   apply Dvoretzky4_A with (F := F) (sigma := sigma) (A := mkposreal _ Rlt_0_1); trivial.
   intros; apply prod_sq_bounded_1; trivial.
 Qed.  
+
+Lemma inv_bound_gt (a b : posreal) :
+  / a  > / (a + b).
+Proof.
+  apply Rinv_lt_contravar.
+  - apply Rmult_lt_0_compat.
+    + apply cond_pos.
+    + apply Rplus_lt_0_compat; apply cond_pos.
+  - replace (pos a) with (a + 0) at 1 by lra.
+    apply Rplus_lt_compat_l.
+    apply cond_pos.
+Qed.
+
+Lemma inv_bound_sq_gt (a b : posreal) :
+  Rsqr (/ a)  > Rsqr (/ (a + b)).
+Proof.
+  apply Rsqr_incrst_1.
+  + apply inv_bound_gt.
+  + left.
+    apply Rinv_0_lt_compat.
+    apply Rplus_lt_0_compat; apply cond_pos.    
+  + left.
+    apply Rinv_0_lt_compat; apply cond_pos.
+Qed.
+
+Lemma inv_bound_exists_lt  (a b : posreal) :
+  exists (j : nat), forall (n:nat), / (a * (INR ((S n) + j))) < / (a * INR (S n) + b).
+Proof.
+  exists (Z.to_nat (up (b/a))).
+  intros.
+  generalize  (RealAdd.up_pos (b/a)); intros.
+  cut_to H.
+  apply Z.gt_lt in H.
+  apply Rinv_lt_contravar.
+  - apply Rmult_lt_0_compat.
+    + apply Rplus_lt_0_compat; [| apply cond_pos].
+      apply Rmult_lt_0_compat; [apply cond_pos | ].
+      apply lt_0_INR; lia.
+    + apply Rmult_lt_0_compat; [apply cond_pos | ].
+      apply lt_0_INR; lia.
+  - rewrite plus_INR.
+    rewrite Rmult_plus_distr_l.
+    apply Rplus_lt_compat_l.
+    assert (b/a < IZR (up (b/a))) by apply archimed.
+    rewrite INR_IZR_INZ.
+    rewrite Z2Nat.id; trivial; [|lia].
+    apply Rmult_lt_compat_l with (r:=a) in H0; [|apply cond_pos].
+    replace (a * (b / a)) with (pos b) in H0.
+    generalize (cond_pos a); intros.
+    lra.
+    field.
+    apply  Rgt_not_eq, cond_pos.
+  - unfold Rdiv.
+    apply Rmult_gt_0_compat; [apply cond_pos|].
+    apply Rinv_0_lt_compat; apply cond_pos.    
+Qed.
+
+Lemma genharmonic_series_sq (b c : posreal) :
+  ex_series (fun n => Rsqr (/ (b + c * INR (S n)))).
+Proof.
+  apply (@ex_series_le R_AbsRing) with (b := fun n => Rsqr ( / (c * INR (S n)))).
+  - intros.
+    assert (0 < c * INR (S n)).    
+    + apply Rmult_lt_0_compat; [apply cond_pos | ].
+      apply lt_0_INR; lia.
+    + rewrite Rabs_right.
+      * left; apply Rgt_lt.
+        rewrite Rplus_comm.
+        generalize (inv_bound_sq_gt (mkposreal _ H) b); intros.
+        apply H0.
+      * apply Rle_ge.
+        apply Rle_0_sqr.
+  - generalize sum_inv_sqr_bounded; intros.
+    unfold ex_finite_lim_seq in H.
+    destruct H.
+    apply (ex_series_ext (fun n => Rsqr (/ c) * Rsqr (/ INR (S n)))).
+    + intros.
+      rewrite Rinv_mult_distr.
+      * now rewrite Rsqr_mult.
+      * apply Rgt_not_eq; apply cond_pos.
+      * apply Rgt_not_eq.
+        apply RealAdd.INR_zero_lt; lia.
+    + apply (@ex_series_scal R_AbsRing).
+      unfold ex_series.
+      exists x.
+      apply is_series_Reals.
+      apply infinite_sum_is_lim_seq.
+      apply (is_lim_seq_ext (fun n : nat => sum_f_R0 (fun i : nat => 1 / (INR i + 1)²) n)); trivial; intros.
+      apply sum_f_R0_ext; intros.
+      unfold Rdiv.
+      rewrite  Rmult_1_l.
+      rewrite Rsqr_inv.
+      * now rewrite S_INR.
+      * apply not_0_INR; lia.
+Qed.
+
+Lemma genharmonic_sq_lim (b c : posreal) :
+  is_lim_seq (fun n => Rsqr (/ (b + c * INR (S n)))) 0.
+Proof.  
+  apply ex_series_lim_0.
+  apply genharmonic_series_sq.
+Qed.
+
+Lemma harmonic_increasing :
+  let f := fun i => sum_f_R0' (fun n => 1 / INR (S n)) i in
+  forall n m : nat, (n <= m)%nat -> f n <= f m.
+Proof.
+  intros.
+  subst f.
+  simpl.
+  replace (m) with (n + (m-n))%nat by lia.
+  rewrite sum_f_R0'_plus_n.
+  rewrite <- Rplus_0_r at 1.
+  apply Rplus_le_compat_l.
+  induction (m-n)%nat.
+  - simpl; lra.
+  - simpl.
+    apply Rplus_le_le_0_compat; trivial.
+    unfold Rdiv.
+    rewrite Rmult_1_l.
+    left.
+    apply Rinv_0_lt_compat.
+    destruct (n + n0)%nat.
+    + lra.
+    + rewrite <- S_INR.
+      apply lt_0_INR; lia.
+Qed.
+  
+Lemma harmonic_series :
+  is_lim_seq (fun i => sum_f_R0' (fun n => 1 / INR (S n)) i) p_infty.
+Proof.
+  apply is_lim_seq_spec.
+  intro.
+  unfold eventually.
+  generalize (sum_f_R0'_bound2 (Z.to_nat (up (2 * (Rabs M))))); intros.
+  exists (2 ^ Z.to_nat (up (2 * (Rabs M))))%nat.
+  intros.
+  assert (IZR (up (2 * Rabs M)) > 2*Rabs M) by apply archimed.
+  assert (1 + INR (Z.to_nat (up (2 * (Rabs M)))) / 2 > Rabs M).
+  rewrite RealAdd.INR_up_pos.
+  lra.
+  assert (0 <= Rabs M) by apply Rabs_pos; lra.
+  generalize (harmonic_increasing (2 ^ Z.to_nat (up (2 * Rabs M))) n H0).
+  intros.
+  generalize (Rle_abs M); intros.
+  lra.
+Qed.
+
+Lemma harmonic_series2 (c:posreal) :
+  is_lim_seq (fun i => sum_f_R0' (fun n =>  1 / (c * INR (S n))) i) p_infty.
+Proof.
+  generalize (cond_pos c); intros cpos.
+  generalize harmonic_series; intros.
+  apply is_lim_seq_scal_l with (a := /c) in H.
+  replace (Rbar_mult (/c) p_infty) with p_infty in H.
+  - apply (is_lim_seq_ext (fun n : nat => /c * sum_f_R0' (fun n0 : nat => 1 / INR (S n0)) n)); intros; trivial.
+    rewrite <- sum_f_R0'_mult_const.
+    apply sum_f_R0'_ext.
+    intros.
+    unfold Rdiv.
+    do 2 rewrite Rmult_1_l.
+    rewrite Rinv_mult_distr; trivial.
+    lra.
+    apply not_0_INR; lia.
+  - rewrite Rbar_mult_comm; symmetry.
+    apply is_Rbar_mult_unique.
+    apply is_Rbar_mult_p_infty_pos.
+    apply Rinv_0_lt_compat; apply cond_pos.
+Qed.
+
+Lemma harmonic_series3 (j:nat) (f : nat -> R) :
+  is_lim_seq (fun i => sum_f_R0' f i) p_infty ->
+  is_lim_seq (fun i => sum_f_R0' (fun n => f (n + j)%nat) i) p_infty.
+Proof.
+  intros.
+  apply (is_lim_seq_incr_n _ j) in H.
+  apply is_lim_seq_minus with (v := fun _ => sum_f_R0' f j) (l2 := sum_f_R0' f j) (l1 := p_infty) (l := p_infty) in H.
+  - apply (is_lim_seq_ext  (fun n : nat => sum_f_R0' f (n + j) - sum_f_R0' f j)); trivial.
+    intros.
+    rewrite sum_f_R0'_split with (m := j); [|lia].
+    replace (n+j-j)%nat with n by lia.
+    lra.
+  - apply is_lim_seq_const.
+  - unfold is_Rbar_minus, is_Rbar_plus.
+    now simpl.
+Qed.
+
+Lemma genharmonic_series (b c : posreal) :
+  is_lim_seq (fun i => sum_f_R0' (fun n => 1 / (b + c * INR (S n))) i) p_infty.
+Proof.
+  generalize (cond_pos c); intros cpos.
+  generalize (inv_bound_exists_lt c b); intros.
+  destruct H as [j H].
+  unfold is_lim_seq.
+  apply filterlim_ge_p_infty with (f := fun n : nat => sum_f_R0' (fun n0 : nat => 1 / (c *INR (S (n0) + j))) n).
+  unfold eventually;  exists (0%nat); intros.
+  apply sum_f_R0'_le_f.
+  intros.
+  unfold Rdiv; do 2 rewrite Rmult_1_l.
+  rewrite Rplus_comm; left; apply H.
+  generalize (harmonic_series2 c); intros.
+  generalize (harmonic_series3 j (fun n => 1 / (c * INR (S n))) H0); trivial.
+Qed.
+  
+Lemma Robbins_Monro_0 (u : R) (a : nat -> posreal) (g : R -> R) (A B : posreal) :
+  (forall (u:R), u <> 0 -> A <= g u <= B) ->
+  forall (n:nat), 
+    (u <> 0) ->
+    Rabs (1 - a n * g u) <= Rmax (1-A*(a n)) (B*(a n) - 1).
+Proof.
+  intros.
+  specialize (H u H0).
+  destruct H.
+  replace (B*(a n) - 1) with (- (1 - B*a n)) by lra.
+  apply Rcomplements.Rabs_le_between_Rmax; unfold Rminus.
+  split; apply Rplus_le_compat_l, Ropp_le_contravar; rewrite Rmult_comm.
+  - apply Rmult_le_compat_r; trivial.    
+    left; apply cond_pos.
+  - apply Rmult_le_compat_l; trivial.
+    left; apply cond_pos.
+Qed.
+
+Lemma Robbins_Monro_1 (r : nat -> R) (a : nat -> posreal) (f : R -> R) (A B : posreal) :
+  (forall (u:R), u <> 0 -> A <= f(u)/u <= B) ->
+  forall (n:nat), r n <> 0 -> Rabs (r n - a n * f (r n)) <= Rabs (r n) * Rmax (1-A*(a n)) (B*(a n) - 1).
+Proof.
+  intros.
+  replace (r n - a n * f (r n)) with ((r n)*(1 - a n * (f(r n)/(r n)))).
+  - rewrite Rabs_mult.
+    apply Rmult_le_compat_l; [apply Rabs_pos | ].
+    apply Robbins_Monro_0 with (g := fun u => f u / u); trivial.
+  - now field.    
+Qed.    
+
+Lemma Robbins_Monro_1b (a A B : posreal) :
+  a < 2/(A + B) -> Rmax (1-A*a) (B*a-1) = 1-A*a.
+Proof.
+  intros.
+  assert (0 < A + B).
+  apply Rplus_lt_0_compat; apply cond_pos.
+  apply Rmax_left; left.
+  unfold Rdiv in H.
+  replace (pos a) with (a * (A + B) * / (A + B)) in H.
+  - apply Rmult_lt_reg_r in H; [lra | ].
+    now apply Rinv_0_lt_compat.
+  - field.
+    now apply Rgt_not_eq.
+Qed.
+    
+(*
+Lemma Robbins_Monro_2 (A C sigma : posreal) :
+  let a = fun (n:nat) => (A*Rsqr C)/(Rsqr sigma + n * Rsqr(A*C)) in
+  exists (N:nat), forall (n:nat), n>N -> 
+*)  
 
 End Dvoretsky.
