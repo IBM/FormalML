@@ -1,5 +1,6 @@
 Require Import Reals Sums Lra Lia.
-Require Import Coquelicot.Hierarchy Coquelicot.Series Coquelicot.Lim_seq Coquelicot.Rbar.
+(* Require Import Coquelicot.Hierarchy Coquelicot.Series Coquelicot.Lim_seq Coquelicot.Rbar.*)
+Require Import Coquelicot.Coquelicot.
 Require Import LibUtils.
 Require Import sumtest.
 
@@ -1322,11 +1323,65 @@ Proof.
   - field.
     now apply Rgt_not_eq.
 Qed.
+
+Lemma is_derive_Rsqr (f : R -> R) (x df : R) :
+  is_derive f x df -> is_derive (fun x0 => Rsqr (f x0)) x (2 * (f x) * df).
+Proof.
+  intros.
+  apply (is_derive_ext (fun x0 => (f x0) * (f x0))); [now unfold Rsqr |].
+  replace (2 * f x * df) with ((df * f x) + (f x * df)) by lra.
+  apply (@is_derive_mult R_AbsRing); trivial.
+  apply Rmult_comm.
+Qed.
+
+Lemma Robbins_Monro_2a (A sigma : posreal) (a0 V : R) :
+  let f := fun a => (Rsqr (1-A*a) * (Rsqr V)) + (Rsqr a * (Rsqr sigma)) in
+  is_derive f a0 ((2 * (1-A*a0) * (-A) * (Rsqr V)) + (2 * a0 * (Rsqr sigma))).
+Proof.
+  intros.
+  apply (@is_derive_plus R_AbsRing).
+  - apply (@is_derive_scal_l R_AbsRing).
+    apply (is_derive_Rsqr (fun x => (1 - A * x))).
+    replace (-A) with (0 - A) by lra.
+    apply (@is_derive_minus R_AbsRing).
+    + apply (@is_derive_const R_AbsRing).
+    + replace (pos A) with (A*1) at 2 by lra.
+      apply is_derive_scal.
+      apply (@is_derive_id R_AbsRing).
+  - apply (@is_derive_scal_l R_AbsRing).
+    replace (2 * a0) with (2 * a0 * 1) by lra.
+    apply is_derive_Rsqr.
+    apply (@is_derive_id R_AbsRing).
+Qed.
     
-(*
-Lemma Robbins_Monro_2 (A C sigma : posreal) :
-  let a = fun (n:nat) => (A*Rsqr C)/(Rsqr sigma + n * Rsqr(A*C)) in
-  exists (N:nat), forall (n:nat), n>N -> 
-*)  
+Lemma Robbins_Monro_2b (A sigma : posreal) (V : R) :
+  let a0 := (A * V^2) / (sigma^2 + A^2 * V^2) in
+  (2 * (1-A*a0) * (-A) * (Rsqr V)) + (2 * a0 * (Rsqr sigma)) = 0.
+Proof.
+  intros.
+  subst a0; unfold Rsqr.
+  field.
+  apply Rgt_not_eq.
+  apply Rlt_gt.
+  generalize (cond_pos sigma); intros.
+  apply Rplus_lt_le_0_compat.
+  - replace (sigma^2) with (Rsqr sigma) by (unfold Rsqr; lra).
+    apply Rlt_0_sqr.
+    now apply Rgt_not_eq.
+  - replace ((A * V)^2) with (Rsqr (A*V)) by (unfold Rsqr; lra).
+    apply Rle_0_sqr.
+Qed.
+
+Lemma Robbins_Monro_2c (A sigma : posreal) (V x : R) :
+  let f := fun a => (Rsqr (1-A*a) * (Rsqr V)) + (Rsqr a * (Rsqr sigma)) in
+  let a0 := (A * V^2) / (sigma^2 + A^2 * V^2) in
+  is_derive f a0 0.
+Proof.
+  intros.
+  subst f.
+  generalize (Robbins_Monro_2a A sigma a0 V); intros.
+  simpl in H; subst a0.
+  now rewrite (Robbins_Monro_2b A sigma V) in H.
+Qed.
 
 End Dvoretsky.
