@@ -1076,6 +1076,8 @@ Proof.
   intros; apply prod_sq_bounded_1; trivial.
 Qed.  
 
+Section Generalized_Harmonic_Series.
+
 Lemma inv_bound_gt (a b : posreal) :
   / a  > / (a + b).
 Proof.
@@ -1289,6 +1291,30 @@ Proof.
         apply Rplus_lt_compat_l; apply cond_pos.
 Qed.
 
+Lemma genharmon_sq (a b : posreal) :
+  forall (n:nat), 
+    Rsqr (/ ((a+b)*(INR (S n)))) <= Rsqr (/ (a*(INR (S n)) + b)) < Rsqr (/ (a * (INR (S n)))).
+Proof.
+  intros.
+  generalize (genharmon a b n); intros.
+  destruct H.
+  assert (0 < INR (S n)) by (apply lt_0_INR; lia).
+  assert (0 < (a + b) * INR (S n)).
+  - apply Rmult_lt_0_compat; trivial.
+    apply Rplus_lt_0_compat; apply cond_pos.
+  - assert (0 < a * INR (S n) + b).
+    + apply Rplus_lt_0_compat; [ | apply cond_pos].
+      apply Rmult_lt_0_compat; [apply cond_pos| trivial].
+    + split.
+      * apply Rsqr_incr_1; trivial.
+        -- left; apply Rinv_0_lt_compat; trivial.
+        -- left; apply Rinv_0_lt_compat; trivial.        
+      * apply Rsqr_incrst_1; trivial.
+        -- left; apply Rinv_0_lt_compat; trivial.
+        -- left; apply Rinv_0_lt_compat.
+           apply Rmult_lt_0_compat; [apply cond_pos | trivial].
+Qed.
+
 Lemma genharmonic_series (b c : posreal) :
   is_lim_seq (fun i => sum_f_R0' (fun n => 1 / (b + c * INR (S n))) i) p_infty.
 Proof.
@@ -1326,6 +1352,8 @@ Proof.
   replace (b + c * INR (S i)) with (c * INR (S i) + b) by lra.
   apply H.
 Qed.  
+
+End Generalized_Harmonic_Series.
 
 Lemma Robbins_Monro_0 (u : R) (a : nat -> posreal) (g : R -> R) (A B : posreal) :
   (forall (u:R), u <> 0 -> A <= g u <= B) ->
