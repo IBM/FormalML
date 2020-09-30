@@ -1262,6 +1262,33 @@ Proof.
     now simpl.
 Qed.
 
+Lemma genharmon (a b : posreal) :
+  forall (n:nat), / ((a+b)*(INR (S n))) <= /(a*(INR (S n)) + b) < /(a * (INR (S n))).
+Proof.
+  intros.
+  split.
+  - apply Rinv_le_contravar.
+    + apply Rplus_lt_0_compat; [ | apply cond_pos].
+      apply Rmult_lt_0_compat; [apply cond_pos | ].
+      apply lt_0_INR; lia.
+    + rewrite Rmult_plus_distr_r.
+      apply Rplus_le_compat_l.
+      replace (pos b) with (b * 1) at 1 by lra.
+      apply Rmult_le_compat_l; [left;apply cond_pos | ].
+      rewrite S_O_plus_INR.
+      replace 1 with (1 + 0) by lra.
+      apply Rplus_le_compat_l.
+      apply pos_INR.
+  - assert (0 < a * INR (S n)).
+    + apply Rmult_lt_0_compat; [apply cond_pos | ].
+      apply lt_0_INR; lia.
+    + apply Rinv_lt_contravar.
+      * apply Rmult_lt_0_compat; trivial.
+        apply Rplus_lt_0_compat; [trivial | apply cond_pos].
+      * replace (a * INR (S n)) with (a * INR (S n) + 0) at 1 by lra.
+        apply Rplus_lt_compat_l; apply cond_pos.
+Qed.
+
 Lemma genharmonic_series (b c : posreal) :
   is_lim_seq (fun i => sum_f_R0' (fun n => 1 / (b + c * INR (S n))) i) p_infty.
 Proof.
@@ -1279,6 +1306,27 @@ Proof.
   generalize (harmonic_series3 j (fun n => 1 / (c * INR (S n))) H0); trivial.
 Qed.
   
+Lemma genharmonic_series2 (b c : posreal) :
+  is_lim_seq (fun i => sum_f_R0' (fun n => 1 / (b + c * INR (S n))) i) p_infty.
+Proof.
+  generalize (genharmon c b); intros.
+  assert (0 < c + b).
+  apply Rplus_lt_0_compat; apply cond_pos.
+  generalize (harmonic_series2 (mkposreal _ H0)); intros.
+  unfold is_lim_seq in *.
+  apply filterlim_ge_p_infty
+    with (f := (fun i : nat =>
+          sum_f_R0' (fun n : nat => 1 / ({| pos := c + b; cond_pos := H0 |} * INR (S n))) i)); trivial.
+  unfold eventually;  exists (0%nat); intros.
+  apply sum_f_R0'_le_f.
+  intros.
+  specialize (H i); destruct H.
+  unfold Rdiv.
+  do 2 rewrite Rmult_1_l.
+  replace (b + c * INR (S i)) with (c * INR (S i) + b) by lra.
+  apply H.
+Qed.  
+
 Lemma Robbins_Monro_0 (u : R) (a : nat -> posreal) (g : R -> R) (A B : posreal) :
   (forall (u:R), u <> 0 -> A <= g u <= B) ->
   forall (n:nat), 
@@ -1365,9 +1413,8 @@ Proof.
   apply Rlt_gt.
   generalize (cond_pos sigma); intros.
   apply Rplus_lt_le_0_compat.
-  - replace (sigma^2) with (Rsqr sigma) by (unfold Rsqr; lra).
-    apply Rlt_0_sqr.
-    now apply Rgt_not_eq.
+  - apply Rmult_lt_0_compat; [apply cond_pos | ].
+    rewrite Rmult_1_r; apply cond_pos.
   - replace ((A * V)^2) with (Rsqr (A*V)) by (unfold Rsqr; lra).
     apply Rle_0_sqr.
 Qed.
@@ -1383,5 +1430,23 @@ Proof.
   simpl in H; subst a0.
   now rewrite (Robbins_Monro_2b A sigma V) in H.
 Qed.
+
+Lemma Robbins_Monro_2d (A sigma : posreal) (V x : R) :
+  let f := fun a => (Rsqr (1-A*a) * (Rsqr V)) + (Rsqr a * (Rsqr sigma)) in
+  let a0 := (A * V^2) / (sigma^2 + A^2 * V^2) in
+  f a0 = sigma^2 * V^2 / (sigma^2 + (A*V)^2).
+Proof.
+  intros.
+  subst f; subst a0; simpl.
+  unfold Rsqr.
+  field.
+  apply Rgt_not_eq.
+  apply Rlt_gt.
+  apply Rplus_lt_le_0_compat.
+  - apply Rmult_lt_0_compat; apply cond_pos.
+  - replace (A * V * (A * V)) with (Rsqr (A * V)) by (unfold Rsqr; lra).
+    apply Rle_0_sqr.
+Qed.  
+  
 
 End Dvoretsky.
