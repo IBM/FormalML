@@ -1218,9 +1218,7 @@ Section lebesgueintegration.
     list_sum (map (fun '(x,y) => Rmult x (measure_mu y)) partition_image_vals).
 
   Definition random_variable_le (rv2 : RandomVariable dom cod) : Prop :=
-    forall (x:Ts), rv.(rv_X) x <= rv2.(rv_X) x.
-
-  Search completeness.
+    forall (x:Ts), rv_X (RandomVariable:=rv) x <= rv_X (RandomVariable:=rv2) x.
 
   (* See https://en.wikipedia.org/wiki/Lebesgue_integration#Towards_a_formal_definition *)
   Definition F_star {dom:SigmaAlgebra R} (measure: MeasurableFunction dom) (f: R -> R) (t: R) :=
