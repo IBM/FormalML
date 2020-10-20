@@ -1,9 +1,11 @@
 Require Import Coq.Reals.Rbase.
 Require Import Coq.Reals.Rfunctions.
 Require Import Coq.Reals.RiemannInt.
-Require Import Lra Omega.
+Require Import Lra Lia.
 Require Import List.
 Require Import Morphisms EquivDec.
+Require Import Coquelicot.Rbar.
+Require Import Coquelicot.Lub.
 
 Require Import Utils.
 Import ListNotations.
@@ -1127,8 +1129,8 @@ Section RandomVariable.
 
   (* A random variable is a mapping from a pobability space to a sigma algebra. *)
   Class RandomVariable {Ts:Type} {Td:Type}
-        {doms: SigmaAlgebra Ts}
-        (dom: ProbSpace doms)
+        {dom: SigmaAlgebra Ts}
+        (prts: ProbSpace dom)
         (cod: SigmaAlgebra Td) :=
     {
       (* the random variable. *)
@@ -1140,10 +1142,10 @@ Section RandomVariable.
     }.
 
   Class RealValuedRandomVariable {Ts:Type}
-        {doms: SigmaAlgebra Ts}
-        {dom: ProbSpace doms}
+        {dom: SigmaAlgebra Ts}
+        {prts: ProbSpace dom}
         {cod: SigmaAlgebra R} 
-        (rrv: RandomVariable dom cod)   :=
+        (rrv: RandomVariable prts cod)   :=
     {
       rrv_is_real: forall r:R, sa_sigma (fun omega:Ts => (rv_X omega) <= r);
     }.
@@ -1160,18 +1162,97 @@ Section RandomVariable.
     apply Rmax_r.
   Defined.
 
-  Class SimpleRealValuedRandomVariable {Ts:Type}
-        {doms: SigmaAlgebra Ts}
-        {dom: ProbSpace doms}
+  Class ConstantRealValuedRandomVariable {Ts:Type}
+        {dom: SigmaAlgebra Ts}
+        {prts: ProbSpace dom}
         {cod: SigmaAlgebra R}
-        {rv : RandomVariable dom cod}
+        {rv : RandomVariable prts cod}
+        (rrv : RealValuedRandomVariable rv) :=
+    { 
+      srv_val : R;
+      srv_val_complete : forall x, (rv_X x) =  srv_val
+    }.
+
+  Class SimpleRealValuedRandomVariable {Ts:Type}
+        {dom: SigmaAlgebra Ts}
+        {prts: ProbSpace dom}
+        {cod: SigmaAlgebra R}
+        {rv : RandomVariable prts cod}
         (rrv : RealValuedRandomVariable rv) :=
     { 
       srv_vals : list R;
       srv_vals_complete : forall x, In (rv_X x) srv_vals
     }.
 
+  Definition random_variable_le {Ts:Type}
+        {dom: SigmaAlgebra Ts}
+        {prts: ProbSpace dom}
+        {cod: SigmaAlgebra R} 
+        (rrv1 rrv2: RandomVariable prts cod) : Prop :=
+    forall (x:Ts), rv_X (RandomVariable:=rrv1) x <= rv_X (RandomVariable:=rrv2) x.
+
+  Definition Positive_random_variable {Ts:Type}
+        {dom: SigmaAlgebra Ts}
+        {prts: ProbSpace dom}
+        {cod: SigmaAlgebra R} 
+        (rrv: RandomVariable prts cod) : Prop :=
+    forall (x:Ts), 0 <= rv_X x.
+
 End RandomVariable.
+
+Section SimpleExpectation.
+  Context 
+    {Ts:Type}
+    {dom: SigmaAlgebra Ts}
+    {Prts: ProbSpace dom}
+    {cod: SigmaAlgebra R}
+    {rv : RandomVariable Prts cod}
+    (rrv : RealValuedRandomVariable rv)
+    (srv : SimpleRealValuedRandomVariable rrv).
+
+  Definition singleton_event {T} (m:T) := fun x => x=m.
+
+  Definition simpleRandomVariable_partition_image  : list (event Ts) :=
+    map (preimage rv_X) (map singleton_event srv_vals).
+    
+  Fixpoint list_sum (l : list R) : R :=
+    match l with
+    | nil => 0
+    | x :: xs => x + list_sum xs
+    end.
+
+  Definition SimpleExpectation  : R :=
+    list_sum (map (fun v => Rmult v (ps_P (preimage rv_X (singleton_event v)))) 
+                  srv_vals).
+
+
+End SimpleExpectation.
+
+Section Expectation.
+
+  Context 
+    {Ts:Type}
+    {dom: SigmaAlgebra Ts}
+    {Prts: ProbSpace dom}
+    {cod: SigmaAlgebra R}
+    {rv : RandomVariable Prts cod}
+    (rrv : RealValuedRandomVariable rv).
+
+  Definition BoundedPositiveRandomVariable
+    (rv2 : RandomVariable Prts cod) : Prop :=
+    Positive_random_variable rv2 /\ random_variable_le rv2 rv.
+
+(*
+  Definition SimpleExpectationSup (E : 
+
+  Definition Expection_positive_random_variable :
+    
+    
+Lemma ex_lub_Rbar (E : R -> Prop) : {l : Rbar | is_lub_Rbar E l}.
+Definition Lub_Rbar (E : R -> Prop) := proj1_sig (ex_lub_Rbar E).
+ *)
+    
+End Expectation.
 
 Section lebesgueintegration.
   
@@ -1189,36 +1270,6 @@ Section lebesgueintegration.
 
     }.
 
-  Context 
-    {Ts:Type}
-    {doms: SigmaAlgebra Ts}
-    {dom: ProbSpace doms}
-    {cod: SigmaAlgebra R}
-    {rv : RandomVariable dom cod}
-    (rrv : RealValuedRandomVariable rv)
-    (srv : SimpleRealValuedRandomVariable rrv)
-        
-    (mu : MeasurableFunction doms).
-
-  Definition singleton_event {T} (m:T) := fun x => x=m.
-
-  Definition partition_image  : list (event Ts) :=
-    map (preimage rv_X) (map singleton_event srv_vals).
-    
-  Definition partition_image_vals  : list (R * event Ts) :=
-    map (fun v => (v, (preimage rv_X (singleton_event v)))) srv_vals.
-
-  Fixpoint list_sum (l : list R) : R :=
-    match l with
-    | nil => 0
-    | x :: xs => x + list_sum xs
-    end.
-
-  Definition SimpleExpection  : R :=
-    list_sum (map (fun '(x,y) => Rmult x (measure_mu y)) partition_image_vals).
-
-  Definition random_variable_le (rv2 : RandomVariable dom cod) : Prop :=
-    forall (x:Ts), rv_X (RandomVariable:=rv) x <= rv_X (RandomVariable:=rv2) x.
 
   (* See https://en.wikipedia.org/wiki/Lebesgue_integration#Towards_a_formal_definition *)
   Definition F_star {dom:SigmaAlgebra R} (measure: MeasurableFunction dom) (f: R -> R) (t: R) :=
@@ -1256,19 +1307,15 @@ Section prob.
   Local Open Scope R.
   Local Open Scope prob.
 
-  Definition Pr {Ts:Type} {Td:Type}
-             {doms: SigmaAlgebra Ts}
-             {dom: ProbSpace doms}
-             {cod: SigmaAlgebra Td}
-             {rv:RandomVariable dom cod}
+  Context {Ts:Type} {Td:Type}
+          {dom: SigmaAlgebra Ts}
+          {prts: ProbSpace dom}
+          {cod: SigmaAlgebra Td}
+          {rv:RandomVariable prts cod}.
+
+  Definition Pr 
              (S:Td->Prop)
     := ps_P (fun x:Ts => S (rv_X x)).
-
-  Context {Ts:Type} {Td:Type}
-          {doms: SigmaAlgebra Ts}
-          {dom: ProbSpace doms}
-          {cod: SigmaAlgebra Td}
-          {rv:RandomVariable dom cod}.
 
   Definition independent (A B:Td->Prop) :=
     Pr (A ∩ B) = (Pr A * Pr B).
@@ -1322,7 +1369,7 @@ Section classic.
       intros [nn Hnn].
       destruct (lt_dec nn m); [ | tauto].
       specialize (H0 _ Hnn).
-      omega.
+      lia.
     - apply make_collection_disjoint_in in Hn.
       exists n; tauto.
   Qed.
