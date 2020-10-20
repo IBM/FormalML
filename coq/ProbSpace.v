@@ -1141,14 +1141,36 @@ Section RandomVariable.
 
   Class RealValuedRandomVariable {Ts:Type}
         {doms: SigmaAlgebra Ts}
-        (dom: ProbSpace doms)
-        (cod: SigmaAlgebra R) :=
+        {dom: ProbSpace doms}
+        {cod: SigmaAlgebra R} 
+        (rrv: RandomVariable dom cod)   :=
     {
-      rrv: RandomVariable dom cod;
-      
       rrv_is_real: forall r:R, sa_sigma (fun omega:Ts => (rv_X omega) <= r);
     }.
-  
+
+  Program Definition pos_fun_part {Ts:Type} (f : Ts -> R) : (Ts -> nonnegreal) :=
+    fun x => mknonnegreal (Rmax (f x) 0) _.
+  Next Obligation.
+    apply Rmax_r.
+  Defined.
+
+  Program Definition neg_fun_part {Ts:Type} (f : Ts -> R) : (Ts -> nonnegreal) :=
+    fun x => mknonnegreal (Rmax (- f x) 0) _.
+  Next Obligation.
+    apply Rmax_r.
+  Defined.
+
+  Class SimpleRealValuedRandomVariable {Ts:Type}
+        {doms: SigmaAlgebra Ts}
+        {dom: ProbSpace doms}
+        {cod: SigmaAlgebra R}
+        {rv : RandomVariable dom cod}
+        (rrv : RealValuedRandomVariable rv) :=
+    { 
+      srv_vals : list R;
+      srv_vals_complete : forall x, In (rv_X x) srv_vals
+    }.
+
 End RandomVariable.
 
 Section lebesgueintegration.
@@ -1165,8 +1187,40 @@ Section lebesgueintegration.
            collection_is_pairwise_disjoint collection ->
            sum_of_probs_equals measure_mu collection (measure_mu (union_of_collection collection))
 
-                               
     }.
+
+  Context 
+    {Ts:Type}
+    {doms: SigmaAlgebra Ts}
+    {dom: ProbSpace doms}
+    {cod: SigmaAlgebra R}
+    {rv : RandomVariable dom cod}
+    (rrv : RealValuedRandomVariable rv)
+    (srv : SimpleRealValuedRandomVariable rrv)
+        
+    (mu : MeasurableFunction doms).
+
+  Definition singleton_event {T} (m:T) := fun x => x=m.
+
+  Definition partition_image  : list (event Ts) :=
+    map (preimage rv_X) (map singleton_event srv_vals).
+    
+  Definition partition_image_vals  : list (R * event Ts) :=
+    map (fun v => (v, (preimage rv_X (singleton_event v)))) srv_vals.
+
+  Fixpoint list_sum (l : list R) : R :=
+    match l with
+    | nil => 0
+    | x :: xs => x + list_sum xs
+    end.
+
+  Definition SimpleExpection  : R :=
+    list_sum (map (fun '(x,y) => Rmult x (measure_mu y)) partition_image_vals).
+
+  Definition random_variable_le (rv2 : RandomVariable dom cod) : Prop :=
+    forall (x:Ts), rv.(rv_X) x <= rv2.(rv_X) x.
+
+  Search completeness.
 
   (* See https://en.wikipedia.org/wiki/Lebesgue_integration#Towards_a_formal_definition *)
   Definition F_star {dom:SigmaAlgebra R} (measure: MeasurableFunction dom) (f: R -> R) (t: R) :=
