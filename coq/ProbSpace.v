@@ -1150,17 +1150,6 @@ Section RandomVariable.
       rrv_is_real: forall r:R, sa_sigma (fun omega:Ts => (rv_X omega) <= r);
     }.
 
-  Program Definition pos_fun_part {Ts:Type} (f : Ts -> R) : (Ts -> nonnegreal) :=
-    fun x => mknonnegreal (Rmax (f x) 0) _.
-  Next Obligation.
-    apply Rmax_r.
-  Defined.
-
-  Program Definition neg_fun_part {Ts:Type} (f : Ts -> R) : (Ts -> nonnegreal) :=
-    fun x => mknonnegreal (Rmax (- f x) 0) _.
-  Next Obligation.
-    apply Rmax_r.
-  Defined.
 
   Class ConstantRealValuedRandomVariable {Ts:Type}
         {dom: SigmaAlgebra Ts}
@@ -1170,7 +1159,7 @@ Section RandomVariable.
         (rrv : RealValuedRandomVariable rv) :=
     { 
       srv_val : R;
-      srv_val_complete : forall x, (rv_X x) =  srv_val
+      srv_val_complete : forall x, rv_X x =  srv_val
     }.
 
   Class SimpleRealValuedRandomVariable {Ts:Type}
@@ -1188,14 +1177,14 @@ Section RandomVariable.
         {dom: SigmaAlgebra Ts}
         {prts: ProbSpace dom}
         {cod: SigmaAlgebra R} 
-        (rrv1 rrv2: RandomVariable prts cod) : Prop :=
-    forall (x:Ts), rv_X (RandomVariable:=rrv1) x <= rv_X (RandomVariable:=rrv2) x.
+        (rv1 rv2: RandomVariable prts cod) : Prop :=
+    forall (x:Ts), rv_X (RandomVariable:=rv1) x <= rv_X (RandomVariable:=rv2) x.
 
   Definition Positive_random_variable {Ts:Type}
         {dom: SigmaAlgebra Ts}
         {prts: ProbSpace dom}
         {cod: SigmaAlgebra R} 
-        (rrv: RandomVariable prts cod) : Prop :=
+        (rv: RandomVariable prts cod) : Prop :=
     forall (x:Ts), 0 <= rv_X x.
 
 End RandomVariable.
@@ -1256,12 +1245,38 @@ Admitted.
          (fun (sv : SimpleRealValuedRandomVariable rrv2) => 
             (BoundedPositiveRandomVariable rv rv2))).
 *)
-    
-  Definition positive_part_ranv {rv : RandomVariable Prts cod }
-             (rrv : RealValuedRandomVariable rv) := rrv.
 
-  Definition negative_part_ranv {rv : RandomVariable Prts cod }
-             (rrv : RealValuedRandomVariable rv) := rrv.
+  Program Definition pos_fun_part {Ts:Type} (f : Ts -> R) : (Ts -> nonnegreal) :=
+    fun x => mknonnegreal (Rmax (f x) 0) _.
+  Next Obligation.
+    apply Rmax_r.
+  Defined.
+
+  Program Definition neg_fun_part {Ts:Type} (f : Ts -> R) : (Ts -> nonnegreal) :=
+    fun x => mknonnegreal (Rmax (- f x) 0) _.
+  Next Obligation.
+    apply Rmax_r.
+  Defined.
+
+  Program Definition positive_part_ranv {rv : RandomVariable Prts cod }
+             (rrv : RealValuedRandomVariable rv) := 
+    let nrv := Build_RandomVariable _ _ _ Prts cod (pos_fun_part rv_X) _ in
+    Build_RealValuedRandomVariable _ _ _ _ nrv _.
+
+  Next Obligation.
+  Admitted.
+  Next Obligation.
+  Admitted.
+
+  Program Definition negative_part_ranv {rv : RandomVariable Prts cod }
+             (rrv : RealValuedRandomVariable rv) := 
+    let nrv := Build_RandomVariable _ _ _ Prts cod (neg_fun_part rv_X) _ in
+    Build_RealValuedRandomVariable _ _ _ _ nrv _ .
+
+  Next Obligation.
+  Admitted.
+  Next Obligation.
+  Admitted.
 
   Definition Expectation  {rv : RandomVariable Prts cod }
              (rrv : RealValuedRandomVariable rv) : option Rbar :=
