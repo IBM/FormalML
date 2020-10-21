@@ -1234,23 +1234,40 @@ Section Expectation.
     {Ts:Type}
     {dom: SigmaAlgebra Ts}
     {Prts: ProbSpace dom}
-    {cod: SigmaAlgebra R}
-    {rv : RandomVariable Prts cod}
-    (rrv : RealValuedRandomVariable rv).
+    {cod: SigmaAlgebra R}.
 
   Definition BoundedPositiveRandomVariable
-    (rv2 : RandomVariable Prts cod) : Prop :=
-    Positive_random_variable rv2 /\ random_variable_le rv2 rv.
+    (rv1 rv2 : RandomVariable Prts cod) : Prop :=
+    Positive_random_variable rv2 /\ random_variable_le rv2 rv1.
 
-  Definition SimpleExpectationSup (E : SimpleRealValuedRandomVariable rrv -> Prop) : Rbar
+  Definition SimpleExpectationSup {rv : RandomVariable Prts cod }
+             {rrv : RealValuedRandomVariable rv}
+             (E : SimpleRealValuedRandomVariable rrv -> Prop) : Rbar
     := Lub_Rbar (fun (x : R) => 
                    exists (sv : SimpleRealValuedRandomVariable rrv), 
                      E sv /\ (SimpleExpectation rrv sv) = x).
 
-  Definition Expection_posRV : Rbar :=
-      SimpleExpectationSup (fun (sv : SimpleRealValuedRandomVariable rrv) => 
-                              BoundedPositiveRandomVariable rv).
+  Definition Expection_posRV {rv : RandomVariable Prts cod }
+             (rrv : RealValuedRandomVariable rv) : Rbar.
+Admitted.
+(*
+ :=
+      (SimpleExpectationSup
+         (fun (sv : SimpleRealValuedRandomVariable rrv2) => 
+            (BoundedPositiveRandomVariable rv rv2))).
+*)
     
+  Definition positive_part_ranv {rv : RandomVariable Prts cod }
+             (rrv : RealValuedRandomVariable rv) := rrv.
+
+  Definition negative_part_ranv {rv : RandomVariable Prts cod }
+             (rrv : RealValuedRandomVariable rv) := rrv.
+
+  Definition Expectation  {rv : RandomVariable Prts cod }
+             (rrv : RealValuedRandomVariable rv) : option Rbar :=
+    Rbar_plus' (Expection_posRV (positive_part_ranv rrv))
+               (Rbar_opp (Expection_posRV (negative_part_ranv rrv))).
+
 End Expectation.
 
 Section lebesgueintegration.
