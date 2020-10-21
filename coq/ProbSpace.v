@@ -1229,22 +1229,40 @@ Section Expectation.
     (rv1 rv2 : RandomVariable Prts cod) : Prop :=
     Positive_random_variable rv2 /\ random_variable_le rv2 rv1.
 
-  Definition SimpleExpectationSup {rv : RandomVariable Prts cod }
-             {rrv : RealValuedRandomVariable rv}
-             (E : SimpleRealValuedRandomVariable rrv -> Prop) : Rbar
+  Definition SimpleExpectationSup 
+             (E :  forall (rv:RandomVariable Prts cod)
+                     (rrv: RealValuedRandomVariable rv)
+                     (srv:SimpleRealValuedRandomVariable rrv), Prop) : Rbar
     := Lub_Rbar (fun (x : R) => 
-                   exists (sv : SimpleRealValuedRandomVariable rrv), 
-                     E sv /\ (SimpleExpectation rrv sv) = x).
+                   exists rv rrv srv, 
+                     E rv rrv srv /\ (SimpleExpectation rrv) srv = x).
 
+  (*
+  Record SRVRV
+    := {
+    srvrv_rv :> RandomVariable Prts cod
+    ; srvrv_rrv :> RealValuedRandomVariable srvrv_rv
+    ; srvrv_srv :> SimpleRealValuedRandomVariable srvrv_rrv
+      }.
+  
+  Definition SimpleExpectationSup 
+             (E : SRVRV -> Prop) : Rbar
+    := Lub_Rbar (fun (x : R) => 
+                   exists sv, 
+                     E sv /\ (SimpleExpectation (srvrv_rrv sv) sv) = x).
+
+   *)
+    
   Definition Expection_posRV {rv : RandomVariable Prts cod }
-             (rrv : RealValuedRandomVariable rv) : Rbar.
-Admitted.
-(*
- :=
+             (rrv : RealValuedRandomVariable rv)
+             (posrv:Positive_random_variable rv) :
+    Rbar
+    :=
       (SimpleExpectationSup
-         (fun (sv : SimpleRealValuedRandomVariable rrv2) => 
+         (fun (rv2:RandomVariable Prts cod)
+            (rrv2: RealValuedRandomVariable rv2)
+            (srv2:SimpleRealValuedRandomVariable rrv2) =>
             (BoundedPositiveRandomVariable rv rv2))).
-*)
 
   Program Definition pos_fun_part {Ts:Type} (f : Ts -> R) : (Ts -> nonnegreal) :=
     fun x => mknonnegreal (Rmax (f x) 0) _.
@@ -1258,30 +1276,48 @@ Admitted.
     apply Rmax_r.
   Defined.
 
-  Program Definition positive_part_ranv {rv : RandomVariable Prts cod }
-             (rrv : RealValuedRandomVariable rv) := 
-    let nrv := Build_RandomVariable _ _ _ Prts cod (pos_fun_part rv_X) _ in
-    Build_RealValuedRandomVariable _ _ _ _ nrv _.
-
-  Next Obligation.
-  Admitted.
-  Next Obligation.
-  Admitted.
-
-  Program Definition negative_part_ranv {rv : RandomVariable Prts cod }
-             (rrv : RealValuedRandomVariable rv) := 
-    let nrv := Build_RandomVariable _ _ _ Prts cod (neg_fun_part rv_X) _ in
-    Build_RealValuedRandomVariable _ _ _ _ nrv _ .
-
-  Next Obligation.
-  Admitted.
+  Program Instance positive_part_rv
+          {rv : RandomVariable Prts cod }
+          (rrv : RealValuedRandomVariable rv) : RandomVariable Prts cod
+    := {
+    rv_X := (pos_fun_part rv_X)
+      }.
   Next Obligation.
   Admitted.
 
-  Definition Expectation  {rv : RandomVariable Prts cod }
+  Instance positive_part_rrv {rv : RandomVariable Prts cod }
+          (rrv : RealValuedRandomVariable rv) :
+    RealValuedRandomVariable (positive_part_rv rrv).
+  Admitted.
+
+  Lemma positive_part_prv {rv : RandomVariable Prts cod }
+           (rrv : RealValuedRandomVariable rv) :
+    Positive_random_variable (positive_part_rv rrv).
+  Admitted.
+
+ Program Instance negative_part_rv
+          {rv : RandomVariable Prts cod }
+          (rrv : RealValuedRandomVariable rv) : RandomVariable Prts cod
+    := {
+    rv_X := (neg_fun_part rv_X)
+      }.
+  Next Obligation.
+  Admitted.
+
+  Instance negative_part_rrv {rv : RandomVariable Prts cod }
+          (rrv : RealValuedRandomVariable rv) :
+    RealValuedRandomVariable (negative_part_rv rrv).
+  Admitted.
+
+  Lemma negative_part_prv {rv : RandomVariable Prts cod }
+           (rrv : RealValuedRandomVariable rv) :
+    Positive_random_variable (negative_part_rv rrv).
+  Admitted.
+
+  Definition Expectation {rv : RandomVariable Prts cod }
              (rrv : RealValuedRandomVariable rv) : option Rbar :=
-    Rbar_plus' (Expection_posRV (positive_part_ranv rrv))
-               (Rbar_opp (Expection_posRV (negative_part_ranv rrv))).
+    Rbar_plus' (@Expection_posRV (positive_part_rv rrv) (positive_part_rrv rrv) (positive_part_prv rrv))
+               (Rbar_opp (@Expection_posRV (negative_part_rv rrv) (negative_part_rrv rrv) (negative_part_prv rrv))).
 
 End Expectation.
 
