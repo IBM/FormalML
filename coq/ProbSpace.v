@@ -1242,15 +1242,14 @@ Section Expectation.
     (rv2 : RandomVariable Prts cod) : Prop :=
     Positive_random_variable rv2 /\ random_variable_le rv2 rv.
 
-(*
-  Definition SimpleExpectationSup (E : 
+  Definition SimpleExpectationSup (E : SimpleRealValuedRandomVariable rrv -> Prop) : Rbar
+    := Lub_Rbar (fun (x : R) => 
+                   exists (sv : SimpleRealValuedRandomVariable rrv), 
+                     E sv /\ (SimpleExpectation rrv sv) = x).
 
-  Definition Expection_positive_random_variable :
-    
-    
-Lemma ex_lub_Rbar (E : R -> Prop) : {l : Rbar | is_lub_Rbar E l}.
-Definition Lub_Rbar (E : R -> Prop) := proj1_sig (ex_lub_Rbar E).
- *)
+  Definition Expection_posRV : Rbar :=
+      SimpleExpectationSup (fun (sv : SimpleRealValuedRandomVariable rrv) => 
+                              BoundedPositiveRandomVariable rv).
     
 End Expectation.
 
