@@ -1196,7 +1196,7 @@ Section SimpleExpectation.
     {Prts: ProbSpace dom}
     {cod: SigmaAlgebra R}
     {rv : RandomVariable Prts cod}
-    (rrv : RealValuedRandomVariable rv)
+    {rrv : RealValuedRandomVariable rv}
     (srv : SimpleRealValuedRandomVariable rrv).
 
   Definition singleton_event {T} (m:T) := fun x => x=m.
@@ -1235,7 +1235,7 @@ Section Expectation.
                      (srv:SimpleRealValuedRandomVariable rrv), Prop) : Rbar
     := Lub_Rbar (fun (x : R) => 
                    exists rv rrv srv, 
-                     E rv rrv srv /\ (SimpleExpectation rrv) srv = x).
+                     E rv rrv srv /\ (SimpleExpectation srv) = x).
 
   (*
   Record SRVRV
@@ -1255,9 +1255,7 @@ Section Expectation.
     
   Definition Expection_posRV {rv : RandomVariable Prts cod }
              (rrv : RealValuedRandomVariable rv)
-             (posrv:Positive_random_variable rv) :
-    Rbar
-    :=
+             (posrv:Positive_random_variable rv) :  Rbar   :=
       (SimpleExpectationSup
          (fun (rv2:RandomVariable Prts cod)
             (rrv2: RealValuedRandomVariable rv2)
@@ -1276,6 +1274,55 @@ Section Expectation.
     apply Rmax_r.
   Defined.
 
+  Lemma Rabs_measureable_neg (f : Ts -> R) :
+    forall (r:R), r < 0 -> sa_sigma (fun omega : Ts => Rmax (f omega) 0 <= r).
+  Proof.
+    intros.
+    assert (event_equiv (fun omega : Ts => Rmax (f omega) 0 <= r) event_none).
+    unfold event_equiv; intros.
+    generalize (Rmax_r (f x) 0); intros.
+    unfold event_none.
+    lra.
+    rewrite H0.
+    apply sa_none.
+  Qed.
+    
+  Lemma Rabs_measureable_pos (f : Ts -> R) :
+    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
+    (forall (r:R),  0 <= r -> sa_sigma (fun omega : Ts => Rmax (f omega) 0 <= r)).
+  Proof.
+    intros.
+    assert (event_equiv (fun omega : Ts => Rmax (f omega) 0 <= r)
+                        (fun omega : Ts => f omega <= r)).
+    unfold event_equiv, event_union; intros.
+    split.
+    intros.
+    unfold Rmax in H1.
+    destruct (Rle_dec (f x) 0); lra.
+    replace (r) with (Rmax r 0) at 2.
+    apply Rle_max_compat_r.
+    rewrite Rmax_left; trivial.
+    now rewrite H1.
+  Qed.
+
+  Lemma Rabs_measureable (f : Ts -> R) :
+    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
+    (forall (r:R),  sa_sigma (fun omega : Ts => Rmax (f omega) 0 <= r)).
+  Proof.
+    intros.
+    destruct (Rle_dec 0 r).
+    now apply Rabs_measureable_pos.
+    apply Rabs_measureable_neg.
+    lra.
+  Qed.
+
+  Lemma Ropp_measureable (f : Ts -> R) :
+    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
+    (forall (r:R),  sa_sigma (fun omega : Ts => - (f omega) <= r)).
+  Proof.
+  Admitted.
+
+
   Program Instance positive_part_rv
           {rv : RandomVariable Prts cod }
           (rrv : RealValuedRandomVariable rv) : RandomVariable Prts cod
@@ -1283,17 +1330,35 @@ Section Expectation.
     rv_X := (pos_fun_part rv_X)
       }.
   Next Obligation.
+    destruct rv.
+    unfold preimage.
+    unfold preimage in rv_preimage0.
+    unfold rv_X.
+    
+    
   Admitted.
 
   Instance positive_part_rrv {rv : RandomVariable Prts cod }
           (rrv : RealValuedRandomVariable rv) :
     RealValuedRandomVariable (positive_part_rv rrv).
-  Admitted.
+  Proof.
+    constructor.
+    destruct rrv.
+    unfold rv_X.
+    unfold positive_part_rv, pos_fun_part.
+    simpl.
+    now apply Rabs_measureable.
+  Qed.
 
   Lemma positive_part_prv {rv : RandomVariable Prts cod }
            (rrv : RealValuedRandomVariable rv) :
     Positive_random_variable (positive_part_rv rrv).
-  Admitted.
+  Proof.
+    unfold Positive_random_variable, rv_X.
+    unfold positive_part_rv, pos_fun_part.
+    intros.
+    apply cond_nonneg.
+ Qed.
 
  Program Instance negative_part_rv
           {rv : RandomVariable Prts cod }
@@ -1307,12 +1372,25 @@ Section Expectation.
   Instance negative_part_rrv {rv : RandomVariable Prts cod }
           (rrv : RealValuedRandomVariable rv) :
     RealValuedRandomVariable (negative_part_rv rrv).
-  Admitted.
+  Proof.
+    constructor.
+    destruct rrv.
+    unfold rv_X.
+    unfold positive_part_rv, pos_fun_part.
+    simpl.
+    apply Rabs_measureable.
+    now apply Ropp_measureable.
+  Qed.
 
   Lemma negative_part_prv {rv : RandomVariable Prts cod }
            (rrv : RealValuedRandomVariable rv) :
     Positive_random_variable (negative_part_rv rrv).
-  Admitted.
+  Proof.
+    unfold Positive_random_variable, rv_X.
+    unfold negative_part_rv, neg_fun_part.
+    intros.
+    apply cond_nonneg.
+ Qed.
 
   Definition Expectation {rv : RandomVariable Prts cod }
              (rrv : RealValuedRandomVariable rv) : option Rbar :=
