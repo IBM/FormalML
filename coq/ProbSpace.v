@@ -1143,49 +1143,50 @@ Section RandomVariable.
 
   Class RealValuedRandomVariable {Ts:Type}
         {dom: SigmaAlgebra Ts}
-        {prts: ProbSpace dom}
-        {cod: SigmaAlgebra R} 
-        (rrv: RandomVariable prts cod)   :=
+        (prts: ProbSpace dom)
+        (cod: SigmaAlgebra R)  :=
+  
     {
-      rrv_is_real: forall r:R, sa_sigma (fun omega:Ts => (rv_X omega) <= r);
-    }.
+      (* the random variable. *)
+      rrv_X: Ts -> R;
 
+      rrv_is_real: forall r:R, sa_sigma (fun omega:Ts => (rrv_X omega) <= r);
+    }.
 
   Class ConstantRealValuedRandomVariable {Ts:Type}
         {dom: SigmaAlgebra Ts}
         {prts: ProbSpace dom}
         {cod: SigmaAlgebra R}
-        {rv : RandomVariable prts cod}
-        (rrv : RealValuedRandomVariable rv) :=
+        (rrv : RealValuedRandomVariable prts cod) :=
     { 
       srv_val : R;
-      srv_val_complete : forall x, rv_X x =  srv_val
+      srv_val_complete : forall x, rrv_X x =  srv_val
     }.
 
   Class SimpleRealValuedRandomVariable {Ts:Type}
         {dom: SigmaAlgebra Ts}
         {prts: ProbSpace dom}
         {cod: SigmaAlgebra R}
-        {rv : RandomVariable prts cod}
-        (rrv : RealValuedRandomVariable rv) :=
+        (rrv : RealValuedRandomVariable prts cod) :=
     { 
       srv_vals : list R;
-      srv_vals_complete : forall x, In (rv_X x) srv_vals
+      srv_vals_complete : forall x, In (rrv_X x) srv_vals
     }.
 
-  Definition random_variable_le {Ts:Type}
+  Definition RealRandomVariableLe {Ts:Type}
         {dom: SigmaAlgebra Ts}
         {prts: ProbSpace dom}
         {cod: SigmaAlgebra R} 
-        (rv1 rv2: RandomVariable prts cod) : Prop :=
-    forall (x:Ts), rv_X (RandomVariable:=rv1) x <= rv_X (RandomVariable:=rv2) x.
+        (rv1 rv2: RealValuedRandomVariable prts cod) : Prop :=
+    forall (x:Ts), rrv_X (RealValuedRandomVariable:=rv1) x <= 
+                   rrv_X (RealValuedRandomVariable:=rv2) x.
 
-  Definition Positive_random_variable {Ts:Type}
+  Definition PositiveRandomVariable {Ts:Type}
         {dom: SigmaAlgebra Ts}
         {prts: ProbSpace dom}
         {cod: SigmaAlgebra R} 
-        (rv: RandomVariable prts cod) : Prop :=
-    forall (x:Ts), 0 <= rv_X x.
+        (rv: RealValuedRandomVariable prts cod) : Prop :=
+    forall (x:Ts), 0 <= rrv_X x.
 
 End RandomVariable.
 
@@ -1195,14 +1196,13 @@ Section SimpleExpectation.
     {dom: SigmaAlgebra Ts}
     {Prts: ProbSpace dom}
     {cod: SigmaAlgebra R}
-    {rv : RandomVariable Prts cod}
-    {rrv : RealValuedRandomVariable rv}
+    {rrv : RealValuedRandomVariable Prts cod}
     (srv : SimpleRealValuedRandomVariable rrv).
 
   Definition singleton_event {T} (m:T) := fun x => x=m.
 
   Definition simpleRandomVariable_partition_image  : list (event Ts) :=
-    map (preimage rv_X) (map singleton_event srv_vals).
+    map (preimage rrv_X) (map singleton_event srv_vals).
     
   Fixpoint list_sum (l : list R) : R :=
     match l with
@@ -1211,7 +1211,7 @@ Section SimpleExpectation.
     end.
 
   Definition SimpleExpectation  : R :=
-    list_sum (map (fun v => Rmult v (ps_P (preimage rv_X (singleton_event v)))) 
+    list_sum (map (fun v => Rmult v (ps_P (preimage rrv_X (singleton_event v)))) 
                   srv_vals).
 
 
@@ -1226,41 +1226,25 @@ Section Expectation.
     {cod: SigmaAlgebra R}.
 
   Definition BoundedPositiveRandomVariable
-    (rv1 rv2 : RandomVariable Prts cod) : Prop :=
-    Positive_random_variable rv2 /\ random_variable_le rv2 rv1.
+    (rv1 rv2 : RealValuedRandomVariable Prts cod) : Prop :=
+    PositiveRandomVariable rv2 /\ RealRandomVariableLe rv2 rv1.
 
   Definition SimpleExpectationSup 
-             (E :  forall (rv:RandomVariable Prts cod)
-                     (rrv: RealValuedRandomVariable rv)
+             (E :  forall 
+                     (rrv: RealValuedRandomVariable Prts cod)
                      (srv:SimpleRealValuedRandomVariable rrv), Prop) : Rbar
     := Lub_Rbar (fun (x : R) => 
-                   exists rv rrv srv, 
-                     E rv rrv srv /\ (SimpleExpectation srv) = x).
-
-  (*
-  Record SRVRV
-    := {
-    srvrv_rv :> RandomVariable Prts cod
-    ; srvrv_rrv :> RealValuedRandomVariable srvrv_rv
-    ; srvrv_srv :> SimpleRealValuedRandomVariable srvrv_rrv
-      }.
-  
-  Definition SimpleExpectationSup 
-             (E : SRVRV -> Prop) : Rbar
-    := Lub_Rbar (fun (x : R) => 
-                   exists sv, 
-                     E sv /\ (SimpleExpectation (srvrv_rrv sv) sv) = x).
-
-   *)
+                   exists rrv srv, 
+                     E rrv srv /\ (SimpleExpectation srv) = x).
     
-  Definition Expection_posRV {rv : RandomVariable Prts cod }
-             (rrv : RealValuedRandomVariable rv)
-             (posrv:Positive_random_variable rv) :  Rbar   :=
+  Definition Expection_posRV
+             (rrv : RealValuedRandomVariable Prts cod)
+             (posrv:PositiveRandomVariable rrv) :  Rbar   :=
       (SimpleExpectationSup
-         (fun (rv2:RandomVariable Prts cod)
-            (rrv2: RealValuedRandomVariable rv2)
+         (fun
+            (rrv2: RealValuedRandomVariable Prts cod)
             (srv2:SimpleRealValuedRandomVariable rrv2) =>
-            (BoundedPositiveRandomVariable rv rv2))).
+            (BoundedPositiveRandomVariable rrv rrv2))).
 
   Program Definition pos_fun_part {Ts:Type} (f : Ts -> R) : (Ts -> nonnegreal) :=
     fun x => mknonnegreal (Rmax (f x) 0) _.
@@ -1295,13 +1279,8 @@ Section Expectation.
     assert (event_equiv (fun omega : Ts => Rmax (f omega) 0 <= r)
                         (fun omega : Ts => f omega <= r)).
     unfold event_equiv, event_union; intros.
-    split.
-    intros.
-    unfold Rmax in H1.
+    unfold Rmax.
     destruct (Rle_dec (f x) 0); lra.
-    replace (r) with (Rmax r 0) at 2.
-    apply Rle_max_compat_r.
-    rewrite Rmax_left; trivial.
     now rewrite H1.
   Qed.
 
@@ -1333,78 +1312,50 @@ Section Expectation.
     Admitted.
 
   Program Instance positive_part_rv
-          {rv : RandomVariable Prts cod }
-          (rrv : RealValuedRandomVariable rv) : RandomVariable Prts cod
+          (rvv : RealValuedRandomVariable Prts cod)
+           : RealValuedRandomVariable Prts cod
     := {
-    rv_X := (pos_fun_part rv_X)
+    rrv_X := (pos_fun_part rrv_X)
       }.
   Next Obligation.
-    destruct rv.
-    unfold preimage.
-    unfold preimage in rv_preimage0.
-    unfold rv_X.
-    
-    
-  Admitted.
-
-  Instance positive_part_rrv {rv : RandomVariable Prts cod }
-          (rrv : RealValuedRandomVariable rv) :
-    RealValuedRandomVariable (positive_part_rv rrv).
-  Proof.
-    constructor.
-    destruct rrv.
-    unfold rv_X.
-    unfold positive_part_rv, pos_fun_part.
-    simpl.
+    destruct rvv.
     now apply Rabs_measurable.
   Qed.
 
-  Lemma positive_part_prv {rv : RandomVariable Prts cod }
-           (rrv : RealValuedRandomVariable rv) :
-    Positive_random_variable (positive_part_rv rrv).
+  Lemma positive_part_prv 
+           (rrv : RealValuedRandomVariable Prts cod) :
+    PositiveRandomVariable (positive_part_rv rrv).
   Proof.
-    unfold Positive_random_variable, rv_X.
+    unfold PositiveRandomVariable, rrv_X.
     unfold positive_part_rv, pos_fun_part.
     intros.
     apply cond_nonneg.
  Qed.
 
  Program Instance negative_part_rv
-          {rv : RandomVariable Prts cod }
-          (rrv : RealValuedRandomVariable rv) : RandomVariable Prts cod
+          (rrv : RealValuedRandomVariable Prts cod) : RealValuedRandomVariable Prts cod
     := {
-    rv_X := (neg_fun_part rv_X)
+    rrv_X := (neg_fun_part rrv_X)
       }.
   Next Obligation.
-  Admitted.
-
-  Instance negative_part_rrv {rv : RandomVariable Prts cod }
-          (rrv : RealValuedRandomVariable rv) :
-    RealValuedRandomVariable (negative_part_rv rrv).
-  Proof.
-    constructor.
     destruct rrv.
-    unfold rv_X.
-    unfold positive_part_rv, pos_fun_part.
-    simpl.
     apply Rabs_measurable.
     now apply Ropp_measurable.
   Qed.
 
-  Lemma negative_part_prv {rv : RandomVariable Prts cod }
-           (rrv : RealValuedRandomVariable rv) :
-    Positive_random_variable (negative_part_rv rrv).
+  Lemma negative_part_prv
+           (rrv : RealValuedRandomVariable Prts cod) :
+    PositiveRandomVariable (negative_part_rv rrv).
   Proof.
-    unfold Positive_random_variable, rv_X.
+    unfold PositiveRandomVariable, rrv_X.
     unfold negative_part_rv, neg_fun_part.
     intros.
     apply cond_nonneg.
  Qed.
 
-  Definition Expectation {rv : RandomVariable Prts cod }
-             (rrv : RealValuedRandomVariable rv) : option Rbar :=
-    Rbar_plus' (@Expection_posRV (positive_part_rv rrv) (positive_part_rrv rrv) (positive_part_prv rrv))
-               (Rbar_opp (@Expection_posRV (negative_part_rv rrv) (negative_part_rrv rrv) (negative_part_prv rrv))).
+  Definition Expectation (rrv : RealValuedRandomVariable Prts cod) : option Rbar :=
+    Rbar_plus' (@Expection_posRV (positive_part_rv rrv) (positive_part_prv rrv))
+               (Rbar_opp (@Expection_posRV (negative_part_rv rrv) (negative_part_prv rrv))).
 
 End Expectation.
 
