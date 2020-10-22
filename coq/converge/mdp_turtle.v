@@ -193,7 +193,7 @@ Section optimal_path.
   (* Recovering the greedy policy for each iteration n. *)
   Definition turtle_approx_dec_rule (n : nat) : dec_rule (turtle_mdp grid) :=
     fun s => argmax (act_list_not_nil (turtle_mdp grid) s)
-                 (fun a => expt_value (t (turtle_mdp grid) s a)
+                 (fun a => expt_value (turtle_prob_t s a)
                                    (fun s' => reward (turtle_mdp grid) s a s' + γ*(turtle_bellman_iter n s'))).
     
 End optimal_path.
