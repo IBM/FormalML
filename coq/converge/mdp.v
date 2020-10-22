@@ -2279,8 +2279,7 @@ Proof.
   - unfold max_ltv. destruct (dec_rule_finite M) as [ld Hld].
     apply Rmax_spec. rewrite in_map_iff.
     exists (greedy γ init).
-    split. erewrite exists_fixpt_policy ; trivial.
-    ++ apply Hld.
+    split ; eauto. erewrite exists_fixpt_policy ; trivial.
   - unfold max_ltv. destruct (dec_rule_finite M) as [ld Hld].
     rewrite Rmax_list_le_iff.
     ++ intros r Hr.
