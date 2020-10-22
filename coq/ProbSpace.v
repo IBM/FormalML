@@ -1274,7 +1274,7 @@ Section Expectation.
     apply Rmax_r.
   Defined.
 
-  Lemma Rabs_measureable_neg (f : Ts -> R) :
+  Lemma Rabs_measurable_neg (f : Ts -> R) :
     forall (r:R), r < 0 -> sa_sigma (fun omega : Ts => Rmax (f omega) 0 <= r).
   Proof.
     intros.
@@ -1287,7 +1287,7 @@ Section Expectation.
     apply sa_none.
   Qed.
     
-  Lemma Rabs_measureable_pos (f : Ts -> R) :
+  Lemma Rabs_measurable_pos (f : Ts -> R) :
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
     (forall (r:R),  0 <= r -> sa_sigma (fun omega : Ts => Rmax (f omega) 0 <= r)).
   Proof.
@@ -1305,23 +1305,32 @@ Section Expectation.
     now rewrite H1.
   Qed.
 
-  Lemma Rabs_measureable (f : Ts -> R) :
+  Lemma Rabs_measurable (f : Ts -> R) :
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
     (forall (r:R),  sa_sigma (fun omega : Ts => Rmax (f omega) 0 <= r)).
   Proof.
     intros.
     destruct (Rle_dec 0 r).
-    now apply Rabs_measureable_pos.
-    apply Rabs_measureable_neg.
+    now apply Rabs_measurable_pos.
+    apply Rabs_measurable_neg.
     lra.
   Qed.
 
-  Lemma Ropp_measureable (f : Ts -> R) :
+  Lemma Ropp_measurable (f : Ts -> R) :
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
     (forall (r:R),  sa_sigma (fun omega : Ts => - (f omega) <= r)).
   Proof.
-  Admitted.
-
+    intros.
+    assert (event_equiv (fun omega : Ts => - (f omega) <= r)
+                        (event_union (fun omega : Ts => (f omega) = -r)
+                                     (event_complement (fun omega : Ts => (f omega) <= -r)))).
+    unfold event_equiv, event_union, event_complement; intros.
+    lra.
+    rewrite H0.
+    apply sa_union.
+    admit.
+    now apply sa_complement.
+    Admitted.
 
   Program Instance positive_part_rv
           {rv : RandomVariable Prts cod }
@@ -1347,7 +1356,7 @@ Section Expectation.
     unfold rv_X.
     unfold positive_part_rv, pos_fun_part.
     simpl.
-    now apply Rabs_measureable.
+    now apply Rabs_measurable.
   Qed.
 
   Lemma positive_part_prv {rv : RandomVariable Prts cod }
@@ -1378,8 +1387,8 @@ Section Expectation.
     unfold rv_X.
     unfold positive_part_rv, pos_fun_part.
     simpl.
-    apply Rabs_measureable.
-    now apply Ropp_measureable.
+    apply Rabs_measurable.
+    now apply Ropp_measurable.
   Qed.
 
   Lemma negative_part_prv {rv : RandomVariable Prts cod }
