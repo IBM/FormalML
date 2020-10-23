@@ -25,7 +25,7 @@ Section RandomVariable.
 
       (* for every element B in the sigma algebra, 
            the preimage of rv_X on B is an event in the probability space *)
-      rv_preimage: forall B: event Td, sa_sigma B -> sa_sigma (event_preimage rv_X B);
+      rv_preimage: forall (B: event Td), sa_sigma B -> sa_sigma (event_preimage rv_X B);
     }.
 
   Section Simple.
@@ -273,21 +273,23 @@ Section Expectation.
     apply Relu_measurable.
     now apply borel_sa_preimage2.    
     apply H.
-  Qed.
+    unfold all_included.
+    rewrite <- borel_sa_preimage2 in rv_preimage0.
+Admitted.
 
-  Lemma positive_part_prv (rrv : RealValuedRandomVariable Prts cod) : 
+  Lemma positive_part_prv (rrv : RandomVariable Prts borel_sa) : 
     PositiveRandomVariable (positive_part_rv rrv).
   Proof.
-    unfold PositiveRandomVariable, rrv_X.
+    unfold PositiveRandomVariable, rv_X.
     unfold positive_part_rv, pos_fun_part.
     intros.
     apply cond_nonneg.
  Qed.
 
  Program Instance negative_part_rv
-          (rrv : RealValuedRandomVariable Prts cod) : RealValuedRandomVariable Prts cod
+          (rrv : RandomVariable Prts borel_sa) : RandomVariable Prts borel_sa
     := {
-    rrv_X := (neg_fun_part rrv_X)
+    rv_X := (neg_fun_part rv_X)
       }.
   Next Obligation.
     destruct rrv.
