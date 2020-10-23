@@ -1327,17 +1327,19 @@ Section Expectation.
     intros.
     assert (event_equiv (fun omega : Ts => f omega >= r)
                         (event_complement (fun omega : Ts => f omega < r))).
-    unfold event_equiv; intros.
-    simpl.
-    
-    admit.
-    rewrite H0.
-    apply sa_complement.
-    rewrite equiv_le_lt.
-    apply sa_countable_union.
-    intros.
-    apply H.
-    Admitted.
+    {
+      simpl.
+      intro x.
+      unfold event_complement.
+      split; intros; lra.
+    }
+      rewrite H0.
+      apply sa_complement.
+      rewrite equiv_le_lt.
+      apply sa_countable_union.
+      intros.
+      apply H.
+  Qed.
 
   Lemma Ropp_measurable (f : Ts -> R) :
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
