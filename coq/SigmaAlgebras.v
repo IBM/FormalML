@@ -52,7 +52,7 @@ Program Instance discrete_sa (T:Type) : SigmaAlgebra T
       sa_sigma := fun _ => True 
     }.
 Solve Obligations with (auto using classic_event_lem || firstorder).
-
+                 
 Program Instance subset_sa (T:Type) (A:event T) : SigmaAlgebra T
   := {
       sa_sigma f := (f === ∅ \/ f === A \/ f === ¬ A \/ f === Ω)

@@ -433,6 +433,11 @@ Proof.
   firstorder.
 Qed.
 
+Definition event_preimage {Ts: Type} {Td: Type}
+           (X: Ts -> Td)
+           (B: event Td)
+  := fun omega: Ts => B (X omega).
+
 Class SigmaAlgebra (T:Type) :=
   {
     sa_sigma : event T -> Prop;

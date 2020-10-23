@@ -11,10 +11,6 @@ Import ListNotations.
 Section RandomVariable.
   (* todo better type names. *)
   (* The preimage of the function X on codomain B. *)
-  Definition preimage {Ts: Type} {Td: Type}
-             (X: Ts -> Td)
-             (B: event Td)
-             := fun omega: Ts => B (X omega).
 
   (* A random variable is a mapping from a pobability space to a sigma algebra. *)
   Class RandomVariable {Ts:Type} {Td:Type}
@@ -27,68 +23,73 @@ Section RandomVariable.
 
       (* for every element B in the sigma algebra, 
            the preimage of rv_X on B is an event in the probability space *)
-      rv_preimage: forall B: event Td, (sa_sigma (preimage rv_X B));
+      rv_preimage: forall B: event Td, (sa_sigma (event_preimage rv_X B));
     }.
 
-  Lemma BorelSigma_preimage 
-    {Ts:Type} {Td:Type}
-    {dom: SigmaAlgebra Ts}
-    (prts: ProbSpace dom)
-    (rvx: Ts -> Td) : 
-    forall B: event Td, (sa_sigma (preimage rvx B)).
-  Proof.
+  Section Simple.
+    Context {Ts:Type} {Td:Type}
+            {dom: SigmaAlgebra Ts}
+            {prts: ProbSpace dom}
+            {cod: SigmaAlgebra Td}.
+
+    Class ConstantRandomVariable
+          (rrv : RandomVariable prts cod)
+      := { 
+      srv_val : Td;
+      srv_val_complete : forall x, rv_X x = srv_val
+        }.
+
+  Program Instance constant_random_variable c : RandomVariable prts cod :=
+    { rv_X := (fun _ => c) }.
+  Next Obligation.
+
   Admitted.
 
-  Instance BuildRealRandomVariable {Ts:Type} 
-    {dom: SigmaAlgebra Ts}
-    (prts: ProbSpace dom)
-    (rvx: Ts -> R) : RandomVariable prts borel_sa
-    := {
-      rv_X := rvx ;
-      rv_preimage := BorelSigma_preimage prts rvx
+  Program Instance constant_random_variable_constant c : ConstantRandomVariable (constant_random_variable c)
+    := { srv_val := c }.
+
+  Class SimpleRandomVariable 
+        (rrv : RandomVariable prts cod)
+    := { 
+      srv_vals : list Td ;
+      srv_vals_complete : forall x, In (rv_X x) srv_vals
     }.
 
-
-
-  Class RealValuedRandomVariable {Ts:Type}
-        {dom: SigmaAlgebra Ts}
-        (prts: ProbSpace dom)
-        (cod: SigmaAlgebra R)  :=
+  Global Program Instance constant_simple_random_variable (rv:RandomVariable prts cod) {crv:ConstantRandomVariable rv} : SimpleRandomVariable rv
+    := { srv_vals := [srv_val] }.
+  Next Obligation.
+  Admitted.
   
-    {
-      (* the random variable. *)
-      rrv_X: Ts -> R;
+  End Simple.
 
-      rrv_is_real: forall r:R, sa_sigma (fun omega:Ts => (rrv_X omega) <= r);
-    }.
+  Section Reals.
+    
+    Context {Ts:Type} 
+            {dom: SigmaAlgebra Ts}
+            (prts: ProbSpace dom).
 
-  Class ConstantRealValuedRandomVariable {Ts:Type}
-        {dom: SigmaAlgebra Ts}
-        {prts: ProbSpace dom}
-        {cod: SigmaAlgebra R}
-        (rrv : RealValuedRandomVariable prts cod) :=
-    { 
-      srv_val : R;
-      srv_val_complete : forall x, rrv_X x =  srv_val
-    }.
+    Instance BuildRealRandomVariable
+             (rvx: Ts -> R)
+             (pf_pre:(forall r:R, sa_sigma (fun omega:Ts => (rvx omega) <= r))%R)
+      : RandomVariable prts borel_sa
+      := {
+      rv_X := rvx ;
+      rv_preimage := borel_sa_preimage rvx pf_pre
+        }.
 
-  Class SimpleRealValuedRandomVariable {Ts:Type}
-        {dom: SigmaAlgebra Ts}
-        {prts: ProbSpace dom}
-        {cod: SigmaAlgebra R}
-        (rrv : RealValuedRandomVariable prts cod) :=
-    { 
-      srv_vals : list R;
-      srv_vals_complete : forall x, In (rrv_X x) srv_vals
-    }.
+    Lemma RealRandomVariable_is_real
+          (rv:RandomVariable prts borel_sa) :
+      forall r:R, sa_sigma (fun omega:Ts => (rv_X omega) <= r)%R.
+    Proof.
+    Admitted.
 
-  Definition RealRandomVariable_le {Ts:Type}
-        {dom: SigmaAlgebra Ts}
-        {prts: ProbSpace dom}
-        {cod: SigmaAlgebra R} 
-        (rv1 rv2: RealValuedRandomVariable prts cod) : Prop :=
-    forall (x:Ts), rrv_X (RealValuedRandomVariable:=rv1) x <= 
-                   rrv_X (RealValuedRandomVariable:=rv2) x.
+
+
+
+  Definition RealRandomVariable_le 
+        (rv1 rv2: RandomVariable prts borel_sa) : Prop :=
+    forall (x:Ts), rrv_X (RandomVariable:=rv1) x <= 
+                   rrv_X (RandomVariable:=rv2) x.
 
   Definition PositiveRandomVariable {Ts:Type}
         {dom: SigmaAlgebra Ts}
