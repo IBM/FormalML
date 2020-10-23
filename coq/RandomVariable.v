@@ -3,6 +3,8 @@ Require Import Reals.
 Require Import Lra Lia.
 Require Import List.
 Require Import Morphisms EquivDec.
+Require Import Coquelicot.Rbar.
+Require Import Coquelicot.Lub.
 
 Require Import Utils.
 Require Import ProbSpace SigmaAlgebras BorelSigmaAlgebra.
@@ -42,7 +44,9 @@ Section RandomVariable.
   Program Instance constant_random_variable c : RandomVariable prts cod :=
     { rv_X := (fun _ => c) }.
   Next Obligation.
-
+    unfold event_preimage.
+    generalize (sa_dec (fun _ : Ts => B c)); intros.
+    unfold event_lem in H.
   Admitted.
 
   Program Instance constant_random_variable_constant c : ConstantRandomVariable (constant_random_variable c)
@@ -84,35 +88,30 @@ Section RandomVariable.
     Admitted.
 
 
-
-
   Definition RealRandomVariable_le 
         (rv1 rv2: RandomVariable prts borel_sa) : Prop :=
-    forall (x:Ts), rrv_X (RandomVariable:=rv1) x <= 
-                   rrv_X (RandomVariable:=rv2) x.
+    forall (x:Ts), (rv_X (RandomVariable:=rv1) x <= 
+                   rv_X (RandomVariable:=rv2) x)%R.
 
-  Definition PositiveRandomVariable {Ts:Type}
-        {dom: SigmaAlgebra Ts}
+  Definition PositiveRandomVariable
         {prts: ProbSpace dom}
-        {cod: SigmaAlgebra R} 
-        (rv: RealValuedRandomVariable prts cod) : Prop :=
-    forall (x:Ts), 0 <= rrv_X x.
-
-End RandomVariable.
+        (rv: RandomVariable prts borel_sa) : Prop :=
+    forall (x:Ts), (0 <= rv_X x)%R.
+  
+End Reals.
 
 Section SimpleExpectation.
   Context 
     {Ts:Type}
     {dom: SigmaAlgebra Ts}
     {Prts: ProbSpace dom}
-    {cod: SigmaAlgebra R}
-    {rrv : RealValuedRandomVariable Prts cod}.
+    {rrv : RandomVariable Prts borel_sa}.
 
   Definition singleton_event {T} (m:T) := fun x => x=m.
 
   Definition simpleRandomVariable_partition_image 
-             (srv : SimpleRealValuedRandomVariable rrv) : list (event Ts) :=
-    map (preimage rrv_X) (map singleton_event srv_vals).
+             (srv : SimpleRandomVariable rrv) : list (event Ts) :=
+    map (event_preimage rv_X) (map singleton_event srv_vals).
     
   Fixpoint list_sum (l : list R) : R :=
     match l with
@@ -120,16 +119,16 @@ Section SimpleExpectation.
     | x :: xs => x + list_sum xs
     end.
 
-  Definition SimpleExpectation (srv : SimpleRealValuedRandomVariable rrv) : R :=
-    list_sum (map (fun v => Rmult v (ps_P (preimage rrv_X (singleton_event v)))) 
+  Definition SimpleExpectation (srv : SimpleRandomVariable rrv) : R :=
+    list_sum (map (fun v => Rmult v (ps_P (event_preimage rv_X (singleton_event v)))) 
                   srv_vals).
 
-  Definition scaleSimpleVariable (c:R) (srv : SimpleRealValuedRandomVariable rrv) : 
-    SimpleRealValuedRandomVariable rrv.
+  Definition scaleSimpleVariable (c:R) (srv : SimpleRandomVariable rrv) : 
+    SimpleRandomVariable rrv.
   Admitted.    
 
-  Lemma scaleSimpleExpectation (c:R) (srv : SimpleRealValuedRandomVariable rrv) : 
-    c * SimpleExpectation srv = SimpleExpectation (scaleSimpleVariable c srv).
+  Lemma scaleSimpleExpectation (c:R) (srv : SimpleRandomVariable rrv) : 
+    (c * SimpleExpectation srv)%R = SimpleExpectation (scaleSimpleVariable c srv).
   Proof.
   Admitted.
     
@@ -140,28 +139,27 @@ Section Expectation.
   Context 
     {Ts:Type}
     {dom: SigmaAlgebra Ts}
-    {Prts: ProbSpace dom}
-    {cod: SigmaAlgebra R}.
+    {Prts: ProbSpace dom}.
 
   Definition BoundedPositiveRandomVariable
-    (rv1 rv2 : RealValuedRandomVariable Prts cod) : Prop :=
-    PositiveRandomVariable rv2 /\ RealRandomVariable_le rv2 rv1.
+    (rv1 rv2 : RandomVariable Prts borel_sa) : Prop :=
+    PositiveRandomVariable rv2 /\ RealRandomVariable_le Prts rv2 rv1.
 
   Definition SimpleExpectationSup 
              (E :  forall 
-                     (rrv: RealValuedRandomVariable Prts cod)
-                     (srv:SimpleRealValuedRandomVariable rrv), Prop) : Rbar
+                     (rrv: RandomVariable Prts borel_sa)
+                     (srv:SimpleRandomVariable rrv), Prop) : Rbar
     := Lub_Rbar (fun (x : R) => 
                    exists rrv srv, 
                      E rrv srv /\ (SimpleExpectation srv) = x).
     
   Definition Expection_posRV
-             {rrv : RealValuedRandomVariable Prts cod}
+             {rrv : RandomVariable Prts borel_sa}
              (posrv:PositiveRandomVariable rrv) :  Rbar   :=
       (SimpleExpectationSup
          (fun
-            (rrv2: RealValuedRandomVariable Prts cod)
-            (srv2:SimpleRealValuedRandomVariable rrv2) =>
+            (rrv2: RandomVariable Prts borel_sa)
+            (srv2:SimpleRandomVariable rrv2) =>
             (BoundedPositiveRandomVariable rrv rrv2))).
 
   Program Definition pos_fun_part {Ts:Type} (f : Ts -> R) : (Ts -> nonnegreal) :=
@@ -221,7 +219,7 @@ Section Expectation.
     unfold event_equiv, union_of_collection.
     intros.
     split; intros.
-    
+    exists (Z.to_nat (up (/ r - f x)%R)).
     admit.
     destruct H.
     assert (0 < / INR (S x0)).
@@ -264,14 +262,16 @@ Section Expectation.
     now apply sa_le_ge.
   Qed.
 
-  Program Instance positive_part_rv (rvv : RealValuedRandomVariable Prts cod) : 
-    RealValuedRandomVariable Prts cod
+  Program Instance positive_part_rv (rvv : RandomVariable Prts borel_sa) : 
+    RandomVariable Prts borel_sa
     := {
-    rrv_X := (pos_fun_part rrv_X)
+    rv_X := (pos_fun_part rv_X)
       }.
   Next Obligation.
     destruct rvv.
-    now apply Relu_measurable.
+    apply borel_sa_preimage.
+    apply Relu_measurable.
+    
   Qed.
 
   Lemma positive_part_prv (rrv : RealValuedRandomVariable Prts cod) : 
