@@ -25,7 +25,7 @@ Section RandomVariable.
 
       (* for every element B in the sigma algebra, 
            the preimage of rv_X on B is an event in the probability space *)
-      rv_preimage: forall B: event Td, (sa_sigma (event_preimage rv_X B));
+      rv_preimage: forall B: event Td, sa_sigma B -> sa_sigma (event_preimage rv_X B);
     }.
 
   Section Simple.
@@ -269,9 +269,10 @@ Section Expectation.
       }.
   Next Obligation.
     destruct rvv.
-    apply borel_sa_preimage.
+    apply borel_sa_preimage2.
     apply Relu_measurable.
-    
+    now apply borel_sa_preimage2.    
+    apply H.
   Qed.
 
   Lemma positive_part_prv (rrv : RealValuedRandomVariable Prts cod) : 
