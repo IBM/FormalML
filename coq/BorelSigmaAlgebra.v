@@ -26,4 +26,11 @@ Lemma borel_sa_preimage2
   (forall r:R, sa_sigma (fun omega:Ts => (rvx omega) <= r)%R) <-> 
   (forall B: event R, sa_sigma B -> (sa_sigma (event_preimage rvx B))).
 Proof.
-Admitted.
+  split; intros.
+  - now apply borel_sa_preimage.
+  - unfold event_preimage in *.
+    simpl in H.
+    apply (H (fun x => x <= r)%R).
+    apply generated_sa_sub.
+    exists r; intuition.
+Qed.

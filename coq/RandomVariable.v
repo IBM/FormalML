@@ -48,9 +48,9 @@ Section RandomVariable.
     { rv_X := (fun _ => c) }.
   Next Obligation.
     unfold event_preimage.
-    generalize (sa_dec (fun _ : Ts => B c)); intros.
-    unfold event_lem in H0.
-    
+    destruct (sa_dec B c).
+    - admit.
+    - admit.
   Admitted.
 
   Program Instance constant_random_variable_constant c : ConstantRandomVariable (constant_random_variable c)
@@ -66,8 +66,11 @@ Section RandomVariable.
   Global Program Instance constant_simple_random_variable (rv:RandomVariable prts cod) {crv:ConstantRandomVariable rv} : SimpleRandomVariable rv
     := { srv_vals := [srv_val] }.
   Next Obligation.
-  Admitted.
-  
+    left.
+    symmetry.
+    apply srv_val_complete.
+  Qed.
+
   End Simple.
 
   Section Reals.
@@ -128,6 +131,20 @@ Section SimpleExpectation.
     list_sum (map (fun v => Rmult v (ps_P (event_preimage rv_X (singleton_event v)))) 
                   srv_vals).
 
+  (*
+  Definition scaleRandomVariable (c:R) (rv : RandomVariable rv) : 
+    RandomVariable rrv.
+  
+  Global Instance scaleRandomVariableConstant (c:R) (rv: RandomVariable) {crv : ConstantRandomVariable rv} : 
+    ConstantRandomVariable (scaleRandomVariable rv).
+  Admitted.    
+
+  Global Instance scaleSimpleVariable (c:R) (rv: RandomVariable) {srv : SimpleRandomVariable rv} : 
+    SimpleRandomVariable (scaleRandomVariable rv).
+  Admitted.    
+   *)
+
+  (*
   Definition scaleSimpleVariable (c:R) (srv : SimpleRandomVariable rrv) : 
     SimpleRandomVariable rrv.
   Admitted.    
@@ -136,6 +153,7 @@ Section SimpleExpectation.
     (c * SimpleExpectation srv)%R = SimpleExpectation (scaleSimpleVariable c srv).
   Proof.
   Admitted.
+*)
     
 End SimpleExpectation.
 
@@ -310,14 +328,13 @@ Section Expectation.
   Program Definition rvscale (rvv : RandomVariable Prts borel_sa) (c:posreal) :=
     BuildRealRandomVariable Prts (fun omega => c * (rv_X omega)) _.
   Next Obligation.
-    destruct rvv.
-    (*
     assert (event_equiv (fun omega : Ts => (c * rv_X omega <= r)%R)
                         (fun omega : Ts => (rv_X omega <= r/c)%R)).
-
-    now apply borel_sa_preimage2.    
-  Qed.
-     *)
+    - red; intros.
+      admit.
+    - rewrite H.
+      apply borel_sa_preimage2; intros.
+      now apply rv_preimage.
     Admitted.
 
 End Expectation.
