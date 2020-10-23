@@ -100,6 +100,8 @@ Section RandomVariable.
   
 End Reals.
 
+End RandomVariable.
+
 Section SimpleExpectation.
   Context 
     {Ts:Type}
