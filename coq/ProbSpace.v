@@ -1196,12 +1196,12 @@ Section SimpleExpectation.
     {dom: SigmaAlgebra Ts}
     {Prts: ProbSpace dom}
     {cod: SigmaAlgebra R}
-    {rrv : RealValuedRandomVariable Prts cod}
-    (srv : SimpleRealValuedRandomVariable rrv).
+    {rrv : RealValuedRandomVariable Prts cod}.
 
   Definition singleton_event {T} (m:T) := fun x => x=m.
 
-  Definition simpleRandomVariable_partition_image  : list (event Ts) :=
+  Definition simpleRandomVariable_partition_image 
+             (srv : SimpleRealValuedRandomVariable rrv) : list (event Ts) :=
     map (preimage rrv_X) (map singleton_event srv_vals).
     
   Fixpoint list_sum (l : list R) : R :=
@@ -1210,11 +1210,19 @@ Section SimpleExpectation.
     | x :: xs => x + list_sum xs
     end.
 
-  Definition SimpleExpectation  : R :=
+  Definition SimpleExpectation (srv : SimpleRealValuedRandomVariable rrv) : R :=
     list_sum (map (fun v => Rmult v (ps_P (preimage rrv_X (singleton_event v)))) 
                   srv_vals).
 
+  Definition scaleSimpleVariable (c:R) (srv : SimpleRealValuedRandomVariable rrv) : 
+    SimpleRealValuedRandomVariable rrv.
+  Admitted.    
 
+  Lemma scaleSimpleExpectation (c:R) (srv : SimpleRealValuedRandomVariable rrv) : 
+    c * SimpleExpectation srv = SimpleExpectation (scaleSimpleVariable c srv).
+  Proof.
+  Admitted.
+    
 End SimpleExpectation.
 
 Section Expectation.
@@ -1258,7 +1266,7 @@ Section Expectation.
     apply Rmax_r.
   Defined.
 
-  Lemma Rmax_measurable_neg (f : Ts -> R) :
+  Lemma Relu_measurable_neg (f : Ts -> R) :
     forall (r:R), r < 0 -> sa_sigma (fun omega : Ts => Rmax (f omega) 0 <= r).
   Proof.
     intros.
@@ -1271,7 +1279,7 @@ Section Expectation.
     apply sa_none.
   Qed.
     
-  Lemma Rmax_measurable_pos (f : Ts -> R) :
+  Lemma Relu_measurable_pos (f : Ts -> R) :
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
     (forall (r:R),  0 <= r -> sa_sigma (fun omega : Ts => Rmax (f omega) 0 <= r)).
   Proof.
@@ -1284,16 +1292,52 @@ Section Expectation.
     now rewrite H1.
   Qed.
 
-  Lemma Rmax_measurable (f : Ts -> R) :
+  Lemma Relu_measurable (f : Ts -> R) :
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
     (forall (r:R),  sa_sigma (fun omega : Ts => Rmax (f omega) 0 <= r)).
   Proof.
     intros.
     destruct (Rle_dec 0 r).
-    now apply Rmax_measurable_pos.
-    apply Rmax_measurable_neg.
+    now apply Relu_measurable_pos.
+    apply Relu_measurable_neg.
     lra.
   Qed.
+
+  Lemma equiv_le_lt (f : Ts -> R) (r:R) :
+    event_equiv (fun omega : Ts => f omega < r)
+                (union_of_collection
+                   (fun (n:nat) => (fun omega : Ts => f omega <= r - / INR (S n)))).
+  Proof.
+    unfold event_equiv, union_of_collection.
+    intros.
+    split; intros.
+    
+    admit.
+    destruct H.
+    assert (0 < / INR (S x0)).
+    apply Rinv_0_lt_compat.
+    apply  lt_0_INR; lia.
+    lra.
+    Admitted.
+
+  Lemma sa_le_ge (f : Ts -> R) :
+    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
+    (forall (r:R),  sa_sigma (fun omega : Ts => f omega >= r)).
+  Proof.
+    intros.
+    assert (event_equiv (fun omega : Ts => f omega >= r)
+                        (event_complement (fun omega : Ts => f omega < r))).
+    unfold event_equiv; intros.
+    simpl.
+    
+    admit.
+    rewrite H0.
+    apply sa_complement.
+    rewrite equiv_le_lt.
+    apply sa_countable_union.
+    intros.
+    apply H.
+    Admitted.
 
   Lemma Ropp_measurable (f : Ts -> R) :
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
@@ -1301,15 +1345,12 @@ Section Expectation.
   Proof.
     intros.
     assert (event_equiv (fun omega : Ts => - (f omega) <= r)
-                        (event_union (fun omega : Ts => (f omega) = -r)
-                                     (event_complement (fun omega : Ts => (f omega) <= -r)))).
-    unfold event_equiv, event_union, event_complement; intros.
+                        (fun omega : Ts => (f omega) >= -r)).
+    unfold event_equiv; intros.
     lra.
     rewrite H0.
-    apply sa_union.
-    admit.
-    now apply sa_complement.
-    Admitted.
+    now apply sa_le_ge.
+  Qed.
 
   Program Instance positive_part_rv (rvv : RealValuedRandomVariable Prts cod) : 
     RealValuedRandomVariable Prts cod
@@ -1318,7 +1359,7 @@ Section Expectation.
       }.
   Next Obligation.
     destruct rvv.
-    now apply Rmax_measurable.
+    now apply Relu_measurable.
   Qed.
 
   Lemma positive_part_prv (rrv : RealValuedRandomVariable Prts cod) : 
@@ -1337,7 +1378,7 @@ Section Expectation.
       }.
   Next Obligation.
     destruct rrv.
-    apply Rmax_measurable.
+    apply Relu_measurable.
     now apply Ropp_measurable.
   Qed.
 
