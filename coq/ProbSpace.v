@@ -1173,7 +1173,7 @@ Section RandomVariable.
       srv_vals_complete : forall x, In (rrv_X x) srv_vals
     }.
 
-  Definition RealRandomVariableLe {Ts:Type}
+  Definition RealRandomVariable_le {Ts:Type}
         {dom: SigmaAlgebra Ts}
         {prts: ProbSpace dom}
         {cod: SigmaAlgebra R} 
@@ -1227,7 +1227,7 @@ Section Expectation.
 
   Definition BoundedPositiveRandomVariable
     (rv1 rv2 : RealValuedRandomVariable Prts cod) : Prop :=
-    PositiveRandomVariable rv2 /\ RealRandomVariableLe rv2 rv1.
+    PositiveRandomVariable rv2 /\ RealRandomVariable_le rv2 rv1.
 
   Definition SimpleExpectationSup 
              (E :  forall 
@@ -1238,7 +1238,7 @@ Section Expectation.
                      E rrv srv /\ (SimpleExpectation srv) = x).
     
   Definition Expection_posRV
-             (rrv : RealValuedRandomVariable Prts cod)
+             {rrv : RealValuedRandomVariable Prts cod}
              (posrv:PositiveRandomVariable rrv) :  Rbar   :=
       (SimpleExpectationSup
          (fun
@@ -1258,7 +1258,7 @@ Section Expectation.
     apply Rmax_r.
   Defined.
 
-  Lemma Rabs_measurable_neg (f : Ts -> R) :
+  Lemma Rmax_measurable_neg (f : Ts -> R) :
     forall (r:R), r < 0 -> sa_sigma (fun omega : Ts => Rmax (f omega) 0 <= r).
   Proof.
     intros.
@@ -1271,7 +1271,7 @@ Section Expectation.
     apply sa_none.
   Qed.
     
-  Lemma Rabs_measurable_pos (f : Ts -> R) :
+  Lemma Rmax_measurable_pos (f : Ts -> R) :
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
     (forall (r:R),  0 <= r -> sa_sigma (fun omega : Ts => Rmax (f omega) 0 <= r)).
   Proof.
@@ -1284,14 +1284,14 @@ Section Expectation.
     now rewrite H1.
   Qed.
 
-  Lemma Rabs_measurable (f : Ts -> R) :
+  Lemma Rmax_measurable (f : Ts -> R) :
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
     (forall (r:R),  sa_sigma (fun omega : Ts => Rmax (f omega) 0 <= r)).
   Proof.
     intros.
     destruct (Rle_dec 0 r).
-    now apply Rabs_measurable_pos.
-    apply Rabs_measurable_neg.
+    now apply Rmax_measurable_pos.
+    apply Rmax_measurable_neg.
     lra.
   Qed.
 
@@ -1311,19 +1311,17 @@ Section Expectation.
     now apply sa_complement.
     Admitted.
 
-  Program Instance positive_part_rv
-          (rvv : RealValuedRandomVariable Prts cod)
-           : RealValuedRandomVariable Prts cod
+  Program Instance positive_part_rv (rvv : RealValuedRandomVariable Prts cod) : 
+    RealValuedRandomVariable Prts cod
     := {
     rrv_X := (pos_fun_part rrv_X)
       }.
   Next Obligation.
     destruct rvv.
-    now apply Rabs_measurable.
+    now apply Rmax_measurable.
   Qed.
 
-  Lemma positive_part_prv 
-           (rrv : RealValuedRandomVariable Prts cod) :
+  Lemma positive_part_prv (rrv : RealValuedRandomVariable Prts cod) : 
     PositiveRandomVariable (positive_part_rv rrv).
   Proof.
     unfold PositiveRandomVariable, rrv_X.
@@ -1339,7 +1337,7 @@ Section Expectation.
       }.
   Next Obligation.
     destruct rrv.
-    apply Rabs_measurable.
+    apply Rmax_measurable.
     now apply Ropp_measurable.
   Qed.
 
@@ -1354,8 +1352,8 @@ Section Expectation.
  Qed.
 
   Definition Expectation (rrv : RealValuedRandomVariable Prts cod) : option Rbar :=
-    Rbar_plus' (@Expection_posRV (positive_part_rv rrv) (positive_part_prv rrv))
-               (Rbar_opp (@Expection_posRV (negative_part_rv rrv) (negative_part_prv rrv))).
+    Rbar_plus' (Expection_posRV  (positive_part_prv rrv))
+               (Rbar_opp (Expection_posRV  (negative_part_prv rrv))).
 
 End Expectation.
 
