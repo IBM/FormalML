@@ -262,20 +262,13 @@ Section Expectation.
     now apply sa_le_ge.
   Qed.
 
-  Program Instance positive_part_rv (rvv : RandomVariable Prts borel_sa) : 
-    RandomVariable Prts borel_sa
-    := {
-    rv_X := (pos_fun_part rv_X)
-      }.
+  Program Definition positive_part_rv (rvv : RandomVariable Prts borel_sa) :=
+    BuildRealRandomVariable Prts (pos_fun_part rv_X) _.
   Next Obligation.
     destruct rvv.
-    apply borel_sa_preimage2.
     apply Relu_measurable.
     now apply borel_sa_preimage2.    
-    apply H.
-    unfold all_included.
-    rewrite <- borel_sa_preimage2 in rv_preimage0.
-Admitted.
+ Qed.
 
   Lemma positive_part_prv (rrv : RandomVariable Prts borel_sa) : 
     PositiveRandomVariable (positive_part_rv rrv).
@@ -286,41 +279,41 @@ Admitted.
     apply cond_nonneg.
  Qed.
 
- Program Instance negative_part_rv
-          (rrv : RandomVariable Prts borel_sa) : RandomVariable Prts borel_sa
-    := {
-    rv_X := (neg_fun_part rv_X)
-      }.
+  Program Definition negative_part_rv (rvv : RandomVariable Prts borel_sa) :=
+    BuildRealRandomVariable Prts (neg_fun_part rv_X) _.
   Next Obligation.
-    destruct rrv.
+    destruct rvv.
     apply Relu_measurable.
-    now apply Ropp_measurable.
+    apply Ropp_measurable.
+    now apply borel_sa_preimage2.    
   Qed.
 
   Lemma negative_part_prv
-           (rrv : RealValuedRandomVariable Prts cod) :
+           (rrv : RandomVariable Prts borel_sa) :
     PositiveRandomVariable (negative_part_rv rrv).
   Proof.
-    unfold PositiveRandomVariable, rrv_X.
+    unfold PositiveRandomVariable, rv_X.
     unfold negative_part_rv, neg_fun_part.
     intros.
     apply cond_nonneg.
  Qed.
 
-  Definition Expectation (rrv : RealValuedRandomVariable Prts cod) : option Rbar :=
+  Definition Expectation (rrv : RandomVariable Prts borel_sa) : option Rbar :=
     Rbar_plus' (Expection_posRV  (positive_part_prv rrv))
                (Rbar_opp (Expection_posRV  (negative_part_prv rrv))).
 
 End Expectation.
 
 
+
 Section lebesgueintegration.
   
+
   Class MeasurableFunction {Ts: Type} (dom: SigmaAlgebra Ts) :=
     {
       measure_mu: event Ts -> R;
 
-      measure_none : measure_mu ∅ = R0 ;
+      measure_none : measure_mu event_none = R0 ;
       measure_ge_zero: forall A : event Ts, sa_sigma A -> 0 <= measure_mu A;
   
       measure_coutably_additive: forall collection: nat -> event Ts,
