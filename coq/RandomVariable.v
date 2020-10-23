@@ -28,11 +28,14 @@ Section RandomVariable.
       rv_preimage: forall (B: event Td), sa_sigma B -> sa_sigma (event_preimage rv_X B);
     }.
 
+
   Section Simple.
     Context {Ts:Type} {Td:Type}
             {dom: SigmaAlgebra Ts}
             {prts: ProbSpace dom}
             {cod: SigmaAlgebra Td}.
+
+    Definition singleton_event {T} (m:T) := fun x => x=m.
 
     Class ConstantRandomVariable
           (rrv : RandomVariable prts cod)
@@ -46,7 +49,8 @@ Section RandomVariable.
   Next Obligation.
     unfold event_preimage.
     generalize (sa_dec (fun _ : Ts => B c)); intros.
-    unfold event_lem in H.
+    unfold event_lem in H0.
+    
   Admitted.
 
   Program Instance constant_random_variable_constant c : ConstantRandomVariable (constant_random_variable c)
@@ -56,7 +60,7 @@ Section RandomVariable.
         (rrv : RandomVariable prts cod)
     := { 
       srv_vals : list Td ;
-      srv_vals_complete : forall x, In (rv_X x) srv_vals
+      srv_vals_complete : forall x, In (rv_X x) srv_vals;
     }.
 
   Global Program Instance constant_simple_random_variable (rv:RandomVariable prts cod) {crv:ConstantRandomVariable rv} : SimpleRandomVariable rv
@@ -85,8 +89,9 @@ Section RandomVariable.
           (rv:RandomVariable prts borel_sa) :
       forall r:R, sa_sigma (fun omega:Ts => (rv_X omega) <= r)%R.
     Proof.
-    Admitted.
-
+      destruct rv.
+      now rewrite  borel_sa_preimage2.
+    Qed.
 
   Definition RealRandomVariable_le 
         (rv1 rv2: RandomVariable prts borel_sa) : Prop :=
@@ -108,8 +113,6 @@ Section SimpleExpectation.
     {dom: SigmaAlgebra Ts}
     {Prts: ProbSpace dom}
     {rrv : RandomVariable Prts borel_sa}.
-
-  Definition singleton_event {T} (m:T) := fun x => x=m.
 
   Definition simpleRandomVariable_partition_image 
              (srv : SimpleRandomVariable rrv) : list (event Ts) :=
@@ -303,6 +306,19 @@ Section Expectation.
   Definition Expectation (rrv : RandomVariable Prts borel_sa) : option Rbar :=
     Rbar_plus' (Expection_posRV  (positive_part_prv rrv))
                (Rbar_opp (Expection_posRV  (negative_part_prv rrv))).
+
+  Program Definition rvscale (rvv : RandomVariable Prts borel_sa) (c:posreal) :=
+    BuildRealRandomVariable Prts (fun omega => c * (rv_X omega)) _.
+  Next Obligation.
+    destruct rvv.
+    (*
+    assert (event_equiv (fun omega : Ts => (c * rv_X omega <= r)%R)
+                        (fun omega : Ts => (rv_X omega <= r/c)%R)).
+
+    now apply borel_sa_preimage2.    
+  Qed.
+     *)
+    Admitted.
 
 End Expectation.
 
