@@ -251,15 +251,25 @@ Section Expectation.
   Proof.
     unfold event_equiv, union_of_collection.
     intros.
-    split; intros.
-    exists (Z.to_nat (up (/ r - f x)%R)).
-    admit.
-    destruct H.
-    assert (0 < / INR (S x0)).
-    apply Rinv_0_lt_compat.
-    apply  lt_0_INR; lia.
-    lra.
-    Admitted.
+    split ; intros.
+    + generalize (archimed_cor1 (r - f x)) ; intros.
+      assert (r - f x > 0) by lra. specialize (H0 H1).
+      clear H1.
+      destruct H0 as [N [HNf HN]].
+      exists N. left.
+      assert (f x < r - / INR N) by lra.
+      eapply Rlt_trans ; eauto.
+      change (r + -/INR N < r + - /INR (S N)).
+      apply Rplus_lt_compat_l. apply Ropp_lt_contravar.
+      apply Rinv_lt_contravar.
+      rewrite <-mult_INR. apply lt_0_INR ; lia.
+      apply lt_INR ; lia.
+    + destruct H.
+      assert (0 < / INR (S x0)).
+      apply Rinv_0_lt_compat.
+      apply  lt_0_INR; lia.
+      lra.
+  Qed.
 
   Lemma sa_le_ge (f : Ts -> R) :
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
