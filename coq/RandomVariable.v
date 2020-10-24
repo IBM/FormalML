@@ -251,26 +251,28 @@ Section Expectation.
                 (union_of_collection
                    (fun (n:nat) => (fun omega : Ts => f omega <= r - / (1 + INR n)))).
   Proof.
-    unfold event_equiv, union_of_collection; intros.
-    split; intros.
-    - exists (Z.to_nat (up (/ (r - f x)))).
-      assert ( (r - f x) >=  / (1 + INR (Z.to_nat (up (/ (r - f x)))))).
-      + replace (r - f x) with (/ / (r - f x)) at 1 by (rewrite Rinv_involutive;lra).
-        apply Rle_ge, Rinv_le_contravar.
-        * apply Rinv_0_lt_compat; lra.
-        * generalize (archimed (/ (r - f x))); intros.
-          rewrite INR_up_pos.
-          lra.
-          left.
-          apply Rinv_0_lt_compat; lra.
-      + lra.
-    - destruct H.
-      assert (0 < / (1 + INR x0)).
-      + apply Rinv_0_lt_compat.
-        Search INR.
-        rewrite Rplus_comm; rewrite <- S_INR.
-        apply  lt_0_INR; lia.
-      + lra.
+    unfold event_equiv, union_of_collection.
+    intros.
+    split ; intros.
+    + generalize (archimed_cor1 (r - f x)) ; intros.
+      assert (r - f x > 0) by lra. specialize (H0 H1).
+      clear H1.
+      destruct H0 as [N [HNf HN]].
+      exists N. left.
+      replace (1 + INR N) with (INR (S N)) by (apply S_O_plus_INR).
+      assert (f x < r - / INR N) by lra.
+      eapply Rlt_trans ; eauto.
+      change (r + -/INR N < r + - /INR (S N)).
+      apply Rplus_lt_compat_l. apply Ropp_lt_contravar.
+      apply Rinv_lt_contravar.
+      rewrite <-mult_INR. apply lt_0_INR ; lia.
+      apply lt_INR ; lia.
+    + destruct H.
+      assert (0 < / INR (S x0)).
+      apply Rinv_0_lt_compat.
+      apply  lt_0_INR; lia.
+      replace (1 + INR x0) with (INR (S x0)) in H by (apply S_O_plus_INR).
+      lra.
   Qed.
 
   Lemma sa_le_ge (f : Ts -> R) :
