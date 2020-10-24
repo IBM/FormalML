@@ -5,7 +5,7 @@ Require Import micromega.Lra.
 Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Equivalence RelationClasses EquivDec Morphisms.
 Require Import Streams StreamAdd. 
-
+Require Import Utils.
 
 Import ListNotations. 
 Set Bullet Behavior "Strict Subproofs".
@@ -104,56 +104,6 @@ Fixpoint applyn {A} (init : A) (g : A -> A) (n : nat) : A :=
 
 End extra.
 
-
-Section list_sum.
-  (* Dump this into RealAdd in Utils. *)
-  Lemma list_sum_map_zero {A} (s : list A)  :
-  list_sum (List.map (fun _ => 0) s) = 0. 
-Proof.
-  induction s.
-  - simpl; reflexivity.
-  - simpl. rewrite IHs ; lra. 
-Qed.
-
-
-Lemma list_sum_le {A} (l : list A) (f g : A -> R) :
-  (forall a, f a <= g a) ->
-  list_sum (List.map f l) <= list_sum (List.map g l).
-Proof.
-  intros Hfg.
-  induction l.
-  - simpl ; right ; trivial.
-  - simpl. specialize (Hfg a). 
-    apply Rplus_le_compat ; trivial. 
-Qed.
-
-Lemma list_sum_mult_const (c : R) (l : list R) :
-  list_sum (List.map (fun z => c*z) l) = c*list_sum (List.map (fun z => z) l).
-Proof. 
-  induction l.
-  simpl; lra.
-  simpl in *. rewrite IHl. 
-  lra. 
-Qed.   
-
-Lemma list_sum_const_mult_le {x y : R} (l : list R) (hl : list_sum l = R1) (hxy : x <= y) :
-  list_sum (List.map (fun z => x*z) l) <= y.
-Proof.
-  rewrite list_sum_mult_const. rewrite map_id. 
-  rewrite hl. lra. 
-Qed. 
-
-Lemma list_sum_fun_mult_le {x y D : R} {f g : R -> R}(l : list R)(hf : forall z, f z <= D) (hg : forall z , 0 <= g z) :
-  list_sum (List.map (fun z => (f z)*(g z)) l) <= D*list_sum (List.map (fun z => g z) l).
-Proof.
-  induction l.
-  simpl. lra.
-  simpl. rewrite Rmult_plus_distr_l.
-  assert (f a * g a <= D * g a). apply Rmult_le_compat_r. exact (hg a). exact (hf a).
-  exact (Rplus_le_compat _ _ _ _ H IHl).   
-Qed. 
-
-End list_sum.
 
 (* Move this to Finite. *)
 Class NonEmpty (A : Type) :=

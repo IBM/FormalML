@@ -5,6 +5,7 @@ Require Import Reals.Integration.
 Require Import Rtrigo_def.
 Require Import List.
 Require Import EquivDec Nat Omega Lra.
+Require Import Morphisms Permutation.
 
 Require Import LibUtils ListAdd.
 Require Import Relation_Definitions Sorted.
@@ -321,3 +322,122 @@ Proof.
     + left; apply Rinv_0_lt_compat; lra.
   - lra.
 Qed.
+
+Section list_sum.
+
+
+Fixpoint list_sum (l : list R) : R :=
+  match l with
+  | nil => 0
+  | x :: xs => x + list_sum xs
+  end.
+
+Lemma list_sum_cat (l1 l2 : list R) :
+  list_sum (l1 ++ l2) = (list_sum l1) + (list_sum l2).
+Proof.
+  induction l1.
+  * simpl ; nra.
+  * simpl.  nra.
+Qed.
+
+Lemma list_sum_map_concat (l : list(list R)) :
+  list_sum (concat l) = list_sum (map list_sum l).
+Proof.
+  induction l.
+  - simpl ; reflexivity.
+  - simpl ; rewrite list_sum_cat. now rewrite IHl.
+Qed.
+
+
+
+Global Instance list_sum_Proper : Proper (@Permutation R ==> eq) list_sum.
+Proof.
+  unfold Proper. intros x y H.
+  apply (@Permutation_ind_bis R (fun a b => list_sum a = list_sum b)).
+  - simpl ; lra.
+  - intros x0 l l' Hpll' Hll'. simpl ; f_equal. assumption.
+  - intros x0 y0 l l' H0 H1. simpl. rewrite H1 ; lra.
+  - intros l l' l'' H0 H1 H2 H3. rewrite H1. rewrite <-H3. reflexivity.
+  - assumption.
+Qed.
+
+Lemma list_sum_perm_eq (l1 l2 : list R) : Permutation l1 l2 -> list_sum l1 = list_sum l2.
+Proof.
+  intro H.
+  now rewrite H.
+Qed.
+
+Lemma list_sum_const_mul {A : Type} (l : list (nonnegreal*R)) :
+  forall r, list_sum (map (fun x => r*(snd x)) l)  =
+       r* list_sum (map (fun x => snd x) l).
+Proof.
+  intro r.
+  induction l.
+  simpl; lra.
+  simpl. rewrite IHl ; lra.
+Qed.
+
+Lemma list_sum_map_const {A} (l : list A) (a : A) (f : A -> R) :
+  list_sum (map (fun x => f a) l) = INR(length l)* (f a).
+Proof.
+  induction l.
+  - simpl ; lra.
+  - simpl. rewrite IHl.
+    enough (match length l with
+            | 0%nat => 1
+            | S _ => INR (length l) + 1
+            end = INR(length l) + 1).
+    rewrite H ; lra.
+    generalize (length l) as n.
+    intro n.  induction n.
+    + simpl ; lra.
+    + lra.
+Qed.
+
+  Lemma list_sum_map_zero {A} (s : list A)  :
+  list_sum (List.map (fun _ => 0) s) = 0.
+Proof.
+  induction s.
+  - simpl; reflexivity.
+  - simpl. rewrite IHs ; lra.
+Qed.
+
+
+Lemma list_sum_le {A} (l : list A) (f g : A -> R) :
+  (forall a, f a <= g a) ->
+  list_sum (List.map f l) <= list_sum (List.map g l).
+Proof.
+  intros Hfg.
+  induction l.
+  - simpl ; right ; trivial.
+  - simpl. specialize (Hfg a).
+    apply Rplus_le_compat ; trivial.
+Qed.
+
+Lemma list_sum_mult_const (c : R) (l : list R) :
+  list_sum (List.map (fun z => c*z) l) = c*list_sum (List.map (fun z => z) l).
+Proof.
+  induction l.
+  simpl; lra.
+  simpl in *. rewrite IHl.
+  lra.
+Qed.
+
+Lemma list_sum_const_mult_le {x y : R} (l : list R) (hl : list_sum l = R1) (hxy : x <= y) :
+  list_sum (List.map (fun z => x*z) l) <= y.
+Proof.
+  rewrite list_sum_mult_const. rewrite map_id.
+  rewrite hl. lra.
+Qed.
+
+Lemma list_sum_fun_mult_le {x y D : R} {f g : R -> R}(l : list R)(hf : forall z, f z <= D) (hg : forall z , 0 <= g z) :
+  list_sum (List.map (fun z => (f z)*(g z)) l) <= D*list_sum (List.map (fun z => g z) l).
+Proof.
+  induction l.
+  simpl. lra.
+  simpl. rewrite Rmult_plus_distr_l.
+  assert (f a * g a <= D * g a). apply Rmult_le_compat_r. exact (hg a). exact (hf a).
+  exact (Rplus_le_compat _ _ _ _ H IHl).
+Qed.
+
+End list_sum.

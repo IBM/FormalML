@@ -1,6 +1,6 @@
 Require Import Reals Coquelicot.Coquelicot Coquelicot.Series.
 Require Import ProofIrrelevance EquivDec.
-Require Import Sums.
+Require Import Sums Utils.
 Require Import micromega.Lra.
 Require Import Coq.Logic.FunctionalExtensionality.
 From mathcomp Require Import ssreflect ssrfun seq.
@@ -24,12 +24,6 @@ tailored to the discrete case.
  *)
 
 (* Helper lemmas. Move to RealAdd. *)
-
-Fixpoint list_sum (l : list R) : R :=
-  match l with
-  | nil => 0
-  | x :: xs => x + list_sum xs
-  end.
 
 Fixpoint list_fst_sum {A : Type} (l : list (nonnegreal*A)): R  :=
   match l with
@@ -104,13 +98,6 @@ Proof.
   f_equal. apply proof_irrelevance.
 Qed.
 
-Lemma list_sum_cat (l1 l2 : list R) :
-  list_sum (l1 ++ l2) = (list_sum l1) + (list_sum l2).
-Proof.
-  induction l1.
-  * simpl ; nra.
-  * simpl.  nra.
-Qed.
 
 Lemma list_fst_sum_cat {A : Type} (l1 l2 : list (nonnegreal * A)) :
   list_fst_sum (l1 ++ l2) = (list_fst_sum l1) + (list_fst_sum l2).

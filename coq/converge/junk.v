@@ -1,5 +1,5 @@
-Require Import Reals EquivDec List LibUtils Permutation Morphisms.
-Require Import pmf_monad.
+Require Import Reals EquivDec List LibUtils Permutation Morphisms Utils.
+Require Import pmf_monad cond_expt.
 Require Import micromega.Lra.
 From mathcomp Require Import ssreflect ssrfun seq.
 

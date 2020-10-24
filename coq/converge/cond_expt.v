@@ -1,5 +1,6 @@
 Require Import Reals EquivDec List LibUtils Permutation Morphisms.
 Require Import pmf_monad.
+Require Import Utils.
 Require Import micromega.Lra.
 From mathcomp Require Import ssreflect ssrfun seq.
 
@@ -495,39 +496,7 @@ Section list_sum.
 
                                        
     
-Global Instance list_sum_Proper : Proper (@Permutation R ==> eq) list_sum.
-Proof.
-  unfold Proper. intros x y H. 
-  apply (@Permutation_ind_bis R (fun a b => list_sum a = list_sum b)). 
-  - simpl ; lra. 
-  - intros x0 l l' Hpll' Hll'. simpl ; f_equal. assumption.
-  - intros x0 y0 l l' H0 H1. simpl. rewrite H1 ; lra. 
-  - intros l l' l'' H0 H1 H2 H3. rewrite H1. rewrite <-H3. reflexivity. 
-  - assumption. 
-Qed.
 
-Lemma list_sum_perm_eq (l1 l2 : list R) : Permutation l1 l2 -> list_sum l1 = list_sum l2.
-Proof.
-  intro H. 
-  now rewrite H.
-Qed.
-      
-Lemma list_sum_map_const {A} (l : list A) (a : A) (f : A -> R) :
-  list_sum (map (fun x => f a) l) = INR(length l)* (f a).
-Proof.   
-  induction l.
-  - simpl ; lra. 
-  - simpl. rewrite IHl.
-    enough (match length l with
-            | 0%nat => 1
-            | S _ => INR (length l) + 1
-            end = INR(length l) + 1). 
-    rewrite H ; lra.
-    generalize (length l) as n.
-    intro n.  induction n.
-    + simpl ; lra.
-    + lra. 
-Qed.
 
 Lemma list_sum_eq_class {A : Type} (l : list A) (f : A -> R) :
   forall l0, In l0 (group_by_image f l) -> list_sum (map f l0) = INR(length l0)*match l0 with
@@ -558,13 +527,6 @@ Proof.
 Qed.
 
 
-Lemma list_sum_map_concat (l : list(list R)) :
-  list_sum (concat l) = list_sum (map list_sum l).
-Proof.   
-  induction l. 
-  - simpl ; reflexivity.
-  - simpl ; rewrite list_sum_cat. now rewrite IHl. 
-Qed.
 
 Theorem list_sum_map_sum_eq_class {A} (l : list A) (f : A -> R) :
   list_sum (map f l) = list_sum (map (fun l0 => INR(length l0)*match l0 with
@@ -598,14 +560,6 @@ Proof.
 Qed.
 
 
-Lemma list_sum_const_mul {A : Type} (l : list (nonnegreal*R)) :
-  forall r, list_sum (map (fun x => r*x.2) l)  = r*list_sum(map (fun x => x.2) l).
-Proof.
-  intro r.   
-  induction l.
-  simpl; lra.
-  simpl. rewrite IHl ; lra.
-Qed.
 
 End list_sum.
 
