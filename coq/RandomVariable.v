@@ -10,6 +10,8 @@ Require Import Utils.
 Require Import ProbSpace SigmaAlgebras BorelSigmaAlgebra.
 Import ListNotations.
 
+Set Bullet Behavior "Strict Subproofs".
+
 Section RandomVariable.
   (* todo better type names. *)
   (* The preimage of the function X on codomain B. *)
@@ -227,7 +229,7 @@ Section Expectation.
     intros.
     assert (event_equiv (fun omega : Ts => Rmax (f omega) 0 <= r)
                         (fun omega : Ts => f omega <= r)).
-    unfold event_equiv, event_union; intros.
+    unfold event_equiv; intros.
     unfold Rmax.
     destruct (Rle_dec (f x) 0); lra.
     now rewrite H1.
@@ -247,19 +249,29 @@ Section Expectation.
   Lemma equiv_le_lt (f : Ts -> R) (r:R) :
     event_equiv (fun omega : Ts => f omega < r)
                 (union_of_collection
-                   (fun (n:nat) => (fun omega : Ts => f omega <= r - / INR (S n)))).
+                   (fun (n:nat) => (fun omega : Ts => f omega <= r - / (1 + INR n)))).
   Proof.
-    unfold event_equiv, union_of_collection.
-    intros.
+    unfold event_equiv, union_of_collection; intros.
     split; intros.
-    exists (Z.to_nat (up (/ r - f x)%R)).
-    admit.
-    destruct H.
-    assert (0 < / INR (S x0)).
-    apply Rinv_0_lt_compat.
-    apply  lt_0_INR; lia.
-    lra.
-    Admitted.
+    - exists (Z.to_nat (up (/ (r - f x)))).
+      assert ( (r - f x) >=  / (1 + INR (Z.to_nat (up (/ (r - f x)))))).
+      + replace (r - f x) with (/ / (r - f x)) at 1 by (rewrite Rinv_involutive;lra).
+        apply Rle_ge, Rinv_le_contravar.
+        * apply Rinv_0_lt_compat; lra.
+        * generalize (archimed (/ (r - f x))); intros.
+          rewrite INR_up_pos.
+          lra.
+          left.
+          apply Rinv_0_lt_compat; lra.
+      + lra.
+    - destruct H.
+      assert (0 < / (1 + INR x0)).
+      + apply Rinv_0_lt_compat.
+        Search INR.
+        rewrite Rplus_comm; rewrite <- S_INR.
+        apply  lt_0_INR; lia.
+      + lra.
+  Qed.
 
   Lemma sa_le_ge (f : Ts -> R) :
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
@@ -343,20 +355,17 @@ Section Expectation.
       assert (event_equiv (fun omega : Ts => (c * f omega <= r)%R)
                           (fun omega : Ts => (f omega <= r/c)%R)).
       - red; intros.
-        assert (0 < c).
-        apply (cond_pos c).
+        assert (0 < c) by apply (cond_pos c).
         split; intros.
         + unfold Rdiv.
           rewrite Rmult_comm.
           replace (f x) with (/c * (c * f x)).
-          apply  Rmult_le_compat_l; trivial.
-          left.
-          now apply Rinv_0_lt_compat.
-          field_simplify; lra.
+          * apply  Rmult_le_compat_l; trivial; left.
+            now apply Rinv_0_lt_compat.
+          * field_simplify; lra.
         + replace (r) with (c * (r / c)).
-          apply  Rmult_le_compat_l; trivial.
-          now left.
-          field; lra.
+          * apply  Rmult_le_compat_l; trivial; now left.
+          * field; lra.
       - rewrite H0.
         apply H.
     Qed.
@@ -406,6 +415,14 @@ Section Expectation.
     intros.
     
   Admitted.
+
+  Lemma measurable_sum (f g : Ts -> R) :
+    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
+    (forall (r:R),  sa_sigma (fun omega : Ts => g omega <= r)) ->    
+    (forall (r:R),  sa_sigma (fun omega : Ts => (f omega) + (g omega) <= r)).
+  Proof.
+    intros.
+    Admitted.
 
 End Expectation.
 
