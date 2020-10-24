@@ -49,9 +49,19 @@ Section RandomVariable.
   Next Obligation.
     unfold event_preimage.
     destruct (sa_dec B c).
-    - admit.
-    - admit.
-  Admitted.
+    - assert (event_equiv (fun _ : Ts => B c)
+                          (fun _ : Ts => True)).
+      red; intros.
+      intuition.
+      rewrite H1.
+      apply sa_all.
+    - assert (event_equiv (fun _ : Ts => B c)
+                          event_none).
+      red; intros.
+      intuition.
+      rewrite H1.
+      apply sa_none.
+   Qed.
 
   Program Instance constant_random_variable_constant c : ConstantRandomVariable (constant_random_variable c)
     := { srv_val := c }.
@@ -176,7 +186,7 @@ Section Expectation.
                    exists rrv srv, 
                      E rrv srv /\ (SimpleExpectation srv) = x).
     
-  Definition Expection_posRV
+  Definition Expectation_posRV
              {rrv : RandomVariable Prts borel_sa}
              (posrv:PositiveRandomVariable rrv) :  Rbar   :=
       (SimpleExpectationSup
@@ -322,20 +332,80 @@ Section Expectation.
  Qed.
 
   Definition Expectation (rrv : RandomVariable Prts borel_sa) : option Rbar :=
-    Rbar_plus' (Expection_posRV  (positive_part_prv rrv))
-               (Rbar_opp (Expection_posRV  (negative_part_prv rrv))).
+    Rbar_plus' (Expectation_posRV  (positive_part_prv rrv))
+               (Rbar_opp (Expectation_posRV  (negative_part_prv rrv))).
 
-  Program Definition rvscale (rvv : RandomVariable Prts borel_sa) (c:posreal) :=
+  Lemma scale_measurable (f : Ts -> R) (c:posreal) :
+    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
+    (forall (r:R),  sa_sigma (fun omega : Ts => c * (f omega) <= r)).
+    Proof.
+      intros.
+      assert (event_equiv (fun omega : Ts => (c * f omega <= r)%R)
+                          (fun omega : Ts => (f omega <= r/c)%R)).
+      - red; intros.
+        assert (0 < c).
+        apply (cond_pos c).
+        split; intros.
+        + unfold Rdiv.
+          rewrite Rmult_comm.
+          replace (f x) with (/c * (c * f x)).
+          apply  Rmult_le_compat_l; trivial.
+          left.
+          now apply Rinv_0_lt_compat.
+          field_simplify; lra.
+        + replace (r) with (c * (r / c)).
+          apply  Rmult_le_compat_l; trivial.
+          now left.
+          field; lra.
+      - rewrite H0.
+        apply H.
+    Qed.
+
+  Program Definition rvscale (c: posreal) (rv : RandomVariable Prts borel_sa) :=
     BuildRealRandomVariable Prts (fun omega => c * (rv_X omega)) _.
   Next Obligation.
-    assert (event_equiv (fun omega : Ts => (c * rv_X omega <= r)%R)
-                        (fun omega : Ts => (rv_X omega <= r/c)%R)).
-    - red; intros.
-      admit.
-    - rewrite H.
-      apply borel_sa_preimage2; intros.
-      now apply rv_preimage.
+    destruct rv.
+    apply scale_measurable.
+    apply borel_sa_preimage2; intros.
+    now apply rv_preimage0.
+ Qed.
+
+  Lemma positive_scale_prv (c:posreal) 
+        {rrv : RandomVariable Prts borel_sa} 
+        (prv : PositiveRandomVariable rrv): 
+    PositiveRandomVariable (rvscale c rrv).
+  Proof.
+    unfold PositiveRandomVariable in *.
+    unfold rv_X; simpl.
+    intros.
+    assert (0 < c) by apply (cond_pos c).
+    specialize (prv x).
+    replace (0) with (c*0) by lra.
+    apply Rmult_le_compat_l; trivial.
+    now left.
+ Qed.
+
+  Lemma Expection_posRV_scale (c: posreal) 
+        (rv : RandomVariable Prts borel_sa) 
+        (posrv:PositiveRandomVariable rv) :  
+    Expectation_posRV (positive_scale_prv c posrv) =
+    c * Expectation_posRV posrv.
+  Proof.
+    unfold Expectation_posRV.
     Admitted.
+
+  Lemma Expectation_scale (c: posreal) (rv : RandomVariable Prts borel_sa) :
+    let Ex_rv := Expectation rv in
+    let Ex_c_rv := Expectation (rvscale c rv) in
+    match Ex_rv, Ex_c_rv with
+    | Some ex, Some exc => c*ex = exc
+    | None, None => True
+    | _,_ => False
+    end.
+  Proof.
+    intros.
+    
+  Admitted.
 
 End Expectation.
 
