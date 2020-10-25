@@ -50,7 +50,7 @@ Section RandomVariable.
     { rv_X := (fun _ => c) }.
   Next Obligation.
     unfold event_preimage.
-    destruct (sa_dec B H c).
+    destruct (sa_dec B c).
     - assert (event_equiv (fun _ : Ts => B c)
                           (fun _ : Ts => True)).
       red; intros.
@@ -173,18 +173,21 @@ Section SimpleExpectation.
   Context 
     {Ts:Type}
     {dom: SigmaAlgebra Ts}
-    {Prts: ProbSpace dom}
-    {rrv : RandomVariable Prts borel_sa}.
+    {Prts: ProbSpace dom}.
 
   Definition simpleRandomVariable_partition_image 
+             {rrv : RandomVariable Prts borel_sa}
              (srv : SimpleRandomVariable rrv) : list (event Ts) :=
     map (event_preimage rv_X) (map singleton_event srv_vals).
     
-  Definition SimpleExpectation (srv : SimpleRandomVariable rrv) : R :=
+  Definition SimpleExpectation
+             {rrv : RandomVariable Prts borel_sa}             
+             (srv : SimpleRandomVariable rrv) : R :=
     list_sum (map (fun v => Rmult v (ps_P (event_preimage rv_X (singleton_event v)))) 
                   srv_vals).
 
   Global Program Instance scale_constant_random_variable (c: posreal)
+         {rrv : RandomVariable Prts borel_sa}
          (crv:ConstantRandomVariable rrv) : ConstantRandomVariable (rvscale Prts c rrv)
     := { srv_val := Rmult c srv_val }.
   Next Obligation.
@@ -194,18 +197,33 @@ Section SimpleExpectation.
   Qed.
 
   Global Program Instance scale_simple_random_variable (c: posreal)
+         {rrv : RandomVariable Prts borel_sa}                      
          (srv:SimpleRandomVariable rrv) : SimpleRandomVariable (rvscale Prts c rrv)
     := { srv_vals := map (fun v => Rmult c v) srv_vals }.
   Next Obligation.
     destruct srv.
-    unfold srv_vals.
-    specialize (srv_vals_complete0 x).
     rewrite in_map_iff.
     exists (rv_X x).
     split; trivial.
   Qed.
 
+  Lemma scaleSimpleExpectation (c:posreal)
+         {rrv : RandomVariable Prts borel_sa}                      
+         (srv : SimpleRandomVariable rrv) : 
+    (c * SimpleExpectation srv)%R = SimpleExpectation (scale_simple_random_variable c srv).
+  Proof.
+    unfold SimpleExpectation, scale_simple_random_variable.
+    destruct srv.
+    unfold srv_vals.
+    simpl.
+    induction srv_vals0.
+    - simpl; lra.
+    - simpl in *.
+  Admitted.
+
 End SimpleExpectation.
+
+
 
 Section Expectation.
 
@@ -347,6 +365,31 @@ Section Expectation.
     now apply sa_le_ge.
   Qed.
 
+  Definition NxN_to_posrat (n d : nat) := INR (S n) / (INR (S d)).
+  Definition indexed_rational (n:nat) := INR n.
+
+  Lemma measurable_sum (f g : Ts -> R) :
+    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
+    (forall (r:R),  sa_sigma (fun omega : Ts => g omega <= r)) ->    
+    (forall (r:R),  sa_sigma (fun omega : Ts => (f omega) + (g omega) <= r)).
+  Proof.
+    intros.
+    assert (event_equiv 
+              (fun omega : Ts => (f omega) + (g omega) <= r)
+              (union_of_collection
+                 (fun (n:nat) => 
+                    event_inter
+                      (fun omega : Ts => f omega <= r + indexed_rational n)
+                      (fun omega : Ts => g omega <= - indexed_rational n)))).
+                        
+  Admitted.
+
+  Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
+    continuity g ->
+    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
+    (forall (r:R),  sa_sigma (fun omega : Ts => g (f omega) <= r)).
+  Admitted.
+
   Program Definition positive_part_rv (rvv : RandomVariable Prts borel_sa) :=
     BuildRealRandomVariable Prts (pos_fun_part rv_X) _.
   Next Obligation.
@@ -410,13 +453,6 @@ Section Expectation.
     
   Admitted.
 
-  Lemma measurable_sum (f g : Ts -> R) :
-    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
-    (forall (r:R),  sa_sigma (fun omega : Ts => g omega <= r)) ->    
-    (forall (r:R),  sa_sigma (fun omega : Ts => (f omega) + (g omega) <= r)).
-  Proof.
-    intros.
-    Admitted.
 
 End Expectation.
 
