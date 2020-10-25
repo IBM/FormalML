@@ -50,7 +50,7 @@ Section RandomVariable.
     { rv_X := (fun _ => c) }.
   Next Obligation.
     unfold event_preimage.
-    destruct (sa_dec B c).
+    destruct (sa_dec B H c).
     - assert (event_equiv (fun _ : Ts => B c)
                           (fun _ : Ts => True)).
       red; intros.

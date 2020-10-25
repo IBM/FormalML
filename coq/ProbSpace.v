@@ -446,7 +446,7 @@ Class SigmaAlgebra (T:Type) :=
     sa_proper :> Proper (event_equiv ==> iff) sa_sigma ;
 
     (* alternative to assuming LEM *)
-    sa_dec (A:event T) : event_lem A;
+    sa_dec (A:event T) : sa_sigma A -> event_lem A;
     
     sa_countable_union (collection: nat -> event T) :
       (forall n, sa_sigma (collection n)) ->
@@ -463,39 +463,45 @@ Hint Resolve sa_dec : prob.
 
 (* restate some lemmas that rely on lem unconditionally *)
 Lemma ps_event_union_complement {T} {s : SigmaAlgebra T} (A:event T) :
+  sa_sigma A ->
   A ∪ ¬ A === Ω.
 Proof.
+  intros.
   apply event_union_complement.
-  apply sa_dec.
+  now apply sa_dec.
 Qed.
 
 Lemma ps_event_union_not_self {T} {s : SigmaAlgebra T} (A:event T) :
+  sa_sigma A ->
   A ∪ ¬ A === Ω.
 Proof.
+  intros.
   apply event_union_not_self.
-  apply sa_dec.
+  now apply sa_dec.
 Qed.
 
-Lemma ps_event_union_diff {T:Type} {s : SigmaAlgebra T} (A B:event T) :
+Lemma ps_event_union_diff {T:Type} {s : SigmaAlgebra T} (A B:event T) : sa_sigma A ->
   A ∪ (B \ A) === A ∪ B.
 Proof.
+  intros.
   apply event_union_diff.
-  apply sa_dec.
+  now apply sa_dec.
 Qed.
 
-Lemma ps_event_union_diff_sub {T:Type} {s : SigmaAlgebra T} (A B:event T) :
+Lemma ps_event_union_diff_sub {T:Type} {s : SigmaAlgebra T} (A B:event T) : sa_sigma A ->
   A ≤ B -> A ∪ (B \ A) === B.
 Proof.
-  apply event_union_diff_sub.
-  apply sa_dec.
+  intros.
+  apply event_union_diff_sub; trivial.
+  now apply sa_dec.
 Qed.
 
 Hint Resolve @ps_event_union_complement @ps_event_union_not_self 2ps_event_union_diff @ps_event_union_diff_sub : prob.
 
-Lemma sa_notnot {T} {s: SigmaAlgebra T} (A:event T) : forall x, ~ ~ A x -> A x.
+Lemma sa_notnot {T} {s: SigmaAlgebra T} (A:event T) : sa_sigma A -> forall x, ~ ~ A x -> A x.
 Proof.
   intros.
-  destruct (sa_dec A x); intuition.
+  destruct (sa_dec A H x); intuition.
 Qed.
 
 Lemma sa_none {T} {s: SigmaAlgebra T} : sa_sigma (∅).
@@ -522,7 +528,7 @@ Proof.
     split; intros.
     + intros [n ncoll].
       intuition.
-    + destruct (sa_dec (collection n) x); trivial.
+    + destruct (sa_dec (collection n) (H n) x); trivial.
       elim H0; eauto.
   - intros.
     apply sa_complement; auto.
@@ -878,11 +884,13 @@ Proof.
   generalize (ps_disjoint_union ps
                                 A (B \ A)); intros HH.
   cut_to HH; [ | auto with prob.. ].
-  rewrite event_union_diff_sub in HH by auto with prob.
-  rewrite HH.
-  generalize (ps_pos (B \ A)); intros.
-  cut_to H; auto with prob.
-  lra.
+  rewrite event_union_diff_sub in HH.
+  - rewrite HH.
+    generalize (ps_pos (B \ A)); intros.
+    cut_to H; auto with prob.
+    lra.
+  - now apply sa_dec.
+  - trivial.
 Qed.
 
 (* C1.1 *)
@@ -959,10 +967,10 @@ Lemma ps_complement {T:Type} {S:SigmaAlgebra T} (ps:ProbSpace S) (A: event T) :
 Proof.
   intros sa1.
   generalize (ps_total ps Ω A (¬ A)); intros HH.
-  cut_to HH; auto with prob.
-  - rewrite ps_one in HH.
-    autorewrite with prob in HH.
-    lra.
+  cut_to HH; eauto with prob.
+  rewrite ps_one in HH.
+  autorewrite with prob in HH.
+  lra.
 Qed.
 
 (* P1.6 *)
@@ -972,9 +980,9 @@ Lemma ps_union {T:Type} {S:SigmaAlgebra T} (ps:ProbSpace S) (A B: event T) :
   ps_P (A ∪ B) = ps_P A + ps_P B - ps_P (A ∩ B).
 Proof.
   intros sa1 sa2.
-  rewrite <- event_union_diff by auto with prob.
-  rewrite ps_disjoint_union by auto with prob.
-  rewrite (ps_total ps B A (¬ A)) by auto with prob.
+  rewrite <- event_union_diff by eauto with prob.
+  rewrite ps_disjoint_union by eauto with prob.
+  rewrite (ps_total ps B A (¬ A)) by eauto with prob.
   rewrite event_diff_derived.  
   rewrite (event_inter_comm A B).
   lra.
