@@ -184,6 +184,15 @@ Section SimpleExpectation.
     list_sum (map (fun v => Rmult v (ps_P (event_preimage rv_X (singleton_event v)))) 
                   srv_vals).
 
+  Global Program Instance scale_constant_random_variable (c: posreal)
+         (crv:ConstantRandomVariable rrv) : ConstantRandomVariable (rvscale Prts c rrv)
+    := { srv_val := Rmult c srv_val }.
+  Next Obligation.
+    destruct crv.
+    unfold srv_val.
+    now rewrite (srv_val_complete0 x).
+  Qed.
+
   Global Program Instance scale_simple_random_variable (c: posreal)
          (srv:SimpleRandomVariable rrv) : SimpleRandomVariable (rvscale Prts c rrv)
     := { srv_vals := map (fun v => Rmult c v) srv_vals }.
@@ -196,30 +205,6 @@ Section SimpleExpectation.
     split; trivial.
   Qed.
 
-  (*
-  Definition scaleRandomVariable (c:R) (rv : RandomVariable rv) : 
-    RandomVariable rrv.
-  
-  Global Instance scaleRandomVariableConstant (c:R) (rv: RandomVariable) {crv : ConstantRandomVariable rv} : 
-    ConstantRandomVariable (scaleRandomVariable rv).
-  Admitted.    
-
-  Global Instance scaleSimpleVariable (c:R) (rv: RandomVariable) {srv : SimpleRandomVariable rv} : 
-    SimpleRandomVariable (scaleRandomVariable rv).
-  Admitted.    
-   *)
-
-  (*
-  Definition scaleSimpleVariable (c:R) (srv : SimpleRandomVariable rrv) : 
-    SimpleRandomVariable rrv.
-  Admitted.    
-
-  Lemma scaleSimpleExpectation (c:R) (srv : SimpleRandomVariable rrv) : 
-    (c * SimpleExpectation srv)%R = SimpleExpectation (scaleSimpleVariable c srv).
-  Proof.
-  Admitted.
-*)
-    
 End SimpleExpectation.
 
 Section Expectation.
