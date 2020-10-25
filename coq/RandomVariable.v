@@ -185,8 +185,7 @@ Section SimpleExpectation.
                   srv_vals).
 
   Global Program Instance scale_simple_random_variable (c: posreal)
-         {rv:RandomVariable Prts borel_sa}
-         (srv:SimpleRandomVariable rrv) : SimpleRandomVariable (rvscale Prts c rv)
+         (srv:SimpleRandomVariable rrv) : SimpleRandomVariable (rvscale Prts c rrv)
     := { srv_vals := map (fun v => Rmult c v) srv_vals }.
   Next Obligation.
     destruct srv.
@@ -195,8 +194,7 @@ Section SimpleExpectation.
     rewrite in_map_iff.
     exists (rv_X x).
     split; trivial.
-    Admitted.
-*)
+  Qed.
 
   (*
   Definition scaleRandomVariable (c:R) (rv : RandomVariable rv) : 
