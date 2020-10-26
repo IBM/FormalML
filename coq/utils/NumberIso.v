@@ -69,7 +69,7 @@ Next Obligation.
       rewrite Z.opp_involutive; lia.
 Qed.
 
-Global Program Instance Q_Zpos_iso : Isomorphism (Q) (Z*positive)
+Global Program Instance Q_Zpos_iso : Isomorphism Q (Z*positive)
   := { iso_f q := (Qnum q, Qden q) ;
        iso_b '(z,p) := Qmake z p
      }.
@@ -88,3 +88,105 @@ Global Instance Q_nat_iso : Isomorphism Q nat
   := Isomorphism_trans
        Q_N_iso
        (Isomorphism_symm nat_to_N_iso).
+
+Require Import ZArith.
+
+
+
+Program Instance Qc_Qpos_iso : Isomorphism Q (Qc*positive)
+  := {
+  iso_f q := (Q2Qc q, Z.to_pos (Z.gcd (Qnum q) (Zpos (Qden q))));
+  iso_b '(qc,m) := ((this qc) * (Z.pos m # m))%Q
+    }.
+Next Obligation.
+  f_equal.
+  - apply Qc_is_canon.
+    unfold Qeq; simpl.
+    case_eq ( (Z.ggcd (Qnum q * Z.pos p) (Z.pos (Qden q * p)))); intros; simpl.
+    generalize (Z.ggcd_correct_divisors (Qnum q * Z.pos p) (Z.pos (Qden q * p))); intros HH.
+    rewrite H in HH.
+    destruct p0.
+    destruct HH as [eqq1 eqq2].
+    simpl.
+    destruct q.
+    destruct this.
+    simpl in *.
+    rewrite Pos2Z.inj_mul in eqq2.
+    assert (eqq12:(Z.pos Qden * (Qnum * Z.pos p)%Z = Z.pos Qden * (z * z0)%Z)%Z)
+           by now rewrite eqq1.
+    assert (eqq22:(Z.pos Qden * (Qnum * Z.pos p)%Z = Qnum * (z * z1)%Z)%Z)
+      by (rewrite <- eqq2; lia).
+    rewrite eqq12 in eqq22.
+    assert (eqq3:( z * (Z.pos Qden * z0) = z * (Qnum * z1))%Z) by lia.
+    rewrite Z2Pos.id.
+    + apply Z.mul_cancel_l in eqq3; [ | lia].
+      lia.
+    + rewrite <- Pos2Z.inj_mul in eqq2.
+      generalize (Pos2Z.pos_is_pos (Qden * p)); intros HH1.
+      rewrite eqq2 in HH1.
+      rewrite Z.mul_comm in HH1.
+      generalize (Z.ggcd_gcd (Qnum * Z.pos p) (Z.pos (Qden * p))); intros HH2.
+      rewrite H in HH2; simpl in HH2.
+      
+      generalize (Z.gcd_nonneg (Qnum * Z.pos p) (Z.pos (Qden * p))); intros HH3.
+      rewrite <- HH2 in HH3.
+      assert (HH4:(z = 0 \/ 0 < z)%Z) by lia.
+      destruct HH4.
+      * subst.
+        lia.
+      * eapply Zmult_gt_0_lt_0_reg_r.
+        -- apply Z.lt_gt.
+           apply H0.
+        -- lia.
+  - simpl.
+    rewrite Pos2Z.inj_mul.
+    rewrite Z.gcd_mul_mono_r.
+    destruct q; simpl.
+    apply Qred_iff in canon.
+    rewrite canon.
+    simpl.
+    trivial.
+Qed.
+Next Obligation.
+  generalize (Qred_correct a); intros HH.
+  red in HH.
+  rewrite <- Z.ggcd_gcd.
+  unfold Qred.
+  destruct a.
+  generalize (Z.ggcd_correct_divisors Qnum (Z.pos Qden)).
+  case_eq (Z.ggcd Qnum (Z.pos Qden)).
+  intros z [p q] eqq [HH1 HH2].
+  simpl.
+  rewrite eqq, HH1; simpl.
+  unfold Qmult; simpl.
+  assert (zn:(z <> 0)%Z).
+  {
+    intro; subst.
+    simpl in HH2.
+    lia.
+  }
+  assert (zpos:(z > 0)%Z).
+  {
+    generalize (Z.gcd_nonneg Qnum (Z.pos Qden)); intros HH3.
+    rewrite <- Z.ggcd_gcd in HH3.
+    rewrite eqq in HH3; simpl in HH3.
+    lia.
+  }
+  assert (qpos:(q>0)%Z).
+  {
+    generalize (Pos2Z.is_pos Qden); intros HH3.
+    eapply Z.lt_gt.
+    eapply Zmult_lt_0_reg_r.
+    + eapply Z.gt_lt.
+      eapply zpos.
+    + lia.
+  } 
+  rewrite Z2Pos.id by lia.
+  f_equal.
+  + lia.
+  + rewrite <- Z2Pos.inj_mul by lia.
+    apply Pos2Z.inj_pos.
+    rewrite HH2.
+    rewrite Z2Pos.id by lia.
+    lia.
+Qed.
