@@ -2,6 +2,9 @@ Require Import ProbSpace SigmaAlgebras.
 Require Import Reals.
 Require Import Lra Lia.
 Require Import Utils.
+Require Import NumberIso.
+
+Set Bullet Behavior "Strict Subproofs".
 
 (* specialized for R *)
 
@@ -227,6 +230,46 @@ Qed.
           lra.
      Qed.
 
+    Lemma sa_le_open_set (f : Ts -> R) :
+      (forall (r:R),  sa_sigma (fun omega : Ts => (f omega <= r)%R)) ->      
+      (forall B: event R, open_set B -> sa_sigma (event_preimage f B)).
+    Proof.
+      unfold event_preimage; intros.
+      generalize (Q_open_set B); intros.
+      destruct H1.
+      assert (event_equiv (fun omega : Ts => B (f omega))
+                          (union_of_collection
+                             (fun (n:nat) => 
+                                let n12 := (@iso_b _ _ nat_pair_encoder) n in
+                                let qint := Q_interval (iso_b (fst n12)) (iso_b (snd n12)) in
+                                fun omega : Ts => (qint (f omega)) /\
+                                                  (included qint B)))).
+      - unfold event_equiv, union_of_collection; intros.
+        split; intros.
+        + specialize (H1 H0 (f x) H3).
+          destruct H1 as [l0 [r0 H1]].
+          exists (iso_f ((iso_f l0), (iso_f r0)) ).
+          rewrite iso_b_f.
+          unfold fst, snd.
+          now do 2 rewrite iso_b_f.
+        + destruct H3.
+          unfold included in H3.
+          destruct H3.
+          now specialize (H4 (f x) H3).
+      - rewrite H3.
+        apply sa_countable_union; intros.
+        generalize (sa_open_intervals f H); intros.
+        unfold Q_interval.
+        specialize (H4 (Qreals.Q2R
+                (@iso_b Q nat Q_nat_iso
+                   (@fst nat nat (@iso_b (prod nat nat) nat nat_pair_encoder n))))
+                    (Qreals.Q2R
+                (@iso_b Q nat Q_nat_iso
+                   (@snd nat nat (@iso_b (prod nat nat) nat nat_pair_encoder n))))).
+        
+        
+        Admitted.
+      
  End Borel.
 
 
