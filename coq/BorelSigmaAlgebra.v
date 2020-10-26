@@ -169,4 +169,32 @@ Qed.
       now apply sa_le_ge.
   Qed.
 
+  Require Import QArith.
+
+  Definition rational_interval (l r : Q) (x:R) : Prop :=
+    Qreals.Q2R l < x < Qreals.Q2R r.
+  
+  Lemma rational_neighborhood (D:R -> Prop) (x:R) :
+        neighbourhood D x -> 
+        exists (l r : Q), rational_interval l r x /\
+                          included (rational_interval l r) D.
+    Proof.
+      unfold neighbourhood, included, disc; intros.
+      destruct H.
+      Admitted.
+      
+
+      
+          
+
  End Borel.
+
+
+(*
+Definition included (D1 D2:R -> Prop) : Prop := forall x:R, D1 x -> D2 x.
+Definition disc (x:R) (delta:posreal) (y:R) : Prop := Rabs (y - x) < delta.
+Definition neighbourhood (V:R -> Prop) (x:R) : Prop :=
+  exists delta : posreal, included (disc x delta) V.
+Definition open_set (D:R -> Prop) : Prop :=
+  forall x:R, D x -> neighbourhood D x.
+*)
