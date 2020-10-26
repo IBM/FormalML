@@ -218,6 +218,16 @@ Section SimpleExpectation.
     split; trivial.
   Qed.
 
+  Lemma list_sum_const_mul_gen {A : Type} (l : list A) f :
+    forall r, list_sum (map (fun x => r*f x) l)  =
+         r* list_sum (map (fun x => f x) l).
+Proof.
+  intro r.
+  induction l.
+  simpl; lra.
+  simpl. rewrite IHl ; lra.
+Qed.
+
   Lemma scaleSimpleExpectation (c:posreal)
          {rrv : RandomVariable Prts borel_sa}                      
          (srv : SimpleRandomVariable rrv) : 
@@ -227,10 +237,21 @@ Section SimpleExpectation.
     destruct srv.
     unfold srv_vals.
     simpl.
-    induction srv_vals0.
-    - simpl; lra.
-    - simpl in *.
-  Admitted.
+    rewrite <- list_sum_const_mul_gen.
+    f_equal.
+    rewrite map_map.
+    apply map_ext_in; intros.
+    rewrite <- Rmult_assoc.
+    f_equal.
+    apply ps_proper; red; intros.
+    unfold event_preimage.
+    unfold singleton_event.
+    split; intros.
+    - now subst.
+    - apply Rmult_eq_reg_l in H0; trivial.
+      destruct c; simpl in *.
+      lra.
+  Qed.
 
 End SimpleExpectation.
 
