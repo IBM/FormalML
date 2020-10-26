@@ -260,12 +260,8 @@ Qed.
         apply sa_countable_union; intros.
         generalize (sa_open_intervals f H); intros.
         unfold Q_interval.
-        specialize (H4 (Qreals.Q2R
-                (@iso_b Q nat Q_nat_iso
-                   (@fst nat nat (@iso_b (prod nat nat) nat nat_pair_encoder n))))
-                    (Qreals.Q2R
-                (@iso_b Q nat Q_nat_iso
-                   (@snd nat nat (@iso_b (prod nat nat) nat nat_pair_encoder n))))).
+        specialize (H4 (Qreals.Q2R (iso_b (fst (@iso_b _ nat nat_pair_encoder n))))
+                       (Qreals.Q2R (iso_b (snd (@iso_b _ nat nat_pair_encoder n))))).
         
         
         Admitted.
