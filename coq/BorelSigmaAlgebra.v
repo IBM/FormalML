@@ -266,6 +266,39 @@ Qed.
         
         Admitted.
       
+    Lemma sa_open_set_le (f : Ts -> R) :
+      (forall B: event R, open_set B -> sa_sigma (event_preimage f B)) ->
+      (forall (r:R),  sa_sigma (fun omega : Ts => (f omega <= r)%R)).
+    Proof.
+      intros.
+      assert (event_equiv (fun omega : Ts => (f omega <= r)%R)
+                          (event_complement (fun omega : Ts => (f omega > r)%R))).
+      - unfold event_equiv, event_complement.
+        intros.
+        lra.
+      - rewrite H0.
+        apply sa_complement.
+        apply H.
+        unfold open_set, neighbourhood.
+        intros; unfold disc.
+        unfold included.
+        assert (0 < (x-r)/2)%R.
+        lra.
+        exists (mkposreal _ H2); intros.
+        simpl in *.
+        apply Rabs_def2 in H3.
+        lra.
+    Qed.
+
+    Lemma sa_open_iff_le (f : Ts -> R) :
+      (forall B: event R, open_set B -> sa_sigma (event_preimage f B)) <->
+      (forall (r:R),  sa_sigma (fun omega : Ts => (f omega <= r)%R)).
+    Proof.
+      split.
+      apply sa_open_set_le.
+      apply sa_le_open_set.
+    Qed.
+
  End Borel.
 
 
