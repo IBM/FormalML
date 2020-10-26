@@ -179,7 +179,7 @@ Qed.
     forall (l r : R),
     (l < r)%R -> (exists (m:Q), l < Qreals.Q2R m < r).
 
-  Lemma Q_neighborhood_smaller (D:R -> Prop) (x:R) :
+  Lemma Q_neighborhood_included (D:R -> Prop) (x:R) :
         neighbourhood D x -> 
         exists (l r : Q), Q_interval l r x /\
                           included (Q_interval l r) D.
@@ -208,7 +208,7 @@ Qed.
     Proof.
       unfold open_set.
       split; intros.
-      - apply Q_neighborhood_smaller.
+      - apply Q_neighborhood_included.
         now apply H.
       - unfold neighbourhood.
         specialize (H x H0).
@@ -216,14 +216,16 @@ Qed.
         destruct H.
         unfold included,disc,Q_interval in *.
         assert (0 < Rmin (x - Qreals.Q2R l0) (Qreals.Q2R r0 - x))%R.
-        apply Rmin_pos; lra.
-        exists (mkposreal _ H2); intros.
-        apply H1.
-        rewrite Rcomplements.Rabs_lt_between' in H3; simpl in H3.
-        destruct H3.
-        
-        Admitted.
-
+        + apply Rmin_pos; lra.
+        + exists (mkposreal _ H2); intros; apply H1.
+          rewrite Rcomplements.Rabs_lt_between in H3; simpl in H3.
+          destruct H3.
+          apply Ropp_lt_contravar in H3.
+          rewrite Ropp_involutive in H3.
+          apply Rmin_Rgt_l in H3.
+          apply Rmin_Rgt_l in H4.        
+          lra.
+     Qed.
 
  End Borel.
 
