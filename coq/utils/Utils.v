@@ -8,6 +8,7 @@ Require Export improper_integrals.
 Require Export Isomorphism.
 Require Export ListAdd.
 Require Export PairEncoding.
+Require Export NumberIso.
 Require Export RealAdd.
 Require Export RiemannAdd.
 Require Export Sums.
