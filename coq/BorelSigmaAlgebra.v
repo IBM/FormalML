@@ -1,6 +1,7 @@
 Require Import ProbSpace SigmaAlgebras.
 Require Import Reals.
 Require Import Lra Lia.
+Require Import Utils.
 
 (* specialized for R *)
 
@@ -171,21 +172,58 @@ Qed.
 
   Require Import QArith.
 
-  Definition rational_interval (l r : Q) (x:R) : Prop :=
+  Definition Q_interval (l r : Q) (x:R) : Prop :=
     Qreals.Q2R l < x < Qreals.Q2R r.
   
-  Lemma rational_neighborhood (D:R -> Prop) (x:R) :
+  Axiom Q_dense :
+    forall (l r : R),
+    (l < r)%R -> (exists (m:Q), l < Qreals.Q2R m < r).
+
+  Lemma Q_neighborhood_smaller (D:R -> Prop) (x:R) :
         neighbourhood D x -> 
-        exists (l r : Q), rational_interval l r x /\
-                          included (rational_interval l r) D.
+        exists (l r : Q), Q_interval l r x /\
+                          included (Q_interval l r) D.
     Proof.
       unfold neighbourhood, included, disc; intros.
-      destruct H.
-      Admitted.
-      
+      destruct H as [eps H].
+      generalize (cond_pos eps); intros.
+      assert (x < x+eps)%R by lra.
+      assert (x - eps < x)%R by lra.
+      generalize (Q_dense (x-eps) x H2); intros.
+      generalize (Q_dense x (x + eps) H1); intros.
+      destruct H3 as [l0 H3].      
+      destruct H4 as [r0 H4].
+      exists l0; exists r0.
+      unfold Q_interval.
+      split; [lra | ].
+      intros;  apply H.
+      rewrite Rcomplements.Rabs_lt_between'; lra.
+    Qed.
 
-      
-          
+    Lemma Q_open_set (D:R -> Prop) :
+      open_set D <->
+      (forall x:R, D x ->
+        exists (l r : Q), Q_interval l r x /\
+                          included (Q_interval l r) D).
+    Proof.
+      unfold open_set.
+      split; intros.
+      - apply Q_neighborhood_smaller.
+        now apply H.
+      - unfold neighbourhood.
+        specialize (H x H0).
+        destruct H as [l0 H]; destruct H as [r0 H].
+        destruct H.
+        unfold included,disc,Q_interval in *.
+        assert (0 < Rmin (x - Qreals.Q2R l0) (Qreals.Q2R r0 - x))%R.
+        apply Rmin_pos; lra.
+        exists (mkposreal _ H2); intros.
+        apply H1.
+        rewrite Rcomplements.Rabs_lt_between' in H3; simpl in H3.
+        destruct H3.
+        
+        Admitted.
+
 
  End Borel.
 
