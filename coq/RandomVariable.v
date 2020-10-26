@@ -30,7 +30,6 @@ Section RandomVariable.
       rv_preimage: forall (B: event Td), sa_sigma B -> sa_sigma (event_preimage rv_X B);
     }.
 
-
   Section Simple.
     Context {Ts:Type} {Td:Type}
             {dom: SigmaAlgebra Ts}
@@ -50,7 +49,7 @@ Section RandomVariable.
     { rv_X := (fun _ => c) }.
   Next Obligation.
     unfold event_preimage.
-    destruct (sa_dec B c).
+    destruct (sa_dec B H c).
     - assert (event_equiv (fun _ : Ts => B c)
                           (fun _ : Ts => True)).
       red; intros.
@@ -112,6 +111,18 @@ Section RandomVariable.
         (rv1 rv2: RandomVariable prts borel_sa) : Prop :=
     forall (x:Ts), (rv_X (RandomVariable:=rv1) x <= 
                    rv_X (RandomVariable:=rv2) x)%R.
+
+
+(*
+  Lemma sa_simple_list_pt (f : Ts -> R) (vals : list R) :
+    (forall (x:Ts), In (f x) vals) ->
+    (forall (pt:R), In pt vals -> sa_sigma (fun omega : Ts => f omega = pt)) ->
+    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)).
+  Proof.
+    intros.
+    assert (event_equiv (fun omega : Ts => f omega <= r)
+                        (union_of_collection (fun n => 
+*)
 
   Definition PositiveRandomVariable
         {prts: ProbSpace dom}
@@ -302,55 +313,7 @@ Section Expectation.
     lra.
   Qed.
 
-  Lemma equiv_le_lt (f : Ts -> R) (r:R) :
-    event_equiv (fun omega : Ts => f omega < r)
-                (union_of_collection
-                   (fun (n:nat) => (fun omega : Ts => f omega <= r - / (1 + INR n)))).
-  Proof.
-    unfold event_equiv, union_of_collection.
-    intros.
-    split ; intros.
-    + generalize (archimed_cor1 (r - f x)) ; intros.
-      assert (r - f x > 0) by lra. specialize (H0 H1).
-      clear H1.
-      destruct H0 as [N [HNf HN]].
-      exists N. left.
-      replace (1 + INR N) with (INR (S N)) by (apply S_O_plus_INR).
-      assert (f x < r - / INR N) by lra.
-      eapply Rlt_trans ; eauto.
-      change (r + -/INR N < r + - /INR (S N)).
-      apply Rplus_lt_compat_l. apply Ropp_lt_contravar.
-      apply Rinv_lt_contravar.
-      rewrite <-mult_INR. apply lt_0_INR ; lia.
-      apply lt_INR ; lia.
-    + destruct H.
-      assert (0 < / INR (S x0)).
-      apply Rinv_0_lt_compat.
-      apply  lt_0_INR; lia.
-      replace (1 + INR x0) with (INR (S x0)) in H by (apply S_O_plus_INR).
-      lra.
-  Qed.
 
-  Lemma sa_le_ge (f : Ts -> R) :
-    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
-    (forall (r:R),  sa_sigma (fun omega : Ts => f omega >= r)).
-  Proof.
-    intros.
-    assert (event_equiv (fun omega : Ts => f omega >= r)
-                        (event_complement (fun omega : Ts => f omega < r))).
-    {
-      simpl.
-      intro x.
-      unfold event_complement.
-      split; intros; lra.
-    }
-      rewrite H0.
-      apply sa_complement.
-      rewrite equiv_le_lt.
-      apply sa_countable_union.
-      intros.
-      apply H.
-  Qed.
 
   Lemma Ropp_measurable (f : Ts -> R) :
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
@@ -365,8 +328,24 @@ Section Expectation.
     now apply sa_le_ge.
   Qed.
 
-  Definition NxN_to_posrat (n d : nat) := INR (S n) / (INR (S d)).
-  Definition indexed_rational (n:nat) := INR n.
+  Compute (1/2)%nat.
+
+  Definition N_to_Z (n : nat) :=
+    let quo := ((S n)/2)%nat in
+    let rem := ((S n) - 2*quo)%nat in
+    match n with
+    | 0 => Z.of_nat n
+    | _ => match rem with
+           | 0 => Z.of_nat quo
+           | _ => (- Z.of_nat quo)%Z
+           end
+    end.
+  
+  Definition NxN_to_rat (nxn : nat*nat) := IZR (N_to_Z (fst nxn)) / (INR (S (snd nxn))).
+
+  Definition N_to_NxN (n:nat) := (n,n).
+  
+  Definition indexed_rational (n:nat) := NxN_to_rat (N_to_NxN n).
 
   Lemma measurable_sum (f g : Ts -> R) :
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
@@ -388,6 +367,7 @@ Section Expectation.
     continuity g ->
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
     (forall (r:R),  sa_sigma (fun omega : Ts => g (f omega) <= r)).
+  Proof.
   Admitted.
 
   Program Definition positive_part_rv (rvv : RandomVariable Prts borel_sa) :=
