@@ -383,7 +383,7 @@ Proof.
   exists (fun n => let '(n1,n2) := iso_b n in f n1 n2).
   split.
   - intros.
-    case_eq (iso_b n); intros n1 n2 eqq.
+    case_eq (@iso_b _ _ nat_pair_encoder n); intros n1 n2 eqq.
     rewrite eqq in *.
     destruct (fprop n1)
       as [HH1 HH2].
@@ -398,7 +398,7 @@ Proof.
       exists (iso_f (n1,n2)).
       rewrite iso_b_f; trivial.
     + intros [n fx].
-      case_eq (iso_b n).
+      case_eq (@iso_b _ _ nat_pair_encoder n).
       intros n1 n2 eqq.
       rewrite eqq in *.
       destruct (fprop n1) as [HH1 HH2].
