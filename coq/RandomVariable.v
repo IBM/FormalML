@@ -337,7 +337,8 @@ Qed.
     unfold srv_vals.
     unfold sum_simple_random_variables.
     rewrite map_map.
-    
+    unfold event_preimage, singleton_event.
+    simpl.
     Admitted.
 
 End SimpleExpectation.
