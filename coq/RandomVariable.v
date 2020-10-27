@@ -63,7 +63,8 @@ Section RandomVariable.
       intuition.
       rewrite H1.
       apply sa_none.
-   Qed.
+  Qed.
+
 
   Program Instance constant_random_variable_constant c : ConstantRandomVariable (constant_random_variable c)
     := { srv_val := c }.
@@ -113,24 +114,12 @@ Section RandomVariable.
     forall (x:Ts), (rv_X (RandomVariable:=rv1) x <= 
                    rv_X (RandomVariable:=rv2) x)%R.
 
-
-(*
-  Lemma sa_simple_list_pt (f : Ts -> R) (vals : list R) :
-    (forall (x:Ts), In (f x) vals) ->
-    (forall (pt:R), In pt vals -> sa_sigma (fun omega : Ts => f omega = pt)) ->
-    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)).
-  Proof.
-    intros.
-    assert (event_equiv (fun omega : Ts => f omega <= r)
-                        (union_of_collection (fun n => 
-*)
-
   Definition PositiveRandomVariable
         {prts: ProbSpace dom}
         (rv: RandomVariable prts borel_sa) : Prop :=
     forall (x:Ts), (0 <= rv_X x)%R.
   
-  Lemma scale_measurable (f : Ts -> R) (c:posreal) :
+  Lemma scale_measurable_pos (f : Ts -> R) (c:posreal) :
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
     (forall (r:R),  sa_sigma (fun omega : Ts => c * (f omega) <= r)).
     Proof.
@@ -153,7 +142,65 @@ Section RandomVariable.
         apply H.
     Qed.
 
-  Program Definition rvscale (c: posreal) (rv : RandomVariable prts borel_sa) :=
+  Lemma scale_measurable_neg (f : Ts -> R) (c:posreal) :
+    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
+    (forall (r:R),  sa_sigma (fun omega : Ts => (-c) * (f omega) <= r)).
+    Proof.
+      intros.
+      assert (event_equiv (fun omega : Ts => ((-c) * f omega <= r)%R)
+                          (fun omega : Ts => (c * f omega >= -r)%R)).
+      - red; intros.
+        assert (0 < c) by apply (cond_pos c).
+        lra.
+      - rewrite H0.
+        apply sa_le_ge.
+        now apply scale_measurable_pos.
+    Qed.
+
+  Lemma constant_measurable (c:R) :
+    forall (r:R),  sa_sigma (fun omega : Ts => c <= r).
+  Proof.
+    intros.
+    destruct (Rle_dec c r).
+    - assert (event_equiv (fun _ : Ts => c <= r)
+                          (fun _ : Ts => True)).
+      red; intros.
+      intuition.
+      rewrite H.
+      apply sa_all.
+    - assert (event_equiv (fun _ : Ts => c <= r)
+                          event_none).
+      red; intros.
+      intuition.
+      rewrite H.
+      apply sa_none.
+  Qed.
+
+  Lemma scale_measurable (f : Ts -> R) (c:R) :
+    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
+    (forall (r:R),  sa_sigma (fun omega : Ts => c * (f omega) <= r)).
+    Proof.
+      intros.
+      destruct (Rle_dec c 0).
+      - destruct (Rle_lt_or_eq_dec c 0); trivial.
+        + assert (0 < -c) by lra.
+          assert (event_equiv (fun omega : Ts => c * f omega <= r)
+                              (fun omega : Ts => (- - c) * f omega <= r)).
+          red; intros.
+          lra.
+          rewrite H1.
+          now apply (scale_measurable_neg f (mkposreal _ H0)).
+        + assert (event_equiv (fun omega : Ts => c * f omega <= r)
+                              (fun _ => 0 <= r)).
+          red; intros.
+          subst; lra.
+          rewrite H0.
+          apply constant_measurable.
+      - assert (0 < c) by lra.
+        now apply (scale_measurable_pos f (mkposreal _ H0)).
+   Qed.
+
+  Program Definition rvscale (c: R) (rv : RandomVariable prts borel_sa) :=
     BuildRealRandomVariable (fun omega => c * (rv_X omega)) _.
   Next Obligation.
     destruct rv.
@@ -198,7 +245,7 @@ Section SimpleExpectation.
     list_sum (map (fun v => Rmult v (ps_P (event_preimage rv_X (singleton_event v)))) 
                   srv_vals).
 
-  Global Program Instance scale_constant_random_variable (c: posreal)
+  Global Program Instance scale_constant_random_variable (c: R)
          {rrv : RandomVariable Prts borel_sa}
          (crv:ConstantRandomVariable rrv) : ConstantRandomVariable (rvscale Prts c rrv)
     := { srv_val := Rmult c srv_val }.
@@ -208,7 +255,7 @@ Section SimpleExpectation.
     now rewrite (srv_val_complete0 x).
   Qed.
 
-  Global Program Instance scale_simple_random_variable (c: posreal)
+  Global Program Instance scale_simple_random_variable (c: R)
          {rrv : RandomVariable Prts borel_sa}                      
          (srv:SimpleRandomVariable rrv) : SimpleRandomVariable (rvscale Prts c rrv)
     := { srv_vals := map (fun v => Rmult c v) srv_vals }.
@@ -229,7 +276,7 @@ Proof.
   simpl. rewrite IHl ; lra.
 Qed.
 
-  Lemma scaleSimpleExpectation (c:posreal)
+  Lemma scaleSimpleExpectation (c:R)
          {rrv : RandomVariable Prts borel_sa}                      
          (srv : SimpleRandomVariable rrv) : 
     (c * SimpleExpectation srv)%R = SimpleExpectation (scale_simple_random_variable c srv).
@@ -243,16 +290,45 @@ Qed.
     rewrite map_map.
     apply map_ext_in; intros.
     rewrite <- Rmult_assoc.
-    f_equal.
-    apply ps_proper; red; intros.
-    unfold event_preimage, singleton_event.
-    split; intros.
-    - now subst.
-    - apply Rmult_eq_reg_l in H0; trivial.
-      destruct c; simpl in *.
+    destruct (Req_dec c 0).
+    - subst.
       lra.
+    - f_equal.
+      apply ps_proper; red; intros.
+      unfold event_preimage, singleton_event.
+      split; intros.
+      + now subst.
+      + apply Rmult_eq_reg_l in H1; trivial.
   Qed.
 
+  Lemma Ropp_measurable (f : Ts -> R) :
+    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
+    (forall (r:R),  sa_sigma (fun omega : Ts => - (f omega) <= r)).
+  Proof.
+    intros.
+    assert (event_equiv (fun omega : Ts => - (f omega) <= r)
+                        (fun omega : Ts => (f omega) >= -r)).
+    unfold event_equiv; intros.
+    lra.
+    rewrite H0.
+    now apply sa_le_ge.
+  Qed.
+
+  Definition rvopp (rv : RandomVariable Prts borel_sa) := rvscale Prts (-1) rv.
+
+  Definition opp_simple_random_variable 
+             {rrv : RandomVariable Prts borel_sa}                      
+             (srv:SimpleRandomVariable rrv) :=
+    scale_simple_random_variable (-1) srv.    
+
+  Lemma oppSimpleExpectation
+         {rrv : RandomVariable Prts borel_sa}                      
+         (srv : SimpleRandomVariable rrv) : 
+    (- SimpleExpectation srv)%R = SimpleExpectation (opp_simple_random_variable srv).
+  Proof.
+    replace (- SimpleExpectation srv) with (-1 * SimpleExpectation srv) by lra.
+    apply scaleSimpleExpectation.
+  Qed.
 
     Lemma sum_measurable (f g : Ts -> R) :
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
@@ -353,8 +429,6 @@ Qed.
     simpl.
     unfold event_preimage, singleton_event.
     
-
-    
   Admitted.
 
 End SimpleExpectation.
@@ -436,18 +510,6 @@ Section Expectation.
     lra.
   Qed.
 
-  Lemma Ropp_measurable (f : Ts -> R) :
-    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
-    (forall (r:R),  sa_sigma (fun omega : Ts => - (f omega) <= r)).
-  Proof.
-    intros.
-    assert (event_equiv (fun omega : Ts => - (f omega) <= r)
-                        (fun omega : Ts => (f omega) >= -r)).
-    unfold event_equiv; intros.
-    lra.
-    rewrite H0.
-    now apply sa_le_ge.
-  Qed.
 
 Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     continuity g ->
@@ -455,9 +517,14 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     (forall (r:R),  sa_sigma (fun omega : Ts => g (f omega) <= r)).
   Proof.
     intros.
-    generalize (sa_le_open_set f H0); intros.
+    generalize (sa_le_open_set f); intros.
+    generalize (continuity_P2 g); intros.
+    generalize (continuity_P3 g); intros.
+    destruct H3.
+    specialize (H3 H).
+    unfold image_rec in *.
+    unfold event_preimage in H1.
     
-
   Admitted.
 
   Program Definition positive_part_rv (rvv : RandomVariable Prts borel_sa) :=
