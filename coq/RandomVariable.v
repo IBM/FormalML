@@ -7,6 +7,7 @@ Require Import Coquelicot.Rbar.
 Require Import Coquelicot.Lub.
 
 Require Import Utils.
+Require Import NumberIso.
 Require Import ProbSpace SigmaAlgebras BorelSigmaAlgebra.
 Import ListNotations.
 
@@ -244,8 +245,7 @@ Qed.
     rewrite <- Rmult_assoc.
     f_equal.
     apply ps_proper; red; intros.
-    unfold event_preimage.
-    unfold singleton_event.
+    unfold event_preimage, singleton_event.
     split; intros.
     - now subst.
     - apply Rmult_eq_reg_l in H0; trivial.
@@ -254,8 +254,6 @@ Qed.
   Qed.
 
 End SimpleExpectation.
-
-
 
 Section Expectation.
 
@@ -334,8 +332,6 @@ Section Expectation.
     lra.
   Qed.
 
-
-
   Lemma Ropp_measurable (f : Ts -> R) :
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
     (forall (r:R),  sa_sigma (fun omega : Ts => - (f omega) <= r)).
@@ -349,42 +345,54 @@ Section Expectation.
     now apply sa_le_ge.
   Qed.
 
-  Compute (1/2)%nat.
+  Lemma measurable_sum_gt (f g : Ts -> R) :
+    (forall (r:R),  sa_sigma (fun omega : Ts => f omega > r)) ->
+    (forall (r:R),  sa_sigma (fun omega : Ts => g omega > r)) ->    
+    (forall (r:R),  sa_sigma (fun omega : Ts => (f omega) + (g omega) > r)).
+  Proof.
+    intros.
+    assert (event_equiv 
+              (fun omega : Ts => (f omega) + (g omega) > r)
+              (union_of_collection
+                 (fun (n:nat) => 
+                    event_inter
+                      (fun omega : Ts => f omega > r - Qreals.Q2R (iso_b n))
+                      (fun omega : Ts => g omega > Qreals.Q2R (iso_b n))))).
+    - unfold event_equiv, union_of_collection, event_inter.
+      intros.
+      split; intros.
+      + assert (g x > r - f x) by lra.
+        generalize (Q_dense (r - f x) (g x) H2); intros.
+        destruct H3.
+        exists (iso_f x0).
+        rewrite iso_b_f.
+        lra.
+      + destruct H1.
+        lra.
+    - rewrite H1.
+      apply sa_countable_union.
+      intros.
+      now apply sa_inter.
+   Qed.
 
-  Definition N_to_Z (n : nat) :=
-    let quo := ((S n)/2)%nat in
-    let rem := ((S n) - 2*quo)%nat in
-    match n with
-    | 0 => Z.of_nat n
-    | _ => match rem with
-           | 0 => Z.of_nat quo
-           | _ => (- Z.of_nat quo)%Z
-           end
-    end.
-  
-  Definition NxN_to_rat (nxn : nat*nat) := IZR (N_to_Z (fst nxn)) / (INR (S (snd nxn))).
-
-  Definition N_to_NxN (n:nat) := (n,n).
-  
-  Definition indexed_rational (n:nat) := NxN_to_rat (N_to_NxN n).
-
-  Lemma measurable_sum (f g : Ts -> R) :
+    Lemma measurable_sum (f g : Ts -> R) :
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
     (forall (r:R),  sa_sigma (fun omega : Ts => g omega <= r)) ->    
     (forall (r:R),  sa_sigma (fun omega : Ts => (f omega) + (g omega) <= r)).
   Proof.
     intros.
-    assert (event_equiv 
-              (fun omega : Ts => (f omega) + (g omega) <= r)
-              (union_of_collection
-                 (fun (n:nat) => 
-                    event_inter
-                      (fun omega : Ts => f omega <= r + indexed_rational n)
-                      (fun omega : Ts => g omega <= - indexed_rational n)))).
-                        
-  Admitted.
+    assert (event_equiv (fun omega : Ts => (f omega) + (g omega) <= r)
+                        (event_complement (fun omega : Ts => (f omega) + (g omega) > r))).
+    - unfold event_equiv, event_complement; intros.
+      lra.
+    - rewrite H1.
+      apply sa_complement.
+      apply measurable_sum_gt.
+      now apply sa_le_gt.
+      now apply sa_le_gt.
+   Qed.      
 
-  Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
+Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     continuity g ->
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
     (forall (r:R),  sa_sigma (fun omega : Ts => g (f omega) <= r)).
