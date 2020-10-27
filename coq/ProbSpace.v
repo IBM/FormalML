@@ -513,6 +513,15 @@ Qed.
 
 Hint Resolve sa_all sa_none sa_complement : prob.
 
+Lemma sa_sigma_const {T} (s: SigmaAlgebra T) {P} (Plem:P\/~P) : sa_sigma (fun _ : T => P).
+Proof.
+  destruct Plem.
+  - eapply sa_proper; [| apply sa_all].
+    red; unfold Ω; intuition.
+  - eapply sa_proper; [| apply sa_none].
+    red; unfold Ω; intuition.
+Qed.
+
 Lemma sa_countable_inter {T} {s: SigmaAlgebra T} (collection: nat -> event T) :
   (forall n, sa_sigma (collection n)) ->
   sa_sigma (inter_of_collection collection).
@@ -1139,6 +1148,12 @@ Notation "a ≤ b" := (event_sub a b) (at level 70) : prob. (* \leq *)
 Require Import Classical ClassicalFacts.
 
 Section classic.
+
+  Lemma sa_sigma_const_classic {T} (s: SigmaAlgebra T) P : sa_sigma (fun _ : T => P).
+  Proof.
+    apply sa_sigma_const.
+    apply classic.
+  Qed.
   
   Lemma make_collection_disjoint_union {T:Type} {S:SigmaAlgebra T} (coll:nat->event T) :
     union_of_collection coll
