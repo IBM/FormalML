@@ -262,9 +262,9 @@ Qed.
         unfold Q_interval.
         specialize (H4 (Qreals.Q2R (iso_b (fst (@iso_b _ nat nat_pair_encoder n))))
                        (Qreals.Q2R (iso_b (snd (@iso_b _ nat nat_pair_encoder n))))).
-        
-        
-        Admitted.
+        apply sa_inter; trivial.
+        apply sa_sigma_const_classic.
+    Qed.
       
     Lemma sa_open_set_le (f : Ts -> R) :
       (forall B: event R, open_set B -> sa_sigma (event_preimage f B)) ->
