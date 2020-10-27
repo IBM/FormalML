@@ -306,7 +306,6 @@ Qed.
     now apply rv_preimage1.
  Qed.
 
-
   Global Program Instance sum_simple_random_variables
          {rv1 rv2 : RandomVariable Prts borel_sa}                      
          (srv1:SimpleRandomVariable rv1)
@@ -322,8 +321,8 @@ Qed.
     exists ((rv_X (RandomVariable:=rv1) x), (rv_X (RandomVariable:=rv2) x)).
     split.
     now simpl.
-    Admitted.
-
+    apply in_prod; trivial.
+ Qed.
 
 End SimpleExpectation.
 
