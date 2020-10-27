@@ -253,6 +253,72 @@ Qed.
       lra.
   Qed.
 
+
+    Lemma sum_measurable (f g : Ts -> R) :
+    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
+    (forall (r:R),  sa_sigma (fun omega : Ts => g omega <= r)) ->    
+    (forall (r:R),  sa_sigma (fun omega : Ts => (f omega) + (g omega) <= r)).
+  Proof.
+    intros.
+    assert (event_equiv (fun omega : Ts => f omega + g omega <= r)
+                        (event_complement (fun omega : Ts => f omega + g omega > r))).
+    - unfold event_equiv, event_complement; intros.
+      lra.
+    - rewrite H1.
+      assert (event_equiv 
+                (fun omega : Ts => (f omega) + (g omega) > r)
+                (union_of_collection
+                   (fun (n:nat) => 
+                      event_inter
+                        (fun omega : Ts => f omega > r - Qreals.Q2R (iso_b n))
+                        (fun omega : Ts => g omega > Qreals.Q2R (iso_b n))))).
+     + unfold event_equiv, union_of_collection, event_inter; intros.
+       split; intros.
+       * assert (g x > r - f x) by lra.
+         generalize (Q_dense (r - f x) (g x) H3); intros.
+         destruct H4.
+         exists (iso_f x0).
+         rewrite iso_b_f.
+         lra.
+       * destruct H2.
+         lra.
+     + apply sa_complement.
+       rewrite H2.
+       apply sa_countable_union.
+       intros.
+       apply sa_inter.
+       now apply sa_le_gt.
+       now apply sa_le_gt.
+   Qed.
+
+  Program Definition rvsum (rv1 rv2 : RandomVariable Prts borel_sa) :=
+    BuildRealRandomVariable Prts
+                            (fun omega =>
+                               (rv_X (RandomVariable:=rv1) omega) + 
+                               (rv_X (RandomVariable:=rv2) omega) ) _.
+  Next Obligation.
+    destruct rv1.
+    destruct rv2.
+    apply sum_measurable.
+    apply borel_sa_preimage2; intros.
+    now apply rv_preimage0.
+    apply borel_sa_preimage2; intros.    
+    now apply rv_preimage1.
+ Qed.
+
+(*
+  Global Program Instance sum_simple_random_variables
+         {rv1 rv2 : RandomVariable Prts borel_sa}                      
+         (srv1 srv2:SimpleRandomVariable rrv) : SimpleRandomVariable (rvsum Prts rv1 rv2)
+    := { srv_vals := map (fun v => Rmult c v) srv_vals }.
+  Next Obligation.
+    destruct srv.
+    rewrite in_map_iff.
+    exists (rv_X x).
+    split; trivial.
+  Qed.
+*)
+
 End SimpleExpectation.
 
 Section Expectation.
@@ -345,58 +411,15 @@ Section Expectation.
     now apply sa_le_ge.
   Qed.
 
-  Lemma measurable_sum_gt (f g : Ts -> R) :
-    (forall (r:R),  sa_sigma (fun omega : Ts => f omega > r)) ->
-    (forall (r:R),  sa_sigma (fun omega : Ts => g omega > r)) ->    
-    (forall (r:R),  sa_sigma (fun omega : Ts => (f omega) + (g omega) > r)).
-  Proof.
-    intros.
-    assert (event_equiv 
-              (fun omega : Ts => (f omega) + (g omega) > r)
-              (union_of_collection
-                 (fun (n:nat) => 
-                    event_inter
-                      (fun omega : Ts => f omega > r - Qreals.Q2R (iso_b n))
-                      (fun omega : Ts => g omega > Qreals.Q2R (iso_b n))))).
-    - unfold event_equiv, union_of_collection, event_inter.
-      intros.
-      split; intros.
-      + assert (g x > r - f x) by lra.
-        generalize (Q_dense (r - f x) (g x) H2); intros.
-        destruct H3.
-        exists (iso_f x0).
-        rewrite iso_b_f.
-        lra.
-      + destruct H1.
-        lra.
-    - rewrite H1.
-      apply sa_countable_union.
-      intros.
-      now apply sa_inter.
-   Qed.
-
-    Lemma measurable_sum (f g : Ts -> R) :
-    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
-    (forall (r:R),  sa_sigma (fun omega : Ts => g omega <= r)) ->    
-    (forall (r:R),  sa_sigma (fun omega : Ts => (f omega) + (g omega) <= r)).
-  Proof.
-    intros.
-    assert (event_equiv (fun omega : Ts => (f omega) + (g omega) <= r)
-                        (event_complement (fun omega : Ts => (f omega) + (g omega) > r))).
-    - unfold event_equiv, event_complement; intros.
-      lra.
-    - rewrite H1.
-      apply sa_complement.
-      apply measurable_sum_gt.
-      now apply sa_le_gt.
-      now apply sa_le_gt.
-   Qed.      
-
 Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     continuity g ->
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
     (forall (r:R),  sa_sigma (fun omega : Ts => g (f omega) <= r)).
   Proof.
+    intros.
+    generalize (sa_le_open_set f H0); intros.
+    
+
   Admitted.
 
   Program Definition positive_part_rv (rvv : RandomVariable Prts borel_sa) :=
