@@ -324,6 +324,22 @@ Qed.
     apply in_prod; trivial.
  Qed.
 
+   Lemma sumSimpleExpectation 
+         {rv1 rv2: RandomVariable Prts borel_sa}                      
+         (srv1 : SimpleRandomVariable rv1) 
+         (srv2 : SimpleRandomVariable rv2) :      
+    (SimpleExpectation srv1) + (SimpleExpectation srv2)%R = 
+    SimpleExpectation (sum_simple_random_variables srv1 srv2).
+  Proof.
+    unfold SimpleExpectation.
+    destruct srv1.
+    destruct srv2.
+    unfold srv_vals.
+    unfold sum_simple_random_variables.
+    rewrite map_map.
+    
+    Admitted.
+
 End SimpleExpectation.
 
 Section Expectation.
