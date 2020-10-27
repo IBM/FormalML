@@ -306,18 +306,24 @@ Qed.
     now apply rv_preimage1.
  Qed.
 
-(*
+
   Global Program Instance sum_simple_random_variables
          {rv1 rv2 : RandomVariable Prts borel_sa}                      
-         (srv1 srv2:SimpleRandomVariable rrv) : SimpleRandomVariable (rvsum Prts rv1 rv2)
-    := { srv_vals := map (fun v => Rmult c v) srv_vals }.
+         (srv1:SimpleRandomVariable rv1)
+         (srv2:SimpleRandomVariable rv2)
+    : SimpleRandomVariable (rvsum rv1 rv2)
+    := { srv_vals := map (fun ab => Rplus (fst ab) (snd ab)) 
+                         (list_prod (srv_vals (SimpleRandomVariable:=srv1))
+                                    (srv_vals (SimpleRandomVariable:=srv2))) }.
   Next Obligation.
-    destruct srv.
+    destruct srv1.
+    destruct srv2.
     rewrite in_map_iff.
-    exists (rv_X x).
-    split; trivial.
-  Qed.
-*)
+    exists ((rv_X (RandomVariable:=rv1) x), (rv_X (RandomVariable:=rv2) x)).
+    split.
+    now simpl.
+    Admitted.
+
 
 End SimpleExpectation.
 
