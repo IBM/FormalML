@@ -322,24 +322,40 @@ Qed.
     split.
     now simpl.
     apply in_prod; trivial.
- Qed.
+  Qed.
 
+
+  Lemma list_prod_concat {A} (l1 l2:list A) : list_prod l1 l2 = concat (map (fun x => map (fun y => (x, y)) l2) l1).
+  Proof.
+    induction l1; simpl; trivial.
+    now rewrite IHl1.
+  Qed.    
+
+  
    Lemma sumSimpleExpectation 
          {rv1 rv2: RandomVariable Prts borel_sa}                      
          (srv1 : SimpleRandomVariable rv1) 
          (srv2 : SimpleRandomVariable rv2) :      
     (SimpleExpectation srv1) + (SimpleExpectation srv2)%R = 
     SimpleExpectation (sum_simple_random_variables srv1 srv2).
-  Proof.
-    unfold SimpleExpectation.
+   Proof.
+     unfold SimpleExpectation.
     destruct srv1.
     destruct srv2.
     unfold srv_vals.
     unfold sum_simple_random_variables.
     rewrite map_map.
-    unfold event_preimage, singleton_event.
+
+    rewrite list_prod_concat.
+    rewrite concat_map.
+    rewrite list_sum_map_concat.
+    repeat rewrite map_map.
     simpl.
-    Admitted.
+    unfold event_preimage, singleton_event.
+    
+
+    
+  Admitted.
 
 End SimpleExpectation.
 
