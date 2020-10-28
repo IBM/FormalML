@@ -367,7 +367,11 @@ Qed.
       + intros.
         replace  (nodup Req_EM_T (map (fun v : R => 0 * v) (r::l))) with ([0]).
         * simpl; lra.
-        * admit.
+        * replace  (map (fun v : R => 0 * v) (r :: l)) with
+                   (map (fun _ : R => 0) (r :: l)).
+          apply nodup_const_map.
+          apply map_ext; intros.
+          lra.
     - rewrite <- list_sum_const_mul_gen.
       f_equal.
       replace (nodup Req_EM_T (map (fun v : R => c * v) srv_vals0)) with
@@ -382,7 +386,7 @@ Qed.
         * now subst.
         * apply Rmult_eq_reg_l in H0; trivial.
       + now apply nodup_scaled.
-  Admitted.
+  Qed.
 
   Lemma Ropp_measurable (f : Ts -> R) :
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
