@@ -672,7 +672,9 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
    Admitted.
 
    Lemma list_sum_fold_right l : list_sum l = fold_right Rplus 0 l.
-   Admitted.
+   Proof.
+     induction l; firstorder.
+   Qed.
 
    Lemma srv_vals_prob_1 
          {rv: RandomVariable Prts borel_sa}                      
