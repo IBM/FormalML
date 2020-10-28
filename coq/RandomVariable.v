@@ -342,6 +342,13 @@ Qed.
   Qed.
 
 
+  Lemma nodup_const_map (c r:R) (l : list R) :
+    [c] = nodup Req_EM_T (map (fun _ : R => c) (r :: l)).
+  Proof.
+    induction l.
+    - now simpl.
+    - 
+
   Lemma scaleSimpleExpectation (c:R)
          {rrv : RandomVariable Prts borel_sa}                      
          (srv : SimpleRandomVariable rrv) : 
@@ -353,9 +360,12 @@ Qed.
     simpl.
     destruct (Req_dec c 0).
     - subst.
-      replace  (nodup Req_EM_T (map (fun v : R => 0 * v) srv_vals0)) with ([0]).
+      case_eq srv_vals0.
       + simpl; lra.
-      + admit.
+      + intros.
+        replace  (nodup Req_EM_T (map (fun v : R => 0 * v) (r::l))) with ([0]).
+        * simpl; lra.
+        * admit.
     - rewrite <- list_sum_const_mul_gen.
       f_equal.
       replace (nodup Req_EM_T (map (fun v : R => c * v) srv_vals0)) with
