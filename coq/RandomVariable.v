@@ -669,7 +669,10 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
        (list_prod (nodup Req_EM_T (srv_vals (SimpleRandomVariable := srv1))) 
                   (nodup Req_EM_T (srv_vals (SimpleRandomVariable := srv2))))).
    Proof.
-     Admitted.
+   Admitted.
+
+   Lemma list_sum_fold_right l : list_sum l = fold_right Rplus 0 l.
+   Admitted.
 
    Lemma srv_vals_prob_1 
          {rv: RandomVariable Prts borel_sa}                      
@@ -677,9 +680,47 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
      list_sum (map (fun x : R => ps_P (fun omega : Ts => rv_X  omega = x)) 
                    (nodup Req_EM_T srv_vals)) = 1.
    Proof.
-     Admitted.
+     transitivity (list_sum (map ps_P (map (fun x : R => (fun omega : Ts => rv_X  omega = x)) 
+                                           (nodup Req_EM_T srv_vals)))).
+     { now rewrite map_map. }
 
-
+     generalize (ps_list_disjoint_union Prts
+                                        (map (fun (x : R) (omega : Ts) => rv_X omega = x) (nodup Req_EM_T srv_vals)))
+     ; intros HH.
+     rewrite list_sum_fold_right.
+     rewrite <- HH; clear HH.
+     - replace 1 with R1 by lra.
+       rewrite <- ps_one.
+       apply ps_proper; intros x.
+       unfold Ω.
+       split; trivial; intros _.
+       unfold list_union.
+       generalize (srv_vals_complete x); intros HH2.
+       exists (fun (omega : Ts) => rv_X (RandomVariable:=rv) omega = rv_X x).
+       split; trivial.
+       apply in_map_iff.
+       exists (rv_X x).
+       split; trivial.
+       now apply nodup_In.
+     - intros.
+       apply in_map_iff in H.
+       destruct H as [y [? yin]]; subst.
+       apply nodup_In in yin.
+       apply sa_le_pt; intros.
+       apply borel_sa_preimage2; intros.
+       now apply rv_preimage.
+     - induction srv_vals; simpl.
+       + constructor.
+       + destruct (in_dec Req_EM_T a l); trivial.
+         simpl.
+         constructor; trivial.
+         rewrite Forall_map.
+         rewrite Forall_forall.
+         intros x xin.
+         apply nodup_In in xin.
+         unfold event_disjoint; intros.
+         congruence.
+   Qed.       
 
   Lemma sumSimpleExpectation00
          {rv1 rv2: RandomVariable Prts borel_sa}                      
