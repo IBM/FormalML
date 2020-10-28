@@ -21,6 +21,19 @@ Local Open Scope R.
 Context {Ts:Type}
         {dom : SigmaAlgebra Ts}.
 
+(*
+Inductive prob_space_closure (p:event T) -> event T
+  :=
+  | psc_base p : prob_space_closure p
+  | sa_countable (collection: nat -> prob_space_closure p) :
+      (forall n, sa_sigma (collection n)) ->
+      sa_sigma (union_of_collection collection);
+
+Lemma prob_space_closure_closure : (ev:prob_space_closure p) -> ev x <-> p x.
+Proof.
+Qed.
+ *)
+
 Lemma borel_sa_preimage
       (rvx: Ts -> R)
       (pf_pre: forall r:R, sa_sigma (fun omega:Ts => (rvx omega) <= r)%R) :
