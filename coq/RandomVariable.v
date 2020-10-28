@@ -217,6 +217,11 @@ Section RandomVariable.
                           (fun omega : Ts => (f omega) <= Rsqrt (mknonnegreal _ H0))).
       + red; intros.
         simpl.
+        replace (r) with (Rsqr (Rsqrt (mknonnegreal _ H0))).
+        Search Rsqr.
+        split.
+        admit.
+        
         
   Admitted.
 
@@ -534,11 +539,11 @@ Qed.
     generalize (non_empty_srv_vals srv2 X); intros.    
     destruct srv1.
     destruct srv2.
-    unfold srv_vals; intros.
+    unfold srv_vals in *; intros.
     unfold sum_simple_random_variables.
     destruct rv1.
     destruct rv2.
-    unfold rv_X.
+    unfold rv_X in *.
     simpl.
     unfold singleton_event, event_preimage.
     
