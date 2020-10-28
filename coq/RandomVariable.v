@@ -527,6 +527,43 @@ Qed.
       now specialize (srv_vals_complete0 x).
   Qed.
 
+    (* should move to RealAdd *)
+    Lemma Rsqrt_le (x y : nonnegreal) : 
+      x <= y <-> Rsqrt x <= Rsqrt y.
+    Proof.
+      split; intros.
+      - apply Rsqr_incr_0; try apply Rsqrt_positivity.
+        unfold Rsqr.
+        now repeat rewrite Rsqrt_Rsqrt.
+      - rewrite <- (Rsqrt_Rsqrt x).
+        rewrite <- (Rsqrt_Rsqrt y).
+        apply Rsqr_incr_1; try apply Rsqrt_positivity.
+        trivial.
+    Qed.
+
+    Lemma Rsqrt_sqr (x:nonnegreal) :
+      Rsqrt {| nonneg := x²; cond_nonneg := Rle_0_sqr x |} = x.
+    Proof.
+      unfold Rsqr.
+      apply Rsqr_inj.
+      - apply Rsqrt_positivity.
+      - apply cond_nonneg.
+      - unfold Rsqr. rewrite Rsqrt_Rsqrt.
+        trivial.
+    Qed.
+          
+    Lemma please_rename_this r 
+      (H0 : 0 <= r)
+      (x:nonnegreal) :
+      x² <= r <-> x <= Rsqrt {| nonneg := r; cond_nonneg := H0 |}.
+    Proof.
+      intros.
+      etransitivity.
+      - eapply (Rsqrt_le (mknonnegreal _ (Rle_0_sqr x)) (mknonnegreal _ H0)).
+      - rewrite Rsqrt_sqr.
+        intuition.
+    Qed.
+                           
   Lemma sumSimpleExpectation 
          {rv1 rv2: RandomVariable Prts borel_sa}                      
          (srv1 : SimpleRandomVariable rv1) 
