@@ -199,33 +199,6 @@ Section RandomVariable.
         now apply (scale_measurable_pos f (mkposreal _ H0)).
    Qed.
 
-  Lemma Rsqr_measurable (f : Ts -> R) :
-    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
-    (forall (r:R),  sa_sigma (fun omega : Ts => Rsqr (f omega) <= r)).
-  Proof.
-    intros.
-    destruct (Rlt_dec r 0).
-    - assert (event_equiv (fun omega : Ts => Rsqr (f omega) <= r)
-                          (fun omega : Ts => False)).
-      + red; intros.
-        generalize (Rle_0_sqr (f x)); intros.
-        lra.
-      + rewrite H0.
-        apply sa_none.
-    - assert (0 <= r) by lra.
-      assert (event_equiv (fun omega : Ts => (f omega)² <= r)
-                          (fun omega : Ts => (f omega) <= Rsqrt (mknonnegreal _ H0))).
-      + red; intros.
-        simpl.
-        replace (r) with (Rsqr (Rsqrt (mknonnegreal _ H0))).
-        Search Rsqr.
-        split.
-        admit.
-        
-        
-  Admitted.
-
-(* Rsqr_sqrt: forall x : R, 0 <= x -> (sqrt x)² = x *)
 
   Program Definition rvscale (c: R) (rv : RandomVariable prts borel_sa) :=
     BuildRealRandomVariable (fun omega => c * (rv_X omega)) _.
@@ -552,18 +525,40 @@ Qed.
         trivial.
     Qed.
           
-    Lemma please_rename_this r 
-      (H0 : 0 <= r)
-      (x:nonnegreal) :
-      x² <= r <-> x <= Rsqrt {| nonneg := r; cond_nonneg := H0 |}.
+    Lemma Rsqr_le_to_Rsqrt (r x:nonnegreal):
+      x² <= r <-> x <= Rsqrt r.
     Proof.
       intros.
       etransitivity.
-      - eapply (Rsqrt_le (mknonnegreal _ (Rle_0_sqr x)) (mknonnegreal _ H0)).
+      - eapply (Rsqrt_le (mknonnegreal _ (Rle_0_sqr x)) r).
       - rewrite Rsqrt_sqr.
         intuition.
     Qed.
-                           
+
+  Lemma Rsqr_pos_measurable (f : Ts -> R) :
+    (forall (x:Ts), (0 <= f x)%R) ->
+    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
+    (forall (r:R),  sa_sigma (fun omega : Ts => Rsqr (f omega) <= r)).
+  Proof.
+    intros.
+    destruct (Rgt_dec 0 r).
+    - assert (event_equiv (fun omega : Ts => (f omega)² <= r)
+                          (fun _ => False)).
+      + unfold event_equiv; intros.
+        generalize (Rle_0_sqr (f x)).
+        lra.
+      + rewrite H1.
+        apply sa_none.
+    - assert (0 <= r) by lra.
+      assert (event_equiv (fun omega : Ts => (f omega)² <= r)
+                          (fun omega : Ts => (f omega) <= Rsqrt (mknonnegreal _ H1)) ).
+      + unfold event_equiv; intros.
+        specialize (H x).
+        apply Rsqr_le_to_Rsqrt with (r := mknonnegreal _ H1) (x := mknonnegreal _ H).
+      + rewrite H2.
+        apply H0.
+   Qed.
+
   Lemma sumSimpleExpectation 
          {rv1 rv2: RandomVariable Prts borel_sa}                      
          (srv1 : SimpleRandomVariable rv1) 
@@ -666,6 +661,20 @@ Section Expectation.
     lra.
   Qed.
 
+Lemma measurable_open_continuous (f : Ts -> R) (g : R -> R) :
+    continuity g ->
+    (forall B: event R, open_set B -> sa_sigma (event_preimage f B)) ->
+    (forall B: event R, open_set B -> 
+                        sa_sigma (event_preimage (fun omega => g (f omega)) B)).
+  Proof.
+    intros.
+    generalize (continuity_P3 g); intros.
+    destruct H2.
+    specialize (H2 H B H1).
+    unfold image_rec in *.
+    unfold event_preimage in *.
+    now specialize (H0 (fun x : R => B (g x)) H2).
+  Qed.
 
 Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     continuity g ->
@@ -673,15 +682,10 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     (forall (r:R),  sa_sigma (fun omega : Ts => g (f omega) <= r)).
   Proof.
     intros.
-    generalize (sa_le_open_set f); intros.
-    generalize (continuity_P2 g); intros.
-    generalize (continuity_P3 g); intros.
-    destruct H3.
-    specialize (H3 H).
-    unfold image_rec in *.
-    unfold event_preimage in H1.
-    
-  Admitted.
+    apply sa_open_set_le.
+    apply measurable_open_continuous; trivial.
+    now apply sa_le_open_set.
+ Qed.
 
   Program Definition positive_part_rv (rvv : RandomVariable Prts borel_sa) :=
     BuildRealRandomVariable Prts (pos_fun_part rv_X) _.
