@@ -559,6 +559,47 @@ Qed.
         apply H0.
    Qed.
 
+  Lemma Rsqr_continuous :
+    continuity Rsqr.
+  Proof.
+    apply derivable_continuous.
+    apply derivable_Rsqr.
+  Qed.
+  
+Lemma measurable_open_continuous (f : Ts -> R) (g : R -> R) :
+    continuity g ->
+    (forall B: event R, open_set B -> sa_sigma (event_preimage f B)) ->
+    (forall B: event R, open_set B -> 
+                        sa_sigma (event_preimage (fun omega => g (f omega)) B)).
+  Proof.
+    intros.
+    generalize (continuity_P3 g); intros.
+    destruct H2.
+    specialize (H2 H B H1).
+    unfold image_rec in *.
+    unfold event_preimage in *.
+    now specialize (H0 (fun x : R => B (g x)) H2).
+  Qed.
+
+Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
+    continuity g ->
+    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
+    (forall (r:R),  sa_sigma (fun omega : Ts => g (f omega) <= r)).
+  Proof.
+    intros.
+    apply sa_open_set_le.
+    apply measurable_open_continuous; trivial.
+    now apply sa_le_open_set.
+ Qed.
+
+  Lemma Rsqr_measurable (f : Ts -> R) :
+    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
+    (forall (r:R),  sa_sigma (fun omega : Ts => Rsqr (f omega) <= r)).
+  Proof.
+    apply measurable_continuous.
+    apply Rsqr_continuous.
+  Qed.
+
   Lemma sumSimpleExpectation 
          {rv1 rv2: RandomVariable Prts borel_sa}                      
          (srv1 : SimpleRandomVariable rv1) 
@@ -661,31 +702,6 @@ Section Expectation.
     lra.
   Qed.
 
-Lemma measurable_open_continuous (f : Ts -> R) (g : R -> R) :
-    continuity g ->
-    (forall B: event R, open_set B -> sa_sigma (event_preimage f B)) ->
-    (forall B: event R, open_set B -> 
-                        sa_sigma (event_preimage (fun omega => g (f omega)) B)).
-  Proof.
-    intros.
-    generalize (continuity_P3 g); intros.
-    destruct H2.
-    specialize (H2 H B H1).
-    unfold image_rec in *.
-    unfold event_preimage in *.
-    now specialize (H0 (fun x : R => B (g x)) H2).
-  Qed.
-
-Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
-    continuity g ->
-    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
-    (forall (r:R),  sa_sigma (fun omega : Ts => g (f omega) <= r)).
-  Proof.
-    intros.
-    apply sa_open_set_le.
-    apply measurable_open_continuous; trivial.
-    now apply sa_le_open_set.
- Qed.
 
   Program Definition positive_part_rv (rvv : RandomVariable Prts borel_sa) :=
     BuildRealRandomVariable Prts (pos_fun_part rv_X) _.
