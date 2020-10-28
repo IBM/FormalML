@@ -298,11 +298,49 @@ Proof.
   simpl. rewrite IHl ; lra.
 Qed.
 
+(* move these two lemmas out *)
+Lemma map_in_inj_strong {A B} (f:A->B) a (l:list A) :
+  (forall a b, In (f a) (map f l) -> In (f b) (map f l) -> f a = f b -> a = b) ->
+  In (f a) (map f l) -> In a l.
+Proof.
+  intros inj HH.
+  apply in_map_iff in HH.
+  destruct HH as [x [eqqx inx]].
+  rewrite (inj a x); trivial.
+  - rewrite <- eqqx.
+    now apply in_map.
+  - now apply in_map.
+  - congruence.
+Qed.
+   
+Lemma nodup_map_inj {A B} decA decB (f:A->B) (l:list A) :
+  (forall a b, In (f a) (map f l) -> In (f b) (map f l) -> f a = f b -> a = b) ->
+  nodup decB (map f l) = map f (nodup decA l).
+Proof.
+  intros inj.
+  induction l; simpl; trivial.
+  assert (forall a b : A, In (f a) (map f l) -> In (f b) (map f l) -> f a = f b -> a = b).
+  { simpl in inj.
+    intuition.
+  } 
+  rewrite IHl by trivial.
+  match_destr; match_destr.
+  - apply map_in_inj_strong in i; trivial.
+    congruence.
+  - elim n.
+    now apply in_map.
+Qed.
+
   Lemma nodup_scaled (c : R) (srv_vals : list R) :
     c <> 0 -> map (fun v : R => c * v) (nodup Req_EM_T srv_vals) =
               nodup Req_EM_T (map (fun v : R => c * v) srv_vals).
   Proof.
-  Admitted.
+    intros.
+    symmetry.
+    apply nodup_map_inj; intros.
+    apply Rmult_eq_reg_l in H2; trivial.
+  Qed.
+
 
   Lemma scaleSimpleExpectation (c:R)
          {rrv : RandomVariable Prts borel_sa}                      
