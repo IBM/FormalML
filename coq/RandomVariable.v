@@ -298,6 +298,12 @@ Proof.
   simpl. rewrite IHl ; lra.
 Qed.
 
+  Lemma nodup_scaled (c : R) (srv_vals : list R) :
+    c <> 0 -> map (fun v : R => c * v) (nodup Req_EM_T srv_vals) =
+              nodup Req_EM_T (map (fun v : R => c * v) srv_vals).
+  Proof.
+  Admitted.
+
   Lemma scaleSimpleExpectation (c:R)
          {rrv : RandomVariable Prts borel_sa}                      
          (srv : SimpleRandomVariable rrv) : 
@@ -325,7 +331,7 @@ Qed.
         split; intros.
         * now subst.
         * apply Rmult_eq_reg_l in H0; trivial.
-      + admit.
+      + now apply nodup_scaled.
   Admitted.
 
   Lemma Ropp_measurable (f : Ts -> R) :
