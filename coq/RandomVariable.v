@@ -341,14 +341,16 @@ Qed.
     apply Rmult_eq_reg_l in H2; trivial.
   Qed.
 
-
   Lemma nodup_const_map (c r:R) (l : list R) :
     [c] = nodup Req_EM_T (map (fun _ : R => c) (r :: l)).
   Proof.
-    induction l.
-    - now simpl.
-    - 
-
+    induction l; simpl; trivial.
+    rewrite IHl.
+    match_destr.
+    simpl.
+    intuition.
+  Qed.
+  
   Lemma scaleSimpleExpectation (c:R)
          {rrv : RandomVariable Prts borel_sa}                      
          (srv : SimpleRandomVariable rrv) : 
