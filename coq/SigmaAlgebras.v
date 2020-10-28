@@ -28,14 +28,6 @@ Program Instance trivial_sa (T:Type) : SigmaAlgebra T
       sa_sigma (f:event T) := (f === ∅ \/ f === Ω)
     }.
 Next Obligation.
-  intros ?? eqq.
-  repeat rewrite eqq.
-  tauto.
-Qed.
-Next Obligation.
-  auto using classic_event_lem.
-Qed.
-Next Obligation.
   (* sigh. more classical reasoning needed *)
   destruct (classic (exists n, collection n === Ω))
   ; [right|left]; firstorder.
@@ -51,20 +43,11 @@ Program Instance discrete_sa (T:Type) : SigmaAlgebra T
   := {
       sa_sigma := fun _ => True 
     }.
-Solve Obligations with (auto using classic_event_lem || firstorder).
                  
 Program Instance subset_sa (T:Type) (A:event T) : SigmaAlgebra T
   := {
       sa_sigma f := (f === ∅ \/ f === A \/ f === ¬ A \/ f === Ω)
     }.
-Next Obligation.
-  intros ?? eqq.
-  repeat rewrite eqq.
-  tauto.
-Qed.
-Next Obligation.
-  auto using classic_event_lem.
-Qed.
 Next Obligation.
   (* sigh. more classical reasoning needed *)
   destruct (classic (exists n, collection n === Ω))
@@ -179,9 +162,6 @@ Program Instance countable_partition_sa {T} (part:nat->event T) (is_part:is_part
       sa_sigma := in_partition_union part
     }.
 Next Obligation.
-  auto using classic_event_lem.
-Qed.
-Next Obligation.
     unfold in_partition_union in *.
     unfold is_partition in *.
     apply choice in H.
@@ -266,17 +246,6 @@ Qed.
 Program Instance sigma_algebra_intersection {T} (coll:SigmaAlgebra T->Prop): SigmaAlgebra T
   := { sa_sigma := fun e => forall sa, coll sa -> @sa_sigma _ sa e
      }.
-Next Obligation.
-  intros x y xyeq.
-  split; intros HH sa.
-  + rewrite <- xyeq.
-    auto.
-  + rewrite xyeq.
-    eauto.
-Qed.
-Next Obligation.
-  auto using classic_event_lem.
-Qed.
 Next Obligation.
   apply sa_countable_union.
   auto.
@@ -413,16 +382,6 @@ Program Instance countable_sa (T:Type) : SigmaAlgebra T
   := {
       sa_sigma (f:event T) := is_countable f \/ is_countable (¬ f)
     }.
-Next Obligation.
-  unfold is_countable.
-  intros ?? eqq.
-  split; intros [[? HH]|[? HH]]
-  ; rewrite eqq in HH || rewrite <- eqq in HH
-  ; eauto.
-Qed.
-Next Obligation.
-  auto using classic_event_lem.
-Qed.
 Next Obligation.
   destruct (classic (forall n, is_countable (collection n))).
   + (* they are all countable *)
