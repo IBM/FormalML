@@ -65,7 +65,6 @@ Section RandomVariable.
       apply sa_none.
   Qed.
 
-
   Program Instance constant_random_variable_constant c : ConstantRandomVariable (constant_random_variable c)
     := { srv_val := c }.
 
@@ -83,7 +82,7 @@ Section RandomVariable.
     symmetry.
     apply srv_val_complete.
   Qed.
-
+  
   End Simple.
 
   Section Reals.
@@ -200,6 +199,29 @@ Section RandomVariable.
         now apply (scale_measurable_pos f (mkposreal _ H0)).
    Qed.
 
+  Lemma Rsqr_measurable (f : Ts -> R) :
+    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
+    (forall (r:R),  sa_sigma (fun omega : Ts => Rsqr (f omega) <= r)).
+  Proof.
+    intros.
+    destruct (Rlt_dec r 0).
+    - assert (event_equiv (fun omega : Ts => Rsqr (f omega) <= r)
+                          (fun omega : Ts => False)).
+      + red; intros.
+        generalize (Rle_0_sqr (f x)); intros.
+        lra.
+      + rewrite H0.
+        apply sa_none.
+    - assert (0 <= r) by lra.
+      assert (event_equiv (fun omega : Ts => (f omega)² <= r)
+                          (fun omega : Ts => (f omega) <= Rsqrt (mknonnegreal _ H0))).
+      + red; intros.
+        simpl.
+        
+  Admitted.
+
+(* Rsqr_sqrt: forall x : R, 0 <= x -> (sqrt x)² = x *)
+
   Program Definition rvscale (c: R) (rv : RandomVariable prts borel_sa) :=
     BuildRealRandomVariable (fun omega => c * (rv_X omega)) _.
   Next Obligation.
@@ -243,7 +265,7 @@ Section SimpleExpectation.
              {rrv : RandomVariable Prts borel_sa}             
              (srv : SimpleRandomVariable rrv) : R :=
     list_sum (map (fun v => Rmult v (ps_P (event_preimage rv_X (singleton_event v)))) 
-                  srv_vals).
+                  (nodup Req_EM_T srv_vals)).
 
   Global Program Instance scale_constant_random_variable (c: R)
          {rrv : RandomVariable Prts borel_sa}
@@ -285,21 +307,26 @@ Qed.
     destruct srv.
     unfold srv_vals.
     simpl.
-    rewrite <- list_sum_const_mul_gen.
-    f_equal.
-    rewrite map_map.
-    apply map_ext_in; intros.
-    rewrite <- Rmult_assoc.
     destruct (Req_dec c 0).
     - subst.
-      lra.
-    - f_equal.
-      apply ps_proper; red; intros.
-      unfold event_preimage, singleton_event.
-      split; intros.
-      + now subst.
-      + apply Rmult_eq_reg_l in H1; trivial.
-  Qed.
+      replace  (nodup Req_EM_T (map (fun v : R => 0 * v) srv_vals0)) with ([0]).
+      + simpl; lra.
+      + admit.
+    - rewrite <- list_sum_const_mul_gen.
+      f_equal.
+      replace (nodup Req_EM_T (map (fun v : R => c * v) srv_vals0)) with
+              (map (fun v : R => c * v) (nodup Req_EM_T srv_vals0)).
+      + rewrite map_map.
+        apply map_ext; intros.
+        rewrite <- Rmult_assoc.
+        f_equal.
+        apply ps_proper; red; intros.
+        unfold event_preimage, singleton_event.
+        split; intros.
+        * now subst.
+        * apply Rmult_eq_reg_l in H0; trivial.
+      + admit.
+  Admitted.
 
   Lemma Ropp_measurable (f : Ts -> R) :
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
@@ -407,29 +434,51 @@ Qed.
     now rewrite IHl1.
   Qed.    
 
-  
-   Lemma sumSimpleExpectation 
+  Class NonEmpty (A : Type) :=
+  ex : A.
+
+  Lemma non_empty_srv_vals 
+         {rv: RandomVariable Prts borel_sa}                      
+         (srv : SimpleRandomVariable rv) :
+    NonEmpty Ts -> srv_vals <> nil.
+  Proof.
+    intros.
+    destruct srv.
+    unfold srv_vals.
+    assert (In (rv_X ex) srv_vals0) by apply srv_vals_complete0.
+    intuition.
+    now subst.
+  Qed.
+
+  Lemma nil_srv_vals_empty_Ts
+        {rv: RandomVariable Prts borel_sa}                      
+        (srv : SimpleRandomVariable rv) :
+    srv_vals = nil -> (forall (x:Ts), False).
+    Proof.
+      intros.
+      destruct srv.
+      unfold srv_vals in *; subst.
+      simpl in srv_vals_complete0.
+      now specialize (srv_vals_complete0 x).
+  Qed.
+
+  Lemma sumSimpleExpectation 
          {rv1 rv2: RandomVariable Prts borel_sa}                      
          (srv1 : SimpleRandomVariable rv1) 
          (srv2 : SimpleRandomVariable rv2) :      
-    (SimpleExpectation srv1) + (SimpleExpectation srv2)%R = 
+    NonEmpty Ts -> (SimpleExpectation srv1) + (SimpleExpectation srv2)%R = 
     SimpleExpectation (sum_simple_random_variables srv1 srv2).
    Proof.
-     unfold SimpleExpectation.
+    unfold SimpleExpectation; intros.
+    generalize (non_empty_srv_vals srv1 X); intros.
+    generalize (non_empty_srv_vals srv2 X); intros.    
     destruct srv1.
     destruct srv2.
-    unfold srv_vals.
+    unfold srv_vals; intros.
     unfold sum_simple_random_variables.
-    rewrite map_map.
-
-    rewrite list_prod_concat.
-    rewrite concat_map.
-    rewrite list_sum_map_concat.
-    repeat rewrite map_map.
-    simpl.
-    unfold event_preimage, singleton_event.
     
   Admitted.
+
 
 End SimpleExpectation.
 
