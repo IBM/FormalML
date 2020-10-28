@@ -266,16 +266,6 @@ Section SimpleExpectation.
     split; trivial.
   Qed.
 
-  Lemma list_sum_const_mul_gen {A : Type} (l : list A) f :
-    forall r, list_sum (map (fun x => r*f x) l)  =
-         r* list_sum (map (fun x => f x) l).
-Proof.
-  intro r.
-  induction l.
-  simpl; lra.
-  simpl. rewrite IHl ; lra.
-Qed.
-
 (* move these two lemmas out *)
 Lemma map_in_inj_strong {A B} (f:A->B) a (l:list A) :
   (forall a b, In (f a) (map f l) -> In (f b) (map f l) -> f a = f b -> a = b) ->
@@ -350,7 +340,7 @@ Qed.
           apply nodup_const_map.
           apply map_ext; intros.
           lra.
-    - rewrite <- list_sum_const_mul_gen.
+    - rewrite <- list_sum_const_mul.
       f_equal.
       replace (nodup Req_EM_T (map (fun v : R => c * v) srv_vals0)) with
               (map (fun v : R => c * v) (nodup Req_EM_T srv_vals0)).
@@ -701,7 +691,7 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     list_sum 
 *)
   
-    
+    (*
     Lemma SimpleExpectation_minimal
           {rrv : RandomVariable Prts borel_sa}             
           (srv1: SimpleRandomVariable rrv) : SimpleExpectation rrv
@@ -723,7 +713,7 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     {1,2}rv1    {3,4}rv2
 
     
-    
+    *)
   Admitted.
 
 

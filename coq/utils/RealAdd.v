@@ -367,9 +367,9 @@ Proof.
   now rewrite H.
 Qed.
 
-Lemma list_sum_const_mul {A : Type} (l : list (nonnegreal*R)) :
-  forall r, list_sum (map (fun x => r*(snd x)) l)  =
-       r* list_sum (map (fun x => snd x) l).
+  Lemma list_sum_const_mul {A : Type} f (l : list A) :
+    forall r, list_sum (map (fun x => r*f x) l)  =
+         r* list_sum (map (fun x => f x) l).
 Proof.
   intro r.
   induction l.
@@ -440,4 +440,19 @@ Proof.
   exact (Rplus_le_compat _ _ _ _ H IHl).
 Qed.
 
+Lemma list_sum_map (A:Type) (f g : A -> R) (l : list A) :
+     list_sum (map f l) + list_sum (map g l) = 
+     list_sum (map (fun x => f x + g x) l).
+Proof.
+  rewrite <- list_sum_cat.
+  rewrite map2_app_interleave_perm.
+  rewrite list_sum_map_concat.
+  rewrite map_map.
+  simpl.
+  f_equal.
+  apply map_ext; intros.
+  lra.
+Qed.
+  
+  
 End list_sum.
