@@ -4,6 +4,9 @@ Require Import Lra Lia.
 Require Import List.
 Require Import Morphisms EquivDec.
 
+Require Import Classical ClassicalFacts.
+Require Ensembles.
+
 Require Import Utils.
 Import ListNotations.
 
@@ -442,12 +445,6 @@ Class SigmaAlgebra (T:Type) :=
   {
     sa_sigma : event T -> Prop;
     
-    (* alternative to assuming functional extensionality *)
-    sa_proper :> Proper (event_equiv ==> iff) sa_sigma ;
-
-    (* alternative to assuming LEM *)
-    sa_dec (A:event T) : sa_sigma A -> event_lem A;
-    
     sa_countable_union (collection: nat -> event T) :
       (forall n, sa_sigma (collection n)) ->
       sa_sigma (union_of_collection collection);
@@ -459,6 +456,24 @@ Class SigmaAlgebra (T:Type) :=
                        
   }.
 
+Lemma sa_dec {T} {s: SigmaAlgebra T} {A:event T} : sa_sigma A -> event_lem A.
+Proof.
+  red; intros.
+  apply classic.
+Qed.
+
+Global Instance sa_proper {T} (s: SigmaAlgebra T) : Proper (event_equiv ==> iff) sa_sigma.
+Proof.
+  intros ?? eqq.
+  red in eqq.
+  cut (x = y); [intros; subst; intuition | ].
+  apply Ensembles.Extensionality_Ensembles.
+  unfold Ensembles.Same_set, Ensembles.Included, Ensembles.In.
+  firstorder.
+Qed.
+
+    (* alternative to assuming functional extensionality *)
+
 Hint Resolve sa_dec : prob.
 
 (* restate some lemmas that rely on lem unconditionally *)
@@ -468,7 +483,7 @@ Lemma ps_event_union_complement {T} {s : SigmaAlgebra T} (A:event T) :
 Proof.
   intros.
   apply event_union_complement.
-  now apply sa_dec.
+  now eapply sa_dec.
 Qed.
 
 Lemma ps_event_union_not_self {T} {s : SigmaAlgebra T} (A:event T) :
@@ -477,7 +492,7 @@ Lemma ps_event_union_not_self {T} {s : SigmaAlgebra T} (A:event T) :
 Proof.
   intros.
   apply event_union_not_self.
-  now apply sa_dec.
+  now eapply sa_dec.
 Qed.
 
 Lemma ps_event_union_diff {T:Type} {s : SigmaAlgebra T} (A B:event T) : sa_sigma A ->
@@ -485,7 +500,7 @@ Lemma ps_event_union_diff {T:Type} {s : SigmaAlgebra T} (A B:event T) : sa_sigma
 Proof.
   intros.
   apply event_union_diff.
-  now apply sa_dec.
+  now eapply sa_dec.
 Qed.
 
 Lemma ps_event_union_diff_sub {T:Type} {s : SigmaAlgebra T} (A B:event T) : sa_sigma A ->
@@ -501,7 +516,7 @@ Hint Resolve @ps_event_union_complement @ps_event_union_not_self 2ps_event_union
 Lemma sa_notnot {T} {s: SigmaAlgebra T} (A:event T) : sa_sigma A -> forall x, ~ ~ A x -> A x.
 Proof.
   intros.
-  destruct (sa_dec A H x); intuition.
+  destruct (sa_dec H x); intuition.
 Qed.
 
 Lemma sa_none {T} {s: SigmaAlgebra T} : sa_sigma (∅).
@@ -537,7 +552,7 @@ Proof.
     split; intros.
     + intros [n ncoll].
       intuition.
-    + destruct (sa_dec (collection n) (H n) x); trivial.
+    + destruct (sa_dec (H n) x); trivial.
       elim H0; eauto.
   - intros.
     apply sa_complement; auto.
