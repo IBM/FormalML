@@ -431,6 +431,17 @@ Qed.
        now apply sa_le_gt.
        now apply sa_le_gt.
    Qed.
+  
+  Lemma minus_measurable (f g : Ts -> R) :
+    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
+    (forall (r:R),  sa_sigma (fun omega : Ts => g omega <= r)) ->    
+    (forall (r:R),  sa_sigma (fun omega : Ts => (f omega) - (g omega) <= r)).
+  Proof.
+    intros.
+    unfold Rminus.
+    apply sum_measurable; trivial.
+    now apply Ropp_measurable.
+  Qed.
 
   Program Definition rvsum (rv1 rv2 : RandomVariable Prts borel_sa) :=
     BuildRealRandomVariable Prts
@@ -600,6 +611,30 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     apply Rsqr_continuous.
   Qed.
 
+  Lemma product_measurable (f g : Ts -> R) :
+    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
+    (forall (r:R),  sa_sigma (fun omega : Ts => g omega <= r)) ->    
+    (forall (r:R),  sa_sigma (fun omega : Ts => (f omega)*(g omega) <= r)).
+  Proof.
+    intros.
+    assert (event_equiv 
+              (fun omega : Ts => (f omega)*(g omega) <= r)
+              (fun omega : Ts => (1/4)*((Rsqr (f omega + g omega)) -
+                                        (Rsqr (f omega - g omega)))
+                                 <= r)).
+    - red; intros.
+      replace ((1/4)*((Rsqr (f x + g x)) -
+                      (Rsqr (f x - g x)))) with ((f x)*(g x)) by (unfold Rsqr; lra).
+      intuition.
+    - rewrite H1.
+      apply scale_measurable.
+      apply minus_measurable.
+      apply Rsqr_measurable.
+      now apply sum_measurable.
+      apply Rsqr_measurable.
+      now apply minus_measurable.
+  Qed.
+  
   Lemma sumSimpleExpectation 
          {rv1 rv2: RandomVariable Prts borel_sa}                      
          (srv1 : SimpleRandomVariable rv1) 
@@ -751,6 +786,8 @@ Section Expectation.
     c * Expectation_posRV posrv.
   Proof.
     unfold Expectation_posRV.
+    unfold BoundedPositiveRandomVariable.
+    unfold SimpleExpectationSup.
     Admitted.
 
   Lemma Expectation_scale (c: posreal) (rv : RandomVariable Prts borel_sa) :
