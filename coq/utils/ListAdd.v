@@ -23,6 +23,38 @@ Section Map.
     destruct l; simpl; trivial.
   Qed.
 
+  Lemma concat_map_swap_perm {A B C} (f:A->B->C) (l1:list A) (l2:list B) :
+    Permutation (concat (map (fun x => map (fun y => f x y) l2) l1))
+                (concat (map (fun x => map (fun y => f y x) l1) l2)) .
+  Proof.
+    revert l2.
+    induction l1; simpl; intros l2.
+    - induction l2; simpl; trivial.
+    - rewrite IHl1.
+      clear IHl1.
+      induction l2; simpl; trivial.
+      apply perm_skip.
+      rewrite <- IHl2.
+      repeat rewrite <- app_ass.
+      apply Permutation_app; trivial.
+      apply Permutation_app_swap.
+  Qed.
+  
+  Lemma map_app_interleave_perm {A B} (l:list A) (fl:list (A->B)) :
+    Permutation (concat (map (fun f => map (fun x => f x) l) fl)) (concat (map (fun x => map (fun f => f x) fl) l)).
+  Proof.
+    apply concat_map_swap_perm.
+  Qed.
+
+  Lemma map2_app_interleave_perm {A B} (l:list A) (f g:A->B) :
+    Permutation (map f l ++ map g l) (concat (map (fun x => f x::g x::nil) l)).
+  Proof.
+    generalize (map_app_interleave_perm l (f::g::nil)); simpl; intros HH.
+    rewrite <- HH.
+    rewrite app_nil_r.
+    reflexivity.
+  Qed.
+
 End Map.
 
 Section Fold.
@@ -979,3 +1011,4 @@ Section folds_with_history.
     apply fold_left_partial_with_history_aux_total.
   Qed.
 End folds_with_history.
+
