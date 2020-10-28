@@ -540,6 +540,8 @@ Qed.
     destruct rv2.
     unfold rv_X.
     simpl.
+    unfold singleton_event, event_preimage.
+    
   Admitted.
 
 
