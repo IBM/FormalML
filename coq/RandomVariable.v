@@ -536,7 +536,10 @@ Qed.
     destruct srv2.
     unfold srv_vals; intros.
     unfold sum_simple_random_variables.
-    
+    destruct rv1.
+    destruct rv2.
+    unfold rv_X.
+    simpl.
   Admitted.
 
 
