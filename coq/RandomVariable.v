@@ -850,9 +850,20 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
      induction (srv_vals (SimpleRandomVariable := srv2)).
      - rewrite list_prod_nil_r.
        now simpl.
-     - simpl.
-       cut_to IHl.
-       rewrite IHl.
+     - rewrite list_prod_swap.
+       simpl.
+       rewrite list_prod_swap.
+       repeat rewrite map_map.
+       simpl.
+       invcs H1.
+       rewrite IHl by trivial.
+       rewrite map_app.
+       repeat rewrite map_map.
+       simpl.
+       rewrite list_sum_cat.
+       f_equal.
+       
+       admit.
 
      (*
          rewrite map_app.
