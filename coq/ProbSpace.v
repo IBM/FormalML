@@ -472,9 +472,33 @@ Proof.
   firstorder.
 Qed.
 
-    (* alternative to assuming functional extensionality *)
-
 Hint Resolve sa_dec : prob.
+
+Definition sa_sub {T} (s1 s2:SigmaAlgebra T) : Prop
+  := event_sub (sa_sigma (SigmaAlgebra := s1)) (sa_sigma (SigmaAlgebra := s2)).
+
+Definition sa_equiv {T} (s1 s2:SigmaAlgebra T) : Prop
+  := event_equiv (sa_sigma (SigmaAlgebra := s1)) (sa_sigma (SigmaAlgebra := s2)).
+
+Global Instance sa_equiv_equiv T : Equivalence (@sa_equiv T).
+Proof.
+  firstorder.
+Qed.
+
+Global Instance sa_equiv_sub {T} : subrelation sa_equiv (@sa_sub T).
+Proof.
+  firstorder.
+Qed.
+
+Global Instance sa_sub_pre {T} : PreOrder (@sa_sub T).
+Proof.
+  firstorder.
+Qed.
+
+Global Instance sa_sub_part {T} : PartialOrder sa_equiv (@sa_sub T).
+Proof.
+  firstorder.
+Qed.
 
 (* restate some lemmas that rely on lem unconditionally *)
 Lemma ps_event_union_complement {T} {s : SigmaAlgebra T} (A:event T) :

@@ -8,6 +8,8 @@ Require Import Morphisms EquivDec.
 Require Import Utils.
 Require Import ProbSpace.
 
+Set Bullet Behavior "Strict Subproofs".
+
 Import ListNotations.
 
 Local Open Scope prob.
@@ -96,7 +98,8 @@ Next Obligation.
     ; firstorder.
 Qed.
 Next Obligation.
-  replace event_equiv with equiv in * by reflexivity.
+  Print equiv.
+  replace event_equiv with (@equiv (event T) _ event_equiv_equiv) in * by reflexivity.
   repeat rewrite event_complement_swap_classic.
   rewrite event_not_not by auto using classic_event_lem.
   autorewrite with prob.
@@ -257,8 +260,22 @@ Next Obligation.
   eauto with prob.
 Qed.
 
+Lemma sigma_algebra_intersection_sub {T} (coll:SigmaAlgebra T->Prop)
+  : forall s, coll s -> sa_sub (sigma_algebra_intersection coll) s.
+Proof.
+  unfold sa_sub, event_sub.
+  simpl; intros.
+  eauto.
+Qed.
+
 Definition all_included {T} (F:event T -> Prop) : SigmaAlgebra T -> Prop
   := fun sa => forall (e:event T), F e -> @sa_sigma _ sa e.
+
+Global Instance all_included_proper {T} : Proper (equiv ==> equiv) (@all_included T).
+Proof.
+  repeat red; unfold equiv, event_equiv, all_included; intros.
+  split; intros HH; intros; apply HH; firstorder.
+Qed.
 
 Instance generated_sa {T} (F:event T -> Prop) : SigmaAlgebra T
   := sigma_algebra_intersection (all_included F).
@@ -279,14 +296,84 @@ Proof.
   eauto.
 Qed.
 
+Inductive prob_space_closure {T} : (event T->Prop) -> event T -> Prop
+  :=
+  | psc_all p : prob_space_closure p Ω
+  | psc_refl (p:event T->Prop) q : p q -> prob_space_closure p q
+  | psc_countable p (collection: nat -> event T) :
+      (forall n, prob_space_closure p (collection n)) ->
+      prob_space_closure p (union_of_collection collection)
+  | psc_complement p q : prob_space_closure p q -> prob_space_closure p (¬ q)
+.
+
+Program Instance closure_sigma_algebra {T} (F:event T -> Prop) : SigmaAlgebra T
+  := { sa_sigma := prob_space_closure F }.
+Next Obligation.
+  now apply psc_countable.
+Qed.
+Next Obligation.
+  now apply psc_complement.
+Qed.
+Next Obligation.
+  now apply psc_all.
+Qed.
+
+Theorem generated_sa_closure {T} (F:event T -> Prop) : generated_sa F === closure_sigma_algebra F.
+Proof.
+  unfold equiv, sa_equiv; simpl.
+  split; intros.
+  - apply (generated_sa_minimal F (closure_sigma_algebra F)); trivial.
+    simpl; intros.
+    now apply psc_refl.
+  - induction H.
+    + apply sa_all.
+    + eauto.
+    + apply sa_countable_union; eauto.
+    + apply sa_complement; eauto.
+Qed.
+
 Definition event_set_product {T₁ T₂} (s₁ : event T₁ -> Prop) (s₂ : event T₂ -> Prop) : event (T₁ * T₂) -> Prop
   := fun (e:event (T₁ * T₂)) =>
        exists e₁ e₂,
          s₁ e₁ /\ s₂ e₂ ->
          e === (fun '(x₁, x₂) => e₁ x₁ /\ e₂ x₂).
 
+Instance event_set_product_proper {T1 T2} : Proper (equiv ==> equiv ==> equiv) (@event_set_product T1 T2).
+Proof.
+  repeat red.
+  unfold equiv, event_equiv, event_set_product; simpl; intros.
+  split; intros [x2 [x3 HH]].
+  - unfold equiv in *.
+    exists x2, x3.
+    intros [??]; apply HH.
+    firstorder.
+  - unfold equiv in *.
+    exists x2, x3.
+    intros [??]; apply HH.
+    firstorder.
+Qed.
+
 Instance product_sa {T₁ T₂} (sa₁:SigmaAlgebra T₁) (sa₂:SigmaAlgebra T₂) : SigmaAlgebra (T₁ * T₂)
   := generated_sa (event_set_product (@sa_sigma _ sa₁) (@sa_sigma _ sa₂)).
+
+Global Instance product_sa_proper {T1 T2} : Proper (equiv ==> equiv ==> equiv) (@product_sa T1 T2).
+Proof.
+  repeat red; unfold equiv, sa_equiv; simpl.
+  intros.
+  split; intros HH.
+  - intros.
+    apply HH.
+    revert H1.
+    apply all_included_proper.
+    rewrite H, H0.
+    reflexivity.
+  - intros.
+    apply HH.
+    revert H1.
+    apply all_included_proper.
+    rewrite H, H0.
+    reflexivity.
+Qed.
 
 Definition event_pullback {X Y:Type} (f:X->Y) (ex:event X) : event Y
   := fun y => exists x, f x = y.
@@ -298,6 +385,47 @@ Qed.
 
 Instance pullback_sa {X Y:Type} (sa:SigmaAlgebra Y) (f:X->Y) : SigmaAlgebra X
   := generated_sa (fun e => sa_sigma (event_pullback f e)).
+
+Instance pullback_sa_proper {X Y:Type} : Proper (equiv ==> (pointwise_relation X equiv) ==> equiv) (@pullback_sa X Y).
+Proof.
+  unfold pointwise_relation, equiv.
+  repeat red; intros; simpl.
+  split; intros HH; intros.
+  - apply HH.
+    revert H1.
+    apply all_included_proper; intros e.
+    unfold event_pullback.
+    unfold sa_equiv in H.
+    
+    split; intros HH2.
+    + apply H.
+      revert HH2.
+      apply sa_proper.
+      red; intros.
+      split; intros [??]; subst; eauto.
+    + apply H.
+      revert HH2.
+      apply sa_proper.
+      red; intros.
+      split; intros [??]; subst; eauto.
+  - apply HH.
+    revert H1.
+    apply all_included_proper; intros e.
+    unfold event_pullback.
+    unfold sa_equiv in H.
+    
+    split; intros HH2.
+    + apply H.
+      revert HH2.
+      apply sa_proper.
+      red; intros.
+      split; intros [??]; subst; eauto.
+    + apply H.
+      revert HH2.
+      apply sa_proper.
+      red; intros.
+      split; intros [??]; subst; eauto.
+Qed.
 
 Definition is_countable {T} (e:event T)
   := exists (coll:nat -> T -> Prop),
