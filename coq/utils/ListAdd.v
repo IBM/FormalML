@@ -1012,3 +1012,15 @@ Section folds_with_history.
   Qed.
 End folds_with_history.
 
+Lemma nodup_not_nil (T : Type) (l : list T) (dec:forall (x y:T), {x = y} + {x <> y}) :
+  l <> nil <-> nodup dec l <> nil.
+Proof.
+  intros.
+  destruct l; intros; simpl.
+  - intuition.
+  - intuition try congruence.
+    match_destr_in H0.
+    apply (nodup_In dec) in i.
+    rewrite H0 in i.
+    simpl in i; trivial.
+Qed.

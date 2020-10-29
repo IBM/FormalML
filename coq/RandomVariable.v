@@ -12,7 +12,7 @@ Require Import ProbSpace SigmaAlgebras BorelSigmaAlgebra.
 Import ListNotations.
 
 Set Bullet Behavior "Strict Subproofs".
-
+  
 Section RandomVariable.
   (* todo better type names. *)
   (* The preimage of the function X on codomain B. *)
