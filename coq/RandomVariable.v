@@ -705,7 +705,6 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     now apply rv_preimage1.
  Qed.
 
-
    Lemma list_sum_fold_right l : list_sum l = fold_right Rplus 0 l.
    Proof.
      induction l; firstorder.
@@ -847,6 +846,39 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
        (list_prod (srv_vals (SimpleRandomVariable := srv1))
                   (srv_vals (SimpleRandomVariable := srv2)))).
    Proof.
+     intros.
+     induction (srv_vals (SimpleRandomVariable := srv2)).
+     - rewrite list_prod_nil_r.
+       now simpl.
+     - simpl.
+       cut_to IHl.
+       rewrite IHl.
+
+     (*
+         rewrite map_app.
+         rewrite list_sum_cat.
+         apply Rplus_eq_compat_r.
+         rewrite map_map.
+         unfold fst, snd.
+         rewrite list_sum_const_mul.
+         rewrite <- (map_ext (fun x : R => 
+                                ps_P (fun omega : Ts => rv_X (RandomVariable:=rv1) omega = a) * 
+                                ps_P (fun omega : Ts => rv_X (RandomVariable:=rv2) omega = x))). 
+         * rewrite list_sum_const_mul.
+           assert (list_sum (map (fun x : R => 
+                                    ps_P (fun omega : Ts => 
+                                            rv_X (RandomVariable:=rv2) omega = x)) 
+                                 (srv_vals (SimpleRandomVariable := srv2))) = 1).
+           -- replace (srv_vals (SimpleRandomVariable := srv2)) with
+                  (nodup Req_EM_T (srv_vals (SimpleRandomVariable := srv2))).
+              ++ apply srv_vals_prob_1.
+              ++ now apply nodup_fixed_point.
+           -- rewrite H2; lra.
+         * intros.
+           apply independent_rv_at_point.
+       + now rewrite NoDup_cons_iff in H0.
+     *)
+
      Admitted.
        
   Lemma sumSimpleExpectation0
@@ -868,10 +900,10 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
    Proof.
      intros.
      apply (sumSimpleExpectation00 (nodup_simple_random_variable Req_EM_T srv1) (nodup_simple_random_variable Req_EM_T srv2)); simpl; try apply NoDup_nodup.
-     
-   Admitted.
+     now apply nodup_not_nil.
+   Qed.
 
-  Lemma sumSimpleExpectation1
+   Lemma sumSimpleExpectation1
          {rv1 rv2: RandomVariable Prts borel_sa}                      
          (srv1 : SimpleRandomVariable rv1) 
          (srv2 : SimpleRandomVariable rv2) :      
@@ -888,50 +920,11 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
        (list_prod (nodup Req_EM_T (srv_vals (SimpleRandomVariable := srv1))) 
                   (nodup Req_EM_T (srv_vals (SimpleRandomVariable := srv2))))).
    Proof.
-     Admitted.
+     intros.
+     apply (sumSimpleExpectation11 (nodup_simple_random_variable Req_EM_T srv1) (nodup_simple_random_variable Req_EM_T srv2)); simpl; try apply NoDup_nodup.
+     now apply nodup_not_nil.
+   Qed.
 
-    Lemma sumSimpleExpectation_nodup
-         {rv1 rv2: RandomVariable Prts borel_sa}                      
-         (srv1 : SimpleRandomVariable rv1) 
-         (srv2 : SimpleRandomVariable rv2) :      
-    NoDup (srv_vals (SimpleRandomVariable := srv1)) ->
-    NoDup (srv_vals (SimpleRandomVariable := srv2)) ->    
-    NonEmpty Ts -> (SimpleExpectation srv1) + (SimpleExpectation srv2)%R = 
-    SimpleExpectation (sum_simple_random_variables srv1 srv2).
-   Proof.
-    unfold SimpleExpectation; intros.
-    generalize (non_empty_srv_vals srv1 X); intros.
-    generalize (non_empty_srv_vals srv2 X); intros.    
-    generalize (sumSimpleExpectation00 srv1 srv2 H2 H H0); intros.
-    generalize (sumSimpleExpectation11 srv1 srv2 H1 H H0); intros.   
-    destruct srv1.
-    destruct srv2.
-    unfold srv_vals in *; intros.
-    unfold sum_simple_random_variables.
-    destruct rv1.
-    destruct rv2.
-    unfold rv_X in *.
-    simpl.
-    unfold singleton_event, event_preimage.
-
-    transitivity (list_sum
-                    (map (fun v : R*R => (fst v + snd v) * ps_P (fun omega : Ts => rv_X0 omega = fst v /\ rv_X1 omega = snd v))
-                         (list_prod (nodup Req_EM_T srv_vals0) (nodup Req_EM_T srv_vals1)))).
-    rewrite nodup_fixed_point; trivial.
-    rewrite nodup_fixed_point; trivial.    
-    rewrite H3.
-    rewrite H4.
-    rewrite list_sum_map.
-    f_equal.
-    apply map_ext.
-    intros.
-    lra.
-    rewrite nodup_fixed_point; trivial.
-    rewrite nodup_fixed_point; trivial.    
-    Admitted.
-    
-
-(*
     Lemma expect_list_pairs_const 
          {rv1 rv2: RandomVariable Prts borel_sa}                      
          (srv1 : SimpleRandomVariable rv1) 
@@ -939,7 +932,7 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
          (pairsum : R)
       :      
         let pairs := 
-            filter (fun xy => Reqb ((fst xy) + (snd xy)) pairsum)
+            filter (fun xy => if Req_EM_T ((fst xy) + (snd xy)) pairsum then true else false)
                    (list_prod (nodup Req_EM_T (srv_vals (SimpleRandomVariable:=srv1)))
                               (nodup Req_EM_T (srv_vals (SimpleRandomVariable:=srv2)))) in
       list_sum
@@ -954,7 +947,9 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
                                                        rv_X (RandomVariable:=rv2) omega = v))
              (nodup Req_EM_T
                     (map (fun ab : R * R => fst ab + snd ab) pairs ))).
-*)
+    Proof.
+      Admitted.
+
     Lemma sumSimpleExpectation 
          {rv1 rv2: RandomVariable Prts borel_sa}                      
          (srv1 : SimpleRandomVariable rv1) 
