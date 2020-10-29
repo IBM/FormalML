@@ -57,11 +57,11 @@ Proof.
     apply generated_sa_sub.
     exists r; intuition.
 Qed.
-(*
+
 Lemma open_borel_sa_preimage
       (rvx: Ts -> R)
       (pf_pre: forall B:event R, open_set B -> sa_sigma (event_preimage rvx B)%R) :
-  (forall B: event R, sa_sigma B -> sa_sigma (event_preimage rvx B)).
+  (forall B: event R, (@sa_sigma R open_borel_sa B) -> sa_sigma (event_preimage rvx B)).
 Proof.
   intros.
   unfold event_preimage.
@@ -69,32 +69,26 @@ Proof.
   simpl in *.  
   dependent induction H.
   - apply sa_all.
-  - destruct H as [??].
-    generalize (pf_pre q); intros.
+  - generalize (pf_pre q); intros.
     apply H0.
-    apply sa_proper; intros xx.
-    specialize (H (rvx xx)).
-    tauto.
+    now unfold open_set.
   - apply sa_countable_union. 
     eauto.
   - apply sa_complement; eauto.
 Qed.
 
-needs to be restated for open_borel
 Lemma open_borel_sa_preimage2 
       (rvx: Ts -> R):
-  (forall r:R, sa_sigma (fun omega:Ts => (rvx omega) <= r)%R) <-> 
-  (forall B: event R, sa_sigma B -> (sa_sigma (event_preimage rvx B))).
+  (forall B:event R, open_set B -> sa_sigma (event_preimage rvx B)%R) <->
+  (forall B: event R, (@sa_sigma R open_borel_sa B) -> sa_sigma (event_preimage rvx B)).
 Proof.
   split; intros.
-  - now apply borel_sa_preimage.
+  - now apply open_borel_sa_preimage.
   - unfold event_preimage in *.
     simpl in H.
-    apply (H (fun x => x <= r)%R).
-    apply generated_sa_sub.
-    exists r; intuition.
+    apply (H B).
+    now apply generated_sa_sub.
 Qed.
- *)
 
   Lemma equiv_le_lt (f : Ts -> R) (r:R) :
     event_equiv (fun omega : Ts => f omega < r)
@@ -390,6 +384,7 @@ Proof.
   unfold event_preimage.
   simpl; intros.
   auto.
+  
 Admitted.
 
 Theorem sa_borel_open_le_equiv : open_borel_sa === borel_sa.
