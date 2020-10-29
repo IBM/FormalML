@@ -867,7 +867,8 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
                   (nodup Req_EM_T (srv_vals (SimpleRandomVariable := srv2))))).
    Proof.
      intros.
-     generalize (sumSimpleExpectation00 srv1 srv2 H); intros.
+     apply (sumSimpleExpectation00 (nodup_simple_random_variable Req_EM_T srv1) (nodup_simple_random_variable Req_EM_T srv2)); simpl; try apply NoDup_nodup.
+     
    Admitted.
 
   Lemma sumSimpleExpectation1
