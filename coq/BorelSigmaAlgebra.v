@@ -3,6 +3,8 @@ Require Import Reals.
 Require Import Lra Lia.
 Require Import Utils.
 Require Import NumberIso.
+Require Import Equivalence.
+Require Import Program.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -21,26 +23,26 @@ Local Open Scope R.
 Context {Ts:Type}
         {dom : SigmaAlgebra Ts}.
 
-(*
-Inductive prob_space_closure (p:event T) -> event T
-  :=
-  | psc_base p : prob_space_closure p
-  | sa_countable (collection: nat -> prob_space_closure p) :
-      (forall n, sa_sigma (collection n)) ->
-      sa_sigma (union_of_collection collection);
-
-Lemma prob_space_closure_closure : (ev:prob_space_closure p) -> ev x <-> p x.
-Proof.
-Qed.
- *)
-
 Lemma borel_sa_preimage
       (rvx: Ts -> R)
       (pf_pre: forall r:R, sa_sigma (fun omega:Ts => (rvx omega) <= r)%R) :
   (forall B: event R, sa_sigma B -> sa_sigma (event_preimage rvx B)).
 Proof.
-Admitted.
-
+  intros.
+  unfold event_preimage.
+  apply generated_sa_closure in H.
+  simpl in *.  
+  dependent induction H.
+  - apply sa_all.
+  - destruct H as [??].
+    generalize (pf_pre x).
+    apply sa_proper; intros xx.
+    specialize (H (rvx xx)).
+    tauto.
+  - apply sa_countable_union. 
+    eauto.
+  - apply sa_complement; eauto.
+Qed.
 
 Lemma borel_sa_preimage2 
       (rvx: Ts -> R):
@@ -312,8 +314,7 @@ Qed.
       apply sa_le_open_set.
     Qed.
 
- End Borel.
-
+End Borel.
 
 (*
 Definition included (D1 D2:R -> Prop) : Prop := forall x:R, D1 x -> D2 x.
