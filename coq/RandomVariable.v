@@ -82,6 +82,23 @@ Section RandomVariable.
     symmetry.
     apply srv_val_complete.
   Qed.
+
+  Program Instance nodup_simple_random_variable (dec:forall (x y:Td), {x = y} + {x <> y}) {rv:RandomVariable prts cod} (srv:SimpleRandomVariable rv) : SimpleRandomVariable rv
+    := { srv_vals := nodup dec srv_vals }.
+  Next Obligation.
+    apply nodup_In.
+    apply srv_vals_complete.
+  Qed.
+
+  Lemma nodup_simple_random_variable_NoDup
+        (dec:forall (x y:Td), {x = y} + {x <> y})
+        {rv:RandomVariable prts cod}
+        (srv:SimpleRandomVariable rv) :
+    NoDup (srv_vals (SimpleRandomVariable:=nodup_simple_random_variable dec srv)).
+  Proof.
+    simpl.
+    apply NoDup_nodup.
+  Qed.
   
   End Simple.
 
