@@ -758,7 +758,6 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
          congruence.
    Qed.       
 
-   (* need to assume independent random variables  *)
    (*
   Definition IndependentRandomVariables
         (rv1 rv2: RandomVariable prts cod) : Prop :=
@@ -766,7 +765,6 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
       sa_sigma B -> 
       independent (event_preimage (rv_X (RandomVariable:=rv1)) B)
                   (event_preimage (rv_X (RandomVariable:=rv2)) B).
-   *)    
 
    Lemma independent_rv_at_point
      (rv1 rv2: RandomVariable Prts borel_sa) :
@@ -778,6 +776,34 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
                                rv_X (RandomVariable := rv2) omega = a0).
    Proof.     
      Admitted.
+
+*)
+
+  Lemma prob_inter_all1
+         {rv1 rv2: RandomVariable Prts borel_sa}                      
+         (srv1 : SimpleRandomVariable rv1) 
+         (srv2 : SimpleRandomVariable rv2)
+         (a:R) :
+
+    ps_P (fun omega : Ts => rv_X (RandomVariable:=rv1) omega = a) =
+    list_sum
+      (map (fun x : R => ps_P (fun omega : Ts => rv_X (RandomVariable:=rv1) omega = a /\ 
+                                                 rv_X (RandomVariable:=rv2) omega = x)) 
+           (srv_vals (SimpleRandomVariable:=srv2))).
+    Admitted.
+
+  Lemma prob_inter_all2
+         {rv1 rv2: RandomVariable Prts borel_sa}                      
+         (srv1 : SimpleRandomVariable rv1) 
+         (srv2 : SimpleRandomVariable rv2)
+         (a:R) :
+
+    ps_P (fun omega : Ts => rv_X (RandomVariable:=rv2) omega = a) =
+    list_sum
+      (map (fun x : R => ps_P (fun omega : Ts => rv_X (RandomVariable:=rv1) omega = x /\ 
+                                                 rv_X (RandomVariable:=rv2) omega = a)) 
+           (srv_vals (SimpleRandomVariable:=srv1))).
+  Admitted.
 
   Lemma sumSimpleExpectation00
          {rv1 rv2: RandomVariable Prts borel_sa}                      
@@ -801,30 +827,16 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
      intros.
      induction (srv_vals (SimpleRandomVariable := srv1)).
      - now simpl.
-     - simpl; cut_to IHl.
-       + rewrite IHl.
-         rewrite map_app.
-         rewrite list_sum_cat.
-         apply Rplus_eq_compat_r.
-         rewrite map_map.
-         unfold fst, snd.
-         rewrite list_sum_const_mul.
-         rewrite <- (map_ext (fun x : R => 
-                                ps_P (fun omega : Ts => rv_X (RandomVariable:=rv1) omega = a) * 
-                                ps_P (fun omega : Ts => rv_X (RandomVariable:=rv2) omega = x))). 
-         * rewrite list_sum_const_mul.
-           assert (list_sum (map (fun x : R => 
-                                    ps_P (fun omega : Ts => 
-                                            rv_X (RandomVariable:=rv2) omega = x)) 
-                                 (srv_vals (SimpleRandomVariable := srv2))) = 1).
-           -- replace (srv_vals (SimpleRandomVariable := srv2)) with
-                  (nodup Req_EM_T (srv_vals (SimpleRandomVariable := srv2))).
-              ++ apply srv_vals_prob_1.
-              ++ now apply nodup_fixed_point.
-           -- rewrite H2; lra.
-         * intros.
-           apply independent_rv_at_point.
-       + now rewrite NoDup_cons_iff in H0.
+     - simpl.
+       invcs H0.
+       rewrite IHl by trivial.
+       rewrite map_app.
+       rewrite list_sum_cat.
+       f_equal.
+       rewrite map_map.
+       unfold fst, snd.
+       rewrite list_sum_const_mul.
+       now rewrite (prob_inter_all1 srv1 srv2 a).
      Qed.
 
      Lemma sumSimpleExpectation11
@@ -862,35 +874,9 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
        simpl.
        rewrite list_sum_cat.
        f_equal.
-       
-       admit.
-
-     (*
-         rewrite map_app.
-         rewrite list_sum_cat.
-         apply Rplus_eq_compat_r.
-         rewrite map_map.
-         unfold fst, snd.
-         rewrite list_sum_const_mul.
-         rewrite <- (map_ext (fun x : R => 
-                                ps_P (fun omega : Ts => rv_X (RandomVariable:=rv1) omega = a) * 
-                                ps_P (fun omega : Ts => rv_X (RandomVariable:=rv2) omega = x))). 
-         * rewrite list_sum_const_mul.
-           assert (list_sum (map (fun x : R => 
-                                    ps_P (fun omega : Ts => 
-                                            rv_X (RandomVariable:=rv2) omega = x)) 
-                                 (srv_vals (SimpleRandomVariable := srv2))) = 1).
-           -- replace (srv_vals (SimpleRandomVariable := srv2)) with
-                  (nodup Req_EM_T (srv_vals (SimpleRandomVariable := srv2))).
-              ++ apply srv_vals_prob_1.
-              ++ now apply nodup_fixed_point.
-           -- rewrite H2; lra.
-         * intros.
-           apply independent_rv_at_point.
-       + now rewrite NoDup_cons_iff in H0.
-     *)
-
-     Admitted.
+       rewrite list_sum_const_mul.
+       now rewrite (prob_inter_all2 srv1 srv2 a).
+   Qed.
        
   Lemma sumSimpleExpectation0
          {rv1 rv2: RandomVariable Prts borel_sa}                      
