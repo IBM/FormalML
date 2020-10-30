@@ -1172,8 +1172,21 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
              
              unfold is_equiv_class, ForallPairs in Hequiv.
              destruct a; simpl in *; [congruence | ]; clear Hnnil.
-             
-             
+             transitivity ((fst p + snd p) * ps_P (fun omega : Ts => rv_X0 omega = fst p /\ rv_X1 omega = snd p) +
+             list_sum
+               (map
+                  (fun v : R * R => (fst p + snd p) * ps_P (fun omega : Ts => rv_X0 omega = fst v /\ rv_X1 omega = snd v))
+                  a)).
+             ++ f_equal.
+                f_equal.
+                apply map_ext_in; intros.
+                f_equal.
+                apply Hequiv; auto.
+             ++ rewrite list_sum_const_mul.
+                simpl.
+                rewrite <- Rmult_plus_distr_l.
+                f_equal.
+                admit.
           -- 
     Admitted.
     
