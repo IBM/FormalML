@@ -1082,7 +1082,27 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
       simpl.
       admit.
       Search "nodup".
-      Admitted.
+    Admitted.
+
+    Require Import cond_expt.
+
+    Definition sums_same (x y:R*R) := fst x + snd x = fst y + snd y.
+
+    Instance sums_same_equiv : Equivalence sums_same.
+    Proof.
+      unfold sums_same.
+      constructor; red.
+      - intros [??]; simpl; trivial.
+      - intros [??][??]; simpl; congruence.
+      - intros [??][??][??]; simpl.
+        congruence.
+    Qed.
+    
+    Instance sums_same_dec : EqDec (R*R) sums_same.
+    Proof.
+      intros [??] [??].
+      apply Req_EM_T.
+    Defined.
 
     Lemma sumSimpleExpectation 
          {rv1 rv2: RandomVariable Prts borel_sa}                      
@@ -1109,16 +1129,52 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     transitivity (list_sum
                     (map (fun v : R*R => (fst v + snd v) * ps_P (fun omega : Ts => rv_X0 omega = fst v /\ rv_X1 omega = snd v))
                          (list_prod (nodup Req_EM_T srv_vals0) (nodup Req_EM_T srv_vals1)))).
-    rewrite H1.
-    rewrite H2.
-    rewrite list_sum_map.
-    f_equal.
-    apply map_ext.
-    intros.
-    lra.
-    
-    clear H1 H2.
-    
+    - rewrite H1.
+      rewrite H2.
+      rewrite list_sum_map.
+      f_equal.
+      apply map_ext.
+      intros.
+      lra.
+    - clear H1 H2.
+      assert (HH:forall x y : R * R, {x = y} + {x <> y}) by admit.
+      transitivity (list_sum
+                      (map
+       (fun v : R * R => (fst v + snd v) * ps_P (fun omega : Ts => rv_X0 omega = fst v /\ rv_X1 omega = snd v))
+       (nodup HH (list_prod srv_vals0 srv_vals1)))).
+      + admit.
+      + transitivity (list_sum
+                        (map (fun v : R => v * ps_P (fun omega : Ts => rv_X0 omega + rv_X1 omega = v))
+                             (nodup Req_EM_T (map (fun ab : R * R => fst ab + snd ab) (nodup HH (list_prod srv_vals0 srv_vals1)))))).
+        * generalize (NoDup_nodup HH (list_prod srv_vals0 srv_vals1)).
+          generalize (nodup HH (list_prod srv_vals0 srv_vals1)). clear.
+          intros.
+          rewrite <- (unquotient_quotient sums_same l) at 1.
+          rewrite concat_map.
+          rewrite list_sum_map_concat.
+          rewrite map_map.
+
+          transitivity (
+              list_sum
+                (map (fun v : R => v * ps_P (fun omega : Ts => rv_X0 omega + rv_X1 omega = v))
+                     (map (fun ab : R * R => fst ab + snd ab) (map (hd (0,0)) (quotient sums_same l))))).
+          -- repeat rewrite map_map; simpl.
+             f_equal.
+             apply map_ext_in; intros.
+             generalize (quotient_nnil sums_same l).
+             generalize (quotient_all_equivs sums_same l).
+             generalize (quotient_all_different sums_same l).
+             unfold all_equivs, all_different.
+             repeat rewrite Forall_forall.
+             intros Hdiff Hequiv Hnnil.
+             specialize (Hnnil _ H0).
+             specialize (Hequiv _ H0).
+             
+             unfold is_equiv_class, ForallPairs in Hequiv.
+             destruct a; simpl in *; [congruence | ]; clear Hnnil.
+             
+             
+          -- 
     Admitted.
     
     (*    Lemma NoDup l1 complete l1,  *)
