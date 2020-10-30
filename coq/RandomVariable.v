@@ -790,10 +790,11 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
      destruct srv.
      split; intros.
      - intuition.
-     - exists (fun (omega:Ts) => rv_X omega = rv_X x).
+     - eexists.
        split; trivial.
        apply in_map_iff.
        now exists (rv_X x).
+       now simpl.
   Qed.
 
   Lemma prob_inter_all1
@@ -821,8 +822,19 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
           now rewrite event_inter_true_r.
         + unfold event_inter.
           now rewrite map_map.
-      - admit.
-      - admit.
+      - intros.
+        apply in_map_iff in H0.
+        destruct H0.
+        destruct H0.
+        rewrite <- H0.
+        apply sa_inter.
+        apply sa_le_pt.
+        destruct rv1.
+        now rewrite borel_sa_preimage2.
+        apply sa_le_pt.
+        destruct rv2.
+        now rewrite borel_sa_preimage2.
+      - 
     Admitted.
 
   Lemma prob_inter_all2
