@@ -1186,6 +1186,31 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
                 simpl.
                 rewrite <- Rmult_plus_distr_l.
                 f_equal.
+                transitivity (
+                    list_sum (map (fun x : R * R => ps_P (fun omega : Ts => rv_X0 omega = fst x /\ rv_X1 omega = snd x)) (p::a))); [reflexivity |].
+                rewrite list_sum_fold_right.
+                rewrite <- map_map.
+                rewrite <- ps_list_disjoint_union.
+                ** admit.
+                ** intros.
+                   (* did we lose some information? *)
+                   admit.
+                ** 
+                   
+                   
+                symmetry.
+                transitivity (
+                    fold_right Rplus 0
+                               (map ps_P (map (event_inter (fun omega : Ts => rv_X0 omega + rv_X1 omega = fst p + snd p) (map (fun omega : Ts => rv_X0 omega = fst p /\ rv_X1 omega = snd p) (p::a)))))).
+
+                                                 
+                generalize (ps_total Prts (fun omega : Ts => rv_X0 omega + rv_X1 omega = fst p + snd p)
+                                     (map (fun x : R * R => (fun omega : Ts => rv_X0 omega = fst x /\ rv_X1 omega = snd x)) (p :: a))).
+
+
+
+
+                
                 admit.
           -- 
     Admitted.
