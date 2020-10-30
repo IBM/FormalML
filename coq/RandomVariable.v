@@ -779,17 +779,50 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
 
 *)
 
+   Lemma simple_random_all
+         {rv: RandomVariable Prts borel_sa}                      
+         (srv : SimpleRandomVariable rv) :
+     event_equiv (list_union (map (fun (x : R) (omega : Ts) => rv_X omega = x) srv_vals))
+         Ω .   
+   Proof.
+     unfold  Ω, list_union, event_equiv.
+     intros.
+     destruct srv.
+     split; intros.
+     - intuition.
+     - exists (fun (omega:Ts) => rv_X omega = rv_X x).
+       split; trivial.
+       apply in_map_iff.
+       now exists (rv_X x).
+  Qed.
+
   Lemma prob_inter_all1
          {rv1 rv2: RandomVariable Prts borel_sa}                      
          (srv1 : SimpleRandomVariable rv1) 
          (srv2 : SimpleRandomVariable rv2)
          (a:R) :
-
+    NoDup (srv_vals (SimpleRandomVariable := srv2)) ->
     ps_P (fun omega : Ts => rv_X (RandomVariable:=rv1) omega = a) =
     list_sum
       (map (fun x : R => ps_P (fun omega : Ts => rv_X (RandomVariable:=rv1) omega = a /\ 
                                                  rv_X (RandomVariable:=rv2) omega = x)) 
            (srv_vals (SimpleRandomVariable:=srv2))).
+    Proof.
+      intros.
+      rewrite list_sum_fold_right.
+      rewrite <- map_map.
+      rewrite <- ps_list_disjoint_union.
+      - replace (map (fun (x : R) (omega : Ts) => rv_X omega = a /\ rv_X omega = x) srv_vals)
+          with (map (event_inter (fun omega => rv_X (RandomVariable:=rv1) omega = a))
+                    (map (fun x => (fun omega => rv_X (RandomVariable:=rv2) omega = x)) 
+                         srv_vals)).
+        + rewrite <- event_inter_list_union_distr.
+          rewrite simple_random_all.
+          now rewrite event_inter_true_r.
+        + unfold event_inter.
+          now rewrite map_map.
+      - admit.
+      - admit.
     Admitted.
 
   Lemma prob_inter_all2
@@ -797,7 +830,7 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
          (srv1 : SimpleRandomVariable rv1) 
          (srv2 : SimpleRandomVariable rv2)
          (a:R) :
-
+    NoDup (srv_vals (SimpleRandomVariable := srv1)) ->
     ps_P (fun omega : Ts => rv_X (RandomVariable:=rv2) omega = a) =
     list_sum
       (map (fun x : R => ps_P (fun omega : Ts => rv_X (RandomVariable:=rv1) omega = x /\ 
@@ -945,6 +978,11 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
              (nodup Req_EM_T
                     (map (fun ab : R * R => fst ab + snd ab) pairs ))).
     Proof.
+      intros.
+      replace (nodup Req_EM_T (map (fun ab : R * R => fst ab + snd ab) pairs )) with
+          [pairsum].
+      simpl.
+      subst pairs.
       Admitted.
 
     Lemma sumSimpleExpectation 
