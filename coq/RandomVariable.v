@@ -926,7 +926,15 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
       (map (fun x : R => ps_P (fun omega : Ts => rv_X (RandomVariable:=rv1) omega = x /\ 
                                                  rv_X (RandomVariable:=rv2) omega = a)) 
            (srv_vals (SimpleRandomVariable:=srv1))).
-  Admitted.
+  Proof.
+    intros.
+    generalize (prob_inter_all1 srv2 srv1 a H); intros.
+    rewrite map_ext with 
+        (g := (fun x : R => ps_P (fun omega : Ts => rv_X (RandomVariable:=rv2) omega = a /\ 
+                                                    rv_X (RandomVariable:=rv1) omega = x))); trivial.
+    intros.
+    now apply ps_proper.
+  Qed.
 
   Lemma sumSimpleExpectation00
          {rv1 rv2: RandomVariable Prts borel_sa}                      
@@ -1072,7 +1080,8 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
       replace (nodup Req_EM_T (map (fun ab : R * R => fst ab + snd ab) pairs )) with
           [pairsum].
       simpl.
-      subst pairs.
+      admit.
+      Search "nodup".
       Admitted.
 
     Lemma sumSimpleExpectation 
