@@ -710,6 +710,111 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
      induction l; firstorder.
    Qed.
 
+
+   Lemma list_union_srv_preimage
+         {rv: RandomVariable Prts borel_sa}                      
+         (srv : SimpleRandomVariable rv) :
+     (list_union (map (fun (x : R) (omega : Ts) => rv_X omega = x) srv_vals)) ===  Ω .
+   Proof.
+     intros x.
+     unfold Ω.
+     split; trivial; intros _.
+     unfold list_union.
+     generalize (srv_vals_complete x); intros HH2.
+     exists (fun (omega : Ts) => rv_X (RandomVariable:=rv) omega = rv_X x).
+     split; trivial.
+     apply in_map_iff.
+     exists (rv_X x).
+     split; trivial.
+   Qed.
+
+   Lemma srv_nodup_preimage_list_union
+         {rv: RandomVariable Prts borel_sa}                      
+         (srv : SimpleRandomVariable rv) :
+     (list_union (map (fun (x : R) (omega : Ts) => rv_X omega = x) (nodup Req_EM_T srv_vals))) ===  Ω .
+   Proof.
+     intros x.
+     unfold Ω.
+     split; trivial; intros _.
+     unfold list_union.
+     generalize (srv_vals_complete x); intros HH2.
+     exists (fun (omega : Ts) => rv_X (RandomVariable:=rv) omega = rv_X x).
+     split; trivial.
+     apply in_map_iff.
+     exists (rv_X x).
+     split; trivial.
+     now apply nodup_In.
+   Qed.
+
+   Lemma event_disjoint_preimage_and_disj {A B}
+         f P l :
+     NoDup l ->
+     ForallOrdPairs event_disjoint (map (fun (x : B) (omega : A) => f omega = x /\ P omega) l).
+   Proof.
+     induction l; simpl; intros nd.
+     - constructor.
+     - invcs nd.
+       constructor; auto.
+       rewrite Forall_map.
+       rewrite Forall_forall.
+       intros x xin e [??] [??].
+       congruence.
+   Qed.
+
+   Lemma event_disjoint_and_preimage_disj {A B}
+         f P l :
+     NoDup l ->
+     ForallOrdPairs event_disjoint (map (fun (x : B) (omega : A) => P omega /\ f omega = x) l).
+   Proof.
+     induction l; simpl; intros nd.
+     - constructor.
+     - invcs nd.
+       constructor; auto.
+       rewrite Forall_map.
+       rewrite Forall_forall.
+       intros x xin e [??] [??].
+       congruence.
+   Qed.
+
+   Lemma event_disjoint_preimage_disj {A B}
+         f l :
+     NoDup l ->
+     ForallOrdPairs event_disjoint (map (fun (x : B) (omega : A) => f omega = x) l).
+   Proof.
+     induction l; simpl; intros nd.
+     - constructor.
+     - invcs nd.
+       constructor; auto.
+       rewrite Forall_map.
+       rewrite Forall_forall.
+       intros x xin e ein.
+       congruence.
+   Qed.
+   
+   Lemma srv_vals_nodup_preimage_disj
+         {rv: RandomVariable Prts borel_sa}                      
+         (srv : SimpleRandomVariable rv) :
+     ForallOrdPairs event_disjoint (map (fun (x : R) (omega : Ts) => rv_X omega = x) (nodup Req_EM_T srv_vals)).
+   Proof.
+     intros.
+     apply event_disjoint_preimage_disj.
+     apply NoDup_nodup.
+   Qed.
+
+   Lemma srv_vals_nodup_preimage_sa  {rv: RandomVariable Prts borel_sa}                      
+         (srv : SimpleRandomVariable rv) :
+     forall x : event Ts,
+       In x (map (fun (x0 : R) (omega : Ts) => rv_X omega = x0) (nodup Req_EM_T srv_vals)) -> sa_sigma x.
+   Proof.
+     intros.
+     apply in_map_iff in H.
+     destruct H as [y [? yin]]; subst.
+     apply nodup_In in yin.
+     apply sa_le_pt; intros.
+     apply borel_sa_preimage2; intros.
+     now apply rv_preimage.
+   Qed.
+     
    Lemma srv_vals_prob_1 
          {rv: RandomVariable Prts borel_sa}                      
          (srv : SimpleRandomVariable rv) :
@@ -725,38 +830,11 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
      ; intros HH.
      rewrite list_sum_fold_right.
      rewrite <- HH; clear HH.
-     - replace 1 with R1 by lra.
-       rewrite <- ps_one.
-       apply ps_proper; intros x.
-       unfold Ω.
-       split; trivial; intros _.
-       unfold list_union.
-       generalize (srv_vals_complete x); intros HH2.
-       exists (fun (omega : Ts) => rv_X (RandomVariable:=rv) omega = rv_X x).
-       split; trivial.
-       apply in_map_iff.
-       exists (rv_X x).
-       split; trivial.
-       now apply nodup_In.
-     - intros.
-       apply in_map_iff in H.
-       destruct H as [y [? yin]]; subst.
-       apply nodup_In in yin.
-       apply sa_le_pt; intros.
-       apply borel_sa_preimage2; intros.
-       now apply rv_preimage.
-     - induction srv_vals; simpl.
-       + constructor.
-       + destruct (in_dec Req_EM_T a l); trivial.
-         simpl.
-         constructor; trivial.
-         rewrite Forall_map.
-         rewrite Forall_forall.
-         intros x xin.
-         apply nodup_In in xin.
-         unfold event_disjoint; intros.
-         congruence.
-   Qed.       
+     - rewrite srv_nodup_preimage_list_union.
+       apply ps_one.
+     - apply srv_vals_nodup_preimage_sa.
+     - apply srv_vals_nodup_preimage_disj.
+   Qed.
 
    (*
   Definition IndependentRandomVariables
@@ -796,7 +874,7 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
        now exists (rv_X x).
        now simpl.
   Qed.
-
+                  
   Lemma prob_inter_all1
          {rv1 rv2: RandomVariable Prts borel_sa}                      
          (srv1 : SimpleRandomVariable rv1) 
@@ -834,9 +912,9 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
         apply sa_le_pt.
         destruct rv2.
         now rewrite borel_sa_preimage2.
-      - 
-    Admitted.
-
+      - now apply event_disjoint_and_preimage_disj.
+    Qed.
+    
   Lemma prob_inter_all2
          {rv1 rv2: RandomVariable Prts borel_sa}                      
          (srv1 : SimpleRandomVariable rv1) 
