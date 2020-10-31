@@ -130,6 +130,46 @@ Section RandomVariable.
     forall (x:Ts), (rv_X (RandomVariable:=rv1) x <= 
                    rv_X (RandomVariable:=rv2) x)%R.
 
+  Definition IndicatorRandomVariable
+             (rv : RandomVariable prts borel_sa) : Prop :=
+    forall (x:Ts), (rv_X x) = 0 \/ (rv_X x) = 1.
+
+  (* should srv argument be minimized ? *)
+  Definition IndicatorSimpleRandomVariable
+             {rv : RandomVariable prts borel_sa}
+             (srv : SimpleRandomVariable rv) : Prop :=
+    forall (x:R), In x srv_vals -> x = 0 \/ x = 1.
+
+  Program Definition EventIndicator (P : event Ts) (dec:forall x, {P x} + {~ P x}) 
+    (sap: sa_sigma P) :=
+    BuildRealRandomVariable 
+      (fun (omega:Ts) => if dec omega then 1 else 0) _.
+  Next Obligation.
+    destruct (Rlt_dec r 0).
+    - assert (event_equiv (fun omega : Ts => (if dec omega then 1 else 0) <= r)
+                          event_none).
+      + unfold event_equiv, event_none; intros.
+        assert ((if dec x then 1 else 0) >= 0) by admit.
+        lra.
+      + rewrite H.
+        apply sa_none.
+    - assert (r >= 0) by lra.
+      destruct (Rlt_dec r 1).
+      + assert (event_equiv (fun omega : Ts => (if dec omega then 1 else 0) <= r)
+                            (fun omega : Ts => ~ P omega)).
+        * unfold event_equiv; intros.
+          intuition.
+  Admitted.
+
+  Lemma sa_singleton (c:R)
+    (rv : RandomVariable prts borel_sa) :
+    sa_sigma (event_preimage rv_X (singleton_event c)).
+  Proof.
+     apply sa_le_pt; intros.
+     apply borel_sa_preimage2; intros.
+     now apply rv_preimage.
+  Qed.
+
   Definition PositiveRandomVariable
         {prts: ProbSpace dom}
         (rv: RandomVariable prts borel_sa) : Prop :=
@@ -875,6 +915,22 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
        now simpl.
   Qed.
                   
+
+  Lemma sa_sigma_inter_pts
+         {rv1 rv2: RandomVariable Prts borel_sa}                      
+         (c1 c2 : R) :
+    sa_sigma (fun omega : Ts => rv_X (RandomVariable:=rv1) omega = c1 /\ 
+                                rv_X (RandomVariable:=rv2) omega = c2).
+  Proof.
+        apply sa_inter.
+        apply sa_le_pt.
+        destruct rv1.
+        now rewrite borel_sa_preimage2.
+        apply sa_le_pt.
+        destruct rv2.
+        now rewrite borel_sa_preimage2.
+  Qed.    
+
   Lemma prob_inter_all1
          {rv1 rv2: RandomVariable Prts borel_sa}                      
          (srv1 : SimpleRandomVariable rv1) 
@@ -905,13 +961,7 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
         destruct H0.
         destruct H0.
         rewrite <- H0.
-        apply sa_inter.
-        apply sa_le_pt.
-        destruct rv1.
-        now rewrite borel_sa_preimage2.
-        apply sa_le_pt.
-        destruct rv2.
-        now rewrite borel_sa_preimage2.
+        apply sa_sigma_inter_pts.
       - now apply event_disjoint_and_preimage_disj.
     Qed.
     
@@ -1104,6 +1154,32 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
       apply Req_EM_T.
     Defined.
 
+  Lemma preimage_points_disjoint
+         {rv: RandomVariable Prts borel_sa}                      
+         (c d: R) :
+    c <> d ->
+    event_disjoint (fun omega => rv_X (RandomVariable:=rv) omega = c)
+                   (fun omega => rv_X (RandomVariable:=rv) omega = d).
+   Proof.
+     unfold event_disjoint.
+     congruence.
+   Qed.
+
+  Lemma preimage_point_pairs_disjoint
+         {rv1 rv2: RandomVariable Prts borel_sa}                      
+         (c1 c2 d1 d2: R) :
+    (c1 <> d1) \/ (c2 <> d2) ->
+    event_disjoint (event_inter (fun omega => rv_X (RandomVariable:=rv1) omega = c1)
+                                (fun omega => rv_X (RandomVariable:=rv2) omega = c2))
+                   (event_inter (fun omega => rv_X (RandomVariable:=rv1) omega = d1)
+                                (fun omega => rv_X (RandomVariable:=rv2) omega = d2)).
+  Proof.
+    intros.
+    unfold event_disjoint, event_inter; intros.
+    destruct H0; destruct H1.
+    destruct H; congruence.
+  Qed.    
+
     Lemma sumSimpleExpectation 
          {rv1 rv2: RandomVariable Prts borel_sa}                      
          (srv1 : SimpleRandomVariable rv1) 
@@ -1116,10 +1192,12 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     generalize (non_empty_srv_vals srv2 X); intros.    
     generalize (sumSimpleExpectation0 srv1 srv2 H0); intros.
     generalize (sumSimpleExpectation1 srv1 srv2 H); intros.   
+    generalize (@sa_sigma_inter_pts rv1 rv2). intro sa_sigma.
     destruct srv1.
     destruct srv2.
     unfold srv_vals in *; intros.
     unfold sum_simple_random_variables.
+
     destruct rv1.
     destruct rv2.
     unfold rv_X in *.
@@ -1191,9 +1269,12 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
                 rewrite list_sum_fold_right.
                 rewrite <- map_map.
                 rewrite <- ps_list_disjoint_union.
+                f_equal.
                 ** admit.
                 ** intros.
-                   (* did we lose some information? *)
+
+(* did we lose some information? *)
+                   
                    admit.
                 ** 
                    
