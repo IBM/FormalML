@@ -876,6 +876,30 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
        congruence.
    Qed.
    
+   Lemma event_disjoint_preimage_disj_pairs {A B}
+         f1 f2 l :
+     NoDup l ->
+     ForallOrdPairs event_disjoint 
+                    (map (fun (x : B*B) (omega : A) => f1 omega = fst x /\ f2 omega = snd x) l).
+   Proof.
+     induction l; simpl; intros nd.
+     - constructor.
+     - invcs nd.
+       constructor; auto.
+       rewrite Forall_map.
+       rewrite Forall_forall.
+       intros x xin e ein.
+       destruct ein.
+       rewrite H.
+       rewrite H0.
+       rewrite <- pair_equal_spec.
+       replace (fst a, snd a) with a.
+       replace (fst x, snd x) with x.
+       congruence.
+       now destruct x; unfold fst, snd.
+       now destruct a; unfold fst, snd.
+   Qed.
+
    Lemma srv_vals_nodup_preimage_disj
          {rv: RandomVariable Prts borel_sa}                      
          (srv : SimpleRandomVariable rv) :
@@ -1144,37 +1168,6 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
      now apply nodup_not_nil.
    Qed.
 
-    Lemma expect_list_pairs_const 
-         {rv1 rv2: RandomVariable Prts borel_sa}                      
-         (srv1 : SimpleRandomVariable rv1) 
-         (srv2 : SimpleRandomVariable rv2) 
-         (pairsum : R)
-      :      
-        let pairs := 
-            filter (fun xy => if Req_EM_T ((fst xy) + (snd xy)) pairsum then true else false)
-                   (list_prod (nodup Req_EM_T (srv_vals (SimpleRandomVariable:=srv1)))
-                              (nodup Req_EM_T (srv_vals (SimpleRandomVariable:=srv2)))) in
-      list_sum
-        (map
-           (fun v : R * R =>
-              (fst v + snd v) *
-              ps_P (fun omega : Ts => rv_X (RandomVariable:=rv1) omega = fst v /\ 
-                                      rv_X (RandomVariable:=rv2) omega = snd v))
-           pairs) = 
-      list_sum
-        (map (fun v : R => v * ps_P (fun omega : Ts => rv_X (RandomVariable:=rv1) omega + 
-                                                       rv_X (RandomVariable:=rv2) omega = v))
-             (nodup Req_EM_T
-                    (map (fun ab : R * R => fst ab + snd ab) pairs ))).
-    Proof.
-      intros.
-      replace (nodup Req_EM_T (map (fun ab : R * R => fst ab + snd ab) pairs )) with
-          [pairsum].
-      simpl.
-      admit.
-      Search "nodup".
-    Admitted.
-
     Require Import cond_expt.
 
     Definition sums_same (x y:R*R) := fst x + snd x = fst y + snd y.
@@ -1240,6 +1233,29 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
       - now apply concat_NoDup in nd2.
     Qed.
 
+  Lemma list_union_sub_cover {T} (l : list (event T)) (P Q: event T) :
+    event_union (list_union l) Q = Ω -> event_disjoint P Q ->
+    (forall (e:event T), In e l -> event_inter P e = e ) ->
+    event_equiv (list_union l) P.
+  Proof.
+    intros.
+    generalize (event_inter_true_l P); intros.
+    rewrite <- H2.
+    rewrite <- H.
+    rewrite event_inter_comm.
+    rewrite event_inter_union_distr.
+    rewrite event_disjoint_inter in H0.
+    rewrite H0.
+    rewrite event_union_false_r.
+    rewrite event_inter_list_union_distr.
+    replace (map (event_inter P) l) with l.
+    - now unfold event_equiv.
+    - rewrite map_ext_in with (g:= fun p => p).
+      now rewrite map_id.
+      intros.
+      apply H1, H3.
+  Qed.
+    
     Lemma sumSimpleExpectation 
          {rv1 rv2: RandomVariable Prts borel_sa}                      
          (srv1 : SimpleRandomVariable rv1) 
@@ -1285,7 +1301,7 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
                         (map (fun v : R => v * ps_P (fun omega : Ts => rv_X0 omega + rv_X1 omega = v))
                              (nodup Req_EM_T (map (fun ab : R * R => fst ab + snd ab) (nodup HH (list_prod srv_vals0 srv_vals1)))))).
         * generalize (NoDup_nodup HH (list_prod srv_vals0 srv_vals1)).
-          generalize (nodup HH (list_prod srv_vals0 srv_vals1)). clear.
+          generalize (nodup HH (list_prod srv_vals0 srv_vals1)). (* clear. *)
           intros.
           rewrite <- (unquotient_quotient sums_same l) at 1.
           rewrite concat_map.
@@ -1305,8 +1321,8 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
              unfold all_equivs, all_different.
              repeat rewrite Forall_forall.
              intros Hdiff Hequiv Hnnil.
-             specialize (Hnnil _ H0).
-             specialize (Hequiv _ H0).
+             specialize (Hnnil _ H2).
+             specialize (Hequiv _ H2).
              
              unfold is_equiv_class, ForallPairs in Hequiv.
              destruct a; simpl in *; [congruence | ]; clear Hnnil.
@@ -1330,13 +1346,16 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
                 rewrite <- map_map.
                 rewrite <- ps_list_disjoint_union.
                 f_equal.
-                ** admit.
-                ** intros.
-
-(* did we lose some information? *)
-                   
-                   admit.
                 ** 
+                  
+                  admit.
+                ** intros.
+                   (* did we lose some information? *)
+                   (* got rid of clear, need to use sa_sigma hypothesis *)
+                   admit.
+                     ** apply event_disjoint_preimage_disj_pairs.
+                        generalize (quotient_bucket_NoDup sums_same l H1); rewrite Forall_forall; eauto.
+            -- admit.
                    
 (*                   
                 symmetry.

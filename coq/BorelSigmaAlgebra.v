@@ -370,7 +370,7 @@ Qed.
 
 Lemma sa_borel_open_le_sub2 : sa_sub borel_sa open_borel_sa.
 Proof.
-  generalize (sa_open_iff_le id).
+  generalize (sa_open_iff_le id (dom:=open_borel_sa)); simpl.
   unfold event_preimage, id.
   intros HH.
   intros e; simpl.
