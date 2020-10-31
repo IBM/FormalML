@@ -140,6 +140,15 @@ Section RandomVariable.
              (srv : SimpleRandomVariable rv) : Prop :=
     forall (x:R), In x srv_vals -> x = 0 \/ x = 1.
 
+  Lemma sa_singleton (c:R)
+    (rv : RandomVariable prts borel_sa) :
+    sa_sigma (event_preimage rv_X (singleton_event c)).
+  Proof.
+     apply sa_le_pt; intros.
+     apply borel_sa_preimage2; intros.
+     now apply rv_preimage.
+  Qed.
+
   Program Definition EventIndicator (P : event Ts) (dec:forall x, {P x} + {~ P x}) 
     (sap: sa_sigma P) :=
     BuildRealRandomVariable 
@@ -149,8 +158,9 @@ Section RandomVariable.
     - assert (event_equiv (fun omega : Ts => (if dec omega then 1 else 0) <= r)
                           event_none).
       + unfold event_equiv, event_none; intros.
-        assert ((if dec x then 1 else 0) >= 0) by admit.
-        lra.
+        assert ((if dec x then 1 else 0) >= 0).
+        * destruct (dec x); lra.
+        * lra.
       + rewrite H.
         apply sa_none.
     - assert (r >= 0) by lra.
@@ -158,17 +168,27 @@ Section RandomVariable.
       + assert (event_equiv (fun omega : Ts => (if dec omega then 1 else 0) <= r)
                             (fun omega : Ts => ~ P omega)).
         * unfold event_equiv; intros.
-          intuition.
-  Admitted.
+          destruct (dec x).
+          -- split; intros.
+             ++ lra.
+             ++ congruence.
+          -- split; intros.
+             ++ congruence.
+             ++ lra.
+        * rewrite H0.
+          now apply sa_complement.
+      + assert (r >= 1) by lra.
+        assert (event_equiv (fun omega : Ts => (if dec omega then 1 else 0) <= r)
+                            (fun omega : Ts => True)).
+        * unfold event_equiv; intros.
+          destruct (dec x); lra.
+        * rewrite H1.
+          apply sa_all.
+  Qed.        
 
-  Lemma sa_singleton (c:R)
-    (rv : RandomVariable prts borel_sa) :
-    sa_sigma (event_preimage rv_X (singleton_event c)).
-  Proof.
-     apply sa_le_pt; intros.
-     apply borel_sa_preimage2; intros.
-     now apply rv_preimage.
-  Qed.
+  Definition point_preimage_indicator (c:R)
+    (rv : RandomVariable prts borel_sa) :=
+    EventIndicator (fun omega => rv_X omega = c) (fun x => Req_EM_T (rv_X x) c).
 
   Definition PositiveRandomVariable
         {prts: ProbSpace dom}
@@ -923,12 +943,8 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
                                 rv_X (RandomVariable:=rv2) omega = c2).
   Proof.
         apply sa_inter.
-        apply sa_le_pt.
-        destruct rv1.
-        now rewrite borel_sa_preimage2.
-        apply sa_le_pt.
-        destruct rv2.
-        now rewrite borel_sa_preimage2.
+        apply sa_singleton.
+        apply sa_singleton.        
   Qed.    
 
   Lemma prob_inter_all1
