@@ -186,9 +186,13 @@ Section RandomVariable.
           apply sa_all.
   Qed.        
 
-  Definition point_preimage_indicator (c:R)
-    (rv : RandomVariable prts borel_sa) :=
-    EventIndicator (fun omega => rv_X omega = c) (fun x => Req_EM_T (rv_X x) c).
+  Program Definition point_preimage_indicator
+    (rv : RandomVariable prts borel_sa)
+    (c:R) :=
+    EventIndicator (fun omega => rv_X omega = c) (fun x => Req_EM_T (rv_X x) c) _.
+  Next Obligation.
+    apply sa_singleton.
+  Qed.
 
   Definition PositiveRandomVariable
         {prts: ProbSpace dom}
@@ -358,6 +362,19 @@ Section SimpleExpectation.
     list_sum (map (fun v => Rmult v (ps_P (event_preimage rv_X (singleton_event v)))) 
                   (nodup Req_EM_T srv_vals)).
 
+(*
+  Definition SimpleConditionalExpection 
+             {rv1 rv2 : RandomVariable Prts borel_sa}             
+             (srv1 : SimpleRandomVariable rv1) 
+             (srv2 : SimpleRandomVariable rv2) :=    
+    fold_right rvplus rvzero 
+               (map (fun c => rvscale 
+                    ((SimpleExpectation (rvprod rv1 (point_preimage_indicator rv2 c)))
+                       / (ps_P (event_preimage rv_X (RandomVariable:=rv2) (singleton_event c))))
+                    (point_preimage_indicator rv2 c))
+               srv_vals (SimpleRandomVariable:=srv2)).
+ *)
+  
   Global Program Instance scale_constant_random_variable (c: R)
          {rrv : RandomVariable Prts borel_sa}
          (crv:ConstantRandomVariable rrv) : ConstantRandomVariable (rvscale Prts c rrv)
@@ -764,6 +781,25 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     apply borel_sa_preimage2; intros.    
     now apply rv_preimage1.
  Qed.
+
+  Global Program Instance product_simple_random_variables
+         {rv1 rv2 : RandomVariable Prts borel_sa}                      
+         (srv1:SimpleRandomVariable rv1)
+         (srv2:SimpleRandomVariable rv2)
+    : SimpleRandomVariable (rvprod rv1 rv2)
+    := { srv_vals := map (fun ab => Rmult (fst ab) (snd ab)) 
+                         (list_prod (srv_vals (SimpleRandomVariable:=srv1))
+                                    (srv_vals (SimpleRandomVariable:=srv2))) }.
+  Next Obligation.
+    destruct srv1.
+    destruct srv2.
+    rewrite in_map_iff.
+    exists ((rv_X (RandomVariable:=rv1) x), (rv_X (RandomVariable:=rv2) x)).
+    split.
+    now simpl.
+    apply in_prod; trivial.
+  Qed.
+
 
    Lemma list_sum_fold_right l : list_sum l = fold_right Rplus 0 l.
    Proof.
