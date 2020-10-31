@@ -1221,6 +1221,25 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     destruct H; congruence.
   Qed.    
 
+  Lemma concat_NoDup {A} (l:list (list A)) : NoDup (concat l) -> Forall (@NoDup A) l.
+    Proof.
+      induction l; simpl; intros nd.
+      - constructor.
+      - constructor.
+        + eapply NoDup_app_inv; eauto.
+        + apply IHl. eapply NoDup_app_inv2; eauto.
+    Qed.
+
+    Lemma quotient_bucket_NoDup {A:Type} (R:A->A->Prop) {eqR:Equivalence R} {decR:EqDec A R} l :
+      NoDup l ->
+      Forall (@NoDup A) (quotient R l).
+    Proof.
+      intros nd.
+      assert (nd2:NoDup (concat (quotient R l))).
+      - now rewrite unquotient_quotient.
+      - now apply concat_NoDup in nd2.
+    Qed.
+
     Lemma sumSimpleExpectation 
          {rv1 rv2: RandomVariable Prts borel_sa}                      
          (srv1 : SimpleRandomVariable rv1) 
