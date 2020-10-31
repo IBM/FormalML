@@ -158,41 +158,30 @@ Section RandomVariable.
     - assert (event_equiv (fun omega : Ts => (if dec omega then 1 else 0) <= r)
                           event_none).
       + unfold event_equiv, event_none; intros.
-        assert ((if dec x then 1 else 0) >= 0).
-        * destruct (dec x); lra.
-        * lra.
-      + rewrite H.
-        apply sa_none.
-    - assert (r >= 0) by lra.
-      destruct (Rlt_dec r 1).
+        destruct (dec x); lra.
+      + rewrite H; apply sa_none.
+    - destruct (Rlt_dec r 1).
       + assert (event_equiv (fun omega : Ts => (if dec omega then 1 else 0) <= r)
                             (fun omega : Ts => ~ P omega)).
         * unfold event_equiv; intros.
           destruct (dec x).
-          -- split; intros.
-             ++ lra.
-             ++ congruence.
-          -- split; intros.
-             ++ congruence.
-             ++ lra.
-        * rewrite H0.
+          -- split; [lra | congruence].
+          -- split; [congruence | lra].
+        * rewrite H.
           now apply sa_complement.
-      + assert (r >= 1) by lra.
-        assert (event_equiv (fun omega : Ts => (if dec omega then 1 else 0) <= r)
+      + assert (event_equiv (fun omega : Ts => (if dec omega then 1 else 0) <= r)
                             (fun omega : Ts => True)).
         * unfold event_equiv; intros.
           destruct (dec x); lra.
-        * rewrite H1.
+        * rewrite H.
           apply sa_all.
   Qed.        
 
-  Program Definition point_preimage_indicator
+  Definition point_preimage_indicator
     (rv : RandomVariable prts borel_sa)
     (c:R) :=
-    EventIndicator (fun omega => rv_X omega = c) (fun x => Req_EM_T (rv_X x) c) _.
-  Next Obligation.
-    apply sa_singleton.
-  Qed.
+    EventIndicator (fun omega => rv_X omega = c) (fun x => Req_EM_T (rv_X x) c) 
+                   (sa_singleton c rv).
 
   Definition PositiveRandomVariable
         {prts: ProbSpace dom}
@@ -1330,7 +1319,7 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
                    admit.
                 ** 
                    
-                   
+(*                   
                 symmetry.
                 transitivity (
                     fold_right Rplus 0
@@ -1346,6 +1335,7 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
                 
                 admit.
           -- 
+*)
     Admitted.
     
     (*    Lemma NoDup l1 complete l1,  *)
