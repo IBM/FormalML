@@ -588,11 +588,11 @@ Qed.
   Definition rvminus (rv1 rv2 : RandomVariable Prts borel_sa) := 
     rvsum rv1 (rvopp rv2).
 
-  Lemma list_prod_concat {A} (l1 l2:list A) : list_prod l1 l2 = concat (map (fun x => map (fun y => (x, y)) l2) l1).
+  Lemma list_prod_concat {A B} (l1:list A) (l2:list B) : list_prod l1 l2 = concat (map (fun x => map (fun y => (x, y)) l2) l1).
   Proof.
     induction l1; simpl; trivial.
     now rewrite IHl1.
-  Qed.    
+  Qed.
 
   Class NonEmpty (A : Type) :=
   ex : A.
@@ -1255,8 +1255,235 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
       intros.
       apply H1, H3.
   Qed.
+
+  Lemma nodup_app2_incl {A} decA (l1 l2:list A) :
+    incl l1 l2 ->
+    nodup decA (l1 ++ l2) = nodup decA l2.
+  Proof.
+    unfold incl; intros inn.
+    induction l1; simpl; trivial; simpl in *.
+    match_destr.
+    - eauto.
+    - elim n.
+      apply in_app_iff.
+      eauto.
+  Qed.
+
+  Lemma nodup_app_distr {A} decA (l1 l2:list A) :
+    disjoint l1 l2 ->
+    nodup decA (l1 ++ l2) = nodup decA l1 ++ nodup decA l2.
+  Proof.
+    unfold disjoint.
+    intros disj.
+    induction l1; simpl; trivial.
+    rewrite IHl1 by firstorder.
+    destruct (in_dec decA a l1).
+    - match_destr.
+      elim n.
+      apply in_app_iff; auto.
+    - match_destr.
+      apply in_app_iff in i.
+      elim (disj a); simpl; intuition.
+  Qed.
     
-    Lemma sumSimpleExpectation 
+  Lemma list_prod_nodup {A B} decA decB decAB (l1:list A) (l2:list B):
+    nodup decAB (list_prod l1 l2) = list_prod (nodup decA l1) (nodup decB l2).
+  Proof.
+    repeat rewrite list_prod_concat.
+    revert l2.
+    induction l1; simpl; trivial.
+    intros l2.
+    match_destr.
+    - rewrite <- IHl1.
+      apply nodup_app2_incl.
+      intros x inn.
+      apply concat_In.
+      eexists.
+      split; try eassumption.
+      apply in_map_iff.
+      eauto.
+    - simpl.
+      rewrite <- IHl1.
+      rewrite nodup_app_distr.
+      + f_equal.
+        induction l2; simpl; trivial.
+        rewrite IHl2.
+        match_destr.
+        * apply in_map_iff in i.
+          destruct i as [x [eqq xin]].
+          invcs eqq.
+          match_destr.
+          congruence.
+        * match_destr.
+          elim n0.
+          apply in_map_iff.
+          eauto.
+      + unfold disjoint.
+        intros [x y] inn HH.
+        apply concat_In in HH.
+        destruct HH as [xx [xxin xinn]].
+        apply in_map_iff in xxin.
+        destruct xxin as [xxx [? xxxin]]; subst.
+        apply in_map_iff in inn.
+        destruct inn as [? [eqq ?]].
+        invcs eqq; subst.
+        apply in_map_iff in xinn.
+        destruct xinn as [? [eqq ?]].
+        invcs eqq.
+        congruence.
+  Qed.
+
+  Existing Instance Equivalence_pullback.
+
+  Instance EqDec_pullback {A B} (R:A->A->Prop) {eqR:Equivalence R} {decR:EqDec A R} (f:B->A) :
+    EqDec B (fun x y : B => R (f x) (f y)).
+  Proof.
+    intros x y.
+    destruct (decR (f x) (f y)).
+    - left; trivial.
+    - right; trivial.
+  Defined.
+
+  Lemma add_to_bucket_map {A B:Type} (R:A->A->Prop) {eqR:Equivalence R} {decR:EqDec A R} (l:list (list B)) 
+          (f:B->A) b :
+    add_to_bucket R (f b) (map (map f) l) = 
+    map (map f) (add_to_bucket (fun x y : B => R (f x) (f y)) b l).
+  Proof.
+    induction l; simpl; trivial.
+    rewrite IHl.
+    destruct a; simpl; trivial.
+    unfold equiv_dec, EqDec_pullback.
+    match_destr.
+  Qed.
+    
+  Lemma quotient_map {A B:Type} (R:A->A->Prop) {eqR:Equivalence R} {decR:EqDec A R} (l:list B) 
+          (f:B->A) :
+    quotient R (map f l) = map (map f) (quotient  (fun x y : B => R (f x) (f y)) l).
+  Proof.
+    induction l; simpl; trivial.
+    rewrite IHl.
+    apply add_to_bucket_map.
+  Qed.
+
+  Lemma add_to_bucket_eq_nin {A} (decA:EqDec A eq) a l :
+    Forall (fun x : list A => not_nil x = true) l ->
+      (forall l' : list A, In l' l -> ~ In a l') ->
+    (add_to_bucket eq a l) = l++[[a]].
+  Proof.
+    intros.
+    induction l; simpl; trivial.
+    invcs H.
+    match_destr.
+    match_destr.
+    - red in e; subst.
+      simpl in H0.
+      eelim H0; eauto.
+      simpl; eauto.
+    - simpl in *.
+      rewrite IHl; eauto.
+  Qed.
+
+  Require Import Permutation.
+
+  Lemma nodup_hd_quotient {A} (decA:EqDec A eq) def (l:list A) : 
+    Permutation ((map (hd def) (quotient eq l)))
+                (nodup decA l).
+  Proof.
+    induction l; simpl; trivial.
+    match_destr.
+    - rewrite <- IHl.
+      apply (quotient_in eq) in i.
+      match goal with
+      | [|- Permutation ?l1 ?l2 ] => replace l1 with l2; [reflexivity | ]
+      end.
+      revert i.
+      clear.
+      generalize (quotient_nnil eq l).
+      generalize (quotient_all_equivs eq l).
+      generalize (quotient_all_different eq l).
+      generalize (quotient eq l); clear; intros l.
+      unfold all_different, all_equivs, is_equiv_class, ForallPairs.
+      repeat rewrite Forall_forall.
+      unfold not_nil.
+      intros alldiff alleq nnil [l' [l'in ain]].
+      induction l; simpl in *.
+      + tauto.
+      + destruct a0.
+        * specialize (nnil []); simpl in nnil; intuition.
+        * match_destr.
+          -- red in e; subst; trivial.
+          -- destruct l'in.
+             ++ subst.
+                elim c.
+                apply (alleq (a0::a1)); simpl; eauto.
+             ++ simpl.
+                rewrite <- IHl; auto.
+                now invcs alldiff.
+                firstorder.
+    - rewrite add_to_bucket_eq_nin.
+      + rewrite map_app; simpl.
+        rewrite <- Permutation_cons_append.
+        now apply perm_skip.
+      + apply quotient_nnil.
+      + intros l' inn1 inn2.
+        generalize (in_quotient eq a l).
+        eauto.
+  Qed.
+
+  Lemma nodup_map_nodup {A B} decA decB (f:A->B) (l:list A) :
+    nodup decB (map f (nodup decA l)) = nodup decB (map f l).
+  Proof.
+    induction l; simpl; trivial.
+    match_destr; match_destr.
+    + elim n.
+      apply in_map_iff; eauto.
+    + simpl.
+      match_destr.
+      elim n0.
+      eapply in_map_iff.
+      eapply in_map_iff in i.
+      destruct i as [? [? inn]].
+      eapply nodup_In in inn.
+      eauto.
+    + simpl.
+      rewrite IHl.
+      match_destr.
+      elim n0.
+      eapply in_map_iff in i.
+      destruct i as [? [? inn]].
+      apply nodup_In in inn.
+      apply in_map_iff.
+      eauto.
+  Qed.
+
+  Lemma add_to_bucket_ext {A:Type} (R1 R2:A->A->Prop) {eqR1:Equivalence R1} {decR1:EqDec A R1} {eqR2:Equivalence R2} {decR2:EqDec A R2} a (l:list (list A)) :
+    (forall l' y, In y l' -> In l' l -> R1 a y <-> R2 a y) ->
+    add_to_bucket R1 a l = add_to_bucket R2 a l.
+  Proof.
+    intros.
+    induction l; simpl; trivial.
+    cut_to IHl; [| firstorder].
+    rewrite IHl.
+    specialize (H a0); simpl in H.
+    match_destr; simpl in *.
+    repeat match_destr; unfold equiv, complement in *; firstorder.
+  Qed.
+    
+  Lemma quotient_ext {A:Type} (R1 R2:A->A->Prop) {eqR1:Equivalence R1} {decR1:EqDec A R1} {eqR2:Equivalence R2} {decR2:EqDec A R2} (l:list A) :
+    ForallPairs (fun x y => R1 x y <-> R2 x y) l ->
+    quotient R1 l = quotient R2 l.
+  Proof.
+    unfold ForallPairs.
+    induction l; simpl; intros; trivial.
+    rewrite IHl by eauto.
+    apply add_to_bucket_ext.
+    intros.
+    eapply H; eauto.
+    right.
+    eapply in_quotient; eauto.
+  Qed.
+    
+  Lemma sumSimpleExpectation 
          {rv1 rv2: RandomVariable Prts borel_sa}                      
          (srv1 : SimpleRandomVariable rv1) 
          (srv2 : SimpleRandomVariable rv2) :      
@@ -1291,19 +1518,29 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
       intros.
       lra.
     - clear H1 H2.
-      assert (HH:forall x y : R * R, {x = y} + {x <> y}) by admit.
+      assert (HH:forall x y : R * R, {x = y} + {x <> y})
+        by apply (pair_eqdec (H:=Req_EM_T) (H0:=Req_EM_T)).
+      
       transitivity (list_sum
                       (map
        (fun v : R * R => (fst v + snd v) * ps_P (fun omega : Ts => rv_X0 omega = fst v /\ rv_X1 omega = snd v))
        (nodup HH (list_prod srv_vals0 srv_vals1)))).
-      + admit.
+      + f_equal.
+        f_equal.
+        symmetry.
+        apply list_prod_nodup.
       + transitivity (list_sum
                         (map (fun v : R => v * ps_P (fun omega : Ts => rv_X0 omega + rv_X1 omega = v))
                              (nodup Req_EM_T (map (fun ab : R * R => fst ab + snd ab) (nodup HH (list_prod srv_vals0 srv_vals1)))))).
         * generalize (NoDup_nodup HH (list_prod srv_vals0 srv_vals1)).
           generalize (nodup HH (list_prod srv_vals0 srv_vals1)). (* clear. *)
           intros.
-          rewrite <- (unquotient_quotient sums_same l) at 1.
+          transitivity (list_sum
+                          (map
+                             (fun v : R * R => (fst v + snd v) * ps_P (fun omega : Ts => rv_X0 omega = fst v /\ rv_X1 omega = snd v))
+                             (concat (quotient sums_same l)))).
+          { apply list_sum_Proper. apply Permutation.Permutation_map. symmetry. apply unquotient_quotient.
+          } 
           rewrite concat_map.
           rewrite list_sum_map_concat.
           rewrite map_map.
@@ -1346,8 +1583,7 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
                 rewrite <- map_map.
                 rewrite <- ps_list_disjoint_union.
                 f_equal.
-                ** 
-                  
+                **
                   admit.
                 ** intros.
                    (* did we lose some information? *)
@@ -1357,25 +1593,21 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
                    apply sa_sigma.
                 ** apply event_disjoint_preimage_disj_pairs.
                    generalize (quotient_bucket_NoDup sums_same l H1); rewrite Forall_forall; eauto.
-            -- admit.
-                   
-(*                   
-                symmetry.
-                transitivity (
-                    fold_right Rplus 0
-                               (map ps_P (map (event_inter (fun omega : Ts => rv_X0 omega + rv_X1 omega = fst p + snd p) (map (fun omega : Ts => rv_X0 omega = fst p /\ rv_X1 omega = snd p) (p::a)))))).
-
-                                                 
-                generalize (ps_total Prts (fun omega : Ts => rv_X0 omega + rv_X1 omega = fst p + snd p)
-                                     (map (fun x : R * R => (fun omega : Ts => rv_X0 omega = fst x /\ rv_X1 omega = snd x)) (p :: a))).
-
-
-
-
-                
-                admit.
-          -- 
-*)
+          -- apply list_sum_Proper.
+             apply Permutation_map.
+             rewrite <- (nodup_hd_quotient Req_EM_T 0).
+             rewrite quotient_map.
+             match goal with
+             | [|- Permutation ?l1 ?l2 ] => replace l1 with l2; [reflexivity | ]
+             end.
+             simpl.
+             repeat rewrite map_map.
+             erewrite quotient_ext.
+             ++ eapply map_ext_in.
+                simpl; intros.
+                destruct a; simpl; lra.
+             ++ unfold sums_same; red; simpl; intros; intuition.
+        * now rewrite nodup_map_nodup.
     Admitted.
     
     (*    Lemma NoDup l1 complete l1,  *)
