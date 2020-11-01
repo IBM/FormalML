@@ -200,7 +200,7 @@ Section RandomVariable.
 
   (*
   Instance IndicatorRandomVariable_positive 
-*)
+   *)
   
   Lemma scale_measurable_pos (f : Ts -> R) (c:posreal) :
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
