@@ -1482,6 +1482,31 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     right.
     eapply in_quotient; eauto.
   Qed.
+
+  Lemma all_different_same_eq {A} R {eqR:Equivalence R} (l:list (list A)) l1 l2 a b:
+    all_different R l ->
+    In l1 l ->
+    In l2 l ->
+    In a l1 ->
+    In b l2 ->
+    R a b ->
+    l1 = l2.
+  Proof.
+    induction l; simpl; intros.
+    - tauto.
+    - unfold all_different in H.
+      invcs H.
+      rewrite Forall_forall in H7.
+      unfold different_buckets in H7.
+      destruct H0; destruct H1; subst.
+      + trivial.
+      + specialize (H7 _ H0 _ _ H2 H3).
+        congruence.
+      + specialize (H7 _ H _ _ H3 H2).
+        symmetry in H4.
+        congruence.
+      + apply IHl; eauto.
+  Qed.
     
   Lemma sumSimpleExpectation 
          {rv1 rv2: RandomVariable Prts borel_sa}                      
@@ -1533,6 +1558,12 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
                         (map (fun v : R => v * ps_P (fun omega : Ts => rv_X0 omega + rv_X1 omega = v))
                              (nodup Req_EM_T (map (fun ab : R * R => fst ab + snd ab) (nodup HH (list_prod srv_vals0 srv_vals1)))))).
         * generalize (NoDup_nodup HH (list_prod srv_vals0 srv_vals1)).
+          assert (Hcomplete:forall x y, In (rv_X0 x, rv_X1 y) (nodup HH (list_prod srv_vals0 srv_vals1))).
+          { intros.
+            apply nodup_In.
+            apply in_prod; eauto.
+          }
+          revert Hcomplete.
           generalize (nodup HH (list_prod srv_vals0 srv_vals1)). (* clear. *)
           intros.
           transitivity (list_sum
@@ -1582,12 +1613,26 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
                 rewrite list_sum_fold_right.
                 rewrite <- map_map.
                 rewrite <- ps_list_disjoint_union.
-                f_equal.
-                **
-                  admit.
+                ** apply ps_proper; intros x.
+                   unfold list_union.
+                   split.
+                   --- intros [e [ein ex]].
+                       apply in_map_iff in ein.
+                       destruct ein as [ee [? eein]]; subst.
+                       destruct ex as [ex1 ex2].
+                       rewrite ex1, ex2.
+                       apply Hequiv; eauto.
+                   --- intros.
+                       exists (fun (omega : Ts) => rv_X0 omega = rv_X0 x /\ rv_X1 omega = rv_X1 x).
+                       split; [| tauto].
+                       apply in_map_iff.
+                       exists (rv_X0 x, rv_X1 x).
+                       split; [reflexivity | ].
+                       assert (Hin:In (rv_X0 x, rv_X1 x) l) by apply Hcomplete.
+                       destruct (quotient_in sums_same _ _ Hin) as [xx [xxin inxx]].
+                       rewrite <- (all_different_same_eq sums_same (quotient sums_same l) xx (p::a) (rv_X0 x, rv_X1 x) (fst p, snd p)); simpl; trivial.
+                       destruct p; eauto.  
                 ** intros.
-                   (* did we lose some information? *)
-                   (* got rid of clear, need to use sa_sigma hypothesis *)
                    apply in_map_iff in H3.
                    destruct H3 as [xx [? xxin]]; subst.
                    apply sa_sigma.
@@ -1608,30 +1653,7 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
                 destruct a; simpl; lra.
              ++ unfold sums_same; red; simpl; intros; intuition.
         * now rewrite nodup_map_nodup.
-    Admitted.
-    
-    (*    Lemma NoDup l1 complete l1,  *)
-    
-
-(*
-   Lemma SimpleExpectation_minimal
-          {rrv : RandomVariable Prts borel_sa}             
-          (srv1: SimpleRandomVariable rrv) : SimpleExpectation rrv
-      SimpleExpectation srv1 = SimpleExpectation srv2.
-    and it is minimal
-
-        Lemma SimpleExpectation_ext
-        {rrv : RandomVariable Prts borel_sa}             
-        (srv1 srv2 : SimpleRandomVariable rrv) : R :=    
-      SimpleExpectation srv1 = SimpleExpectation srv2.
-
-    
-                                               Definition SimpleExpectation
-             {rrv : RandomVariable Prts borel_sa}             
-             (srv : SimpleRandomVariable rrv) : R :=
-    list_sum (map (fun v => Rmult v (ps_P (event_preimage rv_X (singleton_event v)))) 
-                  (nodup Req_EM_T srv_vals)).
-    *)
+   Qed.
 
 End SimpleExpectation.
 
