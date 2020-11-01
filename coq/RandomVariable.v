@@ -130,15 +130,17 @@ Section RandomVariable.
     forall (x:Ts), (rv_X (RandomVariable:=rv1) x <= 
                    rv_X (RandomVariable:=rv2) x)%R.
 
-  Definition IndicatorRandomVariable
-             (rv : RandomVariable prts borel_sa) : Prop :=
-    forall (x:Ts), (rv_X x) = 0 \/ (rv_X x) = 1.
+    Class IndicatorRandomVariable
+        (rv : RandomVariable prts borel_sa) :=
+      irv_binary : forall x, In (rv_X x) [0;1] .
 
-  (* should srv argument be minimized ? *)
-  Definition IndicatorSimpleRandomVariable
-             {rv : RandomVariable prts borel_sa}
-             (srv : SimpleRandomVariable rv) : Prop :=
-    forall (x:R), In x srv_vals -> x = 0 \/ x = 1.
+    Global Program Instance IndicatorRandomVariableSimpl 
+           (rv : RandomVariable prts borel_sa)
+           {irv: IndicatorRandomVariable rv} : SimpleRandomVariable rv
+      := {srv_vals := [0;1]}.
+    Next Obligation.
+      apply irv.
+    Qed.
 
   Lemma sa_singleton (c:R)
     (rv : RandomVariable prts borel_sa) :
@@ -175,7 +177,15 @@ Section RandomVariable.
           destruct (dec x); lra.
         * rewrite H.
           apply sa_all.
-  Qed.        
+  Qed.
+
+  Global Instance EventIndicator_indicator (P : event Ts) (dec:forall x, {P x} + {~ P x}) (sap: sa_sigma P)
+    : IndicatorRandomVariable (EventIndicator P dec sap).
+  Proof.
+    intros x.
+    simpl.
+    match_destr; tauto.
+  Qed.
 
   Definition point_preimage_indicator
     (rv : RandomVariable prts borel_sa)
@@ -183,10 +193,14 @@ Section RandomVariable.
     EventIndicator (fun omega => rv_X omega = c) (fun x => Req_EM_T (rv_X x) c) 
                    (sa_singleton c rv).
 
-  Definition PositiveRandomVariable
+  Class PositiveRandomVariable
         {prts: ProbSpace dom}
         (rv: RandomVariable prts borel_sa) : Prop :=
-    forall (x:Ts), (0 <= rv_X x)%R.
+    prv : forall (x:Ts), (0 <= rv_X x)%R.
+
+  (*
+  Instance IndicatorRandomVariable_positive 
+*)
   
   Lemma scale_measurable_pos (f : Ts -> R) (c:posreal) :
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
@@ -1531,7 +1545,6 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     unfold rv_X in *.
     simpl.
     unfold singleton_event, event_preimage.
-
     transitivity (list_sum
                     (map (fun v : R*R => (fst v + snd v) * ps_P (fun omega : Ts => rv_X0 omega = fst v /\ rv_X1 omega = snd v))
                          (list_prod (nodup Req_EM_T srv_vals0) (nodup Req_EM_T srv_vals1)))).
@@ -1631,7 +1644,7 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
                        assert (Hin:In (rv_X0 x, rv_X1 x) l) by apply Hcomplete.
                        destruct (quotient_in sums_same _ _ Hin) as [xx [xxin inxx]].
                        rewrite <- (all_different_same_eq sums_same (quotient sums_same l) xx (p::a) (rv_X0 x, rv_X1 x) (fst p, snd p)); simpl; trivial.
-                       destruct p; eauto.  
+                       destruct p; eauto.
                 ** intros.
                    apply in_map_iff in H3.
                    destruct H3 as [xx [? xxin]]; subst.
