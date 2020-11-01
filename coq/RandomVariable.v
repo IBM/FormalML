@@ -1352,9 +1352,11 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
                 ** intros.
                    (* did we lose some information? *)
                    (* got rid of clear, need to use sa_sigma hypothesis *)
-                   admit.
-                     ** apply event_disjoint_preimage_disj_pairs.
-                        generalize (quotient_bucket_NoDup sums_same l H1); rewrite Forall_forall; eauto.
+                   apply in_map_iff in H3.
+                   destruct H3 as [xx [? xxin]]; subst.
+                   apply sa_sigma.
+                ** apply event_disjoint_preimage_disj_pairs.
+                   generalize (quotient_bucket_NoDup sums_same l H1); rewrite Forall_forall; eauto.
             -- admit.
                    
 (*                   
