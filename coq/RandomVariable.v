@@ -479,12 +479,6 @@ Qed.
       + now apply nodup_scaled.
   Qed.
 
-  Lemma list_sum_f_plus_g {T} (f g : T -> R) (l : list T) :
-    list_sum (map f l) + list_sum (map g l) =
-    list_sum (map (fun t => f t + g t) l).
-  Proof.
-    Admitted.
-
   Lemma RefineSimpleExpectation0
         (rv : RandomVariable Prts borel_sa)                      
         (E : event Ts) (l : list R):
@@ -499,7 +493,7 @@ Qed.
                                                      (event_complement E) omega)) l).
   Proof.
     intro sa_sigmaE.
-    rewrite list_sum_f_plus_g.
+    rewrite list_sum_map.
     rewrite (map_ext (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v))
                      (fun t : R =>
                         t * ps_P (fun omega : Ts => rv_X omega = t /\ E omega) +
