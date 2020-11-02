@@ -819,17 +819,34 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
   Definition simple_conditional_expectation_scale (c:R)
              {rv1 rv2 : RandomVariable Prts borel_sa}             
              (srv1 : SimpleRandomVariable rv1) 
-             (srv2 : SimpleRandomVariable rv2)  :=
-    srvscale (simple_conditional_expectation_scale_coef c srv1 srv2)  
-             (IndicatorRandomVariableSimpl Prts (point_preimage_indicator Prts rv2 c)).
+             (srv2 : SimpleRandomVariable rv2) :
+    SimpleRandomVariable
+      (rvscale Prts (simple_conditional_expectation_scale_coef c srv1 srv2)
+               (point_preimage_indicator Prts rv2 c))
+    := srvscale (simple_conditional_expectation_scale_coef c srv1 srv2)  
+                (IndicatorRandomVariableSimpl Prts (point_preimage_indicator Prts rv2 c)).
 
   Definition SimpleConditionalExpection_list
              {rv1 rv2 : RandomVariable Prts borel_sa}             
              (srv1 : SimpleRandomVariable rv1) 
-             (srv2 : SimpleRandomVariable rv2) :=    
-    map (fun c => simple_conditional_expectation_scale c srv1 srv2)
-        (srv_vals (SimpleRandomVariable:=srv2)).
+             (srv2 : SimpleRandomVariable rv2)
+    : list (RandomVariable Prts borel_sa)
+    := map (fun c => (rvscale Prts (simple_conditional_expectation_scale_coef c srv1 srv2)
+                           (point_preimage_indicator Prts rv2 c)))
+           (srv_vals (SimpleRandomVariable:=srv2)).
 
+  Lemma SimpleConditionalExpection_list_simple  {rv1 rv2 : RandomVariable Prts borel_sa}             
+             (srv1 : SimpleRandomVariable rv1) 
+             (srv2 : SimpleRandomVariable rv2) :
+    Forallt (@SimpleRandomVariable Ts R dom Prts borel_sa) (SimpleConditionalExpection_list srv1 srv2).
+  Proof.
+    unfold SimpleConditionalExpection_list.
+    induction srv_vals; simpl.
+    - constructor.
+    - constructor; trivial.
+      apply simple_conditional_expectation_scale.
+  Defined.
+  
   Definition SimpleConditionalExpection
              {rv1 rv2 : RandomVariable Prts borel_sa}             
              (srv1 : SimpleRandomVariable rv1) 
