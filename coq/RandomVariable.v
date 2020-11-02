@@ -517,13 +517,20 @@ Qed.
     apply classic_event_lem.
   Qed.
 
+  Lemma list_prod_concat {A B} (l1:list A) (l2:list B) : list_prod l1 l2 = concat (map (fun x => map (fun y => (x, y)) l2) l1).
+  Proof.
+    induction l1; simpl; trivial.
+    now rewrite IHl1.
+  Qed.
+
   Lemma RefineEvent
         (E : event Ts) (lE : list (event Ts)):
-    event_equiv (list_union lE)  Ω ->
-    event_equiv E (list_union (map (fun f => event_inter E f) lE)).
+    ForallOrdPairs event_disjoint lE ->
+    (list_union lE) ===  Ω ->
+    E === list_union (map (fun f => event_inter E f) lE).
   Proof.
-
-
+  Admitted.
+  
   Lemma RefineSimpleExpectation
         {rv rv2 : RandomVariable Prts borel_sa}                      
         (srv : SimpleRandomVariable rv) 
@@ -538,7 +545,21 @@ Qed.
            (list_prod (nodup Req_EM_T (srv_vals (SimpleRandomVariable:=srv)))
                       (nodup Req_EM_T (srv_vals (SimpleRandomVariable:=srv2))))).
   Proof.
-    Admitted.
+    induction ((@nodup R Req_EM_T (@srv_vals Ts R dom Prts borel_sa rv srv))); simpl; trivial.
+    rewrite IHl.
+    rewrite map_app.
+    rewrite list_sum_cat.
+    f_equal.
+    rewrite map_map.
+    simpl.
+    transitivity (list_sum (List.map (fun z => a*z)
+                                     (map (fun x : R => ps_P (fun omega : Ts => (rv_X (RandomVariable:=rv)) omega = a /\ (rv_X (RandomVariable:=rv2)) omega = x)) (nodup Req_EM_T (srv_vals (SimpleRandomVariable:=srv2)))))).
+    - rewrite list_sum_mult_const.
+      f_equal.
+      rewrite map_map.
+      admit.
+    - now rewrite map_map.
+  Qed.
 
   Lemma sa_sigma_inter_pts
          {rv1 rv2: RandomVariable Prts borel_sa}                      
@@ -751,11 +772,6 @@ Qed.
     srvplus srv1 (srvopp srv2).
 
 
-  Lemma list_prod_concat {A B} (l1:list A) (l2:list B) : list_prod l1 l2 = concat (map (fun x => map (fun y => (x, y)) l2) l1).
-  Proof.
-    induction l1; simpl; trivial.
-    now rewrite IHl1.
-  Qed.
 
   Class NonEmpty (A : Type) :=
   ex : A.
