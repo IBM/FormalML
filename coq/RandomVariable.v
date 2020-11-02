@@ -46,7 +46,7 @@ Section RandomVariable.
       srv_val_complete : forall x, rv_X x = srv_val
         }.
 
-  Program Instance constant_random_variable c : RandomVariable prts cod :=
+  Program Instance rvconst c : RandomVariable prts cod :=
     { rv_X := (fun _ => c) }.
   Next Obligation.
     unfold event_preimage.
@@ -65,7 +65,7 @@ Section RandomVariable.
       apply sa_none.
   Qed.
 
-  Program Instance constant_random_variable_constant c : ConstantRandomVariable (constant_random_variable c)
+  Program Instance crvconst c : ConstantRandomVariable (rvconst c)
     := { srv_val := c }.
 
   Class SimpleRandomVariable 
@@ -75,7 +75,9 @@ Section RandomVariable.
       srv_vals_complete : forall x, In (rv_X x) srv_vals;
     }.
 
-  Global Program Instance constant_simple_random_variable (rv:RandomVariable prts cod) {crv:ConstantRandomVariable rv} : SimpleRandomVariable rv
+  Global Program Instance srvconst
+         (rv:RandomVariable prts cod) 
+         {crv:ConstantRandomVariable rv} : SimpleRandomVariable rv
     := { srv_vals := [srv_val] }.
   Next Obligation.
     left.
@@ -365,18 +367,6 @@ Section SimpleExpectation.
     list_sum (map (fun v => Rmult v (ps_P (event_preimage rv_X (singleton_event v)))) 
                   (nodup Req_EM_T srv_vals)).
 
-(*
-  Definition SimpleConditionalExpection 
-             {rv1 rv2 : RandomVariable Prts borel_sa}             
-             (srv1 : SimpleRandomVariable rv1) 
-             (srv2 : SimpleRandomVariable rv2) :=    
-    fold_right rvplus rvzero 
-               (map (fun c => rvscale 
-                    ((SimpleExpectation (rvprod rv1 (point_preimage_indicator rv2 c)))
-                       / (ps_P (event_preimage rv_X (RandomVariable:=rv2) (singleton_event c))))
-                    (point_preimage_indicator rv2 c))
-               srv_vals (SimpleRandomVariable:=srv2)).
- *)
   
   Global Program Instance scale_constant_random_variable (c: R)
          {rrv : RandomVariable Prts borel_sa}
@@ -388,7 +378,7 @@ Section SimpleExpectation.
     now rewrite (srv_val_complete0 x).
   Qed.
 
-  Global Program Instance scale_simple_random_variable (c: R)
+  Global Program Instance srvscale (c: R)
          {rrv : RandomVariable Prts borel_sa}                      
          (srv:SimpleRandomVariable rrv) : SimpleRandomVariable (rvscale Prts c rrv)
     := { srv_vals := map (fun v => Rmult c v) srv_vals }.
@@ -455,9 +445,9 @@ Qed.
   Lemma scaleSimpleExpectation (c:R)
          {rrv : RandomVariable Prts borel_sa}                      
          (srv : SimpleRandomVariable rrv) : 
-    (c * SimpleExpectation srv)%R = SimpleExpectation (scale_simple_random_variable c srv).
+    (c * SimpleExpectation srv)%R = SimpleExpectation (srvscale c srv).
   Proof.
-    unfold SimpleExpectation, scale_simple_random_variable.
+    unfold SimpleExpectation, srvscale.
     destruct srv.
     unfold srv_vals.
     simpl.
@@ -504,15 +494,15 @@ Qed.
 
   Definition rvopp (rv : RandomVariable Prts borel_sa) := rvscale Prts (-1) rv.
 
-  Definition opp_simple_random_variable 
+  Definition srvopp 
              {rrv : RandomVariable Prts borel_sa}                      
              (srv:SimpleRandomVariable rrv) :=
-    scale_simple_random_variable (-1) srv.    
+    srvscale (-1) srv.    
 
   Lemma oppSimpleExpectation
          {rrv : RandomVariable Prts borel_sa}                      
          (srv : SimpleRandomVariable rrv) : 
-    (- SimpleExpectation srv)%R = SimpleExpectation (opp_simple_random_variable srv).
+    (- SimpleExpectation srv)%R = SimpleExpectation (srvopp srv).
   Proof.
     replace (- SimpleExpectation srv) with (-1 * SimpleExpectation srv) by lra.
     apply scaleSimpleExpectation.
@@ -566,7 +556,7 @@ Qed.
     now apply Ropp_measurable.
   Qed.
 
-  Program Definition rvsum (rv1 rv2 : RandomVariable Prts borel_sa) :=
+  Program Definition rvplus (rv1 rv2 : RandomVariable Prts borel_sa) :=
     BuildRealRandomVariable Prts
                             (fun omega =>
                                (rv_X (RandomVariable:=rv1) omega) + 
@@ -581,11 +571,11 @@ Qed.
     now apply rv_preimage1.
  Qed.
 
-  Global Program Instance sum_simple_random_variables
+  Global Program Instance srvplus
          {rv1 rv2 : RandomVariable Prts borel_sa}                      
          (srv1:SimpleRandomVariable rv1)
          (srv2:SimpleRandomVariable rv2)
-    : SimpleRandomVariable (rvsum rv1 rv2)
+    : SimpleRandomVariable (rvplus rv1 rv2)
     := { srv_vals := map (fun ab => Rplus (fst ab) (snd ab)) 
                          (list_prod (srv_vals (SimpleRandomVariable:=srv1))
                                     (srv_vals (SimpleRandomVariable:=srv2))) }.
@@ -600,7 +590,14 @@ Qed.
   Qed.
 
   Definition rvminus (rv1 rv2 : RandomVariable Prts borel_sa) := 
-    rvsum rv1 (rvopp rv2).
+    rvplus rv1 (rvopp rv2).
+
+  Definition srvminus 
+             {rv1 rv2 : RandomVariable Prts borel_sa}
+             (srv1 : SimpleRandomVariable rv1)
+             (srv2 : SimpleRandomVariable rv2) :=     
+    srvplus srv1 (srvopp srv2).
+
 
   Lemma list_prod_concat {A B} (l1:list A) (l2:list B) : list_prod l1 l2 = concat (map (fun x => map (fun y => (x, y)) l2) l1).
   Proof.
@@ -746,6 +743,13 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     now apply rv_preimage0.
  Qed.
 
+(*
+  Global Program Instance srvsqr
+         {rv : RandomVariable Prts borel_sa}                      
+         (srv:SimpleRandomVariable rv) : SimpleRandomVariable (rvsqr rv)
+    := { srv_vals := map Rsqr srv_vals }.
+ *)
+  
   Lemma product_measurable (f g : Ts -> R) :
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
     (forall (r:R),  sa_sigma (fun omega : Ts => g omega <= r)) ->    
@@ -770,7 +774,7 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
       now apply minus_measurable.
   Qed.
   
-  Program Definition rvprod (rv1 rv2 : RandomVariable Prts borel_sa) :=
+  Program Definition rvmult (rv1 rv2 : RandomVariable Prts borel_sa) :=
     BuildRealRandomVariable Prts
                             (fun omega =>
                                (rv_X (RandomVariable:=rv1) omega) * 
@@ -785,11 +789,11 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     now apply rv_preimage1.
  Qed.
 
-  Global Program Instance product_simple_random_variables
+  Global Program Instance srvmult
          {rv1 rv2 : RandomVariable Prts borel_sa}                      
          (srv1:SimpleRandomVariable rv1)
          (srv2:SimpleRandomVariable rv2)
-    : SimpleRandomVariable (rvprod rv1 rv2)
+    : SimpleRandomVariable (rvmult rv1 rv2)
     := { srv_vals := map (fun ab => Rmult (fst ab) (snd ab)) 
                          (list_prod (srv_vals (SimpleRandomVariable:=srv1))
                                     (srv_vals (SimpleRandomVariable:=srv2))) }.
@@ -803,7 +807,36 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     apply in_prod; trivial.
   Qed.
 
+  Definition simple_conditional_expectation_scale_coef (c:R)
+             {rv1 rv2 : RandomVariable Prts borel_sa}             
+             (srv1 : SimpleRandomVariable rv1) 
+             (srv2 : SimpleRandomVariable rv2) : R :=
+    ((SimpleExpectation 
+        (srvmult srv1 
+                 (IndicatorRandomVariableSimpl Prts (point_preimage_indicator Prts rv2 c))))
+       / (ps_P (event_preimage (rv_X (RandomVariable:=rv2)) (singleton_event c)))).
 
+  Definition simple_conditional_expectation_scale (c:R)
+             {rv1 rv2 : RandomVariable Prts borel_sa}             
+             (srv1 : SimpleRandomVariable rv1) 
+             (srv2 : SimpleRandomVariable rv2)  :=
+    srvscale (simple_conditional_expectation_scale_coef c srv1 srv2)  
+             (IndicatorRandomVariableSimpl Prts (point_preimage_indicator Prts rv2 c)).
+
+  Definition SimpleConditionalExpection_list
+             {rv1 rv2 : RandomVariable Prts borel_sa}             
+             (srv1 : SimpleRandomVariable rv1) 
+             (srv2 : SimpleRandomVariable rv2) :=    
+    map (fun c => simple_conditional_expectation_scale c srv1 srv2)
+        (srv_vals (SimpleRandomVariable:=srv2)).
+
+  Definition SimpleConditionalExpection
+             {rv1 rv2 : RandomVariable Prts borel_sa}             
+             (srv1 : SimpleRandomVariable rv1) 
+             (srv2 : SimpleRandomVariable rv2) :=    
+    fold_right srvplus (srvconst (crvconst 0))
+               (simpleConditionalExpectation_list c svr1 srv2).
+  
    Lemma list_sum_fold_right l : list_sum l = fold_right Rplus 0 l.
    Proof.
      induction l; firstorder.
@@ -1527,7 +1560,7 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
          (srv1 : SimpleRandomVariable rv1) 
          (srv2 : SimpleRandomVariable rv2) :      
     NonEmpty Ts -> (SimpleExpectation srv1) + (SimpleExpectation srv2)%R = 
-    SimpleExpectation (sum_simple_random_variables srv1 srv2).
+    SimpleExpectation (srvplus srv1 srv2).
    Proof.
     unfold SimpleExpectation; intros.
     generalize (non_empty_srv_vals srv1 X); intros.
@@ -1538,7 +1571,7 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     destruct srv1.
     destruct srv2.
     unfold srv_vals in *; intros.
-    unfold sum_simple_random_variables.
+    unfold srvplus.
 
     destruct rv1.
     destruct rv2.
@@ -1800,7 +1833,7 @@ Section Expectation.
   Definition variance (rrv : RandomVariable Prts borel_sa) : option Rbar :=
     match rvmean rrv with
     | Some m => Expectation (rvsqr (rvminus rrv 
-                                            (constant_random_variable m)))
+                                            (rvconst m)))
     | None => None
     end.
 
