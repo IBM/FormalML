@@ -848,11 +848,25 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
   Defined.
   
   Definition SimpleConditionalExpection
-             {rv1 rv2 : RandomVariable Prts borel_sa}             
-             (srv1 : SimpleRandomVariable rv1) 
-             (srv2 : SimpleRandomVariable rv2) :=    
-    fold_right srvplus (srvconst (crvconst 0))
-               (simpleConditionalExpectation_list c svr1 srv2).
+             (rv1 rv2 : RandomVariable Prts borel_sa)
+             {srv1 : SimpleRandomVariable rv1}
+             {srv2 : SimpleRandomVariable rv2} :=    
+    fold_right rvplus (rvconst 0)
+               (SimpleConditionalExpection_list srv1 srv2).
+
+  Instance SimpleConditionalExpection_simple
+           (rv1 rv2 : RandomVariable Prts borel_sa)
+           {srv1 : SimpleRandomVariable rv1}
+           {srv2 : SimpleRandomVariable rv2} : SimpleRandomVariable (SimpleConditionalExpection rv1 rv2).
+  Proof.
+    generalize (SimpleConditionalExpection_list_simple srv1 srv2).
+    unfold SimpleConditionalExpection; simpl.
+    induction (SimpleConditionalExpection_list srv1 srv2); simpl; intros ft.
+    - apply srvconst.
+      apply crvconst.
+    - invcs ft.
+      apply srvplus; eauto.
+  Qed.
   
    Lemma list_sum_fold_right l : list_sum l = fold_right Rplus 0 l.
    Proof.
