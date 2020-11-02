@@ -517,14 +517,6 @@ Qed.
     now rewrite IHl1.
   Qed.
 
-  Lemma RefineEvent
-        (E : event Ts) (lE : list (event Ts)):
-    ForallOrdPairs event_disjoint lE ->
-    (list_union lE) ===  Ω ->
-    E === list_union (map (fun f => event_inter E f) lE).
-  Proof.
-  Admitted.
-  
 
   Lemma sa_sigma_inter_pts
          (rv1 rv2: RandomVariable Prts borel_sa)
@@ -1185,6 +1177,17 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
                                                     rv_X (RandomVariable:=rv1) omega = x))); trivial.
     intros.
     now apply ps_proper.
+  Qed.
+
+  Lemma RefineEvent
+        (E : event Ts) (lE : list (event Ts)):
+    (list_union lE) ===  Ω ->
+    E === list_union (map (event_inter E) lE).
+  Proof.
+    intros.
+    rewrite <- event_inter_list_union_distr.
+    rewrite H.
+    now rewrite event_inter_true_r.
   Qed.
 
   Lemma RefineSimpleExpectation
