@@ -743,12 +743,14 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     now apply rv_preimage0.
  Qed.
 
-(*
   Global Program Instance srvsqr
          {rv : RandomVariable Prts borel_sa}                      
          (srv:SimpleRandomVariable rv) : SimpleRandomVariable (rvsqr rv)
     := { srv_vals := map Rsqr srv_vals }.
- *)
+  Next Obligation.
+    destruct srv.
+    now apply in_map.
+  Qed.
   
   Lemma product_measurable (f g : Ts -> R) :
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
