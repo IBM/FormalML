@@ -362,8 +362,8 @@ Section SimpleExpectation.
     map (event_preimage rv_X) (map singleton_event srv_vals).
     
   Definition SimpleExpectation
-             {rrv : RandomVariable Prts borel_sa}             
-             (srv : SimpleRandomVariable rrv) : R :=
+             (rrv : RandomVariable Prts borel_sa)
+             {srv : SimpleRandomVariable rrv} : R :=
     list_sum (map (fun v => Rmult v (ps_P (event_preimage rv_X (singleton_event v)))) 
                   (nodup Req_EM_T srv_vals)).
 
@@ -443,9 +443,9 @@ Qed.
   Qed.
   
   Lemma scaleSimpleExpectation (c:R)
-         {rrv : RandomVariable Prts borel_sa}                      
-         (srv : SimpleRandomVariable rrv) : 
-    (c * SimpleExpectation srv)%R = SimpleExpectation (srvscale c srv).
+        (rrv : RandomVariable Prts borel_sa)
+        {srv : SimpleRandomVariable rrv} : 
+    (c * SimpleExpectation rrv)%R = SimpleExpectation (rvscale _ c rrv).
   Proof.
     unfold SimpleExpectation, srvscale.
     destruct srv.
@@ -532,9 +532,9 @@ Qed.
   Admitted.
   
   Lemma RefineSimpleExpectation
-        {rv rv2 : RandomVariable Prts borel_sa}                      
-        (srv : SimpleRandomVariable rv) 
-        (srv2 : SimpleRandomVariable rv2) :  
+        (rv rv2 : RandomVariable Prts borel_sa)
+        {srv : SimpleRandomVariable rv}
+        {srv2 : SimpleRandomVariable rv2} :  
     list_sum
       (map (fun v : R => v * ps_P (fun omega : Ts => rv_X (RandomVariable:=rv) omega = v))
            (nodup Req_EM_T (srv_vals (SimpleRandomVariable:=srv)))) = 
@@ -559,10 +559,10 @@ Qed.
       rewrite map_map.
       admit.
     - now rewrite map_map.
-  Qed.
+  Admitted.
 
   Lemma sa_sigma_inter_pts
-         {rv1 rv2: RandomVariable Prts borel_sa}                      
+         (rv1 rv2: RandomVariable Prts borel_sa)
          (c1 c2 : R) :
     sa_sigma (fun omega : Ts => rv_X (RandomVariable:=rv1) omega = c1 /\ 
                                 rv_X (RandomVariable:=rv2) omega = c2).
@@ -570,7 +570,7 @@ Qed.
         apply sa_inter.
         apply sa_singleton.
         apply sa_singleton.        
-  Qed.    
+  Qed.
 
   Require Import Classical_Prop.
     Lemma zero_prob_or_witness (E : event Ts) :
@@ -589,17 +589,17 @@ Qed.
     Qed.
 
   Lemma SimpleExpectation_le 
-         {rv1 rv2 : RandomVariable Prts borel_sa}                      
-         (srv1 : SimpleRandomVariable rv1) 
-         (srv2 : SimpleRandomVariable rv2) :     
+        (rv1 rv2 : RandomVariable Prts borel_sa)
+        {srv1 : SimpleRandomVariable rv1}
+        {srv2 : SimpleRandomVariable rv2} : 
     RealRandomVariable_le Prts rv1 rv2 ->
-    SimpleExpectation srv1 <= SimpleExpectation srv2.
+    SimpleExpectation rv1 <= SimpleExpectation rv2.
   Proof.
     unfold RealRandomVariable_le, SimpleExpectation.
     intros.
     unfold event_preimage, singleton_event.
-    rewrite (RefineSimpleExpectation  srv1 srv2).
-    rewrite (RefineSimpleExpectation  srv2 srv1).
+    rewrite (RefineSimpleExpectation  rv1 rv2).
+    rewrite (RefineSimpleExpectation  rv2 rv1).
     generalize (@sa_sigma_inter_pts rv1 rv2); intros sa_sigma.
     destruct rv1; destruct rv2.
     destruct srv1; destruct srv2.
@@ -668,8 +668,8 @@ Qed.
   Definition rvopp (rv : RandomVariable Prts borel_sa) := rvscale Prts (-1) rv.
 
   Definition srvopp 
-             {rrv : RandomVariable Prts borel_sa}                      
-             (srv:SimpleRandomVariable rrv) :=
+             (rrv : RandomVariable Prts borel_sa)
+             {srv:SimpleRandomVariable rrv} :=
     srvscale (-1) srv.    
 
   Lemma oppSimpleExpectation
