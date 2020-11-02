@@ -889,7 +889,7 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
              (srv2 : SimpleRandomVariable rv2) : R :=
     ((SimpleExpectation 
         (rvmult rv1 
-                 (IndicatorRandomVariableSimpl Prts (point_preimage_indicator Prts rv2 c))))
+                 (point_preimage_indicator Prts rv2 c)))
        / (ps_P (event_preimage (rv_X (RandomVariable:=rv2)) (singleton_event c)))).
 
   Definition simple_conditional_expectation_scale (c:R)
@@ -1138,8 +1138,6 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
        now simpl.
   Qed.
                   
-
-
   Lemma prob_inter_all1
          {rv1 rv2: RandomVariable Prts borel_sa}                      
          (srv1 : SimpleRandomVariable rv1) 
@@ -1221,10 +1219,9 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     - rewrite list_sum_mult_const.
       f_equal.
       rewrite map_map.
-      admit.
+     apply (prob_inter_all1 (nodup_simple_random_variable Req_EM_T srv) (nodup_simple_random_variable Req_EM_T srv2) a); simpl; try apply NoDup_nodup.
     - now rewrite map_map.
-  Admitted.
-
+  Qed.
 
   Lemma SimpleExpectation_le 
         (rv1 rv2 : RandomVariable Prts borel_sa)
@@ -1753,8 +1750,8 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
          {rv1 rv2: RandomVariable Prts borel_sa}                      
          (srv1 : SimpleRandomVariable rv1) 
          (srv2 : SimpleRandomVariable rv2) :      
-    NonEmpty Ts -> (SimpleExpectation srv1) + (SimpleExpectation srv2)%R = 
-    SimpleExpectation (srvplus srv1 srv2).
+    NonEmpty Ts -> (SimpleExpectation rv1) + (SimpleExpectation rv2)%R = 
+    SimpleExpectation (rvplus rv1 rv2).
    Proof.
     unfold SimpleExpectation; intros.
     generalize (non_empty_srv_vals srv1 X); intros.
@@ -1914,7 +1911,7 @@ Section Expectation.
                      (srv:SimpleRandomVariable rrv), Prop) : Rbar
     := Lub_Rbar (fun (x : R) => 
                    exists rrv srv, 
-                     E rrv srv /\ (SimpleExpectation srv) = x).
+                     E rrv srv /\ (SimpleExpectation rrv) = x).
     
   Definition Expectation_posRV
              {rrv : RandomVariable Prts borel_sa}
