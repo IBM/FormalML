@@ -826,7 +826,7 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     := srvscale (simple_conditional_expectation_scale_coef c srv1 srv2)  
                 (IndicatorRandomVariableSimpl Prts (point_preimage_indicator Prts rv2 c)).
 
-  Definition SimpleConditionalExpection_list
+  Definition SimpleConditionalExpectation_list
              {rv1 rv2 : RandomVariable Prts borel_sa}             
              (srv1 : SimpleRandomVariable rv1) 
              (srv2 : SimpleRandomVariable rv2)
@@ -835,33 +835,33 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
                            (point_preimage_indicator Prts rv2 c)))
            (srv_vals (SimpleRandomVariable:=srv2)).
 
-  Lemma SimpleConditionalExpection_list_simple  {rv1 rv2 : RandomVariable Prts borel_sa}             
+  Lemma SimpleConditionalExpectation_list_simple  {rv1 rv2 : RandomVariable Prts borel_sa}             
              (srv1 : SimpleRandomVariable rv1) 
              (srv2 : SimpleRandomVariable rv2) :
-    Forallt (@SimpleRandomVariable Ts R dom Prts borel_sa) (SimpleConditionalExpection_list srv1 srv2).
+    Forallt (@SimpleRandomVariable Ts R dom Prts borel_sa) (SimpleConditionalExpectation_list srv1 srv2).
   Proof.
-    unfold SimpleConditionalExpection_list.
+    unfold SimpleConditionalExpectation_list.
     induction srv_vals; simpl.
     - constructor.
     - constructor; trivial.
       apply simple_conditional_expectation_scale.
   Defined.
   
-  Definition SimpleConditionalExpection
+  Definition SimpleConditionalExpectation
              (rv1 rv2 : RandomVariable Prts borel_sa)
              {srv1 : SimpleRandomVariable rv1}
              {srv2 : SimpleRandomVariable rv2} :=    
     fold_right rvplus (rvconst 0)
-               (SimpleConditionalExpection_list srv1 srv2).
+               (SimpleConditionalExpectation_list srv1 srv2).
 
   Instance SimpleConditionalExpection_simple
            (rv1 rv2 : RandomVariable Prts borel_sa)
            {srv1 : SimpleRandomVariable rv1}
-           {srv2 : SimpleRandomVariable rv2} : SimpleRandomVariable (SimpleConditionalExpection rv1 rv2).
+           {srv2 : SimpleRandomVariable rv2} : SimpleRandomVariable (SimpleConditionalExpectation rv1 rv2).
   Proof.
-    generalize (SimpleConditionalExpection_list_simple srv1 srv2).
-    unfold SimpleConditionalExpection; simpl.
-    induction (SimpleConditionalExpection_list srv1 srv2); simpl; intros ft.
+    generalize (SimpleConditionalExpectation_list_simple srv1 srv2).
+    unfold SimpleConditionalExpectation; simpl.
+    induction (SimpleConditionalExpectation_list srv1 srv2); simpl; intros ft.
     - apply srvconst.
       apply crvconst.
     - invcs ft.
