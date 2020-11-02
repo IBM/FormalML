@@ -1284,7 +1284,6 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
       intuition.
     Qed.
 
-
   Lemma sumSimpleExpectation00
          {rv1 rv2: RandomVariable Prts borel_sa}                      
          (srv1 : SimpleRandomVariable rv1) 
@@ -2024,7 +2023,7 @@ Section Expectation.
     | None => None
     end.
 
-  Lemma Expection_posRV_scale (c: posreal) 
+  Lemma Expectation_posRV_scale (c: posreal) 
         (rv : RandomVariable Prts borel_sa) 
         (posrv:PositiveRandomVariable rv) :  
     Expectation_posRV (positive_scale_prv Prts c posrv) =
@@ -2033,6 +2032,7 @@ Section Expectation.
     unfold Expectation_posRV.
     unfold BoundedPositiveRandomVariable.
     unfold SimpleExpectationSup.
+        
     Admitted.
 
   Lemma Expectation_scale (c: posreal) (rv : RandomVariable Prts borel_sa) :
@@ -2043,14 +2043,16 @@ Section Expectation.
     | None, None => True
     | _,_ => False
     end.
-  Proof.
-    intros.
+  Proof. 
+    unfold Expectation.
+    generalize (Expectation_posRV_scale c _ (positive_part_prv rv)); intro eprv.
+    Set Printing All.
     
   Admitted.
 
 
-End Expectation.
 
+End Expectation.
 
 
 Section lebesgueintegration.
