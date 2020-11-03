@@ -904,7 +904,7 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     SimpleRandomVariable (gen_simple_conditional_expectation_scale P rv dec sap).
   Proof.
     typeclasses eauto.
-  Qed.
+  Defined.
 
   Program Fixpoint map_dep {A B} (l:list A) :  (forall x, In x l -> B) -> list B
     := match l with
@@ -920,7 +920,6 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
              (rv : RandomVariable Prts borel_sa)
              {srv : SimpleRandomVariable rv}
              (l : list (event Ts))
-             (ispart: is_partition_list l)
              (sap_all : forall p, In p l -> sa_sigma p)
              (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x})) :=
     fold_right rvplus (rvconst 0)
@@ -930,10 +929,9 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
              (rv : RandomVariable Prts borel_sa)
              {srv : SimpleRandomVariable rv}
              (l : list (event Ts))
-             (ispart: is_partition_list l)
              (sap_all : forall p, In p l -> sa_sigma p)
              (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x})) :
-    SimpleRandomVariable (gen_SimpleConditionalExpectation rv l ispart sap_all dec_all).
+    SimpleRandomVariable (gen_SimpleConditionalExpectation rv l sap_all dec_all).
   Proof.
     unfold gen_SimpleConditionalExpectation.
     induction l; simpl.
@@ -941,23 +939,44 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
       apply crvconst.
     - apply srvplus.
       + apply gen_simple_conditional_expectation_scale_simpl.
-      +     
-    Admitted.
+      + apply IHl.
+  Qed.
 
+  Lemma dec_complement {A} {p:A->Prop} (dec_p: forall x, {p x} + {~ p x}) :
+    forall x, {~ p x} + {~ ~ p x}.
+  Proof.
+    intros x.
+    destruct (dec_p x).
+    - right; tauto.
+    - left; trivial.
+  Defined.
+  
   Program Definition gen_SimpleConditionalExpectation_2part
              (rv : RandomVariable Prts borel_sa)
              {srv : SimpleRandomVariable rv}
              (p : event Ts)
              (sap : sa_sigma p)
              (dec_p: forall x, {p x} + {~ p x})
-             (dec_np: forall x, {~ p x} + {~ ~ p x}) :=    
-
+    :  RandomVariable Prts borel_sa
+    :=    
     rvplus (gen_simple_conditional_expectation_scale p rv dec_p sap)
-           (gen_simple_conditional_expectation_scale (event_complement p) rv _ _).
+           (gen_simple_conditional_expectation_scale (event_complement p) rv (dec_complement dec_p) _).
   Next Obligation.
     now apply sa_complement.
   Qed.
-
+  
+  Instance gen_SimpleConditionalExpectation_2part_simpl
+          (rv : RandomVariable Prts borel_sa)
+          {srv : SimpleRandomVariable rv}
+          (p : event Ts)
+          (sap : sa_sigma p)
+          (dec_p: forall x, {p x} + {~ p x})
+    : SimpleRandomVariable (gen_SimpleConditionalExpectation_2part rv p sap dec_p).
+  Proof.
+    unfold gen_SimpleConditionalExpectation_2part.
+    typeclasses eauto.
+  Qed.
+  
   Definition simple_conditional_expectation_scale_coef (c : R)
   {rv rv2: RandomVariable Prts borel_sa}
   (srv : SimpleRandomVariable rv) 
@@ -1018,17 +1037,48 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     - invcs ft.
       apply srvplus; eauto.
   Qed.
+
+  Lemma SimpleExpectation_EventIndidcator P dec sap :
+    SimpleExpectation (EventIndicator Prts P dec sap) = ps_P P.
+  Proof.
+    unfold EventIndicator, SimpleExpectation; simpl.
+    match_destr.
+    - intuition.
+    - simpl.
+      field_simplify.
+      unfold event_preimage, singleton_event.
+      apply ps_proper.
+      intros x.
+      match_destr; intuition.
+  Qed.
   
+  Lemma gen_simple_conditional_expectation_scale_tower (P : event Ts) (Ppos:ps_P P > 0)
+             (rv : RandomVariable Prts borel_sa)
+             {srv : SimpleRandomVariable rv}
+             (dec:forall x, {P x} + {~ P x})        
+             (sap: sa_sigma P) :
+    SimpleExpectation (gen_simple_conditional_expectation_scale P rv dec sap) =
+    SimpleExpectation (rvmult rv (EventIndicator Prts P dec sap)).
+  Proof.
+    unfold gen_simple_conditional_expectation_scale.
+    generalize (scaleSimpleExpectation (SimpleExpectation (rvmult rv (EventIndicator Prts P dec sap)) / ps_P P)
+                                       (EventIndicator Prts P dec sap)); intros HH.
+    etransitivity.
+    - symmetry. eauto.
+    - rewrite SimpleExpectation_EventIndidcator.
+      field.
+      lra.
+  Qed.
+
   Lemma gen_conditional_tower_law_2part
         (rv : RandomVariable Prts borel_sa)
         {srv : SimpleRandomVariable rv}
         (p : event Ts)
         (sap: sa_sigma p)
-        (dec_p: forall x, {p x} + {~ p x})
-        (dec_np: forall x, {~ p x} + {~ ~ p x}) :
+        (dec_p: forall x, {p x} + {~ p x}) :
     SimpleExpectation rv =
     SimpleExpectation
-      (gen_SimpleConditionalExpectation_2part rv p sap dec_p dec_np).
+      (gen_SimpleConditionalExpectation_2part rv p sap dec_p).
   Proof.
     unfold SimpleExpectation.
     unfold event_preimage, singleton_event.
@@ -1037,7 +1087,15 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     unfold gen_SimpleConditionalExpectation_2part.
     unfold gen_simple_conditional_expectation_scale.
     simpl.
-        
+    destruct (gen_SimpleConditionalExpectation_2part_simpl {| rv_X := rv_X0; rv_preimage := rv_preimage0 |} p
+                                                           sap dec_p).
+    
+
+    
+    unfold rv_X in srv_vals_complete1.
+    unfold gen_SimpleConditionalExpectation_2part in srv_vals_complete1.
+    simpl in srv_vals_complete1.
+    
     
     Admitted.
 
