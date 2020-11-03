@@ -891,7 +891,6 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
   Definition gen_simple_conditional_expectation_scale (P : event Ts)
              {rv : RandomVariable Prts borel_sa}
              (srv : SimpleRandomVariable rv) 
-             (sap : sa_sigma P)
              (dec:forall x, {P x} + {~ P x})        
              (sap: sa_sigma P) :=
     srvscale ((SimpleExpectation (rvmult rv (EventIndicator Prts P dec sap))) / (ps_P P))
@@ -901,11 +900,11 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
              (rv : RandomVariable Prts borel_sa)
              {srv : SimpleRandomVariable rv}
              (l : list (event Ts))
-             (ispart: is_partition_list_partition l)
-             (sap_all : forall (p:event Ts), In p ispart -> sa_sigma p)
-             
-             {srv2 : SimpleRandomVariable rv2} :=    
+             (ispart: is_partition_list l)
+             (sap_all : Forall sa_sigma l )
+             (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x}) :=
     fold_right rvplus (rvconst 0)
+               (map (fun p => gen_simple_conditional_expectation_scale p srv 
                (SimpleConditionalExpectation_list srv1 srv2).
 
 
