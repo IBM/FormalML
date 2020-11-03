@@ -869,10 +869,31 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     apply in_prod; trivial.
   Qed.
 
+  Definition is_partition_list {T} (l:list (event T)) :=
+    ForallOrdPairs event_disjoint l /\ list_union l = Ω.
+
+  Lemma is_partition_list_partition {T} {l:list (event T)} :
+    is_partition_list l ->
+    is_partition (list_collection l event_none).
+  Proof.
+    intros [??].
+    split.
+    - now apply list_collection_disjoint.
+    - rewrite list_union_union, H0.
+      reflexivity.
+  Qed.
+    
+  Instance list_partition_sa {T} (l:list (event T)) (is_part:is_partition_list l) :
+    SigmaAlgebra T := countable_partition_sa
+                        (list_collection l event_none)
+                        (is_partition_list_partition is_part).
+
+  
+  
   Definition simple_conditional_expectation_scale_coef (c:R)
-             {rv1 rv2 : RandomVariable Prts borel_sa}             
-             (srv1 : SimpleRandomVariable rv1) 
-             (srv2 : SimpleRandomVariable rv2) : R :=
+  {rv1 rv2 : RandomVariable Prts borel_sa}
+  (srv1 : SimpleRandomVariable rv1) 
+  (srv2 : SimpleRandomVariable rv2) : R :=
     ((SimpleExpectation 
         (rvmult rv1 
                  (point_preimage_indicator Prts rv2 c)))
