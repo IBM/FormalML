@@ -1070,35 +1070,6 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
       lra.
   Qed.
 
-  Lemma gen_conditional_tower_law_2part
-        (rv : RandomVariable Prts borel_sa)
-        {srv : SimpleRandomVariable rv}
-        (p : event Ts)
-        (sap: sa_sigma p)
-        (dec_p: forall x, {p x} + {~ p x}) :
-    SimpleExpectation rv =
-    SimpleExpectation
-      (gen_SimpleConditionalExpectation_2part rv p sap dec_p).
-  Proof.
-    unfold SimpleExpectation.
-    unfold event_preimage, singleton_event.
-    destruct rv; destruct srv.
-    unfold srv_vals, rv_X.
-    unfold gen_SimpleConditionalExpectation_2part.
-    unfold gen_simple_conditional_expectation_scale.
-    simpl.
-    destruct (gen_SimpleConditionalExpectation_2part_simpl {| rv_X := rv_X0; rv_preimage := rv_preimage0 |} p
-                                                           sap dec_p).
-    
-
-    
-    unfold rv_X in srv_vals_complete1.
-    unfold gen_SimpleConditionalExpectation_2part in srv_vals_complete1.
-    simpl in srv_vals_complete1.
-    
-    
-    Admitted.
-
   Lemma gen_conditional_tower_law
         (rv : RandomVariable Prts borel_sa)
         {srv : SimpleRandomVariable rv}
@@ -1108,7 +1079,7 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
         (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x})) :
     SimpleExpectation rv =
     SimpleExpectation
-      (gen_SimpleConditionalExpectation rv l ispart sap_all dec_all).
+      (gen_SimpleConditionalExpectation rv l sap_all dec_all).
   Proof.
     unfold SimpleExpectation, gen_SimpleConditionalExpectation.
     unfold event_preimage, singleton_event.
@@ -1178,8 +1149,8 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
         (sap_all : forall p, In p l -> sa_sigma p)
         (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x})) :
      partition_measurable rv1 l ->
-     gen_SimpleConditionalExpectation (rvmult rv1 rv2) l is_part sap_all dec_all ===
-     rvmult rv1 (gen_SimpleConditionalExpectation rv2 l is_part sap_all dec_all).
+     gen_SimpleConditionalExpectation (rvmult rv1 rv2) l sap_all dec_all ===
+     rvmult rv1 (gen_SimpleConditionalExpectation rv2 l  sap_all dec_all).
      Proof.
        Admitted.
 
@@ -2008,9 +1979,9 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
   Qed.
     
   Lemma sumSimpleExpectation 
-         {rv1 rv2: RandomVariable Prts borel_sa}                      
-         (srv1 : SimpleRandomVariable rv1) 
-         (srv2 : SimpleRandomVariable rv2) :      
+         (rv1 rv2: RandomVariable Prts borel_sa)                      
+         {srv1 : SimpleRandomVariable rv1} 
+         {srv2 : SimpleRandomVariable rv2} :      
     NonEmpty Ts -> (SimpleExpectation rv1) + (SimpleExpectation rv2)%R = 
     SimpleExpectation (rvplus rv1 rv2).
    Proof.
@@ -2152,6 +2123,33 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
              ++ unfold sums_same; red; simpl; intros; intuition.
         * now rewrite nodup_map_nodup.
    Qed.
+
+  Lemma gen_conditional_tower_law_2part0
+        (rv : RandomVariable Prts borel_sa)
+        {srv : SimpleRandomVariable rv}
+        (p : event Ts)
+        (sap: sa_sigma p)
+        (sanp: sa_sigma (event_complement p))        
+        (dec_p: forall x, {p x} + {~ p x})
+        (dec_np: forall x, {(event_complement p) x} + {~ (event_complement p) x}) :    
+    NonEmpty Ts ->
+    (SimpleExpectation (rvmult rv (EventIndicator Prts p dec_p sap))) +
+    (SimpleExpectation (rvmult rv (EventIndicator Prts (event_complement p) dec_np sanp))) =
+    SimpleExpectation
+      (gen_SimpleConditionalExpectation_2part rv p sap dec_p).
+  Proof.
+    unfold gen_SimpleConditionalExpectation_2part; intro.
+    generalize (sumSimpleExpectation 
+                  (gen_simple_conditional_expectation_scale p rv dec_p sap)
+                  (gen_simple_conditional_expectation_scale 
+                     (event_complement p) rv
+                     (dec_complement dec_p)
+                     (gen_SimpleConditionalExpectation_2part_obligation_1 p sap)) X).
+    intros.
+    rewrite <- H.
+
+    Admitted.
+
 
 End SimpleExpectation.
 
