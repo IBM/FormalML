@@ -888,16 +888,44 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
                         (list_collection l event_none)
                         (is_partition_list_partition is_part).
 
-  
-  
-  Definition simple_conditional_expectation_scale_coef (c:R)
-  {rv1 rv2 : RandomVariable Prts borel_sa}
-  (srv1 : SimpleRandomVariable rv1) 
+  Definition gen_simple_conditional_expectation_scale (P : event Ts)
+             {rv : RandomVariable Prts borel_sa}
+             (srv : SimpleRandomVariable rv) 
+             (sap : sa_sigma P)
+             (dec:forall x, {P x} + {~ P x})        
+             (sap: sa_sigma P) :=
+    srvscale ((SimpleExpectation (rvmult rv (EventIndicator Prts P dec sap))) / (ps_P P))
+            (IndicatorRandomVariableSimpl Prts (EventIndicator Prts P dec sap)).
+
+  Definition gen_SimpleConditionalExpectation
+             (rv : RandomVariable Prts borel_sa)
+             {srv : SimpleRandomVariable rv}
+             (l : list (event Ts))
+             (ispart: is_partition_list_partition l)
+             (sap_all : forall (p:event Ts), In p ispart -> sa_sigma p)
+             
+             {srv2 : SimpleRandomVariable rv2} :=    
+    fold_right rvplus (rvconst 0)
+               (SimpleConditionalExpectation_list srv1 srv2).
+
+
+  Definition simple_conditional_expectation_scale_coef (c : R)
+  {rv rv2: RandomVariable Prts borel_sa}
+  (srv : SimpleRandomVariable rv) 
   (srv2 : SimpleRandomVariable rv2) : R :=
     ((SimpleExpectation 
-        (rvmult rv1 
+        (rvmult rv 
                  (point_preimage_indicator Prts rv2 c)))
        / (ps_P (event_preimage (rv_X (RandomVariable:=rv2)) (singleton_event c)))).
+
+  Definition SimpleConditionalExpectation_list
+             {rv1 rv2 : RandomVariable Prts borel_sa}             
+             (srv1 : SimpleRandomVariable rv1) 
+             (srv2 : SimpleRandomVariable rv2)
+    : list (RandomVariable Prts borel_sa)
+    := map (fun c => (rvscale Prts (simple_conditional_expectation_scale_coef c srv1 srv2)
+                           (point_preimage_indicator Prts rv2 c)))
+           (srv_vals (SimpleRandomVariable:=srv2)).
 
   Definition simple_conditional_expectation_scale (c:R)
              {rv1 rv2 : RandomVariable Prts borel_sa}             
@@ -908,15 +936,6 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
                (point_preimage_indicator Prts rv2 c))
     := srvscale (simple_conditional_expectation_scale_coef c srv1 srv2)  
                 (IndicatorRandomVariableSimpl Prts (point_preimage_indicator Prts rv2 c)).
-
-  Definition SimpleConditionalExpectation_list
-             {rv1 rv2 : RandomVariable Prts borel_sa}             
-             (srv1 : SimpleRandomVariable rv1) 
-             (srv2 : SimpleRandomVariable rv2)
-    : list (RandomVariable Prts borel_sa)
-    := map (fun c => (rvscale Prts (simple_conditional_expectation_scale_coef c srv1 srv2)
-                           (point_preimage_indicator Prts rv2 c)))
-           (srv_vals (SimpleRandomVariable:=srv2)).
 
   Lemma SimpleConditionalExpectation_list_simple  {rv1 rv2 : RandomVariable Prts borel_sa}             
              (srv1 : SimpleRandomVariable rv1) 
@@ -937,7 +956,7 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     fold_right rvplus (rvconst 0)
                (SimpleConditionalExpectation_list srv1 srv2).
 
-  Instance SimpleConditionalExpection_simple
+  Instance SimpleConditionalExpectation_simple
            (rv1 rv2 : RandomVariable Prts borel_sa)
            {srv1 : SimpleRandomVariable rv1}
            {srv2 : SimpleRandomVariable rv2} : SimpleRandomVariable (SimpleConditionalExpectation rv1 rv2).
@@ -951,6 +970,55 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
       apply srvplus; eauto.
   Qed.
   
+  Lemma conditional_tower_law
+        (rv1 rv2 : RandomVariable Prts borel_sa)
+        {srv1 : SimpleRandomVariable rv1}
+        {srv2 : SimpleRandomVariable rv2} :
+    SimpleExpectation (SimpleConditionalExpectation rv1 rv2) = SimpleExpectation rv1.
+    Proof.
+      unfold SimpleConditionalExpectation.
+      unfold SimpleConditionalExpectation_list.
+      unfold SimpleExpectation.
+      destruct rv1; destruct rv2.
+      destruct srv1; destruct srv2.
+      unfold rv_X, srv_vals.
+      unfold event_preimage, singleton_event.
+      unfold simple_conditional_expectation_scale_coef.
+      unfold point_preimage_indicator.
+      unfold EventIndicator.
+      unfold SimpleExpectation.
+      unfold event_preimage, singleton_event.
+      Admitted.
+
+   Definition simple_sigma_measurable 
+        (rv1 rv2 : RandomVariable Prts borel_sa)
+        {srv1 : SimpleRandomVariable rv1}
+        {srv2 : SimpleRandomVariable rv2} : Prop :=
+     forall (c1:R), In c1 (srv_vals (SimpleRandomVariable:=srv1)) ->
+                   forall (c2:R), 
+                     In c2 (srv_vals (SimpleRandomVariable:=srv2)) ->
+                     (event_disjoint (event_preimage (rv_X (RandomVariable:=rv1))
+                                                   (singleton_event c1) )
+                                    (event_preimage (rv_X (RandomVariable:=rv2))
+                                                   (singleton_event c2))) \/
+                     (event_sub (event_preimage (rv_X (RandomVariable:=rv2))
+                                               (singleton_event c2) )
+                                (event_preimage (rv_X (RandomVariable:=rv1))
+                                                   (singleton_event c1))).
+   
+   Lemma conditional_scale_measurable
+        (rv1 rv2 rv3: RandomVariable Prts borel_sa)
+        {srv1 : SimpleRandomVariable rv1}
+        {srv2 : SimpleRandomVariable rv2} 
+        {srv3 : SimpleRandomVariable rv3} :     
+         
+     simple_sigma_measurable rv1 rv3 ->
+     SimpleConditionalExpectation (rvmult rv1 rv2) rv3 ===
+     rvmult rv1 (SimpleConditionalExpectation rv2 rv3).
+   Proof.
+     Admitted.
+
+
    Lemma list_sum_fold_right l : list_sum l = fold_right Rplus 0 l.
    Proof.
      induction l; firstorder.
