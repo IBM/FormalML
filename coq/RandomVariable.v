@@ -889,24 +889,42 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
                         (is_partition_list_partition is_part).
 
   Definition gen_simple_conditional_expectation_scale (P : event Ts)
-             {rv : RandomVariable Prts borel_sa}
-             (srv : SimpleRandomVariable rv) 
+             (rv : RandomVariable Prts borel_sa)
+             {srv : SimpleRandomVariable rv}
              (dec:forall x, {P x} + {~ P x})        
              (sap: sa_sigma P) :=
-    srvscale ((SimpleExpectation (rvmult rv (EventIndicator Prts P dec sap))) / (ps_P P))
-            (IndicatorRandomVariableSimpl Prts (EventIndicator Prts P dec sap)).
+    rvscale _ ((SimpleExpectation (rvmult rv (EventIndicator Prts P dec sap))) / (ps_P P))
+            ((EventIndicator Prts P dec sap)).
+
+  Instance gen_simple_conditional_expectation_scale_simpl (P : event Ts)
+           (rv : RandomVariable Prts borel_sa)
+           (srv : SimpleRandomVariable rv) 
+           (dec:forall x, {P x} + {~ P x})        
+           (sap: sa_sigma P) :
+    SimpleRandomVariable (gen_simple_conditional_expectation_scale P rv dec sap).
+  Proof.
+    typeclasses eauto.
+  Qed.
+
+  Program Fixpoint map_dep {A B} (l:list A) :  (forall x, In x l -> B) -> list B
+    := match l with
+       | nil => fun f => nil
+       | x::xs => fun f => (f x _) :: map_dep xs _
+       end.
+  Next Obligation.
+    eapply f.
+    right; eassumption.
+  Defined.
 
   Definition gen_SimpleConditionalExpectation
              (rv : RandomVariable Prts borel_sa)
              {srv : SimpleRandomVariable rv}
              (l : list (event Ts))
              (ispart: is_partition_list l)
-             (sap_all : Forall sa_sigma l )
-             (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x}) :=
+             (sap_all : forall p, In p l -> sa_sigma p)
+             (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x})) :=
     fold_right rvplus (rvconst 0)
-               (map (fun p => gen_simple_conditional_expectation_scale p srv 
-               (SimpleConditionalExpectation_list srv1 srv2).
-
+               (map_dep l (fun p pf => gen_simple_conditional_expectation_scale p srv (dec_all p pf) (sap_all p pf))).
 
   Definition simple_conditional_expectation_scale_coef (c : R)
   {rv rv2: RandomVariable Prts borel_sa}
