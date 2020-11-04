@@ -2022,7 +2022,7 @@ Section SimpleConditionalExpectation.
   Qed.
   
 
-  Definition fold_rvplus
+  Definition fold_rvplus_prod_indicator
         (rv : RandomVariable Prts borel_sa)
         {srv : SimpleRandomVariable rv}
         (l : list (event Ts))
@@ -2034,13 +2034,13 @@ Section SimpleConditionalExpectation.
                                                         (dec_all p pf)
                                                         (sap_all p pf))))).
 
-   Instance fold_rvplus_simpl
+   Instance fold_rvplus_prod_indicator_simpl
         (rv : RandomVariable Prts borel_sa)
         {srv : SimpleRandomVariable rv}
         (l : list (event Ts))
         (sap_all : forall p, In p l -> sa_sigma p)
         (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x})) :
-     SimpleRandomVariable (fold_rvplus rv l sap_all dec_all).
+     SimpleRandomVariable (fold_rvplus_prod_indicator rv l sap_all dec_all).
    Proof.
    Admitted.
 
@@ -2056,7 +2056,7 @@ Section SimpleConditionalExpectation.
                                                            (dec_all p pf)
                                                            (sap_all p pf))))) =
     SimpleExpectation
-      (fold_rvplus rv l sap_all dec_all).
+      (fold_rvplus_prod_indicator rv l sap_all dec_all).
    Proof.
    Admitted.
 
@@ -2100,6 +2100,15 @@ Section SimpleConditionalExpectation.
      apply SimpleExpectation_pf_irrel.
    Qed.
    
+  Ltac se_rewrite H :=
+    match type of H with
+    | @SimpleExpectation _ _ _ ?x ?sx = _ =>
+      match goal with
+      | [|- context [@SimpleExpectation _ _ _ ?z ?sz]] =>
+        rewrite (@SimpleExpectation_pf_irrel x sz sx); rewrite H
+      end
+    end.
+
   Lemma expectation_indicator_sum
         (rv : RandomVariable Prts borel_sa)
         {srv : SimpleRandomVariable rv}
@@ -2117,10 +2126,13 @@ Section SimpleConditionalExpectation.
   Proof.
       transitivity
         (SimpleExpectation
-           (fold_rvplus rv l sap_all dec_all)).
+           (fold_rvplus_prod_indicator rv l sap_all dec_all)).
       - apply SimpleExpectation_ext.
+        unfold fold_rvplus_prod_indicator.
+        unfold EventIndicator.
+        admit.
+      - 
   Admitted.
-
 
   Lemma gen_simple_conditional_expectation_scale_tower (P : event Ts) (Ppos:ps_P P > 0)
              (rv : RandomVariable Prts borel_sa)
@@ -2140,26 +2152,19 @@ Section SimpleConditionalExpectation.
       lra.
   Qed.
 
-  Ltac se_rewrite H :=
-    match type of H with
-    | @SimpleExpectation _ _ _ ?x ?sx = _ =>
-      match goal with
-      | [|- context [@SimpleExpectation _ _ _ ?z ?sz]] =>
-        rewrite (@SimpleExpectation_pf_irrel x sz sx); rewrite H
-      end
-    end.
-      
   Lemma gen_conditional_tower_law_2part0
         (rv : RandomVariable Prts borel_sa)
         {srv : SimpleRandomVariable rv}
         (p : event Ts)
+        (psP: ps_P p > 0)
+        (psnP: ps_P (event_complement p) > 0)        
         (sap: sa_sigma p)
         (sanp: sa_sigma (event_complement p))        
-        (dec_p: forall x, {p x} + {~ p x})
-        (dec_np: forall x, {(event_complement p) x} + {~ (event_complement p) x}) :    
+        (dec_p: forall x, {p x} + {~ p x}) :
     NonEmpty Ts ->
     (SimpleExpectation (rvmult rv (EventIndicator Prts p dec_p sap))) +
-    (SimpleExpectation (rvmult rv (EventIndicator Prts (event_complement p) dec_np sanp))) =
+    (SimpleExpectation (rvmult rv (EventIndicator Prts (event_complement p) 
+                                                  (dec_complement dec_p) sanp))) =
     SimpleExpectation
       (gen_SimpleConditionalExpectation_2part rv p sap dec_p).
   Proof.
@@ -2173,8 +2178,9 @@ Section SimpleConditionalExpectation.
     intros.
     symmetry in H.
     se_rewrite H.
-
-  Admitted.
+    rewrite gen_simple_conditional_expectation_scale_tower; trivial.
+    now rewrite gen_simple_conditional_expectation_scale_tower.
+  Qed.
 
   Lemma gen_conditional_tower_law
         (rv : RandomVariable Prts borel_sa)
