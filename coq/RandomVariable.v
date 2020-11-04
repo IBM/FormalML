@@ -31,6 +31,23 @@ Section RandomVariable.
       rv_preimage: forall (B: event Td), sa_sigma B -> sa_sigma (event_preimage rv_X B);
     }.
 
+  Definition rv_eq {Ts:Type} {Td:Type}
+              {dom: SigmaAlgebra Ts}
+              {prts: ProbSpace dom}
+              {cod: SigmaAlgebra Td} (rv1 rv2:RandomVariable prts cod)
+     := forall pt, rv_X (RandomVariable:=rv1) pt = rv_X (RandomVariable:=rv2) pt.
+  
+   Global Instance rv_eq_equiv
+          {Ts:Type} {Td:Type}
+          {dom: SigmaAlgebra Ts}
+          (prts: ProbSpace dom)
+          (cod: SigmaAlgebra Td) :
+     Equivalence rv_eq.
+   Proof.
+     unfold rv_eq.
+     constructor; red; congruence.
+   Qed.
+  
   Section Simple.
     Context {Ts:Type} {Td:Type}
             {dom: SigmaAlgebra Ts}
@@ -132,17 +149,25 @@ Section RandomVariable.
     forall (x:Ts), (rv_X (RandomVariable:=rv1) x <= 
                    rv_X (RandomVariable:=rv2) x)%R.
 
-    Class IndicatorRandomVariable
-        (rv : RandomVariable prts borel_sa) :=
-      irv_binary : forall x, In (rv_X x) [0;1] .
+  Global Instance RealRandomVariable_le_pre : PreOrder RealRandomVariable_le.
+  Proof.
+  Admitted.
 
-    Global Program Instance IndicatorRandomVariableSimpl 
-           (rv : RandomVariable prts borel_sa)
-           {irv: IndicatorRandomVariable rv} : SimpleRandomVariable rv
-      := {srv_vals := [0;1]}.
-    Next Obligation.
-      apply irv.
-    Qed.
+  Global Instance RealRandomVariable_le_part : PartialOrder rv_eq RealRandomVariable_le.
+  Proof.
+  Admitted.
+
+  Class IndicatorRandomVariable
+        (rv : RandomVariable prts borel_sa) :=
+    irv_binary : forall x, In (rv_X x) [0;1] .
+
+  Global Program Instance IndicatorRandomVariableSimpl 
+         (rv : RandomVariable prts borel_sa)
+         {irv: IndicatorRandomVariable rv} : SimpleRandomVariable rv
+    := {srv_vals := [0;1]}.
+  Next Obligation.
+    apply irv.
+  Qed.
 
   Lemma sa_singleton (c:R)
     (rv : RandomVariable prts borel_sa) :
@@ -2090,15 +2115,14 @@ Section SimpleConditionalExpectation.
      (* incl preserves it *)
      
    Admitted.
-   
+
    Lemma SimpleExpectation_ext (rv1 rv2 : RandomVariable Prts borel_sa) (srv1:SimpleRandomVariable rv1) (srv2:SimpleRandomVariable rv2):
-     rv1 = rv2 ->
+     rv_eq rv1 rv2 ->
      SimpleExpectation rv1 (srv := srv1) = SimpleExpectation rv2 (srv := srv2).
    Proof.
      intros.
-     subst.
-     apply SimpleExpectation_pf_irrel.
-   Qed.
+     unfold SimpleExpectation.
+   Admitted.
    
   Ltac se_rewrite H :=
     match type of H with
@@ -2130,6 +2154,10 @@ Section SimpleConditionalExpectation.
       - apply SimpleExpectation_ext.
         unfold fold_rvplus_prod_indicator.
         unfold EventIndicator.
+        intros pt.
+        destruct rv; simpl.
+        unfold rv_X; simpl.
+        trivial.
         admit.
       - 
   Admitted.
