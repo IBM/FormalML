@@ -2022,8 +2022,29 @@ Section SimpleConditionalExpectation.
   Qed.
   
 
-  (*
-Lemma expectation_indicator_sum0
+  Definition fold_rvplus
+        (rv : RandomVariable Prts borel_sa)
+        {srv : SimpleRandomVariable rv}
+        (l : list (event Ts))
+        (sap_all : forall p, In p l -> sa_sigma p)
+        (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x})) :=
+    (fold_right rvplus (rvconst 0)
+                (map_dep l (fun p pf => 
+                              rvmult rv (EventIndicator Prts p 
+                                                        (dec_all p pf)
+                                                        (sap_all p pf))))).
+
+   Instance fold_rvplus_simpl
+        (rv : RandomVariable Prts borel_sa)
+        {srv : SimpleRandomVariable rv}
+        (l : list (event Ts))
+        (sap_all : forall p, In p l -> sa_sigma p)
+        (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x})) :
+     SimpleRandomVariable (fold_rvplus rv l sap_all dec_all).
+   Proof.
+     Admitted.
+
+   Lemma expectation_indicator_sum0
         (rv : RandomVariable Prts borel_sa)
         {srv : SimpleRandomVariable rv}
         (l : list (event Ts))
@@ -2040,8 +2061,6 @@ Lemma expectation_indicator_sum0
                                 rvmult rv (EventIndicator Prts p 
                                                            (dec_all p pf)
                                                            (sap_all p pf))))).
-*)    
-
 
   Lemma expectation_indicator_sum
         (rv : RandomVariable Prts borel_sa)
