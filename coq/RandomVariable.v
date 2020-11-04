@@ -869,308 +869,6 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     apply in_prod; trivial.
   Qed.
 
-  Definition is_partition_list {T} (l:list (event T)) :=
-    ForallOrdPairs event_disjoint l /\ list_union l = Ω.
-
-  Lemma is_partition_list_partition {T} {l:list (event T)} :
-    is_partition_list l ->
-    is_partition (list_collection l event_none).
-  Proof.
-    intros [??].
-    split.
-    - now apply list_collection_disjoint.
-    - rewrite list_union_union, H0.
-      reflexivity.
-  Qed.
-    
-  Instance list_partition_sa {T} (l:list (event T)) (is_part:is_partition_list l) :
-    SigmaAlgebra T := countable_partition_sa
-                        (list_collection l event_none)
-                        (is_partition_list_partition is_part).
-
-  Definition gen_simple_conditional_expectation_scale (P : event Ts)
-             (rv : RandomVariable Prts borel_sa)
-             {srv : SimpleRandomVariable rv}
-             (dec:forall x, {P x} + {~ P x})        
-             (sap: sa_sigma P) :=
-    rvscale _ ((SimpleExpectation (rvmult rv (EventIndicator Prts P dec sap))) / (ps_P P))
-            ((EventIndicator Prts P dec sap)).
-
-  Instance gen_simple_conditional_expectation_scale_simpl (P : event Ts)
-           (rv : RandomVariable Prts borel_sa)
-           (srv : SimpleRandomVariable rv) 
-           (dec:forall x, {P x} + {~ P x})        
-           (sap: sa_sigma P) :
-    SimpleRandomVariable (gen_simple_conditional_expectation_scale P rv dec sap).
-  Proof.
-    typeclasses eauto.
-  Defined.
-
-  Program Fixpoint map_dep {A B} (l:list A) :  (forall x, In x l -> B) -> list B
-    := match l with
-       | nil => fun f => nil
-       | x::xs => fun f => (f x _) :: map_dep xs _
-       end.
-  Next Obligation.
-    eapply f.
-    right; eassumption.
-  Defined.
-
-  Definition gen_SimpleConditionalExpectation
-             (rv : RandomVariable Prts borel_sa)
-             {srv : SimpleRandomVariable rv}
-             (l : list (event Ts))
-             (sap_all : forall p, In p l -> sa_sigma p)
-             (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x})) :=
-    fold_right rvplus (rvconst 0)
-               (map_dep l (fun p pf => gen_simple_conditional_expectation_scale p rv (dec_all p pf) (sap_all p pf))).
-
-  Instance gen_SimpleConditionalExpectation_simpl
-             (rv : RandomVariable Prts borel_sa)
-             {srv : SimpleRandomVariable rv}
-             (l : list (event Ts))
-             (sap_all : forall p, In p l -> sa_sigma p)
-             (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x})) :
-    SimpleRandomVariable (gen_SimpleConditionalExpectation rv l sap_all dec_all).
-  Proof.
-    unfold gen_SimpleConditionalExpectation.
-    induction l; simpl.
-    - apply srvconst.
-      apply crvconst.
-    - apply srvplus.
-      + apply gen_simple_conditional_expectation_scale_simpl.
-      + apply IHl.
-  Qed.
-
-  Lemma dec_complement {A} {p:A->Prop} (dec_p: forall x, {p x} + {~ p x}) :
-    forall x, {~ p x} + {~ ~ p x}.
-  Proof.
-    intros x.
-    destruct (dec_p x).
-    - right; tauto.
-    - left; trivial.
-  Defined.
-  
-  Program Definition gen_SimpleConditionalExpectation_2part
-             (rv : RandomVariable Prts borel_sa)
-             {srv : SimpleRandomVariable rv}
-             (p : event Ts)
-             (sap : sa_sigma p)
-             (dec_p: forall x, {p x} + {~ p x})
-    :  RandomVariable Prts borel_sa
-    :=    
-    rvplus (gen_simple_conditional_expectation_scale p rv dec_p sap)
-           (gen_simple_conditional_expectation_scale (event_complement p) rv (dec_complement dec_p) _).
-  Next Obligation.
-    now apply sa_complement.
-  Qed.
-  
-  Instance gen_SimpleConditionalExpectation_2part_simpl
-          (rv : RandomVariable Prts borel_sa)
-          {srv : SimpleRandomVariable rv}
-          (p : event Ts)
-          (sap : sa_sigma p)
-          (dec_p: forall x, {p x} + {~ p x})
-    : SimpleRandomVariable (gen_SimpleConditionalExpectation_2part rv p sap dec_p).
-  Proof.
-    unfold gen_SimpleConditionalExpectation_2part.
-    typeclasses eauto.
-  Qed.
-  
-  Definition simple_conditional_expectation_scale_coef (c : R)
-  {rv rv2: RandomVariable Prts borel_sa}
-  (srv : SimpleRandomVariable rv) 
-  (srv2 : SimpleRandomVariable rv2) : R :=
-    ((SimpleExpectation 
-        (rvmult rv 
-                 (point_preimage_indicator Prts rv2 c)))
-       / (ps_P (event_preimage (rv_X (RandomVariable:=rv2)) (singleton_event c)))).
-
-  Definition SimpleConditionalExpectation_list
-             {rv1 rv2 : RandomVariable Prts borel_sa}             
-             (srv1 : SimpleRandomVariable rv1) 
-             (srv2 : SimpleRandomVariable rv2)
-    : list (RandomVariable Prts borel_sa)
-    := map (fun c => (rvscale Prts (simple_conditional_expectation_scale_coef c srv1 srv2)
-                           (point_preimage_indicator Prts rv2 c)))
-           (srv_vals (SimpleRandomVariable:=srv2)).
-
-  Definition simple_conditional_expectation_scale (c:R)
-             {rv1 rv2 : RandomVariable Prts borel_sa}             
-             (srv1 : SimpleRandomVariable rv1) 
-             (srv2 : SimpleRandomVariable rv2) :
-    SimpleRandomVariable
-      (rvscale Prts (simple_conditional_expectation_scale_coef c srv1 srv2)
-               (point_preimage_indicator Prts rv2 c))
-    := srvscale (simple_conditional_expectation_scale_coef c srv1 srv2)  
-                (IndicatorRandomVariableSimpl Prts (point_preimage_indicator Prts rv2 c)).
-
-  Lemma SimpleConditionalExpectation_list_simple  {rv1 rv2 : RandomVariable Prts borel_sa}             
-             (srv1 : SimpleRandomVariable rv1) 
-             (srv2 : SimpleRandomVariable rv2) :
-    Forallt (@SimpleRandomVariable Ts R dom Prts borel_sa) (SimpleConditionalExpectation_list srv1 srv2).
-  Proof.
-    unfold SimpleConditionalExpectation_list.
-    induction srv_vals; simpl.
-    - constructor.
-    - constructor; trivial.
-      apply simple_conditional_expectation_scale.
-  Defined.
-  
-  Definition SimpleConditionalExpectation
-             (rv1 rv2 : RandomVariable Prts borel_sa)
-             {srv1 : SimpleRandomVariable rv1}
-             {srv2 : SimpleRandomVariable rv2} :=    
-    fold_right rvplus (rvconst 0)
-               (SimpleConditionalExpectation_list srv1 srv2).
-
-  Instance SimpleConditionalExpectation_simple
-           (rv1 rv2 : RandomVariable Prts borel_sa)
-           {srv1 : SimpleRandomVariable rv1}
-           {srv2 : SimpleRandomVariable rv2} : SimpleRandomVariable (SimpleConditionalExpectation rv1 rv2).
-  Proof.
-    generalize (SimpleConditionalExpectation_list_simple srv1 srv2).
-    unfold SimpleConditionalExpectation; simpl.
-    induction (SimpleConditionalExpectation_list srv1 srv2); simpl; intros ft.
-    - apply srvconst.
-      apply crvconst.
-    - invcs ft.
-      apply srvplus; eauto.
-  Qed.
-
-  Lemma SimpleExpectation_EventIndidcator P dec sap :
-    SimpleExpectation (EventIndicator Prts P dec sap) = ps_P P.
-  Proof.
-    unfold EventIndicator, SimpleExpectation; simpl.
-    match_destr.
-    - intuition.
-    - simpl.
-      field_simplify.
-      unfold event_preimage, singleton_event.
-      apply ps_proper.
-      intros x.
-      match_destr; intuition.
-  Qed.
-  
-  Lemma gen_simple_conditional_expectation_scale_tower (P : event Ts) (Ppos:ps_P P > 0)
-             (rv : RandomVariable Prts borel_sa)
-             {srv : SimpleRandomVariable rv}
-             (dec:forall x, {P x} + {~ P x})        
-             (sap: sa_sigma P) :
-    SimpleExpectation (gen_simple_conditional_expectation_scale P rv dec sap) =
-    SimpleExpectation (rvmult rv (EventIndicator Prts P dec sap)).
-  Proof.
-    unfold gen_simple_conditional_expectation_scale.
-    generalize (scaleSimpleExpectation (SimpleExpectation (rvmult rv (EventIndicator Prts P dec sap)) / ps_P P)
-                                       (EventIndicator Prts P dec sap)); intros HH.
-    etransitivity.
-    - symmetry. eauto.
-    - rewrite SimpleExpectation_EventIndidcator.
-      field.
-      lra.
-  Qed.
-
-  Lemma gen_conditional_tower_law
-        (rv : RandomVariable Prts borel_sa)
-        {srv : SimpleRandomVariable rv}
-        (l : list (event Ts))
-        (ispart: is_partition_list l)
-        (sap_all : forall p, In p l -> sa_sigma p)
-        (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x})) :
-    SimpleExpectation rv =
-    SimpleExpectation
-      (gen_SimpleConditionalExpectation rv l sap_all dec_all).
-  Proof.
-    unfold SimpleExpectation, gen_SimpleConditionalExpectation.
-    unfold event_preimage, singleton_event.
-    destruct rv; destruct srv.
-    unfold srv_vals, rv_X.
-    unfold gen_simple_conditional_expectation_scale.
-    unfold SimpleExpectation.
-    unfold event_preimage, singleton_event.    
-    unfold EventIndicator.
-    
-    Admitted.
-      
-
-  Lemma conditional_tower_law
-        (rv1 rv2 : RandomVariable Prts borel_sa)
-        {srv1 : SimpleRandomVariable rv1}
-        {srv2 : SimpleRandomVariable rv2} :
-    SimpleExpectation (SimpleConditionalExpectation rv1 rv2) = SimpleExpectation rv1.
-    Proof.
-      unfold SimpleConditionalExpectation.
-      unfold SimpleConditionalExpectation_list.
-      unfold SimpleExpectation.
-      destruct rv1; destruct rv2.
-      destruct srv1; destruct srv2.
-      unfold rv_X, srv_vals.
-      unfold event_preimage, singleton_event.
-      unfold simple_conditional_expectation_scale_coef.
-      unfold point_preimage_indicator.
-      unfold EventIndicator.
-      unfold SimpleExpectation.
-      unfold event_preimage, singleton_event.
-      Admitted.
-
-   Definition simple_sigma_measurable 
-        (rv1 rv2 : RandomVariable Prts borel_sa)
-        {srv1 : SimpleRandomVariable rv1}
-        {srv2 : SimpleRandomVariable rv2} : Prop :=
-     forall (c1:R), In c1 (srv_vals (SimpleRandomVariable:=srv1)) ->
-                   forall (c2:R), 
-                     In c2 (srv_vals (SimpleRandomVariable:=srv2)) ->
-                     (event_disjoint (event_preimage (rv_X (RandomVariable:=rv1))
-                                                   (singleton_event c1) )
-                                    (event_preimage (rv_X (RandomVariable:=rv2))
-                                                   (singleton_event c2))) \/
-                     (event_sub (event_preimage (rv_X (RandomVariable:=rv2))
-                                               (singleton_event c2) )
-                                (event_preimage (rv_X (RandomVariable:=rv1))
-                                                   (singleton_event c1))).
-   Definition partition_measurable
-        (rv: RandomVariable Prts borel_sa)
-        {srv : SimpleRandomVariable rv}
-        (l : list (event Ts)) : Prop :=
-     is_partition_list l ->
-     forall (c:R), 
-       In c srv_vals ->
-       forall (p:event Ts), 
-         In p l ->
-         (event_disjoint (event_preimage rv_X (singleton_event c)) p) \/
-         (event_sub p (event_preimage rv_X (singleton_event c))).
-
-   Lemma gen_conditional_scale_measurable
-        (rv1 rv2: RandomVariable Prts borel_sa)
-        {srv1 : SimpleRandomVariable rv1}
-        {srv2 : SimpleRandomVariable rv2} 
-        (l : list (event Ts))
-        (is_part: is_partition_list l)
-        (sap_all : forall p, In p l -> sa_sigma p)
-        (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x})) :
-     partition_measurable rv1 l ->
-     gen_SimpleConditionalExpectation (rvmult rv1 rv2) l sap_all dec_all ===
-     rvmult rv1 (gen_SimpleConditionalExpectation rv2 l  sap_all dec_all).
-     Proof.
-       Admitted.
-
-   Lemma conditional_scale_measurable
-        (rv1 rv2 rv3: RandomVariable Prts borel_sa)
-        {srv1 : SimpleRandomVariable rv1}
-        {srv2 : SimpleRandomVariable rv2} 
-        {srv3 : SimpleRandomVariable rv3} :     
-         
-     simple_sigma_measurable rv1 rv3 ->
-     SimpleConditionalExpectation (rvmult rv1 rv2) rv3 ===
-     rvmult rv1 (SimpleConditionalExpectation rv2 rv3).
-   Proof.
-     Admitted.
-
-   Lemma list_sum_fold_right l : list_sum l = fold_right Rplus 0 l.
-   Proof.
-     induction l; firstorder.
-   Qed.
-
 
    Lemma list_union_srv_preimage
          {rv: RandomVariable Prts borel_sa}                      
@@ -1300,6 +998,12 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
      now apply rv_preimage.
    Qed.
      
+   Lemma list_sum_fold_right l : list_sum l = fold_right Rplus 0 l.
+   Proof.
+     induction l; firstorder.
+   Qed.
+
+
    Lemma srv_vals_prob_1 
          {rv: RandomVariable Prts borel_sa}                      
          (srv : SimpleRandomVariable rv) :
@@ -2124,32 +1828,220 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
         * now rewrite nodup_map_nodup.
    Qed.
 
-  Lemma gen_conditional_tower_law_2part0
+  
+
+End SimpleExpectation.
+
+Section SimpleConditionalExpectation.
+
+  Definition is_partition_list {T} (l:list (event T)) :=
+    ForallOrdPairs event_disjoint l /\ list_union l = Ω.
+
+  Lemma is_partition_list_partition {T} {l:list (event T)} :
+    is_partition_list l ->
+    SigmaAlgebras.is_partition (list_collection l event_none).
+  Proof.
+    intros [??].
+    split.
+    - now apply list_collection_disjoint.
+    - rewrite list_union_union, H0.
+      reflexivity.
+  Qed.
+    
+  Instance list_partition_sa {T} (l:list (event T)) (is_part:is_partition_list l) :
+    SigmaAlgebra T := countable_partition_sa
+                        (list_collection l event_none)
+                        (is_partition_list_partition is_part).
+  Context 
+    {Ts:Type}
+    {dom: SigmaAlgebra Ts}
+    {Prts: ProbSpace dom}.
+
+  Definition gen_simple_conditional_expectation_scale (P : event Ts)
+             (rv : RandomVariable Prts borel_sa)
+             {srv : SimpleRandomVariable rv}
+             (dec:forall x, {P x} + {~ P x})        
+             (sap: sa_sigma P) :=
+    rvscale _ ((SimpleExpectation (rvmult rv (EventIndicator Prts P dec sap))) / (ps_P P))
+            ((EventIndicator Prts P dec sap)).
+
+  Instance gen_simple_conditional_expectation_scale_simpl (P : event Ts)
+           (rv : RandomVariable Prts borel_sa)
+           (srv : SimpleRandomVariable rv) 
+           (dec:forall x, {P x} + {~ P x})        
+           (sap: sa_sigma P) :
+    SimpleRandomVariable (gen_simple_conditional_expectation_scale P rv dec sap).
+  Proof.
+    typeclasses eauto.
+  Defined.
+
+  Program Fixpoint map_dep {A B} (l:list A) :  (forall x, In x l -> B) -> list B
+    := match l with
+       | nil => fun f => nil
+       | x::xs => fun f => (f x _) :: map_dep xs _
+       end.
+  Next Obligation.
+    eapply f.
+    right; eassumption.
+  Defined.
+
+  Definition gen_SimpleConditionalExpectation
+             (rv : RandomVariable Prts borel_sa)
+             {srv : SimpleRandomVariable rv}
+             (l : list (event Ts))
+             (sap_all : forall p, In p l -> sa_sigma p)
+             (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x})) :=
+    fold_right rvplus (rvconst 0)
+               (map_dep l (fun p pf => gen_simple_conditional_expectation_scale p rv (dec_all p pf) (sap_all p pf))).
+
+  Instance gen_SimpleConditionalExpectation_simpl
+             (rv : RandomVariable Prts borel_sa)
+             {srv : SimpleRandomVariable rv}
+             (l : list (event Ts))
+             (sap_all : forall p, In p l -> sa_sigma p)
+             (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x})) :
+    SimpleRandomVariable (gen_SimpleConditionalExpectation rv l sap_all dec_all).
+  Proof.
+    unfold gen_SimpleConditionalExpectation.
+    induction l; simpl.
+    - apply srvconst.
+      apply crvconst.
+    - apply srvplus.
+      + apply gen_simple_conditional_expectation_scale_simpl.
+      + apply IHl.
+  Qed.
+
+  Lemma dec_complement {A} {p:A->Prop} (dec_p: forall x, {p x} + {~ p x}) :
+    forall x, {~ p x} + {~ ~ p x}.
+  Proof.
+    intros x.
+    destruct (dec_p x).
+    - right; tauto.
+    - left; trivial.
+  Defined.
+  
+  Program Definition gen_SimpleConditionalExpectation_2part
+             (rv : RandomVariable Prts borel_sa)
+             {srv : SimpleRandomVariable rv}
+             (p : event Ts)
+             (sap : sa_sigma p)
+             (dec_p: forall x, {p x} + {~ p x})
+    :  RandomVariable Prts borel_sa
+    :=    
+    rvplus (gen_simple_conditional_expectation_scale p rv dec_p sap)
+           (gen_simple_conditional_expectation_scale (event_complement p) rv (dec_complement dec_p) _).
+  Next Obligation.
+    now apply sa_complement.
+  Qed.
+  
+  Instance gen_SimpleConditionalExpectation_2part_simpl
+          (rv : RandomVariable Prts borel_sa)
+          {srv : SimpleRandomVariable rv}
+          (p : event Ts)
+          (sap : sa_sigma p)
+          (dec_p: forall x, {p x} + {~ p x})
+    : SimpleRandomVariable (gen_SimpleConditionalExpectation_2part rv p sap dec_p).
+  Proof.
+    unfold gen_SimpleConditionalExpectation_2part.
+    typeclasses eauto.
+  Qed.
+  
+  Definition simple_conditional_expectation_scale_coef (c : R)
+  {rv rv2: RandomVariable Prts borel_sa}
+  (srv : SimpleRandomVariable rv) 
+  (srv2 : SimpleRandomVariable rv2) : R :=
+    ((SimpleExpectation 
+        (rvmult rv 
+                 (point_preimage_indicator Prts rv2 c)))
+       / (ps_P (event_preimage (rv_X (RandomVariable:=rv2)) (singleton_event c)))).
+
+  Definition SimpleConditionalExpectation_list
+             {rv1 rv2 : RandomVariable Prts borel_sa}             
+             (srv1 : SimpleRandomVariable rv1) 
+             (srv2 : SimpleRandomVariable rv2)
+    : list (RandomVariable Prts borel_sa)
+    := map (fun c => (rvscale Prts (simple_conditional_expectation_scale_coef c srv1 srv2)
+                           (point_preimage_indicator Prts rv2 c)))
+           (srv_vals (SimpleRandomVariable:=srv2)).
+
+  Definition simple_conditional_expectation_scale (c:R)
+             {rv1 rv2 : RandomVariable Prts borel_sa}             
+             (srv1 : SimpleRandomVariable rv1) 
+             (srv2 : SimpleRandomVariable rv2) :
+    SimpleRandomVariable
+      (rvscale Prts (simple_conditional_expectation_scale_coef c srv1 srv2)
+               (point_preimage_indicator Prts rv2 c))
+    := srvscale (simple_conditional_expectation_scale_coef c srv1 srv2)  
+                (IndicatorRandomVariableSimpl Prts (point_preimage_indicator Prts rv2 c)).
+
+  Lemma SimpleConditionalExpectation_list_simple  {rv1 rv2 : RandomVariable Prts borel_sa}             
+             (srv1 : SimpleRandomVariable rv1) 
+             (srv2 : SimpleRandomVariable rv2) :
+    Forallt (@SimpleRandomVariable Ts R dom Prts borel_sa) (SimpleConditionalExpectation_list srv1 srv2).
+  Proof.
+    unfold SimpleConditionalExpectation_list.
+    induction srv_vals; simpl.
+    - constructor.
+    - constructor; trivial.
+      apply simple_conditional_expectation_scale.
+  Defined.
+  
+  Definition SimpleConditionalExpectation
+             (rv1 rv2 : RandomVariable Prts borel_sa)
+             {srv1 : SimpleRandomVariable rv1}
+             {srv2 : SimpleRandomVariable rv2} :=    
+    fold_right rvplus (rvconst 0)
+               (SimpleConditionalExpectation_list srv1 srv2).
+
+  Instance SimpleConditionalExpectation_simple
+           (rv1 rv2 : RandomVariable Prts borel_sa)
+           {srv1 : SimpleRandomVariable rv1}
+           {srv2 : SimpleRandomVariable rv2} : SimpleRandomVariable (SimpleConditionalExpectation rv1 rv2).
+  Proof.
+    generalize (SimpleConditionalExpectation_list_simple srv1 srv2).
+    unfold SimpleConditionalExpectation; simpl.
+    induction (SimpleConditionalExpectation_list srv1 srv2); simpl; intros ft.
+    - apply srvconst.
+      apply crvconst.
+    - invcs ft.
+      apply srvplus; eauto.
+  Qed.
+
+  Lemma SimpleExpectation_EventIndidcator P dec sap :
+    SimpleExpectation (EventIndicator Prts P dec sap) = ps_P P.
+  Proof.
+    unfold EventIndicator, SimpleExpectation; simpl.
+    match_destr.
+    - intuition.
+    - simpl.
+      field_simplify.
+      unfold event_preimage, singleton_event.
+      apply ps_proper.
+      intros x.
+      match_destr; intuition.
+  Qed.
+  
+
+  (*
+Lemma expectation_indicator_sum0
         (rv : RandomVariable Prts borel_sa)
         {srv : SimpleRandomVariable rv}
-        (p : event Ts)
-        (sap: sa_sigma p)
-        (sanp: sa_sigma (event_complement p))        
-        (dec_p: forall x, {p x} + {~ p x})
-        (dec_np: forall x, {(event_complement p) x} + {~ (event_complement p) x}) :    
-    NonEmpty Ts ->
-    (SimpleExpectation (rvmult rv (EventIndicator Prts p dec_p sap))) +
-    (SimpleExpectation (rvmult rv (EventIndicator Prts (event_complement p) dec_np sanp))) =
+        (l : list (event Ts))
+        (sap_all : forall p, In p l -> sa_sigma p)
+        (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x})) :
+    list_sum
+      (map_dep l (fun p pf => SimpleExpectation 
+                                (rvmult rv (EventIndicator Prts p 
+                                                           (dec_all p pf)
+                                                           (sap_all p pf))))) =
     SimpleExpectation
-      (gen_SimpleConditionalExpectation_2part rv p sap dec_p).
-  Proof.
-    unfold gen_SimpleConditionalExpectation_2part; intro.
-    generalize (sumSimpleExpectation 
-                  (gen_simple_conditional_expectation_scale p rv dec_p sap)
-                  (gen_simple_conditional_expectation_scale 
-                     (event_complement p) rv
-                     (dec_complement dec_p)
-                     (gen_SimpleConditionalExpectation_2part_obligation_1 p sap)) X).
-    intros.
-    (*
-    rewrite <- H.
-    *)
-    Admitted.
+      (fold_right rvplus (rvconst 0)
+                  (map_dep l (fun p pf => 
+                                rvmult rv (EventIndicator Prts p 
+                                                           (dec_all p pf)
+                                                           (sap_all p pf))))).
+*)    
+
 
   Lemma expectation_indicator_sum
         (rv : RandomVariable Prts borel_sa)
@@ -2178,9 +2070,151 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
                 )))))).               
      *)
       Admitted.
-  
 
-End SimpleExpectation.
+
+  Lemma gen_simple_conditional_expectation_scale_tower (P : event Ts) (Ppos:ps_P P > 0)
+             (rv : RandomVariable Prts borel_sa)
+             {srv : SimpleRandomVariable rv}
+             (dec:forall x, {P x} + {~ P x})        
+             (sap: sa_sigma P) :
+    SimpleExpectation (gen_simple_conditional_expectation_scale P rv dec sap) =
+    SimpleExpectation (rvmult rv (EventIndicator Prts P dec sap)).
+  Proof.
+    unfold gen_simple_conditional_expectation_scale.
+    generalize (scaleSimpleExpectation (SimpleExpectation (rvmult rv (EventIndicator Prts P dec sap)) / ps_P P)
+                                       (EventIndicator Prts P dec sap)); intros HH.
+    etransitivity.
+    - symmetry. eauto.
+    - rewrite SimpleExpectation_EventIndidcator.
+      field.
+      lra.
+  Qed.
+
+  Lemma gen_conditional_tower_law_2part0
+        (rv : RandomVariable Prts borel_sa)
+        {srv : SimpleRandomVariable rv}
+        (p : event Ts)
+        (sap: sa_sigma p)
+        (sanp: sa_sigma (event_complement p))        
+        (dec_p: forall x, {p x} + {~ p x})
+        (dec_np: forall x, {(event_complement p) x} + {~ (event_complement p) x}) :    
+    NonEmpty Ts ->
+    (SimpleExpectation (rvmult rv (EventIndicator Prts p dec_p sap))) +
+    (SimpleExpectation (rvmult rv (EventIndicator Prts (event_complement p) dec_np sanp))) =
+    SimpleExpectation
+      (gen_SimpleConditionalExpectation_2part rv p sap dec_p).
+  Proof.
+    unfold gen_SimpleConditionalExpectation_2part; intro.
+    generalize (sumSimpleExpectation 
+                  (gen_simple_conditional_expectation_scale p rv dec_p sap)
+                  (gen_simple_conditional_expectation_scale 
+                     (event_complement p) rv
+                     (dec_complement dec_p)
+                     (gen_SimpleConditionalExpectation_2part_obligation_1 p sap)) X).
+    intros.
+    (*
+    rewrite <- H.
+    *)
+    Admitted.
+
+  Lemma gen_conditional_tower_law
+        (rv : RandomVariable Prts borel_sa)
+        {srv : SimpleRandomVariable rv}
+        (l : list (event Ts))
+        (ispart: is_partition_list l)
+        (sap_all : forall p, In p l -> sa_sigma p)
+        (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x})) :
+    SimpleExpectation rv =
+    SimpleExpectation
+      (gen_SimpleConditionalExpectation rv l sap_all dec_all).
+  Proof.
+    unfold SimpleExpectation, gen_SimpleConditionalExpectation.
+    unfold event_preimage, singleton_event.
+    destruct rv; destruct srv.
+    unfold srv_vals, rv_X.
+    unfold gen_simple_conditional_expectation_scale.
+    unfold SimpleExpectation.
+    unfold event_preimage, singleton_event.    
+    unfold EventIndicator.
+    
+    Admitted.
+      
+
+  Lemma conditional_tower_law
+        (rv1 rv2 : RandomVariable Prts borel_sa)
+        {srv1 : SimpleRandomVariable rv1}
+        {srv2 : SimpleRandomVariable rv2} :
+    SimpleExpectation (SimpleConditionalExpectation rv1 rv2) = SimpleExpectation rv1.
+    Proof.
+      unfold SimpleConditionalExpectation.
+      unfold SimpleConditionalExpectation_list.
+      unfold SimpleExpectation.
+      destruct rv1; destruct rv2.
+      destruct srv1; destruct srv2.
+      unfold rv_X, srv_vals.
+      unfold event_preimage, singleton_event.
+      unfold simple_conditional_expectation_scale_coef.
+      unfold point_preimage_indicator.
+      unfold EventIndicator.
+      unfold SimpleExpectation.
+      unfold event_preimage, singleton_event.
+      Admitted.
+
+   Definition simple_sigma_measurable 
+        (rv1 rv2 : RandomVariable Prts borel_sa)
+        {srv1 : SimpleRandomVariable rv1}
+        {srv2 : SimpleRandomVariable rv2} : Prop :=
+     forall (c1:R), In c1 (srv_vals (SimpleRandomVariable:=srv1)) ->
+                   forall (c2:R), 
+                     In c2 (srv_vals (SimpleRandomVariable:=srv2)) ->
+                     (event_disjoint (event_preimage (rv_X (RandomVariable:=rv1))
+                                                   (singleton_event c1) )
+                                    (event_preimage (rv_X (RandomVariable:=rv2))
+                                                   (singleton_event c2))) \/
+                     (event_sub (event_preimage (rv_X (RandomVariable:=rv2))
+                                               (singleton_event c2) )
+                                (event_preimage (rv_X (RandomVariable:=rv1))
+                                                   (singleton_event c1))).
+   Definition partition_measurable
+        (rv: RandomVariable Prts borel_sa)
+        {srv : SimpleRandomVariable rv}
+        (l : list (event Ts)) : Prop :=
+     is_partition_list l ->
+     forall (c:R), 
+       In c srv_vals ->
+       forall (p:event Ts), 
+         In p l ->
+         (event_disjoint (event_preimage rv_X (singleton_event c)) p) \/
+         (event_sub p (event_preimage rv_X (singleton_event c))).
+
+   Lemma gen_conditional_scale_measurable
+        (rv1 rv2: RandomVariable Prts borel_sa)
+        {srv1 : SimpleRandomVariable rv1}
+        {srv2 : SimpleRandomVariable rv2} 
+        (l : list (event Ts))
+        (is_part: is_partition_list l)
+        (sap_all : forall p, In p l -> sa_sigma p)
+        (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x})) :
+     partition_measurable rv1 l ->
+     gen_SimpleConditionalExpectation (rvmult rv1 rv2) l sap_all dec_all =
+     rvmult rv1 (gen_SimpleConditionalExpectation rv2 l  sap_all dec_all).
+     Proof.
+       Admitted.
+
+   Lemma conditional_scale_measurable
+        (rv1 rv2 rv3: RandomVariable Prts borel_sa)
+        {srv1 : SimpleRandomVariable rv1}
+        {srv2 : SimpleRandomVariable rv2} 
+        {srv3 : SimpleRandomVariable rv3} :     
+         
+     simple_sigma_measurable rv1 rv3 ->
+     SimpleConditionalExpectation (rvmult rv1 rv2) rv3 =
+     rvmult rv1 (SimpleConditionalExpectation rv2 rv3).
+   Proof.
+     Admitted.
+
+
+End SimpleConditionalExpectation.  
 
 Section Expectation.
 
