@@ -2042,7 +2042,7 @@ Section SimpleConditionalExpectation.
         (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x})) :
      SimpleRandomVariable (fold_rvplus rv l sap_all dec_all).
    Proof.
-     Admitted.
+   Admitted.
 
    Lemma expectation_indicator_sum0
         (rv : RandomVariable Prts borel_sa)
@@ -2056,12 +2056,50 @@ Section SimpleConditionalExpectation.
                                                            (dec_all p pf)
                                                            (sap_all p pf))))) =
     SimpleExpectation
-      (fold_right rvplus (rvconst 0)
-                  (map_dep l (fun p pf => 
-                                rvmult rv (EventIndicator Prts p 
-                                                           (dec_all p pf)
-                                                           (sap_all p pf))))).
+      (fold_rvplus rv l sap_all dec_all).
+   Proof.
+   Admitted.
 
+   Program Instance SimpleRandomVariable_enlarged
+            {rv : RandomVariable Prts borel_sa}
+            (srv:SimpleRandomVariable rv)
+            (l:list R)
+            (lincl : incl srv_vals l)
+     : SimpleRandomVariable rv :=
+     {
+     srv_vals := l
+     }.
+   Next Obligation.
+     apply lincl.
+     apply srv_vals_complete.
+   Qed.
+   
+   Lemma SimpleExpectation_simpl_incl (rv : RandomVariable Prts borel_sa) (srv:SimpleRandomVariable rv)
+         (l:list R)
+         (lincl : incl srv_vals l) :
+     SimpleExpectation rv (srv := srv) = SimpleExpectation rv (srv:=SimpleRandomVariable_enlarged srv l lincl).
+   Proof.
+     unfold SimpleExpectation; simpl.
+   Admitted.
+
+     
+   Lemma SimpleExpectation_pf_irrel (rv : RandomVariable Prts borel_sa) (srv1 srv2:SimpleRandomVariable rv):
+     SimpleExpectation rv (srv := srv1) = SimpleExpectation rv (srv := srv2).
+   Proof.
+
+     (* incl preserves it *)
+     
+   Admitted.
+   
+   Lemma SimpleExpectation_ext (rv1 rv2 : RandomVariable Prts borel_sa) (srv1:SimpleRandomVariable rv1) (srv2:SimpleRandomVariable rv2):
+     rv1 = rv2 ->
+     SimpleExpectation rv1 (srv := srv1) = SimpleExpectation rv2 (srv := srv2).
+   Proof.
+     intros.
+     subst.
+     apply SimpleExpectation_pf_irrel.
+   Qed.
+   
   Lemma expectation_indicator_sum
         (rv : RandomVariable Prts borel_sa)
         {srv : SimpleRandomVariable rv}
@@ -2076,19 +2114,12 @@ Section SimpleConditionalExpectation.
                                                            (dec_all p pf)
                                                            (sap_all p pf)
       )))).
-    Proof.
-     (*
+  Proof.
       transitivity
-          (SimpleExpectation 
-             (fold_right 
-                rvplus (rvconst 0)
-                (map_dep l 
-                         (fun p pf => (rvmult rv (EventIndicator Prts p 
-                                                                 (dec_all p pf)
-                                                                 (sap_all p pf)
-                )))))).               
-     *)
-      Admitted.
+        (SimpleExpectation
+           (fold_rvplus rv l sap_all dec_all)).
+      - apply SimpleExpectation_ext.
+  Admitted.
 
 
   Lemma gen_simple_conditional_expectation_scale_tower (P : event Ts) (Ppos:ps_P P > 0)
@@ -2131,10 +2162,16 @@ Section SimpleConditionalExpectation.
                      (dec_complement dec_p)
                      (gen_SimpleConditionalExpectation_2part_obligation_1 p sap)) X).
     intros.
-    (*
-    rewrite <- H.
-    *)
-    Admitted.
+    symmetry in H.
+    match type of H with
+    | @SimpleExpectation _ _ _ ?x ?sx = _ =>
+      match goal with
+      | [|- context [@SimpleExpectation _ _ _ ?z ?sz]] =>
+        rewrite (@SimpleExpectation_pf_irrel x sz sx); rewrite H
+      end
+    end.
+
+  Admitted.
 
   Lemma gen_conditional_tower_law
         (rv : RandomVariable Prts borel_sa)
