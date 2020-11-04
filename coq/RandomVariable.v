@@ -2193,7 +2193,18 @@ Section SimpleConditionalExpectation.
     SimpleExpectation
       (gen_SimpleConditionalExpectation rv l sap_all dec_all).
   Proof.
-    unfold SimpleExpectation, gen_SimpleConditionalExpectation.
+    unfold gen_SimpleConditionalExpectation.
+    rewrite (expectation_indicator_sum rv l ispart sap_all dec_all).
+    Admitted.    
+
+
+    Lemma expectation_indicator_sum
+        (rv : RandomVariable Prts borel_sa)
+        {srv : SimpleRandomVariable rv}
+        (l : list (event Ts))
+        (is_part: is_partition_list l)
+        (sap_all : forall p, In p l -> sa_sigma p)
+        (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x})) :
     unfold event_preimage, singleton_event.
     destruct rv; destruct srv.
     unfold srv_vals, rv_X.
