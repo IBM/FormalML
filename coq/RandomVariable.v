@@ -2,7 +2,7 @@ Require Import Reals.
 
 Require Import Lra Lia.
 Require Import List.
-Require Import Morphisms EquivDec.
+Require Import Morphisms EquivDec Program.Basics.
 Require Import Coquelicot.Rbar.
 Require Import Coquelicot.Lub.
 
@@ -21,31 +21,22 @@ Section RandomVariable.
   Class RandomVariable {Ts:Type} {Td:Type}
         {dom: SigmaAlgebra Ts}
         (prts: ProbSpace dom)
-        (cod: SigmaAlgebra Td) :=
-    {
-      (* the random variable. *)
-      rv_X: Ts -> Td;
-
+        (cod: SigmaAlgebra Td)
+        (rv_X: Ts -> Td)
+    :=
       (* for every element B in the sigma algebra, 
            the preimage of rv_X on B is an event in the probability space *)
-      rv_preimage: forall (B: event Td), sa_sigma B -> sa_sigma (event_preimage rv_X B);
-    }.
+      rv_preimage: forall (B: event Td), sa_sigma B -> sa_sigma (event_preimage rv_X B).
 
-  Definition rv_eq {Ts:Type} {Td:Type}
-              {dom: SigmaAlgebra Ts}
-              {prts: ProbSpace dom}
-              {cod: SigmaAlgebra Td} (rv1 rv2:RandomVariable prts cod)
-     := forall pt, rv_X (RandomVariable:=rv1) pt = rv_X (RandomVariable:=rv2) pt.
+  (*  pointwise_relation Ts eq *)
+  Definition rv_eq {Ts:Type} {Td:Type} : (Ts -> Td) -> (Ts -> Td) -> Prop
+     :=  pointwise_relation Ts eq.
   
    Global Instance rv_eq_equiv
-          {Ts:Type} {Td:Type}
-          {dom: SigmaAlgebra Ts}
-          (prts: ProbSpace dom)
-          (cod: SigmaAlgebra Td) :
-     Equivalence rv_eq.
+          {Ts:Type} {Td:Type} :
+     Equivalence (@rv_eq Ts Td).
    Proof.
-     unfold rv_eq.
-     constructor; red; congruence.
+     typeclasses eauto.
    Qed.
   
   Section Simple.
@@ -57,52 +48,46 @@ Section RandomVariable.
     Definition singleton_event {T} (m:T) := fun x => x=m.
 
     Class ConstantRandomVariable
-          (rrv : RandomVariable prts cod)
+          (rv_X:Ts -> Td)
       := { 
       srv_val : Td;
       srv_val_complete : forall x, rv_X x = srv_val
         }.
-
-  Program Instance rvconst c : RandomVariable prts cod :=
-    { rv_X := (fun _ => c) }.
-  Next Obligation.
-    unfold event_preimage.
-    destruct (sa_dec H c).
-    - assert (event_equiv (fun _ : Ts => B c)
-                          (fun _ : Ts => True)).
+    
+    Global Instance rvconst c : RandomVariable prts cod (const c).
+    Proof.
       red; intros.
-      intuition.
-      rewrite H1.
-      apply sa_all.
-    - assert (event_equiv (fun _ : Ts => B c)
-                          event_none).
-      red; intros.
-      intuition.
-      rewrite H1.
-      apply sa_none.
+      destruct (sa_dec H c).
+      - assert (event_equiv (fun _ : Ts => B c)
+                            (fun _ : Ts => True)).
+        red; intros.
+        intuition.
+        rewrite H1.
+        apply sa_all.
+      - assert (event_equiv (fun _ : Ts => B c)
+                            event_none).
+        red; intros.
+        intuition.
+        rewrite H1.
+        apply sa_none.
   Qed.
 
-  Program Instance crvconst c : ConstantRandomVariable (rvconst c)
+  Program Instance crvconst c : ConstantRandomVariable (const c)
     := { srv_val := c }.
 
-  Class SimpleRandomVariable 
-        (rrv : RandomVariable prts cod)
+  Class SimpleRandomVariable
+        (rv_X:Ts->Td)
     := { 
       srv_vals : list Td ;
       srv_vals_complete : forall x, In (rv_X x) srv_vals;
     }.
 
-  Global Program Instance srvconst
-         (rv:RandomVariable prts cod) 
-         {crv:ConstantRandomVariable rv} : SimpleRandomVariable rv
+  Global Program Instance srvconst c : SimpleRandomVariable (const c)
     := { srv_vals := [srv_val] }.
-  Next Obligation.
-    left.
-    symmetry.
-    apply srv_val_complete.
-  Qed.
 
-  Program Instance nodup_simple_random_variable (dec:forall (x y:Td), {x = y} + {x <> y}) {rv:RandomVariable prts cod} (srv:SimpleRandomVariable rv) : SimpleRandomVariable rv
+  Program Instance nodup_simple_random_variable (dec:forall (x y:Td), {x = y} + {x <> y})
+          {rv_X:Ts->Td}
+          (srv:SimpleRandomVariable rv_X) : SimpleRandomVariable rv_X
     := { srv_vals := nodup dec srv_vals }.
   Next Obligation.
     apply nodup_In.
@@ -111,8 +96,8 @@ Section RandomVariable.
 
   Lemma nodup_simple_random_variable_NoDup
         (dec:forall (x y:Td), {x = y} + {x <> y})
-        {rv:RandomVariable prts cod}
-        (srv:SimpleRandomVariable rv) :
+        {rv_X}
+        (srv:SimpleRandomVariable rv_X) :
     NoDup (srv_vals (SimpleRandomVariable:=nodup_simple_random_variable dec srv)).
   Proof.
     simpl.
@@ -123,10 +108,9 @@ Section RandomVariable.
 
   Section Reals.
     
-    Context {Ts:Type} 
-            {dom: SigmaAlgebra Ts}
-            (prts: ProbSpace dom).
+    Context {Ts:Type}.
 
+    (*
     Instance BuildRealRandomVariable
              (rvx: Ts -> R)
              (pf_pre:(forall r:R, sa_sigma (fun omega:Ts => (rvx omega) <= r))%R)
@@ -135,19 +119,12 @@ Section RandomVariable.
       rv_X := rvx ;
       rv_preimage := borel_sa_preimage rvx pf_pre
         }.
+     *)
 
-    Lemma RealRandomVariable_is_real
-          (rv:RandomVariable prts borel_sa) :
-      forall r:R, sa_sigma (fun omega:Ts => (rv_X omega) <= r)%R.
-    Proof.
-      destruct rv.
-      now rewrite  borel_sa_preimage2.
-    Qed.
-
-  Definition RealRandomVariable_le 
-        (rv1 rv2: RandomVariable prts borel_sa) : Prop :=
-    forall (x:Ts), (rv_X (RandomVariable:=rv1) x <= 
-                   rv_X (RandomVariable:=rv2) x)%R.
+  Definition RealRandomVariable_le
+        (rv_X1 rv_X2: Ts->R) : Prop :=
+    forall (x:Ts), (rv_X1 x <= 
+                   rv_X2 x)%R.
 
   Global Instance RealRandomVariable_le_pre : PreOrder RealRandomVariable_le.
   Proof.
@@ -158,19 +135,31 @@ Section RandomVariable.
   Admitted.
 
   Class IndicatorRandomVariable
-        (rv : RandomVariable prts borel_sa) :=
+        (rv_X : Ts -> R) :=
     irv_binary : forall x, In (rv_X x) [0;1] .
 
-  Global Program Instance IndicatorRandomVariableSimpl 
-         (rv : RandomVariable prts borel_sa)
-         {irv: IndicatorRandomVariable rv} : SimpleRandomVariable rv
+  Context {dom: SigmaAlgebra Ts}
+          (prts: ProbSpace dom).
+
+    Lemma RealRandomVariable_is_real
+          rv_X
+          (rv:RandomVariable prts borel_sa rv_X) :
+      forall r:R, sa_sigma (fun omega:Ts => (rv_X omega) <= r)%R.
+    Proof.
+      now rewrite borel_sa_preimage2.
+    Qed.
+
+    Global Program Instance IndicatorRandomVariableSimpl
+           rv_X
+           {irv: IndicatorRandomVariable rv_X} : SimpleRandomVariable rv_X
     := {srv_vals := [0;1]}.
   Next Obligation.
     apply irv.
   Qed.
 
   Lemma sa_singleton (c:R)
-    (rv : RandomVariable prts borel_sa) :
+        rv_X
+        (rv : RandomVariable prts borel_sa rv_X) :
     sa_sigma (event_preimage rv_X (singleton_event c)).
   Proof.
      apply sa_le_pt; intros.
@@ -178,17 +167,22 @@ Section RandomVariable.
      now apply rv_preimage.
   Qed.
 
-  Program Definition EventIndicator (P : event Ts) (dec:forall x, {P x} + {~ P x}) 
-    (sap: sa_sigma P) :=
-    BuildRealRandomVariable 
-      (fun (omega:Ts) => if dec omega then 1 else 0) _.
-  Next Obligation.
+  Definition EventIndicator {P : event Ts} (dec:forall x, {P x} + {~ P x}) : Ts -> R
+    := fun omega => if dec omega then 1 else 0.
+
+  Instance EventIndicator_rv {P : event Ts} (dec:forall x, {P x} + {~ P x})
+           (sap: sa_sigma P) : RandomVariable prts borel_sa (EventIndicator dec).
+  Proof.
+    red; intros.
+    apply borel_sa_preimage; trivial; intros.
     destruct (Rlt_dec r 0).
-    - assert (event_equiv (fun omega : Ts => (if dec omega then 1 else 0) <= r)
+    - unfold EventIndicator.
+      simpl.
+      assert (event_equiv (fun omega : Ts => (if dec omega then 1 else 0) <= r)
                           event_none).
       + unfold event_equiv, event_none; intros.
         destruct (dec x); lra.
-      + rewrite H; apply sa_none.
+      + rewrite H0; apply sa_none.
     - destruct (Rlt_dec r 1).
       + assert (event_equiv (fun omega : Ts => (if dec omega then 1 else 0) <= r)
                             (fun omega : Ts => ~ P omega)).
@@ -196,33 +190,44 @@ Section RandomVariable.
           destruct (dec x).
           -- split; [lra | congruence].
           -- split; [congruence | lra].
-        * rewrite H.
+        * rewrite H0.
           now apply sa_complement.
       + assert (event_equiv (fun omega : Ts => (if dec omega then 1 else 0) <= r)
                             (fun omega : Ts => True)).
         * unfold event_equiv; intros.
           destruct (dec x); lra.
-        * rewrite H.
+        * rewrite H0.
           apply sa_all.
   Qed.
 
-  Global Instance EventIndicator_indicator (P : event Ts) (dec:forall x, {P x} + {~ P x}) (sap: sa_sigma P)
-    : IndicatorRandomVariable (EventIndicator P dec sap).
+  Global Instance EventIndicator_indicator (P : event Ts) (dec:forall x, {P x} + {~ P x})
+    : IndicatorRandomVariable (EventIndicator dec).
   Proof.
+    unfold EventIndicator.
     intros x.
     simpl.
     match_destr; tauto.
   Qed.
 
   Definition point_preimage_indicator
-    (rv : RandomVariable prts borel_sa)
-    (c:R) :=
-    EventIndicator (fun omega => rv_X omega = c) (fun x => Req_EM_T (rv_X x) c) 
-                   (sa_singleton c rv).
+             (rv_X:Ts -> R)
+             (c:R) :=
+    EventIndicator (fun x => Req_EM_T (rv_X x) c).
 
+  Instance point_preimage_indicator_rv
+            (rv_X:Ts -> R)
+            (c:R) : RandomVariable prts borel_sa (point_preimage_indicator rv_X c).
+  Proof.
+    red; intros.
+    unfold point_preimage_indicator.
+
+    (* HERE *)
+
+  Qed.
+
+  
   Class PositiveRandomVariable
-        {prts: ProbSpace dom}
-        (rv: RandomVariable prts borel_sa) : Prop :=
+        (rv_X:Ts->R) : Prop :=
     prv : forall (x:Ts), (0 <= rv_X x)%R.
 
   (*
