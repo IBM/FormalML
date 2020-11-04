@@ -2140,6 +2140,15 @@ Section SimpleConditionalExpectation.
       lra.
   Qed.
 
+  Ltac se_rewrite H :=
+    match type of H with
+    | @SimpleExpectation _ _ _ ?x ?sx = _ =>
+      match goal with
+      | [|- context [@SimpleExpectation _ _ _ ?z ?sz]] =>
+        rewrite (@SimpleExpectation_pf_irrel x sz sx); rewrite H
+      end
+    end.
+      
   Lemma gen_conditional_tower_law_2part0
         (rv : RandomVariable Prts borel_sa)
         {srv : SimpleRandomVariable rv}
@@ -2163,13 +2172,7 @@ Section SimpleConditionalExpectation.
                      (gen_SimpleConditionalExpectation_2part_obligation_1 p sap)) X).
     intros.
     symmetry in H.
-    match type of H with
-    | @SimpleExpectation _ _ _ ?x ?sx = _ =>
-      match goal with
-      | [|- context [@SimpleExpectation _ _ _ ?z ?sz]] =>
-        rewrite (@SimpleExpectation_pf_irrel x sz sx); rewrite H
-      end
-    end.
+    se_rewrite H.
 
   Admitted.
 
