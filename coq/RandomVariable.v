@@ -171,7 +171,6 @@ Section RandomVariable.
     := fun omega => if dec omega then 1 else 0.
 
   Instance EventIndicator_rv {P : event Ts} (dec:forall x, {P x} + {~ P x})
-           {rv_X : Ts -> R}
            (sap: sa_sigma P) : RandomVariable prts borel_sa (EventIndicator dec).
   Proof.
     red; intros.
@@ -216,7 +215,7 @@ Section RandomVariable.
     EventIndicator (fun x => Req_EM_T (rv_X x) c).
 
   Instance point_preimage_indicator_rv
-           (rv_X:Ts -> R)
+           {rv_X:Ts -> R}
            (rv: RandomVariable prts borel_sa rv_X)
            (c:R) : RandomVariable prts borel_sa (point_preimage_indicator rv_X c).
   Proof.
@@ -579,17 +578,14 @@ Qed.
       apply NNPP.
       intro x.
       apply H.
-      cut (E === event_none).
+      cut (event_equiv E event_none).
       - intros HH.
-    Admitted.
-(*    
         rewrite HH.
         apply ps_none.
       - intros e.
         unfold event_none; intuition.
         eauto.
     Qed.
-*)
 
   Lemma Ropp_measurable (f : Ts -> R) :
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
@@ -906,7 +902,7 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     fun omega => (rv_X1 omega) * (rv_X2 omega).
 
   Program Instance rvmult_rv 
-          (rv_X1 rv_X2 : Ts -> R)
+          {rv_X1 rv_X2 : Ts -> R}
           (rv1 : RandomVariable Prts borel_sa rv_X1)
           (rv2 : RandomVariable Prts borel_sa rv_X2) :
     RandomVariable Prts borel_sa (rvmult rv_X1 rv_X2).
@@ -939,41 +935,38 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
    Lemma list_union_srv_preimage
          {rv_X : Ts -> R}
          (srv : SimpleRandomVariable rv_X) :
-     (list_union (map (fun (x : R) (omega : Ts) => rv_X omega = x) srv_vals)) ===  Ω .
+     event_equiv (list_union (map (fun (x : R) (omega : Ts) => rv_X omega = x) srv_vals))  Ω .
    Proof.
-     unfold Ω.
      intros x.
+     unfold Ω.
+     split; trivial; intros _.
      unfold list_union.
      generalize (srv_vals_complete x); intros HH2.
-     Admitted.
-(*
      exists (fun (omega : Ts) => rv_X  omega = rv_X x).
      split; trivial.
      apply in_map_iff.
      exists (rv_X x).
      split; trivial.
    Qed.
-*)
+
    Lemma srv_nodup_preimage_list_union
          {rv_X : Ts -> R}         
          (srv : SimpleRandomVariable rv_X) :
-     (list_union (map (fun (x : R) (omega : Ts) => rv_X omega = x) (nodup Req_EM_T srv_vals))) ===  Ω .
+     event_equiv (list_union (map (fun (x : R) (omega : Ts) => rv_X omega = x) (nodup Req_EM_T srv_vals)))  Ω .
    Proof.
      intros x.
      unfold Ω.
-   Admitted.
-(*
      split; trivial; intros _.
      unfold list_union.
      generalize (srv_vals_complete x); intros HH2.
-     exists (fun (omega : Ts) => rv_X (RandomVariable:=rv) omega = rv_X x).
+     exists (fun (omega : Ts) => rv_X  omega = rv_X x).
      split; trivial.
      apply in_map_iff.
      exists (rv_X x).
      split; trivial.
      now apply nodup_In.
    Qed.
-*)
+
    Lemma event_disjoint_preimage_and_disj {A B}
          f P l :
      NoDup l ->
@@ -1074,7 +1067,6 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
      induction l; firstorder.
    Qed.
 
-
    Lemma srv_vals_prob_1 
          {rv_X : Ts -> R}
          (rv: RandomVariable Prts borel_sa rv_X)                      
@@ -1093,7 +1085,7 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
      rewrite <- HH; clear HH.
      - rewrite srv_nodup_preimage_list_union.
        apply ps_one.
-     - apply srv_vals_nodup_preimage_sa.
+     - apply srv_vals_nodup_preimage_sa; trivial.
      - apply srv_vals_nodup_preimage_disj.
    Qed.
 
@@ -1119,8 +1111,8 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
 *)
 
    Lemma simple_random_all
-         {rv: RandomVariable Prts borel_sa}                      
-         (srv : SimpleRandomVariable rv) :
+         {rv_X : Ts -> R}
+         (srv : SimpleRandomVariable rv_X) :
      event_equiv (list_union (map (fun (x : R) (omega : Ts) => rv_X omega = x) srv_vals))
          Ω .   
    Proof.
@@ -1137,24 +1129,25 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
   Qed.
                   
   Lemma prob_inter_all1
-         {rv1 rv2: RandomVariable Prts borel_sa}                      
-         (srv1 : SimpleRandomVariable rv1) 
-         (srv2 : SimpleRandomVariable rv2)
+         {rv_X1 rv_X2 : Ts -> R}
+         {rv1: RandomVariable Prts borel_sa rv_X1}
+         {rv2: RandomVariable Prts borel_sa rv_X2}                               
+         (srv1 : SimpleRandomVariable rv_X1) 
+         (srv2 : SimpleRandomVariable rv_X2)
          (a:R) :
     NoDup (srv_vals (SimpleRandomVariable := srv2)) ->
-    ps_P (fun omega : Ts => rv_X (RandomVariable:=rv1) omega = a) =
+    ps_P (fun omega : Ts => rv_X1 omega = a) =
     list_sum
-      (map (fun x : R => ps_P (fun omega : Ts => rv_X (RandomVariable:=rv1) omega = a /\ 
-                                                 rv_X (RandomVariable:=rv2) omega = x)) 
+      (map (fun x : R => ps_P (fun omega : Ts => rv_X1 omega = a /\ rv_X2 omega = x)) 
            (srv_vals (SimpleRandomVariable:=srv2))).
     Proof.
       intros.
       rewrite list_sum_fold_right.
       rewrite <- map_map.
       rewrite <- ps_list_disjoint_union.
-      - replace (map (fun (x : R) (omega : Ts) => rv_X omega = a /\ rv_X omega = x) srv_vals)
-          with (map (event_inter (fun omega => rv_X (RandomVariable:=rv1) omega = a))
-                    (map (fun x => (fun omega => rv_X (RandomVariable:=rv2) omega = x)) 
+      - replace (map (fun (x : R) (omega : Ts) => rv_X1 omega = a /\ rv_X2 omega = x) srv_vals)
+          with (map (event_inter (fun omega => rv_X1 omega = a))
+                    (map (fun x => (fun omega => rv_X2 omega = x)) 
                          srv_vals)).
         + rewrite <- event_inter_list_union_distr.
           rewrite simple_random_all.
@@ -1166,35 +1159,36 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
         destruct H0.
         destruct H0.
         rewrite <- H0.
-        apply sa_sigma_inter_pts.
+        apply sa_sigma_inter_pts; trivial.
       - now apply event_disjoint_and_preimage_disj.
     Qed.
     
   Lemma prob_inter_all2
-         {rv1 rv2: RandomVariable Prts borel_sa}                      
-         (srv1 : SimpleRandomVariable rv1) 
-         (srv2 : SimpleRandomVariable rv2)
+         {rv_X1 rv_X2 : Ts -> R}
+         {rv1: RandomVariable Prts borel_sa rv_X1}
+         {rv2: RandomVariable Prts borel_sa rv_X2}                               
+         (srv1 : SimpleRandomVariable rv_X1) 
+         (srv2 : SimpleRandomVariable rv_X2)
          (a:R) :
     NoDup (srv_vals (SimpleRandomVariable := srv1)) ->
-    ps_P (fun omega : Ts => rv_X (RandomVariable:=rv2) omega = a) =
+    ps_P (fun omega : Ts => rv_X2 omega = a) =
     list_sum
-      (map (fun x : R => ps_P (fun omega : Ts => rv_X (RandomVariable:=rv1) omega = x /\ 
-                                                 rv_X (RandomVariable:=rv2) omega = a)) 
+      (map (fun x : R => ps_P (fun omega : Ts => rv_X1 omega = x /\ rv_X2 omega = a)) 
            (srv_vals (SimpleRandomVariable:=srv1))).
   Proof.
     intros.
     generalize (prob_inter_all1 srv2 srv1 a H); intros.
     rewrite map_ext with 
-        (g := (fun x : R => ps_P (fun omega : Ts => rv_X (RandomVariable:=rv2) omega = a /\ 
-                                                    rv_X (RandomVariable:=rv1) omega = x))); trivial.
+        (g := (fun x : R => ps_P (fun omega : Ts => rv_X2 omega = a /\ 
+                                                    rv_X1 omega = x))); trivial.
     intros.
     now apply ps_proper.
   Qed.
 
   Lemma RefineEvent
         (E : event Ts) (lE : list (event Ts)):
-    (list_union lE) ===  Ω ->
-    E === list_union (map (event_inter E) lE).
+    event_equiv (list_union lE) Ω ->
+    event_equiv E (list_union (map (event_inter E) lE)).
   Proof.
     intros.
     rewrite <- event_inter_list_union_distr.
@@ -1203,20 +1197,22 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
   Qed.
 
   Lemma RefineSimpleExpectation
-        (rv rv2 : RandomVariable Prts borel_sa)
-        {srv : SimpleRandomVariable rv}
-        {srv2 : SimpleRandomVariable rv2} :  
+        {rv_X rv_X2 : Ts -> R}
+        (rv : RandomVariable Prts borel_sa rv_X)
+        (rv2 : RandomVariable Prts borel_sa rv_X2)        
+        {srv : SimpleRandomVariable rv_X}
+        {srv2 : SimpleRandomVariable rv_X2} :  
     list_sum
-      (map (fun v : R => v * ps_P (fun omega : Ts => rv_X (RandomVariable:=rv) omega = v))
+      (map (fun v : R => v * ps_P (fun omega : Ts => rv_X  omega = v))
            (nodup Req_EM_T (srv_vals (SimpleRandomVariable:=srv)))) = 
     list_sum
       (map (fun vv : R*R => 
-              (fst vv) * ps_P (fun omega : Ts => rv_X (RandomVariable:=rv) omega = fst vv /\
-                                                 rv_X (RandomVariable:=rv2) omega = snd vv))
+              (fst vv) * ps_P (fun omega : Ts => rv_X  omega = fst vv /\
+                                                 rv_X2 omega = snd vv))
            (list_prod (nodup Req_EM_T (srv_vals (SimpleRandomVariable:=srv)))
                       (nodup Req_EM_T (srv_vals (SimpleRandomVariable:=srv2))))).
   Proof.
-    induction ((@nodup R Req_EM_T (@srv_vals Ts R dom Prts borel_sa rv srv))); simpl; trivial.
+    induction (nodup Req_EM_T (@srv_vals Ts R rv_X srv)); simpl; trivial.
     rewrite IHl.
     rewrite map_app.
     rewrite list_sum_cat.
@@ -1224,7 +1220,7 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     rewrite map_map.
     simpl.
     transitivity (list_sum (List.map (fun z => a*z)
-                                     (map (fun x : R => ps_P (fun omega : Ts => (rv_X (RandomVariable:=rv)) omega = a /\ (rv_X (RandomVariable:=rv2)) omega = x)) (nodup Req_EM_T (srv_vals (SimpleRandomVariable:=srv2)))))).
+                                     (map (fun x : R => ps_P (fun omega : Ts => (rv_X ) omega = a /\ (rv_X2) omega = x)) (nodup Req_EM_T (srv_vals (SimpleRandomVariable:=srv2)))))).
     - rewrite list_sum_mult_const.
       f_equal.
       rewrite map_map.
@@ -1233,10 +1229,12 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
   Qed.
 
   Lemma SimpleExpectation_le 
-        (rv1 rv2 : RandomVariable Prts borel_sa)
-        {srv1 : SimpleRandomVariable rv1}
-        {srv2 : SimpleRandomVariable rv2} : 
-    RealRandomVariable_le Prts rv1 rv2 ->
+        {rv_X1 rv_X2 : Ts -> R}
+        (rv1 : RandomVariable Prts borel_sa rv_X1)
+        (rv2 : RandomVariable Prts borel_sa rv_X2)        
+        {srv1 : SimpleRandomVariable rv_X1}
+        {srv2 : SimpleRandomVariable rv_X2} : 
+    RealRandomVariable_le rv_X1 rv_X2 ->
     SimpleExpectation rv1 <= SimpleExpectation rv2.
   Proof.
     unfold RealRandomVariable_le, SimpleExpectation.
@@ -1244,23 +1242,22 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     unfold event_preimage, singleton_event.
     rewrite (RefineSimpleExpectation  rv1 rv2).
     rewrite (RefineSimpleExpectation  rv2 rv1).
-    generalize (@sa_sigma_inter_pts rv1 rv2); intros sa_sigma.
-    destruct rv1; destruct rv2.
+    generalize (@sa_sigma_inter_pts rv_X1 rv_X2 rv1 rv2); intros sa_sigma.
     destruct srv1; destruct srv2.
-    unfold rv_X, srv_vals in *.
+    unfold srv_vals in *.
     replace 
       (list_sum (map
          (fun vv : R * R =>
-            fst vv * ps_P (fun omega : Ts => rv_X1 omega = fst vv /\ rv_X0 omega = snd vv))
+            fst vv * ps_P (fun omega : Ts => rv_X2 omega = fst vv /\ rv_X1 omega = snd vv))
          (list_prod (nodup Req_EM_T srv_vals1) (nodup Req_EM_T srv_vals0)))) with
       (list_sum (map
            (fun vv : R * R =>
-              snd vv * ps_P (fun omega : Ts => rv_X0 omega = fst vv /\ rv_X1 omega = snd vv))
+              snd vv * ps_P (fun omega : Ts => rv_X1 omega = fst vv /\ rv_X2 omega = snd vv))
            (list_prod (nodup Req_EM_T srv_vals0) (nodup Req_EM_T srv_vals1)))).
     - apply list_sum_le; intros.
-      assert ((ps_P (fun omega : Ts => rv_X0 omega = fst a /\ rv_X1 omega = snd a)) = 0 \/
+      assert ((ps_P (fun omega : Ts => rv_X1 omega = fst a /\ rv_X2 omega = snd a)) = 0 \/
               fst a <= snd a).
-      + destruct (Req_EM_T (ps_P (fun omega : Ts => rv_X0 omega = fst a /\ rv_X1 omega = snd a)) 0).
+      + destruct (Req_EM_T (ps_P (fun omega : Ts => rv_X1 omega = fst a /\ rv_X2 omega = snd a)) 0).
         * intuition.
         * apply zero_prob_or_witness in n.
           right.
@@ -1282,11 +1279,11 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
                     snd (snd x, fst x) *
                     ps_P
                       (fun omega : Ts =>
-                         rv_X0 omega = fst (snd x, fst x) /\ 
-                         rv_X1 omega = snd (snd x, fst x)))
+                         rv_X1 omega = fst (snd x, fst x) /\ 
+                         rv_X2 omega = snd (snd x, fst x)))
                  (fun vv : R * R =>
-                    fst vv * ps_P (fun omega : Ts => rv_X1 omega = fst vv /\ 
-                                                     rv_X0 omega = snd vv))).
+                    fst vv * ps_P (fun omega : Ts => rv_X2 omega = fst vv /\ 
+                                                     rv_X1 omega = snd vv))).
       apply Permutation.Permutation_refl.
       intros.
       unfold snd.
@@ -1297,21 +1294,22 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     Qed.
 
   Lemma sumSimpleExpectation00
-         {rv1 rv2: RandomVariable Prts borel_sa}                      
-         (srv1 : SimpleRandomVariable rv1) 
-         (srv2 : SimpleRandomVariable rv2) :
+         {rv_X1 rv_X2 : Ts -> R}
+         {rv1: RandomVariable Prts borel_sa rv_X1}
+         {rv2: RandomVariable Prts borel_sa rv_X2}
+         (srv1 : SimpleRandomVariable rv_X1) 
+         (srv2 : SimpleRandomVariable rv_X2) :
     (srv_vals (SimpleRandomVariable := srv2)) <> nil ->
     NoDup (srv_vals (SimpleRandomVariable := srv1)) ->
     NoDup (srv_vals (SimpleRandomVariable := srv2)) ->    
     list_sum
-      (map (fun v : R => v * ps_P (fun omega : Ts => rv_X (RandomVariable:=rv1) omega = v))
+      (map (fun v : R => v * ps_P (fun omega : Ts => rv_X1 omega = v))
            (srv_vals (SimpleRandomVariable := srv1))) =
     list_sum
       (map
        (fun v : R * R =>
           (fst v) *
-          ps_P (fun omega : Ts => rv_X (RandomVariable:=rv1) omega = fst v /\ 
-                                  rv_X (RandomVariable:=rv2) omega = snd v))
+          ps_P (fun omega : Ts => rv_X1 omega = fst v /\ rv_X2 omega = snd v))
        (list_prod (srv_vals (SimpleRandomVariable := srv1))
                   (srv_vals (SimpleRandomVariable := srv2)))).
    Proof.
@@ -1331,21 +1329,23 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
      Qed.
 
      Lemma sumSimpleExpectation11
-         {rv1 rv2: RandomVariable Prts borel_sa}                      
-         (srv1 : SimpleRandomVariable rv1) 
-         (srv2 : SimpleRandomVariable rv2) :
+         {rv_X1 rv_X2 : Ts -> R}
+         {rv1: RandomVariable Prts borel_sa rv_X1}
+         {rv2: RandomVariable Prts borel_sa rv_X2}         
+         (srv1 : SimpleRandomVariable rv_X1) 
+         (srv2 : SimpleRandomVariable rv_X2) :
     (srv_vals (SimpleRandomVariable := srv1)) <> nil ->
     NoDup (srv_vals (SimpleRandomVariable := srv1)) ->
     NoDup (srv_vals (SimpleRandomVariable := srv2)) ->    
     list_sum
-      (map (fun v : R => v * ps_P (fun omega : Ts => rv_X (RandomVariable:=rv2) omega = v))
+      (map (fun v : R => v * ps_P (fun omega : Ts => rv_X2 omega = v))
            (srv_vals (SimpleRandomVariable := srv2))) =
     list_sum
       (map
        (fun v : R * R =>
           (snd v) *
-          ps_P (fun omega : Ts => rv_X (RandomVariable:=rv1) omega = fst v /\ 
-                                  rv_X (RandomVariable:=rv2) omega = snd v))
+          ps_P (fun omega : Ts => rv_X1 omega = fst v /\ 
+                                  rv_X2 omega = snd v))
        (list_prod (srv_vals (SimpleRandomVariable := srv1))
                   (srv_vals (SimpleRandomVariable := srv2)))).
    Proof.
@@ -1370,19 +1370,20 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
    Qed.
        
   Lemma sumSimpleExpectation0
-         {rv1 rv2: RandomVariable Prts borel_sa}                      
-         (srv1 : SimpleRandomVariable rv1) 
-         (srv2 : SimpleRandomVariable rv2) :
+         {rv_X1 rv_X2 : Ts -> R}
+         {rv1: RandomVariable Prts borel_sa rv_X1}
+         {rv2: RandomVariable Prts borel_sa rv_X2}         
+         (srv1 : SimpleRandomVariable rv_X1) 
+         (srv2 : SimpleRandomVariable rv_X2) :
     (srv_vals (SimpleRandomVariable := srv2)) <> nil ->
     list_sum
-      (map (fun v : R => v * ps_P (fun omega : Ts => rv_X (RandomVariable:=rv1) omega = v))
+      (map (fun v : R => v * ps_P (fun omega : Ts => rv_X1 omega = v))
            (nodup Req_EM_T (srv_vals (SimpleRandomVariable := srv1)))) =
     list_sum
       (map
        (fun v : R * R =>
           (fst v) *
-          ps_P (fun omega : Ts => rv_X (RandomVariable:=rv1) omega = fst v /\ 
-                                  rv_X (RandomVariable:=rv2) omega = snd v))
+          ps_P (fun omega : Ts => rv_X1 omega = fst v /\ rv_X2 omega = snd v))
        (list_prod (nodup Req_EM_T (srv_vals (SimpleRandomVariable := srv1))) 
                   (nodup Req_EM_T (srv_vals (SimpleRandomVariable := srv2))))).
    Proof.
@@ -1393,19 +1394,21 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
 
 
    Lemma sumSimpleExpectation1
-         {rv1 rv2: RandomVariable Prts borel_sa}                      
-         (srv1 : SimpleRandomVariable rv1) 
-         (srv2 : SimpleRandomVariable rv2) :      
+         {rv_X1 rv_X2 : Ts -> R}
+         {rv1: RandomVariable Prts borel_sa rv_X1}
+         {rv2: RandomVariable Prts borel_sa rv_X2}         
+         (srv1 : SimpleRandomVariable rv_X1) 
+         (srv2 : SimpleRandomVariable rv_X2) :
     (srv_vals (SimpleRandomVariable := srv1)) <> nil ->
     list_sum
-      (map (fun v : R => v * ps_P (fun omega : Ts => rv_X (RandomVariable:=rv2) omega = v))
+      (map (fun v : R => v * ps_P (fun omega : Ts => rv_X2 omega = v))
            (nodup Req_EM_T (srv_vals (SimpleRandomVariable := srv2)))) =
     list_sum
       (map
        (fun v : R * R =>
           (snd v) *
-          ps_P (fun omega : Ts => rv_X (RandomVariable:=rv1) omega = fst v /\ 
-                                  rv_X (RandomVariable:=rv2) omega = snd v))
+          ps_P (fun omega : Ts => rv_X1 omega = fst v /\ 
+                                  rv_X2 omega = snd v))
        (list_prod (nodup Req_EM_T (srv_vals (SimpleRandomVariable := srv1))) 
                   (nodup Req_EM_T (srv_vals (SimpleRandomVariable := srv2))))).
    Proof.
@@ -1435,24 +1438,24 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     Defined.
 
   Lemma preimage_points_disjoint
-         {rv: RandomVariable Prts borel_sa}                      
+         {rv_X : Ts -> R}
          (c d: R) :
     c <> d ->
-    event_disjoint (fun omega => rv_X (RandomVariable:=rv) omega = c)
-                   (fun omega => rv_X (RandomVariable:=rv) omega = d).
+    event_disjoint (fun omega => rv_X  omega = c)
+                   (fun omega => rv_X  omega = d).
    Proof.
      unfold event_disjoint.
      congruence.
    Qed.
 
   Lemma preimage_point_pairs_disjoint
-         {rv1 rv2: RandomVariable Prts borel_sa}                      
+         {rv_X1 rv_X2: Ts -> R}
          (c1 c2 d1 d2: R) :
     (c1 <> d1) \/ (c2 <> d2) ->
-    event_disjoint (event_inter (fun omega => rv_X (RandomVariable:=rv1) omega = c1)
-                                (fun omega => rv_X (RandomVariable:=rv2) omega = c2))
-                   (event_inter (fun omega => rv_X (RandomVariable:=rv1) omega = d1)
-                                (fun omega => rv_X (RandomVariable:=rv2) omega = d2)).
+    event_disjoint (event_inter (fun omega => rv_X1 omega = c1)
+                                (fun omega => rv_X2 omega = c2))
+                   (event_inter (fun omega => rv_X1 omega = d1)
+                                (fun omega => rv_X2 omega = d2)).
   Proof.
     intros.
     unfold event_disjoint, event_inter; intros.
@@ -1755,30 +1758,28 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
   Qed.
     
   Lemma sumSimpleExpectation 
-         (rv1 rv2: RandomVariable Prts borel_sa)                      
-         {srv1 : SimpleRandomVariable rv1} 
-         {srv2 : SimpleRandomVariable rv2} :      
+         {rv_X1 rv_X2 : Ts -> R}
+         (rv1: RandomVariable Prts borel_sa rv_X1)
+         (rv2: RandomVariable Prts borel_sa rv_X2)         
+         {srv1 : SimpleRandomVariable rv_X1} 
+         {srv2 : SimpleRandomVariable rv_X2} :      
     NonEmpty Ts -> (SimpleExpectation rv1) + (SimpleExpectation rv2)%R = 
-    SimpleExpectation (rvplus rv1 rv2).
+    SimpleExpectation (rvplus_rv rv1 rv2).
    Proof.
     unfold SimpleExpectation; intros.
     generalize (non_empty_srv_vals srv1 X); intros.
     generalize (non_empty_srv_vals srv2 X); intros.    
     generalize (sumSimpleExpectation0 srv1 srv2 H0); intros.
     generalize (sumSimpleExpectation1 srv1 srv2 H); intros.   
-    generalize (@sa_sigma_inter_pts rv1 rv2). intro sa_sigma.
+    generalize (@sa_sigma_inter_pts rv_X1 rv_X2). intro sa_sigma.
     destruct srv1.
     destruct srv2.
     unfold srv_vals in *; intros.
     unfold srvplus.
-
-    destruct rv1.
-    destruct rv2.
-    unfold rv_X in *.
     simpl.
     unfold singleton_event, event_preimage.
     transitivity (list_sum
-                    (map (fun v : R*R => (fst v + snd v) * ps_P (fun omega : Ts => rv_X0 omega = fst v /\ rv_X1 omega = snd v))
+                    (map (fun v : R*R => (fst v + snd v) * ps_P (fun omega : Ts => rv_X1 omega = fst v /\ rv_X2 omega = snd v))
                          (list_prod (nodup Req_EM_T srv_vals0) (nodup Req_EM_T srv_vals1)))).
     - rewrite H1.
       rewrite H2.
@@ -1793,17 +1794,17 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
       
       transitivity (list_sum
                       (map
-       (fun v : R * R => (fst v + snd v) * ps_P (fun omega : Ts => rv_X0 omega = fst v /\ rv_X1 omega = snd v))
+       (fun v : R * R => (fst v + snd v) * ps_P (fun omega : Ts => rv_X1 omega = fst v /\ rv_X2 omega = snd v))
        (nodup HH (list_prod srv_vals0 srv_vals1)))).
       + f_equal.
         f_equal.
         symmetry.
         apply list_prod_nodup.
       + transitivity (list_sum
-                        (map (fun v : R => v * ps_P (fun omega : Ts => rv_X0 omega + rv_X1 omega = v))
+                        (map (fun v : R => v * ps_P (fun omega : Ts => rv_X1 omega + rv_X2 omega = v))
                              (nodup Req_EM_T (map (fun ab : R * R => fst ab + snd ab) (nodup HH (list_prod srv_vals0 srv_vals1)))))).
         * generalize (NoDup_nodup HH (list_prod srv_vals0 srv_vals1)).
-          assert (Hcomplete:forall x y, In (rv_X0 x, rv_X1 y) (nodup HH (list_prod srv_vals0 srv_vals1))).
+          assert (Hcomplete:forall x y, In (rv_X1 x, rv_X2 y) (nodup HH (list_prod srv_vals0 srv_vals1))).
           { intros.
             apply nodup_In.
             apply in_prod; eauto.
@@ -1813,7 +1814,7 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
           intros.
           transitivity (list_sum
                           (map
-                             (fun v : R * R => (fst v + snd v) * ps_P (fun omega : Ts => rv_X0 omega = fst v /\ rv_X1 omega = snd v))
+                             (fun v : R * R => (fst v + snd v) * ps_P (fun omega : Ts => rv_X1 omega = fst v /\ rv_X2 omega = snd v))
                              (concat (quotient sums_same l)))).
           { apply list_sum_Proper. apply Permutation.Permutation_map. symmetry. apply unquotient_quotient.
           } 
@@ -1823,7 +1824,7 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
 
           transitivity (
               list_sum
-                (map (fun v : R => v * ps_P (fun omega : Ts => rv_X0 omega + rv_X1 omega = v))
+                (map (fun v : R => v * ps_P (fun omega : Ts => rv_X1 omega + rv_X2 omega = v))
                      (map (fun ab : R * R => fst ab + snd ab) (map (hd (0,0)) (quotient sums_same l))))).
           -- repeat rewrite map_map; simpl.
              f_equal.
@@ -1839,10 +1840,10 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
              
              unfold is_equiv_class, ForallPairs in Hequiv.
              destruct a; simpl in *; [congruence | ]; clear Hnnil.
-             transitivity ((fst p + snd p) * ps_P (fun omega : Ts => rv_X0 omega = fst p /\ rv_X1 omega = snd p) +
+             transitivity ((fst p + snd p) * ps_P (fun omega : Ts => rv_X1 omega = fst p /\ rv_X2 omega = snd p) +
              list_sum
                (map
-                  (fun v : R * R => (fst p + snd p) * ps_P (fun omega : Ts => rv_X0 omega = fst v /\ rv_X1 omega = snd v))
+                  (fun v : R * R => (fst p + snd p) * ps_P (fun omega : Ts => rv_X1 omega = fst v /\ rv_X2 omega = snd v))
                   a)).
              ++ f_equal.
                 f_equal.
@@ -1854,7 +1855,7 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
                 rewrite <- Rmult_plus_distr_l.
                 f_equal.
                 transitivity (
-                    list_sum (map (fun x : R * R => ps_P (fun omega : Ts => rv_X0 omega = fst x /\ rv_X1 omega = snd x)) (p::a))); [reflexivity |].
+                    list_sum (map (fun x : R * R => ps_P (fun omega : Ts => rv_X1 omega = fst x /\ rv_X2 omega = snd x)) (p::a))); [reflexivity |].
                 rewrite list_sum_fold_right.
                 rewrite <- map_map.
                 rewrite <- ps_list_disjoint_union.
@@ -1868,19 +1869,19 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
                        rewrite ex1, ex2.
                        apply Hequiv; eauto.
                    --- intros.
-                       exists (fun (omega : Ts) => rv_X0 omega = rv_X0 x /\ rv_X1 omega = rv_X1 x).
+                       exists (fun (omega : Ts) => rv_X1 omega = rv_X1 x /\ rv_X2 omega = rv_X2 x).
                        split; [| tauto].
                        apply in_map_iff.
-                       exists (rv_X0 x, rv_X1 x).
+                       exists (rv_X1 x, rv_X2 x).
                        split; [reflexivity | ].
-                       assert (Hin:In (rv_X0 x, rv_X1 x) l) by apply Hcomplete.
+                       assert (Hin:In (rv_X1 x, rv_X2 x) l) by apply Hcomplete.
                        destruct (quotient_in sums_same _ _ Hin) as [xx [xxin inxx]].
-                       rewrite <- (all_different_same_eq sums_same (quotient sums_same l) xx (p::a) (rv_X0 x, rv_X1 x) (fst p, snd p)); simpl; trivial.
+                       rewrite <- (all_different_same_eq sums_same (quotient sums_same l) xx (p::a) (rv_X1 x, rv_X2 x) (fst p, snd p)); simpl; trivial.
                        destruct p; eauto.
                 ** intros.
                    apply in_map_iff in H3.
                    destruct H3 as [xx [? xxin]]; subst.
-                   apply sa_sigma.
+                   apply sa_sigma; trivial.
                 ** apply event_disjoint_preimage_disj_pairs.
                    generalize (quotient_bucket_NoDup sums_same l H1); rewrite Forall_forall; eauto.
           -- apply list_sum_Proper.
@@ -1899,8 +1900,6 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
              ++ unfold sums_same; red; simpl; intros; intuition.
         * now rewrite nodup_map_nodup.
    Qed.
-
-  
 
 End SimpleExpectation.
 
@@ -1930,20 +1929,38 @@ Section SimpleConditionalExpectation.
     {Prts: ProbSpace dom}.
 
   Definition gen_simple_conditional_expectation_scale (P : event Ts)
-             (rv : RandomVariable Prts borel_sa)
-             {srv : SimpleRandomVariable rv}
+             {rv_X : Ts -> R}
+             (rv : RandomVariable Prts borel_sa rv_X)
+             {srv : SimpleRandomVariable rv_X}
              (dec:forall x, {P x} + {~ P x})        
              (sap: sa_sigma P) :=
-    rvscale _ ((SimpleExpectation (rvmult rv (EventIndicator Prts P dec sap))) / (ps_P P))
-            ((EventIndicator Prts P dec sap)).
+    rvscale  ((SimpleExpectation (rvmult_rv rv (EventIndicator_rv Prts dec sap))) / (ps_P P))
+             (EventIndicator dec).
+
+  Instance gen_simple_conditional_expectation_scale_rv (P : event Ts)
+             {rv_X : Ts -> R}
+             (rv : RandomVariable Prts borel_sa rv_X)
+             {srv : SimpleRandomVariable rv_X}
+             (dec:forall x, {P x} + {~ P x})        
+             (sap: sa_sigma P) :  
+    RandomVariable Prts borel_sa  (gen_simple_conditional_expectation_scale P rv dec sap).
+  Proof.
+    unfold gen_simple_conditional_expectation_scale.
+    apply rvscale_rv.
+    now apply EventIndicator_rv.
+  Qed.
 
   Instance gen_simple_conditional_expectation_scale_simpl (P : event Ts)
-           (rv : RandomVariable Prts borel_sa)
-           (srv : SimpleRandomVariable rv) 
+           {rv_X : Ts -> R}
+           (rv : RandomVariable Prts borel_sa rv_X)
+           (srv : SimpleRandomVariable rv_X) 
            (dec:forall x, {P x} + {~ P x})        
            (sap: sa_sigma P) :
     SimpleRandomVariable (gen_simple_conditional_expectation_scale P rv dec sap).
   Proof.
+    unfold gen_simple_conditional_expectation_scale.
+    apply srvscale.
+    now apply EventIndicator_rv.
     typeclasses eauto.
   Defined.
 
@@ -1958,17 +1975,19 @@ Section SimpleConditionalExpectation.
   Defined.
 
   Definition gen_SimpleConditionalExpectation
-             (rv : RandomVariable Prts borel_sa)
-             {srv : SimpleRandomVariable rv}
+             {rv_X : Ts -> R}
+             (rv : RandomVariable Prts borel_sa rv_X)
+             {srv : SimpleRandomVariable rv_X}
              (l : list (event Ts))
              (sap_all : forall p, In p l -> sa_sigma p)
              (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x})) :=
-    fold_right rvplus (rvconst 0)
+    fold_right rvplus (const 0)
                (map_dep l (fun p pf => gen_simple_conditional_expectation_scale p rv (dec_all p pf) (sap_all p pf))).
 
   Instance gen_SimpleConditionalExpectation_simpl
-             (rv : RandomVariable Prts borel_sa)
-             {srv : SimpleRandomVariable rv}
+             {rv_X : Ts -> R}
+             (rv : RandomVariable Prts borel_sa rv_X)
+             {srv : SimpleRandomVariable rv_X}
              (l : list (event Ts))
              (sap_all : forall p, In p l -> sa_sigma p)
              (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x})) :
@@ -1977,7 +1996,6 @@ Section SimpleConditionalExpectation.
     unfold gen_SimpleConditionalExpectation.
     induction l; simpl.
     - apply srvconst.
-      apply crvconst.
     - apply srvplus.
       + apply gen_simple_conditional_expectation_scale_simpl.
       + apply IHl.
@@ -1993,12 +2011,12 @@ Section SimpleConditionalExpectation.
   Defined.
   
   Program Definition gen_SimpleConditionalExpectation_2part
-             (rv : RandomVariable Prts borel_sa)
-             {srv : SimpleRandomVariable rv}
+             {rv_X : Ts -> R}
+             (rv : RandomVariable Prts borel_sa rv_X)
+             {srv : SimpleRandomVariable rv_X}
              (p : event Ts)
              (sap : sa_sigma p)
              (dec_p: forall x, {p x} + {~ p x})
-    :  RandomVariable Prts borel_sa
     :=    
     rvplus (gen_simple_conditional_expectation_scale p rv dec_p sap)
            (gen_simple_conditional_expectation_scale (event_complement p) rv (dec_complement dec_p) _).
@@ -2007,8 +2025,9 @@ Section SimpleConditionalExpectation.
   Qed.
   
   Instance gen_SimpleConditionalExpectation_2part_simpl
-          (rv : RandomVariable Prts borel_sa)
-          {srv : SimpleRandomVariable rv}
+           {rv_X : Ts -> R}
+          (rv : RandomVariable Prts borel_sa rv_X)
+          {srv : SimpleRandomVariable rv_X}
           (p : event Ts)
           (sap : sa_sigma p)
           (dec_p: forall x, {p x} + {~ p x})
@@ -2019,18 +2038,22 @@ Section SimpleConditionalExpectation.
   Qed.
   
   Definition simple_conditional_expectation_scale_coef (c : R)
-  {rv rv2: RandomVariable Prts borel_sa}
-  (srv : SimpleRandomVariable rv) 
-  (srv2 : SimpleRandomVariable rv2) : R :=
+  {rv_X rv_X2 : Ts -> R}
+  {rv: RandomVariable Prts borel_sa rv_X}
+  {rv2: RandomVariable Prts borel_sa rv_X2}  
+  (srv : SimpleRandomVariable rv_X) 
+  (srv2 : SimpleRandomVariable rv_X2) : R :=
     ((SimpleExpectation 
-        (rvmult rv 
-                 (point_preimage_indicator Prts rv2 c)))
-       / (ps_P (event_preimage (rv_X (RandomVariable:=rv2)) (singleton_event c)))).
+        (rvmult_rv rv 
+                 (point_preimage_indicator_rv Prts rv c)))
+       / (ps_P (event_preimage rv_X2 (singleton_event c)))).
 
   Definition SimpleConditionalExpectation_list
-             {rv1 rv2 : RandomVariable Prts borel_sa}             
-             (srv1 : SimpleRandomVariable rv1) 
-             (srv2 : SimpleRandomVariable rv2)
+             {rv_X1 rv_X2 : Ts -> R}
+             {rv1 : RandomVariable Prts borel_sa rv_X1}
+             {rv2 : RandomVariable Prts borel_sa rv_X2}                          
+             (srv1 : SimpleRandomVariable rv_X1) 
+             (srv2 : SimpleRandomVariable rv_X2)
     : list (RandomVariable Prts borel_sa)
     := map (fun c => (rvscale Prts (simple_conditional_expectation_scale_coef c srv1 srv2)
                            (point_preimage_indicator Prts rv2 c)))
