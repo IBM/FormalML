@@ -2119,30 +2119,52 @@ Section SimpleConditionalExpectation.
   Definition fold_rvplus_prod_indicator
         (rv_X : Ts -> R)
         (l : list (event Ts))
-        (sap_all : forall p, In p l -> sa_sigma p)
         (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x})) :=
     (fold_right rvplus (const 0)
                 (map_dep l (fun p pf => 
                               rvmult rv_X (EventIndicator (dec_all p pf))))).
 
-   Instance fold_rvplus_prod_indicator_simpl
+  Instance fold_rvplus_prod_indicator_rv
         (rv_X : Ts -> R)
-        {srv : SimpleRandomVariable rv_X}
+        {srv : RandomVariable Prts borel_sa rv_X}
         (l : list (event Ts))
         (sap_all : forall p, In p l -> sa_sigma p)
         (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x})) :
-     SimpleRandomVariable (fold_rvplus_prod_indicator rv_X l sap_all dec_all).
+     RandomVariable Prts borel_sa (fold_rvplus_prod_indicator rv_X l dec_all).
    Proof.
      unfold fold_rvplus_prod_indicator.
      induction l; simpl.
      - typeclasses eauto.
      - cut_to IHl; [| simpl in *; intuition].
-       typeclasses eauto.
+       generalize (sap_all a); intros HH; cut_to HH; [| intuition].
+       apply rvplus_rv.
+       + apply rvmult_rv; trivial.
+         now apply EventIndicator_rv.
+       + apply IHl.
+   Qed.
+
+   Instance fold_rvplus_prod_indicator_simpl
+        (rv_X : Ts -> R)
+        {srv : SimpleRandomVariable rv_X}
+        (l : list (event Ts))
+        (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x})) :
+     SimpleRandomVariable (fold_rvplus_prod_indicator rv_X l dec_all).
+   Proof.
+     unfold fold_rvplus_prod_indicator.
+     induction l; simpl; typeclasses eauto.
    Qed.
 
    Lemma SimpleExpectation_const c : SimpleExpectation (const c) = c.
    Proof.
-   Admitted.
+     unfold SimpleExpectation; simpl.
+     unfold srvconst_obligation_1.
+     unfold event_preimage, singleton_event, const.
+     erewrite ps_proper.
+     - erewrite ps_one.
+       lra.
+     - unfold Ω.
+       red; intros; intuition.
+     Qed.
 
    Program Instance SimpleRandomVariable_enlarged
            {rv_X : Ts -> R}
@@ -2166,6 +2188,7 @@ Section SimpleConditionalExpectation.
      SimpleExpectation rv_X (srv:=srv) = SimpleExpectation rv_X (srv:=(SimpleRandomVariable_enlarged srv l lincl)).
    Proof.
      unfold SimpleExpectation; simpl.
+     
    Admitted.
      
    Lemma SimpleExpectation_pf_irrel 
@@ -2234,30 +2257,35 @@ Section SimpleConditionalExpectation.
    
    Lemma expectation_indicator_sum0
         (rv_X : Ts -> R)
-(*        (rv : RandomVariable Prts borel_sa rv_X) *)
+        (rv : RandomVariable Prts borel_sa rv_X)
         {srv : SimpleRandomVariable rv_X}
         (l : list (event Ts))
         (sap_all : forall p, In p l -> sa_sigma p)
         (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x})) :
+        NonEmpty Ts ->
     list_sum
       (map_dep l (fun p pf => SimpleExpectation 
                                 (rvmult rv_X (EventIndicator (dec_all p pf)
                                                                  )))) =
     SimpleExpectation
-      (fold_rvplus_prod_indicator rv_X l sap_all dec_all).
+      (fold_rvplus_prod_indicator rv_X l dec_all).
    Proof.
+     intros nempty.
      unfold fold_rvplus_prod_indicator.
      induction l; simpl.
      - symmetry.
        erewrite SimpleExpectation_pf_irrel.
        apply SimpleExpectation_const.
-     - 
-
-       rewrite SimpleExpectation_pf_irrel.
-       rewrite <- sumSimpleExpectation. rewrite SimpleExpectation_pl
-       
+     - unfold map_dep_obligation_2.
+       rewrite IHl by (simpl in *; intuition).
+       erewrite (SimpleExpectation_pf_irrel _ (srvplus _ _)).
+       generalize (sap_all a); intros HH; cut_to HH; [| intuition].
+       rewrite <- sumSimpleExpectation; trivial.
+       + apply rvmult_rv; trivial.
+         apply EventIndicator_rv; trivial.
+       + apply fold_rvplus_prod_indicator_rv; trivial.
+         simpl in *; intuition.
    Qed.
-
    
   Ltac se_rewrite H :=
     match type of H with
