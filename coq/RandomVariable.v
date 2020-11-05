@@ -2573,20 +2573,20 @@ Section Expectation.
 
   Definition SimpleExpectationSup 
              (E :  forall 
-                     (rrv: RandomVariable Prts borel_sa)
-                     (srv:SimpleRandomVariable rrv), Prop) : Rbar
+                     (rvx:Ts -> R)
+                     (srv:SimpleRandomVariable rvx), Prop) : Rbar
     := Lub_Rbar (fun (x : R) => 
-                   exists rrv srv, 
-                     E rrv srv /\ (SimpleExpectation rrv) = x).
+                   exists rvx srv, 
+                     E rvx srv /\ (SimpleExpectation rvx) = x).
     
   Definition Expectation_posRV
-             {rrv : RandomVariable Prts borel_sa}
-             (posrv:PositiveRandomVariable rrv) :  Rbar   :=
+             {rv_X : Ts -> R}
+             (posrv:PositiveRandomVariable rv_X) :  Rbar   :=
       (SimpleExpectationSup
          (fun
-            (rrv2: RandomVariable Prts borel_sa)
-            (srv2:SimpleRandomVariable rrv2) =>
-            (BoundedPositiveRandomVariable rrv rrv2))).
+            (rvx2: Ts -> R)
+            (srv2:SimpleRandomVariable rvx2) =>
+            (BoundedPositiveRandomVariable rv_X rvx2))).
 
   Program Definition pos_fun_part {Ts:Type} (f : Ts -> R) : (Ts -> nonnegreal) :=
     fun x => mknonnegreal (Rmax (f x) 0) _.
@@ -2637,49 +2637,56 @@ Section Expectation.
     lra.
   Qed.
 
-
-  Program Definition positive_part_rv (rvv : RandomVariable Prts borel_sa) :=
-    BuildRealRandomVariable Prts (pos_fun_part rv_X) _.
+  Program Instance positive_part_rv 
+     (rv_X : Ts -> R)
+     (rv : RandomVariable Prts borel_sa rv_X) :
+           RandomVariable Prts borel_sa (pos_fun_part rv_X).
   Next Obligation.
-    destruct rvv.
+    apply borel_sa_preimage; trivial; intros.
     apply Relu_measurable.
-    now apply borel_sa_preimage2.    
+    now apply (RealRandomVariable_is_real Prts).
  Qed.
 
-  Lemma positive_part_prv (rrv : RandomVariable Prts borel_sa) : 
-    PositiveRandomVariable (positive_part_rv rrv).
+  Lemma positive_part_prv 
+     (rv_X : Ts -> R)
+     (rrv : RandomVariable Prts borel_sa rv_X) : 
+    PositiveRandomVariable (pos_fun_part rv_X).
   Proof.
-    unfold PositiveRandomVariable, rv_X.
+    unfold PositiveRandomVariable.
     unfold positive_part_rv, pos_fun_part.
     intros.
     apply cond_nonneg.
  Qed.
 
-  Program Definition negative_part_rv (rvv : RandomVariable Prts borel_sa) :=
-    BuildRealRandomVariable Prts (neg_fun_part rv_X) _.
+  Program Instance negative_part_rv
+     (rv_X : Ts -> R)
+     (rv : RandomVariable Prts borel_sa rv_X) :
+           RandomVariable Prts borel_sa (neg_fun_part rv_X).
   Next Obligation.
-    destruct rvv.
+    apply borel_sa_preimage; trivial; intros.
     apply Relu_measurable.
     apply Ropp_measurable.
-    now apply borel_sa_preimage2.    
+    now apply (RealRandomVariable_is_real Prts).
   Qed.
 
   Lemma negative_part_prv
-           (rrv : RandomVariable Prts borel_sa) :
-    PositiveRandomVariable (negative_part_rv rrv).
+     (rv_X : Ts -> R)
+     (rrv : RandomVariable Prts borel_sa rv_X) : 
+    PositiveRandomVariable (neg_fun_part rv_X).
   Proof.
-    unfold PositiveRandomVariable, rv_X.
+    unfold PositiveRandomVariable.
     unfold negative_part_rv, neg_fun_part.
     intros.
     apply cond_nonneg.
  Qed.
 
-  Definition Expectation (rrv : RandomVariable Prts borel_sa) : option Rbar :=
-    Rbar_plus' (Expectation_posRV  (positive_part_prv rrv))
-               (Rbar_opp (Expectation_posRV  (negative_part_prv rrv))).
+  Definition Expectation (rv_X : Ts -> R) 
+             {rrv : RandomVariable Prts borel_sa rv_X} : option Rbar :=
+    Rbar_plus' (Expectation_posRV  (positive_part_prv rv_X rrv))
+               (Rbar_opp (Expectation_posRV  (negative_part_prv rv_X rrv))).
 
-  Definition rvmean (rrv : RandomVariable Prts borel_sa) : option R :=
-    match Expectation rrv with
+  Definition rvmean (rv_X:Ts -> R) {rrv : RandomVariable Prts borel_sa rv_X} : option R :=
+    match Expectation rv_X with
     | Some m => match m with
                 | Finite m' => Some (real m)
                 | _ => None
@@ -2687,16 +2694,17 @@ Section Expectation.
     | None => None
     end.
 
-  Definition variance (rrv : RandomVariable Prts borel_sa) : option Rbar :=
-    match rvmean rrv with
-    | Some m => Expectation (rvsqr (rvminus rrv (rvconst m)))
+  Definition variance (rv_X : Ts -> R) {rrv : RandomVariable Prts borel_sa rv_X} : option Rbar :=
+    match rvmean rv_X with
+    | Some m => Expectation (rvsqr (rvminus rv_X (const m)))
     | None => None
     end.
 
   Lemma Expectation_posRV_scale (c: posreal) 
-        (rv : RandomVariable Prts borel_sa) 
-        (posrv:PositiveRandomVariable rv) :  
-    Expectation_posRV (positive_scale_prv Prts c posrv) =
+        (rv_X : Ts -> R)
+        (rv : RandomVariable Prts borel_sa rv_X) 
+        (posrv:PositiveRandomVariable rv_X) :  
+    Expectation_posRV (positive_scale_prv c rv_X posrv) =
     c * Expectation_posRV posrv.
   Proof.
     unfold Expectation_posRV.
@@ -2705,9 +2713,11 @@ Section Expectation.
         
     Admitted.
 
-  Lemma Expectation_scale (c: posreal) (rv : RandomVariable Prts borel_sa) :
-    let Ex_rv := Expectation rv in
-    let Ex_c_rv := Expectation (rvscale Prts c rv) in
+  Lemma Expectation_scale (c: posreal) 
+        (rv_X : Ts -> R)
+        (rv : RandomVariable Prts borel_sa rv_X) :
+    let Ex_rv := Expectation rv_X in
+    let Ex_c_rv := (@Expectation (rvscale c rv_X) (rvscale_rv Prts c rv_X rv))in
     match Ex_rv, Ex_c_rv with
     | Some ex, Some exc => c*ex = exc
     | None, None => True
@@ -2715,12 +2725,9 @@ Section Expectation.
     end.
   Proof. 
     unfold Expectation.
-    generalize (Expectation_posRV_scale c _ (positive_part_prv rv)); intro eprv.
-    Set Printing All.
+    generalize (Expectation_posRV_scale c _  _ (positive_part_prv rv_X rv)); intro eprv.
     
   Admitted.
-
-
 
 End Expectation.
 
