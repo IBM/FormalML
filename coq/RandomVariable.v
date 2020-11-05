@@ -2209,19 +2209,14 @@ Section SimpleConditionalExpectation.
      trivial.
    Qed.
 
-   Definition rv_eq_simple (rv_X1 rv_X2:Ts->R) {srv1:SimpleRandomVariable rv_X1}
-     := forall x:Ts, In (rv_X1 x) srv_vals -> rv_X1 x =  rv_X2 x.
-
    Program Instance SimpleRandomVariable_transport
             {rv_X1 rv_X2:Ts->R}
             (srv1:SimpleRandomVariable rv_X1)
-            (eqq:rv_eq_simple rv_X1 rv_X2)
-:
+            (eqq:rv_eq rv_X1 rv_X2) :
      SimpleRandomVariable rv_X2
      := { srv_vals := srv_vals }.
    Next Obligation.
      rewrite <- (eqq x).
-     apply srv_vals_complete.
      apply srv_vals_complete.
    Qed.
 
@@ -2234,7 +2229,7 @@ Section SimpleConditionalExpectation.
    
    Lemma SimpleExpectation_transport {rv_X1 rv_X2:Ts->R}
             (srv1:SimpleRandomVariable rv_X1)
-            (eqq:rv_eq_simple rv_X1 rv_X2) :
+            (eqq:rv_eq rv_X1 rv_X2) :
      SimpleExpectation rv_X1 = SimpleExpectation rv_X2 (srv:=SimpleRandomVariable_transport srv1 eqq).
    Proof.
      unfold SimpleExpectation.
@@ -2249,26 +2244,13 @@ Section SimpleConditionalExpectation.
      unfold event_preimage.
      rewrite eqq.
      + reflexivity.
-     + apply srv_vals_complete.
    Qed.
             
    Lemma SimpleExpectation_ext 
          {rv_X1 rv_X2 : Ts -> R}
          (srv1:SimpleRandomVariable rv_X1) 
          (srv2:SimpleRandomVariable rv_X2):
-     rv_eq_simple rv_X1 rv_X2 ->
-     SimpleExpectation rv_X1 = SimpleExpectation rv_X2.
-   Proof.
-     intros eqq.
-     rewrite (SimpleExpectation_transport srv1 eqq).
-     apply SimpleExpectation_pf_irrel.
-   Qed.
-
-   Lemma SimpleExpectation_ext_in
-         {rv_X1 rv_X2 : Ts -> R}
-         (srv1:SimpleRandomVariable rv_X1) 
-         (srv2:SimpleRandomVariable rv_X2):
-     rv_eq_simple rv_X1 rv_X2 ->
+     rv_eq rv_X1 rv_X2 ->
      SimpleExpectation rv_X1 = SimpleExpectation rv_X2.
    Proof.
      intros eqq.
@@ -2314,6 +2296,85 @@ Section SimpleConditionalExpectation.
       end
     end.
 
+  Lemma is_partition_list_nnil {T} : NonEmpty T -> ~ @is_partition_list T [].
+  Proof.
+    intros a [??]; unfold list_union in *; simpl in *.
+    assert (HH:@Ω T a) by now compute.
+    rewrite <- H0 in HH.
+    destruct HH as [? [??]].
+    tauto.
+  Qed.
+
+  Lemma list_union_dec {T} {l:list (event T)}
+    (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x})) :
+    (forall x, {(list_union l) x} + {~ (list_union l) x}).
+  Proof.
+    unfold list_union.
+    intros x.
+    induction l; simpl.
+    - right; intros [?[??]]; tauto.
+    - simpl in *.
+      generalize (dec_all a); intros HH.
+      cut_to HH; [|tauto].
+      destruct (HH x).
+      + left; eauto.
+      + destruct IHl.
+        * simpl in *; intros.
+          apply dec_all.
+          eauto.
+        * left. destruct e as [?[??]].
+          eauto.
+        * right.
+          intros [?[??]].
+          destruct H.
+          -- congruence.
+          -- apply n0.
+             eauto.
+  Defined.
+
+  Lemma expectation_indicator_sum_gen {nempty:NonEmpty Ts}
+        (rv_X : Ts -> R)
+        {rv : RandomVariable Prts borel_sa rv_X}
+        {srv : SimpleRandomVariable rv_X}
+        (l : list (event Ts))
+        (is_disj: ForallOrdPairs event_disjoint l)
+        (sap_all : forall p, In p l -> sa_sigma p)
+        (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x})) :
+    SimpleExpectation (rvmult rv_X (EventIndicator (list_union_dec dec_all))) =
+    list_sum
+      (map_dep l (fun p pf => SimpleExpectation 
+                                (rvmult rv_X (EventIndicator (dec_all p pf))))).
+  Proof.
+    rewrite expectation_indicator_sum0 by trivial.
+    induction l; simpl.
+    - unfold fold_rvplus_prod_indicator.
+      simpl.
+      unfold EventIndicator.
+      unfold list_union_dec; simpl.
+      transitivity (SimpleExpectation (rvscale 0 rv_X)).
+      + apply SimpleExpectation_ext.
+        intros ?; simpl.
+        vm_compute.
+        lra.
+      + rewrite <- scaleSimpleExpectation.
+        rewrite SimpleExpectation_const.
+        lra.
+    - invcs is_disj.
+      cut_to IHl; trivial.
+      +
+      + simpl in *; intuition.
+  Qed.
+      
+      
+    unfold fold_rvplus_prod_indicator, const.
+    destruct is_part.
+
+    ps_P (list_union l) * rv_X x =
+      fold_right rvplus (fun _ : Ts => 0)
+               (map_dep l (fun (p : event Ts) (pf : In p l) => rvmult rv_X (EventIndicator (dec_all p pf)))) x
+
+
+               
   Lemma expectation_indicator_sum {nempty:NonEmpty Ts}
         (rv_X : Ts -> R)
         {rv : RandomVariable Prts borel_sa rv_X}
@@ -2329,10 +2390,24 @@ Section SimpleConditionalExpectation.
   Proof.
     rewrite expectation_indicator_sum0 by trivial.
     unfold fold_rvplus_prod_indicator, const.
+
+    SimpleExpectation (rv_X * (EventIndicator (list_union l)))
+    ps_P (list_union l) * rv_X x =
+      fold_right rvplus (fun _ : Ts => 0)
+               (map_dep l (fun (p : event Ts) (pf : In p l) => rvmult rv_X (EventIndicator (dec_all p pf)))) x
+
+    
     apply SimpleExpectation_ext.
-    intros ??.
+    intros x.
+    destruct is_part as [HD HS].
+    
+
+    
+    
     induction l; simpl.
-    - Set Printing All.
+    - apply is_partition_list_nnil.
+
+      Set Printing All.
     generalize (srv_vals_complete e).
     simpl.
     Set Printing All.
