@@ -171,6 +171,7 @@ Section RandomVariable.
     := fun omega => if dec omega then 1 else 0.
 
   Instance EventIndicator_rv {P : event Ts} (dec:forall x, {P x} + {~ P x})
+           {rv_X : Ts -> R}
            (sap: sa_sigma P) : RandomVariable prts borel_sa (EventIndicator dec).
   Proof.
     red; intros.
@@ -215,16 +216,15 @@ Section RandomVariable.
     EventIndicator (fun x => Req_EM_T (rv_X x) c).
 
   Instance point_preimage_indicator_rv
-            (rv_X:Ts -> R)
-            (c:R) : RandomVariable prts borel_sa (point_preimage_indicator rv_X c).
+           (rv_X:Ts -> R)
+           (rv: RandomVariable prts borel_sa rv_X)
+           (c:R) : RandomVariable prts borel_sa (point_preimage_indicator rv_X c).
   Proof.
     red; intros.
     unfold point_preimage_indicator.
-
-    (* HERE *)
-
-  Qed.
-
+    apply EventIndicator_rv; trivial.
+    now apply sa_singleton.
+ Qed.    
   
   Class PositiveRandomVariable
         (rv_X:Ts->R) : Prop :=
@@ -315,27 +315,31 @@ Section RandomVariable.
         now apply (scale_measurable_pos f (mkposreal _ H0)).
    Qed.
 
+      
+    Definition rvscale (c:R) (rv_X : Ts -> R) :=
+      fun omega => c * (rv_X omega).
 
-  Program Definition rvscale (c: R) (rv : RandomVariable prts borel_sa) :=
-    BuildRealRandomVariable (fun omega => c * (rv_X omega)) _.
-  Next Obligation.
-    destruct rv.
-    apply scale_measurable.
-    apply borel_sa_preimage2; intros.
-    now apply rv_preimage0.
- Qed.
-
-  Lemma positive_scale_prv (c:posreal) 
-        {rrv : RandomVariable prts borel_sa} 
-        (prv : PositiveRandomVariable rrv): 
-    PositiveRandomVariable (rvscale c rrv).
+    Instance rvscale_rv (c: R) (rv_X : Ts -> R) 
+             (rv : RandomVariable prts borel_sa rv_X) 
+      : RandomVariable prts borel_sa (rvscale c rv_X).
+   Proof.
+     red; intros.
+     apply borel_sa_preimage2; trivial; intros.
+     apply scale_measurable.     
+     now apply RealRandomVariable_is_real.
+   Qed.
+   
+   Lemma positive_scale_prv (c:posreal) 
+        (rv_X : Ts -> R)
+        (prv : PositiveRandomVariable rv_X): 
+    PositiveRandomVariable (rvscale c rv_X).
   Proof.
-    unfold PositiveRandomVariable in *.
-    unfold rv_X; simpl.
-    intros.
+    red; intros.
+    red in prv.
     assert (0 < c) by apply (cond_pos c).
+    unfold rvscale.
     specialize (prv x).
-    replace (0) with (c*0) by lra.
+    replace (0) with (c*0) by lra.    
     apply Rmult_le_compat_l; trivial.
     now left.
  Qed.
@@ -352,7 +356,7 @@ Section prob.
           {dom: SigmaAlgebra Ts}
           {prts: ProbSpace dom}
           {cod: SigmaAlgebra Td}
-          {rv:RandomVariable prts cod}.
+          {rv_X: Ts -> Td}.
 
   Definition Pr 
              (S:Td->Prop)
@@ -387,30 +391,34 @@ Section SimpleExpectation.
     {Prts: ProbSpace dom}.
 
   Definition simpleRandomVariable_partition_image 
-             {rrv : RandomVariable Prts borel_sa}
-             (srv : SimpleRandomVariable rrv) : list (event Ts) :=
+             {rv_X : Ts -> R}
+             {rrv : RandomVariable Prts borel_sa rv_X}
+             (srv : SimpleRandomVariable rv_X) : list (event Ts) :=
     map (event_preimage rv_X) (map singleton_event srv_vals).
     
   Definition SimpleExpectation
-             (rrv : RandomVariable Prts borel_sa)
-             {srv : SimpleRandomVariable rrv} : R :=
+             {rv_X : Ts -> R}
+             (rrv : RandomVariable Prts borel_sa rv_X)
+             {srv : SimpleRandomVariable rv_X} : R :=
     list_sum (map (fun v => Rmult v (ps_P (event_preimage rv_X (singleton_event v)))) 
                   (nodup Req_EM_T srv_vals)).
 
   
   Global Program Instance scale_constant_random_variable (c: R)
-         {rrv : RandomVariable Prts borel_sa}
-         (crv:ConstantRandomVariable rrv) : ConstantRandomVariable (rvscale Prts c rrv)
+         {rv_X : Ts -> R}
+         {rrv : RandomVariable Prts borel_sa rv_X}
+         (crv:ConstantRandomVariable rv_X) : ConstantRandomVariable (rvscale c rv_X)
     := { srv_val := Rmult c srv_val }.
   Next Obligation.
     destruct crv.
-    unfold srv_val.
+    unfold rvscale.
     now rewrite (srv_val_complete0 x).
   Qed.
 
   Global Program Instance srvscale (c: R)
-         {rrv : RandomVariable Prts borel_sa}                      
-         (srv:SimpleRandomVariable rrv) : SimpleRandomVariable (rvscale Prts c rrv)
+         {rv_X : Ts -> R}
+         {rrv : RandomVariable Prts borel_sa rv_X}                      
+         (srv:SimpleRandomVariable rv_X) : SimpleRandomVariable (rvscale c rv_X)
     := { srv_vals := map (fun v => Rmult c v) srv_vals }.
   Next Obligation.
     destruct srv.
@@ -473,11 +481,12 @@ Qed.
   Qed.
   
   Lemma scaleSimpleExpectation (c:R)
-        (rrv : RandomVariable Prts borel_sa)
-        {srv : SimpleRandomVariable rrv} : 
-    (c * SimpleExpectation rrv)%R = SimpleExpectation (rvscale _ c rrv).
+        {rv_X : Ts -> R}
+        (rrv : RandomVariable Prts borel_sa rv_X)
+        {srv : SimpleRandomVariable rv_X} : 
+    (c * SimpleExpectation rrv)%R = SimpleExpectation (rvscale_rv Prts c rv_X rrv).
   Proof.
-    unfold SimpleExpectation, srvscale.
+    unfold SimpleExpectation, rvscale.
     destruct srv.
     unfold srv_vals.
     simpl.
@@ -510,7 +519,8 @@ Qed.
   Qed.
 
   Lemma RefineSimpleExpectation0
-        (rv : RandomVariable Prts borel_sa)                      
+        {rv_X : Ts -> R}
+        (rv : RandomVariable Prts borel_sa rv_X)                      
         (E : event Ts) (l : list R):
     sa_sigma E ->
     list_sum
@@ -534,7 +544,7 @@ Qed.
                                           ps_P (fun omega : Ts => rv_X omega = a /\ 
                                                                   event_complement E omega))); trivial.
     apply ps_total; trivial.
-    apply sa_singleton.
+    apply (sa_singleton Prts); trivial.
     now apply sa_complement.
     apply event_disjoint_complement.
     apply event_union_complement.
@@ -549,14 +559,16 @@ Qed.
 
 
   Lemma sa_sigma_inter_pts
-         (rv1 rv2: RandomVariable Prts borel_sa)
+         {rv_X1 rv_X2 : Ts -> R}
+         (rv1: RandomVariable Prts borel_sa rv_X1)
+         (rv2: RandomVariable Prts borel_sa rv_X2)         
          (c1 c2 : R) :
-    sa_sigma (fun omega : Ts => rv_X (RandomVariable:=rv1) omega = c1 /\ 
-                                rv_X (RandomVariable:=rv2) omega = c2).
+    sa_sigma (fun omega : Ts => rv_X1 omega = c1 /\ 
+                                rv_X2 omega = c2).
   Proof.
         apply sa_inter.
-        apply sa_singleton.
-        apply sa_singleton.        
+        apply (sa_singleton Prts); trivial.
+        apply (sa_singleton Prts); trivial.
   Qed.
 
   Require Import Classical_Prop.
@@ -568,13 +580,16 @@ Qed.
       intro x.
       apply H.
       cut (E === event_none).
-      - intros HH; rewrite HH.
+      - intros HH.
+    Admitted.
+(*    
+        rewrite HH.
         apply ps_none.
       - intros e.
         unfold event_none; intuition.
         eauto.
     Qed.
-
+*)
 
   Lemma Ropp_measurable (f : Ts -> R) :
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
@@ -589,17 +604,30 @@ Qed.
     now apply sa_le_ge.
   Qed.
 
-  Definition rvopp (rv : RandomVariable Prts borel_sa) := rvscale Prts (-1) rv.
+  Definition rvopp (rv_X : Ts -> R) := rvscale (-1) rv_X.
+
+  Instance rvopp_rv (rv_X : Ts -> R) 
+             (rv : RandomVariable Prts borel_sa rv_X) 
+      : RandomVariable Prts borel_sa (rvopp rv_X).
+   Proof.
+     red; intros.
+     apply borel_sa_preimage2; trivial; intros.
+     unfold rvopp.
+     apply scale_measurable.     
+     now apply (RealRandomVariable_is_real Prts).
+   Qed.
 
   Definition srvopp 
-             (rrv : RandomVariable Prts borel_sa)
-             {srv:SimpleRandomVariable rrv} :=
+             {rv_X : Ts -> R}
+             (rrv : RandomVariable Prts borel_sa rv_X)
+             {srv:SimpleRandomVariable rv_X} :=
     srvscale (-1) srv.    
 
   Lemma oppSimpleExpectation
-         (rrv : RandomVariable Prts borel_sa)                      
-         {srv : SimpleRandomVariable rrv} : 
-    (- SimpleExpectation rrv)%R = SimpleExpectation (rvopp rrv).
+        {rv_X : Ts -> R}
+         (rrv : RandomVariable Prts borel_sa rv_X)                      
+         {srv : SimpleRandomVariable rv_X} : 
+    (- SimpleExpectation rrv)%R = SimpleExpectation (rvopp_rv rv_X rrv).
   Proof.
     replace (- SimpleExpectation rrv) with (-1 * SimpleExpectation rrv) by lra.
     apply scaleSimpleExpectation.
@@ -653,26 +681,27 @@ Qed.
     now apply Ropp_measurable.
   Qed.
 
-  Program Definition rvplus (rv1 rv2 : RandomVariable Prts borel_sa) :=
-    BuildRealRandomVariable Prts
-                            (fun omega =>
-                               (rv_X (RandomVariable:=rv1) omega) + 
-                               (rv_X (RandomVariable:=rv2) omega) ) _.
-  Next Obligation.
-    destruct rv1.
-    destruct rv2.
+  Definition rvplus (rv_X1 rv_X2 : Ts -> R) :=
+    (fun omega =>  (rv_X1 omega) + (rv_X2 omega)).
+
+  Instance rvplus_rv {rv_X1 rv_X2 : Ts -> R}
+           (rv1 : RandomVariable Prts borel_sa rv_X1)
+           (rv2 : RandomVariable Prts borel_sa rv_X2) :
+    RandomVariable Prts borel_sa (rvplus rv_X1 rv_X2).
+  Proof.
+    red; intros.
+    apply borel_sa_preimage2; trivial; intros.
+    unfold rvplus.
     apply sum_measurable.
-    apply borel_sa_preimage2; intros.
-    now apply rv_preimage0.
-    apply borel_sa_preimage2; intros.    
-    now apply rv_preimage1.
- Qed.
+    apply (RealRandomVariable_is_real Prts); trivial.
+    apply (RealRandomVariable_is_real Prts); trivial.    
+   Qed.
 
   Global Program Instance srvplus
-         {rv1 rv2 : RandomVariable Prts borel_sa}                      
-         (srv1:SimpleRandomVariable rv1)
-         (srv2:SimpleRandomVariable rv2)
-    : SimpleRandomVariable (rvplus rv1 rv2)
+         {rv_X1 rv_X2 : Ts -> R}
+         (srv1:SimpleRandomVariable rv_X1)
+         (srv2:SimpleRandomVariable rv_X2)
+    : SimpleRandomVariable (rvplus rv_X1 rv_X2)
     := { srv_vals := map (fun ab => Rplus (fst ab) (snd ab)) 
                          (list_prod (srv_vals (SimpleRandomVariable:=srv1))
                                     (srv_vals (SimpleRandomVariable:=srv2))) }.
@@ -680,27 +709,29 @@ Qed.
     destruct srv1.
     destruct srv2.
     rewrite in_map_iff.
-    exists ((rv_X (RandomVariable:=rv1) x), (rv_X (RandomVariable:=rv2) x)).
+    exists (rv_X1 x, rv_X2 x).
     split.
     now simpl.
     apply in_prod; trivial.
   Qed.
 
-  Definition rvminus (rv1 rv2 : RandomVariable Prts borel_sa) := 
-    rvplus rv1 (rvopp rv2).
+  Definition rvminus (rv_X1 rv_X2 : Ts -> R) :=
+    rvplus rv_X1 (rvopp rv_X2).
 
+  (*
   Definition srvminus 
-             (rv1 rv2 : RandomVariable Prts borel_sa)
-             {srv1 : SimpleRandomVariable rv1}
-             {srv2 : SimpleRandomVariable rv2} :=     
+             {rv_X1 rv_X2 : Ts -> R}
+             (srv1 : SimpleRandomVariable rv_X1)
+             (srv2 : SimpleRandomVariable rv_X2)  :=     
     rvplus rv1 (rvopp rv2).
+   *)
 
   Class NonEmpty (A : Type) :=
   ex : A.
 
   Lemma non_empty_srv_vals 
-         {rv: RandomVariable Prts borel_sa}                      
-         (srv : SimpleRandomVariable rv) :
+         {rv_X : Ts -> R}
+         (srv : SimpleRandomVariable rv_X) :
     NonEmpty Ts -> srv_vals <> nil.
   Proof.
     intros.
@@ -712,8 +743,8 @@ Qed.
   Qed.
 
   Lemma nil_srv_vals_empty_Ts
-        {rv: RandomVariable Prts borel_sa}                      
-        (srv : SimpleRandomVariable rv) :
+        {rv_X : Ts -> R}
+        (srv : SimpleRandomVariable rv_X) :
     srv_vals = nil -> (forall (x:Ts), False).
     Proof.
       intros.
@@ -823,22 +854,27 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     apply Rsqr_continuous.
   Qed.
 
-  Program Definition rvsqr (rv : RandomVariable Prts borel_sa) :=
-    BuildRealRandomVariable Prts
-                            (fun omega => Rsqr (rv_X omega)) _.
-  Next Obligation.
-    destruct rv.
+  Definition rvsqr (rv_X : Ts -> R) := fun omega => Rsqr (rv_X omega).
+
+  Global Instance rvsqr_rv
+         {rv_X : Ts -> R}
+         (rv : RandomVariable Prts borel_sa rv_X) :
+    RandomVariable Prts borel_sa (rvsqr rv_X).
+  Proof.
+    red; intros.
+    apply borel_sa_preimage2; trivial; intros.
+    unfold rvsqr.
     apply Rsqr_measurable.
-    apply borel_sa_preimage2; intros.
-    now apply rv_preimage0.
- Qed.
+    apply (RealRandomVariable_is_real Prts); trivial.
+   Qed.
 
   Global Program Instance srvsqr
-         {rv : RandomVariable Prts borel_sa}                      
-         (srv:SimpleRandomVariable rv) : SimpleRandomVariable (rvsqr rv)
+         {rv_X : Ts -> R}
+         (srv:SimpleRandomVariable rv_X) : SimpleRandomVariable (rvsqr rv_X)
     := { srv_vals := map Rsqr srv_vals }.
   Next Obligation.
     destruct srv.
+    unfold rvsqr.
     now apply in_map.
   Qed.
   
@@ -866,26 +902,27 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
       now apply minus_measurable.
   Qed.
   
-  Program Definition rvmult (rv1 rv2 : RandomVariable Prts borel_sa) :=
-    BuildRealRandomVariable Prts
-                            (fun omega =>
-                               (rv_X (RandomVariable:=rv1) omega) * 
-                               (rv_X (RandomVariable:=rv2) omega) ) _.
+  Definition rvmult (rv_X1 rv_X2 : Ts -> R) := 
+    fun omega => (rv_X1 omega) * (rv_X2 omega).
+
+  Program Instance rvmult_rv 
+          (rv_X1 rv_X2 : Ts -> R)
+          (rv1 : RandomVariable Prts borel_sa rv_X1)
+          (rv2 : RandomVariable Prts borel_sa rv_X2) :
+    RandomVariable Prts borel_sa (rvmult rv_X1 rv_X2).
   Next Obligation.
-    destruct rv1.
-    destruct rv2.
+    apply borel_sa_preimage2; trivial; intros.
+    unfold rvmult.
     apply product_measurable.
-    apply borel_sa_preimage2; intros.
-    now apply rv_preimage0.
-    apply borel_sa_preimage2; intros.    
-    now apply rv_preimage1.
+    apply (RealRandomVariable_is_real Prts); trivial.
+    apply (RealRandomVariable_is_real Prts); trivial.    
  Qed.
 
   Global Program Instance srvmult
-         {rv1 rv2 : RandomVariable Prts borel_sa}                      
-         (srv1:SimpleRandomVariable rv1)
-         (srv2:SimpleRandomVariable rv2)
-    : SimpleRandomVariable (rvmult rv1 rv2)
+         (rv_X1 rv_X2 : Ts -> R)
+         (srv1:SimpleRandomVariable rv_X1)
+         (srv2:SimpleRandomVariable rv_X2)
+    : SimpleRandomVariable (rvmult rv_X1 rv_X2)
     := { srv_vals := map (fun ab => Rmult (fst ab) (snd ab)) 
                          (list_prod (srv_vals (SimpleRandomVariable:=srv1))
                                     (srv_vals (SimpleRandomVariable:=srv2))) }.
@@ -893,37 +930,39 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     destruct srv1.
     destruct srv2.
     rewrite in_map_iff.
-    exists ((rv_X (RandomVariable:=rv1) x), (rv_X (RandomVariable:=rv2) x)).
+    exists (rv_X1 x, rv_X2 x).
     split.
     now simpl.
     apply in_prod; trivial.
   Qed.
 
-
    Lemma list_union_srv_preimage
-         {rv: RandomVariable Prts borel_sa}                      
-         (srv : SimpleRandomVariable rv) :
+         {rv_X : Ts -> R}
+         (srv : SimpleRandomVariable rv_X) :
      (list_union (map (fun (x : R) (omega : Ts) => rv_X omega = x) srv_vals)) ===  Ω .
    Proof.
-     intros x.
      unfold Ω.
-     split; trivial; intros _.
+     intros x.
      unfold list_union.
      generalize (srv_vals_complete x); intros HH2.
-     exists (fun (omega : Ts) => rv_X (RandomVariable:=rv) omega = rv_X x).
+     Admitted.
+(*
+     exists (fun (omega : Ts) => rv_X  omega = rv_X x).
      split; trivial.
      apply in_map_iff.
      exists (rv_X x).
      split; trivial.
    Qed.
-
+*)
    Lemma srv_nodup_preimage_list_union
-         {rv: RandomVariable Prts borel_sa}                      
-         (srv : SimpleRandomVariable rv) :
+         {rv_X : Ts -> R}         
+         (srv : SimpleRandomVariable rv_X) :
      (list_union (map (fun (x : R) (omega : Ts) => rv_X omega = x) (nodup Req_EM_T srv_vals))) ===  Ω .
    Proof.
      intros x.
      unfold Ω.
+   Admitted.
+(*
      split; trivial; intros _.
      unfold list_union.
      generalize (srv_vals_complete x); intros HH2.
@@ -934,7 +973,7 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
      split; trivial.
      now apply nodup_In.
    Qed.
-
+*)
    Lemma event_disjoint_preimage_and_disj {A B}
          f P l :
      NoDup l ->
@@ -1005,8 +1044,8 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
    Qed.
 
    Lemma srv_vals_nodup_preimage_disj
-         {rv: RandomVariable Prts borel_sa}                      
-         (srv : SimpleRandomVariable rv) :
+         {rv_X : Ts -> R}
+         (srv : SimpleRandomVariable rv_X) :
      ForallOrdPairs event_disjoint (map (fun (x : R) (omega : Ts) => rv_X omega = x) (nodup Req_EM_T srv_vals)).
    Proof.
      intros.
@@ -1014,8 +1053,10 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
      apply NoDup_nodup.
    Qed.
 
-   Lemma srv_vals_nodup_preimage_sa  {rv: RandomVariable Prts borel_sa}                      
-         (srv : SimpleRandomVariable rv) :
+   Lemma srv_vals_nodup_preimage_sa  
+         {rv_X : Ts -> R}
+         (rv: RandomVariable Prts borel_sa rv_X)
+         (srv : SimpleRandomVariable rv_X) :
      forall x : event Ts,
        In x (map (fun (x0 : R) (omega : Ts) => rv_X omega = x0) (nodup Req_EM_T srv_vals)) -> sa_sigma x.
    Proof.
@@ -1035,8 +1076,9 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
 
 
    Lemma srv_vals_prob_1 
-         {rv: RandomVariable Prts borel_sa}                      
-         (srv : SimpleRandomVariable rv) :
+         {rv_X : Ts -> R}
+         (rv: RandomVariable Prts borel_sa rv_X)                      
+         (srv : SimpleRandomVariable rv_X) :
      list_sum (map (fun x : R => ps_P (fun omega : Ts => rv_X  omega = x)) 
                    (nodup Req_EM_T srv_vals)) = 1.
    Proof.
