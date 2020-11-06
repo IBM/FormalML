@@ -1144,8 +1144,8 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
        now exists (rv_X x).
        now simpl.
   Qed.
-                  
-  Lemma prob_inter_all1
+
+   Lemma prob_inter_all1
          {rv_X1 rv_X2 : Ts -> R}
          {rv1: RandomVariable Prts borel_sa rv_X1}
          {rv2: RandomVariable Prts borel_sa rv_X2}                               
@@ -2195,12 +2195,89 @@ Section SimpleConditionalExpectation.
        intuition.
      Qed.
 
-     Lemma incl_nodup {A} (decA:EqDec A eq) (l1 l2 : list A) :
+     Lemma nodup_equiv {A} dec (l:list A) : equivlist (nodup dec l) l.
+     Proof.
+       induction l; simpl.
+       - reflexivity.
+       - match_destr.
+         + rewrite IHl.
+           unfold equivlist; simpl; intuition congruence.
+         + now rewrite IHl.
+     Qed.
+
+     Lemma incl_nil_r {A} (l:list A) : incl l nil -> l = nil.
+     Proof.
+       unfold incl.
+       destruct l; simpl; trivial.
+       intros HH.
+       elim (HH a); auto.
+     Qed.
+
+     (*
+     Lemma incl_front_perm {A} (decA:EqDec A eq) (l1 l2 : list A) :
        incl l2 l1 -> 
-       exists (l3: list A), 
-         Permutation (nodup decA l1) (nodup decA l2 ++ nodup decA l3).
-       Proof.
+       {l3: list A |
+         Permutation l1 (l2 ++ l3)}.
+     Proof.
+       unfold incl.
+       revert l2.
+       induction l1; simpl; intros l2 lincl.
+       - exists nil.
+         apply incl_nil_r in lincl.
+         subst.
+         reflexivity.
+       - destruct (in_dec decA a l2).
+         + 
+         + destruct (IHl1 l2).
+           * intros x innx.
+             destruct (lincl _ innx).
+             -- congruence.
+             -- trivial.
+           * exists (a::x).
+             rewrite <- Permutation_middle.
+             now apply perm_skip.
+     Defined.
+      *)
+
+     Lemma incl_front_perm_nodup {A} (decA:EqDec A eq) (l1 l2 : list A) :
+       incl l2 l1 -> 
+       {l3: list A |
+         Permutation (nodup decA l1) (nodup decA l2 ++ l3)}.
+     Proof.
      Admitted.
+
+     Global Instance equivlist_incl_subr {A} : subrelation equivlist (@incl A).
+     Proof.
+       red.
+       intros.
+       apply equivlist_incls.
+       now symmetry.
+     Qed.
+
+     Lemma NoDup_app_disj {A} (a b : list A) : NoDup (a ++ b) -> disjoint a b.
+     Proof.
+       unfold disjoint.
+       induction a; simpl.
+       - intuition.
+       - intros.
+         invcs H.
+         destruct H0.
+         + subst.
+           apply H4.
+           apply in_app_iff; tauto.
+         + eauto.
+     Qed.
+
+     Lemma NoDup_perm_disj {A} (l1 l2 l3 : list A) :
+         Permutation l1 (l2 ++ l3) ->
+         NoDup l1 ->
+         disjoint l2 l3.
+     Proof.
+       intros.
+       apply NoDup_app_disj.
+       now rewrite <- H.
+     Qed.
+                     
 
    Lemma SimpleExpectation_simpl_incl 
          {rv_X : Ts -> R}
@@ -2210,41 +2287,42 @@ Section SimpleConditionalExpectation.
      SimpleExpectation rv_X (srv:=srv) = SimpleExpectation rv_X (srv:=(SimpleRandomVariable_enlarged srv l lincl)).
    Proof.
      unfold SimpleExpectation; simpl.
-     destruct srv.
-     unfold srv_vals in *.
      unfold event_preimage, singleton_event.
-     generalize (incl_nodup _ l srv_vals0 lincl); intros.
-     destruct H as [l2 H].
+     generalize (incl_front_perm_nodup _ l srv_vals lincl); intros HH.
+     
+     destruct HH as [l2 HH].
      rewrite (list_sum_perm_eq 
              (map (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v)) (nodup Req_EM_T l))
-             (map (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v)) ((nodup Req_EM_T srv_vals0) ++ (nodup Req_EM_T l2 )))).
-     rewrite map_app.
-     rewrite list_sum_cat.
-     replace (list_sum
-                (map (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v))
-                     (nodup Req_EM_T srv_vals0))) with 
-         ((list_sum
-             (map (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v))
-                  (nodup Req_EM_T srv_vals0))) + 0) at 1 by lra.
-     f_equal.
-
-     assert (Permutation 
-     replace l with l1p.
-
-
-
-     replace (list_sum
-                (map (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v)) 
-                     (nodup Req_EM_T l))) with
-         (list_sum
-            (map (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v)) 
-                 (nodup Req_EM_T srv_vals))) +
-         (list_sum
-            (map (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v)) 
-                 (nodup Req_EM_T (srv_vals))) +
-
-
-   Admitted.
+             (map (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v)) ((nodup Req_EM_T srv_vals) ++ (nodup Req_EM_T l2 )))).
+     - rewrite map_app.
+       rewrite list_sum_cat.
+       replace (list_sum
+                  (map (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v))
+                       (nodup Req_EM_T srv_vals))) with 
+           ((list_sum
+               (map (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v))
+                    (nodup Req_EM_T srv_vals))) + 0) at 1 by lra.
+       f_equal.
+       rewrite <- (list_sum_map_zero (nodup Req_EM_T l2)).
+       f_equal.
+       apply map_ext_in; intros.
+       rewrite (not_in_srv_vals_event_none srv).
+       + rewrite ps_none.
+         lra.
+       + generalize (NoDup_perm_disj _ _ _ HH); intros HH2.
+         cut_to HH2; [| apply NoDup_nodup].
+         intros inn2.
+         apply (HH2 a).
+         * now apply nodup_In.
+         * now apply nodup_In in H.
+     - apply Permutation_map.
+       rewrite HH.
+       apply Permutation_app; try reflexivity.
+       rewrite nodup_fixed_point; try reflexivity.
+       eapply NoDup_app_inv2.
+       rewrite <- HH.
+       apply NoDup_nodup.
+   Qed.
      
    Lemma SimpleExpectation_pf_irrel 
          {rv_X : Ts -> R}
