@@ -2179,7 +2179,29 @@ Section SimpleConditionalExpectation.
      apply lincl.
      apply srv_vals_complete.
    Qed.
-   
+
+   Lemma not_in_srv_vals_event_none
+         {rv_X : Ts -> R}
+         (srv:SimpleRandomVariable rv_X) :
+     forall (x:R), ~ (In x srv_vals) ->
+                   event_equiv (fun omega => rv_X omega = x) event_none.
+     Proof.
+       destruct srv.
+       unfold srv_vals.
+       red; intros.
+       unfold event_none.
+       intuition.
+       rewrite <- H0 in H.
+       intuition.
+     Qed.
+
+     Lemma incl_nodup {A} (decA:EqDec A eq) (l1 l2 : list A) :
+       incl l2 l1 -> 
+       exists (l3: list A), 
+         Permutation (nodup decA l1) (nodup decA l2 ++ nodup decA l3).
+       Proof.
+     Admitted.
+
    Lemma SimpleExpectation_simpl_incl 
          {rv_X : Ts -> R}
          (srv:SimpleRandomVariable rv_X)
@@ -2188,7 +2210,40 @@ Section SimpleConditionalExpectation.
      SimpleExpectation rv_X (srv:=srv) = SimpleExpectation rv_X (srv:=(SimpleRandomVariable_enlarged srv l lincl)).
    Proof.
      unfold SimpleExpectation; simpl.
-     
+     destruct srv.
+     unfold srv_vals in *.
+     unfold event_preimage, singleton_event.
+     generalize (incl_nodup _ l srv_vals0 lincl); intros.
+     destruct H as [l2 H].
+     rewrite (list_sum_perm_eq 
+             (map (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v)) (nodup Req_EM_T l))
+             (map (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v)) ((nodup Req_EM_T srv_vals0) ++ (nodup Req_EM_T l2 )))).
+     rewrite map_app.
+     rewrite list_sum_cat.
+     replace (list_sum
+                (map (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v))
+                     (nodup Req_EM_T srv_vals0))) with 
+         ((list_sum
+             (map (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v))
+                  (nodup Req_EM_T srv_vals0))) + 0) at 1 by lra.
+     f_equal.
+
+     assert (Permutation 
+     replace l with l1p.
+
+
+
+     replace (list_sum
+                (map (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v)) 
+                     (nodup Req_EM_T l))) with
+         (list_sum
+            (map (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v)) 
+                 (nodup Req_EM_T srv_vals))) +
+         (list_sum
+            (map (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v)) 
+                 (nodup Req_EM_T (srv_vals))) +
+
+
    Admitted.
      
    Lemma SimpleExpectation_pf_irrel 
