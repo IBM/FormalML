@@ -2465,6 +2465,66 @@ Section SimpleConditionalExpectation.
              eauto.
   Defined.
 
+  Lemma Forallt_in {A} (decA:forall x y:A, {x=y} + {x <> y}) {X:A->Type} {l:list A} (ft:Forallt X l) {a} (pf:In a l) : X a.
+  Proof.
+    induction l; simpl in *.
+    - elim pf.
+    - inversion ft.
+      destruct (decA a a0).
+      + congruence.
+      + apply IHl; trivial.
+        intuition congruence.
+  Defined.
+
+  Instance fr_plus0_simple (l : list (Ts -> R)) 
+    (srvs : Forallt SimpleRandomVariable l) :
+    SimpleRandomVariable (fold_right rvplus (const 0) l).
+  Proof.
+    induction l; simpl.
+    - typeclasses eauto.
+    - invcs srvs.
+      apply srvplus; eauto.
+  Qed.
+
+  Fixpoint Forallt_map {A B:Type} {X:A->Type} {l:list A} (f:forall a, X a -> B) (ft:Forallt X l)  : list B
+    := match ft with
+       | Forallt_nil => nil
+       | Forallt_cons x l px pl => f x px :: Forallt_map f pl
+       end.
+
+
+  
+  Require Import Program.
+
+  Lemma very_specific_fold_right_rv_because_barry_waiting l :
+        Forall (RandomVariable Prts borel_sa) l ->
+        RandomVariable Prts borel_sa (fold_right rvplus (const 0) l).
+  Proof.
+    induction l; simpl; intros HH.
+    - typeclasses eauto.
+    - invcs HH.
+      apply rvplus_rv; eauto.
+  Qed.
+            
+  Lemma SimpleExpectation_fold_rvplus {nempty:NonEmpty Ts} (l : list (Ts -> R)) 
+    (rvs : Forall (RandomVariable Prts borel_sa) l) 
+    (srvs : Forallt SimpleRandomVariable l) :
+    SimpleExpectation (fold_right rvplus (const 0) l) (srv:=fr_plus0_simple _ srvs) =
+    list_sum (Forallt_map (fun x pf => SimpleExpectation x (srv:=pf)) srvs).
+  Proof.
+    dependent induction srvs; simpl.
+    - rewrite (SimpleExpectation_ext _ (srvconst 0)).
+      + now rewrite SimpleExpectation_const.
+      + intros ?; congruence.
+    - invcs rvs.
+      rewrite <- IHsrvs by trivial.
+      rewrite sumSimpleExpectation; trivial.
+      + apply SimpleExpectation_pf_irrel.
+      + now apply very_specific_fold_right_rv_because_barry_waiting.
+  Qed.
+
+  Arguments list_union_dec {T} l _.
+
   Lemma expectation_indicator_sum_gen {nempty:NonEmpty Ts}
         (rv_X : Ts -> R)
         {rv : RandomVariable Prts borel_sa rv_X}
@@ -2473,12 +2533,23 @@ Section SimpleConditionalExpectation.
         (is_disj: ForallOrdPairs event_disjoint l)
         (sap_all : forall p, In p l -> sa_sigma p)
         (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x})) :
-    SimpleExpectation (rvmult rv_X (EventIndicator (list_union_dec dec_all))) =
+    SimpleExpectation (rvmult rv_X (EventIndicator (list_union_dec l dec_all))) =
     list_sum
       (map_dep l (fun p pf => SimpleExpectation 
                                 (rvmult rv_X (EventIndicator (dec_all p pf))))).
   Proof.
     rewrite expectation_indicator_sum0 by trivial.
+    unfold fold_rvplus_prod_indicator.
+    assert (srvs : Forallt SimpleRandomVariable (map_dep l (fun (p : event Ts) (pf : In p l) => rvmult rv_X (EventIndicator (dec_all p pf))))).
+    { admit. }
+    rewrite (SimpleExpectation_pf_irrel _ (fr_plus0_simple _ srvs)).
+    rewrite SimpleExpectation_fold_rvplus.
+    - revert is_disj sap_all.
+      dependent induction srvs generalizing l dec_all.
+      unfold list_union_dec.
+      induction l; simpl; intros srvs.
+      + invcs srvs.
+    
     induction l; simpl.
     - unfold fold_rvplus_prod_indicator.
       simpl.
@@ -2494,9 +2565,13 @@ Section SimpleConditionalExpectation.
         lra.
     - invcs is_disj.
       cut_to IHl; trivial.
-      +
+      + unfold fold_rvplus_prod_indicator.
+        rewrite SimpleExpectation_fold_rvplus.
+        
+        
       + simpl in *; intuition.
   Qed.
+
       
       
     unfold fold_rvplus_prod_indicator, const.
