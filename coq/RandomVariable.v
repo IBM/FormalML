@@ -2438,7 +2438,7 @@ Section SimpleConditionalExpectation.
     tauto.
   Qed.
 
-  Lemma list_union_dec {T} {l:list (event T)}
+  Lemma list_union_dec {T} (l:list (event T))
     (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x})) :
     (forall x, {(list_union l) x} + {~ (list_union l) x}).
   Proof.
@@ -2492,8 +2492,6 @@ Section SimpleConditionalExpectation.
        | Forallt_cons x l px pl => f x px :: Forallt_map f pl
        end.
 
-
-  
   Require Import Program.
 
   Lemma very_specific_fold_right_rv_because_barry_waiting l :
@@ -2523,7 +2521,25 @@ Section SimpleConditionalExpectation.
       + now apply very_specific_fold_right_rv_because_barry_waiting.
   Qed.
 
-  Arguments list_union_dec {T} l _.
+  Lemma FOP_sublist {A : Type} {R : A -> A -> Prop} {a : A} {l : list A} :
+    ForallOrdPairs R (a :: l) -> ForallOrdPairs R l.
+    Admitted.
+
+  Lemma indicator_sum (a:Ts)
+        (l : list (event Ts))
+        (is_disj: ForallOrdPairs event_disjoint l)
+        (dec_all : forall p : event Ts, In p l -> forall x : Ts, {p x} + {~ p x}) :
+    (EventIndicator (list_union_dec l dec_all) a) =
+    (list_sum
+       (map_dep l (fun (p : event Ts) (pf : In p l) => EventIndicator (dec_all p pf) a))).
+    Proof.
+      unfold EventIndicator.
+      induction l.
+      - now simpl.
+      - generalize (FOP_sublist is_disj); intros.
+        specialize (IHl H).
+        
+      Admitted.
 
   Lemma expectation_indicator_sum_gen {nempty:NonEmpty Ts}
         (rv_X : Ts -> R)
@@ -2540,48 +2556,37 @@ Section SimpleConditionalExpectation.
   Proof.
     rewrite expectation_indicator_sum0 by trivial.
     unfold fold_rvplus_prod_indicator.
-    assert (srvs : Forallt SimpleRandomVariable (map_dep l (fun (p : event Ts) (pf : In p l) => rvmult rv_X (EventIndicator (dec_all p pf))))).
-    { admit. }
-    rewrite (SimpleExpectation_pf_irrel _ (fr_plus0_simple _ srvs)).
-    rewrite SimpleExpectation_fold_rvplus.
-    - revert is_disj sap_all.
-      dependent induction srvs generalizing l dec_all.
-      unfold list_union_dec.
-      induction l; simpl; intros srvs.
-      + invcs srvs.
-    
-    induction l; simpl.
-    - unfold fold_rvplus_prod_indicator.
-      simpl.
-      unfold EventIndicator.
-      unfold list_union_dec; simpl.
-      transitivity (SimpleExpectation (rvscale 0 rv_X)).
-      + apply SimpleExpectation_ext.
-        intros ?; simpl.
-        vm_compute.
+    apply SimpleExpectation_ext.
+    unfold rv_eq.
+    unfold pointwise_relation.
+    intros.
+    replace (fold_right 
+               rvplus (const 0)
+               (map_dep l
+                        (fun (p : event Ts) (pf : In p l) => 
+                           rvmult rv_X (EventIndicator (dec_all p pf)))) a) with
+        ((rv_X a) * (list_sum (map_dep l
+                                      (fun (p : event Ts) (pf : In p l) => 
+                                           (EventIndicator (dec_all p pf) a))))).
+    - unfold rvmult.
+      f_equal.
+      apply indicator_sum; trivial.
+    - unfold rvplus.
+      induction l.
+      + simpl.
+        unfold const.
         lra.
-      + rewrite <- scaleSimpleExpectation.
-        rewrite SimpleExpectation_const.
-        lra.
-    - invcs is_disj.
-      cut_to IHl; trivial.
-      + unfold fold_rvplus_prod_indicator.
-        rewrite SimpleExpectation_fold_rvplus.
-        
-        
-      + simpl in *; intuition.
-  Qed.
-
-      
-      
-    unfold fold_rvplus_prod_indicator, const.
-    destruct is_part.
-
-    ps_P (list_union l) * rv_X x =
-      fold_right rvplus (fun _ : Ts => 0)
-               (map_dep l (fun (p : event Ts) (pf : In p l) => rvmult rv_X (EventIndicator (dec_all p pf)))) x
-
-
+      + cut_to IHl.
+        * simpl in *.
+          unfold rvmult.
+          rewrite Rmult_plus_distr_l.
+          f_equal.
+          admit.
+        * apply (FOP_sublist is_disj).
+        * 
+          
+ Admitted.
+          
                
   Lemma expectation_indicator_sum {nempty:NonEmpty Ts}
         (rv_X : Ts -> R)
@@ -2596,35 +2601,22 @@ Section SimpleConditionalExpectation.
       (map_dep l (fun p pf => SimpleExpectation 
                                 (rvmult rv_X (EventIndicator (dec_all p pf))))).
   Proof.
-    rewrite expectation_indicator_sum0 by trivial.
-    unfold fold_rvplus_prod_indicator, const.
-
-    SimpleExpectation (rv_X * (EventIndicator (list_union l)))
-    ps_P (list_union l) * rv_X x =
-      fold_right rvplus (fun _ : Ts => 0)
-               (map_dep l (fun (p : event Ts) (pf : In p l) => rvmult rv_X (EventIndicator (dec_all p pf)))) x
-
-    
-    apply SimpleExpectation_ext.
-    intros x.
-    destruct is_part as [HD HS].
-    
-
-    
-    
-    induction l; simpl.
-    - apply is_partition_list_nnil.
-
-      Set Printing All.
-    generalize (srv_vals_complete e).
-    simpl.
-    Set Printing All.
-    unfold SimpleExpectation.
-    unfold fold_rvplus_prod_indicator_simpl.
-    simpl.
-    destruct srv; simpl.
-    induction srv_vals0; simpl.
-  Qed.
+    unfold is_partition_list in is_part.
+    destruct is_part.
+    rewrite <- expectation_indicator_sum_gen; trivial.
+    apply SimpleExpectation_ext; trivial.
+    unfold rv_eq.
+    unfold pointwise_relation.
+    intros.
+    unfold rvmult.
+    replace (rv_X a) with ((rv_X a) * 1) at 1 by lra.
+    f_equal.
+    unfold EventIndicator.
+    destruct (list_union_dec l dec_all a); trivial.
+    rewrite H0 in n.
+    unfold Ω in n.
+    intuition.
+ Qed.
 
   Lemma gen_simple_conditional_expectation_scale_tower (P : event Ts) (Ppos:ps_P P > 0)
              {rv_X : Ts -> R}
@@ -2673,8 +2665,9 @@ Section SimpleConditionalExpectation.
     now rewrite gen_simple_conditional_expectation_scale_tower.
   Qed.
 
-  Lemma gen_conditional_tower_law
+  Lemma gen_conditional_tower_law {nempty:NonEmpty Ts}
         (rv_X : Ts -> R)
+        {rv : RandomVariable Prts borel_sa rv_X}
         {srv : SimpleRandomVariable rv_X}
         (l : list (event Ts))
         (ispart: is_partition_list l)
@@ -2686,6 +2679,7 @@ Section SimpleConditionalExpectation.
   Proof.
     unfold gen_SimpleConditionalExpectation.
     rewrite (expectation_indicator_sum rv_X l ispart sap_all dec_all).
+    (* rewrite SimpleExpectation_fold_rvplus. *)
     Admitted.    
 
   Lemma conditional_tower_law
