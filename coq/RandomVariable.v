@@ -2687,6 +2687,11 @@ Section SimpleConditionalExpectation.
     unfold gen_SimpleConditionalExpectation.
     rewrite (expectation_indicator_sum rv_X l ispart sap_all dec_all).
     generalize SimpleExpectation_fold_rvplus; intros.
+    specialize (H (map_dep l
+          (fun (p : event Ts) (pf : In p l) =>
+           gen_simple_conditional_expectation_scale p rv_X (dec_all p pf) (sap_all p pf)))).
+    cut_to H.
+    
     (* rewrite SimpleExpectation_fold_rvplus. *)
     
     Admitted.    
@@ -2738,6 +2743,37 @@ Section SimpleConditionalExpectation.
          (event_disjoint (event_preimage rv_X (singleton_event c)) p) \/
          (event_sub p (event_preimage rv_X (singleton_event c))).
 
+   Lemma rvmult_assoc
+        (rv_X1 rv_X2 rv_X3 : Ts -> R) :
+     rv_eq (rvmult (rvmult rv_X1 rv_X2) rv_X3) (rvmult rv_X1 (rvmult rv_X2 rv_X3)).
+    Proof.
+      unfold rv_eq.
+      unfold pointwise_relation.
+      intros.
+      unfold rvmult.
+      lra.
+    Qed.
+
+   Lemma expectation_const_factor_subset (c:R)
+        (p : event Ts)
+        (rv_X1 rv_X2 : Ts -> R)
+        {srv1 : SimpleRandomVariable rv_X1}
+        {srv2 : SimpleRandomVariable rv_X2} 
+        (sap : sa_sigma p)
+        (dec:  (forall x, {p x} + {~ p x})) :
+     (forall (omega:Ts), p omega -> rv_X1 omega = c) ->
+     SimpleExpectation
+       (rvmult (rvmult rv_X1 rv_X2) (EventIndicator dec)) =
+     c * SimpleExpectation
+           (rvmult rv_X2 (EventIndicator dec)).
+   Proof.
+     intros.
+     generalize (rvmult_assoc rv_X1 rv_X2 (EventIndicator dec)); intros.
+     unfold SimpleExpectation.
+     unfold EventIndicator, singleton_event, event_preimage.
+  Admitted.
+     
+       
    (* if l is viewed as finite generators for a sigma algebra, this shows that
     we can factor out l-measurable random variables from conditional expectation *)
    Lemma gen_conditional_scale_measurable
@@ -2753,7 +2789,7 @@ Section SimpleConditionalExpectation.
      rvmult rv_X1 (gen_SimpleConditionalExpectation rv_X2 l  sap_all dec_all).
      Proof.
        intros.
-       unfold gen_SimpleConditionalExpectation.
+       unfold gen_SimpleConditionalExpectation at 1.
        unfold gen_simple_conditional_expectation_scale.
        
        Admitted.
