@@ -2687,11 +2687,6 @@ Section SimpleConditionalExpectation.
     unfold gen_SimpleConditionalExpectation.
     rewrite (expectation_indicator_sum rv_X l ispart sap_all dec_all).
     generalize SimpleExpectation_fold_rvplus; intros.
-    Lemma SimpleExpectation_fold_rvplus (l : list (Ts -> R)) 
-    (rvs : Forall (RandomVariable Prts borel_sa) l) 
-    (srvs : Forallt SimpleRandomVariable l) :
-    SimpleExpectation (fold_right rvplus (const 0) l) (srv:=fr_plus0_simple _ srvs) =
-    list_sum (Forallt_map (fun x pf => SimpleExpectation x (srv:=pf)) srvs).
     (* rewrite SimpleExpectation_fold_rvplus. *)
     
     Admitted.    
