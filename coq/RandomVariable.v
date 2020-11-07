@@ -2538,7 +2538,11 @@ Section SimpleConditionalExpectation.
       - now simpl.
       - generalize (FOP_sublist is_disj); intros.
         specialize (IHl H).
-        
+        simpl.
+        unfold map_dep_obligation_1.
+        match_destr.
+        + unfold map_dep_obligation_2.
+          
       Admitted.
 
   Lemma expectation_indicator_sum_gen {nempty:NonEmpty Ts}
