@@ -2523,6 +2523,12 @@ Section SimpleConditionalExpectation.
 
   Lemma FOP_sublist {A : Type} {R : A -> A -> Prop} {a : A} {l : list A} :
     ForallOrdPairs R (a :: l) -> ForallOrdPairs R l.
+    Proof.
+      induction l.
+      - intros.
+        apply FOP_nil.
+      - intros.
+        
     Admitted.
 
   Lemma indicator_sum (a:Ts)
@@ -2542,6 +2548,7 @@ Section SimpleConditionalExpectation.
         unfold map_dep_obligation_1.
         match_destr.
         + unfold map_dep_obligation_2.
+          
           
       Admitted.
 
@@ -2953,6 +2960,37 @@ Section Expectation.
     | None => None
     end.
 
+  Lemma factor_simple_fun (c : posreal)
+        (rv_X : Ts -> R)
+        (srv : SimpleRandomVariable rv_X)
+        (prv : PositiveRandomVariable rv_X) :
+    exists (rvx : Ts -> R) (srvx: SimpleRandomVariable rvx),
+      PositiveRandomVariable rvx /\
+      rv_eq (rvscale c rvx) rv_X.
+   Proof.
+     intros.
+     exists (rvmult (fun omega => /c) rv_X).
+     eexists.
+     - apply srvmult; trivial.
+       apply srvconst.
+     - split.
+       + unfold PositiveRandomVariable in *.
+         intros.
+         assert (0 < c) by apply cond_pos.
+         unfold rvmult.
+         replace (0) with (/c * 0) by lra.
+         apply Rmult_le_compat_l; trivial.
+         left.
+         now apply  Rinv_0_lt_compat.
+       + unfold rv_eq.
+         unfold pointwise_relation.
+         intros.
+         unfold rvscale, rvmult.
+         field.
+         apply Rgt_not_eq.
+         apply cond_pos.
+   Qed.
+     
   Lemma Expectation_posRV_scale (c: posreal) 
         (rv_X : Ts -> R)
         (rv : RandomVariable Prts borel_sa rv_X) 
@@ -2963,8 +3001,10 @@ Section Expectation.
     unfold Expectation_posRV.
     unfold BoundedPositiveRandomVariable.
     unfold SimpleExpectationSup.
+    generalize (factor_simple_fun c); intros.
         
-    Admitted.
+  Admitted.
+    
 
   Lemma Expectation_scale (c: posreal) 
         (rv_X : Ts -> R)
@@ -2979,6 +3019,7 @@ Section Expectation.
   Proof. 
     unfold Expectation.
     generalize (Expectation_posRV_scale c _  _ (positive_part_prv rv_X rv)); intro eprv.
+    
     
   Admitted.
 
