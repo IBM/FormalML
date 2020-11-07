@@ -2580,13 +2580,16 @@ Section SimpleConditionalExpectation.
         * simpl in *.
           unfold rvmult.
           rewrite Rmult_plus_distr_l.
+          unfold map_dep_obligation_2.
           f_equal.
-          admit.
+          now rewrite IHl.
         * apply (FOP_sublist is_disj).
-        * 
-          
- Admitted.
-          
+        * intros.
+          apply sap_all.
+          specialize (sap_all p).
+          simpl.
+          now right.
+   Qed.
                
   Lemma expectation_indicator_sum {nempty:NonEmpty Ts}
         (rv_X : Ts -> R)
@@ -2679,7 +2682,14 @@ Section SimpleConditionalExpectation.
   Proof.
     unfold gen_SimpleConditionalExpectation.
     rewrite (expectation_indicator_sum rv_X l ispart sap_all dec_all).
+    generalize SimpleExpectation_fold_rvplus; intros.
+    Lemma SimpleExpectation_fold_rvplus (l : list (Ts -> R)) 
+    (rvs : Forall (RandomVariable Prts borel_sa) l) 
+    (srvs : Forallt SimpleRandomVariable l) :
+    SimpleExpectation (fold_right rvplus (const 0) l) (srv:=fr_plus0_simple _ srvs) =
+    list_sum (Forallt_map (fun x pf => SimpleExpectation x (srv:=pf)) srvs).
     (* rewrite SimpleExpectation_fold_rvplus. *)
+    
     Admitted.    
 
   Lemma conditional_tower_law
@@ -2729,6 +2739,8 @@ Section SimpleConditionalExpectation.
          (event_disjoint (event_preimage rv_X (singleton_event c)) p) \/
          (event_sub p (event_preimage rv_X (singleton_event c))).
 
+   (* if l is viewed as finite generators for a sigma algebra, this shows that
+    we can factor out l-measurable random variables from conditional expectation *)
    Lemma gen_conditional_scale_measurable
         (rv_X1 rv_X2 : Ts -> R)
         {srv1 : SimpleRandomVariable rv_X1}
@@ -2741,6 +2753,10 @@ Section SimpleConditionalExpectation.
      gen_SimpleConditionalExpectation (rvmult rv_X1 rv_X2) l sap_all dec_all =
      rvmult rv_X1 (gen_SimpleConditionalExpectation rv_X2 l  sap_all dec_all).
      Proof.
+       intros.
+       unfold gen_SimpleConditionalExpectation.
+       unfold gen_simple_conditional_expectation_scale.
+       
        Admitted.
 
    Lemma conditional_scale_measurable
@@ -2763,7 +2779,7 @@ Section SimpleConditionalExpectation.
 End SimpleConditionalExpectation.  
 
 Section Expectation.
-
+ 
   Context 
     {Ts:Type}
     {dom: SigmaAlgebra Ts}
