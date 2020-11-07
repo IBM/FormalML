@@ -1923,7 +1923,7 @@ End SimpleExpectation.
 Section SimpleConditionalExpectation.
 
   Definition is_partition_list {T} (l:list (event T)) :=
-    ForallOrdPairs event_disjoint l /\ list_union l = Ω.
+    ForallOrdPairs event_disjoint l /\ (list_union l) = Ω.
 
   Lemma is_partition_list_partition {T} {l:list (event T)} :
     is_partition_list l ->
@@ -2703,7 +2703,75 @@ Section SimpleConditionalExpectation.
     
     Admitted.    
 
-  Lemma conditional_tower_law
+  Definition induced_sigma_generators
+             {rv_X : Ts -> R}
+             (srv : SimpleRandomVariable rv_X) :=
+    map (fun c => event_preimage rv_X (singleton_event c))
+        (nodup Req_EM_T srv_vals).
+
+  Lemma induced_gen_ispart
+        {rv_X : Ts -> R}
+        (srv : SimpleRandomVariable rv_X) :
+    is_partition_list (induced_sigma_generators srv).
+  Proof. 
+    unfold is_partition_list.
+    unfold induced_sigma_generators, event_preimage, singleton_event.
+    split.
+    - apply event_disjoint_preimage_disj.
+      apply NoDup_nodup.
+    - destruct srv.
+      unfold srv_vals.
+      assert (event_equiv
+                (list_union
+                   (map (fun (c : R) (omega : Ts) => rv_X omega = c) 
+                        (nodup Req_EM_T srv_vals0)) )
+                Ω).
+      + unfold event_equiv; intros.
+        unfold list_union.
+        split.
+        * intros.
+          unfold Ω .
+          intuition.
+        * intros.
+          eexists.
+          -- split.
+             ++ rewrite in_map_iff.
+                exists (rv_X x).
+                split; try easy.
+                now rewrite nodup_In.
+             ++ now simpl.
+      + 
+  Admitted.
+
+  Lemma induced_gen_sap
+        {rv_X : Ts -> R}
+        (rv : RandomVariable Prts borel_sa rv_X)
+        (srv : SimpleRandomVariable rv_X) :
+    forall p, In p (induced_sigma_generators srv) -> sa_sigma p.
+  Proof.
+    unfold induced_sigma_generators, event_preimage, singleton_event.
+    intros.
+    rewrite in_map_iff in H.
+    destruct H as [x [H H0]].
+    rewrite <- H.
+    apply sa_le_pt.
+    apply (RealRandomVariable_is_real Prts); trivial.    
+  Qed.
+      
+  Lemma induced_gen_dec
+        {rv_X : Ts -> R}
+        (srv : SimpleRandomVariable rv_X) :
+    forall p, In p (induced_sigma_generators srv) -> 
+              forall x, {p x} + {~ p x}.
+    Proof.
+      unfold induced_sigma_generators, event_preimage, singleton_event.
+      intros.
+      rewrite in_map_iff in H.
+      
+   Admitted.      
+      
+
+  Lemma conditional_tower_law {nempty:NonEmpty Ts}
         (rv_X1 rv_X2 : Ts -> R)
         (rv1 : RandomVariable Prts borel_sa rv_X1)
         (rv2 : RandomVariable Prts borel_sa rv_X2)        
@@ -2711,18 +2779,28 @@ Section SimpleConditionalExpectation.
         {srv2 : SimpleRandomVariable rv_X2} :
     SimpleExpectation (SimpleConditionalExpectation rv_X1 rv_X2) = SimpleExpectation rv_X1.
     Proof.
-      unfold SimpleConditionalExpectation.
-      unfold SimpleConditionalExpectation_list.
-      unfold SimpleExpectation.
-      destruct srv1; destruct srv2.
-      unfold srv_vals.
-      unfold event_preimage, singleton_event.
+      symmetry.
+      generalize (gen_conditional_tower_law rv_X1 (induced_sigma_generators srv1)); intros.
+      generalize (induced_gen_ispart srv1); intros.
+      specialize (H H0).
+      generalize (induced_gen_sap rv1 srv1); intros.
+      specialize (H H1).
+      unfold gen_SimpleConditionalExpectation in *.
+      unfold gen_simple_conditional_expectation_scale in *.
+      unfold SimpleConditionalExpectation, SimpleConditionalExpectation_list.
+      generalize (induced_gen_dec srv1); intros.
+      specialize (H X).
+      rewrite H.
       unfold simple_conditional_expectation_scale_coef.
       unfold point_preimage_indicator.
+      unfold induced_sigma_generators, event_preimage, singleton_event.
       unfold EventIndicator.
-      unfold SimpleExpectation.
-      unfold event_preimage, singleton_event.
+      apply SimpleExpectation_ext.
+      unfold rv_eq, pointwise_relation.
+      intros.
+      
       Admitted.
+
 
    Definition simple_sigma_measurable 
         (rv_X1 rv_X2 : Ts -> R)
