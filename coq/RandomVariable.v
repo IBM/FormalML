@@ -128,11 +128,28 @@ Section RandomVariable.
 
   Global Instance RealRandomVariable_le_pre : PreOrder RealRandomVariable_le.
   Proof.
-  Admitted.
+    unfold RealRandomVariable_le.
+    constructor; intros.
+    - red; intros; lra.
+    - red; intros.
+      eapply Rle_trans; eauto.
+  Qed.
 
   Global Instance RealRandomVariable_le_part : PartialOrder rv_eq RealRandomVariable_le.
   Proof.
-  Admitted.
+    unfold RealRandomVariable_le.
+    red.
+    intros ??.
+    split; intros eqq.
+    - repeat red.
+      repeat red in eqq.
+      split; intros ?; rewrite eqq; lra.
+    - destruct eqq as [le1 le2].
+      intros y.
+      specialize (le1 y).
+      specialize (le2 y).
+      lra.
+  Qed.
 
   Class IndicatorRandomVariable
         (rv_X : Ts -> R) :=
@@ -2523,13 +2540,10 @@ Section SimpleConditionalExpectation.
 
   Lemma FOP_sublist {A : Type} {R : A -> A -> Prop} {a : A} {l : list A} :
     ForallOrdPairs R (a :: l) -> ForallOrdPairs R l.
-    Proof.
-      induction l.
-      - intros.
-        apply FOP_nil.
-      - intros.
-        
-    Admitted.
+  Proof.
+    intros FP.
+    now invcs FP.
+  Qed.
 
   Lemma indicator_sum (a:Ts)
         (l : list (event Ts))
@@ -2548,6 +2562,7 @@ Section SimpleConditionalExpectation.
         unfold map_dep_obligation_1.
         match_destr.
         + unfold map_dep_obligation_2.
+          
           
           
       Admitted.
