@@ -2230,45 +2230,97 @@ Section SimpleConditionalExpectation.
        elim (HH a); auto.
      Qed.
 
-     (*
-     Lemma incl_front_perm {A} (decA:EqDec A eq) (l1 l2 : list A) :
-       incl l2 l1 -> 
+     Lemma remove_one_nin {A} {dec:EqDec A eq} a (l:list A) :
+       ~ In a l ->
+       remove_one a l = l.
+     Proof.
+       induction l; simpl; trivial.
+       match_destr.
+       - intuition.
+       - intros; f_equal; apply IHl.
+         eauto.
+     Qed.
+     
+     Lemma remove_one_app_nin {A} {dec:EqDec A eq} a (l1 l2:list A) :
+       ~ In a l1 ->
+       remove_one a (l1 ++ l2) = l1 ++ remove_one a l2.
+     Proof.
+       induction l1; simpl; trivial.
+       intros ninn.
+       match_destr.
+       - red in e.
+         intuition.
+       - rewrite IHl1 by intuition.
+         trivial.
+     Qed.
+     
+     Lemma remove_one_in_perm {A} {dec : EqDec A eq} (a:A) l :
+       In a l ->
+       Permutation l (a::remove_one a l).
+     Proof.
+       induction l; simpl; intros inn.
+       - tauto.
+       - match_destr.
+         + rewrite e; reflexivity.
+         + rewrite perm_swap.
+           apply perm_skip.
+           intuition.
+     Qed.
+     
+     Lemma remove_other_in {A} {dec : EqDec A eq} (a1 a2:A) l :
+       a1 <> a2 ->
+       In a1 l <-> In a1 (remove_one a2 l).
+     Proof.
+       intros.
+       induction l; simpl.
+       - intuition.
+       - match_destr.
+         + red in e; subst.
+           intuition.
+         + simpl.
+           intuition.
+     Qed.
+                  
+     Lemma bminus_in_nin {A} {decA:EqDec A eq} a (l1 l2 : list A) :
+       In a l1 -> ~ In a l2 -> In a (bminus l2 l1).
+     Proof.
+       revert l1.
+       induction l2; simpl in *.
+       - intuition.
+       - intros.
+         apply IHl2.
+         + apply remove_other_in; eauto.
+         + eauto.
+     Qed.
+
+     Lemma incl_front_perm {A} {decA:EqDec A eq} (l1 l2 : list A) :
+       incl l2 l1 ->
+       NoDup l2 ->
        {l3: list A |
          Permutation l1 (l2 ++ l3)}.
      Proof.
-       unfold incl.
-       revert l2.
-       induction l1; simpl; intros l2 lincl.
-       - exists nil.
-         apply incl_nil_r in lincl.
-         subst.
-         reflexivity.
-       - destruct (in_dec decA a l2).
-         + 
-         + destruct (IHl1 l2).
-           * intros x innx.
-             destruct (lincl _ innx).
-             -- congruence.
-             -- trivial.
-           * exists (a::x).
-             rewrite <- Permutation_middle.
-             now apply perm_skip.
-     Defined.
-      *)
+       exists (bminus l2 l1).
+       unfold incl in *.
+       induction l2; simpl; trivial.
+       invcs H0.
+       rewrite IHl2; trivial.
+       - rewrite Permutation_middle.
+         apply Permutation_app; trivial.
+         rewrite remove_one_app_nin by trivial.
+         rewrite bunion_bminus.
+         apply remove_one_in_perm.
+         apply bminus_in_nin; trivial.
+         apply H; simpl; eauto.
+       - simpl in H; intuition.
+     Qed.
 
-     Lemma incl_front_perm_nodup {A} (decA:EqDec A eq) (l1 l2 : list A) :
-       incl l2 l1 -> 
-       {l3: list A |
-         Permutation (nodup decA l1) (nodup decA l2 ++ l3)}.
+     Global Instance equivlist_incl_part {A} : PartialOrder equivlist (@incl A).
      Proof.
-     Admitted.
-
-     Global Instance equivlist_incl_subr {A} : subrelation equivlist (@incl A).
-     Proof.
-       red.
-       intros.
-       apply equivlist_incls.
-       now symmetry.
+       split.
+       - intros HH; apply equivlist_incls in HH.
+         split; unfold flip; intuition.
+       - intros [??].
+         unfold flip, incl, equivlist in *; intuition.
      Qed.
 
      Lemma NoDup_app_disj {A} (a b : list A) : NoDup (a ++ b) -> disjoint a b.
@@ -2294,7 +2346,18 @@ Section SimpleConditionalExpectation.
        apply NoDup_app_disj.
        now rewrite <- H.
      Qed.
-                     
+     
+     Lemma incl_front_perm_nodup {A} (decA:EqDec A eq) (l1 l2 : list A) :
+       incl l2 l1 -> 
+       {l3: list A |
+         Permutation (nodup decA l1) (nodup decA l2 ++ l3)}.
+     Proof.
+       intros.
+       apply incl_front_perm; trivial.
+       - now repeat rewrite nodup_equiv.
+       - apply NoDup_nodup.
+     Qed.
+
 
    Lemma SimpleExpectation_simpl_incl 
          {rv_X : Ts -> R}
