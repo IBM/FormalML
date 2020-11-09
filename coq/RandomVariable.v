@@ -2053,7 +2053,7 @@ Section SimpleConditionalExpectation.
              {srv2 : SimpleRandomVariable rv_X2} : R :=
     ((SimpleExpectation 
         (rvmult rv_X
-                 (point_preimage_indicator rv_X c)))
+                 (point_preimage_indicator rv_X2 c)))
        / (ps_P (event_preimage rv_X2 (singleton_event c)))).
 
   Definition SimpleConditionalExpectation_list
@@ -2580,13 +2580,6 @@ Section SimpleConditionalExpectation.
     repeat match_destr; congruence.
   Qed.
 
-  Lemma FOP_sublist {A : Type} {R : A -> A -> Prop} {a : A} {l : list A} :
-    ForallOrdPairs R (a :: l) -> ForallOrdPairs R l.
-  Proof.
-    intros FP.
-    inversion FP.
-    now invcs FP.
-  Qed.
    *)
   (*
   Lemma map_dep_ext {A B} (l:list A) (f1 f2:(forall x, In x l -> B)) :
@@ -2700,7 +2693,8 @@ Section SimpleConditionalExpectation.
     SimpleExpectation (rvmult rv_X (EventIndicator dec)).
   Proof.
     unfold gen_simple_conditional_expectation_scale.
-    generalize (scaleSimpleExpectation (SimpleExpectation (rvmult rv_X (EventIndicator dec)) / ps_P P)
+    generalize (scaleSimpleExpectation 
+                  (SimpleExpectation (rvmult rv_X (EventIndicator dec)) / ps_P P)
                                        (EventIndicator dec)); intros HH.
     etransitivity.
     - symmetry. eauto.
@@ -2716,7 +2710,8 @@ Section SimpleConditionalExpectation.
         (l : list dec_sa_event) :
     Forallt SimpleRandomVariable
             (map (fun ev =>
-                        gen_simple_conditional_expectation_scale (dsa_event ev) rv_X (dsa_dec ev) (dsa_sa ev))
+                    gen_simple_conditional_expectation_scale 
+                      (dsa_event ev) rv_X (dsa_dec ev) (dsa_sa ev))
                      l).
   Proof.
     induction l; simpl.
@@ -2830,17 +2825,13 @@ Section SimpleConditionalExpectation.
       symmetry.
       rewrite  (gen_conditional_tower_law rv_X1 (induced_sigma_generators srv2))
       ; trivial ; [| apply induced_gen_ispart].
-
-      unfold gen_SimpleConditionalExpectation in *.
-      unfold gen_simple_conditional_expectation_scale in *.
+      unfold gen_SimpleConditionalExpectation, gen_simple_conditional_expectation_scale.
       unfold SimpleConditionalExpectation, SimpleConditionalExpectation_list.
       unfold simple_conditional_expectation_scale_coef.
-      unfold point_preimage_indicator.
-      unfold induced_sigma_generators, event_preimage, singleton_event.
-      unfold EventIndicator.
+      unfold point_preimage_indicator,induced_sigma_generators.
+      unfold event_preimage, singleton_event, EventIndicator.
       apply SimpleExpectation_ext.
-      unfold rv_eq, pointwise_relation.
-      intros.
+      unfold rv_eq, pointwise_relation; intros.
       rewrite map_map; simpl.
       unfold induced_sigma_generators_obligation_1.
       reflexivity.
@@ -2908,6 +2899,7 @@ Section SimpleConditionalExpectation.
      unfold srv_vals.
      simpl.
      
+     
   Admitted.
      
        
@@ -2917,13 +2909,12 @@ Section SimpleConditionalExpectation.
         (rv_X1 rv_X2 : Ts -> R)
         {srv1 : SimpleRandomVariable rv_X1}
         {srv2 : SimpleRandomVariable rv_X2} 
-        (l : list (event Ts))
-        (is_part: is_partition_list l)
-        (sap_all : forall p, In p l -> sa_sigma p)
-        (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x})) :
-     partition_measurable rv_X1 l ->
-     gen_SimpleConditionalExpectation (rvmult rv_X1 rv_X2) l sap_all dec_all =
-     rvmult rv_X1 (gen_SimpleConditionalExpectation rv_X2 l  sap_all dec_all).
+        (l : list dec_sa_event)
+        (is_part: is_partition_list (map dsa_event l)) :
+
+     partition_measurable rv_X1 (map dsa_event l) ->
+     gen_SimpleConditionalExpectation (rvmult rv_X1 rv_X2) l  =
+     rvmult rv_X1 (gen_SimpleConditionalExpectation rv_X2 l  ).
      Proof.
        intros.
        unfold gen_SimpleConditionalExpectation at 1.
@@ -2945,6 +2936,17 @@ Section SimpleConditionalExpectation.
      SimpleConditionalExpectation (rvmult rv_X1 rv_X2) rv_X3 =
      rvmult rv_X1 (SimpleConditionalExpectation rv_X2 rv_X3).
    Proof.
+     generalize (gen_conditional_scale_measurable rv_X1 rv_X2 
+                                                  (induced_sigma_generators srv3)
+                                                  (induced_gen_ispart srv3)).
+     intros.
+     cut_to H.
+     unfold gen_SimpleConditionalExpectation in H.
+     unfold SimpleConditionalExpectation, SimpleConditionalExpectation_list.
+     unfold simple_conditional_expectation_scale_coef.
+     unfold gen_simple_conditional_expectation_scale in H.
+     unfold point_preimage_indicator.
+                                                  
      Admitted.
 
 
