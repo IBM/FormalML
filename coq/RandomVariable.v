@@ -2684,6 +2684,82 @@ Section SimpleConditionalExpectation.
     intuition.
  Qed.
 
+  Lemma sub_event_prob_0
+        (P1 P2 : event Ts) 
+        (sap1 : sa_sigma P1)
+        (sap2 : sa_sigma P2):
+    ps_P P2 = 0 -> event_sub P1 P2 -> ps_P P1 = 0.
+  Proof.
+    intros.
+    generalize (ps_sub Prts P1 P2); intros.
+    cut_to H1; trivial.
+    generalize (ps_pos P1); intros.
+    cut_to H2; trivial.
+    lra.
+  Qed.
+  
+  Lemma indicator_prob_0
+        (P : event Ts) 
+        {rv_X : Ts -> R}
+        {rv : RandomVariable Prts borel_sa rv_X}
+        {srv : SimpleRandomVariable rv_X}
+        (dec:forall x, {P x} + {~ P x})        
+        (sap: sa_sigma P) 
+        (a : R) :
+    ps_P P = 0 -> 
+    a <> 0 ->
+    ps_P (fun omega : Ts => rv_X omega * (if dec omega then 1 else 0) = a) = 0.
+  Proof.
+    intros.
+    assert (event_sub (fun omega : Ts => rv_X omega * (if dec omega then 1 else 0) = a)
+           P).
+    - unfold event_sub; intros.
+      destruct (dec x); trivial.
+      rewrite Rmult_0_r in H1.
+      lra.
+    - apply sub_event_prob_0 with (P2 := P); trivial.
+      assert (event_equiv (fun omega : Ts => rv_X omega * (if dec omega then 1 else 0) = a)
+                          (event_inter P (event_preimage rv_X (singleton_event a)))).
+      + unfold event_equiv; intros.
+        unfold event_inter, event_preimage, singleton_event.
+        split; intros.
+        * destruct (dec x).
+          -- rewrite Rmult_1_r in H2; tauto.
+          -- rewrite Rmult_0_r in H2.
+             lra.
+        * destruct (dec x).
+          -- lra.
+          -- rewrite Rmult_0_r.
+             tauto.
+      + rewrite H2.
+        apply sa_inter; trivial.
+        unfold event_preimage, singleton_event.
+        apply sa_le_pt.
+        apply (RealRandomVariable_is_real Prts); trivial.
+  Qed.
+    
+  Lemma expectation_indicator_prob_0
+             (P : event Ts) 
+             {rv_X : Ts -> R}
+             {rv : RandomVariable Prts borel_sa rv_X}
+             {srv : SimpleRandomVariable rv_X}
+             (dec:forall x, {P x} + {~ P x})        
+             (sap: sa_sigma P) :
+    ps_P P = 0 -> 
+    SimpleExpectation (rvmult rv_X (EventIndicator dec)) = 0.
+  Proof.
+    unfold SimpleExpectation.
+    unfold event_preimage, EventIndicator, singleton_event, rvmult.
+    intros.
+    destruct srv.
+    unfold srv_vals.
+    simpl.
+    erewrite <- (list_sum_map_zero _).
+    f_equal.
+    apply map_ext.
+
+    Admitted.
+
   Lemma gen_simple_conditional_expectation_scale_tower (P : event Ts) 
              {rv_X : Ts -> R}
              {srv : SimpleRandomVariable rv_X}
@@ -2709,10 +2785,11 @@ Section SimpleConditionalExpectation.
       clear n l.
       destruct (Req_EM_T a 0).
       + subst; field.
-      + admit.
+      + rewrite indicator_prob_0; trivial.
+        lra.
     - rewrite SimpleExpectation_EventIndicator.
       field; trivial.
-  Admitted.
+  Qed.
 
   Lemma srv_md_gen_simple_scale
         (rv_X : Ts -> R)
@@ -2764,7 +2841,9 @@ Section SimpleConditionalExpectation.
         rewrite <- scaleSimpleExpectation.
         rewrite SimpleExpectation_EventIndicator.
         match_destr.
-        * admit.
+        * rewrite expectation_indicator_prob_0; trivial.
+          lra.
+          apply dsa_sa.
         * field; trivial.
       + apply IHl.
     - rewrite Forall_forall; intros.
