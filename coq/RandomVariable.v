@@ -2999,7 +2999,6 @@ Section SimpleConditionalExpectation.
         {srv1 : SimpleRandomVariable rv_X1}
         {srv2 : SimpleRandomVariable rv_X2} 
         (l : list dec_sa_event)
-        (psp_pos : forall p, In p l -> ps_P (dsa_event p) > 0) 
         (is_part: is_partition_list (map dsa_event l)) :
 
      partition_measurable rv_X1 (map dsa_event l) ->
@@ -3009,6 +3008,7 @@ Section SimpleConditionalExpectation.
        intros.
        unfold gen_SimpleConditionalExpectation.
        unfold gen_simple_conditional_expectation_scale.
+       
        
        
        Admitted.
