@@ -2964,6 +2964,20 @@ Section SimpleConditionalExpectation.
       lra.
     Qed.
 
+    Global Instance nodup_perm {A} dec : Proper (@Permutation A ==> @Permutation A) (nodup dec).
+    Proof.
+      repeat red; intros.
+      revert x y H.
+      apply Permutation_ind_bis; simpl; intros.
+      - trivial.
+      - repeat match_destr.
+        + rewrite H in i; congruence.
+        + rewrite <- H in i; congruence.
+        + apply perm_skip; trivial.
+      - admit.
+      - admit.
+    Admitted.
+      
    Lemma expectation_const_factor_subset (c:R)
         (p : event Ts)
         (rv_X1 rv_X2 : Ts -> R)
@@ -2978,16 +2992,103 @@ Section SimpleConditionalExpectation.
            (rvmult rv_X2 (EventIndicator dec)).
    Proof.
      intros.
-     generalize (rvmult_assoc rv_X1 rv_X2 (EventIndicator dec)); intros.
      unfold SimpleExpectation.
-     unfold EventIndicator, singleton_event, event_preimage.
+     unfold singleton_event, event_preimage.
      rewrite <- list_sum_const_mul.
-     f_equal.
-     destruct srv1.
-     destruct srv2.
-     unfold srv_vals.
      simpl.
+     unfold srv_vals.
+     destruct srv1; destruct srv2; simpl.
+     transitivity ( list_sum
+    (map
+       (fun x : R =>
+        c * (x * ps_P (fun omega : Ts => rvmult rv_X2 (EventIndicator dec) omega = x)))
+       (nodup Req_EM_T srv_vals1))).
+     - transitivity (
+           list_sum
+    (map
+       (fun v : R =>
+        v * ps_P (fun omega : Ts => rvmult (rvmult rv_X1 rv_X2) (EventIndicator dec) omega = v))
+       (nodup Req_EM_T
+                (map (fun ab : R * R => fst ab * snd ab) (list_prod srv_vals0 srv_vals1)) 
+         ))).
+       + admit.
+       +
+         transitivity (
+         list_sum
+           (map
+              (fun v : R =>
+                 v * ps_P (fun omega : Ts => (rvscale c (rvmult rv_X2 (EventIndicator dec))) omega = v))
+              (nodup Req_EM_T (map (fun ab : R * R => fst ab * snd ab) (list_prod srv_vals0 srv_vals1))))).
+         * f_equal.
+           apply map_ext; intros.
+           f_equal.
+           apply ps_proper; intros ev.
+           rewrite rvmult_comm.
+           rewrite rvmult_assoc.
+           
+
+         
+   Admitted.
+
+   Lemma expectation_const_factor_subset (c:R)
+        (p : event Ts)
+        (rv_X1 rv_X2 : Ts -> R)
+        {srv1 : SimpleRandomVariable rv_X1}
+        {srv2 : SimpleRandomVariable rv_X2} 
+        (sap : sa_sigma p)
+        (dec:  (forall x, {p x} + {~ p x})) :
+     (forall (omega:Ts), p omega -> rv_X1 omega = c) ->
+     SimpleExpectation
+       (rvmult (rvmult rv_X1 rv_X2) (EventIndicator dec)) =
+     c * SimpleExpectation
+           (rvmult rv_X2 (EventIndicator dec)).
+   Proof.
+     intros.
+     unfold SimpleExpectation.
+     unfold singleton_event, event_preimage.
+     rewrite <- list_sum_const_mul.
+     simpl.
+
      
+     assert (Permutation 
+                ((nodup Req_EM_T (map (fun ab : R * R => fst ab * snd ab) (list_prod srv_vals [0; 1]))))
+                (nodup Req_EM_T (@srv_vals Ts R rv_X2 srv2))).
+     {
+       rewrite list_prod_swap.
+       simpl.
+       repeat rewrite map_map; simpl.
+       rewrite map_app.
+       rewrite map_map.
+       simpl.
+       rewrite app_nil_r.
+       rewrite map_map.
+       simpl.
+       
+       
+       generalize (list_prod_swap (@srv_vals Ts R rv_X2 srv2) [0; 1]); intros perm1.
+       apply nodup_perm.
+       rewrite perm1.
+       rewrite map_map.
+       simpl.
+     } 
+       
+     
+     transitivity (map
+    (fun v : R =>
+     v * ps_P (fun omega : Ts =>  (rvmult rv_X1 (rvmult rv_X2 (EventIndicator dec))) omega = v))
+    (@nodup R Req_EM_T
+          (@map (prod R R) R (fun ab : prod R R => Rmult (@fst R R ab) (@snd R R ab))
+             (@list_prod R R
+                (@map (prod R R) R (fun ab : prod R R => Rmult (@fst R R ab) (@snd R R ab))
+                   (@list_prod R R (@srv_vals Ts R rv_X1 srv1) (@srv_vals Ts R rv_X2 srv2)))
+                (@cons R (IZR Z0) (@cons R (IZR (Zpos xH)) (@nil R))))))).
+     - apply map_ext; intros.
+       f_equal.
+       apply ps_proper.
+       intros ev.
+       rewrite rvmult_assoc.
+       tauto.
+     - rewrite map     
      
   Admitted.
      
