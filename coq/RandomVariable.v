@@ -2608,6 +2608,7 @@ Section SimpleConditionalExpectation.
     ForallOrdPairs R (a :: l) -> ForallOrdPairs R l.
   Proof.
     intros FP.
+    inversion FP.
     now invcs FP.
   Qed.
 
@@ -2814,7 +2815,6 @@ Section SimpleConditionalExpectation.
           eauto.
   Qed.
 
-
   Lemma srv_md_gen_simple_scale
         (rv_X : Ts -> R)
         {rv : RandomVariable Prts borel_sa rv_X}
@@ -2823,10 +2823,10 @@ Section SimpleConditionalExpectation.
 
         (sap_all : forall p, In p l -> sa_sigma p)
         (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x})) :
-  Forallt SimpleRandomVariable
-                       (map_dep l
-                                (fun (p : event Ts) (pf : In p l) =>
-                                   gen_simple_conditional_expectation_scale p rv_X (dec_all p pf) (sap_all p pf))).
+    Forallt SimpleRandomVariable
+            (map_dep l
+                     (fun (p : event Ts) (pf : In p l) =>
+                        gen_simple_conditional_expectation_scale p rv_X (dec_all p pf) (sap_all p pf))).
   Proof.
     induction l; simpl.
     - constructor.
@@ -2931,39 +2931,41 @@ Section SimpleConditionalExpectation.
     apply (RealRandomVariable_is_real Prts); trivial.    
   Qed.
       
-  Lemma induced_gen_dec
+  Lemma induced_dec 
         {rv_X : Ts -> R}
+        (rv : RandomVariable Prts borel_sa rv_X)
         (srv : SimpleRandomVariable rv_X) :
-    forall p, In p (induced_sigma_generators srv) -> 
-              forall x, {p x} + {~ p x}.
-    Proof.
-      unfold induced_sigma_generators, event_preimage, singleton_event.
-      intros.
-      rewrite in_map_iff in H.
-      
-   Admitted.      
-      
+    forall p : event Ts, In p (induced_sigma_generators srv) -> 
+                         forall x : Ts, {p x} + {~ p x}.
+    unfold induced_sigma_generators.
+    unfold event_preimage, singleton_event.
+    intros.
+    rewrite in_map_iff in H.
+    
+    Admitted.
+
 
   Lemma conditional_tower_law {nempty:NonEmpty Ts}
         (rv_X1 rv_X2 : Ts -> R)
         (rv1 : RandomVariable Prts borel_sa rv_X1)
         (rv2 : RandomVariable Prts borel_sa rv_X2)        
         {srv1 : SimpleRandomVariable rv_X1}
-        {srv2 : SimpleRandomVariable rv_X2} :
+        {srv2 : SimpleRandomVariable rv_X2}
+        (ps_pos: forall p : event Ts, In p (induced_sigma_generators srv2) -> ps_P p > 0):
     SimpleExpectation (SimpleConditionalExpectation rv_X1 rv_X2) = SimpleExpectation rv_X1.
     Proof.
       symmetry.
-      generalize (gen_conditional_tower_law rv_X1 (induced_sigma_generators srv1)); intros.
-      generalize (induced_gen_ispart srv1); intros.
-      specialize (H H0).
-      generalize (induced_gen_sap rv1 srv1); intros.
+      generalize (gen_conditional_tower_law rv_X1 (induced_sigma_generators srv2)); intros.
+      generalize (induced_gen_ispart srv2); intros.
+      specialize (H H0 ps_pos).
+      generalize (induced_gen_sap rv2 srv2); intros.
       specialize (H H1).
+      generalize (induced_dec rv2 srv2); intros.
+      specialize (H X).
+      rewrite H.
       unfold gen_SimpleConditionalExpectation in *.
       unfold gen_simple_conditional_expectation_scale in *.
       unfold SimpleConditionalExpectation, SimpleConditionalExpectation_list.
-      generalize (induced_gen_dec srv1); intros.
-      specialize (H X).
-      rewrite H.
       unfold simple_conditional_expectation_scale_coef.
       unfold point_preimage_indicator.
       unfold induced_sigma_generators, event_preimage, singleton_event.
@@ -2971,6 +2973,7 @@ Section SimpleConditionalExpectation.
       apply SimpleExpectation_ext.
       unfold rv_eq, pointwise_relation.
       intros.
+      
       
       Admitted.
 
@@ -3029,6 +3032,13 @@ Section SimpleConditionalExpectation.
      generalize (rvmult_assoc rv_X1 rv_X2 (EventIndicator dec)); intros.
      unfold SimpleExpectation.
      unfold EventIndicator, singleton_event, event_preimage.
+     rewrite <- list_sum_const_mul.
+     f_equal.
+     destruct srv1.
+     destruct srv2.
+     unfold srv_vals.
+     simpl.
+     
   Admitted.
      
        
