@@ -2709,12 +2709,10 @@ Section SimpleConditionalExpectation.
       clear n l.
       destruct (Req_EM_T a 0).
       + subst; field.
-      + 
+      + admit.
     - rewrite SimpleExpectation_EventIndicator.
       field; trivial.
-  Qed.
-
-(*  
+  Admitted.
 
   Lemma srv_md_gen_simple_scale
         (rv_X : Ts -> R)
@@ -2739,8 +2737,7 @@ Section SimpleConditionalExpectation.
         {rv : RandomVariable Prts borel_sa rv_X}
         {srv : SimpleRandomVariable rv_X}
         (l : list dec_sa_event)
-        (ispart: is_partition_list (map dsa_event l))
-        (psp_pos : forall p, In p l -> ps_P (dsa_event p) > 0) :
+        (ispart: is_partition_list (map dsa_event l)) :
     SimpleExpectation rv_X =
     SimpleExpectation
       (gen_SimpleConditionalExpectation rv_X l).
@@ -2766,12 +2763,10 @@ Section SimpleConditionalExpectation.
         erewrite SimpleExpectation_pf_irrel.
         rewrite <- scaleSimpleExpectation.
         rewrite SimpleExpectation_EventIndicator.
-        field.
-        specialize (psp_pos a).
-        cut_to psp_pos; simpl; eauto.
-        lra.
+        match_destr.
+        * admit.
+        * field; trivial.
       + apply IHl.
-        simpl in *; intuition.
     - rewrite Forall_forall; intros.
       rewrite in_map_iff in H0.
       destruct H0 as [? [? eqq]].
