@@ -1967,7 +1967,8 @@ Section SimpleConditionalExpectation.
              {srv : SimpleRandomVariable rv_X}
              (dec:forall x, {P x} + {~ P x})        
              (sap: sa_sigma P) :=
-    rvscale  ((SimpleExpectation (rvmult rv_X (EventIndicator dec))) / (ps_P P))
+    rvscale (if (Req_EM_T (ps_P P) 0) then 0 else
+               ((SimpleExpectation (rvmult rv_X (EventIndicator dec))) / (ps_P P)))
              (EventIndicator dec).
 
   Instance gen_simple_conditional_expectation_scale_rv (P : event Ts)
@@ -1978,8 +1979,7 @@ Section SimpleConditionalExpectation.
     RandomVariable Prts borel_sa  (gen_simple_conditional_expectation_scale P rv_X dec sap).
   Proof.
     unfold gen_simple_conditional_expectation_scale.
-    apply rvscale_rv.
-    now apply EventIndicator_rv.
+    apply rvscale_rv; now apply EventIndicator_rv.    
   Qed.
 
   Instance gen_simple_conditional_expectation_scale_simpl (P : event Ts)
@@ -1990,8 +1990,7 @@ Section SimpleConditionalExpectation.
     SimpleRandomVariable (gen_simple_conditional_expectation_scale P rv_X dec sap).
   Proof.
     unfold gen_simple_conditional_expectation_scale.
-    apply srvscale.
-    now apply EventIndicator_srv.
+    apply srvscale; apply EventIndicator_srv.
   Defined.
 
   Program Fixpoint map_dep {A B} (l:list A) :  (forall x, In x l -> B) -> list B
@@ -2051,6 +2050,7 @@ Section SimpleConditionalExpectation.
              (rv_X rv_X2 : Ts -> R)
              {srv : SimpleRandomVariable rv_X}
              {srv2 : SimpleRandomVariable rv_X2} : R :=
+    if Req_EM_T (ps_P (event_preimage rv_X2 (singleton_event c))) 0 then 0 else
     ((SimpleExpectation 
         (rvmult rv_X
                  (point_preimage_indicator rv_X2 c)))
@@ -2692,16 +2692,28 @@ Section SimpleConditionalExpectation.
     SimpleExpectation (gen_simple_conditional_expectation_scale P rv_X dec sap) =
     SimpleExpectation (rvmult rv_X (EventIndicator dec)).
   Proof.
-    unfold gen_simple_conditional_expectation_scale.
     generalize (scaleSimpleExpectation 
                   (SimpleExpectation (rvmult rv_X (EventIndicator dec)) / ps_P P)
                                        (EventIndicator dec)); intros HH.
+    unfold gen_simple_conditional_expectation_scale.
     etransitivity.
     - symmetry. eauto.
-    - rewrite SimpleExpectation_EventIndicator.
+    - 
+      
+(*
+   destruct (Req_EM_T (ps_P P) 0).
+      rewrite SimpleExpectation_EventIndicator.
       field.
       lra.
+*)
+  Admitted
+(*       
+
+
+
   Qed.
+*)
+(*  
 
   Lemma srv_md_gen_simple_scale
         (rv_X : Ts -> R)
@@ -2910,6 +2922,7 @@ Section SimpleConditionalExpectation.
         {srv1 : SimpleRandomVariable rv_X1}
         {srv2 : SimpleRandomVariable rv_X2} 
         (l : list dec_sa_event)
+        (psp_pos : forall p, In p l -> ps_P (dsa_event p) > 0) 
         (is_part: is_partition_list (map dsa_event l)) :
 
      partition_measurable rv_X1 (map dsa_event l) ->
@@ -2917,8 +2930,9 @@ Section SimpleConditionalExpectation.
      rvmult rv_X1 (gen_SimpleConditionalExpectation rv_X2 l  ).
      Proof.
        intros.
-       unfold gen_SimpleConditionalExpectation at 1.
+       unfold gen_SimpleConditionalExpectation.
        unfold gen_simple_conditional_expectation_scale.
+       
        
        Admitted.
 
