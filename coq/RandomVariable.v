@@ -2756,12 +2756,11 @@ Section SimpleConditionalExpectation.
     simpl.
     erewrite <- (list_sum_map_zero _).
     f_equal.
-    apply map_ext.
-
     Admitted.
 
   Lemma gen_simple_conditional_expectation_scale_tower (P : event Ts) 
              {rv_X : Ts -> R}
+             {rv : RandomVariable Prts borel_sa rv_X}
              {srv : SimpleRandomVariable rv_X}
              (dec:forall x, {P x} + {~ P x})        
              (sap: sa_sigma P) :
@@ -2905,8 +2904,8 @@ Section SimpleConditionalExpectation.
         (rv1 : RandomVariable Prts borel_sa rv_X1)
         (rv2 : RandomVariable Prts borel_sa rv_X2)        
         {srv1 : SimpleRandomVariable rv_X1}
-        {srv2 : SimpleRandomVariable rv_X2}
-        (ps_pos: forall p, In p (induced_sigma_generators srv2) -> ps_P (dsa_event p) > 0):
+        {srv2 : SimpleRandomVariable rv_X2} :
+
     SimpleExpectation (SimpleConditionalExpectation rv_X1 rv_X2) = SimpleExpectation rv_X1.
     Proof.
       symmetry.
