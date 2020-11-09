@@ -2062,7 +2062,7 @@ Section SimpleConditionalExpectation.
              {srv2 : SimpleRandomVariable rv_X2}
     := map (fun c => (rvscale (simple_conditional_expectation_scale_coef c rv_X1 rv_X2)
                            (point_preimage_indicator rv_X2 c)))
-           (srv_vals (SimpleRandomVariable:=srv2)).
+           (nodup Req_EM_T (srv_vals (SimpleRandomVariable:=srv2))).
 
   Definition SimpleConditionalExpectation
              (rv_X1 rv_X2 : Ts -> R)
@@ -2082,7 +2082,8 @@ Section SimpleConditionalExpectation.
     unfold SimpleConditionalExpectation_list.
     induction srv_vals; simpl.
     - constructor.
-    - constructor; trivial.
+    - match_destr.
+      constructor; trivial.
       typeclasses eauto.
   Defined.
 
@@ -2840,9 +2841,10 @@ Section SimpleConditionalExpectation.
       apply SimpleExpectation_ext.
       unfold rv_eq, pointwise_relation.
       intros.
-      
-      
-      Admitted.
+      rewrite map_map; simpl.
+      unfold induced_sigma_generators_obligation_1.
+      reflexivity.
+    Qed.
 
 
    Definition simple_sigma_measurable 
