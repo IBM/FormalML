@@ -2527,19 +2527,15 @@ Section SimpleConditionalExpectation.
     induction l; simpl.
     - right; intros [?[??]]; tauto.
     - simpl in *.
-      generalize (dec_all a); intros HH.
-      cut_to HH; [|tauto].
-      destruct (HH x).
+      assert (inn:In a (a::l)) by (simpl; eauto).
+      destruct (dec_all _ inn x).
       + left; eauto.
       + destruct IHl.
-        * simpl in *; intros.
-          apply dec_all.
-          eauto.
-        * left. destruct e as [?[??]].
-          eauto.
+        * eauto.
+        * left.
+          destruct e as [? [??]]; eauto.
         * right.
-          intros [?[??]].
-          destruct H.
+          intros [? [[?|?]?]].
           -- congruence.
           -- apply n0.
              eauto.
@@ -2601,11 +2597,31 @@ Section SimpleConditionalExpectation.
       + now apply very_specific_fold_right_rv_because_barry_waiting.
   Qed.
 
+  Lemma list_union_dec_ext {T B} (l:list (event T)) pf1 pf2 (a b:B) :
+    forall x, (if (list_union_dec l pf1) x then a else b) = (if (list_union_dec l pf2) x then a else b).
+  Proof.
+    intros.
+    repeat match_destr; congruence.
+  Qed.
+
   Lemma FOP_sublist {A : Type} {R : A -> A -> Prop} {a : A} {l : list A} :
     ForallOrdPairs R (a :: l) -> ForallOrdPairs R l.
   Proof.
     intros FP.
     now invcs FP.
+  Qed.
+
+  Lemma map_dep_ext {A B} (l:list A) (f1 f2:(forall x, In x l -> B)) :
+    (forall x pf, f1 x pf = f2 x pf) ->
+    map_dep l f1 = map_dep l f2.
+  Proof.
+    intros eqq.
+    induction l; simpl; trivial.
+    rewrite eqq.
+    f_equal.
+    apply IHl; intros.
+    unfold map_dep_obligation_2.
+    now rewrite eqq.
   Qed.
 
   Lemma indicator_sum (a:Ts)
@@ -2619,16 +2635,35 @@ Section SimpleConditionalExpectation.
       unfold EventIndicator.
       induction l.
       - now simpl.
-      - generalize (FOP_sublist is_disj); intros.
-        specialize (IHl H).
+      - invcs is_disj.
+        specialize (IHl H2).
+        assert (Hdec: forall p : event Ts, In p l -> forall x : Ts, {p x} + {~ p x}).
+        { simpl in *; intuition. }
+        specialize (IHl Hdec).
         simpl.
-        unfold map_dep_obligation_1.
-        match_destr.
-        + unfold map_dep_obligation_2.
-          
-          
-          
-      Admitted.
+        unfold map_dep_obligation_1, map_dep_obligation_2.
+        erewrite map_dep_ext.
+        + rewrite Forall_forall in H1.
+          rewrite <- IHl.
+          clear IHl.
+          destruct (dec_all a0
+                            (@or_introl (@eq (event Ts) a0 a0) (@In (event Ts) a0 l)
+                                        (@eq_refl (event Ts) a0)) a ).
+          * match_destr; try lra.
+            destruct l0 as [? [inn ?]].
+            specialize (H1 _ inn a); intuition.
+          * match_destr.
+            -- destruct e as [? [??]].
+               destruct H; [congruence |].
+               match_destr; try lra.
+               elim n0.
+               exists x; intuition.
+            -- match_destr; try lra.
+               destruct l0 as [? [??]].
+               elim n0; eauto.
+        + intros.
+          repeat match_destr; try congruence.
+    Qed.
 
   Lemma expectation_indicator_sum_gen {nempty:NonEmpty Ts}
         (rv_X : Ts -> R)
