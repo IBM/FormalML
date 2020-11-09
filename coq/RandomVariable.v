@@ -2692,27 +2692,15 @@ Section SimpleConditionalExpectation.
     SimpleExpectation (gen_simple_conditional_expectation_scale P rv_X dec sap) =
     SimpleExpectation (rvmult rv_X (EventIndicator dec)).
   Proof.
-    generalize (scaleSimpleExpectation 
-                  (SimpleExpectation (rvmult rv_X (EventIndicator dec)) / ps_P P)
-                                       (EventIndicator dec)); intros HH.
     unfold gen_simple_conditional_expectation_scale.
-    etransitivity.
-    - symmetry. eauto.
-    - 
-      
-(*
-   destruct (Req_EM_T (ps_P P) 0).
-      rewrite SimpleExpectation_EventIndicator.
-      field.
-      lra.
-*)
-  Admitted
-(*       
-
-
-
+    erewrite SimpleExpectation_pf_irrel.
+    rewrite <- scaleSimpleExpectation.
+    match_destr.
+    - lra.
+    - rewrite SimpleExpectation_EventIndicator.
+      field; trivial.
   Qed.
-*)
+
 (*  
 
   Lemma srv_md_gen_simple_scale
