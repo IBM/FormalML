@@ -1940,7 +1940,7 @@ End SimpleExpectation.
 Section SimpleConditionalExpectation.
 
   Definition is_partition_list {T} (l:list (event T)) :=
-    ForallOrdPairs event_disjoint l /\ (list_union l) = Ω.
+    ForallOrdPairs event_disjoint l /\ event_equiv (list_union l) Ω.
 
   Lemma is_partition_list_partition {T} {l:list (event T)} :
     is_partition_list l ->
@@ -2513,7 +2513,7 @@ Section SimpleConditionalExpectation.
   Proof.
     intros a [??]; unfold list_union in *; simpl in *.
     assert (HH:@Ω T a) by now compute.
-    rewrite <- H0 in HH.
+    rewrite <- (H0 a) in HH.
     destruct HH as [? [??]].
     tauto.
   Qed.
@@ -2740,7 +2740,7 @@ Section SimpleConditionalExpectation.
     f_equal.
     unfold EventIndicator.
     destruct (list_union_dec l dec_all a); trivial.
-    rewrite H0 in n.
+    rewrite (H0 a) in n.
     unfold Ω in n.
     intuition.
  Qed.
@@ -2900,27 +2900,21 @@ Section SimpleConditionalExpectation.
       apply NoDup_nodup.
     - destruct srv.
       unfold srv_vals.
-      assert (event_equiv
-                (list_union
-                   (map (fun (c : R) (omega : Ts) => rv_X omega = c) 
-                        (nodup Req_EM_T srv_vals0)) )
-                Ω).
-      + unfold event_equiv; intros.
-        unfold list_union.
+      unfold event_equiv; intros.
+      unfold list_union.
+      split.
+      + intros.
+        unfold Ω .
+        intuition.
+      + intros.
+        eexists.
         split.
-        * intros.
-          unfold Ω .
-          intuition.
-        * intros.
-          eexists.
-          -- split.
-             ++ rewrite in_map_iff.
-                exists (rv_X x).
-                split; try easy.
-                now rewrite nodup_In.
-             ++ now simpl.
-      + 
-  Admitted.
+        * rewrite in_map_iff.
+          exists (rv_X x).
+          split; try easy.
+          now rewrite nodup_In.
+        * now simpl.
+  Qed.
 
   Lemma induced_gen_sap
         {rv_X : Ts -> R}
