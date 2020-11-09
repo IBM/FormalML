@@ -2684,7 +2684,7 @@ Section SimpleConditionalExpectation.
     intuition.
  Qed.
 
-  Lemma gen_simple_conditional_expectation_scale_tower (P : event Ts) (Ppos:ps_P P > 0)
+  Lemma gen_simple_conditional_expectation_scale_tower (P : event Ts) 
              {rv_X : Ts -> R}
              {srv : SimpleRandomVariable rv_X}
              (dec:forall x, {P x} + {~ P x})        
@@ -2696,7 +2696,20 @@ Section SimpleConditionalExpectation.
     erewrite SimpleExpectation_pf_irrel.
     rewrite <- scaleSimpleExpectation.
     match_destr.
-    - lra.
+    - field_simplify.
+      unfold SimpleExpectation.
+      induction srv_vals; simpl; trivial.
+      match_destr.
+      simpl.
+      rewrite <- IHl.
+      unfold event_preimage, singleton_event.
+      unfold EventIndicator; simpl.
+      unfold rvmult.
+      clear IHl.
+      clear n l.
+      destruct (Req_EM_T a 0).
+      + subst; field.
+      + 
     - rewrite SimpleExpectation_EventIndicator.
       field; trivial.
   Qed.
