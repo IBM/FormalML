@@ -2751,12 +2751,15 @@ Section SimpleConditionalExpectation.
     unfold SimpleExpectation.
     unfold event_preimage, EventIndicator, singleton_event, rvmult.
     intros.
-    destruct srv.
-    unfold srv_vals.
     simpl.
-    erewrite <- (list_sum_map_zero _).
+    erewrite <- (list_sum_map_zero _) at 2.
     f_equal.
-    Admitted.
+    apply map_ext; intros.
+    destruct (Req_EM_T a 0).
+    - subst; field.
+    - rewrite indicator_prob_0; trivial.
+      field.
+  Qed.
 
   Lemma gen_simple_conditional_expectation_scale_tower (P : event Ts) 
              {rv_X : Ts -> R}
