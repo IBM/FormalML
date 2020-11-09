@@ -2027,7 +2027,7 @@ Section SimpleConditionalExpectation.
     - apply srvplus.
       + apply gen_simple_conditional_expectation_scale_simpl.
       + apply IHl.
-  Qed.
+  Defined.
 
   Lemma dec_complement {A} {p:A->Prop} (dec_p: forall x, {p x} + {~ p x}) :
     forall x, {~ p x} + {~ ~ p x}.
@@ -2792,12 +2792,56 @@ Section SimpleConditionalExpectation.
     now rewrite gen_simple_conditional_expectation_scale_tower.
   Qed.
 
+  Lemma in_map_dep_iff {A B} (l : list A) f (y : B) :
+    In y (map_dep l f) <-> (exists x pf , f x pf = y).
+  Proof.
+    split; revert f.
+    - induction l; simpl; intros f inn.
+      + tauto.
+      + destruct inn; [eauto |].
+        destruct (IHl _ H) as [? [??]].
+        eauto.
+    - induction l; simpl; intros f inn.
+      + destruct inn as [? [??]].
+        tauto.
+      + destruct inn as [? [??]].
+        unfold map_dep_obligation_1, map_dep_obligation_2.
+        destruct x0.
+        * subst; eauto.
+        * subst.
+          right.
+          apply IHl.
+          eauto.
+  Qed.
+
+
+  Lemma srv_md_gen_simple_scale
+        (rv_X : Ts -> R)
+        {rv : RandomVariable Prts borel_sa rv_X}
+        {srv : SimpleRandomVariable rv_X}
+        (l : list (event Ts))
+
+        (sap_all : forall p, In p l -> sa_sigma p)
+        (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x})) :
+  Forallt SimpleRandomVariable
+                       (map_dep l
+                                (fun (p : event Ts) (pf : In p l) =>
+                                   gen_simple_conditional_expectation_scale p rv_X (dec_all p pf) (sap_all p pf))).
+  Proof.
+    induction l; simpl.
+    - constructor.
+    - constructor.
+      + typeclasses eauto.
+      + apply IHl.
+  Defined.
+                                     
   Lemma gen_conditional_tower_law {nempty:NonEmpty Ts}
         (rv_X : Ts -> R)
         {rv : RandomVariable Prts borel_sa rv_X}
         {srv : SimpleRandomVariable rv_X}
         (l : list (event Ts))
         (ispart: is_partition_list l)
+        (psp_pos : forall p, In p l -> ps_P p > 0)
         (sap_all : forall p, In p l -> sa_sigma p)
         (dec_all:  forall p, In p l -> (forall x, {p x} + {~ p x})) :
     SimpleExpectation rv_X =
@@ -2811,10 +2855,32 @@ Section SimpleConditionalExpectation.
           (fun (p : event Ts) (pf : In p l) =>
            gen_simple_conditional_expectation_scale p rv_X (dec_all p pf) (sap_all p pf)))).
     cut_to H.
-    
-    (* rewrite SimpleExpectation_fold_rvplus. *)
-    
-    Admitted.    
+    - specialize (H (srv_md_gen_simple_scale rv_X l sap_all dec_all)).
+       erewrite SimpleExpectation_pf_irrel in H.
+       rewrite H.
+       clear H.
+       f_equal.
+       unfold srv_md_gen_simple_scale.
+       unfold Forallt_map.
+       clear ispart.
+       induction l; simpl; trivial.
+       f_equal.
+      + unfold  gen_simple_conditional_expectation_scale.
+        erewrite SimpleExpectation_pf_irrel.
+        rewrite <- scaleSimpleExpectation.
+        rewrite SimpleExpectation_EventIndicator.
+        field.
+        specialize (psp_pos a).
+        cut_to psp_pos; simpl; eauto.
+        lra.
+      + apply IHl.
+        simpl in *; intuition.
+    - rewrite Forall_forall; intros.
+      rewrite in_map_dep_iff in H0.
+      destruct H0 as [? [? eqq]].
+      subst.
+      typeclasses eauto.
+  Qed.
 
   Definition induced_sigma_generators
              {rv_X : Ts -> R}
