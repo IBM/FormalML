@@ -3086,7 +3086,45 @@ Section SimpleConditionalExpectation.
            -- split; intros eqq
               ; rewrite <- eqq
               ; field.
-         * admit.
+         * rewrite list_prod_swap.
+           rewrite map_map; simpl.
+           clear srv_vals_complete1.
+           induction srv_vals1; simpl; trivial.
+           match_destr.
+           -- rewrite <- IHsrv_vals1.
+              rewrite map_app.
+              rewrite map_map.
+              simpl.
+              generalize (srv_vals0) at 1; intros l.
+              induction l; simpl; trivial.
+              match_destr.
+              simpl.
+              rewrite IHl.
+              unfold rvscale, rvmult, EventIndicator.
+              {
+                destruct (Req_EM_T (a0 * a) 0).
+                - rewrite e; field.
+                - replace (ps_P (fun omega : Ts => c * (rv_X2 omega * (if dec omega then 1 else 0)) = a0 * a)) with (ps_P event_none).
+                  + rewrite ps_none; field.
+                  + apply ps_proper; unfold event_none.
+                    intros ev.
+                    split; [tauto |].
+                    match_destr.
+                    * rewrite <- (H _ p0).
+                      intros eqq.
+                      apply n.
+                      apply in_app_iff.
+                      right.
+                      apply in_map_iff.
+                      
+                    * intros eqq.
+                      field_simplify in eqq.
+                      congruence.
+
+           
+           induction srv_vals0; simpl.
+           -- admit.
+           -- 
      - rewrite list_prod_swap.
        simpl.
        rewrite app_nil_r.
