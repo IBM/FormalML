@@ -3078,9 +3078,7 @@ Section SimpleConditionalExpectation.
          cut_to IHl.
          match_destr.
          + rewrite IHl.
-           rewrite rvmult_rvadd_distr.           
-           
-
+           (* rewrite rvmult_rvadd_distr.  *)
        
        Admitted.
 
@@ -3108,9 +3106,27 @@ Section SimpleConditionalExpectation.
      unfold simple_conditional_expectation_scale_coef.
      unfold gen_simple_conditional_expectation_scale in H.
      unfold point_preimage_indicator.
-                                                  
-     Admitted.
-
+     unfold event_preimage, singleton_event.
+     unfold induced_sigma_generators in H.
+     unfold induced_sigma_generators_obligation_1 in H.
+     unfold event_preimage, singleton_event in H.
+     do 2 rewrite map_map in H.
+     simpl in H.
+     now rewrite H.
+     unfold partition_measurable, induced_sigma_generators.
+     rewrite map_map; simpl.
+     unfold event_preimage, singleton_event.
+     unfold is_partition_list; intros.
+     destruct H1.
+     rewrite in_map_iff in H3.
+     destruct H3 as [x [H3 HH3]].
+     rewrite <- H3.
+     unfold simple_sigma_measurable in H0.
+     apply H0; trivial.
+     Search nodup.
+     erewrite <- nodup_In.
+     apply HH3.
+  Qed.
 
 End SimpleConditionalExpectation.  
 
