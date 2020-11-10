@@ -2974,9 +2974,34 @@ Section SimpleConditionalExpectation.
         + rewrite H in i; congruence.
         + rewrite <- H in i; congruence.
         + apply perm_skip; trivial.
-      - admit.
-      - admit.
-    Admitted.
+      - destruct (dec x y)
+        ; destruct (dec y x)
+        ; try congruence.
+        + subst.
+          destruct (in_dec dec y l)
+          ; destruct (in_dec dec y l')
+          ; try congruence.
+          * rewrite H in i; congruence.
+          * rewrite <- H in i; congruence.
+          * apply perm_skip; congruence.
+        + destruct (in_dec dec y l)
+          ; destruct (in_dec dec x l)
+          ; destruct (in_dec dec x l')
+          ; destruct (in_dec dec y l')
+          ; try congruence
+          ; try solve [
+                  rewrite H in i; congruence
+                  | rewrite H in i0; congruence
+                  | rewrite H in i1; congruence
+                  | rewrite <- H in i; congruence
+                  | rewrite <- H in i0; congruence
+                  | rewrite <- H in i1; congruence
+                  | apply perm_skip; congruence
+                ] .
+          rewrite H0.
+          apply perm_swap.
+      - now rewrite H0.
+    Qed.
       
    Lemma expectation_const_factor_subset (c:R)
         (p : event Ts)
