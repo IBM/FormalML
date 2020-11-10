@@ -3076,11 +3076,11 @@ Section SimpleConditionalExpectation.
          admit.
        - simpl.
          cut_to IHl.
-         rewrite IHl.
-         rewrite rvmult_rvadd_distr,
-       
-       
-       
+         match_destr.
+         + rewrite IHl.
+           rewrite rvmult_rvadd_distr.           
+           
+
        
        Admitted.
 
