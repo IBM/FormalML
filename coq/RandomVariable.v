@@ -2964,6 +2964,18 @@ Section SimpleConditionalExpectation.
       lra.
     Qed.
 
+    Lemma rvmult_comm
+        (rv_X1 rv_X2 : Ts -> R) :
+     rv_eq (rvmult rv_X1 rv_X2)  (rvmult rv_X2 rv_X1).
+    Proof.
+      unfold rv_eq.
+      unfold pointwise_relation.
+      intros.
+      unfold rvmult.
+      lra.
+    Qed.
+
+    
     Global Instance nodup_perm {A} dec : Proper (@Permutation A ==> @Permutation A) (nodup dec).
     Proof.
       repeat red; intros.
@@ -3036,7 +3048,23 @@ Section SimpleConditionalExpectation.
        (nodup Req_EM_T
                 (map (fun ab : R * R => fst ab * snd ab) (list_prod srv_vals0 srv_vals1)) 
          ))).
-       + admit.
+       + rewrite list_prod_swap.
+         simpl.
+         rewrite app_nil_r.
+         repeat rewrite map_app.
+         repeat rewrite map_map.
+         simpl.
+         rewrite (map_ext (fun x : R * R => fst x * snd x * 0) (const 0))
+                  by (unfold const; intros; field).
+         rewrite (map_ext (fun x : R * R => fst x * snd x * 1) (fun x : R * R => fst x * snd x))
+           by (unfold const; intros; field).
+         generalize ((list_prod srv_vals0 srv_vals1)) at 1; intros l.
+         unfold const.
+         induction l; simpl; trivial.
+         match_destr.
+         simpl.
+         rewrite IHl.
+         field.
        +
          transitivity (
          list_sum
@@ -3048,12 +3076,36 @@ Section SimpleConditionalExpectation.
            apply map_ext; intros.
            f_equal.
            apply ps_proper; intros ev.
-           rewrite rvmult_comm.
-           rewrite rvmult_assoc.
-           
-
-         
-   Admitted.
+           unfold rvmult, rvscale, EventIndicator.
+           match_destr.
+           -- unfold rvmult, rvscale.
+              rewrite H by trivial.
+              split; intros eqq
+              ; rewrite <- eqq
+              ; field.
+           -- split; intros eqq
+              ; rewrite <- eqq
+              ; field.
+         * admit.
+     - rewrite list_prod_swap.
+       simpl.
+       rewrite app_nil_r.
+       repeat rewrite map_app.
+       repeat rewrite map_map.
+       simpl.
+       rewrite (map_ext (fun x => x * 0) (const 0))
+         by (unfold const; intros; field).
+       rewrite (map_ext (fun x => x * 1) (fun x => x))
+         by (unfold const; intros; field).
+       rewrite map_id.
+       generalize (srv_vals1) at 2; intros l.
+       unfold const.
+       induction l; simpl; trivial.
+       match_destr.
+       simpl.
+       rewrite IHl.
+       field.
+   Qed.
 
    Lemma expectation_const_factor_subset (c:R)
         (p : event Ts)
