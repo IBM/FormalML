@@ -3093,12 +3093,12 @@ Section SimpleConditionalExpectation.
            * intros x.
              specialize (H0 (dsa_event a)).
              cut_to H0.
+             destruct H0 as [c [H0 HH0]].             
              rewrite (expectation_const_factor_subset (rv_X1 x)).
              -- unfold rvscale, rvplus, rvmult.
                 field; trivial.
              -- apply dsa_sa.
-             -- destruct H0 as [c [H0 HH0]].
-                unfold event_sub in HH0.
+             -- unfold event_sub in HH0.
                 intros.
                 specialize (HH0 omega H).
                 rewrite HH0.
@@ -3143,7 +3143,7 @@ Section SimpleConditionalExpectation.
      unfold event_preimage, singleton_event in H.
      do 2 rewrite map_map in H.
      simpl in H.
-     now rewrite H.
+     rewrite H.
      unfold partition_measurable, induced_sigma_generators.
      rewrite map_map; simpl.
      unfold event_preimage, singleton_event.
