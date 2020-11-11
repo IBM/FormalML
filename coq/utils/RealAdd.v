@@ -453,6 +453,53 @@ Proof.
   apply map_ext; intros.
   lra.
 Qed.
-  
+
+Lemma list_sum_fold_right l : list_sum l = fold_right Rplus 0 l.
+Proof.
+  induction l; firstorder.
+Qed.
   
 End list_sum.
+
+Lemma Rsqrt_le (x y : nonnegreal) : 
+  x <= y <-> Rsqrt x <= Rsqrt y.
+Proof.
+  split; intros.
+  - apply Rsqr_incr_0; try apply Rsqrt_positivity.
+    unfold Rsqr.
+    now repeat rewrite Rsqrt_Rsqrt.
+  - rewrite <- (Rsqrt_Rsqrt x).
+    rewrite <- (Rsqrt_Rsqrt y).
+    apply Rsqr_incr_1; try apply Rsqrt_positivity.
+    trivial.
+Qed.
+
+Lemma Rsqrt_sqr (x:nonnegreal) :
+  Rsqrt {| nonneg := x²; cond_nonneg := Rle_0_sqr x |} = x.
+Proof.
+  unfold Rsqr.
+  apply Rsqr_inj.
+  - apply Rsqrt_positivity.
+  - apply cond_nonneg.
+  - unfold Rsqr. rewrite Rsqrt_Rsqrt.
+    trivial.
+Qed.
+
+Lemma Rsqr_le_to_Rsqrt (r x:nonnegreal):
+  x² <= r <-> x <= Rsqrt r.
+Proof.
+  intros.
+  etransitivity.
+  - eapply (Rsqrt_le (mknonnegreal _ (Rle_0_sqr x)) r).
+  - rewrite Rsqrt_sqr.
+    intuition.
+Qed.
+
+Lemma Rsqr_continuous :
+  continuity Rsqr.
+Proof.
+  apply derivable_continuous.
+  apply derivable_Rsqr.
+Qed.
+
+Global Instance EqDecR : EqDec R eq := Req_EM_T.

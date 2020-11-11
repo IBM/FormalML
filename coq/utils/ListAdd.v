@@ -1,9 +1,9 @@
-Require Import List Permutation.
+Require Import List Permutation EquivDec.
 Require Import RelationClasses Morphisms.
 Require Import Omega Lia Lra Rbase.
 Require Import Relation_Definitions Sorted.
 
-Require Import LibUtils.
+Require Import LibUtils BasicUtils.
 
 Import ListNotations.
 
@@ -1024,3 +1024,389 @@ Proof.
     rewrite H0 in i.
     simpl in i; trivial.
 Qed.
+
+Lemma map_in_inj_strong {A B} (f:A->B) a (l:list A) :
+  (forall a b, In (f a) (map f l) -> In (f b) (map f l) -> f a = f b -> a = b) ->
+  In (f a) (map f l) -> In a l.
+Proof.
+  intros inj HH.
+  apply in_map_iff in HH.
+  destruct HH as [x [eqqx inx]].
+  rewrite (inj a x); trivial.
+  - rewrite <- eqqx.
+    now apply in_map.
+  - now apply in_map.
+  - congruence.
+Qed.
+   
+Lemma nodup_map_inj {A B} decA decB (f:A->B) (l:list A) :
+  (forall a b, In (f a) (map f l) -> In (f b) (map f l) -> f a = f b -> a = b) ->
+  nodup decB (map f l) = map f (nodup decA l).
+Proof.
+  intros inj.
+  induction l; simpl; trivial.
+  assert (forall a b : A, In (f a) (map f l) -> In (f b) (map f l) -> f a = f b -> a = b).
+  { simpl in inj.
+    intuition.
+  } 
+  rewrite IHl by trivial.
+  match_destr; match_destr.
+  - apply map_in_inj_strong in i; trivial.
+    congruence.
+  - elim n.
+    now apply in_map.
+Qed.
+
+Lemma list_prod_concat {A B} (l1:list A) (l2:list B) : list_prod l1 l2 = concat (map (fun x => map (fun y => (x, y)) l2) l1).
+Proof.
+  induction l1; simpl; trivial.
+  now rewrite IHl1.
+Qed.
+
+Lemma nodup_const_map {A} (c r:A) dec (l : list A) :
+  [c] = nodup dec (map (fun _  => c) (r :: l)).
+Proof.
+  induction l; simpl; trivial.
+  rewrite IHl.
+  match_destr.
+  simpl.
+  intuition.
+Qed.
+
+Lemma concat_NoDup {A} (l:list (list A)) : NoDup (concat l) -> Forall (@NoDup A) l.
+Proof.
+  induction l; simpl; intros nd.
+  - constructor.
+  - constructor.
+    + eapply NoDup_app_inv; eauto.
+    + apply IHl. eapply NoDup_app_inv2; eauto.
+Qed.
+
+Lemma nodup_app2_incl {A} decA (l1 l2:list A) :
+  incl l1 l2 ->
+  nodup decA (l1 ++ l2) = nodup decA l2.
+Proof.
+  unfold incl; intros inn.
+  induction l1; simpl; trivial; simpl in *.
+  match_destr.
+  - eauto.
+  - elim n.
+    apply in_app_iff.
+    eauto.
+Qed.
+
+Lemma nodup_app_distr {A} decA (l1 l2:list A) :
+  disjoint l1 l2 ->
+  nodup decA (l1 ++ l2) = nodup decA l1 ++ nodup decA l2.
+Proof.
+  unfold disjoint.
+  intros disj.
+  induction l1; simpl; trivial.
+  rewrite IHl1 by firstorder.
+  destruct (in_dec decA a l1).
+  - match_destr.
+    elim n.
+    apply in_app_iff; auto.
+  - match_destr.
+    apply in_app_iff in i.
+    elim (disj a); simpl; intuition.
+Qed.
+
+Lemma list_prod_nodup {A B} decA decB decAB (l1:list A) (l2:list B):
+  nodup decAB (list_prod l1 l2) = list_prod (nodup decA l1) (nodup decB l2).
+Proof.
+  repeat rewrite list_prod_concat.
+  revert l2.
+  induction l1; simpl; trivial.
+  intros l2.
+  match_destr.
+  - rewrite <- IHl1.
+    apply nodup_app2_incl.
+    intros x inn.
+    apply concat_In.
+    eexists.
+    split; try eassumption.
+    apply in_map_iff.
+    eauto.
+  - simpl.
+    rewrite <- IHl1.
+    rewrite nodup_app_distr.
+    + f_equal.
+      induction l2; simpl; trivial.
+      rewrite IHl2.
+      match_destr.
+      * apply in_map_iff in i.
+        destruct i as [x [eqq xin]].
+        invcs eqq.
+        match_destr.
+        congruence.
+      * match_destr.
+        elim n0.
+        apply in_map_iff.
+        eauto.
+    + unfold disjoint.
+      intros [x y] inn HH.
+      apply concat_In in HH.
+      destruct HH as [xx [xxin xinn]].
+      apply in_map_iff in xxin.
+      destruct xxin as [xxx [? xxxin]]; subst.
+      apply in_map_iff in inn.
+      destruct inn as [? [eqq ?]].
+      invcs eqq; subst.
+      apply in_map_iff in xinn.
+      destruct xinn as [? [eqq ?]].
+      invcs eqq.
+      congruence.
+Qed.
+
+Lemma nodup_map_nodup {A B} decA decB (f:A->B) (l:list A) :
+  nodup decB (map f (nodup decA l)) = nodup decB (map f l).
+Proof.
+  induction l; simpl; trivial.
+  match_destr; match_destr.
+  + elim n.
+    apply in_map_iff; eauto.
+  + simpl.
+    match_destr.
+    elim n0.
+    eapply in_map_iff.
+    eapply in_map_iff in i.
+    destruct i as [? [? inn]].
+    eapply nodup_In in inn.
+    eauto.
+  + simpl.
+    rewrite IHl.
+    match_destr.
+    elim n0.
+    eapply in_map_iff in i.
+    destruct i as [? [? inn]].
+    apply nodup_In in inn.
+    apply in_map_iff.
+    eauto.
+Qed.
+
+
+Lemma nodup_equiv {A} dec (l:list A) : equivlist (nodup dec l) l.
+Proof.
+  induction l; simpl.
+  - reflexivity.
+  - match_destr.
+    + rewrite IHl.
+      unfold equivlist; simpl; intuition congruence.
+    + now rewrite IHl.
+Qed.
+
+Lemma incl_nil_r {A} (l:list A) : incl l nil -> l = nil.
+Proof.
+  unfold incl.
+  destruct l; simpl; trivial.
+  intros HH.
+  elim (HH a); auto.
+Qed.
+
+Lemma remove_one_nin {A} {dec:EqDec A eq} a (l:list A) :
+  ~ In a l ->
+  remove_one a l = l.
+Proof.
+  induction l; simpl; trivial.
+  match_destr.
+  - intuition.
+  - intros; f_equal; apply IHl.
+    eauto.
+Qed.
+
+Lemma remove_one_app_nin {A} {dec:EqDec A eq} a (l1 l2:list A) :
+  ~ In a l1 ->
+  remove_one a (l1 ++ l2) = l1 ++ remove_one a l2.
+Proof.
+  induction l1; simpl; trivial.
+  intros ninn.
+  match_destr.
+  - red in e.
+    intuition.
+  - rewrite IHl1 by intuition.
+    trivial.
+Qed.
+
+Lemma remove_one_in_perm {A} {dec : EqDec A eq} (a:A) l :
+  In a l ->
+  Permutation l (a::remove_one a l).
+Proof.
+  induction l; simpl; intros inn.
+  - tauto.
+  - match_destr.
+    + red in e; subst.
+      reflexivity.
+    + rewrite perm_swap.
+      apply perm_skip.
+      intuition.
+Qed.
+
+Lemma remove_other_in {A} {dec : EqDec A eq} (a1 a2:A) l :
+  a1 <> a2 ->
+  In a1 l <-> In a1 (remove_one a2 l).
+Proof.
+  intros.
+  induction l; simpl.
+  - intuition.
+  - match_destr.
+    + red in e; subst.
+      intuition.
+    + simpl.
+      intuition.
+Qed.
+
+Lemma bminus_in_nin {A} {decA:EqDec A eq} a (l1 l2 : list A) :
+  In a l1 -> ~ In a l2 -> In a (bminus l2 l1).
+Proof.
+  revert l1.
+  induction l2; simpl in *.
+  - intuition.
+  - intros.
+    apply IHl2.
+    + apply remove_other_in; eauto.
+    + eauto.
+Qed.
+
+Lemma incl_front_perm {A} {decA:EqDec A eq} (l1 l2 : list A) :
+  incl l2 l1 ->
+  NoDup l2 ->
+  {l3: list A |
+    Permutation l1 (l2 ++ l3)}.
+Proof.
+  exists (bminus l2 l1).
+  unfold incl in *.
+  induction l2; simpl; trivial.
+  invcs H0.
+  rewrite IHl2; trivial.
+  - rewrite Permutation_middle.
+    apply Permutation_app; trivial.
+    rewrite remove_one_app_nin by trivial.
+    rewrite bunion_bminus.
+    apply remove_one_in_perm.
+    apply bminus_in_nin; trivial.
+    apply H; simpl; eauto.
+  - simpl in H; intuition.
+Qed.
+
+Instance equivlist_incl_part {A} : PartialOrder equivlist (@incl A).
+Proof.
+  split.
+  - intros HH; apply equivlist_incls in HH.
+    split; unfold Basics.flip; intuition.
+  - intros [??].
+    unfold Basics.flip, incl, equivlist in *; intuition.
+Qed.
+
+Lemma NoDup_app_disj {A} (a b : list A) : NoDup (a ++ b) -> disjoint a b.
+Proof.
+  unfold disjoint.
+  induction a; simpl.
+  - intuition.
+  - intros.
+    invcs H.
+    destruct H0.
+    + subst.
+      apply H4.
+      apply in_app_iff; tauto.
+    + eauto.
+Qed.
+
+Lemma NoDup_perm_disj {A} (l1 l2 l3 : list A) :
+  Permutation l1 (l2 ++ l3) ->
+  NoDup l1 ->
+  disjoint l2 l3.
+Proof.
+  intros.
+  apply NoDup_app_disj.
+  now rewrite <- H.
+Qed.
+
+Lemma incl_front_perm_nodup {A} (decA:EqDec A eq) (l1 l2 : list A) :
+  incl l2 l1 -> 
+  {l3: list A |
+    Permutation (nodup decA l1) (nodup decA l2 ++ l3)}.
+Proof.
+  intros.
+  apply incl_front_perm; trivial.
+  - now repeat rewrite nodup_equiv.
+  - apply NoDup_nodup.
+Qed.
+
+Lemma Forallt_in {A} (decA:forall x y:A, {x=y} + {x <> y}) {X:A->Type} {l:list A} (ft:Forallt X l) {a} (pf:In a l) : X a.
+Proof.
+  induction l; simpl in *.
+  - elim pf.
+  - inversion ft.
+    destruct (decA a a0).
+    + congruence.
+    + apply IHl; trivial.
+      intuition congruence.
+Defined.
+
+Fixpoint Forallt_map {A B:Type} {X:A->Type} {l:list A} (f:forall a, X a -> B) (ft:Forallt X l)  : list B
+  := match ft with
+     | Forallt_nil _ => nil
+     | Forallt_cons _ x l px pl => f x px :: Forallt_map f pl
+     end.
+
+Lemma map_nil' {A B} (f:A->B) l :
+  List.map f l = nil <-> l = nil.
+Proof.
+  split; intros.
+  - induction l; try reflexivity; simpl in *.
+    congruence.
+  - rewrite H; reflexivity.
+Qed.
+
+Lemma map_nil {A B} (f : A -> B) (l : list A) :
+    List.map f l = (@nil B) <-> l = (@nil A).
+Proof.
+    split; intros.
+    - induction l; try reflexivity; simpl in *.
+    congruence.
+    - rewrite H; reflexivity.
+Qed.
+
+Lemma map_not_nil {A B} (l : list A) (f : A -> B):
+  [] <> List.map f l <-> [] <> l.  
+Proof.
+   rewrite ne_symm ; rewrite (ne_symm _ l).
+   split ; intros.
+   * intro Hl. rewrite <-(map_nil f) in Hl ; firstorder.
+   * intro Hl. rewrite (map_nil f) in Hl ; firstorder.
+Qed.
+
+
+Lemma not_nil_exists {A} (l : list A) :
+  [] <> l <-> exists a, In a l.
+Proof.
+  split.
+  * intros Hl. 
+    induction l.
+    - firstorder.
+    - destruct l.
+      -- exists a. simpl; now left. 
+      -- set (Hnc := @nil_cons _ a0 l). specialize (IHl Hnc).
+         destruct IHl as [a1 Ha1]. 
+         exists a1. simpl in * ; intuition.
+  * intros [a Ha] not. rewrite <-not in Ha ; firstorder. 
+Qed.
+
+Lemma list_prod_not_nil {A B} {la : list A} {lb : list B}(Hla : [] <> la) (Hlb : [] <> lb) :
+  [] <> list_prod la lb.
+Proof.
+  rewrite not_nil_exists.
+  rewrite not_nil_exists in Hla.
+  rewrite not_nil_exists in Hlb.
+  destruct Hla as [a Hla].
+  destruct Hlb as [b Hlb].
+  exists (a,b). now apply in_prod. 
+Qed.
+
+(* Applies a function to an initial argument n times *)
+Fixpoint applyn {A} (init : A) (g : A -> A) (n : nat) : A :=
+  match n with
+  | 0 => init
+  | S k => g (applyn init g k)
+  end.

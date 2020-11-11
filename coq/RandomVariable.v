@@ -457,39 +457,6 @@ Section SimpleExpectation.
     split; trivial.
   Qed.
 
-(* move these two lemmas out *)
-Lemma map_in_inj_strong {A B} (f:A->B) a (l:list A) :
-  (forall a b, In (f a) (map f l) -> In (f b) (map f l) -> f a = f b -> a = b) ->
-  In (f a) (map f l) -> In a l.
-Proof.
-  intros inj HH.
-  apply in_map_iff in HH.
-  destruct HH as [x [eqqx inx]].
-  rewrite (inj a x); trivial.
-  - rewrite <- eqqx.
-    now apply in_map.
-  - now apply in_map.
-  - congruence.
-Qed.
-   
-Lemma nodup_map_inj {A B} decA decB (f:A->B) (l:list A) :
-  (forall a b, In (f a) (map f l) -> In (f b) (map f l) -> f a = f b -> a = b) ->
-  nodup decB (map f l) = map f (nodup decA l).
-Proof.
-  intros inj.
-  induction l; simpl; trivial.
-  assert (forall a b : A, In (f a) (map f l) -> In (f b) (map f l) -> f a = f b -> a = b).
-  { simpl in inj.
-    intuition.
-  } 
-  rewrite IHl by trivial.
-  match_destr; match_destr.
-  - apply map_in_inj_strong in i; trivial.
-    congruence.
-  - elim n.
-    now apply in_map.
-Qed.
-
   Lemma nodup_scaled (c : R) (srv_vals : list R) :
     c <> 0 -> map (fun v : R => c * v) (nodup Req_EM_T srv_vals) =
               nodup Req_EM_T (map (fun v : R => c * v) srv_vals).
@@ -498,16 +465,6 @@ Qed.
     symmetry.
     apply nodup_map_inj; intros.
     apply Rmult_eq_reg_l in H2; trivial.
-  Qed.
-
-  Lemma nodup_const_map (c r:R) (l : list R) :
-    [c] = nodup Req_EM_T (map (fun _ : R => c) (r :: l)).
-  Proof.
-    induction l; simpl; trivial.
-    rewrite IHl.
-    match_destr.
-    simpl.
-    intuition.
   Qed.
   
   Lemma scaleSimpleExpectation (c:R)
@@ -578,12 +535,6 @@ Qed.
     - apply event_disjoint_complement.
     - apply event_union_complement.
       apply classic_event_lem.
-  Qed.
-
-  Lemma list_prod_concat {A B} (l1:list A) (l2:list B) : list_prod l1 l2 = concat (map (fun x => map (fun y => (x, y)) l2) l1).
-  Proof.
-    induction l1; simpl; trivial.
-    now rewrite IHl1.
   Qed.
 
 
@@ -784,41 +735,6 @@ Qed.
       now specialize (srv_vals_complete0 x).
   Qed.
 
-    (* should move to RealAdd *)
-    Lemma Rsqrt_le (x y : nonnegreal) : 
-      x <= y <-> Rsqrt x <= Rsqrt y.
-    Proof.
-      split; intros.
-      - apply Rsqr_incr_0; try apply Rsqrt_positivity.
-        unfold Rsqr.
-        now repeat rewrite Rsqrt_Rsqrt.
-      - rewrite <- (Rsqrt_Rsqrt x).
-        rewrite <- (Rsqrt_Rsqrt y).
-        apply Rsqr_incr_1; try apply Rsqrt_positivity.
-        trivial.
-    Qed.
-
-    Lemma Rsqrt_sqr (x:nonnegreal) :
-      Rsqrt {| nonneg := x²; cond_nonneg := Rle_0_sqr x |} = x.
-    Proof.
-      unfold Rsqr.
-      apply Rsqr_inj.
-      - apply Rsqrt_positivity.
-      - apply cond_nonneg.
-      - unfold Rsqr. rewrite Rsqrt_Rsqrt.
-        trivial.
-    Qed.
-          
-    Lemma Rsqr_le_to_Rsqrt (r x:nonnegreal):
-      x² <= r <-> x <= Rsqrt r.
-    Proof.
-      intros.
-      etransitivity.
-      - eapply (Rsqrt_le (mknonnegreal _ (Rle_0_sqr x)) r).
-      - rewrite Rsqrt_sqr.
-        intuition.
-    Qed.
-
   Lemma Rsqr_pos_measurable (f : Ts -> R) :
     (forall (x:Ts), (0 <= f x)%R) ->
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
@@ -842,13 +758,6 @@ Qed.
       + rewrite H2.
         apply H0.
    Qed.
-
-  Lemma Rsqr_continuous :
-    continuity Rsqr.
-  Proof.
-    apply derivable_continuous.
-    apply derivable_Rsqr.
-  Qed.
   
 Lemma measurable_open_continuous (f : Ts -> R) (g : R -> R) :
     continuity g ->
@@ -1096,11 +1005,6 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
      now apply rv_preimage.
    Qed.
      
-   Lemma list_sum_fold_right l : list_sum l = fold_right Rplus 0 l.
-   Proof.
-     induction l; firstorder.
-   Qed.
-
    Lemma srv_vals_prob_1 
          {rv_X : Ts -> R}
          (rv: RandomVariable Prts borel_sa rv_X)                      
@@ -1497,15 +1401,6 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     destruct H; congruence.
   Qed.
 
-  Lemma concat_NoDup {A} (l:list (list A)) : NoDup (concat l) -> Forall (@NoDup A) l.
-    Proof.
-      induction l; simpl; intros nd.
-      - constructor.
-      - constructor.
-        + eapply NoDup_app_inv; eauto.
-        + apply IHl. eapply NoDup_app_inv2; eauto.
-    Qed.
-
     Lemma quotient_bucket_NoDup {A:Type} (R:A->A->Prop) {eqR:Equivalence R} {decR:EqDec A R} l :
       NoDup l ->
       Forall (@NoDup A) (quotient R l).
@@ -1539,93 +1434,9 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
       apply H1, H3.
   Qed.
 
-  Lemma nodup_app2_incl {A} decA (l1 l2:list A) :
-    incl l1 l2 ->
-    nodup decA (l1 ++ l2) = nodup decA l2.
-  Proof.
-    unfold incl; intros inn.
-    induction l1; simpl; trivial; simpl in *.
-    match_destr.
-    - eauto.
-    - elim n.
-      apply in_app_iff.
-      eauto.
-  Qed.
-
-  Lemma nodup_app_distr {A} decA (l1 l2:list A) :
-    disjoint l1 l2 ->
-    nodup decA (l1 ++ l2) = nodup decA l1 ++ nodup decA l2.
-  Proof.
-    unfold disjoint.
-    intros disj.
-    induction l1; simpl; trivial.
-    rewrite IHl1 by firstorder.
-    destruct (in_dec decA a l1).
-    - match_destr.
-      elim n.
-      apply in_app_iff; auto.
-    - match_destr.
-      apply in_app_iff in i.
-      elim (disj a); simpl; intuition.
-  Qed.
-    
-  Lemma list_prod_nodup {A B} decA decB decAB (l1:list A) (l2:list B):
-    nodup decAB (list_prod l1 l2) = list_prod (nodup decA l1) (nodup decB l2).
-  Proof.
-    repeat rewrite list_prod_concat.
-    revert l2.
-    induction l1; simpl; trivial.
-    intros l2.
-    match_destr.
-    - rewrite <- IHl1.
-      apply nodup_app2_incl.
-      intros x inn.
-      apply concat_In.
-      eexists.
-      split; try eassumption.
-      apply in_map_iff.
-      eauto.
-    - simpl.
-      rewrite <- IHl1.
-      rewrite nodup_app_distr.
-      + f_equal.
-        induction l2; simpl; trivial.
-        rewrite IHl2.
-        match_destr.
-        * apply in_map_iff in i.
-          destruct i as [x [eqq xin]].
-          invcs eqq.
-          match_destr.
-          congruence.
-        * match_destr.
-          elim n0.
-          apply in_map_iff.
-          eauto.
-      + unfold disjoint.
-        intros [x y] inn HH.
-        apply concat_In in HH.
-        destruct HH as [xx [xxin xinn]].
-        apply in_map_iff in xxin.
-        destruct xxin as [xxx [? xxxin]]; subst.
-        apply in_map_iff in inn.
-        destruct inn as [? [eqq ?]].
-        invcs eqq; subst.
-        apply in_map_iff in xinn.
-        destruct xinn as [? [eqq ?]].
-        invcs eqq.
-        congruence.
-  Qed.
 
   Existing Instance Equivalence_pullback.
-
-  Instance EqDec_pullback {A B} (R:A->A->Prop) {eqR:Equivalence R} {decR:EqDec A R} (f:B->A) :
-    EqDec B (fun x y : B => R (f x) (f y)).
-  Proof.
-    intros x y.
-    destruct (decR (f x) (f y)).
-    - left; trivial.
-    - right; trivial.
-  Defined.
+  Existing Instance EqDec_pullback.
 
   Lemma add_to_bucket_map {A B:Type} (R:A->A->Prop) {eqR:Equivalence R} {decR:EqDec A R} (l:list (list B)) 
           (f:B->A) b :
@@ -1711,32 +1522,6 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
       + intros l' inn1 inn2.
         generalize (in_quotient eq a l).
         eauto.
-  Qed.
-
-  Lemma nodup_map_nodup {A B} decA decB (f:A->B) (l:list A) :
-    nodup decB (map f (nodup decA l)) = nodup decB (map f l).
-  Proof.
-    induction l; simpl; trivial.
-    match_destr; match_destr.
-    + elim n.
-      apply in_map_iff; eauto.
-    + simpl.
-      match_destr.
-      elim n0.
-      eapply in_map_iff.
-      eapply in_map_iff in i.
-      destruct i as [? [? inn]].
-      eapply nodup_In in inn.
-      eauto.
-    + simpl.
-      rewrite IHl.
-      match_destr.
-      elim n0.
-      eapply in_map_iff in i.
-      destruct i as [? [? inn]].
-      apply nodup_In in inn.
-      apply in_map_iff.
-      eauto.
   Qed.
 
   Lemma add_to_bucket_ext {A:Type} (R1 R2:A->A->Prop) {eqR1:Equivalence R1} {decR1:EqDec A R1} {eqR2:Equivalence R2} {decR2:EqDec A R2} a (l:list (list A)) :
@@ -2036,15 +1821,6 @@ Section SimpleConditionalExpectation.
       + apply gen_simple_conditional_expectation_scale_simpl.
       + apply IHl.
   Defined.
-
-  Lemma dec_complement {A} {p:A->Prop} (dec_p: forall x, {p x} + {~ p x}) :
-    forall x, {~ p x} + {~ ~ p x}.
-  Proof.
-    intros x.
-    destruct (dec_p x).
-    - right; tauto.
-    - left; trivial.
-  Defined.
     
   Definition simple_conditional_expectation_scale_coef (c : R)
              (rv_X rv_X2 : Ts -> R)
@@ -2191,153 +1967,6 @@ Section SimpleConditionalExpectation.
        rewrite <- H0 in H.
        intuition.
      Qed.
-
-     Lemma nodup_equiv {A} dec (l:list A) : equivlist (nodup dec l) l.
-     Proof.
-       induction l; simpl.
-       - reflexivity.
-       - match_destr.
-         + rewrite IHl.
-           unfold equivlist; simpl; intuition congruence.
-         + now rewrite IHl.
-     Qed.
-
-     Lemma incl_nil_r {A} (l:list A) : incl l nil -> l = nil.
-     Proof.
-       unfold incl.
-       destruct l; simpl; trivial.
-       intros HH.
-       elim (HH a); auto.
-     Qed.
-
-     Lemma remove_one_nin {A} {dec:EqDec A eq} a (l:list A) :
-       ~ In a l ->
-       remove_one a l = l.
-     Proof.
-       induction l; simpl; trivial.
-       match_destr.
-       - intuition.
-       - intros; f_equal; apply IHl.
-         eauto.
-     Qed.
-     
-     Lemma remove_one_app_nin {A} {dec:EqDec A eq} a (l1 l2:list A) :
-       ~ In a l1 ->
-       remove_one a (l1 ++ l2) = l1 ++ remove_one a l2.
-     Proof.
-       induction l1; simpl; trivial.
-       intros ninn.
-       match_destr.
-       - red in e.
-         intuition.
-       - rewrite IHl1 by intuition.
-         trivial.
-     Qed.
-     
-     Lemma remove_one_in_perm {A} {dec : EqDec A eq} (a:A) l :
-       In a l ->
-       Permutation l (a::remove_one a l).
-     Proof.
-       induction l; simpl; intros inn.
-       - tauto.
-       - match_destr.
-         + rewrite e; reflexivity.
-         + rewrite perm_swap.
-           apply perm_skip.
-           intuition.
-     Qed.
-     
-     Lemma remove_other_in {A} {dec : EqDec A eq} (a1 a2:A) l :
-       a1 <> a2 ->
-       In a1 l <-> In a1 (remove_one a2 l).
-     Proof.
-       intros.
-       induction l; simpl.
-       - intuition.
-       - match_destr.
-         + red in e; subst.
-           intuition.
-         + simpl.
-           intuition.
-     Qed.
-                  
-     Lemma bminus_in_nin {A} {decA:EqDec A eq} a (l1 l2 : list A) :
-       In a l1 -> ~ In a l2 -> In a (bminus l2 l1).
-     Proof.
-       revert l1.
-       induction l2; simpl in *.
-       - intuition.
-       - intros.
-         apply IHl2.
-         + apply remove_other_in; eauto.
-         + eauto.
-     Qed.
-
-     Lemma incl_front_perm {A} {decA:EqDec A eq} (l1 l2 : list A) :
-       incl l2 l1 ->
-       NoDup l2 ->
-       {l3: list A |
-         Permutation l1 (l2 ++ l3)}.
-     Proof.
-       exists (bminus l2 l1).
-       unfold incl in *.
-       induction l2; simpl; trivial.
-       invcs H0.
-       rewrite IHl2; trivial.
-       - rewrite Permutation_middle.
-         apply Permutation_app; trivial.
-         rewrite remove_one_app_nin by trivial.
-         rewrite bunion_bminus.
-         apply remove_one_in_perm.
-         apply bminus_in_nin; trivial.
-         apply H; simpl; eauto.
-       - simpl in H; intuition.
-     Qed.
-
-     Global Instance equivlist_incl_part {A} : PartialOrder equivlist (@incl A).
-     Proof.
-       split.
-       - intros HH; apply equivlist_incls in HH.
-         split; unfold flip; intuition.
-       - intros [??].
-         unfold flip, incl, equivlist in *; intuition.
-     Qed.
-
-     Lemma NoDup_app_disj {A} (a b : list A) : NoDup (a ++ b) -> disjoint a b.
-     Proof.
-       unfold disjoint.
-       induction a; simpl.
-       - intuition.
-       - intros.
-         invcs H.
-         destruct H0.
-         + subst.
-           apply H4.
-           apply in_app_iff; tauto.
-         + eauto.
-     Qed.
-
-     Lemma NoDup_perm_disj {A} (l1 l2 l3 : list A) :
-         Permutation l1 (l2 ++ l3) ->
-         NoDup l1 ->
-         disjoint l2 l3.
-     Proof.
-       intros.
-       apply NoDup_app_disj.
-       now rewrite <- H.
-     Qed.
-     
-     Lemma incl_front_perm_nodup {A} (decA:EqDec A eq) (l1 l2 : list A) :
-       incl l2 l1 -> 
-       {l3: list A |
-         Permutation (nodup decA l1) (nodup decA l2 ++ l3)}.
-     Proof.
-       intros.
-       apply incl_front_perm; trivial.
-       - now repeat rewrite nodup_equiv.
-       - apply NoDup_nodup.
-     Qed.
-
 
    Lemma SimpleExpectation_simpl_incl 
          {rv_X : Ts -> R}
@@ -2516,16 +2145,6 @@ Section SimpleConditionalExpectation.
              eauto.
   Defined.
 
-  Lemma Forallt_in {A} (decA:forall x y:A, {x=y} + {x <> y}) {X:A->Type} {l:list A} (ft:Forallt X l) {a} (pf:In a l) : X a.
-  Proof.
-    induction l; simpl in *.
-    - elim pf.
-    - inversion ft.
-      destruct (decA a a0).
-      + congruence.
-      + apply IHl; trivial.
-        intuition congruence.
-  Defined.
 
   Instance fr_plus0_simple (l : list (Ts -> R)) 
     (srvs : Forallt SimpleRandomVariable l) :
@@ -2536,12 +2155,6 @@ Section SimpleConditionalExpectation.
     - invcs srvs.
       apply srvplus; eauto.
   Qed.
-
-  Fixpoint Forallt_map {A B:Type} {X:A->Type} {l:list A} (f:forall a, X a -> B) (ft:Forallt X l)  : list B
-    := match ft with
-       | Forallt_nil => nil
-       | Forallt_cons x l px pl => f x px :: Forallt_map f pl
-       end.
 
   Require Import Program.
 
@@ -2966,8 +2579,8 @@ Section SimpleConditionalExpectation.
        destruct H; destruct H0.
        split; intros.
        - admit.
+       - 
          
-       - admit.
        Admitted.
 
      Lemma in_list_in_partition_union {T} (x:event T) l d :
