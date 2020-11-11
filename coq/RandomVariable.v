@@ -2945,10 +2945,11 @@ Section SimpleConditionalExpectation.
         (rv_X : Ts -> R)
         {srv : SimpleRandomVariable rv_X}
         (l : list (event Ts)) : Prop :=
-     forall (c:R), 
-       In c srv_vals ->
-       exists (p:event Ts), (In p l) /\ 
-                            (event_equiv p (event_preimage rv_X (singleton_event c))).
+     is_partition_list l ->
+     forall (p:event Ts),
+       In p l ->
+       exists (c:R), (In c srv_vals) /\
+                     event_sub p (event_preimage rv_X (singleton_event c)).
 
    Lemma rvmult_assoc
         (rv_X1 rv_X2 rv_X3 : Ts -> R) :
@@ -3066,18 +3067,18 @@ Section SimpleConditionalExpectation.
         (rv_X1 rv_X2 : Ts -> R)
         {srv1 : SimpleRandomVariable rv_X1}
         {srv2 : SimpleRandomVariable rv_X2} 
-        (l : list dec_sa_event)
-        (is_part: is_partition_list (map dsa_event l)) :
+        (l : list dec_sa_event) :
+     is_partition_list (map dsa_event l) ->
      partition_measurable rv_X1 (map dsa_event l) ->
      rv_eq (gen_SimpleConditionalExpectation (rvmult rv_X1 rv_X2) l)
            (rvmult rv_X1 (gen_SimpleConditionalExpectation rv_X2 l  )).
      Proof.
        unfold partition_measurable, event_preimage, singleton_event.
        intros.
-       specialize (H is_part).
        unfold gen_SimpleConditionalExpectation.
        unfold gen_simple_conditional_expectation_scale.
-       clear is_part.
+       specialize (H0 H).
+       clear H.
        induction l.
        - simpl.
          unfold rvmult, const; intros ?; simpl.
@@ -3090,19 +3091,25 @@ Section SimpleConditionalExpectation.
            * unfold rvplus, rvmult, rvscale; intros ?.
              field.
            * intros x.
-             specialize (H (rv_X1 x) (srv_vals_complete _)).
-             specialize (H (dsa_event a)).
-             simpl in H.
-             cut_to H; [| intuition].
-             destruct H.
-             -- admit.
-             -- rewrite (expectation_const_factor_subset (rv_X1 x)).
-                ++ unfold rvscale, rvplus, rvmult.
-                   field; trivial.
-                ++ apply dsa_sa.
-                ++ apply H.
+             specialize (H0 (dsa_event a)).
+             cut_to H0.
+             rewrite (expectation_const_factor_subset (rv_X1 x)).
+             -- unfold rvscale, rvplus, rvmult.
+                field; trivial.
+             -- apply dsa_sa.
+             -- destruct H0 as [c [H0 HH0]].
+                unfold event_sub in HH0.
+                intros.
+                specialize (HH0 omega H).
+                rewrite HH0.
+                admit.
+             -- simpl.
+                now left.
          + intros.
-           apply H; simpl; intuition.
+           specialize (H0 p).
+           cut_to H0; trivial.
+           simpl.
+           now right.
      Admitted.
 
 
