@@ -3048,8 +3048,21 @@ Section SimpleConditionalExpectation.
      - rewrite (H _ p0).
        field.
      - field.
-   Qed.     
-       
+   Qed.
+
+   Global Instance rvplus_proper : Proper (rv_eq ==> rv_eq ==> rv_eq) (@rvplus Ts).
+   Proof.
+     unfold rv_eq, rvplus.
+     intros ???????.
+     now rewrite H, H0.
+   Qed.
+
+   Lemma rvscale0 (rv:Ts->R) : rv_eq (rvscale 0 rv) (const 0).
+   Proof.
+     unfold rvscale, const; intros ?; simpl.
+     field.
+   Qed.
+
    (* if l is viewed as finite generators for a sigma algebra, this shows that
     we can factor out l-measurable random variables from conditional expectation *)
    Lemma gen_conditional_scale_measurable
@@ -3059,8 +3072,8 @@ Section SimpleConditionalExpectation.
         (l : list dec_sa_event)
         (is_part: is_partition_list (map dsa_event l)) :
      partition_measurable rv_X1 (map dsa_event l) ->
-     gen_SimpleConditionalExpectation (rvmult rv_X1 rv_X2) l  =
-     rvmult rv_X1 (gen_SimpleConditionalExpectation rv_X2 l  ).
+     rv_eq (gen_SimpleConditionalExpectation (rvmult rv_X1 rv_X2) l)
+           (rvmult rv_X1 (gen_SimpleConditionalExpectation rv_X2 l  )).
      Proof.
        unfold partition_measurable, event_preimage, singleton_event.
        intros.
@@ -3070,17 +3083,31 @@ Section SimpleConditionalExpectation.
        clear is_part.
        induction l.
        - simpl.
-         assert (rv_eq (rvmult rv_X1 (const 0)) (const 0)).
-         unfold rv_eq, pointwise_relation, rvmult, const; intros.
-         lra.
-         admit.
+         unfold rvmult, const; intros ?; simpl.
+         field.
        - simpl.
          cut_to IHl.
-         match_destr.
          + rewrite IHl.
-           (* rewrite rvmult_rvadd_distr.  *)
-       
-       Admitted.
+           clear IHl.
+           match_destr.
+           * unfold rvplus, rvmult, rvscale; intros ?.
+             field.
+           * intros x.
+             specialize (H (rv_X1 x) (srv_vals_complete _)).
+             specialize (H (dsa_event a)).
+             simpl in H.
+             cut_to H; [| intuition].
+             destruct H.
+             -- admit.
+             -- rewrite (expectation_const_factor_subset (rv_X1 x)).
+                ++ unfold rvscale, rvplus, rvmult.
+                   field; trivial.
+                ++ apply dsa_sa.
+                ++ apply H.
+         + intros.
+           apply H; simpl; intuition.
+     Admitted.
+
 
    Lemma conditional_scale_measurable
         (rv_X1 rv_X2 rv_X3 : Ts -> R)
