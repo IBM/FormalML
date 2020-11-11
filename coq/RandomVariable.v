@@ -2957,14 +2957,49 @@ Section SimpleConditionalExpectation.
      (forall (p1:event Ts),
          In p1 l1 ->
          exists (l3: list (event Ts)),
-           incl l3 l2 -> event_equiv (list_union l3) p1).
-     Proof.
-       unfold is_partition_list. unfold Ω.
+           incl l3 l2 /\ event_equiv (list_union l3) p1).
+   Proof.
+     unfold is_partition_list. unfold Ω.
+     intros.
        unfold event_disjoint, event_equiv, list_union, event_sub.
        intros.
        destruct H; destruct H0.
-       
+       split; intros.
+       - admit.
+         
+       - admit.
        Admitted.
+
+     Lemma in_list_in_partition_union {T} (x:event T) l d :
+       In x l -> 
+       in_partition_union (list_collection l d) x.
+     Proof.
+       intros inn.
+       unfold in_partition_union.
+       unfold list_collection.
+       apply (In_nth l x d) in inn.
+       destruct inn as [n [nlen neqq]].
+       exists ((fun y => if y == n then x else event_none)%nat).
+       unfold event_none.
+       split.
+       - unfold sub_partition; intros.
+         match_destr.
+         + red in e; subst.
+           left; reflexivity.
+         + right.
+           intros ?; unfold event_none.
+           tauto.
+       - unfold union_of_collection.
+         intros y; simpl.
+         split.
+         + intros [??].
+           match_destr_in H.
+           tauto.
+         + intros.
+           exists n.
+           match_destr.
+           congruence.
+     Qed.
 
    Lemma events_measurable_sa
          (l1 l2 : list (event Ts)) 
@@ -2979,10 +3014,14 @@ Section SimpleConditionalExpectation.
      intros.
      generalize (events_measurable l1 l2 ispartl1 ispartl2); intros.
      destruct H1.
-     specialize (H1 H p1).
-     
-     
-       Admitted.
+     specialize (H1 H p1 H0).
+     destruct H1 as [l3 [l3incl l3equiv]].
+     rewrite <- l3equiv.
+     apply sa_list_union; intros.
+     apply l3incl in H1.
+     simpl.
+     now apply in_list_in_partition_union.
+   Qed.
 
    Lemma rvmult_assoc
         (rv_X1 rv_X2 rv_X3 : Ts -> R) :
