@@ -2933,13 +2933,10 @@ Section SimpleConditionalExpectation.
         {rv2 : RandomVariable Prts borel_sa rv_X2}
         {srv1 : SimpleRandomVariable rv_X1}
         {srv2 : SimpleRandomVariable rv_X2} : Prop :=
-     forall (c1:R), In c1 (srv_vals (SimpleRandomVariable:=srv1)) ->
-                   forall (c2:R), 
-                     In c2 (srv_vals (SimpleRandomVariable:=srv2)) ->
-                     (event_disjoint (event_preimage rv_X1 (singleton_event c1) )
-                                    (event_preimage rv_X2 (singleton_event c2))) \/
-                     (event_sub (event_preimage rv_X2 (singleton_event c2) )
-                                (event_preimage rv_X1 (singleton_event c1))).
+     forall (c2:R), In c2 (srv_vals (SimpleRandomVariable:=srv2)) ->
+        exists (c1:R), In c1 (srv_vals (SimpleRandomVariable:=srv1)) /\
+                       (event_sub (event_preimage rv_X2 (singleton_event c2) )
+                                  (event_preimage rv_X1 (singleton_event c1))).
    
    Definition partition_measurable
         (rv_X : Ts -> R)
@@ -3124,8 +3121,8 @@ Section SimpleConditionalExpectation.
         {srv3 : SimpleRandomVariable rv_X3} :     
          
      simple_sigma_measurable rv_X1 rv_X3 ->
-     SimpleConditionalExpectation (rvmult rv_X1 rv_X2) rv_X3 =
-     rvmult rv_X1 (SimpleConditionalExpectation rv_X2 rv_X3).
+     rv_eq (SimpleConditionalExpectation (rvmult rv_X1 rv_X2) rv_X3)
+           (rvmult rv_X1 (SimpleConditionalExpectation rv_X2 rv_X3)).
    Proof.
      generalize (gen_conditional_scale_measurable rv_X1 rv_X2 
                                                   (induced_sigma_generators srv3)
@@ -3144,19 +3141,19 @@ Section SimpleConditionalExpectation.
      do 2 rewrite map_map in H.
      simpl in H.
      rewrite H.
-     unfold partition_measurable, induced_sigma_generators.
-     rewrite map_map; simpl.
-     unfold event_preimage, singleton_event.
-     unfold is_partition_list; intros.
-     destruct H1.
-     rewrite in_map_iff in H3.
-     destruct H3 as [x [H3 HH3]].
-     rewrite <- H3.
+     reflexivity.
      unfold simple_sigma_measurable in H0.
-     apply H0; trivial.
-     Search nodup.
+     unfold partition_measurable, induced_sigma_generators.
+     unfold event_preimage, singleton_event in *.
+     rewrite map_map; simpl.
+     intros.
+     rewrite in_map_iff in H2.
+     destruct H2.
+     destruct H2.
+     rewrite <- H2.
+     apply H0.
      erewrite <- nodup_In.
-     apply HH3.
+     apply H3.
   Qed.
 
 End SimpleConditionalExpectation.  
