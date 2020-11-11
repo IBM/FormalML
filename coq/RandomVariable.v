@@ -2946,8 +2946,8 @@ Section SimpleConditionalExpectation.
      forall (p:event Ts),
        In p l ->
        exists (c:R), (In c srv_vals) /\
-                     event_sub p (event_preimage rv_X (singleton_event c)).
-
+                event_sub p (event_preimage rv_X (singleton_event c)).
+   
    Lemma rvmult_assoc
         (rv_X1 rv_X2 rv_X3 : Ts -> R) :
      rv_eq (rvmult (rvmult rv_X1 rv_X2) rv_X3) (rvmult rv_X1 (rvmult rv_X2 rv_X3)).
@@ -3069,50 +3069,48 @@ Section SimpleConditionalExpectation.
      partition_measurable rv_X1 (map dsa_event l) ->
      rv_eq (gen_SimpleConditionalExpectation (rvmult rv_X1 rv_X2) l)
            (rvmult rv_X1 (gen_SimpleConditionalExpectation rv_X2 l  )).
-     Proof.
-       unfold partition_measurable, event_preimage, singleton_event.
-       intros.
-       unfold gen_SimpleConditionalExpectation.
-       unfold gen_simple_conditional_expectation_scale.
-       specialize (H0 H).
-       clear H.
-       induction l.
-       - simpl.
-         unfold rvmult, const; intros ?; simpl.
-         field.
-       - simpl.
-         cut_to IHl.
-         + rewrite IHl.
-           clear IHl.
-           match_destr.
-           * unfold rvplus, rvmult, rvscale; intros ?.
-             field.
-           * intros x.
-             specialize (H0 (dsa_event a)).
-             cut_to H0.
-             destruct H0 as [c [H0 HH0]].             
-             rewrite (expectation_const_factor_subset (rv_X1 x)).
-             -- unfold rvscale, rvplus, rvmult.
-                field; trivial.
-             -- apply dsa_sa.
-             -- unfold event_sub in HH0.
-                intros.
-                specialize (HH0 omega H).
-                rewrite HH0.
-                admit.
-             -- simpl.
-                now left.
-         + intros.
-           specialize (H0 p).
-           cut_to H0; trivial.
-           simpl.
-           now right.
-     Admitted.
-
+   Proof.
+     unfold partition_measurable, event_preimage, singleton_event.
+     intros is_part meas.
+     unfold gen_SimpleConditionalExpectation.
+     unfold gen_simple_conditional_expectation_scale.
+     specialize (meas is_part).
+     destruct is_part as [FP _].
+     induction l.
+     - simpl.
+       unfold rvmult, const; intros ?; simpl.
+       field.
+     - simpl.
+       invcs FP.
+       cut_to IHl; trivial.
+       + rewrite IHl.
+         clear IHl.
+         match_destr.
+         * unfold rvplus, rvmult, rvscale; intros ?.
+           field.
+         * intros x.
+           case_eq (dsa_dec a x); [intros d _ | intros d eqq].
+           -- specialize (meas (dsa_event a)).
+              cut_to meas; [| simpl; intuition].
+              destruct meas as [c [cinn ceq]].
+              rewrite (expectation_const_factor_subset (rv_X1 x)).
+              ++ unfold rvscale, rvplus, rvmult.
+                 field; trivial.
+              ++ apply dsa_sa.
+              ++ intros.
+                 apply ceq in H.
+                 apply ceq in d.
+                 congruence.
+           -- unfold rvplus, rvscale, rvmult, EventIndicator.
+              repeat rewrite eqq.
+              field; trivial.
+       + intros.
+         apply meas; simpl; intuition.
+   Qed.
 
    Lemma conditional_scale_measurable
-        (rv_X1 rv_X2 rv_X3 : Ts -> R)
-        {rv1 : RandomVariable Prts borel_sa rv_X1}
+         (rv_X1 rv_X2 rv_X3 : Ts -> R)
+         {rv1 : RandomVariable Prts borel_sa rv_X1}
         {rv2 : RandomVariable Prts borel_sa rv_X2}
         {rv3 : RandomVariable Prts borel_sa rv_X3}
 
