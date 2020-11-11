@@ -2920,7 +2920,7 @@ Section SimpleConditionalExpectation.
       unfold point_preimage_indicator,induced_sigma_generators.
       unfold event_preimage, singleton_event, EventIndicator.
       apply SimpleExpectation_ext.
-      unfold rv_eq, pointwise_relation; intros.
+      intros x.
       rewrite map_map; simpl.
       unfold induced_sigma_generators_obligation_1.
       reflexivity.
@@ -2948,13 +2948,47 @@ Section SimpleConditionalExpectation.
        exists (c:R), (In c srv_vals) /\
                 event_sub p (event_preimage rv_X (singleton_event c)).
    
+   Lemma events_measurable
+         (l1 l2 : list (event Ts)) :
+     is_partition_list l1 -> is_partition_list l2 ->
+     (forall (p2:event Ts),
+         In p2 l2 ->
+         exists (p1:event Ts), (In p1 l1) /\ event_sub p2 p1) <->
+     (forall (p1:event Ts),
+         In p1 l1 ->
+         exists (l3: list (event Ts)),
+           incl l3 l2 -> event_equiv (list_union l3) p1).
+     Proof.
+       unfold is_partition_list. unfold Ω.
+       unfold event_disjoint, event_equiv, list_union, event_sub.
+       intros.
+       destruct H; destruct H0.
+       
+       Admitted.
+
+   Lemma events_measurable_sa
+         (l1 l2 : list (event Ts)) 
+         (ispartl1: is_partition_list l1)
+         (ispartl2: is_partition_list l2): 
+     (forall (p2:event Ts),
+         In p2 l2 ->
+         exists (p1:event Ts), (In p1 l1) /\ event_sub p2 p1) ->
+     (forall (p1:event Ts),
+         In p1 l1 -> (@sa_sigma Ts (list_partition_sa l2 ispartl2) p1)).
+   Proof.
+     intros.
+     generalize (events_measurable l1 l2 ispartl1 ispartl2); intros.
+     destruct H1.
+     specialize (H1 H p1).
+     
+     
+       Admitted.
+
    Lemma rvmult_assoc
         (rv_X1 rv_X2 rv_X3 : Ts -> R) :
      rv_eq (rvmult (rvmult rv_X1 rv_X2) rv_X3) (rvmult rv_X1 (rvmult rv_X2 rv_X3)).
     Proof.
-      unfold rv_eq.
-      unfold pointwise_relation.
-      intros.
+      intros x.
       unfold rvmult.
       lra.
     Qed.
@@ -2963,9 +2997,7 @@ Section SimpleConditionalExpectation.
         (rv_X1 rv_X2 : Ts -> R) :
      rv_eq (rvmult rv_X1 rv_X2)  (rvmult rv_X2 rv_X1).
     Proof.
-      unfold rv_eq.
-      unfold pointwise_relation.
-      intros.
+      intros x.
       unfold rvmult.
       lra.
     Qed.
@@ -2975,9 +3007,7 @@ Section SimpleConditionalExpectation.
      rv_eq (rvmult rv_X1 (rvplus rv_X2 rv_X3))  
            (rvplus (rvmult rv_X1 rv_X2) (rvmult rv_X1 rv_X3)).
     Proof.
-      unfold rv_eq.
-      unfold pointwise_relation.
-      intros.
+      intros x.
       unfold rvmult, rvplus.
       lra.
     Qed.
@@ -3318,9 +3348,7 @@ Section Expectation.
          apply Rmult_le_compat_l; trivial.
          left.
          now apply  Rinv_0_lt_compat.
-       + unfold rv_eq.
-         unfold pointwise_relation.
-         intros.
+       + intros x.
          unfold rvscale, rvmult.
          field.
          apply Rgt_not_eq.
