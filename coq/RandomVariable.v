@@ -2945,13 +2945,10 @@ Section SimpleConditionalExpectation.
         (rv_X : Ts -> R)
         {srv : SimpleRandomVariable rv_X}
         (l : list (event Ts)) : Prop :=
-     is_partition_list l ->
      forall (c:R), 
        In c srv_vals ->
-       forall (p:event Ts), 
-         In p l ->
-         (event_disjoint (event_preimage rv_X (singleton_event c)) p) \/
-         (event_sub p (event_preimage rv_X (singleton_event c))).
+       exists (p:event Ts), (In p l) /\ 
+                            (event_equiv p (event_preimage rv_X (singleton_event c))).
 
    Lemma rvmult_assoc
         (rv_X1 rv_X2 rv_X3 : Ts -> R) :
