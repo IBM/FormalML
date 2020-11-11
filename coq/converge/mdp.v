@@ -28,65 +28,6 @@ Section extra.
      In their appropriate directories.
    *)
 Open Scope list_scope. 
-Lemma ne_symm {A} (x y : A) : x <> y <-> y <> x.
-Proof.
-  split; intros.
-  * intros Hxy ; symmetry in Hxy ; firstorder.
-  * intros Hxy ; symmetry in Hxy ; firstorder.
-Qed.
-
-Lemma map_nil' {A B} (f:A->B) l :
-  List.map f l = nil <-> l = nil.
-Proof.
-  split; intros.
-  - induction l; try reflexivity; simpl in *.
-    congruence.
-  - rewrite H; reflexivity.
-Qed.
-
-Lemma map_nil {A B} (f : A -> B) (l : list A) :
-    List.map f l = (@nil B) <-> l = (@nil A).
-Proof.
-    split; intros.
-    - induction l; try reflexivity; simpl in *.
-    congruence.
-    - rewrite H; reflexivity.
-Qed.
-
-Lemma map_not_nil {A B} (l : list A) (f : A -> B):
-  [] <> List.map f l <-> [] <> l.  
-Proof.
-   rewrite ne_symm ; rewrite (ne_symm _ l).
-   split ; intros.
-   * intro Hl. rewrite <-(map_nil f) in Hl ; firstorder.
-   * intro Hl. rewrite (map_nil f) in Hl ; firstorder.
-Qed.
-
-Lemma not_nil_exists {A} (l : list A) :
-  [] <> l <-> exists a, In a l.
-Proof.
-  split.
-  * intros Hl. 
-    induction l.
-    - firstorder.
-    - destruct l.
-      -- exists a. simpl; now left. 
-      -- set (Hnc := @nil_cons _ a0 l). specialize (IHl Hnc).
-         destruct IHl as [a1 Ha1]. 
-         exists a1. simpl in * ; intuition.
-  * intros [a Ha] not. rewrite <-not in Ha ; firstorder. 
-Qed.
-
-Lemma list_prod_not_nil {A B} {la : list A} {lb : list B}(Hla : [] <> la) (Hlb : [] <> lb) :
-  [] <> list_prod la lb.
-Proof.
-  rewrite not_nil_exists.
-  rewrite not_nil_exists in Hla.
-  rewrite not_nil_exists in Hlb.
-  destruct Hla as [a Hla].
-  destruct Hlb as [b Hlb].
-  exists (a,b). now apply in_prod. 
-Qed.
 
 Lemma abs_convg_implies_convg : forall (a : nat -> R), ex_series (fun n => Rabs(a n)) -> ex_series a. 
 Proof.
@@ -95,12 +36,6 @@ refine (ex_series_le_Reals a (fun n => Rabs(a n)) _ Habs).
 intros n. now right.
 Qed.
 
-(* Applies a function to an initial argument n times *)
-Fixpoint applyn {A} (init : A) (g : A -> A) (n : nat) : A :=
-  match n with
-  | 0 => init
-  | S k => g (applyn init g k)
-  end.
 
 End extra.
 
@@ -118,8 +53,6 @@ Section Rmax_list.
   
 Open Scope list_scope.
 Open Scope R_scope.
-
-Instance EqDecR : @EqDec R eq _ := Req_EM_T. 
 
 Import ListNotations.
 
@@ -166,7 +99,6 @@ Proof.
     + simpl ; reflexivity.
     + simpl in *. f_equal ; trivial. 
 Qed.
-
 
 Lemma Rmax_list_const_add (l : list R) (d : R) :
   Rmax_list (List.map (fun x => x + d) l) =
