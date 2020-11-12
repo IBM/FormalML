@@ -2400,6 +2400,13 @@ Section SimpleConditionalExpectation.
     Qed.
 
 
+    Lemma perm_cut_to_sublist {A} {l1 l2:list A} :
+      Permutation l1 l2 ->
+      forall l1', sublist l1' l1 ->
+             exists l2', sublist l2' l2 /\ Permutation l1' l2'.
+    Admitted.
+     
+
    Definition simple_sigma_measurable 
         (rv_X1 rv_X2 : Ts -> R)
         {rv1 : RandomVariable Prts borel_sa rv_X1}
@@ -2420,7 +2427,7 @@ Section SimpleConditionalExpectation.
        In p l ->
        exists (c:R), (In c srv_vals) /\
                 event_sub p (event_preimage rv_X (singleton_event c)).
-   
+
    Lemma events_measurable
          (l1 l2 : list (event Ts)) :
      is_partition_list l1 -> is_partition_list l2 ->
@@ -2438,10 +2445,39 @@ Section SimpleConditionalExpectation.
        intros.
        destruct H; destruct H0.
        split; intros.
-       - admit.
-       - 
-         
-       Admitted.
+     -
+       assert (exists l : list (list (event Ts)),
+                  Forall2 (fun x y => event_equiv x (list_union y)) l1 l
+                  /\ Permutation (concat l) l2).
+       {
+         admit.
+       } 
+       destruct H5 as [l [lF lP]].
+       clear H1 H2 H3.
+       clear H H0.
+       revert lP.
+       revert l2.
+       induction lF; simpl in *; intros.
+       + intuition.
+       + destruct H4.
+         * subst.
+           exists y.
+           split.
+           -- admit.
+           -- intros.
+              red in H.
+              rewrite H.
+              reflexivity.
+         * specialize (IHlF H0).
+           destruct (perm_cut_to_sublist lP (concat l')) as [l2' [l2's l2'P]].
+           -- apply sublist_app_r.
+           -- specialize (IHlF _ l2'P).
+              destruct IHlF as [l3 [l3incl l3eq]].
+              exists l3.
+              split; trivial.
+              now rewrite <- l2's.
+     - admit.              
+   Admitted.
 
      Lemma in_list_in_partition_union {T} (x:event T) l d :
        In x l -> 
