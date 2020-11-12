@@ -370,22 +370,37 @@ Qed.
 
 Lemma sa_borel_open_le_sub2 : sa_sub borel_sa open_borel_sa.
 Proof.
-  generalize (sa_open_iff_le id (dom:=open_borel_sa)); simpl.
-  unfold event_preimage, id.
-  intros HH.
-  intros e; simpl.
+  intros e; simpl; intros Hs.
+  apply generated_sa_closure in Hs.
   intros.
-  apply H.
-  unfold all_included; intros.
-  apply HH; trivial.
-  intros.
-  red in H0.
-  apply borel_sa_preimage2.
-  unfold event_preimage.
-  simpl; intros.
-  auto.
-  
-Admitted.
+  simpl in *.
+  dependent induction Hs.
+  - apply sa_all.
+  - destruct H as [r Hr].
+    assert (eqq:event_equiv q (fun m => (m <= r)%R)).
+    { red; intros; symmetry; trivial. }
+    rewrite eqq.
+    clear Hr eqq.
+    assert (HH2:(event_equiv (fun m : R => m <= r)
+                             (event_complement (fun m => m > r)))%R).
+    {
+      unfold event_complement; intros x.
+      intuition lra.
+    }
+    rewrite HH2; clear HH2.
+    apply sa_complement.
+    apply H0.
+    intros x xgt.
+    red.
+    unfold included, disc.
+    assert (HH:(0 < (x-r)/2)%R) by lra.
+    exists (mkposreal _ HH); intros.
+    simpl in *.
+    apply Rabs_def2 in H.
+    lra.
+  - apply sa_countable_union; eauto.
+  - apply sa_complement; eauto.
+Qed.  
 
 Theorem sa_borel_open_le_equiv : open_borel_sa === borel_sa.
 Proof.
@@ -393,12 +408,3 @@ Proof.
   - now apply sa_borel_open_le_sub1.
   - now apply sa_borel_open_le_sub2.
 Qed.
-
-(*
-Definition included (D1 D2:R -> Prop) : Prop := forall x:R, D1 x -> D2 x.
-Definition disc (x:R) (delta:posreal) (y:R) : Prop := Rabs (y - x) < delta.
-Definition neighbourhood (V:R -> Prop) (x:R) : Prop :=
-  exists delta : posreal, included (disc x delta) V.
-Definition open_set (D:R -> Prop) : Prop :=
-  forall x:R, D x -> neighbourhood D x.
-*)
