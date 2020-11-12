@@ -37,6 +37,7 @@ MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	utils/Finite \
 	utils/NumberIso \
 	utils/PairEncoding \
+	utils/Quotient \
 	utils/RealAdd \
 	utils/RiemannAdd \
 	utils/StreamAdd \

@@ -98,7 +98,6 @@ Next Obligation.
     ; firstorder.
 Qed.
 Next Obligation.
-  Print equiv.
   replace event_equiv with (@equiv (event T) _ event_equiv_equiv) in * by reflexivity.
   repeat rewrite event_complement_swap_classic.
   rewrite event_not_not by auto using classic_event_lem.

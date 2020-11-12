@@ -1,8 +1,8 @@
 Require Import Reals.
 
 Require Import Lra Lia.
-Require Import List.
-Require Import Morphisms EquivDec Program.Basics.
+Require Import List Permutation.
+Require Import Morphisms EquivDec Program.
 Require Import Coquelicot.Rbar.
 Require Import Coquelicot.Lub.
 
@@ -1355,8 +1355,6 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
      now apply nodup_not_nil.
    Qed.
 
-    Require Import cond_expt.
-
     Definition sums_same (x y:R*R) := fst x + snd x = fst y + snd y.
 
     Instance sums_same_equiv : Equivalence sums_same.
@@ -1438,143 +1436,6 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
   Existing Instance Equivalence_pullback.
   Existing Instance EqDec_pullback.
 
-  Lemma add_to_bucket_map {A B:Type} (R:A->A->Prop) {eqR:Equivalence R} {decR:EqDec A R} (l:list (list B)) 
-          (f:B->A) b :
-    add_to_bucket R (f b) (map (map f) l) = 
-    map (map f) (add_to_bucket (fun x y : B => R (f x) (f y)) b l).
-  Proof.
-    induction l; simpl; trivial.
-    rewrite IHl.
-    destruct a; simpl; trivial.
-    unfold equiv_dec, EqDec_pullback.
-    match_destr.
-  Qed.
-    
-  Lemma quotient_map {A B:Type} (R:A->A->Prop) {eqR:Equivalence R} {decR:EqDec A R} (l:list B) 
-          (f:B->A) :
-    quotient R (map f l) = map (map f) (quotient  (fun x y : B => R (f x) (f y)) l).
-  Proof.
-    induction l; simpl; trivial.
-    rewrite IHl.
-    apply add_to_bucket_map.
-  Qed.
-
-  Lemma add_to_bucket_eq_nin {A} (decA:EqDec A eq) a l :
-    Forall (fun x : list A => not_nil x = true) l ->
-      (forall l' : list A, In l' l -> ~ In a l') ->
-    (add_to_bucket eq a l) = l++[[a]].
-  Proof.
-    intros.
-    induction l; simpl; trivial.
-    invcs H.
-    match_destr.
-    match_destr.
-    - red in e; subst.
-      simpl in H0.
-      eelim H0; eauto.
-      simpl; eauto.
-    - simpl in *.
-      rewrite IHl; eauto.
-  Qed.
-
-  Require Import Permutation.
-
-  Lemma nodup_hd_quotient {A} (decA:EqDec A eq) def (l:list A) : 
-    Permutation ((map (hd def) (quotient eq l)))
-                (nodup decA l).
-  Proof.
-    induction l; simpl; trivial.
-    match_destr.
-    - rewrite <- IHl.
-      apply (quotient_in eq) in i.
-      match goal with
-      | [|- Permutation ?l1 ?l2 ] => replace l1 with l2; [reflexivity | ]
-      end.
-      revert i.
-      clear.
-      generalize (quotient_nnil eq l).
-      generalize (quotient_all_equivs eq l).
-      generalize (quotient_all_different eq l).
-      generalize (quotient eq l); clear; intros l.
-      unfold all_different, all_equivs, is_equiv_class, ForallPairs.
-      repeat rewrite Forall_forall.
-      unfold not_nil.
-      intros alldiff alleq nnil [l' [l'in ain]].
-      induction l; simpl in *.
-      + tauto.
-      + destruct a0.
-        * specialize (nnil []); simpl in nnil; intuition.
-        * match_destr.
-          -- red in e; subst; trivial.
-          -- destruct l'in.
-             ++ subst.
-                elim c.
-                apply (alleq (a0::a1)); simpl; eauto.
-             ++ simpl.
-                rewrite <- IHl; auto.
-                now invcs alldiff.
-                firstorder.
-    - rewrite add_to_bucket_eq_nin.
-      + rewrite map_app; simpl.
-        rewrite <- Permutation_cons_append.
-        now apply perm_skip.
-      + apply quotient_nnil.
-      + intros l' inn1 inn2.
-        generalize (in_quotient eq a l).
-        eauto.
-  Qed.
-
-  Lemma add_to_bucket_ext {A:Type} (R1 R2:A->A->Prop) {eqR1:Equivalence R1} {decR1:EqDec A R1} {eqR2:Equivalence R2} {decR2:EqDec A R2} a (l:list (list A)) :
-    (forall l' y, In y l' -> In l' l -> R1 a y <-> R2 a y) ->
-    add_to_bucket R1 a l = add_to_bucket R2 a l.
-  Proof.
-    intros.
-    induction l; simpl; trivial.
-    cut_to IHl; [| firstorder].
-    rewrite IHl.
-    specialize (H a0); simpl in H.
-    match_destr; simpl in *.
-    repeat match_destr; unfold equiv, complement in *; firstorder.
-  Qed.
-    
-  Lemma quotient_ext {A:Type} (R1 R2:A->A->Prop) {eqR1:Equivalence R1} {decR1:EqDec A R1} {eqR2:Equivalence R2} {decR2:EqDec A R2} (l:list A) :
-    ForallPairs (fun x y => R1 x y <-> R2 x y) l ->
-    quotient R1 l = quotient R2 l.
-  Proof.
-    unfold ForallPairs.
-    induction l; simpl; intros; trivial.
-    rewrite IHl by eauto.
-    apply add_to_bucket_ext.
-    intros.
-    eapply H; eauto.
-    right.
-    eapply in_quotient; eauto.
-  Qed.
-
-  Lemma all_different_same_eq {A} R {eqR:Equivalence R} (l:list (list A)) l1 l2 a b:
-    all_different R l ->
-    In l1 l ->
-    In l2 l ->
-    In a l1 ->
-    In b l2 ->
-    R a b ->
-    l1 = l2.
-  Proof.
-    induction l; simpl; intros.
-    - tauto.
-    - unfold all_different in H.
-      invcs H.
-      rewrite Forall_forall in H7.
-      unfold different_buckets in H7.
-      destruct H0; destruct H1; subst.
-      + trivial.
-      + specialize (H7 _ H0 _ _ H2 H3).
-        congruence.
-      + specialize (H7 _ H _ _ H3 H2).
-        symmetry in H4.
-        congruence.
-      + apply IHl; eauto.
-  Qed.
     
   Lemma sumSimpleExpectation 
          (rv_X1 rv_X2 : Ts -> R)
@@ -2124,7 +1985,7 @@ Section SimpleConditionalExpectation.
   Qed.
 
   Lemma list_union_dec (l:list dec_sa_event) :
-    (forall x, {(list_union (map dsa_event l)) x} + {~ (list_union (map dsa_event l)) x}).
+    (forall x, sumbool ((list_union (map dsa_event l)) x) (~ (list_union (map dsa_event l)) x)).
   Proof.
     unfold list_union.
     intros x.
@@ -2156,7 +2017,7 @@ Section SimpleConditionalExpectation.
       apply srvplus; eauto.
   Qed.
 
-  Require Import Program.
+
 
   Lemma very_specific_fold_right_rv_because_barry_waiting l :
         Forall (RandomVariable Prts borel_sa) l ->
