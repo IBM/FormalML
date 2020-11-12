@@ -1044,7 +1044,6 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
        ps_P (fun omega : Ts => rv_X (RandomVariable := rv1) omega = a /\ 
                                rv_X (RandomVariable := rv2) omega = a0).
    Proof.     
-     Admitted.
 
 *)
 
