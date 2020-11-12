@@ -64,6 +64,7 @@ MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	derivlemmas \
 	Gaussian \
 	Gen_NN \
+        infprod \
 	ProbSpace \
 	RandomVariable \
 	SigmaAlgebras \
