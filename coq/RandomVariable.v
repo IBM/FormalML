@@ -3189,6 +3189,16 @@ Section Expectation.
     end.
     Admitted.
 
+  Lemma scale_rbar_minus (c: posreal) (x y : Rbar) :
+    let ex := Rbar_plus' x (Rbar_opp y) in
+    let exc := Rbar_plus' (c * x) (Rbar_opp (c * y)) in
+    match ex, exc with
+    | Some ex, Some exc => c*ex = exc
+    | None, None => True
+    | _, _ => False
+    end.
+  Admitted.
+
   Lemma Expectation_scale (c: posreal) 
         (rv_X : Ts -> R)
         {rv : RandomVariable Prts borel_sa rv_X} :
@@ -3201,72 +3211,10 @@ Section Expectation.
     end.
   Proof. 
     unfold Expectation.
-    rewrite Expectation_scale_pos.
-    rewrite Expectation_scale_neg.
-    
-    case_eq (Expectation_posRV (fun x : Ts => pos_fun_part rv_X x))
-    ; [intros posr eqq1 | intros eqq1..]
-    ; case_eq (Expectation_posRV (fun x : Ts => neg_fun_part rv_X x))
-    ; [intros negr eqq2 | intros eqq2..].
-    - 
-    - 
-
-generalize 
-simpl.
-      unfold rvscale.
-      rewrite scale_Rmax0.
-      Search Rmax.
-
-      Lemma       (c:posreal) :
-        Rmax (rvscale c rv_X x) 0 = rvscale c (Rmax rv_X 0)
-
-      Expectation_posRV_scale 
-      unfold rvscale.
-
-
-    
-    match_case; intros.
-    - match_case; intros.
-      unfold Rbar_plus' in *.
-      match_case_in H; intros; rewrite H1 in H.
-      match_case_in H0; intros; rewrite H2 in H0.
-      match_case_in H; intros; rewrite H3 in H.
-      match_case_in H0; intros; rewrite H4 in H0.
-      invcs H.
-      invcs H0.
-      rewrite H1 in exp_pos.
-      replace (Expectation_posRV (neg_fun_part rv_X)) with
-          (Rbar_opp (Rbar_opp (Expectation_posRV (neg_fun_part rv_X)))) in exp_neg by
-          (rewrite Rbar_opp_involutive; trivial).
-      rewrite H3 in exp_neg.
-      assert (Finite (c *  (real (Finite r1))) = Finite r2).
-      rewrite <- exp_pos.
-      rewrite <- H2.
-      apply Expectation_posRV_ext.
-      unfold rvscale; intros ?.
-      simpl.
-      admit.
-      
-
-   
-      admit.
-      assert (Finite (Rmult (pos c) (real (Rbar_opp (Finite r3)))) = 
-              (Rbar_opp (Finite r4))).
-      rewrite <- exp_neg.
-      rewrite <- H4.
-      rewrite Rbar_opp_involutive.
-      admit.
-      simpl.
-      rewrite Rmult_plus_distr_l.
-      replace (r2) with (real (Finite r2)) by trivial.
-      replace (r4) with (real (Rbar_opp (Rbar_opp (Finite r4)))) by
-          (rewrite Rbar_opp_involutive; trivial).          
-      rewrite <- H.
-      rewrite <- H0.
-      simpl.
-      lra.
-      
-  Admitted.
+    rewrite Expectation_scale_pos; trivial.
+    rewrite Expectation_scale_neg; trivial.
+    apply scale_rbar_minus.
+  Qed.
 
 End Expectation.
 
