@@ -82,124 +82,11 @@ Set Bullet Behavior "Strict Subproofs".
 
  Require Import Classical.
       
-Lemma Dvoretzky_rel00 (n:nat) (T X Y : nat -> R -> R) (F : nat -> R)
-      (rvy : RandomVariable prts borel_sa (Y n)) 
-      (svy : SimpleRandomVariable (Y n)) 
-      (rvx : RandomVariable prts borel_sa (X n)) 
-      (svx: SimpleRandomVariable (X n))
-      (rvt : RandomVariable prts borel_sa (fun r:R => T n (X n r))) 
-      (svt: SimpleRandomVariable (fun r:R => T n (X n r))) :
-  (forall (n:nat) (r:R), Rle (Rabs (T n r)) (F n * Rabs r)) ->
-  (forall (n:nat), F n >= 0) ->
-  rv_eq (SimpleConditionalExpectation (Y n) (X n)) (const 0) ->
-  Rle (SimpleExpectation
-         (rvplus (rvsqr (fun r : R => T n (X n r)))
-                 (rvplus
-                    (rvscale 2 (rvmult (fun r : R => T n (X n r))
-                                       (Y n)))
-                    (rvsqr (Y n)))))
-      ((Rsqr (F n)) * SimpleExpectation (rvsqr (X n))
-       + SimpleExpectation (rvsqr (Y n))).
- Proof.
-   intros.
-   rewrite <- sumSimpleExpectation; try typeclasses eauto.
-   rewrite <- sumSimpleExpectation; try typeclasses eauto.
-   rewrite <- scaleSimpleExpectation.
-   rewrite <- Rplus_assoc.
-   apply Rplus_le_compat_r.
-   generalize (conditional_tower_law (rvmult (fun r : R => T n (X n r)) (Y n)) (X n)) ; intros.
-   generalize (conditional_scale_measurable (fun r:R => T n (X n r)) (Y n) (X n)); intros.
-   cut_to H3.
-   - specialize (H2 (rvmult_rv (fun r : R => T n (X n r)) (Y n)) rvx).
-     specialize (H2 (srvmult (fun r : R => T n (X n r)) (Y n)) svx).
-     rewrite <- H2.
-     rewrite (SimpleExpectation_transport _ H3).
-     assert (eqq4:rv_eq  (rvmult (fun r : R => T n (X n r)) (SimpleConditionalExpectation (Y n) (X n)))
-                         (const 0)).
-     {
-       rewrite H1.
-       unfold rvmult, const; intros ?; simpl; field.
-     } 
-     rewrite (SimpleExpectation_transport _ eqq4).
-     rewrite SimpleExpectation_const.
-     rewrite Rmult_0_r .
-     rewrite Rplus_0_r .
-     specialize (H n).
-     rewrite (scaleSimpleExpectation (Rsqr (F n))).
-
-     apply SimpleExpectation_le; try typeclasses eauto.
-     unfold RealRandomVariable_le.
-     intros.
-     unfold rvsqr, rvscale.
-     specialize (H (X n x)).
-     rewrite <- Rabs_right with (r:=F n) in H; trivial.
-     rewrite <- Rabs_mult in H.
-     apply Rsqr_le_abs_1 in H.
-     rewrite Rsqr_mult in H.
-     apply H.
-   - unfold simple_sigma_measurable.
-     unfold event_preimage, singleton_event.
-     destruct svx.
-     destruct svt.
-     unfold RandomVariable.srv_vals.
-     intros.
-
-     destruct (classic ( exists x, X n x = c2)).
-     + exists (T n c2).
-       split.
-       * destruct H5 as [??].
-         subst.
-         auto.
-       * intros x eqq1.
-         now rewrite eqq1.
-     + exists (T n (X n 0)).
-       split.
-       * auto.
-       * intros ??.
-         elim H5.
-         eauto.
- Qed.       
- 
-Lemma Dvoretzky_rel0 (n:nat) (T X Y : nat -> R -> R) (F : nat -> R)
-      (rvy : RandomVariable prts borel_sa (Y n)) 
-      (svy : SimpleRandomVariable (Y n)) 
-      (rvx : RandomVariable prts borel_sa (X n)) 
-      (svx: SimpleRandomVariable (X n))
-      (rvt : RandomVariable prts borel_sa (fun r:R => T n (X n r))) 
-      (svt: SimpleRandomVariable (fun r:R => T n (X n r))) 
-      (svx2: SimpleRandomVariable (X (S n))) :
-  (forall (n:nat), F n >= 0) ->
-  (forall (n:nat) (r:R), Rle (Rabs (T n r)) (F n * Rabs r)) ->
-  (forall (n:nat), rv_eq (X (S n)) (rvplus (fun r =>  T n (X n r)) (Y n))) ->
-  rv_eq (SimpleConditionalExpectation (Y n) (X n)) (const 0) ->
-  Rle (SimpleExpectation (rvsqr (X (S n)) ))
-      ((Rsqr (F n)) * SimpleExpectation (rvsqr (X n))
-       + SimpleExpectation (rvsqr (Y n))).
- Proof.
-   intros.
-   specialize (H1 n).
-   rewrite (SimpleExpectation_transport (srvsqr (X (S n))) (rvsqr_proper _ _ H1)).
-   assert (eqq1:rv_eq (rvsqr (rvplus (fun r : R => T n (X n r)) (Y n))) 
-                 (rvplus (rvsqr (fun r : R => T n (X n r)))
-                         (rvplus
-                            (rvscale 2 (rvmult (fun r : R => T n (X n r))
-                                               (Y n)))
-                            (rvsqr (Y n))))).
-   { intros r.
-     unfold rvsqr, rvplus, rvscale, Rsqr, rvmult.
-     lra.
-   }
-   rewrite (SimpleExpectation_transport _ eqq1).
-   rewrite (SimpleExpectation_pf_irrel _ _).
-   now apply Dvoretzky_rel00.
-Qed.
-                         
-  Lemma srv_vals_compose_offset
+ Lemma srv_vals_offset
         (offset: R)
-        (f : R -> R)
         (vals : list R) :
-    map (fun ab : R * R => fst ab + snd ab) (list_prod (map f vals) [offset]) =  
-    map (fun v => (f v) + offset) vals.
+    map (fun ab : R * R => fst ab + snd ab) (list_prod vals [offset]) =  
+    map (fun v => v + offset) vals.
  Proof.
    induction vals; simpl; trivial.
    now f_equal.
@@ -289,31 +176,26 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
      unfold RandomVariable.srv_vals; simpl.
      unfold rvminus, rvopp, rvplus, rvscale, const.
      unfold RandomVariable.srvconst_obligation_1.
-     assert (srv_vals0 = map (T n) srv_vals).
-     {
-     admit.
-     }
-     rewrite H4.
-     assert (map (fun ab : R * R => fst ab + snd ab) (list_prod (map (T n) srv_vals) [-1 * theta]) =  map (fun v => (T n v) + (-1)*theta) srv_vals) by apply srv_vals_compose_offset.
      intros.
-     rewrite H5.
-     exists (T n c2 + (-1 * theta)).
-     split.
-     {
-       rewrite in_map_iff.
-       now exists c2.
-     }
-     unfold event_sub.
-     intros.
-     rewrite H7; lra.
-  Admitted.
      
-     
-     
-     
-     
-     
-   
-   
-
-
+     destruct (classic ( exists x, X n x = c2)).
+     + exists (T n c2 + (-1)*theta).
+       split.
+       * destruct H5 as [??].
+         subst.
+         assert (In (T n (X n x)) srv_vals0); auto.
+         rewrite srv_vals_offset, in_map_iff.
+         exists (T n (X n x)).
+         split; trivial.
+       * intros x eqq2.
+         now rewrite eqq2.
+     + exists (T n (X n 0) + (-1)*theta).
+       split.
+       * assert (In (T n (X n 0)) srv_vals0); auto.
+         rewrite srv_vals_offset, in_map_iff.
+         exists (T n (X n 0)).
+         split; trivial.
+       * intros ??.
+         elim H5.
+         eauto.
+  Qed.
