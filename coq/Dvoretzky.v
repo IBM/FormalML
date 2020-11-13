@@ -260,8 +260,11 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
      unfold event_preimage, singleton_event.
      destruct svx.
      destruct svt.
-     unfold RandomVariable.srv_vals.
-
+     unfold RandomVariable.srv_vals; simpl.
+     unfold rvminus, rvopp, rvplus, rvscale, const.
+     unfold RandomVariable.srvconst_obligation_1.
+     
+     
      
      
      
