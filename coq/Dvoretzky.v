@@ -140,6 +140,7 @@ Lemma Dvoretzky_rel00 (n:nat) (T X Y : nat -> R -> R) (F : nat -> R)
      destruct svx.
      destruct svt.
      unfold RandomVariable.srv_vals.
+     intros.
      
 admit.
  Admitted.
@@ -179,6 +180,17 @@ Lemma Dvoretzky_rel0 (n:nat) (T X Y : nat -> R -> R) (F : nat -> R)
    now apply Dvoretzky_rel00.
 Qed.
                          
+  Lemma srv_vals_compose_offset
+        (offset: R)
+        (f : R -> R)
+        (vals : list R) :
+    map (fun ab : R * R => fst ab + snd ab) (list_prod (map f vals) [offset]) =  
+    map (fun v => (f v) + offset) vals.
+ Proof.
+   induction vals; simpl; trivial.
+   now f_equal.
+ Qed.
+
 Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
       (rvy : RandomVariable prts borel_sa (Y n)) 
       (svy : SimpleRandomVariable (Y n)) 
@@ -263,6 +275,24 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
      unfold RandomVariable.srv_vals; simpl.
      unfold rvminus, rvopp, rvplus, rvscale, const.
      unfold RandomVariable.srvconst_obligation_1.
+     assert (srv_vals0 = map (T n) srv_vals).
+     {
+     admit.
+     }
+     rewrite H4.
+     assert (map (fun ab : R * R => fst ab + snd ab) (list_prod (map (T n) srv_vals) [-1 * theta]) =  map (fun v => (T n v) + (-1)*theta) srv_vals) by apply srv_vals_compose_offset.
+     intros.
+     rewrite H5.
+     exists (T n c2 + (-1 * theta)).
+     split.
+     {
+       rewrite in_map_iff.
+       now exists c2.
+     }
+     unfold event_sub.
+     intros.
+     rewrite H7; lra.
+  Admitted.
      
      
      
