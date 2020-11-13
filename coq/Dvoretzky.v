@@ -37,6 +37,19 @@ Set Bullet Behavior "Strict Subproofs".
    now rewrite H, H0.
  Qed.
 
+ Global Instance rvminus_proper {Ts} : Proper (rv_eq ==> rv_eq ==> rv_eq) (@rvminus Ts).
+ Proof.
+   unfold rv_eq, rvminus, rvplus, rvopp, rvscale, pointwise_relation.
+   intros ???????.
+   now rewrite H, H0.
+ Qed.
+
+ Global Instance rvopp_proper {Ts} : Proper (rv_eq ==> rv_eq ) (@rvopp Ts).
+ Proof.
+   unfold rv_eq, rvopp, Proper, rvscale, respectful, pointwise_relation.
+   intros x y eqq z.
+   now rewrite eqq.
+ Qed.
 
  Lemma SimpleExpectation_const c srv : SimpleExpectation (const c) (srv:=srv) = c.
  Proof.
@@ -53,7 +66,8 @@ Set Bullet Behavior "Strict Subproofs".
 
  Existing Instance rvscale_rv.
  Existing Instance rvplus_rv.
-Existing Instance rvmult_rv.
+ Existing Instance rvmult_rv.
+
 
  Declare Scope rv.
 
@@ -66,7 +80,7 @@ Existing Instance rvmult_rv.
  Local Open Scope rv.
 
    
-Lemma Dvoretzky_rel00 (n:nat) (T X Y : nat -> R -> R) (F : nat -> R) {nempty:NonEmpty R}
+Lemma Dvoretzky_rel00 (n:nat) (T X Y : nat -> R -> R) (F : nat -> R)
       (rvy : RandomVariable prts borel_sa (Y n)) 
       (svy : SimpleRandomVariable (Y n)) 
       (rvx : RandomVariable prts borel_sa (X n)) 
@@ -121,14 +135,25 @@ Lemma Dvoretzky_rel00 (n:nat) (T X Y : nat -> R -> R) (F : nat -> R) {nempty:Non
      apply Rsqr_le_abs_1 in H.
      rewrite Rsqr_mult in H.
      apply H.
-   - admit.
+   - unfold simple_sigma_measurable.
+     unfold event_preimage, singleton_event.
+     destruct svx.
+     destruct svt.
+     unfold RandomVariable.srv_vals.
+     
+admit.
  Admitted.
 
  
 Lemma Dvoretzky_rel0 (n:nat) (T X Y : nat -> R -> R) (F : nat -> R)
+      (rvy : RandomVariable prts borel_sa (Y n)) 
       (svy : SimpleRandomVariable (Y n)) 
+      (rvx : RandomVariable prts borel_sa (X n)) 
       (svx: SimpleRandomVariable (X n))
+      (rvt : RandomVariable prts borel_sa (fun r:R => T n (X n r))) 
+      (svt: SimpleRandomVariable (fun r:R => T n (X n r))) 
       (svx2: SimpleRandomVariable (X (S n))) :
+  (forall (n:nat), F n >= 0) ->
   (forall (n:nat) (r:R), Rle (Rabs (T n r)) (F n * Rabs r)) ->
   (forall (n:nat), rv_eq (X (S n)) (rvplus (fun r =>  T n (X n r)) (Y n))) ->
   rv_eq (SimpleConditionalExpectation (Y n) (X n)) (const 0) ->
@@ -137,8 +162,8 @@ Lemma Dvoretzky_rel0 (n:nat) (T X Y : nat -> R -> R) (F : nat -> R)
        + SimpleExpectation (rvsqr (Y n))).
  Proof.
    intros.
-   specialize (H0 n).
-   rewrite (SimpleExpectation_transport (srvsqr (X (S n))) (rvsqr_proper _ _ H0)).
+   specialize (H1 n).
+   rewrite (SimpleExpectation_transport (srvsqr (X (S n))) (rvsqr_proper _ _ H1)).
    assert (eqq1:rv_eq (rvsqr (rvplus (fun r : R => T n (X n r)) (Y n))) 
                  (rvplus (rvsqr (fun r : R => T n (X n r)))
                          (rvplus
@@ -150,15 +175,19 @@ Lemma Dvoretzky_rel0 (n:nat) (T X Y : nat -> R -> R) (F : nat -> R)
      lra.
    }
    rewrite (SimpleExpectation_transport _ eqq1).
-   apply Dvoretzky_rel00.
-   
-Admitted.
-   
+   rewrite (SimpleExpectation_pf_irrel _ _).
+   now apply Dvoretzky_rel00.
+Qed.
                          
 Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
+      (rvy : RandomVariable prts borel_sa (Y n)) 
       (svy : SimpleRandomVariable (Y n)) 
+      (rvx : RandomVariable prts borel_sa (X n)) 
       (svx: SimpleRandomVariable (X n))
+      (rvt : RandomVariable prts borel_sa (fun r:R => T n (X n r))) 
+      (svt: SimpleRandomVariable (fun r:R => T n (X n r))) 
       (svx2: SimpleRandomVariable (X (S n))) :
+  (forall (n:nat), F n >= 0) ->
   (forall (n:nat) (r:R), Rle (Rabs ((T n r) - theta)) (F n * Rabs (r-theta))) ->
   (forall (n:nat), rv_eq (X (S n)) (rvplus (fun r => T n (X n r)) (Y n))) ->
   rv_eq (SimpleConditionalExpectation (Y n) (X n)) (const 0) ->
@@ -167,6 +196,6 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
        + SimpleExpectation (rvsqr (rvminus (Y n) (const theta)))).
   Proof.
     intros.
-    specialize (H0 n).
+    specialize (H1 n).
     rewrite (SimpleExpectation_transport (srvsqr (rvminus (X (S n)) (const theta)))
-                                        (rvsqr_proper _ _ H0)).    
+                                        (rvsqr_proper _ _ H1)).    
