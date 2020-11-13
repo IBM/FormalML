@@ -79,7 +79,9 @@ Set Bullet Behavior "Strict Subproofs".
 
  Local Open Scope rv.
 
-   
+
+ Require Import Classical.
+      
 Lemma Dvoretzky_rel00 (n:nat) (T X Y : nat -> R -> R) (F : nat -> R)
       (rvy : RandomVariable prts borel_sa (Y n)) 
       (svy : SimpleRandomVariable (Y n)) 
@@ -141,10 +143,22 @@ Lemma Dvoretzky_rel00 (n:nat) (T X Y : nat -> R -> R) (F : nat -> R)
      destruct svt.
      unfold RandomVariable.srv_vals.
      intros.
-     
-admit.
- Admitted.
 
+     destruct (classic ( exists x, X n x = c2)).
+     + exists (T n c2).
+       split.
+       * destruct H5 as [??].
+         subst.
+         auto.
+       * intros x eqq1.
+         now rewrite eqq1.
+     + exists (T n (X n 0)).
+       split.
+       * auto.
+       * intros ??.
+         elim H5.
+         eauto.
+ Qed.       
  
 Lemma Dvoretzky_rel0 (n:nat) (T X Y : nat -> R -> R) (F : nat -> R)
       (rvy : RandomVariable prts borel_sa (Y n)) 
