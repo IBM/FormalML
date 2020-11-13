@@ -3033,8 +3033,7 @@ Section Expectation.
  Qed.
 
   Global Instance positive_part_prv 
-     (rv_X : Ts -> R)
-     (rrv : RandomVariable Prts borel_sa rv_X) : 
+     (rv_X : Ts -> R) :
     PositiveRandomVariable (pos_fun_part rv_X).
   Proof.
     unfold PositiveRandomVariable.
@@ -3055,8 +3054,7 @@ Section Expectation.
   Qed.
 
   Global Instance negative_part_prv
-     (rv_X : Ts -> R)
-     (rrv : RandomVariable Prts borel_sa rv_X) : 
+     (rv_X : Ts -> R) :
     PositiveRandomVariable (neg_fun_part rv_X).
   Proof.
     unfold PositiveRandomVariable.
@@ -3128,6 +3126,46 @@ Section Expectation.
         
   Admitted.
 
+  Lemma scale_Rmax0 (c:posreal) :
+    forall (x:R),
+      Rmax (c * x) 0 = c * Rmax x 0.
+    intros.
+    replace (0) with (c * 0) at 1 by lra.
+    rewrite RmaxRmult; trivial.
+    left.
+    apply cond_pos.
+  Qed.
+
+  Lemma Expectation_scale_pos (c:posreal) (rv_X : Ts -> R) 
+    {rv : RandomVariable Prts borel_sa rv_X} :
+    Expectation_posRV (fun x : Ts => pos_fun_part (rvscale c rv_X) x) =
+    c * Expectation_posRV (pos_fun_part rv_X).
+  Proof.
+    rewrite <- Expectation_posRV_scale.
+    - apply Expectation_posRV_ext.
+      intros x.
+      unfold pos_fun_part, rvscale.
+      unfold pos_fun_part_obligation_1.
+      simpl.
+      now rewrite scale_Rmax0.
+    - now apply positive_part_rv.
+  Qed.
+  
+  Lemma Expectation_scale_neg (c:posreal) (rv_X : Ts -> R) 
+    {rv : RandomVariable Prts borel_sa rv_X} :
+    Expectation_posRV (fun x : Ts => neg_fun_part (rvscale c rv_X) x) =
+    c * Expectation_posRV (neg_fun_part rv_X).
+  Proof.
+    rewrite <- Expectation_posRV_scale.
+    - apply Expectation_posRV_ext.
+      intros x.
+      unfold neg_fun_part, rvscale.
+      unfold neg_fun_part_obligation_1.
+      simpl.
+      replace (-(c*rv_X x)) with (c * (-rv_X x)) by lra.
+      now rewrite scale_Rmax0.
+    - now apply negative_part_rv.
+  Qed.
 
   Lemma Rbar_plus'_some {a b:Rbar} {c:R} : Rbar_plus' a b = Some (Finite c) ->
                                            { a' & {b' | a = Finite a' & b = Finite b'}}.
@@ -3137,6 +3175,19 @@ Section Expectation.
     eauto.
   Qed.
 
+  Definition option_Rbar_mult (c:posreal) (x:option Rbar) : option Rbar :=
+    match x with
+    | Some x' => Some (Rbar_mult c x')
+    | None => None
+    end.
+
+  Lemma scale_Rbar_diff (c : posreal) (x y : Rbar) :
+    Rbar_plus' (Rbar_mult c x) (Rbar_opp (Rbar_mult c y)) =
+    match (Rbar_plus' x (Rbar_opp y)) with
+    | Some x' => Some (Rbar_mult c x')
+    | None => None
+    end.
+    Admitted.
 
   Lemma Expectation_scale (c: posreal) 
         (rv_X : Ts -> R)
@@ -3150,21 +3201,28 @@ Section Expectation.
     end.
   Proof. 
     unfold Expectation.
-    generalize (Expectation_posRV_scale c (pos_fun_part rv_X)); intros exp_pos.
-    generalize (Expectation_posRV_scale c (neg_fun_part rv_X)); intros exp_neg.
+    rewrite Expectation_scale_pos.
+    rewrite Expectation_scale_neg.
+    
     case_eq (Expectation_posRV (fun x : Ts => pos_fun_part rv_X x))
     ; [intros posr eqq1 | intros eqq1..]
     ; case_eq (Expectation_posRV (fun x : Ts => neg_fun_part rv_X x))
     ; [intros negr eqq2 | intros eqq2..].
-    - simpl.
+    - 
+    - 
+
+generalize 
+simpl.
+      unfold rvscale.
+      rewrite scale_Rmax0.
+      Search Rmax.
 
       Lemma       (c:posreal) :
         Rmax (rvscale c rv_X x) 0 = rvscale c (Rmax rv_X 0)
 
       Expectation_posRV_scale 
       unfold rvscale.
-      
-    
+
 
     
     match_case; intros.
