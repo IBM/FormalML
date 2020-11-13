@@ -2399,13 +2399,13 @@ Section SimpleConditionalExpectation.
       reflexivity.
     Qed.
 
-
+(*
     Lemma perm_cut_to_sublist {A} {l1 l2:list A} :
       Permutation l1 l2 ->
       forall l1', sublist l1' l1 ->
              exists l2', sublist l2' l2 /\ Permutation l1' l2'.
     Admitted.
-     
+ *)   
 
    Definition simple_sigma_measurable 
         (rv_X1 rv_X2 : Ts -> R)
@@ -2417,6 +2417,200 @@ Section SimpleConditionalExpectation.
         exists (c1:R), In c1 (srv_vals (SimpleRandomVariable:=srv1)) /\
                        (event_sub (event_preimage rv_X2 (singleton_event c2) )
                                   (event_preimage rv_X1 (singleton_event c1))).
+
+
+   Lemma events_measurable0_b
+         (l1 l2 : list (event Ts)) :
+     (exists l : list (list (event Ts)),
+         Forall2 (fun x y => event_equiv x (list_union y)) l1 l
+         /\ Permutation (concat l) l2) ->
+     (forall (p2:event Ts),
+         In p2 l2 ->
+         exists (p1:event Ts), (In p1 l1) /\ event_sub p2 p1).
+   Proof.
+     intros [l [Fl Pl]].
+     intros p2 p2inn.
+     rewrite <- Pl in p2inn.
+     apply concat_In in p2inn.
+     destruct p2inn as [ll [llinn inll]].
+     destruct (Forall2_In_r Fl llinn) as [x [xin xequiv]].
+     exists x.
+     split; trivial.
+     intros y p2y.
+     apply xequiv.
+     red.
+     eauto.
+   Qed.
+
+   (*  (dec:forall a, P \/ ~P) *)
+   Lemma classic_filter {A} (P:A->Prop) (l:list A) :
+     exists l', sublist l' l /\ forall x, In x l' <-> In x l /\ P x.
+   Proof.
+     induction l.
+     - exists nil.
+       constructor.
+       + constructor.
+       + intuition.
+     - destruct IHl as [l' [subl' inifl']].
+       destruct (classic (P a)).
+       + exists (a::l').
+         split.
+         * constructor; trivial.
+         * simpl; intros ?; split.
+           -- intros [?|?].
+              ++ subst; eauto.
+              ++ apply inifl' in H0.
+                 tauto.
+           -- intros [[?|?]?].
+              ++ subst; eauto.
+              ++ right; apply inifl'; tauto.
+       + exists l'.
+         split.
+         * apply sublist_skip; trivial.
+         * simpl in *.
+           intros x; split; intros.
+           -- apply inifl' in H0.
+              tauto.
+           -- destruct H0 as [??].
+              apply inifl'.
+              split; trivial.
+              destruct H0; congruence.
+   Qed.
+
+   Lemma classic_sub_filter {A} (P:A->Prop) (l:list (list A)) :
+     exists l', Forall2 sublist l' l /\ Forall2 (fun ll1 ll2 => forall x, In x ll2 <-> In x ll1 /\ P x) l l'.
+   Proof.
+     induction l.
+     - exists nil.
+       constructor.
+       + constructor.
+       + intuition.
+     - destruct IHl as [l' [subl' inifl']].
+       destruct (classic_filter P a) as [a' [a's a'i]].
+       exists (a'::l').
+       split.
+       + constructor; trivial.
+       + constructor; trivial.
+   Qed.
+   
+   Lemma events_measurable0_f {nempty:NonEmpty Ts}
+         (l1 l2 : list (event Ts)) :
+     is_partition_list l1 -> is_partition_list l2 ->
+     (forall (p2:event Ts),
+         In p2 l2 ->
+         exists (p1:event Ts), (In p1 l1) /\ event_sub p2 p1) ->
+     (exists l : list (list (event Ts)),
+         Forall2 (fun x y => event_equiv x (list_union y)) l1 l
+         /\ Permutation (concat l) l2).
+   Proof.
+     intros isp1 isp2 HH.
+     assert (eqq1:
+       Forall2 event_equiv (map (fun x : event Ts => list_union (map (fun y : event Ts => event_inter x y) l2)) l1)
+                  (map (fun x : event Ts => x) l1)).
+     { clear isp1 HH.
+       induction l1; simpl; trivial.
+       destruct l2.
+       -- elim (is_partition_list_nnil nempty isp2).
+       -- constructor.
+          ++ rewrite <- event_inter_list_union_distr.
+             destruct isp2 as [FP1 equiv1].
+             rewrite equiv1.
+             rewrite event_inter_true_r.
+             reflexivity.
+          ++ apply IHl1.
+     }
+     rewrite map_id in eqq1.
+     destruct (classic_sub_filter (fun x => ~ (x = event_none)) (map (fun x => map (fun y => event_inter x y) l2) l1))
+       as [l' [l'sub l'in]].
+     exists l'.
+     split.
+     - rewrite Forall2_map.
+       rewrite map_id.
+       rewrite <- eqq1.
+       rewrite <- Forall2_map.
+       rewrite <- (map_id l') in l'in.
+       rewrite <- Forall2_map in l'in.
+       revert l'in.
+       apply Forall2_incl; intros.
+       unfold list_union.
+       intros z; split.
+       + intros [? [??]].
+         exists x0.
+         split; trivial.
+         apply H1.
+         split; trivial.
+         intro eqq2; rewrite eqq2 in H3.
+         red in H3.
+         tauto.
+       + intros [w [??]].
+         destruct (H1 w) as [HH2 _].
+         destruct (HH2 H2) as [winn wnnone].
+         eauto.
+     - 
+       assert (NoDup (concat l')).
+       {
+         admit.
+       } 
+       apply NoDup_Permutation'.
+       + admit.
+       + admit.
+       + clear eqq1.
+         {
+           split; intros.
+           - 
+   Admitted.
+
+   (*
+   Lemma events_measurable0_f {nempty:NonEmpty Ts}
+         (l1 l2 : list (event Ts)) :
+     is_partition_list l1 -> is_partition_list l2 ->
+     (forall (p2:event Ts),
+         In p2 l2 ->
+         exists (p1:event Ts), (In p1 l1) /\ event_sub p2 p1) ->
+     (exists l : list (list (event Ts)),
+         Forall2 (fun x y => event_equiv x (list_union y)) l1 l
+         /\ equivlist (concat l) l2).
+   Proof.
+     intros isp1 isp2 HH.
+     exists (map (fun x => map (fun y => event_inter x y) l2) l1).
+     split.
+     - rewrite Forall2_map.
+       assert (eqq1:
+       Forall2 event_equiv (map (fun x : event Ts => list_union (map (fun y : event Ts => event_inter x y) l2)) l1)
+                  (map (fun x : event Ts => x) l1)).
+       + clear isp1 HH.
+         induction l1; simpl; trivial.
+         destruct l2.
+         -- elim (is_partition_list_nnil nempty isp2).
+         -- constructor.
+            ++ rewrite <- event_inter_list_union_distr.
+               destruct isp2 as [FP1 equiv1].
+               rewrite equiv1.
+               rewrite event_inter_true_r.
+               reflexivity.
+            ++ apply IHl1.
+       + rewrite map_map.
+         rewrite eqq1.
+         reflexivity.
+     - admit.
+   Admitted.
+*)
+   (*
+   Lemma events_measurable0
+         (l1 l2 : list (event Ts)) :
+     is_partition_list l1 -> is_partition_list l2 ->
+     (forall (p2:event Ts),
+         In p2 l2 ->
+         exists (p1:event Ts), (In p1 l1) /\ event_sub p2 p1) <->
+     (exists l : list (list (event Ts)),
+         Forall2 (fun x y => event_equiv x (list_union y)) l1 l
+         /\ Permutation (concat l) l2).
+   Proof.
+     split; intros HH.
+     - now apply events_measurable0_f.
+     - now apply events_measurable0_b.
+   Qed.   
+*)
    
    Definition partition_measurable
         (rv_X : Ts -> R)
@@ -2427,8 +2621,18 @@ Section SimpleConditionalExpectation.
        In p l ->
        exists (c:R), (In c srv_vals) /\
                 event_sub p (event_preimage rv_X (singleton_event c)).
+   
+   Lemma equivlist_cut_to_incl {A} (l1 l2:list A) :
+     equivlist l1 l2 -> forall l1',
+       incl l1' l1 ->
+       exists l2',
+         equivlist l1' l2' /\
+         incl l2' l2.
+   Proof.
+   Admitted.
 
    Lemma events_measurable
+         {nempty:NonEmpty Ts}
          (l1 l2 : list (event Ts)) :
      is_partition_list l1 -> is_partition_list l2 ->
      (forall (p2:event Ts),
@@ -2439,27 +2643,19 @@ Section SimpleConditionalExpectation.
          exists (l3: list (event Ts)),
            incl l3 l2 /\ event_equiv (list_union l3) p1).
    Proof.
-     unfold is_partition_list. unfold Ω.
+     intros isp1 isp2.
      intros.
-       unfold event_disjoint, event_equiv, list_union, event_sub.
-       intros.
-       destruct H; destruct H0.
-       split; intros.
-     -
-       assert (exists l : list (list (event Ts)),
-                  Forall2 (fun x y => event_equiv x (list_union y)) l1 l
-                  /\ Permutation (concat l) l2).
-       {
-         admit.
-       } 
-       destruct H5 as [l [lF lP]].
-       clear H1 H2 H3.
-       clear H H0.
+     unfold event_disjoint, event_equiv, list_union, event_sub.
+     intros.
+     split; intros.
+     - generalize (events_measurable0_f _ _ isp1 isp2 H); intros HH.
+       destruct HH as [l [lF lP]].
+       clear isp1 isp2 H.
        revert lP.
        revert l2.
        induction lF; simpl in *; intros.
        + intuition.
-       + destruct H4.
+       + destruct H0.
          * subst.
            exists y.
            split.
@@ -2469,8 +2665,9 @@ Section SimpleConditionalExpectation.
               rewrite H.
               reflexivity.
          * specialize (IHlF H0).
-           destruct (perm_cut_to_sublist lP (concat l')) as [l2' [l2's l2'P]].
-           -- apply sublist_app_r.
+           destruct (equivlist_cut_to_incl _ _ lP (concat l')) as [l2' [l2's l2'P]].
+           -- intros ??.
+              apply in_app_iff; tauto
            -- specialize (IHlF _ l2'P).
               destruct IHlF as [l3 [l3incl l3eq]].
               exists l3.
