@@ -3166,41 +3166,17 @@ Section Expectation.
      - f_equal; field; trivial.
      - case (Rle_dec 0 (/ c)) ; intros.
        + match_case; intros.
-         * match_case_in H0; intros.
-           -- match_case_in H1; intros.       
-              ++ rewrite H2 in H0.
-                 invcs H0.
-              ++ lra.
-           -- match_case_in H1; intros.
-              ++ rewrite H2 in H0.
-                 invcs H0.
-              ++ lra.
-         * match_case_in H0; intros.
-           -- match_case_in H1; intros.
-              ++ now rewrite H2 in H0.
-              ++ lra.
-           -- match_case_in H1; intros.
-              ++ now rewrite H2 in H0.
-              ++ lra.
+         * match_case_in H0; intros; match_case_in H1; intros; 
+             try lra; rewrite H2 in H0; invcs H0.
+         * match_case_in H0; intros; match_case_in H1; intros; 
+             try lra; now rewrite H2 in H0.
        + lra.
-     - case (Rle_dec 0 (/ c)) ; intros.
+    -  case (Rle_dec 0 (/ c)) ; intros.
        + match_case; intros.
-         * match_case_in H0; intros.
-           -- match_case_in H1; intros.       
-              ++ rewrite H2 in H0.
-                 invcs H0.
-              ++ lra.
-           -- match_case_in H1; intros.
-              ++ rewrite H2 in H0.
-                 invcs H0.
-              ++ lra.
-         * match_case_in H0; intros.
-           -- match_case_in H1; intros.
-              ++ now rewrite H2 in H0.
-              ++ lra.
-           -- match_case_in H1; intros.
-              ++ now rewrite H2 in H0.
-              ++ lra.
+         * match_case_in H0; intros; match_case_in H1; intros; 
+             try lra; rewrite H2 in H0; invcs H0.
+         * match_case_in H0; intros; match_case_in H1; intros; 
+             try lra; now rewrite H2 in H0.
        + lra.
    Qed.
 
