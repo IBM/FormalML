@@ -3190,9 +3190,8 @@ Section Expectation.
   Proof.
     assert (0 < c) by apply cond_pos.
     assert (0 <= c) by lra.
-    match_case.
-    - intros.
-      destruct x; destruct y; simpl in H1; invcs H1.
+    match_case; intros.
+    - destruct x; destruct y; simpl in H1; invcs H1.
       + simpl; f_equal.
         now rewrite <- Rmult_plus_distr_l.
       + replace (Rbar_mult c r0) with (Finite (c * r0)) by now simpl.
@@ -3214,8 +3213,7 @@ Section Expectation.
         now simpl.
       + rewrite Rbar_mult_pos_minf.
         now simpl.
-    - intros.
-      destruct x; destruct y; simpl in H1; try discriminate.
+    - destruct x; destruct y; simpl in H1; try discriminate.
       + rewrite Rbar_mult_pos_pinf, Rbar_mult_pos_minf.
         now simpl.
       + rewrite Rbar_mult_pos_pinf, Rbar_mult_pos_minf.
