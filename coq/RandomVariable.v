@@ -3112,7 +3112,106 @@ Section Expectation.
          apply cond_pos.
    Qed.
      
-  Lemma Expectation_posRV_scale (c: posreal) 
+   Lemma Rbar_mult_mult_pos (c : posreal) (l : Rbar) :
+     Rbar_mult_pos l c = Rbar_mult l c.
+   Proof.
+     assert (0 < c) as cpos by apply cond_pos.
+     unfold Rbar_mult_pos.
+     unfold Rbar_mult, Rbar_mult'.
+     destruct l.
+     * trivial.
+     * match_case; intros.
+       -- match_case_in H; intros.
+          ++ rewrite H0 in H.
+             match_case_in H; intros.
+             ** rewrite H1 in H.
+                now invcs H.
+             ** rewrite H1 in H.
+                congruence.
+          ++ lra.
+       -- match_case_in H; intros.
+          ++ rewrite H0 in H.
+             match_case_in H; intros.
+             ** rewrite H1 in H.
+                congruence.
+             ** lra.
+          ++ lra.
+     * match_case; intros.
+       -- match_case_in H; intros.
+          ++ rewrite H0 in H.
+             match_case_in H; intros.
+             ** rewrite H1 in H.
+                now invcs H.
+             ** rewrite H1 in H.
+                congruence.
+          ++ lra.
+       -- match_case_in H; intros.
+          ++ rewrite H0 in H.
+             match_case_in H; intros.
+             ** rewrite H1 in H.
+                congruence.
+             ** lra.
+          ++ lra.
+   Qed.
+
+   Lemma Rbar_div_mult_pos (c : posreal) (l : Rbar) :
+     Rbar_mult_pos (Rbar_div l c) c = l.
+   Admitted.
+
+ Lemma rbar_le_scaled (c : posreal) (x y :Rbar) :
+     Rbar_le x (Rbar_mult c y) <-> Rbar_le (Rbar_div x c) y.
+   Proof.
+     symmetry.
+     rewrite Rbar_mult_pos_le with (z := c).
+     rewrite Rbar_mult_comm.
+     rewrite Rbar_div_mult_pos.
+     now rewrite Rbar_mult_mult_pos.
+   Qed.
+       
+   Lemma rbar_le_scaled2 (c : posreal) (x y :Rbar) :
+     Rbar_le (Rbar_mult c x) y <-> Rbar_le x (Rbar_div y c).
+   Proof.
+     symmetry.
+     rewrite Rbar_mult_pos_le with (z := c).     
+     rewrite Rbar_div_mult_pos.
+     rewrite Rbar_mult_comm.
+     now rewrite Rbar_mult_mult_pos.     
+   Qed.
+
+   Lemma lub_rbar_scale0 (c:posreal) (E : R -> Prop) (l:Rbar) :
+         is_lub_Rbar E l -> is_lub_Rbar (fun x => E (x/c)) (Rbar_mult c l).
+   Proof.
+     assert (0 < c) as cpos by apply cond_pos.
+     assert (0 <= c) as cnn by lra.
+     unfold is_lub_Rbar, is_ub_Rbar.
+     intros.
+     destruct H.
+     split.
+     - intros.
+       specialize (H (Rbar_div x c) H1).
+       now apply rbar_le_scaled.
+     - intros.
+       specialize (H0 (Rbar_div b c)).
+       cut_to H0.
+       + now apply rbar_le_scaled2.
+       + intros.
+         specialize (H1 (c * x)).
+         replace (c * x / c) with (x) in H1.
+         apply rbar_le_scaled2.
+         now apply H1.
+         field.
+         now apply Rgt_not_eq.
+    Qed.
+                                                               
+   Lemma lub_rbar_scale (c:posreal) (E : R -> Prop) :
+     Lub_Rbar (fun x => E (x / c)) = Rbar_mult c (Lub_Rbar E).
+     Proof.
+       apply is_lub_Rbar_unique.
+       apply lub_rbar_scale0.
+       apply Lub_Rbar_correct.
+   Qed.
+
+   Lemma Expectation_posRV_scale (c: posreal) 
         (rv_X : Ts -> R)
         {rv : RandomVariable Prts borel_sa rv_X}
         {posrv:PositiveRandomVariable rv_X} :
@@ -3123,8 +3222,15 @@ Section Expectation.
     unfold BoundedPositiveRandomVariable.
     unfold SimpleExpectationSup.
     generalize (factor_simple_fun c); intros.
-        
+    rewrite <- lub_rbar_scale.
+    f_equal.
+    apply FunctionalExtensionality.functional_extensionality.
+    intros.
+    
+    
+
   Admitted.
+
 
   Lemma scale_Rmax0 (c:posreal) :
     forall (x:R),
