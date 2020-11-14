@@ -3117,7 +3117,7 @@ Section Expectation.
         {rv : RandomVariable Prts borel_sa rv_X}
         {posrv:PositiveRandomVariable rv_X} :
     Expectation_posRV (rvscale c rv_X) =
-    c * Expectation_posRV rv_X.
+    Rbar_mult c (Expectation_posRV rv_X).
   Proof.
     unfold Expectation_posRV.
     unfold BoundedPositiveRandomVariable.
@@ -3139,7 +3139,7 @@ Section Expectation.
   Lemma Expectation_scale_pos (c:posreal) (rv_X : Ts -> R) 
     {rv : RandomVariable Prts borel_sa rv_X} :
     Expectation_posRV (fun x : Ts => pos_fun_part (rvscale c rv_X) x) =
-    c * Expectation_posRV (pos_fun_part rv_X).
+    Rbar_mult c (Expectation_posRV (pos_fun_part rv_X)).
   Proof.
     rewrite <- Expectation_posRV_scale.
     - apply Expectation_posRV_ext.
@@ -3154,7 +3154,7 @@ Section Expectation.
   Lemma Expectation_scale_neg (c:posreal) (rv_X : Ts -> R) 
     {rv : RandomVariable Prts borel_sa rv_X} :
     Expectation_posRV (fun x : Ts => neg_fun_part (rvscale c rv_X) x) =
-    c * Expectation_posRV (neg_fun_part rv_X).
+    Rbar_mult c (Expectation_posRV (neg_fun_part rv_X)).
   Proof.
     rewrite <- Expectation_posRV_scale.
     - apply Expectation_posRV_ext.
@@ -3191,9 +3191,9 @@ Section Expectation.
 
   Lemma scale_rbar_minus (c: posreal) (x y : Rbar) :
     let ex := Rbar_plus' x (Rbar_opp y) in
-    let exc := Rbar_plus' (c * x) (Rbar_opp (c * y)) in
+    let exc := Rbar_plus' (Rbar_mult c x) (Rbar_opp (Rbar_mult c y)) in
     match ex, exc with
-    | Some ex, Some exc => c*ex = exc
+    | Some ex, Some exc => Rbar_mult c ex = exc
     | None, None => True
     | _, _ => False
     end.
@@ -3205,7 +3205,7 @@ Section Expectation.
     let Ex_rv := Expectation rv_X in
     let Ex_c_rv := (@Expectation (rvscale c rv_X) (rvscale_rv Prts c rv_X rv))in
     match Ex_rv, Ex_c_rv with
-    | Some ex, Some exc => c*ex = exc
+    | Some ex, Some exc => Rbar_mult c ex = exc
     | None, None => True
     | _,_ => False
     end.
