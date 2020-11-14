@@ -3167,19 +3167,60 @@ Section Expectation.
     - now apply negative_part_rv.
   Qed.
 
-  Lemma Rbar_plus'_some {a b:Rbar} {c:R} : Rbar_plus' a b = Some (Finite c) ->
-                                           { a' & {b' | a = Finite a' & b = Finite b'}}.
-  Proof.
-    intros.
-    destruct a; destruct b; simpl in H; try congruence.
-    eauto.
-  Qed.
+   Lemma Rbar_mult_pos_pinf (c : posreal):
+     Rbar_mult c p_infty = p_infty.
+   Proof.
+     apply is_Rbar_mult_unique.
+     apply (is_Rbar_mult_p_infty_pos c (cond_pos c)).
+   Qed.
 
-  Definition option_Rbar_mult (c:posreal) (x:option Rbar) : option Rbar :=
-    match x with
+   Lemma Rbar_mult_pos_minf (c : posreal):
+     Rbar_mult c m_infty = m_infty.
+   Proof.
+     apply is_Rbar_mult_unique.
+     apply (is_Rbar_mult_m_infty_pos c (cond_pos c)).
+   Qed.
+
+  Lemma scale_Rbar_plus (c : posreal) (x y : Rbar) :
+    Rbar_plus' (Rbar_mult c x) (Rbar_mult c y) =
+    match (Rbar_plus' x y) with
     | Some x' => Some (Rbar_mult c x')
     | None => None
     end.
+  Proof.
+    assert (0 < c) by apply cond_pos.
+    assert (0 <= c) by lra.
+    match_case.
+    - intros.
+      destruct x; destruct y; simpl in H1; invcs H1.
+      + simpl; f_equal.
+        now rewrite <- Rmult_plus_distr_l.
+      + replace (Rbar_mult c r0) with (Finite (c * r0)) by now simpl.
+        unfold Rbar_plus'.
+        match_case; intros.
+        rewrite Rbar_mult_pos_pinf in H1.
+        discriminate.
+      + replace (Rbar_mult c r0) with (Finite (c * r0)) by now simpl.
+        unfold Rbar_plus'.
+        match_case; intros.
+        rewrite Rbar_mult_pos_minf in H1.
+        discriminate.
+      + rewrite Rbar_mult_pos_pinf.
+        replace (Rbar_mult c r0) with (Finite (c * r0)) by now simpl.
+        now simpl.
+      + rewrite Rbar_mult_pos_pinf.
+        now simpl.
+      + rewrite Rbar_mult_pos_minf.
+        now simpl.
+      + rewrite Rbar_mult_pos_minf.
+        now simpl.
+    - intros.
+      destruct x; destruct y; simpl in H1; try discriminate.
+      + rewrite Rbar_mult_pos_pinf, Rbar_mult_pos_minf.
+        now simpl.
+      + rewrite Rbar_mult_pos_pinf, Rbar_mult_pos_minf.
+        now simpl.
+   Qed.
 
   Lemma scale_Rbar_diff (c : posreal) (x y : Rbar) :
     Rbar_plus' (Rbar_mult c x) (Rbar_opp (Rbar_mult c y)) =
@@ -3187,35 +3228,30 @@ Section Expectation.
     | Some x' => Some (Rbar_mult c x')
     | None => None
     end.
-    Admitted.
-
-  Lemma scale_rbar_minus (c: posreal) (x y : Rbar) :
-    let ex := Rbar_plus' x (Rbar_opp y) in
-    let exc := Rbar_plus' (Rbar_mult c x) (Rbar_opp (Rbar_mult c y)) in
-    match ex, exc with
-    | Some ex, Some exc => Rbar_mult c ex = exc
-    | None, None => True
-    | _, _ => False
-    end.
-  Admitted.
+    Proof.
+      replace (Rbar_opp (Rbar_mult c y)) with (Rbar_mult c (Rbar_opp y)).
+      - apply scale_Rbar_plus.
+      - apply Rbar_mult_opp_r.
+    Qed.
 
   Lemma Expectation_scale (c: posreal) 
         (rv_X : Ts -> R)
         {rv : RandomVariable Prts borel_sa rv_X} :
     let Ex_rv := Expectation rv_X in
-    let Ex_c_rv := (@Expectation (rvscale c rv_X) (rvscale_rv Prts c rv_X rv))in
-    match Ex_rv, Ex_c_rv with
-    | Some ex, Some exc => Rbar_mult c ex = exc
-    | None, None => True
-    | _,_ => False
+    let Ex_c_rv := (@Expectation (rvscale c rv_X) (rvscale_rv Prts c rv_X rv)) in
+    Ex_c_rv = 
+    match Ex_rv with
+    | Some x => Some (Rbar_mult c x)
+    | None => None
     end.
   Proof. 
     unfold Expectation.
     rewrite Expectation_scale_pos; trivial.
     rewrite Expectation_scale_neg; trivial.
-    apply scale_rbar_minus.
+    apply scale_Rbar_diff.
   Qed.
 
+  
 End Expectation.
 
 
