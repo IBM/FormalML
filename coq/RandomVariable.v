@@ -3156,9 +3156,55 @@ Section Expectation.
 
    Lemma Rbar_div_mult_pos (c : posreal) (l : Rbar) :
      Rbar_mult_pos (Rbar_div l c) c = l.
-   Admitted.
+   Proof.
+     assert (c > 0) as cpos by apply cond_pos.
+     assert ((pos c) <> 0) as cneq0 by lra.
+     assert (/c > 0) by apply Rinv_0_lt_compat, cpos.
+     unfold Rbar_div; simpl.
+     unfold Rbar_mult, Rbar_mult', Rbar_mult_pos.
+     destruct l.
+     - f_equal; field; trivial.
+     - case (Rle_dec 0 (/ c)) ; intros.
+       + match_case; intros.
+         * match_case_in H0; intros.
+           -- match_case_in H1; intros.       
+              ++ rewrite H2 in H0.
+                 invcs H0.
+              ++ lra.
+           -- match_case_in H1; intros.
+              ++ rewrite H2 in H0.
+                 invcs H0.
+              ++ lra.
+         * match_case_in H0; intros.
+           -- match_case_in H1; intros.
+              ++ now rewrite H2 in H0.
+              ++ lra.
+           -- match_case_in H1; intros.
+              ++ now rewrite H2 in H0.
+              ++ lra.
+       + lra.
+     - case (Rle_dec 0 (/ c)) ; intros.
+       + match_case; intros.
+         * match_case_in H0; intros.
+           -- match_case_in H1; intros.       
+              ++ rewrite H2 in H0.
+                 invcs H0.
+              ++ lra.
+           -- match_case_in H1; intros.
+              ++ rewrite H2 in H0.
+                 invcs H0.
+              ++ lra.
+         * match_case_in H0; intros.
+           -- match_case_in H1; intros.
+              ++ now rewrite H2 in H0.
+              ++ lra.
+           -- match_case_in H1; intros.
+              ++ now rewrite H2 in H0.
+              ++ lra.
+       + lra.
+   Qed.
 
- Lemma rbar_le_scaled (c : posreal) (x y :Rbar) :
+  Lemma rbar_le_scaled (c : posreal) (x y :Rbar) :
      Rbar_le x (Rbar_mult c y) <-> Rbar_le (Rbar_div x c) y.
    Proof.
      symmetry.
