@@ -3213,8 +3213,6 @@ Section Expectation.
     apply FunctionalExtensionality.functional_extensionality.
     intros.
     
-    
-
   Admitted.
 
 
@@ -3299,17 +3297,12 @@ Section Expectation.
       + rewrite Rbar_mult_pos_pinf.
         replace (Rbar_mult c r0) with (Finite (c * r0)) by now simpl.
         now simpl.
-      + rewrite Rbar_mult_pos_pinf.
-        now simpl.
-      + rewrite Rbar_mult_pos_minf.
-        now simpl.
-      + rewrite Rbar_mult_pos_minf.
-        now simpl.
+      + rewrite Rbar_mult_pos_pinf; now simpl.
+      + rewrite Rbar_mult_pos_minf; now simpl.
+      + rewrite Rbar_mult_pos_minf; now simpl.
     - destruct x; destruct y; simpl in H1; try discriminate.
-      + rewrite Rbar_mult_pos_pinf, Rbar_mult_pos_minf.
-        now simpl.
-      + rewrite Rbar_mult_pos_pinf, Rbar_mult_pos_minf.
-        now simpl.
+      + rewrite Rbar_mult_pos_pinf, Rbar_mult_pos_minf; now simpl.
+      + rewrite Rbar_mult_pos_pinf, Rbar_mult_pos_minf; now simpl.
    Qed.
 
   Lemma scale_Rbar_diff (c : posreal) (x y : Rbar) :
