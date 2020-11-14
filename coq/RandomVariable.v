@@ -3119,39 +3119,11 @@ Section Expectation.
      unfold Rbar_mult_pos.
      unfold Rbar_mult, Rbar_mult'.
      destruct l.
-     * trivial.
-     * match_case; intros.
-       -- match_case_in H; intros.
-          ++ rewrite H0 in H.
-             match_case_in H; intros.
-             ** rewrite H1 in H.
-                now invcs H.
-             ** rewrite H1 in H.
-                congruence.
-          ++ lra.
-       -- match_case_in H; intros.
-          ++ rewrite H0 in H.
-             match_case_in H; intros.
-             ** rewrite H1 in H.
-                congruence.
-             ** lra.
-          ++ lra.
-     * match_case; intros.
-       -- match_case_in H; intros.
-          ++ rewrite H0 in H.
-             match_case_in H; intros.
-             ** rewrite H1 in H.
-                now invcs H.
-             ** rewrite H1 in H.
-                congruence.
-          ++ lra.
-       -- match_case_in H; intros.
-          ++ rewrite H0 in H.
-             match_case_in H; intros.
-             ** rewrite H1 in H.
-                congruence.
-             ** lra.
-          ++ lra.
+     - trivial.
+     - match_case; intros; match_case_in H; intros; try lra; rewrite H0 in H; 
+          match_case_in H; intros; try lra; rewrite H1 in H; [now invcs H| congruence].
+     - match_case; intros; match_case_in H; intros; try lra; rewrite H0 in H; 
+          match_case_in H; intros; try lra; rewrite H1 in H; [now invcs H| congruence].
    Qed.
 
    Lemma Rbar_div_mult_pos (c : posreal) (l : Rbar) :
@@ -3164,20 +3136,12 @@ Section Expectation.
      unfold Rbar_mult, Rbar_mult', Rbar_mult_pos.
      destruct l.
      - f_equal; field; trivial.
-     - case (Rle_dec 0 (/ c)) ; intros.
-       + match_case; intros.
-         * match_case_in H0; intros; match_case_in H1; intros; 
-             try lra; rewrite H2 in H0; invcs H0.
-         * match_case_in H0; intros; match_case_in H1; intros; 
-             try lra; now rewrite H2 in H0.
-       + lra.
-    -  case (Rle_dec 0 (/ c)) ; intros.
-       + match_case; intros.
-         * match_case_in H0; intros; match_case_in H1; intros; 
-             try lra; rewrite H2 in H0; invcs H0.
-         * match_case_in H0; intros; match_case_in H1; intros; 
-             try lra; now rewrite H2 in H0.
-       + lra.
+     - case (Rle_dec 0 (/ c)) ; intros; try lra.
+       match_case; intros; match_case_in H0; intros; match_case_in H1; intros; 
+         try lra; rewrite H2 in H0; invcs H0.
+     - case (Rle_dec 0 (/ c)) ; intros; try lra.
+       match_case; intros; match_case_in H0; intros; match_case_in H1; intros; 
+         try lra; rewrite H2 in H0; invcs H0.
    Qed.
 
   Lemma rbar_le_scaled (c : posreal) (x y :Rbar) :
