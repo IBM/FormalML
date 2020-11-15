@@ -18,56 +18,8 @@ Set Bullet Behavior "Strict Subproofs".
 
  (* scalar version of T *)
 
- Global Instance rvsqr_proper {Ts} : Proper (rv_eq ==> rv_eq) (@rvsqr Ts).
- Proof.
-   unfold rv_eq, rvsqr, Proper, respectful, pointwise_relation.
-   intros x y eqq z.
-   unfold Rsqr.
-   rewrite eqq.
-   trivial.
- Qed.
-
  Global Instance R_nonempty : NonEmpty R
    := R0.
-
- Global Instance rvmult_proper {Ts} : Proper (rv_eq ==> rv_eq ==> rv_eq) (@rvmult Ts).
- Proof.
-   unfold rv_eq, rvmult.
-   intros ???????.
-   now rewrite H, H0.
- Qed.
-
- Global Instance rvminus_proper {Ts} : Proper (rv_eq ==> rv_eq ==> rv_eq) (@rvminus Ts).
- Proof.
-   unfold rv_eq, rvminus, rvplus, rvopp, rvscale, pointwise_relation.
-   intros ???????.
-   now rewrite H, H0.
- Qed.
-
- Global Instance rvopp_proper {Ts} : Proper (rv_eq ==> rv_eq ) (@rvopp Ts).
- Proof.
-   unfold rv_eq, rvopp, Proper, rvscale, respectful, pointwise_relation.
-   intros x y eqq z.
-   now rewrite eqq.
- Qed.
-
- Lemma SimpleExpectation_const c srv : SimpleExpectation (const c) (srv:=srv) = c.
- Proof.
-   rewrite (SimpleExpectation_pf_irrel _ (srvconst c)).
-   unfold SimpleExpectation; simpl.
-   unfold RandomVariable.srvconst_obligation_1.
-   unfold event_preimage, singleton_event, const.
-   erewrite ps_proper.
-     - erewrite ps_one.
-       lra.
-     - unfold Ω.
-       red; intros; intuition.
- Qed.
-
- Existing Instance rvscale_rv.
- Existing Instance rvplus_rv.
- Existing Instance rvmult_rv.
-
 
  Declare Scope rv.
 

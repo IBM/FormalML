@@ -72,7 +72,7 @@ Section RandomVariable.
         apply sa_none.
   Qed.
 
-  Program Instance crvconst c : ConstantRandomVariable (const c)
+    Global Program Instance crvconst c : ConstantRandomVariable (const c)
     := { srv_val := c }.
 
   Class SimpleRandomVariable
@@ -187,7 +187,7 @@ Section RandomVariable.
   Definition EventIndicator {P : event Ts} (dec:forall x, {P x} + {~ P x}) : Ts -> R
     := fun omega => if dec omega then 1 else 0.
 
-  Instance EventIndicator_rv {P : event Ts} (dec:forall x, {P x} + {~ P x})
+  Global Instance EventIndicator_rv {P : event Ts} (dec:forall x, {P x} + {~ P x})
            (sap: sa_sigma P) : RandomVariable prts borel_sa (EventIndicator dec).
   Proof.
     red; intros.
@@ -226,7 +226,7 @@ Section RandomVariable.
     match_destr; tauto.
   Qed.
 
-  Program Instance EventIndicator_srv {P : event Ts} (dec:forall x, {P x} + {~ P x})
+ Global Program Instance EventIndicator_srv {P : event Ts} (dec:forall x, {P x} + {~ P x})
     : SimpleRandomVariable (EventIndicator dec) :=
      { srv_vals := [0;1] }.
   Next Obligation.
@@ -352,7 +352,7 @@ Section RandomVariable.
     Definition rvscale (c:R) (rv_X : Ts -> R) :=
       fun omega => c * (rv_X omega).
 
-    Instance rvscale_rv (c: R) (rv_X : Ts -> R) 
+    Global Instance rvscale_rv (c: R) (rv_X : Ts -> R) 
              (rv : RandomVariable prts borel_sa rv_X) 
       : RandomVariable prts borel_sa (rvscale c rv_X).
    Proof.
@@ -583,7 +583,7 @@ Section SimpleExpectation.
 
   Definition rvopp (rv_X : Ts -> R) := rvscale (-1) rv_X.
 
-  Instance rvopp_rv (rv_X : Ts -> R) 
+  Global Instance rvopp_rv (rv_X : Ts -> R) 
              {rv : RandomVariable Prts borel_sa rv_X}
       : RandomVariable Prts borel_sa (rvopp rv_X).
    Proof.
@@ -594,10 +594,17 @@ Section SimpleExpectation.
      now apply (RealRandomVariable_is_real Prts).
    Qed.
 
-   Instance srvopp 
+   Global Instance srvopp 
              {rv_X : Ts -> R}
              {srv:SimpleRandomVariable rv_X} : SimpleRandomVariable (rvopp rv_X)
      := srvscale (-1) rv_X.    
+
+ Global Instance rvopp_proper : Proper (rv_eq ==> rv_eq ) rvopp.
+ Proof.
+   unfold rv_eq, rvopp, Proper, rvscale, respectful, pointwise_relation.
+   intros x y eqq z.
+   now rewrite eqq.
+ Qed.
 
   Lemma oppSimpleExpectation
         (rv_X : Ts -> R)
@@ -659,7 +666,7 @@ Section SimpleExpectation.
   Definition rvplus (rv_X1 rv_X2 : Ts -> R) :=
     (fun omega =>  (rv_X1 omega) + (rv_X2 omega)).
 
-  Instance rvplus_rv (rv_X1 rv_X2 : Ts -> R)
+  Global Instance rvplus_rv (rv_X1 rv_X2 : Ts -> R)
            {rv1 : RandomVariable Prts borel_sa rv_X1}
            {rv2 : RandomVariable Prts borel_sa rv_X2} :
     RandomVariable Prts borel_sa (rvplus rv_X1 rv_X2).
@@ -690,6 +697,20 @@ Section SimpleExpectation.
     apply in_prod; trivial.
   Qed.
 
+  Global Instance rvplus_prv (rv_X1 rv_X2 : Ts -> R)
+           {rv1 : PositiveRandomVariable rv_X1}
+           {rv2 : PositiveRandomVariable rv_X2} :
+    PositiveRandomVariable (rvplus rv_X1 rv_X2).
+  Proof.
+    unfold PositiveRandomVariable in *.
+    unfold rvplus.
+    intros.
+    specialize (rv1 x); specialize (rv2 x).
+    lra.
+  Qed.
+  
+
+
   Definition rvminus (rv_X1 rv_X2 : Ts -> R) :=
     rvplus rv_X1 (rvopp rv_X2).
 
@@ -706,6 +727,13 @@ Section SimpleExpectation.
          {srv2 : SimpleRandomVariable rv_X2}  :
     SimpleRandomVariable (rvminus rv_X1 rv_X2) := 
     srvplus rv_X1 (rvopp rv_X2).
+
+ Global Instance rvminus_proper : Proper (rv_eq ==> rv_eq ==> rv_eq) rvminus.
+ Proof.
+   unfold rv_eq, rvminus, rvplus, rvopp, rvscale, pointwise_relation.
+   intros ???????.
+   now rewrite H, H0.
+ Qed.
 
   Class NonEmpty (A : Type) :=
   ex : A.
@@ -817,6 +845,15 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     now apply in_map.
   Qed.
   
+ Global Instance rvsqr_proper : Proper (rv_eq ==> rv_eq) rvsqr.
+ Proof.
+   unfold rv_eq, rvsqr, Proper, respectful, pointwise_relation.
+   intros x y eqq z.
+   unfold Rsqr.
+   rewrite eqq.
+   trivial.
+ Qed.
+
   Lemma product_measurable (f g : Ts -> R) :
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
     (forall (r:R),  sa_sigma (fun omega : Ts => g omega <= r)) ->    
@@ -844,7 +881,7 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
   Definition rvmult (rv_X1 rv_X2 : Ts -> R) := 
     fun omega => (rv_X1 omega) * (rv_X2 omega).
 
-  Program Instance rvmult_rv 
+  Global Program Instance rvmult_rv 
           (rv_X1 rv_X2 : Ts -> R)
           {rv1 : RandomVariable Prts borel_sa rv_X1}
           {rv2 : RandomVariable Prts borel_sa rv_X2} :
@@ -874,6 +911,13 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     now simpl.
     apply in_prod; trivial.
   Qed.
+
+ Global Instance rvmult_proper : Proper (rv_eq ==> rv_eq ==> rv_eq) rvmult.
+ Proof.
+   unfold rv_eq, rvmult.
+   intros ???????.
+   now rewrite H, H0.
+ Qed.
 
    Lemma list_union_srv_preimage
          {rv_X : Ts -> R}
@@ -1787,18 +1831,6 @@ Section SimpleConditionalExpectation.
      induction l; simpl; typeclasses eauto.
    Defined.
 
-   Lemma SimpleExpectation_const c : SimpleExpectation (const c) = c.
-   Proof.
-     unfold SimpleExpectation; simpl.
-     unfold srvconst_obligation_1.
-     unfold event_preimage, singleton_event, const.
-     erewrite ps_proper.
-     - erewrite ps_one.
-       lra.
-     - unfold Ω.
-       red; intros; intuition.
-     Qed.
-
    Program Instance SimpleRandomVariable_enlarged
            {rv_X : Ts -> R}
            (srv:SimpleRandomVariable rv_X)
@@ -1890,6 +1922,19 @@ Section SimpleConditionalExpectation.
      rewrite (SimpleExpectation_simpl_incl _ _ lincl2).
      trivial.
    Qed.
+
+ Lemma SimpleExpectation_const c srv : SimpleExpectation (const c) (srv:=srv) = c.
+ Proof.
+   rewrite (SimpleExpectation_pf_irrel _ (srvconst c)).
+   unfold SimpleExpectation; simpl.
+   unfold RandomVariable.srvconst_obligation_1.
+   unfold event_preimage, singleton_event, const.
+   erewrite ps_proper.
+     - erewrite ps_one.
+       lra.
+     - unfold Ω.
+       red; intros; intuition.
+ Qed.
 
    Program Instance SimpleRandomVariable_transport
             {rv_X1 rv_X2:Ts->R}
@@ -3377,8 +3422,14 @@ Section Expectation.
     rewrite Expectation_scale_neg; trivial.
     apply scale_Rbar_diff.
   Qed.
-
   
+  Lemma lub_rbar_sum  (E1 E2 : R -> Prop) :
+    Rbar_plus (Lub_Rbar E1) (Lub_Rbar E2) = 
+    (Lub_Rbar (fun x => exists x1 x2, E1 x1 /\ E2 x2 /\ x = x1 + x2)).
+    Proof.
+    Admitted.
+
+
 End Expectation.
 
 

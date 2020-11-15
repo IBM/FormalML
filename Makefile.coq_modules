@@ -62,6 +62,7 @@ MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	BorelSigmaAlgebra \
 	DefinedFunctions \
 	derivlemmas \
+	Dvoretzky \
 	Gaussian \
 	Gen_NN \
         infprod \
