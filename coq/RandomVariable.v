@@ -3316,6 +3316,27 @@ Section Expectation.
     Rbar_plus (Lub_Rbar E1) (Lub_Rbar E2) = 
     (Lub_Rbar (fun x => exists x1 x2, E1 x1 /\ E2 x2 /\ x = x1 + x2)).
     Proof.
+      symmetry.
+      apply is_lub_Rbar_unique.
+      split.
+      - red; intros.
+        destruct H as [y [z [Ey [Ez ?]]]].
+        subst.
+        red.
+        unfold Lub_Rbar.
+        destruct (ex_lub_Rbar E1); simpl.
+        destruct (ex_lub_Rbar E2); simpl.
+        destruct i as [HH11 HH12].
+        specialize (HH11 _ Ey).
+        destruct i0 as [HH21 HH22].
+        specialize (HH21 _ Ez).
+        red in HH11.
+        red in HH21.
+        destruct x; try tauto
+        ; destruct x0; try tauto.
+        simpl.
+        lra.
+      - intros.
     Admitted.
 
 
