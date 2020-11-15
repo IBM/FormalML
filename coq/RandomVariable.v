@@ -3124,35 +3124,6 @@ Section Expectation.
     | None => None
     end.
 
-  Lemma factor_simple_fun (c : posreal)
-        (rv_X : Ts -> R)
-        (srv : SimpleRandomVariable rv_X)
-        (prv : PositiveRandomVariable rv_X) :
-    exists (rvx : Ts -> R) (srvx: SimpleRandomVariable rvx),
-      PositiveRandomVariable rvx /\
-      rv_eq (rvscale c rvx) rv_X.
-   Proof.
-     intros.
-     exists (rvmult (fun omega => /c) rv_X).
-     eexists.
-     - apply srvmult; trivial.
-       apply srvconst.
-     - split.
-       + unfold PositiveRandomVariable in *.
-         intros.
-         assert (0 < c) by apply cond_pos.
-         unfold rvmult.
-         replace (0) with (/c * 0) by lra.
-         apply Rmult_le_compat_l; trivial.
-         left.
-         now apply  Rinv_0_lt_compat.
-       + intros x.
-         unfold rvscale, rvmult.
-         field.
-         apply Rgt_not_eq.
-         apply cond_pos.
-   Qed.
-     
    Lemma Rbar_mult_mult_pos (c : posreal) (l : Rbar) :
      Rbar_mult_pos l c = Rbar_mult l c.
    Proof.
@@ -3258,7 +3229,6 @@ Section Expectation.
     unfold Expectation_posRV.
     unfold BoundedPositiveRandomVariable.
     unfold SimpleExpectationSup.
-    generalize (factor_simple_fun c); intros.
     rewrite <- lub_rbar_scale.
     apply Lub_Rbar_eqset; intros.
     split; intros [? [? [[??]?]]].
@@ -3269,20 +3239,20 @@ Section Expectation.
         { destruct c; simpl.
           now apply Rinv_0_lt_compat.
         } 
-        apply (positive_scale_prv (mkposreal _ H3) x0). 
+        apply (positive_scale_prv (mkposreal _ H2) x0). 
       + unfold RealRandomVariable_le, rvscale in *.
         intros y.
-        specialize (H1 y).
-        apply (Rmult_le_compat_l (/ c)) in H1.
-        * rewrite <- Rmult_assoc in H1.
-          rewrite Rinv_l in H1.
+        specialize (H0 y).
+        apply (Rmult_le_compat_l (/ c)) in H0.
+        * rewrite <- Rmult_assoc in H0.
+          rewrite Rinv_l in H0.
           -- lra.
           -- destruct c; simpl; lra.
         * destruct c; simpl.
           left.
           now apply Rinv_0_lt_compat.
       + rewrite <- scaleSimpleExpectation.
-        rewrite H2.
+        rewrite H1.
         field; trivial.
         destruct c; simpl.
         lra.
@@ -3290,14 +3260,13 @@ Section Expectation.
       exists (srvscale c x0).
       split; [split |].
       + typeclasses eauto.
-      + now rewrite H1.
+      + now rewrite H0.
       + rewrite <- scaleSimpleExpectation.
-        rewrite H2.
+        rewrite H1.
         field; trivial.
         destruct c; simpl.
         lra.
   Qed.
-
 
   Lemma scale_Rmax0 (c:posreal) :
     forall (x:R),
