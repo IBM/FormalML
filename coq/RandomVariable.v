@@ -3197,6 +3197,16 @@ Section Expectation.
        apply Lub_Rbar_correct.
    Qed.
 
+     Global Instance rv_scale_le_proper (c:posreal) :
+       Proper (RealRandomVariable_le ==> RealRandomVariable_le) (@rvscale Ts c).
+     Proof.
+       unfold RealRandomVariable_le, rvscale.
+       intros x y xyle; intros.
+       apply Rmult_le_compat_l; trivial.
+       destruct c; simpl.
+       lra.
+     Qed.
+                                                         
    Lemma Expectation_posRV_scale (c: posreal) 
         (rv_X : Ts -> R)
         {rv : RandomVariable Prts borel_sa rv_X}
@@ -3210,10 +3220,37 @@ Section Expectation.
     generalize (factor_simple_fun c); intros.
     rewrite <- lub_rbar_scale.
     apply Lub_Rbar_eqset; intros.
-    split; intros [? [??]].
+    split; intros [? [? [[??]?]]].
     - admit.
-    - admit.
-  Admitted.
+    (* exists (rvscale (/ c) x0).
+      exists (srvscale _ _).
+      split; [split |].
+      + assert (0 < / c).
+        { destruct c; simpl.
+          now apply Rinv_0_lt_compat.
+        } 
+        apply (positive_scale_prv (mkposreal _ H3) x0). 
+      + unfold RealRandomVariable_le, rvscale in *.
+        intros y.
+        specialize (H1 y).
+        admit.
+      + rewrite <- scaleSimpleExpectation.
+        rewrite H2.
+        field; trivial.
+        destruct c; simpl.
+        lra.
+     *)
+    - exists (rvscale c x0).
+      exists (srvscale c x0).
+      split; [split |].
+      + typeclasses eauto.
+      + now rewrite H1.
+      + rewrite <- scaleSimpleExpectation.
+        rewrite H2.
+        field; trivial.
+        destruct c; simpl.
+        lra.
+Admitted.
 
 
   Lemma scale_Rmax0 (c:posreal) :
