@@ -3209,10 +3209,10 @@ Section Expectation.
     unfold SimpleExpectationSup.
     generalize (factor_simple_fun c); intros.
     rewrite <- lub_rbar_scale.
-    f_equal.
-    apply FunctionalExtensionality.functional_extensionality.
-    intros.
-    
+    apply Lub_Rbar_eqset; intros.
+    split; intros [? [??]].
+    - admit.
+    - admit.
   Admitted.
 
 
