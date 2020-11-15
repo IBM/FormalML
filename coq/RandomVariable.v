@@ -2962,16 +2962,37 @@ Section Expectation.
             (srv2:SimpleRandomVariable rvx2) =>
             (BoundedPositiveRandomVariable rv_X rvx2))).
 
+  Global Instance bprv_eq_proper : Proper (rv_eq ==> rv_eq ==> iff) BoundedPositiveRandomVariable.
+  Proof.
+    intros x1 x2 eqq1 y1 y2 eqq2.
+    unfold BoundedPositiveRandomVariable.
+    unfold PositiveRandomVariable.
+    repeat rewrite eqq1.
+    rewrite eqq2.
+    repeat red in eqq2.
+    intuition.
+    - now rewrite <- eqq2.
+    - now rewrite eqq2.
+  Qed.
+    
   Lemma Expectation_posRV_ext 
         {rv_X1 rv_X2 : Ts -> R}
         (srv1:PositiveRandomVariable rv_X1) 
         (srv2:PositiveRandomVariable rv_X2):
     rv_eq rv_X1 rv_X2 ->
     Expectation_posRV rv_X1 = Expectation_posRV rv_X2.
-   Proof.
-     intros eqq.
-   Admitted.
-
+  Proof.
+    intros eqq.
+    unfold Expectation_posRV, SimpleExpectationSup.
+    apply Lub_Rbar_eqset; intros x.
+    split; intros [y [ ysrv [??]]].
+    - exists y; exists ysrv.
+      rewrite <- eqq.
+      auto.
+    - exists y; exists ysrv.
+      rewrite eqq.
+      auto.
+  Qed.      
    
   Program Definition pos_fun_part {Ts:Type} (f : Ts -> R) : (Ts -> nonnegreal) :=
     fun x => mknonnegreal (Rmax (f x) 0) _.
