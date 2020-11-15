@@ -2444,14 +2444,6 @@ Section SimpleConditionalExpectation.
       reflexivity.
     Qed.
 
-(*
-    Lemma perm_cut_to_sublist {A} {l1 l2:list A} :
-      Permutation l1 l2 ->
-      forall l1', sublist l1' l1 ->
-             exists l2', sublist l2' l2 /\ Permutation l1' l2'.
-    Admitted.
- *)   
-
    Definition simple_sigma_measurable 
         (rv_X1 rv_X2 : Ts -> R)
         {rv1 : RandomVariable Prts borel_sa rv_X1}
@@ -2538,127 +2530,6 @@ Section SimpleConditionalExpectation.
        + constructor; trivial.
    Qed.
 
-   (*
-   Lemma events_measurable0_f {nempty:NonEmpty Ts}
-         (l1 l2 : list (event Ts)) :
-     is_partition_list l1 -> is_partition_list l2 ->
-     (forall (p2:event Ts),
-         In p2 l2 ->
-         exists (p1:event Ts), (In p1 l1) /\ event_sub p2 p1) ->
-     (exists l : list (list (event Ts)),
-         Forall2 (fun x y => event_equiv x (list_union y)) l1 l
-         /\ Permutation (concat l) l2).
-   Proof.
-     intros isp1 isp2 HH.
-     assert (eqq1:
-       Forall2 event_equiv (map (fun x : event Ts => list_union (map (fun y : event Ts => event_inter x y) l2)) l1)
-                  (map (fun x : event Ts => x) l1)).
-     { clear isp1 HH.
-       induction l1; simpl; trivial.
-       destruct l2.
-       -- elim (is_partition_list_nnil nempty isp2).
-       -- constructor.
-          ++ rewrite <- event_inter_list_union_distr.
-             destruct isp2 as [FP1 equiv1].
-             rewrite equiv1.
-             rewrite event_inter_true_r.
-             reflexivity.
-          ++ apply IHl1.
-     }
-     rewrite map_id in eqq1.
-     destruct (classic_sub_filter (fun x => ~ (x = event_none)) (map (fun x => map (fun y => event_inter x y) l2) l1))
-       as [l' [l'sub l'in]].
-     exists l'.
-     split.
-     - rewrite Forall2_map.
-       rewrite map_id.
-       rewrite <- eqq1.
-       rewrite <- Forall2_map.
-       rewrite <- (map_id l') in l'in.
-       rewrite <- Forall2_map in l'in.
-       revert l'in.
-       apply Forall2_incl; intros.
-       unfold list_union.
-       intros z; split.
-       + intros [? [??]].
-         exists x0.
-         split; trivial.
-         apply H1.
-         split; trivial.
-         intro eqq2; rewrite eqq2 in H3.
-         red in H3.
-         tauto.
-       + intros [w [??]].
-         destruct (H1 w) as [HH2 _].
-         destruct (HH2 H2) as [winn wnnone].
-         eauto.
-     - 
-       assert (NoDup (concat l')).
-       {
-         admit.
-       } 
-       apply NoDup_Permutation'.
-       + admit.
-       + admit.
-       + clear eqq1.
-         {
-           split; intros.
-           - 
-   Admitted.
-
-   (*
-   Lemma events_measurable0_f {nempty:NonEmpty Ts}
-         (l1 l2 : list (event Ts)) :
-     is_partition_list l1 -> is_partition_list l2 ->
-     (forall (p2:event Ts),
-         In p2 l2 ->
-         exists (p1:event Ts), (In p1 l1) /\ event_sub p2 p1) ->
-     (exists l : list (list (event Ts)),
-         Forall2 (fun x y => event_equiv x (list_union y)) l1 l
-         /\ equivlist (concat l) l2).
-   Proof.
-     intros isp1 isp2 HH.
-     exists (map (fun x => map (fun y => event_inter x y) l2) l1).
-     split.
-     - rewrite Forall2_map.
-       assert (eqq1:
-       Forall2 event_equiv (map (fun x : event Ts => list_union (map (fun y : event Ts => event_inter x y) l2)) l1)
-                  (map (fun x : event Ts => x) l1)).
-       + clear isp1 HH.
-         induction l1; simpl; trivial.
-         destruct l2.
-         -- elim (is_partition_list_nnil nempty isp2).
-         -- constructor.
-            ++ rewrite <- event_inter_list_union_distr.
-               destruct isp2 as [FP1 equiv1].
-               rewrite equiv1.
-               rewrite event_inter_true_r.
-               reflexivity.
-            ++ apply IHl1.
-       + rewrite map_map.
-         rewrite eqq1.
-         reflexivity.
-     - admit.
-   Admitted.
-*)
-   (*
-   Lemma events_measurable0
-         (l1 l2 : list (event Ts)) :
-     is_partition_list l1 -> is_partition_list l2 ->
-     (forall (p2:event Ts),
-         In p2 l2 ->
-         exists (p1:event Ts), (In p1 l1) /\ event_sub p2 p1) <->
-     (exists l : list (list (event Ts)),
-         Forall2 (fun x y => event_equiv x (list_union y)) l1 l
-         /\ Permutation (concat l) l2).
-   Proof.
-     split; intros HH.
-     - now apply events_measurable0_f.
-     - now apply events_measurable0_b.
-   Qed.   
-*)
-*)
-   
    Definition partition_measurable
         (rv_X : Ts -> R)
         {srv : SimpleRandomVariable rv_X}
@@ -2669,61 +2540,6 @@ Section SimpleConditionalExpectation.
        exists (c:R), (In c srv_vals) /\
                 event_sub p (event_preimage rv_X (singleton_event c)).
    
-   Lemma equivlist_cut_to_incl {A} (l1 l2:list A) :
-     equivlist l1 l2 -> forall l1',
-       incl l1' l1 ->
-       exists l2',
-         equivlist l1' l2' /\
-         incl l2' l2.
-   Proof.
-   Admitted.
-
-   (*
-   Lemma events_measurable
-         {nempty:NonEmpty Ts}
-         (l1 l2 : list (event Ts)) :
-     is_partition_list l1 -> is_partition_list l2 ->
-     (forall (p2:event Ts),
-         In p2 l2 ->
-         exists (p1:event Ts), (In p1 l1) /\ event_sub p2 p1) <->
-     (forall (p1:event Ts),
-         In p1 l1 ->
-         exists (l3: list (event Ts)),
-           incl l3 l2 /\ event_equiv (list_union l3) p1).
-   Proof.
-     intros isp1 isp2.
-     intros.
-     unfold event_disjoint, event_equiv, list_union, event_sub.
-     intros.
-     split; intros.
-     - generalize (events_measurable0_f _ _ isp1 isp2 H); intros HH.
-       destruct HH as [l [lF lP]].
-       clear isp1 isp2 H.
-       revert lP.
-       revert l2.
-       induction lF; simpl in *; intros.
-       + intuition.
-       + destruct H0.
-         * subst.
-           exists y.
-           split.
-           -- admit.
-           -- intros.
-              red in H.
-              rewrite H.
-              reflexivity.
-         * specialize (IHlF H0).
-           destruct (equivlist_cut_to_incl _ _ lP (concat l')) as [l2' [l2's l2'P]].
-           -- intros ??.
-              apply in_app_iff; tauto
-           -- specialize (IHlF _ l2'P).
-              destruct IHlF as [l3 [l3incl l3eq]].
-              exists l3.
-              split; trivial.
-              now rewrite <- l2's.
-     - admit.              
-   Admitted.
-*)
      Lemma in_list_in_partition_union {T} (x:event T) l d :
        In x l -> 
        in_partition_union (list_collection l d) x.
@@ -2755,10 +2571,40 @@ Section SimpleConditionalExpectation.
            congruence.
      Qed.
 
-(*   Lemma events_measurable_sa
-         (l1 l2 : list (event Ts)) 
+   Lemma classic_event_none_or_has {A} (p:event A) : (exists y, p y) \/ event_equiv p event_none.
+   Proof.
+     destruct (classic (exists y, p y)).
+     - eauto.
+     - right; intros x.
+       unfold event_none.
+       split; [| tauto].
+       intros px.
+       apply H.
+       eauto.
+   Qed.
+
+   Lemma nth_map_default_equiv {A} {R} n (l:list A) (d1 d2:A)
+         {refl:Reflexive R} :
+     R d1 d2 ->
+     R (nth n l d1) (nth n l d2).
+   Proof.
+     repeat rewrite <- nth_default_eq.
+     unfold nth_default.
+     match_destr.
+   Qed.
+
+
+   Lemma event_inter_sub_l {T:Type} (A B:event T) :
+     event_sub B A -> event_equiv (event_inter A B) B.
+   Proof.
+     firstorder.
+   Qed.
+
+   Lemma events_measurable_sa
+         (l1 l2 : list (event Ts))
          (ispartl1: is_partition_list l1)
-         (ispartl2: is_partition_list l2): 
+         (ispartl2: is_partition_list l2)
+     : 
      (forall (p2:event Ts),
          In p2 l2 ->
          exists (p1:event Ts), (In p1 l1) /\ event_sub p2 p1) ->
@@ -2766,17 +2612,60 @@ Section SimpleConditionalExpectation.
          In p1 l1 -> (@sa_sigma Ts (list_partition_sa l2 ispartl2) p1)).
    Proof.
      intros.
-     generalize (events_measurable l1 l2 ispartl1 ispartl2); intros.
-     destruct H1.
-     specialize (H1 H p1 H0).
-     destruct H1 as [l3 [l3incl l3equiv]].
-     rewrite <- l3equiv.
-     apply sa_list_union; intros.
-     apply l3incl in H1.
      simpl.
-     now apply in_list_in_partition_union.
+     destruct (classic_event_none_or_has p1).
+     - destruct H1 as [y py].
+       unfold in_partition_union, list_collection, sub_partition.
+       exists (list_collection (map (fun z => event_inter p1 z) l2) event_none).
+       split.
+       + intros n.
+         unfold list_collection.
+         rewrite (nth_map_default_equiv (R:=event_equiv) _ (map (fun z : event Ts => event_inter p1 z) l2) _ ((fun z : event Ts => event_inter p1 z) event_none))
+         ; [| autorewrite with prob; reflexivity].
+         rewrite map_nth.
+         destruct (nth_in_or_default n l2 event_none); trivial.
+         * destruct (H _ i) as [p1' [p1'inn p1'sub]].
+           destruct ispartl1 as [Dl1 Al1].
+           destruct (ForallOrdPairs_In Dl1 _ _ H0 p1'inn).
+           -- subst.
+              left.
+              now apply event_inter_sub_l.
+           -- assert (disj:event_disjoint p1 p1').
+              {
+                destruct H1; trivial.
+                unfold event_disjoint in *.
+                eauto.
+              }
+              clear H1.
+              right.
+              intros x; unfold event_none.
+              split; [| tauto].
+              intros [??].
+              apply p1'sub in H2.
+              eapply disj; eauto.
+         * right.
+           rewrite e.
+           autorewrite with prob.
+           reflexivity.
+       + rewrite list_union_union.
+         rewrite <- event_inter_list_union_distr.
+         destruct ispartl2 as [FP2 equiv2].
+         rewrite equiv2.
+         rewrite event_inter_true_r.
+         reflexivity.
+     - exists (fun _ => event_none).
+       split.
+       + intros x.
+         right; reflexivity.
+       + intros x.
+         unfold union_of_collection.
+         split; intros.
+         * apply H1.
+           destruct H2; trivial.
+         * apply H1 in H2.
+           exists (0%nat); trivial.
    Qed.
-*)
+
    Lemma rvmult_assoc
         (rv_X1 rv_X2 rv_X3 : Ts -> R) :
      rv_eq (rvmult (rvmult rv_X1 rv_X2) rv_X3) (rvmult rv_X1 (rvmult rv_X2 rv_X3)).
