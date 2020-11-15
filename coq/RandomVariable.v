@@ -2600,7 +2600,7 @@ Section SimpleConditionalExpectation.
      firstorder.
    Qed.
 
-   Lemma events_measurable_sa
+   Lemma events_measurable_sa_f
          (l1 l2 : list (event Ts))
          (ispartl1: is_partition_list l1)
          (ispartl2: is_partition_list l2)
@@ -2666,6 +2666,77 @@ Section SimpleConditionalExpectation.
            exists (0%nat); trivial.
    Qed.
 
+   Lemma events_measurable_sa_b {nempty:NonEmpty Ts}
+         (l1 l2 : list (event Ts))
+         (ispartl1: is_partition_list l1)
+         (ispartl2: is_partition_list l2)
+     : 
+     (forall (p1:event Ts),
+         In p1 l1 -> (@sa_sigma Ts (list_partition_sa l2 ispartl2) p1)) ->
+     (forall (p2:event Ts),
+         In p2 l2 ->
+         exists (p1:event Ts), (In p1 l1) /\ event_sub p2 p1).
+   Proof.
+     simpl.
+     intros HH p2 p2inn.
+     destruct (classic_event_none_or_has p2).
+     - destruct H as [y py].
+       destruct ispartl1 as [D1 A1].
+       assert (yl1:list_union l1 y).
+       { apply A1; red; trivial. }
+       destruct yl1 as [z [zinn zy]].
+       exists z.
+       split; trivial.
+       specialize (HH _ zinn).
+       destruct HH as [c [csub cu]].
+       red in csub.
+       apply cu in zy.
+       destruct zy.
+       rewrite <- cu.
+       intros w winn.
+       red.
+       destruct (csub x).
+       + apply H0 in H.
+         unfold list_collection in H.
+         destruct (nth_in_or_default x l2 event_none); trivial.
+         * destruct ispartl2 as [D2 A2].
+           destruct (ForallOrdPairs_In D2 _ _ p2inn i).
+           -- subst.
+              exists x.
+              apply H0.
+              now red.
+           -- destruct H1.
+              ++ elim (H1 _ py H).
+              ++ elim (H1 _ H py).
+         * rewrite e in H.
+           elim H.
+       + apply H0 in H.
+         elim H.
+     - destruct l1.
+       + elim (is_partition_list_nnil _ ispartl1).
+       + exists e; simpl.
+         split; [eauto | ].
+         rewrite H.
+         unfold event_sub, event_none; tauto.
+   Qed.
+
+
+   Lemma events_measurable_sa {nempty:NonEmpty Ts}
+         (l1 l2 : list (event Ts))
+         (ispartl1: is_partition_list l1)
+         (ispartl2: is_partition_list l2)
+     : 
+     (forall (p2:event Ts),
+         In p2 l2 ->
+         exists (p1:event Ts), (In p1 l1) /\ event_sub p2 p1) <->
+     (forall (p1:event Ts),
+         In p1 l1 -> (@sa_sigma Ts (list_partition_sa l2 ispartl2) p1)).
+   Proof.
+     split.
+     - now apply events_measurable_sa_f.
+     - now apply events_measurable_sa_b.
+   Qed.
+     
    Lemma rvmult_assoc
         (rv_X1 rv_X2 rv_X3 : Ts -> R) :
      rv_eq (rvmult (rvmult rv_X1 rv_X2) rv_X3) (rvmult rv_X1 (rvmult rv_X2 rv_X3)).
@@ -3338,6 +3409,19 @@ Section Expectation.
         lra.
       - intros.
     Admitted.
+
+    Lemma events_measurable_sa_b
+         (l1 l2 : list (event Ts))
+         (ispartl1: is_partition_list l1)
+         (ispartl2: is_partition_list l2)
+     : 
+     (forall (p2:event Ts),
+         In p2 l2 ->
+         exists (p1:event Ts), (In p1 l1) /\ event_sub p2 p1) ->
+     (forall (p1:event Ts),
+         In p1 l1 -> (@sa_sigma Ts (list_partition_sa l2 ispartl2) p1)).
+   Proof.
+
 
 
 End Expectation.
