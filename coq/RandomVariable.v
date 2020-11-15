@@ -3221,8 +3221,7 @@ Section Expectation.
     rewrite <- lub_rbar_scale.
     apply Lub_Rbar_eqset; intros.
     split; intros [? [? [[??]?]]].
-    - admit.
-    (* exists (rvscale (/ c) x0).
+    - exists (rvscale (/ c) x0).
       exists (srvscale _ _).
       split; [split |].
       + assert (0 < / c).
@@ -3233,13 +3232,19 @@ Section Expectation.
       + unfold RealRandomVariable_le, rvscale in *.
         intros y.
         specialize (H1 y).
-        admit.
+        apply (Rmult_le_compat_l (/ c)) in H1.
+        * rewrite <- Rmult_assoc in H1.
+          rewrite Rinv_l in H1.
+          -- lra.
+          -- destruct c; simpl; lra.
+        * destruct c; simpl.
+          left.
+          now apply Rinv_0_lt_compat.
       + rewrite <- scaleSimpleExpectation.
         rewrite H2.
         field; trivial.
         destruct c; simpl.
         lra.
-     *)
     - exists (rvscale c x0).
       exists (srvscale c x0).
       split; [split |].
@@ -3250,7 +3255,7 @@ Section Expectation.
         field; trivial.
         destruct c; simpl.
         lra.
-Admitted.
+  Qed.
 
 
   Lemma scale_Rmax0 (c:posreal) :
