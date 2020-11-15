@@ -3089,6 +3089,26 @@ Section Expectation.
     Rbar_plus' (Expectation_posRV (pos_fun_part rv_X))
                (Rbar_opp (Expectation_posRV (neg_fun_part rv_X))).
 
+  Lemma Expectation_ext {rv_X1 rv_X2 : Ts -> R}
+        (srv1:RandomVariable Prts borel_sa rv_X1) 
+        (srv2:RandomVariable Prts borel_sa rv_X2):
+    rv_eq rv_X1 rv_X2 ->
+    Expectation rv_X1 = Expectation rv_X2.
+  Proof.
+    intros eqq.
+    unfold Expectation.
+    f_equal.
+    - apply Expectation_posRV_ext.
+      intros x.
+      unfold pos_fun_part; simpl.
+      now rewrite eqq.
+    - f_equal.
+      apply Expectation_posRV_ext.
+      intros x.
+      unfold pos_fun_part; simpl.
+      now rewrite eqq.
+  Qed.      
+  
   Definition rvmean (rv_X:Ts -> R) {rrv : RandomVariable Prts borel_sa rv_X} : option R :=
     match Expectation rv_X with
     | Some m => match m with
