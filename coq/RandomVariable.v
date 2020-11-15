@@ -3099,29 +3099,21 @@ Section Expectation.
     unfold Expectation.
     f_equal.
     - apply Expectation_posRV_ext.
-      intros x.
-      unfold pos_fun_part; simpl.
+      intros x; simpl.
       now rewrite eqq.
     - f_equal.
       apply Expectation_posRV_ext.
-      intros x.
-      unfold pos_fun_part; simpl.
+      intros x; simpl.
       now rewrite eqq.
   Qed.      
   
-  Definition rvmean (rv_X:Ts -> R) {rrv : RandomVariable Prts borel_sa rv_X} : option R :=
-    match Expectation rv_X with
-    | Some m => match m with
-                | Finite m' => Some (real m)
-                | _ => None
-                end
-    | None => None
-    end.
+  Definition rvmean (rv_X:Ts -> R) {rrv : RandomVariable Prts borel_sa rv_X} : option Rbar :=
+     Expectation rv_X.
 
   Definition variance (rv_X : Ts -> R) {rrv : RandomVariable Prts borel_sa rv_X} : option Rbar :=
     match rvmean rv_X with
-    | Some m => Expectation (rvsqr (rvminus rv_X (const m)))
-    | None => None
+    | Some (Finite m) => Expectation (rvsqr (rvminus rv_X (const m)))
+    | _ => None
     end.
 
    Lemma Rbar_mult_mult_pos (c : posreal) (l : Rbar) :
