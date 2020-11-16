@@ -2736,6 +2736,7 @@ Section SimpleConditionalExpectation.
      - now apply events_measurable_sa_f.
      - now apply events_measurable_sa_b.
    Qed.
+
      
    Lemma rvmult_assoc
         (rv_X1 rv_X2 rv_X3 : Ts -> R) :
@@ -3409,19 +3410,6 @@ Section Expectation.
         lra.
       - intros.
     Admitted.
-
-    Lemma events_measurable_sa_b
-         (l1 l2 : list (event Ts))
-         (ispartl1: is_partition_list l1)
-         (ispartl2: is_partition_list l2)
-     : 
-     (forall (p2:event Ts),
-         In p2 l2 ->
-         exists (p1:event Ts), (In p1 l1) /\ event_sub p2 p1) ->
-     (forall (p1:event Ts),
-         In p1 l1 -> (@sa_sigma Ts (list_partition_sa l2 ispartl2) p1)).
-   Proof.
-
 
 
 End Expectation.
