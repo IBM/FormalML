@@ -3386,30 +3386,29 @@ Section Expectation.
   
   Require Import Classical.
 
-  Lemma lub_Rbar_epsilon (E : R -> Prop) (l:R) :
-    is_lub_Rbar E l ->
-    forall (eps:posreal), exists (x:R), E x /\ x > l- eps.
+  Lemma lub_Rbar_witness (E : R -> Prop) (l1 l2 : R) :
+    is_lub_Rbar E l1 -> l2 < l1 ->
+    exists (x:R), E x /\ x > l2.
   Proof.
     unfold is_lub_Rbar, is_ub_Rbar.
     intros.
     destruct H.
-    specialize (H0 (l-eps)).
-    assert (~(forall x : R, E x -> x <= l - eps)).
+    specialize (H1 l2).
+    assert (~(forall x : R, E x -> x <= l2)).
     - intros HH.
-      specialize (H0 HH).
-      assert (0 < eps) by apply cond_pos.
-      simpl in H0.
+      specialize (H1 HH).
+      simpl in H1.
       lra.
-    - apply not_all_ex_not in H1.
-      destruct H1.
-      apply imply_to_and in H1.
-      destruct H1.
+    - apply not_all_ex_not in H2.
+      destruct H2.
+      apply imply_to_and in H2.
+      destruct H2.
       exists x.
       split; trivial.
       lra.
   Qed.
 
-  Lemma lub_rbar_inf (E : R -> Prop) :
+  Lemma lub_rbar_inf_witness (E : R -> Prop) :
     is_lub_Rbar E p_infty -> forall (b:R), exists (x:R), E x /\ x>b.
   Proof.
     unfold is_lub_Rbar, is_ub_Rbar.
@@ -3476,7 +3475,7 @@ Section Expectation.
       unfold Lub_Rbar in H.
       destruct (ex_lub_Rbar E2); simpl in *.
       invcs H.
-      generalize (lub_rbar_inf _ i); intros.
+      generalize (lub_rbar_inf_witness _ i); intros.
       unfold is_lub_Rbar in i.
       destruct i.
       unfold is_ub_Rbar in *.
@@ -3568,12 +3567,22 @@ Section Expectation.
                unfold Lub_Rbar in *.
                destruct (ex_lub_Rbar E1) as [lubE1 ?]; simpl in *.
                destruct (ex_lub_Rbar E2) as [lubE2 ?]; simpl in *.
-               destruct i as [HH11 HH12].
-               destruct i0 as [HH21 HH22].
-               unfold is_ub_Rbar in *.
-               
-              admit.
-
+               invcs H6.
+               generalize (lub_Rbar_witness E1 r (r - (r + r0 - r1)/2) i).
+               generalize (lub_Rbar_witness E2 r0 (r0 - (r + r0 - r1)/2) i0); intros.
+               assert (r + r0 > r1 -> False); intros.
+               ++ cut_to H0; [|lra].
+                  cut_to H1; [|lra].
+                  destruct H0; destruct H1.
+                  destruct H0; destruct H1.
+                  unfold is_ub_Rbar in *.
+                  specialize (H (x + x0)).
+                  cut_to H.
+                  simpl in H.
+                  lra.
+                  exists x0; exists x; rewrite Rplus_comm; tauto.
+               ++ intros.
+                  lra.
             -- trivial.
             -- unfold is_ub_Rbar in H.
                destruct nemptyE1; destruct nemptyE2.
@@ -3593,7 +3602,7 @@ Section Expectation.
           rewrite <- H6.
           rewrite H5; trivial.
         + tauto.
-   Admitted.
+   Qed.
 
 End Expectation.
 
