@@ -3604,6 +3604,12 @@ Section Expectation.
         + tauto.
    Qed.
 
+    Global Instance prvconst c (cpos:0<=c) : PositiveRandomVariable (Ts:=Ts) (const c).
+    Proof.
+      intros x.
+      unfold const; trivial.
+    Qed.
+
    Lemma Expectation_posRV_sum
         (rv_X1 rv_X2 : Ts -> R)
         {rv1 : RandomVariable Prts borel_sa rv_X1}
@@ -3615,6 +3621,39 @@ Section Expectation.
    Proof.
      unfold Expectation_posRV, SimpleExpectationSup.
      rewrite lub_rbar_sum.
+     - (* apply Lub_Rbar_eqset.
+       intros.
+       split.
+       + intros [? [?[??]]].
+        *)
+       admit.
+     - exists 0.
+       exists (const 0).
+       exists (srvconst 0).
+       split.
+       + unfold BoundedPositiveRandomVariable.
+         split.
+         * apply prvconst.
+           lra.
+         * intros ?.
+           unfold const.
+           red in prv1.
+           auto.
+       + now rewrite SimpleExpectation_const. 
+     - exists 0.
+       exists (const 0).
+       exists (srvconst 0).
+       split.
+       + unfold BoundedPositiveRandomVariable.
+         split.
+         * apply prvconst.
+           lra.
+         * intros ?.
+           unfold const.
+           red in prv1.
+           auto.
+       + now rewrite SimpleExpectation_const. 
+
      Admitted.
 
   Lemma Expectation_sum 
