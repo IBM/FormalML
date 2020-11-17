@@ -3384,10 +3384,145 @@ Section Expectation.
     apply scale_Rbar_diff.
   Qed.
   
-  Lemma lub_rbar_sum  (E1 E2 : R -> Prop) :
-    Rbar_plus (Lub_Rbar E1) (Lub_Rbar E2) = 
-    (Lub_Rbar (fun x => exists x1 x2, E1 x1 /\ E2 x2 /\ x = x1 + x2)).
+  Require Import Classical.
+
+  Lemma lub_Rbar_epsilon (E : R -> Prop) (l:R) :
+    is_lub_Rbar E l ->
+    forall (eps:posreal), exists (x:R), E x /\ x > l- eps.
+  Proof.
+    unfold is_lub_Rbar, is_ub_Rbar.
+    intros.
+    destruct H.
+    specialize (H0 (l-eps)).
+    assert (~(forall x : R, E x -> x <= l - eps)).
+    - intros HH.
+      specialize (H0 HH).
+      assert (0 < eps) by apply cond_pos.
+      simpl in H0.
+      lra.
+    - apply not_all_ex_not in H1.
+      destruct H1.
+      apply imply_to_and in H1.
+      destruct H1.
+      exists x.
+      split; trivial.
+      lra.
+  Qed.
+
+  Lemma lub_rbar_inf (E : R -> Prop) :
+    is_lub_Rbar E p_infty -> forall (b:R), exists (x:R), E x /\ x>b.
+  Proof.
+    unfold is_lub_Rbar, is_ub_Rbar.
+    intros.
+    destruct H.
+    specialize (H0 b).
+    apply imply_to_or in H0.
+    destruct H0; [| now simpl in H0].
+    apply not_all_ex_not in H0.
+    destruct H0.
+    exists x.
+    simpl in H0.
+    apply imply_to_and in H0.
+    destruct H0.
+    split; trivial.
+    lra.
+  Qed.
+    
+  Lemma lub_bar_nonempty (E : R -> Prop) :
+    (exists (x:R), E x) -> ~(Lub_Rbar E = m_infty).
     Proof.
+      unfold Lub_Rbar.
+      destruct (ex_lub_Rbar E); simpl.
+      destruct i as [HH1 HH2].
+      intros.
+      destruct x.
+      + discriminate.
+      + discriminate.
+      + destruct H.
+        specialize (HH1 x H).
+        now unfold Rbar_le in HH1.
+   Qed.
+
+  Lemma lub_rbar_sum_inf1  (E1 E2 : R -> Prop) :
+    (exists (x:R), E1 x) -> Lub_Rbar E2 = p_infty ->
+    Rbar_plus (Lub_Rbar E1) (Lub_Rbar E2) = p_infty.
+  Proof.
+    intros nemptyE1 H.
+    rewrite H.
+    case_eq (Lub_Rbar E1); intros.
+    - now simpl.
+    - now simpl.
+    - unfold Lub_Rbar in H0.
+      destruct (ex_lub_Rbar E1); simpl in H0.
+      destruct nemptyE1.
+      destruct i.
+      specialize (H2 x0 H1).
+      rewrite H0 in H2.
+      simpl in H2.
+      tauto.
+  Qed.
+
+  Lemma lub_rbar_sum_inf2  (E1 E2 : R -> Prop) :
+    (exists (x:R), E1 x) -> Lub_Rbar E2 = p_infty ->
+    is_lub_Rbar (fun x => exists x1 x2, E1 x1 /\ E2 x2 /\ x = x1 + x2) p_infty.    
+  Proof.
+    intros nemptyE1 H.
+    unfold is_lub_Rbar.
+    split.
+    - unfold is_ub_Rbar.
+      intros.
+      now simpl.
+    - intros.
+      unfold Lub_Rbar in H.
+      destruct (ex_lub_Rbar E2); simpl in *.
+      invcs H.
+      generalize (lub_rbar_inf _ i); intros.
+      unfold is_lub_Rbar in i.
+      destruct i.
+      unfold is_ub_Rbar in *.
+      destruct b.
+      + destruct nemptyE1.
+        specialize (H (r-x)).
+        destruct H.
+        specialize (H0 (x + x0)).
+        cut_to H0.
+        destruct H.
+        simpl in H0; lra.
+        exists x; exists x0.
+        destruct H.
+        tauto.
+      + trivial.
+      + destruct nemptyE1.
+        specialize (H 0).
+        destruct H.
+        specialize (H0 (x + x0)).
+        cut_to H0.
+        now simpl in H0.
+        exists x.
+        exists x0.
+        destruct H.
+        tauto.
+   Qed.
+
+  Lemma lub_rbar_sum_inf3  (E1 E2 : R -> Prop) :
+    (exists (x:R), E2 x) -> Lub_Rbar E1 = p_infty ->
+    is_lub_Rbar (fun x => exists x1 x2, E1 x1 /\ E2 x2 /\ x = x1 + x2) p_infty.    
+  Proof.
+    intros nemptyE1 H.
+    generalize (lub_rbar_sum_inf2 E2 E1 nemptyE1 H); intros.
+    apply (is_lub_Rbar_eqset  
+             (fun x : R => exists x1 x2 : R, E2 x1 /\ E1 x2 /\ x = x1 + x2)); 
+      trivial; intros.
+    split; intros; destruct H1; destruct H1; 
+      exists x1; exists x0; rewrite Rplus_comm; tauto.
+  Qed.
+
+  Lemma lub_rbar_sum  (E1 E2 : R -> Prop) :
+    (exists (x:R), E1 x) -> (exists (x:R), E2 x) ->
+    Rbar_plus (Lub_Rbar E1) (Lub_Rbar E2) = 
+    Lub_Rbar (fun x => exists x1 x2, E1 x1 /\ E2 x2 /\ x = x1 + x2).
+    Proof.
+      intros nemptyE1 nemptyE2.
       symmetry.
       apply is_lub_Rbar_unique.
       split.
@@ -3409,8 +3544,56 @@ Section Expectation.
         simpl.
         lra.
       - intros.
-    Admitted.
+        generalize (lub_rbar_sum_inf2 E1 E2 nemptyE1); intros.
+        generalize (lub_rbar_sum_inf3 E1 E2 nemptyE2); intros.        
 
+        generalize (lub_bar_nonempty E2 nemptyE2); intros.
+        assert (Lub_Rbar E2 = p_infty -> 
+                Rbar_plus (Lub_Rbar E1) (Lub_Rbar E2) = p_infty).
+        intros.
+        apply lub_rbar_sum_inf1; trivial.        
+        
+        generalize (lub_bar_nonempty E1 nemptyE1); intros.
+        assert (Lub_Rbar E1 = p_infty -> 
+                Rbar_plus (Lub_Rbar E1) (Lub_Rbar E2) = p_infty).
+        intros.
+        rewrite Rbar_plus_comm.
+        apply lub_rbar_sum_inf1; trivial.
+        
+        case_eq (Lub_Rbar E1); intros.
+        + case_eq (Lub_Rbar E2); intros.
+          * simpl.
+            destruct b.
+            -- clear H0 H1 H2 H3 H4 H5.
+               unfold Lub_Rbar in *.
+               destruct (ex_lub_Rbar E1) as [lubE1 ?]; simpl in *.
+               destruct (ex_lub_Rbar E2) as [lubE2 ?]; simpl in *.
+               destruct i as [HH11 HH12].
+               destruct i0 as [HH21 HH22].
+               unfold is_ub_Rbar in *.
+               
+              admit.
+
+            -- trivial.
+            -- unfold is_ub_Rbar in H.
+               destruct nemptyE1; destruct nemptyE2.
+               specialize (H (x + x0)).
+               cut_to H.
+               now simpl in H.
+               exists x; exists x0; tauto.
+          * cut_to H0; trivial.
+            unfold is_lub_Rbar in H0.
+            destruct H0.
+            now specialize (H8 b H).
+          * congruence.
+        + cut_to H1; trivial.
+          unfold is_lub_Rbar in H1.
+          destruct H1.
+          specialize (H7 b H).
+          rewrite <- H6.
+          rewrite H5; trivial.
+        + tauto.
+   Admitted.
 
 End Expectation.
 
