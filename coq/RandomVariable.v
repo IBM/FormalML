@@ -82,6 +82,7 @@ Section RandomVariable.
       srv_vals_complete : forall x, In (rv_X x) srv_vals;
     }.
 
+
   Global Program Instance srvconst c : SimpleRandomVariable (const c)
     := { srv_vals := [srv_val] }.
 
@@ -165,6 +166,7 @@ Section RandomVariable.
     Proof.
       now rewrite borel_sa_preimage2.
     Qed.
+
 
     Global Program Instance IndicatorRandomVariableSimpl
            rv_X
@@ -368,6 +370,9 @@ Section RandomVariable.
      now apply RealRandomVariable_is_real.
    Qed.
    
+
+
+
    Global Instance positive_scale_prv (c:posreal) 
         (rv_X : Ts -> R)
         {prv : PositiveRandomVariable rv_X} :
@@ -546,7 +551,7 @@ Section SimpleExpectation.
 
   Lemma sa_sigma_inter_pts
          (rv_X1 rv_X2 : Ts -> R)
-         {rv1: RandomVariable Prts borel_sa rv_X1}
+         {rv1: RandomVariable Prts borel_sa rv_X1}         
          {rv2: RandomVariable Prts borel_sa rv_X2}         
          (c1 c2 : R) :
     sa_sigma (fun omega : Ts => rv_X1 omega = c1 /\ 
@@ -3624,19 +3629,63 @@ Section Expectation.
        apply H0.
    Qed.
 
-   Lemma Expectation_posRV_sum
+(*
+  Global Instance rvsimple
+         (rv_X : Ts -> R)
+         {srv : SimpleRandomVariable rv_X} : RandomVariable prts borel_sa rv_X.
+  Proof.
+    red; intros.
+    apply borel_sa_preimage2; trivial; intros.
+*)    
+
+   Lemma Expectation_posRV_sum {nempty:NonEmpty Ts}
         (rv_X1 rv_X2 : Ts -> R)
         {rv1 : RandomVariable Prts borel_sa rv_X1}
         {rv2 : RandomVariable Prts borel_sa rv_X2}        
         {prv1:PositiveRandomVariable rv_X1}
         {prv2:PositiveRandomVariable rv_X2} :     
     Expectation_posRV (rvplus rv_X1 rv_X2) =
-    Rbar_plus (Expectation_posRV rv_X1) (Expectation_posRV rv_X1).
+    Rbar_plus (Expectation_posRV rv_X1) (Expectation_posRV rv_X2).
    Proof.
      unfold Expectation_posRV, SimpleExpectationSup.
      rewrite lub_rbar_sum.
-     - apply Lub_Rbar_eqset.
+     apply Rbar_le_antisym.
+     - admit.
+     - unfold Lub_Rbar.
+       destruct (ex_lub_Rbar
+        (fun x : R =>
+         exists x1 x2 : R,
+           (exists (rvx : Ts -> R) (srv : SimpleRandomVariable rvx),
+              BoundedPositiveRandomVariable rv_X1 rvx /\ SimpleExpectation rvx = x1) /\
+           (exists (rvx : Ts -> R) (srv : SimpleRandomVariable rvx),
+              BoundedPositiveRandomVariable rv_X2 rvx /\ SimpleExpectation rvx = x2) /\
+           x = x1 + x2)); simpl.
+       destruct  (ex_lub_Rbar
+        (fun x0 : R =>
+         exists (rvx : Ts -> R) (srv : SimpleRandomVariable rvx),
+           BoundedPositiveRandomVariable (rvplus rv_X1 rv_X2) rvx /\
+           SimpleExpectation rvx = x0)); simpl.
+       refine (is_lub_Rbar_subset _ _ _ _ _ i0 i).
+       intros x1 [x2 [x3 [HH1 [HH2 HH3]]]].
+       destruct HH1 as [rvx1 [srv1 [HH11 HH12]]].
+       destruct HH2 as [rvx2 [srv2 [HH21 HH22]]].
+       exists (rvplus rvx1 rvx2).
+       exists (srvplus rvx1 rvx2).
+       unfold BoundedPositiveRandomVariable in *.
+       destruct HH11 as [HHH11 HHH12].
+       destruct HH21 as [HHH21 HHH22].
+       split. split.
+       apply rvplus_prv; trivial.
+       unfold RealRandomVariable_le in *.
        intros.
+       unfold rvplus.
+       specialize (HHH12 x4).
+       specialize (HHH22 x4).
+       lra.
+       rewrite HH3.
+       rewrite <- sumSimpleExpectation; trivial.
+       now rewrite HH12, HH22.
+       admit.
        admit.
      - exists 0.
        exists (const 0).
