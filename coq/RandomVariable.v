@@ -3573,14 +3573,14 @@ Section Expectation.
                assert (r + r0 > r1 -> False); intros.
                ++ cut_to H0; [|lra].
                   cut_to H1; [|lra].
-                  destruct H0; destruct H1.
-                  destruct H0; destruct H1.
+                  destruct H0 as [x0 [H0 HH0]].
+                  destruct H1 as [x1 [H1 HH1]].
                   unfold is_ub_Rbar in *.
-                  specialize (H (x + x0)).
+                  specialize (H (x0 + x1)).
                   cut_to H.
                   simpl in H.
                   lra.
-                  exists x0; exists x; rewrite Rplus_comm; tauto.
+                  exists x1; exists x0; rewrite Rplus_comm; tauto.
                ++ intros.
                   lra.
             -- trivial.
@@ -3603,6 +3603,31 @@ Section Expectation.
           rewrite H5; trivial.
         + tauto.
    Qed.
+
+   Lemma Expectation_posRV_sum
+        (rv_X1 rv_X2 : Ts -> R)
+        {rv1 : RandomVariable Prts borel_sa rv_X1}
+        {rv2 : RandomVariable Prts borel_sa rv_X2}        
+        {prv1:PositiveRandomVariable rv_X1}
+        {prv2:PositiveRandomVariable rv_X2} :     
+    Expectation_posRV (rvplus rv_X1 rv_X2) =
+    Rbar_plus (Expectation_posRV rv_X1) (Expectation_posRV rv_X1).
+   Proof.
+     unfold Expectation_posRV, SimpleExpectationSup.
+     rewrite lub_rbar_sum.
+     Admitted.
+
+  Lemma Expectation_sum 
+        (rv_X1 rv_X2 : Ts -> R)
+        {rv1 : RandomVariable Prts borel_sa rv_X1}
+        {rv2 : RandomVariable Prts borel_sa rv_X2} :
+    Expectation (rvplus rv_X1 rv_X2) =
+    match Expectation rv_X1, Expectation rv_X2 with
+    | Some exp1, Some exp2 => Some (Rbar_plus exp1 exp2)
+    | _, _ => None
+    end.
+  Proof. 
+    Admitted.
 
 End Expectation.
 
