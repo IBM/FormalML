@@ -263,6 +263,12 @@ Section RandomVariable.
         (rv_X:Ts->R) : Prop :=
     prv : forall (x:Ts), (0 <= rv_X x)%R.
 
+  Global Instance prvconst c (cpos:0<=c) : PositiveRandomVariable (const c).
+  Proof.
+    intros x.
+    unfold const; trivial.
+  Qed.
+
   (*
   Instance IndicatorRandomVariable_positive 
    *)
@@ -3386,19 +3392,19 @@ Section Expectation.
   
   Require Import Classical.
 
-  Lemma lub_Rbar_witness (E : R -> Prop) (l1 l2 : R) :
-    is_lub_Rbar E l1 -> l2 < l1 ->
-    exists (x:R), E x /\ x > l2.
+  Lemma lub_Rbar_witness (E : R -> Prop) (l : Rbar) (b:R):
+    is_lub_Rbar E l -> Rbar_lt b l ->
+    exists (x:R), E x /\ x > b.
   Proof.
     unfold is_lub_Rbar, is_ub_Rbar.
     intros.
     destruct H.
-    specialize (H1 l2).
-    assert (~(forall x : R, E x -> x <= l2)).
+    specialize (H1 b).
+    assert (~(forall x : R, E x -> x <= b)).
     - intros HH.
       specialize (H1 HH).
-      simpl in H1.
-      lra.
+      apply Rbar_lt_not_le in H0.
+      congruence.
     - apply not_all_ex_not in H2.
       destruct H2.
       apply imply_to_and in H2.
@@ -3411,22 +3417,12 @@ Section Expectation.
   Lemma lub_rbar_inf_witness (E : R -> Prop) :
     is_lub_Rbar E p_infty -> forall (b:R), exists (x:R), E x /\ x>b.
   Proof.
-    unfold is_lub_Rbar, is_ub_Rbar.
     intros.
-    destruct H.
-    specialize (H0 b).
-    apply imply_to_or in H0.
-    destruct H0; [| now simpl in H0].
-    apply not_all_ex_not in H0.
-    destruct H0.
-    exists x.
-    simpl in H0.
-    apply imply_to_and in H0.
-    destruct H0.
-    split; trivial.
-    lra.
+    apply (lub_Rbar_witness _ p_infty b H).
+    now simpl.
   Qed.
-    
+
+
   Lemma lub_bar_nonempty (E : R -> Prop) :
     (exists (x:R), E x) -> ~(Lub_Rbar E = m_infty).
     Proof.
@@ -3571,8 +3567,8 @@ Section Expectation.
                generalize (lub_Rbar_witness E1 r (r - (r + r0 - r1)/2) i).
                generalize (lub_Rbar_witness E2 r0 (r0 - (r + r0 - r1)/2) i0); intros.
                assert (r + r0 > r1 -> False); intros.
-               ++ cut_to H0; [|lra].
-                  cut_to H1; [|lra].
+               ++ cut_to H0; [|simpl; lra].
+                  cut_to H1; [|simpl; lra].
                   destruct H0 as [x0 [H0 HH0]].
                   destruct H1 as [x1 [H1 HH1]].
                   unfold is_ub_Rbar in *.
@@ -3604,11 +3600,29 @@ Section Expectation.
         + tauto.
    Qed.
 
-    Global Instance prvconst c (cpos:0<=c) : PositiveRandomVariable (Ts:=Ts) (const c).
-    Proof.
-      intros x.
-      unfold const; trivial.
-    Qed.
+   Lemma Expectation_witness (l: Rbar) (b : R)
+        (rv_X: Ts -> R)
+        {rv : RandomVariable Prts borel_sa rv_X}
+        {prv:PositiveRandomVariable rv_X} :
+     Rbar_lt b l -> Expectation_posRV rv_X = l -> 
+      exists (x:R), (exists (rvx : Ts -> R) (srv : SimpleRandomVariable rvx),
+        BoundedPositiveRandomVariable rv_X rvx /\ SimpleExpectation rvx = x) /\ x > b.
+     Proof.
+       unfold Expectation_posRV, SimpleExpectationSup.       
+       unfold Lub_Rbar.
+       destruct (ex_lub_Rbar
+                   (fun x : R =>
+                      exists (rvx : Ts -> R) (srv : SimpleRandomVariable rvx),
+                        BoundedPositiveRandomVariable rv_X rvx /\ SimpleExpectation rvx = x)).
+       simpl.
+       intros.
+       invcs H0.
+       generalize (lub_Rbar_witness (fun x : R =>
+         exists (rvx : Ts -> R) (srv : SimpleRandomVariable rvx),
+           BoundedPositiveRandomVariable rv_X rvx /\ SimpleExpectation rvx = x) l b i H)
+       ; intros.
+       apply H0.
+   Qed.
 
    Lemma Expectation_posRV_sum
         (rv_X1 rv_X2 : Ts -> R)
@@ -3621,11 +3635,8 @@ Section Expectation.
    Proof.
      unfold Expectation_posRV, SimpleExpectationSup.
      rewrite lub_rbar_sum.
-     - (* apply Lub_Rbar_eqset.
+     - apply Lub_Rbar_eqset.
        intros.
-       split.
-       + intros [? [?[??]]].
-        *)
        admit.
      - exists 0.
        exists (const 0).
