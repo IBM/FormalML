@@ -2965,10 +2965,11 @@ Section Expectation.
   Definition SimpleExpectationSup 
              (E :  forall 
                      (rvx:Ts -> R)
+                     (rv : RandomVariable Prts borel_sa rvx)
                      (srv:SimpleRandomVariable rvx), Prop) : Rbar
     := Lub_Rbar (fun (x : R) => 
-                   exists rvx srv, 
-                     E rvx srv /\ (SimpleExpectation rvx) = x).
+                   exists rvx rv srv, 
+                     E rvx rv srv /\ (SimpleExpectation rvx) = x).
     
   Definition Expectation_posRV
              (rv_X : Ts -> R)
@@ -2976,6 +2977,7 @@ Section Expectation.
       (SimpleExpectationSup
          (fun
             (rvx2: Ts -> R)
+            (rv2 : RandomVariable Prts borel_sa rvx2)
             (srv2:SimpleRandomVariable rvx2) =>
             (BoundedPositiveRandomVariable rv_X rvx2))).
 
@@ -2994,6 +2996,8 @@ Section Expectation.
     
   Lemma Expectation_posRV_ext 
         {rv_X1 rv_X2 : Ts -> R}
+        (rv1 : RandomVariable Prts borel_sa rv_X1)
+        (rv2 : RandomVariable Prts borel_sa rv_X2)
         (srv1:PositiveRandomVariable rv_X1) 
         (srv2:PositiveRandomVariable rv_X2):
     rv_eq rv_X1 rv_X2 ->
@@ -3002,11 +3006,11 @@ Section Expectation.
     intros eqq.
     unfold Expectation_posRV, SimpleExpectationSup.
     apply Lub_Rbar_eqset; intros x.
-    split; intros [y [ ysrv [??]]].
-    - exists y; exists ysrv.
+    split; intros [y [ yrv [ysrv [??]]]].
+    - exists y; exists yrv; exists ysrv.
       rewrite <- eqq.
       auto.
-    - exists y; exists ysrv.
+    - exists y; exists yrv; exists ysrv.
       rewrite eqq.
       auto.
   Qed.      
@@ -3107,8 +3111,8 @@ Section Expectation.
                (Rbar_opp (Expectation_posRV (neg_fun_part rv_X))).
 
   Lemma Expectation_ext {rv_X1 rv_X2 : Ts -> R}
-        (srv1:RandomVariable Prts borel_sa rv_X1) 
-        (srv2:RandomVariable Prts borel_sa rv_X2):
+        (rv1:RandomVariable Prts borel_sa rv_X1) 
+        (rv2:RandomVariable Prts borel_sa rv_X2):
     rv_eq rv_X1 rv_X2 ->
     Expectation rv_X1 = Expectation rv_X2.
   Proof.
@@ -3116,10 +3120,14 @@ Section Expectation.
     unfold Expectation.
     f_equal.
     - apply Expectation_posRV_ext.
+      now apply positive_part_rv.
+      now apply positive_part_rv.      
       intros x; simpl.
       now rewrite eqq.
     - f_equal.
       apply Expectation_posRV_ext.
+      now apply negative_part_rv.
+      now apply negative_part_rv.      
       intros x; simpl.
       now rewrite eqq.
   Qed.      
@@ -3240,8 +3248,9 @@ Section Expectation.
     unfold SimpleExpectationSup.
     rewrite <- lub_rbar_scale.
     apply Lub_Rbar_eqset; intros.
-    split; intros [? [? [[??]?]]].
+    split; intros [? [? [? [[??]?]]]].
     - exists (rvscale (/ c) x0).
+      exists (rvscale_rv _ _ _ _).
       exists (srvscale _ _).
       split; [split |].
       + assert (0 < / c).
@@ -3266,6 +3275,7 @@ Section Expectation.
         destruct c; simpl.
         lra.
     - exists (rvscale c x0).
+      exists (rvscale_rv _ _ _ _).
       exists (srvscale c x0).
       split; [split |].
       + typeclasses eauto.
@@ -3294,6 +3304,8 @@ Section Expectation.
   Proof.
     rewrite <- Expectation_posRV_scale.
     - apply Expectation_posRV_ext.
+      now apply positive_part_rv, rvscale_rv.
+      now apply rvscale_rv, positive_part_rv.
       intros x.
       unfold pos_fun_part, rvscale.
       unfold pos_fun_part_obligation_1.
@@ -3309,6 +3321,8 @@ Section Expectation.
   Proof.
     rewrite <- Expectation_posRV_scale.
     - apply Expectation_posRV_ext.
+      now apply negative_part_rv, rvscale_rv.
+      now apply rvscale_rv, negative_part_rv.
       intros x.
       unfold neg_fun_part, rvscale.
       unfold neg_fun_part_obligation_1.
@@ -3426,7 +3440,6 @@ Section Expectation.
     apply (lub_Rbar_witness _ p_infty b H).
     now simpl.
   Qed.
-
 
   Lemma lub_bar_nonempty (E : R -> Prop) :
     (exists (x:R), E x) -> ~(Lub_Rbar E = m_infty).
@@ -3610,33 +3623,27 @@ Section Expectation.
         {rv : RandomVariable Prts borel_sa rv_X}
         {prv:PositiveRandomVariable rv_X} :
      Rbar_lt b l -> Expectation_posRV rv_X = l -> 
-      exists (x:R), (exists (rvx : Ts -> R) (srv : SimpleRandomVariable rvx),
+      exists (x:R), (exists (rvx : Ts -> R) (rv : RandomVariable Prts borel_sa rvx)
+                            (srv : SimpleRandomVariable rvx),
         BoundedPositiveRandomVariable rv_X rvx /\ SimpleExpectation rvx = x) /\ x > b.
      Proof.
        unfold Expectation_posRV, SimpleExpectationSup.       
        unfold Lub_Rbar.
        destruct (ex_lub_Rbar
                    (fun x : R =>
-                      exists (rvx : Ts -> R) (srv : SimpleRandomVariable rvx),
+                      exists (rvx : Ts -> R) (rv : RandomVariable Prts borel_sa rvx)
+                             (srv : SimpleRandomVariable rvx),
                         BoundedPositiveRandomVariable rv_X rvx /\ SimpleExpectation rvx = x)).
        simpl.
        intros.
        invcs H0.
        generalize (lub_Rbar_witness (fun x : R =>
-         exists (rvx : Ts -> R) (srv : SimpleRandomVariable rvx),
+         exists (rvx : Ts -> R) (rv : RandomVariable Prts borel_sa rvx) 
+                (srv : SimpleRandomVariable rvx),
            BoundedPositiveRandomVariable rv_X rvx /\ SimpleExpectation rvx = x) l b i H)
        ; intros.
        apply H0.
    Qed.
-
-(*
-  Global Instance rvsimple
-         (rv_X : Ts -> R)
-         {srv : SimpleRandomVariable rv_X} : RandomVariable prts borel_sa rv_X.
-  Proof.
-    red; intros.
-    apply borel_sa_preimage2; trivial; intros.
-*)    
 
    Lemma Expectation_posRV_sum {nempty:NonEmpty Ts}
         (rv_X1 rv_X2 : Ts -> R)
@@ -3650,26 +3657,18 @@ Section Expectation.
      unfold Expectation_posRV, SimpleExpectationSup.
      rewrite lub_rbar_sum.
      apply Rbar_le_antisym.
-     - admit.
+     - 
+admit.
      - unfold Lub_Rbar.
-       destruct (ex_lub_Rbar
-        (fun x : R =>
-         exists x1 x2 : R,
-           (exists (rvx : Ts -> R) (srv : SimpleRandomVariable rvx),
-              BoundedPositiveRandomVariable rv_X1 rvx /\ SimpleExpectation rvx = x1) /\
-           (exists (rvx : Ts -> R) (srv : SimpleRandomVariable rvx),
-              BoundedPositiveRandomVariable rv_X2 rvx /\ SimpleExpectation rvx = x2) /\
-           x = x1 + x2)); simpl.
-       destruct  (ex_lub_Rbar
-        (fun x0 : R =>
-         exists (rvx : Ts -> R) (srv : SimpleRandomVariable rvx),
-           BoundedPositiveRandomVariable (rvplus rv_X1 rv_X2) rvx /\
-           SimpleExpectation rvx = x0)); simpl.
+       repeat match goal with
+       [|- context [proj1_sig ?x]] => destruct x; simpl
+            end.
        refine (is_lub_Rbar_subset _ _ _ _ _ i0 i).
        intros x1 [x2 [x3 [HH1 [HH2 HH3]]]].
-       destruct HH1 as [rvx1 [srv1 [HH11 HH12]]].
-       destruct HH2 as [rvx2 [srv2 [HH21 HH22]]].
+       destruct HH1 as [rvx1 [rrv1 [srv1 [HH11 HH12]]]].
+       destruct HH2 as [rvx2 [rrv2 [srv2 [HH21 HH22]]]].
        exists (rvplus rvx1 rvx2).
+       exists (rvplus_rv _ _ ).
        exists (srvplus rvx1 rvx2).
        unfold BoundedPositiveRandomVariable in *.
        destruct HH11 as [HHH11 HHH12].
@@ -3685,10 +3684,9 @@ Section Expectation.
        rewrite HH3.
        rewrite <- sumSimpleExpectation; trivial.
        now rewrite HH12, HH22.
-       admit.
-       admit.
      - exists 0.
        exists (const 0).
+       exists (rvconst 0).
        exists (srvconst 0).
        split.
        + unfold BoundedPositiveRandomVariable.
@@ -3702,6 +3700,7 @@ Section Expectation.
        + now rewrite SimpleExpectation_const. 
      - exists 0.
        exists (const 0).
+       exists (rvconst 0).
        exists (srvconst 0).
        split.
        + unfold BoundedPositiveRandomVariable.
