@@ -1,6 +1,8 @@
 Require Import Coq.Reals.Rbase Coq.Reals.RList.
 Require Import Coq.Reals.Rfunctions.
 Require Import Ranalysis_reg.
+Require Import Coquelicot.Hierarchy Coquelicot.PSeries Coquelicot.Series Coquelicot.ElemFct.
+Require Import micromega.Lia.
 Require Import Reals.Integration.
 Require Import Rtrigo_def.
 Require Import List.
@@ -11,6 +13,8 @@ Require Import LibUtils ListAdd.
 Require Import Relation_Definitions Sorted.
 
 Require Import Isomorphism.
+
+Set Bullet Behavior "Strict Subproofs".
 
 Import ListNotations.
 
@@ -503,3 +507,64 @@ Proof.
 Qed.
 
 Global Instance EqDecR : EqDec R eq := Req_EM_T.
+
+Lemma exp_ineq2 : forall x : R, x <= -1 -> (1 + x < exp x).
+Proof.
+  intros x Hx.
+  eapply Rle_lt_trans with 0.
+  - lra.
+  - apply exp_pos.
+Qed.
+
+
+Lemma exp_ineq3_aux (n : nat) {x : R}:
+  (-1 < x < 0) -> (x^(2*n)/INR(fact (2*n)) + x^(2*n + 1)/INR(fact (2*n + 1))) > 0.
+Proof.
+  intros Hx.
+  replace (x^(2*n + 1)) with (x^(2*n) * x) by (rewrite pow_add ; ring).
+  unfold Rdiv.
+  rewrite Rmult_assoc.
+  rewrite <-Rmult_plus_distr_l.
+  apply Rmult_gt_0_compat.
+  -- rewrite pow_mult.
+     apply Rgt_lt. apply pow_lt.
+     apply Rcomplements.pow2_gt_0 ; lra.
+  -- replace (/INR(fact (2*n))) with (1 / INR(fact (2*n))) by lra.
+     replace (x*/INR(fact(2*n+1))) with (x/INR(fact(2*n + 1))) by trivial.
+     rewrite Rcomplements.Rdiv_plus.
+     2,3 : (apply (not_0_INR _ (fact_neq_0 _))).
+     rewrite <-mult_INR. unfold Rdiv.
+     apply Rmult_gt_0_compat.
+     2: apply Rinv_pos ; rewrite mult_INR ;
+        apply Rmult_gt_0_compat ; apply Rprod.INR_fact_lt_0.
+     eapply Rlt_le_trans with (INR(fact(2*n)) + x*INR(fact(2*n))).
+     --- replace (INR(fact(2*n)) + x*INR(fact(2*n)))
+         with (1*INR(fact(2*n)) + x* INR(fact(2*n))) by (f_equal ; now rewrite Rmult_1_l).
+         rewrite <-Rmult_plus_distr_r.
+         apply Rmult_lt_0_compat ; try lra ; try (apply Rprod.INR_fact_lt_0).
+     --- rewrite Rmult_1_l.
+         apply Rplus_le_compat_r. apply le_INR.
+         apply fact_le ; lia.
+Qed.
+
+
+Lemma exp_1_x_pseries (x : R) :
+  exp x = (Series (fun n => (x^(2*n)/INR(fact (2*n)) + x^(2*n + 1)/INR(fact (2*n + 1))))).
+Proof.
+  rewrite exp_Reals.
+  rewrite PSeries_odd_even.
+  unfold PSeries.
+  rewrite <-Series_scal_l.
+  rewrite <-Series_plus.
+  apply Series_ext ; intros. f_equal.
+  + rewrite pow_mult.
+    now rewrite Rmult_comm.
+  + rewrite Rmult_comm. rewrite <-pow_mult.
+    rewrite Rmult_assoc.
+    replace (x^(2*n)*x) with (x^(2*n +1)) by (rewrite pow_add ; f_equal ; lra).
+    now rewrite Rmult_comm.
+  + admit.
+  + admit.
+  + admit.
+  + admit.
+Admitted.
