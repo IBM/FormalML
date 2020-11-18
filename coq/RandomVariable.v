@@ -3715,7 +3715,30 @@ admit.
 
      Admitted.
 
-  Lemma Expectation_sum 
+   Definition Rbar_minus' (x y : Rbar) : option Rbar :=
+     Rbar_plus' x (Rbar_opp y). 
+
+   Lemma Expectation_dif_pos_unique 
+        (rvp rvn : Ts -> R)
+        (pr : RandomVariable Prts borel_sa rvp)
+        (nr : RandomVariable Prts borel_sa rvn)        
+        (p : PositiveRandomVariable rvp)
+        (n : PositiveRandomVariable rvn) :
+    Expectation (rvminus rvp rvn) =
+    Rbar_minus' (Expectation_posRV rvp)
+                (Expectation_posRV rvn).
+   Proof.
+   Admitted.
+
+   Lemma rv_pos_neg_id (rv_X:Ts->R) : rv_eq rv_X (rvplus (pos_fun_part rv_X) (rvopp (neg_fun_part rv_X))).
+   Proof.
+     intros x.
+     unfold rvplus, rvopp, pos_fun_part, neg_fun_part, rvscale; simpl.
+     unfold Rmax, Rmin.
+     repeat match_destr; lra.
+   Qed.
+   
+  Lemma Expectation_sum  {nempty:NonEmpty Ts}
         (rv_X1 rv_X2 : Ts -> R)
         {rv1 : RandomVariable Prts borel_sa rv_X1}
         {rv2 : RandomVariable Prts borel_sa rv_X2} :
@@ -3724,8 +3747,31 @@ admit.
     | Some exp1, Some exp2 => Some (Rbar_plus exp1 exp2)
     | _, _ => None
     end.
-  Proof. 
-    Admitted.
+  Proof.
+    assert (eqq1:rv_eq (rvplus rv_X1 rv_X2) (rvminus (rvplus (pos_fun_part rv_X1) (pos_fun_part rv_X2)) (rvplus (neg_fun_part rv_X1) (neg_fun_part rv_X2)))).
+    {
+      rewrite (rv_pos_neg_id rv_X1) at 1.
+      rewrite (rv_pos_neg_id rv_X2) at 1.
+      intros x.
+      unfold rvminus, rvplus, rvopp, rvscale.
+      lra.
+    }
+    rewrite (Expectation_ext _ _ eqq1); clear eqq1.
+    erewrite Expectation_dif_pos_unique.
+    repeat rewrite Expectation_posRV_sum by typeclasses eauto.
+    unfold Expectation.
+    unfold Rbar_minus'.
+    rewrite <- Rbar_plus_opp.
+(*
+    generalize (Expectation_posRV (fun x : Ts => pos_fun_part rv_X1 x))
+    ; generalize (Expectation_posRV (fun x : Ts => pos_fun_part rv_X2 x))
+    ; generalize (Expectation_posRV (fun x : Ts => neg_fun_part rv_X1 x))
+    ; generalize (Expectation_posRV (fun x : Ts => neg_fun_part rv_X2 x))
+    ; simpl; intros.
+    unfold Rbar_plus.
+ *)
+  Admitted.
+    
 
 End Expectation.
 
