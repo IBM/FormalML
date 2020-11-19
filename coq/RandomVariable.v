@@ -3849,9 +3849,7 @@ admit.
         rewrite Expectation_posRV_sum in H3; trivial.
         rewrite Expectation_posRV_sum in H3; trivial.
         generalize (Expectation_posRV_pos rxp1); intros.
-        generalize (Expectation_posRV_pos rxn1); intros.
         generalize (Expectation_posRV_pos rxp2); intros.
-        generalize (Expectation_posRV_pos rxn2); intros.                
         destruct  (Expectation_posRV rxp1); try easy.
         destruct  (Expectation_posRV rxp2); try easy.
         destruct  (Expectation_posRV rxn1); try easy.
@@ -3975,9 +3973,8 @@ admit.
          rewrite <- H1 in H0.
          unfold Rbar_minus in H0.
          generalize (Expectation_posRV_pos rvp); intros.
-         generalize (Expectation_posRV_pos rvn); intros.
          generalize (Expectation_posRV_pos (pos_fun_part (rvminus rvp rvn))); intros.
-         generalize (Expectation_posRV_pos (neg_fun_part (rvminus rvp rvn))); intros.         
+
          destruct  (Expectation_posRV rvp); try easy.
          destruct  (Expectation_posRV rvn); try easy.
          destruct  (Expectation_posRV (pos_fun_part (rvminus rvp rvn))); try easy.
@@ -3992,10 +3989,10 @@ admit.
          * simpl in *.
            unfold Rbar_plus', Rbar_opp.
            match_case; intros.
-           -- rewrite H6 in H0.
+           -- rewrite H4 in H0.
               simpl in H0.
               discriminate.
-           -- rewrite H6 in H4.
+           -- rewrite H4 in H3.
               tauto.
        + apply rv_pos_neg_id.
    Qed.
