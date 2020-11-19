@@ -3856,17 +3856,12 @@ admit.
         rewrite <- H0, <- H1 in H3; simpl in H3.
         rewrite <- H0, <- H1; simpl.
 
-        destruct  (Expectation_posRV rxp1); try easy.
-        destruct  (Expectation_posRV rxp2); try easy.
+        destruct  (Expectation_posRV rxp1); destruct  (Expectation_posRV rxp2); try easy.
 
         + simpl in *.
           rewrite Rbar_finite_eq in H3.
           rewrite Rbar_finite_eq.
           lra.
-        + destruct (Expectation_posRV rxp2).
-          * discriminate.
-          * now simpl.
-          * discriminate.
   Qed.
 
   Lemma bounded_is_finite (a b : R) (x : Rbar) :
@@ -3975,8 +3970,7 @@ admit.
          generalize (Expectation_posRV_pos rvp); intros.
          generalize (Expectation_posRV_pos (pos_fun_part (rvminus rvp rvn))); intros.
 
-         destruct  (Expectation_posRV rvp); try easy.
-         destruct  (Expectation_posRV (pos_fun_part (rvminus rvp rvn))); try easy.
+         destruct  (Expectation_posRV rvp); destruct  (Expectation_posRV (pos_fun_part (rvminus rvp rvn))); try easy.
 
          * unfold Rbar_plus', Rbar_opp.
            simpl in H0.
@@ -3985,14 +3979,6 @@ admit.
            rewrite Rbar_finite_eq in H0.           
            simpl in *.
            lra.
-         * simpl in *.
-           unfold Rbar_plus', Rbar_opp.
-           match_case; intros.
-           -- rewrite H4 in H0.
-              simpl in H0.
-              discriminate.
-           -- rewrite H4 in H3.
-              tauto.
        + apply rv_pos_neg_id.
    Qed.
 
