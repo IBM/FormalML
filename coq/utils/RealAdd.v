@@ -2,6 +2,7 @@ Require Import Coq.Reals.Rbase Coq.Reals.RList.
 Require Import Coq.Reals.Rfunctions.
 Require Import Ranalysis_reg.
 Require Import Coquelicot.Hierarchy Coquelicot.PSeries Coquelicot.Series Coquelicot.ElemFct.
+Require Import Coquelicot.PSeries.
 Require Import micromega.Lia.
 Require Import Reals.Integration.
 Require Import Rtrigo_def.
@@ -547,9 +548,8 @@ Proof.
          apply fact_le ; lia.
 Qed.
 
-Require Import Coquelicot.PSeries.
 
-Lemma ex_series_exp_even (x:R): ex_series (fun k :nat => /INR(fact(2*k)) * (x^2)^k).
+Lemma ex_series_exp_even (x:R): ex_series (fun k :nat => /INR(fact(2*k))*(x^2)^k).
 Proof.
   generalize (ex_series_le (fun k : nat => /INR(fact (2*k))*(x^2)^k) (fun k : nat => (x^2)^k /INR(fact k)));intros.
   apply H. unfold norm. simpl.
@@ -623,15 +623,57 @@ Proof.
      rewrite Rmult_assoc.
      replace (x^(2*n)*x) with (x^(2*n +1)) by (rewrite pow_add ; f_equal ; lra).
      now rewrite Rmult_comm.
-  --  generalize (ex_series_scal x (fun n => (/ INR (fact (2 * n + 1)) * (x ^ 2) ^ n)));intros.
+  --  generalize (ex_series_scal x (fun n => (/ INR (fact (2 * n + 1)) * (x ^ 2) ^ n)))
+      ;intros.
       apply H.
       apply ex_series_exp_odd.
 Qed.
 
-(*Lemma exp_ineq3 {x : R} : -1 < x < 0 -> 1 + x < exp x.
+Lemma ex_series_even_odd (x:R) :
+  ex_series (fun n : nat => x ^ (2 * n) / INR (fact (2 * n)) + x ^ (2 * n + 1) / INR (fact (2 * n + 1))).
 Proof.
-  intro Hx.
+   generalize ex_series_exp_odd ; intros Hodd.
+    generalize ex_series_exp_even ; intros Heven.
+    specialize (Hodd x).
+    specialize (Heven x).
+    assert (Heven' : ex_series (fun n => x^(2*n)/INR (fact (2*n)))).
+    {
+      eapply (ex_series_ext); intros.
+      assert (/INR(fact(2*n))*(x^2)^n = x^(2*n)/INR(fact (2*n)))
+        by (rewrite pow_mult; apply Rmult_comm).
+      apply H.
+      apply Heven.
+    }
+    assert (Hodd' : ex_series (fun n => x^(2*n + 1)/INR (fact (2*n + 1)))).
+    {
+      eapply (ex_series_ext); intros.
+      assert (x*(/INR(fact(2*n + 1))*(x^2)^n) = x^(2*n + 1)/INR(fact (2*n + 1))).
+      rewrite Rmult_comm. rewrite <-pow_mult.
+      rewrite pow_add. rewrite pow_1. rewrite Rmult_assoc.
+      now rewrite Rmult_comm at 1.
+      apply H.
+      generalize (ex_series_scal x (fun n => (/ INR (fact (2 * n + 1)) * (x ^ 2) ^ n)))
+      ;intros.
+      apply H. apply Hodd.
+    }
+    generalize (ex_series_plus _ _ Heven' Hodd') ; intros.
+    exact H.
+Qed.
+
+
+Lemma exp_even_odd_incr_1 (x : R) :
+  exp x = (1 + x) + (Series (fun n =>
+                            (x^(2*(S n)))/INR(fact (2*(S n)))
+                               + x^(2*(S n) + 1)/INR(fact (2*(S n) + 1)))).
+Proof.
   rewrite exp_even_odd.
-  rewrite Series_incr_1. simpl.
-  rewrite Series_incr_1.
-*)
+  rewrite Series_incr_1 at 1.
+  + simpl. f_equal.
+    field.
+  + apply ex_series_even_odd.
+Qed.
+
+
+Lemma Series_pos {a : nat -> R} : ex_series a -> (forall n, 0 < a n) -> 0 < Series a.
+Proof.
+Admitted.
