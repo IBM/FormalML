@@ -3632,20 +3632,12 @@ Section Expectation.
      Proof.
        unfold Expectation_posRV, SimpleExpectationSup.       
        unfold Lub_Rbar.
-       destruct (ex_lub_Rbar
-                   (fun x : R =>
-                      exists (rvx : Ts -> R) (rv : RandomVariable Prts borel_sa rvx)
-                             (srv : SimpleRandomVariable rvx),
-                        BoundedPositiveRandomVariable rv_X rvx /\ SimpleExpectation rvx = x)).
-       simpl.
+       match goal with
+       [|- context [proj1_sig ?x]] => destruct x; simpl
+            end.
        intros.
        invcs H0.
-       generalize (lub_Rbar_witness (fun x : R =>
-         exists (rvx : Ts -> R) (rv : RandomVariable Prts borel_sa rvx) 
-                (srv : SimpleRandomVariable rvx),
-           BoundedPositiveRandomVariable rv_X rvx /\ SimpleExpectation rvx = x) l b i H)
-       ; intros.
-       apply H0.
+       apply lub_Rbar_witness with (l := l); trivial.
    Qed.
 
    Lemma Expectation_posRV_sum {nempty:NonEmpty Ts}
@@ -3726,45 +3718,7 @@ admit.
      repeat match_destr; lra.
    Qed.
 
-  Lemma Expectation_dif_pos_unique2 (nempty: NonEmpty Ts)
-        (rxp1 rxn1 rxp2 rxn2 : Ts -> R)
-        (rp1 : RandomVariable Prts borel_sa rxp1)
-        (rn1 : RandomVariable Prts borel_sa rxn1)
-        (rp2 : RandomVariable Prts borel_sa rxp2)
-        (rn2 : RandomVariable Prts borel_sa rxn2)        
-
-        (pp1 : PositiveRandomVariable rxp1)
-        (pn1 : PositiveRandomVariable rxn1)        
-        (pp2 : PositiveRandomVariable rxp2)
-        (pn2 : PositiveRandomVariable rxn2) :
-    rv_eq (rvminus rxp1 rxn1) (rvminus rxp2 rxn2) ->
-    is_finite (Expectation_posRV rxp1) ->
-    is_finite (Expectation_posRV rxn1) ->
-    is_finite (Expectation_posRV rxp2) ->
-    is_finite (Expectation_posRV rxn2) ->    
-    (Expectation_posRV rxp1) - (Expectation_posRV rxn1) =
-    (Expectation_posRV rxp2) - (Expectation_posRV rxn2).
-    Proof.
-      intros.
-      assert (rv_eq (rvplus rxp1 rxn2) (rvplus rxp2 rxn1)).
-      - unfold rv_eq, pointwise_relation, rvminus, rvopp, rvplus, rvscale in *.
-        intros.
-        specialize (H a).
-        lra.
-      - generalize (Expectation_posRV_ext _ _ _ _ H4); intros.
-        rewrite Expectation_posRV_sum in H5; trivial.
-        rewrite Expectation_posRV_sum in H5; trivial.
-        
-        destruct  (Expectation_posRV rxp1); try easy.
-        destruct  (Expectation_posRV rxp2); try easy.
-        destruct  (Expectation_posRV rxn1); try easy.
-        destruct  (Expectation_posRV rxn2); try easy.
-        simpl in *.
-        rewrite Rbar_finite_eq in H5.
-        lra.
-  Qed.
-
-  Lemma Expectation_posRV_le 
+   Lemma Expectation_posRV_le 
         (rv_X1 rv_X2 : Ts -> R)
         {rv1: RandomVariable Prts borel_sa rv_X1}
         {rv2: RandomVariable Prts borel_sa rv_X2}                               
@@ -3846,6 +3800,78 @@ admit.
       lra.
   Qed.        
 
+  Lemma z_le_z : 0 <= 0.
+    Proof.
+      lra.
+    Qed.
+
+  Lemma Expectation_posRV_const0 :
+        (@Expectation_posRV (const 0) (prvconst _ z_le_z)) = 0.
+   Proof.
+     apply Expectation_posRV_const.
+   Qed.
+
+  Lemma Expectation_posRV_pos
+        (rv_X : Ts -> R)
+        {rv : RandomVariable Prts borel_sa rv_X}
+        {prv : PositiveRandomVariable rv_X} :
+    Rbar_le 0 (Expectation_posRV rv_X).
+  Proof.
+    rewrite <- Expectation_posRV_const0.
+    apply Expectation_posRV_le; trivial.
+    apply rvconst.
+  Qed.
+
+  Lemma Expectation_dif_pos_unique2 (nempty: NonEmpty Ts)
+        (rxp1 rxn1 rxp2 rxn2 : Ts -> R)
+        (rp1 : RandomVariable Prts borel_sa rxp1)
+        (rn1 : RandomVariable Prts borel_sa rxn1)
+        (rp2 : RandomVariable Prts borel_sa rxp2)
+        (rn2 : RandomVariable Prts borel_sa rxn2)        
+
+        (pp1 : PositiveRandomVariable rxp1)
+        (pn1 : PositiveRandomVariable rxn1)        
+        (pp2 : PositiveRandomVariable rxp2)
+        (pn2 : PositiveRandomVariable rxn2) :
+    rv_eq (rvminus rxp1 rxn1) (rvminus rxp2 rxn2) ->
+    is_finite (Expectation_posRV rxn1) ->
+    is_finite (Expectation_posRV rxn2) ->    
+    Rbar_minus (Expectation_posRV rxp1) (Expectation_posRV rxn1) =
+    Rbar_minus (Expectation_posRV rxp2) (Expectation_posRV rxn2).
+    Proof.
+      intros.
+      assert (rv_eq (rvplus rxp1 rxn2) (rvplus rxp2 rxn1)).
+      - unfold rv_eq, pointwise_relation, rvminus, rvopp, rvplus, rvscale in *.
+        intros.
+        specialize (H a).
+        lra.
+      - generalize (Expectation_posRV_ext _ _ _ _ H2); intros.
+        rewrite Expectation_posRV_sum in H3; trivial.
+        rewrite Expectation_posRV_sum in H3; trivial.
+        generalize (Expectation_posRV_pos rxp1); intros.
+        generalize (Expectation_posRV_pos rxn1); intros.
+        generalize (Expectation_posRV_pos rxp2); intros.
+        generalize (Expectation_posRV_pos rxn2); intros.                
+        destruct  (Expectation_posRV rxp1); try easy.
+        destruct  (Expectation_posRV rxp2); try easy.
+        destruct  (Expectation_posRV rxn1); try easy.
+        destruct  (Expectation_posRV rxn2); try easy.
+        + simpl in *.
+          rewrite Rbar_finite_eq in H3.
+          rewrite Rbar_finite_eq.
+          lra.
+        + unfold is_finite in *.
+          rewrite <- H0, <- H1 in H3; simpl in H3.
+          discriminate.
+        + unfold is_finite in *.
+          rewrite <- H0, <- H1 in H3; simpl in H3.
+          rewrite <- H0, <- H1; simpl.
+          destruct (Expectation_posRV rxp2).
+          * discriminate.
+          * now simpl.
+          * discriminate.
+  Qed.
+
   Lemma bounded_is_finite (a b : R) (x : Rbar) :
     Rbar_le a x -> Rbar_le x b -> is_finite x.
   Proof.
@@ -3917,48 +3943,61 @@ admit.
      apply Rmax_lub; lra.
    Qed.
 
-   Lemma Expectation_dif_pos_unique {nempty:NonEmpty Ts}
+    Lemma Expectation_dif_pos_unique {nempty:NonEmpty Ts}
         (rvp rvn : Ts -> R)
         (pr : RandomVariable Prts borel_sa rvp)
         (nr : RandomVariable Prts borel_sa rvn)        
         (p : PositiveRandomVariable rvp)
         (n : PositiveRandomVariable rvn) :
-     is_finite (Expectation_posRV rvp) ->
      is_finite (Expectation_posRV rvn) ->
     Expectation (rvminus rvp rvn) =
     Rbar_minus' (Expectation_posRV rvp)
                 (Expectation_posRV rvn).
    Proof.
      intros.
-     generalize (Expectation_dif_pos_unique2 
+     generalize (Expectation_dif_pos_unique2
                    nempty
                    rvp rvn 
                    (pos_fun_part (rvminus rvp rvn))
                    (neg_fun_part (rvminus rvp rvn))
                    _ _ _ _ _ _ _ _); intros.
-     assert (is_finite (Expectation_posRV (fun x : Ts => pos_fun_part (rvminus rvp rvn) x))).
-     - apply Finite_Expectation_posRV_le with (rv_X2 := rvp) (prv2 := p); trivial.
-       + apply positive_part_rv.
+     assert (is_finite (Expectation_posRV (fun x : Ts => neg_fun_part (rvminus rvp rvn) x))).
+     - apply Finite_Expectation_posRV_le with (rv_X2 := rvn) (prv2 := n); trivial.     
+       + apply negative_part_rv.
          now apply rvminus_rv.
-       + apply pos_part_le; trivial.
-     - assert (is_finite (Expectation_posRV (fun x : Ts => neg_fun_part (rvminus rvp rvn) x))).
-       + apply Finite_Expectation_posRV_le with (rv_X2 := rvn) (prv2 := n); trivial.     
-         * apply negative_part_rv.
-            now apply rvminus_rv.
-         * apply neg_part_le; trivial.
-       + cut_to H1; trivial.
-         * unfold Expectation.
-           unfold Rbar_minus'.
-           unfold is_finite in H2; rewrite <- H2.
-           unfold is_finite in H3; rewrite <- H3.
-           unfold is_finite in H; rewrite <- H.
-           unfold is_finite in H0; rewrite <- H0.           
-           simpl.
+       + apply neg_part_le; trivial.
+     - cut_to H0; trivial.
+       + unfold Expectation.
+         unfold Rbar_minus'.
+         unfold is_finite in H; rewrite <- H.
+         unfold is_finite in H1; rewrite <- H1.
+         rewrite <- H in H0.
+         rewrite <- H1 in H0.
+         unfold Rbar_minus in H0.
+         generalize (Expectation_posRV_pos rvp); intros.
+         generalize (Expectation_posRV_pos rvn); intros.
+         generalize (Expectation_posRV_pos (pos_fun_part (rvminus rvp rvn))); intros.
+         generalize (Expectation_posRV_pos (neg_fun_part (rvminus rvp rvn))); intros.         
+         destruct  (Expectation_posRV rvp); try easy.
+         destruct  (Expectation_posRV rvn); try easy.
+         destruct  (Expectation_posRV (pos_fun_part (rvminus rvp rvn))); try easy.
+         destruct  (Expectation_posRV (neg_fun_part (rvminus rvp rvn))); try easy.         
+         * unfold Rbar_plus', Rbar_opp.
+           simpl in H0.
            f_equal.
            rewrite Rbar_finite_eq.
-           simpl in H1.
+           rewrite Rbar_finite_eq in H0.           
+           simpl in *.
            lra.
-         * apply rv_pos_neg_id.
+         * simpl in *.
+           unfold Rbar_plus', Rbar_opp.
+           match_case; intros.
+           -- rewrite H6 in H0.
+              simpl in H0.
+              discriminate.
+           -- rewrite H6 in H4.
+              tauto.
+       + apply rv_pos_neg_id.
    Qed.
 
   Lemma Expectation_sum  {nempty:NonEmpty Ts}
