@@ -3105,10 +3105,13 @@ Section Expectation.
     apply cond_nonneg.
  Qed.
 
+  Definition Rbar_minus' (x y : Rbar) : option Rbar :=
+    Rbar_plus' x (Rbar_opp y).
+
   Definition Expectation (rv_X : Ts -> R) 
              {rrv : RandomVariable Prts borel_sa rv_X} : option Rbar :=
-    Rbar_plus' (Expectation_posRV (pos_fun_part rv_X))
-               (Rbar_opp (Expectation_posRV (neg_fun_part rv_X))).
+    Rbar_minus' (Expectation_posRV (pos_fun_part rv_X))
+                (Expectation_posRV (neg_fun_part rv_X)).
 
   Lemma Expectation_ext {rv_X1 rv_X2 : Ts -> R}
         (rv1:RandomVariable Prts borel_sa rv_X1) 
@@ -3715,21 +3718,6 @@ admit.
 
      Admitted.
 
-   Definition Rbar_minus' (x y : Rbar) : option Rbar :=
-     Rbar_plus' x (Rbar_opp y). 
-
-   Lemma Expectation_dif_pos_unique 
-        (rvp rvn : Ts -> R)
-        (pr : RandomVariable Prts borel_sa rvp)
-        (nr : RandomVariable Prts borel_sa rvn)        
-        (p : PositiveRandomVariable rvp)
-        (n : PositiveRandomVariable rvn) :
-    Expectation (rvminus rvp rvn) =
-    Rbar_minus' (Expectation_posRV rvp)
-                (Expectation_posRV rvn).
-   Proof.
-   Admitted.
-
    Lemma rv_pos_neg_id (rv_X:Ts->R) : rv_eq rv_X (rvplus (pos_fun_part rv_X) (rvopp (neg_fun_part rv_X))).
    Proof.
      intros x.
@@ -3737,7 +3725,80 @@ admit.
      unfold Rmax, Rmin.
      repeat match_destr; lra.
    Qed.
+
+   Lemma rv_pos_neg_id2 (rv_X:Ts->R) : rv_eq rv_X (rvminus (pos_fun_part rv_X) (neg_fun_part rv_X)).
+     Proof.
+       unfold rvminus.
+       apply rv_pos_neg_id.
+   Qed.
    
+  Lemma Expectation_dif_pos_unique2 (nempty: NonEmpty Ts)
+        (rxp1 rxn1 rxp2 rxn2 : Ts -> R)
+        (rp1 : RandomVariable Prts borel_sa rxp1)
+        (rn1 : RandomVariable Prts borel_sa rxn1)
+        (rp2 : RandomVariable Prts borel_sa rxp2)
+        (rn2 : RandomVariable Prts borel_sa rxn2)        
+
+        (pp1 : PositiveRandomVariable rxp1)
+        (pn1 : PositiveRandomVariable rxn1)        
+        (pp2 : PositiveRandomVariable rxp2)
+        (pn2 : PositiveRandomVariable rxn2) :
+    rv_eq (rvminus rxp1 rxn1) (rvminus rxp2 rxn2) ->
+    is_finite (Expectation_posRV rxp1) ->
+    is_finite (Expectation_posRV rxn1) ->
+    is_finite (Expectation_posRV rxp2) ->
+    is_finite (Expectation_posRV rxn2) ->    
+    (Expectation_posRV rxp1) - (Expectation_posRV rxn1) =
+    (Expectation_posRV rxp2) - (Expectation_posRV rxn2).
+    Proof.
+      intros.
+      assert (rv_eq (rvplus rxp1 rxn2) (rvplus rxp2 rxn1)).
+      - unfold rv_eq, pointwise_relation, rvminus, rvopp, rvplus, rvscale in *.
+        intros.
+        specialize (H a).
+        lra.
+      - generalize (Expectation_posRV_ext _ _ _ _ H4); intros.
+        rewrite Expectation_posRV_sum in H5; trivial.
+        rewrite Expectation_posRV_sum in H5; trivial.
+        
+        destruct  (Expectation_posRV rxp1); try easy.
+        destruct  (Expectation_posRV rxp2); try easy.
+        destruct  (Expectation_posRV rxn1); try easy.
+        destruct  (Expectation_posRV rxn2); try easy.
+        simpl in *.
+        rewrite Rbar_finite_eq in H5.
+        lra.
+  Qed.
+
+
+   Lemma Expectation_dif_pos_unique {nempty:NonEmpty Ts}
+        (rvp rvn : Ts -> R)
+        (pr : RandomVariable Prts borel_sa rvp)
+        (nr : RandomVariable Prts borel_sa rvn)        
+        (p : PositiveRandomVariable rvp)
+        (n : PositiveRandomVariable rvn) :
+     is_finite (Expectation_posRV rvp) ->
+     is_finite (Expectation_posRV rvn) ->
+    Expectation (rvminus rvp rvn) =
+    Rbar_minus' (Expectation_posRV rvp)
+                (Expectation_posRV rvn).
+   Proof.
+     intros.
+     generalize (Expectation_dif_pos_unique2 
+                   nempty
+                   rvp rvn 
+                   (pos_fun_part (rvminus rvp rvn))
+                   (neg_fun_part (rvminus rvp rvn))
+                   _ _ _ _ _ _ _ _); intros.
+     cut_to H1.
+     unfold Expectation.
+     admit.
+     apply rv_pos_neg_id2.
+     trivial.
+     trivial.
+     
+   Admitted.
+
   Lemma Expectation_sum  {nempty:NonEmpty Ts}
         (rv_X1 rv_X2 : Ts -> R)
         {rv1 : RandomVariable Prts borel_sa rv_X1}
