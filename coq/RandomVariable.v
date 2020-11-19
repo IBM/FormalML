@@ -3897,8 +3897,8 @@ admit.
     unfold rvplus, rvopp, rvscale.
     unfold PositiveRandomVariable in *.
     specialize (p x); specialize (n x).
-    replace (rvp x + -1 * rvn x) with (rvp x - rvn x) by lra.
-   Admitted.
+    apply Rmax_lub; lra.
+  Qed.
 
   Lemma neg_part_le 
         (rvp rvn : Ts -> R)
@@ -3914,8 +3914,8 @@ admit.
      unfold rvplus, rvopp, rvscale.
      unfold PositiveRandomVariable in *.
      specialize (p x); specialize (n x).
-     replace (- (rvp x + -1 * rvn x)) with (rvn x - rvp x) by lra.
-   Admitted.
+     apply Rmax_lub; lra.
+   Qed.
 
    Lemma Expectation_dif_pos_unique {nempty:NonEmpty Ts}
         (rvp rvn : Ts -> R)
@@ -3936,22 +3936,30 @@ admit.
                    (pos_fun_part (rvminus rvp rvn))
                    (neg_fun_part (rvminus rvp rvn))
                    _ _ _ _ _ _ _ _); intros.
-     cut_to H1.
-     unfold Expectation.
-     admit.
-     unfold rvminus.
-     apply rv_pos_neg_id.
-     trivial.
-     trivial.
-     apply Finite_Expectation_posRV_le with (rv_X2 := rvp) (prv2 := p); trivial.
-     apply positive_part_rv.
-     now apply rvminus_rv.
-     apply pos_part_le; trivial.
-     apply Finite_Expectation_posRV_le with (rv_X2 := rvn) (prv2 := n); trivial.     
-     apply negative_part_rv.
-     now apply rvminus_rv.
-     apply neg_part_le; trivial.
-   Admitted.
+     assert (is_finite (Expectation_posRV (fun x : Ts => pos_fun_part (rvminus rvp rvn) x))).
+     - apply Finite_Expectation_posRV_le with (rv_X2 := rvp) (prv2 := p); trivial.
+       + apply positive_part_rv.
+         now apply rvminus_rv.
+       + apply pos_part_le; trivial.
+     - assert (is_finite (Expectation_posRV (fun x : Ts => neg_fun_part (rvminus rvp rvn) x))).
+       + apply Finite_Expectation_posRV_le with (rv_X2 := rvn) (prv2 := n); trivial.     
+         * apply negative_part_rv.
+            now apply rvminus_rv.
+         * apply neg_part_le; trivial.
+       + cut_to H1; trivial.
+         * unfold Expectation.
+           unfold Rbar_minus'.
+           unfold is_finite in H2; rewrite <- H2.
+           unfold is_finite in H3; rewrite <- H3.
+           unfold is_finite in H; rewrite <- H.
+           unfold is_finite in H0; rewrite <- H0.           
+           simpl.
+           f_equal.
+           rewrite Rbar_finite_eq.
+           simpl in H1.
+           lra.
+         * apply rv_pos_neg_id.
+   Qed.
 
   Lemma Expectation_sum  {nempty:NonEmpty Ts}
         (rv_X1 rv_X2 : Ts -> R)
