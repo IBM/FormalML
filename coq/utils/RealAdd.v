@@ -753,7 +753,7 @@ Proof.
 Qed.
 
 
-Lemma exp_ineq {x : R} : 1+x <= exp x.
+Lemma exp_ineq (x : R) : 1+x <= exp x.
 Proof.
   destruct (Rlt_or_le (-1) x).
   + destruct (Rlt_or_le x 0).
