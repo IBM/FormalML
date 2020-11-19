@@ -3764,6 +3764,158 @@ admit.
         lra.
   Qed.
 
+  Lemma Expectation_posRV_le 
+        (rv_X1 rv_X2 : Ts -> R)
+        {rv1: RandomVariable Prts borel_sa rv_X1}
+        {rv2: RandomVariable Prts borel_sa rv_X2}                               
+        {prv1 : PositiveRandomVariable rv_X1}
+        {prv2 : PositiveRandomVariable rv_X2} :
+    RealRandomVariable_le rv_X1 rv_X2 ->
+    Rbar_le (Expectation_posRV rv_X1) (Expectation_posRV rv_X2).
+  Proof.
+    intros.
+    unfold Expectation_posRV, SimpleExpectationSup.
+    unfold Lub_Rbar.
+    repeat match goal with
+             [|- context [proj1_sig ?x]] => destruct x; simpl
+           end.
+    refine (is_lub_Rbar_subset _ _ _ _ _ i0 i); intros.
+    destruct H0 as [rvx [? [? [? ?]]]].
+    exists rvx; exists x2; exists x3.
+    split; trivial.
+    unfold BoundedPositiveRandomVariable in *.
+    destruct H0.
+    split; trivial.
+    unfold RealRandomVariable_le in *.
+    intros.
+    specialize (H x4); specialize (H2 x4).
+    lra.
+ Qed.
+
+  Lemma Lub_Rbar_const (c:R) :
+    Lub_Rbar (fun x => x = c) = c.
+  Proof.
+    unfold Lub_Rbar.
+    repeat match goal with
+             [|- context [proj1_sig ?x]] => destruct x; simpl
+           end.
+    unfold is_lub_Rbar, is_ub_Rbar in i.
+    destruct i.
+    specialize (H c).
+    cut_to H; trivial.
+    specialize (H0 c).
+    + cut_to H0.
+      * apply Rbar_le_antisym; trivial.
+      * intros.
+        subst.
+        apply Rbar_le_refl.
+  Qed.
+
+  Lemma Expectation_posRV_const (c : R) (nnc : 0 <= c) :
+        (@Expectation_posRV (const c) (prvconst _ nnc)) = c.
+  Proof.
+    unfold Expectation_posRV, SimpleExpectationSup.
+    unfold Lub_Rbar.
+    repeat match goal with
+             [|- context [proj1_sig ?x]] => destruct x; simpl
+           end.
+    simpl in *.
+    unfold is_lub_Rbar in i.
+    unfold is_ub_Rbar in i.
+    destruct i.
+    specialize (H c).
+    specialize (H0 c).
+    cut_to H.
+    cut_to H0.
+    - apply Rbar_le_antisym; trivial.    
+    - intros.
+      destruct H1 as [? [? [? [? ?]]]].
+      unfold BoundedPositiveRandomVariable in H1.
+      destruct H1.
+      generalize (SimpleExpectation_le x1 (const c) H3); intros.
+      rewrite H2 in H4.
+      rewrite SimpleExpectation_const in H4.
+      now simpl.
+    - exists (const c).
+      exists (rvconst c).
+      exists (srvconst c).
+      split; trivial; [| apply SimpleExpectation_const].
+      unfold BoundedPositiveRandomVariable.
+      split; [ apply (prvconst c nnc) |].
+      unfold RealRandomVariable_le, const; intros.
+      lra.
+  Qed.        
+
+  Lemma bounded_is_finite (a b : R) (x : Rbar) :
+    Rbar_le a x -> Rbar_le x b -> is_finite x.
+  Proof.
+    intros.
+    unfold is_finite.
+    destruct x.
+    - now simpl.
+    - simpl in H0.
+      tauto.
+    - simpl in H.
+      tauto.
+  Qed.
+
+  Lemma Finite_Expectation_posRV_le 
+        (rv_X1 rv_X2 : Ts -> R)
+        {rv1: RandomVariable Prts borel_sa rv_X1}
+        {rv2: RandomVariable Prts borel_sa rv_X2}                               
+        (prv1 : PositiveRandomVariable rv_X1)
+        (prv2 : PositiveRandomVariable rv_X2) :
+    RealRandomVariable_le rv_X1 rv_X2 ->
+    is_finite (Expectation_posRV rv_X2) ->
+    is_finite (Expectation_posRV rv_X1).
+  Proof.
+    intros.
+    generalize (Expectation_posRV_le rv_X1 rv_X2 H); intros.
+    assert (0 <= 0) by lra.
+    generalize (@Expectation_posRV_le (const 0) rv_X1 _ _ (prvconst _ H2) _); intros.
+    cut_to H3.
+    generalize (Expectation_posRV_const 0 H2); intros.
+    rewrite H4 in H3.
+    unfold is_finite in H0.
+    apply (bounded_is_finite 0 (real (Expectation_posRV rv_X2))); trivial.
+    now rewrite H0.
+    unfold RealRandomVariable_le.
+    now unfold PositiveRandomVariable in prv1.
+ Qed.
+
+  Lemma pos_part_le 
+        (rvp rvn : Ts -> R)
+        (pr : RandomVariable Prts borel_sa rvp)
+        (nr : RandomVariable Prts borel_sa rvn)        
+        (p : PositiveRandomVariable rvp)
+        (n : PositiveRandomVariable rvn) :
+   RealRandomVariable_le (fun x : Ts => pos_fun_part (rvminus rvp rvn) x) rvp.
+  Proof.
+    unfold RealRandomVariable_le, pos_fun_part, rvminus.
+    intros.
+    simpl.
+    unfold rvplus, rvopp, rvscale.
+    unfold PositiveRandomVariable in *.
+    specialize (p x); specialize (n x).
+    replace (rvp x + -1 * rvn x) with (rvp x - rvn x) by lra.
+   Admitted.
+
+  Lemma neg_part_le 
+        (rvp rvn : Ts -> R)
+        (pr : RandomVariable Prts borel_sa rvp)
+        (nr : RandomVariable Prts borel_sa rvn)        
+        (p : PositiveRandomVariable rvp)
+        (n : PositiveRandomVariable rvn) :
+    RealRandomVariable_le (fun x : Ts => neg_fun_part (rvminus rvp rvn) x) rvn.
+   Proof.
+     unfold RealRandomVariable_le, pos_fun_part, rvminus.
+     intros.
+     simpl.
+     unfold rvplus, rvopp, rvscale.
+     unfold PositiveRandomVariable in *.
+     specialize (p x); specialize (n x).
+     replace (- (rvp x + -1 * rvn x)) with (rvn x - rvp x) by lra.
+   Admitted.
 
    Lemma Expectation_dif_pos_unique {nempty:NonEmpty Ts}
         (rvp rvn : Ts -> R)
@@ -3791,7 +3943,14 @@ admit.
      apply rv_pos_neg_id.
      trivial.
      trivial.
-     
+     apply Finite_Expectation_posRV_le with (rv_X2 := rvp) (prv2 := p); trivial.
+     apply positive_part_rv.
+     now apply rvminus_rv.
+     apply pos_part_le; trivial.
+     apply Finite_Expectation_posRV_le with (rv_X2 := rvn) (prv2 := n); trivial.     
+     apply negative_part_rv.
+     now apply rvminus_rv.
+     apply neg_part_le; trivial.
    Admitted.
 
   Lemma Expectation_sum  {nempty:NonEmpty Ts}
