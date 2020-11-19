@@ -3726,12 +3726,6 @@ admit.
      repeat match_destr; lra.
    Qed.
 
-   Lemma rv_pos_neg_id2 (rv_X:Ts->R) : rv_eq rv_X (rvminus (pos_fun_part rv_X) (neg_fun_part rv_X)).
-     Proof.
-       unfold rvminus.
-       apply rv_pos_neg_id.
-   Qed.
-   
   Lemma Expectation_dif_pos_unique2 (nempty: NonEmpty Ts)
         (rxp1 rxn1 rxp2 rxn2 : Ts -> R)
         (rp1 : RandomVariable Prts borel_sa rxp1)
@@ -3793,7 +3787,8 @@ admit.
      cut_to H1.
      unfold Expectation.
      admit.
-     apply rv_pos_neg_id2.
+     unfold rvminus.
+     apply rv_pos_neg_id.
      trivial.
      trivial.
      
@@ -3803,6 +3798,7 @@ admit.
         (rv_X1 rv_X2 : Ts -> R)
         {rv1 : RandomVariable Prts borel_sa rv_X1}
         {rv2 : RandomVariable Prts borel_sa rv_X2} :
+    
     Expectation (rvplus rv_X1 rv_X2) =
     match Expectation rv_X1, Expectation rv_X2 with
     | Some exp1, Some exp2 => Some (Rbar_plus exp1 exp2)
