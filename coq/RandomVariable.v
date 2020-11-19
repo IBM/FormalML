@@ -3848,23 +3848,22 @@ admit.
       - generalize (Expectation_posRV_ext _ _ _ _ H2); intros.
         rewrite Expectation_posRV_sum in H3; trivial.
         rewrite Expectation_posRV_sum in H3; trivial.
+
         generalize (Expectation_posRV_pos rxp1); intros.
         generalize (Expectation_posRV_pos rxp2); intros.
+
+        unfold is_finite in *.
+        rewrite <- H0, <- H1 in H3; simpl in H3.
+        rewrite <- H0, <- H1; simpl.
+
         destruct  (Expectation_posRV rxp1); try easy.
         destruct  (Expectation_posRV rxp2); try easy.
-        destruct  (Expectation_posRV rxn1); try easy.
-        destruct  (Expectation_posRV rxn2); try easy.
+
         + simpl in *.
           rewrite Rbar_finite_eq in H3.
           rewrite Rbar_finite_eq.
           lra.
-        + unfold is_finite in *.
-          rewrite <- H0, <- H1 in H3; simpl in H3.
-          discriminate.
-        + unfold is_finite in *.
-          rewrite <- H0, <- H1 in H3; simpl in H3.
-          rewrite <- H0, <- H1; simpl.
-          destruct (Expectation_posRV rxp2).
+        + destruct (Expectation_posRV rxp2).
           * discriminate.
           * now simpl.
           * discriminate.
@@ -3972,13 +3971,13 @@ admit.
          rewrite <- H in H0.
          rewrite <- H1 in H0.
          unfold Rbar_minus in H0.
+
          generalize (Expectation_posRV_pos rvp); intros.
          generalize (Expectation_posRV_pos (pos_fun_part (rvminus rvp rvn))); intros.
 
          destruct  (Expectation_posRV rvp); try easy.
-         destruct  (Expectation_posRV rvn); try easy.
          destruct  (Expectation_posRV (pos_fun_part (rvminus rvp rvn))); try easy.
-         destruct  (Expectation_posRV (neg_fun_part (rvminus rvp rvn))); try easy.         
+
          * unfold Rbar_plus', Rbar_opp.
            simpl in H0.
            f_equal.
@@ -4002,6 +4001,8 @@ admit.
         {rv1 : RandomVariable Prts borel_sa rv_X1}
         {rv2 : RandomVariable Prts borel_sa rv_X2} :
     
+    is_finite (Expectation_posRV (neg_fun_part rv_X1)) ->
+    is_finite (Expectation_posRV (neg_fun_part rv_X2)) ->    
     Expectation (rvplus rv_X1 rv_X2) =
     match Expectation rv_X1, Expectation rv_X2 with
     | Some exp1, Some exp2 => Some (Rbar_plus exp1 exp2)
