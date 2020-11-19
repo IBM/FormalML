@@ -2,7 +2,7 @@ Require Import Coq.Reals.Rbase Coq.Reals.RList.
 Require Import Coq.Reals.Rfunctions.
 Require Import Ranalysis_reg.
 Require Import Coquelicot.Hierarchy Coquelicot.PSeries Coquelicot.Series Coquelicot.ElemFct.
-Require Import Coquelicot.PSeries.
+Require Import Coquelicot.Lim_seq.
 Require Import micromega.Lia.
 Require Import Reals.Integration.
 Require Import Rtrigo_def.
@@ -509,45 +509,63 @@ Qed.
 
 Global Instance EqDecR : EqDec R eq := Req_EM_T.
 
-Lemma exp_ineq2 : forall x : R, x <= -1 -> (1 + x < exp x).
+Section sum_n.
+
+
+Lemma sum_n_pos {a : nat -> R} (n:nat) : (forall n, 0 < a n) -> 0 < sum_n a n.
 Proof.
-  intros x Hx.
-  eapply Rle_lt_trans with 0.
-  - lra.
-  - apply exp_pos.
+  intros.
+  induction n.
+  - unfold sum_n.
+    now rewrite sum_n_n.
+  - unfold sum_n.
+    rewrite sum_n_Sm.
+    apply Rplus_lt_0_compat ; trivial.
+    lia.
+Qed.
+
+Lemma sum_n_zero (n : nat): sum_n (fun _ => 0) n = 0.
+Proof.
+  induction n.
+  + unfold sum_n. now rewrite sum_n_n.
+  + unfold sum_n. rewrite sum_n_Sm.
+    unfold sum_n in IHn. rewrite IHn.
+    unfold plus. simpl ; lra.
+    lia.
+Qed.
+
+(* TODO(Kody) : Maybe get rid of Functional Extensionality? *)
+Lemma Series_nonneg {a : nat -> R} : ex_series a -> (forall n, 0 <= a n) -> 0 <= Series a.
+Proof.
+  intros Ha Hpos.
+  generalize (Series_le (fun n => 0) a).
+  intros H.
+  assert (forall n, 0 <= 0 <= a n) by (intro n; split ; try (lra ; trivial) ; try (trivial)).
+  specialize (H H0 Ha).
+  assert (Series (fun _ => 0) = 0).
+  unfold Series.
+  assert (sum_n (fun _ => 0) = (fun _ => 0))
+    by (apply FunctionalExtensionality.functional_extensionality ; intros ; apply sum_n_zero).
+  rewrite H1. now rewrite Lim_seq_const.
+  now rewrite H1 in H.
 Qed.
 
 
-Lemma exp_ineq3_aux (n : nat) {x : R}:
-  (-1 < x < 0) -> (x^(2*n)/INR(fact (2*n)) + x^(2*n + 1)/INR(fact (2*n + 1))) > 0.
+Lemma Series_pos {a : nat -> R} : ex_series a -> (forall n, 0 < a n) -> 0 < Series a.
 Proof.
-  intros Hx.
-  replace (x^(2*n + 1)) with (x^(2*n) * x) by (rewrite pow_add ; ring).
-  unfold Rdiv.
-  rewrite Rmult_assoc.
-  rewrite <-Rmult_plus_distr_l.
-  apply Rmult_gt_0_compat.
-  -- rewrite pow_mult.
-     apply Rgt_lt. apply pow_lt.
-     apply Rcomplements.pow2_gt_0 ; lra.
-  -- replace (/INR(fact (2*n))) with (1 / INR(fact (2*n))) by lra.
-     replace (x*/INR(fact(2*n+1))) with (x/INR(fact(2*n + 1))) by trivial.
-     rewrite Rcomplements.Rdiv_plus.
-     2,3 : (apply (not_0_INR _ (fact_neq_0 _))).
-     rewrite <-mult_INR. unfold Rdiv.
-     apply Rmult_gt_0_compat.
-     2: apply Rinv_pos ; rewrite mult_INR ;
-        apply Rmult_gt_0_compat ; apply Rprod.INR_fact_lt_0.
-     eapply Rlt_le_trans with (INR(fact(2*n)) + x*INR(fact(2*n))).
-     --- replace (INR(fact(2*n)) + x*INR(fact(2*n)))
-         with (1*INR(fact(2*n)) + x* INR(fact(2*n))) by (f_equal ; now rewrite Rmult_1_l).
-         rewrite <-Rmult_plus_distr_r.
-         apply Rmult_lt_0_compat ; try lra ; try (apply Rprod.INR_fact_lt_0).
-     --- rewrite Rmult_1_l.
-         apply Rplus_le_compat_r. apply le_INR.
-         apply fact_le ; lia.
+  intros Ha Hpos.
+  rewrite Series_incr_1 ; trivial.
+  apply Rplus_lt_le_0_compat ; trivial.
+  apply Series_nonneg.
+  + now rewrite <-ex_series_incr_1.
+  + intros n. left. apply (Hpos (S n)).
 Qed.
 
+End sum_n.
+
+
+
+Section expprops.
 
 Lemma ex_series_exp_even (x:R): ex_series (fun k :nat => /INR(fact(2*k))*(x^2)^k).
 Proof.
@@ -668,12 +686,83 @@ Lemma exp_even_odd_incr_1 (x : R) :
 Proof.
   rewrite exp_even_odd.
   rewrite Series_incr_1 at 1.
-  + simpl. f_equal.
+  + simpl.
+    f_equal.
     field.
   + apply ex_series_even_odd.
 Qed.
 
 
-Lemma Series_pos {a : nat -> R} : ex_series a -> (forall n, 0 < a n) -> 0 < Series a.
+Lemma exp_ineq2 : forall x : R, x <= -1 -> (1 + x < exp x).
 Proof.
-Admitted.
+  intros x Hx.
+  eapply Rle_lt_trans with 0.
+  - lra.
+  - apply exp_pos.
+Qed.
+
+
+Lemma exp_ineq3_aux (n : nat) {x : R}:
+  (-1 < x < 0) -> 0 < (x^(2*n)/INR(fact (2*n)) + x^(2*n + 1)/INR(fact (2*n + 1))).
+Proof.
+  intros Hx.
+  replace (x^(2*n + 1)) with (x^(2*n) * x) by (rewrite pow_add ; ring).
+  unfold Rdiv.
+  rewrite Rmult_assoc.
+  rewrite <-Rmult_plus_distr_l.
+  apply Rmult_gt_0_compat.
+  -- rewrite pow_mult.
+     apply Rgt_lt. apply pow_lt.
+     apply Rcomplements.pow2_gt_0 ; lra.
+  -- replace (/INR(fact (2*n))) with (1 / INR(fact (2*n))) by lra.
+     replace (x*/INR(fact(2*n+1))) with (x/INR(fact(2*n + 1))) by trivial.
+     rewrite Rcomplements.Rdiv_plus.
+     2,3 : (apply (not_0_INR _ (fact_neq_0 _))).
+     rewrite <-mult_INR. unfold Rdiv.
+     apply Rmult_gt_0_compat.
+     2: apply Rinv_pos ; rewrite mult_INR ;
+        apply Rmult_gt_0_compat ; apply Rprod.INR_fact_lt_0.
+     eapply Rlt_le_trans with (INR(fact(2*n)) + x*INR(fact(2*n))).
+     --- replace (INR(fact(2*n)) + x*INR(fact(2*n)))
+         with (1*INR(fact(2*n)) + x* INR(fact(2*n))) by (f_equal ; now rewrite Rmult_1_l).
+         rewrite <-Rmult_plus_distr_r.
+         apply Rmult_lt_0_compat ; try lra ; try (apply Rprod.INR_fact_lt_0).
+     --- rewrite Rmult_1_l.
+         apply Rplus_le_compat_r. apply le_INR.
+         apply fact_le ; lia.
+Qed.
+
+Lemma exp_ineq3 {x : R} : -1 < x < 0 -> 1+x < exp x.
+Proof.
+  intro Hx.
+  rewrite exp_even_odd.
+  rewrite Series_incr_1. 2 : apply ex_series_even_odd.
+  replace (1+x) with (1+x+ 0) by ring.
+  replace (2*0) with 0 by lra.
+  replace (fact(2*0)) with 1%nat by (simpl;trivial).
+  replace (fact(2*0 + 1)) with 1%nat by (simpl;trivial).
+  replace (x^(2*0)) with 1 by (simpl;trivial).
+  replace (x^(2*0 + 1)) with x by (simpl;trivial;ring).
+  replace (INR 1) with 1 by (simpl;trivial).
+  replace (1/1 + x/1) with (1+x) by field.
+  apply Rplus_lt_compat_l.
+  apply Series_pos.
+  + generalize (ex_series_even_odd x) ;intros.
+    now rewrite ex_series_incr_1 in H.
+  + intro n. now apply exp_ineq3_aux.
+Qed.
+
+
+Lemma exp_ineq {x : R} : 1+x <= exp x.
+Proof.
+  destruct (Rlt_or_le (-1) x).
+  + destruct (Rlt_or_le x 0).
+    -- left. apply exp_ineq3. lra.
+    -- destruct H0.
+       ++ left. now apply exp_ineq1.
+       ++ right. subst ; simpl.
+          rewrite exp_0 ; lra.
+  + left. now apply exp_ineq2.
+Qed.
+
+End expprops.
