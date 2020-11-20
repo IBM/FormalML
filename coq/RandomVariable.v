@@ -3982,6 +3982,25 @@ admit.
        + apply rv_pos_neg_id.
    Qed.
 
+
+   Definition simple_approx_seq n : list R := map (fun x => INR x / (2^n)) (seq 0 (n*(2^n)-1)).
+
+   Definition simple_approx (X:Ts->R) (n:nat) : Ts -> R
+     := fun ω : Ts =>
+          let Xw := X ω in
+          match find (fun start => if Rge_dec Xw start then true else false) (simple_approx_seq n) with
+          | Some r => r
+          | None => INR n
+          end.
+
+   Lemma simple_approx_lt (X:Ts->R) (n:nat) ω : simple_approx X n ω < X ω.
+   Proof.
+     unfold simple_approx, simple_approx_seq.
+(*     rewrite find_over_map. *)
+   Admitted.
+   
+   
+
   Lemma Expectation_sum  {nempty:NonEmpty Ts}
         (rv_X1 rv_X2 : Ts -> R)
         {rv1 : RandomVariable Prts borel_sa rv_X1}
