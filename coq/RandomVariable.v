@@ -5,6 +5,7 @@ Require Import List Permutation.
 Require Import Morphisms EquivDec Program.
 Require Import Coquelicot.Rbar.
 Require Import Coquelicot.Lub.
+Require Import Coquelicot.Lim_seq.
 
 Require Import Utils.
 Require Import NumberIso.
@@ -3993,6 +3994,28 @@ admit.
           | None => INR 0
           end.
 
+   Definition interval_dec : forall r r1 r2 :R, {r1 <= r < r2} + {~(r1 <= r < r2)}.
+   Proof.
+     Admitted.
+
+   Definition simple_approx2 (X:Ts->R) (n:nat) : Ts -> R
+     := fun ω : Ts =>
+          let Xw := X ω in
+          if Rge_dec Xw (INR n) then (INR n) else  (* redundant *)
+          match find (fun start => 
+                        if interval_dec Xw ((INR start)/2^n) ((INR start + 1)/2^n) then true
+                        else false)
+                     (seq 0 (n*(2^n))) with
+          | Some r => (INR r)/ (2^n)
+          | None => INR n
+          end.
+   
+   Definition simple_approx_alt (X:Ts->R) (n:nat) : Ts -> R
+     := fun ω : Ts =>
+          let Xw := X ω in
+          if Rge_dec Xw (INR n) then (INR n) else
+            (IZR (up (Xw * 2^n)) - 1)/ 2^n. 
+
    Lemma simple_approx_vals (X:Ts->R) (n:nat) :
      forall (omega:Ts), 
        In (simple_approx X n omega)
@@ -4008,6 +4031,39 @@ admit.
    Next Obligation.
      apply simple_approx_vals.
    Qed.
+
+   Lemma simple_approx2_preimage (X:Ts->R) (n:nat) :
+     let sx := simple_approx2 X n in
+     forall (k:nat), (k<n*2^n)%nat -> 
+                     forall (omega:Ts), sx omega = (INR k)/2^n ->
+                                        (INR k)/2^n <= X omega < (INR (S k))/2^n.
+     Proof.
+       unfold simple_approx2.
+       intros.
+       assert (/ (2^n) <> 0).
+       - apply Rgt_not_eq, Rinv_0_lt_compat.
+         apply pow_lt; lra.
+       - match_case_in H0; intros.
+         + rewrite H2 in H0.
+           apply Rmult_eq_compat_r with (r := 2^n) in H0.
+           unfold Rdiv in H0.
+           rewrite Rmult_assoc in H0.
+           rewrite Rinv_l in H0; trivial.
+           rewrite Rmult_1_r in H0.
+           assert (INR k < INR(n*2^n)).
+           now apply lt_INR.
+           rewrite mult_INR in H3.
+           rewrite pow_INR in H3.
+           simpl in H3.
+           replace (1+1) with (2) in H3 by lra.
+           lra.
+           apply Rgt_not_eq; apply pow_lt; lra.
+         + rewrite H2 in H0.
+           match_case_in H0; intros.
+           * apply find_some in H3.
+             destruct H3.
+             match_case_in H4; intros.
+     Admitted.
 
    Lemma simple_approx_le (X:Ts->R) (n:nat) (posX : PositiveRandomVariable X) (ω:Ts) :
      simple_approx X n ω <= X ω.
@@ -4029,27 +4085,62 @@ admit.
       unfold simple_approx.
       match_case; intros.
       - match_case; intros.
+        + apply le_INR; lia.
+        + match_case; intros.
+          apply find_some in H1.
+      Admitted.
+          
+
+   Lemma simple_approx_increasing_alt  (X:Ts->R) (posX : PositiveRandomVariable X) 
+         (n:nat) (ω : Ts) :
+     simple_approx_alt X n ω <= simple_approx_alt X (S n) ω.
+    Proof.
+      unfold simple_approx_alt.
+      match_case; intros.
+      - match_case; intros.
+        + apply le_INR; lia.
+        + apply Rmult_le_reg_r with (r := 2^(S n)).
+          * apply pow_lt; lra.
+          * unfold Rdiv.
+            rewrite Rmult_assoc.
+            rewrite Rinv_l.
+            -- rewrite Rmult_1_r.
+               generalize (archimed (X ω * 2 ^ S n)); intros.
+               destruct H1.
+               apply Rle_trans with (r2 := X ω * 2^(S n)).
+               ++ apply  Rmult_le_compat_r; [|lra].
+                  left; apply pow_lt; lra.
+               ++ admit.
+            -- apply Rgt_not_eq.
+               apply pow_lt; lra.
+      - match_case; intros.
+        + assert (INR (S n) > INR n).
+          * apply Rlt_gt.
+            apply lt_INR; lia.
+          * lra.
+        + simpl.
    Admitted.
 
     Lemma simple_approx_delta (X:Ts -> R) (n:nat) (ω : Ts) (posX : PositiveRandomVariable X) :
-      (X ω < INR n) -> (X ω - simple_approx X n ω) < / (2^n).
+      (X ω < INR n) -> (X ω - simple_approx2 X n ω) < / (2^n).
     Proof.
       intros.
-      unfold simple_approx.
+      unfold simple_approx2.
       match_case; intros.
       - lra.
-      - rewrite <- map_rev.
-        rewrite find_over_map.
-        unfold lift.
-        match_case; intros.
-        + match_case_in H1; intros.
-          apply find_some in H2.
-          destruct H2.
-          apply in_rev in H2.
+      - match_case; intros.
+        + apply find_some in H1.
+          destruct H1.
+          match_case_in H2; intros.
+          * lra.
+          * rewrite H3 in H2.
+            congruence.
+        + generalize (find_none _ _ H1); intros.
+          
    Admitted.
 
    Lemma simple_approx_lim (X:Ts -> R) (posX : PositiveRandomVariable X) (eps : posreal) :
-     forall (ω : Ts), exists (n:nat), X ω - simple_approx X n ω < eps.
+     forall (ω : Ts), exists (n:nat), X ω - simple_approx2 X n ω < eps.
    Proof.
      intros.
      assert (exists n, (2^n > Z.to_nat (up (/ eps))))%nat.
@@ -4105,6 +4196,26 @@ admit.
          * apply le_INR.
            apply Max.le_max_r.
    Qed.
+
+   Lemma simple_approx_lim_seq (X:Ts -> R) (posX : PositiveRandomVariable X) (eps : posreal) :
+     forall (ω : Ts), is_lim_seq' (fun n => simple_approx2 X n ω) (X ω).
+   Proof.
+     intros.
+     unfold is_lim_seq'; intros.
+     unfold Hierarchy.eventually.
+     generalize (simple_approx_lim X posX eps0 ω); intros.
+     destruct H.
+     exists x.
+     intros.
+     assert (simple_approx2 X n ω <= X ω).
+     admit.
+     rewrite Rabs_minus_sym.
+     Search Rabs.
+     rewrite Rabs_right; [|lra].
+     assert ( simple_approx2 X n ω >= simple_approx2 X x ω).
+     admit.
+     lra.
+   Admitted.
 
   Lemma Expectation_sum  {nempty:NonEmpty Ts}
         (rv_X1 rv_X2 : Ts -> R)
@@ -4197,4 +4308,4 @@ Section zmBoundedVariance.
     }.
 End zmBoundedVariance.
 
-  
+Search "archimed".
