@@ -3982,24 +3982,129 @@ admit.
        + apply rv_pos_neg_id.
    Qed.
 
-
-   Definition simple_approx_seq n : list R := map (fun x => INR x / (2^n)) (seq 0 (n*(2^n)-1)).
-
+   (* sequence of simple random variables monotonically converging to X>=0 *)
    Definition simple_approx (X:Ts->R) (n:nat) : Ts -> R
      := fun ω : Ts =>
           let Xw := X ω in
-          match find (fun start => if Rge_dec Xw start then true else false) (simple_approx_seq n) with
+          if Rge_dec Xw (INR n) then (INR n) else
+          match find (fun start => if Rge_dec Xw start then true else false) 
+                     (rev (map (fun x => INR x / (2^n)) (seq 0 (n*(2^n))))) with
           | Some r => r
-          | None => INR n
+          | None => INR 0
           end.
 
-   Lemma simple_approx_lt (X:Ts->R) (n:nat) ω : simple_approx X n ω < X ω.
+   Lemma simple_approx_vals (X:Ts->R) (n:nat) :
+     forall (omega:Ts), 
+       In (simple_approx X n omega)
+          (map (fun x => INR x / (2^n)) (seq 0 (S (n*(2^n))))).          
    Proof.
-     unfold simple_approx, simple_approx_seq.
-(*     rewrite find_over_map. *)
+     intros.
+     unfold simple_approx.
+     rewrite in_map_iff.
+     Admitted.
+
+   Program Instance simple_appox_srv (X:Ts->R) (n:nat) : SimpleRandomVariable (simple_approx X n) :=
+     {srv_vals := map (fun x => INR x / (2^n)) (seq 0 (S (n*(2^n))))}.
+   Next Obligation.
+     apply simple_approx_vals.
+   Qed.
+
+   Lemma simple_approx_le (X:Ts->R) (n:nat) (posX : PositiveRandomVariable X) (ω:Ts) :
+     simple_approx X n ω <= X ω.
+   Proof.
+     unfold simple_approx.
+     match_case; intros.
+     - lra.
+     - match_case; intros.
+       apply find_some in H0.
+       destruct H0.
+       match_destr_in H1.
+       lra.
+   Qed.
+   
+   Lemma simple_approx_increasing  (X:Ts->R) (posX : PositiveRandomVariable X) 
+         (n:nat) (ω : Ts) :
+     simple_approx X n ω <= simple_approx X (S n) ω.
+    Proof.
+      unfold simple_approx.
+      match_case; intros.
+      - match_case; intros.
    Admitted.
-   
-   
+
+    Lemma simple_approx_delta (X:Ts -> R) (n:nat) (ω : Ts) (posX : PositiveRandomVariable X) :
+      (X ω < INR n) -> (X ω - simple_approx X n ω) < / (2^n).
+    Proof.
+      intros.
+      unfold simple_approx.
+      match_case; intros.
+      - lra.
+      - rewrite <- map_rev.
+        rewrite find_over_map.
+        unfold lift.
+        match_case; intros.
+        + match_case_in H1; intros.
+          apply find_some in H2.
+          destruct H2.
+          apply in_rev in H2.
+   Admitted.
+
+   Lemma simple_approx_lim (X:Ts -> R) (posX : PositiveRandomVariable X) (eps : posreal) :
+     forall (ω : Ts), exists (n:nat), X ω - simple_approx X n ω < eps.
+   Proof.
+     intros.
+     assert (exists n, (2^n > Z.to_nat (up (/ eps))))%nat.
+     - exists (S (Nat.log2 (Z.to_nat (up (/ eps))))).
+       unfold PositiveRandomVariable in posX.
+       apply Nat.log2_spec.
+       replace (0)%nat with (Z.to_nat (0%Z)) by apply Z2Nat.inj_0.
+       apply Z2Nat.inj_lt.
+       + lia.
+       + apply Z.ge_le.
+         apply up_nonneg.
+         left.
+         apply Rinv_0_lt_compat.
+         apply cond_pos.
+       + apply Z.gt_lt.
+         apply up_pos.
+         apply Rinv_0_lt_compat.
+         apply cond_pos.
+     - destruct H.
+       exists (max x (Z.to_nat (up (X ω)))).
+       generalize (simple_approx_delta X (Init.Nat.max x (Z.to_nat (up (X ω)))) ω posX); intros.
+       cut_to H0.
+       + apply Rlt_trans with (r2 := / 2 ^ Init.Nat.max x (Z.to_nat (up (X ω)))); trivial.
+         replace (pos eps) with (/ (/ (pos eps))).
+         * apply Rinv_lt_contravar.
+           -- apply Rmult_lt_0_compat.
+              ++ apply Rinv_0_lt_compat.
+                 apply cond_pos.
+              ++ apply pow_lt.
+                 lra.
+           -- apply Rlt_le_trans with (r2 := 2^x).
+              ++ apply Rlt_trans with (r2 := IZR (up (/ eps))).
+                 ** apply archimed.
+                 ** apply lt_INR in H.
+                    rewrite INR_up_pos in H.
+                    --- replace (2^x) with (INR (2^x)); [apply H |].
+                        rewrite pow_INR.
+                        f_equal.
+                    --- left.
+                        apply Rinv_0_lt_compat.
+                        apply cond_pos.
+              ++ apply Rle_pow; [lra |].
+                 apply Max.le_max_l.
+         * rewrite Rinv_involutive.
+           reflexivity.
+           apply Rgt_not_eq.
+           apply cond_pos.
+       + apply Rlt_le_trans with (r2 := INR (Z.to_nat (up (X  ω)))).
+         * rewrite INR_up_pos.
+           apply archimed.
+           apply Rle_ge.
+           apply posX.
+         * apply le_INR.
+           apply Max.le_max_r.
+   Qed.
 
   Lemma Expectation_sum  {nempty:NonEmpty Ts}
         (rv_X1 rv_X2 : Ts -> R)
