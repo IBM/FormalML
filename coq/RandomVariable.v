@@ -4217,6 +4217,39 @@ admit.
      lra.
    Admitted.
 
+   Instance posfun (X : Ts -> R) : PositiveRandomVariable X.
+   Admitted.
+
+   Instance ranvar (X : Ts -> R) : RandomVariable Prts borel_sa X.
+   Admitted.
+
+   Lemma monotone_convergence
+         (X : Ts -> R )
+         (Xn : nat -> Ts -> R)
+         (rvx : RandomVariable Prts borel_sa X)
+         (posX: PositiveRandomVariable X) :         
+     (forall (n:nat), RealRandomVariable_le (Xn n) X) ->
+     (forall (n:nat), RealRandomVariable_le (Xn n) (Xn (S n))) ->
+
+     (forall (omega:Ts), is_lim_seq' (fun n => Xn n omega) (X omega)) ->
+     is_lim_seq' (fun n => @Expectation_posRV (Xn n) (posfun (Xn n)))  (Expectation_posRV X).
+  Proof.
+    generalize Expectation_posRV_le; intros.
+    assert (forall (n:nat), (Rbar_le (Expectation_posRV (Xn n)) (Expectation_posRV X))).
+    - intros.
+      apply H; trivial.
+      apply ranvar.
+    - assert (forall (n:nat), (Rbar_le (Expectation_posRV (Xn n)) (Expectation_posRV (Xn (S n))))).
+      + intros.
+        apply H; trivial.
+        apply ranvar.
+        apply ranvar.
+      + pose (a := (Lim_seq (fun n : nat => Expectation_posRV (Xn n)))).
+        generalize (Lim_seq_le_loc (fun n => Expectation_posRV (Xn n)) 
+                                   (fun _ => Expectation_posRV X)); intros.
+        cut_to H5.
+        * Admitted.
+
   Lemma Expectation_sum  {nempty:NonEmpty Ts}
         (rv_X1 rv_X2 : Ts -> R)
         {rv1 : RandomVariable Prts borel_sa rv_X1}
@@ -4239,11 +4272,13 @@ admit.
       lra.
     }
     rewrite (Expectation_ext _ _ eqq1); clear eqq1.
+(*
     erewrite Expectation_dif_pos_unique.
     repeat rewrite Expectation_posRV_sum by typeclasses eauto.
     unfold Expectation.
     unfold Rbar_minus'.
     rewrite <- Rbar_plus_opp.
+*)
 (*
     generalize (Expectation_posRV (fun x : Ts => pos_fun_part rv_X1 x))
     ; generalize (Expectation_posRV (fun x : Ts => pos_fun_part rv_X2 x))
@@ -4308,4 +4343,4 @@ Section zmBoundedVariance.
     }.
 End zmBoundedVariance.
 
-Search "archimed".
+
