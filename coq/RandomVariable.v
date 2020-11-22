@@ -4217,17 +4217,15 @@ admit.
       intros.
       generalize (simple_approx_preimage_inf X n posX ω); intros.
       generalize (simple_approx_preimage_inf X (S n) posX ω); intros.
-      generalize (simple_approx_preimage_fin X (S n) posX ω); intros.
       destruct H; destruct H0.
       case (Rge_dec (X ω) (INR n)); intros.
-      - specialize (H2 r).
+      - specialize (H1 r).
         case (Rge_dec (X ω) (INR (S n))); intros.        
-        + specialize (H3 r0).
-          rewrite S_INR in H3.
+        + specialize (H2 r0).
+          rewrite S_INR in H2.
           lra.
-        + rewrite H2.
+        + rewrite H1.
           apply Rnot_ge_lt in n0.
-          specialize (H1 n0).
           assert (INR n = INR (n*2^(S n))/2^(S n)).
           * rewrite mult_INR.
             unfold Rdiv.
@@ -4240,7 +4238,7 @@ admit.
                apply pow_lt; lra.
             -- rewrite pow_INR.
                now replace (INR 2) with 2.
-          * rewrite H4 in r.
+          * rewrite H3 in r.
             apply Rge_le in r.
             generalize (simple_approx_bound X (S n) posX ω n0 (n * 2 ^ S n) r); intros.
             lra.
@@ -4248,11 +4246,11 @@ admit.
         assert (X ω < INR (S n)).
         apply Rlt_trans with (r2 := INR n); trivial; apply lt_INR; lia.
         generalize (simple_approx_exists X n ω); intros.
-        destruct H5.
-        rewrite H5.
+        destruct H4.
+        rewrite H4.
         generalize (simple_approx_le X n posX ω); intros.
-        generalize (simple_approx_bound X (S n) posX ω H4); intros.
-        rewrite H5 in H6.
+        generalize (simple_approx_bound X (S n) posX ω H3); intros.
+        rewrite H4 in H5.
         assert (INR x / 2^n = INR(2*x)/ 2^(S n)).
         + unfold Rdiv.
           rewrite mult_INR.
@@ -4260,10 +4258,10 @@ admit.
           field.
           apply Rgt_not_eq.
           apply pow_lt; lra.          
-        + specialize (H7 (2*x)%nat).
-          rewrite H8.
-          apply H7.
-          now rewrite H8 in H6.
+        + specialize (H6 (2*x)%nat).
+          rewrite H7.
+          apply H6.
+          now rewrite H7 in H5.
    Qed.
           
    Lemma simple_approx_increasing2  (X:Ts->R) (posX : PositiveRandomVariable X) 
