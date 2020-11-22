@@ -4079,6 +4079,68 @@ admit.
      apply simple_approx_vals.
    Qed.
 
+   Lemma simple_approx_preimage_inf (X:Ts -> R) (n:nat) :
+     PositiveRandomVariable X ->
+     forall (omega:Ts), simple_approx X n omega = INR n <-> X omega >= INR n.
+   Proof.
+     unfold PositiveRandomVariable; intro posX.
+     intros.
+     unfold simple_approx.
+     match_case; intros.
+     - tauto.
+     - split; [|lra].
+       generalize (Rnot_ge_lt _ _ n0); intros.
+       match_case_in H1; intros.
+       + rewrite H2 in H1.
+         apply find_some in H2.
+         destruct H2.
+         match_case_in H3; intros.
+         * invcs H1.
+           lra.
+         * invcs H1.
+           rewrite H4 in H3.
+           congruence.
+      + destruct (gt_dec n 0).
+        * generalize (find_none _ _ H2); intros.
+          specialize (H3 0).
+          rewrite <- in_rev in H3.
+          cut_to H3.
+          specialize (posX omega).
+          match_case_in H3; intros.
+          -- rewrite H4 in H3.
+             congruence.
+          -- lra.
+          -- apply in_map_iff.
+             exists (0%nat).
+             split.
+             ++ simpl.
+                lra.
+             ++ apply in_seq.
+                split; [lia|].
+                simpl.
+                generalize (pow_exp_gt 2 n); intros.
+                cut_to H4.
+                replace (0%nat) with (n*0)%nat at 1 by lia.
+                apply mult_lt_compat_l; lia.
+                lia.
+        * assert (n = 0)%nat by lia.
+          invcs H3.
+          simpl.
+          apply Rle_ge.
+          apply posX.
+    Qed.
+       
+   Lemma simple_approx_preimage_fin (X:Ts -> R) (n:nat) :
+     PositiveRandomVariable X ->
+     forall (omega:Ts) (k:nat),
+       X omega < INR n ->
+       simple_approx X n omega = (INR k)/2^n <->
+       (INR k)/2^n <= X omega < (INR (S k))/2^n.
+     Proof.
+     Admitted.
+
+   
+
    Lemma simple_approx2_preimage (X:Ts->R) (n:nat) :
      let sx := simple_approx2 X n in
      forall (k:nat), (k<n*2^n)%nat -> 
@@ -4271,6 +4333,90 @@ admit.
 
    Instance ranvar (X : Ts -> R) : RandomVariable Prts borel_sa X.
    Admitted.
+
+   Lemma monotone_convergence0 (c:posreal)
+         (X : Ts -> R )
+         (Xn : nat -> Ts -> R)
+         (phi : Ts -> R)
+         (rvx : RandomVariable Prts borel_sa X)
+
+         (posX: PositiveRandomVariable X) 
+         (posphi: PositiveRandomVariable phi)
+
+         (sphi : SimpleRandomVariable phi) :
+
+     (forall (n:nat), RealRandomVariable_le (Xn n) X) ->
+     (forall (n:nat), RealRandomVariable_le (Xn n) (Xn (S n))) ->
+     RealRandomVariable_le phi X ->
+     (forall (omega:Ts), is_lim_seq' (fun n => Xn n omega) (X omega)) ->
+     c < 1 ->
+
+     (c * (real (Expectation_posRV phi))) <=
+     (Lim_seq (fun n => real (@Expectation_posRV (Xn n) (posfun (Xn n))))).
+   Proof.
+     Admitted.
+
+   Lemma monotone_convergence00         
+         (X : Ts -> R )
+         (Xn : nat -> Ts -> R)
+         (phi : Ts -> R)
+         (rvx : RandomVariable Prts borel_sa X)
+
+         (posX: PositiveRandomVariable X) 
+         (posphi: PositiveRandomVariable phi)
+
+         (sphi : SimpleRandomVariable phi) :
+
+     (forall (n:nat), RealRandomVariable_le (Xn n) X) ->
+     (forall (n:nat), RealRandomVariable_le (Xn n) (Xn (S n))) ->
+     RealRandomVariable_le phi X ->
+     (forall (omega:Ts), is_lim_seq' (fun n => Xn n omega) (X omega)) ->
+     Rbar_le 
+       (real (Expectation_posRV phi))
+       (Lim_seq (fun n =>  real (@Expectation_posRV (Xn n) (posfun (Xn n))))).
+   Proof.
+     assert (is_lim_seq (fun n => (1-/(2+INR n)) * (Expectation_posRV phi))
+                        (real (Expectation_posRV phi))).
+     - replace (real (@Expectation_posRV phi posphi)) with 
+           (1 * (real (@Expectation_posRV phi posphi))) at 1.
+       + apply is_lim_seq_scal_r with (lu := Finite 1) (a := (@Expectation_posRV phi posphi)).
+         replace (Finite 1) with (Rbar_minus (Finite 1) (Finite 0)) by 
+             (simpl; rewrite Rbar_finite_eq; lra).
+         apply is_lim_seq_minus'.
+         * apply is_lim_seq_const.
+         * replace (Finite 0) with (Rbar_inv p_infty).
+           -- apply is_lim_seq_inv.
+              ++ apply is_lim_seq_plus with (l1 := 2) (l2 := p_infty).
+                 apply is_lim_seq_const.
+                 apply is_lim_seq_INR.
+                 unfold is_Rbar_plus.
+                 now simpl.
+              ++ discriminate.
+           -- now simpl.
+       + now simpl; rewrite Rmult_1_l.
+     - intros.
+       apply is_lim_seq_le with (u:=fun n => (1-/(2+INR n)) * (real (Expectation_posRV phi)))
+                                (v:=fun _ : nat => Lim_seq (fun n : nat => real (@Expectation_posRV (Xn n) (posfun (Xn n))))).
+       intros.
+       assert (0< 1 - /(2+INR n)).
+       apply Rplus_lt_reg_l with (r := /(2+INR n)).
+       ring_simplify.
+       apply Rmult_lt_reg_l with (r := (2 + INR n)).
+       generalize (pos_INR n); lra.
+       rewrite <- Rinv_r_sym.
+       generalize (pos_INR n); lra.
+       apply Rgt_not_eq.
+       generalize (pos_INR n); lra.
+       apply (monotone_convergence0 (mkposreal _ H4) X); trivial.
+       simpl.
+       apply Rplus_lt_reg_l with (r := -1).
+       ring_simplify.
+       apply Ropp_lt_gt_0_contravar.
+       apply  Rinv_0_lt_compat.
+       generalize (pos_INR n); lra.
+       apply H.
+       Admitted.
+
 
    Lemma monotone_convergence
          (X : Ts -> R )
