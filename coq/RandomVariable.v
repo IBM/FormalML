@@ -4130,6 +4130,16 @@ admit.
           apply posX.
     Qed.
        
+
+   Lemma simple_approx_preimage_fin0 (X:Ts -> R) (n:nat) :
+     PositiveRandomVariable X ->
+     forall (omega:Ts) (k:nat),
+       X omega < INR n ->
+       (simple_approx X n omega)*(2^n) = (INR k) <->
+       (INR k) <= (X omega)*(2^n) < (INR (S k)).
+     Proof.
+     Admitted.
+
    Lemma simple_approx_preimage_fin (X:Ts -> R) (n:nat) :
      PositiveRandomVariable X ->
      forall (omega:Ts) (k:nat),
@@ -4139,8 +4149,8 @@ admit.
      Proof.
      Admitted.
 
-   
 
+(*
    Lemma simple_approx2_preimage (X:Ts->R) (n:nat) :
      let sx := simple_approx2 X n in
      forall (k:nat), (k<n*2^n)%nat -> 
@@ -4175,6 +4185,7 @@ admit.
              -- 
              
      Admitted.
+*)
 
    Lemma simple_approx_le (X:Ts->R) (n:nat) (posX : PositiveRandomVariable X) (ω:Ts) :
      simple_approx X n ω <= X ω.
@@ -4201,7 +4212,14 @@ admit.
           apply find_some in H1.
       Admitted.
           
+   Lemma simple_approx_increasing2  (X:Ts->R) (posX : PositiveRandomVariable X) 
+         (n1 n2:nat) (ω : Ts) :
+     (n1 <= n2)%nat ->
+     simple_approx X n1 ω <= simple_approx X n2 ω.
+    Proof.
+      Admitted.
 
+(*
    Lemma simple_approx_increasing_alt  (X:Ts->R) (posX : PositiveRandomVariable X) 
          (n:nat) (ω : Ts) :
      simple_approx_alt X n ω <= simple_approx_alt X (S n) ω.
@@ -4231,27 +4249,22 @@ admit.
           * lra.
         + simpl.
    Admitted.
-
+*)
     Lemma simple_approx_delta (X:Ts -> R) (n:nat) (ω : Ts) (posX : PositiveRandomVariable X) :
-      (X ω < INR n) -> (X ω - simple_approx2 X n ω) < / (2^n).
+      (X ω < INR n) -> (X ω - simple_approx X n ω) < / (2^n).
     Proof.
       intros.
-      unfold simple_approx2.
+      unfold simple_approx.
       match_case; intros.
       - lra.
       - match_case; intros.
         + apply find_some in H1.
           destruct H1.
           match_case_in H2; intros.
-          * lra.
-          * rewrite H3 in H2.
-            congruence.
-        + generalize (find_none _ _ H1); intros.
-          
    Admitted.
 
    Lemma simple_approx_lim (X:Ts -> R) (posX : PositiveRandomVariable X) (eps : posreal) :
-     forall (ω : Ts), exists (n:nat), X ω - simple_approx2 X n ω < eps.
+     forall (ω : Ts), exists (n:nat), X ω - simple_approx X n ω < eps.
    Proof.
      intros.
      assert (exists n, (2^n > Z.to_nat (up (/ eps))))%nat.
@@ -4309,7 +4322,7 @@ admit.
    Qed.
 
    Lemma simple_approx_lim_seq (X:Ts -> R) (posX : PositiveRandomVariable X) (eps : posreal) :
-     forall (ω : Ts), is_lim_seq' (fun n => simple_approx2 X n ω) (X ω).
+     forall (ω : Ts), is_lim_seq' (fun n => simple_approx X n ω) (X ω).
    Proof.
      intros.
      unfold is_lim_seq'; intros.
@@ -4318,15 +4331,12 @@ admit.
      destruct H.
      exists x.
      intros.
-     assert (simple_approx2 X n ω <= X ω).
-     admit.
+     generalize (simple_approx_le X n posX ω); intros. 
      rewrite Rabs_minus_sym.
-     Search Rabs.
      rewrite Rabs_right; [|lra].
-     assert ( simple_approx2 X n ω >= simple_approx2 X x ω).
-     admit.
+     generalize (simple_approx_increasing2 X posX x n ω H0); intros.
      lra.
-   Admitted.
+   Qed.
 
    Instance posfun (X : Ts -> R) : PositiveRandomVariable X.
    Admitted.
