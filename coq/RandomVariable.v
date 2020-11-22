@@ -4263,11 +4263,19 @@ admit.
    Qed.
           
    Lemma simple_approx_increasing2  (X:Ts->R) (posX : PositiveRandomVariable X) 
-         (n1 n2:nat) (ω : Ts) :
-     (n1 <= n2)%nat ->
-     simple_approx X n1 ω <= simple_approx X n2 ω.
+         (k:nat) (ω : Ts) :
+     forall (n:nat), simple_approx X n ω <= simple_approx X (n+k) ω.
     Proof.
-      Admitted.
+      induction k.
+      - intros.
+        replace (n+0)%nat with (n); [| lia].
+        now right.
+      - intros.
+        apply Rle_trans with (r2 := simple_approx X (S n) ω).
+        apply simple_approx_increasing; trivial.
+        specialize (IHk (S n)).
+        now replace (n + S k)%nat with (S n + k)%nat by lia.
+    Qed.
 
     Lemma simple_approx_delta (X:Ts -> R) (n:nat) (ω : Ts) (posX : PositiveRandomVariable X) :
       (X ω < INR n) -> (X ω - simple_approx X n ω) < / (2^n).
@@ -4356,7 +4364,8 @@ admit.
      generalize (simple_approx_le X n posX ω); intros. 
      rewrite Rabs_minus_sym.
      rewrite Rabs_right; [|lra].
-     generalize (simple_approx_increasing2 X posX x n ω H0); intros.
+     generalize (simple_approx_increasing2 X posX (n-x)%nat ω x); intros.
+     replace (x + (n-x))%nat with (n) in H2 by lia.
      lra.
    Qed.
 
