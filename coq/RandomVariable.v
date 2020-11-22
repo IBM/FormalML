@@ -4149,16 +4149,15 @@ admit.
   Admitted.
 
   Lemma simple_approx_exists (X:Ts -> R) (n:nat) :
-    PositiveRandomVariable X ->
-         forall (omega:Ts), 
-           exists (k:nat), simple_approx X n omega = (INR k)/2^n.
+    forall (omega:Ts), 
+    exists (k:nat), simple_approx X n omega = (INR k)/2^n.
   Proof.
     intros.
     generalize (simple_approx_vals X n omega); intros.
-    apply in_map_iff in H0.
-    destruct H0 as [x [? ?]].
+    apply in_map_iff in H.
+    destruct H as [x [? ?]].
     exists x.
-    now symmetry in H0.
+    now symmetry in H.
   Qed.
 
 (*
@@ -4248,7 +4247,7 @@ admit.
       - apply Rnot_ge_lt in n0.
         assert (X ω < INR (S n)).
         apply Rlt_trans with (r2 := INR n); trivial; apply lt_INR; lia.
-        generalize (simple_approx_exists X n posX ω); intros.
+        generalize (simple_approx_exists X n ω); intros.
         destruct H5.
         rewrite H5.
         generalize (simple_approx_le X n posX ω); intros.
