@@ -4130,24 +4130,30 @@ admit.
           apply posX.
     Qed.
        
-
-   Lemma simple_approx_preimage_fin0 (X:Ts -> R) (n:nat) :
-     PositiveRandomVariable X ->
-     forall (omega:Ts) (k:nat),
-       X omega < INR n ->
-       (simple_approx X n omega)*(2^n) = (INR k) <->
-       (INR k) <= (X omega)*(2^n) < (INR (S k)).
-     Proof.
-     Admitted.
-
    Lemma simple_approx_preimage_fin (X:Ts -> R) (n:nat) :
      PositiveRandomVariable X ->
-     forall (omega:Ts) (k:nat),
+     forall (omega:Ts), 
        X omega < INR n ->
-       simple_approx X n omega = (INR k)/2^n <->
-       (INR k)/2^n <= X omega < (INR (S k))/2^n.
+       forall (k:nat),            
+         simple_approx X n omega = (INR k)/2^n <->
+         (INR k)/2^n <= X omega < (INR (S k))/2^n.
      Proof.
      Admitted.
+
+  Lemma simple_approx_bound (X:Ts -> R) (n:nat) :
+    PositiveRandomVariable X ->
+         forall (omega:Ts), 
+           X omega < INR n ->
+           forall (k:nat),  (INR k)/2^n <= X omega ->
+                            (INR k)/2^n <= simple_approx X n omega .
+  Admitted.
+
+  Lemma simple_approx_exists (X:Ts -> R) (n:nat) :
+    PositiveRandomVariable X ->
+         forall (omega:Ts), 
+           X omega < INR n ->
+           exists (k:nat), simple_approx X n omega = (INR k)/2^n.
+  Admitted.
 
 
 (*
@@ -4204,13 +4210,57 @@ admit.
          (n:nat) (ω : Ts) :
      simple_approx X n ω <= simple_approx X (S n) ω.
     Proof.
-      unfold simple_approx.
-      match_case; intros.
-      - match_case; intros.
-        + apply le_INR; lia.
-        + match_case; intros.
-          apply find_some in H1.
-      Admitted.
+      intros.
+      generalize (simple_approx_preimage_inf X n posX ω); intros.
+      generalize (simple_approx_preimage_inf X (S n) posX ω); intros.
+      generalize (simple_approx_preimage_fin X (S n) posX ω); intros.
+      destruct H; destruct H0.
+      case (Rge_dec (X ω) (INR n)); intros.
+      - specialize (H2 r).
+        case (Rge_dec (X ω) (INR (S n))); intros.        
+        + specialize (H3 r0).
+          rewrite S_INR in H3.
+          lra.
+        + rewrite H2.
+          apply Rnot_ge_lt in n0.
+          specialize (H1 n0).
+          assert (INR n = INR (n*2^(S n))/2^(S n)).
+          * rewrite mult_INR.
+            unfold Rdiv.
+            rewrite Rmult_assoc.
+            replace (INR n) with ((INR n)*1) at 1 by lra.
+            apply Rmult_eq_compat_l.
+            replace (INR (2^S n)) with (2 ^ (S n)).
+            -- rewrite Rinv_r; [lra | ].
+               apply Rgt_not_eq.
+               apply pow_lt; lra.
+            -- rewrite pow_INR.
+               now replace (INR 2) with 2.
+          * rewrite H4 in r.
+            apply Rge_le in r.
+            generalize (simple_approx_bound X (S n) posX ω n0 (n * 2 ^ S n) r); intros.
+            lra.
+      - apply Rnot_ge_lt in n0.
+        assert (X ω < INR (S n)).
+        apply Rlt_trans with (r2 := INR n); trivial; apply lt_INR; lia.
+        generalize (simple_approx_exists X n posX ω n0); intros.
+        destruct H5.
+        rewrite H5.
+        generalize (simple_approx_le X n posX ω); intros.
+        generalize (simple_approx_bound X (S n) posX ω H4); intros.
+        rewrite H5 in H6.
+        assert (INR x / 2^n = INR(2*x)/ 2^(S n)).
+        + unfold Rdiv.
+          rewrite mult_INR.
+          simpl.
+          field.
+          apply Rgt_not_eq.
+          apply pow_lt; lra.          
+        + specialize (H7 (2*x)%nat).
+          rewrite H8.
+          apply H7.
+          now rewrite H8 in H6.
+   Qed.
           
    Lemma simple_approx_increasing2  (X:Ts->R) (posX : PositiveRandomVariable X) 
          (n1 n2:nat) (ω : Ts) :
@@ -4219,49 +4269,21 @@ admit.
     Proof.
       Admitted.
 
-(*
-   Lemma simple_approx_increasing_alt  (X:Ts->R) (posX : PositiveRandomVariable X) 
-         (n:nat) (ω : Ts) :
-     simple_approx_alt X n ω <= simple_approx_alt X (S n) ω.
-    Proof.
-      unfold simple_approx_alt.
-      match_case; intros.
-      - match_case; intros.
-        + apply le_INR; lia.
-        + apply Rmult_le_reg_r with (r := 2^(S n)).
-          * apply pow_lt; lra.
-          * unfold Rdiv.
-            rewrite Rmult_assoc.
-            rewrite Rinv_l.
-            -- rewrite Rmult_1_r.
-               generalize (archimed (X ω * 2 ^ S n)); intros.
-               destruct H1.
-               apply Rle_trans with (r2 := X ω * 2^(S n)).
-               ++ apply  Rmult_le_compat_r; [|lra].
-                  left; apply pow_lt; lra.
-               ++ admit.
-            -- apply Rgt_not_eq.
-               apply pow_lt; lra.
-      - match_case; intros.
-        + assert (INR (S n) > INR n).
-          * apply Rlt_gt.
-            apply lt_INR; lia.
-          * lra.
-        + simpl.
-   Admitted.
-*)
     Lemma simple_approx_delta (X:Ts -> R) (n:nat) (ω : Ts) (posX : PositiveRandomVariable X) :
       (X ω < INR n) -> (X ω - simple_approx X n ω) < / (2^n).
     Proof.
       intros.
-      unfold simple_approx.
-      match_case; intros.
-      - lra.
-      - match_case; intros.
-        + apply find_some in H1.
-          destruct H1.
-          match_case_in H2; intros.
-   Admitted.
+      generalize (simple_approx_preimage_fin X n posX ω H); intros.
+      generalize (simple_approx_vals X n ω); intros.
+      apply in_map_iff in H1.
+      destruct H1 as [x [? ?]].
+      symmetry in H1.
+      specialize (H0 x).
+      destruct H0.
+      specialize (H0 H1).
+      rewrite S_INR in H0.
+      lra.
+   Qed.
 
    Lemma simple_approx_lim (X:Ts -> R) (posX : PositiveRandomVariable X) (eps : posreal) :
      forall (ω : Ts), exists (n:nat), X ω - simple_approx X n ω < eps.
