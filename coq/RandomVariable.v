@@ -3996,7 +3996,12 @@ admit.
 
    Definition interval_dec : forall r r1 r2 :R, {r1 <= r < r2} + {~(r1 <= r < r2)}.
    Proof.
-     Admitted.
+     intros.
+     destruct (Rle_dec r1 r)
+     ; destruct (Rlt_dec r r2)
+     ; eauto 3
+     ; right; lra.
+   Defined.
 
    Definition simple_approx2 (X:Ts->R) (n:nat) : Ts -> R
      := fun ω : Ts =>
@@ -4016,6 +4021,16 @@ admit.
           if Rge_dec Xw (INR n) then (INR n) else
             (IZR (up (Xw * 2^n)) - 1)/ 2^n. 
 
+   Lemma pow_nzero a n : a <> 0 -> pow a n <> 0.
+   Proof.
+     intros.
+     induction n; simpl.
+     - lra.
+     - intros eqq.
+       apply Rmult_integral in eqq.
+       intuition.
+   Qed.
+
    Lemma simple_approx_vals (X:Ts->R) (n:nat) :
      forall (omega:Ts), 
        In (simple_approx X n omega)
@@ -4024,7 +4039,39 @@ admit.
      intros.
      unfold simple_approx.
      rewrite in_map_iff.
-     Admitted.
+     match_destr.
+     - exists (n * 2^n)%nat.
+       split.
+       + rewrite mult_INR.
+         unfold Rdiv.
+         rewrite Rmult_assoc.
+         rewrite pow_INR.
+         rewrite INR_IZR_INZ.
+         simpl.
+         rewrite Rinv_r.
+         * lra.
+         * now apply pow_nzero.
+       + apply in_seq.
+         lia.
+     - match_case; intros.
+       + apply find_some in H.
+         destruct H as [inn rge].
+         match_destr_in rge.
+         apply in_rev in inn.
+         apply in_map_iff in inn.
+         destruct inn as [x [eqq1 inn]]; subst.
+         exists x.
+         split; trivial.
+         apply in_seq.
+         apply in_seq in inn.
+         lia.
+       + exists 0%nat.
+         split.
+         * simpl.
+           lra.
+         * apply in_seq.
+           lia.
+   Qed.
 
    Program Instance simple_appox_srv (X:Ts->R) (n:nat) : SimpleRandomVariable (simple_approx X n) :=
      {srv_vals := map (fun x => INR x / (2^n)) (seq 0 (S (n*(2^n))))}.
@@ -4063,6 +4110,8 @@ admit.
            * apply find_some in H3.
              destruct H3.
              match_case_in H4; intros.
+             -- 
+             
      Admitted.
 
    Lemma simple_approx_le (X:Ts->R) (n:nat) (posX : PositiveRandomVariable X) (ω:Ts) :
