@@ -4681,7 +4681,9 @@ admit.
          (posX: PositiveRandomVariable X) 
          (posphi: PositiveRandomVariable phi)
 
-         (sphi : SimpleRandomVariable phi) :
+         (sphi : SimpleRandomVariable phi)
+         (Xn_rv : forall n, RandomVariable Prts borel_sa (Xn n))
+         (Xn_pos : forall n, PositiveRandomVariable (Xn n)) :
 
      (forall (n:nat), RealRandomVariable_le (Xn n) X) ->
      (forall (n:nat), RealRandomVariable_le (Xn n) (Xn (S n))) ->
@@ -4689,7 +4691,7 @@ admit.
      (forall (omega:Ts), is_lim_seq' (fun n => Xn n omega) (X omega)) ->
      Rbar_le 
        (real (Expectation_posRV phi))
-       (Lim_seq (fun n =>  real (@Expectation_posRV (Xn n) (posfun (Xn n))))).
+       (Lim_seq (fun n =>  real (Expectation_posRV (Xn n)))).
    Proof.
      assert (is_lim_seq (fun n => (1-/(2+INR n)) * (Expectation_posRV phi))
                         (real (Expectation_posRV phi))).
@@ -4712,7 +4714,7 @@ admit.
        + now simpl; rewrite Rmult_1_l.
      - intros.
        apply is_lim_seq_le with (u:=fun n => (1-/(2+INR n)) * (real (Expectation_posRV phi)))
-                                (v:=fun _ : nat => Lim_seq (fun n : nat => real (@Expectation_posRV (Xn n) (posfun (Xn n))))).
+                                (v:=fun _ : nat => Lim_seq (fun n : nat => real (Expectation_posRV (Xn n)))).
        intros.
        assert (0< 1 - /(2+INR n)).
        apply Rplus_lt_reg_l with (r := /(2+INR n)).
@@ -4738,23 +4740,22 @@ admit.
          (X : Ts -> R )
          (Xn : nat -> Ts -> R)
          (rvx : RandomVariable Prts borel_sa X)
-         (posX: PositiveRandomVariable X) :         
+         (posX: PositiveRandomVariable X)
+         (Xn_rv : forall n, RandomVariable Prts borel_sa (Xn n))
+         (Xn_pos : forall n, PositiveRandomVariable (Xn n)) :         
      (forall (n:nat), RealRandomVariable_le (Xn n) X) ->
      (forall (n:nat), RealRandomVariable_le (Xn n) (Xn (S n))) ->
 
      (forall (omega:Ts), is_lim_seq' (fun n => Xn n omega) (X omega)) ->
-     is_lim_seq' (fun n => @Expectation_posRV (Xn n) (posfun (Xn n)))  (Expectation_posRV X).
+     is_lim_seq' (fun n => Expectation_posRV (Xn n))  (Expectation_posRV X).
   Proof.
     generalize Expectation_posRV_le; intros.
     assert (forall (n:nat), (Rbar_le (Expectation_posRV (Xn n)) (Expectation_posRV X))).
     - intros.
       apply H; trivial.
-      apply ranvar.
     - assert (forall (n:nat), (Rbar_le (Expectation_posRV (Xn n)) (Expectation_posRV (Xn (S n))))).
       + intros.
         apply H; trivial.
-        apply ranvar.
-        apply ranvar.
       + pose (a := (Lim_seq (fun n : nat => Expectation_posRV (Xn n)))).
         generalize (Lim_seq_le_loc (fun n => Expectation_posRV (Xn n)) 
                                    (fun _ => Expectation_posRV X)); intros.
@@ -4766,6 +4767,8 @@ admit.
         {rv1 : RandomVariable Prts borel_sa rv_X1}
         {rv2 : RandomVariable Prts borel_sa rv_X2} :
     
+    is_finite (Expectation_posRV (pos_fun_part rv_X1)) ->
+    is_finite (Expectation_posRV (pos_fun_part rv_X2)) ->    
     is_finite (Expectation_posRV (neg_fun_part rv_X1)) ->
     is_finite (Expectation_posRV (neg_fun_part rv_X2)) ->    
     Expectation (rvplus rv_X1 rv_X2) =
@@ -4774,6 +4777,7 @@ admit.
     | _, _ => None
     end.
   Proof.
+    intros.
     assert (eqq1:rv_eq (rvplus rv_X1 rv_X2) (rvminus (rvplus (pos_fun_part rv_X1) (pos_fun_part rv_X2)) (rvplus (neg_fun_part rv_X1) (neg_fun_part rv_X2)))).
     {
       rewrite (rv_pos_neg_id rv_X1) at 1.
@@ -4783,12 +4787,30 @@ admit.
       lra.
     }
     rewrite (Expectation_ext _ _ eqq1); clear eqq1.
-(*
     erewrite Expectation_dif_pos_unique.
-    repeat rewrite Expectation_posRV_sum by typeclasses eauto.
-    unfold Expectation.
-    unfold Rbar_minus'.
-    rewrite <- Rbar_plus_opp.
+    - repeat rewrite Expectation_posRV_sum by typeclasses eauto.
+      unfold Expectation.
+      unfold Rbar_minus'.
+      rewrite <- Rbar_plus_opp.
+      destruct (Expectation_posRV (fun x : Ts => neg_fun_part rv_X1 x))
+      ; try solve[simpl; congruence].
+      destruct (Expectation_posRV (fun x : Ts => neg_fun_part rv_X2 x))
+      ; try solve[simpl; congruence].
+      destruct (Expectation_posRV (fun x : Ts => pos_fun_part rv_X1 x))
+      ; try solve[simpl; congruence].
+      destruct (Expectation_posRV (fun x : Ts => pos_fun_part rv_X2 x))
+      ; try solve[simpl; congruence].
+      simpl.
+      f_equal.
+      f_equal.
+      lra.
+    - rewrite Expectation_posRV_sum by typeclasses eauto.
+      rewrite <- H1, <- H2.
+      simpl.
+      reflexivity.
+  Qed.
+      
+      
 *)
 (*
     generalize (Expectation_posRV (fun x : Ts => pos_fun_part rv_X1 x))
@@ -4799,6 +4821,16 @@ admit.
     unfold Rbar_plus.
  *)
   Admitted.
+
+    Lemma Expectation_sum_finite  {nempty:NonEmpty Ts}
+        (rv_X1 rv_X2 : Ts -> R)
+        {rv1 : RandomVariable Prts borel_sa rv_X1}
+        {rv2 : RandomVariable Prts borel_sa rv_X2} :
+      Expectation rv_X1 = Some (Finite e1) ->
+      Expectation rv_X2 = Some (Finite e2) ->
+      Expectation (rvplus rv_X1 rv_X2) = Some (Finite (e1 + e2)).
+  Proof.
+
     
 
 End Expectation.
