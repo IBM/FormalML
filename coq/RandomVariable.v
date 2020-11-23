@@ -4227,17 +4227,10 @@ admit.
         + rewrite H1.
           apply Rnot_ge_lt in n0.
           assert (INR n = INR (n*2^(S n))/2^(S n)).
-          * rewrite mult_INR.
-            unfold Rdiv.
-            rewrite Rmult_assoc.
-            replace (INR n) with ((INR n)*1) at 1 by lra.
-            apply Rmult_eq_compat_l.
-            replace (INR (2^S n)) with (2 ^ (S n)).
-            -- rewrite Rinv_r; [lra | ].
-               apply Rgt_not_eq.
-               apply pow_lt; lra.
-            -- rewrite pow_INR.
-               now replace (INR 2) with 2.
+          * rewrite mult_INR, pow_INR.
+            replace (INR 2) with (2) by (simpl; easy).
+            field.
+            apply Rgt_not_eq, pow_lt; lra.
           * rewrite H3 in r.
             apply Rge_le in r.
             generalize (simple_approx_bound X (S n) posX ω n0 (n * 2 ^ S n) r); intros.
@@ -4256,8 +4249,7 @@ admit.
           rewrite mult_INR.
           simpl.
           field.
-          apply Rgt_not_eq.
-          apply pow_lt; lra.          
+          apply Rgt_not_eq; apply pow_lt; lra.          
         + specialize (H6 (2*x)%nat).
           rewrite H7.
           apply H6.
