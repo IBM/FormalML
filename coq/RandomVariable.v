@@ -4367,14 +4367,18 @@ admit.
          * apply  Rcomplements.Rlt_div_r; [ apply pow_lt; lra |]; trivial.
    Qed.       
      
-     
-  Lemma simple_approx_bound (X:Ts -> R) (n:nat) :
-    PositiveRandomVariable X ->
-         forall (omega:Ts), 
-           X omega < INR n ->
-           forall (k:nat),  (INR k)/2^n <= X omega ->
-                            (INR k)/2^n <= simple_approx X n omega .
-  Admitted.
+   Lemma simple_approx_le (X:Ts->R) (n:nat) (posX : PositiveRandomVariable X) (ω:Ts) :
+     simple_approx X n ω <= X ω.
+   Proof.
+     unfold simple_approx.
+     match_case; intros.
+     - lra.
+     - match_case; intros.
+       apply find_some in H0.
+       destruct H0.
+       match_destr_in H1.
+       lra.
+   Qed.
 
   Lemma simple_approx_exists (X:Ts -> R) (n:nat) :
     forall (omega:Ts), 
@@ -4387,6 +4391,54 @@ admit.
     exists x.
     now symmetry in H.
   Qed.
+
+   Lemma simple_approx_pos (X:Ts->R) (n:nat) (ω:Ts) :
+     simple_approx X n ω >= 0.
+   Proof.
+     generalize (simple_approx_exists X n ω); intros.
+     destruct H.
+     rewrite H.
+     unfold Rdiv.
+     apply Rle_ge.
+     apply Rmult_le_reg_r with (r:= 2^n).
+     apply pow_lt; lra.
+     rewrite Rmult_assoc.
+     rewrite Rinv_l.
+     ring_simplify.
+     apply pos_INR.
+     apply Rgt_not_eq.
+     apply pow_lt; lra.
+   Qed.
+
+  Lemma simple_approx_bound (X:Ts -> R) (n:nat) :
+    PositiveRandomVariable X ->
+         forall (omega:Ts), 
+           X omega < INR n ->
+           forall (k:nat),  (INR k)/2^n <= X omega ->
+                            (INR k)/2^n <= simple_approx X n omega .
+    Proof.
+      intro posX.
+      intros.
+      induction k.
+      - simpl.
+        unfold Rdiv.
+        rewrite Rmult_0_l.
+        apply Rge_le.
+        apply simple_approx_pos.
+      - cut_to IHk.
+        + generalize (simple_approx_preimage_fin X n posX omega H); intros.
+          generalize (simple_approx_exists X n omega); intros.
+          destruct H2.
+          specialize (H1 k).
+          destruct H1.
+          apply imply_to_or in H1.
+          destruct H1; [|lra].
+          destruct IHk.
+          
+Admitted.          
+      
+      
+
 
 (*
    Lemma simple_approx2_preimage (X:Ts->R) (n:nat) :
@@ -4425,19 +4477,6 @@ admit.
      Admitted.
 *)
 
-   Lemma simple_approx_le (X:Ts->R) (n:nat) (posX : PositiveRandomVariable X) (ω:Ts) :
-     simple_approx X n ω <= X ω.
-   Proof.
-     unfold simple_approx.
-     match_case; intros.
-     - lra.
-     - match_case; intros.
-       apply find_some in H0.
-       destruct H0.
-       match_destr_in H1.
-       lra.
-   Qed.
-   
    Lemma simple_approx_increasing  (X:Ts->R) (posX : PositiveRandomVariable X) 
          (n:nat) (ω : Ts) :
      simple_approx X n ω <= simple_approx X (S n) ω.
