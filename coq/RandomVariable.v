@@ -4434,11 +4434,27 @@ admit.
           apply imply_to_or in H1.
           destruct H1; [|lra].
           destruct IHk.
-          
-Admitted.          
-      
-      
-
+          * rewrite H2 in H4 |- *.
+            unfold Rdiv in H4 |- *.
+            apply Rmult_le_compat_r.
+            -- left.
+               apply Rinv_0_lt_compat.
+               apply pow_lt; lra.
+            -- apply Rmult_lt_reg_r in H4.
+               ++ apply INR_lt in H4.
+                  apply le_INR.
+                  lia.
+               ++ apply Rinv_0_lt_compat.
+                  apply pow_lt; lra.
+          * congruence.
+        + eapply Rle_trans; try eapply H0.
+          rewrite S_INR.
+          apply Rmult_le_compat_r.
+          * left.
+            apply Rinv_0_lt_compat.
+            apply pow_lt; lra.
+          * lra.
+    Qed.
 
 (*
    Lemma simple_approx2_preimage (X:Ts->R) (n:nat) :
