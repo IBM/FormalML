@@ -4339,9 +4339,35 @@ admit.
        forall (k:nat),            
          simple_approx X n omega = (INR k)/2^n <->
          (INR k)/2^n <= X omega < (INR (S k))/2^n.
-     Proof.
-     Admitted.
-
+   Proof.
+     intros.
+     destruct (simple_approx_preimage_fin0 X n H omega k H0) as [HH1 HH2].
+     split; intros HH.
+     - cut_to HH1.
+       + destruct HH1 as [le1 lt1].
+         split; intros.
+         * apply  Rcomplements.Rle_div_l; [ apply pow_lt; lra |]; trivial.
+         * apply  Rcomplements.Rlt_div_r; [ apply pow_lt; lra |]; trivial.
+       + rewrite HH.
+         unfold Rdiv.
+         rewrite Rmult_assoc.
+         rewrite Rinv_l.
+         * now rewrite Rmult_1_r.
+         * now apply pow_nzero.
+     - cut_to HH2.
+       + rewrite <- HH2.
+         unfold Rdiv.
+         rewrite Rmult_assoc.
+         rewrite Rinv_r.
+         * now rewrite Rmult_1_r.
+         * now apply pow_nzero.
+       + destruct HH as [le1 lt1].
+         split; intros.
+         * apply  Rcomplements.Rle_div_l; [ apply pow_lt; lra |]; trivial.
+         * apply  Rcomplements.Rlt_div_r; [ apply pow_lt; lra |]; trivial.
+   Qed.       
+     
+     
   Lemma simple_approx_bound (X:Ts -> R) (n:nat) :
     PositiveRandomVariable X ->
          forall (omega:Ts), 
