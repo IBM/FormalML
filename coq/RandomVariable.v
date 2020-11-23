@@ -4646,12 +4646,6 @@ admit.
      lra.
    Qed.
 
-   Instance posfun (X : Ts -> R) : PositiveRandomVariable X.
-   Admitted.
-
-   Instance ranvar (X : Ts -> R) : RandomVariable Prts borel_sa X.
-   Admitted.
-
    Lemma monotone_convergence0 (c:posreal)
          (X : Ts -> R )
          (Xn : nat -> Ts -> R)
@@ -4661,7 +4655,10 @@ admit.
          (posX: PositiveRandomVariable X) 
          (posphi: PositiveRandomVariable phi)
 
-         (sphi : SimpleRandomVariable phi) :
+         (sphi : SimpleRandomVariable phi)
+         (Xn_rv : forall n, RandomVariable Prts borel_sa (Xn n))
+         (Xn_pos : forall n, PositiveRandomVariable (Xn n))
+     :
 
      (forall (n:nat), RealRandomVariable_le (Xn n) X) ->
      (forall (n:nat), RealRandomVariable_le (Xn n) (Xn (S n))) ->
@@ -4670,9 +4667,10 @@ admit.
      c < 1 ->
 
      (c * (real (Expectation_posRV phi))) <=
-     (Lim_seq (fun n => real (@Expectation_posRV (Xn n) (posfun (Xn n))))).
+     (Lim_seq (fun n => real (Expectation_posRV (Xn n)))).
    Proof.
-     Admitted.
+     
+   Admitted.
 
    Lemma monotone_convergence00         
          (X : Ts -> R )
