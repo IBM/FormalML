@@ -4367,6 +4367,7 @@ admit.
          * apply  Rcomplements.Rlt_div_r; [ apply pow_lt; lra |]; trivial.
    Qed.       
      
+
    Lemma simple_approx_le (X:Ts->R) (n:nat) (posX : PositiveRandomVariable X) (ω:Ts) :
      simple_approx X n ω <= X ω.
    Proof.
@@ -4409,6 +4410,28 @@ admit.
      apply Rgt_not_eq.
      apply pow_lt; lra.
    Qed.
+
+   Instance simple_appox_posrv (X:Ts->R) (n:nat) : PositiveRandomVariable (simple_approx X n).
+   Proof.
+     unfold PositiveRandomVariable; intros.
+     apply Rge_le.
+     apply simple_approx_pos.
+   Qed.
+
+   Lemma simple_approx_measurable (X:Ts -> R) (n:nat)
+         (posx : PositiveRandomVariable X)
+         (ranx : RandomVariable Prts borel_sa X) :
+     forall (r : R), sa_sigma (event_preimage (simple_approx X n)
+                                              (singleton_event r)).
+   Proof.
+     intros.
+     generalize (simple_approx_vals X n); intros.
+     generalize (simple_approx_preimage_inf X n posx); intros.
+     generalize (simple_approx_preimage_fin X n posx); intros.     
+     generalize (in_dec Req_EM_T); intros indec.
+     generalize (simple_approx_pos X n); intros.
+     generalize (simple_approx_exists X n); intros.
+   Admitted.
 
   Lemma simple_approx_bound (X:Ts -> R) (n:nat) :
     PositiveRandomVariable X ->
@@ -4455,43 +4478,6 @@ admit.
             apply pow_lt; lra.
           * lra.
     Qed.
-
-(*
-   Lemma simple_approx2_preimage (X:Ts->R) (n:nat) :
-     let sx := simple_approx2 X n in
-     forall (k:nat), (k<n*2^n)%nat -> 
-                     forall (omega:Ts), sx omega = (INR k)/2^n ->
-                                        (INR k)/2^n <= X omega < (INR (S k))/2^n.
-     Proof.
-       unfold simple_approx2.
-       intros.
-       assert (/ (2^n) <> 0).
-       - apply Rgt_not_eq, Rinv_0_lt_compat.
-         apply pow_lt; lra.
-       - match_case_in H0; intros.
-         + rewrite H2 in H0.
-           apply Rmult_eq_compat_r with (r := 2^n) in H0.
-           unfold Rdiv in H0.
-           rewrite Rmult_assoc in H0.
-           rewrite Rinv_l in H0; trivial.
-           rewrite Rmult_1_r in H0.
-           assert (INR k < INR(n*2^n)).
-           now apply lt_INR.
-           rewrite mult_INR in H3.
-           rewrite pow_INR in H3.
-           simpl in H3.
-           replace (1+1) with (2) in H3 by lra.
-           lra.
-           apply Rgt_not_eq; apply pow_lt; lra.
-         + rewrite H2 in H0.
-           match_case_in H0; intros.
-           * apply find_some in H3.
-             destruct H3.
-             match_case_in H4; intros.
-             -- 
-             
-     Admitted.
-*)
 
    Lemma simple_approx_increasing  (X:Ts->R) (posX : PositiveRandomVariable X) 
          (n:nat) (ω : Ts) :
@@ -4767,8 +4753,6 @@ admit.
         {rv1 : RandomVariable Prts borel_sa rv_X1}
         {rv2 : RandomVariable Prts borel_sa rv_X2} :
     
-    is_finite (Expectation_posRV (pos_fun_part rv_X1)) ->
-    is_finite (Expectation_posRV (pos_fun_part rv_X2)) ->    
     is_finite (Expectation_posRV (neg_fun_part rv_X1)) ->
     is_finite (Expectation_posRV (neg_fun_part rv_X2)) ->    
     Expectation (rvplus rv_X1 rv_X2) =
@@ -4791,38 +4775,36 @@ admit.
     - repeat rewrite Expectation_posRV_sum by typeclasses eauto.
       unfold Expectation.
       unfold Rbar_minus'.
+      generalize (Expectation_posRV_pos (pos_fun_part rv_X1)); intros.
+      generalize (Expectation_posRV_pos (pos_fun_part rv_X2)); intros.      
       rewrite <- Rbar_plus_opp.
       destruct (Expectation_posRV (fun x : Ts => neg_fun_part rv_X1 x))
       ; try solve[simpl; congruence].
       destruct (Expectation_posRV (fun x : Ts => neg_fun_part rv_X2 x))
       ; try solve[simpl; congruence].
-      destruct (Expectation_posRV (fun x : Ts => pos_fun_part rv_X1 x))
-      ; try solve[simpl; congruence].
-      destruct (Expectation_posRV (fun x : Ts => pos_fun_part rv_X2 x))
-      ; try solve[simpl; congruence].
-      simpl.
-      f_equal.
-      f_equal.
-      lra.
+      destruct (Expectation_posRV (fun x : Ts => pos_fun_part rv_X1 x)).
+      + destruct (Expectation_posRV (fun x : Ts => pos_fun_part rv_X2 x)).
+        * simpl.
+          f_equal.
+          f_equal.
+          lra.
+        * now simpl.
+        * now simpl.
+      + destruct (Expectation_posRV (fun x : Ts => pos_fun_part rv_X2 x)).
+        * now simpl.
+        * now simpl.
+        * simpl in H2.
+          tauto.
+      + simpl in H1.
+        tauto.
     - rewrite Expectation_posRV_sum by typeclasses eauto.
-      rewrite <- H1, <- H2.
+      rewrite <- H, <- H0.
       simpl.
       reflexivity.
   Qed.
-      
-      
-*)
-(*
-    generalize (Expectation_posRV (fun x : Ts => pos_fun_part rv_X1 x))
-    ; generalize (Expectation_posRV (fun x : Ts => pos_fun_part rv_X2 x))
-    ; generalize (Expectation_posRV (fun x : Ts => neg_fun_part rv_X1 x))
-    ; generalize (Expectation_posRV (fun x : Ts => neg_fun_part rv_X2 x))
-    ; simpl; intros.
-    unfold Rbar_plus.
- *)
-  Admitted.
 
-    Lemma Expectation_sum_finite  {nempty:NonEmpty Ts}
+  (*
+  Lemma Expectation_sum_finite  {nempty:NonEmpty Ts}
         (rv_X1 rv_X2 : Ts -> R)
         {rv1 : RandomVariable Prts borel_sa rv_X1}
         {rv2 : RandomVariable Prts borel_sa rv_X2} :
@@ -4830,7 +4812,7 @@ admit.
       Expectation rv_X2 = Some (Finite e2) ->
       Expectation (rvplus rv_X1 rv_X2) = Some (Finite (e1 + e2)).
   Proof.
-
+  *)
     
 
 End Expectation.
