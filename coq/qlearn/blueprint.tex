@@ -1,0 +1,150 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+
+\usepackage{graphicx}
+\usepackage{float}
+% \usepackage{ebgaramond-maths}
+\usepackage{fullpage}	
+\usepackage{amsfonts}
+\usepackage{color}
+\usepackage{lipsum}
+\usepackage{wrapfig}
+\usepackage{amsmath, amssymb, amsfonts, amscd, amsthm, mathrsfs}
+\usepackage{tabularx}
+\usepackage{framed}
+\usepackage{longtable,tabu}
+\usepackage{hyperref}
+\usepackage{pifont}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+}
+
+% \usepackage{pgfplots}
+% \pgfplotsset{compat=1.15}
+% \usepackage{mathrsfs}
+% \usetikzlibrary{arrows}
+% \pagestyle{empty}
+
+
+% \theoremstyle{plain}
+% \usepackage{ntheorem}
+
+\title{Q-learning convergence : A Formal Blueprint}
+\author{Koundinya Vajjha}
+
+\def\R{\mathbb{R}}
+\def\dmin{D_{\min}}
+\def\Cinf{C^\infty(M)}
+\def\star{\mathfrak{h}^{\ast}}
+\def\E{\mathbb{E}}
+\def\act{\mathcal{A}}
+\def\rew{\mathcal{R}}
+
+\newcommand{\figurehere}[2]{\smallskip\begin{center} 
+\includegraphics[width=#1\textwidth]{#2}\end{center}\smallskip}
+
+\newcommand{\image}[1]{\smallskip\begin{center} #1 \end{center}\smallskip}
+\newcommand{\red}[1]{\textcolor{red}{#1}}
+% environments for theorems, lemmas, etc.
+\newtheorem{lem}{Lemma}[section]
+\newtheorem{theorem}{Theorem}
+\newtheorem{thm}{Theorem}
+\newtheorem{ex}[lem]{Example}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem*{conjecture}{Conjecture}
+\newtheorem*{remark}{Remark:}
+% \newtheorem{lem}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{cor}[theorem]{Corollary}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{prop}[theorem]{Proposition}
+\newtheorem{defn}[theorem]{Definition}
+\newcommand{\code}[1]{\texttt{#1}}
+\DeclareMathOperator*{\argmax}{argmax}
+\DeclareMathOperator*{\argmin}{argmin}
+\newcommand{\fleur}{\ding{95}}
+\newcommand{\HTMLBase}{https://certrl.github.io/CertRLanon}
+\newcommand{\coqHTMLBase}{\HTMLBase}
+\newcommand{\coqBaseModule}{CertRL.}
+\newcommand{\coqtop}{\text{\href{https://github.com/CertRL/CertRLanon}{\fleur}}}
+\newcommand{\coqdef}[2]{\text{\href{\coqHTMLBase/\coqBaseModule#1.html\##2}{\fleur}}}
+
+
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+This will be a formal blueprint of the convergence proof for Q-learning, following the original 1992 proof of Watkins-Dayan. Formal equivalents, whenever available, shall be linked to by a \coqtop.
+
+In a nutshell, the proof proceeds by constructing an auxiliary Markov Decision Process, called the \textit{action-replay} process (ARP) associated to any given MDP. 
+
+We start out with an MDP $M$ \coqdef{converge.mdp}{MDP} which has 
+\begin{itemize}
+    \item A nonempty, finite state space $X$.
+    \item An nonempty, finite action space $\act$ (fibered over each state $x:X$). 
+    \item A stochastic transition structure $T$ which assigns a probability measure over the state space given a state $x$ and an action $a : \act(x)$ available at that state. 
+    \item A reward function $r$. \coqdef{converge.mdp}{reward}
+\end{itemize}
+The expected reward after one transition from state $x$ after taking an action $a$ is called the \textit{step expected reward} \coqdef{converge.mdp}{step_expected_reward} and is denoted $\rew_x(a)$
+
+A \textit{decision rule}\coqdef{converge.mdp}{dec_rule} is a map from the state space to the action space. Transitions happen after actions are taking in a particular state space following a decision rule.
+Denote by $T_\pi (x) := T(x,\pi(x))$ which is the probability measure on $X$ which results after one transition following the decision rule $\pi$ at state $x$. 
+
+If we use the same decision rule at each time step $n$, such policies are called \textit{stationary}. Consider only stationary policies from now. 
+
+The long-term value \coqdef{converge.mdp}{ltv} of a policy $\pi$ is denoted by $V^{\pi}$ and is shown to be equal to
+\[ 
+V^{\pi}(x) = \rew_x(\pi(x)) + \gamma \E_{T_{\pi}(x)} [V^{\pi}]
+\]
+where $0 \le \gamma \le 1$ is a discount factor and the expectation is with respect to the probability measure $T_{\pi}(x)$.
+
+\begin{defn}[$Q$-value]
+Given an MDP $M$ and a policy $\pi$, we define the $Q$-value as:
+\[ 
+Q^{\pi}(x,a) := \rew_x(a) + \gamma \E_{T(x,a)}V^{\pi} 
+\]
+\end{defn}
+
+The value and policy iteration algorithms give us an \textit{optimal policy} denoted $\pi^*$ which maximizes the long-term value. This value is called the optimal value function denoted $V^{\pi^*} := \max_{\pi}(V^\pi)$. \coqdef{converge.mdp}{max_ltv}
+
+Define $Q^*(x,a) := Q^{\pi^*}(x,a)$. We can show that 
+\[ 
+V^*(x) := V^{\pi^*}(x) = \max_{a}\left( \rew_x(a) + \gamma\E_{T(x,a)}V^{\pi^*}\right) = \max_{a}Q^{\pi^*}(x,a) = \max_{a}Q^*(x,a)
+\]
+which says that the optimal value function is the fixed point of the optimal Bellman operator. \coqdef{converge.mdp}{max_ltv_eq_fixpt}
+
+So if an agent can learn the $Q^*$ value, then we can learn $\pi^*$ by simply taking $\pi^*(x) = \argmax_{a} Q^*(x,a)$.
+
+The evolution of an MDP proceeds in stages. At the $n$-th stage, the agent observes state $x_n$, takes an action $a_n$, observes a subsequent stage $y_n$, receives an immediate payoff $r_n$ and adjusts it's $Q_{n-1}$ value (defined below) using a learning factor $\alpha_n$. 
+
+\begin{defn}[$Q_n$-value]
+Assume that $Q_0(x,a)$ is a known function for all $x : X$ and $a : \act(x)$. 
+For $0 \le \alpha_n < 1$ define inductively the following sequence 
+\[Q_n(x,a) :=
+\begin{cases}
+(1 - \alpha_n)Q_{n-1}(x,a) + \alpha_n\left[ r_n + \gamma V_{n-1}(y_n) \right] \mathrm{ if } \ x=x_n \ \mathrm{ and } \ a=a_n \\
+Q_{n-1}(x,a) \quad \mathrm{ otherwise}
+\end{cases}
+\]
+where $r_n = r(x_n,a_n)$ and $V_{n-1}(y) = \max_a Q_{n-1}(y,a)$.
+\end{defn}
+In practice, the $Q_0$ value is set to zero identically. 
+$Q$-learning states that under certain regularity conditions on the learning rate, the sequence of $Q_n$ values converges to $Q^*$ with probability 1. 
+
+\begin{theorem} [$Q$-learning convergence]
+Fix a state $x:X$ and action $a : \act(x)$. Let $n^i(x,a)$ denote the time when action $a$ is tried at state $x$ for the $i$-th time. 
+If we have, for all $x,a$ that
+\[
+\sum_{i}\alpha_{n^i(x,a)} = \infty \ , \ \sum_{i}\alpha_{n^i(x,a)}^2 < \infty \ 
+\]
+then we have $Q_n(x,a) \rightarrow Q^*(x,a)$ with probability 1. 
+\end{theorem}
+
+To prove this theorem, we set up an auxilary MDP called the Action-Replay Process (ARP). 
+\end{document}
+
