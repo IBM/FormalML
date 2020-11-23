@@ -4228,7 +4228,7 @@ admit.
           apply Rnot_ge_lt in n0.
           assert (INR n = INR (n*2^(S n))/2^(S n)).
           * rewrite mult_INR, pow_INR.
-            replace (INR 2) with (2) by (simpl; easy).
+            replace (INR 2) with (2) by easy.
             field.
             apply Rgt_not_eq, pow_lt; lra.
           * rewrite H3 in r.
