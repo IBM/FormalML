@@ -4782,15 +4782,13 @@ admit.
       ; try solve[simpl; congruence].
       destruct (Expectation_posRV (fun x : Ts => neg_fun_part rv_X2 x))
       ; try solve[simpl; congruence].
-      destruct (Expectation_posRV (fun x : Ts => pos_fun_part rv_X1 x)).
+      destruct (Expectation_posRV (fun x : Ts => pos_fun_part rv_X1 x)); try now simpl.
       + destruct (Expectation_posRV (fun x : Ts => pos_fun_part rv_X2 x)); try now simpl.
         simpl.
         f_equal.
         f_equal.
         lra.
       + destruct (Expectation_posRV (fun x : Ts => pos_fun_part rv_X2 x)); try now simpl.
-      + simpl in H1.
-        tauto.
     - rewrite Expectation_posRV_sum by typeclasses eauto.
       rewrite <- H, <- H0.
       simpl.
