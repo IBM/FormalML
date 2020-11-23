@@ -4130,6 +4130,208 @@ admit.
           apply posX.
     Qed.
        
+   Lemma find_some_break {A} f (l:list A) r :
+     find f l = Some r ->
+     exists l1 l2, l = l1 ++ r::l2 /\ Forall (fun x => f x = false) l1.
+   Proof.
+     induction l; simpl; intros fs.
+     - discriminate.
+     - match_case_in fs; intros eqq1
+       ; rewrite eqq1 in fs.
+       + intros.
+         exists nil, l.
+         simpl.
+         invcs fs.
+         split; trivial.
+       + destruct (IHl fs) as [l1 [l2 [eqq2 Fl]]]; subst.
+         exists (a::l1), l2.
+         simpl.
+         split; trivial.
+         constructor; trivial.
+   Qed.
+
+   Lemma simple_approx_preimage_fin0 (X:Ts -> R) (n:nat) :
+     PositiveRandomVariable X ->
+     forall (omega:Ts) (k:nat),
+       X omega < INR n ->
+       (simple_approx X n omega)*(2^n) = (INR k) <->
+       (INR k) <= (X omega)*(2^n) < (INR (S k)).
+   Proof.
+     unfold PositiveRandomVariable.
+     intros posX.
+     intros omega k.
+     intros Xlt.
+     unfold simple_approx.
+     match_destr; [lra | ].
+     clear n0.
+     assert (pos1:(n * 2 ^ n > 0)%nat).
+     {
+       apply NPeano.Nat.mul_pos_pos.
+       - destruct n; try lia.
+         simpl in Xlt.
+         specialize (posX omega).
+         lra.
+       - simpl.
+         apply NPeano.Nat.Private_NZPow.pow_pos_nonneg
+         ; lia.
+     }
+     match_case; intros.
+     - destruct (find_some_break _ _ _ H) as [l1 [l2 [eqq1 Fl1]]].
+       apply find_correct in H.
+       simpl in H.
+       match_destr_in H; clear H.
+       apply (f_equal (@rev _)) in eqq1.
+       rewrite rev_involutive in eqq1.
+       rewrite rev_app_distr in eqq1.
+       simpl in eqq1.
+       apply map_app_break in eqq1.
+       destruct eqq1 as [b [c [eqq2 [eqq3 eqq4]]]].
+       symmetry in eqq3.
+       apply map_app_break in eqq3.
+       destruct eqq3 as [d [e [eqq5 [eqq6 eqq7]]]].
+       subst.
+       destruct e; simpl in eqq7.
+       invcs eqq7.
+       destruct e; simpl in eqq7; invcs eqq7.
+       transitivity (n0 = k).
+       + split; intros.
+         * field_simplify in H.
+           -- now apply INR_eq.
+           -- revert H.
+              now apply pow_nzero.
+         * subst.
+           field_simplify; trivial.
+           apply pow_nzero; lra.
+       + generalize (f_equal (fun x => nth (length d) x 0)%nat); intros HH.
+         specialize (HH _ _ eqq2).
+         rewrite seq_nth in HH.
+         2: {
+              apply (f_equal (@length _)) in eqq2.
+              rewrite seq_length in eqq2.
+              repeat rewrite app_length in eqq2.
+              simpl in eqq2.
+              lia.
+            }
+         simpl in HH.
+         rewrite app_ass in HH.
+         rewrite app_nth2 in HH by lia.
+         rewrite NPeano.Nat.sub_diag in HH.
+         simpl in HH.
+         subst.
+         split; intros.
+         * subst.
+           split.
+           -- apply Rge_le in r0.
+              apply -> Rcomplements.Rle_div_l; trivial.
+              apply pow_lt.
+              lra.
+           -- apply  Rcomplements.Rlt_div_r; trivial.
+              ++ apply pow_lt; lra.
+              ++ {
+                  destruct c.
+                  - rewrite app_nil_r in eqq2.
+                    generalize (f_equal (fun x => last x 0)%nat eqq2); intros eqq0.
+                    rewrite seq_last in eqq0; trivial.
+                    rewrite last_app in eqq0 by congruence.
+                    simpl in eqq0.
+                    rewrite <- eqq0.
+                    rewrite NPeano.Nat.sub_1_r.
+                    rewrite Nat.succ_pred_pos by trivial.
+                    rewrite mult_INR.
+                    unfold Rdiv.
+                    rewrite Rmult_assoc.
+                    rewrite pow_INR.
+                    simpl.
+                    rewrite Rinv_r.
+                    + lra.
+                    + apply pow_nzero; lra.
+                  - generalize (f_equal (fun x => nth (length d+1) x 0)%nat); intros HH.
+                    specialize (HH _ _ eqq2).
+                    {
+                      rewrite seq_nth in HH.
+                      - rewrite app_nth2 in HH.
+                        + rewrite app_length in HH.
+                          simpl in HH.
+                          rewrite Nat.sub_diag in HH.
+                          subst.
+                          apply Internal.Forall_rev in Fl1.
+                          rewrite eqq4 in Fl1.
+                          invcs Fl1.
+                          match_destr_in H1.
+                          rewrite NPeano.Nat.add_1_r in n0.
+                          lra.
+                        + rewrite app_length; simpl.
+                          lia.
+                      - apply (f_equal (@length _)) in eqq2.
+                        rewrite seq_length in eqq2.
+                        repeat rewrite app_length in eqq2.
+                        simpl in eqq2.
+                        rewrite eqq2.
+                        lia.
+                    }
+                }
+         * destruct H as [le1 lt2].
+           apply Rge_le in r0.
+           apply Rcomplements.Rle_div_l in r0 ; [| apply pow_lt; lra].
+           {
+             destruct (lt_eq_lt_dec (length d) k) as [[lt1|]|lt1]; trivial
+             ; elimtype False.
+             - generalize (f_equal (fun x => nth k x 0)%nat); intros HH.
+               specialize (HH _ _ eqq2).
+               {
+                 rewrite seq_nth in HH.
+                 - rewrite app_nth2 in HH.
+                   + rewrite app_length in HH.
+                     simpl in HH.
+                     destruct (nth_in_or_default (k - (length d + 1)) c 0%nat)
+                     ; [| lia].
+                     rewrite <- HH in i.
+                     apply Internal.Forall_rev in Fl1.
+                     rewrite eqq4 in Fl1.
+                     rewrite Forall_map in Fl1.
+                     rewrite Forall_forall in Fl1.
+                     specialize (Fl1 _ i).
+                     match_destr_in Fl1.
+                     apply n0.
+                     apply Rle_ge.
+                     apply  Rcomplements.Rle_div_l
+                     ; [ apply pow_lt; lra |].
+                     lra.
+                   + rewrite app_length; simpl.
+                     lia.
+                 - apply INR_lt.
+                   eapply Rle_lt_trans
+                   ; try eapply le1.
+                   apply  Rcomplements.Rlt_div_r ; [ apply pow_lt; lra |].
+                   rewrite mult_INR.
+                   rewrite pow_INR.
+                   unfold Rdiv.
+                   simpl.
+                   rewrite Rmult_assoc.
+                   rewrite Rinv_r.
+                   + now rewrite Rmult_1_r.
+                   + apply pow_nzero; lra.
+               }
+             - assert (le2:(S k <= length d)%nat) by lia.
+               apply le_INR in le2.
+               lra.
+           }            
+     - generalize (find_none _ _ H); intros HH.
+       specialize (HH 0).
+       cut_to HH.
+       + match_destr_in HH.
+         specialize (posX omega).
+         lra.
+       + apply -> in_rev.
+         apply in_map_iff.
+         exists 0%nat.
+         split.
+         * simpl; lra.
+         * apply in_seq.
+           simpl.
+           split; trivial.
+   Qed.
+
    Lemma simple_approx_preimage_fin (X:Ts -> R) (n:nat) :
      PositiveRandomVariable X ->
      forall (omega:Ts), 
