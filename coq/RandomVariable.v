@@ -4746,11 +4746,43 @@ admit.
      event_equiv (fun omega : Ts => simple_approx X n omega <= r)
                  (list_union (map (fun z => (fun omega => simple_approx X n omega = z))
                                   rvals)).
-    Proof.
-   Admitted.
-     
+   Proof.
+     generalize (simple_approx_vals X n); intros.
+     unfold event_equiv; intros.
+     subst rvals.
+     specialize (H x).
+     rewrite in_map_iff in H.
+     destruct H as [k [? ?]].
+     rewrite <- H.
+     unfold list_union.
+     split; intros.
+     - exists (fun omega => simple_approx X n omega = INR k / 2^n).
+       split.
+       + rewrite in_map_iff.
+         exists (INR k / 2^n).
+         split; trivial.
+         rewrite filter_In.
+         split.
+         * rewrite in_map_iff.
+           exists k.
+           tauto.
+         * match_destr; congruence.
+       + now symmetry.
+     - destruct H1 as [a [? ?]].
+       rewrite in_map_iff in H1.
+       destruct H1 as [x0 [? ?]].
+       rewrite filter_In in H3.
+       destruct H3.
+       rewrite in_map_iff in H3.
+       destruct H3 as [k0 [? ?]].
+       rewrite <- H1 in H2.
+       rewrite H2 in H.
+       rewrite <- H in H4.
+       match_destr_in H4.
+   Qed.
 
   Instance simple_approx_rv (X : Ts -> R) (n:nat)
+           {posx : PositiveRandomVariable X} 
            {rvx : RandomVariable Prts borel_sa X} 
     : RandomVariable Prts borel_sa (simple_approx X n).
   Proof.
@@ -4768,7 +4800,27 @@ admit.
     subst.
     rewrite filter_In in H3.
     destruct H3.
-    Admitted.
+    apply in_map_iff in H2.
+    destruct H2 as [k [? ?]].
+    subst.
+    rewrite in_seq in H4.
+    destruct H4.
+    simpl in H4.
+    rewrite Nat.lt_succ_r in H4.
+    rewrite Nat.le_lteq in H4.
+    destruct H4.
+    - apply simple_approx_fin_measurable; trivial.
+    - subst.
+      replace (INR (n * 2 ^ n) / 2 ^ n) with (INR n).
+      + apply simple_approx_inf_measurable; trivial.
+      + rewrite mult_INR.
+        rewrite pow_INR.
+        unfold Rdiv.
+        rewrite Rmult_assoc.
+        rewrite Rinv_r.
+        * lra.
+        * apply pow2_nzero.
+   Qed.
 
   Lemma simple_approx_bound (X:Ts -> R) (n:nat) :
     PositiveRandomVariable X ->
