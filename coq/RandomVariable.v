@@ -4021,6 +4021,12 @@ admit.
           if Rge_dec Xw (INR n) then (INR n) else
             (IZR (up (Xw * 2^n)) - 1)/ 2^n. 
 
+   Lemma pow2_pos n : 0 < pow 2 n.
+   Proof.
+     apply pow_lt.
+     lra.
+   Qed.
+
    Lemma pow_nzero a n : a <> 0 -> pow a n <> 0.
    Proof.
      intros.
@@ -4029,6 +4035,12 @@ admit.
      - intros eqq.
        apply Rmult_integral in eqq.
        intuition.
+   Qed.
+
+   Lemma pow2_nzero n : pow 2 n <> 0.
+   Proof.
+     apply pow_nzero.
+     lra.
    Qed.
 
    Lemma simple_approx_vals (X:Ts->R) (n:nat) :
@@ -4223,10 +4235,9 @@ admit.
            split.
            -- apply Rge_le in r0.
               apply -> Rcomplements.Rle_div_l; trivial.
-              apply pow_lt.
-              lra.
+              apply pow2_pos.
            -- apply  Rcomplements.Rlt_div_r; trivial.
-              ++ apply pow_lt; lra.
+              ++ apply pow2_pos.
               ++ {
                   destruct c.
                   - rewrite app_nil_r in eqq2.
@@ -4272,7 +4283,7 @@ admit.
                 }
          * destruct H as [le1 lt2].
            apply Rge_le in r0.
-           apply Rcomplements.Rle_div_l in r0 ; [| apply pow_lt; lra].
+           apply Rcomplements.Rle_div_l in r0 ; [| apply pow2_pos].
            {
              destruct (lt_eq_lt_dec (length d) k) as [[lt1|]|lt1]; trivial
              ; elimtype False.
@@ -4295,14 +4306,14 @@ admit.
                      apply n0.
                      apply Rle_ge.
                      apply  Rcomplements.Rle_div_l
-                     ; [ apply pow_lt; lra |].
+                     ; [ apply pow2_pos |].
                      lra.
                    + rewrite app_length; simpl.
                      lia.
                  - apply INR_lt.
                    eapply Rle_lt_trans
                    ; try eapply le1.
-                   apply  Rcomplements.Rlt_div_r ; [ apply pow_lt; lra |].
+                   apply  Rcomplements.Rlt_div_r ; [ apply pow2_pos |].
                    rewrite mult_INR.
                    rewrite pow_INR.
                    unfold Rdiv.
@@ -4346,8 +4357,8 @@ admit.
      - cut_to HH1.
        + destruct HH1 as [le1 lt1].
          split; intros.
-         * apply  Rcomplements.Rle_div_l; [ apply pow_lt; lra |]; trivial.
-         * apply  Rcomplements.Rlt_div_r; [ apply pow_lt; lra |]; trivial.
+         * apply  Rcomplements.Rle_div_l; [ apply pow2_pos |]; trivial.
+         * apply  Rcomplements.Rlt_div_r; [ apply pow2_pos |]; trivial.
        + rewrite HH.
          unfold Rdiv.
          rewrite Rmult_assoc.
@@ -4363,8 +4374,8 @@ admit.
          * now apply pow_nzero.
        + destruct HH as [le1 lt1].
          split; intros.
-         * apply  Rcomplements.Rle_div_l; [ apply pow_lt; lra |]; trivial.
-         * apply  Rcomplements.Rlt_div_r; [ apply pow_lt; lra |]; trivial.
+         * apply  Rcomplements.Rle_div_l; [ apply pow2_pos |]; trivial.
+         * apply  Rcomplements.Rlt_div_r; [ apply pow2_pos |]; trivial.
    Qed.       
      
    Lemma simple_approx_preimage_fin2 (X:Ts -> R) (n:nat) :
@@ -4641,13 +4652,12 @@ admit.
      unfold Rdiv.
      apply Rle_ge.
      apply Rmult_le_reg_r with (r:= 2^n).
-     apply pow_lt; lra.
+     apply pow2_pos.
      rewrite Rmult_assoc.
      rewrite Rinv_l.
      ring_simplify.
      apply pos_INR.
-     apply Rgt_not_eq.
-     apply pow_lt; lra.
+     apply pow2_nzero.
    Qed.
 
    Instance simple_appox_posrv (X:Ts->R) (n:nat) : PositiveRandomVariable (simple_approx X n).
@@ -4657,20 +4667,108 @@ admit.
      apply simple_approx_pos.
    Qed.
 
-   Lemma simple_approx_measurable (X:Ts -> R) (n:nat)
+   Lemma simple_approx_inf_event (X:Ts -> R) (n:nat)
          (posx : PositiveRandomVariable X)
          (ranx : RandomVariable Prts borel_sa X) :
-     forall (r : R), sa_sigma (event_preimage (simple_approx X n)
-                                              (singleton_event r)).
+       event_equiv (event_preimage (simple_approx X n) (singleton_event (INR n)))
+                   (event_preimage X (fun r => r >= INR n)).
+     Proof.
+       generalize (simple_approx_preimage_inf X n posx); intros.
+       unfold event_equiv, event_preimage, singleton_event.
+       apply H.
+    Qed.
+
+     Lemma simple_approx_fin_event (X:Ts -> R) (n:nat) 
+         (posx : PositiveRandomVariable X)
+         (ranx : RandomVariable Prts borel_sa X) :
+     forall (k : nat), 
+       (k < n*2^n)%nat ->
+       event_equiv (event_preimage (simple_approx X n) (singleton_event ((INR k)/2^n)))
+                   (event_preimage X (fun z => (INR k)/2^n <= z < (INR (S k))/2^n)).
+     Proof.
+       unfold event_equiv, event_preimage, singleton_event.
+       intros.
+       now apply simple_approx_preimage_fin2.
+   Qed.
+
+   Lemma simple_approx_inf_measurable (X:Ts -> R) (n:nat)
+         (posx : PositiveRandomVariable X)
+         (ranx : RandomVariable Prts borel_sa X) :
+     sa_sigma (event_preimage (simple_approx X n) (singleton_event (INR n))).
+   Proof.
+    generalize (simple_approx_inf_event X n posx ranx); intros.
+    rewrite H.
+    apply sa_le_ge.
+    apply borel_sa_preimage2; intros.
+    now apply rv_preimage.
+ Qed.
+
+   Lemma simple_approx_fin_measurable (X:Ts -> R) (n:nat)
+         (posx : PositiveRandomVariable X)
+         (ranx : RandomVariable Prts borel_sa X) :
+     forall (k : nat), 
+       (k < n*2^n)%nat ->
+       sa_sigma (event_preimage (simple_approx X n) (singleton_event ((INR k)/2^n))).
    Proof.
      intros.
-     generalize (simple_approx_vals X n); intros.
-     generalize (simple_approx_preimage_inf X n posx); intros.
-     generalize (simple_approx_preimage_fin X n posx); intros.     
-     generalize (in_dec Req_EM_T); intros indec.
-     generalize (simple_approx_pos X n); intros.
-     generalize (simple_approx_exists X n); intros.
+     generalize (simple_approx_fin_event X n posx ranx k H); intros.
+     rewrite H0.
+     assert (event_equiv (fun z : R => INR k / 2 ^ n <= z < INR (S k) / 2 ^ n)
+                         (event_inter (fun z : R => z >= INR k / 2 ^ n)
+                                      (fun z : R => z < INR (S k) / 2 ^ n))).
+     - intros x.
+       unfold event_inter.
+       lra.
+     - rewrite H1.
+       unfold event_preimage.
+       assert (event_equiv  (fun omega : Ts =>
+                               event_inter (fun z : R => z >= INR k / 2 ^ n) 
+                                           (fun z : R => z < INR (S k) / 2 ^ n)
+                                           (X omega))
+                            (event_inter (fun omega => X omega >= INR k / 2^n)
+                                         (fun omega => X omega < INR (S k) / 2^n))).
+       + intros x.
+         unfold event_inter.
+         lra.
+       + rewrite H2.
+         apply sa_inter.
+         * apply sa_le_ge.
+           apply borel_sa_preimage2; intros.
+           now apply rv_preimage.
+         * apply sa_le_lt.
+           apply borel_sa_preimage2; intros.
+           now apply rv_preimage.
+    Qed.
+
+   Lemma simple_approx_range_event (X : Ts -> R) (n:nat) (r : R) :
+     let rvals :=  filter (fun z => if Rle_dec z r then true else false)
+                          (map (fun x : nat => INR x / 2 ^ n) (seq 0 (S (n * 2 ^ n)))) in
+     event_equiv (fun omega : Ts => simple_approx X n omega <= r)
+                 (list_union (map (fun z => (fun omega => simple_approx X n omega = z))
+                                  rvals)).
+    Proof.
    Admitted.
+     
+
+  Instance simple_approx_rv (X : Ts -> R) (n:nat)
+           {rvx : RandomVariable Prts borel_sa X} 
+    : RandomVariable Prts borel_sa (simple_approx X n).
+  Proof.
+    unfold RandomVariable.
+    intros.
+    apply borel_sa_preimage; trivial.
+    intros.
+    generalize (simple_approx_vals X n); intros.
+    generalize (simple_approx_range_event X n r); intros.
+    rewrite H1.
+    apply sa_list_union.
+    intros.
+    apply in_map_iff in H2.
+    destruct H2 as [x0 [? ?]].
+    subst.
+    rewrite filter_In in H3.
+    destruct H3.
+    Admitted.
 
   Lemma simple_approx_bound (X:Ts -> R) (n:nat) :
     PositiveRandomVariable X ->
@@ -4701,20 +4799,20 @@ admit.
             apply Rmult_le_compat_r.
             -- left.
                apply Rinv_0_lt_compat.
-               apply pow_lt; lra.
+               apply pow2_pos.
             -- apply Rmult_lt_reg_r in H4.
                ++ apply INR_lt in H4.
                   apply le_INR.
                   lia.
                ++ apply Rinv_0_lt_compat.
-                  apply pow_lt; lra.
+                  apply pow2_pos.
           * congruence.
         + eapply Rle_trans; try eapply H0.
           rewrite S_INR.
           apply Rmult_le_compat_r.
           * left.
             apply Rinv_0_lt_compat.
-            apply pow_lt; lra.
+            apply pow2_pos.
           * lra.
     Qed.
 
@@ -4738,7 +4836,7 @@ admit.
           * rewrite mult_INR, pow_INR.
             replace (INR 2) with (2) by easy.
             field.
-            apply Rgt_not_eq, pow_lt; lra.
+            apply pow2_nzero.
           * rewrite H3 in r.
             apply Rge_le in r.
             generalize (simple_approx_bound X (S n) posX ω n0 (n * 2 ^ S n) r); intros.
@@ -4757,7 +4855,7 @@ admit.
           rewrite mult_INR.
           simpl.
           field.
-          apply Rgt_not_eq; apply pow_lt; lra.          
+          apply pow2_nzero.
         + specialize (H6 (2*x)%nat).
           rewrite H7.
           apply H6.
@@ -4825,8 +4923,7 @@ admit.
            -- apply Rmult_lt_0_compat.
               ++ apply Rinv_0_lt_compat.
                  apply cond_pos.
-              ++ apply pow_lt.
-                 lra.
+              ++ apply pow2_pos.
            -- apply Rlt_le_trans with (r2 := 2^x).
               ++ apply Rlt_trans with (r2 := IZR (up (/ eps))).
                  ** apply archimed.
@@ -5034,17 +5131,60 @@ admit.
       reflexivity.
   Qed.
 
-  (*
+  Lemma Finite_Rbar_plus' (a b : Rbar) :
+    forall (c:R),
+           Rbar_plus' a b = Some (Finite c) ->
+           is_finite a /\ is_finite b.
+    Proof.
+      intros.
+      unfold Rbar_plus' in H.
+      match_destr_in H; match_destr_in H.
+      unfold is_finite.
+      now rewrite Rbar_finite_eq.
+   Qed.
+
+    Lemma Finite_Rbar_opp (a : Rbar) :
+      is_finite (Rbar_opp a) -> is_finite a.
+    Proof.
+      unfold is_finite, Rbar_opp.
+      match_destr.
+    Qed.
+
+    Lemma Finite_Rbar_minus' (a b : Rbar) :
+    forall (c:R),
+           Rbar_minus' a b = Some (Finite c) ->
+           is_finite a /\ is_finite b.
+    Proof.
+      unfold Rbar_minus'.
+      generalize (Finite_Rbar_plus' a (Rbar_opp b)); intros.
+      specialize (H c H0).
+      generalize (Finite_Rbar_opp b); intros.
+      destruct H.
+      specialize (H1 H2).
+      tauto.
+   Qed.
+
   Lemma Expectation_sum_finite  {nempty:NonEmpty Ts}
         (rv_X1 rv_X2 : Ts -> R)
         {rv1 : RandomVariable Prts borel_sa rv_X1}
         {rv2 : RandomVariable Prts borel_sa rv_X2} :
+    forall (e1 e2:R), 
       Expectation rv_X1 = Some (Finite e1) ->
       Expectation rv_X2 = Some (Finite e2) ->
       Expectation (rvplus rv_X1 rv_X2) = Some (Finite (e1 + e2)).
   Proof.
-  *)
-    
+    intros.
+    generalize (Expectation_sum rv_X1 rv_X2); intros.
+    rewrite H, H0 in H1.
+    unfold Expectation in H.
+    apply Finite_Rbar_minus' in H.
+    unfold Expectation in H0.
+    apply Finite_Rbar_minus' in H0.    
+    destruct H; destruct H0.
+    specialize (H1 H2 H3).
+    rewrite H1.
+    now simpl.
+  Qed.
 
 End Expectation.
 
