@@ -4367,7 +4367,246 @@ admit.
          * apply  Rcomplements.Rlt_div_r; [ apply pow_lt; lra |]; trivial.
    Qed.       
      
-
+   Lemma simple_approx_preimage_fin2 (X:Ts -> R) (n:nat) :
+     PositiveRandomVariable X ->
+     forall (omega:Ts), 
+       forall (k:nat), (k < n*2^n)%nat ->
+         simple_approx X n omega = (INR k)/2^n <->
+         (INR k)/2^n <= X omega < (INR (S k))/2^n.
+   Proof.
+     unfold PositiveRandomVariable.
+     intros posX.
+     intros omega k.
+     intros klt.
+     assert (pos1:(n * 2 ^ n > 0)%nat).
+     {
+       apply NPeano.Nat.mul_pos_pos.
+       - destruct n; try lia.
+       - simpl.
+         apply NPeano.Nat.Private_NZPow.pow_pos_nonneg
+         ; lia.
+     }
+     unfold simple_approx.
+     split; intros HH.
+     - match_destr_in HH.
+       + apply lt_INR in klt.
+         rewrite mult_INR, pow_INR in klt.
+         rewrite HH in klt.
+         simpl in klt.
+         unfold Rdiv in klt.
+         rewrite Rmult_assoc in klt.
+         rewrite Rinv_l in klt; [| apply pow_nzero; lra].
+         lra.
+       + apply Rnot_ge_lt in n0.
+         match_case_in HH; [intros x eqq1 | intros eqq1].
+         * {
+             rewrite eqq1 in HH.
+             subst.
+             rewrite <- map_rev in eqq1.
+             rewrite find_over_map in eqq1.
+             apply some_lift in eqq1.
+             destruct eqq1 as [kk eqq1].
+             apply Rmult_eq_reg_r in e.
+             2: {apply Rinv_neq_0_compat.
+                 apply pow_nzero; lra.
+             }
+             apply INR_eq in e.
+             subst kk.
+             destruct (find_some_break _ _ _ eqq1) as [l1 [l2 [eqq2 Fl1]]].
+             apply find_correct in eqq1.
+             simpl in eqq1.
+             match_destr_in eqq1; clear eqq1.
+             split; [lra | ].
+             apply (f_equal (@rev _)) in eqq2.
+             rewrite rev_involutive in eqq2.
+             rewrite rev_app_distr in eqq2.
+             simpl in eqq2.
+             ++ {
+                  destruct l1.
+                  - rewrite app_nil_r in eqq2.
+                    generalize (f_equal (fun x => last x 0%nat) eqq2); intros eqq0.
+                    rewrite seq_last in eqq0; trivial.
+                    rewrite last_app in eqq0 by congruence.
+                    simpl in eqq0.
+                    subst.
+                    rewrite NPeano.Nat.sub_1_r.
+                    rewrite Nat.succ_pred_pos by trivial.
+                    rewrite mult_INR.
+                    unfold Rdiv.
+                    rewrite Rmult_assoc.
+                    rewrite pow_INR.
+                    simpl.
+                    rewrite Rinv_r.
+                    * lra.
+                    * apply pow_nzero; lra.
+                  - assert (k = length (rev l2)).
+                    {
+                      generalize (f_equal (fun x => nth (length (rev l2)) x 0%nat)); intros HH.
+                      specialize (HH _ _ eqq2).
+                      rewrite app_nth1 in HH
+                      ; [| rewrite app_length; simpl; lia].
+                      rewrite app_nth2 in HH by lia.
+                      rewrite Nat.sub_diag in HH.
+                      simpl in HH.
+                      rewrite seq_nth in HH.
+                      - lia.
+                      - apply (f_equal (@length _)) in eqq2.
+                        rewrite seq_length in eqq2.
+                        repeat rewrite app_length in eqq2.
+                        simpl in eqq2.
+                        rewrite eqq2.
+                        rewrite app_length.
+                        simpl.
+                        lia.
+                    }
+                    generalize (f_equal (fun x => nth (S k) x 0%nat)); intros HH.
+                    specialize (HH _ _ eqq2).
+                    rewrite seq_nth in HH.
+                    + subst.
+                      rewrite app_nth2 in HH
+                      ; [| rewrite app_length; simpl; lia].
+                      rewrite app_length in HH.
+                      replace ((S (length (rev l2)) - (length (rev l2) + length [length (rev l2)])))%nat with 0%nat in HH.
+                      * rewrite rev_nth in HH by (simpl; lia).
+                        rewrite plus_0_l in HH.
+                        rewrite HH.
+                        rewrite Forall_forall in Fl1.
+                        specialize (Fl1 (nth (length (n1 :: l1) - 1) (n1 :: l1) 0%nat)).
+                        cut_to Fl1.
+                        -- match_destr_in Fl1.
+                           lra.
+                        -- apply nth_In.
+                           simpl; lia.
+                      * simpl length.
+                        lia.
+                    + apply (f_equal (@length _)) in eqq2.
+                      rewrite seq_length in eqq2.
+                      repeat rewrite app_length in eqq2.
+                      simpl in eqq2.
+                      rewrite eqq2.
+                      rewrite app_length.
+                      simpl.
+                      lia.
+               }
+           } 
+         * generalize (find_none _ _ eqq1); intros HH2.
+           specialize (HH2 0).
+           cut_to HH2.
+           -- match_destr_in HH2.
+              specialize (posX omega).
+              lra.
+           -- apply -> in_rev.
+              apply in_map_iff.
+              exists 0%nat.
+              split.
+              ++ simpl; lra.
+              ++ apply in_seq.
+                 simpl.
+                 lia.
+     - destruct HH as [le1 lt2].
+       match_destr.
+       + apply Rge_le in r.
+         apply Rle_not_gt in r.
+         elim r.
+         apply Rlt_gt.
+         eapply Rlt_le_trans; try eapply lt2.
+         apply  Rcomplements.Rle_div_r.
+         * apply Rinv_0_lt_compat.
+           apply pow_lt; lra.
+         * unfold Rdiv.
+           rewrite Rinv_involutive by (apply pow_nzero; lra).
+           apply le_INR in klt.
+           rewrite mult_INR in klt.
+           rewrite pow_INR in klt.
+           apply klt.
+       + match_case; [intros x eqq1 | intros eqq1].
+         * destruct (find_some_break _ _ _ eqq1) as [l1 [l2 [eqq2 Fl1]]].
+           apply find_correct in eqq1.
+           simpl in eqq1.
+           match_destr_in eqq1; clear eqq1.
+           apply (f_equal (@rev _)) in eqq2.
+           rewrite rev_involutive in eqq2.
+           rewrite rev_app_distr in eqq2.
+           simpl in eqq2.
+           { 
+             assert (x = INR (length (rev l2)) / 2 ^ n).
+             {
+               generalize (f_equal (fun x => nth (length (rev l2)) x ((fun x : nat => INR x / 2 ^ n) 0%nat))); intros HH.
+               specialize (HH _ _ eqq2).
+               rewrite app_nth1 in HH
+               ; [| rewrite app_length; simpl; lia].
+               rewrite app_nth2 in HH by lia.
+               rewrite Nat.sub_diag in HH.
+               simpl in HH.
+               rewrite (map_nth (fun x : nat => INR x / 2 ^ n) _ 0%nat) in HH.
+               rewrite seq_nth in HH.
+               - simpl in HH.
+                 auto.
+               - apply (f_equal (@length _)) in eqq2.
+                 rewrite map_length in eqq2.
+                 rewrite seq_length in eqq2.
+                 repeat rewrite app_length in eqq2.
+                 simpl in eqq2.
+                 rewrite eqq2.
+                 lia.
+             }
+             subst.
+             apply Rmult_eq_compat_r.
+             f_equal.
+             destruct (lt_eq_lt_dec (length (rev l2)) k) as [[lt1|]|lt1]; trivial
+             ; elimtype False.
+             - generalize (f_equal (fun x => nth k x ((fun x : nat => INR x / 2 ^ n) 0%nat))); intros HH.
+               specialize (HH _ _ eqq2).
+               {
+                 rewrite (map_nth (fun x : nat => INR x / 2 ^ n) _ 0%nat) in HH.
+                 rewrite seq_nth in HH by trivial.
+                 rewrite app_nth2 in HH.
+                 - rewrite app_length in HH.
+                   simpl in HH.
+                   destruct (nth_in_or_default (k - (length (rev l2) + 1)) (rev l1) (0 / 2 ^ n)).
+                   + rewrite <- HH in i.
+                     apply Internal.Forall_rev in Fl1.
+                     rewrite Forall_forall in Fl1.
+                     specialize (Fl1 _ i).
+                     match_destr_in Fl1.
+                     lra.
+                   + rewrite e in HH.
+                     apply Rmult_eq_reg_r in HH.
+                     2: {apply Rinv_neq_0_compat.
+                         apply pow_nzero; lra.
+                     }
+                     replace 0 with (INR 0%nat) in HH by (simpl; trivial).
+                     apply INR_eq in HH.
+                     lia.
+                 - rewrite app_length; simpl.
+                   lia.
+               }
+             - assert (le2:(S k <= length (rev l2))%nat) by lia.
+               apply le_INR in le2.
+               apply  Rcomplements.Rlt_div_r in lt2
+               ; [| apply pow_lt; lra].
+               apply Rge_le in r.
+               apply  Rcomplements.Rle_div_l in r
+               ; [| apply pow_lt; lra].
+               lra.
+           }            
+         * generalize (find_none _ _ eqq1); intros HH.
+           specialize (HH 0).
+           { cut_to HH.
+             + match_destr_in HH.
+               specialize (posX omega).
+               lra.
+             + apply -> in_rev.
+               apply in_map_iff.
+               exists 0%nat.
+               split.
+               * simpl; lra.
+               * apply in_seq.
+                 simpl.
+                 split; trivial.
+           } 
+   Qed.
+     
    Lemma simple_approx_le (X:Ts->R) (n:nat) (posX : PositiveRandomVariable X) (ω:Ts) :
      simple_approx X n ω <= X ω.
    Proof.
