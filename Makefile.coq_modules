@@ -22,7 +22,7 @@ QCERT_LIB_UTILS = LibUtilsAssoc LibUtilsBag LibUtilsBindings LibUtilsBindingsNat
 		  LibUtils
 
 ELFIC_UTILS	= R_compl check_sub_structure compatible continuous_linear_map fixed_point \
-		  hierarchyD hilbert linear_map logic_tricks
+		  hierarchyD hilbert linear_map logic_tricks lax_milgram lax_milgram_cea
 
 
 MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
