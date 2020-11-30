@@ -85,6 +85,16 @@ End NormedModule2.
 
 Export NormedModule2.Exports.
 
+
+Section defs.
+Context {K : AbsRing} {V : NormedModule2 K}.
+
+Definition norm : V -> R := NormedModule2.norm K _ (NormedModule2.class K V).
+
+Definition norm_factor : R := NormedModule2.norm_factor K _ (NormedModule2.class K V).
+
+End defs.
+
 Section CompleteSubset.
 
 Context {E : NormedModule2 R_AbsRing}.
