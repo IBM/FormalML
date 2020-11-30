@@ -5020,6 +5020,22 @@ admit.
      lra.
    Qed.
 
+   Lemma simple_expectation_real 
+             (rv_X : Ts -> R)
+             {prv : PositiveRandomVariable rv_X} 
+             {srv : SimpleRandomVariable rv_X} :
+     is_finite (Expectation_posRV rv_X).
+   Proof.
+     Admitted.
+
+   Lemma simple_Expectation_posRV
+             (rv_X : Ts -> R)
+             {prv : PositiveRandomVariable rv_X} 
+             {srv : SimpleRandomVariable rv_X} :
+     SimpleExpectation rv_X = Expectation_posRV rv_X.
+   Proof.
+     Admitted.
+
    Lemma monotone_convergence0 (c:posreal)
          (X : Ts -> R )
          (Xn : nat -> Ts -> R)
@@ -5039,10 +5055,10 @@ admit.
      RealRandomVariable_le phi X ->
      (forall (omega:Ts), is_lim_seq' (fun n => Xn n omega) (X omega)) ->
      c < 1 ->
-
-     (c * (real (Expectation_posRV phi))) <=
-     (Lim_seq (fun n => real (Expectation_posRV (Xn n)))).
+     Rbar_le (c * (real (Expectation_posRV phi))) 
+             (Lim_seq (fun n => real (Expectation_posRV (Xn n)))).
    Proof.
+     intros.
      
    Admitted.
 

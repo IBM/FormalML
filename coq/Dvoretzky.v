@@ -12,6 +12,18 @@ Import ListNotations.
 
 Set Bullet Behavior "Strict Subproofs".
 
+Require Import LM.hilbert Classical IndefiniteDescription.
+
+Program Definition ortho_projection_hilbert (E:PreHilbert) 
+           (phi: E -> Prop) (phi_mod: compatible_m phi) (phi_compl: complete_subset phi)
+           (u : E) : E.
+  generalize (ortho_projection_subspace phi phi_mod phi_compl u);intros.
+  cut_to H.
+  apply constructive_definite_description in H.
+  exact (proj1_sig H).
+  intro; apply classic.
+Qed.
+
  Context 
    {dom: SigmaAlgebra R}
    {prts: ProbSpace dom}.
