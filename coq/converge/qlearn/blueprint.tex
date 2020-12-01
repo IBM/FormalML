@@ -137,7 +137,7 @@ In practice, the $Q_0$ value is set to zero identically.
 $Q$-learning states that under certain regularity conditions on the learning rate, the sequence of $Q_n$ values converges to $Q^*$ with probability 1. 
 
 \begin{theorem} [$Q$-learning convergence]
-Fix a state $x:X$ and action $a : \act(x)$. Let $n^i(x,a)$ denote the time when action $a$ is tried at state $x$ for the $i$-th time. 
+Fix a state $x:X$ and action $a : \act(x)$. 
 If we have, for all $x,a$ that
 \[
 \sum_{i}\alpha_{n^i(x,a)} = \infty \ , \ \sum_{i}\alpha_{n^i(x,a)}^2 < \infty \ 
@@ -145,6 +145,125 @@ If we have, for all $x,a$ that
 then we have $Q_n(x,a) \rightarrow Q^*(x,a)$ with probability 1. 
 \end{theorem}
 
+All random variables in sight and all probability measures are discrete. 
+
+\section{Action-Replay Process Lemmas}
 To prove this theorem, we set up an auxilary MDP called the Action-Replay Process (ARP). 
+\subsection{Definition of the ARP.}
+\begin{defn}[$i$-th occurence counter]
+Given an MDP, let $n^i(x,a)$ denote the time when action $a$ is tried at state $x$ for the $i$-th time. 
+\end{defn}
+
+\begin{defn}[Action-Replay Process]
+Given an MDP $M = (X,A,T,r)$, we define the action-replay process ARP as having 
+\begin{itemize}
+    \item State space $(\mathbb{N}\times X) \cup \{\ast\}$. Where $\ast$ is a special absorbing state.
+    \item Action space $A$ is the same as the action space of $M$.
+    \item Transition structure TODO. 
+\end{itemize}
+\end{defn}
+
+\subsection{Optimal $Q$ values of the ARP.}
+
+\section{Stochastic Convergence Lemmas}
+\subsection{Convergence in $L^2 \Rightarrow$ Convergence with probability 1.}
+\textbf{Note}: \red{This section may be optional. Maybe we should think about stating our convergence results just in $L^2$, since convergence in probability doesn't really add much?}
+
+\begin{lemma}[Markov Inequality]
+Let $X$ be a discrete random variable which is nonnegative. Then for any positve real number $a$, we have 
+\[ 
+P(X \ge a) \le \frac{\E X}{a}
+\]
+\end{lemma}
+\begin{proof}
+We have $\E X= \sum_{x} x P(X = x)$ \coqdef{converge.cond_expt}{expt_value_eq_class} and we now write:
+\begin{align}
+    \E X &= \sum_{x \ge a} x P(X = x) + \sum_{x < a} x P(X = x) \\
+        &\ge \sum_{x \ge a} x P(X=x) + 0 \\
+        &\ge a \sum_{x \ge a} P(X = x) \\
+        &= a P(X \ge a)
+\end{align}
+where we used the nonnegativity of $X$ in the second step. 
+\end{proof}
+
+Using the Markov inequality, we can prove that convergence in $L^2$ implies convergence in probability. 
+
+\begin{defn}[Convergence in $L^2$]
+A sequence of random variables $X_n$ is said to converge in $L^2$ to a random variable $X$ if \[ 
+\lim_{n \to \infty} \E |X_n - X|^2 = 0.
+\]
+\end{defn}
+
+\begin{defn}[Convergence with probability 1]
+A sequence of random variables $X_n$ is said to converge with probability 1 to a random variable $X$ if
+\[
+    \lim_{n \to \infty} P \left( | X_n - X | \ge \epsilon \right) = 0.
+\]
+\end{defn}
+\begin{theorem}
+Convergence in $L^2$ implies convergence in probability. 
+\end{theorem}
+\begin{proof}
+For any $\epsilon > 0$, we have 
+\begin{align}
+    P(|X_n - X|) \ge \epsilon) &= P(|X_n - X|^2 \ge \epsilon) \\
+    &\le \frac{\E |X_n - X|^2}{\epsilon}
+\end{align}
+The RHS now goes to 0 since $X_n \to X$ in $L^2$. 
+\end{proof}
+
+\subsection{Dvoretzky's convergence lemma}
+This lemma is the essential lemma needed for convergence of $Q$-learning. 
+\begin{lemma}\label{lem:qlearn-ess}
+Let $\{X_n\}$ be discrete random variables updated as
+\begin{equation}\label{eq:rob-monro}
+X_{n+1} = X_n + \alpha_n (Y_n - X_n)    
+\end{equation}
+where $ 0 \le \alpha_n < 1$ are real numbers such that $\sum_n \alpha_n = \infty$ and $\sum_n \alpha_n^2 < \infty$ and $Y_n$ are bounded random variables with mean $\theta$. Then we have that $X_n \to \theta$ in $L^2$.
+\end{lemma}
+
+\begin{remark}
+We note that
+\begin{itemize}
+    \item Convergence is also in probability if we use the lemmas in the previous section.
+    \item The above recurrence scheme (\ref{eq:rob-monro}) is the Robbins-Monro scheme with $f(x) = x$. (See Dvoretzky's paper on page 50).
+\end{itemize} 
+\end{remark}
+
+To prove this lemma, we use the work we did to prove the Dvoretzky convergence lemma, which we recall:
+Let $T$ be a function satisfying the following assumption:
+\[ 
+|T_n(r_1,\dots,r_n) - \theta| \le F_n | r_n - \theta |
+\]
+Define $\{X_n\}$ as
+\[
+X_{n+1}(\omega) = T_n(X_1(\omega),\dots,X_n(\omega)) + Z_n(\omega) \qquad n \ge 1 
+\]
+assume also that
+\begin{itemize}
+    \item $\mathbb{E}[X_1^2] < \infty$,
+    \item $\sum_{n=1}^{\infty}\E[Z_n^2] < \infty$,
+    \item $\E[Z_n | x_1,\dots,x_n] = 0$ for all $n$ with probability 1,
+\end{itemize}
+
+Now if we set $V_n^2 = \E\left[ (X_n - \theta)^2\right]$ and $\sigma_n^2 = \E\left[ Z_n^2 \right]$, then (denoting $T_n$ for $T_n(X_1,\dots,X_n)$) we have:
+\[ V_{n+1}^2 \le F_n^2 V_n^2 + \sigma_n^2\]
+
+\begin{theorem}
+Let $\{F_n\}$ be a sequence of positive real numbers such that $\prod_{n=0}^\infty F_n =0$. Assume we have a sequence of real numbers $\{V_n\}$ which satisfy for every $n$:
+\[ 
+    V_{n+1}^2 \le F_n^2 V_n^2 + \sigma_n^2
+\]
+Where $\{\sigma_n\}$ satisfy $\sum_{n=0}^\infty \sigma_n^2 < \infty$. Then we have that $V_n^2 \rightarrow 0$.
+\end{theorem}
+
+So, the above theorem says that $X_n \to \theta$ in $L^2$. 
+So, to prove Lemma \ref{lem:qlearn-ess}, we set $T_n(X_1,\dots,X_n) = (1-\alpha_n)X_n$ and $Z_n = (Y_n - \theta)$.
+Dvoretzky's theorem applies if we set $F_n = 1 - \alpha_n$. The missing ingredient is supplied by this lemma:
+\begin{lemma}
+If we have $\alpha_n \to 0$, and if $F_n = 1 - \alpha_n$, then $\prod_{n=0}^\infty F_n = 0$. 
+\end{lemma}
+
+
 \end{document}
 
