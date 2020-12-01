@@ -206,7 +206,7 @@ Convergence in $L^2$ implies convergence in probability.
 \begin{proof}
 For any $\epsilon > 0$, we have 
 \begin{align}
-    P(|X_n - X|) \ge \epsilon) &= P(|X_n - X|^2 \ge \epsilon) \\
+    P(|X_n - X|) \ge \epsilon) &= P(|X_n - X|^2 \ge \epsilon^2) \\
     &\le \frac{\E |X_n - X|^2}{\epsilon}
 \end{align}
 The RHS now goes to 0 since $X_n \to X$ in $L^2$. 
@@ -261,7 +261,7 @@ So, the above theorem says that $X_n \to \theta$ in $L^2$.
 So, to prove Lemma \ref{lem:qlearn-ess}, we set $T_n(X_1,\dots,X_n) = (1-\alpha_n)X_n$ and $Z_n = (Y_n - \theta)$.
 Dvoretzky's theorem applies if we set $F_n = 1 - \alpha_n$. The missing ingredient is supplied by this lemma:
 \begin{lemma}
-If we have $\alpha_n \to 0$, and if $F_n = 1 - \alpha_n$, then $\prod_{n=0}^\infty F_n = 0$. 
+If we have $\sum_{n=0}\alpha_n^2 < \infty$ and $\sum_{n=0}^\infty \alpha_n = \infty$, and if $F_n = 1 - \alpha_n$, then $\prod_{n=0}^\infty F_n = 0$. 
 \end{lemma}
 
 
