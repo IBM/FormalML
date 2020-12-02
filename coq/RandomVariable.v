@@ -5115,14 +5115,14 @@ admit.
        generalize (pos_INR n); lra.
        apply Rgt_not_eq.
        generalize (pos_INR n); lra.
-       apply (monotone_convergence0 (mkposreal _ H4) X); trivial.
+       (*apply (monotone_convergence0 (mkposreal _ H4) X); trivial.
        simpl.
        apply Rplus_lt_reg_l with (r := -1).
        ring_simplify.
        apply Ropp_lt_gt_0_contravar.
        apply  Rinv_0_lt_compat.
        generalize (pos_INR n); lra.
-       apply H.
+       apply H.*)
        Admitted.
 
 
