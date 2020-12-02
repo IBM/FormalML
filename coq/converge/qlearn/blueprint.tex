@@ -257,13 +257,26 @@ Let $\{F_n\}$ be a sequence of positive real numbers such that $\prod_{n=0}^\inf
 Where $\{\sigma_n\}$ satisfy $\sum_{n=0}^\infty \sigma_n^2 < \infty$. Then we have that $V_n^2 \rightarrow 0$.
 \end{theorem}
 
-So, the above theorem says that $X_n \to \theta$ in $L^2$. 
-So, to prove Lemma \ref{lem:qlearn-ess}, we set $T_n(X_1,\dots,X_n) = (1-\alpha_n)X_n$ and $Z_n = (Y_n - \theta)$.
-Dvoretzky's theorem applies if we set $F_n = 1 - \alpha_n$. The missing ingredient is supplied by this lemma:
-\begin{lemma}
-If we have $\sum_{n=0}\alpha_n^2 < \infty$ and $\sum_{n=0}^\infty \alpha_n = \infty$, and if $F_n = 1 - \alpha_n$, then $\prod_{n=0}^\infty F_n = 0$. 
-\end{lemma}
+First off, note that in Lemma \ref{lem:qlearn-ess}, we can assume, without loss of generality, that $\theta = 0$. 
+This is because we can rewrite (\ref{eq:rob-monro}) as 
+\[ 
+    (X_{n+1} - \theta)= (X_n - \theta) + \alpha_n ((Y_n-\theta) - (X_n-\theta))    
+\] 
+So, to prove Lemma \ref{lem:qlearn-ess}, we apply the Dvoretzky convergence lemma with $Z_n = \alpha_n Y_n$ and $T_n = (1 - \alpha_n)X_n$, which implies that $F_n = (1 - \alpha_n)$. 
 
+Note that $$\sum_n\E[Z_n^2] = \sum_n \alpha_n^2 \E[Y_n^2] \le D \sum_n \alpha_n^2 < \infty$$ since we assume that $Y_n$ are bounded. 
+
+The missing ingredient is supplied by this lemma:
+\begin{lemma}
+If we have $\sum_{n=0}^\infty \alpha_n = \infty$ where $0 \le \alpha_n < 1$ and if $F_n = 1 - \alpha_n$, then $\prod_{n=0}^\infty F_n = 0$. 
+\end{lemma}
+\begin{proof}
+    We have $F_n = 1 - \alpha_n \le e^{-\alpha_n}$ (this result is proven in \texttt {RealAdd.v}) and so,
+    \[ 
+    0 \le \prod_{n=0}^k (1 - \alpha_k) \le e^{- \sum_{n=0}^k \alpha_k}
+    \]
+    By the hypothesis, the RHS goes to zero as $k \to \infty$. So, by the sandwich theorem we have $\prod_{n=0}^\infty F_n = 0$. 
+\end{proof}
 
 \end{document}
 
