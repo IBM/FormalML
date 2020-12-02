@@ -81,7 +81,8 @@
 \section{Introduction}
 This will be a formal blueprint of the convergence proof for Q-learning, following the original 1992 proof of Watkins-Dayan. Formal equivalents, whenever available, shall be linked to by a \coqtop.
 
-In a nutshell, the proof proceeds by constructing an auxiliary Markov Decision Process, called the \textit{action-replay} process (ARP) associated to any given MDP. 
+In a nutshell, the proof proceeds by constructing an auxiliary Markov Decision Process, called the \textit{action-replay} process (ARP) associated to any given MDP. The ARP is constructed so that it's optimal $Q$-values (defined below) approximate the optimal $Q$-value of the parent MDP. 
+A stochastic approximation result (the Robbins-Monro procedure) finally shows that the approximations indeed converge to the optimal value.
 
 We start out with an MDP $M$ \coqdef{converge.mdp}{MDP} which has 
 \begin{itemize}
