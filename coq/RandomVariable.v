@@ -5020,21 +5020,43 @@ admit.
      lra.
    Qed.
 
+   Lemma simple_Expectation_posRV
+             (rv_X : Ts -> R)
+             {rv : RandomVariable Prts borel_sa rv_X}
+             {prv : PositiveRandomVariable rv_X} 
+             {srv : SimpleRandomVariable rv_X} :
+     Finite (SimpleExpectation rv_X) = Expectation_posRV rv_X.
+   Proof.
+     unfold Expectation_posRV.
+     unfold SimpleExpectationSup.
+     symmetry.
+     apply is_lub_Rbar_unique.
+     unfold is_lub_Rbar.
+     unfold is_ub_Rbar.
+     split; intros.
+     - destruct H as [rvx2 [rv2 [srv2 [? ?]]]].
+       unfold BoundedPositiveRandomVariable in H.
+       destruct H.
+       simpl.
+       rewrite <- H0.
+       now apply SimpleExpectation_le.
+     - apply H.
+       unfold BoundedPositiveRandomVariable.
+       exists rv_X, rv, srv.
+       split; now split.
+   Qed.
+
    Lemma simple_expectation_real 
              (rv_X : Ts -> R)
+             {rv : RandomVariable Prts borel_sa rv_X}
              {prv : PositiveRandomVariable rv_X} 
              {srv : SimpleRandomVariable rv_X} :
      is_finite (Expectation_posRV rv_X).
    Proof.
-     Admitted.
-
-   Lemma simple_Expectation_posRV
-             (rv_X : Ts -> R)
-             {prv : PositiveRandomVariable rv_X} 
-             {srv : SimpleRandomVariable rv_X} :
-     SimpleExpectation rv_X = Expectation_posRV rv_X.
-   Proof.
-     Admitted.
+     rewrite <- (@simple_Expectation_posRV rv_X rv prv srv).
+     unfold is_finite.
+     reflexivity.
+  Qed.
 
    Lemma monotone_convergence0 (c:posreal)
          (X : Ts -> R )
@@ -5055,7 +5077,7 @@ admit.
      RealRandomVariable_le phi X ->
      (forall (omega:Ts), is_lim_seq' (fun n => Xn n omega) (X omega)) ->
      c < 1 ->
-     Rbar_le (c * (real (Expectation_posRV phi))) 
+     Rle (c * (real (Expectation_posRV phi))) 
              (Lim_seq (fun n => real (Expectation_posRV (Xn n)))).
    Proof.
      intros.
@@ -5081,9 +5103,9 @@ admit.
      (forall (omega:Ts), is_lim_seq' (fun n => Xn n omega) (X omega)) ->
      Rbar_le 
        (real (Expectation_posRV phi))
-       (Lim_seq (fun n =>  real (Expectation_posRV (Xn n)))).
+       (real (Lim_seq (fun n =>  real (Expectation_posRV (Xn n))))).
    Proof.
-     assert (is_lim_seq (fun n => (1-/(2+INR n)) * (Expectation_posRV phi))
+     assert (is_lim_seq (fun n => (1-/(2+INR n)) * (real (Expectation_posRV phi)))
                         (real (Expectation_posRV phi))).
      - replace (real (@Expectation_posRV phi posphi)) with 
            (1 * (real (@Expectation_posRV phi posphi))) at 1.
@@ -5103,27 +5125,29 @@ admit.
            -- now simpl.
        + now simpl; rewrite Rmult_1_l.
      - intros.
-       apply is_lim_seq_le with (u:=fun n => (1-/(2+INR n)) * (real (Expectation_posRV phi)))
-                                (v:=fun _ : nat => Lim_seq (fun n : nat => real (Expectation_posRV (Xn n)))).
-       intros.
-       assert (0< 1 - /(2+INR n)).
-       apply Rplus_lt_reg_l with (r := /(2+INR n)).
-       ring_simplify.
-       apply Rmult_lt_reg_l with (r := (2 + INR n)).
-       generalize (pos_INR n); lra.
-       rewrite <- Rinv_r_sym.
-       generalize (pos_INR n); lra.
-       apply Rgt_not_eq.
-       generalize (pos_INR n); lra.
-       (*apply (monotone_convergence0 (mkposreal _ H4) X); trivial.
-       simpl.
-       apply Rplus_lt_reg_l with (r := -1).
-       ring_simplify.
-       apply Ropp_lt_gt_0_contravar.
-       apply  Rinv_0_lt_compat.
-       generalize (pos_INR n); lra.
-       apply H.*)
-       Admitted.
+       apply is_lim_seq_le with 
+                  (u:= (fun n => (1-/(2+INR n)) * (real (Expectation_posRV phi))))
+                  (v:= (fun _ : nat => real (Lim_seq (fun n : nat => real (Expectation_posRV (Xn n)))))).
+       + intros.
+         assert (0< 1 - /(2+INR n)).
+         * apply Rplus_lt_reg_l with (r := /(2+INR n)).
+           ring_simplify.
+           apply Rmult_lt_reg_l with (r := (2 + INR n)).
+           -- generalize (pos_INR n); lra.
+           -- rewrite <- Rinv_r_sym.
+              ++ generalize (pos_INR n); lra.
+              ++ apply Rgt_not_eq.
+                 generalize (pos_INR n); lra.
+         * apply (monotone_convergence0 (mkposreal _ H4) X); trivial.
+           simpl.
+           apply Rplus_lt_reg_l with (r := -1).
+           ring_simplify.
+           apply Ropp_lt_gt_0_contravar.
+           apply  Rinv_0_lt_compat.
+           generalize (pos_INR n); lra.
+       + apply H.
+       + apply is_lim_seq_const.
+   Qed.
 
 
    Lemma monotone_convergence
