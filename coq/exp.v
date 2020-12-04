@@ -11,10 +11,10 @@ Qed.
 
 Lemma exp_ineq (x : R) : 1 + x <= exp x.
 Proof.
-  destruct (total_order_T 0 x) as [[xlt|xeq]|xgt].
+  destruct (total_order_T 0 x) as [[xgt|xeq]|xlt].
   - left; now apply exp_ineq1.
   - rewrite <- xeq, exp_0; lra.
-  - destruct (MVT_cor2 (fun x => exp x - (x + 1)) (fun x => exp x - 1) x 0 xgt) as [c [HH1 HH2]].
+  - destruct (MVT_cor2 (fun x => exp x - (x + 1)) (fun x => exp x - 1) x 0 xlt) as [c [HH1 HH2]].
     + intros.
       apply derivable_pt_lim_minus; [apply derivable_pt_lim_exp | ].
       replace (1) with (1 + 0) at 1 by lra.
