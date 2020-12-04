@@ -25,14 +25,13 @@ Lemma exp_ineq (x : R) : 1 + x <= exp x.
        apply Ropp_eq_compat in H; ring_simplify in H.
        ring_simplify; rewrite H; left.
        replace (x * exp c - x) with ((-x)*(1-exp c)) by lra.
-       apply Rmult_lt_0_compat.
-       -- lra.
-       -- apply Rgt_minus.
-          replace (c) with (- - c) by lra.
-          rewrite exp_Ropp.
-          replace (1) with (/ 1) by lra.
-          apply  Rinv_1_lt_contravar; [lra |].
-          apply exp_gt1; lra.
+       apply Rmult_lt_0_compat; [lra | ].
+       apply Rgt_minus.
+       replace (c) with (- - c) by lra.
+       rewrite exp_Ropp.
+       replace (1) with (/ 1) by lra.
+       apply  Rinv_1_lt_contravar; [lra |].
+       apply exp_gt1; lra.
     + assert (x = 0) by lra.
       subst.
       rewrite exp_0.
