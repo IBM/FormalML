@@ -33,7 +33,5 @@ Lemma exp_ineq (x : R) : 1 + x <= exp x.
        apply  Rinv_1_lt_contravar; [lra |].
        apply exp_gt1; lra.
     + assert (x = 0) by lra.
-      subst.
-      rewrite exp_0.
-      lra.
+      subst; rewrite exp_0; lra.
   Qed.
