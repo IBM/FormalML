@@ -5058,17 +5058,241 @@ admit.
      reflexivity.
   Qed.
 
-   Lemma monotone_convergence0 (c:posreal)
+   Lemma monotone_convergence_E (c:R)
          (X : Ts -> R )
          (Xn : nat -> Ts -> R)
          (phi : Ts -> R)
-         (rvx : RandomVariable Prts borel_sa X)
 
-         (posX: PositiveRandomVariable X) 
-         (posphi: PositiveRandomVariable phi)
-
-         (sphi : SimpleRandomVariable phi)
          (Xn_rv : forall n, RandomVariable Prts borel_sa (Xn n))
+         (sphi : SimpleRandomVariable phi)
+         (phi_rv : RandomVariable Prts borel_sa phi)         
+
+         (posphi: PositiveRandomVariable phi)
+         (Xn_pos : forall n, PositiveRandomVariable (Xn n))
+     :
+
+     (forall (n:nat), RealRandomVariable_le (Xn n) X) ->
+     RealRandomVariable_le phi X ->
+     (forall (omega:Ts), is_lim_seq' (fun n => Xn n omega) (X omega)) ->
+     0 < c < 1 ->
+     (forall (n:nat), sa_sigma (fun (omega:Ts) => (Xn n omega) >= c * phi omega)) /\
+     event_equiv (union_of_collection (fun n => fun (omega:Ts) => (Xn n omega) >= c * phi omega)) 
+                 Ω.
+     Proof.
+       intros.
+       split.
+       - intros.
+         assert (event_equiv (fun omega : Ts => Xn n omega >= c * phi omega)
+                             (fun omega : Ts => Xn n omega - c * phi omega >= 0)); 
+           [intros x; lra | ].
+         rewrite H3.
+         apply sa_le_ge.
+         apply minus_measurable.
+         + now apply (RealRandomVariable_is_real Prts).
+         + apply scale_measurable.
+           now apply (RealRandomVariable_is_real Prts).
+      - assert (event_equiv (fun (omega : Ts) => X omega >= c * phi omega) Ω).
+        + intros x.
+          unfold Ω.
+          specialize (H0 x).
+          specialize (posphi x).
+          assert (phi x >= c * phi x).
+          apply Rminus_ge.
+          replace (phi x - c * phi x) with (phi x * (1 - c)) by lra.
+          apply Rle_ge, Rmult_le_pos; lra.
+          lra.
+        + rewrite <- H3.
+          intros x.
+          specialize (H3 x).
+          unfold Ω in H3.
+          split; [tauto | ].
+          intros.
+          unfold union_of_collection; intros.
+          specialize (H1 x).
+          unfold is_lim_seq' in H1.
+          specialize (H0 x).
+          destruct (Req_dec (phi x) 0).
+          * exists (0%nat).
+            rewrite H5.
+            specialize (Xn_pos (0%nat) x).
+            lra.
+          * specialize (posphi x).
+            assert (0 < (1-c)*(phi x)).
+            apply Rmult_lt_0_compat; lra.
+            specialize (H1 (mkposreal _ H6)).
+            destruct H1.
+            exists x0.
+            specialize (H1 x0).
+            simpl in H1.
+            cut_to H1; [|lia].
+            specialize (H x0 x).
+            rewrite Rabs_left1 in H1; lra.
+   Qed.
+
+  Global Instance indicator_prod_pos 
+     (rv_X : Ts -> R) 
+     (posrv : PositiveRandomVariable rv_X)
+     {P : event Ts} 
+     (dec:forall x, {P x} + {~ P x}) : 
+    PositiveRandomVariable (rvmult rv_X (EventIndicator dec)).
+  Proof.
+    intros x.
+    unfold rvmult, EventIndicator.
+    unfold PositiveRandomVariable in posrv.
+    apply Rmult_le_pos; trivial.
+    match_destr; lra.
+  Qed.
+
+  Global Instance rvscale_pos (phival : posreal)
+     (rv_X : Ts -> R) 
+     (posrv : PositiveRandomVariable rv_X) :
+    PositiveRandomVariable (rvscale phival rv_X).
+  Proof.
+    intro x.
+    unfold rvscale.
+    apply Rmult_le_pos; trivial.
+    left; apply cond_pos.
+  Qed.
+
+ Global Instance EventIndicator_pos {P : event Ts} (dec:forall x, {P x} + {~ P x})
+    : PositiveRandomVariable (EventIndicator dec).
+ Proof.
+   intro x.
+   unfold EventIndicator.
+   match_destr; lra.
+ Qed.
+
+ Lemma lim_prob
+       (En : nat -> event Ts)
+       (E : event Ts) :
+   (forall (n:nat), event_sub (En n) (En (S n))) ->
+   event_equiv (union_of_collection En) E ->
+   is_lim_seq (fun n => ps_P (En n)) (ps_P E).
+ Proof.
+   intros.
+   
+   Admitted.
+
+   Lemma monotone_convergence_E_phi_lim_ind (c:R)
+         (X : Ts -> R )
+         (Xn : nat -> Ts -> R)
+        
+         (Xn_rv : forall n, RandomVariable Prts borel_sa (Xn n))
+         (Xn_pos : forall n, PositiveRandomVariable (Xn n))
+     :
+     (forall (n:nat), RealRandomVariable_le (Xn n) X) ->
+     (forall (n:nat), RealRandomVariable_le (Xn n) (Xn (S n))) ->
+     (forall (omega:Ts), is_lim_seq' (fun n => Xn n omega) (X omega)) ->
+     (forall (omega:Ts), 1 <= X omega) ->
+     0 < c < 1 ->
+     is_lim_seq' (fun n => Expectation_posRV 
+                             (EventIndicator
+                                (fun omega => Rge_dec (Xn n omega) c))) 1. 
+   Proof.
+     intros.
+     rewrite is_lim_seq_spec.
+     apply is_lim_seq_ext with (u := fun n => ps_P (fun omega : Ts => (Xn n omega) >= c)).
+     intros.
+     rewrite <- simple_Expectation_posRV with (srv := EventIndicator_srv (fun omega => Rge_dec (Xn n omega) c)).
+     - now rewrite SimpleExpectation_EventIndicator.
+     - apply EventIndicator_rv.
+       apply sa_le_ge.
+       specialize (Xn_rv n).
+       intros.
+       now apply RealRandomVariable_is_real with (r0 := r) in Xn_rv.
+     - replace (1) with (ps_P  Ω) by apply ps_all.
+       apply lim_prob.
+       + intros.
+         unfold event_sub.
+         intros.
+         unfold RealRandomVariable_le in H0.
+         specialize (H0 n x).
+         lra.
+       + assert (event_equiv (union_of_collection (fun (n : nat) (omega : Ts) => Xn n omega >= c))
+                             (union_of_collection (fun (n : nat) (omega:Ts) => Xn n omega >= c * (const 1 omega)))).
+         * intros x.
+           unfold union_of_collection, const.
+           split; intro; destruct H4 as [n H4]; exists n; lra.
+         * rewrite H4.
+           apply monotone_convergence_E with (X := X); trivial.
+         -- apply srvconst.
+         -- apply rvconst.
+         -- unfold PositiveRandomVariable, const; intros; lra.
+   Qed.
+         
+   Lemma monotone_convergence_E_phi_lim_const (c:R)
+         (X : Ts -> R )
+         (Xn : nat -> Ts -> R)
+         (phival : posreal)
+        
+         (Xn_rv : forall n, RandomVariable Prts borel_sa (Xn n))
+         (posphi: PositiveRandomVariable (const phival))
+         (Xn_pos : forall n, PositiveRandomVariable (Xn n))
+     :
+     (forall (n:nat), RealRandomVariable_le (Xn n) X) ->
+     (forall (n:nat), RealRandomVariable_le (Xn n) (Xn (S n))) ->
+     RealRandomVariable_le (const phival) X ->
+     (forall (omega:Ts), is_lim_seq' (fun n => Xn n omega) (X omega)) ->
+     0 < c < 1 ->
+     is_lim_seq' (fun n => Expectation_posRV 
+                             (rvscale phival
+                                     (EventIndicator
+                                        (fun omega => Rge_dec (Xn n omega) (c * (const (pos phival) omega)))) ))
+                 (Expectation_posRV (const phival)).
+   Proof.
+     intros.
+     rewrite <- simple_Expectation_posRV with (srv := srvconst (pos phival)).
+     - rewrite SimpleExpectation_const.
+       rewrite is_lim_seq_spec.
+       apply is_lim_seq_ext with (u := fun n => phival * (ps_P (fun omega : Ts => (Xn n omega) >= c * (const (pos phival) omega )))).
+       + intros.
+         generalize (EventIndicator_rv Prts (fun omega : Ts => Rge_dec (Xn n omega) (c * const (pos phival) omega))); intros RVE.
+         cut_to RVE.
+         * rewrite (Expectation_posRV_scale phival (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (c * const (pos phival) omega)))).
+           rewrite <- simple_Expectation_posRV with (srv := EventIndicator_srv (fun omega => Rge_dec (Xn n omega) (c * const (pos phival) omega))).
+           -- simpl.
+              apply Rmult_eq_compat_l.
+              now rewrite SimpleExpectation_EventIndicator.
+           -- apply EventIndicator_rv.
+              unfold const.
+              apply sa_le_ge.
+              specialize (Xn_rv n).
+              intros.
+              now apply RealRandomVariable_is_real with (r0 := r) in Xn_rv.
+         * unfold const.
+           apply sa_le_ge.
+           specialize (Xn_rv n).
+           intros.
+           now apply RealRandomVariable_is_real with (r0 := r) in Xn_rv.
+       + replace (Finite (pos phival)) with (Rbar_mult (Finite (pos phival)) (Finite 1)).
+         * apply is_lim_seq_scal_l.
+           replace (1) with (ps_P  Ω) by apply ps_all.
+           apply lim_prob.
+           -- intros.
+              unfold event_sub.
+              intros.
+              unfold RealRandomVariable_le in H0.
+              specialize (H0 n x).
+              lra.
+           -- apply monotone_convergence_E with (X := X); trivial.
+              ++ apply srvconst.
+              ++ apply rvconst.
+         * simpl.
+           rewrite Rbar_finite_eq.
+           lra.
+     - apply rvconst.
+   Qed.
+
+   Lemma monotone_convergence_E_phi_lim (c:R)
+         (X : Ts -> R )
+         (Xn : nat -> Ts -> R)
+         (phi : Ts -> R)
+
+         (Xn_rv : forall n, RandomVariable Prts borel_sa (Xn n))
+         (sphi : SimpleRandomVariable phi)
+         (phi_rv : RandomVariable Prts borel_sa phi)         
+
+         (posphi: PositiveRandomVariable phi)
          (Xn_pos : forall n, PositiveRandomVariable (Xn n))
      :
 
@@ -5076,25 +5300,91 @@ admit.
      (forall (n:nat), RealRandomVariable_le (Xn n) (Xn (S n))) ->
      RealRandomVariable_le phi X ->
      (forall (omega:Ts), is_lim_seq' (fun n => Xn n omega) (X omega)) ->
-     c < 1 ->
-     Rle (c * (real (Expectation_posRV phi))) 
+     0 < c < 1 ->
+     is_lim_seq' (fun n => Expectation_posRV 
+                             (rvmult phi 
+                                     (EventIndicator
+                                        (fun omega => Rge_dec (Xn n omega) (c * phi omega))))) 
+                 (Expectation_posRV phi).
+   Proof.
+     intros.
+     rewrite <- (simple_Expectation_posRV phi).
+     
+     Admitted.
+
+   Lemma monotone_convergence_bar0 (c:R)
+         (X : Ts -> R )
+         (Xn : nat -> Ts -> R)
+         (phi : Ts -> R)
+
+         (rvx : RandomVariable Prts borel_sa X)
+         (Xn_rv : forall n, RandomVariable Prts borel_sa (Xn n))
+         (sphi : SimpleRandomVariable phi)
+         (phi_rv : RandomVariable Prts borel_sa phi)         
+
+         (posX: PositiveRandomVariable X) 
+         (posphi: PositiveRandomVariable phi)
+         (Xn_pos : forall n, PositiveRandomVariable (Xn n))
+     :
+
+     (forall (n:nat), RealRandomVariable_le (Xn n) X) ->
+     (forall (n:nat), RealRandomVariable_le (Xn n) (Xn (S n))) ->
+     RealRandomVariable_le phi X ->
+     (forall (omega:Ts), is_lim_seq' (fun n => Xn n omega) (X omega)) ->
+     0 < c < 1 ->
+     Rbar_le (Rbar_mult c (Expectation_posRV phi)) 
              (Lim_seq (fun n => real (Expectation_posRV (Xn n)))).
    Proof.
      intros.
-     
+(*
+     assert (Lim_seq (fun n => Expectation_posRV 
+                                 (rvmult phi 
+                                         (EventIndicator 
+                                            (fun omega => (Xn n omega) >= c * phi omega)))) =
+             Expectation_posRV phi).
+                                                         
+                                                              destruct H3.
+     rewrite <- (Expectation_posRV_scale (mkposreal c H3) phi).
+     simpl.
+*)     
    Admitted.
+
+   Lemma monotone_convergence0 (c:R)
+         (X : Ts -> R )
+         (Xn : nat -> Ts -> R)
+         (phi : Ts -> R)
+
+         (rvx : RandomVariable Prts borel_sa X)
+         (Xn_rv : forall n, RandomVariable Prts borel_sa (Xn n))
+         (sphi : SimpleRandomVariable phi)
+         (phi_rv : RandomVariable Prts borel_sa phi)         
+
+         (posX: PositiveRandomVariable X) 
+         (posphi: PositiveRandomVariable phi)
+         (Xn_pos : forall n, PositiveRandomVariable (Xn n))
+     :
+
+     (forall (n:nat), RealRandomVariable_le (Xn n) X) ->
+     (forall (n:nat), RealRandomVariable_le (Xn n) (Xn (S n))) ->
+     RealRandomVariable_le phi X ->
+     (forall (omega:Ts), is_lim_seq' (fun n => Xn n omega) (X omega)) ->
+     0 < c < 1 ->
+     c * (Expectation_posRV phi) <=
+     Lim_seq (fun n => real (Expectation_posRV (Xn n))).
+    Admitted.
 
    Lemma monotone_convergence00         
          (X : Ts -> R )
          (Xn : nat -> Ts -> R)
          (phi : Ts -> R)
+
          (rvx : RandomVariable Prts borel_sa X)
+         (Xn_rv : forall n, RandomVariable Prts borel_sa (Xn n))
+         (sphi : SimpleRandomVariable phi)
+         (phi_rv : RandomVariable Prts borel_sa phi)         
 
          (posX: PositiveRandomVariable X) 
          (posphi: PositiveRandomVariable phi)
-
-         (sphi : SimpleRandomVariable phi)
-         (Xn_rv : forall n, RandomVariable Prts borel_sa (Xn n))
          (Xn_pos : forall n, PositiveRandomVariable (Xn n)) :
 
      (forall (n:nat), RealRandomVariable_le (Xn n) X) ->
@@ -5140,6 +5430,7 @@ admit.
                  generalize (pos_INR n); lra.
          * apply (monotone_convergence0 (mkposreal _ H4) X); trivial.
            simpl.
+           split; [lra | ].
            apply Rplus_lt_reg_l with (r := -1).
            ring_simplify.
            apply Ropp_lt_gt_0_contravar.
@@ -5148,7 +5439,6 @@ admit.
        + apply H.
        + apply is_lim_seq_const.
    Qed.
-
 
    Lemma monotone_convergence
          (X : Ts -> R )
@@ -5173,8 +5463,7 @@ admit.
       + pose (a := (Lim_seq (fun n : nat => Expectation_posRV (Xn n)))).
         generalize (Lim_seq_le_loc (fun n => Expectation_posRV (Xn n)) 
                                    (fun _ => Expectation_posRV X)); intros.
-        cut_to H5.
-        * Admitted.
+Admitted.
 
   Lemma Expectation_sum  {nempty:NonEmpty Ts}
         (rv_X1 rv_X2 : Ts -> R)
