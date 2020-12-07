@@ -420,6 +420,16 @@ Definition inter_of_collection {T: Type} (collection: nat -> event T) : event T 
   fun t:T => (forall n, (collection n) t).
 
 
+Global Instance union_of_collection_proper {T:Type} : Proper (pointwise_relation _ event_equiv ==> event_equiv) (@union_of_collection T).
+Proof.
+  firstorder.
+Qed.
+
+Global Instance inter_of_collection_proper {T:Type} : Proper (pointwise_relation _ event_equiv ==> event_equiv) (@inter_of_collection T).
+Proof.
+  firstorder.
+Qed.
+
 Lemma collection_is_pairwise_disjoint_sub {T:Type} (coll:nat -> event T) (f:event T -> event T):
   (forall a, f a ≤ a) ->
   collection_is_pairwise_disjoint coll ->
