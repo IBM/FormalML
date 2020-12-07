@@ -5162,6 +5162,51 @@ admit.
    match_destr; lra.
  Qed.
 
+ Definition ascending_events_disjoint (En : nat -> event Ts) (n:nat) : event Ts :=
+   match n with
+   | 0%nat => En (0%nat)
+   | S n => event_inter (En (S n)) (event_complement (En n))
+   end.
+
+ Lemma ascending_disjoint_union 
+       (En : nat -> event Ts) :
+   (forall (n:nat), event_sub (En n) (En (S n))) ->   
+   event_equiv (union_of_collection En) 
+               (union_of_collection (ascending_events_disjoint En)).
+ Proof.
+   Admitted.
+
+ Definition union_of_finite_collection {T: Type} (collection: nat -> event T) (N:nat) 
+   : event T :=
+  fun t:T => (exists n, (n<=N)%nat /\ (collection n) t).
+
+ Lemma ascending_disjoint_union_finite (n:nat)
+       (En : nat -> event Ts) :
+   (forall (n:nat), event_sub (En n) (En (S n))) ->   
+   event_equiv (union_of_finite_collection (ascending_events_disjoint En) n) (En n).
+ Proof.
+   Admitted.
+
+ Lemma ascending_events_disjoint_2disjoint 
+          (En : nat -> event Ts) (n1 n2 : nat):
+   (n1 < n2)%nat -> 
+   event_disjoint
+     (ascending_events_disjoint En n1)
+     (ascending_events_disjoint En n2).   
+  Proof.
+    intros.
+    unfold event_disjoint; intros.
+    Admitted.
+
+ Lemma ascending_events_disjoint_disjoint 
+          (En : nat -> event Ts) :
+   (forall (n:nat), event_sub (En n) (En (S n))) ->   
+   collection_is_pairwise_disjoint (ascending_events_disjoint En).
+ Proof.
+   unfold collection_is_pairwise_disjoint.
+   intros.
+   Admitted.
+   
  Lemma lim_prob
        (En : nat -> event Ts)
        (E : event Ts) :
@@ -5169,6 +5214,9 @@ admit.
    event_equiv (union_of_collection En) E ->
    is_lim_seq (fun n => ps_P (En n)) (ps_P E).
  Proof.
+   intros.
+   apply (is_lim_seq_ext 
+            (fun n => sum_f_R0' (fun j => ps_P (ascending_events_disjoint En j)) n)).
    intros.
    
    Admitted.
@@ -5451,7 +5499,7 @@ admit.
      (forall (n:nat), RealRandomVariable_le (Xn n) (Xn (S n))) ->
 
      (forall (omega:Ts), is_lim_seq' (fun n => Xn n omega) (X omega)) ->
-     is_lim_seq' (fun n => Expectation_posRV (Xn n))  (Expectation_posRV X).
+     is_lim_seq (fun n => Expectation_posRV (Xn n))  (Expectation_posRV X).
   Proof.
     generalize Expectation_posRV_le; intros.
     assert (forall (n:nat), (Rbar_le (Expectation_posRV (Xn n)) (Expectation_posRV X))).
@@ -5463,6 +5511,11 @@ admit.
       + pose (a := (Lim_seq (fun n : nat => Expectation_posRV (Xn n)))).
         generalize (Lim_seq_le_loc (fun n => Expectation_posRV (Xn n)) 
                                    (fun _ => Expectation_posRV X)); intros.
+        assert (Rbar_le (Expectation_posRV X) a).
+        unfold Expectation_posRV.
+        unfold SimpleExpectationSup.
+        
+        
 Admitted.
 
   Lemma Expectation_sum  {nempty:NonEmpty Ts}
