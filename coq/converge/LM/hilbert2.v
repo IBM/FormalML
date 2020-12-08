@@ -95,6 +95,180 @@ Definition norm_factor : R := NormedModule2.norm_factor K _ (NormedModule2.class
 
 End defs.
 
+Section RC
+        
+Context {E : NormedModule2 R_AbsRing}.
+
+Lemma norm_scal_R: forall l (x:E), norm (scal l x) = abs l * norm x.
+Proof.
+intros l x.
+apply Rle_antisym; try apply norm_scal.
+case (Req_dec l 0); intros V.
+rewrite V; unfold abs; simpl.
+rewrite Rabs_R0, Rmult_0_l.
+apply norm_ge_0.
+apply Rmult_le_reg_l with (abs (/l)).
+unfold abs; simpl.
+apply Rabs_pos_lt.
+now apply Rinv_neq_0_compat.
+apply Rle_trans with (norm x).
+rewrite <- Rmult_assoc.
+unfold abs; simpl.
+rewrite <- Rabs_mult.
+rewrite Rinv_l; trivial.
+rewrite Rabs_R1, Rmult_1_l.
+apply Rle_refl.
+apply Rle_trans with (norm (scal (/l) (scal l x))).
+right; apply f_equal.
+rewrite scal_assoc.
+apply trans_eq with (scal one x).
+apply sym_eq, scal_one.
+apply f_equal2; trivial.
+unfold one, mult; simpl.
+now field.
+apply (norm_scal (/l) (scal l x)).
+Qed.
+
+Lemma sum_n_eq_zero: forall m (L:nat -> E),
+  (forall i, (i <= m)%nat -> L i = zero) ->
+   sum_n L m = zero.
+Proof.
+intros m L H.
+apply trans_eq with (sum_n (fun n => zero) m).
+now apply sum_n_ext_loc.
+clear; induction m.
+now rewrite sum_O.
+rewrite sum_Sn, IHm.
+apply plus_zero_l.
+Qed.
+
+End RC.
+
+
+(** ** Complete Normed Modules *)
+
+Module CompleteNormedModule2.
+
+Section ClassDef.
+
+Variable K : AbsRing.
+
+Record class_of (T : Type) := Class {
+  base : NormedModule2.class_of K T ;
+  mixin : CompleteSpace.mixin_of (UniformSpace.Pack T base T)
+}.
+Local Coercion base : class_of >-> NormedModule2.class_of.
+Definition base2 T (cT : class_of T) : CompleteSpace.class_of T :=
+  CompleteSpace.Class _ (base T cT) (mixin T cT).
+Local Coercion base2 : class_of >-> CompleteSpace.class_of.
+
+Structure type := Pack { sort; _ : class_of sort ; _ : Type }.
+Local Coercion sort : type >-> Sortclass.
+
+Variable cT : type.
+
+Definition class := let: Pack _ c _ := cT return class_of cT in c.
+
+Let xT := let: Pack T _ _ := cT in T.
+Notation xclass := (class : class_of xT).
+
+Definition AbelianGroup := AbelianGroup.Pack cT xclass xT.
+Definition ModuleSpace := ModuleSpace.Pack _ cT xclass xT.
+Definition NormedModuleAux := NormedModuleAux.Pack _ cT xclass xT.
+Definition NormedModule2 := NormedModule2.Pack _ cT xclass xT.
+Definition UniformSpace := UniformSpace.Pack cT xclass xT.
+Definition CompleteSpace := CompleteSpace.Pack cT xclass xT.
+
+End ClassDef.
+
+Module Exports.
+
+Coercion base : class_of >-> NormedModule2.class_of.
+Coercion mixin : class_of >-> CompleteSpace.mixin_of.
+Coercion base2 : class_of >-> CompleteSpace.class_of.
+Coercion sort : type >-> Sortclass.
+Coercion AbelianGroup : type >-> AbelianGroup.type.
+Canonical AbelianGroup.
+Coercion ModuleSpace : type >-> ModuleSpace.type.
+Canonical ModuleSpace.
+Coercion NormedModuleAux : type >-> NormedModuleAux.type.
+Canonical NormedModuleAux.
+Coercion NormedModule2 : type >-> NormedModule2.type.
+Canonical NormedModule2.
+Coercion UniformSpace : type >-> UniformSpace.type.
+Canonical UniformSpace.
+Coercion CompleteSpace : type >-> CompleteSpace.type.
+Canonical CompleteSpace.
+Notation CompleteNormedModule2 := type.
+
+End Exports.
+
+End CompleteNormedModule2.
+
+Export CompleteNormedModule2.Exports.
+
+(*
+Section CompleteNormedModule1.
+
+Context {K : AbsRing} {V : CompleteNormedModule2 K}.
+
+Lemma iota_unique :
+  forall (P : V -> Prop) (x : V),
+  (forall y, P y -> y = x) ->
+  P x ->
+  iota P = x.
+Proof.
+intros P x HP Px.
+apply eq_close.
+intros eps.
+apply: iota_correct_weak Px eps.
+intros x' y Px' Py eps.
+rewrite (HP _ Py) -(HP _ Px').
+apply ball_center.
+Qed.
+
+Lemma iota_correct :
+  forall P : V -> Prop,
+  (exists! x : V, P x) ->
+  P (iota P).
+Proof.
+intros P [x [Px HP]].
+rewrite (iota_unique _ x) ; try exact Px.
+intros y Py.
+now apply sym_eq, HP.
+Qed.
+
+Lemma iota_is_filter_lim {F} {FF : ProperFilter' F} (l : V) :
+  is_filter_lim F l ->
+  iota (is_filter_lim F) = l.
+Proof.
+intros Hl.
+apply: iota_unique (Hl) => l' Hl'.
+exact: is_filter_lim_unique Hl' Hl.
+Qed.
+
+Context {T : Type}.
+
+Lemma iota_filterlim_locally {F} {FF : ProperFilter' F} (f : T -> V) l :
+  filterlim f F (locally l) ->
+  iota (fun x => filterlim f F (locally x)) = l.
+Proof.
+apply iota_is_filter_lim.
+Qed.
+
+Lemma iota_filterlimi_locally {F} {FF : ProperFilter' F} (f : T -> V -> Prop) l :
+  F (fun x => forall y1 y2, f x y1 -> f x y2 -> y1 = y2) ->
+  filterlimi f F (locally l) ->
+  iota (fun x => filterlimi f F (locally x)) = l.
+Proof.
+intros Hf Hl.
+apply: iota_unique (Hl) => l' Hl'.
+exact: filterlimi_locally_unique Hf Hl' Hl.
+Qed.
+
+End CompleteNormedModule1.
+ *)
+
 Section CompleteSubset.
 
 Context {E : NormedModule2 R_AbsRing}.
@@ -586,13 +760,12 @@ Definition Hilbert_CompleteSpace_mixin :=
 Canonical Hilbert_CompleteSpace :=
   CompleteSpace.Pack E (CompleteSpace.Class _ _ Hilbert_CompleteSpace_mixin) E.
 
-(*
-Canonical Hilbert_CompleteNormedModule :=
-  CompleteNormedModule.Pack R_AbsRing E
-    (CompleteNormedModule.Class R_AbsRing E
+Canonical Hilbert_CompleteNormedModule2 :=
+  CompleteNormedModule2.Pack R_AbsRing E
+    (CompleteNormedModule2.Class R_AbsRing E
        (NormedModule2.class _ PreHilbert_NormedModule)
         Hilbert_CompleteSpace_mixin) E.
-*)
+
 End Hilbert_aux.
 
 (** Convexity *)

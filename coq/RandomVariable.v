@@ -5310,17 +5310,33 @@ Hint Rewrite @list_union_app : prob.
  
  Lemma make_collection_disjoint0  (En:nat -> event Ts) :
    event_equiv (make_collection_disjoint En 0) (En 0%nat).
+ Admitted.
+ 
+ 
+ Definition ascending_events_disjoint (En : nat -> event Ts) (n:nat) : event Ts :=
+   match n with
+   | 0%nat => En (0%nat)
+   | S n => event_inter (En (S n)) (event_complement (En n))
+   end.
+
+ Lemma ascending_disjoint_union 
+       (En : nat -> event Ts) :
+   (forall (n:nat), event_sub (En n) (En (S n))) ->   
+   event_equiv (union_of_collection En) 
+               (union_of_collection (ascending_events_disjoint En)).
  Proof.
    unfold make_collection_disjoint.
    rewrite (union_of_collection_proper _ (fun _ => event_none)).
    - autorewrite with prob.
+ Admitted.
+(*      
      reflexivity.
    - intros a.
      match_destr.
      + lia.
      + reflexivity.
  Qed.
-
+*)
   Hint Rewrite @make_collection_disjoint0 : prob.
 
   Hint Rewrite @collection_take_Sn @collection_take1 : prob.
@@ -5401,8 +5417,7 @@ Hint Rewrite @list_union_app : prob.
        now apply sa_make_collection_disjoint.
      + apply collection_take_preserves_disjoint.
        apply make_collection_disjoint_disjoint.
-   -
-     apply (is_lim_seq_ext (fun n : nat => sum_f_R0 (fun j : nat => ps_P (make_collection_disjoint En j)) n)).
+   - apply (is_lim_seq_ext (fun n : nat => sum_f_R0 (fun j : nat => ps_P (make_collection_disjoint En j)) n)).
      + intros.
        now rewrite sum_f_R0_sum_f_R0'.
      + rewrite infinite_sum_is_lim_seq.
@@ -5445,6 +5460,11 @@ Hint Rewrite @list_union_app : prob.
        now apply RealRandomVariable_is_real with (r0 := r) in Xn_rv.
      - replace (1) with (ps_P  Ω) by apply ps_all.
        apply lim_prob.
+       + intros.
+         apply sa_le_ge.
+         specialize (Xn_rv n).
+         intros.
+         now apply RealRandomVariable_is_real with (r0 := r) in Xn_rv.
        + intros.
          unfold event_sub.
          intros.
@@ -5512,6 +5532,12 @@ Hint Rewrite @list_union_app : prob.
            replace (1) with (ps_P  Ω) by apply ps_all.
            apply lim_prob.
            -- intros.
+              unfold const.
+              apply sa_le_ge.
+              specialize (Xn_rv n).
+              intros.
+              now apply RealRandomVariable_is_real with (r0 := r) in Xn_rv.
+           -- intros.
               unfold event_sub.
               intros.
               unfold RealRandomVariable_le in H0.
@@ -5544,7 +5570,7 @@ Hint Rewrite @list_union_app : prob.
      RealRandomVariable_le phi X ->
      (forall (omega:Ts), is_lim_seq' (fun n => Xn n omega) (X omega)) ->
      0 < c < 1 ->
-     is_lim_seq' (fun n => Expectation_posRV 
+     is_lim_seq (fun n => Expectation_posRV 
                              (rvmult phi 
                                      (EventIndicator
                                         (fun omega => Rge_dec (Xn n omega) (c * phi omega))))) 
@@ -5552,7 +5578,19 @@ Hint Rewrite @list_union_app : prob.
    Proof.
      intros.
      rewrite <- (simple_Expectation_posRV phi).
-     
+     apply (is_lim_seq_ext 
+              (fun n => SimpleExpectation 
+                          (rvmult phi (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (c * phi omega)))))).
+     - intros.
+       rewrite <- simple_Expectation_posRV with (srv := (srvmult  phi (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (c * phi omega))))); trivial.
+       apply rvmult_rv; trivial.
+       apply EventIndicator_rv.
+       assert (event_equiv (fun omega : Ts => Xn n omega >= c * phi omega)
+                           (fun omega : Ts => c*phi omega - Xn n omega <= 0)).
+       + intros x; lra.
+       + rewrite H4.
+         
+     admit.
      Admitted.
 
    Lemma monotone_convergence_bar0 (c:R)
@@ -5709,7 +5747,9 @@ Hint Rewrite @list_union_app : prob.
         assert (Rbar_le (Expectation_posRV X) a).
         unfold Expectation_posRV.
         unfold SimpleExpectationSup.
-        
+        Search "lim_seq".
+
+
         
 Admitted.
 
