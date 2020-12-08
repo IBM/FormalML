@@ -5550,7 +5550,9 @@ Hint Rewrite @list_union_app : prob.
        invcs x.
        specialize (IHF2 dom Prts l2 (eq_refl _)).
        simpl.
-   Admitted.
+       eapply is_lim_seq_plus; eauto.
+       reflexivity.
+   Qed.
 
    Lemma monotone_convergence_E_phi_lim (c:R)
          (X : Ts -> R )
