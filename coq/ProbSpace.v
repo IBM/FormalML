@@ -714,10 +714,11 @@ Proof.
 Qed.
 
 Lemma list_collection_disjoint {T} (l:list (event T)) :
-    ForallOrdPairs event_disjoint l ->
+    ForallOrdPairs event_disjoint l <->
     collection_is_pairwise_disjoint (list_collection l ∅).
 Proof.
   unfold collection_is_pairwise_disjoint, event_disjoint, event_none, list_collection.
+  split.
   - induction l; simpl; intros.
     + simpl in H1.
       destruct n1; simpl in *; tauto.
@@ -738,6 +739,23 @@ Proof.
             + rewrite e in H1; tauto.
           - eauto.
         }
+  - induction l; simpl; intros.
+    + constructor. 
+    + constructor.
+      * apply Forall_forall.
+        intros x xinn t.
+        destruct (In_nth _ _ (fun _ : T => False) xinn) as [b [??]].
+        specialize (H 0 (S b)).
+        cut_to H; [| congruence].
+        specialize (H t).
+        simpl in H.
+        now rewrite <- H1.
+      * apply IHl; intros.
+        specialize (H (S n1) (S n2)).
+        cut_to H.
+        -- specialize (H x); simpl in H.
+           eauto.
+        -- congruence.
 Qed.
 
 Lemma list_collection_sigma {T} {s : SigmaAlgebra T} (l:list (event T)) (d:event T) :
@@ -1129,43 +1147,6 @@ Proof.
     intros [n Hn].
     destruct (lt_dec n x); trivial.
     eapply fce; eauto.
-Qed.
-
-
-Lemma make_collection_disjoint_in_exists {T:Type} (coll:nat->event T) (x:nat) (e:T) :
-  coll x e ->
-  exists n : nat, make_collection_disjoint coll n e.
-Proof.
-(*  intros.
-  unfold make_collection_disjoint.
-  assert ((exists y, y < x /\ coll y e) \/ ~(exists y, y < x /\ coll y e) )%nat.
-  
-  revert H.
-  induction x as [ x IHx ] using (well_founded_induction lt_wf).
-  induction x; intros H.
-  - exists 0%nat.
-    simpl.
-    compute.
-    split; trivial.
-    firstorder.
-  - 
- *)
-Admitted.
-
-Lemma make_collection_union {T:Type} (coll:nat->event T) :
-   event_equiv (union_of_collection (make_collection_disjoint coll))
-               (union_of_collection coll).
-Proof.
-  red; intros x; split.
-  - unfold union_of_collection.
-    intros [??].
-    apply make_collection_disjoint_in in H.
-    destruct H.
-    eauto.
-  - intros inn.
-    red.
-    destruct inn.
-    eapply make_collection_disjoint_in_exists; eauto.
 Qed.
 
 Lemma sa_make_collection_disjoint {T:Type} (sa:SigmaAlgebra T) (coll:nat->event T) :
