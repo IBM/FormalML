@@ -5162,98 +5162,47 @@ admit.
    match_destr; lra.
  Qed.
 
- Fixpoint collection_take_aux  (En : nat -> event Ts) (n:nat) : list (event Ts)
-   := match n with
-      | 0 => []
-      | S n => En n :: (collection_take_aux En n)
-      end.
+  (* maybe this should have been the definition in the first place? *)
+ Definition collection_take (En : nat -> event Ts) (n:nat) := map En (seq 0 n).
 
- Definition collection_take (En : nat -> event Ts) (n:nat)
-   := rev (collection_take_aux En n).
-
- Lemma collection_take_aux_length  (En : nat -> event Ts) (n:nat) :
-   length (collection_take_aux En n) = n.
- Proof.
-   induction n; simpl; congruence.
- Qed.
-
- Lemma collection_take_length  (En : nat -> event Ts) (n:nat) :
+ Lemma collection_take_length (En : nat -> event Ts) (n:nat) :
    length (collection_take En n) = n.
  Proof.
    unfold collection_take.
-   rewrite rev_length.
-   apply collection_take_aux_length.
+   now rewrite map_length, seq_length.
  Qed.
- 
-  Lemma collection_take_aux_nth_in a En n x:
-    nth a (collection_take_aux En n) event_none x <->
-    (a < n /\ En (n-a-1) x)%nat.
- Proof.
-   split.
-   - revert a.
-     induction n; intros a na.
-     + simpl in na.
-       destruct a; red in na; tauto.
-     + simpl in *.
-       destruct a.
-       * split.
-         lia.
-         now replace ((S n - 1)%nat) with n by lia.
-       * destruct (IHn _ na).
-         split; trivial.
-         lia.
-   - revert a.
-     induction n; intros a [alt enx].
-     + lia.
-     + simpl in *.
-       destruct a; trivial.
-       * now replace ((S n - 1)%nat) with n in enx by lia.
-       * apply IHn.
-       split; trivial.
-       lia.
- Qed.
- 
+  
  Lemma collection_take_nth_in a En n x:
     nth a (collection_take En n) event_none x <->
     (a < n /\ En a x)%nat.
  Proof.
    unfold collection_take.
    split.
-   - revert a.
-     induction n; intros a na.
-     + simpl in na.
-       destruct a; red in na; tauto.
-     + simpl in *.
-       destruct (lt_dec a (length (((rev (collection_take_aux En n))))%nat)).
-       * rewrite app_nth1 in na by trivial.
-         destruct (IHn _ na).
-         split; trivial.
+   - intros na.
+     destruct (lt_dec a n).
+     + split; trivial.
+       destruct (map_nth_in_exists En (seq 0 n) event_none a).
+       * now rewrite seq_length.
+       * rewrite H in na.
+         rewrite seq_nth in na by trivial.
+         now simpl in na.
+     + rewrite nth_overflow in na.
+       * red in na; tauto.
+       * rewrite map_length, seq_length.
          lia.
-       * rewrite app_nth2 in na by lia.
-         simpl in na.
-         match_case_in na; intros.
-         -- rewrite H in na.
-            assert (a = n).
-            ++ rewrite rev_length, collection_take_aux_length in H, n0; simpl in H, n0.
-               lia.
-            ++ subst.
-               split; trivial.
-               lia.
-         -- rewrite H in na.
-            destruct n1; red in na; tauto.
-   - intros [alt enx].
-     rewrite rev_nth.
-     + rewrite collection_take_aux_length.
-       apply collection_take_aux_nth_in.
-       split.
-       * lia.
-       * now replace ((n - (n - S a) - 1)%nat) with a by lia.
-     + now rewrite collection_take_aux_length.
+   - intros [alt Ea].
+       destruct (map_nth_in_exists En (seq 0 n) event_none a).
+     + now rewrite seq_length.
+     + rewrite H.
+       rewrite seq_nth by trivial.
+       now simpl.
  Qed.
 
  Lemma collection_take_Sn n En :
    (collection_take En (S n)) = collection_take En n ++ (En n::nil).
  Proof.
+   unfold collection_take.
+   rewrite seq_Sn, map_app.
    reflexivity.
  Qed.
 
@@ -5410,6 +5359,20 @@ Hint Rewrite @list_union_app : prob.
        * eauto.
  Qed.
 
+
+ Lemma sa_make_collection_disjoint En :
+   (forall (n:nat), sa_sigma (En n)) ->
+   (forall n, sa_sigma (make_collection_disjoint En n)).
+ Proof.
+   intros.
+   unfold make_collection_disjoint.
+   apply sa_diff; trivial.
+   apply sa_countable_union.
+   intros.
+   match_destr.
+   apply sa_none.
+ Qed.
+
  Lemma lim_prob
        (En : nat -> event Ts)
        (E : event Ts) :
@@ -5420,30 +5383,25 @@ Hint Rewrite @list_union_app : prob.
  Proof.
    intros.
    apply (is_lim_seq_ext 
-            (fun n => sum_f_R0' (fun j => ps_P (make_collection_disjoint En j)) n)).
+            (fun n => sum_f_R0' (fun j => ps_P (make_collection_disjoint En j)) (S n))).
    - intros.
      rewrite sum_f_R0'_as_fold_right.
      generalize (ps_list_disjoint_union Prts (collection_take (make_collection_disjoint En) (S n)))
      ; intros HH.
      cut_to HH.
      + rewrite fold_right_map in HH.
-       replace (fold_right (fun (a : event Ts) (b : R) => ps_P a + b) 0
-                           (collection_take (make_collection_disjoint En) (S n))) with
-           (fold_right (fun (a : nat) (b : R) => ps_P (make_collection_disjoint En a) + b) 0 (seq 0 n))
-           in HH.
-       * admit.
-       * rewrite <- HH.
-         rewrite ascending_make_disjoint_collection_take_union by trivial.
-         replace (fold_right (fun (a : nat) (b : R) => ps_P (make_collection_disjoint En a) + b) 0 (seq 0 n)) with
-             (fold_right Rplus 0 (map ps_P (collection_take (make_collection_disjoint En) (S n)))).
-         -- rewrite <- ps_list_disjoint_union.
-            ++ rewrite ascending_make_disjoint_collection_take_union; trivial.
-            ++ admit.
-            ++ admit.
-         -- admit.
-     + admit.
-     + admit.
-   - rewrite is_lim_seq_incr_1.
+       rewrite ascending_make_disjoint_collection_take_union in HH by trivial.
+       rewrite HH.
+       unfold collection_take.
+       rewrite fold_right_map.
+       trivial.
+     + intros ? inn.
+       apply in_map_iff in inn.
+       destruct inn as [?[??]]; subst.
+       now apply sa_make_collection_disjoint.
+     + apply collection_take_preserves_disjoint.
+       apply make_collection_disjoint_disjoint.
+   -
      apply (is_lim_seq_ext (fun n : nat => sum_f_R0 (fun j : nat => ps_P (make_collection_disjoint En j)) n)).
      + intros.
        now rewrite sum_f_R0_sum_f_R0'.
@@ -5456,9 +5414,9 @@ Hint Rewrite @list_union_app : prob.
          apply ps_countable_disjoint_union.
          -- now apply sa_make_collection_disjoint.
          -- apply make_collection_disjoint_disjoint.
-   Admitted.
+ Qed.
 
-   Lemma monotone_convergence_E_phi_lim_ind (c:R)
+ Lemma monotone_convergence_E_phi_lim_ind (c:R)
          (X : Ts -> R )
          (Xn : nat -> Ts -> R)
         
