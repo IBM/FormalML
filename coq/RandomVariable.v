@@ -5240,6 +5240,7 @@ admit.
  Lemma lim_prob
        (En : nat -> event Ts)
        (E : event Ts) :
+   (forall (n:nat), sa_sigma (En n)) ->
    (forall (n:nat), event_sub (En n) (En (S n))) ->
    event_equiv (union_of_collection En) E ->
    is_lim_seq (fun n => ps_P (En n)) (ps_P E).
@@ -5271,14 +5272,17 @@ admit.
      + admit.
    - rewrite is_lim_seq_incr_1.
      apply (is_lim_seq_ext (fun n : nat => sum_f_R0 (fun j : nat => ps_P (make_collection_disjoint En j)) n)).
-     intros.
-     now rewrite sum_f_R0_sum_f_R0'.
-     rewrite infinite_sum_is_lim_seq.
-     rewrite infinite_sum_infinite_sum'.
-     assert (event_equiv E (union_of_collection (make_collection_disjoint En))).
-     admit.
-     rewrite H1.
-     apply ps_countable_disjoint_union.
+     + intros.
+       now rewrite sum_f_R0_sum_f_R0'.
+     + rewrite infinite_sum_is_lim_seq.
+       rewrite infinite_sum_infinite_sum'.
+       assert (event_equiv E (union_of_collection (make_collection_disjoint En))).
+       * rewrite <- H1.
+         apply make_collection_disjoint_union.
+       * rewrite H2.
+         apply ps_countable_disjoint_union.
+         -- now apply sa_make_collection_disjoint.
+         -- apply make_collection_disjoint_disjoint.
    Admitted.
 
    Lemma monotone_convergence_E_phi_lim_ind (c:R)
