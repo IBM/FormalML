@@ -5310,34 +5310,19 @@ Hint Rewrite @list_union_app : prob.
  
  Lemma make_collection_disjoint0  (En:nat -> event Ts) :
    event_equiv (make_collection_disjoint En 0) (En 0%nat).
- Admitted.
- 
- 
- Definition ascending_events_disjoint (En : nat -> event Ts) (n:nat) : event Ts :=
-   match n with
-   | 0%nat => En (0%nat)
-   | S n => event_inter (En (S n)) (event_complement (En n))
-   end.
-
- Lemma ascending_disjoint_union 
-       (En : nat -> event Ts) :
-   (forall (n:nat), event_sub (En n) (En (S n))) ->   
-   event_equiv (union_of_collection En) 
-               (union_of_collection (ascending_events_disjoint En)).
  Proof.
    unfold make_collection_disjoint.
-   rewrite (union_of_collection_proper _ (fun _ => event_none)).
-   - autorewrite with prob.
- Admitted.
-(*      
-     reflexivity.
-   - intros a.
-     match_destr.
-     + lia.
-     + reflexivity.
+   red; intros.
+   split; intros.
+   - destruct H; trivial.
+   - split; trivial.
+     unfold union_of_collection.
+     intros [? HH].
+     match_destr_in HH.
+     lia.
  Qed.
-*)
-  Hint Rewrite @make_collection_disjoint0 : prob.
+   
+   Hint Rewrite @make_collection_disjoint0 : prob.
 
   Hint Rewrite @collection_take_Sn @collection_take1 : prob.
 
