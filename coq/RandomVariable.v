@@ -5537,6 +5537,21 @@ Hint Rewrite @list_union_app : prob.
      - apply rvconst.
    Qed.
 
+   Lemma is_lim_seq_list_sum (l:list (nat->R)) (l2:list R) :
+     Forall2 is_lim_seq l (map Finite l2) ->
+     is_lim_seq (fun n => list_sum (map (fun x => x n) l)) (list_sum l2).
+   Proof.
+     intros F2.
+     dependent induction F2.
+     - destruct l2; simpl in x; try congruence.
+       simpl.
+       apply is_lim_seq_const.
+     - destruct l2; simpl in x; try congruence.
+       invcs x.
+       specialize (IHF2 dom Prts l2 (eq_refl _)).
+       simpl.
+   Admitted.
+
    Lemma monotone_convergence_E_phi_lim (c:R)
          (X : Ts -> R )
          (Xn : nat -> Ts -> R)
@@ -5574,7 +5589,13 @@ Hint Rewrite @list_union_app : prob.
                            (fun omega : Ts => c*phi omega - Xn n omega <= 0)).
        + intros x; lra.
        + rewrite H4.
-         
+         admit.
+     - unfold SimpleExpectation at 1.
+       unfold SimpleExpectation.
+       generalize (is_lim_seq_list_sum .
+       
+
+       
      admit.
      Admitted.
 
