@@ -5162,6 +5162,30 @@ admit.
    match_destr; lra.
  Qed.
 
+ Fixpoint collection_take  (En : nat -> event Ts) (n:nat) : list (event Ts)
+   := match n with
+      | 0 => []
+      | S n => En n :: (collection_take En n)
+      end.
+
+
+ Lemma collection_take_preserves_disjoint En n:
+   collection_is_pairwise_disjoint En ->
+   ForallOrdPairs event_disjoint (collection_take En n).
+ Proof.
+ Admitted.
+ 
+ Definition ascending_collection (En:nat -> event Ts) := (forall (n:nat), event_sub (En n) (En (S n))).
+
+ Lemma ascending_collection_take_union En :
+   ascending_collection En ->
+   forall n, event_equiv (list_union (collection_take En (S n))) (En n).
+ Proof.
+ Admitted.
+ 
+ 
+
+ 
  Definition ascending_events_disjoint (En : nat -> event Ts) (n:nat) : event Ts :=
    match n with
    | 0%nat => En (0%nat)
@@ -5206,7 +5230,13 @@ admit.
    unfold collection_is_pairwise_disjoint.
    intros.
    Admitted.
-   
+
+ Lemma ascending_make_disjoint_collection_take_union En :
+   ascending_collection En ->
+   forall n, event_equiv (list_union (collection_take (make_collection_disjoint En) (S n))) (En n).
+ Proof.
+ Admitted.
+
  Lemma lim_prob
        (En : nat -> event Ts)
        (E : event Ts) :
@@ -5216,8 +5246,32 @@ admit.
  Proof.
    intros.
    apply (is_lim_seq_ext 
-            (fun n => sum_f_R0' (fun j => ps_P (ascending_events_disjoint En j)) n)).
-   intros.
+            (fun n => sum_f_R0' (fun j => ps_P (make_collection_disjoint En j)) n)).
+   - intros.
+     rewrite sum_f_R0'_as_fold_right.
+     generalize (ps_list_disjoint_union Prts (collection_take (make_collection_disjoint En) (S n)))
+     ; intros HH.
+     cut_to HH.
+     + rewrite fold_right_map in HH.
+       replace (fold_right (fun (a : event Ts) (b : R) => ps_P a + b) 0
+                           (collection_take (make_collection_disjoint En) (S n))) with
+           (fold_right (fun (a : nat) (b : R) => ps_P (make_collection_disjoint En a) + b) 0 (seq 0 n))
+           in HH.
+       * admit.
+       * rewrite <- HH.
+         rewrite ascending_make_disjoint_collection_take_union by trivial.
+         replace (fold_right (fun (a : nat) (b : R) => ps_P (make_collection_disjoint En a) + b) 0 (seq 0 n)) with
+             (fold_right Rplus 0 (map ps_P (collection_take (make_collection_disjoint En) (S n)))).
+         -- rewrite <- ps_list_disjoint_union.
+            ++ rewrite ascending_make_disjoint_collection_take_union; trivial.
+            ++ admit.
+            ++ admit.
+         -- admit.
+     + admit.
+     + admit.
+   - 
+
+     
    
    Admitted.
 

@@ -1131,14 +1131,12 @@ Proof.
     eapply fce; eauto.
 Qed.
 
-(*
-Require Import Arith Wf.
 
 Lemma make_collection_disjoint_in_exists {T:Type} (coll:nat->event T) (x:nat) (e:T) :
   coll x e ->
   exists n : nat, make_collection_disjoint coll n e.
 Proof.
-  intros.
+(*  intros.
   unfold make_collection_disjoint.
   assert ((exists y, y < x /\ coll y e) \/ ~(exists y, y < x /\ coll y e) )%nat.
   
@@ -1151,7 +1149,24 @@ Proof.
     split; trivial.
     firstorder.
   - 
-*)
+ *)
+Admitted.
+
+Lemma make_collection_union {T:Type} (coll:nat->event T) :
+   event_equiv (union_of_collection (make_collection_disjoint coll))
+               (union_of_collection coll).
+Proof.
+  red; intros x; split.
+  - unfold union_of_collection.
+    intros [??].
+    apply make_collection_disjoint_in in H.
+    destruct H.
+    eauto.
+  - intros inn.
+    red.
+    destruct inn.
+    eapply make_collection_disjoint_in_exists; eauto.
+Qed.
 
 Lemma sa_make_collection_disjoint {T:Type} (sa:SigmaAlgebra T) (coll:nat->event T) :
   (forall n, sa_sigma (coll n)) ->

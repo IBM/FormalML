@@ -1,5 +1,9 @@
 Require Import Reals Lra.
 
+Context {P Q:Prop}.
+Lemma pf1: P.
+  eapply proj1.
+
 Local Open Scope R.
 
 Lemma exp_gt1 (x : R) : 0 < x -> 1 < exp x.
