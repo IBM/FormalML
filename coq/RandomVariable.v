@@ -5424,28 +5424,6 @@ admit.
 
 
 
-
-       (*
-       apply  is_lim_seq_list_sum.
-       *)
-
-       Lemma is_lim_seq_list_sum (l:list (nat->R)) (l2:list R) :
-     Forall2 is_lim_seq l (map Finite l2) ->
-     is_lim_seq (fun n => list_sum (map (fun x => x n) l)) (list_sum l2).
-   Proof.
-     intros F2.
-     dependent induction F2.
-     - destruct l2; simpl in x; try congruence.
-       simpl.
-       apply is_lim_seq_const.
-     - destruct l2; simpl in x; try congruence.
-       invcs x.
-       specialize (IHF2 dom Prts l2 (eq_refl _)).
-       simpl.
-       eapply is_lim_seq_plus; eauto.
-       reflexivity.
-   Qed.
-
    Lemma monotone_convergence_bar0 (c:R)
          (X : Ts -> R )
          (Xn : nat -> Ts -> R)
