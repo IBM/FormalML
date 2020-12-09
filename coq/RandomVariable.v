@@ -5605,7 +5605,13 @@ Hint Rewrite @list_union_app : prob.
                            (fun omega : Ts => c*phi omega - Xn n omega <= 0)).
        + intros x; lra.
        + rewrite H4.
-         admit.
+         apply minus_measurable.
+         apply scale_measurable.
+         unfold RandomVariable in phi_rv.
+         now apply borel_sa_preimage2.
+         unfold RandomVariable in Xn_rv.
+         specialize (Xn_rv n).
+         now apply borel_sa_preimage2.
      - apply (is_lim_seq_ext (fun (n:nat) =>
                 (list_sum (map (fun v => v * (ps_P (event_inter
                                                       (event_preimage phi (singleton_event v))
@@ -5619,7 +5625,6 @@ Hint Rewrite @list_union_app : prob.
        apply  is_lim_seq_list_sum.
        *)
        
-     admit.
      Admitted.
 
    Lemma monotone_convergence_bar0 (c:R)
@@ -5776,9 +5781,6 @@ Hint Rewrite @list_union_app : prob.
         assert (Rbar_le (Expectation_posRV X) a).
         unfold Expectation_posRV.
         unfold SimpleExpectationSup.
-        Search "lim_seq".
-
-
         
 Admitted.
 
