@@ -5204,127 +5204,22 @@ admit.
          -- apply make_collection_disjoint_disjoint.
  Qed.
 
- Lemma monotone_convergence_E_phi_lim_ind (c:R)
-         (X : Ts -> R )
-         (Xn : nat -> Ts -> R)
-        
-         (Xn_rv : forall n, RandomVariable Prts borel_sa (Xn n))
-         (Xn_pos : forall n, PositiveRandomVariable (Xn n))
-     :
-     (forall (n:nat), RealRandomVariable_le (Xn n) X) ->
-     (forall (n:nat), RealRandomVariable_le (Xn n) (Xn (S n))) ->
-     (forall (omega:Ts), is_lim_seq' (fun n => Xn n omega) (X omega)) ->
-     (forall (omega:Ts), 1 <= X omega) ->
-     0 < c < 1 ->
-     is_lim_seq' (fun n => Expectation_posRV 
-                             (EventIndicator
-                                (fun omega => Rge_dec (Xn n omega) c))) 1. 
+   Lemma is_lim_seq_list_sum (l:list (nat->R)) (l2:list R) :
+     Forall2 is_lim_seq l (map Finite l2) ->
+     is_lim_seq (fun n => list_sum (map (fun x => x n) l)) (list_sum l2).
    Proof.
-     intros.
-     rewrite is_lim_seq_spec.
-     apply is_lim_seq_ext with (u := fun n => ps_P (fun omega : Ts => (Xn n omega) >= c)).
-     intros.
-     rewrite <- simple_Expectation_posRV with (srv := EventIndicator_srv (fun omega => Rge_dec (Xn n omega) c)).
-     - now rewrite SimpleExpectation_EventIndicator.
-     - apply EventIndicator_rv.
-       apply sa_le_ge.
-       specialize (Xn_rv n).
-       intros.
-       now apply RealRandomVariable_is_real with (r0 := r) in Xn_rv.
-     - replace (1) with (ps_P  Ω) by apply ps_all.
-       apply lim_prob.
-       + intros.
-         apply sa_le_ge.
-         specialize (Xn_rv n).
-         intros.
-         now apply RealRandomVariable_is_real with (r0 := r) in Xn_rv.
-       + intros.
-         unfold event_sub.
-         intros.
-         unfold RealRandomVariable_le in H0.
-         specialize (H0 n x).
-         lra.
-       + assert (event_equiv (union_of_collection (fun (n : nat) (omega : Ts) => Xn n omega >= c))
-                             (union_of_collection (fun (n : nat) (omega:Ts) => Xn n omega >= c * (const 1 omega)))).
-         * intros x.
-           unfold union_of_collection, const.
-           split; intro; destruct H4 as [n H4]; exists n; lra.
-         * rewrite H4.
-           apply monotone_convergence_E with (X := X); trivial.
-         -- apply srvconst.
-         -- apply rvconst.
-         -- unfold PositiveRandomVariable, const; intros; lra.
+     intros F2.
+     dependent induction F2.
+     - destruct l2; simpl in x; try congruence.
+       simpl.
+       apply is_lim_seq_const.
+     - destruct l2; simpl in x; try congruence.
+       invcs x.
+       specialize (IHF2 dom Prts l2 (eq_refl _)).
+       simpl.
+       eapply is_lim_seq_plus; eauto.
+       reflexivity.
    Qed.
-         
-   Lemma monotone_convergence_E_phi_lim_const (c:R)
-         (X : Ts -> R )
-         (Xn : nat -> Ts -> R)
-         (phival : posreal)
-        
-         (Xn_rv : forall n, RandomVariable Prts borel_sa (Xn n))
-         (posphi: PositiveRandomVariable (const phival))
-         (Xn_pos : forall n, PositiveRandomVariable (Xn n))
-     :
-     (forall (n:nat), RealRandomVariable_le (Xn n) X) ->
-     (forall (n:nat), RealRandomVariable_le (Xn n) (Xn (S n))) ->
-     RealRandomVariable_le (const phival) X ->
-     (forall (omega:Ts), is_lim_seq' (fun n => Xn n omega) (X omega)) ->
-     0 < c < 1 ->
-     is_lim_seq' (fun n => Expectation_posRV 
-                             (rvscale phival
-                                     (EventIndicator
-                                        (fun omega => Rge_dec (Xn n omega) (c * (const (pos phival) omega)))) ))
-                 (Expectation_posRV (const phival)).
-   Proof.
-     intros.
-     rewrite <- simple_Expectation_posRV with (srv := srvconst (pos phival)).
-     - rewrite SimpleExpectation_const.
-       rewrite is_lim_seq_spec.
-       apply is_lim_seq_ext with (u := fun n => phival * (ps_P (fun omega : Ts => (Xn n omega) >= c * (const (pos phival) omega )))).
-       + intros.
-         generalize (EventIndicator_rv Prts (fun omega : Ts => Rge_dec (Xn n omega) (c * const (pos phival) omega))); intros RVE.
-         cut_to RVE.
-         * rewrite (Expectation_posRV_scale phival (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (c * const (pos phival) omega)))).
-           rewrite <- simple_Expectation_posRV with (srv := EventIndicator_srv (fun omega => Rge_dec (Xn n omega) (c * const (pos phival) omega))).
-           -- simpl.
-              apply Rmult_eq_compat_l.
-              now rewrite SimpleExpectation_EventIndicator.
-           -- apply EventIndicator_rv.
-              unfold const.
-              apply sa_le_ge.
-              specialize (Xn_rv n).
-              intros.
-              now apply RealRandomVariable_is_real with (r0 := r) in Xn_rv.
-         * unfold const.
-           apply sa_le_ge.
-           specialize (Xn_rv n).
-           intros.
-           now apply RealRandomVariable_is_real with (r0 := r) in Xn_rv.
-       + replace (Finite (pos phival)) with (Rbar_mult (Finite (pos phival)) (Finite 1)).
-         * apply is_lim_seq_scal_l.
-           replace (1) with (ps_P  Ω) by apply ps_all.
-           apply lim_prob.
-           -- intros.
-              unfold const.
-              apply sa_le_ge.
-              specialize (Xn_rv n).
-              intros.
-              now apply RealRandomVariable_is_real with (r0 := r) in Xn_rv.
-           -- intros.
-              unfold event_sub.
-              intros.
-              unfold RealRandomVariable_le in H0.
-              specialize (H0 n x).
-              lra.
-           -- apply monotone_convergence_E with (X := X); trivial.
-              ++ apply srvconst.
-              ++ apply rvconst.
-         * simpl.
-           rewrite Rbar_finite_eq.
-           lra.
-     - apply rvconst.
-   Qed.
-
 
    Lemma simpleFunEventIndicator
          (phi : Ts -> R)
@@ -5367,14 +5262,9 @@ admit.
    Proof.
      intros.
      rewrite <- (simple_Expectation_posRV phi).
-     apply (is_lim_seq_ext 
-              (fun n => SimpleExpectation 
-                          (rvmult phi (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (c * phi omega)))))).
-     - intros.
-       rewrite <- simple_Expectation_posRV with (srv := (srvmult  phi (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (c * phi omega))))); trivial.
-       apply rvmult_rv; trivial.
-       apply EventIndicator_rv.
-       assert (event_equiv (fun omega : Ts => Xn n omega >= c * phi omega)
+     assert (forall n,  sa_sigma (fun omega : Ts => Xn n omega >= c * phi omega)).
+     intros n.
+     - assert (event_equiv (fun omega : Ts => Xn n omega >= c * phi omega)
                            (fun omega : Ts => c*phi omega - Xn n omega <= 0)).
        + intros x; lra.
        + rewrite H4.
@@ -5385,44 +5275,64 @@ admit.
          unfold RandomVariable in Xn_rv.
          specialize (Xn_rv n).
          now apply borel_sa_preimage2.
-     - apply (is_lim_seq_ext (fun (n:nat) =>
-                (list_sum (map (fun v => v * (ps_P (event_inter
-                                                      (event_preimage phi (singleton_event v))
-                                                      (fun omega => Xn n omega >= c * phi omega))))
-                               (nodup Req_EM_T srv_vals))))).
-       intros.
-       symmetry.
-       apply simpleFunEventIndicator.
-       unfold SimpleExpectation.
-
-       generalize (is_lim_seq_list_sum
-                     (map
-                        (fun v : R => fun n => 
-                                     v *
-                                     ps_P
-                                       (event_inter (event_preimage phi (singleton_event v))
-                                                    (fun omega : Ts => Xn n omega >= c * phi omega)))
+     
+     - apply (is_lim_seq_ext 
+                (fun n => SimpleExpectation 
+                            (rvmult phi (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (c * phi omega)))))).
+       + intros.
+         rewrite <- simple_Expectation_posRV with (srv := (srvmult  phi (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (c * phi omega))))); trivial.
+         apply rvmult_rv; trivial.
+         now apply EventIndicator_rv.
+       + apply (is_lim_seq_ext 
+                  (fun (n:nat) =>
+                     (list_sum (map (fun v => v * (ps_P (event_inter
+                                                           (event_preimage phi (singleton_event v))
+                                                           (fun omega => Xn n omega >= c * phi omega))))
+                                    (nodup Req_EM_T srv_vals))))).
+         intros.
+         symmetry.
+         apply simpleFunEventIndicator.
+         unfold SimpleExpectation.
+         generalize (is_lim_seq_list_sum
+                       (map
+                          (fun v : R => fun n => 
+                                          v *
+                                          ps_P
+                                            (event_inter (event_preimage phi (singleton_event v))
+                                                         (fun omega : Ts => Xn n omega >= c * phi omega)))
                         (nodup Req_EM_T srv_vals))
                      (map (fun v : R => v * ps_P (event_preimage phi (singleton_event v)))
                           (nodup Req_EM_T srv_vals)))
-       ; intros HH.
-       cut_to HH.
-       + eapply is_lim_seq_ext; try eapply HH.
-         intros; simpl.
-         now rewrite map_map.
-       + clear HH.
-         rewrite map_map.
-         rewrite <- Forall2_map.
-         apply Forall2_refl_in.
-         rewrite Forall_forall; intros.
-         replace (Finite (x * ps_P (event_preimage phi (singleton_event x)))) with
-             (Rbar_mult x (ps_P (event_preimage phi (singleton_event x))))
+         ; intros HH.
+         cut_to HH.
+         * eapply is_lim_seq_ext; try eapply HH.
+           intros; simpl.
+           now rewrite map_map.
+         * clear HH.
+           rewrite map_map.
+           rewrite <- Forall2_map.
+           apply Forall2_refl_in.
+           rewrite Forall_forall; intros.
+           replace (Finite (x * ps_P (event_preimage phi (singleton_event x)))) with
+               (Rbar_mult x (ps_P (event_preimage phi (singleton_event x))))
              by reflexivity.
-         apply is_lim_seq_scal_l.
-         
-   Admitted.
-
-
+           apply is_lim_seq_scal_l.
+           apply lim_prob.
+           -- intros.
+              apply sa_inter; [|trivial].
+              now apply sa_singleton with (prts := Prts).
+           -- intros.
+              apply event_inter_sub_proper; [reflexivity | ].
+              intros xx.
+              unfold RealRandomVariable_le in H0.
+              specialize (H0 n xx).
+              lra.
+           -- rewrite <- event_inter_countable_union_distr.
+              assert (event_equiv (union_of_collection (fun (n : nat) (omega : Ts) => Xn n omega >= c * phi omega)) Ω).
+              ++ apply monotone_convergence_E with (X := X); trivial.
+              ++ rewrite H6.
+                 apply event_inter_true_r.
+   Qed.
 
    Lemma monotone_convergence_bar0 (c:R)
          (X : Ts -> R )
