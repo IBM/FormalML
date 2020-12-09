@@ -5554,6 +5554,20 @@ Hint Rewrite @list_union_app : prob.
        reflexivity.
    Qed.
 
+   Lemma simpleFunEventIndicator
+         (phi : Ts -> R)
+         (sphi : SimpleRandomVariable phi)
+         {P : event Ts}
+         (dec:forall x, {P x} + {~ P x}) :
+     SimpleExpectation (rvmult phi (EventIndicator dec)) =
+     list_sum (map (fun v => v * (ps_P (event_inter
+                                          (event_preimage phi (singleton_event v))
+                                          P)))
+                   (nodup Req_EM_T srv_vals)).
+   Proof.
+     unfold SimpleExpectation.
+     Admitted.
+
    Lemma monotone_convergence_E_phi_lim (c:R)
          (X : Ts -> R )
          (Xn : nat -> Ts -> R)
@@ -5592,11 +5606,18 @@ Hint Rewrite @list_union_app : prob.
        + intros x; lra.
        + rewrite H4.
          admit.
-     - unfold SimpleExpectation at 1.
+     - apply (is_lim_seq_ext (fun (n:nat) =>
+                (list_sum (map (fun v => v * (ps_P (event_inter
+                                                      (event_preimage phi (singleton_event v))
+                                                      (fun omega => Xn n omega >= c * phi omega))))
+                               (nodup Req_EM_T srv_vals))))).
+       intros.
+       symmetry.
+       apply simpleFunEventIndicator.
        unfold SimpleExpectation.
-       generalize (is_lim_seq_list_sum .
-       
-
+       (*
+       apply  is_lim_seq_list_sum.
+       *)
        
      admit.
      Admitted.
