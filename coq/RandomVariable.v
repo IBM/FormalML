@@ -5162,218 +5162,6 @@ admit.
    match_destr; lra.
  Qed.
 
-  (* maybe this should have been the definition in the first place? *)
- Definition collection_take (En : nat -> event Ts) (n:nat) := map En (seq 0 n).
-
- Lemma collection_take_length (En : nat -> event Ts) (n:nat) :
-   length (collection_take En n) = n.
- Proof.
-   unfold collection_take.
-   now rewrite map_length, seq_length.
- Qed.
-  
- Lemma collection_take_nth_in a En n x:
-    nth a (collection_take En n) event_none x <->
-    (a < n /\ En a x)%nat.
- Proof.
-   unfold collection_take.
-   split.
-   - intros na.
-     destruct (lt_dec a n).
-     + split; trivial.
-       destruct (map_nth_in_exists En (seq 0 n) event_none a).
-       * now rewrite seq_length.
-       * rewrite H in na.
-         rewrite seq_nth in na by trivial.
-         now simpl in na.
-     + rewrite nth_overflow in na.
-       * red in na; tauto.
-       * rewrite map_length, seq_length.
-         lia.
-   - intros [alt Ea].
-       destruct (map_nth_in_exists En (seq 0 n) event_none a).
-     + now rewrite seq_length.
-     + rewrite H.
-       rewrite seq_nth by trivial.
-       now simpl.
- Qed.
-
- Lemma collection_take_Sn n En :
-   (collection_take En (S n)) = collection_take En n ++ (En n::nil).
- Proof.
-   unfold collection_take.
-   rewrite seq_Sn, map_app.
-   reflexivity.
- Qed.
-
- Lemma collection_take1 En : collection_take En 1 = [En 0%nat].
- Proof.
-   reflexivity.
- Qed.
- 
- Lemma collection_take_sub (En:nat -> event Ts) n :
-   pointwise_relation _ event_sub (list_collection (collection_take En n) event_none) En.
- Proof.
-   repeat red; intros.
-   red in H.
-   apply collection_take_nth_in in H.
-   tauto.
- Qed.
-                                                         
- Global Instance collection_is_pairwise_disjoint_event_sub_proper :
-   Proper (pointwise_relation _ event_sub  --> impl) (@collection_is_pairwise_disjoint Ts).
- Proof.
-   unfold Proper, pointwise_relation, impl, respectful, collection_is_pairwise_disjoint, event_sub.
-   intros ??? disj; intros; red; intros.
-   eapply disj; eauto. 
- Qed.
-  
- Lemma collection_take_preserves_disjoint En n:
-   collection_is_pairwise_disjoint En ->
-   ForallOrdPairs event_disjoint (collection_take En n).
- Proof.
-   intros disj.
-   apply list_collection_disjoint.
-   eapply collection_is_pairwise_disjoint_event_sub_proper; eauto.
-   apply collection_take_sub.
- Qed.
- 
- Definition ascending_collection (En:nat -> event Ts) := (forall (n:nat), event_sub (En n) (En (S n))).
-
- Lemma ascending_collection_le (En:nat -> event Ts) :
-   ascending_collection En ->
-   (forall m n, (m <= n)%nat -> event_sub (En m) (En n)).
- Proof.
-   intros asc.
-   induction n; simpl.
-   - intros.
-     replace m with (0%nat) by lia.
-     reflexivity.
-   - intros.
-     apply le_lt_or_eq in H.
-     destruct H.
-     + red in asc.
-       rewrite <- asc.
-       apply IHn.
-       lia.
-     + subst; reflexivity.
- Qed.
-
- Lemma list_union_singleton (En:event Ts) :
-  event_equiv (list_union (En::nil)) En.
- Proof.
-   rewrite list_union_cons, list_union_nil, event_union_false_r.
-   reflexivity.
-Qed.
-
- Lemma list_union_app {T} (l1 l2:list (event T)):
-   event_equiv (list_union (l1 ++ l2)) (event_union (list_union l1) ((list_union l2))).
- Proof.
-   induction l1.
-   - simpl.
-     autorewrite with prob.
-     reflexivity.
-   - simpl.
-     autorewrite with prob.
-     rewrite IHl1.
-     rewrite event_union_assoc.
-     reflexivity.
-Qed.
-
-Hint Rewrite @list_union_app : prob.
-
- Lemma ascending_collection_take_union En :
-   ascending_collection En ->
-   forall n, event_equiv (list_union (collection_take En (S n))) (En n).
- Proof.
-   intros.
-   induction n; simpl.
-   - rewrite collection_take1, list_union_singleton.
-     reflexivity.
-   - rewrite collection_take_Sn.
-     autorewrite with prob.
-     rewrite IHn.
-     red in H.
-     rewrite event_union_sub_r; trivial.
-     reflexivity.
- Qed.
-
- Lemma union_of_collection_const (c:event Ts) : event_equiv (union_of_collection (fun _ => c)) c.
- Proof.
-   unfold union_of_collection.
-   red; intros.
-   split; [intros [_ HH] | intros HH]; trivial.
-   now exists 0%nat.
- Qed.
-
- Hint Rewrite @union_of_collection_const : prob.
- 
- Lemma make_collection_disjoint0  (En:nat -> event Ts) :
-   event_equiv (make_collection_disjoint En 0) (En 0%nat).
- Proof.
-   unfold make_collection_disjoint.
-   red; intros.
-   split; intros.
-   - destruct H; trivial.
-   - split; trivial.
-     unfold union_of_collection.
-     intros [? HH].
-     match_destr_in HH.
-     lia.
- Qed.
-   
-   Hint Rewrite @make_collection_disjoint0 : prob.
-
-  Hint Rewrite @collection_take_Sn @collection_take1 : prob.
-
-  Lemma make_collection_disjoint_sub  (En:nat -> event Ts) n : event_sub (make_collection_disjoint En n) (En n).
-  Proof.
-    now intros x [??].
-  Qed.
-
- Lemma ascending_make_disjoint_collection_take_union En :
-   ascending_collection En ->
-   forall n, event_equiv (list_union (collection_take (make_collection_disjoint En) (S n))) (En n).
- Proof.
-   intros asc n.
-   induction n; simpl.
-   - autorewrite with prob.
-     reflexivity.
-   - autorewrite with prob.
-     autorewrite with prob in IHn.
-     rewrite IHn.
-     intros a.
-     split; intros HH.
-     + destruct HH.
-       * now apply asc.
-       * now apply make_collection_disjoint_sub.
-     + red.
-       unfold make_collection_disjoint.
-       unfold event_diff.
-       destruct (classic (union_of_collection (fun y : nat => if lt_dec y (S n) then En y else event_none) a)).
-       * destruct H as [x HH2].
-         match_destr_in HH2; [ | red in HH2; tauto].
-         left.
-         red in asc.
-         eapply (ascending_collection_le _ asc x); trivial.
-         lia.
-       * eauto.
- Qed.
-
-
- Lemma sa_make_collection_disjoint En :
-   (forall (n:nat), sa_sigma (En n)) ->
-   (forall n, sa_sigma (make_collection_disjoint En n)).
- Proof.
-   intros.
-   unfold make_collection_disjoint.
-   apply sa_diff; trivial.
-   apply sa_countable_union.
-   intros.
-   match_destr.
-   apply sa_none.
- Qed.
-
  Lemma lim_prob
        (En : nat -> event Ts)
        (E : event Ts) :
@@ -5537,22 +5325,6 @@ Hint Rewrite @list_union_app : prob.
      - apply rvconst.
    Qed.
 
-   Lemma is_lim_seq_list_sum (l:list (nat->R)) (l2:list R) :
-     Forall2 is_lim_seq l (map Finite l2) ->
-     is_lim_seq (fun n => list_sum (map (fun x => x n) l)) (list_sum l2).
-   Proof.
-     intros F2.
-     dependent induction F2.
-     - destruct l2; simpl in x; try congruence.
-       simpl.
-       apply is_lim_seq_const.
-     - destruct l2; simpl in x; try congruence.
-       invcs x.
-       specialize (IHF2 dom Prts l2 (eq_refl _)).
-       simpl.
-       eapply is_lim_seq_plus; eauto.
-       reflexivity.
-   Qed.
 
    Lemma simpleFunEventIndicator
          (phi : Ts -> R)
@@ -5568,14 +5340,6 @@ Hint Rewrite @list_union_app : prob.
      unfold SimpleExpectation.
      Admitted.
 
-   Lemma Forall2_refl_in {A} R (l:list A) :
-     Forall (fun x => R x x) l ->
-     Forall2 R l l.
-   Proof.
-     induction l; simpl; trivial.
-     intros HH; invcs HH.
-     constructor; auto.
-   Qed.
 
    Lemma monotone_convergence_E_phi_lim (c:R)
          (X : Ts -> R )
@@ -5681,9 +5445,6 @@ Hint Rewrite @list_union_app : prob.
        eapply is_lim_seq_plus; eauto.
        reflexivity.
    Qed.
-
-
-     Admitted.
 
    Lemma monotone_convergence_bar0 (c:R)
          (X : Ts -> R )

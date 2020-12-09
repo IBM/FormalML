@@ -1,6 +1,7 @@
 Require Import Coquelicot.Coquelicot.
 Set Bullet Behavior "Strict Subproofs".
 
+Require Import Program.
 Require Import Coq.Reals.Rbase.
 Require Import Coq.Reals.Rfunctions.
 Require Import List.
@@ -764,4 +765,22 @@ Proof.
     rewrite sum_n_Reals.
     reflexivity.
 Qed.
+
+Lemma is_lim_seq_list_sum (l:list (nat->R)) (l2:list R) :
+  Forall2 is_lim_seq l (map Finite l2) ->
+  is_lim_seq (fun n => list_sum (map (fun x => x n) l)) (list_sum l2).
+Proof.
+  intros F2.
+  dependent induction F2.
+  - destruct l2; simpl in x; try congruence.
+    simpl.
+    apply is_lim_seq_const.
+  - destruct l2; simpl in x; try congruence.
+    invcs x.
+    specialize (IHF2 l2 (eq_refl _)).
+    simpl.
+    eapply is_lim_seq_plus; eauto.
+    reflexivity.
+Qed.
+
 End coquelicot.

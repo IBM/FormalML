@@ -1473,6 +1473,15 @@ Proof.
   - simpl. rewrite IHp. reflexivity.
 Qed.
 
+Lemma Forall2_refl_in {A} R (l:list A) :
+  Forall (fun x => R x x) l ->
+  Forall2 R l l.
+Proof.
+  induction l; simpl; trivial.
+  intros HH; invcs HH.
+  constructor; auto.
+Qed.
+
 Lemma Forall2_perm {A} R (l1 l1' l2:list A) :
   Forall2 R l1 l2 ->
   Permutation l1 l1' ->
@@ -1622,4 +1631,3 @@ Proof.
 Qed.
  
 End equivlist.
-

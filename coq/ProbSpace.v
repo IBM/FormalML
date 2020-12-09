@@ -1,3 +1,4 @@
+Require Import Program.Basics.
 Require Import Coq.Reals.Rbase.
 
 Require Import Lra Lia.
@@ -121,7 +122,7 @@ Proof.
 Qed.
 
 Global Instance event_disjoint_proper {T} :
-  Proper (event_sub --> event_sub --> Basics.impl) (@event_disjoint T).
+  Proper (event_sub --> event_sub --> impl) (@event_disjoint T).
 Proof.
   firstorder.
 Qed.
@@ -412,6 +413,14 @@ Definition collection_is_pairwise_disjoint {T: Type} (collection: nat -> event T
   forall n1 n2 : nat, n1 <> n2 ->
                       event_disjoint (collection n1) (collection n2).
 
+ Global Instance collection_is_pairwise_disjoint_event_sub_proper {T: Type}:
+   Proper (pointwise_relation _ event_sub  --> impl) (@collection_is_pairwise_disjoint T).
+ Proof.
+   unfold Proper, pointwise_relation, impl, respectful, collection_is_pairwise_disjoint, event_sub.
+   intros ??? disj; intros; red; intros.
+   eapply disj; eauto. 
+ Qed.
+
 (* Returns a new set prop (T->Prop) that returns true if t:T is in any of the sets within the collection. *)
 Definition union_of_collection {T: Type} (collection: nat -> event T) : event T :=
   fun t:T => (exists n, (collection n) t).
@@ -429,6 +438,16 @@ Global Instance inter_of_collection_proper {T:Type} : Proper (pointwise_relation
 Proof.
   firstorder.
 Qed.
+
+Lemma union_of_collection_const {T:Type} (c:event T) : event_equiv (union_of_collection (fun _ => c)) c.
+ Proof.
+   unfold union_of_collection.
+   red; intros.
+   split; [intros [_ HH] | intros HH]; trivial.
+   now exists 0%nat.
+ Qed.
+ 
+ Hint Rewrite @union_of_collection_const : prob.
 
 Lemma collection_is_pairwise_disjoint_sub {T:Type} (coll:nat -> event T) (f:event T -> event T):
   (forall a, f a ≤ a) ->
@@ -673,6 +692,31 @@ Qed.
 
 Hint Rewrite @list_union_nil @list_union_cons : prob.
 
+Lemma list_union_singleton {T} (En:event T) :
+  list_union [En] === En.
+ Proof.
+   rewrite list_union_cons, list_union_nil, event_union_false_r.
+   reflexivity.
+Qed.
+
+ Hint Rewrite @list_union_singleton : prob.
+
+Lemma list_union_app {T} (l1 l2:list (event T)):
+  list_union (l1 ++ l2) === (list_union l1) ∪ (list_union l2).
+Proof.
+  induction l1.
+  - simpl.
+    autorewrite with prob.
+    reflexivity.
+  - simpl.
+    autorewrite with prob.
+    rewrite IHl1.
+    rewrite event_union_assoc.
+    reflexivity.
+Qed.
+
+Hint Rewrite @list_union_app : prob.
+
 Lemma list_union2 {T} (x1 x2 : event T) :
   list_union [x1 ; x2] === x1 ∪ x2.
 Proof.
@@ -705,6 +749,31 @@ Proof.
 Qed.
 
 Hint Rewrite @list_inter_nil @list_inter_cons : prob.
+
+Lemma list_inter_singleton {T} (En:event T) :
+  list_inter [En] === En.
+ Proof.
+   rewrite list_inter_cons, list_inter_nil, event_inter_true_r.
+   reflexivity.
+Qed.
+
+ Hint Rewrite @list_inter_singleton : prob.
+
+Lemma list_inter_app {T} (l1 l2:list (event T)):
+  list_inter (l1 ++ l2) === (list_inter l1) ∩ (list_inter l2).
+Proof.
+  induction l1.
+  - simpl.
+    autorewrite with prob.
+    reflexivity.
+  - simpl.
+    autorewrite with prob.
+    rewrite IHl1.
+    rewrite event_inter_assoc.
+    reflexivity.
+Qed.
+
+Hint Rewrite @list_inter_app : prob.
 
 Lemma list_inter2 {T} (x1 x2 : event T) :
   list_inter [x1 ; x2] === x1 ∩ x2.
@@ -1128,6 +1197,41 @@ Definition make_collection_disjoint {T:Type} (coll:nat->event T) : nat -> event 
                                                then coll y
                                                else ∅)).
 
+Lemma sa_make_collection_disjoint {T:Type} {S:SigmaAlgebra T} (En:nat -> event T) :
+  (forall (n:nat), sa_sigma (En n)) ->
+  (forall n, sa_sigma (make_collection_disjoint En n)).
+Proof.
+  intros.
+  unfold make_collection_disjoint.
+  apply sa_diff; trivial.
+  apply sa_countable_union.
+  intros.
+  match_destr.
+  apply sa_none.
+Qed.
+
+Lemma make_collection_disjoint_sub {T:Type} (En:nat -> event T) n : event_sub (make_collection_disjoint En n) (En n).
+Proof.
+  now intros x [??].
+Qed.
+
+Lemma make_collection_disjoint0 {T:Type}  (En:nat -> event T) :
+  event_equiv (make_collection_disjoint En 0) (En 0%nat).
+Proof.
+  unfold make_collection_disjoint.
+  red; intros.
+  split; intros.
+  - destruct H; trivial.
+  - split; trivial.
+    unfold union_of_collection.
+    intros [? HH].
+    match_destr_in HH.
+    lia.
+Qed.
+
+Hint Rewrite @make_collection_disjoint0 : prob.
+
+
 Lemma make_collection_disjoint_in {T:Type} (coll:nat->event T) (x:nat) (e:T) :
   make_collection_disjoint coll x e <->
   (coll x e /\ forall y, (y < x)%nat -> ~ coll y e).
@@ -1147,17 +1251,6 @@ Proof.
     intros [n Hn].
     destruct (lt_dec n x); trivial.
     eapply fce; eauto.
-Qed.
-
-Lemma sa_make_collection_disjoint {T:Type} (sa:SigmaAlgebra T) (coll:nat->event T) :
-  (forall n, sa_sigma (coll n)) ->
-  (forall n : nat, sa_sigma (make_collection_disjoint coll n)).
-Proof.
-  unfold make_collection_disjoint; intros sas n.
-  apply sa_diff; [eauto | ].
-  apply sa_countable_union; intros.
-  destruct (lt_dec n0 n)
-  ; auto with prob.
 Qed.
   
 Lemma make_collection_disjoint_disjoint {T:Type} (coll:nat->event T) :
@@ -1233,7 +1326,7 @@ Section classic.
     intros.
     apply ps_sub; auto with prob.
   Qed.
-    
+  
   Lemma make_collection_disjoint_le {T:Type} {S:SigmaAlgebra T} (ps:ProbSpace S)
         (coll: nat -> event T) :
     (forall n, sa_sigma (coll n)) ->
@@ -1245,9 +1338,9 @@ Section classic.
     apply sa_countable_union; intros nn.
     destruct (lt_dec nn n); auto with prob.
   Qed.
-    
+  
   Theorem ps_countable_boole_inequality {T:Type} {S:SigmaAlgebra T} (ps:ProbSpace S)
-        (coll: nat -> event T) sum :
+          (coll: nat -> event T) sum :
     (forall n, sa_sigma (coll n)) ->
     infinite_sum' (fun n => ps_P (coll n)) sum ->
     ps_P (union_of_collection coll) <= sum.
@@ -1263,3 +1356,150 @@ Section classic.
 
 End classic.
 
+Section take.
+  (* define primitives for taking a prefix of a collection *)
+  Context {Ts: Type}.
+  Definition collection_take (En : nat -> event Ts) (n:nat) := map En (seq 0 n).
+
+  Lemma collection_take_length (En : nat -> event Ts) (n:nat) :
+    length (collection_take En n) = n.
+  Proof.
+    unfold collection_take.
+    now rewrite map_length, seq_length.
+  Qed.
+
+  Lemma collection_take_nth_in a En n x:
+    nth a (collection_take En n) event_none x <->
+    (a < n /\ En a x)%nat.
+  Proof.
+    unfold collection_take.
+    split.
+    - intros na.
+      destruct (lt_dec a n).
+      + split; trivial.
+        destruct (map_nth_in_exists En (seq 0 n) event_none a).
+        * now rewrite seq_length.
+        * rewrite H in na.
+          rewrite seq_nth in na by trivial.
+          now simpl in na.
+      + rewrite nth_overflow in na.
+        * red in na; tauto.
+        * rewrite map_length, seq_length.
+          lia.
+    - intros [alt Ea].
+      destruct (map_nth_in_exists En (seq 0 n) event_none a).
+      + now rewrite seq_length.
+      + rewrite H.
+        rewrite seq_nth by trivial.
+        now simpl.
+  Qed.
+
+  Lemma collection_take_Sn n En :
+    (collection_take En (S n)) = collection_take En n ++ (En n::nil).
+  Proof.
+    unfold collection_take.
+    rewrite seq_Sn, map_app.
+    reflexivity.
+  Qed.
+
+  Lemma collection_take1 En : collection_take En 1 = [En 0%nat].
+  Proof.
+    reflexivity.
+  Qed.
+
+  Lemma collection_take_sub (En:nat -> event Ts) n :
+    pointwise_relation _ event_sub (list_collection (collection_take En n) event_none) En.
+  Proof.
+    repeat red; intros.
+    red in H.
+    apply collection_take_nth_in in H.
+    tauto.
+  Qed.
+
+  Lemma collection_take_preserves_disjoint En n:
+    collection_is_pairwise_disjoint En ->
+    ForallOrdPairs event_disjoint (collection_take En n).
+  Proof.
+    intros disj.
+    apply list_collection_disjoint.
+    eapply collection_is_pairwise_disjoint_event_sub_proper; eauto.
+    apply collection_take_sub.
+  Qed.
+  
+End take.
+
+Hint Rewrite @collection_take_Sn @collection_take1 : prob.
+
+Section ascending.
+  (* Define properties of ascending collections *)
+
+  Context {Ts: Type}.
+ Definition ascending_collection (En:nat -> event Ts) := (forall (n:nat), event_sub (En n) (En (S n))).
+
+ Lemma ascending_collection_le (En:nat -> event Ts) :
+   ascending_collection En ->
+   (forall m n, (m <= n)%nat -> event_sub (En m) (En n)).
+ Proof.
+   intros asc.
+   induction n; simpl.
+   - intros.
+     replace m with (0%nat) by lia.
+     reflexivity.
+   - intros.
+     apply le_lt_or_eq in H.
+     destruct H.
+     + red in asc.
+       rewrite <- asc.
+       apply IHn.
+       lia.
+     + subst; reflexivity.
+ Qed.
+
+ 
+ Lemma ascending_collection_take_union (En:nat -> event Ts)  :
+   ascending_collection En ->
+   forall n, event_equiv (list_union (collection_take En (S n))) (En n).
+ Proof.
+   intros.
+   induction n; simpl.
+   - rewrite collection_take1, list_union_singleton.
+     reflexivity.
+   - rewrite collection_take_Sn.
+     rewrite list_union_app.
+     rewrite IHn.
+     red in H.
+     autorewrite with prob.
+     rewrite event_union_sub_r; trivial.
+     reflexivity.
+ Qed.
+
+ Lemma ascending_make_disjoint_collection_take_union (En:nat -> event Ts) :
+   ascending_collection En ->
+   forall n, event_equiv (list_union (collection_take (make_collection_disjoint En) (S n))) (En n).
+ Proof.
+   intros asc n.
+   induction n; simpl.
+   - autorewrite with prob.
+     reflexivity.
+   - autorewrite with prob.
+     autorewrite with prob in IHn.
+     rewrite IHn.
+     intros a.
+     split; intros HH.
+     + destruct HH.
+       * now apply asc.
+       * now apply make_collection_disjoint_sub.
+     + red.
+       unfold make_collection_disjoint.
+       unfold event_diff.
+       destruct (classic (union_of_collection (fun y : nat => if lt_dec y (S n) then En y else event_none) a)).
+       * destruct H as [x HH2].
+         match_destr_in HH2; [ | red in HH2; tauto].
+         left.
+         red in asc.
+         eapply (ascending_collection_le _ asc x); trivial.
+         lia.
+       * eauto.
+ Qed.
+
+End ascending.
