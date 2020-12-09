@@ -5568,6 +5568,15 @@ Hint Rewrite @list_union_app : prob.
      unfold SimpleExpectation.
      Admitted.
 
+   Lemma Forall2_refl_in {A} R (l:list A) :
+     Forall (fun x => R x x) l ->
+     Forall2 R l l.
+   Proof.
+     induction l; simpl; trivial.
+     intros HH; invcs HH.
+     constructor; auto.
+   Qed.
+
    Lemma monotone_convergence_E_phi_lim (c:R)
          (X : Ts -> R )
          (Xn : nat -> Ts -> R)
@@ -5621,10 +5630,59 @@ Hint Rewrite @list_union_app : prob.
        symmetry.
        apply simpleFunEventIndicator.
        unfold SimpleExpectation.
+
+       generalize (is_lim_seq_list_sum
+                     (map
+                        (fun v : R => fun n => 
+                                     v *
+                                     ps_P
+                                       (event_inter (event_preimage phi (singleton_event v))
+                                                    (fun omega : Ts => Xn n omega >= c * phi omega)))
+                        (nodup Req_EM_T srv_vals))
+                     (map (fun v : R => v * ps_P (event_preimage phi (singleton_event v)))
+                          (nodup Req_EM_T srv_vals)))
+       ; intros HH.
+       cut_to HH.
+       + eapply is_lim_seq_ext; try eapply HH.
+         intros; simpl.
+         now rewrite map_map.
+       + clear HH.
+         rewrite map_map.
+         rewrite <- Forall2_map.
+         apply Forall2_refl_in.
+         rewrite Forall_forall; intros.
+         replace (Finite (x * ps_P (event_preimage phi (singleton_event x)))) with
+             (Rbar_mult x (ps_P (event_preimage phi (singleton_event x))))
+             by reflexivity.
+         apply is_lim_seq_scal_l.
+         
+   Admitted.
+
+
+
+
        (*
        apply  is_lim_seq_list_sum.
        *)
-       
+
+       Lemma is_lim_seq_list_sum (l:list (nat->R)) (l2:list R) :
+     Forall2 is_lim_seq l (map Finite l2) ->
+     is_lim_seq (fun n => list_sum (map (fun x => x n) l)) (list_sum l2).
+   Proof.
+     intros F2.
+     dependent induction F2.
+     - destruct l2; simpl in x; try congruence.
+       simpl.
+       apply is_lim_seq_const.
+     - destruct l2; simpl in x; try congruence.
+       invcs x.
+       specialize (IHF2 dom Prts l2 (eq_refl _)).
+       simpl.
+       eapply is_lim_seq_plus; eauto.
+       reflexivity.
+   Qed.
+
+
      Admitted.
 
    Lemma monotone_convergence_bar0 (c:R)
