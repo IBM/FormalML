@@ -5546,9 +5546,10 @@ admit.
      (forall (n:nat), RealRandomVariable_le (Xn n) X) ->
      (forall (n:nat), RealRandomVariable_le (Xn n) (Xn (S n))) ->
      (forall (n:nat), is_finite (Expectation_posRV (Xn n))) ->
+     is_finite (Expectation_posRV X) ->     
 
      (forall (omega:Ts), is_lim_seq' (fun n => Xn n omega) (X omega)) ->
-     is_lim_seq (fun n => Expectation_posRV (Xn n))  (Expectation_posRV X).
+     Lim_seq (fun n => Expectation_posRV (Xn n)) =  (Expectation_posRV X).
   Proof.
     generalize Expectation_posRV_le; intros.
     assert (forall (n:nat), (Rbar_le (Expectation_posRV (Xn n)) (Expectation_posRV X))).
@@ -5560,10 +5561,23 @@ admit.
       + pose (a := (Lim_seq (fun n : nat => Expectation_posRV (Xn n)))).
         generalize (Lim_seq_le_loc (fun n => Expectation_posRV (Xn n)) 
                                    (fun _ => Expectation_posRV X)); intros.
-        assert (Rbar_le (Expectation_posRV X) a).
-        unfold Expectation_posRV.
+        cut_to H7.
+        rewrite Lim_seq_const in H7.
+        assert (Rbar_le (Expectation_posRV X) (Lim_seq (fun n : nat => Expectation_posRV (Xn n)))).
+        unfold Expectation_posRV at 1.
         unfold SimpleExpectationSup.
         
+        admit.
+        apply Rbar_le_antisym; trivial.
+        rewrite <- H3.
+        apply H7.
+        unfold Hierarchy.eventually.
+        exists (0%nat).
+        intros.
+        specialize (H (Xn n) X (Xn_rv n) rvx (Xn_pos n) posX (H0 n)).
+        rewrite <- (H2 n) in H.
+        rewrite <- H3 in H.
+        now simpl in H.
 Admitted.
 
   Lemma Expectation_sum  {nempty:NonEmpty Ts}
