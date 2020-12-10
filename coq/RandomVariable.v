@@ -5245,7 +5245,21 @@ admit.
      
      transitivity (list_sum
                      (map (fun v : R => v * ps_P (event_preimage (rvmult phi (EventIndicator dec)) (singleton_event v))) (nodup Req_EM_T srv_vals))).
-     - admit.
+     - rewrite list_prod_swap; simpl.
+       rewrite map_map; simpl.
+       rewrite app_nil_r.
+       rewrite map_app.
+       repeat rewrite map_map; simpl.
+       rewrite (map_ext (fun x : R => x * 0) (fun _ : R => 0))
+         by (intros; lra).
+       rewrite (map_ext (fun x : R => x * 1) (fun x : R => x))
+         by (intros; lra).
+       rewrite map_id.
+       generalize srv_vals at 1.
+       induction l; simpl; trivial.
+       match_destr; simpl.
+       rewrite IHl.
+       lra.
      - f_equal.
        apply map_ext; intros.
        unfold event_preimage.
@@ -5264,7 +5278,7 @@ admit.
          * split; intros.
            -- lra.
            -- tauto.
-   Admitted.
+   Qed.
 
    Lemma monotone_convergence_E_phi_lim
          (X : Ts -> R )
