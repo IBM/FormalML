@@ -5240,7 +5240,31 @@ admit.
                    (nodup Req_EM_T srv_vals)).
    Proof.
      unfold SimpleExpectation.
-     Admitted.
+
+     simpl.
+     
+     transitivity (list_sum
+                     (map (fun v : R => v * ps_P (event_preimage (rvmult phi (EventIndicator dec)) (singleton_event v))) (nodup Req_EM_T srv_vals))).
+     - admit.
+     - f_equal.
+       apply map_ext; intros.
+       unfold event_preimage.
+       unfold event_inter.
+       unfold rvmult, singleton_event.
+       unfold EventIndicator.
+       destruct (Req_EM_T a 0).
+       + subst; lra.
+       + f_equal.
+         apply ps_proper; intros x.
+         match_destr.
+         * split; intros.
+           -- split; trivial.
+              lra.
+           -- destruct H; lra.
+         * split; intros.
+           -- lra.
+           -- tauto.
+   Admitted.
 
    Lemma monotone_convergence_E_phi_lim
          (X : Ts -> R )
@@ -5566,8 +5590,18 @@ admit.
         assert (Rbar_le (Expectation_posRV X) (Lim_seq (fun n : nat => Expectation_posRV (Xn n)))).
         unfold Expectation_posRV at 1.
         unfold SimpleExpectationSup.
-        
-        admit.
+        {
+          unfold Lub_Rbar.
+          match goal with
+            [|- context [proj1_sig ?x]] => destruct x
+          end; simpl.
+          destruct i as [i0 i1].
+          apply i1.
+          red; intros y [? [?[?[??]]]].
+          subst.
+          admit.
+        }
+
         apply Rbar_le_antisym; trivial.
         rewrite <- H3.
         apply H7.
