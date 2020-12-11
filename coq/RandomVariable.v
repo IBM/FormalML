@@ -3,7 +3,6 @@ Require Import Reals.
 Require Import Lra Lia.
 Require Import List Permutation.
 Require Import Morphisms EquivDec Program.
-Local Set Warnings "ambiguous-path, typechecker".
 Require Import Coquelicot.Rbar Coquelicot.Lub Coquelicot.Lim_seq.
 
 Require Import Utils.

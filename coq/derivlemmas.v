@@ -1,4 +1,3 @@
-Local Set Warnings "ambiguous-path, typechecker".
 Require Import Reals Coquelicot.Coquelicot.
 Require Import Lra.
 

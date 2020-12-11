@@ -14,7 +14,6 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 COPYING file for more details.
 *)
 
-Local Set Warnings "ambiguous-path, typechecker".
 Require Export Reals Coquelicot.Coquelicot.
 
 (** AbelianGroup-compatibility *)

@@ -1,6 +1,5 @@
 Require Import Reals Sums Lra Lia.
 (* Require Import Coquelicot.Hierarchy Coquelicot.Series Coquelicot.Lim_seq Coquelicot.Rbar.*)
-Local Set Warnings "ambiguous-path, typechecker".
 Require Import Coquelicot.Coquelicot.
 Require Import LibUtils.
 Require Import sumtest.

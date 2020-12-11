@@ -1,4 +1,3 @@
-Local Set Warnings "ambiguous-path, typechecker".
 Require Import Reals Coquelicot.Coquelicot Coquelicot.Series.
 Require Import ProofIrrelevance EquivDec.
 Require Import Sums Utils.

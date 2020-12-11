@@ -10,7 +10,6 @@ Require Import Eqdep_dec.
 Require Import Floatish.
 Require Import Utils.
 Require Import derivlemmas.
-Local Set Warnings "ambiguous-path, typechecker".
 Require Import Coquelicot.Hierarchy.
 Require Import Coquelicot.Derive.
 Require Import Coquelicot.Rcomplements.
