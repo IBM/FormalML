@@ -5483,86 +5483,72 @@ Section Expectation.
     Rbar_plus (Expectation_posRV rv_X1) (Expectation_posRV rv_X2).
    Proof.
      generalize (simple_approx_lim_seq rv_X1 prv1); intros.
-     generalize (simple_approx_lim_seq rv_X2 prv2); intros.     
-     generalize (monotone_convergence rv_X1 (simple_approx rv_X1) rv1 prv1 (simple_approx_rv rv_X1) (simple_approx_posrv rv_X1)); intros.
-     generalize (monotone_convergence rv_X2 (simple_approx rv_X2) rv2 prv2 (simple_approx_rv rv_X2) (simple_approx_posrv rv_X2)); intros.
+     generalize (simple_approx_lim_seq rv_X2 prv2); intros.
+     generalize (simple_approx_rv rv_X1); intro approx_rv1.
+     generalize (simple_approx_rv rv_X2); intro approx_rv2.     
+     generalize (simple_approx_posrv rv_X1); intro approx_prv1.
+     generalize (simple_approx_posrv rv_X2); intro approx_prv2.     
+     generalize (simple_approx_srv rv_X1); intro approx_srv1.
+     generalize (simple_approx_srv rv_X2); intro approx_srv2.     
+     generalize (monotone_convergence rv_X1 (simple_approx rv_X1) rv1 prv1 approx_rv1 approx_prv1); intros.
+     generalize (monotone_convergence rv_X2 (simple_approx rv_X2) rv2 prv2 approx_rv2 approx_prv2); intros.
      specialize (H1 (simple_approx_le rv_X1 prv1)).
      specialize (H2 (simple_approx_le rv_X2 prv2)).     
      specialize (H1 (simple_approx_increasing rv_X1 prv1)).
      specialize (H2 (simple_approx_increasing rv_X2 prv2)).
      cut_to H1; trivial.
      cut_to H2; trivial.
-     assert (forall n, 
-     RandomVariable Prts borel_sa (rvplus (simple_approx rv_X1 n) (simple_approx rv_X2 n))).
-     intros; apply rvplus_rv.
-     now apply simple_approx_rv.
-     now apply simple_approx_rv.
-     assert (forall n,  PositiveRandomVariable
-                          (rvplus (simple_approx rv_X1 n) (simple_approx rv_X2 n))).
-     intros.
-     apply rvplus_prv.
-     apply simple_approx_posrv.
-     apply simple_approx_posrv.     
-     generalize (monotone_convergence (rvplus rv_X1 rv_X2) 
-                                      (fun n => rvplus (simple_approx rv_X1 n)
-                                                       (simple_approx rv_X2 n))
-                                      (rvplus_rv rv_X1 rv_X2)
-                                      (rvplus_prv rv_X1 rv_X2) H3 H4); intros.
-     cut_to H5; trivial.
-     rewrite Lim_seq_ext with (v := fun n => (Expectation_posRV (simple_approx rv_X1 n)) +
-                                             (Expectation_posRV (simple_approx rv_X2 n)))
+     - assert (forall n, 
+                  RandomVariable Prts borel_sa (rvplus (simple_approx rv_X1 n) (simple_approx rv_X2 n))).
+       + intros; now apply rvplus_rv.
+       + assert (forall n,  PositiveRandomVariable
+                              (rvplus (simple_approx rv_X1 n) (simple_approx rv_X2 n))).
+         * intros; now apply rvplus_prv.
+         * generalize (monotone_convergence (rvplus rv_X1 rv_X2) 
+                                            (fun n => rvplus (simple_approx rv_X1 n)
+                                                             (simple_approx rv_X2 n))
+                                            (rvplus_rv rv_X1 rv_X2)
+                                            (rvplus_prv rv_X1 rv_X2) H3 H4); intros.
+           cut_to H5; trivial.
+           -- rewrite Lim_seq_ext with (v := fun n => (Expectation_posRV (simple_approx rv_X1 n)) +
+                                                      (Expectation_posRV (simple_approx rv_X2 n)))
                               in H5.
-     rewrite Lim_seq_plus in H5.
-     rewrite H1 in H5.
-     rewrite H2 in H5.
-     now symmetry.
-     admit.
-     admit.
-     admit.
-     intros.
-     rewrite <- simple_Expectation_posRV with (srv := srvplus (simple_approx rv_X1 n) (simple_approx rv_X2 n)); trivial.
-     rewrite <- sumSimpleExpectation; trivial.
-     rewrite <- simple_Expectation_posRV with (srv := simple_approx_srv rv_X1 n); trivial.
-     rewrite <- simple_Expectation_posRV with (srv := simple_approx_srv rv_X2 n); trivial.
-     now apply simple_approx_rv.
-     now apply simple_approx_rv.
-     now apply simple_approx_rv.
-     now apply simple_approx_rv.     
-     unfold RealRandomVariable_le, rvplus.
-     intros.
-     generalize (simple_approx_le rv_X1 prv1 n x); intros.
-     generalize (simple_approx_le rv_X2 prv2 n x); intros.     
-     lra.
-     unfold RealRandomVariable_le, rvplus.
-     intros.
-     generalize (simple_approx_increasing rv_X1 prv1 n x); intros.
-     generalize (simple_approx_increasing rv_X2 prv2 n x); intros.     
-     lra.
-     intros.
-     apply simple_expectation_real.
-     apply rvplus_rv.
-     apply simple_approx_rv; trivial.
-     apply simple_approx_rv; trivial.
-     apply srvplus.
-     apply simple_approx_srv.
-     apply simple_approx_srv.
-     intros.
-     unfold rvplus.
-     rewrite is_lim_seq_spec.
-     apply is_lim_seq_plus with (l1 := rv_X1 omega) (l2 := rv_X2 omega).
-     rewrite <- is_lim_seq_spec.
-     apply H.
-     rewrite <- is_lim_seq_spec.
-     apply H0.
-     now unfold is_Rbar_plus.
-     intros.
-     apply simple_expectation_real.
-     apply simple_approx_rv; trivial.
-     apply simple_approx_srv.
-     intros.
-     apply simple_expectation_real.
-     apply simple_approx_rv; trivial.
-     apply simple_approx_srv.
+              ++ rewrite Lim_seq_plus in H5.
+                 ** rewrite H1 in H5.
+                    rewrite H2 in H5.
+                    now symmetry.
+                 ** admit.
+                 ** admit.
+                 ** admit.
+              ++ intros.
+                 rewrite <- simple_Expectation_posRV with (srv := srvplus (simple_approx rv_X1 n) (simple_approx rv_X2 n)); trivial.
+                 rewrite <- sumSimpleExpectation; trivial.
+                 rewrite <- simple_Expectation_posRV with (srv := approx_srv1 n); trivial.
+                 rewrite <- simple_Expectation_posRV with (srv := approx_srv2 n); trivial.
+           -- unfold RealRandomVariable_le, rvplus.
+              intros.
+              generalize (simple_approx_le rv_X1 prv1 n x); intros.
+              generalize (simple_approx_le rv_X2 prv2 n x); intros.     
+              lra.
+           -- unfold RealRandomVariable_le, rvplus.
+              intros.
+              generalize (simple_approx_increasing rv_X1 prv1 n x); intros.
+              generalize (simple_approx_increasing rv_X2 prv2 n x); intros.     
+              lra.
+          -- intros.
+             apply simple_expectation_real; trivial.
+             apply srvplus; trivial.
+          -- intros.
+             unfold rvplus.
+             rewrite is_lim_seq_spec.
+             apply is_lim_seq_plus with (l1 := rv_X1 omega) (l2 := rv_X2 omega).
+             ++ rewrite <- is_lim_seq_spec.
+                apply H.
+             ++ rewrite <- is_lim_seq_spec.
+                apply H0.
+             ++ now unfold is_Rbar_plus.
+     - intros; apply simple_expectation_real; trivial.
+     - intros; apply simple_expectation_real; trivial.
      
 (*
        admit.
