@@ -8,11 +8,11 @@ homepage: "https://github.com/ibm/formalml"
 bug-reports: "https://github.com/ibm/formalml/issues"
 depends: [
   "ocaml" {>= "4.07.0"}
-  "coq" {>= "8.11.2"}
+  "coq" {>= "8.12.1"}
   "coq-mathcomp-ssreflect"
   "coq-coquelicot"
   "coq-flocq"
-  "coq-interval" {<= "3.4.2"}
+  "coq-interval"
   "coq-ext-lib"
   "ocamlbuild"
   "base64"
