@@ -5490,6 +5490,17 @@ Section Expectation.
     - simpl; lra.
  Qed.      
 
+  Lemma Lim_seq_Expectation_m_infty
+        (rvxn : nat -> Ts -> R) 
+        (rvn: forall n, RandomVariable Prts borel_sa (rvxn n)) 
+        (posvn: forall n, PositiveRandomVariable (rvxn n)) :
+    Lim_seq (fun n : nat => Expectation_posRV (rvxn n)) = m_infty -> False.
+    Proof.
+      generalize (Lim_seq_Expectation_posRV_pos rvxn rvn posvn); intros.
+      rewrite  H0 in H.
+      now simpl in H.
+  Qed.
+
   Lemma Expectation_posRV_sum {nempty:NonEmpty Ts}
         (rv_X1 rv_X2 : Ts -> R)
         {rv1 : RandomVariable Prts borel_sa rv_X1}
@@ -5550,20 +5561,14 @@ Section Expectation.
               match_case_in H6; intros.
               ++ rewrite H8 in H6; congruence.
               ++ rewrite H8 in H6; congruence.
-              ++ generalize (Lim_seq_Expectation_posRV_pos (simple_approx rv_X2) apx_rv2 apx_prv2); intros.
-                 rewrite  H8 in H9.
-                 now simpl in H9.
+              ++ now apply Lim_seq_Expectation_m_infty in H8.
            -- rewrite H7 in H6.
               match_case_in H6; intros.
               ++ rewrite H8 in H6; congruence.
               ++ rewrite H8 in H6; congruence.                 
-              ++ generalize (Lim_seq_Expectation_posRV_pos (simple_approx rv_X2) apx_rv2 apx_prv2); intros.
-                 rewrite  H8 in H9.
-                 now simpl in H9.
+              ++ now apply Lim_seq_Expectation_m_infty in H8.
            -- rewrite H7 in H6.
-              generalize (Lim_seq_Expectation_posRV_pos (simple_approx rv_X1) apx_rv1 apx_prv1); intros.
-              rewrite H7 in H8.
-              now simpl in H8.
+              now apply Lim_seq_Expectation_m_infty in H7.
        + intros.
          rewrite <- simple_Expectation_posRV with (srv := srvplus (simple_approx rv_X1 n) (simple_approx rv_X2 n)); trivial.
          rewrite <- sumSimpleExpectation; trivial.
