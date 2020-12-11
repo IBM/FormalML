@@ -41,6 +41,50 @@ Qed.
 
 Definition infinite_product (a : nat -> posreal) := Lim_seq (fun n => part_prod a n). 
 
+
+Lemma ex_product_iff_ex_log_sum (a : nat -> posreal) : ex_lim_seq(fun n => part_prod a n) <-> ex_series (fun N => sum_n (fun n => ln (a n)) N).
+Proof.
+  (*Use infinite_sum_is_lim_seq. *)
+  split. 
+  - intros H. destruct H as [l Hl].
+    apply ex_series_Reals_1.
+    exists (ln (real l)).
+    
+Admitted.
     
 End inf_prod. 
 
+Section iter.
+Context {A : Type}.
+Context (p : Pmf A). 
+Context (X Y : nat -> A -> R).
+Context (F : nat -> R).
+Context (T : nat -> R -> R). 
+
+Fixpoint iter_scheme (n : nat) :=
+  match n with
+  | 0 => (fun a => Y 0 a) 
+  | S k => (fun a => T k (iter_scheme k a) + Y k a)
+  end.
+
+Definition variance (p : Pmf A) (f : A -> R) :=
+  expt_value p (fun a => (f a - (expt_value p f))^2). 
+
+(* Needs the tower law of expectation and also the "take-out-what-is-known" property.*)
+Lemma aux1 (hY : forall n, expt_value p (Y n) = 0) :
+  forall n, expt_value p (fun a => (Y n a)*(T n (iter_scheme n a))) = 0.
+Proof.
+Admitted.
+
+
+Lemma aux2 (k : nat) : forall a,  (iter_scheme (S k) a)^2 = (T k (iter_scheme k a))^2 + (Y k a)^2 + 2*(Y k a)*(T k (iter_scheme k a)). 
+Proof.
+  intros a.
+  simpl. ring.
+Qed.
+
+Lemma iter_scheme_ineq :
+forall n:nat, variance p (iter_scheme (S n)) <= (F n)^2 * (variance p (iter_scheme n)) + variance p (Y n).
+Admitted. 
+
+End iter.
