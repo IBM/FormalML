@@ -14,6 +14,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 COPYING file for more details.
 *)
 
+Local Set Warnings "ambiguous-path, typechecker".
 Require Import hilbert.
 Require Export Decidable.
 Require Export FunctionalExtensionality.
