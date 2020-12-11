@@ -1,7 +1,6 @@
 (* from improper_integrals coq library *)
 From mathcomp Require Import ssreflect.
 Require Import Reals.
-Local Set Warnings "ambiguous-path, typechecker".
 Require Import Coquelicot.Coquelicot.
 Require Import Lra.
 

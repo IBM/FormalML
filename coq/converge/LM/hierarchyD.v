@@ -14,7 +14,6 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 COPYING file for more details.
 *)
 
-Local Set Warnings "ambiguous-path, typechecker".
 Require Import Reals mathcomp.ssreflect.ssreflect.
 Require Import Coquelicot.Rcomplements Coquelicot.Rbar Coquelicot.Markov Coquelicot.Iter Coquelicot.Lub Coquelicot.Hierarchy.
 Require Import continuous_linear_map.
@@ -190,9 +189,12 @@ Proof.
   case: (HFc1 (pos_div_2 eps)) => {HFc1} P ; simpl ; case => HP H0.
   apply filter_imp with (2 := HP).
   move => g Hg t.
-  move: (fun h => H0 g h Hg) => {H0} H0.
-  move: (H t (pos_div_2 eps)) ; simpl => {H} H.
-  unfold Fr in H ; generalize (filter_and _ _ H HP) => {H} H.
+  move: (fun h => H0 g h Hg) => {H0}.
+  move => H0.
+  move: (H t (pos_div_2 eps)) ; simpl => {H}.
+  move => H.
+  unfold Fr in H ; generalize (filter_and _ _ H HP) => {H}.
+  move => H.
   apply filter_ex in H ; case: H => h H.
   rewrite (double_var eps).
   apply ball_triangle with (h t).
