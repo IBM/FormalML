@@ -5475,7 +5475,24 @@ Section Expectation.
              now rewrite H8 in H9.
   Qed.
 
-   Lemma Expectation_posRV_sum {nempty:NonEmpty Ts}
+  Lemma Lim_seq_Expectation_posRV_pos
+        (rvxn : nat -> Ts -> R) 
+        (rvn: forall n, RandomVariable Prts borel_sa (rvxn n)) 
+        (posvn: forall n, PositiveRandomVariable (rvxn n)) :
+    Rbar_le 0 (Lim_seq (fun n : nat => Expectation_posRV (rvxn n))).
+  Proof.
+    replace (Finite 0) with (Lim_seq (fun _ => 0)) by apply Lim_seq_const.
+    apply Lim_seq_le_loc.
+    unfold Hierarchy.eventually.
+    exists (0%nat); intros.
+    generalize (Expectation_posRV_pos (rvxn n)); intros.
+    case_eq (Expectation_posRV (rvxn n)); intros.
+    - now rewrite H1 in H0.
+    - simpl; lra.
+    - simpl; lra.
+ Qed.      
+
+  Lemma Expectation_posRV_sum {nempty:NonEmpty Ts}
         (rv_X1 rv_X2 : Ts -> R)
         {rv1 : RandomVariable Prts borel_sa rv_X1}
         {rv2 : RandomVariable Prts borel_sa rv_X2}        
@@ -5503,6 +5520,8 @@ Section Expectation.
      cut_to H2; trivial.
      generalize (fun n => rvplus_rv (simple_approx rv_X1 n) (simple_approx rv_X2 n)); intros.
      generalize (fun n => rvplus_prv (simple_approx rv_X1 n) (simple_approx rv_X2 n)); intros.     
+     generalize (fun n => simple_expectation_real (simple_approx rv_X1 n)); intros apx_fin1.
+     generalize (fun n => simple_expectation_real (simple_approx rv_X2 n)); intros apx_fin2.     
      generalize (monotone_convergence (rvplus rv_X1 rv_X2) 
                                       (fun n => rvplus (simple_approx rv_X1 n)
                                                        (simple_approx rv_X2 n))
@@ -5516,9 +5535,37 @@ Section Expectation.
          * rewrite H1 in H5.
            rewrite H2 in H5.
            now symmetry.
-         * admit.
-         * admit.
-         * admit.
+         * apply ex_lim_seq_incr.
+           intros.
+           generalize (Expectation_posRV_le (simple_approx rv_X1 n) (simple_approx rv_X1 (S n)) (apx_inc1 n)); intros.
+           rewrite <- apx_fin1 in H6; simpl in H6.
+           now rewrite <- apx_fin1 in H6; simpl in H6.           
+         * apply ex_lim_seq_incr.
+           intros.
+           generalize (Expectation_posRV_le (simple_approx rv_X2 n) (simple_approx rv_X2 (S n)) (apx_inc2 n)); intros.
+           rewrite <- apx_fin2 in H6; simpl in H6.
+           now rewrite <- apx_fin2 in H6; simpl in H6.           
+         * unfold ex_Rbar_plus, Rbar_plus'.
+           match_case; intros.
+           match_case_in H6; intros.
+           -- rewrite H7 in H6.
+              match_case_in H6; intros.
+              ++ rewrite H8 in H6; congruence.
+              ++ rewrite H8 in H6; congruence.
+              ++ generalize (Lim_seq_Expectation_posRV_pos (simple_approx rv_X2) apx_rv2 apx_prv2); intros.
+                 rewrite  H8 in H9.
+                 now simpl in H9.
+           -- rewrite H7 in H6.
+              match_case_in H6; intros.
+              ++ rewrite H8 in H6; congruence.
+              ++ rewrite H8 in H6; congruence.                 
+              ++ generalize (Lim_seq_Expectation_posRV_pos (simple_approx rv_X2) apx_rv2 apx_prv2); intros.
+                 rewrite  H8 in H9.
+                 now simpl in H9.
+           -- rewrite H7 in H6.
+              generalize (Lim_seq_Expectation_posRV_pos (simple_approx rv_X1) apx_rv1 apx_prv1); intros.
+              rewrite H7 in H8.
+              now simpl in H8.
        + intros.
          rewrite <- simple_Expectation_posRV with (srv := srvplus (simple_approx rv_X1 n) (simple_approx rv_X2 n)); trivial.
          rewrite <- sumSimpleExpectation; trivial.
@@ -5540,65 +5587,7 @@ Section Expectation.
      - intros.
        unfold rvplus.
        now apply is_lim_seq_plus with (l1 := rv_X1 omega) (l2 := rv_X2 omega).
-
-     
-(*
-       admit.
-     - unfold Lub_Rbar.
-       repeat match goal with
-       [|- context [proj1_sig ?x]] => destruct x; simpl
-            end.
-       refine (is_lub_Rbar_subset _ _ _ _ _ i0 i).
-       intros x1 [x2 [x3 [HH1 [HH2 HH3]]]].
-       destruct HH1 as [rvx1 [rrv1 [srv1 [HH11 HH12]]]].
-       destruct HH2 as [rvx2 [rrv2 [srv2 [HH21 HH22]]]].
-       exists (rvplus rvx1 rvx2).
-       exists (rvplus_rv _ _ ).
-       exists (srvplus rvx1 rvx2).
-       unfold BoundedPositiveRandomVariable in *.
-       destruct HH11 as [HHH11 HHH12].
-       destruct HH21 as [HHH21 HHH22].
-       split. split.
-       apply rvplus_prv; trivial.
-       unfold RealRandomVariable_le in *.
-       intros.
-       unfold rvplus.
-       specialize (HHH12 x4).
-       specialize (HHH22 x4).
-       lra.
-       rewrite HH3.
-       rewrite <- sumSimpleExpectation; trivial.
-       now rewrite HH12, HH22.
-     - exists 0.
-       exists (const 0).
-       exists (rvconst 0).
-       exists (srvconst 0).
-       split.
-       + unfold BoundedPositiveRandomVariable.
-         split.
-         * apply prvconst.
-           lra.
-         * intros ?.
-           unfold const.
-           red in prv1.
-           auto.
-       + now rewrite SimpleExpectation_const. 
-     - exists 0.
-       exists (const 0).
-       exists (rvconst 0).
-       exists (srvconst 0).
-       split.
-       + unfold BoundedPositiveRandomVariable.
-         split.
-         * apply prvconst.
-           lra.
-         * intros ?.
-           unfold const.
-           red in prv1.
-           auto.
-       + now rewrite SimpleExpectation_const. 
-*)
-     Admitted.
+    Qed.
 
   Lemma Expectation_dif_pos_unique2 (nempty: NonEmpty Ts)
         (rxp1 rxn1 rxp2 rxn2 : Ts -> R)
