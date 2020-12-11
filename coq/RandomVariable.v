@@ -4461,10 +4461,10 @@ Section Expectation.
            } 
    Qed.
      
-   Lemma simple_approx_le (X:Ts->R) (n:nat) (posX : PositiveRandomVariable X) (ω:Ts) :
-     simple_approx X n ω <= X ω.
+   Lemma simple_approx_le (X:Ts->R) (posX : PositiveRandomVariable X) :
+     forall n ω, simple_approx X n ω <= X ω.
    Proof.
-     unfold simple_approx.
+     unfold simple_approx; intros.
      match_case; intros.
      - lra.
      - match_case; intros.
@@ -4503,7 +4503,7 @@ Section Expectation.
      apply pow2_nzero.
    Qed.
 
-   Instance simple_appox_posrv (X:Ts->R) (n:nat) : PositiveRandomVariable (simple_approx X n).
+   Instance simple_approx_posrv (X:Ts->R) (n:nat) : PositiveRandomVariable (simple_approx X n).
    Proof.
      unfold PositiveRandomVariable; intros.
      apply Rge_le.
@@ -4624,10 +4624,10 @@ Section Expectation.
        match_destr_in H4.
    Qed.
 
-  Instance simple_approx_rv (X : Ts -> R) (n:nat)
+  Instance simple_approx_rv (X : Ts -> R)
            {posx : PositiveRandomVariable X} 
            {rvx : RandomVariable Prts borel_sa X} 
-    : RandomVariable Prts borel_sa (simple_approx X n).
+    : forall (n:nat), RandomVariable Prts borel_sa (simple_approx X n).
   Proof.
     unfold RandomVariable.
     intros.
@@ -4742,7 +4742,7 @@ Section Expectation.
         generalize (simple_approx_exists X n ω); intros.
         destruct H4.
         rewrite H4.
-        generalize (simple_approx_le X n posX ω); intros.
+        generalize (simple_approx_le X posX n ω); intros.
         generalize (simple_approx_bound X (S n) posX ω H3); intros.
         rewrite H4 in H5.
         assert (INR x / 2^n = INR(2*x)/ 2^(S n)).
@@ -4845,17 +4845,17 @@ Section Expectation.
            apply Max.le_max_r.
    Qed.
 
-   Lemma simple_approx_lim_seq (X:Ts -> R) (posX : PositiveRandomVariable X) (eps : posreal) :
+   Lemma simple_approx_lim_seq (X:Ts -> R) (posX : PositiveRandomVariable X) :
      forall (ω : Ts), is_lim_seq' (fun n => simple_approx X n ω) (X ω).
    Proof.
      intros.
      unfold is_lim_seq'; intros.
      unfold Hierarchy.eventually.
-     generalize (simple_approx_lim X posX eps0 ω); intros.
+     generalize (simple_approx_lim X posX eps ω); intros.
      destruct H.
      exists x.
      intros.
-     generalize (simple_approx_le X n posX ω); intros. 
+     generalize (simple_approx_le X posX n ω); intros. 
      rewrite Rabs_minus_sym.
      rewrite Rabs_right; [|lra].
      generalize (simple_approx_increasing2 X posX (n-x)%nat ω x); intros.
@@ -5083,9 +5083,7 @@ Section Expectation.
                    (nodup Req_EM_T srv_vals)).
    Proof.
      unfold SimpleExpectation.
-
      simpl.
-     
      transitivity (list_sum
                      (map (fun v : R => v * ps_P (event_preimage (rvmult phi (EventIndicator dec)) (singleton_event v))) (nodup Req_EM_T srv_vals))).
      - rewrite list_prod_swap; simpl.
@@ -5421,14 +5419,12 @@ Section Expectation.
          (X : Ts -> R )
          (Xn : nat -> Ts -> R)
          (rvx : RandomVariable Prts borel_sa X)
-         (posX: PositiveRandomVariable X)
+         (posX: PositiveRandomVariable X) 
          (Xn_rv : forall n, RandomVariable Prts borel_sa (Xn n))
-         (Xn_pos : forall n, PositiveRandomVariable (Xn n)) :         
+         (Xn_pos : forall n, PositiveRandomVariable (Xn n)) :
      (forall (n:nat), RealRandomVariable_le (Xn n) X) ->
      (forall (n:nat), RealRandomVariable_le (Xn n) (Xn (S n))) ->
      (forall (n:nat), is_finite (Expectation_posRV (Xn n))) ->
-     is_finite (Expectation_posRV X) ->     
-
      (forall (omega:Ts), is_lim_seq' (fun n => Xn n omega) (X omega)) ->
      Lim_seq (fun n => Expectation_posRV (Xn n)) =  (Expectation_posRV X).
   Proof.
@@ -5442,39 +5438,39 @@ Section Expectation.
       + pose (a := (Lim_seq (fun n : nat => Expectation_posRV (Xn n)))).
         generalize (Lim_seq_le_loc (fun n => Expectation_posRV (Xn n)) 
                                    (fun _ => Expectation_posRV X)); intros.
-        cut_to H7.
-        rewrite Lim_seq_const in H7.
+        rewrite Lim_seq_const in H6.
         assert (Rbar_le (Expectation_posRV X) (Lim_seq (fun n : nat => Expectation_posRV (Xn n)))).
-        unfold Expectation_posRV at 1.
-        unfold SimpleExpectationSup.
-        {
-          unfold Lub_Rbar.
-          match goal with
-            [|- context [proj1_sig ?x]] => destruct x
-          end; simpl.
-          destruct i as [i0 i1].
-          apply i1.
-          red; intros y [? [?[?[??]]]].
-          subst.
-          unfold BoundedPositiveRandomVariable in H8.
-          destruct H8.
-          rewrite simple_Expectation_posRV with (prv := H8).
-          apply monotone_convergence00 with (X := X); trivial.
-          apply x1.
-        }
-
-        apply Rbar_le_antisym; trivial.
-        rewrite <- H3.
-        apply H7.
-        unfold Hierarchy.eventually.
-        exists (0%nat).
-        intros.
-        specialize (H (Xn n) X (Xn_rv n) rvx (Xn_pos n) posX (H0 n)).
-        rewrite <- (H2 n) in H.
-        rewrite <- H3 in H.
-        now simpl in H.
+        * unfold Expectation_posRV at 1.
+          unfold SimpleExpectationSup.
+          {
+               unfold Lub_Rbar.
+               match goal with
+                 [|- context [proj1_sig ?x]] => destruct x
+               end; simpl.
+               destruct i as [i0 i1].
+               apply i1.
+               red; intros y [? [?[?[??]]]].
+               subst.
+               unfold BoundedPositiveRandomVariable in H7.
+               destruct H7.
+               rewrite simple_Expectation_posRV with (prv := H7); trivial.
+               apply monotone_convergence00 with (X := X); trivial.
+          }
+        * apply Rbar_le_antisym; trivial.
+          case_eq (Expectation_posRV X); intros.
+          ++ rewrite H8 in H6; simpl in H6.
+             apply H6.
+             unfold Hierarchy.eventually.   
+             exists (0%nat).
+             intros.
+             specialize (H (Xn n) X (Xn_rv n) rvx (Xn_pos n) posX (H0 n)).
+             rewrite <- (H2 n) in H.
+             rewrite H8 in H.
+             now simpl in H.
+          ++ now destruct (Lim_seq (fun n : nat => Expectation_posRV (Xn n))).
+          ++ generalize (Expectation_posRV_pos X); intros.
+             now rewrite H8 in H9.
   Qed.
-
 
    Lemma Expectation_posRV_sum {nempty:NonEmpty Ts}
         (rv_X1 rv_X2 : Ts -> R)
@@ -5485,11 +5481,44 @@ Section Expectation.
     Expectation_posRV (rvplus rv_X1 rv_X2) =
     Rbar_plus (Expectation_posRV rv_X1) (Expectation_posRV rv_X2).
    Proof.
-     unfold Expectation_posRV, SimpleExpectationSup.
-     rewrite lub_rbar_sum.
-     apply Rbar_le_antisym.
-     - 
-admit.
+     generalize (simple_approx_lim_seq rv_X1 prv1); intros.
+     generalize (simple_approx_lim_seq rv_X2 prv2); intros.     
+     generalize (monotone_convergence rv_X1 (simple_approx rv_X1) rv1 prv1 (simple_approx_rv rv_X1) (simple_approx_posrv rv_X1)); intros.
+     generalize (monotone_convergence rv_X2 (simple_approx rv_X2) rv2 prv2 (simple_approx_rv rv_X2) (simple_approx_posrv rv_X2)); intros.
+     specialize (H1 (simple_approx_le rv_X1 prv1)).
+     specialize (H2 (simple_approx_le rv_X2 prv2)).     
+     specialize (H1 (simple_approx_increasing rv_X1 prv1)).
+     specialize (H2 (simple_approx_increasing rv_X2 prv2)).
+     cut_to H1; trivial.
+     cut_to H2; trivial.
+     assert (forall n, 
+     RandomVariable Prts borel_sa (rvplus (simple_approx rv_X1 n) (simple_approx rv_X2 n))).
+     intros; apply rvplus_rv.
+     now apply simple_approx_rv.
+     now apply simple_approx_rv.
+     assert (forall n,  PositiveRandomVariable
+                          (rvplus (simple_approx rv_X1 n) (simple_approx rv_X2 n))).
+     intros.
+     apply rvplus_prv.
+     apply simple_approx_posrv.
+     apply simple_approx_posrv.     
+     generalize (monotone_convergence (rvplus rv_X1 rv_X2) 
+                                      (fun n => rvplus (simple_approx rv_X1 n)
+                                                       (simple_approx rv_X2 n))
+                                      (rvplus_rv rv_X1 rv_X2)
+                                      (rvplus_prv rv_X1 rv_X2) H3 H4); intros.
+     cut_to H5; trivial.
+     rewrite Lim_seq_ext with (v := fun n => (Expectation_posRV (simple_approx rv_X1 n)) +
+                                             (Expectation_posRV (simple_approx rv_X2 n)))
+                              in H5.
+     rewrite Lim_seq_plus in H5.
+     rewrite H1 in H5.
+     rewrite H2 in H5.
+     now symmetry.
+  
+
+(*
+       admit.
      - unfold Lub_Rbar.
        repeat match goal with
        [|- context [proj1_sig ?x]] => destruct x; simpl
@@ -5543,7 +5572,7 @@ admit.
            red in prv1.
            auto.
        + now rewrite SimpleExpectation_const. 
-
+*)
      Admitted.
 
   Lemma Expectation_dif_pos_unique2 (nempty: NonEmpty Ts)
