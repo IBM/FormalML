@@ -3928,7 +3928,8 @@ Section Expectation.
            lia.
    Qed.
 
-   Program Instance simple_appox_srv (X:Ts->R) (n:nat) : SimpleRandomVariable (simple_approx X n) :=
+   Program Instance simple_approx_srv (X:Ts->R) (n:nat) : 
+     SimpleRandomVariable (simple_approx X n) :=
      {srv_vals := map (fun x => INR x / (2^n)) (seq 0 (S (n*(2^n))))}.
    Next Obligation.
      apply simple_approx_vals.
@@ -5515,8 +5516,54 @@ Section Expectation.
      rewrite H1 in H5.
      rewrite H2 in H5.
      now symmetry.
-  
-
+     admit.
+     admit.
+     admit.
+     intros.
+     rewrite <- simple_Expectation_posRV with (srv := srvplus (simple_approx rv_X1 n) (simple_approx rv_X2 n)); trivial.
+     rewrite <- sumSimpleExpectation; trivial.
+     rewrite <- simple_Expectation_posRV with (srv := simple_approx_srv rv_X1 n); trivial.
+     rewrite <- simple_Expectation_posRV with (srv := simple_approx_srv rv_X2 n); trivial.
+     now apply simple_approx_rv.
+     now apply simple_approx_rv.
+     now apply simple_approx_rv.
+     now apply simple_approx_rv.     
+     unfold RealRandomVariable_le, rvplus.
+     intros.
+     generalize (simple_approx_le rv_X1 prv1 n x); intros.
+     generalize (simple_approx_le rv_X2 prv2 n x); intros.     
+     lra.
+     unfold RealRandomVariable_le, rvplus.
+     intros.
+     generalize (simple_approx_increasing rv_X1 prv1 n x); intros.
+     generalize (simple_approx_increasing rv_X2 prv2 n x); intros.     
+     lra.
+     intros.
+     apply simple_expectation_real.
+     apply rvplus_rv.
+     apply simple_approx_rv; trivial.
+     apply simple_approx_rv; trivial.
+     apply srvplus.
+     apply simple_approx_srv.
+     apply simple_approx_srv.
+     intros.
+     unfold rvplus.
+     rewrite is_lim_seq_spec.
+     apply is_lim_seq_plus with (l1 := rv_X1 omega) (l2 := rv_X2 omega).
+     rewrite <- is_lim_seq_spec.
+     apply H.
+     rewrite <- is_lim_seq_spec.
+     apply H0.
+     now unfold is_Rbar_plus.
+     intros.
+     apply simple_expectation_real.
+     apply simple_approx_rv; trivial.
+     apply simple_approx_srv.
+     intros.
+     apply simple_expectation_real.
+     apply simple_approx_rv; trivial.
+     apply simple_approx_srv.
+     
 (*
        admit.
      - unfold Lub_Rbar.
