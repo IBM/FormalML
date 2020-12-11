@@ -3844,24 +3844,6 @@ Section Expectation.
      ; right; lra.
    Defined.
 
-   Definition simple_approx2 (X:Ts->R) (n:nat) : Ts -> R
-     := fun ω : Ts =>
-          let Xw := X ω in
-          if Rge_dec Xw (INR n) then (INR n) else  (* redundant *)
-          match find (fun start => 
-                        if interval_dec Xw ((INR start)/2^n) ((INR start + 1)/2^n) then true
-                        else false)
-                     (seq 0 (n*(2^n))) with
-          | Some r => (INR r)/ (2^n)
-          | None => INR n
-          end.
-   
-   Definition simple_approx_alt (X:Ts->R) (n:nat) : Ts -> R
-     := fun ω : Ts =>
-          let Xw := X ω in
-          if Rge_dec Xw (INR n) then (INR n) else
-            (IZR (up (Xw * 2^n)) - 1)/ 2^n. 
-
    Lemma pow2_pos n : 0 < pow 2 n.
    Proof.
      apply pow_lt.
@@ -5330,6 +5312,34 @@ Section Expectation.
            lra.
    Qed.
 
+  Lemma Lim_seq_Expectation_posRV_pos
+        (rvxn : nat -> Ts -> R) 
+        (rvn: forall n, RandomVariable Prts borel_sa (rvxn n)) 
+        (posvn: forall n, PositiveRandomVariable (rvxn n)) :
+    Rbar_le 0 (Lim_seq (fun n : nat => Expectation_posRV (rvxn n))).
+  Proof.
+    replace (Finite 0) with (Lim_seq (fun _ => 0)) by apply Lim_seq_const.
+    apply Lim_seq_le_loc.
+    unfold Hierarchy.eventually.
+    exists (0%nat); intros.
+    generalize (Expectation_posRV_pos (rvxn n)); intros.
+    case_eq (Expectation_posRV (rvxn n)); intros.
+    - now rewrite H1 in H0.
+    - simpl; lra.
+    - simpl; lra.
+ Qed.      
+
+  Lemma Lim_seq_Expectation_m_infty
+        (rvxn : nat -> Ts -> R) 
+        (rvn: forall n, RandomVariable Prts borel_sa (rvxn n)) 
+        (posvn: forall n, PositiveRandomVariable (rvxn n)) :
+    Lim_seq (fun n : nat => Expectation_posRV (rvxn n)) = m_infty -> False.
+    Proof.
+      generalize (Lim_seq_Expectation_posRV_pos rvxn rvn posvn); intros.
+      rewrite  H0 in H.
+      now simpl in H.
+  Qed.
+
    Lemma monotone_convergence00         
          (X : Ts -> R )
          (Xn : nat -> Ts -> R)
@@ -5403,17 +5413,7 @@ Section Expectation.
            apply H.
          * apply is_lim_seq_const.
        + now destruct (Expectation_posRV phi).
-       + assert (Rbar_le 0 (Lim_seq (fun n : nat => Expectation_posRV (Xn n)))).
-         * replace (Finite 0) with (Lim_seq (fun _ => 0)) by apply Lim_seq_const.
-           apply (Lim_seq_le_loc (fun _ => 0) 
-                                 (fun n : nat => Expectation_posRV (Xn n))).
-           unfold Hierarchy.eventually.
-           exists (0%nat); intros.
-           generalize (Expectation_posRV_pos (Xn n)); intros.
-           specialize (H2 n).
-           rewrite <- H2 in H7; now simpl in H7.
-         * rewrite H5 in H6.
-           now simpl in H6.
+       + now apply Lim_seq_Expectation_m_infty in H5.
    Qed.
 
    Lemma monotone_convergence
@@ -5471,34 +5471,6 @@ Section Expectation.
           ++ now destruct (Lim_seq (fun n : nat => Expectation_posRV (Xn n))).
           ++ generalize (Expectation_posRV_pos X); intros.
              now rewrite H8 in H9.
-  Qed.
-
-  Lemma Lim_seq_Expectation_posRV_pos
-        (rvxn : nat -> Ts -> R) 
-        (rvn: forall n, RandomVariable Prts borel_sa (rvxn n)) 
-        (posvn: forall n, PositiveRandomVariable (rvxn n)) :
-    Rbar_le 0 (Lim_seq (fun n : nat => Expectation_posRV (rvxn n))).
-  Proof.
-    replace (Finite 0) with (Lim_seq (fun _ => 0)) by apply Lim_seq_const.
-    apply Lim_seq_le_loc.
-    unfold Hierarchy.eventually.
-    exists (0%nat); intros.
-    generalize (Expectation_posRV_pos (rvxn n)); intros.
-    case_eq (Expectation_posRV (rvxn n)); intros.
-    - now rewrite H1 in H0.
-    - simpl; lra.
-    - simpl; lra.
- Qed.      
-
-  Lemma Lim_seq_Expectation_m_infty
-        (rvxn : nat -> Ts -> R) 
-        (rvn: forall n, RandomVariable Prts borel_sa (rvxn n)) 
-        (posvn: forall n, PositiveRandomVariable (rvxn n)) :
-    Lim_seq (fun n : nat => Expectation_posRV (rvxn n)) = m_infty -> False.
-    Proof.
-      generalize (Lim_seq_Expectation_posRV_pos rvxn rvn posvn); intros.
-      rewrite  H0 in H.
-      now simpl in H.
   Qed.
 
   Lemma Expectation_posRV_sum {nempty:NonEmpty Ts}
