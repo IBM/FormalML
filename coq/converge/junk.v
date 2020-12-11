@@ -248,7 +248,7 @@ Proof.
   simpl. rewrite list_fst_sum_compat. unfold list_fst_sum'.
   field_simplify.
   induction p.(outcomes).
-  - simpl. admit.
+  - simpl. 
   - simpl. destruct a. simpl. 
     rewrite filter_cat. rewrite filter_comp. rewrite IHl. 
       reflexivity.
