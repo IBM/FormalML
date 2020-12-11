@@ -4847,9 +4847,10 @@ Section Expectation.
    Qed.
 
    Lemma simple_approx_lim_seq (X:Ts -> R) (posX : PositiveRandomVariable X) :
-     forall (ω : Ts), is_lim_seq' (fun n => simple_approx X n ω) (X ω).
+     forall (ω : Ts), is_lim_seq(fun n => simple_approx X n ω) (X ω).
    Proof.
      intros.
+     rewrite <- is_lim_seq_spec.
      unfold is_lim_seq'; intros.
      unfold Hierarchy.eventually.
      generalize (simple_approx_lim X posX eps ω); intros.
@@ -4931,7 +4932,7 @@ Section Expectation.
 
      (forall (n:nat), RealRandomVariable_le (Xn n) X) ->
      (forall (omega:Ts), cphi omega = 0 \/ cphi omega < X omega) ->
-     (forall (omega:Ts), is_lim_seq' (fun n => Xn n omega) (X omega)) ->
+     (forall (omega:Ts), is_lim_seq (fun n => Xn n omega) (X omega)) ->
      (forall (n:nat), sa_sigma (fun (omega:Ts) => (Xn n omega) >= cphi omega)) /\
      event_equiv (union_of_collection (fun n => fun (omega:Ts) => (Xn n omega) >= cphi omega)) 
                  Ω.
@@ -4960,6 +4961,7 @@ Section Expectation.
           intros.
           unfold union_of_collection; intros.
           specialize (H1 x).
+          rewrite <- is_lim_seq_spec in H1.
           unfold is_lim_seq' in H1.
           specialize (H0 x).
           unfold PositiveRandomVariable in posphi.
@@ -5138,7 +5140,7 @@ Section Expectation.
      (forall (n:nat), RealRandomVariable_le (Xn n) X) ->
      (forall (n:nat), RealRandomVariable_le (Xn n) (Xn (S n))) ->
      (forall (omega:Ts), cphi omega = 0 \/ cphi omega < X omega) ->
-     (forall (omega:Ts), is_lim_seq' (fun n => Xn n omega) (X omega)) ->
+     (forall (omega:Ts), is_lim_seq (fun n => Xn n omega) (X omega)) ->
      is_lim_seq (fun n => Expectation_posRV 
                              (rvmult cphi 
                                      (EventIndicator
@@ -5226,7 +5228,7 @@ Section Expectation.
      (forall (n:nat), RealRandomVariable_le (Xn n) X) ->
      (forall (n:nat), RealRandomVariable_le (Xn n) (Xn (S n))) ->
      (forall (omega:Ts), cphi omega = 0 \/ cphi omega < X omega) ->
-     (forall (omega:Ts), is_lim_seq' (fun n => Xn n omega) (X omega)) ->
+     (forall (omega:Ts), is_lim_seq (fun n => Xn n omega) (X omega)) ->
      (forall (n:nat), is_finite (Expectation_posRV (Xn n))) ->
      Rbar_le (Expectation_posRV cphi)
      (Lim_seq (fun n => real (Expectation_posRV (Xn n)))).
@@ -5290,7 +5292,7 @@ Section Expectation.
      (forall (n:nat), RealRandomVariable_le (Xn n) (Xn (S n))) ->
      (forall (n:nat), is_finite (Expectation_posRV (Xn n))) ->
      RealRandomVariable_le phi X ->
-     (forall (omega:Ts), is_lim_seq' (fun n => Xn n omega) (X omega)) ->
+     (forall (omega:Ts), is_lim_seq (fun n => Xn n omega) (X omega)) ->
      0 < c < 1 ->
      Rbar_le (Rbar_mult c (Expectation_posRV phi))
      (Lim_seq (fun n => real (Expectation_posRV (Xn n)))).
@@ -5348,7 +5350,7 @@ Section Expectation.
      (forall (n:nat), RealRandomVariable_le (Xn n) (Xn (S n))) ->
      (forall (n:nat), is_finite (Expectation_posRV (Xn n))) ->
      RealRandomVariable_le phi X ->
-     (forall (omega:Ts), is_lim_seq' (fun n => Xn n omega) (X omega)) ->
+     (forall (omega:Ts), is_lim_seq (fun n => Xn n omega) (X omega)) ->
      Rbar_le 
        (Expectation_posRV phi)
        (Lim_seq (fun n =>  real (Expectation_posRV (Xn n)))).
@@ -5426,7 +5428,7 @@ Section Expectation.
      (forall (n:nat), RealRandomVariable_le (Xn n) X) ->
      (forall (n:nat), RealRandomVariable_le (Xn n) (Xn (S n))) ->
      (forall (n:nat), is_finite (Expectation_posRV (Xn n))) ->
-     (forall (omega:Ts), is_lim_seq' (fun n => Xn n omega) (X omega)) ->
+     (forall (omega:Ts), is_lim_seq (fun n => Xn n omega) (X omega)) ->
      Lim_seq (fun n => Expectation_posRV (Xn n)) =  (Expectation_posRV X).
   Proof.
     generalize Expectation_posRV_le; intros.
@@ -5492,10 +5494,8 @@ Section Expectation.
      generalize (simple_approx_srv rv_X2); intro approx_srv2.     
      generalize (monotone_convergence rv_X1 (simple_approx rv_X1) rv1 prv1 approx_rv1 approx_prv1); intros.
      generalize (monotone_convergence rv_X2 (simple_approx rv_X2) rv2 prv2 approx_rv2 approx_prv2); intros.
-     specialize (H1 (simple_approx_le rv_X1 prv1)).
-     specialize (H2 (simple_approx_le rv_X2 prv2)).     
-     specialize (H1 (simple_approx_increasing rv_X1 prv1)).
-     specialize (H2 (simple_approx_increasing rv_X2 prv2)).
+     specialize (H1 (simple_approx_le rv_X1 prv1) (simple_approx_increasing rv_X1 prv1)).
+     specialize (H2 (simple_approx_le rv_X2 prv2) (simple_approx_increasing rv_X2 prv2)).
      cut_to H1; trivial.
      cut_to H2; trivial.
      - assert (forall n, 
@@ -5540,13 +5540,7 @@ Section Expectation.
              apply srvplus; trivial.
           -- intros.
              unfold rvplus.
-             rewrite is_lim_seq_spec.
-             apply is_lim_seq_plus with (l1 := rv_X1 omega) (l2 := rv_X2 omega).
-             ++ rewrite <- is_lim_seq_spec.
-                apply H.
-             ++ rewrite <- is_lim_seq_spec.
-                apply H0.
-             ++ now unfold is_Rbar_plus.
+             now apply is_lim_seq_plus with (l1 := rv_X1 omega) (l2 := rv_X2 omega).
      - intros; apply simple_expectation_real; trivial.
      - intros; apply simple_expectation_real; trivial.
      
