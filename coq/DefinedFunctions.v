@@ -4,7 +4,7 @@ Require Import EquivDec.
 Require Import RelationClasses.
 Require Import List.
 Require Import Permutation.
-Require Import NPeano BinInt.
+Require Import NPeano BinInt PeanoNat.
 Require Import Lra Lia.
 Require Reals.
 Require Import Eqdep_dec.
