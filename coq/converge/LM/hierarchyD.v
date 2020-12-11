@@ -14,6 +14,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 COPYING file for more details.
 *)
 
+Local Set Warnings "ambiguous-path, typechecker".
 Require Import Reals mathcomp.ssreflect.ssreflect.
 Require Import Coquelicot.Rcomplements Coquelicot.Rbar Coquelicot.Markov Coquelicot.Iter Coquelicot.Lub Coquelicot.Hierarchy.
 Require Import continuous_linear_map.
