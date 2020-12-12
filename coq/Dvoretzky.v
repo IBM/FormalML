@@ -216,9 +216,11 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
       lra.
  Qed.
 
+  Definition l1_divergent (a : nat -> R) := is_lim_seq (fun n => sum_n a n) p_infty.
+
   Lemma Fprod_0 (a : nat -> R) (a1_pos : forall n, 0 < 1 - a n) :
     (forall n, 0 <= a n < 1) ->
-    is_lim_seq (fun n => sum_n a n) p_infty ->
+    l1_divergent a ->
     is_lim_seq (part_prod (fun n => (mkposreal (1 - a n)  (a1_pos n)))) 0.
   Proof.
     intros.
