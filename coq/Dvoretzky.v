@@ -293,7 +293,17 @@ Qed.
     destruct x.
     - simpl.
       now unfold Rdiv.
-   Admitted.
+    - unfold Rbar_div, Rbar_div_pos.
+      simpl.
+      destruct (Rle_dec 0 (/ a)); [| lra].
+      destruct (Rle_lt_or_eq_dec 0 (/ a) r); [|lra].
+      trivial.
+    - unfold Rbar_div, Rbar_div_pos.
+      simpl.
+      destruct (Rle_dec 0 (/ a)); [| lra].
+      destruct (Rle_lt_or_eq_dec 0 (/ a) r); [|lra].
+      trivial.
+  Qed.
     
     
     
