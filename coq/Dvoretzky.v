@@ -286,7 +286,7 @@ Qed.
   Lemma Rbar_div_div_pos (a:posreal) (x: Rbar) :
     Rbar_div x a = Rbar_div_pos x a.
   Proof.
-    simpl.
+    unfold Rbar_div, Rbar_div_pos.
     assert (0 < / a).
     apply Rinv_0_lt_compat.
     apply cond_pos.
