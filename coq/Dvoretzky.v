@@ -239,3 +239,24 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
         now apply exp_increasing.
   Qed.
 
+  Lemma Markov_ineq {Ts:Type} {dom:SigmaAlgebra Ts} {prts : ProbSpace dom}
+        (X : Ts -> R)
+        (rv : RandomVariable prts borel_sa X)
+        (posrv : PositiveRandomVariable X)
+        (a : posreal) :
+    Rbar_le (ps_P (fun omega => X omega >= a)) (Rbar_div (Expectation_posRV X) a).
+  Proof.
+    assert (forall omega, a * EventIndicator (fun omega => Rge_dec (X omega) a) omega <= X omega).
+    - intros.
+      unfold EventIndicator.
+      specialize (posrv omega).
+      destruct (Rge_dec (X omega) a); lra.
+    - assert (Rbar_le
+                (Expectation_posRV 
+                   (fun omega => a * EventIndicator (fun omega => Rge_dec (X omega) a) omega))
+                (Expectation_posRV X)).
+      apply Expectation_posRV_le.
+      
+    
+    
+        
