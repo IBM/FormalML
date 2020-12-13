@@ -977,7 +977,7 @@ apply sym_eq, minus_trans.
 Qed.
 
 Definition clm_UniformSpace_mixin :=
-  UniformSpace.Mixin clm clm_ball clm_ball_center clm_ball_sym clm_ball_triangle.
+  UniformSpace.Mixin clm zero clm_ball clm_ball_center clm_ball_sym clm_ball_triangle.
 
 Canonical clm_UniformSpace :=
   UniformSpace.Pack clm (clm_UniformSpace_mixin) clm.

@@ -361,7 +361,7 @@ apply plus_zero_r.
 Qed.
 
 Definition PreHilbert_UniformSpace_mixin :=
-  UniformSpace.Mixin E ball ball_center ball_sym ball_triangle.
+  UniformSpace.Mixin E zero ball ball_center ball_sym ball_triangle.
 
 Canonical PreHilbert_UniformSpace :=
   UniformSpace.Pack E (PreHilbert_UniformSpace_mixin) E.

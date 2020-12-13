@@ -1140,7 +1140,7 @@ Qed.
 
   
 Definition Rfct_UniformSpace_mixin :=
-  UniformSpace.Mixin (Rfct A) Rmax_ball Rmax_ball_center Rmax_ball_sym Rmax_ball_triangle.
+  UniformSpace.Mixin (Rfct A) (fun _ => 0) Rmax_ball Rmax_ball_center Rmax_ball_sym Rmax_ball_triangle.
 
 (* 
    There seems to be a problem defining a `Canonical` version of this, 
