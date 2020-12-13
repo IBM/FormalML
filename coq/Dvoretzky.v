@@ -234,11 +234,8 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
         specialize (H1 (ln eps)); destruct H1.
         exists x; intros.
         specialize (H1 n H2).
-        rewrite Rminus_0_r.
-        rewrite Rabs_right by (left; apply exp_pos).
-        replace (pos eps) with (exp (ln eps)).
-        * now apply exp_increasing.
-        * apply exp_ln.
-          apply cond_pos.
+        rewrite Rminus_0_r, Rabs_right by (left; apply exp_pos).
+        replace (pos eps) with (exp (ln eps)); [| apply exp_ln, cond_pos].
+        now apply exp_increasing.
   Qed.
 
