@@ -250,20 +250,19 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
     generalize simple_Expectation_posRV; intros.
     rewrite <- H.
     rewrite scaleSimpleExpectation.
-    generalize (positive_scale_prv a (EventIndicator (fun omega : Ts => Rge_dec (X omega) a))); intros.
-    rewrite H0 with (prv := H1).
-    - apply Expectation_posRV_le; trivial.
-      + apply rvscale_rv.
-        apply EventIndicator_rv.
-        apply sa_le_ge.
-        now rewrite borel_sa_preimage2.
-      + unfold RealRandomVariable_le, EventIndicator, rvscale; intros.
-        specialize (posrv x).
-        destruct (Rge_dec (X x) a); lra.
-    - apply rvscale_rv.
+    generalize (positive_scale_prv a (EventIndicator (fun omega : Ts => Rge_dec (X omega) a))); intros
+    .
+    assert (Hrv:RandomVariable prts borel_sa (rvscale a (EventIndicator (fun omega : Ts => Rge_dec (X omega) a)))).
+    { apply rvscale_rv.
       apply EventIndicator_rv.
       apply sa_le_ge.
       now rewrite borel_sa_preimage2.
+    }
+    rewrite H0 with (prv := H1); trivial.
+    apply Expectation_posRV_le; trivial.
+    unfold RealRandomVariable_le, EventIndicator, rvscale; intros.
+    specialize (posrv x).
+    destruct (Rge_dec (X x) a); lra.
 Qed.    
       
   Lemma Markov_ineq_div {Ts:Type} {dom:SigmaAlgebra Ts} {prts : ProbSpace dom}
