@@ -244,19 +244,57 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
         (rv : RandomVariable prts borel_sa X)
         (posrv : PositiveRandomVariable X)
         (a : posreal) :
-    Rbar_le (ps_P (fun omega => X omega >= a)) (Rbar_div (Expectation_posRV X) a).
+    Rbar_le (a * (ps_P (fun omega => X omega >= a))) (Expectation_posRV X).
   Proof.
-    assert (forall omega, a * EventIndicator (fun omega => Rge_dec (X omega) a) omega <= X omega).
-    - intros.
-      unfold EventIndicator.
-      specialize (posrv omega).
-      destruct (Rge_dec (X omega) a); lra.
-    - assert (Rbar_le
-                (Expectation_posRV 
-                   (fun omega => a * EventIndicator (fun omega => Rge_dec (X omega) a) omega))
-                (Expectation_posRV X)).
-      apply Expectation_posRV_le.
+    generalize (SimpleExpectation_EventIndicator (fun omega => Rge_dec (X omega) a)); intros.
+    generalize simple_Expectation_posRV; intros.
+    rewrite <- H.
+    rewrite scaleSimpleExpectation.
+    generalize (positive_scale_prv a (EventIndicator (fun omega : Ts => Rge_dec (X omega) a))); intros.
+    rewrite H0 with (prv := H1).
+    - apply Expectation_posRV_le; trivial.
+      + apply rvscale_rv.
+        apply EventIndicator_rv.
+        apply sa_le_ge.
+        now rewrite borel_sa_preimage2.
+      + unfold RealRandomVariable_le, EventIndicator, rvscale; intros.
+        specialize (posrv x).
+        destruct (Rge_dec (X x) a); lra.
+    - apply rvscale_rv.
+      apply EventIndicator_rv.
+      apply sa_le_ge.
+      now rewrite borel_sa_preimage2.
+Qed.    
       
+  Lemma Markov_ineq_div {Ts:Type} {dom:SigmaAlgebra Ts} {prts : ProbSpace dom}
+        (X : Ts -> R)
+        (rv : RandomVariable prts borel_sa X)
+        (posrv : PositiveRandomVariable X)
+        (a : posreal) :
+    Rbar_le (ps_P (fun omega => X omega >= a)) (Rbar_div_pos (Expectation_posRV X) a).
+  Proof.
+    generalize (Markov_ineq X rv posrv a); intros.
+    rewrite Rbar_div_pos_le with (z := a) in H.
+    rewrite Rmult_comm in H.
+    unfold Rbar_div_pos at 1 in H.
+    unfold Rdiv in H.
+    rewrite Rmult_assoc in H.
+    rewrite <- Rinv_r_sym in H; [| apply Rgt_not_eq, cond_pos].
+    now rewrite Rmult_1_r in H.
+  Qed.
+
+  Lemma Rbar_div_div_pos (a:posreal) (x: Rbar) :
+    Rbar_div x a = Rbar_div_pos x a.
+  Proof.
+    simpl.
+    assert (0 < / a).
+    apply Rinv_0_lt_compat.
+    apply cond_pos.
+    destruct x.
+    - simpl.
+      now unfold Rdiv.
+   Admitted.
+    
     
     
         
