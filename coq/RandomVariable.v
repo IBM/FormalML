@@ -627,7 +627,7 @@ Section SimpleExpectation.
     apply scaleSimpleExpectation.
   Qed.
 
-  Lemma sum_measurable (f g : Ts -> R) :
+  Lemma plus_measurable (f g : Ts -> R) :
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
     (forall (r:R),  sa_sigma (fun omega : Ts => g omega <= r)) ->    
     (forall (r:R),  sa_sigma (fun omega : Ts => (f omega) + (g omega) <= r)).
@@ -671,7 +671,7 @@ Section SimpleExpectation.
   Proof.
     intros.
     unfold Rminus.
-    apply sum_measurable; trivial.
+    apply plus_measurable; trivial.
     now apply Ropp_measurable.
   Qed.
 
@@ -686,7 +686,7 @@ Section SimpleExpectation.
     red; intros.
     apply borel_sa_preimage2; trivial; intros.
     unfold rvplus.
-    apply sum_measurable.
+    apply plus_measurable.
     apply (RealRandomVariable_is_real Prts); trivial.
     apply (RealRandomVariable_is_real Prts); trivial.    
    Qed.
@@ -842,7 +842,6 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
   Proof.
     red; intros.
     apply borel_sa_preimage2; trivial; intros.
-    unfold rvsqr.
     apply Rsqr_measurable.
     apply (RealRandomVariable_is_real Prts); trivial.
    Qed.
@@ -866,6 +865,57 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
    trivial.
  Qed.
 
+  Lemma Rabs_measurable (f : Ts -> R) :
+    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
+    (forall (r:R),  sa_sigma (fun omega : Ts => Rabs (f omega) <= r)).
+  Proof.
+    intros.
+    apply measurable_continuous.
+    apply Rcontinuity_abs.
+    apply H.
+ Qed.
+
+ Definition rvabs  (rv_X : Ts -> R) := fun omega => Rabs (rv_X omega).
+
+  Global Instance rvabs_rv
+         (rv_X : Ts -> R)
+         {rv : RandomVariable Prts borel_sa rv_X} :
+    RandomVariable Prts borel_sa (rvabs rv_X).
+  Proof.
+    red; intros.
+    apply borel_sa_preimage2; trivial; intros.
+    apply Rabs_measurable.
+    apply (RealRandomVariable_is_real Prts); trivial.
+   Qed.
+
+  Global Instance prvabs
+         (rv_X : Ts -> R) :
+    PositiveRandomVariable (rvabs rv_X).
+  Proof.
+    unfold PositiveRandomVariable, rvabs.
+    intros; apply Rabs_pos.
+  Qed.
+
+  Global Program Instance srvabs
+         (rv_X : Ts -> R)
+         {srv:SimpleRandomVariable rv_X} : SimpleRandomVariable (rvabs rv_X)
+    := { srv_vals := map Rabs srv_vals }.
+  Next Obligation.
+    destruct srv.
+    unfold rvabs.
+    now apply in_map.
+  Qed.
+  
+ Global Instance rvabs_proper : Proper (rv_eq ==> rv_eq) rvabs.
+ Proof.
+   unfold rv_eq, rvabs, Proper, respectful, pointwise_relation.
+   intros x y eqq z.
+   unfold Rabs.
+   rewrite eqq.
+   trivial.
+ Qed.
+
+
   Lemma product_measurable (f g : Ts -> R) :
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
     (forall (r:R),  sa_sigma (fun omega : Ts => g omega <= r)) ->    
@@ -885,7 +935,7 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
       apply scale_measurable.
       apply minus_measurable.
       apply Rsqr_measurable.
-      now apply sum_measurable.
+      now apply plus_measurable.
       apply Rsqr_measurable.
       now apply minus_measurable.
   Qed.
