@@ -210,10 +210,16 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
 
   Definition l1_divergent (a : nat -> R) := is_lim_seq (sum_n a) p_infty.
 
-  Lemma Fprod_0 (a : nat -> R) (a1_pos : forall n, 0 < 1 - a n) :
-    (forall n, 0 <= a n < 1) ->
+  Lemma a1_pos_pf {a : R} :
+    (0 <= a < 1) -> 0 < 1- a.
+  Proof.
+    lra.
+  Qed.
+
+  Lemma Fprod_0 (a : nat -> R) 
+    (abounds : forall n, 0 <= a n < 1) :
     l1_divergent a ->
-    is_lim_seq (part_prod (fun n => (mkposreal (1 - a n)  (a1_pos n)))) 0.
+    is_lim_seq (part_prod (fun n => (mkposreal (1 - a n)  (a1_pos_pf (abounds  n))))) 0.
   Proof.
     intros.
     apply is_lim_seq_le_le_loc with (u := fun _ => 0) 
@@ -228,12 +234,12 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
       intros; unfold eventually.
       assert (is_lim_seq (sum_n (fun j => - a j)) m_infty).
       + apply is_lim_seq_opp.
-        apply (is_lim_seq_ext (sum_n a)); [apply Ropp_sum_Ropp | apply H0].
-      + apply is_lim_seq_spec in H1; unfold is_lim_seq' in H1.
-        unfold eventually in H1.
-        specialize (H1 (ln eps)); destruct H1.
+        apply (is_lim_seq_ext (sum_n a)); [apply Ropp_sum_Ropp | apply H].
+      + apply is_lim_seq_spec in H0; unfold is_lim_seq' in H0.
+        unfold eventually in H0.
+        specialize (H0 (ln eps)); destruct H0.
         exists x; intros.
-        specialize (H1 n H2).
+        specialize (H0 n H1).
         rewrite Rminus_0_r, Rabs_right by (left; apply exp_pos).
         replace (pos eps) with (exp (ln eps)); [| apply exp_ln, cond_pos].
         now apply exp_increasing.
@@ -250,14 +256,13 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
     generalize simple_Expectation_posRV; intros.
     rewrite <- H.
     rewrite scaleSimpleExpectation.
-    generalize (positive_scale_prv a (EventIndicator (fun omega : Ts => Rge_dec (X omega) a))); intros
-    .
     assert (Hrv:RandomVariable prts borel_sa (rvscale a (EventIndicator (fun omega : Ts => Rge_dec (X omega) a)))).
     { apply rvscale_rv.
       apply EventIndicator_rv.
       apply sa_le_ge.
       now rewrite borel_sa_preimage2.
     }
+    generalize (positive_scale_prv a (EventIndicator (fun omega : Ts => Rge_dec (X omega) a))); intros.
     rewrite H0 with (prv := H1); trivial.
     apply Expectation_posRV_le; trivial.
     unfold RealRandomVariable_le, EventIndicator, rvscale; intros.
@@ -304,6 +309,71 @@ Qed.
       trivial.
   Qed.
     
+  Lemma Rsqr_pos (a : posreal) :
+    0 < Rsqr a.
+  Proof.
+    generalize (Rle_0_sqr a); intros.
+    destruct H; trivial.
+    generalize (cond_pos a); intros.
+    symmetry in H; apply Rsqr_eq_0 in H.
+    lra.
+  Qed.
+
+  Lemma mkpos_Rsqr (a : posreal) :
+    Rsqr a = mkposreal _ (Rsqr_pos a).
+  Proof.
+    now simpl.
+  Qed.
+
+  Lemma conv_l2_prob1_0 {Ts:Type} {dom:SigmaAlgebra Ts} {prts: ProbSpace dom}
+        (eps : posreal) 
+        (X : Ts -> R) 
+        (rv : RandomVariable prts borel_sa X)
+        (posrv: PositiveRandomVariable X) :
+  Rbar_le (ps_P (fun omega => X omega >= eps))
+          (Rbar_div (Expectation_posRV (rvsqr X)) 
+                    (Rsqr eps)).
+    Proof.
+      assert (event_equiv (fun omega => X omega >= eps)
+                          (fun omega => Rsqr(X omega) >= Rsqr eps)).
+      - intro x.
+        split; intros.
+        + apply Rge_le in H.
+          apply Rle_ge.
+          apply Rsqr_incr_1; trivial.
+          left; apply cond_pos.
+        + apply Rge_le in H.
+          apply Rle_ge.
+          apply Rsqr_incr_0; trivial.
+          left; apply cond_pos.
+      - rewrite H.
+        rewrite mkpos_Rsqr.
+        rewrite Rbar_div_div_pos.
+        apply Markov_ineq_div.
+        now apply rvsqr_rv.
+    Qed.
+
+  Lemma conv_l2_prob1 {Ts:Type} {dom:SigmaAlgebra Ts} {prts: ProbSpace dom}
+        (eps : posreal) 
+        (X Xn: Ts -> R)
+        (rvx : RandomVariable prts borel_sa X)
+        (rvxn : RandomVariable prts borel_sa Xn) :
+    Rbar_le (ps_P (fun omega => (rvabs (rvminus X Xn)) omega >= eps))
+            (Rbar_div (Expectation_posRV (rvsqr (rvabs (rvminus X Xn))))
+                      (Rsqr eps)).
+    Proof.
+      assert (RandomVariable prts borel_sa (rvabs (rvminus X Xn))).
+      - apply rvabs_rv.
+        now apply rvminus_rv.
+      - assert (PositiveRandomVariable (rvabs (rvminus X Xn))).
+        now apply prvabs.
+        apply conv_l2_prob1_0; trivial.
+    Qed.
+
     
+        
+    
+    
+        
     
         
