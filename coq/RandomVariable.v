@@ -896,6 +896,15 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     intros; apply Rabs_pos.
   Qed.
 
+  Global Instance prvsqr
+         (rv_X : Ts -> R) :
+    PositiveRandomVariable (rvsqr rv_X).
+  Proof.
+    unfold PositiveRandomVariable, rvsqr.
+    intros.
+    apply Rle_0_sqr.
+  Qed.
+
   Global Program Instance srvabs
          (rv_X : Ts -> R)
          {srv:SimpleRandomVariable rv_X} : SimpleRandomVariable (rvabs rv_X)
