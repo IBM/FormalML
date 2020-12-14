@@ -409,15 +409,15 @@ Qed.
       + apply conv_l2_prob1; trivial.
     - apply is_lim_seq_const.
     - apply is_lim_seq_div with (l1 := 0) (l2 := Rsqr eps); trivial.
-      apply is_lim_seq_const.
-      apply Rbar_finite_neq.
-      apply Rgt_not_eq.
-      apply Rsqr_pos.
-      unfold is_Rbar_div.
-      simpl.
-      unfold is_Rbar_mult, Rbar_mult'.
-      f_equal.
-      now rewrite Rmult_0_l.
+      + apply is_lim_seq_const.
+      + apply Rbar_finite_neq.
+        apply Rgt_not_eq.
+        apply Rsqr_pos.
+      + unfold is_Rbar_div.
+        simpl.
+        unfold is_Rbar_mult, Rbar_mult'.
+        f_equal.
+        now rewrite Rmult_0_l.
   Qed.
       
       
