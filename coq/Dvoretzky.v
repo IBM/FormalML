@@ -358,18 +358,71 @@ Qed.
         (X Xn: Ts -> R)
         (rvx : RandomVariable prts borel_sa X)
         (rvxn : RandomVariable prts borel_sa Xn) :
-    Rbar_le (ps_P (fun omega => (rvabs (rvminus X Xn)) omega >= eps))
-            (Rbar_div (Expectation_posRV (rvsqr (rvabs (rvminus X Xn))))
-                      (Rsqr eps)).
+    is_finite (Expectation_posRV (rvsqr (rvabs (rvminus X Xn)))) ->
+    ps_P (fun omega => (rvabs (rvminus X Xn)) omega >= eps) <=
+    (Expectation_posRV (rvsqr (rvabs (rvminus X Xn)))) / (Rsqr eps).
     Proof.
       assert (RandomVariable prts borel_sa (rvabs (rvminus X Xn))).
       - apply rvabs_rv.
         now apply rvminus_rv.
       - assert (PositiveRandomVariable (rvabs (rvminus X Xn))).
         now apply prvabs.
-        apply conv_l2_prob1_0; trivial.
+        intros.
+        generalize (conv_l2_prob1_0 eps (rvabs (rvminus X Xn)) H H0).
+        rewrite <- H1.
+        now simpl.
     Qed.
 
+  Lemma conv_l2_prob {Ts:Type} {dom:SigmaAlgebra Ts} {prts: ProbSpace dom}
+        (eps : posreal) 
+        (X: Ts -> R)
+        (Xn: nat -> Ts -> R)
+        (rvx : RandomVariable prts borel_sa X)
+        (rvxn : forall n, RandomVariable prts borel_sa (Xn n)) :
+    (forall n, is_finite (Expectation_posRV (rvsqr (rvabs (rvminus X (Xn n)))))) ->
+    is_lim_seq (fun n => Expectation_posRV (rvsqr (rvabs (rvminus X (Xn n))))) 0 ->
+    is_lim_seq (fun n => ps_P (fun omega => (rvabs (rvminus X (Xn n))) omega >= eps)) 0.
+  Proof.
+    intros.
+    apply is_lim_seq_le_le_loc with (u := fun _ => 0) 
+                                    (w := (fun n => (Expectation_posRV (rvsqr (rvabs (rvminus X (Xn n))))) / (Rsqr eps))).
+    - unfold eventually.
+      exists (0%nat).
+      intros.
+      split.
+      + apply ps_pos.
+        apply sa_le_ge.
+        apply Rabs_measurable.
+        intros.
+        assert (event_equiv (fun omega => (rvminus X (Xn n)) omega <= r)
+                            (fun omega => (X omega) - (Xn n) omega <= r)).
+        * intro x.
+          unfold rvminus, rvopp, rvplus, rvscale.
+          unfold Rminus.
+          now replace (-1 * Xn n x) with (- Xn n x) by lra.
+        * rewrite H2.
+          apply minus_measurable.
+          -- unfold RandomVariable in *.
+             now rewrite borel_sa_preimage2.
+          -- specialize (rvxn n).
+             now rewrite borel_sa_preimage2.    
+      + apply conv_l2_prob1; trivial.
+    - apply is_lim_seq_const.
+    - apply is_lim_seq_div with (l1 := 0) (l2 := Rsqr eps); trivial.
+      apply is_lim_seq_const.
+      apply Rbar_finite_neq.
+      apply Rgt_not_eq.
+      apply Rsqr_pos.
+      unfold is_Rbar_div.
+      simpl.
+      unfold is_Rbar_mult, Rbar_mult'.
+      f_equal.
+      now rewrite Rmult_0_l.
+  Qed.
+      
+      
+    
+    
     
         
     
