@@ -3058,8 +3058,8 @@ Section Expectation.
         {rv_X1 rv_X2 : Ts -> R}
         (rv1 : RandomVariable Prts borel_sa rv_X1)
         (rv2 : RandomVariable Prts borel_sa rv_X2)
-        (srv1:PositiveRandomVariable rv_X1) 
-        (srv2:PositiveRandomVariable rv_X2):
+        (prv1:PositiveRandomVariable rv_X1) 
+        (prv2:PositiveRandomVariable rv_X2):
     rv_eq rv_X1 rv_X2 ->
     Expectation_posRV rv_X1 = Expectation_posRV rv_X2.
   Proof.
@@ -3172,6 +3172,29 @@ Section Expectation.
              {rrv : RandomVariable Prts borel_sa rv_X} : option Rbar :=
     Rbar_minus' (Expectation_posRV (pos_fun_part rv_X))
                 (Expectation_posRV (neg_fun_part rv_X)).
+
+  Lemma pos_fun_part_pos (rv_X : Ts -> R) 
+         {prv : PositiveRandomVariable rv_X} :
+    rv_eq rv_X (pos_fun_part rv_X).
+    Proof.
+      unfold pos_fun_part.
+      intro x.
+      simpl.
+      unfold PositiveRandomVariable in prv.
+      now rewrite Rmax_left.
+  Qed.
+
+  Lemma neg_fun_part_pos (rv_X : Ts -> R) 
+         {prv : PositiveRandomVariable rv_X} :
+    rv_eq (const 0) (neg_fun_part rv_X).
+    Proof.
+      unfold neg_fun_part, const.
+      intro x.
+      simpl.
+      specialize (prv x).
+      rewrite Rmax_right; lra.
+  Qed.
+
 
   Lemma Expectation_ext {rv_X1 rv_X2 : Ts -> R}
         (rv1:RandomVariable Prts borel_sa rv_X1) 
@@ -3787,6 +3810,31 @@ Section Expectation.
       unfold RealRandomVariable_le, const; intros.
       lra.
   Qed.        
+
+  Lemma Expectation_pos_posRV (rv_X : Ts -> R) 
+         {rrv : RandomVariable Prts borel_sa rv_X} 
+         {prv : PositiveRandomVariable rv_X} :
+    Expectation rv_X = Some (Expectation_posRV rv_X).
+  Proof.
+    unfold Expectation.
+    replace (Expectation_posRV (pos_fun_part rv_X)) with (Expectation_posRV rv_X).
+    - replace (Expectation_posRV (neg_fun_part rv_X)) with (Finite 0).
+      + unfold Rbar_minus', Rbar_plus', Rbar_opp.
+        match_destr.
+        f_equal; apply Rbar_finite_eq; lra.
+      + generalize (neg_fun_part_pos rv_X); intros.
+        assert (0 <= 0) by lra.
+        generalize (@prvconst Ts 0 H0); intros.
+        rewrite Expectation_posRV_ext with (prv2 := H1).
+        symmetry.
+        apply (Expectation_posRV_const 0 H0).
+        now apply negative_part_rv.
+        apply rvconst.
+        now symmetry.
+    - apply Expectation_posRV_ext; trivial.
+      now apply positive_part_rv.
+      now apply pos_fun_part_pos.
+   Qed.
 
   Lemma z_le_z : 0 <= 0.
     Proof.
