@@ -3948,7 +3948,6 @@ Section Expectation.
        + now apply positive_part_rv.
        + apply rvopp_rv.
          now apply negative_part_rv.
-         Unshelve.
      - now apply negative_part_rv.
      - now apply positive_part_rv.
    Qed.
