@@ -3041,6 +3041,42 @@ Section Expectation.
             (srv2:SimpleRandomVariable rvx2) =>
             (BoundedPositiveRandomVariable rv_X rvx2))).
 
+  Lemma srv_Expectation_posRV
+             (rv_X : Ts -> R)
+             {rvx_rv : RandomVariable Prts borel_sa rv_X}
+             {posrv:PositiveRandomVariable rv_X}
+             {srv:SimpleRandomVariable rv_X} :
+    Expectation_posRV rv_X = SimpleExpectation rv_X.
+ Proof.
+   unfold Expectation_posRV.
+   unfold SimpleExpectationSup.
+   unfold Lub_Rbar.
+   match goal with
+     [|- context [proj1_sig ?x]] => destruct x
+   end; simpl.
+   destruct i as [i0 i1].
+   specialize (i1 (SimpleExpectation rv_X)).
+   unfold is_ub_Rbar in *.
+   specialize (i0 (SimpleExpectation rv_X)).
+   cut_to i0.
+   - cut_to i1.
+     + now apply Rbar_le_antisym.
+     + intros.
+       destruct H as [rvx [? [? [? ?]]]].
+       unfold BoundedPositiveRandomVariable in H.
+       destruct H.
+       rewrite <- H0.
+       apply SimpleExpectation_le; trivial.
+   - exists rv_X.
+     exists rvx_rv.
+     exists srv.
+     split; trivial.
+     unfold BoundedPositiveRandomVariable.
+     split; trivial.
+     unfold RealRandomVariable_le.
+     intros; lra.
+  Qed.
+
   Global Instance bprv_eq_proper : Proper (rv_eq ==> rv_eq ==> iff) BoundedPositiveRandomVariable.
   Proof.
     intros x1 x2 eqq1 y1 y2 eqq2.
