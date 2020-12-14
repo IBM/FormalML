@@ -3180,6 +3180,33 @@ Section Expectation.
     apply cond_nonneg.
  Qed.
 
+  Global Program Instance positive_part_srv'
+     (rv_X : Ts -> R) 
+     {srv: SimpleRandomVariable rv_X } : SimpleRandomVariable (pos_fun_part rv_X)
+    :=  { srv_vals := map (fun x => mknonnegreal (Rmax x 0) _) srv_vals}.
+  Next Obligation.
+    apply Rmax_r.
+  Defined.
+  Next Obligation.
+    destruct srv.
+    apply in_map_iff.
+    unfold srv_vals.
+    exists (rv_X x).
+    split; trivial.
+  Qed.
+  
+  Global Program Instance positive_part_srv
+     (rv_X : Ts -> R) 
+     {srv: SimpleRandomVariable rv_X } : SimpleRandomVariable (fun x => nonneg (pos_fun_part rv_X x))
+    :=  { srv_vals := map (fun x => (Rmax x 0)) srv_vals}.
+  Next Obligation.
+    destruct srv.
+    apply in_map_iff.
+    unfold srv_vals.
+    exists (rv_X x).
+    split; trivial.
+  Qed.    
+
   Global Program Instance negative_part_rv
      (rv_X : Ts -> R)
      (rv : RandomVariable Prts borel_sa rv_X) :
@@ -3199,7 +3226,35 @@ Section Expectation.
     unfold negative_part_rv, neg_fun_part.
     intros.
     apply cond_nonneg.
- Qed.
+  Qed.
+
+  Global Program Instance negative_part_srv'
+     (rv_X : Ts -> R) 
+     {srv: SimpleRandomVariable rv_X } : SimpleRandomVariable (neg_fun_part rv_X)
+    :=  { srv_vals := map (fun x => mknonnegreal (Rmax (- x) 0) _) srv_vals}.
+  Next Obligation.
+    apply Rmax_r.
+  Defined.
+  Next Obligation.
+    destruct srv.
+    apply in_map_iff.
+    unfold srv_vals.
+    unfold neg_fun_part.
+    exists (rv_X x).
+    split; trivial.
+  Qed.
+
+    Global Program Instance negative_part_srv
+     (rv_X : Ts -> R) 
+     {srv: SimpleRandomVariable rv_X } : SimpleRandomVariable (fun x => nonneg (neg_fun_part rv_X x))
+    :=  { srv_vals := map (fun x => (Rmax (- x) 0)) srv_vals}.
+  Next Obligation.
+    destruct srv.
+    apply in_map_iff.
+    unfold srv_vals.
+    exists (rv_X x).
+    split; trivial.
+  Qed.
 
   Definition Rbar_minus' (x y : Rbar) : option Rbar :=
     Rbar_plus' x (Rbar_opp y).
@@ -3209,6 +3264,7 @@ Section Expectation.
     Rbar_minus' (Expectation_posRV (pos_fun_part rv_X))
                 (Expectation_posRV (neg_fun_part rv_X)).
 
+  
   Lemma pos_fun_part_pos (rv_X : Ts -> R) 
          {prv : PositiveRandomVariable rv_X} :
     rv_eq rv_X (pos_fun_part rv_X).
@@ -3870,6 +3926,31 @@ Section Expectation.
     - apply Expectation_posRV_ext; trivial.
       now apply positive_part_rv.
       now apply pos_fun_part_pos.
+   Qed.
+
+  Lemma Expectation_simple
+        {nempty:NonEmpty Ts}
+        (rv_X : Ts -> R)
+        {rvx_rv : RandomVariable Prts borel_sa rv_X}
+        {srv:SimpleRandomVariable rv_X} :
+    Expectation rv_X = Some (Finite (SimpleExpectation rv_X)).
+   Proof.
+     unfold Expectation.
+     repeat erewrite srv_Expectation_posRV.
+     - simpl.
+       f_equal.
+       rewrite oppSimpleExpectation.
+       rewrite sumSimpleExpectation; trivial.
+       + f_equal.
+         apply SimpleExpectation_ext.
+         symmetry.
+         apply rv_pos_neg_id.
+       + now apply positive_part_rv.
+       + apply rvopp_rv.
+         now apply negative_part_rv.
+         Unshelve.
+     - now apply negative_part_rv.
+     - now apply positive_part_rv.
    Qed.
 
   Lemma z_le_z : 0 <= 0.
