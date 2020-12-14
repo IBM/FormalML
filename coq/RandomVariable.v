@@ -3180,6 +3180,36 @@ Section Expectation.
     apply cond_nonneg.
  Qed.
 
+  Global Program Instance positive_part_srv
+     (rv_X : Ts -> R) 
+     {srv: SimpleRandomVariable rv_X } : SimpleRandomVariable (pos_fun_part rv_X)
+    :=  { srv_vals := map (fun x => mknonnegreal (Rmax x 0) 
+                                                 (pos_fun_part_obligation_1 Ts rv_X x)) srv_vals}.
+  Next Obligation.
+    apply Rmax_r.
+  Qed.
+  Next Obligation.
+    destruct srv.
+    apply in_map_iff.
+    unfold srv_vals.
+    exists (rv_X x).
+    split; trivial.
+    unfold pos_fun_part.
+    f_equal.
+    
+
+
+  Program Instance nodup_simple_random_variable (dec:forall (x y:Td), {x = y} + {x <> y})
+          {rv_X:Ts->Td}
+          (srv:SimpleRandomVariable rv_X) : SimpleRandomVariable rv_X
+    := { srv_vals := nodup dec srv_vals }.
+  Next Obligation.
+    apply nodup_In.
+    apply srv_vals_complete.
+  Qed.
+
+
+
   Global Program Instance negative_part_rv
      (rv_X : Ts -> R)
      (rv : RandomVariable Prts borel_sa rv_X) :
@@ -3871,6 +3901,20 @@ Section Expectation.
       now apply positive_part_rv.
       now apply pos_fun_part_pos.
    Qed.
+
+  Lemma Expectation_simple
+        (rv_X : Ts -> R)
+        {rvx_rv : RandomVariable Prts borel_sa rv_X}
+        {srv:SimpleRandomVariable rv_X} :
+    Expectation rv_X = Some (Finite (SimpleExpectation rv_X)).
+   Proof.
+     unfold Expectation.
+     
+
+
+
+  Lemma srv_Expectation_posRV
+    Expectation_posRV rv_X = SimpleExpectation rv_X.
 
   Lemma z_le_z : 0 <= 0.
     Proof.
