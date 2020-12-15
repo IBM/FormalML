@@ -208,7 +208,7 @@ Convergence in $L^2$ implies convergence in probability.
 For any $\epsilon > 0$, we have 
 \begin{align}
     P(|X_n - X|) \ge \epsilon) &= P(|X_n - X|^2 \ge \epsilon^2) \\
-    &\le \frac{\E |X_n - X|^2}{\epsilon^2}
+    &\le \frac{\E |X_n - X|^2}{\epsilon}
 \end{align}
 The RHS now goes to 0 since $X_n \to X$ in $L^2$. 
 \end{proof}
@@ -232,10 +232,14 @@ We note that
 \end{remark}
 
 To prove this lemma, we use the work we did to prove the Dvoretzky convergence lemma, which we recall:
+
+\begin{theorem}[Dvoretzky's weak theorem]
 Let $T$ be a function satisfying the following assumption:
-\[ 
-|T_n(r_1,\dots,r_n) - \theta| \le F_n | r_n - \theta |
-\]
+\begin{equation}\label{eq:dvoret}
+|T_n(r_1,\dots,r_n) - \theta| \le F_n | r_n - \theta |    
+\end{equation}
+
+For a positive sequence of real numbers $\{F_n\}$ such that $\prod_{n=0}^\infty F_n =0$.
 Define $\{X_n\}$ as
 \[
 X_{n+1}(\omega) = T_n(X_1(\omega),\dots,X_n(\omega)) + Z_n(\omega) \qquad n \ge 1 
@@ -243,19 +247,16 @@ X_{n+1}(\omega) = T_n(X_1(\omega),\dots,X_n(\omega)) + Z_n(\omega) \qquad n \ge 
 assume also that
 \begin{itemize}
     \item $\mathbb{E}[X_1^2] < \infty$,
-    \item $\sum_{n=1}^{\infty}\E[Z_n^2] < \infty$,
-    \item $\E[Z_n | x_1,\dots,x_n] = 0$ for all $n$ with probability 1,
+    \item $\sum_{n=1}^{\infty}\E[Z_n^2] = \sum_{n=1}^{\infty}\sigma_n^2 < \infty$,
+    \item $\E[Z_n | X_1,\dots,X_n] = 0$ for all $n$ with probability 1,
 \end{itemize}
 
-Now if we set $V_n^2 = \E\left[ (X_n - \theta)^2\right]$ and $\sigma_n^2 = \E\left[ Z_n^2 \right]$, then (denoting $T_n$ for $T_n(X_1,\dots,X_n)$) we have:
-\[ V_{n+1}^2 \le F_n^2 V_n^2 + \sigma_n^2\]
+Now if we set $V_n^2 = \E\left[ (X_n - \theta)^2\right]$ and $\sigma_n^2 = \E\left[ Z_n^2 \right]$, then we have:
+\begin{enumerate}
+    \item $V_{n+1}^2 \le F_n^2 V_n^2 + \sigma_n^2$ and
+    \item $V_n^2 = \E\left[ (X_n - \theta)^2\right] \to 0$. That is, $X_n \to \theta$ in $L^2$.
+\end{enumerate} 
 
-\begin{theorem}
-Let $\{F_n\}$ be a sequence of positive real numbers such that $\prod_{n=0}^\infty F_n =0$. Assume we have a sequence of real numbers $\{V_n\}$ which satisfy for every $n$:
-\[ 
-    V_{n+1}^2 \le F_n^2 V_n^2 + \sigma_n^2
-\]
-Where $\{\sigma_n\}$ satisfy $\sum_{n=0}^\infty \sigma_n^2 < \infty$. Then we have that $V_n^2 \rightarrow 0$.
 \end{theorem}
 
 First off, note that in Lemma \ref{lem:qlearn-ess}, we can assume, without loss of generality, that $\theta = 0$. 
@@ -268,7 +269,7 @@ So, to prove Lemma \ref{lem:qlearn-ess}, we apply the Dvoretzky convergence lemm
 Note that $$\sum_n\E[Z_n^2] = \sum_n \alpha_n^2 \E[Y_n^2] \le D \sum_n \alpha_n^2 < \infty$$ since we assume that $Y_n$ are bounded. 
 
 The missing ingredient is supplied by this lemma:
-\begin{lemma}
+\begin{lemma}\label{thm:fprod}
 If we have $\sum_{n=0}^\infty \alpha_n = \infty$ where $0 \le \alpha_n < 1$ and if $F_n = 1 - \alpha_n$, then $\prod_{n=0}^\infty F_n = 0$. 
 \end{lemma}
 \begin{proof}
@@ -277,6 +278,42 @@ If we have $\sum_{n=0}^\infty \alpha_n = \infty$ where $0 \le \alpha_n < 1$ and 
     0 \le \prod_{n=0}^k (1 - \alpha_k) \le e^{- \sum_{n=0}^k \alpha_k}
     \]
     By the hypothesis, the RHS goes to zero as $k \to \infty$. So, by the sandwich theorem we have $\prod_{n=0}^\infty F_n = 0$. 
+\end{proof}
+
+\section{Proof of Jaakkola Lemma 1}
+In Jaakkola's paper, Lemma 1 says the following:
+\begin{theorem}
+A random process 
+\[ 
+w_{n+1}(x) = (1 - \alpha_n(x))w_{n}(x) + \beta_n(x)r_n(x) \qquad n \ge 1
+\]
+converges to zero in $L^2$ (hence with probability 1) if the following conditions are satisfied:
+\begin{itemize}
+    \item $\sum_{n} \alpha_n(x) = \infty$ , $\sum_n \alpha_n(x)^2 < \infty$, $\sum_n \beta_n^2(x) < \infty$ uniformly over $x$ with probability 1. 
+    \item $\E\left[ r_n(x) | P_n , \beta_n\right] = 0$ and $\E\left[ r_n^2(x) | P_n, \beta_n \right] \le C$ with probability 1, where
+    \[ P_n = \{w_n,w_{n-1}\dots,r_{n-1},r_{n-2},\dots,\alpha_n,\alpha_{n-1},\dots,\beta_n,\beta_{n-1}\dots \}\]
+    is the information available at the current moment. $\alpha_n(x)$ and $\beta_n(x)$ are assumed to be non-negative and mutually independent w.r.t $P_n$.
+\end{itemize}
+\end{theorem}
+\begin{proof}
+We shall sketch a proof of this in the case where 
+\begin{enumerate}
+    \item $\alpha_n(x)$ and $\beta_n(x)$ are constant functions for $n \ge 1$.
+    \item  $0 \le \alpha_n < 1$.
+    \item When $\E\left[ w_1^2 \right] < \infty$
+\end{enumerate}
+Although the results should all pull through with a bit of modification even without the first assumption. 
+
+We apply the weak Dvoretzky theorem. The following list shows that all the hypotheses of that theorem are satisfied in our case with the assumptions.  
+\begin{itemize}
+    \item In our case, set $T_n = (1 - \alpha_n)w_n$ as before, which implies $F_n = 1 - \alpha_n$. (\ref{eq:dvoret}) is trivially satisfied. 
+    \item We have $Z_n = \beta_n r_n$. So we have $\E\left[Z_n | w_n,w_{n-1},\dots,w_1\right]= \E\left[r_n  \beta_n| w_n,w_{n-1},\dots,w_1\right] = 0$ from the hypothesis and since $\beta_n$ was assumed constant.
+    \item We also have \[ \sum_n\E[Z_n^2] = \sum_n \beta_n^2 \E[r_n^2] \le C \sum_n \beta_n^2 < \infty \]
+    \item Note that $\sum_n \alpha_n = \infty$ and Lemma \ref{thm:fprod} imply that $\prod_{n=0}^{\infty} F_n = 0$. 
+    
+\end{itemize}
+
+
 \end{proof}
 
 \end{document}
