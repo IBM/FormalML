@@ -60,7 +60,7 @@ Section L2.
     - destruct (Rlt_dec 0 (Rsqr x)).
       + rewrite Expectation_ext with (rv2 := (rvscale_rv prts (mkposreal _ r) (rvsqr rv_X) 
                                                          (rvsqr_rv rv_X))); trivial.
-        rewrite Expectation_scale.
+        rewrite Expectation_scale_posreal.
         unfold IsL2 in isl2.
         match_destr_in isl2.
         now match_destr_in isl2.
@@ -382,16 +382,43 @@ Section L2.
     L2RRVinner (L2RRVscale l x) y = l * L2RRVinner x y.
   Proof.
     unfold L2RRVinner, L2RRVscale; simpl.
-  Admitted.
+    rewrite Expectation_ext with (rv2 := rvscale_rv prts l (rvmult x y) (rvmult_rv x y)).
+    destruct (Req_EM_T l 0).
+    subst.
+    rewrite Expectation_ext with (rv2 := rvconst 0).
+    rewrite Expectation_const; lra.
+    intro x0.
+    unfold rvscale, rvmult, const; lra.
+    generalize (Expectation_scale l (rvmult x y) n); intros.
+    rewrite H.
+    case_eq (Expectation (rvmult x y)); intros.
+    destruct (Rlt_dec 0 l).
+    assert (0 <= l) by lra.
+    unfold Rbar_mult; simpl.
+    destruct r; simpl; try lra.
+    destruct (Rle_dec 0 l); try lra.
+    destruct ( Rle_lt_or_eq_dec 0 l r); try lra.
+    destruct (Rle_dec 0 l); try lra.
+    destruct ( Rle_lt_or_eq_dec 0 l r); try lra.
+    assert (0 > l) by lra.
+    destruct r; simpl; try lra.
+    destruct (Rle_dec 0 l); try lra.
+    destruct ( Rle_lt_or_eq_dec 0 l r); try lra.
+    destruct (Rle_dec 0 l); try lra.
+    destruct ( Rle_lt_or_eq_dec 0 l r); try lra.
+    lra.
+    intro x0.
+    unfold rvmult, rvscale.
+    lra.
+  Qed.
 
   Lemma L2RRV_inner_plus (x y z : L2RRV) :
     L2RRVinner (L2RRVplus x y) z = L2RRVinner x z + L2RRVinner y z.
   Proof.
     unfold L2RRVinner, L2RRVplus; simpl.
-    
+    rewrite Expectation_ext with (rv2 := rvplus_rv (rvmult x z) (rvmult y z)).
     
   Admitted.
-
 
   
   Definition L2RRVq : Type := quot L2RRV_eq.
