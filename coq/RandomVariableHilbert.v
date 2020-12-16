@@ -14,8 +14,6 @@ Require Import FunctionalExtensionality.
 
 Set Bullet Behavior "Strict Subproofs".
 
-Hint Resolve ps_none ps_one : prob.
-
 Section almost_eq.
   Context {Ts:Type} {Td:Type}
           {dom: SigmaAlgebra Ts}

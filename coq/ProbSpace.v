@@ -1627,3 +1627,5 @@ Section ascending.
  Qed.
 
 End ascending.
+
+Hint Resolve ps_none ps_one : prob.
