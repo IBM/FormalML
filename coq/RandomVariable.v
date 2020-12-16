@@ -3282,7 +3282,7 @@ Section Expectation.
     Rbar_minus' (Expectation_posRV (pos_fun_part rv_X))
                 (Expectation_posRV (neg_fun_part rv_X)).
 
-  
+    
   Lemma pos_fun_part_pos (rv_X : Ts -> R) 
          {prv : PositiveRandomVariable rv_X} :
     rv_eq rv_X (pos_fun_part rv_X).
@@ -3920,6 +3920,51 @@ Section Expectation.
       unfold RealRandomVariable_le, const; intros.
       lra.
   Qed.        
+
+  Lemma Expectation_const (c:R) :
+    Expectation (const c) = Some (Finite c).
+  Proof.
+    unfold Expectation.
+    generalize (rvconst c); intros.
+    generalize (rvconst 0); intros.
+    destruct (Rle_dec 0 c).
+    - rewrite Expectation_posRV_ext with (prv2 := prvconst c r); trivial.
+      + rewrite Expectation_posRV_const; trivial.
+        assert (0 <= 0) by lra.
+        rewrite Expectation_posRV_ext with (prv2 := prvconst 0 H1); trivial.    
+        * rewrite Expectation_posRV_const; trivial.
+          simpl.
+          f_equal.
+          rewrite Rbar_finite_eq.
+          lra.
+        * apply negative_part_rv; trivial.
+        * intro x.
+          unfold neg_fun_part, const, Rmax; simpl.
+          destruct (Rle_dec (-c) 0); lra.
+      + apply positive_part_rv; trivial.
+      + intro x.
+        unfold pos_fun_part, const, Rmax; simpl.
+        destruct (Rle_dec c 0); lra.
+    - assert (0 <= (-c)) by lra.
+      generalize (rvconst (-c)); intros.
+      assert (0 <= 0) by lra.
+      rewrite Expectation_posRV_ext with (prv2 := prvconst 0 H3); trivial.
+      + rewrite Expectation_posRV_const; trivial.
+        rewrite Expectation_posRV_ext with (prv2 := prvconst (-c) H1); trivial.    
+        * rewrite Expectation_posRV_const; trivial.
+          simpl.
+          f_equal.
+          rewrite Rbar_finite_eq.
+          lra.
+        * apply negative_part_rv; trivial.
+        * intro x.
+          unfold neg_fun_part, const, Rmax; simpl.
+          destruct (Rle_dec (-c) 0); lra.
+      + apply positive_part_rv; trivial.
+      + intro x.
+        unfold pos_fun_part, const, Rmax; simpl.
+        destruct (Rle_dec c 0); lra.
+  Qed.
 
   Lemma Expectation_pos_posRV (rv_X : Ts -> R) 
          {rrv : RandomVariable Prts borel_sa rv_X} 
