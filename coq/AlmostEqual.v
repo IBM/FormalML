@@ -158,32 +158,17 @@ Lemma rv_almost_eq_plus_proper
                            (fun x : Ts => rvplus x1 y1 x = rvplus x2 y2 x)); intros.
         rewrite H0 in H1.
         unfold RandomVariable in *.
-        rewrite <- borel_sa_preimage2 in rvx1.
-        rewrite <- borel_sa_preimage2 in rvx2.
-        rewrite <- borel_sa_preimage2 in rvy1.
-        rewrite <- borel_sa_preimage2 in rvy2.
         apply Rle_antisym.
         * apply ps_le1.
-          rewrite equiv_rvminus_eq.
-          apply sa_le_pt.
-          intros.
-          rewrite <- rvminus_equiv.
-          apply minus_measurable; apply plus_measurable; trivial.
+          apply (Hsigma_borel_eq_pf prts).
+          now apply rvplus_rv.
+          now apply rvplus_rv.          
         * apply H1; trivial.
           -- apply sa_inter.
-             rewrite equiv_rvminus_eq.
-             apply sa_le_pt.
-             intros.
-             rewrite <- rvminus_equiv.
-             now apply minus_measurable.
-             rewrite equiv_rvminus_eq.
-             apply sa_le_pt.
-             intros.
-             rewrite <- rvminus_equiv.
-             now apply minus_measurable.
-          -- rewrite equiv_rvminus_eq.
-             apply sa_le_pt.
-             intros.
-             rewrite <- rvminus_equiv.
-             apply minus_measurable; apply plus_measurable; trivial.
+             now apply (Hsigma_borel_eq_pf prts).
+             now apply (Hsigma_borel_eq_pf prts).                          
+          -- apply (Hsigma_borel_eq_pf prts).
+             now apply rvplus_rv.
+             now apply rvplus_rv.                          
   Qed.
+
