@@ -160,15 +160,9 @@ Lemma rv_almost_eq_plus_proper
         unfold RandomVariable in *.
         apply Rle_antisym.
         * apply ps_le1.
-          apply (Hsigma_borel_eq_pf prts).
-          now apply rvplus_rv.
-          now apply rvplus_rv.          
+          apply (Hsigma_borel_eq_pf prts); now apply rvplus_rv.
         * apply H1; trivial.
-          -- apply sa_inter.
-             now apply (Hsigma_borel_eq_pf prts).
-             now apply (Hsigma_borel_eq_pf prts).                          
-          -- apply (Hsigma_borel_eq_pf prts).
-             now apply rvplus_rv.
-             now apply rvplus_rv.                          
+          -- apply sa_inter; now apply (Hsigma_borel_eq_pf prts).
+          -- apply (Hsigma_borel_eq_pf prts); now apply rvplus_rv.
   Qed.
 
