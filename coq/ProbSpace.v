@@ -1629,3 +1629,60 @@ Section ascending.
 End ascending.
 
 Hint Resolve ps_none ps_one : prob.
+
+  Lemma event_complement_union {Ts} (E1 E2:event Ts) :
+    event_equiv (event_complement (event_union E1 E2))
+                (event_inter (event_complement E1) (event_complement E2)).
+  Proof.
+    unfold event_complement, event_inter, event_union.
+    red; intros.
+    split; intros.
+    - now apply not_or_and.
+    - now apply and_not_or.
+  Qed.
+
+  Lemma event_complement_inter {Ts} (E1 E2:event Ts) :
+    event_equiv (event_complement (event_inter E1 E2))
+                (event_union (event_complement E1) (event_complement E2)).
+  Proof.
+    unfold event_complement, event_inter, event_union.
+    red; intros.
+    split; intros.
+    - now apply not_and_or.
+    - now apply or_not_and.
+  Qed.
+
+  Lemma ps_one_inter {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts: ProbSpace dom)
+    E1 E2 :
+    sa_sigma E1 ->
+    sa_sigma E2 ->
+    ps_P (E1)=1 -> ps_P (E2)=1 -> ps_P (event_inter E1 E2)=1.
+  Proof.
+    intros sa1 sa2 p1 p2.
+    assert (p1':1-ps_P E1 = 0) by lra.
+    assert (p2':1-ps_P E2 = 0) by lra.
+    rewrite <- ps_complement in p1' by trivial.
+    rewrite <- ps_complement in p2' by trivial.
+    cut (1-ps_P (event_inter E1 E2) = 0); [lra |].
+    rewrite <- ps_complement by auto with prob.    
+    rewrite event_complement_inter.
+    rewrite ps_union by auto with prob.
+    rewrite p1', p2'.
+    field_simplify.
+    cut (ps_P (event_inter (event_complement E1) (event_complement E2)) = 0); try lra.
+
+    assert (HH:event_sub ((event_inter (event_complement E1) (event_complement E2))) (event_complement E1)).
+    {
+      red; intros.
+      now destruct H.
+    }
+    apply (ps_sub prts) in HH
+    ; auto with prob.
+    rewrite p1' in HH.
+    apply Rle_antisym; trivial.
+    apply ps_pos.
+    auto with prob.
+  Qed.
+
