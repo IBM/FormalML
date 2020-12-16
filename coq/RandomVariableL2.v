@@ -247,6 +247,20 @@ Section L2.
     apply HH.
   Qed.
 
+  Definition L2RRVinner (x y:L2RRV) : R
+    :=  match (Expectation (rvmult x y)) with
+        | Some (Finite z) => z
+        | _ => 0
+        end.
+
+  Global Instance L2RRV_inner_proper : Proper (L2RRV_eq ==> L2RRV_eq ==> eq) L2RRVinner.
+  Proof.
+    unfold Proper, respectful, L2RRV_eq.
+
+    intros x1 x2 eqq1 y1 y2 eqq2.
+    unfold L2RRVinner.
+  Admitted.
+
   Ltac L2RRV_simpl
     := repeat match goal with
               | [H : L2RRV |- _ ] => destruct H as [???]
@@ -328,6 +342,40 @@ Section L2.
      unfold rvplus, rvopp, rvscale, const, mult; simpl.
      lra.
   Qed.
+
+  Lemma L2RRV_inner_comm (x y : L2RRV) :
+    L2RRVinner x y = L2RRVinner y x.
+  Proof.
+    unfold L2RRVinner.
+    now rewrite (Expectation_ext _ _ (rvmult_comm x y)).
+  Qed.
+  
+  Lemma L2RRV_inner_pos (x : L2RRV) : 0 <= L2RRVinner x x.
+  Proof.
+    unfold L2RRVinner.
+  Admitted.
+  
+  Lemma L2RRV_inner_zero_inv (x:L2RRV) : L2RRVinner x x = 0 ->
+                                         L2RRV_eq x (L2RRVconst 0).
+  Proof.
+    unfold L2RRVinner.
+  Admitted.
+  
+  Lemma L2RRV_inner_scal (x y : L2RRV) (l : R) :
+    L2RRVinner (L2RRVscale l x) y = l * L2RRVinner x y.
+  Proof.
+    unfold L2RRVinner, L2RRVscale; simpl.
+  Admitted.
+
+  Lemma L2RRV_inner_plus (x y z : L2RRV) :
+    L2RRVinner (L2RRVplus x y) z = L2RRVinner x z + L2RRVinner y z.
+  Proof.
+    unfold L2RRVinner, L2RRVplus; simpl.
+    
+    
+  Admitted.
+
+
   
   Definition L2RRVq : Type := quot L2RRV_eq.
 
@@ -389,6 +437,15 @@ Section L2.
 
   Hint Rewrite L2RRVq_minusE : quot.
 
+  Definition L2RRVq_inner : L2RRVq -> L2RRVq -> R
+    := quot_lift2_to _ L2RRVinner.
+
+  Lemma L2RRVq_innerE x y : L2RRVq_inner (Quot _ x) (Quot _ y) = (L2RRVinner x y).
+  Proof.
+    apply quot_lift2_toE.
+  Qed.
+
+  Hint Rewrite L2RRVq_innerE : quot.
 
   Ltac L2RRVq_simpl
     := repeat match goal with
@@ -476,7 +533,62 @@ Section L2.
                          L2RRVq_scale_plus_l L2RRVq_scale_plus_r.
 
   Canonical L2RRVq_ModuleSpace :=
-    ModuleSpace.Class R_Ring L2RRVq L2RRVq_AbelianGroup_mixin L2RRVq_ModuleSpace_mixin.
+    ModuleSpace.Pack R_Ring L2RRVq (ModuleSpace.Class R_Ring L2RRVq L2RRVq_AbelianGroup_mixin L2RRVq_ModuleSpace_mixin) L2RRVq.
 
+  Ltac L2RRVq_simpl ::=
+     repeat match goal with
+       | [H: L2RRVq |- _ ] =>
+         let xx := fresh H in destruct (Quot_inv H) as [xx ?]; subst H; rename xx into H
+       | [H: AbelianGroup.sort L2RRVq_AbelianGroup |- _ ] =>
+         let xx := fresh H in destruct (Quot_inv H) as [xx ?]; subst H; rename xx into H
+       | [H: ModuleSpace.sort R_Ring L2RRVq_ModuleSpace |- _ ] =>
+         let xx := fresh H in destruct (Quot_inv H) as [xx ?]; subst H; rename xx into H
+            end
+       ; try autorewrite with quot
+       ; try apply (@eq_Quot _ _ L2RRV_eq_equiv).
+
+  Lemma L2RRVq_inner_comm (x y : L2RRVq_ModuleSpace) :
+    L2RRVq_inner x y = L2RRVq_inner y x.
+  Proof.
+    L2RRVq_simpl.
+    apply L2RRV_inner_comm.
+  Qed.
+  
+  Lemma L2RRVq_inner_pos (x : L2RRVq_ModuleSpace) : 0 <= L2RRVq_inner x x.
+  Proof.
+    L2RRVq_simpl.
+    apply L2RRV_inner_pos.
+  Qed.
+  
+  Lemma L2RRVq_inner_zero_inv (x:L2RRVq_ModuleSpace) : L2RRVq_inner x x = 0 ->
+                                                       x = zero.
+  Proof.
+    unfold zero; simpl.
+    L2RRVq_simpl; intros; L2RRVq_simpl.
+    now apply L2RRV_inner_zero_inv.
+  Qed.
+  
+  Lemma L2RRVq_inner_scal (x y : L2RRVq_ModuleSpace) (l : R) :
+    L2RRVq_inner (scal l x) y = l * L2RRVq_inner x y.
+  Proof.
+    L2RRVq_simpl.
+    apply L2RRV_inner_scal.
+  Qed.
+
+  Lemma L2RRVq_inner_plus (x y z : L2RRVq_ModuleSpace) :
+    L2RRVq_inner (plus x y) z = L2RRVq_inner x z + L2RRVq_inner y z.
+  Proof.
+    L2RRVq_simpl.
+    apply L2RRV_inner_plus.
+  Qed.
+  
+  Definition L2RRVq_PreHilbert_mixin : PreHilbert.mixin_of L2RRVq_ModuleSpace
+    := PreHilbert.Mixin L2RRVq_ModuleSpace L2RRVq_inner
+                        L2RRVq_inner_comm  L2RRVq_inner_pos L2RRVq_inner_zero_inv
+                        L2RRVq_inner_scal L2RRVq_inner_plus.
+
+  Canonical L2RRVq_PreHilbert :=
+    PreHilbert.Pack L2RRVq (PreHilbert.Class _ _ L2RRVq_PreHilbert_mixin) L2RRVq.
+  
 
 End L2.

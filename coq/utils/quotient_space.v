@@ -278,6 +278,43 @@ Section Lift.
     unfold quot_lift2.
     now repeat rewrite quot_recE.
   Qed.        
+  
+  Definition quot_lift2_to {T S : Type} (R : T->T->Prop)
+        {equivR:Equivalence R}
+        (f : T -> T -> S) {propR:Proper (R ==> R ==> eq) f} :
+    quot R -> quot R -> S.
+  Proof.
+    generalize (@quot_rec _ _ equivR)
+    ; intros HH.
+    specialize (HH (quot R -> S)).
+    assert (Hpf:forall x, forall x0 y : T, R x0 y -> (f x x0) = (f x y)).
+    {
+      intros.
+      rewrite H.
+      reflexivity.
+    } 
+    refine (HH (fun x => (@quot_rec _ _ equivR S (fun y =>  (f x y)) (Hpf x) )) _).
+    intros.
+    (* we might be able to avoid this, but since quotients use it anyway, it does not really matter *)
+    apply FunctionalExtensionality.functional_extensionality; intros.
+    destruct (Quot_inv x0); subst.
+    repeat rewrite quot_recE.
+    rewrite H.
+    reflexivity.
+  Defined.
+
+  Global Arguments quot_lift2_to {T} {S} R {equivR} f {propR}.
+    
+  Lemma quot_lift2_toE
+        {T S : Type} (R : T->T->Prop)
+        {equivR:Equivalence R}
+        (f : T -> T -> S) {propR:Proper (R ==> R ==> eq) f} :
+    forall x y, quot_lift2_to R f (Quot R x) (Quot R y) = f x y.
+  Proof.
+    intros.
+    unfold quot_lift2_to.
+    now repeat rewrite quot_recE.
+  Qed.        
 
 End Lift.
 
