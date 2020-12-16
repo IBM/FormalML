@@ -304,7 +304,7 @@ Section L2.
   Qed.
 
    Lemma L2RRV_scale_scale (x y : R) (u : L2RRV) :
-     L2RRV_eq (L2RRVscale x (L2RRVscale y u)) (L2RRVscale (mult x y) u).
+     L2RRV_eq (L2RRVscale x (L2RRVscale y u)) (L2RRVscale (x * y) u).
    Proof.
      red; intros.
      L2RRV_simpl.
@@ -589,6 +589,20 @@ Section L2.
 
   Canonical L2RRVq_PreHilbert :=
     PreHilbert.Pack L2RRVq (PreHilbert.Class _ _ L2RRVq_PreHilbert_mixin) L2RRVq.
+
+
+  Definition L2RRVq_lim (lim : ((L2RRVq_PreHilbert -> Prop) -> Prop)) : L2RRVq.
+  Admitted.
   
+  Lemma L2RRVq_lim_complete (F : (PreHilbert_UniformSpace -> Prop) -> Prop) :
+    ProperFilter F -> cauchy F -> forall eps : posreal, F (ball (L2RRVq_lim  F) eps).
+  Proof.
+  Admitted.
+
+  Definition L2RRVq_Hilbert_mixin : Hilbert.mixin_of L2RRVq_PreHilbert
+    := Hilbert.Mixin L2RRVq_PreHilbert L2RRVq_lim L2RRVq_lim_complete.
+
+  Canonical L2RRVq_Hilbert :=
+    Hilbert.Pack L2RRVq (Hilbert.Class _ _ L2RRVq_Hilbert_mixin) L2RRVq.
 
 End L2.
