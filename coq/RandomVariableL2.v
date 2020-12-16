@@ -591,7 +591,7 @@ Section L2.
     PreHilbert.Pack L2RRVq (PreHilbert.Class _ _ L2RRVq_PreHilbert_mixin) L2RRVq.
 
 
-  Definition L2RRVq_lim (lim : ((L2RRVq_PreHilbert -> Prop) -> Prop)) : L2RRVq.
+  Definition L2RRVq_lim (lim : ((L2RRVq -> Prop) -> Prop)) : L2RRVq.
   Admitted.
   
   Lemma L2RRVq_lim_complete (F : (PreHilbert_UniformSpace -> Prop) -> Prop) :
