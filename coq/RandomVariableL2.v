@@ -36,9 +36,7 @@ Section L2.
     - intro x0.
       now unfold rvsqr, const.
     - rewrite Expectation_ext with (rv2 := (rvconst (Rsqr x))); trivial.
-      generalize (Rle_0_sqr x); intros.
-      rewrite Expectation_pos_posRV with (prv := (@prvconst Ts (Rsqr x) H0)).
-      now rewrite Expectation_posRV_const.
+      now rewrite Expectation_const.
   Qed.
 
   Instance is_L2_plus rv_X1 rv_X2
@@ -71,9 +69,7 @@ Section L2.
         symmetry in H1.
         apply Rsqr_eq_0 in H1.
         rewrite Expectation_ext with (rv2 := rvconst 0).
-        * assert (0 <= 0) by lra.
-          rewrite Expectation_pos_posRV with (prv := (@prvconst Ts 0 H2)).
-          now rewrite Expectation_posRV_const.
+        * now rewrite Expectation_const.
         * intro x0.
           unfold rvsqr, rvscale, const, Rsqr.
           subst.
