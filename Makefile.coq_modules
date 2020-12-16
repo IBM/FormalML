@@ -71,6 +71,7 @@ MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	ProbSpace \
 	RandomVariable \
 	RandomVariableHilbert \
+	RandomVariableL2 \
 	SigmaAlgebras \
 	sumtest
 	
