@@ -464,6 +464,163 @@ Section SimpleExpectation.
     list_sum (map (fun v => Rmult v (ps_P (event_preimage rv_X (singleton_event v)))) 
                   (nodup Req_EM_T srv_vals)).
 
+      Global Instance nodup_perm {A} dec : Proper (@Permutation A ==> @Permutation A) (nodup dec).
+    Proof.
+      repeat red; intros.
+      revert x y H.
+      apply Permutation_ind_bis; simpl; intros.
+      - trivial.
+      - repeat match_destr.
+        + rewrite H in i; congruence.
+        + rewrite <- H in i; congruence.
+        + apply perm_skip; trivial.
+      - destruct (dec x y)
+        ; destruct (dec y x)
+        ; try congruence.
+        + subst.
+          destruct (in_dec dec y l)
+          ; destruct (in_dec dec y l')
+          ; try congruence.
+          * rewrite H in i; congruence.
+          * rewrite <- H in i; congruence.
+          * apply perm_skip; congruence.
+        + destruct (in_dec dec y l)
+          ; destruct (in_dec dec x l)
+          ; destruct (in_dec dec x l')
+          ; destruct (in_dec dec y l')
+          ; try congruence
+          ; try solve [
+                  rewrite H in i; congruence
+                  | rewrite H in i0; congruence
+                  | rewrite H in i1; congruence
+                  | rewrite <- H in i; congruence
+                  | rewrite <- H in i0; congruence
+                  | rewrite <- H in i1; congruence
+                  | apply perm_skip; congruence
+                ] .
+          rewrite H0.
+          apply perm_swap.
+      - now rewrite H0.
+    Qed.
+
+    Lemma list_sum_pos_pos l :
+      Forall (fun x => x >= 0) l ->
+      list_sum l >= 0.
+    Proof.
+      induction l; simpl; try lra.
+      intros HH; invcs HH.
+      specialize (IHl H2).
+      lra.
+    Qed.
+
+    Lemma list_sum_all_pos_zero_all_zero l : list_sum l = 0 ->
+                                           Forall (fun x => x >= 0) l ->
+                                           Forall (fun x => x = 0) l.
+    Proof.
+      induction l; intros.
+      - constructor.
+      - invcs H0.
+        simpl in H.
+        generalize (list_sum_pos_pos _ H4); intros HH.
+        assert (a = 0) by lra.
+        subst.
+        field_simplify in H.
+        auto.
+    Qed.
+
+    Lemma Forall_nodup {A} dec P (l:list A) : Forall P l <-> Forall P (nodup dec l).
+    Proof.
+      repeat rewrite Forall_forall.
+      generalize (nodup_In dec).
+      firstorder.
+    Qed.
+
+
+ Lemma SimplePosExpectation_zero_pos
+        (x : Ts -> R)
+        {rv : RandomVariable Prts borel_sa x}
+        {posrv :PositiveRandomVariable x} 
+        {srv : SimpleRandomVariable x} :
+    SimpleExpectation x = 0 ->
+    ps_P (fun omega => x omega = 0) = 1.
+ Proof.
+   intros.
+   unfold SimpleExpectation in H.
+   apply list_sum_all_pos_zero_all_zero in H.
+   - admit.
+   - rewrite Forall_map.
+     apply Forall_nodup.
+     rewrite Forall_forall.
+     intros.
+     unfold PositiveRandomVariable in posrv.
+     generalize (ps_pos  (event_preimage x (singleton_event x0))); intros HH.
+     cut_to HH; [| eapply sa_singleton; eauto].
+     destruct srv.
+     
+     
+     specialize (posrv x0).
+     
+   destruct srv; simpl in *.
+   erewrite ps_proper; try eapply ps_one.
+   red; intros.
+   unfold Ω.
+   split; trivial; intros _.
+   generalize (list_sum_all_pos_zero_all_zero _ H)
+   ; intros HH.
+   cut_to HH.
+   - rewrite Forall_map in HH.
+     apply Forall_nodup in HH.
+     rewrite Forall_forall in HH.
+     specialize (H _ (srv_vals_complete0 x0)).
+     apply Rmult_integral in H.
+     destruct H; trivial.
+     unfold event_preimage, singleton_event in H.
+     
+     
+     
+     specialize (srv_vals_complete0 x0).
+     apply (nodup_In Req_EM_T) in srv_vals_complete0.
+     apply in_map_iff.
+     eapply in_map in srv_vals_complete0.
+     eapply srv_vals_complete0.
+     
+     apply in_map_iff.
+     +
+   
+   red in posrv.
+     
+   induction (nodup Req_EM_T srv_vals0); simpl in *; try contradiction.
+   destruct srv_vals_complete0.
+   - subst.
+     generalize (ps_pos (event_preimage x (singleton_event (x x0)))); intros HH.
+     cut_to HH; [| eapply sa_singleton; eauto].
+
+     assert (list_sum (map (fun v : R => v * ps_P (event_preimage x (singleton_event v))) l) >= 0)
+       by admit.
+     lra.
+   
+   induction srv_vals0; simpl in *; try contradiction.
+   match_destr_in H.
+   - apply IHsrv_vals0; eauto.
+   - 
+   
+   
+   apply (nodup_In Req_EM_T) in srv_vals_complete0.
+   destruct (in_split _ _ srv_vals_complete0) as [?[??]].
+   rewrite H0 in H.
+   rewrite <- (Permutation_middle x1 x2 (x x0)) in H.
+   simpl in H.
+
+   
+   
+   assert (list_sum (map (fun v : R => v * ps_P (event_preimage x (singleton_event v))) (x1 ++ x2)) >= 0).
+   {
+     admit.
+   }
+
+   
+ Qed.
+  
   Global Program Instance scale_constant_random_variable (c: R)
          (rv_X : Ts -> R)
          {rrv : RandomVariable Prts borel_sa rv_X}
@@ -2887,45 +3044,6 @@ Section SimpleConditionalExpectation.
       intros x.
       unfold rvmult, rvplus.
       lra.
-    Qed.
-
-    Global Instance nodup_perm {A} dec : Proper (@Permutation A ==> @Permutation A) (nodup dec).
-    Proof.
-      repeat red; intros.
-      revert x y H.
-      apply Permutation_ind_bis; simpl; intros.
-      - trivial.
-      - repeat match_destr.
-        + rewrite H in i; congruence.
-        + rewrite <- H in i; congruence.
-        + apply perm_skip; trivial.
-      - destruct (dec x y)
-        ; destruct (dec y x)
-        ; try congruence.
-        + subst.
-          destruct (in_dec dec y l)
-          ; destruct (in_dec dec y l')
-          ; try congruence.
-          * rewrite H in i; congruence.
-          * rewrite <- H in i; congruence.
-          * apply perm_skip; congruence.
-        + destruct (in_dec dec y l)
-          ; destruct (in_dec dec x l)
-          ; destruct (in_dec dec x l')
-          ; destruct (in_dec dec y l')
-          ; try congruence
-          ; try solve [
-                  rewrite H in i; congruence
-                  | rewrite H in i0; congruence
-                  | rewrite H in i1; congruence
-                  | rewrite <- H in i; congruence
-                  | rewrite <- H in i0; congruence
-                  | rewrite <- H in i1; congruence
-                  | apply perm_skip; congruence
-                ] .
-          rewrite H0.
-          apply perm_swap.
-      - now rewrite H0.
     Qed.
       
    Lemma expectation_const_factor_subset (c:R)
