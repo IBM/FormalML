@@ -3305,7 +3305,6 @@ Section Expectation.
       rewrite Rmax_right; lra.
   Qed.
 
-
   Lemma Expectation_ext {rv_X1 rv_X2 : Ts -> R}
         (rv1:RandomVariable Prts borel_sa rv_X1) 
         (rv2:RandomVariable Prts borel_sa rv_X2):
@@ -3326,8 +3325,16 @@ Section Expectation.
       now apply negative_part_rv.      
       intros x; simpl.
       now rewrite eqq.
+  Qed.
+
+  Lemma Expectation_pf_irrel {rv_X: Ts -> R}
+        (rrv1 rrv2:RandomVariable Prts borel_sa rv_X)  :
+        Expectation rv_X (rrv:=rrv1) = Expectation rv_X (rrv:=rrv2).
+  Proof.
+    apply Expectation_ext.
+    reflexivity.
   Qed.      
-  
+
   Definition rvmean (rv_X:Ts -> R) {rrv : RandomVariable Prts borel_sa rv_X} : option Rbar :=
      Expectation rv_X.
 

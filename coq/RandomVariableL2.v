@@ -167,7 +167,6 @@ Section L2.
 
   Definition L2RRVzero : L2RRV := L2RRVconst 0.
 
-
   Definition L2RRVplus (rv1 rv2:L2RRV) : L2RRV
     := pack_L2RRV (rvplus rv1  rv2).
 
@@ -358,11 +357,25 @@ Section L2.
     fold (Rsqr (x x0)).
     apply Rle_0_sqr.
   Qed.
-  
+
+  Lemma rvsqr_eq (x:Ts->R): rv_eq (rvsqr x) (rvmult x x).
+  Proof.
+    intros ?.
+    reflexivity.
+  Qed.
+
   Lemma L2RRV_inner_zero_inv (x:L2RRV) : L2RRVinner x x = 0 ->
                                          L2RRV_eq x (L2RRVconst 0).
   Proof.
-    unfold L2RRVinner.
+    unfold L2RRVinner, L2RRV_eq.
+    destruct x as [x rv l2]; simpl.
+    red in l2.
+    rewrite (Expectation_ext _ _ (rvsqr_eq x)) in l2.
+    erewrite Expectation_pf_irrel in l2.
+    match_case; [intros r eqq1 | intros eqq1]
+    ; rewrite eqq1 in l2; try contradiction.
+    match_destr; try contradiction.
+    intros; subst.
   Admitted.
   
   Lemma L2RRV_inner_scal (x y : L2RRV) (l : R) :
