@@ -30,6 +30,14 @@ Section L2.
 
   Instance is_L2_const x : IsL2 (const x).
   Proof.
+    unfold IsL2.
+    assert (@rv_eq Ts R (rvsqr (const x)) (const (Rsqr x))).
+    - intro x0.
+      now unfold rvsqr, const.
+    - rewrite Expectation_ext with (rv2 := (rvconst (Rsqr x))); trivial.
+      generalize (Rle_0_sqr x); intros.
+      rewrite Expectation_pos_posRV with (prv := (@prvconst Ts (Rsqr x) H0)).
+      rewrite Expectation_posRV_const.
   Admitted.
 
   Instance is_L2_plus rv_X1 rv_X2
@@ -45,6 +53,8 @@ Section L2.
            {isl2:IsL2 rv_X} :
     IsL2 (rvscale x rv_X).
   Proof.
+    unfold IsL2.
+    
   Admitted.
 
   
