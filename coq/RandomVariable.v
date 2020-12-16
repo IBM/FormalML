@@ -747,6 +747,24 @@ Section SimpleExpectation.
    now rewrite H, H0.
  Qed.
 
+ Lemma rvminus_equiv (f g : Ts -> R) :
+    (forall (r:R),  
+        (event_equiv (fun omega : Ts => f omega -  g omega <= r)
+                     (fun omega : Ts => rvminus f g omega <= r))).
+    Proof.
+      intros r x.
+      unfold rvminus, rvplus, rvopp, rvscale.
+      split; lra.
+    Qed.
+
+  Lemma equiv_rvminus_eq (f g : Ts -> R) :
+    event_equiv (fun omega => f omega = g omega)
+                (fun omega => rvminus f g omega = 0).
+    unfold rvminus, rvplus, rvopp, rvscale.
+    intro x.
+    split; lra.
+  Qed.
+
   Class NonEmpty (A : Type) :=
   ex : A.
 

@@ -111,74 +111,14 @@ Section L2.
     destruct rv2.
     now apply rvplus_rv.
   Qed.
-
-  Lemma rvminus_equiv (f g : Ts -> R) :
-    (forall (r:R),  
-        (event_equiv (fun omega : Ts => f omega -  g omega <= r)
-                     (fun omega : Ts => rvminus f g omega <= r))).
-    Proof.
-      intros r x.
-      unfold rvminus, rvplus, rvopp, rvscale.
-      split; lra.
-    Qed.
-
-  Lemma equiv_rvminus_eq (f g : Ts -> R) :
-    event_equiv (fun omega => f omega = g omega)
-                (fun omega => rvminus f g omega = 0).
-    unfold rvminus, rvplus, rvopp, rvscale.
-    intro x.
-    split; lra.
-  Qed.
-    
+  
   Global Instance RRV_plus_proper : Proper (RRV_eq ==> RRV_eq ==> RRV_eq) RRVplus.
   Proof.
     unfold Proper, respectful, RRV_eq.
     intros [x1?] [x2?] eqqx [y1?] [y2?] eqqy.
     simpl in *.
-    unfold rv_almost_eq in *.
-    assert (event_sub (event_inter (fun x : Ts => x1 x = x2 x)
-                                   (fun x : Ts => y1 x = y2 x))
-                      (fun x : Ts => rvplus x1 y1 x = rvplus x2 y2 x)).
-    - unfold event_sub, event_inter, rvplus.
-      intros.
-      destruct H.
-      now rewrite H, H0.
-    - assert (ps_P (event_inter (fun x : Ts => x1 x = x2 x) (fun x : Ts => y1 x = y2 x)) = 1).
-      + apply ps_one_inter; trivial
-        ; eapply Hsigma_borel_eq_pf; eauto.
-      + generalize (ps_sub prts (event_inter (fun x : Ts => x1 x = x2 x) (fun x : Ts => y1 x = y2 x))
-                           (fun x : Ts => rvplus x1 y1 x = rvplus x2 y2 x)); intros.
-        rewrite H0 in H1.
-        unfold RandomVariable in *.
-        rewrite <- borel_sa_preimage2 in r.
-        rewrite <- borel_sa_preimage2 in r0.
-        rewrite <- borel_sa_preimage2 in r1.
-        rewrite <- borel_sa_preimage2 in r2.    
-        apply Rle_antisym.
-        * apply ps_le1.
-          rewrite equiv_rvminus_eq.
-          apply sa_le_pt.
-          intros.
-          rewrite <- rvminus_equiv.
-          apply minus_measurable; apply plus_measurable; trivial.
-        * cut_to H1; trivial.
-          apply sa_inter.
-          rewrite equiv_rvminus_eq.
-          apply sa_le_pt.
-          intros.
-          rewrite <- rvminus_equiv.
-          now apply minus_measurable.
-          rewrite equiv_rvminus_eq.
-          apply sa_le_pt.
-          intros.
-          rewrite <- rvminus_equiv.
-          now apply minus_measurable.
-          rewrite equiv_rvminus_eq.
-          apply sa_le_pt.
-          intros.
-          rewrite <- rvminus_equiv.
-          apply minus_measurable; apply plus_measurable; trivial.          
-  Qed.
+    now apply rv_almost_eq_plus_proper.
+  Qed.    
 
   Program Definition RRVscale (x:R) (rv:RRV) : RRV
     := rvscale x rv.

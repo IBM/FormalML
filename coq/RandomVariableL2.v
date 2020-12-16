@@ -148,9 +148,8 @@ Section L2.
     unfold Proper, respectful, L2RRV_eq.
     intros [x1??] [x2??] eqqx [y1??] [y2??] eqqy.
     simpl in *.
-    unfold rv_almost_eq in *.
-  Admitted.
-
+    now apply rv_almost_eq_plus_proper.
+  Qed.
   
   Program Definition L2RRVscale (x:R) (rv:L2RRV) : L2RRV
     := pack_L2RRV (rvscale x rv).

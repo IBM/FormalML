@@ -9,6 +9,8 @@ Require Import BorelSigmaAlgebra.
 Require Import ProbSpace.
 Require Import RandomVariable.
 
+Set Bullet Behavior "Strict Subproofs".
+
 Local Open Scope R.
 
 Section almost_eq.
@@ -127,3 +129,61 @@ Proof.
   unfold rvminus, rvplus, rvopp, rvscale.
   split; lra.
 Qed.
+
+Lemma rv_almost_eq_plus_proper
+      {Ts:Type} 
+      {dom: SigmaAlgebra Ts}
+      (prts: ProbSpace dom) 
+      (x1 x2 y1 y2 : Ts -> R)
+      {rvx1 : RandomVariable prts borel_sa x1}
+      {rvx2: RandomVariable prts borel_sa x2}
+      (eqqx : rv_almost_eq prts x1 x2)
+      {rvy1 : RandomVariable prts borel_sa y1}
+      {rvy2 : RandomVariable prts borel_sa y2}
+      (eqqy : rv_almost_eq prts y1 y2) :
+      rv_almost_eq prts (rvplus x1 y1) (rvplus x2 y2).
+  Proof.
+    unfold rv_almost_eq in *.
+    assert (event_sub (event_inter (fun x : Ts => x1 x = x2 x)
+                                   (fun x : Ts => y1 x = y2 x))
+                      (fun x : Ts => rvplus x1 y1 x = rvplus x2 y2 x)).
+    - unfold event_sub, event_inter, rvplus.
+      intros.
+      destruct H.
+      now rewrite H, H0.
+    - assert (ps_P (event_inter (fun x : Ts => x1 x = x2 x) (fun x : Ts => y1 x = y2 x)) = 1).
+      + apply ps_one_inter; trivial
+        ; eapply Hsigma_borel_eq_pf; eauto.
+      + generalize (ps_sub prts (event_inter (fun x : Ts => x1 x = x2 x) (fun x : Ts => y1 x = y2 x))
+                           (fun x : Ts => rvplus x1 y1 x = rvplus x2 y2 x)); intros.
+        rewrite H0 in H1.
+        unfold RandomVariable in *.
+        rewrite <- borel_sa_preimage2 in rvx1.
+        rewrite <- borel_sa_preimage2 in rvx2.
+        rewrite <- borel_sa_preimage2 in rvy1.
+        rewrite <- borel_sa_preimage2 in rvy2.
+        apply Rle_antisym.
+        * apply ps_le1.
+          rewrite equiv_rvminus_eq.
+          apply sa_le_pt.
+          intros.
+          rewrite <- rvminus_equiv.
+          apply minus_measurable; apply plus_measurable; trivial.
+        * apply H1; trivial.
+          -- apply sa_inter.
+             rewrite equiv_rvminus_eq.
+             apply sa_le_pt.
+             intros.
+             rewrite <- rvminus_equiv.
+             now apply minus_measurable.
+             rewrite equiv_rvminus_eq.
+             apply sa_le_pt.
+             intros.
+             rewrite <- rvminus_equiv.
+             now apply minus_measurable.
+          -- rewrite equiv_rvminus_eq.
+             apply sa_le_pt.
+             intros.
+             rewrite <- rvminus_equiv.
+             apply minus_measurable; apply plus_measurable; trivial.
+  Qed.
