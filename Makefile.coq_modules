@@ -38,6 +38,7 @@ MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	utils/NumberIso \
 	utils/PairEncoding \
 	utils/Quotient \
+	utils/quotient_space \
 	utils/RealAdd \
 	utils/RiemannAdd \
 	utils/StreamAdd \
@@ -68,6 +69,7 @@ MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
         infprod \
 	ProbSpace \
 	RandomVariable \
+	RandomVariableHilbert \
 	SigmaAlgebras \
 	sumtest
 	
