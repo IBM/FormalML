@@ -16,7 +16,7 @@ Require Import AlmostEqual.
 
 Set Bullet Behavior "Strict Subproofs".
 
-Section L2.
+Section RVHierarchy.
 
   Context {Ts:Type} 
           {dom: SigmaAlgebra Ts}
@@ -249,7 +249,17 @@ Section L2.
   Qed.
 
   Hint Rewrite RRVq_zeroE : quot.
-  
+
+  Definition RRVq_scale (x:R) : RRVq -> RRVq
+    := quot_lift _ (RRVscale x).
+
+  Lemma RRVq_scaleE x y : RRVq_scale x (Quot _ y)  = Quot _ (RRVscale x y).
+  Proof.
+    apply quot_liftE.
+  Qed.
+
+  Hint Rewrite RRVq_scaleE : quot.
+
   Definition RRVq_opp  : RRVq -> RRVq
     := quot_lift _ RRVopp.
 
@@ -313,6 +323,47 @@ Section L2.
     RRVq_simpl.
     apply RRV_plus_inv.
   Qed.
+
+  Lemma RRV_scale_scale (x y : R) (u : RRV) :
+     RRV_eq (RRVscale x (RRVscale y u)) (RRVscale (x * y) u).
+   Proof.
+     red; intros.
+     RRV_simpl.
+     apply rv_almost_eq_eq; intros ?.
+     unfold rvplus, rvopp, rvscale, const, mult; simpl.
+     lra.
+   Qed.
+
+   Lemma RRV_scale1 (u : RRV) :
+     RRV_eq (RRVscale one u) u.
+  Proof.
+     red; intros.
+     RRV_simpl.
+     apply rv_almost_eq_eq; intros ?.
+     unfold rvplus, rvopp, rvscale, const, mult, one; simpl.
+     lra.
+  Qed.
+  
+  Lemma RRV_scale_plus_l (x : R) (u v : RRV) :
+    RRV_eq (RRVscale x (RRVplus u v)) (RRVplus (RRVscale x u) (RRVscale x v)).
+  Proof.
+     red; intros.
+     RRV_simpl.
+     apply rv_almost_eq_eq; intros ?.
+     unfold rvplus, rvopp, rvscale, const, mult; simpl.
+     lra.
+  Qed.
+  
+  Lemma RRV_scale_plus_r (x y : R) (u : RRV) :
+    RRV_eq (RRVscale (x + y) u) (RRVplus (RRVscale x u) (RRVscale y u)).
+  Proof.
+     red; intros.
+     RRV_simpl.
+     apply rv_almost_eq_eq; intros ?.
+     unfold rvplus, rvopp, rvscale, const, mult; simpl.
+     lra.
+  Qed.
+
     
   Program Definition RRVq_AbelianGroup_mixin : AbelianGroup.mixin_of RRVq
     := AbelianGroup.Mixin RRVq RRVq_plus RRVq_opp RRVq_zero
@@ -322,4 +373,52 @@ Section L2.
   Canonical RRVq_AbelianGroup :=
     AbelianGroup.Pack RRVq RRVq_AbelianGroup_mixin RRVq.
 
-End L2.
+  Ltac RRVq_simpl ::=
+     repeat match goal with
+       | [H: RRVq |- _ ] =>
+         let xx := fresh H in destruct (Quot_inv H) as [xx ?]; subst H; rename xx into H
+       | [H: AbelianGroup.sort RRVq_AbelianGroup |- _ ] =>
+         let xx := fresh H in destruct (Quot_inv H) as [xx ?]; subst H; rename xx into H
+           end
+       ; try autorewrite with quot
+       ; try apply (@eq_Quot _ _ RRV_eq_equiv).
+  
+  Lemma RRVq_scale_scale (x y : R_Ring) (u : RRVq_AbelianGroup) :
+    RRVq_scale x (RRVq_scale y u) = RRVq_scale (x * y) u.
+  Proof.
+    RRVq_simpl.
+    apply RRV_scale_scale.
+  Qed.
+  
+  Lemma RRVq_scale1 (u : RRVq_AbelianGroup) :
+    RRVq_scale one u = u.
+  Proof.
+    RRVq_simpl.
+    apply RRV_scale1.
+  Qed.
+  
+  Lemma RRVq_scale_plus_l (x : R_Ring) (u v : RRVq_AbelianGroup) :
+    RRVq_scale x (plus u v) = plus (RRVq_scale x u) (RRVq_scale x v).
+  Proof.
+    RRVq_simpl.
+    apply RRV_scale_plus_l.
+  Qed.
+
+  Lemma RRVq_scale_plus_r (x y : R_Ring) (u : RRVq_AbelianGroup) :
+    RRVq_scale (plus x y) u = plus (RRVq_scale x u) (RRVq_scale y u).
+  Proof.
+    RRVq_simpl.
+    apply RRV_scale_plus_r.
+  Qed.
+
+  Definition RRVq_ModuleSpace_mixin : ModuleSpace.mixin_of R_Ring RRVq_AbelianGroup
+    := ModuleSpace.Mixin R_Ring RRVq_AbelianGroup
+                         RRVq_scale RRVq_scale_scale RRVq_scale1
+                         RRVq_scale_plus_l RRVq_scale_plus_r.
+
+  Canonical RRVq_ModuleSpace :=
+    ModuleSpace.Pack R_Ring RRVq (ModuleSpace.Class R_Ring RRVq RRVq_AbelianGroup_mixin RRVq_ModuleSpace_mixin) RRVq.
+
+  
+
+End RVHierarchy.
