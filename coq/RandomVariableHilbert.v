@@ -144,7 +144,8 @@ Section L2.
       destruct H.
       now rewrite H, H0.
     - assert (ps_P (event_inter (fun x : Ts => x1 x = x2 x) (fun x : Ts => y1 x = y2 x)) = 1).
-      + admit.
+      + apply ps_one_inter; trivial
+        ; eapply Hsigma_borel_eq_pf; eauto.
       + generalize (ps_sub prts (event_inter (fun x : Ts => x1 x = x2 x) (fun x : Ts => y1 x = y2 x))
                            (fun x : Ts => rvplus x1 y1 x = rvplus x2 y2 x)); intros.
         rewrite H0 in H1.
@@ -177,7 +178,7 @@ Section L2.
           intros.
           rewrite <- rvminus_equiv.
           apply minus_measurable; apply plus_measurable; trivial.          
-  Admitted.
+  Qed.
 
   Program Definition RRVscale (x:R) (rv:RRV) : RRV
     := rvscale x rv.
