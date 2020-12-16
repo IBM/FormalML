@@ -349,7 +349,15 @@ Section L2.
   Lemma L2RRV_inner_pos (x : L2RRV) : 0 <= L2RRVinner x x.
   Proof.
     unfold L2RRVinner.
-  Admitted.
+    match_case; intros; [| lra].
+    match_case; intros; try lra.
+    subst.
+    apply (Expectation_le _ _ _ _ (Expectation_const 0) H).
+    red; intros.
+    unfold const, rvmult.
+    fold (Rsqr (x x0)).
+    apply Rle_0_sqr.
+  Qed.
   
   Lemma L2RRV_inner_zero_inv (x:L2RRV) : L2RRVinner x x = 0 ->
                                          L2RRV_eq x (L2RRVconst 0).
