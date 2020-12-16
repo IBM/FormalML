@@ -29,6 +29,26 @@ Section L2.
        | _ => False
        end.
 
+  Lemma L2Expectation_finite (rv_X:Ts->R) {rv:RandomVariable prts borel_sa rv_X} {l2:IsL2 rv_X}
+    :  match Expectation rv_X with
+       | Some (Finite _) => True
+       | _ => False
+       end.
+  Proof.
+  Admitted.
+
+  Definition L2Expectation_ex (rv_X:Ts->R) {rv:RandomVariable prts borel_sa rv_X} {l2:IsL2 rv_X} :
+    { x: R | Expectation rv_X = Some (Finite x)}.
+  Proof.
+    generalize (L2Expectation_finite rv_X).
+    match_destr; [| tauto].
+    destruct r; [| tauto..].
+    eauto.
+  Defined.
+
+  Definition L2Expectation (rv_X:Ts->R) {rv:RandomVariable prts borel_sa rv_X} {l2:IsL2 rv_X}
+    := proj1_sig (L2Expectation_ex rv_X).
+  
   Instance is_L2_const x : IsL2 (const x).
   Proof.
     unfold IsL2.
@@ -242,6 +262,19 @@ Section L2.
     apply HH.
   Qed.
 
+  Definition L2RRVexpectation (rv:L2RRV) : R
+    := L2Expectation rv.
+
+  Global Instance L2RRV_expectation_proper : Proper (L2RRV_eq ==> eq) L2RRVexpectation.
+  Proof.
+    unfold Proper, respectful, L2RRVexpectation, L2RRV_eq.
+    unfold L2Expectation.
+    intros x y eqq.
+    repeat match goal with
+      [|- context [proj1_sig ?x]] => destruct x; simpl
+    end.
+  Admitted.
+  
   Definition L2RRVinner (x y:L2RRV) : R
     :=  match (Expectation (rvmult x y)) with
         | Some (Finite z) => z
@@ -417,7 +450,7 @@ Section L2.
   Proof.
     unfold L2RRVinner, L2RRVplus; simpl.
     rewrite Expectation_ext with (rv2 := rvplus_rv (rvmult x z) (rvmult y z)).
-    
+    -
   Admitted.
 
   
