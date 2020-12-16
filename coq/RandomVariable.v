@@ -3991,6 +3991,7 @@ Section Expectation.
       now apply pos_fun_part_pos.
    Qed.
 
+
   Lemma Expectation_simple
         {nempty:NonEmpty Ts}
         (rv_X : Ts -> R)
@@ -6040,6 +6041,42 @@ Section Expectation.
     specialize (H1 H2 H3).
     rewrite H1.
     now simpl.
+  Qed.
+
+  Lemma Expectation_le 
+        (rv_X1 rv_X2 : Ts -> R)
+        {rv1: RandomVariable Prts borel_sa rv_X1}
+        {rv2: RandomVariable Prts borel_sa rv_X2} :
+    forall (e1 e2 : Rbar),
+      Expectation rv_X1 = Some e1 ->
+      Expectation rv_X2 = Some e2 ->
+      RealRandomVariable_le rv_X1 rv_X2 ->
+      Rbar_le e1 e2.
+  Proof.
+    unfold Expectation, RealRandomVariable_le; intros.
+    assert (RealRandomVariable_le (pos_fun_part rv_X1) (pos_fun_part rv_X2)).
+    - unfold RealRandomVariable_le, pos_fun_part.
+      intros; simpl.
+      now apply Rle_max_compat_r.
+    - assert (RealRandomVariable_le (neg_fun_part rv_X2) (neg_fun_part rv_X1)).
+      + unfold RealRandomVariable_le, neg_fun_part.
+        intros; simpl.
+        apply Rle_max_compat_r.
+        specialize (H1 x).
+        lra.
+      + apply Expectation_posRV_le with (prv1 := positive_part_prv rv_X1) 
+                                        (prv2 := positive_part_prv rv_X2) in H2;
+          [|now apply positive_part_rv | now apply positive_part_rv].
+        apply Expectation_posRV_le with (prv1 := negative_part_prv rv_X2) 
+                                        (prv2 := negative_part_prv rv_X1) in H3;
+          [|now apply negative_part_rv | now apply negative_part_rv].
+        apply Rbar_opp_le in H3.
+        unfold Rbar_minus' in *.
+        generalize (Rbar_plus_le_compat _ _ _ _ H2 H3).
+        apply is_Rbar_plus_unique in H.
+        apply is_Rbar_plus_unique in H0.
+        rewrite H.
+        now rewrite H0.
   Qed.
 
 End Expectation.
