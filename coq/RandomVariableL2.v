@@ -13,6 +13,7 @@ Require Import RandomVariable.
 Require Import quotient_space.
 
 Require Import AlmostEqual.
+Require Import utils.Utils.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -47,6 +48,7 @@ Section L2.
            {isl22:IsL2 rv_X2} :
     IsL2 (rvplus rv_X1 rv_X2).
   Proof.
+    unfold IsL2.
   Admitted.
 
   Instance is_L2_scale x rv_X {rv:RandomVariable prts borel_sa rv_X}
@@ -54,9 +56,29 @@ Section L2.
     IsL2 (rvscale x rv_X).
   Proof.
     unfold IsL2.
-    
-  Admitted.
-
+    assert (rv_eq  (rvsqr (rvscale x rv_X)) (rvscale (Rsqr x) (rvsqr rv_X))).
+    - intro x0.
+      unfold rvsqr, rvscale, Rsqr; lra.
+    - destruct (Rlt_dec 0 (Rsqr x)).
+      + rewrite Expectation_ext with (rv2 := (rvscale_rv prts (mkposreal _ r) (rvsqr rv_X) 
+                                                         (rvsqr_rv rv_X))); trivial.
+        rewrite Expectation_scale.
+        unfold IsL2 in isl2.
+        match_destr_in isl2.
+        now match_destr_in isl2.
+      + generalize (Rle_0_sqr x); intros.
+        assert (0 = Rsqr x) by lra.
+        symmetry in H1.
+        apply Rsqr_eq_0 in H1.
+        rewrite Expectation_ext with (rv2 := rvconst 0).
+        * assert (0 <= 0) by lra.
+          rewrite Expectation_pos_posRV with (prv := (@prvconst Ts 0 H2)).
+          now rewrite Expectation_posRV_const.
+        * intro x0.
+          unfold rvsqr, rvscale, const, Rsqr.
+          subst.
+          lra.
+  Qed.
   
   Record L2RRV : Type
     := L2RRV_of {
