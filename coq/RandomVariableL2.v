@@ -256,6 +256,46 @@ Section L2.
     unfold rvplus, rvopp, rvscale, const.
     lra.
   Qed.
+
+   Lemma L2RRV_scale_scale (x y : R) (u : L2RRV) :
+     L2RRV_eq (L2RRVscale x (L2RRVscale y u)) (L2RRVscale (mult x y) u).
+   Proof.
+     red; intros.
+     L2RRV_simpl.
+     apply rv_almost_eq_eq; intros ?.
+     unfold rvplus, rvopp, rvscale, const, mult; simpl.
+     lra.
+   Qed.
+
+   Lemma L2RRV_scale1 (u : L2RRV) :
+     L2RRV_eq (L2RRVscale one u) u.
+  Proof.
+     red; intros.
+     L2RRV_simpl.
+     apply rv_almost_eq_eq; intros ?.
+     unfold rvplus, rvopp, rvscale, const, mult, one; simpl.
+     lra.
+  Qed.
+  
+  Lemma L2RRV_scale_plus_l (x : R) (u v : L2RRV) :
+    L2RRV_eq (L2RRVscale x (L2RRVplus u v)) (L2RRVplus (L2RRVscale x u) (L2RRVscale x v)).
+  Proof.
+     red; intros.
+     L2RRV_simpl.
+     apply rv_almost_eq_eq; intros ?.
+     unfold rvplus, rvopp, rvscale, const, mult; simpl.
+     lra.
+  Qed.
+  
+  Lemma L2RRV_scale_plus_r (x y : R) (u : L2RRV) :
+    L2RRV_eq (L2RRVscale (x + y) u) (L2RRVplus (L2RRVscale x u) (L2RRVscale y u)).
+  Proof.
+     red; intros.
+     L2RRV_simpl.
+     apply rv_almost_eq_eq; intros ?.
+     unfold rvplus, rvopp, rvscale, const, mult; simpl.
+     lra.
+  Qed.
   
   Definition L2RRVq : Type := quot L2RRV_eq.
 
@@ -276,6 +316,16 @@ Section L2.
   Qed.
 
   Hint Rewrite L2RRVq_zeroE : quot.
+
+  Definition L2RRVq_scale (x:R) : L2RRVq -> L2RRVq
+    := quot_lift _ (L2RRVscale x).
+
+  Lemma L2RRVq_scaleE x y : L2RRVq_scale x (Quot _ y)  = Quot _ (L2RRVscale x y).
+  Proof.
+    apply quot_liftE.
+  Qed.
+
+  Hint Rewrite L2RRVq_scaleE : quot.
   
   Definition L2RRVq_opp  : L2RRVq -> L2RRVq
     := quot_lift _ L2RRVopp.
@@ -341,12 +391,60 @@ Section L2.
     apply L2RRV_plus_inv.
   Qed.
     
-  Program Definition L2RRVq_AbelianGroup_mixin : AbelianGroup.mixin_of L2RRVq
+  Definition L2RRVq_AbelianGroup_mixin : AbelianGroup.mixin_of L2RRVq
     := AbelianGroup.Mixin L2RRVq L2RRVq_plus L2RRVq_opp L2RRVq_zero
                           L2RRVq_plus_comm L2RRVq_plus_assoc
                           L2RRVq_plus_zero L2RRVq_plus_inv.
 
   Canonical L2RRVq_AbelianGroup :=
     AbelianGroup.Pack L2RRVq L2RRVq_AbelianGroup_mixin L2RRVq.
+
+
+   Ltac L2RRVq_simpl ::=
+     repeat match goal with
+       | [H: L2RRVq |- _ ] =>
+         let xx := fresh H in destruct (Quot_inv H) as [xx ?]; subst H; rename xx into H
+       | [H: AbelianGroup.sort L2RRVq_AbelianGroup |- _ ] =>
+         let xx := fresh H in destruct (Quot_inv H) as [xx ?]; subst H; rename xx into H
+           end
+       ; try autorewrite with quot
+       ; try apply (@eq_Quot _ _ L2RRV_eq_equiv).
+  
+  Lemma L2RRVq_scale_scale (x y : R_Ring) (u : L2RRVq_AbelianGroup) :
+    L2RRVq_scale x (L2RRVq_scale y u) = L2RRVq_scale (x * y) u.
+  Proof.
+    L2RRVq_simpl.
+    apply L2RRV_scale_scale.
+  Qed.
+  
+  Lemma L2RRVq_scale1 (u : L2RRVq_AbelianGroup) :
+    L2RRVq_scale one u = u.
+  Proof.
+    L2RRVq_simpl.
+    apply L2RRV_scale1.
+  Qed.
+  
+  Lemma L2RRVq_scale_plus_l (x : R_Ring) (u v : L2RRVq_AbelianGroup) :
+    L2RRVq_scale x (plus u v) = plus (L2RRVq_scale x u) (L2RRVq_scale x v).
+  Proof.
+    L2RRVq_simpl.
+    apply L2RRV_scale_plus_l.
+  Qed.
+
+  Lemma L2RRVq_scale_plus_r (x y : R_Ring) (u : L2RRVq_AbelianGroup) :
+    L2RRVq_scale (plus x y) u = plus (L2RRVq_scale x u) (L2RRVq_scale y u).
+  Proof.
+    L2RRVq_simpl.
+    apply L2RRV_scale_plus_r.
+  Qed.
+
+  Definition L2RRVq_ModuleSpace_mixin : ModuleSpace.mixin_of R_Ring L2RRVq_AbelianGroup
+    := ModuleSpace.Mixin R_Ring L2RRVq_AbelianGroup
+                         L2RRVq_scale L2RRVq_scale_scale L2RRVq_scale1
+                         L2RRVq_scale_plus_l L2RRVq_scale_plus_r.
+
+  Canonical L2RRVq_ModuleSpace :=
+    ModuleSpace.Class R_Ring L2RRVq L2RRVq_AbelianGroup_mixin L2RRVq_ModuleSpace_mixin.
+
 
 End L2.
