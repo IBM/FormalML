@@ -59,6 +59,7 @@ MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	converge/mdp_turtle \
 	converge/finite_time \
 	converge/cond_expt \
+	AlmostEqual \
 	AxiomaticNormedRealVectorSpace \
 	BorelSigmaAlgebra \
 	DefinedFunctions \
