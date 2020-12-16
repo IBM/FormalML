@@ -397,19 +397,63 @@ Section L2.
     reflexivity.
   Qed.
 
+  Lemma SimplePosExpectation_zero_pos
+        (x : Ts -> R)
+        {rv : RandomVariable prts borel_sa x}
+        {posrv :PositiveRandomVariable x} 
+        {srv : SimpleRandomVariable x} :
+    SimpleExpectation x = 0 ->
+    ps_P (fun omega => x omega = 0) = 1.
+  Proof.    
+    unfold SimpleExpectation; intros.
+    Admitted.
+
+
+  Lemma Expectation_zero_pos 
+        (x : Ts -> R)
+        {rv : RandomVariable prts borel_sa x}
+        {posrv :PositiveRandomVariable x} :
+    Expectation x = Some (Finite 0) ->
+    ps_P (fun omega => x omega = 0) = 1.
+  Proof.
+    rewrite Expectation_pos_posRV with (prv := posrv); intros.
+    inversion H.
+    unfold Expectation_posRV, SimpleExpectationSup, Lub_Rbar in H1.
+    match goal with
+      [H:context [proj1_sig ?x] |- _] => destruct x
+    end; simpl.
+    unfold is_lub_Rbar in i.
+    destruct i.
+    unfold is_ub_Rbar in i.
+    Admitted.
+
   Lemma L2RRV_inner_zero_inv (x:L2RRV) : L2RRVinner x x = 0 ->
                                          L2RRV_eq x (L2RRVconst 0).
   Proof.
     unfold L2RRVinner, L2RRV_eq.
     destruct x as [x rv l2]; simpl.
     red in l2.
-    rewrite (Expectation_ext _ _ (rvsqr_eq x)) in l2.
+    generalize (Expectation_ext _ _ (rvsqr_eq x)); intro exp_ext.
+    rewrite exp_ext in l2.
     erewrite Expectation_pf_irrel in l2.
     match_case; [intros r eqq1 | intros eqq1]
     ; rewrite eqq1 in l2; try contradiction.
     match_destr; try contradiction.
     intros; subst.
-  Admitted.
+    unfold rv_almost_eq.
+    assert (event_equiv (fun x0 : Ts => x x0 = const 0 x0)
+                        (fun x0 : Ts => rvsqr x x0 = 0)).
+    intro x0.
+    unfold const, rvsqr.
+    split; intros.
+    rewrite H; unfold Rsqr; lra.
+    now apply Rsqr_0_uniq with (r := (x x0)).
+    rewrite H.
+    apply Expectation_zero_pos with (rv := rvsqr_rv x).
+    unfold PositiveRandomVariable, rvsqr; intros.
+    now apply Rle_0_sqr.
+    now rewrite exp_ext.
+  Qed.
   
   Lemma L2RRV_inner_scal (x y : L2RRV) (l : R) :
     L2RRVinner (L2RRVscale l x) y = l * L2RRVinner x y.
