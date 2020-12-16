@@ -37,8 +37,8 @@ Section L2.
     - rewrite Expectation_ext with (rv2 := (rvconst (Rsqr x))); trivial.
       generalize (Rle_0_sqr x); intros.
       rewrite Expectation_pos_posRV with (prv := (@prvconst Ts (Rsqr x) H0)).
-      rewrite Expectation_posRV_const.
-  Admitted.
+      now rewrite Expectation_posRV_const.
+  Qed.
 
   Instance is_L2_plus rv_X1 rv_X2
            {rv1:RandomVariable prts borel_sa rv_X1}
