@@ -157,7 +157,6 @@ Lemma rv_almost_eq_plus_proper
       + generalize (ps_sub prts (event_inter (fun x : Ts => x1 x = x2 x) (fun x : Ts => y1 x = y2 x))
                            (fun x : Ts => rvplus x1 y1 x = rvplus x2 y2 x)); intros.
         rewrite H0 in H1.
-        unfold RandomVariable in *.
         apply Rle_antisym.
         * apply ps_le1.
           apply (Hsigma_borel_eq_pf prts); now apply rvplus_rv.
