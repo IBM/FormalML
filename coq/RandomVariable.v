@@ -1568,19 +1568,18 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
   Existing Instance Equivalence_pullback.
   Existing Instance EqDec_pullback.
 
-    
-  Lemma sumSimpleExpectation 
+  Lemma sumSimpleExpectation_nempty
          (rv_X1 rv_X2 : Ts -> R)
          {rv1: RandomVariable Prts borel_sa rv_X1}
          {rv2: RandomVariable Prts borel_sa rv_X2}
          {srv1 : SimpleRandomVariable rv_X1} 
-         {srv2 : SimpleRandomVariable rv_X2} :      
-    NonEmpty Ts -> (SimpleExpectation rv_X1) + (SimpleExpectation rv_X2)%R = 
+         {srv2 : SimpleRandomVariable rv_X2} :
+    @srv_vals Ts R rv_X1 srv1 <> nil -> 
+    @srv_vals Ts R rv_X2 srv2 <> nil ->
+    (SimpleExpectation rv_X1) + (SimpleExpectation rv_X2)%R = 
     SimpleExpectation (rvplus rv_X1 rv_X2).
    Proof.
     unfold SimpleExpectation; intros.
-    generalize (non_empty_srv_vals _ srv1 X); intros.
-    generalize (non_empty_srv_vals _ srv2 X); intros.    
     generalize (sumSimpleExpectation0 srv1 srv2 H0); intros.
     generalize (sumSimpleExpectation1 srv1 srv2 H); intros.   
     generalize (@sa_sigma_inter_pts rv_X1 rv_X2). intro sa_sigma.
@@ -1711,6 +1710,80 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
                 destruct a; simpl; lra.
              ++ unfold sums_same; red; simpl; intros; intuition.
         * now rewrite nodup_map_nodup.
+   Qed.
+
+      Program Instance SimpleRandomVariable_enlarged
+           {rv_X : Ts -> R}
+           (srv:SimpleRandomVariable rv_X)
+           (l:list R)
+           (lincl : incl srv_vals l)
+     : SimpleRandomVariable rv_X :=
+     {
+     srv_vals := l
+     }.
+   Next Obligation.
+     apply lincl.
+     apply srv_vals_complete.
+   Qed.
+
+   Lemma not_in_srv_vals_event_none
+         {rv_X : Ts -> R}
+         (srv:SimpleRandomVariable rv_X) :
+     forall (x:R), ~ (In x srv_vals) ->
+                   event_equiv (fun omega => rv_X omega = x) event_none.
+     Proof.
+       destruct srv.
+       unfold srv_vals.
+       red; intros.
+       unfold event_none.
+       intuition.
+       rewrite <- H0 in H.
+       intuition.
+     Qed.
+
+   Lemma SimpleExpectation_simpl_incl 
+         {rv_X : Ts -> R}
+         (srv:SimpleRandomVariable rv_X)
+         (l:list R)
+         (lincl : incl srv_vals l) :
+     SimpleExpectation rv_X (srv:=srv) = SimpleExpectation rv_X (srv:=(SimpleRandomVariable_enlarged srv l lincl)).
+   Proof.
+     unfold SimpleExpectation; simpl.
+     unfold event_preimage, singleton_event.
+     generalize (incl_front_perm_nodup _ l srv_vals lincl); intros HH.
+     
+     destruct HH as [l2 HH].
+     rewrite (list_sum_perm_eq 
+             (map (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v)) (nodup Req_EM_T l))
+             (map (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v)) ((nodup Req_EM_T srv_vals) ++ (nodup Req_EM_T l2 )))).
+     - rewrite map_app.
+       rewrite list_sum_cat.
+       replace (list_sum
+                  (map (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v))
+                       (nodup Req_EM_T srv_vals))) with 
+           ((list_sum
+               (map (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v))
+                    (nodup Req_EM_T srv_vals))) + 0) at 1 by lra.
+       f_equal.
+       rewrite <- (list_sum_map_zero (nodup Req_EM_T l2)).
+       f_equal.
+       apply map_ext_in; intros.
+       rewrite (not_in_srv_vals_event_none srv).
+       + rewrite ps_none.
+         lra.
+       + generalize (NoDup_perm_disj _ _ _ HH); intros HH2.
+         cut_to HH2; [| apply NoDup_nodup].
+         intros inn2.
+         apply (HH2 a).
+         * now apply nodup_In.
+         * now apply nodup_In in H.
+     - apply Permutation_map.
+       rewrite HH.
+       apply Permutation_app; try reflexivity.
+       rewrite nodup_fixed_point; try reflexivity.
+       eapply NoDup_app_inv2.
+       rewrite <- HH.
+       apply NoDup_nodup.
    Qed.
 
 End SimpleExpectation.
@@ -1920,80 +1993,6 @@ Section SimpleConditionalExpectation.
      induction l; simpl; typeclasses eauto.
    Defined.
 
-   Program Instance SimpleRandomVariable_enlarged
-           {rv_X : Ts -> R}
-           (srv:SimpleRandomVariable rv_X)
-           (l:list R)
-           (lincl : incl srv_vals l)
-     : SimpleRandomVariable rv_X :=
-     {
-     srv_vals := l
-     }.
-   Next Obligation.
-     apply lincl.
-     apply srv_vals_complete.
-   Qed.
-
-   Lemma not_in_srv_vals_event_none
-         {rv_X : Ts -> R}
-         (srv:SimpleRandomVariable rv_X) :
-     forall (x:R), ~ (In x srv_vals) ->
-                   event_equiv (fun omega => rv_X omega = x) event_none.
-     Proof.
-       destruct srv.
-       unfold srv_vals.
-       red; intros.
-       unfold event_none.
-       intuition.
-       rewrite <- H0 in H.
-       intuition.
-     Qed.
-
-   Lemma SimpleExpectation_simpl_incl 
-         {rv_X : Ts -> R}
-         (srv:SimpleRandomVariable rv_X)
-         (l:list R)
-         (lincl : incl srv_vals l) :
-     SimpleExpectation rv_X (srv:=srv) = SimpleExpectation rv_X (srv:=(SimpleRandomVariable_enlarged srv l lincl)).
-   Proof.
-     unfold SimpleExpectation; simpl.
-     unfold event_preimage, singleton_event.
-     generalize (incl_front_perm_nodup _ l srv_vals lincl); intros HH.
-     
-     destruct HH as [l2 HH].
-     rewrite (list_sum_perm_eq 
-             (map (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v)) (nodup Req_EM_T l))
-             (map (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v)) ((nodup Req_EM_T srv_vals) ++ (nodup Req_EM_T l2 )))).
-     - rewrite map_app.
-       rewrite list_sum_cat.
-       replace (list_sum
-                  (map (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v))
-                       (nodup Req_EM_T srv_vals))) with 
-           ((list_sum
-               (map (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v))
-                    (nodup Req_EM_T srv_vals))) + 0) at 1 by lra.
-       f_equal.
-       rewrite <- (list_sum_map_zero (nodup Req_EM_T l2)).
-       f_equal.
-       apply map_ext_in; intros.
-       rewrite (not_in_srv_vals_event_none srv).
-       + rewrite ps_none.
-         lra.
-       + generalize (NoDup_perm_disj _ _ _ HH); intros HH2.
-         cut_to HH2; [| apply NoDup_nodup].
-         intros inn2.
-         apply (HH2 a).
-         * now apply nodup_In.
-         * now apply nodup_In in H.
-     - apply Permutation_map.
-       rewrite HH.
-       apply Permutation_app; try reflexivity.
-       rewrite nodup_fixed_point; try reflexivity.
-       eapply NoDup_app_inv2.
-       rewrite <- HH.
-       apply NoDup_nodup.
-   Qed.
-     
    Lemma SimpleExpectation_pf_irrel 
          {rv_X : Ts -> R}
          (srv1 srv2:SimpleRandomVariable rv_X):
@@ -2074,7 +2073,26 @@ Section SimpleConditionalExpectation.
      apply SimpleExpectation_pf_irrel.
    Qed.
 
-   Lemma expectation_indicator_sum0 {nempty:NonEmpty Ts}
+   Lemma sumSimpleExpectation
+         (rv_X1 rv_X2 : Ts -> R)
+         {rv1: RandomVariable Prts borel_sa rv_X1}
+         {rv2: RandomVariable Prts borel_sa rv_X2}
+         {srv1 : SimpleRandomVariable rv_X1} 
+         {srv2 : SimpleRandomVariable rv_X2} :
+    (SimpleExpectation rv_X1) + (SimpleExpectation rv_X2)%R = 
+    SimpleExpectation (rvplus rv_X1 rv_X2).
+   Proof.
+     assert (H:incl (@srv_vals _ _ _ srv1) (0::(@srv_vals _ _ _ srv1)))
+           by (red; simpl; tauto).
+    rewrite (SimpleExpectation_simpl_incl srv1 _ H).
+    assert (H0:incl (@srv_vals _ _ _ srv2) (0::(@srv_vals _ _ _ srv2)))
+           by (red; simpl; tauto).
+    rewrite (SimpleExpectation_simpl_incl srv2 _ H0).
+    rewrite sumSimpleExpectation_nempty; simpl; trivial; try congruence.
+    apply SimpleExpectation_pf_irrel.
+   Qed.
+
+   Lemma expectation_indicator_sum0 
         (rv_X : Ts -> R)
         (rv : RandomVariable Prts borel_sa rv_X)
         {srv : SimpleRandomVariable rv_X}
@@ -2162,7 +2180,7 @@ Section SimpleConditionalExpectation.
       apply rvplus_rv; eauto.
   Qed.
             
-  Lemma SimpleExpectation_fold_rvplus {nempty:NonEmpty Ts} (l : list (Ts -> R)) 
+  Lemma SimpleExpectation_fold_rvplus (l : list (Ts -> R)) 
     (rvs : Forall (RandomVariable Prts borel_sa) l) 
     (srvs : Forallt SimpleRandomVariable l) :
     SimpleExpectation (fold_right rvplus (const 0) l) (srv:=fr_plus0_simple _ srvs) =
@@ -2225,7 +2243,7 @@ Section SimpleConditionalExpectation.
         + destruct (list_union_dec l); try lra.
     Qed.
 
-  Lemma expectation_indicator_sum_gen {nempty:NonEmpty Ts}
+  Lemma expectation_indicator_sum_gen
         (rv_X : Ts -> R)
         {rv : RandomVariable Prts borel_sa rv_X}
         {srv : SimpleRandomVariable rv_X}
@@ -2263,7 +2281,7 @@ Section SimpleConditionalExpectation.
         * now invcs is_disj.
   Qed.
                
-  Lemma expectation_indicator_sum {nempty:NonEmpty Ts}
+  Lemma expectation_indicator_sum 
         (rv_X : Ts -> R)
         {rv : RandomVariable Prts borel_sa rv_X}
         {srv : SimpleRandomVariable rv_X}
@@ -2418,7 +2436,7 @@ Section SimpleConditionalExpectation.
       + apply IHl.
   Defined.
                                      
-  Lemma gen_conditional_tower_law {nempty:NonEmpty Ts}
+  Lemma gen_conditional_tower_law 
         (rv_X : Ts -> R)
         {rv : RandomVariable Prts borel_sa rv_X}
         {srv : SimpleRandomVariable rv_X}
@@ -2509,7 +2527,7 @@ Section SimpleConditionalExpectation.
         * now simpl.
   Qed.
 
-  Lemma conditional_tower_law {nempty:NonEmpty Ts}
+  Lemma conditional_tower_law 
         (rv_X1 rv_X2 : Ts -> R)
         (rv1 : RandomVariable Prts borel_sa rv_X1)
         (rv2 : RandomVariable Prts borel_sa rv_X2)        
@@ -3967,51 +3985,6 @@ Section Expectation.
       lra.
   Qed.        
 
-  Lemma Expectation_const (c:R) :
-    Expectation (const c) = Some (Finite c).
-  Proof.
-    unfold Expectation.
-    generalize (rvconst c); intros.
-    generalize (rvconst 0); intros.
-    destruct (Rle_dec 0 c).
-    - rewrite Expectation_posRV_ext with (prv2 := prvconst c r); trivial.
-      + rewrite Expectation_posRV_const; trivial.
-        assert (0 <= 0) by lra.
-        rewrite Expectation_posRV_ext with (prv2 := prvconst 0 H1); trivial.    
-        * rewrite Expectation_posRV_const; trivial.
-          simpl.
-          f_equal.
-          rewrite Rbar_finite_eq.
-          lra.
-        * apply negative_part_rv; trivial.
-        * intro x.
-          unfold neg_fun_part, const, Rmax; simpl.
-          destruct (Rle_dec (-c) 0); lra.
-      + apply positive_part_rv; trivial.
-      + intro x.
-        unfold pos_fun_part, const, Rmax; simpl.
-        destruct (Rle_dec c 0); lra.
-    - assert (0 <= (-c)) by lra.
-      generalize (rvconst (-c)); intros.
-      assert (0 <= 0) by lra.
-      rewrite Expectation_posRV_ext with (prv2 := prvconst 0 H3); trivial.
-      + rewrite Expectation_posRV_const; trivial.
-        rewrite Expectation_posRV_ext with (prv2 := prvconst (-c) H1); trivial.    
-        * rewrite Expectation_posRV_const; trivial.
-          simpl.
-          f_equal.
-          rewrite Rbar_finite_eq.
-          lra.
-        * apply negative_part_rv; trivial.
-        * intro x.
-          unfold neg_fun_part, const, Rmax; simpl.
-          destruct (Rle_dec (-c) 0); lra.
-      + apply positive_part_rv; trivial.
-      + intro x.
-        unfold pos_fun_part, const, Rmax; simpl.
-        destruct (Rle_dec c 0); lra.
-  Qed.
-
   Lemma Expectation_scale (c: R) 
         (rv_X : Ts -> R)
         {rv : RandomVariable Prts borel_sa rv_X} :
@@ -4070,9 +4043,7 @@ Section Expectation.
       now apply pos_fun_part_pos.
    Qed.
 
-
   Lemma Expectation_simple
-        {nempty:NonEmpty Ts}
         (rv_X : Ts -> R)
         {rvx_rv : RandomVariable Prts borel_sa rv_X}
         {srv:SimpleRandomVariable rv_X} :
@@ -4094,6 +4065,12 @@ Section Expectation.
      - now apply negative_part_rv.
      - now apply positive_part_rv.
    Qed.
+
+   Lemma Expectation_const (c:R) :
+    Expectation (const c) = Some (Finite c).
+  Proof.
+    now rewrite (Expectation_simple _ (srv:=srvconst c)), SimpleExpectation_const.
+  Qed.
 
   Lemma z_le_z : 0 <= 0.
     Proof.
@@ -5839,7 +5816,7 @@ Section Expectation.
              now rewrite H8 in H9.
   Qed.
 
-  Lemma Expectation_posRV_sum {nempty:NonEmpty Ts}
+  Lemma Expectation_posRV_sum 
         (rv_X1 rv_X2 : Ts -> R)
         {rv1 : RandomVariable Prts borel_sa rv_X1}
         {rv2 : RandomVariable Prts borel_sa rv_X2}        
@@ -5930,7 +5907,7 @@ Section Expectation.
        now apply is_lim_seq_plus with (l1 := rv_X1 omega) (l2 := rv_X2 omega).
     Qed.
 
-  Lemma Expectation_dif_pos_unique2 (nempty: NonEmpty Ts)
+  Lemma Expectation_dif_pos_unique2 
         (rxp1 rxn1 rxp2 rxn2 : Ts -> R)
         (rp1 : RandomVariable Prts borel_sa rxp1)
         (rn1 : RandomVariable Prts borel_sa rxn1)
@@ -5973,7 +5950,7 @@ Section Expectation.
   Qed.
 
 
-    Lemma Expectation_dif_pos_unique {nempty:NonEmpty Ts}
+    Lemma Expectation_dif_pos_unique 
         (rvp rvn : Ts -> R)
         (pr : RandomVariable Prts borel_sa rvp)
         (nr : RandomVariable Prts borel_sa rvn)        
@@ -5986,7 +5963,6 @@ Section Expectation.
    Proof.
      intros.
      generalize (Expectation_dif_pos_unique2
-                   nempty
                    rvp rvn 
                    (pos_fun_part (rvminus rvp rvn))
                    (neg_fun_part (rvminus rvp rvn))
@@ -6020,7 +5996,7 @@ Section Expectation.
        + apply rv_pos_neg_id.
    Qed.
 
-  Lemma Expectation_sum  {nempty:NonEmpty Ts}
+  Lemma Expectation_sum 
         (rv_X1 rv_X2 : Ts -> R)
         {rv1 : RandomVariable Prts borel_sa rv_X1}
         {rv2 : RandomVariable Prts borel_sa rv_X2} :
@@ -6100,7 +6076,7 @@ Section Expectation.
       tauto.
    Qed.
 
-  Lemma Expectation_sum_finite  {nempty:NonEmpty Ts}
+  Lemma Expectation_sum_finite 
         (rv_X1 rv_X2 : Ts -> R)
         {rv1 : RandomVariable Prts borel_sa rv_X1}
         {rv2 : RandomVariable Prts borel_sa rv_X2} :
