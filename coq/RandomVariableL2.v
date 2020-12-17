@@ -45,7 +45,7 @@ Section L2.
     unfold IsL2, IsL2'.
     rewrite Expectation_sqr.
     match_destr; now simpl.
- Qed.
+  Qed.
 
   Lemma Cauchy_Schwarz_ineq (rv_X1 rv_X2 :Ts->R) 
         {is1:IsL2' rv_X1}
@@ -151,7 +151,6 @@ Section L2.
     rewrite H4 in l2; tauto.    
   Qed.
 
-
   Lemma L2Expectation_finite (rv_X:Ts->R)  
         {rv : RandomVariable prts borel_sa rv_X}
         {l2:IsL2 rv_X}
@@ -160,34 +159,9 @@ Section L2.
        | _ => False
        end.
   Proof.
-    assert (PositiveRandomVariable (rvabs rv_X)) by apply prvabs.
-    generalize (Expectation_pos_posRV (rvabs rv_X)); intros.
-    generalize (rvabs_bound rv_X); intros.
-    assert (one_pos: 0 < 1) by lra.
-    assert (PositiveRandomVariable (rvplus (rvsqr rv_X) (const 1))).
-    apply rvplus_prv.
-    apply prvsqr.
-    apply prvconst.
-    lra.
-    generalize (Finite_Expectation_posRV_le _ _ H H2 H1); intros.
-    unfold IsL2 in l2.
-    rewrite Expectation_pos_posRV with (prv := prvsqr rv_X) in l2.
-    match_case_in l2; intros.
-    assert (0 <= 1) by lra.
-    generalize (@prvconst Ts 1 H5); intros.
-    generalize (Expectation_posRV_sum (rvsqr rv_X) (const 1)); intros.
-    cut_to H3.
-    admit.
-    repeat match_destr_in l2.
-    assert (0 <= mkposreal _ one_pos).
-    simpl; lra.
-    assert (@PositiveRandomVariable Ts (const (mkposreal _ one_pos))).
-    now apply prvconst.
-    generalize (Expectation_posRV_const (mkposreal _ one_pos) H8); intros.
-    
-    simpl in H10.
-
-  Admitted.
+    apply Expectation_abs_then_finite; trivial.
+    apply L2Expectation_finite_abs; trivial.
+  Qed.
 
   Definition L2Expectation_ex (rv_X:Ts->R) {rv:RandomVariable prts borel_sa rv_X} {l2:IsL2 rv_X} :
     { x: R | Expectation rv_X = Some (Finite x)}.

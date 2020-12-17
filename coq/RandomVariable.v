@@ -4115,6 +4115,54 @@ Section Expectation.
     now unfold PositiveRandomVariable in prv1.
  Qed.
 
+    Lemma pos_fun_part_le rv_X : RealRandomVariable_le (fun x : Ts => pos_fun_part rv_X x) (rvabs rv_X).
+  Proof.
+    red; intros.
+    unfold rvabs, pos_fun_part, Rabs, Rmax; simpl.
+    repeat match_destr; lra.
+  Qed.
+
+  Lemma neg_fun_part_le rv_X : RealRandomVariable_le (fun x : Ts => (neg_fun_part rv_X x)) (rvabs rv_X).
+  Proof.
+    red; intros.
+    unfold rvabs, rvopp, rvscale, neg_fun_part, Rabs, Rmax; simpl.
+    repeat match_destr; lra.
+  Qed.
+
+  Lemma Expectation_abs_then_finite (rv_X:Ts->R)  
+        {rv : RandomVariable Prts borel_sa rv_X}
+    :  match Expectation (rvabs rv_X) with
+       | Some (Finite _) => True
+       | _ => False
+       end ->
+       match Expectation rv_X with
+       | Some (Finite _) => True
+       | _ => False
+       end.
+  Proof.
+    rewrite Expectation_pos_posRV with (prv := prvabs _).
+    unfold Expectation.
+    intros HH.
+    match_case_in HH
+    ; [intros r eqq | intros eqq | intros eqq]
+    ; rewrite eqq in HH
+    ; try contradiction.
+
+    unfold Rbar_minus', Rbar_plus'.
+    assert (fin:is_finite (Expectation_posRV (rvabs rv_X)))
+      by (rewrite eqq; reflexivity).
+
+    generalize (pos_fun_part_le rv_X); intros le1.
+    generalize (Finite_Expectation_posRV_le _ _ _ _ le1 fin)
+    ; intros fin1.
+    rewrite <- fin1.
+    generalize (neg_fun_part_le rv_X); intros le2.
+    generalize (Finite_Expectation_posRV_le _ _ _ _ le2 fin)
+    ; intros fin2.
+    rewrite <- fin2.
+    simpl; trivial.
+  Qed.
+
   Lemma pos_part_le 
         (rvp rvn : Ts -> R)
         (p : PositiveRandomVariable rvp)
