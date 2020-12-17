@@ -267,6 +267,15 @@ Section RandomVariable.
         (rv_X:Ts->R) : Prop :=
     prv : forall (x:Ts), (0 <= rv_X x)%R.
 
+  Global Instance PositiveRandomVariable_proper : Proper (rv_eq ==> iff) PositiveRandomVariable.
+  Proof.
+    unfold PositiveRandomVariable, rv_eq, pointwise_relation.
+    intros x y eqq.
+    split; intros lle z.
+    - rewrite <- eqq; auto.
+    - rewrite eqq; auto.
+  Qed.
+  
   Global Instance prvconst c (cpos:0<=c) : PositiveRandomVariable (const c).
   Proof.
     intros x.
