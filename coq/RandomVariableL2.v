@@ -137,15 +137,19 @@ Section L2.
     rewrite Expectation_pos_posRV with (prv := H).
     now rewrite <- H3.
     assert (0 <= 1) by lra.
+    erewrite Expectation_posRV_pf_irrel in H7.
+    rewrite H7.
+    erewrite Expectation_posRV_pf_irrel in H4.
+    rewrite H4.
     generalize (Expectation_posRV_const 1 H8); intros.
-    (*
-    rewrite H9 in H7.
-    rewrite H4 in H7.
-    *)
-    admit.
+    erewrite Expectation_posRV_pf_irrel in H9.
+    rewrite H9.
+    simpl.
+    reflexivity.
+
     rewrite H4 in l2; tauto.
     rewrite H4 in l2; tauto.    
-  Admitted.
+  Qed.
 
 
   Lemma L2Expectation_finite (rv_X:Ts->R)  
@@ -185,7 +189,7 @@ Section L2.
 
   Admitted.
 
-  Definition L2Expectation_ex (rv_X:Ts->R) {l2:IsL2 rv_X} :
+  Definition L2Expectation_ex (rv_X:Ts->R) {rv:RandomVariable prts borel_sa rv_X} {l2:IsL2 rv_X} :
     { x: R | Expectation rv_X = Some (Finite x)}.
   Proof.
     generalize (L2Expectation_finite rv_X).
@@ -194,7 +198,7 @@ Section L2.
     eauto.
   Defined.
 
-  Definition L2Expectation (rv_X:Ts->R) {l2:IsL2 rv_X}
+  Definition L2Expectation (rv_X:Ts->R) {rv:RandomVariable prts borel_sa rv_X} {l2:IsL2 rv_X}
     := proj1_sig (L2Expectation_ex rv_X).
   
   Instance is_L2_const x : IsL2 (const x).
