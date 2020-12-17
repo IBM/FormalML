@@ -275,7 +275,14 @@ Section RandomVariable.
     - rewrite <- eqq; auto.
     - rewrite eqq; auto.
   Qed.
-  
+
+  Global Instance PositiveRandomVariable_le_proper : Proper (RealRandomVariable_le ==> impl) PositiveRandomVariable.
+  Proof.
+    unfold PositiveRandomVariable, RealRandomVariable_le.
+    intros x y eqq lle z.
+    eapply Rle_trans; eauto.
+  Qed.
+
   Global Instance prvconst c (cpos:0<=c) : PositiveRandomVariable (const c).
   Proof.
     intros x.
