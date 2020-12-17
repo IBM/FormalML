@@ -23,21 +23,20 @@ Section L2.
           (prts: ProbSpace dom).
 
 
-  Class IsL2 (rv_X:Ts->R) {rv:RandomVariable prts borel_sa rv_X}
+  Class IsL2 (rv_X:Ts->R) 
     := is_L2 : match Expectation (rvsqr rv_X) with
        | Some (Finite _) => True
        | _ => False
        end.
 
   Lemma Expectation_sqr
-        (rv_X :Ts->R) 
-        {rv:RandomVariable prts borel_sa rv_X} :
+        (rv_X :Ts->R)  :
     Expectation (rvsqr rv_X) = Some (Expectation_posRV (rvsqr rv_X)).
   Proof.
     apply Expectation_pos_posRV.
   Qed.
 
-  Definition IsL2' (rv_X:Ts->R) {rv:RandomVariable prts borel_sa rv_X} :=
+  Definition IsL2' (rv_X:Ts->R)  :=
     is_finite (Expectation_posRV (rvsqr rv_X)).
 
   Lemma IsL2_spec (rv_X:Ts->R) {rv:RandomVariable prts borel_sa rv_X} :
@@ -49,8 +48,6 @@ Section L2.
  Qed.
 
   Lemma Cauchy_Schwarz_ineq (rv_X1 rv_X2 :Ts->R) 
-        {rv1:RandomVariable prts borel_sa rv_X1} 
-        {rv2:RandomVariable prts borel_sa rv_X2} 
         {is1:IsL2' rv_X1}
         {is2:IsL2' rv_X2}  :
     0 < Expectation_posRV(rvsqr rv_X1) ->
@@ -110,7 +107,7 @@ Section L2.
     lra.
   Qed.
 
-  Lemma L2Expectation_finite (rv_X:Ts->R) {rv:RandomVariable prts borel_sa rv_X} {l2:IsL2 rv_X}
+  Lemma L2Expectation_finite (rv_X:Ts->R) {l2:IsL2 rv_X}
     :  match Expectation rv_X with
        | Some (Finite _) => True
        | _ => False
@@ -118,7 +115,7 @@ Section L2.
   Proof.
   Admitted.
 
-  Definition L2Expectation_ex (rv_X:Ts->R) {rv:RandomVariable prts borel_sa rv_X} {l2:IsL2 rv_X} :
+  Definition L2Expectation_ex (rv_X:Ts->R) {l2:IsL2 rv_X} :
     { x: R | Expectation rv_X = Some (Finite x)}.
   Proof.
     generalize (L2Expectation_finite rv_X).
@@ -127,7 +124,7 @@ Section L2.
     eauto.
   Defined.
 
-  Definition L2Expectation (rv_X:Ts->R) {rv:RandomVariable prts borel_sa rv_X} {l2:IsL2 rv_X}
+  Definition L2Expectation (rv_X:Ts->R) {l2:IsL2 rv_X}
     := proj1_sig (L2Expectation_ex rv_X).
   
   Instance is_L2_const x : IsL2 (const x).
@@ -136,8 +133,9 @@ Section L2.
     assert (@rv_eq Ts R (rvsqr (const x)) (const (Rsqr x))).
     - intro x0.
       now unfold rvsqr, const.
-    - rewrite Expectation_ext with (rv2 := (rvconst (Rsqr x))); trivial.
-      now rewrite Expectation_const.
+    - rewrite (@Expectation_ext _ _ _ _ (const (Rsqr x))).
+      + now rewrite Expectation_const.
+      + intros ?; reflexivity.
   Qed.
 
   Lemma rvprod_bound (rv_X1 rv_X2 : Ts->R) :
@@ -159,7 +157,7 @@ Section L2.
     apply Rplus_le_compat_l with (r:= (2 * (rv_X1 x * rv_X2 x))) in H.
     ring_simplify in H.
     now ring_simplify.
-  Qed.    
+  Qed.  
 
   Lemma rvsum_sqr_bound (rv_X1 rv_X2 : Ts->R) :
     RealRandomVariable_le (rvsqr (rvplus rv_X1 rv_X2)) 
@@ -216,7 +214,7 @@ Section L2.
     now rewrite <- H6.
   Qed.
 
-  Instance is_L2_scale x rv_X {rv:RandomVariable prts borel_sa rv_X}
+  Instance is_L2_scale x rv_X 
            {isl2:IsL2 rv_X} :
     IsL2 (rvscale x rv_X).
   Proof.
@@ -225,8 +223,7 @@ Section L2.
     - intro x0.
       unfold rvsqr, rvscale, Rsqr; lra.
     - destruct (Rlt_dec 0 (Rsqr x)).
-      + rewrite Expectation_ext with (rv2 := (rvscale_rv prts (mkposreal _ r) (rvsqr rv_X) 
-                                                         (rvsqr_rv rv_X))); trivial.
+      + rewrite (Expectation_ext (rv_X2 := (rvscale (mkposreal _ r) (rvsqr rv_X))) H).
         rewrite Expectation_scale_posreal.
         unfold IsL2 in isl2.
         match_destr_in isl2.
@@ -235,7 +232,7 @@ Section L2.
         assert (0 = Rsqr x) by lra.
         symmetry in H1.
         apply Rsqr_eq_0 in H1.
-        rewrite Expectation_ext with (rv2 := rvconst 0).
+        rewrite (Expectation_ext (rv_X2 := const 0)).
         * now rewrite Expectation_const.
         * intro x0.
           unfold rvsqr, rvscale, const, Rsqr.
@@ -522,7 +519,7 @@ Section L2.
     L2RRVinner x y = L2RRVinner y x.
   Proof.
     unfold L2RRVinner.
-    now rewrite (Expectation_ext _ _ (rvmult_comm x y)).
+    now rewrite (Expectation_ext (rvmult_comm x y)).
   Qed.
   
   Lemma L2RRV_inner_pos (x : L2RRV) : 0 <= L2RRVinner x x.
@@ -580,9 +577,8 @@ Section L2.
     unfold L2RRVinner, L2RRV_eq.
     destruct x as [x rv l2]; simpl.
     red in l2.
-    generalize (Expectation_ext _ _ (rvsqr_eq x)); intro exp_ext.
+    generalize (Expectation_ext (rvsqr_eq x)); intro exp_ext.
     rewrite exp_ext in l2.
-    erewrite Expectation_pf_irrel in l2.
     match_case; [intros r eqq1 | intros eqq1]
     ; rewrite eqq1 in l2; try contradiction.
     match_destr; try contradiction.
@@ -596,20 +592,21 @@ Section L2.
     rewrite H; unfold Rsqr; lra.
     now apply Rsqr_0_uniq with (r := (x x0)).
     rewrite H.
-    apply Expectation_zero_pos with (rv := rvsqr_rv x).
-    unfold PositiveRandomVariable, rvsqr; intros.
-    now apply Rle_0_sqr.
-    now rewrite exp_ext.
+    apply Expectation_zero_pos.
+    - typeclasses eauto.
+    - unfold PositiveRandomVariable, rvsqr; intros.
+      now apply Rle_0_sqr.
+    - now rewrite exp_ext.
   Qed.
   
   Lemma L2RRV_inner_scal (x y : L2RRV) (l : R) :
     L2RRVinner (L2RRVscale l x) y = l * L2RRVinner x y.
   Proof.
     unfold L2RRVinner, L2RRVscale; simpl.
-    rewrite Expectation_ext with (rv2 := rvscale_rv prts l (rvmult x y) (rvmult_rv x y)).
+    rewrite (Expectation_ext (rv_X2 := rvscale l (rvmult x y))).
     destruct (Req_EM_T l 0).
     subst.
-    rewrite Expectation_ext with (rv2 := rvconst 0).
+    rewrite (Expectation_ext (rv_X2 := const 0)).
     rewrite Expectation_const; lra.
     intro x0.
     unfold rvscale, rvmult, const; lra.
@@ -640,7 +637,7 @@ Section L2.
     L2RRVinner (L2RRVplus x y) z = L2RRVinner x z + L2RRVinner y z.
   Proof.
     unfold L2RRVinner, L2RRVplus; simpl.
-    rewrite Expectation_ext with (rv2 := rvplus_rv (rvmult x z) (rvmult y z)).
+    rewrite (Expectation_ext (rv_X2 := rvplus (rvmult x z) (rvmult y z))).
     -
   Admitted.
 

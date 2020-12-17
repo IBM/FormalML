@@ -3144,8 +3144,6 @@ Section Expectation.
     
   Lemma Expectation_posRV_ext 
         {rv_X1 rv_X2 : Ts -> R}
-        (rv1 : RandomVariable Prts borel_sa rv_X1)
-        (rv2 : RandomVariable Prts borel_sa rv_X2)
         (prv1:PositiveRandomVariable rv_X1) 
         (prv2:PositiveRandomVariable rv_X2):
     rv_eq rv_X1 rv_X2 ->
@@ -3161,7 +3159,16 @@ Section Expectation.
     - exists y; exists yrv; exists ysrv.
       rewrite eqq.
       auto.
-  Qed.      
+  Qed.
+
+  Lemma Expectation_posRV_pf_irrel 
+        {rv_X: Ts -> R}
+        (prv1 prv2:PositiveRandomVariable rv_X) :
+    Expectation_posRV rv_X (posrv:=prv1) = Expectation_posRV rv_X (posrv:=prv2).
+  Proof.
+    apply Expectation_posRV_ext.
+    reflexivity.
+  Qed.
    
   Program Definition pos_fun_part {Ts:Type} (f : Ts -> R) : (Ts -> nonnegreal) :=
     fun x => mknonnegreal (Rmax (f x) 0) _.
@@ -3310,12 +3317,10 @@ Section Expectation.
 
   Definition Rbar_minus' (x y : Rbar) : option Rbar :=
     Rbar_plus' x (Rbar_opp y).
-
-  Definition Expectation (rv_X : Ts -> R) 
-             {rrv : RandomVariable Prts borel_sa rv_X} : option Rbar :=
+ 
+  Definition Expectation (rv_X : Ts -> R) : option Rbar :=
     Rbar_minus' (Expectation_posRV (pos_fun_part rv_X))
                 (Expectation_posRV (neg_fun_part rv_X)).
-
     
   Lemma pos_fun_part_pos (rv_X : Ts -> R) 
          {prv : PositiveRandomVariable rv_X} :
@@ -3339,9 +3344,7 @@ Section Expectation.
       rewrite Rmax_right; lra.
   Qed.
 
-  Lemma Expectation_ext {rv_X1 rv_X2 : Ts -> R}
-        (rv1:RandomVariable Prts borel_sa rv_X1) 
-        (rv2:RandomVariable Prts borel_sa rv_X2):
+  Lemma Expectation_ext {rv_X1 rv_X2 : Ts -> R} :
     rv_eq rv_X1 rv_X2 ->
     Expectation rv_X1 = Expectation rv_X2.
   Proof.
@@ -3349,30 +3352,24 @@ Section Expectation.
     unfold Expectation.
     f_equal.
     - apply Expectation_posRV_ext.
-      now apply positive_part_rv.
-      now apply positive_part_rv.      
       intros x; simpl.
       now rewrite eqq.
     - f_equal.
       apply Expectation_posRV_ext.
-      now apply negative_part_rv.
-      now apply negative_part_rv.      
       intros x; simpl.
       now rewrite eqq.
   Qed.
 
-  Lemma Expectation_pf_irrel {rv_X: Ts -> R}
-        (rrv1 rrv2:RandomVariable Prts borel_sa rv_X)  :
-        Expectation rv_X (rrv:=rrv1) = Expectation rv_X (rrv:=rrv2).
+  Global Instance Expectation_proper : Proper (rv_eq ==> eq) Expectation.
   Proof.
-    apply Expectation_ext.
-    reflexivity.
-  Qed.      
-
-  Definition rvmean (rv_X:Ts -> R) {rrv : RandomVariable Prts borel_sa rv_X} : option Rbar :=
+    intros ???.
+    now apply Expectation_ext.
+  Qed.
+    
+  Definition rvmean (rv_X:Ts -> R) : option Rbar :=
      Expectation rv_X.
 
-  Definition variance (rv_X : Ts -> R) {rrv : RandomVariable Prts borel_sa rv_X} : option Rbar :=
+  Definition variance (rv_X : Ts -> R)  : option Rbar :=
     match rvmean rv_X with
     | Some (Finite m) => Expectation (rvsqr (rvminus rv_X (const m)))
     | _ => None
@@ -3472,10 +3469,9 @@ Section Expectation.
        destruct c; simpl.
        lra.
      Qed.
-                                                         
+
    Lemma Expectation_posRV_scale (c: posreal) 
         (rv_X : Ts -> R)
-        {rv : RandomVariable Prts borel_sa rv_X}
         {posrv:PositiveRandomVariable rv_X} :
     Expectation_posRV (rvscale c rv_X) =
     Rbar_mult c (Expectation_posRV rv_X).
@@ -3534,39 +3530,31 @@ Section Expectation.
     apply cond_pos.
   Qed.
 
-  Lemma Expectation_scale_pos (c:posreal) (rv_X : Ts -> R) 
-    {rv : RandomVariable Prts borel_sa rv_X} :
+  Lemma Expectation_scale_pos (c:posreal) (rv_X : Ts -> R) :
     Expectation_posRV (fun x : Ts => pos_fun_part (rvscale c rv_X) x) =
     Rbar_mult c (Expectation_posRV (pos_fun_part rv_X)).
   Proof.
     rewrite <- Expectation_posRV_scale.
-    - apply Expectation_posRV_ext.
-      now apply positive_part_rv, rvscale_rv.
-      now apply rvscale_rv, positive_part_rv.
-      intros x.
-      unfold pos_fun_part, rvscale.
-      unfold pos_fun_part_obligation_1.
-      simpl.
-      now rewrite scale_Rmax0.
-    - now apply positive_part_rv.
+    apply Expectation_posRV_ext.
+    intros x.
+    unfold pos_fun_part, rvscale.
+    unfold pos_fun_part_obligation_1.
+    simpl.
+    now rewrite scale_Rmax0.
   Qed.
   
-  Lemma Expectation_scale_neg (c:posreal) (rv_X : Ts -> R) 
-    {rv : RandomVariable Prts borel_sa rv_X} :
+  Lemma Expectation_scale_neg (c:posreal) (rv_X : Ts -> R) :
     Expectation_posRV (fun x : Ts => neg_fun_part (rvscale c rv_X) x) =
     Rbar_mult c (Expectation_posRV (neg_fun_part rv_X)).
   Proof.
     rewrite <- Expectation_posRV_scale.
-    - apply Expectation_posRV_ext.
-      now apply negative_part_rv, rvscale_rv.
-      now apply rvscale_rv, negative_part_rv.
-      intros x.
-      unfold neg_fun_part, rvscale.
-      unfold neg_fun_part_obligation_1.
-      simpl.
-      replace (-(c*rv_X x)) with (c * (-rv_X x)) by lra.
-      now rewrite scale_Rmax0.
-    - now apply negative_part_rv.
+    apply Expectation_posRV_ext.
+    intros x.
+    unfold neg_fun_part, rvscale.
+    unfold neg_fun_part_obligation_1.
+    simpl.
+    replace (-(c*rv_X x)) with (c * (-rv_X x)) by lra.
+    now rewrite scale_Rmax0.
   Qed.
 
    Lemma Rbar_mult_pos_pinf (c : posreal):
@@ -3630,10 +3618,9 @@ Section Expectation.
     Qed.
 
   Lemma Expectation_scale_posreal (c: posreal) 
-        (rv_X : Ts -> R)
-        {rv : RandomVariable Prts borel_sa rv_X} :
+        (rv_X : Ts -> R) :
     let Ex_rv := Expectation rv_X in
-    let Ex_c_rv := (@Expectation (rvscale c rv_X) (rvscale_rv Prts c rv_X rv)) in
+    let Ex_c_rv := Expectation (rvscale c rv_X) in
     Ex_c_rv = 
     match Ex_rv with
     | Some x => Some (Rbar_mult c x)
@@ -3647,10 +3634,9 @@ Section Expectation.
   Qed.
   
   Lemma Expectation_opp
-        (rv_X : Ts -> R)
-        {rv : RandomVariable Prts borel_sa rv_X} :
+        (rv_X : Ts -> R) :
     let Ex_rv := Expectation rv_X in
-    let Ex_o_rv := (@Expectation (rvopp rv_X) (rvopp_rv rv_X)) in
+    let Ex_o_rv := Expectation (rvopp rv_X) in
     Ex_o_rv = 
     match Ex_rv with
     | Some x => Some (Rbar_opp x)
@@ -3659,31 +3645,24 @@ Section Expectation.
   Proof.
     unfold Expectation.
     rewrite Expectation_posRV_ext with (prv2 := negative_part_prv rv_X).
-    replace (Expectation_posRV (fun x : Ts => neg_fun_part (rvopp rv_X) x)) with
+    - replace (Expectation_posRV (fun x : Ts => neg_fun_part (rvopp rv_X) x)) with
         (Expectation_posRV (fun x : Ts => pos_fun_part rv_X x)).
-    unfold Rbar_minus'.
-    case_eq  (Expectation_posRV (fun x : Ts => pos_fun_part rv_X x)); intros.
-    case_eq  (Expectation_posRV (fun x : Ts => neg_fun_part rv_X x)); intros; simpl; f_equal.
-    rewrite Rbar_finite_eq; lra.
-    case_eq  (Expectation_posRV (fun x : Ts => neg_fun_part rv_X x)); intros; simpl; f_equal.
-    case_eq  (Expectation_posRV (fun x : Ts => neg_fun_part rv_X x)); intros; simpl; f_equal.
-    symmetry.
-    rewrite Expectation_posRV_ext with (prv2 := positive_part_prv rv_X).
-    reflexivity.
-    apply negative_part_rv.
-    now apply rvopp_rv.
-    now apply positive_part_rv.
-    intro x.
-    unfold neg_fun_part, rvopp, pos_fun_part, rvscale; simpl.
-    now replace (- (-1 * rv_X x)) with (rv_X x) by lra.
-    apply positive_part_rv.
-    now apply rvopp_rv.
-    now apply negative_part_rv.
-    intro x.
-    unfold neg_fun_part, rvopp, pos_fun_part, rvscale; simpl.
-    now replace (-1 * rv_X x) with (- rv_X x) by lra.
+      + unfold Rbar_minus'.
+        case_eq  (Expectation_posRV (fun x : Ts => pos_fun_part rv_X x)); intros.
+        * case_eq  (Expectation_posRV (fun x : Ts => neg_fun_part rv_X x)); intros; simpl; f_equal.
+          rewrite Rbar_finite_eq; lra.
+        * case_eq  (Expectation_posRV (fun x : Ts => neg_fun_part rv_X x)); intros; simpl; f_equal.
+        * case_eq  (Expectation_posRV (fun x : Ts => neg_fun_part rv_X x)); intros; simpl; f_equal.
+      + symmetry.
+        rewrite Expectation_posRV_ext with (prv2 := positive_part_prv rv_X).
+        * reflexivity.
+        * intro x.
+          unfold neg_fun_part, rvopp, pos_fun_part, rvscale; simpl.
+          now replace (- (-1 * rv_X x)) with (rv_X x) by lra.
+    - intro x.
+      unfold neg_fun_part, rvopp, pos_fun_part, rvscale; simpl.
+      now replace (-1 * rv_X x) with (- rv_X x) by lra.
   Qed.
-
 
   Lemma lub_Rbar_witness (E : R -> Prop) (l : Rbar) (b:R):
     is_lub_Rbar E l -> Rbar_lt b l ->
@@ -3894,7 +3873,6 @@ Section Expectation.
 
    Lemma Expectation_witness (l: Rbar) (b : R)
         (rv_X: Ts -> R)
-        {rv : RandomVariable Prts borel_sa rv_X}
         {prv:PositiveRandomVariable rv_X} :
      Rbar_lt b l -> Expectation_posRV rv_X = l -> 
       exists (x:R), (exists (rvx : Ts -> R) (rv : RandomVariable Prts borel_sa rvx)
@@ -3921,8 +3899,6 @@ Section Expectation.
 
    Lemma Expectation_posRV_le 
         (rv_X1 rv_X2 : Ts -> R)
-        {rv1: RandomVariable Prts borel_sa rv_X1}
-        {rv2: RandomVariable Prts borel_sa rv_X2}                               
         {prv1 : PositiveRandomVariable rv_X1}
         {prv2 : PositiveRandomVariable rv_X2} :
     RealRandomVariable_le rv_X1 rv_X2 ->
@@ -3999,14 +3975,13 @@ Section Expectation.
       split; [ apply (prvconst c nnc) |].
       unfold RealRandomVariable_le, const; intros.
       lra.
-  Qed.        
+  Qed.
 
   Lemma Expectation_scale (c: R) 
-        (rv_X : Ts -> R)
-        {rv : RandomVariable Prts borel_sa rv_X} :
+        (rv_X : Ts -> R) :
     c <> 0 ->
     let Ex_rv := Expectation rv_X in
-    let Ex_c_rv := (@Expectation (rvscale c rv_X) (rvscale_rv Prts c rv_X rv)) in
+    let Ex_c_rv := Expectation (rvscale c rv_X) in
     Ex_c_rv = 
     match Ex_rv with
     | Some x => Some (Rbar_mult c x)
@@ -4017,25 +3992,24 @@ Section Expectation.
     destruct (Rlt_dec 0 c).
     apply (Expectation_scale_posreal (mkposreal c r)).
     destruct (Rlt_dec 0 (- c)).
-    unfold Ex_c_rv.
-    rewrite Expectation_ext with (rv2 := rvopp_rv (rvscale (-c) rv_X)).
-    rewrite Expectation_opp.
-    rewrite (Expectation_scale_posreal (mkposreal (-c) r)).
-    unfold Ex_rv.
-    case_eq (Expectation rv_X); intros; trivial.
-    f_equal; simpl.
-    rewrite <- Rbar_mult_opp_l.
-    simpl.
-    now replace (- - c) with (c) by lra.
-    intro x.
-    unfold rvopp, rvscale.
-    lra.
-    unfold Ex_c_rv, Ex_rv.
-    lra.
+    - unfold Ex_c_rv.
+      rewrite (@Expectation_ext _ (rvopp (rvscale (- c) rv_X))).
+      + rewrite Expectation_opp.
+        rewrite (Expectation_scale_posreal (mkposreal (-c) r)).
+        unfold Ex_rv.
+        case_eq (Expectation rv_X); intros; trivial.
+        f_equal; simpl.
+        rewrite <- Rbar_mult_opp_l.
+        simpl.
+        now replace (- - c) with (c) by lra.
+      + intro x.
+        unfold rvopp, rvscale.
+        lra.
+    - unfold Ex_c_rv, Ex_rv.
+      lra.
   Qed.
 
   Lemma Expectation_pos_posRV (rv_X : Ts -> R) 
-         {rrv : RandomVariable Prts borel_sa rv_X} 
          {prv : PositiveRandomVariable rv_X} :
     Expectation rv_X = Some (Expectation_posRV rv_X).
   Proof.
@@ -4051,11 +4025,8 @@ Section Expectation.
         rewrite Expectation_posRV_ext with (prv2 := H1).
         symmetry.
         apply (Expectation_posRV_const 0 H0).
-        now apply negative_part_rv.
-        apply rvconst.
         now symmetry.
     - apply Expectation_posRV_ext; trivial.
-      now apply positive_part_rv.
       now apply pos_fun_part_pos.
    Qed.
 
@@ -4101,13 +4072,11 @@ Section Expectation.
 
   Lemma Expectation_posRV_pos
         (rv_X : Ts -> R)
-        {rv : RandomVariable Prts borel_sa rv_X}
         {prv : PositiveRandomVariable rv_X} :
     Rbar_le 0 (Expectation_posRV rv_X).
   Proof.
     rewrite <- Expectation_posRV_const0.
     apply Expectation_posRV_le; trivial.
-    apply rvconst.
   Qed.
 
 
@@ -4126,8 +4095,6 @@ Section Expectation.
 
   Lemma Finite_Expectation_posRV_le 
         (rv_X1 rv_X2 : Ts -> R)
-        {rv1: RandomVariable Prts borel_sa rv_X1}
-        {rv2: RandomVariable Prts borel_sa rv_X2}                               
         (prv1 : PositiveRandomVariable rv_X1)
         (prv2 : PositiveRandomVariable rv_X2) :
     RealRandomVariable_le rv_X1 rv_X2 ->
@@ -4137,7 +4104,7 @@ Section Expectation.
     intros.
     generalize (Expectation_posRV_le rv_X1 rv_X2 H); intros.
     assert (0 <= 0) by lra.
-    generalize (@Expectation_posRV_le (const 0) rv_X1 _ _ (prvconst _ H2) _); intros.
+    generalize (@Expectation_posRV_le (const 0) rv_X1 (prvconst _ H2) _); intros.
     cut_to H3.
     generalize (Expectation_posRV_const 0 H2); intros.
     rewrite H4 in H3.
@@ -4150,8 +4117,6 @@ Section Expectation.
 
   Lemma pos_part_le 
         (rvp rvn : Ts -> R)
-        (pr : RandomVariable Prts borel_sa rvp)
-        (nr : RandomVariable Prts borel_sa rvn)        
         (p : PositiveRandomVariable rvp)
         (n : PositiveRandomVariable rvn) :
    RealRandomVariable_le (fun x : Ts => pos_fun_part (rvminus rvp rvn) x) rvp.
@@ -4167,8 +4132,6 @@ Section Expectation.
 
   Lemma neg_part_le 
         (rvp rvn : Ts -> R)
-        (pr : RandomVariable Prts borel_sa rvp)
-        (nr : RandomVariable Prts borel_sa rvn)        
         (p : PositiveRandomVariable rvp)
         (n : PositiveRandomVariable rvn) :
     RealRandomVariable_le (fun x : Ts => neg_fun_part (rvminus rvp rvn) x) rvn.
@@ -4851,8 +4814,7 @@ Section Expectation.
    Qed.
 
    Lemma simple_approx_inf_event (X:Ts -> R) (n:nat)
-         (posx : PositiveRandomVariable X)
-         (ranx : RandomVariable Prts borel_sa X) :
+         (posx : PositiveRandomVariable X) :
        event_equiv (event_preimage (simple_approx X n) (singleton_event (INR n)))
                    (event_preimage X (fun r => r >= INR n)).
      Proof.
@@ -4862,8 +4824,7 @@ Section Expectation.
     Qed.
 
      Lemma simple_approx_fin_event (X:Ts -> R) (n:nat) 
-         (posx : PositiveRandomVariable X)
-         (ranx : RandomVariable Prts borel_sa X) :
+         (posx : PositiveRandomVariable X) :
      forall (k : nat), 
        (k < n*2^n)%nat ->
        event_equiv (event_preimage (simple_approx X n) (singleton_event ((INR k)/2^n)))
@@ -4879,7 +4840,7 @@ Section Expectation.
          (ranx : RandomVariable Prts borel_sa X) :
      sa_sigma (event_preimage (simple_approx X n) (singleton_event (INR n))).
    Proof.
-    generalize (simple_approx_inf_event X n posx ranx); intros.
+    generalize (simple_approx_inf_event X n posx); intros.
     rewrite H.
     apply sa_le_ge.
     apply borel_sa_preimage2; intros.
@@ -4894,7 +4855,7 @@ Section Expectation.
        sa_sigma (event_preimage (simple_approx X n) (singleton_event ((INR k)/2^n))).
    Proof.
      intros.
-     generalize (simple_approx_fin_event X n posx ranx k H); intros.
+     generalize (simple_approx_fin_event X n posx k H); intros.
      rewrite H0.
      assert (event_equiv (fun z : R => INR k / 2 ^ n <= z < INR (S k) / 2 ^ n)
                          (event_inter (fun z : R => z >= INR k / 2 ^ n)
@@ -5650,7 +5611,7 @@ Section Expectation.
        intros.
        cut_to H6; trivial.
        + destruct H4.
-         rewrite <- (Expectation_posRV_scale (mkposreal c H4)); [apply H6 | trivial].
+         rewrite <- (Expectation_posRV_scale (mkposreal c H4)); apply H6.
        + intros.
          unfold cphi, rvscale.
          destruct H4.
@@ -5673,7 +5634,6 @@ Section Expectation.
 
   Lemma Lim_seq_Expectation_posRV_pos
         (rvxn : nat -> Ts -> R) 
-        (rvn: forall n, RandomVariable Prts borel_sa (rvxn n)) 
         (posvn: forall n, PositiveRandomVariable (rvxn n)) :
     Rbar_le 0 (Lim_seq (fun n : nat => Expectation_posRV (rvxn n))).
   Proof.
@@ -5690,11 +5650,10 @@ Section Expectation.
 
   Lemma Lim_seq_Expectation_m_infty
         (rvxn : nat -> Ts -> R) 
-        (rvn: forall n, RandomVariable Prts borel_sa (rvxn n)) 
         (posvn: forall n, PositiveRandomVariable (rvxn n)) :
     Lim_seq (fun n : nat => Expectation_posRV (rvxn n)) = m_infty -> False.
     Proof.
-      generalize (Lim_seq_Expectation_posRV_pos rvxn rvn posvn); intros.
+      generalize (Lim_seq_Expectation_posRV_pos rvxn posvn); intros.
       rewrite  H0 in H.
       now simpl in H.
   Qed.
@@ -5823,7 +5782,7 @@ Section Expectation.
              unfold Hierarchy.eventually.   
              exists (0%nat).
              intros.
-             specialize (H (Xn n) X (Xn_rv n) rvx (Xn_pos n) posX (H0 n)).
+             specialize (H (Xn n) X (Xn_pos n) posX (H0 n)).
              rewrite <- (H2 n) in H.
              rewrite H8 in H.
              now simpl in H.
@@ -5835,7 +5794,7 @@ Section Expectation.
   Lemma Expectation_posRV_sum 
         (rv_X1 rv_X2 : Ts -> R)
         {rv1 : RandomVariable Prts borel_sa rv_X1}
-        {rv2 : RandomVariable Prts borel_sa rv_X2}        
+        {rv2 : RandomVariable Prts borel_sa rv_X2}
         {prv1:PositiveRandomVariable rv_X1}
         {prv2:PositiveRandomVariable rv_X2} :     
     Expectation_posRV (rvplus rv_X1 rv_X2) =
@@ -5844,7 +5803,7 @@ Section Expectation.
      generalize (simple_approx_lim_seq rv_X1 prv1); intros.
      generalize (simple_approx_lim_seq rv_X2 prv2); intros.
      generalize (simple_approx_rv rv_X1); intro apx_rv1.
-     generalize (simple_approx_rv rv_X2); intro apx_rv2.     
+     generalize (simple_approx_rv rv_X2); intro apx_rv2.
      generalize (simple_approx_posrv rv_X1); intro apx_prv1.
      generalize (simple_approx_posrv rv_X2); intro apx_prv2.     
      generalize (simple_approx_srv rv_X1); intro apx_srv1.
@@ -5946,7 +5905,7 @@ Section Expectation.
         intros.
         specialize (H a).
         lra.
-      - generalize (Expectation_posRV_ext _ _ _ _ H2); intros.
+      - generalize (Expectation_posRV_ext _ _ H2); intros.
         rewrite Expectation_posRV_sum in H3; trivial.
         rewrite Expectation_posRV_sum in H3; trivial.
 
@@ -5985,9 +5944,7 @@ Section Expectation.
                    _ _ _ _ _ _ _ _); intros.
      assert (is_finite (Expectation_posRV (fun x : Ts => neg_fun_part (rvminus rvp rvn) x))).
      - apply Finite_Expectation_posRV_le with (rv_X2 := rvn) (prv2 := n); trivial.     
-       + apply negative_part_rv.
-         now apply rvminus_rv.
-       + apply neg_part_le; trivial.
+       apply neg_part_le; trivial.
      - cut_to H0; trivial.
        + unfold Expectation.
          unfold Rbar_minus'.
@@ -6034,7 +5991,7 @@ Section Expectation.
       unfold rvminus, rvplus, rvopp, rvscale.
       lra.
     }
-    rewrite (Expectation_ext _ _ eqq1); clear eqq1.
+    rewrite (Expectation_ext eqq1); clear eqq1.
     erewrite Expectation_dif_pos_unique.
     - repeat rewrite Expectation_posRV_sum by typeclasses eauto.
       unfold Expectation.
@@ -6053,6 +6010,8 @@ Section Expectation.
         f_equal.
         lra.
       + destruct (Expectation_posRV (fun x : Ts => pos_fun_part rv_X2 x)); try now simpl.
+    - typeclasses eauto.
+    - typeclasses eauto.
     - rewrite Expectation_posRV_sum by typeclasses eauto.
       rewrite <- H, <- H0.
       simpl.
@@ -6115,9 +6074,7 @@ Section Expectation.
   Qed.
 
   Lemma Expectation_le 
-        (rv_X1 rv_X2 : Ts -> R)
-        {rv1: RandomVariable Prts borel_sa rv_X1}
-        {rv2: RandomVariable Prts borel_sa rv_X2} :
+        (rv_X1 rv_X2 : Ts -> R) :
     forall (e1 e2 : Rbar),
       Expectation rv_X1 = Some e1 ->
       Expectation rv_X2 = Some e2 ->
@@ -6136,11 +6093,9 @@ Section Expectation.
         specialize (H1 x).
         lra.
       + apply Expectation_posRV_le with (prv1 := positive_part_prv rv_X1) 
-                                        (prv2 := positive_part_prv rv_X2) in H2;
-          [|now apply positive_part_rv | now apply positive_part_rv].
+                                        (prv2 := positive_part_prv rv_X2) in H2.
         apply Expectation_posRV_le with (prv1 := negative_part_prv rv_X2) 
-                                        (prv2 := negative_part_prv rv_X1) in H3;
-          [|now apply negative_part_rv | now apply negative_part_rv].
+                                        (prv2 := negative_part_prv rv_X1) in H3.
         apply Rbar_opp_le in H3.
         unfold Rbar_minus' in *.
         generalize (Rbar_plus_le_compat _ _ _ _ H2 H3).
