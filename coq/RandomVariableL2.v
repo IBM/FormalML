@@ -107,12 +107,79 @@ Section L2.
     lra.
   Qed.
 
-  Lemma L2Expectation_finite (rv_X:Ts->R) {l2:IsL2 rv_X}
+  Lemma L2Expectation_finite_abs (rv_X:Ts->R) {l2:IsL2 rv_X}
+    :  match Expectation (rvabs rv_X) with
+       | Some (Finite _) => True
+       | _ => False
+       end.
+  Proof.
+    assert (PositiveRandomVariable (rvabs rv_X)) by apply prvabs.
+    generalize (Expectation_pos_posRV (rvabs rv_X)); intros.
+    generalize (rvabs_bound rv_X); intros.
+    assert (one_pos: 0 < 1) by lra.
+    assert (PositiveRandomVariable (rvplus (rvsqr rv_X) (const 1))).
+    apply rvplus_prv.
+    apply prvsqr.
+    apply prvconst.
+    lra.
+    generalize (Finite_Expectation_posRV_le _ _ H H2 H1); intros.
+    unfold IsL2 in l2.
+    rewrite Expectation_pos_posRV with (prv := prvsqr rv_X) in l2.
+    match_case_in l2; intros.
+    rewrite H4 in l2.
+    assert (PositiveRandomVariable (@const R Ts 1)).
+    apply prvconst; lra.
+    assert (PositiveRandomVariable (rvsqr rv_X)) by apply prvsqr.
+    (*
+    generalize (Expectation_posRV_sum (rvsqr rv_X) (const 1)); intros.
+    cut_to H3.
+    rewrite Expectation_pos_posRV with (prv := H).
+    now rewrite <- H3.
+    assert (0 <= 1) by lra.
+    generalize (Expectation_posRV_const 1 H8); intros.
+    rewrite H9 in H7.
+    rewrite H4 in H7.
+    *)
+    admit.
+    rewrite H4 in l2; tauto.
+    rewrite H4 in l2; tauto.    
+  Admitted.
+
+
+  Lemma L2Expectation_finite (rv_X:Ts->R)  {l2:IsL2 rv_X}
     :  match Expectation rv_X with
        | Some (Finite _) => True
        | _ => False
        end.
   Proof.
+    assert (PositiveRandomVariable (rvabs rv_X)) by apply prvabs.
+    generalize (Expectation_pos_posRV (rvabs rv_X)); intros.
+    generalize (rvabs_bound rv_X); intros.
+    assert (one_pos: 0 < 1) by lra.
+    assert (PositiveRandomVariable (rvplus (rvsqr rv_X) (const 1))).
+    apply rvplus_prv.
+    apply prvsqr.
+    apply prvconst.
+    lra.
+    generalize (Finite_Expectation_posRV_le _ _ H H2 H1); intros.
+    unfold IsL2 in l2.
+    rewrite Expectation_pos_posRV with (prv := prvsqr rv_X) in l2.
+    match_case_in l2; intros.
+    assert (0 <= 1) by lra.
+    generalize (@prvconst Ts 1 H5); intros.
+(*
+    generalize (Expectation_posRV_sum (rvsqr rv_X) (const 1)); intros.
+    cut_to H3.
+    admit.
+    repeat match_destr_in l2.
+    assert (0 <= mkposreal _ one_pos).
+    simpl; lra.
+    assert (@PositiveRandomVariable Ts (const (mkposreal _ one_pos))).
+    now apply prvconst.
+    generalize (Expectation_posRV_const (mkposreal _ one_pos) H8); intros.
+    
+    simpl in H10.
+*)
   Admitted.
 
   Definition L2Expectation_ex (rv_X:Ts->R) {l2:IsL2 rv_X} :
