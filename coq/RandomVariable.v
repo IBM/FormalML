@@ -536,6 +536,84 @@ Section SimpleExpectation.
     Qed.
 
 
+   Lemma classic_event_none_or_has {A} (p:event A) : (exists y, p y) \/ event_equiv p event_none.
+   Proof.
+     destruct (classic (exists y, p y)).
+     - eauto.
+     - right; intros x.
+       unfold event_none.
+       split; [| tauto].
+       intros px.
+       apply H.
+       eauto.
+   Qed.
+
+   Lemma srv_nodup_preimage_list_union
+         {rv_X : Ts -> R}         
+         (srv : SimpleRandomVariable rv_X) :
+     event_equiv (list_union (map (fun (x : R) (omega : Ts) => rv_X omega = x) (nodup Req_EM_T srv_vals)))  Ω .
+   Proof.
+     intros x.
+     unfold Ω.
+     split; trivial; intros _.
+     unfold list_union.
+     generalize (srv_vals_complete x); intros HH2.
+     exists (fun (omega : Ts) => rv_X  omega = rv_X x).
+     split; trivial.
+     apply in_map_iff.
+     exists (rv_X x).
+     split; trivial.
+     now apply nodup_In.
+   Qed.
+
+   Lemma event_disjoint_preimage_disj {A B}
+         f l :
+     NoDup l ->
+     ForallOrdPairs event_disjoint (map (fun (x : B) (omega : A) => f omega = x) l).
+   Proof.
+     induction l; simpl; intros nd.
+     - constructor.
+     - invcs nd.
+       constructor; auto.
+       rewrite Forall_map.
+       rewrite Forall_forall.
+       intros x xin e ein.
+       congruence.
+   Qed.
+
+   Lemma srv_vals_nodup_preimage_sa  
+         {rv_X : Ts -> R}
+         (rv: RandomVariable Prts borel_sa rv_X)
+         (srv : SimpleRandomVariable rv_X) :
+     forall x : event Ts,
+       In x (map (fun (x0 : R) (omega : Ts) => rv_X omega = x0) (nodup Req_EM_T srv_vals)) -> sa_sigma x.
+   Proof.
+     intros.
+     apply in_map_iff in H.
+     destruct H as [y [? yin]]; subst.
+     apply nodup_In in yin.
+     apply sa_le_pt; intros.
+     apply borel_sa_preimage2; intros.
+     now apply rv_preimage.
+   Qed.
+
+   Lemma SimplePosExpectation_zero_pos_0helper (x : Ts -> R) l :
+     ~ In 0 l ->
+     Forall (fun x : R => x = 0)
+            (map (fun v : R => v * ps_P (event_preimage x (singleton_event v))) l) ->
+     
+     fold_right Rplus 0 (map ps_P (map (fun (x0 : R) (omega : Ts) => x omega = x0) l)) = 0.
+   Proof.
+     induction l; simpl; intros inn Fl; trivial.
+     invcs Fl.
+     rewrite IHl; try tauto.
+     destruct (Rmult_integral _ _ H1).
+     - tauto.
+     - unfold event_preimage, singleton_event in H.
+       rewrite H.
+       lra.
+   Qed.
+
  Lemma SimplePosExpectation_zero_pos
         (x : Ts -> R)
         {rv : RandomVariable Prts borel_sa x}
@@ -547,78 +625,42 @@ Section SimpleExpectation.
    intros.
    unfold SimpleExpectation in H.
    apply list_sum_all_pos_zero_all_zero in H.
-   - admit.
+   - generalize (event_disjoint_preimage_disj x (nodup Req_EM_T srv_vals) (NoDup_nodup _ _))
+     ; intros HH1.
+     generalize (srv_nodup_preimage_list_union srv)
+     ; intros HH2.
+     generalize (ps_list_disjoint_union Prts _ (srv_vals_nodup_preimage_sa _ srv) HH1)
+     ; intros HH3.
+     rewrite HH2 in HH3.
+     rewrite ps_one in HH3.
+     clear HH1 HH2.
+     assert (nd:NoDup (nodup Req_EM_T srv_vals)) by (apply NoDup_nodup).
+     induction (nodup Req_EM_T srv_vals); simpl in *; [lra | ].
+     invcs H.
+     invcs nd.
+     specialize (IHl H3).
+     destruct (Rmult_integral _ _ H2).
+     + subst.
+       rewrite (SimplePosExpectation_zero_pos_0helper x _ H1 H3) in HH3.
+       lra.
+     + unfold event_preimage, singleton_event in H.
+       rewrite H in HH3.
+       apply IHl; trivial.
+       lra.
    - rewrite Forall_map.
      apply Forall_nodup.
      rewrite Forall_forall.
      intros.
-     unfold PositiveRandomVariable in posrv.
      generalize (ps_pos  (event_preimage x (singleton_event x0))); intros HH.
      cut_to HH; [| eapply sa_singleton; eauto].
-     destruct srv.
-     
-     
-     specialize (posrv x0).
-     
-   destruct srv; simpl in *.
-   erewrite ps_proper; try eapply ps_one.
-   red; intros.
-   unfold Ω.
-   split; trivial; intros _.
-   generalize (list_sum_all_pos_zero_all_zero _ H)
-   ; intros HH.
-   cut_to HH.
-   - rewrite Forall_map in HH.
-     apply Forall_nodup in HH.
-     rewrite Forall_forall in HH.
-     specialize (H _ (srv_vals_complete0 x0)).
-     apply Rmult_integral in H.
-     destruct H; trivial.
-     unfold event_preimage, singleton_event in H.
-     
-     
-     
-     specialize (srv_vals_complete0 x0).
-     apply (nodup_In Req_EM_T) in srv_vals_complete0.
-     apply in_map_iff.
-     eapply in_map in srv_vals_complete0.
-     eapply srv_vals_complete0.
-     
-     apply in_map_iff.
-     +
-   
-   red in posrv.
-     
-   induction (nodup Req_EM_T srv_vals0); simpl in *; try contradiction.
-   destruct srv_vals_complete0.
-   - subst.
-     generalize (ps_pos (event_preimage x (singleton_event (x x0)))); intros HH.
-     cut_to HH; [| eapply sa_singleton; eauto].
-
-     assert (list_sum (map (fun v : R => v * ps_P (event_preimage x (singleton_event v))) l) >= 0)
-       by admit.
-     lra.
-   
-   induction srv_vals0; simpl in *; try contradiction.
-   match_destr_in H.
-   - apply IHsrv_vals0; eauto.
-   - 
-   
-   
-   apply (nodup_In Req_EM_T) in srv_vals_complete0.
-   destruct (in_split _ _ srv_vals_complete0) as [?[??]].
-   rewrite H0 in H.
-   rewrite <- (Permutation_middle x1 x2 (x x0)) in H.
-   simpl in H.
-
-   
-   
-   assert (list_sum (map (fun v : R => v * ps_P (event_preimage x (singleton_event v))) (x1 ++ x2)) >= 0).
-   {
-     admit.
-   }
-
-   
+     destruct (classic_event_none_or_has ((event_preimage x (singleton_event x0)))).
+     + destruct H1.
+       repeat red in H1; subst.
+       specialize (posrv x1).
+       apply Rle_ge.
+       now apply Rmult_le_pos.
+     + rewrite H1, ps_none.
+       lra.
  Qed.
   
   Global Program Instance scale_constant_random_variable (c: R)
@@ -1198,23 +1240,6 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
      split; trivial.
    Qed.
 
-   Lemma srv_nodup_preimage_list_union
-         {rv_X : Ts -> R}         
-         (srv : SimpleRandomVariable rv_X) :
-     event_equiv (list_union (map (fun (x : R) (omega : Ts) => rv_X omega = x) (nodup Req_EM_T srv_vals)))  Ω .
-   Proof.
-     intros x.
-     unfold Ω.
-     split; trivial; intros _.
-     unfold list_union.
-     generalize (srv_vals_complete x); intros HH2.
-     exists (fun (omega : Ts) => rv_X  omega = rv_X x).
-     split; trivial.
-     apply in_map_iff.
-     exists (rv_X x).
-     split; trivial.
-     now apply nodup_In.
-   Qed.
 
    Lemma event_disjoint_preimage_and_disj {A B}
          f P l :
@@ -1243,21 +1268,6 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
        rewrite Forall_map.
        rewrite Forall_forall.
        intros x xin e [??] [??].
-       congruence.
-   Qed.
-
-   Lemma event_disjoint_preimage_disj {A B}
-         f l :
-     NoDup l ->
-     ForallOrdPairs event_disjoint (map (fun (x : B) (omega : A) => f omega = x) l).
-   Proof.
-     induction l; simpl; intros nd.
-     - constructor.
-     - invcs nd.
-       constructor; auto.
-       rewrite Forall_map.
-       rewrite Forall_forall.
-       intros x xin e ein.
        congruence.
    Qed.
    
@@ -1295,21 +1305,6 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
      apply NoDup_nodup.
    Qed.
 
-   Lemma srv_vals_nodup_preimage_sa  
-         {rv_X : Ts -> R}
-         (rv: RandomVariable Prts borel_sa rv_X)
-         (srv : SimpleRandomVariable rv_X) :
-     forall x : event Ts,
-       In x (map (fun (x0 : R) (omega : Ts) => rv_X omega = x0) (nodup Req_EM_T srv_vals)) -> sa_sigma x.
-   Proof.
-     intros.
-     apply in_map_iff in H.
-     destruct H as [y [? yin]]; subst.
-     apply nodup_In in yin.
-     apply sa_le_pt; intros.
-     apply borel_sa_preimage2; intros.
-     now apply rv_preimage.
-   Qed.
      
    Lemma srv_vals_prob_1 
          {rv_X : Ts -> R}
@@ -2851,17 +2846,6 @@ Section SimpleConditionalExpectation.
            congruence.
      Qed.
 
-   Lemma classic_event_none_or_has {A} (p:event A) : (exists y, p y) \/ event_equiv p event_none.
-   Proof.
-     destruct (classic (exists y, p y)).
-     - eauto.
-     - right; intros x.
-       unfold event_none.
-       split; [| tauto].
-       intros px.
-       apply H.
-       eauto.
-   Qed.
 
    Lemma nth_map_default_equiv {A} {R} n (l:list A) (d1 d2:A)
          {refl:Reflexive R} :

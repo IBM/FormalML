@@ -601,18 +601,6 @@ Section L2.
     reflexivity.
   Qed.
 
-  Lemma SimplePosExpectation_zero_pos
-        (x : Ts -> R)
-        {rv : RandomVariable prts borel_sa x}
-        {posrv :PositiveRandomVariable x} 
-        {srv : SimpleRandomVariable x} :
-    SimpleExpectation x = 0 ->
-    ps_P (fun omega => x omega = 0) = 1.
-  Proof.    
-    unfold SimpleExpectation; intros.
-    Admitted.
-
-
   Lemma Expectation_zero_pos 
         (x : Ts -> R)
         {rv : RandomVariable prts borel_sa x}
