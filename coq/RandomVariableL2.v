@@ -47,6 +47,7 @@ Section L2.
     match_destr; now simpl.
   Qed.
 
+(*
   Lemma Cauchy_Schwarz_ineq (rv_X1 rv_X2 :Ts->R) 
         {is1:IsL2' rv_X1}
         {is2:IsL2' rv_X2}  :
@@ -80,7 +81,7 @@ Section L2.
     unfold rvsqr, rvminus, rvscale, rvopp, rvabs, rvplus, rvscale, rvabs, rvmult, Rsqr.
     apply Rminus_diag_uniq.
     now ring_simplify.
-  Admitted.
+*)
 
   Lemma rvabs_bound (rv_X : Ts -> R) :
     RealRandomVariable_le (rvabs rv_X) (rvplus (rvsqr rv_X) (const 1)).
