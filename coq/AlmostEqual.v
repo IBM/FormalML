@@ -130,6 +130,101 @@ Proof.
   split; lra.
 Qed.
 
+Lemma rv_almost_eq_rv_refl
+      {Ts:Type} 
+      {dom: SigmaAlgebra Ts}
+      (prts: ProbSpace dom) 
+      (x : Ts -> R)
+      {rvx : RandomVariable prts borel_sa x} :
+  rv_almost_eq prts x x.
+Proof.
+  unfold rv_almost_eq.
+  assert (eqq:event_equiv (fun x0 : Ts => x x0 = x x0) Ω)
+    by firstorder.
+  rewrite eqq.
+  eauto with prob.
+Qed.
+
+Global Instance rv_almost_eq_rv_sym {Ts Td:Type} {dom: SigmaAlgebra Ts} (prts: ProbSpace dom) :
+  Symmetric (rv_almost_eq prts (Td:=Td)).
+Proof.
+  unfold rv_almost_eq.
+  intros x y ps1; simpl in *.
+  rewrite ps_proper; try eassumption.
+  red; intros.
+  split; congruence.
+Qed.
+
+Hint Resolve Hsigma_borel_eq_pf : prob.
+
+Lemma rv_almost_eq_rv_trans
+      {Ts:Type} 
+      {dom: SigmaAlgebra Ts}
+      (prts: ProbSpace dom) 
+      (x y z: Ts -> R)
+      {rvx : RandomVariable prts borel_sa x} 
+      {rvy : RandomVariable prts borel_sa y} 
+      {rvz : RandomVariable prts borel_sa z} :
+  rv_almost_eq prts x y ->
+  rv_almost_eq prts y z ->
+  rv_almost_eq prts x z.
+Proof.
+  unfold rv_almost_eq.
+  intros ps1 ps2.
+  simpl in *.
+  rewrite rv_almost_eq_alt_eq in ps1 by eauto with prob.
+  rewrite rv_almost_eq_alt_eq in ps2 by eauto with prob.
+  rewrite rv_almost_eq_alt_eq by eauto with prob.
+  generalize (ps_union prts _ _ (sa_complement _ (Hsigma_borel_eq_pf _ x y _ _)) (sa_complement _ (Hsigma_borel_eq_pf _ y z _ _)))
+  ; intros HH.
+  unfold event_complement in HH.
+  rewrite ps1,ps2 in HH.
+  field_simplify in HH.
+
+  assert (HH2 : ps_P
+                  (event_inter (event_complement (fun x0 : Ts => x x0 = y x0))
+                               (event_complement (fun x : Ts => y x = z x))) = 0).
+  {
+    assert (HH3:ps_P
+                  (event_union (event_complement (fun x0 : Ts => x x0 = y x0))
+                               (event_complement (fun x : Ts => y x = z x))) 
+                +
+                ps_P
+                  (event_inter (event_complement (fun x0 : Ts => x x0 = y x0))
+                               (event_complement (fun x : Ts => y x = z x))) = 0)
+      by (unfold event_complement; lra).
+    rewrite Rplus_comm in HH3.
+    apply Rplus_eq_0_l in HH3; trivial
+    ; apply ps_pos
+    ; eauto 6 with prob.
+  }
+  unfold event_complement in HH2.
+  rewrite HH2, Ropp_0 in HH.
+  unfold event_union in HH2.
+
+  assert (ele:event_sub
+                (event_complement (fun x0 : Ts => x x0 = z x0))
+                (event_union (event_complement (fun x1 : Ts => x x1 = y x1))
+                             (event_complement (fun x : Ts => y x = z x)))).
+  {
+    unfold event_complement.
+    red; intros.
+    apply not_and_or.
+    intros [??].
+    congruence.
+  }
+
+  apply (@ps_sub _ _ prts) in ele; trivial.
+  * unfold event_complement in ele.
+    rewrite HH in ele.
+    apply Rle_antisym; trivial.
+    apply ps_pos; trivial.
+    apply sa_complement.
+    eauto with prob.
+  * eauto with prob.
+  * apply sa_union; eauto with prob.
+  Qed.
+
 Lemma rv_almost_eq_plus_proper
       {Ts:Type} 
       {dom: SigmaAlgebra Ts}
