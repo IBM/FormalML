@@ -165,3 +165,39 @@ Lemma rv_almost_eq_plus_proper
           -- apply (Hsigma_borel_eq_pf prts); now apply rvplus_rv.
   Qed.
 
+
+Lemma rv_almost_eq_mult_proper
+      {Ts:Type} 
+      {dom: SigmaAlgebra Ts}
+      (prts: ProbSpace dom) 
+      (x1 x2 y1 y2 : Ts -> R)
+      {rvx1 : RandomVariable prts borel_sa x1}
+      {rvx2: RandomVariable prts borel_sa x2}
+      (eqqx : rv_almost_eq prts x1 x2)
+      {rvy1 : RandomVariable prts borel_sa y1}
+      {rvy2 : RandomVariable prts borel_sa y2}
+      (eqqy : rv_almost_eq prts y1 y2) :
+      rv_almost_eq prts (rvmult x1 y1) (rvmult x2 y2).
+  Proof.
+    unfold rv_almost_eq in *.
+    unfold rvmult.
+    assert (event_sub (event_inter (fun x : Ts => x1 x = x2 x)
+                                   (fun x : Ts => y1 x = y2 x))
+                      (fun x : Ts => rvmult x1 y1 x = rvmult x2 y2 x)).
+    - unfold event_sub, event_inter, rvmult.
+      intros.
+      destruct H.
+      now rewrite H, H0.
+    - assert (ps_P (event_inter (fun x : Ts => x1 x = x2 x) (fun x : Ts => y1 x = y2 x)) = 1).
+      + apply ps_one_inter; trivial
+        ; eapply Hsigma_borel_eq_pf; eauto.
+      + generalize (ps_sub prts (event_inter (fun x : Ts => x1 x = x2 x) (fun x : Ts => y1 x = y2 x))
+                           (fun x : Ts => rvmult x1 y1 x = rvmult x2 y2 x)); intros.
+        rewrite H0 in H1.
+        apply Rle_antisym.
+        * apply ps_le1.
+          apply (Hsigma_borel_eq_pf prts); now apply rvmult_rv.
+        * apply H1; trivial.
+          -- apply sa_inter; now apply (Hsigma_borel_eq_pf prts).
+          -- apply (Hsigma_borel_eq_pf prts); now apply rvmult_rv.
+  Qed.

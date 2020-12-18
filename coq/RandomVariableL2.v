@@ -457,6 +457,10 @@ Section L2.
   Definition L2RRVexpectation (rv:L2RRV) : R
     := L2Expectation rv.
 
+
+  Global Instance Expectation_proper_almost : Proper (rv_almost_eq prts ==> eq) Expectation.
+  Admitted.
+
   Global Instance L2RRV_expectation_proper : Proper (L2RRV_eq ==> eq) L2RRVexpectation.
   Proof.
     unfold Proper, respectful, L2RRVexpectation, L2RRV_eq.
@@ -464,8 +468,10 @@ Section L2.
     intros x y eqq.
     repeat match goal with
       [|- context [proj1_sig ?x]] => destruct x; simpl
-    end.
-  Admitted.
+           end.
+    rewrite eqq in e.
+    congruence.
+  Qed.
   
   Definition L2RRVinner (x y:L2RRV) : R
     :=  match (Expectation (rvmult x y)) with
@@ -473,20 +479,25 @@ Section L2.
         | _ => 0
         end.
 
-  Global Instance L2RRV_inner_proper : Proper (L2RRV_eq ==> L2RRV_eq ==> eq) L2RRVinner.
-  Proof.
-    unfold Proper, respectful, L2RRV_eq.
-
-    intros x1 x2 eqq1 y1 y2 eqq2.
-    unfold L2RRVinner.
-  Admitted.
-
   Ltac L2RRV_simpl
     := repeat match goal with
               | [H : L2RRV |- _ ] => destruct H as [???]
               end
        ; unfold L2RRVplus, L2RRVminus, L2RRVopp, L2RRVscale
        ; simpl.
+
+  Global Instance L2RRV_inner_proper : Proper (L2RRV_eq ==> L2RRV_eq ==> eq) L2RRVinner.
+  Proof.
+    unfold Proper, respectful, L2RRV_eq.
+
+    intros x1 x2 eqq1 y1 y2 eqq2.
+    unfold L2RRVinner.
+    assert (eqq:rv_almost_eq prts (rvmult x1 y1) (rvmult x2 y2)).
+    - L2RRV_simpl.
+      now apply rv_almost_eq_mult_proper.
+    - rewrite eqq.
+      reflexivity.
+  Qed.
 
   Lemma L2RRV_plus_comm x y : L2RRV_eq (L2RRVplus x y) (L2RRVplus y x).
   Proof.
@@ -686,7 +697,10 @@ Section L2.
   Proof.
     unfold L2RRVinner, L2RRVplus; simpl.
     rewrite (Expectation_ext (rv_X2 := rvplus (rvmult x z) (rvmult y z))).
-    -
+    - admit.
+    - intros ?.
+      unfold rvmult, rvplus.
+      lra.
   Admitted.
 
   
