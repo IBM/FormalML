@@ -5941,6 +5941,94 @@ Section Expectation.
              now rewrite H8 in H9.
   Qed.
 
+  Lemma Expectation_zero_pos 
+        (X : Ts -> R)
+        {rv : RandomVariable Prts borel_sa X}
+        {posrv :PositiveRandomVariable X} :
+    Expectation X = Some (Finite 0) ->
+    ps_P (fun omega => X omega = 0) = 1.
+  Proof.
+    rewrite Expectation_pos_posRV with (prv := posrv); intros.
+    inversion H.
+
+    generalize (simple_approx_lim_seq X posrv); intros.
+    generalize (simple_approx_rv X); intro apx_rv1.
+    generalize (simple_approx_posrv X); intro apx_prv1.
+    generalize (simple_approx_srv X); intro apx_srv1.
+    generalize (simple_approx_le X posrv); intro apx_le1.
+    generalize (simple_approx_increasing X posrv); intro apx_inc1.
+    generalize (monotone_convergence X (simple_approx X) rv posrv apx_rv1 apx_prv1 apx_le1 apx_inc1 (fun n => simple_expectation_real (simple_approx X n)) H0); intros.
+
+    assert (forall n:nat, Expectation_posRV (simple_approx X n) = 0).
+    intros.
+    generalize (Expectation_posRV_le (simple_approx X n) X (apx_le1 n)); intros.
+    rewrite H1 in H3.
+    generalize (Expectation_posRV_pos (simple_approx X n)); intros.
+    apply Rbar_le_antisym; trivial.
+
+    assert (forall n:nat, ps_P (fun omega => (simple_approx X n) omega = 0) = 1).
+    intros.
+    apply SimplePosExpectation_zero_pos with (srv := apx_srv1 n); trivial.
+    generalize (srv_Expectation_posRV (simple_approx X n)); intros.
+    rewrite H3 in H4; symmetry in H4.
+    now apply Rbar_finite_eq in H4.
+
+    assert (forall n:nat, ps_P (event_complement (fun omega => (simple_approx X n omega = 0))) = 0).
+    intros.
+    rewrite ps_complement.
+    rewrite H4; lra.
+    apply sa_le_pt.
+    unfold RandomVariable in apx_rv1.
+    specialize (apx_rv1 n).
+    now rewrite <- borel_sa_preimage2 in apx_rv1.
+
+    generalize (lim_prob (fun n => (event_complement (fun omega => simple_approx X n omega = 0)))
+                         (event_complement (fun omega => X omega = 0))
+               ); trivial; intros.
+    cut_to H6; trivial.
+    apply is_lim_seq_ext with (v := (fun n => 0)) in H6.
+    generalize (is_lim_seq_const 0); intros.
+    apply is_lim_seq_unique in H6.
+    apply is_lim_seq_unique in H7.    
+    rewrite H6 in H7.
+    rewrite ps_complement in H7.
+    apply Rbar_finite_eq in H7; lra.
+    apply sa_le_pt.
+    unfold RandomVariable in rv.
+    now rewrite <- borel_sa_preimage2 in rv.
+    trivial.
+    intros.
+    apply sa_complement.
+    apply sa_le_pt.
+    specialize (apx_rv1 n).
+    unfold RandomVariable in apx_rv1.
+    now rewrite <- borel_sa_preimage2 in apx_rv1.
+    unfold event_sub; intros.
+    unfold event_complement.
+    unfold event_complement in H7.
+    unfold PositiveRandomVariable in apx_prv1.
+    apply Rgt_not_eq.
+    apply Rdichotomy in H7.
+    destruct H7.
+    generalize (apx_prv1 n); intros.
+    specialize (H8 x); lra.
+    specialize (apx_inc1 n x).
+    lra.
+    unfold event_complement.
+    intro x.
+    unfold union_of_collection.
+    split; intros.
+    destruct H7.
+    apply Rgt_not_eq.
+    apply Rdichotomy in H7.
+    destruct H7.
+    generalize (apx_prv1 x0 x); intros; lra.
+    specialize (apx_le1 x0 x); lra.
+    specialize (H0 x).
+    clear H H1 H2 H3 H4 H5 H6.
+    
+    Admitted.
+
   Lemma Expectation_posRV_sum 
         (rv_X1 rv_X2 : Ts -> R)
         {rv1 : RandomVariable Prts borel_sa rv_X1}
