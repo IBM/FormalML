@@ -6026,8 +6026,25 @@ Section Expectation.
     specialize (apx_le1 x0 x); lra.
     specialize (H0 x).
     clear H H1 H2 H3 H4 H5 H6.
-    
-    Admitted.
+    apply Rdichotomy in H7.
+    destruct H7.
+    specialize (posrv x); lra.
+    apply is_lim_seq_spec in H0.
+    unfold is_lim_seq' in H0.
+    specialize (H0 (mkposreal _ H)).
+    destruct H0.
+    specialize (H0 x0).
+    exists x0.
+    apply Rgt_not_eq.
+    cut_to H0; [|lia].
+    simpl in H0.
+    specialize (apx_le1 x0 x).
+    Search Rabs.
+    rewrite <- Rabs_Ropp in H0.
+    replace (Rabs (-(simple_approx X x0 x - X x))) with (X x - simple_approx X x0 x) in H0.
+    lra.
+    rewrite Rabs_pos_eq; lra.
+  Qed.
 
   Lemma Expectation_posRV_sum 
         (rv_X1 rv_X2 : Ts -> R)
