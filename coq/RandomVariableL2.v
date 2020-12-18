@@ -472,7 +472,7 @@ Section L2.
     rewrite eqq in e.
     congruence.
   Qed.
-  
+
   Definition L2RRVinner (x y:L2RRV) : R
     :=  match (Expectation (rvmult x y)) with
         | Some (Finite z) => z
@@ -692,18 +692,149 @@ Section L2.
     lra.
   Qed.
 
+  Lemma rvprod_bound_abs (rv_X1 rv_X2 : Ts->R) :
+    RealRandomVariable_le (rvscale 2 (rvabs (rvmult rv_X1 rv_X2)))
+                          (rvplus (rvsqr rv_X1) (rvsqr rv_X2)).
+  Proof.
+    assert (PositiveRandomVariable (rvsqr (rvminus (rvabs rv_X1) (rvabs rv_X2)))) by apply prvsqr.
+    assert (rv_eq (rvsqr (rvminus (rvabs rv_X1) (rvabs rv_X2))) 
+                  (rvplus (rvplus (rvsqr rv_X1) (rvopp (rvscale 2 (rvabs (rvmult rv_X1 rv_X2)))))
+                          (rvsqr rv_X2))).
+    intro x.
+    unfold rvsqr, rvminus, rvplus, rvmult, rvopp, rvscale, rvabs, Rsqr.
+    rewrite Rabs_mult.
+    apply Rminus_diag_uniq.
+    ring_simplify.
+    do 2 rewrite pow2_abs.
+    now ring_simplify.
+    rewrite H0 in H; clear H0.
+    unfold RealRandomVariable_le; intros.
+    unfold rvsqr, rvminus, rvplus, rvmult, rvopp, rvscale, rvabs, Rsqr in *.
+    unfold PositiveRandomVariable in H.
+    specialize (H x).
+    apply Rplus_le_compat_l with (r:= (2 * Rabs (rv_X1 x * rv_X2 x))) in H.
+    ring_simplify in H.
+    now ring_simplify.
+  Qed.  
+
+  Lemma rvprod_bound_abs1 (rv_X1 rv_X2 : Ts->R) :
+    RealRandomVariable_le (rvabs (rvmult rv_X1 rv_X2))
+                          (rvplus (rvsqr rv_X1) (rvsqr rv_X2)).
+    Proof.
+      generalize (rvprod_bound_abs rv_X1 rv_X2).
+      unfold RealRandomVariable_le, rvscale, rvabs, rvmult, rvsqr, Rsqr; intros.
+      specialize (H x).
+      assert (Rabs (rv_X1 x * rv_X2 x) <= 2 * Rabs (rv_X1 x * rv_X2 x)).
+      apply Rplus_le_reg_l with (r := - Rabs(rv_X1 x * rv_X2 x)).
+      ring_simplify.
+      apply Rabs_pos.
+      lra.
+    Qed.
+
+  Lemma L2Expectation_finite_abs_prod (rv_X1 rv_X2:Ts->R) 
+        {rv1 : RandomVariable prts borel_sa rv_X1}
+        {rv2 : RandomVariable prts borel_sa rv_X2} 
+        {l21:IsL2 rv_X1}
+        {l22:IsL2 rv_X2}        
+    :  match Expectation (rvabs (rvmult rv_X1 rv_X2)) with
+       | Some (Finite _) => True
+       | _ => False
+       end.
+  Proof.
+    assert (PositiveRandomVariable (rvabs (rvmult rv_X1 rv_X2))) by apply prvabs.
+    generalize (Expectation_pos_posRV (rvabs (rvmult rv_X1 rv_X2))); intros.
+    generalize (rvprod_bound_abs1 rv_X1 rv_X2); intros.
+    assert (PositiveRandomVariable (rvplus (rvsqr rv_X1) (rvsqr rv_X2))).
+    apply rvplus_prv; apply prvsqr.
+    generalize (Finite_Expectation_posRV_le _ _ H H2 H1); intros.
+    unfold IsL2 in *.
+    rewrite Expectation_pos_posRV with (prv := prvsqr rv_X1) in l21.
+    rewrite Expectation_pos_posRV with (prv := prvsqr rv_X2) in l22.    
+    match_case_in l21; intros.
+    match_case_in l22; intros.
+    rewrite H4 in l21.
+    rewrite H5 in l22.
+    assert (PositiveRandomVariable (rvsqr rv_X1)) by apply prvsqr.
+    assert (PositiveRandomVariable (rvsqr rv_X2)) by apply prvsqr.
+    generalize (Expectation_posRV_sum (rvsqr rv_X1) (rvsqr rv_X2)); intros.
+    cut_to H3.
+    rewrite Expectation_pos_posRV with (prv := H).
+    now rewrite <- H3.
+    erewrite Expectation_posRV_pf_irrel in H8.
+    rewrite H8.
+    erewrite Expectation_posRV_pf_irrel in H4.
+    rewrite H4.
+    erewrite Expectation_posRV_pf_irrel in H5.
+    rewrite H5.
+    simpl.
+    now unfold is_finite.
+
+    rewrite H5 in l22; tauto.
+    rewrite H5 in l22; tauto.    
+    rewrite H4 in l21; tauto.
+    rewrite H4 in l21; tauto.    
+  Qed.
+
   Lemma L2RRV_inner_plus (x y z : L2RRV) :
     L2RRVinner (L2RRVplus x y) z = L2RRVinner x z + L2RRVinner y z.
   Proof.
     unfold L2RRVinner, L2RRVplus; simpl.
     rewrite (Expectation_ext (rv_X2 := rvplus (rvmult x z) (rvmult y z))).
-    - admit.
-    - intros ?.
+    - destruct x.
+      destruct y.
+      destruct z.
+      simpl.
+      generalize (L2Expectation_finite_abs_prod L2RRV_rv_X0 L2RRV_rv_X2); intros.
+      generalize (L2Expectation_finite_abs_prod L2RRV_rv_X1 L2RRV_rv_X2); intros.      
+      generalize (Expectation_abs_then_finite  (rvmult L2RRV_rv_X0 L2RRV_rv_X2) H); intros.
+      generalize (Expectation_abs_then_finite  (rvmult L2RRV_rv_X1 L2RRV_rv_X2) H0); intros.
+      match_case_in H1; intros.
+      match_case_in H2; intros.
+      rewrite Expectation_sum.
+      rewrite H3 in H1.
+      rewrite H4 in H2.
+      rewrite H3, H4.
+      match_destr_in H1; try tauto.
+      match_destr_in H2; try tauto.
+      now apply rvmult_rv.
+      now apply rvmult_rv.
+      assert (RealRandomVariable_le (neg_fun_part (rvmult L2RRV_rv_X0 L2RRV_rv_X2))
+                                    (rvabs (rvmult L2RRV_rv_X0 L2RRV_rv_X2))).
+      unfold RealRandomVariable_le, neg_fun_part, rvmult, rvabs; intros.
+      simpl.
+      unfold Rmax, Rabs.
+      match_destr; match_destr; lra.
+      apply Finite_Expectation_posRV_le with (prv2 := prvabs (rvmult L2RRV_rv_X0 L2RRV_rv_X2)); trivial.
+      match_case_in H; intros.
+      rewrite H6 in H.
+      match_destr_in H; try tauto.
+      rewrite Expectation_pos_posRV with (prv := prvabs (rvmult L2RRV_rv_X0 L2RRV_rv_X2)) in H6.
+      inversion H6.
+      rewrite H8.
+      now unfold is_finite.
+      now rewrite H6 in H.
+      assert (RealRandomVariable_le (neg_fun_part (rvmult L2RRV_rv_X1 L2RRV_rv_X2))
+                                    (rvabs (rvmult L2RRV_rv_X1 L2RRV_rv_X2))).
+      unfold RealRandomVariable_le, neg_fun_part, rvmult, rvabs; intros.
+      simpl.
+      unfold Rmax, Rabs.
+      match_destr; match_destr; lra.
+      apply Finite_Expectation_posRV_le with (prv2 := prvabs (rvmult L2RRV_rv_X1 L2RRV_rv_X2)); trivial.
+      match_case_in H0; intros.
+      rewrite H6 in H0.
+      match_destr_in H0; try tauto.
+      rewrite Expectation_pos_posRV with (prv := prvabs (rvmult L2RRV_rv_X1 L2RRV_rv_X2)) in H6.
+      inversion H6.
+      rewrite H8.
+      now unfold is_finite.
+      now rewrite H6 in H0.
+      now rewrite H4 in H2.
+      now rewrite H3 in H1.
+    - intro x0.
       unfold rvmult, rvplus.
       lra.
-  Admitted.
+  Qed.
 
-  
   Definition L2RRVq : Type := quot L2RRV_eq.
 
   Definition L2RRVq_const (x:R) : L2RRVq := Quot _ (L2RRVconst x).
