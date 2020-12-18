@@ -466,9 +466,9 @@ Section L2.
   Admitted.
  *)
 
-(*  Lemma list_sum0_is0 l :
+  Lemma list_sum0_is0 l :
     Forall (fun x => x = 0) l ->
-    list_sum l = 0.
+    RealAdd.list_sum l = 0%R.
   Proof.
     induction l; simpl; trivial.
     inversion 1; subst.
@@ -488,9 +488,38 @@ Section L2.
     apply List.Forall_forall.
     intros ? inn.
     apply in_map_iff in inn.
-    
+    destruct inn as [?[??]].
+    red in eqq.
+    unfold const in eqq.
+    destruct (Req_EM_T x1 0).
+    - subst.
+      lra.
+    - replace (ps_P (fun omega : Ts => x omega = x1)) with 0 in H; [lra |].
+      apply Rle_antisym.
+      + apply ps_pos.
+        eapply Hsigma_borel_eq_pf; eauto.
+        apply rvconst.
+      +
+      assert (event_sub  (fun x0 : Ts => x x0 = 0) (event_complement (fun omega : Ts => x omega = x1))).
+      {
+        unfold event_complement.
+        red; intros.
+        lra.
+      }
+      apply (ps_sub prts) in H1.
+      * rewrite ps_complement in H1.
+        -- rewrite eqq in H1.
+           lra.
+        -- eapply Hsigma_borel_eq_pf; eauto.
+           apply rvconst.
+      * eapply Hsigma_borel_eq_pf; eauto.
+        apply rvconst.
+      * apply sa_complement.
+        eapply Hsigma_borel_eq_pf; eauto.
+        apply rvconst.
+  Qed.
 
-    Lemma Expectation_simple_proper_almost x y
+  Lemma Expectation_simple_proper_almost x y
         {rvx:RandomVariable prts borel_sa x}
         {rvy:RandomVariable prts borel_sa y} 
         {xsrv:SimpleRandomVariable x}
@@ -499,12 +528,27 @@ Section L2.
     SimpleExpectation x = SimpleExpectation y.
   Proof.
     intros.
+    generalize (SimplePosExpectation_pos_zero (rvminus x y))
+    ; intros HH.
+    cut_to HH.
+    - unfold rvminus in HH.
+      erewrite SimpleExpectation_pf_irrel in HH.
+      rewrite <- sumSimpleExpectation with (srv1:=xsrv) (srv2:=srvopp) in HH; trivial.
+      + unfold rvopp in HH.
+        erewrite (@SimpleExpectation_pf_irrel _ _ _ (rvscale (-1) y)) in HH.
+        rewrite <- scaleSimpleExpectation with (srv:=ysrv) in HH.
+        lra.
+      + typeclasses eauto.
+    - clear HH.
+      unfold rv_almost_eq in *.
+      unfold const.
+      rewrite ps_proper; try eapply H.
+      intros a.
+      unfold rvminus, rvplus, rvopp, rvscale.
+      split; intros; lra.
+  Qed.
 
-    
-    admit.
-  Admitted.
- *)
-
+(*
   Lemma Expectation_posRV_ub_proper_almost x y x0
     {rvx:RandomVariable prts borel_sa x}
     {rvy:RandomVariable prts borel_sa y} 
@@ -560,7 +604,7 @@ Section L2.
     specialize (xlub _ (Expectation_posRV_ub_proper_almost _ _ _ temp_le2 (symmetry H) yub)).
     now apply Rbar_le_antisym.
   Admitted.
-
+*)
   Lemma Expectation_proper_almost x y 
     {rvx:RandomVariable prts borel_sa x}
     {rvy:RandomVariable prts borel_sa y} :
@@ -569,10 +613,13 @@ Section L2.
   Proof.
     unfold Proper, respectful; intros eqq.
     unfold Expectation.
+    (*
     rewrite (Expectation_posRV_proper_almost _ _ (pos_fun_part_proper_almost _ _ eqq)).
     rewrite (Expectation_posRV_proper_almost _ _ (neg_fun_part_proper_almost _ _ eqq)).
     reflexivity.
   Qed.
+     *)
+  Admitted.
 
   Global Instance L2RRV_expectation_proper : Proper (L2RRV_eq ==> eq) L2RRVexpectation.
   Proof.
