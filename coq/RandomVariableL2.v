@@ -14,6 +14,7 @@ Require Import quotient_space.
 
 Require Import AlmostEqual.
 Require Import utils.Utils.
+Require Import List.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -309,70 +310,15 @@ Section L2.
 
   Global Instance L2RRV_eq_equiv : Equivalence L2RRV_eq.
   Proof.
-    unfold L2RRV_eq, rv_almost_eq.
-    constructor; red.
+    unfold L2RRV_eq.
+    constructor.
     - intros [x?].
-      assert (eqq:event_equiv (fun x0 : Ts => x x0 = x x0) Ω)
-        by firstorder.
-      rewrite eqq.
-      eauto with prob.
+      now apply rv_almost_eq_rv_refl.
     - intros [x?] [y?] ps1; simpl in *.
-      rewrite ps_proper; try eassumption.
-      red; intros.
-      split; congruence.
+      now apply rv_almost_eq_rv_sym.
     - intros [x??] [y??] [z??] ps1 ps2.
       simpl in *.
-      rewrite rv_almost_eq_alt_eq in ps1 by eauto with prob.
-      rewrite rv_almost_eq_alt_eq in ps2 by eauto with prob.
-      rewrite rv_almost_eq_alt_eq by eauto with prob.
-      generalize (ps_union prts _ _ (sa_complement _ (Hsigma_borel_eq_pf _ x y _ _)) (sa_complement _ (Hsigma_borel_eq_pf _ y z _ _)))
-      ; intros HH.
-      unfold event_complement in HH.
-      rewrite ps1,ps2 in HH.
-      field_simplify in HH.
-
-      assert (HH2 : ps_P
-                      (event_inter (event_complement (fun x0 : Ts => x x0 = y x0))
-                                   (event_complement (fun x : Ts => y x = z x))) = 0).
-      {
-        assert (HH3:ps_P
-                      (event_union (event_complement (fun x0 : Ts => x x0 = y x0))
-                                   (event_complement (fun x : Ts => y x = z x))) 
-                    +
-                    ps_P
-                      (event_inter (event_complement (fun x0 : Ts => x x0 = y x0))
-                                   (event_complement (fun x : Ts => y x = z x))) = 0)
-          by (unfold event_complement; lra).
-        rewrite Rplus_comm in HH3.
-        apply Rplus_eq_0_l in HH3; trivial
-        ; apply ps_pos
-        ; eauto 6 with prob.
-      }
-      unfold event_complement in HH2.
-      rewrite HH2, Ropp_0 in HH.
-      unfold event_union in HH2.
-
-      assert (ele:event_sub
-                    (event_complement (fun x0 : Ts => x x0 = z x0))
-                    (event_union (event_complement (fun x1 : Ts => x x1 = y x1))
-                                 (event_complement (fun x : Ts => y x = z x)))).
-      {
-        unfold event_complement.
-        red; intros.
-        apply not_and_or.
-        intros [??].
-        congruence.
-      }
-
-      apply (@ps_sub _ _ prts) in ele; trivial.
-      * unfold event_complement in ele.
-        rewrite HH in ele.
-        apply Rle_antisym; trivial.
-        apply ps_pos; trivial.
-        apply sa_complement.
-        eauto with prob.
-      * eauto with prob.
-      * apply sa_union; eauto with prob.
+      now apply rv_almost_eq_rv_trans with (y0:=y).
   Qed.
   
   Definition L2RRVconst (x:R) : L2RRV
@@ -500,7 +446,99 @@ Section L2.
         congruence.
   Qed.
 
-  Lemma Expectation_posRV_proper_almost x y 
+(*  
+    Lemma BoundedPositiveRandomVariable_proper_almost x y w 
+    {rvx:RandomVariable prts borel_sa x}
+      {rvy:RandomVariable prts borel_sa y} :
+    rv_almost_eq prts x y ->
+      
+      BoundedPositiveRandomVariable x w ->
+      BoundedPositiveRandomVariable y w.
+  Proof.
+    intros eqq.
+    unfold BoundedPositiveRandomVariable.
+    intros [? wle].
+    split; trivial.
+    red in eqq.
+    unfold RealRandomVariable_le in *.
+    intros a.
+    eapply Rle_trans; try eapply wle.
+  Admitted.
+ *)
+
+(*  Lemma list_sum0_is0 l :
+    Forall (fun x => x = 0) l ->
+    list_sum l = 0.
+  Proof.
+    induction l; simpl; trivial.
+    inversion 1; subst.
+    rewrite IHl; trivial.
+    lra.
+  Qed.
+
+  Lemma SimplePosExpectation_pos_zero x
+        {rvx:RandomVariable prts borel_sa x} 
+        {xsrv:SimpleRandomVariable x} :
+    rv_almost_eq prts x (const 0) ->
+    SimpleExpectation x = 0.
+  Proof.
+    intros eqq.
+    unfold SimpleExpectation.
+    apply list_sum0_is0.
+    apply List.Forall_forall.
+    intros ? inn.
+    apply in_map_iff in inn.
+    
+
+    Lemma Expectation_simple_proper_almost x y
+        {rvx:RandomVariable prts borel_sa x}
+        {rvy:RandomVariable prts borel_sa y} 
+        {xsrv:SimpleRandomVariable x}
+        {ysrv:SimpleRandomVariable y} :
+    rv_almost_eq prts x y ->
+    SimpleExpectation x = SimpleExpectation y.
+  Proof.
+    intros.
+
+    
+    admit.
+  Admitted.
+ *)
+
+  Lemma Expectation_posRV_ub_proper_almost x y x0
+    {rvx:RandomVariable prts borel_sa x}
+    {rvy:RandomVariable prts borel_sa y} 
+    {prvx:PositiveRandomVariable x}
+    {prvy:PositiveRandomVariable y} :
+    RealRandomVariable_le y x ->
+      rv_almost_eq prts x y ->
+     is_ub_Rbar
+          (fun x0 : R =>
+           exists
+             (rvx : Ts -> R) (_ : RandomVariable prts borel_sa rvx) (srv : SimpleRandomVariable rvx),
+             BoundedPositiveRandomVariable x rvx /\ SimpleExpectation rvx = x0) x0 ->
+          is_ub_Rbar
+          (fun x0 : R =>
+           exists
+             (rvx : Ts -> R) (_ : RandomVariable prts borel_sa rvx) (srv : SimpleRandomVariable rvx),
+             BoundedPositiveRandomVariable y rvx /\ SimpleExpectation rvx = x0) x0.
+    Proof.
+      intros xle eqq ub.
+      revert ub.
+      apply is_ub_Rbar_subset.
+      intros ? [z [zrv [zsrv [[??]?]]]].
+      unfold BoundedPositiveRandomVariable.
+      exists z.
+      exists zrv.
+      exists zsrv.
+      split.
+      - split.
+        + trivial.
+        + etransitivity; eauto.
+      - trivial.
+    Qed.
+
+    Lemma Expectation_posRV_proper_almost x y
     {rvx:RandomVariable prts borel_sa x}
     {rvy:RandomVariable prts borel_sa y} 
     {prvx:PositiveRandomVariable x}
@@ -508,8 +546,21 @@ Section L2.
     rv_almost_eq prts x y ->
     Expectation_posRV x = Expectation_posRV y.
   Proof.
+    intros.
+    unfold Expectation_posRV, SimpleExpectationSup.
+    unfold Lub_Rbar.
+    repeat match goal with
+      [|- context [proj1_sig ?x]] => destruct x; simpl
+    end.
+    destruct i as [xub xlub].
+    destruct i0 as [yub ylub].
+    assert (temp_le1:RealRandomVariable_le y x) by admit.
+    assert (temp_le2:RealRandomVariable_le x y) by admit.
+    specialize (ylub _ (Expectation_posRV_ub_proper_almost _ _ _ temp_le1 H xub)).
+    specialize (xlub _ (Expectation_posRV_ub_proper_almost _ _ _ temp_le2 (symmetry H) yub)).
+    now apply Rbar_le_antisym.
   Admitted.
-  
+
   Lemma Expectation_proper_almost x y 
     {rvx:RandomVariable prts borel_sa x}
     {rvy:RandomVariable prts borel_sa y} :
