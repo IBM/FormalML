@@ -577,18 +577,15 @@ Section L2.
     unfold rv_almost_eq in H.
     assert (rv_almost_eq prts x2 (const 0)).
     unfold rv_almost_eq.
-    assert (event_sub (event_complement (fun x5 : Ts => x2 x5 = const 0 x5))
-                      (event_complement (fun x0 : Ts => x x0 = const 0 x0))).
-    unfold event_sub, event_complement; intros.
-    apply Rgt_not_eq.
+    assert (event_sub (fun x0 : Ts => x x0 = const 0 x0)
+                      (fun x5 : Ts => x2 x5 = const 0 x5)).
+    unfold event_sub; intros.
     unfold const in H3.
     unfold const.
-    apply Rdichotomy in H3.
-    destruct H3.
-    unfold PositiveRandomVariable in H0.
-    specialize (H0 x5); lra.
     unfold RealRandomVariable_le in H2.
     specialize (H2 x5).
+    unfold PositiveRandomVariable in H0.
+    specialize (H0 x5).
     lra.
     unfold RandomVariable in *.
     rewrite <- borel_sa_preimage2 in rvx.
@@ -599,15 +596,9 @@ Section L2.
     assert (sa_sigma (fun x5 : Ts => x x5 = const 0 x5)).    
     unfold const.
     now apply sa_le_pt.
-    apply (ps_sub prts) in H3.
-    do 2 rewrite ps_complement in H3; trivial.
-    generalize (ps_pos (fun x5 : Ts => x2 x5 = const 0 x5) H4); intros.
-    generalize (ps_pos (fun x5 : Ts => x x5 = const 0 x5) H5); intros.    
+    apply (ps_sub prts) in H3; trivial.
     generalize (ps_le1 prts (fun x5 : Ts => x2 x5 = const 0 x5) H4); intros.
-    generalize (ps_le1 prts (fun x5 : Ts => x x5 = const 0 x5) H5); intros.    
     lra.
-    now apply sa_complement.
-    now apply sa_complement.
     generalize (SimplePosExpectation_pos_zero x2 H3); intros.
     rewrite H4 in H1.
     rewrite <- H1.
@@ -621,8 +612,6 @@ Section L2.
     apply prv.
     apply SimpleExpectation_const.
  Qed.
-    
-
 
 (*
   Lemma Expectation_posRV_ub_proper_almost x y x0
