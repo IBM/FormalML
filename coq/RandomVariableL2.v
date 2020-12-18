@@ -568,49 +568,49 @@ Section L2.
     specialize (xlub 0).
     unfold is_ub_Rbar in xlub.
     cut_to xub.
-    cut_to xlub.
-    now apply Rbar_le_antisym.
-    intros.
-    destruct H0 as [? [? [? [? ?]]]].
-    unfold BoundedPositiveRandomVariable in H0.
-    destruct H0.
-    unfold rv_almost_eq in H.
-    assert (rv_almost_eq prts x2 (const 0)).
-    unfold rv_almost_eq.
-    assert (event_sub (fun x0 : Ts => x x0 = const 0 x0)
-                      (fun x5 : Ts => x2 x5 = const 0 x5)).
-    unfold event_sub; intros.
-    unfold const in H3.
-    unfold const.
-    unfold RealRandomVariable_le in H2.
-    specialize (H2 x5).
-    unfold PositiveRandomVariable in H0.
-    specialize (H0 x5).
-    lra.
-    unfold RandomVariable in *.
-    rewrite <- borel_sa_preimage2 in rvx.
-    rewrite <- borel_sa_preimage2 in x3.
-    assert (sa_sigma (fun x5 : Ts => x2 x5 = const 0 x5)).
-    unfold const.
-    now apply sa_le_pt.
-    assert (sa_sigma (fun x5 : Ts => x x5 = const 0 x5)).    
-    unfold const.
-    now apply sa_le_pt.
-    apply (ps_sub prts) in H3; trivial.
-    generalize (ps_le1 prts (fun x5 : Ts => x2 x5 = const 0 x5) H4); intros.
-    lra.
-    generalize (SimplePosExpectation_pos_zero x2 H3); intros.
-    rewrite H4 in H1.
-    rewrite <- H1.
-    simpl; lra.
-    exists (const 0); exists (rvconst 0); exists (srvconst 0).
-    split.
-    unfold BoundedPositiveRandomVariable.
-    split.
-    apply prvconst; lra.
-    unfold RealRandomVariable_le, const.
-    apply prv.
-    apply SimpleExpectation_const.
+    - cut_to xlub.
+      + now apply Rbar_le_antisym.
+      + intros.
+        destruct H0 as [? [? [? [? ?]]]].
+        unfold BoundedPositiveRandomVariable in H0.
+        destruct H0.
+        unfold rv_almost_eq in H.
+        assert (rv_almost_eq prts x2 (const 0)).
+        * unfold rv_almost_eq.
+          assert (event_sub (fun x0 : Ts => x x0 = const 0 x0)
+                            (fun x5 : Ts => x2 x5 = const 0 x5)).
+          -- unfold event_sub; intros.
+             unfold const in H3.
+             unfold const.
+             unfold RealRandomVariable_le in H2.
+             specialize (H2 x5).
+             unfold PositiveRandomVariable in H0.
+             specialize (H0 x5).
+             lra.
+          -- unfold RandomVariable in *.
+             rewrite <- borel_sa_preimage2 in rvx.
+             rewrite <- borel_sa_preimage2 in x3.
+             assert (sa_sigma (fun x5 : Ts => x2 x5 = const 0 x5)).
+             ++ unfold const.
+                now apply sa_le_pt.
+             ++ assert (sa_sigma (fun x5 : Ts => x x5 = const 0 x5)).    
+                ** unfold const.
+                   now apply sa_le_pt.
+                ** apply (ps_sub prts) in H3; trivial.
+                   generalize (ps_le1 prts (fun x5 : Ts => x2 x5 = const 0 x5) H4); intros.
+                   lra.
+        * generalize (SimplePosExpectation_pos_zero x2 H3); intros.
+          rewrite H4 in H1.
+          rewrite <- H1.
+          simpl; lra.
+    - exists (const 0); exists (rvconst 0); exists (srvconst 0).
+      split.
+      + unfold BoundedPositiveRandomVariable.
+        split.
+        * apply prvconst; lra.
+        * unfold RealRandomVariable_le, const.
+          apply prv.
+      + apply SimpleExpectation_const.
  Qed.
 
 (*
