@@ -458,9 +458,70 @@ Section L2.
   Definition L2RRVexpectation (rv:L2RRV) : R
     := L2Expectation rv.
 
+  Lemma pos_fun_part_proper_almost x y 
+    {rvx:RandomVariable prts borel_sa x}
+    {rvy:RandomVariable prts borel_sa y} :
+    rv_almost_eq prts x y ->
+    rv_almost_eq prts (fun x0 => nonneg (pos_fun_part x x0)) (fun x0 => nonneg (pos_fun_part y x0)).
+  Proof.
+    unfold pos_fun_part; simpl.
+    unfold rv_almost_eq; intros eqq.
+    apply Rle_antisym; trivial.
+    - apply ps_le1.
+      apply (Hsigma_borel_eq_pf prts)
+      ; now apply positive_part_rv.
+    - rewrite <- eqq.
+      apply ps_sub.
+      + now apply (Hsigma_borel_eq_pf prts).
+      + apply (Hsigma_borel_eq_pf prts)
+        ; now apply positive_part_rv.
+      + intros a; intros eqq2.
+        congruence.
+  Qed.
 
-  Global Instance Expectation_proper_almost : Proper (rv_almost_eq prts ==> eq) Expectation.
+  Lemma neg_fun_part_proper_almost x y 
+    {rvx:RandomVariable prts borel_sa x}
+    {rvy:RandomVariable prts borel_sa y} :
+    rv_almost_eq prts x y ->
+    rv_almost_eq prts (fun x0 => nonneg (neg_fun_part x x0)) (fun x0 => nonneg (neg_fun_part y x0)).
+  Proof.
+    unfold neg_fun_part; simpl.
+    unfold rv_almost_eq; intros eqq.
+    apply Rle_antisym; trivial.
+    - apply ps_le1.
+      apply (Hsigma_borel_eq_pf prts)
+      ; now apply negative_part_rv.
+    - rewrite <- eqq.
+      apply ps_sub.
+      + now apply (Hsigma_borel_eq_pf prts).
+      + apply (Hsigma_borel_eq_pf prts)
+        ; now apply negative_part_rv.
+      + intros a; intros eqq2.
+        congruence.
+  Qed.
+
+  Lemma Expectation_posRV_proper_almost x y 
+    {rvx:RandomVariable prts borel_sa x}
+    {rvy:RandomVariable prts borel_sa y} 
+    {prvx:PositiveRandomVariable x}
+    {prvy:PositiveRandomVariable y} :
+    rv_almost_eq prts x y ->
+    Expectation_posRV x = Expectation_posRV y.
+  Proof.
   Admitted.
+  
+  Lemma Expectation_proper_almost x y 
+    {rvx:RandomVariable prts borel_sa x}
+    {rvy:RandomVariable prts borel_sa y} :
+    rv_almost_eq prts x y ->
+    Expectation x = Expectation y.
+  Proof.
+    unfold Proper, respectful; intros eqq.
+    unfold Expectation.
+    rewrite (Expectation_posRV_proper_almost _ _ (pos_fun_part_proper_almost _ _ eqq)).
+    rewrite (Expectation_posRV_proper_almost _ _ (neg_fun_part_proper_almost _ _ eqq)).
+    reflexivity.
+  Qed.
 
   Global Instance L2RRV_expectation_proper : Proper (L2RRV_eq ==> eq) L2RRVexpectation.
   Proof.
@@ -470,7 +531,7 @@ Section L2.
     repeat match goal with
       [|- context [proj1_sig ?x]] => destruct x; simpl
            end.
-    rewrite eqq in e.
+    rewrite (Expectation_proper_almost _ _ eqq) in e.
     congruence.
   Qed.
 
@@ -496,7 +557,7 @@ Section L2.
     assert (eqq:rv_almost_eq prts (rvmult x1 y1) (rvmult x2 y2)).
     - L2RRV_simpl.
       now apply rv_almost_eq_mult_proper.
-    - rewrite eqq.
+    - rewrite (Expectation_proper_almost _ _ eqq).
       reflexivity.
   Qed.
 
