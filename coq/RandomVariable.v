@@ -6039,7 +6039,6 @@ Section Expectation.
     cut_to H0; [|lia].
     simpl in H0.
     specialize (apx_le1 x0 x).
-    Search Rabs.
     rewrite <- Rabs_Ropp in H0.
     replace (Rabs (-(simple_approx X x0 x - X x))) with (X x - simple_approx X x0 x) in H0.
     lra.
