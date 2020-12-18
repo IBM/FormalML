@@ -48,7 +48,7 @@ Section L2.
     match_destr; now simpl.
   Qed.
 
-(*
+
   Lemma Cauchy_Schwarz_ineq (rv_X1 rv_X2 :Ts->R) 
         {is1:IsL2' rv_X1}
         {is2:IsL2' rv_X2}  :
@@ -61,8 +61,8 @@ Section L2.
     intros.
     assert (PositiveRandomVariable
               (rvsqr (rvminus
-                        (rvscale (Expectation_posRV (rvsqr rv_X2)) rv_X1)
-                        (rvscale (Expectation_posRV (rvabs (rvmult rv_X1 rv_X2))) rv_X2)))).
+                        (rvscale (Expectation_posRV (rvsqr rv_X2)) (rvabs rv_X1))
+                        (rvscale (Expectation_posRV (rvabs (rvmult rv_X1 rv_X2))) (rvabs rv_X2))))).
     apply prvsqr.
     assert (rv_eq
               (rvsqr (rvminus
@@ -82,7 +82,9 @@ Section L2.
     unfold rvsqr, rvminus, rvscale, rvopp, rvabs, rvplus, rvscale, rvabs, rvmult, Rsqr.
     apply Rminus_diag_uniq.
     now ring_simplify.
-*)
+    rewrite H2 in H1.
+   Admitted.
+    
 
   Lemma rvabs_bound (rv_X : Ts -> R) :
     RealRandomVariable_le (rvabs rv_X) (rvplus (rvsqr rv_X) (const 1)).
@@ -547,6 +549,80 @@ Section L2.
       unfold rvminus, rvplus, rvopp, rvscale.
       split; intros; lra.
   Qed.
+
+  Lemma Expectation_posRV_almost_0 x 
+        {rvx:RandomVariable prts borel_sa x}
+        {prv:PositiveRandomVariable x} :
+    rv_almost_eq prts x (const 0) ->
+    Expectation_posRV x = 0.
+  Proof.
+    intros.
+    unfold Expectation_posRV, SimpleExpectationSup.
+    unfold Lub_Rbar.
+    repeat match goal with
+      [|- context [proj1_sig ?x]] => destruct x; simpl
+    end.
+    destruct i as [xub xlub].
+    unfold is_ub_Rbar in xub.
+    specialize (xub 0).
+    specialize (xlub 0).
+    unfold is_ub_Rbar in xlub.
+    cut_to xub.
+    cut_to xlub.
+    now apply Rbar_le_antisym.
+    intros.
+    destruct H0 as [? [? [? [? ?]]]].
+    unfold BoundedPositiveRandomVariable in H0.
+    destruct H0.
+    unfold rv_almost_eq in H.
+    assert (rv_almost_eq prts x2 (const 0)).
+    unfold rv_almost_eq.
+    assert (event_sub (event_complement (fun x5 : Ts => x2 x5 = const 0 x5))
+                      (event_complement (fun x0 : Ts => x x0 = const 0 x0))).
+    unfold event_sub, event_complement; intros.
+    apply Rgt_not_eq.
+    unfold const in H3.
+    unfold const.
+    apply Rdichotomy in H3.
+    destruct H3.
+    unfold PositiveRandomVariable in H0.
+    specialize (H0 x5); lra.
+    unfold RealRandomVariable_le in H2.
+    specialize (H2 x5).
+    lra.
+    unfold RandomVariable in *.
+    rewrite <- borel_sa_preimage2 in rvx.
+    rewrite <- borel_sa_preimage2 in x3.
+    assert (sa_sigma (fun x5 : Ts => x2 x5 = const 0 x5)).
+    unfold const.
+    now apply sa_le_pt.
+    assert (sa_sigma (fun x5 : Ts => x x5 = const 0 x5)).    
+    unfold const.
+    now apply sa_le_pt.
+    apply (ps_sub prts) in H3.
+    do 2 rewrite ps_complement in H3; trivial.
+    generalize (ps_pos (fun x5 : Ts => x2 x5 = const 0 x5) H4); intros.
+    generalize (ps_pos (fun x5 : Ts => x x5 = const 0 x5) H5); intros.    
+    generalize (ps_le1 prts (fun x5 : Ts => x2 x5 = const 0 x5) H4); intros.
+    generalize (ps_le1 prts (fun x5 : Ts => x x5 = const 0 x5) H5); intros.    
+    lra.
+    now apply sa_complement.
+    now apply sa_complement.
+    generalize (SimplePosExpectation_pos_zero x2 H3); intros.
+    rewrite H4 in H1.
+    rewrite <- H1.
+    simpl; lra.
+    exists (const 0); exists (rvconst 0); exists (srvconst 0).
+    split.
+    unfold BoundedPositiveRandomVariable.
+    split.
+    apply prvconst; lra.
+    unfold RealRandomVariable_le, const.
+    apply prv.
+    apply SimpleExpectation_const.
+ Qed.
+    
+
 
 (*
   Lemma Expectation_posRV_ub_proper_almost x y x0
