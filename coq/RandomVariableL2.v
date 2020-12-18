@@ -662,24 +662,6 @@ Section L2.
     reflexivity.
   Qed.
 
-  Lemma Expectation_zero_pos 
-        (x : Ts -> R)
-        {rv : RandomVariable prts borel_sa x}
-        {posrv :PositiveRandomVariable x} :
-    Expectation x = Some (Finite 0) ->
-    ps_P (fun omega => x omega = 0) = 1.
-  Proof.
-    rewrite Expectation_pos_posRV with (prv := posrv); intros.
-    inversion H.
-    unfold Expectation_posRV, SimpleExpectationSup, Lub_Rbar in H1.
-    match goal with
-      [H:context [proj1_sig ?x] |- _] => destruct x
-    end; simpl.
-    unfold is_lub_Rbar in i.
-    destruct i.
-    unfold is_ub_Rbar in i.
-    Admitted.
-
   Lemma L2RRV_inner_zero_inv (x:L2RRV) : L2RRVinner x x = 0 ->
                                          L2RRV_eq x (L2RRVconst 0).
   Proof.
