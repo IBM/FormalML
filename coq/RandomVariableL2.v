@@ -670,6 +670,157 @@ Section L2.
     simpl; f_equal; f_equal; lra.
   Qed.
 
+
+  Lemma Expectation_finite_neg_part x
+        {rvx:RandomVariable prts borel_sa x}  :
+    forall (e:R), 
+      Expectation x = Some (Finite e) ->
+      is_finite (Expectation_posRV (neg_fun_part x)).
+  Proof.
+    intros.
+    unfold Expectation, Rbar_minus' in H.
+    destruct (Expectation_posRV (fun x0 : Ts => pos_fun_part x x0)).
+    - destruct (Expectation_posRV (fun x0 : Ts => neg_fun_part x x0)).
+      + now unfold is_finite.
+      + simpl in H; discriminate.
+      + simpl in H; discriminate.
+    - destruct (Expectation_posRV (fun x0 : Ts => neg_fun_part x x0));
+        simpl in H; discriminate.
+    - destruct (Expectation_posRV (fun x0 : Ts => neg_fun_part x x0));
+        simpl in H; discriminate.
+  Qed.
+
+  Lemma Expectation_finite_pos_part x
+        {rvx:RandomVariable prts borel_sa x}  :
+    forall (e:R), 
+      Expectation x = Some (Finite e) ->
+      is_finite (Expectation_posRV (pos_fun_part x)).
+  Proof.
+    intros.
+    unfold Expectation, Rbar_minus' in H.
+    destruct (Expectation_posRV (fun x0 : Ts => pos_fun_part x x0)).
+    - destruct (Expectation_posRV (fun x0 : Ts => neg_fun_part x x0)).
+      + now unfold is_finite.
+      + simpl in H; discriminate.
+      + simpl in H; discriminate.
+    - destruct (Expectation_posRV (fun x0 : Ts => neg_fun_part x x0));
+        simpl in H; discriminate.
+    - destruct (Expectation_posRV (fun x0 : Ts => neg_fun_part x x0));
+        simpl in H; discriminate.
+  Qed.
+
+  Lemma Expectation_finite_proper_almost x y
+        {rvx:RandomVariable prts borel_sa x}
+        {rvy:RandomVariable prts borel_sa y} :
+    forall (e1 e2:R), 
+      Expectation x = Some (Finite e1) ->
+      Expectation y = Some (Finite e2) ->
+      rv_almost_eq prts x y ->
+      e1 = e2.
+  Proof.
+    intros.
+    generalize (Expectation_almost_0 (rvminus x y))
+    ; intros HH.
+    cut_to HH.
+    - unfold rvminus in HH.
+      generalize (Expectation_sum x (rvopp y)); intros Esum.
+      cut_to Esum.
+      + rewrite HH in Esum.
+        unfold rvopp in Esum.
+        rewrite Expectation_scale in Esum; try lra.
+        rewrite H in Esum.
+        rewrite H0 in Esum.
+        inversion Esum.
+        lra.
+      + apply Expectation_finite_neg_part with (e := e1); trivial.
+      + assert (PositiveRandomVariable (fun x0 => nonneg(pos_fun_part y x0))).
+        unfold PositiveRandomVariable, pos_fun_part; simpl.
+        intros.
+        apply Rmax_r.
+        rewrite Expectation_posRV_ext with (prv2 := H2).
+        apply Expectation_finite_pos_part with (e := e2); trivial.
+        intro x0.
+        unfold pos_fun_part, neg_fun_part, rvopp, rvscale; simpl.
+        f_equal.
+        lra.
+    - unfold rv_almost_eq in *.
+      unfold const in *.
+      assert (event_equiv (fun x0 : Ts => rvminus x y x0 = 0) (fun x0 : Ts => x x0 = y x0)).
+      intros a.
+      unfold rvminus, rvplus, rvopp, rvscale.
+      split; intros; lra.
+      now rewrite H2.
+   Qed.
+
+  Lemma Expectation_proper_almost x y
+        {rvx:RandomVariable prts borel_sa x}
+        {rvy:RandomVariable prts borel_sa y} :
+      rv_almost_eq prts x y ->
+      Expectation x = Expectation y.
+  Proof.
+    intros.
+    generalize (Expectation_almost_0 (rvminus x y))
+    ; intros HH.
+    cut_to HH.
+    - unfold rvminus in HH.
+      generalize (Expectation_sum x (rvopp y)); intros.
+      cut_to H0.
+      + rewrite HH in H0.
+        unfold rvopp in H0.
+        rewrite Expectation_scale in H0; try lra.
+        match_case_in H0; intros.
+        * rewrite H1 in H0.
+          match_case_in H0; intros.
+          -- match_case_in H2; intros.
+             ++ f_equal.
+                rewrite H3 in H0.
+                inversion H0.
+                destruct r.
+                ** destruct r1.
+                   --- simpl in H5.
+                       apply Rbar_finite_eq.
+                       apply Rbar_finite_eq in H5.
+                       lra.
+                   --- simpl in H5.
+                       destruct (Rle_dec 0 (-1)).
+                       +++ lra.
+                       +++  simpl in H5.
+                            discriminate.
+                   --- simpl in H5.
+                       destruct (Rle_dec 0 (-1)).
+                       +++ lra.
+                       +++ simpl in H5.
+                           discriminate.
+                ** simpl in H5.
+                   destruct r1.
+                   --- simpl in H5.
+                       discriminate.
+                   --- reflexivity.
+                   --- simpl in H5.
+                       destruct (Rle_dec 0 (-1)).
+                       +++ lra.
+                       +++ simpl in H5.
+                           discriminate.
+                ** destruct r1.
+                   --- discriminate.
+                   --- simpl in H5.
+                       destruct (Rle_dec 0 (-1)).
+                       +++ lra.
+                       +++ simpl in H5.
+                           discriminate.
+                   --- reflexivity.
+             ++ rewrite H3 in H2.
+                discriminate.
+          -- match_case_in H2; intros.
+             ++ rewrite H3 in H2.
+                discriminate.
+             ++ rewrite H3 in H0.
+                discriminate.
+        * rewrite H1 in H0.
+          discriminate.
+      + 
+      Admitted.
+
 (*
   Lemma Expectation_posRV_ub_proper_almost x y x0
     {rvx:RandomVariable prts borel_sa x}
@@ -727,7 +878,8 @@ Section L2.
     now apply Rbar_le_antisym.
   Admitted.
 *)
-  Lemma Expectation_proper_almost x y 
+
+  Lemma Expectation_proper_almost2 x y 
     {rvx:RandomVariable prts borel_sa x}
     {rvy:RandomVariable prts borel_sa y} :
     rv_almost_eq prts x y ->
@@ -742,6 +894,7 @@ Section L2.
   Qed.
      *)
   Admitted.
+
 
   Global Instance L2RRV_expectation_proper : Proper (L2RRV_eq ==> eq) L2RRVexpectation.
   Proof.
