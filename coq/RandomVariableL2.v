@@ -48,7 +48,6 @@ Section L2.
     match_destr; now simpl.
   Qed.
 
-
   Lemma Cauchy_Schwarz_ineq (rv_X1 rv_X2 :Ts->R) 
         {is1:IsL2' rv_X1}
         {is2:IsL2' rv_X2}  :
@@ -83,6 +82,9 @@ Section L2.
     apply Rminus_diag_uniq.
     now ring_simplify.
     rewrite H2 in H1.
+    generalize Expectation_posRV_pos; intros.
+    specialize (H3 _ H1).
+    
    Admitted.
     
 
@@ -571,9 +573,8 @@ Section L2.
     - cut_to xlub.
       + now apply Rbar_le_antisym.
       + intros.
-        destruct H0 as [? [? [? [? ?]]]].
         unfold BoundedPositiveRandomVariable in H0.
-        destruct H0.
+        destruct H0 as [? [? [? [[? ?] ?]]]].
         unfold rv_almost_eq in H.
         assert (rv_almost_eq prts x2 (const 0)).
         * unfold rv_almost_eq.
@@ -582,8 +583,8 @@ Section L2.
           -- unfold event_sub; intros.
              unfold const in H3.
              unfold const.
-             unfold RealRandomVariable_le in H2.
-             specialize (H2 x5).
+             unfold RealRandomVariable_le in H1.
+             specialize (H1 x5).
              unfold PositiveRandomVariable in H0.
              specialize (H0 x5).
              lra.
@@ -600,8 +601,8 @@ Section L2.
                    generalize (ps_le1 prts (fun x5 : Ts => x2 x5 = const 0 x5) H4); intros.
                    lra.
         * generalize (SimplePosExpectation_pos_zero x2 H3); intros.
-          rewrite H4 in H1.
-          rewrite <- H1.
+          rewrite H4 in H2.
+          rewrite <- H2.
           simpl; lra.
     - exists (const 0); exists (rvconst 0); exists (srvconst 0).
       split.
@@ -612,6 +613,23 @@ Section L2.
           apply prv.
       + apply SimpleExpectation_const.
  Qed.
+
+  Lemma Expectation_almost_0 x 
+        {rvx:RandomVariable prts borel_sa x} :
+    rv_almost_eq prts x (const 0) ->
+    Expectation x = Some (Finite 0).
+  Proof.
+    unfold rv_almost_eq.
+    intros.
+    unfold Expectation.
+    assert (rv_almost_eq prts (fun omega => nonneg(pos_fun_part x omega)) (const 0)).
+    admit.
+    assert (rv_almost_eq prts (fun omega => nonneg(neg_fun_part x omega)) (const 0)).
+    admit.
+    rewrite (Expectation_posRV_almost_0 (fun x0 : Ts => pos_fun_part x x0) H0).
+    rewrite (Expectation_posRV_almost_0 (fun x0 : Ts => neg_fun_part x x0) H1).
+    simpl; f_equal; f_equal; lra.
+  Admitted.
 
 (*
   Lemma Expectation_posRV_ub_proper_almost x y x0
