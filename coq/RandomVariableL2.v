@@ -621,15 +621,54 @@ Section L2.
   Proof.
     unfold rv_almost_eq.
     intros.
+    assert (RandomVariable prts borel_sa (pos_fun_part x)).
+    now apply positive_part_rv.
+    assert (RandomVariable prts borel_sa (neg_fun_part x)).
+    now apply negative_part_rv.
+    unfold RandomVariable in rvx.
+    rewrite <- borel_sa_preimage2 in rvx.
+    assert (sa_sigma (fun x0 : Ts => nonneg(pos_fun_part x x0) = 0)).
+    apply sa_le_pt.
+    now apply Relu_measurable.
+    assert (sa_sigma (fun x0 : Ts => nonneg(neg_fun_part x x0) = 0)).
+    apply sa_le_pt.
+    apply Relu_measurable.
+    now apply Ropp_measurable.
     unfold Expectation.
     assert (rv_almost_eq prts (fun omega => nonneg(pos_fun_part x omega)) (const 0)).
-    admit.
+    unfold rv_almost_eq.
+    assert (event_sub (fun x0 : Ts => x x0 = const 0 x0)
+                      (fun x0 : Ts => nonneg(pos_fun_part x x0) = const 0 x0)).
+    intro x0.
+    unfold pos_fun_part, const; simpl.
+    unfold Rmax; match_destr.
+    unfold const in *.
+    apply (ps_sub prts) in H4; trivial.
+    generalize (ps_le1 prts (fun x0 : Ts => nonneg(pos_fun_part x x0) = const 0 x0)); intros.
+    unfold const in H5.
+    specialize (H5 H2).
+    lra.
+    now apply sa_le_pt.
     assert (rv_almost_eq prts (fun omega => nonneg(neg_fun_part x omega)) (const 0)).
-    admit.
-    rewrite (Expectation_posRV_almost_0 (fun x0 : Ts => pos_fun_part x x0) H0).
-    rewrite (Expectation_posRV_almost_0 (fun x0 : Ts => neg_fun_part x x0) H1).
+    assert (event_sub (fun x0 : Ts => x x0 = const 0 x0)
+                      (fun x0 : Ts => nonneg(neg_fun_part x x0) = const 0 x0)
+                        ).
+    intro x0.
+    unfold neg_fun_part, const; simpl.
+    unfold Rmax; match_destr.
+    lra.
+    unfold rv_almost_eq.
+    unfold const in *.
+    apply (ps_sub prts) in H5; trivial.
+    generalize (ps_le1 prts (fun x0 : Ts => nonneg(neg_fun_part x x0) = const 0 x0)); intros.
+    unfold const in H6.
+    specialize (H6 H3).
+    lra.
+    now apply sa_le_pt.
+    rewrite (Expectation_posRV_almost_0 (fun x0 : Ts => pos_fun_part x x0) H4).
+    rewrite (Expectation_posRV_almost_0 (fun x0 : Ts => neg_fun_part x x0) H5).
     simpl; f_equal; f_equal; lra.
-  Admitted.
+  Qed.
 
 (*
   Lemma Expectation_posRV_ub_proper_almost x y x0
