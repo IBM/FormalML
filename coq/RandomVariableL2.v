@@ -552,26 +552,6 @@ Section L2.
         congruence.
   Qed.
 
-(*  
-    Lemma BoundedPositiveRandomVariable_proper_almost x y w 
-    {rvx:RandomVariable prts borel_sa x}
-      {rvy:RandomVariable prts borel_sa y} :
-    rv_almost_eq prts x y ->
-      
-      BoundedPositiveRandomVariable x w ->
-      BoundedPositiveRandomVariable y w.
-  Proof.
-    intros eqq.
-    unfold BoundedPositiveRandomVariable.
-    intros [? wle].
-    split; trivial.
-    red in eqq.
-    unfold RealRandomVariable_le in *.
-    intros a.
-    eapply Rle_trans; try eapply wle.
-  Admitted.
- *)
-
   Lemma list_sum0_is0 l :
     Forall (fun x => x = 0) l ->
     RealAdd.list_sum l = 0%R.
@@ -854,6 +834,7 @@ Section L2.
       now rewrite H2.
    Qed.
 
+  (*
   Lemma Expectation_proper_almost x y
         {rvx:RandomVariable prts borel_sa x}
         {rvy:RandomVariable prts borel_sa y} :
@@ -922,81 +903,7 @@ Section L2.
           discriminate.
       + 
       Admitted.
-
-(*
-  Lemma Expectation_posRV_ub_proper_almost x y x0
-    {rvx:RandomVariable prts borel_sa x}
-    {rvy:RandomVariable prts borel_sa y} 
-    {prvx:PositiveRandomVariable x}
-    {prvy:PositiveRandomVariable y} :
-    RealRandomVariable_le y x ->
-      rv_almost_eq prts x y ->
-     is_ub_Rbar
-          (fun x0 : R =>
-           exists
-             (rvx : Ts -> R) (_ : RandomVariable prts borel_sa rvx) (srv : SimpleRandomVariable rvx),
-             BoundedPositiveRandomVariable x rvx /\ SimpleExpectation rvx = x0) x0 ->
-          is_ub_Rbar
-          (fun x0 : R =>
-           exists
-             (rvx : Ts -> R) (_ : RandomVariable prts borel_sa rvx) (srv : SimpleRandomVariable rvx),
-             BoundedPositiveRandomVariable y rvx /\ SimpleExpectation rvx = x0) x0.
-    Proof.
-      intros xle eqq ub.
-      revert ub.
-      apply is_ub_Rbar_subset.
-      intros ? [z [zrv [zsrv [[??]?]]]].
-      unfold BoundedPositiveRandomVariable.
-      exists z.
-      exists zrv.
-      exists zsrv.
-      split.
-      - split.
-        + trivial.
-        + etransitivity; eauto.
-      - trivial.
-    Qed.
-
-    Lemma Expectation_posRV_proper_almost x y
-    {rvx:RandomVariable prts borel_sa x}
-    {rvy:RandomVariable prts borel_sa y} 
-    {prvx:PositiveRandomVariable x}
-    {prvy:PositiveRandomVariable y} :
-    rv_almost_eq prts x y ->
-    Expectation_posRV x = Expectation_posRV y.
-  Proof.
-    intros.
-    unfold Expectation_posRV, SimpleExpectationSup.
-    unfold Lub_Rbar.
-    repeat match goal with
-      [|- context [proj1_sig ?x]] => destruct x; simpl
-    end.
-    destruct i as [xub xlub].
-    destruct i0 as [yub ylub].
-    assert (temp_le1:RealRandomVariable_le y x) by admit.
-    assert (temp_le2:RealRandomVariable_le x y) by admit.
-    specialize (ylub _ (Expectation_posRV_ub_proper_almost _ _ _ temp_le1 H xub)).
-    specialize (xlub _ (Expectation_posRV_ub_proper_almost _ _ _ temp_le2 (symmetry H) yub)).
-    now apply Rbar_le_antisym.
-  Admitted.
 *)
-
-  Lemma Expectation_proper_almost2 x y 
-    {rvx:RandomVariable prts borel_sa x}
-    {rvy:RandomVariable prts borel_sa y} :
-    rv_almost_eq prts x y ->
-    Expectation x = Expectation y.
-  Proof.
-    unfold Proper, respectful; intros eqq.
-    unfold Expectation.
-    (*
-    rewrite (Expectation_posRV_proper_almost _ _ (pos_fun_part_proper_almost _ _ eqq)).
-    rewrite (Expectation_posRV_proper_almost _ _ (neg_fun_part_proper_almost _ _ eqq)).
-    reflexivity.
-  Qed.
-     *)
-  Admitted.
-
 
   Global Instance L2RRV_expectation_proper : Proper (L2RRV_eq ==> eq) L2RRVexpectation.
   Proof.
@@ -1006,8 +913,7 @@ Section L2.
     repeat match goal with
       [|- context [proj1_sig ?x]] => destruct x; simpl
            end.
-    rewrite (Expectation_proper_almost _ _ eqq) in e.
-    congruence.
+    apply (Expectation_finite_proper_almost _ _ _ _ e e0 eqq).
   Qed.
 
   Definition L2RRVinner (x y:L2RRV) : R
@@ -1023,6 +929,27 @@ Section L2.
        ; unfold L2RRVplus, L2RRVminus, L2RRVopp, L2RRVscale
        ; simpl.
 
+
+
+
+  (*
+
+  Lemma is_L2_mult x y : IsL2 x -> IsL2 y -> IsL2 (rvmult x y).
+  Proof.
+    unfold IsL2 in *.
+    intros HH1 HH2.
+    match_case_in HH1
+    ; [intros ? eqq1 | intros eqq1]
+    ; rewrite eqq1 in HH1
+    ; try contradiction.
+    match_destr_in HH1; try contradiction.
+    match_case_in HH2
+    ; [intros ? eqq2 | intros eqq2]
+    ; rewrite eqq2 in HH2
+    ; try contradiction.
+    match_destr_in HH2; try contradiction.
+    
+   *)
   Global Instance L2RRV_inner_proper : Proper (L2RRV_eq ==> L2RRV_eq ==> eq) L2RRVinner.
   Proof.
     unfold Proper, respectful, L2RRV_eq.
@@ -1032,9 +959,14 @@ Section L2.
     assert (eqq:rv_almost_eq prts (rvmult x1 y1) (rvmult x2 y2)).
     - L2RRV_simpl.
       now apply rv_almost_eq_mult_proper.
-    - rewrite (Expectation_proper_almost _ _ eqq).
-      reflexivity.
-  Qed.
+    - L2RRV_simpl; simpl in *.
+      
+(*      generalize (L2Expectation_finite (rvmult L2RRV_rv_X3 L2RRV_rv_X1)). *)
+
+(*      rewrite (Expectation_proper_almost _ _ eqq). 
+      reflexivity. *)
+    admit.
+  Admitted.
 
   Lemma L2RRV_plus_comm x y : L2RRV_eq (L2RRVplus x y) (L2RRVplus y x).
   Proof.
