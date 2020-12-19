@@ -63,17 +63,66 @@ Section L2.
      now rewrite H.
    Qed.
 
+   Lemma Rmult_le_0_compat (r1 r2 : R) :
+     0 <= r1 -> 0 <= r2 -> 0 <= r1 * r2.
+   Proof.
+     intros.
+     replace (0) with (r1 * 0) by lra.
+     now apply Rmult_le_compat_l.
+   Qed.
+
+   Lemma Expectation_abs_neg_part_finite (rv_X : Ts -> R)
+        {rv:RandomVariable prts borel_sa rv_X} :         
+     is_finite (Expectation_posRV (rvabs rv_X)) ->
+     is_finite (Expectation_posRV (neg_fun_part rv_X)).
+   Proof.
+     apply Finite_Expectation_posRV_le.
+     apply neg_fun_part_le.
+   Qed.
+     
+   Lemma Expectation_neg_part_finite (rv_X : Ts -> R)
+        {rv:RandomVariable prts borel_sa rv_X} :         
+     match Expectation rv_X with
+     | Some (Finite _) => True
+     | _ => False
+     end -> is_finite (Expectation_posRV (neg_fun_part rv_X)).
+   Proof.
+     intros.
+     unfold Expectation in H.
+     destruct (Expectation_posRV (fun x : Ts => pos_fun_part rv_X x)).
+     destruct (Expectation_posRV (fun x : Ts => neg_fun_part rv_X x)).     
+     now unfold is_finite.
+     simpl in H; tauto.
+     simpl in H; tauto.     
+     destruct (Expectation_posRV (fun x : Ts => neg_fun_part rv_X x));
+       simpl in H; tauto.
+     destruct (Expectation_posRV (fun x : Ts => neg_fun_part rv_X x));
+       simpl in H; tauto.
+   Qed.
+   
+   Lemma Rbar_pos_finite (r : Rbar):
+         0 < r -> is_finite r.
+     Proof.
+       intros.
+       destruct r.
+       now unfold is_finite.
+       simpl in H; lra.
+       simpl in H; lra.
+     Qed.
+     
   Lemma Cauchy_Schwarz_ineq (rv_X1 rv_X2 :Ts->R) 
         {rv1:RandomVariable prts borel_sa rv_X1}
         {rv2:RandomVariable prts borel_sa rv_X2}        
         {is1:IsL2' rv_X1}
         {is2:IsL2' rv_X2}  :
+    is_finite (Expectation_posRV (rvabs (rvmult rv_X1 rv_X2))) ->
     0 < Expectation_posRV(rvsqr rv_X1) ->
     0 < Expectation_posRV(rvsqr rv_X2) ->    
     Rsqr (Expectation_posRV (rvabs (rvmult rv_X1 rv_X2))) <=
     Expectation_posRV (rvsqr rv_X1) * Expectation_posRV (rvsqr rv_X2).
   Proof.
     unfold IsL2' in *.
+    intro isfin_prod.
     intros.
     destruct (Req_dec (Expectation_posRV (rvabs (rvmult rv_X1 rv_X2))) 0).
     - rewrite H1.
@@ -124,8 +173,7 @@ Section L2.
     rewrite <- is1 in H4.
     rewrite <- is2 in H4.
     assert (is_finite (Expectation_posRV (rvabs (rvmult rv_X1 rv_X2)))).
-    
-    admit.
+    apply isfin_prod.
     rewrite <- H5 in H4.
     simpl in H4.
     unfold Rsqr in H4.
@@ -172,8 +220,39 @@ Section L2.
     apply rvmult_rv.
     now apply rvabs_rv.
     now apply rvabs_rv.
-    admit.
-    admit.
+    apply Expectation_neg_part_finite.
+    apply rvscale_rv.
+    apply rvsqr_rv.
+    now apply rvabs_rv.
+    rewrite Expectation_scale.
+    rewrite (@Expectation_ext _ _ prts _ (rvsqr rv_X1)).
+    rewrite Expectation_pos_posRV with (prv :=prvsqr rv_X1).
+    rewrite <- is1.
+    rewrite <- is2.
+    now simpl.
+    intro x.
+    unfold rvsqr, rvabs.
+    now rewrite <- Rsqr_abs.    
+    apply Rmult_integral_contrapositive_currified.        
+    now apply Rgt_not_eq.
+    now apply Rgt_not_eq.    
+    apply Expectation_neg_part_finite.
+    apply rvscale_rv.
+    apply rvmult_rv.
+    now apply rvabs_rv.
+    now apply rvabs_rv.    
+    rewrite Expectation_scale.
+    rewrite (@Expectation_ext _ _ prts _ (rvabs (rvmult rv_X1 rv_X2))).
+    rewrite Expectation_pos_posRV with (prv :=prvabs (rvmult rv_X1 rv_X2)).
+    rewrite <- isfin_prod.
+    now simpl.
+    intro x.
+    unfold rvmult, rvabs.
+    now rewrite Rabs_mult.
+    apply Rmult_integral_contrapositive_currified; trivial.
+    apply Rmult_integral_contrapositive_currified; trivial.
+    lra.
+    now apply Rgt_not_eq.
     apply rvplus_rv.
     apply rvscale_rv.
     apply rvsqr_rv.
@@ -185,10 +264,91 @@ Section L2.
     apply rvscale_rv.
     apply rvsqr_rv.
     now apply rvabs_rv.
-    admit.
-    admit.
-   Admitted.
-    
+    apply Expectation_neg_part_finite.
+    apply rvplus_rv.
+    apply rvscale_rv.
+    apply rvsqr_rv.
+    now apply rvabs_rv.
+    apply rvscale_rv.
+    apply rvmult_rv.
+    now apply rvabs_rv.
+    now apply rvabs_rv.
+    rewrite Expectation_sum.
+    rewrite Expectation_scale.
+    rewrite Expectation_scale.
+    rewrite (@Expectation_ext _ _ prts _ (rvsqr rv_X1)).
+    rewrite Expectation_pos_posRV with (prv :=prvsqr rv_X1).
+    rewrite (@Expectation_ext _ _ prts _ (rvabs (rvmult rv_X1 rv_X2))).
+    rewrite Expectation_pos_posRV with (prv :=prvabs (rvmult rv_X1 rv_X2)).
+    rewrite <- isfin_prod.
+    rewrite <- is1.
+    now simpl.
+    intro x.
+    unfold rvmult, rvabs.
+    now rewrite Rabs_mult.
+    intro x.
+    unfold rvabs, rvsqr.
+    now rewrite <- Rsqr_abs.
+    apply Rmult_integral_contrapositive_currified; trivial.
+    apply Rmult_integral_contrapositive_currified; trivial.    
+    lra.
+    now apply Rgt_not_eq.
+    apply Rmult_integral_contrapositive_currified; trivial.    
+    now apply Rgt_not_eq.
+    now apply Rgt_not_eq.
+    apply rvscale_rv.
+    apply rvsqr_rv.
+    now apply rvabs_rv.
+    apply rvscale_rv.
+    apply rvmult_rv.
+    now apply rvabs_rv.
+    now apply rvabs_rv.        
+    apply Expectation_neg_part_finite.
+    apply rvscale_rv.
+    apply rvsqr_rv.
+    now apply rvabs_rv.
+    rewrite Expectation_scale.
+    rewrite (@Expectation_ext _ _ prts _ (rvsqr rv_X1)).
+    rewrite Expectation_pos_posRV with (prv :=prvsqr rv_X1).
+    rewrite <- is2.
+    rewrite <- is1.    
+    now simpl.
+    intro x.
+    unfold rvsqr, rvabs.
+    now rewrite <- Rsqr_abs. 
+    apply Rmult_integral_contrapositive_currified; trivial.
+    now apply Rgt_not_eq.
+    now apply Rgt_not_eq.    
+    apply Expectation_neg_part_finite.
+    apply rvscale_rv.
+    apply rvmult_rv.
+    now apply rvabs_rv.
+    now apply rvabs_rv.    
+    rewrite Expectation_scale.
+    rewrite (@Expectation_ext _ _ prts _ (rvabs (rvmult rv_X1 rv_X2))).
+    rewrite Expectation_pos_posRV with (prv :=prvabs (rvmult rv_X1 rv_X2)).
+    now rewrite <- isfin_prod.
+    intro x.
+    unfold rvmult, rvabs.
+    now rewrite Rabs_mult.
+    apply Rmult_integral_contrapositive_currified; trivial.
+    apply Rmult_integral_contrapositive_currified; trivial.
+    lra.
+    now apply Rgt_not_eq.
+    apply Expectation_neg_part_finite.
+    apply rvscale_rv.
+    apply rvsqr_rv.
+    now apply rvabs_rv.
+    rewrite Expectation_scale.
+    rewrite (@Expectation_ext _ _ prts _ (rvsqr rv_X2)).
+    rewrite Expectation_pos_posRV with (prv :=prvsqr rv_X2).
+    rewrite <- is2.
+    now simpl.
+    intro x.
+    unfold rvsqr, rvabs.
+    now rewrite <- Rsqr_abs. 
+    apply Rmult_integral_contrapositive_currified; trivial.
+  Qed.
 
   Lemma rvabs_bound (rv_X : Ts -> R) :
     RealRandomVariable_le (rvabs rv_X) (rvplus (rvsqr rv_X) (const 1)).
@@ -310,9 +470,32 @@ Section L2.
     unfold rvsqr, rvminus, rvplus, rvmult, rvopp, rvscale, Rsqr in *.
     unfold PositiveRandomVariable in H.
     specialize (H x).
-    apply Rplus_le_compat_l with (r:= (2 * (rv_X1 x * rv_X2 x))) in H.
-    ring_simplify in H.
+    lra.
+  Qed.  
+
+  Lemma rvprod_abs_bound (rv_X1 rv_X2 : Ts->R) :
+    RealRandomVariable_le (rvscale 2 (rvabs (rvmult rv_X1 rv_X2)))
+                          (rvplus (rvsqr rv_X1) (rvsqr rv_X2)).
+  Proof.
+    assert (PositiveRandomVariable (rvsqr (rvminus (rvabs rv_X1) (rvabs rv_X2)))) by apply prvsqr.
+    assert (rv_eq (rvsqr (rvminus (rvabs rv_X1) (rvabs rv_X2))) 
+                  (rvplus (rvplus (rvsqr rv_X1) (rvopp (rvscale 2 (rvabs (rvmult rv_X1 rv_X2)))))
+                          (rvsqr rv_X2))).
+    intro x.
+    unfold rvsqr, rvminus, rvplus, rvmult, rvopp, rvscale, rvabs, Rsqr.
+    rewrite Rabs_mult.
+    ring_simplify.
+    replace (pow (Rabs (rv_X1 x)) 2) with (pow (rv_X1 x) 2).
+    replace (pow (Rabs (rv_X2 x)) 2) with (pow (rv_X2 x) 2).    
     now ring_simplify.
+    unfold Rabs; match_destr; lra.
+    unfold Rabs; match_destr; lra.    
+    rewrite H0 in H; clear H0.
+    unfold RealRandomVariable_le; intros.
+    unfold rvsqr, rvminus, rvplus, rvmult, rvopp, rvscale, rvabs, Rsqr in *.
+    unfold PositiveRandomVariable in H.
+    specialize (H x).
+    lra.
   Qed.  
 
   Lemma rvsum_sqr_bound (rv_X1 rv_X2 : Ts->R) :
