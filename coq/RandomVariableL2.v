@@ -48,7 +48,24 @@ Section L2.
     match_destr; now simpl.
   Qed.
 
+  Definition Expectation_total (x : Ts -> R) : Rbar
+    :=  match (Expectation x) with
+        | Some z => z
+        | _ => 0
+        end.
+
+  Lemma Expectation_total_pos_posRV (rv_X : Ts -> R) 
+         {prv : PositiveRandomVariable rv_X} :
+    Expectation_total rv_X = Expectation_posRV rv_X.
+   Proof.
+     generalize (Expectation_pos_posRV rv_X); intros.
+     unfold Expectation_total.
+     now rewrite H.
+   Qed.
+
   Lemma Cauchy_Schwarz_ineq (rv_X1 rv_X2 :Ts->R) 
+        {rv1:RandomVariable prts borel_sa rv_X1}
+        {rv2:RandomVariable prts borel_sa rv_X2}        
         {is1:IsL2' rv_X1}
         {is2:IsL2' rv_X2}  :
     0 < Expectation_posRV(rvsqr rv_X1) ->
@@ -58,15 +75,20 @@ Section L2.
   Proof.
     unfold IsL2' in *.
     intros.
-    assert (PositiveRandomVariable
-              (rvsqr (rvminus
-                        (rvscale (Expectation_posRV (rvsqr rv_X2)) (rvabs rv_X1))
-                        (rvscale (Expectation_posRV (rvabs (rvmult rv_X1 rv_X2))) (rvabs rv_X2))))).
-    apply prvsqr.
-    assert (rv_eq
-              (rvsqr (rvminus
-                        (rvscale (Expectation_posRV (rvsqr rv_X2)) (rvabs rv_X1))
-                        (rvscale (Expectation_posRV (rvabs (rvmult rv_X1 rv_X2))) (rvabs rv_X2))))
+    destruct (Req_dec (Expectation_posRV (rvabs (rvmult rv_X1 rv_X2))) 0).
+    - rewrite H1.
+      left.
+      rewrite Rsqr_0.
+      now apply Rmult_lt_0_compat.
+    - assert (PositiveRandomVariable
+                (rvsqr (rvminus
+                          (rvscale (Expectation_posRV (rvsqr rv_X2)) (rvabs rv_X1))
+                          (rvscale (Expectation_posRV (rvabs (rvmult rv_X1 rv_X2))) (rvabs rv_X2))))).
+      apply prvsqr.
+      assert (rv_eq
+                (rvsqr (rvminus
+                          (rvscale (Expectation_posRV (rvsqr rv_X2)) (rvabs rv_X1))
+                          (rvscale (Expectation_posRV (rvabs (rvmult rv_X1 rv_X2))) (rvabs rv_X2))))
               (rvplus
                  (rvplus
                     (rvscale (Rsqr (Expectation_posRV (rvsqr rv_X2)))
@@ -77,14 +99,94 @@ Section L2.
                        (rvmult (rvabs rv_X1) (rvabs rv_X2))))
                  (rvscale (Rsqr (Expectation_posRV (rvabs (rvmult rv_X1 rv_X2))))
                           (rvsqr (rvabs rv_X2))))).                 
-    intros x.
-    unfold rvsqr, rvminus, rvscale, rvopp, rvabs, rvplus, rvscale, rvabs, rvmult, Rsqr.
-    apply Rminus_diag_uniq.
-    now ring_simplify.
-    rewrite H2 in H1.
-    generalize Expectation_posRV_pos; intros.
-    specialize (H3 _ H1).
+      intros x.
+      unfold rvsqr, rvminus, rvscale, rvopp, rvabs, rvplus, rvscale, rvabs, rvmult, Rsqr.
+      apply Rminus_diag_uniq.
+      now ring_simplify.
+      rewrite H3 in H2.
+      generalize Expectation_posRV_pos; intros.
+      specialize (H4 _ H2).
+
+    rewrite <- Expectation_total_pos_posRV in H4.
+    unfold Expectation_total in H4.
+    rewrite Expectation_sum in H4.
+    rewrite Expectation_sum in H4.
+    rewrite Expectation_scale in H4; trivial.
+    rewrite Expectation_scale in H4; trivial.
+
+    rewrite Expectation_pos_posRV with (prv := prvsqr (rvabs rv_X1)) in H4.
+    rewrite Expectation_scale in H4; trivial.
+    rewrite Expectation_pos_posRV with (prv := prvsqr (rvabs rv_X2)) in H4.
+    rewrite (@Expectation_ext _ _  prts _ (rvabs (rvmult rv_X1 rv_X2))) in H4.
+    rewrite Expectation_pos_posRV with (prv := prvabs (rvmult rv_X1 rv_X2)) in H4.
+    rewrite Expectation_posRV_ext with (prv1 := prvsqr (rvabs rv_X1)) (prv2 := prvsqr rv_X1) in H4.
+    rewrite Expectation_posRV_ext with (prv1 := prvsqr (rvabs rv_X2)) (prv2 := prvsqr rv_X2) in H4.    
+    rewrite <- is1 in H4.
+    rewrite <- is2 in H4.
+    assert (is_finite (Expectation_posRV (rvabs (rvmult rv_X1 rv_X2)))).
     
+    admit.
+    rewrite <- H5 in H4.
+    simpl in H4.
+    unfold Rsqr in H4.
+    ring_simplify in H4.
+    unfold pow at 1 in H4.
+    replace ( Expectation_posRV (rvsqr rv_X2) * (Expectation_posRV (rvsqr rv_X2) * 1) *
+       Expectation_posRV (rvsqr rv_X1) -
+       Expectation_posRV (rvsqr rv_X2) *
+       Expectation_posRV (rvabs (rvmult rv_X1 rv_X2)) ^ 2)
+      with
+        (Expectation_posRV (rvsqr rv_X2)*((Expectation_posRV (rvsqr rv_X1) * Expectation_posRV (rvsqr rv_X2))  -
+       Expectation_posRV (rvabs (rvmult rv_X1 rv_X2)) ^ 2)) in H4.
+    replace (0) with ((Expectation_posRV (rvsqr rv_X2)) * 0) in H4 by lra.
+    apply Rmult_le_reg_l in H4; trivial.
+    unfold Rsqr.
+    unfold pow in H4.
+    lra.
+    now ring_simplify.
+    intro x.
+    unfold rvsqr, rvabs.
+    now rewrite <- Rsqr_abs.
+    intro x.
+    unfold rvsqr, rvabs.
+    now rewrite <- Rsqr_abs.    
+    intro x.
+    unfold rvmult, rvabs.
+    now rewrite Rabs_mult.
+    apply Rmult_integral_contrapositive_currified.
+    lra.
+    trivial.
+    apply Rmult_integral_contrapositive_currified.
+    apply Rmult_integral_contrapositive_currified.    
+    lra.
+    now apply Rgt_not_eq.
+    trivial.
+    unfold Rsqr.
+    apply Rmult_integral_contrapositive_currified.        
+    now apply Rgt_not_eq.
+    now apply Rgt_not_eq.    
+    apply rvscale_rv.
+    apply rvsqr_rv.
+    now apply rvabs_rv.
+    apply rvscale_rv.
+    apply rvmult_rv.
+    now apply rvabs_rv.
+    now apply rvabs_rv.
+    admit.
+    admit.
+    apply rvplus_rv.
+    apply rvscale_rv.
+    apply rvsqr_rv.
+    now apply rvabs_rv.
+    apply rvscale_rv.
+    apply rvmult_rv.
+    now apply rvabs_rv.
+    now apply rvabs_rv.    
+    apply rvscale_rv.
+    apply rvsqr_rv.
+    now apply rvabs_rv.
+    admit.
+    admit.
    Admitted.
     
 
