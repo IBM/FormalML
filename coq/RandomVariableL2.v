@@ -215,18 +215,11 @@ Section L2.
     apply Rmult_integral_contrapositive_currified.        
     now apply Rgt_not_eq.
     now apply Rgt_not_eq.    
-    apply rvscale_rv.
-    apply rvsqr_rv.
-    now apply rvabs_rv.
-    apply rvscale_rv.
-    apply rvmult_rv.
-    now apply rvabs_rv.
-    now apply rvabs_rv.
+    typeclasses eauto.
+    typeclasses eauto.    
 
     apply Expectation_neg_part_finite.
-    apply rvscale_rv.
-    apply rvsqr_rv.
-    now apply rvabs_rv.
+    typeclasses eauto.    
     rewrite Expectation_scale; trivial.
     rewrite (@Expectation_ext _ _ prts _ (rvsqr rv_X1)); trivial.
     rewrite Expectation_pos_posRV with (prv :=prvsqr rv_X1).
@@ -238,10 +231,7 @@ Section L2.
     now apply Rgt_not_eq.    
 
     apply Expectation_neg_part_finite.
-    apply rvscale_rv.
-    apply rvmult_rv.
-    now apply rvabs_rv.
-    now apply rvabs_rv.    
+    typeclasses eauto.
     rewrite Expectation_scale; trivial.
     rewrite (@Expectation_ext _ _ prts _ (rvabs (rvmult rv_X1 rv_X2))); trivial.
     rewrite Expectation_pos_posRV with (prv :=prvabs (rvmult rv_X1 rv_X2)).
@@ -252,27 +242,11 @@ Section L2.
     lra.
     now apply Rgt_not_eq.
 
-    apply rvplus_rv.
-    apply rvscale_rv.
-    apply rvsqr_rv.
-    now apply rvabs_rv.
-    apply rvscale_rv.
-    apply rvmult_rv.
-    now apply rvabs_rv.
-    now apply rvabs_rv.    
-    apply rvscale_rv.
-    apply rvsqr_rv.
-    now apply rvabs_rv.
+    typeclasses eauto.
+    typeclasses eauto.
 
     apply Expectation_neg_part_finite.
-    apply rvplus_rv.
-    apply rvscale_rv.
-    apply rvsqr_rv.
-    now apply rvabs_rv.
-    apply rvscale_rv.
-    apply rvmult_rv.
-    now apply rvabs_rv.
-    now apply rvabs_rv.
+    typeclasses eauto.
     rewrite Expectation_sum.
     rewrite Expectation_scale; trivial.
     rewrite Expectation_scale; trivial.
@@ -292,18 +266,11 @@ Section L2.
     now apply Rgt_not_eq.
     now apply Rgt_not_eq.
 
-    apply rvscale_rv.
-    apply rvsqr_rv.
-    now apply rvabs_rv.
-    apply rvscale_rv.
-    apply rvmult_rv.
-    now apply rvabs_rv.
-    now apply rvabs_rv.        
+    typeclasses eauto.
+    typeclasses eauto.    
 
     apply Expectation_neg_part_finite.
-    apply rvscale_rv.
-    apply rvsqr_rv.
-    now apply rvabs_rv.
+    typeclasses eauto.    
     rewrite Expectation_scale; trivial.
     rewrite (@Expectation_ext _ _ prts _ (rvsqr rv_X1)); trivial.
     rewrite Expectation_pos_posRV with (prv :=prvsqr rv_X1).
@@ -315,10 +282,7 @@ Section L2.
     now apply Rgt_not_eq.    
 
     apply Expectation_neg_part_finite.
-    apply rvscale_rv.
-    apply rvmult_rv.
-    now apply rvabs_rv.
-    now apply rvabs_rv.    
+    typeclasses eauto.    
     rewrite Expectation_scale; trivial.
     rewrite (@Expectation_ext _ _ prts _ (rvabs (rvmult rv_X1 rv_X2))); trivial.
     rewrite Expectation_pos_posRV with (prv :=prvabs (rvmult rv_X1 rv_X2)).
@@ -329,9 +293,7 @@ Section L2.
     now apply Rgt_not_eq.
 
     apply Expectation_neg_part_finite.
-    apply rvscale_rv.
-    apply rvsqr_rv.
-    now apply rvabs_rv.
+    typeclasses eauto.    
     rewrite Expectation_scale; trivial.
     rewrite (@Expectation_ext _ _ prts _ (rvsqr rv_X2)); trivial.
     rewrite Expectation_pos_posRV with (prv :=prvsqr rv_X2).
