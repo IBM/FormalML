@@ -900,7 +900,6 @@ Section SimpleExpectation.
   Proof.
     red; intros.
     apply borel_sa_preimage2; trivial; intros.
-    unfold rvplus.
     apply plus_measurable.
     apply (RealRandomVariable_is_real Prts); trivial.
     apply (RealRandomVariable_is_real Prts); trivial.    
@@ -936,8 +935,6 @@ Section SimpleExpectation.
     lra.
   Qed.
   
-
-
   Definition rvminus (rv_X1 rv_X2 : Ts -> R) :=
     rvplus rv_X1 (rvopp rv_X2).
 
@@ -1157,6 +1154,119 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
    trivial.
  Qed.
 
+ Definition rvmax  (rv_X1 rv_X2 : Ts -> R) := fun omega => Rmax (rv_X1 omega) (rv_X2 omega).
+ Definition rvmin  (rv_X1 rv_X2 : Ts -> R) := fun omega => Rmin (rv_X1 omega) (rv_X2 omega). 
+
+ (* 
+   max(a,b) = (a + b + abs(a-b))/2
+   min(a,b) = (a + b - abs(a-b))/2
+ *)
+
+ Lemma max_measurable (f g : Ts -> R) :
+    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
+    (forall (r:R),  sa_sigma (fun omega : Ts => g omega <= r)) ->    
+    (forall (r:R),  sa_sigma (fun omega : Ts => Rmax (f omega) (g omega) <= r)).
+ Proof.
+   intros.
+   assert (event_equiv (fun omega : Ts => Rmax (f omega) (g omega) <= r)
+                       (fun omega : Ts => (/2)*((f omega) + (g omega) +
+                                          (Rabs (f omega - (g omega)))) <= r)).
+   intro x.
+   unfold Rmax, Rabs.
+   match_destr.
+   match_destr; lra.
+   match_destr; lra.
+   rewrite H1.
+   apply scale_measurable.
+   apply plus_measurable.
+   now apply plus_measurable.
+   apply Rabs_measurable.
+   now apply minus_measurable.
+ Qed.
+ 
+ Lemma min_measurable (f g : Ts -> R) :
+    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
+    (forall (r:R),  sa_sigma (fun omega : Ts => g omega <= r)) ->    
+    (forall (r:R),  sa_sigma (fun omega : Ts => Rmin (f omega) (g omega) <= r)).
+ Proof.
+   intros.
+   assert (event_equiv (fun omega : Ts => Rmin (f omega) (g omega) <= r)
+                       (fun omega : Ts => (/2)*((f omega) + (g omega) -
+                                          (Rabs (f omega - (g omega)))) <= r)).
+  Proof.
+   intro x.
+   unfold Rmin, Rabs.
+   match_destr.
+   match_destr; lra.
+   match_destr; lra.
+   rewrite H1.
+   apply scale_measurable.
+   apply minus_measurable.
+   now apply plus_measurable.
+   apply Rabs_measurable.
+   now apply minus_measurable.
+ Qed.
+
+  Global Program Instance rvmax_rv
+         (rv_X1 rv_X2 : Ts -> R)
+         {rv1 : RandomVariable Prts borel_sa rv_X1}
+         {rv2 : RandomVariable Prts borel_sa rv_X2}  :
+    RandomVariable Prts borel_sa (rvmax rv_X1 rv_X2).
+  Next Obligation.
+    apply borel_sa_preimage2; trivial; intros.
+    apply max_measurable.
+    apply (RealRandomVariable_is_real Prts); trivial.
+    apply (RealRandomVariable_is_real Prts); trivial.
+ Qed.
+    
+  Global Program Instance rvmin_rv
+         (rv_X1 rv_X2 : Ts -> R)
+         {rv1 : RandomVariable Prts borel_sa rv_X1}
+         {rv2 : RandomVariable Prts borel_sa rv_X2}  :
+    RandomVariable Prts borel_sa (rvmin rv_X1 rv_X2).
+  Next Obligation.
+    apply borel_sa_preimage2; trivial; intros.
+    apply min_measurable.
+    apply (RealRandomVariable_is_real Prts); trivial.
+    apply (RealRandomVariable_is_real Prts); trivial.
+ Qed.
+
+  Global Program Instance srvmax
+         (rv_X1 rv_X2 : Ts -> R)
+         {srv1:SimpleRandomVariable rv_X1}
+         {srv2:SimpleRandomVariable rv_X2}
+    : SimpleRandomVariable (rvmax rv_X1 rv_X2)
+    := { srv_vals := map (fun ab => Rmax (fst ab) (snd ab)) 
+                         (list_prod (srv_vals (SimpleRandomVariable:=srv1))
+                                    (srv_vals (SimpleRandomVariable:=srv2))) }.
+  Next Obligation.
+    destruct srv1.
+    destruct srv2.
+    rewrite in_map_iff.
+    exists (rv_X1 x, rv_X2 x).
+    split.
+    now simpl.
+    apply in_prod; trivial.
+  Qed.
+
+  Global Program Instance srvmin
+         (rv_X1 rv_X2 : Ts -> R)
+         {srv1:SimpleRandomVariable rv_X1}
+         {srv2:SimpleRandomVariable rv_X2}
+    : SimpleRandomVariable (rvmin rv_X1 rv_X2)
+    := { srv_vals := map (fun ab => Rmin (fst ab) (snd ab)) 
+                         (list_prod (srv_vals (SimpleRandomVariable:=srv1))
+                                    (srv_vals (SimpleRandomVariable:=srv2))) }.
+  Next Obligation.
+    destruct srv1.
+    destruct srv2.
+    rewrite in_map_iff.
+    exists (rv_X1 x, rv_X2 x).
+    split.
+    now simpl.
+    apply in_prod; trivial.
+  Qed.
+
 
   Lemma product_measurable (f g : Ts -> R) :
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
@@ -1192,7 +1302,6 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     RandomVariable Prts borel_sa (rvmult rv_X1 rv_X2).
   Next Obligation.
     apply borel_sa_preimage2; trivial; intros.
-    unfold rvmult.
     apply product_measurable.
     apply (RealRandomVariable_is_real Prts); trivial.
     apply (RealRandomVariable_is_real Prts); trivial.    
