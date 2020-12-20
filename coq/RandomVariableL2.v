@@ -205,10 +205,13 @@ Section L2.
 
     rewrite <- Expectation_total_pos_posRV in H4.
     unfold Expectation_total in H4.
-    rewrite Expectation_sum in H4.
-    rewrite Expectation_sum in H4.
+    rewrite Expectation_sum_finite_alt in H4.
+    unfold Expectation_total in H4.
+    rewrite Expectation_sum_finite_alt in H4.
+    unfold Expectation_total in H4.    
     rewrite Expectation_scale in H4; trivial.
     rewrite Expectation_scale in H4; trivial.
+    
 
     rewrite Expectation_pos_posRV with (prv := prvsqr (rvabs rv_X1)) in H4.
     rewrite Expectation_scale in H4; trivial.
@@ -249,8 +252,6 @@ Section L2.
     typeclasses eauto.
     typeclasses eauto.    
 
-    apply Expectation_neg_part_finite.
-    typeclasses eauto.    
     rewrite Expectation_scale; trivial.
     rewrite (@Expectation_ext _ _ prts _ (rvsqr rv_X1)); trivial.
     rewrite Expectation_pos_posRV with (prv :=prvsqr rv_X1).
@@ -261,8 +262,6 @@ Section L2.
     now apply Rgt_not_eq.
     now apply Rgt_not_eq.    
 
-    apply Expectation_neg_part_finite.
-    typeclasses eauto.
     rewrite Expectation_scale; trivial.
     rewrite (@Expectation_ext _ _ prts _ (rvabs (rvmult rv_X1 rv_X2))); trivial.
     rewrite Expectation_pos_posRV with (prv :=prvabs (rvmult rv_X1 rv_X2)).
@@ -276,32 +275,11 @@ Section L2.
     typeclasses eauto.
     typeclasses eauto.
 
-    apply Expectation_neg_part_finite.
-    typeclasses eauto.
-    rewrite Expectation_sum.
-    rewrite Expectation_scale; trivial.
-    rewrite Expectation_scale; trivial.
-    rewrite (@Expectation_ext _ _ prts _ (rvsqr rv_X1)); trivial.
-    rewrite Expectation_pos_posRV with (prv :=prvsqr rv_X1).
-    rewrite (@Expectation_ext _ _ prts _ (rvabs (rvmult rv_X1 rv_X2))); trivial.
-    rewrite Expectation_pos_posRV with (prv :=prvabs (rvmult rv_X1 rv_X2)).
-    rewrite <- isfin_prod.
-    rewrite <- is1.
-    now simpl.
-
-    apply Rmult_integral_contrapositive_currified; trivial.
-    apply Rmult_integral_contrapositive_currified; trivial.    
-    lra.
-    now apply Rgt_not_eq.
-    apply Rmult_integral_contrapositive_currified; trivial.    
-    now apply Rgt_not_eq.
-    now apply Rgt_not_eq.
-
+    rewrite Expectation_sum_finite_alt.
+    tauto.
     typeclasses eauto.
     typeclasses eauto.    
 
-    apply Expectation_neg_part_finite.
-    typeclasses eauto.    
     rewrite Expectation_scale; trivial.
     rewrite (@Expectation_ext _ _ prts _ (rvsqr rv_X1)); trivial.
     rewrite Expectation_pos_posRV with (prv :=prvsqr rv_X1).
@@ -312,8 +290,6 @@ Section L2.
     now apply Rgt_not_eq.
     now apply Rgt_not_eq.    
 
-    apply Expectation_neg_part_finite.
-    typeclasses eauto.    
     rewrite Expectation_scale; trivial.
     rewrite (@Expectation_ext _ _ prts _ (rvabs (rvmult rv_X1 rv_X2))); trivial.
     rewrite Expectation_pos_posRV with (prv :=prvabs (rvmult rv_X1 rv_X2)).
@@ -323,8 +299,6 @@ Section L2.
     lra.
     now apply Rgt_not_eq.
 
-    apply Expectation_neg_part_finite.
-    typeclasses eauto.    
     rewrite Expectation_scale; trivial.
     rewrite (@Expectation_ext _ _ prts _ (rvsqr rv_X2)); trivial.
     rewrite Expectation_pos_posRV with (prv :=prvsqr rv_X2).
