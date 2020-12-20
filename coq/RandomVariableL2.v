@@ -134,6 +134,22 @@ Section L2.
                           (rvscale (Expectation_posRV (rvsqr rv_X2)) (rvabs rv_X1))
                           (rvscale (Expectation_posRV (rvabs (rvmult rv_X1 rv_X2))) (rvabs rv_X2))))).
       apply prvsqr.
+      assert (sqr_abs_mult_ne : Rsqr (Expectation_posRV (rvabs (rvmult rv_X1 rv_X2)) ) <> 0).
+      now apply Rmult_integral_contrapositive_currified.        
+      assert (sqr_abs1: rv_eq (rvsqr (rvabs rv_X1)) (rvsqr rv_X1)).
+      intro x.
+      unfold rvsqr, rvabs.
+      now rewrite <- Rsqr_abs.
+      assert (sqr_abs2: rv_eq (rvsqr (rvabs rv_X2)) (rvsqr rv_X2)).
+      intro x.
+      unfold rvsqr, rvabs.
+      now rewrite <- Rsqr_abs.
+      assert (mult_abs: rv_eq (rvmult (rvabs rv_X1) (rvabs rv_X2)) (rvabs (rvmult rv_X1 rv_X2))).
+
+      intro x.
+      unfold rvmult, rvabs.
+      now rewrite Rabs_mult.
+      
       assert (rv_eq
                 (rvsqr (rvminus
                           (rvscale (Expectation_posRV (rvsqr rv_X2)) (rvabs rv_X1))
@@ -166,15 +182,13 @@ Section L2.
     rewrite Expectation_pos_posRV with (prv := prvsqr (rvabs rv_X1)) in H4.
     rewrite Expectation_scale in H4; trivial.
     rewrite Expectation_pos_posRV with (prv := prvsqr (rvabs rv_X2)) in H4.
-    rewrite (@Expectation_ext _ _  prts _ (rvabs (rvmult rv_X1 rv_X2))) in H4.
+    rewrite (@Expectation_ext _ _  prts _ (rvabs (rvmult rv_X1 rv_X2))) in H4; trivial.
     rewrite Expectation_pos_posRV with (prv := prvabs (rvmult rv_X1 rv_X2)) in H4.
-    rewrite Expectation_posRV_ext with (prv1 := prvsqr (rvabs rv_X1)) (prv2 := prvsqr rv_X1) in H4.
-    rewrite Expectation_posRV_ext with (prv1 := prvsqr (rvabs rv_X2)) (prv2 := prvsqr rv_X2) in H4.    
+    rewrite Expectation_posRV_ext with (prv1 := prvsqr (rvabs rv_X1)) (prv2 := prvsqr rv_X1) in H4; trivial.
+    rewrite Expectation_posRV_ext with (prv1 := prvsqr (rvabs rv_X2)) (prv2 := prvsqr rv_X2) in H4; trivial.    
     rewrite <- is1 in H4.
     rewrite <- is2 in H4.
-    assert (is_finite (Expectation_posRV (rvabs (rvmult rv_X1 rv_X2)))).
-    apply isfin_prod.
-    rewrite <- H5 in H4.
+    rewrite <- isfin_prod in H4.
     simpl in H4.
     unfold Rsqr in H4.
     ring_simplify in H4.
@@ -192,24 +206,12 @@ Section L2.
     unfold pow in H4.
     lra.
     now ring_simplify.
-    intro x.
-    unfold rvsqr, rvabs.
-    now rewrite <- Rsqr_abs.
-    intro x.
-    unfold rvsqr, rvabs.
-    now rewrite <- Rsqr_abs.    
-    intro x.
-    unfold rvmult, rvabs.
-    now rewrite Rabs_mult.
-    apply Rmult_integral_contrapositive_currified.
-    lra.
-    trivial.
+
     apply Rmult_integral_contrapositive_currified.
     apply Rmult_integral_contrapositive_currified.    
     lra.
     now apply Rgt_not_eq.
     trivial.
-    unfold Rsqr.
     apply Rmult_integral_contrapositive_currified.        
     now apply Rgt_not_eq.
     now apply Rgt_not_eq.    
@@ -220,39 +222,36 @@ Section L2.
     apply rvmult_rv.
     now apply rvabs_rv.
     now apply rvabs_rv.
+
     apply Expectation_neg_part_finite.
     apply rvscale_rv.
     apply rvsqr_rv.
     now apply rvabs_rv.
-    rewrite Expectation_scale.
-    rewrite (@Expectation_ext _ _ prts _ (rvsqr rv_X1)).
+    rewrite Expectation_scale; trivial.
+    rewrite (@Expectation_ext _ _ prts _ (rvsqr rv_X1)); trivial.
     rewrite Expectation_pos_posRV with (prv :=prvsqr rv_X1).
     rewrite <- is1.
     rewrite <- is2.
     now simpl.
-    intro x.
-    unfold rvsqr, rvabs.
-    now rewrite <- Rsqr_abs.    
     apply Rmult_integral_contrapositive_currified.        
     now apply Rgt_not_eq.
     now apply Rgt_not_eq.    
+
     apply Expectation_neg_part_finite.
     apply rvscale_rv.
     apply rvmult_rv.
     now apply rvabs_rv.
     now apply rvabs_rv.    
-    rewrite Expectation_scale.
-    rewrite (@Expectation_ext _ _ prts _ (rvabs (rvmult rv_X1 rv_X2))).
+    rewrite Expectation_scale; trivial.
+    rewrite (@Expectation_ext _ _ prts _ (rvabs (rvmult rv_X1 rv_X2))); trivial.
     rewrite Expectation_pos_posRV with (prv :=prvabs (rvmult rv_X1 rv_X2)).
     rewrite <- isfin_prod.
     now simpl.
-    intro x.
-    unfold rvmult, rvabs.
-    now rewrite Rabs_mult.
     apply Rmult_integral_contrapositive_currified; trivial.
     apply Rmult_integral_contrapositive_currified; trivial.
     lra.
     now apply Rgt_not_eq.
+
     apply rvplus_rv.
     apply rvscale_rv.
     apply rvsqr_rv.
@@ -264,6 +263,7 @@ Section L2.
     apply rvscale_rv.
     apply rvsqr_rv.
     now apply rvabs_rv.
+
     apply Expectation_neg_part_finite.
     apply rvplus_rv.
     apply rvscale_rv.
@@ -274,21 +274,16 @@ Section L2.
     now apply rvabs_rv.
     now apply rvabs_rv.
     rewrite Expectation_sum.
-    rewrite Expectation_scale.
-    rewrite Expectation_scale.
-    rewrite (@Expectation_ext _ _ prts _ (rvsqr rv_X1)).
+    rewrite Expectation_scale; trivial.
+    rewrite Expectation_scale; trivial.
+    rewrite (@Expectation_ext _ _ prts _ (rvsqr rv_X1)); trivial.
     rewrite Expectation_pos_posRV with (prv :=prvsqr rv_X1).
-    rewrite (@Expectation_ext _ _ prts _ (rvabs (rvmult rv_X1 rv_X2))).
+    rewrite (@Expectation_ext _ _ prts _ (rvabs (rvmult rv_X1 rv_X2))); trivial.
     rewrite Expectation_pos_posRV with (prv :=prvabs (rvmult rv_X1 rv_X2)).
     rewrite <- isfin_prod.
     rewrite <- is1.
     now simpl.
-    intro x.
-    unfold rvmult, rvabs.
-    now rewrite Rabs_mult.
-    intro x.
-    unfold rvabs, rvsqr.
-    now rewrite <- Rsqr_abs.
+
     apply Rmult_integral_contrapositive_currified; trivial.
     apply Rmult_integral_contrapositive_currified; trivial.    
     lra.
@@ -296,6 +291,7 @@ Section L2.
     apply Rmult_integral_contrapositive_currified; trivial.    
     now apply Rgt_not_eq.
     now apply Rgt_not_eq.
+
     apply rvscale_rv.
     apply rvsqr_rv.
     now apply rvabs_rv.
@@ -303,51 +299,44 @@ Section L2.
     apply rvmult_rv.
     now apply rvabs_rv.
     now apply rvabs_rv.        
+
     apply Expectation_neg_part_finite.
     apply rvscale_rv.
     apply rvsqr_rv.
     now apply rvabs_rv.
-    rewrite Expectation_scale.
-    rewrite (@Expectation_ext _ _ prts _ (rvsqr rv_X1)).
+    rewrite Expectation_scale; trivial.
+    rewrite (@Expectation_ext _ _ prts _ (rvsqr rv_X1)); trivial.
     rewrite Expectation_pos_posRV with (prv :=prvsqr rv_X1).
     rewrite <- is2.
     rewrite <- is1.    
     now simpl.
-    intro x.
-    unfold rvsqr, rvabs.
-    now rewrite <- Rsqr_abs. 
     apply Rmult_integral_contrapositive_currified; trivial.
     now apply Rgt_not_eq.
     now apply Rgt_not_eq.    
+
     apply Expectation_neg_part_finite.
     apply rvscale_rv.
     apply rvmult_rv.
     now apply rvabs_rv.
     now apply rvabs_rv.    
-    rewrite Expectation_scale.
-    rewrite (@Expectation_ext _ _ prts _ (rvabs (rvmult rv_X1 rv_X2))).
+    rewrite Expectation_scale; trivial.
+    rewrite (@Expectation_ext _ _ prts _ (rvabs (rvmult rv_X1 rv_X2))); trivial.
     rewrite Expectation_pos_posRV with (prv :=prvabs (rvmult rv_X1 rv_X2)).
     now rewrite <- isfin_prod.
-    intro x.
-    unfold rvmult, rvabs.
-    now rewrite Rabs_mult.
     apply Rmult_integral_contrapositive_currified; trivial.
     apply Rmult_integral_contrapositive_currified; trivial.
     lra.
     now apply Rgt_not_eq.
+
     apply Expectation_neg_part_finite.
     apply rvscale_rv.
     apply rvsqr_rv.
     now apply rvabs_rv.
-    rewrite Expectation_scale.
-    rewrite (@Expectation_ext _ _ prts _ (rvsqr rv_X2)).
+    rewrite Expectation_scale; trivial.
+    rewrite (@Expectation_ext _ _ prts _ (rvsqr rv_X2)); trivial.
     rewrite Expectation_pos_posRV with (prv :=prvsqr rv_X2).
     rewrite <- is2.
     now simpl.
-    intro x.
-    unfold rvsqr, rvabs.
-    now rewrite <- Rsqr_abs. 
-    apply Rmult_integral_contrapositive_currified; trivial.
   Qed.
 
   Lemma rvabs_bound (rv_X : Ts -> R) :
