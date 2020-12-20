@@ -1267,6 +1267,35 @@ Lemma measurable_continuous (f : Ts -> R) (g : R -> R) :
     apply in_prod; trivial.
   Qed.
 
+  Instance prvmin  (rv_X1 rv_X2 : Ts -> R)
+           {prv1:PositiveRandomVariable rv_X1}
+           {prv2:PositiveRandomVariable rv_X2} :
+    PositiveRandomVariable (rvmin rv_X1 rv_X2).
+  Proof.
+    unfold PositiveRandomVariable in *.
+    intros x.
+    unfold rvmin.
+    eapply Rmin_glb; eauto.
+  Qed.
+
+  Instance prvmax_l  (rv_X1 rv_X2 : Ts -> R)
+         {prv1:PositiveRandomVariable rv_X1} : PositiveRandomVariable (rvmax rv_X1 rv_X2).
+  Proof.
+    intros x.
+    unfold rvmax.
+    eapply Rle_trans; try eapply (prv1 x).
+    eapply Rmax_l.
+  Qed.
+
+  Instance prvmax_r  (rv_X1 rv_X2 : Ts -> R)
+         {prv1:PositiveRandomVariable rv_X2} : PositiveRandomVariable (rvmax rv_X1 rv_X2).
+  Proof.
+    intros x.
+    unfold rvmax.
+    eapply Rle_trans; try eapply (prv1 x).
+    eapply Rmax_r.
+  Qed.
+
 
   Lemma product_measurable (f g : Ts -> R) :
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
