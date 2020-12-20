@@ -110,6 +110,37 @@ Section L2.
        simpl in H; lra.
      Qed.
      
+  Lemma Expectation_sum_finite_alt 
+        (rv_X1 rv_X2 : Ts -> R)
+        {rv1 : RandomVariable prts borel_sa rv_X1}
+        {rv2 : RandomVariable prts borel_sa rv_X2} :
+     match Expectation rv_X1 with
+     | Some (Finite _) => True
+     | _ => False
+     end -> 
+     match Expectation rv_X2 with
+     | Some (Finite _) => True
+     | _ => False
+     end ->  Expectation (rvplus rv_X1 rv_X2) = 
+             Some (Finite (Expectation_total rv_X1 +
+                           Expectation_total rv_X2)).
+  Proof.
+    intros.
+    apply Expectation_sum_finite; trivial.
+
+    unfold Expectation_total.
+    match_case_in H; intros.
+    rewrite H1 in H.
+    match_destr_in H; tauto.
+    match_destr_in H; tauto.
+
+    unfold Expectation_total.
+    match_case_in H0; intros.
+    rewrite H1 in H0.
+    match_destr_in H0; tauto.
+    match_destr_in H0; tauto.
+ Qed.
+
   Lemma Cauchy_Schwarz_ineq (rv_X1 rv_X2 :Ts->R) 
         {rv1:RandomVariable prts borel_sa rv_X1}
         {rv2:RandomVariable prts borel_sa rv_X2}        
