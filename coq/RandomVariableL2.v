@@ -1392,6 +1392,20 @@ Section L2.
 
   (* get abs version by saying (x : L2RRV) <-> (abs x : L2RRV) *)
 
+  Lemma L2RRV_inner_plus_r (x y z : L2RRV) :
+    L2RRVinner x (L2RRVplus y z) = L2RRVinner x y  + L2RRVinner x z.
+    Proof.
+      do 3 rewrite L2RRV_inner_comm with (x := x).
+      now rewrite L2RRV_inner_plus.
+   Qed.
+
+  Lemma L2RRV_inner_scal_r (x y : L2RRV) (l : R) :
+    L2RRVinner x (L2RRVscale l y) = l * L2RRVinner x y.
+  Proof.
+    do 2 rewrite L2RRV_inner_comm with (x := x).
+    now rewrite L2RRV_inner_scal.
+  Qed.
+
   Lemma Cauchy_Schwarz_L2 (x1 x2 : L2RRV) :
     0 < L2RRVinner x2 x2 ->
     Rsqr (L2RRVinner x1 x2) <= (L2RRVinner x1 x1)*(L2RRVinner x2 x2).
@@ -1402,17 +1416,8 @@ Section L2.
                     (L2RRVscale (L2RRVinner x1 x2) x2))); intros.
     rewrite L2RRVminus_plus in H.
     rewrite L2RRVopp_scale in H.
-    rewrite L2RRV_inner_plus in H.
-    rewrite L2RRV_scale_scale in H.
-    do 2 rewrite L2RRV_inner_scal in H.
-    rewrite L2RRV_inner_comm with (x := x1) in H.
-    rewrite L2RRV_inner_plus in H.
-    do 2 rewrite L2RRV_inner_scal in H.
-    rewrite L2RRV_inner_comm with 
-        (y := (L2RRVplus (L2RRVscale (L2RRVinner x2 x2) x1) 
-                         (L2RRVscale (-1 * L2RRVinner x1 x2) x2))) in H.
-    rewrite L2RRV_inner_plus in H.
-    do 2 rewrite L2RRV_inner_scal in H.
+    repeat (try rewrite L2RRV_inner_plus in H; try rewrite L2RRV_inner_scal in H;
+            try rewrite L2RRV_inner_plus_r in H; try rewrite L2RRV_inner_scal_r in H).
     ring_simplify in H.
     unfold pow in H.
     do 3 rewrite Rmult_assoc in H.
