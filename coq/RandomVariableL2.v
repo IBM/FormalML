@@ -1423,7 +1423,6 @@ Section L2.
     rewrite <- Rmult_minus_distr_l in H.
     replace (0) with (L2RRVinner x2 x2 * 0) in H by lra.
     apply Rmult_le_reg_l with (r := L2RRVinner x2 x2) in H; trivial.
-    ring_simplify in H.
     unfold Rsqr.
     rewrite L2RRV_inner_comm with (x := x2) (y := x1) in H.
     lra.
