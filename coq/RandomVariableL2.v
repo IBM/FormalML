@@ -625,6 +625,22 @@ Section L2.
   Definition L2RRVminus (rv1 rv2:L2RRV) : L2RRV
     := pack_L2RRV (rvminus rv1 rv2).
 
+  Lemma L2RRVminus_plus (rv1 rv2:L2RRV) :
+    L2RRV_eq 
+      (L2RRVminus rv1 rv2) (L2RRVplus rv1 (L2RRVopp rv2)).
+  Proof.
+    reflexivity.
+  Qed.
+
+  Lemma L2RRVopp_scale (rv:L2RRV) :
+    L2RRV_eq 
+      (L2RRVopp rv) (L2RRVscale (-1) rv).
+  Proof.
+    red.
+    apply rv_almost_eq_eq.
+    reflexivity.
+  Qed.
+  
   Global Instance L2RRV_minus_proper : Proper (L2RRV_eq ==> L2RRV_eq ==> L2RRV_eq) L2RRVminus.
   Proof.
     unfold Proper, respectful, L2RRV_eq.
@@ -1484,6 +1500,20 @@ Section L2.
        ; try autorewrite with quot
        ; try apply (@eq_Quot _ _ L2RRV_eq_equiv).
 
+  Lemma L2RRVq_minus_plus (rv1 rv2:L2RRVq) :
+    L2RRVq_minus rv1 rv2 = L2RRVq_plus rv1 (L2RRVq_opp rv2).
+  Proof.
+    L2RRVq_simpl.
+    apply L2RRVminus_plus.
+  Qed.
+
+  Lemma L2RRVq_opp_scale (rv:L2RRVq) :
+    L2RRVq_opp rv =L2RRVq_scale (-1) rv.
+  Proof.
+    L2RRVq_simpl.
+    apply L2RRVopp_scale.
+  Qed.
+  
   Lemma L2RRVq_plus_comm x y : L2RRVq_plus x y = L2RRVq_plus y x.
   Proof.
     L2RRVq_simpl.
