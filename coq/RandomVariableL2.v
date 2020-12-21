@@ -63,14 +63,6 @@ Section L2.
      now rewrite H.
    Qed.
 
-   Lemma Rmult_le_0_compat (r1 r2 : R) :
-     0 <= r1 -> 0 <= r2 -> 0 <= r1 * r2.
-   Proof.
-     intros.
-     replace (0) with (r1 * 0) by lra.
-     now apply Rmult_le_compat_l.
-   Qed.
-
    Lemma Expectation_abs_neg_part_finite (rv_X : Ts -> R)
         {rv:RandomVariable prts borel_sa rv_X} :         
      is_finite (Expectation_posRV (rvabs rv_X)) ->
@@ -1380,6 +1372,38 @@ Section L2.
     - intro x0.
       unfold rvmult, rvplus.
       lra.
+  Qed.
+
+  (* get abs version by saying (x : L2RRV) <-> (abs x : L2RRV) *)
+
+  Lemma Cauchy_Schwarz_L2 (x1 x2 : L2RRV) :
+    0 < L2RRVinner x2 x2 ->
+    Rsqr (L2RRVinner x1 x2) <= (L2RRVinner x1 x1)*(L2RRVinner x2 x2).
+  Proof.
+    generalize (L2RRV_inner_pos 
+                 (L2RRVplus
+                    (L2RRVscale (L2RRVinner x2 x2) x1)
+                    (L2RRVscale (- (L2RRVinner x1 x2)) x2))); intros.
+    rewrite L2RRV_inner_plus in H.
+    do 2 rewrite L2RRV_inner_scal in H.
+    rewrite L2RRV_inner_comm with (x := x1) in H.
+    rewrite L2RRV_inner_plus in H.
+    do 2 rewrite L2RRV_inner_scal in H.
+    rewrite L2RRV_inner_comm with 
+        (y := (L2RRVplus (L2RRVscale (L2RRVinner x2 x2) x1) 
+                         (L2RRVscale (- L2RRVinner x1 x2) x2))) in H.
+    rewrite L2RRV_inner_plus in H.
+    do 2 rewrite L2RRV_inner_scal in H.
+    ring_simplify in H.
+    unfold pow in H.
+    do 3 rewrite Rmult_assoc in H.
+    rewrite <- Rmult_minus_distr_l in H.
+    replace (0) with (L2RRVinner x2 x2 * 0) in H by lra.
+    apply Rmult_le_reg_l with (r := L2RRVinner x2 x2) in H; trivial.
+    ring_simplify in H.
+    unfold Rsqr.
+    rewrite L2RRV_inner_comm with (x := x2) (y := x1) in H.
+    lra.
   Qed.
 
   Definition L2RRVq : Type := quot L2RRV_eq.
