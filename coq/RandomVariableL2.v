@@ -1403,15 +1403,16 @@ Section L2.
     rewrite L2RRVminus_plus in H.
     rewrite L2RRVopp_scale in H.
     rewrite L2RRV_inner_plus in H.
+    rewrite L2RRV_scale_scale in H.
     do 2 rewrite L2RRV_inner_scal in H.
     rewrite L2RRV_inner_comm with (x := x1) in H.
     rewrite L2RRV_inner_plus in H.
-    do 4 rewrite L2RRV_inner_scal in H.
+    do 2 rewrite L2RRV_inner_scal in H.
     rewrite L2RRV_inner_comm with 
         (y := (L2RRVplus (L2RRVscale (L2RRVinner x2 x2) x1) 
-                         (L2RRVscale (-1) (L2RRVscale (L2RRVinner x1 x2) x2)))) in H.
+                         (L2RRVscale (-1 * L2RRVinner x1 x2) x2))) in H.
     rewrite L2RRV_inner_plus in H.
-    do 3 rewrite L2RRV_inner_scal in H.
+    do 2 rewrite L2RRV_inner_scal in H.
     ring_simplify in H.
     unfold pow in H.
     do 3 rewrite Rmult_assoc in H.
