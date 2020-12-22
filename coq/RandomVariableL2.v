@@ -98,6 +98,38 @@ Section L2.
     typeclasses eauto.
   Qed.
 
+  Lemma rvabs_sqr (rv_X : Ts -> R) :
+    rv_eq (rvabs (rvsqr rv_X)) (rvsqr rv_X).
+    Proof.
+      intro x.
+      unfold rvabs, rvsqr.
+      apply Rabs_pos_eq.
+      apply Rle_0_sqr.
+    Qed.
+      
+  Lemma rvsqr_abs (rv_X : Ts -> R) :
+    rv_eq (rvsqr (rvabs rv_X)) (rvsqr rv_X).
+    Proof.
+      intro x.
+      unfold rvabs, rvsqr.
+      now rewrite <- Rsqr_abs.
+    Qed.
+
+    Lemma rvmult_abs (rv_X1 rv_X2 : Ts -> R):
+      rv_eq (rvabs (rvmult rv_X1 rv_X2)) (rvmult (rvabs rv_X1) (rvabs rv_X2)).
+      Proof.
+        intro x.
+        unfold rvmult, rvabs.
+        apply Rabs_mult.
+     Qed.
+
+    Lemma isL2_abs (rv_X : Ts -> R) :
+      IsL2 rv_X <-> IsL2 (rvabs rv_X).
+    Proof.
+      unfold IsL2.
+      now rewrite rvsqr_abs.
+    Qed.
+
   Lemma rvprod_bound (rv_X1 rv_X2 : Ts->R) :
     RealRandomVariable_le (rvscale 2 (rvmult rv_X1 rv_X2))
                           (rvplus (rvsqr rv_X1) (rvsqr rv_X2)).
@@ -121,26 +153,13 @@ Section L2.
     RealRandomVariable_le (rvscale 2 (rvabs (rvmult rv_X1 rv_X2)))
                           (rvplus (rvsqr rv_X1) (rvsqr rv_X2)).
   Proof.
-    assert (PositiveRandomVariable (rvsqr (rvminus (rvabs rv_X1) (rvabs rv_X2)))) by apply prvsqr.
-    assert (rv_eq (rvsqr (rvminus (rvabs rv_X1) (rvabs rv_X2))) 
-                  (rvplus (rvplus (rvsqr rv_X1) (rvopp (rvscale 2 (rvabs (rvmult rv_X1 rv_X2)))))
-                          (rvsqr rv_X2))).
-    intro x.
-    unfold rvsqr, rvminus, rvplus, rvmult, rvopp, rvscale, rvabs, Rsqr.
-    rewrite Rabs_mult.
-    ring_simplify.
-    replace (pow (Rabs (rv_X1 x)) 2) with (pow (rv_X1 x) 2).
-    replace (pow (Rabs (rv_X2 x)) 2) with (pow (rv_X2 x) 2).    
-    now ring_simplify.
-    unfold Rabs; match_destr; lra.
-    unfold Rabs; match_destr; lra.    
-    rewrite H0 in H; clear H0.
-    unfold RealRandomVariable_le; intros.
-    unfold rvsqr, rvminus, rvplus, rvmult, rvopp, rvscale, rvabs, Rsqr in *.
-    unfold PositiveRandomVariable in H.
-    specialize (H x).
-    lra.
-  Qed.  
+    generalize (rvprod_bound (rvabs rv_X1) (rvabs rv_X2)); intros.
+    do 2 rewrite rvsqr_abs in H.
+    (* rewrite rvmult_abs. *)
+    unfold RealRandomVariable_le, rvscale in *.
+    intros.
+    now rewrite rvmult_abs.
+  Qed.
 
   Lemma rvsum_sqr_bound (rv_X1 rv_X2 : Ts->R) :
     RealRandomVariable_le (rvsqr (rvplus rv_X1 rv_X2)) 
@@ -574,36 +593,11 @@ Section L2.
       lra.
   Qed.
 
-  Lemma rvprod_bound_abs (rv_X1 rv_X2 : Ts->R) :
-    RealRandomVariable_le (rvscale 2 (rvabs (rvmult rv_X1 rv_X2)))
-                          (rvplus (rvsqr rv_X1) (rvsqr rv_X2)).
-  Proof.
-    assert (PositiveRandomVariable (rvsqr (rvminus (rvabs rv_X1) (rvabs rv_X2)))) by apply prvsqr.
-    assert (rv_eq (rvsqr (rvminus (rvabs rv_X1) (rvabs rv_X2))) 
-                  (rvplus (rvplus (rvsqr rv_X1) (rvopp (rvscale 2 (rvabs (rvmult rv_X1 rv_X2)))))
-                          (rvsqr rv_X2))).
-    intro x.
-    unfold rvsqr, rvminus, rvplus, rvmult, rvopp, rvscale, rvabs, Rsqr.
-    rewrite Rabs_mult.
-    apply Rminus_diag_uniq.
-    ring_simplify.
-    do 2 rewrite pow2_abs.
-    now ring_simplify.
-    rewrite H0 in H; clear H0.
-    unfold RealRandomVariable_le; intros.
-    unfold rvsqr, rvminus, rvplus, rvmult, rvopp, rvscale, rvabs, Rsqr in *.
-    unfold PositiveRandomVariable in H.
-    specialize (H x).
-    apply Rplus_le_compat_l with (r:= (2 * Rabs (rv_X1 x * rv_X2 x))) in H.
-    ring_simplify in H.
-    now ring_simplify.
-  Qed.  
-
-  Lemma rvprod_bound_abs1 (rv_X1 rv_X2 : Ts->R) :
+  Lemma rvprod_abs1_bound (rv_X1 rv_X2 : Ts->R) :
     RealRandomVariable_le (rvabs (rvmult rv_X1 rv_X2))
                           (rvplus (rvsqr rv_X1) (rvsqr rv_X2)).
   Proof.
-    generalize (rvprod_bound_abs rv_X1 rv_X2).
+    generalize (rvprod_abs_bound rv_X1 rv_X2).
     unfold RealRandomVariable_le, rvscale, rvabs, rvmult, rvsqr, Rsqr; intros.
     specialize (H x).
     assert (Rabs (rv_X1 x * rv_X2 x) <= 2 * Rabs (rv_X1 x * rv_X2 x)).
@@ -623,7 +617,7 @@ Section L2.
   Proof.
     assert (PositiveRandomVariable (rvabs (rvmult rv_X1 rv_X2))) by apply prvabs.
     generalize (Expectation_pos_posRV (rvabs (rvmult rv_X1 rv_X2))); intros.
-    generalize (rvprod_bound_abs1 rv_X1 rv_X2); intros.
+    generalize (rvprod_abs1_bound rv_X1 rv_X2); intros.
     assert (PositiveRandomVariable (rvplus (rvsqr rv_X1) (rvsqr rv_X2))).
     apply rvplus_prv; apply prvsqr.
     generalize (Finite_Expectation_posRV_le _ _ H H2 H1); intros.
