@@ -1278,89 +1278,7 @@ Proof.
   - apply make_collection_disjoint_disjoint.
 Qed.
 
-Section RandomVariable.
-  (* todo better type names. *)
-  (* The preimage of the function X on codomain B. *)
-  Definition preimage {Ts: Type} {Td: Type}
-             (X: Ts -> Td)
-             (B: event Td)
-             := fun lia: Ts => B (X lia).
-
-  (* A random variable is a mapping from a pobability space to a sigma algebra. *)
-  Class RandomVariable {Ts:Type} {Td:Type}
-        {doms: SigmaAlgebra Ts}
-        (dom: ProbSpace doms)
-        (cod: SigmaAlgebra Td) :=
-    {
-      (* the random variable. *)
-      rv_X: Ts -> Td;
-
-      (* for every element B in the sigma algebra, 
-           the preimage of rv_X on B is an event in the probability space *)
-      rv_preimage: forall B: event Td, (sa_sigma (preimage rv_X B));
-    }.
-
-  Class RealValuedRandomVariable {Ts:Type}
-        {doms: SigmaAlgebra Ts}
-        (dom: ProbSpace doms)
-        (cod: SigmaAlgebra R) :=
-    {
-      rrv: RandomVariable dom cod;
-      
-      rrv_is_real: forall r:R, sa_sigma (fun lia:Ts => (rv_X lia) <= r);
-    }.
-  
-End RandomVariable.
-
-Section lebesgueintegration.
-  
-  Class MeasurableFunction {Ts: Type} (dom: SigmaAlgebra Ts) :=
-    {
-      measure_mu: event Ts -> R;
-
-      measure_none : measure_mu ∅ = R0 ;
-      measure_ge_zero: forall A : event Ts, sa_sigma A -> 0 <= measure_mu A;
-  
-      measure_coutably_additive: forall collection: nat -> event Ts,
-           (forall n : nat, sa_sigma (collection n)) ->
-           collection_is_pairwise_disjoint collection ->
-           sum_of_probs_equals measure_mu collection (measure_mu (union_of_collection collection))
-
-                               
-    }.
-
-  (* See https://en.wikipedia.org/wiki/Lebesgue_integration#Towards_a_formal_definition *)
-  Definition F_star {dom:SigmaAlgebra R} (measure: MeasurableFunction dom) (f: R -> R) (t: R) :=
-    measure_mu (fun (x: R) => (f x) > t).
-
-  (* The integral $\int f d\mu defined in terms of the Riemann integral.
-   * note that this definition assumes that f : R -> R+
-   * Again, see https://en.wikipedia.org/wiki/Lebesgue_integration#Towards_a_formal_definition *)
-  Definition Lebesgue_integrable_pos {dom: SigmaAlgebra R}
-             (f : R -> R)
-             (f_nonneg : forall x:R, f x > 0)
-             (measure: MeasurableFunction dom)
-             (a b : R) :=
-    (Riemann_integrable (F_star measure f) a b).
-End lebesgueintegration.
-
-Instance ProbSpace_Measurable {T:Type} {sa: SigmaAlgebra T} (ps:ProbSpace sa) : MeasurableFunction sa
-  := {
-      measure_mu := ps_P ;
-      measure_none := (ps_none ps) ;
-      measure_ge_zero := ps_pos ;
-      measure_coutably_additive := ps_countable_disjoint_union ; 
-    }.
-
-Section zmBoundedVariance.
-  (* TODO finish this definition *)
-  Class ZeroMeanVoundedVariance (t: nat -> R) :=
-    {
-      has_zero_mean: Prop;
-      has_bounded_variance: Prop;
-    }.
-End zmBoundedVariance.
-
+(*
 Section prob.
   Local Open Scope R.
   Local Open Scope prob.
@@ -1399,7 +1317,8 @@ Section prob.
   Qed.
 
 End prob.
-  
+ *)
+
 Notation "∅" := event_none : prob. (* \emptyset *)
 Notation "a ∪ b" := (event_union a b) (at level 50) : prob. (* \cup *)
 Notation "a ∩ b" := (event_inter a b) (at level 50) : prob. (* \cap *)
