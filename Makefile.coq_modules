@@ -69,7 +69,9 @@ MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	Gen_NN \
         infprod \
 	ProbSpace \
+	FunctionsToReal \
 	RandomVariable \
+	RealRandomVariable \
 	RandomVariableModuleSpace \
 	RandomVariableFinite \
 	RandomVariableL1 \

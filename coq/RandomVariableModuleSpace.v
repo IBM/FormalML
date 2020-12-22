@@ -10,7 +10,7 @@ Require Import hilbert.
 Require Import utils.Utils.
 Require Import ProbSpace.
 Require Import BorelSigmaAlgebra.
-Require Import RandomVariable.
+Require Import RealRandomVariable.
 Require Import quotient_space.
 Require Import AlmostEqual.
 

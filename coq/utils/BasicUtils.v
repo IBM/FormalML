@@ -1,4 +1,4 @@
-Require Import Equivalence EquivDec.
+Require Import Equivalence EquivDec Morphisms.
 
 Require Import LibUtilsCoqLibAdd.
 
@@ -34,3 +34,15 @@ Proof.
   * intros Hxy ; symmetry in Hxy ; firstorder.
   * intros Hxy ; symmetry in Hxy ; firstorder.
 Qed.
+
+Definition rv_eq {Ts Td:Type} : (Ts -> Td) -> (Ts -> Td) -> Prop
+  :=  pointwise_relation Ts eq.
+
+(* This instance is Local, since it is too general *)
+Local Instance rv_eq_equiv
+         {Ts Td:Type} :
+  Equivalence (@rv_eq Ts Td).
+Proof.
+  typeclasses eauto.
+Qed.
+

@@ -7,9 +7,6 @@ Require Import FunctionalExtensionality.
 
 Require Import hilbert.
 
-Require Import BorelSigmaAlgebra.
-Require Import ProbSpace.
-Require Import RandomVariable.
 Require Export RandomVariableFinite.
 Require Import quotient_space.
 
@@ -186,7 +183,7 @@ Section L1.
   Lemma IsL1_bounded rv_X1 rv_X2
         {isl1:IsFiniteExpectation prts rv_X2}
     :
-      RealRandomVariable_le (rvabs rv_X1) rv_X2 ->
+      rv_le (rvabs rv_X1) rv_X2 ->
       IsL1 rv_X1.
   Proof.
     unfold IsL1 in *.

@@ -7,9 +7,7 @@ Require Import FunctionalExtensionality.
 
 Require Import hilbert.
 
-Require Import BorelSigmaAlgebra.
-Require Import ProbSpace.
-Require Import RandomVariable.
+Require Export RealRandomVariable.
 Require Import quotient_space.
 
 Require Import AlmostEqual.
@@ -442,7 +440,6 @@ Section fe.
           -- unfold event_sub; intros.
              unfold const in H3.
              unfold const.
-             unfold RealRandomVariable_le in H1.
              specialize (H1 x5).
              unfold PositiveRandomVariable in H0.
              specialize (H0 x5).
@@ -463,13 +460,12 @@ Section fe.
           rewrite H4 in H2.
           rewrite <- H2.
           simpl; lra.
-    - exists (const 0); exists (rvconst 0); exists (srvconst 0).
+    - exists (const 0); exists (rvconst _ _ 0); exists (srvconst 0).
       split.
       + unfold BoundedPositiveRandomVariable.
         split.
         * apply prvconst; lra.
-        * unfold RealRandomVariable_le, const.
-          apply prv.
+        * apply prv.
       + apply SimpleExpectation_const.
   Qed.
 
@@ -559,7 +555,7 @@ Section fe.
         {isfe1:IsFiniteExpectation rv_X1}
         {isfe2:IsFiniteExpectation rv_X2}
     :
-      RealRandomVariable_le rv_X1 rv_X2 ->
+      rv_le rv_X1 rv_X2 ->
       FiniteExpectation rv_X1 <= FiniteExpectation rv_X2.
   Proof.
     intros.
@@ -569,35 +565,13 @@ Section fe.
     now simpl in H.
   Qed.
 
-  Lemma RealRandomVariable_le_pos rv_X1 rv_X2 :
-    RealRandomVariable_le rv_X1 rv_X2 ->
-    RealRandomVariable_le (fun x : Ts => pos_fun_part rv_X1 x) (fun x : Ts => pos_fun_part rv_X2 x).
-  Proof.
-    unfold RealRandomVariable_le.
-    intros le12 a.
-    unfold pos_fun_part; simpl.
-    now apply Rle_max_compat_r.
-  Qed.
-
-  Lemma RealRandomVariable_le_neg rv_X1 rv_X2 :
-    RealRandomVariable_le rv_X1 rv_X2 ->
-    RealRandomVariable_le (fun x : Ts => neg_fun_part rv_X2 x) (fun x : Ts => neg_fun_part rv_X1 x).
-  Proof.
-    unfold RealRandomVariable_le.
-    intros le12 a.
-    unfold pos_fun_part; simpl.
-    replace 0 with (- 0) by lra.
-    repeat rewrite Rmax_opp_Rmin.
-    apply Ropp_le_contravar.
-    now apply Rle_min_compat_r.
-  Qed.
 
   Lemma IsFiniteExpectation_bounded rv_X1 rv_X2 rv_X3
         {isfe1:IsFiniteExpectation rv_X1}
         {isfe2:IsFiniteExpectation rv_X3}
     :
-      RealRandomVariable_le rv_X1 rv_X2 ->
-      RealRandomVariable_le rv_X2 rv_X3 ->
+      rv_le rv_X1 rv_X2 ->
+      rv_le rv_X2 rv_X3 ->
       IsFiniteExpectation rv_X2.
   Proof.
     intros.
@@ -618,8 +592,8 @@ Section fe.
     apply Finite_Rbar_plus' in eqq2.
     destruct eqq1 as [eqq1pos eqq1neg].
     destruct eqq2 as [eqq2pos eqq2neg].
-    generalize (RealRandomVariable_le_pos _ _ H0).
-    generalize (RealRandomVariable_le_neg _ _ H).
+    generalize (rv_le_pos_fun_part _ _ H0).
+    generalize (rv_le_neg_fun_part _ _ H).
     intros.
     apply Finite_Rbar_opp in eqq1neg.
 

@@ -8,6 +8,7 @@ Require Import Classical.
 Require Import BorelSigmaAlgebra.
 Require Import ProbSpace.
 Require Import RandomVariable.
+Require Import RealRandomVariable.
 
 Set Bullet Behavior "Strict Subproofs".
 

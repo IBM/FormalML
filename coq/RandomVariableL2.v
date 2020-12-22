@@ -7,9 +7,6 @@ Require Import FunctionalExtensionality.
 
 Require Import hilbert.
 
-Require Import BorelSigmaAlgebra.
-Require Import ProbSpace.
-Require Import RandomVariable.
 Require Export RandomVariableL1.
 Require Import quotient_space.
 
@@ -38,7 +35,7 @@ Section L2.
   Qed.
   
   Lemma rvabs_bound (rv_X : Ts -> R) :
-    RealRandomVariable_le (rvabs rv_X) (rvplus (rvsqr rv_X) (const 1)).
+    rv_le (rvabs rv_X) (rvplus (rvsqr rv_X) (const 1)).
   Proof.
     assert (PositiveRandomVariable (rvsqr (rvplus (rvabs rv_X) (const (-1))))) by apply prvsqr.
     assert (rv_eq (rvsqr (rvplus (rvabs rv_X) (const (-1))))
@@ -50,7 +47,7 @@ Section L2.
     now ring_simplify.
     rewrite H0 in H; clear H0.
     unfold PositiveRandomVariable in H.
-    unfold RealRandomVariable_le; intros.
+    unfold rv_le; intros x.
     specialize (H x).
     unfold rvsqr, rvminus, rvplus, rvmult, rvopp, rvscale, rvabs in *.
     rewrite Rsqr_abs.
@@ -131,7 +128,7 @@ Section L2.
     Qed.
 
   Lemma rvprod_bound (rv_X1 rv_X2 : Ts->R) :
-    RealRandomVariable_le (rvscale 2 (rvmult rv_X1 rv_X2))
+    rv_le (rvscale 2 (rvmult rv_X1 rv_X2))
                           (rvplus (rvsqr rv_X1) (rvsqr rv_X2)).
   Proof.
     assert (PositiveRandomVariable (rvsqr (rvminus rv_X1 rv_X2))) by apply prvsqr.
@@ -142,27 +139,24 @@ Section L2.
     unfold rvsqr, rvminus, rvplus, rvmult, rvopp, rvscale, Rsqr.
     now ring_simplify.
     rewrite H0 in H; clear H0.
-    unfold RealRandomVariable_le; intros.
+    intros x.
     unfold rvsqr, rvminus, rvplus, rvmult, rvopp, rvscale, Rsqr in *.
     unfold PositiveRandomVariable in H.
     specialize (H x).
     lra.
   Qed.  
-
+  
   Lemma rvprod_abs_bound (rv_X1 rv_X2 : Ts->R) :
-    RealRandomVariable_le (rvscale 2 (rvabs (rvmult rv_X1 rv_X2)))
+    rv_le (rvscale 2 (rvabs (rvmult rv_X1 rv_X2)))
                           (rvplus (rvsqr rv_X1) (rvsqr rv_X2)).
   Proof.
     generalize (rvprod_bound (rvabs rv_X1) (rvabs rv_X2)); intros.
     do 2 rewrite rvsqr_abs in H.
-    (* rewrite rvmult_abs. *)
-    unfold RealRandomVariable_le, rvscale in *.
-    intros.
     now rewrite rvmult_abs.
   Qed.
 
   Lemma rvsum_sqr_bound (rv_X1 rv_X2 : Ts->R) :
-    RealRandomVariable_le (rvsqr (rvplus rv_X1 rv_X2)) 
+    rv_le (rvsqr (rvplus rv_X1 rv_X2)) 
                           (rvscale 2 (rvplus (rvsqr rv_X1) (rvsqr rv_X2))).
   Proof.
     assert (PositiveRandomVariable (rvsqr (rvminus rv_X1 rv_X2))) by apply prvsqr.
@@ -174,7 +168,7 @@ Section L2.
     now ring_simplify.
     rewrite H0 in H; clear H0.
     unfold PositiveRandomVariable in H.
-    unfold RealRandomVariable_le; intros.
+    intros x.
     specialize (H x).
     unfold rvsqr, rvminus, rvplus, rvmult, rvopp, rvscale, Rsqr in *.
     apply Rplus_le_compat_l with (r:= ((rv_X1 x + rv_X2 x) * (rv_X1 x + rv_X2 x))) in H.
@@ -594,11 +588,11 @@ Section L2.
   Qed.
 
   Lemma rvprod_abs1_bound (rv_X1 rv_X2 : Ts->R) :
-    RealRandomVariable_le (rvabs (rvmult rv_X1 rv_X2))
+    rv_le (rvabs (rvmult rv_X1 rv_X2))
                           (rvplus (rvsqr rv_X1) (rvsqr rv_X2)).
   Proof.
     generalize (rvprod_abs_bound rv_X1 rv_X2).
-    unfold RealRandomVariable_le, rvscale, rvabs, rvmult, rvsqr, Rsqr; intros.
+    unfold rv_le, rvscale, rvabs, rvmult, rvsqr, Rsqr; intros H x.
     specialize (H x).
     assert (Rabs (rv_X1 x * rv_X2 x) <= 2 * Rabs (rv_X1 x * rv_X2 x)).
     apply Rplus_le_reg_l with (r := - Rabs(rv_X1 x * rv_X2 x)).

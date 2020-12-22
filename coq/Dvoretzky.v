@@ -1,7 +1,7 @@
 Require Import Reals Sums Lra Lia.
 Require Import Coquelicot.Coquelicot.
 Require Import LibUtils.
-Require Import ProbSpace SigmaAlgebras BorelSigmaAlgebra RandomVariable.
+Require Import RealRandomVariable.
 Require Import infprod.
 
 Require Import List Permutation.
@@ -121,8 +121,7 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
      rewrite (scaleSimpleExpectation (Rsqr (F n))).
      
      apply SimpleExpectation_le; try typeclasses eauto.
-     unfold RealRandomVariable_le.
-     intros.
+     intros x.
      unfold rvsqr, rvscale.
      specialize (H0 n (X n x)).
      rewrite <- Rabs_right with (r:=F n) in H0; trivial.
@@ -134,12 +133,11 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
      replace (-1 * theta) with (-theta) by lra.
      apply H0.
    - unfold simple_sigma_measurable.
-     unfold event_preimage, singleton_event.
+     unfold event_preimage, event_singleton.
      destruct svx.
      destruct svt.
      unfold RandomVariable.srv_vals; simpl.
      unfold rvminus, rvopp, rvplus, rvscale, const.
-     unfold RandomVariable.srvconst_obligation_1.
      intros.
      
      destruct (classic ( exists x, X n x = c2)).
@@ -265,7 +263,7 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
     generalize (positive_scale_prv a (EventIndicator (fun omega : Ts => Rge_dec (X omega) a))); intros.
     rewrite H0 with (prv := H1); trivial.
     apply Expectation_posRV_le; trivial.
-    unfold RealRandomVariable_le, EventIndicator, rvscale; intros.
+    unfold EventIndicator, rvscale; intros x.
     specialize (posrv x).
     destruct (Rge_dec (X x) a); lra.
 Qed.    
@@ -393,7 +391,7 @@ Qed.
       + apply ps_pos.
         apply sa_le_ge.
         apply Rabs_measurable.
-        intros.
+        intros r.
         assert (event_equiv (fun omega => (rvminus X (Xn n)) omega <= r)
                             (fun omega => (X omega) - (Xn n) omega <= r)).
         * intro x.

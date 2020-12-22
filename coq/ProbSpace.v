@@ -46,6 +46,9 @@ Section ev.
 
   Definition event_none {T} : event T
     := fun x: T => False.
+
+  Definition event_singleton {T} (m:T) : event T
+    := fun x => x=m.
   
   Definition event_union {T} (A B:event T) : event T
     := fun x:T => A x \/ B x.
@@ -471,6 +474,15 @@ Definition event_preimage {Ts: Type} {Td: Type}
            (X: Ts -> Td)
            (B: event Td)
   := fun omega: Ts => B (X omega).
+
+Global Instance event_preimage_proper {Ts: Type} {Td: Type} :
+  Proper (rv_eq ==> event_equiv ==> event_equiv) (@event_preimage Ts Td).
+Proof.
+  intros ???????.
+  unfold event_preimage.
+  rewrite H.
+  apply H0.
+Qed.
 
 Class SigmaAlgebra (T:Type) :=
   {
