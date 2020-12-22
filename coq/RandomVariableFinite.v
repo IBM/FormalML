@@ -7,7 +7,7 @@ Require Import FunctionalExtensionality.
 
 Require Import hilbert.
 
-Require Export RealRandomVariable.
+Require Export Expectation.
 Require Import quotient_space.
 
 Require Import AlmostEqual.
@@ -138,8 +138,8 @@ Section fe.
 
   Global Instance IsFiniteExpectation_plus 
          (rv_X1 rv_X2 : Ts -> R)
-         {rv1 : RandomVariable prts borel_sa rv_X1}
-         {rv2 : RandomVariable prts borel_sa rv_X2} 
+         {rv1 : RandomVariable dom borel_sa rv_X1}
+         {rv2 : RandomVariable dom borel_sa rv_X2} 
          {isfe1:IsFiniteExpectation rv_X1}
          {isfe2:IsFiniteExpectation rv_X2} :
     IsFiniteExpectation (rvplus rv_X1 rv_X2).
@@ -155,8 +155,8 @@ Section fe.
 
   Lemma FiniteExpectation_plus
         (rv_X1 rv_X2 : Ts -> R)
-        {rv1 : RandomVariable prts borel_sa rv_X1}
-        {rv2 : RandomVariable prts borel_sa rv_X2} 
+        {rv1 : RandomVariable dom borel_sa rv_X1}
+        {rv2 : RandomVariable dom borel_sa rv_X2} 
         {isfe1:IsFiniteExpectation rv_X1}
         {isfe2:IsFiniteExpectation rv_X2} :
     FiniteExpectation (rvplus rv_X1 rv_X2) =
@@ -257,8 +257,8 @@ Section fe.
   
   Global Instance IsFiniteExpectation_minus
          (rv_X1 rv_X2 : Ts -> R)
-         {rv1 : RandomVariable prts borel_sa rv_X1}
-         {rv2 : RandomVariable prts borel_sa rv_X2} 
+         {rv1 : RandomVariable dom borel_sa rv_X1}
+         {rv2 : RandomVariable dom borel_sa rv_X2} 
          {isfe1:IsFiniteExpectation rv_X1}
          {isfe2:IsFiniteExpectation rv_X2} :
     IsFiniteExpectation (rvminus rv_X1 rv_X2).
@@ -269,8 +269,8 @@ Section fe.
 
   Lemma FiniteExpectation_minus
         (rv_X1 rv_X2 : Ts -> R)
-        {rv1 : RandomVariable prts borel_sa rv_X1}
-        {rv2 : RandomVariable prts borel_sa rv_X2} 
+        {rv1 : RandomVariable dom borel_sa rv_X1}
+        {rv2 : RandomVariable dom borel_sa rv_X2} 
         {isfe1:IsFiniteExpectation rv_X1}
         {isfe2:IsFiniteExpectation rv_X2} :
     FiniteExpectation (rvminus rv_X1 rv_X2) =
@@ -286,8 +286,8 @@ Section fe.
   Hint Rewrite FiniteExpectation_plus : prob.
 
   Lemma pos_fun_part_proper_almost x y 
-        {rvx:RandomVariable prts borel_sa x}
-        {rvy:RandomVariable prts borel_sa y} :
+        {rvx:RandomVariable dom borel_sa x}
+        {rvy:RandomVariable dom borel_sa y} :
     rv_almost_eq prts x y ->
     rv_almost_eq prts (fun x0 => nonneg (pos_fun_part x x0)) (fun x0 => nonneg (pos_fun_part y x0)).
   Proof.
@@ -307,8 +307,8 @@ Section fe.
   Qed.
 
   Lemma neg_fun_part_proper_almost x y 
-        {rvx:RandomVariable prts borel_sa x}
-        {rvy:RandomVariable prts borel_sa y} :
+        {rvx:RandomVariable dom borel_sa x}
+        {rvy:RandomVariable dom borel_sa y} :
     rv_almost_eq prts x y ->
     rv_almost_eq prts (fun x0 => nonneg (neg_fun_part x x0)) (fun x0 => nonneg (neg_fun_part y x0)).
   Proof.
@@ -338,7 +338,7 @@ Section fe.
   Qed.
 
   Lemma SimplePosExpectation_pos_zero x
-        {rvx:RandomVariable prts borel_sa x} 
+        {rvx:RandomVariable dom borel_sa x} 
         {xsrv:SimpleRandomVariable x} :
     rv_almost_eq prts x (const 0) ->
     SimpleExpectation x = 0.
@@ -381,8 +381,8 @@ Section fe.
   Qed.
 
   Lemma Expectation_simple_proper_almost x y
-        {rvx:RandomVariable prts borel_sa x}
-        {rvy:RandomVariable prts borel_sa y} 
+        {rvx:RandomVariable dom borel_sa x}
+        {rvy:RandomVariable dom borel_sa y} 
         {xsrv:SimpleRandomVariable x}
         {ysrv:SimpleRandomVariable y} :
     rv_almost_eq prts x y ->
@@ -410,7 +410,7 @@ Section fe.
   Qed.
 
   Lemma Expectation_posRV_almost_0 x 
-        {rvx:RandomVariable prts borel_sa x}
+        {rvx:RandomVariable dom borel_sa x}
         {prv:PositiveRandomVariable x} :
     rv_almost_eq prts x (const 0) ->
     Expectation_posRV x = 0.
@@ -470,25 +470,28 @@ Section fe.
   Qed.
 
   Lemma Expectation_almost_0 x 
-        {rvx:RandomVariable prts borel_sa x} :
+        {rvx:RandomVariable dom borel_sa x} :
     rv_almost_eq prts x (const 0) ->
     Expectation x = Some (Finite 0).
   Proof.
     unfold rv_almost_eq.
     intros.
-    assert (RandomVariable prts borel_sa (pos_fun_part x)).
+    assert (RandomVariable dom borel_sa (pos_fun_part x)).
     now apply positive_part_rv.
-    assert (RandomVariable prts borel_sa (neg_fun_part x)).
+    assert (RandomVariable dom borel_sa (neg_fun_part x)).
     now apply negative_part_rv.
     unfold RandomVariable in rvx.
     rewrite <- borel_sa_preimage2 in rvx.
     assert (sa_sigma (fun x0 : Ts => nonneg(pos_fun_part x x0) = 0)).
-    apply sa_le_pt.
-    now apply Relu_measurable.
+    { apply sa_le_pt.
+      apply rv_measurable.
+      typeclasses eauto.
+    }
     assert (sa_sigma (fun x0 : Ts => nonneg(neg_fun_part x x0) = 0)).
-    apply sa_le_pt.
-    apply Relu_measurable.
-    now apply Ropp_measurable.
+    { apply sa_le_pt.
+      apply rv_measurable.
+      typeclasses eauto.
+    }
     unfold Expectation.
     assert (rv_almost_eq prts (fun omega => nonneg(pos_fun_part x omega)) (const 0)).
     unfold rv_almost_eq.
@@ -526,8 +529,8 @@ Section fe.
   Qed.
 
   Lemma FiniteExpectation_proper_almost rv_X1 rv_X2
-        {rrv1:RandomVariable prts borel_sa rv_X1}
-        {rrv2:RandomVariable prts borel_sa rv_X2}
+        {rrv1:RandomVariable dom borel_sa rv_X1}
+        {rrv2:RandomVariable dom borel_sa rv_X2}
         {isfe1:IsFiniteExpectation rv_X1}
         {isfe2:IsFiniteExpectation rv_X2}
     :
@@ -603,8 +606,8 @@ Section fe.
 
   Global Instance IsFiniteExpectation_min
          (rv_X1 rv_X2 : Ts -> R)
-         {rv1 : RandomVariable prts borel_sa rv_X1}
-         {rv2 : RandomVariable prts borel_sa rv_X2} 
+         {rv1 : RandomVariable dom borel_sa rv_X1}
+         {rv2 : RandomVariable dom borel_sa rv_X2} 
          {isfe1:IsFiniteExpectation rv_X1}
          {isfe2:IsFiniteExpectation rv_X2} :
     IsFiniteExpectation (rvmin rv_X1 rv_X2).
@@ -671,8 +674,8 @@ Section fe.
 
   Global Instance IsFiniteExpectation_max
          (rv_X1 rv_X2 : Ts -> R)
-         {rv1 : RandomVariable prts borel_sa rv_X1}
-         {rv2 : RandomVariable prts borel_sa rv_X2} 
+         {rv1 : RandomVariable dom borel_sa rv_X1}
+         {rv2 : RandomVariable dom borel_sa rv_X2} 
          {isfe1:IsFiniteExpectation rv_X1}
          {isfe2:IsFiniteExpectation rv_X2} :
     IsFiniteExpectation (rvmax rv_X1 rv_X2).
@@ -752,7 +755,7 @@ Section fe.
 
   Lemma FiniteExpectation_zero_pos 
         (X : Ts -> R)
-        {rv : RandomVariable prts borel_sa X}
+        {rv : RandomVariable dom borel_sa X}
         {posrv :PositiveRandomVariable X}
         {isfe:IsFiniteExpectation X} :
     FiniteExpectation X = 0%R ->

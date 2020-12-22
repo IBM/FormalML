@@ -7,8 +7,7 @@ Import ListNotations.
 
 (* A random variable is a mapping from a pobability space to a sigma algebra. *)
 Class RandomVariable {Ts:Type} {Td:Type}
-      {dom: SigmaAlgebra Ts}
-      (prts: ProbSpace dom)
+      (dom: SigmaAlgebra Ts)
       (cod: SigmaAlgebra Td)
       (rv_X: Ts -> Td)
   :=
@@ -17,9 +16,8 @@ Class RandomVariable {Ts:Type} {Td:Type}
     rv_preimage: forall (B: event Td), sa_sigma B -> sa_sigma (event_preimage rv_X B).
 
 Global Instance RandomVariable_proper {Ts:Type} {Td:Type}
-      {dom: SigmaAlgebra Ts}
-      (prts: ProbSpace dom)
-      (cod: SigmaAlgebra Td) : Proper (rv_eq ==> iff) (RandomVariable prts cod).
+       (dom: SigmaAlgebra Ts)
+       (cod: SigmaAlgebra Td) : Proper (rv_eq ==> iff) (RandomVariable dom cod).
 Proof.
   intros x y eqq.
   unfold RandomVariable.
@@ -42,11 +40,10 @@ Section Const.
     := { srv_val := c }.
 
 
-  Context {dom: SigmaAlgebra Ts}
-          (prts: ProbSpace dom)
+  Context (dom: SigmaAlgebra Ts)
           (cod: SigmaAlgebra Td).
 
-  Global Instance rvconst c : RandomVariable prts cod (const c).
+  Global Instance rvconst c : RandomVariable dom cod (const c).
     Proof.
       red; intros.
       destruct (sa_dec H c).

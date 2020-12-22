@@ -1409,6 +1409,18 @@ Section classic.
     apply make_collection_disjoint_le; trivial.
   Qed.
 
+  Lemma classic_event_none_or_has {A} (p:event A) : (exists y, p y) \/ event_equiv p event_none.
+  Proof.
+    destruct (classic (exists y, p y)).
+    - eauto.
+    - right; intros x.
+      unfold event_none.
+      split; [| tauto].
+      intros px.
+      apply H.
+      eauto.
+  Qed.
+
 End classic.
 
 Section take.

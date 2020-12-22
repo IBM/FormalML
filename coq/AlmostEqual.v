@@ -112,8 +112,8 @@ Lemma Hsigma_borel_eq_pf
       {Ts:Type} 
       {dom: SigmaAlgebra Ts}
       (prts: ProbSpace dom) : forall r1 r2 : Ts -> R,
-    RandomVariable prts borel_sa r1 ->
-    RandomVariable prts borel_sa r2 ->
+    RandomVariable dom borel_sa r1 ->
+    RandomVariable dom borel_sa r2 ->
     sa_sigma (fun x0 : Ts => r1 x0 = r2 x0).
 Proof.
   intros.
@@ -123,7 +123,8 @@ Proof.
     ; intros.
     apply borel_sa_preimage2
     ; intros.
-    now apply rv_preimage.
+    apply measurable_rv; trivial.
+    apply minus_measurable; now apply rv_measurable.
   }
   eapply sa_proper; try eassumption.
   red; intros.
@@ -136,7 +137,7 @@ Lemma rv_almost_eq_rv_refl
       {dom: SigmaAlgebra Ts}
       (prts: ProbSpace dom) 
       (x : Ts -> R)
-      {rvx : RandomVariable prts borel_sa x} :
+      {rvx : RandomVariable dom borel_sa x} :
   rv_almost_eq prts x x.
 Proof.
   unfold rv_almost_eq.
@@ -163,9 +164,9 @@ Lemma rv_almost_eq_rv_trans
       {dom: SigmaAlgebra Ts}
       (prts: ProbSpace dom) 
       (x y z: Ts -> R)
-      {rvx : RandomVariable prts borel_sa x} 
-      {rvy : RandomVariable prts borel_sa y} 
-      {rvz : RandomVariable prts borel_sa z} :
+      {rvx : RandomVariable dom borel_sa x} 
+      {rvy : RandomVariable dom borel_sa y} 
+      {rvz : RandomVariable dom borel_sa z} :
   rv_almost_eq prts x y ->
   rv_almost_eq prts y z ->
   rv_almost_eq prts x z.
@@ -231,11 +232,11 @@ Lemma rv_almost_eq_plus_proper
       {dom: SigmaAlgebra Ts}
       (prts: ProbSpace dom) 
       (x1 x2 y1 y2 : Ts -> R)
-      {rvx1 : RandomVariable prts borel_sa x1}
-      {rvx2: RandomVariable prts borel_sa x2}
+      {rvx1 : RandomVariable dom borel_sa x1}
+      {rvx2: RandomVariable dom borel_sa x2}
       (eqqx : rv_almost_eq prts x1 x2)
-      {rvy1 : RandomVariable prts borel_sa y1}
-      {rvy2 : RandomVariable prts borel_sa y2}
+      {rvy1 : RandomVariable dom borel_sa y1}
+      {rvy2 : RandomVariable dom borel_sa y2}
       (eqqy : rv_almost_eq prts y1 y2) :
       rv_almost_eq prts (rvplus x1 y1) (rvplus x2 y2).
   Proof.
@@ -267,11 +268,11 @@ Lemma rv_almost_eq_mult_proper
       {dom: SigmaAlgebra Ts}
       (prts: ProbSpace dom) 
       (x1 x2 y1 y2 : Ts -> R)
-      {rvx1 : RandomVariable prts borel_sa x1}
-      {rvx2: RandomVariable prts borel_sa x2}
+      {rvx1 : RandomVariable dom borel_sa x1}
+      {rvx2: RandomVariable dom borel_sa x2}
       (eqqx : rv_almost_eq prts x1 x2)
-      {rvy1 : RandomVariable prts borel_sa y1}
-      {rvy2 : RandomVariable prts borel_sa y2}
+      {rvy1 : RandomVariable dom borel_sa y1}
+      {rvy2 : RandomVariable dom borel_sa y2}
       (eqqy : rv_almost_eq prts y1 y2) :
       rv_almost_eq prts (rvmult x1 y1) (rvmult x2 y2).
   Proof.

@@ -30,7 +30,7 @@ Section L1.
   Typeclasses Transparent IsL1.
   
   Global Instance IsL1_Finite (rv_X:Ts->R)
-         {rrv:RandomVariable prts borel_sa rv_X}
+         {rrv:RandomVariable dom borel_sa rv_X}
          {l1:IsL1 rv_X} : IsFiniteExpectation prts rv_X.
   Proof.
     red.
@@ -38,7 +38,7 @@ Section L1.
   Qed.
 
   Lemma Expectation_abs_neg_part_finite (rv_X : Ts -> R)
-        {rv:RandomVariable prts borel_sa rv_X} :
+        {rv:RandomVariable dom borel_sa rv_X} :
     is_finite (Expectation_posRV (rvabs rv_X)) ->
     is_finite (Expectation_posRV (neg_fun_part rv_X)).
   Proof.
@@ -47,7 +47,7 @@ Section L1.
   Qed.
   
   Lemma Expectation_neg_part_finite (rv_X : Ts -> R)
-        {rv:RandomVariable prts borel_sa rv_X}
+        {rv:RandomVariable dom borel_sa rv_X}
         {isfe:IsFiniteExpectation prts rv_X} :
     is_finite (Expectation_posRV (neg_fun_part rv_X)).
   Proof.
@@ -76,8 +76,8 @@ Section L1.
   
   Global Instance IsL1_plus 
          (rv_X1 rv_X2 : Ts -> R)
-         {rv1 : RandomVariable prts borel_sa rv_X1}
-         {rv2 : RandomVariable prts borel_sa rv_X2} 
+         {rv1 : RandomVariable dom borel_sa rv_X1}
+         {rv2 : RandomVariable dom borel_sa rv_X2} 
          {isl11:IsL1 rv_X1}
          {isl12:IsL1 rv_X2} :
     IsL1 (rvplus rv_X1 rv_X2).
@@ -152,8 +152,8 @@ Section L1.
 
   Global Instance IsL1_minus
          (rv_X1 rv_X2 : Ts -> R)
-         {rv1 : RandomVariable prts borel_sa rv_X1}
-         {rv2 : RandomVariable prts borel_sa rv_X2} 
+         {rv1 : RandomVariable dom borel_sa rv_X1}
+         {rv2 : RandomVariable dom borel_sa rv_X2} 
          {isl11:IsL1 rv_X1}
          {isl12:IsL1 rv_X2} :
     IsL1 (rvminus rv_X1 rv_X2).
@@ -196,8 +196,8 @@ Section L1.
   
   Global Instance IsL1_max
          (rv_X1 rv_X2 : Ts -> R)
-         {rv1 : RandomVariable prts borel_sa rv_X1}
-         {rv2 : RandomVariable prts borel_sa rv_X2}
+         {rv1 : RandomVariable dom borel_sa rv_X1}
+         {rv2 : RandomVariable dom borel_sa rv_X2}
          {isl11:IsL1 rv_X1}
          {isl12:IsL1 rv_X2} :
     IsL1 (rvmax rv_X1 rv_X2).
@@ -212,8 +212,8 @@ Section L1.
 
   Global Instance IsL1_min
          (rv_X1 rv_X2 : Ts -> R)
-         {rv1 : RandomVariable prts borel_sa rv_X1}
-         {rv2 : RandomVariable prts borel_sa rv_X2}
+         {rv1 : RandomVariable dom borel_sa rv_X1}
+         {rv2 : RandomVariable dom borel_sa rv_X2}
          {isl11:IsL1 rv_X1}
          {isl12:IsL1 rv_X2} :
     IsL1 (rvmin rv_X1 rv_X2).

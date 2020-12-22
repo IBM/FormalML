@@ -1631,3 +1631,50 @@ Proof.
 Qed.
  
 End equivlist.
+
+Global Instance nodup_perm {A} dec : Proper (@Permutation A ==> @Permutation A) (nodup dec).
+Proof.
+  repeat red; intros.
+  revert x y H.
+  apply Permutation_ind_bis; simpl; intros.
+  - trivial.
+  - repeat match_destr.
+    + rewrite H in i; congruence.
+    + rewrite <- H in i; congruence.
+    + apply perm_skip; trivial.
+  - destruct (dec x y)
+    ; destruct (dec y x)
+    ; try congruence.
+    + subst.
+      destruct (in_dec dec y l)
+      ; destruct (in_dec dec y l')
+      ; try congruence.
+      * rewrite H in i; congruence.
+      * rewrite <- H in i; congruence.
+      * apply perm_skip; congruence.
+    + destruct (in_dec dec y l)
+      ; destruct (in_dec dec x l)
+      ; destruct (in_dec dec x l')
+      ; destruct (in_dec dec y l')
+      ; try congruence
+      ; try solve [
+              rewrite H in i; congruence
+            | rewrite H in i0; congruence
+            | rewrite H in i1; congruence
+            | rewrite <- H in i; congruence
+            | rewrite <- H in i0; congruence
+            | rewrite <- H in i1; congruence
+            | apply perm_skip; congruence
+            ] .
+      rewrite H0.
+      apply perm_swap.
+  - now rewrite H0.
+Qed.
+
+
+Lemma Forall_nodup {A} dec P (l:list A) : Forall P l <-> Forall P (nodup dec l).
+Proof.
+  repeat rewrite Forall_forall.
+  generalize (nodup_In dec).
+  firstorder.
+Qed.

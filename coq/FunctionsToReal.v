@@ -228,6 +228,50 @@ Section defs.
       apply Ropp_le_contravar.
       now apply Rle_min_compat_r.
     Qed.
+    
+    Lemma rvmax_unfold (f g:Ts->R) :
+      rvmax f g === rvscale (/2) (rvplus (rvplus f g) (rvabs (rvminus f g))).
+    Proof.
+      intro x.
+      unfold rvmax, rvminus, rvscale, rvabs, rvopp, rvscale, rvplus.
+      unfold Rmax, Rabs.
+      repeat match_destr; lra.
+    Qed.
+
+    Lemma rvmin_unfold (f g:Ts->R) :
+      rvmin f g === rvscale (/2) (rvminus (rvplus f g) (rvabs (rvminus f g))).
+    Proof.
+      intro x.
+      unfold rvmin, rvminus, rvscale, rvabs, rvopp, rvscale, rvplus.
+      unfold Rmin, Rabs.
+      repeat match_destr; lra.
+    Qed.
+
+    Lemma rvmult_unfold (f g:Ts->R) :
+      rvmult f g === rvscale (1/4) (rvminus (rvsqr (rvplus f g))
+                                            (rvsqr (rvminus f g))).
+    Proof.
+      intros x.
+      unfold rvmult, rvminus, rvplus,rvsqr, rvopp, rvscale.
+      replace (1 / 4 * ((f x + g x)² + -1 * (f x + -1 * g x)²)) with ((f x)*(g x)) by (unfold Rsqr; lra).
+      intuition.
+    Qed.
+
+    Lemma pos_fun_part_unfold (f : Ts->R) :
+      (fun x => nonneg (pos_fun_part f x)) === rvmax f (const 0).
+    Proof.
+      intros x.
+      reflexivity.
+    Qed.
+
+    Lemma neg_fun_part_unfold (f : Ts->R) :
+      (fun x => nonneg (neg_fun_part f x)) === rvmax (rvopp f) (const 0).
+    Proof.
+      intros x.
+      unfold neg_fun_part, rvopp, const, rvscale, rvmax; simpl.
+      f_equal.
+      lra.
+    Qed.
 
   End eqs.
 End defs.

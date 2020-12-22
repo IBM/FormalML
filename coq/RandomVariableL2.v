@@ -68,7 +68,7 @@ Section L2.
   Qed.
     
   Global Instance isL2_isL1 (rv_X:Ts->R) 
-        {rv : RandomVariable prts borel_sa rv_X}
+        {rv : RandomVariable dom borel_sa rv_X}
         {l2:IsL2 rv_X}
     :  IsL1 prts rv_X.
   Proof.
@@ -178,8 +178,8 @@ Section L2.
   Qed.    
 
   Global Instance is_L2_plus rv_X1 rv_X2
-           {rv1:RandomVariable prts borel_sa rv_X1}
-           {rv2:RandomVariable prts borel_sa rv_X2}
+           {rv1:RandomVariable dom borel_sa rv_X1}
+           {rv2:RandomVariable dom borel_sa rv_X2}
            {isl21:IsL2 rv_X1}
            {isl22:IsL2 rv_X2} :
     IsL2 (rvplus rv_X1 rv_X2).
@@ -198,11 +198,11 @@ Section L2.
     rewrite H0 in H2.
     assert (PositiveRandomVariable (rvsqr (rvplus rv_X1 rv_X2))) by apply prvsqr.
     assert (PositiveRandomVariable (rvscale (mkposreal _ H1) (rvplus (rvsqr rv_X1) (rvsqr rv_X2)))).
-    - apply rvscale_pos.
-      apply rvplus_prv; apply prvsqr.
+    - typeclasses eauto. 
     - rewrite Expectation_pos_posRV with (prv := H4).
       generalize (Finite_Expectation_posRV_le (rvsqr (rvplus rv_X1 rv_X2))
-                                              (rvscale 2 (rvplus (rvsqr rv_X1) (rvsqr rv_X2))) H4 H5 H); intros.
+                                              (rvscale 2 (rvplus (rvsqr rv_X1) (rvsqr rv_X2)))
+                                              _ _ H); intros.
       rewrite Expectation_pos_posRV with (prv := H5) in H2.
       inversion H2.
       rewrite H8 in H6.
@@ -244,8 +244,8 @@ Section L2.
   Qed.
 
   Global Instance is_L2_minus rv_X1 rv_X2
-           {rv1:RandomVariable prts borel_sa rv_X1}
-           {rv2:RandomVariable prts borel_sa rv_X2}
+           {rv1:RandomVariable dom borel_sa rv_X1}
+           {rv2:RandomVariable dom borel_sa rv_X2}
            {isl21:IsL2 rv_X1}
            {isl22:IsL2 rv_X2} :
     IsL2 (rvminus rv_X1 rv_X2).
@@ -254,8 +254,8 @@ Section L2.
   Qed.
 
     Global Instance is_L2_mult_finite x y 
-        {xrv:RandomVariable prts borel_sa x}
-        {yrv:RandomVariable prts borel_sa y} : 
+        {xrv:RandomVariable dom borel_sa x}
+        {yrv:RandomVariable dom borel_sa y} : 
     IsL2 x -> IsL2 y ->
     IsFiniteExpectation prts (rvmult x y).
   Proof.
@@ -308,14 +308,14 @@ Section L2.
   Record L2RRV : Type
     := L2RRV_of {
            L2RRV_rv_X :> Ts -> R
-           ; L2RRV_rv :> RandomVariable prts borel_sa L2RRV_rv_X
+           ; L2RRV_rv :> RandomVariable dom borel_sa L2RRV_rv_X
            ; L2RRV_l2 :> IsL2 L2RRV_rv_X
          }.
 
   Existing Instance L2RRV_rv.
   Existing Instance L2RRV_l2.
   
-  Definition pack_L2RRV (rv_X:Ts -> R) {rv:RandomVariable prts borel_sa rv_X} {l2:IsL2 rv_X}
+  Definition pack_L2RRV (rv_X:Ts -> R) {rv:RandomVariable dom borel_sa rv_X} {l2:IsL2 rv_X}
     := L2RRV_of rv_X rv l2.
   
   Definition L2RRV_eq (rv1 rv2:L2RRV)
@@ -602,8 +602,8 @@ Section L2.
   Qed.
 
   Global Instance L2Expectation_l1_prod (rv_X1 rv_X2:Ts->R) 
-        {rv1 : RandomVariable prts borel_sa rv_X1}
-        {rv2 : RandomVariable prts borel_sa rv_X2} 
+        {rv1 : RandomVariable dom borel_sa rv_X1}
+        {rv2 : RandomVariable dom borel_sa rv_X2} 
         {l21:IsL2 rv_X1}
         {l22:IsL2 rv_X2}        
     :  IsL1 prts (rvmult rv_X1 rv_X2).

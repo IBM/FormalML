@@ -19,10 +19,10 @@ Set Bullet Behavior "Strict Subproofs".
 Section RVHierarchy.
 
   Context {Ts:Type} 
-          {dom: SigmaAlgebra Ts}
+          (dom: SigmaAlgebra Ts)
           (prts: ProbSpace dom).
 
-  Definition RRV : Type := {rv_X:Ts->R | RandomVariable prts borel_sa rv_X}.
+  Definition RRV : Type := {rv_X:Ts->R | RandomVariable dom borel_sa rv_X}.
 
   Program Definition RRV_eq (rv1 rv2:RRV) := rv_almost_eq prts rv1 rv2.
 

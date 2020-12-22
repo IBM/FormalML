@@ -1,7 +1,7 @@
 Require Import Reals Sums Lra Lia.
 Require Import Coquelicot.Coquelicot.
 Require Import LibUtils.
-Require Import RealRandomVariable.
+Require Import Expectation.
 Require Import infprod.
 
 Require Import List Permutation.
@@ -57,11 +57,11 @@ Qed.
  Qed.
 
 Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
-      (rvy : RandomVariable prts borel_sa (Y n)) 
+      (rvy : RandomVariable dom borel_sa (Y n)) 
       (svy : SimpleRandomVariable (Y n)) 
-      (rvx : RandomVariable prts borel_sa (X n)) 
+      (rvx : RandomVariable dom borel_sa (X n)) 
       (svx: SimpleRandomVariable (X n))
-      (rvt : RandomVariable prts borel_sa (fun r:R => T n (X n r))) 
+      (rvt : RandomVariable dom borel_sa (fun r:R => T n (X n r))) 
       (svt: SimpleRandomVariable (fun r:R => T n (X n r))) 
       (svx2: SimpleRandomVariable (X (S n))) :
   (forall (n:nat), F n >= 0) ->
@@ -99,13 +99,11 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
    apply Rplus_le_compat_r.
    generalize (conditional_tower_law (rvmult (rvminus (fun r : R => T n (X n r)) (const theta))
                                              (Y n)) 
-                                     (X n)) ; intros tower.
+                                     (X n) _ _) ; intros tower.
    generalize (conditional_scale_measurable (rvminus (fun r:R => T n (X n r)) (const theta))
                                             (Y n) (X n)); intros cond_scale.
    cut_to cond_scale.
-   - specialize (tower (rvmult_rv _ (Y n)) rvx).
-     specialize (tower (srvmult _ (Y n)) svx).
-     rewrite <- tower.
+   - rewrite <- tower.
      rewrite (SimpleExpectation_transport _ cond_scale).
      assert (eqq4:rv_eq  (rvmult (rvminus (fun r : R => T n (X n r)) (const theta))
                                  (SimpleConditionalExpectation (Y n) (X n)))
@@ -245,7 +243,7 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
 
   Lemma Markov_ineq {Ts:Type} {dom:SigmaAlgebra Ts} {prts : ProbSpace dom}
         (X : Ts -> R)
-        (rv : RandomVariable prts borel_sa X)
+        (rv : RandomVariable dom borel_sa X)
         (posrv : PositiveRandomVariable X)
         (a : posreal) :
     Rbar_le (a * (ps_P (fun omega => X omega >= a))) (Expectation_posRV X).
@@ -254,7 +252,7 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
     generalize simple_Expectation_posRV; intros.
     rewrite <- H.
     rewrite scaleSimpleExpectation.
-    assert (Hrv:RandomVariable prts borel_sa (rvscale a (EventIndicator (fun omega : Ts => Rge_dec (X omega) a)))).
+    assert (Hrv:RandomVariable dom borel_sa (rvscale a (EventIndicator (fun omega : Ts => Rge_dec (X omega) a)))).
     { apply rvscale_rv.
       apply EventIndicator_rv.
       apply sa_le_ge.
@@ -270,7 +268,7 @@ Qed.
       
   Lemma Markov_ineq_div {Ts:Type} {dom:SigmaAlgebra Ts} {prts : ProbSpace dom}
         (X : Ts -> R)
-        (rv : RandomVariable prts borel_sa X)
+        (rv : RandomVariable dom borel_sa X)
         (posrv : PositiveRandomVariable X)
         (a : posreal) :
     Rbar_le (ps_P (fun omega => X omega >= a)) (Rbar_div_pos (Expectation_posRV X) a).
@@ -326,7 +324,7 @@ Qed.
   Lemma conv_l2_prob1_0 {Ts:Type} {dom:SigmaAlgebra Ts} {prts: ProbSpace dom}
         (eps : posreal) 
         (X : Ts -> R) 
-        (rv : RandomVariable prts borel_sa X)
+        (rv : RandomVariable dom borel_sa X)
         (posrv: PositiveRandomVariable X) :
   Rbar_le (ps_P (fun omega => X omega >= eps))
           (Rbar_div (Expectation_posRV (rvsqr X)) 
@@ -354,13 +352,13 @@ Qed.
   Lemma conv_l2_prob1 {Ts:Type} {dom:SigmaAlgebra Ts} {prts: ProbSpace dom}
         (eps : posreal) 
         (X Xn: Ts -> R)
-        (rvx : RandomVariable prts borel_sa X)
-        (rvxn : RandomVariable prts borel_sa Xn) :
+        (rvx : RandomVariable dom borel_sa X)
+        (rvxn : RandomVariable dom borel_sa Xn) :
     is_finite (Expectation_posRV (rvsqr (rvabs (rvminus X Xn)))) ->
     ps_P (fun omega => (rvabs (rvminus X Xn)) omega >= eps) <=
     (Expectation_posRV (rvsqr (rvabs (rvminus X Xn)))) / (Rsqr eps).
     Proof.
-      assert (RandomVariable prts borel_sa (rvabs (rvminus X Xn))).
+      assert (RandomVariable dom borel_sa (rvabs (rvminus X Xn))).
       - apply rvabs_rv.
         now apply rvminus_rv.
       - assert (PositiveRandomVariable (rvabs (rvminus X Xn))).
@@ -375,8 +373,8 @@ Qed.
         (eps : posreal) 
         (X: Ts -> R)
         (Xn: nat -> Ts -> R)
-        (rvx : RandomVariable prts borel_sa X)
-        (rvxn : forall n, RandomVariable prts borel_sa (Xn n)) :
+        (rvx : RandomVariable dom borel_sa X)
+        (rvxn : forall n, RandomVariable dom borel_sa (Xn n)) :
     (forall n, is_finite (Expectation_posRV (rvsqr (rvabs (rvminus X (Xn n)))))) ->
     is_lim_seq (fun n => Expectation_posRV (rvsqr (rvabs (rvminus X (Xn n))))) 0 ->
     is_lim_seq (fun n => ps_P (fun omega => (rvabs (rvminus X (Xn n))) omega >= eps)) 0.
@@ -390,20 +388,8 @@ Qed.
       split.
       + apply ps_pos.
         apply sa_le_ge.
-        apply Rabs_measurable.
-        intros r.
-        assert (event_equiv (fun omega => (rvminus X (Xn n)) omega <= r)
-                            (fun omega => (X omega) - (Xn n) omega <= r)).
-        * intro x.
-          unfold rvminus, rvopp, rvplus, rvscale.
-          unfold Rminus.
-          now replace (-1 * Xn n x) with (- Xn n x) by lra.
-        * rewrite H2.
-          apply minus_measurable.
-          -- unfold RandomVariable in *.
-             now rewrite borel_sa_preimage2.
-          -- specialize (rvxn n).
-             now rewrite borel_sa_preimage2.    
+        apply rv_measurable.
+        typeclasses eauto.
       + apply conv_l2_prob1; trivial.
     - apply is_lim_seq_const.
     - apply is_lim_seq_div with (l1 := 0) (l2 := Rsqr eps); trivial.
@@ -417,14 +403,3 @@ Qed.
         f_equal.
         now rewrite Rmult_0_l.
   Qed.
-      
-      
-    
-    
-    
-        
-    
-    
-        
-    
-        
