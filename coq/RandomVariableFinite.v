@@ -529,7 +529,7 @@ Section fe.
     simpl; f_equal; f_equal; lra.
   Qed.
 
-  Lemma Expectation_finite_proper_almost rv_X1 rv_X2
+  Lemma FiniteExpectation_proper_almost rv_X1 rv_X2
         {rrv1:RandomVariable prts borel_sa rv_X1}
         {rrv2:RandomVariable prts borel_sa rv_X2}
         {isfe1:IsFiniteExpectation rv_X1}
@@ -760,7 +760,36 @@ Section fe.
       + typeclasses eauto.
       + typeclasses eauto.
   Qed.
-  
+
+  Lemma FiniteExpectation_pos  (rv_X : Ts -> R)
+        {prv : PositiveRandomVariable rv_X}
+        {isfe:IsFiniteExpectation rv_X} :
+    0 <= FiniteExpectation rv_X.
+  Proof.
+    unfold FiniteExpectation.
+    simpl_finite.
+    generalize (Expectation_posRV_pos rv_X).
+    erewrite Expectation_pos_posRV in e.
+    invcs e.
+    rewrite H0.
+    simpl.
+    trivial.
+  Qed.
+
+  Lemma FiniteExpectation_zero_pos 
+        (X : Ts -> R)
+        {rv : RandomVariable prts borel_sa X}
+        {posrv :PositiveRandomVariable X}
+        {isfe:IsFiniteExpectation X} :
+    FiniteExpectation X = 0%R ->
+    ps_P (fun omega => X omega = 0) = 1.
+  Proof.
+    unfold FiniteExpectation.
+    simpl_finite.
+    intros; subst.
+    now apply Expectation_zero_pos.
+  Qed.
+
 End fe.
 
 Hint Rewrite FiniteExpectation_const FiniteExpectation_plus FiniteExpectation_scale FiniteExpectation_opp FiniteExpectation_minus: prob.
