@@ -888,6 +888,17 @@ Section RealRandomVariables.
       apply Rle_0_sqr.
     Qed.
 
+    Global Instance rvpow_prv
+           (rv_X : Ts -> R) 
+           (k : nat) 
+           (prv : PositiveRandomVariable rv_X) :
+      PositiveRandomVariable (rvpow rv_X k).
+    Proof.
+      unfold PositiveRandomVariable, rvpow.
+      unfold PositiveRandomVariable in prv.
+      intros.
+      now apply pow_le.
+    Qed.
 
     Global Instance prvmin (rv_X1 rv_X2 : Ts -> R)
            {prv1:PositiveRandomVariable rv_X1}
