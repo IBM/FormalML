@@ -317,7 +317,7 @@ Proof.
         -- congruence.
         -- eauto.
       * eauto.
-Qed.
+Defined.
 
 (* This is very important too. *)
 Lemma Rmax_list_map_exist_sig {A} (f : A -> R) {l : list A} :
@@ -327,7 +327,7 @@ Proof.
   apply exists_in_strengthen_dec.
   - intro x. apply Req_EM_T.
   - now apply Rmax_list_map_exist.
-Qed.
+Defined.
 
 Definition argmax {A} {l : list A} (hl : [] <> l)(f : A -> R) : A :=
   proj1_sig (Rmax_list_map_exist_sig f hl).

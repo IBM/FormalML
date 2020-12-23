@@ -95,7 +95,7 @@ Section turtle.
   Proof.
     exists (Up::Down::Left::Right::nil).
     destruct x; simpl; tauto.
-  Qed.
+  Defined.
 
   Instance turtle_action_nonempty : NonEmpty turtle_action
     := Up.
