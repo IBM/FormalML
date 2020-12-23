@@ -63,6 +63,10 @@ Section defs.
 
     Definition rvsqr (rv_X : Ts -> R) := fun omega => Rsqr (rv_X omega).
 
+    Definition rvpow (rv_X : Ts -> R) (n:nat) := fun omega => pow (rv_X omega) n.
+
+    Definition rvpower (rv_X1 rv_X2 : Ts -> R) := fun omega => Rpower (rv_X1 omega) (rv_X2 omega).
+
     Definition rvabs  (rv_X : Ts -> R) := fun omega => Rabs (rv_X omega).
 
     Definition rvmax  (rv_X1 rv_X2 : Ts -> R)
@@ -132,6 +136,23 @@ Section defs.
       unfold Rsqr.
       rewrite eqq.
       trivial.
+    Qed.
+
+    Global Instance rvpow_proper : Proper (rv_eq ==> eq ==> rv_eq) rvpow.
+    Proof.
+      unfold rv_eq, rvpow, Proper, respectful, pointwise_relation.
+      intros x y eqq z ???.
+      subst.
+      rewrite eqq.
+      trivial.
+    Qed.
+
+    Global Instance rvpower_proper : Proper (rv_eq ==> rv_eq ==> rv_eq) rvpower.
+    Proof.
+      unfold rv_eq, rvpower, Proper, respectful, pointwise_relation.
+      intros x y eqq1 z ? eqq2 ?.
+      subst.
+      now rewrite eqq1, eqq2.
     Qed.
 
     Global Instance rvabs_proper : Proper (rv_eq ==> rv_eq) rvabs.
@@ -255,6 +276,14 @@ Section defs.
       unfold rvmult, rvminus, rvplus,rvsqr, rvopp, rvscale.
       replace (1 / 4 * ((f x + g x)² + -1 * (f x + -1 * g x)²)) with ((f x)*(g x)) by (unfold Rsqr; lra).
       intuition.
+    Qed.
+
+    Lemma rvsqr_unfold (f:Ts->R) :
+      rvsqr f === rvpow f 2.
+    Proof.
+      intros x.
+      unfold rvpow, rvsqr, Rsqr; simpl.
+      lra.
     Qed.
 
     Lemma pos_fun_part_unfold (f : Ts->R) :

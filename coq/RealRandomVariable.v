@@ -270,6 +270,21 @@ Section RealRandomVariables.
       now apply sa_le_open_set.
     Qed.
 
+    Instance rvpow_measurable (f : Ts -> R) n :
+      RealMeasurable f ->
+      RealMeasurable (rvpow f n).
+    Proof.
+      intros.
+      unfold rvpow.
+      assert (rv_eq  (fun omega : Ts => f omega ^ n)
+                     (fun omega : Ts => compose (fun x => pow x n) f omega))
+        by reflexivity.
+      rewrite H0.
+      apply measurable_continuous; trivial.
+      apply derivable_continuous.
+      apply derivable_pow.
+    Qed.
+
     Instance Rsqr_measurable (f : Ts -> R) :
       RealMeasurable f ->
       RealMeasurable (rvsqr f).
@@ -280,7 +295,7 @@ Section RealRandomVariables.
       apply Rsqr_continuous.
     Qed.
 
-    Instance product_measurable (f g : Ts -> R) :
+    Instance mult_measurable (f g : Ts -> R) :
       RealMeasurable f ->
       RealMeasurable g ->
       RealMeasurable (rvmult f g).
@@ -375,6 +390,13 @@ Section RealRandomVariables.
              {rv1 : RandomVariable dom borel_sa rv_X1}
              {rv2 : RandomVariable dom borel_sa rv_X2} :
         RandomVariable dom borel_sa (rvmult rv_X1 rv_X2).
+      Proof.
+        typeclasses eauto.
+      Qed.
+
+      Global Instance rvpow_rv (rv_X : Ts -> R) n :
+        RandomVariable dom borel_sa rv_X ->
+        RandomVariable dom borel_sa (rvpow rv_X n).
       Proof.
         typeclasses eauto.
       Qed.
@@ -537,6 +559,19 @@ Section RealRandomVariables.
       unfold rvsqr.
       now apply in_map.
     Qed.
+
+    Global Program Instance srvpow
+           (rv_X : Ts -> R) n
+           {srv:SimpleRandomVariable rv_X} : SimpleRandomVariable (rvpow rv_X n)
+      := { srv_vals := map (fun x => pow x n) srv_vals }.
+    Next Obligation.
+      destruct srv.
+      unfold rvpow.
+      simpl.
+      apply in_map_iff.
+      eauto.
+    Qed.
+
     Global Program Instance srvabs
            (rv_X : Ts -> R)
            {srv:SimpleRandomVariable rv_X} : SimpleRandomVariable (rvabs rv_X)
@@ -903,7 +938,6 @@ Section RealRandomVariables.
     intros.
     apply cond_nonneg.
   Qed.
-
     
   End Pos.
 
