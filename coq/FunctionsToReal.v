@@ -69,6 +69,15 @@ Section defs.
 
     Definition rvabs  (rv_X : Ts -> R) := fun omega => Rabs (rv_X omega).
 
+    Definition rvchoice (c:Ts -> bool) (rv_X1 rv_X2 : Ts -> R)
+      := fun omega => if c omega then  rv_X1 omega else rv_X2 omega.
+
+    Definition bvmin_choice (rv_X1 rv_X2:Ts -> R) : Ts -> bool
+      := fun omega => if Rle_dec (rv_X1 omega) (rv_X2 omega) then true else false.
+
+    Definition bvmax_choice (rv_X1 rv_X2:Ts -> R) : Ts -> bool
+      := fun omega => if Rle_dec (rv_X1 omega) (rv_X2 omega) then false else true.
+
     Definition rvmax  (rv_X1 rv_X2 : Ts -> R)
       := fun omega => Rmax (rv_X1 omega) (rv_X2 omega).
 
@@ -302,5 +311,56 @@ Section defs.
       lra.
     Qed.
 
+    Lemma rvmin_choice (rv_X1 rv_X2 : Ts -> R)
+      : rvmin rv_X1 rv_X2 === rvchoice (bvmin_choice rv_X1 rv_X2) rv_X1 rv_X2.
+    Proof.
+      intros a.
+      unfold rvmin, rvchoice, bvmin_choice, Rmin.
+      match_destr.
+    Qed.
+
+    Lemma rvmax_choice (rv_X1 rv_X2 : Ts -> R)
+      : rvmax rv_X1 rv_X2 === rvchoice (bvmax_choice rv_X1 rv_X2) rv_X1 rv_X2.
+    Proof.
+      intros a.
+      unfold rvmax, rvchoice, bvmax_choice, Rmax.
+      match_destr.
+    Qed.
+
+    Lemma rvchoice_le_max (c:Ts->bool) (rv_X1 rv_X2 : Ts -> R)
+      : rv_le (rvchoice c rv_X1 rv_X2) (rvmax rv_X1 rv_X2).
+    Proof.
+      intros a.
+      unfold rvchoice, rvmax, Rmax.
+      repeat match_destr; lra.
+    Qed.
+
+    Lemma rvchoice_le_min (c:Ts->bool) (rv_X1 rv_X2 : Ts -> R)
+      : rv_le (rvmin rv_X1 rv_X2) (rvchoice c rv_X1 rv_X2).
+    Proof.
+      intros a.
+      unfold rvchoice, rvmin, Rmin.
+      repeat match_destr; lra.
+    Qed.
+
   End eqs.
 End defs.
+
+Ltac rv_unfold := unfold 
+                    EventIndicator,
+                  rvplus,
+                  rvscale,
+                  rvopp,
+                  rvminus,
+                  rvmult,
+                  rvsqr,
+                  rvpow,
+                  rvpower,
+                  rvabs,
+                  rvmax, 
+                  rvmin,
+                  rvchoice,
+                  bvmin_choice,
+                  bvmax_choice,
+                  pos_fun_part,
+                  neg_fun_part in *.

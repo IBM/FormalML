@@ -16,7 +16,7 @@ Require Import List.
 
 Set Bullet Behavior "Strict Subproofs".
 
-Section L1.
+Section Lp.
   Context {Ts:Type} 
           {dom: SigmaAlgebra Ts}
           (prts: ProbSpace dom).
@@ -27,7 +27,15 @@ Section L1.
 
   Existing Class IsLp.
   Typeclasses Transparent IsLp.
-  
+
+    Global Instance IsL1_proper
+    : Proper (eq ==> rv_eq ==> iff) IsLp.
+  Proof.
+    intros ?? eqq1 x y eqq2.
+    unfold IsLp.
+    now rewrite eqq1, eqq2.
+  Qed.
+
   (* Note that IsLp 0 always holds, so it says that we are not making any assumptions *)
   Global Instance IsL0_True (rv_X:Ts->R) : IsLp 0 rv_X.
   Proof.
@@ -243,27 +251,8 @@ Section L1.
     destruct p; simpl.
     - apply IsL0_True.
     - (* HERE *)
-      
-
-
-
-      
-      apply (@IsLp_bounded (S p) _ (rvplus (rvabs rv_X1) (rvabs rv_X2))).
-      + apply IsFiniteExpectation_plus.
-        * typeclasses eauto.
-        * typeclasses eauto.
-        * eapply IsLSp_abs_Finite; eauto.
-        * eapply IsLSp_abs_Finite; eauto.
-      + apply rvpow_abs_plus.
-  Qed.
-
-  Global Instance IsL1_proper
-    : Proper (rv_eq ==> iff) IsL1.
-  Proof.
-    intros x y eqq.
-    unfold IsL1.
-    now rewrite eqq.
-  Qed.
+  Admitted.
+  
 
   Lemma rv_abs_scale_eq (c:R) (rv_X:Ts->R) :
     rv_eq (rvabs (rvscale c rv_X)) (rvscale (Rabs c) (rvabs rv_X)).
@@ -279,52 +268,77 @@ Section L1.
     intros a.
     reflexivity.
   Qed.
-
-  Global Instance IsL1_scale (c:R) (rv_X:Ts->R)
-         {isl1:IsL1 rv_X} :
-    IsL1 (rvscale c rv_X).
+  
+  Lemma rvpow_mult_distr (x y:Ts->R) n :
+    rv_eq (rvpow (rvmult x y) n) (rvmult (rvpow x n) (rvpow y n)).
   Proof.
-    unfold IsL1 in *.
+    intros a.
+    unfold rvpow, rvmult.
+    apply Rpow_mult_distr.
+  Qed.
+
+  Lemma rvpow_scale c (X:Ts->R) n :
+    rv_eq (rvpow (rvscale c X) n) (rvscale (pow c n) (rvpow X n)).
+  Proof.
+    intros x.
+    unfold rvpow, rvscale.
+    apply Rpow_mult_distr.
+  Qed.
+
+  Lemma rvpow_const c n :
+    rv_eq (Ts:=Ts) (rvpow (const c) n) (const (pow c n)).
+  Proof.
+    intros x.
+    reflexivity.
+  Qed.
+
+  Global Instance IsLp_scale p (c:R) (rv_X:Ts->R)
+         {islp:IsLp p rv_X} :
+    IsLp p (rvscale c rv_X).
+  Proof.
+    unfold IsLp in *.
     rewrite rv_abs_scale_eq.
+    rewrite rvpow_scale.
     typeclasses eauto.
   Qed.
 
-  Lemma IsL1_scale_inv c rv_X 
-        {isl1:IsL1 (rvscale c rv_X)} :
+  Lemma IsLp_scale_inv p c rv_X 
+        {islp:IsLp p (rvscale c rv_X)} :
     c <> 0 ->
-    IsL1 rv_X.
+    IsLp p rv_X.
   Proof.
     intros.
-    unfold IsL1 in *.
-    rewrite rv_abs_scale_eq in isl1.
+    unfold IsLp in *.
+    rewrite rv_abs_scale_eq, rvpow_scale in islp.
     eapply IsFiniteExpectation_scale_inv; try eassumption.
+    apply pow_nzero.
     now apply Rabs_no_R0.
   Qed.
   
-  Global Instance IsL1_opp (rv_X:Ts->R)
-         {isl1:IsL1 rv_X} :
-    IsL1 (rvopp rv_X).
+  Global Instance IsLp_opp p (rv_X:Ts->R)
+         {islp:IsLp p rv_X} :
+    IsLp p (rvopp rv_X).
   Proof.
-    unfold IsL1 in *.
-    now apply IsL1_scale.
+    now apply IsLp_scale.
   Qed.
 
-  Global Instance IsL1_const c : IsL1 (const c).
+  Global Instance IsLp_const p c : IsLp p (const c).
   Proof.
     red.
-    rewrite rv_abs_const_eq.
+    rewrite rv_abs_const_eq, rvpow_const.
     typeclasses eauto.
   Qed.
 
-  Global Instance IsL1_minus
+  Global Instance IsLp_minus p
          (rv_X1 rv_X2 : Ts -> R)
          {rv1 : RandomVariable dom borel_sa rv_X1}
          {rv2 : RandomVariable dom borel_sa rv_X2} 
-         {isl11:IsL1 rv_X1}
-         {isl12:IsL1 rv_X2} :
-    IsL1 (rvminus rv_X1 rv_X2).
+         {islp1:IsLp p rv_X1}
+         {islp2:IsLp p rv_X2} :
+    IsLp p (rvminus rv_X1 rv_X2).
   Proof.
     unfold rvminus.
+    apply IsLp_plus; 
     typeclasses eauto.
   Qed.
 
@@ -336,48 +350,72 @@ Section L1.
     now rewrite Rabs_Rabsolu.
   Qed.
   
-  Global Instance IsL1_abs
+  Global Instance IsLp_abs p
          (rv_X : Ts -> R)
-         {isl1:IsL1 rv_X} :
-    IsL1 (rvabs rv_X).
+         {islp:IsLp p rv_X} :
+    IsLp p (rvabs rv_X).
   Proof.
-    unfold IsL1.
+    unfold IsLp.
     rewrite rv_abs_abs.
-    apply isl1.
+    apply islp.
   Qed.
 
-  
-  Global Instance IsL1_max
+  Lemma rvpowabs_choice_le c (rv_X1 rv_X2 : Ts -> R) p :
+    rv_le (rvpow (rvabs (rvchoice c rv_X1 rv_X2)) p)
+          (rvplus (rvpow (rvabs rv_X1) p) (rvpow (rvabs rv_X2) p)).
+  Proof.
+    intros a.
+    rv_unfold.
+    repeat rewrite RPow_abs.
+    match_destr.
+    - assert (0 <= Rabs (rv_X2 a ^ p)) by apply Rabs_pos.
+      lra.
+    - assert (0 <= Rabs (rv_X1 a ^ p)) by apply Rabs_pos.
+      lra.
+  Qed.
+
+  Global Instance IsLp_choice p
+         c
          (rv_X1 rv_X2 : Ts -> R)
          {rv1 : RandomVariable dom borel_sa rv_X1}
          {rv2 : RandomVariable dom borel_sa rv_X2}
-         {isl11:IsL1 rv_X1}
-         {isl12:IsL1 rv_X2} :
-    IsL1 (rvmax rv_X1 rv_X2).
+         {islp1:IsLp p rv_X1}
+         {islp2:IsLp p rv_X2} :
+    IsLp p (rvchoice c rv_X1 rv_X2).
   Proof.
-    unfold IsL1 in *.
-    eapply (IsL1_bounded _ (rvplus (rvabs rv_X1)  (rvabs rv_X2))).
-    intros a.
-    unfold rvabs, rvplus, rvmax.
-    unfold Rmax, Rabs.
-    repeat match_destr; lra.
+    unfold IsLp in *.
+    eapply (IsLp_bounded _)
+    ; try eapply rvpowabs_choice_le.
+    apply IsFiniteExpectation_plus; eauto.
+    - apply rvpow_rv.
+      now apply rvabs_rv.
+    - apply rvpow_rv.
+      now apply rvabs_rv.
   Qed.
-
-  Global Instance IsL1_min
+  
+  Global Instance IsLp_max p
          (rv_X1 rv_X2 : Ts -> R)
          {rv1 : RandomVariable dom borel_sa rv_X1}
          {rv2 : RandomVariable dom borel_sa rv_X2}
-         {isl11:IsL1 rv_X1}
-         {isl12:IsL1 rv_X2} :
-    IsL1 (rvmin rv_X1 rv_X2).
+         {islp1:IsLp p rv_X1}
+         {islp2:IsLp p rv_X2} :
+    IsLp p (rvmax rv_X1 rv_X2).
   Proof.
-    unfold IsL1 in *.
-    eapply (IsL1_bounded _ (rvplus (rvabs rv_X1)  (rvabs rv_X2))).
-    intros a.
-    unfold rvabs, rvplus, rvmin.
-    unfold Rmin, Rabs.
-    repeat match_destr; lra.
+    rewrite rvmax_choice.
+    typeclasses eauto.
+  Qed.
+
+  Global Instance IsLp_min p
+         (rv_X1 rv_X2 : Ts -> R)
+         {rv1 : RandomVariable dom borel_sa rv_X1}
+         {rv2 : RandomVariable dom borel_sa rv_X2}
+         {islp1:IsLp p rv_X1}
+         {islp2:IsLp p rv_X2} :
+    IsLp p (rvmin rv_X1 rv_X2).
+  Proof.
+    rewrite rvmin_choice.
+    typeclasses eauto.
   Qed.
   
-End L1.
+End Lp.
 

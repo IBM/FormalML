@@ -326,6 +326,7 @@ Section RealRandomVariables.
       typeclasses eauto.
     Qed.
 
+
     Instance min_measurable (f g : Ts -> R) :
       RealMeasurable f ->
       RealMeasurable g ->
@@ -898,6 +899,17 @@ Section RealRandomVariables.
       unfold PositiveRandomVariable in prv.
       intros.
       now apply pow_le.
+    Qed.
+    
+    Global Instance prvchoice (c:Ts->bool) (rv_X1 rv_X2 : Ts -> R)
+           {prv1:PositiveRandomVariable rv_X1}
+           {prv2:PositiveRandomVariable rv_X2} :
+      PositiveRandomVariable (rvchoice c rv_X1 rv_X2).
+    Proof.
+      unfold PositiveRandomVariable in *.
+      intros x.
+      unfold rvchoice.
+      match_destr.
     Qed.
 
     Global Instance prvmin (rv_X1 rv_X2 : Ts -> R)
