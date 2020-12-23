@@ -49,4 +49,5 @@ End API.
 *)
 Extract Inductive Decimal.int => unit [ "(fun _ -> ())" "(fun _ -> ())" ] "(fun _ _ _ -> assert false)".
 
+Set Warnings "extraction-opaque-accessed,extraction".
 Extraction "extracted/TurtleExtracted" API.
