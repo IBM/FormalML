@@ -346,8 +346,11 @@ Section defs.
   End eqs.
 End defs.
 
-Ltac rv_unfold := unfold 
-                    EventIndicator,
+Ltac rv_unfold := unfold
+                    const,
+                  id,
+                  compose,
+                  EventIndicator,
                   rvplus,
                   rvscale,
                   rvopp,
