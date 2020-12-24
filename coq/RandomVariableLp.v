@@ -189,9 +189,9 @@ Section Lp.
 
 
   Lemma IsLp_bounded n rv_X1 rv_X2
+        (rle:rv_le (rvpow (rvabs rv_X1) n) rv_X2)
         {islp:IsFiniteExpectation prts rv_X2}
     :
-      rv_le (rvpow (rvabs rv_X1) n) rv_X2 ->
       IsLp n rv_X1.
   Proof.
     unfold IsLp in *.
@@ -240,19 +240,10 @@ Section Lp.
     simpl in H; lra.
   Qed.
 
-  Global Instance IsLp_plus p
-         (rv_X1 rv_X2 : Ts -> R)
-         {rv1 : RandomVariable dom borel_sa rv_X1}
-         {rv2 : RandomVariable dom borel_sa rv_X2} 
-         {isl11:IsLp p rv_X1}
-         {isl12:IsLp p rv_X2} :
-    IsLp p (rvplus rv_X1 rv_X2).
+  Lemma pow_ineq p x y : 2*Rabs (x + y )^p <= (2*Rabs x)^p + (2*Rabs y)^p.
   Proof.
-    destruct p; simpl.
-    - apply IsL0_True.
-    - 
   Admitted.
-  
+    
   Lemma rv_abs_scale_eq (c:R) (rv_X:Ts->R) :
     rv_eq (rvabs (rvscale c rv_X)) (rvscale (Rabs c) (rvabs rv_X)).
   Proof.
@@ -289,6 +280,35 @@ Section Lp.
   Proof.
     intros x.
     reflexivity.
+  Qed.
+    
+  Global Instance IsLp_plus p
+         (rv_X1 rv_X2 : Ts -> R)
+         {rv1 : RandomVariable dom borel_sa rv_X1}
+         {rv2 : RandomVariable dom borel_sa rv_X2} 
+         {islp1:IsLp p rv_X1}
+         {islp2:IsLp p rv_X2} :
+    IsLp p (rvplus rv_X1 rv_X2).
+  Proof.
+    destruct p; simpl.
+    - apply IsL0_True.
+    - apply (IsLp_bounded (S p) _ (rvscale (/2) (rvplus (rvpow (rvscale 2 (rvabs rv_X1)) (S p)) (rvpow (rvscale 2 (rvabs rv_X2)) (S p))))).
+      + intros x.
+        rv_unfold.
+        apply Rmult_le_reg_l with (r:=2); try lra.
+        rewrite <- Rmult_assoc.
+        field_simplify.
+        apply pow_ineq.
+      + apply IsFiniteExpectation_scale.
+        apply IsFiniteExpectation_plus.
+        * typeclasses eauto.
+        * typeclasses eauto.
+        * rewrite rvpow_scale.
+          apply IsFiniteExpectation_scale.
+          apply islp1.
+        * rewrite rvpow_scale.
+          apply IsFiniteExpectation_scale.
+          apply islp2.
   Qed.
 
   Global Instance IsLp_scale p (c:R) (rv_X:Ts->R)
@@ -833,6 +853,7 @@ Section Lp.
 
     Lemma LpRRV_norm_plus x y : LpRRVnorm (LpRRVplus x y) <= LpRRVnorm x + LpRRVnorm y.
     Proof.
+      
     Admitted.
 
 
@@ -1027,8 +1048,9 @@ Section Lp.
 
   *)  
 
-  
-  
+    End quot.
+    
+  End packed.
   
 End Lp.
 
