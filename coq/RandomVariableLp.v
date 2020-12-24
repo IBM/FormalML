@@ -244,6 +244,64 @@ Section Lp.
   Proof.
   Admitted.
     
+   Lemma pow_ineq1 (p : nat) (x y : R) :
+     0 <= x -> 0 <= y -> pow (x + y) p <= (pow 2 p) * ((pow x p) + (pow y p)).
+   Proof.
+     rewrite binomial.
+     rewrite sum_f_R0_sum_f_R0'.
+     generalize ( sum_f_R0'_le_f (fun i : nat => Binomial.C p i * x ^ i * y ^ (p - i))
+                                 (fun i : nat => (pow x p + pow y p) * Binomial.C p i) (S p)); intros.
+     cut_to H.
+     - rewrite sum_f_R0'_mult_const in H.
+       generalize (binomial 1 1 p); intros.
+       replace (1+1) with (2) in H2 by lra.
+       rewrite sum_f_R0_ext with (f2 := Binomial.C p) in H2.
+       + rewrite sum_f_R0_sum_f_R0' in H2.
+         rewrite <- H2 in H.
+         now rewrite Rmult_comm in H.
+       + intros.
+         rewrite Rmult_assoc.
+         do 2 rewrite pow1.
+         lra.
+     - intros.
+       ring_simplify.
+       rewrite <- Rmult_plus_distr_l.
+       rewrite Rmult_assoc.
+       apply Rmult_le_compat_l.
+       * unfold Binomial.C.
+         left; unfold Rdiv.
+         apply Rmult_lt_0_compat.
+         -- apply lt_0_INR; apply lt_O_fact.
+         -- apply Rinv_0_lt_compat.
+            apply Rmult_lt_0_compat; apply lt_0_INR; apply lt_O_fact.
+       * destruct (Rle_dec y x).
+         -- replace (p) with (i + (p-i))%nat at 2.
+            ++ rewrite Rdef_pow_add.
+               assert (x ^ i * y ^ (p - i) <= x ^ i * x ^ (p - i)); intros.
+               ** apply Rmult_le_compat_l
+                  ; [now apply pow_le | apply pow_maj_Rabs; rewrite Rabs_right; lra].
+               ** assert (0 <= y^p); [now apply pow_le | lra].
+            ++ lia.
+     
+         -- replace (p) with (i + (p-i))%nat at 3.
+            ++ rewrite Rdef_pow_add.
+               assert (x ^ i * y ^ (p - i) <= y ^ i * y ^ (p - i)); intros.
+               ** apply Rmult_le_compat_r
+                  ; [now apply pow_le | apply pow_maj_Rabs; rewrite Rabs_right; lra].
+               ** assert (0 <= x^p); [now apply pow_le | lra].
+            ++ lia.
+   Qed.     
+     
+   Lemma pow_abs_ineq1 (p : nat) (x y : R) :
+     pow (Rabs(x + y)) p <= (pow 2 p) * ((pow (Rabs x) p) + (pow (Rabs y) p)).
+   Proof.
+     apply Rle_trans with (r2 := pow (Rabs x + Rabs y) p).
+     - apply pow_maj_Rabs.
+       rewrite Rabs_Rabsolu.
+       apply Rabs_triang.
+     - apply pow_ineq1; apply Rabs_pos.
+   Qed.
+
   Lemma rv_abs_scale_eq (c:R) (rv_X:Ts->R) :
     rv_eq (rvabs (rvscale c rv_X)) (rvscale (Rabs c) (rvabs rv_X)).
   Proof.
