@@ -909,9 +909,135 @@ Section Lp.
       ; try typeclasses eauto.
     Qed.
 
+    Lemma almost0_lpf_almost0 (rv_X:Ts->R)
+          {rrv:RandomVariable dom borel_sa rv_X}
+          {isfe: IsFiniteExpectation prts (rvpow (rvabs rv_X) (S p))}:
+      rv_almost_eq prts rv_X (const 0) <->
+      rv_almost_eq prts (rvpow (rvabs rv_X) (S p)) (const 0).
+    Proof.
+      intros.
+      unfold rv_almost_eq in *.
+      erewrite ps_proper.
+      - split; intros H; exact H.
+      - red; intros a.
+        rv_unfold.
+        split; intros eqq.
+        + rewrite eqq.
+          now rewrite Rabs_R0, pow0_Sbase.
+        + apply pow_integral in eqq.
+          now apply Rabs_eq_0 in eqq.
+    Qed.
+
+    Lemma LpFin0_almost0 (rv_X:Ts->R)
+          {rrv:RandomVariable dom borel_sa rv_X}
+          {isfe: IsFiniteExpectation prts (rvpow (rvabs rv_X) (S p))}:
+      FiniteExpectation prts (rvpow (rvabs rv_X) (S p)) = 0 ->
+      rv_almost_eq prts rv_X (const 0).
+    Proof.
+      intros fin0.
+      apply FiniteExpectation_zero_pos in fin0
+      ; try typeclasses eauto.
+      apply almost0_lpf_almost0
+      ; try typeclasses eauto.
+      apply fin0.
+    Qed.
+    
     Lemma LpRRV_norm_plus x y : LpRRVnorm (LpRRVplus x y) <= LpRRVnorm x + LpRRVnorm y.
     Proof.
-      
+      unfold Proper, respectful, LpRRVnorm, LpRRVplus.
+      simpl LpRRV_rv_X .
+      unfold root.
+
+      (* first we show that the zero cases (which are special cased by root
+         work out
+       *)
+
+      destruct (Req_EM_T (FiniteExpectation prts (rvpow (rvabs x) (S p))) 0).
+      {
+        field_simplify.
+        apply LpFin0_almost0 in e; try typeclasses eauto.
+        rewrite (FiniteExpectation_proper_almost prts (rvpow (rvabs (rvplus x y)) (S p)) (rvpow (rvabs y) (S p))
+                                                 (isfe2:=(@LpRRV_lp (S p) y))).
+        - lra.
+        - apply rv_almost_eq_pow_abs_proper
+          ; try typeclasses eauto.
+          apply rv_almost_eq_abs_proper
+          ; try typeclasses eauto.
+          generalize (rv_almost_eq_plus_proper prts x (const 0) y y e)
+          ; intros HH.
+          cut_to HH.
+          + apply (rv_almost_eq_rv_trans prts _ (rvplus (const 0) y))
+            ; trivial
+            ; try typeclasses eauto.
+            apply rv_almost_eq_eq.
+            intros a.
+            rv_unfold.
+            lra.
+          + apply rv_almost_eq_rv_refl.
+            typeclasses eauto.
+      }
+      destruct (Req_EM_T (FiniteExpectation prts (rvpow (rvabs y) (S p))) 0).
+      {
+        field_simplify.
+        apply LpFin0_almost0 in e; try typeclasses eauto.
+        rewrite (FiniteExpectation_proper_almost prts (rvpow (rvabs (rvplus x y)) (S p)) (rvpow (rvabs x) (S p))
+                                                 (isfe2:=(@LpRRV_lp (S p) x))).
+        - match_destr; try lra.
+        - apply rv_almost_eq_pow_abs_proper
+          ; try typeclasses eauto.
+          apply rv_almost_eq_abs_proper
+          ; try typeclasses eauto.
+          generalize (rv_almost_eq_plus_proper prts x x y (const 0))
+          ; intros HH.
+          cut_to HH
+          ; trivial
+          ; try typeclasses eauto.
+          + apply (rv_almost_eq_rv_trans prts _ (rvplus x (const 0)))
+            ; trivial
+            ; try typeclasses eauto.
+            apply rv_almost_eq_eq.
+            intros a.
+            rv_unfold.
+            lra.
+          + apply rv_almost_eq_rv_refl.
+            typeclasses eauto.
+      }
+      destruct (Req_EM_T (FiniteExpectation prts (rvpow (rvabs (rvplus x y)) (S p))) 0).
+      {
+        unfold Rpower.
+        apply Rplus_le_le_0_compat
+        ; left; apply exp_pos.
+      }
+
+      assert (xexppos:0 < (@FiniteExpectation Ts dom prts (@rvpow Ts (@rvabs Ts (@LpRRV_rv_X (S p) x)) (S p))
+                                              (@LpRRV_lp (S p) x))).
+      {
+        destruct (FiniteExpectation_pos prts (rvpow (rvabs x) (S p)) (isfe:=(@LpRRV_lp (S p) x)))
+        ; congruence.
+      } 
+
+      assert (yexppos:0 < (@FiniteExpectation Ts dom prts (@rvpow Ts (@rvabs Ts (@LpRRV_rv_X (S p) y)) (S p))
+                                              (@LpRRV_lp (S p) y))).
+      {
+        destruct (FiniteExpectation_pos prts (rvpow (rvabs y) (S p)) (isfe:=(@LpRRV_lp (S p) y)))
+        ; congruence.
+      } 
+
+      assert (xyexppos:0 < (@FiniteExpectation Ts dom prts
+                                      (rvpow (rvabs (rvplus x y)) (S p))) 
+                    (@IsLp_plus (S p) (@LpRRV_rv_X (S p) x) (@LpRRV_rv_X (S p) y) (@LpRRV_rv (S p) x)
+                                (@LpRRV_rv (S p) y) (@LpRRV_lp (S p) x) (@LpRRV_lp (S p) y))).
+      { 
+        destruct (FiniteExpectation_pos prts
+                                        (rvpow (rvabs (rvplus x y)) (S p)) (isfe:=
+          (@IsLp_plus (S p) (@LpRRV_rv_X (S p) x) (@LpRRV_rv_X (S p) y) (@LpRRV_rv (S p) x)
+                      (@LpRRV_rv (S p) y) (@LpRRV_lp (S p) x) (@LpRRV_lp (S p) y))))
+        ; trivial.
+        elim n1.
+        rewrite H.
+        apply FiniteExpectation_pf_irrel.
+      }
+
     Admitted.
 
 
