@@ -326,7 +326,6 @@ Section RealRandomVariables.
       typeclasses eauto.
     Qed.
 
-
     Instance min_measurable (f g : Ts -> R) :
       RealMeasurable f ->
       RealMeasurable g ->

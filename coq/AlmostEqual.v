@@ -225,7 +225,7 @@ Proof.
     eauto with prob.
   * eauto with prob.
   * apply sa_union; eauto with prob.
-  Qed.
+Qed.
 
 Lemma rv_almost_eq_plus_proper
       {Ts:Type} 
@@ -238,29 +238,29 @@ Lemma rv_almost_eq_plus_proper
       {rvy1 : RandomVariable dom borel_sa y1}
       {rvy2 : RandomVariable dom borel_sa y2}
       (eqqy : rv_almost_eq prts y1 y2) :
-      rv_almost_eq prts (rvplus x1 y1) (rvplus x2 y2).
-  Proof.
-    unfold rv_almost_eq in *.
-    assert (event_sub (event_inter (fun x : Ts => x1 x = x2 x)
-                                   (fun x : Ts => y1 x = y2 x))
-                      (fun x : Ts => rvplus x1 y1 x = rvplus x2 y2 x)).
-    - unfold event_sub, event_inter, rvplus.
-      intros.
-      destruct H.
-      now rewrite H, H0.
-    - assert (ps_P (event_inter (fun x : Ts => x1 x = x2 x) (fun x : Ts => y1 x = y2 x)) = 1).
-      + apply ps_one_inter; trivial
-        ; eapply Hsigma_borel_eq_pf; eauto.
-      + generalize (ps_sub prts (event_inter (fun x : Ts => x1 x = x2 x) (fun x : Ts => y1 x = y2 x))
-                           (fun x : Ts => rvplus x1 y1 x = rvplus x2 y2 x)); intros.
-        rewrite H0 in H1.
-        apply Rle_antisym.
-        * apply ps_le1.
-          apply (Hsigma_borel_eq_pf prts); now apply rvplus_rv.
-        * apply H1; trivial.
-          -- apply sa_inter; now apply (Hsigma_borel_eq_pf prts).
-          -- apply (Hsigma_borel_eq_pf prts); now apply rvplus_rv.
-  Qed.
+  rv_almost_eq prts (rvplus x1 y1) (rvplus x2 y2).
+Proof.
+  unfold rv_almost_eq in *.
+  assert (event_sub (event_inter (fun x : Ts => x1 x = x2 x)
+                                 (fun x : Ts => y1 x = y2 x))
+                    (fun x : Ts => rvplus x1 y1 x = rvplus x2 y2 x)).
+  - unfold event_sub, event_inter, rvplus.
+    intros.
+    destruct H.
+    now rewrite H, H0.
+  - assert (ps_P (event_inter (fun x : Ts => x1 x = x2 x) (fun x : Ts => y1 x = y2 x)) = 1).
+    + apply ps_one_inter; trivial
+      ; eapply Hsigma_borel_eq_pf; eauto.
+    + generalize (ps_sub prts (event_inter (fun x : Ts => x1 x = x2 x) (fun x : Ts => y1 x = y2 x))
+                         (fun x : Ts => rvplus x1 y1 x = rvplus x2 y2 x)); intros.
+      rewrite H0 in H1.
+      apply Rle_antisym.
+      * apply ps_le1.
+        apply (Hsigma_borel_eq_pf prts); now apply rvplus_rv.
+      * apply H1; trivial.
+        -- apply sa_inter; now apply (Hsigma_borel_eq_pf prts).
+        -- apply (Hsigma_borel_eq_pf prts); now apply rvplus_rv.
+Qed.
 
 
 Lemma rv_almost_eq_mult_proper
@@ -274,27 +274,148 @@ Lemma rv_almost_eq_mult_proper
       {rvy1 : RandomVariable dom borel_sa y1}
       {rvy2 : RandomVariable dom borel_sa y2}
       (eqqy : rv_almost_eq prts y1 y2) :
-      rv_almost_eq prts (rvmult x1 y1) (rvmult x2 y2).
-  Proof.
-    unfold rv_almost_eq in *.
-    unfold rvmult.
-    assert (event_sub (event_inter (fun x : Ts => x1 x = x2 x)
-                                   (fun x : Ts => y1 x = y2 x))
-                      (fun x : Ts => rvmult x1 y1 x = rvmult x2 y2 x)).
-    - unfold event_sub, event_inter, rvmult.
-      intros.
-      destruct H.
-      now rewrite H, H0.
-    - assert (ps_P (event_inter (fun x : Ts => x1 x = x2 x) (fun x : Ts => y1 x = y2 x)) = 1).
-      + apply ps_one_inter; trivial
-        ; eapply Hsigma_borel_eq_pf; eauto.
-      + generalize (ps_sub prts (event_inter (fun x : Ts => x1 x = x2 x) (fun x : Ts => y1 x = y2 x))
-                           (fun x : Ts => rvmult x1 y1 x = rvmult x2 y2 x)); intros.
-        rewrite H0 in H1.
-        apply Rle_antisym.
-        * apply ps_le1.
-          apply (Hsigma_borel_eq_pf prts); now apply rvmult_rv.
-        * apply H1; trivial.
-          -- apply sa_inter; now apply (Hsigma_borel_eq_pf prts).
-          -- apply (Hsigma_borel_eq_pf prts); now apply rvmult_rv.
-  Qed.
+  rv_almost_eq prts (rvmult x1 y1) (rvmult x2 y2).
+Proof.
+  unfold rv_almost_eq in *.
+  unfold rvmult.
+  assert (event_sub (event_inter (fun x : Ts => x1 x = x2 x)
+                                 (fun x : Ts => y1 x = y2 x))
+                    (fun x : Ts => rvmult x1 y1 x = rvmult x2 y2 x)).
+  - unfold event_sub, event_inter, rvmult.
+    intros.
+    destruct H.
+    now rewrite H, H0.
+  - assert (ps_P (event_inter (fun x : Ts => x1 x = x2 x) (fun x : Ts => y1 x = y2 x)) = 1).
+    + apply ps_one_inter; trivial
+      ; eapply Hsigma_borel_eq_pf; eauto.
+    + generalize (ps_sub prts (event_inter (fun x : Ts => x1 x = x2 x) (fun x : Ts => y1 x = y2 x))
+                         (fun x : Ts => rvmult x1 y1 x = rvmult x2 y2 x)); intros.
+      rewrite H0 in H1.
+      apply Rle_antisym.
+      * apply ps_le1.
+        apply (Hsigma_borel_eq_pf prts); now apply rvmult_rv.
+      * apply H1; trivial.
+        -- apply sa_inter; now apply (Hsigma_borel_eq_pf prts).
+        -- apply (Hsigma_borel_eq_pf prts); now apply rvmult_rv.
+Qed.
+
+Lemma Rpower_inv_cancel x n :
+  0 < x ->
+  n <> 0 ->
+  Rpower (Rpower x n) (Rinv n) = x.
+Proof.
+  intros.
+  rewrite Rpower_mult.
+  rewrite <- Rinv_r_sym; trivial.
+  now rewrite Rpower_1.
+Qed.
+
+Lemma pow0_Sbase n : pow 0 (S n) = 0.
+Proof.
+  simpl; field.
+Qed.
+
+Lemma pow_integral n y :
+  y ^ S n = 0 -> y = 0.
+Proof.
+  intros.
+  induction n; simpl in *.
+  - lra.
+  - apply Rmult_integral in H.
+    destruct H; lra.
+Qed.
+                 
+Lemma Rabs_pow_eq_inv x y n :
+  Rabs x ^ S n = Rabs y ^ S n ->
+  Rabs x = Rabs y.
+Proof.
+  intros.
+  destruct (Req_EM_T x 0).
+  - subst.
+    rewrite Rabs_pos_eq in H by lra.
+    rewrite pow0_Sbase in H.
+    symmetry in H.
+    apply pow_integral in H.
+    apply Rcomplements.Rabs_eq_0 in H.
+    congruence.
+  - destruct (Req_EM_T y 0).
+    + subst.
+      symmetry in H.
+      rewrite Rabs_pos_eq in H by lra.
+      rewrite pow0_Sbase in H.
+      symmetry in H.
+      apply pow_integral in H.
+      apply Rcomplements.Rabs_eq_0 in H.
+      congruence.
+    + assert (0 < Rabs x) by now apply Rabs_pos_lt.
+      assert (0 < Rabs y) by now apply Rabs_pos_lt.
+      rewrite <- (Rpower_inv_cancel (Rabs x) (INR (S n))); trivial
+      ; try (apply not_0_INR; congruence).
+      rewrite <- (Rpower_inv_cancel (Rabs y) (INR (S n))); trivial
+      ; try (apply not_0_INR; congruence).
+      f_equal.
+      repeat rewrite Rpower_pow by trivial.
+      trivial.
+Qed.
+
+Lemma rv_almost_eq_sub
+      {Ts:Type} 
+      {dom: SigmaAlgebra Ts}
+      (prts: ProbSpace dom) 
+      (x1 x2: Ts -> R)
+      (f:(Ts->R)->Ts->R)
+      {rvx1 : RandomVariable dom borel_sa x1}
+      {rvx2: RandomVariable dom borel_sa x2}
+      {rvfx1 : RandomVariable dom borel_sa (f x1)}
+      {rvfx2: RandomVariable dom borel_sa (f x2)}
+      (eqqx : rv_almost_eq prts x1 x2)
+      (fpres: forall x y a, x a = y a -> f x a = f y a)
+:
+  rv_almost_eq prts (f x1) (f x2).
+Proof.
+  red in eqqx.
+  red.
+  apply Rle_antisym.
+  - apply ps_le1.
+    apply Hsigma_borel_eq_pf; eauto.
+  - generalize (ps_sub prts (fun x : Ts => x1 x = x2 x) (fun x : Ts => f x1 x = f x2 x))
+    ; intros HH.
+    rewrite eqqx in HH.
+    apply HH.
+    + apply Hsigma_borel_eq_pf; eauto.
+    + apply Hsigma_borel_eq_pf; eauto; admit.
+    + intros a ?.
+      auto.
+Qed.
+  
+Lemma rv_almost_eq_pow_abs_proper
+      {Ts:Type} 
+      {dom: SigmaAlgebra Ts}
+      (prts: ProbSpace dom) 
+      (x1 x2: Ts -> R)
+      n
+      {rvx1 : RandomVariable dom borel_sa x1}
+      {rvx2: RandomVariable dom borel_sa x2}
+      (eqqx : rv_almost_eq prts (rvabs x1) (rvabs x2)) :
+  rv_almost_eq prts (rvpow (rvabs x1) n) (rvpow (rvabs x2) n).
+Proof.
+  apply (rv_almost_eq_sub prts (rvabs x1) (rvabs x2) (fun x => rvpow x n)); trivial.
+  intros.
+  now unfold rvpow; rewrite H.
+Qed.
+
+Lemma rv_almost_eq_abs_proper
+      {Ts:Type} 
+      {dom: SigmaAlgebra Ts}
+      (prts: ProbSpace dom) 
+      (x1 x2: Ts -> R)
+      {rvx1 : RandomVariable dom borel_sa x1}
+      {rvx2: RandomVariable dom borel_sa x2}
+      (eqqx : rv_almost_eq prts x1 x2) :
+  rv_almost_eq prts (rvabs x1) (rvabs x2).
+Proof.
+  apply rv_almost_eq_sub; eauto; try typeclasses eauto.
+  intros.
+  unfold rvabs.
+  now rewrite H.
+Qed.

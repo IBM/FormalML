@@ -574,10 +574,10 @@ Section L2.
     L2RRVinner (L2RRVscale l x) y = l * L2RRVinner x y.
   Proof.
     unfold L2RRVinner, L2RRVscale; simpl.
-    rewrite (FiniteExpectation_ext _ _ (rvscale l (rvmult x y))).
+    erewrite (FiniteExpectation_ext _ _ (rvscale l (rvmult x y))).
     - destruct (Req_EM_T l 0).
       + subst.
-        rewrite (FiniteExpectation_ext _ _ (const 0)).
+        erewrite (FiniteExpectation_ext _ _ (const 0)).
         * rewrite FiniteExpectation_const; lra.
         * intro x0.
           unfold rvscale, rvmult, const; lra.
@@ -648,7 +648,7 @@ Section L2.
     L2RRVinner (L2RRVplus x y) z = L2RRVinner x z + L2RRVinner y z.
   Proof.
     unfold L2RRVinner, L2RRVplus; simpl.
-    rewrite (FiniteExpectation_ext _ _ (rvplus (rvmult x z) (rvmult y z))).
+    erewrite (FiniteExpectation_ext _ _ (rvplus (rvmult x z) (rvmult y z))).
     - erewrite <- FiniteExpectation_plus.
       apply FiniteExpectation_pf_irrel.
     - intro x0.

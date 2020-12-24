@@ -101,13 +101,12 @@ Section fe.
   Qed.
 
   Lemma FiniteExpectation_ext rv_X1 rv_X2
+        (eqq: rv_eq rv_X1 rv_X2)
         {isfe1:IsFiniteExpectation rv_X1}
         {isfe2:IsFiniteExpectation rv_X2} :
-    rv_eq rv_X1 rv_X2 ->
     @FiniteExpectation rv_X1 isfe1 = @FiniteExpectation rv_X2 isfe2.
   Proof.
     unfold FiniteExpectation.
-    intros eqq.
     simpl_finite.
     rewrite eqq in e.
     congruence.
@@ -213,7 +212,7 @@ Section fe.
     unfold IsFiniteExpectation in *.
     destruct (Req_EM_T c 0).
     - subst.
-      rewrite (FiniteExpectation_ext (rvscale 0 rv_X) (const 0)).
+      erewrite (FiniteExpectation_ext (rvscale 0 rv_X) (const 0)).
       + autorewrite with prob.
         lra.
       + intros ?; unfold rvscale, const.
