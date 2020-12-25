@@ -765,14 +765,17 @@ End expprops.
 
 Section convex.
 
-  Definition convex (f : R -> R) (a x y : R) :=
+  Definition pos_convex (f : R -> R) :=
+     forall x y c : R, 0 <= x -> 0 <= y -> 0<=c<=1 -> f (c * x + (1-c) * y) <= c * f x + (1-c)*f y.
+
+  Definition convex (f : R -> R) := forall a x y : R,
     0<=a<=1 -> f (a * x + (1-a) * y) <= a * f x + (1-a)*f y.
 
-  Lemma compose_convex (f g : R -> R) (a x y : R) :
-    (forall (x y : R), convex f a x y) ->
-    convex g a x y -> 
+  Lemma compose_convex (f g : R -> R) :
+    convex f ->
+    convex g ->
     increasing f ->
-    convex (fun z => f (g z)) a x y.
+    convex (fun z => f (g z)).
   Proof.
     unfold convex, increasing.
     intros.
@@ -782,7 +785,7 @@ Section convex.
     now apply H.
  Qed.
 
-  Lemma abs_convex : forall (a x y : R), convex Rabs a x y.
+  Lemma abs_convex : convex Rabs.
    Proof.
      unfold convex; intros.
      generalize (Rabs_triang (a*x) ((1-a)*y)); intros.
@@ -797,24 +800,24 @@ Section convex.
    Lemma convex_deriv (f f' : R -> R) :
      (forall c : R,  derivable_pt_lim f c (f' c)) ->
      (forall x y : R, f y >= f x + f' x * (y - x)) ->
-     forall x y c : R, convex f c x y.
+     convex f.
      Proof.
      unfold convex.
      intros.
-     generalize (H0 (c * x + (1-c)*y) x); intros.
-     generalize (H0 (c * x + (1-c)*y) y); intros.
+     generalize (H0 (a * x + (1-a)*y) x); intros.
+     generalize (H0 (a * x + (1-a)*y) y); intros.
      apply Rge_le in H2.
      apply Rge_le in H3.
-     apply Rmult_le_compat_l with (r := c) in H2; try lra.
-     apply Rmult_le_compat_l with (r := 1-c) in H3; try lra.
+     apply Rmult_le_compat_l with (r := a) in H2; try lra.
+     apply Rmult_le_compat_l with (r := 1-a) in H3; try lra.
    Qed.
 
    Lemma pos_convex_deriv (f f' : R -> R) :
      (forall c : R,  0 <= c -> derivable_pt_lim f c (f' c)) ->
      (forall x y : R, 0 <= x -> 0 <= y  -> f y >= f x + f' x * (y - x)) ->
-     forall x y c : R, 0 <= x -> 0 <= y -> convex f c x y.
+     pos_convex f.
      Proof.
-     unfold convex.
+     unfold pos_convex.
      intros.
      assert (0 <= c * x + (1-c)*y).
      apply Rmult_le_compat_l with (r := c) in H1; try lra.
@@ -875,10 +878,10 @@ Section convex.
   Qed.
 
    Lemma pow_convex (n : nat) :
-     forall (a x y : R), 0<=x -> 0<=y ->  convex (fun z => pow z n) a x y.
+     forall x y c : R, 0 <= x -> 0 <= y -> 0<=c<=1 -> pos_convex (fun z => pow z n).
   Proof.
-    intros.
-    apply pos_convex_deriv with (f' := fun z => INR n * pow z (pred n)); trivial.
+    unfold pos_convex; intros.
+    apply pos_convex_deriv with (f := fun z => pow z n) (f' := fun z => INR n * pow z (pred n)); trivial.
     - intros; apply derivable_pt_lim_pow.
     - intros.
       apply (pos_deriv_incr_convex (fun z => pow z n) (fun z => INR n * pow z (pred n))); trivial.
@@ -886,11 +889,10 @@ Section convex.
       + intros.
         apply Rmult_le_compat_l; [apply pos_INR |].
         apply pow_maj_Rabs; trivial.
-        rewrite Rabs_right; lra.
+        rewrite Rabs_right ; lra.
   Qed.
 
-  Lemma exp_convex {r : R}:
-    forall (x y : R), convex exp r x y.
+  Lemma exp_convex: convex exp.
   Proof.
     intros.
     eapply convex_deriv with  (f' := exp) ; trivial.
@@ -904,5 +906,6 @@ Section convex.
         -- subst ; trivial.
            right ; trivial.
   Qed.
+
 
 End convex.
