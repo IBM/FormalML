@@ -977,6 +977,9 @@ Section ineqs.
       ring.
   Qed.
 
+  (*
+    Young's inequality is needed in the proof of Holder's inequality.
+   *)
   Theorem youngs_ineq_2 {p q : posreal} (Hpq : 1/p + 1/q = 1):
     forall (t a b : R), 0 < a -> 0 < b -> 0 < t ->
       (Rpower a (1/p))*(Rpower b (1/q)) <= (Rpower t (-1/q))*a/p + (Rpower t (1/p))*b/q.
@@ -1024,12 +1027,25 @@ Section ineqs.
     rewrite <-Rpower_sqrt ; try (apply Rmult_lt_0_compat ; trivial).
     rewrite <-Rpower_mult_distr ; trivial.
     rewrite Rdiv_plus_distr.
-    assert (Hpq : 1/pos(mkposreal 2 Rlt_0_2) + 1/pos(mkposreal 2 Rlt_0_2) = 1) by (simpl;field).
+    assert (Hpq : 1/pos(mkposreal 2 Rlt_0_2) + 1/pos(mkposreal 2 Rlt_0_2) = 1)
+      by (simpl;field).
     generalize (youngs_ineq_2 Hpq 1 a b Ha Hb Rlt_0_1) ; simpl ; intros.
     replace (/2) with (1/2) by lra.
     eapply Rle_trans. apply H.
     repeat rewrite Rpower_base_1.
     right ; field.
   Qed.
+
+  Lemma minkowski_helper {p q : posreal} {a b t : R} (Hpq : 1/p + 1/q = 1):
+    (0 < a) -> (0 < b) -> 0<t<1 -> Rpower (a+b) p <=
+                                (Rpower t (1-p) * Rpower a p)
+                                + (Rpower (1-t) (1-p) * Rpower b p).
+  Proof.
+    intros Ha Hb Ht.
+    assert (Ht1 : t <> 0) by (intro not; destruct Ht as [h1 h2] ; subst ; lra).
+    assert (Ht2 : 1-t <> 0) by (intro not; destruct Ht as [h1 h2] ; subst ; lra).
+    replace (a+b) with (t*a/t + (1-t)*b/(1-t)) by (field ; split ; trivial).
+    (* Need convexity of Rpower x p for p>=1 to proceed. *)
+  Admitted.
 
 End ineqs.
