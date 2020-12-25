@@ -72,7 +72,6 @@ MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	FunctionsToReal \
 	RandomVariable \
 	RealRandomVariable \
-	RandomVariableModuleSpace \
 	RandomVariableFinite \
 	RandomVariableL1 \
 	RandomVariableL2 \
