@@ -915,6 +915,15 @@ Section ineqs.
     now rewrite ln_exp.
   Qed.
 
+  Lemma Rpower_base_1 : forall x : R, Rpower 1 x = 1.
+  Proof.
+    intros.
+    unfold Rpower.
+    rewrite ln_1.
+    replace (x*0) with 0 by lra.
+    apply exp_0.
+  Qed.
+
   Lemma Rpower_pos : forall x y : R, 0 < Rpower x y.
   Proof.
     unfold Rpower.
@@ -1006,6 +1015,21 @@ Section ineqs.
          rewrite <-Rpower_O with (x := t) ; trivial.
          f_equal. rewrite Rpower_O;trivial.
          ring.
+  Qed.
+
+  Corollary ag_ineq (a b : R):
+    0 < a -> 0 < b ->  sqrt (a*b) <= (a+b)/2.
+  Proof.
+    intros Ha Hb.
+    rewrite <-Rpower_sqrt ; try (apply Rmult_lt_0_compat ; trivial).
+    rewrite <-Rpower_mult_distr ; trivial.
+    rewrite Rdiv_plus_distr.
+    assert (Hpq : 1/pos(mkposreal 2 Rlt_0_2) + 1/pos(mkposreal 2 Rlt_0_2) = 1) by (simpl;field).
+    generalize (youngs_ineq_2 Hpq 1 a b Ha Hb Rlt_0_1) ; simpl ; intros.
+    replace (/2) with (1/2) by lra.
+    eapply Rle_trans. apply H.
+    repeat rewrite Rpower_base_1.
+    right ; field.
   Qed.
 
 End ineqs.
