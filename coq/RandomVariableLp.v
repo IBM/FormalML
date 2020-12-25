@@ -279,7 +279,15 @@ Section Lp.
 
   Lemma pow_ineq p x y : 2*Rabs (x + y )^p <= (2*Rabs x)^p + (2*Rabs y)^p.
   Proof.
-  Admitted.
+    destruct p.
+    - simpl; lra.
+    - repeat rewrite Rpow_mult_distr.
+      replace (2 ^ S p * Rabs x ^ S p + 2 ^ S p * Rabs y ^ S p) with
+          (2 * (2 ^ p * (Rabs x ^ S p + Rabs y ^ S p)))
+        by (simpl; field).
+      apply Rmult_le_compat_l; try lra.
+      apply pow_abs_ineq.
+  Qed.
     
    Lemma pow_ineq1 (p : nat) (x y : R) :
      0 <= x -> 0 <= y -> pow (x + y) p <= (pow 2 p) * ((pow x p) + (pow y p)).
