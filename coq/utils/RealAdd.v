@@ -794,6 +794,21 @@ Section convex.
      now rewrite Rabs_right; lra.
   Qed.
      
+   Lemma convex_deriv (f f' : R -> R) :
+     (forall c : R,  derivable_pt_lim f c (f' c)) ->
+     (forall x y : R, f y >= f x + f' x * (y - x)) ->
+     forall x y c : R, convex f c x y.
+     Proof.
+     unfold convex.
+     intros.
+     generalize (H0 (c * x + (1-c)*y) x); intros.
+     generalize (H0 (c * x + (1-c)*y) y); intros.
+     apply Rge_le in H2.
+     apply Rge_le in H3.
+     apply Rmult_le_compat_l with (r := c) in H2; try lra.
+     apply Rmult_le_compat_l with (r := 1-c) in H3; try lra.
+   Qed.
+
    Lemma pos_convex_deriv (f f' : R -> R) :
      (forall c : R,  0 <= c -> derivable_pt_lim f c (f' c)) ->
      (forall x y : R, 0 <= x -> 0 <= y  -> f y >= f x + f' x * (y - x)) ->
@@ -813,6 +828,29 @@ Section convex.
      apply Rmult_le_compat_l with (r := 1-c) in H6; try lra.
    Qed.
      
+   Lemma deriv_incr_convex (f f' : R -> R) :
+     (forall c : R,   derivable_pt_lim f c (f' c)) ->
+     (forall (x y : R), x <= y -> f' x <= f' y) ->
+     forall (x y : R), f y >= f x + f' x * (y-x).
+   Proof.
+     intros.
+     generalize (MVT_cor3 f f'); intros.
+     destruct (Rtotal_order x y).
+     - specialize (H1 x y H2).
+       cut_to H1.
+       + destruct H1 as [x0 [? [? ?]]].
+         assert (f' x <= f' x0) by (apply H0; lra).
+         apply Rmult_le_compat_r with (r := (y-x)) in H5; lra.
+       + intros; apply H; lra.
+     - destruct H2; [subst; lra| ].
+       specialize (H1 y x H2).
+       cut_to H1.
+       + destruct H1 as [x0 [? [? ?]]].
+         assert (f' x0 <= f' x) by (apply H0; lra).
+         apply Rmult_le_compat_r with (r := (x-y)) in H5; lra.
+       + intros; apply H; lra.
+  Qed.
+
    Lemma pos_deriv_incr_convex (f f' : R -> R) :
      (forall c : R,  0 <= c -> derivable_pt_lim f c (f' c)) ->
      (forall (x y : R), 0<=x -> 0 <= y -> x <= y -> f' x <= f' y) ->
@@ -852,16 +890,16 @@ Section convex.
   Qed.
 
   Lemma exp_convex {r : R}:
-    forall (x y : R),(0 <= x) -> (0 <= y) -> convex exp r x y.
+    forall (x y : R), convex exp r x y.
   Proof.
     intros.
-    eapply pos_convex_deriv with  (f' := exp) ; trivial.
+    eapply convex_deriv with  (f' := exp) ; trivial.
     - intros; apply derivable_pt_lim_exp.
     - intros.
-      apply (pos_deriv_incr_convex); trivial.
+      apply deriv_incr_convex; trivial.
       + intros; apply derivable_pt_lim_exp.
       + intros.
-        destruct H5 ; trivial.
+        destruct H ; trivial.
         -- left. apply exp_increasing ; trivial.
         -- subst ; trivial.
            right ; trivial.
