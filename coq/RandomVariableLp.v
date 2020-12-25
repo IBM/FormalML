@@ -240,6 +240,43 @@ Section Lp.
     simpl in H; lra.
   Qed.
 
+  Lemma pow_ineq_convex p : 
+    forall (x y : R), 0 <= x -> 0 <= y -> 
+                      (x + y)^(S p) <= 2^p*(x^(S p) + y^(S p)).
+  Proof.
+    intros.
+    assert (0 <= (/2) <= 1) by lra.
+    generalize (pow_convex (S p) (/2) x y H H0 H1); intros.
+    replace (1 - /2) with (/2) in H2 by lra.
+    rewrite <- Rmult_plus_distr_l in H2.
+    rewrite Rpow_mult_distr in H2.
+    apply Rmult_le_compat_l with (r := 2^(S p)) in H2.
+    - rewrite <- Rmult_assoc in H2.
+      replace (2^(S p) * (/2)^(S p)) with (1) in H2.
+      + rewrite <- Rmult_plus_distr_l in H2.
+        rewrite <- Rmult_assoc in H2.
+        replace (2^(S p) * /2) with (2^p) in H2.
+        * now rewrite Rmult_1_l in H2.
+        * simpl.
+          rewrite Rmult_comm.
+          rewrite <- Rmult_assoc.
+          lra.
+      + rewrite <- Rpow_mult_distr.
+        replace (2 * /2) with (1) by lra.
+        now rewrite pow1.
+    - apply pow_le; lra.
+  Qed.
+
+   Lemma pow_abs_ineq (p : nat) (x y : R) :
+     (Rabs (x + y))^(S p) <= (2^p) * (((Rabs x)^(S p)) + ((Rabs y)^(S p))).
+   Proof.
+     apply Rle_trans with (r2 := pow (Rabs x + Rabs y) (S p)).
+     - apply pow_maj_Rabs.
+       rewrite Rabs_Rabsolu.
+       apply Rabs_triang.
+     - apply pow_ineq_convex; apply Rabs_pos.
+   Qed.
+
   Lemma pow_ineq p x y : 2*Rabs (x + y )^p <= (2*Rabs x)^p + (2*Rabs y)^p.
   Proof.
   Admitted.

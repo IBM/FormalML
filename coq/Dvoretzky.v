@@ -458,3 +458,7 @@ Qed.
         f_equal.
         now rewrite Rmult_0_l.
   Qed.
+
+    
+    
+    

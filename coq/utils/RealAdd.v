@@ -762,3 +762,93 @@ Proof.
 Qed.
 
 End expprops.
+
+Section convex.
+
+  Definition convex (f : R -> R) (a x y : R) :=
+    0<=a<=1 -> f (a * x + (1-a) * y) <= a * f x + (1-a)*f y.
+
+  Lemma compose_convex (f g : R -> R) (a x y : R) :
+    (forall (x y : R), convex f a x y) ->
+    convex g a x y -> 
+    increasing f ->
+    convex (fun z => f (g z)) a x y.
+  Proof.
+    unfold convex, increasing.
+    intros.
+    apply Rle_trans with (r2 := f (a * g x + (1 - a) * g y)).
+    apply H1.
+    now apply H0.
+    now apply H.
+ Qed.
+
+  Lemma abs_convex : forall (a x y : R), convex Rabs a x y.
+   Proof.
+     unfold convex; intros.
+     generalize (Rabs_triang (a*x) ((1-a)*y)); intros.
+     do 2 rewrite Rabs_mult in H0.
+     replace (Rabs a) with a in H0.
+     replace (Rabs (1-a)) with (1-a) in H0.
+     apply H0.
+     now rewrite Rabs_right; lra.
+     now rewrite Rabs_right; lra.
+  Qed.
+     
+   Lemma pos_convex_deriv (f f' : R -> R) :
+     (forall c : R,  0 <= c -> derivable_pt_lim f c (f' c)) ->
+     (forall x y : R, 0 <= x -> 0 <= y  -> f y >= f x + f' x * (y - x)) ->
+     forall x y c : R, 0 <= x -> 0 <= y -> convex f c x y.
+     Proof.
+     unfold convex.
+     intros.
+     assert (0 <= c * x + (1-c)*y).
+     apply Rmult_le_compat_l with (r := c) in H1; try lra.
+     apply Rmult_le_compat_l with (r := 1-c) in H2; try lra.     
+     
+     generalize (H0 (c * x + (1-c)*y) x H4 H1); intros.
+     generalize (H0 (c * x + (1-c)*y) y H4 H2); intros.
+     apply Rge_le in H5.
+     apply Rge_le in H6.
+     apply Rmult_le_compat_l with (r := c) in H5; try lra.
+     apply Rmult_le_compat_l with (r := 1-c) in H6; try lra.
+   Qed.
+     
+   Lemma pos_deriv_incr_convex (f f' : R -> R) :
+     (forall c : R,  0 <= c -> derivable_pt_lim f c (f' c)) ->
+     (forall (x y : R), 0<=x -> 0 <= y -> x <= y -> f' x <= f' y) ->
+     forall (x y : R), 0 <= x -> 0 <= y -> f y >= f x + f' x * (y-x).
+   Proof.
+     intros.
+     generalize (MVT_cor3 f f'); intros.
+     destruct (Rtotal_order x y).
+     - specialize (H3 x y H4).
+       cut_to H3.
+       + destruct H3 as [x0 [? [? ?]]].
+         assert (f' x <= f' x0) by (apply H0; lra).
+         apply Rmult_le_compat_r with (r := (y-x)) in H7; lra.
+       + intros; apply H; lra.
+     - destruct H4; [subst; lra| ].
+       specialize (H3 y x H4).
+       cut_to H3.
+       + destruct H3 as [x0 [? [? ?]]].
+         assert (f' x0 <= f' x) by (apply H0; lra).
+         apply Rmult_le_compat_r with (r := (x-y)) in H7; lra.
+       + intros; apply H; lra.
+  Qed.
+
+   Lemma pow_convex (n : nat) :
+     forall (a x y : R), 0<=x -> 0<=y ->  convex (fun z => pow z n) a x y.
+  Proof.
+    intros.
+    apply pos_convex_deriv with (f' := fun z => INR n * pow z (pred n)); trivial.
+    - intros; apply derivable_pt_lim_pow.
+    - intros.
+      apply (pos_deriv_incr_convex (fun z => pow z n) (fun z => INR n * pow z (pred n))); trivial.
+      + intros; apply derivable_pt_lim_pow.
+      + intros.
+        apply Rmult_le_compat_l; [apply pos_INR |].
+        apply pow_maj_Rabs; trivial.
+        rewrite Rabs_right; lra.
+  Qed.
+
+End convex.
