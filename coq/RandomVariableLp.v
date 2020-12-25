@@ -1019,7 +1019,7 @@ Section Lp.
       rewrite Rabs_pos_eq in H3 by trivial.
       lra.
     Qed.
-
+(*
     Lemma LpRRV_norm_plus x y : LpRRVnorm (LpRRVplus x y) <= LpRRVnorm x + LpRRVnorm y.
     Proof.
       unfold Proper, respectful, LpRRVnorm, LpRRVplus.
@@ -1117,7 +1117,7 @@ Section Lp.
       }
 
     Admitted.
-    
+    *)
     Lemma root_mult_distr x a b :
       0 <= a ->
       0 <= b ->
@@ -1269,12 +1269,14 @@ Section Lp.
       Qed.
 
       Hint Rewrite LpRRVq_normE : quot.
-      
+
+      (*
       Lemma LpRRVq_norm_plus x y : LpRRVq_norm (LpRRVq_plus x y) <= LpRRVq_norm x + LpRRVq_norm y.
       Proof.
         LpRRVq_simpl.
         now apply LpRRV_norm_plus.
       Qed.
+       *)
       
       Lemma LpRRVq_norm_scal_strong x y : LpRRVq_norm (LpRRVq_scale x y) = Rabs x * LpRRVq_norm y.
       Proof.
