@@ -936,16 +936,6 @@ Section ineqs.
     ring.
   Qed.
 
-  Lemma Rpower_inv_l : forall x t k, (Rpower x (t/k))*(Rpower x (-t/k)) = 1.
-  Proof.
-    intros. rewrite Ropp_div.
-    rewrite Rpower_Ropp.
-    apply Rinv_r.
-    unfold Rpower.
-    generalize (exp_pos (t / k * ln x)) ; intros H not.
-    lra.
-  Qed.
-
  (*
    This theorem also holds for a b : nonnegreal. But it is awkward since
    Rpower x y is defined in terms of exp and ln.
