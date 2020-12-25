@@ -851,4 +851,20 @@ Section convex.
         rewrite Rabs_right; lra.
   Qed.
 
+  Lemma exp_convex {r : R}:
+    forall (x y : R),(0 <= x) -> (0 <= y) -> convex exp r x y.
+  Proof.
+    intros.
+    eapply pos_convex_deriv with  (f' := exp) ; trivial.
+    - intros; apply derivable_pt_lim_exp.
+    - intros.
+      apply (pos_deriv_incr_convex); trivial.
+      + intros; apply derivable_pt_lim_exp.
+      + intros.
+        destruct H5 ; trivial.
+        -- left. apply exp_increasing ; trivial.
+        -- subst ; trivial.
+           right ; trivial.
+  Qed.
+
 End convex.
