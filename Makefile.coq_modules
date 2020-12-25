@@ -76,6 +76,7 @@ MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	RandomVariableFinite \
 	RandomVariableL1 \
 	RandomVariableL2 \
+	RandomVariableLp \
 	SimpleExpectation \
 	Expectation \
 	SigmaAlgebras \
