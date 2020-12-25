@@ -889,7 +889,7 @@ Section convex.
         rewrite Rabs_right; lra.
   Qed.
 
-  Lemma exp_convex {r : R}:
+  Lemma exp_convex (r : R):
     forall (x y : R), convex exp r x y.
   Proof.
     intros.
@@ -906,3 +906,56 @@ Section convex.
   Qed.
 
 End convex.
+
+Section ineqs.
+
+  Lemma Rpower_ln : forall x y : R, ln (Rpower x y) = y*ln x.
+  Proof.
+    unfold Rpower ; intros.
+    now rewrite ln_exp.
+  Qed.
+
+  Lemma sum_one_le : forall x y : R, 0 <= x -> 0 <= y -> x + y = 1 -> x <= 1.
+  Proof.
+    intros.
+    rewrite <-H1.
+    replace (x) with (x+0) by lra.
+    replace (x+0+y) with (x+y) by lra.
+    apply Rplus_le_compat_l ; trivial.
+  Qed.
+
+ (*
+   This theorem also holds for a b : nonnegreal. But it is awkward since
+   Rpower x y is defined in terms of exp and ln.
+  *)
+  Theorem youngs_ineq {p q : posreal} (Hpq : 1/p + 1/q = 1):
+    forall a b : posreal, a*b <= (Rpower a p)/p + (Rpower b q)/q.
+  Proof.
+    intros.
+    destruct a as [a apos] ; simpl.
+    destruct b as [b bpos] ; simpl.
+    replace (a*b) with (exp (ln (a*b)))
+        by (rewrite exp_ln ; trivial ; apply Rmult_lt_0_compat ; trivial).
+    rewrite ln_mult ; trivial.
+    destruct p as [p ppos] ; destruct q as [q qpos] ; simpl in *.
+    assert (Hp : p <> 0) by lra.
+    assert (Hq : q <> 0) by lra.
+    replace (ln a) with (/p*p*(ln a)) by (rewrite Rinv_l ; lra).
+    replace (ln b) with (/q*q*(ln b)) by (rewrite Rinv_l ; lra).
+    rewrite Rmult_assoc; rewrite Rmult_assoc.
+    replace (p*ln a) with (ln(Rpower a p)) by (apply Rpower_ln).
+    replace (q*ln b) with (ln(Rpower b q)) by (apply Rpower_ln).
+    generalize (exp_convex (/p) (ln (Rpower a p)) (ln(Rpower b q))); intros.
+    unfold convex in H. unfold Rdiv.
+    replace (/q) with (1 - /p) by lra.
+    eapply Rle_trans.
+    - apply H.
+      split.
+      + left ; apply Rinv_pos ; trivial.
+      + apply sum_one_le with (y := /q) ; try (left ; apply Rinv_pos ; trivial) ; try lra.
+    - right.
+      repeat (rewrite exp_ln; try (unfold Rpower ; apply exp_pos)).
+      ring.
+  Qed.
+
+End ineqs.
