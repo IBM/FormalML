@@ -915,6 +915,13 @@ Section ineqs.
     now rewrite ln_exp.
   Qed.
 
+  Lemma Rpower_pos : forall x y : R, 0 < Rpower x y.
+  Proof.
+    unfold Rpower.
+    intros.
+    apply exp_pos.
+  Qed.
+
   Lemma sum_one_le : forall x y : R, 0 <= x -> 0 <= y -> x + y = 1 -> x <= 1.
   Proof.
     intros.
@@ -924,16 +931,29 @@ Section ineqs.
     apply Rplus_le_compat_l ; trivial.
   Qed.
 
+  Lemma Rmult_four_assoc (a b c d : R) : a * b * (c * d) = a * (b*c) * d.
+  Proof.
+    ring.
+  Qed.
+
+  Lemma Rpower_inv_l : forall x t k, (Rpower x (t/k))*(Rpower x (-t/k)) = 1.
+  Proof.
+    intros. rewrite Ropp_div.
+    rewrite Rpower_Ropp.
+    apply Rinv_r.
+    unfold Rpower.
+    generalize (exp_pos (t / k * ln x)) ; intros H not.
+    lra.
+  Qed.
+
  (*
    This theorem also holds for a b : nonnegreal. But it is awkward since
    Rpower x y is defined in terms of exp and ln.
   *)
-  Theorem youngs_ineq {p q : posreal} (Hpq : 1/p + 1/q = 1):
-    forall a b : posreal, a*b <= (Rpower a p)/p + (Rpower b q)/q.
+  Theorem youngs_ineq {p q : posreal} {a b : R} (Hpq : 1/p + 1/q = 1) :
+    0 < a -> 0 < b -> a*b <= (Rpower a p)/p + (Rpower b q)/q.
   Proof.
-    intros.
-    destruct a as [a apos] ; simpl.
-    destruct b as [b bpos] ; simpl.
+    intros apos bpos.
     replace (a*b) with (exp (ln (a*b)))
         by (rewrite exp_ln ; trivial ; apply Rmult_lt_0_compat ; trivial).
     rewrite ln_mult ; trivial.
@@ -956,6 +976,46 @@ Section ineqs.
     - right.
       repeat (rewrite exp_ln; try (unfold Rpower ; apply exp_pos)).
       ring.
+  Qed.
+
+  Theorem youngs_ineq_2 {p q : posreal} (Hpq : 1/p + 1/q = 1):
+    forall (t a b : R), 0 < a -> 0 < b -> 0 < t ->
+      (Rpower a (1/p))*(Rpower b (1/q)) <= (Rpower t (-1/q))*a/p + (Rpower t (1/p))*b/q.
+  Proof.
+    intros t a b apos bpos tpos.
+    assert (Hq : pos q <> 0)
+      by (generalize (cond_pos q) ; intros H notq ; rewrite notq in H ; lra).
+    assert (Hp : pos p <> 0)
+      by (generalize (cond_pos p) ; intros H notp ; rewrite notp in H ; lra).
+    assert (Hap : 0 < ((Rpower a (1/p))*Rpower t (-1/(q*p))))
+      by (unfold Rpower ; apply Rmult_lt_0_compat ; apply exp_pos).
+    assert (Hbq : 0 < (Rpower t (1/(q*p))*(Rpower b (1/q))))
+      by (unfold Rpower ; apply Rmult_lt_0_compat ; apply exp_pos).
+    generalize (youngs_ineq Hpq Hap Hbq) ; intros.
+    rewrite Rmult_four_assoc in H.
+    replace (Rpower t (-1/(q*p)) * Rpower t (1/(q*p))) with 1 in H.
+    -- ring_simplify in H.
+       eapply Rle_trans.
+       apply H. clear H.
+       repeat (rewrite <-Rpower_mult_distr ; try apply Rpower_pos).
+       unfold Rdiv.
+       repeat (rewrite Rpower_mult).
+       replace (1 */p *p) with 1 by (field ; trivial).
+       replace (1 */q *q) with 1 by (field ; trivial).
+    + repeat (rewrite Rpower_1 ; trivial).
+      right.
+      f_equal.
+      ++  rewrite Rmult_assoc.  rewrite Rmult_comm.
+          replace (-1 * /(q*p) * p) with (-1 * /q).
+          ring. field ; split ; trivial.
+      ++  rewrite Rmult_assoc.
+          replace (1 * /(q*p) * q) with (1 * /p).
+          ring. field ; split ; trivial.
+      -- unfold Rdiv.
+         rewrite <-Rpower_plus.
+         rewrite <-Rpower_O with (x := t) ; trivial.
+         f_equal. rewrite Rpower_O;trivial.
+         ring.
   Qed.
 
 End ineqs.
