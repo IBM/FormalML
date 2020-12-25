@@ -941,7 +941,40 @@ Section Lp.
       ; try typeclasses eauto.
       apply fin0.
     Qed.
+
+    Lemma Rsqr_pow_com x n : x² ^ n = (x ^ n)².
+    Proof.
+      repeat rewrite Rsqr_pow2.
+      repeat rewrite <- pow_mult.
+      now rewrite mult_comm.
+    Qed.
     
+    Lemma pow_incr_inv (x y:R) (n : nat) :
+      0 <= x ->
+      0 <= y ->
+      x ^ (S n) <= y ^ (S n) ->
+      x <= y.
+    Proof.
+      intros.
+      destruct (Rle_lt_dec x y); trivial.
+      assert (y ^ S n <= x ^ S n).
+      {
+        apply pow_incr.
+        split; trivial.
+        lra.
+      }
+      assert (x ^ S n = y ^ S n).
+      {
+        now apply Rle_antisym.
+      }
+      replace x with (Rabs x) in H3 by now apply Rabs_pos_eq.
+      replace y with (Rabs y) in H3 by now apply Rabs_pos_eq.
+      apply Rabs_pow_eq_inv in H3.
+      rewrite Rabs_pos_eq in H3 by trivial.
+      rewrite Rabs_pos_eq in H3 by trivial.
+      lra.
+    Qed.
+
     Lemma LpRRV_norm_plus x y : LpRRVnorm (LpRRVplus x y) <= LpRRVnorm x + LpRRVnorm y.
     Proof.
       unfold Proper, respectful, LpRRVnorm, LpRRVplus.
@@ -1039,8 +1072,7 @@ Section Lp.
       }
 
     Admitted.
-
-
+    
     Lemma root_mult_distr x a b :
       0 <= a ->
       0 <= b ->
