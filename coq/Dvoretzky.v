@@ -10,9 +10,11 @@ Require Import Morphisms EquivDec Program.
 Require Import Utils.
 Import ListNotations.
 
+
 Set Bullet Behavior "Strict Subproofs".
 
 Require Import LM.hilbert Classical IndefiniteDescription.
+Require Import RandomVariableL2.
 
 Program Definition ortho_projection_hilbert (E:PreHilbert) 
            (phi: E -> Prop) (phi_mod: compatible_m phi) (phi_compl: complete_subset phi)
@@ -458,6 +460,168 @@ Qed.
         f_equal.
         now rewrite Rmult_0_l.
   Qed.
+
+  Ltac L2RRV_simpl
+    := repeat match goal with
+              | [H : L2RRV |- _ ] => destruct H as [???]
+              end
+       ; unfold L2RRVplus, L2RRVminus, L2RRVopp, L2RRVscale
+       ; simpl.
+
+   Global Instance is_finiteExp_L2RRV {Ts:Type} {dom:SigmaAlgebra Ts} {prts: ProbSpace dom}
+          (x : L2RRV prts) :
+     IsFiniteExpectation prts x.
+   Proof.
+     destruct x.
+     generalize (isL2_isL1 prts L2RRV_rv_X); intros.
+     unfold IsL1 in H.
+     simpl.
+     unfold IsFiniteExpectation in *.
+     now apply Expectation_abs_then_finite.
+   Qed.
+
+   Global Instance is_finiteExp_sqr_L2RRV  {Ts:Type} {dom:SigmaAlgebra Ts} {prts: ProbSpace dom}
+(x : L2RRV prts) :
+     IsFiniteExpectation prts (rvsqr x).
+   Proof.
+     destruct x.
+     unfold IsL2 in *.
+     easy.
+   Qed.
+
+   Lemma L2RRV_L2_L1   {Ts:Type} {dom:SigmaAlgebra Ts} {prts: ProbSpace dom}
+         (x : L2RRV prts) :
+    Rsqr (FiniteExpectation prts x) <= FiniteExpectation prts (rvsqr x).
+   Proof.
+     generalize (L2RRV_Cauchy_Schwarz prts x (L2RRVconst prts 1)); intros.
+     assert (L2RRVinner prts (L2RRVconst prts 1) (L2RRVconst prts 1) = 1).
+     unfold L2RRVinner.
+     L2RRV_simpl.
+     unfold rvmult.
+     rewrite FiniteExpectation_ext with (rv_X2 := (const 1)) 
+                                        (isfe2 :=  IsFiniteExpectation_const prts 1).
+     apply FiniteExpectation_const.
+     intro x0.
+     unfold const; lra.
+     rewrite H0 in H.
+     rewrite Rmult_1_r in H.
+     assert (L2RRVinner prts x (L2RRVconst prts 1) = FiniteExpectation prts x).
+     unfold L2RRVinner.
+     rewrite FiniteExpectation_ext with (rv_X2 := x)
+                                        (isfe2 :=  is_finiteExp_L2RRV x).
+     trivial.
+     intro x0.
+     L2RRV_simpl.
+     unfold rvmult, const.
+     lra.
+     rewrite H1 in H.
+     unfold L2RRVinner in H.
+     rewrite FiniteExpectation_ext with (rv_X1 := (rvmult x x)) (rv_X2 := (rvsqr x))
+       (isfe2 := is_finiteExp_sqr_L2RRV x) in H.
+     apply H; lra.
+     intro x0.
+     unfold rvmult, rvsqr, Rsqr; lra.
+  Qed.
+
+  Lemma L2_L1_bound_finite  {Ts:Type} {dom:SigmaAlgebra Ts} {prts: ProbSpace dom}
+        (rv_X : Ts -> R) 
+        {rv:RandomVariable dom borel_sa rv_X}
+         {l2:IsL2 prts rv_X} :
+    Rsqr (FiniteExpectation prts rv_X) <= FiniteExpectation prts (rvsqr rv_X).
+    Proof.
+      generalize L2RRV_L2_L1;intros.
+      specialize (H (pack_L2RRV prts rv_X)).      
+      simpl in H.
+      Admitted.
+
+    Definition Rsqrt_abs (r : R) : R := Rsqrt (mknonnegreal (Rabs r) (Rabs_pos r)).
+
+    Lemma Rsqr_lt_to_Rsqrt (x r:nonnegreal) :
+      r < x² <-> Rsqrt r < x.
+    Proof.
+      Admitted.
+
+    Lemma zlez : 0 <= 0.
+    Proof.
+      lra.
+    Qed.
+
+    Lemma conv_l2_l1 {Ts:Type} {dom:SigmaAlgebra Ts} {prts: ProbSpace dom}
+        (X: Ts -> R)
+        (Xn: nat -> Ts -> R)
+        (rvx : RandomVariable dom borel_sa X)
+        (rvxn : forall n, RandomVariable dom borel_sa (Xn n)) 
+        (isl: forall n, IsL2 prts (rvabs (rvminus X (Xn n)))) :
+    is_lim_seq (fun n => FiniteExpectation prts (rvsqr (rvabs (rvminus X (Xn n))))) 0 ->
+    is_lim_seq (fun n => FiniteExpectation prts (rvabs (rvminus X (Xn n)))) 0.
+    Proof.
+      intros.
+      assert (forall n, 0 <= FiniteExpectation prts (rvsqr (rvabs (rvminus X (Xn n))))).
+      intros.
+      apply FiniteExpectation_pos.
+      unfold PositiveRandomVariable, rvabs, rvminus, rvopp, rvplus, rvsqr; intros.
+      apply Rle_0_sqr.
+      apply is_lim_seq_le_le_loc with 
+          (u := fun _ => 0) 
+          (w := (fun n => Rsqrt (mknonnegreal (FiniteExpectation prts (rvsqr (rvabs (rvminus X (Xn n))))) (H0 n)))).
+      unfold eventually.
+      exists (0%nat).
+      intros.
+      assert (0 <= FiniteExpectation prts (rvabs (rvminus X (Xn n)))).
+      apply FiniteExpectation_pos.
+      unfold rvabs, rvminus, rvopp, rvplus, PositiveRandomVariable; intros.
+      apply Rabs_pos.
+      split; trivial.
+      generalize (L2_L1_bound_finite (rvabs (rvminus X (Xn n)))); intros.
+      generalize Rsqr_le_to_Rsqrt; intros.
+      specialize (H4 (mknonnegreal _ (H0 n))
+                     (mknonnegreal _ H2)).
+      apply H4; simpl.
+      apply H3.
+      apply is_lim_seq_const.
+      apply is_lim_seq_ext with 
+          (u := fun n=> Rsqrt_abs (FiniteExpectation prts (rvsqr (rvabs (rvminus X (Xn n)))))).
+      intros.
+      unfold Rsqrt_abs; f_equal.
+      admit.
+      assert (Rsqrt_abs 0 = 0).
+      unfold Rsqrt_abs.
+      admit.
+      replace (0) with (Rsqrt_abs 0) by apply H1.
+      apply is_lim_seq_continuous; [|trivial].
+      unfold continuity_pt.
+      unfold continue_in.
+      unfold limit1_in.
+      unfold limit_in.
+      intros.
+      unfold dist; simpl.
+      unfold R_dist, D_x, no_cond.
+      exists (Rsqr eps).
+      split.
+      unfold Rsqr.
+      now apply Rmult_gt_0_compat.
+      intros.
+      destruct H3.
+      destruct H3.
+      rewrite Rminus_0_r in H4.
+      rewrite H1, Rminus_0_r.
+      unfold Rsqrt_abs.
+      rewrite Rabs_right by (apply Rle_ge, Rsqrt_positivity).
+      generalize Rsqr_lt_to_Rsqrt; intros.
+      assert (0 <= eps) by lra.
+      specialize (H6 (mknonnegreal _ H7) (mknonnegreal _ (Rabs_pos x))).
+      rewrite <- H6.
+      now simpl.
+   Admitted.
+
+      
+      
+      
+      
+
+
+
+
 
     
     
