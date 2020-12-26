@@ -569,6 +569,9 @@ Qed.
       lra.
     Qed.
 
+    (* TODO(Kody):
+       Move these to someplace more canonical. Like RealAdd.
+       Delete identical copies in mdp.v *)
     Lemma nonneg_pf_irrel r1 (cond1 cond2:0 <= r1) :
       mknonnegreal r1 cond1 = mknonnegreal r1 cond2.
     Proof.
