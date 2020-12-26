@@ -22,6 +22,12 @@ Section Expectation.
     {dom: SigmaAlgebra Ts}
     {Prts: ProbSpace dom}.
 
+  (* should be p_infty if (is_empty (fun omega => rv_X omega > x)) *)
+  Definition Linfty_norm (rv_X : Ts -> R) 
+             (rv : RandomVariable dom borel_sa rv_X) : Rbar :=
+    Glb_Rbar (fun (x : R) =>
+                ps_P (fun omega => rv_X omega > x) = 0).
+
   Definition BoundedPositiveRandomVariable
              (rv_X1 rv_X2 : Ts -> R) :=
     PositiveRandomVariable rv_X2 /\ rv_le rv_X2 rv_X1.
