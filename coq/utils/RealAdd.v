@@ -1037,14 +1037,24 @@ Section ineqs.
   Qed.
 
   Lemma minkowski_helper_aux (p:nat) (a t : R) : 0 < t -> (1 < p)%nat ->
-                                   t*(pow(a/t) p) = (pow a p)*(pow (/t) (p-1)).
+                                                 t*(pow(a/t) p) = (pow a p)*(pow (/t) (p-1)).
+    Admitted.
+
+  Lemma pow_mult (p:nat) (a t : R) : 0 < t -> 
+                                   t*(pow(a/t) (S p)) = (pow a (S p))*(pow (/t) p).
   Proof.
     intros.
     unfold Rdiv.
     rewrite Rpow_mult_distr.
-    rewrite Rmult_comm. rewrite Rmult_assoc.
+    rewrite Rmult_comm, Rmult_assoc.
     f_equal.
-  Admitted.
+    simpl.
+    rewrite Rmult_comm.
+    rewrite <- Rmult_assoc.
+    rewrite Rinv_r.
+    now rewrite Rmult_1_l.
+    now apply Rgt_not_eq.
+  Qed.
 
   Lemma minkowski_helper (p : nat) {a b t : R}:
     (0 < a) -> (0 < b) -> 0<t<1 ->
