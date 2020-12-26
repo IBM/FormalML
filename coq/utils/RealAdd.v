@@ -1036,11 +1036,11 @@ Section ineqs.
     right ; field.
   Qed.
 
-  Lemma minkowski_helper_aux (p:nat) (a t : R) : 0 < t -> (1 < p)%nat ->
+  (* Lemma minkowski_helper_aux (p:nat) (a t : R) : 0 < t -> (1 < p)%nat ->
                                                  t*(pow(a/t) p) = (pow a p)*(pow (/t) (p-1)).
-    Admitted.
+    Admitted.*)
 
-  Lemma pow_mult (p:nat) (a t : R) : 0 < t -> 
+  Lemma minkowski_helper_aux (p:nat) (a t : R) : 0 < t ->
                                    t*(pow(a/t) (S p)) = (pow a (S p))*(pow (/t) p).
   Proof.
     intros.
