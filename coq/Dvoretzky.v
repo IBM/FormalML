@@ -546,6 +546,21 @@ Qed.
       lra.
     Qed.
 
+ Lemma nonneg_pf_irrel r1 (cond1 cond2:0 <= r1) :
+  mknonnegreal r1 cond1 = mknonnegreal r1 cond2.
+Proof.
+  f_equal.
+  apply proof_irrelevance.
+Qed.
+
+Lemma nonneg_ext r1 cond1 r2 cond2:
+  r1 = r2 ->
+  mknonnegreal r1 cond1 = mknonnegreal r2 cond2.
+Proof.
+  intros; subst.
+  apply nonneg_pf_irrel.
+Qed.
+
     Lemma conv_l2_l1 {Ts:Type} {dom:SigmaAlgebra Ts} {prts: ProbSpace dom}
         (X: Ts -> R)
         (Xn: nat -> Ts -> R)
@@ -583,10 +598,14 @@ Qed.
           (u := fun n=> Rsqrt_abs (FiniteExpectation prts (rvsqr (rvabs (rvminus X (Xn n)))))).
       intros.
       unfold Rsqrt_abs; f_equal.
-      admit.
-      assert (Rsqrt_abs 0 = 0).
-      unfold Rsqrt_abs.
-      admit.
+      apply nonneg_ext. (* CAUTION : This uses proof irrelevance. *)
+      now rewrite Rabs_pos_eq.
+      assert (Rsqrt_abs 0 = mknonnegreal 0 (zlez)).
+      unfold Rsqrt_abs. simpl.
+      unfold Rsqrt. simpl.
+      destruct (Rsqrt_exists (Rabs 0) (Rabs_pos 0)).
+      destruct a.  rewrite Rabs_R0 in H2.
+      now apply Rsqr_eq_0.
       replace (0) with (Rsqrt_abs 0) by apply H1.
       apply is_lim_seq_continuous; [|trivial].
       unfold continuity_pt.
@@ -612,17 +631,4 @@ Qed.
       specialize (H6 (mknonnegreal _ H7) (mknonnegreal _ (Rabs_pos x))).
       rewrite <- H6.
       now simpl.
-   Admitted.
-
-      
-      
-      
-      
-
-
-
-
-
-    
-    
-    
+  Qed.
