@@ -536,30 +536,53 @@ Qed.
 
     Definition Rsqrt_abs (r : R) : R := Rsqrt (mknonnegreal (Rabs r) (Rabs_pos r)).
 
+    Lemma Rsqrt_lt (x y : nonnegreal) : 
+      x < y <-> Rsqrt x < Rsqrt y.
+    Proof.
+      split.
+      - generalize (Rsqr_incrst_0 (Rsqrt x) (Rsqrt y)); intros.
+        apply H.
+        unfold Rsqr.
+        now repeat rewrite Rsqrt_Rsqrt.
+        apply Rsqrt_positivity.
+        apply Rsqrt_positivity.    
+      - rewrite <- (Rsqrt_Rsqrt x).
+        rewrite <- (Rsqrt_Rsqrt y).
+        generalize (Rsqr_incrst_1 (Rsqrt x) (Rsqrt y)); unfold Rsqr; intros.
+        apply H; trivial.
+        apply Rsqrt_positivity.
+        apply Rsqrt_positivity.    
+    Qed.
+
     Lemma Rsqr_lt_to_Rsqrt (x r:nonnegreal) :
       r < x² <-> Rsqrt r < x.
     Proof.
-      Admitted.
+      intros.
+      etransitivity.
+      - eapply (Rsqrt_lt r (mknonnegreal _ (Rle_0_sqr x))).
+      - rewrite Rsqrt_sqr.
+        intuition.
+    Qed.
 
     Lemma zlez : 0 <= 0.
     Proof.
       lra.
     Qed.
 
- Lemma nonneg_pf_irrel r1 (cond1 cond2:0 <= r1) :
-  mknonnegreal r1 cond1 = mknonnegreal r1 cond2.
-Proof.
-  f_equal.
-  apply proof_irrelevance.
-Qed.
+    Lemma nonneg_pf_irrel r1 (cond1 cond2:0 <= r1) :
+      mknonnegreal r1 cond1 = mknonnegreal r1 cond2.
+    Proof.
+      f_equal.
+      apply proof_irrelevance.
+    Qed.
 
-Lemma nonneg_ext r1 cond1 r2 cond2:
-  r1 = r2 ->
-  mknonnegreal r1 cond1 = mknonnegreal r2 cond2.
-Proof.
-  intros; subst.
-  apply nonneg_pf_irrel.
-Qed.
+    Lemma nonneg_ext r1 cond1 r2 cond2:
+      r1 = r2 ->
+      mknonnegreal r1 cond1 = mknonnegreal r2 cond2.
+    Proof.
+      intros; subst.
+      apply nonneg_pf_irrel.
+    Qed.
 
     Lemma conv_l2_l1 {Ts:Type} {dom:SigmaAlgebra Ts} {prts: ProbSpace dom}
         (X: Ts -> R)
