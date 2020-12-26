@@ -24,9 +24,13 @@ Section Expectation.
 
   (* should be p_infty if (is_empty (fun omega => rv_X omega > x)) *)
   Definition Linfty_norm (rv_X : Ts -> R) 
-             (rv : RandomVariable dom borel_sa rv_X) : Rbar :=
+             {rv : RandomVariable dom borel_sa rv_X} : Rbar :=
     Glb_Rbar (fun (x : R) =>
                 ps_P (fun omega => rv_X omega > x) = 0).
+
+  Definition essentially_bounded (rv_X : Ts -> R) 
+             (rv : RandomVariable dom borel_sa rv_X)  :=
+    is_finite (Linfty_norm rv_X).
 
   Definition BoundedPositiveRandomVariable
              (rv_X1 rv_X2 : Ts -> R) :=
