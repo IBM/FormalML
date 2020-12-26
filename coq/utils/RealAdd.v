@@ -1058,7 +1058,7 @@ Section ineqs.
 
   Lemma minkowski_helper (p : nat) {a b t : R}:
     (0 < a) -> (0 < b) -> 0<t<1 ->
-    (pow (a+b) p) <= t*(pow (a/t) p) + (1-t)*(pow (b/(1-t)) p).
+    (pow (a+b) (S p)) <= (pow (/t) p)*(pow a (S p)) + (pow (/(1-t)) p)*(pow b (S p)).
   Proof.
     intros Ha Hb Ht.
     assert (Ht1 : t <> 0) by (intro not; destruct Ht as [h1 h2] ; subst ; lra).
@@ -1067,7 +1067,9 @@ Section ineqs.
     assert (Hbt : 0 <= b/(1-t)) by  (left ; apply Rdiv_lt_0_compat ; lra).
     assert (Ht' : 0 <= t <= 1) by lra.
     replace (a+b) with (t*(a/t) + (1-t)*(b/(1-t))) by (field ; split ; trivial).
-    apply (pow_convex p t (a/t) (b/(1-t)) Hat Hbt Ht').
+    generalize (pow_convex (S p) t (a/t) (b/(1-t)) Hat Hbt Ht'); intros.
+    eapply Rle_trans. apply H.
+    repeat (rewrite minkowski_helper_aux ; try lra).
   Qed.
 
 End ineqs.
