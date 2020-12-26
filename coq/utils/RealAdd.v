@@ -813,7 +813,7 @@ Section convex.
      (forall c : R,  0 <= c -> derivable_pt_lim f c (f' c)) ->
      (forall x y : R, 0 <= x -> 0 <= y  -> f y >= f x + f' x * (y - x)) ->
      forall x y c : R, 0 <= x -> 0 <= y -> convex f c x y.
-     Proof.
+    Proof.
      unfold convex.
      intros.
      assert (0 <= c * x + (1-c)*y).
@@ -826,8 +826,8 @@ Section convex.
      apply Rge_le in H6.
      apply Rmult_le_compat_l with (r := c) in H5; try lra.
      apply Rmult_le_compat_l with (r := 1-c) in H6; try lra.
-   Qed.
-     
+    Qed.
+
    Lemma deriv_incr_convex (f f' : R -> R) :
      (forall c : R,   derivable_pt_lim f c (f' c)) ->
      (forall (x y : R), x <= y -> f' x <= f' y) ->
@@ -1036,16 +1036,18 @@ Section ineqs.
     right ; field.
   Qed.
 
-  Lemma minkowski_helper {p q : posreal} {a b t : R} (Hpq : 1/p + 1/q = 1):
-    (0 < a) -> (0 < b) -> 0<t<1 -> Rpower (a+b) p <=
-                                (Rpower t (1-p) * Rpower a p)
-                                + (Rpower (1-t) (1-p) * Rpower b p).
+  Lemma minkowski_helper (p : nat) {a b t : R}:
+    (0 < a) -> (0 < b) -> 0<t<1 ->
+    (pow (a+b) p) <= t*(pow (a/t) p) + (1-t)*(pow (b/(1-t)) p).
   Proof.
     intros Ha Hb Ht.
     assert (Ht1 : t <> 0) by (intro not; destruct Ht as [h1 h2] ; subst ; lra).
     assert (Ht2 : 1-t <> 0) by (intro not; destruct Ht as [h1 h2] ; subst ; lra).
-    replace (a+b) with (t*a/t + (1-t)*b/(1-t)) by (field ; split ; trivial).
-    (* Need convexity of Rpower x p for p>=1 to proceed. *)
-  Admitted.
+    assert (Hat : 0 <= a/t) by (left ; apply Rdiv_lt_0_compat ; lra).
+    assert (Hbt : 0 <= b/(1-t)) by  (left ; apply Rdiv_lt_0_compat ; lra).
+    assert (Ht' : 0 <= t <= 1) by lra.
+    replace (a+b) with (t*(a/t) + (1-t)*(b/(1-t))) by (field ; split ; trivial).
+    apply (pow_convex p t (a/t) (b/(1-t)) Hat Hbt Ht').
+  Qed.
 
 End ineqs.
