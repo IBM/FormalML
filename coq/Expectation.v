@@ -26,7 +26,7 @@ Section Expectation.
   Definition Linfty_norm (rv_X : Ts -> R) 
              {rv : RandomVariable dom borel_sa rv_X} : Rbar :=
     Glb_Rbar (fun (x : R) =>
-                ps_P (fun omega => rv_X omega > x) = 0).
+                ps_P (fun omega => (rvabs rv_X) omega > x) = 0).
 
   Definition essentially_bounded (rv_X : Ts -> R) 
              (rv : RandomVariable dom borel_sa rv_X)  :=
