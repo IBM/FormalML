@@ -496,16 +496,6 @@ Qed.
          apply H; lra.
   Qed.
 
-  Lemma L2_L1_bound_finite  {Ts:Type} {dom:SigmaAlgebra Ts} {prts: ProbSpace dom}
-        (rv_X : Ts -> R) 
-        {rv:RandomVariable dom borel_sa rv_X}
-         {l2:IsLp prts 2%nat rv_X} :
-    Rsqr (FiniteExpectation prts rv_X) <= FiniteExpectation prts (rvsqr rv_X).
-    Proof.
-      generalize L2RRV_L2_L1;intros.
-      apply (H (pack_LpRRV prts rv_X)).      
-    Qed.
-
     Definition Rsqrt_abs (r : R) : R := Rsqrt (mknonnegreal (Rabs r) (Rabs_pos r)).
 
     Lemma Rsqrt_lt (x y : nonnegreal) : 
@@ -570,63 +560,60 @@ Qed.
     Proof.
       intros.
       assert (forall n, 0 <= FiniteExpectation prts (rvsqr (rvabs (rvminus X (Xn n))))).
-      intros.
-      apply FiniteExpectation_pos.
-      unfold PositiveRandomVariable, rvabs, rvminus, rvopp, rvplus, rvsqr; intros.
-      apply Rle_0_sqr.
-      apply is_lim_seq_le_le_loc with 
-          (u := fun _ => 0) 
-          (w := (fun n => Rsqrt (mknonnegreal (FiniteExpectation prts (rvsqr (rvabs (rvminus X (Xn n))))) (H0 n)))).
-      unfold eventually.
-      exists (0%nat).
-      intros.
-      assert (0 <= FiniteExpectation prts (rvabs (rvminus X (Xn n)))).
-      apply FiniteExpectation_pos.
-      unfold rvabs, rvminus, rvopp, rvplus, PositiveRandomVariable; intros.
-      apply Rabs_pos.
-      split; trivial.
-      generalize (L2_L1_bound_finite (rvabs (rvminus X (Xn n)))); intros.
-      generalize Rsqr_le_to_Rsqrt; intros.
-      specialize (H4 (mknonnegreal _ (H0 n))
-                     (mknonnegreal _ H2)).
-      apply H4; simpl.
-      apply H3.
-      apply is_lim_seq_const.
-      apply is_lim_seq_ext with 
+      - intros.
+        apply FiniteExpectation_pos.
+        unfold PositiveRandomVariable, rvabs, rvminus, rvopp, rvplus, rvsqr; intros.
+        apply Rle_0_sqr.
+      - apply is_lim_seq_le_le_loc with 
+            (u := fun _ => 0) 
+            (w := (fun n => Rsqrt (mknonnegreal (FiniteExpectation prts (rvsqr (rvabs (rvminus X (Xn n))))) (H0 n)))).
+        + exists (0%nat); intros.
+          assert (0 <= FiniteExpectation prts (rvabs (rvminus X (Xn n)))).
+          * apply FiniteExpectation_pos.
+            unfold rvabs, rvminus, rvopp, rvplus, PositiveRandomVariable; intros.
+            apply Rabs_pos.
+          * split; trivial.
+            generalize (L2RRV_L2_L1 (pack_LpRRV prts (rvabs (rvminus X (Xn n)))));intros.
+            generalize Rsqr_le_to_Rsqrt; intros.
+            specialize (H4 (mknonnegreal _ (H0 n))
+                           (mknonnegreal _ H2)).
+            apply H4; simpl.
+            apply H3.
+        + apply is_lim_seq_const.
+        + apply is_lim_seq_ext with 
           (u := fun n=> Rsqrt_abs (FiniteExpectation prts (rvsqr (rvabs (rvminus X (Xn n)))))).
-      intros.
-      unfold Rsqrt_abs; f_equal.
-      apply nonneg_ext. (* CAUTION : This uses proof irrelevance. *)
-      now rewrite Rabs_pos_eq.
-      assert (Rsqrt_abs 0 = mknonnegreal 0 (zlez)).
-      unfold Rsqrt_abs. simpl.
-      unfold Rsqrt. simpl.
-      destruct (Rsqrt_exists (Rabs 0) (Rabs_pos 0)).
-      destruct a.  rewrite Rabs_R0 in H2.
-      now apply Rsqr_eq_0.
-      replace (0) with (Rsqrt_abs 0) by apply H1.
-      apply is_lim_seq_continuous; [|trivial].
-      unfold continuity_pt.
-      unfold continue_in.
-      unfold limit1_in.
-      unfold limit_in.
-      intros.
-      unfold dist; simpl.
-      unfold R_dist, D_x, no_cond.
-      exists (Rsqr eps).
-      split.
-      unfold Rsqr.
-      now apply Rmult_gt_0_compat.
-      intros.
-      destruct H3.
-      destruct H3.
-      rewrite Rminus_0_r in H4.
-      rewrite H1, Rminus_0_r.
-      unfold Rsqrt_abs.
-      rewrite Rabs_right by (apply Rle_ge, Rsqrt_positivity).
-      generalize Rsqr_lt_to_Rsqrt; intros.
-      assert (0 <= eps) by lra.
-      specialize (H6 (mknonnegreal _ H7) (mknonnegreal _ (Rabs_pos x))).
-      rewrite <- H6.
-      now simpl.
-  Qed.
+          * intros.
+            unfold Rsqrt_abs; f_equal.
+            apply nonneg_ext. (* CAUTION : This uses proof irrelevance. *)
+            now rewrite Rabs_pos_eq.
+          * assert (Rsqrt_abs 0 = mknonnegreal 0 (zlez)).
+            -- unfold Rsqrt_abs. simpl.
+               unfold Rsqrt. simpl.
+               destruct (Rsqrt_exists (Rabs 0) (Rabs_pos 0)).
+               destruct a.  rewrite Rabs_R0 in H2.
+               now apply Rsqr_eq_0.
+            -- replace (0) with (Rsqrt_abs 0) by apply H1.
+               apply is_lim_seq_continuous; [|trivial].
+               unfold continuity_pt.
+               unfold continue_in.
+               unfold limit1_in.
+               unfold limit_in.
+               intros.
+               unfold dist; simpl.
+               unfold R_dist, D_x, no_cond.
+               exists (Rsqr eps).
+               split.
+               ++ unfold Rsqr.
+                  now apply Rmult_gt_0_compat.
+               ++ intros.
+                  destruct H3 as [[? ?] ?].
+                  rewrite Rminus_0_r in H5.
+                  rewrite H1, Rminus_0_r.
+                  unfold Rsqrt_abs.
+                  rewrite Rabs_right by (apply Rle_ge, Rsqrt_positivity).
+                  generalize Rsqr_lt_to_Rsqrt; intros.
+                  assert (0 <= eps) by lra.
+                  specialize (H6 (mknonnegreal _ H7) (mknonnegreal _ (Rabs_pos x))).
+                  rewrite <- H6.
+                  now simpl.
+    Qed.
