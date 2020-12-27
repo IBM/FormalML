@@ -496,8 +496,6 @@ Qed.
          apply H; lra.
   Qed.
 
-    Definition Rsqrt_abs (r : R) : R := Rsqrt (mknonnegreal (Rabs r) (Rabs_pos r)).
-
     Lemma Rsqrt_lt (x y : nonnegreal) : 
       x < y <-> Rsqrt x < Rsqrt y.
     Proof.
@@ -526,10 +524,42 @@ Qed.
         intuition.
     Qed.
 
-    Lemma zlez : 0 <= 0.
-    Proof.
-      lra.
+    Definition Rsqrt_abs (r : R) : R := Rsqrt (mknonnegreal (Rabs r) (Rabs_pos r)).
+
+    Lemma Rsqrt_abs_0 :
+      Rsqrt_abs 0 = 0.
+     Proof.
+      unfold Rsqrt_abs. simpl.
+      unfold Rsqrt. simpl.
+      destruct (Rsqrt_exists (Rabs 0) (Rabs_pos 0)).
+      destruct a.  rewrite Rabs_R0 in H0.
+      now apply Rsqr_eq_0.
     Qed.
+
+    Lemma continuity_pt_Rsqrt_abs_0 :
+      continuity_pt Rsqrt_abs 0.
+    Proof.
+      unfold continuity_pt, continue_in.
+      unfold limit1_in, limit_in.
+      intros.
+      unfold dist; simpl.
+      unfold R_dist, D_x, no_cond.
+      exists (Rsqr eps).
+      split.
+      - unfold Rsqr.
+        now apply Rmult_gt_0_compat.
+      - intros.
+        destruct H0 as [[? ?] ?].
+        rewrite Rminus_0_r in H2.
+        rewrite Rsqrt_abs_0, Rminus_0_r.
+        unfold Rsqrt_abs.
+        rewrite Rabs_right by (apply Rle_ge, Rsqrt_positivity).
+        generalize Rsqr_lt_to_Rsqrt; intros.
+        assert (0 <= eps) by lra.
+        specialize (H3 (mknonnegreal _ H4) (mknonnegreal _ (Rabs_pos x))).
+        rewrite <- H3.
+        now simpl.
+     Qed.
 
     (* TODO(Kody):
        Move these to someplace more canonical. Like RealAdd.
@@ -586,34 +616,7 @@ Qed.
             unfold Rsqrt_abs; f_equal.
             apply nonneg_ext. (* CAUTION : This uses proof irrelevance. *)
             now rewrite Rabs_pos_eq.
-          * assert (Rsqrt_abs 0 = mknonnegreal 0 (zlez)).
-            -- unfold Rsqrt_abs. simpl.
-               unfold Rsqrt. simpl.
-               destruct (Rsqrt_exists (Rabs 0) (Rabs_pos 0)).
-               destruct a.  rewrite Rabs_R0 in H2.
-               now apply Rsqr_eq_0.
-            -- replace (0) with (Rsqrt_abs 0) by apply H1.
-               apply is_lim_seq_continuous; [|trivial].
-               unfold continuity_pt.
-               unfold continue_in.
-               unfold limit1_in.
-               unfold limit_in.
-               intros.
-               unfold dist; simpl.
-               unfold R_dist, D_x, no_cond.
-               exists (Rsqr eps).
-               split.
-               ++ unfold Rsqr.
-                  now apply Rmult_gt_0_compat.
-               ++ intros.
-                  destruct H3 as [[? ?] ?].
-                  rewrite Rminus_0_r in H5.
-                  rewrite H1, Rminus_0_r.
-                  unfold Rsqrt_abs.
-                  rewrite Rabs_right by (apply Rle_ge, Rsqrt_positivity).
-                  generalize Rsqr_lt_to_Rsqrt; intros.
-                  assert (0 <= eps) by lra.
-                  specialize (H6 (mknonnegreal _ H7) (mknonnegreal _ (Rabs_pos x))).
-                  rewrite <- H6.
-                  now simpl.
+          * replace (0) with (Rsqrt_abs 0) by apply Rsqrt_abs_0.
+            apply is_lim_seq_continuous; [|trivial].
+            apply continuity_pt_Rsqrt_abs_0.
     Qed.
