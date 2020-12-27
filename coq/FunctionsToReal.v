@@ -343,6 +343,30 @@ Section defs.
       repeat match_destr; lra.
     Qed.
 
+    Lemma rvminus_self (x:Ts->R) : rv_eq (rvminus x x) (const 0).
+    Proof.
+      intros a.
+      unfold rvminus, rvplus, rvopp, rvscale, const.
+      lra.
+    Qed.
+
+    Lemma rvminus_unfold (x y : Ts -> R)
+      : rv_eq (rvminus x y)  (fun a => x a - y a).
+    Proof.
+      unfold rvminus, rvplus, rvopp, rvscale.
+      intros a.
+      lra.
+    Qed.
+
+    Lemma rvabs_rvminus_sym (x y : Ts -> R) :
+      rv_eq (rvabs (rvminus x y)) (rvabs (rvminus y x)).
+    Proof.
+      repeat rewrite rvminus_unfold.
+      unfold rvabs.
+      intros a.
+      apply Rabs_minus_sym.
+    Qed.
+
   End eqs.
 End defs.
 
@@ -351,11 +375,6 @@ Ltac rv_unfold := unfold
                   id,
                   compose,
                   EventIndicator,
-                  rvplus,
-                  rvscale,
-                  rvopp,
-                  rvminus,
-                  rvmult,
                   rvsqr,
                   rvpow,
                   rvpower,
@@ -366,4 +385,9 @@ Ltac rv_unfold := unfold
                   bvmin_choice,
                   bvmax_choice,
                   pos_fun_part,
-                  neg_fun_part in *.
+                  neg_fun_part,
+                  rvminus,
+                  rvopp,
+                  rvscale,
+                  rvplus,
+                  rvmult in *.

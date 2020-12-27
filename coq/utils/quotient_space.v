@@ -5,7 +5,7 @@ with MIT license: https://github.com/arthuraa/poleiro/blob/23854f99cf286087a8c4d
 
 
 (* We do deliberately do not make heavy use of this module, prefering (non-axiomatic) setoid constructions.  Howver, it is needed for interop with librararies that do not generalize to arbitrarty equivalence relations (Coquelicot and LM).
-*)
+ *)
 
 (* begin hide *)
 Require Import Coq.Logic.FunctionalExtensionality.
@@ -56,67 +56,67 @@ quotients won't compute.) *)
 
 Section Quotient.
 
-(** We define the quotient of [T] by an equivalence relation [R] as usual: it is
+  (** We define the quotient of [T] by an equivalence relation [R] as usual: it is
 the type of equivalence classes of [R]. *)
 
-Context {T : Type} (R : relation T) {RP : Equivalence R}.
+  Context {T : Type} (R : relation T) {RP : Equivalence R}.
 
-(* begin hide *)
-Unset Elimination Schemes.
-(* end hide *)
-Record quot := Quot_ {
-  quot_class  : T → Prop;
-  quot_classP : ∃ x, quot_class = R x;
-}.
-(* begin hide *)
-Set Elimination Schemes.
-(* end hide *)
+  (* begin hide *)
+  Unset Elimination Schemes.
+  (* end hide *)
+  Record quot := Quot_ {
+                     quot_class  : T → Prop;
+                     quot_classP : ∃ x, quot_class = R x;
+                   }.
+  (* begin hide *)
+  Set Elimination Schemes.
+  (* end hide *)
 
-(** The projection into the quotient is given by the [Quot] constructor below,
+  (** The projection into the quotient is given by the [Quot] constructor below,
 which maps [x] to its equivalence class [R x].  This definition satisfies the
 usual properties: [Quot x = Quot y] if and only if [R x y].  The "if" direction
 requires the principle of proof irrelevance, which is a consequence of
 propositional extensionality. *)
 
-Definition Quot (x : T) : quot :=
-  @Quot_ (R x) (ex_intro _ x (eq_refl _)).
+  Definition Quot (x : T) : quot :=
+    @Quot_ (R x) (ex_intro _ x (eq_refl _)).
 
-Lemma Quot_inj x y : Quot x = Quot y → R x y.
-Proof.
-  intros e.
-  inversion e.
-  rewrite H0.
-  reflexivity.
-Qed.
+  Lemma Quot_inj x y : Quot x = Quot y → R x y.
+  Proof.
+    intros e.
+    inversion e.
+    rewrite H0.
+    reflexivity.
+  Qed.
 
-Lemma eq_Quot x y : R x y → Quot x = Quot y.
-Proof.
-  intros e.
-  assert (eqq:R x = R y).
-  {
-    apply functional_extensionality; intros z.
-    apply propositional_extensionality; rewrite e; tauto.
-  }
-  unfold Quot.
-  generalize (ex_intro (λ x0 : T, R y = R x0) y eq_refl); intros HH.
-  generalize HH.
-  rewrite <- eqq; intros HH2.
-  f_equal.
-  apply proof_irrelevance.
-Qed.
+  Lemma eq_Quot x y : R x y → Quot x = Quot y.
+  Proof.
+    intros e.
+    assert (eqq:R x = R y).
+    {
+      apply functional_extensionality; intros z.
+      apply propositional_extensionality; rewrite e; tauto.
+    }
+    unfold Quot.
+    generalize (ex_intro (λ x0 : T, R y = R x0) y eq_refl); intros HH.
+    generalize HH.
+    rewrite <- eqq; intros HH2.
+    f_equal.
+    apply proof_irrelevance.
+  Qed.
 
-(** We can also show that [Quot] is surjective by extracting the witness in the
+  (** We can also show that [Quot] is surjective by extracting the witness in the
 existential. *)
-Lemma Quot_inv q : ∃ x, q = Quot x.
-Proof.
-  destruct q.
-  unfold Quot.
-  destruct quot_classP0; simpl.
-  rewrite e.
-  eauto.
-Qed.
+  Lemma Quot_inv q : ∃ x, q = Quot x.
+  Proof.
+    destruct q.
+    unfold Quot.
+    destruct quot_classP0; simpl.
+    rewrite e.
+    eauto.
+  Qed.
 
-(** Unique choice comes into play when defining the elimination principles for
+  (** Unique choice comes into play when defining the elimination principles for
 the quotient.  In its usual non-dependent form, the principle says that we can
 lift a function [f : T → S] to another function [quot → S] provided that [f] is
 constant on equivalence classes.  We define a more general dependently typed
@@ -126,95 +126,95 @@ version, which allows in particular to prove a property [S q] by proving that [S
 (Quot x)] and [S (Quot y)], which requires us to transport the left-hand side
 along the equivalence [R x y]. *)
 
-Section Elim.
+  Section Elim.
 
-Definition cast A B (e : A = B) : A → B :=
-  match e with (eq_refl _) => id end.
+    Definition cast A B (e : A = B) : A → B :=
+      match e with (eq_refl _) => id end.
 
-Context (S : quot → Type) (f : ∀ x, S (Quot x)).
-Context (fP : ∀ x y (exy : R x y), cast (f_equal S (eq_Quot exy)) (f x) = f y).
+    Context (S : quot → Type) (f : ∀ x, S (Quot x)).
+    Context (fP : ∀ x y (exy : R x y), cast (f_equal S (eq_Quot exy)) (f x) = f y).
 
-(** We begin with an auxiliary result that uniquely characterizes the result of
+    (** We begin with an auxiliary result that uniquely characterizes the result of
 applying the eliminator to an element [q : quot].  Thanks to unique choice, this
 allows us to define the eliminator as a function [quot_rect]. *)
 
-Lemma quot_rect_subproof (q : quot) :
-  exists! a : S q, ∃ x (exq : Quot x = q), a = cast (f_equal S exq) (f x).
-Proof.
-  destruct q; simpl.
-  destruct quot_classP0 as [x q].
-  rewrite q.
-  exists (f x).
-  split.
-  - eauto.
-  - intros x' [?[??]].
-    subst.
-    inversion x1.
-    assert (eqq:R x0 x).
-    {
-      apply Quot_inj; apply eq_Quot.
-      rewrite H0; reflexivity.
-    } 
-    rewrite <- (@fP x0 x eqq).
-    do 2 f_equal.
-    apply proof_irrelevance.
-    Unshelve.
-    exact x.
-    reflexivity.
-Qed.
+    Lemma quot_rect_subproof (q : quot) :
+      exists! a : S q, ∃ x (exq : Quot x = q), a = cast (f_equal S exq) (f x).
+    Proof.
+      destruct q; simpl.
+      destruct quot_classP0 as [x q].
+      rewrite q.
+      exists (f x).
+      split.
+      - eauto.
+      - intros x' [?[??]].
+        subst.
+        inversion x1.
+        assert (eqq:R x0 x).
+        {
+          apply Quot_inj; apply eq_Quot.
+          rewrite H0; reflexivity.
+        } 
+        rewrite <- (@fP x0 x eqq).
+        do 2 f_equal.
+        apply proof_irrelevance.
+        Unshelve.
+        exact x.
+        reflexivity.
+    Qed.
 
-Definition quot_rect q : S q :=
-  proj1_sig (constructive_definite_description _ (quot_rect_subproof q)).
+    Definition quot_rect q : S q :=
+      proj1_sig (constructive_definite_description _ (quot_rect_subproof q)).
 
-Lemma quot_rectE x : quot_rect (Quot x) = f x.
-Proof.
-  unfold quot_rect.
-  destruct ( (constructive_definite_description
-       (λ a : S (Quot x),
-          ∃ (x0 : T) (exq : Quot x0 = Quot x), a = cast (f_equal S exq) (f x0))
-       (quot_rect_subproof (Quot x)))) as [?[?[??]]]; simpl.
-  subst.
-  erewrite <- (@fP _ x).
-  do 2 f_equal.
-  apply proof_irrelevance.
-  Unshelve.
-  now apply Quot_inj.
-Qed.
+    Lemma quot_rectE x : quot_rect (Quot x) = f x.
+    Proof.
+      unfold quot_rect.
+      destruct ( (constructive_definite_description
+                    (λ a : S (Quot x),
+                           ∃ (x0 : T) (exq : Quot x0 = Quot x), a = cast (f_equal S exq) (f x0))
+                    (quot_rect_subproof (Quot x)))) as [?[?[??]]]; simpl.
+      subst.
+      erewrite <- (@fP _ x).
+      do 2 f_equal.
+      apply proof_irrelevance.
+      Unshelve.
+      now apply Quot_inj.
+    Qed.
 
-End Elim.
+  End Elim.
 
-(** In the non-dependent case, the compatibility condition acquires its usual
+  (** In the non-dependent case, the compatibility condition acquires its usual
 form. *)
 
-Section Rec.
+  Section Rec.
 
-Context S (f : T → S) (fP : ∀ x y, R x y → f x = f y).
+    Context S (f : T → S) (fP : ∀ x y, R x y → f x = f y).
 
-Definition congr1CE (A B : Type) (b : B) x y (e : x = y) :
-  f_equal (λ _ : A, b) e = (eq_refl _) :=
-  match e with (eq_refl _) => (eq_refl _) end.
+    Definition congr1CE (A B : Type) (b : B) x y (e : x = y) :
+      f_equal (λ _ : A, b) e = (eq_refl _) :=
+      match e with (eq_refl _) => (eq_refl _) end.
 
-Definition quot_rec : quot -> S :=
-  @quot_rect (λ _, S) f
-    (λ x y exy, trans_eq
-                  (f_equal (λ p, cast p (f x)) (congr1CE S (eq_Quot exy)))
-      (fP exy)).
+    Definition quot_rec : quot -> S :=
+      @quot_rect (λ _, S) f
+                 (λ x y exy, trans_eq
+                               (f_equal (λ p, cast p (f x)) (congr1CE S (eq_Quot exy)))
+                               (fP exy)).
 
-Lemma quot_recE x : quot_rec (Quot x) = f x.
-Proof.
-  unfold quot_rec.
-  now rewrite quot_rectE.
-Qed.
+    Lemma quot_recE x : quot_rec (Quot x) = f x.
+    Proof.
+      unfold quot_rec.
+      now rewrite quot_rectE.
+    Qed.
 
-End Rec.
+  End Rec.
 
 End Quotient.
 
 
 Section Lift.
   Definition quot_lift {T : Type} (R : T->T->Prop)
-        {equivR:Equivalence R}
-        (f : T -> T) {propR:Proper (R ==> R) f} :
+             {equivR:Equivalence R}
+             (f : T -> T) {propR:Proper (R ==> R) f} :
     quot R -> quot R.
   Proof.
     assert (Hpf:forall x0 y : T, R x0 y -> Quot R (f x0) = Quot R (f y)).
@@ -241,8 +241,8 @@ Section Lift.
   Qed.        
   
   Definition quot_lift2 {T : Type} (R : T->T->Prop)
-        {equivR:Equivalence R}
-        (f : T -> T -> T) {propR:Proper (R ==> R ==> R) f} :
+             {equivR:Equivalence R}
+             (f : T -> T -> T) {propR:Proper (R ==> R ==> R) f} :
     quot R -> quot R -> quot R.
   Proof.
     generalize (@quot_rec _ _ equivR)
@@ -267,7 +267,7 @@ Section Lift.
   Defined.
 
   Global Arguments quot_lift2 {T} R {equivR} f {propR}.
-    
+  
   Lemma quot_lift2E
         {T : Type} (R : T->T->Prop)
         {equivR:Equivalence R}
@@ -280,8 +280,8 @@ Section Lift.
   Qed.        
   
   Definition quot_lift2_to {T S : Type} (R : T->T->Prop)
-        {equivR:Equivalence R}
-        (f : T -> T -> S) {propR:Proper (R ==> R ==> eq) f} :
+             {equivR:Equivalence R}
+             (f : T -> T -> S) {propR:Proper (R ==> R ==> eq) f} :
     quot R -> quot R -> S.
   Proof.
     generalize (@quot_rec _ _ equivR)
@@ -304,7 +304,7 @@ Section Lift.
   Defined.
 
   Global Arguments quot_lift2_to {T} {S} R {equivR} f {propR}.
-    
+  
   Lemma quot_lift2_toE
         {T S : Type} (R : T->T->Prop)
         {equivR:Equivalence R}
@@ -313,6 +313,44 @@ Section Lift.
   Proof.
     intros.
     unfold quot_lift2_to.
+    now repeat rewrite quot_recE.
+  Qed.        
+
+  Definition quot_lift_ball {T S : Type} (R : T->T->Prop)
+             {equivR:Equivalence R}
+             (f : T -> S -> T -> Prop) {propR:Proper (R ==> eq ==> R ==> iff) f} :
+    quot R -> S -> quot R -> Prop.
+  Proof.
+    generalize (@quot_rec _ _ equivR)
+    ; intros HH.
+    specialize (HH (S -> quot R -> Prop)).
+    assert (Hpf:forall x s, forall x0 y : T, R x0 y -> (f x s x0) = (f x s y)).
+    {
+      intros.
+      apply propositional_extensionality.
+      now apply propR.
+    } 
+    refine (HH (fun x s => (@quot_rec _ _ equivR Prop (fun y =>  (f x s y)) (Hpf x s) )) _).
+    intros.
+    apply FunctionalExtensionality.functional_extensionality; intros.
+    apply FunctionalExtensionality.functional_extensionality; intros.
+    destruct (Quot_inv x1); subst.
+    repeat rewrite quot_recE.
+    apply propositional_extensionality.
+    now apply propR.
+  Defined.
+
+  Global Arguments quot_lift_ball {T} {S} R {equivR} f {propR}.
+  
+  Lemma quot_lift_ballE
+        {T S : Type} (R : T->T->Prop)
+        {equivR:Equivalence R}
+        (f : T -> S -> T -> Prop) {propR:Proper (R ==> eq ==> R ==> iff) f} :
+
+    forall x e y, quot_lift_ball R f (Quot R x) e (Quot R y) = f x e y.
+  Proof.
+    intros.
+    unfold quot_lift_ball.
     now repeat rewrite quot_recE.
   Qed.        
 

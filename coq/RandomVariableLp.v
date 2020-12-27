@@ -29,7 +29,7 @@ Section Lp.
   Typeclasses Transparent IsLp.
 
   Global Instance Lp_FiniteLp n rv_X
-           {islp:IsLp n rv_X}
+         {islp:IsLp n rv_X}
     : IsFiniteExpectation prts (rvpow (rvabs rv_X) n)
     := islp.
 
@@ -68,8 +68,8 @@ Section Lp.
   Qed.
 
   Lemma IsL1_Finite (rv_X:Ts->R)
-         {rrv:RandomVariable dom borel_sa rv_X}
-         {lp:IsLp 1 rv_X} : IsFiniteExpectation prts rv_X.
+        {rrv:RandomVariable dom borel_sa rv_X}
+        {lp:IsLp 1 rv_X} : IsFiniteExpectation prts rv_X.
   Proof.
     red.
     red in lp.
@@ -78,7 +78,7 @@ Section Lp.
   Qed.
 
   Lemma IsL1_abs_Finite (rv_X:Ts->R)
-         {lp:IsLp 1 rv_X} : IsFiniteExpectation prts (rvabs rv_X).
+        {lp:IsLp 1 rv_X} : IsFiniteExpectation prts (rvabs rv_X).
   Proof.
     red.
     red in lp.
@@ -141,10 +141,10 @@ Section Lp.
   (* Making this an instance causes coq to look for more and more "S (S (...))" expansions.
     This might be fixable with Hint Mode, but for now, we just don't make it an instance
    *)
-     
+  
   Lemma IsLp_down n (rv_X:Ts->R)
-         {rrv:RandomVariable dom borel_sa rv_X}
-         {lp:IsLp (S n) rv_X} : IsLp n rv_X.
+        {rrv:RandomVariable dom borel_sa rv_X}
+        {lp:IsLp (S n) rv_X} : IsLp n rv_X.
   Proof.
     red in lp.
     rewrite rvpowS in lp.
@@ -251,7 +251,7 @@ Section Lp.
 
   Lemma pow_ineq_convex p : 
     forall (x y : R), 0 <= x -> 0 <= y -> 
-                      (x + y)^(S p) <= 2^p*(x^(S p) + y^(S p)).
+                 (x + y)^(S p) <= 2^p*(x^(S p) + y^(S p)).
   Proof.
     intros.
     assert (0 <= (/2) <= 1) by lra.
@@ -276,15 +276,15 @@ Section Lp.
     - apply pow_le; lra.
   Qed.
 
-   Lemma pow_abs_ineq (p : nat) (x y : R) :
-     (Rabs (x + y))^(S p) <= (2^p) * (((Rabs x)^(S p)) + ((Rabs y)^(S p))).
-   Proof.
-     apply Rle_trans with (r2 := pow (Rabs x + Rabs y) (S p)).
-     - apply pow_maj_Rabs.
-       rewrite Rabs_Rabsolu.
-       apply Rabs_triang.
-     - apply pow_ineq_convex; apply Rabs_pos.
-   Qed.
+  Lemma pow_abs_ineq (p : nat) (x y : R) :
+    (Rabs (x + y))^(S p) <= (2^p) * (((Rabs x)^(S p)) + ((Rabs y)^(S p))).
+  Proof.
+    apply Rle_trans with (r2 := pow (Rabs x + Rabs y) (S p)).
+    - apply pow_maj_Rabs.
+      rewrite Rabs_Rabsolu.
+      apply Rabs_triang.
+    - apply pow_ineq_convex; apply Rabs_pos.
+  Qed.
 
   Lemma pow_ineq p x y : 2*Rabs (x + y )^p <= (2*Rabs x)^p + (2*Rabs y)^p.
   Proof.
@@ -297,64 +297,64 @@ Section Lp.
       apply Rmult_le_compat_l; try lra.
       apply pow_abs_ineq.
   Qed.
-    
-   Lemma pow_ineq1 (p : nat) (x y : R) :
-     0 <= x -> 0 <= y -> pow (x + y) p <= (pow 2 p) * ((pow x p) + (pow y p)).
-   Proof.
-     rewrite binomial.
-     rewrite sum_f_R0_sum_f_R0'.
-     generalize ( sum_f_R0'_le_f (fun i : nat => Binomial.C p i * x ^ i * y ^ (p - i))
-                                 (fun i : nat => (pow x p + pow y p) * Binomial.C p i) (S p)); intros.
-     cut_to H.
-     - rewrite sum_f_R0'_mult_const in H.
-       generalize (binomial 1 1 p); intros.
-       replace (1+1) with (2) in H2 by lra.
-       rewrite sum_f_R0_ext with (f2 := Binomial.C p) in H2.
-       + rewrite sum_f_R0_sum_f_R0' in H2.
-         rewrite <- H2 in H.
-         now rewrite Rmult_comm in H.
-       + intros.
-         rewrite Rmult_assoc.
-         do 2 rewrite pow1.
-         lra.
-     - intros.
-       ring_simplify.
-       rewrite <- Rmult_plus_distr_l.
-       rewrite Rmult_assoc.
-       apply Rmult_le_compat_l.
-       * unfold Binomial.C.
-         left; unfold Rdiv.
-         apply Rmult_lt_0_compat.
-         -- apply lt_0_INR; apply lt_O_fact.
-         -- apply Rinv_0_lt_compat.
-            apply Rmult_lt_0_compat; apply lt_0_INR; apply lt_O_fact.
-       * destruct (Rle_dec y x).
-         -- replace (p) with (i + (p-i))%nat at 2.
-            ++ rewrite Rdef_pow_add.
-               assert (x ^ i * y ^ (p - i) <= x ^ i * x ^ (p - i)); intros.
-               ** apply Rmult_le_compat_l
-                  ; [now apply pow_le | apply pow_maj_Rabs; rewrite Rabs_right; lra].
-               ** assert (0 <= y^p); [now apply pow_le | lra].
-            ++ lia.
-     
-         -- replace (p) with (i + (p-i))%nat at 3.
-            ++ rewrite Rdef_pow_add.
-               assert (x ^ i * y ^ (p - i) <= y ^ i * y ^ (p - i)); intros.
-               ** apply Rmult_le_compat_r
-                  ; [now apply pow_le | apply pow_maj_Rabs; rewrite Rabs_right; lra].
-               ** assert (0 <= x^p); [now apply pow_le | lra].
-            ++ lia.
-   Qed.     
-     
-   Lemma pow_abs_ineq1 (p : nat) (x y : R) :
-     pow (Rabs(x + y)) p <= (pow 2 p) * ((pow (Rabs x) p) + (pow (Rabs y) p)).
-   Proof.
-     apply Rle_trans with (r2 := pow (Rabs x + Rabs y) p).
-     - apply pow_maj_Rabs.
-       rewrite Rabs_Rabsolu.
-       apply Rabs_triang.
-     - apply pow_ineq1; apply Rabs_pos.
-   Qed.
+  
+  Lemma pow_ineq1 (p : nat) (x y : R) :
+    0 <= x -> 0 <= y -> pow (x + y) p <= (pow 2 p) * ((pow x p) + (pow y p)).
+  Proof.
+    rewrite binomial.
+    rewrite sum_f_R0_sum_f_R0'.
+    generalize ( sum_f_R0'_le_f (fun i : nat => Binomial.C p i * x ^ i * y ^ (p - i))
+                                (fun i : nat => (pow x p + pow y p) * Binomial.C p i) (S p)); intros.
+    cut_to H.
+    - rewrite sum_f_R0'_mult_const in H.
+      generalize (binomial 1 1 p); intros.
+      replace (1+1) with (2) in H2 by lra.
+      rewrite sum_f_R0_ext with (f2 := Binomial.C p) in H2.
+      + rewrite sum_f_R0_sum_f_R0' in H2.
+        rewrite <- H2 in H.
+        now rewrite Rmult_comm in H.
+      + intros.
+        rewrite Rmult_assoc.
+        do 2 rewrite pow1.
+        lra.
+    - intros.
+      ring_simplify.
+      rewrite <- Rmult_plus_distr_l.
+      rewrite Rmult_assoc.
+      apply Rmult_le_compat_l.
+      * unfold Binomial.C.
+        left; unfold Rdiv.
+        apply Rmult_lt_0_compat.
+        -- apply lt_0_INR; apply lt_O_fact.
+        -- apply Rinv_0_lt_compat.
+           apply Rmult_lt_0_compat; apply lt_0_INR; apply lt_O_fact.
+      * destruct (Rle_dec y x).
+        -- replace (p) with (i + (p-i))%nat at 2.
+           ++ rewrite Rdef_pow_add.
+              assert (x ^ i * y ^ (p - i) <= x ^ i * x ^ (p - i)); intros.
+              ** apply Rmult_le_compat_l
+                 ; [now apply pow_le | apply pow_maj_Rabs; rewrite Rabs_right; lra].
+              ** assert (0 <= y^p); [now apply pow_le | lra].
+           ++ lia.
+              
+        -- replace (p) with (i + (p-i))%nat at 3.
+           ++ rewrite Rdef_pow_add.
+              assert (x ^ i * y ^ (p - i) <= y ^ i * y ^ (p - i)); intros.
+              ** apply Rmult_le_compat_r
+                 ; [now apply pow_le | apply pow_maj_Rabs; rewrite Rabs_right; lra].
+              ** assert (0 <= x^p); [now apply pow_le | lra].
+           ++ lia.
+  Qed.     
+  
+  Lemma pow_abs_ineq1 (p : nat) (x y : R) :
+    pow (Rabs(x + y)) p <= (pow 2 p) * ((pow (Rabs x) p) + (pow (Rabs y) p)).
+  Proof.
+    apply Rle_trans with (r2 := pow (Rabs x + Rabs y) p).
+    - apply pow_maj_Rabs.
+      rewrite Rabs_Rabsolu.
+      apply Rabs_triang.
+    - apply pow_ineq1; apply Rabs_pos.
+  Qed.
 
   Lemma rv_abs_scale_eq (c:R) (rv_X:Ts->R) :
     rv_eq (rvabs (rvscale c rv_X)) (rvscale (Rabs c) (rvabs rv_X)).
@@ -393,7 +393,7 @@ Section Lp.
     intros x.
     reflexivity.
   Qed.
-    
+  
   Global Instance IsLp_plus p
          (rv_X1 rv_X2 : Ts -> R)
          {rv1 : RandomVariable dom borel_sa rv_X1}
@@ -931,6 +931,15 @@ Section Lp.
   Global Arguments LpRRV : clear implicits.
   Global Arguments LpRRVq : clear implicits.
 
+  (** Lp 0 is a degenerate case; representing the space of all RandomVariables, quotiented by a.e.
+      It is still a ModuleSpace.
+
+      For Lp (S p), we can further define a norm (and the ball induced by the distance function defined by the norm),
+      and show that it is a UniformSapce and NormedModuleSpace.
+
+      For the special case of Lp 2, it is also a HilbertSpace.  This is shown in RandomVaribleL2.
+
+ *)
   Section packed.
 
     Context {p:nat}.
@@ -1033,7 +1042,7 @@ Section Lp.
       rewrite Rabs_pos_eq in H3 by trivial.
       lra.
     Qed.
-(*
+    
     Lemma LpRRV_norm_plus x y : LpRRVnorm (LpRRVplus x y) <= LpRRVnorm x + LpRRVnorm y.
     Proof.
       unfold Proper, respectful, LpRRVnorm, LpRRVplus.
@@ -1042,14 +1051,13 @@ Section Lp.
 
       (* first we show that the zero cases (which are special cased by root
          work out
-       *)
+     *)
 
       destruct (Req_EM_T (FiniteExpectation prts (rvpow (rvabs x) (S p))) 0).
       {
         field_simplify.
         apply LpFin0_almost0 in e; try typeclasses eauto.
-        rewrite (FiniteExpectation_proper_almost prts (rvpow (rvabs (rvplus x y)) (S p)) (rvpow (rvabs y) (S p))
-                                                 (isfe2:=(@LpRRV_lp (S p) y))).
+        rewrite (FiniteExpectation_proper_almost prts (rvpow (rvabs (rvplus x y)) (S p)) (rvpow (rvabs y) (S p))).
         - lra.
         - apply rv_almost_eq_pow_abs_proper
           ; try typeclasses eauto.
@@ -1072,8 +1080,7 @@ Section Lp.
       {
         field_simplify.
         apply LpFin0_almost0 in e; try typeclasses eauto.
-        rewrite (FiniteExpectation_proper_almost prts (rvpow (rvabs (rvplus x y)) (S p)) (rvpow (rvabs x) (S p))
-                                                 (isfe2:=(@LpRRV_lp (S p) x))).
+        rewrite (FiniteExpectation_proper_almost prts (rvpow (rvabs (rvplus x y)) (S p)) (rvpow (rvabs x) (S p))).
         - match_destr; try lra.
         - apply rv_almost_eq_pow_abs_proper
           ; try typeclasses eauto.
@@ -1102,28 +1109,26 @@ Section Lp.
       }
 
       assert (xexppos:0 < (@FiniteExpectation Ts dom prts (@rvpow Ts (@rvabs Ts (@LpRRV_rv_X (S p) x)) (S p))
-                                              (@LpRRV_lp (S p) x))).
+                                              _)).
       {
-        destruct (FiniteExpectation_pos prts (rvpow (rvabs x) (S p)) (isfe:=(@LpRRV_lp (S p) x)))
+        destruct (FiniteExpectation_pos prts (rvpow (rvabs x) (S p)) )
         ; congruence.
       } 
 
-      assert (yexppos:0 < (@FiniteExpectation Ts dom prts (@rvpow Ts (@rvabs Ts (@LpRRV_rv_X (S p) y)) (S p))
-                                              (@LpRRV_lp (S p) y))).
+      assert (yexppos:0 < (@FiniteExpectation Ts dom prts (@rvpow Ts (@rvabs Ts (@LpRRV_rv_X (S p) y)) (S p)) _
+                                             )).
       {
-        destruct (FiniteExpectation_pos prts (rvpow (rvabs y) (S p)) (isfe:=(@LpRRV_lp (S p) y)))
+        destruct (FiniteExpectation_pos prts (rvpow (rvabs y) (S p)))
         ; congruence.
       } 
 
       assert (xyexppos:0 < (@FiniteExpectation Ts dom prts
                                       (rvpow (rvabs (rvplus x y)) (S p))) 
-                    (@IsLp_plus (S p) (@LpRRV_rv_X (S p) x) (@LpRRV_rv_X (S p) y) (@LpRRV_rv (S p) x)
-                                (@LpRRV_rv (S p) y) (@LpRRV_lp (S p) x) (@LpRRV_lp (S p) y))).
+                             _).
       { 
         destruct (FiniteExpectation_pos prts
                                         (rvpow (rvabs (rvplus x y)) (S p)) (isfe:=
-          (@IsLp_plus (S p) (@LpRRV_rv_X (S p) x) (@LpRRV_rv_X (S p) y) (@LpRRV_rv (S p) x)
-                      (@LpRRV_rv (S p) y) (@LpRRV_lp (S p) x) (@LpRRV_lp (S p) y))))
+          _))
         ; trivial.
         elim n1.
         rewrite H.
@@ -1131,7 +1136,7 @@ Section Lp.
       }
 
     Admitted.
-    *)
+
     Lemma root_mult_distr x a b :
       0 <= a ->
       0 <= b ->
@@ -1209,8 +1214,8 @@ Section Lp.
       unfold LpRRVnorm, LpRRVscale.
       simpl LpRRV_rv_X.
       assert (eqq:rv_eq
-                (rvpow (rvabs (rvscale x y)) (S p))
-                (rvscale (Rabs x ^ S p) (rvpow (rvabs y) (S p))))
+                    (rvpow (rvabs (rvscale x y)) (S p))
+                    (rvscale (Rabs x ^ S p) (rvpow (rvabs y) (S p))))
         by now rewrite rv_abs_scale_eq, rvpow_scale.
       rewrite (FiniteExpectation_ext prts _ _ eqq).
       rewrite FiniteExpectation_scale.
@@ -1247,9 +1252,115 @@ Section Lp.
         lia.
     Qed.
 
-        
+    Definition LpRRVball (x:LpRRV (S p)) (e:R) (y:LpRRV (S p)): Prop
+      := LpRRVnorm (LpRRVminus x y) < e.
+
+    Ltac LpRRV_simpl
+      := repeat match goal with
+                | [H : LpRRV _ |- _ ] => destruct H as [???]
+                end;
+         unfold LpRRVball, LpRRVnorm, LpRRVplus, LpRRVminus, LpRRVopp, LpRRVscale, LpRRVnorm in *
+         ; simpl pack_LpRRV; simpl LpRRV_rv_X in *.
+
+
+    Global Instance LpRRV_ball_proper : Proper (LpRRV_eq ==> eq ==> LpRRV_eq ==> iff) LpRRVball.
+    Proof.
+      intros ?? eqq1 ?? eqq2 ?? eqq3.
+      unfold LpRRVball in *.
+      rewrite <- eqq1, <- eqq2, <- eqq3.
+      reflexivity.
+    Qed.
+
+    Definition LpRRVpoint : LpRRV (S p) := LpRRVconst 0.
+
+    Lemma LpRRV_ball_refl x (e : posreal) : LpRRVball x e x.
+    Proof.
+      LpRRV_simpl.
+      assert (eqq1:rv_eq (rvpow (rvabs (rvminus LpRRV_rv_X0 LpRRV_rv_X0)) (S p))
+                         (const 0)).
+      {
+        rewrite rvminus_self.
+        rewrite rv_abs_const_eq.
+        rewrite Rabs_pos_eq by lra.
+        rewrite rvpow_const.
+        rewrite pow0_Sbase.
+        reflexivity.
+      }
+      rewrite (FiniteExpectation_ext _ _ _ eqq1).
+      rewrite FiniteExpectation_const.
+      unfold root.
+      match_destr; try lra.
+      apply cond_pos.
+    Qed.
+    
+    Lemma LpRRV_ball_sym x y e : LpRRVball x e y -> LpRRVball y e x.
+    Proof.
+      LpRRV_simpl.
+      intros.
+      rewrite (FiniteExpectation_ext _ _  (rvpow (rvabs (rvminus LpRRV_rv_X1 LpRRV_rv_X0)) (S p)))
+      ; trivial.
+      rewrite rvabs_rvminus_sym.
+      reflexivity.
+    Qed.
+
+    Lemma LpRRV_ball_trans x y z e1 e2 : LpRRVball x e1 y -> LpRRVball y e2 z -> LpRRVball x (e1+e2) z.
+    Proof.
+      generalize (LpRRV_norm_plus
+                       (LpRRVminus x y)
+                       (LpRRVminus y z)).
+      LpRRV_simpl.
+      intros.
+
+      apply (Rle_lt_trans
+               _ 
+               ((root (INR (S p)) (FiniteExpectation prts (rvpow (rvabs (rvminus LpRRV_rv_X2 LpRRV_rv_X1)) (S p)))) +
+                (root (INR (S p)) (FiniteExpectation prts (rvpow (rvabs (rvminus LpRRV_rv_X1 LpRRV_rv_X0)) (S p))))))
+      ; [ | now apply Rplus_lt_compat].
+
+      (* by minkowski *)
+      rewrite (FiniteExpectation_ext _ (rvpow (rvabs (rvminus LpRRV_rv_X2 LpRRV_rv_X0)) (S p))
+                                     (rvpow (rvabs (rvplus (rvminus LpRRV_rv_X2 LpRRV_rv_X1) (rvminus LpRRV_rv_X1 LpRRV_rv_X0))) (S p))); trivial.
+      intros a.
+      rv_unfold.
+      f_equal.
+      f_equal.
+      lra.
+    Qed.
+
+    Lemma LpRRV_close_close (x y : LpRRV (S p)) (eps : R) :
+      LpRRVnorm (LpRRVminus y x) < eps ->
+      LpRRVball x eps y.
+    Proof.
+      intros.
+      apply LpRRV_ball_sym.
+      apply H.
+    Qed.
+
+    Definition LpRRVnorm_factor : R := 1.
+    
+    Lemma LpRRV_norm_ball_compat (x y : LpRRV (S p)) (eps : posreal) :
+      LpRRVball x eps y -> LpRRVnorm (LpRRVminus y x) < LpRRVnorm_factor * eps.
+    Proof.
+      intros HH.
+      apply LpRRV_ball_sym in HH.
+      unfold LpRRVnorm_factor.
+      field_simplify.
+      apply HH.
+    Qed.
+
+    Lemma LpRRV_plus_opp_minus (x y : LpRRV (S p)) :
+      LpRRV_eq (LpRRVplus x (LpRRVopp y)) (LpRRVminus x y).
+    Proof.
+      unfold LpRRVminus, LpRRVplus, LpRRVopp.
+      simpl.
+      apply rv_almost_eq_eq.
+      intros ?.
+      reflexivity.
+    Qed.
+    
     Section quot.
 
+      
       Ltac LpRRVq_simpl :=
         repeat match goal with
                | [H: LpRRVq _ |- _ ] =>
@@ -1268,6 +1379,61 @@ Section Lp.
       Hint Rewrite @LpRRVq_minusE : quot.
       Hint Rewrite @LpRRVq_constE : quot.
 
+      Definition LpRRVq_ball : LpRRVq (S p) -> R -> LpRRVq (S p) -> Prop
+        := quot_lift_ball LpRRV_eq LpRRVball.
+      
+      Lemma LpRRVq_ballE x e y : LpRRVq_ball (Quot _ x) e (Quot _ y)  = LpRRVball x e y.
+      Proof.
+        apply quot_lift_ballE.
+      Qed.
+
+      Hint Rewrite LpRRVq_ballE : quot.
+      
+      Definition LpRRVq_point : LpRRVq (S p)
+        := Quot _ LpRRVpoint.
+
+
+      Lemma LpRRVq_pointE : LpRRVq_point = Quot _ LpRRVpoint.
+      Proof.
+        reflexivity.
+      Qed.
+
+      Hint Rewrite LpRRVq_pointE : quot.
+
+      Lemma LpRRVq_ball_refl x (e : posreal) : LpRRVq_ball x e x.
+      Proof.
+        LpRRVq_simpl.
+        apply LpRRV_ball_refl.
+      Qed.
+      
+      Lemma LpRRVq_ball_sym x y e : LpRRVq_ball x e y -> LpRRVq_ball y e x.
+      Proof.
+        LpRRVq_simpl.
+        apply LpRRV_ball_sym.
+      Qed.
+
+      Lemma LpRRVq_ball_trans x y z e1 e2 : LpRRVq_ball x e1 y -> LpRRVq_ball y e2 z -> LpRRVq_ball x (e1+e2) z.
+      Proof.
+        LpRRVq_simpl.
+        apply LpRRV_ball_trans.
+      Qed.
+
+      Definition LpRRVq_UniformSpace_mixin : UniformSpace.mixin_of (LpRRVq (S p))
+        := UniformSpace.Mixin  (LpRRVq (S p)) LpRRVq_point LpRRVq_ball
+                               LpRRVq_ball_refl
+                               LpRRVq_ball_sym
+                               LpRRVq_ball_trans.
+
+      Canonical LpRRVq_UniformSpace :=
+        UniformSpace.Pack (LpRRVq (S p)) LpRRVq_UniformSpace_mixin (LpRRVq (S p)).
+
+      Canonical LpRRVq_NormedModuleAux :=
+        NormedModuleAux.Pack R_AbsRing (LpRRVq (S p))
+                             (NormedModuleAux.Class R_AbsRing (LpRRVq (S p))
+                                                    (ModuleSpace.class _ (LpRRVq_ModuleSpace))
+                                                    (LpRRVq_UniformSpace_mixin)) (LpRRVq (S p)).
+
+      
       Definition LpRRVq_norm : LpRRVq (S p) -> R
         := quot_rec LpRRV_norm_proper.
 
@@ -1278,13 +1444,11 @@ Section Lp.
 
       Hint Rewrite LpRRVq_normE : quot.
 
-      (*
       Lemma LpRRVq_norm_plus x y : LpRRVq_norm (LpRRVq_plus x y) <= LpRRVq_norm x + LpRRVq_norm y.
       Proof.
         LpRRVq_simpl.
         now apply LpRRV_norm_plus.
       Qed.
-       *)
       
       Lemma LpRRVq_norm_scal_strong x y : LpRRVq_norm (LpRRVq_scale x y) = Rabs x * LpRRVq_norm y.
       Proof.
@@ -1305,19 +1469,49 @@ Section Lp.
         now apply LpRRV_norm0.
       Qed.
 
-      (*
-    
-    Record mixin_of (K : AbsRing) (V : NormedModuleAux K) := Mixin {
-  norm : V -> R ;
-  norm_factor : R ;
-  ax1 : forall (x y : V), norm (plus x y) <= norm x + norm y ;
-  ax2 : forall (l : K) (x : V), norm (scal l x) <= abs l * norm x ;
-  ax3 : forall (x y : V) (eps : R), norm (minus y x) < eps -> ball x eps y ;
-  ax4 : forall (x y : V) (eps : posreal), ball x eps y -> norm (minus y x) < norm_factor * eps ;
-  ax5 : forall x : V, norm x = 0 -> x = zero
-}.
+      Lemma LpRRVq_minus_minus (x y : LpRRVq (S p)) :
+        minus x y = LpRRVq_minus x y.
+      Proof.
+        unfold minus, plus, opp; simpl.
+        LpRRVq_simpl.
+        apply LpRRVminus_plus.
+      Qed.
 
-  *)  
+      Lemma LpRRVq_close_close (x y : LpRRVq (S p)) (eps : R) :
+        LpRRVq_norm (minus y x) < eps ->
+        LpRRVq_ball x eps y.
+      Proof.
+        intros.
+        rewrite LpRRVq_minus_minus in H.
+        LpRRVq_simpl.
+        now apply LpRRV_close_close.
+      Qed.
+
+      Lemma LpRRVq_norm_ball_compat (x y : LpRRVq (S p)) (eps : posreal) :
+        LpRRVq_ball x eps y -> LpRRVq_norm (minus y x) < LpRRVnorm_factor * eps.
+      Proof.
+        intros.
+        rewrite LpRRVq_minus_minus.
+        LpRRVq_simpl.
+        now apply LpRRV_norm_ball_compat.
+      Qed.
+ 
+      Definition LpRRVq_NormedModule_mixin : NormedModule.mixin_of R_AbsRing LpRRVq_NormedModuleAux
+        := NormedModule.Mixin R_AbsRing LpRRVq_NormedModuleAux
+                              LpRRVq_norm
+                              LpRRVnorm_factor
+                              LpRRVq_norm_plus
+                              LpRRVq_norm_scal
+                              LpRRVq_close_close
+                              LpRRVq_norm_ball_compat
+                              LpRRVq_norm0.
+
+      Definition LpRRVq_NormedModule :=
+        NormedModule.Pack R_AbsRing (LpRRVq (S p))
+                          (NormedModule.Class R_AbsRing (LpRRVq (S p))
+                                              (NormedModuleAux.class _ LpRRVq_NormedModuleAux)
+                                              LpRRVq_NormedModule_mixin)
+                          (LpRRVq (S p)).
 
     End quot.
     
