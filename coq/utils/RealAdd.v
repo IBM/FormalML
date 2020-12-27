@@ -475,6 +475,24 @@ Proof.
     trivial.
 Qed.
 
+Lemma Rsqrt_lt (x y : nonnegreal) : 
+  x < y <-> Rsqrt x < Rsqrt y.
+Proof.
+  split.
+  - generalize (Rsqr_incrst_0 (Rsqrt x) (Rsqrt y)); intros.
+    apply H.
+    unfold Rsqr.
+    now repeat rewrite Rsqrt_Rsqrt.
+    apply Rsqrt_positivity.
+    apply Rsqrt_positivity.    
+  - rewrite <- (Rsqrt_Rsqrt x).
+    rewrite <- (Rsqrt_Rsqrt y).
+    generalize (Rsqr_incrst_1 (Rsqrt x) (Rsqrt y)); unfold Rsqr; intros.
+    apply H; trivial.
+    apply Rsqrt_positivity.
+    apply Rsqrt_positivity.    
+Qed.
+
 Lemma Rsqrt_sqr (x:nonnegreal) :
   Rsqrt {| nonneg := x²; cond_nonneg := Rle_0_sqr x |} = x.
 Proof.
@@ -485,6 +503,17 @@ Proof.
   - unfold Rsqr. rewrite Rsqrt_Rsqrt.
     trivial.
 Qed.
+
+Lemma Rsqr_lt_to_Rsqrt (x r:nonnegreal) :
+  r < x² <-> Rsqrt r < x.
+Proof.
+  intros.
+  etransitivity.
+  - eapply (Rsqrt_lt r (mknonnegreal _ (Rle_0_sqr x))).
+  - rewrite Rsqrt_sqr.
+    intuition.
+Qed.
+
 
 Lemma Rsqr_le_to_Rsqrt (r x:nonnegreal):
   x² <= r <-> x <= Rsqrt r.

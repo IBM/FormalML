@@ -529,10 +529,9 @@ Qed.
     Lemma Rsqrt_abs_0 :
       Rsqrt_abs 0 = 0.
      Proof.
-      unfold Rsqrt_abs. simpl.
-      unfold Rsqrt. simpl.
-      destruct (Rsqrt_exists (Rabs 0) (Rabs_pos 0)).
-      destruct a.  rewrite Rabs_R0 in H0.
+      unfold Rsqrt_abs, Rsqrt; simpl.
+      match_destr; destruct a.
+      rewrite Rabs_R0 in H0.
       now apply Rsqr_eq_0.
     Qed.
 
@@ -620,3 +619,4 @@ Qed.
             apply is_lim_seq_continuous; [|trivial].
             apply continuity_pt_Rsqrt_abs_0.
     Qed.
+
