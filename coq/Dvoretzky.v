@@ -496,34 +496,6 @@ Qed.
          apply H; lra.
   Qed.
 
-    Lemma Rsqrt_lt (x y : nonnegreal) : 
-      x < y <-> Rsqrt x < Rsqrt y.
-    Proof.
-      split.
-      - generalize (Rsqr_incrst_0 (Rsqrt x) (Rsqrt y)); intros.
-        apply H.
-        unfold Rsqr.
-        now repeat rewrite Rsqrt_Rsqrt.
-        apply Rsqrt_positivity.
-        apply Rsqrt_positivity.    
-      - rewrite <- (Rsqrt_Rsqrt x).
-        rewrite <- (Rsqrt_Rsqrt y).
-        generalize (Rsqr_incrst_1 (Rsqrt x) (Rsqrt y)); unfold Rsqr; intros.
-        apply H; trivial.
-        apply Rsqrt_positivity.
-        apply Rsqrt_positivity.    
-    Qed.
-
-    Lemma Rsqr_lt_to_Rsqrt (x r:nonnegreal) :
-      r < x² <-> Rsqrt r < x.
-    Proof.
-      intros.
-      etransitivity.
-      - eapply (Rsqrt_lt r (mknonnegreal _ (Rle_0_sqr x))).
-      - rewrite Rsqrt_sqr.
-        intuition.
-    Qed.
-
     Definition Rsqrt_abs (r : R) : R := Rsqrt (mknonnegreal (Rabs r) (Rabs_pos r)).
 
     Lemma Rsqrt_abs_0 :
