@@ -1537,6 +1537,9 @@ Hint Rewrite LpRRVq_normE : quot.
 Global Arguments LpRRVq_AbelianGroup {Ts} {dom} prts p.
 Global Arguments LpRRVq_ModuleSpace {Ts} {dom} prts p.
 
+Global Arguments LpRRVq_UniformSpace {Ts} {dom} prts p.
+Global Arguments LpRRVq_NormedModule {Ts} {dom} prts p.
+
 Ltac LpRRVq_simpl :=
   repeat match goal with
          | [H: LpRRVq _ _ |- _ ] =>
