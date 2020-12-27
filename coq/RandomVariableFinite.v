@@ -101,9 +101,10 @@ Section fe.
   Qed.
 
   Lemma FiniteExpectation_ext rv_X1 rv_X2
-        (eqq: rv_eq rv_X1 rv_X2)
         {isfe1:IsFiniteExpectation rv_X1}
-        {isfe2:IsFiniteExpectation rv_X2} :
+        {isfe2:IsFiniteExpectation rv_X2}
+        (eqq: rv_eq rv_X1 rv_X2)
+    :
     @FiniteExpectation rv_X1 isfe1 = @FiniteExpectation rv_X2 isfe2.
   Proof.
     unfold FiniteExpectation.

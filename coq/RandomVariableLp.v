@@ -28,6 +28,11 @@ Section Lp.
   Existing Class IsLp.
   Typeclasses Transparent IsLp.
 
+  Global Instance Lp_FiniteLp n rv_X
+           {islp:IsLp n rv_X}
+    : IsFiniteExpectation prts (rvpow (rvabs rv_X) n)
+    := islp.
+
   Global Instance IsL1_proper
     : Proper (eq ==> rv_eq ==> iff) IsLp.
   Proof.
@@ -132,8 +137,12 @@ Section Lp.
     apply le_pow_mult_plus.
     apply Rabs_pos.
   Qed.
-  
-  Global Instance IsLp_down n (rv_X:Ts->R)
+
+  (* Making this an instance causes coq to look for more and more "S (S (...))" expansions.
+    This might be fixable with Hint Mode, but for now, we just don't make it an instance
+   *)
+     
+  Lemma IsLp_down n (rv_X:Ts->R)
          {rrv:RandomVariable dom borel_sa rv_X}
          {lp:IsLp (S n) rv_X} : IsLp n rv_X.
   Proof.
@@ -147,7 +156,7 @@ Section Lp.
       apply pow_le.
       apply Rabs_pos.
     - apply rvabs_pow_bound.
-  Qed.      
+  Qed.
 
   Lemma IsLp_down_le m n (rv_X:Ts->R)
         {rrv:RandomVariable dom borel_sa rv_X}
@@ -172,7 +181,7 @@ Section Lp.
 
   Global Instance IsLSp_Finite n (rv_X:Ts->R)
          {rrv:RandomVariable dom borel_sa rv_X}
-         {lp:IsLp (S n) rv_X} : IsFiniteExpectation prts rv_X.
+         {lp:IsLp (S n) rv_X} : IsFiniteExpectation prts rv_X | 2.
   Proof.
     eapply IsLp_Finite; try eassumption.
     lia.
@@ -552,6 +561,11 @@ Section Lp.
 
     Global Existing Instance LpRRV_rv.
     Global Existing Instance LpRRV_lp.
+
+    Global Instance LpRRV_LpS_FiniteLp (rv_X:LpRRV)
+      : IsFiniteExpectation prts (rvpow (rvabs rv_X) p)
+      := LpRRV_lp _.
+
 
     Definition pack_LpRRV (rv_X:Ts -> R) {rv:RandomVariable dom borel_sa rv_X} {lp:IsLp p rv_X}
       := LpRRV_of rv_X rv lp.
@@ -938,8 +952,8 @@ Section Lp.
     Qed.
     
     Definition LpRRVnorm (rv_X:LpRRV (S p)) : R
-      := root (INR (S p)) (FiniteExpectation prts (rvpow (rvabs rv_X) (S p)) (isfe:=LpRRV_lp _)).
-    
+      := root (INR (S p)) (FiniteExpectation prts (rvpow (rvabs rv_X) (S p))).
+
     Global Instance LpRRV_norm_proper : Proper (LpRRV_eq ==> eq) LpRRVnorm.
     Proof.
       unfold Proper, respectful, LpRRVnorm, LpRRV_eq.
@@ -1184,7 +1198,7 @@ Section Lp.
 
     Lemma FiniteExpectation_Lp_pos y
           {islp:IsLp (S p) y} :
-      0 <= FiniteExpectation prts (rvpow (rvabs y) (S p)) (isfe:=islp).
+      0 <= FiniteExpectation prts (rvpow (rvabs y) (S p)).
     Proof.
       apply FiniteExpectation_pos.
       typeclasses eauto.
@@ -1198,13 +1212,7 @@ Section Lp.
                 (rvpow (rvabs (rvscale x y)) (S p))
                 (rvscale (Rabs x ^ S p) (rvpow (rvabs y) (S p))))
         by now rewrite rv_abs_scale_eq, rvpow_scale.
-      rewrite (@FiniteExpectation_ext _ _ prts _ _ eqq
-                                         (@LpRRV_lp (S p)
-                                                    (@pack_LpRRV (S p) (@rvscale Ts x (@LpRRV_rv_X (S p) y))
-                                                                 (@rvscale_rv Ts dom x (@LpRRV_rv_X (S p) y) (@LpRRV_rv (S p) y))
-                                                                 (@IsLp_scale (S p) x (@LpRRV_rv_X (S p) y) (@LpRRV_lp (S p) y))))
-                                         (@IsFiniteExpectation_scale _ _ _ _ _ (LpRRV_lp _))).
-
+      rewrite (FiniteExpectation_ext prts _ _ eqq).
       rewrite FiniteExpectation_scale.
       rewrite root_mult_distr.
       - f_equal.
@@ -1317,4 +1325,39 @@ Section Lp.
   
 End Lp.
 
+Hint Rewrite LpRRVq_constE : quot.
+Hint Rewrite LpRRVq_zeroE : quot.
+Hint Rewrite LpRRVq_scaleE : quot.
+Hint Rewrite LpRRVq_oppE : quot.
+Hint Rewrite LpRRVq_plusE : quot.
+Hint Rewrite LpRRVq_minusE : quot.
+Hint Rewrite @LpRRVq_constE : quot.
+Hint Rewrite @LpRRVq_zeroE : quot.
+Hint Rewrite @LpRRVq_scaleE : quot.
+Hint Rewrite @LpRRVq_oppE : quot.
+Hint Rewrite @LpRRVq_plusE : quot.
+Hint Rewrite @LpRRVq_minusE : quot.
+Hint Rewrite @LpRRVq_constE : quot.
+Hint Rewrite LpRRVq_normE : quot.
 
+Global Arguments LpRRVq_AbelianGroup {Ts} {dom} prts p.
+Global Arguments LpRRVq_ModuleSpace {Ts} {dom} prts p.
+
+Ltac LpRRVq_simpl :=
+  repeat match goal with
+         | [H: LpRRVq _ _ |- _ ] =>
+           let xx := fresh H in destruct (Quot_inv H) as [xx ?]; subst H; rename xx into H
+         | [H: AbelianGroup.sort (LpRRVq_AbelianGroup _ _) |- _ ] =>
+           let xx := fresh H in destruct (Quot_inv H) as [xx ?]; subst H; rename xx into H
+         | [H: ModuleSpace.sort R_Ring (LpRRVq_ModuleSpace _ _) |- _ ] =>
+           let xx := fresh H in destruct (Quot_inv H) as [xx ?]; subst H; rename xx into H
+         end
+  ; try autorewrite with quot in *
+  ; try apply (@eq_Quot _ _ (LpRRV_eq_equiv _)).
+
+Ltac LpRRV_simpl
+  := repeat match goal with
+            | [H : LpRRV _ _ |- _ ] => destruct H as [???]
+            end
+     ; unfold LpRRVplus, LpRRVminus, LpRRVopp, LpRRVscale
+     ; simpl.
