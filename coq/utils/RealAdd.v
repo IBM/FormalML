@@ -1066,7 +1066,11 @@ Section ineqs.
        repeat rewrite Rpower_base_1.
        right ; field.
     ++ subst. left.
-       rewrite Rmult_0_r.  lra.
+       rewrite Rmult_0_r.
+       rewrite sqrt_0 ; lra.
+    ++ subst.
+       rewrite Rmult_0_l.
+       rewrite sqrt_0; lra.
   Qed.
 
   Lemma minkowski_helper_aux (p:nat) (a t : R) : 0 < t ->
