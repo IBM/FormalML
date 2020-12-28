@@ -2,7 +2,7 @@ Require Import Coq.Reals.Rbase Coq.Reals.RList.
 Require Import Coq.Reals.Rfunctions.
 Require Import Ranalysis_reg.
 Require Import Coquelicot.Hierarchy Coquelicot.PSeries Coquelicot.Series Coquelicot.ElemFct.
-Require Import Coquelicot.Lim_seq.
+Require Import Coquelicot.Lim_seq Coquelicot.Lub Coquelicot.Rbar.
 Require Import Lia Lra.
 Require Import Reals.Integration.
 Require Import Rtrigo_def.
@@ -1105,4 +1105,64 @@ Section ineqs.
     repeat (rewrite minkowski_helper_aux ; try lra).
   Qed.
 
+  Lemma minkowski_inf (p : nat) {a b : R}:
+    (0 < a) -> (0 < b) -> 
+    is_glb_Rbar (fun z => exists (t:R), 
+             0<t<1 /\
+             z = (pow (/t) p)*(pow a (S p)) + (pow (/(1-t)) p)*(pow b (S p)))
+            (pow (a + b) (S p)).
+  Proof.
+    intros.
+    unfold is_glb_Rbar, is_lb_Rbar.
+    split; intros.
+    - destruct H1 as [t [? ?]].
+      rewrite H2; simpl.
+      apply minkowski_helper; trivial; now left.
+    - specialize (H1  ((a + b) ^ S p)).
+      apply H1.
+      exists (a / (a + b)).
+      split.
+      + split.
+        * apply Rdiv_lt_0_compat; trivial.
+          now apply Rplus_lt_0_compat.
+        * apply Rmult_lt_reg_r with (r := a+b).
+          now apply Rplus_lt_0_compat.
+          unfold Rdiv.
+          rewrite Rmult_assoc, Rinv_l.
+          rewrite Rmult_1_r, Rmult_1_l.
+          replace (a) with (a + 0) at 1 by lra.
+          now apply Rplus_lt_compat_l.
+          apply Rgt_not_eq.
+          now apply Rplus_lt_0_compat.
+      + simpl.
+        assert (a <> 0) by now apply Rgt_not_eq.
+        assert (a + b <> 0) by (apply Rgt_not_eq; now apply Rplus_lt_0_compat).
+        replace (/ (a / (a + b))) with ((a+b)* (/a)).
+        rewrite Rpow_mult_distr.        
+        rewrite Rmult_assoc.
+        replace ((/ a) ^ p * (a * a ^ p)) with (a).
+        replace (/ (1 - a / (a + b))) with ((a+b)/b).
+        unfold Rdiv.
+        rewrite Rpow_mult_distr.
+        rewrite Rmult_assoc.
+        replace ((/ b) ^ p * (b * b ^ p)) with (b).
+        ring.
+        rewrite <- Rmult_assoc.
+        rewrite Rmult_comm.
+        rewrite <- Rmult_assoc.
+        rewrite <- Rpow_mult_distr.      
+        rewrite Rinv_r, pow1; lra.
+        field.
+        split; trivial.
+        replace (a + b - a) with b by lra.
+        now apply Rgt_not_eq.
+        rewrite <- Rmult_assoc.
+        rewrite Rmult_comm.
+        rewrite <- Rmult_assoc.
+        rewrite <- Rpow_mult_distr.      
+        rewrite Rinv_r, pow1; lra.
+        field.
+        now split.
+  Qed.
+  
 End ineqs.
