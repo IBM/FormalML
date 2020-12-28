@@ -1043,6 +1043,44 @@ Section Lp.
       lra.
     Qed.
     
+    Lemma pow_root_inv x :
+      0 <= x ->
+      root (INR (S p)) x ^ S p = x.
+    Proof.
+      intros.
+      unfold root.
+      match_destr.
+      - now rewrite pow0_Sbase.
+      - rewrite <- Rpower_pow.
+        + rewrite Rpower_mult.
+          rewrite Rinv_l.
+          * rewrite Rpower_1; trivial.
+            lra.
+          * apply INR_nzero; lia.
+        + apply exp_pos.
+    Qed.
+    
+    Lemma root_pow_inv x :
+      0 <= x ->
+      root (INR (S p)) (x ^ S p) = x.
+    Proof.
+      intros.
+      unfold root.
+      match_destr.
+      - now apply pow_integral in e.
+      - assert (x <> 0).
+        {
+          intro; subst.
+          rewrite pow_i in n; try lra; try lia.
+        }
+        rewrite <- Rpower_pow; try lra.
+        rewrite Rpower_mult.
+        rewrite Rinv_r.
+        + rewrite Rpower_1; trivial.
+          lra.
+        + apply INR_nzero; lia.
+    Qed.
+
     Lemma Minkowski_rv (x y : LpRRV (S p)) (t:R): 
        0 < t < 1 -> 
        rv_le (rvpow (rvplus (rvabs x) (rvabs y)) (S p))
@@ -1092,6 +1130,87 @@ Section Lp.
       apply Rle_trans with 
           (r2 := FiniteExpectation prts (rvpow (rvplus (rvabs x) (rvabs y)) (S p))); trivial.
    Qed.
+
+    Lemma root_nneg x a :
+      0 <= root x a.
+    Proof.
+      intros.
+      unfold root.
+      match_destr; try lra.
+      unfold Rpower.
+      left.
+      apply exp_pos.
+    Qed.
+
+    Lemma root_pos (a : R) :
+      0 < a -> 0 < root (INR (S p)) a.
+    Proof.
+      intros.
+      unfold root.
+      match_destr.
+      congruence.
+      apply Rpower_pos.
+    Qed.
+
+    Lemma Minkowski_2 (x y : LpRRV (S p))
+          (xexppos : 0 < FiniteExpectation prts (rvpow (rvabs x) (S p)))
+          (yexppos : 0 < FiniteExpectation prts (rvpow (rvabs y) (S p))) :
+       FiniteExpectation prts (rvpow (rvabs (rvplus x y)) (S p))  <=
+       pow ((root (INR (S p)) (FiniteExpectation prts (rvpow (rvabs x) (S p)))) +
+            (root (INR (S p)) (FiniteExpectation prts (rvpow (rvabs y) (S p))))) (S p).
+    Proof.
+      generalize (Minkowski_1 x y); intros.
+      pose (a := root (INR (S p)) (FiniteExpectation prts (rvpow (rvabs x) (S p)))).
+      pose (b := root (INR (S p)) (FiniteExpectation prts (rvpow (rvabs y) (S p)))).
+      assert (0 < a).
+      unfold a.
+      now apply root_pos.
+      assert (0 < b).
+      now apply root_pos.
+      replace (FiniteExpectation prts (rvpow (rvabs x) (S p))) with (pow a (S p)) in H.
+      replace (FiniteExpectation prts (rvpow (rvabs y) (S p))) with (pow b (S p)) in H.
+      specialize (H (a /(a + b))).
+      cut_to H.
+      rewrite (minkowski_subst p H0 H1) in H.
+      unfold a in H.
+      unfold b in H.
+      apply H.
+      now apply minkowski_range.
+      unfold b.
+      apply pow_root_inv; now left.
+      apply pow_root_inv; now left.      
+    Qed.
+
+    Lemma Rle_root_l (a b : R) :
+      0 < a -> a  <= b -> root (INR (S p)) a <= root (INR (S p)) b.
+    Proof.
+      unfold root.
+      intros.
+      match_destr; [lra |].
+      match_destr; [lra |].      
+      apply Rle_Rpower_l.
+      left; apply Rinv_0_lt_compat.
+      apply lt_0_INR; lia.
+      split; lra.
+    Qed.
+
+    Lemma Minkowski (x y : LpRRV (S p))
+          (xexppos : 0 < FiniteExpectation prts (rvpow (rvabs x) (S p)))
+          (yexppos : 0 < FiniteExpectation prts (rvpow (rvabs y) (S p))) 
+          (xyexppos : 0 < FiniteExpectation prts (rvpow (rvabs (rvplus x y)) (S p))) :
+       root (INR (S p)) (FiniteExpectation prts (rvpow (rvabs (rvplus x y)) (S p)))  <=
+       (root (INR (S p)) (FiniteExpectation prts (rvpow (rvabs x) (S p)))) +
+       (root (INR (S p)) (FiniteExpectation prts (rvpow (rvabs y) (S p)))).
+    Proof.
+      generalize (Minkowski_2 x y xexppos yexppos); intros.
+      apply Rle_root_l in H; trivial.
+      rewrite root_pow_inv in H.
+      apply H.
+      left.
+      apply Rplus_lt_0_compat.
+      now apply root_pos.
+      now apply root_pos.
+    Qed.   
 
     Lemma LpRRV_norm_plus x y : LpRRVnorm (LpRRVplus x y) <= LpRRVnorm x + LpRRVnorm y.
     Proof.
@@ -1184,6 +1303,7 @@ Section Lp.
         rewrite H.
         apply FiniteExpectation_pf_irrel.
       }
+      
 
     Admitted.
 
@@ -1206,54 +1326,6 @@ Section Lp.
         rewrite Rpower_mult_distr; trivial; lra.
     Qed.
 
-    Lemma root_pos x a :
-      0 <= root x a.
-    Proof.
-      intros.
-      unfold root.
-      match_destr; try lra.
-      unfold Rpower.
-      left.
-      apply exp_pos.
-    Qed.
-
-    Lemma pow_root_inv x :
-      0 <= x ->
-      root (INR (S p)) x ^ S p = x.
-    Proof.
-      intros.
-      unfold root.
-      match_destr.
-      - now rewrite pow0_Sbase.
-      - rewrite <- Rpower_pow.
-        + rewrite Rpower_mult.
-          rewrite Rinv_l.
-          * rewrite Rpower_1; trivial.
-            lra.
-          * apply INR_nzero; lia.
-        + apply exp_pos.
-    Qed.
-    
-    Lemma root_pow_inv x :
-      0 <= x ->
-      root (INR (S p)) (x ^ S p) = x.
-    Proof.
-      intros.
-      unfold root.
-      match_destr.
-      - now apply pow_integral in e.
-      - assert (x <> 0).
-        {
-          intro; subst.
-          rewrite pow_i in n; try lra; try lia.
-        }
-        rewrite <- Rpower_pow; try lra.
-        rewrite Rpower_mult.
-        rewrite Rinv_r.
-        + rewrite Rpower_1; trivial.
-          lra.
-        + apply INR_nzero; lia.
-    Qed.
 
     Lemma FiniteExpectation_Lp_pos y
           {islp:IsLp (S p) y} :
