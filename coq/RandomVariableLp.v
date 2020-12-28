@@ -1077,20 +1077,21 @@ Section Lp.
        (pow (/(1-t)) p) * (FiniteExpectation prts (rvpow (rvabs y) (S p))).
     Proof.
       intros.
+      generalize (Minkowski_rv x y t H); intros.
+      generalize (rvpow_plus_le x y); intros.
       assert (IsFiniteExpectation prts (rvpow (rvplus (rvabs x) (rvabs y)) (S p))).
-      admit.
+      apply (IsFiniteExpectation_bounded _ _ _ _ H1 H0).
       assert (FiniteExpectation prts (rvpow (rvabs (rvplus x y)) (S p)) <=
               FiniteExpectation prts (rvpow (rvplus (rvabs x) (rvabs y)) (S p))).
       apply FiniteExpectation_le.
       apply rvpow_plus_le.
-      generalize (Minkowski_rv x y t H); intros.
-      generalize (FiniteExpectation_le _ _ _ H2); intros.
-      rewrite FiniteExpectation_plus in H3.
-      rewrite FiniteExpectation_scale in H3.
-      rewrite FiniteExpectation_scale in H3.
+      generalize (FiniteExpectation_le _ _ _ H0); intros.
+      rewrite FiniteExpectation_plus in H4.
+      rewrite FiniteExpectation_scale in H4.
+      rewrite FiniteExpectation_scale in H4.
       apply Rle_trans with 
           (r2 := FiniteExpectation prts (rvpow (rvplus (rvabs x) (rvabs y)) (S p))); trivial.
-      Admitted.
+   Qed.
 
     Lemma LpRRV_norm_plus x y : LpRRVnorm (LpRRVplus x y) <= LpRRVnorm x + LpRRVnorm y.
     Proof.
