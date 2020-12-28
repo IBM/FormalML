@@ -1043,6 +1043,55 @@ Section Lp.
       lra.
     Qed.
     
+    Lemma Minkowski_rv (x y : LpRRV (S p)) (t:R): 
+       0 < t < 1 -> 
+       rv_le (rvpow (rvplus (rvabs x) (rvabs y)) (S p))
+             (rvplus
+                (rvscale (pow (/t) p) (rvpow (rvabs x) (S p))) 
+                (rvscale (pow (/(1-t)) p) (rvpow (rvabs y) (S p)))).
+    Proof.
+      intros.
+      intro x0.
+      generalize (@minkowski_helper p (rvabs x x0) (rvabs y x0) t); intros.
+      unfold rvpow, rvscale, rvplus.
+      unfold rvabs in *.
+      apply H0; trivial.
+      apply Rabs_pos.
+      apply Rabs_pos.
+   Qed.
+
+    Lemma rvpow_plus_le (x y : LpRRV (S p)) :
+      rv_le (rvpow (rvabs (rvplus x y)) (S p)) (rvpow (rvplus (rvabs x) (rvabs y)) (S p)).
+    Proof.
+      intro x0.
+      unfold rvpow, rvabs, rvplus.
+      apply pow_maj_Rabs.
+      rewrite Rabs_Rabsolu.      
+      apply Rabs_triang.
+    Qed.
+    
+    Lemma Minkowski_1 (x y : LpRRV (S p)) (t:R):
+       0 < t < 1 -> 
+       (FiniteExpectation prts (rvpow (rvabs (rvplus x y)) (S p)))  <=
+       (pow (/t) p) * (FiniteExpectation prts (rvpow (rvabs x) (S p))) + 
+       (pow (/(1-t)) p) * (FiniteExpectation prts (rvpow (rvabs y) (S p))).
+    Proof.
+      intros.
+      assert (IsFiniteExpectation prts (rvpow (rvplus (rvabs x) (rvabs y)) (S p))).
+      admit.
+      assert (FiniteExpectation prts (rvpow (rvabs (rvplus x y)) (S p)) <=
+              FiniteExpectation prts (rvpow (rvplus (rvabs x) (rvabs y)) (S p))).
+      apply FiniteExpectation_le.
+      apply rvpow_plus_le.
+      generalize (Minkowski_rv x y t H); intros.
+      generalize (FiniteExpectation_le _ _ _ H2); intros.
+      rewrite FiniteExpectation_plus in H3.
+      rewrite FiniteExpectation_scale in H3.
+      rewrite FiniteExpectation_scale in H3.
+      apply Rle_trans with 
+          (r2 := FiniteExpectation prts (rvpow (rvplus (rvabs x) (rvabs y)) (S p))); trivial.
+      Admitted.
+
     Lemma LpRRV_norm_plus x y : LpRRVnorm (LpRRVplus x y) <= LpRRVnorm x + LpRRVnorm y.
     Proof.
       unfold Proper, respectful, LpRRVnorm, LpRRVplus.
@@ -1136,6 +1185,10 @@ Section Lp.
       }
 
     Admitted.
+
+
+
+
 
     Lemma root_mult_distr x a b :
       0 <= a ->
