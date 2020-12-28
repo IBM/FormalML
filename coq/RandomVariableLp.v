@@ -1212,17 +1212,32 @@ Section Lp.
       now apply root_pos.
     Qed.   
 
+    Lemma Minkowski_power (x y : LpRRV (S p))
+          (xexppos : 0 < FiniteExpectation prts (rvpow (rvabs x) (S p)))
+          (yexppos : 0 < FiniteExpectation prts (rvpow (rvabs y) (S p))) 
+          (xyexppos : 0 < FiniteExpectation prts (rvpow (rvabs (rvplus x y)) (S p))) :
+       Rpower (FiniteExpectation prts (rvpow (rvabs (rvplus x y)) (S p))) (/ INR (S p)) <=
+       Rpower (FiniteExpectation prts (rvpow (rvabs x) (S p))) (/ INR (S p)) +
+       Rpower (FiniteExpectation prts (rvpow (rvabs y) (S p))) (/ INR (S p)).
+    Proof.
+      generalize (Minkowski x y xexppos yexppos xyexppos); intros.
+      unfold root in H.
+      repeat match_destr_in H; try lra.
+    Qed.   
+
     Lemma LpRRV_norm_plus x y : LpRRVnorm (LpRRVplus x y) <= LpRRVnorm x + LpRRVnorm y.
     Proof.
       unfold Proper, respectful, LpRRVnorm, LpRRVplus.
-      simpl LpRRV_rv_X .
+      simpl LpRRV_rv_X.
+      simpl LpRRV_LpS_FiniteLp.
       unfold root.
 
       (* first we show that the zero cases (which are special cased by root
          work out
-     *)
+       *)
 
-      destruct (Req_EM_T (FiniteExpectation prts (rvpow (rvabs x) (S p))) 0).
+      destruct (Req_EM_T (@FiniteExpectation Ts dom prts (@rvpow Ts (@rvabs Ts (@LpRRV_rv_X (S p) x)) (S p))
+             (@LpRRV_LpS_FiniteLp (S p) x)) 0).
       {
         field_simplify.
         apply LpFin0_almost0 in e; try typeclasses eauto.
@@ -1303,13 +1318,8 @@ Section Lp.
         rewrite H.
         apply FiniteExpectation_pf_irrel.
       }
-      
-
-    Admitted.
-
-
-
-
+      now apply Minkowski_power.
+    Qed.
 
     Lemma root_mult_distr x a b :
       0 <= a ->
