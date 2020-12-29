@@ -84,6 +84,7 @@ Section defs.
     Definition rvmin  (rv_X1 rv_X2 : Ts -> R)
       := fun omega => Rmin (rv_X1 omega) (rv_X2 omega). 
 
+
     Program Definition pos_fun_part {Ts:Type} (f : Ts -> R) : (Ts -> nonnegreal) :=
       fun x => mknonnegreal (Rmax (f x) 0) _.
     Next Obligation.
@@ -96,6 +97,24 @@ Section defs.
       apply Rmax_r.
     Defined.
 
+    Definition rvclip {Ts:Type} (f : Ts -> R) (c : posreal) : Ts -> R
+      := fun x => if Rgt_dec (f x) c then c else
+                    (if Rlt_dec (f x) (-c) then (-c) else f x).
+
+    Lemma rvclip_abs_bounded rv_X c :
+      forall omega : Ts, Rabs ((rvclip rv_X c) omega) <= c.
+    Proof.
+      intros.
+      assert (0 < c) by apply (cond_pos c).
+      unfold rvclip.
+      match_destr.
+      rewrite Rabs_pos_eq; lra.
+      match_destr.
+      rewrite Rabs_Ropp.
+      rewrite Rabs_pos_eq; lra.      
+      apply Rabs_le.
+      lra.
+   Qed.
 
   End funs.
 
@@ -294,6 +313,8 @@ Section defs.
       unfold rvpow, rvsqr, Rsqr; simpl.
       lra.
     Qed.
+
+      
 
     Lemma pos_fun_part_unfold (f : Ts->R) :
       (fun x => nonneg (pos_fun_part f x)) === rvmax f (const 0).

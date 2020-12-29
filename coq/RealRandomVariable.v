@@ -336,6 +336,45 @@ Section RealRandomVariables.
       typeclasses eauto.
     Qed.
 
+    Instance rvclip_measurable (f : Ts -> R) (c : posreal) :
+      RealMeasurable f ->
+      RealMeasurable (rvclip f c).
+    Proof.
+      intros ??.
+      generalize (rvclip_abs_bounded f c); intros.
+      destruct (Rge_dec r c).
+      - assert (event_equiv (fun omega : Ts => rvclip f c omega <= r)
+                          Ω ).
+        + intro x.
+          specialize (H0 x).
+          generalize (Rle_abs (rvclip f c x)); intros.
+          split; red; lra.
+        + rewrite H1.
+          apply sa_all.
+      
+      - destruct (Rlt_dec r (-c)).
+        + assert (event_equiv (fun omega : Ts => rvclip f c omega <= r)
+                              event_none ).
+          * intro x.
+            specialize (H0 x).
+            generalize (Rle_abs (- rvclip f c x)); intros.
+            rewrite Rabs_Ropp in H1.
+            split; intros.
+            lra.
+            now unfold event_none in H2.
+          * rewrite H1.
+            apply sa_none.
+        + unfold RealMeasurable in H.
+          assert (event_equiv (fun omega : Ts => rvclip f c omega <= r)
+                              (fun omega : Ts => f omega <= r)).
+          * intro x.
+            unfold rvclip.
+            match_destr.
+            lra.
+            match_destr; lra.
+          * now rewrite H1.
+      Qed.
+
     Instance pos_fun_part_measurable (f : Ts -> R) :
       RealMeasurable f ->
       RealMeasurable (pos_fun_part f).
