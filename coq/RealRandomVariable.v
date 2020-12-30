@@ -336,7 +336,7 @@ Section RealRandomVariables.
       typeclasses eauto.
     Qed.
 
-    Instance rvclip_measurable (f : Ts -> R) (c : posreal) :
+    Instance rvclip_measurable (f : Ts -> R) (c : nonnegreal) :
       RealMeasurable f ->
       RealMeasurable (rvclip f c).
     Proof.
@@ -405,6 +405,13 @@ Section RealRandomVariables.
       Global Instance rvopp_rv (rv_X : Ts -> R) 
              {rv : RandomVariable dom borel_sa rv_X}
         : RandomVariable dom borel_sa (rvopp rv_X).
+      Proof.
+        typeclasses eauto.
+      Qed.
+
+      Global Instance rvclip_rv (rv_X : Ts -> R) (c:nonnegreal)
+             {rv : RandomVariable dom borel_sa rv_X}
+        : RandomVariable dom borel_sa (rvclip rv_X c).
       Proof.
         typeclasses eauto.
       Qed.

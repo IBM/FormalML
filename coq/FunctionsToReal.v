@@ -97,7 +97,7 @@ Section defs.
       apply Rmax_r.
     Defined.
 
-    Definition rvclip {Ts:Type} (f : Ts -> R) (c : posreal) : Ts -> R
+    Definition rvclip {Ts:Type} (f : Ts -> R) (c : nonnegreal) : Ts -> R
       := fun x => if Rgt_dec (f x) c then c else
                     (if Rlt_dec (f x) (-c) then (-c) else f x).
 
@@ -105,7 +105,7 @@ Section defs.
       forall omega : Ts, Rabs ((rvclip rv_X c) omega) <= c.
     Proof.
       intros.
-      assert (0 < c) by apply (cond_pos c).
+      assert (0 <= c) by apply (cond_nonneg c).
       unfold rvclip.
       match_destr.
       rewrite Rabs_pos_eq; lra.
