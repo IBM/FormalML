@@ -3,13 +3,14 @@ Require Import Reals.
 Require Import Lra Lia.
 Require Import List Permutation.
 Require Import Morphisms EquivDec Program.
-Require Import Coquelicot.Rbar Coquelicot.Lub Coquelicot.Lim_seq.
+Require Import Coquelicot.Rbar Coquelicot.Lub Coquelicot.Lim_seq Coquelicot.Hierarchy.
 Require Import Classical_Prop.
 Require Import Classical.
 
 Require Import Utils.
 Require Import NumberIso.
 Require Export SimpleExpectation.
+Require Import AlmostEqual.
 
 Import ListNotations.
 
@@ -28,10 +29,65 @@ Section Expectation.
     Glb_Rbar (fun (x : R) =>
                 ps_P (fun omega => (rvabs rv_X) omega > x) = 0).
 
-  Definition essentially_bounded (rv_X : Ts -> R) 
-             (rv : RandomVariable dom borel_sa rv_X)  :=
+  Definition is_Linfty (rv_X : Ts -> R) 
+             {rv : RandomVariable dom borel_sa rv_X}  :=
     is_finite (Linfty_norm rv_X).
 
+(*
+  Lemma Linfty_norm_nonneg rv_X 
+        {rv : RandomVariable dom borel_sa rv_X}  :
+    0 <= Linfty_norm rv_X.
+  Proof.
+    unfold Linfty_norm.
+  Admitted.
+ *)
+  
+  Lemma almost_bounded (rv_X : Ts -> R) (c : nonnegreal)
+        (rv : RandomVariable dom borel_sa rv_X) :
+    ps_P (fun omega => (rvabs rv_X) omega > c) = 0 ->
+    rv_almost_eq Prts rv_X (rvclip rv_X c).
+ Proof.
+   intros.
+   unfold rv_almost_eq.
+   generalize (ps_complement Prts (fun omega : Ts => rvabs rv_X omega > c)); intros.
+   rewrite H, Rminus_0_r in H0.
+   cut_to H0.
+   - rewrite <- H0.
+     apply ps_proper.
+     intros x.
+     unfold event_complement.
+     unfold rvclip, rvabs.
+     generalize (Rle_abs (rv_X x)); intros.       
+     simpl.
+     match_destr; [lra |].
+     generalize (Rcomplements.Rabs_maj2 (rv_X x)); intros.
+     match_destr; [lra |].
+     split; [|lra].
+     intros.
+     unfold Rabs.
+     match_destr; lra.
+   - apply sa_le_gt.
+     apply Rabs_measurable.
+     unfold RealMeasurable.
+     apply borel_sa_preimage2; intros.
+     now apply rv_preimage.
+   Qed.
+
+ (*
+  Lemma almost_bounded_exists (rv_X : Ts -> R)
+        (rv : RandomVariable dom borel_sa rv_X) :
+    is_Linfty rv_X ->
+    exists (c:nonnegreal), rv_almost_eq Prts rv_X (rvclip rv_X c).
+  Proof.
+    unfold is_Linfty, Linfty_norm.
+    intros.
+    unfold Glb_Rbar in H.
+    destruct (ex_glb_Rbar (fun x : R => ps_P (fun omega : Ts => rvabs rv_X omega > x) = 0)).
+    unfold is_glb_Rbar, is_lb_Rbar in i.
+    destruct i.
+    simpl in H.
+  *)  
+    
   Definition BoundedPositiveRandomVariable
              (rv_X1 rv_X2 : Ts -> R) :=
     PositiveRandomVariable rv_X2 /\ rv_le rv_X2 rv_X1.
@@ -2162,6 +2218,31 @@ Section Expectation.
           -- now apply sa_make_collection_disjoint.
           -- apply make_collection_disjoint_disjoint.
   Qed.
+
+(*
+  Lemma Linfty_norm_contains_finite_lim (rv_X : Ts -> R) 
+        {rv : RandomVariable dom borel_sa rv_X} : 
+      is_finite (Linfty_norm rv_X) ->
+      ps_P (fun omega => (rvabs rv_X) omega > (Linfty_norm rv_X)) = 0.
+   Proof.
+     generalize (lim_prob (fun n => (fun omega => (rvabs rv_X) omega > (Linfty_norm rv_X) + / INR (S n))) (fun omega => (rvabs rv_X) omega > (Linfty_norm rv_X))); intros.
+     cut_to H.
+     - assert (forall n, ps_P (fun omega : Ts => rvabs rv_X omega > Linfty_norm rv_X + / INR (S n)) = 0).
+       + admit.
+       + apply is_lim_seq_ext with (v := fun _ => 0) in H.
+         * generalize (is_lim_seq_const 0); intros.
+           generalize (is_lim_seq_unique); intros.
+           apply is_lim_seq_unique in H.
+           apply is_lim_seq_unique in H2.
+           rewrite H in H2.
+           now rewrite Rbar_finite_eq in H2.
+         * unfold Linfty_norm in H0.
+           unfold Glb_Rbar in H0.
+           destruct (ex_glb_Rbar (fun x : R => ps_P (fun omega : Ts => rvabs rv_X omega > x) = 0)).
+           unfold is_glb_Rbar, is_lb_Rbar in i.
+           intros.
+           destruct i.
+*)           
 
   Lemma is_lim_seq_list_sum (l:list (nat->R)) (l2:list R) :
     Forall2 is_lim_seq l (map Finite l2) ->
