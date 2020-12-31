@@ -69,6 +69,14 @@ Section defs.
 
     Definition rvabs  (rv_X : Ts -> R) := fun omega => Rabs (rv_X omega).
 
+    Lemma rvabs_pos (rv_X : Ts -> R) :
+      rv_le (const 0) (rvabs rv_X).
+    Proof.
+      intro x.
+      unfold const, rvabs.
+      apply Rabs_pos.
+    Qed.
+
     Definition rvchoice (c:Ts -> bool) (rv_X1 rv_X2 : Ts -> R)
       := fun omega => if c omega then  rv_X1 omega else rv_X2 omega.
 
@@ -101,6 +109,26 @@ Section defs.
       := fun x => if Rgt_dec (f x) c then c else
                     (if Rlt_dec (f x) (-c) then (-c) else f x).
 
+    Lemma rvclip_le_c (rv_X : Ts -> R) (c : nonnegreal) :
+      rv_le (rvclip rv_X c) (const c).
+    Proof.
+      intro x0.
+      unfold rvclip, const.
+      assert (0 <= c) by apply (cond_nonneg c).
+      match_destr; [lra |].
+      match_destr; lra.
+    Qed.
+      
+    Lemma rvclip_negc_le (rv_X : Ts -> R) (c : nonnegreal) :
+      rv_le (const (-c)) (rvclip rv_X c).
+    Proof.
+      intro x0.
+      unfold rvclip, const.
+      assert (0 <= c) by apply (cond_nonneg c).
+      match_destr; [lra |].
+      match_destr; lra.
+    Qed.
+
     Lemma rvclip_abs_bounded rv_X c :
       forall omega : Ts, Rabs ((rvclip rv_X c) omega) <= c.
     Proof.
@@ -114,6 +142,14 @@ Section defs.
       rewrite Rabs_pos_eq; lra.      
       apply Rabs_le.
       lra.
+   Qed.
+
+    Lemma rvclip_abs_le_c (rv_X : Ts -> R) (c : nonnegreal) :
+      rv_le (rvabs (rvclip rv_X c)) (const c).
+    Proof.
+      intro x.
+      unfold rvabs, const.
+      apply rvclip_abs_bounded.
    Qed.
 
   End funs.
