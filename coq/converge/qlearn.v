@@ -38,7 +38,8 @@ Set Bullet Behavior "Strict Subproofs".
     Qed.
 
     Lemma is_contraction_RMsync (r : R) :
-      (0<r<1) -> (@norm_factor R_AbsRing X <= 1) -> is_contraction (fun (x : X) => plus (scal (1 - r) x) (scal r (F x))).
+      (0<r<1) -> (@norm_factor R_AbsRing X <= 1) ->
+      is_contraction (fun (x : X) => plus (scal (1 - r) x) (scal r (F x))).
     Proof.
       intros Hr Hnf.
       unfold is_contraction.
@@ -54,7 +55,11 @@ Set Bullet Behavior "Strict Subproofs".
       + unfold is_Lipschitz in *.
         destruct HF as [Hγ0 HF].
         split; intros.
-        ++ admit.
+        ++ replace 0 with  (0+0) by lra.
+           apply Rplus_le_compat.
+           --- left. lra.
+           --- replace 0 with (r*0) by lra.
+               apply Rmult_le_compat_l ; lra.
         ++ rewrite Rmult_plus_distr_r.
            apply (@norm_compat1 R_AbsRing X).
            rewrite plus_minus_scal_distr.
