@@ -45,7 +45,12 @@ Set Bullet Behavior "Strict Subproofs".
       destruct hF as [γ [Hγ HF]].
       exists (1 - r + r*γ).
       split.
-      + admit.
+      + destruct HF.
+        rewrite <-(Rplus_0_r).
+        replace (1 -r + r*γ) with (1 + r*(γ-1)) by lra.
+        apply Rplus_lt_compat_l.
+        replace 0 with (r*0) by lra.
+        apply Rmult_lt_compat_l ; lra.
       + unfold is_Lipschitz in *.
         destruct HF as [Hγ0 HF].
         split; intros.
