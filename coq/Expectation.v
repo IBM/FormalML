@@ -33,17 +33,71 @@ Section Expectation.
              {rv : RandomVariable dom borel_sa rv_X}  :=
     is_finite (Linfty_norm rv_X).
 
-(*
-  Lemma Linfty_norm_nonneg rv_X 
-        {rv : RandomVariable dom borel_sa rv_X}  :
-    0 <= Linfty_norm rv_X.
+  Lemma empty_glb_inf (E : R -> Prop) :
+    (forall (r:R), ~ E r) -> is_glb_Rbar E p_infty.
   Proof.
-    unfold Linfty_norm.
-  Admitted.
- *)
-  
+    unfold is_glb_Rbar, is_lb_Rbar.
+    split; intros.
+    - specialize (H x).
+      tauto.
+    - unfold Rbar_le.
+      match_destr.
+    Qed.
+      
+  Lemma is_finite_glb (E : R -> Prop) :
+    (exists (z:Rbar), is_glb_Rbar E z /\ is_finite z) -> exists (r:R), E r.
+  Proof.
+    intros.
+    destruct H as [z [? ?]].
+    generalize (empty_glb_inf E); intros.
+    apply imply_to_or in H1.
+    destruct H1.
+    - now apply not_all_not_ex in H1.
+    - apply is_glb_Rbar_unique in H1.
+      apply is_glb_Rbar_unique in H.
+      rewrite H in H1.
+      rewrite H1 in H0.
+      discriminate.
+  Qed.
+
+  Lemma finite_glb (E : R -> Prop) :
+    is_finite (Glb_Rbar E) -> exists (r:R), E r.
+  Proof.
+    unfold Glb_Rbar.
+    destruct (ex_glb_Rbar E); simpl.
+    intros.
+    apply is_finite_glb.
+    exists x.
+    tauto.
+  Qed.
+
+  Lemma is_Linfty_c_nonneg (rv_X : Ts -> R)
+        {rv : RandomVariable dom borel_sa rv_X} :        
+    is_Linfty rv_X -> 
+    exists (c:nonnegreal), ps_P (fun omega => (rvabs rv_X) omega > c) = 0.
+  Proof.
+    unfold is_Linfty, Linfty_norm.
+    intros.
+    apply finite_glb in H.
+    destruct H.
+    destruct (Rle_dec 0 x).
+    - exists (mknonnegreal _ r).
+      now simpl.
+    - assert (0 > x) by lra.
+      assert (event_equiv (fun omega : Ts => rvabs rv_X omega > x)  Ω ).
+      + intro x0.
+        unfold rvabs.
+        generalize (Rabs_pos (rv_X x0)); intros.
+        unfold  Ω.
+        lra.
+      + rewrite H1 in H.
+        generalize (ps_all Prts); intros.
+        rewrite H in H2.
+        lra.
+    Qed.                          
+
   Lemma almost_bounded (rv_X : Ts -> R) (c : nonnegreal)
-        (rv : RandomVariable dom borel_sa rv_X) :
+        {rv : RandomVariable dom borel_sa rv_X} :
     ps_P (fun omega => (rvabs rv_X) omega > c) = 0 ->
     rv_almost_eq Prts rv_X (rvclip rv_X c).
  Proof.
@@ -73,21 +127,18 @@ Section Expectation.
      now apply rv_preimage.
    Qed.
 
- (*
   Lemma almost_bounded_exists (rv_X : Ts -> R)
         (rv : RandomVariable dom borel_sa rv_X) :
     is_Linfty rv_X ->
     exists (c:nonnegreal), rv_almost_eq Prts rv_X (rvclip rv_X c).
   Proof.
-    unfold is_Linfty, Linfty_norm.
     intros.
-    unfold Glb_Rbar in H.
-    destruct (ex_glb_Rbar (fun x : R => ps_P (fun omega : Ts => rvabs rv_X omega > x) = 0)).
-    unfold is_glb_Rbar, is_lb_Rbar in i.
-    destruct i.
-    simpl in H.
-  *)  
-    
+    generalize (is_Linfty_c_nonneg rv_X H); intros.
+    destruct H0.
+    exists x.
+    now apply almost_bounded.
+  Qed.
+  
   Definition BoundedPositiveRandomVariable
              (rv_X1 rv_X2 : Ts -> R) :=
     PositiveRandomVariable rv_X2 /\ rv_le rv_X2 rv_X1.
