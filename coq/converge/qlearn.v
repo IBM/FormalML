@@ -14,11 +14,28 @@ Set Bullet Behavior "Strict Subproofs".
       | (S k) => plus (scal (1 - α k) (RMsync k)) (scal (α k) (F (RMsync k)))
       end.
 
-    Lemma plus_minus_scal_distr (r : R_AbsRing) (x1 x2 y1 y2 : X) :
+    Lemma plus_minus_scal_distr (r : R) (x1 x2 y1 y2 : X) :
       minus (plus (scal (1 - r) x1) (scal r y1) ) (plus (scal (1-r) x2) (scal r y2)) =
       plus (scal (1-r) (minus x1 x2)) (scal r (minus y1 y2)).
     Proof.
-    Admitted.
+      generalize (scal_minus_distr_l (1 - r) x1 x2); intros H1.
+      generalize (scal_minus_distr_l r y1 y2); intros H2.
+      setoid_rewrite H1.
+      setoid_rewrite H2.
+      generalize (scal (1-r) x1) as a.
+      generalize (scal r y1) as b.
+      generalize (scal (1-r) x2) as c.
+      generalize (scal r y2) as d.
+      intros.
+      unfold minus.
+      rewrite opp_plus.
+      rewrite plus_assoc.
+      rewrite plus_assoc.
+      f_equal.
+      rewrite <-plus_assoc.
+      rewrite <-plus_assoc.
+      f_equal. apply plus_comm.
+    Qed.
 
     Lemma is_contraction_RMsync (r : R) :
       (0<r<1) -> (@norm_factor R_AbsRing X <= 1) -> is_contraction (fun (x : X) => plus (scal (1 - r) x) (scal r (F x))).
