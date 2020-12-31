@@ -65,7 +65,7 @@ Section defs.
 
     Definition rvpow (rv_X : Ts -> R) (n:nat) := fun omega => pow (rv_X omega) n.
 
-    Definition rvpower (rv_X1 rv_X2 : Ts -> R) := fun omega => Rpower (rv_X1 omega) (rv_X2 omega).
+    Definition rvpower (rv_X1 rv_X2 : Ts -> R) := fun omega => power (rv_X1 omega) (rv_X2 omega).
 
     Definition rvabs  (rv_X : Ts -> R) := fun omega => Rabs (rv_X omega).
 

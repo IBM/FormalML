@@ -528,6 +528,36 @@ Section fe.
     simpl; f_equal; f_equal; lra.
   Qed.
 
+    Lemma IsFiniteExpectation_proper_almost rv_X1 rv_X2
+        {rrv1:RandomVariable dom borel_sa rv_X1}
+        {rrv2:RandomVariable dom borel_sa rv_X2}
+        {isfe1:IsFiniteExpectation rv_X1}
+    :
+      rv_almost_eq prts rv_X1 rv_X2 ->
+      IsFiniteExpectation rv_X2.
+  Proof.
+    intros.
+    generalize (Expectation_almost_0 (rvminus rv_X1 rv_X2))
+    ; intros HH.
+    cut_to HH.
+    - assert (isfe2:IsFiniteExpectation (rvminus rv_X1 rv_X2))
+             by (now red; rewrite HH).
+      assert (isfe3:IsFiniteExpectation (rvopp (rvminus rv_X1 rv_X2)))
+        by now apply IsFiniteExpectation_opp.
+      assert (isfe4:IsFiniteExpectation (rvplus rv_X1 (rvopp (rvminus rv_X1 rv_X2))))
+        by (apply IsFiniteExpectation_plus; trivial; try typeclasses eauto).
+      eapply IsFiniteExpectation_proper; try eapply isfe4.
+      intros a.
+      rv_unfold; lra.
+    - unfold rv_almost_eq in *.
+      unfold const in *.
+      assert (event_equiv (fun x0 : Ts => rvminus rv_X1 rv_X2 x0 = 0) (fun x0 : Ts => rv_X1 x0 = rv_X2 x0)).
+      intros a.
+      unfold rvminus, rvplus, rvopp, rvscale.
+      split; intros; lra.
+      now rewrite H0.
+  Qed.
+
   Lemma FiniteExpectation_proper_almost rv_X1 rv_X2
         {rrv1:RandomVariable dom borel_sa rv_X1}
         {rrv2:RandomVariable dom borel_sa rv_X2}
@@ -736,6 +766,21 @@ Section fe.
         reflexivity.
       + typeclasses eauto.
       + typeclasses eauto.
+  Qed.
+
+  Global Instance IsFiniteExpectation_case
+         (c: Ts -> bool) (rv_X1 rv_X2 : Ts -> R)
+         {rv1 : RandomVariable dom borel_sa rv_X1}
+         {rv2 : RandomVariable dom borel_sa rv_X2} 
+         {isfe1:IsFiniteExpectation rv_X1}
+         {isfe2:IsFiniteExpectation rv_X2} :
+    IsFiniteExpectation (rvchoice c rv_X1 rv_X2).
+  Proof.
+    intros.
+    eapply IsFiniteExpectation_bounded
+    ; try eapply rvchoice_le_min
+    ; try eapply rvchoice_le_max
+    ; typeclasses eauto.
   Qed.
 
   Lemma FiniteExpectation_pos  (rv_X : Ts -> R)
