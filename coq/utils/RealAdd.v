@@ -1215,7 +1215,6 @@ Section power.
     intros.
     generalize (derivable_pt_lim_D_in (fun x : R => power x z)
                                       (fun x : R => z * power x (z - 1)) y); intros.
-    Check D_in_imp.
     apply D_in_imp with (D := no_cond).
     intros.
     now unfold no_cond.
