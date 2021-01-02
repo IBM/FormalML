@@ -393,6 +393,71 @@ Section RealRandomVariables.
       typeclasses eauto.
     Qed.
 
+    Instance ln_measurable (b : Ts -> R) :
+      (forall (x:Ts), (0 < b x)%R) ->
+      RealMeasurable b ->
+      RealMeasurable (fun (x:Ts) => ln (b x)).
+    Proof.
+      unfold RealMeasurable.
+      intros bpos rb.
+      intros.
+      assert (event_equiv (fun omega : Ts => ln (b omega) <= r)
+                          (fun omega : Ts => (b omega) <= exp r)).
+      - intro x.
+        specialize (bpos x).
+        split; intros.
+        + rewrite <- (exp_ln (b x)); trivial.
+          destruct H.
+          * left; now apply exp_increasing.
+          * rewrite H; now right.
+        + rewrite <- (ln_exp r).
+          destruct H.
+          * left; now apply ln_increasing.
+          * rewrite H; now right.
+      - rewrite H.
+        apply rb.
+    Qed.
+
+    Instance Rpower_measurable (b e : Ts -> R) :
+      (forall (x:Ts), (0 < b x)%R) ->
+      RealMeasurable b ->
+      RealMeasurable e ->
+      RealMeasurable (fun (x:Ts) => Rpower (b x) (e x)).
+    Proof.
+      unfold rvpower, Rpower.
+      intros bpos rb re.
+      apply measurable_continuous.
+      apply derivable_continuous.
+      apply derivable_exp.
+      apply mult_measurable; trivial.
+      now apply ln_measurable.
+    Qed.
+
+    (*
+    Instance rvpower_measurable (b e : Ts -> R) :
+      (forall (x:Ts), (0 <= b x)%R) ->
+      RealMeasurable b ->
+      RealMeasurable e ->
+      RealMeasurable (rvpower b e).
+    Proof.
+      unfold rvpower, power, RealMeasurable.
+      intros bpos rb re r.
+      assert (event_equiv  (fun omega : Ts => (if Req_EM_T (b omega) 0 then 0 else Rpower (b omega) (e omega)) <= r)
+                           (event_union
+                              (event_inter (fun omega => b omega = 0)
+                                           (fun omega => b omega <= r))
+                              (fun omega => 0 < (b omega)  /\
+                                            Rpower (b omega) (e omega) <= r))).
+      admit.
+      rewrite H.
+      apply sa_union.
+      apply sa_inter; trivial.
+      now apply sa_le_pt.
+      generalize (Rpower_measurable b e); intros.
+      cut_to H0; trivial.
+      unfold RealMeasurable in H0.
+    Qed.
+   *)
     Section rvs.
 
       Global Instance rvscale_rv (c: R) (rv_X : Ts -> R) 
