@@ -418,6 +418,15 @@ Section RealRandomVariables.
         apply rb.
     Qed.
 
+    Instance exp_measurable (b : Ts -> R) :
+      RealMeasurable b ->
+      RealMeasurable (fun (x:Ts) => exp (b x)).
+    Proof.
+      apply measurable_continuous.
+      apply derivable_continuous.
+      apply derivable_exp.
+   Qed.
+      
     Instance Rpower_measurable (b e : Ts -> R) :
       (forall (x:Ts), (0 < b x)%R) ->
       RealMeasurable b ->
@@ -426,14 +435,12 @@ Section RealRandomVariables.
     Proof.
       unfold rvpower, Rpower.
       intros bpos rb re.
-      apply measurable_continuous.
-      apply derivable_continuous.
-      apply derivable_exp.
+      apply exp_measurable.
       apply mult_measurable; trivial.
       now apply ln_measurable.
     Qed.
 
-    (*
+(*
     Instance rvpower_measurable (b e : Ts -> R) :
       (forall (x:Ts), (0 <= b x)%R) ->
       RealMeasurable b ->
@@ -454,10 +461,14 @@ Section RealRandomVariables.
       apply sa_inter; trivial.
       now apply sa_le_pt.
       generalize (Rpower_measurable b e); intros.
-      cut_to H0; trivial.
       unfold RealMeasurable in H0.
+      
+      cut_to H0; trivial.
+      
+      
     Qed.
-   *)
+ *)
+    
     Section rvs.
 
       Global Instance rvscale_rv (c: R) (rv_X : Ts -> R) 
