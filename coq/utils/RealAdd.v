@@ -1191,56 +1191,37 @@ Section power.
     - apply Rpower_mult_distr; lra.
   Qed.
   
-(*
   Lemma derivable_pt_lim_power' (x y : R) :
-    0 <= x ->
+    0 < x ->
     derivable_pt_lim (fun x0 : R => power x0 y) x (y * power x (y - 1)).
   Proof.
     intros.
     unfold power.
     match_destr.
-    - subst; simpl.
-      unfold derivable_pt_lim.
-      intros.
-      eexists (mkposreal (power eps y) _); simpl; intros.
-      repeat match_destr; try lra.
-      rewrite Rplus_0_l, Rmult_0_r, Rminus_0_r, Rminus_0_r.
-      admit.
-    - generalize (derivable_pt_lim_power x y); intros HH.
-      cut_to HH; [| lra].
-      unfold derivable_pt_lim in *.
-      match_destr; [lra |].
-      intros eps eps_pos.
-      destruct (HH eps eps_pos) as [delta ?].
-      exists delta; intros.
-      specialize (H0 _ H1 H2).
-      match_destr.
-      + rewrite e in H0.
-        
-        
-
-        assert (eqq1:h = -x) by lra.
-        subst.
-      + auto.
+    - lra.
+    - generalize (derivable_pt_lim_power x y H); intros HH.
+      apply derivable_pt_lim_locally_ext with (f := fun x => Rpower x y) (a := x/2) (b := x + x/2); trivial.
+      + lra.
+      + intros.
+        match_destr.
+        lra.
   Qed.
-      
-      
-      destruct (Req_EM_T 0 0).
-    - apply derivable_pt_lim_power.
- *)
-  (*
+
   Lemma Dpower' (y z : R) :
         0 < y ->
         D_in (fun x : R => power x z) (fun x : R => z * power x (z - 1))
-             (fun x : R => 0 <= x) y.
+             (fun x : R => 0 < x) y.
   Proof.
     intros.
-    eapply D_in_imp.
+    generalize (derivable_pt_lim_D_in (fun x : R => power x z)
+                                      (fun x : R => z * power x (z - 1)) y); intros.
+    Check D_in_imp.
+    apply D_in_imp with (D := no_cond).
     intros.
-    unfold D_in, limit1_in.
-
+    now unfold no_cond.
+    apply H0.
+    now apply derivable_pt_lim_power'.
   Qed.
-   *)
 
 End power.
 
