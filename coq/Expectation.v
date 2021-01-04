@@ -33,6 +33,12 @@ Section Expectation.
              {rv : RandomVariable dom borel_sa rv_X}  :=
     is_finite (Linfty_norm rv_X).
 
+  Definition norm_convergence 
+        (X: Ts -> R)
+        (Xn: nat -> Ts -> R)
+        (norm : (Ts -> R) -> nonnegreal) :=
+    is_lim_seq (fun n => norm (rvminus X (Xn n))) 0.
+
   Lemma empty_glb_inf (E : R -> Prop) :
     (forall (r:R), ~ E r) -> is_glb_Rbar E p_infty.
   Proof.
@@ -2270,7 +2276,64 @@ Section Expectation.
           -- apply make_collection_disjoint_disjoint.
   Qed.
 
-(*
+  Lemma zero_prob_bound
+        (rv_X : Ts -> R)         
+        {rv : RandomVariable dom borel_sa rv_X} : 
+    forall (c1 c2 : R),
+      c1 <= c2  ->
+      ps_P (fun omega : Ts => rvabs rv_X omega > c1) = 0 ->
+      ps_P (fun omega : Ts => rvabs rv_X omega > c2) = 0.
+  Proof.
+    intros.
+    unfold RandomVariable in rv.
+    assert (forall (r:R), sa_sigma (fun omega : Ts => rvabs rv_X omega > r)).
+    apply sa_le_gt.
+    intros.
+    apply Rabs_measurable.
+    unfold RealMeasurable.
+    now rewrite borel_sa_preimage2.
+
+    assert (event_sub (fun omega : Ts => rvabs rv_X omega > c2)
+                      (fun omega : Ts => rvabs rv_X omega > c1) ) by (intro x0; lra).
+
+    assert (ps_P (fun omega : Ts => rvabs rv_X omega > c2) <=
+            ps_P (fun omega : Ts => rvabs rv_X omega > c1)).
+    apply ps_sub; trivial.
+    generalize (ps_pos (fun omega : Ts => rvabs rv_X omega > c2)); intros.
+    specialize (H1 c2).
+    specialize (H4 H1).
+    lra.
+  Qed.
+
+  Lemma zero_prob_bound_Linfty
+        (rv_X : Ts -> R)         
+        {rv : RandomVariable dom borel_sa rv_X} : 
+      is_finite (Linfty_norm rv_X) ->
+    forall (c : R),
+      (0 < c  ->
+       ps_P (fun omega : Ts => rvabs rv_X omega > Linfty_norm rv_X + c) = 0).
+   Proof.
+     intros.
+     generalize (is_Linfty_c_nonneg rv_X H); intros.
+     unfold Linfty_norm in H.
+     generalize (Glb_Rbar_correct (fun x : R => ps_P (fun omega : Ts => rvabs rv_X omega > x) = 0)); intros.
+     unfold is_glb_Rbar in H2.
+     destruct H2.
+     rewrite <- H in H2; simpl in H2.
+     destruct H1.
+     destruct (Rle_dec x (Linfty_norm rv_X + c)).
+     apply zero_prob_bound with (c1 := x); trivial.
+     assert (x > Linfty_norm rv_X + c) by lra.
+     assert (exists (y:R), (Linfty_norm rv_X <= y <= Linfty_norm rv_X + c) /\
+                            ps_P (fun omega : Ts => rvabs rv_X omega > y) = 0).
+     apply not_all_not_ex.
+     unfold not at 1; intros.
+     
+     
+     
+     
+
+
   Lemma Linfty_norm_contains_finite_lim (rv_X : Ts -> R) 
         {rv : RandomVariable dom borel_sa rv_X} : 
       is_finite (Linfty_norm rv_X) ->
@@ -2279,21 +2342,61 @@ Section Expectation.
      generalize (lim_prob (fun n => (fun omega => (rvabs rv_X) omega > (Linfty_norm rv_X) + / INR (S n))) (fun omega => (rvabs rv_X) omega > (Linfty_norm rv_X))); intros.
      cut_to H.
      - assert (forall n, ps_P (fun omega : Ts => rvabs rv_X omega > Linfty_norm rv_X + / INR (S n)) = 0).
-       + admit.
-       + apply is_lim_seq_ext with (v := fun _ => 0) in H.
-         * generalize (is_lim_seq_const 0); intros.
-           generalize (is_lim_seq_unique); intros.
-           apply is_lim_seq_unique in H.
-           apply is_lim_seq_unique in H2.
-           rewrite H in H2.
-           now rewrite Rbar_finite_eq in H2.
-         * unfold Linfty_norm in H0.
-           unfold Glb_Rbar in H0.
-           destruct (ex_glb_Rbar (fun x : R => ps_P (fun omega : Ts => rvabs rv_X omega > x) = 0)).
-           unfold is_glb_Rbar, is_lb_Rbar in i.
-           intros.
-           destruct i.
-*)           
+       + generalize (zero_prob_bound_Linfty rv_X H0); intros.
+         apply H1.
+         apply Rinv_0_lt_compat.
+         apply lt_0_INR; lia.
+       + apply is_lim_seq_ext with (v := fun _ => 0) in H; trivial.
+         generalize (is_lim_seq_const 0); intros.
+         generalize (is_lim_seq_unique); intros.
+         apply is_lim_seq_unique in H.
+         apply is_lim_seq_unique in H2.
+         rewrite H in H2.
+         now rewrite Rbar_finite_eq in H2.
+     - intros.
+       apply sa_le_gt.
+       intros.
+       apply Rabs_measurable.
+       unfold RealMeasurable.
+       unfold RandomVariable in rv.
+       now rewrite borel_sa_preimage2.
+     - unfold event_sub; intros.
+       apply Rgt_trans with (r2 :=  Linfty_norm rv_X + / INR (S n)); trivial.
+       apply Rplus_gt_compat_l.
+       apply Rinv_1_lt_contravar.
+       replace (1) with (0 + 1) by lra.
+       rewrite S_INR.
+       apply Rplus_le_compat_r.
+       apply pos_INR.
+       apply lt_INR; lia.
+     - intro x.
+       unfold union_of_collection.
+       split; intros.
+       + destruct H1.
+         replace (real(Linfty_norm rv_X)) with (real (Linfty_norm rv_X) + 0) by lra.
+         apply Rgt_trans with (r2 := Linfty_norm rv_X + / INR (S x0)); trivial.
+         apply Rplus_gt_compat_l.
+         apply Rinv_0_lt_compat.
+         apply lt_0_INR; lia.
+       + exists (Z.to_nat (up (/ (rvabs rv_X x - Linfty_norm rv_X)))).
+         apply Rplus_gt_reg_l with (r := - Linfty_norm rv_X).
+         ring_simplify.
+         rewrite Rplus_comm.
+         rewrite <- (Rinv_involutive  (rvabs rv_X x + - Linfty_norm rv_X)).
+         apply Rinv_lt_contravar.
+         apply Rmult_lt_0_compat.
+         apply Rinv_0_lt_compat; lra.
+         apply lt_0_INR; lia.
+         assert (forall (r:R), 0 < r -> r < INR (S (Z.to_nat (up r)))); intros.
+         rewrite S_INR.
+         rewrite INR_up_pos.
+         generalize (archimed r); intros.
+         destruct H3; lra.
+         lra.
+         apply H2.
+         apply Rinv_0_lt_compat; lra.
+         apply Rgt_not_eq; lra.
+   Qed.
 
   Lemma is_lim_seq_list_sum (l:list (nat->R)) (l2:list R) :
     Forall2 is_lim_seq l (map Finite l2) ->
