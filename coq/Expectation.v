@@ -2328,11 +2328,21 @@ Section Expectation.
        unfold Linfty_norm in H2.
        do 3 rewrite <- H in H2; simpl in H2.
        lra.
-       
-     (* apply not_ex_all_not in H3. ? *)
 
-     Admitted.
-
+       generalize (not_ex_all_not _ _ H3)
+       ; intros HH.
+       red; intros.
+       specialize (HH x).
+       apply not_and_or in HH.
+       destruct HH; try congruence.
+       apply not_and_or in H5.
+       destruct H5.
+       + red in H1.
+         specialize (H1 _ H4).
+         red in H1.
+         tauto.
+       + red; lra.
+   Qed.
 
   Lemma Linfty_norm_contains_finite_lim (rv_X : Ts -> R) 
         {rv : RandomVariable dom borel_sa rv_X} : 
