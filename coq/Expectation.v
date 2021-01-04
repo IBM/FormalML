@@ -2314,24 +2314,24 @@ Section Expectation.
        ps_P (fun omega : Ts => rvabs rv_X omega > Linfty_norm rv_X + c) = 0).
    Proof.
      intros.
-     generalize (is_Linfty_c_nonneg rv_X H); intros.
      unfold Linfty_norm in H.
      generalize (Glb_Rbar_correct (fun x : R => ps_P (fun omega : Ts => rvabs rv_X omega > x) = 0)); intros.
-     unfold is_glb_Rbar in H2.
-     destruct H2.
-     rewrite <- H in H2; simpl in H2.
+     unfold is_glb_Rbar in H1.
      destruct H1.
-     destruct (Rle_dec x (Linfty_norm rv_X + c)).
-     apply zero_prob_bound with (c1 := x); trivial.
-     assert (x > Linfty_norm rv_X + c) by lra.
-     assert (exists (y:R), (Linfty_norm rv_X <= y <= Linfty_norm rv_X + c) /\
-                            ps_P (fun omega : Ts => rvabs rv_X omega > y) = 0).
-     apply not_all_not_ex.
-     unfold not at 1; intros.
-     
-     
-     
-     
+     rewrite <- H in H1; simpl in H1.
+     destruct (classic (exists (y:R), (Linfty_norm rv_X <= y <= Linfty_norm rv_X + c) /\
+                                      ps_P (fun omega : Ts => rvabs rv_X omega > y) = 0)).
+     - destruct H3 as [y [? ?]].
+       apply zero_prob_bound with (c1 := y); trivial; lra.
+     - specialize (H2 (Linfty_norm rv_X + c)).
+       cut_to H2.
+       unfold Linfty_norm in H2.
+       do 3 rewrite <- H in H2; simpl in H2.
+       lra.
+       
+     (* apply not_ex_all_not in H3. ? *)
+
+     Admitted.
 
 
   Lemma Linfty_norm_contains_finite_lim (rv_X : Ts -> R) 
