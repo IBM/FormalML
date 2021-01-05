@@ -369,9 +369,7 @@ Section Linf.
              ; try typeclasses eauto.
              apply rv_almost_eq_abs_proper
              ; try typeclasses eauto.
-             simpl.
              apply rvclip_almost_bounded; trivial.
-             simpl.
              now apply Linfty_norm_contains_finite_lim.
       + apply FiniteExpectation_pos.
         typeclasses eauto.
@@ -382,6 +380,29 @@ Section Linf.
         (Xn: nat -> Ts -> R)
         (norm : (Ts -> R) -> nonnegreal) :=
     is_lim_seq (fun n => norm (rvminus X (Xn n))) 0.
+
+  Lemma Linf_Lp_converge (p:nat)
+        (X: Ts -> R)
+        (Xn: nat -> Ts -> R)
+        (norm : (Ts -> R) -> nonnegreal) 
+        (rvdif : forall (n:nat), RandomVariable dom borel_sa (rvminus X (Xn n))) 
+        (islp : forall (n:nat), IsLp prts (S p) (rvminus X (Xn n))) 
+        (isl: forall (n:nat), IsLinfty (rvminus X (Xn n))) :
+    is_lim_seq (fun n => Linfty_norm (rvminus X (Xn n))) 0 ->
+    is_lim_seq (fun n => LpRRVnorm (p:=p) prts (pack_LpRRV prts (rvminus X (Xn n)))) 0.
+  Proof.
+    intros.
+    apply is_lim_seq_le_le_loc with 
+        (u := fun _ => 0) 
+        (w := (fun n =>  Linfty_norm (rvminus X (Xn n)))).
+    exists (0%nat).
+    intros.
+    split.
+    - unfold LpRRVnorm.
+      apply root_nneg.    
+    - generalize (@Linfty_Lp_le p (rvminus X (Xn n)) (rvdif n) (isl n)); intros.
+      Admitted.
+        
 
 End Linf.
 
