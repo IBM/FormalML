@@ -394,14 +394,17 @@ Section Linf.
     intros.
     apply is_lim_seq_le_le_loc with 
         (u := fun _ => 0) 
-        (w := (fun n =>  Linfty_norm (rvminus X (Xn n)))).
-    exists (0%nat).
-    intros.
-    split.
-    - unfold LpRRVnorm.
-      apply root_nneg.    
-    - generalize (@Linfty_Lp_le p (rvminus X (Xn n)) (rvdif n) (isl n)); intros.
-      Admitted.
+        (w := (fun n =>  Linfty_norm (rvminus X (Xn n)))); trivial.
+    - exists (0%nat).
+      intros.
+      split; trivial.
+      + unfold LpRRVnorm.
+        apply root_nneg.    
+      + generalize (@Linfty_Lp_le p (rvminus X (Xn n)) (rvdif n) (isl n)); intros.
+        unfold LpRRVnorm in *.
+        erewrite FiniteExpectation_pf_irrel in H1; eauto.
+    - apply is_lim_seq_const.
+  Qed.
         
 
 End Linf.
