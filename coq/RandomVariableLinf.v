@@ -361,7 +361,10 @@ Section Linf.
           apply rvclip_abs_bounded.
         * typeclasses eauto.        
         * typeclasses eauto.
-        * admit.
+        * apply rv_almost_eq_pow_abs_proper; [typeclasses eauto | typeclasses eauto | ].
+          apply rv_almost_eq_abs_proper; [typeclasses eauto | typeclasses eauto | ].
+          simpl.
+          
       + apply FiniteExpectation_pos.
         typeclasses eauto.
     Admitted.
