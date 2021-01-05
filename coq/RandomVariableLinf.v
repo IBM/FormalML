@@ -3,11 +3,11 @@ Require Import Equivalence.
 Require Import Program.Basics.
 Require Import Lra Lia.
 Require Import Classical.
+Require Import Reals.
 Require Import FunctionalExtensionality.
+Require Import Coquelicot.Rbar Coquelicot.Lub Coquelicot.Lim_seq Coquelicot.Hierarchy.
 
-Require Import hilbert.
-
-Require Export RandomVariableFinite.
+Require Export RandomVariableFinite RandomVariableLp.
 Require Import quotient_space.
 
 Require Import AlmostEqual.
@@ -30,37 +30,6 @@ Section Linf.
   Definition is_Linfty (rv_X : Ts -> R) 
              {rv : RandomVariable dom borel_sa rv_X}  :=
     is_finite (Linfty_norm rv_X).
-
-  Lemma is_Linfty_c_nonneg (rv_X : Ts -> R)
-        {rv : RandomVariable dom borel_sa rv_X} :        
-    is_Linfty rv_X -> 
-    exists (c:nonnegreal), ps_P (fun omega => (rvabs rv_X) omega > c) = 0.
-  Proof.
-    unfold is_Linfty, Linfty_norm.
-    intros.
-    apply finite_glb in H.
-    destruct H.
-    destruct (Rle_dec 0 x).
-    - exists (mknonnegreal _ r).
-      now simpl.
-    - assert (0 > x) by lra.
-      assert (event_equiv (fun omega : Ts => rvabs rv_X omega > x)  Ω ).
-      + intro x0.
-        unfold rvabs.
-        generalize (Rabs_pos (rv_X x0)); intros.
-        unfold  Ω.
-        lra.
-      + rewrite H1 in H.
-        generalize (ps_all prts); intros.
-        rewrite H in H2.
-        lra.
-    Qed.                          
-
-  Definition norm_convergence 
-        (X: Ts -> R)
-        (Xn: nat -> Ts -> R)
-        (norm : (Ts -> R) -> nonnegreal) :=
-    is_lim_seq (fun n => norm (rvminus X (Xn n))) 0.
 
   Lemma empty_glb_inf (E : R -> Prop) :
     (forall (r:R), ~ E r) -> is_glb_Rbar E p_infty.
@@ -99,6 +68,31 @@ Section Linf.
     exists x.
     tauto.
   Qed.
+
+  Lemma is_Linfty_c_nonneg (rv_X : Ts -> R)
+        {rv : RandomVariable dom borel_sa rv_X} :        
+    is_Linfty rv_X -> 
+    exists (c:nonnegreal), ps_P (fun omega => (rvabs rv_X) omega > c) = 0.
+  Proof.
+    unfold is_Linfty, Linfty_norm.
+    intros.
+    apply finite_glb in H.
+    destruct H.
+    destruct (Rle_dec 0 x).
+    - exists (mknonnegreal _ r).
+      now simpl.
+    - assert (0 > x) by lra.
+      assert (event_equiv (fun omega : Ts => rvabs rv_X omega > x)  Ω ).
+      + intro x0.
+        unfold rvabs.
+        generalize (Rabs_pos (rv_X x0)); intros.
+        unfold  Ω.
+        lra.
+      + rewrite H1 in H.
+        generalize (ps_all prts); intros.
+        rewrite H in H2.
+        lra.
+    Qed.                          
 
 
   Lemma almost_bounded (rv_X : Ts -> R) (c : nonnegreal)
@@ -275,6 +269,56 @@ Section Linf.
          apply Rinv_0_lt_compat; lra.
          apply Rgt_not_eq; lra.
    Qed.
+
+   Lemma IsLp_const_bounded (n:nat) (rv_X : Ts -> R) (bound : R)
+    {rv : RandomVariable dom borel_sa rv_X} :
+     rv_le (rvabs rv_X) (const bound) ->
+     IsLp prts n rv_X.
+  Proof.
+    generalize (IsLp_bounded prts n rv_X (const (pow bound n))); intros.
+    apply H.
+    unfold rvpow, rvabs, const, rv_le, pointwise_relation in *.
+    intro x.
+    specialize (H0 x).
+    apply pow_maj_Rabs.
+    now rewrite Rabs_Rabsolu.
+    apply IsFiniteExpectation_const.
+  Qed.
+
+  Lemma Linfty_Lp (n:nat) (rv_X : Ts -> R) 
+    {rv : RandomVariable dom borel_sa rv_X} :
+    is_Linfty rv_X -> IsLp prts (S n) rv_X.
+  Proof.
+    intros.
+    generalize (almost_bounded_exists rv_X rv H); intros.
+    destruct H0 as [c H0].
+    generalize (rvclip_abs_le_c rv_X c); intros.
+    generalize (IsLp_const_bounded (S n) _ c H1); intros.
+    apply IsLp_proper_almost with (rv_X1 := (rvclip rv_X c)); trivial.
+    now apply rvclip_rv.
+    now symmetry.
+  Qed.
+
+  Lemma Linfty_Lp_le (p:nat) (rv_X : Ts -> R) 
+    {rv : RandomVariable dom borel_sa rv_X} 
+    {islp : IsLp prts (S p) rv_X}:
+    is_Linfty rv_X -> 
+    LpRRVnorm prts (pack_LpRRV prts rv_X) <= Linfty_norm rv_X.
+  Proof.
+    intros.
+    unfold LpRRVnorm.
+    apply pow_incr_inv with (n:=p).
+    apply root_nneg.
+    
+    admit.
+    rewrite pow_root_inv.
+    Admitted.
+
+  Definition norm_convergence 
+        (X: Ts -> R)
+        (Xn: nat -> Ts -> R)
+        (norm : (Ts -> R) -> nonnegreal) :=
+    is_lim_seq (fun n => norm (rvminus X (Xn n))) 0.
 
 End Linf.
 
