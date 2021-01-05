@@ -69,6 +69,22 @@ Section Linf.
     tauto.
   Qed.
 
+  Lemma abs_neg_psall (rv_X : Ts -> R) (r:R)
+        {rv : RandomVariable dom borel_sa rv_X} :        
+    ps_P (fun omega => (rvabs rv_X) omega > r) = 0 -> 0<=r.
+  Proof.
+    destruct (Rle_dec 0 r); intros; trivial.
+    assert (event_equiv (fun omega : Ts => rvabs rv_X omega > r) Ω).
+    intro x0.
+    unfold rvabs.
+    generalize (Rabs_pos (rv_X x0)); intros.
+    unfold  Ω.
+    lra.
+    rewrite H0 in H.
+    rewrite ps_all in H.
+    lra.
+  Qed.  
+    
   Lemma is_Linfty_c_nonneg (rv_X : Ts -> R)
         {rv : RandomVariable dom borel_sa rv_X}
         {isl:IsLinfty rv_X} :
@@ -93,6 +109,28 @@ Section Linf.
         lra.
     Qed.                          
 
+  Lemma Linfty_norm_nneg (rv_X : Ts -> R)
+        {rv : RandomVariable dom borel_sa rv_X} :
+    IsLinfty rv_X -> 
+      0 <= Linfty_norm rv_X.
+  Proof.
+    intros.
+    generalize (Glb_Rbar_correct (fun x : R => ps_P (fun omega : Ts => rvabs rv_X omega > x) = 0)); intros.    
+    unfold is_glb_Rbar in H0.
+    destruct H0.
+    destruct (Rle_dec 0 (Linfty_norm rv_X)); trivial.
+    assert (0 > Linfty_norm rv_X) by lra.
+    unfold Linfty_norm in H2.
+    specialize (H1 0).
+    unfold IsLinfty, Linfty_norm in H.
+    rewrite <- H in H1.
+    simpl in H1.
+    cut_to H1.
+    lra.
+    unfold is_lb_Rbar; intros.
+    simpl.
+    now apply (abs_neg_psall rv_X x).
+  Qed.
 
   Lemma almost_bounded (rv_X : Ts -> R) (c : nonnegreal)
         {rv : RandomVariable dom borel_sa rv_X} :
@@ -307,7 +345,7 @@ Section Linf.
     unfold LpRRVnorm.
     apply pow_incr_inv with (n:=p).
     - apply root_nneg.
-    - admit.
+    - now apply Linfty_norm_nneg.
     - rewrite pow_root_inv.
       + admit.
       + apply FiniteExpectation_pos.
