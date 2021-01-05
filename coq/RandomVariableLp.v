@@ -41,6 +41,24 @@ Section Lp.
     now rewrite eqq1, eqq2.
   Qed.
 
+  Lemma IsLp_proper_almost n rv_X1 rv_X2
+        {rrv1:RandomVariable dom borel_sa rv_X1}
+        {rrv2:RandomVariable dom borel_sa rv_X2}
+        {islp1:IsLp n rv_X1}
+    :
+      rv_almost_eq prts rv_X1 rv_X2 ->
+      IsLp n rv_X2.
+  Proof.
+    red; intros.
+    eapply IsFiniteExpectation_proper_almost
+    ; try eapply islp1
+    ; try typeclasses eauto.
+    apply rv_almost_eq_pow_abs_proper
+    ; try typeclasses eauto.
+    now apply rv_almost_eq_abs_proper
+    ; try typeclasses eauto.
+  Qed.
+
   (* Note that IsLp 0 always holds, so it says that we are not making any assumptions *)
   Global Instance IsL0_True (rv_X:Ts->R) : IsLp 0 rv_X.
   Proof.
