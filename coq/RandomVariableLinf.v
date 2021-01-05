@@ -399,9 +399,7 @@ Section Linf.
       split; trivial.
       + unfold LpRRVnorm.
         apply root_nneg.    
-      + generalize (@Linfty_Lp_le p (rvminus X (Xn n)) (rvdif n) (isl n)); intros.
-        unfold LpRRVnorm in *.
-        erewrite FiniteExpectation_pf_irrel in H1; eauto.
+      + now apply Linfty_Lp_le.
     - apply is_lim_seq_const.
   Qed.
         
