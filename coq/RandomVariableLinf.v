@@ -386,7 +386,6 @@ Section Linf.
         (Xn: nat -> Ts -> R)
         (norm : (Ts -> R) -> nonnegreal) 
         (rvdif : forall (n:nat), RandomVariable dom borel_sa (rvminus X (Xn n))) 
-        (islp : forall (n:nat), IsLp prts (S p) (rvminus X (Xn n))) 
         (isl: forall (n:nat), IsLinfty (rvminus X (Xn n))) :
     is_lim_seq (fun n => Linfty_norm (rvminus X (Xn n))) 0 ->
     is_lim_seq (fun n => LpRRVnorm (p:=p) prts (pack_LpRRV prts (rvminus X (Xn n)))) 0.
