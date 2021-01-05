@@ -110,22 +110,22 @@ Section Linf.
     Qed.                          
 
   Lemma Linfty_norm_nneg (rv_X : Ts -> R)
-        {rv : RandomVariable dom borel_sa rv_X} :
-    IsLinfty rv_X -> 
+        {rv : RandomVariable dom borel_sa rv_X}
+        {isl:IsLinfty rv_X} :
       0 <= Linfty_norm rv_X.
   Proof.
     intros.
     generalize (Glb_Rbar_correct (fun x : R => ps_P (fun omega : Ts => rvabs rv_X omega > x) = 0)); intros.    
-    unfold is_glb_Rbar in H0.
-    destruct H0.
+    unfold is_glb_Rbar in H.
+    destruct H.
     destruct (Rle_dec 0 (Linfty_norm rv_X)); trivial.
     assert (0 > Linfty_norm rv_X) by lra.
-    unfold Linfty_norm in H2.
-    specialize (H1 0).
-    unfold IsLinfty, Linfty_norm in H.
-    rewrite <- H in H1.
-    simpl in H1.
-    cut_to H1.
+    unfold Linfty_norm in H1.
+    specialize (H0 0).
+    unfold IsLinfty, Linfty_norm in isl.
+    rewrite <- isl in H0.
+    simpl in H0.
+    cut_to H0.
     lra.
     unfold is_lb_Rbar; intros.
     simpl.
