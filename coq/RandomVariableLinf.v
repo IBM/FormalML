@@ -27,9 +27,9 @@ Section Linf.
     Glb_Rbar (fun (x : R) =>
                 ps_P (fun omega => (rvabs rv_X) omega > x) = 0).
 
-  Definition is_Linfty (rv_X : Ts -> R) 
+  Class IsLinfty (rv_X : Ts -> R) 
              {rv : RandomVariable dom borel_sa rv_X}  :=
-    is_finite (Linfty_norm rv_X).
+    is_linfty : is_finite (Linfty_norm rv_X).
 
   Lemma empty_glb_inf (E : R -> Prop) :
     (forall (r:R), ~ E r) -> is_glb_Rbar E p_infty.
@@ -70,14 +70,13 @@ Section Linf.
   Qed.
 
   Lemma is_Linfty_c_nonneg (rv_X : Ts -> R)
-        {rv : RandomVariable dom borel_sa rv_X} :        
-    is_Linfty rv_X -> 
+        {rv : RandomVariable dom borel_sa rv_X}
+        {isl:IsLinfty rv_X} :
     exists (c:nonnegreal), ps_P (fun omega => (rvabs rv_X) omega > c) = 0.
   Proof.
-    unfold is_Linfty, Linfty_norm.
-    intros.
-    apply finite_glb in H.
-    destruct H.
+    unfold IsLinfty, Linfty_norm in *.
+    apply finite_glb in isl.
+    destruct isl.
     destruct (Rle_dec 0 x).
     - exists (mknonnegreal _ r).
       now simpl.
@@ -127,13 +126,11 @@ Section Linf.
    Qed.
 
   Lemma almost_bounded_exists (rv_X : Ts -> R)
-        (rv : RandomVariable dom borel_sa rv_X) :
-    is_Linfty rv_X ->
+        (rv : RandomVariable dom borel_sa rv_X)
+        {isl:IsLinfty rv_X} :
     exists (c:nonnegreal), rv_almost_eq prts rv_X (rvclip rv_X c).
   Proof.
-    intros.
-    generalize (is_Linfty_c_nonneg rv_X H); intros.
-    destruct H0.
+    destruct (is_Linfty_c_nonneg rv_X).
     exists x.
     now apply almost_bounded.
   Qed.
@@ -169,14 +166,15 @@ Section Linf.
 
   Lemma zero_prob_bound_Linfty
         (rv_X : Ts -> R)         
-        {rv : RandomVariable dom borel_sa rv_X} : 
-      is_finite (Linfty_norm rv_X) ->
+        {rv : RandomVariable dom borel_sa rv_X}
+        {isl:IsLinfty rv_X} :
     forall (c : R),
       (0 < c  ->
        ps_P (fun omega : Ts => rvabs rv_X omega > Linfty_norm rv_X + c) = 0).
-   Proof.
+  Proof.
+     rename isl into H.
      intros.
-     unfold Linfty_norm in H.
+     unfold IsLinfty, Linfty_norm in H.
      generalize (Glb_Rbar_correct (fun x : R => ps_P (fun omega : Ts => rvabs rv_X omega > x) = 0)); intros.
      unfold is_glb_Rbar in H1.
      destruct H1.
@@ -207,24 +205,24 @@ Section Linf.
    Qed.
 
   Lemma Linfty_norm_contains_finite_lim (rv_X : Ts -> R) 
-        {rv : RandomVariable dom borel_sa rv_X} : 
-      is_finite (Linfty_norm rv_X) ->
+        {rv : RandomVariable dom borel_sa rv_X}
+        {isl:IsLinfty rv_X} :
       ps_P (fun omega => (rvabs rv_X) omega > (Linfty_norm rv_X)) = 0.
-   Proof.
+  Proof.
      generalize (lim_prob (fun n => (fun omega => (rvabs rv_X) omega > (Linfty_norm rv_X) + / INR (S n))) (fun omega => (rvabs rv_X) omega > (Linfty_norm rv_X))); intros.
      cut_to H.
      - assert (forall n, ps_P (fun omega : Ts => rvabs rv_X omega > Linfty_norm rv_X + / INR (S n)) = 0).
-       + generalize (zero_prob_bound_Linfty rv_X H0); intros.
-         apply H1.
+       + generalize (zero_prob_bound_Linfty rv_X); intros.
+         apply H0.
          apply Rinv_0_lt_compat.
          apply lt_0_INR; lia.
        + apply is_lim_seq_ext with (v := fun _ => 0) in H; trivial.
          generalize (is_lim_seq_const 0); intros.
          generalize (is_lim_seq_unique); intros.
          apply is_lim_seq_unique in H.
-         apply is_lim_seq_unique in H2.
-         rewrite H in H2.
-         now rewrite Rbar_finite_eq in H2.
+         apply is_lim_seq_unique in H1.
+         rewrite H in H1.
+         now rewrite Rbar_finite_eq in H1.
      - intros.
        apply sa_le_gt.
        intros.
@@ -244,7 +242,7 @@ Section Linf.
      - intro x.
        unfold union_of_collection.
        split; intros.
-       + destruct H1.
+       + destruct H0.
          replace (real(Linfty_norm rv_X)) with (real (Linfty_norm rv_X) + 0) by lra.
          apply Rgt_trans with (r2 := Linfty_norm rv_X + / INR (S x0)); trivial.
          apply Rplus_gt_compat_l.
@@ -263,14 +261,14 @@ Section Linf.
          rewrite S_INR.
          rewrite INR_up_pos.
          generalize (archimed r); intros.
-         destruct H3; lra.
+         destruct H2; lra.
          lra.
-         apply H2.
+         apply H1.
          apply Rinv_0_lt_compat; lra.
          apply Rgt_not_eq; lra.
    Qed.
 
-   Lemma IsLp_const_bounded (n:nat) (rv_X : Ts -> R) (bound : R)
+  Instance IsLp_const_bounded (n:nat) (rv_X : Ts -> R) (bound : R)
     {rv : RandomVariable dom borel_sa rv_X} :
      rv_le (rvabs rv_X) (const bound) ->
      IsLp prts n rv_X.
@@ -285,15 +283,16 @@ Section Linf.
     apply IsFiniteExpectation_const.
   Qed.
 
-  Lemma Linfty_Lp (n:nat) (rv_X : Ts -> R) 
-    {rv : RandomVariable dom borel_sa rv_X} :
-    is_Linfty rv_X -> IsLp prts (S n) rv_X.
+  Global Instance Linfty_Lp (n:nat) (rv_X : Ts -> R) 
+    {rv : RandomVariable dom borel_sa rv_X}
+    {isl:IsLinfty rv_X}
+    : IsLp prts n rv_X.
   Proof.
     intros.
-    generalize (almost_bounded_exists rv_X rv H); intros.
-    destruct H0 as [c H0].
+    generalize (almost_bounded_exists rv_X rv); intros.
+    destruct H as [c H0].
     generalize (rvclip_abs_le_c rv_X c); intros.
-    generalize (IsLp_const_bounded (S n) _ c H1); intros.
+    generalize (IsLp_const_bounded n _ c H); intros.
     apply IsLp_proper_almost with (rv_X1 := (rvclip rv_X c)); trivial.
     now apply rvclip_rv.
     now symmetry.
@@ -301,17 +300,18 @@ Section Linf.
 
   Lemma Linfty_Lp_le (p:nat) (rv_X : Ts -> R) 
     {rv : RandomVariable dom borel_sa rv_X} 
-    {islp : IsLp prts (S p) rv_X}:
-    is_Linfty rv_X -> 
-    LpRRVnorm prts (pack_LpRRV prts rv_X) <= Linfty_norm rv_X.
+    {isl:IsLinfty rv_X} :
+    LpRRVnorm (p:=p) prts (pack_LpRRV prts rv_X) <= Linfty_norm rv_X.
   Proof.
     intros.
     unfold LpRRVnorm.
     apply pow_incr_inv with (n:=p).
-    apply root_nneg.
-    
-    admit.
-    rewrite pow_root_inv.
+    - apply root_nneg.
+    - admit.
+    - rewrite pow_root_inv.
+      + admit.
+      + apply FiniteExpectation_pos.
+        typeclasses eauto.
     Admitted.
 
   Definition norm_convergence 
