@@ -343,14 +343,38 @@ Section Linf.
   Proof.
     intros.
     unfold LpRRVnorm.
-    apply pow_incr_inv with (n:=p).
+    generalize (Linfty_norm_nneg rv_X); intros.
+    apply pow_incr_inv with (n:=p); trivial.
     - apply root_nneg.
-    - now apply Linfty_norm_nneg.
     - rewrite pow_root_inv.
-      + admit.
+      + assert (IsFiniteExpectation prts (rvpow (rvabs (rvclip rv_X (mknonnegreal _ H))) (S p))).
+        admit.
+        rewrite FiniteExpectation_proper_almost with 
+            (rv_X2 := (rvpow (rvabs (rvclip rv_X (mknonnegreal _ H))) (S p)))
+            (isfe2 := H0).
+        * rewrite <- (FiniteExpectation_const prts (Linfty_norm rv_X ^ S p)).
+          apply FiniteExpectation_le.
+          intro x.
+          unfold rvpow, rvabs, const.
+          apply pow_maj_Rabs.
+          rewrite Rabs_Rabsolu.        
+          apply rvclip_abs_bounded.
+        * typeclasses eauto.        
+        * typeclasses eauto.
+        * admit.
       + apply FiniteExpectation_pos.
         typeclasses eauto.
     Admitted.
+
+  Lemma FiniteExpectation_proper_almost rv_X1 rv_X2
+        {rrv1:RandomVariable dom borel_sa rv_X1}
+        {rrv2:RandomVariable dom borel_sa rv_X2}
+        {isfe1:IsFiniteExpectation rv_X1}
+        {isfe2:IsFiniteExpectation rv_X2}
+    :
+      rv_almost_eq prts rv_X1 rv_X2 ->
+      FiniteExpectation rv_X1 = FiniteExpectation rv_X2.
+
 
   Definition norm_convergence 
         (X: Ts -> R)
