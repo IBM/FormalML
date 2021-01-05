@@ -393,6 +393,49 @@ Section RealRandomVariables.
       typeclasses eauto.
     Qed.
 
+      Instance rvchoice_measurable (c f g : Ts -> R) :
+        RealMeasurable c ->
+        RealMeasurable f ->
+        RealMeasurable g ->
+        RealMeasurable (rvchoice (fun x => if Req_EM_T (c x) 0 then false else true)  f g).
+      Proof.
+        unfold RealMeasurable.
+        intros.
+        assert (event_equiv
+                  (fun omega : Ts =>
+                     rvchoice (fun x : Ts => if Req_EM_T (c x) 0 then false else true) 
+                              f g omega <= r)
+                  (event_union 
+                     (fun omega : Ts => (c omega) = 0 /\ g omega <= r)
+                     (fun omega : Ts => (c omega) <> 0 /\ f omega <= r))).
+        intro x.
+        unfold rvchoice, event_union.
+        destruct (Req_EM_T (c x) 0); lra.
+        rewrite H2.
+        apply sa_union.
+        - assert (event_equiv (fun omega : Ts => c omega = 0 /\ g omega <= r)
+                              (event_inter 
+                                 (fun omega : Ts => c omega = 0)
+                                 (fun omega : Ts => g omega <= r))).
+          + intro x.
+            unfold event_inter.
+            split; lra.
+          + rewrite H3.
+            apply sa_inter; trivial.
+            now apply sa_le_pt.
+        - assert (event_equiv (fun omega : Ts => c omega <> 0 /\ f omega <= r)
+                              (event_inter 
+                                 (event_complement (fun omega : Ts => c omega = 0))
+                                 (fun omega : Ts => f omega <= r))).
+          + intro x.
+            unfold event_inter, event_complement.
+            split; lra.
+          + rewrite H3.
+            apply sa_inter; trivial.
+            apply sa_complement.
+            now apply sa_le_pt.
+     Qed.
+
     Instance ln_measurable (b : Ts -> R) :
       (forall (x:Ts), (0 < b x)%R) ->
       RealMeasurable b ->
@@ -416,6 +459,68 @@ Section RealRandomVariables.
           * rewrite H; now right.
       - rewrite H.
         apply rb.
+    Qed.
+
+    Instance ln_measurable2 (b : Ts -> R) :
+      RealMeasurable b ->
+      RealMeasurable (fun (x:Ts) => ln (b x)).
+    Proof.
+      unfold RealMeasurable.
+      intros rb.
+      intros.
+      assert (event_equiv (fun omega : Ts => ln (b omega) <= r)
+                          (event_union
+                             (fun omega => b omega <= 0 <= r)
+                             (fun omega : Ts => (0 < b omega <= exp r)))).
+      - intro x.
+        split; intros.
+        + unfold event_union.
+          destruct (Rle_dec (b x) 0).
+          left.
+          unfold ln in H.
+          match_destr_in H; lra.
+          right.
+          split; [lra | ].
+          rewrite <- (exp_ln (b x)); trivial.
+          destruct H.
+          * left; now apply exp_increasing.
+          * rewrite H; now right.
+          * lra.
+        + unfold event_union in H.
+          destruct H.
+          * destruct H.
+            unfold ln.
+            match_destr.
+            assert False by lra.
+            tauto.
+          * destruct H. 
+            rewrite <- (ln_exp r).
+            destruct H0.
+            -- left; now apply ln_increasing.
+            -- rewrite H0; now right.
+      - rewrite H.
+        apply sa_union.
+        assert (event_equiv (fun omega : Ts => b omega <= 0 <= r)
+                            (event_inter (fun omega : Ts => b omega <= 0)
+                                         (fun omega : Ts => 0 <= r))).
+        + intro x.
+          unfold event_inter.
+          lra.
+        + rewrite H0.
+          apply sa_inter; trivial.
+          apply constant_measurable.
+        + assert (event_equiv (fun omega : Ts => 0 < b omega <= exp r)
+                              (event_inter (fun omega : Ts => 0 < b omega )
+                                           (fun omega : Ts => b omega <= exp r))).
+          * intro x.
+            unfold event_inter.
+            lra.
+          * rewrite H0.
+            apply sa_inter; trivial.
+            assert (event_equiv (fun omega : Ts => 0 < b omega)
+                                (fun omega : Ts => b omega > 0)) by (intro x; lra).
+            rewrite H1.
+            now apply sa_le_gt.
     Qed.
 
     Instance exp_measurable (b : Ts -> R) :
@@ -592,6 +697,7 @@ Section RealRandomVariables.
         apply neg_fun_partmeasurable.
         now apply rv_measurable.
       Qed.
+
 
     End rvs.
 
