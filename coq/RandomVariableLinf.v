@@ -384,7 +384,6 @@ Section Linf.
   Lemma Linf_Lp_converge (p:nat)
         (X: Ts -> R)
         (Xn: nat -> Ts -> R)
-        (norm : (Ts -> R) -> nonnegreal) 
         (rvdif : forall (n:nat), RandomVariable dom borel_sa (rvminus X (Xn n))) 
         (isl: forall (n:nat), IsLinfty (rvminus X (Xn n))) :
     is_lim_seq (fun n => Linfty_norm (rvminus X (Xn n))) 0 ->
