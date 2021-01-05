@@ -132,7 +132,7 @@ Section Linf.
     now apply (abs_neg_psall rv_X x).
   Qed.
 
-  Lemma almost_bounded (rv_X : Ts -> R) (c : nonnegreal)
+  Lemma rvclip_almost_bounded (rv_X : Ts -> R) (c : nonnegreal)
         {rv : RandomVariable dom borel_sa rv_X} :
     ps_P (fun omega => (rvabs rv_X) omega > c) = 0 ->
     rv_almost_eq prts rv_X (rvclip rv_X c).
@@ -163,14 +163,14 @@ Section Linf.
      now apply rv_preimage.
    Qed.
 
-  Lemma almost_bounded_exists (rv_X : Ts -> R)
+ Lemma rvclip_almost_bounded_exists (rv_X : Ts -> R)
         (rv : RandomVariable dom borel_sa rv_X)
         {isl:IsLinfty rv_X} :
     exists (c:nonnegreal), rv_almost_eq prts rv_X (rvclip rv_X c).
   Proof.
     destruct (is_Linfty_c_nonneg rv_X).
     exists x.
-    now apply almost_bounded.
+    now apply rvclip_almost_bounded.
   Qed.
 
   Lemma zero_prob_bound
@@ -327,7 +327,7 @@ Section Linf.
     : IsLp prts n rv_X.
   Proof.
     intros.
-    generalize (almost_bounded_exists rv_X rv); intros.
+    generalize (rvclip_almost_bounded_exists rv_X rv); intros.
     destruct H as [c H0].
     generalize (rvclip_abs_le_c rv_X c); intros.
     generalize (IsLp_const_bounded n _ c H); intros.
@@ -348,36 +348,34 @@ Section Linf.
     - apply root_nneg.
     - rewrite pow_root_inv.
       + assert (IsFiniteExpectation prts (rvpow (rvabs (rvclip rv_X (mknonnegreal _ H))) (S p))).
-        admit.
-        rewrite FiniteExpectation_proper_almost with 
-            (rv_X2 := (rvpow (rvabs (rvclip rv_X (mknonnegreal _ H))) (S p)))
-            (isfe2 := H0).
-        * rewrite <- (FiniteExpectation_const prts (Linfty_norm rv_X ^ S p)).
-          apply FiniteExpectation_le.
-          intro x.
-          unfold rvpow, rvabs, const.
-          apply pow_maj_Rabs.
-          rewrite Rabs_Rabsolu.        
-          apply rvclip_abs_bounded.
-        * typeclasses eauto.        
-        * typeclasses eauto.
-        * apply rv_almost_eq_pow_abs_proper; [typeclasses eauto | typeclasses eauto | ].
-          apply rv_almost_eq_abs_proper; [typeclasses eauto | typeclasses eauto | ].
+        * eapply IsLp_proper_almost; try eapply isl
+          ; try typeclasses eauto.
+          apply rvclip_almost_bounded
+          ; try typeclasses eauto.
           simpl.
-          
+          now apply Linfty_norm_contains_finite_lim.
+        * rewrite FiniteExpectation_proper_almost with 
+            (rv_X2 := (rvpow (rvabs (rvclip rv_X (mknonnegreal _ H))) (S p)))
+            (isfe2 := H0)
+          ; try typeclasses eauto.
+          -- rewrite <- (FiniteExpectation_const prts (Linfty_norm rv_X ^ S p)).
+             apply FiniteExpectation_le.
+             intro x.
+             unfold rvpow, rvabs, const.
+             apply pow_maj_Rabs.
+             rewrite Rabs_Rabsolu.        
+             apply rvclip_abs_bounded.
+          -- apply rv_almost_eq_pow_abs_proper
+             ; try typeclasses eauto.
+             apply rv_almost_eq_abs_proper
+             ; try typeclasses eauto.
+             simpl.
+             apply rvclip_almost_bounded; trivial.
+             simpl.
+             now apply Linfty_norm_contains_finite_lim.
       + apply FiniteExpectation_pos.
         typeclasses eauto.
-    Admitted.
-
-  Lemma FiniteExpectation_proper_almost rv_X1 rv_X2
-        {rrv1:RandomVariable dom borel_sa rv_X1}
-        {rrv2:RandomVariable dom borel_sa rv_X2}
-        {isfe1:IsFiniteExpectation rv_X1}
-        {isfe2:IsFiniteExpectation rv_X2}
-    :
-      rv_almost_eq prts rv_X1 rv_X2 ->
-      FiniteExpectation rv_X1 = FiniteExpectation rv_X2.
-
+  Qed.
 
   Definition norm_convergence 
         (X: Ts -> R)
