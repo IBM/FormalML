@@ -325,7 +325,7 @@ Proof.
     rewrite eqqx in HH.
     apply HH.
     + apply Hsigma_borel_eq_pf; eauto.
-    + apply Hsigma_borel_eq_pf; eauto; admit.
+    + apply Hsigma_borel_eq_pf; eauto.
     + intros a ?.
       auto.
 Qed.
