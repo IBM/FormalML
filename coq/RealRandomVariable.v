@@ -470,11 +470,13 @@ Section RealRandomVariables.
       intros.
       assert (event_equiv (fun omega : Ts => ln (b omega) <= r)
                           (event_union
-                             (fun omega => b omega <= 0 <= r)
-                             (fun omega : Ts => (0 < b omega <= exp r)))).
+                             (event_inter (fun omega : Ts => b omega <= 0)
+                                         (fun omega : Ts => 0 <= r))
+                              (event_inter (fun omega : Ts => b omega > 0 )
+                                           (fun omega : Ts => b omega <= exp r)))).
       - intro x.
         split; intros.
-        + unfold event_union.
+        + unfold event_union, event_inter.
           destruct (Rle_dec (b x) 0).
           left.
           unfold ln in H.
@@ -500,29 +502,13 @@ Section RealRandomVariables.
             -- rewrite H0; now right.
       - rewrite H.
         apply sa_union.
-        assert (event_equiv (fun omega : Ts => b omega <= 0 <= r)
-                            (event_inter (fun omega : Ts => b omega <= 0)
-                                         (fun omega : Ts => 0 <= r))).
-        + intro x.
-          unfold event_inter.
-          lra.
-        + rewrite H0.
-          apply sa_inter; trivial.
+        + apply sa_inter; trivial.
           apply constant_measurable.
-        + assert (event_equiv (fun omega : Ts => 0 < b omega <= exp r)
-                              (event_inter (fun omega : Ts => 0 < b omega )
-                                           (fun omega : Ts => b omega <= exp r))).
-          * intro x.
-            unfold event_inter.
-            lra.
-          * rewrite H0.
-            apply sa_inter; trivial.
-            assert (event_equiv (fun omega : Ts => 0 < b omega)
-                                (fun omega : Ts => b omega > 0)) by (intro x; lra).
-            rewrite H1.
-            now apply sa_le_gt.
+        + apply sa_inter; trivial.
+          now apply sa_le_gt.
     Qed.
 
+(*
     Instance ln_measurable3 (b : Ts -> R) :
       RealMeasurable b ->
       RealMeasurable (fun (x:Ts) => ln (b x)).
@@ -577,7 +563,7 @@ Section RealRandomVariables.
                   apply sa_none.
         + admit.
         + apply constant_measurable.
-    Admitted.              
+*)
 
     Instance exp_measurable (b : Ts -> R) :
       RealMeasurable b ->
@@ -608,7 +594,8 @@ Section RealRandomVariables.
     Proof.
       unfold rvpower, power, RealMeasurable.
       intros bpos rb re r.
-      assert (event_equiv  (fun omega : Ts => (if Req_EM_T (b omega) 0 then 0 else Rpower (b omega) (e omega)) <= r)
+      assert (event_equiv  (fun omega : Ts => (if Req_EM_T (b omega) 0 
+                                               then 0 else Rpower (b omega) (e omega)) <= r)
                            (event_union
                               (event_inter (fun omega => b omega = 0)
                                            (fun omega => b omega <= r))
@@ -686,6 +673,19 @@ Section RealRandomVariables.
         RandomVariable dom borel_sa (rvpow rv_X n).
       Proof.
         typeclasses eauto.
+      Qed.
+
+      Global Instance rvpower_rv 
+             (rv_X1 rv_X2 : Ts -> R)
+             {rv1 : RandomVariable dom borel_sa rv_X1}
+             {rv2 : RandomVariable dom borel_sa rv_X2} :
+        (forall (x:Ts), (0 <= rv_X1 x)%R) ->
+        RandomVariable dom borel_sa (rvpower rv_X1 rv_X2).
+      Proof.
+        intros.
+        unfold RandomVariable.
+        rewrite <- borel_sa_preimage2.
+        apply rvpower_measurable; trivial; typeclasses eauto.
       Qed.
 
       Global Instance rvsqr_rv
