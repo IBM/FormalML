@@ -1,3 +1,4 @@
+Require Import Program.Basics.
 Require Import Coq.Reals.Rbase Coq.Reals.RList.
 Require Import Coq.Reals.Rfunctions.
 Require Import Ranalysis_reg.
@@ -1255,9 +1256,9 @@ Section power.
   Qed.
   
   Lemma Dpower' (y z : R) :
-        0 < y ->
-        D_in (fun x : R => power x z) (fun x : R => z * power x (z - 1))
-             (fun x : R => 0 < x) y.
+    0 < y ->
+    D_in (fun x : R => power x z) (fun x : R => z * power x (z - 1))
+         (fun x : R => 0 < x) y.
   Proof.
     intros.
     generalize (derivable_pt_lim_D_in (fun x : R => power x z)
@@ -1271,371 +1272,523 @@ Section power.
 
 End power.
 
-    Section ineqs.
+Section ineqs.
 
-      Lemma Rpower_ln : forall x y : R, ln (Rpower x y) = y*ln x.
-      Proof.
-        unfold Rpower ; intros.
-        now rewrite ln_exp.
-      Qed.
+  Lemma Rpower_ln : forall x y : R, ln (Rpower x y) = y*ln x.
+  Proof.
+    unfold Rpower ; intros.
+    now rewrite ln_exp.
+  Qed.
 
-      Lemma Rpower_base_1 : forall x : R, Rpower 1 x = 1.
-      Proof.
-        intros.
-        unfold Rpower.
-        rewrite ln_1.
-        replace (x*0) with 0 by lra.
-        apply exp_0.
-      Qed.
+  Lemma Rpower_base_1 : forall x : R, Rpower 1 x = 1.
+  Proof.
+    intros.
+    unfold Rpower.
+    rewrite ln_1.
+    replace (x*0) with 0 by lra.
+    apply exp_0.
+  Qed.
 
-      Lemma power_base_1 e : power 1 e = 1.
-      Proof.
-        unfold power.
-        match_destr; try lra.
-        apply Rpower_base_1.
-      Qed.
+  Lemma power_base_1 e : power 1 e = 1.
+  Proof.
+    unfold power.
+    match_destr; try lra.
+    apply Rpower_base_1.
+  Qed.
 
-      Lemma sum_one_le : forall x y : R, 0 <= x -> 0 <= y -> x + y = 1 -> x <= 1.
-      Proof.
-        intros.
-        rewrite <-H1.
-        replace (x) with (x+0) by lra.
-        replace (x+0+y) with (x+y) by lra.
-        apply Rplus_le_compat_l ; trivial.
-      Qed.
+  Lemma sum_one_le : forall x y : R, 0 <= x -> 0 <= y -> x + y = 1 -> x <= 1.
+  Proof.
+    intros.
+    rewrite <-H1.
+    replace (x) with (x+0) by lra.
+    replace (x+0+y) with (x+y) by lra.
+    apply Rplus_le_compat_l ; trivial.
+  Qed.
 
-      Lemma Rmult_four_assoc (a b c d : R) : a * b * (c * d) = a * (b*c) * d.
-      Proof.
-        ring.
-      Qed.
+  Lemma Rmult_four_assoc (a b c d : R) : a * b * (c * d) = a * (b*c) * d.
+  Proof.
+    ring.
+  Qed.
 
-      (*
+  (*
    This theorem also holds for a b : nonnegreal. But it is awkward since
    Rpower x y is defined in terms of exp and ln.
-       *)
-      Theorem youngs_ineq {p q : posreal} {a b : R} (Hpq : 1/p + 1/q = 1) :
-        0 < a -> 0 < b -> a*b <= (Rpower a p)/p + (Rpower b q)/q.
-      Proof.
-        intros apos bpos.
-        replace (a*b) with (exp (ln (a*b)))
-          by (rewrite exp_ln ; trivial ; apply Rmult_lt_0_compat ; trivial).
-        rewrite ln_mult ; trivial.
-        destruct p as [p ppos] ; destruct q as [q qpos] ; simpl in *.
-        assert (Hp : p <> 0) by lra.
-        assert (Hq : q <> 0) by lra.
-        replace (ln a) with (/p*p*(ln a)) by (rewrite Rinv_l ; lra).
-        replace (ln b) with (/q*q*(ln b)) by (rewrite Rinv_l ; lra).
-        rewrite Rmult_assoc; rewrite Rmult_assoc.
-        replace (p*ln a) with (ln(Rpower a p)) by (apply Rpower_ln).
-        replace (q*ln b) with (ln(Rpower b q)) by (apply Rpower_ln).
-        generalize (exp_convex (/p) (ln (Rpower a p)) (ln(Rpower b q))); intros.
-        unfold convex in H. unfold Rdiv.
-        replace (/q) with (1 - /p) by lra.
-        eapply Rle_trans.
-        - apply H.
-          split.
-          + left ; apply Rinv_pos ; trivial.
-          + apply sum_one_le with (y := /q) ; try (left ; apply Rinv_pos ; trivial) ; try lra.
-        - right.
-          repeat (rewrite exp_ln; try (unfold Rpower ; apply exp_pos)).
-          ring.
-      Qed.
+   *)
+  Theorem Rpower_youngs_ineq {p q : posreal} {a b : R} (Hpq : 1/p + 1/q = 1) :
+    0 < a -> 0 < b -> a*b <= (Rpower a p)/p + (Rpower b q)/q.
+  Proof.
+    intros apos bpos.
+    replace (a*b) with (exp (ln (a*b)))
+      by (rewrite exp_ln ; trivial ; apply Rmult_lt_0_compat ; trivial).
+    rewrite ln_mult ; trivial.
+    destruct p as [p ppos] ; destruct q as [q qpos] ; simpl in *.
+    assert (Hp : p <> 0) by lra.
+    assert (Hq : q <> 0) by lra.
+    replace (ln a) with (/p*p*(ln a)) by (rewrite Rinv_l ; lra).
+    replace (ln b) with (/q*q*(ln b)) by (rewrite Rinv_l ; lra).
+    rewrite Rmult_assoc; rewrite Rmult_assoc.
+    replace (p*ln a) with (ln(Rpower a p)) by (apply Rpower_ln).
+    replace (q*ln b) with (ln(Rpower b q)) by (apply Rpower_ln).
+    generalize (exp_convex (/p) (ln (Rpower a p)) (ln(Rpower b q))); intros.
+    unfold convex in H. unfold Rdiv.
+    replace (/q) with (1 - /p) by lra.
+    eapply Rle_trans.
+    - apply H.
+      split.
+      + left ; apply Rinv_pos ; trivial.
+      + apply sum_one_le with (y := /q) ; try (left ; apply Rinv_pos ; trivial) ; try lra.
+    - right.
+      repeat (rewrite exp_ln; try (unfold Rpower ; apply exp_pos)).
+      ring.
+  Qed.
 
-      Theorem youngs_ineq' {p q : posreal} {a b : R} (Hpq : 1/p + 1/q = 1) :
-        0 <= a -> 0 <= b -> a*b <= (power a p)/p + (power b q)/q.
-      Proof.
-        unfold power; intros apos bpos.
-        repeat match_destr; subst.
-        - lra.
-        - destruct p; destruct q; simpl in *.
-          field_simplify; [| lra].
-          apply Rmult_le_pos.
-          + apply Rmult_le_pos; try lra.
-            generalize (Rpower_pos b pos0); lra.
-          + left.
-            apply Rinv_pos.
-            now apply Rmult_lt_0_compat.
-        - destruct p; destruct q; simpl in *.
-          field_simplify; [| lra].
-          apply Rmult_le_pos.
-          + apply Rmult_le_pos; try lra.
-            generalize (Rpower_pos a pos); lra.
-          + left.
-            apply Rinv_pos.
-            now apply Rmult_lt_0_compat.
-        - apply youngs_ineq; lra.
-      Qed.
+  Theorem youngs_ineq {p q : posreal} {a b : R} (Hpq : 1/p + 1/q = 1) :
+    0 <= a -> 0 <= b -> a*b <= (power a p)/p + (power b q)/q.
+  Proof.
+    unfold power; intros apos bpos.
+    repeat match_destr; subst.
+    - lra.
+    - destruct p; destruct q; simpl in *.
+      field_simplify; [| lra].
+      apply Rmult_le_pos.
+      + apply Rmult_le_pos; try lra.
+        generalize (Rpower_pos b pos0); lra.
+      + left.
+        apply Rinv_pos.
+        now apply Rmult_lt_0_compat.
+    - destruct p; destruct q; simpl in *.
+      field_simplify; [| lra].
+      apply Rmult_le_pos.
+      + apply Rmult_le_pos; try lra.
+        generalize (Rpower_pos a pos); lra.
+      + left.
+        apply Rinv_pos.
+        now apply Rmult_lt_0_compat.
+    - apply Rpower_youngs_ineq; lra.
+  Qed.
 
-      (*
+  (*
     Young's inequality is needed in the proof of Holder's inequality.
-       *)
+   *)
 
-      Theorem youngs_ineq_2' {p q : posreal} (Hpq : 1/p + 1/q = 1):
-        forall (t a b : R), 0 <= a -> 0 <= b -> 0 < t ->
-                            (power a (1/p))*(power b (1/q)) <= (power t (-1/q))*a/p + (power t (1/p))*b/q.
-      Proof.
-        intros t a b apos bpos tpos.
-        assert (Hq : pos q <> 0)
-          by (generalize (cond_pos q) ; intros H notq ; rewrite notq in H ; lra).
-        assert (Hp : pos p <> 0)
-          by (generalize (cond_pos p) ; intros H notp ; rewrite notp in H ; lra).
-        assert (Hap : 0 <= ((power a (1/p))*power t (-1/(q*p))))
-        by (apply Rmult_le_pos; apply power_nonneg).
-        assert (Hbq : 0 <= (power t (1/(q*p))*(power b (1/q))))
-        by (apply Rmult_le_pos; apply power_nonneg).
-        generalize (youngs_ineq' Hpq Hap Hbq) ; intros.
-        rewrite Rmult_four_assoc in H.
-        replace (power t (-1/(q*p)) * power t (1/(q*p))) with 1 in H.
-        -- ring_simplify in H.
-           eapply Rle_trans.
-           apply H. clear H.
-           repeat (rewrite <-power_mult_distr ; try apply power_nonneg).
-           unfold Rdiv.
-           repeat (rewrite power_mult).
-           replace (1 */p *p) with 1 by (field ; trivial).
-           replace (1 */q *q) with 1 by (field ; trivial).
-        + repeat (rewrite power_1 ; trivial).
-          right.
-          f_equal.
-          ++  rewrite Rmult_assoc.  rewrite Rmult_comm.
-              replace (-1 * /(q*p) * p) with (-1 * /q).
-              ring. field ; split ; trivial.
-          ++  rewrite Rmult_assoc.
-              replace (1 * /(q*p) * q) with (1 * /p).
-              ring. field ; split ; trivial.
-          -- unfold Rdiv.
-             rewrite <-power_plus.
-             rewrite <-power_O with (x := t) ; trivial.
-             f_equal. rewrite power_O;trivial.
-             ring.
-      Qed.
+  Theorem youngs_ineq_2 {p q : posreal} (Hpq : 1/p + 1/q = 1):
+    forall (t a b : R), 0 <= a -> 0 <= b -> 0 < t ->
+                   (power a (1/p))*(power b (1/q)) <= (power t (-1/q))*a/p + (power t (1/p))*b/q.
+  Proof.
+    intros t a b apos bpos tpos.
+    assert (Hq : pos q <> 0)
+      by (generalize (cond_pos q) ; intros H notq ; rewrite notq in H ; lra).
+    assert (Hp : pos p <> 0)
+      by (generalize (cond_pos p) ; intros H notp ; rewrite notp in H ; lra).
+    assert (Hap : 0 <= ((power a (1/p))*power t (-1/(q*p))))
+      by (apply Rmult_le_pos; apply power_nonneg).
+    assert (Hbq : 0 <= (power t (1/(q*p))*(power b (1/q))))
+      by (apply Rmult_le_pos; apply power_nonneg).
+    generalize (youngs_ineq Hpq Hap Hbq) ; intros.
+    rewrite Rmult_four_assoc in H.
+    replace (power t (-1/(q*p)) * power t (1/(q*p))) with 1 in H.
+    -- ring_simplify in H.
+       eapply Rle_trans.
+       apply H. clear H.
+       repeat (rewrite <-power_mult_distr ; try apply power_nonneg).
+       unfold Rdiv.
+       repeat (rewrite power_mult).
+       replace (1 */p *p) with 1 by (field ; trivial).
+       replace (1 */q *q) with 1 by (field ; trivial).
+    + repeat (rewrite power_1 ; trivial).
+      right.
+      f_equal.
+      ++  rewrite Rmult_assoc.  rewrite Rmult_comm.
+          replace (-1 * /(q*p) * p) with (-1 * /q).
+          ring. field ; split ; trivial.
+      ++  rewrite Rmult_assoc.
+          replace (1 * /(q*p) * q) with (1 * /p).
+          ring. field ; split ; trivial.
+      -- unfold Rdiv.
+         rewrite <-power_plus.
+         rewrite <-power_O with (x := t) ; trivial.
+         f_equal. rewrite power_O;trivial.
+         ring.
+  Qed.
 
-      Theorem youngs_ineq_2 {p q : posreal} (Hpq : 1/p + 1/q = 1):
-        forall (t a b : R), 0 < a -> 0 < b -> 0 < t ->
-                            (Rpower a (1/p))*(Rpower b (1/q)) <= (Rpower t (-1/q))*a/p + (Rpower t (1/p))*b/q.
-      Proof.
-        intros.
-        generalize (youngs_ineq_2' Hpq t a b) ; intros HH.
-        cut_to HH; try lra.
-        now repeat rewrite power_Rpower in HH by lra.
-      Qed.        
-
-      Corollary ag_ineq (a b : R):
-        0 <= a -> 0 <= b ->  sqrt (a*b) <= (a+b)/2.
-      Proof.
-        intros Ha Hb.
-        destruct Ha as [Hapos | Haz].
-        destruct Hb as [Hbpos | Hbz].
-        ++ rewrite <-Rpower_sqrt ; try (apply Rmult_lt_0_compat ; trivial).
-           rewrite <-Rpower_mult_distr ; trivial.
-           rewrite Rdiv_plus_distr.
-           assert (Hpq : 1/pos(mkposreal 2 Rlt_0_2) + 1/pos(mkposreal 2 Rlt_0_2) = 1)
-             by (simpl;field).
-           generalize (youngs_ineq_2 Hpq 1 a b Hapos Hbpos Rlt_0_1) ; simpl ; intros.
-           replace (/2) with (1/2) by lra.
-           eapply Rle_trans. apply H.
-           repeat rewrite Rpower_base_1.
-           right ; field.
-        ++ subst. left.
-           rewrite Rmult_0_r.
-           rewrite sqrt_0 ; lra.
-        ++ subst.
-           rewrite Rmult_0_l.
-           rewrite sqrt_0; lra.
-      Qed.
-
-      Lemma minkowski_helper_aux (p:nat) (a t : R) : 0 < t ->
-                                                     t*(pow(a/t) (S p)) = (pow a (S p))*(pow (/t) p).
-      Proof.
-        intros.
-        unfold Rdiv.
-        rewrite Rpow_mult_distr.
-        rewrite Rmult_comm, Rmult_assoc.
-        f_equal.
-        simpl.
-        rewrite Rmult_comm.
-        rewrite <- Rmult_assoc.
-        rewrite Rinv_r.
-        now rewrite Rmult_1_l.
-        now apply Rgt_not_eq.
-      Qed.
-
-      Lemma minkowski_helper (p : nat) {a b t : R}:
-        (0 <= a) -> (0 <= b) -> 0<t<1 ->
-        (pow (a+b) (S p)) <= (pow (/t) p)*(pow a (S p)) + (pow (/(1-t)) p)*(pow b (S p)).
-      Proof.
-        intros Ha Hb Ht.
-        assert (Ht1 : t <> 0) by (intro not; destruct Ht as [h1 h2] ; subst ; lra).
-        assert (Ht2 : 1-t <> 0) by (intro not; destruct Ht as [h1 h2] ; subst ; lra).
-        assert (Hat : 0 <= a/t) by (apply Rcomplements.Rdiv_le_0_compat ; lra).
-        assert (Hbt : 0 <= b/(1-t)) by  (apply Rcomplements.Rdiv_le_0_compat ; lra).
-        assert (Ht' : 0 <= t <= 1) by lra.
-        replace (a+b) with (t*(a/t) + (1-t)*(b/(1-t))) by (field ; split ; trivial).
-        generalize (pow_convex (S p) t (a/t) (b/(1-t)) Hat Hbt Ht'); intros.
-        eapply Rle_trans. apply H.
-        repeat (rewrite minkowski_helper_aux ; try lra).
-      Qed.
-
-      Lemma minkowski_subst (p : nat) {a b : R} :
-        (0 < a) -> (0 < b) -> 
-        (pow (/(a / (a + b))) p)*(pow a (S p)) +
-        (pow (/(1-(a / (a + b)))) p)*(pow b (S p)) = (pow (a + b) (S p)).
-      Proof.
-        intros; simpl.
-        assert (a <> 0) by now apply Rgt_not_eq.
-        assert (a + b <> 0) by (apply Rgt_not_eq; now apply Rplus_lt_0_compat).
-        replace (/ (a / (a + b))) with ((a+b)* (/a)).
-        - rewrite Rpow_mult_distr, Rmult_assoc.
-          replace ((/ a) ^ p * (a * a ^ p)) with (a).
-          + replace (/ (1 - a / (a + b))) with ((a+b)/b).
-            * unfold Rdiv; rewrite Rpow_mult_distr, Rmult_assoc.
-              replace ((/ b) ^ p * (b * b ^ p)) with (b).
-              ring.
-              rewrite <- Rmult_assoc, Rmult_comm.
-              rewrite <- Rmult_assoc, <- Rpow_mult_distr.      
-              rewrite Rinv_r, pow1; lra.
-            * field; split; trivial.
-              replace (a + b - a) with b by lra.
-              now apply Rgt_not_eq.
-          + rewrite <- Rmult_assoc, Rmult_comm.
-            rewrite <- Rmult_assoc, <- Rpow_mult_distr.
-            rewrite Rinv_r, pow1; lra.
-        - field; now split.
-      Qed.
-
-      Lemma minkowski_range (a b : R) :
-        (0 < a) -> (0 < b) -> 
-        0 < a / (a + b) < 1.
-        split.
-        - apply Rdiv_lt_0_compat; trivial.
-          now apply Rplus_lt_0_compat.
-        - apply Rmult_lt_reg_r with (r := a+b).
-          now apply Rplus_lt_0_compat.
-          unfold Rdiv.
-          rewrite Rmult_assoc, Rinv_l.
-          + rewrite Rmult_1_r, Rmult_1_l.
-            replace (a) with (a + 0) at 1 by lra.
-            now apply Rplus_lt_compat_l.
-          + apply Rgt_not_eq.
-            now apply Rplus_lt_0_compat.
-      Qed.
-      
-    End ineqs.
-
-    Lemma Rpower_neg1 b e : b < 0 -> Rpower b e = 1.
-    Proof.
-      intros.
-      unfold Rpower.
-      unfold ln.
-      match_destr; try lra.
-      - elimtype False; try tauto; lra.
-      - rewrite Rmult_0_r.
-        now rewrite exp_0.
-    Qed.
-
-    Lemma derivable_pt_lim_abs_power2' (x y : R) :
-      0 <= x ->
-      1 < y ->
-      derivable_pt_lim (fun x0 : R => power (Rabs x0) y) x (y * power x (y - 1)).
+  Theorem Rpower_youngs_ineq_2 {p q : posreal} (Hpq : 1/p + 1/q = 1):
+    forall (t a b : R), 0 < a -> 0 < b -> 0 < t ->
+                   (Rpower a (1/p))*(Rpower b (1/q)) <= (Rpower t (-1/q))*a/p + (Rpower t (1/p))*b/q.
   Proof.
     intros.
-    unfold power.
+    generalize (youngs_ineq_2 Hpq t a b) ; intros HH.
+    cut_to HH; try lra.
+    now repeat rewrite power_Rpower in HH by lra.
+  Qed.        
+
+  
+  Corollary ag_ineq (a b : R):
+    0 <= a -> 0 <= b ->  sqrt (a*b) <= (a+b)/2.
+  Proof.
+    intros Ha Hb.
+    destruct Ha as [Hapos | Haz].
+    destruct Hb as [Hbpos | Hbz].
+    ++ rewrite <-Rpower_sqrt ; try (apply Rmult_lt_0_compat ; trivial).
+       rewrite <-Rpower_mult_distr ; trivial.
+       rewrite Rdiv_plus_distr.
+       assert (Hpq : 1/pos(mkposreal 2 Rlt_0_2) + 1/pos(mkposreal 2 Rlt_0_2) = 1)
+         by (simpl;field).
+       generalize (Rpower_youngs_ineq_2 Hpq 1 a b Hapos Hbpos Rlt_0_1) ; simpl ; intros.
+       replace (/2) with (1/2) by lra.
+       eapply Rle_trans. apply H.
+       repeat rewrite Rpower_base_1.
+       right ; field.
+    ++ subst. left.
+       rewrite Rmult_0_r.
+       rewrite sqrt_0 ; lra.
+    ++ subst.
+       rewrite Rmult_0_l.
+       rewrite sqrt_0; lra.
+  Qed.
+
+  Lemma pow_minkowski_helper_aux (p:nat) (a t : R) : 0 < t ->
+                                                   t*(pow(a/t) (S p)) = (pow a (S p))*(pow (/t) p).
+  Proof.
+    intros.
+    unfold Rdiv.
+    rewrite Rpow_mult_distr.
+    rewrite Rmult_comm, Rmult_assoc.
+    f_equal.
+    simpl.
+    rewrite Rmult_comm.
+    rewrite <- Rmult_assoc.
+    rewrite Rinv_r.
+    now rewrite Rmult_1_l.
+    now apply Rgt_not_eq.
+  Qed.
+
+  Lemma pow_minkowski_helper (p : nat) {a b t : R}:
+    (0 <= a) -> (0 <= b) -> 0<t<1 ->
+    (pow (a+b) (S p)) <= (pow (/t) p)*(pow a (S p)) + (pow (/(1-t)) p)*(pow b (S p)).
+  Proof.
+    intros Ha Hb Ht.
+    assert (Ht1 : t <> 0) by (intro not; destruct Ht as [h1 h2] ; subst ; lra).
+    assert (Ht2 : 1-t <> 0) by (intro not; destruct Ht as [h1 h2] ; subst ; lra).
+    assert (Hat : 0 <= a/t) by (apply Rcomplements.Rdiv_le_0_compat ; lra).
+    assert (Hbt : 0 <= b/(1-t)) by  (apply Rcomplements.Rdiv_le_0_compat ; lra).
+    assert (Ht' : 0 <= t <= 1) by lra.
+    replace (a+b) with (t*(a/t) + (1-t)*(b/(1-t))) by (field ; split ; trivial).
+    generalize (pow_convex (S p) t (a/t) (b/(1-t)) Hat Hbt Ht'); intros.
+    eapply Rle_trans. apply H.
+    repeat (rewrite pow_minkowski_helper_aux ; try lra).
+  Qed.
+
+  Lemma pow_minkowski_subst (p : nat) {a b : R} :
+    (0 < a) -> (0 < b) -> 
+    (pow (/(a / (a + b))) p)*(pow a (S p)) +
+    (pow (/(1-(a / (a + b)))) p)*(pow b (S p)) = (pow (a + b) (S p)).
+  Proof.
+    intros; simpl.
+    assert (a <> 0) by now apply Rgt_not_eq.
+    assert (a + b <> 0) by (apply Rgt_not_eq; now apply Rplus_lt_0_compat).
+    replace (/ (a / (a + b))) with ((a+b)* (/a)).
+    - rewrite Rpow_mult_distr, Rmult_assoc.
+      replace ((/ a) ^ p * (a * a ^ p)) with (a).
+      + replace (/ (1 - a / (a + b))) with ((a+b)/b).
+        * unfold Rdiv; rewrite Rpow_mult_distr, Rmult_assoc.
+          replace ((/ b) ^ p * (b * b ^ p)) with (b).
+          ring.
+          rewrite <- Rmult_assoc, Rmult_comm.
+          rewrite <- Rmult_assoc, <- Rpow_mult_distr.      
+          rewrite Rinv_r, pow1; lra.
+        * field; split; trivial.
+          replace (a + b - a) with b by lra.
+          now apply Rgt_not_eq.
+      + rewrite <- Rmult_assoc, Rmult_comm.
+        rewrite <- Rmult_assoc, <- Rpow_mult_distr.
+        rewrite Rinv_r, pow1; lra.
+    - field; now split.
+  Qed.
+
+  Lemma minkowski_range (a b : R) :
+    (0 < a) -> (0 < b) -> 
+    0 < a / (a + b) < 1.
+    split.
+    - apply Rdiv_lt_0_compat; trivial.
+      now apply Rplus_lt_0_compat.
+    - apply Rmult_lt_reg_r with (r := a+b).
+      now apply Rplus_lt_0_compat.
+      unfold Rdiv.
+      rewrite Rmult_assoc, Rinv_l.
+      + rewrite Rmult_1_r, Rmult_1_l.
+        replace (a) with (a + 0) at 1 by lra.
+        now apply Rplus_lt_compat_l.
+      + apply Rgt_not_eq.
+        now apply Rplus_lt_0_compat.
+  Qed.
+
+End ineqs.
+
+Lemma Rpower_neg1 b e : b < 0 -> Rpower b e = 1.
+Proof.
+  intros.
+  unfold Rpower.
+  unfold ln.
+  match_destr; try lra.
+  - elimtype False; try tauto; lra.
+  - rewrite Rmult_0_r.
+    now rewrite exp_0.
+Qed.
+
+Lemma derivable_pt_lim_abs_power2' (x y : R) :
+  0 <= x ->
+  1 < y ->
+  derivable_pt_lim (fun x0 : R => power (Rabs x0) y) x (y * power x (y - 1)).
+Proof.
+  intros.
+  unfold power.
+  match_destr.
+  - red; intros.
+    match_destr; try lra.
+    clear e0.
+    subst.
+    assert (dpos:0 <  (power eps (Rinv (y-1)))).
+    {
+      apply power_pos; lra.
+    } 
+    exists (mkposreal _ dpos); intros.
+    rewrite Rplus_0_l.
     match_destr.
-    - red; intros.
-      match_destr; try lra.
-      clear e0.
-      subst.
-      assert (dpos:0 <  (power eps (Rinv (y-1)))).
-      {
-        apply power_pos; lra.
-      } 
-      exists (mkposreal _ dpos); intros.
-      rewrite Rplus_0_l.
-      match_destr.
-      -- apply Rcomplements.Rabs_eq_0 in e; lra.
-      -- simpl in *.
-         rewrite Rmult_0_r.
-         repeat rewrite Rminus_0_r.
-         generalize (Rlt_power_l (Rabs h) (power eps (Rinv (y - 1))) (y-1))
-         ; intros HH.
-         cut_to HH.
-      + rewrite power_mult in HH.
-        rewrite Rinv_l in HH by lra.
-        rewrite power_1 in HH by lra.
-        unfold power in HH.
-        match_destr_in HH; try lra.
-        unfold Rminus in HH.
-        rewrite Rpower_plus in HH.
-        rewrite Rpower_Ropp in HH.
-        rewrite Rpower_1 in HH
-          by now apply Rabs_pos_lt.
-        unfold Rdiv.
-        rewrite Rabs_mult.
-        rewrite Rabs_Rinv by trivial.
-        rewrite (Rabs_pos_eq (Rpower (Rabs h) y)); trivial.
-        left.
-        apply Rpower_pos.
-      + lra.
-      + split; trivial.
-        apply Rabs_pos.
-        -- subst.
-           rewrite Rabs_R0 in n; lra.
-    -
-      generalize (derivable_pt_lim_comp
-                    Rabs
-                    (fun x0 : R => if Req_EM_T x0 0 then 0 else Rpower x0 y)
-                    x
-                    1
-                 (y * Rpower x (y - 1)))
-      ; intros HH2.
-      rewrite Rmult_1_r in HH2.
-      apply HH2.
-      + apply Rabs_derive_1; lra.
-      + rewrite Rabs_pos_eq by lra.
-        generalize (derivable_pt_lim_power' x y); intros HH.
-        cut_to HH; [| lra].
-        unfold power in HH.
-        match_destr_in HH; try lra.
-  Qed.
+    -- apply Rcomplements.Rabs_eq_0 in e; lra.
+    -- simpl in *.
+       rewrite Rmult_0_r.
+       repeat rewrite Rminus_0_r.
+       generalize (Rlt_power_l (Rabs h) (power eps (Rinv (y - 1))) (y-1))
+       ; intros HH.
+       cut_to HH.
+    + rewrite power_mult in HH.
+      rewrite Rinv_l in HH by lra.
+      rewrite power_1 in HH by lra.
+      unfold power in HH.
+      match_destr_in HH; try lra.
+      unfold Rminus in HH.
+      rewrite Rpower_plus in HH.
+      rewrite Rpower_Ropp in HH.
+      rewrite Rpower_1 in HH
+        by now apply Rabs_pos_lt.
+      unfold Rdiv.
+      rewrite Rabs_mult.
+      rewrite Rabs_Rinv by trivial.
+      rewrite (Rabs_pos_eq (Rpower (Rabs h) y)); trivial.
+      left.
+      apply Rpower_pos.
+    + lra.
+    + split; trivial.
+      apply Rabs_pos.
+      -- subst.
+         rewrite Rabs_R0 in n; lra.
+  -
+    generalize (derivable_pt_lim_comp
+                  Rabs
+                  (fun x0 : R => if Req_EM_T x0 0 then 0 else Rpower x0 y)
+                  x
+                  1
+                  (y * Rpower x (y - 1)))
+    ; intros HH2.
+    rewrite Rmult_1_r in HH2.
+    apply HH2.
+    + apply Rabs_derive_1; lra.
+    + rewrite Rabs_pos_eq by lra.
+      generalize (derivable_pt_lim_power' x y); intros HH.
+      cut_to HH; [| lra].
+      unfold power in HH.
+      match_destr_in HH; try lra.
+Qed.
 
-  Lemma Rpower_convex_pos (e:R) (r : R):
-    1 <= e ->
-    forall (x y a : R), 0<x -> 0<y -> convex (fun z => Rpower z e) a x y.
+Lemma Rpower_convex_pos (e:R) :
+  1 <= e ->
+  forall (x y a : R), 0<x -> 0<y -> convex (fun z => Rpower z e) a x y.
+Proof.
+  intros.
+  eapply ppos_convex_deriv; trivial.
+  - intros.
+    now apply derivable_pt_lim_power.
+  - intros.
+    apply (ppos_deriv_incr_convex (fun z => Rpower z e)); trivial.
+    + intros; now apply derivable_pt_lim_power.
+    + intros.
+      apply Rmult_le_compat_l; [lra |].
+      apply Rle_Rpower_l; lra.
+Qed.
+
+Lemma Rpower_base_0 e : Rpower 0 e = 1.
+Proof.
+  unfold Rpower, ln.
+  match_destr.
+  - elimtype False; try tauto; lra.
+  - rewrite Rmult_0_r.
+    now rewrite exp_0.
+Qed.
+
+Lemma power_convex_pos (e:R) :
+  1 <= e ->
+  forall (x y a : R), 0<x -> 0<y -> convex (fun z => power z e) a x y.
+Proof.
+  intros.
+  eapply ppos_convex_deriv; trivial.
+  - intros.
+    now apply derivable_pt_lim_power'.
+  - intros.
+    apply (ppos_deriv_incr_convex (fun z => power z e)); trivial.
+    + intros; now apply derivable_pt_lim_power'.
+    + intros.
+      apply Rmult_le_compat_l; [lra |].
+      apply Rle_power_l; lra.
+Qed.
+
+Section power_minkowski.
+
+  Lemma power_minkowski_helper_aux (p:R) (a t : R) :
+    0 <= a ->
+    0 < t ->
+    1 <= p ->
+    t*(power (a/t) p) = (power a p)*(power (/t) (p-1)).
   Proof.
     intros.
-    eapply ppos_convex_deriv; trivial.
-    - intros.
-      now apply derivable_pt_lim_power.
-    - intros.
-      apply (ppos_deriv_incr_convex (fun z => Rpower z e)); trivial.
-      + intros; now apply derivable_pt_lim_power.
-      + intros.
-        apply Rmult_le_compat_l; [lra |].
-        apply Rle_Rpower_l; lra.
+    unfold Rdiv.
+    rewrite <- power_mult_distr; trivial.
+    - rewrite Rmult_comm, Rmult_assoc.
+      f_equal.
+      unfold Rminus.
+      rewrite power_plus.
+      f_equal.
+      rewrite power_Ropp.
+      + rewrite power_1.
+        * rewrite Rinv_involutive; lra.
+        * left.
+          now apply Rinv_pos.
+      + apply Rinv_neq_0_compat; lra.
+    - left.
+      now apply Rinv_pos.
   Qed.
 
-  Lemma Rpower_base_0 e : Rpower 0 e = 1.
+  Lemma power_minkowski_helper_lt (p : R) {a b t : R}:
+    (0 < a) ->
+    (0 < b) ->
+    0<t<1 ->
+    1 <= p ->
+    (power (a+b) p) <= (power (/t) (p-1))*(power a p) + (power (/(1-t)) (p-1))*(power b p).
   Proof.
-    unfold Rpower, ln.
-    match_destr.
-    - elimtype False; try tauto; lra.
-    - rewrite Rmult_0_r.
-      now rewrite exp_0.
+    intros Ha Hb Ht pbig.
+    assert (Ht1 : t <> 0) by (intro not; destruct Ht as [h1 h2] ; subst ; lra).
+    assert (Ht2 : 1-t <> 0) by (intro not; destruct Ht as [h1 h2] ; subst ; lra).
+    assert (Hat : 0 < a/t) by (apply Rcomplements.Rdiv_lt_0_compat ; lra).
+    assert (Hbt : 0 < b/(1-t)) by  (apply Rcomplements.Rdiv_lt_0_compat ; lra).
+    assert (Ht' : 0 <= t <= 1) by lra.
+    replace (a+b) with (t*(a/t) + (1-t)*(b/(1-t))) by (field ; split ; trivial).
+    
+    generalize (power_convex_pos p pbig (a/t) (b/(1-t)) t Hat Hbt Ht'); intros.
+    eapply Rle_trans. apply H.
+    repeat (rewrite power_minkowski_helper_aux ; try lra).
   Qed.
 
-  Lemma power_convex_pos (e:R) (r : R):
-    1 <= e ->
-    forall (x y a : R), 0<x -> 0<y -> convex (fun z => power z e) a x y.
+  Lemma Rmult_bigpos_le_l a b :
+    0 <= a ->
+    1 <= b ->
+    a <= b * a.
   Proof.
     intros.
-    eapply ppos_convex_deriv; trivial.
-    - intros.
-      now apply derivable_pt_lim_power'.
-    - intros.
-      apply (ppos_deriv_incr_convex (fun z => power z e)); trivial.
-      + intros; now apply derivable_pt_lim_power'.
-      + intros.
-        apply Rmult_le_compat_l; [lra |].
-        apply Rle_power_l; lra.
+    rewrite <- (Rmult_1_l a) at 1.
+    now apply Rmult_le_compat_r.
   Qed.
 
+  Lemma power_big_big a e :
+    0 <= e ->
+    1 <= a ->
+    1 <= power a e.
+  Proof.
+    intros nne pbig.
+    generalize (Rle_power a 0 e pbig nne).
+    rewrite power_O; lra.
+  Qed.
+    
+  Lemma power_minkowski_helper (p : R) {a b t : R}:
+    (0 <= a) ->
+    (0 <= b) ->
+    0<t<1 ->
+    1 <= p ->
+    (power (a+b) p) <= (power (/t) (p-1))*(power a p) + (power (/(1-t)) (p-1))*(power b p).
+  Proof.
+    intros Ha Hb Ht pbig.
+    destruct (Req_EM_T a 0).
+    - subst.
+      rewrite power0_Sbase by lra.
+      rewrite Rmult_0_r.
+      repeat rewrite Rplus_0_l.
+      apply Rmult_bigpos_le_l.
+      + apply power_nonneg.
+      + assert (1 <= / (1 - t)).
+        * rewrite <- Rinv_1 at 1.
+          apply Rinv_le_contravar; lra.
+        * apply power_big_big; lra.
+    - destruct (Req_EM_T b 0).
+      + subst.
+        rewrite power0_Sbase by lra.
+        rewrite Rmult_0_r.
+        repeat rewrite Rplus_0_r.
+        apply Rmult_bigpos_le_l.
+      * apply power_nonneg.
+      * assert (1 <= / t).
+        -- rewrite <- Rinv_1 at 1.
+          apply Rinv_le_contravar; lra.
+        -- apply power_big_big; lra.
+      + apply power_minkowski_helper_lt; trivial; lra.
+  Qed.
+
+  Lemma power_minus1 b e :
+    0 <= b ->
+    power b e = b * power b (e-1).
+  Proof.
+    intros.
+    replace e with ((e-1)+1) at 1 by lra.
+    rewrite power_plus.
+    rewrite power_1; trivial.
+    lra.
+  Qed.
+
+  Lemma power_minkowski_subst (p : R) {a b : R} :
+    (0 < a) ->
+    (0 < b) ->
+    1 <= p ->
+    (power (/(a / (a + b))) (p-1))*(power a p) +
+    (power (/(1-(a / (a + b)))) (p-1))*(power b p) = (power (a + b) p).
+  Proof.
+    intros; simpl.
+    assert (a <> 0) by auto with real. 
+    assert (a + b <> 0) by lra. 
+    replace (/ (a / (a + b))) with ((a+b)* (/a))
+      by (field; now split).
+    rewrite <- power_mult_distr, Rmult_assoc by (try lra; auto with real).
+    replace (power (/ a) (p-1) * (power a p)) with (a).
+    - replace (/ (1 - a / (a + b))) with ((a+b)/b).
+      + unfold Rdiv; rewrite <- power_mult_distr, Rmult_assoc by (try lra; auto with real).
+       replace (power (/ b) (p-1) * ( power b p)) with (b).
+       * rewrite <- Rmult_plus_distr_l.
+         rewrite Rmult_comm.
+         rewrite <- power_minus1; trivial.
+         lra.
+       * rewrite (power_minus1 b) by lra.
+         rewrite <-  Rmult_assoc, Rmult_comm, <- Rmult_assoc.
+         rewrite power_mult_distr by (try lra; auto with real).
+         rewrite Rinv_r by lra.
+         rewrite power_base_1.
+         lra.
+      + rewrite <- (Rinv_r (a+b)) by lra.
+        fold (Rdiv (a+b) (a+b)).
+        rewrite <- Rdiv_minus_distr.
+        field_simplify; try lra; auto with real.
+    - rewrite (power_minus1 a p) by auto with real.
+      rewrite <- Rmult_assoc, Rmult_comm, <- Rmult_assoc.
+      rewrite power_mult_distr by auto with real.
+      rewrite Rinv_r, power_base_1 by lra.
+      lra.
+  Qed.
+
+End power_minkowski.
+
+     

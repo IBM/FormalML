@@ -855,9 +855,6 @@ Section Lp.
           now apply Rabs_eq_0 in eqq.
     Qed.
 
-    (* move to RealRandomVariable *)
-
-
     Lemma LpFin0_almost0 (rv_X:Ts->R)
           {rrv:RandomVariable dom borel_sa rv_X}
           {isfe: IsFiniteExpectation prts (rvpower (rvabs rv_X) (const p))}:

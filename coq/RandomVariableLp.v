@@ -1108,7 +1108,7 @@ Section Lp.
     Proof.
       intros.
       intro x0.
-      generalize (@minkowski_helper p (rvabs x x0) (rvabs y x0) t); intros.
+      generalize (@pow_minkowski_helper p (rvabs x x0) (rvabs y x0) t); intros.
       unfold rvpow, rvscale, rvplus.
       unfold rvabs in *.
       apply H0; trivial.
@@ -1189,7 +1189,7 @@ Section Lp.
       replace (FiniteExpectation prts (rvpow (rvabs y) (S p))) with (pow b (S p)) in H.
       specialize (H (a /(a + b))).
       cut_to H.
-      rewrite (minkowski_subst p H0 H1) in H.
+      rewrite (pow_minkowski_subst p H0 H1) in H.
       unfold a in H.
       unfold b in H.
       apply H.
