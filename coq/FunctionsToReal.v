@@ -424,6 +424,54 @@ Section defs.
       apply Rabs_minus_sym.
     Qed.
 
+    Lemma rvabs_pow1 (x:Ts->R) : rv_eq (rvpower (rvabs x) (const 1)) (rvabs x).
+    Proof.
+      intros a.
+      unfold rvpower, rvabs, const.
+      apply power_1.
+      apply Rabs_pos.
+    Qed.
+
+    Lemma rv_abs_scale_eq (c:R) (rv_X:Ts->R) :
+    rv_eq (rvabs (rvscale c rv_X)) (rvscale (Rabs c) (rvabs rv_X)).
+  Proof.
+    intros a.
+    unfold rvabs, rvscale.
+    apply Rabs_mult.
+  Qed.
+  
+  Lemma rv_abs_const_eq (c:R)  :
+    rv_eq (Ts:=Ts) (rvabs (const c)) (const (Rabs c)).
+  Proof.
+    intros a.
+    reflexivity.
+  Qed.
+  
+  Lemma rvpow_mult_distr (x y:Ts->R) n :
+    rv_eq (rvpow (rvmult x y) n) (rvmult (rvpow x n) (rvpow y n)).
+  Proof.
+    intros a.
+    unfold rvpow, rvmult.
+    apply Rpow_mult_distr.
+  Qed.
+
+  Lemma rvpow_scale c (X:Ts->R) n :
+    rv_eq (rvpow (rvscale c X) n) (rvscale (pow c n) (rvpow X n)).
+  Proof.
+    intros x.
+    unfold rvpow, rvscale.
+    apply Rpow_mult_distr.
+  Qed.
+
+  Lemma rvpow_const c n :
+    rv_eq (Ts:=Ts) (rvpow (const c) n) (const (pow c n)).
+  Proof.
+    intros x.
+    reflexivity.
+  Qed.
+
+  
+  
   End eqs.
 End defs.
 

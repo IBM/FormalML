@@ -857,6 +857,30 @@ Section convex.
     apply Rmult_le_compat_l with (r := 1-c) in H6; try lra.
   Qed.
 
+  Lemma ppos_convex_deriv (f f' : R -> R) :
+    (forall c : R,  0 < c -> derivable_pt_lim f c (f' c)) ->
+    (forall x y : R, 0 < x -> 0 < y  -> f y >= f x + f' x * (y - x)) ->
+    forall x y c : R, 0 < x -> 0 < y -> convex f c x y.
+  Proof.
+    unfold convex.
+    intros.
+    assert (ineq:0 < c * x + (1-c)*y).
+    {
+      destruct (Req_EM_T c 0).
+      - subst.
+        lra.
+      - apply Rplus_lt_le_0_compat.
+        + apply Rmult_lt_0_compat; lra.
+        + apply Rmult_le_pos; lra.
+    }
+    generalize (H0 (c * x + (1-c)*y) x ineq H1); intros HH1.
+    generalize (H0 (c * x + (1-c)*y) y ineq H2); intros HH2.
+    apply Rge_le in HH1.
+    apply Rge_le in HH2.
+    apply Rmult_le_compat_l with (r := c) in HH1; try lra.
+    apply Rmult_le_compat_l with (r := 1-c) in HH2; try lra.
+  Qed.
+
   Lemma deriv_incr_convex (f f' : R -> R) :
     (forall c : R,   derivable_pt_lim f c (f' c)) ->
     (forall (x y : R), x <= y -> f' x <= f' y) ->
@@ -884,6 +908,29 @@ Section convex.
     (forall c : R,  0 <= c -> derivable_pt_lim f c (f' c)) ->
     (forall (x y : R), 0<=x -> 0 <= y -> x <= y -> f' x <= f' y) ->
     forall (x y : R), 0 <= x -> 0 <= y -> f y >= f x + f' x * (y-x).
+  Proof.
+    intros.
+    generalize (MVT_cor3 f f'); intros.
+    destruct (Rtotal_order x y).
+    - specialize (H3 x y H4).
+      cut_to H3.
+      + destruct H3 as [x0 [? [? ?]]].
+        assert (f' x <= f' x0) by (apply H0; lra).
+        apply Rmult_le_compat_r with (r := (y-x)) in H7; lra.
+      + intros; apply H; lra.
+    - destruct H4; [subst; lra| ].
+      specialize (H3 y x H4).
+      cut_to H3.
+      + destruct H3 as [x0 [? [? ?]]].
+        assert (f' x0 <= f' x) by (apply H0; lra).
+        apply Rmult_le_compat_r with (r := (x-y)) in H7; lra.
+      + intros; apply H; lra.
+  Qed.
+
+  Lemma ppos_deriv_incr_convex (f f' : R -> R) :
+    (forall c : R,  0 < c -> derivable_pt_lim f c (f' c)) ->
+    (forall (x y : R), 0<x -> 0 < y -> x <= y -> f' x <= f' y) ->
+    forall (x y : R), 0 < x -> 0 < y -> f y >= f x + f' x * (y-x).
   Proof.
     intros.
     generalize (MVT_cor3 f f'); intros.
@@ -1190,7 +1237,7 @@ Section power.
     - apply Rmult_integral in e; intuition lra.
     - apply Rpower_mult_distr; lra.
   Qed.
-  
+
   Lemma derivable_pt_lim_power' (x y : R) :
     0 < x ->
     derivable_pt_lim (fun x0 : R => power x0 y) x (y * power x (y - 1)).
@@ -1206,7 +1253,7 @@ Section power.
         match_destr.
         lra.
   Qed.
-
+  
   Lemma Dpower' (y z : R) :
         0 < y ->
         D_in (fun x : R => power x z) (fun x : R => z * power x (z - 1))
@@ -1239,6 +1286,13 @@ End power.
         rewrite ln_1.
         replace (x*0) with 0 by lra.
         apply exp_0.
+      Qed.
+
+      Lemma power_base_1 e : power 1 e = 1.
+      Proof.
+        unfold power.
+        match_destr; try lra.
+        apply Rpower_base_1.
       Qed.
 
       Lemma sum_one_le : forall x y : R, 0 <= x -> 0 <= y -> x + y = 1 -> x <= 1.
@@ -1467,3 +1521,121 @@ End power.
       Qed.
       
     End ineqs.
+
+    Lemma Rpower_neg1 b e : b < 0 -> Rpower b e = 1.
+    Proof.
+      intros.
+      unfold Rpower.
+      unfold ln.
+      match_destr; try lra.
+      - elimtype False; try tauto; lra.
+      - rewrite Rmult_0_r.
+        now rewrite exp_0.
+    Qed.
+
+    Lemma derivable_pt_lim_abs_power2' (x y : R) :
+      0 <= x ->
+      1 < y ->
+      derivable_pt_lim (fun x0 : R => power (Rabs x0) y) x (y * power x (y - 1)).
+  Proof.
+    intros.
+    unfold power.
+    match_destr.
+    - red; intros.
+      match_destr; try lra.
+      clear e0.
+      subst.
+      assert (dpos:0 <  (power eps (Rinv (y-1)))).
+      {
+        apply power_pos; lra.
+      } 
+      exists (mkposreal _ dpos); intros.
+      rewrite Rplus_0_l.
+      match_destr.
+      -- apply Rcomplements.Rabs_eq_0 in e; lra.
+      -- simpl in *.
+         rewrite Rmult_0_r.
+         repeat rewrite Rminus_0_r.
+         generalize (Rlt_power_l (Rabs h) (power eps (Rinv (y - 1))) (y-1))
+         ; intros HH.
+         cut_to HH.
+      + rewrite power_mult in HH.
+        rewrite Rinv_l in HH by lra.
+        rewrite power_1 in HH by lra.
+        unfold power in HH.
+        match_destr_in HH; try lra.
+        unfold Rminus in HH.
+        rewrite Rpower_plus in HH.
+        rewrite Rpower_Ropp in HH.
+        rewrite Rpower_1 in HH
+          by now apply Rabs_pos_lt.
+        unfold Rdiv.
+        rewrite Rabs_mult.
+        rewrite Rabs_Rinv by trivial.
+        rewrite (Rabs_pos_eq (Rpower (Rabs h) y)); trivial.
+        left.
+        apply Rpower_pos.
+      + lra.
+      + split; trivial.
+        apply Rabs_pos.
+        -- subst.
+           rewrite Rabs_R0 in n; lra.
+    -
+      generalize (derivable_pt_lim_comp
+                    Rabs
+                    (fun x0 : R => if Req_EM_T x0 0 then 0 else Rpower x0 y)
+                    x
+                    1
+                 (y * Rpower x (y - 1)))
+      ; intros HH2.
+      rewrite Rmult_1_r in HH2.
+      apply HH2.
+      + apply Rabs_derive_1; lra.
+      + rewrite Rabs_pos_eq by lra.
+        generalize (derivable_pt_lim_power' x y); intros HH.
+        cut_to HH; [| lra].
+        unfold power in HH.
+        match_destr_in HH; try lra.
+  Qed.
+
+  Lemma Rpower_convex_pos (e:R) (r : R):
+    1 <= e ->
+    forall (x y a : R), 0<x -> 0<y -> convex (fun z => Rpower z e) a x y.
+  Proof.
+    intros.
+    eapply ppos_convex_deriv; trivial.
+    - intros.
+      now apply derivable_pt_lim_power.
+    - intros.
+      apply (ppos_deriv_incr_convex (fun z => Rpower z e)); trivial.
+      + intros; now apply derivable_pt_lim_power.
+      + intros.
+        apply Rmult_le_compat_l; [lra |].
+        apply Rle_Rpower_l; lra.
+  Qed.
+
+  Lemma Rpower_base_0 e : Rpower 0 e = 1.
+  Proof.
+    unfold Rpower, ln.
+    match_destr.
+    - elimtype False; try tauto; lra.
+    - rewrite Rmult_0_r.
+      now rewrite exp_0.
+  Qed.
+
+  Lemma power_convex_pos (e:R) (r : R):
+    1 <= e ->
+    forall (x y a : R), 0<x -> 0<y -> convex (fun z => power z e) a x y.
+  Proof.
+    intros.
+    eapply ppos_convex_deriv; trivial.
+    - intros.
+      now apply derivable_pt_lim_power'.
+    - intros.
+      apply (ppos_deriv_incr_convex (fun z => power z e)); trivial.
+      + intros; now apply derivable_pt_lim_power'.
+      + intros.
+        apply Rmult_le_compat_l; [lra |].
+        apply Rle_power_l; lra.
+  Qed.
+
