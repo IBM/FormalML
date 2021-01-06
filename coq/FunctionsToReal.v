@@ -470,6 +470,12 @@ Section defs.
     reflexivity.
   Qed.
 
+  Lemma rvpower_const b e :
+    rv_eq (Ts:=Ts) (rvpower (const b) (const e)) (const (power b e)).
+  Proof.
+    reflexivity.
+  Qed.
+
   
   
   End eqs.

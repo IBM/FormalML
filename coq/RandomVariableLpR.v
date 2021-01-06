@@ -267,7 +267,6 @@ Section Lp.
              ++ apply Rle_power; lra.
   Qed.
 
-  
   Instance IsLp_plus p
          (rv_X1 rv_X2 : Ts -> R)
          {rv1 : RandomVariable dom borel_sa rv_X1}
@@ -312,10 +311,13 @@ Section Lp.
   Proof.
     intros.
     unfold IsLp in *.
-    rewrite rv_abs_scale_eq, rvpow_scale in islp.
+    rewrite rv_abs_scale_eq in islp.
+    rewrite rvpower_abs_scale in islp.
     eapply IsFiniteExpectation_scale_inv; try eassumption.
-    apply pow_nzero.
-    now apply Rabs_no_R0.
+    generalize (power_pos (Rabs c) p); intros HH.
+    cut_to HH.
+    - lra.
+    - now apply Rabs_no_R0.
   Qed.
   
   Global Instance IsLp_opp p (rv_X:Ts->R)
@@ -324,11 +326,11 @@ Section Lp.
   Proof.
     now apply IsLp_scale.
   Qed.
-
+                                       
   Global Instance IsLp_const p c : IsLp p (const c).
   Proof.
     red.
-    rewrite rv_abs_const_eq, rvpow_const.
+    rewrite rv_abs_const_eq, rvpower_const.
     typeclasses eauto.
   Qed.
 
@@ -338,6 +340,7 @@ Section Lp.
          {rv2 : RandomVariable dom borel_sa rv_X2} 
          {islp1:IsLp p rv_X1}
          {islp2:IsLp p rv_X2} :
+    1 <= p ->
     IsLp p (rvminus rv_X1 rv_X2).
   Proof.
     unfold rvminus.
@@ -364,16 +367,15 @@ Section Lp.
   Qed.
 
   Lemma rvpowabs_choice_le c (rv_X1 rv_X2 : Ts -> R) p :
-    rv_le (rvpow (rvabs (rvchoice c rv_X1 rv_X2)) p)
-          (rvplus (rvpow (rvabs rv_X1) p) (rvpow (rvabs rv_X2) p)).
+    rv_le (rvpower (rvabs (rvchoice c rv_X1 rv_X2)) (const p))
+          (rvplus (rvpower (rvabs rv_X1) (const p)) (rvpower (rvabs rv_X2) (const p))).
   Proof.
     intros a.
-    rv_unfold.
-    repeat rewrite RPow_abs.
+    rv_unfold; simpl.
     match_destr.
-    - assert (0 <= Rabs (rv_X2 a ^ p)) by apply Rabs_pos.
+    - assert (0 <= power (Rabs (rv_X2 a)) p) by apply power_nonneg.
       lra.
-    - assert (0 <= Rabs (rv_X1 a ^ p)) by apply Rabs_pos.
+    - assert (0 <= power (Rabs (rv_X1 a)) p) by apply power_nonneg.
       lra.
   Qed.
 
@@ -389,11 +391,8 @@ Section Lp.
     unfold IsLp in *.
     eapply (IsLp_bounded _)
     ; try eapply rvpowabs_choice_le.
-    apply IsFiniteExpectation_plus; eauto.
-    - apply rvpow_rv.
-      now apply rvabs_rv.
-    - apply rvpow_rv.
-      now apply rvabs_rv.
+    apply IsFiniteExpectation_plus; eauto
+    ; typeclasses eauto. 
   Qed.
   
   Global Instance IsLp_max p
@@ -422,7 +421,7 @@ Section Lp.
 
   Section packed.
 
-    Context {p:nat}.
+    Context {p:R}.
     
     Record LpRRV : Type
       := LpRRV_of {
@@ -435,7 +434,7 @@ Section Lp.
     Global Existing Instance LpRRV_lp.
 
     Global Instance LpRRV_LpS_FiniteLp (rv_X:LpRRV)
-      : IsFiniteExpectation prts (rvpow (rvabs rv_X) p)
+      : IsFiniteExpectation prts (rvpower (rvabs rv_X) (const p))
       := LpRRV_lp _.
 
 
@@ -460,23 +459,11 @@ Section Lp.
         now apply rv_almost_eq_rv_trans with (y0:=y).
     Qed.
 
-    
     Definition LpRRVconst (x:R) : LpRRV
       := pack_LpRRV (const x).
 
     Definition LpRRVzero : LpRRV := LpRRVconst 0.
 
-    Definition LpRRVplus (rv1 rv2:LpRRV) : LpRRV
-      := pack_LpRRV (rvplus rv1  rv2) (lp:=IsLp_plus _ _ _).
-
-    Global Instance LpRRV_plus_proper : Proper (LpRRV_eq ==> LpRRV_eq ==> LpRRV_eq) LpRRVplus.
-    Proof.
-      unfold Proper, respectful, LpRRV_eq.
-      intros [x1??] [x2??] eqqx [y1??] [y2??] eqqy.
-      simpl in *.
-      now apply rv_almost_eq_plus_proper.
-    Qed.
-    
     Program Definition LpRRVscale (x:R) (rv:LpRRV) : LpRRV
       := pack_LpRRV (rvscale x rv).
 
@@ -516,22 +503,35 @@ Section Lp.
       apply HH.
     Qed.
     
-    Definition LpRRVminus (rv1 rv2:LpRRV) : LpRRV
-      := pack_LpRRV (rvminus rv1 rv2)  (lp:=IsLp_minus _ _ _).
-
-    Lemma LpRRVminus_plus (rv1 rv2:LpRRV) :
-      LpRRV_eq 
-        (LpRRVminus rv1 rv2) (LpRRVplus rv1 (LpRRVopp rv2)).
-    Proof.
-      apply rv_almost_eq_eq.
-      reflexivity.
-    Qed.
-
     Lemma LpRRVopp_scale (rv:LpRRV) :
       LpRRV_eq 
         (LpRRVopp rv) (LpRRVscale (-1) rv).
     Proof.
       red.
+      apply rv_almost_eq_eq.
+      reflexivity.
+    Qed.
+
+    Context (pbig:1 <= p).
+
+    Definition LpRRVplus (rv1 rv2:LpRRV) : LpRRV
+      := pack_LpRRV (rvplus rv1  rv2) (lp:=IsLp_plus _ _ _ pbig).
+
+    Global Instance LpRRV_plus_proper : Proper (LpRRV_eq ==> LpRRV_eq ==> LpRRV_eq) LpRRVplus.
+    Proof.
+      unfold Proper, respectful, LpRRV_eq.
+      intros [x1??] [x2??] eqqx [y1??] [y2??] eqqy.
+      simpl in *.
+      now apply rv_almost_eq_plus_proper.
+    Qed.
+    
+    Definition LpRRVminus (rv1 rv2:LpRRV) : LpRRV
+      := pack_LpRRV (rvminus rv1 rv2)  (lp:=IsLp_minus _ _ _ pbig).
+
+    Lemma LpRRVminus_plus (rv1 rv2:LpRRV) :
+      LpRRV_eq 
+        (LpRRVminus rv1 rv2) (LpRRVplus rv1 (LpRRVopp rv2)).
+    Proof.
       apply rv_almost_eq_eq.
       reflexivity.
     Qed.
@@ -798,6 +798,7 @@ Section Lp.
       
     End quot.
 
+    Print LpRRVq_ModuleSpace.
   End packed.
 
   Global Arguments LpRRV : clear implicits.
