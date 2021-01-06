@@ -1191,7 +1191,6 @@ Section RealRandomVariables.
              {rv1 : RandomVariable dom borel_sa rv_X1}
              {rv2 : RandomVariable dom borel_sa rv_X2}
              {prv1: PositiveRandomVariable rv_X1}:
-        (forall (x:Ts), (0 <= rv_X1 x)%R) ->
         RandomVariable dom borel_sa (rvpower rv_X1 rv_X2).
       Proof.
         intros.
