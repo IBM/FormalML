@@ -200,18 +200,18 @@ Section Lp.
     forall (x y : R), 0 < x -> 0 < y -> 
                  power (x + y) p <= (power 2 (p-1))*(power x p + power y p).
   Proof.
-    intros.
+    intros pbig; intros.
     assert (0 <= (/2) <= 1) by lra.
-    generalize (power_convex_pos p (/2) H x y _ H0 H1 H2); intros.
-    replace (1 - /2) with (/2) in H3 by lra.
-    repeat rewrite <- Rmult_plus_distr_l in H3.
-    rewrite <- power_mult_distr in H3 by lra.
-    apply Rmult_le_compat_l with (r := power 2 p) in H3
+    generalize (power_convex_pos p pbig x y _ H H0 H1); intros HH.
+    replace (1 - /2) with (/2) in HH by lra.
+    repeat rewrite <- Rmult_plus_distr_l in HH.
+    rewrite <- power_mult_distr in HH by lra.
+    apply Rmult_le_compat_l with (r := power 2 p) in HH
     ; [| apply power_nonneg].
-    repeat rewrite <- Rmult_assoc in H3.
-    replace (power 2 p * power (/2) p) with (1) in H3.
-    + replace (power 2 p * (/2)) with (power 2 (p - 1)) in H3.
-      * now repeat rewrite Rmult_1_l in H3.
+    repeat rewrite <- Rmult_assoc in HH.
+    replace (power 2 p * power (/2) p) with (1) in HH.
+    + replace (power 2 p * (/2)) with (power 2 (p - 1)) in HH.
+      * now repeat rewrite Rmult_1_l in HH.
       * replace (/2) with (power 2 ((Ropp 1))).
         -- now rewrite <- power_plus.
         -- rewrite power_Ropp by lra.
@@ -267,7 +267,7 @@ Section Lp.
              ++ apply Rle_power; lra.
   Qed.
 
-  Instance IsLp_plus p
+  Global Instance IsLp_plus p
          (rv_X1 rv_X2 : Ts -> R)
          {rv1 : RandomVariable dom borel_sa rv_X1}
          {rv2 : RandomVariable dom borel_sa rv_X2} 
@@ -946,240 +946,198 @@ Section Lp.
        0 < t < 1 -> 
        rv_le (rvpower (rvplus (rvabs x) (rvabs y)) (const p))
              (rvplus
-                (rvscale (power (/t) p) (rvpower (rvabs x) (const p))) 
-                (rvscale (power (/(1-t)) p) (rvpower (rvabs y) (const p)))).
+                (rvscale (power (/t) (p-1)) (rvpower (rvabs x) (const p))) 
+                (rvscale (power (/(1-t)) (p-1)) (rvpower (rvabs y) (const p)))).
     Proof.
       intros.
       intro x0.
-      generalize (@minkowski_helper p (rvabs x x0) (rvabs y x0) t); intros.
-      unfold rvpow, rvscale, rvplus.
-      unfold rvabs in *.
+      generalize (@power_minkowski_helper p (rvabs x x0) (rvabs y x0) t); intros.
+      rv_unfold.
       apply H0; trivial.
       apply Rabs_pos.
       apply Rabs_pos.
    Qed.
 
-    Lemma rvpow_plus_le (x y : LpRRV (S p)) :
-      rv_le (rvpow (rvabs (rvplus x y)) (S p)) (rvpow (rvplus (rvabs x) (rvabs y)) (S p)).
+    Lemma rvpower_plus_le (x y : LpRRV p) :
+      rv_le (rvpower (rvabs (rvplus x y)) (const p)) (rvpower (rvplus (rvabs x) (rvabs y)) (const p)).
     Proof.
       intro x0.
-      unfold rvpow, rvabs, rvplus.
-      apply pow_maj_Rabs.
-      rewrite Rabs_Rabsolu.      
-      apply Rabs_triang.
+      rv_unfold.
+      apply Rle_power_l; [lra|].
+      split.
+      - apply Rabs_pos.
+      - apply Rabs_triang.
     Qed.
-    
-    Lemma Minkowski_1 (x y : LpRRV (S p)) (t:R):
+
+    Lemma Minkowski_1 (x y : LpRRV p) (t:R):
        0 < t < 1 -> 
-       (FiniteExpectation prts (rvpow (rvabs (rvplus x y)) (S p)))  <=
-       (pow (/t) p) * (FiniteExpectation prts (rvpow (rvabs x) (S p))) + 
-       (pow (/(1-t)) p) * (FiniteExpectation prts (rvpow (rvabs y) (S p))).
+       (FiniteExpectation prts (rvpower (rvabs (rvplus x y)) (const p)) (isfe:=IsLp_plus _ _ _ pbig))  <=
+       (power (/t) (p-1)) * (FiniteExpectation prts (rvpower (rvabs x) (const p))) + 
+       (power (/(1-t)) (p-1)) * (FiniteExpectation prts (rvpower (rvabs y) (const p))).
     Proof.
       intros.
       generalize (Minkowski_rv x y t H); intros.
-      generalize (rvpow_plus_le x y); intros.
-      assert (IsFiniteExpectation prts (rvpow (rvplus (rvabs x) (rvabs y)) (S p))).
-      apply (IsFiniteExpectation_bounded _ _ _ _ H1 H0).
-      assert (FiniteExpectation prts (rvpow (rvabs (rvplus x y)) (S p)) <=
-              FiniteExpectation prts (rvpow (rvplus (rvabs x) (rvabs y)) (S p))).
-      apply FiniteExpectation_le.
-      apply rvpow_plus_le.
-      generalize (FiniteExpectation_le _ _ _ H0); intros.
+      generalize (rvpower_plus_le x y); intros.
+      assert (IsFiniteExpectation prts (rvpower (rvplus (rvabs x) (rvabs y)) (const p))).
+      {
+        eapply (IsFiniteExpectation_bounded _ _ _ _ H1 H0 (isfe1:=IsLp_plus _ _ _ pbig)).
+      } 
+      assert (FiniteExpectation prts (rvpower (rvabs (rvplus x y)) (const p)) (isfe:=IsLp_plus _ _ _ pbig) <=
+              FiniteExpectation prts (rvpower (rvplus (rvabs x) (rvabs y)) (const p))).
+      {
+        apply FiniteExpectation_le.
+        apply rvpower_plus_le.
+      } 
+        generalize (FiniteExpectation_le _ _ _ H0); intros.
       rewrite FiniteExpectation_plus in H4.
       rewrite FiniteExpectation_scale in H4.
       rewrite FiniteExpectation_scale in H4.
       apply Rle_trans with 
-          (r2 := FiniteExpectation prts (rvpow (rvplus (rvabs x) (rvabs y)) (S p))); trivial.
+          (r2 := FiniteExpectation prts (rvpower (rvplus (rvabs x) (rvabs y)) (const p))); trivial.
    Qed.
 
-    Lemma root_nneg x a :
-      0 <= root x a.
+    Lemma power_inv_cancel b e :
+      0 <= b ->
+      e <> 0 ->
+      power (power b (/ e)) e = b.
     Proof.
       intros.
-      unfold root.
-      match_destr; try lra.
-      unfold Rpower.
-      left.
-      apply exp_pos.
+      rewrite power_mult.
+      rewrite Rinv_l; trivial.
+      now rewrite power_1.
     Qed.
 
-    Lemma root_pos (a : R) :
-      0 < a -> 0 < root (INR (S p)) a.
+    Lemma inv_power_cancel b e :
+      0 <= b ->
+      e <> 0 ->
+      power (power b e) (/ e) = b.
     Proof.
       intros.
-      unfold root.
-      match_destr.
-      congruence.
-      apply Rpower_pos.
+      rewrite power_mult.
+      rewrite Rinv_r; trivial.
+      now rewrite power_1.
     Qed.
 
-    Lemma Minkowski_2 (x y : LpRRV (S p))
-          (xexppos : 0 < FiniteExpectation prts (rvpow (rvabs x) (S p)))
-          (yexppos : 0 < FiniteExpectation prts (rvpow (rvabs y) (S p))) :
-       FiniteExpectation prts (rvpow (rvabs (rvplus x y)) (S p))  <=
-       pow ((root (INR (S p)) (FiniteExpectation prts (rvpow (rvabs x) (S p)))) +
-            (root (INR (S p)) (FiniteExpectation prts (rvpow (rvabs y) (S p))))) (S p).
+    Lemma Minkowski_2 (x y : LpRRV p)
+          (xexppos : 0 < FiniteExpectation prts (rvpower (rvabs x) (const p)))
+          (yexppos : 0 < FiniteExpectation prts (rvpower (rvabs y) (const p))) :
+       FiniteExpectation prts (rvpower (rvabs (rvplus x y)) (const p)) (isfe:=IsLp_plus _ _ _ pbig)  <=
+       power ((power (FiniteExpectation prts (rvpower (rvabs x) (const p))) (/ p)) +
+            (power (FiniteExpectation prts (rvpower (rvabs y) (const p))) (/ p))) p.
     Proof.
       generalize (Minkowski_1 x y); intros.
-      pose (a := root (INR (S p)) (FiniteExpectation prts (rvpow (rvabs x) (S p)))).
-      pose (b := root (INR (S p)) (FiniteExpectation prts (rvpow (rvabs y) (S p)))).
-      assert (0 < a).
-      unfold a.
-      now apply root_pos.
-      assert (0 < b).
-      now apply root_pos.
-      replace (FiniteExpectation prts (rvpow (rvabs x) (S p))) with (pow a (S p)) in H.
-      replace (FiniteExpectation prts (rvpow (rvabs y) (S p))) with (pow b (S p)) in H.
+      pose (a := power (FiniteExpectation prts (rvpower (rvabs x) (const p))) (/ p)).
+      pose (b := power (FiniteExpectation prts (rvpower (rvabs y) (const p))) (/ p)).
+      assert (0 < a)
+        by (apply power_pos; lra).
+      assert (0 < b)
+        by (apply power_pos; lra).
+      replace (FiniteExpectation prts (rvpower (rvabs x) (const p))) with (power a p) in H
+        by (apply power_inv_cancel; lra).
+      replace (FiniteExpectation prts (rvpower (rvabs y) (const p))) with (power b p) in H
+        by (apply power_inv_cancel; lra).
       specialize (H (a /(a + b))).
       cut_to H.
-      rewrite (minkowski_subst p H0 H1) in H.
-      unfold a in H.
-      unfold b in H.
-      apply H.
-      now apply minkowski_range.
-      unfold b.
-      apply pow_root_inv; now left.
-      apply pow_root_inv; now left.      
+      - rewrite (power_minkowski_subst p H0 H1) in H; trivial.
+      - now apply minkowski_range.
     Qed.
 
-    Lemma Rle_root_l (a b : R) :
-      0 < a -> a  <= b -> root (INR (S p)) a <= root (INR (S p)) b.
+    Lemma Rle_power_inv_l (a b : R) :
+      0 < a -> a  <= b -> power a (/ p) <= power b (/ p).
     Proof.
-      unfold root.
       intros.
-      match_destr; [lra |].
-      match_destr; [lra |].      
-      apply Rle_Rpower_l.
-      left; apply Rinv_0_lt_compat.
-      apply lt_0_INR; lia.
-      split; lra.
+      apply Rle_power_l.
+      - left; apply Rinv_0_lt_compat; lra.
+      - lra.
     Qed.
-
-    Lemma Minkowski (x y : LpRRV (S p))
-          (xexppos : 0 < FiniteExpectation prts (rvpow (rvabs x) (S p)))
-          (yexppos : 0 < FiniteExpectation prts (rvpow (rvabs y) (S p))) 
-          (xyexppos : 0 < FiniteExpectation prts (rvpow (rvabs (rvplus x y)) (S p))) :
-       root (INR (S p)) (FiniteExpectation prts (rvpow (rvabs (rvplus x y)) (S p)))  <=
-       (root (INR (S p)) (FiniteExpectation prts (rvpow (rvabs x) (S p)))) +
-       (root (INR (S p)) (FiniteExpectation prts (rvpow (rvabs y) (S p)))).
+    
+    Lemma Minkowski_lt (x y : LpRRV p)
+          (xexppos : 0 < FiniteExpectation prts (rvpower (rvabs x) (const p)))
+          (yexppos : 0 < FiniteExpectation prts (rvpower (rvabs y) (const p))) 
+          (xyexppos : 0 < FiniteExpectation prts (rvpower (rvabs (rvplus x y)) (const p)) (isfe:=IsLp_plus _ _ _ pbig)) :
+      power (FiniteExpectation prts (rvpower (rvabs (rvplus x y)) (const p)) (isfe:=IsLp_plus _ _ _ pbig)) (/ p)  <=
+      power (FiniteExpectation prts (rvpower (rvabs x) (const p))) (/ p) +
+      power (FiniteExpectation prts (rvpower (rvabs y) (const p))) (/ p).
     Proof.
       generalize (Minkowski_2 x y xexppos yexppos); intros.
-      apply Rle_root_l in H; trivial.
-      rewrite root_pow_inv in H.
-      apply H.
-      left.
-      apply Rplus_lt_0_compat.
-      now apply root_pos.
-      now apply root_pos.
+      apply Rle_power_inv_l in H; try lra.
+      rewrite inv_power_cancel in H; trivial; try lra.
+      apply Rplus_le_le_0_compat
+      ; apply power_nonneg.
     Qed.   
 
-    Lemma Minkowski_power (x y : LpRRV (S p))
-          (xexppos : 0 < FiniteExpectation prts (rvpow (rvabs x) (S p)))
-          (yexppos : 0 < FiniteExpectation prts (rvpow (rvabs y) (S p))) 
-          (xyexppos : 0 < FiniteExpectation prts (rvpow (rvabs (rvplus x y)) (S p))) :
-       Rpower (FiniteExpectation prts (rvpow (rvabs (rvplus x y)) (S p))) (/ INR (S p)) <=
-       Rpower (FiniteExpectation prts (rvpow (rvabs x) (S p))) (/ INR (S p)) +
-       Rpower (FiniteExpectation prts (rvpow (rvabs y) (S p))) (/ INR (S p)).
+    Lemma Minkowski (x y : LpRRV p) :
+      power (FiniteExpectation prts (rvpower (rvabs (rvplus x y)) (const p)) (isfe:=IsLp_plus _ _ _ pbig)) (/ p)  <=
+      power (FiniteExpectation prts (rvpower (rvabs x) (const p))) (/ p) +
+      power (FiniteExpectation prts (rvpower (rvabs y) (const p))) (/ p).
     Proof.
-      generalize (Minkowski x y xexppos yexppos xyexppos); intros.
-      unfold root in H.
-      repeat match_destr_in H; try lra.
-    Qed.   
+      destruct (FiniteExpectation_pos prts (rvpower (rvabs x) (const p))).
+      - {
+          destruct (FiniteExpectation_pos prts (rvpower (rvabs y) (const p))).
+          - {
+              - destruct (FiniteExpectation_pos prts (rvpower (rvabs (rvplus x y)) (const p)) (isfe:=IsLp_plus _ _ _ pbig)). 
+                + now apply Minkowski_lt.
+                + rewrite <- H1.
+                  rewrite power0_Sbase
+                    by (apply Rinv_neq_0_compat; lra).
+                  apply Rplus_le_le_0_compat
+                  ; apply power_nonneg.
+            } 
+          - rewrite <- H0.
+            rewrite power0_Sbase
+              by (apply Rinv_neq_0_compat; lra).
+            symmetry in H0.
+            apply LpFin0_almost0 in H0; try typeclasses eauto.
+            rewrite (FiniteExpectation_proper_almost prts (rvpower (rvabs (rvplus x y)) (const p)) (rvpower (rvabs x) (const p))).
+            + lra.
+            + apply rv_almost_eq_power_abs_proper
+              ; try typeclasses eauto.
+              apply rv_almost_eq_abs_proper
+              ; try typeclasses eauto.
+              
+              generalize (rv_almost_eq_plus_proper prts x x y (const 0)); intros HH.
+              cut_to HH; trivial; try typeclasses eauto.
+              * apply (rv_almost_eq_rv_trans prts _ (rvplus x (const 0)))
+                ; trivial
+                ; try typeclasses eauto.
+                apply rv_almost_eq_eq.
+                intros a.
+                rv_unfold.
+                lra.
+              * apply rv_almost_eq_rv_refl
+                ; typeclasses eauto.
+        }                                                    
+      - rewrite <- H.
+        rewrite power0_Sbase
+          by (apply Rinv_neq_0_compat; lra).
+        symmetry in H.
+        apply LpFin0_almost0 in H; try typeclasses eauto.
+        rewrite (FiniteExpectation_proper_almost prts (rvpower (rvabs (rvplus x y)) (const p)) (rvpower (rvabs y) (const p))).
+        + lra.
+        + apply rv_almost_eq_power_abs_proper
+          ; try typeclasses eauto.
+          apply rv_almost_eq_abs_proper
+          ; try typeclasses eauto.
+          generalize (rv_almost_eq_plus_proper prts x (const 0) y y H)
+          ; intros HH.
+          cut_to HH.
+          * apply (rv_almost_eq_rv_trans prts _ (rvplus (const 0) y))
+            ; trivial
+            ; try typeclasses eauto.
+            apply rv_almost_eq_eq.
+            intros a.
+            rv_unfold.
+            lra.
+          * apply rv_almost_eq_rv_refl.
+            typeclasses eauto.
+    Qed.
 
-    Lemma LpRRV_norm_plus x y : LpRRVnorm (LpRRVplus x y) <= LpRRVnorm x + LpRRVnorm y.
+    Lemma LpRRV_norm_plus x y : LpRRVnorm (LpRRVplus pbig x y) <= LpRRVnorm x + LpRRVnorm y.
     Proof.
       unfold Proper, respectful, LpRRVnorm, LpRRVplus.
       simpl LpRRV_rv_X.
       simpl LpRRV_LpS_FiniteLp.
-      unfold root.
-
-      (* first we show that the zero cases (which are special cased by root
-         work out
-       *)
-
-      destruct (Req_EM_T (@FiniteExpectation Ts dom prts (@rvpow Ts (@rvabs Ts (@LpRRV_rv_X (S p) x)) (S p))
-             (@LpRRV_LpS_FiniteLp (S p) x)) 0).
-      {
-        field_simplify.
-        apply LpFin0_almost0 in e; try typeclasses eauto.
-        rewrite (FiniteExpectation_proper_almost prts (rvpow (rvabs (rvplus x y)) (S p)) (rvpow (rvabs y) (S p))).
-        - lra.
-        - apply rv_almost_eq_pow_abs_proper
-          ; try typeclasses eauto.
-          apply rv_almost_eq_abs_proper
-          ; try typeclasses eauto.
-          generalize (rv_almost_eq_plus_proper prts x (const 0) y y e)
-          ; intros HH.
-          cut_to HH.
-          + apply (rv_almost_eq_rv_trans prts _ (rvplus (const 0) y))
-            ; trivial
-            ; try typeclasses eauto.
-            apply rv_almost_eq_eq.
-            intros a.
-            rv_unfold.
-            lra.
-          + apply rv_almost_eq_rv_refl.
-            typeclasses eauto.
-      }
-      destruct (Req_EM_T (FiniteExpectation prts (rvpow (rvabs y) (S p))) 0).
-      {
-        field_simplify.
-        apply LpFin0_almost0 in e; try typeclasses eauto.
-        rewrite (FiniteExpectation_proper_almost prts (rvpow (rvabs (rvplus x y)) (S p)) (rvpow (rvabs x) (S p))).
-        - match_destr; try lra.
-        - apply rv_almost_eq_pow_abs_proper
-          ; try typeclasses eauto.
-          apply rv_almost_eq_abs_proper
-          ; try typeclasses eauto.
-          generalize (rv_almost_eq_plus_proper prts x x y (const 0))
-          ; intros HH.
-          cut_to HH
-          ; trivial
-          ; try typeclasses eauto.
-          + apply (rv_almost_eq_rv_trans prts _ (rvplus x (const 0)))
-            ; trivial
-            ; try typeclasses eauto.
-            apply rv_almost_eq_eq.
-            intros a.
-            rv_unfold.
-            lra.
-          + apply rv_almost_eq_rv_refl.
-            typeclasses eauto.
-      }
-      destruct (Req_EM_T (FiniteExpectation prts (rvpow (rvabs (rvplus x y)) (S p))) 0).
-      {
-        unfold Rpower.
-        apply Rplus_le_le_0_compat
-        ; left; apply exp_pos.
-      }
-
-      assert (xexppos:0 < (@FiniteExpectation Ts dom prts (@rvpow Ts (@rvabs Ts (@LpRRV_rv_X (S p) x)) (S p))
-                                              _)).
-      {
-        destruct (FiniteExpectation_pos prts (rvpow (rvabs x) (S p)) )
-        ; congruence.
-      } 
-
-      assert (yexppos:0 < (@FiniteExpectation Ts dom prts (@rvpow Ts (@rvabs Ts (@LpRRV_rv_X (S p) y)) (S p)) _
-                                             )).
-      {
-        destruct (FiniteExpectation_pos prts (rvpow (rvabs y) (S p)))
-        ; congruence.
-      } 
-
-      assert (xyexppos:0 < (@FiniteExpectation Ts dom prts
-                                      (rvpow (rvabs (rvplus x y)) (S p))) 
-                             _).
-      { 
-        destruct (FiniteExpectation_pos prts
-                                        (rvpow (rvabs (rvplus x y)) (S p)) (isfe:=
-          _))
-        ; trivial.
-        elim n1.
-        rewrite H.
-        apply FiniteExpectation_pf_irrel.
-      }
-      now apply Minkowski_power.
+      apply Minkowski.
     Qed.
 
     Lemma root_mult_distr x a b :
