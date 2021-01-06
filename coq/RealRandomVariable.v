@@ -675,19 +675,8 @@ Section RealRandomVariables.
         typeclasses eauto.
       Qed.
 
-      Global Instance rvpower_rv 
-             (rv_X1 rv_X2 : Ts -> R)
-             {rv1 : RandomVariable dom borel_sa rv_X1}
-             {rv2 : RandomVariable dom borel_sa rv_X2} :
-        (forall (x:Ts), (0 <= rv_X1 x)%R) ->
-        RandomVariable dom borel_sa (rvpower rv_X1 rv_X2).
-      Proof.
-        intros.
-        unfold RandomVariable.
-        rewrite <- borel_sa_preimage2.
-        apply rvpower_measurable; trivial; typeclasses eauto.
-      Qed.
-
+      (* rvpower_rv declared below since it uses PositiveRandomvariable *)
+      
       Global Instance rvsqr_rv
              (rv_X : Ts -> R)
              {rv : RandomVariable dom borel_sa rv_X} :
@@ -869,7 +858,6 @@ Section RealRandomVariables.
       unfold rvabs.
       now apply in_map.
     Qed.
-    
 
     Global Program Instance srvmax
            (rv_X1 rv_X2 : Ts -> R)
@@ -1187,6 +1175,30 @@ Section RealRandomVariables.
       intros.
       now apply pow_le.
     Qed.
+
+    Global Instance rvpower_prv
+           (rv_X1 rv_X2 : Ts -> R) :
+      PositiveRandomVariable (rvpower rv_X1 rv_X2).
+    Proof.
+      unfold PositiveRandomVariable, rvpower in *.
+      intros.
+      apply power_nonneg.
+    Qed.
+
+    (* Here so that we can state the positivity constraint nicely *)
+    Global Instance rvpower_rv 
+             (rv_X1 rv_X2 : Ts -> R)
+             {rv1 : RandomVariable dom borel_sa rv_X1}
+             {rv2 : RandomVariable dom borel_sa rv_X2}
+             {prv1: PositiveRandomVariable rv_X1}:
+        (forall (x:Ts), (0 <= rv_X1 x)%R) ->
+        RandomVariable dom borel_sa (rvpower rv_X1 rv_X2).
+      Proof.
+        intros.
+        apply measurable_rv.
+        apply rvpower_measurable; trivial
+        ; apply rv_measurable; trivial.
+      Qed.
     
     Global Instance prvchoice (c:Ts->bool) (rv_X1 rv_X2 : Ts -> R)
            {prv1:PositiveRandomVariable rv_X1}

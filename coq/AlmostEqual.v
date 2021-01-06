@@ -329,6 +329,8 @@ Proof.
     + intros a ?.
       auto.
 Qed.
+
+                                                         
   
 Lemma rv_almost_eq_pow_abs_proper
       {Ts:Type} 
@@ -344,6 +346,22 @@ Proof.
   apply (rv_almost_eq_sub prts (rvabs x1) (rvabs x2) (fun x => rvpow x n)); trivial.
   intros.
   now unfold rvpow; rewrite H.
+Qed.
+      
+Lemma rv_almost_eq_power_abs_proper
+      {Ts:Type} 
+      {dom: SigmaAlgebra Ts}
+      (prts: ProbSpace dom) 
+      (x1 x2: Ts -> R)
+      n
+      {rvx1 : RandomVariable dom borel_sa x1}
+      {rvx2: RandomVariable dom borel_sa x2}
+      (eqqx : rv_almost_eq prts (rvabs x1) (rvabs x2)) :
+  rv_almost_eq prts (rvpower (rvabs x1) (const n)) (rvpower (rvabs x2) (const n)).
+Proof.
+  apply (rv_almost_eq_sub prts (rvabs x1) (rvabs x2) (fun x => rvpower x (const n))); trivial.
+  intros.
+  now unfold rvpower; rewrite H.
 Qed.
 
 Lemma rv_almost_eq_abs_proper

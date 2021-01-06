@@ -798,7 +798,6 @@ Section Lp.
       
     End quot.
 
-    Print LpRRVq_ModuleSpace.
   End packed.
 
   Global Arguments LpRRV : clear implicits.
@@ -815,12 +814,12 @@ Section Lp.
  *)
   Section packed.
 
-    Context {p:nat}.
-
-    (* this is only really defined for n >= 0 *)
+    (* we should probably merge this with the earlier section now *)
+    Context {p:R}.
+    Context (pbig:1 <= p).
     
-    Definition LpRRVnorm (rv_X:LpRRV (S p)) : R
-      := root (INR (S p)) (FiniteExpectation prts (rvpow (rvabs rv_X) (S p))).
+    Definition LpRRVnorm (rv_X:LpRRV p) : R
+      := power (FiniteExpectation prts (rvpower (rvabs rv_X) (const p))) (Rinv p).
 
     Global Instance LpRRV_norm_proper : Proper (LpRRV_eq ==> eq) LpRRVnorm.
     Proof.
@@ -829,7 +828,7 @@ Section Lp.
       f_equal.
       apply FiniteExpectation_proper_almost
       ; try typeclasses eauto.
-      apply rv_almost_eq_pow_abs_proper
+      apply rv_almost_eq_power_abs_proper
       ; try typeclasses eauto.
       apply rv_almost_eq_abs_proper
       ; trivial
@@ -838,9 +837,9 @@ Section Lp.
 
     Lemma almost0_lpf_almost0 (rv_X:Ts->R)
           {rrv:RandomVariable dom borel_sa rv_X}
-          {isfe: IsFiniteExpectation prts (rvpow (rvabs rv_X) (S p))}:
+          {isfe: IsFiniteExpectation prts (rvpower (rvabs rv_X) (const p))}:
       rv_almost_eq prts rv_X (const 0) <->
-      rv_almost_eq prts (rvpow (rvabs rv_X) (S p)) (const 0).
+      rv_almost_eq prts (rvpower (rvabs rv_X) (const p)) (const 0).
     Proof.
       intros.
       unfold rv_almost_eq in *.
@@ -850,15 +849,19 @@ Section Lp.
         rv_unfold.
         split; intros eqq.
         + rewrite eqq.
-          now rewrite Rabs_R0, pow0_Sbase.
-        + apply pow_integral in eqq.
+          rewrite Rabs_R0.
+          rewrite power0_Sbase; lra.
+        + apply power_integral in eqq.
           now apply Rabs_eq_0 in eqq.
     Qed.
 
+    (* move to RealRandomVariable *)
+
+
     Lemma LpFin0_almost0 (rv_X:Ts->R)
           {rrv:RandomVariable dom borel_sa rv_X}
-          {isfe: IsFiniteExpectation prts (rvpow (rvabs rv_X) (S p))}:
-      FiniteExpectation prts (rvpow (rvabs rv_X) (S p)) = 0 ->
+          {isfe: IsFiniteExpectation prts (rvpower (rvabs rv_X) (const p))}:
+      FiniteExpectation prts (rvpower (rvabs rv_X) (const p)) = 0 ->
       rv_almost_eq prts rv_X (const 0).
     Proof.
       intros fin0.
@@ -869,7 +872,8 @@ Section Lp.
       apply fin0.
     Qed.
 
-    Lemma Rsqr_pow_com x n : x² ^ n = (x ^ n)².
+    (*
+    Lemma Rsqr_power_com x n : x² ^ n = (x ^ n)².
     Proof.
       repeat rewrite Rsqr_pow2.
       repeat rewrite <- pow_mult.
@@ -939,13 +943,14 @@ Section Lp.
           lra.
         + apply INR_nzero; lia.
     Qed.
-
-    Lemma Minkowski_rv (x y : LpRRV (S p)) (t:R): 
+     *)
+    
+    Lemma Minkowski_rv (x y : LpRRV p) (t:R): 
        0 < t < 1 -> 
-       rv_le (rvpow (rvplus (rvabs x) (rvabs y)) (S p))
+       rv_le (rvpower (rvplus (rvabs x) (rvabs y)) (const p))
              (rvplus
-                (rvscale (pow (/t) p) (rvpow (rvabs x) (S p))) 
-                (rvscale (pow (/(1-t)) p) (rvpow (rvabs y) (S p)))).
+                (rvscale (power (/t) p) (rvpower (rvabs x) (const p))) 
+                (rvscale (power (/(1-t)) p) (rvpower (rvabs y) (const p)))).
     Proof.
       intros.
       intro x0.
