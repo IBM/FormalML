@@ -523,6 +523,62 @@ Section RealRandomVariables.
             now apply sa_le_gt.
     Qed.
 
+    Instance ln_measurable3 (b : Ts -> R) :
+      RealMeasurable b ->
+      RealMeasurable (fun (x:Ts) => ln (b x)).
+    Proof.
+      unfold RealMeasurable.
+      intros rb.
+      intros.
+      assert (event_equiv 
+                (fun omega : Ts => ln (b omega) <= r)
+                (fun omega : Ts =>
+                   (rvchoice
+                      (fun x : Ts =>
+                         if Req_EM_T (if Rgt_dec (b x) 0 then 1 else 0) 0 then false else true)
+                      (fun x => ln (b x))
+                      (fun x => 0)) omega <= r)).
+      - intro x0.
+        unfold rvchoice.
+        destruct (Rgt_dec (b x0) 0).
+        + destruct (Req_EM_T 1 0); [lra|].
+          tauto.
+        + destruct (Req_EM_T 0 0).
+          * unfold ln.
+            match_destr; tauto.
+          * lra.
+      - rewrite H.
+        apply rvchoice_measurable.
+        unfold RealMeasurable; intros.
+        + destruct (Rge_dec r0 1).
+          assert (event_equiv (fun omega : Ts => (if Rgt_dec (b omega) 0 then 1 else 0) <= r0) Ω).
+          * intro x.
+            split; intros.
+            now unfold  Ω.
+            match_destr; lra.
+          * rewrite H0.
+            apply sa_all.
+          * destruct (Rge_dec r0 0).
+            assert (event_equiv (fun omega : Ts => (if Rgt_dec (b omega) 0 then 1 else 0) <= r0)
+                                (fun omega : Ts => b omega <= 0)).
+            -- intro x.
+               split; intros.
+               ++ match_destr_in H0; lra.
+               ++ match_destr; lra.
+            -- now rewrite H0.
+            -- assert (event_equiv (fun omega : Ts => (if Rgt_dec (b omega) 0 then 1 else 0) <= r0)
+                                   event_none).
+               ++ intro x.
+                  split; intros.
+                  ** match_destr_in H0; lra.
+                  ** unfold event_none in H0.
+                     tauto.
+               ++ rewrite H0.
+                  apply sa_none.
+        + admit.
+        + apply constant_measurable.
+    Admitted.              
+
     Instance exp_measurable (b : Ts -> R) :
       RealMeasurable b ->
       RealMeasurable (fun (x:Ts) => exp (b x)).
@@ -533,7 +589,6 @@ Section RealRandomVariables.
    Qed.
       
     Instance Rpower_measurable (b e : Ts -> R) :
-      (forall (x:Ts), (0 < b x)%R) ->
       RealMeasurable b ->
       RealMeasurable e ->
       RealMeasurable (fun (x:Ts) => Rpower (b x) (e x)).
@@ -542,10 +597,9 @@ Section RealRandomVariables.
       intros bpos rb re.
       apply exp_measurable.
       apply mult_measurable; trivial.
-      now apply ln_measurable.
+      now apply ln_measurable2.
     Qed.
 
-(*
     Instance rvpower_measurable (b e : Ts -> R) :
       (forall (x:Ts), (0 <= b x)%R) ->
       RealMeasurable b ->
@@ -558,21 +612,27 @@ Section RealRandomVariables.
                            (event_union
                               (event_inter (fun omega => b omega = 0)
                                            (fun omega => b omega <= r))
-                              (fun omega => 0 < (b omega)  /\
-                                            Rpower (b omega) (e omega) <= r))).
-      admit.
-      rewrite H.
-      apply sa_union.
-      apply sa_inter; trivial.
-      now apply sa_le_pt.
-      generalize (Rpower_measurable b e); intros.
-      unfold RealMeasurable in H0.
-      
-      cut_to H0; trivial.
-      
-      
+                              (event_inter (fun omega => b omega > 0) 
+                                           (fun omega => Rpower (b omega) (e omega) <= r)))).
+      - intro x.
+        unfold event_inter, event_union.
+        destruct (Req_EM_T (b x) 0).
+        + rewrite e0.
+          split; intros.
+          * now left.
+          * destruct H; destruct H; lra.
+        + specialize (bpos x).
+          split; intros.
+          * right; lra.
+          * destruct H; destruct H; lra.
+      - rewrite H.
+        apply sa_union.
+        + apply sa_inter; trivial.
+          now apply sa_le_pt.
+        + apply sa_inter.
+          * now apply sa_le_gt.
+          * now apply Rpower_measurable.
     Qed.
- *)
     
     Section rvs.
 
