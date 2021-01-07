@@ -1178,7 +1178,6 @@ Section power.
   Qed.
 
   Lemma power0_Sbase e :
-    e <> 0 ->
     power 0 e = 0.
   Proof.
     unfold power.
@@ -1206,6 +1205,18 @@ Section power.
     rewrite power_mult.
     rewrite Rinv_r; trivial.
     now rewrite power_1.
+  Qed.
+
+  Lemma power_eq_inv x y n :
+    0 <> n ->
+    0 <= x ->
+    0 <= y ->
+    power x n = power y n ->
+    x = y.
+  Proof.
+    intros.
+    apply (f_equal (fun x => power x (/n))) in H2.
+    now repeat rewrite inv_power_cancel in H2 by lra.
   Qed.
 
   Lemma power_pow (n : nat) (x : R) :
@@ -1309,6 +1320,24 @@ Section power.
     repeat match_destr; subst; try lra.
     - apply Rmult_integral in e; intuition lra.
     - apply Rpower_mult_distr; lra.
+  Qed.
+
+  
+  Lemma power_incr_inv (x y:R) (n : R) :
+    0 < n ->
+    0 <= x ->
+    0 <= y ->
+    power x n <= power y n ->
+    x <= y.
+  Proof.
+    intros.
+    generalize (Rle_power_l (power x n) (power y n) (/n))
+    ; intros HH.
+    repeat rewrite inv_power_cancel in HH by lra.
+    apply HH.
+    - now left; apply Rinv_pos.
+    - split; trivial.
+      apply power_nonneg.
   Qed.
 
   Lemma derivable_pt_lim_power' (x y : R) :

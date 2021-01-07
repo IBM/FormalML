@@ -7,7 +7,7 @@ Require Import Reals.
 Require Import FunctionalExtensionality.
 Require Import Coquelicot.Rbar Coquelicot.Lub Coquelicot.Lim_seq Coquelicot.Hierarchy.
 
-Require Export RandomVariableFinite RandomVariableLpNat.
+Require Export RandomVariableFinite RandomVariableLpR.
 Require Import quotient_space.
 
 Require Import AlmostEqual.
@@ -306,22 +306,24 @@ Section Linf.
          apply Rgt_not_eq; lra.
    Qed.
 
-  Instance IsLp_const_bounded (n:nat) (rv_X : Ts -> R) (bound : R)
-    {rv : RandomVariable dom borel_sa rv_X} :
-     rv_le (rvabs rv_X) (const bound) ->
-     IsLp prts n rv_X.
+  Instance IsLp_const_bounded (n:R) (rv_X : Ts -> R) (bound : R)
+           {rv : RandomVariable dom borel_sa rv_X} :
+    0 <= n ->
+    rv_le (rvabs rv_X) (const bound) ->
+    IsLp prts n rv_X.
   Proof.
-    generalize (IsLp_bounded prts n rv_X (const (pow bound n))); intros.
-    apply H.
-    unfold rvpow, rvabs, const, rv_le, pointwise_relation in *.
+    generalize (IsLp_bounded prts n rv_X (const (power bound n))); intros.
+    apply H
+    ; try typeclasses eauto.
+    unfold rvpower, rvabs, const, rv_le, pointwise_relation in *.
     intro x.
-    specialize (H0 x).
-    apply pow_maj_Rabs.
-    now rewrite Rabs_Rabsolu.
-    apply IsFiniteExpectation_const.
+    specialize (H1 x).
+    apply Rle_power_l; trivial.
+    split; trivial.
+    apply Rabs_pos.
   Qed.
 
-  Global Instance Linfty_Lp (n:nat) (rv_X : Ts -> R) 
+  Global Instance Linfty_Lp (n:nonnegreal) (rv_X : Ts -> R) 
     {rv : RandomVariable dom borel_sa rv_X}
     {isl:IsLinfty rv_X}
     : IsLp prts n rv_X.
@@ -330,49 +332,70 @@ Section Linf.
     generalize (rvclip_almost_bounded_exists rv_X rv); intros.
     destruct H as [c H0].
     generalize (rvclip_abs_le_c rv_X c); intros.
-    generalize (IsLp_const_bounded n _ c H); intros.
+    generalize (IsLp_const_bounded n _ c (cond_nonneg _) H); intros.
     apply IsLp_proper_almost with (rv_X1 := (rvclip rv_X c)); trivial.
     now apply rvclip_rv.
     now symmetry.
   Qed.
 
-  Lemma Linfty_Lp_le (p:nat) (rv_X : Ts -> R) 
+  Definition posreal_nnneg (x:posreal) : nonnegreal
+    := mknonnegreal x (Rlt_le _ _ (cond_pos x)).
+  
+  Coercion posreal_nnneg : posreal >-> nonnegreal.
+  
+  Global Instance Linfty_Lp' (n:posreal) (rv_X : Ts -> R) 
+    {rv : RandomVariable dom borel_sa rv_X}
+    {isl:IsLinfty rv_X}
+    : IsLp prts n rv_X.
+  Proof.
+    eapply (Linfty_Lp n); eauto.
+  Qed.
+  
+  Lemma Linfty_Lp_le (p:posreal) (rv_X : Ts -> R) 
     {rv : RandomVariable dom borel_sa rv_X} 
     {isl:IsLinfty rv_X} :
-    LpRRVnorm (p:=p) prts (pack_LpRRV prts rv_X) <= Linfty_norm rv_X.
-  Proof.
-    intros.
-    unfold LpRRVnorm.
+    LpRRVnorm (p:=p) prts (pack_LpRRV prts rv_X (lp:=Linfty_Lp p _)) <= Linfty_norm rv_X.
+  Proof.      
     generalize (Linfty_norm_nneg rv_X); intros.
-    apply pow_incr_inv with (n:=p); trivial.
-    - apply root_nneg.
-    - rewrite pow_root_inv.
-      + assert (IsFiniteExpectation prts (rvpow (rvabs (rvclip rv_X (mknonnegreal _ H))) (S p))).
-        * eapply IsLp_proper_almost; try eapply isl
+    apply power_incr_inv with (n:=p); trivial.
+    - apply cond_pos.
+    - unfold LpRRVnorm.
+      apply power_nonneg.
+    - unfold LpRRVnorm.
+      rewrite power_inv_cancel.
+      + assert (IsFiniteExpectation prts (rvpower (rvabs (rvclip rv_X (mknonnegreal _ H))) (const p))).
+        * eapply (IsLp_proper_almost prts p rv_X); try eapply isl
           ; try typeclasses eauto.
           apply rvclip_almost_bounded
           ; try typeclasses eauto.
           simpl.
           now apply Linfty_norm_contains_finite_lim.
         * rewrite FiniteExpectation_proper_almost with 
-            (rv_X2 := (rvpow (rvabs (rvclip rv_X (mknonnegreal _ H))) (S p)))
+            (rv_X2 := (rvpower (rvabs (rvclip rv_X (mknonnegreal _ H))) (const p)))
             (isfe2 := H0)
           ; try typeclasses eauto.
-          -- rewrite <- (FiniteExpectation_const prts (Linfty_norm rv_X ^ S p)).
+          -- rewrite <- (FiniteExpectation_const prts (power (Linfty_norm rv_X) p)).
              apply FiniteExpectation_le.
              intro x.
-             unfold rvpow, rvabs, const.
-             apply pow_maj_Rabs.
-             rewrite Rabs_Rabsolu.        
-             apply rvclip_abs_bounded.
-          -- apply rv_almost_eq_pow_abs_proper
+             unfold rvpower, rvabs, const.
+             apply Rle_power_l.
+             ++ destruct p; simpl; lra.
+             ++ split.
+                ** apply Rabs_pos.
+                ** apply rvclip_abs_bounded.
+          -- eapply rvpower_rv; try typeclasses eauto.
+             apply (RandomVariable_proper _ _ (const (pos p)))
+             ; try typeclasses eauto.
+             intros ?; reflexivity.
+          -- apply rv_almost_eq_power_abs_proper
              ; try typeclasses eauto.
              apply rv_almost_eq_abs_proper
              ; try typeclasses eauto.
              apply rvclip_almost_bounded; trivial.
              now apply Linfty_norm_contains_finite_lim.
-      + apply FiniteExpectation_pos.
-        typeclasses eauto.
+      + apply FiniteExpectation_pos
+        ; typeclasses eauto.
+      + destruct p; simpl; lra.
   Qed.
 
   Definition norm_convergence 
@@ -381,7 +404,7 @@ Section Linf.
         (norm : (Ts -> R) -> nonnegreal) :=
     is_lim_seq (fun n => norm (rvminus X (Xn n))) 0.
 
-  Lemma Linf_Lp_converge (p:nat)
+  Lemma Linf_Lp_converge (p:posreal)
         (X: Ts -> R)
         (Xn: nat -> Ts -> R)
         (rvdif : forall (n:nat), RandomVariable dom borel_sa (rvminus X (Xn n))) 
@@ -397,11 +420,13 @@ Section Linf.
       intros.
       split; trivial.
       + unfold LpRRVnorm.
-        apply root_nneg.    
-      + now apply Linfty_Lp_le.
+        apply power_nonneg.
+      + erewrite LpRRV_norm_proper.
+        * now apply Linfty_Lp_le.
+        * apply rv_almost_eq_eq.
+          reflexivity.
     - apply is_lim_seq_const.
   Qed.
-        
 
 End Linf.
 
