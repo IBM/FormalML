@@ -7,7 +7,7 @@ Require Import Reals.
 Require Import FunctionalExtensionality.
 Require Import Coquelicot.Rbar Coquelicot.Lub Coquelicot.Lim_seq Coquelicot.Hierarchy.
 
-Require Export RandomVariableFinite RandomVariableLp.
+Require Export RandomVariableFinite RandomVariableLpNat.
 Require Import quotient_space.
 
 Require Import AlmostEqual.

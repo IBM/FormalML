@@ -7,7 +7,7 @@ Require Import FunctionalExtensionality.
 
 Require Import hilbert.
 
-Require Export RandomVariableLp.
+Require Export RandomVariableLpNat.
 Require Import quotient_space.
 
 Require Import AlmostEqual.
