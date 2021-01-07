@@ -436,31 +436,26 @@ Section RealRandomVariables.
                               (event_inter (fun omega : Ts => b omega > 0 )
                                            (fun omega : Ts => b omega <= exp r)))).
       - intro x.
+        unfold event_union, event_inter.
         split; intros.
-        + unfold event_union, event_inter.
-          destruct (Rle_dec (b x) 0).
-          left.
-          unfold ln in H.
-          match_destr_in H; lra.
-          right.
-          split; [lra | ].
-          rewrite <- (exp_ln (b x)); trivial.
-          destruct H.
-          * left; now apply exp_increasing.
-          * rewrite H; now right.
-          * lra.
-        + unfold event_union in H.
-          destruct H.
-          * destruct H.
-            unfold ln.
+        + destruct (Rle_dec (b x) 0).
+          * left; unfold ln in H.
+            match_destr_in H; lra.
+          * right; split; [lra | ].
+            rewrite <- (exp_ln (b x)); trivial.
+            destruct H.
+            -- left; now apply exp_increasing.
+            -- rewrite H; lra.
+            -- lra.
+        + destruct H; destruct H.
+          * unfold ln.
             match_destr.
             assert False by lra.
             tauto.
-          * destruct H. 
-            rewrite <- (ln_exp r).
+          * rewrite <- (ln_exp r).
             destruct H0.
             -- left; now apply ln_increasing.
-            -- rewrite H0; now right.
+            -- rewrite H0; lra.
       - rewrite H.
         apply sa_union.
         + apply sa_inter; trivial.
