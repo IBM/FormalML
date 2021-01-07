@@ -1270,6 +1270,28 @@ Section power.
     now apply derivable_pt_lim_power'.
   Qed.
 
+  Lemma power_inv_cancel b e :
+    0 <= b ->
+    e <> 0 ->
+    power (power b (/ e)) e = b.
+  Proof.
+    intros.
+    rewrite power_mult.
+    rewrite Rinv_l; trivial.
+    now rewrite power_1.
+  Qed.
+
+  Lemma inv_power_cancel b e :
+    0 <= b ->
+    e <> 0 ->
+    power (power b e) (/ e) = b.
+  Proof.
+    intros.
+    rewrite power_mult.
+    rewrite Rinv_r; trivial.
+    now rewrite power_1.
+  Qed.
+
 End power.
 
 Section ineqs.
@@ -1790,5 +1812,3 @@ Section power_minkowski.
   Qed.
 
 End power_minkowski.
-
-     
