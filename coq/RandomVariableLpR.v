@@ -632,6 +632,492 @@ Section Lp.
       lra.
     Qed.
 
+    Definition LpRRVnorm (rv_X:LpRRV) : R
+      := power (FiniteExpectation prts (rvpower (rvabs rv_X) (const p))) (Rinv p).
+
+    Global Instance LpRRV_norm_proper : Proper (LpRRV_eq ==> eq) LpRRVnorm.
+    Proof.
+      unfold Proper, respectful, LpRRVnorm, LpRRV_eq.
+      intros.
+      f_equal.
+      apply FiniteExpectation_proper_almost
+      ; try typeclasses eauto.
+      apply rv_almost_eq_power_abs_proper
+      ; try typeclasses eauto.
+      apply rv_almost_eq_abs_proper
+      ; trivial
+      ; try typeclasses eauto.
+    Qed.
+
+    Lemma almost0_lpf_almost0 (rv_X:Ts->R)
+          {rrv:RandomVariable dom borel_sa rv_X}
+          {isfe: IsFiniteExpectation prts (rvpower (rvabs rv_X) (const p))}:
+      rv_almost_eq prts rv_X (const 0) <->
+      rv_almost_eq prts (rvpower (rvabs rv_X) (const p)) (const 0).
+    Proof.
+      intros.
+      unfold rv_almost_eq in *.
+      erewrite ps_proper.
+      - split; intros H; exact H.
+      - red; intros a.
+        rv_unfold.
+        split; intros eqq.
+        + rewrite eqq.
+          rewrite Rabs_R0.
+          rewrite power0_Sbase; lra.
+        + apply power_integral in eqq.
+          now apply Rabs_eq_0 in eqq.
+    Qed.
+
+    Lemma LpFin0_almost0 (rv_X:Ts->R)
+          {rrv:RandomVariable dom borel_sa rv_X}
+          {isfe: IsFiniteExpectation prts (rvpower (rvabs rv_X) (const p))}:
+      FiniteExpectation prts (rvpower (rvabs rv_X) (const p)) = 0 ->
+      rv_almost_eq prts rv_X (const 0).
+    Proof.
+      intros fin0.
+      apply FiniteExpectation_zero_pos in fin0
+      ; try typeclasses eauto.
+      apply almost0_lpf_almost0
+      ; try typeclasses eauto.
+      apply fin0.
+    Qed.
+
+    (*
+    Lemma Rsqr_power_com x n : x² ^ n = (x ^ n)².
+    Proof.
+      repeat rewrite Rsqr_pow2.
+      repeat rewrite <- pow_mult.
+      now rewrite mult_comm.
+    Qed.
+    
+    Lemma pow_incr_inv (x y:R) (n : nat) :
+      0 <= x ->
+      0 <= y ->
+      x ^ (S n) <= y ^ (S n) ->
+      x <= y.
+    Proof.
+      intros.
+      destruct (Rle_lt_dec x y); trivial.
+      assert (y ^ S n <= x ^ S n).
+      {
+        apply pow_incr.
+        split; trivial.
+        lra.
+      }
+      assert (x ^ S n = y ^ S n).
+      {
+        now apply Rle_antisym.
+      }
+      replace x with (Rabs x) in H3 by now apply Rabs_pos_eq.
+      replace y with (Rabs y) in H3 by now apply Rabs_pos_eq.
+      apply Rabs_pow_eq_inv in H3.
+      rewrite Rabs_pos_eq in H3 by trivial.
+      rewrite Rabs_pos_eq in H3 by trivial.
+      lra.
+    Qed.
+    
+    Lemma pow_root_inv x :
+      0 <= x ->
+      root (INR (S p)) x ^ S p = x.
+    Proof.
+      intros.
+      unfold root.
+      match_destr.
+      - now rewrite pow0_Sbase.
+      - rewrite <- Rpower_pow.
+        + rewrite Rpower_mult.
+          rewrite Rinv_l.
+          * rewrite Rpower_1; trivial.
+            lra.
+          * apply INR_nzero; lia.
+        + apply exp_pos.
+    Qed.
+    
+    Lemma root_pow_inv x :
+      0 <= x ->
+      root (INR (S p)) (x ^ S p) = x.
+    Proof.
+      intros.
+      unfold root.
+      match_destr.
+      - now apply pow_integral in e.
+      - assert (x <> 0).
+        {
+          intro; subst.
+          rewrite pow_i in n; try lra; try lia.
+        }
+        rewrite <- Rpower_pow; try lra.
+        rewrite Rpower_mult.
+        rewrite Rinv_r.
+        + rewrite Rpower_1; trivial.
+          lra.
+        + apply INR_nzero; lia.
+    Qed.
+     *)
+    
+    Lemma Minkowski_rv (x y : LpRRV) (t:R): 
+       0 < t < 1 -> 
+       rv_le (rvpower (rvplus (rvabs x) (rvabs y)) (const p))
+             (rvplus
+                (rvscale (power (/t) (p-1)) (rvpower (rvabs x) (const p))) 
+                (rvscale (power (/(1-t)) (p-1)) (rvpower (rvabs y) (const p)))).
+    Proof.
+      intros.
+      intro x0.
+      generalize (@power_minkowski_helper p (rvabs x x0) (rvabs y x0) t); intros.
+      rv_unfold.
+      apply H0; trivial.
+      apply Rabs_pos.
+      apply Rabs_pos.
+   Qed.
+
+    Lemma rvpower_plus_le (x y : LpRRV) :
+      rv_le (rvpower (rvabs (rvplus x y)) (const p)) (rvpower (rvplus (rvabs x) (rvabs y)) (const p)).
+    Proof.
+      intro x0.
+      rv_unfold.
+      apply Rle_power_l; [lra|].
+      split.
+      - apply Rabs_pos.
+      - apply Rabs_triang.
+    Qed.
+
+    Lemma Minkowski_1 (x y : LpRRV) (t:R):
+       0 < t < 1 -> 
+       (FiniteExpectation prts (rvpower (rvabs (rvplus x y)) (const p)) (isfe:=IsLp_plus _ _ _ pbig))  <=
+       (power (/t) (p-1)) * (FiniteExpectation prts (rvpower (rvabs x) (const p))) + 
+       (power (/(1-t)) (p-1)) * (FiniteExpectation prts (rvpower (rvabs y) (const p))).
+    Proof.
+      intros.
+      generalize (Minkowski_rv x y t H); intros.
+      generalize (rvpower_plus_le x y); intros.
+      assert (IsFiniteExpectation prts (rvpower (rvplus (rvabs x) (rvabs y)) (const p))).
+      {
+        eapply (IsFiniteExpectation_bounded _ _ _ _ H1 H0 (isfe1:=IsLp_plus _ _ _ pbig)).
+      } 
+      assert (FiniteExpectation prts (rvpower (rvabs (rvplus x y)) (const p)) (isfe:=IsLp_plus _ _ _ pbig) <=
+              FiniteExpectation prts (rvpower (rvplus (rvabs x) (rvabs y)) (const p))).
+      {
+        apply FiniteExpectation_le.
+        apply rvpower_plus_le.
+      } 
+        generalize (FiniteExpectation_le _ _ _ H0); intros.
+      rewrite FiniteExpectation_plus in H4.
+      rewrite FiniteExpectation_scale in H4.
+      rewrite FiniteExpectation_scale in H4.
+      apply Rle_trans with 
+          (r2 := FiniteExpectation prts (rvpower (rvplus (rvabs x) (rvabs y)) (const p))); trivial.
+   Qed.
+
+    Lemma power_inv_cancel b e :
+      0 <= b ->
+      e <> 0 ->
+      power (power b (/ e)) e = b.
+    Proof.
+      intros.
+      rewrite power_mult.
+      rewrite Rinv_l; trivial.
+      now rewrite power_1.
+    Qed.
+
+    Lemma inv_power_cancel b e :
+      0 <= b ->
+      e <> 0 ->
+      power (power b e) (/ e) = b.
+    Proof.
+      intros.
+      rewrite power_mult.
+      rewrite Rinv_r; trivial.
+      now rewrite power_1.
+    Qed.
+
+    Lemma Minkowski_2 (x y : LpRRV)
+          (xexppos : 0 < FiniteExpectation prts (rvpower (rvabs x) (const p)))
+          (yexppos : 0 < FiniteExpectation prts (rvpower (rvabs y) (const p))) :
+       FiniteExpectation prts (rvpower (rvabs (rvplus x y)) (const p)) (isfe:=IsLp_plus _ _ _ pbig)  <=
+       power ((power (FiniteExpectation prts (rvpower (rvabs x) (const p))) (/ p)) +
+            (power (FiniteExpectation prts (rvpower (rvabs y) (const p))) (/ p))) p.
+    Proof.
+      generalize (Minkowski_1 x y); intros.
+      pose (a := power (FiniteExpectation prts (rvpower (rvabs x) (const p))) (/ p)).
+      pose (b := power (FiniteExpectation prts (rvpower (rvabs y) (const p))) (/ p)).
+      assert (0 < a)
+        by (apply power_pos; lra).
+      assert (0 < b)
+        by (apply power_pos; lra).
+      replace (FiniteExpectation prts (rvpower (rvabs x) (const p))) with (power a p) in H
+        by (apply power_inv_cancel; lra).
+      replace (FiniteExpectation prts (rvpower (rvabs y) (const p))) with (power b p) in H
+        by (apply power_inv_cancel; lra).
+      specialize (H (a /(a + b))).
+      cut_to H.
+      - rewrite (power_minkowski_subst p H0 H1) in H; trivial.
+      - now apply minkowski_range.
+    Qed.
+
+    Lemma Rle_power_inv_l (a b : R) :
+      0 < a -> a  <= b -> power a (/ p) <= power b (/ p).
+    Proof.
+      intros.
+      apply Rle_power_l.
+      - left; apply Rinv_0_lt_compat; lra.
+      - lra.
+    Qed.
+    
+    Lemma Minkowski_lt (x y : LpRRV)
+          (xexppos : 0 < FiniteExpectation prts (rvpower (rvabs x) (const p)))
+          (yexppos : 0 < FiniteExpectation prts (rvpower (rvabs y) (const p))) 
+          (xyexppos : 0 < FiniteExpectation prts (rvpower (rvabs (rvplus x y)) (const p)) (isfe:=IsLp_plus _ _ _ pbig)) :
+      power (FiniteExpectation prts (rvpower (rvabs (rvplus x y)) (const p)) (isfe:=IsLp_plus _ _ _ pbig)) (/ p)  <=
+      power (FiniteExpectation prts (rvpower (rvabs x) (const p))) (/ p) +
+      power (FiniteExpectation prts (rvpower (rvabs y) (const p))) (/ p).
+    Proof.
+      generalize (Minkowski_2 x y xexppos yexppos); intros.
+      apply Rle_power_inv_l in H; try lra.
+      rewrite inv_power_cancel in H; trivial; try lra.
+      apply Rplus_le_le_0_compat
+      ; apply power_nonneg.
+    Qed.   
+
+    Lemma Minkowski (x y : LpRRV) :
+      power (FiniteExpectation prts (rvpower (rvabs (rvplus x y)) (const p)) (isfe:=IsLp_plus _ _ _ pbig)) (/ p)  <=
+      power (FiniteExpectation prts (rvpower (rvabs x) (const p))) (/ p) +
+      power (FiniteExpectation prts (rvpower (rvabs y) (const p))) (/ p).
+    Proof.
+      destruct (FiniteExpectation_pos prts (rvpower (rvabs x) (const p))).
+      - {
+          destruct (FiniteExpectation_pos prts (rvpower (rvabs y) (const p))).
+          - {
+              - destruct (FiniteExpectation_pos prts (rvpower (rvabs (rvplus x y)) (const p)) (isfe:=IsLp_plus _ _ _ pbig)). 
+                + now apply Minkowski_lt.
+                + rewrite <- H1.
+                  rewrite power0_Sbase
+                    by (apply Rinv_neq_0_compat; lra).
+                  apply Rplus_le_le_0_compat
+                  ; apply power_nonneg.
+            } 
+          - rewrite <- H0.
+            rewrite power0_Sbase
+              by (apply Rinv_neq_0_compat; lra).
+            symmetry in H0.
+            apply LpFin0_almost0 in H0; try typeclasses eauto.
+            rewrite (FiniteExpectation_proper_almost prts (rvpower (rvabs (rvplus x y)) (const p)) (rvpower (rvabs x) (const p))).
+            + lra.
+            + apply rv_almost_eq_power_abs_proper
+              ; try typeclasses eauto.
+              apply rv_almost_eq_abs_proper
+              ; try typeclasses eauto.
+              
+              generalize (rv_almost_eq_plus_proper prts x x y (const 0)); intros HH.
+              cut_to HH; trivial; try typeclasses eauto.
+              * apply (rv_almost_eq_rv_trans prts _ (rvplus x (const 0)))
+                ; trivial
+                ; try typeclasses eauto.
+                apply rv_almost_eq_eq.
+                intros a.
+                rv_unfold.
+                lra.
+              * apply rv_almost_eq_rv_refl
+                ; typeclasses eauto.
+        }                                                    
+      - rewrite <- H.
+        rewrite power0_Sbase
+          by (apply Rinv_neq_0_compat; lra).
+        symmetry in H.
+        apply LpFin0_almost0 in H; try typeclasses eauto.
+        rewrite (FiniteExpectation_proper_almost prts (rvpower (rvabs (rvplus x y)) (const p)) (rvpower (rvabs y) (const p))).
+        + lra.
+        + apply rv_almost_eq_power_abs_proper
+          ; try typeclasses eauto.
+          apply rv_almost_eq_abs_proper
+          ; try typeclasses eauto.
+          generalize (rv_almost_eq_plus_proper prts x (const 0) y y H)
+          ; intros HH.
+          cut_to HH.
+          * apply (rv_almost_eq_rv_trans prts _ (rvplus (const 0) y))
+            ; trivial
+            ; try typeclasses eauto.
+            apply rv_almost_eq_eq.
+            intros a.
+            rv_unfold.
+            lra.
+          * apply rv_almost_eq_rv_refl.
+            typeclasses eauto.
+    Qed.
+
+    Lemma LpRRV_norm_plus x y : LpRRVnorm (LpRRVplus x y) <= LpRRVnorm x + LpRRVnorm y.
+    Proof.
+      unfold Proper, respectful, LpRRVnorm, LpRRVplus.
+      simpl LpRRV_rv_X.
+      simpl LpRRV_LpS_FiniteLp.
+      apply Minkowski.
+    Qed.
+
+    Lemma FiniteExpectation_Lp_pos y
+          {islp:IsLp p y} :
+      0 <= FiniteExpectation prts (rvpower (rvabs y) (const p)).
+    Proof.
+      apply FiniteExpectation_pos.
+      typeclasses eauto.
+    Qed.
+
+    Lemma LpRRV_norm_scal_strong x y : LpRRVnorm (LpRRVscale x y) = Rabs x * LpRRVnorm y.
+    Proof.
+      unfold LpRRVnorm, LpRRVscale.
+      simpl LpRRV_rv_X.
+      assert (eqq:rv_eq
+                    (rvpower (rvabs (rvscale x y)) (const p))
+                    (rvscale (power (Rabs x) p) (rvpower (rvabs y) (const p)))).
+      {
+        rewrite rv_abs_scale_eq.
+        rv_unfold; intros a.
+        rewrite power_mult_distr; trivial; apply Rabs_pos.
+      } 
+      rewrite (FiniteExpectation_ext prts _ _ eqq).
+      rewrite FiniteExpectation_scale.
+      rewrite <- power_mult_distr.
+      - f_equal.
+        rewrite inv_power_cancel; try lra.
+        apply Rabs_pos.
+      - apply power_nonneg. 
+      - apply FiniteExpectation_Lp_pos.
+    Qed.
+
+    Lemma LpRRV_norm_scal x y : LpRRVnorm (LpRRVscale x y) <= Rabs x * LpRRVnorm y.
+    Proof.
+      right.
+      apply LpRRV_norm_scal_strong.
+    Qed.
+
+    Lemma LpRRV_norm0 x :
+      LpRRVnorm x = 0 ->
+      rv_almost_eq prts x LpRRVzero.
+    Proof.
+      unfold LpRRVnorm, LpRRVzero, LpRRVconst.
+      intros.
+      apply power_integral in H.
+      apply FiniteExpectation_zero_pos in H; try typeclasses eauto.
+      erewrite ps_proper in H; try eapply H.
+      intros a; simpl; unfold const.
+      split; intros eqq.
+      + apply power_integral in eqq.
+        now apply Rabs_eq_0.
+      + rv_unfold.
+        rewrite eqq.
+        rewrite Rabs_R0.
+        rewrite power0_Sbase; trivial.
+        lra.
+    Qed.
+
+    Definition LpRRVball (x:LpRRV) (e:R) (y:LpRRV): Prop
+      := LpRRVnorm (LpRRVminus x y) < e.
+
+    Ltac LpRRV_simpl
+      ::= repeat match goal with
+                | [H : LpRRV |- _ ] => destruct H as [???]
+                end;
+         unfold LpRRVball, LpRRVnorm, LpRRVplus, LpRRVminus, LpRRVopp, LpRRVscale, LpRRVnorm in *
+         ; simpl pack_LpRRV; simpl LpRRV_rv_X in *.
+
+
+    Global Instance LpRRV_ball_proper : Proper (LpRRV_eq ==> eq ==> LpRRV_eq ==> iff) LpRRVball.
+    Proof.
+      intros ?? eqq1 ?? eqq2 ?? eqq3.
+      unfold LpRRVball in *.
+      rewrite <- eqq1, <- eqq2, <- eqq3.
+      reflexivity.
+    Qed.
+
+    Definition LpRRVpoint : LpRRV := LpRRVconst 0.
+
+    Lemma LpRRV_ball_refl x (e : posreal) : LpRRVball x e x.
+    Proof.
+      LpRRV_simpl.
+      assert (eqq1:rv_eq (rvpower (rvabs (rvminus LpRRV_rv_X0 LpRRV_rv_X0)) (const p))
+                         (const 0)).
+      {
+        rewrite rvminus_self.
+        rewrite rv_abs_const_eq.
+        rewrite Rabs_pos_eq by lra.
+        rewrite rvpower_const.
+        rewrite power0_Sbase.
+        reflexivity.
+        lra.
+      }
+      rewrite (FiniteExpectation_ext _ _ _ eqq1).
+      rewrite FiniteExpectation_const.
+      rewrite power0_Sbase.
+      + apply cond_pos.
+      + apply Rinv_neq_0_compat; lra.
+    Qed.
+    
+    Lemma LpRRV_ball_sym x y e : LpRRVball x e y -> LpRRVball y e x.
+    Proof.
+      LpRRV_simpl.
+      intros.
+      rewrite (FiniteExpectation_ext _ _  (rvpower (rvabs (rvminus LpRRV_rv_X1 LpRRV_rv_X0)) (const p)) (isfe2:=IsLp_minus _ _ _ pbig))
+      ; trivial.
+      rewrite rvabs_rvminus_sym.
+      reflexivity.
+    Qed.
+
+    Lemma LpRRV_ball_trans x y z e1 e2 : LpRRVball x e1 y -> LpRRVball y e2 z -> LpRRVball x (e1+e2) z.
+    Proof.
+      generalize (LpRRV_norm_plus
+                       (LpRRVminus x y)
+                       (LpRRVminus y z)).
+      LpRRV_simpl.
+      intros.
+
+      apply (Rle_lt_trans
+               _ 
+               ((power (FiniteExpectation prts (rvpower (rvabs (rvminus LpRRV_rv_X2 LpRRV_rv_X1)) (const p)) (isfe:=IsLp_minus _ _ _ pbig)) (/ p)) +
+                (power  (FiniteExpectation prts (rvpower (rvabs (rvminus LpRRV_rv_X1 LpRRV_rv_X0)) (const p)) (isfe:=IsLp_minus _ _ _ pbig)) (/ p))))
+      ; [ | now apply Rplus_lt_compat].
+
+      (* by minkowski *)
+      rewrite (FiniteExpectation_ext _ (rvpower (rvabs (rvminus LpRRV_rv_X2 LpRRV_rv_X0)) (const p))
+                                     (rvpower (rvabs (rvplus (rvminus LpRRV_rv_X2 LpRRV_rv_X1) (rvminus LpRRV_rv_X1 LpRRV_rv_X0))) (const p)) (isfe2:=IsLp_plus _ _ _ pbig (islp1:=IsLp_minus _ _ _ pbig) (islp2:=IsLp_minus _ _ _ pbig))); trivial.
+      intros a.
+      rv_unfold.
+      f_equal.
+      f_equal.
+      lra.
+    Qed.
+
+    Lemma LpRRV_close_close (x y : LpRRV) (eps : R) :
+      LpRRVnorm (LpRRVminus y x) < eps ->
+      LpRRVball x eps y.
+    Proof.
+      intros.
+      apply LpRRV_ball_sym.
+      apply H.
+    Qed.
+
+    Definition LpRRVnorm_factor : R := 1.
+    
+    Lemma LpRRV_norm_ball_compat (x y : LpRRV) (eps : posreal) :
+      LpRRVball x eps y -> LpRRVnorm (LpRRVminus y x) < LpRRVnorm_factor * eps.
+    Proof.
+      intros HH.
+      apply LpRRV_ball_sym in HH.
+      unfold LpRRVnorm_factor.
+      field_simplify.
+      apply HH.
+    Qed.
+
+    Lemma LpRRV_plus_opp_minus (x y : LpRRV) :
+      LpRRV_eq (LpRRVplus x (LpRRVopp y)) (LpRRVminus x y).
+    Proof.
+      unfold LpRRVminus, LpRRVplus, LpRRVopp.
+      simpl.
+      apply rv_almost_eq_eq.
+      intros ?.
+      reflexivity.
+    Qed.
+    
+
     Section quot.
 
       Definition LpRRVq : Type := quot LpRRV_eq.
@@ -795,518 +1281,10 @@ Section Lp.
 
       Canonical LpRRVq_ModuleSpace :=
         ModuleSpace.Pack R_Ring LpRRVq (ModuleSpace.Class R_Ring LpRRVq LpRRVq_AbelianGroup_mixin LpRRVq_ModuleSpace_mixin) LpRRVq.
-      
-    End quot.
 
-  End packed.
-
-  Global Arguments LpRRV : clear implicits.
-  Global Arguments LpRRVq : clear implicits.
-
-  (** Lp 0 is a degenerate case; representing the space of all RandomVariables, quotiented by a.e.
-      It is still a ModuleSpace.
-
-      For Lp (S p), we can further define a norm (and the ball induced by the distance function defined by the norm),
-      and show that it is a UniformSapce and NormedModuleSpace.
-
-      For the special case of Lp 2, it is also a HilbertSpace.  This is shown in RandomVaribleL2.
-
- *)
-  Section packed.
-
-    (* we should probably merge this with the earlier section now *)
-    Context {p:R}.
-    Context (pbig:1 <= p).
-    
-    Definition LpRRVnorm (rv_X:LpRRV p) : R
-      := power (FiniteExpectation prts (rvpower (rvabs rv_X) (const p))) (Rinv p).
-
-    Global Instance LpRRV_norm_proper : Proper (LpRRV_eq ==> eq) LpRRVnorm.
-    Proof.
-      unfold Proper, respectful, LpRRVnorm, LpRRV_eq.
-      intros.
-      f_equal.
-      apply FiniteExpectation_proper_almost
-      ; try typeclasses eauto.
-      apply rv_almost_eq_power_abs_proper
-      ; try typeclasses eauto.
-      apply rv_almost_eq_abs_proper
-      ; trivial
-      ; try typeclasses eauto.
-    Qed.
-
-    Lemma almost0_lpf_almost0 (rv_X:Ts->R)
-          {rrv:RandomVariable dom borel_sa rv_X}
-          {isfe: IsFiniteExpectation prts (rvpower (rvabs rv_X) (const p))}:
-      rv_almost_eq prts rv_X (const 0) <->
-      rv_almost_eq prts (rvpower (rvabs rv_X) (const p)) (const 0).
-    Proof.
-      intros.
-      unfold rv_almost_eq in *.
-      erewrite ps_proper.
-      - split; intros H; exact H.
-      - red; intros a.
-        rv_unfold.
-        split; intros eqq.
-        + rewrite eqq.
-          rewrite Rabs_R0.
-          rewrite power0_Sbase; lra.
-        + apply power_integral in eqq.
-          now apply Rabs_eq_0 in eqq.
-    Qed.
-
-    Lemma LpFin0_almost0 (rv_X:Ts->R)
-          {rrv:RandomVariable dom borel_sa rv_X}
-          {isfe: IsFiniteExpectation prts (rvpower (rvabs rv_X) (const p))}:
-      FiniteExpectation prts (rvpower (rvabs rv_X) (const p)) = 0 ->
-      rv_almost_eq prts rv_X (const 0).
-    Proof.
-      intros fin0.
-      apply FiniteExpectation_zero_pos in fin0
-      ; try typeclasses eauto.
-      apply almost0_lpf_almost0
-      ; try typeclasses eauto.
-      apply fin0.
-    Qed.
-
-    (*
-    Lemma Rsqr_power_com x n : x² ^ n = (x ^ n)².
-    Proof.
-      repeat rewrite Rsqr_pow2.
-      repeat rewrite <- pow_mult.
-      now rewrite mult_comm.
-    Qed.
-    
-    Lemma pow_incr_inv (x y:R) (n : nat) :
-      0 <= x ->
-      0 <= y ->
-      x ^ (S n) <= y ^ (S n) ->
-      x <= y.
-    Proof.
-      intros.
-      destruct (Rle_lt_dec x y); trivial.
-      assert (y ^ S n <= x ^ S n).
-      {
-        apply pow_incr.
-        split; trivial.
-        lra.
-      }
-      assert (x ^ S n = y ^ S n).
-      {
-        now apply Rle_antisym.
-      }
-      replace x with (Rabs x) in H3 by now apply Rabs_pos_eq.
-      replace y with (Rabs y) in H3 by now apply Rabs_pos_eq.
-      apply Rabs_pow_eq_inv in H3.
-      rewrite Rabs_pos_eq in H3 by trivial.
-      rewrite Rabs_pos_eq in H3 by trivial.
-      lra.
-    Qed.
-    
-    Lemma pow_root_inv x :
-      0 <= x ->
-      root (INR (S p)) x ^ S p = x.
-    Proof.
-      intros.
-      unfold root.
-      match_destr.
-      - now rewrite pow0_Sbase.
-      - rewrite <- Rpower_pow.
-        + rewrite Rpower_mult.
-          rewrite Rinv_l.
-          * rewrite Rpower_1; trivial.
-            lra.
-          * apply INR_nzero; lia.
-        + apply exp_pos.
-    Qed.
-    
-    Lemma root_pow_inv x :
-      0 <= x ->
-      root (INR (S p)) (x ^ S p) = x.
-    Proof.
-      intros.
-      unfold root.
-      match_destr.
-      - now apply pow_integral in e.
-      - assert (x <> 0).
-        {
-          intro; subst.
-          rewrite pow_i in n; try lra; try lia.
-        }
-        rewrite <- Rpower_pow; try lra.
-        rewrite Rpower_mult.
-        rewrite Rinv_r.
-        + rewrite Rpower_1; trivial.
-          lra.
-        + apply INR_nzero; lia.
-    Qed.
-     *)
-    
-    Lemma Minkowski_rv (x y : LpRRV p) (t:R): 
-       0 < t < 1 -> 
-       rv_le (rvpower (rvplus (rvabs x) (rvabs y)) (const p))
-             (rvplus
-                (rvscale (power (/t) (p-1)) (rvpower (rvabs x) (const p))) 
-                (rvscale (power (/(1-t)) (p-1)) (rvpower (rvabs y) (const p)))).
-    Proof.
-      intros.
-      intro x0.
-      generalize (@power_minkowski_helper p (rvabs x x0) (rvabs y x0) t); intros.
-      rv_unfold.
-      apply H0; trivial.
-      apply Rabs_pos.
-      apply Rabs_pos.
-   Qed.
-
-    Lemma rvpower_plus_le (x y : LpRRV p) :
-      rv_le (rvpower (rvabs (rvplus x y)) (const p)) (rvpower (rvplus (rvabs x) (rvabs y)) (const p)).
-    Proof.
-      intro x0.
-      rv_unfold.
-      apply Rle_power_l; [lra|].
-      split.
-      - apply Rabs_pos.
-      - apply Rabs_triang.
-    Qed.
-
-    Lemma Minkowski_1 (x y : LpRRV p) (t:R):
-       0 < t < 1 -> 
-       (FiniteExpectation prts (rvpower (rvabs (rvplus x y)) (const p)) (isfe:=IsLp_plus _ _ _ pbig))  <=
-       (power (/t) (p-1)) * (FiniteExpectation prts (rvpower (rvabs x) (const p))) + 
-       (power (/(1-t)) (p-1)) * (FiniteExpectation prts (rvpower (rvabs y) (const p))).
-    Proof.
-      intros.
-      generalize (Minkowski_rv x y t H); intros.
-      generalize (rvpower_plus_le x y); intros.
-      assert (IsFiniteExpectation prts (rvpower (rvplus (rvabs x) (rvabs y)) (const p))).
-      {
-        eapply (IsFiniteExpectation_bounded _ _ _ _ H1 H0 (isfe1:=IsLp_plus _ _ _ pbig)).
-      } 
-      assert (FiniteExpectation prts (rvpower (rvabs (rvplus x y)) (const p)) (isfe:=IsLp_plus _ _ _ pbig) <=
-              FiniteExpectation prts (rvpower (rvplus (rvabs x) (rvabs y)) (const p))).
-      {
-        apply FiniteExpectation_le.
-        apply rvpower_plus_le.
-      } 
-        generalize (FiniteExpectation_le _ _ _ H0); intros.
-      rewrite FiniteExpectation_plus in H4.
-      rewrite FiniteExpectation_scale in H4.
-      rewrite FiniteExpectation_scale in H4.
-      apply Rle_trans with 
-          (r2 := FiniteExpectation prts (rvpower (rvplus (rvabs x) (rvabs y)) (const p))); trivial.
-   Qed.
-
-    Lemma power_inv_cancel b e :
-      0 <= b ->
-      e <> 0 ->
-      power (power b (/ e)) e = b.
-    Proof.
-      intros.
-      rewrite power_mult.
-      rewrite Rinv_l; trivial.
-      now rewrite power_1.
-    Qed.
-
-    Lemma inv_power_cancel b e :
-      0 <= b ->
-      e <> 0 ->
-      power (power b e) (/ e) = b.
-    Proof.
-      intros.
-      rewrite power_mult.
-      rewrite Rinv_r; trivial.
-      now rewrite power_1.
-    Qed.
-
-    Lemma Minkowski_2 (x y : LpRRV p)
-          (xexppos : 0 < FiniteExpectation prts (rvpower (rvabs x) (const p)))
-          (yexppos : 0 < FiniteExpectation prts (rvpower (rvabs y) (const p))) :
-       FiniteExpectation prts (rvpower (rvabs (rvplus x y)) (const p)) (isfe:=IsLp_plus _ _ _ pbig)  <=
-       power ((power (FiniteExpectation prts (rvpower (rvabs x) (const p))) (/ p)) +
-            (power (FiniteExpectation prts (rvpower (rvabs y) (const p))) (/ p))) p.
-    Proof.
-      generalize (Minkowski_1 x y); intros.
-      pose (a := power (FiniteExpectation prts (rvpower (rvabs x) (const p))) (/ p)).
-      pose (b := power (FiniteExpectation prts (rvpower (rvabs y) (const p))) (/ p)).
-      assert (0 < a)
-        by (apply power_pos; lra).
-      assert (0 < b)
-        by (apply power_pos; lra).
-      replace (FiniteExpectation prts (rvpower (rvabs x) (const p))) with (power a p) in H
-        by (apply power_inv_cancel; lra).
-      replace (FiniteExpectation prts (rvpower (rvabs y) (const p))) with (power b p) in H
-        by (apply power_inv_cancel; lra).
-      specialize (H (a /(a + b))).
-      cut_to H.
-      - rewrite (power_minkowski_subst p H0 H1) in H; trivial.
-      - now apply minkowski_range.
-    Qed.
-
-    Lemma Rle_power_inv_l (a b : R) :
-      0 < a -> a  <= b -> power a (/ p) <= power b (/ p).
-    Proof.
-      intros.
-      apply Rle_power_l.
-      - left; apply Rinv_0_lt_compat; lra.
-      - lra.
-    Qed.
-    
-    Lemma Minkowski_lt (x y : LpRRV p)
-          (xexppos : 0 < FiniteExpectation prts (rvpower (rvabs x) (const p)))
-          (yexppos : 0 < FiniteExpectation prts (rvpower (rvabs y) (const p))) 
-          (xyexppos : 0 < FiniteExpectation prts (rvpower (rvabs (rvplus x y)) (const p)) (isfe:=IsLp_plus _ _ _ pbig)) :
-      power (FiniteExpectation prts (rvpower (rvabs (rvplus x y)) (const p)) (isfe:=IsLp_plus _ _ _ pbig)) (/ p)  <=
-      power (FiniteExpectation prts (rvpower (rvabs x) (const p))) (/ p) +
-      power (FiniteExpectation prts (rvpower (rvabs y) (const p))) (/ p).
-    Proof.
-      generalize (Minkowski_2 x y xexppos yexppos); intros.
-      apply Rle_power_inv_l in H; try lra.
-      rewrite inv_power_cancel in H; trivial; try lra.
-      apply Rplus_le_le_0_compat
-      ; apply power_nonneg.
-    Qed.   
-
-    Lemma Minkowski (x y : LpRRV p) :
-      power (FiniteExpectation prts (rvpower (rvabs (rvplus x y)) (const p)) (isfe:=IsLp_plus _ _ _ pbig)) (/ p)  <=
-      power (FiniteExpectation prts (rvpower (rvabs x) (const p))) (/ p) +
-      power (FiniteExpectation prts (rvpower (rvabs y) (const p))) (/ p).
-    Proof.
-      destruct (FiniteExpectation_pos prts (rvpower (rvabs x) (const p))).
-      - {
-          destruct (FiniteExpectation_pos prts (rvpower (rvabs y) (const p))).
-          - {
-              - destruct (FiniteExpectation_pos prts (rvpower (rvabs (rvplus x y)) (const p)) (isfe:=IsLp_plus _ _ _ pbig)). 
-                + now apply Minkowski_lt.
-                + rewrite <- H1.
-                  rewrite power0_Sbase
-                    by (apply Rinv_neq_0_compat; lra).
-                  apply Rplus_le_le_0_compat
-                  ; apply power_nonneg.
-            } 
-          - rewrite <- H0.
-            rewrite power0_Sbase
-              by (apply Rinv_neq_0_compat; lra).
-            symmetry in H0.
-            apply LpFin0_almost0 in H0; try typeclasses eauto.
-            rewrite (FiniteExpectation_proper_almost prts (rvpower (rvabs (rvplus x y)) (const p)) (rvpower (rvabs x) (const p))).
-            + lra.
-            + apply rv_almost_eq_power_abs_proper
-              ; try typeclasses eauto.
-              apply rv_almost_eq_abs_proper
-              ; try typeclasses eauto.
-              
-              generalize (rv_almost_eq_plus_proper prts x x y (const 0)); intros HH.
-              cut_to HH; trivial; try typeclasses eauto.
-              * apply (rv_almost_eq_rv_trans prts _ (rvplus x (const 0)))
-                ; trivial
-                ; try typeclasses eauto.
-                apply rv_almost_eq_eq.
-                intros a.
-                rv_unfold.
-                lra.
-              * apply rv_almost_eq_rv_refl
-                ; typeclasses eauto.
-        }                                                    
-      - rewrite <- H.
-        rewrite power0_Sbase
-          by (apply Rinv_neq_0_compat; lra).
-        symmetry in H.
-        apply LpFin0_almost0 in H; try typeclasses eauto.
-        rewrite (FiniteExpectation_proper_almost prts (rvpower (rvabs (rvplus x y)) (const p)) (rvpower (rvabs y) (const p))).
-        + lra.
-        + apply rv_almost_eq_power_abs_proper
-          ; try typeclasses eauto.
-          apply rv_almost_eq_abs_proper
-          ; try typeclasses eauto.
-          generalize (rv_almost_eq_plus_proper prts x (const 0) y y H)
-          ; intros HH.
-          cut_to HH.
-          * apply (rv_almost_eq_rv_trans prts _ (rvplus (const 0) y))
-            ; trivial
-            ; try typeclasses eauto.
-            apply rv_almost_eq_eq.
-            intros a.
-            rv_unfold.
-            lra.
-          * apply rv_almost_eq_rv_refl.
-            typeclasses eauto.
-    Qed.
-
-    Lemma LpRRV_norm_plus x y : LpRRVnorm (LpRRVplus pbig x y) <= LpRRVnorm x + LpRRVnorm y.
-    Proof.
-      unfold Proper, respectful, LpRRVnorm, LpRRVplus.
-      simpl LpRRV_rv_X.
-      simpl LpRRV_LpS_FiniteLp.
-      apply Minkowski.
-    Qed.
-
-    Lemma FiniteExpectation_Lp_pos y
-          {islp:IsLp p y} :
-      0 <= FiniteExpectation prts (rvpower (rvabs y) (const p)).
-    Proof.
-      apply FiniteExpectation_pos.
-      typeclasses eauto.
-    Qed.
-
-    Lemma LpRRV_norm_scal_strong x y : LpRRVnorm (LpRRVscale x y) = Rabs x * LpRRVnorm y.
-    Proof.
-      unfold LpRRVnorm, LpRRVscale.
-      simpl LpRRV_rv_X.
-      assert (eqq:rv_eq
-                    (rvpower (rvabs (rvscale x y)) (const p))
-                    (rvscale (power (Rabs x) p) (rvpower (rvabs y) (const p)))).
-      {
-        rewrite rv_abs_scale_eq.
-        rv_unfold; intros a.
-        rewrite power_mult_distr; trivial; apply Rabs_pos.
-      } 
-      rewrite (FiniteExpectation_ext prts _ _ eqq).
-      rewrite FiniteExpectation_scale.
-      rewrite <- power_mult_distr.
-      - f_equal.
-        rewrite inv_power_cancel; try lra.
-        apply Rabs_pos.
-      - apply power_nonneg. 
-      - apply FiniteExpectation_Lp_pos.
-    Qed.
-
-    Lemma LpRRV_norm_scal x y : LpRRVnorm (LpRRVscale x y) <= Rabs x * LpRRVnorm y.
-    Proof.
-      right.
-      apply LpRRV_norm_scal_strong.
-    Qed.
-
-    Lemma LpRRV_norm0 x : LpRRVnorm x = 0 -> rv_almost_eq prts x (LpRRVzero (p:=p)).
-    Proof.
-      unfold LpRRVnorm, LpRRVzero, LpRRVconst.
-      intros.
-      apply power_integral in H.
-      apply FiniteExpectation_zero_pos in H; try typeclasses eauto.
-      erewrite ps_proper in H; try eapply H.
-      intros a; simpl; unfold const.
-      split; intros eqq.
-      + apply power_integral in eqq.
-        now apply Rabs_eq_0.
-      + rv_unfold.
-        rewrite eqq.
-        rewrite Rabs_R0.
-        rewrite power0_Sbase; trivial.
-        lra.
-    Qed.
-
-    Definition LpRRVball (x:LpRRV p) (e:R) (y:LpRRV p): Prop
-      := LpRRVnorm (LpRRVminus pbig x y) < e.
-
-    Ltac LpRRV_simpl
-      := repeat match goal with
-                | [H : LpRRV _ |- _ ] => destruct H as [???]
-                end;
-         unfold LpRRVball, LpRRVnorm, LpRRVplus, LpRRVminus, LpRRVopp, LpRRVscale, LpRRVnorm in *
-         ; simpl pack_LpRRV; simpl LpRRV_rv_X in *.
-
-
-    Global Instance LpRRV_ball_proper : Proper (LpRRV_eq ==> eq ==> LpRRV_eq ==> iff) LpRRVball.
-    Proof.
-      intros ?? eqq1 ?? eqq2 ?? eqq3.
-      unfold LpRRVball in *.
-      rewrite <- eqq1, <- eqq2, <- eqq3.
-      reflexivity.
-    Qed.
-
-    Definition LpRRVpoint : LpRRV p := LpRRVconst 0.
-
-    Lemma LpRRV_ball_refl x (e : posreal) : LpRRVball x e x.
-    Proof.
-      LpRRV_simpl.
-      assert (eqq1:rv_eq (rvpower (rvabs (rvminus LpRRV_rv_X0 LpRRV_rv_X0)) (const p))
-                         (const 0)).
-      {
-        rewrite rvminus_self.
-        rewrite rv_abs_const_eq.
-        rewrite Rabs_pos_eq by lra.
-        rewrite rvpower_const.
-        rewrite power0_Sbase.
-        reflexivity.
-        lra.
-      }
-      rewrite (FiniteExpectation_ext _ _ _ eqq1).
-      rewrite FiniteExpectation_const.
-      rewrite power0_Sbase.
-      + apply cond_pos.
-      + apply Rinv_neq_0_compat; lra.
-    Qed.
-    
-    Lemma LpRRV_ball_sym x y e : LpRRVball x e y -> LpRRVball y e x.
-    Proof.
-      LpRRV_simpl.
-      intros.
-      rewrite (FiniteExpectation_ext _ _  (rvpower (rvabs (rvminus LpRRV_rv_X1 LpRRV_rv_X0)) (const p)) (isfe2:=IsLp_minus _ _ _ pbig))
-      ; trivial.
-      rewrite rvabs_rvminus_sym.
-      reflexivity.
-    Qed.
-
-    Lemma LpRRV_ball_trans x y z e1 e2 : LpRRVball x e1 y -> LpRRVball y e2 z -> LpRRVball x (e1+e2) z.
-    Proof.
-      generalize (LpRRV_norm_plus
-                       (LpRRVminus pbig x y)
-                       (LpRRVminus pbig y z)).
-      LpRRV_simpl.
-      intros.
-
-      apply (Rle_lt_trans
-               _ 
-               ((power (FiniteExpectation prts (rvpower (rvabs (rvminus LpRRV_rv_X2 LpRRV_rv_X1)) (const p)) (isfe:=IsLp_minus _ _ _ pbig)) (/ p)) +
-                (power  (FiniteExpectation prts (rvpower (rvabs (rvminus LpRRV_rv_X1 LpRRV_rv_X0)) (const p)) (isfe:=IsLp_minus _ _ _ pbig)) (/ p))))
-      ; [ | now apply Rplus_lt_compat].
-
-      (* by minkowski *)
-      rewrite (FiniteExpectation_ext _ (rvpower (rvabs (rvminus LpRRV_rv_X2 LpRRV_rv_X0)) (const p))
-                                     (rvpower (rvabs (rvplus (rvminus LpRRV_rv_X2 LpRRV_rv_X1) (rvminus LpRRV_rv_X1 LpRRV_rv_X0))) (const p)) (isfe2:=IsLp_plus _ _ _ pbig (islp1:=IsLp_minus _ _ _ pbig) (islp2:=IsLp_minus _ _ _ pbig))); trivial.
-      intros a.
-      rv_unfold.
-      f_equal.
-      f_equal.
-      lra.
-    Qed.
-
-    Lemma LpRRV_close_close (x y : LpRRV p) (eps : R) :
-      LpRRVnorm (LpRRVminus pbig y x) < eps ->
-      LpRRVball x eps y.
-    Proof.
-      intros.
-      apply LpRRV_ball_sym.
-      apply H.
-    Qed.
-
-    Definition LpRRVnorm_factor : R := 1.
-    
-    Lemma LpRRV_norm_ball_compat (x y : LpRRV p) (eps : posreal) :
-      LpRRVball x eps y -> LpRRVnorm (LpRRVminus pbig y x) < LpRRVnorm_factor * eps.
-    Proof.
-      intros HH.
-      apply LpRRV_ball_sym in HH.
-      unfold LpRRVnorm_factor.
-      field_simplify.
-      apply HH.
-    Qed.
-
-    Lemma LpRRV_plus_opp_minus (x y : LpRRV p) :
-      LpRRV_eq (LpRRVplus pbig x (LpRRVopp y)) (LpRRVminus pbig x y).
-    Proof.
-      unfold LpRRVminus, LpRRVplus, LpRRVopp.
-      simpl.
-      apply rv_almost_eq_eq.
-      intros ?.
-      reflexivity.
-    Qed.
-    
-    Section quot.
-
-      
-      Ltac LpRRVq_simpl :=
+      Ltac LpRRVq_simpl ::=
         repeat match goal with
-               | [H: LpRRVq _ |- _ ] =>
+               | [H: LpRRVq |- _ ] =>
                  let xx := fresh H in destruct (Quot_inv H) as [xx ?]; subst H; rename xx into H
                | [H: AbelianGroup.sort LpRRVq_AbelianGroup |- _ ] =>
                  let xx := fresh H in destruct (Quot_inv H) as [xx ?]; subst H; rename xx into H
@@ -1322,7 +1300,7 @@ Section Lp.
       Hint Rewrite @LpRRVq_minusE : quot.
       Hint Rewrite @LpRRVq_constE : quot.
 
-      Definition LpRRVq_ball : LpRRVq p -> R -> LpRRVq p -> Prop
+      Definition LpRRVq_ball : LpRRVq -> R -> LpRRVq -> Prop
         := quot_lift_ball LpRRV_eq LpRRVball.
 
       Lemma LpRRVq_ballE x e y : LpRRVq_ball (Quot _ x) e (Quot _ y)  = LpRRVball x e y.
@@ -1332,7 +1310,7 @@ Section Lp.
 
       Hint Rewrite LpRRVq_ballE : quot.
       
-      Definition LpRRVq_point : LpRRVq p
+      Definition LpRRVq_point : LpRRVq
         := Quot _ LpRRVpoint.
 
 
@@ -1361,23 +1339,23 @@ Section Lp.
         apply LpRRV_ball_trans.
       Qed.
 
-      Definition LpRRVq_UniformSpace_mixin : UniformSpace.mixin_of (LpRRVq p)
-        := UniformSpace.Mixin  (LpRRVq p) LpRRVq_point LpRRVq_ball
+      Definition LpRRVq_UniformSpace_mixin : UniformSpace.mixin_of LpRRVq
+        := UniformSpace.Mixin  LpRRVq LpRRVq_point LpRRVq_ball
                                LpRRVq_ball_refl
                                LpRRVq_ball_sym
                                LpRRVq_ball_trans.
 
       Canonical LpRRVq_UniformSpace :=
-        UniformSpace.Pack (LpRRVq p) LpRRVq_UniformSpace_mixin (LpRRVq p).
+        UniformSpace.Pack LpRRVq LpRRVq_UniformSpace_mixin LpRRVq.
 
       Canonical LpRRVq_NormedModuleAux :=
-        NormedModuleAux.Pack R_AbsRing (LpRRVq p)
-                             (NormedModuleAux.Class R_AbsRing (LpRRVq p)
-                                                    (ModuleSpace.class _ (LpRRVq_ModuleSpace pbig))
-                                                    (LpRRVq_UniformSpace_mixin)) (LpRRVq p).
+        NormedModuleAux.Pack R_AbsRing LpRRVq
+                             (NormedModuleAux.Class R_AbsRing LpRRVq
+                                                    (ModuleSpace.class _ LpRRVq_ModuleSpace)
+                                                    (LpRRVq_UniformSpace_mixin)) LpRRVq.
 
       
-      Definition LpRRVq_norm : LpRRVq p -> R
+      Definition LpRRVq_norm : LpRRVq -> R
         := quot_rec LpRRV_norm_proper.
 
       Lemma LpRRVq_normE x : LpRRVq_norm (Quot _ x)  = LpRRVnorm x.
@@ -1387,7 +1365,7 @@ Section Lp.
 
       Hint Rewrite LpRRVq_normE : quot.
 
-      Lemma LpRRVq_norm_plus x y : LpRRVq_norm (LpRRVq_plus pbig x y) <= LpRRVq_norm x + LpRRVq_norm y.
+      Lemma LpRRVq_norm_plus x y : LpRRVq_norm (LpRRVq_plus x y) <= LpRRVq_norm x + LpRRVq_norm y.
       Proof.
         LpRRVq_simpl.
         now apply LpRRV_norm_plus.
@@ -1412,15 +1390,15 @@ Section Lp.
         now apply LpRRV_norm0.
       Qed.
 
-      Lemma LpRRVq_minus_minus (x y : LpRRVq p) :
-        minus x y = LpRRVq_minus pbig x y.
+      Lemma LpRRVq_minus_minus (x y : LpRRVq) :
+        minus x y = LpRRVq_minus x y.
       Proof.
         unfold minus, plus, opp; simpl.
         LpRRVq_simpl.
         apply LpRRVminus_plus.
       Qed.
 
-      Lemma LpRRVq_close_close (x y : LpRRVq p) (eps : R) :
+      Lemma LpRRVq_close_close (x y : LpRRVq) (eps : R) :
         LpRRVq_norm (minus y x) < eps ->
         LpRRVq_ball x eps y.
       Proof.
@@ -1430,7 +1408,7 @@ Section Lp.
         now apply LpRRV_close_close.
       Qed.
 
-      Lemma LpRRVq_norm_ball_compat (x y : LpRRVq p) (eps : posreal) :
+      Lemma LpRRVq_norm_ball_compat (x y : LpRRVq) (eps : posreal) :
         LpRRVq_ball x eps y -> LpRRVq_norm (minus y x) < LpRRVnorm_factor * eps.
       Proof.
         intros.
@@ -1450,12 +1428,38 @@ Section Lp.
                               LpRRVq_norm0.
 
       Definition LpRRVq_NormedModule :=
-        NormedModule.Pack R_AbsRing (LpRRVq p)
-                          (NormedModule.Class R_AbsRing (LpRRVq p)
+        NormedModule.Pack R_AbsRing LpRRVq
+                          (NormedModule.Class R_AbsRing LpRRVq
                                               (NormedModuleAux.class _ LpRRVq_NormedModuleAux)
                                               LpRRVq_NormedModule_mixin)
-                          (LpRRVq p).
+                          LpRRVq.
 
+
+    End quot.
+
+  End packed.
+
+  Global Arguments LpRRV : clear implicits.
+  Global Arguments LpRRVq : clear implicits.
+
+  (** Lp 0 is a degenerate case; representing the space of all RandomVariables, quotiented by a.e.
+      It is still a ModuleSpace.
+
+      For Lp (S p), we can further define a norm (and the ball induced by the distance function defined by the norm),
+      and show that it is a UniformSapce and NormedModuleSpace.
+
+      For the special case of Lp 2, it is also a HilbertSpace.  This is shown in RandomVaribleL2.
+
+ *)
+  Section packed.
+
+    (* we should probably merge this with the earlier section now *)
+    Context {p:R}.
+    Context (pbig:1 <= p).
+    
+    Section quot.
+
+      
     End quot.
     
   End packed.
