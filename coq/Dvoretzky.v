@@ -469,7 +469,7 @@ Qed.
        ; simpl.
 
    Lemma L2RRV_L2_L1   {Ts:Type} {dom:SigmaAlgebra Ts} {prts: ProbSpace dom}
-         (x : LpRRV prts 2%nat) :
+         (x : LpRRV prts 2) :
     Rsqr (FiniteExpectation prts x) <= FiniteExpectation prts (rvsqr x).
    Proof.
      generalize (L2RRV_Cauchy_Schwarz prts x (LpRRVconst prts 1)); intros.
@@ -555,7 +555,7 @@ Qed.
         (Xn: nat -> Ts -> R)
         (rvx : RandomVariable dom borel_sa X)
         (rvxn : forall n, RandomVariable dom borel_sa (Xn n)) 
-        (isl: forall n, IsLp prts 2%nat (rvabs (rvminus X (Xn n)))) :
+        (isl: forall n, IsLp prts 2 (rvabs (rvminus X (Xn n)))) :
     is_lim_seq (fun n => FiniteExpectation prts (rvsqr (rvabs (rvminus X (Xn n))))) 0 ->
     is_lim_seq (fun n => FiniteExpectation prts (rvabs (rvminus X (Xn n)))) 0.
     Proof.

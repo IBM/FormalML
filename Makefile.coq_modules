@@ -75,6 +75,7 @@ MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	RandomVariableFinite \
 	RandomVariableL2 \
 	RandomVariableLpNat \
+	RandomVariableLpR \
 	RandomVariableLinf \
 	SimpleExpectation \
 	Expectation \

@@ -350,7 +350,12 @@ Section defs.
       lra.
     Qed.
 
-      
+    Lemma rvpower_abs2_unfold (f:Ts->R) :
+      rvpower (rvabs f) (const 2) === rvsqr f.
+    Proof.
+      intros x.
+      apply power_abs2_sqr.
+    Qed.
 
     Lemma pos_fun_part_unfold (f : Ts->R) :
       (fun x => nonneg (pos_fun_part f x)) === rvmax f (const 0).

@@ -1394,9 +1394,9 @@ Ltac LpRRVq_simpl :=
   repeat match goal with
          | [H: LpRRVq _ _ |- _ ] =>
            let xx := fresh H in destruct (Quot_inv H) as [xx ?]; subst H; rename xx into H
-         | [H: AbelianGroup.sort (LpRRVq_AbelianGroup _ _) |- _ ] =>
+         | [H: AbelianGroup.sort (LpRRVq_AbelianGroup _ _ _) |- _ ] =>
            let xx := fresh H in destruct (Quot_inv H) as [xx ?]; subst H; rename xx into H
-         | [H: ModuleSpace.sort R_Ring (LpRRVq_ModuleSpace _ _) |- _ ] =>
+         | [H: ModuleSpace.sort R_Ring (LpRRVq_ModuleSpace _ _ _) |- _ ] =>
            let xx := fresh H in destruct (Quot_inv H) as [xx ?]; subst H; rename xx into H
          end
   ; try autorewrite with quot in *

@@ -1186,6 +1186,28 @@ Section power.
     congruence.
   Qed.
 
+  Lemma power_inv_cancel b e :
+    0 <= b ->
+    e <> 0 ->
+    power (power b (/ e)) e = b.
+  Proof.
+    intros.
+    rewrite power_mult.
+    rewrite Rinv_l; trivial.
+    now rewrite power_1.
+  Qed.
+
+  Lemma inv_power_cancel b e :
+    0 <= b ->
+    e <> 0 ->
+    power (power b e) (/ e) = b.
+  Proof.
+    intros.
+    rewrite power_mult.
+    rewrite Rinv_r; trivial.
+    now rewrite power_1.
+  Qed.
+
   Lemma power_pow (n : nat) (x : R) :
     0 < x ->
     power x (INR n) = x ^ n.
@@ -1193,6 +1215,56 @@ Section power.
     unfold power; intros.
     match_destr; [lra |].
     now apply Rpower_pow.
+  Qed.
+
+  Lemma power_Spow (n : nat) (x : R) :
+    0 <= x ->
+    power x (INR (S n)) = x ^ (S n).
+  Proof.
+    unfold power; intros.
+    match_destr.
+    - subst.
+      now rewrite pow0_Sbase.
+    - apply Rpower_pow; lra.
+  Qed.
+
+  Lemma power2_sqr (x : R) :
+    0 <= x ->
+    power x 2 = Rsqr x.
+  Proof.
+    intros.
+    replace 2 with (INR 2%nat) by reflexivity.
+    rewrite power_Spow by trivial.
+    now rewrite Rsqr_pow2.
+  Qed.
+
+  Lemma power_abs2_sqr (x : R) :
+    power (Rabs x) 2 = Rsqr x.
+  Proof.
+    rewrite power2_sqr.
+    - now rewrite <- Rsqr_abs.
+    - apply Rabs_pos.
+  Qed.
+
+  Lemma power_2_sqrt (x : nonnegreal) :
+    power x (/2) = Rsqrt x.
+  Proof.
+    intros.
+    generalize (Rsqr_eq_abs_0 (power x (/ 2)) (Rsqrt x))
+    ; intros HH.
+    cut_to HH.
+    - rewrite Rabs_right in HH.
+      + rewrite Rabs_right in HH; trivial.
+        apply Rle_ge.
+        apply Rsqrt_positivity.
+      + apply Rle_ge.
+        apply power_nonneg.
+    - unfold Rsqr at 2.
+      rewrite Rsqrt_Rsqrt.
+      rewrite <- power2_sqr.
+      + rewrite power_inv_cancel; trivial.
+        apply cond_nonneg.
+      + apply power_nonneg.
   Qed.
 
   Lemma Rlt_power_l (a b c : R) :
@@ -1268,28 +1340,6 @@ Section power.
     now unfold no_cond.
     apply H0.
     now apply derivable_pt_lim_power'.
-  Qed.
-
-  Lemma power_inv_cancel b e :
-    0 <= b ->
-    e <> 0 ->
-    power (power b (/ e)) e = b.
-  Proof.
-    intros.
-    rewrite power_mult.
-    rewrite Rinv_l; trivial.
-    now rewrite power_1.
-  Qed.
-
-  Lemma inv_power_cancel b e :
-    0 <= b ->
-    e <> 0 ->
-    power (power b e) (/ e) = b.
-  Proof.
-    intros.
-    rewrite power_mult.
-    rewrite Rinv_r; trivial.
-    now rewrite power_1.
   Qed.
 
 End power.
