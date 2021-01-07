@@ -665,6 +665,15 @@ Section RealRandomVariables.
         now apply rv_measurable.
       Qed.
 
+      Global Instance rvchoice_rv
+             (rv_C rv_X1 rv_X2 : Ts -> R)
+             {rvc : RandomVariable dom borel_sa rv_C}
+             {rv1 : RandomVariable dom borel_sa rv_X1}
+             {rv2 : RandomVariable dom borel_sa rv_X2}  :
+        RealMeasurable (rvchoice (fun x => if Req_EM_T (rv_C x) 0 then false else true) rv_X1 rv_X2).
+      Proof.
+        typeclasses eauto.
+      Qed.
 
     End rvs.
 
