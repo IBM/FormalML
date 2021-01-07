@@ -406,34 +406,20 @@ Section RealRandomVariables.
                      rvchoice (fun x : Ts => if Req_EM_T (c x) 0 then false else true) 
                               f g omega <= r)
                   (event_union 
-                     (fun omega : Ts => (c omega) = 0 /\ g omega <= r)
-                     (fun omega : Ts => (c omega) <> 0 /\ f omega <= r))).
+                     (event_inter 
+                        (fun omega : Ts => c omega = 0)
+                        (fun omega : Ts => g omega <= r))
+                     (event_inter 
+                        (event_complement (fun omega : Ts => c omega = 0))
+                        (fun omega : Ts => f omega <= r)))).
         intro x.
-        unfold rvchoice, event_union.
+        unfold rvchoice, event_union, event_inter, event_complement.
         destruct (Req_EM_T (c x) 0); lra.
         rewrite H2.
-        apply sa_union.
-        - assert (event_equiv (fun omega : Ts => c omega = 0 /\ g omega <= r)
-                              (event_inter 
-                                 (fun omega : Ts => c omega = 0)
-                                 (fun omega : Ts => g omega <= r))).
-          + intro x.
-            unfold event_inter.
-            split; lra.
-          + rewrite H3.
-            apply sa_inter; trivial.
-            now apply sa_le_pt.
-        - assert (event_equiv (fun omega : Ts => c omega <> 0 /\ f omega <= r)
-                              (event_inter 
-                                 (event_complement (fun omega : Ts => c omega = 0))
-                                 (fun omega : Ts => f omega <= r))).
-          + intro x.
-            unfold event_inter, event_complement.
-            split; lra.
-          + rewrite H3.
-            apply sa_inter; trivial.
-            apply sa_complement.
-            now apply sa_le_pt.
+        apply sa_union; apply sa_inter; trivial.
+        - now apply sa_le_pt.
+        - apply sa_complement.
+          now apply sa_le_pt.
      Qed.
 
     Instance ln_measurable (b : Ts -> R) :
