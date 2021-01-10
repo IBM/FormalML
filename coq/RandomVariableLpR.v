@@ -1359,28 +1359,6 @@ Section Lp.
 
   Global Arguments LpRRV : clear implicits.
   Global Arguments LpRRVq : clear implicits.
-
-  (** Lp 0 is a degenerate case; representing the space of all RandomVariables, quotiented by a.e.
-      It is still a ModuleSpace.
-
-      For Lp (S p), we can further define a norm (and the ball induced by the distance function defined by the norm),
-      and show that it is a UniformSapce and NormedModuleSpace.
-
-      For the special case of Lp 2, it is also a HilbertSpace.  This is shown in RandomVaribleL2.
-
- *)
-  Section packed.
-
-    (* we should probably merge this with the earlier section now *)
-    Context {p:R}.
-    Context (pbig:1 <= p).
-    
-    Section quot.
-
-      
-    End quot.
-    
-  End packed.
   
 End Lp.
 
