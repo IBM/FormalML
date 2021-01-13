@@ -2671,19 +2671,87 @@ Section Expectation.
       + exists (0%nat); simpl;lra.
   Qed.
 
-  Instance Fatou_Y_rv
+  Lemma Fatou_Y_incr_Rbar (Xn : nat -> Ts -> R) n omega :
+    Rbar_le (Fatou_Y Xn n omega) (Fatou_Y Xn (S n) omega).
+  Proof.
+    unfold Fatou_Y.
+    repeat rewrite Inf_eq_glb.
+    apply Rbar_glb_subset.
+    intros x [??]; subst.
+    exists (S x0).
+    now replace (x0 + S n)%nat with (S x0 + n)%nat by lia.
+  Qed.
+     
+  Lemma Fatou_Y_incr (Xn : nat -> Ts -> R)
+        (Xn_pos : forall n, PositiveRandomVariable (Xn n)) n omega:
+    Fatou_Y Xn n omega <= Fatou_Y Xn (S n) omega.
+  Proof.
+    generalize (Fatou_Y_incr_Rbar Xn n omega).
+    rewrite <- is_finite_Fatou_Y by trivial.
+    simpl.
+    now rewrite <-  is_finite_Fatou_Y by trivial.
+  Qed.
+
+    Instance Fatou_Y_meas
+             (Xn : nat -> Ts -> R)
+             (Xn_pos : forall n, PositiveRandomVariable (Xn n))
+             (Xn_rv : forall n, RealMeasurable dom (Xn n)) :
+      forall (n:nat), RealMeasurable dom (Fatou_Y Xn n).
+    Proof.
+      intros; red.
+      apply sa_ge_le.
+      intros.
+      assert (event_equiv
+              (fun omega : Ts => Inf_seq (fun k : nat => Xn (k + n)%nat omega) >= r)
+              (inter_of_collection (fun k:nat => (fun omega : Ts => Xn (k + n)%nat omega >= r)))).
+      - unfold inter_of_collection.
+        intros omega.
+        generalize (is_finite_Fatou_Y Xn Xn_pos n omega).
+        unfold Fatou_Y.
+        rewrite Inf_eq_glb.
+        unfold Rbar_glb.
+        match goal with
+          [|- context [proj1_sig ?x]] => destruct x
+        end; simpl.
+        intros xisf.
+        destruct r0 as [lb glb].
+        split; intros HH.
+        + red in lb.
+          intros.
+          eapply Rge_trans; try eapply HH.
+          specialize (lb (Xn (n0 + n)%nat omega)).
+          apply Rle_ge.
+          cut_to lb; [| eauto].
+          rewrite <- xisf in lb.
+          simpl in lb.
+          now simpl.
+        + generalize (glb r); intros HH2.
+          cut_to HH2.
+          * rewrite <- xisf in HH2.
+            apply Rle_ge.
+            now simpl in HH2.
+          * red; intros ? [??]; subst.
+            simpl.
+            apply Rge_le.
+            auto.
+      - rewrite H.
+        apply sa_countable_inter; intros.
+        clear H.
+        revert r.
+        apply sa_le_ge.
+        apply Xn_rv.
+    Qed.
+    
+    Instance Fatou_Y_rv
          (Xn : nat -> Ts -> R)
          (Xn_rv : forall n, RandomVariable dom borel_sa (Xn n)) :
     forall (n:nat), RandomVariable dom borel_sa (Fatou_Y Xn n).
-  Proof.
-    unfold RandomVariable in *.
-    intro n.
-    rewrite <- borel_sa_preimage2.
-    specialize (Xn_rv n).
-    rewrite <- borel_sa_preimage2 in Xn_rv.
-    intros.
-    unfold Fatou_Y.
-    Admitted.
+    Proof.
+      intros.
+      apply measurable_rv.
+      apply Fatou_Y_meas; intros.
+      now apply rv_measurable.
+    Qed.
 
   Lemma limInf_increasing
         (f : nat -> R) :
@@ -2741,7 +2809,7 @@ Section Expectation.
   Proof.
   Admitted.
 
-  Lemma is_LimInf_Sup_Seq' (f: nat -> R) 
+  Lemma is_LimInf_Sup_Seq (f: nat -> R) 
         (incr:forall (n:nat), f n <= f (S n)) :
     is_LimInf_seq f (Sup_seq f).
   Proof.
@@ -2772,119 +2840,48 @@ Section Expectation.
       eauto.
   Qed.
 
-  Lemma is_LimInf_Sup_Seq (f: nat -> Rbar) 
-        (incr:forall (n:nat), Rbar_le (f n) (f (S n))) :
-    is_LimInf_seq f (Sup_seq f).
-  Proof.
-    intros.
-    unfold Sup_seq.
-    match goal with
-      [|- context [proj1_sig ?x ]] => destruct x; simpl
-    end.
-    destruct x; simpl in *.
-    
-    - intros eps.
-      split; intros.
-      + exists N.
-        split; try lia.
-        destruct (i eps) as [HH _].
-        auto.
-      + destruct (i eps) as [_ [N HH]].
-        exists N.
-        intros.
-        eapply Rlt_le_trans; try eapply HH.
-        now apply incr_le_strong.
-    - intros.
-      destruct (i M) as [N HH].
-      exists N.
-      intros.
-        eapply Rlt_le_trans; try eapply HH.
-        now apply incr_le_strong.
-    - intros.
-      eauto.
-  Qed.
-
-
-  Lemma lim_seq_Inf_seq0
-        (f : nat -> R) :
-    (forall (n:nat), 
-        Inf_seq (fun k : nat => f (k + n)%nat) <=
-        Inf_seq (fun k : nat => f (k + (S n))%nat)) ->
+  Lemma lim_seq_Inf_seq
+        (f : nat -> R)
+        (fin:forall n, is_finite (Inf_seq (fun n0 : nat => f (n0 + n)%nat)))
+        (incr:forall (n:nat), 
+            Inf_seq (fun k : nat => f (k + n)%nat) <=
+            Inf_seq (fun k : nat => f (k + (S n))%nat)) :
     is_lim_seq
       (fun n : nat =>  Inf_seq (fun k : nat => f (k + n)%nat))
       (LimInf_seq f).
   Proof.
-    intros.
-    generalize (ex_lim_seq_incr (fun n : nat =>  Inf_seq (fun k : nat => f (k + n)%nat)) H); intros.
+    generalize (ex_lim_seq_incr (fun n : nat =>  Inf_seq (fun k : nat => f (k + n)%nat)) incr); intros.
     rewrite limInf_increasing2; trivial.
     rewrite LimInf_SupInf_seq.
-    
-    apply is_LimInf_Sup_Seq.
-    
-    unfold is_LimInf_seq.
-    match_case; intros.
-    split; intros.
-    
-    
-    
-    unfold is_lim_seq'.
+    rewrite (Sup_seq_ext _
+    (fun m : nat => real (Inf_seq (fun n : nat => Finite (f (Init.Nat.add n m)))))).
+    - now apply is_LimInf_Sup_Seq.
+    - intros.
+      now rewrite fin.
+  Qed.
 
-    destruct (ex_LimInf_seq f).
-    unfold is_LimInf_seq in i.
-    match_case; intros; unfold eventually.
-    - destruct x.
-      specialize (i eps).
-      destruct i.
-
-
-          unfold LimInf_seq.
-    match goal with
-      [|- context [proj1_sig ?x ]] => destruct x; simpl
-    end.
-        
-    
-
-
-      is_LimInf_seq = 
-fun (u : nat -> R) (l : Rbar) =>
-match l with
-| Finite l0 =>
-    forall eps : posreal,
-    (forall N : nat, exists n : nat, (N <= n)%nat /\ u n < l0 + eps) /\
-    (exists N : nat, forall n : nat, (N <= n)%nat -> l0 - eps < u n)
-| p_infty => forall M : R, exists N : nat, forall n : nat, (N <= n)%nat -> M < u n
-| m_infty => forall (M : R) (N : nat), exists n : nat, (N <= n)%nat /\ u n < M
-end
-     : (nat -> R) -> Rbar -> Prop
-
-                          is_inf_seq = 
-fun (u : nat -> Rbar) (l : Rbar) =>
-match l with
-| Finite l0 =>
-    forall eps : posreal,
-    (forall n : nat, Rbar_lt (l0 - eps) (u n)) /\ (exists n : nat, Rbar_lt (u n) (l0 + eps))
-| p_infty => forall (M : R) (n : nat), Rbar_lt M (u n)
-| m_infty => forall M : R, exists n : nat, Rbar_lt (u n) M
-end
-     : (nat -> Rbar) -> Rbar -> Prop
-
-
-
+  (*
   Lemma lim_seq_Inf_seq
         (f : nat -> R) :
     is_lim_seq
       (fun n : nat => Inf_seq (fun k : nat => f (k + n)%nat))
       (Finite (LimInf_seq f)).
   Proof.
+    intros.
+    
+    apply lim_seq_Inf_seq0.
+    
     
     Admitted.
-
+*)
 
   Lemma Fatou
         (Xn : nat -> Ts -> R)
         (Xn_pos : forall n, PositiveRandomVariable (Xn n)) 
         (Xn_rv : forall n, RandomVariable dom borel_sa (Xn n))
         (fin_exp : forall n, is_finite (Expectation_posRV (Xn n)))
+        (isf:forall omega, is_finite (LimInf_seq (fun n : nat => Xn n omega)))
+
         (lim_rv : RandomVariable dom borel_sa 
                                  (fun omega => LimInf_seq (fun n => Xn n omega))) :
     Rbar_le (Expectation_posRV (fun omega => LimInf_seq (fun n => Xn n omega)))
@@ -2908,13 +2905,16 @@ end
       now rewrite <- H in H1.
     - assert (Lim_seq (fun n => Expectation_posRV (Fatou_Y Xn n)) =  
               (Expectation_posRV (fun omega => LimInf_seq (fun n => Xn n omega)))).
-      + apply monotone_convergence; trivial.
+      + apply monotone_convergence with (X:= (fun omega : Ts => LimInf_seq (fun n : nat => Xn n omega))); trivial.
         * assert (forall (n:nat), Rbar_le (Expectation_posRV (Fatou_Y Xn n))
                                           (Expectation_posRV (Xn n))); intros.
           -- now apply Expectation_posRV_le.
           -- now apply Fatou_Y_rv.
         * intros; intro x.
-          apply (inf_limInf (fun k => Xn k x) n).
+          generalize (inf_limInf (fun k => Xn k x) n); intros HH.
+          rewrite <- isf in HH.
+          rewrite <- (H n x) in HH.
+          apply HH.
         * intros; intro x.
           unfold Fatou_Y.
           do 2 rewrite Inf_eq_glb.
@@ -2933,8 +2933,13 @@ end
           now replace (S x1 + n)%nat with (x1 + S n)%nat by lia.          
         * intros; now apply Finite_Expectation_posRV_le with (rv_X2 := Xn n) (prv2 := Xn_pos n).
         * intros.
-          unfold Fatou_Y.
-          apply (lim_seq_Inf_seq (fun k => Xn k omega)).
+          rewrite isf.
+          apply (lim_seq_Inf_seq (fun k => Xn k omega)); trivial.
+          -- unfold Fatou_Y in H.
+             intros.
+             apply H.
+          -- intros.
+             now apply Fatou_Y_incr.
       + rewrite <- H2.
         replace  (Lim_seq
        (fun n : nat => Expectation_posRV (fun omega : Ts => Fatou_Y Xn n omega))) with
