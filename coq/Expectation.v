@@ -2801,7 +2801,18 @@ Section Expectation.
         (incr:forall (n:nat), f n <= f (S n)) a b :
     (a <= b)%nat -> f a <= f b.
   Proof.
-  Admitted.
+    revert a.
+    induction b; intros.
+    - assert (a = 0%nat) by lia.
+      subst.
+      lra.
+    - apply Nat.le_succ_r in H.
+      destruct H.
+      + eapply Rle_trans; [| eapply incr].
+        auto.
+      + subst.
+        lra.
+  Qed.
 
   Lemma is_LimInf_Sup_Seq (f: nat -> R) 
         (incr:forall (n:nat), f n <= f (S n)) :
