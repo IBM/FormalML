@@ -2613,14 +2613,6 @@ Section Expectation.
       apply Xn_pos.
   Qed.
 
-(*
-  Definition Fatou_Y (n : nat)
-        (Xn : nat -> Ts -> R) :=
-    fun (omega : Ts) => 
-      Glb_Rbar (fun (x:R) => 
-                  exists (k:nat), (k>= n)%nat /\ x = Xn k omega).
- *)
-  
   Definition Fatou_Y (Xn : nat -> Ts -> R) (n:nat) :=
     fun (omega : Ts) => Inf_seq (fun (k:nat) => Xn (k+n)%nat omega).
 
@@ -2861,21 +2853,6 @@ Section Expectation.
     - intros.
       now rewrite fin.
   Qed.
-
-  (*
-  Lemma lim_seq_Inf_seq
-        (f : nat -> R) :
-    is_lim_seq
-      (fun n : nat => Inf_seq (fun k : nat => f (k + n)%nat))
-      (Finite (LimInf_seq f)).
-  Proof.
-    intros.
-    
-    apply lim_seq_Inf_seq0.
-    
-    
-    Admitted.
-*)
 
   Lemma Fatou
         (Xn : nat -> Ts -> R)
