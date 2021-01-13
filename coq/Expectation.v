@@ -2722,13 +2722,87 @@ Section Expectation.
 
   Lemma inf_limInf
         (f : nat -> R) (n:nat) :
-    Inf_seq (fun k : nat => f (k + n)%nat) <=
-    LimInf_seq f.
+    Rbar_le (Inf_seq (fun k : nat => f (k + n)%nat))
+            (LimInf_seq f).
   Proof.
     rewrite LimInf_SupInf_seq.
     rewrite Rbar_sup_eq_lub.
+    unfold Rbar_lub.
+    match goal with
+      [|- context [proj1_sig ?x ]] => destruct x; simpl
+    end.
+    destruct r as [ub lub].
+    apply ub; eauto.
+  Qed.
+
+  Lemma incr_le_strong f 
+        (incr:forall (n:nat), f n <= f (S n)) a b :
+    (a <= b)%nat -> f a <= f b.
+  Proof.
+  Admitted.
+
+  Lemma is_LimInf_Sup_Seq' (f: nat -> R) 
+        (incr:forall (n:nat), f n <= f (S n)) :
+    is_LimInf_seq f (Sup_seq f).
+  Proof.
+    intros.
+    unfold Sup_seq.
+    match goal with
+      [|- context [proj1_sig ?x ]] => destruct x; simpl
+    end.
+    destruct x; simpl in *.
+    - intros eps.
+      split; intros.
+      + exists N.
+        split; try lia.
+        destruct (i eps) as [HH _].
+        auto.
+      + destruct (i eps) as [_ [N HH]].
+        exists N.
+        intros.
+        eapply Rlt_le_trans; try eapply HH.
+        now apply incr_le_strong.
+    - intros.
+      destruct (i M) as [N HH].
+      exists N.
+      intros.
+        eapply Rlt_le_trans; try eapply HH.
+        now apply incr_le_strong.
+    - intros.
+      eauto.
+  Qed.
+
+  Lemma is_LimInf_Sup_Seq (f: nat -> Rbar) 
+        (incr:forall (n:nat), Rbar_le (f n) (f (S n))) :
+    is_LimInf_seq f (Sup_seq f).
+  Proof.
+    intros.
+    unfold Sup_seq.
+    match goal with
+      [|- context [proj1_sig ?x ]] => destruct x; simpl
+    end.
+    destruct x; simpl in *.
     
-    Admitted.
+    - intros eps.
+      split; intros.
+      + exists N.
+        split; try lia.
+        destruct (i eps) as [HH _].
+        auto.
+      + destruct (i eps) as [_ [N HH]].
+        exists N.
+        intros.
+        eapply Rlt_le_trans; try eapply HH.
+        now apply incr_le_strong.
+    - intros.
+      destruct (i M) as [N HH].
+      exists N.
+      intros.
+        eapply Rlt_le_trans; try eapply HH.
+        now apply incr_le_strong.
+    - intros.
+      eauto.
+  Qed.
 
 
   Lemma lim_seq_Inf_seq0
@@ -2743,7 +2817,10 @@ Section Expectation.
     intros.
     generalize (ex_lim_seq_incr (fun n : nat =>  Inf_seq (fun k : nat => f (k + n)%nat)) H); intros.
     rewrite limInf_increasing2; trivial.
-    rewrite LimInf_SupInf_seq.    
+    rewrite LimInf_SupInf_seq.
+    
+    apply is_LimInf_Sup_Seq.
+    
     unfold is_LimInf_seq.
     match_case; intros.
     split; intros.
@@ -2759,8 +2836,38 @@ Section Expectation.
       specialize (i eps).
       destruct i.
 
+
+          unfold LimInf_seq.
+    match goal with
+      [|- context [proj1_sig ?x ]] => destruct x; simpl
+    end.
+        
     
-    
+
+
+      is_LimInf_seq = 
+fun (u : nat -> R) (l : Rbar) =>
+match l with
+| Finite l0 =>
+    forall eps : posreal,
+    (forall N : nat, exists n : nat, (N <= n)%nat /\ u n < l0 + eps) /\
+    (exists N : nat, forall n : nat, (N <= n)%nat -> l0 - eps < u n)
+| p_infty => forall M : R, exists N : nat, forall n : nat, (N <= n)%nat -> M < u n
+| m_infty => forall (M : R) (N : nat), exists n : nat, (N <= n)%nat /\ u n < M
+end
+     : (nat -> R) -> Rbar -> Prop
+
+                          is_inf_seq = 
+fun (u : nat -> Rbar) (l : Rbar) =>
+match l with
+| Finite l0 =>
+    forall eps : posreal,
+    (forall n : nat, Rbar_lt (l0 - eps) (u n)) /\ (exists n : nat, Rbar_lt (u n) (l0 + eps))
+| p_infty => forall (M : R) (n : nat), Rbar_lt M (u n)
+| m_infty => forall M : R, exists n : nat, Rbar_lt (u n) M
+end
+     : (nat -> Rbar) -> Rbar -> Prop
+
 
 
   Lemma lim_seq_Inf_seq
