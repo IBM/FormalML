@@ -164,6 +164,20 @@ Qed.
       now apply sa_complement.
   Qed.
 
+  Lemma sa_ge_lt (f : Ts -> R) :
+    (forall (r:R),  sa_sigma (fun omega : Ts => f omega >= r)) ->
+    (forall (r:R),  sa_sigma (fun omega : Ts => f omega < r)).
+  Proof. 
+    intros.
+    assert (event_equiv (fun omega : Ts => f omega < r)
+                        (event_complement (fun omega : Ts => f omega >= r))).
+    - intro x.
+      unfold event_complement.
+      split; intros; lra.
+    - rewrite H0.
+      now apply sa_complement.
+  Qed.
+
   Lemma sa_le_ge (f : Ts -> R) :
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega >= r)).
@@ -217,6 +231,21 @@ Qed.
     - rewrite H0.
       apply sa_complement.
       now apply sa_le_ge.
+  Qed.
+
+  Lemma sa_ge_gt (f : Ts -> R) :
+    (forall (r:R),  sa_sigma (fun omega : Ts => f omega >= r)) ->
+    (forall (r:R),  sa_sigma (fun omega : Ts => f omega > r)).
+  Proof. 
+    intros.
+    assert (event_equiv (fun omega : Ts => f omega > r)
+                        (event_complement (fun omega : Ts => f omega <= r))).
+    - intro x.
+      unfold event_complement.
+      split; intros; lra.
+    - rewrite H0.
+      apply sa_complement.
+      now apply sa_ge_le.
   Qed.
 
   Lemma sa_closed_intervals (f : Ts -> R) :
