@@ -2744,12 +2744,14 @@ Section Expectation.
     
     Instance Fatou_Y_rv
          (Xn : nat -> Ts -> R)
-         (Xn_rv : forall n, RandomVariable dom borel_sa (Xn n)) :
+         (Xn_rv : forall n, RandomVariable dom borel_sa (Xn n))
+         (Xn_pos : forall n, PositiveRandomVariable (Xn n))
+      :
     forall (n:nat), RandomVariable dom borel_sa (Fatou_Y Xn n).
     Proof.
       intros.
       apply measurable_rv.
-      apply Fatou_Y_meas; intros.
+      apply Fatou_Y_meas; intros; trivial.
       now apply rv_measurable.
     Qed.
 
