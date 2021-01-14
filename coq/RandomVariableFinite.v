@@ -817,7 +817,7 @@ Section fe.
          (Xn_pos : forall n, PositiveRandomVariable (Xn n)) :
     PositiveRandomVariable (fun omega => Lim_seq (sum_n (fun n => Xn n omega))).
   Proof.
-    Admitted.
+  Admitted.
 
   Definition rvsum (Xn : nat -> Ts -> R) (n : nat) :=
     (fun omega => sum_n (fun n0 => Xn n0 omega) n).
@@ -872,12 +872,6 @@ Section fe.
       lia.
   Qed.
 
-  Lemma IsFiniteExpectation_ext rv_X1 rv_X2    :
-    rv_eq rv_X1 rv_X2 ->
-    IsFiniteExpectation rv_X1 <-> IsFiniteExpectation rv_X2.
-  Proof.
-    Admitted.
-
   Global Instance IsFiniteExpectation_sum (Xn : nat -> Ts -> R)
          {Xn_rv : forall n, RandomVariable dom borel_sa  (Xn n)} 
          {isfe: forall (n:nat), IsFiniteExpectation (Xn n)} :
@@ -886,10 +880,10 @@ Section fe.
     intros.
     induction n.
     - unfold rvsum, sum_n.
-      rewrite (IsFiniteExpectation_ext _ (Xn 0%nat)); trivial.
+      rewrite (IsFiniteExpectation_proper _ (Xn 0%nat)); trivial.
       intro x.
       now rewrite sum_n_n.
-    - rewrite (IsFiniteExpectation_ext _ (rvplus (rvsum Xn n) (Xn (S n)))).
+    - rewrite (IsFiniteExpectation_proper _ (rvplus (rvsum Xn n) (Xn (S n)))).
       apply IsFiniteExpectation_plus; trivial.
       now apply rvsum_rv.
       intro x.
@@ -927,6 +921,20 @@ Section fe.
         lia.
   Qed.
 
+    Lemma FiniteExpectation_posRV (X:Ts->R) 
+          {posX: PositiveRandomVariable X}
+          {isfeX: IsFiniteExpectation X} :
+      FiniteExpectation X = real (Expectation_posRV  X).
+    Proof.
+      unfold FiniteExpectation.
+      unfold proj1_sig.
+      match_destr.
+      rewrite (Expectation_pos_posRV) with  (prv:=posX) in e.
+      invcs e.
+      rewrite H0.
+      now simpl.
+    Qed.
+    
   Lemma monotone_convergence_FiniteExpectation
         (X : Ts -> R )
         (Xn : nat -> Ts -> R)
@@ -945,14 +953,28 @@ Section fe.
     generalize (monotone_convergence X Xn rvx posX Xn_rv Xn_pos H H0); intros.
     generalize (Expectation_pos_posRV X); intros.
     assert (forall n, Expectation (Xn n) = Some (Expectation_posRV (Xn n))).
-    intro.
-    apply Expectation_pos_posRV.
-    cut_to H2.
-    admit.
-    intros.
-    specialize (isfe n).
-    unfold IsFiniteExpectation in isfe.
-    Admitted.
+    {
+      intro.
+      apply Expectation_pos_posRV.
+    }
+    cut_to H2; trivial.
+    - rewrite (Lim_seq_ext _  (fun n : nat => Expectation_posRV (Xn n))).
+      + rewrite H2.
+        simpl.
+        rewrite FiniteExpectation_posRV with (posX:=posX).
+        simpl.
+        red in isfeX.
+        rewrite Expectation_pos_posRV with (prv:=posX) in isfeX.
+        match_destr_in isfeX; try tauto.
+      + intros n.
+        now rewrite FiniteExpectation_posRV with (posX:=Xn_pos n).
+    - intros n.
+      specialize (isfe n).
+      red in isfe.
+      rewrite Expectation_pos_posRV with (prv:=(Xn_pos n)) in isfe.
+      match_destr_in isfe; try tauto.
+      reflexivity.
+  Qed.
 
   Lemma rvsum_le_series (Xn : nat -> Ts -> R) 
         (Xn_pos : forall n, PositiveRandomVariable (Xn n)) :
@@ -995,9 +1017,13 @@ Section fe.
       apply Rplus_le_compat_l.
       apply Xn_pos.
     - intros.
-  (*
-    apply Lim_seq_correct.
-    *)
+      assert (isf:is_finite (Lim_seq (fun n : nat => rvsum Xn n omega))).
+      {
+        admit.
+      }
+      rewrite isf.
+      apply Lim_seq_correct.
+      
    Admitted.
 
 
