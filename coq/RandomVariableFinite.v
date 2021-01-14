@@ -1,7 +1,7 @@
 Require Import Morphisms.
 Require Import Equivalence.
 Require Import Program.Basics.
-Require Import Lra.
+Require Import Lra Lia.
 Require Import Classical.
 Require Import FunctionalExtensionality.
 
@@ -811,6 +811,195 @@ Section fe.
     intros; subst.
     now apply Expectation_zero_pos.
   Qed.
+
+  Instance series_rv_pos
+         (Xn : nat -> Ts -> R)
+         (Xn_pos : forall n, PositiveRandomVariable (Xn n)) :
+    PositiveRandomVariable (fun omega => Lim_seq (sum_n (fun n => Xn n omega))).
+  Proof.
+    Admitted.
+
+  Definition rvsum (Xn : nat -> Ts -> R) (n : nat) :=
+    (fun omega => sum_n (fun n0 => Xn n0 omega) n).
+  
+  Instance rvsum_measurable 
+           (Xn : nat -> Ts -> R)
+           (Xn_rv : forall n, RealMeasurable dom (Xn n)) :
+      forall (n:nat), RealMeasurable dom (rvsum Xn n).
+  Proof.
+    unfold RealMeasurable in *.
+    induction n; intros.
+    - assert (event_equiv (fun omega : Ts => rvsum Xn 0 omega <= r)
+                          (fun omega : Ts => Xn 0%nat omega <= r)).
+      + intro x.
+        unfold rvsum, sum_n.
+        now rewrite sum_n_n.
+      + now rewrite H.
+    - assert (event_equiv  (fun omega : Ts => rvsum Xn (S n) omega <= r)
+                           (fun omega => (rvplus (rvsum Xn n) (Xn (S n))) omega <= r)).
+      + intro x.
+        unfold rvsum, rvplus, sum_n.
+        rewrite sum_n_Sm.
+        now unfold plus; simpl.
+        lia.
+      + rewrite H.
+        now apply plus_measurable.
+   Qed.
+
+  Instance rvsum_rv (Xn : nat -> Ts -> R)
+           {rv : forall (n:nat), RandomVariable dom borel_sa (Xn n)} :
+    forall (n:nat), RandomVariable dom borel_sa (rvsum Xn n).
+      Proof.
+        intros.
+        apply measurable_rv.
+        apply rvsum_measurable; intros.
+        now apply rv_measurable.
+      Qed.
+
+  Instance rvsum_pos (Xn : nat -> Ts -> R)
+           {Xn_pos : forall n, PositiveRandomVariable (Xn n)} :
+    forall (n:nat), PositiveRandomVariable (rvsum Xn n).
+  Proof.
+    intros.
+    unfold PositiveRandomVariable in Xn_pos.
+    unfold PositiveRandomVariable, rvsum; intros.
+    induction n.
+    - unfold sum_n.
+      now rewrite sum_n_n.
+    - unfold sum_n.
+      rewrite sum_n_Sm.
+      apply Rplus_le_le_0_compat ; trivial.
+      lia.
+  Qed.
+
+  Lemma IsFiniteExpectation_ext rv_X1 rv_X2    :
+    rv_eq rv_X1 rv_X2 ->
+    IsFiniteExpectation rv_X1 <-> IsFiniteExpectation rv_X2.
+  Proof.
+    Admitted.
+
+  Global Instance IsFiniteExpectation_sum (Xn : nat -> Ts -> R)
+         {Xn_rv : forall n, RandomVariable dom borel_sa  (Xn n)} 
+         {isfe: forall (n:nat), IsFiniteExpectation (Xn n)} :
+    forall n, IsFiniteExpectation (rvsum Xn n).
+  Proof.
+    intros.
+    induction n.
+    - unfold rvsum, sum_n.
+      rewrite (IsFiniteExpectation_ext _ (Xn 0%nat)); trivial.
+      intro x.
+      now rewrite sum_n_n.
+    - rewrite (IsFiniteExpectation_ext _ (rvplus (rvsum Xn n) (Xn (S n)))).
+      apply IsFiniteExpectation_plus; trivial.
+      now apply rvsum_rv.
+      intro x.
+      unfold rvsum, rvplus, sum_n.
+      rewrite sum_n_Sm; [|lia].      
+      now unfold plus; simpl.
+   Qed.
+
+  Lemma sum_expectation
+        (Xn : nat -> Ts -> R)
+        (Xn_pos : forall n, PositiveRandomVariable (Xn n))
+        (Xn_rv : forall n, RandomVariable dom borel_sa  (Xn n)) 
+        (isfe : forall n, IsFiniteExpectation (Xn n)) :
+    forall (n:nat),
+      sum_n (fun n0 : nat => FiniteExpectation (Xn n0)) n =
+      FiniteExpectation (rvsum Xn n).
+    Proof.
+      intros.
+      induction n.
+      - unfold rvsum, sum_n.
+        rewrite sum_n_n.
+        symmetry.
+        rewrite FiniteExpectation_ext with (rv_X2 := Xn 0%nat) (isfe2 := isfe 0%nat); trivial.
+        intro x.
+        now rewrite sum_n_n.
+      - unfold rvsum, sum_n.
+        rewrite sum_n_Sm; [unfold plus; simpl | lia].
+        symmetry.
+        rewrite FiniteExpectation_ext with (rv_X2 := rvplus (rvsum Xn n) (Xn (S n))) (isfe2 := (IsFiniteExpectation_plus (rvsum Xn n) (Xn (S n)))).
+        rewrite FiniteExpectation_plus.
+        unfold sum_n in IHn.
+        now rewrite IHn.
+        intro x.
+        rewrite sum_n_Sm; unfold plus, rvsum, rvplus, sum_n; simpl; trivial.
+        lia.
+  Qed.
+
+  Lemma monotone_convergence_FiniteExpectation
+        (X : Ts -> R )
+        (Xn : nat -> Ts -> R)
+        (rvx : RandomVariable dom borel_sa X)
+        (posX: PositiveRandomVariable X) 
+        (Xn_rv : forall n, RandomVariable dom borel_sa (Xn n))
+        (Xn_pos : forall n, PositiveRandomVariable (Xn n))
+        (isfeX: IsFiniteExpectation X)
+        (isfe: forall (n:nat), IsFiniteExpectation (Xn n)) :
+    (forall (n:nat), rv_le (Xn n) X) ->
+    (forall (n:nat), rv_le (Xn n) (Xn (S n))) ->
+    (forall (omega:Ts), is_lim_seq (fun n => Xn n omega) (X omega)) ->
+    Lim_seq (fun n => FiniteExpectation (Xn n)) =  (FiniteExpectation X).
+  Proof.
+    intros.
+    generalize (monotone_convergence X Xn rvx posX Xn_rv Xn_pos H H0); intros.
+    generalize (Expectation_pos_posRV X); intros.
+    assert (forall n, Expectation (Xn n) = Some (Expectation_posRV (Xn n))).
+    intro.
+    apply Expectation_pos_posRV.
+    cut_to H2.
+    admit.
+    intros.
+    specialize (isfe n).
+    unfold IsFiniteExpectation in isfe.
+    Admitted.
+
+  Lemma rvsum_le_series (Xn : nat -> Ts -> R) 
+        (Xn_pos : forall n, PositiveRandomVariable (Xn n)) :
+    forall n:nat,
+      rv_le (rvsum Xn n)
+            (fun omega => Lim_seq (fun n0 : nat => rvsum Xn n0 omega)).
+   Proof.
+     intros n x.
+     
+   Admitted.
+
+  Lemma series_expectation
+        (Xn : nat -> Ts -> R)
+        (Xn_pos : forall n, PositiveRandomVariable (Xn n))
+        (Xn_rv : forall n, RandomVariable dom borel_sa  (Xn n))
+        (isfe : forall n, IsFiniteExpectation (Xn n)) 
+        (lim_rv : RandomVariable dom borel_sa 
+                                 (fun omega => Lim_seq (sum_n (fun n => Xn n omega))))
+        (lim_fe : IsFiniteExpectation
+                    (fun omega : Ts => Lim_seq (fun n : nat => rvsum Xn n omega)))
+        (lim_pos : PositiveRandomVariable
+           (fun omega : Ts => Lim_seq (fun n : nat => rvsum Xn n omega))):    
+    Lim_seq (sum_n (fun n => FiniteExpectation (Xn n))) =
+    FiniteExpectation (fun omega => Lim_seq (fun n => rvsum Xn n omega)).
+  Proof.
+    generalize (monotone_convergence_FiniteExpectation
+                  (fun omega : Ts => Lim_seq (fun n => rvsum Xn n omega))
+                  (fun n => rvsum Xn n) lim_rv lim_pos (rvsum_rv Xn) (rvsum_pos Xn)
+               lim_fe (IsFiniteExpectation_sum Xn)); intros.
+    cut_to H.
+    - rewrite Lim_seq_ext with 
+          (v := fun n : nat => FiniteExpectation (rvsum Xn n)); [apply H |].
+      now apply sum_expectation.
+    - now apply rvsum_le_series.
+    - intros; intro x.
+      unfold rvsum, sum_n.
+      rewrite sum_n_Sm; [unfold plus; simpl | lia].
+      replace (sum_n_m (fun n0 : nat => Xn n0 x) 0 n) with
+          (sum_n_m (fun n0 : nat => Xn n0 x) 0 n + 0) at 1 by lra.
+      apply Rplus_le_compat_l.
+      apply Xn_pos.
+    - intros.
+  (*
+    apply Lim_seq_correct.
+    *)
+   Admitted.
+
 
 End fe.
 
