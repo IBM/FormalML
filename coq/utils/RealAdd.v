@@ -1890,4 +1890,70 @@ Section power_minkowski.
       lra.
   Qed.
 
+  
+  Lemma power_ineq_convex p :
+    1 <= p ->
+    forall (x y : R), 0 < x -> 0 < y -> 
+                 power (x + y) p <= (power 2 (p-1))*(power x p + power y p).
+  Proof.
+    intros pbig; intros.
+    assert (0 <= (/2) <= 1) by lra.
+    generalize (power_convex_pos p pbig x y _ H H0 H1); intros HH.
+    replace (1 - /2) with (/2) in HH by lra.
+    repeat rewrite <- Rmult_plus_distr_l in HH.
+    rewrite <- power_mult_distr in HH by lra.
+    apply Rmult_le_compat_l with (r := power 2 p) in HH
+    ; [| apply power_nonneg].
+    repeat rewrite <- Rmult_assoc in HH.
+    replace (power 2 p * power (/2) p) with (1) in HH.
+    + replace (power 2 p * (/2)) with (power 2 (p - 1)) in HH.
+      * now repeat rewrite Rmult_1_l in HH.
+      * replace (/2) with (power 2 ((Ropp 1))).
+        -- now rewrite <- power_plus.
+        -- rewrite power_Ropp by lra.
+           rewrite power_1; lra.
+    + rewrite power_mult_distr by lra.
+      replace (2 * /2) with (1) by lra.
+      now rewrite power_base_1.
+  Qed.
+
+  Lemma power_abs_ineq (p : R) (x y : R) :
+    0 <= p ->
+    power (Rabs (x + y)) p <= (power 2 p)*(power (Rabs x) p + power (Rabs y) p).
+  Proof.
+    intros pnneg.
+    pose (m:=Rmax (Rabs x) (Rabs y)).
+
+    assert (eqq:Rabs (x + y) <= 2*m).
+    {
+      unfold m.
+      eapply Rle_trans; try eapply Rcomplements.Rplus_le_Rmax.
+      apply Rabs_triang.
+    }
+    eapply Rle_trans
+    ; try apply (Rle_power_l (Rabs (x + y)) (2 * m) p); trivial.
+    - split; trivial.
+      apply Rabs_pos.
+    - rewrite <- power_mult_distr.
+      + apply Rmult_le_compat_l.
+        * apply power_nonneg.
+        * unfold m, Rmax.
+          generalize (power_nonneg (Rabs x) p); intros.
+          generalize (power_nonneg (Rabs y) p); intros.
+          match_destr; lra.
+      + lra.
+      + unfold m; eapply Rle_trans; [| eapply Rmax_l].
+        apply Rabs_pos.
+  Qed.
+
 End power_minkowski.
+
+Lemma Rbar_pos_finite (r : Rbar):
+  0 < r -> is_finite r.
+Proof.
+  intros.
+  destruct r.
+  now unfold is_finite.
+  simpl in H; lra.
+  simpl in H; lra.
+Qed.

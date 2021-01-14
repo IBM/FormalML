@@ -25,6 +25,9 @@ Section L2.
   Proof.
     lra.
   Qed.
+  Let nneg2 : nonnegreal := mknonnegreal 2 ltac:(lra).
+  Canonical nneg2.
+
 
   Global Instance IsL2_Finite (rv_X:Ts->R)
         {rrv:RandomVariable dom borel_sa rv_X}
@@ -328,7 +331,7 @@ Section L2.
   Qed.
 
   Lemma L2RRV_inner_plus (x y z : LpRRV prts 2) :
-    L2RRVinner (LpRRVplus prts big2 x y) z = L2RRVinner x z + L2RRVinner y z.
+    L2RRVinner (LpRRVplus prts x y) z = L2RRVinner x z + L2RRVinner y z.
   Proof.
     unfold L2RRVinner, LpRRVplus; simpl.
     erewrite (FiniteExpectation_ext _ _ (rvplus (rvmult x z) (rvmult y z))).
@@ -342,7 +345,7 @@ Section L2.
   (* get abs version by saying (x : L2RRV) <-> (abs x : L2RRV) *)
 
   Lemma L2RRV_inner_plus_r (x y z : LpRRV prts 2) :
-    L2RRVinner x (LpRRVplus prts big2 y z) = L2RRVinner x y  + L2RRVinner x z.
+    L2RRVinner x (LpRRVplus prts y z) = L2RRVinner x y  + L2RRVinner x z.
   Proof.
     do 3 rewrite L2RRV_inner_comm with (x := x).
     now rewrite L2RRV_inner_plus.
@@ -360,7 +363,7 @@ Section L2.
     Rsqr (L2RRVinner x1 x2) <= (L2RRVinner x1 x1)*(L2RRVinner x2 x2).
   Proof.
     generalize (L2RRV_inner_pos 
-                  (LpRRVminus prts big2
+                  (LpRRVminus prts
                      (LpRRVscale prts (L2RRVinner x2 x2) x1)
                      (LpRRVscale prts (L2RRVinner x1 x2) x2))); intros.
     rewrite LpRRVminus_plus, LpRRVopp_scale in H.
@@ -386,20 +389,20 @@ Section L2.
 
   Hint Rewrite L2RRVq_innerE : quot.
 
-  Lemma L2RRVq_inner_comm (x y : LpRRVq_ModuleSpace prts 2 big2) :
+  Lemma L2RRVq_inner_comm (x y : LpRRVq_ModuleSpace prts nneg2) :
     L2RRVq_inner x y = L2RRVq_inner y x.
   Proof.
     LpRRVq_simpl.
     apply L2RRV_inner_comm.
   Qed.
   
-  Lemma L2RRVq_inner_pos (x : LpRRVq_ModuleSpace prts 2 big2) : 0 <= L2RRVq_inner x x.
+  Lemma L2RRVq_inner_pos (x : LpRRVq_ModuleSpace prts nneg2) : 0 <= L2RRVq_inner x x.
   Proof.
     LpRRVq_simpl.
     apply L2RRV_inner_pos.
   Qed.
   
-  Lemma L2RRVq_inner_zero_inv (x:LpRRVq_ModuleSpace prts 2 big2) : L2RRVq_inner x x = 0 ->
+  Lemma L2RRVq_inner_zero_inv (x:LpRRVq_ModuleSpace prts nneg2) : L2RRVq_inner x x = 0 ->
                                                        x = zero.
   Proof.
     unfold zero; simpl.
@@ -407,7 +410,7 @@ Section L2.
     now apply L2RRV_inner_zero_inv.
   Qed.
   
-  Lemma L2RRVq_inner_scal (x y : LpRRVq_ModuleSpace prts 2 big2) (l : R) :
+  Lemma L2RRVq_inner_scal (x y : LpRRVq_ModuleSpace prts nneg2) (l : R) :
     L2RRVq_inner (scal l x) y = l * L2RRVq_inner x y.
   Proof.
     unfold scal; simpl.
@@ -415,7 +418,7 @@ Section L2.
     apply L2RRV_inner_scal.
   Qed.
 
-  Lemma L2RRVq_inner_plus (x y z : LpRRVq_ModuleSpace prts 2 big2) :
+  Lemma L2RRVq_inner_plus (x y z : LpRRVq_ModuleSpace prts nneg2) :
     L2RRVq_inner (plus x y) z = L2RRVq_inner x z + L2RRVq_inner y z.
   Proof.
     unfold plus; simpl.
@@ -423,8 +426,8 @@ Section L2.
     apply L2RRV_inner_plus.
   Qed.
   
-  Definition L2RRVq_PreHilbert_mixin : PreHilbert.mixin_of (LpRRVq_ModuleSpace prts 2 big2)
-    := PreHilbert.Mixin (LpRRVq_ModuleSpace prts 2 big2) L2RRVq_inner
+  Definition L2RRVq_PreHilbert_mixin : PreHilbert.mixin_of (LpRRVq_ModuleSpace prts nneg2)
+    := PreHilbert.Mixin (LpRRVq_ModuleSpace prts nneg2) L2RRVq_inner
                         L2RRVq_inner_comm  L2RRVq_inner_pos L2RRVq_inner_zero_inv
                         L2RRVq_inner_scal L2RRVq_inner_plus.
 

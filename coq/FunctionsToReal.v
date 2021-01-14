@@ -357,6 +357,37 @@ Section defs.
       apply power_abs2_sqr.
     Qed.
 
+    Lemma rvpower_abs_scale c (X:Ts->R) n :
+      rvpower (rvscale (Rabs c) (rvabs X)) (const n) === rvscale (power (Rabs c) n) (rvpower (rvabs X) (const n)).
+    Proof.
+      intros x.
+      unfold rvpower, rvscale.
+      rewrite power_mult_distr; trivial.
+      - apply Rabs_pos.
+      - apply rvabs_pos.
+    Qed.
+
+    Lemma rv_abs_abs (rv_X:Ts->R) :
+      rv_eq (rvabs (rvabs rv_X)) (rvabs rv_X).
+    Proof.
+      intros a.
+      unfold rvabs.
+      now rewrite Rabs_Rabsolu.
+    Qed.
+    
+    Lemma rvpowabs_choice_le c (rv_X1 rv_X2 : Ts -> R) p :
+      rv_le (rvpower (rvabs (rvchoice c rv_X1 rv_X2)) (const p))
+            (rvplus (rvpower (rvabs rv_X1) (const p)) (rvpower (rvabs rv_X2) (const p))).
+    Proof.
+      intros a.
+      unfold rvpower, rvabs, rvchoice, rvplus, const; simpl.
+      match_destr.
+      - assert (0 <= power (Rabs (rv_X2 a)) p) by apply power_nonneg.
+        lra.
+      - assert (0 <= power (Rabs (rv_X1 a)) p) by apply power_nonneg.
+        lra.
+    Qed.
+    
     Lemma pos_fun_part_unfold (f : Ts->R) :
       (fun x => nonneg (pos_fun_part f x)) === rvmax f (const 0).
     Proof.
