@@ -812,12 +812,6 @@ Section fe.
     now apply Expectation_zero_pos.
   Qed.
 
-  Instance series_rv_pos
-         (Xn : nat -> Ts -> R)
-         (Xn_pos : forall n, PositiveRandomVariable (Xn n)) :
-    PositiveRandomVariable (fun omega => Lim_seq (sum_n (fun n => Xn n omega))).
-  Proof.
-  Admitted.
 
   Definition rvsum (Xn : nat -> Ts -> R) (n : nat) :=
     (fun omega => sum_n (fun n0 => Xn n0 omega) n).
@@ -871,6 +865,34 @@ Section fe.
       apply Rplus_le_le_0_compat ; trivial.
       lia.
   Qed.
+
+  Lemma Lim_seq_pos (f : nat -> R) :
+    (forall n, 0 <= f n) ->
+    Rbar_le 0 (Lim_seq f).
+  Proof.
+    intros.
+    generalize (Lim_seq_le_loc (fun _ => 0) f); intros.
+    rewrite Lim_seq_const in H0.
+    apply H0.
+    exists (0%nat).
+    intros.
+    apply H.
+  Qed.
+
+  Instance series_rv_pos
+         (Xn : nat -> Ts -> R)
+         (Xn_pos : forall n, PositiveRandomVariable (Xn n)) 
+         (is_fin_lim : 
+            forall omega, is_finite (Lim_seq (sum_n (fun n => Xn n omega)))):
+    PositiveRandomVariable (fun omega => Lim_seq (sum_n (fun n => Xn n omega))).
+  Proof.
+    unfold PositiveRandomVariable in *; intros.
+    generalize (Lim_seq_pos (sum_n (fun n : nat => Xn n x))).
+    rewrite <- is_fin_lim; simpl.
+    intros; apply H.
+    intros.
+    now apply rvsum_pos.
+ Qed.
 
   Global Instance IsFiniteExpectation_sum (Xn : nat -> Ts -> R)
          {Xn_rv : forall n, RandomVariable dom borel_sa  (Xn n)} 
@@ -951,12 +973,6 @@ Section fe.
   Proof.
     intros.
     generalize (monotone_convergence X Xn rvx posX Xn_rv Xn_pos H H0); intros.
-    generalize (Expectation_pos_posRV X); intros.
-    assert (forall n, Expectation (Xn n) = Some (Expectation_posRV (Xn n))).
-    {
-      intro.
-      apply Expectation_pos_posRV.
-    }
     cut_to H2; trivial.
     - rewrite (Lim_seq_ext _  (fun n : nat => Expectation_posRV (Xn n))).
       + rewrite H2.
@@ -976,15 +992,38 @@ Section fe.
       reflexivity.
   Qed.
 
+  Lemma Lim_seq_increasing_le (f : nat -> R) :
+    (forall n, f n <= f (S n)) ->
+    forall n, Rbar_le (f n) (Lim_seq f).
+  Proof.
+    intros.
+    rewrite <- Lim_seq_const.
+    apply Lim_seq_le_loc.
+    exists n.
+    intros.
+    now apply incr_le_strong.
+  Qed.
+
   Lemma rvsum_le_series (Xn : nat -> Ts -> R) 
         (Xn_pos : forall n, PositiveRandomVariable (Xn n)) :
+    (forall omega, is_finite (Lim_seq (fun n => rvsum Xn n omega))) ->
     forall n:nat,
       rv_le (rvsum Xn n)
             (fun omega => Lim_seq (fun n0 : nat => rvsum Xn n0 omega)).
    Proof.
-     intros n x.
-     
-   Admitted.
+     intros isfin n x.
+     generalize (Lim_seq_increasing_le (fun n => rvsum Xn n x)); intros.
+     rewrite <- isfin in H.
+     apply H.
+     intros.
+     unfold rvsum, sum_n.
+     replace (sum_n_m (fun n1 : nat => Xn n1 x) 0 n0) with
+         (sum_n_m (fun n1 : nat => Xn n1 x) 0 n0 + 0) by lra.
+     rewrite sum_n_Sm; [|lia].
+     unfold plus; simpl.
+     apply Rplus_le_compat_l.
+     apply Xn_pos.
+   Qed.
 
   Lemma series_expectation
         (Xn : nat -> Ts -> R)
@@ -993,10 +1032,13 @@ Section fe.
         (isfe : forall n, IsFiniteExpectation (Xn n)) 
         (lim_rv : RandomVariable dom borel_sa 
                                  (fun omega => Lim_seq (sum_n (fun n => Xn n omega))))
+        (lim_fin : forall omega,
+            is_finite (Lim_seq (fun n : nat => rvsum Xn n omega)))
         (lim_fe : IsFiniteExpectation
                     (fun omega : Ts => Lim_seq (fun n : nat => rvsum Xn n omega)))
         (lim_pos : PositiveRandomVariable
            (fun omega : Ts => Lim_seq (fun n : nat => rvsum Xn n omega))):    
+    (forall omega, ex_lim_seq (fun n : nat => rvsum Xn n omega)) ->
     Lim_seq (sum_n (fun n => FiniteExpectation (Xn n))) =
     FiniteExpectation (fun omega => Lim_seq (fun n => rvsum Xn n omega)).
   Proof.
@@ -1017,15 +1059,9 @@ Section fe.
       apply Rplus_le_compat_l.
       apply Xn_pos.
     - intros.
-      assert (isf:is_finite (Lim_seq (fun n : nat => rvsum Xn n omega))).
-      {
-        admit.
-      }
-      rewrite isf.
-      apply Lim_seq_correct.
-      
-   Admitted.
-
+      rewrite lim_fin.
+      now apply Lim_seq_correct.
+  Qed.
 
 End fe.
 
