@@ -957,6 +957,17 @@ Section fe.
       now simpl.
     Qed.
     
+    Lemma IsFiniteExpectation_posRV (X:Ts->R) 
+          {posX: PositiveRandomVariable X}
+          {isfeX: IsFiniteExpectation X} :
+      is_finite (Expectation_posRV  X).
+    Proof.
+      red in isfeX.
+      rewrite Expectation_pos_posRV with (prv:=posX) in isfeX.
+      match_destr_in isfeX; try tauto.
+      reflexivity.
+   Qed.
+
   Lemma monotone_convergence_FiniteExpectation
         (X : Ts -> R )
         (Xn : nat -> Ts -> R)
@@ -976,21 +987,47 @@ Section fe.
     cut_to H2; trivial.
     - rewrite (Lim_seq_ext _  (fun n : nat => Expectation_posRV (Xn n))).
       + rewrite H2.
-        simpl.
         rewrite FiniteExpectation_posRV with (posX:=posX).
-        simpl.
         red in isfeX.
         rewrite Expectation_pos_posRV with (prv:=posX) in isfeX.
         match_destr_in isfeX; try tauto.
       + intros n.
         now rewrite FiniteExpectation_posRV with (posX:=Xn_pos n).
-    - intros n.
-      specialize (isfe n).
-      red in isfe.
-      rewrite Expectation_pos_posRV with (prv:=(Xn_pos n)) in isfe.
-      match_destr_in isfe; try tauto.
-      reflexivity.
+    - intros.
+      now apply IsFiniteExpectation_posRV.
   Qed.
+
+Lemma Fatou_FiniteExpectation
+        (Xn : nat -> Ts -> R)
+        (Xn_pos : forall n, PositiveRandomVariable (Xn n)) 
+        (Xn_rv : forall n, RandomVariable dom borel_sa (Xn n))
+        (isfe_Xn : forall n, IsFiniteExpectation (Xn n))
+        (isfe_limInf : IsFiniteExpectation
+                         (fun omega : Ts => LimInf_seq (fun n : nat => Xn n omega)))
+        (isf:forall omega, is_finite (LimInf_seq (fun n : nat => Xn n omega)))
+
+        (lim_rv : RandomVariable dom borel_sa 
+                                 (fun omega => LimInf_seq (fun n => Xn n omega))) :
+                                                                                    
+    Rbar_le (FiniteExpectation (fun omega => LimInf_seq (fun n => Xn n omega)))
+            (LimInf_seq (fun n => FiniteExpectation (Xn n))).
+  Proof.
+    assert (fin_exp: forall n, is_finite (Expectation_posRV (Xn n))).
+    - intros.
+      now apply IsFiniteExpectation_posRV.
+    - generalize (Fatou Xn Xn_pos Xn_rv fin_exp isf lim_rv); intros.
+      rewrite FiniteExpectation_posRV with (posX := LimInf_seq_pos Xn Xn_pos).
+      unfold LimInf_seq.
+      destruct (ex_LimInf_seq (fun n : nat => FiniteExpectation (Xn n))).
+      generalize (is_LimInf_seq_ext  (fun n : nat => FiniteExpectation (Xn n)) 
+                                     (fun n : nat => Expectation_posRV (Xn n)) x); intros.
+      cut_to H0; trivial.
+      apply is_LimInf_seq_unique in H0.      
+      rewrite <- H0.
+      now rewrite IsFiniteExpectation_posRV.
+      intros.
+      now rewrite FiniteExpectation_posRV with (posX :=Xn_pos n).
+   Qed.
 
   Lemma Lim_seq_increasing_le (f : nat -> R) :
     (forall n, f n <= f (S n)) ->
