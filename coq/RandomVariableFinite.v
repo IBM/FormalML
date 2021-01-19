@@ -1100,6 +1100,110 @@ Lemma Fatou_FiniteExpectation
       now apply Lim_seq_correct.
   Qed.
 
+(*
+  Lemma lim_ascending (E : nat -> event Ts) :
+    (forall (n:nat), sa_sigma (E n)) ->
+    (forall n, event_sub (E n) (E (S n))) ->
+    is_lim_seq (fun n => ps_P (E n)) (ps_P (union_of_collection E)).
+  Proof.
+    Admitted.
+
+  Lemma lim_ascending2 (E : nat -> event Ts) :
+    (forall (n:nat), sa_sigma (E n)) ->
+    (forall n, event_sub (E n) (E (S n))) ->
+    Lim_seq (fun n => ps_P (E n)) =  (ps_P (union_of_collection E)).
+  Proof.
+    intros.
+    apply is_lim_seq_unique.
+    now apply lim_ascending.
+  Qed.
+*)
+  Lemma lim_descending (E : nat -> event Ts) :
+    (forall (n:nat), sa_sigma (E n)) ->
+    (forall n, event_sub (E (S n)) (E n)) ->
+    is_lim_seq (fun n => ps_P (E n)) (ps_P (inter_of_collection E)).
+  Proof.
+    Admitted.
+
+  Lemma lim_descending2 (E : nat -> event Ts) :
+    (forall (n:nat), sa_sigma (E n)) ->
+    (forall n, event_sub (E (S n)) (E n)) ->
+    Lim_seq (fun n => ps_P (E n)) = (ps_P (inter_of_collection E)).
+  Proof.
+    intros.
+    apply is_lim_seq_unique.
+    now apply lim_descending.
+  Qed.
+
+  Lemma Lim_series_tails (f : nat -> R) :
+        ex_series f ->
+        Lim_seq (fun k : nat => Series (fun n : nat => f (n + k)%nat)) = 0.
+    Proof.
+    Admitted.
+
+  Lemma ps_union_le_ser col :
+    ex_series (fun n0 : nat => ps_P (col n0)) ->
+    (forall n : nat, sa_sigma (col n)) ->
+    ps_P (union_of_collection col) <=
+    Series (fun n0 : nat => ps_P (col n0)).
+  Proof.
+    intros.
+    apply ps_countable_boole_inequality; trivial.
+    rewrite <- infinite_sum_infinite_sum'.
+    rewrite <- is_series_Reals.
+    now apply Series_correct.
+  Qed.
+
+  Lemma Borel_Cantelli (E : nat -> event Ts) :
+    (forall (n:nat), sa_sigma (E n)) ->
+    ex_series (fun n => ps_P (E n)) ->
+    ps_P (inter_of_collection 
+            (fun k => union_of_collection 
+                        (fun n => E (n + k)%nat))) = 0.
+  Proof.
+    intros.
+    assert (Rbar_le
+              (Lim_seq (fun k => ps_P (union_of_collection (fun n => E (n+k)%nat))))
+              (Lim_seq (fun k => Series (fun n => ps_P (E (n+k)%nat))))).
+    {
+    apply Lim_seq_le_loc; exists (0%nat); intros.
+    apply ps_union_le_ser.
+    apply ex_series_ext with (a :=  (fun n0 : nat => ps_P (E (n + n0)%nat))).
+    intros.
+    f_equal; f_equal; lia.
+    now rewrite <- ex_series_incr_n with (a := (fun n0 => ps_P (E n0))).
+    intros.
+    apply H.
+    }
+    generalize (Lim_series_tails (fun n => ps_P (E n)) H0); intros.    
+    unfold ex_series in H0.
+    destruct H0.
+    assert (ps_P (inter_of_collection 
+                    (fun k => union_of_collection 
+                                (fun n => E (n + k)%nat))) =
+            Lim_seq (fun k => ps_P (union_of_collection
+                                    (fun n => E (n + k)%nat)))).
+    { 
+      rewrite lim_descending2; trivial.
+      intros.
+      now apply sa_countable_union.
+      intros n x0.
+      unfold union_of_collection; intros.
+      destruct H3.
+      exists (S x1).
+      now replace (S x1 + n)%nat with (x1 + S n)%nat by lia.
+    } 
+    rewrite H2 in H1.
+    rewrite H3.
+    apply Rbar_le_antisym in H1.
+    - symmetry in H1.
+      now rewrite H1.
+    - replace (Finite 0) with (Lim_seq (fun _ => 0)) by apply Lim_seq_const.
+      apply Lim_seq_le_loc; exists (0%nat); intros.
+      apply ps_pos.
+      now apply sa_countable_union.
+  Qed.    
+
 End fe.
 
 Hint Rewrite FiniteExpectation_const FiniteExpectation_plus FiniteExpectation_scale FiniteExpectation_opp FiniteExpectation_minus: prob.
