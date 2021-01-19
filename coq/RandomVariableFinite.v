@@ -1135,11 +1135,80 @@ Lemma Fatou_FiniteExpectation
     now apply lim_descending.
   Qed.
 
+  Lemma sum_shift (f : nat -> R) (n n0 : nat) :
+    sum_n_m f n (n0 + n) = sum_n_m (fun n1 : nat => f (n1 + n)%nat) 0 n0.
+  Proof.
+    induction n0.
+    - replace (0 + n)%nat with n by lia.
+      do 2 rewrite sum_n_n.
+      now replace (0 + n)%nat with n by lia.
+    - replace (S n0 + n)%nat with (S (n0 + n)%nat) by lia.
+      rewrite sum_n_Sm.
+      rewrite sum_n_Sm.
+      replace (S n0 + n)%nat with (S (n0 + n)%nat) by lia.
+      now apply Rplus_eq_compat_r.
+      lia.
+      lia.
+   Qed.
+
   Lemma Lim_series_tails (f : nat -> R) :
         ex_series f ->
+        (forall n, 0 <= f n) ->
         Lim_seq (fun k : nat => Series (fun n : nat => f (n + k)%nat)) = 0.
     Proof.
-    Admitted.
+      intros.
+      generalize (Cauchy_ex_series f H); intros.
+      unfold Cauchy_series in H1.
+      apply is_lim_seq_unique.
+      rewrite <- is_lim_seq_spec.
+      unfold is_lim_seq'.
+      intros.
+      unfold Series.
+      assert (0 < eps) by apply cond_pos.
+      assert (0 < eps/2) by lra.
+      specialize (H1 (mkposreal _ H3)).
+      destruct H1.
+      exists x; intros.
+      assert (Rbar_le (Lim_seq (fun k => (sum_n (fun n0 : nat => f (n0 + n)%nat) k))) (eps/2)).
+      { 
+        replace (Finite (eps/2)) with (Lim_seq (fun n => eps/2)) by apply Lim_seq_const.
+        apply Lim_seq_le_loc.
+        exists x; intros.
+        unfold norm in H1; simpl in H1.
+        specialize (H1 n (n0 + n)%nat H4).
+        assert (x <= n0 + n)%nat by lia.
+        specialize (H1 H6).
+        rewrite Rabs_right in H1.
+        - unfold sum_n.
+          left.
+          replace  (sum_n_m (fun n1 : nat => f (n1 + n)%nat) 0 n0) with
+              (sum_n_m f n (n0 + n)).
+          + apply H1.
+          + apply sum_shift.
+        - apply Rle_ge.
+          replace 0 with (sum_n_m (fun _ => 0) n (n0 + n)%nat).
+          + now apply sum_n_m_le.
+          + rewrite sum_n_m_const; lra.
+      }
+      rewrite Rminus_0_r.
+      generalize (Lim_seq_pos (sum_n (fun n0 : nat => f (n0 + n)%nat))); intros.
+      cut_to H6.
+      - destruct (Lim_seq (sum_n (fun n0 : nat => f (n0 + n)%nat))).
+        + simpl in H5.
+          simpl in H6.
+          rewrite Rabs_right.
+          * assert (eps/2 < eps) by lra.
+            now apply Rle_lt_trans with (r2 := eps/2).
+          * now apply Rle_ge.
+        + now simpl in H6.
+        + now simpl in H6.
+      - intros.
+        replace 0 with (sum_n (fun _ => 0) n0).
+        + apply sum_n_m_le.
+          intros.
+          apply H0.
+        + rewrite sum_n_const; lra.
+    Qed.
 
   Lemma ps_union_le_ser col :
     ex_series (fun n0 : nat => ps_P (col n0)) ->
@@ -1166,14 +1235,14 @@ Lemma Fatou_FiniteExpectation
               (Lim_seq (fun k => ps_P (union_of_collection (fun n => E (n+k)%nat))))
               (Lim_seq (fun k => Series (fun n => ps_P (E (n+k)%nat))))).
     {
-    apply Lim_seq_le_loc; exists (0%nat); intros.
-    apply ps_union_le_ser.
-    apply ex_series_ext with (a :=  (fun n0 : nat => ps_P (E (n + n0)%nat))).
-    intros.
-    f_equal; f_equal; lia.
-    now rewrite <- ex_series_incr_n with (a := (fun n0 => ps_P (E n0))).
-    intros.
-    apply H.
+      apply Lim_seq_le_loc; exists (0%nat); intros.
+      apply ps_union_le_ser.
+      apply ex_series_ext with (a :=  (fun n0 : nat => ps_P (E (n + n0)%nat))).
+      intros.
+      f_equal; f_equal; lia.
+      now rewrite <- ex_series_incr_n with (a := (fun n0 => ps_P (E n0))).
+      intros.
+      apply H.
     }
     generalize (Lim_series_tails (fun n => ps_P (E n)) H0); intros.    
     unfold ex_series in H0.
@@ -1202,6 +1271,8 @@ Lemma Fatou_FiniteExpectation
       apply Lim_seq_le_loc; exists (0%nat); intros.
       apply ps_pos.
       now apply sa_countable_union.
+    - intros.
+      now apply ps_pos.
   Qed.    
 
 End fe.
