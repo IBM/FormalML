@@ -1381,7 +1381,7 @@ Lemma Fatou_FiniteExpectation
     now apply Series_correct.
   Qed.
 
-  Lemma Borel_Cantelli (E : nat -> event Ts) :
+  Theorem Borel_Cantelli (E : nat -> event Ts) :
     (forall (n:nat), sa_sigma (E n)) ->
     ex_series (fun n => ps_P (E n)) ->
     ps_P (inter_of_collection 
