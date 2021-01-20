@@ -1110,12 +1110,42 @@ Lemma Fatou_FiniteExpectation
     auto.
   Qed.
 
+  Lemma seq_iota_seq m n : seq.iota m n = seq m n.
+  Proof.
+    revert m.
+    induction n; intros m; simpl; trivial.
+  Qed.
+
+  Lemma sum_n_m_fold_right_seq (f:nat->R) n m:
+        sum_n_m (fun n0 : nat => f n0) m n =
+        fold_right Rplus 0 (map f (List.seq m (S n - m))).
+  Proof.
+    unfold sum_n_m, Iter.iter_nat.
+    rewrite seq_iota_seq.
+    generalize (S n - m)%nat; intros nn.
+    clear n.
+    revert m.
+    induction nn; unfold plus; simpl; trivial; intros m.
+    now rewrite IHnn.
+  Qed.
+  
+  Lemma sum_n_fold_right_seq (f:nat->R) n :
+    sum_n (fun n0 : nat => f n0) n =
+    fold_right Rplus 0 (map f (seq 0 (S n))).
+  Proof.
+    unfold sum_n.
+    now rewrite sum_n_m_fold_right_seq.
+  Qed.
+
   Lemma sum_prob_fold_right  (E : nat -> event Ts) n :
         sum_n (fun n0 : nat => ps_P (E n0)) n =
         fold_right Rplus 0 (map ps_P (collection_take E (S n))).
   Proof.
-    
-  Admitted.
+    rewrite sum_n_fold_right_seq.
+    f_equal.
+    unfold collection_take.
+    now rewrite map_map.
+  Qed.    
   
   Lemma lim_ascending (E : nat -> event Ts) :
     (forall (n:nat), sa_sigma (E n)) ->
@@ -1149,7 +1179,7 @@ Lemma Fatou_FiniteExpectation
         now apply sa_make_collection_disjoint.
       + apply collection_take_preserves_disjoint.
         apply make_collection_disjoint_disjoint.
-  Qed.        
+  Qed.
 
   Lemma lim_descending (E : nat -> event Ts) :
     (forall (n:nat), sa_sigma (E n)) ->
