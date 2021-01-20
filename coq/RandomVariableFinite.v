@@ -1100,40 +1100,45 @@ Lemma Fatou_FiniteExpectation
       now apply Lim_seq_correct.
   Qed.
 
-(*
   Lemma lim_ascending (E : nat -> event Ts) :
-    (forall (n:nat), sa_sigma (E n)) ->
-    (forall n, event_sub (E n) (E (S n))) ->
-    is_lim_seq (fun n => ps_P (E n)) (ps_P (union_of_collection E)).
-  Proof.
-    Admitted.
-
-  Lemma lim_ascending2 (E : nat -> event Ts) :
     (forall (n:nat), sa_sigma (E n)) ->
     (forall n, event_sub (E n) (E (S n))) ->
     Lim_seq (fun n => ps_P (E n)) =  (ps_P (union_of_collection E)).
   Proof.
     intros.
-    apply is_lim_seq_unique.
-    now apply lim_ascending.
-  Qed.
-*)
-  Lemma lim_descending (E : nat -> event Ts) :
-    (forall (n:nat), sa_sigma (E n)) ->
-    (forall n, event_sub (E (S n)) (E n)) ->
-    is_lim_seq (fun n => ps_P (E n)) (ps_P (inter_of_collection E)).
-  Proof.
-    Admitted.
+    generalize (union_of_make_collection_disjoint prts E H); intros.
+    unfold sum_of_probs_equals in H1.
+    rewrite <- make_collection_disjoint_union in H1.
+    rewrite <- infinite_sum_infinite_sum' in H1.
+    rewrite <- is_series_Reals in H1.
+    apply is_series_unique in H1.
+    unfold Series in H1.
+    rewrite Lim_seq_ext with (v := fun n => ps_P (E n)) in H1.
+    - generalize (Lim_seq_le_loc (fun n : nat => ps_P (E n)) (fun _ => 1)); intros.
+      generalize (Lim_seq_pos (fun n : nat => ps_P (E n))); intros.
+      cut_to H2; [| exists 0%nat; intros; now apply ps_le1].
+      cut_to H3; [| intros; now apply ps_pos].
+      rewrite Lim_seq_const in H2.
+      destruct (Lim_seq (fun n : nat => ps_P (E n))).
+      + simpl in H1.
+        now rewrite H1.
+      + now simpl in H2.
+      + now simpl in H3.
+    - intros.
+      
+  Admitted.
 
-  Lemma lim_descending2 (E : nat -> event Ts) :
+  Lemma lim_descending (E : nat -> event Ts) :
     (forall (n:nat), sa_sigma (E n)) ->
     (forall n, event_sub (E (S n)) (E n)) ->
     Lim_seq (fun n => ps_P (E n)) = (ps_P (inter_of_collection E)).
   Proof.
     intros.
-    apply is_lim_seq_unique.
-    now apply lim_descending.
-  Qed.
+    generalize (lim_ascending (fun n => event_diff (E 0%nat) (E n))); intros.
+    cut_to H1.
+    Admitted.
+    
+
 
   Lemma sum_shift (f : nat -> R) (n n0 : nat) :
     sum_n_m f n (n0 + n) = sum_n_m (fun n1 : nat => f (n1 + n)%nat) 0 n0.
@@ -1143,12 +1148,10 @@ Lemma Fatou_FiniteExpectation
       do 2 rewrite sum_n_n.
       now replace (0 + n)%nat with n by lia.
     - replace (S n0 + n)%nat with (S (n0 + n)%nat) by lia.
-      rewrite sum_n_Sm.
-      rewrite sum_n_Sm.
+      rewrite sum_n_Sm; [|lia].
+      rewrite sum_n_Sm; [|lia].
       replace (S n0 + n)%nat with (S (n0 + n)%nat) by lia.
       now apply Rplus_eq_compat_r.
-      lia.
-      lia.
    Qed.
 
   Lemma Lim_series_tails (f : nat -> R) :
@@ -1161,9 +1164,7 @@ Lemma Fatou_FiniteExpectation
       unfold Cauchy_series in H1.
       apply is_lim_seq_unique.
       rewrite <- is_lim_seq_spec.
-      unfold is_lim_seq'.
-      intros.
-      unfold Series.
+      unfold is_lim_seq', Series; intros.
       assert (0 < eps) by apply cond_pos.
       assert (0 < eps/2) by lra.
       specialize (H1 (mkposreal _ H3)).
@@ -1179,16 +1180,13 @@ Lemma Fatou_FiniteExpectation
         assert (x <= n0 + n)%nat by lia.
         specialize (H1 H6).
         rewrite Rabs_right in H1.
-        - unfold sum_n.
-          left.
-          replace  (sum_n_m (fun n1 : nat => f (n1 + n)%nat) 0 n0) with
-              (sum_n_m f n (n0 + n)).
-          + apply H1.
-          + apply sum_shift.
+        - unfold sum_n; left.
+          now replace  (sum_n_m (fun n1 : nat => f (n1 + n)%nat) 0 n0) with
+              (sum_n_m f n (n0 + n)) by apply sum_shift.
         - apply Rle_ge.
-          replace 0 with (sum_n_m (fun _ => 0) n (n0 + n)%nat).
-          + now apply sum_n_m_le.
-          + rewrite sum_n_m_const; lra.
+          replace 0 with (sum_n_m (fun _ => 0) n (n0 + n)%nat) by 
+              (rewrite sum_n_m_const; lra).
+          now apply sum_n_m_le.
       }
       rewrite Rminus_0_r.
       generalize (Lim_seq_pos (sum_n (fun n0 : nat => f (n0 + n)%nat))); intros.
@@ -1203,11 +1201,9 @@ Lemma Fatou_FiniteExpectation
         + now simpl in H6.
         + now simpl in H6.
       - intros.
-        replace 0 with (sum_n (fun _ => 0) n0).
-        + apply sum_n_m_le.
-          intros.
-          apply H0.
-        + rewrite sum_n_const; lra.
+        replace 0 with (sum_n (fun _ => 0) n0) by (rewrite sum_n_const; lra).
+        apply sum_n_m_le.
+        intros; apply H0.
     Qed.
 
   Lemma ps_union_le_ser col :
@@ -1253,7 +1249,7 @@ Lemma Fatou_FiniteExpectation
             Lim_seq (fun k => ps_P (union_of_collection
                                     (fun n => E (n + k)%nat)))).
     { 
-      rewrite lim_descending2; trivial.
+      rewrite lim_descending; trivial.
       intros.
       now apply sa_countable_union.
       intros n x0.
