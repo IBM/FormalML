@@ -1100,9 +1100,26 @@ Lemma Fatou_FiniteExpectation
       now apply Lim_seq_correct.
   Qed.
 
+  Lemma sa_collection_take (E : nat -> event Ts) n :
+    (forall m, sa_sigma (E m)) -> (forall e, In e (collection_take E n) -> sa_sigma e).
+  Proof.
+    unfold collection_take.
+    intros.
+    apply in_map_iff in H0.
+    destruct H0 as [?[??]]; subst.
+    auto.
+  Qed.
+
+  Lemma sum_prob_fold_right  (E : nat -> event Ts) n :
+        sum_n (fun n0 : nat => ps_P (E n0)) n =
+        fold_right Rplus 0 (map ps_P (collection_take E (S n))).
+  Proof.
+    
+  Admitted.
+  
   Lemma lim_ascending (E : nat -> event Ts) :
     (forall (n:nat), sa_sigma (E n)) ->
-    (forall n, event_sub (E n) (E (S n))) ->
+    ascending_collection E ->
     Lim_seq (fun n => ps_P (E n)) =  (ps_P (union_of_collection E)).
   Proof.
     intros.
@@ -1125,8 +1142,14 @@ Lemma Fatou_FiniteExpectation
       + now simpl in H2.
       + now simpl in H3.
     - intros.
-      
-  Admitted.
+      rewrite <- ascending_make_disjoint_collection_take_union by trivial.
+      rewrite ps_list_disjoint_union.
+      + apply  sum_prob_fold_right.
+      + apply sa_collection_take.
+        now apply sa_make_collection_disjoint.
+      + apply collection_take_preserves_disjoint.
+        apply make_collection_disjoint_disjoint.
+  Qed.        
 
   Lemma lim_descending (E : nat -> event Ts) :
     (forall (n:nat), sa_sigma (E n)) ->
@@ -1136,6 +1159,7 @@ Lemma Fatou_FiniteExpectation
     intros.
     generalize (lim_ascending (fun n => event_diff (E 0%nat) (E n))); intros.
     cut_to H1.
+    - 
     Admitted.
     
 
