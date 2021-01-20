@@ -1252,6 +1252,17 @@ Lemma Fatou_FiniteExpectation
     now eapply transitivity.
   Qed.
 
+  Lemma union_diff_inter (A:event Ts) (E : nat -> event Ts) :
+        event_equiv (union_of_collection (fun n : nat => event_diff A (E n)))
+                    (event_diff A (inter_of_collection E)).
+  Proof.
+    unfold event_equiv, union_of_collection, event_diff, inter_of_collection.
+    firstorder.
+    apply not_all_ex_not in H0.
+    firstorder.
+  Qed.
+
+    
   Lemma lim_descending (E : nat -> event Ts) :
     (forall (n:nat), sa_sigma (E n)) ->
     (forall n, event_sub (E (S n)) (E n)) ->
@@ -1262,28 +1273,26 @@ Lemma Fatou_FiniteExpectation
     generalize (is_finite_Lim_seq_psP E H); intros.
     cut_to H1.
     - rewrite Lim_seq_ext with (v := (fun n => (ps_P (E 0%nat)) - (ps_P (E n)))) in H1.
-      + replace (union_of_collection (fun n : nat => event_diff (E 0%nat) (E n))) with
-            (event_diff (E 0%nat) (inter_of_collection E)) in H1.
-        * rewrite ps_diff_sub in H1.
-          -- rewrite Lim_seq_minus in H1.
-             ++ rewrite Lim_seq_const in H1.
-                rewrite <- H2 in H1.
-                simpl in H1.
-                rewrite Rbar_finite_eq in H1.
-                ring_simplify in H1.
-                rewrite <- H2.
-                rewrite Rbar_finite_eq.
-                lra.
-             ++ apply ex_lim_seq_const.
-             ++ apply ex_lim_seq_decr.
-                intros.
-                now apply ps_sub.
-             ++ rewrite Lim_seq_const.
-                now rewrite <- H2.
-          -- apply H.
-          -- now apply sa_countable_inter.
-          -- firstorder.
-        * admit.
+      + rewrite union_diff_inter in H1. 
+        rewrite ps_diff_sub in H1.
+        * rewrite Lim_seq_minus in H1.
+          -- rewrite Lim_seq_const in H1.
+             rewrite <- H2 in H1.
+             simpl in H1.
+             rewrite Rbar_finite_eq in H1.
+             ring_simplify in H1.
+             rewrite <- H2.
+             rewrite Rbar_finite_eq.
+             lra.
+          -- apply ex_lim_seq_const.
+          -- apply ex_lim_seq_decr.
+             intros.
+             now apply ps_sub.
+          -- rewrite Lim_seq_const.
+             now rewrite <- H2.
+        * apply H.
+        * now apply sa_countable_inter.
+        * firstorder.
       + intros.
         apply ps_diff_sub; trivial.
         now apply event_sub_descending.
@@ -1291,7 +1300,7 @@ Lemma Fatou_FiniteExpectation
       now apply sa_diff.
     - unfold ascending_collection; intros.
       firstorder.
-  Admitted.
+  Qed.
     
   Lemma sum_shift (f : nat -> R) (n n0 : nat) :
     sum_n_m f n (n0 + n) = sum_n_m (fun n1 : nat => f (n1 + n)%nat) 0 n0.
