@@ -446,20 +446,30 @@ Section list_sum.
     lra.
   Qed.
 
-  Lemma list_sum_all_pos_zero_all_zero l : list_sum l = 0 ->
-                                           Forall (fun x => x >= 0) l ->
-                                           Forall (fun x => x = 0) l.
-  Proof.
-    induction l; intros.
-    - constructor.
-    - invcs H0.
-      simpl in H.
-      generalize (list_sum_pos_pos _ H4); intros HH.
-      assert (a = 0) by lra.
-      subst.
-      field_simplify in H.
-      auto.
-  Qed.
+Lemma list_sum_pos_pos' l :
+  Forall (fun x => 0 <= x) l ->
+  0 <= list_sum l.
+Proof.
+  induction l; simpl; try lra.
+  intros HH; invcs HH.
+  specialize (IHl H2).
+  lra.
+Qed.
+
+Lemma list_sum_all_pos_zero_all_zero l : list_sum l = 0 ->
+                                         Forall (fun x => x >= 0) l ->
+                                         Forall (fun x => x = 0) l.
+Proof.
+  induction l; intros.
+  - constructor.
+  - invcs H0.
+    simpl in H.
+    generalize (list_sum_pos_pos _ H4); intros HH.
+    assert (a = 0) by lra.
+    subst.
+    field_simplify in H.
+    auto.
+Qed.
 
 End list_sum.
 
