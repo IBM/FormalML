@@ -1,9 +1,42 @@
 Require Import converge.mdp LM.fixed_point.
+Require Import RealAdd.
 Require Import micromega.Lra.
 
 Set Bullet Behavior "Strict Subproofs".
 
   Section qlearn.
+
+    Fixpoint list_prod (l : list R) : R :=
+      match l with
+      | nil => 1
+      | cons x xs => x*list_prod xs
+      end.
+
+    (* Lemma 4 of Vasily's blueprint.*)
+    Lemma product_sum_helper (l : list R):
+      List.Forall (fun r => 0 <= r <= 1) l -> 1 - list_sum l <= list_prod (List.map (fun x => 1 - x) l).
+    Proof.
+      revert l.
+      induction l.
+      * simpl ; lra.
+      * simpl. intros Hl.
+        eapply Rle_trans with ((1-list_sum l)*(1-a)).
+        ++ ring_simplify.
+           apply Rplus_le_compat_r.
+           do 2 rewrite Rle_minus_r.
+           ring_simplify.
+           inversion Hl ; subst.
+           specialize (IHl H2). destruct H1.
+           apply Rmult_le_pos ; trivial.
+           apply list_sum_pos_pos'; trivial.
+           generalize (List.Forall_and_inv _ _ H2); intros.
+           destruct H1; trivial.
+        ++ inversion Hl; subst.
+           specialize (IHl H2).
+           rewrite Rmult_comm.
+           apply Rmult_le_compat_l ; trivial.
+           lra.
+    Qed.
 
     Definition is_norm_Lipschitz {K1 K2: AbsRing}
                {X : NormedModule K1} {Y : NormedModule K2} (f: X -> Y) (k:R) :=
@@ -98,7 +131,7 @@ Set Bullet Behavior "Strict Subproofs".
         split; intros.
         ++ replace 0 with  (0+0) by lra.
           apply Rplus_le_compat.
-          --- left. lra.
+          --- lra.
           --- replace 0 with (r*0) by lra.
               apply Rmult_le_compat_l ; lra.
         ++ rewrite Rmult_plus_distr_r.
@@ -110,7 +143,8 @@ Set Bullet Behavior "Strict Subproofs".
           --  generalize (norm_scal (1-r) (minus x2 x1)) ; intros.
               eapply Rle_lt_trans ; try apply H2.
               unfold abs ; simpl.
-              replace (Rabs (1-r)) with (1-r) by (symmetry; try apply Rabs_pos_eq; try (left;lra)).
+              replace (Rabs (1-r)) with (1-r) by (symmetry; try apply Rabs_pos_eq;
+                                                  try (lra)).
               apply Rmult_lt_compat_l ; try lra.
               eapply Rlt_le_trans ; eauto ; try lra.
           -- generalize (norm_scal r (minus (F x2) (F x1))); intros.
@@ -123,5 +157,6 @@ Set Bullet Behavior "Strict Subproofs".
               unfold ball_norm in HF.
               assumption.
     Qed.
+
 
   End qlearn.
