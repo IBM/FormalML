@@ -6,15 +6,15 @@ Set Bullet Behavior "Strict Subproofs".
 
   Section qlearn.
 
-    Fixpoint list_prod (l : list R) : R :=
+    Fixpoint list_product (l : list R) : R :=
       match l with
       | nil => 1
-      | cons x xs => x*list_prod xs
+      | cons x xs => x*list_product xs
       end.
 
     (* Lemma 4 of Vasily's blueprint.*)
     Lemma product_sum_helper (l : list R):
-      List.Forall (fun r => 0 <= r <= 1) l -> 1 - list_sum l <= list_prod (List.map (fun x => 1 - x) l).
+      List.Forall (fun r => 0 <= r <= 1) l -> 1 - list_sum l <= list_product (List.map (fun x => 1 - x) l).
     Proof.
       revert l.
       induction l.
