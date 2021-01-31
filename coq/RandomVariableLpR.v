@@ -1153,6 +1153,222 @@ Section Lp.
         reflexivity.
       Qed.
 
+      Lemma LpRRV_norm_telescope_minus (f : nat -> LpRRV p) :
+        forall (n k:nat), 
+          LpRRVnorm (LpRRVminus (f ((S k)+n)%nat) (f n)) <= 
+          sum_n_m (fun m => LpRRVnorm (LpRRVminus (f (S m)) (f m))) n (k + n).
+      Proof.
+        intros.
+        induction k.
+        - replace (0+n)%nat with n by lia.
+          rewrite sum_n_n.
+          simpl; lra.
+        - replace (S k + n)%nat with (S (k + n)%nat) by lia.
+          rewrite sum_n_Sm; [|lia].
+          rewrite (LpRRV_norm_proper (LpRRVminus (f (S (S k) + n)%nat) (f n))
+                                     (LpRRVplus  
+                                        (LpRRVminus (f (S (S k) + n)%nat) (f ((S k)+n)%nat))
+                                        (LpRRVminus (f ((S k) + n)%nat) (f n)))).
+          generalize (LpRRV_norm_plus  
+                        (LpRRVminus (f (S (S k) + n)%nat) (f (S k + n)%nat))
+                        (LpRRVminus (f (S k + n)%nat) (f n))); intros.
+          apply Rle_trans with (r2 := LpRRVnorm (LpRRVminus (f (S k + n)%nat) (f n)) +
+                                      LpRRVnorm (LpRRVminus (f (S (S k) + n)%nat) (f (S k + n)%nat))).
+          now rewrite Rplus_comm.
+          now apply Rplus_le_compat_r.
+          do 3 rewrite LpRRVminus_plus.
+          rewrite LpRRV_plus_assoc.
+          rewrite <- LpRRV_plus_assoc with (x := (f (S (S k) + n)%nat)).
+          rewrite <- (@LpRRV_plus_comm pnneg (f (S k + n)%nat)).
+          rewrite LpRRV_plus_inv.          
+          now rewrite LpRRV_plus_zero.
+      Qed.
+
+      Lemma sum_geom (n : nat) (c : R):
+        c <> 1 ->
+        sum_n (fun k => pow c k) n = (pow c (S n) - 1)/(c - 1).
+      Proof.
+        intros.
+        induction n.
+        Search sum_n.
+        - rewrite sum_O, pow_O, pow_1.
+          unfold Rdiv.
+          rewrite Rinv_r; lra.
+        - unfold sum_n.
+          rewrite sum_n_Sm; [|lia].
+          unfold sum_n in IHn.
+          rewrite IHn.
+          unfold plus; simpl.
+          field; lra.
+      Qed.
+
+      Lemma sum_geom_n_m (n m : nat) (c : R) :
+        c <> 1 ->
+        (S n <= m)%nat ->
+        sum_n_m (fun k => pow c k) (S n) m = (pow c (S m) - pow c (S n))/(c-1).
+      Proof.
+        intros.
+        rewrite sum_n_m_sum_n; [|lia].
+        rewrite sum_geom; trivial.
+        rewrite sum_geom; trivial.
+        unfold minus, plus, opp; simpl.
+        field; lra.
+      Qed.
+
+      Global Instance IsLp_sum (n : nat)
+             (rv_X : nat -> Ts -> R)
+             {rv : forall n, RandomVariable dom borel_sa (rv_X n)}
+             {islp:forall n, IsLp p (rv_X n)} :
+        IsLp p (rvsum rv_X n).
+      Proof.
+        unfold IsLp, rvsum.
+        Admitted.
+
+      Definition LpRRVsum (rvn:nat -> LpRRV p) (n:nat) : LpRRV p
+        := pack_LpRRV (rvsum rvn n).
+
+      Definition LpRRVabs (rv : LpRRV p) : LpRRV p
+        := pack_LpRRV (rvabs rv).                                                 
+
+      Lemma LpRRV_norm_sum (f : nat -> LpRRV p) :
+        forall (n:nat), 
+          LpRRVnorm (LpRRVsum f n) <=
+          sum_n (fun m => LpRRVnorm (f m)) n.
+      Proof.
+        unfold sum_n; intros.
+        induction n.
+        - unfold sum_n.
+          rewrite sum_n_n.
+          assert (LpRRV_eq  (LpRRVsum f 0) (f 0%nat)).
+          + apply rv_almost_eq_eq.
+            intro x.
+            unfold LpRRVsum; simpl.
+            unfold rvsum.
+            now rewrite sum_O.
+          + rewrite H; lra.
+        - rewrite sum_n_Sm; [|lia].
+          assert (LpRRV_eq (LpRRVsum f (S n)) (LpRRVplus (LpRRVsum f n) (f (S n)))).
+          + apply rv_almost_eq_eq.
+            intro x.
+            unfold LpRRVsum; simpl.
+            unfold rvsum, sum_n.
+            rewrite sum_n_Sm; [|lia].
+            now unfold rvplus, plus; simpl.
+          + rewrite H.
+            generalize (LpRRV_norm_plus (LpRRVsum f n) (f (S n))); intros.
+            apply Rle_trans with (r2 := LpRRVnorm (LpRRVsum f n) + LpRRVnorm (f (S n))); trivial.
+            unfold plus; simpl; lra.
+      Qed.
+
+      Lemma norm_abs (f : LpRRV p) :
+        LpRRVnorm (LpRRVabs f) = LpRRVnorm f.
+      Proof.
+        unfold LpRRVnorm.
+        f_equal.
+        unfold LpRRVabs.
+        simpl.
+        erewrite FiniteExpectation_ext with (rv_X2 := rvpower (rvabs f) (const p)).
+        reflexivity.
+        now rewrite rv_abs_abs.
+      Qed.
+      
+      Lemma c_pow_bound(c : R) (n : nat) :
+        0 < c < 1 ->
+        (1-c^n) / (1-c) <= 1/(1-c).
+      Proof.
+        intros.
+        unfold Rdiv.
+        apply Rmult_le_reg_r with (r := 1-c); [lra|].
+        rewrite Rmult_assoc.
+        rewrite <- Rinv_l_sym; [|lra].
+        rewrite Rmult_assoc.
+        rewrite <- Rinv_l_sym; [|lra].
+        apply Rplus_le_reg_r with (r := -1).
+        apply Ropp_le_cancel.
+        ring_simplify.
+        left; apply pow_lt; lra.
+      Qed.
+
+      Lemma lp_telescope_norm_bound (f : nat -> LpRRV p) :
+        (forall (n:nat), LpRRVnorm (LpRRVminus (f (S n)) (f n)) < / (pow 2 n)) ->
+        forall (n:nat), 
+          LpRRVnorm (LpRRVsum (fun n0 => LpRRVabs (LpRRVminus (f (S n0)) (f n0))) n) <= 2.
+      Proof.
+        intros.
+        apply Rle_trans with (r2 := sum_n (fun n0 => LpRRVnorm (LpRRVabs (LpRRVminus (f (S n0)) (f n0)))) n).
+        apply LpRRV_norm_sum.
+        apply Rle_trans with (r2 := sum_n (fun n0 => / 2^n0) n).
+        unfold sum_n.
+        apply sum_n_m_le.
+        intros; left.
+        rewrite norm_abs.
+        apply H.
+        rewrite sum_n_ext with (b := fun n0 => (/ 2)^n0) by (intros; now rewrite Rinv_pow).
+        rewrite sum_geom; [|lra].
+        generalize (c_pow_bound (/2) (S n)); intros.
+        lra.
+      Qed.
+        
+      (* note this is zero at points where the limit is infinite *)
+      Definition rv_lim (f : nat -> Ts -> R) : (Ts -> R) :=
+        (fun omega => real (Lim_seq (fun n => f n omega))).
+
+      Lemma islp_lim_bound (f : nat -> LpRRV p) (c : R) :
+        (forall (n:nat), LpRRVnorm (LpRRVsum f n) <= c) ->
+        IsLp p (rv_lim (fun n => LpRRVsum f n)).
+      Proof.
+        Admitted.
+
+      Lemma islp_lim_telescope_abs (f : nat -> LpRRV p) :
+        (forall (n:nat), LpRRVnorm (LpRRVminus (f (S n)) (f n)) < / (pow 2 n)) ->
+        IsLp p (rv_lim
+                  (fun n => LpRRVsum (fun n0 => LpRRVabs (LpRRVminus (f (S n0)) (f n0))) n)).
+      Proof.
+        intros.
+        apply islp_lim_bound with (c := 2).
+        intros.
+        now apply lp_telescope_norm_bound.
+      Qed.
+
+      Lemma lp_norm_seq_pow2 (f : nat -> LpRRV p) :
+        (forall (n:nat), LpRRVnorm (LpRRVminus (f (S n)) (f n)) < / (pow 2 n)) ->
+        forall (n m:nat), (m > S n)%nat -> 
+                          LpRRVnorm (LpRRVminus (f m) (f (S n))) <= / (pow 2 n).
+      Proof.
+        intros.
+        generalize (LpRRV_norm_telescope_minus f (S n) (m-S (S n))%nat); intros.
+        replace (S (m - S (S n)) + (S n))%nat with (m) in H1 by lia.
+        replace (m - S (S n) + (S n))%nat with (m-1)%nat in H1 by lia.
+        apply Rle_trans with 
+            (r2 := sum_n_m (fun m : nat => LpRRVnorm (LpRRVminus (f (S m)) (f m))) (S n) (m - 1)); trivial.
+        apply Rle_trans with (r2 := sum_n_m (fun m0 => / (2 ^ m0)) (S n) (m-1)%nat).
+        apply sum_n_m_le; intros; left.
+        apply H.
+        assert (forall n, (/ (pow 2 n)) = pow (/ 2) n).
+        intros.
+        now rewrite <- Rinv_pow.
+        rewrite sum_n_m_ext with (b := fun m0 => pow (/ 2) m0); trivial.
+        rewrite sum_geom_n_m; [|lra|lia].
+        replace (/2 ^ n) with ((/2)^n) by now rewrite H2.
+        replace (S (m-1)) with (m) by lia.
+        unfold Rdiv.
+        replace (/2 - 1) with (-/2) by lra.
+        rewrite <- Ropp_inv_permute; [|lra].
+        field_simplify.
+        simpl.
+        rewrite <- Rmult_assoc.
+        replace (2 * / 2) with (1) by lra.
+        ring_simplify.
+        replace ((/ 2)^n) with (0 + (/ 2)^n) at 2 by lra.
+        apply Rplus_le_compat_r.
+        apply Ropp_le_cancel.
+        ring_simplify.
+        replace (m) with (S (m-1)) by lia.
+        simpl.
+        field_simplify.
+        apply pow_le; lra.
+     Qed.
+
       Section quotbigp.
       Ltac LpRRVq_simpl :=
         repeat match goal with
