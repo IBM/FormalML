@@ -1190,7 +1190,6 @@ Section Lp.
       Proof.
         intros.
         induction n.
-        Search sum_n.
         - rewrite sum_O, pow_O, pow_1.
           unfold Rdiv.
           rewrite Rinv_r; lra.
@@ -1222,7 +1221,8 @@ Section Lp.
         IsLp p (rvsum rv_X n).
       Proof.
         unfold IsLp, rvsum.
-        Admitted.
+        
+      Admitted.
 
       Definition LpRRVsum (rvn:nat -> LpRRV p) (n:nat) : LpRRV p
         := pack_LpRRV (rvsum rvn n).
