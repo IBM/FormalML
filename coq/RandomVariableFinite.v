@@ -816,7 +816,7 @@ Section fe.
   Definition rvsum (Xn : nat -> Ts -> R) (n : nat) :=
     (fun omega => sum_n (fun n0 => Xn n0 omega) n).
   
-  Instance rvsum_measurable 
+  Global Instance rvsum_measurable 
            (Xn : nat -> Ts -> R)
            (Xn_rv : forall n, RealMeasurable dom (Xn n)) :
       forall (n:nat), RealMeasurable dom (rvsum Xn n).
@@ -840,7 +840,7 @@ Section fe.
         now apply plus_measurable.
    Qed.
 
-  Instance rvsum_rv (Xn : nat -> Ts -> R)
+  Global Instance rvsum_rv (Xn : nat -> Ts -> R)
            {rv : forall (n:nat), RandomVariable dom borel_sa (Xn n)} :
     forall (n:nat), RandomVariable dom borel_sa (rvsum Xn n).
       Proof.
@@ -850,7 +850,7 @@ Section fe.
         now apply rv_measurable.
       Qed.
 
-  Instance rvsum_pos (Xn : nat -> Ts -> R)
+  Global Instance rvsum_pos (Xn : nat -> Ts -> R)
            {Xn_pos : forall n, PositiveRandomVariable (Xn n)} :
     forall (n:nat), PositiveRandomVariable (rvsum Xn n).
   Proof.
