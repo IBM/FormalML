@@ -1220,9 +1220,23 @@ Section Lp.
              {islp:forall n, IsLp p (rv_X n)} :
         IsLp p (rvsum rv_X n).
       Proof.
-        unfold IsLp, rvsum.
-        
-      Admitted.
+        unfold sum_n; intros.
+        induction n.
+        - unfold sum_n.
+          assert (rv_eq (rvsum rv_X 0%nat)
+                        (rv_X 0%nat)).
+          + intros ?.
+            unfold rvsum.
+            now rewrite sum_O.
+          + now rewrite H.
+        - assert (rv_eq (rvsum rv_X (S n)) (rvplus (rvsum rv_X n) (rv_X (S n)))).
+          + intros ?.
+            unfold rvsum, sum_n, rvplus.
+            rewrite sum_n_Sm; [|lia].
+            reflexivity.
+          + rewrite H.
+            typeclasses eauto.
+      Qed.
 
       Definition LpRRVsum (rvn:nat -> LpRRV p) (n:nat) : LpRRV p
         := pack_LpRRV (rvsum rvn n).
