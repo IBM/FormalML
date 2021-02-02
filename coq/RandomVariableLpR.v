@@ -1332,11 +1332,14 @@ Section Lp.
       Proof.
       Admitted.
 
-      Instance rvlim_rv (f: nat -> Ts -> R)
+      Global Instance rvlim_rv (f: nat -> Ts -> R)
              {rv : forall n, RandomVariable dom borel_sa (f n)} :
         RandomVariable dom borel_sa (rvlim f).
       Proof.
-      Admitted.
+        apply measurable_rv.
+        apply rvlim_measurable; intros.
+        now apply rv_measurable.
+      Qed.
 
       Lemma power_inv_le b q c :
             0 < q -> 0 <= b -> 0 <= c ->
@@ -1356,6 +1359,7 @@ Section Lp.
         (forall (n:nat), rv_le (f n) (f (S n))) ->
         (forall (n:nat), rv_le (f n) (rvlim f)).
       Proof.
+        
         Admitted.
 
       Lemma islp_rvlim_bounded (f : nat -> LpRRV p) (c : R) :
@@ -1402,6 +1406,15 @@ Section Lp.
           specialize (finexp n).
           now rewrite FiniteExpectation_posRV with (posX := (H n)) in finexp.
           apply Lim_seq_const.
+          rewrite monc in H1.
+          cut (is_finite (Expectation_posRV (rvpower (rvabs (rvlim (fun x : nat => f x))) (const p)))).
+          + intros eqq; now rewrite <- eqq.
+          + eapply bounded_is_finite.
+            * eapply Expectation_posRV_pos.
+            * eapply H1.
+        - 
+          
+          
           Admitted.
 
           (*
