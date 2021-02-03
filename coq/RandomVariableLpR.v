@@ -1330,6 +1330,7 @@ Section Lp.
         (forall n, RealMeasurable dom (f n)) ->
         RealMeasurable dom (rvlim f).
       Proof.
+        unfold RealMeasurable; intros.
       Admitted.
 
       Global Instance rvlim_rv (f: nat -> Ts -> R)
@@ -1357,10 +1358,62 @@ Section Lp.
       Lemma rvlim_incr (f : nat -> LpRRV p)  :
         (forall (n:nat), PositiveRandomVariable  (f n)) ->
         (forall (n:nat), rv_le (f n) (f (S n))) ->
+        (forall (omega:Ts), is_finite (Lim_seq (fun n => f n omega))) ->
         (forall (n:nat), rv_le (f n) (rvlim f)).
       Proof.
-        
-        Admitted.
+        unfold rv_le, pointwise_relation, rvlim; intros.
+        generalize (Lim_seq_le_loc (fun _ => f n a) (fun n0 => f n0 a)); intros.
+        cut_to H2.
+        rewrite Lim_seq_const in H2.
+        now rewrite <- (H1 a) in H2.
+        exists n; intros.
+        now apply (incr_le_strong (fun n => f n a)).
+      Qed.
+
+      Definition p_power (x:R) := (power x p).
+
+      Lemma continuity_p_power_pos (x : R) :
+        0 < x ->
+        continuity_pt p_power x.
+      Proof.
+        intros.
+        unfold p_power.
+        generalize (continuity_pt_filterlim); intros.
+        apply derivable_continuous_pt.
+        generalize (derivable_pt_lim_power' x p H); intros.
+        unfold derivable_pt, derivable_pt_abs.
+        eauto.
+      Qed.
+
+      (* implicitly assumes p > 0 *)
+      Lemma continuity_p_power_Rabs (x : R) :
+        continuity_pt (fun x0 => p_power (Rabs x0)) x.
+      Proof.
+        destruct (Req_dec x 0).
+        - unfold p_power.
+          repeat red; intros.
+          exists (power eps (/ p)).
+          split; [now apply power_pos, Rgt_not_eq |].
+          unfold dist; simpl; unfold R_dist.
+          intros; subst.
+          rewrite Rabs_R0.
+          rewrite Rminus_0_r in H1.
+          destruct H1.
+          rewrite power0_Sbase, Rminus_0_r.
+          rewrite Rabs_right; [| apply Rle_ge, power_nonneg].
+          replace (eps) with (power (power eps (/p)) p) by (apply power_inv_cancel; lra).
+          apply Rlt_power_l; [lra |].
+          split; trivial.
+          apply Rabs_pos.
+        - apply continuity_pt_comp with (f2 := p_power).
+          generalize Rcontinuity_abs.
+          now unfold continuity.
+          apply continuity_p_power_pos.
+          generalize (Rabs_pos x); intros.
+          destruct H0; trivial.
+          symmetry in H0; apply Rabs_eq_0 in H0.
+          lra.
+      Qed.
 
       Lemma islp_rvlim_bounded (f : nat -> LpRRV p) (c : R) :
         0 <= c ->
@@ -1384,10 +1437,11 @@ Section Lp.
         assert (forall n, PositiveRandomVariable (rvpower (rvabs (f n)) (const p))).
         {
           intros.
-          unfold PositiveRandomVariable; intros.
-          unfold rvpower.
+          unfold PositiveRandomVariable, rvpower; intros.
           apply power_nonneg.
         }
+        assert (isfin_flim: forall (omega:Ts), is_finite (Lim_seq (fun n : nat => f n omega))).
+        admit.
         generalize ( monotone_convergence 
                       (rvpower (rvabs (rvlim (fun x : nat => f x))) (const p))
                       (fun n => (rvpower (rvabs (f n)) (const p))) _ _ _ _); intro monc.
@@ -1395,7 +1449,10 @@ Section Lp.
         cut_to monc.
         - unfold IsFiniteExpectation.
           assert (PositiveRandomVariable  (rvpower (rvabs (rvlim (fun x : nat => f x))) (const p))).
-          admit.
+          {
+            unfold PositiveRandomVariable, rvpower; intros.
+            apply power_nonneg.            
+          }
           rewrite Expectation_pos_posRV with (prv := H0).
           assert (Rbar_le
                     (Lim_seq (fun n : nat => Expectation_posRV (rvpower (rvabs (f n)) (const p)))) (power c p)).
@@ -1409,39 +1466,9 @@ Section Lp.
           rewrite monc in H1.
           cut (is_finite (Expectation_posRV (rvpower (rvabs (rvlim (fun x : nat => f x))) (const p)))).
           + intros eqq; now rewrite <- eqq.
-          + eapply bounded_is_finite.
+           + eapply bounded_is_finite.
             * eapply Expectation_posRV_pos.
             * eapply H1.
-        - 
-          
-          
-          Admitted.
-
-          (*
-
-          match_case; intros.
-          
-          rewrite H1 in monc.
-
-
-
-
-          rewrite Expectation_pos_posRV with (prv := H) in finexp.
-          assert (is_finite (Lim_seq (fun n : nat => Expectation_posRV (rvpower (rvabs (f n)) (const p))))).
-          
-          generalize (Lim_seq_le_loc 
-                        (fun n : nat => Expectation_posRV (rvpower (rvabs (f n)) (const p)))
-                        (
-          admit.
-
-          
-          rewrite <- monc.
-assert (rv_eq (rvpower (rvabs (rvlim (fun x : nat => f x))) (const p))
-                        (rvlim (fun x => rvpower (rvabs (f x)) (const p)))).
-          admit.
-          rewrite H.
-rewrite (IsFiniteExpectation_proper).
-admit.
         - intros n x.
           unfold rvpower.
           apply Rle_power_l; [ unfold const; lra |].
@@ -1449,10 +1476,10 @@ admit.
           unfold rvabs.
           rewrite Rabs_right by apply Rle_ge, fpos.
           rewrite Rabs_right.
-          now apply rvlim_incr.
+          apply rvlim_incr; trivial.
           apply Rge_trans with (r2 := f n x).
           + apply Rle_ge.
-            now apply rvlim_incr.
+            apply rvlim_incr; trivial.
           + apply Rle_ge, fpos.
         - intros n x.
           apply Rle_power_l.
@@ -1464,20 +1491,31 @@ admit.
             apply fincr.
         - intros; apply IsFiniteExpectation_posRV.
           apply (@LpRRV_LpS_FiniteLp p (f n)).
-        - admit.
+        - intros.
+          unfold rvpower, rvabs, rvlim, const.
+          apply is_lim_seq_ext with (u := fun n : nat => p_power (Rabs (f n omega))).
+          now unfold p_power.
+          apply is_lim_seq_continuous with (f := fun x => p_power (Rabs x)).
+          apply continuity_p_power_Rabs.
+          generalize (Lim_seq_correct (fun n : nat => f n omega)); intros.
+          rewrite <- (isfin_flim omega) in H0.
+          apply H0.
+          apply ex_lim_seq_incr.
+          now unfold rv_le, pointwise_relation in fincr.
         Admitted.
-      *)
 
-     (*
+      (*
       Lemma islp_lim_telescope_abs (f : nat -> LpRRV p) :
         (forall (n:nat), LpRRVnorm (LpRRVminus (f (S n)) (f n)) < / (pow 2 n)) ->
+        (forall (n:nat), PositiveRandomVariable  ((f n)) ->
+        (forall (n:nat), rv_le (f n) (f (S n))) ->
         IsLp p (rvlim
                   (fun n => LpRRVsum (fun n0 => LpRRVabs (LpRRVminus (f (S n0)) (f n0))) n)).
       Proof.
         intros.
         apply islp_rvlim_bounded with (c := 2).
         intros.
-        now apply lp_telescope_norm_bound.
+        apply lp_telescope_norm_bound.
       Qed.
       *)
       
