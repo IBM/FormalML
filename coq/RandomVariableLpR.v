@@ -1328,18 +1328,23 @@ Section Lp.
 
       Instance rvlim_measurable (f : nat -> Ts -> R) :
         (forall n, RealMeasurable dom (f n)) ->
+        (forall (omega:Ts), ex_finite_lim_seq (fun n => f n omega)) ->
         RealMeasurable dom (rvlim f).
       Proof.
         unfold RealMeasurable; intros.
+        
       Admitted.
 
       Global Instance rvlim_rv (f: nat -> Ts -> R)
              {rv : forall n, RandomVariable dom borel_sa (f n)} :
+        (forall (omega:Ts), ex_finite_lim_seq (fun n => f n omega)) ->
         RandomVariable dom borel_sa (rvlim f).
       Proof.
+        intros.
         apply measurable_rv.
         apply rvlim_measurable; intros.
         now apply rv_measurable.
+        apply H.
       Qed.
 
       Lemma power_inv_le b q c :
@@ -1355,17 +1360,33 @@ Section Lp.
         apply inv_power_cancel; lra.
       Qed.
 
+      Lemma isfin_Lim_seq (f : nat -> R) :
+        ex_finite_lim_seq f ->
+        is_finite (Lim_seq f).
+      Proof.
+        apply ex_finite_lim_seq_correct.
+      Qed.
+
+      Lemma isfin_Lim_seq2 (f : nat -> Ts -> R) :
+        (forall (omega:Ts), ex_finite_lim_seq (fun n => f n omega)) ->
+        forall (omega:Ts), is_finite (Lim_seq (fun n => f n omega)).
+      Proof.
+        intros.
+        now apply ex_finite_lim_seq_correct.
+      Qed.
+
       Lemma rvlim_incr (f : nat -> LpRRV p)  :
         (forall (n:nat), PositiveRandomVariable  (f n)) ->
         (forall (n:nat), rv_le (f n) (f (S n))) ->
-        (forall (omega:Ts), is_finite (Lim_seq (fun n => f n omega))) ->
+        (forall (omega:Ts), ex_finite_lim_seq (fun n => f n omega)) ->
         (forall (n:nat), rv_le (f n) (rvlim f)).
       Proof.
         unfold rv_le, pointwise_relation, rvlim; intros.
         generalize (Lim_seq_le_loc (fun _ => f n a) (fun n0 => f n0 a)); intros.
         cut_to H2.
         rewrite Lim_seq_const in H2.
-        now rewrite <- (H1 a) in H2.
+        generalize (isfin_Lim_seq2 _ H1); intros.
+        now rewrite <- (H3 a) in H2.
         exists n; intros.
         now apply (incr_le_strong (fun n => f n a)).
       Qed.
@@ -1420,12 +1441,14 @@ Section Lp.
       Lemma islp_rvlim_bounded (f : nat -> LpRRV p) (c : R) :
         0 <= c ->
         (forall (n:nat), LpRRVnorm (f n) <= c) ->
+        (forall (n:nat), RandomVariable dom borel_sa (f n)) ->
         (forall (n:nat), PositiveRandomVariable  (f n)) ->
         (forall (n:nat), rv_le (f n) (f (S n))) ->
-        (forall (omega:Ts), is_finite (Lim_seq (fun n : nat => f n omega))) ->
+        (forall (omega:Ts), ex_finite_lim_seq (fun n : nat => f n omega)) ->
         IsLp p (rvlim f).
       Proof.
-        intros cpos fnorm fpos fincr isfin_flim.
+        intros cpos fnorm f_rv fpos fincr exfinlim.
+        generalize (isfin_Lim_seq2 _ exfinlim); intros isfin_flim.
         unfold LpRRVnorm in fnorm.
         unfold IsLp.
         assert (finexp: forall n, FiniteExpectation prts (rvpower (rvabs (f n)) (const p)) <= 
@@ -1443,6 +1466,12 @@ Section Lp.
           unfold PositiveRandomVariable, rvpower; intros.
           apply power_nonneg.
         }
+        assert (rvlim_rv: RandomVariable dom borel_sa (rvpower (rvabs (rvlim (fun x : nat => f x))) (const p))).
+        apply rvpower_rv.
+        apply rvabs_rv.
+        apply rvlim_rv; trivial.
+        typeclasses eauto.
+        typeclasses eauto.
         generalize ( monotone_convergence 
                       (rvpower (rvabs (rvlim (fun x : nat => f x))) (const p))
                       (fun n => (rvpower (rvabs (f n)) (const p))) _ _ _ _); intro monc.
@@ -1530,12 +1559,11 @@ Section Lp.
 
       Lemma islp_lim_telescope_abs (f : nat -> LpRRV p) :
         (forall (n:nat), LpRRVnorm (LpRRVminus (f (S n)) (f n)) < / (pow 2 n)) ->
+        (forall (n:nat), RandomVariable dom borel_sa (f n)) ->
         (forall omega : Ts,
-            is_finite
-              (Lim_seq
-                 (fun n : nat =>
-                    LpRRVsum (fun n0 : nat => LpRRVabs (LpRRVminus (f (S n0)) (f n0))) n omega))) ->
-
+            ex_finite_lim_seq
+              (fun n : nat =>
+                 LpRRVsum (fun n0 : nat => LpRRVabs (LpRRVminus (f (S n0)) (f n0))) n omega)) ->
         IsLp p (rvlim
                   (fun n => LpRRVsum (fun n0 => LpRRVabs (LpRRVminus (f (S n0)) (f n0))) n)).
       Proof.
@@ -1543,6 +1571,8 @@ Section Lp.
         apply islp_rvlim_bounded with (c := 2); try lra.
         intros.
         apply lp_telescope_norm_bound; trivial.
+        - intros.
+          typeclasses eauto.
         - intros.
           apply LpRRVsum_pos.
           typeclasses eauto.
@@ -1553,7 +1583,7 @@ Section Lp.
           apply Rplus_le_compat1_l.
           unfold rvabs.
           apply Rabs_pos.
-        - apply H0.
+        - apply H1.
       Qed.
       
       Lemma lp_norm_seq_pow2 (f : nat -> LpRRV p) :
