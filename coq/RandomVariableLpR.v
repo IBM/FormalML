@@ -1415,14 +1415,17 @@ Section Lp.
           lra.
       Qed.
 
+      (* need stronger version of monotone_convergence to remove
+         is_finite (Lim_seq (fun n : nat => f n omega))) hypothesis *)
       Lemma islp_rvlim_bounded (f : nat -> LpRRV p) (c : R) :
         0 <= c ->
         (forall (n:nat), LpRRVnorm (f n) <= c) ->
         (forall (n:nat), PositiveRandomVariable  (f n)) ->
         (forall (n:nat), rv_le (f n) (f (S n))) ->
+        (forall (omega:Ts), is_finite (Lim_seq (fun n : nat => f n omega))) ->
         IsLp p (rvlim f).
       Proof.
-        intros cpos fnorm fpos fincr.
+        intros cpos fnorm fpos fincr isfin_flim.
         unfold LpRRVnorm in fnorm.
         unfold IsLp.
         assert (finexp: forall n, FiniteExpectation prts (rvpower (rvabs (f n)) (const p)) <= 
@@ -1440,8 +1443,6 @@ Section Lp.
           unfold PositiveRandomVariable, rvpower; intros.
           apply power_nonneg.
         }
-        assert (isfin_flim: forall (omega:Ts), is_finite (Lim_seq (fun n : nat => f n omega))).
-        admit.
         generalize ( monotone_convergence 
                       (rvpower (rvabs (rvlim (fun x : nat => f x))) (const p))
                       (fun n => (rvpower (rvabs (f n)) (const p))) _ _ _ _); intro monc.
@@ -1502,22 +1503,58 @@ Section Lp.
           apply H0.
           apply ex_lim_seq_incr.
           now unfold rv_le, pointwise_relation in fincr.
-        Admitted.
+        Qed.
 
-      (*
+      Lemma LpRRVsum_pos (f : nat -> LpRRV p) (n : nat) :
+        (forall n, PositiveRandomVariable (f n)) ->
+        PositiveRandomVariable (LpRRVsum f n).
+      Proof.
+        unfold PositiveRandomVariable.
+        intros.
+        unfold LpRRVsum, pack_LpRRV; simpl.
+        unfold rvsum.
+        induction n.
+        - now rewrite sum_O.
+        - rewrite sum_Sn.
+          unfold rvplus, plus; simpl.
+          now apply Rplus_le_le_0_compat.
+      Qed.
+          
+      Lemma Rplus_le_compat1_l (a b : R) :
+        0 <= b -> a <= a + b.
+      Proof.
+        intros.
+        replace (a) with (a + 0) at 1 by lra.
+        now apply Rplus_le_compat_l.
+      Qed.
+
       Lemma islp_lim_telescope_abs (f : nat -> LpRRV p) :
         (forall (n:nat), LpRRVnorm (LpRRVminus (f (S n)) (f n)) < / (pow 2 n)) ->
-        (forall (n:nat), PositiveRandomVariable  ((f n)) ->
-        (forall (n:nat), rv_le (f n) (f (S n))) ->
+        (forall omega : Ts,
+            is_finite
+              (Lim_seq
+                 (fun n : nat =>
+                    LpRRVsum (fun n0 : nat => LpRRVabs (LpRRVminus (f (S n0)) (f n0))) n omega))) ->
+
         IsLp p (rvlim
                   (fun n => LpRRVsum (fun n0 => LpRRVabs (LpRRVminus (f (S n0)) (f n0))) n)).
       Proof.
         intros.
-        apply islp_rvlim_bounded with (c := 2).
+        apply islp_rvlim_bounded with (c := 2); try lra.
         intros.
-        apply lp_telescope_norm_bound.
+        apply lp_telescope_norm_bound; trivial.
+        - intros.
+          apply LpRRVsum_pos.
+          typeclasses eauto.
+        - intros n x.
+          unfold LpRRVsum, pack_LpRRV; simpl.
+          unfold rvsum.
+          rewrite sum_Sn.
+          apply Rplus_le_compat1_l.
+          unfold rvabs.
+          apply Rabs_pos.
+        - apply H0.
       Qed.
-      *)
       
       Lemma lp_norm_seq_pow2 (f : nat -> LpRRV p) :
         (forall (n:nat), LpRRVnorm (LpRRVminus (f (S n)) (f n)) < / (pow 2 n)) ->
