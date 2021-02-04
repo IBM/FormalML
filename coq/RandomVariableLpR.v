@@ -1360,14 +1360,7 @@ Section Lp.
         apply inv_power_cancel; lra.
       Qed.
 
-      Lemma isfin_Lim_seq (f : nat -> R) :
-        ex_finite_lim_seq f ->
-        is_finite (Lim_seq f).
-      Proof.
-        apply ex_finite_lim_seq_correct.
-      Qed.
-
-      Lemma isfin_Lim_seq2 (f : nat -> Ts -> R) :
+      Lemma isfin_Lim_seq (f : nat -> Ts -> R) :
         (forall (omega:Ts), ex_finite_lim_seq (fun n => f n omega)) ->
         forall (omega:Ts), is_finite (Lim_seq (fun n => f n omega)).
       Proof.
@@ -1385,7 +1378,7 @@ Section Lp.
         generalize (Lim_seq_le_loc (fun _ => f n a) (fun n0 => f n0 a)); intros.
         cut_to H2.
         rewrite Lim_seq_const in H2.
-        generalize (isfin_Lim_seq2 _ H1); intros.
+        generalize (isfin_Lim_seq _ H1); intros.
         now rewrite <- (H3 a) in H2.
         exists n; intros.
         now apply (incr_le_strong (fun n => f n a)).
@@ -1448,7 +1441,7 @@ Section Lp.
         IsLp p (rvlim f).
       Proof.
         intros cpos fnorm f_rv fpos fincr exfinlim.
-        generalize (isfin_Lim_seq2 _ exfinlim); intros isfin_flim.
+        generalize (isfin_Lim_seq _ exfinlim); intros isfin_flim.
         unfold LpRRVnorm in fnorm.
         unfold IsLp.
         assert (finexp: forall n, FiniteExpectation prts (rvpower (rvabs (f n)) (const p)) <= 
