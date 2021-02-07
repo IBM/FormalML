@@ -78,7 +78,7 @@ Set Bullet Behavior "Strict Subproofs".
         apply Rlt_n_Sn.
     Qed.
 
-    Context {X : CompleteNormedModule R_AbsRing} {F : X -> X}
+    Context {X : NormedModule R_AbsRing} {F : X -> X}
             (hF : is_norm_contraction F) (α : nat -> R) (x0 : X).
 
     Fixpoint RMsync (n : nat) : X :=
@@ -90,7 +90,7 @@ Set Bullet Behavior "Strict Subproofs".
 
     Lemma plus_minus_scal_distr (r : R) (x1 x2 y1 y2 : X) :
       minus (plus (scal (1 - r) x1) (scal r y1) ) (plus (scal (1-r) x2) (scal r y2)) =
-      plus (@scal R_AbsRing X (1-r) (minus x1 x2)) (@scal R_AbsRing X r (minus y1 y2)).
+      plus (scal (1-r) (minus x1 x2)) (scal r (minus y1 y2)).
     Proof.
       generalize (scal_minus_distr_l (1 - r) x1 x2); intros H1.
       generalize (scal_minus_distr_l r y1 y2); intros H2.
@@ -159,7 +159,7 @@ Set Bullet Behavior "Strict Subproofs".
     Qed.
 
     Definition f_alpha (f : X -> X) a : (X -> X)  :=
-      fun (x:X) => plus (@scal R_AbsRing X (1-a) x) (@scal R_AbsRing X a (f x)).
+      fun (x:X) => plus (scal (1-a) x) (scal a (f x)).
 
     Lemma xstar_fixpoint xstar :
       xstar = F xstar ->
@@ -217,12 +217,15 @@ Set Bullet Behavior "Strict Subproofs".
       unfold f_alpha.
       rewrite plus_minus_scal_distr.
       rewrite norm_triangle.
-      replace (norm (@scal R_AbsRing X (1 - a) (minus x y))) with ((1-a)*norm(minus x y)).
-      replace (norm (@scal R_AbsRing X a (minus (F x) (F y)))) with (a*norm(minus (F x) (F y))).      
-      specialize (H1 x y).
+      rewrite norm_scal_R.
+      rewrite norm_scal_R.
+      unfold abs; simpl.
+      repeat rewrite Rabs_right.
+      specialize (H1 x y).      
       apply Rmult_le_compat_l with (r := a) in H1; lra.
-      generalize (norm_scal_R a (minus (F x) (F y))); intros.
-    Admitted.
+      lra.
+      lra.
+    Qed.
       
     Lemma RMsync_f_alpha n :
       RMsync (S n) = f_alpha F (α n) (RMsync n).
