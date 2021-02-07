@@ -288,11 +288,10 @@ Set Bullet Behavior "Strict Subproofs".
       intros.
       generalize (Vasily_2a gamma xstar H H0 H1 H3); intros.
       rewrite is_lim_seq_incr_1.
-      apply (is_lim_seq_le_le (fun n => 0) _
-                              (fun n =>  norm (minus x0 xstar) * prod_f_R0 (fun k : nat => g_alpha gamma (α k)) n) 0); intros.
+      eapply is_lim_seq_le_le; intros.
       - split.
-        + apply norm_ge_0.
-        + apply H4.
+        + eapply norm_ge_0.
+        + eapply H4.
       - apply is_lim_seq_const.
       - replace (Finite 0) with (Rbar_mult (norm (minus x0 xstar)) 0).
         now apply is_lim_seq_scal_l.
