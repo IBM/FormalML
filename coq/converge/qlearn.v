@@ -161,6 +161,9 @@ Set Bullet Behavior "Strict Subproofs".
     Definition f_alpha (f : X -> X) a : (X -> X)  :=
       fun (x:X) => plus (scal (1-a) x) (scal a (f x)).
 
+    Definition g_alpha (gamma a : R) :=
+      1 - (1 - gamma) * a.
+
     Lemma xstar_fixpoint xstar :
       xstar = F xstar ->
       forall n, xstar = f_alpha F (α n) xstar.
@@ -185,7 +188,7 @@ Set Bullet Behavior "Strict Subproofs".
     Lemma gamma_alpha_pos gamma :
       0 <= gamma < 1 ->
       (forall n, 0 <= α n <= 1) ->
-      forall n, 0 <= 1 - (1 - gamma) * α n.
+      forall n, 0 <= g_alpha gamma (α n).
     Proof.
       intros.
       apply Rge_le.
@@ -198,23 +201,23 @@ Set Bullet Behavior "Strict Subproofs".
     Lemma gamma_alpha_le_1 gamma :
       0 <= gamma < 1 ->
       (forall n, 0 <= α n <= 1) ->
-      forall n, 1 - (1 - gamma) * α n <= 1.
+      forall n, g_alpha gamma (α n) <= 1.
     Proof.
       intros.
       assert (0 <= (1 - gamma) * α n).
       specialize (H0 n).
       apply Rmult_le_pos; lra.
-      lra.
+      unfold g_alpha; lra.
     Qed.
 
     Lemma f_alpha_contraction gamma a :
       0 <= gamma < 1 ->
       0 <= a <= 1 ->
       (forall x y, norm(minus (F x) (F y)) <= gamma * norm (minus x y)) ->
-      forall x y, norm(minus (f_alpha F a x) (f_alpha F a y)) <= (1 - (1 - gamma) * a) * norm (minus x y).
+      forall x y, norm(minus (f_alpha F a x) (f_alpha F a y)) <= (g_alpha gamma a) * norm (minus x y).
     Proof.
       intros.
-      unfold f_alpha.
+      unfold f_alpha, g_alpha.
       rewrite plus_minus_scal_distr.
       rewrite norm_triangle.
       rewrite norm_scal_R.
@@ -238,7 +241,7 @@ Set Bullet Behavior "Strict Subproofs".
       (forall x y, norm(minus (F x) (F y)) <= gamma * norm (minus x y)) ->
       forall n,
         norm (minus (RMsync (S n)) xstar) <= 
-        (1 - (1 - gamma) * (α n)) * norm (minus (RMsync n) xstar).
+        (g_alpha gamma (α n)) * norm (minus (RMsync n) xstar).
       Proof.
         intros.
         replace (RMsync (S n)) with (f_alpha F (α n) (RMsync n)).
@@ -256,7 +259,7 @@ Set Bullet Behavior "Strict Subproofs".
       (forall x y, norm(minus (F x) (F y)) <= gamma * norm (minus x y)) ->
       forall n, 
         norm (minus (RMsync (S n)) xstar) <= 
-        norm (minus x0 xstar) * prod_f_R0 (fun k => 1 - (1-gamma) * (α k)) n.
+        norm (minus x0 xstar) * prod_f_R0 (fun k => g_alpha gamma (α k)) n.
       Proof.
         intros.
         generalize (gamma_alpha_RMsync_ratio gamma xstar H H1 H0 H2); intros.
@@ -266,7 +269,7 @@ Set Bullet Behavior "Strict Subproofs".
           now apply H3.
         - specialize (H3 (S n)).
           rewrite Rmult_comm in H3.
-          apply Rle_trans with (r2 := norm (minus (RMsync (S n)) xstar) * (1 - (1 - gamma) * α (S n))); trivial.
+          apply Rle_trans with (r2 := norm (minus (RMsync (S n)) xstar) * (g_alpha gamma (α (S n)))); trivial.
           rewrite prod_f_R0_Sn.
           rewrite <- Rmult_assoc.
           apply Rmult_le_compat_r.
@@ -278,15 +281,22 @@ Set Bullet Behavior "Strict Subproofs".
       0 <= gamma < 1 ->
       xstar = F xstar ->
       (forall n, 0 <= α n <= 1) ->
-      is_lim_seq (fun n => prod_f_R0 (fun k => 1 - (1-gamma) * (α k)) n) 0 ->
+      is_lim_seq (fun n => prod_f_R0 (fun k => g_alpha gamma (α k)) n) 0 ->
       (forall x y, norm(minus (F x) (F y)) <= gamma * norm (minus x y)) ->
       is_lim_seq (fun n => norm (minus (RMsync n) xstar)) 0.
     Proof.
       intros.
       generalize (Vasily_2a gamma xstar H H0 H1 H3); intros.
-      generalize (is_lim_seq_le (fun n => norm (minus (RMsync (S n)) xstar)) 
-                                (fun n =>  norm (minus x0 xstar) * prod_f_R0 (fun k : nat => 1 - (1 - gamma) * α k) n)); intros.
-      
-    Admitted.
+      rewrite is_lim_seq_incr_1.
+      apply (is_lim_seq_le_le (fun n => 0) _
+                              (fun n =>  norm (minus x0 xstar) * prod_f_R0 (fun k : nat => g_alpha gamma (α k)) n) 0); intros.
+      - split.
+        + apply norm_ge_0.
+        + apply H4.
+      - apply is_lim_seq_const.
+      - replace (Finite 0) with (Rbar_mult (norm (minus x0 xstar)) 0).
+        now apply is_lim_seq_scal_l.
+        apply Rbar_mult_0_r.
+    Qed.
     
   End qlearn.
