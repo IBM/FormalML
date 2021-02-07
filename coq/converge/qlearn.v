@@ -220,11 +220,9 @@ Set Bullet Behavior "Strict Subproofs".
       rewrite norm_scal_R.
       rewrite norm_scal_R.
       unfold abs; simpl.
-      repeat rewrite Rabs_right.
+      repeat rewrite Rabs_right by lra.
       specialize (H1 x y).      
       apply Rmult_le_compat_l with (r := a) in H1; lra.
-      lra.
-      lra.
     Qed.
       
     Lemma RMsync_f_alpha n :
