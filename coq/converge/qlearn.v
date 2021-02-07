@@ -1,6 +1,6 @@
 Require Import converge.mdp LM.fixed_point.
 Require Import RealAdd.
-Require Import micromega.Lra.
+Require Import Lra Lia.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -90,7 +90,7 @@ Set Bullet Behavior "Strict Subproofs".
 
     Lemma plus_minus_scal_distr (r : R) (x1 x2 y1 y2 : X) :
       minus (plus (scal (1 - r) x1) (scal r y1) ) (plus (scal (1-r) x2) (scal r y2)) =
-      plus (scal (1-r) (minus x1 x2)) (scal r (minus y1 y2)).
+      plus (@scal R_AbsRing X (1-r) (minus x1 x2)) (@scal R_AbsRing X r (minus y1 y2)).
     Proof.
       generalize (scal_minus_distr_l (1 - r) x1 x2); intros H1.
       generalize (scal_minus_distr_l r y1 y2); intros H2.
@@ -158,5 +158,134 @@ Set Bullet Behavior "Strict Subproofs".
               assumption.
     Qed.
 
+    Definition f_alpha (f : X -> X) a : (X -> X)  :=
+      fun (x:X) => plus (@scal R_AbsRing X (1-a) x) (@scal R_AbsRing X a (f x)).
 
+    Lemma xstar_fixpoint xstar :
+      xstar = F xstar ->
+      forall n, xstar = f_alpha F (α n) xstar.
+    Proof.
+      intros.
+      unfold f_alpha.
+      rewrite <- H.
+      rewrite <- scal_distr_r.
+      unfold plus; simpl.
+      replace (1 - α n + α n) with 1 by lra.
+      replace 1 with (@one R_AbsRing).
+      now rewrite scal_one.
+      reflexivity.
+    Qed.
+
+    Lemma prod_f_R0_Sn f n :
+      prod_f_R0 f (S n) = prod_f_R0 f n * (f (S n)).
+    Proof.
+      now simpl.
+    Qed.
+
+    Lemma gamma_alpha_pos gamma :
+      0 <= gamma < 1 ->
+      (forall n, 0 <= α n <= 1) ->
+      forall n, 0 <= 1 - (1 - gamma) * α n.
+    Proof.
+      intros.
+      apply Rge_le.
+      apply Rge_minus.
+      replace (1) with (1*1) at 1 by lra.
+      specialize (H0 n).
+      apply Rmult_ge_compat; lra.
+    Qed.
+
+    Lemma gamma_alpha_le_1 gamma :
+      0 <= gamma < 1 ->
+      (forall n, 0 <= α n <= 1) ->
+      forall n, 1 - (1 - gamma) * α n <= 1.
+    Proof.
+      intros.
+      assert (0 <= (1 - gamma) * α n).
+      specialize (H0 n).
+      apply Rmult_le_pos; lra.
+      lra.
+    Qed.
+
+    Lemma f_alpha_contraction gamma a :
+      0 <= gamma < 1 ->
+      0 <= a <= 1 ->
+      (forall x y, norm(minus (F x) (F y)) <= gamma * norm (minus x y)) ->
+      forall x y, norm(minus (f_alpha F a x) (f_alpha F a y)) <= (1 - (1 - gamma) * a) * norm (minus x y).
+    Proof.
+      intros.
+      unfold f_alpha.
+      rewrite plus_minus_scal_distr.
+      rewrite norm_triangle.
+      replace (norm (@scal R_AbsRing X (1 - a) (minus x y))) with ((1-a)*norm(minus x y)).
+      replace (norm (@scal R_AbsRing X a (minus (F x) (F y)))) with (a*norm(minus (F x) (F y))).      
+      specialize (H1 x y).
+      apply Rmult_le_compat_l with (r := a) in H1; lra.
+      generalize (norm_scal_R a (minus (F x) (F y))); intros.
+    Admitted.
+      
+    Lemma RMsync_f_alpha n :
+      RMsync (S n) = f_alpha F (α n) (RMsync n).
+    Proof.
+      now simpl.
+    Qed.
+
+    Lemma gamma_alpha_RMsync_ratio gamma xstar :
+      0 <= gamma < 1 ->
+      (forall n, 0 <= α n <= 1) ->
+      xstar = F xstar ->
+      (forall x y, norm(minus (F x) (F y)) <= gamma * norm (minus x y)) ->
+      forall n,
+        norm (minus (RMsync (S n)) xstar) <= 
+        (1 - (1 - gamma) * (α n)) * norm (minus (RMsync n) xstar).
+      Proof.
+        intros.
+        replace (RMsync (S n)) with (f_alpha F (α n) (RMsync n)).
+        replace (xstar) with (f_alpha F (α n) xstar) at 1.
+        apply f_alpha_contraction; trivial.
+        symmetry.
+        now apply xstar_fixpoint.
+        now simpl.
+    Qed.
+
+    Theorem Vasily_2a gamma xstar :
+      0 <= gamma < 1 ->
+      xstar = F xstar ->
+      (forall n, 0 <= α n <= 1) ->
+      (forall x y, norm(minus (F x) (F y)) <= gamma * norm (minus x y)) ->
+      forall n, 
+        norm (minus (RMsync (S n)) xstar) <= 
+        norm (minus x0 xstar) * prod_f_R0 (fun k => 1 - (1-gamma) * (α k)) n.
+      Proof.
+        intros.
+        generalize (gamma_alpha_RMsync_ratio gamma xstar H H1 H0 H2); intros.
+        induction n.
+        - unfold prod_f_R0.
+          rewrite Rmult_comm.
+          now apply H3.
+        - specialize (H3 (S n)).
+          rewrite Rmult_comm in H3.
+          apply Rle_trans with (r2 := norm (minus (RMsync (S n)) xstar) * (1 - (1 - gamma) * α (S n))); trivial.
+          rewrite prod_f_R0_Sn.
+          rewrite <- Rmult_assoc.
+          apply Rmult_le_compat_r.
+          now apply gamma_alpha_pos.
+          apply IHn.
+      Qed.
+                 
+    Theorem Vasily_2b gamma xstar :
+      0 <= gamma < 1 ->
+      xstar = F xstar ->
+      (forall n, 0 <= α n <= 1) ->
+      is_lim_seq (fun n => prod_f_R0 (fun k => 1 - (1-gamma) * (α k)) n) 0 ->
+      (forall x y, norm(minus (F x) (F y)) <= gamma * norm (minus x y)) ->
+      is_lim_seq (fun n => norm (minus (RMsync n) xstar)) 0.
+    Proof.
+      intros.
+      generalize (Vasily_2a gamma xstar H H0 H1 H3); intros.
+      generalize (is_lim_seq_le (fun n => norm (minus (RMsync (S n)) xstar)) 
+                                (fun n =>  norm (minus x0 xstar) * prod_f_R0 (fun k : nat => 1 - (1 - gamma) * α k) n)); intros.
+      
+    Admitted.
+    
   End qlearn.
