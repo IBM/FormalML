@@ -111,7 +111,7 @@ Set Bullet Behavior "Strict Subproofs".
     Qed.
 
  Lemma is_contraction_RMsync (r : R) :
-      (0<r<1) -> (@norm_factor R_AbsRing X < 1) ->
+      (0<r<1) -> (@norm_factor R_AbsRing X <= 1) ->
       is_contraction (fun (x : X) => plus (scal (1 - r) x) (scal r (F x))).
     Proof.
       intros Hr Hnf.
@@ -151,19 +151,21 @@ Set Bullet Behavior "Strict Subproofs".
               replace r0 with (1*r0) by lra.
               eapply Rlt_le_trans ; eauto ; try lra.
               simpl. apply Rmult_le_compat_r ; lra; trivial.
-          -- generalize (norm_scal r (minus (F x2) (F x1))); intros.
+          --  generalize (norm_scal r (minus (F x2) (F x1))); intros.
               eapply Rle_trans; eauto.
               unfold abs ; simpl.
               rewrite Rabs_pos_eq ; try (left ; lra).
               rewrite Rmult_assoc.
               apply Rmult_le_compat_l; try lra.
-              left.
-              apply HF; trivial.
               generalize (norm_compat2 x1 x2 (mkposreal r0 H) H0) ; intros.
               simpl in H3.
+              unfold ball_norm in HF.
+              left.
+              apply HF; trivial.
               replace r0 with (1*r0) by lra.
-              unfold ball_norm.
-              eapply Rlt_trans; eauto.
+              eapply Rlt_le_trans; eauto.
+              apply Rmult_le_compat_r; trivial.
+              now left.
     Qed.
 
 
