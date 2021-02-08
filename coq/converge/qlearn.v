@@ -297,5 +297,87 @@ Set Bullet Behavior "Strict Subproofs".
         now apply is_lim_seq_scal_l.
         apply Rbar_mult_0_r.
     Qed.
-    
+
+    Fixpoint RMseq (s : nat -> R) (init : R) (n : nat) : R :=
+      match n with
+      | 0 => init
+      | (S k) => plus (scal (1 - α k) (RMseq s init k)) (scal (α k) (s k))
+      end.
+
+    Fixpoint RMseqX (f : nat -> X -> X) (init : X) (n : nat) : X :=
+      match n with
+      | 0 => init
+      | (S k) => plus (scal (1 - α k) (RMseqX f init k)) (scal (α k) (f k (RMseqX f init k)))
+      end.
+      
+    Lemma helper_bounding_5 (s1 s2 : nat -> R) (init1 init2 : R) :
+      0 <= init1 <= init2 ->
+      (forall n, 0 <= (α n) <= 1) ->
+      (forall n, 0 <= s1 n <= s2 n) ->
+      forall n, 0 <= RMseq s1 init1 n <= RMseq s2 init2 n.
+    Proof.
+      intros.
+      induction n.
+      - now unfold RMseq.
+      - simpl.
+        unfold plus, scal; simpl.
+        unfold mult; simpl.
+        specialize (H0 n).
+        specialize (H1 n).
+        split.
+        + apply Rplus_le_le_0_compat; apply Rmult_le_pos; lra.
+        + apply Rplus_le_compat; apply Rmult_le_compat_l; lra.
+     Qed.
+
+    Lemma helper_convergence_6 (delta : nat -> R) (init:R) :
+      0 <= init ->
+      (forall n, 0 <= (α n) <= 1) ->
+      (forall n, 0 <= delta n) ->
+      is_lim_seq α 0 ->
+      is_lim_seq delta 0 ->
+      (forall k, is_lim_seq (fun n => prod_f_R0 (fun m => 1 - (α (m + k)%nat)) n) 0) ->
+      is_lim_seq (RMseq delta init) 0.
+    Proof.
+      Admitted.
+
+    Lemma bounding_7 (gamma C : R) (f : nat -> X -> X) (init : X) :
+      0 <= gamma < 1 -> 0 <= C ->
+      (forall n, 0 <= (α n) <= 1) ->
+      (forall n x, norm (f n x) <= gamma * norm x + C) ->
+      is_lim_seq α 0 ->
+      (forall k, is_lim_seq (fun n => prod_f_R0 (fun m => 1 - (α (m + k)%nat)) n) 0) ->
+      exists B, forall n, norm ( RMseqX f init n) <= B.
+    Proof.
+      intros.
+      assert (forall n, norm(RMseqX f init (S n)) <= (1 - α n)*norm(RMseqX f init n) + (α n)*(gamma * norm (RMseqX f init n) + C)).
+      {
+        intros.
+        simpl.
+        specialize (H1 n).
+        eapply Rle_trans.
+        generalize (@norm_triangle R_AbsRing X); intros.
+        apply H5.
+        do 2 rewrite norm_scal_R.
+        unfold abs; simpl.
+        rewrite Rabs_right; try lra.
+        rewrite Rabs_right; try lra.
+        apply Rplus_le_compat_l.
+        apply Rmult_le_compat_l; try lra.
+        apply H2.
+      }
+
+      assert (forall n,  norm(RMseqX f init (S n)) <= (g_alpha gamma  (α n)) * norm(RMseqX f init n) + (α n)*C).
+      {
+        intros.
+        eapply Rle_trans.
+        apply H5.
+        unfold g_alpha.
+        lra.
+     }
+      
+        
+      
+
+     Admitted.
+
   End qlearn.
