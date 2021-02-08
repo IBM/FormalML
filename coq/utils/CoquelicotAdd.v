@@ -436,4 +436,3 @@ Proof.
 Qed.
   
 Hint Resolve sqrt2_neq0 sqrt_PI_neq0 sqrt_2PI_nzero : Rarith.
-

@@ -6,87 +6,31 @@ Set Bullet Behavior "Strict Subproofs".
 
   Section qlearn.
 
-    Fixpoint list_product (l : list R) : R :=
-      match l with
-      | nil => 1
-      | cons x xs => x*list_product xs
-      end.
-
-    (* Lemma 4 of Vasily's blueprint.*)
-    Lemma product_sum_helper (l : list R):
-      List.Forall (fun r => 0 <= r <= 1) l -> 1 - list_sum l <= list_product (List.map (fun x => 1 - x) l).
+    Lemma ball_zero_eq {K : AbsRing} (X : NormedModule K) :
+      forall x y : X, ball x 0 y -> x=y.
     Proof.
-      revert l.
-      induction l.
-      * simpl ; lra.
-      * simpl. intros Hl.
-        eapply Rle_trans with ((1-list_sum l)*(1-a)).
-        ++ ring_simplify.
-           apply Rplus_le_compat_r.
-           do 2 rewrite Rle_minus_r.
-           ring_simplify.
-           inversion Hl ; subst.
-           specialize (IHl H2). destruct H1.
-           apply Rmult_le_pos ; trivial.
-           apply list_sum_pos_pos'; trivial.
-           generalize (List.Forall_and_inv _ _ H2); intros.
-           destruct H1; trivial.
-        ++ inversion Hl; subst.
-           specialize (IHl H2).
-           rewrite Rmult_comm.
-           apply Rmult_le_compat_l ; trivial.
-           lra.
+      intros x y Hxy.
+      apply eq_close.
+      intros eps.
+      apply ball_le with (e1 := 0).
+      + left. apply cond_pos.
+      + assumption.
     Qed.
 
-    Definition is_norm_Lipschitz {K1 K2: AbsRing}
-               {X : NormedModule K1} {Y : NormedModule K2} (f: X -> Y) (k:R) :=
-      0 <= k /\
-        forall x1 x2 r, 0 < r ->
-        ball_norm x1 r x2 -> ball_norm (f x1) (k*r) (f x2).
+    Context {X : CompleteNormedModule R_AbsRing} {F : X -> X}
+            (hF : is_contraction F) (α : nat -> R) (x0 : X).
 
-    Definition is_norm_contraction {K1 K2: AbsRing}
-               {X : NormedModule K1} {Y : NormedModule K2}(f: X -> Y) :=
-      exists k, k < 1 /\ is_norm_Lipschitz f k.
+    Definition f_alpha (f : X -> X) a : (X -> X)  :=
+      fun (x:X) => plus (scal (1-a) x) (scal a (f x)).
 
-    Lemma ball_norm_zero {K : AbsRing} (X : NormedModule K) :
-      forall x y : X, ball_norm x 0 y -> x=y.
-    Proof.
-      intros.
-      unfold ball_norm in H.
-      generalize (norm_ge_0 (minus y x)); intros Hge.
-      assert (norm (minus y x) = 0) by lra.
-      generalize (norm_eq_zero (minus y x) H0); intros Hmz.
-      replace (zero) with (minus x x) in Hmz by (apply minus_eq_zero).
-      unfold minus in Hmz.
-      eapply plus_reg_r; eauto.
-    Qed.
-
-    Lemma is_norm_Lipschitz_zero  {K1 K2: AbsRing}
-          {X : NormedModule K1} {Y : NormedModule K2} (f: X -> Y):
-      is_norm_Lipschitz f 0 -> (forall x y, f x = f y).
-    Proof.
-      intros Hl x y.
-      unfold is_norm_Lipschitz in Hl.
-      destruct Hl as [? Hn].
-      apply ball_norm_zero.
-      replace 0 with (0*(norm(minus y x) + 1)) by lra.
-      apply Hn.
-      + replace 0 with (0+0) by lra.
-        apply Rplus_le_lt_compat; try lra.
-        apply norm_ge_0.
-      + unfold ball_norm.
-        apply Rlt_n_Sn.
-    Qed.
-
-    Context {X : NormedModule R_AbsRing} {F : X -> X}
-            (hF : is_norm_contraction F) (α : nat -> R) (x0 : X).
+    Definition g_alpha (gamma a : R) :=
+      1 - (1 - gamma) * a.
 
     Fixpoint RMsync (n : nat) : X :=
       match n with
       | 0 => x0
       | (S k) => plus (scal (1 - α k) (RMsync k)) (scal (α k) (F (RMsync k)))
       end.
-
 
     Lemma plus_minus_scal_distr (r : R) (x1 x2 y1 y2 : X) :
       minus (plus (scal (1 - r) x1) (scal r y1) ) (plus (scal (1-r) x2) (scal r y2)) =
@@ -111,58 +55,72 @@ Set Bullet Behavior "Strict Subproofs".
       f_equal. apply plus_comm.
     Qed.
 
-    Lemma is_norm_contraction_RMsync (r : R) :
-      (0<r<1) ->
-      is_norm_contraction (fun (x : X) => plus (scal (1 - r) x) (scal r (F x))).
+
+    Lemma is_contraction_RMsync (r : R) :
+      (0<r<1) -> (@norm_factor R_AbsRing X <= 1) ->
+      is_contraction (fun (x : X) => plus (scal (1 - r) x) (scal r (F x))).
     Proof.
-      intros Hr.
-      unfold is_norm_contraction.
-      destruct hF as [γ [Hγ HF]].
+      intros Hr Hnf.
+      unfold is_contraction.
+      destruct hF as [γ [Hγ [Hγ0 HF]]].
       exists (1 - r + r*γ).
       split.
-      + destruct HF.
-        rewrite <-(Rplus_0_r).
+      + rewrite <-(Rplus_0_r).
         replace (1 -r + r*γ) with (1 + r*(γ-1)) by lra.
         apply Rplus_lt_compat_l.
         replace 0 with (r*0) by lra.
         apply Rmult_lt_compat_l ; lra.
       + unfold is_Lipschitz in *.
-        destruct HF as [Hγ0 HF].
         split; intros.
         ++ replace 0 with  (0+0) by lra.
           apply Rplus_le_compat.
           --- lra.
           --- replace 0 with (r*0) by lra.
               apply Rmult_le_compat_l ; lra.
-        ++ rewrite Rmult_plus_distr_r.
-           unfold ball_norm.
-          rewrite plus_minus_scal_distr.
-          generalize (norm_triangle (scal (1-r) (minus x2 x1)) (scal r (minus (F x2) (F x1)))) ; intros.
-          eapply Rle_lt_trans ; eauto.
-          apply Rplus_lt_compat.
+        ++ apply (@norm_compat1 R_AbsRing).
+           rewrite Rmult_plus_distr_r.
+           rewrite plus_minus_scal_distr.
+           generalize (norm_triangle (scal (1-r) (minus x2 x1)) (scal r (minus (F x2) (F x1)))) ; intros.
+           eapply Rle_lt_trans ; eauto.
+           apply Rplus_lt_le_compat.
           --  generalize (norm_scal (1-r) (minus x2 x1)) ; intros.
-              eapply Rle_lt_trans ; try apply H2.
+              eapply Rle_lt_trans ; eauto.
               unfold abs ; simpl.
               replace (Rabs (1-r)) with (1-r) by (symmetry; try apply Rabs_pos_eq;
                                                   try (lra)).
               apply Rmult_lt_compat_l ; try lra.
+              unfold ball_x in H0.
+              simpl in H0.
+              generalize (norm_compat2 x1 x2 (mkposreal r0 H)) ; intros.
+              replace r0 with (1*r0) by lra.
               eapply Rlt_le_trans ; eauto ; try lra.
-          -- generalize (norm_scal r (minus (F x2) (F x1))); intros.
-              eapply Rle_lt_trans; eauto.
+              simpl. apply Rmult_le_compat_r ; lra; trivial.
+          --  generalize (norm_scal r (minus (F x2) (F x1))); intros.
+              eapply Rle_trans; eauto.
               unfold abs ; simpl.
               rewrite Rabs_pos_eq ; try (left ; lra).
               rewrite Rmult_assoc.
-              apply Rmult_lt_compat_l; try lra.
-              specialize (HF (x1) (x2) r0 H H0).
-              unfold ball_norm in HF.
-              assumption.
+              apply Rmult_le_compat_l; try lra.
+              generalize (norm_compat2 x1 x2 (mkposreal r0 H) H0) ; intros.
+              simpl in H3.
+              specialize (HF x1 x2 r0 H H0).
+              destruct Hγ0.
+              +++ assert (0 < γ*r0) by (apply Rmult_lt_0_compat; trivial).
+                  generalize (norm_compat2 (F x1) (F x2) (mkposreal (γ*r0) H5) HF); intros.
+                  replace (γ*r0) with (1*(γ*r0)) by lra.
+                  simpl in H5.
+                  left.
+                  eapply Rlt_le_trans; eauto.
+                  apply Rmult_le_compat_r; trivial.
+                  now left.
+              +++ subst.
+                  replace (0*r0) with 0 in * by lra.
+                  assert (F x1 = F x2) by (now apply ball_zero_eq).
+                  rewrite H4.
+                  rewrite minus_eq_zero.
+                  right.
+                  apply (@norm_zero R_AbsRing).
     Qed.
-
-    Definition f_alpha (f : X -> X) a : (X -> X)  :=
-      fun (x:X) => plus (scal (1-a) x) (scal a (f x)).
-
-    Definition g_alpha (gamma a : R) :=
-      1 - (1 - gamma) * a.
 
     Lemma xstar_fixpoint xstar :
       xstar = F xstar ->
@@ -220,8 +178,8 @@ Set Bullet Behavior "Strict Subproofs".
       unfold f_alpha, g_alpha.
       rewrite plus_minus_scal_distr.
       rewrite norm_triangle.
-      rewrite norm_scal_R.
-      rewrite norm_scal_R.
+      rewrite (@norm_scal_R X).
+      rewrite (@norm_scal_R X).
       unfold abs; simpl.
       repeat rewrite Rabs_right by lra.
       specialize (H1 x y).      
@@ -298,6 +256,38 @@ Set Bullet Behavior "Strict Subproofs".
         apply Rbar_mult_0_r.
     Qed.
 
+    Fixpoint list_product (l : list R) : R :=
+      match l with
+      | nil => 1
+      | cons x xs => x*list_product xs
+      end.
+
+    (* Lemma 4 of Vasily's blueprint.*)
+    Lemma product_sum_helper (l : list R):
+      List.Forall (fun r => 0 <= r <= 1) l -> 1 - list_sum l <= list_product (List.map (fun x => 1 - x) l).
+    Proof.
+      revert l.
+      induction l.
+      * simpl ; lra.
+      * simpl. intros Hl.
+        eapply Rle_trans with ((1-list_sum l)*(1-a)).
+        ++ ring_simplify.
+           apply Rplus_le_compat_r.
+           do 2 rewrite Rle_minus_r.
+           ring_simplify.
+           inversion Hl ; subst.
+           specialize (IHl H2). destruct H1.
+           apply Rmult_le_pos ; trivial.
+           apply list_sum_pos_pos'; trivial.
+           generalize (List.Forall_and_inv _ _ H2); intros.
+           destruct H1; trivial.
+        ++ inversion Hl; subst.
+           specialize (IHl H2).
+           rewrite Rmult_comm.
+           apply Rmult_le_compat_l ; trivial.
+           lra.
+    Qed.
+
     Fixpoint RMseq (s : nat -> R) (init : R) (n : nat) : R :=
       match n with
       | 0 => init
@@ -357,7 +347,7 @@ Set Bullet Behavior "Strict Subproofs".
         eapply Rle_trans.
         generalize (@norm_triangle R_AbsRing X); intros.
         apply H5.
-        do 2 rewrite norm_scal_R.
+        do 2 rewrite (@norm_scal_R X).
         unfold abs; simpl.
         rewrite Rabs_right; try lra.
         rewrite Rabs_right; try lra.
