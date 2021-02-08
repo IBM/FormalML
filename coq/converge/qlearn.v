@@ -6,8 +6,25 @@ Set Bullet Behavior "Strict Subproofs".
 
   Section qlearn.
 
-    Context {X : NormedModule R_AbsRing} {F : X -> X}
-            (hF : is_norm_contraction F) (α : nat -> R) (x0 : X).
+    Lemma ball_zero_eq {K : AbsRing} (X : NormedModule K) :
+      forall x y : X, ball x 0 y -> x=y.
+    Proof.
+      intros x y Hxy.
+      apply eq_close.
+      intros eps.
+      apply ball_le with (e1 := 0).
+      + left. apply cond_pos.
+      + assumption.
+    Qed.
+
+    Context {X : CompleteNormedModule R_AbsRing} {F : X -> X}
+            (hF : is_contraction F) (α : nat -> R) (x0 : X).
+
+    Definition f_alpha (f : X -> X) a : (X -> X)  :=
+      fun (x:X) => plus (scal (1-a) x) (scal a (f x)).
+
+    Definition g_alpha (gamma a : R) :=
+      1 - (1 - gamma) * a.
 
     Fixpoint RMsync (n : nat) : X :=
       match n with
@@ -38,14 +55,14 @@ Set Bullet Behavior "Strict Subproofs".
       f_equal. apply plus_comm.
     Qed.
 
-Lemma is_contraction_RMsync (r : R) :
+
+    Lemma is_contraction_RMsync (r : R) :
       (0<r<1) -> (@norm_factor R_AbsRing X <= 1) ->
       is_contraction (fun (x : X) => plus (scal (1 - r) x) (scal r (F x))).
     Proof.
       intros Hr Hnf.
       unfold is_contraction.
       destruct hF as [γ [Hγ [Hγ0 HF]]].
-      destruct Hγ0.
       exists (1 - r + r*γ).
       split.
       + rewrite <-(Rplus_0_r).
@@ -67,68 +84,7 @@ Lemma is_contraction_RMsync (r : R) :
            eapply Rle_lt_trans ; eauto.
            apply Rplus_lt_le_compat.
           --  generalize (norm_scal (1-r) (minus x2 x1)) ; intros.
-              eapply Rle_lt_trans ; try apply H3.
-              unfold abs ; simpl.
-              replace (Rabs (1-r)) with (1-r) by (symmetry; try apply Rabs_pos_eq;
-                                                  try (lra)).
-              apply Rmult_lt_compat_l ; try lra.
-              unfold ball_x in H0.
-              simpl in H0.
-              generalize (norm_compat2 x1 x2 (mkposreal r0 H0)) ; intros.
-              replace r0 with (1*r0) by lra.
-              eapply Rlt_le_trans ; eauto ; try lra.
-              simpl. apply Rmult_le_compat_r ; lra; trivial.
-          --  generalize (norm_scal r (minus (F x2) (F x1))); intros.
-              eapply Rle_trans; eauto.
-              unfold abs ; simpl.
-              rewrite Rabs_pos_eq ; try (left ; lra).
-              rewrite Rmult_assoc.
-              apply Rmult_le_compat_l; try lra.
-              generalize (norm_compat2 x1 x2 (mkposreal r0 H0) H1) ; intros.
-              simpl in H3.
-              specialize (HF x1 x2 r0 H0 H1).
-              assert (0 < γ*r0) by (apply Rmult_lt_0_compat; trivial).
-              generalize (norm_compat2 (F x1) (F x2) (mkposreal (γ*r0) H5) HF); intros.
-              replace (γ*r0) with (1*(γ*r0)) by lra.
-              simpl in H5.
-              left.
-              eapply Rlt_le_trans; eauto.
-              apply Rmult_le_compat_r; trivial.
-              now left.
-      + admit.
-    Admitted.
-
- Lemma is_contraction_RMsync (r : R) :
-      (0<r<1) -> (@norm_factor R_AbsRing X <= 1) ->
-      is_contraction (fun (x : X) => plus (scal (1 - r) x) (scal r (F x))).
-    Proof.
-      intros Hr Hnf.
-      unfold is_contraction.
-      destruct hF as [γ [Hγ HF]].
-      exists (1 - r + r*γ).
-      split.
-      + destruct HF.
-        rewrite <-(Rplus_0_r).
-        replace (1 -r + r*γ) with (1 + r*(γ-1)) by lra.
-        apply Rplus_lt_compat_l.
-        replace 0 with (r*0) by lra.
-        apply Rmult_lt_compat_l ; lra.
-      + unfold is_Lipschitz in *.
-        destruct HF as [Hγ0 HF].
-        split; intros.
-        ++ replace 0 with  (0+0) by lra.
-          apply Rplus_le_compat.
-          --- lra.
-          --- replace 0 with (r*0) by lra.
-              apply Rmult_le_compat_l ; lra.
-        ++ apply (@norm_compat1 R_AbsRing).
-           rewrite Rmult_plus_distr_r.
-           rewrite plus_minus_scal_distr.
-           generalize (norm_triangle (scal (1-r) (minus x2 x1)) (scal r (minus (F x2) (F x1)))) ; intros.
-           eapply Rle_lt_trans ; eauto.
-           apply Rplus_lt_le_compat.
-          --  generalize (norm_scal (1-r) (minus x2 x1)) ; intros.
-              eapply Rle_lt_trans ; try apply H2.
+              eapply Rle_lt_trans ; eauto.
               unfold abs ; simpl.
               replace (Rabs (1-r)) with (1-r) by (symmetry; try apply Rabs_pos_eq;
                                                   try (lra)).
@@ -147,69 +103,24 @@ Lemma is_contraction_RMsync (r : R) :
               apply Rmult_le_compat_l; try lra.
               generalize (norm_compat2 x1 x2 (mkposreal r0 H) H0) ; intros.
               simpl in H3.
-              unfold ball_norm in HF.
-              left.
-              unfold ball_y,ball_x in HF.
-              apply HF; trivial.
-              replace r0 with (1*r0) by lra.
-              eapply Rlt_le_trans; eauto.
-              apply Rmult_le_compat_r; trivial.
-              now left.
+              specialize (HF x1 x2 r0 H H0).
+              destruct Hγ0.
+              +++ assert (0 < γ*r0) by (apply Rmult_lt_0_compat; trivial).
+                  generalize (norm_compat2 (F x1) (F x2) (mkposreal (γ*r0) H5) HF); intros.
+                  replace (γ*r0) with (1*(γ*r0)) by lra.
+                  simpl in H5.
+                  left.
+                  eapply Rlt_le_trans; eauto.
+                  apply Rmult_le_compat_r; trivial.
+                  now left.
+              +++ subst.
+                  replace (0*r0) with 0 in * by lra.
+                  assert (F x1 = F x2) by (now apply ball_zero_eq).
+                  rewrite H4.
+                  rewrite minus_eq_zero.
+                  right.
+                  apply (@norm_zero R_AbsRing).
     Qed.
-
-
-(*    Lemma is_norm_contraction_RMsync (r : R) :
-      (0<r<1) ->
-      is_norm_contraction (fun (x : X) => plus (scal (1 - r) x) (scal r (F x))).
-    Proof.
-      intros Hr.
-      unfold is_norm_contraction.
-      destruct hF as [γ [Hγ HF]].
-      exists (1 - r + r*γ).
-      split.
-      + destruct HF.
-        rewrite <-(Rplus_0_r).
-        replace (1 -r + r*γ) with (1 + r*(γ-1)) by lra.
-        apply Rplus_lt_compat_l.
-        replace 0 with (r*0) by lra.
-        apply Rmult_lt_compat_l ; lra.
-      + unfold is_Lipschitz in *.
-        destruct HF as [Hγ0 HF].
-        split; intros.
-        ++ replace 0 with  (0+0) by lra.
-          apply Rplus_le_compat.
-          --- lra.
-          --- replace 0 with (r*0) by lra.
-              apply Rmult_le_compat_l ; lra.
-        ++ rewrite Rmult_plus_distr_r.
-           unfold ball_norm.
-          rewrite plus_minus_scal_distr.
-          generalize (norm_triangle (scal (1-r) (minus x2 x1)) (scal r (minus (F x2) (F x1)))) ; intros.
-          eapply Rle_lt_trans ; eauto.
-          apply Rplus_lt_compat.
-          --  generalize (norm_scal (1-r) (minus x2 x1)) ; intros.
-              eapply Rle_lt_trans ; try apply H2.
-              unfold abs ; simpl.
-              replace (Rabs (1-r)) with (1-r) by (symmetry; try apply Rabs_pos_eq;
-                                                  try (lra)).
-              apply Rmult_lt_compat_l ; try lra.
-              eapply Rlt_le_trans ; eauto ; try lra.
-          -- generalize (norm_scal r (minus (F x2) (F x1))); intros.
-              eapply Rle_lt_trans; eauto.
-              unfold abs ; simpl.
-              rewrite Rabs_pos_eq ; try (left ; lra).
-              rewrite Rmult_assoc.
-              apply Rmult_lt_compat_l; try lra.
-              specialize (HF (x1) (x2) r0 H H0).
-              unfold ball_norm in HF.
-              assumption.
-    Qed.*)
-
-    Definition f_alpha (f : X -> X) a : (X -> X)  :=
-      fun (x:X) => plus (scal (1-a) x) (scal a (f x)).
-
-    Definition g_alpha (gamma a : R) :=
-      1 - (1 - gamma) * a.
 
     Lemma xstar_fixpoint xstar :
       xstar = F xstar ->
@@ -267,8 +178,8 @@ Lemma is_contraction_RMsync (r : R) :
       unfold f_alpha, g_alpha.
       rewrite plus_minus_scal_distr.
       rewrite norm_triangle.
-      rewrite norm_scal_R.
-      rewrite norm_scal_R.
+      rewrite (@norm_scal_R X).
+      rewrite (@norm_scal_R X).
       unfold abs; simpl.
       repeat rewrite Rabs_right by lra.
       specialize (H1 x y).      
