@@ -436,3 +436,14 @@ Proof.
 Qed.
   
 Hint Resolve sqrt2_neq0 sqrt_PI_neq0 sqrt_2PI_nzero : Rarith.
+
+Lemma ball_zero_eq {K : AbsRing} (X : NormedModule K) :
+  forall x y : X, ball x 0 y -> x=y.
+Proof.
+  intros x y Hxy.
+  apply eq_close.
+  intros eps.
+  apply ball_le with (e1 := 0).
+  + left. apply cond_pos.
+  + assumption.
+Qed.
