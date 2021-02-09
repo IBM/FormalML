@@ -1,22 +1,18 @@
 Require Import converge.mdp LM.fixed_point.
-Require Import RealAdd.
+Require Import RealAdd CoquelicotAdd.
 Require Import utils.Utils.
 Require Import Lra Lia.
 
 Set Bullet Behavior "Strict Subproofs".
 
-  Section qlearn.
+(*
+****************************************************************************************
+This file is a work-in-progress proof of convergence of the classical Q-learning
+algorithm.
+****************************************************************************************
+*)
 
-    Lemma ball_zero_eq {K : AbsRing} (X : NormedModule K) :
-      forall x y : X, ball x 0 y -> x=y.
-    Proof.
-      intros x y Hxy.
-      apply eq_close.
-      intros eps.
-      apply ball_le with (e1 := 0).
-      + left. apply cond_pos.
-      + assumption.
-    Qed.
+  Section qlearn.
 
     Context {X : CompleteNormedModule R_AbsRing} {F : X -> X}
             (hF : is_contraction F) (α : nat -> R) (x0 : X).
@@ -56,8 +52,8 @@ Set Bullet Behavior "Strict Subproofs".
       f_equal. apply plus_comm.
     Qed.
 
-
-    Lemma is_contraction_RMsync (r : R) :
+    (* Proof of Lemma 1. *)
+    Lemma is_contraction_falpha (r : R) :
       (0<r<1) -> (@norm_factor R_AbsRing X <= 1) ->
       is_contraction (fun (x : X) => plus (scal (1 - r) x) (scal r (F x))).
     Proof.
@@ -123,6 +119,9 @@ Set Bullet Behavior "Strict Subproofs".
                   apply (@norm_zero R_AbsRing).
     Qed.
 
+    (* The next few lemmas are in preparation for proving Theorem 2. *)
+
+    (* Equation (9). *)
     Lemma xstar_fixpoint xstar :
       xstar = F xstar ->
       forall n, xstar = f_alpha F (α n) xstar.
@@ -211,6 +210,7 @@ Set Bullet Behavior "Strict Subproofs".
         now simpl.
     Qed.
 
+      (* Theorem 2, part a. *)
     Theorem Vasily_2a gamma xstar :
       0 <= gamma < 1 ->
       xstar = F xstar ->
@@ -235,7 +235,8 @@ Set Bullet Behavior "Strict Subproofs".
           now apply gamma_alpha_pos.
           apply IHn.
       Qed.
-                 
+
+      (* Theorem 2, part b. *)
     Theorem Vasily_2b gamma xstar :
       0 <= gamma < 1 ->
       xstar = F xstar ->
@@ -263,7 +264,7 @@ Set Bullet Behavior "Strict Subproofs".
       | cons x xs => x*list_product xs
       end.
 
-    (* Lemma 4 of Vasily's blueprint.*)
+    (* Lemma 4.*)
     Lemma product_sum_helper (l : list R):
       List.Forall (fun r => 0 <= r <= 1) l -> 1 - list_sum l <= list_product (List.map (fun x => 1 - x) l).
     Proof.
@@ -313,6 +314,7 @@ Set Bullet Behavior "Strict Subproofs".
       | (S k) => plus (scal (g_alpha gamma (α k)) (RMseqG init gamma C k)) (scal (α k) C)
       end.
 
+    (* Lemma 5.*)
     Lemma helper_bounding_5 (s1 s2 : nat -> R) (init1 init2 : R) :
       0 <= init1 <= init2 ->
       (forall n, 0 <= (α n) <= 1) ->
@@ -332,6 +334,7 @@ Set Bullet Behavior "Strict Subproofs".
         + apply Rplus_le_compat; apply Rmult_le_compat_l; lra.
      Qed.
 
+    (* Lemma 6. *)
     Lemma helper_convergence_6 (delta : nat -> R) (init:R) :
       0 <= init ->
       (forall n, 0 <= (α n) <= 1) ->
@@ -377,6 +380,7 @@ Set Bullet Behavior "Strict Subproofs".
         apply H0.
     Qed.
 
+    (* Lemma 7. *)
     Lemma bounding_7 (gamma C : R) (f : nat -> X -> X) (init : X) :
       0 <= gamma < 1 -> 0 <= C ->
       (forall n, 0 <= (α n) <= 1) ->
