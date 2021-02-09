@@ -1,5 +1,6 @@
 Require Import converge.mdp LM.fixed_point.
 Require Import RealAdd.
+Require Import utils.Utils.
 Require Import Lra Lia.
 
 Set Bullet Behavior "Strict Subproofs".
@@ -288,6 +289,12 @@ Set Bullet Behavior "Strict Subproofs".
            lra.
     Qed.
 
+  End qlearn.
+
+  Section qlearn2.
+    
+    Context {X : CompleteNormedModule R_AbsRing} (α : nat -> R).
+
     Fixpoint RMseq (s : nat -> R) (init : R) (n : nat) : R :=
       match n with
       | 0 => init
@@ -300,6 +307,12 @@ Set Bullet Behavior "Strict Subproofs".
       | (S k) => plus (scal (1 - α k) (RMseqX f init k)) (scal (α k) (f k (RMseqX f init k)))
       end.
       
+    Fixpoint RMseqG (init gamma C : R) (n : nat) : R :=
+      match n with
+      | 0 => init
+      | (S k) => plus (scal (g_alpha gamma (α k)) (RMseqG init gamma C k)) (scal (α k) C)
+      end.
+
     Lemma helper_bounding_5 (s1 s2 : nat -> R) (init1 init2 : R) :
       0 <= init1 <= init2 ->
       (forall n, 0 <= (α n) <= 1) ->
@@ -328,14 +341,48 @@ Set Bullet Behavior "Strict Subproofs".
       (forall k, is_lim_seq (fun n => prod_f_R0 (fun m => 1 - (α (m + k)%nat)) n) 0) ->
       is_lim_seq (RMseq delta init) 0.
     Proof.
+      intros.
+      rewrite <- is_lim_seq_spec in H3.
+      unfold is_lim_seq' in H3.
+      rewrite <- is_lim_seq_spec.
+      unfold is_lim_seq'.
+      intros.
+      generalize (cond_pos eps); intros.
+      assert (0 < eps/2) by lra.
+      specialize (H3 (mkposreal _ H6)).
+      destruct H3 as [N H3].
+      simpl in H3.
+      generalize (helper_bounding_5 (fun n => delta (N+n)%nat) (fun _ => eps/2) (RMseq delta init N) (RMseq delta init N)); intros.
+
+      generalize (@Vasily_2b R_CompleteNormedModule (fun _ => eps/2) α (RMseq delta init N) 0 (eps/2)).
+
       Admitted.
+
+
+
+    Lemma finite_lim_bound (f : nat -> R) (lim : R) :
+      is_lim_seq f lim ->
+      exists (B:R), forall n, f n <= B.
+    Proof.
+      generalize (filterlim_bounded f); intros.
+      cut_to H.
+      - destruct H.
+        exists x; intros.
+        unfold norm in r; simpl in r.
+        unfold abs in r; simpl in r.
+        eapply Rle_trans.
+        + apply Rle_abs.
+        + apply r.
+      - exists lim.
+        apply H0.
+    Qed.
 
     Lemma bounding_7 (gamma C : R) (f : nat -> X -> X) (init : X) :
       0 <= gamma < 1 -> 0 <= C ->
       (forall n, 0 <= (α n) <= 1) ->
       (forall n x, norm (f n x) <= gamma * norm x + C) ->
       is_lim_seq α 0 ->
-      (forall k, is_lim_seq (fun n => prod_f_R0 (fun m => 1 - (α (m + k)%nat)) n) 0) ->
+      (forall k, is_lim_seq (fun n => prod_f_R0 (fun m => g_alpha gamma (α (m+k))) n) 0) ->
       exists B, forall n, norm ( RMseqX f init n) <= B.
     Proof.
       intros.
@@ -364,10 +411,88 @@ Set Bullet Behavior "Strict Subproofs".
         unfold g_alpha.
         lra.
      }
-      
-        
-      
 
-     Admitted.
+      assert (forall n, norm(RMseqX f init n) <= RMseqG (norm init) gamma C n).
+      { 
+        induction n.
+        - unfold RMseqX, RMseqG; lra.
+        - simpl.
+          unfold g_alpha.
+          eapply Rle_trans.
+          apply H5.
+          unfold scal; simpl.
+          unfold mult; simpl.
+          rewrite Rmult_plus_distr_l. 
+          rewrite <- Rmult_assoc.
+          rewrite <- Rplus_assoc.
+          rewrite <- Rmult_plus_distr_r. 
+          unfold plus; simpl.
+          apply Rplus_le_compat_r.
+          replace (1 - α n + α n * gamma) with (1 - (1 - gamma) * α n) by lra.
+          apply Rmult_le_compat_l.
+          apply  gamma_alpha_pos; trivial.
+          apply IHn.
+      }
+      
+      generalize (@Vasily_2b R_CompleteNormedModule (fun s => gamma * s + C) α (norm init) gamma (C/(1-gamma)) H); intros.
+      assert (exists B2, forall n, RMseqG (norm init) gamma C n <= B2).
+      {
+        cut_to H8; trivial.
+        - apply finite_lim_bound with (lim := C / (1 - gamma)).
+          rewrite <- is_lim_seq_abs_0 in H8.
+          generalize (is_lim_seq_const (C / (1 - gamma))); intros.
+          generalize (is_lim_seq_plus' _ _ _ _ H8 H9); intros.
+          rewrite Rplus_0_l in H10.
+          apply is_lim_seq_ext with (v := (fun n => (@RMsync R_CompleteNormedModule (fun s => gamma * s + C) α (norm init) n)) ) in H10.
+          + apply is_lim_seq_ext with (v :=  (RMseqG (norm init) gamma C)) in H10.
+            * apply H10.
+            * induction n.
+              -- now unfold RMsync, RMseqG.
+              -- simpl.
+                 unfold g_alpha.
+                 unfold plus, scal, mult; simpl.
+                 unfold Hierarchy.mult; simpl.
+                 rewrite <- IHn.
+                 ring_simplify.
+                 apply Rplus_eq_compat_r.
+                 rewrite Rmult_assoc.
+                 rewrite Rmult_comm with (r2 := gamma).
+                 rewrite <- Rmult_assoc.
+                 unfold Rminus.
+                 rewrite Rplus_assoc.
+                 rewrite Rplus_assoc.
+                 apply Rplus_eq_compat_l.
+                 now rewrite Rplus_comm.
+          + intros.
+            unfold minus; simpl.
+            unfold plus; simpl.
+            unfold opp; simpl.
+            now ring_simplify.
+        - simpl; field.
+          lra.
+        - specialize (H4 0%nat).
+          apply is_lim_seq_ext with (u := (fun n : nat => prod_f_R0 (fun k : nat => g_alpha gamma (α (k + 0)%nat)) n)).
+          intros.
+          f_equal.
+          apply FunctionalExtensionality.functional_extensionality; intros.
+          f_equal.
+          f_equal; lia.
+          apply H4.
+        - intros.
+          unfold minus, plus, opp; simpl.
+          right.
+          unfold norm; simpl.
+          unfold abs; simpl.
+          replace (gamma * x + C + - (gamma * y + C)) with (gamma * (x + - y)) by lra.
+          rewrite Rabs_mult.
+          rewrite Rabs_right; lra.
+      }
+      destruct H9.
+      exists x.
+      intros.
+      eapply Rle_trans.
+      apply H7.
+      apply H9.
+    Qed.
 
-  End qlearn.
+
