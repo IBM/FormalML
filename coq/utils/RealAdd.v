@@ -1,6 +1,7 @@
 Require Import Program.Basics.
 Require Import Coq.Reals.Rbase Coq.Reals.RList.
 Require Import Coq.Reals.Rfunctions.
+Require Import Coq.Reals.Rprod.
 Require Import Ranalysis_reg.
 Require Import Coquelicot.Hierarchy Coquelicot.PSeries Coquelicot.Series Coquelicot.ElemFct.
 Require Import Coquelicot.Lim_seq Coquelicot.Lub Coquelicot.Rbar.
@@ -19,7 +20,6 @@ Set Bullet Behavior "Strict Subproofs".
 Import ListNotations.
 
 Local Open Scope R.
-
 
 Lemma INR_nzero {n} :
   (n > 0)%nat -> INR n <> 0.
@@ -1967,3 +1967,11 @@ Proof.
   simpl in H; lra.
   simpl in H; lra.
 Qed.
+
+Global Instance prod_f_R0_proper :
+  Proper (pointwise_relation _ eq ==> eq ==> eq) prod_f_R0.
+Proof.
+  intros f1 f2 feqq N N' xeqq; subst N'.
+  induction N; simpl; congruence.
+Qed.
+  
