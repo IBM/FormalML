@@ -168,6 +168,7 @@ algorithm.
       unfold g_alpha; lra.
     Qed.
 
+    (* Lemma 1 *)
     Lemma f_alpha_contraction gamma a :
       0 <= gamma < 1 ->
       0 <= a <= 1 ->
@@ -294,32 +295,18 @@ algorithm.
 
   Section qlearn2.
     
-    Context {X : CompleteNormedModule R_AbsRing} (α : nat -> R).
-
-    Fixpoint RMseq (s : nat -> R) (init : R) (n : nat) : R :=
+    Fixpoint RMseq (α : nat -> R) (s : nat -> R) (init : R) (n : nat) : R :=
       match n with
       | 0 => init
-      | (S k) => plus (scal (1 - α k) (RMseq s init k)) (scal (α k) (s k))
-      end.
-
-    Fixpoint RMseqX (f : nat -> X -> X) (init : X) (n : nat) : X :=
-      match n with
-      | 0 => init
-      | (S k) => plus (scal (1 - α k) (RMseqX f init k)) (scal (α k) (f k (RMseqX f init k)))
-      end.
-      
-    Fixpoint RMseqG (init gamma C : R) (n : nat) : R :=
-      match n with
-      | 0 => init
-      | (S k) => plus (scal (g_alpha gamma (α k)) (RMseqG init gamma C k)) (scal (α k) C)
+      | (S k) => plus (scal (1 - α k) (RMseq α s init k)) (scal (α k) (s k))
       end.
 
     (* Lemma 5.*)
-    Lemma helper_bounding_5 (s1 s2 : nat -> R) (init1 init2 : R) :
+    Lemma helper_bounding_5 (α : nat -> R) (s1 s2 : nat -> R) (init1 init2 : R) :
       0 <= init1 <= init2 ->
       (forall n, 0 <= (α n) <= 1) ->
       (forall n, 0 <= s1 n <= s2 n) ->
-      forall n, 0 <= RMseq s1 init1 n <= RMseq s2 init2 n.
+      forall n, 0 <= RMseq α s1 init1 n <= RMseq α s2 init2 n.
     Proof.
       intros.
       induction n.
@@ -334,6 +321,35 @@ algorithm.
         + apply Rplus_le_compat; apply Rmult_le_compat_l; lra.
      Qed.
 
+    Context {X : CompleteNormedModule R_AbsRing} (α : nat -> R).
+
+    Fixpoint RMseqX (f : nat -> X -> X) (init : X) (n : nat) : X :=
+      match n with
+      | 0 => init
+      | (S k) => plus (scal (1 - α k) (RMseqX f init k)) (scal (α k) (f k (RMseqX f init k)))
+      end.
+      
+    Fixpoint RMseqG (init gamma C : R) (n : nat) : R :=
+      match n with
+      | 0 => init
+      | (S k) => plus (scal (g_alpha gamma (α k)) (RMseqG init gamma C k)) (scal (α k) C)
+      end.
+
+    Lemma RMseq_shift (delta : nat -> R) (init : R) (N n : nat) :
+      RMseq (fun n =>  α (N + n)%nat) 
+            (fun n : nat => delta (N + n)%nat) (RMseq α delta init N) n  = 
+      RMseq α delta init (N + n)%nat.
+    Proof.
+      induction n.
+      - simpl.
+        f_equal.
+        lia.
+      - replace (N + S n)%nat with (S (N + n)%nat) by lia.
+        simpl.
+        rewrite IHn.
+        reflexivity.
+      Qed.
+
     (* Lemma 6. *)
     Lemma helper_convergence_6 (delta : nat -> R) (init:R) :
       0 <= init ->
@@ -342,7 +358,7 @@ algorithm.
       is_lim_seq α 0 ->
       is_lim_seq delta 0 ->
       (forall k, is_lim_seq (fun n => prod_f_R0 (fun m => 1 - (α (m + k)%nat)) n) 0) ->
-      is_lim_seq (RMseq delta init) 0.
+      is_lim_seq (RMseq α delta init) 0.
     Proof.
       intros.
       rewrite <- is_lim_seq_spec in H3.
@@ -355,13 +371,101 @@ algorithm.
       specialize (H3 (mkposreal _ H6)).
       destruct H3 as [N H3].
       simpl in H3.
-      generalize (helper_bounding_5 (fun n => delta (N+n)%nat) (fun _ => eps/2) (RMseq delta init N) (RMseq delta init N)); intros.
-
-      generalize (@Vasily_2b R_CompleteNormedModule (fun _ => eps/2) α (RMseq delta init N) 0 (eps/2)).
-
-      Admitted.
-
-
+      generalize (helper_bounding_5 (fun n => α (N+n)%nat)
+                                    (fun n => delta (N+n)%nat) 
+                                    (fun _ => eps/2) 
+                                    (RMseq α delta init N) (RMseq α delta init N)); intros.
+      generalize (@Vasily_2b R_CompleteNormedModule (fun _ => eps/2) (fun n => α (N+n)%nat) (RMseq α delta init N) 0 (eps/2)); intros.
+      assert (is_lim_seq (fun n : nat => (RMseq (fun n => α (N+n)%nat) (fun _ => eps/2) 
+                                                (RMseq α delta init N) n)) (eps / 2)).
+      {
+        rewrite <- is_lim_seq_abs_0 in H8.
+        generalize (is_lim_seq_const (eps/2)); intros.
+        cut_to H8; trivial.
+        - generalize (is_lim_seq_plus' _ _ _ _ H8 H9); intros.
+          rewrite Rplus_0_l in H10.
+          apply is_lim_seq_ext with 
+              (v := (fun n => (@RMsync R_CompleteNormedModule (fun _ => eps/2) (fun n => α (N+n)%nat) 
+                                       (RMseq α delta init N) n)) ) in H10.
+          + apply is_lim_seq_ext with (v :=  (RMseq (fun n => α (N+n)%nat) (fun _ => eps/2)
+                                                    (RMseq α delta init N))) in H10.
+            * apply H10.
+            * induction n.
+              -- now unfold RMsync, RMseq.
+              -- simpl.
+                 unfold plus, scal, mult; simpl.
+                 unfold Hierarchy.mult; simpl.
+                 rewrite <- IHn.
+                 reflexivity.
+          + intro.
+            unfold minus; simpl.
+            unfold plus, opp; simpl.
+            lra.
+        - lra.
+        - unfold g_alpha.
+          specialize (H4 N).
+          apply is_lim_seq_ext with (u := (fun n : nat => prod_f_R0 (fun m : nat => 1 - α (m + N)) n)).
+          intro n.
+          apply prod_f_R0_proper; trivial.
+          intro x.
+          ring_simplify.
+          do 3 f_equal.
+          lia.
+          apply H4.
+        - intros.
+          unfold minus, norm; simpl.
+          unfold abs, plus, opp; simpl.
+          ring_simplify.
+          replace (eps / 2 + - (eps / 2)) with (0) by lra.
+          right.
+          apply Rabs_R0.
+      }
+      rewrite <- is_lim_seq_spec in H9.
+      unfold is_lim_seq' in H9.
+      specialize (H9 (mkposreal _ H6)).
+      destruct H9 as [Neps H9]; simpl in H9.
+      exists (N + Neps)%nat; intros.
+      rewrite Rminus_0_r.
+      assert (Neps <= (n - N))%nat by lia.
+      specialize (H9 (n-N)%nat H11); simpl in H9.
+      generalize (Rabs_triang_inv (RMseq (fun n : nat => α (N + n)) (fun _ : nat => eps / 2) (RMseq α delta init N) (n-N)) (eps/2)); intros.
+      generalize (Rle_lt_trans _ _ _ H12 H9); intros.
+      rewrite Rabs_right with (r := eps/2) in H13; [| lra].
+      apply Rplus_lt_compat_r with (r := eps/2) in H13.
+      ring_simplify in H13.
+      replace (2 * (eps/2)) with (pos eps) in H13 by lra.
+      cut_to H7; trivial.
+      - specialize (H7 (n-N)%nat).
+        destruct H7.
+        generalize (RMseq_shift delta init N (n-N)); intros.
+        replace (N + (n -N))%nat with n in H15 by lia.
+        generalize (Rle_trans _ _ _ H7 H14); intros.
+        rewrite H15 in H14.
+        rewrite Rabs_right in H13.
+        generalize (Rle_lt_trans _ _ _ H14 H13); intros.
+        rewrite Rabs_right.
+        apply H17.
+        generalize (helper_bounding_5  α delta delta init init); intros.
+        cut_to H18; trivial; try lra.
+        intros.
+        split; [| lra].
+        apply H1.
+        now apply Rle_ge.
+      - apply helper_bounding_5; trivial; try lra.
+        split; try lra.
+        apply H1.
+      - intros; split.
+        + apply H1.
+        + specialize (H3 (N + n0)%nat).
+          rewrite Rabs_right in H3.
+          * rewrite Rminus_0_r in H3.
+            left.
+            apply H3.
+            lia.
+          * rewrite Rminus_0_r.
+            apply Rle_ge.
+            apply H1.
+     Qed.
 
     Lemma finite_lim_bound (f : nat -> R) (lim : R) :
       is_lim_seq f lim ->
@@ -463,8 +567,7 @@ algorithm.
                  rewrite Rmult_comm with (r2 := gamma).
                  rewrite <- Rmult_assoc.
                  unfold Rminus.
-                 rewrite Rplus_assoc.
-                 rewrite Rplus_assoc.
+                 do 2 rewrite Rplus_assoc.
                  apply Rplus_eq_compat_l.
                  now rewrite Rplus_comm.
           + intros.
@@ -472,15 +575,11 @@ algorithm.
             unfold plus; simpl.
             unfold opp; simpl.
             now ring_simplify.
-        - simpl; field.
-          lra.
+        - simpl; field; lra.
         - specialize (H4 0%nat).
-          apply is_lim_seq_ext with (u := (fun n : nat => prod_f_R0 (fun k : nat => g_alpha gamma (α (k + 0)%nat)) n)).
-          intros.
-          f_equal.
-          apply FunctionalExtensionality.functional_extensionality; intros.
-          f_equal.
-          f_equal; lia.
+          apply is_lim_seq_ext with (u := (fun n : nat => prod_f_R0 (fun k : nat => g_alpha gamma (α (k + 0)%nat)) n)); intros.
+          apply prod_f_R0_proper; trivial; intro x.
+          f_equal; f_equal; lia.
           apply H4.
         - intros.
           unfold minus, plus, opp; simpl.
@@ -488,8 +587,7 @@ algorithm.
           unfold norm; simpl.
           unfold abs; simpl.
           replace (gamma * x + C + - (gamma * y + C)) with (gamma * (x + - y)) by lra.
-          rewrite Rabs_mult.
-          rewrite Rabs_right; lra.
+          rewrite Rabs_mult, Rabs_right; lra.
       }
       destruct H9.
       exists x.
@@ -499,4 +597,4 @@ algorithm.
       apply H9.
     Qed.
 
-
+End qlearn2.
