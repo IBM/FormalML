@@ -385,6 +385,36 @@ algorithm.
               lra.
       Qed.
 
+      Lemma prod_f_R0_n (f : nat -> R) (n : nat) :
+        f n = 0 ->
+        prod_f_R0 f n = 0.
+      Proof.
+        intros.
+        destruct (Nat.eq_dec n 0).
+        - subst.
+          now simpl.
+        - replace (n) with (S (n-1)) by lia.
+          rewrite prod_f_R0_Sn.
+          replace (S (n - 1)) with n by lia.
+          rewrite H.
+          apply Rmult_0_r.
+       Qed.
+
+      Lemma prod_f_R0_n1_n2 (f : nat -> R) (n1 n2 : nat) :
+        (n1 <= n2)%nat ->
+        f n1 = 0 ->
+        prod_f_R0 f n2 = 0.
+      Proof.
+        intros.
+        destruct (lt_dec n1 n2).
+        - rewrite prod_SO_split with (k := n1) (n := n2); trivial.
+          rewrite prod_f_R0_n; trivial.
+          apply Rmult_0_l.
+        - assert (n1 = n2) by lia.
+          rewrite H1 in H0.
+          now apply prod_f_R0_n.
+      Qed.
+
       (* Lemma 3, part a *)
       Lemma product_sum_assumption_a gamma :
         0 <= gamma < 1 ->
@@ -402,10 +432,9 @@ algorithm.
             apply H0.
           - assert (0 < 1-gamma <= 1) by lra.
             destruct H3.
-            apply Rmult_le_compat_r with (r :=  α (n + k)) in H4.
+            apply Rmult_le_compat_r with (r :=  α (n + k)) in H4; [|apply H0].
             rewrite Rmult_1_l in H4.
             apply Rle_trans with (r2 := α (n + k)); trivial.
-            apply H0.
             apply H0.
         }
         
@@ -416,7 +445,9 @@ algorithm.
           exists n; intros.
           replace (prod_f_R0 (fun m : nat => 1 - (1 - gamma) * α (m + k)) n0) with 0.
           lra.
-          admit.
+          rewrite prod_f_R0_n1_n2 with (n1 := n); trivial.
+          rewrite an1.
+          lra.
         - assert (abounds':forall n, 0 <= (1-gamma)* α (n + k) < 1).
           {
             intros n.
