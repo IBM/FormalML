@@ -2,6 +2,8 @@ Require Import converge.mdp LM.fixed_point.
 Require Import RealAdd CoquelicotAdd.
 Require Import utils.Utils.
 Require Import Lra Lia.
+Require Import infprod Dvoretzky.
+Require Import Classical.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -259,6 +261,8 @@ algorithm.
         apply Rbar_mult_0_r.
     Qed.
 
+  
+
     Fixpoint list_product (l : list R) : R :=
       match l with
       | nil => 1
@@ -290,6 +294,198 @@ algorithm.
            apply Rmult_le_compat_l ; trivial.
            lra.
     Qed.
+
+    Lemma Rmult_lt_1 (a b :R) :
+      0 <= a <= 1 ->
+      b < 1 ->
+      a*b < 1.
+   Proof.
+     intros.
+     destruct H.
+     destruct (Rlt_dec 0 a).
+     - apply Rmult_lt_compat_l with (r := a) in H0; trivial.
+       rewrite Rmult_1_r in H0.
+       now generalize (Rlt_le_trans _ _ _ H0 H1).
+     - assert (a = 0) by lra.
+       subst.
+       lra.
+   Qed.
+
+   Lemma sum_n_m_shift (k n0 : nat) :
+     sum_n_m α k (n0 + k)%nat = sum_n (fun n1 : nat => α (n1 + k)%nat) n0.
+   Proof.
+     unfold sum_n.
+     induction n0.
+     - replace (0 + k)%nat with (k) by lia.
+       do 2 rewrite sum_n_n.
+       f_equal; lia.
+     - replace (S n0 + k)%nat with (S (n0 + k)%nat) by lia.
+       rewrite sum_n_Sm; try lia.
+       rewrite sum_n_Sm; try lia.
+       replace (S n0 + k)%nat with (S (n0 + k)%nat) by lia.
+       now rewrite IHn0.
+     Qed.
+
+    (* Lemma 3, part a *)
+    Lemma product_sum_assumption_a_lt_1 gamma :
+      0 <= gamma < 1 ->
+      (forall n, 0 <= α n <= 1) ->
+      (forall n, 0 <= (1-gamma)* α n < 1) ->
+      is_lim_seq α 0 ->
+      is_lim_seq (sum_n α) p_infty ->
+      forall k, is_lim_seq (fun n => prod_f_R0 (fun m => g_alpha gamma (α (m + k)%nat)) n) 0.
+      Proof.
+        intros.
+        assert (forall n, 0 <= (1-gamma)* α (n+k)%nat < 1) by (intros; apply H1).
+        generalize (Fprod_0 (fun n => (1-gamma)* α (n+k)%nat) H4); intros.
+        apply is_lim_seq_ext with (v := (fun n : nat => prod_f_R0 (fun m : nat => g_alpha gamma (α (m + k))) n)) in H5.
+        apply H5.
+        induction n.
+        - unfold part_prod, part_prod_n, g_alpha.
+          simpl; lra.
+        - simpl.
+          unfold part_prod, g_alpha.
+          simpl.
+          rewrite part_prod_n_S; [|lia].
+          unfold part_prod in IHn.
+          rewrite IHn.
+          reflexivity.
+        - unfold l1_divergent.
+          apply is_lim_seq_ext with 
+              (u := (fun m => (1-gamma) * (sum_n  (fun n => α (n + k)%nat) m))).
+          + intros.
+            generalize (sum_n_mult_l (1-gamma) (fun n => α (n + k)%nat) n); intros.
+            unfold Hierarchy.mult in H6; simpl in H6.
+            symmetry.
+            apply H6.
+          + replace (p_infty) with (Rbar_mult (1-gamma) p_infty).
+            * apply is_lim_seq_scal_l.
+              destruct (Nat.eq_dec k 0).
+              -- subst.
+                 apply is_lim_seq_ext with (u := (sum_n α)); trivial.
+                 intros; apply sum_n_ext.
+                 intros; f_equal.
+                 lia.
+              -- assert (k > 0)%nat by lia.
+                 apply is_lim_seq_ext with
+                     (u := fun m => minus (sum_n α (m + k)%nat) (sum_n α (k-1)%nat)).
+                 ++ intros.
+                    rewrite <- sum_n_m_sum_n; trivial; try lia.
+                    replace (S (k-1)%nat) with (k) by lia.
+                    apply sum_n_m_shift.
+                 ++ apply is_lim_seq_minus with 
+                        (l1 := p_infty) (l2 := sum_n α (k - 1)).
+                    ** eapply is_lim_seq_incr_n in H3.
+                       apply H3.
+                    ** apply is_lim_seq_const.
+                    ** unfold is_Rbar_minus, is_Rbar_plus, Rbar_opp.
+                       now simpl.
+            * rewrite Rbar_mult_comm.
+              rewrite Rbar_mult_p_infty_pos; trivial.
+              lra.
+      Qed.
+
+      (* Lemma 3, part a *)
+      Lemma product_sum_assumption_a gamma :
+        0 <= gamma < 1 ->
+        (forall n, 0 <= α n <= 1) ->
+        is_lim_seq α 0 ->
+        is_lim_seq (sum_n α) p_infty ->
+        forall k, is_lim_seq (fun n => prod_f_R0 (fun m => g_alpha gamma (α (m + k)%nat)) n) 0.
+      Proof.
+        intros.
+        assert (abounds: forall n, 0 <= (1-gamma)* α (n + k) <= 1).
+        {
+          intros n.
+          split.
+          - apply Rmult_le_pos; [lra | ].
+            apply H0.
+          - assert (0 < 1-gamma <= 1) by lra.
+            destruct H3.
+            apply Rmult_le_compat_r with (r :=  α (n + k)) in H4.
+            rewrite Rmult_1_l in H4.
+            apply Rle_trans with (r2 := α (n + k)); trivial.
+            apply H0.
+            apply H0.
+        }
+        
+        destruct (classic (exists n,  (1-gamma) * α (n+k) = 1)) as [[n an1] | Hnex].
+        - unfold g_alpha.
+          apply is_lim_seq_le_le_loc with (u := fun _ => 0) (w := fun _ => 0)
+             ; [| apply is_lim_seq_const | apply is_lim_seq_const].
+          exists n; intros.
+          replace (prod_f_R0 (fun m : nat => 1 - (1 - gamma) * α (m + k)) n0) with 0.
+          lra.
+          admit.
+        - assert (abounds':forall n, 0 <= (1-gamma)* α (n + k) < 1).
+          {
+            intros n.
+            destruct (abounds n).
+            split; trivial.
+            destruct H4; trivial.
+            elim Hnex; eauto.
+          }
+          apply product_sum_assumption_a_lt_1; trivial.
+       Admitted.
+      
+    (* Lemma 3, part b *)
+    Lemma product_sum_assumption_b_helper :
+      (forall n, 0 <= α n <= 1) ->
+      ex_series α ->
+      forall k, Lim_seq (fun n => prod_f_R0 (fun m => 1 - (α (m + k)%nat)) n) > 0.
+    Proof.
+      intros.
+      generalize (Cauchy_ex_series _ H0); intros.
+      unfold Cauchy_series in H1.
+      specialize (H1 posreal_half).
+      destruct H1 as [N H1].
+      unfold norm in H1; simpl in H1.
+      unfold abs in H1; simpl in H1.
+      assert (Lim_seq (fun n => sum_n_m α (S N) n) < 1).
+      generalize (Lim_seq_le_loc (fun n => sum_n_m α (S N) n) (fun _ => /2)); intros.
+      rewrite Lim_seq_const in H2.
+      unfold ex_series in H0.
+      destruct H0.
+      unfold is_series in H0.
+      assert (is_lim_seq (sum_n α) x).
+      unfold is_lim_seq.
+      apply H0.
+      assert (ex_finite_lim_seq (fun n : nat => sum_n_m α (S N) n)).
+      unfold ex_finite_lim_seq.
+      exists (x - (sum_n α N)).
+      apply is_lim_seq_ext_loc with 
+        (u := (fun n => minus (sum_n α n) (sum_n α N))).
+      exists N.
+      intros.
+      rewrite sum_n_m_sum_n; trivial.
+      apply is_lim_seq_minus'; trivial.
+      apply is_lim_seq_const.
+      unfold ex_finite_lim_seq in H4.
+      destruct H4.
+      apply is_lim_seq_unique in H4.
+      rewrite H4.
+      rewrite H4 in H2.
+      simpl in H2.
+      apply Rle_lt_trans with (r2 := /2); try lra.
+      apply H2.
+      exists (S N).
+      intros.
+      specialize (H1 (S N) n).
+      left.
+      rewrite Rabs_right in H1.
+      apply H1.
+      lia.
+      lia.
+      replace 0 with (sum_n_m (fun _ => 0) (S N) n).
+      apply Rle_ge.
+      apply sum_n_m_le.
+      apply H.
+      generalize (@sum_n_m_const_zero R_AbsRing (S N) n).
+      now unfold zero; simpl.
+      Admitted.
+      
+      
+
 
   End qlearn.
 
