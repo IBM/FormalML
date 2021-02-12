@@ -523,7 +523,7 @@ algorithm.
         intros.
       Admitted.
 
-      Lemma sum_n_pos_incr a n1 n2 : (forall n, (n1 < n <= n2)%nat -> 0 <= a n) -> 
+    Lemma sum_n_pos_incr a n1 n2 : (forall n, (n1 < n <= n2)%nat -> 0 <= a n) -> 
                                      (n1 <= n2)%nat -> sum_n a n1 <= sum_n a n2.
       Proof.
         intros.
@@ -544,7 +544,7 @@ algorithm.
       is_lim_seq (sum_n α) p_infty.
     Proof.
       intros gbounds abounds alim.
-      rewrite <- Decidable.contrapositive.
+      rewrite <- Decidable.contrapositive; [|apply classic].
       intros.
       assert (asum: ex_series (fun n => α n)).
       {
@@ -629,8 +629,6 @@ algorithm.
       rewrite H0 in H2.
       simpl in H2.
       lra.
-      unfold is_lim_seq.
-      apply classic.
     Qed.
 
   End qlearn.
