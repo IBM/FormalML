@@ -326,14 +326,13 @@ algorithm.
        now rewrite IHn0.
      Qed.
 
-    (* Lemma 3, part a *)
-    Lemma product_sum_assumption_a_lt_1 gamma :
+    Lemma product_sum_assumption_a_lt_1 (gamma:R) (k:nat):
       0 <= gamma < 1 ->
       (forall n, 0 <= α n <= 1) ->
-      (forall n, 0 <= (1-gamma)* α n < 1) ->
+      (forall n, 0 <= (1-gamma)* α (n+k)%nat < 1) ->
       is_lim_seq α 0 ->
       is_lim_seq (sum_n α) p_infty ->
-      forall k, is_lim_seq (fun n => prod_f_R0 (fun m => g_alpha gamma (α (m + k)%nat)) n) 0.
+      is_lim_seq (fun n => prod_f_R0 (fun m => g_alpha gamma (α (m + k)%nat)) n) 0.
       Proof.
         intros.
         assert (forall n, 0 <= (1-gamma)* α (n+k)%nat < 1) by (intros; apply H1).
@@ -457,7 +456,7 @@ algorithm.
             elim Hnex; eauto.
           }
           apply product_sum_assumption_a_lt_1; trivial.
-       Admitted.
+      Qed.
       
     (* Lemma 3, part b *)
     Lemma product_sum_assumption_b_helper :
@@ -516,8 +515,6 @@ algorithm.
       Admitted.
       
       
-
-
   End qlearn.
 
   Section qlearn2.
