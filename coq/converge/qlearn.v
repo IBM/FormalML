@@ -523,10 +523,16 @@ algorithm.
         intros.
       Admitted.
 
-
-      Lemma sum_n_pos_incr a n1 n2 : (forall n, (n1 < n <= n2)%nat -> a n >= 0) -> 
+      Lemma sum_n_pos_incr a n1 n2 : (forall n, (n1 < n <= n2)%nat -> 0 <= a n) -> 
                                      (n1 <= n2)%nat -> sum_n a n1 <= sum_n a n2.
       Proof.
+        intros.
+        unfold sum_n.
+        rewrite sum_n_m_Chasles with (k:=n2) (m:=n1); try lia.
+        replace (sum_n_m a 0 n1) with ((sum_n_m a 0 n1) + 0) at 1 by lra.
+        unfold plus; simpl.
+        apply Rplus_le_compat_l.
+        
       Admitted.
 
     (* Lemma 3, part b *)
@@ -564,7 +570,43 @@ algorithm.
           intros n.
           destruct (HH1 n) as [n0 [nle nbound]].
           generalize (sum_n_pos_incr α n n0); intros.
-          admit.
+          apply Rle_trans with (r2 := sum_n α n0); trivial.
+          apply H1; trivial.
+          intros.
+          apply abounds.
+        }
+        unfold ex_series.
+        unfold is_series.
+        generalize (ex_lim_seq_incr (sum_n α)); intros.
+        unfold ex_lim_seq in H1.
+        cut_to H1.
+        destruct H1.
+        generalize (is_lim_seq_le (sum_n α) (fun _ => M) x M HH2 H1); intros.
+        generalize (is_lim_seq_le (fun _ => 0) (sum_n α) 0 x); intros.
+        cut_to H2.
+        cut_to H3.
+        assert (is_finite x).
+        destruct x; unfold is_finite.
+        - trivial.
+        - unfold Rbar_le in H2; now simpl in H2.
+        - unfold Rbar_le in H3; now simpl in H3.
+        - rewrite <- H4 in H1.
+          exists (real x).
+          unfold is_lim_seq in H1.
+          apply H1.
+        - intros.
+          rewrite <- sum_n_zero with (n := n).
+          unfold sum_n.
+          apply sum_n_m_le.
+          apply abounds.
+        - apply is_lim_seq_const.
+        - apply H1.
+        - apply is_lim_seq_const.
+        - intros.
+          rewrite sum_Sn.
+          replace (sum_n α n) with ((sum_n α n) + 0) at 1 by lra.
+          apply Rplus_le_compat_l.
+          apply abounds.
       }
       assert (gasum: ex_series (fun n => (1-gamma)* (α n))).
       now apply ex_series_scal with (c := 1-gamma) (a := α).
@@ -594,7 +636,8 @@ algorithm.
       simpl in H2.
       lra.
       unfold is_lim_seq.
-    Admitted.
+      apply classic.
+    Qed.
 
   End qlearn.
 
