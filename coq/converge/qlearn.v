@@ -580,28 +580,22 @@ algorithm.
         generalize (ex_lim_seq_incr (sum_n α)); intros.
         unfold ex_lim_seq in H1.
         cut_to H1.
-        destruct H1.
-        generalize (is_lim_seq_le (sum_n α) (fun _ => M) x M HH2 H1); intros.
-        generalize (is_lim_seq_le (fun _ => 0) (sum_n α) 0 x); intros.
-        cut_to H2.
-        cut_to H3.
-        assert (is_finite x).
-        destruct x; unfold is_finite.
-        - trivial.
-        - unfold Rbar_le in H2; now simpl in H2.
-        - unfold Rbar_le in H3; now simpl in H3.
-        - rewrite <- H4 in H1.
-          exists (real x).
-          unfold is_lim_seq in H1.
-          apply H1.
-        - intros.
-          rewrite <- sum_n_zero with (n := n).
-          unfold sum_n.
-          apply sum_n_m_le.
-          apply abounds.
-        - apply is_lim_seq_const.
-        - apply H1.
-        - apply is_lim_seq_const.
+        - destruct H1.
+          generalize (is_lim_seq_le (sum_n α) (fun _ => M) x M HH2 H1); intros.
+          generalize (is_lim_seq_le (fun _ => 0) (sum_n α) 0 x); intros.
+          cut_to H2; [|apply is_lim_seq_const].
+          cut_to H3.
+          + generalize (bounded_is_finite 0 M x H3 H2); intros.
+            rewrite <- H4 in H1.
+            exists (real x).
+            apply H1.
+          + intros.
+            rewrite <- sum_n_zero with (n := n).
+            unfold sum_n.
+            apply sum_n_m_le.
+            apply abounds.
+          + apply is_lim_seq_const.
+          + apply H1.
         - intros.
           rewrite sum_Sn.
           replace (sum_n α n) with ((sum_n α n) + 0) at 1 by lra.

@@ -877,20 +877,6 @@ Section Expectation.
     apply Expectation_posRV_le; trivial.
   Qed.
 
-
-  Lemma bounded_is_finite (a b : R) (x : Rbar) :
-    Rbar_le a x -> Rbar_le x b -> is_finite x.
-  Proof.
-    intros.
-    unfold is_finite.
-    destruct x.
-    - now simpl.
-    - simpl in H0.
-      tauto.
-    - simpl in H.
-      tauto.
-  Qed.
-
   Lemma Finite_Expectation_posRV_le 
         (rv_X1 rv_X2 : Ts -> R)
         (prv1 : PositiveRandomVariable rv_X1)
