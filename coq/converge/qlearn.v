@@ -457,12 +457,11 @@ algorithm.
           }
           apply product_sum_assumption_a_lt_1; trivial.
       Qed.
-      
-    (* Lemma 3, part b *)
-    Lemma product_sum_assumption_b_helper :
-      (forall n, 0 <= α n <= 1) ->
-      ex_series α ->
-      forall k, Lim_seq (fun n => prod_f_R0 (fun m => 1 - (α (m + k)%nat)) n) > 0.
+
+    Lemma product_sum_assumption_b_helper (g_α : nat -> R) :
+      (forall n, 0 <= g_α n <= 1) ->
+      ex_series g_α ->
+      exists N, Lim_seq (sum_n_m g_α N) < 1.
     Proof.
       intros.
       generalize (Cauchy_ex_series _ H0); intros.
@@ -471,20 +470,20 @@ algorithm.
       destruct H1 as [N H1].
       unfold norm in H1; simpl in H1.
       unfold abs in H1; simpl in H1.
-      assert (Lim_seq (fun n => sum_n_m α (S N) n) < 1).
-      generalize (Lim_seq_le_loc (fun n => sum_n_m α (S N) n) (fun _ => /2)); intros.
+      assert (Lim_seq (fun n => sum_n_m g_α (S N) n) < 1).
+      generalize (Lim_seq_le_loc (fun n => sum_n_m g_α (S N) n) (fun _ => /2)); intros.
       rewrite Lim_seq_const in H2.
       unfold ex_series in H0.
       destruct H0.
       unfold is_series in H0.
-      assert (is_lim_seq (sum_n α) x).
+      assert (is_lim_seq (sum_n g_α) x).
       unfold is_lim_seq.
       apply H0.
-      assert (ex_finite_lim_seq (fun n : nat => sum_n_m α (S N) n)).
+      assert (ex_finite_lim_seq (fun n : nat => sum_n_m g_α (S N) n)).
       unfold ex_finite_lim_seq.
-      exists (x - (sum_n α N)).
+      exists (x - (sum_n g_α N)).
       apply is_lim_seq_ext_loc with 
-        (u := (fun n => minus (sum_n α n) (sum_n α N))).
+        (u := (fun n => minus (sum_n g_α n) (sum_n g_α N))).
       exists N.
       intros.
       rewrite sum_n_m_sum_n; trivial.
@@ -512,9 +511,71 @@ algorithm.
       apply H.
       generalize (@sum_n_m_const_zero R_AbsRing (S N) n).
       now unfold zero; simpl.
+      eexists.
+      apply H2.
+    Qed.
+
+    Lemma product_sum_helper_lim (x : nat -> R) (N:nat) :
+        (forall n, 0 <= x n) ->
+        Lim_seq (sum_n_m x N) < 1 ->
+        Lim_seq (fun m => prod_f_R0 (fun n => 1 - (x (n + N)%nat)) m) > 0.
+      Proof.
+        intros.
       Admitted.
-      
-      
+
+
+    (* Lemma 3, part b *)
+    Lemma product_sum_assumption_b gamma :
+      0 <= gamma < 1 ->
+      (forall n, 0 <= α n <= 1) ->
+      is_lim_seq α 0 ->
+      (forall k, is_lim_seq (fun n => prod_f_R0 (fun m => g_alpha gamma (α (m + k)%nat)) n) 0) ->
+      is_lim_seq (sum_n α) p_infty.
+    Proof.
+      intros gbounds abounds alim.
+      rewrite <- Decidable.contrapositive.
+      intros.
+      assert (asum: ex_series (fun n => α n)).
+      {
+        rewrite <- is_lim_seq_spec in H.
+        unfold is_lim_seq' in H.
+        apply not_all_ex_not in H.
+        destruct H as [M H].
+        unfold eventually in H.
+        generalize (not_ex_all_not _ _ H); intros.
+        generalize (ex_lim_seq_incr  (sum_n α)); intros.
+        admit.
+      }
+      assert (gasum: ex_series (fun n => (1-gamma)* (α n))).
+      now apply ex_series_scal with (c := 1-gamma) (a := α).
+      assert (ga_pos: forall n, 0 <= (1 - gamma) * α n).
+      {
+        intros.
+        apply Rmult_le_pos; [lra|].
+        apply abounds.
+      }
+      assert (ga_bounds : (forall n : nat, 0 <= (1 - gamma) * α n <= 1)).
+      {
+        intros; split; [apply ga_pos|].
+        assert (0 < 1-gamma <= 1) by lra.
+        destruct H1.
+        apply Rmult_le_compat_r with (r :=  α n) in H2; [|apply abounds].
+        rewrite Rmult_1_l in H2.
+        apply Rle_trans with (r2 := α n); trivial.
+        apply abounds.
+      }
+      generalize (product_sum_assumption_b_helper (fun n => (1-gamma) * α n) ga_bounds gasum); intros.
+      destruct H1.
+      generalize (product_sum_helper_lim (fun n => (1-gamma) * α n) x ga_pos H1); intros.
+      specialize (H0 x).
+      apply is_lim_seq_unique in H0.
+      unfold g_alpha in H0.
+      rewrite H0 in H2.
+      simpl in H2.
+      lra.
+      unfold is_lim_seq.
+    Admitted.
+
   End qlearn.
 
   Section qlearn2.
