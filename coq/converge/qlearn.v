@@ -524,6 +524,11 @@ algorithm.
       Admitted.
 
 
+      Lemma sum_n_pos_incr a n1 n2 : (forall n, (n1 < n <= n2)%nat -> a n >= 0) -> 
+                                     (n1 <= n2)%nat -> sum_n a n1 <= sum_n a n2.
+      Proof.
+      Admitted.
+
     (* Lemma 3, part b *)
     Lemma product_sum_assumption_b gamma :
       0 <= gamma < 1 ->
@@ -542,9 +547,24 @@ algorithm.
         apply not_all_ex_not in H.
         destruct H as [M H].
         unfold eventually in H.
-        generalize (not_ex_all_not _ _ H); intros.
-        generalize (ex_lim_seq_incr  (sum_n α)); intros.
-        admit.
+        generalize (not_ex_all_not _ _ H); intros HH.
+        assert (HH1:forall n : nat, exists n0 : nat, (n <= n0)%nat /\ sum_n α n0 <= M).
+        {
+          intros n; specialize (HH n).
+          apply not_all_ex_not in HH.
+          destruct HH as [x HH2].
+          apply imply_to_and in HH2.
+          destruct HH2.
+          exists x.
+          split; trivial.
+          lra.
+        }
+        assert (HH2: forall n : nat, sum_n α n <= M).
+        {
+          intros n.
+          destruct (HH1 n) as [n0 [nle nbound]].
+          generalize (sum_n_pos_incr α n n0); intros.
+          admit.
       }
       assert (gasum: ex_series (fun n => (1-gamma)* (α n))).
       now apply ex_series_scal with (c := 1-gamma) (a := α).
