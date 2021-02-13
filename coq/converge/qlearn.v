@@ -295,6 +295,10 @@ algorithm.
            lra.
     Qed.
 
+  End qlearn.
+
+  Section qlearn2.
+    
     Lemma Rmult_lt_1 (a b :R) :
       0 <= a <= 1 ->
       b < 1 ->
@@ -311,7 +315,7 @@ algorithm.
        lra.
    Qed.
 
-   Lemma sum_n_m_shift (k n0 : nat) :
+   Lemma sum_n_m_shift (α : nat -> R) (k n0 : nat) :
      sum_n_m α k (n0 + k)%nat = sum_n (fun n1 : nat => α (n1 + k)%nat) n0.
    Proof.
      unfold sum_n.
@@ -326,7 +330,9 @@ algorithm.
        now rewrite IHn0.
      Qed.
 
-    Lemma product_sum_assumption_a_lt_1 (gamma:R) (k:nat):
+    Context {X : CompleteNormedModule R_AbsRing}.
+
+    Lemma product_sum_assumption_a_lt_1 (α : nat -> R) (gamma:R) (k:nat):
       0 <= gamma < 1 ->
       (forall n, 0 <= α n <= 1) ->
       (forall n, 0 <= (1-gamma)* α (n+k)%nat < 1) ->
@@ -337,7 +343,7 @@ algorithm.
         intros.
         assert (forall n, 0 <= (1-gamma)* α (n+k)%nat < 1) by (intros; apply H1).
         generalize (Fprod_0 (fun n => (1-gamma)* α (n+k)%nat) H4); intros.
-        apply is_lim_seq_ext with (v := (fun n : nat => prod_f_R0 (fun m : nat => g_alpha gamma (α (m + k))) n)) in H5.
+        apply is_lim_seq_ext with (v := (fun n : nat => prod_f_R0 (fun m : nat => g_alpha gamma (α (m + k)%nat)) n)) in H5.
         apply H5.
         induction n.
         - unfold part_prod, part_prod_n, g_alpha.
@@ -415,7 +421,7 @@ algorithm.
       Qed.
 
       (* Lemma 3, part a *)
-      Lemma product_sum_assumption_a gamma :
+      Lemma product_sum_assumption_a (α : nat -> R) gamma :
         0 <= gamma < 1 ->
         (forall n, 0 <= α n <= 1) ->
         is_lim_seq α 0 ->
@@ -423,7 +429,7 @@ algorithm.
         forall k, is_lim_seq (fun n => prod_f_R0 (fun m => g_alpha gamma (α (m + k)%nat)) n) 0.
       Proof.
         intros.
-        assert (abounds: forall n, 0 <= (1-gamma)* α (n + k) <= 1).
+        assert (abounds: forall n, 0 <= (1-gamma)* α (n + k)%nat <= 1).
         {
           intros n.
           split.
@@ -431,23 +437,23 @@ algorithm.
             apply H0.
           - assert (0 < 1-gamma <= 1) by lra.
             destruct H3.
-            apply Rmult_le_compat_r with (r :=  α (n + k)) in H4; [|apply H0].
+            apply Rmult_le_compat_r with (r :=  α (n + k)%nat) in H4; [|apply H0].
             rewrite Rmult_1_l in H4.
-            apply Rle_trans with (r2 := α (n + k)); trivial.
+            apply Rle_trans with (r2 := α (n + k)%nat); trivial.
             apply H0.
         }
         
-        destruct (classic (exists n,  (1-gamma) * α (n+k) = 1)) as [[n an1] | Hnex].
+        destruct (classic (exists n,  (1-gamma) * α (n+k)%nat = 1)) as [[n an1] | Hnex].
         - unfold g_alpha.
           apply is_lim_seq_le_le_loc with (u := fun _ => 0) (w := fun _ => 0)
              ; [| apply is_lim_seq_const | apply is_lim_seq_const].
           exists n; intros.
-          replace (prod_f_R0 (fun m : nat => 1 - (1 - gamma) * α (m + k)) n0) with 0.
+          replace (prod_f_R0 (fun m : nat => 1 - (1 - gamma) * α (m + k)%nat) n0) with 0.
           lra.
           rewrite prod_f_R0_n1_n2 with (n1 := n); trivial.
           rewrite an1.
           lra.
-        - assert (abounds':forall n, 0 <= (1-gamma)* α (n + k) < 1).
+        - assert (abounds':forall n, 0 <= (1-gamma)* α (n + k)%nat < 1).
           {
             intros n.
             destruct (abounds n).
@@ -546,13 +552,10 @@ algorithm.
     Qed.
 
     Lemma product_sum_helper_fun (x : nat -> R) (N : nat) :
-      (forall n, (n<=N)%nat -> 0 <= x n) ->
-      sum_n x N < 1 ->
+      (forall n, (n<=N)%nat -> 0 <= x n <= 1) ->
       prod_f_R0 (fun n => 1 - x n) N >= 1 - sum_n x N.
     Proof.
       intros.
-      generalize (sum_f_bound x N 1 H H0); intros.
-      clear H0.
       induction N.
       - simpl.
         rewrite sum_O.
@@ -562,8 +565,8 @@ algorithm.
         cut_to IHN.
         + apply Rge_trans with (r2 := (1-sum_n x N) * (1 - x (S N))).
           * apply Rmult_ge_compat_r; trivial.
-            specialize (H1 (S N)).
-            cut_to H1; try lia.
+            specialize (H (S N)).
+            cut_to H; try lia.
             lra.
           * rewrite Rmult_minus_distr_r.
             rewrite Rmult_1_l.
@@ -582,22 +585,24 @@ algorithm.
                intros; apply H; lia.
             -- apply H; lia.
         + intros; apply H; lia.
-        + intros; apply H1; lia.
      Qed.
 
-    Lemma product_sum_helper_lim1 (x : nat -> R) :
-        (forall n, 0 <= x n) ->
-        ex_finite_lim_seq (sum_n x) ->
-        Lim_seq (sum_n x) < 1 ->
-        Rbar_lt 0 (Lim_seq (fun m => prod_f_R0 (fun n => 1 - (x n)) m)).
+    Lemma product_sum_helper_lim (α : nat -> R) (N:nat) :
+        (forall n, 0 <= α n <= 1) ->
+        ex_finite_lim_seq (fun n => sum_n_m α N (n + N)%nat) ->
+        Lim_seq (sum_n_m α N) < 1 ->
+        Rbar_lt 0 (Lim_seq (fun m => prod_f_R0 (fun n => 1 - (α (n + N)%nat)) m)).
       Proof.
-        generalize (Lim_seq_le_loc (fun n => 1 - sum_n x n) (fun n => prod_f_R0 (fun k => 1 - x k) n)); intros.
+        generalize (Lim_seq_le_loc (fun n => 1 - sum_n_m α N (n+N)%nat) (fun n => prod_f_R0 (fun k => 1 - α (k + N)%nat) n)); intros.
         apply ex_finite_lim_seq_correct in H1.
         destruct H1.
+        generalize (Lim_seq_incr_n (sum_n_m α N) N); intros.
+        rewrite <- H4 in H2.
         cut_to H.
         - rewrite Lim_seq_minus, Lim_seq_const in H; trivial.
-          + apply Rbar_lt_le_trans with (y := (Rbar_minus 1 (Lim_seq (sum_n x)))); trivial.
+          + apply Rbar_lt_le_trans with (y := (Rbar_minus 1 (Lim_seq (fun n : nat => sum_n_m α N (n + N))))); trivial.
             rewrite <- H3.
+            simpl.
             simpl; lra.
           + apply ex_lim_seq_const.
           + rewrite Lim_seq_const.
@@ -605,21 +610,13 @@ algorithm.
             now simpl.
         - exists (0%nat); intros.
           apply Rge_le.
-          apply product_sum_helper_fun.
+          generalize (product_sum_helper_fun (fun n => α (n + N)%nat)); intros.
+          replace (sum_n_m α N (n + N)) with (sum_n (fun n => α (n + N)%nat) n).
+          apply H6.
           intros; apply H0.
-        
-      Admitted.
-
-    Lemma product_sum_helper_lim (x : nat -> R) (N:nat) :
-        (forall n, 0 <= x n) ->
-        Lim_seq (sum_n_m x N) < 1 ->
-        Rbar_lt 0 (Lim_seq (fun m => prod_f_R0 (fun n => 1 - (x (n + N)%nat)) m)).
-      Proof.
-        intros.
-        
-        
-      Admitted.
-
+          symmetry.
+          apply sum_n_m_shift.
+     Qed.
 
     Lemma sum_n_pos_incr a n1 n2 : (forall n, (n1 < n <= n2)%nat -> 0 <= a n) -> 
                                      (n1 <= n2)%nat -> sum_n a n1 <= sum_n a n2.
@@ -635,7 +632,7 @@ algorithm.
       Admitted.
 
     (* Lemma 3, part b *)
-    Lemma product_sum_assumption_b gamma :
+    Lemma product_sum_assumption_b (α : nat -> R) gamma :
       0 <= gamma < 1 ->
       (forall n, 0 <= α n <= 1) ->
       is_lim_seq α 0 ->
@@ -721,19 +718,16 @@ algorithm.
       }
       generalize (product_sum_assumption_b_helper (fun n => (1-gamma) * α n) ga_bounds gasum); intros.
       destruct H1.
-      generalize (product_sum_helper_lim (fun n => (1-gamma) * α n) x ga_pos H1); intros.
+      generalize (product_sum_helper_lim (fun n => (1-gamma) * α n) x ga_bounds); intros.
       specialize (H0 x).
       apply is_lim_seq_unique in H0.
       unfold g_alpha in H0.
       rewrite H0 in H2.
       simpl in H2.
+      cut_to H2; trivial.
       lra.
-    Qed.
+      Admitted.
 
-  End qlearn.
-
-  Section qlearn2.
-    
     Fixpoint RMseq (α : nat -> R) (s : nat -> R) (init : R) (n : nat) : R :=
       match n with
       | 0 => init
@@ -760,21 +754,19 @@ algorithm.
         + apply Rplus_le_compat; apply Rmult_le_compat_l; lra.
      Qed.
 
-    Context {X : CompleteNormedModule R_AbsRing} (α : nat -> R).
-
-    Fixpoint RMseqX (f : nat -> X -> X) (init : X) (n : nat) : X :=
+    Fixpoint RMseqX (α : nat -> R) (f : nat -> X -> X) (init : X) (n : nat) : X :=
       match n with
       | 0 => init
-      | (S k) => plus (scal (1 - α k) (RMseqX f init k)) (scal (α k) (f k (RMseqX f init k)))
+      | (S k) => plus (scal (1 - α k) (RMseqX α f init k)) (scal (α k) (f k (RMseqX α f init k)))
       end.
       
-    Fixpoint RMseqG (init gamma C : R) (n : nat) : R :=
+    Fixpoint RMseqG (α : nat -> R) (init gamma C : R) (n : nat) : R :=
       match n with
       | 0 => init
-      | (S k) => plus (scal (g_alpha gamma (α k)) (RMseqG init gamma C k)) (scal (α k) C)
+      | (S k) => plus (scal (g_alpha gamma (α k)) (RMseqG α init gamma C k)) (scal (α k) C)
       end.
 
-    Lemma RMseq_shift (delta : nat -> R) (init : R) (N n : nat) :
+    Lemma RMseq_shift (α : nat -> R) (delta : nat -> R) (init : R) (N n : nat) :
       RMseq (fun n =>  α (N + n)%nat) 
             (fun n : nat => delta (N + n)%nat) (RMseq α delta init N) n  = 
       RMseq α delta init (N + n)%nat.
@@ -790,7 +782,7 @@ algorithm.
       Qed.
 
     (* Lemma 6. *)
-    Lemma helper_convergence_6 (delta : nat -> R) (init:R) :
+    Lemma helper_convergence_6 (α : nat -> R) (delta : nat -> R) (init:R) :
       0 <= init ->
       (forall n, 0 <= (α n) <= 1) ->
       (forall n, 0 <= delta n) ->
@@ -843,7 +835,7 @@ algorithm.
         - lra.
         - unfold g_alpha.
           specialize (H4 N).
-          apply is_lim_seq_ext with (u := (fun n : nat => prod_f_R0 (fun m : nat => 1 - α (m + N)) n)).
+          apply is_lim_seq_ext with (u := (fun n : nat => prod_f_R0 (fun m : nat => 1 - α (m + N)%nat) n)).
           intro n.
           apply prod_f_R0_proper; trivial.
           intro x.
@@ -867,7 +859,7 @@ algorithm.
       rewrite Rminus_0_r.
       assert (Neps <= (n - N))%nat by lia.
       specialize (H9 (n-N)%nat H11); simpl in H9.
-      generalize (Rabs_triang_inv (RMseq (fun n : nat => α (N + n)) (fun _ : nat => eps / 2) (RMseq α delta init N) (n-N)) (eps/2)); intros.
+      generalize (Rabs_triang_inv (RMseq (fun n : nat => α (N + n)%nat) (fun _ : nat => eps / 2) (RMseq α delta init N) (n-N)) (eps/2)); intros.
       generalize (Rle_lt_trans _ _ _ H12 H9); intros.
       rewrite Rabs_right with (r := eps/2) in H13; [| lra].
       apply Rplus_lt_compat_r with (r := eps/2) in H13.
@@ -876,7 +868,7 @@ algorithm.
       cut_to H7; trivial.
       - specialize (H7 (n-N)%nat).
         destruct H7.
-        generalize (RMseq_shift delta init N (n-N)); intros.
+        generalize (RMseq_shift α delta init N (n-N)); intros.
         replace (N + (n -N))%nat with n in H15 by lia.
         generalize (Rle_trans _ _ _ H7 H14); intros.
         rewrite H15 in H14.
@@ -924,16 +916,16 @@ algorithm.
     Qed.
 
     (* Lemma 7. *)
-    Lemma bounding_7 (gamma C : R) (f : nat -> X -> X) (init : X) :
+    Lemma bounding_7  (α : nat -> R) (gamma C : R) (f : nat -> X -> X) (init : X) :
       0 <= gamma < 1 -> 0 <= C ->
       (forall n, 0 <= (α n) <= 1) ->
       (forall n x, norm (f n x) <= gamma * norm x + C) ->
       is_lim_seq α 0 ->
-      (forall k, is_lim_seq (fun n => prod_f_R0 (fun m => g_alpha gamma (α (m+k))) n) 0) ->
-      exists B, forall n, norm ( RMseqX f init n) <= B.
+      (forall k, is_lim_seq (fun n => prod_f_R0 (fun m => g_alpha gamma (α (m+k)%nat)) n) 0) ->
+      exists B, forall n, norm ( RMseqX α f init n) <= B.
     Proof.
       intros.
-      assert (forall n, norm(RMseqX f init (S n)) <= (1 - α n)*norm(RMseqX f init n) + (α n)*(gamma * norm (RMseqX f init n) + C)).
+      assert (forall n, norm(RMseqX α f init (S n)) <= (1 - α n)*norm(RMseqX α f init n) + (α n)*(gamma * norm (RMseqX α f init n) + C)).
       {
         intros.
         simpl.
@@ -950,7 +942,7 @@ algorithm.
         apply H2.
       }
 
-      assert (forall n,  norm(RMseqX f init (S n)) <= (g_alpha gamma  (α n)) * norm(RMseqX f init n) + (α n)*C).
+      assert (forall n,  norm(RMseqX α f init (S n)) <= (g_alpha gamma  (α n)) * norm(RMseqX α f init n) + (α n)*C).
       {
         intros.
         eapply Rle_trans.
@@ -959,7 +951,7 @@ algorithm.
         lra.
      }
 
-      assert (forall n, norm(RMseqX f init n) <= RMseqG (norm init) gamma C n).
+      assert (forall n, norm(RMseqX α f init n) <= RMseqG α (norm init) gamma C n).
       { 
         induction n.
         - unfold RMseqX, RMseqG; lra.
@@ -982,7 +974,7 @@ algorithm.
       }
       
       generalize (@Vasily_2b R_CompleteNormedModule (fun s => gamma * s + C) α (norm init) gamma (C/(1-gamma)) H); intros.
-      assert (exists B2, forall n, RMseqG (norm init) gamma C n <= B2).
+      assert (exists B2, forall n, RMseqG α (norm init) gamma C n <= B2).
       {
         cut_to H8; trivial.
         - apply finite_lim_bound with (lim := C / (1 - gamma)).
@@ -991,7 +983,7 @@ algorithm.
           generalize (is_lim_seq_plus' _ _ _ _ H8 H9); intros.
           rewrite Rplus_0_l in H10.
           apply is_lim_seq_ext with (v := (fun n => (@RMsync R_CompleteNormedModule (fun s => gamma * s + C) α (norm init) n)) ) in H10.
-          + apply is_lim_seq_ext with (v :=  (RMseqG (norm init) gamma C)) in H10.
+          + apply is_lim_seq_ext with (v :=  (RMseqG α (norm init) gamma C)) in H10.
             * apply H10.
             * induction n.
               -- now unfold RMsync, RMseqG.
