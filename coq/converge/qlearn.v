@@ -631,6 +631,33 @@ algorithm.
         apply Rplus_le_compat_l.
       Admitted.
 
+      Lemma series_finite_sum (a : nat -> R) :
+        ex_series a ->
+        ex_finite_lim_seq (sum_n a).
+      Proof.
+        unfold ex_series, is_series, ex_finite_lim_seq, is_lim_seq; intros.
+        apply H.
+      Qed.
+
+      Lemma series_finite_sum_shift (a : nat -> R) (N:nat) :
+        ex_series a ->
+        ex_finite_lim_seq (fun n => sum_n_m a N (n + N)).
+      Proof.
+        intros.
+        assert (ex_series (fun n => a (n + N)%nat)).
+        apply ex_series_incr_n with (n := N) in H.
+        apply ex_series_ext with (a0 := (fun k : nat => a (N + k)%nat)); trivial.
+        intros; f_equal; lia.
+        generalize (series_finite_sum _ H0); intros.
+        unfold ex_finite_lim_seq in H1.
+        destruct H1.
+        apply is_lim_seq_ext with (v := (fun n : nat => sum_n_m a N (n + N)) ) in H1.
+        exists x.
+        apply H1.
+        intros.
+        now rewrite sum_n_m_shift.
+     Qed.
+
     (* Lemma 3, part b *)
     Lemma product_sum_assumption_b (α : nat -> R) gamma :
       0 <= gamma < 1 ->
@@ -726,7 +753,8 @@ algorithm.
       simpl in H2.
       cut_to H2; trivial.
       lra.
-      Admitted.
+      now apply series_finite_sum_shift.
+    Qed.
 
     Fixpoint RMseq (α : nat -> R) (s : nat -> R) (init : R) (n : nat) : R :=
       match n with
