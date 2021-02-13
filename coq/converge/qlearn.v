@@ -515,24 +515,123 @@ algorithm.
       apply H2.
     Qed.
 
+    Lemma sum_f_bound (f : nat -> R) (N : nat) (C : R) :
+      (forall n, (n<=N)%nat -> 0 <= f n) ->
+      sum_n f N < C ->
+      (forall n, (n<=N)%nat -> f n < C).
+    Proof.
+      intros.
+      induction N.
+      - unfold sum_n in H0; simpl in H0.
+        rewrite sum_n_n in H0.
+        assert (n = 0%nat ) by lia.
+        rewrite H2.
+        apply H0.
+      - destruct (le_dec n N).
+        + apply IHN; trivial.
+          intros; apply H; lia.
+          rewrite sum_S in H0.
+          apply Rle_lt_trans with (r2 := sum_n f N + f (S N)); trivial.
+          replace (sum_n f N) with ((sum_n f N) + 0) at 1 by lra.
+          apply Rplus_le_compat_l.
+          apply H; lia.
+        + assert (n = S N) by lia.
+          rewrite H2.
+          apply Rle_lt_trans with (r2 := sum_n f (S N)); trivial.
+          rewrite sum_S.
+          replace (f (S N)) with (0 + (f (S N))) at 1 by lra.
+          apply Rplus_le_compat_r.
+          apply sum_n_nneg.
+          intros; apply H; lia.
+    Qed.
+
+    Lemma product_sum_helper_fun (x : nat -> R) (N : nat) :
+      (forall n, (n<=N)%nat -> 0 <= x n) ->
+      sum_n x N < 1 ->
+      prod_f_R0 (fun n => 1 - x n) N >= 1 - sum_n x N.
+    Proof.
+      intros.
+      generalize (sum_f_bound x N 1 H H0); intros.
+      clear H0.
+      induction N.
+      - simpl.
+        rewrite sum_O.
+        lra.
+      - simpl.
+        rewrite sum_S.
+        cut_to IHN.
+        + apply Rge_trans with (r2 := (1-sum_n x N) * (1 - x (S N))).
+          * apply Rmult_ge_compat_r; trivial.
+            specialize (H1 (S N)).
+            cut_to H1; try lia.
+            lra.
+          * rewrite Rmult_minus_distr_r.
+            rewrite Rmult_1_l.
+            rewrite Rmult_minus_distr_l.
+            rewrite Rmult_1_r.
+            apply Rge_trans with (r2 := 1 - x (S N) - sum_n x N); [ | lra].
+            unfold Rminus.
+            apply Rplus_ge_compat_l.
+            ring_simplify.
+            replace (- sum_n x N) with (0 - sum_n x N) by lra.
+            unfold Rminus.
+            apply Rplus_ge_compat_r.
+            apply Rle_ge.
+            apply Rmult_le_pos.
+            -- apply sum_n_nneg.
+               intros; apply H; lia.
+            -- apply H; lia.
+        + intros; apply H; lia.
+        + intros; apply H1; lia.
+     Qed.
+
+    Lemma product_sum_helper_lim1 (x : nat -> R) :
+        (forall n, 0 <= x n) ->
+        ex_finite_lim_seq (sum_n x) ->
+        Lim_seq (sum_n x) < 1 ->
+        Rbar_lt 0 (Lim_seq (fun m => prod_f_R0 (fun n => 1 - (x n)) m)).
+      Proof.
+        generalize (Lim_seq_le_loc (fun n => 1 - sum_n x n) (fun n => prod_f_R0 (fun k => 1 - x k) n)); intros.
+        apply ex_finite_lim_seq_correct in H1.
+        destruct H1.
+        cut_to H.
+        - rewrite Lim_seq_minus, Lim_seq_const in H; trivial.
+          + apply Rbar_lt_le_trans with (y := (Rbar_minus 1 (Lim_seq (sum_n x)))); trivial.
+            rewrite <- H3.
+            simpl; lra.
+          + apply ex_lim_seq_const.
+          + rewrite Lim_seq_const.
+            rewrite <- H3.
+            now simpl.
+        - exists (0%nat); intros.
+          apply Rge_le.
+          apply product_sum_helper_fun.
+          intros; apply H0.
+        
+      Admitted.
+
     Lemma product_sum_helper_lim (x : nat -> R) (N:nat) :
         (forall n, 0 <= x n) ->
         Lim_seq (sum_n_m x N) < 1 ->
-        Lim_seq (fun m => prod_f_R0 (fun n => 1 - (x (n + N)%nat)) m) > 0.
+        Rbar_lt 0 (Lim_seq (fun m => prod_f_R0 (fun n => 1 - (x (n + N)%nat)) m)).
       Proof.
         intros.
+        
+        
       Admitted.
+
 
     Lemma sum_n_pos_incr a n1 n2 : (forall n, (n1 < n <= n2)%nat -> 0 <= a n) -> 
                                      (n1 <= n2)%nat -> sum_n a n1 <= sum_n a n2.
       Proof.
         intros.
+        destruct (Nat.eq_dec n1 n2); [rewrite e; lra|].
+        assert (n1 < n2)%nat by lia.
         unfold sum_n.
         rewrite sum_n_m_Chasles with (k:=n2) (m:=n1); try lia.
         replace (sum_n_m a 0 n1) with ((sum_n_m a 0 n1) + 0) at 1 by lra.
         unfold plus; simpl.
         apply Rplus_le_compat_l.
-        
       Admitted.
 
     (* Lemma 3, part b *)
