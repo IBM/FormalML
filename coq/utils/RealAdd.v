@@ -547,17 +547,38 @@ Global Instance EqDecR : EqDec R eq := Req_EM_T.
 
 Section sum_n.
 
-
-  Lemma sum_n_pos {a : nat -> R} (n:nat) : (forall n, 0 < a n) -> 0 < sum_n a n.
+  Lemma sum_n_pos {a : nat -> R} (N:nat) : 
+    (forall n, (n <= N)%nat -> 0 < a n) -> 
+    0 < sum_n a N.
   Proof.
     intros.
-    induction n.
+    induction N.
     - unfold sum_n.
-      now rewrite sum_n_n.
+      rewrite sum_n_n.
+      apply H; lia.
+    - rewrite sum_Sn.
+      apply Rplus_lt_0_compat.
+      apply IHN.
+      intros.
+      apply H; lia.
+      apply H; lia.
+  Qed.
+
+  Lemma sum_n_nneg {a : nat -> R} (N:nat) : 
+    (forall n, (n <= N)%nat -> 0 <= a n) -> 
+    0 <= sum_n a N.
+  Proof.
+    intros.
+    induction N.
     - unfold sum_n.
-      rewrite sum_n_Sm.
-      apply Rplus_lt_0_compat ; trivial.
-      lia.
+      rewrite sum_n_n.
+      apply H; lia.
+    - rewrite sum_Sn.
+      apply Rplus_le_le_0_compat.
+      apply IHN.
+      intros.
+      apply H; lia.
+      apply H; lia.
   Qed.
 
   Lemma sum_n_zero (n : nat): sum_n (fun _ => 0) n = 0.
