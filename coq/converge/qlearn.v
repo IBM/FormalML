@@ -618,6 +618,23 @@ algorithm.
           apply sum_n_m_shift.
      Qed.
 
+      Lemma sum_n_m_pos a n1 n2 :
+         (forall n, (n1 <= n <= n2)%nat -> 0 <= a n) ->
+         0 <= (sum_n_m a n1 n2).
+      Proof.
+        intros.
+        rewrite RandomVariableFinite.sum_n_m_fold_right_seq.
+        cut (forall x, List.In x ((List.seq n1 (S n2 - n1))) -> 0 <= a x).
+        - generalize ( (List.seq n1 (S n2 - n1))); intros l.
+          induction l; simpl; intros.
+          + lra.
+          + apply Rplus_le_le_0_compat; auto.
+        - intros ? inn.
+          apply List.in_seq in inn.
+          apply H.
+          lia.
+      Qed.
+                                   
     Lemma sum_n_pos_incr a n1 n2 : (forall n, (n1 < n <= n2)%nat -> 0 <= a n) -> 
                                      (n1 <= n2)%nat -> sum_n a n1 <= sum_n a n2.
       Proof.
@@ -629,8 +646,11 @@ algorithm.
         replace (sum_n_m a 0 n1) with ((sum_n_m a 0 n1) + 0) at 1 by lra.
         unfold plus; simpl.
         apply Rplus_le_compat_l.
-      Admitted.
-
+        apply sum_n_m_pos; intros.
+        apply H.
+        lia.
+      Qed.
+      
       Lemma series_finite_sum (a : nat -> R) :
         ex_series a ->
         ex_finite_lim_seq (sum_n a).
