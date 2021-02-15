@@ -115,6 +115,15 @@ Section Expectation.
       auto.
   Qed.
 
+  Lemma Expectation_posRV_re
+        {rv_X1 rv_X2 : Ts -> R}
+        {prv1:PositiveRandomVariable rv_X1}
+        (eqq:rv_eq rv_X1 rv_X2) :
+    Expectation_posRV rv_X1 = Expectation_posRV rv_X2 (posrv:=((proj1 (PositiveRandomVariable_proper _ _ eqq)) prv1)).
+  Proof.
+    now apply Expectation_posRV_ext.
+  Qed.
+
   Lemma Expectation_posRV_pf_irrel 
         {rv_X: Ts -> R}
         (prv1 prv2:PositiveRandomVariable rv_X) :
