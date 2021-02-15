@@ -1127,9 +1127,7 @@ algorithm.
         intros.
         rewrite H3.
         unfold minus.
-        (*
-        repeat rewrite inner_plus_l.
-        *)
+        repeat rewrite (@inner_plus_l (Hilbert.PreHilbert X)).
         admit.
      }
       assert (forall n,
