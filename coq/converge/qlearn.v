@@ -1130,8 +1130,37 @@ algorithm.
         (*
         repeat rewrite inner_plus_l.
         *)
-        Admitted.
-
+        admit.
+     }
+      assert (forall n,
+                 PositiveRandomVariable
+                  (fun v => 
+                 plus (inner (minus ((f_alpha F (α n)) (x n v)) xstar)
+                             (minus ((f_alpha F (α n)) (x n v)) xstar))
+                      (plus 
+                         (scal (2 * (α n))
+                               (inner (minus ((f_alpha F (α n)) (x n v)) xstar) 
+                                      (w n v)))
+                         (scal ((α n)^2) (inner (w n v) (w n v)))))).
+      intros.
+      admit.
+     assert (forall n, 
+                Expectation_posRV 
+                  (fun v => inner (minus (x (S n) v) xstar) (minus (x (S n) v) xstar))
+                = 
+                Expectation_posRV 
+                  (fun v => 
+                 plus (inner (minus ((f_alpha F (α n)) (x n v)) xstar)
+                             (minus ((f_alpha F (α n)) (x n v)) xstar))
+                      (plus 
+                         (scal (2 * (α n))
+                               (inner (minus ((f_alpha F (α n)) (x n v)) xstar) 
+                                      (w n v)))
+                         (scal ((α n)^2) (inner (w n v) (w n v)))))).
+     intros.
+     apply Expectation_posRV_ext.
+     now intro v.
+     Admitted.
 
 
       
