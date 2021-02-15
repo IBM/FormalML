@@ -1,9 +1,11 @@
-Require Import converge.mdp LM.fixed_point.
+Require Import converge.mdp fixed_point.
 Require Import RealAdd CoquelicotAdd.
 Require Import utils.Utils.
 Require Import Lra Lia.
-Require Import infprod Dvoretzky.
+Require Import infprod Dvoretzky Expectation.
 Require Import Classical.
+Require Import SigmaAlgebras ProbSpace.
+Require hilbert.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -214,7 +216,8 @@ algorithm.
     Qed.
 
       (* Theorem 2, part a. *)
-    Theorem Vasily_2a gamma xstar :
+
+    Theorem Deterministic_RM_2a gamma xstar :
       0 <= gamma < 1 ->
       xstar = F xstar ->
       (forall n, 0 <= α n <= 1) ->
@@ -240,7 +243,7 @@ algorithm.
       Qed.
 
       (* Theorem 2, part b. *)
-    Theorem Vasily_2b gamma xstar :
+    Theorem Deterministic_RM_2b gamma xstar :
       0 <= gamma < 1 ->
       xstar = F xstar ->
       (forall n, 0 <= α n <= 1) ->
@@ -249,7 +252,7 @@ algorithm.
       is_lim_seq (fun n => norm (minus (RMsync n) xstar)) 0.
     Proof.
       intros.
-      generalize (Vasily_2a gamma xstar H H0 H1 H3); intros.
+      generalize (Deterministic_RM_2a gamma xstar H H0 H1 H3); intros.
       rewrite is_lim_seq_incr_1.
       eapply is_lim_seq_le_le; intros.
       - split.
@@ -854,7 +857,7 @@ algorithm.
                                     (fun n => delta (N+n)%nat) 
                                     (fun _ => eps/2) 
                                     (RMseq α delta init N) (RMseq α delta init N)); intros.
-      generalize (@Vasily_2b R_CompleteNormedModule (fun _ => eps/2) (fun n => α (N+n)%nat) (RMseq α delta init N) 0 (eps/2)); intros.
+      generalize (@Deterministic_RM_2b R_CompleteNormedModule (fun _ => eps/2) (fun n => α (N+n)%nat) (RMseq α delta init N) 0 (eps/2)); intros.
       assert (is_lim_seq (fun n : nat => (RMseq (fun n => α (N+n)%nat) (fun _ => eps/2) 
                                                 (RMseq α delta init N) n)) (eps / 2)).
       {
@@ -1021,7 +1024,7 @@ algorithm.
           apply IHn.
       }
       
-      generalize (@Vasily_2b R_CompleteNormedModule (fun s => gamma * s + C) α (norm init) gamma (C/(1-gamma)) H); intros.
+      generalize (@Deterministic_RM_2b R_CompleteNormedModule (fun s => gamma * s + C) α (norm init) gamma (C/(1-gamma)) H); intros.
       assert (exists B2, forall n, RMseqG α (norm init) gamma C n <= B2).
       {
         cut_to H8; trivial.
@@ -1076,4 +1079,63 @@ algorithm.
       apply H9.
     Qed.
 
-End qlearn2.
+  End qlearn2.
+
+  Section qlearn3.
+    
+  Import hilbert.
+
+    Context {X : Hilbert} (gamma : R) (α : nat -> R) {F : X -> X}
+            {dom: SigmaAlgebra X} {prts: ProbSpace dom}
+            (hF : is_contraction F) (lF : is_Lipschitz F gamma) (x0 : X).
+
+    (* Theorem 8 *)
+
+    Definition ConditionalExpectationV (f g : X -> X) : X -> X.
+    Admitted.
+
+    Theorem L2_convergent (C : R) (w x : nat -> X -> X) (xstar : X)
+            (rw : forall n, RandomVariable dom dom (w n)) 
+            (px : forall n, PositiveRandomVariable 
+                              (fun v => (inner (minus (x n v) xstar)
+                                               (minus (x n v) xstar)))) :
+      0 <= gamma < 1 ->
+      xstar = F xstar ->
+      is_lim_seq α 0 ->
+      is_lim_seq (sum_n α) p_infty ->
+      (forall k, forall (v:X), 
+            (x (S k) v) = plus ((f_alpha F (α k)) (x k v)) (scal (α k) (w k v))) ->
+      (forall n, ConditionalExpectationV (w n) (x n) = (fun v => zero)) ->
+      is_lim_seq 
+        (fun n => Expectation_posRV
+                    (fun v =>
+                       inner (minus (x n v) xstar)
+                             (minus (x n v) xstar))) 0.
+    Proof.
+      intros.
+      assert (forall n, forall v,
+                 inner (minus (x (S n) v) xstar)
+                       (minus (x (S n) v) xstar) =
+                 plus (inner (minus ((f_alpha F (α n)) (x n v)) xstar)
+                             (minus ((f_alpha F (α n)) (x n v)) xstar))
+                      (plus 
+                         (scal (2 * (α n))
+                               (inner (minus ((f_alpha F (α n)) (x n v)) xstar) 
+                                      (w n v)))
+                         (scal ((α n)^2) (inner (w n v) (w n v))))).
+      {
+        intros.
+        rewrite H3.
+        unfold minus.
+        (*
+        repeat rewrite inner_plus_l.
+        *)
+        Admitted.
+
+
+
+      
+                                                    
+                                                            
+
+
