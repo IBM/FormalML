@@ -1094,18 +1094,27 @@ algorithm.
     Definition ConditionalExpectationV (f g : X -> X) : X -> X.
     Admitted.
 
+    Definition ExpectationV (f : X -> X) : X.
+    Admitted.
+
+    Global Instance positive_inner (f : X -> X) :
+      PositiveRandomVariable (fun v => inner (f v) (f v) ).
+    Proof.
+      unfold PositiveRandomVariable.
+      intros.
+      apply inner_ge_0.
+    Qed.
+
     Theorem L2_convergent (C : R) (w x : nat -> X -> X) (xstar : X)
-            (rw : forall n, RandomVariable dom dom (w n)) 
-            (px : forall n, PositiveRandomVariable 
-                              (fun v => (inner (minus (x n v) xstar)
-                                               (minus (x n v) xstar)))) :
+            (rw : forall n, RandomVariable dom dom (w n)) :
       0 <= gamma < 1 ->
       xstar = F xstar ->
       is_lim_seq α 0 ->
       is_lim_seq (sum_n α) p_infty ->
       (forall k, forall (v:X), 
             (x (S k) v) = plus ((f_alpha F (α k)) (x k v)) (scal (α k) (w k v))) ->
-      (forall n, ConditionalExpectationV (w n) (x n) = (fun v => zero)) ->
+      (forall n, ExpectationV (w n) = zero) ->
+      (forall n, Expectation_posRV (fun v => inner (w n v) (w n v)) < C)  ->
       is_lim_seq 
         (fun n => Expectation_posRV
                     (fun v =>
@@ -1113,51 +1122,35 @@ algorithm.
                              (minus (x n v) xstar))) 0.
     Proof.
       intros.
-      assert (forall n, forall v,
-                 inner (minus (x (S n) v) xstar)
-                       (minus (x (S n) v) xstar) =
-                 plus (inner (minus ((f_alpha F (α n)) (x n v)) xstar)
-                             (minus ((f_alpha F (α n)) (x n v)) xstar))
-                      (plus 
-                         (scal (2 * (α n))
-                               (inner (minus ((f_alpha F (α n)) (x n v)) xstar) 
-                                      (w n v)))
-                         (scal ((α n)^2) (inner (w n v) (w n v))))).
+      assert (forall n, 
+                 rv_eq 
+                   (fun v =>
+                      inner (minus (x (S n) v) xstar)
+                            (minus (x (S n) v) xstar))
+                   (fun v =>
+                      inner (minus ((f_alpha F (α n)) (x n v)) xstar)
+                            (minus ((f_alpha F (α n)) (x n v)) xstar) +
+                      (2 * (α n) *
+                       (inner (minus ((f_alpha F (α n)) (x n v)) xstar) 
+                              (w n v))) + 
+                      ((α n)^2 * inner (w n v) (w n v)))).
       {
-        intros.
+        intros n v.
         rewrite H3.
         unfold minus.
         repeat rewrite (@inner_plus_l (Hilbert.PreHilbert X)).
-        admit.
+        repeat rewrite (@inner_plus_r (Hilbert.PreHilbert X)).
+        repeat rewrite (@inner_scal_l (Hilbert.PreHilbert X)).        
+        repeat rewrite (@inner_scal_r (Hilbert.PreHilbert X)).
+        ring_simplify.
+        repeat rewrite Rplus_assoc.
+        repeat apply Rplus_eq_compat_l.
+        do 2 rewrite inner_sym with (x1 := (w n v)).
+        now ring_simplify.
      }
-      assert (forall n,
-                 PositiveRandomVariable
-                  (fun v => 
-                 plus (inner (minus ((f_alpha F (α n)) (x n v)) xstar)
-                             (minus ((f_alpha F (α n)) (x n v)) xstar))
-                      (plus 
-                         (scal (2 * (α n))
-                               (inner (minus ((f_alpha F (α n)) (x n v)) xstar) 
-                                      (w n v)))
-                         (scal ((α n)^2) (inner (w n v) (w n v)))))).
-      intros.
-      admit.
-     assert (forall n, 
-                Expectation_posRV 
-                  (fun v => inner (minus (x (S n) v) xstar) (minus (x (S n) v) xstar))
-                = 
-                Expectation_posRV 
-                  (fun v => 
-                 plus (inner (minus ((f_alpha F (α n)) (x n v)) xstar)
-                             (minus ((f_alpha F (α n)) (x n v)) xstar))
-                      (plus 
-                         (scal (2 * (α n))
-                               (inner (minus ((f_alpha F (α n)) (x n v)) xstar) 
-                                      (w n v)))
-                         (scal ((α n)^2) (inner (w n v) (w n v)))))).
-     intros.
-     apply Expectation_posRV_ext.
-     now intro v.
+     (*
+      generalize (forall n, Expectation_posRV_re (H6 n)).
+     *)
      Admitted.
 
 
