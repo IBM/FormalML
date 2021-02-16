@@ -1155,7 +1155,10 @@ algorithm.
     rewrite (Expectation_posRV_re H).
     assert (0 <= 0) by lra.
     generalize (Expectation_posRV_const 0 H0); intros.
-    Admitted.
+    erewrite Expectation_posRV_pf_irrel.
+    rewrite H1.
+    reflexivity.
+  Qed.
 
   Lemma Expectation_sum_first_finite_snd_pos 
         (rv_X1 rv_X2 : X -> R)
