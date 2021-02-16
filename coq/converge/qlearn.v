@@ -1127,15 +1127,21 @@ algorithm.
                    (fun v =>
                       inner (minus (x (S n) v) xstar)
                             (minus (x (S n) v) xstar))
-                   (fun v =>
-                      inner (minus ((f_alpha F (α n)) (x n v)) xstar)
-                            (minus ((f_alpha F (α n)) (x n v)) xstar) +
-                      (2 * (α n) *
-                       (inner (minus ((f_alpha F (α n)) (x n v)) xstar) 
-                              (w n v))) + 
-                      ((α n)^2 * inner (w n v) (w n v)))).
+                   (rvplus
+                      (fun v =>
+                         inner (minus ((f_alpha F (α n)) (x n v)) xstar)
+                               (minus ((f_alpha F (α n)) (x n v)) xstar))
+                      (rvplus
+                         (rvscale 
+                            (2 * (α n))
+                            (fun v =>
+                               (inner (minus ((f_alpha F (α n)) (x n v)) xstar) 
+                                      (w n v))))
+                         (rvscale ((α n)^2)
+                                  (fun v => inner (w n v) (w n v)))))).
       {
         intros n v.
+        unfold rvplus, rvscale.
         rewrite H3.
         unfold minus.
         repeat rewrite (@inner_plus_l (Hilbert.PreHilbert X)).
@@ -1148,9 +1154,9 @@ algorithm.
         do 2 rewrite inner_sym with (x1 := (w n v)).
         now ring_simplify.
      }
-     (*
+      (*
       generalize (forall n, Expectation_posRV_re (H6 n)).
-     *)
+      *)
      Admitted.
 
 
