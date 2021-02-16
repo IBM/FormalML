@@ -117,8 +117,8 @@ Section Expectation.
 
   Lemma Expectation_posRV_re
         {rv_X1 rv_X2 : Ts -> R}
-        {prv1:PositiveRandomVariable rv_X1}
-        (eqq:rv_eq rv_X1 rv_X2) :
+        (eqq:rv_eq rv_X1 rv_X2)
+        {prv1:PositiveRandomVariable rv_X1} :
     Expectation_posRV rv_X1 = Expectation_posRV rv_X2 (posrv:=((proj1 (PositiveRandomVariable_proper _ _ eqq)) prv1)).
   Proof.
     now apply Expectation_posRV_ext.
