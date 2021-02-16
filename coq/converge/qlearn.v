@@ -2,7 +2,7 @@ Require Import converge.mdp fixed_point.
 Require Import RealAdd CoquelicotAdd.
 Require Import utils.Utils.
 Require Import Lra Lia.
-Require Import infprod Dvoretzky Expectation.
+Require Import infprod Dvoretzky Expectation RandomVariableFinite.
 Require Import Classical.
 Require Import SigmaAlgebras ProbSpace.
 Require hilbert.
@@ -1105,6 +1105,80 @@ algorithm.
       apply inner_ge_0.
     Qed.
 
+    Lemma forall_expectation_ext {rv1 rv2 : nat -> X -> R} :
+      (forall n, rv_eq (rv1 n) (rv2 n)) ->
+      forall n, Expectation (rv1 n) = Expectation (rv2 n).
+    Proof.
+      intros.
+      now apply Expectation_ext.
+    Qed.
+
+    Lemma isfinexp_finite_neg_part (rv_X : X -> R)
+          {rv : RandomVariable dom borel_sa rv_X} :
+      IsFiniteExpectation prts rv_X ->
+      is_finite (Expectation_posRV (neg_fun_part rv_X)).
+    Proof.
+      intros.
+      apply IsFiniteExpectation_Finite in H.
+      destruct H.
+      unfold neg_fun_part, is_finite; simpl.
+      unfold Expectation in e.
+      unfold Rbar_minus' in e.
+      simpl in e.
+      unfold Rbar_plus', Rbar_opp in e.
+      match_destr_in e.
+      - match_case_in e; intros; match_case_in H; intros; rewrite H0 in H
+        ; try discriminate.
+        + rewrite H0 in e; inversion e.
+        + rewrite H0 in e; inversion e.          
+      - match_case_in e; intros; match_case_in H; intros; rewrite H0 in H
+        ; try discriminate.
+        + rewrite H0 in e; inversion e.
+        + rewrite H0 in e; inversion e.          
+      - match_case_in e; intros; match_case_in H; intros; rewrite H0 in H
+        ; try discriminate.
+        + rewrite H0 in e; inversion e.
+        + rewrite H0 in e; inversion e.          
+   Qed.
+
+  Lemma Expectation_pos_finite_neg_part (rv_X : X -> R) 
+        {prv : PositiveRandomVariable rv_X} :
+    is_finite (Expectation_posRV (neg_fun_part rv_X)).
+  Proof.
+    unfold neg_fun_part; simpl.
+    unfold PositiveRandomVariable in prv.
+    assert (rv_eq (fun x : X => Rmax (- rv_X x) 0) (const 0)).
+    intro x.
+    specialize (prv x).
+    unfold const.
+    rewrite Rmax_right; lra.
+    rewrite (Expectation_posRV_re H).
+    assert (0 <= 0) by lra.
+    generalize (Expectation_posRV_const 0 H0); intros.
+    Admitted.
+
+  Lemma Expectation_sum_first_finite_snd_pos 
+        (rv_X1 rv_X2 : X -> R)
+        {rv1 : RandomVariable dom borel_sa rv_X1}
+        {rv2 : RandomVariable dom borel_sa rv_X2} 
+        {prv2 : PositiveRandomVariable rv_X2} :
+    forall (e1:R) (e2 : Rbar), 
+      Expectation rv_X1 = Some (Finite e1) ->
+      Expectation rv_X2 = Some e2 ->
+      Expectation (rvplus rv_X1 rv_X2) = Some (Rbar_plus e1 e2).
+  Proof.
+    intros.
+    generalize (isfinexp_finite_neg_part rv_X1); intros.
+    cut_to H1.
+    generalize (Expectation_pos_finite_neg_part rv_X2); intros.
+    generalize (Expectation_sum rv_X1 rv_X2 H1 H2); intros.
+    rewrite H in H3.
+    rewrite H0 in H3.
+    apply H3.
+    unfold IsFiniteExpectation.
+    now rewrite H.
+ Qed.
+
     Theorem L2_convergent (C : R) (w x : nat -> X -> X) (xstar : X)
             (rw : forall n, RandomVariable dom dom (w n)) :
       0 <= gamma < 1 ->
@@ -1122,26 +1196,28 @@ algorithm.
                              (minus (x n v) xstar))) 0.
     Proof.
       intros.
+
       assert (forall n, 
                  rv_eq 
                    (fun v =>
                       inner (minus (x (S n) v) xstar)
                             (minus (x (S n) v) xstar))
                    (rvplus
-                      (fun v =>
-                         inner (minus ((f_alpha F (α n)) (x n v)) xstar)
-                               (minus ((f_alpha F (α n)) (x n v)) xstar))
+                      (rvscale 
+                         (2 * (α n))
+                         (fun v =>
+                            (inner (minus ((f_alpha F (α n)) (x n v)) xstar) 
+                                   (w n v))))
                       (rvplus
-                         (rvscale 
-                            (2 * (α n))
-                            (fun v =>
-                               (inner (minus ((f_alpha F (α n)) (x n v)) xstar) 
-                                      (w n v))))
+                         (fun v =>
+                            inner (minus ((f_alpha F (α n)) (x n v)) xstar)
+                                  (minus ((f_alpha F (α n)) (x n v)) xstar))
                          (rvscale ((α n)^2)
                                   (fun v => inner (w n v) (w n v)))))).
       {
         intros n v.
         unfold rvplus, rvscale.
+        simpl.
         rewrite H3.
         unfold minus.
         repeat rewrite (@inner_plus_l (Hilbert.PreHilbert X)).
@@ -1154,9 +1230,36 @@ algorithm.
         do 2 rewrite inner_sym with (x1 := (w n v)).
         now ring_simplify.
      }
-      (*
-      generalize (forall n, Expectation_posRV_re (H6 n)).
-      *)
+      generalize (forall_expectation_ext H6); intros.
+      assert (forall n, 
+                 Expectation (rvscale 
+                                (2 * α n)
+                                (fun v : X => 
+                                   inner (minus (f_alpha F (α n) (x n v)) xstar) 
+                                         (w n v))) = Some (Finite 0)). 
+      admit.
+      assert (forall n,
+                  Expectation
+                    (fun v : X => inner (minus (x (S n) v) xstar) (minus (x (S n) v) xstar)) =
+                  Expectation
+                    (rvplus
+                       (fun v : X =>
+                          inner (minus (f_alpha F (α n) (x n v)) xstar)
+                                (minus (f_alpha F (α n) (x n v)) xstar))
+                       (rvscale (α n ^ 2) (fun v : X => inner (w n v) (w n v))))).
+      intros.
+      rewrite H7.
+      erewrite Expectation_sum_first_finite_snd_pos with (e1 := 0).
+      erewrite Expectation_pos_posRV.
+      f_equal.
+      now rewrite Rbar_plus_0_l.
+
+      admit.
+      admit.
+      admit.
+      apply H8.
+      apply Expectation_pos_posRV.
+
      Admitted.
 
 
