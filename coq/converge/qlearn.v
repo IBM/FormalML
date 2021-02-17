@@ -1105,6 +1105,10 @@ algorithm.
       apply inner_ge_0.
     Qed.
 
+    Instance inner_rv (f g: X -> X) :
+      RandomVariable dom borel_sa (fun v => inner (f v) (g v)).
+    Admitted.
+
     Lemma forall_expectation_ext {rv1 rv2 : nat -> X -> R} :
       (forall n, rv_eq (rv1 n) (rv2 n)) ->
       forall n, Expectation (rv1 n) = Expectation (rv2 n).
@@ -1186,6 +1190,7 @@ algorithm.
             (rw : forall n, RandomVariable dom dom (w n)) :
       0 <= gamma < 1 ->
       xstar = F xstar ->
+      (forall n, 0 < α n <= 1) ->
       is_lim_seq α 0 ->
       is_lim_seq (sum_n α) p_infty ->
       (forall k, forall (v:X), 
@@ -1199,7 +1204,7 @@ algorithm.
                              (minus (x n v) xstar))) 0.
     Proof.
       intros.
-
+      assert (asq_pos:forall n, 0 < (α n)^2) by (intros; apply pow_lt, H1).
       assert (forall n, 
                  rv_eq 
                    (fun v =>
@@ -1215,13 +1220,13 @@ algorithm.
                          (fun v =>
                             inner (minus ((f_alpha F (α n)) (x n v)) xstar)
                                   (minus ((f_alpha F (α n)) (x n v)) xstar))
-                         (rvscale ((α n)^2)
+                         (rvscale (mkposreal ((α n)^2) (asq_pos n))
                                   (fun v => inner (w n v) (w n v)))))).
       {
         intros n v.
         unfold rvplus, rvscale.
         simpl.
-        rewrite H3.
+        rewrite H4.
         unfold minus.
         repeat rewrite (@inner_plus_l (Hilbert.PreHilbert X)).
         repeat rewrite (@inner_plus_r (Hilbert.PreHilbert X)).
@@ -1233,7 +1238,7 @@ algorithm.
         do 2 rewrite inner_sym with (x1 := (w n v)).
         now ring_simplify.
      }
-      generalize (forall_expectation_ext H6); intros.
+      generalize (forall_expectation_ext H7); intros.
       assert (forall n, 
                  Expectation (rvscale 
                                 (2 * α n)
@@ -1249,20 +1254,55 @@ algorithm.
                        (fun v : X =>
                           inner (minus (f_alpha F (α n) (x n v)) xstar)
                                 (minus (f_alpha F (α n) (x n v)) xstar))
-                       (rvscale (α n ^ 2) (fun v : X => inner (w n v) (w n v))))).
+                       (rvscale (mkposreal (α n ^ 2) (asq_pos n))(fun v : X => inner (w n v) (w n v))))).
+      { 
+        intros.
+        rewrite H8.
+        erewrite Expectation_sum_first_finite_snd_pos with (e1 := 0).
+        erewrite Expectation_pos_posRV.
+        f_equal.
+        now rewrite Rbar_plus_0_l.
+        typeclasses eauto.
+        typeclasses eauto.
+        typeclasses eauto.        
+        apply H9.
+        apply Expectation_pos_posRV.
+      }
+      assert (forall n,
+                 Expectation_posRV
+                   (fun v : X => inner (minus (x (S n) v) xstar) (minus (x (S n) v) xstar)) = 
+                 Rbar_plus
+                   (Expectation_posRV 
+                      (fun v : X =>
+                         inner (minus (f_alpha F (α n) (x n v)) xstar)
+                               (minus (f_alpha F (α n) (x n v)) xstar)))
+                   (Rbar_mult (mkposreal (α n ^ 2) (asq_pos n))
+                              (Expectation_posRV
+                                 (fun v : X => inner (w n v) (w n v))))).
+      {
+        intros.
+        specialize (H10 n).
+        erewrite Expectation_pos_posRV in H10.
+        erewrite Expectation_pos_posRV in H10.
+        inversion H10.
+        erewrite Expectation_posRV_sum in H12.
+        erewrite Expectation_posRV_scale in H12.
+        apply H12.
+        typeclasses eauto.
+        typeclasses eauto.
+      }
+      assert (forall n,
+                 Rbar_le
+                   (Expectation_posRV
+                      (fun v : X => inner (minus (x (S n) v) xstar) (minus (x (S n) v) xstar)))
+                  (Rbar_plus
+                     (Rbar_mult ((g_alpha gamma (α n))^2)
+                                (Expectation_posRV
+                                   (fun v : X => inner (minus (x n v) xstar) (minus (x n v) xstar))))
+                     (((α n)^2)*C))).
       intros.
-      rewrite H7.
-      erewrite Expectation_sum_first_finite_snd_pos with (e1 := 0).
-      erewrite Expectation_pos_posRV.
-      f_equal.
-      now rewrite Rbar_plus_0_l.
-
-      admit.
-      admit.
-      admit.
-      apply H8.
-      apply Expectation_pos_posRV.
-
+      rewrite H11.
+      
      Admitted.
 
 
