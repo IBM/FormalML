@@ -1576,6 +1576,8 @@ Hint Rewrite
      bunion_bminus 
      remove_one_consed : bag.
 
+#[global]
 Hint Unfold ldeqA : fml.
+#[global]
 Hint Unfold mult_equiv : fml.
 

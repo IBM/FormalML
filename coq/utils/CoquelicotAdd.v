@@ -435,6 +435,7 @@ Proof.
     trivial.
 Qed.
   
+#[global]
 Hint Resolve sqrt2_neq0 sqrt_PI_neq0 sqrt_2PI_nzero : Rarith.
 
 Lemma ball_zero_eq {K : AbsRing} (X : NormedModule K) :

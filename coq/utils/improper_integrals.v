@@ -650,6 +650,7 @@ apply ex_RInt_Chasles_2 with w;[split; apply Rlt_le; tauto | ].
 destruct (Ps4 w x) as [wx [Pwx closewx]]; try tauto; exists wx; tauto.
 Qed.
 
+#[export]
 Hint Mode ProperFilter' - + : typeclass_instances.
 
 (* TODO : move to coquelicot. *)

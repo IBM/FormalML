@@ -600,6 +600,7 @@ Lemma in_interleave_with_end_padding {A} (l1 l2:list A) def1 def2:
     In x (interleave_with_end_padding l1 def1 l2 def2) ->
     In x l1 \/ In x l2 \/ x = def1 \/ x = def2.
 Proof.
+  #[global]
   Hint Resolve repeat_spec : list.
   intros.
   destruct (in_interleave _ _ x H)

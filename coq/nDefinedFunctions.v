@@ -3386,6 +3386,7 @@ F (d : definition_function_types)
      induction df; firstorder.
    Qed.
 
+   #[global]
    Hint Resolve is_scalar_function_has_scalar_functions.
 
  Definition DefinedFunction_ind_unit_has_scalar_functions
@@ -13043,6 +13044,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                                             (fun i : {n' : nat | n' < n} =>
                                                vector_fold_right_bounded_dep (fun _ : nat => Datatypes.cons) [] (transpose mat i) bound_m pf_m) bound_n pf_n)).
       Proof.
+        #[global]
         Hint Constructors Permutation.
         revert bound_n pf_n.
         induction bound_m; intros; simpl.

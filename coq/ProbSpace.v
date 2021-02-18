@@ -149,6 +149,7 @@ Proof.
   firstorder.
 Qed.
 
+#[global]
 Hint Resolve event_disjoint_diff : prob.
 
 Lemma event_disjoint_complement {T} (A:event T) : event_disjoint A (¬ A).
@@ -156,6 +157,7 @@ Proof.
   firstorder.
 Qed.
 
+#[global]
 Hint Resolve event_disjoint_complement : prob.
 
 Lemma event_sub_true {T} (A:event T) : A ≤ Ω.
@@ -168,6 +170,7 @@ Proof.
   firstorder.
 Qed.
 
+#[global]
 Hint Resolve event_sub_true event_false_sub : prob.
 
 Lemma event_sub_union_l {T} (A B:event T) : A ≤ A ∪ B.
@@ -180,6 +183,7 @@ Proof.
   firstorder.
 Qed.
 
+#[global]
 Hint Resolve event_sub_union_l event_sub_union_r : prob.
 
 Lemma event_inter_sub_l {T} (A B:event T) : A ∩ B ≤ A.
@@ -192,6 +196,7 @@ Proof.
   firstorder.
 Qed.
 
+#[global]
 Hint Resolve event_inter_sub_l event_inter_sub_r : prob.
 
 Lemma event_union_true_l {T} (A:event T) : Ω ∪ A === Ω.
@@ -287,6 +292,7 @@ Proof.
   firstorder.
 Qed.
 
+#[global]
 Hint Resolve event_diff_sub : prob.
 
 Lemma event_union_comm {T} (A B:event T) : A ∪ B === B ∪ A.
@@ -515,6 +521,7 @@ Proof.
   firstorder.
 Qed.
 
+#[global]
 Hint Resolve sa_dec : prob.
 
 Definition sa_sub {T} (s1 s2:SigmaAlgebra T) : Prop
@@ -578,6 +585,7 @@ Proof.
   now apply sa_dec.
 Qed.
 
+#[global]
 Hint Resolve ps_event_union_complement ps_event_union_not_self ps_event_union_diff ps_event_union_diff_sub : prob.
 
 Lemma sa_notnot {T} {s: SigmaAlgebra T} (A:event T) : sa_sigma A -> forall x, ~ ~ A x -> A x.
@@ -593,6 +601,7 @@ Proof.
   firstorder.
 Qed.
 
+#[global]
 Hint Resolve sa_all sa_none sa_complement : prob.
 
 Lemma sa_sigma_const {T} (s: SigmaAlgebra T) {P} (Plem:P\/~P) : sa_sigma (fun _ : T => P).
@@ -901,6 +910,7 @@ Proof.
   simpl; intuition congruence.
 Qed.
 
+#[global]
 Hint Resolve sa_union sa_inter : prob.
 
 Lemma sa_diff {T} {s: SigmaAlgebra T} {A₁ A₂} :
@@ -911,6 +921,7 @@ Proof.
   auto with prob.
 Qed.
 
+#[global]
 Hint Resolve sa_diff : prob.
 
 (* Prop: the sum of probabilities for everything in the collection == R. *)
@@ -1571,6 +1582,7 @@ Section ascending.
 
 End ascending.
 
+#[global]
 Hint Resolve ps_none ps_one : prob.
 
   Lemma event_complement_union {Ts} (E1 E2:event Ts) :

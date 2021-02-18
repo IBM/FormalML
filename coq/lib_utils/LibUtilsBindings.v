@@ -1752,8 +1752,11 @@ Section Edot.
     
 End Edot.
 
+#[global]
 Hint Unfold rec_sort rec_concat_sort : fml.
+#[global]
 Hint Resolve drec_sort_sorted drec_concat_sort_sorted : fml.
+#[global]
 Hint Resolve is_list_sorted_NoDup_strlt : fml.
 
 Section MergeBindings.
@@ -2299,4 +2302,5 @@ Section RecRemove.
 
 End RecRemove.
 
+#[global]
 Hint Resolve merge_bindings_sorted : fml.

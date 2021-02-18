@@ -2280,7 +2280,9 @@ Section ListAdd.
 
 End ListAdd.
 
+#[global]
 Hint Resolve disjoint_nil_l disjoint_nil_r : fml.
+#[global]
 Hint Immediate NoDup_nil : fml.
 
 Global Arguments remove_nin_inv {A eqdec v1 v2 l}.

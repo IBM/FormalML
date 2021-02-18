@@ -417,6 +417,7 @@ Proof.
   now ring_simplify.
 Qed.
 
+#[global]
 Hint Resolve Rgt_not_eq : Rarith.
 
 (*                     || (rewrite Derive_div; [ | solve[solve_derive]..])*)
@@ -494,6 +495,7 @@ Proof.
   apply continuous_erf'.
 Qed.
 
+#[global]
 Hint Resolve Rlt_sqrt2_0 sqrt2_neq0 Rinv_pos : Rarith.
 
 Lemma std_from_erf0 (x:R) : 

@@ -3,7 +3,7 @@ Require Import ProofIrrelevance EquivDec.
 Require Import Sums Utils.
 Require Import Lia Lra.
 Require Import Coq.Logic.FunctionalExtensionality.
-From mathcomp Require Import ssreflect ssrfun seq.
+(* From mathcomp Require Import ssreflect ssrfun seq. *)
 Require Import ExtLib.Structures.Monad ExtLib.Structures.MonadLaws. 
 
 Import MonadNotation. 
@@ -27,12 +27,12 @@ tailored to the discrete case.
 
 Fixpoint list_fst_sum {A : Type} (l : list (nonnegreal*A)): R  :=
   match l with
-  | nil => 0
-  | (n,_) :: ns => n + list_fst_sum ns                
+  | List.nil => 0
+  | List.cons (n,_) ns => n + list_fst_sum ns
   end.
 
 Definition list_fst_sum' {A : Type} (l : list (nonnegreal*A)) : R :=
-  list_sum (map (fun x => nonneg (fst x)) l).
+  list_sum (List.map (fun x => nonneg (fst x)) l).
 
 Lemma list_fst_sum_compat {A : Type} (l : list (nonnegreal*A)) : list_fst_sum l = list_fst_sum' l.
 Proof.
@@ -131,8 +131,9 @@ Lemma Pmf_ext  {A} (p q : Pmf A)  : outcomes p = outcomes q -> p = q.
 Proof.
 destruct p as [op sp].
 destruct q as [oq sq].
-rewrite /outcomes => ?. (* what's happening here? *)
-subst. f_equal. apply proof_irrelevance.
+simpl; intros.
+subst. f_equal.
+apply proof_irrelevance.
 Qed.
 
 Lemma sum1_compat {B} (p : Pmf B) :

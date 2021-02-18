@@ -839,4 +839,5 @@ Section Sublist.
 
 End Sublist.
 
+#[global]
 Hint Immediate sublist_nil_l : fml.

@@ -32,7 +32,10 @@ Section BindingsNat.
 
 End BindingsNat.
 
+#[global]
 Hint Unfold rec_sort rec_concat_sort : fml.
+#[global]
 Hint Resolve drec_sort_sorted drec_concat_sort_sorted : fml.
+#[global]
 Hint Resolve is_list_sorted_NoDup_strlt : fml.
 

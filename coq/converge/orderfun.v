@@ -28,6 +28,7 @@ Section range.
     firstorder.
   Qed.
   
+  #[global]
   Hint Resolve mem_range_iff : range. 
 
   Lemma mem_range_self {A B} (a : A) (f : A -> B) : (f a ∈ range f).
@@ -35,6 +36,7 @@ Section range.
     now exists a.
   Qed.
 
+  #[global]
   Hint Resolve mem_range_self : range. 
 
   Lemma range_id {A} : range (fun x => x) = Full_set A.
@@ -47,6 +49,7 @@ Section range.
     - intros x Hx. now exists x. 
   Qed.
 
+  #[global]
   Hint Resolve range_id : range. 
 
   Lemma exists_range_iff {A B} (f : A -> B) (p : B -> Prop):

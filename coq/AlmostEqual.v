@@ -157,6 +157,7 @@ Proof.
   split; congruence.
 Qed.
 
+#[global]
 Hint Resolve Hsigma_borel_eq_pf : prob.
 
 Lemma rv_almost_eq_rv_trans
