@@ -12,6 +12,7 @@ Require Import ExtrFloatishIEEE.
 (* Our stuff modules *)
 
 Require Import Utils.
+Require Import Vector.
 Require Gen_NN.
 Require Import DefinedFunctions.
 Require Import FloatishDef.

@@ -18,58 +18,6 @@ Import ListNotations.
 
 Set Bullet Behavior "Strict Subproofs".
 
-(*
-Fixpoint vector (T:Type) (n:nat) : Type
-  := match n with
-     | 0 => unit
-     | S m => prod T (vector T m)
-     end.
-*)
-     
-Definition vector (T:Type) (n:nat)
-  := { l : list T | length l = n}.
-
-Program Lemma vector_length {T:Type} {n:nat} (v:vector T n)
-  : length v = n.
-Proof.
-  now destruct v; simpl.
-Qed.
-  
-Program Fixpoint vector_create
-           {T:Type}
-           (n:nat)
-           (f:forall m, (m < n)%nat -> T) : vector T n
-  := match n with
-     | 0 => []
-     | S m => f m _ :: vector_create m (fun x pf => f x _)
-     end.
-
-Program Definition vector_nth
-        {T:Type}
-        {n:nat}
-        (i:nat)
-        (pf:(i<n)%nat)
-        (v:vector T n)
-        : T
-  := match nth_error v i with
-     | Some x => x
-     | None => _
-     end.
-Next Obligation.
-  symmetry in Heq_anonymous.
-  apply nth_error_None in Heq_anonymous.
-  rewrite vector_length in Heq_anonymous.
-  lia.
-Qed.
-
-Program Definition vector_map {A B:Type}
-           {n:nat} (f:A->B) (v:vector A n) : vector B n
-  := map f v.
-Next Obligation.
-  rewrite map_length.
-  now destruct v; simpl.
-Qed.
-
 Section VectorRandomVariables.
   
   Context {Ts:Type} {Td:Type}.
@@ -136,3 +84,5 @@ Context
 Definition vector_Expectation {n} (rv_X : Ts -> vector R n) : option (vector Rbar n)
   := vectoro_to_ovector (vector_map Expectation (iso_f rv_X)).
 
+Definition Rvector_plus {n} (x y:vector R n) : vector R n
+  := vector_map (fun '(a,b) => a + b) (vector_zip x y).

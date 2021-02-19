@@ -12,6 +12,7 @@ Require Import Eqdep_dec.
 Require Import Floatish.
 Require Import Utils.
 Require Import derivlemmas.
+Require Import Vector.
 
 Import ListNotations.
 

@@ -13,4 +13,3 @@ Require Export NumberIso.
 Require Export RealAdd.
 Require Export RiemannAdd.
 Require Export Sums.
-Require Export Vector.

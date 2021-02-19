@@ -6,6 +6,7 @@ Require Import List.
 Require Import ListAdd.
 Require Import Rbase Rtrigo Rpower Rbasic_fun.
 Require Import DefinedFunctions.
+Require Import Vector.
 Require Import Lra Lia.
 
 Require Import Floatish Utils.

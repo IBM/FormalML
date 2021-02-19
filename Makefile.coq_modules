@@ -46,6 +46,7 @@ MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	utils/Sums \
 	utils/nvector \
 	utils/Vector \
+	utils/DVector \
 	utils/Utils \
 	utils/Floatish/FloatishDef \
 	utils/Floatish/FloatishOps \
