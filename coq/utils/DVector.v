@@ -1,9 +1,49 @@
 Require Import List Lia.
-
+Require Import Eqdep_dec.
+Require Import LibUtils.
+        
 Import ListNotations.
 
 Definition vector (T:Type) (n:nat)
   := { l : list T | length l = n}.
+
+Lemma length_pf_irrel {T} {n:nat} {l:list T} (pf1 pf2:length l = n) : pf1 = pf2.
+Proof.
+  apply UIP_dec.
+  Search  (forall x y : nat, {x = y} + {x <> y}).
+  apply PeanoNat.Nat.eq_dec.
+Qed.
+
+Lemma vector_pf_irrel {T:Type} {n:nat} {l:list T} pf1 pf2
+  : exist (fun x=>length x = n) l pf1 = exist _ l pf2.
+Proof.
+  f_equal.
+  apply length_pf_irrel.
+Qed.
+
+Lemma vector_ext {T:Type} {n:nat} {l1 l2:list T} pf1 pf2
+  : l1 = l2 ->
+    exist (fun x=>length x = n) l1 pf1 = exist _ l2 pf2.
+Proof.
+  intros; subst.
+  apply vector_pf_irrel.
+Qed.
+
+Lemma vector_eq {T} {n:nat} (x y:vector T n)
+  : proj1_sig x = proj1_sig y -> x = y.
+Proof.
+  destruct x; destruct y; simpl.
+  apply vector_ext.
+Qed.
+
+Lemma vector_eqs {T} {n:nat} (x y:vector T n)
+  : Forall2 eq (proj1_sig x) (proj1_sig y) -> x = y.
+Proof.
+  destruct x; destruct y; simpl.
+  intros eqq.
+  apply vector_ext.
+  now apply Forall2_eq.
+Qed.
 
 Program Lemma vector_length {T:Type} {n:nat} (v:vector T n)
   : length v = n.
@@ -19,6 +59,15 @@ Program Fixpoint vector_create
      | 0 => []
      | S m => f m _ :: vector_create m (fun x pf => f x _)
      end.
+
+Definition vector_const {T} (c:T) n : vector T n
+  := vector_create n (fun _ _ => c).
+
+
+Program Lemma vector_const_Forall {A} (c:A) n : Forall (fun a => a = c) (vector_const c n).
+Proof.
+  induction n; simpl; auto.
+Qed.
 
 Program Definition vector_nth
         {T:Type}
