@@ -85,5 +85,12 @@ Context
 
 Definition vector_Expectation {n} (rv_X : Ts -> vector R n) : option (vector Rbar n)
   := vectoro_to_ovector (vector_map Expectation (iso_f rv_X)).
+Print SimpleRandomVariable.
+
+
+Definition vector_SimpleExpectation {n} (rv_X : Ts -> vector R n)
+           (simp : forall (x:Ts->R), In x  (` (iso_f rv_X)) -> SimpleRandomVariable x)
+ : vector R n
+  := vector_map_onto (iso_f rv_X) (fun x pf => SimpleExpectation x (srv:=simp x pf)).
 
 End vector_ops.

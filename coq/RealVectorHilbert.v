@@ -178,7 +178,34 @@ Section Rvector_defs.
                              Rvector_scale Rvector_scale_scale Rvector_scale1
                              Rvector_scale_plus_l Rvector_scale_plus_r.
 
-      Canonical Rvector_ModuleSpace :=
-        ModuleSpace.Pack R_Ring (vector R n) (ModuleSpace.Class R_Ring (vector R n) Rvector_AbelianGroup_mixin Rvector_ModuleSpace_mixin) (vector R n).
+  Canonical Rvector_ModuleSpace :=
+    ModuleSpace.Pack R_Ring (vector R n) (ModuleSpace.Class R_Ring (vector R n) Rvector_AbelianGroup_mixin Rvector_ModuleSpace_mixin) (vector R n).
+
+
+  Definition Rvector_PreHilbert_mixin : PreHilbert.mixin_of (Rvector_ModuleSpace)
+    := PreHilbert.Mixin (Rvector_ModuleSpace) Rvector_inner
+                        Rvector_inner_comm  Rvector_inner_pos Rvector_inner_zero_inv
+                        Rvector_inner_scal Rvector_inner_plus.
   
+  Canonical Rvector_PreHilbert :=
+    PreHilbert.Pack (vector R n) (PreHilbert.Class _ _ Rvector_PreHilbert_mixin) (vector R n).
+
+      
+      
+      Definition LpRRVq_UniformSpace_mixin : UniformSpace.mixin_of (LpRRVq p)
+        := UniformSpace.Mixin  (LpRRVq p) LpRRVq_point LpRRVq_ball
+                               LpRRVq_ball_refl
+                               LpRRVq_ball_sym
+                               LpRRVq_ball_trans.
+
+      Canonical LpRRVq_UniformSpace :=
+        UniformSpace.Pack (LpRRVq p) LpRRVq_UniformSpace_mixin (LpRRVq p).
+
+      Canonical LpRRVq_NormedModuleAux :=
+        NormedModuleAux.Pack R_AbsRing (LpRRVq p)
+                             (NormedModuleAux.Class R_AbsRing (LpRRVq p)
+                                                    (ModuleSpace.class _ LpRRVq_ModuleSpace)
+                                                    (LpRRVq_UniformSpace_mixin)) (LpRRVq p).
+
+      
 End Rvector_defs.

@@ -94,6 +94,33 @@ Next Obligation.
   now destruct v; simpl.
 Qed.
 
+(* This should move *)
+Program Fixpoint map_onto {A B} (l:list A) (f:forall a, In a l -> B) : list B
+  := match l with
+     | [] => []
+     | x::l' => f x _ :: map_onto l' (fun a pf => f a _)
+     end.
+Next Obligation.
+  simpl; auto.
+Qed.
+Next Obligation.
+  simpl; auto.
+Qed.
+
+Lemma map_onto_length  {A B} (l:list A) (f:forall a, In a l -> B) :
+  length (map_onto l f) = length l.
+Proof.
+  induction l; simpl; congruence.
+Qed.
+
+Program Definition vector_map_onto {A B:Type}
+           {n:nat} (v:vector A n) (f:forall a, In a v->B) : vector B n
+  := map_onto v f.
+Next Obligation.
+  rewrite map_onto_length.
+  now destruct v; simpl.
+Qed.
+
 Program Definition vector_zip {A B:Type}
            {n:nat} (v1:vector A n) (v2:vector B n) : vector (A*B) n
   := combine v1 v2.
