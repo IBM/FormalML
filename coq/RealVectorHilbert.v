@@ -49,10 +49,10 @@ Section Rvector_defs.
 
   Notation "∑ x " := (Rvector_sum (x%Rvector)) (at level 40, left associativity) : Rvector_scope. (* \sum *)
 
-  Definition Rinner_product (x y:vector R n) : R
+  Definition Rvector_inner (x y:vector R n) : R
     := Rvector_sum (Rvector_plus x y).
 
-  Notation "x · y" := (Rinner_product x%Rvector y%Rvector) (at level 40, left associativity) : Rvector_scope.  (* \cdot *)
+  Notation "x · y" := (Rvector_inner x%Rvector y%Rvector) (at level 40, left associativity) : Rvector_scope.  (* \cdot *)
 
   Local Open Scope Rvector_scope.
 
@@ -136,4 +136,49 @@ Section Rvector_defs.
   Canonical Rvector_AbelianGroup :=
     AbelianGroup.Pack (vector R n) Rvector_AbelianGroup_mixin (vector R n).
 
+  Lemma Rvector_scale_scale (a b:R) (v:vector R n) :
+    a .* (b .* v) = (a * b) .* v.
+  Proof.
+    apply vector_eq; simpl.
+    rewrite map_map.
+    apply map_ext; intros.
+    lra.
+  Qed.
+
+  Lemma Rvector_scale1 (v:vector R n) :
+    1 .* v = v.
+  Proof.
+    apply vector_eq; simpl.
+    erewrite map_ext; try eapply map_id; intros; simpl.
+    lra.
+  Qed.
+
+  Lemma Rvector_scale_plus_l (a:R) (x y:vector R n) :
+    a .* (x + y) = a .* x + a .* y.
+  Proof.
+    apply vector_eq; simpl.
+    rewrite combine_map.
+    repeat rewrite map_map.
+    apply map_ext; intros [??]; simpl.
+    lra.
+  Qed.
+
+  Lemma Rvector_scale_plus_r (a b:R) (x:vector R n) :
+    (a + b) .* x = a .* x + b .* x.
+  Proof.
+    apply vector_eq; simpl.
+    rewrite combine_map, map_map, combine_self, map_map.
+    apply map_ext; intros.
+    lra.
+  Qed.
+
+
+  Definition Rvector_ModuleSpace_mixin : ModuleSpace.mixin_of R_Ring Rvector_AbelianGroup
+        := ModuleSpace.Mixin R_Ring Rvector_AbelianGroup
+                             Rvector_scale Rvector_scale_scale Rvector_scale1
+                             Rvector_scale_plus_l Rvector_scale_plus_r.
+
+      Canonical Rvector_ModuleSpace :=
+        ModuleSpace.Pack R_Ring (vector R n) (ModuleSpace.Class R_Ring (vector R n) Rvector_AbelianGroup_mixin Rvector_ModuleSpace_mixin) (vector R n).
+  
 End Rvector_defs.

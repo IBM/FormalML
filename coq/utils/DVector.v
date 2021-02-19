@@ -10,7 +10,6 @@ Definition vector (T:Type) (n:nat)
 Lemma length_pf_irrel {T} {n:nat} {l:list T} (pf1 pf2:length l = n) : pf1 = pf2.
 Proof.
   apply UIP_dec.
-  Search  (forall x y : nat, {x = y} + {x <> y}).
   apply PeanoNat.Nat.eq_dec.
 Qed.
 

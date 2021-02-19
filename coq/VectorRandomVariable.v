@@ -86,16 +86,4 @@ Context
 Definition vector_Expectation {n} (rv_X : Ts -> vector R n) : option (vector Rbar n)
   := vectoro_to_ovector (vector_map Expectation (iso_f rv_X)).
 
-Definition Rvector_plus {n} (x y:vector R n) : vector R n
-  := vector_map (fun '(a,b) => a + b) (vector_zip x y).
-
-Definition Rvector_mult {n} (x y:vector R n) : vector R n
-  := vector_map (fun '(a,b) => a * b) (vector_zip x y).
-
-Definition Rvector_sum {n} (v:vector R n) : R
-  := vector_fold_left Rplus v 0.
-
-Definition Rinner_product {n} (x y:vector R n) : R
-  := Rvector_sum (Rvector_plus x y).
-
 End vector_ops.
