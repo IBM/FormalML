@@ -68,6 +68,20 @@ Proof.
   induction n; simpl; auto.
 Qed.
 
+  Program Lemma vector_const_eq {A} {n} (x:vector A n) c : x = vector_const c n <-> Forall (fun a => a = c) x.
+  Proof.
+    split; intros HH.
+    - subst.
+      apply vector_const_Forall.
+    - apply vector_eq.
+      destruct x; simpl in *.
+      unfold vector_const; simpl.
+      subst n.
+      induction x; simpl; trivial.
+      invcs HH.
+      f_equal; auto.
+  Qed.
+
 Program Definition vector_nth
         {T:Type}
         {n:nat}

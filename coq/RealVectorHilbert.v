@@ -44,8 +44,13 @@ Section Rvector_defs.
 
   Notation "x * y" := (Rvector_mult x y) (at level 40, left associativity) : Rvector_scope.
 
-  Definition Rvector_sum (v:vector R n) : R
-    := vector_fold_left Rplus v 0.
+  Definition Rvector_sqr (x:vector R n) : vector R n
+    := vector_map (fun a => a²) x.
+
+  Notation "x ²" := (Rvector_sqr x) (at level 1) : Rvector_scope.
+
+  Program Definition Rvector_sum (v:vector R n) : R
+    := RealAdd.list_sum v.
 
   Notation "∑ x " := (Rvector_sum (x%Rvector)) (at level 40, left associativity) : Rvector_scope. (* \sum *)
 
@@ -57,6 +62,14 @@ Section Rvector_defs.
   Local Open Scope Rvector_scope.
 
   Lemma Rvector_plus_comm (x y:vector R n) : x + y = y + x.
+  Proof.
+    apply vector_eq; simpl.
+    rewrite combine_swap, map_map.
+    apply map_ext; intros [??]; simpl.
+    lra.
+  Qed.
+
+  Lemma Rvector_mult_comm (x y:vector R n) : x * y = y * x.
   Proof.
     apply vector_eq; simpl.
     rewrite combine_swap, map_map.
@@ -89,12 +102,35 @@ Section Rvector_defs.
     lia.
   Qed.
 
+  Lemma combine_map_l {A B C : Type} (f : A -> C) (l1 : list A) (l2 : list B) :
+    combine (map f l1) l2 = map (fun '(x, y) => (f x, y)) (combine l1 l2).
+  Proof.
+    rewrite <- (map_id l2) at 1.
+    now rewrite combine_map.
+  Qed.
+
+  Lemma combine_map_r {A B D : Type} (g : B -> D) (l1 : list A) (l2 : list B) :
+    combine l1 (map g l2) = map (fun '(x, y) => (x, g y)) (combine l1 l2).
+  Proof.
+    rewrite <- (map_id l1) at 1.
+    now rewrite combine_map.
+  Qed.
+  
   Lemma Rvector_plus_assoc (x y z:vector R n) : x + (y + z) = (x + y) + z.
   Proof.
     apply vector_eq; simpl.
-    rewrite <- (map_id (proj1_sig x)) at 1.
-    rewrite <- (map_id (proj1_sig z)) at 2.
-    repeat rewrite combine_map, map_map.
+    rewrite combine_map_l, combine_map_r.
+    repeat rewrite map_map.
+    rewrite combine_assoc, map_map.
+    apply map_ext; intros [[??]?].
+    lra.
+  Qed.
+
+  Lemma Rvector_mult_assoc (x y z:vector R n) : x * (y * z) = (x * y) * z.
+  Proof.
+    apply vector_eq; simpl.
+    rewrite combine_map_l, combine_map_r.
+    repeat rewrite map_map.
     rewrite combine_assoc, map_map.
     apply map_ext; intros [[??]?].
     lra.
@@ -111,11 +147,22 @@ Section Rvector_defs.
     - now repeat rewrite vector_length.
   Qed.
 
+  Lemma Rvector_mult_zero (x:vector R n) : x * 0 = 0.
+  Proof.
+    apply vector_eqs; simpl.
+    destruct x; simpl.
+    unfold Rvector_zero, vector_const.
+    revert x e.
+    induction n; simpl; destruct x; simpl in *; trivial; try discriminate; intros.
+    invcs e.
+    constructor; auto.
+    lra.
+  Qed.
+
   Lemma Rvector_plus_inv (x:vector R n) : x + (- x) = 0.
   Proof.
     apply vector_eq; simpl.
-    rewrite <- (map_id (proj1_sig x)) at 1.
-    repeat rewrite combine_map, combine_self.
+    repeat rewrite combine_map_r, combine_self.
     repeat rewrite map_map.
     destruct x; simpl.
     unfold Rvector_zero, vector_const.
@@ -179,4 +226,153 @@ Section Rvector_defs.
 
   Canonical Rvector_ModuleSpace :=
     ModuleSpace.Pack R_Ring (vector R n) (ModuleSpace.Class R_Ring (vector R n) Rvector_AbelianGroup_mixin Rvector_ModuleSpace_mixin) (vector R n).
+
+  Lemma Rvector_inner_comm (x y:vector R n) : x ⋅ y = y ⋅ x.
+  Proof.
+    unfold Rvector_inner.
+    now rewrite Rvector_mult_comm.
+  Qed.
+
+  Program Lemma Rvector_sum_pos (x:vector R n) :
+    (forall a, In a x -> 0%R <= a) -> 0 <= ∑ x.
+  Proof.
+    intros.
+    apply list_sum_pos_pos'.
+    now rewrite Forall_forall.
+  Qed.
+
+  Lemma Rvector_sqr_mult (x:vector R n) : x² = x * x.
+  Proof.
+    apply vector_eq; simpl.
+    rewrite combine_self, map_map.
+    now unfold Rsqr.
+  Qed.
+
+  Program Lemma Rvector_sqr_pos (x:vector R n) : forall a, In a x² -> 0 <= a.
+  Proof.
+    intros.
+    apply in_map_iff in H.
+    destruct H as [?[??]].
+    subst.
+    apply Rle_0_sqr.
+  Qed.
+  
+  Lemma Rvector_inner_pos (x:vector R n) : 0%R <= x ⋅ x.
+  Proof.
+    unfold Rvector_inner.
+    apply Rvector_sum_pos; intros.
+    rewrite <- Rvector_sqr_mult in H.
+    now apply Rvector_sqr_pos in H.
+  Qed.
+
+  Program Lemma Rvector_sum_pos_0 (x:vector R n) :
+      (forall a, In a x -> 0%R <= a) ->
+      ∑ x = 0%R -> x = 0.
+  Proof.
+    intros.
+    apply vector_const_eq.
+    apply list_sum_all_pos_zero_all_zero in H0; trivial.
+    rewrite Forall_forall; intros.
+    specialize (H _ H1).
+    lra.
+  Qed.
+
+  Lemma Rvector_sqr_zero_inv (x:vector R n) : x² = 0  -> x = 0.
+  Proof.
+    intros eqq.
+    apply vector_const_eq in eqq.
+    apply vector_const_eq.
+    rewrite Forall_forall in *; intros a inn.
+    specialize (eqq (a ²)%R).
+    cut_to eqq.
+    - now apply Rsqr_0_uniq.
+    - apply in_map_iff.
+      eauto.
+  Qed.
+
+  Lemma Rvector_inner_zero_inv (x:vector R n) : x ⋅ x = 0%R  -> x = 0.
+  Proof.
+    unfold Rvector_inner.
+    intros.
+    rewrite <- Rvector_sqr_mult in H.
+    apply Rvector_sum_pos_0 in H.
+    - now apply Rvector_sqr_zero_inv.
+    - intros.
+      eapply Rvector_sqr_pos; eauto.
+  Qed.
+
+  Lemma Rvector_scale_mult_l (a:R) (x y:vector R n) :
+    ((a .* x) * y) = a .* (x * y).
+  Proof.
+    apply vector_eq; simpl.
+    rewrite combine_map_l.
+    repeat rewrite map_map.
+    apply map_ext; intros [??]; simpl.
+    lra.
+  Qed.
+
+  Lemma Rvector_scale_sum (a:R) (x:vector R n) :
+    ∑ (a .* x) = Rmult a (∑ x).
+  Proof.
+    unfold Rvector_sum.
+    destruct x; simpl.
+    now rewrite list_sum_mult_const, map_id.
+  Qed.
+
+  Lemma Rvector_inner_scal (x y:vector R n) (l:R) : (l .* x) ⋅ y = Rmult l (x ⋅ y).
+  Proof.
+    unfold Rvector_inner.
+    now rewrite Rvector_scale_mult_l, Rvector_scale_sum.
+  Qed.
+
+  Lemma Rvector_mult_plus_distr_r (x y z:vector R n) :
+    (x + y) * z =  (x * z) + (y * z).
+  Proof.
+    apply vector_eq; simpl.
+    repeat rewrite combine_map_l.
+    repeat rewrite map_map.
+    rewrite (combine_swap  (proj1_sig y) (proj1_sig z)).
+    repeat rewrite combine_map_r, map_map.
+    rewrite combine_assoc.
+    rewrite (combine_swap (combine (proj1_sig x) (proj1_sig z)) (proj1_sig z)).
+    rewrite combine_assoc.
+    rewrite (combine_swap (combine (proj1_sig z) (proj1_sig x))).
+    rewrite combine_assoc.
+    rewrite combine_self.
+    repeat rewrite combine_map_l, map_map.
+    rewrite combine_swap.
+    rewrite combine_assoc.
+    repeat rewrite map_map.
+    apply map_ext; intros [[??]?]; simpl.
+    lra.
+  Qed.
+
+  Lemma Rvector_sum_plus_distr (x y:vector R n) :
+    ∑ (x + y) = (∑ x + ∑ y)%R.
+  Proof.
+    unfold Rvector_sum, Rvector_plus; simpl.
+    destruct x; destruct y; simpl.
+    subst.
+    revert x0 e0.
+    induction x; destruct x0; simpl in *; try discriminate; intros.
+    - lra.
+    - invcs e0.
+      rewrite IHx; trivial.
+      lra.
+  Qed.
+
+  Lemma Rvector_inner_plus (x y z:vector R n)  : (x + y) ⋅ z = Rplus (x ⋅ z) (y ⋅ z).
+  Proof.
+    unfold Rvector_inner.
+    now rewrite Rvector_mult_plus_distr_r, Rvector_sum_plus_distr.
+  Qed.
+  
+  Definition Rvector_PreHilbert_mixin : PreHilbert.mixin_of (Rvector_ModuleSpace)
+    := PreHilbert.Mixin (Rvector_ModuleSpace) Rvector_inner
+                        Rvector_inner_comm Rvector_inner_pos Rvector_inner_zero_inv
+                        Rvector_inner_scal Rvector_inner_plus.
+  
+  Canonical Rvector_PreHilbert :=
+    PreHilbert.Pack (vector R n) (PreHilbert.Class _ _ Rvector_PreHilbert_mixin) (vector R n).
+      
 End Rvector_defs.
