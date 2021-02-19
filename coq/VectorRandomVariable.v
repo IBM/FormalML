@@ -8,6 +8,7 @@ Require Import Classical_Prop.
 Require Import Classical.
 
 Require Import Utils.
+Require Import DVector.
 Require Import NumberIso.
 Require Import SigmaAlgebras.
 Require Export FunctionsToReal ProbSpace BorelSigmaAlgebra.
@@ -76,6 +77,7 @@ Next Obligation.
   now rewrite vector_length in Heq_anonymous.
 Qed.
 
+Section vector_ops.
 Context 
   {Ts:Type}
   {dom: SigmaAlgebra Ts}
@@ -86,3 +88,14 @@ Definition vector_Expectation {n} (rv_X : Ts -> vector R n) : option (vector Rba
 
 Definition Rvector_plus {n} (x y:vector R n) : vector R n
   := vector_map (fun '(a,b) => a + b) (vector_zip x y).
+
+Definition Rvector_mult {n} (x y:vector R n) : vector R n
+  := vector_map (fun '(a,b) => a * b) (vector_zip x y).
+
+Definition Rvector_sum {n} (v:vector R n) : R
+  := vector_fold_left Rplus v 0.
+
+Definition Rinner_product {n} (x y:vector R n) : R
+  := Rvector_sum (Rvector_plus x y).
+
+End vector_ops.

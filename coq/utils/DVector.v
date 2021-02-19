@@ -55,3 +55,7 @@ Next Obligation.
   now rewrite Min.min_idempotent.
 Qed.
 
+Program Definition vector_fold_left {A B:Type} (f:A->B->A)
+           {n:nat} (v:vector B n) (a0:A) : A
+  := fold_left f v a0.
+
