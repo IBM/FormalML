@@ -118,13 +118,12 @@ Proof.
     apply (pf (s,s',σ)).
 Qed.
 
-
 (* For every s, we get a list of all actions available at that state. *)
-Definition act_list (M : MDP) : forall s, list (act M s) :=
+Definition act_list {M : MDP} : forall s, list (act M s) :=
   fun s => let (la, Hla) := fa M s in la.
 
 (* For every s, we get a proof that the list of actions is not nil. *)
-Lemma act_list_not_nil (M : MDP) : forall s, [] <> act_list M s.
+Lemma act_list_not_nil {M : MDP} : forall s: state M, [] <> act_list s.
 Proof. 
   intros s.
   apply not_nil_exists.
@@ -177,6 +176,8 @@ Qed.
 Definition step_expt_reward : state M -> R :=
   (fun s => expt_value (t s (σ s)) (reward s (σ s))).
 
+Definition act_expt_reward : forall s : M.(state), M.(act) s -> R :=
+  (fun s a => expt_value (t s a) (reward s a)).
 
 (* Expected reward after n-steps, starting at initial state, following policy sigma. *)
 Definition expt_reward (init : M.(state)) (n : nat) : R :=
@@ -1139,7 +1140,7 @@ Proof.
 Qed.
 
 Definition ltv : M.(state) -> R:= fun s => Series (fun n => γ^n * (expt_reward σ s n)).
-  
+
 Definition expt_ltv (p : Pmf M.(state)) : R :=
   expt_value p ltv.
 
@@ -1175,6 +1176,14 @@ Proof.
   apply ex_series_ltv. 
 Qed.
 
+Definition Qvalue : forall s: M.(state), (M.(act) s) -> R :=
+  fun s a => act_expt_reward s a + γ*expt_value (t s a) ltv.
+
+Lemma ltv_Qvalue : ltv init = Qvalue init (σ init).
+Proof.
+  now rewrite ltv_corec.
+Qed.
+
 End ltv.
 
 Section operator.
@@ -1195,8 +1204,7 @@ Arguments outcomes {_}.
 Arguments t {_}.
 
 Definition bellman_op (π : dec_rule M) : @Rfct M.(state) (fs M) -> @Rfct M.(state) (fs M) :=
-  fun W => fun s => (step_expt_reward π s + γ*(expt_value (t s (π s)) W)). 
-
+  fun W => fun s => (step_expt_reward π s + γ*(expt_value (t s (π s)) W)).
 
 Theorem is_contraction_bellman_op (π : dec_rule M) :
  @is_contraction (Rfct_UniformSpace M.(state)) (Rfct_UniformSpace M.(state)) (bellman_op π).
@@ -1605,8 +1613,16 @@ Proof.
   rewrite (ltv_bellman_op_fixpt γ hγ π init) ; now subst.
 Qed.
 
-End order.
+Definition maxQ : forall s : M.(state), M.(act) s -> R :=
+  fun s => fun a => act_expt_reward s a + γ * expt_value (t s a) max_ltv.
 
+ Definition BellmanQ : (forall s : M.(state), M.(act) s -> R) -> (forall s : M.(state), M.(act) s -> R)
+  :=
+    fun W => fun s a => (act_expt_reward s a +
+                   γ*expt_value (t s a)(fun s' => Max_{act_list s'}(fun a => W s' a) )).
+
+
+End order.
 
 Section improve.
 
@@ -1686,7 +1702,7 @@ Qed.
 
 (* Computes the greedy policy from V^σ by taking the max over all actions. *)
 Definition improved_tot (σ : dec_rule M) : dec_rule M :=
-  improved σ (act_list_not_nil M).
+  improved σ (act_list_not_nil).
 
 Lemma improved_tot_better (σ : dec_rule M) : forall s, 
     bellman_op γ (improved_tot σ) (ltv γ σ) s >= bellman_op γ σ (ltv γ σ) s.
