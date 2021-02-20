@@ -1093,10 +1093,8 @@ algorithm.
   Context (gamma : R) (α : nat -> R) {F : X -> X}
           {dom: SigmaAlgebra X} {prts: ProbSpace dom} (x0 : X).
 
-
-  (*
-  Context (hF : is_contraction F)
-          (lF : is_Lipschitz F gamma). *)
+  Context (hF : (@is_contraction Rvector_UniformSpace Rvector_UniformSpace F))
+          (lF : (@is_Lipschitz Rvector_UniformSpace Rvector_UniformSpace F gamma)).
 
     (* Theorem 8 *)
 
