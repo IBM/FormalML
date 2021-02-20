@@ -7,7 +7,7 @@ Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Equivalence RelationClasses EquivDec Morphisms.
 Require Import ExtLib.Structures.Monad.
 
-Require Import ListAdd.
+Require Import ListAdd RealAdd.
 
 Set Bullet Behavior "Strict Subproofs".
 (*

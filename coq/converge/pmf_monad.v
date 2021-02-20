@@ -1,6 +1,6 @@
 Require Import Reals Coquelicot.Coquelicot Coquelicot.Series.
 Require Import ProofIrrelevance EquivDec.
-Require Import Sums Utils.
+Require Import Sums utils.Utils.
 Require Import Lia Lra.
 Require Import Coq.Logic.FunctionalExtensionality.
 From mathcomp Require Import ssreflect ssrfun seq.

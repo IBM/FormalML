@@ -5,7 +5,7 @@ Require Import Sums Coq.Reals.ROrderedType.
 Require Import micromega.Lra.
 Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Equivalence RelationClasses EquivDec Morphisms.
-Require Import Streams StreamAdd. 
+Require Import Streams RealAdd.
 Require Import mdp.
 Require Import Vector.
 Require Import Lia.
