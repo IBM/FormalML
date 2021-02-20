@@ -5,6 +5,7 @@ Require Import Lra Lia.
 Require Import infprod Dvoretzky Expectation RandomVariableFinite.
 Require Import Classical.
 Require Import SigmaAlgebras ProbSpace.
+Require Import DVector RealVectorHilbert VectorRandomVariable.
 Require hilbert.
 
 Set Bullet Behavior "Strict Subproofs".
@@ -1084,10 +1085,18 @@ algorithm.
   Section qlearn3.
     
   Import hilbert.
+  Context {I : nat}.
+  Canonical Rvector_UniformSpace := @PreHilbert_UniformSpace (@Rvector_PreHilbert I).
 
-    Context {X : Hilbert} (gamma : R) (α : nat -> R) {F : X -> X}
-            {dom: SigmaAlgebra X} {prts: ProbSpace dom}
-            (hF : is_contraction F) (lF : is_Lipschitz F gamma) (x0 : X).
+  Definition X := (vector R I).
+
+  Context (gamma : R) (α : nat -> R) {F : X -> X}
+          {dom: SigmaAlgebra X} {prts: ProbSpace dom} (x0 : X).
+
+
+  (*
+  Context (hF : is_contraction F)
+          (lF : is_Lipschitz F gamma). *)
 
     (* Theorem 8 *)
 
@@ -1186,6 +1195,7 @@ algorithm.
     now rewrite H.
  Qed.
 
+(*
     Theorem L2_convergent (C : R) (w x : nat -> X -> X) (xstar : X)
             (rw : forall n, RandomVariable dom dom (w n)) :
       0 <= gamma < 1 ->
@@ -1305,7 +1315,7 @@ algorithm.
       
      Admitted.
 
-
+*)
       
                                                     
                                                             
