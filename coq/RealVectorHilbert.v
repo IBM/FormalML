@@ -375,14 +375,116 @@ Section Rvector_defs.
   Canonical Rvector_PreHilbert :=
     PreHilbert.Pack (vector R n) (PreHilbert.Class _ _ Rvector_PreHilbert_mixin) (vector R n).
 
-  (*
-  Definition Rvector_lim (F:(vector R n -> Prop) -> Prop) : vector R n.
+  Definition Rvector_filter_part {T} (F:(vector T n -> Prop) -> Prop) i (pf:(i < n)%nat) : (T -> Prop) -> Prop
+    := fun (s:T->Prop) =>
+         F (fun v => s (vector_nth i pf v)).
+
+  Definition Rvector_lim (F:(vector R n -> Prop) -> Prop) : vector R n
+    := vector_create n
+                     (fun i pf =>
+                        Hierarchy.lim (Rvector_filter_part F i pf
+                     )).
+
+  Lemma Rvector_filter_part_Filter {T} (F:(vector T n -> Prop) -> Prop) i pf :
+    Filter F ->
+    Filter (Rvector_filter_part F i pf).
+  Proof.
+    unfold Rvector_filter_part.
+    intros [???].
+    constructor; intros; auto.
+    - eapply filter_imp; try eapply H0.
+      simpl; intros; eauto.
+  Qed.
+      
+  Lemma Rvector_filter_part_ProperFilter {T} (F:(vector T n -> Prop) -> Prop) i pf :
+    ProperFilter F ->
+    ProperFilter (Rvector_filter_part F i pf).
+  Proof.
+    unfold Rvector_filter_part.
+    intros [??].
+    constructor.
+    - intros.
+      destruct (filter_ex _ H).
+      eauto.
+    - now apply Rvector_filter_part_Filter.
+  Qed.
+
+  Lemma Rvector_filter_part_cauchy (F:(PreHilbert_UniformSpace -> Prop) -> Prop) i pf :
+    cauchy F ->
+    cauchy (Rvector_filter_part F i pf).
+  Proof.
+    unfold Rvector_filter_part.
+    unfold cauchy; intros cf eps.
+    destruct (cf eps).
+(*
+    exists (vector_nth i pf x).
+
+    unfold Hierarchy.ball; simpl.
+ *)
   Admitted.
 
-
+  Lemma Rvector_inner_self (x:vector R n) : x ⋅ x = ∑ x².
+  Proof.
+    unfold Rvector_inner.
+    now rewrite <- Rvector_sqr_mult.
+  Qed.
+    
   Definition Rvector_lim_complete 
              (F : (PreHilbert_UniformSpace -> Prop) -> Prop) :
     ProperFilter F -> cauchy F -> forall eps : posreal, F (ball (Rvector_lim F) eps).
+  Proof.
+    intros pff cf eps.
+    
+    generalize (fun i pf =>  Hierarchy.complete_cauchy
+                            (Rvector_filter_part F i pf)
+                            (Rvector_filter_part_ProperFilter F i pf pff)
+                            (Rvector_filter_part_cauchy F i pf cf)
+               )
+    ; intros HH.
+
+    unfold Rvector_lim.
+    unfold ball, Hnorm, inner; simpl.
+    eapply filter_imp; intros.
+    - rewrite Rvector_inner_self.
+      unfold minus, plus; simpl.
+
+      
+      
+      eapply H.
+    - 
+
+    cut (F
+    (fun y : vector R n =>
+     sqrt
+       (∑ (minus
+          (vector_create n
+             (fun (i : nat) (pf : (i < n)%nat) =>
+              Hierarchy.lim (Rvector_filter_part (fun x : vector R n -> Prop => F x) i pf))) y)²) < eps)
+           ).
+    {
+      eapply filter_imp; intros.
+      now rewrite Rvector_inner_self.
+    }       
+
+    
+    
+    rewrite Rvector_inner_self.
+
+    
+    
+    unfold Hierarchy.ball, UniformSpace.ball in HH.
+    simpl in HH.
+    unfold AbsRing_ball in HH.
+    unfold inner; simpl.
+    
+    
+
+        unfold Rvector_filter_part in HH.
+    
+    unfold ball, Hnorm.
+    unfold Rvector_lim.
+    
+     complete_cauchy :
   Admitted.
 
   
