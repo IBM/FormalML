@@ -374,5 +374,23 @@ Section Rvector_defs.
   
   Canonical Rvector_PreHilbert :=
     PreHilbert.Pack (vector R n) (PreHilbert.Class _ _ Rvector_PreHilbert_mixin) (vector R n).
-      
+
+  (*
+  Definition Rvector_lim (F:(vector R n -> Prop) -> Prop) : vector R n.
+  Admitted.
+
+
+  Definition Rvector_lim_complete 
+             (F : (PreHilbert_UniformSpace -> Prop) -> Prop) :
+    ProperFilter F -> cauchy F -> forall eps : posreal, F (ball (Rvector_lim F) eps).
+  Admitted.
+
+  
+  Definition Rvector_Hilbert_mixin : Hilbert.mixin_of Rvector_PreHilbert
+    := Hilbert.Mixin Rvector_PreHilbert Rvector_lim Rvector_lim_complete.
+
+  Canonical Rvector_Hilbert :=
+    Hilbert.Pack (vector R n) (Hilbert.Class _ _ Rvector_Hilbert_mixin) (vector R n).
+*)
+  
 End Rvector_defs.
