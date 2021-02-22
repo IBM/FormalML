@@ -1257,9 +1257,18 @@ Proof.
     split.
     -- now destruct hγ.
     -- intros f g r Hr Hx.
-       repeat red in Hx. repeat red.
-       unfold Rmax_norm in *.
-       destruct (act_finite M).
+       repeat red in Hx |-.
+       unfold Rmax_norm, Rmax_ball in *.
+       destruct (act_finite M) as [la Hla].
+       unfold minus, plus, opp ; simpl.
+       rewrite Rmax_list_lt_iff; intros; try(apply map_not_nil; apply not_nil_exists).
+       rewrite in_map_iff in H.
+       destruct H as [sa [Q HQ]]; subst.
+       apply Rabs_def1; try (unfold bellmanQ; destruct sa; ring_simplify).
+       rewrite <-Rmult_minus_distr_l.
+       apply Rmult_lt_compat_l; try (destruct hγ; lra).
+       rewrite <-expt_value_sub.
+
 Admitted.
 
 
