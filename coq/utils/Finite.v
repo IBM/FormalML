@@ -303,11 +303,13 @@ Qed.
       apply list_dep_prod.
       + destruct finA ; auto.
       + intros a. destruct (finB a); auto.
-    Qed.
+    Defined.
     Next Obligation.
-      destruct finA as [la Hla].
-      destruct (finB x) as [lb Hlb].
-    Admitted.
+      unfold finite_dep_prod_obligation_1.
+      rewrite in_dep_prod_iff.
+      destruct finA as [la Hla]; split; auto.
+      destruct (finB x) as [lb Hlb]; auto.
+    Qed.
 
 Definition bounded_nat_finite_list n : list {x : nat | (x < n)%nat}.
 Proof.
