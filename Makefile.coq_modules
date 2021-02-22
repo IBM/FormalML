@@ -78,6 +78,7 @@ MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	RandomVariableLpNat \
 	RandomVariableLpR \
 	RandomVariableLinf \
+	RealVectorHilbert \
 	SimpleExpectation \
 	Expectation \
 	SigmaAlgebras \

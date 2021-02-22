@@ -704,6 +704,46 @@ Section Rvector_defs.
   Proof.
   Admitted.
 *)
+  Lemma Filter_Forall_commute_aux F P :
+    Filter F ->
+    (forall (i : nat) (pf : (i < n)%nat),
+        F (fun v : vector R n =>
+             P i pf (vector_nth i pf v))) ->
+    forall m (pf2:(m <= n)%nat),
+    F (fun v : vector R n =>
+         forall (i : nat) (pf : (i < m)%nat),
+           P i (lt_le_trans _ _ _ pf pf2) (vector_nth i (lt_le_trans _ _ _ pf pf2) v)).
+  Proof.
+    intros [???] FA.
+    induction m; simpl; intros mle.
+    - generalize filter_true.
+      apply filter_imp; intros.
+      lia.
+    - assert (pft:(forall i, i < m -> i < S m)%nat) by lia.
+      cut ( F
+              (fun v : vector R n =>
+                 P m mle (vector_nth m mle v) /\
+                 forall (i : nat) (pf : (i < m)%nat),
+                   P i (Nat.lt_le_trans i (S m) n (pft _ pf) mle) (vector_nth i (Nat.lt_le_trans i (S m) n (pft _ pf) mle) v))).
+      + apply filter_imp; intros.
+        generalize (lt_n_Sm_le _ _ pf); intros pf2.
+        apply le_lt_or_eq in pf2.
+        destruct H.
+        destruct pf2.
+        * generalize (H0 _ H1).
+          now replace ((pft i H1)) with pf by apply le_uniqueness_proof.
+        * subst.
+          now replace (Nat.lt_le_trans m (S m) n pf mle) with mle by apply le_uniqueness_proof.
+      + apply filter_and; trivial.
+        assert (pf3:(m <= n)%nat) by lia.
+        specialize (IHm pf3).
+        revert IHm.
+        apply filter_imp; intros.
+        specialize (H _ pf).
+        now replace ((Nat.lt_le_trans i (S m) n (pft i pf) mle)) with (Nat.lt_le_trans i m n pf pf3)
+          by apply le_uniqueness_proof.
+  Qed.
+
   Lemma Filter_Forall_commute F P :
     Filter F ->
     (forall (i : nat) (pf : (i < n)%nat),
@@ -714,17 +754,15 @@ Section Rvector_defs.
            P i pf (vector_nth i pf v)).
   Proof.
     intros.
-    induction n; simpl.
-    - apply filter_imp with (P0:=fun _ => True).
-      + intros.
-        lia.
-      + destruct H.
-        apply filter_true.
-    - 
-Admitted.
-
+    generalize (Filter_Forall_commute_aux _ _ H H0 n (le_refl n)).
+    destruct H.
+    apply filter_imp; intros.
+    specialize (H i pf).
+    now replace  (Nat.lt_le_trans i n n pf (Nat.le_refl n)) with pf in H
+      by apply le_uniqueness_proof.
+  Qed.
   
-  Definition Rvector_lim_complete2 (F : (PreHilbert_UniformSpace -> Prop) -> Prop) :
+  Lemma Rvector_lim_complete_nneg (F : (PreHilbert_UniformSpace -> Prop) -> Prop) :
     (0 < n)%nat ->
     ProperFilter F -> cauchy F -> forall eps : posreal, F (ball (Rvector_lim F) eps).
   Proof.
@@ -778,6 +816,32 @@ Admitted.
       intros.
       specialize (H4 i pf).
       now rewrite vector_nth_create'.
-    Qed.
+  Qed.
+
+  Lemma vector_zero0 (n0:n = 0%nat) (v:vector R n) : v = 0.
+  Proof.
+    apply vector_nth_eq; intros; lia.
+  Qed.
+
+  Lemma Rvector_lim_complete (F : (PreHilbert_UniformSpace -> Prop) -> Prop) :
+    ProperFilter F -> cauchy F -> forall eps : posreal, F (ball (Rvector_lim F) eps).
+  Proof.
+    destruct (Nat.eq_dec n 0).
+    - intros.
+      destruct H as [?[???]].
+      generalize filter_true.
+      apply filter_imp; intros.
+      rewrite (vector_zero0 e (Rvector_lim (fun x : vector R n -> Prop => F x))).
+      rewrite (vector_zero0 e x).
+      apply ball_center.
+    - apply Rvector_lim_complete_nneg.
+      lia.
+  Qed.
+
+Definition Rvector_Hilbert_mixin : Hilbert.mixin_of Rvector_PreHilbert
+    := Hilbert.Mixin Rvector_PreHilbert Rvector_lim Rvector_lim_complete.
+
+  Canonical Rvector_Hilbert :=
+    Hilbert.Pack (vector R n) (Hilbert.Class _ _ Rvector_Hilbert_mixin) (vector R n).  
 
 End Rvector_defs.
