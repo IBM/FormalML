@@ -566,63 +566,47 @@ Section Rvector_defs.
         abs (vector_nth i pf x) < eps / INR n) ->
     Hnorm x < eps.
   Proof.
-    unfold Hnorm, abs; simpl.
-    intros.
+    unfold Hnorm, abs; simpl; intros.
     unfold inner; simpl.
     unfold Rvector_inner.
     rewrite <- sqrt_Rsqr with (x := eps); [|left; apply cond_pos].
     apply sqrt_lt_1_alt.
-    assert (forall i pf, Rsqr (vector_nth i pf x) < (Rsqr eps)/(INR n)).
+    split; [apply Rvector_inner_pos | ].
+    assert (INR n <> 0)%R.
+    {
+    apply Rgt_not_eq.
+    now apply lt_0_INR.
+    }
+    replace (Rsqr eps) with ((Rsqr eps / INR n) * (INR n))%R by
+        (unfold Rdiv; rewrite Rmult_assoc, Rinv_l; lra).
+    apply Rvector_sum_bound_const_lt; try lia.
     intros.
+    apply In_vector_nth_ex in H2.
+    destruct H2 as [i [pf H2]].
+    rewrite <- H2.
+    rewrite <- mult_nth.
     specialize (H0 i pf).
     replace (eps / INR n) with (Rabs (eps / INR n)) in H0.
     apply  Rsqr_lt_abs_1 in H0.
+    unfold Rsqr at 1 in H0.
     eapply Rlt_le_trans.
     apply H0.
     unfold Rdiv.
     rewrite Rsqr_mult.
-    apply Rmult_le_compat_l.
-    apply Rle_0_sqr.
-    rewrite Rsqr_inv.
-    apply Rinv_le_contravar.
-    apply INR_zero_lt; lia.
-    unfold Rsqr.
-    replace (INR n) with ((INR n) * 1)%R at 1 by lra.
-    apply Rmult_le_compat_l.
-    apply pos_INR.
+    apply Rmult_le_compat_l; [apply Rle_0_sqr |].
+    rewrite Rsqr_inv; trivial.
+    apply Rinv_le_contravar; [now apply lt_0_INR |].
+    unfold Rsqr; replace (INR n) with ((INR n) * 1)%R at 1 by lra.
+    apply Rmult_le_compat_l; [apply pos_INR |].
     assert (1 <= n)%nat by lia.
-    apply le_INR in H1.
-    now simpl in H1.
-    apply Rgt_not_eq.
-    now apply lt_0_INR.
+    now apply le_INR in H3.
     apply Rabs_right.
     unfold Rdiv.
     apply Rle_ge.
     apply Rmult_le_pos.
     left; apply cond_pos.
-
     left. apply Rinv_pos.
     apply INR_zero_lt; lia.
-
-    split.
-    + apply Rvector_inner_pos.
-    + eapply Rlt_le_trans.
-      * apply Rvector_sum_bound_const_lt; [lia | ].
-        intros.
-        apply In_vector_nth_ex in H2.
-        destruct H2 as [?[?]].
-        specialize (H1 _ x1).
-        subst.
-        rewrite Rvector_mult_explode.
-        rewrite vector_nth_create'.
-        unfold Rsqr in H1.
-        eapply H1.
-      * unfold Rsqr.
-        unfold Rdiv.
-        rewrite Rmult_assoc.
-        rewrite Rinv_l; try lra.
-        assert (0 < INR n); [| lra].
-        now apply lt_0_INR.
   Qed.
 
   Lemma Nth_Hnorm (v x : vector R n) (eps : posreal) :
@@ -691,19 +675,6 @@ Section Rvector_defs.
 
    *)
 
-
-(*  Lemma forall_F (F : (vector R n -> Prop) -> Prop) 
-        w  (eps : posreal) :
-    (forall (i : nat) (pf : (i < n)%nat),
-        F (fun v:vector R n  =>
-            Hierarchy.ball (vector_nth i pf w) eps (vector_nth i pf v))) ->
-  F
-    (fun v : vector R n =>
-     forall (i : nat) (pf : (i < n)%nat),
-     Hierarchy.ball (vector_nth i pf w) eps (vector_nth i pf v)).
-  Proof.
-  Admitted.
-*)
   Lemma Filter_Forall_commute_aux F P :
     Filter F ->
     (forall (i : nat) (pf : (i < n)%nat),
@@ -799,16 +770,11 @@ Section Rvector_defs.
       unfold Rvector_lim.
       unfold lim; simpl.
       unfold Rvector_filter_part at 1 in H3.
-      assert (HF:F
-       (fun v : vector R n =>
-          forall i pf,
-            Hierarchy.ball (R_complete_lim (Rvector_filter_part F i pf)) (eps / INR n) (vector_nth i pf v))).
-      {
-        apply Filter_Forall_commute with
-              (P:=fun i pf x =>
-                     Hierarchy.ball (R_complete_lim (Rvector_filter_part F i pf)) (eps / INR n) x); trivial.
-      }
-      eapply filter_imp; try eapply HF; intros.
+      generalize (Filter_Forall_commute 
+                    F
+                    (fun i pf x =>
+                       Hierarchy.ball (R_complete_lim (Rvector_filter_part F i pf)) (eps / INR n) x)); trivial; intros HF.
+      eapply filter_imp; try eapply HF; intros; trivial.
       unfold ball; simpl.
       unfold Hierarchy.lim; simpl.
       simpl in H4.
