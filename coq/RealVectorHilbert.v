@@ -475,7 +475,7 @@ Section Rvector_defs.
    *)
  Admitted.
 
-(*
+  (*
   Definition filter_part {T} (F:(vector T n -> Prop) -> Prop) i (pf:(i < n)%nat) : (T -> Prop) -> Prop
     := fun (s:T->Prop) =>
          F (fun v => s (vector_nth i pf v)).
@@ -496,14 +496,21 @@ Section Rvector_defs.
     minus (vector_nth i pf x0) (vector_nth i pf x) =
     vector_nth i pf (minus x0 x).
   Proof.
-    Admitted.
-
-(*
+    unfold minus, plus, opp; simpl.
+    rewrite Rvector_plus_explode.
+    rewrite vector_nth_create'.
+    unfold Rvector_opp, Rvector_scale.
+    rewrite vector_nth_map.
+    now ring_simplify.
+  Qed.
+    
   Lemma mult_nth (x x0 : vector R n) (i:nat) (pf : (i < n)%nat):
-    (vector_nth i pf x0) * (vector_nth i pf x) =
+    ((vector_nth i pf x0) * (vector_nth i pf x))%R =
     vector_nth i pf (Rvector_mult x0 x).
   Proof.
-    Admitted.
+    rewrite Rvector_mult_explode.
+    now rewrite vector_nth_create'.
+  Qed.
 
   Lemma Hnorm_nth1 (x : vector R n) (eps0 : posreal) (i:nat) (pf : (i < n)%nat):
       Hnorm x < eps0 ->
@@ -518,11 +525,20 @@ Section Rvector_defs.
     unfold Rsqr, inner; simpl.
     unfold Rvector_inner.
     rewrite mult_nth.
+
+(*
+    (forall x, v1 <= v2 )->
+    ∑ v1 <= ∑ v2
+ *)
+    
+    
+(*    vector_create 0 n (fun i' _ _ => if i == i' then x else 0). *)
+    
   Admitted.
   
   Lemma Hnorm_nth (x x0 : vector R n) (eps0 : posreal) (i:nat) (pf : (i < n)%nat):
       Hnorm (minus x x0) < eps0 ->
-      ball (vector_nth i pf x) eps0 (vector_nth i pf x0).
+      Hierarchy.ball (vector_nth i pf x) eps0 (vector_nth i pf x0).
   Proof.
     intros.
     repeat red.
@@ -530,7 +546,7 @@ Section Rvector_defs.
     rewrite minus_nth.
     now apply Hnorm_nth1.
   Qed.    
-*)
+
   Definition Rvector_lim_complete2 (F : (PreHilbert_UniformSpace -> Prop) -> Prop) :
     (0 < n)%nat ->
     ProperFilter F -> cauchy F -> forall eps : posreal, F (ball (Rvector_lim F) eps).
@@ -557,15 +573,38 @@ Section Rvector_defs.
         unfold Rvector_filter_part.
         apply filter_imp with (P := (fun y : vector R n => Hnorm (minus x y) < eps0)).
         intros.
-        admit.
+        now apply Hnorm_nth.
         apply H1.
       }
       simpl in H3.
       unfold Rvector_lim.
       unfold lim; simpl.
       unfold Rvector_filter_part at 1 in H3.
-      assert (F (fun v =>
-                   
+      assert (HF:F
+       (fun v : vector R n =>
+          forall i pf,
+            Hierarchy.ball (R_complete_lim (Rvector_filter_part F i pf)) (eps / INR n) (vector_nth i pf v))).
+      {
+        admit.
+      }
+
+      eapply filter_imp; try eapply HF; intros.
+      
+      
+
+
+
+      forall (i : nat) (pf : (i < n)%nat),
+       F
+         (fun v : vector R n =>
+          Hierarchy.ball (R_complete_lim (Rvector_filter_part F i pf)) (eps / INR n) (vector_nth i pf v))
+
+
+  
+         
+      
+      assert (F (fun v => Forall
+                         (Hierarchy.ball (R_complete_lim (Rvector_filter_part F i pf)) (eps / INR n) (vector_nth i pf v))) v)
                    vector_fold_left and
                       (vector_map 
                          (fun c => 
