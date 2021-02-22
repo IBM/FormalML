@@ -508,6 +508,34 @@ Section Rvector_defs.
     now apply Hnorm_nth1.
   Qed.
 
+
+  Program Lemma Rvector_sum_bound_const_lt (x:vector R n) c :
+    (forall a, In a x -> (a < c)%R) ->
+    ∑ x < (c * INR n)%R.
+  Proof.
+    intros.
+  Admitted.
+
+  Program Lemma In_vector_nth_ex {T} {x:vector T n} a :
+    In a x ->
+    exists i pf, vector_nth i pf x = a.
+  Proof.
+    intros inn.
+    apply In_nth_error in inn.
+    destruct inn as [i eqq].
+    destruct x; simpl in *.
+    destruct (lt_dec i (length x)).
+    - subst.
+      exists i, l.
+      unfold vector_nth, proj1_sig.
+      repeat match_destr.
+      simpl in *.
+      congruence.
+    - assert (HH:(length x <= i)%nat) by lia.
+      apply nth_error_None in HH.
+      congruence.
+  Qed.
+
   Lemma Nth_Hnorm1 (x : vector R n) (eps : posreal) :
     (0 < n)%nat ->
     (forall (i : nat) (pf : (i < n)%nat),
@@ -548,9 +576,30 @@ Section Rvector_defs.
     apply Rle_ge.
     apply Rmult_le_pos.
     left; apply cond_pos.
-    
 
-    Admitted.
+    left. apply Rinv_pos.
+    apply INR_zero_lt; lia.
+
+    split.
+    + apply Rvector_inner_pos.
+    + eapply Rlt_le_trans.
+      * apply Rvector_sum_bound_const_lt.
+        intros.
+        apply In_vector_nth_ex in H2.
+        destruct H2 as [?[?]].
+        specialize (H1 _ x1).
+        subst.
+        rewrite Rvector_mult_explode.
+        rewrite vector_nth_create'.
+        unfold Rsqr in H1.
+        eapply H1.
+      * unfold Rsqr.
+        unfold Rdiv.
+        rewrite Rmult_assoc.
+        rewrite Rinv_l; try lra.
+        assert (0 < INR n); [| lra].
+        now apply lt_0_INR.
+  Qed.
 
   Lemma Nth_Hnorm (v x : vector R n) (eps : posreal) :
     (0 < n)%nat ->
@@ -568,7 +617,7 @@ Section Rvector_defs.
   Qed.
 
   Lemma Rvector_filter_part_cauchy (F:(PreHilbert_UniformSpace -> Prop) -> Prop) i pf :
-    ProperFilter F ->
+    Filter F ->
     cauchy F ->
     cauchy (Rvector_filter_part F i pf).
   Proof.
@@ -588,12 +637,12 @@ Section Rvector_defs.
     now rewrite <- Rvector_sqr_mult.
   Qed.
 
+  (*
   Definition Rvector_lim_complete 
              (F : (PreHilbert_UniformSpace -> Prop) -> Prop) :
     ProperFilter F -> cauchy F -> forall eps : posreal, F (ball (Rvector_lim F) eps).
   Proof.
     intros pff cf eps.
-    
     generalize (fun i pf =>  Hierarchy.complete_cauchy
                             (Rvector_filter_part F i pf)
                             (Rvector_filter_part_ProperFilter F i pf pff)
@@ -612,17 +661,17 @@ Section Rvector_defs.
       rewrite <- vector_map_create.
       apply H.
     - unfold Rvector_filter_part at 1 in HH.
+*)
 (*     complete_cauchy :
   Admitted.
 
    *)
- Admitted.
 
-(*
-  Lemma forall_F (F : (PreHilbert_UniformSpace -> Prop) -> Prop) 
+
+(*  Lemma forall_F (F : (vector R n -> Prop) -> Prop) 
         w  (eps : posreal) :
     (forall (i : nat) (pf : (i < n)%nat),
-        F (fun v  =>
+        F (fun v:vector R n  =>
             Hierarchy.ball (vector_nth i pf w) eps (vector_nth i pf v))) ->
   F
     (fun v : vector R n =>
@@ -630,13 +679,36 @@ Section Rvector_defs.
      Hierarchy.ball (vector_nth i pf w) eps (vector_nth i pf v)).
   Proof.
   Admitted.
- *)
+*)
+  Lemma Filter_Forall_commute F P :
+    Filter F ->
+    (forall (i : nat) (pf : (i < n)%nat),
+        F (fun v : vector R n =>
+             P i pf (vector_nth i pf v))) ->
+    F (fun v : vector R n =>
+         forall (i : nat) (pf : (i < n)%nat),
+           P i pf (vector_nth i pf v)).
+  Proof.
+    intros.
+    induction n; simpl.
+    - apply filter_imp with (P0:=fun _ => True).
+      + intros.
+        lia.
+      + destruct H.
+        apply filter_true.
+    - 
+Admitted.
+
   
   Definition Rvector_lim_complete2 (F : (PreHilbert_UniformSpace -> Prop) -> Prop) :
     (0 < n)%nat ->
     ProperFilter F -> cauchy F -> forall eps : posreal, F (ball (Rvector_lim F) eps).
-    Proof.
-      unfold cauchy; intros.
+  Proof.
+    unfold cauchy; intros.
+    assert (FF:Filter F).
+    {
+      destruct H0; trivial.
+    } 
       assert (0 < eps/INR n).
       {
         unfold Rdiv.
@@ -670,7 +742,9 @@ Section Rvector_defs.
           forall i pf,
             Hierarchy.ball (R_complete_lim (Rvector_filter_part F i pf)) (eps / INR n) (vector_nth i pf v))).
       {
-        admit.
+        apply Filter_Forall_commute with
+              (P:=fun i pf x =>
+                     Hierarchy.ball (R_complete_lim (Rvector_filter_part F i pf)) (eps / INR n) x); trivial.
       }
       eapply filter_imp; try eapply HF; intros.
       unfold ball; simpl.
@@ -680,6 +754,6 @@ Section Rvector_defs.
       intros.
       specialize (H4 i pf).
       now rewrite vector_nth_create'.
-  Admitted.
+    Qed.
 
 End Rvector_defs.
