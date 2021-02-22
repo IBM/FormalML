@@ -7,6 +7,7 @@ Require Import hilbert.
 
 Require Import utils.Utils.
 Require Import List.
+Require Coquelicot.Hierarchy.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -472,12 +473,134 @@ Section Rvector_defs.
   Admitted.
 
    *)
-  (*
+ Admitted.
+
+(*
+  Definition filter_part {T} (F:(vector T n -> Prop) -> Prop) i (pf:(i < n)%nat) : (T -> Prop) -> Prop
+    := fun (s:T->Prop) =>
+         F (fun v => s (vector_nth i pf v)).
+*)
+
+(*
+  Canonical Rvector_UniformSpace := @PreHilbert_UniformSpace Rvector_PreHilbert.
+  Canonical Rvector_NormedModule := @PreHilbert_NormedModule Rvector_PreHilbert.
+  Import Coquelicot.Hierarchy.
+*)
+(*
+  Definition Rvector_lim (F:(Rvector_UniformSpace -> Prop) -> Prop) : Rvector_UniformSpace
+    := vector_create 0 n 
+                     (fun i _ pf => lim (filter_part F i pf
+                     )).
+*)
+  Lemma minus_nth (x x0 : vector R n) (i:nat) (pf : (i < n)%nat):
+    minus (vector_nth i pf x0) (vector_nth i pf x) =
+    vector_nth i pf (minus x0 x).
+  Proof.
+    Admitted.
+
+(*
+  Lemma mult_nth (x x0 : vector R n) (i:nat) (pf : (i < n)%nat):
+    (vector_nth i pf x0) * (vector_nth i pf x) =
+    vector_nth i pf (Rvector_mult x0 x).
+  Proof.
+    Admitted.
+
+  Lemma Hnorm_nth1 (x : vector R n) (eps0 : posreal) (i:nat) (pf : (i < n)%nat):
+      Hnorm x < eps0 ->
+      abs (vector_nth i pf x) < eps0.
+  Proof.
+    unfold Hnorm.
+    unfold abs; simpl.
+    intros.
+    eapply Rle_lt_trans; [|apply H].
+    rewrite <- sqrt_Rsqr_abs.
+    apply sqrt_le_1_alt.
+    unfold Rsqr, inner; simpl.
+    unfold Rvector_inner.
+    rewrite mult_nth.
+  Admitted.
+  
+  Lemma Hnorm_nth (x x0 : vector R n) (eps0 : posreal) (i:nat) (pf : (i < n)%nat):
+      Hnorm (minus x x0) < eps0 ->
+      ball (vector_nth i pf x) eps0 (vector_nth i pf x0).
+  Proof.
+    intros.
+    repeat red.
+    rewrite abs_minus.
+    rewrite minus_nth.
+    now apply Hnorm_nth1.
+  Qed.    
+*)
+  Definition Rvector_lim_complete2 (F : (PreHilbert_UniformSpace -> Prop) -> Prop) :
+    (0 < n)%nat ->
+    ProperFilter F -> cauchy F -> forall eps : posreal, F (ball (Rvector_lim F) eps).
+    Proof.
+      unfold cauchy; intros.
+      assert (0 < eps/INR n).
+      {
+        unfold Rdiv.
+        apply Rmult_lt_0_compat.
+        apply cond_pos.
+        apply Rinv_0_lt_compat, lt_0_INR; lia.
+      }
+      assert (forall i (pf: (i<n)%nat),
+                 Rvector_filter_part F i pf (Hierarchy.ball (R_complete_lim (Rvector_filter_part F i pf)) 
+                                          (mkposreal _ H2))).
+      {
+        intros.
+        apply R_complete.
+        now apply filtermap_proper_filter.
+        intros.
+        specialize (H1 eps0).
+        destruct H1 as [x H1].
+        exists (vector_nth i pf x).
+        unfold Rvector_filter_part.
+        apply filter_imp with (P := (fun y : vector R n => Hnorm (minus x y) < eps0)).
+        intros.
+        admit.
+        apply H1.
+      }
+      simpl in H3.
+      unfold Rvector_lim.
+      unfold lim; simpl.
+      unfold Rvector_filter_part at 1 in H3.
+      assert (F (fun v =>
+                   
+                   vector_fold_left and
+                      (vector_map 
+                         (fun c => 
+                                  
+      eapply filter_imp.
+      intros.
+      Check filter_and.
+      notation /\.
+        
+
+
+      Search filter.
+      apply Forall_filter in H3.
+
+      intros.
+
+      
+      
+  Admitted.
+
+    Lemma R_complete :
+  forall F : (R -> Prop) -> Prop,
+  ProperFilter F ->
+  (forall eps : posreal, exists x : R, F (ball x eps)) ->
+  forall eps : posreal, F (ball (R_complete_lim F) eps).
+  
   Definition Rvector_Hilbert_mixin : Hilbert.mixin_of Rvector_PreHilbert
     := Hilbert.Mixin Rvector_PreHilbert Rvector_lim Rvector_lim_complete.
 
   Canonical Rvector_Hilbert :=
     Hilbert.Pack (vector R n) (Hilbert.Class _ _ Rvector_Hilbert_mixin) (vector R n).
+<<<<<<< Updated upstream
 *)
   Admitted.  
+=======
+  
+>>>>>>> Stashed changes
 End Rvector_defs.

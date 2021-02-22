@@ -19,7 +19,9 @@ algorithm.
 
   Section qlearn.
 
-    Context {X : CompleteNormedModule R_AbsRing} {F : X -> X}
+
+
+    Context {X : NormedModule R_AbsRing} {F : X -> X}
             (hF : is_contraction F) (α : nat -> R) (x0 : X).
 
     Definition f_alpha (f : X -> X) a : (X -> X)  :=
@@ -1087,6 +1089,7 @@ algorithm.
   Import hilbert.
   Context {I : nat}.
   Canonical Rvector_UniformSpace := @PreHilbert_UniformSpace (@Rvector_PreHilbert I).
+  Canonical Rvector_NormedModule := @PreHilbert_NormedModule (@Rvector_PreHilbert I).
 
   Definition X := (vector R I).
 
@@ -1193,7 +1196,9 @@ algorithm.
     now rewrite H.
  Qed.
 
-(*
+  Definition F_alpha (a : R)  :=
+     (@f_alpha Rvector_NormedModule F a).
+
     Theorem L2_convergent (C : R) (w x : nat -> X -> X) (xstar : X)
             (rw : forall n, RandomVariable dom dom (w n)) :
       0 <= gamma < 1 ->
@@ -1202,7 +1207,7 @@ algorithm.
       is_lim_seq α 0 ->
       is_lim_seq (sum_n α) p_infty ->
       (forall k, forall (v:X), 
-            (x (S k) v) = plus ((f_alpha F (α k)) (x k v)) (scal (α k) (w k v))) ->
+            (x (S k) v) = plus (F_alpha (α k) (x k v)) (scal (α k) (w k v))) ->
       (forall n, ExpectationV (w n) = zero) ->
       (forall n, Expectation_posRV (fun v => inner (w n v) (w n v)) < C)  ->
       is_lim_seq 
@@ -1222,12 +1227,12 @@ algorithm.
                       (rvscale 
                          (2 * (α n))
                          (fun v =>
-                            (inner (minus ((f_alpha F (α n)) (x n v)) xstar) 
+                            (inner (minus ((F_alpha (α n)) (x n v)) xstar) 
                                    (w n v))))
                       (rvplus
                          (fun v =>
-                            inner (minus ((f_alpha F (α n)) (x n v)) xstar)
-                                  (minus ((f_alpha F (α n)) (x n v)) xstar))
+                            inner (minus ((F_alpha (α n)) (x n v)) xstar)
+                                  (minus ((F_alpha (α n)) (x n v)) xstar))
                          (rvscale (mkposreal ((α n)^2) (asq_pos n))
                                   (fun v => inner (w n v) (w n v)))))).
       {
@@ -1236,22 +1241,28 @@ algorithm.
         simpl.
         rewrite H4.
         unfold minus.
-        repeat rewrite (@inner_plus_l (Hilbert.PreHilbert X)).
-        repeat rewrite (@inner_plus_r (Hilbert.PreHilbert X)).
-        repeat rewrite (@inner_scal_l (Hilbert.PreHilbert X)).        
-        repeat rewrite (@inner_scal_r (Hilbert.PreHilbert X)).
+        repeat rewrite (@inner_plus_l (@Rvector_PreHilbert I)).
+        repeat rewrite (@inner_plus_r (@Rvector_PreHilbert I)).
+        repeat rewrite (@inner_scal_l (@Rvector_PreHilbert I)).
+        repeat rewrite (@inner_scal_r (@Rvector_PreHilbert I)).
         ring_simplify.
         repeat rewrite Rplus_assoc.
         repeat apply Rplus_eq_compat_l.
-        do 2 rewrite inner_sym with (x1 := (w n v)).
+        replace (inner (w n v) (F_alpha (α n) (x n v))) with 
+            (inner (F_alpha (α n) (x n v)) (w n v)).
+        replace (inner (w n v) (opp xstar)) with
+                (inner (opp xstar) (w n v)).
+        (* do 2 rewrite inner_sym with (x1 := (w n v)). *)
         now ring_simplify.
+        apply inner_sym.
+        apply inner_sym.
      }
       generalize (forall_expectation_ext H7); intros.
       assert (forall n, 
                  Expectation (rvscale 
                                 (2 * α n)
                                 (fun v : X => 
-                                   inner (minus (f_alpha F (α n) (x n v)) xstar) 
+                                   inner (minus (F_alpha (α n) (x n v)) xstar) 
                                          (w n v))) = Some (Finite 0)). 
       admit.
       assert (forall n,
@@ -1260,8 +1271,8 @@ algorithm.
                   Expectation
                     (rvplus
                        (fun v : X =>
-                          inner (minus (f_alpha F (α n) (x n v)) xstar)
-                                (minus (f_alpha F (α n) (x n v)) xstar))
+                          inner (minus (F_alpha (α n) (x n v)) xstar)
+                                (minus (F_alpha (α n) (x n v)) xstar))
                        (rvscale (mkposreal (α n ^ 2) (asq_pos n))(fun v : X => inner (w n v) (w n v))))).
       { 
         intros.
@@ -1282,8 +1293,8 @@ algorithm.
                  Rbar_plus
                    (Expectation_posRV 
                       (fun v : X =>
-                         inner (minus (f_alpha F (α n) (x n v)) xstar)
-                               (minus (f_alpha F (α n) (x n v)) xstar)))
+                         inner (minus (F_alpha (α n) (x n v)) xstar)
+                               (minus (F_alpha (α n) (x n v)) xstar)))
                    (Rbar_mult (mkposreal (α n ^ 2) (asq_pos n))
                               (Expectation_posRV
                                  (fun v : X => inner (w n v) (w n v))))).
@@ -1313,7 +1324,6 @@ algorithm.
       
      Admitted.
 
-*)
       
                                                     
                                                             
