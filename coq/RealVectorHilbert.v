@@ -425,7 +425,6 @@ Section Rvector_defs.
     - now apply Rvector_filter_part_Filter.
   Qed.
 
-  (*
   Lemma Rvector_filter_part_cauchy (F:(PreHilbert_UniformSpace -> Prop) -> Prop) i pf :
     cauchy F ->
     cauchy (Rvector_filter_part F i pf).
@@ -440,14 +439,13 @@ Section Rvector_defs.
     unfold Hierarchy.ball; simpl.
  *)
   Admitted.
-*)
+
   Lemma Rvector_inner_self (x:vector R n) : x ⋅ x = ∑ x².
   Proof.
     unfold Rvector_inner.
     now rewrite <- Rvector_sqr_mult.
   Qed.
 
-  (*
   Definition Rvector_lim_complete 
              (F : (PreHilbert_UniformSpace -> Prop) -> Prop) :
     ProperFilter F -> cauchy F -> forall eps : posreal, F (ball (Rvector_lim F) eps).
@@ -468,7 +466,9 @@ Section Rvector_defs.
       unfold minus, plus; simpl.
       unfold Rvector_filter_part.
       rewrite <- vector_map_create.
-     complete_cauchy :
+      apply H.
+    - 
+(*     complete_cauchy :
   Admitted.
 
    *)
@@ -479,5 +479,5 @@ Section Rvector_defs.
   Canonical Rvector_Hilbert :=
     Hilbert.Pack (vector R n) (Hilbert.Class _ _ Rvector_Hilbert_mixin) (vector R n).
 *)
-  
+  Admitted.  
 End Rvector_defs.
