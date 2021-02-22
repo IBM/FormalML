@@ -100,6 +100,13 @@ Proof.
  apply st_eqdec.
 Qed.
 
+Global Instance act_finite (M : MDP) : Finite (sigT M.(act)).
+Proof.
+  apply finite_dep_prod.
+  + apply fs.
+  + apply fa.
+Qed.
+
 Global Instance nonempty_dec_rule (M : MDP) : NonEmpty (dec_rule M)
   := fun s => na M s.
 
@@ -1206,12 +1213,6 @@ Arguments t {_}.
 Definition bellman_op (π : dec_rule M) : @Rfct M.(state) (fs M) -> @Rfct M.(state) (fs M) :=
   fun W => fun s => (step_expt_reward π s + γ*(expt_value (t s (π s)) W)).
 
-Global Instance act_finite : Finite (sigT M.(act)).
-Proof.
-  apply finite_dep_prod.
-  + apply fs.
-  + apply fa.
-Qed.
 
 Definition bellmanQ : Rfct (sigT M.(act)) -> Rfct (sigT M.(act))
   := fun W => fun sa => let (s,a) := sa in
@@ -1227,14 +1228,17 @@ Proof.
      exists (1/2). split; [lra |].
      unfold is_Lipschitz. split;trivial;[lra |].
      destruct (fs M) as [ls ?].
-     intros f g. intros r Hr Hfgr.
+     intros f g r Hr Hfgr.
      rewrite e. unfold ball_x,ball_y in *.
      simpl in *. unfold Rmax_ball,Rmax_norm in *.
      destruct act_finite as [acts ?].
-     rewrite Rmax_list_lt_iff; intros ; try (apply map_not_nil).
+     rewrite Rmax_list_lt_iff; intros ;
+       try (apply map_not_nil; apply not_nil_exists ;
+            exists (existT _ (ne M) ((na M) (ne M))); auto).
      rewrite in_map_iff in H.
      destruct H.
-     unfold minus,plus,opp in H. destruct x0 as [s a].
+     unfold minus,plus,opp in H.
+     destruct x0 as [s a].
      simpl in H. destruct H as [H1 H2].
      do 2 rewrite Rmult_0_l in H1.
      subst.
@@ -1245,9 +1249,17 @@ Proof.
      eapply Ropp_lt_gt_0_contravar with (r := (1/2)*r).
      replace (0) with ((1/2)*0) by lra.
      apply Rmult_lt_compat_l; trivial; lra.
-     apply not_nil_exists.
-     exists (existT _ (ne M) ((na M) (ne M))); auto.
-  ++ admit.
+  ++ exists γ ; split.
+  - now destruct hγ.
+  - unfold is_Lipschitz.
+    unfold ball_x,ball_y. simpl.
+    destruct (fs M) as [ls Hls].
+    split.
+    -- now destruct hγ.
+    -- intros f g r Hr Hx.
+       repeat red in Hx. repeat red.
+       unfold Rmax_norm in *.
+       destruct (act_finite M).
 Admitted.
 
 
