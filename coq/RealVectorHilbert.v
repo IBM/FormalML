@@ -447,6 +447,38 @@ Section Rvector_defs.
     now rewrite vector_nth_create'.
   Qed.
 
+  (* move *) 
+  Lemma list_sum_pos_In_le (l:list R) (a:R) 
+        (all_pos : forall a : R, In a l -> 0 <= a):
+    In a l ->
+    a <= RealAdd.list_sum l.
+  Proof.
+    induction l; simpl; inversion 1; simpl in *.
+    - subst.
+      generalize (list_sum_pos_pos' l); intros HH.
+      cut_to HH.
+      + lra.
+      + rewrite Forall_forall; eauto.
+    - cut_to IHl; trivial.
+      + specialize (all_pos a0).
+        cut_to all_pos; auto; try lra.
+      + eauto. 
+  Qed.
+
+  Program Lemma vector_nth_pos_le_pos (v:vector R n) i pf :
+    (forall a, In a v -> 0%R <= a) ->
+    vector_nth i pf v <= ∑ v.
+  Proof.
+    unfold vector_nth, proj1_sig.
+    destruct v; simpl.
+    match_destr; simpl in *.
+    intros all_pos.
+    symmetry in e0.
+    apply nth_error_In in e0.
+    unfold Rvector_sum; simpl.
+    now apply list_sum_pos_In_le.
+  Qed.
+
   Lemma Hnorm_nth1 (x : vector R n) (eps0 : posreal) (i:nat) (pf : (i < n)%nat):
       Hnorm x < eps0 ->
       abs (vector_nth i pf x) < eps0.
@@ -460,16 +492,10 @@ Section Rvector_defs.
     unfold Rsqr, inner; simpl.
     unfold Rvector_inner.
     rewrite mult_nth.
-
-(*
-    (forall x, v1 <= v2 )->
-    ∑ v1 <= ∑ v2
- *)
-    
-    
-(*    vector_create 0 n (fun i' _ _ => if i == i' then x else 0). *)
-    
-  Admitted.
+    apply vector_nth_pos_le_pos; intros.
+    rewrite <- Rvector_sqr_mult in H0.
+    now apply Rvector_sqr_pos in H0.
+  Qed.    
   
   Lemma Hnorm_nth (x x0 : vector R n) (eps0 : posreal) (i:nat) (pf : (i < n)%nat):
       Hnorm (minus x x0) < eps0 ->
