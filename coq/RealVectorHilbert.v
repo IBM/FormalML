@@ -61,19 +61,35 @@ Section Rvector_defs.
 
   Local Open Scope Rvector_scope.
 
+  Lemma Rvector_plus_explode (x y:vector R n) :
+    x + y = vector_create 0 n (fun i _ pf => (vector_nth i pf x + vector_nth i pf y)%R).
+  Proof.
+    unfold Rvector_plus.
+    rewrite vector_zip_explode.
+    rewrite vector_map_create.
+    reflexivity.
+  Qed.
+
+  Lemma Rvector_mult_explode (x y:vector R n) :
+    x * y = vector_create 0 n (fun i _ pf => (vector_nth i pf x * vector_nth i pf y)%R).
+  Proof.
+    unfold Rvector_mult.
+    rewrite vector_zip_explode.
+    rewrite vector_map_create.
+    reflexivity.
+  Qed.
+
   Lemma Rvector_plus_comm (x y:vector R n) : x + y = y + x.
   Proof.
-    apply vector_eq; simpl.
-    rewrite combine_swap, map_map.
-    apply map_ext; intros [??]; simpl.
+    repeat rewrite Rvector_plus_explode.
+    apply vector_create_ext; intros.
     lra.
   Qed.
 
   Lemma Rvector_mult_comm (x y:vector R n) : x * y = y * x.
   Proof.
-    apply vector_eq; simpl.
-    rewrite combine_swap, map_map.
-    apply map_ext; intros [??]; simpl.
+    repeat rewrite Rvector_mult_explode.
+    apply vector_create_ext; intros.
     lra.
   Qed.
 
@@ -138,24 +154,22 @@ Section Rvector_defs.
 
   Lemma Rvector_plus_zero (x:vector R n) : x + 0 = x.
   Proof.
-    apply vector_eq; simpl.
-    rewrite combine_const_r with (c:=0%R).
-    - rewrite map_map; simpl.
-      erewrite map_ext; try eapply map_id.
-      intros; lra.
-    - apply vector_const_Forall.
-    - now repeat rewrite vector_length.
+    rewrite Rvector_plus_explode.
+    apply vector_nth_eq; intros.
+    rewrite vector_nth_create; simpl.
+    unfold Rvector_zero.
+    rewrite vector_nth_const.
+    rewrite Rplus_0_r.
+    apply vector_nth_ext.
   Qed.
 
   Lemma Rvector_mult_zero (x:vector R n) : x * 0 = 0.
   Proof.
-    apply vector_eqs; simpl.
-    destruct x; simpl.
-    unfold Rvector_zero, vector_const.
-    revert x e.
-    induction n; simpl; destruct x; simpl in *; trivial; try discriminate; intros.
-    invcs e.
-    constructor; auto.
+    rewrite Rvector_mult_explode.
+    apply vector_nth_eq; intros.
+    rewrite vector_nth_create; simpl.
+    unfold Rvector_zero.
+    repeat rewrite vector_nth_const.
     lra.
   Qed.
 
@@ -171,8 +185,10 @@ Section Rvector_defs.
     ; destruct x; simpl in *; trivial; try discriminate
     ; intros.
     invcs e.
-    f_equal; auto.
-    lra.
+    f_equal.
+    - lra.
+    - rewrite IHn0; trivial.
+      apply vector_list_create_const_shift.
   Qed.
   
   Definition Rvector_AbelianGroup_mixin : AbelianGroup.mixin_of (vector R n)
@@ -380,8 +396,8 @@ Section Rvector_defs.
          F (fun v => s (vector_nth i pf v)).
 
   Definition Rvector_lim (F:(vector R n -> Prop) -> Prop) : vector R n
-    := vector_create n
-                     (fun i pf =>
+    := vector_create 0 n
+                     (fun i _ pf =>
                         Hierarchy.lim (Rvector_filter_part F i pf
                      )).
 
@@ -409,6 +425,7 @@ Section Rvector_defs.
     - now apply Rvector_filter_part_Filter.
   Qed.
 
+  (*
   Lemma Rvector_filter_part_cauchy (F:(PreHilbert_UniformSpace -> Prop) -> Prop) i pf :
     cauchy F ->
     cauchy (Rvector_filter_part F i pf).
@@ -416,19 +433,21 @@ Section Rvector_defs.
     unfold Rvector_filter_part.
     unfold cauchy; intros cf eps.
     destruct (cf eps).
+    
 (*
     exists (vector_nth i pf x).
 
     unfold Hierarchy.ball; simpl.
  *)
   Admitted.
-
+*)
   Lemma Rvector_inner_self (x:vector R n) : x ⋅ x = ∑ x².
   Proof.
     unfold Rvector_inner.
     now rewrite <- Rvector_sqr_mult.
   Qed.
-    
+
+  (*
   Definition Rvector_lim_complete 
              (F : (PreHilbert_UniformSpace -> Prop) -> Prop) :
     ProperFilter F -> cauchy F -> forall eps : posreal, F (ball (Rvector_lim F) eps).
@@ -447,47 +466,13 @@ Section Rvector_defs.
     eapply filter_imp; intros.
     - rewrite Rvector_inner_self.
       unfold minus, plus; simpl.
-
-      
-      
-      eapply H.
-    - 
-
-    cut (F
-    (fun y : vector R n =>
-     sqrt
-       (∑ (minus
-          (vector_create n
-             (fun (i : nat) (pf : (i < n)%nat) =>
-              Hierarchy.lim (Rvector_filter_part (fun x : vector R n -> Prop => F x) i pf))) y)²) < eps)
-           ).
-    {
-      eapply filter_imp; intros.
-      now rewrite Rvector_inner_self.
-    }       
-
-    
-    
-    rewrite Rvector_inner_self.
-
-    
-    
-    unfold Hierarchy.ball, UniformSpace.ball in HH.
-    simpl in HH.
-    unfold AbsRing_ball in HH.
-    unfold inner; simpl.
-    
-    
-
-        unfold Rvector_filter_part in HH.
-    
-    unfold ball, Hnorm.
-    unfold Rvector_lim.
-    
+      unfold Rvector_filter_part.
+      rewrite <- vector_map_create.
      complete_cauchy :
   Admitted.
 
-  
+   *)
+  (*
   Definition Rvector_Hilbert_mixin : Hilbert.mixin_of Rvector_PreHilbert
     := Hilbert.Mixin Rvector_PreHilbert Rvector_lim Rvector_lim_complete.
 
