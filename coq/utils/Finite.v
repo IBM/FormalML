@@ -252,7 +252,7 @@ Next Obligation.
   split; apply finite.
 Qed.
 
-Fixpoint list_dep_prod {A : Type} {B : A -> Type}(l:list A) (l': forall a:A, list (B a)) :
+  Fixpoint list_dep_prod {A : Type} {B : A -> Type}(l:list A) (l': forall a:A, list (B a)) :
       list (sigT B) :=
       match l with
       | nil => nil
@@ -285,26 +285,29 @@ Fixpoint list_dep_prod {A : Type} {B : A -> Type}(l:list A) (l': forall a:A, lis
     Proof.
       split; [ | intros; apply in_dep_prod; intuition ].
       induction l; simpl; intros.
-      intuition.
-      destruct (in_app_or _ _ _ H); clear H ; intuition.
-      destruct (in_map_iff (fun y : B a => existT _ a y) (l' a) (existT _ x y)) as (H1,_).
-      destruct (H1 H0) as (z,(H2,H3)); clear H0 H1.
-      injection H2; intuition.
-      admit.
-    Admitted.
+      + intuition.
+      + destruct (in_app_or _ _ _ H); clear H.
+        -- rewrite in_map_iff in H0.
+           destruct H0 as [z [H2 H3]].
+           injection H2; intuition.
+           subst ; clear H.
+           generalize (Eqdep.EqdepTheory.inj_pair2 A B _ _ _ H2); intros.
+           now subst.
+        -- intuition.
+    Qed.
 
-Global Program Instance finite_dep_prod {A B} (finA : Finite A)
+    Global Program Instance finite_dep_prod {A B} (finA : Finite A)
        (finB : forall a:A, Finite (B a))
-  : Finite (sigT B).
-Next Obligation.
-apply list_dep_prod.
-+ destruct finA ; auto.
-+ intros a. destruct (finB a); auto.
-Qed.
-Next Obligation.
-  destruct finA as [la Hla].
-  destruct (finB x) as [lb Hlb].
-Admitted.
+      : Finite (sigT B).
+    Next Obligation.
+      apply list_dep_prod.
+      + destruct finA ; auto.
+      + intros a. destruct (finB a); auto.
+    Qed.
+    Next Obligation.
+      destruct finA as [la Hla].
+      destruct (finB x) as [lb Hlb].
+    Admitted.
 
 Definition bounded_nat_finite_list n : list {x : nat | (x < n)%nat}.
 Proof.
