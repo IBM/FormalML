@@ -506,22 +506,81 @@ Section Rvector_defs.
     rewrite abs_minus.
     rewrite minus_nth.
     now apply Hnorm_nth1.
-  Qed.    
+  Qed.
+
+  Lemma Nth_Hnorm1 (x : vector R n) (eps : posreal) :
+    (0 < n)%nat ->
+    (forall (i : nat) (pf : (i < n)%nat),
+        abs (vector_nth i pf x) < eps / INR n) ->
+    Hnorm x < eps.
+  Proof.
+    unfold Hnorm, abs; simpl.
+    intros.
+    unfold inner; simpl.
+    unfold Rvector_inner.
+    rewrite <- sqrt_Rsqr with (x := eps); [|left; apply cond_pos].
+    apply sqrt_lt_1_alt.
+    assert (forall i pf, Rsqr (vector_nth i pf x) < (Rsqr eps)/(INR n)).
+    intros.
+    specialize (H0 i pf).
+    replace (eps / INR n) with (Rabs (eps / INR n)) in H0.
+    apply  Rsqr_lt_abs_1 in H0.
+    eapply Rlt_le_trans.
+    apply H0.
+    unfold Rdiv.
+    rewrite Rsqr_mult.
+    apply Rmult_le_compat_l.
+    apply Rle_0_sqr.
+    rewrite Rsqr_inv.
+    apply Rinv_le_contravar.
+    apply INR_zero_lt; lia.
+    unfold Rsqr.
+    replace (INR n) with ((INR n) * 1)%R at 1 by lra.
+    apply Rmult_le_compat_l.
+    apply pos_INR.
+    assert (1 <= n)%nat by lia.
+    apply le_INR in H1.
+    now simpl in H1.
+    apply Rgt_not_eq.
+    now apply lt_0_INR.
+    apply Rabs_right.
+    unfold Rdiv.
+    apply Rle_ge.
+    apply Rmult_le_pos.
+    left; apply cond_pos.
+    
+
+    Admitted.
+
+  Lemma Nth_Hnorm (v x : vector R n) (eps : posreal) :
+    (0 < n)%nat ->
+    (forall (i : nat) (pf : (i < n)%nat),
+        Hierarchy.ball (vector_nth i pf v) (eps / INR n) (vector_nth i pf x)) ->
+    Hnorm (minus v x) < eps.
+  Proof.
+    unfold Hierarchy.ball; simpl.
+    unfold AbsRing_ball; simpl.
+    intros.
+    apply Nth_Hnorm1; trivial.
+    intros.
+    rewrite <- minus_nth.
+    now rewrite abs_minus with (x0 := (vector_nth i pf v)).
+  Qed.
 
   Lemma Rvector_filter_part_cauchy (F:(PreHilbert_UniformSpace -> Prop) -> Prop) i pf :
+    ProperFilter F ->
     cauchy F ->
     cauchy (Rvector_filter_part F i pf).
   Proof.
     unfold Rvector_filter_part.
-    unfold cauchy; intros cf eps.
+    unfold cauchy; intros fil cf eps.
     destruct (cf eps).
-    
-(*
     exists (vector_nth i pf x).
-
-    unfold Hierarchy.ball; simpl.
- *)
-  Admitted.
+    apply filter_imp with (P := (fun y : vector R n => Hnorm (minus x y) < eps)).
+    intros.
+    now apply Hnorm_nth.
+    apply H.
+  Qed.
 
   Lemma Rvector_inner_self (x:vector R n) : x ⋅ x = ∑ x².
   Proof.
@@ -538,45 +597,41 @@ Section Rvector_defs.
     generalize (fun i pf =>  Hierarchy.complete_cauchy
                             (Rvector_filter_part F i pf)
                             (Rvector_filter_part_ProperFilter F i pf pff)
-                            (Rvector_filter_part_cauchy F i pf cf)
+                            (Rvector_filter_part_cauchy F i pf pff cf)
                )
     ; intros HH.
 
     unfold Rvector_lim.
     unfold ball.
 
-    Hnorm, inner; simpl.
+    unfold Hnorm, inner; simpl.
     eapply filter_imp; intros.
     - rewrite Rvector_inner_self.
       unfold minus, plus; simpl.
       unfold Rvector_filter_part.
       rewrite <- vector_map_create.
       apply H.
-    - 
+    - unfold Rvector_filter_part at 1 in HH.
 (*     complete_cauchy :
   Admitted.
 
    *)
  Admitted.
 
-  (*
-  Definition filter_part {T} (F:(vector T n -> Prop) -> Prop) i (pf:(i < n)%nat) : (T -> Prop) -> Prop
-    := fun (s:T->Prop) =>
-         F (fun v => s (vector_nth i pf v)).
-*)
-
 (*
-  Canonical Rvector_UniformSpace := @PreHilbert_UniformSpace Rvector_PreHilbert.
-  Canonical Rvector_NormedModule := @PreHilbert_NormedModule Rvector_PreHilbert.
-  Import Coquelicot.Hierarchy.
-*)
-(*
-  Definition Rvector_lim (F:(Rvector_UniformSpace -> Prop) -> Prop) : Rvector_UniformSpace
-    := vector_create 0 n 
-                     (fun i _ pf => lim (filter_part F i pf
-                     )).
-*)
-
+  Lemma forall_F (F : (PreHilbert_UniformSpace -> Prop) -> Prop) 
+        w  (eps : posreal) :
+    (forall (i : nat) (pf : (i < n)%nat),
+        F (fun v  =>
+            Hierarchy.ball (vector_nth i pf w) eps (vector_nth i pf v))) ->
+  F
+    (fun v : vector R n =>
+     forall (i : nat) (pf : (i < n)%nat),
+     Hierarchy.ball (vector_nth i pf w) eps (vector_nth i pf v)).
+  Proof.
+  Admitted.
+ *)
+  
   Definition Rvector_lim_complete2 (F : (PreHilbert_UniformSpace -> Prop) -> Prop) :
     (0 < n)%nat ->
     ProperFilter F -> cauchy F -> forall eps : posreal, F (ball (Rvector_lim F) eps).
@@ -617,59 +672,14 @@ Section Rvector_defs.
       {
         admit.
       }
-
       eapply filter_imp; try eapply HF; intros.
-      
-      
-
-
-
-      forall (i : nat) (pf : (i < n)%nat),
-       F
-         (fun v : vector R n =>
-          Hierarchy.ball (R_complete_lim (Rvector_filter_part F i pf)) (eps / INR n) (vector_nth i pf v))
-
-
-  
-         
-      
-      assert (F (fun v => Forall
-                         (Hierarchy.ball (R_complete_lim (Rvector_filter_part F i pf)) (eps / INR n) (vector_nth i pf v))) v)
-                   vector_fold_left and
-                      (vector_map 
-                         (fun c => 
-                                  
-      eapply filter_imp.
+      unfold ball; simpl.
+      unfold Hierarchy.lim; simpl.
+      simpl in H4.
+      apply Nth_Hnorm; trivial.
       intros.
-      Check filter_and.
-      notation /\.
-        
-
-
-      Search filter.
-      apply Forall_filter in H3.
-
-      intros.
-
-      
-      
+      specialize (H4 i pf).
+      now rewrite vector_nth_create'.
   Admitted.
 
-    Lemma R_complete :
-  forall F : (R -> Prop) -> Prop,
-  ProperFilter F ->
-  (forall eps : posreal, exists x : R, F (ball x eps)) ->
-  forall eps : posreal, F (ball (R_complete_lim F) eps).
-  
-  Definition Rvector_Hilbert_mixin : Hilbert.mixin_of Rvector_PreHilbert
-    := Hilbert.Mixin Rvector_PreHilbert Rvector_lim Rvector_lim_complete.
-
-  Canonical Rvector_Hilbert :=
-    Hilbert.Pack (vector R n) (Hilbert.Class _ _ Rvector_Hilbert_mixin) (vector R n).
-<<<<<<< Updated upstream
-*)
-  Admitted.  
-=======
-  
->>>>>>> Stashed changes
 End Rvector_defs.
