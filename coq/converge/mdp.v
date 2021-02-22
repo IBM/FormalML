@@ -1209,7 +1209,9 @@ Definition bellman_op (π : dec_rule M) : @Rfct M.(state) (fs M) -> @Rfct M.(sta
 Global Instance act_finite : Finite (sigT M.(act)).
 Proof.
   apply finite_dep_prod.
-Admitted.
+  + apply fs.
+  + apply fa.
+Qed.
 
 Definition bellmanQ : Rfct (sigT M.(act)) -> Rfct (sigT M.(act))
   := fun W => fun sa => let (s,a) := sa in
