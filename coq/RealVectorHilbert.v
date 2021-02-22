@@ -509,12 +509,36 @@ Section Rvector_defs.
   Qed.
 
 
+  Lemma list_sum_bound_const_lt (l : list R)
+        (c : R) :
+    l <> nil ->
+    (forall a : R, In a l -> a < c) ->
+    RealAdd.list_sum l < c * INR (length l).
+  Proof.
+    intros nnil bounded.
+    induction l; simpl in *; try congruence.
+    destruct l; simpl.
+    - ring_simplify.
+      auto.
+    - simpl in *.
+      cut_to IHl; try congruence; auto.
+      specialize (bounded a).
+      cut_to bounded; auto.
+      lra.
+  Qed.
+
   Program Lemma Rvector_sum_bound_const_lt (x:vector R n) c :
+    n <> 0%nat ->
     (forall a, In a x -> (a < c)%R) ->
     ∑ x < (c * INR n)%R.
   Proof.
     intros.
-  Admitted.
+    unfold Rvector_sum.
+    destruct x; simpl in *.
+    subst.
+    apply list_sum_bound_const_lt; trivial.
+    destruct x; simpl in *; congruence.
+  Qed.
 
   Program Lemma In_vector_nth_ex {T} {x:vector T n} a :
     In a x ->
@@ -583,7 +607,7 @@ Section Rvector_defs.
     split.
     + apply Rvector_inner_pos.
     + eapply Rlt_le_trans.
-      * apply Rvector_sum_bound_const_lt.
+      * apply Rvector_sum_bound_const_lt; [lia | ].
         intros.
         apply In_vector_nth_ex in H2.
         destruct H2 as [?[?]].
