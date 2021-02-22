@@ -252,12 +252,58 @@ Next Obligation.
   split; apply finite.
 Qed.
 
+Fixpoint list_dep_prod {A : Type} {B : A -> Type}(l:list A) (l': forall a:A, list (B a)) :
+      list (sigT B) :=
+      match l with
+      | nil => nil
+      | cons x t => map (fun y: B x => existT _ x y) (l' x) ++(list_dep_prod t l')
+      end.
+
+    Lemma in_dep_prod_aux {A : Type} {B : A -> Type} :
+      forall (x:A) (y:B x) (l:list (B x)),
+	      In y l -> In (existT _ x y) (map (fun y0:B x => existT _ x y0) l).
+    Proof.
+      induction l;
+	[ simpl; auto
+	  | simpl; destruct 1 as [H1| ];
+	    [ left; rewrite H1; trivial | right; auto ] ].
+    Qed.
+
+    Lemma in_dep_prod {A : Type} {B : A -> Type}:
+      forall (l:list A) (l':forall a:A, list (B a)) (x:A) (y:B x),
+        In x l -> In y (l' x) -> In (existT _ x y) (list_dep_prod l l').
+    Proof.
+      induction l;
+      [ simpl; tauto
+      | simpl; intros; apply in_or_app; destruct H];
+      [ left; rewrite H; apply in_dep_prod_aux; auto | right; auto ].
+    Qed.
+
+    Lemma in_dep_prod_iff {A:Type} {B : A -> Type} :
+      forall (l:list A)(l':forall a, list (B a))(x:A)(y:B x),
+        In (existT _ x y) (list_dep_prod l l') <-> In x l /\ In y (l' x).
+    Proof.
+      split; [ | intros; apply in_dep_prod; intuition ].
+      induction l; simpl; intros.
+      intuition.
+      destruct (in_app_or _ _ _ H); clear H ; intuition.
+      destruct (in_map_iff (fun y : B a => existT _ a y) (l' a) (existT _ x y)) as (H1,_).
+      destruct (H1 H0) as (z,(H2,H3)); clear H0 H1.
+      injection H2; intuition.
+      admit.
+    Admitted.
+
 Global Program Instance finite_dep_prod {A B} (finA : Finite A)
        (finB : forall a:A, Finite (B a))
   : Finite (sigT B).
 Next Obligation.
-Admitted.
+apply list_dep_prod.
++ destruct finA ; auto.
++ intros a. destruct (finB a); auto.
+Qed.
 Next Obligation.
+  destruct finA as [la Hla].
+  destruct (finB x) as [lb Hlb].
 Admitted.
 
 Definition bounded_nat_finite_list n : list {x : nat | (x < n)%nat}.
