@@ -257,6 +257,8 @@ Global Program Instance finite_dep_prod {A B} (finA : Finite A)
   : Finite (sigT B).
 Next Obligation.
 Admitted.
+Next Obligation.
+Admitted.
 
 Definition bounded_nat_finite_list n : list {x : nat | (x < n)%nat}.
 Proof.
