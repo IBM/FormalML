@@ -426,73 +426,8 @@ Section Rvector_defs.
     - now apply Rvector_filter_part_Filter.
   Qed.
 
-  Lemma Rvector_filter_part_cauchy (F:(PreHilbert_UniformSpace -> Prop) -> Prop) i pf :
-    cauchy F ->
-    cauchy (Rvector_filter_part F i pf).
-  Proof.
-    unfold Rvector_filter_part.
-    unfold cauchy; intros cf eps.
-    destruct (cf eps).
-    
-(*
-    exists (vector_nth i pf x).
 
-    unfold Hierarchy.ball; simpl.
- *)
-  Admitted.
-
-  Lemma Rvector_inner_self (x:vector R n) : x ⋅ x = ∑ x².
-  Proof.
-    unfold Rvector_inner.
-    now rewrite <- Rvector_sqr_mult.
-  Qed.
-
-  Definition Rvector_lim_complete 
-             (F : (PreHilbert_UniformSpace -> Prop) -> Prop) :
-    ProperFilter F -> cauchy F -> forall eps : posreal, F (ball (Rvector_lim F) eps).
-  Proof.
-    intros pff cf eps.
-    
-    generalize (fun i pf =>  Hierarchy.complete_cauchy
-                            (Rvector_filter_part F i pf)
-                            (Rvector_filter_part_ProperFilter F i pf pff)
-                            (Rvector_filter_part_cauchy F i pf cf)
-               )
-    ; intros HH.
-
-    unfold Rvector_lim.
-    unfold ball, Hnorm, inner; simpl.
-    eapply filter_imp; intros.
-    - rewrite Rvector_inner_self.
-      unfold minus, plus; simpl.
-      unfold Rvector_filter_part.
-      rewrite <- vector_map_create.
-      apply H.
-    - 
-(*     complete_cauchy :
-  Admitted.
-
-   *)
- Admitted.
-
-  (*
-  Definition filter_part {T} (F:(vector T n -> Prop) -> Prop) i (pf:(i < n)%nat) : (T -> Prop) -> Prop
-    := fun (s:T->Prop) =>
-         F (fun v => s (vector_nth i pf v)).
-*)
-
-(*
-  Canonical Rvector_UniformSpace := @PreHilbert_UniformSpace Rvector_PreHilbert.
-  Canonical Rvector_NormedModule := @PreHilbert_NormedModule Rvector_PreHilbert.
-  Import Coquelicot.Hierarchy.
-*)
-(*
-  Definition Rvector_lim (F:(Rvector_UniformSpace -> Prop) -> Prop) : Rvector_UniformSpace
-    := vector_create 0 n 
-                     (fun i _ pf => lim (filter_part F i pf
-                     )).
-*)
-  Lemma minus_nth (x x0 : vector R n) (i:nat) (pf : (i < n)%nat):
+    Lemma minus_nth (x x0 : vector R n) (i:nat) (pf : (i < n)%nat):
     minus (vector_nth i pf x0) (vector_nth i pf x) =
     vector_nth i pf (minus x0 x).
   Proof.
@@ -546,6 +481,75 @@ Section Rvector_defs.
     rewrite minus_nth.
     now apply Hnorm_nth1.
   Qed.    
+
+  Lemma Rvector_filter_part_cauchy (F:(PreHilbert_UniformSpace -> Prop) -> Prop) i pf :
+    cauchy F ->
+    cauchy (Rvector_filter_part F i pf).
+  Proof.
+    unfold Rvector_filter_part.
+    unfold cauchy; intros cf eps.
+    destruct (cf eps).
+    
+(*
+    exists (vector_nth i pf x).
+
+    unfold Hierarchy.ball; simpl.
+ *)
+  Admitted.
+
+  Lemma Rvector_inner_self (x:vector R n) : x ⋅ x = ∑ x².
+  Proof.
+    unfold Rvector_inner.
+    now rewrite <- Rvector_sqr_mult.
+  Qed.
+
+  Definition Rvector_lim_complete 
+             (F : (PreHilbert_UniformSpace -> Prop) -> Prop) :
+    ProperFilter F -> cauchy F -> forall eps : posreal, F (ball (Rvector_lim F) eps).
+  Proof.
+    intros pff cf eps.
+    
+    generalize (fun i pf =>  Hierarchy.complete_cauchy
+                            (Rvector_filter_part F i pf)
+                            (Rvector_filter_part_ProperFilter F i pf pff)
+                            (Rvector_filter_part_cauchy F i pf cf)
+               )
+    ; intros HH.
+
+    unfold Rvector_lim.
+    unfold ball.
+
+    Hnorm, inner; simpl.
+    eapply filter_imp; intros.
+    - rewrite Rvector_inner_self.
+      unfold minus, plus; simpl.
+      unfold Rvector_filter_part.
+      rewrite <- vector_map_create.
+      apply H.
+    - 
+(*     complete_cauchy :
+  Admitted.
+
+   *)
+ Admitted.
+
+  (*
+  Definition filter_part {T} (F:(vector T n -> Prop) -> Prop) i (pf:(i < n)%nat) : (T -> Prop) -> Prop
+    := fun (s:T->Prop) =>
+         F (fun v => s (vector_nth i pf v)).
+*)
+
+(*
+  Canonical Rvector_UniformSpace := @PreHilbert_UniformSpace Rvector_PreHilbert.
+  Canonical Rvector_NormedModule := @PreHilbert_NormedModule Rvector_PreHilbert.
+  Import Coquelicot.Hierarchy.
+*)
+(*
+  Definition Rvector_lim (F:(Rvector_UniformSpace -> Prop) -> Prop) : Rvector_UniformSpace
+    := vector_create 0 n 
+                     (fun i _ pf => lim (filter_part F i pf
+                     )).
+*)
 
   Definition Rvector_lim_complete2 (F : (PreHilbert_UniformSpace -> Prop) -> Prop) :
     (0 < n)%nat ->
