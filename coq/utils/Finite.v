@@ -252,6 +252,12 @@ Next Obligation.
   split; apply finite.
 Qed.
 
+Global Program Instance finite_dep_prod {A B} (finA : Finite A)
+       (finB : forall a:A, Finite (B a))
+  : Finite (sigT B).
+Next Obligation.
+Admitted.
+
 Definition bounded_nat_finite_list n : list {x : nat | (x < n)%nat}.
 Proof.
   induction n.

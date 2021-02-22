@@ -7,7 +7,7 @@ Require Import Equivalence RelationClasses EquivDec Morphisms.
 Require Import Streams RealAdd.
 Require Import utils.Utils.
 
-Import ListNotations. 
+Import ListNotations.
 Set Bullet Behavior "Strict Subproofs".
 
 
@@ -1206,6 +1206,49 @@ Arguments t {_}.
 Definition bellman_op (π : dec_rule M) : @Rfct M.(state) (fs M) -> @Rfct M.(state) (fs M) :=
   fun W => fun s => (step_expt_reward π s + γ*(expt_value (t s (π s)) W)).
 
+Global Instance act_finite : Finite (sigT M.(act)).
+Proof.
+  apply finite_dep_prod.
+Admitted.
+
+Definition bellmanQ : Rfct (sigT M.(act)) -> Rfct (sigT M.(act))
+  := fun W => fun sa => let (s,a) := sa in
+                  act_expt_reward s a +
+                  γ*expt_value (t s a)(fun s' => Max_{act_list s'}(fun a => W (existT _ s' a) ) ).
+
+Theorem is_contraction_bellmanQ :
+ @is_contraction (Rfct_UniformSpace (sigT M.(act))) (Rfct_UniformSpace (sigT M.(act))) bellmanQ.
+Proof.
+  unfold is_contraction.
+  destruct (Req_EM_T γ 0).
+  ++ unfold bellmanQ.
+     exists (1/2). split; [lra |].
+     unfold is_Lipschitz. split;trivial;[lra |].
+     destruct (fs M) as [ls ?].
+     intros f g. intros r Hr Hfgr.
+     rewrite e. unfold ball_x,ball_y in *.
+     simpl in *. unfold Rmax_ball,Rmax_norm in *.
+     destruct act_finite as [acts ?].
+     rewrite Rmax_list_lt_iff; intros ; try (apply map_not_nil).
+     rewrite in_map_iff in H.
+     destruct H.
+     unfold minus,plus,opp in H. destruct x0 as [s a].
+     simpl in H. destruct H as [H1 H2].
+     do 2 rewrite Rmult_0_l in H1.
+     subst.
+     apply Rabs_def1 ; ring_simplify.
+     replace (0) with ((1/2)*0) by lra.
+     apply Rmult_lt_compat_l; trivial; lra.
+     rewrite Ropp_mult_distr_l_reverse.
+     eapply Ropp_lt_gt_0_contravar with (r := (1/2)*r).
+     replace (0) with ((1/2)*0) by lra.
+     apply Rmult_lt_compat_l; trivial; lra.
+     apply not_nil_exists.
+     exists (existT _ (ne M) ((na M) (ne M))); auto.
+  ++ admit.
+Admitted.
+
+
 Theorem is_contraction_bellman_op (π : dec_rule M) :
  @is_contraction (Rfct_UniformSpace M.(state)) (Rfct_UniformSpace M.(state)) (bellman_op π).
 Proof.
@@ -1612,15 +1655,6 @@ Proof.
   apply closed_true. rewrite <-H0. 
   rewrite (ltv_bellman_op_fixpt γ hγ π init) ; now subst.
 Qed.
-
-Definition maxQ : forall s : M.(state), M.(act) s -> R :=
-  fun s => fun a => act_expt_reward s a + γ * expt_value (t s a) max_ltv.
-
- Definition BellmanQ : (forall s : M.(state), M.(act) s -> R) -> (forall s : M.(state), M.(act) s -> R)
-  :=
-    fun W => fun s a => (act_expt_reward s a +
-                   γ*expt_value (t s a)(fun s' => Max_{act_list s'}(fun a => W s' a) )).
-
 
 End order.
 
