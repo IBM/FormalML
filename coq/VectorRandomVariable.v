@@ -122,7 +122,59 @@ Definition rvinner {n} (rv_X1 rv_X2 : Ts -> vector R n) :=
 Class RealVectorMeasurable {n} (rv_X : Ts -> vector R n) :=
   vecmeasurable : forall i pf, RealMeasurable dom (vector_nth i pf (iso_f rv_X)).
 
+Definition event_set_vector_product {n} {T} (v:vector ((event T)->Prop) n) : event (vector T n) -> Prop
+  := fun (e:event (vector T n)) =>
+       exists (sub_e:vector (event T) n),
+         (forall i pf, (vector_nth i pf v) (vector_nth i pf sub_e))
+         /\
+         e === (fun (x:vector T n) => forall i pf, (vector_nth i pf sub_e) (vector_nth i pf x)).
 
+(*
+Instance event_set_product_proper {T1 T2} : Proper (equiv ==> equiv ==> equiv) (@event_set_product T1 T2).
+Proof.
+  repeat red.
+  unfold equiv, event_equiv, event_set_product; simpl; intros.
+  split; intros [x2 [x3 HH]].
+  - unfold equiv in *.
+    exists x2, x3.
+    intros [??]; apply HH.
+    firstorder.
+  - unfold equiv in *.
+    exists x2, x3.
+    intros [??]; apply HH.
+    firstorder.
+Qed.
+ *)
+
+Instance vector_sa {n} {T} (sav:vector (SigmaAlgebra T) n) : SigmaAlgebra (vector T n)
+  := generated_sa (event_set_vector_product (vector_map (@sa_sigma _) sav)).
+
+(*
+Global Instance product_sa_proper {T1 T2} : Proper (equiv ==> equiv ==> equiv) (@product_sa T1 T2).
+Proof.
+  repeat red; unfold equiv, sa_equiv; simpl.
+  intros.
+  split; intros HH.
+  - intros.
+    apply HH.
+    revert H1.
+    apply all_included_proper.
+    rewrite H, H0.
+    reflexivity.
+  - intros.
+    apply HH.
+    revert H1.
+    apply all_included_proper.
+    rewrite H, H0.
+    reflexivity.
+Qed.
+*)
+
+Definition Rvector_borel_sa (n:nat) : SigmaAlgebra (vector R n)
+  := vector_sa (vector_const borel_sa n).
+
+
+        
 
 (*
 
