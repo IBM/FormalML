@@ -15,6 +15,7 @@ Require Export FunctionsToReal ProbSpace BorelSigmaAlgebra.
 Require Export RandomVariable.
 Require Export Isomorphism.
 Require Import FunctionalExtensionality.
+Require Import RealVectorHilbert.
 
 Import ListNotations.
 
@@ -105,5 +106,33 @@ Definition vector_SimpleExpectation {n} (rv_X : Ts -> vector R n)
            (simp : forall (x:Ts->R), In x  (` (iso_f rv_X)) -> SimpleRandomVariable x)
  : vector R n
   := vector_map_onto (iso_f rv_X) (fun x pf => SimpleExpectation x (srv:=simp x pf)).
+
+Definition vecrvplus {n} (rv_X1 rv_X2 : Ts -> vector R n) :=
+  (fun omega =>  Rvector_plus (rv_X1 omega) (rv_X2 omega)).
+
+Definition vecrvscale {n} (c:R) (rv_X : Ts -> vector R n) :=
+  fun omega => Rvector_scale c (rv_X omega).
+
+Definition vecrvopp {n} (rv_X : Ts -> vector R n) := 
+  vecrvscale (-1) rv_X.
+
+Definition rvinner {n} (rv_X1 rv_X2 : Ts -> vector R n) :=
+  fun omega => Rvector_inner (rv_X1 omega) (rv_X2 omega).
+
+Class RealVectorMeasurable {n} (rv_X : Ts -> vector R n) :=
+  vecmeasurable : forall i pf, RealMeasurable dom (vector_nth i pf (iso_f rv_X)).
+
+
+
+(*
+
+(* n-fold product_sa borel_sa *)
+Definition vec_borel {n} :=
+    fold_left  
+ (
+Instance measurable_vecrv {n} (rv_X : Ts -> vector R n)
+         {rvm : RealVectorMeasurable rv_X} :
+  RandomVariable dom 
+*)
 
 End vector_ops.
