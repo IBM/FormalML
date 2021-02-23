@@ -1,9 +1,12 @@
 Require Import Reals.
+Require Import Coquelicot.Hierarchy.
 Require Import Morphisms Equivalence.
 Require Import Lra.
 Require Import utils.Utils.
 (* For const *)
 Require Export Program.Basics.
+
+Set Bullet Behavior "Strict Subproofs".
 
 Local Open Scope R.
 Section rels.
@@ -49,6 +52,9 @@ Section defs.
 
     Definition rvplus (rv_X1 rv_X2 : Ts -> R) :=
       (fun omega =>  (rv_X1 omega) + (rv_X2 omega)).
+
+    Definition rvsum (Xn : nat -> Ts -> R) (n : nat) :=
+      (fun omega => sum_n (fun n0 => Xn n0 omega) n).
 
     Definition rvscale (c:R) (rv_X : Ts -> R) :=
       fun omega => c * (rv_X omega).
@@ -118,7 +124,7 @@ Section defs.
       match_destr; [lra |].
       match_destr; lra.
     Qed.
-      
+    
     Lemma rvclip_negc_le (rv_X : Ts -> R) (c : nonnegreal) :
       rv_le (const (-c)) (rvclip rv_X c).
     Proof.
@@ -142,7 +148,7 @@ Section defs.
       rewrite Rabs_pos_eq; lra.      
       apply Rabs_le.
       lra.
-   Qed.
+    Qed.
 
     Lemma rvclip_abs_le_c (rv_X : Ts -> R) (c : nonnegreal) :
       rv_le (rvabs (rvclip rv_X c)) (const c).
@@ -150,7 +156,7 @@ Section defs.
       intro x.
       unfold rvabs, const.
       apply rvclip_abs_bounded.
-   Qed.
+    Qed.
 
   End funs.
 
@@ -469,51 +475,51 @@ Section defs.
     Qed.
 
     Lemma rv_abs_scale_eq (c:R) (rv_X:Ts->R) :
-    rv_eq (rvabs (rvscale c rv_X)) (rvscale (Rabs c) (rvabs rv_X)).
-  Proof.
-    intros a.
-    unfold rvabs, rvscale.
-    apply Rabs_mult.
-  Qed.
-  
-  Lemma rv_abs_const_eq (c:R)  :
-    rv_eq (Ts:=Ts) (rvabs (const c)) (const (Rabs c)).
-  Proof.
-    intros a.
-    reflexivity.
-  Qed.
-  
-  Lemma rvpow_mult_distr (x y:Ts->R) n :
-    rv_eq (rvpow (rvmult x y) n) (rvmult (rvpow x n) (rvpow y n)).
-  Proof.
-    intros a.
-    unfold rvpow, rvmult.
-    apply Rpow_mult_distr.
-  Qed.
+      rv_eq (rvabs (rvscale c rv_X)) (rvscale (Rabs c) (rvabs rv_X)).
+    Proof.
+      intros a.
+      unfold rvabs, rvscale.
+      apply Rabs_mult.
+    Qed.
+    
+    Lemma rv_abs_const_eq (c:R)  :
+      rv_eq (Ts:=Ts) (rvabs (const c)) (const (Rabs c)).
+    Proof.
+      intros a.
+      reflexivity.
+    Qed.
+    
+    Lemma rvpow_mult_distr (x y:Ts->R) n :
+      rv_eq (rvpow (rvmult x y) n) (rvmult (rvpow x n) (rvpow y n)).
+    Proof.
+      intros a.
+      unfold rvpow, rvmult.
+      apply Rpow_mult_distr.
+    Qed.
 
-  Lemma rvpow_scale c (X:Ts->R) n :
-    rv_eq (rvpow (rvscale c X) n) (rvscale (pow c n) (rvpow X n)).
-  Proof.
-    intros x.
-    unfold rvpow, rvscale.
-    apply Rpow_mult_distr.
-  Qed.
+    Lemma rvpow_scale c (X:Ts->R) n :
+      rv_eq (rvpow (rvscale c X) n) (rvscale (pow c n) (rvpow X n)).
+    Proof.
+      intros x.
+      unfold rvpow, rvscale.
+      apply Rpow_mult_distr.
+    Qed.
 
-  Lemma rvpow_const c n :
-    rv_eq (Ts:=Ts) (rvpow (const c) n) (const (pow c n)).
-  Proof.
-    intros x.
-    reflexivity.
-  Qed.
+    Lemma rvpow_const c n :
+      rv_eq (Ts:=Ts) (rvpow (const c) n) (const (pow c n)).
+    Proof.
+      intros x.
+      reflexivity.
+    Qed.
 
-  Lemma rvpower_const b e :
-    rv_eq (Ts:=Ts) (rvpower (const b) (const e)) (const (power b e)).
-  Proof.
-    reflexivity.
-  Qed.
+    Lemma rvpower_const b e :
+      rv_eq (Ts:=Ts) (rvpower (const b) (const e)) (const (power b e)).
+    Proof.
+      reflexivity.
+    Qed.
 
-  
-  
+    
+    
   End eqs.
 End defs.
 

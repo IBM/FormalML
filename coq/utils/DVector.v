@@ -1,7 +1,8 @@
 Require Import List Lia.
 Require Import Eqdep_dec.
+Require Import Equivalence EquivDec.
 Require Import LibUtils.
-        
+
 Import ListNotations.
 
 Definition vector (T:Type) (n:nat)
@@ -511,3 +512,69 @@ Proof.
   f_equal.
   apply le_uniqueness_proof.
 Qed.
+
+Definition vector_equiv {T:Type} (R:T->T->Prop) {eqR:Equivalence R} (n:nat) : vector T n -> vector T n -> Prop
+  := fun v1 v2 => forall i pf, vector_nth i pf v1 === vector_nth i pf v2.
+
+Global Instance vector_equiv_equiv {T:Type} (R:T->T->Prop) {eqR:Equivalence R} {n:nat} : Equivalence (vector_equiv R n).
+Proof.
+  constructor
+  ; repeat red; intros.
+  - reflexivity.
+  - symmetry.
+    apply H.
+  - etransitivity.
+    + apply H.
+    + apply H0.
+Qed.
+
+Global Instance vector_equiv_dec {T:Type} (R:T->T->Prop) {eqR:Equivalence R} {eqdecR:EqDec T R} {n:nat}
+  : EqDec (vector T n) (vector_equiv R n).
+Proof.
+  repeat red.
+  destruct x; destruct y; simpl.
+  revert x x0 e e0.
+  induction n; intros x y e1 e2.
+  - left.
+    intros ??; lia.
+  - destruct x; try discriminate.
+    destruct y; try discriminate.
+    destruct (eqdecR t t0).
+    + simpl in *.
+      assert (pfx: (length x = n)%nat) by lia.
+      assert (pfy: (length y = n)%nat) by lia.
+      destruct (IHn x y pfx pfy).
+      * left.
+        intros ??.
+        unfold vector_nth, proj1_sig.
+        repeat match_destr.
+        simpl in *.
+        destruct i; simpl in *.
+        -- invcs e3.
+           invcs e4.
+           trivial.
+        -- assert (pf2:(i < n)%nat) by lia.
+           specialize (e0 i pf2).
+           unfold vector_nth, proj1_sig in e0.
+           repeat match_destr_in e0.
+           simpl in *.
+           congruence.
+      * right.
+        intros HH.
+        apply c.
+        intros i pf.
+        assert (pf2:(S i < S n)%nat) by lia.
+        specialize (HH (S i) pf2).
+        unfold vector_nth, proj1_sig in *.
+        repeat match_destr_in HH.
+        repeat match_destr.
+        simpl in *.
+        congruence.
+    + right.
+      intros HH.
+      red in HH.
+      assert (pf1:(0 < S n)%nat) by lia.
+      specialize (HH 0%nat pf1).
+      unfold vector_nth in HH; simpl in HH.
+      congruence.
+Defined.

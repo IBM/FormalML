@@ -29,7 +29,7 @@ Section RealRandomVariables.
       := rmeasurable : forall (r:R), sa_sigma (fun omega : Ts => f omega <= r).
 
     Instance measurable_rv (rv_X:Ts->R)
-           {rm:RealMeasurable rv_X}
+             {rm:RealMeasurable rv_X}
       : RandomVariable dom borel_sa rv_X.
     Proof.
       intros ??.
@@ -37,7 +37,7 @@ Section RealRandomVariables.
     Qed.
 
     Instance rv_measurable (rv_X:Ts->R)
-           {rrv:RandomVariable dom borel_sa rv_X}
+             {rrv:RandomVariable dom borel_sa rv_X}
       : RealMeasurable rv_X | 3.
     Proof.
       red.
@@ -207,7 +207,31 @@ Section RealRandomVariables.
           now apply sa_le_gt.
           now apply sa_le_gt.
     Qed.
-    
+
+ Instance rvsum_measurable 
+           (Xn : nat -> Ts -> R)
+           (Xn_rv : forall n, RealMeasurable (Xn n)) :
+      forall (n:nat), RealMeasurable (rvsum Xn n).
+    Proof.
+      unfold RealMeasurable in *.
+      induction n; intros.
+      - assert (event_equiv (fun omega : Ts => rvsum Xn 0 omega <= r)
+                            (fun omega : Ts => Xn 0%nat omega <= r)).
+        + intro x.
+          unfold rvsum, Hierarchy.sum_n.
+          now rewrite Hierarchy.sum_n_n.
+        + now rewrite H.
+      - assert (event_equiv  (fun omega : Ts => rvsum Xn (S n) omega <= r)
+                             (fun omega => (rvplus (rvsum Xn n) (Xn (S n))) omega <= r)).
+        + intro x.
+          unfold rvsum, rvplus, Hierarchy.sum_n.
+          rewrite Hierarchy.sum_n_Sm.
+          now unfold plus; simpl.
+          lia.
+        + rewrite H.
+          now apply plus_measurable.
+    Qed.
+
     Instance minus_measurable (f g : Ts -> R) :
       RealMeasurable f ->
       RealMeasurable g ->
@@ -344,14 +368,14 @@ Section RealRandomVariables.
       generalize (rvclip_abs_bounded f c); intros.
       destruct (Rge_dec r c).
       - assert (event_equiv (fun omega : Ts => rvclip f c omega <= r)
-                          Ω ).
+                            Ω ).
         + intro x.
           specialize (H0 x).
           generalize (Rle_abs (rvclip f c x)); intros.
           split; red; lra.
         + rewrite H1.
           apply sa_all.
-      
+          
       - destruct (Rlt_dec r (-c)).
         + assert (event_equiv (fun omega : Ts => rvclip f c omega <= r)
                               event_none ).
@@ -373,7 +397,7 @@ Section RealRandomVariables.
             lra.
             match_destr; lra.
           * now rewrite H1.
-      Qed.
+    Qed.
 
     Instance pos_fun_part_measurable (f : Ts -> R) :
       RealMeasurable f ->
@@ -393,34 +417,34 @@ Section RealRandomVariables.
       typeclasses eauto.
     Qed.
 
-      Instance rvchoice_measurable (c f g : Ts -> R) :
-        RealMeasurable c ->
-        RealMeasurable f ->
-        RealMeasurable g ->
-        RealMeasurable (rvchoice (fun x => if Req_EM_T (c x) 0 then false else true)  f g).
-      Proof.
-        unfold RealMeasurable.
-        intros.
-        assert (event_equiv
-                  (fun omega : Ts =>
-                     rvchoice (fun x : Ts => if Req_EM_T (c x) 0 then false else true) 
-                              f g omega <= r)
-                  (event_union 
-                     (event_inter 
-                        (fun omega : Ts => c omega = 0)
-                        (fun omega : Ts => g omega <= r))
-                     (event_inter 
-                        (event_complement (fun omega : Ts => c omega = 0))
-                        (fun omega : Ts => f omega <= r)))).
-        intro x.
-        unfold rvchoice, event_union, event_inter, event_complement.
-        destruct (Req_EM_T (c x) 0); lra.
-        rewrite H2.
-        apply sa_union; apply sa_inter; trivial.
-        - now apply sa_le_pt.
-        - apply sa_complement.
-          now apply sa_le_pt.
-     Qed.
+    Instance rvchoice_measurable (c f g : Ts -> R) :
+      RealMeasurable c ->
+      RealMeasurable f ->
+      RealMeasurable g ->
+      RealMeasurable (rvchoice (fun x => if Req_EM_T (c x) 0 then false else true)  f g).
+    Proof.
+      unfold RealMeasurable.
+      intros.
+      assert (event_equiv
+                (fun omega : Ts =>
+                   rvchoice (fun x : Ts => if Req_EM_T (c x) 0 then false else true) 
+                            f g omega <= r)
+                (event_union 
+                   (event_inter 
+                      (fun omega : Ts => c omega = 0)
+                      (fun omega : Ts => g omega <= r))
+                   (event_inter 
+                      (event_complement (fun omega : Ts => c omega = 0))
+                      (fun omega : Ts => f omega <= r)))).
+      intro x.
+      unfold rvchoice, event_union, event_inter, event_complement.
+      destruct (Req_EM_T (c x) 0); lra.
+      rewrite H2.
+      apply sa_union; apply sa_inter; trivial.
+      - now apply sa_le_pt.
+      - apply sa_complement.
+        now apply sa_le_pt.
+    Qed.
 
     Instance ln_measurable (b : Ts -> R) :
       RealMeasurable b ->
@@ -432,9 +456,9 @@ Section RealRandomVariables.
       assert (event_equiv (fun omega : Ts => ln (b omega) <= r)
                           (event_union
                              (event_inter (fun omega : Ts => b omega <= 0)
-                                         (fun omega : Ts => 0 <= r))
-                              (event_inter (fun omega : Ts => b omega > 0 )
-                                           (fun omega : Ts => b omega <= exp r)))).
+                                          (fun omega : Ts => 0 <= r))
+                             (event_inter (fun omega : Ts => b omega > 0 )
+                                          (fun omega : Ts => b omega <= exp r)))).
       - intro x.
         unfold event_union, event_inter.
         split; intros.
@@ -471,8 +495,8 @@ Section RealRandomVariables.
       apply measurable_continuous.
       apply derivable_continuous.
       apply derivable_exp.
-   Qed.
-      
+    Qed.
+    
     Instance Rpower_measurable (b e : Ts -> R) :
       RealMeasurable b ->
       RealMeasurable e ->
@@ -494,7 +518,7 @@ Section RealRandomVariables.
       unfold rvpower, power, RealMeasurable.
       intros bpos rb re r.
       assert (event_equiv  (fun omega : Ts => (if Req_EM_T (b omega) 0 
-                                               then 0 else Rpower (b omega) (e omega)) <= r)
+                                            then 0 else Rpower (b omega) (e omega)) <= r)
                            (event_union
                               (event_inter (fun omega => b omega = 0)
                                            (fun omega => b omega <= r))
@@ -549,6 +573,16 @@ Section RealRandomVariables.
         RandomVariable dom borel_sa (rvplus rv_X1 rv_X2).
       Proof.
         typeclasses eauto.
+      Qed.
+
+      Global Instance rvsum_rv (Xn : nat -> Ts -> R)
+             {rv : forall (n:nat), RandomVariable dom borel_sa (Xn n)} :
+        forall (n:nat), RandomVariable dom borel_sa (rvsum Xn n).
+      Proof.
+        intros.
+        apply measurable_rv.
+        apply rvsum_measurable; intros.
+        now apply rv_measurable.
       Qed.
 
       Global Instance rvminus_rv
@@ -1022,6 +1056,22 @@ Section RealRandomVariables.
       lra.
     Qed.
 
+    Global Instance rvsum_pos (Xn : nat -> Ts -> R)
+           {Xn_pos : forall n, PositiveRandomVariable (Xn n)} :
+      forall (n:nat), PositiveRandomVariable (rvsum Xn n).
+    Proof.
+      intros.
+      unfold PositiveRandomVariable in Xn_pos.
+      unfold PositiveRandomVariable, rvsum; intros.
+      induction n.
+      - unfold Hierarchy.sum_n.
+        now rewrite Hierarchy.sum_n_n.
+      - unfold Hierarchy.sum_n.
+        rewrite Hierarchy.sum_n_Sm.
+        apply Rplus_le_le_0_compat ; trivial.
+        lia.
+    Qed.
+
     Global Instance indicator_prod_pos 
            (rv_X : Ts -> R) 
            (posrv : PositiveRandomVariable rv_X)
@@ -1095,16 +1145,16 @@ Section RealRandomVariables.
 
     (* Here so that we can state the positivity constraint nicely *)
     Global Instance rvpower_rv 
-             (rv_X1 rv_X2 : Ts -> R)
-             {rv1 : RandomVariable dom borel_sa rv_X1}
-             {rv2 : RandomVariable dom borel_sa rv_X2}
-             {prv1: PositiveRandomVariable rv_X1}:
-        RandomVariable dom borel_sa (rvpower rv_X1 rv_X2).
-      Proof.
-        apply measurable_rv.
-        apply rvpower_measurable; trivial
-        ; apply rv_measurable; trivial.
-      Qed.
+           (rv_X1 rv_X2 : Ts -> R)
+           {rv1 : RandomVariable dom borel_sa rv_X1}
+           {rv2 : RandomVariable dom borel_sa rv_X2}
+           {prv1: PositiveRandomVariable rv_X1}:
+      RandomVariable dom borel_sa (rvpower rv_X1 rv_X2).
+    Proof.
+      apply measurable_rv.
+      apply rvpower_measurable; trivial
+      ; apply rv_measurable; trivial.
+    Qed.
     
     Global Instance prvchoice (c:Ts->bool) (rv_X1 rv_X2 : Ts -> R)
            {prv1:PositiveRandomVariable rv_X1}
@@ -1147,25 +1197,25 @@ Section RealRandomVariables.
     Qed.
 
     Global Instance positive_part_prv 
-         (rv_X : Ts -> R) :
-    PositiveRandomVariable (pos_fun_part rv_X).
+           (rv_X : Ts -> R) :
+      PositiveRandomVariable (pos_fun_part rv_X).
     Proof.
-    unfold PositiveRandomVariable.
-    unfold pos_fun_part; simpl.
-    intros.
-    apply Rmax_r.
-  Qed.
+      unfold PositiveRandomVariable.
+      unfold pos_fun_part; simpl.
+      intros.
+      apply Rmax_r.
+    Qed.
 
-  
-  Global Instance negative_part_prv
-         (rv_X : Ts -> R) :
-    PositiveRandomVariable (neg_fun_part rv_X).
-  Proof.
-    unfold PositiveRandomVariable.
-    unfold neg_fun_part.
-    intros.
-    apply cond_nonneg.
-  Qed.
+    
+    Global Instance negative_part_prv
+           (rv_X : Ts -> R) :
+      PositiveRandomVariable (neg_fun_part rv_X).
+    Proof.
+      unfold PositiveRandomVariable.
+      unfold neg_fun_part.
+      intros.
+      apply cond_nonneg.
+    Qed.
     
   End Pos.
 

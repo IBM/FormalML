@@ -119,14 +119,14 @@ Definition vecrvscale {n} (c:R) (rv_X : Ts -> vector R n) :=
 Definition vecrvopp {n} (rv_X : Ts -> vector R n) := 
   vecrvscale (-1) rv_X.
 
-Definition rvsum {n} (rv_X : Ts -> vector R n) : Ts -> R :=
+Definition vecrvsum {n} (rv_X : Ts -> vector R n) : Ts -> R :=
   (fun omega => Rvector_sum (rv_X omega)).
 
 Definition rvinner {n} (rv_X1 rv_X2 : Ts -> vector R n) :=
   fun omega => Rvector_inner (rv_X1 omega) (rv_X2 omega).
 
 Lemma rvinner_unfold {n} (rv_X1 rv_X2 : Ts -> vector R n)
-  : rvinner rv_X1 rv_X2 === rvsum (vecrvmult rv_X1 rv_X2).
+  : rvinner rv_X1 rv_X2 === vecrvsum (vecrvmult rv_X1 rv_X2).
 Proof.
   intros ?.
   reflexivity.
@@ -135,53 +135,60 @@ Qed.
 Class RealVectorMeasurable {n} (rv_X : Ts -> vector R n) :=
   vecmeasurable : forall i pf, RealMeasurable dom (vector_nth i pf (iso_f rv_X)).
 
-Definition event_set_vector_product {n} {T} (v:vector ((event T)->Prop) n) : event (vector T n) -> Prop
+Definition event_set_vector_product {T} {n} (v:vector ((event T)->Prop) n) : event (vector T n) -> Prop
   := fun (e:event (vector T n)) =>
        exists (sub_e:vector (event T) n),
          (forall i pf, (vector_nth i pf v) (vector_nth i pf sub_e))
          /\
          e === (fun (x:vector T n) => forall i pf, (vector_nth i pf sub_e) (vector_nth i pf x)).
 
-(*
-Instance event_set_product_proper {T1 T2} : Proper (equiv ==> equiv ==> equiv) (@event_set_product T1 T2).
+Instance event_set_vector_product_proper {n} {T} : Proper (equiv ==> equiv) (@event_set_vector_product T n).
 Proof.
   repeat red.
-  unfold equiv, event_equiv, event_set_product; simpl; intros.
-  split; intros [x2 [x3 HH]].
+  unfold equiv, event_equiv, event_set_vector_product; simpl; intros.
+  split; intros [v [HH1 HH2]].
   - unfold equiv in *.
-    exists x2, x3.
-    intros [??]; apply HH.
-    firstorder.
+    exists v.
+    split; intros.
+    + apply H; eauto.
+    + rewrite HH2.
+      reflexivity.
   - unfold equiv in *.
-    exists x2, x3.
-    intros [??]; apply HH.
-    firstorder.
+    exists v.
+    split; intros.
+    + apply H; eauto.
+    + rewrite HH2.
+      reflexivity.
 Qed.
- *)
 
 Instance vector_sa {n} {T} (sav:vector (SigmaAlgebra T) n) : SigmaAlgebra (vector T n)
   := generated_sa (event_set_vector_product (vector_map (@sa_sigma _) sav)).
 
-(*
-Global Instance product_sa_proper {T1 T2} : Proper (equiv ==> equiv ==> equiv) (@product_sa T1 T2).
+Global Instance product_sa_proper {T} {n} : Proper (equiv ==> equiv) (@vector_sa T n).
 Proof.
   repeat red; unfold equiv, sa_equiv; simpl.
   intros.
   split; intros HH.
   - intros.
     apply HH.
-    revert H1.
+    revert H0.
     apply all_included_proper.
-    rewrite H, H0.
-    reflexivity.
+    apply event_set_vector_product_proper.
+    intros ??.
+    repeat rewrite vector_nth_map.
+    specialize (H i pf).
+    apply H.
   - intros.
     apply HH.
-    revert H1.
+    revert H0.
     apply all_included_proper.
-    rewrite H, H0.
-    reflexivity.
+    apply event_set_vector_product_proper.
+    intros ??.
+    repeat rewrite vector_nth_map.
+    specialize (H i pf).
+    symmetry.
+    apply H.
 Qed.
-*)
 
 Definition Rvector_borel_sa (n:nat) : SigmaAlgebra (vector R n)
   := vector_sa (vector_const borel_sa n).
@@ -260,7 +267,7 @@ Qed.
 
 Instance Rvector_sum_measurable {n} (f : Ts -> vector R n) :
   RealVectorMeasurable f ->
-  RealMeasurable dom (rvsum f).
+  RealMeasurable dom (vecrvsum f).
 Proof.
   unfold RealVectorMeasurable; simpl; intros.
 Admitted.

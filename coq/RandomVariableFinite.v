@@ -812,60 +812,6 @@ Section fe.
     now apply Expectation_zero_pos.
   Qed.
 
-
-  Definition rvsum (Xn : nat -> Ts -> R) (n : nat) :=
-    (fun omega => sum_n (fun n0 => Xn n0 omega) n).
-  
-  Global Instance rvsum_measurable 
-           (Xn : nat -> Ts -> R)
-           (Xn_rv : forall n, RealMeasurable dom (Xn n)) :
-      forall (n:nat), RealMeasurable dom (rvsum Xn n).
-  Proof.
-    unfold RealMeasurable in *.
-    induction n; intros.
-    - assert (event_equiv (fun omega : Ts => rvsum Xn 0 omega <= r)
-                          (fun omega : Ts => Xn 0%nat omega <= r)).
-      + intro x.
-        unfold rvsum, sum_n.
-        now rewrite sum_n_n.
-      + now rewrite H.
-    - assert (event_equiv  (fun omega : Ts => rvsum Xn (S n) omega <= r)
-                           (fun omega => (rvplus (rvsum Xn n) (Xn (S n))) omega <= r)).
-      + intro x.
-        unfold rvsum, rvplus, sum_n.
-        rewrite sum_n_Sm.
-        now unfold plus; simpl.
-        lia.
-      + rewrite H.
-        now apply plus_measurable.
-   Qed.
-
-  Global Instance rvsum_rv (Xn : nat -> Ts -> R)
-           {rv : forall (n:nat), RandomVariable dom borel_sa (Xn n)} :
-    forall (n:nat), RandomVariable dom borel_sa (rvsum Xn n).
-      Proof.
-        intros.
-        apply measurable_rv.
-        apply rvsum_measurable; intros.
-        now apply rv_measurable.
-      Qed.
-
-  Global Instance rvsum_pos (Xn : nat -> Ts -> R)
-           {Xn_pos : forall n, PositiveRandomVariable (Xn n)} :
-    forall (n:nat), PositiveRandomVariable (rvsum Xn n).
-  Proof.
-    intros.
-    unfold PositiveRandomVariable in Xn_pos.
-    unfold PositiveRandomVariable, rvsum; intros.
-    induction n.
-    - unfold sum_n.
-      now rewrite sum_n_n.
-    - unfold sum_n.
-      rewrite sum_n_Sm.
-      apply Rplus_le_le_0_compat ; trivial.
-      lia.
-  Qed.
-
   Lemma Lim_seq_pos (f : nat -> R) :
     (forall n, 0 <= f n) ->
     Rbar_le 0 (Lim_seq f).
@@ -1081,7 +1027,7 @@ Lemma Fatou_FiniteExpectation
   Proof.
     generalize (monotone_convergence_FiniteExpectation
                   (fun omega : Ts => Lim_seq (fun n => rvsum Xn n omega))
-                  (fun n => rvsum Xn n) lim_rv lim_pos (rvsum_rv Xn) (rvsum_pos Xn)
+                  (fun n => rvsum Xn n) lim_rv lim_pos (rvsum_rv _ Xn) (rvsum_pos Xn)
                lim_fe (IsFiniteExpectation_sum Xn)); intros.
     cut_to H.
     - rewrite Lim_seq_ext with 
