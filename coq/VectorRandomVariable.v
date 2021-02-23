@@ -110,14 +110,27 @@ Definition vector_SimpleExpectation {n} (rv_X : Ts -> vector R n)
 Definition vecrvplus {n} (rv_X1 rv_X2 : Ts -> vector R n) :=
   (fun omega =>  Rvector_plus (rv_X1 omega) (rv_X2 omega)).
 
+Definition vecrvmult {n} (rv_X1 rv_X2 : Ts -> vector R n) :=
+  (fun omega =>  Rvector_mult (rv_X1 omega) (rv_X2 omega)).
+
 Definition vecrvscale {n} (c:R) (rv_X : Ts -> vector R n) :=
   fun omega => Rvector_scale c (rv_X omega).
 
 Definition vecrvopp {n} (rv_X : Ts -> vector R n) := 
   vecrvscale (-1) rv_X.
 
+Definition rvsum {n} (rv_X : Ts -> vector R n) : Ts -> R :=
+  (fun omega => Rvector_sum (rv_X omega)).
+
 Definition rvinner {n} (rv_X1 rv_X2 : Ts -> vector R n) :=
   fun omega => Rvector_inner (rv_X1 omega) (rv_X2 omega).
+
+Lemma rvinner_unfold {n} (rv_X1 rv_X2 : Ts -> vector R n)
+  : rvinner rv_X1 rv_X2 === rvsum (vecrvmult rv_X1 rv_X2).
+Proof.
+  intros ?.
+  reflexivity.
+Qed.
 
 Class RealVectorMeasurable {n} (rv_X : Ts -> vector R n) :=
   vecmeasurable : forall i pf, RealMeasurable dom (vector_nth i pf (iso_f rv_X)).
@@ -191,15 +204,77 @@ Proof.
   
 Admitted.
 
-(*
+Instance Rvector_plus_measurable {n} (f g : Ts -> vector R n) :
+  RealVectorMeasurable f ->
+  RealVectorMeasurable g ->
+  RealVectorMeasurable (vecrvplus f g).
+Proof.
+  unfold RealVectorMeasurable; intros.
+  simpl in *.
+  unfold vecrvplus, fun_to_vector_to_vector_of_funs in *.
+  rewrite vector_nth_create'.
+  eapply RealMeasurable_proper.
+  - intros ?.
+    rewrite Rvector_plus_explode.
+    rewrite vector_nth_create'.
+    reflexivity.
+  - apply plus_measurable; eauto.
+    + simpl in *.
+      eapply RealMeasurable_proper; try eapply H.
+      intros ?.
+      rewrite vector_nth_create'.
+      reflexivity.
+    + simpl in *.
+      eapply RealMeasurable_proper; try eapply H0.
+      intros ?.
+      rewrite vector_nth_create'.
+      reflexivity.
+Qed.
 
-(* n-fold product_sa borel_sa *)
-Definition vec_borel {n} :=
-    fold_left  
- (
-Instance measurable_vecrv {n} (rv_X : Ts -> vector R n)
-         {rvm : RealVectorMeasurable rv_X} :
-  RandomVariable dom 
-*)
+Instance Rvector_mult_measurable {n} (f g : Ts -> vector R n) :
+  RealVectorMeasurable f ->
+  RealVectorMeasurable g ->
+  RealVectorMeasurable (vecrvmult f g).
+Proof.
+  unfold RealVectorMeasurable; intros.
+  simpl in *.
+  unfold vecrvmult, fun_to_vector_to_vector_of_funs in *.
+  rewrite vector_nth_create'.
+  eapply RealMeasurable_proper.
+  - intros ?.
+    rewrite Rvector_mult_explode.
+    rewrite vector_nth_create'.
+    reflexivity.
+  - apply mult_measurable; eauto.
+    + simpl in *.
+      eapply RealMeasurable_proper; try eapply H.
+      intros ?.
+      rewrite vector_nth_create'.
+      reflexivity.
+    + simpl in *.
+      eapply RealMeasurable_proper; try eapply H0.
+      intros ?.
+      rewrite vector_nth_create'.
+      reflexivity.
+Qed.
+
+Instance Rvector_sum_measurable {n} (f : Ts -> vector R n) :
+  RealVectorMeasurable f ->
+  RealMeasurable dom (rvsum f).
+Proof.
+  unfold RealVectorMeasurable; simpl; intros.
+Admitted.
+
+
+Instance Rvector_inner_measurable {n} (f g : Ts -> vector R n) :
+  RealVectorMeasurable f ->
+  RealVectorMeasurable g ->
+  RealMeasurable dom (rvinner f g).
+Proof.
+  unfold RealVectorMeasurable; simpl; intros.
+  rewrite rvinner_unfold.
+  apply Rvector_sum_measurable.
+  apply Rvector_mult_measurable; trivial.
+Qed.
 
 End vector_ops.
