@@ -193,14 +193,101 @@ Qed.
 Definition Rvector_borel_sa (n:nat) : SigmaAlgebra (vector R n)
   := vector_sa (vector_const borel_sa n).
 
+Lemma Rvector_borel_sa_closure (n:nat) : 
+    Rvector_borel_sa n === closure_sigma_algebra
+                                           (event_set_vector_product (vector_map (@sa_sigma _) (vector_const borel_sa n))).
+Proof.
+  rewrite <- generated_sa_closure.
+  reflexivity.
+Qed.
+
+Definition bounded_inter_of_collection {T} {n} {s: SigmaAlgebra T} (collection: forall i (pf:(i<n)%nat), event T)
+  : event T
+  := fun t => forall i pf, collection i pf t.
+
+Definition bounded_inter_of_collection_unbound {T} {n} {s: SigmaAlgebra T} (collection: forall i (pf:(i<n)%nat), event T)
+  : event T
+  := inter_of_collection
+       (fun i => match lt_dec i n with
+              | left pf => collection i pf
+              | right _ => Ω
+              end).
+
+Lemma bounded_inter_of_collection_unbound_eq {T} {n} {s: SigmaAlgebra T} (collection: forall i (pf:(i<n)%nat), event T) :
+  bounded_inter_of_collection collection === bounded_inter_of_collection_unbound collection.
+Proof.
+  intros x.
+  unfold bounded_inter_of_collection_unbound, bounded_inter_of_collection.
+  split; intros.
+  - intros i.
+    match_destr.
+    now red.
+  - specialize (H i).
+    simpl in H.
+    match_destr_in H; try lia.
+    now replace pf with l by apply le_uniqueness_proof.
+Qed.
+
+Lemma sa_bounded_inter {T} {n} {s: SigmaAlgebra T} (collection: forall i (pf:(i<n)%nat), event T) :
+      (forall (i : nat) (pf : (i < n)%nat), sa_sigma (collection i pf)) ->
+      sa_sigma (bounded_inter_of_collection collection).
+Proof.
+  intros.
+  rewrite bounded_inter_of_collection_unbound_eq.
+  apply sa_countable_inter; intros.
+  match_destr.
+  apply sa_all.
+Qed.
+
+Lemma vector_nth_fun_to_vector {n} (f:Ts->vector R n) i pf : 
+  vector_nth i pf (fun_to_vector_to_vector_of_funs f) = fun x => vector_nth i pf (f x).
+Proof.
+  unfold fun_to_vector_to_vector_of_funs.
+  now rewrite vector_nth_create'.
+Qed.
+
 Instance RealVectorMeasurableRandomVariable {n}
          (rv_X : Ts -> vector R n)
          {rvm:RealVectorMeasurable rv_X} :
   RandomVariable dom (Rvector_borel_sa n) rv_X.
 Proof.
-  
-Admitted.
-
+  red in rvm.
+  intros e sa_e.
+  assert (rvm':forall i pf, RandomVariable dom borel_sa (vector_nth i pf (iso_f rv_X))).
+  {
+    intros.
+    apply measurable_rv.
+    apply rvm.
+  }
+  clear rvm.
+  red in rvm'.
+  unfold event_preimage in *.
+  simpl in sa_e.
+  generalize (Rvector_borel_sa_closure n); intros HH.
+  destruct (HH e) as [HH1 _].
+  apply HH1 in sa_e.
+  clear HH HH1.
+  simpl in sa_e.
+  clear prts.
+  dependent induction sa_e; simpl.
+  - apply sa_all.
+  - destruct H as [v [H1 H2]].
+    eapply sa_proper.
+    + red; intros.
+      apply H2.
+    + clear e H2.
+      apply sa_bounded_inter; intros.
+      specialize (H1 i pf).
+      rewrite vector_nth_map, vector_nth_const in H1.
+      specialize (rvm' i pf _ H1).
+      eapply sa_proper; try eapply rvm'.
+      intros x; simpl.
+      rewrite vector_nth_fun_to_vector.
+      reflexivity.
+  - apply sa_countable_union; intros.
+    eapply H0; auto.
+  - apply sa_complement; auto.
+Qed.
 
 Instance RandomVariableRealVectorMeasurable {n}
          (rv_X : Ts -> vector R n)
@@ -210,12 +297,6 @@ Proof.
   
 Admitted.
 
-Lemma vector_nth_fun_to_vector {n} (f:Ts->vector R n) i pf : 
-  vector_nth i pf (fun_to_vector_to_vector_of_funs f) = fun x => vector_nth i pf (f x).
-Proof.
-  unfold fun_to_vector_to_vector_of_funs.
-  now rewrite vector_nth_create'.
-Qed.
 
 
 Lemma RealVectorMeasurableComponent_simplify {n} (f:Ts->vector R n) : 
