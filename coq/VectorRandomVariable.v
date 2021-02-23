@@ -62,34 +62,16 @@ Section VectorRandomVariables.
     now rewrite (vector_create_nth).
   Qed.
 
+  Lemma vector_nth_fun_to_vector {n} (f:Ts->vector R n) i pf : 
+    vector_nth i pf (fun_to_vector_to_vector_of_funs f) = fun x => vector_nth i pf (f x).
+  Proof.
+    unfold fun_to_vector_to_vector_of_funs.
+    now rewrite vector_nth_create'.
+  Qed.
+
 End VectorRandomVariables.
 
 Require Import Expectation.
-
-Lemma listo_to_olist_length {A:Type} (l:list (option A)) (r:list A)
-  : listo_to_olist l = Some r ->
-    length l = length r.
-Proof.
-  revert r.
-  induction l; simpl; intros.
-  - now invcs H; simpl.
-  - destruct a; try discriminate.
-    match_option_in H; try discriminate.
-    invcs H.
-    simpl.
-    now rewrite (IHl _ eqq).
-Qed.
-
-Program Definition vectoro_to_ovector {A} {n} (v:vector (option A) n) : option (vector A n)
-  := match listo_to_olist v with
-     | None => None
-     | Some x => Some x
-     end.
-Next Obligation.
-  symmetry in Heq_anonymous.
-  apply listo_to_olist_length in Heq_anonymous.
-  now rewrite vector_length in Heq_anonymous.
-Qed.
 
 Section vector_ops.
 Context 
@@ -135,61 +117,6 @@ Qed.
 Class RealVectorMeasurable {n} (rv_X : Ts -> vector R n) :=
   vecmeasurable : forall i pf, RealMeasurable dom (vector_nth i pf (iso_f rv_X)).
 
-Definition event_set_vector_product {T} {n} (v:vector ((event T)->Prop) n) : event (vector T n) -> Prop
-  := fun (e:event (vector T n)) =>
-       exists (sub_e:vector (event T) n),
-         (forall i pf, (vector_nth i pf v) (vector_nth i pf sub_e))
-         /\
-         e === (fun (x:vector T n) => forall i pf, (vector_nth i pf sub_e) (vector_nth i pf x)).
-
-Instance event_set_vector_product_proper {n} {T} : Proper (equiv ==> equiv) (@event_set_vector_product T n).
-Proof.
-  repeat red.
-  unfold equiv, event_equiv, event_set_vector_product; simpl; intros.
-  split; intros [v [HH1 HH2]].
-  - unfold equiv in *.
-    exists v.
-    split; intros.
-    + apply H; eauto.
-    + rewrite HH2.
-      reflexivity.
-  - unfold equiv in *.
-    exists v.
-    split; intros.
-    + apply H; eauto.
-    + rewrite HH2.
-      reflexivity.
-Qed.
-
-Instance vector_sa {n} {T} (sav:vector (SigmaAlgebra T) n) : SigmaAlgebra (vector T n)
-  := generated_sa (event_set_vector_product (vector_map (@sa_sigma _) sav)).
-
-Global Instance product_sa_proper {T} {n} : Proper (equiv ==> equiv) (@vector_sa T n).
-Proof.
-  repeat red; unfold equiv, sa_equiv; simpl.
-  intros.
-  split; intros HH.
-  - intros.
-    apply HH.
-    revert H0.
-    apply all_included_proper.
-    apply event_set_vector_product_proper.
-    intros ??.
-    repeat rewrite vector_nth_map.
-    specialize (H i pf).
-    apply H.
-  - intros.
-    apply HH.
-    revert H0.
-    apply all_included_proper.
-    apply event_set_vector_product_proper.
-    intros ??.
-    repeat rewrite vector_nth_map.
-    specialize (H i pf).
-    symmetry.
-    apply H.
-Qed.
-
 Definition Rvector_borel_sa (n:nat) : SigmaAlgebra (vector R n)
   := vector_sa (vector_const borel_sa n).
 
@@ -199,51 +126,6 @@ Lemma Rvector_borel_sa_closure (n:nat) :
 Proof.
   rewrite <- generated_sa_closure.
   reflexivity.
-Qed.
-
-Definition bounded_inter_of_collection {T} {n} {s: SigmaAlgebra T} (collection: forall i (pf:(i<n)%nat), event T)
-  : event T
-  := fun t => forall i pf, collection i pf t.
-
-Definition bounded_inter_of_collection_unbound {T} {n} {s: SigmaAlgebra T} (collection: forall i (pf:(i<n)%nat), event T)
-  : event T
-  := inter_of_collection
-       (fun i => match lt_dec i n with
-              | left pf => collection i pf
-              | right _ => Ω
-              end).
-
-Lemma bounded_inter_of_collection_unbound_eq {T} {n} {s: SigmaAlgebra T} (collection: forall i (pf:(i<n)%nat), event T) :
-  bounded_inter_of_collection collection === bounded_inter_of_collection_unbound collection.
-Proof.
-  intros x.
-  unfold bounded_inter_of_collection_unbound, bounded_inter_of_collection.
-  split; intros.
-  - intros i.
-    match_destr.
-    now red.
-  - specialize (H i).
-    simpl in H.
-    match_destr_in H; try lia.
-    now replace pf with l by apply le_uniqueness_proof.
-Qed.
-
-Lemma sa_bounded_inter {T} {n} {s: SigmaAlgebra T} (collection: forall i (pf:(i<n)%nat), event T) :
-      (forall (i : nat) (pf : (i < n)%nat), sa_sigma (collection i pf)) ->
-      sa_sigma (bounded_inter_of_collection collection).
-Proof.
-  intros.
-  rewrite bounded_inter_of_collection_unbound_eq.
-  apply sa_countable_inter; intros.
-  match_destr.
-  apply sa_all.
-Qed.
-
-Lemma vector_nth_fun_to_vector {n} (f:Ts->vector R n) i pf : 
-  vector_nth i pf (fun_to_vector_to_vector_of_funs f) = fun x => vector_nth i pf (f x).
-Proof.
-  unfold fun_to_vector_to_vector_of_funs.
-  now rewrite vector_nth_create'.
 Qed.
 
 Instance RealVectorMeasurableRandomVariable {n}

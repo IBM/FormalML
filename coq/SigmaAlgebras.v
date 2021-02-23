@@ -5,7 +5,7 @@ Require Import FinFun.
 Require Import List.
 Require Import Morphisms EquivDec.
 
-Require Import Utils.
+Require Import Utils DVector.
 Require Import ProbSpace.
 
 Set Bullet Behavior "Strict Subproofs".
@@ -531,4 +531,60 @@ Next Obligation.
   right.
   rewrite event_not_all.
   apply is_countable_empty.
+Qed.
+
+(* vector product *)
+Definition event_set_vector_product {T} {n} (v:vector ((event T)->Prop) n) : event (vector T n) -> Prop
+  := fun (e:event (vector T n)) =>
+       exists (sub_e:vector (event T) n),
+         (forall i pf, (vector_nth i pf v) (vector_nth i pf sub_e))
+         /\
+         e === (fun (x:vector T n) => forall i pf, (vector_nth i pf sub_e) (vector_nth i pf x)).
+
+Instance event_set_vector_product_proper {n} {T} : Proper (equiv ==> equiv) (@event_set_vector_product T n).
+Proof.
+  repeat red.
+  unfold equiv, event_equiv, event_set_vector_product; simpl; intros.
+  split; intros [v [HH1 HH2]].
+  - unfold equiv in *.
+    exists v.
+    split; intros.
+    + apply H; eauto.
+    + rewrite HH2.
+      reflexivity.
+  - unfold equiv in *.
+    exists v.
+    split; intros.
+    + apply H; eauto.
+    + rewrite HH2.
+      reflexivity.
+Qed.
+
+Instance vector_sa {n} {T} (sav:vector (SigmaAlgebra T) n) : SigmaAlgebra (vector T n)
+  := generated_sa (event_set_vector_product (vector_map (@sa_sigma _) sav)).
+
+Global Instance vector_sa_proper {T} {n} : Proper (equiv ==> equiv) (@vector_sa T n).
+Proof.
+  repeat red; unfold equiv, sa_equiv; simpl.
+  intros.
+  split; intros HH.
+  - intros.
+    apply HH.
+    revert H0.
+    apply all_included_proper.
+    apply event_set_vector_product_proper.
+    intros ??.
+    repeat rewrite vector_nth_map.
+    specialize (H i pf).
+    apply H.
+  - intros.
+    apply HH.
+    revert H0.
+    apply all_included_proper.
+    apply event_set_vector_product_proper.
+    intros ??.
+    repeat rewrite vector_nth_map.
+    specialize (H i pf).
+    symmetry.
+    apply H.
 Qed.

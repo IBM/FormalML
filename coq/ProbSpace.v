@@ -10,7 +10,7 @@ Require Import Morphisms EquivDec.
 Require Import Classical ClassicalFacts.
 Require Ensembles.
 
-Require Import Utils.
+Require Import Utils DVector.
 Import ListNotations.
 
 Declare Scope prob.
@@ -1644,4 +1644,45 @@ Hint Resolve ps_none ps_one : prob.
       rewrite p2.
       lra.
   Qed.
+
+(* vectors *)
+
+Definition bounded_inter_of_collection {T} {n} {s: SigmaAlgebra T} (collection: forall i (pf:(i<n)%nat), event T)
+  : event T
+  := fun t => forall i pf, collection i pf t.
+
+Definition bounded_inter_of_collection_unbound {T} {n} {s: SigmaAlgebra T} (collection: forall i (pf:(i<n)%nat), event T)
+  : event T
+  := inter_of_collection
+       (fun i => match lt_dec i n with
+              | left pf => collection i pf
+              | right _ => Ω
+              end).
+
+Lemma bounded_inter_of_collection_unbound_eq {T} {n} {s: SigmaAlgebra T} (collection: forall i (pf:(i<n)%nat), event T) :
+  bounded_inter_of_collection collection === bounded_inter_of_collection_unbound collection.
+Proof.
+  intros x.
+  unfold bounded_inter_of_collection_unbound, bounded_inter_of_collection.
+  split; intros.
+  - intros i.
+    match_destr.
+    now red.
+  - specialize (H i).
+    simpl in H.
+    match_destr_in H; try lia.
+    now replace pf with l by apply le_uniqueness_proof.
+Qed.
+
+Lemma sa_bounded_inter {T} {n} {s: SigmaAlgebra T} (collection: forall i (pf:(i<n)%nat), event T) :
+      (forall (i : nat) (pf : (i < n)%nat), sa_sigma (collection i pf)) ->
+      sa_sigma (bounded_inter_of_collection collection).
+Proof.
+  intros.
+  rewrite bounded_inter_of_collection_unbound_eq.
+  apply sa_countable_inter; intros.
+  match_destr.
+  apply sa_all.
+Qed.
+
 

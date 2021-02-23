@@ -1,7 +1,7 @@
 Require Import List Lia.
 Require Import Eqdep_dec.
 Require Import Equivalence EquivDec.
-Require Import LibUtils.
+Require Import LibUtils ListAdd.
 
 Import ListNotations.
 
@@ -578,3 +578,14 @@ Proof.
       unfold vector_nth in HH; simpl in HH.
       congruence.
 Defined.
+
+Program Definition vectoro_to_ovector {A} {n} (v:vector (option A) n) : option (vector A n)
+  := match listo_to_olist v with
+     | None => None
+     | Some x => Some x
+     end.
+Next Obligation.
+  symmetry in Heq_anonymous.
+  apply listo_to_olist_length in Heq_anonymous.
+  now rewrite vector_length in Heq_anonymous.
+Qed.

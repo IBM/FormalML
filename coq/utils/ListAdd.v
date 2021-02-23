@@ -1686,3 +1686,17 @@ Proof.
   induction l; simpl; trivial; intros.
   rewrite IHl; auto.
 Qed.
+
+Lemma listo_to_olist_length {A:Type} (l:list (option A)) (r:list A)
+  : listo_to_olist l = Some r ->
+    length l = length r.
+Proof.
+  revert r.
+  induction l; simpl; intros.
+  - now invcs H; simpl.
+  - destruct a; try discriminate.
+    match_option_in H; try discriminate.
+    invcs H.
+    simpl.
+    now rewrite (IHl _ eqq).
+Qed.
