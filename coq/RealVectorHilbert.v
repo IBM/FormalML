@@ -646,7 +646,7 @@ Section Rvector_defs.
   Qed.
 
   (*
-  Definition Rvector_lim_complete 
+  Lemma Rvector_lim_complete 
              (F : (PreHilbert_UniformSpace -> Prop) -> Prop) :
     ProperFilter F -> cauchy F -> forall eps : posreal, F (ball (Rvector_lim F) eps).
   Proof.
@@ -654,7 +654,7 @@ Section Rvector_defs.
     generalize (fun i pf =>  Hierarchy.complete_cauchy
                             (Rvector_filter_part F i pf)
                             (Rvector_filter_part_ProperFilter F i pf pff)
-                            (Rvector_filter_part_cauchy F i pf pff cf)
+                            (Rvector_filter_part_cauchy F i pf (Hierarchy.filter_filter) cf)
                )
     ; intros HH.
 
@@ -669,11 +669,10 @@ Section Rvector_defs.
       rewrite <- vector_map_create.
       apply H.
     - unfold Rvector_filter_part at 1 in HH.
-*)
-(*     complete_cauchy :
-  Admitted.
 
-   *)
+(*     complete_cauchy : *)
+
+*)
 
   Lemma Filter_Forall_commute_aux F P :
     Filter F ->
