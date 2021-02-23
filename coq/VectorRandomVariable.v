@@ -62,8 +62,8 @@ Section VectorRandomVariables.
     now rewrite (vector_create_nth).
   Qed.
 
-  Lemma vector_nth_fun_to_vector {n} (f:Ts->vector R n) i pf : 
-    vector_nth i pf (fun_to_vector_to_vector_of_funs f) = fun x => vector_nth i pf (f x).
+  Lemma vector_nth_fun_to_vector {n} (f:Ts->vector Td n) i pf : 
+    vector_nth i pf (fun_to_vector_to_vector_of_funs f) = fun x:Ts => vector_nth i pf (f x).
   Proof.
     unfold fun_to_vector_to_vector_of_funs.
     now rewrite vector_nth_create'.
