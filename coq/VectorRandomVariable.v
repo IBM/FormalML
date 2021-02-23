@@ -173,8 +173,23 @@ Qed.
 Definition Rvector_borel_sa (n:nat) : SigmaAlgebra (vector R n)
   := vector_sa (vector_const borel_sa n).
 
+Instance RealVectorMeasurableRandomVariable {n}
+         (rv_X : Ts -> vector R n)
+         {rvm:RealVectorMeasurable rv_X} :
+  RandomVariable dom (Rvector_borel_sa n) rv_X.
+Proof.
+  
 
-        
+Admitted.
+
+
+Instance RandomVariableRealVectorMeasurable {n}
+         (rv_X : Ts -> vector R n)
+         {rrv:RandomVariable dom (Rvector_borel_sa n) rv_X} :
+  RealVectorMeasurable rv_X.
+Proof.
+  
+Admitted.
 
 (*
 
