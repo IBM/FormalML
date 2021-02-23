@@ -14,6 +14,7 @@ Require Import SigmaAlgebras.
 Require Export FunctionsToReal ProbSpace BorelSigmaAlgebra.
 Require Export RandomVariable.
 Require Export Isomorphism.
+Require Import FunctionalExtensionality.
 
 Import ListNotations.
 
@@ -23,17 +24,18 @@ Section VectorRandomVariables.
   
   Context {Ts:Type} {Td:Type}.
 
+
   Definition fun_to_vector_to_vector_of_funs
              {n:nat}
              (f: Ts -> vector Td n)
     : vector (Ts->Td) n
-    := vector_create n (fun m pf => fun x => vector_nth m pf (f x)).
+    := vector_create 0 n (fun m _ pf => fun x => vector_nth m pf (f x)).
 
   Definition vector_of_funs_to_fun_to_vector
              {n:nat}
              (fs:vector (Ts->Td) n)
     : Ts -> vector Td n
-    := fun x => vector_create n (fun m pf => vector_nth m pf fs x).
+    := fun x => vector_create 0 n (fun m _ pf => vector_nth m pf fs x).
   
   Program Global Instance vector_iso n : Isomorphism (Ts -> vector Td n) (vector (Ts->Td) n)
     := {
@@ -42,11 +44,22 @@ Section VectorRandomVariables.
       }.
   Next Obligation.
     unfold fun_to_vector_to_vector_of_funs, vector_of_funs_to_fun_to_vector.
-    destruct b.
-    induction x; simpl in *.
-  Admitted.
+    apply vector_nth_eq; intros.
+    rewrite vector_nth_create'; simpl.
+    apply functional_extensionality; intros.
+    now rewrite vector_nth_create'.
+  Qed.
   Next Obligation.
-  Admitted.
+    unfold fun_to_vector_to_vector_of_funs, vector_of_funs_to_fun_to_vector.
+    apply functional_extensionality; intros.
+    erewrite vector_create_ext.
+    2: {
+      intros.
+      rewrite vector_nth_create'.
+      reflexivity.
+    }
+    now rewrite (vector_create_nth).
+  Qed.
 
 End VectorRandomVariables.
 
