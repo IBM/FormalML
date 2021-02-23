@@ -1219,6 +1219,12 @@ Definition bellmanQ : Rfct (sigT M.(act)) -> Rfct (sigT M.(act))
                   act_expt_reward s a +
                   γ*expt_value (t s a)(fun s' => Max_{act_list s'}(fun a => W (existT _ s' a) ) ).
 
+Lemma Rabs_helper : forall a b c : R, Rabs ( (a + b) + -(a + c)) = Rabs (b - c).
+Proof.
+  intros.
+  f_equal. lra.
+Qed.
+
 Theorem is_contraction_bellmanQ :
  @is_contraction (Rfct_UniformSpace (sigT M.(act))) (Rfct_UniformSpace (sigT M.(act))) bellmanQ.
 Proof.
@@ -1258,19 +1264,38 @@ Proof.
     -- now destruct hγ.
     -- intros f g r Hr Hx.
        repeat red in Hx |-.
-       unfold Rmax_norm, Rmax_ball in *.
+       unfold Rmax_ball, Rmax_norm.
        destruct (act_finite M) as [la Hla].
-       unfold minus, plus, opp ; simpl.
        rewrite Rmax_list_lt_iff; intros; try(apply map_not_nil; apply not_nil_exists).
        rewrite in_map_iff in H.
        destruct H as [sa [Q HQ]]; subst.
-       apply Rabs_def1; try (unfold bellmanQ; destruct sa; ring_simplify).
+       unfold minus, plus, opp. simpl.
+       unfold bellmanQ; destruct sa. rewrite Rabs_helper.
        rewrite <-Rmult_minus_distr_l.
+       rewrite Rabs_mult.
+       assert (Hrγ : Rabs γ = γ) by (apply Rabs_pos_eq; lra). rewrite Hrγ.
        apply Rmult_lt_compat_l; try (destruct hγ; lra).
        rewrite <-expt_value_sub.
-
-Admitted.
-
+       eapply Rle_lt_trans; eauto.
+       unfold Rmax_norm.
+       eapply Rle_trans. apply expt_value_Rabs_Rle.
+       apply expt_value_bdd; intro s0.
+       unfold act_list.
+       destruct (M s0).
+       eapply Rle_trans. apply Rmax_list_minus_le_abs.
+       rewrite Rmax_list_le_iff; try (rewrite map_not_nil).
+       intros r'.
+       rewrite in_map_iff; intros.
+       destruct H as [a0 [Ha0 Helms]].
+       subst. apply Rmax_spec.
+       rewrite in_map_iff.
+       exists (existT _ s0 a0); now split.
+       rewrite not_nil_exists.
+       generalize (na _ s0); intros a0; now exists a0.
+       generalize (ne M); intros s0.
+       generalize (na M); intros a0.
+       specialize (a0 s0). now exists (existT _ s0 a0).
+Qed.
 
 Theorem is_contraction_bellman_op (π : dec_rule M) :
  @is_contraction (Rfct_UniformSpace M.(state)) (Rfct_UniformSpace M.(state)) (bellman_op π).
