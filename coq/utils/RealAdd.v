@@ -2616,3 +2616,50 @@ Proof.
 Qed.
 
 End Rmax_list.
+
+Lemma seq_iota_seq m n : seq.iota m n = seq m n.
+Proof.
+  revert m.
+  induction n; intros m; simpl; trivial.
+Qed.
+
+Lemma sum_n_m_fold_right_seq (f:nat->R) n m:
+  sum_n_m (fun n0 : nat => f n0) m n =
+  fold_right Rplus 0 (map f (List.seq m (S n - m))).
+Proof.
+  unfold sum_n_m, Iter.iter_nat.
+  rewrite seq_iota_seq.
+  generalize (S n - m)%nat; intros nn.
+  clear n.
+  revert m.
+  induction nn; unfold plus; simpl; trivial; intros m.
+  now rewrite IHnn.
+Qed.
+
+Lemma sum_n_fold_right_seq (f:nat->R) n :
+  sum_n (fun n0 : nat => f n0) n =
+  fold_right Rplus 0 (map f (seq 0 (S n))).
+Proof.
+  unfold sum_n.
+  now rewrite sum_n_m_fold_right_seq.
+Qed.
+
+Lemma list_sum_sum_n (l:list R) :
+  list_sum l =
+  @Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun i:nat => match nth_error l i with
+                                                     | Some x => x
+                                                     | None => 0%R
+                                                     end) (length l).
+Proof.
+  rewrite sum_n_fold_right_seq.
+  rewrite  list_sum_fold_right.
+  induction l; simpl; try lra.
+  f_equal.
+  rewrite IHl.
+  destruct l; simpl; try lra.
+  f_equal.
+  f_equal.
+  rewrite <- (@seq_shift _ 2).
+  rewrite map_map.
+  apply fold_right_ext; trivial.
+Qed.

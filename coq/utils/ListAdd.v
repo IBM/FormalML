@@ -1678,3 +1678,11 @@ Proof.
   generalize (nodup_In dec).
   firstorder.
 Qed.
+
+Lemma fold_right_ext {A B:Type} (f1 f2 : B -> A -> A) (init : A) (l:list B) :
+  (forall a b, In b l -> f1 b a = f2 b a) ->
+  fold_right f1 init l = fold_right f2 init l.
+Proof.
+  induction l; simpl; trivial; intros.
+  rewrite IHl; auto.
+Qed.

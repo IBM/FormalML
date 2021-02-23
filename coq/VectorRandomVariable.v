@@ -199,7 +199,6 @@ Instance RealVectorMeasurableRandomVariable {n}
   RandomVariable dom (Rvector_borel_sa n) rv_X.
 Proof.
   
-
 Admitted.
 
 
@@ -211,31 +210,40 @@ Proof.
   
 Admitted.
 
+Lemma vector_nth_fun_to_vector {n} (f:Ts->vector R n) i pf : 
+  vector_nth i pf (fun_to_vector_to_vector_of_funs f) = fun x => vector_nth i pf (f x).
+Proof.
+  unfold fun_to_vector_to_vector_of_funs.
+  now rewrite vector_nth_create'.
+Qed.
+
+
+Lemma RealVectorMeasurableComponent_simplify {n} (f:Ts->vector R n) : 
+  (forall (i : nat) (pf : (i < n)%nat),
+   RealMeasurable dom (vector_nth i pf (fun_to_vector_to_vector_of_funs f))) ->   
+  (forall (i : nat) (pf : (i < n)%nat),
+      RealMeasurable dom (fun x => vector_nth i pf (f x))).
+Proof.
+  intros HH i pf.
+  eapply RealMeasurable_proper; try eapply HH.
+  rewrite vector_nth_fun_to_vector.
+  reflexivity.
+Qed.
+                  
 Instance Rvector_plus_measurable {n} (f g : Ts -> vector R n) :
   RealVectorMeasurable f ->
   RealVectorMeasurable g ->
   RealVectorMeasurable (vecrvplus f g).
 Proof.
-  unfold RealVectorMeasurable; intros.
-  simpl in *.
-  unfold vecrvplus, fun_to_vector_to_vector_of_funs in *.
-  rewrite vector_nth_create'.
+  unfold RealVectorMeasurable, vecrvplus; simpl; intros.
+  rewrite vector_nth_fun_to_vector.
   eapply RealMeasurable_proper.
   - intros ?.
     rewrite Rvector_plus_explode.
     rewrite vector_nth_create'.
     reflexivity.
-  - apply plus_measurable; eauto.
-    + simpl in *.
-      eapply RealMeasurable_proper; try eapply H.
-      intros ?.
-      rewrite vector_nth_create'.
-      reflexivity.
-    + simpl in *.
-      eapply RealMeasurable_proper; try eapply H0.
-      intros ?.
-      rewrite vector_nth_create'.
-      reflexivity.
+  - apply plus_measurable; eauto
+    ; now apply RealVectorMeasurableComponent_simplify.
 Qed.
 
 Instance Rvector_mult_measurable {n} (f g : Ts -> vector R n) :
@@ -243,35 +251,52 @@ Instance Rvector_mult_measurable {n} (f g : Ts -> vector R n) :
   RealVectorMeasurable g ->
   RealVectorMeasurable (vecrvmult f g).
 Proof.
-  unfold RealVectorMeasurable; intros.
-  simpl in *.
-  unfold vecrvmult, fun_to_vector_to_vector_of_funs in *.
-  rewrite vector_nth_create'.
+  unfold RealVectorMeasurable, vecrvmult; simpl; intros.
+  rewrite vector_nth_fun_to_vector.
   eapply RealMeasurable_proper.
   - intros ?.
     rewrite Rvector_mult_explode.
     rewrite vector_nth_create'.
     reflexivity.
-  - apply mult_measurable; eauto.
-    + simpl in *.
-      eapply RealMeasurable_proper; try eapply H.
-      intros ?.
-      rewrite vector_nth_create'.
-      reflexivity.
-    + simpl in *.
-      eapply RealMeasurable_proper; try eapply H0.
-      intros ?.
-      rewrite vector_nth_create'.
-      reflexivity.
+  - apply mult_measurable; eauto
+    ; now apply RealVectorMeasurableComponent_simplify.
 Qed.
-
+    
+Lemma vecrvsum_rvsum {n} (f : Ts -> vector R n) :
+  (vecrvsum f) === (rvsum (fun i x => match lt_dec i n with
+                                  | left pf => vector_nth i pf (f x)
+                                  | right _ => 0%R
+                                  end)
+                          n).
+Proof.
+  intros a.
+  unfold vecrvsum, Rvector_sum, rvsum; simpl.
+  destruct (f a); simpl.
+  subst.
+  rewrite list_sum_sum_n.
+  apply (@Hierarchy.sum_n_ext Hierarchy.R_AbelianGroup); intros.
+  destruct (lt_dec n (length x)).
+  - unfold vector_nth.
+    match goal with
+      [|- context [proj1_sig ?x]] => destruct x
+    end; simpl in *.
+    now rewrite <- e.
+  - destruct (nth_error_None x n) as [_ HH].
+    rewrite HH; trivial.
+    lia.
+Qed.
+  
 Instance Rvector_sum_measurable {n} (f : Ts -> vector R n) :
   RealVectorMeasurable f ->
   RealMeasurable dom (vecrvsum f).
 Proof.
   unfold RealVectorMeasurable; simpl; intros.
-Admitted.
-
+  rewrite vecrvsum_rvsum.
+  apply rvsum_measurable; intros.
+  match_destr.
+  - now apply RealVectorMeasurableComponent_simplify.
+  - apply constant_measurable.
+Qed.  
 
 Instance Rvector_inner_measurable {n} (f g : Ts -> vector R n) :
   RealVectorMeasurable f ->
