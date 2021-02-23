@@ -732,7 +732,7 @@ Section Rvector_defs.
       by apply le_uniqueness_proof.
   Qed.
   
-  Lemma Rvector_lim_complete_nneg (F : (PreHilbert_UniformSpace -> Prop) -> Prop) :
+  Lemma Rvector_lim_complete_pos (F : (PreHilbert_UniformSpace -> Prop) -> Prop) :
     (0 < n)%nat ->
     ProperFilter F -> cauchy F -> forall eps : posreal, F (ball (Rvector_lim F) eps).
   Proof.
@@ -799,7 +799,7 @@ Section Rvector_defs.
       rewrite (vector_zero0 e (Rvector_lim (fun x : vector R n -> Prop => F x))).
       rewrite (vector_zero0 e x).
       apply ball_center.
-    - apply Rvector_lim_complete_nneg.
+    - apply Rvector_lim_complete_pos.
       lia.
   Qed.
 
