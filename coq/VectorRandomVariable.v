@@ -367,6 +367,11 @@ Proof.
     vector_SimpleExpectation rv_X =
     vector_SimpleExpectation
       (vector_gen_SimpleConditionalExpectation rv_X l).
+   Proof.
+     apply vector_create_ext.
+     intros.
+     unfold vector_gen_SimpleConditionalExpectation.
+     
    Admitted.
 
   (* if l is viewed as finite generators for a sigma algebra, this shows that
