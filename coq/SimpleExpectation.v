@@ -1873,14 +1873,14 @@ Section SimpleConditionalExpectation.
       + constructor; trivial.
   Qed.
 
-  Definition partition_measurable
-             (rv_X : Ts -> R)
+  Definition partition_measurable {Td}
+             (rv_X : Ts -> Td)
              {srv : SimpleRandomVariable rv_X}
              (l : list (event Ts)) : Prop :=
     is_partition_list l ->
     forall (p:event Ts),
       In p l ->
-      exists (c:R), (In c srv_vals) /\
+      exists (c:Td), (In c srv_vals) /\
                     event_sub p (event_preimage rv_X (event_singleton c)).
   
   Lemma in_list_in_partition_union {T} (x:event T) l d :
