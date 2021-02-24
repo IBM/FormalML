@@ -21,6 +21,20 @@ Import ListNotations.
 
 Set Bullet Behavior "Strict Subproofs".
 
+
+(* move *)
+Lemma SimpleRandomVariable_ext {Ts} {Td} (x y:Ts->Td) :
+  rv_eq x y ->
+  SimpleRandomVariable x ->
+  SimpleRandomVariable y.
+Proof.
+  repeat red; intros.
+  invcs X.
+  exists srv_vals.
+  intros.
+  now rewrite <- H.
+Qed.
+
 Section VectorRandomVariables.
   
   Context {Ts:Type} {Td:Type}.
@@ -37,7 +51,7 @@ Section VectorRandomVariables.
              (fs:vector (Ts->Td) n)
     : Ts -> vector Td n
     := fun x => vector_create 0 n (fun m _ pf => vector_nth m pf fs x).
-  
+
   Program Global Instance vector_iso n : Isomorphism (Ts -> vector Td n) (vector (Ts->Td) n)
     := {
     iso_f := fun_to_vector_to_vector_of_funs
@@ -67,6 +81,18 @@ Section VectorRandomVariables.
   Proof.
     unfold fun_to_vector_to_vector_of_funs.
     now rewrite vector_nth_create'.
+  Qed.
+
+  Lemma vector_of_funs_vector_create n f :
+    rv_eq (vector_of_funs_to_fun_to_vector (vector_create 0 n f))
+          (fun t=> vector_create 0 n (fun m pf1 pf2 => f m pf1 pf2 t))
+  .
+  Proof.
+    unfold vector_of_funs_to_fun_to_vector.
+    intros x; simpl.
+    apply vector_create_ext; intros.
+    rewrite vector_nth_create.
+    f_equal; apply le_uniqueness_proof.
   Qed.
 
 End VectorRandomVariables.
@@ -350,13 +376,54 @@ Definition vector_gen_SimpleConditionalExpectation {n} (rv_X : Ts -> vector R n)
                                 (srv := (vec_srv rv_X m pf srv))
                                 l)).
 
+
+(*
+Definition list_cross_product {T} {n} (l:list (list T)) -> list (vector T (length l).
+
+
+Definition vector_list_product {T} {n} : vector (list T) n -> list (vector T n).
+*)
+
+Lemma SimpleRandomVariable_nth_vector {n} {Td} (v:Ts->vector Td n) :
+  (forall i pf1, SimpleRandomVariable (fun a => vector_nth i pf1 (v a))) ->
+  SimpleRandomVariable v.
+Proof.
+Admitted.
+
+  (*
+Lemma SimpleRandomVariable_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
+  (forall m pf1 pf2, SimpleRandomVariable (fun a => f a m pf1 pf2)) ->
+  SimpleRandomVariable (fun a => vector_reate 0 n (f a)).
+
+   *)
 Instance vector_gen_SimpleConditionalExpectation_simpl {n}
            (rv_X : Ts -> vector R n)
            {srv : SimpleRandomVariable rv_X}
            (l : list dec_sa_event) :
   SimpleRandomVariable (vector_gen_SimpleConditionalExpectation rv_X l).
 Proof.
-  Admitted.
+  unfold vector_gen_SimpleConditionalExpectation; simpl.
+  apply SimpleRandomVariable_nth_vector; intros.
+  apply SimpleRandomVariable_ext with (x:= fun a =>
+                                         (gen_SimpleConditionalExpectation
+                                            (vector_nth i pf1 (fun_to_vector_to_vector_of_funs rv_X)) l a)).
+  - intros ?.
+    rewrite vector_of_funs_vector_create.
+    now rewrite vector_nth_create'.
+  - apply gen_SimpleConditionalExpectation_simpl.
+Qed.
+    
+(*
+Lemma vector_of_funs_vector_create {n} (f:Ts->vector Td n) i pf :
+  (vector_of_funs_to_fun_to_vector
+     (vector_create 0 n
+                    
+    vector_nth i pf (fun_to_vector_to_vector_of_funs f) = fun x:Ts => vector_nth i pf (f x).
+  Proof.
+    unfold fun_to_vector_to_vector_of_funs.
+    now rewrite vector_nth_create'.
+  Qed.
+*)
 
  Lemma vector_gen_conditional_tower_law {n}
         (rv_X : Ts -> vector R n)
@@ -371,8 +438,19 @@ Proof.
      apply vector_create_ext.
      intros.
      unfold vector_gen_SimpleConditionalExpectation.
-     
-   Admitted.
+     transitivity (SimpleExpectation (srv:=(@gen_SimpleConditionalExpectation_simpl Ts dom prts
+       (@vector_nth (Ts -> R) n i pf2 (@fun_to_vector_to_vector_of_funs Ts R n rv_X))
+       (@vec_srv n rv_X i pf2 srv) l))
+                     (gen_SimpleConditionalExpectation (vector_nth i pf2 ((fun_to_vector_to_vector_of_funs rv_X))) l)).
+     - apply gen_conditional_tower_law; trivial.
+       apply RandomVariableRealVectorMeasurable in rv.
+       red in rv.
+       specialize (rv i pf2).
+       now apply measurable_rv.
+     - apply SimpleExpectation_ext.
+       rewrite iso_f_b.
+       now rewrite vector_nth_create'.
+   Qed.
 
   (* if l is viewed as finite generators for a sigma algebra, this shows that
     we can factor out l-measurable random variables from conditional expectation *)
@@ -431,9 +509,10 @@ Proof.
            {srv2:SimpleRandomVariable rv_X2}
       : SimpleRandomVariable (rvinner rv_X1 rv_X2).
     Proof.
-      (* rewrite rvinner_unfold. *)
-    Admitted.
-
+      eapply SimpleRandomVariable_ext.
+      - rewrite rvinner_unfold; reflexivity.
+      - typeclasses eauto.
+    Qed.
 
   Lemma vector_gen_conditional_scale_measurable {n}
         (rv_X1 rv_X2 : Ts -> vector R n)
@@ -444,6 +523,8 @@ Proof.
     partition_measurable rv_X1 (map dsa_event l) ->
     rv_eq (gen_SimpleConditionalExpectation (rvinner rv_X1 rv_X2) l)
           (rvinner rv_X1 (vector_gen_SimpleConditionalExpectation rv_X2 l  )).
+  Proof.
+    intros.
    Admitted.
 
 End vector_ops.
