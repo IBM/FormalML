@@ -291,6 +291,7 @@ Qed.
            destruct H0 as [z [H2 H3]].
            injection H2; intuition.
            subst ; clear H.
+           (* This is equivalent to assuming Streicher's Axiom K (?). *)
            generalize (Eqdep.EqdepTheory.inj_pair2 A B _ _ _ H2); intros.
            now subst.
         -- intuition.
