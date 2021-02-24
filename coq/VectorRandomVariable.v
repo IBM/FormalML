@@ -495,7 +495,16 @@ Qed.
             (gen_SimpleConditionalExpectation y l).
     Proof.
       repeat red; intros.
-      Admitted.
+      unfold gen_SimpleConditionalExpectation.
+      do 2 f_equal.
+      apply FunctionalExtensionality.functional_extensionality.
+      intros.
+      unfold gen_simple_conditional_expectation_scale.
+      match_destr.
+      do 2 f_equal.
+      apply SimpleExpectation_ext.
+      now rewrite H.
+    Qed.
 
   (* if l is viewed as finite generators for a sigma algebra, this shows that
     we can factor out l-measurable random variables from conditional expectation *)
