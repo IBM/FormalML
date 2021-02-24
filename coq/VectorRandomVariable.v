@@ -357,15 +357,6 @@ Instance vector_gen_SimpleConditionalExpectation_simpl {n}
   SimpleRandomVariable (vector_gen_SimpleConditionalExpectation rv_X l).
 Proof.
   Admitted.
-(*
-    unfold gen_SimpleConditionalExpectation.
-    induction l; simpl.
-    - apply srvconst.
-    - apply srvplus.
-      + apply gen_simple_conditional_expectation_scale_simpl.
-      + apply IHl.
-  Defined.
- *)
 
  Lemma vector_gen_conditional_tower_law {n}
         (rv_X : Ts -> vector R n)
@@ -380,17 +371,64 @@ Proof.
 
   (* if l is viewed as finite generators for a sigma algebra, this shows that
     we can factor out l-measurable random variables from conditional expectation *)
+
+    Program Instance srv_vecrvmult {n}
+           (rv_X1 rv_X2 : Ts -> vector R n)
+           {srv1:SimpleRandomVariable rv_X1}
+           {srv2:SimpleRandomVariable rv_X2}
+      : SimpleRandomVariable (vecrvmult rv_X1 rv_X2)
+      := { srv_vals := map (fun ab => Rvector_mult (fst ab) (snd ab)) 
+                           (list_prod (srv_vals (SimpleRandomVariable:=srv1))
+                                      (srv_vals (SimpleRandomVariable:=srv2))) }.
+    Next Obligation.
+      destruct srv1.
+      destruct srv2.
+      rewrite in_map_iff.
+      exists (rv_X1 x, rv_X2 x).
+      split.
+      now simpl.
+      apply in_prod; trivial.
+    Qed.
+
+    Program Instance srv_vecrvplus {n}
+           (rv_X1 rv_X2 : Ts -> vector R n)
+           {srv1:SimpleRandomVariable rv_X1}
+           {srv2:SimpleRandomVariable rv_X2}
+      : SimpleRandomVariable (vecrvplus rv_X1 rv_X2)
+      := { srv_vals := map (fun ab => Rvector_plus (fst ab) (snd ab)) 
+                           (list_prod (srv_vals (SimpleRandomVariable:=srv1))
+                                      (srv_vals (SimpleRandomVariable:=srv2))) }.
+    Next Obligation.
+      destruct srv1.
+      destruct srv2.
+      rewrite in_map_iff.
+      exists (rv_X1 x, rv_X2 x).
+      split.
+      now simpl.
+      apply in_prod; trivial.
+    Qed.
+
+    Program Instance srv_vecsum {n}
+           (rv_X : Ts -> vector R n)
+           {srv:SimpleRandomVariable rv_X}
+      : SimpleRandomVariable (vecrvsum rv_X)
+      := { srv_vals := map Rvector_sum srv_vals }.
+    Next Obligation.
+      destruct srv.
+      rewrite in_map_iff.
+      exists (rv_X x).
+      easy.
+    Qed.
+
     Instance srvinner {n}
            (rv_X1 rv_X2 : Ts -> vector R n)
            {srv1:SimpleRandomVariable rv_X1}
            {srv2:SimpleRandomVariable rv_X2}
       : SimpleRandomVariable (rvinner rv_X1 rv_X2).
+    Proof.
+      (* rewrite rvinner_unfold. *)
     Admitted.
-(*
-      := { srv_vals := map (fun ab => Rplus (fst ab) (snd ab)) 
-                           (list_prod (srv_vals (SimpleRandomVariable:=srv1))
-                                      (srv_vals (SimpleRandomVariable:=srv2))) }.
-*)
+
 
   Lemma vector_gen_conditional_scale_measurable {n}
         (rv_X1 rv_X2 : Ts -> vector R n)
