@@ -79,15 +79,6 @@ Context
   {dom: SigmaAlgebra Ts}
   {prts: ProbSpace dom}.
 
-Definition vector_Expectation {n} (rv_X : Ts -> vector R n) : option (vector Rbar n)
-  := vectoro_to_ovector (vector_map Expectation (iso_f rv_X)).
-Print SimpleRandomVariable.
-
-
-Definition vector_SimpleExpectation {n} (rv_X : Ts -> vector R n)
-           (simp : forall (x:Ts->R), In x  (` (iso_f rv_X)) -> SimpleRandomVariable x)
- : vector R n
-  := vector_map_onto (iso_f rv_X) (fun x pf => SimpleExpectation x (srv:=simp x pf)).
 
 Definition vecrvplus {n} (rv_X1 rv_X2 : Ts -> vector R n) :=
   (fun omega =>  Rvector_plus (rv_X1 omega) (rv_X2 omega)).
@@ -255,6 +246,7 @@ Proof.
     ; now apply RealVectorMeasurableComponent_simplify.
 Qed.
     
+
 Lemma vecrvsum_rvsum {n} (f : Ts -> vector R n) :
   (vecrvsum f) === (rvsum (fun i x => match lt_dec i n with
                                   | left pf => vector_nth i pf (f x)
@@ -324,5 +316,91 @@ Proof.
   apply Rvector_sum_measurable.
   apply Rvector_mult_measurable; trivial.
 Qed.
+
+Definition vector_Expectation {n} (rv_X : Ts -> vector R n) : option (vector Rbar n)
+  := vectoro_to_ovector (vector_map Expectation (iso_f rv_X)).
+
+Program Instance vec_srv {n} (rv_X : Ts -> vector R n) i (pf : (i < n)%nat)
+        (srv : SimpleRandomVariable rv_X) : SimpleRandomVariable
+                                              (vector_nth i pf (iso_f rv_X)) 
+  :=
+  {
+   srv_vals := map (fun c => vector_nth i pf c) srv_vals
+  }.
+  Next Obligation.
+    rewrite vector_nth_fun_to_vector.
+    destruct srv.
+    now apply in_map.
+ Qed.
+
+Definition vector_SimpleExpectation {n} (rv_X : Ts -> vector R n)
+           {srv : SimpleRandomVariable rv_X} : vector R n
+ := 
+   vector_create 0 n (fun m _ pf => 
+                        SimpleExpectation (vector_nth m pf (iso_f rv_X))
+                                          (srv := (vec_srv rv_X m pf srv))).
+
+Definition vector_gen_SimpleConditionalExpectation {n} (rv_X : Ts -> vector R n)
+           {srv : SimpleRandomVariable rv_X} 
+           (l : list dec_sa_event) : Ts -> vector R n 
+  := iso_b (
+         vector_create 0 n (fun m _ pf => 
+                              gen_SimpleConditionalExpectation 
+                                (vector_nth m pf (iso_f rv_X))
+                                (srv := (vec_srv rv_X m pf srv))
+                                l)).
+
+Instance vector_gen_SimpleConditionalExpectation_simpl {n}
+           (rv_X : Ts -> vector R n)
+           {srv : SimpleRandomVariable rv_X}
+           (l : list dec_sa_event) :
+  SimpleRandomVariable (vector_gen_SimpleConditionalExpectation rv_X l).
+Proof.
+  Admitted.
+(*
+    unfold gen_SimpleConditionalExpectation.
+    induction l; simpl.
+    - apply srvconst.
+    - apply srvplus.
+      + apply gen_simple_conditional_expectation_scale_simpl.
+      + apply IHl.
+  Defined.
+ *)
+
+ Lemma vector_gen_conditional_tower_law {n}
+        (rv_X : Ts -> vector R n)
+        {rv : RandomVariable dom (Rvector_borel_sa n) rv_X}
+        {srv : SimpleRandomVariable rv_X}
+        (l : list dec_sa_event)
+        (ispart: is_partition_list (map dsa_event l)) :
+    vector_SimpleExpectation rv_X =
+    vector_SimpleExpectation
+      (vector_gen_SimpleConditionalExpectation rv_X l).
+   Admitted.
+
+  (* if l is viewed as finite generators for a sigma algebra, this shows that
+    we can factor out l-measurable random variables from conditional expectation *)
+    Instance srvinner {n}
+           (rv_X1 rv_X2 : Ts -> vector R n)
+           {srv1:SimpleRandomVariable rv_X1}
+           {srv2:SimpleRandomVariable rv_X2}
+      : SimpleRandomVariable (rvinner rv_X1 rv_X2).
+    Admitted.
+(*
+      := { srv_vals := map (fun ab => Rplus (fst ab) (snd ab)) 
+                           (list_prod (srv_vals (SimpleRandomVariable:=srv1))
+                                      (srv_vals (SimpleRandomVariable:=srv2))) }.
+*)
+
+  Lemma vector_gen_conditional_scale_measurable {n}
+        (rv_X1 rv_X2 : Ts -> vector R n)
+        {srv1 : SimpleRandomVariable rv_X1}
+        {srv2 : SimpleRandomVariable rv_X2} 
+        (l : list dec_sa_event) :
+    is_partition_list (map dsa_event l) ->
+    partition_measurable rv_X1 (map dsa_event l) ->
+    rv_eq (gen_SimpleConditionalExpectation (rvinner rv_X1 rv_X2) l)
+          (rvinner rv_X1 (vector_gen_SimpleConditionalExpectation rv_X2 l  )).
+   Admitted.
 
 End vector_ops.
