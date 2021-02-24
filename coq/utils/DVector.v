@@ -513,6 +513,13 @@ Proof.
   apply le_uniqueness_proof.
 Qed.
 
+Lemma vector_map_const {A B} {n} (c:A) (f:A->B) : vector_map f (vector_const c n) = vector_const (f c) n.
+Proof.
+  apply vector_nth_eq; intros.
+  rewrite vector_nth_map.
+  now repeat rewrite vector_nth_const.
+Qed.
+
 Definition vector_equiv {T:Type} (R:T->T->Prop) {eqR:Equivalence R} (n:nat) : vector T n -> vector T n -> Prop
   := fun v1 v2 => forall i pf, vector_nth i pf v1 === vector_nth i pf v2.
 

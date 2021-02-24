@@ -176,10 +176,40 @@ Instance RandomVariableRealVectorMeasurable {n}
          {rrv:RandomVariable dom (Rvector_borel_sa n) rv_X} :
   RealVectorMeasurable rv_X.
 Proof.
-  
-Admitted.
-
-
+  red; intros.
+  apply rv_measurable.
+  red in rrv.
+  intros e sa_e.
+  unfold event_preimage in *.
+  simpl.
+  eapply sa_proper.
+  - intros ?.
+    rewrite vector_nth_fun_to_vector.
+    split; intros HH; eapply HH.
+  - apply (rrv (fun x => e (vector_nth i pf x))).
+    simpl; intros.
+    apply H.
+    rewrite vector_map_const.
+    red.
+    
+    exists (vector_create 0 n (fun j _ pf => if Nat.eq_dec j i then e else Ω)).
+    split; intros.
+    + rewrite vector_nth_const.
+      rewrite vector_nth_create'.
+      match_destr.
+      apply sa_all.
+    + intros x.
+      split; intros.
+      * rewrite vector_nth_create'.
+        match_destr.
+        -- subst.
+           now replace pf0 with pf by apply le_uniqueness_proof.
+        -- red; trivial.
+      * specialize (H0 i pf).
+        rewrite vector_nth_create' in H0.
+        match_destr_in H0.
+        congruence.
+Qed.
 
 Lemma RealVectorMeasurableComponent_simplify {n} (f:Ts->vector R n) : 
   (forall (i : nat) (pf : (i < n)%nat),
