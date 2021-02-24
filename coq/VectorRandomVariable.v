@@ -278,7 +278,30 @@ Proof.
     rewrite HH; trivial.
     lia.
 Qed.
-  
+
+Instance Rvector_scale_measurable {n} c (f : Ts -> vector R n) :
+  RealVectorMeasurable f ->
+  RealVectorMeasurable (vecrvscale c f).
+Proof.
+  unfold RealVectorMeasurable; simpl; intros.
+  rewrite vector_nth_fun_to_vector.
+  unfold vecrvscale, Rvector_scale.
+  eapply RealMeasurable_proper.
+  - intros x.
+    rewrite vector_nth_map.
+    reflexivity.
+  - apply scale_measurable.
+    specialize (H i pf).
+    now rewrite vector_nth_fun_to_vector in H.
+Qed.
+
+Instance Rvector_opp_measurable {n} (f : Ts -> vector R n) :
+  RealVectorMeasurable f ->
+  RealVectorMeasurable (vecrvopp f).
+Proof.
+  apply Rvector_scale_measurable.
+Qed.
+
 Instance Rvector_sum_measurable {n} (f : Ts -> vector R n) :
   RealVectorMeasurable f ->
   RealMeasurable dom (vecrvsum f).
