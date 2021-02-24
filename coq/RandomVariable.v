@@ -1,7 +1,7 @@
 Require Export Program.Basics.
 Require Import List Morphisms.
 
-Require Export BasicUtils ProbSpace.
+Require Export LibUtils BasicUtils ProbSpace.
 
 Import ListNotations.
 
@@ -73,6 +73,17 @@ Section Simple.
     srv_vals_complete : forall x, In (rv_X x) srv_vals;
       }.
 
+  Lemma SimpleRandomVariable_ext (x y:Ts->Td) :
+    rv_eq x y ->
+    SimpleRandomVariable x ->
+    SimpleRandomVariable y.
+  Proof.
+    repeat red; intros.
+    invcs X.
+    exists srv_vals0.
+    intros.
+    now rewrite <- H.
+  Qed.
 
   Global Program Instance srv_crv (rv_X:Ts->Td) {crv:ConstantRandomVariable rv_X} :
     SimpleRandomVariable rv_X
