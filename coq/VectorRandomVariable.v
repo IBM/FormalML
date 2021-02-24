@@ -486,6 +486,17 @@ Qed.
       - typeclasses eauto.
     Qed.
 
+    Lemma gen_SimpleConditionalExpectation_ext (x y:Ts->R)
+          {srvx : SimpleRandomVariable x}
+          {srvy : SimpleRandomVariable y}          
+          (l : list dec_sa_event) :
+      rv_eq x y ->
+      rv_eq (gen_SimpleConditionalExpectation x l)
+            (gen_SimpleConditionalExpectation y l).
+    Proof.
+      repeat red; intros.
+      Admitted.
+
   (* if l is viewed as finite generators for a sigma algebra, this shows that
     we can factor out l-measurable random variables from conditional expectation *)
   Lemma vector_gen_conditional_scale_measurable {n}
@@ -499,6 +510,11 @@ Qed.
           (rvinner rv_X1 (vector_gen_SimpleConditionalExpectation rv_X2 l  )).
   Proof.
     intros.
+    intro v.
+    generalize (@rvinner_unfold n); intros.
+    rewrite H1.
+    rewrite (gen_SimpleConditionalExpectation_ext _ _ l (H1 rv_X1 rv_X2)).
+    generalize (vecrvsum_rvsum (vecrvmult rv_X1 rv_X2)); intros.
     
    Admitted.
 
