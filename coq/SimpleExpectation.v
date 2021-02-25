@@ -1124,7 +1124,7 @@ Section SimpleConditionalExpectation.
       + apply gen_simple_conditional_expectation_scale_simpl.
       + apply IHl.
   Defined.
-  
+
   Definition simple_conditional_expectation_scale_coef (c : R)
              (rv_X rv_X2 : Ts -> R)
              {srv : SimpleRandomVariable rv_X}
@@ -1308,6 +1308,25 @@ Section SimpleConditionalExpectation.
     rewrite (SimpleExpectation_transport srv1 eqq).
     apply SimpleExpectation_pf_irrel.
   Qed.
+
+   Lemma gen_SimpleConditionalExpectation_ext (x y:Ts->R)
+          {srvx : SimpleRandomVariable x}
+          {srvy : SimpleRandomVariable y}          
+          (l : list dec_sa_event) :
+      rv_eq x y ->
+      rv_eq (gen_SimpleConditionalExpectation x l)
+            (gen_SimpleConditionalExpectation y l).
+    Proof.
+      repeat red; intros.
+      unfold gen_SimpleConditionalExpectation.
+      f_equal.
+      apply map_ext; intros.
+      unfold gen_simple_conditional_expectation_scale.
+      match_destr.
+      do 2 f_equal.
+      apply SimpleExpectation_ext.
+      now rewrite H.
+    Qed.
 
   Lemma sumSimpleExpectation
         (rv_X1 rv_X2 : Ts -> R)
