@@ -508,9 +508,8 @@ Qed.
     Proof.
       repeat red; intros.
       unfold gen_SimpleConditionalExpectation.
-      do 2 f_equal.
-      apply FunctionalExtensionality.functional_extensionality.
-      intros.
+      f_equal.
+      apply map_ext; intros.
       unfold gen_simple_conditional_expectation_scale.
       match_destr.
       do 2 f_equal.
