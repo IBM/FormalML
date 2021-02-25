@@ -62,7 +62,7 @@ algorithm.
     (* Proof of Lemma 1. *)
     Lemma is_contraction_falpha (r : R) :
       (0<r<1) -> (@norm_factor R_AbsRing X <= 1) ->
-      is_contraction (fun (x : X) => plus (scal (1 - r) x) (scal r (F x))).
+      is_contraction (f_alpha F r).
     Proof.
       intros Hr Hnf.
       unfold is_contraction.
@@ -83,6 +83,7 @@ algorithm.
               apply Rmult_le_compat_l ; lra.
         ++ apply (@norm_compat1 R_AbsRing).
            rewrite Rmult_plus_distr_r.
+           unfold f_alpha.
            rewrite plus_minus_scal_distr.
            generalize (norm_triangle (scal (1-r) (minus x2 x1)) (scal r (minus (F x2) (F x1)))) ; intros.
            eapply Rle_lt_trans ; eauto.
