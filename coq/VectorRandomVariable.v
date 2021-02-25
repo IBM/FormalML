@@ -363,18 +363,30 @@ Definition vector_gen_SimpleConditionalExpectation {n} (rv_X : Ts -> vector R n)
                                 l)).
 
 
-(*
-Definition list_cross_product {T} {n} (l:list (list T)) -> list (vector T (length l).
-
-
-Definition vector_list_product {T} {n} : vector (list T) n -> list (vector T n).
-*)
-
-Lemma SimpleRandomVariable_nth_vector {n} {Td} (v:Ts->vector Td n) :
-  (forall i pf1, SimpleRandomVariable (fun a => vector_nth i pf1 (v a))) ->
-  SimpleRandomVariable v.
-Proof.
-Admitted.
+Program Instance SimpleRandomVariable_nth_vector {n} {Td} (v:Ts->vector Td n)
+        (srvs:forall i pf1, SimpleRandomVariable (fun a => vector_nth i pf1 (v a))) :
+  SimpleRandomVariable v
+  := { srv_vals :=
+         if Nat.eq_dec n 0
+         then [vector0]
+         else 
+           vector_list_product
+             (vector_create 0 n
+                            (fun i _ pf => (@srv_vals _ _ _ (srvs i pf)))) }.
+Next Obligation.
+  match_destr.
+  - simpl.
+    left.
+    subst.
+    rewrite vector0_0.
+    apply vector_eq; simpl; trivial.
+  - apply vector_list_product_in_iff; trivial.
+    apply vector_Forall2_nth_iff.
+    intros.
+    rewrite vector_nth_create'.
+    destruct (srvs i pf).
+    auto.
+Qed.
 
   (*
 Lemma SimpleRandomVariable_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :

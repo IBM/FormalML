@@ -459,7 +459,7 @@ Lemma StronglySorted_nth_lt {A} R (l:list A) idx1 idx2 d1 d2 :
 Proof.
   intros.
   destruct (@nth_split _ idx1 l d1)
-           as [l1 [l2 [leqq l1len]]]
+    as [l1 [l2 [leqq l1len]]]
   ; [ lia | ].
   rewrite leqq in H.
   apply StronglySorted_app_inv in H.
@@ -504,10 +504,10 @@ Section bucket.
   Fixpoint find_bucket (needle:A) (haystack:list A)
     := match haystack with
        | x::((y::_) as more) => if R_dec x needle
-                                then if R_dec needle y
-                                     then Some (x,y)
-                                     else find_bucket needle more
-                                else None
+                             then if R_dec needle y
+                                  then Some (x,y)
+                                  else find_bucket needle more
+                             else None
        | _ => None
        end.
   
@@ -713,29 +713,29 @@ Qed.
 
 Section combining.
 
-Lemma combine_nth_in {A B : Type} (l : list A) (l' : list B) (n : nat) (x : A) (y : B) :
-  n < min (length l) (length l') ->
-  nth n (combine l l') (x, y) = (nth n l x, nth n l' y).
-Proof.
-  revert l' n.
-  induction l; simpl; intros l' n nlt.
-  - lia.
-  - destruct l'; simpl in *.
-    + lia.
-    + destruct n; simpl; trivial.
-      apply IHl.
-      lia.
-Qed.
+  Lemma combine_nth_in {A B : Type} (l : list A) (l' : list B) (n : nat) (x : A) (y : B) :
+    n < min (length l) (length l') ->
+    nth n (combine l l') (x, y) = (nth n l x, nth n l' y).
+  Proof.
+    revert l' n.
+    induction l; simpl; intros l' n nlt.
+    - lia.
+    - destruct l'; simpl in *.
+      + lia.
+      + destruct n; simpl; trivial.
+        apply IHl.
+        lia.
+  Qed.
 
-Lemma combine_map {A B C D:Type} (f:A->C) (g:B->D) (l1:list A) (l2:list B) :
-  combine (map f l1) (map g l2) = map (fun '(x,y) => (f x, g y)) (combine l1 l2).
-Proof.
-  revert l2.
-  induction l1; intros l2; simpl; trivial.
-  destruct l2; simpl; trivial.
-  f_equal.
-  auto.
-Qed.
+  Lemma combine_map {A B C D:Type} (f:A->C) (g:B->D) (l1:list A) (l2:list B) :
+    combine (map f l1) (map g l2) = map (fun '(x,y) => (f x, g y)) (combine l1 l2).
+  Proof.
+    revert l2.
+    induction l1; intros l2; simpl; trivial.
+    destruct l2; simpl; trivial.
+    f_equal.
+    auto.
+  Qed.
 
   Lemma combine_self {A:Type} (l:list A) :
     combine l l = map (fun x => (x,x)) l.
@@ -1486,14 +1486,14 @@ Lemma Forall2_perm {A} R (l1 l1' l2:list A) :
   Forall2 R l1 l2 ->
   Permutation l1 l1' ->
   exists l2', Permutation l2 l2' /\
-         Forall2 R l1' l2'.
+              Forall2 R l1' l2'.
 Proof.
   revert l2.
   cut (forall (l1 l1':list A),
           Permutation l1 l1' ->
           (fun l1 l1' => forall l2, Forall2 R l1 l2 ->
-                            exists l2', Permutation l2 l2' /\
-                                   Forall2 R l1' l2') l1 l1')
+                                    exists l2', Permutation l2 l2' /\
+                                                Forall2 R l1' l2') l1 l1')
   ; [ eauto | ].
   apply Permutation_ind_bis; simpl; intros.
   - invcs H. exists nil; eauto.
@@ -1549,87 +1549,87 @@ Qed.
 
 Section equivlist.
 
-Global Instance app_equivlist_proper {A} : Proper (equivlist ==> equivlist ==> equivlist) (@app A).
-Proof.
-  split; intros inn
-  ; apply in_app_iff
-  ; apply in_app_iff in inn.
-  - destruct inn.
-    + rewrite H in H1; tauto.
-    + rewrite H0 in H1; tauto.
-  - destruct inn.
-    + rewrite <- H in H1; tauto.
-    + rewrite <- H0 in H1; tauto.
-Qed.
+  Global Instance app_equivlist_proper {A} : Proper (equivlist ==> equivlist ==> equivlist) (@app A).
+  Proof.
+    split; intros inn
+    ; apply in_app_iff
+    ; apply in_app_iff in inn.
+    - destruct inn.
+      + rewrite H in H1; tauto.
+      + rewrite H0 in H1; tauto.
+    - destruct inn.
+      + rewrite <- H in H1; tauto.
+      + rewrite <- H0 in H1; tauto.
+  Qed.
 
-Lemma equivlist_const {A B} (b:B) (l:list A) :
-  l <> nil -> 
-  equivlist (map (fun _ => b) l) (b::nil).
-Proof.
-  induction l; simpl; intros.
-  - congruence.
-  - destruct l; simpl.
-    + reflexivity.
-    + simpl in IHl.
-      rewrite IHl by congruence.
-      red; simpl; tauto.
-Qed.
-            
-Lemma list_prod_fst_equiv {A B} (a:list A) (b:list B) : b <> nil -> equivlist (map fst (list_prod a b)) a.
-Proof.
-  intros.
-  induction a; simpl.
-  - reflexivity.
-  - intros.
-    simpl.
-    rewrite map_app.
+  Lemma equivlist_const {A B} (b:B) (l:list A) :
+    l <> nil -> 
+    equivlist (map (fun _ => b) l) (b::nil).
+  Proof.
+    induction l; simpl; intros.
+    - congruence.
+    - destruct l; simpl.
+      + reflexivity.
+      + simpl in IHl.
+        rewrite IHl by congruence.
+        red; simpl; tauto.
+  Qed.
+  
+  Lemma list_prod_fst_equiv {A B} (a:list A) (b:list B) : b <> nil -> equivlist (map fst (list_prod a b)) a.
+  Proof.
+    intros.
+    induction a; simpl.
+    - reflexivity.
+    - intros.
+      simpl.
+      rewrite map_app.
+      rewrite map_map; simpl.
+      rewrite IHa.
+      rewrite equivlist_const by trivial.
+      reflexivity.
+  Qed.
+
+  Lemma list_prod_snd_equiv {A B} (a:list A) (b:list B) : a <> nil -> equivlist (map snd (list_prod a b)) b.
+  Proof.
+    intros.
+    rewrite ListAdd.list_prod_swap.
     rewrite map_map; simpl.
-    rewrite IHa.
-    rewrite equivlist_const by trivial.
+    rewrite <- (list_prod_fst_equiv b a) at 2 by trivial.
     reflexivity.
-Qed.
-
-Lemma list_prod_snd_equiv {A B} (a:list A) (b:list B) : a <> nil -> equivlist (map snd (list_prod a b)) b.
-Proof.
-  intros.
-  rewrite ListAdd.list_prod_swap.
-  rewrite map_map; simpl.
-  rewrite <- (list_prod_fst_equiv b a) at 2 by trivial.
-  reflexivity.
-Qed.
+  Qed.
 
 
-Global Instance list_prod_equivlist {A B} :
-  Proper (equivlist ==> equivlist ==> equivlist) (@list_prod A B).
-Proof.
-  cut (Proper (equivlist ==> equivlist ==> @incl _) (@list_prod A B))
-  ; unfold Proper, respectful; intros.
-  - apply equivlist_incls.
-    split; apply H; trivial.
-    + now symmetry.
-    + now symmetry.
-  - intros [a b] inn.
-    apply in_prod_iff in inn.
-    apply in_prod_iff.
-    now rewrite <- H, <- H0.
-Qed.
+  Global Instance list_prod_equivlist {A B} :
+    Proper (equivlist ==> equivlist ==> equivlist) (@list_prod A B).
+  Proof.
+    cut (Proper (equivlist ==> equivlist ==> @incl _) (@list_prod A B))
+    ; unfold Proper, respectful; intros.
+    - apply equivlist_incls.
+      split; apply H; trivial.
+      + now symmetry.
+      + now symmetry.
+    - intros [a b] inn.
+      apply in_prod_iff in inn.
+      apply in_prod_iff.
+      now rewrite <- H, <- H0.
+  Qed.
 
-Global Instance map_equivlist_proper {A B}: Proper (pointwise_relation _ eq ==> equivlist ==> equivlist) (@map A B).
-Proof.
-  unfold Proper, respectful, equivlist; intros.
-  repeat rewrite in_map_iff.
-  unfold pointwise_relation in H.
-  split; intros [? [??]].
-  - subst.
-    exists x2. split.
-    + now rewrite H.
-    + now apply H0.
-  - subst.
-    exists x2. split.
-    + now rewrite H.
-    + now apply H0.
-Qed.
- 
+  Global Instance map_equivlist_proper {A B}: Proper (pointwise_relation _ eq ==> equivlist ==> equivlist) (@map A B).
+  Proof.
+    unfold Proper, respectful, equivlist; intros.
+    repeat rewrite in_map_iff.
+    unfold pointwise_relation in H.
+    split; intros [? [??]].
+    - subst.
+      exists x2. split.
+      + now rewrite H.
+      + now apply H0.
+    - subst.
+      exists x2. split.
+      + now rewrite H.
+      + now apply H0.
+  Qed.
+  
 End equivlist.
 
 Global Instance nodup_perm {A} dec : Proper (@Permutation A ==> @Permutation A) (nodup dec).
@@ -1700,3 +1700,163 @@ Proof.
     simpl.
     now rewrite (IHl _ eqq).
 Qed.
+
+Section cross_product.
+  
+  Definition list_cross_product {T} (l:list (list T)) : (list (list T))
+    := match l with
+       | nil => nil
+       | x::l' =>
+         fold_left (fun (acc:list (list T)) (b:list T) =>
+                      map (fun '(a,b) => b ++ [a]) (list_prod b acc)) l' (map singleton x)
+       end.
+
+  Example list_cross_product_example :
+    list_cross_product [[1;2];[3];[4;5;6]] =
+    [[1; 3; 4]; [2; 3; 4]; [1; 3; 5]; [2; 3; 5]; [1; 3; 6]; [2; 3; 6]]
+    := eq_refl _.
+
+  Lemma list_cross_product_length {T} (l:list (list T)) (lnnil:l <> nil)
+    : length (list_cross_product l) = fold_left Peano.mult (List.map (@length T) l) 1%nat.
+  Proof.
+    unfold list_cross_product.
+    destruct l; try congruence.
+    clear lnnil.
+    simpl.
+    rewrite <- plus_n_O.
+    
+    replace  (length l) with (length (map singleton l)) by (now rewrite map_length).
+    generalize (map singleton l).
+    induction l0; simpl; intros acc; trivial.
+    rewrite IHl0.
+    rewrite map_length.
+    rewrite prod_length.
+    now rewrite PeanoNat.Nat.mul_comm.
+  Qed.
+
+  Lemma list_cross_product_inner_length {T} (l:list (list T))
+    : Forall (fun x => length x = length l) (list_cross_product l).
+  Proof.
+    destruct l; simpl; trivial.
+    cut (forall acc n, Forall (fun x : list T => length x = n) acc ->
+                  Forall (fun x : list T => length x = n + length l0)
+                         (fold_left
+                            (fun (acc : list (list T)) (b : list T) =>
+                               map (fun '(a, b0) => b0 ++ [a]) (list_prod b acc)) l0 acc)).
+    - intros HH.
+      apply (HH _ 1).
+      rewrite Forall_forall; intros ? inn.
+      apply in_map_iff in inn.
+      destruct inn as [?[??]]; subst.
+      reflexivity.
+    - clear l.
+      induction l0; simpl; intros acc n Facc.
+      + revert Facc.
+        apply Forall_impl; intros.
+        lia.
+      +
+        rewrite <- Plus.plus_Snm_nSm.
+        specialize (IHl0 (map (fun '(a0, b0) => b0 ++ [a0]) (list_prod a acc)) (S n)).
+        apply IHl0.
+        rewrite Forall_map; simpl.
+        rewrite Forall_forall in *.
+        intros ? inn.
+        destruct x; simpl.
+        rewrite app_length; simpl.
+        apply in_prod_iff in inn.
+        rewrite Facc; simpl; try lia.
+        tauto.
+  Qed.
+
+  Lemma in_list_cross_product {T} (l:list (list T)) (nnil:l<>nil) (x:list T) :
+    In x (list_cross_product l) -> Forall2 (@In T) x l.
+  Proof.
+    destruct l; simpl; [congruence | clear nnil].
+    revert x.
+    induction l0 using rev_ind; simpl.
+    - intros.
+      apply in_map_iff in H.
+      destruct H as [? [? inn]]; subst.
+      unfold singleton.
+      constructor; trivial.
+    - intros ? HH.
+      rewrite fold_left_app in HH; simpl in HH.
+      apply in_map_iff in HH.
+      destruct HH as [[??][??]]; subst.
+      apply in_prod_iff in H0.
+      destruct H0 as [inn1 inn2].
+      replace (l::l0 ++ [x]) with ((l::l0)++[x]) by reflexivity.
+      apply Forall2_app; auto.
+  Qed.
+
+  Lemma list_cross_product_in {T} (l:list (list T)) (nnil:l<>nil) (x:list T) :
+    Forall2 (@In T) x l -> In x (list_cross_product l).
+  Proof.
+    destruct l; simpl; [congruence | clear nnil].
+    revert x.
+    induction l0 using rev_ind; simpl; intros xx HH.
+    - invcs HH.
+      apply in_map_iff.
+      unfold singleton.
+      invcs H3.
+      eauto.
+    - invcs HH.
+      apply Forall2_app_inv_r in H3.
+      destruct H3 as [?[?[F2 [F2' eqq]]]]; subst.
+      invcs F2'.
+      invcs H4.
+      specialize (IHl0 (x0::x1)).
+      rewrite fold_left_app; simpl.
+      apply in_map_iff.
+      exists (x3, x0::x1).
+      simpl.
+      split; trivial.
+      apply in_prod_iff.
+      split; auto.
+  Qed.
+
+  Lemma list_cross_product_in_iff {T} (l:list (list T)) (nnil:l<>nil) (x:list T) :
+    In x (list_cross_product l) <-> Forall2 (@In T) x l.
+  Proof.
+    split.
+    - now apply in_list_cross_product.
+    - now apply list_cross_product_in.
+  Qed.
+
+End cross_product.
+
+Section list_dep.
+
+  (* Given a list and a predicate that holds for every element in the list, 
+   we can combine them to get a list of sig types, pairing the proof with each element
+   *)
+  Program Fixpoint list_dep_zip  {T} {P:T->Prop} (l:list T) 
+  : Forall P l -> list (sig P)
+    := match l as l' return Forall P l' -> list (sig P) with
+       | nil => fun _ => nil
+       | x::l' => fun fp => exist _ x _ ::
+                             list_dep_zip l' _
+       end.
+  Next Obligation.
+    now invcs fp.
+  Qed.
+  Next Obligation.
+    now invcs fp.
+  Qed.
+
+  Lemma list_dep_zip_map1 {T} {P:T->Prop} (l:list T) Fp
+    : map (@proj1_sig _ P) (list_dep_zip l Fp) = l.
+  Proof.
+    revert Fp.
+    induction l; simpl; trivial; intros.
+    now rewrite IHl.
+  Qed.
+
+  Lemma list_dep_zip_length {T} {P:T->Prop} (l:list T) (Fp:Forall P l) :
+    length (list_dep_zip l Fp) = length l.
+  Proof.
+    erewrite <- map_length.
+    now rewrite list_dep_zip_map1.
+  Qed.
+
+End list_dep.

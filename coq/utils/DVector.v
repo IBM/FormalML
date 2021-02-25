@@ -45,6 +45,16 @@ Proof.
   now apply Forall2_eq.
 Qed.
 
+Definition vector0 {T} : vector T 0%nat := exist _ [] (eq_refl _).
+
+Lemma vector0_0 {T} (v:vector T 0%nat) : v = vector0.
+Proof.
+  apply vector_eq.
+  destruct v; simpl.
+  destruct x; simpl in *; trivial.
+  congruence.
+Qed.
+
 Program Lemma vector_length {T:Type} {n:nat} (v:vector T n)
   : length v = n.
 Proof.
@@ -161,6 +171,47 @@ Proof.
     congruence.
 Qed.
 
+Program Lemma vector_Forall2_nth_iff {A B} {n} (P:A->B->Prop) (v1:vector A n) (v2:vector B n) :
+  (forall (i : nat) (pf : (i < n)%nat), P (vector_nth i pf v1) (vector_nth i pf v2)) <->
+  Forall2 P v1 v2.
+Proof.
+  destruct v1 as [v1 ?]; destruct v2 as [v2 ?]; simpl in *; subst.
+  split
+  ; revert v2 e0
+  ; induction v1
+  ; destruct v2; simpl in *; try discriminate
+  ; intros e; intros.
+  - trivial.
+  - constructor.
+    + assert (pf0:(0 < S (length v1))%nat) by lia.
+      specialize (H _ pf0).
+      unfold vector_nth, proj1_sig in H.
+      repeat match_destr_in H; simpl in *.
+      congruence.
+    + assert (pf1:length v2 = length v1) by lia.
+      apply (IHv1 _ pf1); intros.
+      unfold vector_nth, proj1_sig.
+      repeat match_destr; simpl in *.
+      assert (pf2:(S i < S (length v1))%nat) by lia.
+      specialize (H (S i) pf2).      
+      unfold vector_nth, proj1_sig in H.
+      repeat match_destr_in H; simpl in *.
+      congruence.
+  - lia.
+  - invcs H.
+    unfold vector_nth, proj1_sig.
+    repeat match_destr; simpl in *.
+    destruct i; simpl in *.
+    + congruence.
+    + invcs e.
+      assert (pf1:(i < length v1)%nat) by lia.
+      specialize (IHv1 _ H0 H5 i pf1).
+      unfold vector_nth, proj1_sig in IHv1.
+      repeat match_destr_in IHv1; simpl in *.
+      congruence.
+Qed.
+
+
 Program Lemma vector_nth_In {A}
         {n}
         (v:vector A n)
@@ -175,7 +226,19 @@ Proof.
   now apply nth_error_In in e.
 Qed.  
 
-(*
+Lemma nth_error_map_onto {A B} (l:list A) (f:forall a, In a l->B) i d :
+  nth_error (map_onto l f) i = Some d ->
+  exists d' pfin, nth_error l i = Some d' /\
+             d = f d' pfin.
+Proof.
+  revert l f d.
+  induction i; destruct l; simpl; intros; try discriminate.
+  - invcs H.
+    eauto.
+  - destruct (IHi _ _ _ H) as [d' [pfin [??]]]; subst.
+    eauto.
+Qed.
+
 Program Lemma vector_nth_map_onto
   {A B:Type}
   {n:nat} (v:vector A n) (f:forall a, In a v->B)
@@ -185,46 +248,15 @@ Program Lemma vector_nth_map_onto
 Proof.
   unfold vector_map_onto.
   unfold vector_nth, proj1_sig.
-  match_destr.
+  repeat match_destr.
   simpl in *.
-  destruct v; simpl.
-  destruct x0; simpl in *; try lia.
-  revert x x0 e e0 f.
-  induction i; simpl; intros.
-  - invcs e.
-    eauto.
-  - match_destr.
-    simpl in *.
-    assert (pfi:i < n) by lia.
-    specialize (IHi pfi).
-    specialize (
-
-    specialize (
-
-  
-  cut (exists pfin, Some x = Some (f (let (a, _) := vector_nth_packed i pf v in a) (vector_nth_In v i pf)))
-  ; [now intros; invcs H |].
-  rewrite e; clear e.
-  destruct v; simpl.
+  symmetry in e1.
+  destruct (nth_error_map_onto _ _ _ _ e1) as [?[?[??]]].
   subst.
-  destruct x0; simpl in *; try lia.
-  induction i.
-  - simpl.
-    unfold map_onto_oib
-    repeat f_equal.
-    
-  
-  
-
-
-  
-  
-  match_destr.
-  simpl in *.
-  induction i; simpl.
-
+  rewrite H in e.
+  invcs e.
+  eauto.
 Qed.
- *)
 
 Program Fixpoint vector_list_create
            {T:Type}
@@ -596,3 +628,60 @@ Next Obligation.
   apply listo_to_olist_length in Heq_anonymous.
   now rewrite vector_length in Heq_anonymous.
 Qed.
+
+Definition vector_list {A} (l:list A) : vector A (length l)
+  := exist _ l (eq_refl _).
+
+Definition Forall_vectorize {T} {n} (l:list (list T)) 
+           (flen:Forall (fun x => length x = n) l) : list (vector T n)
+  := list_dep_zip l flen.
+
+Lemma Forall_vectorize_length {T} {n} (l:list (list T)) 
+      (flen:Forall (fun x => length x = n) l) :
+  length (Forall_vectorize l flen) = length l.
+Proof.
+  apply list_dep_zip_length.
+Qed.
+
+Lemma Forall_vectorize_in {T} {n} (l:list (list T)) 
+      (flen:Forall (fun x => length x = n) l) (x:vector T n) :
+  In x (Forall_vectorize l flen) <-> In (proj1_sig x) l.
+Proof.
+  rewrite <- (list_dep_zip_map1 l flen) at 2.
+  rewrite in_map_iff.
+  split; intros.
+  - eauto.
+  - destruct H as [? [??]].
+    apply vector_eq in H.
+    now subst.
+Qed.
+
+Program Definition vector_list_product {n} {T} (l:vector (list T) n)
+  : list (vector T n)
+  := Forall_vectorize (list_cross_product l) _.
+Next Obligation.
+  destruct l.
+  subst.
+  apply list_cross_product_inner_length.
+Qed.
+
+Program Lemma vector_list_product_length {n} {T} (lnnil:n <> 0) (l:vector (list T) n) :
+  length (vector_list_product l) = fold_left Peano.mult (vector_map (@length T) l) 1%nat.
+Proof.
+  unfold vector_list_product.
+  rewrite Forall_vectorize_length.
+  rewrite list_cross_product_length; simpl; trivial.
+  destruct l; simpl.
+  destruct x; simpl in *; congruence.
+Qed.
+
+Program Lemma vector_list_product_in_iff {n} {T} (lnnil:n <> 0) (l:vector (list T) n) (x:vector T n):
+  In x (vector_list_product l) <-> Forall2 (@In T) x l.
+Proof.
+  unfold vector_list_product.
+  rewrite Forall_vectorize_in.
+  apply list_cross_product_in_iff.
+  destruct l; simpl.
+  destruct x0; simpl in *; congruence.
+Qed.
+
