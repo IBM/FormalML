@@ -332,6 +332,72 @@ Proof.
   apply Rvector_mult_measurable; trivial.
 Qed.
 
+
+Global Instance Rvector_plus_rv {n} (f g : Ts -> vector R n) :
+  RandomVariable dom (Rvector_borel_sa n)  f ->
+  RandomVariable dom (Rvector_borel_sa n)  g ->
+  RandomVariable dom (Rvector_borel_sa n)  (vecrvplus f g).
+Proof.
+  intros.
+  apply RealVectorMeasurableRandomVariable.
+  apply Rvector_plus_measurable
+  ; now apply RandomVariableRealVectorMeasurable.
+Qed.
+
+Global Instance Rvector_mult_rv {n} (f g : Ts -> vector R n) :
+  RandomVariable dom (Rvector_borel_sa n)  f ->
+  RandomVariable dom (Rvector_borel_sa n)  g ->
+  RandomVariable dom (Rvector_borel_sa n)  (vecrvmult f g).
+Proof.
+  intros.
+  apply RealVectorMeasurableRandomVariable.
+  apply Rvector_mult_measurable
+  ; now apply RandomVariableRealVectorMeasurable.
+Qed.
+
+
+Global Instance Rvector_scale_rv {n} c (f : Ts -> vector R n) :
+  RandomVariable dom (Rvector_borel_sa n) f ->
+  RandomVariable dom (Rvector_borel_sa n) (vecrvscale c f).
+Proof.
+  intros.
+  apply RealVectorMeasurableRandomVariable.
+  apply Rvector_scale_measurable.
+  now apply RandomVariableRealVectorMeasurable.
+Qed.
+  
+Global Instance Rvector_opp_rv {n} (f : Ts -> vector R n) :
+  RandomVariable dom (Rvector_borel_sa n) f ->
+  RandomVariable dom (Rvector_borel_sa n) (vecrvopp f).
+Proof.
+  intros.
+  apply RealVectorMeasurableRandomVariable.
+  apply Rvector_opp_measurable.
+  now apply RandomVariableRealVectorMeasurable.
+Qed.  
+
+Global Instance Rvector_sum_rv {n} (f : Ts -> vector R n) :
+  RandomVariable dom (Rvector_borel_sa n) f ->
+  RandomVariable dom borel_sa (vecrvsum f).
+Proof.
+  intros.
+  apply measurable_rv.
+  apply Rvector_sum_measurable
+  ; now apply RandomVariableRealVectorMeasurable.
+Qed.
+
+Global Instance Rvector_inner_rv {n} (f g : Ts -> vector R n) :
+  RandomVariable dom (Rvector_borel_sa n) f ->
+  RandomVariable dom (Rvector_borel_sa n) g ->
+  RandomVariable dom borel_sa (rvinner f g).
+Proof.
+  intros.
+  apply measurable_rv.
+  apply Rvector_inner_measurable
+  ; now apply RandomVariableRealVectorMeasurable.
+Qed.
+
+
 Definition vector_Expectation {n} (rv_X : Ts -> vector R n) : option (vector Rbar n)
   := vectoro_to_ovector (vector_map Expectation (iso_f rv_X)).
 

@@ -1116,10 +1116,6 @@ algorithm.
       apply inner_ge_0.
     Qed.
 
-    Instance inner_rv (f g: X -> X) :
-      RandomVariable dom borel_sa (fun v => inner (f v) (g v)).
-    Admitted.
-
     Lemma forall_expectation_ext {rv1 rv2 : nat -> X -> R} :
       (forall n, rv_eq (rv1 n) (rv2 n)) ->
       forall n, Expectation (rv1 n) = Expectation (rv2 n).
@@ -1367,6 +1363,7 @@ algorithm.
                    (SimpleExpectation 
                       (rvinner (w n) (w n))))).
       intros.
+      erewrite (SimpleExpectation_pf_irrel _ (srvplus _ _)).
       rewrite <- sumSimpleExpectation.
       assert (forall n, 
                  Expectation (rvscale 
