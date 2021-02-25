@@ -397,6 +397,47 @@ Proof.
   ; now apply RandomVariableRealVectorMeasurable.
 Qed.
 
+Global Instance Rvector_sum_pos {n} (f : Ts -> vector R n) :
+  (forall i pf, PositiveRandomVariable (fun x => vector_nth i pf (f x))) ->
+  PositiveRandomVariable (vecrvsum f).
+Proof.
+  intros FP ?.
+  apply Rvector_sum_pos.
+  intros.
+  apply In_vector_nth_ex in H.
+  destruct H as [i [pf eqq]]; subst.
+  apply FP.
+Qed.
+
+Global Instance Rvector_inner_pos_mult {n} (f g : Ts -> vector R n) :
+  (forall i pf, PositiveRandomVariable (fun x => vector_nth i pf (f x) * vector_nth i pf (g x))) ->
+  PositiveRandomVariable (rvinner f g).
+Proof.
+  intros ?.
+  apply Rvector_sum_pos; intros.
+  intros ?.
+  rewrite Rvector_mult_explode; rewrite vector_nth_create'.
+  apply H.
+Qed.
+
+Global Instance Rvector_inner_self_pos {n} (f : Ts -> vector R n) :
+  PositiveRandomVariable (rvinner f f).
+Proof.
+  intros ?.
+  apply Rvector_inner_pos.
+Qed.
+
+Global Instance Rvector_inner_pos {n} (f g : Ts -> vector R n) :
+  (forall i pf, PositiveRandomVariable (fun x => vector_nth i pf (f x))) ->
+  (forall i pf, PositiveRandomVariable (fun x => vector_nth i pf (g x))) ->
+  PositiveRandomVariable (rvinner f g).
+Proof.
+  unfold PositiveRandomVariable.
+  intros ??.
+  apply Rvector_inner_pos_mult.
+  intros i pf ?.
+  apply Rmult_le_pos; eauto.
+Qed.
 
 Definition vector_Expectation {n} (rv_X : Ts -> vector R n) : option (vector Rbar n)
   := vectoro_to_ovector (vector_map Expectation (iso_f rv_X)).
