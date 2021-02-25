@@ -104,6 +104,9 @@ Definition vecrvscale {n} (c:R) (rv_X : Ts -> vector R n) :=
 Definition vecrvopp {n} (rv_X : Ts -> vector R n) := 
   vecrvscale (-1) rv_X.
 
+Definition vecrvminus {n} (rv_X1 rv_X2 : Ts -> vector R n) :=
+  vecrvplus rv_X1 (vecrvopp rv_X2).
+
 Definition vecrvsum {n} (rv_X : Ts -> vector R n) : Ts -> R :=
   (fun omega => Rvector_sum (rv_X omega)).
 
@@ -487,7 +490,7 @@ Qed.
       easy.
     Qed.
 
-    Instance srvinner {n}
+    Global Instance srvinner {n}
            (rv_X1 rv_X2 : Ts -> vector R n)
            {srv1:SimpleRandomVariable rv_X1}
            {srv2:SimpleRandomVariable rv_X2}
@@ -498,24 +501,6 @@ Qed.
       - typeclasses eauto.
     Qed.
 
-    Lemma gen_SimpleConditionalExpectation_ext (x y:Ts->R)
-          {srvx : SimpleRandomVariable x}
-          {srvy : SimpleRandomVariable y}          
-          (l : list dec_sa_event) :
-      rv_eq x y ->
-      rv_eq (gen_SimpleConditionalExpectation x l)
-            (gen_SimpleConditionalExpectation y l).
-    Proof.
-      repeat red; intros.
-      unfold gen_SimpleConditionalExpectation.
-      f_equal.
-      apply map_ext; intros.
-      unfold gen_simple_conditional_expectation_scale.
-      match_destr.
-      do 2 f_equal.
-      apply SimpleExpectation_ext.
-      now rewrite H.
-    Qed.
 
   (* if l is viewed as finite generators for a sigma algebra, this shows that
     we can factor out l-measurable random variables from conditional expectation *)
