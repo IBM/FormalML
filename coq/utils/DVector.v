@@ -143,33 +143,6 @@ Proof.
   auto.
 Qed.
 
-Lemma vector_nth_eq {T} {n} (v1 v2:vector T n) :
-  (forall i pf, vector_nth i pf v1 = vector_nth i pf v2) ->
-  v1 = v2.
-Proof.
-  intros eqq.
-  apply vector_eq.
-  destruct v1; destruct v2; simpl in *.
-  subst.
-  revert x0 e0 eqq.
-  induction x; destruct x0; simpl; intros; trivial; try discriminate.
-  f_equal.
-  - assert (pf:0 < S (length x)) by lia.
-    specialize (eqq 0 pf).
-    unfold vector_nth, proj1_sig in eqq.
-    repeat match_destr_in eqq.
-    simpl in *.
-    congruence.
-  - assert (pf:length x0 = length x) by lia.
-    apply (IHx _ pf); intros.
-    assert (pf2: (S i) < S (length x)) by lia.
-    specialize (eqq _ pf2).
-    unfold vector_nth, proj1_sig in *.
-    repeat match_destr_in eqq.
-    repeat match_destr.
-    simpl in *.
-    congruence.
-Qed.
 
 Program Lemma vector_Forall2_nth_iff {A B} {n} (P:A->B->Prop) (v1:vector A n) (v2:vector B n) :
   (forall (i : nat) (pf : (i < n)%nat), P (vector_nth i pf v1) (vector_nth i pf v2)) <->
@@ -209,6 +182,15 @@ Proof.
       unfold vector_nth, proj1_sig in IHv1.
       repeat match_destr_in IHv1; simpl in *.
       congruence.
+Qed.
+
+Lemma vector_nth_eq {T} {n} (v1 v2:vector T n) :
+  (forall i pf, vector_nth i pf v1 = vector_nth i pf v2) ->
+  v1 = v2.
+Proof.
+  intros.
+  apply vector_eqs.
+  now apply vector_Forall2_nth_iff.
 Qed.
 
 
