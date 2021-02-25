@@ -1102,12 +1102,6 @@ algorithm.
 
     (* Theorem 8 *)
 
-    Definition ConditionalExpectationV (f g : X -> X) : X -> X.
-    Admitted.
-
-    Definition ExpectationV (f : X -> X) : X.
-    Admitted.
-
     Global Instance positive_inner (f : X -> X) :
       PositiveRandomVariable (fun v => inner (f v) (f v) ).
     Proof.
@@ -1145,8 +1139,6 @@ algorithm.
       intros.
       now apply SimpleExpectation_ext.
     Qed.
-
-    
 
     Lemma isfinexp_finite_neg_part (rv_X : X -> R)
           {rv : RandomVariable dom borel_sa rv_X} :
@@ -1229,68 +1221,102 @@ algorithm.
    Lemma rv_inner_plus_l (x y z : X) :
      Rvector_inner (Rvector_plus x y) z = 
      (Rvector_inner x z) + (Rvector_inner y z).
-   Admitted.
+   Proof.
+     now generalize (inner_plus_l x y z).
+   Qed.
 
    Lemma rv_inner_plus_r (x y z : X) :
      Rvector_inner x (Rvector_plus y z) = 
      (Rvector_inner x y) + (Rvector_inner x z).
-   Admitted.
+    Proof.
+      now generalize (inner_plus_r x y z).
+    Qed.
    
    Lemma rv_inner_scal_l (x y : X) (l : R) :
      Rvector_inner (Rvector_scale l x) y = l * Rvector_inner x y.
-   Admitted.
+   Proof.
+     now generalize (inner_scal_l x y l).
+   Qed.
 
    Lemma rv_inner_scal_r (x y : X) (l : R) :
      Rvector_inner x (Rvector_scale l y) = l * Rvector_inner x y.
-   Admitted.
+   Proof.
+     now generalize (inner_scal_r x y l).
+   Qed.
 
    Lemma rv_inner_sym (x y : X) :
      Rvector_inner x y = Rvector_inner y x.
+   Proof.
+     now generalize (inner_sym x y).
+   Qed.
+
+   Instance rv_Fa (a:R) (x: X -> X) 
+            (rvx : RandomVariable dom (Rvector_borel_sa I) x) :
+     RandomVariable dom (Rvector_borel_sa I) 
+                    (fun v => F_alpha a (x v)).
    Admitted.
 
-    Theorem L2_convergent (C : R) (w x : nat -> X -> X) (xstar : X)
-            (rw : forall n, RandomVariable dom dom (w n)) 
-            (srw : forall n, SimpleRandomVariable  (w n)) :      
-      0 <= gamma < 1 ->
-      xstar = F xstar ->
-      (forall n, 0 < α n <= 1) ->
-      is_lim_seq α 0 ->
-      is_lim_seq (sum_n α) p_infty ->
-      (forall k, (x (S k)) = 
+  Instance srv_Fa (a:R) (x: X -> X)
+           (srvx : SimpleRandomVariable x) :
+    SimpleRandomVariable (fun v => F_alpha a (x v)).
+  Admitted.
+
+   Lemma L2_convergent_helper (C : R) (w x : nat -> X -> X) (xstar : X) (n:nat)
+         (rx : forall n, RandomVariable dom (Rvector_borel_sa I) (x n))
+         (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
+         (srw : forall n, SimpleRandomVariable  (w n)) 
+         (srx : forall n, SimpleRandomVariable  (x n)) :
+     (forall k, (x (S k)) = 
                  vecrvplus (fun v => (F_alpha (α k) (x k v)))
                            (vecrvscale (α k) (w k))) ->
-      (forall n, vector_SimpleExpectation (w n) = zero) ->
-      (forall n, SimpleExpectation (fun v => inner (w n v) (w n v)) < C)  ->
-      is_lim_seq 
-        (fun n => Expectation_posRV
+     SimpleExpectation
+       (rvinner
+          (vecrvminus (fun v : X => F_alpha (α n) (x n v)) 
+                      (const xstar))
+          (w n)) = zero ->
+     
+     rv_le (rvinner (vecrvminus (fun v : X => F_alpha (α n) (x n v))
+                                (const xstar))
+                    (vecrvminus (fun v : X => F_alpha (α n) (x n v))
+                                (const xstar)))
+           (rvscale (g_alpha gamma (α n)) 
                     (rvinner (vecrvminus (x n) (const xstar))
-                             (vecrvminus (x n) (const xstar)))) 0.
+                             (vecrvminus (x n) (const xstar)))) ->
+           
+     SimpleExpectation (rvinner (w n) (w n)) < C  ->
+      
+     SimpleExpectation (rvinner (vecrvminus (x (S n)) (const xstar))
+                                (vecrvminus (x (S n)) (const xstar))) <=
+     (SimpleExpectation
+        (rvscale (g_alpha gamma (α n))
+                 (rvinner (vecrvminus (x n) (const xstar))
+                          (vecrvminus (x n) (const xstar)))))
+       + (α n)^2 * C.
     Proof.
       intros.
-      assert (forall n, 
-                 rv_eq (rvinner (vecrvminus (x (S n)) (const xstar))
-                                (vecrvminus (x (S n)) (const xstar)))
-                       (rvplus
-                          (rvscale 
-                             (2 * (α n))
-                             (rvinner
-                                (vecrvminus (fun v => ((F_alpha (α n)) (x n v)))
-                                          (const xstar))
-                                (w n)))
-                          (rvplus
-                            (rvinner (vecrvminus 
-                                        (fun v => ((F_alpha (α n)) (x n v)))
-                                        (const xstar))
-                                     (vecrvminus 
-                                        (fun v => ((F_alpha (α n)) (x n v))) 
-                                        (const xstar)))
-                            (rvscale ((α n)^2)
-                                     (rvinner (w n) (w n)))))).
+      assert (rv_eq (rvinner (vecrvminus (x (S n)) (const xstar))
+                     (vecrvminus (x (S n)) (const xstar)))
+            (rvplus
+               (rvscale 
+                  (2 * (α n))
+                  (rvinner
+                     (vecrvminus (fun v => ((F_alpha (α n)) (x n v)))
+                                 (const xstar))
+                     (w n)))
+               (rvplus
+                  (rvinner (vecrvminus 
+                              (fun v => ((F_alpha (α n)) (x n v)))
+                              (const xstar))
+                           (vecrvminus 
+                              (fun v => ((F_alpha (α n)) (x n v))) 
+                              (const xstar)))
+                  (rvscale ((α n)^2)
+                           (rvinner (w n) (w n)))))).
       {
-        intros n v.
+        intros v.
         unfold rvplus, rvscale.
         simpl.
-        rewrite H4.
+        rewrite H.
         unfold rvinner, vecrvminus, vecrvplus, vecrvopp, vecrvscale.
         repeat rewrite rv_inner_plus_l.
         repeat rewrite rv_inner_plus_r.        
@@ -1305,129 +1331,49 @@ algorithm.
                 (Rvector_inner (const xstar v) (w n v)) by apply rv_inner_sym.
         now ring_simplify.
      }
+      generalize (SimpleExpectation_ext _ _ H3); intros.
+      rewrite <- sumSimpleExpectation in H4; [|typeclasses eauto | typeclasses eauto].
+      rewrite <- sumSimpleExpectation in H4; [|typeclasses eauto | typeclasses eauto].
+      rewrite <- scaleSimpleExpectation in H4.
+      rewrite <- scaleSimpleExpectation in H4.      
+      rewrite H0 in H4.
+      rewrite Rmult_0_r in H4.
+      ring_simplify in H4.
+      generalize (SimpleExpectation_le _ _ H1); intros.
+      rewrite H4.      
+      apply Rplus_le_compat.
+      apply H5.
+      apply Rmult_le_compat_l.
+      apply pow2_ge_0.
+      now left.
+   Qed.
 
-      assert (forall n : nat,
-                 SimpleRandomVariable
-                   ((fun (n0 : nat) =>
-                       rvinner (vecrvminus (x (S n0)) (const xstar))
-                               (vecrvminus (x (S n0)) (const xstar))) n)).
-      admit.
-      generalize (forall_SimpleRandomVariable_ext H7); intros.
-      generalize (forall_SimpleExpectation_ext H7); intros.
-      assert (forall n,
-                 SimpleRandomVariable
-                   (vecrvminus (fun v : X => F_alpha (α n) (x n v))
-                                   (const xstar)) ).
-      admit.
-      assert (forall n,
-                 SimpleRandomVariable 
-                    (rvinner
-                       (vecrvminus (fun v : X => F_alpha (α n) (x n v))
-                                   (const xstar)) 
-                       (w n))) by (intros; now apply srvinner).
-      assert (forall n,
-                 SimpleRandomVariable
-                    (rvinner
-                       (vecrvminus (fun v : X => F_alpha (α n) (x n v))
-                                   (const xstar))
-                       (vecrvminus (fun v : X => F_alpha (α n) (x n v))
-                                   (const xstar)))) by
-          (intros; now apply srvinner).
-      assert (forall n,
-                  SimpleExpectation
-                    (rvplus
-                       (rvscale (2 * α n)
-                                (rvinner
-                                   (vecrvminus (fun v : X => F_alpha (α n) (x n v))
-                                               (const xstar)) (w n)))
-                       (rvplus
-                          (rvinner
-                             (vecrvminus (fun v : X => F_alpha (α n) (x n v))
-                                         (const xstar))
-                             (vecrvminus (fun v : X => F_alpha (α n) (x n v))
-                                         (const xstar))) 
-                          (rvscale (α n ^ 2) (rvinner (w n) (w n))))) =
-                  ((2 * α n) *
-                  SimpleExpectation 
-                    (rvinner
-                       (vecrvminus (fun v : X => F_alpha (α n) (x n v))
-                                   (const xstar)) 
-                       (w n))) + 
-                  (SimpleExpectation
-                    (rvinner
-                       (vecrvminus (fun v : X => F_alpha (α n) (x n v))
-                                   (const xstar))
-                       (vecrvminus (fun v : X => F_alpha (α n) (x n v))
-                                   (const xstar)))) + 
-                  (((α n)^2) * 
-                   (SimpleExpectation 
-                      (rvinner (w n) (w n))))).
+    Theorem L2_convergent (C : R) (w x : nat -> X -> X) (xstar : X)
+         (rx : forall n, RandomVariable dom (Rvector_borel_sa I) (x n))
+         (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
+         (srw : forall n, SimpleRandomVariable  (w n)) 
+         (srx : forall n, SimpleRandomVariable  (x n)) :
+      0 <= gamma < 1 ->
+      xstar = F xstar ->
+      (forall n, 0 < α n <= 1) ->
+      is_lim_seq α 0 ->
+      is_lim_seq (sum_n α) p_infty ->
+      (forall k, (x (S k)) = 
+                 vecrvplus (fun v => (F_alpha (α k) (x k v)))
+                           (vecrvscale (α k) (w k))) ->
+      (forall n, SimpleExpectation
+                   (rvinner
+                      (vecrvminus (fun v : X => F_alpha (α n) (x n v)) 
+                                  (const xstar))
+                      (w n)) = zero) ->
+      (forall n, SimpleExpectation (fun v => inner (w n v) (w n v)) < C)  ->
+      is_lim_seq 
+        (fun n => Expectation_posRV
+                    (rvinner (vecrvminus (x n) (const xstar))
+                             (vecrvminus (x n) (const xstar)))) 0.
+    Proof.
       intros.
-      erewrite (SimpleExpectation_pf_irrel _ (srvplus _ _)).
-      rewrite <- sumSimpleExpectation.
-      assert (forall n, 
-                 Expectation (rvscale 
-                                (2 * α n)
-                                (fun v : X => 
-                                   inner (minus (F_alpha (α n) (x n v)) xstar) 
-                                         (w n v))) = Some (Finite 0)). 
-      admit.
-      assert (forall n,
-                  Expectation
-                    (fun v : X => inner (minus (x (S n) v) xstar) (minus (x (S n) v) xstar)) =
-                  Expectation
-                    (rvplus
-                       (fun v : X =>
-                          inner (minus (F_alpha (α n) (x n v)) xstar)
-                                (minus (F_alpha (α n) (x n v)) xstar))
-                       (rvscale (mkposreal (α n ^ 2) (asq_pos n))(fun v : X => inner (w n v) (w n v))))).
-      { 
-        intros.
-        rewrite H8.
-        erewrite Expectation_sum_first_finite_snd_pos with (e1 := 0).
-        erewrite Expectation_pos_posRV.
-        f_equal.
-        now rewrite Rbar_plus_0_l.
-        typeclasses eauto.
-        typeclasses eauto.
-        typeclasses eauto.        
-        apply H9.
-        apply Expectation_pos_posRV.
-      }
-      assert (forall n,
-                 Expectation_posRV
-                   (fun v : X => inner (minus (x (S n) v) xstar) (minus (x (S n) v) xstar)) = 
-                 Rbar_plus
-                   (Expectation_posRV 
-                      (fun v : X =>
-                         inner (minus (F_alpha (α n) (x n v)) xstar)
-                               (minus (F_alpha (α n) (x n v)) xstar)))
-                   (Rbar_mult (mkposreal (α n ^ 2) (asq_pos n))
-                              (Expectation_posRV
-                                 (fun v : X => inner (w n v) (w n v))))).
-      {
-        intros.
-        specialize (H10 n).
-        erewrite Expectation_pos_posRV in H10.
-        erewrite Expectation_pos_posRV in H10.
-        inversion H10.
-        erewrite Expectation_posRV_sum in H12.
-        erewrite Expectation_posRV_scale in H12.
-        apply H12.
-        typeclasses eauto.
-        typeclasses eauto.
-      }
-      assert (forall n,
-                 Rbar_le
-                   (Expectation_posRV
-                      (fun v : X => inner (minus (x (S n) v) xstar) (minus (x (S n) v) xstar)))
-                  (Rbar_plus
-                     (Rbar_mult ((g_alpha gamma (α n))^2)
-                                (Expectation_posRV
-                                   (fun v : X => inner (minus (x n v) xstar) (minus (x n v) xstar))))
-                     (((α n)^2)*C))).
-      intros.
-      rewrite H11.
+      generalize (L2_convergent_helper C w x xstar); intros.
       
      Admitted.
 
