@@ -344,6 +344,7 @@ Proof.
   ; now apply RandomVariableRealVectorMeasurable.
 Qed.
 
+
 Global Instance Rvector_mult_rv {n} (f g : Ts -> vector R n) :
   RandomVariable dom (Rvector_borel_sa n)  f ->
   RandomVariable dom (Rvector_borel_sa n)  g ->
@@ -354,7 +355,6 @@ Proof.
   apply Rvector_mult_measurable
   ; now apply RandomVariableRealVectorMeasurable.
 Qed.
-
 
 Global Instance Rvector_scale_rv {n} c (f : Ts -> vector R n) :
   RandomVariable dom (Rvector_borel_sa n) f ->
@@ -375,6 +375,17 @@ Proof.
   apply Rvector_opp_measurable.
   now apply RandomVariableRealVectorMeasurable.
 Qed.  
+
+Global Instance Rvector_minus_rv {n} (f g : Ts -> vector R n) :
+  RandomVariable dom (Rvector_borel_sa n)  f ->
+  RandomVariable dom (Rvector_borel_sa n)  g ->
+  RandomVariable dom (Rvector_borel_sa n)  (vecrvminus f g).
+Proof.
+  intros.
+  unfold vecrvminus.
+  apply Rvector_plus_rv; trivial.
+  now apply Rvector_opp_rv.
+Qed.
 
 Global Instance Rvector_sum_rv {n} (f : Ts -> vector R n) :
   RandomVariable dom (Rvector_borel_sa n) f ->
@@ -584,6 +595,32 @@ Qed.
       now simpl.
       apply in_prod; trivial.
     Qed.
+
+    Program Instance srv_vecrvscale {n} (c:R)
+           (rv_X : Ts -> vector R n)
+           {srv:SimpleRandomVariable rv_X}
+      : SimpleRandomVariable (vecrvscale c rv_X)
+      := { srv_vals := map (fun x => Rvector_scale c x)
+                           (srv_vals (SimpleRandomVariable := srv)) }.
+    Next Obligation.
+      destruct srv.
+      rewrite in_map_iff.
+      exists (rv_X x).
+      now split.
+    Qed.
+
+    Global Instance srv_vecropp {n}
+           (rv_X : Ts -> vector R n)
+           {srv:SimpleRandomVariable rv_X}
+      : SimpleRandomVariable (vecrvopp rv_X)
+    :=  srv_vecrvscale (-1) rv_X.    
+
+    Global Instance srv_vecrvminus {n}
+           (rv_X1 rv_X2 : Ts -> vector R n)
+           {srv1 : SimpleRandomVariable rv_X1}
+           {srv2 : SimpleRandomVariable rv_X2}  :
+      SimpleRandomVariable (vecrvminus rv_X1 rv_X2) := 
+      srv_vecrvplus rv_X1 (vecrvopp rv_X2).
 
     Program Instance srv_vecsum {n}
            (rv_X : Ts -> vector R n)
