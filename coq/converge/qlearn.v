@@ -127,13 +127,38 @@ algorithm.
                   apply (@norm_zero R_AbsRing).
     Qed.
 
+    Lemma scal_1 (x:X) :
+      scal 1 x = x.
+    Proof.
+      generalize (scal_one x).
+      now unfold one.
+    Qed.
+
+    Lemma scal_0 (x:X) :
+      scal 0 x = zero.
+    Proof.
+      generalize (scal_zero_l x).
+      now unfold zero.
+    Qed.
+
     (*TODO(Kody): Use this to simplify the proof above. *)
     Lemma is_contraction_falpha' (γ r : R) :
-      0<r<=1 -> (forall x y, norm(minus (F x) (F y)) <= γ*(norm (minus x y)))
+      0<=r<=1 -> (forall x y, norm(minus (F x) (F y)) <= γ*(norm (minus x y)))
       -> (forall x y,
       norm (minus (f_alpha F r x) (f_alpha F r y)) <=  (1-r+ γ*r)*norm(minus x y)).
     Proof.
       intros Hr HL x y.
+      destruct (Req_dec r 0).
+      {
+        rewrite H.
+        unfold f_alpha.
+        ring_simplify.
+        replace (1 - 0) with (1) by lra.
+        do 2 rewrite scal_1.
+        do 2 rewrite scal_0.
+        do 2 rewrite plus_zero_r.
+        lra.
+      }
       rewrite Rmult_plus_distr_r.
       unfold f_alpha.
       rewrite plus_minus_scal_distr.
@@ -1271,6 +1296,11 @@ algorithm.
      now generalize (inner_sym x y).
    Qed.
 
+   Lemma rv_inner_ge_0 (x : X) :
+      0 <= Rvector_inner x x.
+   Proof.
+     now generalize (inner_ge_0 x).
+   Qed.
 (*
    Definition F_alpha (a : R)  :=
      (@f_alpha Rvector_NormedModule F a).
@@ -1320,7 +1350,7 @@ algorithm.
                                 (const xstar))
                     (vecrvminus (F_alpha (α n) (x n))
                                 (const xstar)))
-           (rvscale (g_alpha gamma (α n)) 
+           (rvscale ((g_alpha gamma (α n))^2)
                     (rvinner (vecrvminus (x n) (const xstar))
                              (vecrvminus (x n) (const xstar)))) ->
            
@@ -1328,7 +1358,7 @@ algorithm.
       
      SimpleExpectation (rvinner (vecrvminus (x (S n)) (const xstar))
                                 (vecrvminus (x (S n)) (const xstar))) <=
-     (g_alpha gamma (α n)) *
+     ((g_alpha gamma (α n))^2) *
      (SimpleExpectation
         (rvinner (vecrvminus (x n) (const xstar))
                  (vecrvminus (x n) (const xstar))))
@@ -1395,11 +1425,9 @@ algorithm.
          (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
          (srw : forall n, SimpleRandomVariable  (w n)) 
          (srx : forall n, SimpleRandomVariable  (x n)) :
-      (*  0 <= gamma < 1 -> *)
-       0 < gamma < 1 ->
-(*      (@norm_factor R_AbsRing (Rvector_PreHilbert I)) <= 1 -> *)
+      0 <= gamma < 1 ->
       xstar = F xstar ->
-      (forall n, 0 < α n <= 1) -> 
+      (forall n, 0 <= α n <= 1) -> 
       is_lim_seq α 0 ->
       is_lim_seq (sum_n α) p_infty ->
       (forall k, (x (S k)) = 
@@ -1411,6 +1439,12 @@ algorithm.
                                   (const xstar))
                       (w n)) = zero) ->
       (forall n, SimpleExpectation (rvinner (w n) (w n)) < C)  ->
+(*
+      (forall (x y : (@PreHilbert_NormedModule
+                                             (@Rvector_PreHilbert I))),
+          norm (minus (F x) (F y)) <= gamma * norm (minus x y)) ->
+*)
+
       is_lim_seq 
         (fun n => Expectation_posRV
                     (rvinner (vecrvminus (x n) (const xstar))
@@ -1420,7 +1454,7 @@ algorithm.
       assert (forall n,
                  SimpleExpectation (rvinner (vecrvminus (x (S n)) (const xstar))
                                 (vecrvminus (x (S n)) (const xstar))) <=
-                 (g_alpha gamma (α n)) *
+                 ((g_alpha gamma (α n))^2) *
                  (SimpleExpectation
                     (rvinner (vecrvminus (x n) (const xstar))
                              (vecrvminus (x n) (const xstar))))
@@ -1428,10 +1462,42 @@ algorithm.
       intros.
       apply L2_convergent_helper with (w := w) (srw := srw); trivial.
 
+      
+
       generalize (@is_contraction_falpha' (@PreHilbert_NormedModule
                                              (@Rvector_PreHilbert I))
-                                         F gamma (α n) (H1 n)); intros.
-
+                                          F gamma (α n) (H1 n)); intros.
+      intro v.
+      cut_to H7.
+      specialize (H7 (x n v) xstar).
+      unfold norm, minus, f_alpha in H7; simpl in H7.
+      unfold Hnorm, plus, opp in H7; simpl in H7.
+      unfold inner, scal in H7; simpl in H7.
+      unfold rvinner, vecrvminus, F_alpha, const.
+      unfold vecrvplus, vecrvopp, vecrvscale, rvscale.
+      unfold Rvector_opp in H7.
+      replace (1 - α n + gamma * α n) with (sqrt( (1 - α n + gamma * α n)^2)) in H7.
+      rewrite <- sqrt_mult_alt in H7.
+      apply sqrt_le_0 in H7.
+      unfold g_alpha.
+      rewrite <- H0 in H7.
+      replace  (Rvector_plus (Rvector_scale (1 - α n) xstar)
+                  (Rvector_scale (α n) xstar)) with
+          (xstar) in H7.
+      replace (1 - (1 - gamma) * α n) with (1 - α n + gamma * α n) by lra.
+      apply H7.
+      admit.
+      apply rv_inner_ge_0.
+      apply Rmult_le_pos.
+      apply pow2_ge_0.
+      apply rv_inner_ge_0.      
+      apply pow2_ge_0.
+      rewrite sqrt_pow2; trivial.
+      generalize (gamma_alpha_pos α gamma H H1 n).
+      unfold g_alpha; lra.
+      admit.
+      
+      
     Admitted.
 
       
