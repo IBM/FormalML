@@ -127,20 +127,6 @@ algorithm.
                   apply (@norm_zero R_AbsRing).
     Qed.
 
-    Lemma scal_1 (x:X) :
-      scal 1 x = x.
-    Proof.
-      generalize (scal_one x).
-      now unfold one.
-    Qed.
-
-    Lemma scal_0 (x:X) :
-      scal 0 x = zero.
-    Proof.
-      generalize (scal_zero_l x).
-      now unfold zero.
-    Qed.
-
     (*TODO(Kody): Use this to simplify the proof above. *)
     Lemma is_contraction_falpha' (γ r : R) :
       0<=r<=1 -> (forall x y, norm(minus (F x) (F y)) <= γ*(norm (minus x y)))
@@ -148,17 +134,6 @@ algorithm.
       norm (minus (f_alpha F r x) (f_alpha F r y)) <=  (1-r+ γ*r)*norm(minus x y)).
     Proof.
       intros Hr HL x y.
-      destruct (Req_dec r 0).
-      {
-        rewrite H.
-        unfold f_alpha.
-        ring_simplify.
-        replace (1 - 0) with (1) by lra.
-        do 2 rewrite scal_1.
-        do 2 rewrite scal_0.
-        do 2 rewrite plus_zero_r.
-        lra.
-      }
       rewrite Rmult_plus_distr_r.
       unfold f_alpha.
       rewrite plus_minus_scal_distr.
@@ -179,6 +154,7 @@ algorithm.
           rewrite Rmult_assoc.
           apply Rmult_le_compat_l; try lra.
           apply HL.
+          lra.
     Qed.
 
     (* The next few lemmas are in preparation for proving Theorem 2. *)
