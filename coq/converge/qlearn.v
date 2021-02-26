@@ -1240,14 +1240,6 @@ algorithm.
  Qed.
 
 
-   Definition F_alpha (a : R)  :=
-     (@f_alpha Rvector_NormedModule F a).
-
-    (*
-    Definition f_alpha (f : X -> X) a : (X -> X)  :=
-      fun (x:X) => plus (scal (1-a) x) (scal a (f x)).
-     *)
-
    Lemma rv_inner_plus_l (x y z : X) :
      Rvector_inner (Rvector_plus x y) z = 
      (Rvector_inner x z) + (Rvector_inner y z).
@@ -1280,15 +1272,35 @@ algorithm.
      now generalize (inner_sym x y).
    Qed.
 
+(*
+   Definition F_alpha (a : R)  :=
+     (@f_alpha Rvector_NormedModule F a).
+
+    Definition f_alpha (f : X -> X) a : (X -> X)  :=
+      fun (x:X) => plus (scal (1-a) x) (scal a (f x)).
+*)
+
+   Definition F_alpha (a : R) (x : X -> X) :=
+     vecrvplus (vecrvscale (1-a) x) (vecrvscale a (fun v => F (x v))).
+
    Instance rv_Fa (a:R) (x: X -> X) 
             (rvx : RandomVariable dom (Rvector_borel_sa I) x) :
-     RandomVariable dom (Rvector_borel_sa I) 
-                    (fun v => F_alpha a (x v)).
+     RandomVariable dom (Rvector_borel_sa I) (F_alpha a x).
+   Proof.
+     unfold F_alpha.
+     apply Rvector_plus_rv.
+     typeclasses eauto.
+     apply Rvector_scale_rv.
    Admitted.
 
   Instance srv_Fa (a:R) (x: X -> X)
            (srvx : SimpleRandomVariable x) :
-    SimpleRandomVariable (fun v => F_alpha a (x v)).
+    SimpleRandomVariable (F_alpha a x).
+  Proof.
+    unfold F_alpha.
+    apply srv_vecrvplus.
+    now apply srv_vecrvscale.
+    apply srv_vecrvscale.    
   Admitted.
 
    Lemma L2_convergent_helper (C : R) (w x : nat -> X -> X) (xstar : X) (n:nat)
@@ -1297,17 +1309,17 @@ algorithm.
          (srw : forall n, SimpleRandomVariable  (w n)) 
          (srx : forall n, SimpleRandomVariable  (x n)) :
      (forall k, (x (S k)) = 
-                 vecrvplus (fun v => (F_alpha (α k) (x k v)))
+                 vecrvplus (F_alpha (α k) (x k))
                            (vecrvscale (α k) (w k))) ->
      SimpleExpectation
        (rvinner
-          (vecrvminus (fun v : X => F_alpha (α n) (x n v)) 
+          (vecrvminus (F_alpha (α n) (x n)) 
                       (const xstar))
           (w n)) = zero ->
      
-     rv_le (rvinner (vecrvminus (fun v : X => F_alpha (α n) (x n v))
+     rv_le (rvinner (vecrvminus (F_alpha (α n) (x n))
                                 (const xstar))
-                    (vecrvminus (fun v : X => F_alpha (α n) (x n v))
+                    (vecrvminus (F_alpha (α n) (x n))
                                 (const xstar)))
            (rvscale (g_alpha gamma (α n)) 
                     (rvinner (vecrvminus (x n) (const xstar))
@@ -1317,10 +1329,10 @@ algorithm.
       
      SimpleExpectation (rvinner (vecrvminus (x (S n)) (const xstar))
                                 (vecrvminus (x (S n)) (const xstar))) <=
+     (g_alpha gamma (α n)) *
      (SimpleExpectation
-        (rvscale (g_alpha gamma (α n))
-                 (rvinner (vecrvminus (x n) (const xstar))
-                          (vecrvminus (x n) (const xstar)))))
+        (rvinner (vecrvminus (x n) (const xstar))
+                 (vecrvminus (x n) (const xstar))))
        + (α n)^2 * C.
     Proof.
       intros.
@@ -1330,15 +1342,15 @@ algorithm.
                (rvscale 
                   (2 * (α n))
                   (rvinner
-                     (vecrvminus (fun v => ((F_alpha (α n)) (x n v)))
+                     (vecrvminus (F_alpha (α n) (x n))
                                  (const xstar))
                      (w n)))
                (rvplus
                   (rvinner (vecrvminus 
-                              (fun v => ((F_alpha (α n)) (x n v)))
+                              (F_alpha (α n) (x n))
                               (const xstar))
                            (vecrvminus 
-                              (fun v => ((F_alpha (α n)) (x n v))) 
+                              (F_alpha (α n) (x n)) 
                               (const xstar)))
                   (rvscale ((α n)^2)
                            (rvinner (w n) (w n)))))).
@@ -1355,8 +1367,8 @@ algorithm.
         ring_simplify.
         repeat rewrite Rplus_assoc.
         repeat apply Rplus_eq_compat_l.
-        replace (Rvector_inner (w n v) (F_alpha (α n) (x n v))) with 
-            (Rvector_inner (F_alpha (α n) (x n v)) (w n v)) by apply rv_inner_sym.
+        replace (Rvector_inner (w n v) (F_alpha (α n) (x n) v)) with 
+            (Rvector_inner (F_alpha (α n) (x n) v) (w n v)) by apply rv_inner_sym.
         replace (Rvector_inner (w n v) (const xstar v)) with
                 (Rvector_inner (const xstar v) (w n v)) by apply rv_inner_sym.
         now ring_simplify.
@@ -1371,6 +1383,7 @@ algorithm.
       ring_simplify in H4.
       generalize (SimpleExpectation_le _ _ H1); intros.
       rewrite H4.      
+      rewrite <- scaleSimpleExpectation in H5.
       apply Rplus_le_compat.
       apply H5.
       apply Rmult_le_compat_l.
@@ -1383,27 +1396,42 @@ algorithm.
          (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
          (srw : forall n, SimpleRandomVariable  (w n)) 
          (srx : forall n, SimpleRandomVariable  (x n)) :
-      0 <= gamma < 1 ->
+      (*  0 <= gamma < 1 -> *)
+       0 < gamma < 1 ->
+(*      (@norm_factor R_AbsRing (Rvector_PreHilbert I)) <= 1 -> *)
       xstar = F xstar ->
-      (forall n, 0 < α n <= 1) ->
+      (forall n, 0 < α n <= 1) -> 
       is_lim_seq α 0 ->
       is_lim_seq (sum_n α) p_infty ->
       (forall k, (x (S k)) = 
-                 vecrvplus (fun v => (F_alpha (α k) (x k v)))
+                 vecrvplus (F_alpha (α k) (x k))
                            (vecrvscale (α k) (w k))) ->
       (forall n, SimpleExpectation
                    (rvinner
-                      (vecrvminus (fun v : X => F_alpha (α n) (x n v)) 
+                      (vecrvminus (F_alpha (α n) (x n)) 
                                   (const xstar))
                       (w n)) = zero) ->
-      (forall n, SimpleExpectation (fun v => inner (w n v) (w n v)) < C)  ->
+      (forall n, SimpleExpectation (rvinner (w n) (w n)) < C)  ->
       is_lim_seq 
         (fun n => Expectation_posRV
                     (rvinner (vecrvminus (x n) (const xstar))
                              (vecrvminus (x n) (const xstar)))) 0.
     Proof.
       intros.
-      generalize (L2_convergent_helper C w x xstar); intros.
+      assert (forall n,
+                 SimpleExpectation (rvinner (vecrvminus (x (S n)) (const xstar))
+                                (vecrvminus (x (S n)) (const xstar))) <=
+                 (g_alpha gamma (α n)) *
+                 (SimpleExpectation
+                    (rvinner (vecrvminus (x n) (const xstar))
+                             (vecrvminus (x n) (const xstar))))
+                 + (α n)^2 * C).
+      intros.
+      apply L2_convergent_helper with (w := w) (srw := srw); trivial.
+
+      (*
+      generalize (@is_contraction_falpha' (Rvector_PreHilbert I) gamma (α n)).
+      *)
       
      Admitted.
 
