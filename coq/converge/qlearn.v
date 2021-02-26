@@ -127,6 +127,36 @@ algorithm.
                   apply (@norm_zero R_AbsRing).
     Qed.
 
+    (*TODO(Kody): Use this to simplify the proof above. *)
+    Lemma is_contraction_falpha' (γ r : R) :
+      0<=r<=1 -> (forall x y, norm(minus (F x) (F y)) <= γ*(norm (minus x y)))
+      -> (forall x y,
+      norm (minus (f_alpha F r x) (f_alpha F r y)) <=  (1-r+ γ*r)*norm(minus x y)).
+    Proof.
+      intros Hr HL x y.
+      rewrite Rmult_plus_distr_r.
+      unfold f_alpha.
+      rewrite plus_minus_scal_distr.
+      generalize (norm_triangle (scal (1-r) (minus x y)) (scal r (minus (F x) (F y)))) ; intros.
+      eapply Rle_trans ; eauto.
+      apply Rplus_le_compat.
+      --  generalize (norm_scal (1-r) (minus x y)) ; intros.
+          eapply Rle_trans ; eauto.
+          unfold abs ; simpl.
+          replace (Rabs (1-r)) with (1-r) by (symmetry; try apply Rabs_pos_eq;
+                                              try (lra)).
+          apply Rmult_le_compat_l ; try lra.
+      --  generalize (norm_scal r (minus (F x) (F y))); intros.
+          eapply Rle_trans; eauto.
+          unfold abs ; simpl.
+          rewrite Rabs_pos_eq ; try (left ; lra).
+          replace (γ*r) with (r*γ) by lra.
+          rewrite Rmult_assoc.
+          apply Rmult_le_compat_l; try lra.
+          apply HL.
+          now destruct Hr.
+    Qed.
+
     (* The next few lemmas are in preparation for proving Theorem 2. *)
 
     (* Equation (9). *)
