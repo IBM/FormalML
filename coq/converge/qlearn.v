@@ -129,7 +129,7 @@ algorithm.
 
     (*TODO(Kody): Use this to simplify the proof above. *)
     Lemma is_contraction_falpha' (γ r : R) :
-      0<=r<=1 -> (forall x y, norm(minus (F x) (F y)) <= γ*(norm (minus x y)))
+      0<r<=1 -> (forall x y, norm(minus (F x) (F y)) <= γ*(norm (minus x y)))
       -> (forall x y,
       norm (minus (f_alpha F r x) (f_alpha F r y)) <=  (1-r+ γ*r)*norm(minus x y)).
     Proof.
@@ -154,7 +154,6 @@ algorithm.
           rewrite Rmult_assoc.
           apply Rmult_le_compat_l; try lra.
           apply HL.
-          now destruct Hr.
     Qed.
 
     (* The next few lemmas are in preparation for proving Theorem 2. *)
@@ -1429,11 +1428,11 @@ algorithm.
       intros.
       apply L2_convergent_helper with (w := w) (srw := srw); trivial.
 
-      (*
-      generalize (@is_contraction_falpha' (Rvector_PreHilbert I) gamma (α n)).
-      *)
-      
-     Admitted.
+      generalize (@is_contraction_falpha' (@PreHilbert_NormedModule
+                                             (@Rvector_PreHilbert I))
+                                         F gamma (α n) (H1 n)); intros.
+
+    Admitted.
 
       
                                                     
