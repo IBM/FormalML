@@ -464,7 +464,7 @@ Proof.
 Qed.
 
 Lemma is_Lipschitz_cond {X Y : NormedModule R_AbsRing} {F : X -> Y} (γ : R):
-  (0 < γ < 1) ->
+  (0 < γ <= 1) ->
   (forall (x y : X) (r : R), norm(minus y x) < r -> norm(minus (F y) (F x)) < γ*r) ->
   (forall (x y : X), norm (minus (F y) (F x)) <= γ*norm( minus y x)).
 Proof.
@@ -474,14 +474,12 @@ Proof.
   destruct Hγ as [H1 H2].
   simpl.
   generalize Rle_mult_Rlt; intros.
-  enough (Hxy : norm (minus y x) < norm (minus y x) + eps).
+  assert (Hxy : norm (minus y x) < norm (minus y x) + eps) by lra.
   specialize (H x y (norm (minus y x) + eps) Hxy).
+  destruct H2; subst ; try lra.
   replace (eps) with (1*eps) by lra.
   eapply Rlt_trans; eauto.
   rewrite Rmult_plus_distr_l.
   apply Rplus_lt_compat_l.
   apply Rmult_lt_compat_r; trivial.
-  rewrite Rplus_comm.
-  rewrite <-Rlt_minus_l.
-  now ring_simplify.
 Qed.
