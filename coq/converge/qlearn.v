@@ -1394,7 +1394,185 @@ algorithm.
       apply Rmult_le_compat_l.
       apply pow2_ge_0.
       now left.
+    Qed.
+
+    Lemma SimpleExpectation_rvinner_pos (f : X -> X) 
+          (rx : RandomVariable dom (Rvector_borel_sa I) f)
+          (srv: SimpleRandomVariable f) :
+      0 <= SimpleExpectation (rvinner f f).
+    Proof.
+      replace (0) with (SimpleExpectation (const 0)).
+      apply SimpleExpectation_le.
+      apply rvconst.
+      now apply Rvector_inner_rv.
+      intro v.
+      now generalize (inner_ge_0 (f v)).
+      apply SimpleExpectation_const.
    Qed.
+
+    Lemma aux_seq (C: R) (x : nat -> X -> X) (v : nat -> R) (xstar : X)
+         (rx : forall n, RandomVariable dom (Rvector_borel_sa I) (x n))
+         (srx : forall n, SimpleRandomVariable  (x n)) :
+      v (0%nat) = SimpleExpectation 
+                    (rvinner 
+                       (vecrvminus (x (0%nat)) (const xstar))
+                       (vecrvminus (x (0%nat)) (const xstar))) ->
+      (forall n, v (S n) = (g_alpha gamma (α n))^2 * (v n) +
+                                                  (α n)^2 * C) ->
+      (forall n,
+          SimpleExpectation (rvinner (vecrvminus (x (S n)) (const xstar))
+                                     (vecrvminus (x (S n)) (const xstar))) <=
+          ((g_alpha gamma (α n))^2) *
+          (SimpleExpectation
+             (rvinner (vecrvminus (x n) (const xstar))
+                      (vecrvminus (x n) (const xstar))))
+          + (α n)^2 * C) ->
+      forall n, 0 <= 
+          SimpleExpectation (rvinner (vecrvminus (x n) (const xstar))
+                                     (vecrvminus (x n) (const xstar))) <=
+          (v n).
+    Proof.
+      intros.
+      split.
+      apply SimpleExpectation_rvinner_pos.
+      typeclasses eauto.
+      induction n.
+      - rewrite H.
+        lra.
+      - eapply Rle_trans.
+        apply H1.
+        rewrite H0.
+        apply Rplus_le_compat_r.
+        apply Rmult_le_compat_l.
+        apply pow2_ge_0.
+        apply IHn.
+     Qed.
+
+    Lemma Rmult_le_1 (a b :R) :
+      0 <= a <= 1 ->
+      0 <= b <= 1 ->
+      0 <= a*b <= 1.
+    Proof.
+      intros.
+      split.
+      now apply Rmult_le_pos.
+      replace (1) with (1 * 1) by lra.
+      now apply Rmult_le_compat.
+    Qed.
+
+    Lemma aux_seq_lim (C: R) (x : nat -> X -> X) (v : nat -> R) (xstar : X)
+         (rx : forall n, RandomVariable dom (Rvector_borel_sa I) (x n))
+         (srx : forall n, SimpleRandomVariable  (x n)) :
+      0 <= C ->
+      0 <= gamma < 1 ->
+      (forall n, 0 <= α n <= 1) -> 
+      is_lim_seq α 0 ->
+      v (0%nat) = SimpleExpectation 
+                    (rvinner 
+                       (vecrvminus (x (0%nat)) (const xstar))
+                       (vecrvminus (x (0%nat)) (const xstar))) ->
+      (forall n, v (S n) = (g_alpha gamma (α n))^2 * (v n) +
+                                                 (α n)^2 * C) ->
+      is_lim_seq v 0.
+    Proof.
+      intros Cpos grel arel alim v0rel vrel.
+      generalize (helper_convergence_6); intros.
+      specialize (H (fun n => 2*(1-gamma)*(α n)-(1-gamma)^2*(α n)^2)).
+      specialize (H (fun n => C*(α n)/(2*(1-gamma)-(1-gamma)^2*(α n)))).
+      specialize (H (v (0%nat))).
+      assert (0 <= v 0%nat).
+      rewrite v0rel.
+      apply SimpleExpectation_rvinner_pos; typeclasses eauto.
+      specialize (H H0).
+      cut_to H; trivial.
+      apply is_lim_seq_ext with (u :=  (RMseq
+            (fun n : nat => 2 * (1 - gamma) * α n - (1 - gamma) ^ 2 * α n ^ 2)
+            (fun n : nat => C * α n / (2 * (1 - gamma) - (1 - gamma) ^ 2 * α n))
+            (v 0%nat))).
+      intros.
+      induction n.
+      - now unfold RMseq.
+      - rewrite vrel.
+        simpl.
+        simpl in IHn.
+        rewrite IHn.
+        unfold g_alpha.
+        unfold plus, scal; simpl.
+        unfold mult; simpl.
+        apply Rminus_diag_uniq.
+        field_simplify; trivial.
+        unfold Rdiv.
+        now rewrite Rmult_0_l.
+        rewrite Rmult_comm.
+        rewrite Rmult_assoc.
+        rewrite <- Rmult_minus_distr_l.
+        apply Rmult_integral_contrapositive.
+        split; [lra | ].
+        assert ((1-gamma) *  α n <= 1).
+        apply Rmult_le_1; [lra |].
+        apply arel.
+        lra.
+      - apply H.
+      - intros.
+        replace ( 2 * (1 - gamma) * α n - (1 - gamma) ^ 2 * α n ^ 2 ) with
+            (1 -  (g_alpha gamma (α n))^2).
+        generalize (gamma_alpha_pos α gamma grel arel n); intros.
+        generalize (gamma_alpha_le_1 α gamma grel arel n); intros.        
+        generalize (Rmult_le_1 (g_alpha gamma (α n)) (g_alpha gamma (α n))); try lra.
+        unfold g_alpha.
+        ring.
+      - intros.
+        apply Rmult_le_pos.
+        apply Rmult_le_pos; trivial; apply arel.
+        left.
+        apply Rinv_0_lt_compat.
+        rewrite Rmult_comm.
+        simpl.
+        rewrite Rmult_assoc.
+        rewrite <- Rmult_minus_distr_l.
+        apply Rmult_lt_0_compat; [lra |].
+        rewrite Rmult_1_r.
+        assert ((1 - gamma) * α n <= 1).
+        replace (1) with (1 * 1) by lra.
+        apply Rmult_le_compat; try lra; apply arel.
+        lra.
+      - apply is_lim_seq_minus with (l1 := 0) (l2 := 0).
+        replace (Finite 0) with (Rbar_mult (2 * (1 - gamma)) 0).
+        now apply is_lim_seq_scal_l.
+        simpl; rewrite Rmult_0_r; reflexivity.
+        replace (Finite 0) with (Rbar_mult ((1-gamma)^2) 0).
+        apply is_lim_seq_scal_l.
+        unfold pow.
+        apply is_lim_seq_mult with (l1 := 0) (l2 := 0); trivial.
+        replace (Finite 0) with (Rbar_mult 0 1).
+        now apply is_lim_seq_scal_r.
+        simpl; rewrite Rmult_0_l; reflexivity.
+        unfold is_Rbar_mult; simpl.
+        f_equal; rewrite Rmult_0_l; reflexivity.
+        simpl; rewrite Rmult_0_r; reflexivity.
+        unfold is_Rbar_minus; simpl.
+        unfold is_Rbar_plus; simpl.
+        f_equal; rewrite Rplus_0_l, Ropp_0; reflexivity.
+      - apply is_lim_seq_div with (l1 := 0) (l2 := (2 * (1 - gamma))).
+        replace (Finite 0) with (Rbar_mult C 0).
+        now apply is_lim_seq_scal_l.
+        simpl; rewrite Rmult_0_r; reflexivity.
+        apply is_lim_seq_minus with (l1 := 2 * (1-gamma)) (l2 := 0).
+        apply is_lim_seq_const.
+        replace (Finite 0) with (Rbar_mult ((1-gamma)^2) 0).
+        now apply is_lim_seq_scal_l.
+        simpl; rewrite Rmult_0_r; reflexivity.
+        unfold is_Rbar_minus; simpl.
+        unfold is_Rbar_plus; simpl.
+        f_equal; rewrite Ropp_0, Rplus_0_r; reflexivity.
+        rewrite Rbar_finite_neq.
+        apply Rmult_integral_contrapositive.
+        split; lra.
+        unfold is_Rbar_div; simpl.
+        unfold is_Rbar_mult; simpl.
+        f_equal; rewrite Rmult_0_l; reflexivity.
+      - intros.
+        Admitted.
 
     Theorem L2_convergent (C : R) (w x : nat -> X -> X) (xstar : X)
          (rx : forall n, RandomVariable dom (Rvector_borel_sa I) (x n))
@@ -1415,12 +1593,7 @@ algorithm.
                                   (const xstar))
                       (w n)) = zero) ->
       (forall n, SimpleExpectation (rvinner (w n) (w n)) < C)  ->
-(*
-      (forall (x y : (@PreHilbert_NormedModule
-                                             (@Rvector_PreHilbert I))),
-          norm (minus (F x) (F y)) <= gamma * norm (minus x y)) ->
-*)
-
+      (forall x1 y : vector R I, Hnorm (minus (F x1) (F y)) <= gamma * Hnorm (minus x1 y)) -> 
       is_lim_seq 
         (fun n => Expectation_posRV
                     (rvinner (vecrvminus (x n) (const xstar))
@@ -1444,24 +1617,24 @@ algorithm.
                                              (@Rvector_PreHilbert I))
                                           F gamma (α n) (H1 n)); intros.
       intro v.
-      cut_to H7.
-      specialize (H7 (x n v) xstar).
-      unfold norm, minus, f_alpha in H7; simpl in H7.
-      unfold Hnorm, plus, opp in H7; simpl in H7.
-      unfold inner, scal in H7; simpl in H7.
+      cut_to H8.
+      specialize (H8 (x n v) xstar).
+      unfold norm, minus, f_alpha in H8; simpl in H8.
+      unfold Hnorm, plus, opp in H8; simpl in H8.
+      unfold inner, scal in H8; simpl in H8.
       unfold rvinner, vecrvminus, F_alpha, const.
       unfold vecrvplus, vecrvopp, vecrvscale, rvscale.
-      unfold Rvector_opp in H7.
-      replace (1 - α n + gamma * α n) with (sqrt( (1 - α n + gamma * α n)^2)) in H7.
-      rewrite <- sqrt_mult_alt in H7.
-      apply sqrt_le_0 in H7.
+      unfold Rvector_opp in H8.
+      replace (1 - α n + gamma * α n) with (sqrt( (1 - α n + gamma * α n)^2)) in H8.
+      rewrite <- sqrt_mult_alt in H8.
+      apply sqrt_le_0 in H8.
       unfold g_alpha.
-      rewrite <- H0 in H7.
+      rewrite <- H0 in H8.
       replace  (Rvector_plus (Rvector_scale (1 - α n) xstar)
                   (Rvector_scale (α n) xstar)) with
-          (xstar) in H7.
+          (xstar) in H8.
       replace (1 - (1 - gamma) * α n) with (1 - α n + gamma * α n) by lra.
-      apply H7.
+      apply H8.
       assert (xstar = plus (scal (1 - (α n)) xstar) (scal (α n) xstar)).
       rewrite scal_minus_distr_r with (x1 := 1).
       unfold minus.
@@ -1469,7 +1642,7 @@ algorithm.
       rewrite plus_opp_l.
       rewrite plus_zero_r.
       now generalize (scal_one xstar).
-      apply H8.
+      apply H9.
       apply rv_inner_ge_0.
       apply Rmult_le_pos.
       apply pow2_ge_0.
@@ -1478,13 +1651,19 @@ algorithm.
       rewrite sqrt_pow2; trivial.
       generalize (gamma_alpha_pos α gamma H H1 n).
       unfold g_alpha; lra.
-      admit.
+      destruct lF.
+      unfold ball_x in H10.
+      repeat red in H10.
+      unfold UniformSpace.ball in H10.
+      simpl in H10.
+      unfold ball in H10.
+      unfold PreHilbert_NormedModule. simpl.
+      intros. specialize (H10 x1 y).
+      apply H7.
+      
       
       
     Admitted.
 
       
-                                                    
-                                                            
-
 
