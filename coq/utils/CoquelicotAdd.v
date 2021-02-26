@@ -10,6 +10,7 @@ Require Import Rtrigo1.
 Require Import Reals.Rtrigo_calc.
 Require Import Lra.
 
+Require Import fixed_point.
 Require Import LibUtils.
 
 Set Bullet Behavior "Strict Subproofs".
@@ -446,4 +447,41 @@ Proof.
   apply ball_le with (e1 := 0).
   + left. apply cond_pos.
   + assumption.
+Qed.
+
+Lemma Rlt_forall_le (a b : R) : (forall eps:posreal, a < b + eps) -> a <= b.
+Proof.
+  intros H.
+  destruct (Rle_dec a b); intros; trivial.
+  exfalso.
+  generalize (Rnot_le_lt _ _ n); intros Hab.
+  clear n.
+  assert (Hpos : 0 < (a - b)/2) by lra.
+  pose (abs := mkposreal ((a - b)/2) Hpos).
+  specialize (H abs).
+  simpl in H ; clear abs.
+  lra.
+Qed.
+
+Lemma is_Lipschitz_cond {X Y : NormedModule R_AbsRing} {F : X -> Y} (γ : R):
+  (0 < γ < 1) ->
+  (forall (x y : X) (r : R), norm(minus y x) < r -> norm(minus (F y) (F x)) < γ*r) ->
+  (forall (x y : X), norm (minus (F y) (F x)) <= γ*norm( minus y x)).
+Proof.
+  intros Hγ H x y.
+  apply Rlt_forall_le; intros eps.
+  destruct eps as [eps Heps].
+  destruct Hγ as [H1 H2].
+  simpl.
+  generalize Rle_mult_Rlt; intros.
+  enough (Hxy : norm (minus y x) < norm (minus y x) + eps).
+  specialize (H x y (norm (minus y x) + eps) Hxy).
+  replace (eps) with (1*eps) by lra.
+  eapply Rlt_trans; eauto.
+  rewrite Rmult_plus_distr_l.
+  apply Rplus_lt_compat_l.
+  apply Rmult_lt_compat_r; trivial.
+  rewrite Rplus_comm.
+  rewrite <-Rlt_minus_l.
+  now ring_simplify.
 Qed.
