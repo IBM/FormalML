@@ -1462,7 +1462,14 @@ algorithm.
           (xstar) in H7.
       replace (1 - (1 - gamma) * α n) with (1 - α n + gamma * α n) by lra.
       apply H7.
-      admit.
+      assert (xstar = plus (scal (1 - (α n)) xstar) (scal (α n) xstar)).
+      rewrite scal_minus_distr_r with (x1 := 1).
+      unfold minus.
+      rewrite <- plus_assoc.
+      rewrite plus_opp_l.
+      rewrite plus_zero_r.
+      now generalize (scal_one xstar).
+      apply H8.
       apply rv_inner_ge_0.
       apply Rmult_le_pos.
       apply pow2_ge_0.
