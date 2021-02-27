@@ -96,6 +96,15 @@ Section Simple.
     reflexivity.
   Qed.
 
+  Global Program Instance srv_fun (rv_X : Ts -> Td) (f : Td -> Td)
+          (srv:SimpleRandomVariable rv_X) : 
+    SimpleRandomVariable (fun v => f (rv_X v)) :=
+    {srv_vals := map f srv_vals}.
+  Next Obligation.
+    destruct srv.
+    now apply in_map.
+  Qed.
+
   Definition srvconst c : SimpleRandomVariable (const c)
     := srv_crv (const c).
 
