@@ -449,6 +449,31 @@ Proof.
   + assumption.
 Qed.
 
+Lemma minus_zero_iff_eq {G : AbelianGroup} : forall x y : G, (minus x y = zero) <-> x = y.
+Proof.
+  intros x y.
+  split; intros; subst.
+  + unfold minus in H.
+    eapply plus_reg_r with (opp y).
+    rewrite H.
+    symmetry. apply plus_opp_r.
+  + apply minus_eq_zero.
+Qed.
+
+Lemma is_Lipschitz_lt_zero {K1 K2 : AbsRing} {X : NormedModule K1} {Y : NormedModule K2}
+      {F : X -> Y}:
+  (forall x y : X, norm (minus (F y) (F x)) <= 0) -> (forall x y, F x = F y).
+Proof.
+  intros Hnorm x y.
+  specialize (Hnorm x y).
+  destruct Hnorm.
+  + apply ball_zero_eq.
+    now apply norm_compat1.
+  + apply (norm_eq_zero) in H.
+    symmetry.
+    now rewrite <-minus_zero_iff_eq.
+Qed.
+
 Lemma Rlt_forall_le (a b : R) : (forall eps:posreal, a < b + eps) -> a <= b.
 Proof.
   intros H.
