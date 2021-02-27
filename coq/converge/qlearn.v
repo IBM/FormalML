@@ -1304,9 +1304,9 @@ algorithm.
   Proof.
     unfold F_alpha.
     apply srv_vecrvplus.
-    now apply srv_vecrvscale.
-    apply srv_vecrvscale.    
-  Admitted.
+    typeclasses eauto.
+    typeclasses eauto.
+  Qed.
 
    Lemma L2_convergent_helper (C : R) (w x : nat -> X -> X) (xstar : X) (n:nat)
          (rx : forall n, RandomVariable dom (Rvector_borel_sa I) (x n))
