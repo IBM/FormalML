@@ -1608,6 +1608,7 @@ algorithm.
          (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
          (srw : forall n, SimpleRandomVariable  (w n)) 
          (srx : forall n, SimpleRandomVariable  (x n)) :
+      0 <= C ->
       0 <= gamma < 1 ->
       xstar = F xstar ->
       (forall n, 0 <= α n <= 1) -> 
@@ -1628,7 +1629,7 @@ algorithm.
                     (rvinner (vecrvminus (x n) (const xstar))
                              (vecrvminus (x n) (const xstar)))) 0.
     Proof.
-      intros.
+      intros Cpos grel xfix arel alim aser xrel xterm wbound Fcontract.
       assert (forall n,
                  SimpleExpectation (rvinner (vecrvminus (x (S n)) (const xstar))
                                 (vecrvminus (x (S n)) (const xstar))) <=
@@ -1637,60 +1638,61 @@ algorithm.
                     (rvinner (vecrvminus (x n) (const xstar))
                              (vecrvminus (x n) (const xstar))))
                  + (α n)^2 * C).
-      intros.
-      apply L2_convergent_helper with (w := w) (srw := srw); trivial.
+      {
+        intros.
+        apply L2_convergent_helper with (w := w) (srw := srw); trivial.
 
-      
-
-      generalize (@is_contraction_falpha' (@PreHilbert_NormedModule
-                                             (@Rvector_PreHilbert I))
-                                          F gamma (α n) (H1 n)); intros.
-      intro v.
-      cut_to H8.
-      specialize (H8 (x n v) xstar).
-      unfold norm, minus, f_alpha in H8; simpl in H8.
-      unfold Hnorm, plus, opp in H8; simpl in H8.
-      unfold inner, scal in H8; simpl in H8.
-      unfold rvinner, vecrvminus, F_alpha, const.
-      unfold vecrvplus, vecrvopp, vecrvscale, rvscale.
-      unfold Rvector_opp in H8.
-      replace (1 - α n + gamma * α n) with (sqrt( (1 - α n + gamma * α n)^2)) in H8.
-      rewrite <- sqrt_mult_alt in H8.
-      apply sqrt_le_0 in H8.
-      unfold g_alpha.
-      rewrite <- H0 in H8.
-      replace  (Rvector_plus (Rvector_scale (1 - α n) xstar)
-                  (Rvector_scale (α n) xstar)) with
-          (xstar) in H8.
-      replace (1 - (1 - gamma) * α n) with (1 - α n + gamma * α n) by lra.
-      apply H8.
-      assert (xstar = plus (scal (1 - (α n)) xstar) (scal (α n) xstar)).
-      rewrite scal_minus_distr_r with (x1 := 1).
-      unfold minus.
-      rewrite <- plus_assoc.
-      rewrite plus_opp_l.
-      rewrite plus_zero_r.
-      now generalize (scal_one xstar).
-      apply H9.
-      apply rv_inner_ge_0.
-      apply Rmult_le_pos.
-      apply pow2_ge_0.
-      apply rv_inner_ge_0.      
-      apply pow2_ge_0.
-      rewrite sqrt_pow2; trivial.
-      generalize (gamma_alpha_pos α gamma H H1 n).
-      unfold g_alpha; lra.
-      destruct lF.
-      unfold ball_x in H10.
-      repeat red in H10.
-      unfold UniformSpace.ball in H10.
-      simpl in H10.
-      unfold ball in H10.
-      unfold PreHilbert_NormedModule. simpl.
-      intros. specialize (H10 x1 y).
-      apply H7.
-      
-      
+        generalize (@is_contraction_falpha' (@PreHilbert_NormedModule
+                                               (@Rvector_PreHilbert I))
+                                            F gamma (α n) (arel n)); intros.
+        intro v.
+        cut_to H.
+        - specialize (H (x n v) xstar).
+          unfold norm, minus, f_alpha in H; simpl in H.
+          unfold Hnorm, plus, opp in H; simpl in H.
+          unfold inner, scal in H; simpl in H.
+          unfold rvinner, vecrvminus, F_alpha, const.
+          unfold vecrvplus, vecrvopp, vecrvscale, rvscale.
+          unfold Rvector_opp in H.
+          replace (1 - α n + gamma * α n) with (sqrt( (1 - α n + gamma * α n)^2)) in H.
+          + rewrite <- sqrt_mult_alt in H.
+            * apply sqrt_le_0 in H.
+              -- unfold g_alpha.
+                 rewrite <- xfix in H.
+                 replace  (Rvector_plus (Rvector_scale (1 - α n) xstar)
+                                        (Rvector_scale (α n) xstar)) with
+                     (xstar) in H.
+                 ++ replace (1 - (1 - gamma) * α n) with (1 - α n + gamma * α n) by lra.
+                    apply H.
+                 ++ assert (xstar = plus (scal (1 - (α n)) xstar) (scal (α n) xstar)).
+                    ** rewrite scal_minus_distr_r with (x1 := 1).
+                       unfold minus.
+                       rewrite <- plus_assoc.
+                       rewrite plus_opp_l.
+                       rewrite plus_zero_r.
+                       now generalize (scal_one xstar).
+                    ** apply H0.
+              -- apply rv_inner_ge_0.
+              -- apply Rmult_le_pos.
+                 ++ apply pow2_ge_0.
+                 ++ apply rv_inner_ge_0.      
+            * apply pow2_ge_0.
+          + rewrite sqrt_pow2; trivial.
+            generalize (gamma_alpha_pos α gamma grel arel n).
+            unfold g_alpha; lra.
+            (*
+             destruct lF.
+             unfold ball_x in H1.
+             repeat red in H1.
+             unfold UniformSpace.ball in H1.
+             simpl in H1.
+             unfold ball in H1.
+             unfold PreHilbert_NormedModule. simpl.
+             intros. specialize (H1 x1 y).
+            *)
+        - apply Fcontract.
+       }
+      generalize (aux_seq_lim C x); intros.
       
     Admitted.
 
