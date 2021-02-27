@@ -1467,6 +1467,7 @@ algorithm.
       0 <= gamma < 1 ->
       (forall n, 0 <= α n <= 1) -> 
       is_lim_seq α 0 ->
+      is_lim_seq (sum_n α) p_infty ->
       v (0%nat) = SimpleExpectation 
                     (rvinner 
                        (vecrvminus (x (0%nat)) (const xstar))
@@ -1475,7 +1476,7 @@ algorithm.
                                                  (α n)^2 * C) ->
       is_lim_seq v 0.
     Proof.
-      intros Cpos grel arel alim v0rel vrel.
+      intros Cpos grel arel alim aser v0rel vrel.
       generalize (helper_convergence_6); intros.
       specialize (H (fun n => 2*(1-gamma)*(α n)-(1-gamma)^2*(α n)^2)).
       specialize (H (fun n => C*(α n)/(2*(1-gamma)-(1-gamma)^2*(α n)))).
@@ -1571,8 +1572,36 @@ algorithm.
         unfold is_Rbar_div; simpl.
         unfold is_Rbar_mult; simpl.
         f_equal; rewrite Rmult_0_l; reflexivity.
-      - intros.
-        Admitted.
+      - generalize (product_sum_assumption_a α gamma grel arel alim aser); intros.
+        assert (forall k, 
+                    is_lim_seq
+                      (fun n : nat => prod_f_R0 (fun m : nat => (g_alpha gamma (α (m + k)))^2) n) 0).
+        intros.
+        apply is_lim_seq_ext with
+            (u := (fun n => (prod_f_R0 (fun m : nat => g_alpha gamma (α (m + k0))) n) * 
+                            (prod_f_R0 (fun m : nat => g_alpha gamma (α (m + k0))) n))).
+        intros.
+        induction n.
+        + simpl; ring.
+        + simpl.
+          simpl in IHn.
+          rewrite <- IHn.
+          ring.
+        + apply is_lim_seq_mult with (l1 := 0) (l2 := 0).
+          apply H1.
+          apply H1.
+          unfold is_Rbar_mult; simpl.
+          f_equal; rewrite Rmult_0_l; reflexivity.
+        + apply is_lim_seq_ext with 
+              (u := (fun n : nat =>
+                       prod_f_R0 (fun m : nat => g_alpha gamma (α (m + k)) ^ 2) n)).
+          intros.
+          apply prod_f_R0_proper; trivial.
+          intro m.
+          unfold g_alpha.
+          simpl; ring.
+          apply H2.
+     Qed.
 
     Theorem L2_convergent (C : R) (w x : nat -> X -> X) (xstar : X)
          (rx : forall n, RandomVariable dom (Rvector_borel_sa I) (x n))
