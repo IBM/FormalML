@@ -460,7 +460,7 @@ Proof.
   + apply minus_eq_zero.
 Qed.
 
-Lemma is_Lipschitz_lt_zero {K1 K2 : AbsRing} {X : NormedModule K1} {Y : NormedModule K2}
+Lemma is_Lipschitz_le_zero_const {K1 K2 : AbsRing} {X : NormedModule K1} {Y : NormedModule K2}
       {F : X -> Y}:
   (forall x y : X, norm (minus (F y) (F x)) <= 0) -> (forall x y, F x = F y).
 Proof.
@@ -488,8 +488,24 @@ Proof.
   lra.
 Qed.
 
-Lemma is_Lipschitz_cond {X Y : NormedModule R_AbsRing} {F : X -> Y} (γ : R):
-  (0 < γ <= 1) ->
+Lemma Rlt_forall_le' (a b : R) : (forall eps:posreal, a + eps < b) -> a <= b.
+Proof.
+  intros H.
+  destruct (Rle_dec a b); intros; trivial.
+  exfalso.
+  generalize (Rnot_le_lt _ _ n); intros Hab.
+  clear n.
+  assert (Hpos : 0 < (a - b)/2) by lra.
+  pose (abs := mkposreal ((a - b)/2) Hpos).
+  specialize (H abs).
+  simpl in H ; clear abs.
+  lra.
+Qed.
+
+
+Lemma is_Lipschitz_cond {K : AbsRing} {X : NormedModule K}{Y : NormedModule R_AbsRing}
+      {F : X -> Y} (γ : R):
+  (0 <= γ <= 1) ->
   (forall (x y : X) (r : R), norm(minus y x) < r -> norm(minus (F y) (F x)) < γ*r) ->
   (forall (x y : X), norm (minus (F y) (F x)) <= γ*norm( minus y x)).
 Proof.
