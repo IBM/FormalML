@@ -1122,14 +1122,13 @@ algorithm.
   Context {I : nat}.
   Canonical Rvector_UniformSpace := @PreHilbert_UniformSpace (@Rvector_PreHilbert I).
   Canonical Rvector_NormedModule := @PreHilbert_NormedModule (@Rvector_PreHilbert I).
+  Canonical Rvector_CompleteNormedModule :=
+       @Hilbert_CompleteNormedModule (@Rvector_Hilbert I).
 
   Definition X := (vector R I).
 
   Context (gamma : R) (α : nat -> R) {F : X -> X}
           {dom: SigmaAlgebra X} {prts: ProbSpace dom} (x0 : X).
-
-  Context (hF : (@is_contraction Rvector_UniformSpace Rvector_UniformSpace F))
-          (lF : (@is_Lipschitz Rvector_UniformSpace Rvector_UniformSpace F gamma)).
 
     (* Theorem 8 *)
 
@@ -1791,6 +1790,49 @@ algorithm.
       | 0 => init
       | (S k) => (a k) * (RMseq_gen a b init k) + (b k)
       end.
+
+   (* following depends on is_contraction hypothesis in context *)
+(*
+  Context (hF : (@is_contraction Rvector_UniformSpace Rvector_UniformSpace F)).
+
+
+          (lF : (@is_Lipschitz Rvector_UniformSpace Rvector_UniformSpace F gamma)).
+*)
+   Lemma f_contract_fixedpoint :
+      0 <= gamma < 1 ->
+      (forall x1 y : vector R I, Hnorm (minus (F x1) (F y)) <= gamma * Hnorm (minus x1 y)) -> 
+     exists (xstar : X), F xstar = xstar.
+   Proof.
+     intros.
+     destruct (Req_dec gamma 0).
+     - exists (F zero).
+       rewrite H1 in H0.
+       apply (@is_Lipschitz_le_zero_const R_AbsRing R_AbsRing 
+                                          Rvector_NormedModule
+                                          Rvector_NormedModule).
+       intros.
+       specialize (H0 y x).
+       now rewrite Rmult_0_l in H0.
+    - generalize (@FixedPoint R_AbsRing Rvector_CompleteNormedModule F (fun _ => True)); intros.
+     cut_to H2; trivial.
+     destruct H2 as [x [? [? [? ?]]]].
+     now exists x.
+     now exists (zero).
+     apply closed_my_complete ; apply closed_true.                
+     unfold is_contraction.
+     exists gamma.
+     split; [lra | ].
+     unfold is_Lipschitz.
+     unfold ball_x, ball_y; simpl.
+     unfold ball; simpl.
+     split; [lra | ].
+     intros.
+     specialize (H0 x1 x2).
+     eapply Rle_lt_trans.
+     apply H0.
+     assert (0 < gamma) by lra.
+     now apply Rmult_lt_compat_l.
+  Qed.
 
     Theorem L2_convergent (C : R) (w x : nat -> X -> X) (xstar : X)
          (rx : forall n, RandomVariable dom (Rvector_borel_sa I) (x n))
