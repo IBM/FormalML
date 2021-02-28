@@ -1365,12 +1365,15 @@ algorithm.
       unfold list_union.
       split; intros.
       - specialize (srv_vals_complete0 v).
-        generalize (srv_vals_complete v); intros.
-        exists (fun omega : X => x omega = x v /\ f (x v) = c).
+        eexists.
         rewrite in_map_iff.
         split.
-        + exists (x v); easy.
-        + easy.
+        + eexists.
+          split.
+          * reflexivity.
+          * apply srv_vals_complete0.
+        + simpl.
+          easy.
       - destruct H0.
         rewrite in_map_iff in H0.
         destruct H0 as [[c0 [? ?]] ?].
@@ -1439,12 +1442,15 @@ algorithm.
       unfold list_union.
       split; intros.
       - specialize (srv_vals_complete0 v).
-        generalize (srv_vals_complete v); intros.
-        exists (fun omega : X => x omega = x v /\ f (x v) = c).
+        eexists.
         rewrite in_map_iff.
         split.
-        + exists (x v); easy.
-        + easy.
+        + eexists.
+          split.
+          * reflexivity.
+          * apply srv_vals_complete0.
+        + simpl.
+          easy.
       - destruct H0.
         rewrite in_map_iff in H0.
         destruct H0 as [[c0 [? ?]] ?].
