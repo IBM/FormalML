@@ -1122,7 +1122,35 @@ algorithm.
         (cod: SigmaAlgebra Td) :
     (forall (c : Td), sa_sigma (event_preimage rv_X (event_singleton c))) ->
     RandomVariable dom cod rv_X.
-  Admitted.
+  Proof.
+    intros.
+    unfold RandomVariable; intros.
+    destruct srv.
+    assert (event_equiv 
+              (event_preimage rv_X B)
+              (event_preimage 
+                 rv_X
+                 (event_inter B 
+                              (list_union
+                                 (map event_singleton srv_vals))))).
+    {
+      intro x.
+      unfold event_preimage, event_singleton, event_inter.
+      split; [|tauto].
+      intros.
+      assert (event_equiv (list_union (map (fun m x0 : Td => x0 = m) srv_vals) )
+                           Ω).
+      intro v.
+      unfold  Ω.
+      admit.
+      unfold event_equiv in H2.
+      specialize (H2 (rv_X x)).
+      unfold  Ω in H2.
+      tauto.
+    } 
+    rewrite H1.
+
+   Admitted.
 
   Section qlearn3.
     
@@ -1311,22 +1339,56 @@ algorithm.
         {rv : RandomVariable dom (Rvector_borel_sa n) rv_X} :
     forall c, sa_sigma (event_preimage rv_X (event_singleton c)).
   Proof.
+    intros.
+    generalize  (RandomVariableRealVectorMeasurable rv_X); intros.
+    unfold RealVectorMeasurable in H.
+    unfold event_preimage, event_singleton.
+    (* want to convert to the intersection of each component of rv_X maps to each component of c 
+       and use sa_singleton 
+    assert (event_equiv 
+               (fun omega : X => rv_X omega = c)
+               (list_inter 
+                  (
+    *)
   Admitted.
-  
+
   Instance rv_fun_simple (x f : X -> X)
             (rvx : RandomVariable dom (Rvector_borel_sa I) x) 
             (srvx : SimpleRandomVariable x) :
-     RandomVariable dom (Rvector_borel_sa I) (fun u => F (x u)).    
+     RandomVariable dom (Rvector_borel_sa I) (fun u => f (x u)).    
   Proof.
-    apply srv_singleton_rv.
-    typeclasses eauto.
+    generalize (srv_fun x f srvx); intros.
+    apply srv_singleton_rv; trivial.
+    destruct X0.
+    destruct srvx.
     intros.
     generalize (vec_sa_singleton x); intros.
-    assert (event_equiv (event_preimage (fun u : X => F (x u)) (event_singleton c))
-                        (event_preimage x (event_preimage F (event_singleton c)))).
-    intro v.
-    now unfold event_preimage, event_singleton.
+    unfold event_preimage, event_singleton.
+    assert (event_equiv (fun omega : X => f (x omega) = c)
+                        (list_union
+                           (map (fun sval =>
+                                   (fun omega =>
+                                      (x omega = sval) /\ (f sval = c)))
+                                srv_vals0))).
+    admit.
     rewrite H0.
+    apply sa_list_union.
+    intros.
+    rewrite in_map_iff in H1.
+    destruct H1.
+    destruct H1.
+    rewrite <- H1.
+    assert (event_equiv (fun omega : X => x omega = x2 /\ f x2 = c)
+                        (event_inter (fun omega => x omega = x2)
+                                     (fun _ => f x2 = c))).
+    intro u.
+    now unfold event_inter.
+    rewrite H3.
+    apply sa_inter.
+    apply H.
+    apply sa_sigma_const.
+    apply classic_event_lem.
+
     Admitted.
     
    Instance rv_Fa (a:R) (x: X -> X) 
@@ -1338,7 +1400,9 @@ algorithm.
      now apply srv_Fa.
      intros.
      apply vec_sa_singleton.
-   Admitted.
+     unfold F_alpha.
+     typeclasses eauto.
+  Qed.
    
    Lemma L2_convergent_helper (C : R) (w x : nat -> X -> X) (xstar : X) (n:nat)
          (rx : forall n, RandomVariable dom (Rvector_borel_sa I) (x n))
@@ -1731,25 +1795,28 @@ algorithm.
         - apply Fcontract.
        }
       generalize 
-      (aux_seq_lim
-         C x 
-         (fun n => RMseq_gen (fun k => (g_alpha gamma (α k))^2)
-                             (fun k => ((α k)^2)* C) 
-                             (SimpleExpectation
-                                (rvinner (vecrvminus (x 0%nat) (const xstar))
-                                         (vecrvminus (x 0%nat) (const xstar))))
-                             n   )
-         xstar rx srx Cpos grel arel alim aser
-      ); intros; cut_to H0; try (now simpl).
+        (aux_seq_lim C x 
+                     (fun n => RMseq_gen (fun k => (g_alpha gamma (α k))^2)
+                                         (fun k => ((α k)^2)* C) 
+                                         (SimpleExpectation
+                                            (rvinner (vecrvminus (x 0%nat) 
+                                                                 (const xstar))
+                                                     (vecrvminus (x 0%nat) 
+                                                                 (const xstar))))
+                                         n   )
+                     xstar rx srx Cpos grel arel alim aser
+        ); intros; cut_to H0; try (now simpl).
       generalize
         (aux_seq C x 
-         (fun n => RMseq_gen (fun k => (g_alpha gamma (α k))^2)
-                             (fun k => ((α k)^2)* C) 
-                             (SimpleExpectation
-                                (rvinner (vecrvminus (x 0%nat) (const xstar))
-                                         (vecrvminus (x 0%nat) (const xstar))))
-                             n   )
-         xstar rx srx
+                 (fun n => RMseq_gen (fun k => (g_alpha gamma (α k))^2)
+                                     (fun k => ((α k)^2)* C) 
+                                     (SimpleExpectation
+                                        (rvinner (vecrvminus (x 0%nat) 
+                                                             (const xstar))
+                                                 (vecrvminus (x 0%nat) 
+                                                             (const xstar))))
+                                     n   )
+                 xstar rx srx
         ); intros; cut_to H1; try (now simpl).
       apply (is_lim_seq_le_le _ _ _ 0 H1); trivial.
       apply is_lim_seq_const.
