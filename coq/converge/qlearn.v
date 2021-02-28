@@ -1345,7 +1345,26 @@ algorithm.
             (srvx : SimpleRandomVariable x) :
      RandomVariable dom (Rvector_borel_sa I) (fun u => f (x u)).    
   Proof.
+    apply RealVectorMeasurableRandomVariable.
+    intros i pf.
+    apply rv_measurable.
+    simpl.
+    rewrite vector_nth_fun_to_vector.
+    generalize (vec_srv _ i pf srvx); intros srv.
+    simpl in srv.
+    rewrite vector_nth_fun_to_vector in srv.
+    apply RandomVariableRealVectorMeasurable in rvx.
+    specialize (rvx i pf).
+    apply measurable_rv in rvx.
+    simpl in rvx.
+    rewrite vector_nth_fun_to_vector in rvx.
+
+    (*
+
+    
+    
     generalize (srv_fun x f srvx); intros.
+
     apply srv_singleton_rv with (srv:=X0); trivial.
     destruct X0.
     destruct srvx.
@@ -1378,7 +1397,7 @@ algorithm.
     apply classic_event_lem.
 
     Admitted.
-    
+     *)
    Instance rv_Fa (a:R) (x: X -> X) 
             (rvx : RandomVariable dom (Rvector_borel_sa I) x) 
             (srvx : SimpleRandomVariable x) :
