@@ -1116,42 +1116,6 @@ algorithm.
 
   End qlearn2.
 
-  Lemma srv_singleton_rv {Ts Td : Type} (rv_X : Ts -> Td)
-        (srv:SimpleRandomVariable rv_X) 
-        (dom: SigmaAlgebra Ts)
-        (cod: SigmaAlgebra Td) :
-    (forall (c : Td), sa_sigma (event_preimage rv_X (event_singleton c))) ->
-    RandomVariable dom cod rv_X.
-  Proof.
-    intros.
-    unfold RandomVariable; intros.
-    destruct srv.
-    assert (event_equiv 
-              (event_preimage rv_X B)
-              (event_preimage 
-                 rv_X
-                 (event_inter B 
-                              (list_union
-                                 (map event_singleton srv_vals))))).
-    {
-      intro x.
-      unfold event_preimage, event_singleton, event_inter.
-      split; [|tauto].
-      intros.
-      assert (event_equiv (list_union (map (fun m x0 : Td => x0 = m) srv_vals) )
-                           Ω).
-      intro v.
-      unfold  Ω.
-      admit.
-      unfold event_equiv in H2.
-      specialize (H2 (rv_X x)).
-      unfold  Ω in H2.
-      tauto.
-    } 
-    rewrite H1.
-
-   Admitted.
-
   Section qlearn3.
     
   Import hilbert.
@@ -1358,10 +1322,10 @@ algorithm.
      RandomVariable dom (Rvector_borel_sa I) (fun u => f (x u)).    
   Proof.
     generalize (srv_fun x f srvx); intros.
-    apply srv_singleton_rv; trivial.
+    apply srv_singleton_rv with (srv:=X0); trivial.
     destruct X0.
     destruct srvx.
-    intros.
+    intros c cinn.
     generalize (vec_sa_singleton x); intros.
     unfold event_preimage, event_singleton.
     assert (event_equiv (fun omega : X => f (x omega) = c)
@@ -1396,8 +1360,7 @@ algorithm.
             (srvx : SimpleRandomVariable x) :
      RandomVariable dom (Rvector_borel_sa I) (F_alpha a x).
    Proof.
-     apply srv_singleton_rv.
-     now apply srv_Fa.
+     eapply srv_singleton_rv with (srv:=srv_Fa _ _ _).
      intros.
      apply vec_sa_singleton.
      unfold F_alpha.

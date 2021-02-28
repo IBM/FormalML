@@ -2,8 +2,11 @@ Require Export Program.Basics.
 Require Import List Morphisms.
 
 Require Export LibUtils BasicUtils ProbSpace.
+Require Classical.
 
 Import ListNotations.
+
+Set Bullet Behavior "Strict Subproofs".
 
 (* A random variable is a mapping from a pobability space to a sigma algebra. *)
 Class RandomVariable {Ts:Type} {Td:Type}
@@ -126,5 +129,71 @@ Section Simple.
     simpl.
     apply NoDup_nodup.
   Qed.
+
+
+Lemma srv_singleton_rv (rv_X : Ts -> Td)
+        (srv:SimpleRandomVariable rv_X) 
+        (dom: SigmaAlgebra Ts)
+        (cod: SigmaAlgebra Td) :
+    (forall (c : Td), In c srv_vals -> sa_sigma (event_preimage rv_X (event_singleton c))) ->
+    RandomVariable dom cod rv_X.
+Proof.
+  intros Fs.
+  intros x sa_x.
+  unfold event_preimage in *.
+  unfold event_singleton in *.
+
+  destruct srv.
+  assert (exists ld, incl ld srv_vals0 /\
+                (forall d: Td, In d ld -> x d) /\
+                (forall d: Td, In d srv_vals0 -> x d -> In d ld)).
+  {
+    clear srv_vals_complete0 Fs.
+    induction srv_vals0.
+    - exists nil.
+      split.
+      + intros ?; trivial.
+      + split.
+        * simpl; tauto.
+        * intros ??.
+          auto.
+    - destruct IHsrv_vals0 as [ld [ldincl [In1 In2]]].
+      destruct (Classical_Prop.classic (x a)).
+      + exists (a::ld).
+        split; [| split].
+        * red; simpl; intros ? [?|?]; eauto.
+        * simpl; intros ? [?|?].
+          -- congruence.
+          -- eauto.
+        * intros ? [?|?]; simpl; eauto.
+      + exists ld.
+        split; [| split].
+        * red; simpl; eauto.
+        * eauto.
+        * simpl; intros ? [?|?] ?.
+          -- congruence.
+          -- eauto.
+  } 
+  destruct H as [ld [ld_incl ld_iff]].
+  apply sa_proper with (x0:=list_union (map (fun d omega => rv_X omega = d) ld)).
+  - intros e.
+    split; intros HH.
+    + destruct HH as [? [??]].
+      apply in_map_iff in H.
+      destruct H as [? [??]]; subst.
+      now apply ld_iff.
+    + red; simpl.
+      apply ld_iff in HH.
+      eexists; split.
+      * apply in_map_iff; simpl.
+        eexists; split; [reflexivity |]; eauto.
+      * reflexivity.
+      * eauto.
+  - apply sa_list_union; intros.
+    apply in_map_iff in H.
+    destruct H as [? [??]]; subst.
+    apply Fs.
+    now apply ld_incl.
+Qed.
   
 End Simple.
