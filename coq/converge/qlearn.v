@@ -1340,11 +1340,71 @@ algorithm.
     - apply sa_all.
   Qed.                 
 
+  Instance rv_fun_simple_R (x : X -> R) (f : R -> R)
+            (rvx : RandomVariable dom borel_sa x) 
+            (srvx : SimpleRandomVariable x) :
+     RandomVariable dom borel_sa (fun u => f (x u)).    
+  Proof.
+    generalize (srv_fun x f srvx); intros.
+    apply srv_singleton_rv with (srv:=X0); trivial.
+    destruct X0.
+    destruct srvx.
+    intros c cinn.
+    assert (forall (c:R), sa_sigma (event_preimage x (event_singleton c))).
+    intros.
+    now apply sa_singleton.
+    unfold event_preimage, event_singleton.
+    assert (event_equiv (fun omega : X => f (x omega) = c)
+                        (list_union
+                           (map (fun sval =>
+                                   (fun omega =>
+                                      (x omega = sval) /\ (f sval = c)))
+                                srv_vals0))).
+    { 
+      intro v.
+      unfold list_union.
+      split; intros.
+      - specialize (srv_vals_complete0 v).
+        generalize (srv_vals_complete v); intros.
+        exists (fun omega : X => x omega = x v /\ f (x v) = c).
+        rewrite in_map_iff.
+        split.
+        + exists (x v); easy.
+        + easy.
+      - destruct H0.
+        rewrite in_map_iff in H0.
+        destruct H0 as [[c0 [? ?]] ?].
+        rewrite <- H0 in H2.
+        destruct H2.
+        now rewrite <- H2 in H3.
+    }
+    rewrite H0.
+    apply sa_list_union.
+    intros.
+    rewrite in_map_iff in H1.
+    destruct H1.
+    destruct H1.
+    rewrite <- H1.
+    assert (event_equiv (fun omega : X => x omega = x2 /\ f x2 = c)
+                        (event_inter (fun omega => x omega = x2)
+                                     (fun _ => f x2 = c))).
+    {
+      intro u.
+      now unfold event_inter.
+    }
+    rewrite H3.
+    apply sa_inter.
+    - apply H.
+    - apply sa_sigma_const.
+      apply classic_event_lem.
+  Qed.
+
   Instance rv_fun_simple (x f : X -> X)
             (rvx : RandomVariable dom (Rvector_borel_sa I) x) 
             (srvx : SimpleRandomVariable x) :
      RandomVariable dom (Rvector_borel_sa I) (fun u => f (x u)).    
   Proof.
+  (*
     apply RealVectorMeasurableRandomVariable.
     intros i pf.
     apply rv_measurable.
@@ -1358,10 +1418,7 @@ algorithm.
     apply measurable_rv in rvx.
     simpl in rvx.
     rewrite vector_nth_fun_to_vector in rvx.
-
-    (*
-
-    
+ *)
     
     generalize (srv_fun x f srvx); intros.
 
@@ -1377,7 +1434,24 @@ algorithm.
                                    (fun omega =>
                                       (x omega = sval) /\ (f sval = c)))
                                 srv_vals0))).
-    admit.
+    { 
+      intro v.
+      unfold list_union.
+      split; intros.
+      - specialize (srv_vals_complete0 v).
+        generalize (srv_vals_complete v); intros.
+        exists (fun omega : X => x omega = x v /\ f (x v) = c).
+        rewrite in_map_iff.
+        split.
+        + exists (x v); easy.
+        + easy.
+      - destruct H0.
+        rewrite in_map_iff in H0.
+        destruct H0 as [[c0 [? ?]] ?].
+        rewrite <- H0 in H2.
+        destruct H2.
+        now rewrite <- H2 in H3.
+    }
     rewrite H0.
     apply sa_list_union.
     intros.
@@ -1388,16 +1462,17 @@ algorithm.
     assert (event_equiv (fun omega : X => x omega = x2 /\ f x2 = c)
                         (event_inter (fun omega => x omega = x2)
                                      (fun _ => f x2 = c))).
-    intro u.
-    now unfold event_inter.
+    {
+      intro u.
+      now unfold event_inter.
+    }
     rewrite H3.
     apply sa_inter.
-    apply H.
-    apply sa_sigma_const.
-    apply classic_event_lem.
+    - apply H.
+    - apply sa_sigma_const.
+      apply classic_event_lem.
+  Qed.
 
-    Admitted.
-     *)
    Instance rv_Fa (a:R) (x: X -> X) 
             (rvx : RandomVariable dom (Rvector_borel_sa I) x) 
             (srvx : SimpleRandomVariable x) :
