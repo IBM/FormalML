@@ -1303,18 +1303,42 @@ algorithm.
         {rv : RandomVariable dom (Rvector_borel_sa n) rv_X} :
     forall c, sa_sigma (event_preimage rv_X (event_singleton c)).
   Proof.
+
     intros.
     generalize  (RandomVariableRealVectorMeasurable rv_X); intros.
     unfold RealVectorMeasurable in H.
     unfold event_preimage, event_singleton.
-    (* want to convert to the intersection of each component of rv_X maps to each component of c 
-       and use sa_singleton 
+    unfold X in *.
+    simpl in H.
+    
     assert (event_equiv 
-               (fun omega : X => rv_X omega = c)
-               (list_inter 
-                  (
-    *)
-  Admitted.
+              (fun omega : X => rv_X omega = c)
+              (inter_of_collection
+                 (fun i => match lt_dec i n with
+                        | left pf => fun omega => vector_nth i pf (rv_X omega) = vector_nth i pf c
+                        | right _ => Ω
+                        end))).
+    {
+      intros e.
+      split; intros HH.
+      - intros i.
+        match_destr.
+        + congruence.
+        + now red.
+      - apply vector_nth_eq; intros.
+        specialize (HH i); simpl in HH.
+        match_destr_in HH; try lia.
+        now replace pf with l by apply le_uniqueness_proof.
+    }
+    rewrite H0.
+    apply sa_countable_inter; intros.
+    match_destr.
+    - specialize (H _ l).
+      apply measurable_rv in H.
+      rewrite vector_nth_fun_to_vector in H.
+      now apply sa_singleton.
+    - apply sa_all.
+  Qed.                 
 
   Instance rv_fun_simple (x f : X -> X)
             (rvx : RandomVariable dom (Rvector_borel_sa I) x) 
