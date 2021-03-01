@@ -655,10 +655,11 @@ Qed.
       unfold vecrvsum.
       Admitted.
 
+    (* following should be SimpleExpectation (rvinner rv_X1 rv_X2) *)
     Lemma SimpleExpectation_rvinner {n} (rv_X1 rv_X2 : Ts -> vector R n) 
            {srv1:SimpleRandomVariable rv_X1}
            {srv2:SimpleRandomVariable rv_X2} :
-      SimpleExpectation (vecrvsum (vecrvmult rv_X1 rv_X2))
+      SimpleExpectation (rvinner rv_X1 rv_X2)
       = 
       Rvector_sum
         (vector_create 
@@ -667,6 +668,8 @@ Qed.
               SimpleExpectation (rvmult (vector_nth m pf (iso_f rv_X1))
                                         (vector_nth m pf (iso_f rv_X2)))  )).
    Proof.
+     generalize (rvinner_unfold rv_X1 rv_X2); intros.
+     rewrite (SimpleExpectation_ext _ _ H).
      rewrite SimpleExpectation_rvsum.
      f_equal.
      unfold vector_SimpleExpectation.
@@ -681,7 +684,6 @@ Qed.
      rewrite vector_nth_create'.     
      now unfold rvmult.
   Qed.
-
 
   (* if l is viewed as finite generators for a sigma algebra, this shows that
     we can factor out l-measurable random variables from conditional expectation *)
