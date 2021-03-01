@@ -862,7 +862,7 @@ Lemma SimpleRandomVariable_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
         {rv2:RandomVariable dom (Rvector_borel_sa n) rv_X2}
         {srv1:SimpleRandomVariable rv_X1}
         {srv2:SimpleRandomVariable rv_X2} :
-    SimpleExpectation (vecrvsum (vecrvmult rv_X1 rv_X2))
+    SimpleExpectation (rvinner rv_X1 rv_X2)
     = 
     Rvector_sum
       (vector_create 
@@ -871,6 +871,8 @@ Lemma SimpleRandomVariable_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
             SimpleExpectation (rvmult (vector_nth m pf (iso_f rv_X1))
                                       (vector_nth m pf (iso_f rv_X2)))  )).
   Proof.
+    generalize (rvinner_unfold rv_X1 rv_X2); intros.
+    rewrite (SimpleExpectation_ext _ _ H).
     rewrite SimpleExpectation_rvsum.
     f_equal.
     unfold vector_SimpleExpectation.
@@ -887,8 +889,72 @@ Lemma SimpleRandomVariable_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
     apply Rvector_mult_rv; trivial.
   Qed.
 
+  Instance vec_gen_condexp_rv {n}
+        (rv_X : Ts -> vector R n)
+        {rv:RandomVariable dom (Rvector_borel_sa n) rv_X}
+        {srv : SimpleRandomVariable rv_X}
+        (l : list dec_sa_event) :
+    RandomVariable dom (Rvector_borel_sa n)
+                   (vector_gen_SimpleConditionalExpectation rv_X l).
+  Proof.
+    unfold vector_gen_SimpleConditionalExpectation.
+    simpl.
+    rewrite vector_of_funs_vector_create.
+    
+  Admitted.
+
+   Lemma simple_expection_rvinner_measurable {n}
+        (rv_X1 rv_X2 : Ts -> vector R n)
+        {rv1:RandomVariable dom (Rvector_borel_sa n) rv_X1}
+        {rv2:RandomVariable dom (Rvector_borel_sa n) rv_X2}
+        {srv1 : SimpleRandomVariable rv_X1}
+        {srv2 : SimpleRandomVariable rv_X2} 
+        (l : list dec_sa_event) :
+    is_partition_list (map dsa_event l) ->
+    partition_measurable rv_X1 (map dsa_event l) ->
+    SimpleExpectation (rvinner rv_X1 rv_X2) =
+    SimpleExpectation (rvinner rv_X1 (vector_gen_SimpleConditionalExpectation rv_X2 l)).
+     Proof.
+       intros.
+       rewrite SimpleExpectation_rvinner; trivial.
+       rewrite SimpleExpectation_rvinner; trivial.
+       f_equal.
+       apply vector_create_ext.
+       intros.
+       erewrite gen_conditional_tower_law with (l0 := l); trivial.
+       - apply SimpleExpectation_ext.
+         rewrite gen_conditional_scale_measurable; trivial.
+         + intro x.
+           f_equal.
+           unfold vector_gen_SimpleConditionalExpectation.
+           rewrite iso_f_b.
+           now rewrite vector_nth_create'.
+         + unfold partition_measurable.
+           unfold partition_measurable in H0.
+           intros.
+           cut_to H0; trivial.
+           specialize (H0 p H2).
+           destruct H0 as [cvec [? ?]].
+           exists (vector_nth i pf2 cvec).
+           destruct srv1.
+           unfold RandomVariable.srv_vals; simpl.
+           split.
+           * unfold RandomVariable.srv_vals in H0; simpl in H0.
+             rewrite in_map_iff.
+             exists cvec.
+             tauto.
+           * rewrite vector_nth_fun_to_vector.
+             unfold event_sub, event_preimage, event_singleton in *.
+             intros.
+             now rewrite H3.
+       - typeclasses eauto.
+       - typeclasses eauto.         
+    Qed.       
+         
+
   (* if l is viewed as finite generators for a sigma algebra, this shows that
     we can factor out l-measurable random variables from conditional expectation *)
+(*
   Lemma vector_gen_conditional_scale_measurable {n}
         (rv_X1 rv_X2 : Ts -> vector R n)
         {srv1 : SimpleRandomVariable rv_X1}
@@ -905,7 +971,6 @@ Lemma SimpleRandomVariable_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
     rewrite H1.
     rewrite (gen_SimpleConditionalExpectation_ext _ _ l (H1 rv_X1 rv_X2)).
     generalize (vecrvsum_rvsum (vecrvmult rv_X1 rv_X2)); intros.
-    
-  Admitted.
+*)
 
 End vector_ops.
