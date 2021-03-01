@@ -1125,6 +1125,17 @@ Section SimpleConditionalExpectation.
       + apply IHl.
   Defined.
 
+  Instance gen_simple_conditional_expectation_rv 
+           (rv_X : Ts -> R)
+           {rv:RandomVariable dom borel_sa rv_X}
+           {srv : SimpleRandomVariable rv_X}
+           (l : list dec_sa_event) :
+    RandomVariable dom borel_sa (gen_SimpleConditionalExpectation rv_X l).
+  Proof.
+    unfold gen_SimpleConditionalExpectation.
+    induction l; simpl; typeclasses eauto.
+    Qed.
+
   Definition simple_conditional_expectation_scale_coef (c : R)
              (rv_X rv_X2 : Ts -> R)
              {srv : SimpleRandomVariable rv_X}
