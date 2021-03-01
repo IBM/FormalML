@@ -1835,6 +1835,7 @@ algorithm.
   Qed.
 
     Theorem L2_convergent (C : R) (w x : nat -> X -> X) (xstar : X)
+         (hist : nat -> list dec_sa_event) 
          (rx : forall n, RandomVariable dom (Rvector_borel_sa I) (x n))
          (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
          (srw : forall n, SimpleRandomVariable  (w n)) 
@@ -1843,16 +1844,17 @@ algorithm.
       0 <= gamma < 1 ->
       xstar = F xstar ->
       (forall n, 0 <= α n <= 1) -> 
+      (forall n, is_partition_list (map dsa_event (hist n))) ->
+      (forall n, partition_measurable 
+             (vecrvminus (F_alpha (α n) (x n)) 
+                                  (const xstar))
+             (map dsa_event (hist n))) ->
       is_lim_seq α 0 ->
       is_lim_seq (sum_n α) p_infty ->
       (forall k, (x (S k)) = 
                  vecrvplus (F_alpha (α k) (x k))
                            (vecrvscale (α k) (w k))) ->
-      (forall n, SimpleExpectation
-                   (rvinner
-                      (vecrvminus (F_alpha (α n) (x n)) 
-                                  (const xstar))
-                      (w n)) = zero) ->
+      (forall n, rv_eq (vector_gen_SimpleConditionalExpectation (w n) (hist n)) (const zero)) ->
       (forall n, SimpleExpectation (rvinner (w n) (w n)) < C)  ->
       (forall x1 y : vector R I, Hnorm (minus (F x1) (F y)) <= gamma * Hnorm (minus x1 y)) -> 
       is_lim_seq 
@@ -1860,7 +1862,7 @@ algorithm.
                     (rvinner (vecrvminus (x n) (const xstar))
                              (vecrvminus (x n) (const xstar)))) 0.
     Proof.
-      intros Cpos grel xfix arel alim aser xrel xterm wbound Fcontract.
+      intros Cpos grel xfix arel ispart part_meas alim aser xrel xterm wbound Fcontract.
       assert (forall n,
                  SimpleExpectation (rvinner (vecrvminus (x (S n)) (const xstar))
                                 (vecrvminus (x (S n)) (const xstar))) <=
@@ -1872,7 +1874,26 @@ algorithm.
       {
         intros.
         apply L2_convergent_helper with (w := w) (srw := srw); trivial.
-
+        generalize (simple_expection_rvinner_measurable 
+                      (vecrvminus (F_alpha (α n) (x n)) (const xstar))
+                      (w n) (hist n) (ispart n) (part_meas n)); intros.
+        erewrite SimpleExpectation_pf_irrel in H.
+        rewrite H.
+        assert (rv_eq (rvinner (vecrvminus (F_alpha (α n) (x n)) (const xstar)) (vector_gen_SimpleConditionalExpectation (w n) (hist n)))
+                      (const (zero))).
+        { 
+          intro v.
+          specialize (xterm n v).
+          unfold rvinner, const.
+          unfold const in xterm.
+          rewrite xterm.
+          generalize (inner_zero_r (vecrvminus (F_alpha (α n) (x n)) (fun _ : X => xstar) v)); intros.
+          unfold inner, zero in H0; simpl in H0.
+          unfold zero; simpl.
+          now rewrite H0.
+        }
+        rewrite (SimpleExpectation_ext _ _ H0).
+        now rewrite SimpleExpectation_const.
         generalize (@is_contraction_falpha' (@PreHilbert_NormedModule
                                                (@Rvector_PreHilbert I))
                                             F gamma (α n) (arel n)); intros.
