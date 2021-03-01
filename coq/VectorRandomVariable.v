@@ -900,9 +900,19 @@ Lemma SimpleRandomVariable_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
     unfold vector_gen_SimpleConditionalExpectation.
     simpl.
     rewrite vector_of_funs_vector_create.
+    apply RealVectorMeasurableRandomVariable.
+    intros ??.
+    apply rv_measurable.
+    simpl.
+    rewrite vector_nth_fun_to_vector.
+    eapply RandomVariable_proper.
+    - intros ?.
+      rewrite vector_nth_create'.
+      reflexivity.
+    - Existing Instance  gen_simple_conditional_expectation_rv.
+      typeclasses eauto.
+  Qed.
     
-  Admitted.
-
    Lemma simple_expection_rvinner_measurable {n}
         (rv_X1 rv_X2 : Ts -> vector R n)
         {rv1:RandomVariable dom (Rvector_borel_sa n) rv_X1}
