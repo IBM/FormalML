@@ -645,6 +645,43 @@ Qed.
       - typeclasses eauto.
     Qed.
 
+    Lemma SimpleExpectation_rvsum {n} (rv_X : Ts -> vector R n) 
+           {srv1:SimpleRandomVariable rv_X} :
+      SimpleExpectation (vecrvsum rv_X) 
+      = 
+      Rvector_sum (vector_SimpleExpectation rv_X).
+    Proof.
+      unfold vector_SimpleExpectation.
+      unfold vecrvsum.
+      Admitted.
+
+    Lemma SimpleExpectation_rvinner {n} (rv_X1 rv_X2 : Ts -> vector R n) 
+           {srv1:SimpleRandomVariable rv_X1}
+           {srv2:SimpleRandomVariable rv_X2} :
+      SimpleExpectation (vecrvsum (vecrvmult rv_X1 rv_X2))
+      = 
+      Rvector_sum
+        (vector_create 
+           0 n 
+           (fun m _ pf => 
+              SimpleExpectation (rvmult (vector_nth m pf (iso_f rv_X1))
+                                        (vector_nth m pf (iso_f rv_X2)))  )).
+   Proof.
+     rewrite SimpleExpectation_rvsum.
+     f_equal.
+     unfold vector_SimpleExpectation.
+     apply vector_create_ext.
+     intros.
+     apply SimpleExpectation_ext.
+     simpl.
+     intro v.
+     do 3 rewrite vector_nth_fun_to_vector.	
+     unfold vecrvmult.
+     rewrite Rvector_mult_explode.
+     rewrite vector_nth_create'.     
+     now unfold rvmult.
+  Qed.
+
 
   (* if l is viewed as finite generators for a sigma algebra, this shows that
     we can factor out l-measurable random variables from conditional expectation *)
