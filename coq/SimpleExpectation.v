@@ -1125,7 +1125,7 @@ Section SimpleConditionalExpectation.
       + apply IHl.
   Defined.
 
-  Instance gen_simple_conditional_expectation_rv 
+  Global Instance gen_simple_conditional_expectation_rv 
            (rv_X : Ts -> R)
            {rv:RandomVariable dom borel_sa rv_X}
            {srv : SimpleRandomVariable rv_X}

@@ -909,8 +909,7 @@ Lemma SimpleRandomVariable_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
     - intros ?.
       rewrite vector_nth_create'.
       reflexivity.
-    - Existing Instance  gen_simple_conditional_expectation_rv.
-      typeclasses eauto.
+    - typeclasses eauto.
   Qed.
     
    Lemma simple_expection_rvinner_measurable {n}
