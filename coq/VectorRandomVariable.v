@@ -113,6 +113,56 @@ Section vector_ops.
   Definition rvinner {n} (rv_X1 rv_X2 : Ts -> vector R n) :=
     fun omega => Rvector_inner (rv_X1 omega) (rv_X2 omega).
 
+
+  Global Instance vecrvplus_proper {n} : Proper (rv_eq ==> rv_eq ==> rv_eq) (@vecrvplus n).
+  Proof.
+    repeat red.
+    unfold vecrvplus, rv_eq.
+    congruence.
+  Qed.
+
+  Global Instance vecrvmult_proper {n} : Proper (rv_eq ==> rv_eq ==> rv_eq) (@vecrvmult n).
+  Proof.
+    repeat red.
+    unfold vecrvmult, rv_eq.
+    congruence.
+  Qed.
+
+  Global Instance vecrvscale_proper {n} : Proper (eq ==> rv_eq ==> rv_eq) (@vecrvscale n).
+  Proof.
+    repeat red.
+    unfold vecrvscale, rv_eq.
+    congruence.
+  Qed.
+
+  Global Instance vecrvopp_proper {n} : Proper (rv_eq ==> rv_eq) (@vecrvopp n).
+  Proof.
+    repeat red.
+    unfold vecrvopp, vecrvscale, rv_eq.
+    congruence.
+  Qed.
+
+  Global Instance vecrvminus_proper {n} : Proper (rv_eq ==> rv_eq ==> rv_eq) (@vecrvminus n).
+  Proof.
+    repeat red.
+    unfold vecrvminus, vecrvplus, vecrvopp, vecrvscale, rv_eq.
+    congruence.
+  Qed.
+
+  Global Instance vecrvsum_proper {n} : Proper (rv_eq ==> rv_eq) (@vecrvsum n).
+  Proof.
+    repeat red.
+    unfold vecrvsum, rv_eq.
+    congruence.
+  Qed.
+
+  Global Instance rvinner_proper {n} : Proper (rv_eq ==> rv_eq ==> rv_eq) (@rvinner n).
+  Proof.
+    repeat red.
+    unfold rvinner, rv_eq.
+    congruence.
+  Qed.
+  
   Lemma rvinner_unfold {n} (rv_X1 rv_X2 : Ts -> vector R n)
     : rvinner rv_X1 rv_X2 === vecrvsum (vecrvmult rv_X1 rv_X2).
   Proof.
@@ -120,6 +170,7 @@ Section vector_ops.
     reflexivity.
   Qed.
 
+  
   Class RealVectorMeasurable {n} (rv_X : Ts -> vector R n) :=
     vecmeasurable : forall i pf, RealMeasurable dom (vector_nth i pf (iso_f rv_X)).
 
@@ -890,10 +941,10 @@ Lemma SimpleRandomVariable_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
   Qed.
 
   Instance vec_gen_condexp_rv {n}
-        (rv_X : Ts -> vector R n)
-        {rv:RandomVariable dom (Rvector_borel_sa n) rv_X}
-        {srv : SimpleRandomVariable rv_X}
-        (l : list dec_sa_event) :
+           (rv_X : Ts -> vector R n)
+           {rv:RandomVariable dom (Rvector_borel_sa n) rv_X}
+           {srv : SimpleRandomVariable rv_X}
+           (l : list dec_sa_event) :
     RandomVariable dom (Rvector_borel_sa n)
                    (vector_gen_SimpleConditionalExpectation rv_X l).
   Proof.
@@ -911,8 +962,8 @@ Lemma SimpleRandomVariable_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
       reflexivity.
     - typeclasses eauto.
   Qed.
-    
-   Lemma simple_expection_rvinner_measurable {n}
+  
+  Lemma simple_expection_rvinner_measurable {n}
         (rv_X1 rv_X2 : Ts -> vector R n)
         {rv1:RandomVariable dom (Rvector_borel_sa n) rv_X1}
         {rv2:RandomVariable dom (Rvector_borel_sa n) rv_X2}
@@ -923,48 +974,44 @@ Lemma SimpleRandomVariable_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
     partition_measurable rv_X1 (map dsa_event l) ->
     SimpleExpectation (rvinner rv_X1 rv_X2) =
     SimpleExpectation (rvinner rv_X1 (vector_gen_SimpleConditionalExpectation rv_X2 l)).
-     Proof.
-       intros.
-       rewrite SimpleExpectation_rvinner; trivial.
-       rewrite SimpleExpectation_rvinner; trivial.
-       f_equal.
-       apply vector_create_ext.
-       intros.
-       erewrite gen_conditional_tower_law with (l0 := l); trivial.
-       - apply SimpleExpectation_ext.
-         rewrite gen_conditional_scale_measurable; trivial.
-         + intro x.
-           f_equal.
-           unfold vector_gen_SimpleConditionalExpectation.
-           rewrite iso_f_b.
-           now rewrite vector_nth_create'.
-         + unfold partition_measurable.
-           unfold partition_measurable in H0.
-           intros.
-           cut_to H0; trivial.
-           specialize (H0 p H2).
-           destruct H0 as [cvec [? ?]].
-           exists (vector_nth i pf2 cvec).
-           destruct srv1.
-           unfold RandomVariable.srv_vals; simpl.
-           split.
-           * unfold RandomVariable.srv_vals in H0; simpl in H0.
-             rewrite in_map_iff.
-             exists cvec.
-             tauto.
-           * rewrite vector_nth_fun_to_vector.
-             unfold event_sub, event_preimage, event_singleton in *.
-             intros.
-             now rewrite H3.
-       - typeclasses eauto.
-       - typeclasses eauto.         
-    Qed.       
-         
-    Instance rvinner_proper {n} :
-      Proper (rv_eq ==> rv_eq ==> rv_eq) (@rvinner n).
-    Admitted.
+  Proof.
+    intros.
+    rewrite SimpleExpectation_rvinner; trivial.
+    rewrite SimpleExpectation_rvinner; trivial.
+    f_equal.
+    apply vector_create_ext.
+    intros.
+    erewrite gen_conditional_tower_law with (l0 := l); trivial.
+    - apply SimpleExpectation_ext.
+      rewrite gen_conditional_scale_measurable; trivial.
+      + intro x.
+        f_equal.
+        unfold vector_gen_SimpleConditionalExpectation.
+        rewrite iso_f_b.
+        now rewrite vector_nth_create'.
+      + unfold partition_measurable.
+        unfold partition_measurable in H0.
+        intros.
+        cut_to H0; trivial.
+        specialize (H0 p H2).
+        destruct H0 as [cvec [? ?]].
+        exists (vector_nth i pf2 cvec).
+        destruct srv1.
+        unfold RandomVariable.srv_vals; simpl.
+        split.
+        * unfold RandomVariable.srv_vals in H0; simpl in H0.
+          rewrite in_map_iff.
+          exists cvec.
+          tauto.
+        * rewrite vector_nth_fun_to_vector.
+          unfold event_sub, event_preimage, event_singleton in *.
+          intros.
+          now rewrite H3.
+    - typeclasses eauto.
+    - typeclasses eauto.         
+  Qed.       
 
-   Lemma simple_expection_rvinner_measurable_zero {n}
+  Lemma simple_expection_rvinner_measurable_zero {n}
         (rv_X1 rv_X2 : Ts -> vector R n)
         {rv1:RandomVariable dom (Rvector_borel_sa n) rv_X1}
         {rv2:RandomVariable dom (Rvector_borel_sa n) rv_X2}
@@ -975,22 +1022,22 @@ Lemma SimpleRandomVariable_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
     is_partition_list (map dsa_event l) ->
     partition_measurable rv_X1 (map dsa_event l) ->
     SimpleExpectation (rvinner rv_X1 rv_X2) = 0.
-   Proof.
-     intros.
-     rewrite simple_expection_rvinner_measurable with (l0 := l); trivial.
-     assert (rv_eq  
-               (rvinner rv_X1 (vector_gen_SimpleConditionalExpectation rv_X2 l))
-               (const 0)).
-     {
-       rewrite H.
-       intro v.
-       now generalize (hilbert.inner_zero_r (rv_X1 v) ).
-     }
-     rewrite (SimpleExpectation_ext _ _ H2).
-     now rewrite SimpleExpectation_const.
+  Proof.
+    intros.
+    rewrite simple_expection_rvinner_measurable with (l0 := l); trivial.
+    assert (rv_eq  
+              (rvinner rv_X1 (vector_gen_SimpleConditionalExpectation rv_X2 l))
+              (const 0)).
+    {
+      rewrite H.
+      intro v.
+      now generalize (hilbert.inner_zero_r (rv_X1 v) ).
+    }
+    rewrite (SimpleExpectation_ext _ _ H2).
+    now rewrite SimpleExpectation_const.
   Qed.
 
-  (* if l is viewed as finite generators for a sigma algebra, this shows that
+(* if l is viewed as finite generators for a sigma algebra, this shows that
     we can factor out l-measurable random variables from conditional expectation *)
 (*
   Lemma vector_gen_conditional_scale_measurable {n}
@@ -1009,6 +1056,6 @@ Lemma SimpleRandomVariable_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
     rewrite H1.
     rewrite (gen_SimpleConditionalExpectation_ext _ _ l (H1 rv_X1 rv_X2)).
     generalize (vecrvsum_rvsum (vecrvmult rv_X1 rv_X2)); intros.
-*)
+ *)
 
 End vector_ops.
