@@ -960,6 +960,35 @@ Lemma SimpleRandomVariable_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
        - typeclasses eauto.         
     Qed.       
          
+    Instance rvinner_proper {n} :
+      Proper (rv_eq ==> rv_eq ==> rv_eq) (@rvinner n).
+    Admitted.
+
+   Lemma simple_expection_rvinner_measurable_zero {n}
+        (rv_X1 rv_X2 : Ts -> vector R n)
+        {rv1:RandomVariable dom (Rvector_borel_sa n) rv_X1}
+        {rv2:RandomVariable dom (Rvector_borel_sa n) rv_X2}
+        {srv1 : SimpleRandomVariable rv_X1}
+        {srv2 : SimpleRandomVariable rv_X2} 
+        (l : list dec_sa_event) :
+    rv_eq (vector_gen_SimpleConditionalExpectation rv_X2 l) (const Rvector_zero) ->
+    is_partition_list (map dsa_event l) ->
+    partition_measurable rv_X1 (map dsa_event l) ->
+    SimpleExpectation (rvinner rv_X1 rv_X2) = 0.
+   Proof.
+     intros.
+     rewrite simple_expection_rvinner_measurable with (l0 := l); trivial.
+     assert (rv_eq  
+               (rvinner rv_X1 (vector_gen_SimpleConditionalExpectation rv_X2 l))
+               (const 0)).
+     {
+       rewrite H.
+       intro v.
+       now generalize (hilbert.inner_zero_r (rv_X1 v) ).
+     }
+     rewrite (SimpleExpectation_ext _ _ H2).
+     now rewrite SimpleExpectation_const.
+  Qed.
 
   (* if l is viewed as finite generators for a sigma algebra, this shows that
     we can factor out l-measurable random variables from conditional expectation *)
