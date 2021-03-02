@@ -1898,7 +1898,20 @@ algorithm.
      partition_measurable rv_X l ->
      partition_measurable (fun v => f (rv_X v)) l.
    Proof.
-     Admitted.
+     unfold partition_measurable; intros.
+     specialize (H0 H p H2).
+     destruct H0 as [c [? ?]].
+     exists (f c).
+     destruct srv.
+     unfold RandomVariable.srv_vals; simpl.
+     split.
+     - rewrite in_map_iff.
+       exists c.
+       easy.
+     - unfold event_sub, event_preimage, event_singleton in *.
+       intros.
+       now rewrite H3.
+     Qed.
 
    Lemma partition_measurable_const (c : X)
          (l : list (event X)) :
