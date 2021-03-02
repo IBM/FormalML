@@ -1288,16 +1288,6 @@ algorithm.
    Definition F_alpha (a : R) (x : X -> X) :=
      vecrvplus (vecrvscale (1-a) x) (vecrvscale a (fun v => F (x v))).
 
-  Instance srv_Fa (a:R) (x: X -> X)
-           (srvx : SimpleRandomVariable x) :
-    SimpleRandomVariable (F_alpha a x).
-  Proof.
-    unfold F_alpha.
-    apply srv_vecrvplus.
-    typeclasses eauto.
-    typeclasses eauto.
-  Qed.
-
   Lemma vec_sa_singleton {n} (rv_X : X -> vector R n)
         {rv : RandomVariable dom (Rvector_borel_sa n) rv_X} :
     forall c, sa_sigma (event_preimage rv_X (event_singleton c)).
@@ -1483,7 +1473,7 @@ algorithm.
             (srvx : SimpleRandomVariable x) :
      RandomVariable dom (Rvector_borel_sa I) (F_alpha a x).
    Proof.
-     eapply srv_singleton_rv with (srv:=srv_Fa _ _ _).
+     eapply srv_singleton_rv.
      intros.
      apply vec_sa_singleton.
      unfold F_alpha.
@@ -1833,6 +1823,112 @@ algorithm.
      assert (0 < gamma) by lra.
      now apply Rmult_lt_compat_l.
   Qed.
+
+   Lemma partition_measurable_vecrvplus {Ts} (rv_X1 rv_X2 : Ts -> X) 
+         {srv1 : SimpleRandomVariable rv_X1}
+         {srv2 : SimpleRandomVariable rv_X2}         
+            (l : list (event Ts)) :
+    is_partition_list l ->
+     partition_measurable rv_X1 l ->
+     partition_measurable rv_X2 l ->     
+     partition_measurable (vecrvplus rv_X1 rv_X2) l.
+   Proof.
+     unfold partition_measurable. intros.
+     specialize (H0 H p H3).
+     specialize (H1 H p H3).
+     destruct H0 as [c1 [? ?]].
+     destruct H1 as [c2 [? ?]].     
+     exists (Rvector_plus c1 c2).
+     split.
+     - destruct srv1.
+       destruct srv2.
+       unfold RandomVariable.srv_vals; simpl.
+       apply in_map_iff.
+       exists (c1, c2).
+       split; [reflexivity | ].
+       now apply in_prod.
+     - unfold event_sub, event_preimage, event_singleton in *.
+       intros.
+       unfold vecrvplus.
+       now rewrite (H4 x H6), (H5 x H6).
+     Qed.
+
+   Lemma partition_measurable_vecrvscale {Ts} (c : R) (rv_X : Ts -> X) 
+         {srv : SimpleRandomVariable rv_X}
+            (l : list (event Ts)) :
+    is_partition_list l ->
+     partition_measurable rv_X l ->     
+     partition_measurable (vecrvscale c rv_X) l.
+   Proof.
+     unfold partition_measurable. intros.
+     specialize (H0 H p H2).
+     destruct H0 as [c0 [? ?]].
+     unfold vecrvscale.
+     exists (Rvector_scale c c0).
+     split.
+     - destruct srv.
+       unfold RandomVariable.srv_vals; simpl.
+       apply in_map_iff.
+       exists c0.
+       now split; [reflexivity | ].
+     - unfold event_sub, event_preimage, event_singleton in *.
+       intros.
+       now rewrite (H3 x H4).
+     Qed.
+
+   Lemma partition_measurable_vecrvminus {Ts} (rv_X1 rv_X2 : Ts -> X) 
+         {srv1 : SimpleRandomVariable rv_X1}
+         {srv2 : SimpleRandomVariable rv_X2}         
+            (l : list (event Ts)) :
+    is_partition_list l ->
+     partition_measurable rv_X1 l ->
+     partition_measurable rv_X2 l ->     
+     partition_measurable (vecrvminus rv_X1 rv_X2) l.
+   Proof.
+     unfold vecrvminus; intros.
+     apply partition_measurable_vecrvplus; trivial.
+     unfold vecrvopp.
+     apply partition_measurable_vecrvscale; trivial.     
+   Qed.
+     
+   Lemma partition_measurable_comp {Ts} (rv_X : Ts -> X) (f : X -> X) 
+         {srv : SimpleRandomVariable rv_X}
+         (l : list (event Ts)) :
+    is_partition_list l ->
+     partition_measurable rv_X l ->
+     partition_measurable (fun v => f (rv_X v)) l.
+   Proof.
+     Admitted.
+
+   Lemma partition_measurable_const (c : X)
+         (l : list (event X)) :
+     is_partition_list l ->
+     partition_measurable (const c) l.
+   Proof.
+     unfold partition_measurable; intros.
+     exists c.
+     unfold srv_vals; simpl.
+     split; [now left | ].
+     repeat red.
+     reflexivity.
+   Qed.
+
+   Lemma partition_measurable_vecrvminus_F_alpha_const (x : X -> X)
+         {srv : SimpleRandomVariable x}
+         (a : R) (xstar : X) 
+         (l : list (event X)) :
+     is_partition_list l ->
+     partition_measurable x l ->
+     partition_measurable (vecrvminus (F_alpha a x) (const xstar)) l.
+   Proof.
+     unfold F_alpha; intros.
+     apply partition_measurable_vecrvminus; trivial.
+     apply partition_measurable_vecrvplus; trivial.
+     apply partition_measurable_vecrvscale; trivial.
+     apply partition_measurable_vecrvscale; trivial.
+     apply partition_measurable_comp; trivial.
+     apply partition_measurable_const; trivial.
+   Qed.
 
     Theorem L2_convergent (C : R) (w x : nat -> X -> X) (xstar : X)
          (hist : nat -> list dec_sa_event) 
