@@ -1941,10 +1941,7 @@ algorithm.
       xstar = F xstar ->
       (forall n, 0 <= α n <= 1) -> 
       (forall n, is_partition_list (map dsa_event (hist n))) ->
-      (forall n, partition_measurable 
-             (vecrvminus (F_alpha (α n) (x n)) 
-                                  (const xstar))
-             (map dsa_event (hist n))) ->
+      (forall n, partition_measurable (x n) (map dsa_event (hist n))) ->
       is_lim_seq α 0 ->
       is_lim_seq (sum_n α) p_infty ->
       (forall k, (x (S k)) = 
@@ -1970,11 +1967,13 @@ algorithm.
       {
         intros.
         apply L2_convergent_helper with (w := w) (srw := srw); trivial.
+        generalize (partition_measurable_vecrvminus_F_alpha_const (x n) (α n)
+                   xstar (map dsa_event (hist n)) (ispart n) (part_meas n)); intros.
         generalize (simple_expection_rvinner_measurable_zero 
                       (vecrvminus (F_alpha (α n) (x n)) (const xstar))
-                      (w n) (hist n) (xterm n) (ispart n) (part_meas n)); intros.
-        erewrite SimpleExpectation_pf_irrel in H.
-        now rewrite H.
+                      (w n) (hist n) (xterm n) (ispart n) H); intros.
+        erewrite SimpleExpectation_pf_irrel in H0.
+        now rewrite H0.
         generalize (@is_contraction_falpha' (@PreHilbert_NormedModule
                                                (@Rvector_PreHilbert I))
                                             F gamma (α n) (arel n)); intros.
