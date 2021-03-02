@@ -117,7 +117,7 @@ Section vector_ops.
   Global Instance vecrvplus_proper {n} : Proper (rv_eq ==> rv_eq ==> rv_eq) (@vecrvplus n).
   Proof.
     repeat red.
-    unfold vecrvplus, rv_eq.
+    unfold vecrvplus, rv_eq in *.
     congruence.
   Qed.
 
@@ -1031,7 +1031,7 @@ Lemma SimpleRandomVariable_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
     {
       rewrite H.
       intro v.
-      now generalize (hilbert.inner_zero_r (rv_X1 v) ).
+      apply (hilbert.inner_zero_r (rv_X1 v)).
     }
     rewrite (SimpleExpectation_ext _ _ H2).
     now rewrite SimpleExpectation_const.
