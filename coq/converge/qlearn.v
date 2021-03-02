@@ -1874,26 +1874,11 @@ algorithm.
       {
         intros.
         apply L2_convergent_helper with (w := w) (srw := srw); trivial.
-        generalize (simple_expection_rvinner_measurable 
+        generalize (simple_expection_rvinner_measurable_zero 
                       (vecrvminus (F_alpha (α n) (x n)) (const xstar))
-                      (w n) (hist n) (ispart n) (part_meas n)); intros.
+                      (w n) (hist n) (xterm n) (ispart n) (part_meas n)); intros.
         erewrite SimpleExpectation_pf_irrel in H.
-        rewrite H.
-        assert (rv_eq (rvinner (vecrvminus (F_alpha (α n) (x n)) (const xstar)) (vector_gen_SimpleConditionalExpectation (w n) (hist n)))
-                      (const (zero))).
-        { 
-          intro v.
-          specialize (xterm n v).
-          unfold rvinner, const.
-          unfold const in xterm.
-          rewrite xterm.
-          generalize (inner_zero_r (vecrvminus (F_alpha (α n) (x n)) (fun _ : X => xstar) v)); intros.
-          unfold inner, zero in H0; simpl in H0.
-          unfold zero; simpl.
-          now rewrite H0.
-        }
-        rewrite (SimpleExpectation_ext _ _ H0).
-        now rewrite SimpleExpectation_const.
+        now rewrite H.
         generalize (@is_contraction_falpha' (@PreHilbert_NormedModule
                                                (@Rvector_PreHilbert I))
                                             F gamma (α n) (arel n)); intros.
