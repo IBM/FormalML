@@ -638,7 +638,7 @@ Lemma SimpleRandomVariable_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
     apply in_prod; trivial.
   Qed.
 
-  Program Instance srv_vecrvplus {n}
+  Global Program Instance srv_vecrvplus {n}
           (rv_X1 rv_X2 : Ts -> vector R n)
           {srv1:SimpleRandomVariable rv_X1}
           {srv2:SimpleRandomVariable rv_X2}
@@ -656,7 +656,7 @@ Lemma SimpleRandomVariable_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
     apply in_prod; trivial.
   Qed.
 
-  Program Instance srv_vecrvscale {n} (c:R)
+  Global Program Instance srv_vecrvscale {n} (c:R)
           (rv_X : Ts -> vector R n)
           {srv:SimpleRandomVariable rv_X}
     : SimpleRandomVariable (vecrvscale c rv_X)
