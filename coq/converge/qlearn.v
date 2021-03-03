@@ -1942,6 +1942,122 @@ algorithm.
      apply partition_measurable_comp; trivial.
      apply partition_measurable_const; trivial.
    Qed.
+     
+   Definition refine_dec_sa_event (e : dec_sa_event) (l : list (dec_sa_event)) :=
+     map (fun e2 => dec_sa_event_inter e e2) l.
+
+   Definition refine_dec_sa_partitions (l1 l2 : list dec_sa_event) :=
+     flat_map (fun e1 => refine_dec_sa_event e1 l2) l1.
+
+  Program Definition vec_induced_sigma_generators
+          {rv_X : X -> X}
+          {rv:RandomVariable dom (Rvector_borel_sa I) rv_X}
+          (srv : SimpleRandomVariable rv_X)
+    : list dec_sa_event
+    :=
+      map (fun (c:X) => Build_dec_sa_event
+                      (event_preimage rv_X (event_singleton c)) _ _)
+          srv_vals.
+    Next Obligation.
+      unfold event_preimage, event_singleton, dec_event.
+      intros.
+      apply vector_eq_dec.
+  Defined.
+  Next Obligation.
+    eapply vec_sa_singleton; eauto.
+  Qed.
+
+  Definition update_sa_dec_history (l : list dec_sa_event)
+          {rv_X : X -> X}
+          {rv:RandomVariable dom (Rvector_borel_sa I) rv_X}
+          (srv : SimpleRandomVariable rv_X) : list dec_sa_event
+    :=                                                   
+      refine_dec_sa_partitions (vec_induced_sigma_generators srv) l.
+
+   Definition simpleRandomVariable_partition_domain
+              {Ts Td}
+              {rv_X : Ts -> Td}
+              {dom : SigmaAlgebra Ts}
+              {cod : SigmaAlgebra Td}
+              (srv : SimpleRandomVariable rv_X) : list (event Ts) :=
+     map (event_preimage rv_X) (map event_singleton srv_vals).
+
+  (*
+   Definition refine_partition_srv {Ts Td} 
+              (dom : SigmaAlgebra Ts)
+              (cod : SigmaAlgebra Td)
+              (rv_X : Ts -> Td)
+              {rrv : RandomVariable dom cod rv_X}
+              {srv : SimpleRandomVariable rv_X}
+              (l : list (event Ts)) : list (event Ts) :=
+     refine_partitions l (simpleRandomVariable_partition_domain srv).
+ *)
+
+(*
+   Lemma partition_event_refine {Ts} (e : event Ts) (l : list (event Ts)) :
+     is_partition_list l ->
+     is_partition_list (refine_event e l).
+   Proof.
+     unfold is_partition_list.
+     intros.
+     Admitted.
+
+
+   Lemma partition_refine {Ts} (l1 l2 : list (event Ts)) :
+     is_partition_list l1 ->
+     is_partition_list l2 ->
+     is_partition_list (refine_partitions l1 l2).
+   Proof.
+     unfold is_partition_list.
+     intros.
+     Admitted.
+ *)
+
+
+   (*
+   Lemma partition_measurable_borel_rv {Ts} 
+         (rv_X : Ts -> R)
+         {srv : SimpleRandomVariable rv_X}
+         (l : list (event Ts))
+         (ispart : is_partition_list l) :
+     partition_measurable rv_X l ->
+     RandomVariable (list_partition_sa l ispart) borel_sa rv_X.
+   Proof.
+     intros.
+     apply measurable_rv.
+     unfold RealMeasurable.
+     intros.
+     destruct srv.
+     
+     Admitted.
+     
+   Lemma partition_measurable_vec_borel_rv {Ts} {n} 
+         (rv_X : Ts -> vector R n)
+         {srv : SimpleRandomVariable rv_X}
+         (l : list (event Ts))
+         (ispart : is_partition_list l) :
+     partition_measurable rv_X l ->
+     RandomVariable (list_partition_sa l ispart) (Rvector_borel_sa n) rv_X.
+   Proof.
+     intros.
+     apply RealVectorMeasurableRandomVariable.
+     unfold RealVectorMeasurable.
+     intros.
+     apply rv_measurable.
+     generalize (vec_srv rv_X i pf srv); intros.
+     apply partition_measurable_borel_rv with (srv0 := X0).
+     unfold partition_measurable in *.
+     intros.
+     specialize (H H0 p H1).
+     destruct H as [c [? ?]].
+     exists (vector_nth i pf c).
+     split.
+     destruct srv.
+     unfold RandomVariable.srv_vals in H.
+     destruct X0.
+     simpl.
+   Qed.
+  *)
 
     Theorem L2_convergent (C : R) (w x : nat -> X -> X) (xstar : X)
          (hist : nat -> list dec_sa_event) 
