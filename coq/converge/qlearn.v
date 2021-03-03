@@ -2145,7 +2145,8 @@ algorithm.
     simpl in H0.
     exists x1.
     split; trivial.
-    now rewrite H0.
+    - eapply nodup_In; eauto.
+    - now rewrite H0.
   Qed.
 
   Lemma update_partition_measurable
@@ -2405,6 +2406,20 @@ algorithm.
 
     End hist.
 
+    Lemma L2_convergent_hist_is_partition_list x rx srx n:
+      is_partition_list (map dsa_event (L2_convergent_hist x rx srx n)).
+    Proof.
+      induction n; simpl.
+      - apply is_partition_vec_induced_gen.
+      - now apply update_partition_list.
+    Qed.
+
+    Lemma L2_convergent_hist_partition_measurable x rx srx (n:nat):
+      partition_measurable (x n) (map dsa_event (L2_convergent_hist x rx srx n)).
+    Proof.
+    Admitted.
+
+    
     Theorem L2_convergent (C : R) (xinit:X->X) (w : nat -> X -> X) (xstar : X)
           (rx : forall n, RandomVariable dom (Rvector_borel_sa I) (L2_convergent_x xinit w n))
           (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
@@ -2426,9 +2441,10 @@ algorithm.
     Proof.
       intros.
       eapply L2_convergent_helper2; eauto.
-      - intros; admit.
       - intros.
-        
-    Admitted.
+        apply L2_convergent_hist_is_partition_list.
+      - intros.
+        apply L2_convergent_hist_partition_measurable.
+    Qed.
       
 
