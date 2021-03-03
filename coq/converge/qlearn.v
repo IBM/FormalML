@@ -1974,6 +1974,31 @@ algorithm.
     :=                                                   
       refine_dec_sa_partitions (vec_induced_sigma_generators srv) l.
 
+  Lemma is_partition_refine (l1 l2 : list dec_sa_event) :
+    is_partition_list (map dsa_event l1) ->
+    is_partition_list (map dsa_event l2) ->    
+    is_partition_list (map dsa_event (refine_dec_sa_partitions l1 l2)).
+  Proof.
+    unfold is_partition_list, refine_dec_sa_partitions.
+    intros.
+    destruct H.
+    destruct H0.
+    split.
+    - induction l1.
+      + simpl.
+        apply FOP_nil.
+      + simpl.
+        rewrite map_app.
+    Admitted.
+
+  Lemma is_partition_vec_induced_gen
+          {rv_X : X -> X}
+          {rv:RandomVariable dom (Rvector_borel_sa I) rv_X}
+          (srv : SimpleRandomVariable rv_X) :
+    is_partition_list (map dsa_event (vec_induced_sigma_generators srv)).
+  Proof.
+    Admitted.
+
   Lemma update_partition_list
           (l : list dec_sa_event)
           {rv_X : X -> X}
@@ -1982,7 +2007,11 @@ algorithm.
     is_partition_list (map dsa_event l) ->
     is_partition_list (map dsa_event (update_sa_dec_history l srv)).
   Proof.
-  Admitted.
+    intros.
+    unfold update_sa_dec_history.
+    apply is_partition_refine; trivial.
+    apply is_partition_vec_induced_gen.
+  Qed.
 
   Lemma vec_induced_partition_measurable
           {rv_X : X -> X}
@@ -2011,11 +2040,13 @@ algorithm.
     partition_measurable rv_X (map dsa_event (update_sa_dec_history l srv)).
   Proof.
     unfold partition_measurable, update_sa_dec_history.
-    unfold refine_dec_sa_partitions, vec_induced_sigma_generators.
+    unfold refine_dec_sa_partitions.
     intros.
+    rewrite in_map_iff in H0.
+    destruct H0 as [? [? ?]].
     
     Admitted.
-
+  
   (*
    Definition simpleRandomVariable_partition_domain
               {Ts Td}
@@ -2232,6 +2263,7 @@ algorithm.
                            (vecrvscale (α k) (w k))
          end.
 
+(*
     Program Definition dsa_Ω : dec_sa_event
       := {| dsa_event := Ω |}.
     Next Obligation.
@@ -2240,7 +2272,7 @@ algorithm.
     Next Obligation.
       apply sa_all.
     Qed.
-
+*)
     Section hist.
       Context (x:nat->X->X).
       Context (rvx:forall n, RandomVariable dom (Rvector_borel_sa I) (x n)).
@@ -2248,12 +2280,16 @@ algorithm.
       
       Fixpoint L2_convergent_hist (n:nat) : list dec_sa_event
         := match n with
-           | 0 => dsa_Ω :: nil
+           | 0 => 
+             @vec_induced_sigma_generators
+                                   (x 0%nat)
+                                   (rvx 0%nat)
+                                   (srvx 0%nat)
            | S k =>
              @update_sa_dec_history (L2_convergent_hist k)
-                                   (x k)
-                                   (rvx k)
-                                   (srvx k)
+                                   (x (S k))
+                                   (rvx (S k))
+                                   (srvx (S k))
            end.
 
     End hist.
@@ -2279,8 +2315,9 @@ algorithm.
     Proof.
       intros.
       eapply L2_convergent_helper2; eauto.
-      - admit.
-      - admit.
+      - intros; admit.
+      - intros.
+        
     Admitted.
       
 
