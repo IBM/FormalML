@@ -2268,16 +2268,6 @@ algorithm.
                            (vecrvscale (α k) (w k))
          end.
 
-(*
-    Program Definition dsa_Ω : dec_sa_event
-      := {| dsa_event := Ω |}.
-    Next Obligation.
-      left; now red.
-    Defined.
-    Next Obligation.
-      apply sa_all.
-    Qed.
-*)
     Section hist.
       Context (x:nat->X->X).
       Context (rvx:forall n, RandomVariable dom (Rvector_borel_sa I) (x n)).

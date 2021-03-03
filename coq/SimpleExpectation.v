@@ -1124,6 +1124,24 @@ Section SimpleConditionalExpectation.
     ; dsa_sa : sa_sigma dsa_event
     }.
 
+    Program Definition dsa_Ω : dec_sa_event
+      := {| dsa_event := Ω |}.
+    Next Obligation.
+      left; now red.
+    Defined.
+    Next Obligation.
+      apply sa_all.
+    Qed.
+
+    Program Definition dsa_none : dec_sa_event
+      := {| dsa_event := event_none |}.
+    Next Obligation.
+      right; now red.
+    Defined.
+    Next Obligation.
+      apply sa_none.
+    Qed.
+
   Definition dec_sa_event_inter (e1 e2 : dec_sa_event) : dec_sa_event :=
     {| dsa_event := (event_inter (dsa_event e1) (dsa_event e2))
       ; dsa_dec := dec_event_inter (dsa_dec e1) (dsa_dec e2)
