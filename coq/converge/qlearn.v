@@ -2166,8 +2166,25 @@ algorithm.
     destruct H1 as [? [? ?]].
     rewrite in_map_iff in H1.
     destruct H1 as [? [? ?]].
-    
-    Admitted.
+    rewrite <- H1 in H2.
+    destruct srv.
+    unfold vec_induced_sigma_generators in H3.
+    rewrite in_map_iff in H3.
+    destruct H3 as [? [? ?]].
+    unfold RandomVariable.srv_vals in *.
+    exists x3.
+    split.
+    now rewrite nodup_In in H4.
+    unfold refine_dec_sa_event in H2.
+    rewrite in_map_iff in H2.
+    destruct H2 as [? [? ?]].
+    rewrite <- H0.
+    rewrite <- H2.
+    rewrite <- H3.
+    simpl.
+    unfold event_sub, event_inter, event_preimage, event_singleton.
+    tauto.
+  Qed.
   
   (*
    Definition simpleRandomVariable_partition_domain
@@ -2417,8 +2434,10 @@ algorithm.
     Lemma L2_convergent_hist_partition_measurable x rx srx (n:nat):
       partition_measurable (x n) (map dsa_event (L2_convergent_hist x rx srx n)).
     Proof.
-    Admitted.
-
+      induction n; simpl.
+      - apply vec_induced_partition_measurable.
+      - apply update_partition_measurable.
+    Qed.
     
     Theorem L2_convergent (C : R) (xinit:X->X) (w : nat -> X -> X) (xstar : X)
           (rx : forall n, RandomVariable dom (Rvector_borel_sa I) (L2_convergent_x xinit w n))
