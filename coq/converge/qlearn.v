@@ -2044,6 +2044,11 @@ algorithm.
     intros.
     rewrite in_map_iff in H0.
     destruct H0 as [? [? ?]].
+    rewrite flat_map_concat_map in H1.
+    rewrite concat_In in H1.
+    destruct H1 as [? [? ?]].
+    rewrite in_map_iff in H1.
+    destruct H1 as [? [? ?]].
     
     Admitted.
   
