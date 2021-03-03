@@ -2102,7 +2102,7 @@ algorithm.
    Qed.
   *)
 
-    Theorem L2_convergent (C : R) (w x : nat -> X -> X) (xstar : X)
+    Lemma L2_convergent_helper2 (C : R) (w x : nat -> X -> X) (xstar : X)
          (hist : nat -> list dec_sa_event) 
          (rx : forall n, RandomVariable dom (Rvector_borel_sa I) (x n))
          (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
@@ -2222,7 +2222,65 @@ algorithm.
         ); intros; cut_to H1; try (now simpl).
       apply (is_lim_seq_le_le _ _ _ 0 H1); trivial.
       apply is_lim_seq_const.
-  Qed.
+    Qed.
 
+
+    Fixpoint L2_convergent_x (xinit:X->X) (w: nat -> X -> X) (n:nat) : X -> X
+      := match n with
+         | 0 => xinit
+         | S k => vecrvplus (F_alpha (α k) (L2_convergent_x xinit w k))
+                           (vecrvscale (α k) (w k))
+         end.
+
+    Program Definition dsa_Ω : dec_sa_event
+      := {| dsa_event := Ω |}.
+    Next Obligation.
+      left; now red.
+    Defined.
+    Next Obligation.
+      apply sa_all.
+    Qed.
+
+    Section hist.
+      Context (x:nat->X->X).
+      Context (rvx:forall n, RandomVariable dom (Rvector_borel_sa I) (x n)).
+      Context (srvx: forall n, SimpleRandomVariable (x n)).
+      
+      Fixpoint L2_convergent_hist (n:nat) : list dec_sa_event
+        := match n with
+           | 0 => dsa_Ω :: nil
+           | S k =>
+             @update_sa_dec_history (L2_convergent_hist k)
+                                   (x k)
+                                   (rvx k)
+                                   (srvx k)
+           end.
+
+    End hist.
+
+    Theorem L2_convergent (C : R) (xinit:X->X) (w : nat -> X -> X) (xstar : X)
+          (rx : forall n, RandomVariable dom (Rvector_borel_sa I) (L2_convergent_x xinit w n))
+          (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
+          (srx : forall n, SimpleRandomVariable  (L2_convergent_x xinit w n))
+          (srw : forall n, SimpleRandomVariable  (w n)) :
+      0 <= C ->
+      0 <= gamma < 1 ->
+      xstar = F xstar ->
+      (forall n, 0 <= α n <= 1) -> 
+      is_lim_seq α 0 ->
+      is_lim_seq (sum_n α) p_infty ->
+      (forall n, rv_eq (vector_gen_SimpleConditionalExpectation (w n) (L2_convergent_hist (L2_convergent_x xinit w) _ _ n)) (const zero)) ->
+      (forall n, SimpleExpectation (rvinner (w n) (w n)) < C)  ->
+      (forall x1 y : vector R I, Hnorm (minus (F x1) (F y)) <= gamma * Hnorm (minus x1 y)) -> 
+      is_lim_seq 
+        (fun n => SimpleExpectation
+                 (rvinner (vecrvminus (L2_convergent_x xinit w n) (const xstar))
+                          (vecrvminus (L2_convergent_x xinit w n) (const xstar)))) 0.
+    Proof.
+      intros.
+      eapply L2_convergent_helper2; eauto.
+      - admit.
+      - admit.
+    Admitted.
       
 
