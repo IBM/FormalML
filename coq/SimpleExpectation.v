@@ -1095,13 +1095,47 @@ Section SimpleConditionalExpectation.
     := (combine (seq 0 (length l)) l).
 
 
+  Definition dec_event {T} (a:event T) := forall x, {a x} + {~ a x}.
+
+  Lemma dec_event_inter {T} {a b:event T} :
+    dec_event a -> dec_event b -> dec_event (event_inter a b).
+  Proof.
+    intros ???.
+    apply sumbool_and; trivial.
+  Defined.
+
+  Lemma dec_event_union {T} {a b:event T} :
+    dec_event a -> dec_event b -> dec_event (event_union a b).
+  Proof.
+    unfold event_union.
+    intros d1 d2 x.
+    destruct (d1 x).
+    - left; eauto.
+    - destruct (d2 x).
+      + left; eauto.
+      + right.
+        tauto.
+  Defined.
+  
   Record dec_sa_event :=
     {
     dsa_event : event Ts
-    ; dsa_dec :  (forall x, {dsa_event x} + {~ dsa_event x})
+    ; dsa_dec :  dec_event dsa_event
     ; dsa_sa : sa_sigma dsa_event
     }.
-  
+
+  Definition dec_sa_event_inter (e1 e2 : dec_sa_event) : dec_sa_event :=
+    {| dsa_event := (event_inter (dsa_event e1) (dsa_event e2))
+      ; dsa_dec := dec_event_inter (dsa_dec e1) (dsa_dec e2)
+      ; dsa_sa := (sa_inter (dsa_sa e1) (dsa_sa e2))
+    |} .
+
+    Definition dec_sa_event_union (e1 e2 : dec_sa_event) : dec_sa_event :=
+    {| dsa_event := (event_union (dsa_event e1) (dsa_event e2))
+      ; dsa_dec := dec_event_union (dsa_dec e1) (dsa_dec e2)
+      ; dsa_sa := (sa_union (dsa_sa e1) (dsa_sa e2))
+    |} .
+
   Definition gen_SimpleConditionalExpectation
              (rv_X : Ts -> R)
              {srv : SimpleRandomVariable rv_X}
@@ -1757,6 +1791,7 @@ Section SimpleConditionalExpectation.
           (nodup Req_EM_T srv_vals).
   Next Obligation.
     unfold event_preimage, event_singleton.
+    intros ?.
     apply Req_EM_T.
   Defined.
   Next Obligation.
