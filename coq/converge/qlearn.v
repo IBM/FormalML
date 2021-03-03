@@ -1957,7 +1957,7 @@ algorithm.
     :=
       map (fun (c:X) => Build_dec_sa_event
                       (event_preimage rv_X (event_singleton c)) _ _)
-          srv_vals.
+          (nodup vector_eq_dec srv_vals).
     Next Obligation.
       unfold event_preimage, event_singleton, dec_event.
       intros.
@@ -2100,14 +2100,20 @@ algorithm.
     - now apply events_disjoint_refine.
     - now rewrite event_equiv_list_union_refine_all.
   Qed.
-
+  
   Lemma is_partition_vec_induced_gen
           {rv_X : X -> X}
           {rv:RandomVariable dom (Rvector_borel_sa I) rv_X}
           (srv : SimpleRandomVariable rv_X) :
     is_partition_list (map dsa_event (vec_induced_sigma_generators srv)).
   Proof.
-    Admitted.
+    unfold is_partition_list, vec_induced_sigma_generators.
+    rewrite map_map; simpl.
+    split.
+    - apply event_disjoint_preimage_disj.
+      apply NoDup_nodup.
+    - apply srv_nodup_preimage_list_union.
+  Qed.
 
   Lemma update_partition_list
           (l : list dec_sa_event)

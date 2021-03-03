@@ -35,11 +35,10 @@ Section SimpleExpectation.
                   (nodup Req_EM_T srv_vals)).
 
 
-
-  Lemma srv_nodup_preimage_list_union
-        {rv_X : Ts -> R}         
+  Lemma srv_nodup_preimage_list_union {Td} dec
+        {rv_X : Ts -> Td}         
         (srv : SimpleRandomVariable rv_X) :
-    event_equiv (list_union (map (fun (x : R) (omega : Ts) => rv_X omega = x) (nodup Req_EM_T srv_vals)))  Ω .
+    event_equiv (list_union (map (fun (x : Td) (omega : Ts) => rv_X omega = x) (nodup dec srv_vals)))  Ω .
   Proof.
     intros x.
     unfold Ω.
@@ -115,7 +114,7 @@ Section SimpleExpectation.
     apply list_sum_all_pos_zero_all_zero in H.
     - generalize (event_disjoint_preimage_disj x (nodup Req_EM_T srv_vals) (NoDup_nodup _ _))
       ; intros HH1.
-      generalize (srv_nodup_preimage_list_union srv)
+      generalize (srv_nodup_preimage_list_union Req_EM_T srv)
       ; intros HH2.
       generalize (ps_list_disjoint_union Prts _ (srv_vals_nodup_preimage_sa _ srv) HH1)
       ; intros HH3.
