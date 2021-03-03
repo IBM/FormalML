@@ -1974,6 +1974,49 @@ algorithm.
     :=                                                   
       refine_dec_sa_partitions (vec_induced_sigma_generators srv) l.
 
+  Lemma update_partition_list
+          (l : list dec_sa_event)
+          {rv_X : X -> X}
+          {rv:RandomVariable dom (Rvector_borel_sa I) rv_X}
+          (srv : SimpleRandomVariable rv_X) :
+    is_partition_list (map dsa_event l) ->
+    is_partition_list (map dsa_event (update_sa_dec_history l srv)).
+  Proof.
+  Admitted.
+
+  Lemma vec_induced_partition_measurable
+          {rv_X : X -> X}
+          {rv:RandomVariable dom (Rvector_borel_sa I) rv_X}
+          (srv : SimpleRandomVariable rv_X) :
+    partition_measurable rv_X (map dsa_event (vec_induced_sigma_generators srv)).
+  Proof.
+    unfold partition_measurable, vec_induced_sigma_generators.
+    intros.
+    rewrite in_map_iff in H0.
+    destruct H0 as [? [? ?]].
+    rewrite in_map_iff in H1.
+    destruct H1 as [? [? ?]].
+    rewrite <- H1 in H0.
+    simpl in H0.
+    exists x1.
+    split; trivial.
+    now rewrite H0.
+  Qed.
+
+  Lemma update_partition_measurable
+          (l : list dec_sa_event)
+          {rv_X : X -> X}
+          {rv:RandomVariable dom (Rvector_borel_sa I) rv_X}
+          (srv : SimpleRandomVariable rv_X) :
+    partition_measurable rv_X (map dsa_event (update_sa_dec_history l srv)).
+  Proof.
+    unfold partition_measurable, update_sa_dec_history.
+    unfold refine_dec_sa_partitions, vec_induced_sigma_generators.
+    intros.
+    
+    Admitted.
+
+  (*
    Definition simpleRandomVariable_partition_domain
               {Ts Td}
               {rv_X : Ts -> Td}
@@ -1981,7 +2024,7 @@ algorithm.
               {cod : SigmaAlgebra Td}
               (srv : SimpleRandomVariable rv_X) : list (event Ts) :=
      map (event_preimage rv_X) (map event_singleton srv_vals).
-
+  *)
   (*
    Definition refine_partition_srv {Ts Td} 
               (dom : SigmaAlgebra Ts)
