@@ -600,6 +600,22 @@ Proof.
       congruence.
 Defined.
 
+Global Instance vector_eq_dec {T:Type} {eqdecR:EqDec T eq} {n:nat}
+  : EqDec (vector T n) eq.
+Proof.
+  intros x y.
+  destruct (vector_equiv_dec eq x y).
+  - left.
+    unfold equiv in *.
+    apply vector_nth_eq.
+    apply e.
+  - right.
+    unfold equiv, complement in *.
+    intros ?; subst.
+    apply c.
+    reflexivity.
+Defined.
+
 Program Definition vectoro_to_ovector {A} {n} (v:vector (option A) n) : option (vector A n)
   := match listo_to_olist v with
      | None => None

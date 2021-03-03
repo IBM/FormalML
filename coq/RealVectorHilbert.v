@@ -20,6 +20,12 @@ Section Rvector_defs.
   Delimit Scope Rvector_scope with Rvector.
   Bind Scope Rvector_scope with vector R.
 
+  Lemma vec_Req_EM_T (v1 v2 : vector R n) :
+    {v1 = v2} + {v1 <> v2}.
+  Proof.
+    apply vector_eq_dec.
+  Defined.
+  
   Definition Rvector_zero : vector R n
     := vector_const 0 n.
 
