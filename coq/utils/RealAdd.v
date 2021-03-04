@@ -2663,3 +2663,81 @@ Proof.
   rewrite map_map.
   apply fold_right_ext; trivial.
 Qed.
+
+
+Lemma sum_n_m_shift (α : nat -> R) (k n0 : nat) :
+  sum_n_m α k (n0 + k)%nat = sum_n (fun n1 : nat => α (n1 + k)%nat) n0.
+Proof.
+  unfold sum_n.
+  induction n0.
+  - replace (0 + k)%nat with (k) by lia.
+    do 2 rewrite sum_n_n.
+    f_equal; lia.
+  - replace (S n0 + k)%nat with (S (n0 + k)%nat) by lia.
+    rewrite sum_n_Sm; try lia.
+    rewrite sum_n_Sm; try lia.
+    replace (S n0 + k)%nat with (S (n0 + k)%nat) by lia.
+    now rewrite IHn0.
+Qed.
+
+Lemma sum_n_m_pos a n1 n2 :
+  (forall n, (n1 <= n <= n2)%nat -> 0 <= a n) ->
+  0 <= (sum_n_m a n1 n2).
+Proof.
+  intros.
+  rewrite sum_n_m_fold_right_seq.
+  cut (forall x, List.In x ((List.seq n1 (S n2 - n1))) -> 0 <= a x).
+  - generalize ( (List.seq n1 (S n2 - n1))); intros l.
+    induction l; simpl; intros.
+    + lra.
+    + apply Rplus_le_le_0_compat; auto.
+  - intros ? inn.
+    apply List.in_seq in inn.
+    apply H.
+    lia.
+Qed.
+
+                                   
+Lemma sum_n_pos_incr a n1 n2 : (forall n, (n1 < n <= n2)%nat -> 0 <= a n) -> 
+                               (n1 <= n2)%nat -> sum_n a n1 <= sum_n a n2.
+Proof.
+  intros.
+  destruct (Nat.eq_dec n1 n2); [rewrite e; lra|].
+  assert (n1 < n2)%nat by lia.
+  unfold sum_n.
+  rewrite sum_n_m_Chasles with (k:=n2) (m:=n1); try lia.
+  replace (sum_n_m a 0 n1) with ((sum_n_m a 0 n1) + 0) at 1 by lra.
+  unfold plus; simpl.
+  apply Rplus_le_compat_l.
+  apply sum_n_m_pos; intros.
+  apply H.
+  lia.
+Qed.
+
+Lemma Rmult_lt_1 (a b :R) :
+  0 <= a <= 1 ->
+  b < 1 ->
+  a*b < 1.
+Proof.
+  intros.
+  destruct H.
+  destruct (Rlt_dec 0 a).
+  - apply Rmult_lt_compat_l with (r := a) in H0; trivial.
+    rewrite Rmult_1_r in H0.
+    now generalize (Rlt_le_trans _ _ _ H0 H1).
+  - assert (a = 0) by lra.
+    subst.
+    lra.
+Qed.
+
+Lemma Rmult_le_1 (a b :R) :
+  0 <= a <= 1 ->
+  0 <= b <= 1 ->
+  0 <= a*b <= 1.
+Proof.
+  intros.
+  split.
+  now apply Rmult_le_pos.
+  replace (1) with (1 * 1) by lra.
+  now apply Rmult_le_compat.
+Qed.
