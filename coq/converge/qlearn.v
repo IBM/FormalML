@@ -2377,7 +2377,7 @@ algorithm.
     Qed.
     
     Theorem L2_convergent (C : R) (xinit:X->X) (w : nat -> X -> X) (xstar : X)
-          (rx : RandomVariable dom (Rvector_borel_sa I) xinit)
+          (rxinit : RandomVariable dom (Rvector_borel_sa I) xinit)
           (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
           (srvinit : SimpleRandomVariable xinit)
           (srw : forall n, SimpleRandomVariable  (w n)) :
