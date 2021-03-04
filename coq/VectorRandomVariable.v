@@ -705,6 +705,202 @@ Lemma SimpleRandomVariable_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
     - typeclasses eauto.
   Qed.
 
+
+   Lemma partition_measurable_vecrvplus {n} (rv_X1 rv_X2 : Ts -> vector R n) 
+         {srv1 : SimpleRandomVariable rv_X1}
+         {srv2 : SimpleRandomVariable rv_X2}         
+            (l : list (event Ts)) :
+    is_partition_list l ->
+     partition_measurable rv_X1 l ->
+     partition_measurable rv_X2 l ->     
+     partition_measurable (vecrvplus rv_X1 rv_X2) l.
+   Proof.
+     unfold partition_measurable. intros.
+     specialize (H0 H p H3).
+     specialize (H1 H p H3).
+     destruct H0 as [c1 [? ?]].
+     destruct H1 as [c2 [? ?]].     
+     exists (Rvector_plus c1 c2).
+     split.
+     - destruct srv1.
+       destruct srv2.
+       unfold RandomVariable.srv_vals; simpl.
+       apply in_map_iff.
+       exists (c1, c2).
+       split; [reflexivity | ].
+       now apply in_prod.
+     - unfold event_sub, event_preimage, event_singleton in *.
+       intros.
+       unfold vecrvplus.
+       now rewrite (H4 x H6), (H5 x H6).
+     Qed.
+
+   
+   Lemma partition_measurable_vecrvscale {n} (c : R) (rv_X : Ts -> vector R n) 
+         {srv : SimpleRandomVariable rv_X}
+            (l : list (event Ts)) :
+    is_partition_list l ->
+     partition_measurable rv_X l ->     
+     partition_measurable (vecrvscale c rv_X) l.
+   Proof.
+     unfold partition_measurable. intros.
+     specialize (H0 H p H2).
+     destruct H0 as [c0 [? ?]].
+     unfold vecrvscale.
+     exists (Rvector_scale c c0).
+     split.
+     - destruct srv.
+       unfold RandomVariable.srv_vals; simpl.
+       apply in_map_iff.
+       exists c0.
+       now split; [reflexivity | ].
+     - unfold event_sub, event_preimage, event_singleton in *.
+       intros.
+       now rewrite (H3 x H4).
+     Qed.
+
+   Lemma partition_measurable_vecrvminus {n} (rv_X1 rv_X2 : Ts -> vector R n) 
+         {srv1 : SimpleRandomVariable rv_X1}
+         {srv2 : SimpleRandomVariable rv_X2}         
+            (l : list (event Ts)) :
+    is_partition_list l ->
+     partition_measurable rv_X1 l ->
+     partition_measurable rv_X2 l ->     
+     partition_measurable (vecrvminus rv_X1 rv_X2) l.
+   Proof.
+     unfold vecrvminus; intros.
+     apply partition_measurable_vecrvplus; trivial.
+     unfold vecrvopp.
+     apply partition_measurable_vecrvscale; trivial.     
+   Qed.
+     
+   Lemma partition_measurable_comp {n} (rv_X : Ts -> vector R n) (f : vector R n -> vector R n) 
+         {srv : SimpleRandomVariable rv_X}
+         (l : list (event Ts)) :
+    is_partition_list l ->
+     partition_measurable rv_X l ->
+     partition_measurable (fun v => f (rv_X v)) l.
+   Proof.
+     unfold partition_measurable; intros.
+     specialize (H0 H p H2).
+     destruct H0 as [c [? ?]].
+     exists (f c).
+     destruct srv.
+     unfold RandomVariable.srv_vals; simpl.
+     split.
+     - rewrite in_map_iff.
+       exists c.
+       easy.
+     - unfold event_sub, event_preimage, event_singleton in *.
+       intros.
+       now rewrite H3.
+     Qed.
+
+   Lemma partition_measurable_const {n} (c : vector R n)
+         (l : list (event (vector R n))) :
+     is_partition_list l ->
+     partition_measurable (const c) l.
+   Proof.
+     unfold partition_measurable; intros.
+     exists c.
+     unfold srv_vals; simpl.
+     split; [now left | ].
+     repeat red.
+     reflexivity.
+   Qed.
+
+  Lemma vec_sa_singleton {n} (rv_X : Ts -> vector R n)
+        {rv : RandomVariable dom (Rvector_borel_sa n) rv_X} :
+    forall c, sa_sigma (event_preimage rv_X (event_singleton c)).
+  Proof.
+
+    intros.
+    generalize  (RandomVariableRealVectorMeasurable rv_X); intros.
+    unfold RealVectorMeasurable in H.
+    unfold event_preimage, event_singleton.
+    simpl in H.
+    
+    assert (event_equiv 
+              (fun omega : Ts => rv_X omega = c)
+              (inter_of_collection
+                 (fun i => match lt_dec i n with
+                        | left pf => fun omega => vector_nth i pf (rv_X omega) = vector_nth i pf c
+                        | right _ => Ω
+                        end))).
+    {
+      intros e.
+      split; intros HH.
+      - intros i.
+        match_destr.
+        + congruence.
+        + now red.
+      - apply vector_nth_eq; intros.
+        specialize (HH i); simpl in HH.
+        match_destr_in HH; try lia.
+        now replace pf with l by apply le_uniqueness_proof.
+    }
+    rewrite H0.
+    apply sa_countable_inter; intros.
+    match_destr.
+    - specialize (H _ l).
+      apply measurable_rv in H.
+      rewrite vector_nth_fun_to_vector in H.
+      now apply sa_singleton.
+    - apply sa_all.
+  Qed.                 
+
+  Program Definition vec_induced_sigma_generators {n}
+          {rv_X : Ts -> vector R n}
+          {rv:RandomVariable dom (Rvector_borel_sa n) rv_X}
+          (srv : SimpleRandomVariable rv_X)
+    : list dec_sa_event
+    :=
+      map (fun (c:vector R n) => Build_dec_sa_event
+                      (event_preimage rv_X (event_singleton c)) _ _)
+          (nodup vector_eq_dec srv_vals).
+    Next Obligation.
+      unfold event_preimage, event_singleton, dec_event.
+      intros.
+      apply vector_eq_dec.
+  Defined.
+  Next Obligation.
+    eapply vec_sa_singleton; eauto.
+  Qed.
+
+    Lemma is_partition_vec_induced_gen {n}
+          {rv_X : Ts -> vector R n}
+          {rv:RandomVariable dom (Rvector_borel_sa n) rv_X}
+          (srv : SimpleRandomVariable rv_X) :
+    is_partition_list (map dsa_event (vec_induced_sigma_generators srv)).
+  Proof.
+    unfold is_partition_list, vec_induced_sigma_generators.
+    rewrite map_map; simpl.
+    split.
+    - apply event_disjoint_preimage_disj.
+      apply NoDup_nodup.
+    - apply srv_nodup_preimage_list_union.
+  Qed.
+
+  Lemma vec_induced_partition_measurable {n}
+          {rv_X : Ts -> vector R n}
+          {rv:RandomVariable dom (Rvector_borel_sa n) rv_X}
+          (srv : SimpleRandomVariable rv_X) :
+    partition_measurable rv_X (map dsa_event (vec_induced_sigma_generators srv)).
+  Proof.
+    unfold partition_measurable, vec_induced_sigma_generators.
+    intros.
+    rewrite in_map_iff in H0.
+    destruct H0 as [? [? ?]].
+    rewrite in_map_iff in H1.
+    destruct H1 as [? [? ?]].
+    rewrite <- H1 in H0.
+    simpl in H0.
+    exists x0.
+    split; trivial.
+    - eapply nodup_In; eauto.
+    - now rewrite H0.
+  Qed.
+
   (* move *)
   Lemma vector_list_create_shiftS
         {T:Type}

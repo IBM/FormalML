@@ -1153,6 +1153,121 @@ Section SimpleConditionalExpectation.
       ; dsa_sa := (sa_union (dsa_sa e1) (dsa_sa e2))
     |} .
 
+     
+   Definition refine_dec_sa_event (e : dec_sa_event) (l : list (dec_sa_event)) :=
+     map (fun e2 => dec_sa_event_inter e e2) l.
+
+   Definition refine_dec_sa_partitions (l1 l2 : list dec_sa_event) :=
+     flat_map (fun e1 => refine_dec_sa_event e1 l2) l1.
+
+  Lemma events_disjoint_refine_event (a : dec_sa_event) (l : list dec_sa_event) :
+    ForallOrdPairs event_disjoint (map dsa_event l) ->
+    ForallOrdPairs event_disjoint (map dsa_event (refine_dec_sa_event a l)).
+  Proof.
+    induction l; simpl; trivial; intros F1.
+    invcs F1.
+    constructor; [| auto].
+    rewrite Forall_forall; intros ? inn.
+    unfold refine_dec_sa_event, dec_sa_event_inter in inn.
+    rewrite map_map in inn.
+    simpl in inn.
+    apply in_map_iff in inn.
+    destruct inn as [? [??]]; subst.
+    unfold event_disjoint, event_inter; intros.
+    rewrite Forall_forall in H1.
+    destruct H; destruct H3.
+    eapply (H1 (dsa_event x0)).
+    - apply in_map_iff; eauto.
+    - eauto.
+    - eauto.
+  Qed.
+
+  Lemma events_disjoint_refine (l1 l2 : list dec_sa_event) :
+    ForallOrdPairs event_disjoint (map dsa_event l1) ->
+    ForallOrdPairs event_disjoint (map dsa_event l2) ->
+    ForallOrdPairs event_disjoint
+                   (map dsa_event (flat_map (fun e1 : dec_sa_event => refine_dec_sa_event e1 l2) l1)).
+  Proof.
+    revert l2.
+    induction l1; simpl; trivial.
+    intros l2 F1 F2.
+    rewrite map_app.
+    invcs F1.
+    apply ForallOrdPairs_app.
+    - now apply events_disjoint_refine_event.
+    - auto.
+    - intros x y xinn yinn.
+      unfold refine_dec_sa_event, dec_sa_event_inter in xinn, yinn.
+      rewrite map_map in xinn.
+      simpl in xinn.
+      apply in_map_iff in xinn.
+      destruct xinn as [?[??]]; subst.
+      apply in_map_iff in yinn.
+      destruct yinn as [?[??]]; subst.
+      apply in_flat_map in H3.
+      destruct H3 as [?[??]].
+      apply in_map_iff in H3.
+      destruct H3 as [?[??]]; subst.
+      simpl.
+      rewrite Forall_forall in H1.
+      specialize (H1 (dsa_event x1)).
+      cut_to H1.
+      + firstorder.
+      + apply in_map_iff; eauto.
+  Qed.        
+
+  Lemma event_equiv_list_union_refine_event a l :
+    event_equiv (list_union (map dsa_event l)) Ω ->
+    event_equiv (list_union (map dsa_event (refine_dec_sa_event a l))) (dsa_event a).
+  Proof.
+    unfold event_equiv, refine_dec_sa_event, list_union, dec_sa_event_inter; intros.
+    rewrite map_map; simpl.
+    split; intros.
+    - destruct H0 as [?[??]].
+      apply in_map_iff in H0.
+      destruct H0 as [?[??]]; subst.
+      firstorder.
+    - destruct (H x).
+      cut_to H2; [| now red].
+      destruct H2 as [? [??]].
+      apply in_map_iff in H2.
+      destruct H2 as [?[??]]; subst.
+      exists (event_inter (dsa_event a) (dsa_event x1)).
+      split.
+      + apply in_map_iff.
+        eauto.
+      + red; tauto.
+  Qed.
+
+  Lemma event_equiv_list_union_refine_all l1 l2 :
+    event_equiv (list_union (map dsa_event l2)) Ω ->
+    event_equiv
+      (list_union (map dsa_event (flat_map (fun e1 : dec_sa_event => refine_dec_sa_event e1 l2) l1)))
+      (list_union (map dsa_event l1)).
+  Proof.
+    revert l2.
+    induction l1; simpl; trivial; intros l2 E.
+    - reflexivity.
+    - rewrite map_app.
+      rewrite list_union_app, list_union_cons.
+      apply event_union_proper.
+      + now apply event_equiv_list_union_refine_event.
+      + now apply IHl1.
+  Qed.
+
+  Lemma is_partition_refine (l1 l2 : list dec_sa_event) :
+    is_partition_list (map dsa_event l1) ->
+    is_partition_list (map dsa_event l2) ->    
+    is_partition_list (map dsa_event (refine_dec_sa_partitions l1 l2)).
+  Proof.
+    unfold is_partition_list, refine_dec_sa_partitions.
+    intros [??] [??].
+    split.
+    - now apply events_disjoint_refine.
+    - now rewrite event_equiv_list_union_refine_all.
+  Qed.
+
+
   Definition gen_SimpleConditionalExpectation
              (rv_X : Ts -> R)
              {srv : SimpleRandomVariable rv_X}

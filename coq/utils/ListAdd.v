@@ -1445,6 +1445,26 @@ Proof.
       invcs H. specialize (IHl H3). assumption. 
 Qed.
 
+
+Lemma ForallOrdPairs_app {A : Type} {R : A -> A -> Prop} {l1 l2 : list A} :
+  ForallOrdPairs R l1 ->
+  ForallOrdPairs R l2 ->
+  (forall x y, In x l1 -> In y l2 -> R x y) ->
+  ForallOrdPairs R (l1 ++ l2).
+Proof.
+  revert l2.
+  induction l1; simpl; trivial; intros.
+  invcs H.
+  constructor.
+  - apply Forall_app; trivial.
+    rewrite Forall_forall.
+    intros.
+    apply H1; trivial.
+    eauto.
+  - apply IHl1; trivial.
+    eauto.
+Qed.
+
 Lemma ForallOrdPairs_app_in {A R} {l1 l2:list A} : ForallOrdPairs R (l1 ++ l2) ->
                                                    forall x y, In x l1 -> In y l2 -> R x y.
 Proof.

@@ -1130,8 +1130,6 @@ algorithm.
   Context (gamma : R) (α : nat -> R) {F : X -> X}
           {dom: SigmaAlgebra X} {prts: ProbSpace dom} (x0 : X).
 
-    (* Theorem 8 *)
-
     Global Instance positive_inner (f : X -> X) :
       PositiveRandomVariable (fun v => inner (f v) (f v) ).
     Proof.
@@ -1277,57 +1275,10 @@ algorithm.
    Proof.
      now generalize (inner_ge_0 x).
    Qed.
-(*
-   Definition F_alpha (a : R)  :=
-     (@f_alpha Rvector_NormedModule F a).
-
-    Definition f_alpha (f : X -> X) a : (X -> X)  :=
-      fun (x:X) => plus (scal (1-a) x) (scal a (f x)).
-*)
 
    Definition F_alpha (a : R) (x : X -> X) :=
      vecrvplus (vecrvscale (1-a) x) (vecrvscale a (fun v => F (x v))).
 
-  Lemma vec_sa_singleton {n} (rv_X : X -> vector R n)
-        {rv : RandomVariable dom (Rvector_borel_sa n) rv_X} :
-    forall c, sa_sigma (event_preimage rv_X (event_singleton c)).
-  Proof.
-
-    intros.
-    generalize  (RandomVariableRealVectorMeasurable rv_X); intros.
-    unfold RealVectorMeasurable in H.
-    unfold event_preimage, event_singleton.
-    unfold X in *.
-    simpl in H.
-    
-    assert (event_equiv 
-              (fun omega : X => rv_X omega = c)
-              (inter_of_collection
-                 (fun i => match lt_dec i n with
-                        | left pf => fun omega => vector_nth i pf (rv_X omega) = vector_nth i pf c
-                        | right _ => Ω
-                        end))).
-    {
-      intros e.
-      split; intros HH.
-      - intros i.
-        match_destr.
-        + congruence.
-        + now red.
-      - apply vector_nth_eq; intros.
-        specialize (HH i); simpl in HH.
-        match_destr_in HH; try lia.
-        now replace pf with l by apply le_uniqueness_proof.
-    }
-    rewrite H0.
-    apply sa_countable_inter; intros.
-    match_destr.
-    - specialize (H _ l).
-      apply measurable_rv in H.
-      rewrite vector_nth_fun_to_vector in H.
-      now apply sa_singleton.
-    - apply sa_all.
-  Qed.                 
 
   Instance rv_fun_simple_R (x : X -> R) (f : R -> R)
             (rvx : RandomVariable dom borel_sa x) 
@@ -1824,108 +1775,6 @@ algorithm.
      now apply Rmult_lt_compat_l.
   Qed.
 
-   Lemma partition_measurable_vecrvplus {Ts} (rv_X1 rv_X2 : Ts -> X) 
-         {srv1 : SimpleRandomVariable rv_X1}
-         {srv2 : SimpleRandomVariable rv_X2}         
-            (l : list (event Ts)) :
-    is_partition_list l ->
-     partition_measurable rv_X1 l ->
-     partition_measurable rv_X2 l ->     
-     partition_measurable (vecrvplus rv_X1 rv_X2) l.
-   Proof.
-     unfold partition_measurable. intros.
-     specialize (H0 H p H3).
-     specialize (H1 H p H3).
-     destruct H0 as [c1 [? ?]].
-     destruct H1 as [c2 [? ?]].     
-     exists (Rvector_plus c1 c2).
-     split.
-     - destruct srv1.
-       destruct srv2.
-       unfold RandomVariable.srv_vals; simpl.
-       apply in_map_iff.
-       exists (c1, c2).
-       split; [reflexivity | ].
-       now apply in_prod.
-     - unfold event_sub, event_preimage, event_singleton in *.
-       intros.
-       unfold vecrvplus.
-       now rewrite (H4 x H6), (H5 x H6).
-     Qed.
-
-   Lemma partition_measurable_vecrvscale {Ts} (c : R) (rv_X : Ts -> X) 
-         {srv : SimpleRandomVariable rv_X}
-            (l : list (event Ts)) :
-    is_partition_list l ->
-     partition_measurable rv_X l ->     
-     partition_measurable (vecrvscale c rv_X) l.
-   Proof.
-     unfold partition_measurable. intros.
-     specialize (H0 H p H2).
-     destruct H0 as [c0 [? ?]].
-     unfold vecrvscale.
-     exists (Rvector_scale c c0).
-     split.
-     - destruct srv.
-       unfold RandomVariable.srv_vals; simpl.
-       apply in_map_iff.
-       exists c0.
-       now split; [reflexivity | ].
-     - unfold event_sub, event_preimage, event_singleton in *.
-       intros.
-       now rewrite (H3 x H4).
-     Qed.
-
-   Lemma partition_measurable_vecrvminus {Ts} (rv_X1 rv_X2 : Ts -> X) 
-         {srv1 : SimpleRandomVariable rv_X1}
-         {srv2 : SimpleRandomVariable rv_X2}         
-            (l : list (event Ts)) :
-    is_partition_list l ->
-     partition_measurable rv_X1 l ->
-     partition_measurable rv_X2 l ->     
-     partition_measurable (vecrvminus rv_X1 rv_X2) l.
-   Proof.
-     unfold vecrvminus; intros.
-     apply partition_measurable_vecrvplus; trivial.
-     unfold vecrvopp.
-     apply partition_measurable_vecrvscale; trivial.     
-   Qed.
-     
-   Lemma partition_measurable_comp {Ts} (rv_X : Ts -> X) (f : X -> X) 
-         {srv : SimpleRandomVariable rv_X}
-         (l : list (event Ts)) :
-    is_partition_list l ->
-     partition_measurable rv_X l ->
-     partition_measurable (fun v => f (rv_X v)) l.
-   Proof.
-     unfold partition_measurable; intros.
-     specialize (H0 H p H2).
-     destruct H0 as [c [? ?]].
-     exists (f c).
-     destruct srv.
-     unfold RandomVariable.srv_vals; simpl.
-     split.
-     - rewrite in_map_iff.
-       exists c.
-       easy.
-     - unfold event_sub, event_preimage, event_singleton in *.
-       intros.
-       now rewrite H3.
-     Qed.
-
-   Lemma partition_measurable_const (c : X)
-         (l : list (event X)) :
-     is_partition_list l ->
-     partition_measurable (const c) l.
-   Proof.
-     unfold partition_measurable; intros.
-     exists c.
-     unfold srv_vals; simpl.
-     split; [now left | ].
-     repeat red.
-     reflexivity.
-   Qed.
-
    Lemma partition_measurable_vecrvminus_F_alpha_const (x : X -> X)
          {srv : SimpleRandomVariable x}
          (a : R) (xstar : X) 
@@ -1942,30 +1791,6 @@ algorithm.
      apply partition_measurable_comp; trivial.
      apply partition_measurable_const; trivial.
    Qed.
-     
-   Definition refine_dec_sa_event (e : dec_sa_event) (l : list (dec_sa_event)) :=
-     map (fun e2 => dec_sa_event_inter e e2) l.
-
-   Definition refine_dec_sa_partitions (l1 l2 : list dec_sa_event) :=
-     flat_map (fun e1 => refine_dec_sa_event e1 l2) l1.
-
-  Program Definition vec_induced_sigma_generators
-          {rv_X : X -> X}
-          {rv:RandomVariable dom (Rvector_borel_sa I) rv_X}
-          (srv : SimpleRandomVariable rv_X)
-    : list dec_sa_event
-    :=
-      map (fun (c:X) => Build_dec_sa_event
-                      (event_preimage rv_X (event_singleton c)) _ _)
-          (nodup vector_eq_dec srv_vals).
-    Next Obligation.
-      unfold event_preimage, event_singleton, dec_event.
-      intros.
-      apply vector_eq_dec.
-  Defined.
-  Next Obligation.
-    eapply vec_sa_singleton; eauto.
-  Qed.
 
   Definition update_sa_dec_history (l : list dec_sa_event)
           {rv_X : X -> X}
@@ -1973,147 +1798,6 @@ algorithm.
           (srv : SimpleRandomVariable rv_X) : list dec_sa_event
     :=                                                   
       refine_dec_sa_partitions (vec_induced_sigma_generators srv) l.
-
-
-  Lemma ForallOrdPairs_app {A : Type} {R : A -> A -> Prop} {l1 l2 : list A} :
-    ForallOrdPairs R l1 ->
-    ForallOrdPairs R l2 ->
-    (forall x y, In x l1 -> In y l2 -> R x y) ->
-    ForallOrdPairs R (l1 ++ l2).
-  Proof.
-    revert l2.
-    induction l1; simpl; trivial; intros.
-    invcs H.
-    constructor.
-    - apply Forall_app; trivial.
-      rewrite Forall_forall.
-      intros.
-      apply H1; trivial.
-      eauto.
-    - apply IHl1; trivial.
-      eauto.
-  Qed.
-
-  Lemma events_disjoint_refine_event (a : dec_sa_event) (l : list dec_sa_event) :
-    ForallOrdPairs event_disjoint (map dsa_event l) ->
-    ForallOrdPairs event_disjoint (map dsa_event (refine_dec_sa_event a l)).
-  Proof.
-    induction l; simpl; trivial; intros F1.
-    invcs F1.
-    constructor; [| auto].
-    rewrite Forall_forall; intros ? inn.
-    unfold refine_dec_sa_event, dec_sa_event_inter in inn.
-    rewrite map_map in inn.
-    simpl in inn.
-    apply in_map_iff in inn.
-    destruct inn as [? [??]]; subst.
-    unfold event_disjoint, event_inter; intros.
-    rewrite Forall_forall in H1.
-    destruct H; destruct H3.
-    eapply (H1 (dsa_event x1)).
-    - apply in_map_iff; eauto.
-    - eauto.
-    - eauto.
-  Qed.
-
-  Lemma events_disjoint_refine (l1 l2 : list dec_sa_event) :
-    ForallOrdPairs event_disjoint (map dsa_event l1) ->
-    ForallOrdPairs event_disjoint (map dsa_event l2) ->
-    ForallOrdPairs event_disjoint
-                   (map dsa_event (flat_map (fun e1 : dec_sa_event => refine_dec_sa_event e1 l2) l1)).
-  Proof.
-    revert l2.
-    induction l1; simpl; trivial.
-    intros l2 F1 F2.
-    rewrite map_app.
-    invcs F1.
-    apply ForallOrdPairs_app.
-    - now apply events_disjoint_refine_event.
-    - auto.
-    - intros x y xinn yinn.
-      unfold refine_dec_sa_event, dec_sa_event_inter in xinn, yinn.
-      rewrite map_map in xinn.
-      simpl in xinn.
-      apply in_map_iff in xinn.
-      destruct xinn as [?[??]]; subst.
-      apply in_map_iff in yinn.
-      destruct yinn as [?[??]]; subst.
-      apply in_flat_map in H3.
-      destruct H3 as [?[??]].
-      apply in_map_iff in H3.
-      destruct H3 as [?[??]]; subst.
-      simpl.
-      rewrite Forall_forall in H1.
-      specialize (H1 (dsa_event x2)).
-      cut_to H1.
-      + firstorder.
-      + apply in_map_iff; eauto.
-  Qed.        
-
-  Lemma event_equiv_list_union_refine_event a l :
-    event_equiv (list_union (map dsa_event l)) Ω ->
-    event_equiv (list_union (map dsa_event (refine_dec_sa_event a l))) (dsa_event a).
-  Proof.
-    unfold event_equiv, refine_dec_sa_event, list_union, dec_sa_event_inter; intros.
-    rewrite map_map; simpl.
-    split; intros.
-    - destruct H0 as [?[??]].
-      apply in_map_iff in H0.
-      destruct H0 as [?[??]]; subst.
-      firstorder.
-    - destruct (H x).
-      cut_to H2; [| now red].
-      destruct H2 as [? [??]].
-      apply in_map_iff in H2.
-      destruct H2 as [?[??]]; subst.
-      exists (event_inter (dsa_event a) (dsa_event x2)).
-      split.
-      + apply in_map_iff.
-        eauto.
-      + red; tauto.
-  Qed.
-
-  Lemma event_equiv_list_union_refine_all l1 l2 :
-    event_equiv (list_union (map dsa_event l2)) Ω ->
-    event_equiv
-      (list_union (map dsa_event (flat_map (fun e1 : dec_sa_event => refine_dec_sa_event e1 l2) l1)))
-      (list_union (map dsa_event l1)).
-  Proof.
-    revert l2.
-    induction l1; simpl; trivial; intros l2 E.
-    - reflexivity.
-    - rewrite map_app.
-      rewrite list_union_app, list_union_cons.
-      apply event_union_proper.
-      + now apply event_equiv_list_union_refine_event.
-      + now apply IHl1.
-  Qed.
-
-  Lemma is_partition_refine (l1 l2 : list dec_sa_event) :
-    is_partition_list (map dsa_event l1) ->
-    is_partition_list (map dsa_event l2) ->    
-    is_partition_list (map dsa_event (refine_dec_sa_partitions l1 l2)).
-  Proof.
-    unfold is_partition_list, refine_dec_sa_partitions.
-    intros [??] [??].
-    split.
-    - now apply events_disjoint_refine.
-    - now rewrite event_equiv_list_union_refine_all.
-  Qed.
-  
-  Lemma is_partition_vec_induced_gen
-          {rv_X : X -> X}
-          {rv:RandomVariable dom (Rvector_borel_sa I) rv_X}
-          (srv : SimpleRandomVariable rv_X) :
-    is_partition_list (map dsa_event (vec_induced_sigma_generators srv)).
-  Proof.
-    unfold is_partition_list, vec_induced_sigma_generators.
-    rewrite map_map; simpl.
-    split.
-    - apply event_disjoint_preimage_disj.
-      apply NoDup_nodup.
-    - apply srv_nodup_preimage_list_union.
-  Qed.
 
   Lemma update_partition_list
           (l : list dec_sa_event)
@@ -2127,26 +1811,6 @@ algorithm.
     unfold update_sa_dec_history.
     apply is_partition_refine; trivial.
     apply is_partition_vec_induced_gen.
-  Qed.
-
-  Lemma vec_induced_partition_measurable
-          {rv_X : X -> X}
-          {rv:RandomVariable dom (Rvector_borel_sa I) rv_X}
-          (srv : SimpleRandomVariable rv_X) :
-    partition_measurable rv_X (map dsa_event (vec_induced_sigma_generators srv)).
-  Proof.
-    unfold partition_measurable, vec_induced_sigma_generators.
-    intros.
-    rewrite in_map_iff in H0.
-    destruct H0 as [? [? ?]].
-    rewrite in_map_iff in H1.
-    destruct H1 as [? [? ?]].
-    rewrite <- H1 in H0.
-    simpl in H0.
-    exists x1.
-    split; trivial.
-    - eapply nodup_In; eauto.
-    - now rewrite H0.
   Qed.
 
   Lemma update_partition_measurable
@@ -2347,7 +2011,7 @@ algorithm.
       Fixpoint L2_convergent_hist (n:nat) : list dec_sa_event
         := match n with
            | 0 => 
-             @vec_induced_sigma_generators
+             @vec_induced_sigma_generators X dom I
                                    (x 0%nat)
                                    (rvx 0%nat)
                                    (srvx 0%nat)
@@ -2375,7 +2039,8 @@ algorithm.
       - apply vec_induced_partition_measurable.
       - apply update_partition_measurable.
     Qed.
-    
+
+    (* Theorem 8 *)
     Theorem L2_convergent (C : R) (xinit:X->X) (w : nat -> X -> X)
           (rxinit : RandomVariable dom (Rvector_borel_sa I) xinit)
           (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
