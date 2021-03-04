@@ -2376,14 +2376,13 @@ algorithm.
       - apply update_partition_measurable.
     Qed.
     
-    Theorem L2_convergent (C : R) (xinit:X->X) (w : nat -> X -> X) (xstar : X)
+    Theorem L2_convergent (C : R) (xinit:X->X) (w : nat -> X -> X)
           (rxinit : RandomVariable dom (Rvector_borel_sa I) xinit)
           (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
-          (srvinit : SimpleRandomVariable xinit)
+          (srvxinit : SimpleRandomVariable xinit)
           (srw : forall n, SimpleRandomVariable  (w n)) :
       0 <= C ->
       0 <= gamma < 1 ->
-      xstar = F xstar ->
       (forall n, 0 <= α n <= 1) -> 
       is_lim_seq α 0 ->
       is_lim_seq (sum_n α) p_infty ->
@@ -2392,13 +2391,18 @@ algorithm.
                           (L2_convergent_hist (L2_convergent_x xinit w) _ _ n)) 
                        (const zero)) ->
       (forall n, SimpleExpectation (rvinner (w n) (w n)) < C)  ->
-      (forall x1 y : vector R I, Hnorm (minus (F x1) (F y)) <= gamma * Hnorm (minus x1 y)) -> 
-      is_lim_seq 
-        (fun n => SimpleExpectation
-                 (rvinner (vecrvminus (L2_convergent_x xinit w n) (const xstar))
-                          (vecrvminus (L2_convergent_x xinit w n) (const xstar)))) 0.
+      (forall x1 y : vector R I, Hnorm (minus (F x1) (F y)) <= gamma * Hnorm (minus x1 y)) ->
+      exists xstar,
+        F xstar = xstar /\
+        is_lim_seq 
+          (fun n => SimpleExpectation
+                   (rvinner (vecrvminus (L2_convergent_x xinit w n) (const xstar))
+                            (vecrvminus (L2_convergent_x xinit w n) (const xstar)))) 0.
     Proof.
       intros.
+      destruct (f_contract_fixedpoint) as [xstar Fxstar]; trivial.
+      exists xstar.
+      split; trivial.
       eapply L2_convergent_helper2; eauto.
       - typeclasses eauto.
       - intros.
