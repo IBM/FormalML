@@ -901,53 +901,6 @@ Lemma SimpleRandomVariable_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
     - now rewrite H0.
   Qed.
 
-  (* move *)
-  Lemma vector_list_create_shiftS
-        {T:Type}
-        (start len:nat)
-        (f:(forall m, S start <= m -> m < S start + len -> T)%nat) :
-    vector_list_create (S start) len f =
-    vector_list_create start len (fun x pf1 pf2 => f (S x)%nat (le_n_S _ _ pf1) (lt_n_S _ _ pf2)).
-  Proof.
-    revert start f.
-    induction len; simpl; trivial; intros.
-    rewrite IHlen.
-    f_equal.
-    - f_equal; apply le_uniqueness_proof.
-    - apply vector_list_create_ext; intros.
-      f_equal; apply le_uniqueness_proof.
-  Qed.
-  
-  Lemma vector_list_create_shift0
-        {T:Type}
-        (start len:nat)
-        (f:(forall m, start <= m -> m < start + len -> T)%nat) :
-    vector_list_create start len f =
-    vector_list_create 0 len (fun x _ pf2 => f (start+x)%nat (le_plus_l start _) (plus_lt_compat_l _ _ start pf2)).
-  Proof.
-    induction start; simpl.
-    - apply vector_list_create_ext; intros.
-      f_equal; apply le_uniqueness_proof.
-    - rewrite vector_list_create_shiftS.
-      rewrite IHstart.
-      apply vector_list_create_ext; intros.
-      f_equal; apply le_uniqueness_proof.
-  Qed.
-
-  Lemma vector_list_create_map
-        {T U:Type}
-        (start len:nat)
-        (f:(forall m, start <= m -> m < start + len -> T)%nat)
-        (g:T->U) :
-    map g (vector_list_create start len f) =
-    vector_list_create start len (fun x pf1 pf2 => g (f x pf1 pf2)).
-  Proof.
-    revert start f.
-    induction len; simpl; trivial; intros.
-    f_equal.
-    apply IHlen.
-  Qed.
-
   Lemma fold_right_rv_inner c (l:list (Ts->R)) (a:Ts) :
     fold_right rvplus (const c) l a =
     fold_right Rplus c (map (fun x => x a) l).
@@ -956,7 +909,6 @@ Lemma SimpleRandomVariable_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
     induction l; simpl; trivial.
     now rewrite IHl.
   Qed.
-
 
   Program Lemma Forallt_vector {A} {P:A->Type} {n:nat} (l:vector A n) :
     (forall i pf, P (vector_nth i pf l)) ->

@@ -2,6 +2,7 @@ Require Import List Lia.
 Require Import Eqdep_dec.
 Require Import Equivalence EquivDec.
 Require Import LibUtils ListAdd.
+Require Import Arith.
 
 Import ListNotations.
 
@@ -87,7 +88,6 @@ Next Obligation.
   rewrite map_onto_length.
   now destruct v; simpl.
 Qed.
-
 
   Program Definition vector_nth_packed
          {T:Type}
@@ -340,6 +340,52 @@ Proof.
   now apply IHx.
 Qed.
   
+Lemma vector_list_create_shiftS
+      {T:Type}
+      (start len:nat)
+      (f:(forall m, S start <= m -> m < S start + len -> T)%nat) :
+  vector_list_create (S start) len f =
+  vector_list_create start len (fun x pf1 pf2 => f (S x)%nat (le_n_S _ _ pf1) (lt_n_S _ _ pf2)).
+Proof.
+  revert start f.
+  induction len; simpl; trivial; intros.
+  rewrite IHlen.
+  f_equal.
+  - f_equal; apply le_uniqueness_proof.
+  - apply vector_list_create_ext; intros.
+    f_equal; apply le_uniqueness_proof.
+Qed.
+  
+Lemma vector_list_create_shift0
+      {T:Type}
+      (start len:nat)
+      (f:(forall m, start <= m -> m < start + len -> T)%nat) :
+  vector_list_create start len f =
+  vector_list_create 0 len (fun x _ pf2 => f (start+x)%nat (le_plus_l start _) (plus_lt_compat_l _ _ start pf2)).
+Proof.
+  induction start; simpl.
+  - apply vector_list_create_ext; intros.
+    f_equal; apply le_uniqueness_proof.
+  - rewrite vector_list_create_shiftS.
+    rewrite IHstart.
+    apply vector_list_create_ext; intros.
+    f_equal; apply le_uniqueness_proof.
+Qed.
+
+Lemma vector_list_create_map
+      {T U:Type}
+      (start len:nat)
+      (f:(forall m, start <= m -> m < start + len -> T)%nat)
+      (g:T->U) :
+  map g (vector_list_create start len f) =
+  vector_list_create start len (fun x pf1 pf2 => g (f x pf1 pf2)).
+Proof.
+  revert start f.
+  induction len; simpl; trivial; intros.
+  f_equal.
+  apply IHlen.
+Qed.
+
 Program Lemma vector_const_eq {A} {n} (x:vector A n) c : x = vector_const c n <-> Forall (fun a => a = c) x.
 Proof.
   split; intros HH.
