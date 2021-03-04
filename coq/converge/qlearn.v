@@ -2186,92 +2186,6 @@ algorithm.
     tauto.
   Qed.
   
-  (*
-   Definition simpleRandomVariable_partition_domain
-              {Ts Td}
-              {rv_X : Ts -> Td}
-              {dom : SigmaAlgebra Ts}
-              {cod : SigmaAlgebra Td}
-              (srv : SimpleRandomVariable rv_X) : list (event Ts) :=
-     map (event_preimage rv_X) (map event_singleton srv_vals).
-  *)
-  (*
-   Definition refine_partition_srv {Ts Td} 
-              (dom : SigmaAlgebra Ts)
-              (cod : SigmaAlgebra Td)
-              (rv_X : Ts -> Td)
-              {rrv : RandomVariable dom cod rv_X}
-              {srv : SimpleRandomVariable rv_X}
-              (l : list (event Ts)) : list (event Ts) :=
-     refine_partitions l (simpleRandomVariable_partition_domain srv).
- *)
-
-(*
-   Lemma partition_event_refine {Ts} (e : event Ts) (l : list (event Ts)) :
-     is_partition_list l ->
-     is_partition_list (refine_event e l).
-   Proof.
-     unfold is_partition_list.
-     intros.
-     Admitted.
-
-
-   Lemma partition_refine {Ts} (l1 l2 : list (event Ts)) :
-     is_partition_list l1 ->
-     is_partition_list l2 ->
-     is_partition_list (refine_partitions l1 l2).
-   Proof.
-     unfold is_partition_list.
-     intros.
-     Admitted.
- *)
-
-
-   (*
-   Lemma partition_measurable_borel_rv {Ts} 
-         (rv_X : Ts -> R)
-         {srv : SimpleRandomVariable rv_X}
-         (l : list (event Ts))
-         (ispart : is_partition_list l) :
-     partition_measurable rv_X l ->
-     RandomVariable (list_partition_sa l ispart) borel_sa rv_X.
-   Proof.
-     intros.
-     apply measurable_rv.
-     unfold RealMeasurable.
-     intros.
-     destruct srv.
-     
-     Admitted.
-     
-   Lemma partition_measurable_vec_borel_rv {Ts} {n} 
-         (rv_X : Ts -> vector R n)
-         {srv : SimpleRandomVariable rv_X}
-         (l : list (event Ts))
-         (ispart : is_partition_list l) :
-     partition_measurable rv_X l ->
-     RandomVariable (list_partition_sa l ispart) (Rvector_borel_sa n) rv_X.
-   Proof.
-     intros.
-     apply RealVectorMeasurableRandomVariable.
-     unfold RealVectorMeasurable.
-     intros.
-     apply rv_measurable.
-     generalize (vec_srv rv_X i pf srv); intros.
-     apply partition_measurable_borel_rv with (srv0 := X0).
-     unfold partition_measurable in *.
-     intros.
-     specialize (H H0 p H1).
-     destruct H as [c [? ?]].
-     exists (vector_nth i pf c).
-     split.
-     destruct srv.
-     unfold RandomVariable.srv_vals in H.
-     destruct X0.
-     simpl.
-   Qed.
-  *)
-
     Lemma L2_convergent_helper2 (C : R) (w x : nat -> X -> X) (xstar : X)
          (hist : nat -> list dec_sa_event) 
          (rx : forall n, RandomVariable dom (Rvector_borel_sa I) (x n))
@@ -2402,6 +2316,23 @@ algorithm.
                            (vecrvscale (α k) (w k))
          end.
 
+    Lemma L2_convergent_x_srv (xinit:X->X) (w: nat -> X -> X) (n:nat)
+          (srx :SimpleRandomVariable (L2_convergent_x xinit w n))
+          (srw : SimpleRandomVariable (w n)) :
+      SimpleRandomVariable (L2_convergent_x xinit w (S n)).
+    Proof.
+      typeclasses eauto.
+    Qed.
+
+    Lemma L2_convergent_x_rv (xinit:X->X) (w: nat -> X -> X) (n:nat)
+          (rx : RandomVariable dom (Rvector_borel_sa I) (L2_convergent_x xinit w n))
+          (srx : SimpleRandomVariable (L2_convergent_x xinit w n))          
+          (rw : RandomVariable dom (Rvector_borel_sa I) (w n)) :
+      RandomVariable dom (Rvector_borel_sa I) (L2_convergent_x xinit w (S n)). 
+   Proof.
+     typeclasses eauto.
+   Qed.
+      
     Section hist.
       Context (x:nat->X->X).
       Context (rvx:forall n, RandomVariable dom (Rvector_borel_sa I) (x n)).
@@ -2450,7 +2381,10 @@ algorithm.
       (forall n, 0 <= α n <= 1) -> 
       is_lim_seq α 0 ->
       is_lim_seq (sum_n α) p_infty ->
-      (forall n, rv_eq (vector_gen_SimpleConditionalExpectation (w n) (L2_convergent_hist (L2_convergent_x xinit w) _ _ n)) (const zero)) ->
+      (forall n, rv_eq (vector_gen_SimpleConditionalExpectation 
+                          (w n) 
+                          (L2_convergent_hist (L2_convergent_x xinit w) _ _ n)) 
+                       (const zero)) ->
       (forall n, SimpleExpectation (rvinner (w n) (w n)) < C)  ->
       (forall x1 y : vector R I, Hnorm (minus (F x1) (F y)) <= gamma * Hnorm (minus x1 y)) -> 
       is_lim_seq 
