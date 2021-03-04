@@ -2316,7 +2316,7 @@ algorithm.
                            (vecrvscale (α k) (w k))
          end.
 
-    Lemma L2_convergent_x_srv (xinit:X->X) (w: nat -> X -> X) (n:nat)
+    Instance L2_convergent_x_srv (xinit:X->X) (w: nat -> X -> X) (n:nat)
           (srx : SimpleRandomVariable xinit)
           (srw : forall n, SimpleRandomVariable (w n)) :
       SimpleRandomVariable (L2_convergent_x xinit w n).
@@ -2326,7 +2326,7 @@ algorithm.
       - typeclasses eauto.
     Qed.
 
-    Lemma L2_convergent_x_rv (xinit:X->X) (w: nat -> X -> X) (n:nat)
+    Instance L2_convergent_x_rv (xinit:X->X) (w: nat -> X -> X) (n:nat)
           (rx : RandomVariable dom (Rvector_borel_sa I) xinit)
           (srx : SimpleRandomVariable xinit)
           (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n)) 
@@ -2377,9 +2377,9 @@ algorithm.
     Qed.
     
     Theorem L2_convergent (C : R) (xinit:X->X) (w : nat -> X -> X) (xstar : X)
-          (rx : forall n, RandomVariable dom (Rvector_borel_sa I) (L2_convergent_x xinit w n))
+          (rx : RandomVariable dom (Rvector_borel_sa I) xinit)
           (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
-          (srx : forall n, SimpleRandomVariable  (L2_convergent_x xinit w n))
+          (srvinit : SimpleRandomVariable xinit)
           (srw : forall n, SimpleRandomVariable  (w n)) :
       0 <= C ->
       0 <= gamma < 1 ->
@@ -2400,6 +2400,7 @@ algorithm.
     Proof.
       intros.
       eapply L2_convergent_helper2; eauto.
+      - typeclasses eauto.
       - intros.
         apply L2_convergent_hist_is_partition_list.
       - intros.
