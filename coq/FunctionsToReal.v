@@ -3,6 +3,7 @@ Require Import Coquelicot.Hierarchy.
 Require Import Morphisms Equivalence.
 Require Import Lra.
 Require Import utils.Utils.
+Require Import List.
 (* For const *)
 Require Export Program.Basics.
 
@@ -518,7 +519,14 @@ Section defs.
       reflexivity.
     Qed.
 
-    
+    Lemma fold_right_rvplus c (l:list (Ts->R)) (a:Ts) :
+      fold_right rvplus (const c) l a =
+      fold_right Rplus c (map (fun x => x a) l).
+    Proof.
+      unfold rvplus, const.
+      induction l; simpl; trivial.
+      now rewrite IHl.
+  Qed.
     
   End eqs.
 End defs.

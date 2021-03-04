@@ -901,69 +901,6 @@ Lemma SimpleRandomVariable_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
     - now rewrite H0.
   Qed.
 
-  Lemma fold_right_rv_inner c (l:list (Ts->R)) (a:Ts) :
-    fold_right rvplus (const c) l a =
-    fold_right Rplus c (map (fun x => x a) l).
-  Proof.
-    unfold rvplus, const.
-    induction l; simpl; trivial.
-    now rewrite IHl.
-  Qed.
-
-  Program Lemma Forallt_vector {A} {P:A->Type} {n:nat} (l:vector A n) :
-    (forall i pf, P (vector_nth i pf l)) ->
-    Forallt P l.
-  Proof.
-    destruct l; simpl; subst.
-    induction x; simpl; intros.
-    - constructor.
-    - constructor.
-      + apply (X 0%nat ltac:(lia)).
-      + apply IHx; intros.
-        specialize (X (S i) (ltac:(lia))).
-        unfold vector_nth, proj1_sig in *.
-        match_destr.
-        match_destr_in X.
-        simpl in *.
-        congruence.
-  Defined.
-
-  Program Lemma Forall_vector {A} {P:A->Prop} {n:nat} (l:vector A n)
-    : (forall i pf, P (vector_nth i pf l)) ->
-      Forall P l.
-  Proof.
-    destruct l; simpl; subst.
-    induction x; simpl; intros.
-    - constructor.
-    - constructor.
-      + apply (H 0%nat ltac:(lia)).
-      + apply IHx; intros.
-        specialize (H (S i) (ltac:(lia))).
-        unfold vector_nth, proj1_sig in *.
-        match_destr.
-        match_destr_in H.
-        simpl in *.
-        congruence.
-  Defined.
-
-  Lemma vector_nthS {A} a i (l:list A) pf1 pf2 :
-    (vector_nth (S i) pf1
-                (exist (fun l0 : list A => length l0 = S (length l)) (a :: l) pf2))
-    = vector_nth i (lt_S_n _ _ pf1) (exist (fun l0 : list A => length l0 = length l) (l) (eq_add_S _ _ pf2)).
-  Proof.
-    unfold vector_nth, proj1_sig.
-    repeat match_destr.
-    simpl in *.
-    congruence.
-  Qed.
-
-  Lemma Forallt_map_length {A B} {X:A->Type} (f:forall a : A, X a -> B) (l:list A) (ft:Forallt X l) :
-    length (Forallt_map f ft) = length l.
-  Proof.
-    induction ft; simpl; trivial.
-    now rewrite IHft.
-  Qed.
-
   Lemma SimpleRandomVariable_exist2_part
         (l : list ({rv_X:Ts -> R & RandomVariable dom borel_sa rv_X & SimpleRandomVariable rv_X})) : 
     SimpleRandomVariable
@@ -1037,7 +974,7 @@ Lemma SimpleRandomVariable_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
     {
       intros ?.
       rewrite list_sum_fold_right.
-      rewrite fold_right_rv_inner.
+      rewrite fold_right_rvplus.
       f_equal.
       rewrite make_simple_vector_package_proj1.
       simpl.

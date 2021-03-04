@@ -82,51 +82,51 @@ Proof.
 Qed.
 
 Program Definition vector_map_onto {A B:Type}
-           {n:nat} (v:vector A n) (f:forall a, In a v->B) : vector B n
+        {n:nat} (v:vector A n) (f:forall a, In a v->B) : vector B n
   := map_onto v f.
 Next Obligation.
   rewrite map_onto_length.
   now destruct v; simpl.
 Qed.
 
-  Program Definition vector_nth_packed
-         {T:Type}
-         {n:nat}
-         (i:nat)
-         (pf:(i<n)%nat)
-         (v:vector T n)
-    : {x:T | Some x = nth_error v i}
-       := match nth_error v i with
-          | Some x => x
-          | None => _
-          end.
-  Next Obligation.
-    symmetry in Heq_anonymous.
-    apply nth_error_None in Heq_anonymous.
-   rewrite vector_length in Heq_anonymous.
-   lia.
-  Defined.
+Program Definition vector_nth_packed
+        {T:Type}
+        {n:nat}
+        (i:nat)
+        (pf:(i<n)%nat)
+        (v:vector T n)
+  : {x:T | Some x = nth_error v i}
+  := match nth_error v i with
+     | Some x => x
+     | None => _
+     end.
+Next Obligation.
+  symmetry in Heq_anonymous.
+  apply nth_error_None in Heq_anonymous.
+  rewrite vector_length in Heq_anonymous.
+  lia.
+Defined.
 
-  Program Definition vector_nth
-         {T:Type}
-         {n:nat}
-         (i:nat)
-         (pf:(i<n)%nat)
-         (v:vector T n)
-    : T
-    := vector_nth_packed i pf v.
+Program Definition vector_nth
+        {T:Type}
+        {n:nat}
+        (i:nat)
+        (pf:(i<n)%nat)
+        (v:vector T n)
+  : T
+  := vector_nth_packed i pf v.
 
-  Program Lemma vector_nth_in
-         {T:Type}
-         {n:nat}
-         (i:nat)
-         (pf:(i<n)%nat)
-         (v:vector T n)
-    : Some (vector_nth i pf v) = nth_error v i.
-  Proof.
-    unfold vector_nth.
-    now destruct ((vector_nth_packed i pf v)); simpl.
-  Qed.
+Program Lemma vector_nth_in
+        {T:Type}
+        {n:nat}
+        (i:nat)
+        (pf:(i<n)%nat)
+        (v:vector T n)
+  : Some (vector_nth i pf v) = nth_error v i.
+Proof.
+  unfold vector_nth.
+  now destruct ((vector_nth_packed i pf v)); simpl.
+Qed.
 
 Program Definition vector_nth_rect
         {T:Type}
@@ -211,7 +211,7 @@ Qed.
 Lemma nth_error_map_onto {A B} (l:list A) (f:forall a, In a l->B) i d :
   nth_error (map_onto l f) i = Some d ->
   exists d' pfin, nth_error l i = Some d' /\
-             d = f d' pfin.
+                  d = f d' pfin.
 Proof.
   revert l f d.
   induction i; destruct l; simpl; intros; try discriminate.
@@ -222,10 +222,10 @@ Proof.
 Qed.
 
 Program Lemma vector_nth_map_onto
-  {A B:Type}
-  {n:nat} (v:vector A n) (f:forall a, In a v->B)
-  i
-  (pf:i<n) :
+        {A B:Type}
+        {n:nat} (v:vector A n) (f:forall a, In a v->B)
+        i
+        (pf:i<n) :
   exists pfin, vector_nth i pf (vector_map_onto v f) = f (vector_nth i pf v) pfin.
 Proof.
   unfold vector_map_onto.
@@ -241,10 +241,10 @@ Proof.
 Qed.
 
 Program Fixpoint vector_list_create
-           {T:Type}
-           (start:nat)
-           (len:nat)
-           (f:(forall m, start <= m -> m < start + len -> T)%nat) : list T
+        {T:Type}
+        (start:nat)
+        (len:nat)
+        (f:(forall m, start <= m -> m < start + len -> T)%nat) : list T
   := match len with
      | 0 => []
      | S m => f start _ _ :: vector_list_create (S start) m (fun x pf1 pf2 => f x _ _)
@@ -252,10 +252,10 @@ Program Fixpoint vector_list_create
 Solve All Obligations with lia.
 
 Lemma vector_list_create_length
-           {T:Type}
-           (start:nat)
-           (len:nat)
-           (f:(forall m, start <= m -> m < start + len -> T)%nat) :
+      {T:Type}
+      (start:nat)
+      (len:nat)
+      (f:(forall m, start <= m -> m < start + len -> T)%nat) :
   length (vector_list_create start len f) = len.
 Proof.
   revert start f.
@@ -265,10 +265,10 @@ Proof.
 Qed.
 
 Program Definition vector_create
-           {T:Type}
-           (start:nat)
-           (len:nat)
-           (f:(forall m, start <= m -> m < start + len -> T)%nat) : vector T len
+        {T:Type}
+        (start:nat)
+        (len:nat)
+        (f:(forall m, start <= m -> m < start + len -> T)%nat) : vector T len
   := vector_list_create start len f.
 Next Obligation.
   apply vector_list_create_length.
@@ -288,9 +288,9 @@ Proof.
 Qed.
 
 Lemma vector_create_ext
-           {T:Type}
-           (start len:nat)
-           (f1 f2:(forall m, start <= m -> m < start + len -> T)%nat) :
+      {T:Type}
+      (start len:nat)
+      (f1 f2:(forall m, start <= m -> m < start + len -> T)%nat) :
   (forall i pf1 pf2, f1 i pf1 pf2 = f2 i pf1 pf2) ->
   vector_create start len f1 = vector_create start len f2.
 Proof.
@@ -339,7 +339,7 @@ Proof.
   f_equal.
   now apply IHx.
 Qed.
-  
+
 Lemma vector_list_create_shiftS
       {T:Type}
       (start len:nat)
@@ -355,7 +355,7 @@ Proof.
   - apply vector_list_create_ext; intros.
     f_equal; apply le_uniqueness_proof.
 Qed.
-  
+
 Lemma vector_list_create_shift0
       {T:Type}
       (start len:nat)
@@ -478,7 +478,7 @@ Proof.
 Qed.  
 
 Program Definition vector_map {A B:Type}
-           {n:nat} (f:A->B) (v:vector A n) : vector B n
+        {n:nat} (f:A->B) (v:vector A n) : vector B n
   := map f v.
 Next Obligation.
   rewrite map_length.
@@ -487,7 +487,7 @@ Qed.
 
 
 Program Definition vector_zip {A B:Type}
-           {n:nat} (v1:vector A n) (v2:vector B n) : vector (A*B) n
+        {n:nat} (v1:vector A n) (v2:vector B n) : vector (A*B) n
   := combine v1 v2.
 Next Obligation.
   rewrite combine_length.
@@ -499,9 +499,9 @@ Qed.
 Lemma nth_error_combine {A B} (x:list A) (y:list B) i :
   match nth_error (combine x y) i with
   | Some (a,b) => nth_error x i = Some a /\
-                 nth_error y i = Some b
+                  nth_error y i = Some b
   | None => nth_error x i = None \/
-           nth_error y i = None
+            nth_error y i = None
   end.
 Proof.
   revert i y.
@@ -514,7 +514,7 @@ Proof.
 Qed.
 
 Lemma vector_nth_zip {A B:Type}
-           {n:nat} (x:vector A n) (y:vector B n) i pf : 
+      {n:nat} (x:vector A n) (y:vector B n) i pf : 
   vector_nth i pf (vector_zip x y) = (vector_nth i pf x, vector_nth i pf y).
 Proof.
   unfold vector_nth, vector_zip, proj1_sig; simpl.
@@ -527,9 +527,9 @@ Proof.
   intros [??].
   congruence.
 Qed.
-  
+
 Program Definition vector_fold_left {A B:Type} (f:A->B->A)
-           {n:nat} (v:vector B n) (a0:A) : A
+        {n:nat} (v:vector B n) (a0:A) : A
   := fold_left f v a0.
 
 Lemma vector_zip_explode {A B} {n} (x:vector A n) (y:vector B n):
@@ -541,7 +541,7 @@ Proof.
 Qed.
 
 Lemma vector_nth_map {A B:Type}
-           {n:nat} (f:A->B) (v:vector A n) i pf
+      {n:nat} (f:A->B) (v:vector A n) i pf
   : vector_nth i pf (vector_map f v) = f (vector_nth i pf v).
 Proof.
   unfold vector_nth, vector_map, proj1_sig.
@@ -729,3 +729,50 @@ Proof.
   destruct x0; simpl in *; congruence.
 Qed.
 
+
+Program Lemma Forallt_vector {A} {P:A->Type} {n:nat} (l:vector A n) :
+  (forall i pf, P (vector_nth i pf l)) ->
+  Forallt P l.
+Proof.
+  destruct l; simpl; subst.
+  induction x; simpl; intros.
+  - constructor.
+  - constructor.
+    + apply (X 0%nat ltac:(lia)).
+    + apply IHx; intros.
+      specialize (X (S i) (ltac:(lia))).
+      unfold vector_nth, proj1_sig in *.
+      match_destr.
+      match_destr_in X.
+      simpl in *.
+      congruence.
+Defined.
+
+Program Lemma Forall_vector {A} {P:A->Prop} {n:nat} (l:vector A n)
+  : (forall i pf, P (vector_nth i pf l)) ->
+    Forall P l.
+Proof.
+  destruct l; simpl; subst.
+  induction x; simpl; intros.
+  - constructor.
+  - constructor.
+    + apply (H 0%nat ltac:(lia)).
+    + apply IHx; intros.
+      specialize (H (S i) (ltac:(lia))).
+      unfold vector_nth, proj1_sig in *.
+      match_destr.
+      match_destr_in H.
+      simpl in *.
+      congruence.
+Defined.
+
+Lemma vector_nthS {A} a i (l:list A) pf1 pf2 :
+  (vector_nth (S i) pf1
+              (exist (fun l0 : list A => length l0 = S (length l)) (a :: l) pf2))
+  = vector_nth i (lt_S_n _ _ pf1) (exist (fun l0 : list A => length l0 = length l) (l) (eq_add_S _ _ pf2)).
+Proof.
+  unfold vector_nth, proj1_sig.
+  repeat match_destr.
+  simpl in *.
+  congruence.
+Qed.

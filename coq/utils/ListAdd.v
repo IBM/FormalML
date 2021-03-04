@@ -1350,6 +1350,13 @@ Fixpoint Forallt_map {A B:Type} {X:A->Type} {l:list A} (f:forall a, X a -> B) (f
      | Forallt_cons _ x l px pl => f x px :: Forallt_map f pl
      end.
 
+Lemma Forallt_map_length {A B} {X:A->Type} (f:forall a : A, X a -> B) (l:list A) (ft:Forallt X l) :
+  length (Forallt_map f ft) = length l.
+Proof.
+  induction ft; simpl; trivial.
+  now rewrite IHft.
+Qed.
+
 Lemma map_nil' {A B} (f:A->B) l :
   List.map f l = nil <-> l = nil.
 Proof.
