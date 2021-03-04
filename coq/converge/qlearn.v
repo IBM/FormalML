@@ -2317,22 +2317,28 @@ algorithm.
          end.
 
     Lemma L2_convergent_x_srv (xinit:X->X) (w: nat -> X -> X) (n:nat)
-          (srx :SimpleRandomVariable (L2_convergent_x xinit w n))
-          (srw : SimpleRandomVariable (w n)) :
-      SimpleRandomVariable (L2_convergent_x xinit w (S n)).
+          (srx : SimpleRandomVariable xinit)
+          (srw : forall n, SimpleRandomVariable (w n)) :
+      SimpleRandomVariable (L2_convergent_x xinit w n).
     Proof.
-      typeclasses eauto.
+      induction n.
+      - now simpl.
+      - typeclasses eauto.
     Qed.
 
     Lemma L2_convergent_x_rv (xinit:X->X) (w: nat -> X -> X) (n:nat)
-          (rx : RandomVariable dom (Rvector_borel_sa I) (L2_convergent_x xinit w n))
-          (srx : SimpleRandomVariable (L2_convergent_x xinit w n))          
-          (rw : RandomVariable dom (Rvector_borel_sa I) (w n)) :
-      RandomVariable dom (Rvector_borel_sa I) (L2_convergent_x xinit w (S n)). 
-   Proof.
-     typeclasses eauto.
-   Qed.
-      
+          (rx : RandomVariable dom (Rvector_borel_sa I) xinit)
+          (srx : SimpleRandomVariable xinit)
+          (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n)) 
+          (srw : forall n, SimpleRandomVariable (w n)) :
+      RandomVariable dom (Rvector_borel_sa I) (L2_convergent_x xinit w n). 
+    Proof.
+      induction n.
+      - now simpl.
+      - generalize (L2_convergent_x_srv xinit w n srx srw); intros.
+        typeclasses eauto.
+    Qed.
+
     Section hist.
       Context (x:nat->X->X).
       Context (rvx:forall n, RandomVariable dom (Rvector_borel_sa I) (x n)).
