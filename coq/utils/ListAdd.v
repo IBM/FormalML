@@ -1887,3 +1887,13 @@ Section list_dep.
   Qed.
 
 End list_dep.
+
+Program Fixpoint map_dep {A B} (l:list A) :  (forall x, In x l -> B) -> list B
+  := match l with
+     | nil => fun f => nil
+     | x::xs => fun f => (f x _) :: map_dep xs _
+     end.
+Next Obligation.
+  eapply f.
+  right; eassumption.
+Defined.

@@ -588,3 +588,40 @@ Proof.
     symmetry.
     apply H.
 Qed.
+
+Definition is_partition_list {T} (l:list (event T)) :=
+  ForallOrdPairs event_disjoint l /\ event_equiv (list_union l) Ω.
+
+Lemma is_partition_list_partition {T} {l:list (event T)} :
+  is_partition_list l ->
+  SigmaAlgebras.is_partition (list_collection l event_none).
+Proof.
+  intros [??].
+  split.
+  - now apply list_collection_disjoint.
+  - rewrite list_union_union, H0.
+    reflexivity.
+Qed.
+
+Instance list_partition_sa {T} (l:list (event T)) (is_part:is_partition_list l) :
+  SigmaAlgebra T := countable_partition_sa
+                      (list_collection l event_none)
+                      (is_partition_list_partition is_part).
+
+Section dec.
+
+  Context {Ts:Type} {dom:SigmaAlgebra Ts}.
+
+  Lemma is_partition_refine (l1 l2 : list dec_sa_event) :
+    is_partition_list (map dsa_event l1) ->
+    is_partition_list (map dsa_event l2) ->    
+    is_partition_list (map dsa_event (refine_dec_sa_partitions l1 l2)).
+  Proof.
+    unfold is_partition_list, refine_dec_sa_partitions.
+    intros [??] [??].
+    split.
+    - now apply events_disjoint_refine.
+    - now rewrite event_equiv_list_union_refine_all.
+  Qed.
+
+End dec.

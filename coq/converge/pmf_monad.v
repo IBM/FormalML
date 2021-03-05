@@ -123,9 +123,9 @@ Record Pmf (A : Type) := mkPmf {
   sum1 : list_fst_sum outcomes = R1
  }.
 
- Arguments outcomes {_}.
- Arguments sum1 {_}.
- Arguments mkPmf {_}.
+ Global Arguments outcomes {_}.
+ Global Arguments sum1 {_}.
+ Global Arguments mkPmf {_}.
 
 Lemma Pmf_ext  {A} (p q : Pmf A)  : outcomes p = outcomes q -> p = q.
 Proof.

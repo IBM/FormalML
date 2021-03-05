@@ -261,3 +261,33 @@ Proof.
   Qed.
 
 End Simple.
+
+Require Import Finite ListAdd SigmaAlgebras.
+
+Section Finite.
+  Context {Ts:Type}{Td:Type}.
+
+  Program Instance Finite_SimpleRandomVariable {fin:Finite Ts}  (rv_X:Ts->Td)
+    : SimpleRandomVariable rv_X
+    := {| 
+    srv_vals := map rv_X elms
+      |}.
+  Next Obligation.
+    generalize (finite x); intros.
+    apply in_map_iff; eauto.
+  Qed.
+
+  Program Instance Finite_finitesubset {A:Type} (l:list A)
+    : Finite {x : A | In x l}.
+  Next Obligation.
+    apply (list_dep_zip l).
+    apply Forall_forall; trivial.
+  Defined.
+  Next Obligation.
+    (* TODO: either fix the witness or use a stronger In *)
+  Admitted.
+
+  Definition finitesubset_sa {A} (l:list A) : SigmaAlgebra {x : A | In x l}
+    := discrete_sa {x : A | In x l}.
+  
+End Finite.
