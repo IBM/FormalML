@@ -1219,7 +1219,16 @@ Section RealRandomVariables.
     
   End Pos.
 
-
+  Instance rv_fun_simple_R (x : Ts -> R) (f : R -> R)
+            (rvx : RandomVariable dom borel_sa x) 
+            (srvx : SimpleRandomVariable x) :
+     RandomVariable dom borel_sa (fun u => f (x u)).    
+  Proof.
+    eapply rv_fun_simple; eauto.
+    intros.
+    now apply sa_singleton.
+  Qed.
+  
 End RealRandomVariables.
 
 Section prob.

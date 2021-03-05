@@ -195,5 +195,69 @@ Proof.
     apply Fs.
     now apply ld_incl.
 Qed.
-  
+
+Instance rv_fun_simple {dom: SigmaAlgebra Ts}
+         {cod: SigmaAlgebra Td}
+         (x : Ts -> Td) (f : Td -> Td)
+         {rvx : RandomVariable dom cod x}
+         {srvx : SimpleRandomVariable x} :
+      (forall (c : Td), In c srv_vals -> sa_sigma (event_preimage x (event_singleton c))) ->
+     RandomVariable dom cod (fun u => f (x u)).    
+Proof.
+  intros Hsingleton.
+    generalize (srv_fun x f srvx); intros.
+    apply srv_singleton_rv with (srv:=X); trivial.
+    destruct X.
+    destruct srvx.
+    intros c cinn.
+    simpl in cinn.
+    unfold event_preimage, event_singleton.
+    assert (event_equiv (fun omega : Ts => f (x omega) = c)
+                        (list_union
+                           (map (fun sval =>
+                                   (fun omega =>
+                                      (x omega = sval) /\ (f sval = c)))
+                                srv_vals1))).
+    { 
+      intro v.
+      unfold list_union.
+      split; intros.
+      - specialize (srv_vals_complete0 v).
+        eexists.
+        rewrite in_map_iff.
+        split.
+        + exists (x v).
+          split.
+          * reflexivity.
+          * easy.
+        + simpl.
+          easy.
+      - destruct H.
+        rewrite in_map_iff in H.
+        destruct H as [[c0 [? ?]] ?].
+        rewrite <- H in H1.
+        destruct H1.
+        now rewrite <- H1 in H2.
+    }
+    rewrite H.
+    apply sa_list_union.
+    intros.
+    rewrite in_map_iff in H0.
+    destruct H0.
+    destruct H0.
+    rewrite <- H0.
+    assert (event_equiv (fun omega : Ts => x omega = x1 /\ f x1 = c)
+                        (event_inter (fun omega => x omega = x1)
+                                     (fun _ => f x1 = c))).
+    {
+      intro u.
+      now unfold event_inter.
+    }
+    rewrite H2.
+    apply sa_inter.
+    - now apply Hsingleton.
+    - apply sa_sigma_const.
+      apply Classical_Prop.classic.
+  Qed.
+
 End Simple.

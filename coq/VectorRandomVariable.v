@@ -1122,25 +1122,14 @@ Lemma SimpleRandomVariable_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
     now rewrite SimpleExpectation_const.
   Qed.
 
-(* if l is viewed as finite generators for a sigma algebra, this shows that
-    we can factor out l-measurable random variables from conditional expectation *)
-(*
-  Lemma vector_gen_conditional_scale_measurable {n}
-        (rv_X1 rv_X2 : Ts -> vector R n)
-        {srv1 : SimpleRandomVariable rv_X1}
-        {srv2 : SimpleRandomVariable rv_X2} 
-        (l : list dec_sa_event) :
-    is_partition_list (map dsa_event l) ->
-    partition_measurable rv_X1 (map dsa_event l) ->
-    rv_eq (gen_SimpleConditionalExpectation (rvinner rv_X1 rv_X2) l)
-          (rvinner rv_X1 (vector_gen_SimpleConditionalExpectation rv_X2 l  )).
+  Instance rv_fun_simple_Rvector {n} (x:Ts -> vector R n) (f : vector R n -> vector R n)
+           (rvx : RandomVariable dom (Rvector_borel_sa n) x) 
+           (srvx : SimpleRandomVariable x) :
+    RandomVariable dom (Rvector_borel_sa n) (fun u => f (x u)).
   Proof.
+    eapply rv_fun_simple; eauto.
     intros.
-    intro v.
-    generalize (@rvinner_unfold n); intros.
-    rewrite H1.
-    rewrite (gen_SimpleConditionalExpectation_ext _ _ l (H1 rv_X1 rv_X2)).
-    generalize (vecrvsum_rvsum (vecrvmult rv_X1 rv_X2)); intros.
- *)
+    now apply vec_sa_singleton.
+  Qed.
 
 End vector_ops.
