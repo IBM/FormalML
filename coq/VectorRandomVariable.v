@@ -797,7 +797,7 @@ Lemma SimpleRandomVariable_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
      Qed.
 
    Lemma partition_measurable_const {n} (c : vector R n)
-         (l : list (event (vector R n))) :
+         (l : list (event Ts)) :
      is_partition_list l ->
      partition_measurable (const c) l.
    Proof.

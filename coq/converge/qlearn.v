@@ -1061,10 +1061,10 @@ algorithm.
 
   Definition X := (vector R I).
 
-  Context (gamma : R) (α : nat -> R) {F : X -> X}
-          {dom: SigmaAlgebra X} {prts: ProbSpace dom} (x0 : X).
+  Context (gamma : R) (α : nat -> R) {F : X -> X} {Ts : Type}
+          {dom: SigmaAlgebra Ts} {prts: ProbSpace dom} (x0 : X).
 
-    Global Instance positive_inner (f : X -> X) :
+    Global Instance positive_inner (f : Ts -> X) :
       PositiveRandomVariable (fun v => inner (f v) (f v) ).
     Proof.
       unfold PositiveRandomVariable.
@@ -1072,7 +1072,7 @@ algorithm.
       apply inner_ge_0.
     Qed.
 
-    Lemma forall_expectation_ext {rv1 rv2 : nat -> X -> R} :
+    Lemma forall_expectation_ext {rv1 rv2 : nat -> Ts -> R} :
       (forall n, rv_eq (rv1 n) (rv2 n)) ->
       forall n, Expectation (rv1 n) = Expectation (rv2 n).
     Proof.
@@ -1080,7 +1080,7 @@ algorithm.
       now apply Expectation_ext.
     Qed.
 
-    Lemma forall_SimpleRandomVariable_ext {rv1 rv2 : nat -> X -> R} 
+    Lemma forall_SimpleRandomVariable_ext {rv1 rv2 : nat -> Ts -> R} 
           {srv1 : forall n, SimpleRandomVariable (rv1 n)} :
       (forall n, rv_eq (rv1 n) (rv2 n)) ->
       forall n, SimpleRandomVariable (rv2 n).
@@ -1092,7 +1092,7 @@ algorithm.
       trivial.
     Qed.
 
-    Lemma forall_SimpleExpectation_ext {rv1 rv2 : nat -> X -> R} 
+    Lemma forall_SimpleExpectation_ext {rv1 rv2 : nat -> Ts -> R} 
           {srv1 : forall n, SimpleRandomVariable (rv1 n)}
           {srv2 : forall n, SimpleRandomVariable (rv2 n)} :
       (forall n, rv_eq (rv1 n) (rv2 n)) ->
@@ -1102,7 +1102,7 @@ algorithm.
       now apply SimpleExpectation_ext.
     Qed.
 
-    Lemma isfinexp_finite_neg_part (rv_X : X -> R)
+    Lemma isfinexp_finite_neg_part (rv_X : Ts -> R)
           {rv : RandomVariable dom borel_sa rv_X} :
       IsFiniteExpectation prts rv_X ->
       is_finite (Expectation_posRV (neg_fun_part rv_X)).
@@ -1130,13 +1130,13 @@ algorithm.
         + rewrite H0 in e; inversion e.          
    Qed.
 
-  Lemma Expectation_pos_finite_neg_part (rv_X : X -> R) 
+  Lemma Expectation_pos_finite_neg_part (rv_X : Ts -> R) 
         {prv : PositiveRandomVariable rv_X} :
     is_finite (Expectation_posRV (neg_fun_part rv_X)).
   Proof.
     unfold neg_fun_part; simpl.
     unfold PositiveRandomVariable in prv.
-    assert (rv_eq (fun x : X => Rmax (- rv_X x) 0) (const 0)).
+    assert (rv_eq (fun x : Ts => Rmax (- rv_X x) 0) (const 0)).
     intro x.
     specialize (prv x).
     unfold const.
@@ -1150,7 +1150,7 @@ algorithm.
   Qed.
 
   Lemma Expectation_sum_first_finite_snd_pos 
-        (rv_X1 rv_X2 : X -> R)
+        (rv_X1 rv_X2 : Ts -> R)
         {rv1 : RandomVariable dom borel_sa rv_X1}
         {rv2 : RandomVariable dom borel_sa rv_X2} 
         {prv2 : PositiveRandomVariable rv_X2} :
@@ -1212,11 +1212,11 @@ algorithm.
 
    Existing Instance rv_fun_simple_Rvector.
 
-   Definition F_alpha (a : R) (x : X -> X) :=
+   Definition F_alpha (a : R) (x : Ts -> X) :=
      vecrvplus (vecrvscale (1-a) x) (vecrvscale a (fun v => F (x v))).
 
 
-   Instance rv_Fa (a:R) (x: X -> X) 
+   Instance rv_Fa (a:R) (x: Ts -> X) 
             (rvx : RandomVariable dom (Rvector_borel_sa I) x) 
             (srvx : SimpleRandomVariable x) :
      RandomVariable dom (Rvector_borel_sa I) (F_alpha a x).
@@ -1228,7 +1228,7 @@ algorithm.
      typeclasses eauto.
   Qed.
    
-   Lemma L2_convergent_helper (C : R) (w x : nat -> X -> X) (xstar : X) (n:nat)
+   Lemma L2_convergent_helper (C : R) (w x : nat -> Ts -> X) (xstar : X) (n:nat)
          (rx : forall n, RandomVariable dom (Rvector_borel_sa I) (x n))
          (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
          (srw : forall n, SimpleRandomVariable  (w n)) 
@@ -1317,7 +1317,7 @@ algorithm.
       now left.
     Qed.
 
-    Lemma SimpleExpectation_rvinner_pos (f : X -> X) 
+    Lemma SimpleExpectation_rvinner_pos (f : Ts -> X) 
           (rx : RandomVariable dom (Rvector_borel_sa I) f)
           (srv: SimpleRandomVariable f) :
       0 <= SimpleExpectation (rvinner f f).
@@ -1331,7 +1331,7 @@ algorithm.
       apply SimpleExpectation_const.
    Qed.
 
-    Lemma aux_seq (C: R) (x : nat -> X -> X) (v : nat -> R) (xstar : X)
+    Lemma aux_seq (C: R) (x : nat -> Ts -> X) (v : nat -> R) (xstar : X)
          (rx : forall n, RandomVariable dom (Rvector_borel_sa I) (x n))
          (srx : forall n, SimpleRandomVariable  (x n)) :
       v (0%nat) = SimpleExpectation 
@@ -1369,7 +1369,7 @@ algorithm.
         apply IHn.
      Qed.
     
-    Lemma aux_seq_lim (C: R) (x : nat -> X -> X) (v : nat -> R) (xstar : X)
+    Lemma aux_seq_lim (C: R) (x : nat -> Ts -> X) (v : nat -> R) (xstar : X)
          (rx : forall n, RandomVariable dom (Rvector_borel_sa I) (x n))
          (srx : forall n, SimpleRandomVariable  (x n)) :
       0 <= C ->
@@ -1561,10 +1561,10 @@ algorithm.
      now apply Rmult_lt_compat_l.
   Qed.
 
-   Lemma partition_measurable_vecrvminus_F_alpha_const (x : X -> X)
+   Lemma partition_measurable_vecrvminus_F_alpha_const (x : Ts -> X)
          {srv : SimpleRandomVariable x}
          (a : R) (xstar : X) 
-         (l : list (event X)) :
+         (l : list (event Ts)) :
      is_partition_list l ->
      partition_measurable x l ->
      partition_measurable (vecrvminus (F_alpha a x) (const xstar)) l.
@@ -1579,7 +1579,7 @@ algorithm.
    Qed.
 
   Definition update_sa_dec_history (l : list dec_sa_event)
-          {rv_X : X -> X}
+          {rv_X : Ts -> X}
           {rv:RandomVariable dom (Rvector_borel_sa I) rv_X}
           (srv : SimpleRandomVariable rv_X) : list dec_sa_event
     :=                                                   
@@ -1587,7 +1587,7 @@ algorithm.
 
   Lemma update_partition_list
           (l : list dec_sa_event)
-          {rv_X : X -> X}
+          {rv_X : Ts -> X}
           {rv:RandomVariable dom (Rvector_borel_sa I) rv_X}
           (srv : SimpleRandomVariable rv_X) :
     is_partition_list (map dsa_event l) ->
@@ -1601,7 +1601,7 @@ algorithm.
 
   Lemma update_partition_measurable
           (l : list dec_sa_event)
-          {rv_X : X -> X}
+          {rv_X : Ts -> X}
           {rv:RandomVariable dom (Rvector_borel_sa I) rv_X}
           (srv : SimpleRandomVariable rv_X) :
     partition_measurable rv_X (map dsa_event (update_sa_dec_history l srv)).
@@ -1636,7 +1636,7 @@ algorithm.
     tauto.
   Qed.
   
-    Lemma L2_convergent_helper2 (C : R) (w x : nat -> X -> X) (xstar : X)
+    Lemma L2_convergent_helper2 (C : R) (w x : nat -> Ts -> X) (xstar : X)
          (hist : nat -> list dec_sa_event) 
          (rx : forall n, RandomVariable dom (Rvector_borel_sa I) (x n))
          (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
@@ -1759,14 +1759,14 @@ algorithm.
     Qed.
 
 
-    Fixpoint L2_convergent_x (xinit:X->X) (w: nat -> X -> X) (n:nat) : X -> X
+    Fixpoint L2_convergent_x (xinit:Ts->X) (w: nat -> Ts -> X) (n:nat) : Ts -> X
       := match n with
          | 0 => xinit
          | S k => vecrvplus (F_alpha (α k) (L2_convergent_x xinit w k))
                            (vecrvscale (α k) (w k))
          end.
 
-    Instance L2_convergent_x_srv (xinit:X->X) (w: nat -> X -> X) (n:nat)
+    Instance L2_convergent_x_srv (xinit:Ts->X) (w: nat -> Ts -> X) (n:nat)
           (srx : SimpleRandomVariable xinit)
           (srw : forall n, SimpleRandomVariable (w n)) :
       SimpleRandomVariable (L2_convergent_x xinit w n).
@@ -1776,7 +1776,7 @@ algorithm.
       - typeclasses eauto.
     Qed.
 
-    Instance L2_convergent_x_rv (xinit:X->X) (w: nat -> X -> X) (n:nat)
+    Instance L2_convergent_x_rv (xinit:Ts->X) (w: nat -> Ts -> X) (n:nat)
           (rx : RandomVariable dom (Rvector_borel_sa I) xinit)
           (srx : SimpleRandomVariable xinit)
           (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n)) 
@@ -1790,14 +1790,14 @@ algorithm.
     Qed.
 
     Section hist.
-      Context (x:nat->X->X).
+      Context (x:nat->Ts->X).
       Context (rvx:forall n, RandomVariable dom (Rvector_borel_sa I) (x n)).
       Context (srvx: forall n, SimpleRandomVariable (x n)).
       
       Fixpoint L2_convergent_hist (n:nat) : list dec_sa_event
         := match n with
            | 0 => 
-             @vec_induced_sigma_generators X dom I
+             @vec_induced_sigma_generators Ts dom I
                                    (x 0%nat)
                                    (rvx 0%nat)
                                    (srvx 0%nat)
@@ -1827,7 +1827,7 @@ algorithm.
     Qed.
 
     (* Theorem 8 *)
-    Theorem L2_convergent (C : R) (xinit:X->X) (w : nat -> X -> X)
+    Theorem L2_convergent (C : R) (xinit:Ts->X) (w : nat -> Ts -> X)
           (rxinit : RandomVariable dom (Rvector_borel_sa I) xinit)
           (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
           (srvxinit : SimpleRandomVariable xinit)
