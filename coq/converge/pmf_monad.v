@@ -634,5 +634,25 @@ Qed.
     lra.
   Qed.
 
+  Lemma expt_value_sum_comm {A B : Type}
+        (f : A -> B -> R) (p : Pmf B) (la : list A):
+    expt_value p (fun b => list_sum (map (fun a => f a b) la)) =
+    list_sum (List.map (fun a => expt_value p (fun b => f a b)) la).
+ Proof.
+   destruct p as [lp Hlp].
+   unfold expt_value.
+   simpl. clear Hlp.
+   revert lp.
+   induction lp.
+   + simpl. symmetry.
+     apply list_sum_map_zero.
+   + simpl. rewrite IHlp.
+     rewrite <-list_sum_map.
+     f_equal. rewrite Rmult_comm.
+     rewrite <-list_sum_const_mul.
+     f_equal. apply List.map_ext; intros.
+     lra.
+ Qed.
+
 End expected_value. 
 
