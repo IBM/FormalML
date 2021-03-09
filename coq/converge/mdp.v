@@ -277,6 +277,7 @@ Definition Rfct_le (f g : Rfct A) := forall a : A, f a <= g a.
 
 Definition Rfct_ge (f g : Rfct A) := forall a : A, f a >= g a.
 
+
 Global Instance Rfct_le_pre : PreOrder Rfct_le.
 Proof.
   unfold Rfct_le.
@@ -904,6 +905,37 @@ Section Rfct_CompleteSpace.
 
 End Rfct_CompleteSpace.
 
+Section Rfct_expt.
+
+  Context (A : Type) {finA : Finite A}.
+
+  Definition Rfct_inner (f g : Rfct A) : R :=
+  let (ls, _) := finA in (list_sum (List.map (fun x => (f x)*(g x)) ls)).
+
+
+  Lemma Rfct_expt_inner {B : Type}
+        (f : B -> Rfct A) (p : Pmf B):
+    let (la, _) := finA in
+    expt_value p (fun b => Rfct_inner (f b) (f b)) =
+    list_sum (List.map (fun a => expt_value p (fun b => (f b a)*(f b a))) la).
+ Proof.
+   unfold Rfct_inner.
+   destruct finA.
+   destruct p as [lp Hlp]. unfold expt_value.
+   simpl. clear Hlp.
+   revert lp.
+   induction lp.
+   + simpl. symmetry.
+     apply list_sum_map_zero.
+   + simpl. rewrite IHlp.
+     rewrite <-list_sum_map.
+     f_equal. rewrite Rmult_comm.
+     rewrite <-list_sum_const_mul.
+     f_equal. apply List.map_ext; intros.
+     lra.
+ Qed.
+
+End Rfct_expt.
 Section fixpt.
 
   (* Properties about fixed points of contractive maps in complete normed modules.
