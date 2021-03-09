@@ -774,3 +774,34 @@ Proof.
 Qed.
 
 End coquelicot.
+
+Lemma infinite_sum'_one f n l :
+  (forall n', n' <> n -> f n' = 0%R) ->
+  infinite_sum' f l <-> l = f n.
+Proof.
+  intros.
+  rewrite (infinite_sum'_split (S n) f l).
+  split; intros.
+  - erewrite infinite_sum'_ext in H0.
+    + apply infinite_sum'_const0 in H0.
+      simpl in H0.
+      erewrite sum_f_R0'_ext in H0.
+      * rewrite (sum_f_R0'_const 0) in H0.
+        lra.
+      * intros; simpl.
+        apply H; lia.
+    + intros; simpl.
+      apply H; lia.
+  - subst.
+    apply infinite_sum'_ext with (s1:=fun _ => 0%R).
+    + intros; simpl.
+      symmetry; apply H; lia.
+    + replace (f n - sum_f_R0' f (S n))%R with  0%R.
+      * apply infinite_sum'0.
+      * simpl.
+        erewrite sum_f_R0'_ext.
+        rewrite (sum_f_R0'_const 0).
+        -- lra.
+        -- intros; simpl.
+           apply H; lia.
+Qed.

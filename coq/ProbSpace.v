@@ -412,6 +412,18 @@ Proof.
   apply event_union_sub_r; trivial.
 Qed.
 
+
+  Lemma event_complement_inj {A} (x y:event A) :
+    event_equiv (event_complement x) (event_complement y) ->
+    event_equiv x y.
+  Proof.
+    unfold event_equiv, event_complement.
+    intros ??.
+    split; intros.
+    - destruct (classic (y x0)); firstorder.
+    - destruct (classic (x x0)); firstorder.
+  Qed.
+
 (* Collections are *countable* sequences of subsets of the powerset of T. *)
 
 Definition collection_is_pairwise_disjoint {T: Type} (collection: nat -> event T) :=
@@ -796,6 +808,7 @@ Proof.
   reflexivity.
 Qed.
 
+
 Lemma list_collection_disjoint {T} (l:list (event T)) :
     ForallOrdPairs event_disjoint l <->
     collection_is_pairwise_disjoint (list_collection l ∅).
@@ -913,6 +926,7 @@ Qed.
 
 Hint Resolve sa_diff : prob.
 
+
 (* Prop: the sum of probabilities for everything in the collection == R. *)
 Definition sum_of_probs_equals {T:Type}
            (p : event T -> R)
@@ -921,7 +935,10 @@ Definition sum_of_probs_equals {T:Type}
 
 Class ProbSpace {T:Type} (S:SigmaAlgebra T) :=
   {
-    ps_P: event T -> R;
+  (* FIXME: this should be
+   *  ps_P (e:event T) : sa_sigma e -> R;
+   *)
+    ps_P : event T -> R;
     ps_proper :> Proper (event_equiv ==> eq) ps_P ;
     
     ps_countable_disjoint_union (collection: nat -> event T) :
@@ -1593,6 +1610,15 @@ Hint Resolve ps_none ps_one : prob.
     split; intros.
     - now apply not_and_or.
     - now apply or_not_and.
+  Qed.
+
+  Lemma event_complement_list_union {A} (l:list (event A)) :
+    event_equiv (event_complement (list_union l)) (list_inter (map event_complement l)).
+  Proof.
+    induction l; simpl.
+    - firstorder.
+    - rewrite list_union_cons, event_complement_union, list_inter_cons.
+      now rewrite IHl.
   Qed.
 
   Lemma ps_zero_union {Ts:Type} 

@@ -1897,3 +1897,11 @@ Next Obligation.
   eapply f.
   right; eassumption.
 Defined.
+
+Lemma filter_map_swap {A B} (P:B->bool) (f:A->B) (l:list A) :
+  filter P (map f l) = map f (filter (fun x => P (f x)) l).
+Proof.
+  induction l; simpl; trivial.
+  rewrite IHl.
+  match_destr.
+Qed.

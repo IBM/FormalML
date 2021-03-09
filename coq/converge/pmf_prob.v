@@ -4,9 +4,11 @@ Require Import LibUtils utils.Utils.
 Require Import ProbSpace SigmaAlgebras.
 Require Import pmf_monad.
 Require Import SimpleExpectation.
-
+Require Import Lia.
 
 Set Bullet Behavior "Strict Subproofs".
+
+Require Import ClassicalDescription.
 
 Lemma list_fst_sum_eq {A : Type} (l : list (nonnegreal*A)) :
   list_fst_sum l =
@@ -18,49 +20,26 @@ Proof.
 Qed.
 
 Section pmf_prob.
-
   Context {A:Type}.
   Context (pmf:Pmf A).
-  
-  Definition pmf_space := {x : A | In x (map snd pmf.(outcomes))}.
 
-  Definition sa_pmf_space : SigmaAlgebra pmf_space
-    := discrete_sa _.
+  Definition sa_pmf : SigmaAlgebra A
+      := generated_sa (fun e => In e (map event_singleton (map snd pmf.(outcomes)))).
 
-   Axiom (A_event_dec:forall (e:event pmf_space), dec_event e).
-
-   Program Definition ps_p_pmf_space (e:event pmf_space) : R
-   := list_sum (map_dep pmf.(outcomes) (fun '(p,a) pf =>
-                            if A_event_dec e (exist _ a _)
-                            then nonneg p else 0%R)).
-   Next Obligation.
-     apply in_map_iff.
-     eexists.
-     split; eauto; simpl; trivial.
-   Qed.
-
-
-   
-
-   
- Definition Pmf_sa {A} (pmf:Pmf A) : SigmaAlgebra A
-   := generated_sa (fun e => In e (map event_singleton (map snd pmf.(outcomes)))).
- 
- Definition Pmf_ps_p (pmf:Pmf A) (e:event A) : R
-   := list_sum (map (fun '(p,a) =>
-                            if A_event_dec e a
-                            then nonneg p else 0%R) pmf.(outcomes)).
-
- Definition finitesubset_sa {A} (l:list A) : SigmaAlgebra {x : A | In x l}
-   := discrete_sa {x : A | In x l}.
-
- 
- Program Instance Pmf_ps (pmf:Pmf A) : ProbSpace (Pmf_sa pmf)
+  Program Definition ps_p_pmf (e:event A) : R
+    := list_sum
+         (map (fun '(r, v) =>
+                 if excluded_middle_informative (e v)
+                 then nonneg r
+                 else 0%R)
+              pmf.(outcomes)).
+    
+ Program Instance ps_pmf : ProbSpace sa_pmf
    := {|
-   ps_P e := Pmf_ps_p pmf e
+   ps_P e := ps_p_pmf e
      |}.
  Next Obligation.
-   unfold Pmf_ps_p.
+   unfold ps_p_pmf.
    intros ?? eqq1.
    f_equal.
    apply map_ext; intros [??].
@@ -70,9 +49,39 @@ Section pmf_prob.
    - apply eqq1 in y0; tauto.
  Qed.
  Next Obligation.
- Admitted.
+   unfold ps_p_pmf; simpl in *.
+   clear H.
+   (* there should be a more constructive proof, but my spirit is broken *)
+   destruct pmf.
+   simpl in *.
+   clear sum1.
+   induction outcomes.
+   - red; simpl.
+     apply infinite_sum'0.
+   - simpl.
+     destruct a; simpl in *.
+     match_destr.
+     + destruct u as [nn Hn].
+       apply infinite_sum'_plus; trivial.
+       apply (infinite_sum'_one
+                     _
+                     nn n).
+       * intros.
+         match_destr.
+         eelim H0; eauto.
+       * match_destr.
+         congruence.
+     + rewrite Rplus_0_l.
+       red.
+       eapply infinite_sum'_ext; try eapply IHoutcomes
+       ; intros; simpl.
+       match_destr; simpl.
+       * elim n0.
+         eexists; eauto.
+       * lra.
+Qed.
  Next Obligation.
-   unfold Pmf_ps_p.
+   unfold ps_p_pmf.
    rewrite <- pmf.(sum1).
    rewrite list_fst_sum_eq.
    f_equal.
@@ -81,7 +90,7 @@ Section pmf_prob.
    elim n0; now red.
  Qed.
  Next Obligation.
-   unfold Pmf_ps_p.
+   unfold ps_p_pmf.
    apply list_sum_pos_pos'.
    rewrite Forall_forall; intros ? inn.
    apply in_map_iff in inn.
@@ -90,7 +99,4 @@ Section pmf_prob.
    - apply cond_nonneg.
    - now right.
  Qed.
-
- 
- Lemma pmf_SimpleExpectation (rv_X:A->R)
 
