@@ -5,6 +5,7 @@ Require Import Lia Lra.
 Require Import Coq.Logic.FunctionalExtensionality.
 From mathcomp Require Import ssreflect ssrfun seq.
 Require Import ExtLib.Structures.Monad ExtLib.Structures.MonadLaws. 
+Require Import Coq.Program.Equality.
 
 Import MonadNotation. 
 Set Bullet Behavior "Strict Subproofs".
@@ -620,6 +621,19 @@ Proof.
     apply hf.
     now apply Rplus_le_compat.
 Qed.
+
+
+ Lemma expt_value_const {A : Type} {c : R} (p : Pmf A) : expt_value p (fun _ => c) = c.
+  Proof.
+    destruct p as [lp Hp].
+    unfold expt_value.
+    simpl.
+    rewrite list_sum_const_mul.
+    rewrite list_fst_sum_compat in Hp.
+    unfold list_fst_sum' in Hp.
+    rewrite Hp.
+    lra.
+  Qed.
 
 End expected_value. 
 
