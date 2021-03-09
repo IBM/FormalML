@@ -5,7 +5,6 @@ Require Import Lia Lra.
 Require Import Coq.Logic.FunctionalExtensionality.
 From mathcomp Require Import ssreflect ssrfun seq.
 Require Import ExtLib.Structures.Monad ExtLib.Structures.MonadLaws. 
-Require Import Coq.Program.Equality.
 
 Import MonadNotation. 
 Set Bullet Behavior "Strict Subproofs".
