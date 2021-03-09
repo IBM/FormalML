@@ -622,7 +622,7 @@ Proof.
 Qed.
 
 
- Lemma expt_value_const {A : Type} {c : R} (p : Pmf A) : expt_value p (fun _ => c) = c.
+ Lemma expt_value_const {A : Type} (c : R) (p : Pmf A) : expt_value p (fun _ => c) = c.
   Proof.
     destruct p as [lp Hp].
     unfold expt_value.
