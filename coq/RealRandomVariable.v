@@ -988,8 +988,67 @@ Section RealRandomVariables.
              (c:R) : SimpleRandomVariable (point_preimage_indicator rv_X c)
       := IndicatorRandomVariableSimpl _.
 
-  End Indicator.
+  Lemma preimage_indicator_notin (rv_X : Ts -> R) l :
+    forall a:Ts,
+      ~ In (rv_X a) l ->
+                       list_sum 
+                         (map 
+                            (fun c => c * (point_preimage_indicator rv_X c a))
+                            (nodup Req_EM_T l)) = 0.
+  Proof.
+    intros.
+    erewrite map_ext_in.
+    - apply list_sum_map_zero.
+    - intros.
+      apply nodup_In in H0.
+      unfold point_preimage_indicator, EventIndicator.
+      match_destr.
+      + congruence.
+      + lra.
+  Qed.
 
+
+ Lemma srv_preimage_indicator (rv_X : Ts -> R) {srv:SimpleRandomVariable rv_X} :
+   forall a:Ts, rv_X a =
+               list_sum 
+                 (map 
+                    (fun c => c * (point_preimage_indicator rv_X c a))
+                    (nodup Req_EM_T srv_vals)).
+  Proof.
+    intros.
+    destruct srv; simpl.
+    specialize (srv_vals_complete a).
+    induction srv_vals; simpl in srv_vals_complete; [tauto |].
+    simpl.
+    match_destr.
+    - apply IHsrv_vals.
+      intuition congruence.
+    - simpl.
+      destruct srv_vals_complete.
+      + subst.
+        rewrite preimage_indicator_notin; trivial.
+        unfold point_preimage_indicator, EventIndicator.
+        match_destr; lra.
+      + rewrite IHsrv_vals; trivial.
+        unfold point_preimage_indicator, EventIndicator.
+        match_destr.
+        * subst.
+          tauto.
+        * lra.
+  Qed.
+
+  Lemma srv_preimage_indicator' (rv_X : Ts -> R) {srv:SimpleRandomVariable rv_X} :
+    pointwise_relation Ts eq rv_X
+               (fun a => list_sum 
+                 (map 
+                    (fun c => c * (point_preimage_indicator rv_X c a))
+                    (nodup Req_EM_T srv_vals))).
+  Proof.
+    repeat red; intros.
+    apply srv_preimage_indicator.
+  Qed.
+
+  End Indicator.
 
   Section Pos.
     
