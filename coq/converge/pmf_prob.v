@@ -6,6 +6,7 @@ Require Import pmf_monad mdp.
 Require Import SimpleExpectation.
 Require Import cond_expt.
 Require Import Lia.
+Require Import Equivalence.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -109,6 +110,13 @@ Qed.
    now rewrite expt_value_const.
  Qed.
 
+ (* TODOL Move to utils/BasicUtils *)
+ Lemma refl_refl {T} {R:T->T->Prop} {refl:Reflexive R} x y : x = y -> R x y.
+ Proof.
+   intros; subst.
+   apply refl.
+ Qed.
+ 
  Lemma pmf_SimpleExpectation_value_point_preimage_indicator (rv_X : A -> R) (c:R) :
    SimpleExpectation (Prts:=ps_pmf) (point_preimage_indicator rv_X c) =
    expt_value pmf (point_preimage_indicator rv_X c).
@@ -121,34 +129,23 @@ Qed.
    unfold expt_value.
    apply list_sum_Proper.
    destruct pmf; simpl.
-   assert  ((map
-       (fun pat : nonnegreal * A =>
-        (let
-         '(r, v) as anonymous' := pat return (anonymous' = pat -> R) in
-          fun _ : (r, v) = pat =>
-          if excluded_middle_informative (rv_X v = c) then r else 0) eq_refl)
-       outcomes) = 
-   (seq.map
-        (fun x : nonnegreal * A =>
-        (if Req_EM_T (rv_X (snd x)) c then 1 else 0) * fst x) outcomes)).
-   - unfold map.
-     unfold seq.map.
+   apply refl_refl.
+   unfold map.
+   unfold seq.map.
+   f_equal.
+   intros.
+   clear sum1.
+   induction outcomes.
+   + easy.
+   + cut_to IHoutcomes; trivial.
+     rewrite IHoutcomes.
      f_equal.
-     intros.
-     clear sum1.
-     induction outcomes.
-     + easy.
-     + cut_to IHoutcomes; trivial.
-       rewrite IHoutcomes.
-       f_equal.
-       match_destr.
-       unfold fst, snd.
-       match_destr.
-       * rewrite e.
-         match_destr; lra.
-       * match_destr; lra.
-   - rewrite H.
-     apply Permutation.Permutation_refl.
+     match_destr.
+     unfold fst, snd.
+     match_destr.
+     * rewrite e.
+       match_destr; lra.
+     * match_destr; lra.
  Qed.
 
 Lemma SimpleExpectation_preimage_indicator
@@ -161,28 +158,33 @@ Lemma SimpleExpectation_preimage_indicator
   Proof.
     unfold SimpleExpectation at 1.
     apply list_sum_Proper.
-    assert ( (@map R R
-       (fun v : R =>
-        Rmult v
-          (@ps_P A sa_pmf ps_pmf
-             (@event_preimage A R rv_X (@event_singleton R v))))
-       (@nodup R Req_EM_T (@srv_vals A R rv_X srv))) = 
-    (@map R R
-       (fun v : R =>
-        Rmult v
-          (@SimpleExpectation A sa_pmf ps_pmf
-             (@point_preimage_indicator A rv_X v)
-             (@EventIndicator_srv A (fun x : A => @eq R (rv_X x) v)
-                (fun x : A => Req_EM_T (rv_X x) v))))
-       (@nodup R Req_EM_T (@srv_vals A R rv_X srv)))).
-    - apply map_ext.
-      intros.
-      unfold point_preimage_indicator.
-      rewrite SimpleExpectation_EventIndicator.
-      reflexivity.
-    - rewrite H.
-      apply Permutation.Permutation_refl.    
+    apply refl_refl.
+    apply map_ext.
+    intros.
+    unfold point_preimage_indicator.
+    rewrite SimpleExpectation_EventIndicator.
+    reflexivity.
   Qed.
+
+  Lemma preimage_indicator_notin (rv_X : A -> R) l :
+    forall a:A,
+      ~ In (rv_X a) l ->
+                       list_sum 
+                         (map 
+                            (fun c => c * (point_preimage_indicator rv_X c a))
+                            (nodup Req_EM_T l)) = 0.
+  Proof.
+    intros.
+    erewrite map_ext_in.
+    - apply list_sum_map_zero.
+    - intros.
+      apply nodup_In in H0.
+      unfold point_preimage_indicator, EventIndicator.
+      match_destr.
+      + congruence.
+      + lra.
+  Qed.
+
 
  Lemma srv_preimage_indicator (rv_X : A -> R) {srv:SimpleRandomVariable rv_X} :
    forall a:A, rv_X a =
@@ -192,14 +194,26 @@ Lemma SimpleExpectation_preimage_indicator
                     (nodup Req_EM_T srv_vals)).
   Proof.
     intros.
-    destruct srv.
-    unfold RandomVariable.srv_vals.
+    destruct srv; simpl.
     specialize (srv_vals_complete a).
-    
-    induction srv_vals.
-    
-  Admitted.
-
+    induction srv_vals; simpl in srv_vals_complete; [tauto |].
+    simpl.
+    match_destr.
+    - apply IHsrv_vals.
+      intuition congruence.
+    - simpl.
+      destruct srv_vals_complete.
+      + subst.
+        rewrite preimage_indicator_notin; trivial.
+        unfold point_preimage_indicator, EventIndicator.
+        match_destr; lra.
+      + rewrite IHsrv_vals; trivial.
+        unfold point_preimage_indicator, EventIndicator.
+        match_destr.
+        * subst.
+          tauto.
+        * lra.
+  Qed.
 
 (*
 
