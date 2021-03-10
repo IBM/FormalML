@@ -46,3 +46,8 @@ Proof.
   typeclasses eauto.
 Qed.
 
+Lemma refl_refl {T} {R:T->T->Prop} {refl:Reflexive R} x y : x = y -> R x y.
+Proof.
+  intros; subst.
+  apply refl.
+Qed.

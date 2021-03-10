@@ -110,13 +110,6 @@ Qed.
    now rewrite expt_value_const.
  Qed.
 
- (* TODOL Move to utils/BasicUtils *)
- Lemma refl_refl {T} {R:T->T->Prop} {refl:Reflexive R} x y : x = y -> R x y.
- Proof.
-   intros; subst.
-   apply refl.
- Qed.
- 
  Lemma pmf_SimpleExpectation_value_point_preimage_indicator (rv_X : A -> R) (c:R) :
    SimpleExpectation (Prts:=ps_pmf) (point_preimage_indicator rv_X c) =
    expt_value pmf (point_preimage_indicator rv_X c).
@@ -215,13 +208,25 @@ Lemma SimpleExpectation_preimage_indicator
         * lra.
   Qed.
 
-(*
+  Lemma expt_value_preimage_indicator
+       (rv_X : A -> R)
+       {srv : SimpleRandomVariable rv_X} :
+     expt_value pmf rv_X = 
+     list_sum (map (fun v => v *
+                             (expt_value pmf (point_preimage_indicator rv_X v)))
+                   (nodup Req_EM_T srv_vals)).
+    Proof.
+      Admitted.
 
  Theorem pmf_SimpleExpectation_value (rv_X : A -> R) {srv:SimpleRandomVariable rv_X} 
    : SimpleExpectation (Prts:=ps_pmf) rv_X = expt_value pmf rv_X.
  Proof.
-   unfold SimpleExpectation.
-   f_equal.
-   unfold group_by_image.
-*)
-   
+    rewrite SimpleExpectation_preimage_indicator.   
+    rewrite expt_value_preimage_indicator with (srv := srv).
+    apply list_sum_Proper.
+    apply refl_refl.
+    apply map_ext.
+    intros.
+    apply Rmult_eq_compat_l.
+    apply pmf_SimpleExpectation_value_point_preimage_indicator.
+ Qed.
