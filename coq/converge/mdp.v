@@ -1251,6 +1251,60 @@ Definition bellmanQ : Rfct (sigT M.(act)) -> Rfct (sigT M.(act))
                   act_expt_reward s a +
                   γ*expt_value (t s a)(fun s' => Max_{act_list s'}(fun a => W (existT _ s' a) ) ).
 
+(* Move this to somewhere nice.*)
+Lemma expt_value_le_max {A : Type} (finA : Finite A) (p : Pmf A) (f : A -> R):
+  let (la,_) := finA in
+  expt_value p f <= Max_{la}(f).
+Proof.
+  destruct finA.
+  apply expt_value_bdd.
+  intros. apply Rmax_spec.
+  rewrite in_map_iff.
+  exists a. split; auto.
+Qed.
+
+Lemma Rmax_list_Rsqr_Rabs_1 {A : Type} (f : A -> R) (l : list A):
+[] <> l -> Max_{l}(fun a => Rsqr (f a)) <= Max_{l}(fun a => Rsqr (Rabs (f a))).
+Proof.
+  intros Hn.
+  apply Rmax_spec.
+  rewrite in_map_iff.
+  destruct (Rmax_list_map_exist (fun a => Rsqr (f a)) l Hn) as [a [Ha1 Ha2]].
+  exists a.  rewrite <-Rsqr_abs.
+  split; trivial.
+Qed.
+
+Lemma Rmax_list_Rsqr_Rabs_2 {A : Type} (f : A -> R) (l : list A):
+  [] <> l -> Max_{l}(fun a => Rsqr (Rabs (f a))) <= Rsqr(Max_{l}(fun a => Rabs(f a))).
+Proof.
+  intros Hn.
+  destruct (Rmax_list_map_exist (fun a => Rsqr (Rabs (f a))) l Hn) as [a [Ha1 Ha2]].
+  rewrite <-Ha2.
+  apply neg_pos_Rsqr_le; try (apply Rmax_spec ; rewrite in_map_iff ; exists a; split; trivial).
+  replace (Rabs (f a)) with (- (- (Rabs (f a)))) by lra.
+  apply Ropp_le_contravar.
+  apply Rle_trans with (r2 := Rabs (f a)); try (apply Rmax_spec ; rewrite in_map_iff ; exists a; split; trivial).
+  rewrite Rminus_le_0.
+  ring_simplify.
+  apply Rmult_le_pos; try (left; apply Rlt_0_2).
+  apply Rabs_pos.
+Qed.
+
+
+Lemma expt_value_qvalue_sqr_le W :
+  forall (s : M.(state)) (a: M.(act) s),
+    expt_value (t s a) (fun s' => Rsqr(act_expt_reward s a +
+                               γ*Max_{act_list s'}(fun a => W (existT _ s' a)))) <= 1.
+Proof.
+  intros s a.
+  generalize (expt_value_le_max (fs M) (t s a)); intros.
+  destruct (fs M) as [ls ?].
+  assert (Hls: [] <> ls) by (apply not_nil_exists; exists (ne M); trivial).
+  eapply Rle_trans; try eapply H.
+  eapply Rle_trans; try (eapply (Rmax_list_Rsqr_Rabs_1) ; trivial).
+  eapply Rle_trans; try (eapply (Rmax_list_Rsqr_Rabs_2) ; trivial).
+Admitted.
+
 Lemma Rabs_helper : forall a b c : R, Rabs ( (a + b) + -(a + c)) = Rabs (b - c).
 Proof.
   intros.
