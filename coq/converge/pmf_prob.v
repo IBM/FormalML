@@ -7,6 +7,7 @@ Require Import SimpleExpectation.
 Require Import cond_expt.
 Require Import Lia.
 Require Import Equivalence.
+Require Import Morphisms.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -208,6 +209,17 @@ Lemma SimpleExpectation_preimage_indicator
         * lra.
   Qed.
 
+  Lemma srv_preimage_indicator' (rv_X : A -> R) {srv:SimpleRandomVariable rv_X} :
+    pointwise_relation A eq rv_X
+               (fun a => list_sum 
+                 (map 
+                    (fun c => c * (point_preimage_indicator rv_X c a))
+                    (nodup Req_EM_T srv_vals))).
+  Proof.
+    repeat red; intros.
+    apply srv_preimage_indicator.
+  Qed.
+
   Lemma expt_value_preimage_indicator
        (rv_X : A -> R)
        {srv : SimpleRandomVariable rv_X} :
@@ -215,8 +227,18 @@ Lemma SimpleExpectation_preimage_indicator
      list_sum (map (fun v => v *
                              (expt_value pmf (point_preimage_indicator rv_X v)))
                    (nodup Req_EM_T srv_vals)).
-    Proof.
-      Admitted.
+  Proof.
+    transitivity (expt_value pmf (fun a => list_sum 
+                 (map 
+                    (fun c => c * (point_preimage_indicator rv_X c a))
+                    (nodup Req_EM_T srv_vals)))).
+    - apply expt_value_Proper; trivial.
+      apply srv_preimage_indicator'.
+    - rewrite expt_value_sum_comm.
+      f_equal.
+      apply map_ext; intros.
+      apply expt_value_const_mul.
+  Qed.
 
  Theorem pmf_SimpleExpectation_value (rv_X : A -> R) {srv:SimpleRandomVariable rv_X} 
    : SimpleExpectation (Prts:=ps_pmf) rv_X = expt_value pmf rv_X.
