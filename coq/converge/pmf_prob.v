@@ -6,7 +6,7 @@ Require Import pmf_monad mdp.
 Require Import SimpleExpectation.
 Require Import cond_expt.
 Require Import Lia.
-Require Import Equivalence.
+Require Import Equivalence EquivDec.
 Require Import Morphisms.
 
 Set Bullet Behavior "Strict Subproofs".
@@ -252,3 +252,53 @@ Lemma SimpleExpectation_preimage_indicator
     apply Rmult_eq_compat_l.
     apply pmf_SimpleExpectation_value_point_preimage_indicator.
  Qed.
+
+ Definition rv_restricted_range {B} {decB:EqDec B eq} (default:B) (l:list B) (rv_X: A -> B) : A -> B
+   := fun a => if in_dec decB (rv_X a) l
+            then rv_X a
+            else default.
+
+ Program Global Instance srv_restricted_range
+        {B} {decB:EqDec B eq} (default:B) (l:list B) (rv_X: A -> B)
+   : SimpleRandomVariable (rv_restricted_range default l rv_X)
+   := {|
+   srv_vals := default::l
+     |}.
+ Next Obligation.
+   unfold rv_restricted_range.
+   match_destr; eauto.
+ Qed.
+
+Definition pmf_image rv_X : list R := (map rv_X (map snd pmf.(outcomes))).
+ 
+Lemma expt_value_on_restricted_range rv_X :
+  expt_value pmf rv_X = expt_value pmf (rv_restricted_range 0 (pmf_image rv_X) rv_X).
+Proof.
+  unfold expt_value.
+  assert (forall x, In x pmf -> In (rv_X (snd x)) (pmf_image rv_X)).
+  {
+    unfold pmf_image; intros.
+    now repeat apply in_map.
+  }
+  destruct pmf; simpl in *.
+  clear sum1.
+  induction outcomes; simpl; trivial.
+  rewrite <- IHoutcomes.
+  - f_equal.
+    unfold rv_restricted_range.
+    match_destr.
+    specialize (H a); simpl in *.
+    elim n.
+    apply H.
+    eauto.
+  - simpl in *.
+    firstorder.
+Qed.
+
+Theorem pmf_value_SimpleExpectation (rv_X : A -> R) :
+  expt_value pmf rv_X = SimpleExpectation (Prts:=ps_pmf) (rv_restricted_range 0 (pmf_image rv_X) rv_X).
+Proof.
+  rewrite pmf_SimpleExpectation_value.
+  apply expt_value_on_restricted_range.
+Qed.
+
