@@ -343,6 +343,13 @@ Section list_sum.
     now rewrite H.
   Qed.
 
+  Lemma list_sum_map_ext {A : Type} (f g : A -> R) (l : list A):
+    (forall x, f x = g x) -> list_sum (map f l) = list_sum (map g l).
+  Proof.
+    intros Hfg.
+    f_equal. now apply List.map_ext.
+  Qed.
+
   Lemma list_sum_const_mul {A : Type} f (l : list A) :
     forall r, list_sum (map (fun x => r*f x) l)  =
               r* list_sum (map (fun x => f x) l).

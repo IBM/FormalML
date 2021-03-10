@@ -329,26 +329,13 @@ Arguments outcomes {_}.
 Definition expt_value {A : Type} (p : Pmf A) (f : A -> R): R :=
   list_sum (map (fun x => (f x.2) * nonneg x.1) p.(outcomes)).
 
-Lemma list_sum_map_ext {A : Type} (f g : A -> R) (l : list A):
-  (forall x, f x = g x) -> list_sum (map f l) = list_sum (map g l).
-Proof.
-  intros Hfg.
-  f_equal. now apply List.map_ext.
-Qed.
 
-Lemma expt_value_ext {A : Type}(f g : A -> R) (p q : Pmf A):
-  (p=q) -> (forall x, f x = g x) -> expt_value p f = expt_value q f.
-Proof.
-  intros Hpq Hfg.
-  unfold expt_value.
-  rewrite Hpq.
-  apply list_sum_map_ext.
-  trivial.
-Qed.
-
-Global Instance expt_value_Proper {A : Type}: Proper (eq  ==> eq ==> eq) (@expt_value A).
-Proof.
-solve_proper.
+Global Instance expt_value_Proper {A : Type}:
+  Proper (eq  ==> pointwise_relation A eq ==> eq) (@expt_value A).
+intros p q Hpq f g Hfg.
+rewrite Hpq.
+apply list_sum_map_ext.
+intros a. now f_equal.
 Qed.
 
 Lemma expt_value_zero {A : Type} (p : Pmf A) :
