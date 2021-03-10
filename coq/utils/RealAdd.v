@@ -326,7 +326,6 @@ Section list_sum.
   Qed.
 
 
-
   Global Instance list_sum_Proper : Proper (@Permutation R ==> eq) list_sum.
   Proof.
     unfold Proper. intros x y H.

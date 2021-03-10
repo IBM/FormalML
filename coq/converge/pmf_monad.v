@@ -1,6 +1,6 @@
 Require Import Reals Coquelicot.Coquelicot Coquelicot.Series.
 Require Import ProofIrrelevance EquivDec.
-Require Import Sums utils.Utils.
+Require Import Sums utils.Utils Morphisms.
 Require Import Lia Lra.
 Require Import Coq.Logic.FunctionalExtensionality.
 From mathcomp Require Import ssreflect ssrfun seq.
@@ -344,6 +344,11 @@ Proof.
   rewrite Hpq.
   apply list_sum_map_ext.
   trivial.
+Qed.
+
+Global Instance expt_value_Proper {A : Type}: Proper (eq  ==> eq ==> eq) (@expt_value A).
+Proof.
+solve_proper.
 Qed.
 
 Lemma expt_value_zero {A : Type} (p : Pmf A) :
