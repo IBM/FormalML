@@ -2433,6 +2433,21 @@ Proof.
     -- rewrite map_not_nil. congruence.
 Qed.
 
+Lemma Rmax_list_map_triangle {A} (f g : A -> R) (l : list A):
+  Max_{ l}(fun a : A => Rabs (f a + g a)) <=
+  Max_{ l}(fun a : A => Rabs (f a)) + (Max_{ l}(fun a : A => Rabs (g a))).
+Proof.
+   destruct (is_nil_dec l).
+  - subst; simpl. lra.
+  - rewrite Rmax_list_le_iff.
+    intros x Hx. rewrite in_map_iff in Hx.
+    destruct Hx as [a [Ha Hina]].
+    rewrite <-Ha.
+    eapply Rle_trans; try apply Rabs_triang.
+    apply Rplus_le_compat; try (apply Rmax_spec; rewrite in_map_iff; exists a; split ; trivial).
+    rewrite map_not_nil.
+    congruence.
+Qed.
 
 Lemma Rmax_list_minus_le_abs {A} (f g : A -> R) (la : list A):
   Rabs (Max_{la}(f) - Max_{la}(g)) <= Max_{la}(fun a => Rabs(f a - g a)).
@@ -2563,17 +2578,14 @@ Proof.
   now rewrite map_not_nil.
 Qed.
 
-Lemma Rmax_list_fun_le' {A B} {la : list A} {lb : list B}
-      (f : A -> R) (g : B -> R)
-      (hla : [] <> la) (hlb : [] <> lb)  :
-      (forall a b, f a <= g b) ->
-      Max_{la} (fun a => f a) <= Max_{lb} (fun b => g b).
+Lemma Rmax_list_map_nonneg {A} {la : list A}
+      (f : A -> R):
+      (forall a, 0 <= f a) ->
+      0 <= Max_{la}(fun a => f a).
 Proof.
-  intros Hfg.
-  destruct (Rmax_list_map_exist (fun b => g b) lb hlb) as [b [Hb Hinb]].
-  destruct (Rmax_list_map_exist (fun a => f a) la hla) as [a [Ha Hina]].
-  rewrite <-Hinb, <-Hina.
-  apply Hfg.
+  intros Hf.
+  rewrite <-(Rmax_list_zero la).
+  now apply Rmax_list_fun_le.
 Qed.
 
 Lemma Rmax_list_map_transf {A B} (l : list A) (f : A -> R) (f' : B -> R) (g : A -> B) :
@@ -2586,13 +2598,6 @@ Proof.
   assumption.
 Qed.
 
-(*
-Lemma Rmax_list_pairs {A} (ls : list (Stream A)) (f : Stream A -> R) (f':A*Stream A -> R) :
-  (List.Forall(fun x => f x = f'(hd x, tl x)) ls) -> Max_{ls}(f) = Max_{(List.map (fun x => (hd x, tl x)) ls)}(fun x => f'(x)).
-Proof.
-  apply Rmax_list_map_transf.
-Qed.
-*)
 Lemma fin_fun_bounded {A} (finA : Finite A) (f : A -> R) : {D | forall a, f a <= D}.
 Proof.
   exists (Max_{@elms _ finA}(f)).

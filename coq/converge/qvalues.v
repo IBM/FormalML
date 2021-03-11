@@ -50,6 +50,7 @@ Proof.
   rewrite <-expt_value_const_mul.
   now rewrite expt_value_add.
 Qed.
+
 Lemma Rabs_helper : forall a b c : R, Rabs ( (a + b) + -(a + c)) = Rabs (b - c).
 Proof.
   intros.
@@ -143,7 +144,7 @@ Arguments t {_}.
 Definition fun_inner_prod {A : Type} (f g : A -> R) (ls : list A) : R :=
   (list_sum (map (fun a => (f a)*(g a)) ls)).
 
-Lemma Rfct_inner_self {A : Type} (l : list A) (f : A -> R) :
+Lemma fun_inner_prod_self {A : Type} (l : list A) (f : A -> R) :
   fun_inner_prod f f l = list_sum (map (fun a => Rsqr (f a)) l).
 Proof.
   unfold fun_inner_prod.
@@ -177,9 +178,18 @@ Proof.
     lra.
 Qed.
 
+
 Definition bellmanQ : Rfct(sigT M.(act)) -> M.(state) -> Rfct(sigT M.(act))
   := fun W => fun s' sa => let (s,a) := sa in
-                  reward s a s' + γ*Max_{act_list s'}(fun a => W (existT _ s' a) ).
+                  reward s a s' + γ*Max_{act_list s'}(fun a => W (existT _ s' a)).
+
+Variable (Q : Rfct (sigT M.(act))).
+
+(* This is [fun s' => B(s').B(s')]*)
+Check (fun s' => Rfct_inner _ (bellmanQ Q s') (bellmanQ Q s')).
+
+(* This is E[fun s' => B(s').B(s')]. But what is the Pmf?? *)
+Check expt_value _ (fun s' => Rfct_inner _ (bellmanQ Q s') (bellmanQ Q s')).
 
 (* Move this to somewhere nice.*)
 Lemma expt_value_le_max {A : Type} (finA : Finite A) (p : Pmf A) (f : A -> R):
@@ -220,25 +230,38 @@ Proof.
   apply Rabs_pos.
 Qed.
 
-Lemma expt_value_qvalue_sqr_le W :
+Lemma Rmax_list_Rsqr_Rabs_3 {A : Type} (f g : A -> R) (l : list A):
+  [] <> l -> (Max_{l}(fun a => Rabs (f a + g a)))² <=
+           (Max_{l}(fun a => Rabs(f a)) + Max_{l}(fun a => Rabs (g a)))².
+Proof.
+  intros Hn.
+  apply Rsqr_incr_1; try (apply Rmax_list_map_nonneg).
+  + apply Rmax_list_map_triangle.
+  + intros a.
+    apply Rabs_pos.
+  + replace 0 with (0+0) by lra.
+    apply Rplus_le_compat; apply Rmax_list_map_nonneg; intros; apply Rabs_pos.
+Qed.
+
+(* Proves that each individual summand is bounded. *)
+(*TODO(Kody): Clean this up and make the RHS a simpler function. *)
+Lemma summand_bounded W :
   forall (s : M.(state)) (a: M.(act) s),
-    expt_value (t s a) (fun s' => Rsqr(act_expt_reward s a +
-                               γ*Max_{act_list s'}(fun a => W (existT _ s' a)))) <= 1.
+    let (ls,_) := fs M in
+    variance (t s a) (fun s' => act_expt_reward s a + γ*Max_{act_list s'} (fun a => W (existT _ s' a)))
+             <= (Max_{ ls}(fun a0 : state M => Rabs ((fun _ : state M => act_expt_reward s a) a0)) +
+     (Max_{ ls} (fun a0 : state M => Rabs ((fun a1 : state M => γ * (Max_{ act_list a1}(fun a2 : act M a1 => W (existT (act M) a1 a2)))) a0))))².
 Proof.
   intros s a.
   generalize (expt_value_le_max (fs M) (t s a)); intros.
   destruct (fs M) as [ls ?].
   assert (Hls: [] <> ls) by (apply not_nil_exists; exists (ne M); trivial).
+  eapply Rle_trans; try apply variance_le_expt_value_sqr.
   eapply Rle_trans; try eapply H.
   eapply Rle_trans; try (eapply (Rmax_list_Rsqr_Rabs_1) ; trivial).
   eapply Rle_trans; try (eapply (Rmax_list_Rsqr_Rabs_2) ; trivial).
-
-Admitted.
-
-
-
-
-
-
+  eapply Rle_trans; try (eapply (Rmax_list_Rsqr_Rabs_3) ; trivial).
+  right; trivial.
+Qed.
 
 End bellmanQ.
