@@ -183,14 +183,6 @@ Definition bellmanQ : Rfct(sigT M.(act)) -> M.(state) -> Rfct(sigT M.(act))
   := fun W => fun s' sa => let (s,a) := sa in
                   reward s a s' + γ*Max_{act_list s'}(fun a => W (existT _ s' a)).
 
-Variable (Q : Rfct (sigT M.(act))).
-
-(* This is [fun s' => B(s').B(s')]*)
-Check (fun s' => Rfct_inner _ (bellmanQ Q s') (bellmanQ Q s')).
-
-(* This is E[fun s' => B(s').B(s')]. But what is the Pmf?? *)
-Check expt_value _ (fun s' => Rfct_inner _ (bellmanQ Q s') (bellmanQ Q s')).
-
 (* Move this to somewhere nice.*)
 Lemma expt_value_le_max {A : Type} (finA : Finite A) (p : Pmf A) (f : A -> R):
   let (la,_) := finA in
