@@ -356,6 +356,15 @@ Proof.
   simpl. rewrite IHl. lra. 
 Qed.
 
+Lemma expt_value_const_mul' {A : Type} (p : Pmf A) (f : A -> R) (c : R):
+  expt_value p (fun a => (f a)*c) = c * expt_value p (fun a => f a).
+Proof.
+  unfold expt_value.
+  induction p.(outcomes).
+  simpl ; lra.
+  simpl. rewrite IHl. lra.
+Qed.
+
 Lemma expt_value_add {A : Type} (p : Pmf A) (f1 f2 : A -> R) :
   expt_value p (fun x => f1 x + f2 x) = (expt_value p f1) + (expt_value p f2).
 Proof.
@@ -663,5 +672,50 @@ Qed.
      lra.
  Qed.
 
+ Lemma expt_value_minus {A : Type} (f : A -> R) (p : Pmf A):
+   expt_value p (fun x => - (f x)) = - expt_value p f.
+ Proof.
+   apply Rplus_opp_r_uniq.
+   rewrite <-expt_value_add.
+   setoid_rewrite Rplus_opp_r.
+   apply expt_value_const.
+ Qed.
+
 End expected_value. 
 
+Section variance.
+
+  Definition variance {A : Type} (p : Pmf A) (f : A -> R) :=
+    expt_value p (fun a => Rsqr((f a) - expt_value p f)).
+
+  Lemma variance_eq {A : Type} (p : Pmf A) (f : A -> R):
+    variance p f = expt_value p (fun a => (f a)²) - (expt_value p f)².
+  Proof.
+    unfold variance.
+    setoid_rewrite Rsqr_plus.
+    setoid_rewrite <-Rsqr_neg.
+    setoid_rewrite Ropp_mult_distr_r_reverse.
+    do 2 rewrite expt_value_add.
+    rewrite Rplus_assoc. unfold Rminus. f_equal.
+    rewrite expt_value_const.
+    rewrite expt_value_minus.
+    setoid_rewrite Rmult_assoc.
+    rewrite expt_value_const_mul.
+    rewrite expt_value_const_mul'.
+    rewrite <-Rmult_assoc.
+    replace (expt_value p [eta f]) with (expt_value p f) by reflexivity.
+    unfold Rsqr.
+    ring.
+  Qed.
+
+  Lemma variance_le_expt_value_sqr {A : Type} (p : Pmf A) (f : A -> R):
+    variance p f <= expt_value p (fun a => (f a)²).
+  Proof.
+    rewrite variance_eq.
+    rewrite Rle_minus_l.
+    rewrite <-(Rplus_0_r) at 1.
+    apply Rplus_le_compat_l.
+    apply Rle_0_sqr.
+  Qed.
+
+End variance.
