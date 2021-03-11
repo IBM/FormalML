@@ -54,6 +54,12 @@ Section Rvector_defs.
   Definition Rvector_sqr (x:vector R n) : vector R n
     := vector_map (fun a => a²) x.
 
+  Definition Rvector_abs (x:vector R n) : vector R n
+    := vector_map Rabs x.                                                 
+
+  Definition Rvector_max_abs (x:vector R n) : R 
+    := vector_fold_left Rmax (Rvector_abs x) 0.
+
   Notation "x ²" := (Rvector_sqr x) (at level 1) : Rvector_scope.
 
   Program Definition Rvector_sum (v:vector R n) : R

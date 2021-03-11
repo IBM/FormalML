@@ -3,7 +3,7 @@ Require Import Reals Lra List.
 Require Import LibUtils utils.Utils.
 Require Import ProbSpace SigmaAlgebras.
 Require Import pmf_monad mdp.
-Require Import SimpleExpectation.
+Require Import RealRandomVariable SimpleExpectation.
 Require Import cond_expt.
 Require Import Lia.
 Require Import Equivalence EquivDec.
@@ -160,65 +160,6 @@ Lemma SimpleExpectation_preimage_indicator
     reflexivity.
   Qed.
 
-  Lemma preimage_indicator_notin (rv_X : A -> R) l :
-    forall a:A,
-      ~ In (rv_X a) l ->
-                       list_sum 
-                         (map 
-                            (fun c => c * (point_preimage_indicator rv_X c a))
-                            (nodup Req_EM_T l)) = 0.
-  Proof.
-    intros.
-    erewrite map_ext_in.
-    - apply list_sum_map_zero.
-    - intros.
-      apply nodup_In in H0.
-      unfold point_preimage_indicator, EventIndicator.
-      match_destr.
-      + congruence.
-      + lra.
-  Qed.
-
-
- Lemma srv_preimage_indicator (rv_X : A -> R) {srv:SimpleRandomVariable rv_X} :
-   forall a:A, rv_X a =
-               list_sum 
-                 (map 
-                    (fun c => c * (point_preimage_indicator rv_X c a))
-                    (nodup Req_EM_T srv_vals)).
-  Proof.
-    intros.
-    destruct srv; simpl.
-    specialize (srv_vals_complete a).
-    induction srv_vals; simpl in srv_vals_complete; [tauto |].
-    simpl.
-    match_destr.
-    - apply IHsrv_vals.
-      intuition congruence.
-    - simpl.
-      destruct srv_vals_complete.
-      + subst.
-        rewrite preimage_indicator_notin; trivial.
-        unfold point_preimage_indicator, EventIndicator.
-        match_destr; lra.
-      + rewrite IHsrv_vals; trivial.
-        unfold point_preimage_indicator, EventIndicator.
-        match_destr.
-        * subst.
-          tauto.
-        * lra.
-  Qed.
-
-  Lemma srv_preimage_indicator' (rv_X : A -> R) {srv:SimpleRandomVariable rv_X} :
-    pointwise_relation A eq rv_X
-               (fun a => list_sum 
-                 (map 
-                    (fun c => c * (point_preimage_indicator rv_X c a))
-                    (nodup Req_EM_T srv_vals))).
-  Proof.
-    repeat red; intros.
-    apply srv_preimage_indicator.
-  Qed.
 
   Lemma expt_value_preimage_indicator
        (rv_X : A -> R)

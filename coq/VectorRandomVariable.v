@@ -110,9 +110,14 @@ Section vector_ops.
   Definition vecrvsum {n} (rv_X : Ts -> vector R n) : Ts -> R :=
     (fun omega => Rvector_sum (rv_X omega)).
 
+  Definition vecrvabs {n} (rv_X : Ts -> vector R n) := 
+    fun omega => Rvector_abs (rv_X omega).
+
+  Definition rvmaxabs {n} (rv_X : Ts -> vector R n) := 
+    fun omega => Rvector_max_abs (rv_X omega).
+
   Definition rvinner {n} (rv_X1 rv_X2 : Ts -> vector R n) :=
     fun omega => Rvector_inner (rv_X1 omega) (rv_X2 omega).
-
 
   Global Instance vecrvplus_proper {n} : Proper (rv_eq ==> rv_eq ==> rv_eq) (@vecrvplus n).
   Proof.
@@ -360,6 +365,23 @@ Section vector_ops.
     apply Rvector_scale_measurable.
   Qed.
 
+  Instance Rvector_abs_measurable {n} (f : Ts -> vector R n) :
+    RealVectorMeasurable f ->
+    RealVectorMeasurable (vecrvabs f).
+  Proof.
+    unfold RealVectorMeasurable; simpl; intros.
+    rewrite vector_nth_fun_to_vector.
+    unfold vecrvabs.
+    eapply RealMeasurable_proper.
+    - intros x.
+      unfold Rvector_abs.
+      rewrite vector_nth_map.
+      reflexivity.
+    - apply Rabs_measurable.
+      specialize (H i pf).
+      now rewrite vector_nth_fun_to_vector in H.
+  Qed.
+
   Instance Rvector_sum_measurable {n} (f : Ts -> vector R n) :
     RealVectorMeasurable f ->
     RealMeasurable dom (vecrvsum f).
@@ -424,6 +446,16 @@ Section vector_ops.
     intros.
     apply RealVectorMeasurableRandomVariable.
     apply Rvector_opp_measurable.
+    now apply RandomVariableRealVectorMeasurable.
+  Qed.  
+
+  Global Instance Rvector_abs_rv {n} (f : Ts -> vector R n) :
+    RandomVariable dom (Rvector_borel_sa n) f ->
+    RandomVariable dom (Rvector_borel_sa n) (vecrvabs f).
+  Proof.
+    intros.
+    apply RealVectorMeasurableRandomVariable.
+    apply Rvector_abs_measurable.
     now apply RandomVariableRealVectorMeasurable.
   Qed.  
 
