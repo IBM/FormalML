@@ -58,7 +58,7 @@ Section Rvector_defs.
     := vector_map Rabs x.                                                 
 
   Definition Rvector_max_abs (x:vector R n) : R 
-    := fold_right Rmax 0 (proj1_sig (Rvector_abs x)).
+    := vector_fold_left Rmax (Rvector_abs x) 0.
 
   Notation "x ²" := (Rvector_sqr x) (at level 1) : Rvector_scope.
 
