@@ -423,9 +423,16 @@ Section list_sum.
     exact (Rplus_le_compat _ _ _ _ H IHl).
   Qed.
 
-  Lemma list_sum_map {A:Type} (f g : A -> R) (l : list A) :
-    list_sum (map f l) + list_sum (map g l) = 
-    list_sum (map (fun x => f x + g x) l).
+  Lemma list_sum_map_add {A:Type} (f g : A -> R) (l : list A) :
+    list_sum (map (fun x => f x + g x) l) =
+    list_sum (map f l) + list_sum (map g l).
+  Proof.
+    induction l; simpl; lra.
+  Qed.
+
+  Lemma list_sum_map_sub {A:Type} (f g : A -> R) (l : list A) :
+    list_sum (map (fun x => f x - g x) l) =
+    list_sum (map f l) - list_sum (map g l).
   Proof.
     induction l; simpl; lra.
   Qed.

@@ -665,7 +665,7 @@ Qed.
    + simpl. symmetry.
      apply list_sum_map_zero.
    + simpl. rewrite IHlp.
-     rewrite <-list_sum_map.
+     rewrite list_sum_map_add.
      f_equal. rewrite Rmult_comm.
      rewrite <-list_sum_const_mul.
      f_equal. apply List.map_ext; intros.
@@ -716,6 +716,45 @@ Section variance.
     rewrite <-(Rplus_0_r) at 1.
     apply Rplus_le_compat_l.
     apply Rle_0_sqr.
+  Qed.
+
+  Definition total_variance {A : Type} (lp : list (Pmf A)) (lf : list (A -> R)): R :=
+    list_sum (map (fun '(f,p) => variance p f) (zip lf lp)).
+
+  Lemma list_sum_sqr_pos {A : Type} (f : A -> R) (l : list A):
+    0 <= list_sum (map (fun x => (f x)²) l).
+  Proof.
+    apply list_sum_pos_pos'.
+    rewrite List.Forall_forall; intros.
+    rewrite List.in_map_iff in H *; intros.
+    destruct H as [a [Ha HIna]].
+    unfold comp in Ha; subst.
+    apply Rle_0_sqr.
+  Qed.
+
+  Lemma total_variance_eq_sum {A : Type} (lp : list (Pmf A)) (lf : list (A -> R)) :
+    total_variance lp lf = list_sum (map (fun '(f,p) => expt_value p (comp Rsqr f)) (zip lf lp))
+                           - list_sum (map (fun '(f,p) => (expt_value p f)²) (zip lf lp)).
+  Proof.
+    rewrite <-list_sum_map_sub.
+    unfold total_variance.
+    apply list_sum_map_ext; intros.
+    destruct x. apply variance_eq.
+  Qed.
+
+  Lemma total_variance_le_expt_sqr {A : Type} (lp : list (Pmf A)) (lf : list (A -> R)) :
+    total_variance lp lf <= list_sum (map (fun '(f,p) => expt_value p (comp Rsqr f)) (zip lf lp)).
+  Proof.
+    rewrite total_variance_eq_sum.
+    rewrite Rle_minus_l.
+    rewrite <-(Rplus_0_r) at 1.
+    apply Rplus_le_compat_l.
+    apply list_sum_pos_pos'.
+    rewrite List.Forall_forall; intros.
+    rewrite List.in_map_iff in H *; intros.
+    destruct H as [a [Ha HIna]].
+    unfold comp in Ha; subst.
+    destruct a; apply Rle_0_sqr.
   Qed.
 
 End variance.
