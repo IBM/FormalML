@@ -394,6 +394,48 @@ Section vector_ops.
     - apply constant_measurable.
   Qed.  
 
+  Lemma fold_left_Rmax_init_le l d :
+    d <= fold_left Rmax l d.
+  Proof.
+    revert d.
+    induction l; simpl; intros.
+    - lra.
+    - specialize (IHl (Rmax d a)).
+      eapply Rle_trans; try eapply IHl.
+      apply Rmax_l.
+  Qed.
+
+  Lemma fold_left_Rmax_le l d x :
+    In x l ->
+    x <= fold_left Rmax l d.
+  Proof.
+    revert d.
+    induction l; simpl.
+    - tauto.
+    - intros.
+      destruct H.
+      + subst.
+        eapply Rle_trans
+        ; try eapply (fold_left_Rmax_init_le l (Rmax d x)).
+        apply Rmax_r.
+      + now eapply IHl.
+  Qed.
+
+  Lemma fold_left_lub l d r:
+    (forall x, In x l -> x <= r) ->
+    d <= r ->
+    fold_left Rmax l d <= r.
+  Proof.
+    revert d.
+    induction l; simpl.
+    - tauto.
+    - intros.
+      apply IHl.
+      + eauto.
+      + apply Rmax_lub; eauto.
+  Qed.
+
+
   Instance Rvector_max_abs_measurable {n} (f : Ts -> vector R n) :
     RealVectorMeasurable f ->
     RealMeasurable dom (rvmaxabs f).
@@ -402,17 +444,71 @@ Section vector_ops.
     unfold rvmaxabs.
     unfold RealMeasurable.
     intros.
+    
     assert (event_equiv  (fun omega : Ts => Rvector_max_abs (f omega) <= r)
+                         (event_inter (fun _ => 0 <= r)
                          (list_inter
-                            (vector_list_create 
+                            (proj1_sig (vector_create 
                                0 n 
                                (fun m _ pf => fun omega => Rabs (vector_nth m pf 
-                                                                            (f omega)) <= r)))).
-    admit.
-    rewrite H0.
-    apply sa_list_inter.
-    intros.
-    Admitted.
+                                                                            (f omega)) <= r)))))).
+    - intros x.
+      split.
+      + intros HH.
+        split.
+        {
+          unfold Rvector_max_abs in HH.
+          eapply Rle_trans; try eapply HH.
+          apply fold_left_Rmax_init_le.
+        } 
+        intros a ain.
+        apply In_vector_nth_ex in ain.
+        destruct ain as [?[? inn]].
+        rewrite vector_nth_create' in inn.
+        subst.
+        unfold Rvector_max_abs in HH.
+        unfold vector_fold_left, Rvector_abs in HH.
+        simpl in *.
+        assert (inn:In (vector_nth x0 x1 (f x)) (proj1_sig (f x))) by apply vector_nth_In.
+        eapply Rle_trans; try eapply HH.
+        apply fold_left_Rmax_le.
+        now apply in_map.
+      + unfold list_inter.
+        unfold Rvector_max_abs.
+        intros [??].
+        apply fold_left_lub; trivial; intros.
+        apply In_vector_nth_ex in H2.
+        destruct H2 as [?[? inn]].
+        subst.
+        apply H1.
+
+        assert (HH:vector_nth x1 x2  
+                           (vector_create 0 n
+                                          (fun (m : nat) (_ : (0 <= m)%nat) (pf : (m < 0 + n)%nat) (omega : Ts) =>
+                                             Rabs (vector_nth m pf (f omega)) <= r)) = (fun x0 : Ts => vector_nth x1 x2 (Rvector_abs (f x0)) <= r)).
+        {
+          rewrite vector_nth_create'.
+          unfold Rvector_abs.
+          apply functional_extensionality; intros.
+          now rewrite vector_nth_map.
+        }         
+        rewrite <- HH.
+        apply vector_nth_In.
+    - rewrite H0.
+      apply sa_inter.
+      + apply sa_sigma_const_classic.
+      + apply sa_list_inter.
+        intros.
+        apply In_vector_nth_ex in H1.
+        destruct H1 as [?[? inn]].
+        rewrite vector_nth_create' in inn.
+        simpl.
+        subst.
+        apply Rabs_measurable.
+        intros rr.
+        specialize (H x0 x1 rr).
+        now rewrite vector_nth_fun_to_vector in H.
+  Qed.
 
 
   Instance Rvector_inner_measurable {n} (f g : Ts -> vector R n) :
