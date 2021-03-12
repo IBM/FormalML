@@ -2,7 +2,7 @@ Require Import Reals.
 
 Require Import Lra Lia.
 Require Import List Permutation.
-Require Import Morphisms EquivDec Program.
+Require Import Morphisms EquivDec Program Equivalence.
 Require Import Coquelicot.Rbar Coquelicot.Lub Coquelicot.Lim_seq.
 Require Import Classical_Prop.
 Require Import Classical.
@@ -18,7 +18,26 @@ Import ListNotations.
 Set Bullet Behavior "Strict Subproofs".
 
 Section RealRandomVariables.
-  
+
+  Lemma borel_singleton (c:R) :
+    sa_sigma (SigmaAlgebra:=borel_sa) (pre_event_singleton c).
+  Proof.
+    apply sa_le_pt.
+    apply borel_sa_preimage2; intros.
+    destruct B.
+    unfold event_preimage.
+    simpl.
+    apply s.
+  Qed.
+
+  Global Instance borel_has_preimages : HasPreimageSingleton borel_sa.
+  Proof.
+    red; intros.
+    apply sa_le_pt; intros.
+    apply borel_sa_preimage2; intros.
+    now apply rv_preimage_sa.
+  Qed.
+
   Context {Ts:Type}
           (dom: SigmaAlgebra Ts).
 
@@ -32,7 +51,7 @@ Section RealRandomVariables.
              {rm:RealMeasurable rv_X}
       : RandomVariable dom borel_sa rv_X.
     Proof.
-      intros ??.
+      intros ?.
       apply borel_sa_preimage2; trivial; intros.
     Qed.
 
@@ -56,22 +75,13 @@ Section RealRandomVariables.
         rewrite H.
         now apply measurable_rv.
     Qed.
-
-    Lemma sa_singleton (c:R) (rv_X:Ts->R)
-          {rv : RandomVariable dom borel_sa rv_X} :
-      sa_sigma (event_preimage rv_X (event_singleton c)).
-    Proof.
-      apply sa_le_pt; intros.
-      apply borel_sa_preimage2; intros.
-      now apply rv_preimage.
-    Qed.
-
+      
     Instance scale_measurable_pos (f : Ts -> R) (c:posreal) :
       RealMeasurable f ->
       RealMeasurable (rvscale c f).
     Proof.
       intros ? r.
-      assert (event_equiv (fun omega : Ts => (c * f omega <= r)%R)
+      assert (pre_event_equiv (fun omega : Ts => (c * f omega <= r)%R)
                           (fun omega : Ts => (f omega <= r/c)%R)).
       - red; intros.
         assert (0 < c) by apply (cond_pos c).
@@ -94,7 +104,7 @@ Section RealRandomVariables.
       RealMeasurable (rvscale (- c) f).
     Proof.
       intros ? r.
-      assert (event_equiv (fun omega : Ts => ((-c) * f omega <= r)%R)
+      assert (pre_event_equiv (fun omega : Ts => ((-c) * f omega <= r)%R)
                           (fun omega : Ts => (c * f omega >= -r)%R)).
       - red; intros.
         assert (0 < c) by apply (cond_pos c).
@@ -109,13 +119,13 @@ Section RealRandomVariables.
     Proof.
       intros r.
       destruct (Rle_dec c r).
-      - assert (event_equiv (fun _ : Ts => c <= r)
+      - assert (pre_event_equiv (fun _ : Ts => c <= r)
                             (fun _ : Ts => True)).
         red; intros.
         intuition.
         rewrite H.
         apply sa_all.
-      - assert (event_equiv (fun _ : Ts => c <= r)
+      - assert (pre_event_equiv (fun _ : Ts => c <= r)
                             event_none).
         red; intros.
         intuition.
@@ -153,8 +163,8 @@ Section RealRandomVariables.
                                rv_X2 omega = c2).
     Proof.
       apply sa_inter.
-      - now apply sa_singleton.
-      - now apply sa_singleton.
+      - now apply sa_preimage_singleton.
+      - now apply sa_preimage_singleton.
     Qed.
 
     
@@ -163,9 +173,9 @@ Section RealRandomVariables.
       RealMeasurable (rvopp f).
     Proof.
       intros ??.
-      assert (event_equiv (fun omega : Ts => rvopp f omega <= r)
+      assert (pre_event_equiv (fun omega : Ts => rvopp f omega <= r)
                           (fun omega : Ts => (f omega) >= -r)).
-      unfold event_equiv; intros.
+      unfold pre_event_equiv; intros.
       unfold rvopp, rvscale; lra.
       rewrite H0.
       now apply sa_le_ge.
@@ -177,19 +187,19 @@ Section RealRandomVariables.
       RealMeasurable (rvplus f g).
     Proof.
       intros ?? r.
-      assert (event_equiv (fun omega : Ts => rvplus f g omega <= r)
-                          (event_complement (fun omega : Ts => f omega + g omega > r))).
-      - unfold event_equiv, event_complement, rvplus; intros.
+      assert (pre_event_equiv (fun omega : Ts => rvplus f g omega <= r)
+                          (pre_event_complement (fun omega : Ts => f omega + g omega > r))).
+      - unfold pre_event_equiv, pre_event_complement, rvplus; intros.
         lra.
       - rewrite H1.
-        assert (event_equiv 
+        assert (pre_event_equiv 
                   (fun omega : Ts => (f omega) + (g omega) > r)
-                  (union_of_collection
+                  (pre_union_of_collection
                      (fun (n:nat) => 
-                        event_inter
+                        pre_event_inter
                           (fun omega : Ts => f omega > r - Qreals.Q2R (iso_b n))
                           (fun omega : Ts => g omega > Qreals.Q2R (iso_b n))))).
-        + unfold event_equiv, union_of_collection, event_inter; intros.
+        + unfold pre_event_equiv, pre_union_of_collection, pre_event_inter; intros.
           split; intros.
           * assert (g x > r - f x) by lra.
             generalize (Q_dense (r - f x) (g x) H3); intros.
@@ -215,13 +225,13 @@ Section RealRandomVariables.
     Proof.
       unfold RealMeasurable in *.
       induction n; intros.
-      - assert (event_equiv (fun omega : Ts => rvsum Xn 0 omega <= r)
+      - assert (pre_event_equiv (fun omega : Ts => rvsum Xn 0 omega <= r)
                             (fun omega : Ts => Xn 0%nat omega <= r)).
         + intro x.
           unfold rvsum, Hierarchy.sum_n.
           now rewrite Hierarchy.sum_n_n.
         + now rewrite H.
-      - assert (event_equiv  (fun omega : Ts => rvsum Xn (S n) omega <= r)
+      - assert (pre_event_equiv  (fun omega : Ts => rvsum Xn (S n) omega <= r)
                              (fun omega => (rvplus (rvsum Xn n) (Xn (S n))) omega <= r)).
         + intro x.
           unfold rvsum, rvplus, Hierarchy.sum_n.
@@ -250,18 +260,18 @@ Section RealRandomVariables.
     Proof.
       intros ?? r.
       destruct (Rgt_dec 0 r).
-      - assert (event_equiv (fun omega : Ts => rvsqr f omega <= r)
+      - assert (equiv (fun omega : Ts => rvsqr f omega <= r)
                             (fun _ => False)).
-        + unfold event_equiv; intros.
+        + unfold equiv, pre_event_equiv; intros.
           generalize (Rle_0_sqr (f x)).
           unfold rvsqr.
           lra.
         + rewrite H1.
           apply sa_none.
       - assert (0 <= r) by lra.
-        assert (event_equiv (fun omega : Ts => rvsqr f omega <= r)
+        assert (pre_event_equiv (fun omega : Ts => rvsqr f omega <= r)
                             (fun omega : Ts => (f omega) <= Rsqrt (mknonnegreal _ H1)) ).
-        + unfold event_equiv, rvsqr; intros.
+        + unfold pre_event_equiv, rvsqr; intros.
           specialize (H x).
           apply Rsqr_le_to_Rsqrt with (r := mknonnegreal _ H1) (x := mknonnegreal _ H).
         + rewrite H2.
@@ -270,9 +280,9 @@ Section RealRandomVariables.
     
     Lemma measurable_open_continuous (f : Ts -> R) (g : R -> R) :
       continuity g ->
-      (forall B: event R, open_set B -> sa_sigma (event_preimage f B)) ->
-      (forall B: event R, open_set B -> 
-                     sa_sigma (event_preimage (fun omega => g (f omega)) B)).
+      (forall B: pre_event R, open_set B -> sa_sigma (pre_event_preimage f B)) ->
+      (forall B: pre_event R, open_set B -> 
+                     sa_sigma (pre_event_preimage (fun omega => g (f omega)) B)).
     Proof.
       intros.
       generalize (continuity_P3 g); intros.
@@ -367,17 +377,17 @@ Section RealRandomVariables.
       intros ??.
       generalize (rvclip_abs_bounded f c); intros.
       destruct (Rge_dec r c).
-      - assert (event_equiv (fun omega : Ts => rvclip f c omega <= r)
+      - assert (pre_event_equiv (fun omega : Ts => rvclip f c omega <= r)
                             Ω ).
         + intro x.
           specialize (H0 x).
           generalize (Rle_abs (rvclip f c x)); intros.
-          split; red; lra.
+          unfold Ω, pre_Ω; simpl.
+          split; try tauto. red; lra.
         + rewrite H1.
           apply sa_all.
-          
       - destruct (Rlt_dec r (-c)).
-        + assert (event_equiv (fun omega : Ts => rvclip f c omega <= r)
+        + assert (pre_event_equiv (fun omega : Ts => rvclip f c omega <= r)
                               event_none ).
           * intro x.
             specialize (H0 x).
@@ -389,7 +399,7 @@ Section RealRandomVariables.
           * rewrite H1.
             apply sa_none.
         + unfold RealMeasurable in H.
-          assert (event_equiv (fun omega : Ts => rvclip f c omega <= r)
+          assert (pre_event_equiv (fun omega : Ts => rvclip f c omega <= r)
                               (fun omega : Ts => f omega <= r)).
           * intro x.
             unfold rvclip.
@@ -425,19 +435,19 @@ Section RealRandomVariables.
     Proof.
       unfold RealMeasurable.
       intros.
-      assert (event_equiv
+      assert (pre_event_equiv
                 (fun omega : Ts =>
                    rvchoice (fun x : Ts => if Req_EM_T (c x) 0 then false else true) 
                             f g omega <= r)
-                (event_union 
-                   (event_inter 
+                (pre_event_union 
+                   (pre_event_inter 
                       (fun omega : Ts => c omega = 0)
                       (fun omega : Ts => g omega <= r))
-                   (event_inter 
-                      (event_complement (fun omega : Ts => c omega = 0))
+                   (pre_event_inter 
+                      (pre_event_complement (fun omega : Ts => c omega = 0))
                       (fun omega : Ts => f omega <= r)))).
       intro x.
-      unfold rvchoice, event_union, event_inter, event_complement.
+      unfold rvchoice, pre_event_union, pre_event_inter, pre_event_complement.
       destruct (Req_EM_T (c x) 0); lra.
       rewrite H2.
       apply sa_union; apply sa_inter; trivial.
@@ -453,14 +463,14 @@ Section RealRandomVariables.
       unfold RealMeasurable.
       intros rb.
       intros.
-      assert (event_equiv (fun omega : Ts => ln (b omega) <= r)
-                          (event_union
-                             (event_inter (fun omega : Ts => b omega <= 0)
+      assert (pre_event_equiv (fun omega : Ts => ln (b omega) <= r)
+                          (pre_event_union
+                             (pre_event_inter (fun omega : Ts => b omega <= 0)
                                           (fun omega : Ts => 0 <= r))
-                             (event_inter (fun omega : Ts => b omega > 0 )
+                             (pre_event_inter (fun omega : Ts => b omega > 0 )
                                           (fun omega : Ts => b omega <= exp r)))).
       - intro x.
-        unfold event_union, event_inter.
+        unfold pre_event_union, pre_event_inter.
         split; intros.
         + destruct (Rle_dec (b x) 0).
           * left; unfold ln in H.
@@ -517,15 +527,15 @@ Section RealRandomVariables.
     Proof.
       unfold rvpower, power, RealMeasurable.
       intros bpos rb re r.
-      assert (event_equiv  (fun omega : Ts => (if Req_EM_T (b omega) 0 
+      assert (pre_event_equiv  (fun omega : Ts => (if Req_EM_T (b omega) 0 
                                             then 0 else Rpower (b omega) (e omega)) <= r)
-                           (event_union
-                              (event_inter (fun omega => b omega = 0)
+                           (pre_event_union
+                              (pre_event_inter (fun omega => b omega = 0)
                                            (fun omega => b omega <= r))
-                              (event_inter (fun omega => b omega > 0) 
+                              (pre_event_inter (fun omega => b omega > 0) 
                                            (fun omega => Rpower (b omega) (e omega) <= r)))).
       - intro x.
-        unfold event_inter, event_union.
+        unfold pre_event_inter, pre_event_union.
         destruct (Req_EM_T (b x) 0).
         + rewrite e0.
           split; intros.
@@ -557,8 +567,8 @@ Section RealRandomVariables.
              {rv : RandomVariable dom borel_sa rv_X}
         : RandomVariable dom borel_sa (rvopp rv_X).
       Proof.
-        typeclasses eauto.
-      Qed.
+        now apply rvscale_rv.
+      Defined.
 
       Global Instance rvclip_rv (rv_X : Ts -> R) (c:nonnegreal)
              {rv : RandomVariable dom borel_sa rv_X}
@@ -925,37 +935,38 @@ Section RealRandomVariables.
       apply irv.
     Qed.
 
-    Global Instance EventIndicator_rv {P : event Ts} (dec:forall x, {P x} + {~ P x})
-           (sap: sa_sigma P) : RandomVariable dom borel_sa (EventIndicator dec).
+    Global Instance EventIndicator_pre_rv {P : pre_event Ts} (dec:forall x, {P x} + {~ P x}) :
+      sa_sigma P ->
+      RandomVariable dom borel_sa (EventIndicator dec).
     Proof.
       red; intros.
       apply borel_sa_preimage; trivial; intros.
       destruct (Rlt_dec r 0).
       - unfold EventIndicator.
         simpl.
-        assert (event_equiv (fun omega : Ts => (if dec omega then 1 else 0) <= r)
+        assert (pre_event_equiv (fun omega : Ts => (if dec omega then 1 else 0) <= r)
                             event_none).
-        + unfold event_equiv, event_none; intros.
+        + unfold pre_event_equiv, event_none, pre_event_none; intros; simpl.
           destruct (dec x); lra.
         + rewrite H0; apply sa_none.
       - destruct (Rlt_dec r 1).
-        + assert (event_equiv (fun omega : Ts => (if dec omega then 1 else 0) <= r)
+        + assert (pre_event_equiv (fun omega : Ts => (if dec omega then 1 else 0) <= r)
                               (fun omega : Ts => ~ P omega)).
-          * unfold event_equiv; intros.
+          * unfold pre_event_equiv; intros.
             destruct (dec x).
             -- split; [lra | congruence].
             -- split; [congruence | lra].
           * rewrite H0.
             now apply sa_complement.
-        + assert (event_equiv (fun omega : Ts => (if dec omega then 1 else 0) <= r)
+        + assert (pre_event_equiv (fun omega : Ts => (if dec omega then 1 else 0) <= r)
                               (fun omega : Ts => True)).
-          * unfold event_equiv; intros.
+          * unfold pre_event_equiv; intros.
             destruct (dec x); lra.
           * rewrite H0.
             apply sa_all.
     Qed.
 
-    Global Instance EventIndicator_indicator (P : event Ts) (dec:forall x, {P x} + {~ P x})
+    Global Instance EventIndicator_pre_indicator (P : pre_event Ts) (dec:forall x, {P x} + {~ P x})
       : IndicatorRandomVariable (EventIndicator dec).
     Proof.
       unfold EventIndicator.
@@ -964,25 +975,37 @@ Section RealRandomVariables.
       match_destr; tauto.
     Qed.
 
-    Global Program Instance EventIndicator_srv {P : event Ts} (dec:forall x, {P x} + {~ P x})
+    Global Program Instance EventIndicator_pre_srv {P : pre_event Ts} (dec:forall x, {P x} + {~ P x})
       : SimpleRandomVariable (EventIndicator dec) :=
       IndicatorRandomVariableSimpl (EventIndicator dec).
+
+    Global Program Instance EventIndicator_srv {P : event dom} (dec:forall x, {P x} + {~ P x})
+      : SimpleRandomVariable (EventIndicator dec) :=
+      IndicatorRandomVariableSimpl (EventIndicator dec).
+
+    Global Instance EventIndicator_rv {P : event dom} (dec:forall x, {P x} + {~ P x}) :
+      RandomVariable dom borel_sa (EventIndicator dec).
+    Proof.
+      apply EventIndicator_pre_rv.
+      now destruct P.
+    Qed.
     
     Definition point_preimage_indicator
                (rv_X:Ts -> R)
                (c:R) :=
       EventIndicator (fun x => Req_EM_T (rv_X x) c).
 
-    Instance point_preimage_indicator_rv
+    Global Instance point_preimage_indicator_rv
              {rv_X:Ts -> R}
              (rv: RandomVariable dom borel_sa rv_X)
              (c:R) : RandomVariable dom borel_sa (point_preimage_indicator rv_X c).
     Proof.
-      apply EventIndicator_rv.
-      now apply sa_singleton.
+      unfold point_preimage_indicator.
+      apply EventIndicator_pre_rv.
+      now apply sa_preimage_singleton.
     Qed.    
     
-    Instance point_preimage_indicator_srv
+    Global Instance point_preimage_indicator_srv
              {rv_X:Ts -> R}
              (rv: RandomVariable dom borel_sa rv_X)
              (c:R) : SimpleRandomVariable (point_preimage_indicator rv_X c)
@@ -1134,7 +1157,7 @@ Section RealRandomVariables.
     Global Instance indicator_prod_pos 
            (rv_X : Ts -> R) 
            (posrv : PositiveRandomVariable rv_X)
-           {P : event Ts} 
+           {P : pre_event Ts} 
            (dec:forall x, {P x} + {~ P x}) : 
       PositiveRandomVariable (rvmult rv_X (EventIndicator dec)).
     Proof.
@@ -1146,7 +1169,7 @@ Section RealRandomVariables.
     Qed.
 
 
-    Global Instance EventIndicator_pos {P : event Ts} (dec:forall x, {P x} + {~ P x})
+    Global Instance EventIndicator_pos {P : pre_event Ts} (dec:forall x, {P x} + {~ P x})
       : PositiveRandomVariable (EventIndicator dec).
     Proof.
       typeclasses eauto.
@@ -1285,11 +1308,12 @@ Section RealRandomVariables.
   Proof.
     eapply rv_fun_simple; eauto.
     intros.
-    now apply sa_singleton.
+    now apply sa_preimage_singleton.
   Qed.
   
 End RealRandomVariables.
 
+(*
 Section prob.
   Local Open Scope R.
   Local Open Scope prob.
@@ -1376,4 +1400,4 @@ Section zmBoundedVariance.
     has_bounded_variance: Prop;
     }.
 End zmBoundedVariance.
-
+*)

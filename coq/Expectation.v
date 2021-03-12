@@ -853,11 +853,6 @@ Section Expectation.
         apply SimpleExpectation_ext.
         symmetry.
         apply rv_pos_neg_id.
-      + now apply positive_part_rv.
-      + apply rvopp_rv.
-        now apply negative_part_rv.
-    - now apply negative_part_rv.
-    - now apply positive_part_rv.
   Qed.
 
   Lemma Expectation_const (c:R) :
@@ -1640,86 +1635,15 @@ Section Expectation.
     apply simple_approx_pos.
   Qed.
 
-  Lemma simple_approx_inf_event (X:Ts -> R) (n:nat)
-        (posx : PositiveRandomVariable X) :
-    event_equiv (event_preimage (simple_approx X n) (event_singleton (INR n)))
-                (event_preimage X (fun r => r >= INR n)).
-  Proof.
-    generalize (simple_approx_preimage_inf X n posx); intros.
-    unfold event_equiv, event_preimage, event_singleton.
-    apply H.
-  Qed.
-
-  Lemma simple_approx_fin_event (X:Ts -> R) (n:nat) 
-        (posx : PositiveRandomVariable X) :
-    forall (k : nat), 
-      (k < n*2^n)%nat ->
-      event_equiv (event_preimage (simple_approx X n) (event_singleton ((INR k)/2^n)))
-                  (event_preimage X (fun z => (INR k)/2^n <= z < (INR (S k))/2^n)).
-  Proof.
-    unfold event_equiv, event_preimage, event_singleton.
-    intros.
-    now apply simple_approx_preimage_fin2.
-  Qed.
-
-  Lemma simple_approx_inf_measurable (X:Ts -> R) (n:nat)
-        (posx : PositiveRandomVariable X)
-        (ranx : RandomVariable dom borel_sa X) :
-    sa_sigma (event_preimage (simple_approx X n) (event_singleton (INR n))).
-  Proof.
-    generalize (simple_approx_inf_event X n posx); intros.
-    rewrite H.
-    apply sa_le_ge.
-    apply borel_sa_preimage2; intros.
-    now apply rv_preimage.
-  Qed.
-
-  Lemma simple_approx_fin_measurable (X:Ts -> R) (n:nat)
-        (posx : PositiveRandomVariable X)
-        (ranx : RandomVariable dom borel_sa X) :
-    forall (k : nat), 
-      (k < n*2^n)%nat ->
-      sa_sigma (event_preimage (simple_approx X n) (event_singleton ((INR k)/2^n))).
-  Proof.
-    intros.
-    generalize (simple_approx_fin_event X n posx k H); intros.
-    rewrite H0.
-    assert (event_equiv (fun z : R => INR k / 2 ^ n <= z < INR (S k) / 2 ^ n)
-                        (event_inter (fun z : R => z >= INR k / 2 ^ n)
-                                     (fun z : R => z < INR (S k) / 2 ^ n))).
-    - intros x.
-      unfold event_inter.
-      lra.
-    - rewrite H1.
-      unfold event_preimage.
-      assert (event_equiv  (fun omega : Ts =>
-                              event_inter (fun z : R => z >= INR k / 2 ^ n) 
-                                          (fun z : R => z < INR (S k) / 2 ^ n)
-                                          (X omega))
-                           (event_inter (fun omega => X omega >= INR k / 2^n)
-                                        (fun omega => X omega < INR (S k) / 2^n))).
-      + intros x.
-        unfold event_inter.
-        lra.
-      + rewrite H2.
-        apply sa_inter.
-        * apply sa_le_ge.
-          apply borel_sa_preimage2; intros.
-          now apply rv_preimage.
-        * apply sa_le_lt.
-          apply borel_sa_preimage2; intros.
-          now apply rv_preimage.
-  Qed.
-
   Lemma simple_approx_range_event (X : Ts -> R) (n:nat) (r : R) :
     let rvals :=  filter (fun z => if Rle_dec z r then true else false)
                          (map (fun x : nat => INR x / 2 ^ n) (seq 0 (S (n * 2 ^ n)))) in
-    event_equiv (fun omega : Ts => simple_approx X n omega <= r)
-                (list_union (map (fun z => (fun omega => simple_approx X n omega = z))
+    pre_event_equiv (fun omega : Ts => simple_approx X n omega <= r)
+                    (pre_list_union (map (fun z => (fun omega => simple_approx X n omega = z))
                                  rvals)).
   Proof.
     generalize (simple_approx_vals X n); intros.
-    unfold event_equiv; intros.
+    unfold pre_event_equiv; intros.
     subst rvals.
     specialize (H x).
     rewrite in_map_iff in H.
@@ -1752,6 +1676,77 @@ Section Expectation.
       match_destr_in H4.
   Qed.
 
+  Lemma simple_approx_inf_event (X:Ts -> R) (n:nat)
+        (posx : PositiveRandomVariable X) :
+    pre_event_equiv (pre_event_preimage (simple_approx X n) (pre_event_singleton (INR n)))
+                (pre_event_preimage X (fun r => r >= INR n)).
+  Proof.
+    generalize (simple_approx_preimage_inf X n posx); intros.
+    unfold pre_event_equiv, pre_event_preimage, pre_event_singleton.
+    apply H.
+  Qed.
+
+  Lemma simple_approx_fin_event (X:Ts -> R) (n:nat) 
+        (posx : PositiveRandomVariable X) :
+    forall (k : nat), 
+      (k < n*2^n)%nat ->
+      pre_event_equiv (pre_event_preimage (simple_approx X n) (pre_event_singleton ((INR k)/2^n)))
+                  (pre_event_preimage X (fun z => (INR k)/2^n <= z < (INR (S k))/2^n)).
+  Proof.
+    unfold pre_event_equiv, pre_event_preimage, pre_event_singleton.
+    intros.
+    now apply simple_approx_preimage_fin2.
+  Qed.
+
+  Lemma simple_approx_inf_measurable (X:Ts -> R) (n:nat)
+        (posx : PositiveRandomVariable X)
+        (ranx : RandomVariable dom borel_sa X) :
+    sa_sigma (pre_event_preimage (simple_approx X n) (pre_event_singleton (INR n))).
+  Proof.
+    generalize (simple_approx_inf_event X n posx); intros.
+    rewrite H.
+    apply sa_le_ge.
+    apply borel_sa_preimage2; intros.
+    now apply rv_preimage_sa.
+  Qed.
+
+  Lemma simple_approx_fin_measurable (X:Ts -> R) (n:nat)
+        (posx : PositiveRandomVariable X)
+        (ranx : RandomVariable dom borel_sa X) :
+    forall (k : nat), 
+      (k < n*2^n)%nat ->
+      sa_sigma (pre_event_preimage (simple_approx X n) (pre_event_singleton ((INR k)/2^n))).
+  Proof.
+    intros.
+    generalize (simple_approx_fin_event X n posx k H); intros.
+    rewrite H0.
+    assert (pre_event_equiv (fun z : R => INR k / 2 ^ n <= z < INR (S k) / 2 ^ n)
+                            (pre_event_inter (fun z : R => z >= INR k / 2 ^ n)
+                                     (fun z : R => z < INR (S k) / 2 ^ n))).
+    - intros x.
+      unfold pre_event_inter.
+      lra.
+    - rewrite H1.
+      unfold pre_event_preimage.
+      assert (pre_event_equiv  (fun omega : Ts =>
+                              pre_event_inter (fun z : R => z >= INR k / 2 ^ n) 
+                                          (fun z : R => z < INR (S k) / 2 ^ n)
+                                          (X omega))
+                           (pre_event_inter (fun omega => X omega >= INR k / 2^n)
+                                        (fun omega => X omega < INR (S k) / 2^n))).
+      + intros x.
+        unfold pre_event_inter.
+        lra.
+      + rewrite H2.
+        apply sa_inter.
+        * apply sa_le_ge.
+          apply borel_sa_preimage2; intros.
+          now apply rv_preimage_sa.
+        * apply sa_le_lt.
+          apply borel_sa_preimage2; intros.
+          now apply rv_preimage_sa.
+  Qed.
+
   Instance simple_approx_rv (X : Ts -> R)
            {posx : PositiveRandomVariable X} 
            {rvx : RandomVariable dom borel_sa X} 
@@ -1763,23 +1758,23 @@ Section Expectation.
     intros.
     generalize (simple_approx_vals X n); intros.
     generalize (simple_approx_range_event X n r); intros.
-    rewrite H1.
-    apply sa_list_union.
+    rewrite H0.
+    apply sa_pre_list_union.
     intros.
-    apply in_map_iff in H2.
-    destruct H2 as [x0 [? ?]].
+    apply in_map_iff in H1.
+    destruct H1 as [x0 [? ?]].
     subst.
-    rewrite filter_In in H3.
+    rewrite filter_In in H2.
+    destruct H2.
+    apply in_map_iff in H1.
+    destruct H1 as [k [? ?]].
+    subst.
+    rewrite in_seq in H3.
     destruct H3.
-    apply in_map_iff in H2.
-    destruct H2 as [k [? ?]].
-    subst.
-    rewrite in_seq in H4.
-    destruct H4.
-    simpl in H4.
-    rewrite Nat.lt_succ_r in H4.
-    rewrite Nat.le_lteq in H4.
-    destruct H4.
+    simpl in H3.
+    rewrite Nat.lt_succ_r in H3.
+    rewrite Nat.le_lteq in H3.
+    destruct H3.
     - apply simple_approx_fin_measurable; trivial.
     - subst.
       replace (INR (n * 2 ^ n) / 2 ^ n) with (INR n).
@@ -2032,7 +2027,7 @@ Section Expectation.
 
 
   Lemma f_ge_g_le0_eq (f g : Ts -> R) :
-    (event_equiv (fun omega : Ts => f omega >= g omega)
+    (pre_event_equiv (fun omega : Ts => f omega >= g omega)
                  (fun omega : Ts => (rvminus g f) omega <= 0)).
   Proof.
     intros x; unfold rvminus, rvplus, rvopp, rvscale; lra.
@@ -2066,27 +2061,27 @@ Section Expectation.
       (forall (omega:Ts), cphi omega = 0 \/ cphi omega < X omega) ->
       (forall (omega:Ts), is_lim_seq (fun n => Xn n omega) (X omega)) ->
       (forall (n:nat), sa_sigma (fun (omega:Ts) => (Xn n omega) >= cphi omega)) /\
-      event_equiv (union_of_collection (fun n => fun (omega:Ts) => (Xn n omega) >= cphi omega)) 
-                  Ω.
+      pre_event_equiv (pre_union_of_collection (fun n => fun (omega:Ts) => (Xn n omega) >= cphi omega)) 
+                  pre_Ω.
   Proof.
     intros.
     split.
     - intros x.
       now apply sigma_f_ge_g. 
-    - assert (event_equiv (event_union (fun (omega : Ts) => cphi omega < X omega)
+    - assert (pre_event_equiv (pre_event_union (fun (omega : Ts) => cphi omega < X omega)
                                        (fun (omega : Ts) => cphi omega = 0))
-                          Ω).
+                          pre_Ω).
       + intros x.
-        unfold Ω, event_union.
+        unfold pre_Ω, pre_event_union.
         specialize (H0 x).
         lra.
       + rewrite <- H2.
         intros x.
         specialize (H2 x).
-        unfold Ω in H2.
+        unfold pre_Ω in H2.
         split; [tauto | ].
         intros.
-        unfold union_of_collection; intros.
+        unfold pre_union_of_collection; intros.
         specialize (H1 x).
         rewrite <- is_lim_seq_spec in H1.
         unfold is_lim_seq' in H1.
@@ -2110,9 +2105,8 @@ Section Expectation.
   Qed.
 
   Lemma lim_prob
-        (En : nat -> event Ts)
-        (E : event Ts) :
-    (forall (n:nat), sa_sigma (En n)) ->
+        (En : nat -> event dom)
+        (E : event dom) :
     (forall (n:nat), event_sub (En n) (En (S n))) ->
     event_equiv (union_of_collection En) E ->
     is_lim_seq (fun n => ps_P (En n)) (ps_P E).
@@ -2131,10 +2125,6 @@ Section Expectation.
         unfold collection_take.
         rewrite fold_right_map.
         trivial.
-      + intros ? inn.
-        apply in_map_iff in inn.
-        destruct inn as [?[??]]; subst.
-        now apply sa_make_collection_disjoint.
       + apply collection_take_preserves_disjoint.
         apply make_collection_disjoint_disjoint.
     - apply (is_lim_seq_ext (fun n : nat => sum_f_R0 (fun j : nat => ps_P (make_collection_disjoint En j)) n)).
@@ -2143,14 +2133,12 @@ Section Expectation.
       + rewrite infinite_sum_is_lim_seq.
         rewrite infinite_sum_infinite_sum'.
         assert (event_equiv E (union_of_collection (make_collection_disjoint En))).
-        * rewrite <- H1.
+        * rewrite <- H0.
           apply make_collection_disjoint_union.
-        * rewrite H2.
+        * rewrite H1.
           apply ps_countable_disjoint_union.
-          -- now apply sa_make_collection_disjoint.
-          -- apply make_collection_disjoint_disjoint.
+          apply make_collection_disjoint_disjoint.
   Qed.
-
 
   Lemma is_lim_seq_list_sum (l:list (nat->R)) (l2:list R) :
     Forall2 is_lim_seq l (map Finite l2) ->
@@ -2173,19 +2161,20 @@ Section Expectation.
   
   Lemma simpleFunEventIndicator
         (phi : Ts -> R)
+        {rphi : RandomVariable dom borel_sa phi}
         (sphi : SimpleRandomVariable phi)
-        {P : event Ts}
+        {P : event dom}
         (dec:forall x, {P x} + {~ P x}) :
     SimpleExpectation (rvmult phi (EventIndicator dec)) =
     list_sum (map (fun v => v * (ps_P (event_inter
-                                      (event_preimage phi (event_singleton v))
+                                      (preimage_singleton phi v)
                                       P)))
                   (nodup Req_EM_T srv_vals)).
   Proof.
     unfold SimpleExpectation.
     simpl.
     transitivity (list_sum
-                    (map (fun v : R => v * ps_P (event_preimage (rvmult phi (EventIndicator dec)) (event_singleton v))) (nodup Req_EM_T srv_vals))).
+                    (map (fun v : R => v * ps_P (preimage_singleton (rvmult phi (EventIndicator dec)) v)) (nodup Req_EM_T srv_vals))).
     - rewrite list_prod_swap; simpl.
       rewrite map_map; simpl.
       rewrite app_nil_r.
@@ -2203,14 +2192,14 @@ Section Expectation.
       lra.
     - f_equal.
       apply map_ext; intros.
-      unfold event_preimage.
-      unfold event_inter.
-      unfold rvmult, event_singleton.
+      unfold preimage_singleton, pre_event_preimage.
+      unfold event_inter, pre_event_inter.
+      unfold rvmult, pre_event_singleton.
       unfold EventIndicator.
       destruct (Req_EM_T a 0).
       + subst; lra.
       + f_equal.
-        apply ps_proper; intros x.
+        apply ps_proper; intros x; simpl.
         match_destr.
         * split; intros.
           -- split; trivial.
@@ -2246,64 +2235,68 @@ Section Expectation.
   Proof.
     intros.
     rewrite <- (simple_Expectation_posRV cphi).
-    assert (forall n,  sa_sigma (fun omega : Ts => Xn n omega >= cphi omega)).
+    assert (sa1:forall n,  sa_sigma (fun omega : Ts => Xn n omega >= cphi omega)).
     intros.
     now apply sigma_f_ge_g.
+    assert (rv1:forall n, RandomVariable dom borel_sa (rvmult cphi (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (cphi omega))))).
+    {
+      intros.
+      apply rvmult_rv; trivial.
+      now apply EventIndicator_pre_rv.
+    } 
+    
     apply (is_lim_seq_ext 
              (fun n => SimpleExpectation 
-                      (rvmult cphi (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (cphi omega)))))).
+                      (rv:=rv1 n) (rvmult cphi (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (cphi omega)))))).
     - intros.
-      rewrite <- simple_Expectation_posRV with (srv := (srvmult cphi (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (cphi omega))))); trivial.
-      apply rvmult_rv; trivial.
-      now apply EventIndicator_rv.
+      rewrite <- simple_Expectation_posRV with (rv:=rv1 n) (srv := (srvmult cphi (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (cphi omega))))); trivial.
     - apply (is_lim_seq_ext 
                (fun (n:nat) =>
                   (list_sum (map (fun v => v * (ps_P (event_inter
-                                                     (event_preimage cphi (event_singleton v))
-                                                     (fun omega => Xn n omega >= cphi omega))))
+                                                     (preimage_singleton cphi v)
+                                                     (exist _ (fun omega => Xn n omega >= cphi omega) (sa1 n)))))
                                  (nodup Req_EM_T srv_vals))))).
-      intros.
-      symmetry.
-      apply simpleFunEventIndicator.
-      unfold SimpleExpectation.
-      generalize (is_lim_seq_list_sum
-                    (map
-                       (fun v : R => fun n => 
-                                    v *
-                                    ps_P
-                                      (event_inter (event_preimage cphi (event_singleton v))
-                                                   (fun omega : Ts => Xn n omega >= cphi omega)))
+      + intros.
+        symmetry.
+        erewrite <- simpleFunEventIndicator.
+        eapply SimpleExpectation_pf_irrel.
+      + unfold SimpleExpectation.
+        generalize (is_lim_seq_list_sum
+                      (map
+                         (fun v : R => fun n => 
+                                      v *
+                                      ps_P
+                                        (event_inter (preimage_singleton cphi v)
+                                                   (exist _ (fun omega : Ts => Xn n omega >= cphi omega) (sa1 n))))
                        (nodup Req_EM_T srv_vals))
-                    (map (fun v : R => v * ps_P (event_preimage cphi (event_singleton v)))
+                    (map (fun v : R => v * ps_P (preimage_singleton cphi v))
                          (nodup Req_EM_T srv_vals)))
       ; intros HH.
       cut_to HH.
-      + eapply is_lim_seq_ext; try eapply HH.
+      * eapply is_lim_seq_ext; try eapply HH.
         intros; simpl.
         now rewrite map_map.
-      + clear HH.
+      * clear HH.
         rewrite map_map.
         rewrite <- Forall2_map.
         apply Forall2_refl_in.
         rewrite Forall_forall; intros.
-        replace (Finite (x * ps_P (event_preimage cphi (event_singleton x)))) with
-            (Rbar_mult x (ps_P (event_preimage cphi (event_singleton x))))
+        replace (Finite (x * ps_P (preimage_singleton cphi x))) with
+            (Rbar_mult x (ps_P (preimage_singleton cphi x)))
           by reflexivity.
         apply is_lim_seq_scal_l.
         apply lim_prob.
-        * intros.
-          apply sa_inter; [|trivial].
-          now apply sa_singleton.
-        * intros.
+        -- intros.
           apply event_inter_sub_proper; [reflexivity | ].
           intros xx.
           unfold rv_le in H0.
           specialize (H0 n xx).
+          simpl.
           lra.
-        * rewrite <- event_inter_countable_union_distr.
-          assert (event_equiv (union_of_collection (fun (n : nat) (omega : Ts) => Xn n omega >= cphi omega)) Ω).
+        -- rewrite <- event_inter_countable_union_distr.
+          assert (event_equiv (union_of_collection (fun (n : nat) => exist _ (fun (omega : Ts) => Xn n omega >= cphi omega) (sa1 n))) Ω).
           apply monotone_convergence_Ec with (X := X); trivial.
-          -- rewrite H5.
+          ++ rewrite H4.
              apply event_inter_true_r.
   Qed.
 
@@ -2343,7 +2336,7 @@ Section Expectation.
     assert (RandomVariable _ borel_sa  (rvmult cphi
                                                   (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (cphi omega))))).
     -  apply rvmult_rv; trivial.
-      apply EventIndicator_rv.
+      apply EventIndicator_pre_rv.
       now apply sigma_f_ge_g.
     - generalize (Expectation_posRV_le
                     (rvmult cphi (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (cphi omega))))
@@ -2353,14 +2346,13 @@ Section Expectation.
         assert (is_finite (Expectation_posRV
                              (rvmult cphi
                                      (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (cphi omega)))))).
-        * assert (SimpleRandomVariable  (rvmult cphi (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (cphi omega))))).
-          -- apply srvmult; trivial.
-             apply EventIndicator_srv.
-          -- rewrite <- simple_Expectation_posRV with (srv := X0).
-             ++ now unfold is_finite.
-             ++ apply rvmult_rv; trivial.
-                apply EventIndicator_rv.
-                now apply sigma_f_ge_g.
+        * assert (srv1:SimpleRandomVariable  (rvmult cphi (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (cphi omega))))).
+          {
+            apply srvmult; trivial.
+            apply EventIndicator_pre_srv.
+          }
+          rewrite <- simple_Expectation_posRV with (rv := H7) (srv := srv1).
+          now unfold is_finite.
         * rewrite <- H9 in H8.
           now simpl in H8.
       + unfold rv_le; intros x.
@@ -2688,10 +2680,10 @@ Section Expectation.
       intros; red.
       apply sa_ge_le.
       intros.
-      assert (event_equiv
+      assert (pre_event_equiv
               (fun omega : Ts => Inf_seq (fun k : nat => Xn (k + n)%nat omega) >= r)
-              (inter_of_collection (fun k:nat => (fun omega : Ts => Xn (k + n)%nat omega >= r)))).
-      - unfold inter_of_collection.
+              (pre_inter_of_collection (fun k:nat => (fun omega : Ts => Xn (k + n)%nat omega >= r)))).
+      - unfold pre_inter_of_collection.
         intros omega.
         generalize (is_finite_Fatou_Y Xn Xn_pos n omega).
         unfold Fatou_Y.
@@ -2722,7 +2714,7 @@ Section Expectation.
             apply Rge_le.
             auto.
       - rewrite H.
-        apply sa_countable_inter; intros.
+        apply sa_pre_countable_inter; intros.
         clear H.
         revert r.
         apply sa_le_ge.
@@ -2984,7 +2976,7 @@ Section Expectation.
         {rv : RandomVariable dom borel_sa X}
         {posrv :PositiveRandomVariable X} :
     Expectation X = Some (Finite 0) ->
-    ps_P (fun omega => X omega = 0) = 1.
+    ps_P (preimage_singleton X 0) = 1.
   Proof.
     rewrite Expectation_pos_posRV with (prv := posrv); intros.
     inversion H.
@@ -3004,83 +2996,70 @@ Section Expectation.
     generalize (Expectation_posRV_pos (simple_approx X n)); intros.
     apply Rbar_le_antisym; trivial.
 
-    assert (forall n:nat, ps_P (fun omega => (simple_approx X n) omega = 0) = 1).
+    assert (forall n:nat, ps_P (preimage_singleton (simple_approx X n) 0) = 1).
     intros.
     apply SimplePosExpectation_zero_pos with (srv := apx_srv1 n); trivial.
     generalize (srv_Expectation_posRV (simple_approx X n)); intros.
     rewrite H3 in H4; symmetry in H4.
     now apply Rbar_finite_eq in H4.
 
-    assert (forall n:nat, ps_P (event_complement (fun omega => (simple_approx X n omega = 0))) = 0).
-    intros.
-    rewrite ps_complement.
-    rewrite H4; lra.
-    apply sa_le_pt.
-    unfold RandomVariable in apx_rv1.
-    specialize (apx_rv1 n).
-    now rewrite <- borel_sa_preimage2 in apx_rv1.
+    assert (forall n:nat, ps_P (event_complement (preimage_singleton (simple_approx X n) 0)) = 0).
+    {
+      intros.
+      rewrite ps_complement.
+      rewrite H4; lra.
+    } 
 
-    generalize (lim_prob (fun n => (event_complement (fun omega => simple_approx X n omega = 0)))
-                         (event_complement (fun omega => X omega = 0))
-               ); trivial; intros.
-    cut_to H6; trivial.
-    apply is_lim_seq_ext with (v := (fun n => 0)) in H6.
-    generalize (is_lim_seq_const 0); intros.
-    apply is_lim_seq_unique in H6.
-    apply is_lim_seq_unique in H7.    
-    rewrite H6 in H7.
-    rewrite ps_complement in H7.
-    apply Rbar_finite_eq in H7; lra.
-    apply sa_le_pt.
-    unfold RandomVariable in rv.
-    now rewrite <- borel_sa_preimage2 in rv.
-    trivial.
-    intros.
-    apply sa_complement.
-    apply sa_le_pt.
-    specialize (apx_rv1 n).
-    unfold RandomVariable in apx_rv1.
-    now rewrite <- borel_sa_preimage2 in apx_rv1.
-    unfold event_sub; intros.
-    unfold event_complement.
-    unfold event_complement in H7.
-    unfold PositiveRandomVariable in apx_prv1.
-    apply Rgt_not_eq.
-    apply Rdichotomy in H7.
-    destruct H7.
-    generalize (apx_prv1 n); intros.
-    specialize (H8 x); lra.
-    specialize (apx_inc1 n x).
-    lra.
-    unfold event_complement.
-    intro x.
-    unfold union_of_collection.
-    split; intros.
-    destruct H7.
-    apply Rgt_not_eq.
-    apply Rdichotomy in H7.
-    destruct H7.
-    generalize (apx_prv1 x0 x); intros; lra.
-    specialize (apx_le1 x0 x); lra.
-    specialize (H0 x).
-    clear H H1 H2 H3 H4 H5 H6.
-    apply Rdichotomy in H7.
-    destruct H7.
-    specialize (posrv x); lra.
-    apply is_lim_seq_spec in H0.
-    unfold is_lim_seq' in H0.
-    specialize (H0 (mkposreal _ H)).
-    destruct H0.
-    specialize (H0 x0).
-    exists x0.
-    apply Rgt_not_eq.
-    cut_to H0; [|lia].
-    simpl in H0.
-    specialize (apx_le1 x0 x).
-    rewrite <- Rabs_Ropp in H0.
-    replace (Rabs (-(simple_approx X x0 x - X x))) with (X x - simple_approx X x0 x) in H0.
-    lra.
-    rewrite Rabs_pos_eq; lra.
+    generalize (lim_prob (fun n => (event_complement (preimage_singleton (simple_approx X n) 0)))
+                         (event_complement (preimage_singleton X 0))
+               ); trivial; intros HH.
+    cut_to HH; trivial.
+    - apply is_lim_seq_ext with (v := (fun n => 0)) in HH.
+      generalize (is_lim_seq_const 0); intros.
+      apply is_lim_seq_unique in HH.    
+      apply is_lim_seq_unique in H6.
+      rewrite HH in H6.
+      rewrite ps_complement in H6.
+      apply Rbar_finite_eq in H6; lra.
+      trivial.
+    -
+      unfold event_sub, pre_event_sub, event_complement, pre_event_complement; simpl; intros.
+      unfold PositiveRandomVariable in apx_prv1.
+      apply Rgt_not_eq.
+      apply Rdichotomy in H6.
+      destruct H6.
+      + generalize (apx_prv1 n); intros.
+        specialize (H7 x); lra.
+      + specialize (apx_inc1 n x).
+        lra.
+    - unfold event_complement, pre_event_complement.
+      intro x; simpl.
+      split; intros.
+      + destruct H6.
+        apply Rgt_not_eq.
+        apply Rdichotomy in H6.
+        destruct H6.
+        generalize (apx_prv1 x0 x); intros; lra.
+        specialize (apx_le1 x0 x); lra.
+      + specialize (H0 x).
+        clear H H1 H2 H3 H4 H5 HH.
+        apply Rdichotomy in H6.
+        destruct H6.
+        * specialize (posrv x); lra.
+        * apply is_lim_seq_spec in H0.
+          unfold is_lim_seq' in H0.
+          specialize (H0 (mkposreal _ H)).
+          destruct H0.
+          specialize (H0 x0).
+          exists x0.
+          apply Rgt_not_eq.
+          cut_to H0; [|lia].
+          simpl in H0.
+          specialize (apx_le1 x0 x).
+          rewrite <- Rabs_Ropp in H0.
+          replace (Rabs (-(simple_approx X x0 x - X x))) with (X x - simple_approx X x0 x) in H0.
+          lra.
+          rewrite Rabs_pos_eq; lra.
   Qed.
 
   Lemma Expectation_posRV_sum 
@@ -3152,10 +3131,10 @@ Section Expectation.
           -- rewrite H7 in H6.
              now apply Lim_seq_Expectation_m_infty in H7.
       + intros.
-        rewrite <- simple_Expectation_posRV with (srv := srvplus (simple_approx rv_X1 n) (simple_approx rv_X2 n)); trivial.
+        rewrite <- simple_Expectation_posRV with (rv:=rvplus_rv _ _ _) (srv := srvplus (simple_approx rv_X1 n) (simple_approx rv_X2 n)); trivial.
         rewrite <- sumSimpleExpectation; trivial.
-        rewrite <- simple_Expectation_posRV with (srv := apx_srv1 n); trivial.
-        rewrite <- simple_Expectation_posRV with (srv := apx_srv2 n); trivial.
+        rewrite <- simple_Expectation_posRV with (rv:=apx_rv1 n) (srv := apx_srv1 n); trivial.
+        rewrite <- simple_Expectation_posRV with (rv:=apx_rv2 n) (srv := apx_srv2 n); trivial.
     - unfold rv_le, rvplus.
       intros n x.
       specialize (apx_le1 n x).

@@ -21,11 +21,21 @@ Section Linf.
           {dom: SigmaAlgebra Ts}
           (prts: ProbSpace dom).
 
+  Lemma sa_le_gt_rv (rv_X : Ts -> R) {rv : RandomVariable dom borel_sa rv_X} x
+    : sa_sigma (fun omega => (rvabs rv_X) omega > x).
+  Proof.
+    apply sa_le_gt.
+    apply rv_measurable.
+    typeclasses eauto.
+  Qed.
 
+  Definition Linfty_term (rv_X : Ts -> R) {rv : RandomVariable dom borel_sa rv_X} x
+    := exist _ (fun omega => (rvabs rv_X) omega > x) (sa_le_gt_rv _ _).
+  
   Definition Linfty_norm (rv_X : Ts -> R) 
              {rv : RandomVariable dom borel_sa rv_X} : Rbar :=
     Glb_Rbar (fun (x : R) =>
-                ps_P (fun omega => (rvabs rv_X) omega > x) = 0).
+                ps_P (Linfty_term rv_X x) = 0).
 
   Class IsLinfty (rv_X : Ts -> R) 
              {rv : RandomVariable dom borel_sa rv_X}  :=
@@ -71,14 +81,16 @@ Section Linf.
 
   Lemma abs_neg_psall (rv_X : Ts -> R) (r:R)
         {rv : RandomVariable dom borel_sa rv_X} :        
-    ps_P (fun omega => (rvabs rv_X) omega > r) = 0 -> 0<=r.
+    ps_P (Linfty_term rv_X r) = 0 -> 0<=r.
   Proof.
     destruct (Rle_dec 0 r); intros; trivial.
-    assert (event_equiv (fun omega : Ts => rvabs rv_X omega > r) Ω).
+    assert (event_equiv (Linfty_term rv_X r) Ω).
     intro x0.
     unfold rvabs.
     generalize (Rabs_pos (rv_X x0)); intros.
-    unfold  Ω.
+    unfold  Ω, pre_Ω; simpl.
+    unfold rvabs.
+    split; trivial; intros.
     lra.
     rewrite H0 in H.
     rewrite ps_all in H.
@@ -88,7 +100,7 @@ Section Linf.
   Lemma is_Linfty_c_nonneg (rv_X : Ts -> R)
         {rv : RandomVariable dom borel_sa rv_X}
         {isl:IsLinfty rv_X} :
-    exists (c:nonnegreal), ps_P (fun omega => (rvabs rv_X) omega > c) = 0.
+    exists (c:nonnegreal), ps_P  (Linfty_term rv_X c) = 0.
   Proof.
     unfold IsLinfty, Linfty_norm in *.
     apply finite_glb in isl.
@@ -97,12 +109,12 @@ Section Linf.
     - exists (mknonnegreal _ r).
       now simpl.
     - assert (0 > x) by lra.
-      assert (event_equiv (fun omega : Ts => rvabs rv_X omega > x)  Ω ).
+      assert (event_equiv  (Linfty_term rv_X x) Ω ).
       + intro x0.
         unfold rvabs.
         generalize (Rabs_pos (rv_X x0)); intros.
-        unfold  Ω.
-        lra.
+        unfold  Ω, pre_Ω; simpl. unfold rvabs.
+        intuition lra.
       + rewrite H1 in H.
         generalize (ps_all prts); intros.
         rewrite H in H2.
@@ -115,7 +127,7 @@ Section Linf.
       0 <= Linfty_norm rv_X.
   Proof.
     intros.
-    generalize (Glb_Rbar_correct (fun x : R => ps_P (fun omega : Ts => rvabs rv_X omega > x) = 0)); intros.    
+    generalize (Glb_Rbar_correct (fun x : R => ps_P (Linfty_term rv_X x) = 0)); intros.    
     unfold is_glb_Rbar in H.
     destruct H.
     destruct (Rle_dec 0 (Linfty_norm rv_X)); trivial.
@@ -134,34 +146,29 @@ Section Linf.
 
   Lemma rvclip_almost_bounded (rv_X : Ts -> R) (c : nonnegreal)
         {rv : RandomVariable dom borel_sa rv_X} :
-    ps_P (fun omega => (rvabs rv_X) omega > c) = 0 ->
+    ps_P  (Linfty_term rv_X c) = 0 ->
     rv_almost_eq prts rv_X (rvclip rv_X c).
  Proof.
    intros.
    unfold rv_almost_eq.
-   generalize (ps_complement prts (fun omega : Ts => rvabs rv_X omega > c)); intros.
+   generalize (ps_complement prts (Linfty_term rv_X c)); intros.
    rewrite H, Rminus_0_r in H0.
-   cut_to H0.
-   - rewrite <- H0.
-     apply ps_proper.
-     intros x.
-     unfold event_complement.
-     unfold rvclip, rvabs.
-     generalize (Rle_abs (rv_X x)); intros.       
-     simpl.
-     match_destr; [lra |].
-     generalize (Rcomplements.Rabs_maj2 (rv_X x)); intros.
-     match_destr; [lra |].
-     split; [|lra].
-     intros.
-     unfold Rabs.
-     match_destr; lra.
-   - apply sa_le_gt.
-     apply Rabs_measurable.
-     unfold RealMeasurable.
-     apply borel_sa_preimage2; intros.
-     now apply rv_preimage.
-   Qed.
+   rewrite <- H0.
+   apply ps_proper.
+   intros x.
+   unfold event_complement, pre_event_complement.
+   unfold rvclip, rvabs.
+   generalize (Rle_abs (rv_X x)); intros.       
+   simpl.
+   unfold rvabs.
+   match_destr; [lra |].
+   generalize (Rcomplements.Rabs_maj2 (rv_X x)); intros.
+   match_destr; [lra |].
+   split; [|lra].
+   intros.
+   unfold Rabs.
+   match_destr; lra.
+ Qed.
 
  Lemma rvclip_almost_bounded_exists (rv_X : Ts -> R)
         (rv : RandomVariable dom borel_sa rv_X)
@@ -178,27 +185,18 @@ Section Linf.
         {rv : RandomVariable dom borel_sa rv_X} : 
     forall (c1 c2 : R),
       c1 <= c2  ->
-      ps_P (fun omega : Ts => rvabs rv_X omega > c1) = 0 ->
-      ps_P (fun omega : Ts => rvabs rv_X omega > c2) = 0.
+      ps_P (Linfty_term rv_X c1) = 0 ->
+      ps_P (Linfty_term rv_X c2) = 0.
   Proof.
     intros.
-    unfold RandomVariable in rv.
-    assert (forall (r:R), sa_sigma (fun omega : Ts => rvabs rv_X omega > r)).
-    apply sa_le_gt.
-    intros.
-    apply Rabs_measurable.
-    unfold RealMeasurable.
-    now rewrite borel_sa_preimage2.
+    assert (event_sub (Linfty_term rv_X c2)
+                      (Linfty_term rv_X c1))
+           by (intros ?; simpl; unfold rvabs; lra).
 
-    assert (event_sub (fun omega : Ts => rvabs rv_X omega > c2)
-                      (fun omega : Ts => rvabs rv_X omega > c1) ) by (intro x0; lra).
-
-    assert (ps_P (fun omega : Ts => rvabs rv_X omega > c2) <=
-            ps_P (fun omega : Ts => rvabs rv_X omega > c1)).
-    apply ps_sub; trivial.
-    generalize (ps_pos (fun omega : Ts => rvabs rv_X omega > c2)); intros.
-    specialize (H1 c2).
-    specialize (H4 H1).
+    assert (ps_P (Linfty_term rv_X c2) <=
+            ps_P (Linfty_term rv_X c1))
+           by now apply ps_sub.
+    generalize (ps_pos (Linfty_term rv_X c2)); intros.
     lra.
   Qed.
 
@@ -208,17 +206,17 @@ Section Linf.
         {isl:IsLinfty rv_X} :
     forall (c : R),
       (0 < c  ->
-       ps_P (fun omega : Ts => rvabs rv_X omega > Linfty_norm rv_X + c) = 0).
+       ps_P (Linfty_term rv_X (Linfty_norm rv_X + c))  = 0).
   Proof.
      rename isl into H.
      intros.
      unfold IsLinfty, Linfty_norm in H.
-     generalize (Glb_Rbar_correct (fun x : R => ps_P (fun omega : Ts => rvabs rv_X omega > x) = 0)); intros.
+     generalize (Glb_Rbar_correct (fun x : R => ps_P (Linfty_term rv_X x) = 0)); intros.
      unfold is_glb_Rbar in H1.
      destruct H1.
      rewrite <- H in H1; simpl in H1.
      destruct (classic (exists (y:R), (Linfty_norm rv_X <= y <= Linfty_norm rv_X + c) /\
-                                      ps_P (fun omega : Ts => rvabs rv_X omega > y) = 0)).
+                                      ps_P (Linfty_term rv_X y) = 0)).
      - destruct H3 as [y [? ?]].
        apply zero_prob_bound with (c1 := y); trivial; lra.
      - specialize (H2 (Linfty_norm rv_X + c)).
@@ -245,12 +243,14 @@ Section Linf.
   Lemma Linfty_norm_contains_finite_lim (rv_X : Ts -> R) 
         {rv : RandomVariable dom borel_sa rv_X}
         {isl:IsLinfty rv_X} :
-      ps_P (fun omega => (rvabs rv_X) omega > (Linfty_norm rv_X)) = 0.
+      ps_P  (Linfty_term rv_X (Linfty_norm rv_X)) = 0.
   Proof.
-     generalize (lim_prob (fun n => (fun omega => (rvabs rv_X) omega > (Linfty_norm rv_X) + / INR (S n))) (fun omega => (rvabs rv_X) omega > (Linfty_norm rv_X))); intros.
+    generalize (lim_prob (fun n => (Linfty_term rv_X ((Linfty_norm rv_X) + / INR (S n))))
+                         (Linfty_term rv_X (Linfty_norm rv_X))); intros.
      cut_to H.
-     - assert (forall n, ps_P (fun omega : Ts => rvabs rv_X omega > Linfty_norm rv_X + / INR (S n)) = 0).
-       + generalize (zero_prob_bound_Linfty rv_X); intros.
+    - assert (forall n, ps_P
+                     (Linfty_term rv_X (Linfty_norm rv_X + / INR (S n))) = 0).
+      + generalize (zero_prob_bound_Linfty rv_X); intros.
          apply H0.
          apply Rinv_0_lt_compat.
          apply lt_0_INR; lia.
@@ -261,22 +261,15 @@ Section Linf.
          apply is_lim_seq_unique in H1.
          rewrite H in H1.
          now rewrite Rbar_finite_eq in H1.
-     - intros.
-       apply sa_le_gt.
-       intros.
-       apply Rabs_measurable.
-       unfold RealMeasurable.
-       unfold RandomVariable in rv.
-       now rewrite borel_sa_preimage2.
-     - unfold event_sub; intros.
+    - unfold event_sub, pre_event_sub; intros. 
        apply Rgt_trans with (r2 :=  Linfty_norm rv_X + / INR (S n)); trivial.
        apply Rplus_gt_compat_l.
        apply Rinv_1_lt_contravar.
-       replace (1) with (0 + 1) by lra.
-       rewrite S_INR.
-       apply Rplus_le_compat_r.
-       apply pos_INR.
-       apply lt_INR; lia.
+       + replace (1) with (0 + 1) by lra.
+         rewrite S_INR.
+         apply Rplus_le_compat_r.
+         apply pos_INR.
+       + apply lt_INR; lia.
      - intro x.
        unfold union_of_collection.
        split; intros.
@@ -291,19 +284,20 @@ Section Linf.
          ring_simplify.
          rewrite Rplus_comm.
          rewrite <- (Rinv_involutive  (rvabs rv_X x + - Linfty_norm rv_X)).
-         apply Rinv_lt_contravar.
-         apply Rmult_lt_0_compat.
-         apply Rinv_0_lt_compat; lra.
-         apply lt_0_INR; lia.
-         assert (forall (r:R), 0 < r -> r < INR (S (Z.to_nat (up r)))); intros.
-         rewrite S_INR.
-         rewrite INR_up_pos.
-         generalize (archimed r); intros.
-         destruct H2; lra.
-         lra.
-         apply H1.
-         apply Rinv_0_lt_compat; lra.
-         apply Rgt_not_eq; lra.
+         * apply Rinv_lt_contravar.
+           -- apply Rmult_lt_0_compat.
+              ++ simpl in *; apply Rinv_0_lt_compat; lra.
+              ++ apply lt_0_INR; lia.
+           -- assert (forall (r:R), 0 < r -> r < INR (S (Z.to_nat (up r)))); intros.
+              ++ rewrite S_INR.
+                 rewrite INR_up_pos.
+                 ** generalize (archimed r); intros.
+                    destruct H2; lra.
+                 ** lra.
+              ++ apply H1.
+                 simpl in *.
+                 apply Rinv_0_lt_compat; lra.
+         * simpl in *; apply Rgt_not_eq; lra.
    Qed.
 
   Instance IsLp_const_bounded (n:R) (rv_X : Ts -> R) (bound : R)
@@ -333,9 +327,8 @@ Section Linf.
     destruct H as [c H0].
     generalize (rvclip_abs_le_c rv_X c); intros.
     generalize (IsLp_const_bounded n _ c (cond_nonneg _) H); intros.
-    apply IsLp_proper_almost with (rv_X1 := (rvclip rv_X c)); trivial.
-    now apply rvclip_rv.
-    now symmetry.
+    eapply IsLp_proper_almost with (rv_X1 := (rvclip rv_X c)); trivial.
+    now apply rv_almost_eq_rv_sym.
   Qed.
 
   Definition posreal_nnneg (x:posreal) : nonnegreal
@@ -370,7 +363,7 @@ Section Linf.
           ; try typeclasses eauto.
           simpl.
           now apply Linfty_norm_contains_finite_lim.
-        * rewrite FiniteExpectation_proper_almost with 
+        * erewrite FiniteExpectation_proper_almost with 
             (rv_X2 := (rvpower (rvabs (rvclip rv_X (mknonnegreal _ H))) (const p)))
             (isfe2 := H0)
           ; try typeclasses eauto.
@@ -383,10 +376,6 @@ Section Linf.
              ++ split.
                 ** apply Rabs_pos.
                 ** apply rvclip_abs_bounded.
-          -- eapply rvpower_rv; try typeclasses eauto.
-             apply (RandomVariable_proper _ _ (const (pos p)))
-             ; try typeclasses eauto.
-             intros ?; reflexivity.
           -- apply rv_almost_eq_power_abs_proper
              ; try typeclasses eauto.
              apply rv_almost_eq_abs_proper

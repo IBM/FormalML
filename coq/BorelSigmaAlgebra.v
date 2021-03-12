@@ -27,13 +27,14 @@ Context {Ts:Type}
 Lemma borel_sa_preimage
       (rvx: Ts -> R)
       (pf_pre: forall r:R, sa_sigma (fun omega:Ts => (rvx omega) <= r)%R) :
-  (forall B: event R, sa_sigma B -> sa_sigma (event_preimage rvx B)).
+  (forall B: event borel_sa, sa_sigma (event_preimage rvx B)).
 Proof.
   intros.
   unfold event_preimage.
-  apply generated_sa_closure in H.
+  destruct B; simpl.
+  apply generated_sa_closure in s.
   simpl in *.  
-  dependent induction H.
+  dependent induction s.
   - apply sa_all.
   - destruct H as [??].
     generalize (pf_pre x).
@@ -48,27 +49,27 @@ Qed.
 Lemma borel_sa_preimage2 
       (rvx: Ts -> R):
   (forall r:R, sa_sigma (fun omega:Ts => (rvx omega) <= r)%R) <-> 
-  (forall B: event R, sa_sigma B -> (sa_sigma (event_preimage rvx B))).
+  (forall B: event borel_sa, (sa_sigma (event_preimage rvx B))).
 Proof.
   split; intros.
   - now apply borel_sa_preimage.
   - unfold event_preimage in *.
-    simpl in H.
-    apply (H (fun x => x <= r)%R).
+    refine (H (exist _  (fun x => x <= r)%R _)).
     apply generated_sa_sub.
     exists r; intuition.
 Qed.
 
 Lemma open_borel_sa_preimage
       (rvx: Ts -> R)
-      (pf_pre: forall B:event R, open_set B -> sa_sigma (event_preimage rvx B)%R) :
-  (forall B: event R, (@sa_sigma R open_borel_sa B) -> sa_sigma (event_preimage rvx B)).
+      (pf_pre: forall B:pre_event R, open_set B -> sa_sigma (pre_event_preimage rvx B)%R) :
+  (forall B: event open_borel_sa, sa_sigma (event_preimage rvx B)).
 Proof.
   intros.
   unfold event_preimage.
-  apply generated_sa_closure in H.
+  destruct B; simpl in *.
+  apply generated_sa_closure in s.
   simpl in *.  
-  dependent induction H.
+  dependent induction s.
   - apply sa_all.
   - generalize (pf_pre q); intros.
     apply H0.
@@ -80,23 +81,22 @@ Qed.
 
 Lemma open_borel_sa_preimage2 
       (rvx: Ts -> R):
-  (forall B:event R, open_set B -> sa_sigma (event_preimage rvx B)%R) <->
-  (forall B: event R, (@sa_sigma R open_borel_sa B) -> sa_sigma (event_preimage rvx B)).
+  (forall B:pre_event R, open_set B -> sa_sigma (pre_event_preimage rvx B)%R) <->
+  (forall B:event open_borel_sa, sa_sigma (event_preimage rvx B)).
 Proof.
   split; intros.
   - now apply open_borel_sa_preimage.
-  - unfold event_preimage in *.
-    simpl in H.
-    apply (H B).
+  -  unfold event_preimage, pre_event_preimage in *.
+     refine (H (exist _ B _)).
     now apply generated_sa_sub.
 Qed.
 
   Lemma equiv_le_lt (f : Ts -> R) (r:R) :
-    event_equiv (fun omega : Ts => f omega < r)
-                (union_of_collection
+    pre_event_equiv (fun omega : Ts => f omega < r)
+                (pre_union_of_collection
                    (fun (n:nat) => (fun omega : Ts => f omega <= r - / (1 + INR n)))).
   Proof.
-    unfold event_equiv, union_of_collection.
+    unfold pre_event_equiv, pre_union_of_collection.
     intros.
     split ; intros.
     + generalize (archimed_cor1 (r - f x)) ; intros.
@@ -121,8 +121,8 @@ Qed.
   Qed.
 
   Lemma equiv_ge_gt (f : Ts -> R) (r:R) :
-    event_equiv (fun omega : Ts => f omega > r)
-                (union_of_collection
+    pre_event_equiv (fun omega : Ts => f omega > r)
+                (pre_union_of_collection
                    (fun (n:nat) => (fun omega : Ts => f omega >= r + / (1 + INR n)))).
   Proof.
     unfold event_equiv, union_of_collection.
@@ -155,10 +155,10 @@ Qed.
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega > r)).
   Proof. 
     intros.
-    assert (event_equiv (fun omega : Ts => f omega > r)
-                        (event_complement (fun omega : Ts => f omega <= r))).
+    assert (pre_event_equiv (fun omega : Ts => f omega > r)
+                        (pre_event_complement (fun omega : Ts => f omega <= r))).
     - intro x.
-      unfold event_complement.
+      unfold pre_event_complement.
       split; intros; lra.
     - rewrite H0.
       now apply sa_complement.
@@ -169,10 +169,10 @@ Qed.
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega < r)).
   Proof. 
     intros.
-    assert (event_equiv (fun omega : Ts => f omega < r)
-                        (event_complement (fun omega : Ts => f omega >= r))).
+    assert (pre_event_equiv (fun omega : Ts => f omega < r)
+                        (pre_event_complement (fun omega : Ts => f omega >= r))).
     - intro x.
-      unfold event_complement.
+      unfold pre_event_complement.
       split; intros; lra.
     - rewrite H0.
       now apply sa_complement.
@@ -183,11 +183,11 @@ Qed.
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega >= r)).
   Proof.
     intros.
-    assert (event_equiv (fun omega : Ts => f omega >= r)
-                        (event_complement (fun omega : Ts => f omega < r))).
+    assert (pre_event_equiv (fun omega : Ts => f omega >= r)
+                        (pre_event_complement (fun omega : Ts => f omega < r))).
     {
       intro x.
-      unfold event_complement.
+      unfold pre_event_complement.
       split; intros; lra.
     }
       rewrite H0.
@@ -203,11 +203,11 @@ Qed.
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)).
   Proof.
     intros.
-    assert (event_equiv (fun omega : Ts => f omega <= r)
-                        (event_complement (fun omega : Ts => f omega > r))).
+    assert (pre_event_equiv (fun omega : Ts => f omega <= r)
+                        (pre_event_complement (fun omega : Ts => f omega > r))).
     {
       intro x.
-      unfold event_complement.
+      unfold pre_event_complement.
       split; intros; lra.
     }
       rewrite H0.
@@ -223,10 +223,10 @@ Qed.
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega < r)).
   Proof. 
     intros.
-    assert (event_equiv (fun omega : Ts => f omega < r)
-                        (event_complement (fun omega : Ts => f omega >= r))).
+    assert (pre_event_equiv (fun omega : Ts => f omega < r)
+                        (pre_event_complement (fun omega : Ts => f omega >= r))).
     - intro x.
-      unfold event_complement.
+      unfold pre_event_complement.
       split; intros; lra.
     - rewrite H0.
       apply sa_complement.
@@ -238,10 +238,10 @@ Qed.
     (forall (r:R),  sa_sigma (fun omega : Ts => f omega > r)).
   Proof. 
     intros.
-    assert (event_equiv (fun omega : Ts => f omega > r)
-                        (event_complement (fun omega : Ts => f omega <= r))).
+    assert (pre_event_equiv (fun omega : Ts => f omega > r)
+                        (pre_event_complement (fun omega : Ts => f omega <= r))).
     - intro x.
-      unfold event_complement.
+      unfold pre_event_complement.
       split; intros; lra.
     - rewrite H0.
       apply sa_complement.
@@ -253,13 +253,13 @@ Qed.
     (forall (l r:R), sa_sigma (fun omega : Ts => l <= f omega <= r)).
   Proof.
     intros.
-    assert (event_equiv (fun omega : Ts => l <= f omega <= r) 
-                        (event_inter (fun omega : Ts => l <= f omega) 
+    assert (pre_event_equiv (fun omega : Ts => l <= f omega <= r) 
+                        (pre_event_inter (fun omega : Ts => l <= f omega) 
                                      (fun omega : Ts => f omega <= r))).
-    now unfold event_equiv, event_inter.
+    now unfold pre_event_equiv, pre_event_inter.
     rewrite H0.
     apply sa_inter; trivial.
-    assert (event_equiv (fun omega : Ts => l <= f omega)
+    assert (pre_event_equiv (fun omega : Ts => l <= f omega)
                         (fun omega : Ts => f omega >= l)).
     red; intros; intuition.
     rewrite H1.
@@ -271,13 +271,13 @@ Qed.
     (forall (l r:R), sa_sigma (fun omega : Ts => l < f omega < r)).
   Proof.
     intros.
-    assert (event_equiv (fun omega : Ts => l < f omega < r) 
-                        (event_inter (fun omega : Ts => l < f omega) 
+    assert (pre_event_equiv (fun omega : Ts => l < f omega < r) 
+                        (pre_event_inter (fun omega : Ts => l < f omega) 
                                      (fun omega : Ts => f omega < r))).
-    now unfold event_equiv, event_inter.
+    now unfold pre_event_equiv, pre_event_inter.
     rewrite H0.
     apply sa_inter; trivial.
-    assert (event_equiv (fun omega : Ts => l < f omega)
+    assert (pre_event_equiv (fun omega : Ts => l < f omega)
                         (fun omega : Ts => f omega > l)).
     red; intros; intuition.
     rewrite H1.
@@ -290,16 +290,15 @@ Qed.
     (forall (pt:R), sa_sigma (fun omega : Ts => f omega = pt)).
   Proof.
     intros.
-    assert (event_equiv (fun omega : Ts => f omega = pt)
-                        (event_inter (fun omega : Ts => f omega <= pt)
+    assert (pre_event_equiv (fun omega : Ts => f omega = pt)
+                        (pre_event_inter (fun omega : Ts => f omega <= pt)
                                      (fun omega : Ts => f omega >= pt))).
-    - unfold event_equiv, event_inter; intros.
+    - unfold pre_event_equiv, pre_event_inter; intros.
       intuition.
     - rewrite H0.
       apply sa_inter; trivial.
       now apply sa_le_ge.
   Qed.
-
 
   Definition Q_interval (l r : Q) (x:R) : Prop :=
     Qreals.Q2R l < x < Qreals.Q2R r.
@@ -358,19 +357,19 @@ Qed.
 
     Lemma sa_le_open_set (f : Ts -> R) :
       (forall (r:R),  sa_sigma (fun omega : Ts => (f omega <= r)%R)) ->      
-      (forall B: event R, open_set B -> sa_sigma (event_preimage f B)).
+      (forall B: pre_event R, open_set B -> sa_sigma (pre_event_preimage f B)).
     Proof.
-      unfold event_preimage; intros.
+      unfold pre_event_preimage; intros.
       generalize (Q_open_set B); intros.
       destruct H1.
-      assert (event_equiv (fun omega : Ts => B (f omega))
-                          (union_of_collection
+      assert (pre_event_equiv (fun omega : Ts => B (f omega))
+                          (pre_union_of_collection
                              (fun (n:nat) => 
                                 let n12 := (@iso_b _ _ nat_pair_encoder) n in
                                 let qint := Q_interval (iso_b (fst n12)) (iso_b (snd n12)) in
                                 fun omega : Ts => (qint (f omega)) /\
                                                   (included qint B)))).
-      - unfold event_equiv, union_of_collection; intros.
+      - unfold pre_event_equiv, union_of_collection; intros.
         split; intros.
         + specialize (H1 H0 (f x) H3).
           destruct H1 as [l0 [r0 H1]].
@@ -393,13 +392,13 @@ Qed.
     Qed.
       
     Lemma sa_open_set_le (f : Ts -> R) :
-      (forall B: event R, open_set B -> sa_sigma (event_preimage f B)) ->
+      (forall B: pre_event R, open_set B -> sa_sigma (pre_event_preimage f B)) ->
       (forall (r:R),  sa_sigma (fun omega : Ts => (f omega <= r)%R)).
     Proof.
       intros.
-      assert (event_equiv (fun omega : Ts => (f omega <= r)%R)
-                          (event_complement (fun omega : Ts => (f omega > r)%R))).
-      - unfold event_equiv, event_complement.
+      assert (pre_event_equiv (fun omega : Ts => (f omega <= r)%R)
+                          (pre_event_complement (fun omega : Ts => (f omega > r)%R))).
+      - unfold pre_event_equiv, pre_event_complement.
         intros.
         lra.
       - rewrite H0.
@@ -417,7 +416,7 @@ Qed.
     Qed.
 
     Lemma sa_open_iff_le (f : Ts -> R) :
-      (forall B: event R, open_set B -> sa_sigma (event_preimage f B)) <->
+      (forall B: pre_event R, open_set B -> sa_sigma (pre_event_preimage f B)) <->
       (forall (r:R),  sa_sigma (fun omega : Ts => (f omega <= r)%R)).
     Proof.
       split.
@@ -432,7 +431,7 @@ Local Open Scope equiv_scope.
 Lemma sa_borel_open_le_sub1 : sa_sub open_borel_sa borel_sa.
 Proof.
   generalize (sa_open_iff_le id).
-  unfold event_preimage, id.
+  unfold pre_event_preimage, id.
   intros HH.
   intros e; simpl.
   intros.
@@ -444,6 +443,7 @@ Proof.
   apply borel_sa_preimage2.
   unfold event_preimage.
   simpl; intros.
+  destruct B; simpl.
   auto.
 Qed.
 
@@ -456,14 +456,14 @@ Proof.
   dependent induction Hs.
   - apply sa_all.
   - destruct H as [r Hr].
-    assert (eqq:event_equiv q (fun m => (m <= r)%R)).
+    assert (eqq:pre_event_equiv q (fun m => (m <= r)%R)).
     { red; intros; symmetry; trivial. }
     rewrite eqq.
     clear Hr eqq.
-    assert (HH2:(event_equiv (fun m : R => m <= r)
-                             (event_complement (fun m => m > r)))%R).
+    assert (HH2:(pre_event_equiv (fun m : R => m <= r)
+                             (pre_event_complement (fun m => m > r)))%R).
     {
-      unfold event_complement; intros x.
+      unfold pre_event_complement; intros x.
       intuition lra.
     }
     rewrite HH2; clear HH2.
