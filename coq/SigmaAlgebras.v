@@ -6,7 +6,7 @@ Require Import List.
 Require Import Morphisms EquivDec.
 
 Require Import Utils DVector.
-Require Import ProbSpace.
+Require Export Event.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -14,24 +14,26 @@ Import ListNotations.
 
 Local Open Scope prob.
 
-Lemma classic_event_lem {T} : forall a:event T, event_lem a.
-Proof.
-  intros ??; apply classic.
-Qed.
-
-Lemma event_complement_swap_classic {T} (A B:event T) : ¬ A === B <-> A === ¬ B.
+Lemma pre_event_complement_swap_classic {T} (A B:pre_event T) : pre_event_complement A === B <-> A === pre_event_complement B.
 Proof.
   intros.
-  apply event_complement_swap; auto using classic_event_lem.
+  apply pre_event_complement_swap
+  ; red; intros; apply classic.
+Qed.
+
+Lemma event_complement_swap_classic {T} (σ:SigmaAlgebra T) (A B:event σ) : ¬ A === B <-> A === ¬ B.
+Proof.
+  intros.
+  apply event_complement_swap; auto using sa_dec.
 Qed.
 
 Program Instance trivial_sa (T:Type) : SigmaAlgebra T
   := {
-      sa_sigma (f:event T) := (f === ∅ \/ f === Ω)
+      sa_sigma (f:pre_event T) := (f === pre_event_none \/ f === pre_Ω)
     }.
 Next Obligation.
   (* sigh. more classical reasoning needed *)
-  destruct (classic (exists n, collection n === Ω))
+  destruct (classic (exists n, collection n === pre_Ω))
   ; [right|left]; firstorder.
 Qed.
 Next Obligation.
@@ -46,16 +48,16 @@ Program Instance discrete_sa (T:Type) : SigmaAlgebra T
       sa_sigma := fun _ => True 
     }.
                  
-Program Instance subset_sa (T:Type) (A:event T) : SigmaAlgebra T
+Program Instance subset_sa (T:Type) (A:pre_event T) : SigmaAlgebra T
   := {
-      sa_sigma f := (f === ∅ \/ f === A \/ f === ¬ A \/ f === Ω)
+      sa_sigma f := (f === pre_event_none \/ f === A \/ f === ¬ A \/ f === pre_Ω)
     }.
 Next Obligation.
   (* sigh. more classical reasoning needed *)
-  destruct (classic (exists n, collection n === Ω))
+  destruct (classic (exists n, collection n === pre_Ω))
   ; [repeat right; firstorder | ].
   destruct (classic (exists n, collection n === A))
-  ; destruct (classic (exists n, collection n === ¬ A)).
+  ; destruct (classic (exists n, collection n === pre_event_complement A)).
   + right; right; right.
     unfold union_of_collection, equiv, event_equiv; intros x.
     split; [firstorder | ].
@@ -98,10 +100,10 @@ Next Obligation.
     ; firstorder.
 Qed.
 Next Obligation.
-  replace event_equiv with (@equiv (event T) _ event_equiv_equiv) in * by reflexivity.
-  repeat rewrite event_complement_swap_classic.
-  rewrite event_not_not by auto using classic_event_lem.
-  autorewrite with prob.
+  replace pre_event_equiv with (@equiv (pre_event T) _ pre_event_equiv_equiv) in * |- * by reflexivity.
+  repeat rewrite pre_event_complement_swap_classic.
+  rewrite pre_event_not_not by auto using sa_pre_dec.
+  rewrite pre_event_not_none, pre_event_not_all.
   tauto.
 Qed.
 Next Obligation.
@@ -109,16 +111,16 @@ Next Obligation.
   reflexivity.
 Qed.
 
-Definition is_partition {T} (part:nat->event T)
-  := collection_is_pairwise_disjoint part 
-     /\ union_of_collection part === Ω.
+Definition is_pre_partition {T}(part:nat->pre_event T)
+  := pre_collection_is_pairwise_disjoint part 
+     /\ pre_union_of_collection part === pre_Ω.
 
-Definition sub_partition {T} (part1 part2 : nat -> event T)
-  := forall n, part1 n === part2 n \/ part1 n === ∅.
+Definition pre_sub_partition {T} (part1 part2 : nat -> pre_event T)
+  := forall n, part1 n === part2 n \/ part1 n === pre_event_none.
 
-Instance sub_partition_pre {T} : PreOrder (@sub_partition T).
+Instance pre_sub_partition_pre {T} : PreOrder (@pre_sub_partition T).
 Proof.
-  constructor; red; unfold sub_partition; intuition eauto.
+  constructor; red; unfold pre_sub_partition; intuition eauto.
   - left; reflexivity.
   - specialize (H n).
     specialize (H0 n).
@@ -129,14 +131,14 @@ Proof.
       tauto.
 Qed.
 
-Definition in_partition_union {T} (part:nat->event T) (f:event T) : Prop
-  := exists subpart, sub_partition subpart part /\ (union_of_collection subpart) === f.
+Definition pre_in_partition_union {T} (part:nat->pre_event T) (f:pre_event T) : Prop
+  := exists subpart, pre_sub_partition subpart part /\ (pre_union_of_collection subpart) === f.
 
-Instance in_partition_union_proper {T} (part:nat->event T) :
-  Proper (event_equiv ==> iff) (in_partition_union part).
+Instance pre_in_partition_union_proper {T} (part:nat->pre_event T) :
+  Proper (pre_event_equiv ==> iff) (pre_in_partition_union part).
 Proof.
-  cut (Proper (event_equiv ==> Basics.impl) (in_partition_union part))
-  ; unfold in_partition_union, Basics.impl.
+  cut (Proper (pre_event_equiv ==> Basics.impl) (pre_in_partition_union part))
+  ; unfold pre_in_partition_union, Basics.impl.
   { intros HH x y xyeq.
     intuition eauto.
     symmetry in xyeq.
@@ -147,35 +149,35 @@ Proof.
   eauto.
 Qed.
 
-Lemma sub_partition_diff {T} (sub part:nat->event T) :
-  sub_partition sub part ->
-  sub_partition (fun x : nat => part x \ sub x) part.
+Lemma pre_sub_partition_diff {T} (sub part:nat->pre_event T) :
+  pre_sub_partition sub part ->
+  pre_sub_partition (fun x : nat => pre_event_diff (part x) (sub x)) part.
 Proof.
   intros is_sub n.
   specialize (is_sub n).
   destruct is_sub as [eqq|eqq]
-  ; rewrite eqq
-  ; autorewrite with prob
-  ; intuition.
+  ; rewrite eqq.
+  - rewrite pre_event_diff_self; intuition.
+  - rewrite pre_event_diff_false_r; intuition.
 Qed.
 
-Program Instance countable_partition_sa {T} (part:nat->event T) (is_part:is_partition part) : SigmaAlgebra T
+Program Instance countable_partition_sa {T} (part:nat->pre_event T) (is_part:is_pre_partition part) : SigmaAlgebra T
   := {
-      sa_sigma := in_partition_union part
+      sa_sigma := pre_in_partition_union part
     }.
 Next Obligation.
-    unfold in_partition_union in *.
-    unfold is_partition in *.
+    unfold pre_in_partition_union in *.
+    unfold is_pre_partition in *.
     apply choice in H.
     destruct H as [partish pH].
-    exists (fun n => union_of_collection (fun x => partish x n)).
+    exists (fun n => pre_union_of_collection (fun x => partish x n)).
     split.
     + intros n.
-      unfold union_of_collection.
+      unfold pre_union_of_collection.
 
-      unfold union_of_collection in *.
+      unfold pre_union_of_collection in *.
       unfold is_partition in is_part.
-      destruct (classic ((fun t : T => exists n0 : nat, partish n0 n t) === ∅)); [eauto | ].
+      destruct (classic ((fun t : T => exists n0 : nat, partish n0 n t) === pre_event_none)); [eauto | ].
       left.
       apply not_all_ex_not in H.
       destruct H as [nn Hnn].
@@ -197,7 +199,7 @@ Next Obligation.
         destruct HH1 as [eqq|eqq]; [ | apply eqq in pnn2; vm_compute in pnn2; intuition ].
         apply eqq in pnnn.
         eauto.
-    + intros x; unfold union_of_collection in *.
+    + intros x; unfold pre_union_of_collection in *.
       split.
       * intros [n1 [n2 pnn]].
         exists n2.
@@ -212,11 +214,11 @@ Next Obligation.
   destruct is_part as [disj tot].
   destruct H as [sub [is_sub uc2]].
   rewrite <- uc2.
-  exists (fun x => part x \ sub x).
+  exists (fun x => pre_event_diff (part x) (sub x)).
   split.
-  + apply sub_partition_diff; trivial.
+  + apply pre_sub_partition_diff; trivial.
   + intros x.
-    unfold union_of_collection, event_complement, event_diff.
+    unfold pre_union_of_collection, pre_event_complement, pre_event_diff.
     { split.
       -
         intros [n [part1 sub1]].
@@ -228,8 +230,8 @@ Next Obligation.
           apply H in sub2.
           tauto.
       - intros.
-        unfold union_of_collection in tot.
-        assert (xin:Ω x) by firstorder.
+        unfold pre_union_of_collection in tot.
+        assert (xin:pre_Ω x) by firstorder.
         apply tot in xin.
         destruct xin as [n partn].
         exists n.
@@ -264,11 +266,12 @@ Lemma sigma_algebra_intersection_sub {T} (coll:SigmaAlgebra T->Prop)
 Proof.
   unfold sa_sub, event_sub.
   simpl; intros.
-  eauto.
+  red; simpl
+  ; eauto.
 Qed.
 
-Definition all_included {T} (F:event T -> Prop) : SigmaAlgebra T -> Prop
-  := fun sa => forall (e:event T), F e -> @sa_sigma _ sa e.
+Definition all_included {T} (F:pre_event T -> Prop) : SigmaAlgebra T -> Prop
+  := fun sa => forall (e:pre_event T), F e -> @sa_sigma _ sa e.
 
 Global Instance all_included_proper {T} : Proper (equiv ==> equiv) (@all_included T).
 Proof.
@@ -276,17 +279,17 @@ Proof.
   split; intros HH; intros; apply HH; firstorder.
 Qed.
 
-Instance generated_sa {T} (F:event T -> Prop) : SigmaAlgebra T
+Instance generated_sa {T} (F:pre_event T -> Prop) : SigmaAlgebra T
   := sigma_algebra_intersection (all_included F).
 
-Lemma generated_sa_sub {T} (F:event T -> Prop) :
+Lemma generated_sa_sub {T} (F:pre_event T -> Prop) :
   forall x, F x -> @sa_sigma _ (generated_sa F) x.
 Proof.
   unfold sa_sigma, generated_sa, sigma_algebra_intersection, all_included.
   eauto.
 Qed.
 
-Lemma generated_sa_minimal {T} (F:event T -> Prop) (sa':SigmaAlgebra T) :
+Lemma generated_sa_minimal {T} (F:pre_event T -> Prop) (sa':SigmaAlgebra T) :
   (forall x, F x -> @sa_sigma _ sa' x) ->
   (forall x, @sa_sigma _ (generated_sa F) x -> @sa_sigma _ sa' x).
 Proof.
@@ -295,17 +298,17 @@ Proof.
   eauto.
 Qed.
 
-Inductive prob_space_closure {T} : (event T->Prop) -> event T -> Prop
+Inductive prob_space_closure {T} : (pre_event T->Prop) -> pre_event T -> Prop
   :=
-  | psc_all p : prob_space_closure p Ω
-  | psc_refl (p:event T->Prop) q : p q -> prob_space_closure p q
-  | psc_countable p (collection: nat -> event T) :
+  | psc_all p : prob_space_closure p pre_Ω
+  | psc_refl (p:pre_event T->Prop) q : p q -> prob_space_closure p q
+  | psc_countable p (collection: nat -> pre_event T) :
       (forall n, prob_space_closure p (collection n)) ->
-      prob_space_closure p (union_of_collection collection)
-  | psc_complement p q : prob_space_closure p q -> prob_space_closure p (¬ q)
+      prob_space_closure p (pre_union_of_collection collection)
+  | psc_complement p q : prob_space_closure p q -> prob_space_closure p (pre_event_complement q)
 .
 
-Program Instance closure_sigma_algebra {T} (F:event T -> Prop) : SigmaAlgebra T
+Program Instance closure_sigma_algebra {T} (F:pre_event T -> Prop) : SigmaAlgebra T
   := { sa_sigma := prob_space_closure F }.
 Next Obligation.
   now apply psc_countable.
@@ -317,7 +320,7 @@ Next Obligation.
   now apply psc_all.
 Qed.
 
-Theorem generated_sa_closure {T} (F:event T -> Prop) : generated_sa F === closure_sigma_algebra F.
+Theorem generated_sa_closure {T} (F:pre_event T -> Prop) : generated_sa F === closure_sigma_algebra F.
 Proof.
   unfold equiv, sa_equiv; simpl.
   split; intros.
@@ -331,16 +334,16 @@ Proof.
     + apply sa_complement; eauto.
 Qed.
 
-Definition event_set_product {T₁ T₂} (s₁ : event T₁ -> Prop) (s₂ : event T₂ -> Prop) : event (T₁ * T₂) -> Prop
-  := fun (e:event (T₁ * T₂)) =>
+Definition pre_event_set_product {T₁ T₂} (s₁ : pre_event T₁ -> Prop) (s₂ : pre_event T₂ -> Prop) : pre_event (T₁ * T₂) -> Prop
+  := fun (e:pre_event (T₁ * T₂)) =>
        exists e₁ e₂,
          s₁ e₁ /\ s₂ e₂ ->
          e === (fun '(x₁, x₂) => e₁ x₁ /\ e₂ x₂).
 
-Instance event_set_product_proper {T1 T2} : Proper (equiv ==> equiv ==> equiv) (@event_set_product T1 T2).
+Instance event_set_product_proper {T1 T2} : Proper (equiv ==> equiv ==> equiv) (@pre_event_set_product T1 T2).
 Proof.
   repeat red.
-  unfold equiv, event_equiv, event_set_product; simpl; intros.
+  unfold equiv, pre_event_equiv, pre_event_set_product; simpl; intros.
   split; intros [x2 [x3 HH]].
   - unfold equiv in *.
     exists x2, x3.
@@ -353,7 +356,7 @@ Proof.
 Qed.
 
 Instance product_sa {T₁ T₂} (sa₁:SigmaAlgebra T₁) (sa₂:SigmaAlgebra T₂) : SigmaAlgebra (T₁ * T₂)
-  := generated_sa (event_set_product (@sa_sigma _ sa₁) (@sa_sigma _ sa₂)).
+  := generated_sa (pre_event_set_product (@sa_sigma _ sa₁) (@sa_sigma _ sa₂)).
 
 Global Instance product_sa_proper {T1 T2} : Proper (equiv ==> equiv ==> equiv) (@product_sa T1 T2).
 Proof.
@@ -374,16 +377,16 @@ Proof.
     reflexivity.
 Qed.
 
-Definition event_pullback {X Y:Type} (f:X->Y) (ex:event X) : event Y
+Definition pre_event_pullback {X Y:Type} (f:X->Y) (ex:pre_event X) : pre_event Y
   := fun y => exists x, f x = y.
 
-Instance event_pullback_proper {X Y:Type} (f:X->Y) : Proper (event_equiv ==> event_equiv) (event_pullback f).
+Instance pre_event_pullback_proper {X Y:Type} (f:X->Y) : Proper (equiv ==> equiv) (pre_event_pullback f).
 Proof.
   repeat red; intuition.
 Qed.
 
 Instance pullback_sa {X Y:Type} (sa:SigmaAlgebra Y) (f:X->Y) : SigmaAlgebra X
-  := generated_sa (fun e => sa_sigma (event_pullback f e)).
+  := generated_sa (fun e => sa_sigma (pre_event_pullback f e)).
 
 Instance pullback_sa_proper {X Y:Type} : Proper (equiv ==> (pointwise_relation X equiv) ==> equiv) (@pullback_sa X Y).
 Proof.
@@ -393,7 +396,7 @@ Proof.
   - apply HH.
     revert H1.
     apply all_included_proper; intros e.
-    unfold event_pullback.
+    unfold pre_event_pullback.
     unfold sa_equiv in H.
     
     split; intros HH2.
@@ -410,7 +413,7 @@ Proof.
   - apply HH.
     revert H1.
     apply all_included_proper; intros e.
-    unfold event_pullback.
+    unfold pre_event_pullback.
     unfold sa_equiv in H.
     
     split; intros HH2.
@@ -426,18 +429,18 @@ Proof.
       split; intros [??]; subst; eauto.
 Qed.
 
-Definition is_countable {T} (e:event T)
+Definition is_countable {T} (e:pre_event T)
   := exists (coll:nat -> T -> Prop),
     (forall n t1 t2, coll n t1 -> coll n t2 -> t1 = t2) /\
     e === (fun a => exists n, coll n a).
 
-Lemma is_countable_empty {T} : @is_countable T ∅.
+Lemma is_countable_empty {T} : @is_countable T pre_event_none.
 Proof.
   exists (fun n t => False).
   firstorder.
 Qed.
 
-Instance is_countable_proper_sub {T} : Proper (event_sub --> Basics.impl) (@is_countable T).
+Instance is_countable_proper_sub {T} : Proper (pre_event_sub --> Basics.impl) (@is_countable T).
 Proof.
   unfold Proper, respectful, Basics.impl, Basics.flip, is_countable.
   intros x y sub [c cx].
@@ -447,31 +450,23 @@ Proof.
   firstorder.
 Qed.
 
-Instance is_countable_proper {T} : Proper (event_equiv ==> iff) (@is_countable T).
+Instance is_countable_proper {T} : Proper (equiv ==> iff) (@is_countable T).
 Proof.
   unfold Proper, respectful.
   intros x y eqq.
   split; intros.
   - apply (is_countable_proper_sub x y); trivial.
-    apply event_equiv_sub; trivial.
+    apply pre_event_equiv_sub; trivial.
     symmetry; trivial.
   - apply (is_countable_proper_sub y x); trivial.
-    apply event_equiv_sub; trivial.
+    apply pre_event_equiv_sub; trivial.
 Qed.
 
-Lemma union_of_collection_sup {T} (coll:nat->event T) n : (coll n) ≤ (union_of_collection coll).
-Proof.
-  unfold event_sub, union_of_collection.
-  eauto.
-Qed.
-
-
-Definition F {T} (coll:nat->event T) (n:nat) : ({x:T | coll n x} -> nat) -> Prop
+Definition Finj_event {T} (coll:nat->pre_event T) (n:nat) : ({x:T | coll n x} -> nat) -> Prop
   := fun f => Injective f.
 
-
-Lemma union_of_collection_is_countable {T} (coll:nat->event T) :
-  (forall n : nat, is_countable (coll n)) -> is_countable (union_of_collection coll).
+Lemma union_of_collection_is_countable {T} (coll:nat->pre_event T) :
+  (forall n : nat, is_countable (coll n)) -> is_countable (pre_union_of_collection coll).
 Proof.
   intros isc.
   apply choice in isc.
@@ -507,7 +502,7 @@ Qed.
 (* The set of countable and c-countable sets forms a sigma algebra *)
 Program Instance countable_sa (T:Type) : SigmaAlgebra T
   := {
-      sa_sigma (f:event T) := is_countable f \/ is_countable (¬ f)
+      sa_sigma (f:pre_event T) := is_countable f \/ is_countable (¬ f)
     }.
 Next Obligation.
   destruct (classic (forall n, is_countable (collection n))).
@@ -516,35 +511,35 @@ Next Obligation.
     apply union_of_collection_is_countable; trivial.
   + apply not_all_ex_not in H0.
     destruct H0 as [n ncn].
-    assert (iscnn:is_countable (¬ collection n)).
+    assert (iscnn:is_countable (pre_event_complement (collection n))).
     { destruct (H n); intuition. }
-    generalize (union_of_collection_sup collection n); intros subs.
-    apply event_complement_sub_proper in subs.
+    generalize (pre_union_of_collection_sup collection n); intros subs.
+    apply pre_event_complement_sub_proper in subs.
     rewrite <- subs in iscnn.
     eauto.
 Qed.
 Next Obligation.
-  rewrite event_not_not by auto using classic_event_lem.
+  rewrite pre_event_not_not by auto using sa_pre_dec.
   tauto.
 Qed.
 Next Obligation.
   right.
-  rewrite event_not_all.
+  rewrite pre_event_not_all.
   apply is_countable_empty.
 Qed.
 
 (* vector product *)
-Definition event_set_vector_product {T} {n} (v:vector ((event T)->Prop) n) : event (vector T n) -> Prop
-  := fun (e:event (vector T n)) =>
-       exists (sub_e:vector (event T) n),
+Definition pre_event_set_vector_product {T} {n} (v:vector ((pre_event T)->Prop) n) : pre_event (vector T n) -> Prop
+  := fun (e:pre_event (vector T n)) =>
+       exists (sub_e:vector (pre_event T) n),
          (forall i pf, (vector_nth i pf v) (vector_nth i pf sub_e))
          /\
          e === (fun (x:vector T n) => forall i pf, (vector_nth i pf sub_e) (vector_nth i pf x)).
 
-Instance event_set_vector_product_proper {n} {T} : Proper (equiv ==> equiv) (@event_set_vector_product T n).
+Instance pre_event_set_vector_product_proper {n} {T} : Proper (equiv ==> equiv) (@pre_event_set_vector_product T n).
 Proof.
   repeat red.
-  unfold equiv, event_equiv, event_set_vector_product; simpl; intros.
+  unfold equiv, pre_event_equiv, pre_event_set_vector_product; simpl; intros.
   split; intros [v [HH1 HH2]].
   - unfold equiv in *.
     exists v.
@@ -561,7 +556,7 @@ Proof.
 Qed.
 
 Instance vector_sa {n} {T} (sav:vector (SigmaAlgebra T) n) : SigmaAlgebra (vector T n)
-  := generated_sa (event_set_vector_product (vector_map (@sa_sigma _) sav)).
+  := generated_sa (pre_event_set_vector_product (vector_map (@sa_sigma _) sav)).
 
 Global Instance vector_sa_proper {T} {n} : Proper (equiv ==> equiv) (@vector_sa T n).
 Proof.
@@ -572,7 +567,7 @@ Proof.
     apply HH.
     revert H0.
     apply all_included_proper.
-    apply event_set_vector_product_proper.
+    apply pre_event_set_vector_product_proper.
     intros ??.
     repeat rewrite vector_nth_map.
     specialize (H i pf).
@@ -581,7 +576,7 @@ Proof.
     apply HH.
     revert H0.
     apply all_included_proper.
-    apply event_set_vector_product_proper.
+    apply pre_event_set_vector_product_proper.
     intros ??.
     repeat rewrite vector_nth_map.
     specialize (H i pf).
@@ -589,24 +584,27 @@ Proof.
     apply H.
 Qed.
 
-Definition is_partition_list {T} (l:list (event T)) :=
-  ForallOrdPairs event_disjoint l /\ event_equiv (list_union l) Ω.
+Definition is_pre_partition_list {T} (l:list (pre_event T)) :=
+  ForallOrdPairs pre_event_disjoint l /\ pre_list_union l === pre_Ω.
 
-Lemma is_partition_list_partition {T} {l:list (event T)} :
-  is_partition_list l ->
-  SigmaAlgebras.is_partition (list_collection l event_none).
+Lemma pre_is_partition_list_partition {T} {l:list (pre_event T)} :
+  is_pre_partition_list l ->
+  is_pre_partition (pre_list_collection l pre_event_none).
 Proof.
   intros [??].
   split.
-  - now apply list_collection_disjoint.
-  - rewrite list_union_union, H0.
+  - now apply pre_list_collection_disjoint.
+  - rewrite pre_list_union_union, H0.
     reflexivity.
 Qed.
 
-Instance list_partition_sa {T} (l:list (event T)) (is_part:is_partition_list l) :
+Instance list_partition_sa {T} (l:list (pre_event T)) (is_part:is_pre_partition_list l) :
   SigmaAlgebra T := countable_partition_sa
-                      (list_collection l event_none)
-                      (is_partition_list_partition is_part).
+                      (pre_list_collection l pre_event_none)
+                      (pre_is_partition_list_partition is_part).
+
+Definition is_partition_list {T} {σ:SigmaAlgebra T} (l:list (event σ)) :=
+  ForallOrdPairs event_disjoint l /\ list_union l === Ω.
 
 Section dec.
 

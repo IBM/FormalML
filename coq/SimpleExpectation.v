@@ -22,41 +22,49 @@ Section SimpleExpectation.
     {dom: SigmaAlgebra Ts}
     {Prts: ProbSpace dom}.
 
+  Local Open Scope prob.
+    
   Definition simpleRandomVariable_partition_image 
              {rv_X : Ts -> R}
              {rrv : RandomVariable dom borel_sa rv_X}
-             (srv : SimpleRandomVariable rv_X) : list (event Ts) :=
-    map (event_preimage rv_X) (map event_singleton srv_vals).
+             (srv : SimpleRandomVariable rv_X) : list (event dom) :=
+    map (preimage_singleton rv_X) srv_vals.
   
   Definition SimpleExpectation
              (rv_X : Ts -> R)
+             {rv:RandomVariable dom borel_sa rv_X}
              {srv : SimpleRandomVariable rv_X} : R :=
-    list_sum (map (fun v => Rmult v (ps_P (event_preimage rv_X (event_singleton v)))) 
+    list_sum (map (fun v => Rmult v (ps_P (preimage_singleton rv_X v)))
                   (nodup Req_EM_T srv_vals)).
 
-
-  Lemma srv_nodup_preimage_list_union {Td} dec
-        {rv_X : Ts -> Td}         
+  
+  Lemma srv_nodup_preimage_list_union dec
+        {rv_X : Ts -> R}
+        {rv: RandomVariable dom borel_sa rv_X}
         (srv : SimpleRandomVariable rv_X) :
-    event_equiv (list_union (map (fun (x : Td) (omega : Ts) => rv_X omega = x) (nodup dec srv_vals)))  Ω .
+    event_equiv (list_union (map (preimage_singleton rv_X) (nodup dec srv_vals)))  Ω .
   Proof.
     intros x.
     unfold Ω.
     split; trivial; intros _.
     unfold list_union.
     generalize (srv_vals_complete x); intros HH2.
-    exists (fun (omega : Ts) => rv_X  omega = rv_X x).
-    split; trivial.
-    apply in_map_iff.
-    exists (rv_X x).
-    split; trivial.
-    now apply nodup_In.
+    simpl; red; trivial.
+    simpl.
+    eexists.
+    split.
+    - apply in_map.
+      apply nodup_In.
+      apply srv_vals_complete.
+    - reflexivity.
   Qed.
-
-  Lemma event_disjoint_preimage_disj {A B}
-        f l :
+  
+  Lemma event_disjoint_preimage_disj
+        (f:Ts->R) l
+        {rv: RandomVariable dom borel_sa f}
+:
     NoDup l ->
-    ForallOrdPairs event_disjoint (map (fun (x : B) (omega : A) => f omega = x) l).
+    ForallOrdPairs event_disjoint (map (preimage_singleton f) l).
   Proof.
     induction l; simpl; intros nd.
     - constructor.
@@ -68,37 +76,19 @@ Section SimpleExpectation.
       congruence.
   Qed.
 
-  Lemma srv_vals_nodup_preimage_sa  
-        {rv_X : Ts -> R}
-        (rv: RandomVariable dom borel_sa rv_X)
-        (srv : SimpleRandomVariable rv_X) :
-    forall x : event Ts,
-      In x (map (fun (x0 : R) (omega : Ts) => rv_X omega = x0) (nodup Req_EM_T srv_vals)) -> sa_sigma x.
-  Proof.
-    intros.
-    apply in_map_iff in H.
-    destruct H as [y [? yin]]; subst.
-    apply nodup_In in yin.
-    apply sa_le_pt; intros.
-    apply borel_sa_preimage2; intros.
-    now apply rv_preimage.
-  Qed.
-
-  Lemma SimplePosExpectation_zero_pos_0helper (x : Ts -> R) l :
+  Lemma SimplePosExpectation_zero_pos_0helper (x : Ts -> R) {rv:RandomVariable dom borel_sa x} l :
     ~ In 0 l ->
     Forall (fun x : R => x = 0)
-           (map (fun v : R => v * ps_P (event_preimage x (event_singleton v))) l) ->
+           (map (fun v : R => v * ps_P (preimage_singleton x v)) l) ->
     
-    fold_right Rplus 0 (map ps_P (map (fun (x0 : R) (omega : Ts) => x omega = x0) l)) = 0.
+    fold_right Rplus 0 (map ps_P (map (preimage_singleton x) l)) = 0.
   Proof.
     induction l; simpl; intros inn Fl; trivial.
     invcs Fl.
     rewrite IHl; try tauto.
     destruct (Rmult_integral _ _ H1).
     - tauto.
-    - unfold event_preimage, event_singleton in H.
-      rewrite H.
-      lra.
+    - lra.
   Qed.
 
   Lemma SimplePosExpectation_zero_pos
@@ -107,7 +97,7 @@ Section SimpleExpectation.
         {posrv :PositiveRandomVariable x} 
         {srv : SimpleRandomVariable x} :
     SimpleExpectation x = 0 ->
-    ps_P (fun omega => x omega = 0) = 1.
+    ps_P (preimage_singleton x 0) = 1.
   Proof.
     intros.
     unfold SimpleExpectation in H.
@@ -116,7 +106,7 @@ Section SimpleExpectation.
       ; intros HH1.
       generalize (srv_nodup_preimage_list_union Req_EM_T srv)
       ; intros HH2.
-      generalize (ps_list_disjoint_union Prts _ (srv_vals_nodup_preimage_sa _ srv) HH1)
+      generalize (ps_list_disjoint_union Prts _ HH1)
       ; intros HH3.
       rewrite HH2 in HH3.
       rewrite ps_one in HH3.
@@ -138,9 +128,8 @@ Section SimpleExpectation.
       apply Forall_nodup.
       rewrite Forall_forall.
       intros.
-      generalize (ps_pos  (event_preimage x (event_singleton x0))); intros HH.
-      cut_to HH; [| eapply sa_singleton; eauto].
-      destruct (classic_event_none_or_has ((event_preimage x (event_singleton x0)))).
+      generalize (ps_pos  (preimage_singleton x x0)); intros HH.
+      destruct (classic_event_none_or_has (preimage_singleton x x0)).
       + destruct H1.
         repeat red in H1; subst.
         specialize (posrv x1).
@@ -163,6 +152,7 @@ Section SimpleExpectation.
   
   Lemma scaleSimpleExpectation (c:R)
         (rv_X : Ts -> R)
+        {rv : RandomVariable dom borel_sa rv_X}
         {srv : SimpleRandomVariable rv_X} : 
     (c * SimpleExpectation rv_X)%R = SimpleExpectation (rvscale c rv_X).
   Proof.
@@ -190,8 +180,8 @@ Section SimpleExpectation.
         apply map_ext; intros.
         rewrite <- Rmult_assoc.
         f_equal.
-        apply ps_proper; red; intros.
-        unfold event_preimage, event_singleton.
+        apply ps_proper; red; intros; simpl.
+        unfold pre_event_preimage, pre_event_singleton.
         split; intros.
         * now subst.
         * apply Rmult_eq_reg_l in H0; trivial.
@@ -201,31 +191,26 @@ Section SimpleExpectation.
   Lemma RefineSimpleExpectation0
         (rv_X : Ts -> R)
         {rv : RandomVariable dom borel_sa rv_X}
-        (E : event Ts) (l : list R):
+        (E : event dom) (l : list R):
     sa_sigma E ->
     list_sum
-      (map (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v)) l) = 
+      (map (fun v : R => v * ps_P (preimage_singleton rv_X v)) l) = 
     list_sum
-      (map (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v /\ E omega)) l)
+      (map (fun v : R => v * ps_P ((preimage_singleton rv_X v) ∩ E)) l)
     + 
     list_sum
-      (map (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v /\ 
-                                               (event_complement E) omega)) l).
+      (map (fun v : R => v * ps_P ((preimage_singleton rv_X v) ∩ ¬ E)) l).
   Proof.
     intro sa_sigmaE.
     rewrite <-list_sum_map_add.
-    rewrite (map_ext (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v))
+    rewrite (map_ext (fun v : R => v * ps_P (preimage_singleton rv_X v))
                      (fun t : R =>
-                        t * ps_P (fun omega : Ts => rv_X omega = t /\ E omega) +
-                        t * ps_P (fun omega : Ts => rv_X omega = t /\ event_complement E omega))); trivial.
+                        t * ps_P ((preimage_singleton rv_X t) ∩ E) +
+                        t * ps_P ((preimage_singleton rv_X t) ∩ ¬ E))); trivial.
     intros.
     rewrite <- Rmult_plus_distr_l.
-    rewrite Rmult_eq_compat_l with (r2 := (ps_P (fun omega : Ts => rv_X omega = a /\ E omega) +
-                                           ps_P (fun omega : Ts => rv_X omega = a /\ 
-                                                                event_complement E omega))); trivial.
-    apply ps_total; trivial.
-    - now apply sa_singleton.
-    - now apply sa_complement.
+    apply Rmult_eq_compat_l.
+    apply ps_total.
     - apply event_disjoint_complement.
     - apply event_union_complement.
       now apply sa_dec.
@@ -233,6 +218,7 @@ Section SimpleExpectation.
 
   Lemma oppSimpleExpectation
         (rv_X : Ts -> R)
+        {rv : RandomVariable dom borel_sa rv_X}
         {srv : SimpleRandomVariable rv_X} : 
     (- SimpleExpectation rv_X)%R = SimpleExpectation (rvopp rv_X).
   Proof.
@@ -242,7 +228,7 @@ Section SimpleExpectation.
 
   Lemma rvminus_equiv (f g : Ts -> R) :
     (forall (r:R),  
-        (event_equiv (fun omega : Ts => f omega -  g omega <= r)
+        (pre_event_equiv (fun omega : Ts => f omega -  g omega <= r)
                      (fun omega : Ts => rvminus f g omega <= r))).
   Proof.
     intros r x.
@@ -251,7 +237,7 @@ Section SimpleExpectation.
   Qed.
 
   Lemma equiv_rvminus_eq (f g : Ts -> R) :
-    event_equiv (fun omega => f omega = g omega)
+    pre_event_equiv (fun omega => f omega = g omega)
                 (fun omega => rvminus f g omega = 0).
     unfold rvminus, rvplus, rvopp, rvscale.
     intro x.
@@ -285,31 +271,32 @@ Section SimpleExpectation.
     simpl in srv_vals_complete.
     now specialize (srv_vals_complete x).
   Qed.
-  
-  
 
   Lemma list_union_srv_preimage
         {rv_X : Ts -> R}
+        {rv : RandomVariable dom borel_sa rv_X}
         (srv : SimpleRandomVariable rv_X) :
-    event_equiv (list_union (map (fun (x : R) (omega : Ts) => rv_X omega = x) srv_vals))  Ω .
+    event_equiv (list_union (map (preimage_singleton rv_X) srv_vals))  Ω .
   Proof.
     intros x.
     unfold Ω.
     split; trivial; intros _.
-    unfold list_union.
-    generalize (srv_vals_complete x); intros HH2.
-    exists (fun (omega : Ts) => rv_X  omega = rv_X x).
-    split; trivial.
-    apply in_map_iff.
-    exists (rv_X x).
-    split; trivial.
-  Qed.
+    - now repeat red.
+    - unfold list_union.
+      generalize (srv_vals_complete x); intros HH2.
+      simpl.
+      eexists.
+      split.
+      + apply in_map.
+        apply srv_vals_complete.
+      + reflexivity.
+  Qed.    
 
-
-  Lemma event_disjoint_preimage_and_disj {A B}
-        f P l :
+  Lemma event_disjoint_preimage_and_disj 
+        f P l
+    {rv : RandomVariable dom borel_sa f} :
     NoDup l ->
-    ForallOrdPairs event_disjoint (map (fun (x : B) (omega : A) => f omega = x /\ P omega) l).
+    ForallOrdPairs event_disjoint (map (fun x => preimage_singleton f x ∩ P) l).
   Proof.
     induction l; simpl; intros nd.
     - constructor.
@@ -321,10 +308,11 @@ Section SimpleExpectation.
       congruence.
   Qed.
 
-  Lemma event_disjoint_and_preimage_disj {A B}
-        f P l :
+  Lemma event_disjoint_and_preimage_disj 
+        f P l
+        {rv : RandomVariable dom borel_sa f} :
     NoDup l ->
-    ForallOrdPairs event_disjoint (map (fun (x : B) (omega : A) => P omega /\ f omega = x) l).
+    ForallOrdPairs event_disjoint (map (fun x => P ∩ preimage_singleton f x)  l).
   Proof.
     induction l; simpl; intros nd.
     - constructor.
@@ -336,11 +324,13 @@ Section SimpleExpectation.
       congruence.
   Qed.
   
-  Lemma event_disjoint_preimage_disj_pairs {A B}
-        f1 f2 l :
+  Lemma event_disjoint_preimage_disj_pairs
+        f1 f2 l
+        {rv1 : RandomVariable dom borel_sa f1} 
+        {rv2 : RandomVariable dom borel_sa f2} :
     NoDup l ->
     ForallOrdPairs event_disjoint 
-                   (map (fun (x : B*B) (omega : A) => f1 omega = fst x /\ f2 omega = snd x) l).
+                   (map (fun (x : R*R) => (preimage_singleton f1 (fst x) ∩ preimage_singleton f2 (snd x))) l).
   Proof.
     induction l; simpl; intros nd.
     - constructor.
@@ -348,82 +338,60 @@ Section SimpleExpectation.
       constructor; auto.
       rewrite Forall_map.
       rewrite Forall_forall.
-      intros x xin e ein.
+      intros [??] xin e ein.
+      simpl in *.
+      destruct a.
       destruct ein.
-      rewrite H.
-      rewrite H0.
-      rewrite <- pair_equal_spec.
-      replace (fst a, snd a) with a.
-      replace (fst x, snd x) with x.
+      intros [??].
+      unfold pre_event_preimage, pre_event_singleton in *.
+      simpl in *.
       congruence.
-      now destruct x; unfold fst, snd.
-      now destruct a; unfold fst, snd.
   Qed.
 
   Lemma srv_vals_nodup_preimage_disj
-        {rv_X : Ts -> R}
-        (srv : SimpleRandomVariable rv_X) :
-    ForallOrdPairs event_disjoint (map (fun (x : R) (omega : Ts) => rv_X omega = x) (nodup Req_EM_T srv_vals)).
+        (rv_X : Ts -> R)
+        {rv : RandomVariable dom borel_sa rv_X}
+        {srv : SimpleRandomVariable rv_X} :
+    ForallOrdPairs event_disjoint (map (preimage_singleton rv_X) (nodup Req_EM_T srv_vals)).
   Proof.
     intros.
     apply event_disjoint_preimage_disj.
     apply NoDup_nodup.
   Qed.
-
   
   Lemma srv_vals_prob_1 
-        {rv_X : Ts -> R}
-        (rv: RandomVariable dom borel_sa rv_X)                      
-        (srv : SimpleRandomVariable rv_X) :
-    list_sum (map (fun x : R => ps_P (fun omega : Ts => rv_X  omega = x)) 
+        (rv_X : Ts -> R)
+        {rv: RandomVariable dom borel_sa rv_X}
+        {srv : SimpleRandomVariable rv_X} :
+    list_sum (map (fun x : R => ps_P (preimage_singleton rv_X x)) 
                   (nodup Req_EM_T srv_vals)) = 1.
   Proof.
-    transitivity (list_sum (map ps_P (map (fun x : R => (fun omega : Ts => rv_X  omega = x)) 
+    transitivity (list_sum (map ps_P (map (preimage_singleton rv_X) 
                                           (nodup Req_EM_T srv_vals)))).
     { now rewrite map_map. }
 
     generalize (ps_list_disjoint_union Prts
-                                       (map (fun (x : R) (omega : Ts) => rv_X omega = x) (nodup Req_EM_T srv_vals)))
+                                       (map (preimage_singleton rv_X) (nodup Req_EM_T srv_vals)))
     ; intros HH.
     rewrite list_sum_fold_right.
     rewrite <- HH; clear HH.
     - rewrite srv_nodup_preimage_list_union.
       apply ps_one.
-    - apply srv_vals_nodup_preimage_sa; trivial.
     - apply srv_vals_nodup_preimage_disj.
   Qed.
 
-  (*
-  Definition IndependentRandomVariables
-        (rv1 rv2: RandomVariable prts cod) : Prop :=
-    forall (B: event Td), 
-      sa_sigma B -> 
-      independent (event_preimage (rv_X (RandomVariable:=rv1)) B)
-                  (event_preimage (rv_X (RandomVariable:=rv2)) B).
-
-   Lemma independent_rv_at_point
-     (rv1 rv2: RandomVariable dom borel_sa) :
-   (* IndependentRandomVariables rv1 rv2 -> *)
-     forall (a a0 : R),
-       ps_P (fun omega : Ts => rv_X (RandomVariable := rv1) omega = a) * 
-       ps_P (fun omega : Ts => rv_X (RandomVariable := rv2) omega = a0) =
-       ps_P (fun omega : Ts => rv_X (RandomVariable := rv1) omega = a /\ 
-                               rv_X (RandomVariable := rv2) omega = a0).
-   Proof.     
-
-   *)
-
   Lemma simple_random_all
-        {rv_X : Ts -> R}
-        (srv : SimpleRandomVariable rv_X) :
-    event_equiv (list_union (map (fun (x : R) (omega : Ts) => rv_X omega = x) srv_vals))
+        (rv_X : Ts -> R)
+        {rv : RandomVariable dom borel_sa rv_X}
+        {srv : SimpleRandomVariable rv_X} :
+    event_equiv (list_union (map (preimage_singleton rv_X) srv_vals))
                 Ω .   
   Proof.
     unfold  Ω, list_union, event_equiv.
     intros.
     destruct srv.
     split; intros.
-    - intuition.
+    - now repeat red.
     - eexists.
       split; trivial.
       apply in_map_iff.
@@ -439,30 +407,24 @@ Section SimpleExpectation.
         (srv2 : SimpleRandomVariable rv_X2)
         (a:R) :
     NoDup (srv_vals (SimpleRandomVariable := srv2)) ->
-    ps_P (fun omega : Ts => rv_X1 omega = a) =
+    ps_P (preimage_singleton rv_X1 a) =
     list_sum
-      (map (fun x : R => ps_P (fun omega : Ts => rv_X1 omega = a /\ rv_X2 omega = x)) 
+      (map (fun x : R => ps_P (preimage_singleton rv_X1 a ∩ preimage_singleton rv_X2 x)) 
            (srv_vals (SimpleRandomVariable:=srv2))).
   Proof.
     intros.
     rewrite list_sum_fold_right.
     rewrite <- map_map.
     rewrite <- ps_list_disjoint_union.
-    - replace (map (fun (x : R) (omega : Ts) => rv_X1 omega = a /\ rv_X2 omega = x) srv_vals)
-        with (map (event_inter (fun omega => rv_X1 omega = a))
-                  (map (fun x => (fun omega => rv_X2 omega = x)) 
+    - replace (map (fun x => preimage_singleton rv_X1 a ∩ preimage_singleton rv_X2 x) srv_vals)
+        with (map (event_inter (preimage_singleton rv_X1 a))
+                  (map (preimage_singleton rv_X2) 
                        srv_vals)).
       + rewrite <- event_inter_list_union_distr.
         rewrite simple_random_all.
         now rewrite event_inter_true_r.
       + unfold event_inter.
         now rewrite map_map.
-    - intros.
-      apply in_map_iff in H0.
-      destruct H0.
-      destruct H0.
-      rewrite <- H0.
-      eapply sa_sigma_inter_pts; trivial.
     - now apply event_disjoint_and_preimage_disj.
   Qed.
   
@@ -474,22 +436,21 @@ Section SimpleExpectation.
         (srv2 : SimpleRandomVariable rv_X2)
         (a:R) :
     NoDup (srv_vals (SimpleRandomVariable := srv1)) ->
-    ps_P (fun omega : Ts => rv_X2 omega = a) =
+    ps_P (preimage_singleton rv_X2 a) =
     list_sum
-      (map (fun x : R => ps_P (fun omega : Ts => rv_X1 omega = x /\ rv_X2 omega = a)) 
+      (map (fun x : R => ps_P (preimage_singleton rv_X1 x ∩ preimage_singleton rv_X2 a)) 
            (srv_vals (SimpleRandomVariable:=srv1))).
   Proof.
     intros.
-    generalize (prob_inter_all1 srv2 srv1 a H); intros.
-    rewrite map_ext with 
-        (g := (fun x : R => ps_P (fun omega : Ts => rv_X2 omega = a /\ 
-                                              rv_X1 omega = x))); trivial.
-    intros.
-    now apply ps_proper.
+    rewrite (prob_inter_all1 srv2 srv1 a H); intros.
+    f_equal.
+    apply map_ext; intros.
+    apply ps_proper.
+    now rewrite event_inter_comm.
   Qed.
 
   Lemma RefineEvent
-        (E : event Ts) (lE : list (event Ts)):
+        (E : event dom) (lE : list (event dom)):
     event_equiv (list_union lE) Ω ->
     event_equiv E (list_union (map (event_inter E) lE)).
   Proof.
@@ -506,12 +467,11 @@ Section SimpleExpectation.
         (srv : SimpleRandomVariable rv_X)
         (srv2 : SimpleRandomVariable rv_X2) :  
     list_sum
-      (map (fun v : R => v * ps_P (fun omega : Ts => rv_X  omega = v))
+      (map (fun v : R => v * ps_P (preimage_singleton rv_X v))
            (nodup Req_EM_T (srv_vals (SimpleRandomVariable:=srv)))) = 
     list_sum
       (map (fun vv : R*R => 
-              (fst vv) * ps_P (fun omega : Ts => rv_X  omega = fst vv /\
-                                              rv_X2 omega = snd vv))
+              (fst vv) * ps_P ((preimage_singleton rv_X (fst vv)) ∩ (preimage_singleton rv_X2 (snd vv))))
            (list_prod (nodup Req_EM_T (srv_vals (SimpleRandomVariable:=srv)))
                       (nodup Req_EM_T (srv_vals (SimpleRandomVariable:=srv2))))).
   Proof.
@@ -523,7 +483,7 @@ Section SimpleExpectation.
     rewrite map_map.
     simpl.
     transitivity (list_sum (List.map (fun z => a*z)
-                                     (map (fun x : R => ps_P (fun omega : Ts => (rv_X ) omega = a /\ (rv_X2) omega = x)) (nodup Req_EM_T (srv_vals (SimpleRandomVariable:=srv2)))))).
+                                     (map (fun x : R => ps_P ((preimage_singleton rv_X a) ∩ (preimage_singleton rv_X2 x))) (nodup Req_EM_T (srv_vals (SimpleRandomVariable:=srv2)))))).
     - rewrite list_sum_mult_const.
       f_equal.
       rewrite map_map.
@@ -531,7 +491,7 @@ Section SimpleExpectation.
     - now rewrite map_map.
   Qed.
 
-  Lemma zero_prob_or_witness (E : event Ts) :
+  Lemma zero_prob_or_witness (E : event dom) :
     ps_P E <> 0 -> exists (x:Ts), E x.
   Proof.
     intros.
@@ -543,7 +503,7 @@ Section SimpleExpectation.
       rewrite HH.
       apply ps_none.
     - intros e.
-      unfold event_none; intuition.
+      unfold event_none, pre_event_none; simpl; intuition.
       eauto.
   Qed.
 
@@ -567,49 +527,35 @@ Section SimpleExpectation.
     replace 
       (list_sum (map
                    (fun vv : R * R =>
-                      fst vv * ps_P (fun omega : Ts => rv_X2 omega = fst vv /\ rv_X1 omega = snd vv))
+                      fst vv * ps_P (preimage_singleton rv_X2 (fst vv) ∩ preimage_singleton rv_X1 (snd vv)))
                    (list_prod (nodup Req_EM_T srv_vals0) (nodup Req_EM_T srv_vals)))) with
         (list_sum (map
                      (fun vv : R * R =>
-                        snd vv * ps_P (fun omega : Ts => rv_X1 omega = fst vv /\ rv_X2 omega = snd vv))
+                        snd vv * ps_P (preimage_singleton rv_X1 (fst vv) ∩ preimage_singleton rv_X2 (snd vv)))
                      (list_prod (nodup Req_EM_T srv_vals) (nodup Req_EM_T srv_vals0)))).
     - apply list_sum_le; intros.
-      assert ((ps_P (fun omega : Ts => rv_X1 omega = fst a /\ rv_X2 omega = snd a)) = 0 \/
+      assert (ps_P (preimage_singleton rv_X1 (fst a) ∩ preimage_singleton rv_X2 (snd a)) = 0 \/
               fst a <= snd a).
-      + destruct (Req_EM_T (ps_P (fun omega : Ts => rv_X1 omega = fst a /\ rv_X2 omega = snd a)) 0).
+      + destruct (Req_EM_T (ps_P (preimage_singleton rv_X1 (fst a) ∩ preimage_singleton rv_X2 (snd a))) 0).
         * intuition.
-        * apply zero_prob_or_witness in n.
-          right.
-          destruct n.
-          destruct H0.
+        * right.
+          apply zero_prob_or_witness in n.
+          destruct n as [?[??]].
           rewrite <- H0; rewrite <- H1.
           apply H.
       + destruct H0.
-        rewrite H0; lra.
-        apply Rmult_le_compat_r.
-        apply ps_pos.
-        apply sa_sigma.
-        trivial.
+        * rewrite H0; lra.
+        * apply Rmult_le_compat_r; trivial.
+          apply ps_pos.
     - apply list_sum_Proper.
       rewrite list_prod_swap.
       rewrite map_map.
-      rewrite (map_ext 
-                 (fun x : R * R =>
-                    snd (snd x, fst x) *
-                    ps_P
-                      (fun omega : Ts =>
-                         rv_X1 omega = fst (snd x, fst x) /\ 
-                         rv_X2 omega = snd (snd x, fst x)))
-                 (fun vv : R * R =>
-                    fst vv * ps_P (fun omega : Ts => rv_X2 omega = fst vv /\ 
-                                                  rv_X1 omega = snd vv))).
-      apply Permutation.Permutation_refl.
-      intros.
-      unfold snd.
+      
+      apply Permutation_refl'.
+      apply map_ext; intros [??]; simpl.
       f_equal.
       apply ps_proper.
-      unfold event_equiv; intros.
-      intuition.
+      now rewrite event_inter_comm.
   Qed.
 
   Lemma sumSimpleExpectation00
@@ -622,13 +568,13 @@ Section SimpleExpectation.
     NoDup (srv_vals (SimpleRandomVariable := srv1)) ->
     NoDup (srv_vals (SimpleRandomVariable := srv2)) ->    
     list_sum
-      (map (fun v : R => v * ps_P (fun omega : Ts => rv_X1 omega = v))
+      (map (fun v : R => v * ps_P (preimage_singleton rv_X1 v))
            (srv_vals (SimpleRandomVariable := srv1))) =
     list_sum
       (map
          (fun v : R * R =>
             (fst v) *
-            ps_P (fun omega : Ts => rv_X1 omega = fst v /\ rv_X2 omega = snd v))
+            ps_P (preimage_singleton rv_X1 (fst v) ∩ preimage_singleton rv_X2 (snd v)))
          (list_prod (srv_vals (SimpleRandomVariable := srv1))
                     (srv_vals (SimpleRandomVariable := srv2)))).
   Proof.
@@ -657,14 +603,13 @@ Section SimpleExpectation.
     NoDup (srv_vals (SimpleRandomVariable := srv1)) ->
     NoDup (srv_vals (SimpleRandomVariable := srv2)) ->    
     list_sum
-      (map (fun v : R => v * ps_P (fun omega : Ts => rv_X2 omega = v))
+      (map (fun v : R => v * ps_P (preimage_singleton rv_X2 v))
            (srv_vals (SimpleRandomVariable := srv2))) =
     list_sum
       (map
          (fun v : R * R =>
             (snd v) *
-            ps_P (fun omega : Ts => rv_X1 omega = fst v /\ 
-                                 rv_X2 omega = snd v))
+            ps_P (preimage_singleton rv_X1 (fst v) ∩ preimage_singleton rv_X2 (snd v)))
          (list_prod (srv_vals (SimpleRandomVariable := srv1))
                     (srv_vals (SimpleRandomVariable := srv2)))).
   Proof.
@@ -696,13 +641,13 @@ Section SimpleExpectation.
         (srv2 : SimpleRandomVariable rv_X2) :
     (srv_vals (SimpleRandomVariable := srv2)) <> nil ->
     list_sum
-      (map (fun v : R => v * ps_P (fun omega : Ts => rv_X1 omega = v))
+      (map (fun v : R => v * ps_P (preimage_singleton rv_X1 v))
            (nodup Req_EM_T (srv_vals (SimpleRandomVariable := srv1)))) =
     list_sum
       (map
          (fun v : R * R =>
             (fst v) *
-            ps_P (fun omega : Ts => rv_X1 omega = fst v /\ rv_X2 omega = snd v))
+            ps_P (preimage_singleton rv_X1 (fst v) ∩ preimage_singleton rv_X2 (snd v)))
          (list_prod (nodup Req_EM_T (srv_vals (SimpleRandomVariable := srv1))) 
                     (nodup Req_EM_T (srv_vals (SimpleRandomVariable := srv2))))).
   Proof.
@@ -720,14 +665,13 @@ Section SimpleExpectation.
         (srv2 : SimpleRandomVariable rv_X2) :
     (srv_vals (SimpleRandomVariable := srv1)) <> nil ->
     list_sum
-      (map (fun v : R => v * ps_P (fun omega : Ts => rv_X2 omega = v))
+      (map (fun v : R => v * ps_P (preimage_singleton rv_X2 v))
            (nodup Req_EM_T (srv_vals (SimpleRandomVariable := srv2)))) =
     list_sum
       (map
          (fun v : R * R =>
             (snd v) *
-            ps_P (fun omega : Ts => rv_X1 omega = fst v /\ 
-                                 rv_X2 omega = snd v))
+            ps_P (preimage_singleton rv_X1 (fst v) ∩ preimage_singleton rv_X2 (snd v)))
          (list_prod (nodup Req_EM_T (srv_vals (SimpleRandomVariable := srv1))) 
                     (nodup Req_EM_T (srv_vals (SimpleRandomVariable := srv2))))).
   Proof.
@@ -756,10 +700,11 @@ Section SimpleExpectation.
 
   Lemma preimage_points_disjoint
         {rv_X : Ts -> R}
+        {rv : RandomVariable dom borel_sa rv_X}
         (c d: R) :
     c <> d ->
-    event_disjoint (fun omega => rv_X  omega = c)
-                   (fun omega => rv_X  omega = d).
+    event_disjoint (preimage_singleton rv_X c)
+                   (preimage_singleton rv_X d).
   Proof.
     unfold event_disjoint.
     congruence.
@@ -767,15 +712,17 @@ Section SimpleExpectation.
 
   Lemma preimage_point_pairs_disjoint
         (rv_X1 rv_X2: Ts -> R)
+        {rv1 : RandomVariable dom borel_sa rv_X1}
+        {rv2 : RandomVariable dom borel_sa rv_X2}
         (c1 c2 d1 d2: R) :
     (c1 <> d1) \/ (c2 <> d2) ->
-    event_disjoint (event_inter (fun omega => rv_X1 omega = c1)
-                                (fun omega => rv_X2 omega = c2))
-                   (event_inter (fun omega => rv_X1 omega = d1)
-                                (fun omega => rv_X2 omega = d2)).
+    event_disjoint (event_inter (preimage_singleton rv_X1 c1)
+                                (preimage_singleton rv_X2 c2))
+                   (event_inter (preimage_singleton rv_X1 d1)
+                                (preimage_singleton rv_X2 d2)).
   Proof.
     intros.
-    unfold event_disjoint, event_inter; intros.
+    unfold event_disjoint, pre_event_disjoint, event_inter, pre_event_inter; simpl; intros.
     destruct H0; destruct H1.
     destruct H; congruence.
   Qed.
@@ -790,9 +737,10 @@ Section SimpleExpectation.
     - now apply concat_NoDup in nd2.
   Qed.
 
-  Lemma list_union_sub_cover {T} (l : list (event T)) (P Q: event T) :
-    event_union (list_union l) Q = Ω -> event_disjoint P Q ->
-    (forall (e:event T), In e l -> event_inter P e = e ) ->
+  Lemma list_union_sub_cover (l : list (event dom)) (P Q: event dom) :
+    event_union (list_union l) Q = Ω ->
+    event_disjoint P Q ->
+    (forall (e:event dom), In e l -> event_inter P e = e ) ->
     event_equiv (list_union l) P.
   Proof.
     intros.
@@ -839,7 +787,8 @@ Section SimpleExpectation.
     simpl.
     unfold event_singleton, event_preimage.
     transitivity (list_sum
-                    (map (fun v : R*R => (fst v + snd v) * ps_P (fun omega : Ts => rv_X1 omega = fst v /\ rv_X2 omega = snd v))
+                    (map (fun v : R*R => (fst v + snd v) * ps_P
+                                                          (preimage_singleton rv_X1 (fst v) ∩ preimage_singleton rv_X2 (snd v)))
                          (list_prod (nodup Req_EM_T srv_vals) (nodup Req_EM_T srv_vals0)))).
     - rewrite H1.
       rewrite H2.
@@ -854,14 +803,14 @@ Section SimpleExpectation.
       
       transitivity (list_sum
                       (map
-                         (fun v : R * R => (fst v + snd v) * ps_P (fun omega : Ts => rv_X1 omega = fst v /\ rv_X2 omega = snd v))
+                         (fun v : R * R => (fst v + snd v) * ps_P (preimage_singleton rv_X1 (fst v) ∩ preimage_singleton rv_X2 (snd v)))
                          (nodup HH (list_prod srv_vals srv_vals0)))).
       + f_equal.
         f_equal.
         symmetry.
         apply list_prod_nodup.
       + transitivity (list_sum
-                        (map (fun v : R => v * ps_P (fun omega : Ts => rv_X1 omega + rv_X2 omega = v))
+                        (map (fun v : R => v * ps_P (preimage_singleton (rvplus rv_X1 rv_X2) v))
                              (nodup Req_EM_T (map (fun ab : R * R => fst ab + snd ab) (nodup HH (list_prod srv_vals srv_vals0)))))).
         * generalize (NoDup_nodup HH (list_prod srv_vals srv_vals0)).
           assert (Hcomplete:forall x y, In (rv_X1 x, rv_X2 y) (nodup HH (list_prod srv_vals srv_vals0))).
@@ -874,7 +823,7 @@ Section SimpleExpectation.
           intros.
           transitivity (list_sum
                           (map
-                             (fun v : R * R => (fst v + snd v) * ps_P (fun omega : Ts => rv_X1 omega = fst v /\ rv_X2 omega = snd v))
+                             (fun v : R * R => (fst v + snd v) * ps_P (preimage_singleton rv_X1 (fst v) ∩ preimage_singleton rv_X2 (snd v)))
                              (concat (quotient sums_same l)))).
           { apply list_sum_Proper. apply Permutation.Permutation_map. symmetry. apply unquotient_quotient.
           } 
@@ -884,7 +833,7 @@ Section SimpleExpectation.
 
           transitivity (
               list_sum
-                (map (fun v : R => v * ps_P (fun omega : Ts => rv_X1 omega + rv_X2 omega = v))
+                (map (fun v : R => v * ps_P (preimage_singleton (rvplus rv_X1 rv_X2) v))
                      (map (fun ab : R * R => fst ab + snd ab) (map (hd (0,0)) (quotient sums_same l))))).
           -- repeat rewrite map_map; simpl.
              f_equal.
@@ -900,10 +849,10 @@ Section SimpleExpectation.
              
              unfold is_equiv_class, ForallPairs in Hequiv.
              destruct a; simpl in *; [congruence | ]; clear Hnnil.
-             transitivity ((fst p + snd p) * ps_P (fun omega : Ts => rv_X1 omega = fst p /\ rv_X2 omega = snd p) +
+             transitivity ((fst p + snd p) * ps_P (preimage_singleton rv_X1 (fst p) ∩ preimage_singleton rv_X2 (snd p))  +
                            list_sum
                              (map
-                                (fun v : R * R => (fst p + snd p) * ps_P (fun omega : Ts => rv_X1 omega = fst v /\ rv_X2 omega = snd v))
+                                (fun v : R * R => (fst p + snd p) * ps_P (preimage_singleton rv_X1 (fst v) ∩ preimage_singleton rv_X2 (snd v)))
                                 a)).
              ++ f_equal.
                 f_equal.
@@ -915,33 +864,40 @@ Section SimpleExpectation.
                 rewrite <- Rmult_plus_distr_l.
                 f_equal.
                 transitivity (
-                    list_sum (map (fun x : R * R => ps_P (fun omega : Ts => rv_X1 omega = fst x /\ rv_X2 omega = snd x)) (p::a))); [reflexivity |].
+                    list_sum (map (fun x : R * R => ps_P (preimage_singleton rv_X1 (fst x) ∩ preimage_singleton rv_X2 (snd x))) (p::a))); [reflexivity |].
                 rewrite list_sum_fold_right.
                 rewrite <- map_map.
                 rewrite <- ps_list_disjoint_union.
                 ** apply ps_proper; intros x.
-                   unfold list_union.
+                   unfold preimage_singleton, pre_event_preimage, event_inter, pre_event_inter, pre_event_singleton, rvplus; simpl.
                    split.
                    --- intros [e [ein ex]].
-                       apply in_map_iff in ein.
+                       destruct ein as [?|ein].
+                       +++ subst; simpl in *.
+                           destruct ex.
+                           congruence.
+                       +++ apply in_map_iff in ein.
                        destruct ein as [ee [? eein]]; subst.
                        destruct ex as [ex1 ex2].
                        rewrite ex1, ex2.
                        apply Hequiv; eauto.
                    --- intros.
-                       exists (fun (omega : Ts) => rv_X1 omega = rv_X1 x /\ rv_X2 omega = rv_X2 x).
-                       split; [| tauto].
-                       apply in_map_iff.
-                       exists (rv_X1 x, rv_X2 x).
-                       split; [reflexivity | ].
                        assert (Hin:In (rv_X1 x, rv_X2 x) l) by apply Hcomplete.
                        destruct (quotient_in sums_same _ _ Hin) as [xx [xxin inxx]].
-                       rewrite <- (all_different_same_eq sums_same (quotient sums_same l) xx (p::a) (rv_X1 x, rv_X2 x) (fst p, snd p)); simpl; trivial.
-                       destruct p; eauto.
-                ** intros.
-                   apply in_map_iff in H3.
-                   destruct H3 as [xx [? xxin]]; subst.
-                   apply sa_sigma; trivial.
+                       generalize (all_different_same_eq sums_same (quotient sums_same l) xx (p::a) (rv_X1 x, rv_X2 x) (fst p, snd p)); simpl; trivial; intros.
+                       rewrite H4 in inxx; trivial
+                       ; destruct p; simpl; eauto.
+                       destruct inxx.
+                       +++ eexists.
+                           split; [left; reflexivity | ]; simpl.
+                           invcs H5; tauto.
+                       +++ eexists.
+                           split.
+                           *** right.
+                               apply in_map.
+                               apply H5.
+                           *** simpl.
+                               tauto.
                 ** apply event_disjoint_preimage_disj_pairs.
                    generalize (quotient_bucket_NoDup sums_same l H1); rewrite Forall_forall; eauto.
           -- apply list_sum_Proper.
@@ -961,24 +917,24 @@ Section SimpleExpectation.
         * now rewrite nodup_map_nodup.
   Qed.
 
-
   Lemma not_in_srv_vals_event_none
-        {rv_X : Ts -> R}
-        (srv:SimpleRandomVariable rv_X) :
+        (rv_X : Ts -> R)
+        {rv : RandomVariable dom borel_sa rv_X}
+        {srv:SimpleRandomVariable rv_X} :
     forall (x:R), ~ (In x srv_vals) ->
-             event_equiv (fun omega => rv_X omega = x) event_none.
+             event_equiv (preimage_singleton rv_X x) event_none.
   Proof.
     destruct srv.
     unfold RandomVariable.srv_vals.
-    red; intros.
-    unfold event_none.
-    intuition.
-    rewrite <- H0 in H.
-    intuition.
+    repeat red; intros.
+    unfold preimage_singleton, pre_event_singleton, pre_event_preimage; simpl.
+    unfold pre_event_none.
+    split; intros; subst; intuition.
   Qed.
 
   Lemma SimpleExpectation_simpl_incl 
         {rv_X : Ts -> R}
+        {rv : RandomVariable dom borel_sa rv_X}
         (srv:SimpleRandomVariable rv_X)
         (l:list R)
         (lincl : incl srv_vals l) :
@@ -990,21 +946,21 @@ Section SimpleExpectation.
     
     destruct HH as [l2 HH].
     rewrite (list_sum_perm_eq 
-               (map (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v)) (nodup Req_EM_T l))
-               (map (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v)) ((nodup Req_EM_T srv_vals) ++ (nodup Req_EM_T l2 )))).
+               (map (fun v : R => v * ps_P (preimage_singleton rv_X v)) (nodup Req_EM_T l))
+               (map (fun v : R => v * ps_P (preimage_singleton rv_X v)) ((nodup Req_EM_T srv_vals) ++ (nodup Req_EM_T l2 )))).
     - rewrite map_app.
       rewrite list_sum_cat.
       replace (list_sum
-                 (map (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v))
+                 (map (fun v : R => v * ps_P (preimage_singleton rv_X v))
                       (nodup Req_EM_T srv_vals))) with 
           ((list_sum
-              (map (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v))
+              (map (fun v : R => v * ps_P (preimage_singleton rv_X v))
                    (nodup Req_EM_T srv_vals))) + 0) at 1 by lra.
       f_equal.
       rewrite <- (list_sum_map_zero (nodup Req_EM_T l2)).
       f_equal.
       apply map_ext_in; intros.
-      rewrite (not_in_srv_vals_event_none srv).
+      rewrite (not_in_srv_vals_event_none rv_X).
       + rewrite ps_none.
         lra.
       + generalize (NoDup_perm_disj _ _ _ HH); intros HH2.
@@ -1031,32 +987,32 @@ Section SimpleConditionalExpectation.
     {dom: SigmaAlgebra Ts}
     {Prts: ProbSpace dom}.
 
-  Definition gen_simple_conditional_expectation_scale (P : event Ts)
+  Program Definition gen_simple_conditional_expectation_scale (P : event dom)
              (rv_X : Ts -> R)
+             {rv : RandomVariable dom borel_sa rv_X}
              {srv : SimpleRandomVariable rv_X}
-             (dec:forall x, {P x} + {~ P x})        
-             (sap: sa_sigma P) :=
+             (dec:forall x, {P x} + {~ P x}) :=
     rvscale (if (Req_EM_T (ps_P P) 0) then 0 else
-               ((SimpleExpectation (rvmult rv_X (EventIndicator dec))) / (ps_P P)))
+               ((SimpleExpectation  ((rvmult rv_X (EventIndicator dec)))) / (ps_P P)))
             (EventIndicator dec).
 
-  Instance gen_simple_conditional_expectation_scale_rv (P : event Ts)
+  Instance gen_simple_conditional_expectation_scale_rv (P : event dom)
            (rv_X : Ts -> R)
+           {rv : RandomVariable dom borel_sa rv_X}
            {srv : SimpleRandomVariable rv_X}
-           (dec:forall x, {P x} + {~ P x})        
-           (sap: sa_sigma P) :  
-    RandomVariable dom borel_sa  (gen_simple_conditional_expectation_scale P rv_X dec sap).
+           (dec:forall x, {P x} + {~ P x}) :
+    RandomVariable dom borel_sa  (gen_simple_conditional_expectation_scale P rv_X dec).
   Proof.
     unfold gen_simple_conditional_expectation_scale.
     apply rvscale_rv; now apply EventIndicator_rv.    
   Qed.
 
-  Instance gen_simple_conditional_expectation_scale_simpl (P : event Ts)
+  Instance gen_simple_conditional_expectation_scale_simpl (P : event dom)
            (rv_X : Ts -> R)
+           {rv : RandomVariable dom borel_sa rv_X}
            {srv : SimpleRandomVariable rv_X}
-           (dec:forall x, {P x} + {~ P x})        
-           (sap: sa_sigma P) :
-    SimpleRandomVariable (gen_simple_conditional_expectation_scale P rv_X dec sap).
+           (dec:forall x, {P x} + {~ P x}) :
+    SimpleRandomVariable (gen_simple_conditional_expectation_scale P rv_X dec).
   Proof.
     unfold gen_simple_conditional_expectation_scale.
     apply srvscale; apply EventIndicator_srv.
@@ -1065,18 +1021,19 @@ Section SimpleConditionalExpectation.
   Definition with_index_simple {A} (l:list A) : list (nat*A)
     := (combine (seq 0 (length l)) l).
 
-
   Definition gen_SimpleConditionalExpectation
              (rv_X : Ts -> R)
+             {rv : RandomVariable dom borel_sa rv_X}
              {srv : SimpleRandomVariable rv_X}
              (l : list dec_sa_event) :=
     fold_right rvplus (const 0)
                (map
-                  (fun ev => gen_simple_conditional_expectation_scale (dsa_event ev) rv_X (dsa_dec ev) (dsa_sa ev))
+                  (fun ev => gen_simple_conditional_expectation_scale (dsa_event ev) rv_X (dsa_dec ev))
                   l).
 
   Instance gen_SimpleConditionalExpectation_simpl
            (rv_X : Ts -> R)
+           {rv : RandomVariable dom borel_sa rv_X}
            {srv : SimpleRandomVariable rv_X}
            (l : list dec_sa_event) :
     SimpleRandomVariable (gen_SimpleConditionalExpectation rv_X l).
@@ -1102,16 +1059,20 @@ Section SimpleConditionalExpectation.
 
   Definition simple_conditional_expectation_scale_coef (c : R)
              (rv_X rv_X2 : Ts -> R)
+             {rv : RandomVariable dom borel_sa rv_X}
+             {rv2 : RandomVariable dom borel_sa rv_X2}
              {srv : SimpleRandomVariable rv_X}
              {srv2 : SimpleRandomVariable rv_X2} : R :=
-    if Req_EM_T (ps_P (event_preimage rv_X2 (event_singleton c))) 0 then 0 else
+    if Req_EM_T (ps_P (preimage_singleton rv_X2 c)) 0 then 0 else
       ((SimpleExpectation 
           (rvmult rv_X
                   (point_preimage_indicator rv_X2 c)))
-         / (ps_P (event_preimage rv_X2 (event_singleton c)))).
+         / (ps_P (preimage_singleton rv_X2 c))).
 
   Definition SimpleConditionalExpectation_list
              (rv_X1 rv_X2 : Ts -> R)
+             {rv : RandomVariable dom borel_sa rv_X1}
+             {rv : RandomVariable dom borel_sa rv_X2}
              {srv1 : SimpleRandomVariable rv_X1}
              {srv2 : SimpleRandomVariable rv_X2}
     := map (fun c => (rvscale (simple_conditional_expectation_scale_coef c rv_X1 rv_X2)
@@ -1120,10 +1081,28 @@ Section SimpleConditionalExpectation.
 
   Definition SimpleConditionalExpectation
              (rv_X1 rv_X2 : Ts -> R)
+             {rv : RandomVariable dom borel_sa rv_X1}
+             {rv : RandomVariable dom borel_sa rv_X2}
              {srv1 : SimpleRandomVariable rv_X1} 
              {srv2 : SimpleRandomVariable rv_X2} :=
     fold_right rvplus (const 0)
                (SimpleConditionalExpectation_list rv_X1 rv_X2).
+
+  Lemma SimpleConditionalExpectation_list_rv  
+        (rv_X1 rv_X2 : Ts -> R)
+        {rv1 : RandomVariable dom borel_sa rv_X1}
+        {rv2 : RandomVariable dom borel_sa rv_X2}                          
+        {srv1 : SimpleRandomVariable rv_X1}
+        {srv2 : SimpleRandomVariable rv_X2} :
+    Forall (RandomVariable dom borel_sa) (SimpleConditionalExpectation_list rv_X1 rv_X2).
+  Proof.
+    unfold SimpleConditionalExpectation_list.
+    induction srv_vals; simpl.
+    - constructor.
+    - match_destr.
+      constructor; trivial.
+      typeclasses eauto.
+  Defined.
 
   Lemma SimpleConditionalExpectation_list_simple  
         (rv_X1 rv_X2 : Ts -> R)
@@ -1141,6 +1120,22 @@ Section SimpleConditionalExpectation.
       typeclasses eauto.
   Defined.
 
+  Instance SimpleConditionalExpectation_rv
+           (rv_X1 rv_X2 : Ts -> R)
+           {rv1 : RandomVariable dom borel_sa rv_X1}
+           {rv2 : RandomVariable dom borel_sa rv_X2}                          
+           {srv1 : SimpleRandomVariable rv_X1}
+           {srv2 : SimpleRandomVariable rv_X2}
+    : RandomVariable dom borel_sa (SimpleConditionalExpectation rv_X1 rv_X2).
+  Proof.
+    unfold SimpleConditionalExpectation; simpl.
+    generalize (SimpleConditionalExpectation_list_rv rv_X1 rv_X2).
+    induction (SimpleConditionalExpectation_list rv_X1 rv_X2); intros HH; simpl.
+    - typeclasses eauto.
+    - invcs HH.
+      apply rvplus_rv; auto.
+  Qed.
+  
   Instance SimpleConditionalExpectation_simple
            (rv_X1 rv_X2 : Ts -> R)
            {rv1 : RandomVariable dom borel_sa rv_X1}
@@ -1158,18 +1153,20 @@ Section SimpleConditionalExpectation.
   Qed.
 
   Lemma SimpleExpectation_EventIndicator 
-        {P : event Ts} 
+        {P : event dom} 
         (dec: forall x, {P x} + {~ P x}) :
     SimpleExpectation (EventIndicator dec) = ps_P P.
   Proof.
     unfold EventIndicator_srv.
     unfold SimpleExpectation.
     unfold srv_vals.
-    unfold event_preimage, event_singleton.
+    unfold preimage_singleton.
+    unfold pre_event_preimage, pre_event_singleton.
     unfold EventIndicator.
     simpl.
     repeat match_destr; simpl; ring_simplify
-    ; apply ps_proper; intros ?; match_destr; intuition.
+    ; apply ps_proper; intros ?; simpl    
+    ; match_destr; intuition.
   Qed.
 
   Definition fold_rvplus_prod_indicator
@@ -1191,7 +1188,6 @@ Section SimpleConditionalExpectation.
     - apply rvplus_rv.
       + apply rvmult_rv; trivial.
         apply EventIndicator_rv.
-        apply dsa_sa.
       + apply IHl.
   Qed.
 
@@ -1205,11 +1201,30 @@ Section SimpleConditionalExpectation.
     induction l; simpl; typeclasses eauto.
   Defined.
 
+  Lemma SimpleExpectation_rv_irrel 
+        {rv_X : Ts -> R}
+        (rv1 : RandomVariable dom borel_sa rv_X)
+        (rv2 : RandomVariable dom borel_sa rv_X)
+        {srv:SimpleRandomVariable rv_X} :
+    SimpleExpectation rv_X (rv:=rv1) = SimpleExpectation rv_X (rv:=rv2).
+  Proof.
+    unfold SimpleExpectation.
+    f_equal.
+    apply map_ext; intros.
+    f_equal.
+    apply ps_proper.
+    unfold preimage_singleton; intros ?; simpl.
+    reflexivity.
+  Qed.
+    
   Lemma SimpleExpectation_pf_irrel 
         {rv_X : Ts -> R}
+        {rv1 : RandomVariable dom borel_sa rv_X}
+        {rv2 : RandomVariable dom borel_sa rv_X}
         (srv1 srv2:SimpleRandomVariable rv_X):
-    SimpleExpectation rv_X (srv:=srv1) = SimpleExpectation rv_X (srv:=srv2).
+    SimpleExpectation rv_X (rv:=rv1) (srv:=srv1) = SimpleExpectation rv_X (rv:=rv2) (srv:=srv2).
   Proof.
+    rewrite (SimpleExpectation_rv_irrel rv1 rv2).
     assert (lincl1:incl (srv_vals (SimpleRandomVariable:=srv1)) (srv_vals (SimpleRandomVariable:=srv1)++(srv_vals (SimpleRandomVariable:=srv2)))).
     { apply incl_appl.
       reflexivity.
@@ -1227,12 +1242,34 @@ Section SimpleConditionalExpectation.
   Proof.
     rewrite (SimpleExpectation_pf_irrel _ (srvconst c)).
     unfold SimpleExpectation; simpl.
-    unfold event_preimage, event_singleton, const.
+    unfold preimage_singleton, pre_event_preimage, pre_event_singleton, const.
     erewrite ps_proper.
     - erewrite ps_one.
       lra.
-    - unfold Ω.
-      red; intros; intuition.
+    - unfold Ω, pre_Ω.
+      repeat red; intros; simpl; intuition.
+  Qed.
+  
+  Lemma scaleSimpleExpectation' (c:R)
+        (rv_X : Ts -> R)
+        {rv : RandomVariable dom borel_sa rv_X}
+        {srv : SimpleRandomVariable rv_X} 
+        {rv' : RandomVariable dom borel_sa (rvscale c rv_X)} 
+        {srv' : SimpleRandomVariable (rvscale c rv_X)} : 
+    SimpleExpectation (rv:=rv') (srv:=srv') (rvscale c rv_X) = (c * SimpleExpectation rv_X)%R.
+  Proof.
+    rewrite scaleSimpleExpectation.
+    apply SimpleExpectation_pf_irrel.
+  Qed.
+
+
+  Instance RandomVariable_transport
+          {rv_X1 rv_X2:Ts->R}
+          {rv : RandomVariable dom borel_sa rv_X1}
+          (eqq:rv_eq rv_X1 rv_X2) :
+    RandomVariable dom borel_sa rv_X2.
+  Proof.
+    now apply (RandomVariable_proper dom borel_sa rv_X1 rv_X2 eqq).
   Qed.
 
   Program Instance SimpleRandomVariable_transport
@@ -1246,7 +1283,14 @@ Section SimpleConditionalExpectation.
     apply srv_vals_complete.
   Qed.
 
-  Global Instance event_preimage_proper {A B} : Proper (rv_eq ==> event_equiv ==> event_equiv) (@event_preimage A B).
+  Global Instance pre_event_preimage_proper {A B} : Proper (rv_eq ==> pre_event_equiv ==> pre_event_equiv) (@pre_event_preimage A B).
+  Proof.
+    unfold pre_event_preimage; intros ???????.
+    rewrite H.
+    apply H0.
+  Qed.
+
+  Global Instance event_preimage_proper {A B S} : Proper (rv_eq ==> event_equiv ==> pre_event_equiv) (@event_preimage A B S).
   Proof.
     unfold event_preimage; intros ???????.
     rewrite H.
@@ -1254,9 +1298,10 @@ Section SimpleConditionalExpectation.
   Qed.
   
   Lemma SimpleExpectation_transport {rv_X1 rv_X2:Ts->R}
+        {rv1 : RandomVariable dom borel_sa rv_X1}
         (srv1:SimpleRandomVariable rv_X1)
         (eqq:rv_eq rv_X1 rv_X2) :
-    SimpleExpectation rv_X1 = SimpleExpectation rv_X2 (srv:=SimpleRandomVariable_transport srv1 eqq).
+    SimpleExpectation rv_X1 = SimpleExpectation rv_X2 (rv:=RandomVariable_transport eqq) (srv:=SimpleRandomVariable_transport srv1 eqq).
   Proof.
     unfold SimpleExpectation.
     simpl.
@@ -1267,15 +1312,17 @@ Section SimpleConditionalExpectation.
     f_equal.
     apply ps_proper.
     intros ?.
-    unfold event_preimage.
+    unfold preimage_singleton, pre_event_preimage, pre_event_singleton; simpl.
     rewrite eqq.
-    + reflexivity.
+    reflexivity.
   Qed.
   
   Lemma SimpleExpectation_ext 
         {rv_X1 rv_X2 : Ts -> R}
-        (srv1:SimpleRandomVariable rv_X1) 
-        (srv2:SimpleRandomVariable rv_X2):
+        {rv1 : RandomVariable dom borel_sa rv_X1}
+        {rv2 : RandomVariable dom borel_sa rv_X2}
+        {srv1:SimpleRandomVariable rv_X1}
+        {srv2:SimpleRandomVariable rv_X2}:
     rv_eq rv_X1 rv_X2 ->
     SimpleExpectation rv_X1 = SimpleExpectation rv_X2.
   Proof.
@@ -1284,10 +1331,12 @@ Section SimpleConditionalExpectation.
     apply SimpleExpectation_pf_irrel.
   Qed.
 
-   Lemma gen_SimpleConditionalExpectation_ext (x y:Ts->R)
-          {srvx : SimpleRandomVariable x}
-          {srvy : SimpleRandomVariable y}          
-          (l : list dec_sa_event) :
+  Lemma gen_SimpleConditionalExpectation_ext (x y:Ts->R)
+        {rvx : RandomVariable dom borel_sa x}
+        {rvy : RandomVariable dom borel_sa y}
+        {srvx : SimpleRandomVariable x}
+        {srvy : SimpleRandomVariable y}          
+        (l : list dec_sa_event) :
       rv_eq x y ->
       rv_eq (gen_SimpleConditionalExpectation x l)
             (gen_SimpleConditionalExpectation y l).
@@ -1322,6 +1371,21 @@ Section SimpleConditionalExpectation.
     apply SimpleExpectation_pf_irrel.
   Qed.
 
+  Lemma sumSimpleExpectation'
+        (rv_X1 rv_X2 : Ts -> R)
+        {rv1: RandomVariable dom borel_sa rv_X1}
+        {rv2: RandomVariable dom borel_sa rv_X2}
+        {srv1 : SimpleRandomVariable rv_X1} 
+        {srv2 : SimpleRandomVariable rv_X2}
+        {rv': RandomVariable dom borel_sa (rvplus rv_X1 rv_X2)}
+        {srv' : SimpleRandomVariable (rvplus rv_X1 rv_X2)} :
+    SimpleExpectation (rv:=rv') (srv:=srv') (rvplus rv_X1 rv_X2) =
+    (SimpleExpectation rv_X1) + (SimpleExpectation rv_X2)%R.
+  Proof.
+    rewrite sumSimpleExpectation.
+    apply SimpleExpectation_pf_irrel.
+  Qed.
+
   Lemma expectation_indicator_sum0 
         (rv_X : Ts -> R)
         (rv : RandomVariable dom borel_sa rv_X)
@@ -1337,29 +1401,27 @@ Section SimpleConditionalExpectation.
     unfold fold_rvplus_prod_indicator.
     induction l; simpl.
     - symmetry.
+      erewrite SimpleExpectation_pf_irrel.
       apply SimpleExpectation_const.
     - unfold ListAdd.map_dep_obligation_2.
       rewrite IHl by (simpl in *; intuition).
-      rewrite <- sumSimpleExpectation; trivial.
-      + apply rvmult_rv; trivial.
-        apply EventIndicator_rv; trivial.
-        apply dsa_sa.
-      + apply fold_rvplus_prod_indicator_rv; trivial.
+      erewrite sumSimpleExpectation.
+      apply SimpleExpectation_pf_irrel.
   Qed.
   
   Ltac se_rewrite H :=
     match type of H with
-    | @SimpleExpectation _ _ _ ?x ?sx = _ =>
+    | @SimpleExpectation _ _ _ ?x _ ?sx = _ =>
       match goal with
-      | [|- context [@SimpleExpectation _ _ _ ?z ?sz]] =>
+      | [|- context [@SimpleExpectation _ _ _ ?z _ ?sz]] =>
         rewrite (@SimpleExpectation_pf_irrel x sz sx); rewrite H
       end
     end.
 
-  Lemma is_partition_list_nnil {T} : NonEmpty T -> ~ @is_partition_list T [].
+  Lemma is_partition_list_nnil : NonEmpty Ts -> ~ is_partition_list [].
   Proof.
     intros a [??]; unfold list_union in *; simpl in *.
-    assert (HH:@Ω T a) by now compute.
+    assert (HH:Ω a) by now compute.
     rewrite <- (H0 a) in HH.
     destruct HH as [? [??]].
     tauto.
@@ -1398,8 +1460,6 @@ Section SimpleConditionalExpectation.
       apply srvplus; eauto.
   Qed.
 
-
-
   Lemma very_specific_fold_right_rv_because_barry_waiting l :
     Forall (RandomVariable dom borel_sa) l ->
     RandomVariable dom borel_sa (fold_right rvplus (const 0) l).
@@ -1409,48 +1469,56 @@ Section SimpleConditionalExpectation.
     - invcs HH.
       apply rvplus_rv; eauto.
   Qed.
+
+  Lemma Forall_Forallt {A : Type} {P : A -> Prop} {l : list A} :
+    Forall P l -> Forallt P l.
+  Proof.
+    induction l; intros HH; constructor.
+    - rewrite Forall_forall in HH.
+      apply HH; simpl; eauto.
+    - apply IHl.
+      now invcs HH.
+  Defined.
+
+  Lemma Forallt_conj {A : Type} {P1 P2 : A -> Type} {l : list A} :
+      Forallt P1 l ->
+      Forallt P2 l ->
+      Forallt (fun x => prod (P1 x) (P2 x)) l.
+  Proof.
+    induction l; intros HH1 HH2.
+    - constructor.
+    - invcs HH1.
+      invcs HH2.
+      constructor; eauto.
+  Defined.
   
   Lemma SimpleExpectation_fold_rvplus (l : list (Ts -> R)) 
         (rvs : Forall (RandomVariable dom borel_sa) l) 
         (srvs : Forallt SimpleRandomVariable l) :
-    SimpleExpectation (fold_right rvplus (const 0) l) (srv:=fr_plus0_simple _ srvs) =
-    list_sum (Forallt_map (fun x pf => SimpleExpectation x (srv:=pf)) srvs).
+    SimpleExpectation (fold_right rvplus (const 0) l) (rv:=very_specific_fold_right_rv_because_barry_waiting _ rvs) (srv:=fr_plus0_simple _ srvs) =
+    list_sum (Forallt_map (fun x pf => SimpleExpectation x (rv:=fst pf) (srv:=snd pf)) (Forallt_conj (Forall_Forallt rvs) srvs)).
   Proof.
     dependent induction srvs; simpl.
-    - rewrite (SimpleExpectation_ext _ (srvconst 0)).
-      + now rewrite SimpleExpectation_const.
-      + intros ?; congruence.
-    - invcs rvs.
-      rewrite <- IHsrvs by trivial.
+    - erewrite SimpleExpectation_pf_irrel. 
+      apply SimpleExpectation_const.
+    - rewrite <- IHsrvs by trivial.
       rewrite sumSimpleExpectation; trivial.
-      + apply SimpleExpectation_pf_irrel.
-      + now apply very_specific_fold_right_rv_because_barry_waiting.
+      apply SimpleExpectation_pf_irrel.
   Qed.
 
-  (*
-  Lemma list_union_dec_ext {T B} (l:list dec_sa_event) pf1 pf2 (a b:B) :
-    forall x, (if (list_union_dec l pf1) x then a else b) = (if (list_union_dec l pf2) x then a else b).
+  Lemma SimpleExpectation_fold_rvplus' (l : list (Ts -> R))
+        {rv : RandomVariable dom borel_sa (fold_right rvplus (const 0) l)}
+        {srv : SimpleRandomVariable (fold_right rvplus (const 0) l)}
+        (rvs : Forall (RandomVariable dom borel_sa) l) 
+        (srvs : Forallt SimpleRandomVariable l) :
+    SimpleExpectation (fold_right rvplus (const 0) l) (rv:=rv) (srv:=srv) =
+    list_sum (Forallt_map (fun x pf => SimpleExpectation x (rv:=fst pf) (srv:=snd pf)) (Forallt_conj (Forall_Forallt rvs) srvs)).
   Proof.
-    intros.
-    repeat match_destr; congruence.
+    generalize (SimpleExpectation_fold_rvplus l); intros HH.
+    rewrite (SimpleExpectation_pf_irrel _ (fr_plus0_simple l srvs)).
+    rewrite (SimpleExpectation_rv_irrel _ (very_specific_fold_right_rv_because_barry_waiting l rvs)).
+    apply SimpleExpectation_fold_rvplus.
   Qed.
-
-   *)
-  (*
-  Lemma map_dep_ext {A B} (l:list A) (f1 f2:(forall x, In x l -> B)) :
-    (forall x pf, f1 x pf = f2 x pf) ->
-    map_dep l f1 = map_dep l f2.
-  Proof.
-    intros eqq.
-    induction l; simpl; trivial.
-    rewrite eqq.
-    f_equal.
-    apply IHl; intros.
-    unfold map_dep_obligation_2.
-    now rewrite eqq.
-  Qed.
-   *)
-  
   Lemma indicator_sum (a:Ts)
         (l : list dec_sa_event)
         (is_disj: ForallOrdPairs event_disjoint (map dsa_event l)) :
@@ -1468,7 +1536,7 @@ Section SimpleConditionalExpectation.
       rewrite <- IHl; clear IHl.
       destruct (dsa_dec a0 a).
       + match_destr; try lra.
-        destruct l0 as [? [inn ?]].
+        destruct e as [? [inn ?]].
         specialize (H1 _ inn a); intuition.
       + destruct (list_union_dec l); try lra.
   Qed.
@@ -1535,76 +1603,53 @@ Section SimpleConditionalExpectation.
     unfold EventIndicator.
     destruct (list_union_dec l a); trivial.
     rewrite (H0 a) in n.
-    unfold Ω in n.
+    unfold Ω, pre_Ω in n; simpl in n.
     intuition.
   Qed.
 
   Lemma sub_event_prob_0
-        (P1 P2 : event Ts) 
-        (sap1 : sa_sigma P1)
-        (sap2 : sa_sigma P2):
+        (P1 P2 : event dom) :
     ps_P P2 = 0 -> event_sub P1 P2 -> ps_P P1 = 0.
   Proof.
     intros.
     generalize (ps_sub Prts P1 P2); intros.
     cut_to H1; trivial.
     generalize (ps_pos P1); intros.
-    cut_to H2; trivial.
     lra.
   Qed.
   
   Lemma indicator_prob_0
-        (P : event Ts) 
+        (P : event dom) 
         {rv_X : Ts -> R}
         {rv : RandomVariable dom borel_sa rv_X}
         {srv : SimpleRandomVariable rv_X}
         (dec:forall x, {P x} + {~ P x})        
-        (sap: sa_sigma P) 
         (a : R) :
     ps_P P = 0 -> 
     a <> 0 ->
-    ps_P (fun omega : Ts => rv_X omega * (if dec omega then 1 else 0) = a) = 0.
+    ps_P (preimage_singleton (rvmult rv_X (EventIndicator dec)) a) = 0.
   Proof.
     intros.
-    assert (event_sub (fun omega : Ts => rv_X omega * (if dec omega then 1 else 0) = a)
+    assert (event_sub (preimage_singleton (rvmult rv_X (EventIndicator dec)) a)
                       P).
-    - unfold event_sub; intros.
+    - unfold event_sub, pre_event_sub; simpl.
+      vm_compute; intros.
       destruct (dec x); trivial.
-      rewrite Rmult_0_r in H1.
+      rewrite Rmult_0_r in x0.
       lra.
     - apply sub_event_prob_0 with (P2 := P); trivial.
-      assert (event_equiv (fun omega : Ts => rv_X omega * (if dec omega then 1 else 0) = a)
-                          (event_inter P (event_preimage rv_X (event_singleton a)))).
-      + unfold event_equiv; intros.
-        unfold event_inter, event_preimage, event_singleton.
-        split; intros.
-        * destruct (dec x).
-          -- rewrite Rmult_1_r in H2; tauto.
-          -- rewrite Rmult_0_r in H2.
-             lra.
-        * destruct (dec x).
-          -- lra.
-          -- rewrite Rmult_0_r.
-             tauto.
-      + rewrite H2.
-        apply sa_inter; trivial.
-        unfold event_preimage, event_singleton.
-        apply sa_le_pt.
-        now apply rv_measurable.
   Qed.
   
   Lemma expectation_indicator_prob_0
-        (P : event Ts) 
+        (P : event dom) 
         {rv_X : Ts -> R}
         {rv : RandomVariable dom borel_sa rv_X}
         {srv : SimpleRandomVariable rv_X}
-        (dec:forall x, {P x} + {~ P x})        
-        (sap: sa_sigma P) :
+        (dec:forall x, {P x} + {~ P x}) :
     ps_P P = 0 -> 
     SimpleExpectation (rvmult rv_X (EventIndicator dec)) = 0.
   Proof.
     unfold SimpleExpectation.
-    unfold event_preimage, EventIndicator, event_singleton, rvmult.
     intros.
     simpl.
     erewrite <- (list_sum_map_zero _) at 2.
@@ -1616,18 +1661,16 @@ Section SimpleConditionalExpectation.
       field.
   Qed.
 
-  Lemma gen_simple_conditional_expectation_scale_tower (P : event Ts) 
+  Lemma gen_simple_conditional_expectation_scale_tower (P : event dom) 
         {rv_X : Ts -> R}
         {rv : RandomVariable dom borel_sa rv_X}
         {srv : SimpleRandomVariable rv_X}
-        (dec:forall x, {P x} + {~ P x})        
-        (sap: sa_sigma P) :
-    SimpleExpectation (gen_simple_conditional_expectation_scale P rv_X dec sap) =
+        (dec:forall x, {P x} + {~ P x}) :
+    SimpleExpectation (gen_simple_conditional_expectation_scale P rv_X dec) =
     SimpleExpectation (rvmult rv_X (EventIndicator dec)).
   Proof.
     unfold gen_simple_conditional_expectation_scale.
-    erewrite SimpleExpectation_pf_irrel.
-    rewrite <- scaleSimpleExpectation.
+    erewrite scaleSimpleExpectation'.
     match_destr.
     - field_simplify.
       unfold SimpleExpectation.
@@ -1635,9 +1678,6 @@ Section SimpleConditionalExpectation.
       match_destr.
       simpl.
       rewrite <- IHl.
-      unfold event_preimage, event_singleton.
-      unfold EventIndicator; simpl.
-      unfold rvmult.
       clear IHl.
       clear n l.
       destruct (Req_EM_T a 0).
@@ -1648,6 +1688,24 @@ Section SimpleConditionalExpectation.
       field; trivial.
   Qed.
 
+  Lemma rv_md_gen_simple_scale
+        (rv_X : Ts -> R)
+        {rv : RandomVariable dom borel_sa rv_X}
+        {srv : SimpleRandomVariable rv_X}
+        (l : list dec_sa_event) :
+    Forall (RandomVariable dom borel_sa)
+           (map (fun ev =>
+                   gen_simple_conditional_expectation_scale
+                     (dsa_event ev) rv_X (dsa_dec ev))
+                l).
+  Proof.
+    induction l; simpl.
+    - constructor.
+    - constructor.
+      + typeclasses eauto.
+      + apply IHl.
+  Qed.
+
   Lemma srv_md_gen_simple_scale
         (rv_X : Ts -> R)
         {rv : RandomVariable dom borel_sa rv_X}
@@ -1655,8 +1713,8 @@ Section SimpleConditionalExpectation.
         (l : list dec_sa_event) :
     Forallt SimpleRandomVariable
             (map (fun ev =>
-                    gen_simple_conditional_expectation_scale 
-                      (dsa_event ev) rv_X (dsa_dec ev) (dsa_sa ev))
+                    gen_simple_conditional_expectation_scale
+                      (dsa_event ev) rv_X (dsa_dec ev))
                  l).
   Proof.
     induction l; simpl.
@@ -1665,7 +1723,7 @@ Section SimpleConditionalExpectation.
       + typeclasses eauto.
       + apply IHl.
   Defined.
-  
+
   Lemma gen_conditional_tower_law 
         (rv_X : Ts -> R)
         {rv : RandomVariable dom borel_sa rv_X}
@@ -1678,36 +1736,23 @@ Section SimpleConditionalExpectation.
   Proof.
     unfold gen_SimpleConditionalExpectation.
     rewrite (expectation_indicator_sum rv_X l ispart).
-    generalize SimpleExpectation_fold_rvplus; intros.
-    specialize (H (map (fun ev =>
-                          gen_simple_conditional_expectation_scale (dsa_event ev) rv_X (dsa_dec ev) (dsa_sa ev))
-                       l)).
-    cut_to H.
-    - specialize (H (srv_md_gen_simple_scale rv_X l)).
-      erewrite SimpleExpectation_pf_irrel in H.
-      rewrite H.
-      clear H.
-      f_equal.
-      unfold srv_md_gen_simple_scale.
-      unfold Forallt_map.
-      clear ispart.
-      induction l; simpl; trivial.
-      f_equal.
-      + unfold  gen_simple_conditional_expectation_scale.
-        erewrite SimpleExpectation_pf_irrel.
-        rewrite <- scaleSimpleExpectation.
-        rewrite SimpleExpectation_EventIndicator.
-        match_destr.
-        * rewrite expectation_indicator_prob_0; trivial.
-          lra.
-          apply dsa_sa.
-        * field; trivial.
-      + apply IHl.
-    - rewrite Forall_forall; intros.
-      rewrite in_map_iff in H0.
-      destruct H0 as [? [? eqq]].
-      subst.
-      typeclasses eauto.
+    rewrite (SimpleExpectation_fold_rvplus') with (rvs:=rv_md_gen_simple_scale rv_X l)
+                                                  (srvs:=srv_md_gen_simple_scale rv_X l).
+    f_equal.
+    clear ispart.
+    induction l; simpl; trivial.
+    f_equal.
+    + unfold  gen_simple_conditional_expectation_scale.
+      erewrite scaleSimpleExpectation'.
+      rewrite SimpleExpectation_EventIndicator.
+      match_destr.
+      * rewrite e.
+        field_simplify.
+        now erewrite <- expectation_indicator_prob_0; try reflexivity.
+      * field_simplify; trivial.
+    + rewrite IHl.
+      apply Forallt_map_irrel; intros.
+      apply SimpleExpectation_pf_irrel.
   Qed.
 
   Program Definition induced_sigma_generators
@@ -1717,16 +1762,13 @@ Section SimpleConditionalExpectation.
     : list dec_sa_event
     :=
       map (fun c => Build_dec_sa_event
-                      (event_preimage rv_X (event_singleton c)) _ _)
+                   (preimage_singleton rv_X c) _)
           (nodup Req_EM_T srv_vals).
   Next Obligation.
-    unfold event_preimage, event_singleton.
     intros ?.
     apply Req_EM_T.
   Defined.
-  Next Obligation.
-    eapply sa_singleton; eauto.
-  Qed.
+
   
   Lemma induced_gen_ispart
         {rv_X : Ts -> R}
@@ -1746,8 +1788,7 @@ Section SimpleConditionalExpectation.
       unfold list_union.
       split.
       + intros.
-        unfold Ω .
-        intuition.
+        now unfold Ω, pre_Ω; simpl.
       + intros.
         eexists.
         split.
@@ -1778,8 +1819,13 @@ Section SimpleConditionalExpectation.
     apply SimpleExpectation_ext.
     intros x.
     rewrite map_map; simpl.
+    induction (nodup Req_EM_T srv_vals); simpl; trivial.
+    unfold rvplus; simpl.
+    f_equal; trivial.
+    unfold rvscale.
     unfold induced_sigma_generators_obligation_1.
-    reflexivity.
+    match_destr.
+    erewrite SimpleExpectation_pf_irrel; reflexivity.
   Qed.
 
   Definition simple_sigma_measurable 
@@ -1790,18 +1836,18 @@ Section SimpleConditionalExpectation.
              {srv2 : SimpleRandomVariable rv_X2} : Prop :=
     forall (c2:R), In c2 (srv_vals (SimpleRandomVariable:=srv2)) ->
                    exists (c1:R), In c1 (srv_vals (SimpleRandomVariable:=srv1)) /\
-                                  (event_sub (event_preimage rv_X2 (event_singleton c2) )
-                                             (event_preimage rv_X1 (event_singleton c1))).
+                             (event_sub (preimage_singleton rv_X2 c2)
+                                        (preimage_singleton rv_X1 c1)).
 
 
   Lemma events_measurable0_b
-        (l1 l2 : list (event Ts)) :
-    (exists l : list (list (event Ts)),
+        (l1 l2 : list (event dom)) :
+    (exists l : list (list (event dom)),
         Forall2 (fun x y => event_equiv x (list_union y)) l1 l
         /\ Permutation (concat l) l2) ->
-    (forall (p2:event Ts),
+    (forall (p2:event dom),
         In p2 l2 ->
-        exists (p1:event Ts), (In p1 l1) /\ event_sub p2 p1).
+        exists (p1:event dom), (In p1 l1) /\ event_sub p2 p1).
   Proof.
     intros [l [Fl Pl]].
     intros p2 p2inn.
@@ -1813,8 +1859,7 @@ Section SimpleConditionalExpectation.
     split; trivial.
     intros y p2y.
     apply xequiv.
-    red.
-    eauto.
+    simpl; eauto.
   Qed.
 
   (*  (dec:forall a, P \/ ~P) *)
@@ -1869,15 +1914,19 @@ Section SimpleConditionalExpectation.
   Qed.
 
   Definition partition_measurable {Td}
+             {cod:SigmaAlgebra Td}
+             {has_pre:HasPreimageSingleton cod}
              (rv_X : Ts -> Td)
+             {rv : RandomVariable dom cod rv_X}
              {srv : SimpleRandomVariable rv_X}
-             (l : list (event Ts)) : Prop :=
+             (l : list (event dom)) : Prop :=
     is_partition_list l ->
-    forall (p:event Ts),
+    forall (p:event dom),
       In p l ->
-      exists (c:Td), (In c srv_vals) /\
-                    event_sub p (event_preimage rv_X (event_singleton c)).
+      exists c, (In c srv_vals) /\
+                    event_sub p (preimage_singleton rv_X c).
   
+(*
   Lemma in_list_in_partition_union {T} (x:event T) l d :
     In x l -> 
     in_partition_union (list_collection l d) x.
@@ -1908,7 +1957,7 @@ Section SimpleConditionalExpectation.
         match_destr.
         congruence.
   Qed.
-
+*)
 
   Lemma nth_map_default_equiv {A} {R} n (l:list A) (d1 d2:A)
         {refl:Reflexive R} :
@@ -1920,13 +1969,13 @@ Section SimpleConditionalExpectation.
     match_destr.
   Qed.
 
-
-  Lemma event_inter_sub_l {T:Type} (A B:event T) :
+  Lemma event_inter_sub_l {T:Type} {σ:SigmaAlgebra T} (A B:event σ) :
     event_sub B A -> event_equiv (event_inter A B) B.
   Proof.
     firstorder.
   Qed.
 
+  (*
   Lemma events_measurable_sa_f
         (l1 l2 : list (event Ts))
         (ispartl1: is_partition_list l1)
@@ -1992,7 +2041,8 @@ Section SimpleConditionalExpectation.
         * apply H1 in H2.
           exists (0%nat); trivial.
   Qed.
-
+   *)
+  (*
   Lemma events_measurable_sa_b {nempty:NonEmpty Ts}
         (l1 l2 : list (event Ts))
         (ispartl1: is_partition_list l1)
@@ -2063,15 +2113,16 @@ Section SimpleConditionalExpectation.
     - now apply events_measurable_sa_f.
     - now apply events_measurable_sa_b.
   Qed.
-
+*)
   
   
   Lemma expectation_const_factor_subset (c:R)
-        (p : event Ts)
+        (p : event dom)
         (rv_X1 rv_X2 : Ts -> R)
+        {rv1 : RandomVariable dom borel_sa rv_X1}
+        {rv2 : RandomVariable dom borel_sa rv_X2}
         {srv1 : SimpleRandomVariable rv_X1}
         {srv2 : SimpleRandomVariable rv_X2} 
-        (sap : sa_sigma p)
         (dec:  (forall x, {p x} + {~ p x})) :
     (forall (omega:Ts), p omega -> rv_X1 omega = c) ->
     SimpleExpectation
@@ -2085,7 +2136,7 @@ Section SimpleConditionalExpectation.
     intros ev.
     unfold EventIndicator, rvmult, rvscale.
     match_destr.
-    - rewrite (H _ p0).
+    - rewrite H; trivial.
       field.
     - field.
   Qed.
@@ -2107,6 +2158,8 @@ Section SimpleConditionalExpectation.
     we can factor out l-measurable random variables from conditional expectation *)
   Lemma gen_conditional_scale_measurable
         (rv_X1 rv_X2 : Ts -> R)
+        {rv1 : RandomVariable dom borel_sa rv_X1}
+        {rv2 : RandomVariable dom borel_sa rv_X2}
         {srv1 : SimpleRandomVariable rv_X1}
         {srv2 : SimpleRandomVariable rv_X2} 
         (l : list dec_sa_event) :
@@ -2141,7 +2194,6 @@ Section SimpleConditionalExpectation.
              rewrite (expectation_const_factor_subset (rv_X1 x)).
              ++ unfold rvscale, rvplus, rvmult.
                 field; trivial.
-             ++ apply dsa_sa.
              ++ intros.
                 apply ceq in H.
                 apply ceq in d.
@@ -2172,31 +2224,44 @@ Section SimpleConditionalExpectation.
                                                  (induced_gen_ispart srv3)).
     intros.
     cut_to H.
-    unfold gen_SimpleConditionalExpectation in H.
-    unfold SimpleConditionalExpectation, SimpleConditionalExpectation_list.
-    unfold simple_conditional_expectation_scale_coef.
-    unfold gen_simple_conditional_expectation_scale in H.
-    unfold point_preimage_indicator.
-    unfold event_preimage, event_singleton.
-    unfold induced_sigma_generators in H.
-    unfold induced_sigma_generators_obligation_1 in H.
-    unfold event_preimage, event_singleton in H.
-    do 2 rewrite map_map in H.
-    simpl in H.
-    rewrite H.
-    reflexivity.
-    unfold simple_sigma_measurable in H0.
-    unfold partition_measurable, induced_sigma_generators.
-    unfold event_preimage, event_singleton in *.
-    rewrite map_map; simpl.
-    intros.
-    rewrite in_map_iff in H2.
-    destruct H2.
-    destruct H2.
-    rewrite <- H2.
-    apply H0.
-    erewrite <- nodup_In.
-    apply H3.
+    - unfold gen_SimpleConditionalExpectation in H.
+      unfold SimpleConditionalExpectation, SimpleConditionalExpectation_list.
+      unfold simple_conditional_expectation_scale_coef.
+      unfold gen_simple_conditional_expectation_scale in H.
+      unfold point_preimage_indicator.
+      unfold event_preimage, event_singleton.
+      unfold induced_sigma_generators in H.
+      unfold induced_sigma_generators_obligation_1 in H.
+      unfold event_preimage, event_singleton in H.
+      do 2 rewrite map_map in H.
+      simpl in H.
+      etransitivity; [| etransitivity; [eapply H|]]; clear.
+      + induction  (nodup Req_EM_T srv_vals); simpl; [reflexivity |].
+        apply rvplus_proper; eauto.
+        apply rvscale_proper; try reflexivity.
+        match_destr.
+        f_equal.
+        apply SimpleExpectation_pf_irrel.
+      + induction  (nodup Req_EM_T srv_vals); simpl; [reflexivity |].
+        repeat rewrite rvmult_rvadd_distr.
+        apply rvplus_proper; eauto.
+        apply rvmult_proper; [reflexivity |].
+        apply rvscale_proper; try reflexivity.
+        match_destr.
+        f_equal.
+        apply SimpleExpectation_pf_irrel.
+    - unfold simple_sigma_measurable in H0.
+      unfold partition_measurable, induced_sigma_generators.
+      unfold event_preimage, event_singleton in *.
+      rewrite map_map; simpl.
+      intros.
+      rewrite in_map_iff in H2.
+      destruct H2.
+      destruct H2.
+      rewrite <- H2.
+      apply H0.
+      erewrite <- nodup_In.
+      apply H3.
   Qed.
 
 End SimpleConditionalExpectation.  

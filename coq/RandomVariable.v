@@ -16,7 +16,17 @@ Class RandomVariable {Ts:Type} {Td:Type}
   :=
     (* for every element B in the sigma algebra, 
        the preimage of rv_X on B is an event in the probability space *)
-    rv_preimage: forall (B: event Td), sa_sigma B -> sa_sigma (event_preimage rv_X B).
+    rv_preimage_sa: forall (B: event cod), sa_sigma (event_preimage rv_X B).
+
+Definition rv_preimage
+           {Ts:Type}
+           {Td:Type}
+           {dom: SigmaAlgebra Ts}
+           {cod: SigmaAlgebra Td}
+           (rv_X: Ts -> Td)
+           {rv:RandomVariable dom cod rv_X} :
+  event cod -> event dom
+  := fun b => exist _ _ (rv_preimage_sa b).
 
 Global Instance RandomVariable_proper {Ts:Type} {Td:Type}
        (dom: SigmaAlgebra Ts)
@@ -28,6 +38,31 @@ Proof.
   - rewrite <- eqq; auto.
   - rewrite eqq; auto.
 Qed.
+
+Global Instance rv_preimage_proper
+       {Ts:Type}
+       {Td:Type}
+       {dom: SigmaAlgebra Ts}
+       {cod: SigmaAlgebra Td}
+       (rv_X: Ts -> Td)
+       {rv:RandomVariable dom cod rv_X} :
+  Proper (event_equiv ==> event_equiv) (@rv_preimage Ts Td dom cod rv_X rv).
+Proof.
+  intros x y eqq.
+  now apply event_preimage_proper.
+Qed.  
+
+
+Class HasPreimageSingleton {Td} (σ:SigmaAlgebra Td)
+  := sa_preimage_singleton :
+       forall {Ts} {σs:SigmaAlgebra Ts} (rv_X:Ts->Td) {rv : RandomVariable σs σ rv_X} c,
+         sa_sigma (pre_event_preimage rv_X (pre_event_singleton c)).
+
+Definition preimage_singleton {Ts Td} {σs:SigmaAlgebra Ts} {σd:SigmaAlgebra Td} {has_pre:HasPreimageSingleton σd}
+           (rv_X:Ts->Td) 
+           {rv : RandomVariable σs σd rv_X}
+           (c:Td) : event σs
+  := exist _ _ (sa_preimage_singleton rv_X c).
 
 Section Const.
   Context {Ts Td:Type}.
@@ -45,22 +80,20 @@ Section Const.
 
   Context (dom: SigmaAlgebra Ts)
           (cod: SigmaAlgebra Td).
-
+  
   Global Instance rvconst c : RandomVariable dom cod (const c).
     Proof.
       red; intros.
-      destruct (sa_dec H c).
-      - assert (event_equiv (fun _ : Ts => B c)
-                            (fun _ : Ts => True)).
-        red; intros.
-        intuition.
-        rewrite H1.
+      destruct (sa_dec B c).
+      - assert (pre_event_equiv (fun _ : Ts => B c)
+                            (fun _ : Ts => True))
+          by (red; intuition).
+        rewrite H0.
         apply sa_all.
-      - assert (event_equiv (fun _ : Ts => B c)
-                            event_none).
-        red; intros.
-        intuition.
-        rewrite H1.
+      - assert (pre_event_equiv (fun _ : Ts => B c)
+                            event_none)
+        by (red; intuition).
+        rewrite H0.
         apply sa_none.
     Qed.
 
@@ -135,13 +168,13 @@ Lemma srv_singleton_rv (rv_X : Ts -> Td)
         (srv:SimpleRandomVariable rv_X) 
         (dom: SigmaAlgebra Ts)
         (cod: SigmaAlgebra Td) :
-    (forall (c : Td), In c srv_vals -> sa_sigma (event_preimage rv_X (event_singleton c))) ->
+    (forall (c : Td), In c srv_vals -> sa_sigma (pre_event_preimage rv_X (pre_event_singleton c))) ->
     RandomVariable dom cod rv_X.
 Proof.
   intros Fs.
-  intros x sa_x.
-  unfold event_preimage in *.
-  unfold event_singleton in *.
+  intros x.
+  unfold event_preimage, pre_event_preimage in *.
+  unfold pre_event_singleton in *.
 
   destruct srv.
   assert (exists ld, incl ld srv_vals0 /\
@@ -175,7 +208,7 @@ Proof.
           -- eauto.
   } 
   destruct H as [ld [ld_incl ld_iff]].
-  apply sa_proper with (x0:=list_union (map (fun d omega => rv_X omega = d) ld)).
+  apply sa_proper with (x0:=pre_list_union (map (fun d omega => rv_X omega = d) ld)).
   - intros e.
     split; intros HH.
     + destruct HH as [? [??]].
@@ -189,7 +222,7 @@ Proof.
         eexists; split; [reflexivity |]; eauto.
       * reflexivity.
       * eauto.
-  - apply sa_list_union; intros.
+  - apply sa_pre_list_union; intros.
     apply in_map_iff in H.
     destruct H as [? [??]]; subst.
     apply Fs.
@@ -201,7 +234,7 @@ Instance rv_fun_simple {dom: SigmaAlgebra Ts}
          (x : Ts -> Td) (f : Td -> Td)
          {rvx : RandomVariable dom cod x}
          {srvx : SimpleRandomVariable x} :
-      (forall (c : Td), In c srv_vals -> sa_sigma (event_preimage x (event_singleton c))) ->
+      (forall (c : Td), In c srv_vals -> sa_sigma (pre_event_preimage x (pre_event_singleton c))) ->
      RandomVariable dom cod (fun u => f (x u)).    
 Proof.
   intros Hsingleton.
@@ -211,16 +244,16 @@ Proof.
     destruct srvx.
     intros c cinn.
     simpl in cinn.
-    unfold event_preimage, event_singleton.
-    assert (event_equiv (fun omega : Ts => f (x omega) = c)
-                        (list_union
+    unfold pre_event_preimage, pre_event_singleton.
+    assert (pre_event_equiv (fun omega : Ts => f (x omega) = c)
+                        (pre_list_union
                            (map (fun sval =>
                                    (fun omega =>
                                       (x omega = sval) /\ (f sval = c)))
                                 srv_vals1))).
     { 
       intro v.
-      unfold list_union.
+      unfold pre_list_union.
       split; intros.
       - specialize (srv_vals_complete0 v).
         eexists.
@@ -240,14 +273,14 @@ Proof.
         now rewrite <- H1 in H2.
     }
     rewrite H.
-    apply sa_list_union.
+    apply sa_pre_list_union.
     intros.
     rewrite in_map_iff in H0.
     destruct H0.
     destruct H0.
     rewrite <- H0.
-    assert (event_equiv (fun omega : Ts => x omega = x1 /\ f x1 = c)
-                        (event_inter (fun omega => x omega = x1)
+    assert (pre_event_equiv (fun omega : Ts => x omega = x1 /\ f x1 = c)
+                        (pre_event_inter (fun omega => x omega = x1)
                                      (fun _ => f x1 = c))).
     {
       intro u.
@@ -277,6 +310,7 @@ Section Finite.
     apply in_map_iff; eauto.
   Qed.
 
+(*
   Program Instance Finite_finitesubset {A:Type} (l:list A)
     : Finite {x : A | In x l}.
   Next Obligation.
@@ -286,6 +320,7 @@ Section Finite.
   Next Obligation.
     (* TODO: either fix the witness or use a stronger In *)
   Admitted.
+*)
 
   Definition finitesubset_sa {A} (l:list A) : SigmaAlgebra {x : A | In x l}
     := discrete_sa {x : A | In x l}.

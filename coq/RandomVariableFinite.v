@@ -295,15 +295,10 @@ Section fe.
     unfold rv_almost_eq; intros eqq.
     apply Rle_antisym; trivial.
     - apply ps_le1.
-      apply (Hsigma_borel_eq_pf prts)
-      ; now apply positive_part_rv.
     - rewrite <- eqq.
       apply ps_sub.
-      + now apply (Hsigma_borel_eq_pf prts).
-      + apply (Hsigma_borel_eq_pf prts)
-        ; now apply positive_part_rv.
-      + intros a; intros eqq2.
-        congruence.
+      intros a; intros eqq2.
+      congruence.
   Qed.
 
   Lemma neg_fun_part_proper_almost x y 
@@ -316,15 +311,10 @@ Section fe.
     unfold rv_almost_eq; intros eqq.
     apply Rle_antisym; trivial.
     - apply ps_le1.
-      apply (Hsigma_borel_eq_pf prts)
-      ; now apply negative_part_rv.
     - rewrite <- eqq.
       apply ps_sub.
-      + now apply (Hsigma_borel_eq_pf prts).
-      + apply (Hsigma_borel_eq_pf prts)
-        ; now apply negative_part_rv.
-      + intros a; intros eqq2.
-        congruence.
+      intros a; intros eqq2.
+      congruence.
   Qed.
 
   Lemma list_sum0_is0 l :
@@ -335,6 +325,26 @@ Section fe.
     inversion 1; subst.
     rewrite IHl; trivial.
     lra.
+  Qed.
+
+  Lemma event_eq_const (x:Ts -> R)
+        {rvx:RandomVariable dom borel_sa x} 
+        (c:R) :
+    event_equiv
+      (event_eq x (const c)) ((preimage_singleton x c)).
+  Proof.
+    repeat red; simpl.
+    split; trivial.
+  Qed.
+
+  Lemma event_eq_const' (x:Ts -> R)
+        {rvx:RandomVariable dom borel_sa x} 
+        (c:R) :
+    event_equiv
+      (event_eq x (fun _ => c) (rv2:=rvconst _ _ _)) ((preimage_singleton x c)).
+  Proof.
+    repeat red; simpl.
+    split; trivial.
   Qed.
 
   Lemma SimplePosExpectation_pos_zero x
@@ -355,29 +365,21 @@ Section fe.
     destruct (Req_EM_T x1 0).
     - subst.
       lra.
-    - replace (ps_P (fun omega : Ts => x omega = x1)) with 0 in H; [lra |].
+    - replace (ps_P (preimage_singleton x x1)) with 0 in H; [lra |].
       apply Rle_antisym.
       + apply ps_pos.
-        eapply Hsigma_borel_eq_pf; eauto.
-        apply rvconst.
       +
-        assert (event_sub  (fun x0 : Ts => x x0 = 0) (event_complement (fun omega : Ts => x omega = x1))).
+        assert (event_sub (preimage_singleton x 0) (event_complement (preimage_singleton x x1))).
         {
-          unfold event_complement.
-          red; intros.
+          repeat red; intros; simpl in *.
+          unfold pre_event_preimage, pre_event_singleton in *.
           lra.
         }
         apply (ps_sub prts) in H1.
         * rewrite ps_complement in H1.
-          -- rewrite eqq in H1.
+          -- rewrite event_eq_const' in eqq.
+             rewrite eqq in H1.
              lra.
-          -- eapply Hsigma_borel_eq_pf; eauto.
-             apply rvconst.
-        * eapply Hsigma_borel_eq_pf; eauto.
-          apply rvconst.
-        * apply sa_complement.
-          eapply Hsigma_borel_eq_pf; eauto.
-          apply rvconst.
   Qed.
 
   Lemma Expectation_simple_proper_almost x y
@@ -394,19 +396,24 @@ Section fe.
     cut_to HH.
     - unfold rvminus in HH.
       erewrite SimpleExpectation_pf_irrel in HH.
-      rewrite <- sumSimpleExpectation with (srv1:=xsrv) (srv2:=srvopp) in HH; trivial.
+      erewrite sumSimpleExpectation' with (srv1:=xsrv) (srv2:=srvopp) in HH; trivial.
       + unfold rvopp in HH.
         erewrite (@SimpleExpectation_pf_irrel _ _ _ (rvscale (-1) y)) in HH.
-        rewrite <- scaleSimpleExpectation with (srv:=ysrv) in HH.
-        lra.
-      + typeclasses eauto.
+        erewrite <- scaleSimpleExpectation with (srv:=ysrv) in HH.
+        field_simplify in HH.
+        apply Rminus_diag_uniq_sym in HH.
+        symmetry.
+        apply HH.
     - clear HH.
       unfold rv_almost_eq in *.
       unfold const.
       rewrite ps_proper; try eapply H.
       intros a.
-      unfold rvminus, rvplus, rvopp, rvscale.
+      unfold rvminus, rvplus, rvopp, rvscale; simpl.
       split; intros; lra.
+      Unshelve.
+      typeclasses eauto.
+      typeclasses eauto.
   Qed.
 
   Lemma Expectation_posRV_almost_0 x 
@@ -435,27 +442,16 @@ Section fe.
         unfold rv_almost_eq in H.
         assert (rv_almost_eq prts x2 (const 0)).
         * unfold rv_almost_eq.
-          assert (event_sub (fun x0 : Ts => x x0 = const 0 x0)
-                            (fun x5 : Ts => x2 x5 = const 0 x5)).
-          -- unfold event_sub; intros.
-             unfold const in H3.
-             unfold const.
+          assert (event_sub (event_eq x (const 0))
+                            (event_eq x2 (const 0))).
+          -- unfold event_sub, pre_event_sub, const; simpl; intros.
              specialize (H1 x5).
              unfold PositiveRandomVariable in H0.
              specialize (H0 x5).
              lra.
-          -- unfold RandomVariable in *.
-             rewrite <- borel_sa_preimage2 in rvx.
-             rewrite <- borel_sa_preimage2 in x3.
-             assert (sa_sigma (fun x5 : Ts => x2 x5 = const 0 x5)).
-             ++ unfold const.
-                now apply sa_le_pt.
-             ++ assert (sa_sigma (fun x5 : Ts => x x5 = const 0 x5)).    
-                ** unfold const.
-                   now apply sa_le_pt.
-                ** apply (ps_sub prts) in H3; trivial.
-                   generalize (ps_le1 prts (fun x5 : Ts => x2 x5 = const 0 x5) H4); intros.
-                   lra.
+          -- apply (ps_sub prts) in H3; trivial.
+             generalize (ps_le1 prts (event_eq x2 (const 0))). 
+             lra.
         * generalize (SimplePosExpectation_pos_zero x2 H3); intros.
           rewrite H4 in H2.
           rewrite <- H2.
@@ -480,6 +476,7 @@ Section fe.
     now apply positive_part_rv.
     assert (RandomVariable dom borel_sa (neg_fun_part x)).
     now apply negative_part_rv.
+    (*
     unfold RandomVariable in rvx.
     rewrite <- borel_sa_preimage2 in rvx.
     assert (sa_sigma (fun x0 : Ts => nonneg(pos_fun_part x x0) = 0)).
@@ -492,43 +489,59 @@ Section fe.
       apply rv_measurable.
       typeclasses eauto.
     }
+*)
     unfold Expectation.
     assert (rv_almost_eq prts (fun omega => nonneg(pos_fun_part x omega)) (const 0)).
-    unfold rv_almost_eq.
-    assert (event_sub (fun x0 : Ts => x x0 = const 0 x0)
-                      (fun x0 : Ts => nonneg(pos_fun_part x x0) = const 0 x0)).
-    intro x0.
-    unfold pos_fun_part, const; simpl.
-    unfold Rmax; match_destr.
-    unfold const in *.
-    apply (ps_sub prts) in H4; trivial.
-    generalize (ps_le1 prts (fun x0 : Ts => nonneg(pos_fun_part x x0) = const 0 x0)); intros.
-    unfold const in H5.
-    specialize (H5 H2).
-    lra.
-    now apply sa_le_pt.
+    {
+      unfold rv_almost_eq.
+      assert (event_sub (event_eq x (const 0))
+                        (event_eq (fun x0 : Ts => nonneg(pos_fun_part x x0)) (const 0))).
+      {
+        intro x0.
+        unfold pos_fun_part, const; simpl.
+        unfold Rmax; match_destr.
+      } 
+      unfold const in *.
+      apply (ps_sub prts) in H2; trivial.
+      generalize (ps_le1 prts (event_eq (fun x0 : Ts => nonneg(pos_fun_part x x0)) (const 0))); intros.
+      unfold const in H3.
+      lra.
+    }
     assert (rv_almost_eq prts (fun omega => nonneg(neg_fun_part x omega)) (const 0)).
-    assert (event_sub (fun x0 : Ts => x x0 = const 0 x0)
-                      (fun x0 : Ts => nonneg(neg_fun_part x x0) = const 0 x0)
-           ).
-    intro x0.
-    unfold neg_fun_part, const; simpl.
-    unfold Rmax; match_destr.
+    {
+      unfold rv_almost_eq.
+      assert (event_sub (event_eq x (const 0))
+                        (event_eq (fun x0 : Ts => nonneg(neg_fun_part x x0)) (const 0))).
+      {
+        intro x0.
+        unfold neg_fun_part, const; simpl.
+        unfold Rmax; match_destr.
+        lra.
+      } 
+      unfold const in *.
+      apply (ps_sub prts) in H3; trivial.
+      generalize (ps_le1 prts (event_eq (fun x0 : Ts => nonneg(neg_fun_part x x0)) (const 0))); intros.
+      unfold const in H4.
+      lra.
+    }
+    rewrite (Expectation_posRV_almost_0 _ H2).
+    rewrite (Expectation_posRV_almost_0 _ H3).
+    simpl; do 2 f_equal.
     lra.
-    unfold rv_almost_eq.
-    unfold const in *.
-    apply (ps_sub prts) in H5; trivial.
-    generalize (ps_le1 prts (fun x0 : Ts => nonneg(neg_fun_part x x0) = const 0 x0)); intros.
-    unfold const in H6.
-    specialize (H6 H3).
-    lra.
-    now apply sa_le_pt.
-    rewrite (Expectation_posRV_almost_0 (fun x0 : Ts => pos_fun_part x x0) H4).
-    rewrite (Expectation_posRV_almost_0 (fun x0 : Ts => neg_fun_part x x0) H5).
-    simpl; f_equal; f_equal; lra.
   Qed.
 
-    Lemma IsFiniteExpectation_proper_almost rv_X1 rv_X2
+  Lemma event_eq_minus0
+        rv_X1 rv_X2
+        {rrv1:RandomVariable dom borel_sa rv_X1}
+        {rrv2:RandomVariable dom borel_sa rv_X2} :
+    (event_equiv (event_eq (rvminus rv_X1 rv_X2) (const 0)) (event_eq rv_X1 rv_X2)).
+  Proof.
+    intros a.
+    unfold event_eq, rvminus, rvplus, rvopp, rvscale, const; simpl.
+    split; intros; lra.
+  Qed.
+
+  Lemma IsFiniteExpectation_proper_almost rv_X1 rv_X2
         {rrv1:RandomVariable dom borel_sa rv_X1}
         {rrv2:RandomVariable dom borel_sa rv_X2}
         {isfe1:IsFiniteExpectation rv_X1}
@@ -550,12 +563,7 @@ Section fe.
       intros a.
       rv_unfold; lra.
     - unfold rv_almost_eq in *.
-      unfold const in *.
-      assert (event_equiv (fun x0 : Ts => rvminus rv_X1 rv_X2 x0 = 0) (fun x0 : Ts => rv_X1 x0 = rv_X2 x0)).
-      intros a.
-      unfold rvminus, rvplus, rvopp, rvscale.
-      split; intros; lra.
-      now rewrite H0.
+      now rewrite event_eq_minus0.
   Qed.
 
   Lemma FiniteExpectation_proper_almost rv_X1 rv_X2
@@ -577,11 +585,7 @@ Section fe.
       lra.
     - unfold rv_almost_eq in *.
       unfold const in *.
-      assert (event_equiv (fun x0 : Ts => rvminus rv_X1 rv_X2 x0 = 0) (fun x0 : Ts => rv_X1 x0 = rv_X2 x0)).
-      intros a.
-      unfold rvminus, rvplus, rvopp, rvscale.
-      split; intros; lra.
-      now rewrite H0.
+      now rewrite event_eq_minus0.
   Qed.
 
   Lemma FiniteExpectation_le rv_X1 rv_X2
@@ -804,13 +808,25 @@ Section fe.
         {posrv :PositiveRandomVariable X}
         {isfe:IsFiniteExpectation X} :
     FiniteExpectation X = 0%R ->
-    ps_P (fun omega => X omega = 0) = 1.
+    ps_P (preimage_singleton X 0) = 1.
   Proof.
     unfold FiniteExpectation.
     simpl_finite.
     intros; subst.
     now apply Expectation_zero_pos.
   Qed.
+
+  Lemma FiniteExpectation_zero_pos'
+        (X : Ts -> R)
+        {rv : RandomVariable dom borel_sa X}
+        {posrv :PositiveRandomVariable X}
+        {isfe:IsFiniteExpectation X} :
+    FiniteExpectation X = 0%R ->
+    ps_P (event_eq X (const 0)) = 1.
+  Proof.
+    rewrite event_eq_const.
+    now apply FiniteExpectation_zero_pos.
+  Qed.    
 
   Lemma Lim_seq_pos (f : nat -> R) :
     (forall n, 0 <= f n) ->
@@ -1046,7 +1062,8 @@ Lemma Fatou_FiniteExpectation
       now apply Lim_seq_correct.
   Qed.
 
-  Lemma sa_collection_take (E : nat -> event Ts) n :
+  (*
+  Lemma sa_collection_take (E : nat -> event dom) n :
     (forall m, sa_sigma (E m)) -> (forall e, In e (collection_take E n) -> sa_sigma e).
   Proof.
     unfold collection_take.
@@ -1055,8 +1072,9 @@ Lemma Fatou_FiniteExpectation
     destruct H0 as [?[??]]; subst.
     auto.
   Qed.
-
-  Lemma sum_prob_fold_right  (E : nat -> event Ts) n :
+   *)
+  
+  Lemma sum_prob_fold_right  (E : nat -> event dom) n :
         sum_n (fun n0 : nat => ps_P (E n0)) n =
         fold_right Rplus 0 (map ps_P (collection_take E (S n))).
   Proof.
@@ -1085,8 +1103,7 @@ Lemma Fatou_FiniteExpectation
     exists (0%nat); intros; apply H0.
   Qed.    
 
-  Lemma is_finite_Lim_seq_psP (E : nat -> event Ts) :
-    (forall (n:nat), sa_sigma (E n)) ->
+  Lemma is_finite_Lim_seq_psP (E : nat -> event dom) :
     is_finite (Lim_seq (fun n => ps_P (E n))).
   Proof.
     intros.
@@ -1097,71 +1114,71 @@ Lemma Fatou_FiniteExpectation
     now apply ps_le1.
   Qed.
 
-  Lemma lim_ascending (E : nat -> event Ts) :
-    (forall (n:nat), sa_sigma (E n)) ->
+  Lemma lim_ascending (E : nat -> event dom) :
     ascending_collection E ->
     Lim_seq (fun n => ps_P (E n)) =  (ps_P (union_of_collection E)).
   Proof.
-    intros.
-    generalize (union_of_make_collection_disjoint prts E H); intros.
-    unfold sum_of_probs_equals in H1.
-    rewrite <- make_collection_disjoint_union in H1.
-    rewrite <- infinite_sum_infinite_sum' in H1.
-    rewrite <- is_series_Reals in H1.
-    apply is_series_unique in H1.
-    unfold Series in H1.
+    intros asc.
+    generalize (union_of_make_collection_disjoint prts E); intros HH.
+    unfold sum_of_probs_equals in HH.
+    rewrite <- make_collection_disjoint_union in HH.
+    rewrite <- infinite_sum_infinite_sum' in HH.
+    rewrite <- is_series_Reals in HH.
+    apply is_series_unique in HH.
+    unfold Series in HH.
     rewrite <- is_finite_Lim_seq_psP; trivial.
     rewrite Rbar_finite_eq.
-    rewrite Lim_seq_ext with (v  := fun n => ps_P (E n)) in H1.
-    apply H1.
+    rewrite Lim_seq_ext with (v  := fun n => ps_P (E n)) in HH.
+    apply HH.
     intros.
     rewrite <- ascending_make_disjoint_collection_take_union by trivial.
     rewrite ps_list_disjoint_union.
     - apply  sum_prob_fold_right.
-    - apply sa_collection_take.
-      now apply sa_make_collection_disjoint.
     - apply collection_take_preserves_disjoint.
       apply make_collection_disjoint_disjoint.
   Qed.
 
-  Lemma diff_inter_compl (A B : event Ts) :
+  Lemma diff_inter_compl (A B : event dom) :
     (event_equiv (event_diff A B) 
                  (event_inter A (event_complement B))).
   Proof.
     firstorder.
   Qed.
   
-  Lemma union_diff (A B : event Ts) :
-    event_lem B ->
+  Lemma union_diff (A B : event dom) :
     event_equiv A (event_union (event_diff A B) (event_inter A B)).
   Proof.
-    firstorder.
+    unfold event_union, event_diff, event_inter, event_equiv.
+    unfold pre_event_union, pre_event_diff, pre_event_inter.
+    repeat red; simpl; intros.
+    tauto.
   Qed.
 
-  Lemma sub_diff_union (A B : event Ts) :
-    event_lem B ->
+  Lemma sub_diff_union (A B : event dom) :
     event_sub B A ->
     event_equiv A (event_union (event_diff A B) B).
   Proof.
-    firstorder.
+    unfold event_union, event_diff, event_inter, event_equiv, event_sub.
+    unfold pre_event_union, pre_event_diff, pre_event_inter, pre_event_sub.
+    repeat red; simpl; intros.
+    split; intros.
+    - destruct (classic (proj1_sig B x)); tauto.
+    - intuition.
   Qed.
 
-  Lemma ps_diff_sub (A B : event Ts) :
-    sa_sigma A -> sa_sigma B ->
+  Lemma ps_diff_sub (A B : event dom) :
     event_sub B A ->
     ps_P (event_diff A B) = ps_P A - ps_P B.
   Proof.
     intros.
     generalize (ps_disjoint_union prts (event_diff A B) B); intros.
-    cut_to H2; trivial.
-    rewrite <- sub_diff_union in H2; trivial.
-    lra.
-    now apply sa_dec.
-    now apply sa_diff.
-    firstorder.
+    cut_to H0.
+    - rewrite <- sub_diff_union in H0; trivial.
+      lra.
+    - firstorder.
   Qed.
 
-  Lemma event_sub_descending (E : nat -> event Ts) :
+  Lemma event_sub_descending (E : nat -> event dom) :
     (forall n, event_sub (E (S n)) (E n)) ->
     forall n, event_sub (E n) (E 0%nat).
   Proof.
@@ -1171,36 +1188,37 @@ Lemma Fatou_FiniteExpectation
     now eapply transitivity.
   Qed.
 
-  Lemma union_diff_inter (A:event Ts) (E : nat -> event Ts) :
+  Lemma union_diff_inter (A:event dom) (E : nat -> event dom) :
         event_equiv (union_of_collection (fun n : nat => event_diff A (E n)))
                     (event_diff A (inter_of_collection E)).
   Proof.
     unfold event_equiv, union_of_collection, event_diff, inter_of_collection.
-    firstorder.
+    unfold pre_event_equiv, pre_union_of_collection, pre_event_equiv, pre_inter_of_collection; simpl.
+    intros.
+    split; [firstorder |]; intros.
+    destruct H.
     apply not_all_ex_not in H0.
     firstorder.
   Qed.
-
     
-  Lemma lim_descending (E : nat -> event Ts) :
-    (forall (n:nat), sa_sigma (E n)) ->
+  Lemma lim_descending (E : nat -> event dom) :
     (forall n, event_sub (E (S n)) (E n)) ->
     Lim_seq (fun n => ps_P (E n)) = (ps_P (inter_of_collection E)).
   Proof.
     intros.
-    generalize (lim_ascending (fun n => event_diff (E 0%nat) (E n))); intros.
-    generalize (is_finite_Lim_seq_psP E H); intros.
-    cut_to H1.
-    - rewrite Lim_seq_ext with (v := (fun n => (ps_P (E 0%nat)) - (ps_P (E n)))) in H1.
-      + rewrite union_diff_inter in H1. 
-        rewrite ps_diff_sub in H1.
-        * rewrite Lim_seq_minus in H1.
-          -- rewrite Lim_seq_const in H1.
-             rewrite <- H2 in H1.
-             simpl in H1.
-             rewrite Rbar_finite_eq in H1.
-             ring_simplify in H1.
-             rewrite <- H2.
+    generalize (lim_ascending (fun n => event_diff (E 0%nat) (E n))); intros asc.
+    generalize (is_finite_Lim_seq_psP E); intros isf.
+    cut_to asc.
+    - rewrite Lim_seq_ext with (v := (fun n => (ps_P (E 0%nat)) - (ps_P (E n)))) in asc.
+      + rewrite union_diff_inter in asc. 
+        rewrite ps_diff_sub in asc.
+        * rewrite Lim_seq_minus in asc.
+          -- rewrite Lim_seq_const in asc.
+             rewrite <- isf in asc.
+             simpl in asc.
+             rewrite Rbar_finite_eq in asc.
+             ring_simplify in asc.
+             rewrite <- isf.
              rewrite Rbar_finite_eq.
              lra.
           -- apply ex_lim_seq_const.
@@ -1208,15 +1226,11 @@ Lemma Fatou_FiniteExpectation
              intros.
              now apply ps_sub.
           -- rewrite Lim_seq_const.
-             now rewrite <- H2.
-        * apply H.
-        * now apply sa_countable_inter.
+             now rewrite <- isf.
         * firstorder.
       + intros.
         apply ps_diff_sub; trivial.
         now apply event_sub_descending.
-    - intros.
-      now apply sa_diff.
     - unfold ascending_collection; intros.
       firstorder.
   Qed.
@@ -1289,7 +1303,6 @@ Lemma Fatou_FiniteExpectation
 
   Lemma ps_union_le_ser col :
     ex_series (fun n0 : nat => ps_P (col n0)) ->
-    (forall n : nat, sa_sigma (col n)) ->
     ps_P (union_of_collection col) <=
     Series (fun n0 : nat => ps_P (col n0)).
   Proof.
@@ -1300,7 +1313,7 @@ Lemma Fatou_FiniteExpectation
     now apply Series_correct.
   Qed.
 
-  Theorem Borel_Cantelli (E : nat -> event Ts) :
+  Theorem Borel_Cantelli (E : nat -> event dom) :
     (forall (n:nat), sa_sigma (E n)) ->
     ex_series (fun n => ps_P (E n)) ->
     ps_P (inter_of_collection 
@@ -1318,8 +1331,6 @@ Lemma Fatou_FiniteExpectation
       intros.
       f_equal; f_equal; lia.
       now rewrite <- ex_series_incr_n with (a := (fun n0 => ps_P (E n0))).
-      intros.
-      apply H.
     }
     generalize (Lim_series_tails (fun n => ps_P (E n)) H0); intros.    
     unfold ex_series in H0.
@@ -1331,8 +1342,6 @@ Lemma Fatou_FiniteExpectation
                                     (fun n => E (n + k)%nat)))).
     { 
       rewrite lim_descending; trivial.
-      intros.
-      now apply sa_countable_union.
       intros n x0.
       unfold union_of_collection; intros.
       destruct H3.
@@ -1347,7 +1356,6 @@ Lemma Fatou_FiniteExpectation
     - replace (Finite 0) with (Lim_seq (fun _ => 0)) by apply Lim_seq_const.
       apply Lim_seq_le_loc; exists (0%nat); intros.
       apply ps_pos.
-      now apply sa_countable_union.
     - intros.
       now apply ps_pos.
   Qed.    

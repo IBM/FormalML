@@ -1,4 +1,4 @@
-Require Import List Permutation EquivDec.
+Require Import List Permutation EquivDec Program.
 Require Import RelationClasses Morphisms.
 Require Import Lia Lra Rbase.
 Require Import Relation_Definitions Sorted.
@@ -1357,6 +1357,21 @@ Proof.
   now rewrite IHft.
 Qed.
 
+Lemma Forallt_map_irrel {A B:Type} {X:A->Type} {l:list A} (f:forall a, X a -> B) (ft1 ft2:Forallt X l) :
+  (forall a, In a l -> forall x y, f a x = f a y) ->
+  Forallt_map f ft1 = Forallt_map f ft2.
+Proof.
+  intros.
+  revert ft1 ft2.
+  induction l; intros
+  ; dependent destruction ft1
+  ; dependent destruction ft2
+  ; simpl in *
+  ; trivial.
+  f_equal; eauto.
+Qed.
+
+
 Lemma map_nil' {A B} (f:A->B) l :
   List.map f l = nil <-> l = nil.
 Proof.
@@ -1904,4 +1919,17 @@ Proof.
   induction l; simpl; trivial.
   rewrite IHl.
   match_destr.
+Qed.
+
+Lemma ForallOrdPairs_map {A B} (P:B->B->Prop) (f:A->B) (l:list A) :
+  ForallOrdPairs P (map f l) <-> ForallOrdPairs (fun x y => P (f x) (f y)) l.
+Proof.
+  induction l; simpl; split; intros HH
+  ; invcs HH
+  ; constructor
+  ; trivial.
+  - now rewrite Forall_map in H1.
+  - now apply IHl.
+  - now rewrite Forall_map.  
+  - now apply IHl.
 Qed.
