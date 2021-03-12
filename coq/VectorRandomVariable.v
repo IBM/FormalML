@@ -394,6 +394,27 @@ Section vector_ops.
     - apply constant_measurable.
   Qed.  
 
+  Instance Rvector_max_abs_measurable {n} (f : Ts -> vector R n) :
+    RealVectorMeasurable f ->
+    RealMeasurable dom (rvmaxabs f).
+  Proof.
+    unfold RealVectorMeasurable; simpl; intros.
+    unfold rvmaxabs.
+    unfold RealMeasurable.
+    intros.
+    assert (event_equiv  (fun omega : Ts => Rvector_max_abs (f omega) <= r)
+                         (list_inter
+                            (vector_list_create 
+                               0 n 
+                               (fun m _ pf => fun omega => Rabs (vector_nth m pf 
+                                                                            (f omega)) <= r)))).
+    admit.
+    rewrite H0.
+    apply sa_list_inter.
+    intros.
+    Admitted.
+
+
   Instance Rvector_inner_measurable {n} (f g : Ts -> vector R n) :
     RealVectorMeasurable f ->
     RealVectorMeasurable g ->
@@ -416,7 +437,6 @@ Section vector_ops.
     apply Rvector_plus_measurable
     ; now apply RandomVariableRealVectorMeasurable.
   Qed.
-
 
   Global Instance Rvector_mult_rv {n} (f g : Ts -> vector R n) :
     RandomVariable dom (Rvector_borel_sa n)  f ->
