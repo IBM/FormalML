@@ -596,6 +596,16 @@ Section vector_ops.
     ; now apply RandomVariableRealVectorMeasurable.
   Qed.
 
+  Global Instance Rvector_max_abs_rv {n} (f : Ts -> vector R n) :
+    RandomVariable dom (Rvector_borel_sa n) f ->
+    RandomVariable dom borel_sa (rvmaxabs f).
+  Proof.
+    intros.
+    apply measurable_rv.
+    apply Rvector_max_abs_measurable
+    ; now apply RandomVariableRealVectorMeasurable.
+  Qed.
+
   Global Instance Rvector_inner_rv {n} (f g : Ts -> vector R n) :
     RandomVariable dom (Rvector_borel_sa n) f ->
     RandomVariable dom (Rvector_borel_sa n) g ->
