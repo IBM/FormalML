@@ -213,7 +213,7 @@ Section SimpleExpectation.
                                                (event_complement E) omega)) l).
   Proof.
     intro sa_sigmaE.
-    rewrite list_sum_map.
+    rewrite <-list_sum_map_add.
     rewrite (map_ext (fun v : R => v * ps_P (fun omega : Ts => rv_X omega = v))
                      (fun t : R =>
                         t * ps_P (fun omega : Ts => rv_X omega = t /\ E omega) +
@@ -843,7 +843,7 @@ Section SimpleExpectation.
                          (list_prod (nodup Req_EM_T srv_vals) (nodup Req_EM_T srv_vals0)))).
     - rewrite H1.
       rewrite H2.
-      rewrite list_sum_map.
+      rewrite <-list_sum_map_add.
       f_equal.
       apply map_ext.
       intros.
