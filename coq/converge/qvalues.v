@@ -235,16 +235,19 @@ Proof.
     apply Rplus_le_compat; apply Rmax_list_map_nonneg; intros; apply Rabs_pos.
 Qed.
 
+Definition summand_bound W := fun (s : M.(state)) a => let (ls,_) := fs M in
+                      (Max_{ ls}(fun a0 : state M => Rabs ((fun _ : state M => act_expt_reward s a) a0)) +
+     (Max_{ ls} (fun a0 : state M => Rabs ((fun a1 : state M => γ * (Max_{ act_list a1}(fun a2 : act M a1 => W (existT (act M) a1 a2)))) a0))))².
+
 (* Proves that each individual summand is bounded. *)
-(*TODO(Kody): Clean this up and make the RHS a simpler function. *)
 Lemma summand_bounded W :
   forall (s : M.(state)) (a: M.(act) s),
     let (ls,_) := fs M in
     variance (t s a) (fun s' => act_expt_reward s a + γ*Max_{act_list s'} (fun a => W (existT _ s' a)))
-             <= (Max_{ ls}(fun a0 : state M => Rabs ((fun _ : state M => act_expt_reward s a) a0)) +
-     (Max_{ ls} (fun a0 : state M => Rabs ((fun a1 : state M => γ * (Max_{ act_list a1}(fun a2 : act M a1 => W (existT (act M) a1 a2)))) a0))))².
+             <= summand_bound W s a.
 Proof.
   intros s a.
+  unfold summand_bound.
   generalize (expt_value_le_max (fs M) (t s a)); intros.
   destruct (fs M) as [ls ?].
   assert (Hls: [] <> ls) by (apply not_nil_exists; exists (ne M); trivial).
