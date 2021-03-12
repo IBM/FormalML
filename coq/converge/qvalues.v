@@ -170,7 +170,7 @@ Proof.
   + simpl. symmetry.
     apply list_sum_map_zero.
   + simpl. rewrite IHlp.
-    rewrite <-list_sum_map.
+    rewrite list_sum_map_add.
     f_equal. rewrite Rmult_comm.
     unfold fun_inner_prod.
     rewrite <-list_sum_const_mul.
