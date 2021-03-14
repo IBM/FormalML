@@ -1904,10 +1904,15 @@ algorithm.
     Proof.
       Admitted.
 
-    Lemma Induction_I1_15 {n} (eps : posreal) (C C0 : R) (x : nat -> Ts -> vector R n) (xstar : vector R n):
+    Lemma Induction_I1_15 {n} (eps : posreal) (C C0 : R) (w x : nat -> Ts -> vector R n) (xstar : vector R n)
+          (rw : forall n0, RandomVariable dom (Rvector_borel_sa n) (w n0))
+          (srw : forall n0, SimpleRandomVariable  (w n0)) :
       0 <= C ->
+      0 <= gamma < 1 ->
       gamma + eps < 1 ->
       (forall n, 0 <= α n <= 1) ->       
+      is_lim_seq α 0 ->
+      is_lim_seq (sum_n α) p_infty ->
       (forall n, forall omega, 
             rvmaxabs (vecrvminus (x n) (const xstar)) omega <= C0) ->
       forall (k:nat),
@@ -1922,8 +1927,12 @@ algorithm.
         replace (n + 0)%nat with n by lia.
         rewrite pow_O.
         rewrite Rmult_1_r.
-        apply H2.
+        apply H5.
       - generalize (RMseq_const_lim (gamma * C0 * (gamma + eps)^k) (C0 * (gamma + eps)^k) ); intros.
-        generalize (@L2_convergent n gamma α (fun _ => vector_const 0 n) Ts dom prts C); intros.
+        generalize (@L2_convergent n gamma α (fun _ => vector_const 0 n) Ts dom prts C (vecrvconst n 0) w (Rvector_const_rv n 0) rw (srv_vecrvconst n 0) srw H H0 H2 H3 H4); intros.
+        cut_to H7.
+        destruct H7 as [? [? ?]].
+        rewrite <- H7 in H8.
+        
         Admitted.
 
