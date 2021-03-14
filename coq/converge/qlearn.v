@@ -1059,12 +1059,10 @@ algorithm.
   Canonical Rvector_CompleteNormedModule :=
        @Hilbert_CompleteNormedModule (@Rvector_Hilbert I).
 
-  Definition X := (vector R I).
+  Context (gamma : R) (α : nat -> R) {F : vector R I -> vector R I} {Ts : Type}
+          {dom: SigmaAlgebra Ts} {prts: ProbSpace dom}.
 
-  Context (gamma : R) (α : nat -> R) {F : X -> X} {Ts : Type}
-          {dom: SigmaAlgebra Ts} {prts: ProbSpace dom} (x0 : X).
-
-    Global Instance positive_inner (f : Ts -> X) :
+    Global Instance positive_inner (f : Ts -> vector R I) :
       PositiveRandomVariable (fun v => inner (f v) (f v) ).
     Proof.
       unfold PositiveRandomVariable.
@@ -1172,39 +1170,39 @@ algorithm.
  Qed.
 
 
-   Lemma rv_inner_plus_l (x y z : X) :
+   Lemma rv_inner_plus_l (x y z : vector R I) :
      Rvector_inner (Rvector_plus x y) z = 
      (Rvector_inner x z) + (Rvector_inner y z).
    Proof.
      apply (inner_plus_l x y z).
    Qed.
 
-   Lemma rv_inner_plus_r (x y z : X) :
+   Lemma rv_inner_plus_r (x y z : vector R I) :
      Rvector_inner x (Rvector_plus y z) = 
      (Rvector_inner x y) + (Rvector_inner x z).
     Proof.
       apply (inner_plus_r x y z).
     Qed.
    
-   Lemma rv_inner_scal_l (x y : X) (l : R) :
+   Lemma rv_inner_scal_l (x y : vector R I) (l : R) :
      Rvector_inner (Rvector_scale l x) y = l * Rvector_inner x y.
    Proof.
      apply (inner_scal_l x y l).
    Qed.
 
-   Lemma rv_inner_scal_r (x y : X) (l : R) :
+   Lemma rv_inner_scal_r (x y : vector R I) (l : R) :
      Rvector_inner x (Rvector_scale l y) = l * Rvector_inner x y.
    Proof.
      apply (inner_scal_r x y l).
    Qed.
 
-   Lemma rv_inner_sym (x y : X) :
+   Lemma rv_inner_sym (x y : vector R I) :
      Rvector_inner x y = Rvector_inner y x.
    Proof.
      apply (inner_sym x y).
    Qed.
 
-   Lemma rv_inner_ge_0 (x : X) :
+   Lemma rv_inner_ge_0 (x : vector R I) :
       0 <= Rvector_inner x x.
    Proof.
      apply (inner_ge_0 x).
@@ -1212,11 +1210,11 @@ algorithm.
 
    Existing Instance rv_fun_simple_Rvector.
 
-   Definition F_alpha (a : R) (x : Ts -> X) :=
+   Definition F_alpha (a : R) (x : Ts -> vector R I) :=
      vecrvplus (vecrvscale (1-a) x) (vecrvscale a (fun v => F (x v))).
 
 
-   Instance rv_Fa (a:R) (x: Ts -> X) 
+   Instance rv_Fa (a:R) (x: Ts -> vector R I) 
             (rvx : RandomVariable dom (Rvector_borel_sa I) x) 
             (srvx : SimpleRandomVariable x) :
      RandomVariable dom (Rvector_borel_sa I) (F_alpha a x).
@@ -1228,7 +1226,7 @@ algorithm.
      typeclasses eauto.
   Qed.
    
-   Lemma L2_convergent_helper (C : R) (w x : nat -> Ts -> X) (xstar : X) (n:nat)
+   Lemma L2_convergent_helper (C : R) (w x : nat -> Ts -> vector R I) (xstar : vector R I) (n:nat)
          (rx : forall n, RandomVariable dom (Rvector_borel_sa I) (x n))
          (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
          (srw : forall n, SimpleRandomVariable  (w n)) 
@@ -1317,7 +1315,7 @@ algorithm.
       now left.
     Qed.
 
-    Lemma SimpleExpectation_rvinner_pos (f : Ts -> X) 
+    Lemma SimpleExpectation_rvinner_pos (f : Ts -> vector R I) 
           (rx : RandomVariable dom (Rvector_borel_sa I) f)
           (srv: SimpleRandomVariable f) :
       0 <= SimpleExpectation (rvinner f f).
@@ -1331,7 +1329,7 @@ algorithm.
       apply SimpleExpectation_const.
    Qed.
 
-    Lemma aux_seq (C: R) (x : nat -> Ts -> X) (v : nat -> R) (xstar : X)
+    Lemma aux_seq (C: R) (x : nat -> Ts -> vector R I) (v : nat -> R) (xstar : vector R I)
          (rx : forall n, RandomVariable dom (Rvector_borel_sa I) (x n))
          (srx : forall n, SimpleRandomVariable  (x n)) :
       v (0%nat) = SimpleExpectation 
@@ -1369,7 +1367,7 @@ algorithm.
         apply IHn.
      Qed.
     
-    Lemma aux_seq_lim (C: R) (x : nat -> Ts -> X) (v : nat -> R) (xstar : X)
+    Lemma aux_seq_lim (C: R) (x : nat -> Ts -> vector R I) (v : nat -> R) (xstar : vector R I)
          (rx : forall n, RandomVariable dom (Rvector_borel_sa I) (x n))
          (srx : forall n, SimpleRandomVariable  (x n)) :
       0 <= C ->
@@ -1528,7 +1526,7 @@ algorithm.
    Lemma f_contract_fixedpoint :
       0 <= gamma < 1 ->
       (forall x1 y : vector R I, Hnorm (minus (F x1) (F y)) <= gamma * Hnorm (minus x1 y)) -> 
-     exists (xstar : X), F xstar = xstar.
+     exists (xstar : vector R I), F xstar = xstar.
    Proof.
      intros.
      destruct (Req_dec gamma 0).
@@ -1561,9 +1559,9 @@ algorithm.
      now apply Rmult_lt_compat_l.
   Qed.
 
-   Lemma partition_measurable_vecrvminus_F_alpha_const (x : Ts -> X)
+   Lemma partition_measurable_vecrvminus_F_alpha_const (x : Ts -> vector R I)
          {srv : SimpleRandomVariable x}
-         (a : R) (xstar : X) 
+         (a : R) (xstar : vector R I) 
          (l : list (event Ts)) :
      is_partition_list l ->
      partition_measurable x l ->
@@ -1579,7 +1577,7 @@ algorithm.
    Qed.
 
   Definition update_sa_dec_history (l : list dec_sa_event)
-          {rv_X : Ts -> X}
+          {rv_X : Ts -> vector R I}
           {rv:RandomVariable dom (Rvector_borel_sa I) rv_X}
           (srv : SimpleRandomVariable rv_X) : list dec_sa_event
     :=                                                   
@@ -1587,7 +1585,7 @@ algorithm.
 
   Lemma update_partition_list
           (l : list dec_sa_event)
-          {rv_X : Ts -> X}
+          {rv_X : Ts -> vector R I}
           {rv:RandomVariable dom (Rvector_borel_sa I) rv_X}
           (srv : SimpleRandomVariable rv_X) :
     is_partition_list (map dsa_event l) ->
@@ -1601,7 +1599,7 @@ algorithm.
 
   Lemma update_partition_measurable
           (l : list dec_sa_event)
-          {rv_X : Ts -> X}
+          {rv_X : Ts -> vector R I}
           {rv:RandomVariable dom (Rvector_borel_sa I) rv_X}
           (srv : SimpleRandomVariable rv_X) :
     partition_measurable rv_X (map dsa_event (update_sa_dec_history l srv)).
@@ -1622,7 +1620,7 @@ algorithm.
     rewrite in_map_iff in H3.
     destruct H3 as [? [? ?]].
     unfold RandomVariable.srv_vals in *.
-    exists x3.
+    exists x2.
     split.
     now rewrite nodup_In in H4.
     unfold refine_dec_sa_event in H2.
@@ -1636,7 +1634,7 @@ algorithm.
     tauto.
   Qed.
   
-    Lemma L2_convergent_helper2 (C : R) (w x : nat -> Ts -> X) (xstar : X)
+    Lemma L2_convergent_helper2 (C : R) (w x : nat -> Ts -> vector R I) (xstar : vector R I)
          (hist : nat -> list dec_sa_event) 
          (rx : forall n, RandomVariable dom (Rvector_borel_sa I) (x n))
          (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
@@ -1703,7 +1701,7 @@ algorithm.
                  ++ replace (1 - (1 - gamma) * α n) with (1 - α n + gamma * α n) by lra.
                     apply H.
                  ++ assert (xstar = plus (scal (1 - (α n)) xstar) (scal (α n) xstar)).
-                    ** rewrite scal_minus_distr_r with (x1 := 1).
+                    ** rewrite scal_minus_distr_r with (x0 := 1).
                        unfold minus.
                        rewrite <- plus_assoc.
                        rewrite plus_opp_l.
@@ -1759,14 +1757,14 @@ algorithm.
     Qed.
 
 
-    Fixpoint L2_convergent_x (xinit:Ts->X) (w: nat -> Ts -> X) (n:nat) : Ts -> X
+    Fixpoint L2_convergent_x (xinit:Ts->vector R I) (w: nat -> Ts -> vector R I) (n:nat) : Ts -> vector R I
       := match n with
          | 0 => xinit
          | S k => vecrvplus (F_alpha (α k) (L2_convergent_x xinit w k))
                            (vecrvscale (α k) (w k))
          end.
 
-    Instance L2_convergent_x_srv (xinit:Ts->X) (w: nat -> Ts -> X) (n:nat)
+    Instance L2_convergent_x_srv (xinit:Ts->vector R I) (w: nat -> Ts -> vector R I) (n:nat)
           (srx : SimpleRandomVariable xinit)
           (srw : forall n, SimpleRandomVariable (w n)) :
       SimpleRandomVariable (L2_convergent_x xinit w n).
@@ -1776,7 +1774,7 @@ algorithm.
       - typeclasses eauto.
     Qed.
 
-    Instance L2_convergent_x_rv (xinit:Ts->X) (w: nat -> Ts -> X) (n:nat)
+    Instance L2_convergent_x_rv (xinit:Ts->vector R I) (w: nat -> Ts -> vector R I) (n:nat)
           (rx : RandomVariable dom (Rvector_borel_sa I) xinit)
           (srx : SimpleRandomVariable xinit)
           (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n)) 
@@ -1790,7 +1788,7 @@ algorithm.
     Qed.
 
     Section hist.
-      Context (x:nat->Ts->X).
+      Context (x:nat->Ts->vector R I).
       Context (rvx:forall n, RandomVariable dom (Rvector_borel_sa I) (x n)).
       Context (srvx: forall n, SimpleRandomVariable (x n)).
       
@@ -1827,7 +1825,7 @@ algorithm.
     Qed.
 
     (* Theorem 8 *)
-    Theorem L2_convergent (C : R) (xinit:Ts->X) (w : nat -> Ts -> X)
+    Theorem L2_convergent (C : R) (xinit:Ts->vector R I) (w : nat -> Ts -> vector R I)
           (rxinit : RandomVariable dom (Rvector_borel_sa I) xinit)
           (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
           (srvxinit : SimpleRandomVariable xinit)
@@ -1861,3 +1859,71 @@ algorithm.
       - intros.
         apply L2_convergent_hist_partition_measurable.
     Qed.
+
+  End qlearn3.
+
+  Section qlearn4.
+
+  Context (gamma : R) (α : nat -> R) {Ts : Type}
+          {dom: SigmaAlgebra Ts} {prts: ProbSpace dom}.
+
+    Fixpoint RMseqTs (α : nat -> R) (f : nat -> Ts -> R) (init : Ts -> R) (n : nat) (omega : Ts) : R :=
+      match n with
+      | 0 => init omega
+      | (S k) => plus (scal (1 - α k) (RMseqTs α f init k omega)) (scal (α k) (f k omega))
+      end.
+   
+    Lemma Induction_I2_15 (xtilde : nat -> Ts -> R) (xstar : R) (w : nat -> Ts -> R) (C:R) :
+      (forall n, 0 <= α n <= 1) -> 
+      (forall n, forall omega, Rabs (xtilde n omega) <= C) ->
+      (forall n, forall omega, 
+            (- α n)*gamma*C <= (xtilde (S n) omega) -  (1 - α n)*(xtilde n omega) -  (α n)*(w n omega) <= (α n)*gamma*C) ->
+      forall n, forall omega, 
+          - (RMseq α (fun n => gamma * C) C n) <= (xtilde n omega) - (RMseqTs α w (const 0) n omega) 
+          <= RMseq α (fun n => gamma * C) C n.
+    Proof.
+      intros.
+      induction n.
+      - unfold const; simpl.
+        rewrite Rminus_0_r.
+        specialize (H0 0%nat omega).
+        now apply Rabs_le_between.
+      - simpl.
+        specialize (H1 n omega).
+        unfold plus, scal; simpl.
+        unfold Hierarchy.mult; simpl.
+        destruct IHn.
+        specialize (H n).
+        split.
+        + apply Rmult_le_compat_l with (r := 1 - α n) in H2; lra.
+        + apply Rmult_le_compat_l with (r := 1 - α n) in H3; lra.
+     Qed.
+
+    Lemma RMseq_const_lim (C : R) (init : R):
+      is_lim_seq (RMseq α (fun n => C) init) (C).
+    Proof.
+      Admitted.
+
+    Lemma Induction_I1_15 {n} (eps : posreal) (C C0 : R) (x : nat -> Ts -> vector R n) (xstar : vector R n):
+      0 <= C ->
+      gamma + eps < 1 ->
+      (forall n, 0 <= α n <= 1) ->       
+      (forall n, forall omega, 
+            rvmaxabs (vecrvminus (x n) (const xstar)) omega <= C0) ->
+      forall (k:nat),
+      exists (nk : nat),
+      forall n, forall omega,
+          rvmaxabs (vecrvminus (x (n + nk)%nat) (const xstar)) omega <= C0 * (gamma + eps)^k.
+    Proof.
+      intros.
+      induction k.
+      - exists (0%nat).
+        intros.
+        replace (n + 0)%nat with n by lia.
+        rewrite pow_O.
+        rewrite Rmult_1_r.
+        apply H2.
+      - generalize (RMseq_const_lim (gamma * C0 * (gamma + eps)^k) (C0 * (gamma + eps)^k) ); intros.
+        generalize (@L2_convergent n gamma α (fun _ => vector_const 0 n) Ts dom prts C); intros.
+        Admitted.
+
