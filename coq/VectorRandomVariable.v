@@ -91,6 +91,8 @@ Section vector_ops.
     {dom: SigmaAlgebra Ts}
     {prts: ProbSpace dom}.
 
+  Definition vecrvconst (n:nat) (c : R) :=
+    (fun (omega : Ts) => vector_const c n).
 
   Definition vecrvplus {n} (rv_X1 rv_X2 : Ts -> vector R n) :=
     (fun omega =>  Rvector_plus (rv_X1 omega) (rv_X2 omega)).
@@ -392,7 +394,23 @@ Section vector_ops.
     match_destr.
     - now apply RealVectorMeasurableComponent_simplify.
     - apply constant_measurable.
-  Qed.  
+  Qed.
+
+  Instance Rvector_const_measurable {n:nat} (c : R) :
+    RealVectorMeasurable (vecrvconst n c ).
+  Proof.
+    unfold RealVectorMeasurable; intros.
+    unfold iso_f; simpl.
+    rewrite vector_nth_fun_to_vector.
+    assert (rv_eq (fun x : Ts => vector_nth i pf (vecrvconst n c x))
+                  (const c)).
+    - intro x.
+      unfold vecrvconst.
+      unfold vector_const.
+      now rewrite vector_nth_create'.
+    - rewrite H.
+      apply constant_measurable.
+  Qed.
 
   Lemma fold_left_Rmax_init_le l d :
     d <= fold_left Rmax l d.
@@ -522,6 +540,12 @@ Section vector_ops.
     apply Rvector_mult_measurable; trivial.
   Qed.
 
+  Global Instance Rvector_const_rv n c :
+    RandomVariable dom (Rvector_borel_sa n) (vecrvconst n c).
+  Proof.
+    apply RealVectorMeasurableRandomVariable.
+    apply Rvector_const_measurable.
+  Qed.
 
   Global Instance Rvector_plus_rv {n} (f g : Ts -> vector R n) :
     RandomVariable dom (Rvector_borel_sa n)  f ->
@@ -684,6 +708,10 @@ Section vector_ops.
     apply rv.
   Qed.
 
+  Global Program Instance srv_vecrvconst n c :
+    SimpleRandomVariable (vecrvconst n c)
+    := { srv_vals := (vector_const c n)::nil }.
+  
   Definition vector_SimpleExpectation {n} (rv_X : Ts -> vector R n)
              {srv : SimpleRandomVariable rv_X} : vector R n
     := 
