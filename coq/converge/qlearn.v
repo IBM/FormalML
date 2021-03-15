@@ -297,8 +297,6 @@ algorithm.
         apply Rbar_mult_0_r.
     Qed.
 
-  
-
     Fixpoint list_product (l : list R) : R :=
       match l with
       | nil => 1
@@ -1900,9 +1898,41 @@ algorithm.
      Qed.
 
     Lemma RMseq_const_lim (C : R) (init : R):
-      is_lim_seq (RMseq α (fun n => C) init) (C).
+      0 <= gamma < 1 ->
+      (forall n, 0 <= α n <= 1) ->       
+      is_lim_seq α 0 ->
+      is_lim_seq (sum_n α) p_infty ->
+      is_lim_seq (RMseq α (fun n => gamma * C) init) (gamma * C).
     Proof.
-      Admitted.
+      intros.
+      generalize (product_sum_assumption_a α gamma H H0 H1 H2 0); intros.
+      apply is_lim_seq_ext with (v := fun n : nat => prod_f_R0 (fun m : nat => g_alpha gamma (α m)) n) in H3.
+      generalize (@Deterministic_RM_2b R_NormedModule (fun n => gamma * C) α init gamma (gamma * C) H); intros.
+      cut_to H4; trivial.
+      - apply is_lim_seq_abs_0 in H4.
+        unfold minus in H4.
+        unfold opp in H4; simpl in H4.
+        apply is_lim_seq_plus' with (u := (fun _ => gamma * C)) (l1 := gamma * C) in H4.
+        + rewrite Rplus_0_r in H4.
+          apply is_lim_seq_ext with (v := (RMseq α (fun _ : nat => gamma * C) init)) in H4.
+          apply H4.
+          intros.
+          unfold plus; simpl.
+          ring_simplify.
+          clear H1 H2 H3 H4.
+          induction n.
+          * now simpl.
+          * simpl.
+            now rewrite IHn.
+        + apply is_lim_seq_const.
+      - intros.
+        rewrite minus_eq_zero, norm_zero.
+        apply Rmult_le_pos; try lra.
+        apply norm_ge_0.
+      - intros; apply prod_f_R0_proper; [|trivial].
+        unfold Morphisms.pointwise_relation; intros.
+        do 2 f_equal; lia.
+      Qed.
 
     Lemma Induction_I1_15 {n} (eps : posreal) (C C0 : R) (w x : nat -> Ts -> vector R n) (xstar : vector R n)
           (rw : forall n0, RandomVariable dom (Rvector_borel_sa n) (w n0))
@@ -1928,7 +1958,7 @@ algorithm.
         rewrite pow_O.
         rewrite Rmult_1_r.
         apply H5.
-      - generalize (RMseq_const_lim (gamma * C0 * (gamma + eps)^k) (C0 * (gamma + eps)^k) ); intros.
+      - generalize (RMseq_const_lim (C0 * (gamma + eps)^k) (C0 * (gamma + eps)^k) H0 H2 H3 H4); intros.
         generalize (@L2_convergent n gamma α (fun _ => vector_const 0 n) Ts dom prts C (vecrvconst n 0) w (Rvector_const_rv n 0) rw (srv_vecrvconst n 0) srw H H0 H2 H3 H4); intros.
         cut_to H7.
         destruct H7 as [? [? ?]].
