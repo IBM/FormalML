@@ -1945,6 +1945,7 @@ algorithm.
       is_lim_seq (sum_n α) p_infty ->
       (forall n, forall omega, 
             rvmaxabs (vecrvminus (x n) (const xstar)) omega <= C0) ->
+      (forall n0 : nat, SimpleExpectation (rvinner (w n0) (w n0)) < C) ->
       forall (k:nat),
       exists (nk : nat),
       forall n, forall omega,
@@ -1960,9 +1961,18 @@ algorithm.
         apply H5.
       - generalize (RMseq_const_lim (C0 * (gamma + eps)^k) (C0 * (gamma + eps)^k) H0 H2 H3 H4); intros.
         generalize (@L2_convergent n gamma α (fun _ => vector_const 0 n) Ts dom prts C (vecrvconst n 0) w (Rvector_const_rv n 0) rw (srv_vecrvconst n 0) srw H H0 H2 H3 H4); intros.
-        cut_to H7.
-        destruct H7 as [? [? ?]].
-        rewrite <- H7 in H8.
-        
+        cut_to H8; trivial.
+        destruct H8 as [? [? ?]].
+        rewrite <- H8 in H9.
+        admit.
+        admit.
+        intros.
+        rewrite minus_eq_zero.
+        generalize (@hilbert.norm_zero (@Rvector_PreHilbert n)); intros.
+        replace (@zero (@Rvector_AbelianGroup n)) with (@zero (hilbert.PreHilbert.AbelianGroup (@Rvector_PreHilbert n))).
+        rewrite H9.
+        apply Rmult_le_pos; try lra.
+        now apply hilbert.norm_ge_0.
+        reflexivity.
         Admitted.
 
