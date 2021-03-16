@@ -1159,6 +1159,27 @@ Section SimpleConditionalExpectation.
       apply srvplus; auto.
   Qed.
 
+  Lemma SimpleExpectation_pre_EventIndicator
+        {P : pre_event Ts}
+        (sa_P:sa_sigma P)
+        (dec: forall x, {P x} + {~ P x}) :
+    SimpleExpectation (EventIndicator dec)
+                      (rv:=EventIndicator_pre_rv _ dec sa_P)
+                      (srv:=EventIndicator_pre_srv dec)
+    = ps_P (exist _ P sa_P).
+  Proof.
+    unfold EventIndicator_srv.
+    unfold SimpleExpectation.
+    unfold srv_vals.
+    unfold preimage_singleton.
+    unfold pre_event_preimage, pre_event_singleton.
+    unfold EventIndicator.
+    simpl.
+    repeat match_destr; simpl; ring_simplify
+    ; apply ps_proper; intros ?; simpl    
+    ; match_destr; intuition.
+  Qed.
+
   Lemma SimpleExpectation_EventIndicator 
         {P : event dom} 
         (dec: forall x, {P x} + {~ P x}) :

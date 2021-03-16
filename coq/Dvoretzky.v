@@ -65,6 +65,7 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
       (svx: SimpleRandomVariable (X n))
       (rvt : RandomVariable dom borel_sa (fun r:R => T n (X n r))) 
       (svt: SimpleRandomVariable (fun r:R => T n (X n r))) 
+      (rvx2 : RandomVariable dom borel_sa (X (S n)))
       (svx2: SimpleRandomVariable (X (S n))) :
   (forall (n:nat), F n >= 0) ->
   (forall (n:nat) (r:R), Rle (Rabs ((T n r) - theta)) (F n * Rabs (r-theta))) ->
@@ -115,6 +116,7 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
        unfold rvmult, const; intros ?; simpl; field.
      } 
      rewrite (SimpleExpectation_transport _ eqq4).
+     rewrite (SimpleExpectation_pf_irrel _ (srvconst _)).
      rewrite SimpleExpectation_const.
      rewrite Rmult_0_r, Rplus_0_r.
      specialize (H n).
@@ -149,7 +151,8 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
          rewrite srv_vals_offset, in_map_iff.
          exists (T n (X n x)).
          split; trivial.
-       * intros x eqq2.
+       * intros x; simpl.
+         unfold pre_event_preimage, pre_event_singleton; intros eqq2.
          now rewrite eqq2.
      + exists (T n (X n 0) + (-1)*theta).
        split.
@@ -157,7 +160,8 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
          rewrite srv_vals_offset, in_map_iff.
          exists (T n (X n 0)).
          split; trivial.
-       * intros ??.
+       * intros ?; simpl.
+         unfold pre_event_preimage, pre_event_singleton; intros eqq2.
          elim H5.
          eauto.
   Qed.
@@ -243,37 +247,44 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
         now apply exp_increasing.
   Qed.
 
+  Lemma sa_le_ge_rv  {Ts:Type} {dom:SigmaAlgebra Ts}
+        (rv_X : Ts -> R) {rv : RandomVariable dom borel_sa rv_X} x
+    : sa_sigma (fun omega => rv_X omega >= x).
+  Proof.
+    apply sa_le_ge.
+    now apply rv_measurable.
+  Qed.
+
+  Definition event_ge {Ts:Type} {dom:SigmaAlgebra Ts}
+        (rv_X : Ts -> R) {rv : RandomVariable dom borel_sa rv_X} x
+    : event dom
+    := @exist (pre_event Ts) _ _ (sa_le_ge_rv rv_X x).
+
   Lemma Markov_ineq {Ts:Type} {dom:SigmaAlgebra Ts} {prts : ProbSpace dom}
         (X : Ts -> R)
         (rv : RandomVariable dom borel_sa X)
         (posrv : PositiveRandomVariable X)
         (a : posreal) :
-    Rbar_le (a * (ps_P (fun omega => X omega >= a))) (Expectation_posRV X).
+    Rbar_le (a * (ps_P (event_ge X a))) (Expectation_posRV X).
   Proof.
-    generalize (SimpleExpectation_EventIndicator (fun omega => Rge_dec (X omega) a)); intros.
-    generalize simple_Expectation_posRV; intros.
+    generalize (SimpleExpectation_pre_EventIndicator (sa_le_ge_rv X a) (fun x => Rge_dec (X x) a)); intros.
+    unfold event_ge.
     rewrite <- H.
+    generalize simple_Expectation_posRV; intros.
     rewrite scaleSimpleExpectation.
-    assert (Hrv:RandomVariable dom borel_sa (rvscale a (EventIndicator (fun omega : Ts => Rge_dec (X omega) a)))).
-    { apply rvscale_rv.
-      apply EventIndicator_rv.
-      apply sa_le_ge.
-      now rewrite borel_sa_preimage2.
-    }
-    generalize (positive_scale_prv a (EventIndicator (fun omega : Ts => Rge_dec (X omega) a))); intros.
-    rewrite H0 with (prv := H1); trivial.
-    apply Expectation_posRV_le; trivial.
+    erewrite H0.
+    apply Expectation_posRV_le.
     unfold EventIndicator, rvscale; intros x.
     specialize (posrv x).
     destruct (Rge_dec (X x) a); lra.
-Qed.    
+  Qed.    
       
   Lemma Markov_ineq_div {Ts:Type} {dom:SigmaAlgebra Ts} {prts : ProbSpace dom}
         (X : Ts -> R)
         (rv : RandomVariable dom borel_sa X)
         (posrv : PositiveRandomVariable X)
         (a : posreal) :
-    Rbar_le (ps_P (fun omega => X omega >= a)) (Rbar_div_pos (Expectation_posRV X) a).
+    Rbar_le (ps_P (event_ge X a)) (Rbar_div_pos (Expectation_posRV X) a).
   Proof.
     generalize (Markov_ineq X rv posrv a); intros.
     rewrite Rbar_div_pos_le with (z := a) in H.
@@ -328,12 +339,12 @@ Qed.
         (X : Ts -> R) 
         (rv : RandomVariable dom borel_sa X)
         (posrv: PositiveRandomVariable X) :
-  Rbar_le (ps_P (fun omega => X omega >= eps))
+  Rbar_le (ps_P (event_ge X eps))
           (Rbar_div (Expectation_posRV (rvsqr X)) 
                     (Rsqr eps)).
     Proof.
-      assert (event_equiv (fun omega => X omega >= eps)
-                          (fun omega => Rsqr(X omega) >= Rsqr eps)).
+      assert (event_equiv (event_ge X eps)
+                          (event_ge (rvsqr X) (Rsqr eps))).
       - intro x.
         split; intros.
         + apply Rge_le in H.
@@ -348,8 +359,8 @@ Qed.
         rewrite mkpos_Rsqr.
         rewrite Rbar_div_div_pos.
         apply Markov_ineq_div.
-        now apply rvsqr_rv.
     Qed.
+
 
   Lemma conv_l2_prob_le {Ts:Type} {dom:SigmaAlgebra Ts} {prts: ProbSpace dom}
         (eps : posreal) 
@@ -357,7 +368,7 @@ Qed.
         (rvx : RandomVariable dom borel_sa X)
         (rvxn : RandomVariable dom borel_sa Xn) :
     is_finite (Expectation_posRV (rvsqr (rvabs (rvminus X Xn)))) ->
-    ps_P (fun omega => (rvabs (rvminus X Xn)) omega >= eps) <=
+    ps_P (event_ge (rvabs (rvminus X Xn)) eps) <=
     (Expectation_posRV (rvsqr (rvabs (rvminus X Xn)))) / (Rsqr eps).
     Proof.
       assert (RandomVariable dom borel_sa (rvabs (rvminus X Xn))).
@@ -368,7 +379,11 @@ Qed.
         intros.
         generalize (conv_l2_prob_le_div eps (rvabs (rvminus X Xn)) H H0).
         rewrite <- H1.
-        now simpl.
+        simpl.
+        intros.
+        erewrite ps_proper; try eapply H2.
+        intros ?; simpl.
+        reflexivity.
     Qed.
 
   Lemma conv_l1_prob_le {Ts:Type} {dom:SigmaAlgebra Ts} {prts: ProbSpace dom}
@@ -377,7 +392,7 @@ Qed.
         (rvx : RandomVariable dom borel_sa X)
         (rvxn : RandomVariable dom borel_sa Xn) :
     is_finite (Expectation_posRV (rvabs (rvminus X Xn))) ->
-    ps_P (fun omega => (rvabs (rvminus X Xn)) omega >= eps) <=
+    ps_P (event_ge (rvabs (rvminus X Xn)) eps) <=
     (Expectation_posRV (rvabs (rvminus X Xn))) / eps.
     Proof.
       assert (RandomVariable dom borel_sa (rvabs (rvminus X Xn))).
@@ -388,7 +403,10 @@ Qed.
         intros.
         generalize (Markov_ineq_div (rvabs (rvminus X Xn)) H H0 eps); intros.
         rewrite <- H1 in H2.
-        now simpl in H2.
+        intros.
+        erewrite ps_proper; try eapply H2.
+        intros ?; simpl.
+        reflexivity.
     Qed.
         
   Lemma conv_l2_prob {Ts:Type} {dom:SigmaAlgebra Ts} {prts: ProbSpace dom}
@@ -399,7 +417,7 @@ Qed.
         (rvxn : forall n, RandomVariable dom borel_sa (Xn n)) :
     (forall n, is_finite (Expectation_posRV (rvsqr (rvabs (rvminus X (Xn n)))))) ->
     is_lim_seq (fun n => Expectation_posRV (rvsqr (rvabs (rvminus X (Xn n))))) 0 ->
-    is_lim_seq (fun n => ps_P (fun omega => (rvabs (rvminus X (Xn n))) omega >= eps)) 0.
+    is_lim_seq (fun n => ps_P (event_ge (rvabs (rvminus X (Xn n))) eps)) 0.
   Proof.
     intros.
     apply is_lim_seq_le_le_loc with (u := fun _ => 0) 
@@ -409,9 +427,6 @@ Qed.
       intros.
       split.
       + apply ps_pos.
-        apply sa_le_ge.
-        apply rv_measurable.
-        typeclasses eauto.
       + apply conv_l2_prob_le; trivial.
     - apply is_lim_seq_const.
     - apply is_lim_seq_div with (l1 := 0) (l2 := Rsqr eps); trivial.
@@ -434,7 +449,7 @@ Qed.
         (rvxn : forall n, RandomVariable dom borel_sa (Xn n)) :
     (forall n, is_finite (Expectation_posRV (rvabs (rvminus X (Xn n))))) ->
     is_lim_seq (fun n => Expectation_posRV (rvabs (rvminus X (Xn n)))) 0 ->
-    is_lim_seq (fun n => ps_P (fun omega => (rvabs (rvminus X (Xn n))) omega >= eps)) 0.
+    is_lim_seq (fun n => ps_P (event_ge (rvabs (rvminus X (Xn n))) eps)) 0.
   Proof.
     intros.
     apply is_lim_seq_le_le_loc with (u := fun _ => 0) 
@@ -444,9 +459,6 @@ Qed.
       intros.
       split.
       + apply ps_pos.
-        apply sa_le_ge.
-        apply rv_measurable.
-        typeclasses eauto.
       + apply conv_l1_prob_le; trivial.
     - apply is_lim_seq_const.
     - apply is_lim_seq_div with (l1 := 0) (l2 := eps); trivial.
