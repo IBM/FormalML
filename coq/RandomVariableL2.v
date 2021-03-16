@@ -246,14 +246,17 @@ Section L2.
                                          LpRRV_eq prts x (LpRRVconst prts 0).
   Proof.
     unfold L2RRVinner, LpRRV_eq; intros.
-    apply FiniteExpectation_zero_pos in H; try typeclasses eauto.
+    eapply FiniteExpectation_zero_pos in H; try typeclasses eauto.
     red.
     erewrite ps_proper; try eapply H.
     intros a.
     unfold LpRRVconst, const, rvmult.
     split; intros; simpl in *.
-    - rewrite H0; lra.
+    - unfold pre_event_preimage, pre_event_singleton.
+      rewrite H0; lra.
     - now apply Rsqr_0_uniq in H0.
+      Unshelve.
+      typeclasses eauto.
   Qed.
   
   Lemma L2RRV_inner_scal (x y : LpRRV prts 2) (l : R) :
