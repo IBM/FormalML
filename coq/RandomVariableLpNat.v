@@ -50,10 +50,10 @@ Section Lp.
       IsLp n rv_X2.
   Proof.
     red; intros.
-    eapply IsFiniteExpectation_proper_almost
+    eapply (IsFiniteExpectation_proper_almost _ (rvpow (rvabs rv_X1) n))
     ; try eapply islp1
     ; try typeclasses eauto.
-    apply rv_almost_eq_pow_abs_proper
+    eapply rv_almost_eq_pow_abs_proper
     ; try typeclasses eauto.
     now apply rv_almost_eq_abs_proper
     ; try typeclasses eauto.
@@ -591,8 +591,6 @@ Section Lp.
     Definition LpRRV_eq (rv1 rv2:LpRRV)
       := rv_almost_eq prts rv1 rv2.
 
-    Local Hint Resolve Hsigma_borel_eq_pf : prob.
-
     Global Instance LpRRV_eq_equiv : Equivalence LpRRV_eq.
     Proof.
       unfold LpRRV_eq.
@@ -603,7 +601,7 @@ Section Lp.
         now apply rv_almost_eq_rv_sym.
       - intros [x??] [y??] [z??] ps1 ps2.
         simpl in *.
-        now apply rv_almost_eq_rv_trans with (y0:=y).
+        now eapply rv_almost_eq_rv_trans with (y0:=y).
     Qed.
 
     
@@ -637,12 +635,12 @@ Section Lp.
       destruct (Req_EM_T x 0).
       - subst.
         erewrite ps_proper; try eapply ps_one.
-        red.
-        unfold Ω.
-        split; trivial.
+        red; simpl.
+        unfold pre_Ω.
+        split; simpl; trivial.
         lra.
       - erewrite ps_proper; try eapply eqqx.
-        red; intros.
+        red; intros; simpl.
         split; intros.
         + eapply Rmult_eq_reg_l; eauto.
         + congruence.
@@ -986,7 +984,7 @@ Section Lp.
       unfold Proper, respectful, LpRRVnorm, LpRRV_eq.
       intros.
       f_equal.
-      apply FiniteExpectation_proper_almost
+      eapply FiniteExpectation_proper_almost
       ; try typeclasses eauto.
       apply rv_almost_eq_pow_abs_proper
       ; try typeclasses eauto.
@@ -1007,9 +1005,10 @@ Section Lp.
       - split; intros H; exact H.
       - red; intros a.
         rv_unfold.
-        split; intros eqq.
+        split; simpl; intros eqq.
         + rewrite eqq.
-          now rewrite Rabs_R0, pow0_Sbase.
+          rewrite Rabs_R0.
+          lra.
         + apply pow_integral in eqq.
           now apply Rabs_eq_0 in eqq.
     Qed.
@@ -1021,10 +1020,12 @@ Section Lp.
       rv_almost_eq prts rv_X (const 0).
     Proof.
       intros fin0.
-      apply FiniteExpectation_zero_pos in fin0
+      eapply FiniteExpectation_zero_pos in fin0
       ; try typeclasses eauto.
       apply almost0_lpf_almost0
       ; try typeclasses eauto.
+      red.
+      rewrite event_eq_const.
       apply fin0.
     Qed.
 
@@ -1258,7 +1259,7 @@ Section Lp.
              (@LpRRV_LpS_FiniteLp (S p) x)) 0).
       {
         field_simplify.
-        apply LpFin0_almost0 in e; try typeclasses eauto.
+        eapply LpFin0_almost0 in e; try typeclasses eauto.
         rewrite (FiniteExpectation_proper_almost prts (rvpow (rvabs (rvplus x y)) (S p)) (rvpow (rvabs y) (S p))).
         - lra.
         - apply rv_almost_eq_pow_abs_proper
@@ -1268,7 +1269,7 @@ Section Lp.
           generalize (rv_almost_eq_plus_proper prts x (const 0) y y e)
           ; intros HH.
           cut_to HH.
-          + apply (rv_almost_eq_rv_trans prts _ (rvplus (const 0) y))
+          + eapply (rv_almost_eq_rv_trans prts _ (rvplus (const 0) y))
             ; trivial
             ; try typeclasses eauto.
             apply rv_almost_eq_eq.
@@ -1276,12 +1277,11 @@ Section Lp.
             rv_unfold.
             lra.
           + apply rv_almost_eq_rv_refl.
-            typeclasses eauto.
       }
       destruct (Req_EM_T (FiniteExpectation prts (rvpow (rvabs y) (S p))) 0).
       {
         field_simplify.
-        apply LpFin0_almost0 in e; try typeclasses eauto.
+        eapply LpFin0_almost0 in e; try typeclasses eauto.
         rewrite (FiniteExpectation_proper_almost prts (rvpow (rvabs (rvplus x y)) (S p)) (rvpow (rvabs x) (S p))).
         - match_destr; try lra.
         - apply rv_almost_eq_pow_abs_proper
@@ -1293,15 +1293,16 @@ Section Lp.
           cut_to HH
           ; trivial
           ; try typeclasses eauto.
-          + apply (rv_almost_eq_rv_trans prts _ (rvplus x (const 0)))
-            ; trivial
-            ; try typeclasses eauto.
-            apply rv_almost_eq_eq.
-            intros a.
-            rv_unfold.
-            lra.
+          + eapply (rv_almost_eq_rv_trans prts _ (rvplus x (const 0)))
+            ; trivial.
+            * apply rv_almost_eq_plus_proper.
+              --  apply rv_almost_eq_rv_refl.
+              -- apply e.
+            * apply rv_almost_eq_eq.
+              intros a.
+              rv_unfold.
+              lra.
           + apply rv_almost_eq_rv_refl.
-            typeclasses eauto.
       }
       destruct (Req_EM_T (FiniteExpectation prts (rvpow (rvabs (rvplus x y)) (S p))) 0).
       {
@@ -1393,17 +1394,20 @@ Section Lp.
       unfold LpRRVnorm, LpRRVzero, LpRRVconst.
       intros.
       apply root_integral in H.
-      apply FiniteExpectation_zero_pos in H; try typeclasses eauto.
+      eapply FiniteExpectation_zero_pos in H; try typeclasses eauto.
       erewrite ps_proper in H; try eapply H.
       intros a; simpl; unfold const.
       split; intros eqq.
       + apply pow_integral in eqq.
         now apply Rabs_eq_0.
       + rv_unfold.
+        unfold pre_event_preimage, pre_event_singleton.
         rewrite eqq.
         rewrite Rabs_R0.
         rewrite pow_i; trivial.
         lia.
+        Unshelve.
+        typeclasses eauto.
     Qed.
 
     Definition LpRRVball (x:LpRRV (S p)) (e:R) (y:LpRRV (S p)): Prop
