@@ -38,9 +38,13 @@ Section SimpleExpectation.
                   (nodup Req_EM_T srv_vals)).
 
   
-  Lemma srv_nodup_preimage_list_union dec
-        {rv_X : Ts -> R}
-        {rv: RandomVariable dom borel_sa rv_X}
+  Lemma srv_nodup_preimage_list_union
+        {Td}
+        {cod:SigmaAlgebra Td}
+        {has_pre:HasPreimageSingleton cod}
+        dec
+        {rv_X : Ts -> Td}
+        {rv: RandomVariable dom cod rv_X}
         (srv : SimpleRandomVariable rv_X) :
     event_equiv (list_union (map (preimage_singleton rv_X) (nodup dec srv_vals)))  Ω .
   Proof.
@@ -60,8 +64,11 @@ Section SimpleExpectation.
   Qed.
   
   Lemma event_disjoint_preimage_disj
-        (f:Ts->R) l
-        {rv: RandomVariable dom borel_sa f}
+        {Td}
+        {cod:SigmaAlgebra Td}
+        {has_pre:HasPreimageSingleton cod}
+        (f:Ts->Td) l
+        {rv: RandomVariable dom cod f}
 :
     NoDup l ->
     ForallOrdPairs event_disjoint (map (preimage_singleton f) l).
