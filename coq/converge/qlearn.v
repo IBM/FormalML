@@ -1092,8 +1092,10 @@ algorithm.
       trivial.
     Qed.
 
-    Lemma forall_SimpleExpectation_ext {rv1 rv2 : nat -> Ts -> R} 
+    Lemma forall_SimpleExpectation_ext {rv1 rv2 : nat -> Ts -> R}
+          {rrv1 : forall n, RandomVariable dom borel_sa (rv1 n)}
           {srv1 : forall n, SimpleRandomVariable (rv1 n)}
+          {rrv2 : forall n, RandomVariable dom borel_sa (rv2 n)}
           {srv2 : forall n, SimpleRandomVariable (rv2 n)} :
       (forall n, rv_eq (rv1 n) (rv2 n)) ->
       forall n, SimpleExpectation (rv1 n) = SimpleExpectation (rv2 n).
@@ -1221,9 +1223,8 @@ algorithm.
             (srvx : SimpleRandomVariable x) :
      RandomVariable dom (Rvector_borel_sa I) (F_alpha a x).
    Proof.
-     eapply srv_singleton_rv.
-     intros.
-     apply vec_sa_singleton.
+     eapply srv_singleton_rv; intros.
+     apply (sa_preimage_singleton (σ:=Rvector_borel_sa I)).
      unfold F_alpha.
      typeclasses eauto.
   Qed.
@@ -1299,22 +1300,19 @@ algorithm.
                 (Rvector_inner (const xstar v) (w n v)) by apply rv_inner_sym.
         now ring_simplify.
      }
-      generalize (SimpleExpectation_ext _ _ H3); intros.
-      rewrite <- sumSimpleExpectation in H4; [|typeclasses eauto | typeclasses eauto].
-      rewrite <- sumSimpleExpectation in H4; [|typeclasses eauto | typeclasses eauto].
-      rewrite <- scaleSimpleExpectation in H4.
-      rewrite <- scaleSimpleExpectation in H4.      
-      rewrite H0 in H4.
-      rewrite Rmult_0_r in H4.
-      ring_simplify in H4.
+      rewrite (SimpleExpectation_ext H3).
+      repeat rewrite <- sumSimpleExpectation.
+      repeat rewrite <- scaleSimpleExpectation.
+      rewrite H0.
+      rewrite Rmult_0_r.
+      ring_simplify.
       generalize (SimpleExpectation_le _ _ H1); intros.
-      rewrite H4.      
-      rewrite <- scaleSimpleExpectation in H5.
-      apply Rplus_le_compat.
-      apply H5.
+      rewrite <- scaleSimpleExpectation in H4.
+      rewrite Rplus_comm.
+      apply Rplus_le_compat; trivial.
       apply Rmult_le_compat_l.
-      apply pow2_ge_0.
-      now left.
+      - apply pow2_ge_0.
+      - now left.
     Qed.
 
     Lemma SimpleExpectation_rvinner_pos (f : Ts -> X) 
@@ -1323,12 +1321,10 @@ algorithm.
       0 <= SimpleExpectation (rvinner f f).
     Proof.
       replace (0) with (SimpleExpectation (const 0)).
-      apply SimpleExpectation_le.
-      apply rvconst.
-      now apply Rvector_inner_rv.
-      intro v.
-      now generalize (inner_ge_0 (f v)).
-      apply SimpleExpectation_const.
+      - apply SimpleExpectation_le.
+        intro v.
+        now generalize (inner_ge_0 (f v)).
+      - apply SimpleExpectation_const.
    Qed.
 
     Lemma aux_seq (C: R) (x : nat -> Ts -> X) (v : nat -> R) (xstar : X)
@@ -1356,7 +1352,6 @@ algorithm.
       intros.
       split.
       apply SimpleExpectation_rvinner_pos.
-      typeclasses eauto.
       induction n.
       - rewrite H.
         lra.
@@ -1562,16 +1557,17 @@ algorithm.
   Qed.
 
    Lemma partition_measurable_vecrvminus_F_alpha_const (x : Ts -> X)
+         {rv : RandomVariable dom (Rvector_borel_sa I) x}
          {srv : SimpleRandomVariable x}
          (a : R) (xstar : X) 
-         (l : list (event Ts)) :
+         (l : list (event dom)) :
      is_partition_list l ->
-     partition_measurable x l ->
-     partition_measurable (vecrvminus (F_alpha a x) (const xstar)) l.
+     partition_measurable (cod:=Rvector_borel_sa I) x l ->
+     partition_measurable (cod:=Rvector_borel_sa I) (vecrvminus (F_alpha a x) (const xstar)) l.
    Proof.
      unfold F_alpha; intros.
      apply partition_measurable_vecrvminus; trivial.
-     apply partition_measurable_vecrvplus; trivial.
+     eapply partition_measurable_vecrvplus; trivial.
      apply partition_measurable_vecrvscale; trivial.
      apply partition_measurable_vecrvscale; trivial.
      apply partition_measurable_comp; trivial.
@@ -1604,7 +1600,7 @@ algorithm.
           {rv_X : Ts -> X}
           {rv:RandomVariable dom (Rvector_borel_sa I) rv_X}
           (srv : SimpleRandomVariable rv_X) :
-    partition_measurable rv_X (map dsa_event (update_sa_dec_history l srv)).
+    partition_measurable (cod:=Rvector_borel_sa I) rv_X (map dsa_event (update_sa_dec_history l srv)).
   Proof.
     unfold partition_measurable, update_sa_dec_history.
     unfold refine_dec_sa_partitions.
@@ -1632,7 +1628,7 @@ algorithm.
     rewrite <- H2.
     rewrite <- H3.
     simpl.
-    unfold event_sub, event_inter, event_preimage, event_singleton.
+    vm_compute.
     tauto.
   Qed.
   
@@ -1647,7 +1643,7 @@ algorithm.
       xstar = F xstar ->
       (forall n, 0 <= α n <= 1) -> 
       (forall n, is_partition_list (map dsa_event (hist n))) ->
-      (forall n, partition_measurable (x n) (map dsa_event (hist n))) ->
+      (forall n, partition_measurable (cod:=Rvector_borel_sa I) (x n) (map dsa_event (hist n))) ->
       is_lim_seq α 0 ->
       is_lim_seq (sum_n α) p_infty ->
       (forall k, (x (S k)) = 
@@ -1672,7 +1668,7 @@ algorithm.
                  + (α n)^2 * C).
       {
         intros.
-        apply L2_convergent_helper with (w := w) (srw := srw); trivial.
+        eapply L2_convergent_helper with (w := w) (srw := srw); trivial.
         generalize (partition_measurable_vecrvminus_F_alpha_const (x n) (α n)
                    xstar (map dsa_event (hist n)) (ispart n) (part_meas n)); intros.
         generalize (simple_expection_rvinner_measurable_zero 
@@ -1819,7 +1815,7 @@ algorithm.
     Qed.
 
     Lemma L2_convergent_hist_partition_measurable x rx srx (n:nat):
-      partition_measurable (x n) (map dsa_event (L2_convergent_hist x rx srx n)).
+      partition_measurable (cod:=Rvector_borel_sa I) (x n) (map dsa_event (L2_convergent_hist x rx srx n)).
     Proof.
       induction n; simpl.
       - apply vec_induced_partition_measurable.
@@ -1855,7 +1851,6 @@ algorithm.
       exists xstar.
       split; trivial.
       eapply L2_convergent_helper2; eauto.
-      - typeclasses eauto.
       - intros.
         apply L2_convergent_hist_is_partition_list.
       - intros.
