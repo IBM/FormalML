@@ -351,6 +351,24 @@ Qed.
         now apply rvsqr_rv.
     Qed.
 
+  Lemma conv_l2_prob_le1 {Ts:Type} {dom:SigmaAlgebra Ts} {prts: ProbSpace dom}
+        (eps : posreal) 
+        (Xn: Ts -> R)
+        (rvxn : RandomVariable dom borel_sa Xn) :
+    is_finite (Expectation_posRV (rvsqr (rvabs Xn))) ->
+    ps_P (fun omega => (rvabs Xn) omega >= eps) <=
+    (Expectation_posRV (rvsqr (rvabs Xn))) / (Rsqr eps).
+    Proof.
+      assert (RandomVariable dom borel_sa (rvabs Xn)).
+      - now apply rvabs_rv.
+      - assert (PositiveRandomVariable (rvabs Xn)).
+        now apply prvabs.
+        intros.
+        generalize (conv_l2_prob_le_div eps (rvabs Xn) H H0).
+        rewrite <- H1.
+        now simpl.
+    Qed.
+
   Lemma conv_l2_prob_le {Ts:Type} {dom:SigmaAlgebra Ts} {prts: ProbSpace dom}
         (eps : posreal) 
         (X Xn: Ts -> R)
@@ -360,15 +378,9 @@ Qed.
     ps_P (fun omega => (rvabs (rvminus X Xn)) omega >= eps) <=
     (Expectation_posRV (rvsqr (rvabs (rvminus X Xn)))) / (Rsqr eps).
     Proof.
-      assert (RandomVariable dom borel_sa (rvabs (rvminus X Xn))).
-      - apply rvabs_rv.
-        now apply rvminus_rv.
-      - assert (PositiveRandomVariable (rvabs (rvminus X Xn))).
-        now apply prvabs.
-        intros.
-        generalize (conv_l2_prob_le_div eps (rvabs (rvminus X Xn)) H H0).
-        rewrite <- H1.
-        now simpl.
+      intros.
+      apply conv_l2_prob_le1; trivial.
+      now apply rvminus_rv.
     Qed.
 
   Lemma conv_l1_prob_le {Ts:Type} {dom:SigmaAlgebra Ts} {prts: ProbSpace dom}
@@ -391,19 +403,17 @@ Qed.
         now simpl in H2.
     Qed.
         
-  Lemma conv_l2_prob {Ts:Type} {dom:SigmaAlgebra Ts} {prts: ProbSpace dom}
+  Lemma conv_l2_prob1 {Ts:Type} {dom:SigmaAlgebra Ts} {prts: ProbSpace dom}
         (eps : posreal) 
-        (X: Ts -> R)
         (Xn: nat -> Ts -> R)
-        (rvx : RandomVariable dom borel_sa X)
         (rvxn : forall n, RandomVariable dom borel_sa (Xn n)) :
-    (forall n, is_finite (Expectation_posRV (rvsqr (rvabs (rvminus X (Xn n)))))) ->
-    is_lim_seq (fun n => Expectation_posRV (rvsqr (rvabs (rvminus X (Xn n))))) 0 ->
-    is_lim_seq (fun n => ps_P (fun omega => (rvabs (rvminus X (Xn n))) omega >= eps)) 0.
+    (forall n, is_finite (Expectation_posRV (rvsqr (rvabs (Xn n))))) ->
+    is_lim_seq (fun n => Expectation_posRV (rvsqr (rvabs (Xn n)))) 0 ->
+    is_lim_seq (fun n => ps_P (fun omega => (rvabs (Xn n)) omega >= eps)) 0.
   Proof.
     intros.
     apply is_lim_seq_le_le_loc with (u := fun _ => 0) 
-                                    (w := (fun n => (Expectation_posRV (rvsqr (rvabs (rvminus X (Xn n))))) / (Rsqr eps))).
+                                    (w := (fun n => (Expectation_posRV (rvsqr (rvabs (Xn n)))) / (Rsqr eps))).
     - unfold eventually.
       exists (0%nat).
       intros.
@@ -412,7 +422,7 @@ Qed.
         apply sa_le_ge.
         apply rv_measurable.
         typeclasses eauto.
-      + apply conv_l2_prob_le; trivial.
+      + apply conv_l2_prob_le1; trivial.
     - apply is_lim_seq_const.
     - apply is_lim_seq_div with (l1 := 0) (l2 := Rsqr eps); trivial.
       + apply is_lim_seq_const.
@@ -424,6 +434,22 @@ Qed.
         unfold is_Rbar_mult, Rbar_mult'.
         f_equal.
         now rewrite Rmult_0_l.
+  Qed.
+
+  Lemma conv_l2_prob {Ts:Type} {dom:SigmaAlgebra Ts} {prts: ProbSpace dom}
+        (eps : posreal) 
+        (X: Ts -> R)
+        (Xn: nat -> Ts -> R)
+        (rvx : RandomVariable dom borel_sa X)
+        (rvxn : forall n, RandomVariable dom borel_sa (Xn n)) :
+    (forall n, is_finite (Expectation_posRV (rvsqr (rvabs (rvminus X (Xn n)))))) ->
+    is_lim_seq (fun n => Expectation_posRV (rvsqr (rvabs (rvminus X (Xn n))))) 0 ->
+    is_lim_seq (fun n => ps_P (fun omega => (rvabs (rvminus X (Xn n))) omega >= eps)) 0.
+  Proof.
+    intros.
+    apply conv_l2_prob1; trivial.
+    intros.
+    now apply rvminus_rv.
   Qed.
 
     Lemma conv_l1_prob {Ts:Type} {dom:SigmaAlgebra Ts} {prts: ProbSpace dom}
