@@ -1871,6 +1871,20 @@ algorithm.
       | (S k) => plus (scal (1 - α k) (RMseqTs α f init k omega)) (scal (α k) (f k omega))
       end.
    
+(*
+    Lemma eq86 {n} (F : vector R n -> vector R n) (x w : nat -> Ts -> vector R n) (xstar : vector R n) (C : R)
+          (i : nat) (pf : (i < n)%nat) :
+      (forall n, forall omega, Rabs (vector_nth i pf (minus (x n omega) xstar)) <= C) ->
+      (forall n, forall omega, x (S n) omega = 
+      (forall x y : vector R n, hilbert.Hnorm (minus (F x) (F y)) <= gamma * hilbert.Hnorm (minus x y)) ->
+      (forall n, forall omega, 
+            (- α n)*gamma*C <= (vector_nth i pf (minus (x (S n) omega) xstar)) -  (1 - α n)*(vector_nth i pf (minus (x n omega) xstar)) -  (α n)*(vector_nth i pf (w n omega)) <= (α n)*gamma*C).
+    Proof.
+      intros.
+      induction n.
+      - simpl.
+      
+*)
     Lemma Induction_I2_15 (xtilde : nat -> Ts -> R) (xstar : R) (w : nat -> Ts -> R) (C:R) :
       (forall n, 0 <= α n <= 1) -> 
       (forall n, forall omega, Rabs (xtilde n omega) <= C) ->
@@ -1934,6 +1948,148 @@ algorithm.
         do 2 f_equal; lia.
       Qed.
 
+
+    Lemma Induction_I1_15_helper {n}
+          (eps : posreal) (C C0 : R) (w x : nat -> Ts -> vector R n) (xstar : vector R n)
+          (rw : forall n0, RandomVariable dom (Rvector_borel_sa n) (w n0))
+          (srw : forall n0, SimpleRandomVariable  (w n0)) (i : nat) (pf : (i < n)%nat) :
+      0 <= C ->
+      0 <= gamma < 1 ->
+      (forall n, 0 <= α n <= 1) ->       
+      is_lim_seq α 0 ->
+      is_lim_seq (sum_n α) p_infty ->
+      (forall n0 : nat, vector_SimpleExpectation (w n0) = vector_const 0 n) ->
+      (forall n0 : nat, SimpleExpectation (rvinner (w n0) (w n0)) < C) ->
+    is_lim_seq (fun n0 => ps_P (fun omega => Rabs (vector_nth i pf (@L2_convergent_x n α (fun v => vector_const 0 n) Ts (vecrvconst n 0) w n0 omega))  >= eps)) 0.
+    Proof.
+      intros.
+      generalize (@L2_convergent n gamma α (fun _ => vector_const 0 n) Ts dom prts C (vecrvconst n 0) w (Rvector_const_rv n 0) rw (srv_vecrvconst n 0) srw H H0 H1 H2 H3); intros.
+      cut_to H6; trivial.
+      - destruct H6 as [? [? ?]].
+        rewrite <- H6 in H7.
+        assert (forall n0, (SimpleRandomVariable (@L2_convergent_x n α (fun v => vector_const 0 n) Ts (vecrvconst n 0) w n0))); intros.
+        {
+          apply  L2_convergent_x_srv.
+          typeclasses eauto.
+          apply srw.
+        }
+        apply is_lim_seq_ext with 
+            (v := fun n0 : nat =>
+                    SimpleExpectation
+                      (rvinner (L2_convergent_x α (vecrvconst n 0) w n0)
+                               (L2_convergent_x α (vecrvconst n 0) w n0))) in H7.
+        + apply conv_l2_prob1; intros.
+          * generalize (vec_rv (fun omega => (@L2_convergent_x n α (fun v => vector_const 0 n) Ts (vecrvconst n 0) w n0 omega)) i pf); intros.
+            cut_to H8.
+            unfold iso_f in H8; simpl in H8.
+            now rewrite vector_nth_fun_to_vector in H8.
+            apply L2_convergent_x_rv; trivial.
+            typeclasses eauto.
+            typeclasses eauto.
+          * assert 
+              (SimpleRandomVariable 
+                 (rvsqr
+                    (rvabs
+                       (fun omega : Ts =>
+                          vector_nth 
+                            i pf 
+                            (@L2_convergent_x n α (fun v => vector_const 0 n) Ts 
+                                              (vecrvconst n 0) w n0 omega))))).
+            {
+              apply srvsqr, srvabs.
+              generalize (vec_srv (fun omega => (@L2_convergent_x n α (fun v => vector_const 0 n) Ts (vecrvconst n 0) w n0 omega)) i pf); intros.
+              unfold iso_f in X0; simpl in X0.
+              rewrite vector_nth_fun_to_vector in X0.
+              apply X0.
+              apply L2_convergent_x_srv; trivial.
+              typeclasses eauto.
+            }
+            rewrite srv_Expectation_posRV with (srv := X0).
+            now unfold is_finite.
+            apply rvsqr_rv, rvabs_rv.
+            generalize (vec_rv (fun omega => (@L2_convergent_x n α (fun v => vector_const 0 n) Ts (vecrvconst n 0) w n0 omega)) i pf); intros.
+            cut_to H8.
+            {
+              unfold iso_f in H8; simpl in H8.
+              now rewrite vector_nth_fun_to_vector in H8.
+            }
+            apply L2_convergent_x_rv; trivial.
+            typeclasses eauto.
+            typeclasses eauto.
+          * assert (forall n0, (SimpleRandomVariable
+                      (rvsqr (rvabs (fun omega : Ts => 
+                                       vector_nth 
+                                         i pf 
+                                         (@L2_convergent_x n α  (fun v => vector_const 0 n) Ts (vecrvconst n 0) w n0 omega)))))).
+            intros.
+            apply srvsqr, srvabs.
+            generalize (vec_srv (fun omega => (@L2_convergent_x n α (fun v => vector_const 0 n) Ts (vecrvconst n 0) w n0 omega)) i pf); intros.
+            unfold iso_f in X0; simpl in X0.
+            rewrite vector_nth_fun_to_vector in X0.
+            apply X0.
+            apply L2_convergent_x_srv; trivial.
+            typeclasses eauto.
+
+            apply is_lim_seq_ext with 
+                (u := fun n0 : nat =>
+                        SimpleExpectation (rvsqr (rvabs (fun omega : Ts => vector_nth i pf (L2_convergent_x α (vecrvconst n 0) w n0 omega))))).
+            intros.
+            rewrite srv_Expectation_posRV with (srv := (X0 n0)).
+            reflexivity.
+            apply rvsqr_rv, rvabs_rv.
+            generalize (vec_rv (fun omega => (@L2_convergent_x n α (fun v => vector_const 0 n) Ts (vecrvconst n 0) w n0 omega)) i pf); intros.
+            cut_to H8.
+            {
+              unfold iso_f in H8; simpl in H8.
+              now rewrite vector_nth_fun_to_vector in H8.
+            }
+            apply L2_convergent_x_rv; trivial.
+            typeclasses eauto.
+            typeclasses eauto.
+            admit.
+        + intros.
+          apply SimpleExpectation_ext.
+          intro z.
+          assert (rv_eq (vecrvminus (@L2_convergent_x n α (fun v => vector_const 0 n) Ts (vecrvconst n 0) w n0) (const (vector_const 0 n)))
+                        (@L2_convergent_x n α (fun v => vector_const 0 n) Ts (vecrvconst n 0) w n0)).
+          intro zz.
+          unfold vecrvminus, vecrvconst.
+          unfold vecrvplus, vecrvopp.
+          unfold vecrvscale, const.
+          rewrite Rvector_scale_zero.
+          now rewrite Rvector_plus_zero.
+          now apply rvinner_proper.
+      - intros.
+        intro z.
+        unfold vector_gen_SimpleConditionalExpectation.
+        unfold iso_b; simpl.
+        rewrite vector_of_funs_vector_create.
+        unfold const, zero; simpl.
+        unfold Rvector_zero.
+        unfold vector_const.
+        apply vector_create_ext.
+        intros.
+        generalize (@vector_nth_fun_to_vector _ _ (Init.Nat.add 0 n) (w n0) i0 pf2); intros.
+        assert (rv_eq (vector_nth i0 pf2 (@fun_to_vector_to_vector_of_funs _ _ (Init.Nat.add 0 n) (w n0)))
+                      (fun x : Ts => (vector_nth i0 pf2 (w n0 x)))).
+        now rewrite H7.
+        assert (SimpleRandomVariable 
+                  (fun x : Ts => @vector_nth R (Init.Nat.add O n) i0 pf2 (w n0 x))).
+        generalize (vec_srv (w n0) i0 pf2 (srw n0)); intros.
+        unfold iso_f in X; simpl in X.
+        now apply (SimpleRandomVariable_ext _ _ H8) in X.
+        rewrite (gen_SimpleConditionalExpectation_ext _ _ _ H8).
+        admit.
+      - intros.
+        rewrite minus_eq_zero.
+        generalize (@hilbert.norm_zero (@Rvector_PreHilbert n)); intros.
+        replace (@zero (@Rvector_AbelianGroup n)) with (@zero (hilbert.PreHilbert.AbelianGroup (@Rvector_PreHilbert n))).
+        rewrite H7.
+        apply Rmult_le_pos; try lra.
+        now apply hilbert.norm_ge_0.
+        reflexivity.
+    Admitted.
+         
     Lemma Induction_I1_15 {n} (eps : posreal) (C C0 : R) (w x : nat -> Ts -> vector R n) (xstar : vector R n)
           (rw : forall n0, RandomVariable dom (Rvector_borel_sa n) (w n0))
           (srw : forall n0, SimpleRandomVariable  (w n0)) :
@@ -1975,4 +2131,3 @@ algorithm.
         now apply hilbert.norm_ge_0.
         reflexivity.
         Admitted.
-
