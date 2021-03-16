@@ -186,6 +186,17 @@ Section Rvector_defs.
     lra.
   Qed.
 
+  Lemma Rvector_scale_zero (c : R) :
+      Rvector_scale c 0 = 0.
+    Proof.
+      apply vector_nth_eq.
+      unfold Rvector_zero, vector_const.
+      unfold Rvector_scale.
+      intros.
+      rewrite vector_nth_map, vector_nth_create.
+      now rewrite Rmult_0_r.
+    Qed.
+
   Lemma Rvector_plus_inv (x:vector R n) : x + (- x) = 0.
   Proof.
     apply vector_eq; simpl.
