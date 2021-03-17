@@ -2058,6 +2058,7 @@ algorithm.
     Admitted.
          
     Lemma Induction_I1_15 {n} (eps P : posreal) (C C0 : R) (w x : nat -> Ts -> vector R n) (xstar : vector R n)
+          (rx : forall n0, RandomVariable dom (Rvector_borel_sa n) (x n0))
           (rw : forall n0, RandomVariable dom (Rvector_borel_sa n) (w n0))
           (srw : forall n0, SimpleRandomVariable  (w n0)) :
       P < 1 ->
