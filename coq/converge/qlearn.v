@@ -1757,8 +1757,8 @@ algorithm.
          | S k => vecrvplus (F_alpha (α k) (L2_convergent_x xinit w k))
                            (vecrvscale (α k) (w k))
          end.
-
-    Instance L2_convergent_x_srv (xinit:Ts->vector R I) (w: nat -> Ts -> vector R I) (n:nat)
+    
+    Global Instance L2_convergent_x_srv (xinit:Ts->vector R I) (w: nat -> Ts -> vector R I) (n:nat)
           (srx : SimpleRandomVariable xinit)
           (srw : forall n, SimpleRandomVariable (w n)) :
       SimpleRandomVariable (L2_convergent_x xinit w n).
@@ -1768,7 +1768,7 @@ algorithm.
       - typeclasses eauto.
     Qed.
 
-    Instance L2_convergent_x_rv (xinit:Ts->vector R I) (w: nat -> Ts -> vector R I) (n:nat)
+    Global Instance L2_convergent_x_rv (xinit:Ts->vector R I) (w: nat -> Ts -> vector R I) (n:nat)
           (rx : RandomVariable dom (Rvector_borel_sa I) xinit)
           (srx : SimpleRandomVariable xinit)
           (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n)) 
@@ -1943,7 +1943,6 @@ algorithm.
         do 2 f_equal; lia.
       Qed.
 
-
     Lemma Induction_I1_15_helper {n}
           (eps : posreal) (C C0 : R) (w x : nat -> Ts -> vector R n) (xstar : vector R n)
           (rw : forall n0, RandomVariable dom (Rvector_borel_sa n) (w n0))
@@ -1955,7 +1954,7 @@ algorithm.
       is_lim_seq (sum_n α) p_infty ->
       (forall n0 : nat, vector_SimpleExpectation (w n0) = vector_const 0 n) ->
       (forall n0 : nat, SimpleExpectation (rvinner (w n0) (w n0)) < C) ->
-    is_lim_seq (fun n0 => ps_P (event_ge (rvabs (fun omega => (vector_nth i pf (@L2_convergent_x n α (fun v => vector_const 0 n) Ts (vecrvconst n 0) w n0 omega)))) eps)) 0.
+    is_lim_seq (fun n0 => ps_P (event_ge (rvabs (vecrvnth i pf (@L2_convergent_x n α (fun v => vector_const 0 n) Ts (vecrvconst n 0) w n0))) eps)) 0.
     Proof.
       intros.
       generalize (@L2_convergent n gamma α (fun _ => vector_const 0 n) Ts dom prts C (vecrvconst n 0) w (Rvector_const_rv n 0) rw (srv_vecrvconst n 0) srw H H0 H1 H2 H3); intros.
@@ -1974,13 +1973,6 @@ algorithm.
                       (rvinner (L2_convergent_x α (vecrvconst n 0) w n0)
                                (L2_convergent_x α (vecrvconst n 0) w n0))) in H7.
         + apply conv_l2_prob1; intros.
-          * generalize (vec_rv (fun omega => (@L2_convergent_x n α (fun v => vector_const 0 n) Ts (vecrvconst n 0) w n0 omega)) i pf); intros.
-            cut_to H8.
-            unfold iso_f in H8; simpl in H8.
-            now rewrite vector_nth_fun_to_vector in H8.
-            apply L2_convergent_x_rv; trivial.
-            typeclasses eauto.
-            typeclasses eauto.
           * assert 
               (SimpleRandomVariable 
                  (rvsqr
@@ -1999,18 +1991,8 @@ algorithm.
               apply L2_convergent_x_srv; trivial.
               typeclasses eauto.
             }
-            rewrite srv_Expectation_posRV with (srv := X0).
+            erewrite srv_Expectation_posRV with (srv := X0).
             now unfold is_finite.
-            apply rvsqr_rv, rvabs_rv.
-            generalize (vec_rv (fun omega => (@L2_convergent_x n α (fun v => vector_const 0 n) Ts (vecrvconst n 0) w n0 omega)) i pf); intros.
-            cut_to H8.
-            {
-              unfold iso_f in H8; simpl in H8.
-              now rewrite vector_nth_fun_to_vector in H8.
-            }
-            apply L2_convergent_x_rv; trivial.
-            typeclasses eauto.
-            typeclasses eauto.
           * assert (forall n0, (SimpleRandomVariable
                       (rvsqr (rvabs (fun omega : Ts => 
                                        vector_nth 
@@ -2027,21 +2009,11 @@ algorithm.
 
             apply is_lim_seq_ext with 
                 (u := fun n0 : nat =>
-                        SimpleExpectation (rvsqr (rvabs (fun omega : Ts => vector_nth i pf (L2_convergent_x α (vecrvconst n 0) w n0 omega))))).
-            intros.
-            rewrite srv_Expectation_posRV with (srv := (X0 n0)).
-            reflexivity.
-            apply rvsqr_rv, rvabs_rv.
-            generalize (vec_rv (fun omega => (@L2_convergent_x n α (fun v => vector_const 0 n) Ts (vecrvconst n 0) w n0 omega)) i pf); intros.
-            cut_to H8.
-            {
-              unfold iso_f in H8; simpl in H8.
-              now rewrite vector_nth_fun_to_vector in H8.
-            }
-            apply L2_convergent_x_rv; trivial.
-            typeclasses eauto.
-            typeclasses eauto.
-            admit.
+                        SimpleExpectation (rvsqr (rvabs (vecrvnth i pf (L2_convergent_x α (vecrvconst n 0) w n0))))).
+            -- intros.
+               erewrite srv_Expectation_posRV with (srv := (X0 n0)).
+               reflexivity.
+            -- admit.
         + intros.
           apply SimpleExpectation_ext.
           intro z.

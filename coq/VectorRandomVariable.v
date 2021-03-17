@@ -121,6 +121,9 @@ Section vector_ops.
   Definition rvinner {n} (rv_X1 rv_X2 : Ts -> vector R n) :=
     fun omega => Rvector_inner (rv_X1 omega) (rv_X2 omega).
 
+  Definition vecrvnth {n} i pf (rv_X : Ts -> vector R n) :=
+    (fun omega =>  vector_nth i pf (rv_X omega)).
+
   Global Instance vecrvplus_proper {n} : Proper (rv_eq ==> rv_eq ==> rv_eq) (@vecrvplus n).
   Proof.
     repeat red.
@@ -641,6 +644,31 @@ Section vector_ops.
     ; now apply RandomVariableRealVectorMeasurable.
   Qed.
 
+  Global Instance vecrvnth_rv {n} i pf (rv_X : Ts -> vector R n)
+         {rv:RandomVariable dom (Rvector_borel_sa n) rv_X} :
+    RandomVariable dom borel_sa (vecrvnth i pf rv_X).
+  Proof.
+    apply RandomVariableRealVectorMeasurable in rv.
+    apply measurable_rv.
+    red in rv.
+    specialize (rv i pf).
+    simpl in rv.
+    now rewrite vector_nth_fun_to_vector in rv.
+  Qed.
+
+  Global Program Instance vecrvnth_srv {n} i pf (rv_X : Ts -> vector R n)
+         {rv:SimpleRandomVariable rv_X} :
+    SimpleRandomVariable (vecrvnth i pf rv_X)
+    :=
+      {
+    srv_vals := map (fun c => vector_nth i pf c) srv_vals
+      }.
+  Next Obligation.
+    unfold vecrvnth.
+    apply in_map.
+    apply srv_vals_complete.
+  Qed.
+
   Global Instance Rvector_sum_pos {n} (f : Ts -> vector R n) :
     (forall i pf, PositiveRandomVariable (fun x => vector_nth i pf (f x))) ->
     PositiveRandomVariable (vecrvsum f).
@@ -914,7 +942,8 @@ Lemma SimpleRandomVariable_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
   Proof.
     eapply SimpleRandomVariable_ext.
     - rewrite rvinner_unfold; reflexivity.
-    - typeclasses eauto.
+    - apply srv_vecsum.
+      now apply srv_vecrvmult.
   Qed.
 End vector_ops.
 
