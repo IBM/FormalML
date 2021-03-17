@@ -260,6 +260,18 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
     : event dom
     := @exist (pre_event Ts) _ _ (sa_le_ge_rv rv_X x).
 
+  Lemma sa_le_le_rv  {Ts:Type} {dom:SigmaAlgebra Ts}
+        (rv_X : Ts -> R) {rv : RandomVariable dom borel_sa rv_X} x
+    : sa_sigma (fun omega => rv_X omega <= x).
+  Proof.
+    now apply rv_measurable.
+  Qed.
+
+  Definition event_le {Ts:Type} {dom:SigmaAlgebra Ts}
+        (rv_X : Ts -> R) {rv : RandomVariable dom borel_sa rv_X} x
+    : event dom
+    := @exist (pre_event Ts) _ _ (sa_le_le_rv rv_X x).
+
   Lemma Markov_ineq {Ts:Type} {dom:SigmaAlgebra Ts} {prts : ProbSpace dom}
         (X : Ts -> R)
         (rv : RandomVariable dom borel_sa X)
