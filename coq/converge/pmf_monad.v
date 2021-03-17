@@ -237,17 +237,8 @@ Global Instance Monad_Pmf : Monad Pmf := {|
 |}.
 
 
+(*We can use the nice bind and return syntax, since Pmf is now part of the Monad typeclass.*)
 Open Scope monad_scope.
-
-
-(*We can use the nice bind and return syntax, since Pmf is now part of the Monad typeclass.
-
-Variable (A B : Type).
-Variable (p : Pmf A).
-Variable (b : B).
-Variable (f g : A -> Pmf B). 
-Check (p >>= f).*)
-
 
 Lemma Pmf_ret_of_bind {A : Type} (p : Pmf A) : p >>= (fun a => ret a) = p.
 Proof.
@@ -311,6 +302,10 @@ Proof.
   simpl. rewrite <-IHl. destruct a. 
 Admitted.*)
 
+Definition pmf_prod {A B : Type} (p : Pmf A) (q : Pmf B) : Pmf (A*B) :=
+  a <- p;;
+  b <- q;;
+  ret (a,b).
 
 End Pmf.
 
