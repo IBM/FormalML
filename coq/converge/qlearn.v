@@ -2057,9 +2057,10 @@ algorithm.
         reflexivity.
     Admitted.
          
-    Lemma Induction_I1_15 {n} (eps : posreal) (C C0 : R) (w x : nat -> Ts -> vector R n) (xstar : vector R n)
+    Lemma Induction_I1_15 {n} (eps P : posreal) (C C0 : R) (w x : nat -> Ts -> vector R n) (xstar : vector R n)
           (rw : forall n0, RandomVariable dom (Rvector_borel_sa n) (w n0))
           (srw : forall n0, SimpleRandomVariable  (w n0)) :
+      P < 1 ->
       0 <= C ->
       0 <= gamma < 1 ->
       gamma + eps < 1 ->
@@ -2071,8 +2072,12 @@ algorithm.
       (forall n0 : nat, SimpleExpectation (rvinner (w n0) (w n0)) < C) ->
       forall (k:nat),
       exists (nk : nat),
-      forall n, forall omega,
-          rvmaxabs (vecrvminus (x (n + nk)%nat) (const xstar)) omega <= C0 * (gamma + eps)^k.
+      forall n0, 
+        ps_P 
+          (event_le
+             (rvmaxabs (vecrvminus (x (n0 + nk)%nat) (const xstar)))
+             C0 * (gamma + eps)^k)
+        >= P^k .
     Proof.
       intros.
       induction k.
@@ -2081,19 +2086,30 @@ algorithm.
         replace (n + 0)%nat with n by lia.
         rewrite pow_O.
         rewrite Rmult_1_r.
-        apply H5.
-      - generalize (RMseq_const_lim (C0 * (gamma + eps)^k) (C0 * (gamma + eps)^k) H0 H2 H3 H4); intros.
-        generalize (@L2_convergent n gamma α (fun _ => vector_const 0 n) Ts dom prts C (vecrvconst n 0) w (Rvector_const_rv n 0) rw (srv_vecrvconst n 0) srw H H0 H2 H3 H4); intros.
-        cut_to H8; trivial.
-        destruct H8 as [? [? ?]].
-        rewrite <- H8 in H9.
+        rewrite pow_O; right.
+        assert (event_equiv 
+                   (fun omega : Ts =>
+                      rvmaxabs (vecrvminus (x (n0 + 0)%nat) (const xstar)) omega <= C0)
+                    Ω).
+        intro omega.
+        unfold  Ω.
+        specialize (H6 n0 omega).
+        replace (n0 + 0)%nat with (n0) by lia.
+        tauto.
+        rewrite H8.
+        apply ps_one.
+      - generalize (RMseq_const_lim (C0 * (gamma + eps)^k) (C0 * (gamma + eps)^k) H1 H3 H4 H5); intros.
+        generalize (@L2_convergent n gamma α (fun _ => vector_const 0 n) Ts dom prts C (vecrvconst n 0) w (Rvector_const_rv n 0) rw (srv_vecrvconst n 0) srw H0 H1 H3 H4 H5); intros.
+        cut_to H9; trivial.
+        destruct H9 as [? [? ?]].
+        rewrite <- H9 in H10.
         admit.
         admit.
         intros.
         rewrite minus_eq_zero.
         generalize (@hilbert.norm_zero (@Rvector_PreHilbert n)); intros.
         replace (@zero (@Rvector_AbelianGroup n)) with (@zero (hilbert.PreHilbert.AbelianGroup (@Rvector_PreHilbert n))).
-        rewrite H9.
+        rewrite H10.
         apply Rmult_le_pos; try lra.
         now apply hilbert.norm_ge_0.
         reflexivity.

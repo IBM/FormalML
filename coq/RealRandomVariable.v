@@ -1310,7 +1310,32 @@ Section RealRandomVariables.
     intros.
     now apply sa_preimage_singleton.
   Qed.
-  
+
+  Lemma sa_le_ge_rv 
+        (rv_X : Ts -> R) {rv : RandomVariable dom borel_sa rv_X} x
+    : sa_sigma (fun omega => rv_X omega >= x).
+  Proof.
+    apply sa_le_ge.
+    now apply rv_measurable.
+  Qed.
+
+  Definition event_ge 
+        (rv_X : Ts -> R) {rv : RandomVariable dom borel_sa rv_X} x
+    : event dom
+    := @exist (pre_event Ts) _ _ (sa_le_ge_rv rv_X x).
+
+  Lemma sa_le_le_rv 
+        (rv_X : Ts -> R) {rv : RandomVariable dom borel_sa rv_X} x
+    : sa_sigma (fun omega => rv_X omega <= x).
+  Proof.
+    now apply rv_measurable.
+  Qed.
+
+  Definition event_le
+        (rv_X : Ts -> R) {rv : RandomVariable dom borel_sa rv_X} x
+    : event dom
+    := @exist (pre_event Ts) _ _ (sa_le_le_rv rv_X x).
+
 End RealRandomVariables.
 
 (*
