@@ -1954,7 +1954,7 @@ algorithm.
       is_lim_seq (sum_n α) p_infty ->
       (forall n0 : nat, vector_SimpleExpectation (w n0) = vector_const 0 n) ->
       (forall n0 : nat, SimpleExpectation (rvinner (w n0) (w n0)) < C) ->
-    is_lim_seq (fun n0 => ps_P (event_ge (rvabs (vecrvnth i pf (@L2_convergent_x n α (fun v => vector_const 0 n) Ts (vecrvconst n 0) w n0))) eps)) 0.
+    is_lim_seq (fun n0 => ps_P (event_ge dom (rvabs (vecrvnth i pf (@L2_convergent_x n α (fun v => vector_const 0 n) Ts (vecrvconst n 0) w n0))) eps)) 0.
     Proof.
       intros.
       generalize (@L2_convergent n gamma α (fun _ => vector_const 0 n) Ts dom prts C (vecrvconst n 0) w (Rvector_const_rv n 0) rw (srv_vecrvconst n 0) srw H H0 H1 H2 H3); intros.
@@ -2074,9 +2074,9 @@ algorithm.
       exists (nk : nat),
       forall n0, 
         ps_P 
-          (event_le
+          (event_le dom
              (rvmaxabs (vecrvminus (x (n0 + nk)%nat) (const xstar)))
-             C0 * (gamma + eps)^k)
+             (C0 * (gamma + eps)^k))
         >= P^k .
     Proof.
       intros.
