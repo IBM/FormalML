@@ -252,9 +252,9 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
         (rv : RandomVariable dom borel_sa X)
         (posrv : PositiveRandomVariable X)
         (a : posreal) :
-    Rbar_le (a * (ps_P (event_ge X a))) (Expectation_posRV X).
+    Rbar_le (a * (ps_P (event_ge dom X a))) (Expectation_posRV X).
   Proof.
-    generalize (SimpleExpectation_pre_EventIndicator (sa_le_ge_rv X a) (fun x => Rge_dec (X x) a)); intros.
+    generalize (SimpleExpectation_pre_EventIndicator (sa_le_ge_rv dom X a) (fun x => Rge_dec (X x) a)); intros.
     unfold event_ge.
     rewrite <- H.
     generalize simple_Expectation_posRV; intros.
@@ -271,7 +271,7 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
         (rv : RandomVariable dom borel_sa X)
         (posrv : PositiveRandomVariable X)
         (a : posreal) :
-    Rbar_le (ps_P (event_ge X a)) (Rbar_div_pos (Expectation_posRV X) a).
+    Rbar_le (ps_P (event_ge dom X a)) (Rbar_div_pos (Expectation_posRV X) a).
   Proof.
     generalize (Markov_ineq X rv posrv a); intros.
     rewrite Rbar_div_pos_le with (z := a) in H.
@@ -326,12 +326,12 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
         (X : Ts -> R) 
         (rv : RandomVariable dom borel_sa X)
         (posrv: PositiveRandomVariable X) :
-  Rbar_le (ps_P (event_ge X eps))
+  Rbar_le (ps_P (event_ge dom X eps))
           (Rbar_div (Expectation_posRV (rvsqr X)) 
                     (Rsqr eps)).
     Proof.
-      assert (event_equiv (event_ge X eps)
-                          (event_ge (rvsqr X) (Rsqr eps))).
+      assert (event_equiv (event_ge dom X eps)
+                          (event_ge dom (rvsqr X) (Rsqr eps))).
       - intro x.
         split; intros.
         + apply Rge_le in H.
@@ -353,7 +353,7 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
         (Xn: Ts -> R)
         (rvxn : RandomVariable dom borel_sa Xn) :
     is_finite (Expectation_posRV (rvsqr (rvabs Xn))) ->
-    ps_P (event_ge (rvabs Xn) eps) <=
+    ps_P (event_ge dom (rvabs Xn) eps) <=
     (Expectation_posRV (rvsqr (rvabs Xn))) / (Rsqr eps).
     Proof.
       assert (RandomVariable dom borel_sa (rvabs Xn)).
@@ -376,7 +376,7 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
         (rvx : RandomVariable dom borel_sa X)
         (rvxn : RandomVariable dom borel_sa Xn) :
     is_finite (Expectation_posRV (rvsqr (rvabs (rvminus X Xn)))) ->
-    ps_P (event_ge (rvabs (rvminus X Xn)) eps) <=
+    ps_P (event_ge dom (rvabs (rvminus X Xn)) eps) <=
     (Expectation_posRV (rvsqr (rvabs (rvminus X Xn)))) / (Rsqr eps).
     Proof.
       intros.
@@ -389,7 +389,7 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
         (rvx : RandomVariable dom borel_sa X)
         (rvxn : RandomVariable dom borel_sa Xn) :
     is_finite (Expectation_posRV (rvabs (rvminus X Xn))) ->
-    ps_P (event_ge (rvabs (rvminus X Xn)) eps) <=
+    ps_P (event_ge dom (rvabs (rvminus X Xn)) eps) <=
     (Expectation_posRV (rvabs (rvminus X Xn))) / eps.
     Proof.
       assert (RandomVariable dom borel_sa (rvabs (rvminus X Xn))).
@@ -412,7 +412,7 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
         (rvxn : forall n, RandomVariable dom borel_sa (Xn n)) :
     (forall n, is_finite (Expectation_posRV (rvsqr (rvabs (Xn n))))) ->
     is_lim_seq (fun n => Expectation_posRV (rvsqr (rvabs (Xn n)))) 0 ->
-    is_lim_seq (fun n => ps_P (event_ge (rvabs (Xn n)) eps)) 0.
+    is_lim_seq (fun n => ps_P (event_ge dom (rvabs (Xn n)) eps)) 0.
   Proof.
     intros.
     apply is_lim_seq_le_le_loc with (u := fun _ => 0) 
@@ -444,7 +444,7 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
         (rvxn : forall n, RandomVariable dom borel_sa (Xn n)) :
     (forall n, is_finite (Expectation_posRV (rvsqr (rvabs (rvminus X (Xn n)))))) ->
     is_lim_seq (fun n => Expectation_posRV (rvsqr (rvabs (rvminus X (Xn n))))) 0 ->
-    is_lim_seq (fun n => ps_P (event_ge (rvabs (rvminus X (Xn n))) eps)) 0.
+    is_lim_seq (fun n => ps_P (event_ge dom (rvabs (rvminus X (Xn n))) eps)) 0.
   Proof.
     intros.
     apply conv_l2_prob1; trivial.
@@ -458,7 +458,7 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
         (rvxn : forall n, RandomVariable dom borel_sa (Xn n)) :
     (forall n, is_finite (Expectation_posRV (rvabs (rvminus X (Xn n))))) ->
     is_lim_seq (fun n => Expectation_posRV (rvabs (rvminus X (Xn n)))) 0 ->
-    is_lim_seq (fun n => ps_P (event_ge (rvabs (rvminus X (Xn n))) eps)) 0.
+    is_lim_seq (fun n => ps_P (event_ge dom (rvabs (rvminus X (Xn n))) eps)) 0.
   Proof.
     intros.
     apply is_lim_seq_le_le_loc with (u := fun _ => 0) 
