@@ -2089,11 +2089,12 @@ algorithm.
         rewrite Rmult_1_r.
         rewrite pow_O; right.
         assert (event_equiv 
-                   (fun omega : Ts =>
-                      rvmaxabs (vecrvminus (x (n0 + 0)%nat) (const xstar)) omega <= C0)
+                   (event_le dom
+                      (rvmaxabs (vecrvminus (x (n0 + 0)%nat) (const xstar)))
+                      C0)
                     Ω).
         intro omega.
-        unfold  Ω.
+        unfold  Ω, pre_Ω, sa_all; simpl.
         specialize (H6 n0 omega).
         replace (n0 + 0)%nat with (n0) by lia.
         tauto.
