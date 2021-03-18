@@ -450,7 +450,7 @@ Proof.
   firstorder.
 Qed.
 
-Instance is_countable_proper {T} : Proper (equiv ==> iff) (@is_countable T).
+Global Instance is_countable_proper {T} : Proper (equiv ==> iff) (@is_countable T).
 Proof.
   unfold Proper, respectful.
   intros x y eqq.
