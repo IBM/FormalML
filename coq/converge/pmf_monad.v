@@ -5,8 +5,9 @@ Require Import Lia Lra.
 Require Import Coq.Logic.FunctionalExtensionality.
 From mathcomp Require Import ssreflect ssrfun seq.
 Require Import ExtLib.Structures.Monad ExtLib.Structures.MonadLaws. 
+Require Import ExtLib.Structures.Functor.
 
-Import MonadNotation. 
+Import MonadNotation FunctorNotation.
 Set Bullet Behavior "Strict Subproofs".
 
 (*
@@ -155,7 +156,11 @@ outcomes := [::(mknonnegreal R1 (Rlt_le _ _ Rlt_0_1),a)];
 sum1 := pure_sum1 _
 |}.
 
-
+Global Instance Proper_pure {A : Type}: Proper (eq ==> eq) (@Pmf_pure A).
+Proof.
+  unfold Proper,respectful; intros.
+  now subst.
+Qed.
 
 Fixpoint dist_bind_outcomes
          {A B : Type} (f : A -> Pmf B) (p : list (nonnegreal*A)) : list(nonnegreal*B) :=
@@ -231,6 +236,22 @@ Definition Pmf_bind {A B : Type} (p : Pmf A) (f : A -> Pmf B)  : Pmf B :={|
   sum1 := dist_bind_sum1 f p
   |}.
 
+
+Global Instance Proper_bind {A B : Type}:
+  Proper (eq ==> (pointwise_relation A eq) ==> eq) (@Pmf_bind A B).
+Proof.
+  unfold Proper, respectful, pointwise_relation.
+  intros p q Hpq f g Hfg; subst.
+  apply Pmf_ext.
+  destruct q as [q Hq].
+  unfold Pmf_bind; simpl.
+  clear Hq.
+  induction q; simpl; trivial.
+  destruct a.
+  f_equal; trivial.
+  now rewrite Hfg.
+Qed.
+
 Global Instance Monad_Pmf : Monad Pmf := {|
   ret := @Pmf_pure;
   bind := @Pmf_bind;
@@ -302,10 +323,56 @@ Proof.
   simpl. rewrite <-IHl. destruct a. 
 Admitted.*)
 
-Definition pmf_prod {A B : Type} (p : Pmf A) (q : Pmf B) : Pmf (A*B) :=
+
+(* The functorial action of Pmf. *)
+Definition Pmf_map {A B : Type}(f : A -> B) (p : Pmf A) : Pmf B := p >>= (ret \o f).
+
+Global Instance Pmf_Functor : Functor Pmf := {| fmap := @Pmf_map |}.
+
+Lemma Pmf_map_id {A : Type} (p : Pmf A) : id <$> p = p.
+Proof.
+  simpl. unfold Pmf_map.
+  now rewrite Pmf_ret_of_bind.
+Qed.
+
+Lemma Pmf_map_ret {A B : Type} (a : A) (f : A -> B) : f <$> (ret a) = ret (f a).
+Proof.
+  simpl.
+  unfold Pmf_map.
+  rewrite Pmf_bind_of_ret.
+  now unfold comp.
+Qed.
+
+Lemma Pmf_map_bind {A B : Type} (p : Pmf A)  (f : A -> B) : p >>= (ret \o f) = f <$> p.
+Proof.
+  reflexivity.
+Qed.
+
+Lemma Pmf_map_comp {A B C : Type}(p : Pmf A) (f : A -> B)(g : B -> C) :
+ g <$> (f <$> p) = (g \o f) <$> p.
+Proof.
+  simpl.
+  unfold Pmf_map, comp.
+  rewrite Pmf_bind_of_bind.
+  now setoid_rewrite Pmf_bind_of_ret.
+Qed.
+
+Definition Pmf_prod {A B : Type} (p : Pmf A) (q : Pmf B) : Pmf (A*B) :=
   a <- p;;
   b <- q;;
   ret (a,b).
+
+
+Lemma Pmf_prod_map1 {A B : Type} (p : Pmf A) (q : Pmf B) : p = fst <$> Pmf_prod p q.
+Proof.
+  unfold Pmf_prod.
+  simpl.
+  unfold Pmf_map, Pmf_prod.
+  rewrite Pmf_bind_of_bind.
+  setoid_rewrite Pmf_bind_of_bind.
+  setoid_rewrite Pmf_bind_of_ret.
+  unfold comp.
+Admitted.
 
 End Pmf.
 
@@ -675,6 +742,10 @@ Qed.
    setoid_rewrite Rplus_opp_r.
    apply expt_value_const.
  Qed.
+
+ Lemma expt_value_prod_pmf {A B : Type} (f : A -> B -> R) (p : Pmf A) (q : Pmf B):
+   expt_value (Pmf_prod p q) (fun '(a,b) => f a b) = expt_value p (fun a => expt_value q (fun b => f a b)).
+ Admitted.
 
 End expected_value. 
 
