@@ -805,3 +805,27 @@ Proof.
         -- intros; simpl.
            apply H; lia.
 Qed.
+
+Lemma infinite_sum'_pos_prefix_le f l n:
+  infinite_sum' f l ->
+  (forall n, 0 <= f n) ->
+  sum_f_R0' f n <= l.
+Proof.
+  intros.
+  apply (infinite_sum'_split n f l) in H.
+  apply infinite_sum'_pos in H.
+  - lra.
+  - auto.
+Qed.
+
+Lemma infinite_sum'_pos_one_le f l n:
+  infinite_sum' f l ->
+  (forall n, 0 <= f n) ->
+  f n <= l.
+Proof.
+  intros.
+  apply (infinite_sum'_pos_prefix_le _ _ (S n)) in H; trivial.
+  simpl in H.
+  generalize (sum_f_R0'_le f n H0).
+  lra.
+Qed.

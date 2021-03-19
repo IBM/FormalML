@@ -462,6 +462,31 @@ Proof.
     apply pre_event_equiv_sub; trivial.
 Qed.
 
+Lemma is_countable_singleton {A:Type} {σ:SigmaAlgebra A} x pf :
+  is_countable (event_singleton x pf).
+Proof.
+  red.
+  exists (fun n => match n with
+           | 0 => fun x' => x = x'
+           | _ => pre_event_none
+           end
+    ).
+  split.
+  - intros ??? s1 s2.
+    match_destr_in s1; [congruence|].
+    red in s1; tauto.
+  - intros ?.
+    simpl.
+    unfold pre_event_singleton.
+    split.
+    + intros; subst.
+      exists 0%nat; trivial.
+    + intros [? s1].
+      match_destr_in s1.
+      * eauto.
+      * red in s1; tauto.
+Qed.
+
 Definition Finj_event {T} (coll:nat->pre_event T) (n:nat) : ({x:T | coll n x} -> nat) -> Prop
   := fun f => Injective f.
 
