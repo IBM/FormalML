@@ -241,7 +241,7 @@ Section discrete.
       apply (ex_finite_lim_seq_incr _ 1).
       - apply sum_series_of_pmf_points_partial_incr. 
       - apply sum_series_of_pmf_points_le1.
-    Qed.
+    Defined.
 
     Definition sum_pmf_points (x:event σ)
       := proj1_sig (ex_sum_series_of_pmf_points x).
@@ -350,6 +350,111 @@ Section discrete.
       - elim n0.
         apply pmf_singleton_countable.
     Qed.
+
+    Lemma sum_series_of_pmf_disjoint_union collection :
+      collection_is_pairwise_disjoint collection ->
+      forall n2, infinite_sum' (fun n1 : nat => series_of_pmf_points (collection n1) n2)
+                          (series_of_pmf_points ((union_of_collection collection)) n2).
+    Proof.
+      intros.
+      unfold series_of_pmf_points; simpl.
+      match_destr.
+      - match_destr.
+        + destruct e as [n na].
+          eapply (infinite_sum'_one _ n).
+          * intros.
+            match_destr.
+            elim (H _ _ H0 a); eauto.
+          * match_destr.
+              elim n0.
+              eauto.
+        + erewrite infinite_sum'_ext.
+          * apply infinite_sum'0. 
+          * intros.
+            simpl.
+            match_destr.
+            elim n.
+            eauto.
+      - apply infinite_sum'0.
+    Qed.
+
+
+Lemma lim_seq_series_of_pmf_disjoint_union collection :
+      collection_is_pairwise_disjoint collection ->
+      forall n2, Lim_seq (sum_f_R0 (fun n1 : nat => series_of_pmf_points (collection n1) n2)) =
+            series_of_pmf_points ((union_of_collection collection)) n2.
+    Proof.
+      intros.
+      
+      unfold series_of_pmf_points; simpl.
+      match_destr.
+      - match_destr.
+        + destruct e as [n na].
+          assert (HH:infinite_sum' 
+                       (fun n1 : nat => if excluded_middle_informative (collection n1 a) then pmf_pmf PMF n2 else 0)
+                                (pmf_pmf PMF n2)).
+          {
+            eapply (infinite_sum'_one _ n).
+            - intros.
+              match_destr.
+              elim (H _ _ H0 a); eauto.
+            - match_destr.
+              elim n0.
+              eauto.
+          }
+          rewrite <- infinite_sum_infinite_sum' in HH.
+          rewrite <- infinite_sum_is_lim_seq in HH.
+          now apply is_lim_seq_unique in HH.
+        + erewrite Lim_seq_ext.
+          * rewrite Lim_seq_const; reflexivity.
+          * intros.
+            rewrite sum_f_R0_sum_f_R0'.
+            erewrite sum_f_R0'_ext.
+            -- rewrite (sum_f_R0'_const 0).
+               lra.
+            -- intros.
+               match_destr.
+               elim n.
+               eauto.
+      - erewrite Lim_seq_ext.
+        + rewrite Lim_seq_const; reflexivity.
+        + intros.
+          rewrite sum_f_R0_sum_f_R0'.
+          rewrite sum_f_R0'_const.
+          lra.
+    Qed.
+
+    Lemma Lim_seq_sum_swap f :
+      (forall i j, 0 <= f i j) ->
+      Lim_seq (sum_f_R0
+                 (fun n1 =>
+                    Lim_seq
+                      (sum_f_R0 (fun n2 => f n1 n2)))) =
+      Lim_seq (sum_f_R0
+                 (fun n2 =>
+                    Lim_seq
+                      (sum_f_R0 (fun n1 => f n1 n2)))).
+    Proof.
+    Admitted.
+
+
+    Lemma Lim_seq_incr_one_le f n :
+      (forall i, f i <= f (S i)) ->
+      Rbar_le (f n) (Lim_seq f).
+    Proof.
+      intros.
+      generalize (Lim_seq_le_loc (fun _ => f n) f); intros HH.
+      rewrite Lim_seq_const in HH.
+      apply HH.
+      red.
+      exists n.
+      clear HH.
+      intros i ile.
+      induction ile.
+      - lra.
+      - eapply Rle_trans; try eapply IHile.
+        eauto.
+    Qed.
     
     Program Instance discrete_ProbSpace : ProbSpace σ
       := {|
@@ -371,25 +476,67 @@ Section discrete.
         {
           unfold sum_pmf_points, proj1_sig.
           match_destr.
-
-          
-          
+          generalize (sum_series_of_pmf_disjoint_union collection H); intros HH.
           rewrite <- infinite_sum_infinite_sum'.
           rewrite <- infinite_sum_is_lim_seq.
-
-
+          rewrite <- infinite_sum_infinite_sum' in i0.
+          rewrite <- infinite_sum_is_lim_seq in i0.
+          assert (Finite x =  Lim_seq (
+                                  sum_f_R0
+                                    (fun n : nat => Lim_seq (fun i2 : nat => sum_f_R0 (series_of_pmf_points (collection n)) i2)))).
+          {
+            rewrite Lim_seq_sum_swap.
+            - rewrite (Lim_seq_ext _ (
+                                     (sum_f_R0
+                                        (series_of_pmf_points ((union_of_collection collection)))) )).
+              + generalize (is_lim_seq_unique _ _ i0); intros.
+                erewrite (Lim_seq_ext _  (fun i : nat => sum_f_R0 (series_of_pmf_points (@union_of_collection A σ collection)) i)) by reflexivity.
+                destruct (Lim_seq (fun i1 : nat => sum_f_R0 (series_of_pmf_points (union_of_collection collection)) i1)); subst; simpl; congruence.
+              + intros. 
+                eapply sum_f_R0_ext; intros.
+                generalize (lim_seq_series_of_pmf_disjoint_union collection H x0); intros HH2.
+                destruct (Lim_seq (sum_f_R0 (fun n1 : nat => series_of_pmf_points (collection n1) x0)))
+                ; simpl; congruence.
+            - intros.
+              apply series_of_pmf_points_pos.
+          }
+          simpl.
+          subst.
+          rewrite H0 in i0.
+          rewrite H0.
+          apply Lim_seq_correct.
           
-          
-          unfold series_of_pmf_points in i0.
-          simpl in i0.
-          admit.
-        }
+          apply (ex_lim_seq_incr _).
+          - intros.
+            simpl.
+            assert (0 <= Lim_seq (fun i1 : nat => sum_f_R0 (series_of_pmf_points (collection (S n))) i1)).
+            {
+              generalize (Lim_seq_le_loc (fun _ => 0) (fun i1 : nat => sum_f_R0 (series_of_pmf_points (collection (S n))) i1)); intros HH2.
+              rewrite Lim_seq_const in HH2.
+              simpl in HH2.
+              cut_to HH2.
+              - match_destr_in HH2.
+                + simpl; lra.
+                + tauto.
+              - exists 0%nat; intros.
+                apply PartSum.cond_pos_sum; intros.
+                apply series_of_pmf_points_pos.
+            }
+            lra.
+        } 
         eapply infinite_sum'_ext; try eapply inf.
         intros.
         match_destr.
         elim n.
-        admit.
+        eapply is_countable_proper_sub; try eapply i.
+        intros ??.
+        eexists; eauto.
       - admit.
+(*
+        assert (is_countable (¬ (union_of_collection collection))).
+        {
+          admit.
+        } 
                        
 
         
@@ -401,7 +548,7 @@ Section discrete.
       - admit.
       - 
 
-      
+      *)
     Admitted.
     Next Obligation.
       unfold ps_of_pmf, proj1_sig.
