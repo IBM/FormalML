@@ -369,12 +369,134 @@ Lemma lim_seq_series_of_pmf_disjoint_union collection :
           lra.
     Qed.
 
-    Search (nat->Rbar).
-    
+    Lemma sum_f_R0_le (f g : nat -> R) n :
+      (forall (i:nat), (i<=n)%nat -> (f i) <= (g i)) ->
+      sum_f_R0 f n <= sum_f_R0 g n.
+    Proof.
+      intros.
+      induction n.
+      - unfold sum_f_R0.
+        simpl.
+        apply H.
+        lia.
+      - do 2 rewrite sum_f_R0_peel.
+        eapply Rle_trans.
+        + apply Rplus_le_compat_r.
+          apply IHn.
+          intros.
+          apply H.
+          lia.
+        + apply Rplus_le_compat_l.
+          apply H.
+          lia.
+    Qed.
+
+    Lemma double_ser_lub f :
+      (forall i j, 0 <= f i j) ->
+      (forall i, ex_finite_lim_seq (sum_f_R0 (fun j => f i j))) ->
+      Lim_seq (sum_f_R0
+                 (fun n1 =>
+                    Lim_seq
+                      (sum_f_R0 (fun n2 => f n1 n2)))) =
+      Lub_Rbar (fun x => exists (n m : nat), 
+                    x = sum_f_R0 (fun i => sum_f_R0 (fun j => f i j) m) n).
+    Proof.
+      intros.
+      symmetry.
+      apply is_lub_Rbar_unique.
+      unfold is_lub_Rbar.
+      split.
+      - unfold is_ub_Rbar.
+        intros.
+        destruct H1 as [n [m H1]].
+        rewrite H1.
+        + rewrite <- Lim_seq_const.
+          apply Lim_seq_le_loc.
+          exists (S n); intros.
+          rewrite sum_f_R0_split with (n := n0) (m := n); [|lia].
+          apply Rle_trans with 
+              (r2 := sum_f_R0 (fun n1 : nat => Lim_seq (sum_f_R0 (fun n2 : nat => f n1 n2))) n).
+          * apply sum_f_R0_le; intros.
+            assert (Rbar_le  (sum_f_R0 (fun j : nat => f i j) m)
+                           (Lim_seq (sum_f_R0 (fun n2 : nat => f i n2)))).
+            { 
+              rewrite <- Lim_seq_const.
+              apply Lim_seq_le_loc.
+              exists (S m); intros.
+              rewrite sum_f_R0_split with (n := n1) (m := m); [|lia].
+              rewrite <- Rplus_0_r at 1.
+              apply Rplus_le_compat_l.
+              rewrite <- sum_n_Reals.
+              apply sum_n_nneg; intros.
+              apply H.
+            }
+            specialize (H0 i).
+            unfold ex_finite_lim_seq in H0.
+            destruct H0 as [l H0].
+            apply is_lim_seq_unique in H0.
+            rewrite H0 in H4; simpl in H4.
+            now rewrite H0.
+          * rewrite <- Rplus_0_r at 1.
+            apply Rplus_le_compat_l.
+            rewrite <- sum_n_Reals.
+            apply sum_n_nneg; intros.
+            assert (Rbar_le 0
+                            (Lim_seq (sum_f_R0 (fun n2 : nat => f (n1 + S n)%nat n2)))).
+            -- rewrite <- Lim_seq_const.
+               apply Lim_seq_le_loc.
+               exists (0%nat); intros.
+               rewrite <- sum_n_Reals.
+               apply sum_n_nneg; intros.
+               apply H.
+            -- specialize (H0 (n1 + S n)%nat).
+               unfold ex_finite_lim_seq in H0.
+               destruct H0 as [l H0].
+               apply is_lim_seq_unique in H0.
+               rewrite H0 in H4; simpl in H4.
+               now rewrite H0.
+      - intros.
+        unfold is_ub_Rbar in H1.
+                 
+   Admitted.
+
+   Lemma finite_sum_exchange f (x0 x1 : nat) :
+     sum_f_R0 (fun j : nat => sum_f_R0 (fun i : nat => f i j) x0) x1 =
+     sum_f_R0 (fun i : nat => sum_f_R0 (fun j : nat => f i j) x1) x0.
+   Proof.
+     induction x0.
+     - now simpl.
+     - rewrite sum_f_R0_peel.
+       rewrite <- IHx0.      
+       clear IHx0.
+       induction x1.
+       + now simpl.
+       + rewrite sum_f_R0_peel.
+         rewrite IHx1.
+         do 3 rewrite sum_f_R0_peel.
+         lra.
+    Qed.
+
+   Lemma Lub_Rbar_exchange f :
+     Lub_Rbar
+       (fun x : R =>
+          exists n m : nat,
+            x = sum_f_R0 (fun i : nat => sum_f_R0 (fun j : nat => f i j) m) n) =
+     Lub_Rbar
+       (fun x : R =>
+          exists n m : nat,
+            x = sum_f_R0 (fun i : nat => sum_f_R0 (fun j : nat => f j i) m) n).
+   Proof.
+     apply Lub_Rbar_eqset.
+     intros.
+     split; intros; destruct H as [n [m H]];
+       exists m; exists n; rewrite H;
+         apply finite_sum_exchange.
+   Qed.
+
     Lemma Lim_seq_sum_swap f :
       (forall i j, 0 <= f i j) ->
       (forall i, ex_finite_lim_seq (sum_f_R0 (fun j => f i j))) ->
-      (forall j, ex_finite_lim_seq (sum_f_R0 (fun i => f i j))) ->
+      (forall j, ex_finite_lim_seq (sum_f_R0 (fun i => f i j))) ->      
       Lim_seq (sum_f_R0
                  (fun n1 =>
                     Lim_seq
@@ -384,7 +506,11 @@ Lemma lim_seq_series_of_pmf_disjoint_union collection :
                     Lim_seq
                       (sum_f_R0 (fun n1 => f n1 n2)))).
     Proof.
-    Admitted.
+      intros.
+      rewrite double_ser_lub; trivial.
+      rewrite double_ser_lub; trivial.
+      apply Lub_Rbar_exchange.
+   Qed.
 
     Lemma Lim_seq_incr_one_le f n :
       (forall i, f i <= f (S i)) ->
