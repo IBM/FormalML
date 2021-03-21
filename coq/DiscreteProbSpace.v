@@ -156,6 +156,12 @@ Section discrete.
       generalize (pmf_parts_pos x (S n)).
       lra.
     Qed.
+    
+    Lemma sum_pmf_parts_pos x (n : nat) : 0 <=sum_f_R0 (pmf_parts x) n.
+    Proof.
+      apply PartSum.cond_pos_sum; intros.
+      apply pmf_parts_pos.
+    Qed.
 
     Lemma sum_pmf_parts_le1 x (n : nat) : sum_f_R0 (pmf_parts x) n <= 1.
     Proof.
@@ -363,8 +369,12 @@ Lemma lim_seq_series_of_pmf_disjoint_union collection :
           lra.
     Qed.
 
+    Search (nat->Rbar).
+    
     Lemma Lim_seq_sum_swap f :
       (forall i j, 0 <= f i j) ->
+      (forall i, ex_finite_lim_seq (sum_f_R0 (fun j => f i j))) ->
+      (forall j, ex_finite_lim_seq (sum_f_R0 (fun i => f i j))) ->
       Lim_seq (sum_f_R0
                  (fun n1 =>
                     Lim_seq
@@ -394,6 +404,21 @@ Lemma lim_seq_series_of_pmf_disjoint_union collection :
         eauto.
     Qed.
 
+    Lemma pmf_parts_sub_total collection j n :
+      collection_is_pairwise_disjoint collection ->
+      sum_f_R0 (fun i0 : nat => pmf_parts (collection i0) j) n <=  
+      pmf_parts (union_of_collection collection) j.
+    Proof.
+      intros disj.
+      rewrite sum_f_R0_sum_f_R0'.
+      generalize (sum_series_of_pmf_disjoint_union collection disj j)
+      ; intros HH.
+
+      apply  (infinite_sum'_pos_prefix_le _ _ (S n) HH).
+      intros.
+      apply pmf_parts_pos.
+    Qed.
+    
     Program Instance discrete_ps : ProbSpace (discrete_sa A)
       := {|
       ps_P := ps_of_pmf
@@ -429,7 +454,29 @@ Lemma lim_seq_series_of_pmf_disjoint_union collection :
                 ; simpl; congruence.
             - intros.
               apply pmf_parts_pos.
-          }
+            - intros.
+              apply ex_finite_lim_seq_incr with (M:=1).
+              + apply sum_pmf_parts_partial_incr.
+              + apply sum_pmf_parts_le1.
+            - intros.
+              apply ex_finite_lim_seq_incr with (M:=x).
+              + intros.
+                simpl.
+                generalize (pmf_parts_pos (collection (S n)) j).
+                lra.
+              + intros.
+                eapply Rle_trans.
+                * now eapply pmf_parts_sub_total.
+                * eapply (is_lim_seq_incr_compare) with (n:=j) in i.
+                  -- {
+                      eapply Rle_trans; try eapply i.
+                      destruct j; simpl.
+                      - lra.
+                      - generalize (sum_pmf_parts_pos (union_of_collection collection) j).
+                        lra.
+                    }
+                  -- apply sum_pmf_parts_partial_incr.
+          }                   
           simpl.
           subst.
           rewrite H0 in i.
