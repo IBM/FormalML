@@ -642,6 +642,8 @@ Lemma lim_seq_series_of_pmf_disjoint_union collection :
 
 End discrete.
 
+(* TODO? show that which countable instance does not matter *)
+
 Section fin.
 
   Fixpoint find_index {A:Type} {dec:EqDec A eq} (x:A) (l:list A) : nat
@@ -710,10 +712,42 @@ Section fin.
     - apply find_index_in.
       apply Finite.finite.
   Qed.
-
-    
-  
-
-(* TODO? show that which countable instance does not matter *)
-   
+     
 End fin.
+
+Section countable_products.
+
+  Global Program Instance prod_countable (A B:Type) {countableA:Countable A} {countableB:Countable B}: Countable (A * B)
+    := {|
+    countable_index '(a, b) := iso_f (countable_index a, countable_index b)
+      |}.
+  Next Obligation.
+    intros [??] [??]; intros HH.
+    cut (iso_f (Isomorphism:=nat_pair_encoder) (countable_index a, countable_index b) = (iso_f (countable_index a0, countable_index b0)))
+    ; [| apply HH].
+    intros HH2.
+    generalize (f_equal (iso_b (Isomorphism:=nat_pair_encoder)) HH2)
+    ; intros HH3.
+    repeat rewrite iso_b_f in HH3.
+    invcs HH3.
+    apply countable_index_inj in H0.
+    apply countable_index_inj in H1.
+    congruence.
+  Qed.
+
+  Program Definition prod_prob_mass_fun (A B:Type) {countableA:Countable A} {countableB:Countable B}
+          (pmf1:prob_mass_fun A) (pmf2:prob_mass_fun B)
+    : prob_mass_fun (A*B)
+    := {|
+    pmf_pmf '(a,b) := pmf1.(pmf_pmf) a * pmf2.(pmf_pmf) b
+      |}.
+  Next Obligation.
+    apply Rmult_le_pos
+    ; apply pmf_pmf_pos.
+  Qed.
+  Next Obligation.
+    unfold countable_sum.
+  Admitted.  
+  
+End countable_products.
+
