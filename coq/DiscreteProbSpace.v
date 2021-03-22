@@ -547,7 +547,7 @@ Lemma lim_seq_series_of_pmf_disjoint_union collection :
     
     (* proof based on 
        https://www.math.ucdavis.edu/~npgallup/m17_mat25/lecture_notes/lecture_15/m17_mat25_lecture_15_notes.pdf *)
-    Lemma infinite_sum'_perm (f:nat -> R) (g:nat->nat) l:
+    Theorem infinite_sum'_perm (g:nat->nat) (f:nat -> R) l:
       Bijective g ->
       (exists l2, infinite_sum' (fun x => Rabs (f x)) l2) ->
       infinite_sum' f l ->
@@ -741,6 +741,7 @@ Lemma lim_seq_series_of_pmf_disjoint_union collection :
       - lia.
     Qed.
     
+(*
     Lemma Lim_seq_perm (f:nat -> R) (g:nat->nat):
       Bijective g ->
       ex_finite_lim_seq f ->
@@ -751,7 +752,8 @@ Lemma lim_seq_series_of_pmf_disjoint_union collection :
       unfold Lim_seq.
       
     Qed.
-
+ *)
+    
     Lemma Lim_seq_sum_pair (f:nat -> nat -> R) :
       (forall i j, 0 <= f i j) ->
       (forall i, ex_finite_lim_seq (sum_f_R0 (fun j => f i j))) ->
@@ -771,6 +773,63 @@ Lemma lim_seq_series_of_pmf_disjoint_union collection :
     Qed.
 *)
 
+    Lemma infinite_sum'_pair_merge (f:nat -> nat -> R) l :
+      (forall i j, 0 <= f i j) ->
+      (forall i, ex_finite_lim_seq (sum_f_R0 (fun j => f i j))) ->
+      (forall j, ex_finite_lim_seq (sum_f_R0 (fun i => f i j))) ->
+      infinite_sum' (fun n1 => Lim_seq (sum_f_R0 (fun n2 : nat => f n1 n2))) l ->
+      infinite_sum' (fun n => let '(a,b) := iso_f n in f a b) l.
+    Proof.
+      intros.
+    Admitted.
+
+    Lemma infinite_sum'_pair_split (f:nat -> nat -> R) l :
+      (forall i j, 0 <= f i j) ->
+      (forall i, ex_finite_lim_seq (sum_f_R0 (fun j => f i j))) ->
+      (forall j, ex_finite_lim_seq (sum_f_R0 (fun i => f i j))) ->
+      infinite_sum' (fun n => let '(a,b) := iso_f n in f a b) l ->
+      infinite_sum' (fun n1 => Lim_seq (sum_f_R0 (fun n2 : nat => f n1 n2))) l.
+    Proof.
+      intros.
+    Admitted.
+
+    (*
+    Lemma Lim_seq_sum_swap f  l:
+      (forall i j, 0 <= f i j) ->
+      (forall i, ex_finite_lim_seq (sum_f_R0 (fun j => f i j))) ->
+      (forall j, ex_finite_lim_seq (sum_f_R0 (fun i => f i j))) ->
+      infinite_sum' 
+                 (fun n1 =>
+                    Lim_seq
+                      (sum_f_R0 (fun n2 => f n1 n2))) l ->
+      infinite_sum' 
+                 (fun n2 =>
+                    Lim_seq
+                      (sum_f_R0 (fun n1 => f n1 n2))) l.
+    Proof.
+      intros.
+      generalize (infinite_sum'_pair_merge f l)
+      ; intros HH.
+      cut_to HH; trivial.
+      apply infinite_sum'_pair_split; trivial.
+
+      apply (infinite_sum'_perm (fun n =>
+                                        iso_b (snd (iso_f n), fst (iso_f n))))
+        in HH.
+      - erewrite infinite_sum'_ext; try eapply HH.
+        intros.
+        cbv beta.
+        destruct (iso_f x).
+        now rewrite iso_f_b; simpl.
+      - exists (fun n => iso_b (snd (iso_f n), fst (iso_f n))).
+        erewrite infinite_sum'_ext; try eapply HH.
+        intros.
+        cbv beta.
+        destruct (iso_f x); simpl.
+        now rewrite Rabs_pos_eq.
+    Qed.
+*)
+
     Lemma Lim_seq_sum_swap f :
       (forall i j, 0 <= f i j) ->
       (forall i, ex_finite_lim_seq (sum_f_R0 (fun j => f i j))) ->
@@ -786,8 +845,7 @@ Lemma lim_seq_series_of_pmf_disjoint_union collection :
     Proof.
       intros.
       repeat rewrite Lim_seq_sum_pair; trivial.
-      
-      
+      assert (ex_lim_seq  (sum_f_R0 (fun n : nat => let '(a, b) := iso_f n in f a b))).
     Admitted.
 
     Lemma Lim_seq_incr_one_le f n :
@@ -994,8 +1052,23 @@ Section fin.
 End fin.
 
 Section countable_products.
+  
+  Global Program Instance unit_finite : Finite.Finite unit
+    := {|
+    Finite.elms := tt::nil
+      |}.
+  Next Obligation.
+    destruct x; eauto.
+  Qed.
 
-    
+  Global Instance unit_eqdec : EqDec unit eq.
+  Proof.
+    intros [][]; left; reflexivity.
+  Defined.
+
+  Global Instance unit_countable : Countable unit
+    := finite_countable unit.
+
   Global Program Instance prod_countable (A B:Type) {countableA:Countable A} {countableB:Countable B}: Countable (A * B)
     := {|
     countable_index '(a, b) := iso_f (countable_index a, countable_index b)
@@ -1014,6 +1087,26 @@ Section countable_products.
     congruence.
   Qed.
 
+  Program Definition unit_pmf : prob_mass_fun unit
+    := {|
+    pmf_pmf _ := 1
+      |}.
+  Next Obligation.
+    lra.
+  Qed.
+  Next Obligation.
+    red.
+    eapply (infinite_sum'_one _ (countable_index tt)).
+    - intros.
+      generalize (countable_inv_sound n' tt).
+      match_destr; intros eqq.
+      elim H.
+      symmetry.
+      apply eqq.
+      now destruct u.
+    - now rewrite countable_inv_index.
+  Qed.
+
   Program Definition prod_prob_mass_fun (A B:Type) {countableA:Countable A} {countableB:Countable B}
           (pmf1:prob_mass_fun A) (pmf2:prob_mass_fun B)
     : prob_mass_fun (A*B)
@@ -1028,14 +1121,31 @@ Section countable_products.
     unfold countable_sum.
     rewrite <- infinite_sum_infinite_sum'.
     rewrite <- infinite_sum_is_lim_seq.
-    
+  Admitted.
 
-    
-    
+  Fixpoint iter_prod (l:list Type) : Type
+    := match l with
+       | nil => unit
+       | x::l' => prod x (iter_prod l')
+       end.
+  
+  Instance iter_prod_countable (l:list Type) (countableL:forall x, In x l -> Countable x) :
+    Countable (iter_prod l).
+  Proof.
+    induction l; simpl.
+    - typeclasses eauto.
+    - simpl in countableL.
+      apply prod_countable; eauto.
+  Defined.
 
-    
-    
-  Admitted.  
+  Definition list_prod_prob_mass_fun (l:list Type) (countableL:forall x, In x l -> Countable x)
+          (pmfL:forall x (pf:In x l), prob_mass_fun (countableA:=countableL _ pf) x)
+    : prob_mass_fun (iter_prod l).
+  Proof.
+    induction l; simpl in *.
+    - apply unit_pmf.
+    - apply prod_prob_mass_fun; eauto.
+  Defined.
   
 End countable_products.
 
