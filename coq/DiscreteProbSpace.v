@@ -2,9 +2,10 @@ Require Import Program.Basics.
 Require Import Coq.Reals.Rbase.
 Require Import Coq.Reals.Rfunctions.
 Require Import Coq.Reals.RiemannInt.
+Require Import Reals.
 
 Require Import Lra Lia.
-Require Import List.
+Require Import List Permutation.
 Require Import FinFun Finite.
 Require Import Morphisms EquivDec.
 Require Import Equivalence.
@@ -16,6 +17,7 @@ Import ListNotations.
 Require Export Event SigmaAlgebras ProbSpace.
 Require Import Coquelicot.Coquelicot.
 Require Import ClassicalDescription.
+
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -369,134 +371,410 @@ Lemma lim_seq_series_of_pmf_disjoint_union collection :
           lra.
     Qed.
 
-    Lemma sum_f_R0_le (f g : nat -> R) n :
-      (forall (i:nat), (i<=n)%nat -> (f i) <= (g i)) ->
-      sum_f_R0 f n <= sum_f_R0 g n.
+    
+    (*
+    Lemma LimSup_seq_perm (f:nat -> R) (g:nat->nat):
+      Bijective g ->
+      ex_finite_lim_seq f ->
+      LimSup_seq f =
+      LimSup_seq (fun n => f (g n)).
     Proof.
       intros.
-      induction n.
-      - unfold sum_f_R0.
-        simpl.
-        apply H.
-        lia.
-      - do 2 rewrite sum_f_R0_peel.
-        eapply Rle_trans.
-        + apply Rplus_le_compat_r.
-          apply IHn.
-          intros.
-          apply H.
-          lia.
-        + apply Rplus_le_compat_l.
-          apply H.
-          lia.
+      unfold LimSup_seq, proj1_sig.
+      repeat match_destr.
+      unfold is_LimSup_seq in *.
+      match_destr_in i; match_destr_in i0.
+      - f_equal.
+        destruct (Req_EM_T r r0); trivial.
+        assert (diffpos:0 < Rabs (r - r0)).
+        {
+          apply Rabs_pos_lt.
+          lra.
+        }
+        destruct (i (mkposreal _ diffpos)) as [HH1 [? HH2]].
+        destruct (i0 (mkposreal _ diffpos)) as [HH3 [? HH4]].
+        simpl in *.
+        destruct (HH1 (max x x0)) as [?[??]].
+        destruct (HH3 (max x x0)) as [?[??]].
+
+        r < f x1 + Rabs (r - r0) < ... f (g n) -  Rabs (r - r0) < r0
+        
+
+        
+      - 
+      
+      
+    Qed.
+     *)
+
+
+    Lemma sum_f_R0'_list_sum f n :
+      sum_f_R0' f n = list_sum (map f (seq 0 n)).
+    Proof.
+      now rewrite sum_f_R0'_as_fold_right, list_sum_fold_right, fold_right_map.
     Qed.
 
-    Lemma double_ser_lub f :
+    Lemma bijective_injective {B C} (f:B->C) : Bijective f -> Injective f.
+    Proof.
+      intros [g [??]] ?? eqq.
+      generalize (f_equal g eqq); intros eqq2.
+      now repeat rewrite H in eqq2.
+    Qed.
+
+    Lemma list_sum_pos_sublist_le l1 l2 :
+      (forall x, In x l2 -> 0 <= x) ->
+      sublist l1 l2 ->
+      list_sum l1 <= list_sum l2.
+    Proof.
+      intros pos subl.
+      induction subl.
+      - lra.
+      - simpl.
+        apply Rplus_le_compat_l.
+        apply IHsubl.
+        simpl in *; eauto.
+      - simpl.
+        replace (list_sum l1) with (0 + list_sum l1) by lra.
+        apply Rplus_le_compat.
+        + simpl in *.
+          eauto.
+        + eapply IHsubl.
+          simpl in *; eauto.
+    Qed.
+
+    Lemma list_sum_Rabs_triangle l :
+      Rabs (list_sum l) <= list_sum (map Rabs l).
+    Proof.
+      induction l; simpl.
+      - rewrite Rabs_R0; lra.
+      - eapply Rle_trans.
+        + apply Rabs_triang.
+        + lra.
+    Qed.
+
+    Lemma list_max_in l : l <> nil -> In (list_max l) l.
+    Proof.
+      induction l; simpl; [eauto |]; intros _.
+      destruct (Max.max_dec a (list_max l))
+      ; rewrite e in *
+      ; eauto.
+      destruct l.
+      - simpl in e.
+        rewrite Max.max_0_r in e; simpl
+        ; eauto.
+      - right; apply IHl; congruence.
+    Qed.
+
+    Lemma list_max_upper l :
+      List.Forall (fun k : nat => (k <= list_max l)%nat) l.
+    Proof.
+      apply list_max_le.
+      lia.
+    Qed.
+
+(*    Lemma NoDup_pigeon l :
+      l <> nil ->
+      {n | (n >= length l - 2 /\ In n l)%nat}.
+    Proof.
+      induction l; simpl; [congruence | intros _].
+      destruct l; simpl.
+      - exists a; split; eauto.
+        lia.
+      - cut_to IHl; [| congruence].
+        destruct IHl as [k [kgeq kin]].
+        simpl in *.
+        
+        
+                rewrite minus_n_O.
+ *)
+
+    (* Lemma NoDup_pigeon a b l : *)
+    (*   NoDup (a :: b :: l) -> *)
+    (*   List.Forall (fun k : nat => (k <= length l)%nat) (a :: b :: l) -> *)
+    (* Proof. *)
+    (*   rewrite Forall_forall. *)
+    (*   revert a b. *)
+    (*   induction l; simpl; intros. *)
+    (*   - assert (a = 0)%nat *)
+    (*          by (assert (a <= 0)%nat by eauto; lia). *)
+    (*     assert (b = 0)%nat *)
+    (*          by (assert (b <= 0)%nat by eauto; lia). *)
+    (*     intros nd. *)
+    (*     invcs nd. *)
+    (*     simpl in H4; eauto. *)
+    (*   -  *)
+
+        
+    (* Lemma NoDup_pigeon a b l : *)
+    (*   List.Forall (fun k : nat => (k <= length l)%nat) (a :: b :: l) -> *)
+    (*   ~ NoDup (a :: b :: l). *)
+    (* Proof. *)
+    (*   rewrite Forall_forall. *)
+    (*   revert a b. *)
+    (*   induction l; simpl; intros. *)
+    (*   - assert (a = 0)%nat *)
+    (*          by (assert (a <= 0)%nat by eauto; lia). *)
+    (*     assert (b = 0)%nat *)
+    (*          by (assert (b <= 0)%nat by eauto; lia). *)
+    (*     intros nd. *)
+    (*     invcs nd. *)
+    (*     simpl in H4; eauto. *)
+    (*   -  *)
+
+
+    Lemma NoDup_list_max_count l :
+      NoDup l ->
+      (length l <= S (list_max l))%nat.
+    Proof.
+      intros nd.
+      assert (lincl:incl l (seq 0 (S (list_max l)))).
+      {
+        intros ??.
+        apply in_seq.
+        split; [lia| ].
+        simpl.
+        generalize (list_max_upper l).
+        rewrite Forall_forall.
+        intros HH.
+        specialize (HH _ H).
+        lia.
+      } 
+      
+      generalize (NoDup_incl_length nd lincl)
+      ; intros HH.
+      now rewrite seq_length in HH.
+    Qed.
+    
+    (* proof based on 
+       https://www.math.ucdavis.edu/~npgallup/m17_mat25/lecture_notes/lecture_15/m17_mat25_lecture_15_notes.pdf *)
+    Lemma infinite_sum'_perm (f:nat -> R) (g:nat->nat) l:
+      Bijective g ->
+      (exists l2, infinite_sum' (fun x => Rabs (f x)) l2) ->
+      infinite_sum' f l ->
+      infinite_sum' (fun n => f (g n)) l.
+    Proof.
+      intros bij fabs inf.
+      
+      assert (cc:Cauchy_crit (sum_f_R0 (fun x => Rabs (f x)))).
+      {
+        destruct fabs as [? inf2].
+        apply CV_Cauchy.
+        rewrite <- infinite_sum_infinite_sum' in inf2.
+        rewrite  <- infinite_sum_is_lim_seq in inf2.
+        rewrite is_lim_seq_Reals in inf2.
+        eauto.
+      } 
+
+      generalize bij; intros [ginv [ginvg gginv]].
+
+      unfold infinite_sum' in *; intros eps eps_pos.
+      assert (eps2_pos : eps / 2 > 0) by lra.
+      destruct (inf _ eps2_pos) as [N1 N1_lt].
+      destruct (cc _ eps2_pos) as [N2 N2_lt].
+      pose (N := S (max N1 N2)).
+      pose (M := S (List.list_max (map ginv (seq 0 N)))).
+      pose (sN := sum_f_R0' f N).
+      assert (MltN:(N <= M)%nat).
+      {
+        unfold M.
+        generalize (NoDup_list_max_count (map ginv (seq 0 N)))
+        ; intros HH.
+        cut_to HH.
+        - now rewrite map_length, seq_length in HH.
+        - apply Injective_map_NoDup.
+          + intros ???.
+            apply (f_equal g) in H.
+            now repeat rewrite gginv in H.
+          + apply seq_NoDup.
+      }
+      exists M; intros m mbig.
+      unfold R_dist.
+      replace (sum_f_R0' (fun n : nat => f (g n)) m - l)
+        with ((sum_f_R0' (fun n : nat => f (g n)) m - sN) + (sN - l))
+        by lra.
+      eapply Rle_lt_trans.
+      { eapply Rabs_triang. }
+      apply (Rlt_le_trans _ (Rabs (sum_f_R0' (fun n : nat => f (g n)) m - sN) + eps / 2)).
+      {
+        apply Rplus_lt_compat_l.
+        apply N1_lt.
+        lia.
+      }
+      cut (Rabs (sum_f_R0' (fun n : nat => f (g n)) m - sN)   <= eps / 2); [lra|].
+      
+      unfold sN.
+      repeat rewrite sum_f_R0'_list_sum.
+      rewrite <- map_map.
+
+      destruct (@incl_NoDup_sublist_perm _ _ (seq 0 N) (map g (seq 0 m)))
+        as [gpre [gpre_perm gpre_subl]].
+      {
+        apply seq_NoDup.
+      }
+      {
+        intros x xinn.
+        apply in_seq in xinn.
+        destruct xinn as [_ xlt].
+        simpl in xlt.
+        eapply in_map_iff.
+        exists (ginv x).
+        rewrite gginv.
+        split; trivial.
+        apply in_seq.
+        split; [lia|].
+        simpl.
+        eapply lt_le_trans; try apply mbig.
+        unfold M.
+        unfold lt.
+        generalize (list_max_upper (map ginv (seq 0 N))); intros FF.
+        rewrite Forall_forall in FF.
+        specialize (FF (ginv x)).
+        cut_to FF.
+        - lia.
+        - apply in_map.
+          apply in_seq; lia.
+      } 
+      rewrite gpre_perm.
+      destruct (sublist_perm_head gpre_subl) as [l2 l2perm].
+      rewrite <- l2perm.
+      rewrite map_app.
+      rewrite list_sum_cat.
+      replace (list_sum (map f gpre) + list_sum (map f l2) - list_sum (map f gpre))
+        with (list_sum (map f l2)) by lra.
+
+      assert (ndgl:NoDup (gpre ++ l2)).
+      {
+        rewrite l2perm.
+        apply Injective_map_NoDup.
+        - now apply bijective_injective.
+        - apply seq_NoDup.
+      }
+
+      assert(l2_lower: (forall x, In x l2 -> x >= N)%nat).
+      {
+        intros.
+        destruct (ge_dec x N); trivial.
+        apply not_ge in n.
+        assert (inn:In x gpre).
+        { 
+          rewrite <- gpre_perm.
+          apply in_seq.
+          lia.
+        }
+        apply NoDup_app_disj in ndgl.
+        elim (ndgl x inn H).
+      } 
+      pose (nn:=List.list_max l2).
+      destruct (list_max_le l2 nn) as [l2_upper _].
+      specialize (l2_upper (le_refl _)).
+      assert (incl1:incl l2 (seq N (S nn-N))).
+      {
+        intros ? inn.
+        apply in_seq.
+        split.
+        - now specialize (l2_lower _ inn).
+        - rewrite Forall_forall in l2_upper.
+          specialize (l2_upper _ inn).
+          lia.
+      }
+      apply NoDup_app_inv2 in ndgl.
+      destruct (incl_NoDup_sublist_perm ndgl incl1)
+        as [l2' [perm2 subl2]].
+      rewrite perm2.
+
+      apply (Rle_trans _ (list_sum (map Rabs (map f l2')))).
+      {
+        apply list_sum_Rabs_triangle.
+      } 
+
+      destruct l2.
+      {
+        apply Permutation_nil in perm2.
+        subst; simpl.
+        lra.
+      } 
+      
+      eapply (Rle_trans _ (list_sum (map Rabs (map f (seq N (S nn - N)))))).
+      { 
+        eapply list_sum_pos_sublist_le.
+        - intros.
+          apply in_map_iff in H.
+          destruct H as [?[??]]; subst.
+          apply Rabs_pos.
+        - now do 2 apply sublist_map.
+      }
+
+      assert (Nltnn:(N <= nn)%nat).
+      {
+        unfold nn.
+        simpl.
+        transitivity n.
+        - simpl in *.
+          specialize (l2_lower n).
+          cut_to l2_lower; [| eauto].
+          lia.
+        - apply Nat.le_max_l.
+      } 
+
+      rewrite map_map.
+      specialize (N2_lt nn (max N1 N2))%nat.
+      cut_to N2_lt.
+      - unfold R_dist in N2_lt.
+        repeat rewrite sum_f_R0_sum_f_R0' in N2_lt.
+        repeat rewrite sum_f_R0'_list_sum in N2_lt.
+        replace (S nn) with (N + (S nn - N))%nat in N2_lt.
+        + rewrite seq_app, map_app, list_sum_cat in N2_lt.
+          replace (S (N - 1)) with N in N2_lt by lia.
+          rewrite Rplus_minus_cancel1 in N2_lt.
+          rewrite plus_O_n in N2_lt.
+          rewrite Rabs_pos_eq in N2_lt.
+          * lra.
+          * apply list_sum_pos_pos'.
+            rewrite Forall_forall; intros.
+            apply in_map_iff in H.
+            destruct H as [?[??]]; subst.
+            apply Rabs_pos.
+        + apply le_plus_minus_r.
+          lia.
+      - red.
+        transitivity N; lia.
+      - lia.
+    Qed.
+    
+    Lemma Lim_seq_perm (f:nat -> R) (g:nat->nat):
+      Bijective g ->
+      ex_finite_lim_seq f ->
+      Lim_seq f =
+      Lim_seq (fun n => f (g n)).
+    Proof.
+      intros.
+      unfold Lim_seq.
+      
+    Qed.
+
+    Lemma Lim_seq_sum_pair (f:nat -> nat -> R) :
       (forall i j, 0 <= f i j) ->
       (forall i, ex_finite_lim_seq (sum_f_R0 (fun j => f i j))) ->
-      Lim_seq (sum_f_R0
-                 (fun n1 =>
-                    Lim_seq
-                      (sum_f_R0 (fun n2 => f n1 n2)))) =
-      Lub_Rbar (fun x => exists (n m : nat), 
-                    x = sum_f_R0 (fun i => sum_f_R0 (fun j => f i j) m) n).
+      (forall j, ex_finite_lim_seq (sum_f_R0 (fun i => f i j))) ->
+      Lim_seq (sum_f_R0 (fun n1 => Lim_seq (sum_f_R0 (fun n2 : nat => f n1 n2)))) =
+      Lim_seq (sum_f_R0 (fun n => let '(a,b) := iso_f n in f a b)).
     Proof.
       intros.
-      symmetry.
-      apply is_lub_Rbar_unique.
-      unfold is_lub_Rbar.
-      split.
-      - unfold is_ub_Rbar.
-        intros.
-        destruct H1 as [n [m H1]].
-        rewrite H1.
-        + rewrite <- Lim_seq_const.
-          apply Lim_seq_le_loc.
-          exists (S n); intros.
-          rewrite sum_f_R0_split with (n := n0) (m := n); [|lia].
-          apply Rle_trans with 
-              (r2 := sum_f_R0 (fun n1 : nat => Lim_seq (sum_f_R0 (fun n2 : nat => f n1 n2))) n).
-          * apply sum_f_R0_le; intros.
-            assert (Rbar_le  (sum_f_R0 (fun j : nat => f i j) m)
-                           (Lim_seq (sum_f_R0 (fun n2 : nat => f i n2)))).
-            { 
-              rewrite <- Lim_seq_const.
-              apply Lim_seq_le_loc.
-              exists (S m); intros.
-              rewrite sum_f_R0_split with (n := n1) (m := m); [|lia].
-              rewrite <- Rplus_0_r at 1.
-              apply Rplus_le_compat_l.
-              rewrite <- sum_n_Reals.
-              apply sum_n_nneg; intros.
-              apply H.
-            }
-            specialize (H0 i).
-            unfold ex_finite_lim_seq in H0.
-            destruct H0 as [l H0].
-            apply is_lim_seq_unique in H0.
-            rewrite H0 in H4; simpl in H4.
-            now rewrite H0.
-          * rewrite <- Rplus_0_r at 1.
-            apply Rplus_le_compat_l.
-            rewrite <- sum_n_Reals.
-            apply sum_n_nneg; intros.
-            assert (Rbar_le 0
-                            (Lim_seq (sum_f_R0 (fun n2 : nat => f (n1 + S n)%nat n2)))).
-            -- rewrite <- Lim_seq_const.
-               apply Lim_seq_le_loc.
-               exists (0%nat); intros.
-               rewrite <- sum_n_Reals.
-               apply sum_n_nneg; intros.
-               apply H.
-            -- specialize (H0 (n1 + S n)%nat).
-               unfold ex_finite_lim_seq in H0.
-               destruct H0 as [l H0].
-               apply is_lim_seq_unique in H0.
-               rewrite H0 in H4; simpl in H4.
-               now rewrite H0.
-      - intros.
-        unfold is_ub_Rbar in H1.
-                 
-   Admitted.
+    Admitted.
 
-   Lemma finite_sum_exchange f (x0 x1 : nat) :
-     sum_f_R0 (fun j : nat => sum_f_R0 (fun i : nat => f i j) x0) x1 =
-     sum_f_R0 (fun i : nat => sum_f_R0 (fun j : nat => f i j) x1) x0.
-   Proof.
-     induction x0.
-     - now simpl.
-     - rewrite sum_f_R0_peel.
-       rewrite <- IHx0.      
-       clear IHx0.
-       induction x1.
-       + now simpl.
-       + rewrite sum_f_R0_peel.
-         rewrite IHx1.
-         do 3 rewrite sum_f_R0_peel.
-         lra.
+(*    Lemma infinite_sum'_pair_merge (f:nat -> nat -> R) l :
+      infinite_sum' (fun n1 => Lim_seq (sum_f_R0 (fun n2 : nat => f n1 n2))) l ->
+      infinite_sum' (fun n => let '(a,b) := iso_f n in f a b) l.
+    Proof.
+      intros.
+
     Qed.
-
-   Lemma Lub_Rbar_exchange f :
-     Lub_Rbar
-       (fun x : R =>
-          exists n m : nat,
-            x = sum_f_R0 (fun i : nat => sum_f_R0 (fun j : nat => f i j) m) n) =
-     Lub_Rbar
-       (fun x : R =>
-          exists n m : nat,
-            x = sum_f_R0 (fun i : nat => sum_f_R0 (fun j : nat => f j i) m) n).
-   Proof.
-     apply Lub_Rbar_eqset.
-     intros.
-     split; intros; destruct H as [n [m H]];
-       exists m; exists n; rewrite H;
-         apply finite_sum_exchange.
-   Qed.
+*)
 
     Lemma Lim_seq_sum_swap f :
       (forall i j, 0 <= f i j) ->
       (forall i, ex_finite_lim_seq (sum_f_R0 (fun j => f i j))) ->
-      (forall j, ex_finite_lim_seq (sum_f_R0 (fun i => f i j))) ->      
+      (forall j, ex_finite_lim_seq (sum_f_R0 (fun i => f i j))) ->
       Lim_seq (sum_f_R0
                  (fun n1 =>
                     Lim_seq
@@ -507,10 +785,10 @@ Lemma lim_seq_series_of_pmf_disjoint_union collection :
                       (sum_f_R0 (fun n1 => f n1 n2)))).
     Proof.
       intros.
-      rewrite double_ser_lub; trivial.
-      rewrite double_ser_lub; trivial.
-      apply Lub_Rbar_exchange.
-   Qed.
+      repeat rewrite Lim_seq_sum_pair; trivial.
+      
+      
+    Admitted.
 
     Lemma Lim_seq_incr_one_le f n :
       (forall i, f i <= f (S i)) ->
@@ -717,6 +995,7 @@ End fin.
 
 Section countable_products.
 
+    
   Global Program Instance prod_countable (A B:Type) {countableA:Countable A} {countableB:Countable B}: Countable (A * B)
     := {|
     countable_index '(a, b) := iso_f (countable_index a, countable_index b)
@@ -747,6 +1026,15 @@ Section countable_products.
   Qed.
   Next Obligation.
     unfold countable_sum.
+    rewrite <- infinite_sum_infinite_sum'.
+    rewrite <- infinite_sum_is_lim_seq.
+    
+
+    
+    
+
+    
+    
   Admitted.  
   
 End countable_products.
