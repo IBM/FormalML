@@ -6,6 +6,7 @@ Require Import Coq.Reals.Rbase.
 Require Import Coq.Reals.Rfunctions.
 Require Import List.
 Require Import EquivDec Nat Lia Lra.
+Require FinFun.
 
 Require Import LibUtils ListAdd RealAdd.
 Import ListNotations.
@@ -828,4 +829,244 @@ Proof.
   simpl in H.
   generalize (sum_f_R0'_le f n H0).
   lra.
+Qed.
+
+Lemma sum_f_R0'_list_sum f n :
+  sum_f_R0' f n = list_sum (map f (seq 0 n)).
+Proof.
+  now rewrite sum_f_R0'_as_fold_right, list_sum_fold_right, fold_right_map.
+Qed.
+
+Lemma list_sum_pos_sublist_le l1 l2 :
+  (forall x, In x l2 -> 0 <= x) ->
+  sublist l1 l2 ->
+  list_sum l1 <= list_sum l2.
+Proof.
+  intros pos subl.
+  induction subl.
+  - lra.
+  - simpl.
+    apply Rplus_le_compat_l.
+    apply IHsubl.
+    simpl in *; eauto.
+  - simpl.
+    replace (list_sum l1) with (0 + list_sum l1) by lra.
+    apply Rplus_le_compat.
+    + simpl in *.
+      eauto.
+    + eapply IHsubl.
+      simpl in *; eauto.
+Qed.
+
+Lemma list_sum_Rabs_triangle l :
+  Rabs (list_sum l) <= list_sum (map Rabs l).
+Proof.
+  induction l; simpl.
+  - rewrite Rabs_R0; lra.
+  - eapply Rle_trans.
+    + apply Rabs_triang.
+    + lra.
+Qed.
+
+Lemma bijective_injective {B C} (f:B->C) : FinFun.Bijective f -> FinFun.Injective f.
+Proof.
+  intros [g [??]] ?? eqq.
+  generalize (f_equal g eqq); intros eqq2.
+  now repeat rewrite H in eqq2.
+Qed.
+
+(* proof based on 
+       https://www.math.ucdavis.edu/~npgallup/m17_mat25/lecture_notes/lecture_15/m17_mat25_lecture_15_notes.pdf *)
+Theorem infinite_sum'_perm (g:nat->nat) (f:nat -> R) l:
+  FinFun.Bijective g ->
+  (exists l2, infinite_sum' (fun x => Rabs (f x)) l2) ->
+  infinite_sum' f l ->
+  infinite_sum' (fun n => f (g n)) l.
+Proof.
+  intros bij fabs inf.
+  
+  assert (cc:Rseries.Cauchy_crit (sum_f_R0 (fun x => Rabs (f x)))).
+  {
+    destruct fabs as [? inf2].
+    apply SeqProp.CV_Cauchy.
+    rewrite <- infinite_sum_infinite_sum' in inf2.
+    rewrite  <- infinite_sum_is_lim_seq in inf2.
+    rewrite is_lim_seq_Reals in inf2.
+    eauto.
+  } 
+
+  generalize bij; intros [ginv [ginvg gginv]].
+
+  unfold infinite_sum' in *; intros eps eps_pos.
+  assert (eps2_pos : eps / 2 > 0) by lra.
+  destruct (inf _ eps2_pos) as [N1 N1_lt].
+  destruct (cc _ eps2_pos) as [N2 N2_lt].
+  pose (N := S (max N1 N2)).
+  pose (M := S (List.list_max (map ginv (seq 0 N)))).
+  pose (sN := sum_f_R0' f N).
+  assert (MltN:(N <= M)%nat).
+  {
+    unfold M.
+    generalize (NoDup_list_max_count (map ginv (seq 0 N)))
+    ; intros HH.
+    cut_to HH.
+    - now rewrite map_length, seq_length in HH.
+    - apply FinFun.Injective_map_NoDup.
+      + intros ???.
+        apply (f_equal g) in H.
+        now repeat rewrite gginv in H.
+      + apply seq_NoDup.
+  }
+  exists M; intros m mbig.
+  unfold R_dist.
+  replace (sum_f_R0' (fun n : nat => f (g n)) m - l)
+    with ((sum_f_R0' (fun n : nat => f (g n)) m - sN) + (sN - l))
+    by lra.
+  eapply Rle_lt_trans.
+  { eapply Rabs_triang. }
+  apply (Rlt_le_trans _ (Rabs (sum_f_R0' (fun n : nat => f (g n)) m - sN) + eps / 2)).
+  {
+    apply Rplus_lt_compat_l.
+    apply N1_lt.
+    lia.
+  }
+  cut (Rabs (sum_f_R0' (fun n : nat => f (g n)) m - sN)   <= eps / 2); [lra|].
+  
+  unfold sN.
+  repeat rewrite sum_f_R0'_list_sum.
+  rewrite <- map_map.
+
+  destruct (@incl_NoDup_sublist_perm _ _ (seq 0 N) (map g (seq 0 m)))
+    as [gpre [gpre_perm gpre_subl]].
+  {
+    apply seq_NoDup.
+  }
+  {
+    intros x xinn.
+    apply in_seq in xinn.
+    destruct xinn as [_ xlt].
+    simpl in xlt.
+    eapply in_map_iff.
+    exists (ginv x).
+    rewrite gginv.
+    split; trivial.
+    apply in_seq.
+    split; [lia|].
+    simpl.
+    eapply lt_le_trans; try apply mbig.
+    unfold M.
+    unfold lt.
+    generalize (list_max_upper (map ginv (seq 0 N))); intros FF.
+    rewrite Forall_forall in FF.
+    specialize (FF (ginv x)).
+    cut_to FF.
+    - lia.
+    - apply in_map.
+      apply in_seq; lia.
+  } 
+  rewrite gpre_perm.
+  destruct (sublist_perm_head gpre_subl) as [l2 l2perm].
+  rewrite <- l2perm.
+  rewrite map_app.
+  rewrite list_sum_cat.
+  replace (list_sum (map f gpre) + list_sum (map f l2) - list_sum (map f gpre))
+    with (list_sum (map f l2)) by lra.
+
+  assert (ndgl:NoDup (gpre ++ l2)).
+  {
+    rewrite l2perm.
+    apply FinFun.Injective_map_NoDup.
+    - now apply bijective_injective.
+    - apply seq_NoDup.
+  }
+
+  assert(l2_lower: (forall x, In x l2 -> x >= N)%nat).
+  {
+    intros.
+    destruct (ge_dec x N); trivial.
+    apply not_ge in n.
+    assert (inn:In x gpre).
+    { 
+      rewrite <- gpre_perm.
+      apply in_seq.
+      lia.
+    }
+    apply NoDup_app_disj in ndgl.
+    elim (ndgl x inn H).
+  } 
+  pose (nn:=List.list_max l2).
+  destruct (list_max_le l2 nn) as [l2_upper _].
+  specialize (l2_upper (le_refl _)).
+  assert (incl1:incl l2 (seq N (S nn-N))).
+  {
+    intros ? inn.
+    apply in_seq.
+    split.
+    - now specialize (l2_lower _ inn).
+    - rewrite Forall_forall in l2_upper.
+      specialize (l2_upper _ inn).
+      lia.
+  }
+  apply NoDup_app_inv2 in ndgl.
+  destruct (incl_NoDup_sublist_perm ndgl incl1)
+    as [l2' [perm2 subl2]].
+  rewrite perm2.
+
+  apply (Rle_trans _ (list_sum (map Rabs (map f l2')))).
+  {
+    apply list_sum_Rabs_triangle.
+  } 
+
+  destruct l2.
+  {
+    apply Permutation.Permutation_nil in perm2.
+    subst; simpl.
+    lra.
+  } 
+  
+  eapply (Rle_trans _ (list_sum (map Rabs (map f (seq N (S nn - N)))))).
+  { 
+    eapply list_sum_pos_sublist_le.
+    - intros.
+      apply in_map_iff in H.
+      destruct H as [?[??]]; subst.
+      apply Rabs_pos.
+    - now do 2 apply sublist_map.
+  }
+
+  assert (Nltnn:(N <= nn)%nat).
+  {
+    unfold nn.
+    simpl.
+    transitivity n.
+    - simpl in *.
+      specialize (l2_lower n).
+      cut_to l2_lower; [| eauto].
+      lia.
+    - apply Nat.le_max_l.
+  } 
+
+  rewrite map_map.
+  specialize (N2_lt nn (max N1 N2))%nat.
+  cut_to N2_lt.
+  - unfold R_dist in N2_lt.
+    repeat rewrite sum_f_R0_sum_f_R0' in N2_lt.
+    repeat rewrite sum_f_R0'_list_sum in N2_lt.
+    replace (S nn) with (N + (S nn - N))%nat in N2_lt.
+    + rewrite seq_app, map_app, list_sum_cat in N2_lt.
+      replace (S (N - 1)) with N in N2_lt by lia.
+      rewrite Rplus_minus_cancel1 in N2_lt.
+      rewrite plus_O_n in N2_lt.
+      rewrite Rabs_pos_eq in N2_lt.
+      * lra.
+      * apply list_sum_pos_pos'.
+        rewrite Forall_forall; intros.
+        apply in_map_iff in H.
+        destruct H as [?[??]]; subst.
+        apply Rabs_pos.
+    + apply le_plus_minus_r.
+      lia.
+  - red.
+    transitivity N; lia.
+  - lia.
 Qed.

@@ -1933,3 +1933,47 @@ Proof.
   - now rewrite Forall_map.  
   - now apply IHl.
 Qed.
+
+Lemma list_max_in l : l <> nil -> In (list_max l) l.
+Proof.
+  induction l; simpl; [eauto |]; intros _.
+  destruct (Max.max_dec a (list_max l))
+  ; rewrite e in *
+  ; eauto.
+  destruct l.
+  - simpl in e.
+    rewrite Max.max_0_r in e; simpl
+    ; eauto.
+  - right; apply IHl; congruence.
+Qed.
+
+Lemma list_max_upper l :
+  List.Forall (fun k : nat => (k <= list_max l)%nat) l.
+Proof.
+  apply list_max_le.
+  lia.
+Qed.
+
+
+    Lemma NoDup_list_max_count l :
+      NoDup l ->
+      (length l <= S (list_max l))%nat.
+    Proof.
+      intros nd.
+      assert (lincl:incl l (seq 0 (S (list_max l)))).
+      {
+        intros ??.
+        apply in_seq.
+        split; [lia| ].
+        simpl.
+        generalize (list_max_upper l).
+        rewrite Forall_forall.
+        intros HH.
+        specialize (HH _ H).
+        lia.
+      } 
+      
+      generalize (NoDup_incl_length nd lincl)
+      ; intros HH.
+      now rewrite seq_length in HH.
+    Qed.

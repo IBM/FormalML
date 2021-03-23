@@ -2752,3 +2752,6 @@ Proof.
   replace (1) with (1 * 1) by lra.
   now apply Rmult_le_compat.
 Qed.
+
+Lemma Rplus_minus_cancel1 : forall a b, a + b - a = b.
+Proof. intros; ring. Qed.
