@@ -391,6 +391,470 @@ Lemma lim_seq_series_of_pmf_disjoint_union collection :
           lia.
     Qed.
 
+    Lemma sum_f_R0_nneg f N :
+      (forall n, (n<=N)%nat -> 0 <= f n) ->
+      0 <= sum_f_R0 f N.
+    Proof.
+      rewrite <- sum_n_Reals.
+      apply sum_n_nneg.
+    Qed.
+
+    Lemma le_incr0 (f : nat -> R) :
+      (forall n, f n <= f (S n)) ->
+      (forall n k, f n <= f (n + k)%nat).
+    Proof.
+      intros.
+      induction k.
+      - replace (n + 0)%nat with n by lia.
+        lra.
+      - eapply Rle_trans.
+        apply IHk.
+        replace (n + S k)%nat with (S (n + k)%nat) by lia.
+        apply H.
+     Qed.
+
+    Lemma le_incr (f : nat -> R) :
+      (forall n, f n <= f (S n)) ->
+      (forall n m, (n<=m)%nat -> f n <= f m).
+    Proof.
+      intros.
+      replace (m) with (n + (m-n))%nat by lia.
+      now apply le_incr0.
+    Qed.
+      
+    Lemma lim_seq_sup_seq_incr (f : nat -> R) (l : Rbar) :
+      (forall n, f n <= f (S n)) ->
+      is_lim_seq f l <-> is_sup_seq f l.
+   Proof.
+     intros.
+     split; intros.
+     apply is_lim_LimSup_seq in H0.
+     destruct l.
+     - unfold is_LimSup_seq in H0.
+       unfold is_sup_seq.
+       intros.
+       specialize (H0 eps).
+       destruct H0.
+       simpl.
+       split; intros.
+       + destruct H1.
+         destruct (le_dec x n).
+         * now apply H1.
+         * assert (n <= x)%nat by lia.
+           apply Rle_lt_trans with (r2 := f x).
+           now apply le_incr.
+           apply H1; lia.
+       + specialize (H0 0%nat).
+         destruct H0 as [n [? ?]].
+         exists n.
+         apply H2.
+     - unfold is_LimSup_seq in H0.
+       unfold is_sup_seq; simpl; intros.
+       specialize (H0 M 0%nat).
+       destruct H0 as [n [? ?]].
+       exists n.
+       apply H1.
+     - unfold is_LimSup_seq in H0.
+       unfold is_sup_seq; simpl; intros.
+       specialize (H0 M).
+       destruct H0 as [N H0].
+       destruct (le_dec N n).
+       + now apply H0.
+       + assert (n <= N)%nat by lia.
+         apply Rle_lt_trans with (r2 := f N).
+         * now apply le_incr.
+         * apply H0; lia.
+     - rewrite <- is_lim_seq_spec.
+       destruct l.
+       + unfold is_sup_seq in H0.
+         unfold is_lim_seq'; intros.
+         specialize (H0 eps).
+         destruct H0 as [? [n ?]].
+         simpl in H1; simpl in H0.
+         exists n; intros.
+         destruct (Rge_dec (f n0) r).
+         * specialize (H0 n0).
+           rewrite Rabs_right; lra.
+         * assert (f n0 < r) by lra.
+           rewrite Rabs_left; [|lra].
+           generalize (le_incr f H n n0 H2); intros.
+           lra.
+       + unfold is_sup_seq in H0.
+         unfold is_lim_seq'; intros.
+         specialize (H0 M); simpl in H0.
+         destruct H0 as [n ?].
+         exists n; intros.
+         apply Rlt_le_trans with (r2 := f n); trivial.
+         now apply le_incr.
+       + unfold is_sup_seq in H0.
+         unfold is_lim_seq'; intros.
+         specialize (H0 M); simpl in H0.
+         exists (0%nat); intros.
+         apply H0.
+    Qed.
+
+(*
+   Lemma is_sup_seq_lub (u : nat → Rbar) (l : Rbar) :
+    is_sup_seq u l → Rbar_is_lub (fun x ⇒ ∃ n, x = u n) l.
+
+  Lemma Rbar_is_lub_sup_seq (u : nat → Rbar) (l : Rbar) :
+   Rbar_is_lub (fun x ⇒ ∃ n, x = u n) l → is_sup_seq u l.
+ *)
+
+   Lemma is_lub_sup_seq (u : nat -> R) (l : Rbar) :
+     is_lub_Rbar (fun x => exists n, x = u n) l ->
+     is_sup_seq u l.
+   Proof.
+     intros.
+     apply Rbar_is_lub_sup_seq.
+     unfold is_lub_Rbar in H.
+     unfold Rbar_is_lub.
+     destruct H.
+     split.
+     - unfold Rbar_is_upper_bound.
+       unfold is_ub_Rbar in H.
+       intros.
+       destruct x.
+       + apply H.
+         destruct H1.
+         exists x.
+         now rewrite Rbar_finite_eq in H1.
+       + destruct H1.
+         discriminate.
+       + destruct H1.
+         discriminate.
+     - intros.
+       apply H0.
+       unfold is_ub_Rbar.
+       intros.
+       apply H1.
+       destruct H2.
+       exists x0.
+       rewrite H2.
+       reflexivity.
+   Qed.
+
+   Lemma is_sub_seq_lub_R (u : nat -> R) (l : Rbar) :
+     is_sup_seq u l -> is_lub_Rbar (fun x => exists n, x = u n) l.
+   Proof.
+     intros.
+     apply is_sup_seq_lub in H.
+     unfold Rbar_is_lub in H.
+     unfold is_lub_Rbar.
+     destruct H.
+     split.
+     - unfold Rbar_is_upper_bound in H.
+       unfold is_ub_Rbar.
+       intros.
+       apply H.
+       destruct H1.
+       exists x0.
+       rewrite H1.
+       reflexivity.
+     - intros.
+       apply H0.
+       unfold Rbar_is_upper_bound.
+       unfold is_ub_Rbar in H1.
+       intros.
+       destruct x.
+       + apply H1.
+         destruct H2.
+         exists x.
+         now rewrite Rbar_finite_eq in H2.
+       + destruct H2.
+         discriminate.
+       + destruct H2.
+         discriminate.
+   Qed.
+
+    Lemma lim_seq_is_lub_incr (f : nat -> R) (l : Rbar) :
+      (forall n, f n <= f (S n)) ->
+      (is_lim_seq f l) <-> (is_lub_Rbar (fun x => exists n, x = f n) l).
+    Proof.
+      intros.
+      rewrite lim_seq_sup_seq_incr; trivial.
+      split; intros.
+      now apply is_sub_seq_lub_R.
+      now apply is_lub_sup_seq.
+    Qed.
+
+   Lemma sum_f_R0_pos_incr f :
+      (forall i, 0 <= f i) ->
+      forall n : nat, sum_f_R0 f n <= sum_f_R0 f (S n).
+     Proof.
+       intros.
+       simpl.
+       rewrite <- Rplus_0_r at 1.
+       now apply Rplus_le_compat_l.
+   Qed.
+    
+     Lemma one_ser_lub f :
+       (forall i, 0 <= f i) ->
+       Lim_seq (sum_f_R0 f) = Lub_Rbar (fun x => exists n, x = sum_f_R0 f n).
+    Proof.
+      intros.
+      generalize (lim_seq_is_lub_incr (sum_f_R0 f) (Lub_Rbar (fun x => exists n, x = sum_f_R0 f n))); intros.
+      cut_to H0.
+      destruct H0.
+      cut_to H1.
+      now apply is_lim_seq_unique.
+      apply Lub_Rbar_correct.
+      now apply sum_f_R0_pos_incr.
+    Qed.
+
+    Lemma sum_f_R0_one_ser_lub f n :
+      (forall i j, 0 <= f i j) ->
+      sum_f_R0 (fun n1 => Lim_seq (sum_f_R0 (fun n2 => f n1 n2))) n =
+      sum_f_R0 (fun n1 => Lub_Rbar (fun x => exists n, x = sum_f_R0 (fun n2 => f n1 n2) n)) n.
+    Proof.
+      intros.
+      apply sum_f_R0_ext.
+      intros.
+      generalize (one_ser_lub (fun n2 => f x n2)); intros.
+      cut_to H1; trivial.
+      now f_equal.
+    Qed.
+
+    Lemma Lub_Rbar_nneg (f : nat -> R) :
+      (forall i, 0 <= f i) ->
+      Rbar_le 0 (Lub_Rbar (fun x => exists n, x = f n)).
+    Proof.
+      intros.
+      Search Lub_Rbar.
+      unfold Lub_Rbar.
+      destruct (ex_lub_Rbar (fun x : R => exists n : nat, x = f n)).
+      unfold proj1_sig.
+      unfold is_lub_Rbar in i.
+      destruct i.
+      unfold is_ub_Rbar in H0.
+      apply Rbar_le_trans with (y := f 0%nat).
+      apply (H 0%nat).
+      apply H0.
+      now exists (0%nat).
+    Qed.
+
+     Lemma Lub_Rbar_nneg_real (f : nat -> R) :
+      (forall i, 0 <= f i) ->
+      0  <= Lub_Rbar (fun x => exists n, x = f n).
+    Proof.
+      intros.
+      generalize (Lub_Rbar_nneg f H); intros.
+      destruct (Lub_Rbar (fun x : R => exists n : nat, x = f n)).
+      apply H0.
+      simpl; lra.
+      simpl; lra.
+    Qed.
+
+    Lemma Lub_Rbar_lim0 (g : nat -> R) (b : Rbar) :
+      (forall x : R,
+          (exists n : nat, x = g n) -> Rbar_le x b) ->
+      Rbar_le
+        (Lub_Rbar (fun x2 : R => exists n0 : nat, x2 = g n0))
+        b.
+    Proof.
+      intros.
+      unfold Lub_Rbar.
+      destruct (ex_lub_Rbar (fun x2 : R => exists n0 : nat, x2 = g n0)).
+      unfold proj1_sig.
+      unfold is_lub_Rbar in i.
+      destruct i.
+      unfold is_ub_Rbar in *.
+      apply H1.
+      intros.
+      now apply H.
+   Qed.
+
+    Lemma Sup_seq_plus (f g : nat -> R) :
+      is_finite (Sup_seq f) ->
+      is_finite (Sup_seq g) ->
+      (forall n, f n <= f (S n)) ->
+      (forall n, g n <= g (S n)) ->
+      Sup_seq (fun n0 => (f n0) + (g n0)) =
+      Sup_seq (fun n0 => f n0) + Sup_seq (fun n0 => g n0).
+    Proof.
+      intros fin_f fin_g incr_f incr_g.
+      unfold Sup_seq in *.
+      destruct (ex_sup_seq (fun x : nat => Finite (f x))).
+      destruct (ex_sup_seq (fun x : nat => Finite (g x))).
+      destruct  (ex_sup_seq (fun n0 : nat => Finite (Rplus (f n0) (g n0)))).
+      destruct (lim_seq_sup_seq_incr f x incr_f); intros.
+      specialize (H0 i).
+      destruct (lim_seq_sup_seq_incr g x0 incr_g); intros.      
+      specialize (H2 i0).
+      unfold proj1_sig in *.
+      rewrite <- fin_f in H0.
+      rewrite <- fin_g in H2.
+      generalize (is_lim_seq_plus' _ _ _ _ H0 H2); intros.
+      generalize (lim_seq_sup_seq_incr (fun n : nat => f n + g n) (x + x0)); intros.
+      cut_to H4.
+      rewrite H4 in H3.
+      apply is_sup_seq_unique in i1.
+      apply is_sup_seq_unique in H3.
+      rewrite H3 in i1.
+      now symmetry.
+      intros.
+      specialize (incr_f n).
+      specialize (incr_g n).
+      lra.
+    Qed.
+
+    Lemma Sup_seq_Rbar_plus (f g : nat -> R) :
+      (forall n, f n <= f (S n)) ->
+      (forall n, g n <= g (S n)) ->
+      Sup_seq (fun n0 => (f n0) + (g n0)) =
+      Rbar_plus (Sup_seq (fun n0 => f n0)) (Sup_seq (fun n0 => g n0)).
+    Proof.
+      intros incr_f incr_g.
+      unfold Sup_seq in *.
+      destruct (ex_sup_seq (fun x : nat => Finite (f x))).
+      destruct (ex_sup_seq (fun x : nat => Finite (g x))).
+      destruct  (ex_sup_seq (fun n0 : nat => Finite (Rplus (f n0) (g n0)))).
+      unfold proj1_sig in *.
+      destruct (lim_seq_sup_seq_incr f x incr_f); intros.
+      specialize (H0 i).
+      destruct (lim_seq_sup_seq_incr g x0 incr_g); intros.      
+      specialize (H2 i0).
+      generalize (is_lim_seq_plus f g x x0 (Rbar_plus x x0) H0 H2); intros.
+      cut_to H3.
+      generalize (lim_seq_sup_seq_incr (fun n : nat => f n + g n) (Rbar_plus x x0)); intros.
+      cut_to H4.
+      rewrite H4 in H3.
+      apply is_sup_seq_unique in i1.
+      apply is_sup_seq_unique in H3.
+      rewrite H3 in i1.
+      now symmetry.
+      intros.
+      specialize (incr_f n).
+      specialize (incr_g n).
+      lra.
+      apply Rbar_plus_correct.
+      unfold ex_Rbar_plus.
+      destruct x; destruct x0; unfold Rbar_plus'; trivial.
+      unfold is_sup_seq in i0.
+      specialize (i0 (g 0%nat) 0%nat).
+      simpl in i0.
+      lra.
+      unfold is_sup_seq in i.
+      specialize (i (f 0%nat) 0%nat).
+      simpl in i.
+      lra.
+    Qed.
+    
+    Lemma finite_sup_sum (g : nat -> nat -> R) (x1 : nat) :
+      (forall n m, g n m <= g n (S m)) ->
+      (forall n1, is_finite (Sup_seq (g n1))) ->
+      is_finite (Sup_seq (fun x : nat => sum_f_R0 (fun n1 : nat => g n1 x) x1)).
+    Proof.
+      intros.
+      induction x1.
+      - now simpl.
+      - simpl.
+        rewrite Sup_seq_plus; trivial.
+        + rewrite <- IHx1.
+          unfold is_finite.
+          reflexivity.
+        + intros.
+          apply sum_f_R0_le.
+          intros.
+          apply H.
+      Qed.
+      
+    Lemma sum_sup_comm  (g : nat -> nat -> R) (x1 : nat) :
+      (forall n m, g n m <= g n (S m)) ->
+      (forall n1, is_finite (Sup_seq (g n1))) ->
+      (sum_f_R0 (fun n1 : nat => Sup_seq (g n1)) x1) = 
+      Sup_seq (fun n0 => sum_f_R0 (fun n1 => g n1 n0) x1).
+    Proof.
+      intros.
+      induction x1.
+      - now simpl.
+      - simpl.
+        rewrite IHx1.
+        rewrite Sup_seq_plus; trivial.
+        + now apply finite_sup_sum.
+        + intros.
+          apply sum_f_R0_le.
+          intros.
+          apply H.
+    Qed.
+
+    Lemma Lub_Rbar_Sup_seq  (u : nat -> R) :
+      Lub_Rbar (fun x => exists n, x = u n) = Sup_seq u.
+    Proof.
+      unfold Lub_Rbar, Sup_seq.
+      destruct (ex_lub_Rbar (fun x : R => exists n : nat, x = u n)).
+      destruct (ex_sup_seq (fun x : nat => u x)).
+      unfold proj1_sig.
+      apply is_lub_sup_seq in i.
+      apply is_sup_seq_unique in i.
+      apply is_sup_seq_unique in i0.
+      rewrite i0 in i.
+      symmetry.
+      apply i.
+    Qed.      
+
+    Lemma sum_Lub_Rbar_comm  (g : nat -> nat -> R) (x1 : nat) :
+      (forall n m, g n m <= g n (S m)) ->
+      (forall n1, is_finite (Lub_Rbar (fun x2 : R => exists n0 : nat, x2 = g n1 n0))) ->
+      (sum_f_R0 (fun n1 : nat => Lub_Rbar (fun x2 : R => exists n0 : nat, x2 = g n1 n0))
+                x1) = 
+      Lub_Rbar (fun x2 : R => exists n0 : nat, x2 = sum_f_R0 (fun n1 => g n1 n0) x1).
+    Proof.
+      intros.
+      rewrite Lub_Rbar_Sup_seq.
+      rewrite sum_f_R0_ext with
+          (f2 := (fun n1 => Sup_seq (g n1))).
+      apply sum_sup_comm; trivial.
+      intros.
+      rewrite is_finite_correct.
+      specialize (H0 n1).
+      rewrite is_finite_correct in H0.
+      destruct H0.
+      exists x.
+      now rewrite Lub_Rbar_Sup_seq in H0.
+      intros.
+      rewrite Lub_Rbar_Sup_seq.
+      reflexivity.
+    Qed.
+
+    Lemma Lub_Rbar_lim1 (g : nat -> nat -> R) (b : Rbar) (x1 : nat) :
+      (forall i j, 0 <= g i j) ->
+      (forall n m, g n m <= g n (S m)) ->
+      (forall n1,  is_finite (Lub_Rbar (fun x2 : R => exists n0 : nat, x2 = g n1 n0))) ->
+      (forall x : R,
+        (exists n m : nat, x = sum_f_R0 (fun i : nat => g i m) n) -> Rbar_le x b) ->
+      Rbar_le
+        (sum_f_R0 (fun n1 : nat => Lub_Rbar (fun x2 : R => exists n0 : nat, x2 = g n1 n0))
+                  x1) b.
+    Proof.
+      intros.
+      rewrite sum_Lub_Rbar_comm; trivial.
+      unfold Lub_Rbar.
+      destruct (ex_lub_Rbar (fun x2 : R => exists n0 : nat, x2 = sum_f_R0 (fun n1 : nat => g n1 n0) x1)).
+      unfold proj1_sig.
+      unfold is_lub_Rbar in i.
+      destruct i.
+      unfold is_ub_Rbar in *.
+      destruct x.
+      - apply H4.
+        intros.
+        apply H2.
+        exists x1.
+        apply H5.
+      - unfold real.
+        apply Rbar_le_trans with (y := g 0%nat 0%nat).
+        apply H.
+        apply H2.
+        exists 0%nat.
+        now exists 0%nat.
+      - unfold real.
+        apply Rbar_le_trans with (y := g 0%nat 0%nat).
+        apply H.
+        apply H2.
+        exists 0%nat.
+        now exists 0%nat.
+    Qed.
+    
     Lemma double_ser_lub f :
       (forall i j, 0 <= f i j) ->
       (forall i, ex_finite_lim_seq (sum_f_R0 (fun j => f i j))) ->
@@ -426,8 +890,7 @@ Lemma lim_seq_series_of_pmf_disjoint_union collection :
               rewrite sum_f_R0_split with (n := n1) (m := m); [|lia].
               rewrite <- Rplus_0_r at 1.
               apply Rplus_le_compat_l.
-              rewrite <- sum_n_Reals.
-              apply sum_n_nneg; intros.
+              apply sum_f_R0_nneg; intros.
               apply H.
             }
             specialize (H0 i).
@@ -438,15 +901,13 @@ Lemma lim_seq_series_of_pmf_disjoint_union collection :
             now rewrite H0.
           * rewrite <- Rplus_0_r at 1.
             apply Rplus_le_compat_l.
-            rewrite <- sum_n_Reals.
-            apply sum_n_nneg; intros.
+            apply sum_f_R0_nneg; intros.
             assert (Rbar_le 0
                             (Lim_seq (sum_f_R0 (fun n2 : nat => f (n1 + S n)%nat n2)))).
             -- rewrite <- Lim_seq_const.
                apply Lim_seq_le_loc.
                exists (0%nat); intros.
-               rewrite <- sum_n_Reals.
-               apply sum_n_nneg; intros.
+               apply sum_f_R0_nneg; intros.
                apply H.
             -- specialize (H0 (n1 + S n)%nat).
                unfold ex_finite_lim_seq in H0.
@@ -456,9 +917,52 @@ Lemma lim_seq_series_of_pmf_disjoint_union collection :
                now rewrite H0.
       - intros.
         unfold is_ub_Rbar in H1.
-                 
-   Admitted.
-
+        assert (forall n,
+                   sum_f_R0 (fun n1 => Lim_seq (sum_f_R0 (fun n2 => f n1 n2))) n =
+                   sum_f_R0 (fun n1 => Lub_Rbar (fun x => exists n, x = sum_f_R0 (fun n2 => f n1 n2) n)) n).
+        intros; now apply sum_f_R0_one_ser_lub.
+        rewrite Lim_seq_ext with
+            (v := sum_f_R0 (fun n1 : nat => Lub_Rbar (fun x : R => exists n0 : nat, x = sum_f_R0 (fun n2 : nat => f n1 n2) n0))); [|apply H2].
+        rewrite one_ser_lub.
+        unfold Lub_Rbar at 1.
+        destruct
+          (ex_lub_Rbar
+          (fun x : R =>
+           exists n : nat,
+             x =
+             sum_f_R0
+               (fun n1 : nat => Lub_Rbar (fun x0 : R => exists n0 : nat, x0 = sum_f_R0 (fun n2 : nat => f n1 n2) n0))
+               n)).
+        simpl.
+        unfold is_lub_Rbar in i.
+        destruct i.
+        unfold is_ub_Rbar in *.
+        apply H4.
+        intros.
+        destruct H5.
+        rewrite H5.
+        apply Lub_Rbar_lim1; trivial.
+        intros; apply sum_f_R0_nneg.
+        intros; apply H.
+        intros; simpl.
+        rewrite <- Rplus_0_r at 1.
+        now apply Rplus_le_compat_l.
+        intros.
+        rewrite Lub_Rbar_Sup_seq.
+        specialize (H0 n1).
+        unfold ex_finite_lim_seq in H0.
+        destruct H0.
+        rewrite lim_seq_sup_seq_incr in H0.
+        apply is_sup_seq_unique in H0.
+        now rewrite H0.
+        intros; simpl.
+        rewrite <- Rplus_0_r at 1.
+        apply Rplus_le_compat_l.
+        apply H.
+        intros; apply Lub_Rbar_nneg_real.
+        intros; now apply sum_f_R0_nneg.
+    Qed.
+    
    Lemma finite_sum_exchange f (x0 x1 : nat) :
      sum_f_R0 (fun j : nat => sum_f_R0 (fun i : nat => f i j) x0) x1 =
      sum_f_R0 (fun i : nat => sum_f_R0 (fun j : nat => f i j) x1) x0.
