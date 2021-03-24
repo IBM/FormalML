@@ -1289,8 +1289,33 @@ Section countable_products.
   Qed.
   Next Obligation.
     unfold countable_sum.
-    rewrite <- infinite_sum_infinite_sum'.
-    rewrite <- infinite_sum_is_lim_seq.
+
+    cut (infinite_sum'
+           (fun n : nat =>
+              let (n1,n2) := iso_b (Isomorphism:=nat_pair_encoder) n in
+              match countable_inv n1 with
+              | Some a => pmf1.(pmf_pmf) a
+              | None => 0
+              end * 
+              match countable_inv n2 with
+              | Some a => pmf2.(pmf_pmf) a
+              | None => 0
+              end) 1).
+    -
+      (* apply infinite_sum'_ext; intros. *)
+      (* match_case; [intros [??] eqq | intros eqq]. *)
+      (* + generalize (countable_inv_sound _ _ eqq); intros eqq2. *)
+      (*   subst. *)
+      (*   match_case; intros. *)
+        
+      (*   simpl. *)
+      
+      (* unfold countable_inv; simpl. *)
+      (* destruct (excluded_middle_informative (exists s : A * B, countable_index s = x)). *)
+      (* + admit. *)
+      (* +  *)
+      admit.
+    - 
   Admitted.
 
   Fixpoint iter_prod (l:list Type) : Type
