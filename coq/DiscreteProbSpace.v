@@ -1277,6 +1277,48 @@ Section countable_products.
     - now rewrite countable_inv_index.
   Qed.
 
+  Lemma countable_prod_inv_some A B {countableA} {countableB} n :
+    match @countable_inv (prod A B) (@prod_countable A B countableA countableB) n with
+    | Some (a,b) => (let '(n1,n2) := iso_b n in
+                    @countable_inv A countableA n1 = Some a /\
+                    @countable_inv B countableB n2 = Some b)
+    | None => (let '(n1,n2) := iso_b n in
+               @countable_inv A countableA n1 = None \/
+               @countable_inv B countableB n2 = None)
+    end.
+  Proof.
+    match_case; [intros [??] eqq1 | intros eqq1]
+    ; match_case; intros ?? eqq2.
+    - unfold countable_inv in eqq1.
+      match_destr_in eqq1.
+      destruct e as [[??] eqq3]; subst.
+      unfold proj1_sig in eqq1.
+      match_destr_in eqq1.
+      invcs eqq1.
+      apply (f_equal (@countable_inv _ (prod_countable A B))) in e.
+      repeat rewrite countable_inv_index in e.
+      invcs e.
+      unfold countable_index, prod_countable in eqq2.
+      rewrite iso_b_f in eqq2.
+      invcs eqq2.
+      repeat rewrite countable_inv_index.
+      tauto.
+    -  unfold countable_inv in eqq1.
+       match_destr_in eqq1.
+       case_eq (@countable_inv A countableA n0)
+       ; [intros ? eqq3 | intros eqq3]; [| eauto].
+       case_eq (@countable_inv B countableB n1)
+       ; [intros ? eqq4 | intros eqq4]; [| eauto].
+       elim n2.
+       exists (a,b).
+       unfold countable_index, prod_countable.
+       apply countable_inv_sound in eqq3.
+       apply countable_inv_sound in eqq4.
+       apply (f_equal (iso_f (Isomorphism := nat_pair_encoder))) in eqq2.
+       rewrite iso_f_b in eqq2.
+       now subst.
+  Qed.
+
   Program Definition prod_prob_mass_fun (A B:Type) {countableA:Countable A} {countableB:Countable B}
           (pmf1:prob_mass_fun A) (pmf2:prob_mass_fun B)
     : prob_mass_fun (A*B)
@@ -1301,20 +1343,18 @@ Section countable_products.
               | Some a => pmf2.(pmf_pmf) a
               | None => 0
               end) 1).
-    -
-      (* apply infinite_sum'_ext; intros. *)
-      (* match_case; [intros [??] eqq | intros eqq]. *)
-      (* + generalize (countable_inv_sound _ _ eqq); intros eqq2. *)
-      (*   subst. *)
-      (*   match_case; intros. *)
-        
-      (*   simpl. *)
-      
-      (* unfold countable_inv; simpl. *)
-      (* destruct (excluded_middle_informative (exists s : A * B, countable_index s = x)). *)
-      (* + admit. *)
-      (* +  *)
-      admit.
+    - apply infinite_sum'_ext; intros.
+      generalize (countable_prod_inv_some A B x)
+      ; intros HH.
+      match_destr.
+      + match_destr.
+        match_destr.
+        destruct HH as [HH1 HH2].
+        now rewrite HH1, HH2.
+      + match_destr.
+        destruct HH as [HH|HH]
+        ; rewrite HH
+        ; lra.
     - 
   Admitted.
 

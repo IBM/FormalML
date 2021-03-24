@@ -1070,3 +1070,17 @@ Proof.
     transitivity N; lia.
   - lia.
 Qed.
+
+Corollary infinite_sum'_pos_perm (g:nat->nat) (f:nat -> R) l:
+  FinFun.Bijective g ->
+  (forall x, 0 <= f x) ->
+  infinite_sum' f l ->
+  infinite_sum' (fun n => f (g n)) l.
+Proof.
+  intros.
+  eapply infinite_sum'_perm; eauto.
+  eexists.
+  eapply infinite_sum'_ext; try eapply H1.
+  intros.
+  rewrite Rabs_pos_eq; auto.
+Qed.
