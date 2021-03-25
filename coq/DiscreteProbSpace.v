@@ -371,35 +371,6 @@ Lemma lim_seq_series_of_pmf_disjoint_union collection :
           lra.
     Qed.
 
-    Lemma sum_f_R0_le (f g : nat -> R) n :
-      (forall (i:nat), (i<=n)%nat -> (f i) <= (g i)) ->
-      sum_f_R0 f n <= sum_f_R0 g n.
-    Proof.
-      intros.
-      induction n.
-      - unfold sum_f_R0.
-        simpl.
-        apply H.
-        lia.
-      - do 2 rewrite sum_f_R0_peel.
-        eapply Rle_trans.
-        + apply Rplus_le_compat_r.
-          apply IHn.
-          intros.
-          apply H.
-          lia.
-        + apply Rplus_le_compat_l.
-          apply H.
-          lia.
-    Qed.
-
-    Lemma sum_f_R0_nneg f N :
-      (forall n, (n<=N)%nat -> 0 <= f n) ->
-      0 <= sum_f_R0 f N.
-    Proof.
-      rewrite <- sum_n_Reals.
-      apply sum_n_nneg.
-    Qed.
 
     Lemma le_incr0 (f : nat -> R) :
       (forall n, f n <= f (S n)) ->
@@ -580,16 +551,6 @@ Lemma lim_seq_series_of_pmf_disjoint_union collection :
       now apply is_lub_sup_seq.
     Qed.
 
-   Lemma sum_f_R0_pos_incr f :
-      (forall i, 0 <= f i) ->
-      forall n : nat, sum_f_R0 f n <= sum_f_R0 f (S n).
-     Proof.
-       intros.
-       simpl.
-       rewrite <- Rplus_0_r at 1.
-       now apply Rplus_le_compat_l.
-   Qed.
-    
      Lemma one_ser_lub f :
        (forall i, 0 <= f i) ->
        Lim_seq (sum_f_R0 f) = Lub_Rbar (fun x => exists n, x = sum_f_R0 f n).
@@ -1355,7 +1316,21 @@ Section countable_products.
         destruct HH as [HH|HH]
         ; rewrite HH
         ; lra.
-    - 
+    - rewrite <- infinite_sum_infinite_sum'.
+      rewrite <- infinite_sum_is_lim_seq.
+      rewrite lim_seq_sup_seq_incr.
+      + unfold is_sup_seq.
+        split; intros.
+        * admit.
+        * admit.
+      + intros.
+        rewrite sum_f_R0_peel.
+        rewrite <- Rplus_0_r at 1.
+        apply Rplus_le_compat_l.
+        match_destr.
+        match_destr; [|lra].
+        match_destr; [|lra].
+        apply Rmult_le_pos; apply pmf_pmf_pos.
   Admitted.
 
   Fixpoint iter_prod (l:list Type) : Type

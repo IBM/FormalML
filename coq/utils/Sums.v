@@ -136,6 +136,46 @@ Section sum'.
         lia.
   Qed.
 
+    Lemma sum_f_R0_le (f g : nat -> R) n :
+      (forall (i:nat), (i<=n)%nat -> (f i) <= (g i)) ->
+      sum_f_R0 f n <= sum_f_R0 g n.
+    Proof.
+      intros.
+      induction n.
+      - unfold sum_f_R0.
+        simpl.
+        apply H.
+        lia.
+      - do 2 rewrite sum_f_R0_peel.
+        eapply Rle_trans.
+        + apply Rplus_le_compat_r.
+          apply IHn.
+          intros.
+          apply H.
+          lia.
+        + apply Rplus_le_compat_l.
+          apply H.
+          lia.
+    Qed.
+
+    Lemma sum_f_R0_nneg f N :
+      (forall n, (n<=N)%nat -> 0 <= f n) ->
+      0 <= sum_f_R0 f N.
+    Proof.
+      rewrite <- sum_n_Reals.
+      apply sum_n_nneg.
+    Qed.
+
+   Lemma sum_f_R0_pos_incr f :
+      (forall i, 0 <= f i) ->
+      forall n : nat, sum_f_R0 f n <= sum_f_R0 f (S n).
+     Proof.
+       intros.
+       simpl.
+       rewrite <- Rplus_0_r at 1.
+       now apply Rplus_le_compat_l.
+   Qed.
+
   Lemma sum_f_R0_split_on f n m:
     (S m < n)%nat ->
     sum_f_R0 f n =
