@@ -1280,6 +1280,175 @@ Section countable_products.
        now subst.
   Qed.
 
+  Lemma sum_n_n_pos_incr (f : nat -> nat -> R) :
+    (forall i j, 0 <= f i j) ->
+    forall n, sum_f_R0 (fun i => sum_f_R0 (fun j => f i j) n) n <=
+              sum_f_R0 (fun i => sum_f_R0 (fun j => f i j) (S n)) (S n).
+    intros.
+    simpl.
+    apply Rle_trans with (r2 := sum_f_R0 (fun i : nat => sum_f_R0 (fun j : nat => f i j) n + f i (S n)) n).
+    - apply sum_f_R0_le.
+      intros.
+      rewrite <- Rplus_0_r at 1.
+      now apply Rplus_le_compat_l.
+    - rewrite <- Rplus_0_r at 1.
+      apply Rplus_le_compat_l.
+      apply Rplus_le_le_0_compat; trivial.
+      now apply sum_f_R0_nneg.
+   Qed.
+
+  Lemma lim_sum_n_n_pos (f : nat -> nat -> R) :
+    (forall i j, 0 <= f i j) ->
+    ex_lim_seq (fun n => sum_f_R0 (fun i => sum_f_R0 (fun j => f i j) n) n).
+  Proof.
+    intros.
+    apply ex_lim_seq_incr.
+    now apply sum_n_n_pos_incr.
+   Qed.
+
+  Lemma lim_sum_n_n_pos_bounded (f : nat -> nat -> R) (C:R):
+    (forall i j, 0 <= f i j) ->
+    (forall n, sum_f_R0 (fun i => sum_f_R0 (fun j => f i j) n) n <= C) ->
+    ex_finite_lim_seq (fun n => sum_f_R0 (fun i => sum_f_R0 (fun j => f i j) n) n).
+  Proof.
+    intros.
+    apply ex_finite_lim_seq_incr with (M := C); trivial.
+    now apply sum_n_n_pos_incr.
+   Qed.
+
+  Lemma cauchy_lim_sum_n_n_pos_bounded (f : nat -> nat -> R) (C:R):
+    (forall i j, 0 <= f i j) ->
+    (forall n, sum_f_R0 (fun i => sum_f_R0 (fun j => f i j) n) n <= C) ->
+    ex_lim_seq_cauchy (fun n => sum_f_R0 (fun i => sum_f_R0 (fun j => f i j) n) n).
+  Proof.
+    intros.
+    rewrite <- ex_lim_seq_cauchy_corr.
+    now apply lim_sum_n_n_pos_bounded with (C := C).
+  Qed.
+
+  Definition double_sum (f : nat -> nat -> R) (n m : nat) :=
+     sum_f_R0 (fun i => sum_f_R0 (fun j => f i j) m) n.
+
+  Lemma double_sum_ge (f : nat -> nat -> R) (n1 n2 m1 m2 : nat) :
+    (forall n m, 0 <= f n m) ->
+    (n1 >= n2)%nat -> (m1 >= m2)%nat ->
+    double_sum f n1 m1 - double_sum f n2 m2 >= 0.
+  Proof.
+    intros.
+    apply Rge_minus.
+    unfold double_sum.
+    destruct (lt_dec n2 n1).
+    - rewrite (sum_f_R0_split _ n1 n2); trivial.
+      apply Rge_trans with (r2 := sum_f_R0 (fun i : nat => sum_f_R0 (fun j : nat => f i j) m1) n2).
+      + rewrite <- Rplus_0_r.
+        apply Rplus_ge_compat_l.
+        apply Rle_ge, sum_f_R0_nneg.
+        intros.
+        apply sum_f_R0_nneg.
+        intros; apply H.
+      + apply Rle_ge, sum_f_R0_le.
+        intros.
+        destruct (lt_dec m2 m1).
+        * rewrite (sum_f_R0_split _ m1 m2); trivial.
+          rewrite <- Rplus_0_r at 1.
+          apply Rplus_le_compat_l.
+          apply sum_f_R0_nneg.
+          intros; apply H.
+        * assert (m1 = m2) by lia; subst; lra.
+    - assert (n1 = n2) by lia; subst.
+      apply Rle_ge, sum_f_R0_le.
+      intros.
+      destruct (lt_dec m2 m1).
+      + rewrite (sum_f_R0_split _ m1 m2); trivial.
+        rewrite <- Rplus_0_r at 1.
+        apply Rplus_le_compat_l.
+        apply sum_f_R0_nneg.
+        intros; apply H.
+      + assert (m1 = m2) by lia; subst.
+        lra.
+   Qed.
+
+  Lemma double_sum_le (f : nat -> nat -> R) (n1 n2 m1 m2 : nat) :
+    (forall n m, 0 <= f n m) ->
+    (n1 <= n2)%nat -> (m1 <= m2)%nat ->
+    double_sum f n1 m1 - double_sum f n2 m2 <= 0.
+  Proof.
+    intros.
+    generalize (double_sum_ge f n2 n1 m2 m1 H); intros.
+    cut_to H2; try lia.
+    lra.
+  Qed.
+
+  Lemma lim_sum_n_m_cauchy (f : nat -> nat -> R) (l:R) (eps : posreal) :
+    (forall n m, 0 <= f n m) ->
+    is_lim_seq (fun n => double_sum f n n) l ->
+    exists (N:nat), forall (m n : nat), 
+        (N <= m)%nat -> (N <= n)%nat ->
+        Rabs (double_sum f m n - l) < eps.
+  Proof.
+    intros.
+    assert (ex_lim_seq_cauchy (fun n => double_sum f n n)).
+    rewrite <- ex_lim_seq_cauchy_corr.
+    unfold ex_finite_lim_seq.
+    now exists l.
+    rewrite <- is_lim_seq_spec in H0.
+    unfold is_lim_seq' in H0.
+    unfold ex_lim_seq_cauchy in H1.
+    assert (eps_half: 0 < eps/2).
+    assert (0 < eps) by apply cond_pos.
+    lra.
+    specialize (H0 (mkposreal _ eps_half)).
+    specialize (H1 (mkposreal _ eps_half)).
+    destruct H0 as [M H0].
+    destruct H1 as [N H1].
+    exists (max M N).
+    intros.
+    specialize (H1 n m).
+    cut_to H1; try lia.
+    assert (Rabs ((double_sum f m m) - (double_sum f m n)) + Rabs ((double_sum f m n) - (double_sum f n n)) =
+            Rabs ((double_sum f m m) - (double_sum f n n))).
+    destruct (ge_dec m n)%nat.
+    rewrite Rabs_right, Rabs_right, Rabs_right; try lra.
+    apply double_sum_ge; trivial; lia.
+    apply double_sum_ge; trivial; lia.
+    apply double_sum_ge; trivial; lia.    
+    rewrite Rabs_left1, Rabs_left1, Rabs_left1; try lra.
+    apply double_sum_le; trivial; lia.
+    apply double_sum_le; trivial; lia.
+    apply double_sum_le; trivial; lia.    
+    assert (Rabs ((double_sum f m n) - (double_sum f n n)) < mkposreal _ eps_half).
+    
+    rewrite Rabs_minus_sym in H1.
+    rewrite <- H4 in H1.
+    eapply Rle_lt_trans.
+    rewrite <- Rplus_0_l at 1.
+    apply Rplus_le_compat_r.
+    apply Rabs_pos.
+    apply H1.
+    generalize (Rabs_triang ((double_sum f m n) - (double_sum f n n))
+                            ((double_sum f n n) - l)); intros.
+    specialize (H0 n).
+    cut_to H0; try lia.
+    unfold Rminus in H6.
+    rewrite Rplus_assoc in H6.
+    rewrite <- Rplus_assoc with (r3 := -l) in H6.
+    rewrite Rplus_opp_l in H6.
+    rewrite Rplus_0_l in H6.
+    simpl in *.
+    unfold Rminus in *.
+    lra.
+  Qed.
+
+  Lemma lim_sum_n_m (f : nat -> nat -> R) (l:R) (eps : posreal) :
+    (forall n m, 0 <= f n m) ->
+    is_lim_seq (fun n => double_sum f n n) l ->
+    Lim_seq (sum_f_R0
+               (fun n1 =>
+                  Lim_seq
+                    (sum_f_R0 (fun n2 => f n1 n2)))) = l.
+  Proof.
+  Admitted.
+
   Program Definition prod_prob_mass_fun (A B:Type) {countableA:Countable A} {countableB:Countable B}
           (pmf1:prob_mass_fun A) (pmf2:prob_mass_fun B)
     : prob_mass_fun (A*B)
