@@ -276,6 +276,14 @@ Proof.
     lra.
   Qed.
 
+  Lemma sum_f_R0_mult_const f1 n c :
+    sum_f_R0 (fun x => c * f1 x) n = c * sum_f_R0 f1 n.
+  Proof.
+    induction n; simpl; [lra | ].
+    rewrite IHn.
+    lra.
+  Qed.
+
   Lemma sum_f_R0'_le f n :
     (forall n, (0 <= f n)) ->
     0 <= sum_f_R0' f n.
