@@ -1746,6 +1746,22 @@ Section countable_products.
      now apply (sup_seq_squeeze f g l).
    Qed.
 
+   Lemma pair_encode_contains_square (n: nat) :
+     exists (c : nat),
+     forall (n1 n2 : nat),
+       (n1 <= n)%nat -> (n2 <= n)%nat ->
+       (iso_f (Isomorphism:=nat_pair_encoder) (n1, n2) <= c)%nat.
+   Proof.
+     Admitted.
+
+   Lemma square_contains_pair_encode (c : nat) :
+     exists (n : nat),
+     forall (c1 : nat), (c1 <= c)%nat ->
+        let (n1, n2) := iso_b (Isomorphism:=nat_pair_encoder) c1 in
+        (max n1 n2 <= n)%nat.
+   Proof.
+    Admitted.
+
   Lemma prod_prob_mass_fun_sum_1  (A B:Type) 
         {countableA:Countable A} {countableB:Countable B}
         (pmf1:prob_mass_fun A) (pmf2:prob_mass_fun B) :
@@ -1785,15 +1801,23 @@ Section countable_products.
                   1 1 H H0); intros.
     replace (1 * 1) with (1) in H2 by lra.
     eapply (lim_seq_incr_squeeze _ _ 1 _ H1 H2).
-    - admit.
-    - admit.
+    - intros.
+      destruct (square_contains_pair_encode n) as [m1 ?].
+      exists m1.
+      unfold double_sum.
+      admit.
+    - intros.
+      destruct (pair_encode_contains_square n) as [m2 ?].
+      exists m2.
+      unfold double_sum.
+      admit.
     Unshelve.
     apply double_sum_square_incr.
     intros.
     apply Rmult_le_pos; match_destr; try lra; apply pmf_pmf_pos.
      Admitted.
 
-Program Definition prod_prob_mass_fun (A B:Type) {countableA:Countable A} {countableB:Countable B}
+  Program Definition prod_prob_mass_fun (A B:Type) {countableA:Countable A} {countableB:Countable B}
           (pmf1:prob_mass_fun A) (pmf2:prob_mass_fun B)
     : prob_mass_fun (A*B)
     := {|
