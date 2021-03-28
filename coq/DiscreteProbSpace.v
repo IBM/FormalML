@@ -1388,15 +1388,19 @@ Section countable_products.
   Proof.
     intros.
     assert (ex_lim_seq_cauchy (fun n => double_sum f n n)).
-    rewrite <- ex_lim_seq_cauchy_corr.
-    unfold ex_finite_lim_seq.
-    now exists l.
+    {
+      rewrite <- ex_lim_seq_cauchy_corr.
+      unfold ex_finite_lim_seq.
+      now exists l.
+    }
     rewrite <- is_lim_seq_spec in H0.
     unfold is_lim_seq' in H0.
     unfold ex_lim_seq_cauchy in H1.
     assert (eps_half: 0 < eps/2).
+    {
     assert (0 < eps) by apply cond_pos.
     lra.
+    }
     specialize (H0 (mkposreal _ eps_half)).
     specialize (H1 (mkposreal _ eps_half)).
     destruct H0 as [M H0].
@@ -1405,26 +1409,30 @@ Section countable_products.
     intros.
     specialize (H1 n m).
     cut_to H1; try lia.
-    assert (Rabs ((double_sum f m m) - (double_sum f m n)) + Rabs ((double_sum f m n) - (double_sum f n n)) =
+    assert (Rabs ((double_sum f m m) - (double_sum f m n)) + 
+            Rabs ((double_sum f m n) - (double_sum f n n)) =
             Rabs ((double_sum f m m) - (double_sum f n n))).
-    destruct (ge_dec m n)%nat.
-    rewrite Rabs_right, Rabs_right, Rabs_right; try lra.
-    apply double_sum_ge; trivial; lia.
-    apply double_sum_ge; trivial; lia.
-    apply double_sum_ge; trivial; lia.    
-    rewrite Rabs_left1, Rabs_left1, Rabs_left1; try lra.
-    apply double_sum_le; trivial; lia.
-    apply double_sum_le; trivial; lia.
-    apply double_sum_le; trivial; lia.    
+    {
+      destruct (ge_dec m n)%nat.
+      rewrite Rabs_right, Rabs_right, Rabs_right; try lra.
+      apply double_sum_ge; trivial; lia.
+      apply double_sum_ge; trivial; lia.
+      apply double_sum_ge; trivial; lia.    
+      rewrite Rabs_left1, Rabs_left1, Rabs_left1; try lra.
+      apply double_sum_le; trivial; lia.
+      apply double_sum_le; trivial; lia.
+      apply double_sum_le; trivial; lia.    
+    }
     assert (Rabs ((double_sum f m n) - (double_sum f n n)) < mkposreal _ eps_half).
-    
-    rewrite Rabs_minus_sym in H1.
-    rewrite <- H4 in H1.
-    eapply Rle_lt_trans.
-    rewrite <- Rplus_0_l at 1.
-    apply Rplus_le_compat_r.
-    apply Rabs_pos.
-    apply H1.
+    {
+      rewrite Rabs_minus_sym in H1.
+      rewrite <- H4 in H1.
+      eapply Rle_lt_trans.
+      - rewrite <- Rplus_0_l at 1.
+        apply Rplus_le_compat_r.
+        apply Rabs_pos.
+      - apply H1.
+    }
     generalize (Rabs_triang ((double_sum f m n) - (double_sum f n n))
                             ((double_sum f n n) - l)); intros.
     specialize (H0 n).
@@ -1439,17 +1447,261 @@ Section countable_products.
     lra.
   Qed.
 
-  Lemma lim_sum_n_m (f : nat -> nat -> R) (l:R) (eps : posreal) :
-    (forall n m, 0 <= f n m) ->
-    is_lim_seq (fun n => double_sum f n n) l ->
-    Lim_seq (sum_f_R0
-               (fun n1 =>
-                  Lim_seq
-                    (sum_f_R0 (fun n2 => f n1 n2)))) = l.
+  Lemma iterated_sum_product (f g : nat -> R) (a b : R) :
+    is_lim_seq (sum_f_R0 f) a ->
+    is_lim_seq (sum_f_R0 g) b ->
+    is_lim_seq (sum_f_R0
+                  (fun n1 =>
+                     Lim_seq
+                       (sum_f_R0 (fun n2 => (f n1)*(g n2))))) (a*b).
   Proof.
-  Admitted.
+    intros.
+    apply is_lim_seq_unique in H0.
+    apply is_lim_seq_ext with
+        (u := fun n => b * sum_f_R0 f n).
+    - intros.
+      rewrite sum_f_R0_ext with
+          (f1 := (fun n1 : nat => Lim_seq (sum_f_R0 (fun n2 : nat => f n1 * g n2))))
+          (f2 := fun n1 => (Lim_seq (sum_f_R0 g)) * (f n1)).
+      + rewrite sum_f_R0_mult_const.
+        now rewrite H0.
+      + intros.
+        rewrite Lim_seq_ext with (v := (fun n => (f x) * sum_f_R0 g n)).
+        * rewrite Lim_seq_scal_l.
+          rewrite H0.
+          simpl.
+          apply Rmult_comm.
+        * intros.
+          apply sum_f_R0_mult_const.
+    - replace (Finite (a * b)) with (Rbar_mult b a).
+      now apply is_lim_seq_scal_l.
+      simpl.
+      rewrite Rmult_comm.
+      reflexivity.
+  Qed.
 
-  Program Definition prod_prob_mass_fun (A B:Type) {countableA:Countable A} {countableB:Countable B}
+  Lemma Lim_seq_nneg_Rbar (f : nat -> R) :
+    (forall n, 0 <= f n) ->
+    Rbar_le 0 (Lim_seq (sum_f_R0 f)).
+  Proof.
+    intros.
+    apply Rbar_le_trans with (y := (sum_f_R0 f 0)).
+    simpl.
+    apply H.
+    apply Lim_seq_incr_one_le.
+    intros.
+    rewrite sum_f_R0_peel.
+    rewrite <- Rplus_0_r at 1.
+    now apply Rplus_le_compat_l.
+  Qed.
+
+  Lemma Lim_seq_nneg (f : nat -> R) :
+    (forall n, 0 <= f n) ->
+    0 <= Lim_seq (sum_f_R0 f).
+  Proof.
+    intros.
+    generalize (Lim_seq_nneg_Rbar f H); intros.
+    destruct (Lim_seq (sum_f_R0 f)).
+    apply H0.
+    simpl; lra.
+    simpl; lra.
+ Qed.
+
+  Lemma sum_lim_bound_Rbar (f : nat -> R) :
+    (forall n, 0 <= f n) ->
+    forall n, Rbar_le (sum_f_R0 f n) (Lim_seq (sum_f_R0 f)).
+  Proof.
+    intros.
+    rewrite <- Lim_seq_const.
+    apply Lim_seq_le_loc.
+    exists n; intros.
+    destruct (lt_dec n n0).
+    generalize (sum_f_R0_split f n0 n); intros.
+    rewrite H1; try lia.
+    rewrite <- Rplus_0_r at 1.
+    apply Rplus_le_compat_l.
+    apply sum_f_R0_nneg.
+    intros; apply H.
+    assert ( n = n0 ) by lia.
+    subst.
+    lra.
+  Qed.
+
+   Lemma sum_lim_bound (f : nat -> R) :
+    (forall n, 0 <= f n) ->
+    ex_finite_lim_seq (sum_f_R0 f) ->
+    forall n, sum_f_R0 f n <= Lim_seq (sum_f_R0 f).
+   Proof.
+     intros.
+     generalize (sum_lim_bound_Rbar f H n); intros.
+     unfold ex_finite_lim_seq in H0.
+     destruct H0 as [l H0].
+     apply is_lim_seq_unique in H0.
+     rewrite H0 in H1.
+     rewrite H0.
+     now simpl in H1.
+   Qed.
+
+  Lemma finite_double_sum_lim_bound (f : nat -> nat -> R) :
+    (forall n m, 0 <= f n m) ->
+    (forall n1, ex_finite_lim_seq (sum_f_R0 (fun n2 => f n1 n2))) ->
+    ex_finite_lim_seq (sum_f_R0
+                         (fun n1 =>
+                            Lim_seq
+                              (sum_f_R0 (fun n2 => f n1 n2)))) ->
+    forall n m, double_sum f n m <=
+                Lim_seq (sum_f_R0
+                           (fun n1 =>
+                              Lim_seq
+                                (sum_f_R0 (fun n2 => f n1 n2)))).
+  Proof.
+    intros.
+    unfold double_sum.
+    eapply Rle_trans.
+    unfold ex_finite_lim_seq in H1.
+    destruct H1 as [l H1].
+    apply is_lim_seq_unique in H1.
+    apply sum_f_R0_le.
+    intros.
+    now apply sum_lim_bound.
+    apply sum_lim_bound; trivial.
+    intros.
+    now apply Lim_seq_nneg.
+  Qed.
+
+  Lemma sum_product_square_bound (f g : nat -> R) (a b : R) :
+    (forall n, 0 <= f n) ->
+    (forall n, 0 <= g n) ->
+    is_lim_seq (sum_f_R0 f) a ->
+    is_lim_seq (sum_f_R0 g) b ->
+    forall n m, double_sum (fun i j => (f i)*(g j)) n m <= a*b.
+  Proof.
+    intros.
+    generalize (iterated_sum_product f g a b H1 H2); intros.
+    generalize (finite_double_sum_lim_bound (fun i j => (f i)*(g j))); intros.
+    cut_to H4.
+    apply is_lim_seq_unique in H3.
+    replace (a*b) with (real (Finite (a * b))).
+    rewrite <- H3.
+    apply H4.
+    reflexivity.
+    intros.
+    now apply Rmult_le_pos.
+    intros.
+    rewrite ex_finite_lim_seq_correct.
+    split.
+    apply ex_lim_seq_ext with (u := (fun n => (f n1) * (sum_f_R0 g n))).
+    intros.
+    now rewrite sum_f_R0_mult_const.
+    apply ex_lim_seq_scal_l.
+    now exists b.
+    rewrite Lim_seq_ext with (v := (fun n => (f n1) * (sum_f_R0 g n))).
+    rewrite Lim_seq_scal_l.
+    apply is_lim_seq_unique in H2.
+    rewrite H2.
+    simpl.
+    unfold is_finite.
+    reflexivity.
+    intros.
+    now rewrite sum_f_R0_mult_const.
+    unfold ex_finite_lim_seq.
+    now exists (a*b).
+  Qed.
+
+  Lemma Rplus_le_pos_l (f g : R) :
+    0 <= g ->
+    f <= f + g.
+  Proof.
+    intros.
+    rewrite <- Rplus_0_r at 1.
+    now apply Rplus_le_compat_l.
+  Qed.
+
+  Lemma double_sum_Sn (f : nat -> nat -> R) (n m : nat) :
+    double_sum f n (S m) =
+    double_sum f n m + sum_f_R0 (fun i => f i (S m)) n.
+  Proof.
+    unfold double_sum.
+    assert (forall i, sum_f_R0 (fun j => f i j) (S m) =
+                      sum_f_R0 (fun j => f i j) m + (f i (S m))).
+    intros.
+    apply sum_f_R0_peel.
+    rewrite sum_f_R0_ext with 
+        (f2 := fun i =>  sum_f_R0 (fun j : nat => f i j) m + f i (S m)).
+    now rewrite sum_plus.
+    intros.
+    apply sum_f_R0_peel.
+  Qed.
+
+  Lemma double_sum_square_incr (f : nat -> nat -> R) :
+    (forall n m, 0 <= f n m) ->
+    forall n : nat,
+      double_sum f n n <= double_sum f (S n) (S n).
+  Proof.
+    unfold double_sum.
+    intros.
+    rewrite sum_f_R0_peel.
+    generalize (double_sum_Sn f n n); intros.
+    unfold double_sum in H0.
+    rewrite H0.
+    rewrite Rplus_assoc.
+    apply Rplus_le_pos_l.
+    apply Rplus_le_le_0_compat.
+    apply sum_f_R0_nneg.
+    intros; apply H.
+    apply sum_f_R0_nneg.
+    intros; apply H.
+  Qed.
+
+  Lemma double_sum_prod (f g : nat -> R) (n m : nat) :
+    double_sum (fun i j => (f i)*(g j)) n m =
+    (sum_f_R0 f n) * (sum_f_R0 g m).
+    Proof.
+      unfold double_sum.
+      rewrite sum_f_R0_ext with
+          (f2 := fun i => (sum_f_R0 g m) * (f i)).
+      rewrite sum_f_R0_mult_const.
+      apply Rmult_comm.
+      intros.
+      rewrite sum_f_R0_mult_const.
+      apply Rmult_comm.
+    Qed.
+
+  Lemma lim_sum_product_square (f g : nat -> R) (a b : R) :
+    is_lim_seq (sum_f_R0 f) a ->
+    is_lim_seq (sum_f_R0 g) b ->
+    is_lim_seq (fun n => double_sum (fun i j => (f i)*(g j)) n n) (a*b).
+  Proof.
+    intros.
+    apply is_lim_seq_ext with
+        (u := fun n => (sum_f_R0 f n) * (sum_f_R0 g n)).
+    intro; symmetry.
+    apply double_sum_prod.
+    apply is_lim_seq_mult with (l1 := a) (l2 := b); trivial.
+    unfold is_Rbar_mult.
+    now simpl.
+  Qed.
+  
+  Lemma prod_prob_mass_fun_sum_1  (A B:Type) 
+        {countableA:Countable A} {countableB:Countable B}
+        (pmf1:prob_mass_fun A) (pmf2:prob_mass_fun B) :
+  is_lim_seq
+    (fun i : nat =>
+     sum_f_R0
+       (fun n : nat =>
+        let (n1, n2) := iso_b  (Isomorphism:=nat_pair_encoder) n in
+        match countable_inv n1 with
+        | Some a => pmf_pmf pmf1 a
+        | None => 0
+        end *
+        match countable_inv n2 with
+        | Some a => pmf_pmf pmf2 a
+        | None => 0
+        end) i) 1.
+   Proof.
+     Admitted.
+
+Program Definition prod_prob_mass_fun (A B:Type) {countableA:Countable A} {countableB:Countable B}
           (pmf1:prob_mass_fun A) (pmf2:prob_mass_fun B)
     : prob_mass_fun (A*B)
     := {|
@@ -1487,20 +1739,8 @@ Section countable_products.
         ; lra.
     - rewrite <- infinite_sum_infinite_sum'.
       rewrite <- infinite_sum_is_lim_seq.
-      rewrite lim_seq_sup_seq_incr.
-      + unfold is_sup_seq.
-        split; intros.
-        * admit.
-        * admit.
-      + intros.
-        rewrite sum_f_R0_peel.
-        rewrite <- Rplus_0_r at 1.
-        apply Rplus_le_compat_l.
-        match_destr.
-        match_destr; [|lra].
-        match_destr; [|lra].
-        apply Rmult_le_pos; apply pmf_pmf_pos.
-  Admitted.
+      apply prod_prob_mass_fun_sum_1.
+  Qed.
 
   Fixpoint iter_prod (l:list Type) : Type
     := match l with
