@@ -1681,7 +1681,71 @@ Section countable_products.
     unfold is_Rbar_mult.
     now simpl.
   Qed.
-  
+
+  Lemma prod_prob_mass_fun_sum_incr (A B:Type) 
+        {countableA:Countable A} {countableB:Countable B}
+        (pmf1:prob_mass_fun A) (pmf2:prob_mass_fun B) :
+     forall n : nat,
+  sum_f_R0
+    (fun n0 : nat =>
+     let (n1, n2) := iso_b (Isomorphism:=nat_pair_encoder) n0 in
+     match countable_inv n1 with
+     | Some a => pmf_pmf pmf1 a
+     | None => 0
+     end * match countable_inv n2 with
+           | Some a => pmf_pmf pmf2 a
+           | None => 0
+           end) n <=
+  sum_f_R0
+    (fun n0 : nat =>
+     let (n1, n2) := iso_b (Isomorphism:=nat_pair_encoder) n0 in
+     match countable_inv n1 with
+     | Some a => pmf_pmf pmf1 a
+     | None => 0
+     end * match countable_inv n2 with
+           | Some a => pmf_pmf pmf2 a
+           | None => 0
+           end) (S n).
+    Proof.
+      intros.
+      rewrite sum_f_R0_peel.
+      apply Rplus_le_pos_l; match_destr.
+      apply Rmult_le_pos; match_destr; try lra; apply pmf_pmf_pos.
+   Qed.
+
+    Lemma sup_seq_squeeze (f g : nat -> R) (l:R) :
+      is_sup_seq f l ->
+      (forall n, exists m1, g n <= f m1) ->
+      (forall n, exists m2, f n <= g m2) ->
+      is_sup_seq g l.
+    Proof.
+      unfold is_sup_seq in *.
+      simpl in *; intros.
+      destruct (H eps) as [? [N ?]].
+      split.
+      - intros.
+        destruct (H0 n) as [m1 ?].
+        specialize (H2 m1).
+        lra.
+      - destruct (H1 N) as [m2 ?].
+        exists m2.
+        lra.
+    Qed.
+
+    Lemma lim_seq_incr_squeeze (f g : nat -> R) (l:R) :
+      (forall n, f n <= f (S n)) ->
+      (forall n, g n <= g (S n)) ->
+      is_lim_seq f l ->
+      (forall n, exists m1, g n <= f m1) ->
+      (forall n, exists m2, f n <= g m2) ->
+      is_lim_seq g l.
+   Proof.
+     intros.
+     apply lim_seq_sup_seq_incr in H1; trivial.
+     apply lim_seq_sup_seq_incr; trivial.
+     now apply (sup_seq_squeeze f g l).
+   Qed.
+
   Lemma prod_prob_mass_fun_sum_1  (A B:Type) 
         {countableA:Countable A} {countableB:Countable B}
         (pmf1:prob_mass_fun A) (pmf2:prob_mass_fun B) :
@@ -1689,7 +1753,7 @@ Section countable_products.
     (fun i : nat =>
      sum_f_R0
        (fun n : nat =>
-        let (n1, n2) := iso_b  (Isomorphism:=nat_pair_encoder) n in
+        let (n1, n2) := iso_b (Isomorphism:=nat_pair_encoder) n in
         match countable_inv n1 with
         | Some a => pmf_pmf pmf1 a
         | None => 0
@@ -1698,7 +1762,35 @@ Section countable_products.
         | Some a => pmf_pmf pmf2 a
         | None => 0
         end) i) 1.
-   Proof.
+  Proof.
+    generalize (pmf_pmf_one pmf1); intros.
+    unfold countable_sum in H.
+    rewrite <- infinite_sum_infinite_sum' in H.
+    rewrite <- infinite_sum_is_lim_seq in H.
+    generalize (pmf_pmf_one pmf2); intros.    
+    unfold countable_sum in H0.
+    rewrite <- infinite_sum_infinite_sum' in H0.
+    rewrite <- infinite_sum_is_lim_seq in H0.
+    
+    generalize (prod_prob_mass_fun_sum_incr A B pmf1 pmf2); intros.
+    generalize (lim_sum_product_square 
+                  (fun n1 => match countable_inv n1 with
+                             | Some a => pmf_pmf pmf1 a
+                             | None => 0
+                             end)
+                  (fun n2 => match countable_inv n2 with
+                             | Some a => pmf_pmf pmf2 a
+                             | None => 0
+                             end)
+                  1 1 H H0); intros.
+    replace (1 * 1) with (1) in H2 by lra.
+    eapply (lim_seq_incr_squeeze _ _ 1 _ H1 H2).
+    - admit.
+    - admit.
+    Unshelve.
+    apply double_sum_square_incr.
+    intros.
+    apply Rmult_le_pos; match_destr; try lra; apply pmf_pmf_pos.
      Admitted.
 
 Program Definition prod_prob_mass_fun (A B:Type) {countableA:Countable A} {countableB:Countable B}
