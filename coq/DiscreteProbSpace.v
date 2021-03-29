@@ -1746,7 +1746,6 @@ Section countable_products.
      now apply (sup_seq_squeeze f g l).
    Qed.
 
-
    Lemma pair_encode_contains_square (n: nat) :
      exists (c : nat),
      forall (n1 n2 : nat),
@@ -1762,18 +1761,9 @@ Section countable_products.
                    (map
                       (iso_f (Isomorphism:=nat_pair_encoder))
                       (list_prod (seq 0 (S n)) (seq 0 (S n))))); intros.
-     rewrite Forall_forall in H1.
-     apply H1.
+     rewrite Forall_forall in H1; apply H1.
      apply in_map.
-     apply in_prod.
-     rewrite in_seq; lia.
-     rewrite in_seq; lia.     
-   Qed.
-
-   Lemma map_nil_nil {A B : Type} (f : A -> B) :
-     map f nil = nil.
-   Proof.
-     now simpl.
+     apply in_prod; rewrite in_seq; lia.
    Qed.
 
    Lemma square_contains_pair_encode (c : nat) :
@@ -1804,12 +1794,11 @@ Section countable_products.
          rewrite map_app, list_max_app.
          apply Nat.le_max_l.
        + assert (c1 = S c) by lia.
-         rewrite seq_S.
-         rewrite map_app, list_max_app.
+         rewrite seq_S, map_app, list_max_app.
          rewrite Nat.max_le_iff; right.
          replace (0 + S c)%nat with (S c) by lia.
          rewrite H1 in H0.
-         rewrite map_cons, map_nil_nil.
+         rewrite map_cons.
          rewrite H0.
          simpl.
          apply Nat.le_max_l.         
