@@ -1804,6 +1804,39 @@ Section countable_products.
          apply Nat.le_max_l.         
    Qed.
 
+   Lemma iso_le_double (f g : nat -> R) :
+     (forall n, 0 <= f n) ->
+     (forall n, 0 <= g n) ->
+     forall n,
+     exists m1 : nat,
+       sum_f_R0
+         (fun n0 : nat =>
+            let (n1, n2) := iso_b (Isomorphism:=nat_pair_encoder) n0 in 
+            (f n1)*(g n2)) n <=
+    double_sum
+      (fun i j : nat => (f i)*(g j)) m1 m1.
+  Proof.
+    intros.
+    destruct (pair_encode_contains_square n) as [m1 ?].
+    exists m1.
+  Admitted.
+
+  Lemma double_le_iso  (f g : nat -> R) :
+     (forall n, 0 <= f n) ->
+     (forall n, 0 <= g n) ->
+    forall n,
+    exists m2 : nat,
+      double_sum (fun i j : nat => (f i) * (g j)) n n <=
+      sum_f_R0
+        (fun n0 : nat =>
+           let (n1, n2) := iso_b (Isomorphism:=nat_pair_encoder) n0 in 
+           (f n1) * (g n2)) m2.
+  Proof.
+    intros.
+    destruct (square_contains_pair_encode n) as [m2 ?].
+    exists m2.
+    Admitted.
+
   Lemma prod_prob_mass_fun_sum_1  (A B:Type) 
         {countableA:Countable A} {countableB:Countable B}
         (pmf1:prob_mass_fun A) (pmf2:prob_mass_fun B) :
@@ -1843,21 +1876,17 @@ Section countable_products.
                   1 1 H H0); intros.
     replace (1 * 1) with (1) in H2 by lra.
     eapply (lim_seq_incr_squeeze _ _ 1 _ H1 H2).
-    - intros.
-      destruct (square_contains_pair_encode n) as [m1 ?].
-      exists m1.
-      unfold double_sum.
-      admit.
-    - intros.
-      destruct (pair_encode_contains_square n) as [m2 ?].
-      exists m2.
-      unfold double_sum.
-      admit.
+    - apply iso_le_double.
+      intro; match_destr; try lra; apply pmf_pmf_pos.
+      intro; match_destr; try lra; apply pmf_pmf_pos.      
+    - apply double_le_iso.
+      intro; match_destr; try lra; apply pmf_pmf_pos.
+      intro; match_destr; try lra; apply pmf_pmf_pos.      
     Unshelve.
     apply double_sum_square_incr.
     intros.
     apply Rmult_le_pos; match_destr; try lra; apply pmf_pmf_pos.
-     Admitted.
+  Qed.
 
   Program Definition prod_prob_mass_fun (A B:Type) {countableA:Countable A} {countableB:Countable B}
           (pmf1:prob_mass_fun A) (pmf2:prob_mass_fun B)
