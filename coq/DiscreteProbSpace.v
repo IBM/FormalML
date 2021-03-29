@@ -1766,6 +1766,12 @@ Section countable_products.
      apply in_prod; rewrite in_seq; lia.
    Qed.
 
+   Lemma pair_encode_contains_square2 (n: nat) :
+     exists m2, 
+       incl (list_prod (seq 0 (S n)) (seq 0 (S n))) (map iso_b (seq 0 (S m2))).
+   Proof.
+     Admitted.
+
    Lemma square_contains_pair_encode (c : nat) :
      exists (n : nat),
      forall (c1 : nat), (c1 <= c)%nat ->
@@ -1804,7 +1810,60 @@ Section countable_products.
          apply Nat.le_max_l.         
    Qed.
 
-   Lemma iso_le_double (f g : nat -> R) :
+   Lemma square_contains_pair_encode2 (n : nat) :
+     exists m1,
+       incl (map iso_b (seq 0 (S n))) (list_prod (seq 0 (S m1)) (seq 0 (S m1))).
+   Proof.
+     Admitted.
+
+   Lemma list_sum_nest_prod (f : nat -> nat -> R ) (n m : nat) :
+     list_sum
+       (map (fun i : nat => list_sum (map (fun j : nat => f i j) (seq 0 m)))
+            (seq 0 n)) =
+     list_sum (map (fun '(a, b) => f a b) (list_prod (seq 0 m) (seq 0 n))).
+   Proof.
+     induction n.
+     - simpl.
+       rewrite list_prod_nil_r.
+       now simpl.
+   Admitted.
+   
+   Lemma double_sum_list_sum (f : nat -> nat -> R ) (n m : nat) :
+     double_sum f n m =
+     list_sum (map (fun '(a, b) => f a b) (list_prod (seq 0 (S m)) (seq 0 (S n)))).
+   Proof.
+     unfold double_sum.
+     rewrite sum_f_R0_ext with
+         (f2 := (fun i => list_sum (map (fun j => f i j) (seq 0 (S m))))).
+     rewrite sum_f_R0_sum_f_R0'.
+     rewrite sum_f_R0'_list_sum.
+     apply list_sum_nest_prod.
+     intros.
+     rewrite sum_f_R0_sum_f_R0'.
+     now rewrite sum_f_R0'_list_sum.
+   Qed.
+
+   Lemma sum_f_R0_pairs_list_sum (f : nat -> nat -> R) (m : nat) :
+      sum_f_R0
+        (fun n0 : nat =>
+           let (n1, n2) := iso_b (Isomorphism:=nat_pair_encoder) n0 in 
+           (f n1 n2)) m =
+      list_sum (map (fun '(a, b) => f a b)
+                    (map (iso_b (Isomorphism:=nat_pair_encoder)) (seq 0 (S m)))).
+   Proof.
+     induction m.
+     - simpl; lra.
+     - rewrite sum_f_R0_peel.
+       rewrite IHm.
+       rewrite seq_S with (len := (S m)).
+       do 2 rewrite map_app.
+       rewrite list_sum_cat.
+       apply Rplus_eq_compat_l.
+       simpl.
+       now rewrite Rplus_0_r.
+   Qed.
+
+   Lemma iso_sum_le_double_sum (f g : nat -> R) :
      (forall n, 0 <= f n) ->
      (forall n, 0 <= g n) ->
      forall n,
@@ -1817,12 +1876,36 @@ Section countable_products.
       (fun i j : nat => (f i)*(g j)) m1 m1.
   Proof.
     intros.
-    destruct (square_contains_pair_encode n) as [m1 ?].
+    destruct (square_contains_pair_encode2 n) as [m1 ?].
     exists m1.
-    unfold double_sum.
+    rewrite double_sum_list_sum.
+    rewrite sum_f_R0_pairs_list_sum.
+    generalize (@incl_NoDup_sublist_perm (nat*nat) _  (map iso_b (seq 0 (S n)))
+                                         (list_prod (seq 0 (S m1)) (seq 0 (S m1))))
+    ; intros.
+    cut_to H2; trivial.
+    destruct H2 as [l [? ?]].
+    apply Rle_trans with (r2 :=  list_sum (map (fun '(a, b) => f a * g b) l)).
+    right.
+    apply list_sum_perm_eq.
+    now apply Permutation_map.
+    apply list_sum_pos_sublist_le.
+    intros.
+    apply in_map_iff in H4.
+    destruct H4 as [x0 [? ?]].
+    rewrite <- H4.
+    match_destr.
+    now apply Rmult_le_pos.
+    now apply sublist_map.
   Admitted.
 
-  Lemma double_le_iso  (f g : nat -> R) :
+  Lemma NoDup_prod (l1 l2 : list nat) : 
+    NoDup l1 -> NoDup l2 -> NoDup (list_prod l1 l2).
+  Proof.
+    intros.
+  Admitted.
+
+  Lemma double_sum_le_iso_sum  (f g : nat -> R) :
      (forall n, 0 <= f n) ->
      (forall n, 0 <= g n) ->
     forall n,
@@ -1834,10 +1917,29 @@ Section countable_products.
            (f n1) * (g n2)) m2.
   Proof.
     intros.
-    destruct (pair_encode_contains_square n) as [m2 ?].
+    destruct (pair_encode_contains_square2 n) as [m2 ?].
     exists m2.
-    unfold double_sum.
-    Admitted.
+    rewrite double_sum_list_sum.    
+    rewrite sum_f_R0_pairs_list_sum.
+    generalize (@incl_NoDup_sublist_perm (nat*nat) _  
+                                     (list_prod (seq 0 (S n)) (seq 0 (S n)))
+                                     (map iso_b (seq 0 (S m2)))); intros.
+    cut_to H2; trivial.
+    destruct H2 as [l [? ?]].
+    apply Rle_trans with (r2 :=  list_sum (map (fun '(a, b) => f a * g b) l)).
+    right.
+    apply list_sum_perm_eq.
+    now apply Permutation_map.
+    apply list_sum_pos_sublist_le.
+    intros.
+    apply in_map_iff in H4.
+    destruct H4 as [x0 [? ?]].
+    rewrite <- H4.
+    match_destr.
+    now apply Rmult_le_pos.
+    now apply sublist_map.
+    apply NoDup_prod; apply seq_NoDup.
+  Qed.
 
   Lemma prod_prob_mass_fun_sum_1  (A B:Type) 
         {countableA:Countable A} {countableB:Countable B}
@@ -1878,10 +1980,10 @@ Section countable_products.
                   1 1 H H0); intros.
     replace (1 * 1) with (1) in H2 by lra.
     eapply (lim_seq_incr_squeeze _ _ 1 _ H1 H2).
-    - apply iso_le_double.
+    - apply iso_sum_le_double_sum.
       intro; match_destr; try lra; apply pmf_pmf_pos.
       intro; match_destr; try lra; apply pmf_pmf_pos.      
-    - apply double_le_iso.
+    - apply double_sum_le_iso_sum.
       intro; match_destr; try lra; apply pmf_pmf_pos.
       intro; match_destr; try lra; apply pmf_pmf_pos.      
     Unshelve.
