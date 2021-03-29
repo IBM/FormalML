@@ -1770,7 +1770,28 @@ Section countable_products.
      exists m2, 
        incl (list_prod (seq 0 (S n)) (seq 0 (S n))) (map iso_b (seq 0 (S m2))).
    Proof.
-     Admitted.
+     generalize (pair_encode_contains_square n); intros.
+     destruct H.
+     exists x.
+     apply incl_Forall_in_iff.
+     rewrite Forall_forall.
+     intros.
+     destruct x0.
+     apply in_prod_iff in H0.
+     destruct H0.
+     apply in_seq in H0.
+     apply in_seq in H1.
+     assert (n0 <= n)%nat by lia.
+     assert (n1 <= n)%nat by lia.
+     specialize (H n0 n1 H2 H3).
+     assert (In (iso_f  (n0, n1)) (seq 0 (S x))).
+     apply in_seq; lia.
+     apply in_map with (f := iso_b (Isomorphism:=nat_pair_encoder)) in H4.
+     assert (iso_b (iso_f (n0, n1)) = (n0, n1)).
+     now rewrite iso_b_f.
+     rewrite <- H5.
+     apply H4.
+   Qed.
 
    Lemma square_contains_pair_encode (c : nat) :
      exists (n : nat),
@@ -1814,7 +1835,31 @@ Section countable_products.
      exists m1,
        incl (map iso_b (seq 0 (S n))) (list_prod (seq 0 (S m1)) (seq 0 (S m1))).
    Proof.
-     Admitted.
+     generalize (square_contains_pair_encode n); intros.
+     destruct H.
+     exists x.
+     apply incl_Forall_in_iff.
+     rewrite Forall_forall.
+     intros.
+     specialize (H (iso_f x0)).
+     destruct x0 as (x1, x2).
+     cut_to H.
+     apply in_map_iff in H0.
+     destruct H0 as [? [? ?]].
+     apply in_prod_iff.
+     generalize (iso_b_f (x1, x2)); intros.
+     rewrite H2 in H.
+     split.
+     apply in_seq; lia.
+     apply in_seq; lia.
+     apply in_map with (f := iso_f) in H0.
+     replace (map iso_f (map iso_b (seq 0 (S n)))) with (seq 0 (S n)) in H0.
+     apply in_seq in H0; lia.
+     rewrite map_map.
+     rewrite map_ext with (g := fun u => u).
+     now rewrite map_id.
+     apply iso_f_b.
+   Qed.
 
    Lemma list_sum_nest_prod (f : nat -> nat -> R ) (n m : nat) :
      list_sum
