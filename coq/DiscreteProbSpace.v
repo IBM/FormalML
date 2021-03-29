@@ -1817,8 +1817,9 @@ Section countable_products.
       (fun i j : nat => (f i)*(g j)) m1 m1.
   Proof.
     intros.
-    destruct (pair_encode_contains_square n) as [m1 ?].
+    destruct (square_contains_pair_encode n) as [m1 ?].
     exists m1.
+    unfold double_sum.
   Admitted.
 
   Lemma double_le_iso  (f g : nat -> R) :
@@ -1833,8 +1834,9 @@ Section countable_products.
            (f n1) * (g n2)) m2.
   Proof.
     intros.
-    destruct (square_contains_pair_encode n) as [m2 ?].
+    destruct (pair_encode_contains_square n) as [m2 ?].
     exists m2.
+    unfold double_sum.
     Admitted.
 
   Lemma prod_prob_mass_fun_sum_1  (A B:Type) 
