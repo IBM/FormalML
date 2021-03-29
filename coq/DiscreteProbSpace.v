@@ -1955,7 +1955,26 @@ Section countable_products.
     NoDup l1 -> NoDup l2 -> NoDup (list_prod l1 l2).
   Proof.
     intros.
-  Admitted.
+    induction l1.
+    - simpl.
+      apply NoDup_nil.
+    - simpl.
+      apply NoDup_cons_iff in H.
+      destruct H.
+      cut_to IHl1; trivial.
+      apply NoDup_app; trivial.
+      + unfold disjoint.
+        intros.
+        apply in_map_iff in H2.
+        destruct H2 as [? [? ?]].
+        rewrite <- H2 in H3.
+        apply in_prod_iff in H3.
+        tauto.
+      + apply Injective_map_NoDup; trivial.
+        unfold Injective.
+        intros.
+        now inversion H2.
+  Qed.
 
   Lemma double_sum_le_iso_sum  (f g : nat -> R) :
      (forall n, 0 <= f n) ->
