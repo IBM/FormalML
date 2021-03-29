@@ -1942,7 +1942,14 @@ Section countable_products.
     match_destr.
     now apply Rmult_le_pos.
     now apply sublist_map.
-  Admitted.
+    apply NoDup_map_inv with (f := iso_f).
+    replace (map iso_f (map iso_b (seq 0 (S n)))) with (seq 0 (S n)).
+    apply seq_NoDup.
+    rewrite map_map.
+    rewrite map_ext with (g := fun u => u).
+     now rewrite map_id.
+     apply iso_f_b.
+  Qed.
 
   Lemma NoDup_prod (l1 l2 : list nat) : 
     NoDup l1 -> NoDup l2 -> NoDup (list_prod l1 l2).
