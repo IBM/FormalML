@@ -2,6 +2,7 @@ Require Import List Permutation EquivDec Program.
 Require Import RelationClasses Morphisms.
 Require Import Lia Lra Rbase.
 Require Import Relation_Definitions Sorted.
+Require FinFun.
 
 Require Import LibUtils BasicUtils.
 
@@ -1634,7 +1635,7 @@ Section equivlist.
   Lemma list_prod_snd_equiv {A B} (a:list A) (b:list B) : a <> nil -> equivlist (map snd (list_prod a b)) b.
   Proof.
     intros.
-    rewrite ListAdd.list_prod_swap.
+    rewrite list_prod_swap.
     rewrite map_map; simpl.
     rewrite <- (list_prod_fst_equiv b a) at 2 by trivial.
     reflexivity.
@@ -1955,25 +1956,49 @@ Proof.
 Qed.
 
 
-    Lemma NoDup_list_max_count l :
-      NoDup l ->
-      (length l <= S (list_max l))%nat.
-    Proof.
-      intros nd.
-      assert (lincl:incl l (seq 0 (S (list_max l)))).
-      {
-        intros ??.
-        apply in_seq.
-        split; [lia| ].
-        simpl.
-        generalize (list_max_upper l).
-        rewrite Forall_forall.
-        intros HH.
-        specialize (HH _ H).
-        lia.
-      } 
-      
-      generalize (NoDup_incl_length nd lincl)
-      ; intros HH.
-      now rewrite seq_length in HH.
-    Qed.
+Lemma NoDup_list_max_count l :
+  NoDup l ->
+  (length l <= S (list_max l))%nat.
+Proof.
+  intros nd.
+  assert (lincl:incl l (seq 0 (S (list_max l)))).
+  {
+    intros ??.
+    apply in_seq.
+    split; [lia| ].
+    simpl.
+    generalize (list_max_upper l).
+    rewrite Forall_forall.
+    intros HH.
+    specialize (HH _ H).
+    lia.
+  } 
+  
+  generalize (NoDup_incl_length nd lincl)
+  ; intros HH.
+  now rewrite seq_length in HH.
+Qed.
+
+Lemma NoDup_prod {A B} {decA:EqDec A eq} {decB:EqDec B eq} (l1 :list A) (l2 : list B) : 
+  NoDup l1 -> NoDup l2 -> NoDup (list_prod l1 l2).
+Proof.
+  intros.
+  induction l1.
+  - simpl.
+    apply NoDup_nil.
+  - simpl.
+    apply NoDup_cons_iff in H.
+    destruct H.
+    cut_to IHl1; trivial.
+    apply NoDup_app; trivial.
+    + unfold disjoint; intros.
+      apply in_map_iff in H2.
+      destruct H2 as [? [? ?]].
+      rewrite <- H2 in H3.
+      apply in_prod_iff in H3.
+      tauto.
+    + apply FinFun.Injective_map_NoDup; trivial.
+      unfold FinFun.Injective; intros.
+      now inversion H2.
+Qed.
+
