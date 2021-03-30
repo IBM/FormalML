@@ -575,7 +575,6 @@ Lemma lim_seq_series_of_pmf_disjoint_union collection :
       Rbar_le 0 (Lub_Rbar (fun x => exists n, x = f n)).
     Proof.
       intros.
-      Search Lub_Rbar.
       unfold Lub_Rbar.
       destruct (ex_lub_Rbar (fun x : R => exists n : nat, x = f n)).
       unfold proj1_sig.
