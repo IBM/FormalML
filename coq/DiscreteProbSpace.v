@@ -600,25 +600,6 @@ Lemma lim_seq_series_of_pmf_disjoint_union collection :
       simpl; lra.
     Qed.
 
-    Lemma Lub_Rbar_lim0 (g : nat -> R) (b : Rbar) :
-      (forall x : R,
-          (exists n : nat, x = g n) -> Rbar_le x b) ->
-      Rbar_le
-        (Lub_Rbar (fun x2 : R => exists n0 : nat, x2 = g n0))
-        b.
-    Proof.
-      intros.
-      unfold Lub_Rbar.
-      destruct (ex_lub_Rbar (fun x2 : R => exists n0 : nat, x2 = g n0)).
-      unfold proj1_sig.
-      unfold is_lub_Rbar in i.
-      destruct i.
-      unfold is_ub_Rbar in *.
-      apply H1.
-      intros.
-      now apply H.
-   Qed.
-
     Lemma Sup_seq_plus (f g : nat -> R) :
       is_finite (Sup_seq f) ->
       is_finite (Sup_seq g) ->
@@ -810,14 +791,6 @@ Lemma lim_seq_series_of_pmf_disjoint_union collection :
         now exists 0%nat.
     Qed.
     
-  Lemma Rplus_le_pos_l (f g : R) :
-    0 <= g ->
-    f <= f + g.
-  Proof.
-    intros.
-    rewrite <- Rplus_0_r at 1.
-    now apply Rplus_le_compat_l.
-  Qed.
 
     Lemma double_ser_lub f :
       (forall i j, 0 <= f i j) ->
@@ -1473,7 +1446,7 @@ Section countable_products.
       reflexivity.
   Qed.
 
-  Lemma Lim_seq_nneg_Rbar (f : nat -> R) :
+  Lemma Lim_seq_sum_f_nneg_Rbar (f : nat -> R) :
     (forall n, 0 <= f n) ->
     Rbar_le 0 (Lim_seq (sum_f_R0 f)).
   Proof.
@@ -1487,12 +1460,12 @@ Section countable_products.
     now apply Rplus_le_pos_l.
   Qed.
 
-  Lemma Lim_seq_nneg (f : nat -> R) :
+  Lemma Lim_seq_sum_f_nneg (f : nat -> R) :
     (forall n, 0 <= f n) ->
     0 <= Lim_seq (sum_f_R0 f).
   Proof.
     intros.
-    generalize (Lim_seq_nneg_Rbar f H); intros.
+    generalize (Lim_seq_sum_f_nneg_Rbar f H); intros.
     destruct (Lim_seq (sum_f_R0 f)).
     apply H0.
     simpl; lra.
@@ -1557,7 +1530,7 @@ Section countable_products.
     now apply sum_lim_bound.
     apply sum_lim_bound; trivial.
     intros.
-    now apply Lim_seq_nneg.
+    now apply Lim_seq_sum_f_nneg.
   Qed.
 
   Lemma sum_product_square_bound (f g : nat -> R) (a b : R) :

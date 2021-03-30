@@ -2755,3 +2755,12 @@ Qed.
 
 Lemma Rplus_minus_cancel1 : forall a b, a + b - a = b.
 Proof. intros; ring. Qed.
+
+Lemma Rplus_le_pos_l (f g : R) :
+  0 <= g ->
+  f <= f + g.
+Proof.
+  intros.
+  rewrite <- Rplus_0_r at 1.
+  now apply Rplus_le_compat_l.
+Qed.
