@@ -1861,21 +1861,29 @@ Section countable_products.
      apply iso_f_b.
    Qed.
 
-   Lemma list_sum_nest_prod (f : nat -> nat -> R ) (n m : nat) :
+   Lemma list_sum_nest_prod (f : nat -> nat -> R ) (l1 l2 : list nat) :
      list_sum
-       (map (fun i : nat => list_sum (map (fun j : nat => f i j) (seq 0 m)))
-            (seq 0 n)) =
-     list_sum (map (fun '(a, b) => f a b) (list_prod (seq 0 m) (seq 0 n))).
+       (map (fun i : nat => list_sum (map (fun j : nat => f i j) l2)) l1) =
+     list_sum (map (fun '(a, b) => f a b) (list_prod l1 l2)).
    Proof.
-     induction n.
+     intros.
+     induction l1.
      - simpl.
-       rewrite list_prod_nil_r.
-       now simpl.
-   Admitted.
+       induction l2.
+       + now simpl.
+       + simpl.
+         lra.
+     - simpl.
+       rewrite IHl1.
+       rewrite map_app.
+       rewrite list_sum_cat.
+       apply Rplus_eq_compat_r.
+       now rewrite map_map.
+    Qed.
    
    Lemma double_sum_list_sum (f : nat -> nat -> R ) (n m : nat) :
      double_sum f n m =
-     list_sum (map (fun '(a, b) => f a b) (list_prod (seq 0 (S m)) (seq 0 (S n)))).
+     list_sum (map (fun '(a, b) => f a b) (list_prod (seq 0 (S n)) (seq 0 (S m)))).
    Proof.
      unfold double_sum.
      rewrite sum_f_R0_ext with
