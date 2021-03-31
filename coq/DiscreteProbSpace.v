@@ -14,7 +14,7 @@ Require Ensembles.
 
 Require Import Utils DVector.
 Import ListNotations.
-Require Export Event SigmaAlgebras ProbSpace.
+Require Export Event SigmaAlgebras ProbSpace RandomVariable.
 Require Import Coquelicot.Coquelicot.
 Require Import ClassicalDescription.
 
@@ -2056,6 +2056,88 @@ Section countable_products.
     - apply unit_pmf.
     - apply prod_prob_mass_fun; eauto.
   Defined.
+
+  Record bundled_function :=
+    {
+    bf_dom:Type
+    ; bf_cod:Type
+    ; bf_map:bf_dom -> bf_cod
+    }.
+  Definition bf_dom_prod (l:list bundled_function): Type
+    := iter_prod (map bf_dom l).
+  Definition bf_cod_prod (l:list bundled_function): Type
+    := iter_prod (map bf_cod l).
+  Fixpoint bf_map_prod (l:list bundled_function) : bf_dom_prod l -> bf_cod_prod l
+    := match l with
+       | nil => fun _ => tt
+       | x::l' => fun '(d,dl) =>
+                  (x.(bf_map) d, bf_map_prod l' dl)
+       end.
+  Definition bf_prod (l:list bundled_function)
+    := {|
+    bf_dom := bf_dom_prod l
+    ; bf_cod := bf_cod_prod l
+    ; bf_map := bf_map_prod l
+      |}.
   
+  Definition map_prod {Ts1 Ts2 : Type} {Td1 Td2 : Type}
+           (rv_X1 : Ts1 -> Td1)
+           (rv_X2 : Ts2 -> Td2) : ((Ts1 * Ts2) -> (Td1 * Td2)) :=
+      (fun '(a,b) => ((rv_X1 a), (rv_X2 b))).
+
+  Program Instance discrete_rvprod {Ts1 Ts2 : Type} {Td1 Td2 : Type}
+           {cod1 : SigmaAlgebra Td1}
+           {cod2 : SigmaAlgebra Td2}
+           {rv_X1 : Ts1 -> Td1}
+           {rv_X2 : Ts2 -> Td2}
+           (rv1 : RandomVariable (discrete_sa Ts1) cod1 rv_X1)
+           (rv2 : RandomVariable (discrete_sa Ts2) cod2 rv_X2) :
+    RandomVariable (discrete_sa (Ts1 * Ts2)) (product_sa cod1 cod2) 
+                   (map_prod rv_X1 rv_X2).
+
+  Record discrete_bundled_rv :=
+    {
+    db_dom:Type
+    ; db_cod:Type
+    ; db_sa_cod : SigmaAlgebra db_cod
+    ; db_map: db_dom -> db_cod
+    ; db_rv : RandomVariable (discrete_sa db_dom) db_sa_cod db_map
+    }.
+
+  Definition db_dom_prod (l:list discrete_bundled_rv): Type
+    := iter_prod (map db_dom l).
+  Definition db_cod_prod (l:list discrete_bundled_rv): Type
+    := iter_prod (map db_cod l).
+  Fixpoint db_map_prod (l:list discrete_bundled_rv) : db_dom_prod l -> db_cod_prod l
+    := match l with
+       | nil => fun _ => tt
+       | x::l' => fun '(d,dl) =>
+                  (x.(db_map) d, db_map_prod l' dl)
+       end.
+  Fixpoint db_sa_prod  (l:list discrete_bundled_rv) : SigmaAlgebra (db_cod_prod l)
+    := match l with
+       | nil => trivial_sa unit
+       | x::l' => product_sa x.(db_sa_cod) (db_sa_prod l')
+       end.
+  
+  Program Fixpoint db_rv_prod (l:list discrete_bundled_rv) : 
+    RandomVariable (discrete_sa (db_dom_prod l)) (db_sa_prod l) (db_map_prod l)
+    := match l with
+       | nil => _
+       | x::l' => discrete_rvprod x.(db_rv) (db_rv_prod l')
+       end.
+  Next Obligation.
+    now unfold RandomVariable, sa_sigma.
+  Qed.
+
+  Definition db_prod_bundled_rv (l:list discrete_bundled_rv) : discrete_bundled_rv
+    := {|
+    db_dom := db_dom_prod l
+    ; db_cod := db_cod_prod l
+    ; db_sa_cod := db_sa_prod l
+    ; db_map := db_map_prod l
+    ; db_rv := db_rv_prod l
+      |}.
+
 End countable_products.
 
