@@ -2120,15 +2120,12 @@ Section countable_products.
        | x::l' => product_sa x.(db_sa_cod) (db_sa_prod l')
        end.
   
-  Program Fixpoint db_rv_prod (l:list discrete_bundled_rv) : 
+  Fixpoint db_rv_prod (l:list discrete_bundled_rv) : 
     RandomVariable (discrete_sa (db_dom_prod l)) (db_sa_prod l) (db_map_prod l)
     := match l with
-       | nil => _
+       | nil => rvconst (discrete_sa unit) (trivial_sa unit) tt
        | x::l' => discrete_rvprod x.(db_rv) (db_rv_prod l')
        end.
-  Next Obligation.
-    now unfold RandomVariable, sa_sigma.
-  Qed.
 
   Definition db_prod_bundled_rv (l:list discrete_bundled_rv) : discrete_bundled_rv
     := {|
