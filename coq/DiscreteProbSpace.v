@@ -2080,11 +2080,6 @@ Section countable_products.
     ; bf_map := bf_map_prod l
       |}.
   
-  Definition map_prod {Ts1 Ts2 : Type} {Td1 Td2 : Type}
-           (rv_X1 : Ts1 -> Td1)
-           (rv_X2 : Ts2 -> Td2) : ((Ts1 * Ts2) -> (Td1 * Td2)) :=
-      (fun '(a,b) => ((rv_X1 a), (rv_X2 b))).
-
   Program Instance discrete_rvprod {Ts1 Ts2 : Type} {Td1 Td2 : Type}
            {cod1 : SigmaAlgebra Td1}
            {cod2 : SigmaAlgebra Td2}
@@ -2092,8 +2087,8 @@ Section countable_products.
            {rv_X2 : Ts2 -> Td2}
            (rv1 : RandomVariable (discrete_sa Ts1) cod1 rv_X1)
            (rv2 : RandomVariable (discrete_sa Ts2) cod2 rv_X2) :
-    RandomVariable (discrete_sa (Ts1 * Ts2)) (product_sa cod1 cod2) 
-                   (map_prod rv_X1 rv_X2).
+    RandomVariable (discrete_sa (Ts1 * Ts2)) (product_sa cod1 cod2)
+                   (fun '(a,b) => (rv_X1 a, rv_X2 b)).
 
   Record discrete_bundled_rv :=
     {
