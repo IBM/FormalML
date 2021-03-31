@@ -14,10 +14,10 @@ Require Ensembles.
 
 Require Import Utils DVector.
 Import ListNotations.
-Require Export Event SigmaAlgebras ProbSpace RandomVariable.
+Require Export Event SigmaAlgebras ProbSpace.
+Require Export RandomVariable VectorRandomVariable.
 Require Import Coquelicot.Coquelicot.
 Require Import ClassicalDescription.
-
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -2130,6 +2130,51 @@ Section countable_products.
     ; db_map := db_map_prod l
     ; db_rv := db_rv_prod l
       |}.
+
+  Record discrete_bundled_vector_rv :=
+    {
+    dbvec_dom:Type
+    ; dbvec_dim : nat
+    ; dbvec_map: dbvec_dom -> vector R dbvec_dim
+    ; dbvec_rv : RandomVariable (discrete_sa dbvec_dom) 
+                             (Rvector_borel_sa dbvec_dim) dbvec_map
+    }.
+
+  Definition dbvec_dom_prod (l:list discrete_bundled_vector_rv): Type
+    := iter_prod (map dbvec_dom l).
+  Definition dbvec_dim_prod (l:list discrete_bundled_vector_rv): nat
+    := fold_right (fun a b => (a + b)%nat) 0%nat (map dbvec_dim l).
+
+  Fixpoint dbvec_map_prod (l:list discrete_bundled_vector_rv)
+    : dbvec_dom_prod l -> vector R (dbvec_dim_prod l)
+    := match l with
+       | nil => fun _ => vector0
+       | x::l' => fun '(d,dl) =>
+                    vector_append (x.(dbvec_map) d) (dbvec_map_prod l' dl)
+       end.
+  
+  Program Fixpoint dbvec_rv_prod (l:list discrete_bundled_vector_rv) : 
+    RandomVariable (discrete_sa (dbvec_dom_prod l)) 
+                   (Rvector_borel_sa (dbvec_dim_prod l)) (dbvec_map_prod l)
+    := match l with
+       | nil => _
+       | x::l' => _
+       end.
+  Next Obligation.
+    now unfold RandomVariable; simpl.
+  Qed.
+  Next Obligation.
+    now unfold RandomVariable, sa_sigma; simpl.
+  Qed.
+
+  Definition db_prod_bundled_vector_rv (l:list discrete_bundled_vector_rv) : discrete_bundled_vector_rv
+    := {|
+    dbvec_dom := dbvec_dom_prod l
+    ; dbvec_dim := dbvec_dim_prod l
+    ; dbvec_map := dbvec_map_prod l
+    ; dbvec_rv := dbvec_rv_prod l
+      |}.
+
 
 End countable_products.
 
