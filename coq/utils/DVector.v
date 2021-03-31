@@ -776,3 +776,11 @@ Proof.
   simpl in *.
   congruence.
 Qed.
+
+Program Definition vector_append {A} {n1} (l1:vector A n1) {n2} (l2:vector A n2) : vector A (n1 + n2)
+  := l1 ++ l2.
+Next Obligation.
+  destruct l1; destruct l2; simpl.
+  rewrite app_length.
+  congruence.
+Qed.
