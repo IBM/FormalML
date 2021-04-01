@@ -251,24 +251,25 @@ Section Pmf_PMF.
     apply map_filter_nodup_perm_aux.
     exact (f a).
   Qed.
-  
-  Program Definition pmf_PMF {A:Type} {countableA:Countable A} {dec:EqDec A eq} (pmf:Pmf A) : prob_mass_fun A
-    := {|
-    pmf_pmf := pmf_PMF_fun pmf
-      |}. 
-  Next Obligation.
-    unfold pmf_PMF_fun.
-    apply list_sum_pos_pos'.
-    apply Forall_map.
-    rewrite Forall_forall; intros [[??]?]; intros; simpl.
-    apply cond_nonneg.
-  Qed.
-  Next Obligation.
-    unfold pmf_PMF_fun, countable_sum.
-    replace 1 with R1 by lra.
+
+
+  Lemma pmf_infinite_sum_finite {A : Type}
+        {countableA : Countable A}
+        {dec : EqDec A eq}
+        (pmf : Pmf A) :
+   infinite_sum'
+    (fun n : nat =>
+     match countable_inv n with
+     | Some a =>
+         list_sum
+           (map (fun x : nonnegreal * A => nonneg (fst x))
+              (filter (fun x : nonnegreal * A => if equiv_dec a (snd x) then true else false)
+                 pmf))
+     | None => 0
+     end) (list_sum (map (fun x : nonnegreal * A => nonneg (fst x)) pmf)).
+  Proof.
     destruct pmf; simpl.
-    rewrite <- sum1; clear sum1.
-    rewrite list_fst_sum_eq.
+    clear sum1.
     replace (list_sum (map (fun x : nonnegreal * A => nonneg (fst x)) outcomes))
       with (list_sum (map (fun n : nat =>
      match countable_inv n with
@@ -317,7 +318,26 @@ Section Pmf_PMF.
       apply Permutation_map.
       apply map_filter_nodup_perm.
   Qed.
-
+  
+  Program Definition pmf_PMF {A:Type} {countableA:Countable A} {dec:EqDec A eq} (pmf:Pmf A) : prob_mass_fun A
+    := {|
+    pmf_pmf := pmf_PMF_fun pmf
+      |}. 
+  Next Obligation.
+    unfold pmf_PMF_fun.
+    apply list_sum_pos_pos'.
+    apply Forall_map.
+    rewrite Forall_forall; intros [[??]?]; intros; simpl.
+    apply cond_nonneg.
+  Qed.
+  Next Obligation.
+    replace 1 with R1 by lra.
+    rewrite <- pmf.(sum1).
+    unfold countable_sum.
+    rewrite list_fst_sum_eq.
+    apply pmf_infinite_sum_finite.
+  Qed.
+  
 End Pmf_PMF.
 
 Section pmf_prob.
@@ -346,39 +366,99 @@ Section pmf_prob.
    generalize (SimpleExpectation_EventIndicator (Prts:=ps_pmf) (P:=(preimage_singleton rv_X c))
                                                 (fun x => Req_EM_T (rv_X x) c))
    ; intros.
+   unfold preimage_singleton, event_pre in H.
+   unfold pre_event_preimage in H.
    simpl in H.
-   unfold pre_event_preimage, pre_event_singleton in H.
    erewrite SimpleExpectation_pf_irrel in H.
    rewrite H; clear H.
    
    unfold EventIndicator.
-   unfold ps_P; simpl.
-   unfold ps_p_pmf.
+   unfold ps_of_pmf.
+   unfold proj1_sig.
+   match_destr.
    unfold expt_value.
-   apply list_sum_Proper.
-   destruct pmf; simpl.
-   apply refl_refl.
-   unfold map.
-   unfold seq.map.
-   f_equal.
-   intros.
-   clear sum1.
-   induction outcomes.
-   + easy.
-   + cut_to IHoutcomes; trivial.
-     rewrite IHoutcomes.
-     f_equal.
+   simpl in i.
+   unfold pmf_PMF_fun in i.
+   
+   generalize (infinite_sum'_finite
+                 (pmf_parts (pmf_PMF pmf)
+                            (exist (fun _ : pre_event A => True)
+                                   (fun omega : A => pre_event_singleton c (rv_X omega))
+                                   (sa_preimage_singleton rv_X c)))
+                 (nodup eq_nat_dec (map countable_index (map snd pmf.(outcomes)))))
+   ; intros HH.
+   cut_to HH.
+   - rewrite (infinite_sum'_unique i HH).
+     clear i HH.
+     unfold pmf_parts; simpl.
+     rewrite nodup_map_inj with (decA0:=decA)
+      ; [| intros; now apply countable_index_inj].
+      rewrite map_map.
+      erewrite map_ext
+      ; [| intros; rewrite countable_inv_index; reflexivity].
+      destruct pmf.
+      unfold pmf_PMF_fun; simpl.
+      clear sum1.
+
+      rewrite <- (map_filter_nodup_perm snd outcomes) at 2.
+      rewrite concat_map.
+      rewrite list_sum_map_concat.
+      repeat rewrite map_map.
+      f_equal.
+      apply map_ext_in; intros a inn1.
+      match_destr.
+     + f_equal.
+       apply map_ext_in; intros [??] inn2; simpl.
+       match_destr.
+       * subst; lra.
+       * field_simplify.
+         apply filter_In in inn2.
+         destruct inn2 as [inn2 eqq2].
+         simpl in *.
+         match_destr_in eqq2.
+         red in e.
+         subst.
+         red in p.
+         congruence.
+     + unfold pre_event_singleton in n.
+       symmetry.
+       apply list_sum0_0.
+       apply Forall_map.
+       rewrite Forall_forall; intros [??] inn2.
+       apply filter_In in inn2.
+       destruct inn2 as [inn2 eqq2].
+       simpl in *.
+       match_destr_in eqq2.
+       red in e.
+       subst.
+       match_destr; [congruence | lra].
+   - intros n nin.
+     unfold pmf_parts.
+     match_case; intros a eqq1.
+     apply countable_inv_sound in eqq1; subst.
      match_destr.
-     unfold fst, snd.
-     match_destr.
-     * rewrite e.
-       match_destr; lra.
-     * match_destr; lra.
- Qed.
+     simpl in e.
+     unfold pmf_PMF; simpl.
+     unfold pmf_PMF_fun.
+     apply list_sum0_0.
+     rewrite Forall_map.
+     rewrite Forall_forall; intros [??] inn1; simpl.
+     apply filter_In in inn1.
+     destruct inn1 as [inn1 eqq2].
+     simpl in eqq2.
+     match_destr_in eqq2.
+     red in e0; subst.
+     elim nin.
+     apply nodup_In.
+     apply in_map.
+     apply in_map_iff.
+     exists (n, a0); simpl; eauto.
+   - apply NoDup_nodup.
+ Qed.     
 
 Lemma SimpleExpectation_preimage_indicator
       (rv_X : A -> R)
-      {rv: RandomVariable sa_pmf borel_sa rv_X}
+      {rv: RandomVariable (discrete_sa A)  borel_sa rv_X}
       {srv : SimpleRandomVariable rv_X} :
      SimpleExpectation (Prts := ps_pmf) rv_X = 
      list_sum (map (fun v => v *
@@ -401,7 +481,6 @@ Lemma SimpleExpectation_preimage_indicator
    reflexivity.
   Qed.
 
-
   Lemma expt_value_preimage_indicator
        (rv_X : A -> R)
        {srv : SimpleRandomVariable rv_X} :
@@ -423,7 +502,7 @@ Lemma SimpleExpectation_preimage_indicator
   Qed.
 
   Theorem pmf_SimpleExpectation_value (rv_X : A -> R)
-          {rv: RandomVariable sa_pmf borel_sa rv_X}
+          {rv: RandomVariable (discrete_sa A) borel_sa rv_X}
           {srv:SimpleRandomVariable rv_X} 
    : SimpleExpectation (Prts:=ps_pmf) rv_X = expt_value pmf rv_X.
  Proof.
@@ -479,92 +558,15 @@ Proof.
     firstorder.
 Qed.
 
-(* TODO: clean the proof up a bit *)
- Global Instance rv_restricted_range_image_borel
-        (default:R) (rv_X: A -> R) {rv: RandomVariable sa_pmf borel_sa rv_X}
-   : RandomVariable sa_pmf borel_sa (rv_restricted_range default (pmf_image rv_X) rv_X).
-Proof.
-  red; intros.
-  destruct B.
-  unfold event_preimage, rv_restricted_range, pmf_image.
-  simpl proj1_sig.
-  
-  assert (
-      pre_event_equiv
-        (fun omega : A =>
-           x (if in_dec EqDecR (rv_X omega) (map rv_X (map snd pmf)) then rv_X omega else default))
-        (pre_event_union
-           (fun omega =>
-              In (rv_X omega)
-                 (map rv_X (map snd pmf))
-              /\ x (rv_X omega))
-           (fun omega =>
-              ~ In (rv_X omega)
-                 (map rv_X (map snd pmf))
-              /\ x default))).
-  {
-    unfold pre_event_union.
-    intros ?; simpl.
-    match_destr; intuition.
-  } 
-  rewrite H.
-  apply sa_union.
-  - apply sa_inter.
-    +
-      generalize (sa_pre_list_union (s:=sa_pmf)
-                    (map (fun c => fun omega : A => rv_X omega = rv_X c) (map snd pmf)))
-      ; intros HH.
-      eapply sa_proper; try eapply HH; clear HH.
-      * unfold pre_list_union.
-        red; intros.
-        split; intros.
-        -- apply in_map_iff in H0.
-           destruct H0 as [?[??]].
-           eexists.
-           split.
-           ++ apply in_map; eauto.
-           ++ simpl; congruence.
-        -- destruct H0 as [? [??]].
-           apply in_map_iff in H0.
-           destruct H0 as [?[??]]; subst.
-           rewrite H1.
-           now apply in_map.
-      * intros ? inn.
-        apply in_map_iff in inn.
-        destruct inn as [? [??]]; subst.
-        now apply sa_preimage_singleton .
-    + apply (rv (exist _ _ s)).
-  - apply sa_inter.
-    +
-      apply sa_complement.
-      generalize (sa_pre_list_union (s:=sa_pmf)
-                    (map (fun c => fun omega : A => rv_X omega = rv_X c) (map snd pmf)))
-      ; intros HH.
-      eapply sa_proper; try eapply HH; clear HH.
-      * unfold pre_list_union.
-        red; intros.
-        split; intros.
-        -- apply in_map_iff in H0.
-           destruct H0 as [?[??]].
-           eexists.
-           split.
-           ++ apply in_map; eauto.
-           ++ simpl; congruence.
-        -- destruct H0 as [? [??]].
-           apply in_map_iff in H0.
-           destruct H0 as [?[??]]; subst.
-           rewrite H1.
-           now apply in_map.
-      * intros ? inn.
-        apply in_map_iff in inn.
-        destruct inn as [? [??]]; subst.
-        now apply sa_preimage_singleton .
-    + apply sa_sigma_const_classic.
-Qed.
+(* This should move *)
+ Global Instance discrete_sa_rv
+        sa (rv_X: A -> R) 
+   : RandomVariable (discrete_sa A)  sa rv_X.
+ Proof.
+   exact (fun _ => I).
+ Qed.
 
-
-Theorem pmf_value_SimpleExpectation (rv_X : A -> R)
-   {rv: RandomVariable sa_pmf borel_sa rv_X} :
+Theorem pmf_value_SimpleExpectation (rv_X : A -> R) :
   expt_value pmf rv_X =
   SimpleExpectation (Prts:=ps_pmf)
                     (rv_restricted_range 0 (pmf_image rv_X) rv_X).
