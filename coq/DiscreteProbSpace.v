@@ -2153,19 +2153,10 @@ Section countable_products.
                     vector_append (x.(dbvec_map) d) (dbvec_map_prod l' dl)
        end.
   
-  Program Fixpoint dbvec_rv_prod (l:list discrete_bundled_vector_rv) : 
+  Definition dbvec_rv_prod (l:list discrete_bundled_vector_rv) : 
     RandomVariable (discrete_sa (dbvec_dom_prod l)) 
                    (Rvector_borel_sa (dbvec_dim_prod l)) (dbvec_map_prod l)
-    := match l with
-       | nil => _
-       | x::l' => _
-       end.
-  Next Obligation.
-    now unfold RandomVariable; simpl.
-  Qed.
-  Next Obligation.
-    now unfold RandomVariable, sa_sigma; simpl.
-  Qed.
+    := fun _ => I.
 
   Definition db_prod_bundled_vector_rv (l:list discrete_bundled_vector_rv) : discrete_bundled_vector_rv
     := {|
