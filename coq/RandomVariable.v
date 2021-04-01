@@ -1,7 +1,7 @@
 Require Export Program.Basics.
 Require Import List Morphisms.
 
-Require Export LibUtils BasicUtils ProbSpace.
+Require Export LibUtils BasicUtils ProbSpace SigmaAlgebras.
 Require Classical.
 
 Import ListNotations.
@@ -77,6 +77,12 @@ Section Const.
   Global Program Instance crvconst c : ConstantRandomVariable (const c)
     := { srv_val := c }.
 
+  Global Instance discrete_sa_rv
+         {cod:SigmaAlgebra Td} (rv_X: Ts -> Td) 
+    : RandomVariable (discrete_sa Ts) cod rv_X.
+  Proof.
+    exact (fun _ => I).
+  Qed.
 
   Context (dom: SigmaAlgebra Ts)
           (cod: SigmaAlgebra Td).

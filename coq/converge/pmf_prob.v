@@ -357,8 +357,7 @@ Section pmf_prob.
    now rewrite expt_value_const.
  Qed.
 
- Lemma pmf_SimpleExpectation_value_point_preimage_indicator (rv_X : A -> R) (c:R)
-       {rv:RandomVariable (discrete_sa A) borel_sa rv_X} :
+ Lemma pmf_SimpleExpectation_value_point_preimage_indicator (rv_X : A -> R) (c:R) :
    SimpleExpectation (Prts:=ps_pmf) (point_preimage_indicator rv_X c) =
    expt_value pmf (point_preimage_indicator rv_X c).
  Proof.
@@ -458,7 +457,6 @@ Section pmf_prob.
 
 Lemma SimpleExpectation_preimage_indicator
       (rv_X : A -> R)
-      {rv: RandomVariable (discrete_sa A)  borel_sa rv_X}
       {srv : SimpleRandomVariable rv_X} :
      SimpleExpectation (Prts := ps_pmf) rv_X = 
      list_sum (map (fun v => v *
@@ -502,7 +500,6 @@ Lemma SimpleExpectation_preimage_indicator
   Qed.
 
   Theorem pmf_SimpleExpectation_value (rv_X : A -> R)
-          {rv: RandomVariable (discrete_sa A) borel_sa rv_X}
           {srv:SimpleRandomVariable rv_X} 
    : SimpleExpectation (Prts:=ps_pmf) rv_X = expt_value pmf rv_X.
  Proof.
@@ -559,12 +556,6 @@ Proof.
 Qed.
 
 (* This should move *)
- Global Instance discrete_sa_rv
-        sa (rv_X: A -> R) 
-   : RandomVariable (discrete_sa A)  sa rv_X.
- Proof.
-   exact (fun _ => I).
- Qed.
 
 Theorem pmf_value_SimpleExpectation (rv_X : A -> R) :
   expt_value pmf rv_X =
