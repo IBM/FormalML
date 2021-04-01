@@ -2114,10 +2114,6 @@ Section countable_products.
        | x::l' => product_sa x.(db_sa_cod) (db_sa_prod l')
        end.
   
-  Definition db_rv_prod (l:list discrete_bundled_rv) : 
-    RandomVariable (discrete_sa (db_dom_prod l)) (db_sa_prod l) (db_map_prod l)
-    := fun _ => I.
-
   Definition db_prod_bundled_rv (l:list discrete_bundled_rv) : discrete_bundled_rv
     := {|
     db_dom := db_dom_prod l
@@ -2146,11 +2142,6 @@ Section countable_products.
                     vector_append (x.(dbvec_map) d) (dbvec_map_prod l' dl)
        end.
   
-  Definition dbvec_rv_prod (l:list discrete_bundled_vector_rv) : 
-    RandomVariable (discrete_sa (dbvec_dom_prod l)) 
-                   (Rvector_borel_sa (dbvec_dim_prod l)) (dbvec_map_prod l)
-    := fun _ => I.
-
   Definition db_prod_bundled_vector_rv (l:list discrete_bundled_vector_rv) : discrete_bundled_vector_rv
     := {|
     dbvec_dom := dbvec_dom_prod l
