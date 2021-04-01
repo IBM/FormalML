@@ -3,7 +3,9 @@ Require Import Reals Lra List Permutation.
 Require Import LibUtils utils.Utils.
 Require Import ProbSpace DiscreteProbSpace SigmaAlgebras.
 Require Import pmf_monad mdp.
-Require Import RealRandomVariable SimpleExpectation.
+Require Import RealRandomVariable SimpleExpectation Expectation RandomVariableFinite.
+Require Import AlmostEqual.
+
 Require Import cond_expt.
 Require Import Lia.
 Require Import Equivalence EquivDec.
@@ -555,7 +557,56 @@ Proof.
     firstorder.
 Qed.
 
-(* This should move *)
+Lemma pmf_restricted_range_almost_eq rv_X :
+  rv_almost_eq ps_pmf rv_X  (rv_restricted_range 0 (pmf_image rv_X) rv_X).
+Proof.
+  apply rv_almost_eq_alt_eq.
+  simpl.
+  unfold ps_of_pmf, proj1_sig.
+  match_destr.
+  unfold pmf_parts in i.
+  simpl in i.
+  erewrite infinite_sum'_ext in i
+  ; [now apply infinite_sum'_const0 in i |].
+  intros n; simpl.
+  match_case; intros.
+  match_destr.
+  unfold pmf_image, pre_event_complement, rv_restricted_range in p.
+  match_destr_in p; try congruence.
+  unfold pmf_PMF_fun.
+  apply list_sum0_0.
+  rewrite Forall_map.
+  rewrite Forall_forall.
+  intros ? inn.
+  apply filter_In in inn.
+  destruct inn as [inn eqq].
+  match_destr_in eqq.
+  red in e; subst.
+  elim n0.
+  now repeat apply in_map.
+Qed.
+
+Local Instance pmf_restricted_range_finite (rv_X : A -> R) :
+  IsFiniteExpectation ps_pmf (rv_restricted_range 0 (pmf_image rv_X) rv_X).
+Proof.
+  red.
+  now rewrite (Expectation_simple (rv_restricted_range 0 (pmf_image rv_X) rv_X)).
+Qed.
+
+Global Instance pmf_value_IsFinite (rv_X : A -> R) :
+  IsFiniteExpectation ps_pmf rv_X.
+Proof.
+  apply (IsFiniteExpectation_proper_almost _ _ _ (rv_almost_eq_rv_sym _ (pmf_restricted_range_almost_eq rv_X))).
+Qed.
+
+Lemma pmf_expectation_on_restricted_range rv_X :
+  Expectation (Prts:=ps_pmf) rv_X = Expectation (Prts:=ps_pmf) (rv_restricted_range 0 (pmf_image rv_X) rv_X).
+Proof.
+  generalize (FiniteExpectation_proper_almost ps_pmf _ _ (pmf_restricted_range_almost_eq rv_X)).
+  unfold FiniteExpectation, proj1_sig.
+  repeat match_destr.
+  congruence.
+Qed.
 
 Theorem pmf_value_SimpleExpectation (rv_X : A -> R) :
   expt_value pmf rv_X =
@@ -566,3 +617,20 @@ Proof.
   apply expt_value_on_restricted_range.
 Qed.
 
+Theorem pmf_value_Expectation (rv_X : A -> R) :
+  Expectation (Prts:=ps_pmf) rv_X =
+  Some (Rbar.Finite (expt_value pmf rv_X)).
+Proof.
+  rewrite pmf_expectation_on_restricted_range.
+  erewrite Expectation_simple.
+  now rewrite pmf_value_SimpleExpectation.
+Qed.
+
+Corollary pmf_value_FiniteExpectation (rv_X : A -> R) :
+  FiniteExpectation ps_pmf rv_X = expt_value pmf rv_X.
+Proof.
+  generalize (pmf_value_Expectation rv_X).
+  erewrite FiniteExpectation_Expectation; congruence.
+Qed.
+
+End pmf_prob.
