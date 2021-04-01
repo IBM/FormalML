@@ -2080,7 +2080,7 @@ Section countable_products.
     ; bf_map := bf_map_prod l
       |}.
   
-  Program Instance discrete_rvprod {Ts1 Ts2 : Type} {Td1 Td2 : Type}
+  Definition discrete_rvprod {Ts1 Ts2 : Type} {Td1 Td2 : Type}
            {cod1 : SigmaAlgebra Td1}
            {cod2 : SigmaAlgebra Td2}
            {rv_X1 : Ts1 -> Td1}
@@ -2088,7 +2088,7 @@ Section countable_products.
            (rv1 : RandomVariable (discrete_sa Ts1) cod1 rv_X1)
            (rv2 : RandomVariable (discrete_sa Ts2) cod2 rv_X2) :
     RandomVariable (discrete_sa (Ts1 * Ts2)) (product_sa cod1 cod2)
-                   (fun '(a,b) => (rv_X1 a, rv_X2 b)).
+                   (fun '(a,b) => (rv_X1 a, rv_X2 b)) := fun _ => I.
 
   Record discrete_bundled_rv :=
     {
@@ -2096,7 +2096,6 @@ Section countable_products.
     ; db_cod:Type
     ; db_sa_cod : SigmaAlgebra db_cod
     ; db_map: db_dom -> db_cod
-    ; db_rv : RandomVariable (discrete_sa db_dom) db_sa_cod db_map
     }.
 
   Definition db_dom_prod (l:list discrete_bundled_rv): Type
@@ -2115,12 +2114,9 @@ Section countable_products.
        | x::l' => product_sa x.(db_sa_cod) (db_sa_prod l')
        end.
   
-  Fixpoint db_rv_prod (l:list discrete_bundled_rv) : 
+  Definition db_rv_prod (l:list discrete_bundled_rv) : 
     RandomVariable (discrete_sa (db_dom_prod l)) (db_sa_prod l) (db_map_prod l)
-    := match l with
-       | nil => rvconst (discrete_sa unit) (trivial_sa unit) tt
-       | x::l' => discrete_rvprod x.(db_rv) (db_rv_prod l')
-       end.
+    := fun _ => I.
 
   Definition db_prod_bundled_rv (l:list discrete_bundled_rv) : discrete_bundled_rv
     := {|
@@ -2128,7 +2124,6 @@ Section countable_products.
     ; db_cod := db_cod_prod l
     ; db_sa_cod := db_sa_prod l
     ; db_map := db_map_prod l
-    ; db_rv := db_rv_prod l
       |}.
 
   Record discrete_bundled_vector_rv :=
@@ -2136,8 +2131,6 @@ Section countable_products.
     dbvec_dom:Type
     ; dbvec_dim : nat
     ; dbvec_map: dbvec_dom -> vector R dbvec_dim
-    ; dbvec_rv : RandomVariable (discrete_sa dbvec_dom) 
-                             (Rvector_borel_sa dbvec_dim) dbvec_map
     }.
 
   Definition dbvec_dom_prod (l:list discrete_bundled_vector_rv): Type
@@ -2163,7 +2156,6 @@ Section countable_products.
     dbvec_dom := dbvec_dom_prod l
     ; dbvec_dim := dbvec_dim_prod l
     ; dbvec_map := dbvec_map_prod l
-    ; dbvec_rv := dbvec_rv_prod l
       |}.
 
 
