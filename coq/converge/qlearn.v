@@ -2047,7 +2047,7 @@ algorithm.
         now apply hilbert.norm_ge_0.
         reflexivity.
     Qed.
-(*
+
     Lemma conv_l2_vector_prob_i {n:nat}
         (eps : posreal) 
         (i : nat)
@@ -2095,16 +2095,21 @@ algorithm.
     Qed.
 
     Lemma conv_l2_vector_prob_max_abs {n:nat}
+        (eps : posreal)
         (Xn: nat -> Ts -> vector R n) 
         (srvxn : forall n0, SimpleRandomVariable (Xn n0))
         (rvxn : forall n0, RandomVariable dom (Rvector_borel_sa n) (Xn n0)) :
         is_lim_seq
           (fun n0 : nat =>
               SimpleExpectation (rvinner (Xn n0) (Xn n0))) 0 ->
-        forall (eps:posreal), is_lim_seq (fun n0 => ps_P (event_ge dom (rvmaxabs (Xn n0)) eps)) 0.
+        is_lim_seq (fun n0 => ps_P (event_ge dom (rvmaxabs (Xn n0)) eps)) 0.
     Proof.
       intros.
-*)
+      generalize (conv_l2_vector_prob eps Xn srvxn rvxn H); intros.
+                        
+      Admitted.
+
+      
     Lemma Induction_I1_15 {n} (eps P : posreal) (C C0 : R) (w x : nat -> Ts -> vector R n) (xstar : vector R n)
           (rx : forall n0, RandomVariable dom (Rvector_borel_sa n) (x n0))
           (rw : forall n0, RandomVariable dom (Rvector_borel_sa n) (w n0))
@@ -2173,10 +2178,10 @@ algorithm.
                        SimpleExpectation
                          (rvinner (@L2_convergent_x n α (vecrvconst n 0) Ts (vecrvconst n 0) w n0)
                                   (@L2_convergent_x n α (vecrvconst n 0) Ts (vecrvconst n 0) w n0))) in H11.
-          * assert (forall i pf, 
-                       is_lim_seq (fun n0 => ps_P (event_ge dom (rvabs (vecrvnth i pf (@L2_convergent_x n α (vecrvconst n 0) Ts (vecrvconst n 0) w n0))) (mkposreal _ H13))) 0).
-            intros.
-            apply Induction_I1_15_helper with (C1 := C); trivial.
+
+          * generalize (conv_l2_vector_prob 
+                          (mkposreal _ H13)
+                          (fun n0 => @L2_convergent_x n α (vecrvconst n 0) Ts (vecrvconst n 0) w n0) _ _ H11); intros.
             admit.
           * intros.
             apply SimpleExpectation_ext.
