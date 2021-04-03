@@ -1988,7 +1988,7 @@ algorithm.
     Qed.
 
     Lemma Induction_I1_15_helper {n}
-          (eps : posreal) (C C0 : R) (w x : nat -> Ts -> vector R n) (xstar : vector R n)
+          (eps : posreal) (C : R) (w : nat -> Ts -> vector R n)
           (rw : forall n0, RandomVariable dom (Rvector_borel_sa n) (w n0))
           (srw : forall n0, SimpleRandomVariable  (w n0)) (i : nat) (pf : (i < n)%nat) :
       0 <= C ->
@@ -2004,7 +2004,7 @@ algorithm.
                   (@L2_convergent_x n α (vecrvconst n 0) Ts (vecrvconst n 0) w) _ _ n0)) 
             (const zero)) ->
       (forall n0 : nat, SimpleExpectation (rvinner (w n0) (w n0)) < C) ->
-    is_lim_seq (fun n0 => ps_P (event_ge dom (rvabs (vecrvnth i pf (@L2_convergent_x n α (fun v => vector_const 0 n) Ts (vecrvconst n 0) w n0))) eps)) 0.
+    is_lim_seq (fun n0 => ps_P (event_ge dom (rvabs (vecrvnth i pf (@L2_convergent_x n α (vecrvconst n 0) Ts (vecrvconst n 0) w n0))) eps)) 0.
     Proof.
       intros.
       generalize (@L2_convergent n gamma α (fun _ => vector_const 0 n) Ts dom prts C (vecrvconst n 0) w (Rvector_const_rv n 0) rw (srv_vecrvconst n 0) srw H H0 H1 H2 H3); intros.
@@ -2017,25 +2017,7 @@ algorithm.
                       (rvinner (@L2_convergent_x n α (vecrvconst n 0) Ts (vecrvconst n 0) w n0)
                                (@L2_convergent_x n α (vecrvconst n 0) Ts (vecrvconst n 0) w n0))) in H7.
         + apply conv_l2_prob1; intros.
-          * assert 
-              (SimpleRandomVariable 
-                 (rvsqr
-                    (rvabs
-                       (fun omega : Ts =>
-                          vector_nth 
-                            i pf 
-                            (@L2_convergent_x n α (fun v => vector_const 0 n) Ts 
-                                              (vecrvconst n 0) w n0 omega))))).
-            {
-              apply srvsqr, srvabs.
-              generalize (vec_srv (fun omega => (@L2_convergent_x n α (fun v => vector_const 0 n) Ts (vecrvconst n 0) w n0 omega)) i pf); intros.
-              unfold iso_f in X; simpl in X.
-              rewrite vector_nth_fun_to_vector in X.
-              apply X.
-              apply L2_convergent_x_srv; trivial.
-              typeclasses eauto.
-            }
-            erewrite srv_Expectation_posRV with (srv := X).
+          * erewrite srv_Expectation_posRV.
             now unfold is_finite.
           * apply is_lim_seq_ext with 
                 (u := fun n0 : nat =>
@@ -2065,7 +2047,7 @@ algorithm.
         now apply hilbert.norm_ge_0.
         reflexivity.
     Qed.
-
+(*
     Lemma conv_l2_vector_prob_i {n:nat}
         (eps : posreal) 
         (i : nat)
@@ -2122,8 +2104,7 @@ algorithm.
         forall (eps:posreal), is_lim_seq (fun n0 => ps_P (event_ge dom (rvmaxabs (Xn n0)) eps)) 0.
     Proof.
       intros.
-      Admitted.
-
+*)
     Lemma Induction_I1_15 {n} (eps P : posreal) (C C0 : R) (w x : nat -> Ts -> vector R n) (xstar : vector R n)
           (rx : forall n0, RandomVariable dom (Rvector_borel_sa n) (x n0))
           (rw : forall n0, RandomVariable dom (Rvector_borel_sa n) (w n0))
@@ -2192,13 +2173,10 @@ algorithm.
                        SimpleExpectation
                          (rvinner (@L2_convergent_x n α (vecrvconst n 0) Ts (vecrvconst n 0) w n0)
                                   (@L2_convergent_x n α (vecrvconst n 0) Ts (vecrvconst n 0) w n0))) in H11.
-          * generalize (conv_l2_vector_prob_max_abs _ _ _ H11 (mkposreal _ H13)); intros.
-            apply is_lim_seq_spec in H14.
-            unfold is_lim_seq' in H14.
-            assert (0 < 1 - P) by lra.
-            specialize (H14 (mkposreal _ H15)).
-            destruct H14 as [N ?].
-            
+          * assert (forall i pf, 
+                       is_lim_seq (fun n0 => ps_P (event_ge dom (rvabs (vecrvnth i pf (@L2_convergent_x n α (vecrvconst n 0) Ts (vecrvconst n 0) w n0))) (mkposreal _ H13))) 0).
+            intros.
+            apply Induction_I1_15_helper with (C1 := C); trivial.
             admit.
           * intros.
             apply SimpleExpectation_ext.
