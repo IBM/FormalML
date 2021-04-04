@@ -2094,6 +2094,26 @@ algorithm.
       now apply conv_l2_vector_prob_i with (srvxn0 := srvxn).
     Qed.
 
+    Lemma equiv_ge_rvmaxabs_inter_rvabs {n}
+          (eps : posreal)
+          (X : Ts -> vector R n)
+          (srv : SimpleRandomVariable X)
+          (rv :  RandomVariable dom (Rvector_borel_sa n) X) :
+      pre_event_equiv
+        (fun omega => rvmaxabs X omega >= eps)
+        (pre_list_inter
+           (proj1_sig (vector_map (fun f => fun omega => rvabs f omega >= eps)
+                                  (fun_to_vector_to_vector_of_funs X)))).
+    Proof.
+      intro x.
+      simpl.
+      rewrite vector_list_create_map.
+      unfold rvmaxabs, pre_list_inter.
+      unfold Rvector_max_abs.
+      split; intros.
+      Admitted.
+        
+
     Lemma conv_l2_vector_prob_max_abs {n:nat}
         (eps : posreal)
         (Xn: nat -> Ts -> vector R n) 
