@@ -1946,7 +1946,21 @@ algorithm.
     Lemma Rsqr_le_rvinner {n} (v : vector R n) (i: nat) (pf : (i < n)%nat) :
       (vector_nth i pf v)² <= Rvector_sum (Rvector_mult v v).
     Proof.
-      Admitted.
+      eapply Rle_trans
+      ; [| 
+         apply (vector_nth_pos_le_pos (Rvector_mult v v) i pf)].
+      - rewrite Rvector_mult_explode, vector_nth_create'.
+        unfold Rsqr.
+        now right.
+      - intros.
+        apply In_vector_nth_ex in H.
+        destruct H as [?[? HH]].
+        rewrite Rvector_mult_explode, vector_nth_create' in HH.
+        assert (HH2:a = Rsqr (vector_nth x x0 v))
+          by (symmetry; apply HH).
+        rewrite HH2.
+        apply Rle_0_sqr.
+    Qed.
 
     Lemma SimpleExpectation_rvsqr_pos (f : Ts -> R) 
           {rx : RandomVariable dom borel_sa f}
@@ -2094,25 +2108,58 @@ algorithm.
       now apply conv_l2_vector_prob_i with (srvxn0 := srvxn).
     Qed.
 
+    Lemma Rvector_max_abs_nth_le {n} (v:vector R n) i pf:
+      Rabs (vector_nth i pf v) <= Rvector_max_abs v.
+    Proof.
+      cut (In (vector_nth i pf v) (proj1_sig v)); [| apply vector_nth_In].
+      generalize (vector_nth i pf v).
+      unfold Rvector_max_abs, vector_fold_left.
+      destruct v; simpl.
+      clear n pf i e.
+      intros.
+      apply fold_left_Rmax_le.
+      now apply in_map.
+    Qed.
+
     Lemma equiv_ge_rvmaxabs_inter_rvabs {n}
           (eps : posreal)
           (X : Ts -> vector R n)
           (srv : SimpleRandomVariable X)
           (rv :  RandomVariable dom (Rvector_borel_sa n) X) :
       pre_event_equiv
-        (fun omega => rvmaxabs X omega >= eps)
+        (fun omega => rvmaxabs X omega <= eps)
         (pre_list_inter
-           (proj1_sig (vector_map (fun f => fun omega => rvabs f omega >= eps)
+           (proj1_sig (vector_map (fun f => fun omega => rvabs f omega <= eps)
                                   (fun_to_vector_to_vector_of_funs X)))).
     Proof.
+      unfold rvmaxabs, rvabs.
       intro x.
-      simpl.
-      rewrite vector_list_create_map.
-      unfold rvmaxabs, pre_list_inter.
-      unfold Rvector_max_abs.
-      split; intros.
-      Admitted.
-        
+      split; intros HH.
+      - intros ? inn.
+        apply In_vector_nth_ex in inn.
+        destruct inn as [?[? inn]].
+        subst.
+        rewrite vector_nth_map, vector_nth_fun_to_vector.
+        eapply Rle_trans; try eapply HH.
+        apply Rvector_max_abs_nth_le.
+      - red in HH.
+        apply fold_left_lub.
+        + intros ? inn.
+          apply In_vector_nth_ex in inn.
+          destruct inn as [?[? inn]].
+          subst.
+          unfold Rvector_abs.
+          rewrite vector_nth_map.
+          apply HH.
+          generalize (vector_nth_In (vector_map (fun (f : Ts -> R) (omega : Ts) => Rabs (f omega) <= eps)
+                                                (fun_to_vector_to_vector_of_funs X)) x1 x2)
+          ; intros inn.
+          rewrite vector_nth_map in inn.
+          rewrite vector_nth_fun_to_vector in inn.
+          apply inn.
+        + destruct eps; simpl.
+          lra.
+    Qed.        
 
     Lemma conv_l2_vector_prob_max_abs {n:nat}
         (eps : posreal)
@@ -2126,7 +2173,6 @@ algorithm.
     Proof.
       intros.
       generalize (conv_l2_vector_prob eps Xn srvxn rvxn H); intros.
-                        
       Admitted.
 
       
