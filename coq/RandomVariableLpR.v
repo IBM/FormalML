@@ -1738,6 +1738,15 @@ Section Lp.
         apply LpRRVminus_plus.
       Qed.
 
+      Lemma LpRRVq_minus_plus_opp
+            (x y : LpRRVq p) :
+        LpRRVq_minus x y = LpRRVq_plus x (LpRRVq_opp y).
+      Proof.
+        unfold minus, plus, opp; simpl.
+        LpRRVq_simpl.
+        apply LpRRVminus_plus.
+      Qed.
+
       Lemma LpRRVq_close_close (x y : LpRRVq p) (eps : R) :
         LpRRVq_norm (minus y x) < eps ->
         LpRRVq_ball x eps y.

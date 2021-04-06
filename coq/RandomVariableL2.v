@@ -543,6 +543,48 @@ Section L2.
     eapply lim_picker_cumulative_included; eauto.
   Qed.
 
+  Lemma LpRRVq_opp_opp (x : LpRRVq prts 2) :
+    opp x = LpRRVq_opp prts x.
+  Proof.
+    unfold opp; simpl.
+    LpRRVq_simpl.
+    reflexivity.
+  Qed.
+
+  Lemma LpRRVq_norm_norm (x : LpRRVq prts 2) :
+    Hnorm x = LpRRVq_norm prts x.
+  Proof.
+    unfold Hnorm; simpl.
+    LpRRVq_simpl.
+    rewrite LpRRVq_normE.
+    unfold LpRRVnorm.
+    unfold L2RRVinner.
+    rewrite power_sqrt.
+    - f_equal.
+      apply FiniteExpectation_ext.
+      intros ?; simpl.
+      now rewrite rvpower_abs2_unfold, rvsqr_eq.
+    - apply FiniteExpectation_pos.
+      typeclasses eauto.
+  Qed.
+
+  Lemma LpRRVq_minus_plus_opp'
+        (x y : LpRRVq prts 2) :
+    LpRRVq_minus prts x y = LpRRVq_plus prts x (LpRRVq_opp prts y).
+  Proof.
+    unfold minus, plus, opp; simpl.
+    LpRRVq_simpl.
+    apply LpRRVminus_plus.
+  Qed.
+
+  Lemma Hnorm_minus_opp {T:PreHilbert} (a b:T) :
+    (Hnorm (minus a b) = Hnorm (minus b a)).
+  Proof.
+    rewrite <- (norm_opp (minus a b)).
+    rewrite opp_minus.
+    reflexivity.
+  Qed.
+    
   Lemma lim_ball_center_dist (x y : LpRRVq prts 2)
              (F : (PreHilbert_UniformSpace (E:= L2RRVq_PreHilbert) -> Prop) -> Prop)
              (PF:ProperFilter F)
@@ -552,8 +594,37 @@ Section L2.
     (proj1_sig (L2RRVq_lim_ball_center F PF cF N)) y ->
     LpRRVq_norm prts (LpRRVq_minus prts x y) < 2 / pow 2 N.
   Proof.
-    Admitted.
-        
+    unfold L2RRVq_lim_ball_center; simpl.
+    unfold proj1_sig.
+    match_case; intros.
+    match_destr_in H.
+    invcs H.
+    unfold Hierarchy.ball in *; simpl in *.
+    unfold ball in *; simpl in *.
+    generalize (Rplus_lt_compat _ _ _ _ H0 H1)
+    ; intros HH.
+    field_simplify in HH.
+    - eapply Rle_lt_trans; try eapply HH.
+      generalize (norm_triangle (minus x x1) (minus x1 y))
+      ; intros HH2.
+      unfold minus in HH2.
+      repeat rewrite plus_assoc in HH2.
+      rewrite <- (plus_assoc x (opp x1)) in HH2.
+      rewrite plus_opp_l in HH2.
+      rewrite plus_zero_r in HH2.
+      unfold plus in HH2; simpl in HH2.
+      rewrite LpRRVq_norm_norm in HH2.
+      rewrite LpRRVq_minus_plus_opp'.
+      rewrite LpRRVq_opp_opp in HH2.
+      eapply Rle_trans; try eapply HH2.
+      eapply Rplus_le_compat.
+      + rewrite Hnorm_minus_opp.
+        unfold minus.
+        now right.
+      + now right.
+    - eelim pow_nzero; try eapply HH.
+      lra.
+  Qed.
 
   Lemma lim_filter_cauchy 
         (F : (PreHilbert_UniformSpace (E:= L2RRVq_PreHilbert) -> Prop) -> Prop)
