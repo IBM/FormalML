@@ -537,9 +537,7 @@ Section L2.
                             (L2RRVq_lim_picker F PF cF m)) < 2 / pow 2 N.
   Proof.
     intros.
-    apply (lim_ball_center_dist _ _ F PF cF).
-    now apply lim_picker_included.
-    now apply lim_picker_included.    
+    apply (lim_ball_center_dist _ _ F PF cF); now apply lim_picker_included.
   Qed.    
 
   Definition L2RRVq_lim_with_conditions (lim : (PreHilbert_UniformSpace (E:= L2RRVq_PreHilbert) -> Prop) -> Prop)
