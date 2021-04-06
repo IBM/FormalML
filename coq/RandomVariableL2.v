@@ -1,7 +1,7 @@
 Require Import Morphisms.
 Require Import Equivalence.
 Require Import Program.Basics.
-Require Import Lra.
+Require Import Lra Lia.
 Require Import Classical.
 Require Import FunctionalExtensionality.
 Require Import IndefiniteDescription ClassicalDescription.
@@ -498,6 +498,35 @@ Section L2.
                  _
                  (proj2_sig (L2RRVq_lim_ball_cumulative F PF cF n))))).
 
+    Lemma lim_picker_cumulative_included
+             (F : (PreHilbert_UniformSpace (E:= L2RRVq_PreHilbert) -> Prop) -> Prop)
+             (PF:ProperFilter F)
+             (cF:cauchy F)
+             (N n:nat) :
+      (N <= n)%nat ->
+      forall x,
+      proj1_sig (L2RRVq_lim_ball_cumulative F PF cF n) x ->
+       (proj1_sig (L2RRVq_lim_ball_center F PF cF N)) x.
+    Proof.
+      unfold L2RRVq_lim_ball_cumulative.
+      intros.
+      assert (inn:In N (seq 0 (S n))).
+      {
+        apply in_seq.
+        lia.
+      }
+      revert inn H0.
+      generalize (seq 0 (S n)).
+      clear.
+      induction l; simpl.
+      - tauto.
+      - intros [eqq | inn]; intros.
+        + subst.
+          tauto.
+        + apply (IHl inn).
+          tauto.
+    Qed.
+    
   Lemma lim_picker_included
              (F : (PreHilbert_UniformSpace (E:= L2RRVq_PreHilbert) -> Prop) -> Prop)
              (PF:ProperFilter F)
@@ -508,8 +537,11 @@ Section L2.
       (L2RRVq_lim_picker F PF cF n).
   Proof.
     intros.
-    destruct  (L2RRVq_lim_picker F PF cF n).
-    Admitted.
+    unfold L2RRVq_lim_picker.
+    unfold proj1_sig at 2.
+    match_destr.
+    eapply lim_picker_cumulative_included; eauto.
+  Qed.
 
   Lemma lim_ball_center_dist (x y : LpRRVq prts 2)
              (F : (PreHilbert_UniformSpace (E:= L2RRVq_PreHilbert) -> Prop) -> Prop)
