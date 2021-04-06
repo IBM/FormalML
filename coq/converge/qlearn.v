@@ -2121,7 +2121,49 @@ algorithm.
       now apply in_map.
     Qed.
 
-    Lemma equiv_ge_rvmaxabs_inter_rvabs {n}
+    Lemma Rvector_max_abs_in {n} (v:vector R (S n)) :
+      In (Rvector_max_abs v) (proj1_sig (vector_map Rabs v)).
+    Proof.
+      destruct v; simpl.
+      destruct x; simpl; try discriminate.
+      unfold Rvector_max_abs, vector_fold_left; simpl.
+      clear e.
+      induction x using rev_ind; simpl.
+      - unfold Rmax.
+        match_destr; eauto.
+        elim n0.
+        apply Rabs_pos.
+      - rewrite map_app.
+        rewrite fold_left_app.
+        destruct IHx.
+        + rewrite <- H.
+          simpl.
+          unfold Rmax.
+          match_destr.
+          * right.
+            apply in_app_iff; simpl; eauto.
+          * eauto.
+        + simpl.
+          right.
+          unfold Rmax at 1.
+          match_destr.
+          * apply in_app_iff; simpl; eauto.
+          * apply in_app_iff; simpl; eauto.
+    Qed.
+
+    Lemma Rvector_max_abs_nth_in {n} (v:vector R (S n)) :
+      exists i pf, Rvector_max_abs v = Rabs (vector_nth i pf v).
+    Proof.
+      generalize (Rvector_max_abs_in v)
+      ; intros HH.
+      apply In_vector_nth_ex in HH.
+      destruct HH as [?[? eqq]].
+      symmetry in eqq.
+      rewrite vector_nth_map in eqq.
+      eauto.
+    Qed.
+
+    Lemma equiv_le_rvmaxabs_inter_rvabs {n}
           (eps : posreal)
           (X : Ts -> vector R n)
           (srv : SimpleRandomVariable X)
@@ -2159,7 +2201,75 @@ algorithm.
           apply inn.
         + destruct eps; simpl.
           lra.
-    Qed.        
+    Qed.
+
+    Lemma equiv_ge_rvmaxabs_inter_rvabs_aux {n}
+          (eps : posreal)
+          (X : Ts -> vector R (S n))
+          (srv : SimpleRandomVariable X)
+          (rv :  RandomVariable dom (Rvector_borel_sa (S n)) X) :
+      pre_event_equiv
+        (fun omega => rvmaxabs X omega >= eps)
+        (pre_list_union
+           (proj1_sig (vector_map (fun f => fun omega => rvabs f omega >= eps)
+                                  (fun_to_vector_to_vector_of_funs X)))).
+    Proof.
+      unfold rvmaxabs, rvabs.
+      intro x.
+      split; intros HH.
+      - red.
+        destruct (Rvector_max_abs_nth_in (X x)) as [i [pf inn]].
+
+        assert (
+             exists i pf,
+               vector_nth i pf
+                          (vector_map (fun (f : Ts -> R) (omega : Ts) => Rabs (f omega) >= eps)
+                                      (fun_to_vector_to_vector_of_funs X)) x).
+        + eexists. eexists.
+          rewrite vector_nth_map.
+          rewrite vector_nth_fun_to_vector.
+          rewrite inn in HH.
+          eapply HH.
+        + destruct H as [?[??]].
+          eexists.
+          split; [| eapply H].
+          apply vector_nth_In.
+      - destruct HH as [e [inn HH]].
+        apply In_vector_nth_ex in inn.
+        destruct inn as [i[pf eqq]].
+        subst.
+        rewrite vector_nth_map in HH.
+        rewrite vector_nth_fun_to_vector in HH.
+        eapply Rge_trans; try eapply HH.
+        eapply Rle_ge.
+        apply Rvector_max_abs_nth_le.
+    Qed.
+
+    Lemma equiv_ge_rvmaxabs_inter_rvabs {n}
+          (eps : posreal)
+          (X : Ts -> vector R n)
+          (srv : SimpleRandomVariable X)
+          (rv :  RandomVariable dom (Rvector_borel_sa n) X) :
+      pre_event_equiv
+        (fun omega => rvmaxabs X omega >= eps)
+        (pre_list_union
+           (proj1_sig (vector_map (fun f => fun omega => rvabs f omega >= eps)
+                                  (fun_to_vector_to_vector_of_funs X)))).
+    Proof.
+      destruct n.
+      - simpl.
+        rewrite pre_list_union_nil.
+        unfold pre_event_none.
+        intros ?.
+        split; try tauto.
+        unfold rvmaxabs, Rvector_max_abs, vector_fold_left.
+        destruct (X x); simpl.
+        destruct x0; try discriminate.
+        simpl.
+        destruct eps; simpl.
+        lra.
+      - now apply equiv_ge_rvmaxabs_inter_rvabs_aux.
+    Qed.
 
     Lemma conv_l2_vector_prob_max_abs {n:nat}
         (eps : posreal)
