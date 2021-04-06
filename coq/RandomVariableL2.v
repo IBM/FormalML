@@ -454,20 +454,6 @@ Section L2.
         (forall n m:nat,
           (n >= N)%nat -> (m >= N)%nat -> LpRRVq_norm prts (LpRRVq_minus prts (Un n) (Un m)) < eps).
 
-(*
-  Lemma cauch_cauchy (F:(LpRRVq prts 2->Prop)->Prop) :
-    ProperFilter F ->
-    cauchy F ->
-    let mapping (n:nat) := /(pow 2 n) in
-    exists (s:nat->LpRRVq prts 2),
-      Cauchy_crit s /\
-      is_lim_seq s (L2RRVq_lim F).
-      forall n,
-      exists X, F X /\
-           exists x, X x /\
-             Hierarchy.ball (s n) (mapping n).
- *)
-
    Lemma inv_pow_2_pos (n : nat) :
         0 < / (pow 2 n) .
   Proof.
@@ -498,7 +484,7 @@ Section L2.
                      exist _ _ (Hierarchy.filter_and
                        _ _ (proj2_sig x) (proj2_sig y)))
                   (exist _ _ Hierarchy.filter_true)
-                  (map (L2RRVq_lim_ball_center F PF cF) (seq 0 n)).
+                  (map (L2RRVq_lim_ball_center F PF cF) (seq 0 (S n))).
 
   Definition L2RRVq_lim_picker
              (F : (PreHilbert_UniformSpace (E:= L2RRVq_PreHilbert) -> Prop) -> Prop)
@@ -511,6 +497,50 @@ Section L2.
               (filter_ex
                  _
                  (proj2_sig (L2RRVq_lim_ball_cumulative F PF cF n))))).
+
+  Lemma lim_picker_included
+             (F : (PreHilbert_UniformSpace (E:= L2RRVq_PreHilbert) -> Prop) -> Prop)
+             (PF:ProperFilter F)
+             (cF:cauchy F)
+             (N n:nat) :
+    (N <= n)%nat ->
+    (proj1_sig (L2RRVq_lim_ball_center F PF cF N)) 
+      (L2RRVq_lim_picker F PF cF n).
+  Proof.
+    intros.
+    destruct  (L2RRVq_lim_picker F PF cF n).
+    Admitted.
+
+  Lemma lim_ball_center_dist (x y : LpRRVq prts 2)
+             (F : (PreHilbert_UniformSpace (E:= L2RRVq_PreHilbert) -> Prop) -> Prop)
+             (PF:ProperFilter F)
+             (cF:cauchy F)
+             (N:nat) :
+    (proj1_sig (L2RRVq_lim_ball_center F PF cF N)) x ->
+    (proj1_sig (L2RRVq_lim_ball_center F PF cF N)) y ->
+    LpRRVq_norm prts (LpRRVq_minus prts x y) < 2 / pow 2 N.
+  Proof.
+    Admitted.
+        
+
+  Lemma lim_filter_cauchy 
+        (F : (PreHilbert_UniformSpace (E:= L2RRVq_PreHilbert) -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F) :
+    forall N : nat,
+      forall n m : nat,
+        (n >= N)%nat ->
+        (m >= N)%nat -> 
+        LpRRVq_norm prts (LpRRVq_minus 
+                            prts  
+                            (L2RRVq_lim_picker F PF cF n)
+                            (L2RRVq_lim_picker F PF cF m)) < 2 / pow 2 N.
+  Proof.
+    intros.
+    apply (lim_ball_center_dist _ _ F PF cF).
+    now apply lim_picker_included.
+    now apply lim_picker_included.    
+  Qed.    
 
   Definition L2RRVq_lim_with_conditions (lim : (PreHilbert_UniformSpace (E:= L2RRVq_PreHilbert) -> Prop) -> Prop)
     (PF:ProperFilter lim)
