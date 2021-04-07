@@ -566,6 +566,12 @@ Section pre_ev.
     firstorder.
   Qed.
 
+  Lemma sa_equiv_subs {T} (s1 s2:SigmaAlgebra T)
+    : sa_equiv s1 s2 <-> (sa_sub s1 s2 /\ sa_sub s2 s1).
+  Proof.
+    firstorder.
+  Qed.
+
   (* restate some lemmas that rely on lem unconditionally *)
   Lemma ps_pre_event_union_complement {T} {s : SigmaAlgebra T} (A:pre_event T) :
     sa_sigma A ->

@@ -3,7 +3,7 @@ Require Import ClassicalChoice.
 Require Import FinFun.
 
 Require Import List.
-Require Import Morphisms EquivDec.
+Require Import Morphisms EquivDec Program.
 
 Require Import Utils DVector.
 Require Export Event.
@@ -289,6 +289,12 @@ Proof.
   eauto.
 Qed.
 
+Lemma generated_sa_sub' {T} (F:pre_event T -> Prop) :
+  pre_event_sub F (@sa_sigma _ (generated_sa F)).
+Proof.
+  firstorder.
+Qed.
+
 Lemma generated_sa_minimal {T} (F:pre_event T -> Prop) (sa':SigmaAlgebra T) :
   (forall x, F x -> @sa_sigma _ sa' x) ->
   (forall x, @sa_sigma _ (generated_sa F) x -> @sa_sigma _ sa' x).
@@ -334,6 +340,51 @@ Proof.
     + apply sa_complement; eauto.
 Qed.
 
+Global Instance closure_sigma_algebra_proper {T} :
+  Proper (Equivalence.equiv ==> Equivalence.equiv) (@closure_sigma_algebra T).
+Proof.
+  unfold Equivalence.equiv, pre_event_equiv, sa_equiv.
+  intros ?? eqq ?.
+  simpl; split; intros HH
+  ; apply generated_sa_closure in HH
+  ; apply generated_sa_closure
+  ; simpl in *
+  ; intros sa allsa
+  ; apply HH
+  ; eapply all_included_proper; eauto.
+  symmetry; eauto.
+Qed.
+
+Global Instance prob_space_closure_proper {T} :
+  Proper (Equivalence.equiv ==> Equivalence.equiv ==> iff) (@prob_space_closure T).
+Proof.
+  unfold Equivalence.equiv, pre_event_equiv, sa_equiv.
+  intros ?? eqq1 ?? eqq2.
+  simpl; split; intros HH
+  ; apply generated_sa_closure in HH
+  ; apply generated_sa_closure
+  ; simpl in *
+  ; intros sa allsa
+  ; eapply sa_proper
+  ; try apply HH
+  ; try red; firstorder.
+Qed.
+
+Lemma generated_sa_sub_sub {X:Type} (E1 E2:pre_event X -> Prop) :
+  sa_sub (generated_sa E1) (generated_sa E2) <->
+  (pre_event_sub E1 (sa_sigma (SigmaAlgebra:=(generated_sa E2)))).
+Proof.
+  firstorder.
+Qed.
+    
+Lemma generated_sa_equiv_subs {X:Type} (E1 E2:pre_event X -> Prop) :
+  generated_sa E1 === generated_sa E2 <->
+  (pre_event_sub E1 (sa_sigma (SigmaAlgebra:=(generated_sa E2))) /\
+   pre_event_sub E2 (sa_sigma (SigmaAlgebra:=(generated_sa E1)))).
+Proof.
+  firstorder.
+Qed.
+             
 Definition pre_event_set_product {T₁ T₂} (s₁ : pre_event T₁ -> Prop) (s₂ : pre_event T₂ -> Prop) : pre_event (T₁ * T₂) -> Prop
   := fun (e:pre_event (T₁ * T₂)) =>
        exists e₁ e₂,
@@ -378,11 +429,11 @@ Proof.
 Qed.
 
 Definition pre_event_pullback {X Y:Type} (f:X->Y) (ex:pre_event X) : pre_event Y
-  := fun y => exists x, f x = y.
+  := fun y => exists x, f x = y /\ ex x.
 
 Instance pre_event_pullback_proper {X Y:Type} (f:X->Y) : Proper (equiv ==> equiv) (pre_event_pullback f).
 Proof.
-  repeat red; intuition.
+  firstorder congruence.
 Qed.
 
 Instance pullback_sa {X Y:Type} (sa:SigmaAlgebra Y) (f:X->Y) : SigmaAlgebra X
@@ -404,12 +455,12 @@ Proof.
       revert HH2.
       apply sa_proper.
       red; intros.
-      split; intros [??]; subst; eauto.
+      split; intros [?[??]]; subst; eauto.
     + apply H.
       revert HH2.
       apply sa_proper.
       red; intros.
-      split; intros [??]; subst; eauto.
+      split; intros [?[??]]; subst; eauto.
   - apply HH.
     revert H1.
     apply all_included_proper; intros e.
@@ -421,13 +472,23 @@ Proof.
       revert HH2.
       apply sa_proper.
       red; intros.
-      split; intros [??]; subst; eauto.
+      split; intros [?[??]]; subst; eauto.
     + apply H.
       revert HH2.
       apply sa_proper.
       red; intros.
-      split; intros [??]; subst; eauto.
+      split; intros [?[??]]; subst; eauto.
 Qed.
+
+Lemma pullback_sa_pullback {X Y:Type} (sa:SigmaAlgebra Y) (f:X->Y) x :
+  sa_sigma (pre_event_pullback f x) ->
+  sa_sigma (SigmaAlgebra:=pullback_sa sa f) x.
+Proof.
+  simpl.
+  unfold pre_event_pullback.
+  intros ?? HH.
+  now apply (HH x).
+Qed.  
 
 Definition is_countable {T} (e:pre_event T)
   := exists (coll:nat -> T -> Prop),
