@@ -2132,33 +2132,6 @@ algorithm.
       now apply conv_l2_vector_prob_i with (srvxn0 := srvxn).
     Qed.
 
-    Lemma Rvector_mult_rsqr {n} (v : vector R n) :
-      Rvector_mult v v = vector_map Rsqr v.
-    Proof.
-      rewrite Rvector_mult_explode.
-      apply vector_nth_eq; intros.
-      rewrite vector_nth_create; simpl.
-      rewrite vector_nth_map.
-      rewrite vector_nth_ext with (pf2 := pf).
-      now unfold Rsqr.
-   Qed.
-
-    Lemma rsqr_Rvector_max_abs {n:nat} (v : vector R n) :
-      Rsqr (Rvector_max_abs v) = Rvector_max_abs (vector_map Rsqr v).
-    Proof.
-      unfold Rvector_max_abs, vector_fold_left.
-      Admitted.
-
-    Lemma sqr_max_abs_le_inner {n:nat} (v : vector R n) :
-      (Rvector_max_abs v)² <= Rvector_inner v v.
-    Proof.
-      rewrite rsqr_Rvector_max_abs.
-      unfold Rvector_inner, Rvector_max_abs.
-      unfold Rvector_sum, vector_fold_left.
-      unfold Rvector_abs.
-      rewrite Rvector_mult_rsqr.
-      Admitted.
-
     Lemma conv_l2_conv_linf_sqr {n:nat}
         (eps : posreal) 
         (Xn: nat -> Ts -> vector R n) 
@@ -2187,60 +2160,6 @@ algorithm.
         apply sqr_max_abs_le_inner.
     Qed.
           
-    Lemma Rvector_max_abs_nth_le {n} (v:vector R n) i pf:
-      Rabs (vector_nth i pf v) <= Rvector_max_abs v.
-    Proof.
-      cut (In (vector_nth i pf v) (proj1_sig v)); [| apply vector_nth_In].
-      generalize (vector_nth i pf v).
-      unfold Rvector_max_abs, vector_fold_left.
-      destruct v; simpl.
-      clear n pf i e.
-      intros.
-      apply fold_left_Rmax_le.
-      now apply in_map.
-    Qed.
-
-    Lemma Rvector_max_abs_in {n} (v:vector R (S n)) :
-      In (Rvector_max_abs v) (proj1_sig (vector_map Rabs v)).
-    Proof.
-      destruct v; simpl.
-      destruct x; simpl; try discriminate.
-      unfold Rvector_max_abs, vector_fold_left; simpl.
-      clear e.
-      induction x using rev_ind; simpl.
-      - unfold Rmax.
-        match_destr; eauto.
-        elim n0.
-        apply Rabs_pos.
-      - rewrite map_app.
-        rewrite fold_left_app.
-        destruct IHx.
-        + rewrite <- H.
-          simpl.
-          unfold Rmax.
-          match_destr.
-          * right.
-            apply in_app_iff; simpl; eauto.
-          * eauto.
-        + simpl.
-          right.
-          unfold Rmax at 1.
-          match_destr.
-          * apply in_app_iff; simpl; eauto.
-          * apply in_app_iff; simpl; eauto.
-    Qed.
-
-    Lemma Rvector_max_abs_nth_in {n} (v:vector R (S n)) :
-      exists i pf, Rvector_max_abs v = Rabs (vector_nth i pf v).
-    Proof.
-      generalize (Rvector_max_abs_in v)
-      ; intros HH.
-      apply In_vector_nth_ex in HH.
-      destruct HH as [?[? eqq]].
-      symmetry in eqq.
-      rewrite vector_nth_map in eqq.
-      eauto.
-    Qed.
 
     Lemma equiv_le_rvmaxabs_inter_rvabs {n}
           (eps : posreal)

@@ -208,6 +208,26 @@ Proof.
   now apply nth_error_In in e.
 Qed.  
 
+Program Lemma In_vector_nth_ex {T} {n} {x:vector T n} a :
+  In a x ->
+  exists i pf, vector_nth i pf x = a.
+Proof.
+  intros inn.
+  apply In_nth_error in inn.
+  destruct inn as [i eqq].
+  destruct x; simpl in *.
+  destruct (lt_dec i (length x)).
+  - subst.
+    exists i, l.
+    unfold vector_nth, proj1_sig.
+    repeat match_destr.
+    simpl in *.
+    congruence.
+  - assert (HH:(length x <= i)%nat) by lia.
+    apply nth_error_None in HH.
+    congruence.
+Qed.
+
 Lemma nth_error_map_onto {A B} (l:list A) (f:forall a, In a l->B) i d :
   nth_error (map_onto l f) i = Some d ->
   exists d' pfin, nth_error l i = Some d' /\
@@ -783,4 +803,31 @@ Next Obligation.
   destruct l1; destruct l2; simpl.
   rewrite app_length.
   congruence.
+Qed.
+
+Lemma vector_map_map {A B C} {n} (f:B->C) (g:A->B) (v:vector A n) :
+  vector_map f (vector_map g v) = vector_map (fun x => f (g x)) v.
+Proof.
+  apply vector_ext; simpl.
+  apply map_map.
+Qed.
+
+Program Lemma vector_map_ext' {A B} {n} (f g:A->B) (v:vector A n) :
+  (forall x, In x v -> f x = g x) ->
+  vector_map f v = vector_map g v.
+Proof.
+  intros.
+  apply vector_ext; simpl.
+  apply map_ext_in; auto.
+Qed.
+
+Lemma vector_map_ext {A B} {n} (f g:A->B) (v:vector A n) :
+  (forall i pf, f (vector_nth i pf v) = g (vector_nth i pf v)) ->
+  vector_map f v = vector_map g v.
+Proof.
+  intros.
+  apply vector_map_ext'; intros ? inn.
+  apply In_vector_nth_ex in inn.
+  destruct inn as [?[??]]; subst.
+  auto.
 Qed.

@@ -2780,3 +2780,50 @@ Proof.
   now repeat rewrite Rabs_pos_eq in H2 by trivial.
 Qed.
 
+Lemma Rabs_sqr (x : R) : x² = Rabs (x²).
+Proof.
+  rewrite Rabs_pos_eq; trivial.
+  apply Rle_0_sqr.
+Qed.
+
+Lemma fold_left_Rmax_init_le l d :
+  d <= fold_left Rmax l d.
+Proof.
+  revert d.
+  induction l; simpl; intros.
+  - lra.
+  - specialize (IHl (Rmax d a)).
+    eapply Rle_trans; try eapply IHl.
+    apply Rmax_l.
+Qed.
+
+Lemma fold_left_Rmax_le l d x :
+  In x l ->
+  x <= fold_left Rmax l d.
+Proof.
+  revert d.
+  induction l; simpl.
+  - tauto.
+  - intros.
+    destruct H.
+    + subst.
+      eapply Rle_trans
+      ; try eapply (fold_left_Rmax_init_le l (Rmax d x)).
+      apply Rmax_r.
+    + now eapply IHl.
+Qed.
+
+Lemma fold_left_lub l d r:
+  (forall x, In x l -> x <= r) ->
+  d <= r ->
+  fold_left Rmax l d <= r.
+Proof.
+  revert d.
+  induction l; simpl.
+  - tauto.
+  - intros.
+    apply IHl.
+    + eauto.
+    + apply Rmax_lub; eauto.
+Qed.
+

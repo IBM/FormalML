@@ -563,26 +563,6 @@ Section Rvector_defs.
     destruct x; simpl in *; congruence.
   Qed.
 
-  Program Lemma In_vector_nth_ex {T} {x:vector T n} a :
-    In a x ->
-    exists i pf, vector_nth i pf x = a.
-  Proof.
-    intros inn.
-    apply In_nth_error in inn.
-    destruct inn as [i eqq].
-    destruct x; simpl in *.
-    destruct (lt_dec i (length x)).
-    - subst.
-      exists i, l.
-      unfold vector_nth, proj1_sig.
-      repeat match_destr.
-      simpl in *.
-      congruence.
-    - assert (HH:(length x <= i)%nat) by lia.
-      apply nth_error_None in HH.
-      congruence.
-  Qed.
-
   Lemma Nth_Hnorm1 (x : vector R n) (eps : posreal) :
     (0 < n)%nat ->
     (forall (i : nat) (pf : (i < n)%nat),
@@ -833,3 +813,153 @@ Definition Rvector_Hilbert_mixin : Hilbert.mixin_of Rvector_PreHilbert
     Hilbert.Pack (vector R n) (Hilbert.Class _ _ Rvector_Hilbert_mixin) (vector R n).  
 
 End Rvector_defs.
+
+Section more_lemmas.
+  
+  Lemma Rvector_mult_rsqr {n} (v : vector R n) :
+    Rvector_mult v v = vector_map Rsqr v.
+  Proof.
+    rewrite Rvector_mult_explode.
+    apply vector_nth_eq; intros.
+    rewrite vector_nth_create; simpl.
+    rewrite vector_nth_map.
+    rewrite vector_nth_ext with (pf2 := pf).
+    now unfold Rsqr.
+  Qed.
+  
+  Lemma rsqr_Rvector_max_abs {n:nat} (v : vector R n) :
+    Rsqr (Rvector_max_abs v) = Rvector_max_abs (vector_map Rsqr v).
+  Proof.
+    unfold Rvector_max_abs.
+    destruct v as [l pfl]; simpl in *.
+    unfold vector_fold_left, vector_map, Rvector_abs; simpl.
+    clear pfl.
+    assert (HH:forall a, 0 <= a -> (fold_left Rmax (map Rabs l) a)² = fold_left Rmax (map Rabs (map Rsqr l)) (Rsqr a)).
+    - induction l; simpl in *; trivial; intros.
+      rewrite IHl.
+      f_equal.
+      unfold Rmax.
+      repeat match_destr.
+      + rewrite <- Rsqr_abs.
+        now rewrite <- Rabs_sqr.
+      + elim n0.
+        rewrite <- Rabs_sqr.
+        apply Rsqr_le_abs_1.
+        now rewrite (Rabs_pos_eq _ H).
+      + rewrite <- Rabs_sqr in r.
+        apply Rsqr_le_abs_0 in r.
+        now rewrite (Rabs_pos_eq _ H) in r.
+      + apply Rmax_Rle; eauto.
+    - specialize (HH 0).
+      rewrite Rsqr_0 in HH.
+      apply HH.
+      lra.
+  Qed.
+
+  Lemma Rvector_max_abs_nth_le {n} (v:vector R n) i pf:
+    Rabs (vector_nth i pf v) <= Rvector_max_abs v.
+  Proof.
+    cut (In (vector_nth i pf v) (proj1_sig v)); [| apply vector_nth_In].
+    generalize (vector_nth i pf v).
+    unfold Rvector_max_abs, vector_fold_left.
+    destruct v; simpl.
+    clear n pf i e.
+    intros.
+    apply fold_left_Rmax_le.
+    now apply in_map.
+  Qed.
+
+  Lemma Rvector_max_abs_in {n} (v:vector R (S n)) :
+    In (Rvector_max_abs v) (proj1_sig (vector_map Rabs v)).
+  Proof.
+    destruct v; simpl.
+    destruct x; simpl; try discriminate.
+    unfold Rvector_max_abs, vector_fold_left; simpl.
+    clear e.
+    induction x using rev_ind; simpl.
+    - unfold Rmax.
+      match_destr; eauto.
+      elim n0.
+      apply Rabs_pos.
+    - rewrite map_app.
+      rewrite fold_left_app.
+      destruct IHx.
+      + rewrite <- H.
+        simpl.
+        unfold Rmax.
+        match_destr.
+        * right.
+          apply in_app_iff; simpl; eauto.
+        * eauto.
+      + simpl.
+        right.
+        unfold Rmax at 1.
+        match_destr.
+        * apply in_app_iff; simpl; eauto.
+        * apply in_app_iff; simpl; eauto.
+  Qed.
+
+  Lemma Rvector_max_abs_nth_in {n} (v:vector R (S n)) :
+    exists i pf, Rvector_max_abs v = Rabs (vector_nth i pf v).
+  Proof.
+    generalize (Rvector_max_abs_in v)
+    ; intros HH.
+    apply In_vector_nth_ex in HH.
+    destruct HH as [?[? eqq]].
+    symmetry in eqq.
+    rewrite vector_nth_map in eqq.
+    eauto.
+  Qed.
+
+  Program Lemma Rvector_sum_pos_in_le {n} x (v : vector R n) :
+    (forall a, In a v -> 0%R <= a) ->
+    In x v ->
+    x <= Rvector_sum v.
+  Proof.
+    unfold Rvector_sum.
+    destruct v as [l lpf]; simpl.
+    apply list_sum_pos_In_le.
+  Qed.
+
+  Lemma sqr_max_abs_le_inner {n:nat} (v : vector R n) :
+    (Rvector_max_abs v)² <= Rvector_inner v v.
+  Proof.
+    rewrite rsqr_Rvector_max_abs.
+    unfold Rvector_inner.
+    rewrite <- Rvector_sqr_mult.
+    unfold Rvector_sqr.
+    destruct n.
+    - destruct v.
+      destruct x; simpl in *; try discriminate.
+      vm_compute; eauto.
+    - apply Rvector_sum_pos_in_le.
+      + intros.
+        apply In_vector_nth_ex in H.
+        destruct H as [?[??]]; subst.
+        rewrite vector_nth_map.
+        apply Rle_0_sqr.
+      + generalize (Rvector_max_abs_in (vector_map Rsqr v))
+        ; intros inn.
+        rewrite vector_map_map in inn.
+        erewrite (vector_map_ext' (fun x : R => Rabs x²)) in inn
+        ; try eapply inn; intros; simpl.
+        now rewrite <- Rabs_sqr.
+  Qed.
+
+  Lemma Rvector_max_abs_nonneg {n} (v: vector R n) : 0 <= Rvector_max_abs v.
+  Proof.
+    unfold Rvector_max_abs, vector_fold_left.
+    destruct v as [l lpf]; simpl; clear lpf.
+    apply fold_left_Rmax_init_le.
+  Qed.
+  
+  Lemma max_abs_le_sqrt_inner {n:nat} (v : vector R n) :
+    (Rvector_max_abs v) <= Rsqrt (mknonnegreal (Rvector_inner v v) (Rvector_inner_pos v)).
+  Proof.
+    replace (Rvector_max_abs v) with
+        (nonneg (mknonnegreal (Rvector_max_abs v) (Rvector_max_abs_nonneg v))) by reflexivity.
+    apply Rsqr_le_to_Rsqrt; simpl.
+    apply sqr_max_abs_le_inner.
+  Qed.
+                            
+End more_lemmas.
