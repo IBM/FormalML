@@ -1311,16 +1311,40 @@ algorithm.
       - now left.
     Qed.
 
+    Lemma SimpleExpectation_pos (f : Ts -> R)
+          (rx : RandomVariable dom borel_sa f)
+          (srv: SimpleRandomVariable f) :
+      (forall omega, 0 <= f omega) ->
+      0 <= SimpleExpectation f.
+    Proof.
+      intros.
+      replace (0) with (SimpleExpectation (const 0)).
+      - apply SimpleExpectation_le.
+        now unfold const.
+      - apply SimpleExpectation_const.
+    Qed.
+
     Lemma SimpleExpectation_rvinner_pos (f : Ts -> vector R I) 
           (rx : RandomVariable dom (Rvector_borel_sa I) f)
           (srv: SimpleRandomVariable f) :
       0 <= SimpleExpectation (rvinner f f).
     Proof.
-      replace (0) with (SimpleExpectation (const 0)).
-      - apply SimpleExpectation_le.
-        intro v.
-        now generalize (inner_ge_0 (f v)).
-      - apply SimpleExpectation_const.
+      apply SimpleExpectation_pos.
+      intro v.
+      now generalize (inner_ge_0 (f v)).
+   Qed.
+
+    Lemma SimpleExpectation_rvmaxabs_pos (f : Ts -> vector R I) 
+          (rx : RandomVariable dom (Rvector_borel_sa I) f)
+          (srv: SimpleRandomVariable f) :
+      0 <= SimpleExpectation (rvmaxabs f).
+    Proof.
+      apply SimpleExpectation_pos.
+      intro v.
+      unfold const, rvmaxabs.
+      unfold Rvector_max_abs.
+      unfold vector_fold_left.
+      apply fold_left_Rmax_init_le.
    Qed.
 
     Lemma aux_seq (C: R) (x : nat -> Ts -> vector R I) (v : nat -> R) (xstar : vector R I)
@@ -2108,6 +2132,61 @@ algorithm.
       now apply conv_l2_vector_prob_i with (srvxn0 := srvxn).
     Qed.
 
+    Lemma Rvector_mult_rsqr {n} (v : vector R n) :
+      Rvector_mult v v = vector_map Rsqr v.
+    Proof.
+      rewrite Rvector_mult_explode.
+      apply vector_nth_eq; intros.
+      rewrite vector_nth_create; simpl.
+      rewrite vector_nth_map.
+      rewrite vector_nth_ext with (pf2 := pf).
+      now unfold Rsqr.
+   Qed.
+
+    Lemma rsqr_Rvector_max_abs {n:nat} (v : vector R n) :
+      Rsqr (Rvector_max_abs v) = Rvector_max_abs (vector_map Rsqr v).
+    Proof.
+      unfold Rvector_max_abs, vector_fold_left.
+      Admitted.
+
+    Lemma sqr_max_abs_le_inner {n:nat} (v : vector R n) :
+      (Rvector_max_abs v)² <= Rvector_inner v v.
+    Proof.
+      rewrite rsqr_Rvector_max_abs.
+      unfold Rvector_inner, Rvector_max_abs.
+      unfold Rvector_sum, vector_fold_left.
+      unfold Rvector_abs.
+      rewrite Rvector_mult_rsqr.
+      Admitted.
+
+    Lemma conv_l2_conv_linf_sqr {n:nat}
+        (eps : posreal) 
+        (Xn: nat -> Ts -> vector R n) 
+        (srvxn : forall n0, SimpleRandomVariable (Xn n0))
+        (rvxn : forall n0, RandomVariable dom (Rvector_borel_sa n) (Xn n0)) :
+        is_lim_seq
+          (fun n0 : nat =>
+              SimpleExpectation (rvinner (Xn n0) (Xn n0))) 0 ->
+        is_lim_seq
+          (fun n0 : nat =>
+              SimpleExpectation (rvsqr (rvmaxabs (Xn n0)))) 0.
+    Proof.
+      intros.
+      apply is_lim_seq_le_le with
+          (u := fun _ => 0) (w := fun n0 => 
+                                    SimpleExpectation (rvinner (Xn n0) (Xn n0)));
+        [ | apply is_lim_seq_const | trivial].
+      intros; split.
+      - apply SimpleExpectation_pos.
+        intros.
+        unfold rvsqr.
+        apply Rle_0_sqr.
+      - apply SimpleExpectation_le.
+        intro x.
+        unfold rvmaxabs, rvinner, rvsqr.
+        apply sqr_max_abs_le_inner.
+    Qed.
+          
     Lemma Rvector_max_abs_nth_le {n} (v:vector R n) i pf:
       Rabs (vector_nth i pf v) <= Rvector_max_abs v.
     Proof.
