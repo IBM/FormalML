@@ -2161,11 +2161,27 @@ algorithm.
 
     Instance IsFiniteExpectation_simple
         (X:  Ts -> R)
-        (rv : RandomVariable dom borel_sa X) 
-        (srv: SimpleRandomVariable X)  :       
+        {rv : RandomVariable dom borel_sa X} 
+        {srv: SimpleRandomVariable X}  :       
       IsFiniteExpectation prts X.
     Proof.
-      Admitted.
+      generalize (Expectation_simple X); intros.
+      generalize (Expectation_IsFiniteExpectation prts X); intros.
+      now specialize (H0 _ H).
+    Qed.
+
+    Program Instance srvpower
+           (rv_X : Ts -> R) (r:R)
+           {srv:SimpleRandomVariable rv_X} : 
+      SimpleRandomVariable (rvpower (rvabs rv_X) (const r)) :=
+      {srv_vals := map (fun x => power (Rabs x) r) srv_vals }.
+    Next Obligation.
+      unfold rvpower, rvabs, const.
+      apply in_map_iff.
+      destruct srv.
+      exists (rv_X x).
+      split; trivial.
+    Qed.
 
     Instance IsLp_simple
         (X:  Ts -> R)
@@ -2176,7 +2192,8 @@ algorithm.
       unfold IsLp.
       apply IsFiniteExpectation_simple.
       typeclasses eauto.
-      Admitted.
+      typeclasses eauto.      
+    Qed.
 
     Lemma finite_expectation_simple
         (X: Ts -> R)
@@ -2223,8 +2240,8 @@ algorithm.
 
     Lemma conv_l2_conv_linf {n:nat}
         (Xn: nat -> Ts -> vector R n) 
-        (srvxn : forall n0, SimpleRandomVariable (Xn n0))
-        (rvxn : forall n0, RandomVariable dom (Rvector_borel_sa n) (Xn n0)) :
+        {srvxn : forall n0, SimpleRandomVariable (Xn n0)}
+        {rvxn : forall n0, RandomVariable dom (Rvector_borel_sa n) (Xn n0)} :
         is_lim_seq
           (fun n0 : nat =>
               SimpleExpectation (rvinner (Xn n0) (Xn n0))) 0 ->
@@ -2365,6 +2382,8 @@ algorithm.
         is_lim_seq (fun n0 => ps_P (event_ge dom (rvmaxabs (Xn n0)) eps)) 0.
     Proof.
       intros.
+      generalize (conv_l2_conv_linf Xn H); intros.
+      
       generalize (conv_l2_vector_prob eps Xn srvxn rvxn H); intros.
       Admitted.
       
