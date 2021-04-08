@@ -7,6 +7,7 @@ Require Import infprod Dvoretzky Expectation RandomVariableFinite.
 Require Import Classical.
 Require Import SigmaAlgebras ProbSpace.
 Require Import DVector RealVectorHilbert VectorRandomVariable.
+Require Import RandomVariableL2.
 Require hilbert.
 
 Set Bullet Behavior "Strict Subproofs".
@@ -1991,8 +1992,7 @@ algorithm.
           {srv: SimpleRandomVariable f} :
       0 <= SimpleExpectation (rvsqr f).
     Proof.
-      replace (0) with (SimpleExpectation (const 0)); [|apply SimpleExpectation_const].
-      apply SimpleExpectation_le.
+      apply SimpleExpectation_pos.
       intro v.
       unfold const, rvsqr.
       apply Rle_0_sqr.
@@ -2133,7 +2133,6 @@ algorithm.
     Qed.
 
     Lemma conv_l2_conv_linf_sqr {n:nat}
-        (eps : posreal) 
         (Xn: nat -> Ts -> vector R n) 
         (srvxn : forall n0, SimpleRandomVariable (Xn n0))
         (rvxn : forall n0, RandomVariable dom (Rvector_borel_sa n) (Xn n0)) :
@@ -2159,7 +2158,93 @@ algorithm.
         unfold rvmaxabs, rvinner, rvsqr.
         apply sqr_max_abs_le_inner.
     Qed.
-          
+
+    Instance IsFiniteExpectation_simple
+        (X:  Ts -> R)
+        (rv : RandomVariable dom borel_sa X) 
+        (srv: SimpleRandomVariable X)  :       
+      IsFiniteExpectation prts X.
+    Proof.
+      Admitted.
+
+    Instance IsLp_simple
+        (X:  Ts -> R)
+        (rv : RandomVariable dom borel_sa X) 
+        (srv: SimpleRandomVariable X)  :       
+      IsLp prts 2 X.
+    Proof.
+      unfold IsLp.
+      apply IsFiniteExpectation_simple.
+      typeclasses eauto.
+      Admitted.
+
+    Lemma finite_expectation_simple
+        (X: Ts -> R)
+        {rv : RandomVariable dom borel_sa X} 
+        {srv : SimpleRandomVariable X} :
+      SimpleExpectation X = FiniteExpectation prts X.
+      generalize (Expectation_simple X); intros.
+      generalize (FiniteExpectation_Expectation prts X); intros.
+      rewrite H in H0.
+      now inversion H0.
+   Qed.
+
+    Lemma conv_l2_l1_simple
+        (Xn: nat -> Ts -> R)
+        (rvxn : forall n, RandomVariable dom borel_sa (Xn n)) 
+        (srvxn : forall n, SimpleRandomVariable (Xn n))  :       
+    is_lim_seq (fun n => SimpleExpectation (rvsqr (Xn n))) 0 ->
+    is_lim_seq (fun n => SimpleExpectation (rvabs (Xn n))) 0.
+    Proof.
+      intros.
+      generalize (conv_l2_l1 Xn rvxn _); intros.
+      cut_to H0.
+      - apply is_lim_seq_ext with 
+            (v := fun n : nat => SimpleExpectation (rvabs (Xn n))) in H0.
+        apply H0.
+        intros; symmetry.
+        generalize (finite_expectation_simple (rvabs (Xn n))); intros.
+        rewrite H1.
+        apply FiniteExpectation_pf_irrel.
+      - apply is_lim_seq_ext with
+            (u := fun n => SimpleExpectation (rvsqr (rvabs (Xn n)))).
+        intros.
+        generalize (finite_expectation_simple (rvsqr (rvabs (Xn n)))); intros.
+        rewrite H1.
+        apply FiniteExpectation_pf_irrel.
+        apply is_lim_seq_ext with
+            (u := (fun n : nat => SimpleExpectation (rvsqr (Xn n)))); trivial.
+        intros.
+        apply SimpleExpectation_ext.
+        intro x.
+        unfold rvsqr, rvabs.
+        now rewrite Rsqr_abs.
+     Qed.
+
+    Lemma conv_l2_conv_linf {n:nat}
+        (Xn: nat -> Ts -> vector R n) 
+        (srvxn : forall n0, SimpleRandomVariable (Xn n0))
+        (rvxn : forall n0, RandomVariable dom (Rvector_borel_sa n) (Xn n0)) :
+        is_lim_seq
+          (fun n0 : nat =>
+              SimpleExpectation (rvinner (Xn n0) (Xn n0))) 0 ->
+        is_lim_seq
+          (fun n0 : nat =>
+             SimpleExpectation (rvmaxabs (Xn n0))) 0.
+     Proof.
+       intros.
+       generalize (conv_l2_conv_linf_sqr Xn srvxn rvxn H); intros.
+       apply conv_l2_l1_simple in H0.
+       apply is_lim_seq_ext with
+           (v := (fun n0 => SimpleExpectation (rvmaxabs (Xn n0)))) in H0; trivial.
+       intros.
+       apply SimpleExpectation_ext.
+       intro x.
+       unfold rvabs, rvmaxabs.
+       apply Rabs_right.
+       apply Rle_ge.
+       apply Rvector_max_abs_nonneg.
+    Qed.
 
     Lemma equiv_le_rvmaxabs_inter_rvabs {n}
           (eps : posreal)

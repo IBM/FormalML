@@ -571,31 +571,29 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
       apply nonneg_pf_irrel.
     Qed.
 
-    Lemma conv_l2_l1 {Ts:Type} {dom:SigmaAlgebra Ts} {prts: ProbSpace dom}
-        (X: Ts -> R)
+     Lemma conv_l2_l1 {Ts:Type} {dom:SigmaAlgebra Ts} {prts: ProbSpace dom}
         (Xn: nat -> Ts -> R)
-        (rvx : RandomVariable dom borel_sa X)
         (rvxn : forall n, RandomVariable dom borel_sa (Xn n)) 
-        (isl: forall n, IsLp prts 2 (rvabs (rvminus X (Xn n)))) :
-    is_lim_seq (fun n => FiniteExpectation prts (rvsqr (rvabs (rvminus X (Xn n))))) 0 ->
-    is_lim_seq (fun n => FiniteExpectation prts (rvabs (rvminus X (Xn n)))) 0.
+        (isl: forall n, IsLp prts 2 (Xn n)):
+    is_lim_seq (fun n => FiniteExpectation prts (rvsqr (rvabs (Xn n)))) 0 ->
+    is_lim_seq (fun n => FiniteExpectation prts (rvabs (Xn n))) 0.
     Proof.
       intros.
-      assert (forall n, 0 <= FiniteExpectation prts (rvsqr (rvabs (rvminus X (Xn n))))).
+      assert (forall n, 0 <= FiniteExpectation prts (rvsqr (rvabs (Xn n)))).
       - intros.
         apply FiniteExpectation_pos.
-        unfold PositiveRandomVariable, rvabs, rvminus, rvopp, rvplus, rvsqr; intros.
+        unfold PositiveRandomVariable, rvabs, rvsqr; intros.
         apply Rle_0_sqr.
       - apply is_lim_seq_le_le_loc with 
             (u := fun _ => 0) 
-            (w := (fun n => Rsqrt (mknonnegreal (FiniteExpectation prts (rvsqr (rvabs (rvminus X (Xn n))))) (H0 n)))).
+            (w := (fun n => Rsqrt (mknonnegreal (FiniteExpectation prts (rvsqr (rvabs (Xn n)))) (H0 n)))).
         + exists (0%nat); intros.
-          assert (0 <= FiniteExpectation prts (rvabs (rvminus X (Xn n)))).
+          assert (0 <= FiniteExpectation prts (rvabs (Xn n))).
           * apply FiniteExpectation_pos.
-            unfold rvabs, rvminus, rvopp, rvplus, PositiveRandomVariable; intros.
+            unfold rvabs, PositiveRandomVariable; intros.
             apply Rabs_pos.
           * split; trivial.
-            generalize (L2RRV_L2_L1 (pack_LpRRV prts (rvabs (rvminus X (Xn n)))));intros.
+            generalize (L2RRV_L2_L1 (pack_LpRRV prts (rvabs (Xn n))));intros.
             generalize Rsqr_le_to_Rsqrt; intros.
             specialize (H4 (mknonnegreal _ (H0 n))
                            (mknonnegreal _ H2)).
@@ -603,7 +601,7 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
             apply H3.
         + apply is_lim_seq_const.
         + apply is_lim_seq_ext with 
-          (u := fun n=> Rsqrt_abs (FiniteExpectation prts (rvsqr (rvabs (rvminus X (Xn n)))))).
+          (u := fun n=> Rsqrt_abs (FiniteExpectation prts (rvsqr (rvabs (Xn n))))).
           * intros.
             unfold Rsqrt_abs; f_equal.
             apply nonneg_ext. (* CAUTION : This uses proof irrelevance. *)
@@ -611,5 +609,17 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
           * replace (0) with (Rsqrt_abs 0) by apply Rsqrt_abs_0.
             apply is_lim_seq_continuous; [|trivial].
             apply continuity_pt_Rsqrt_abs_0.
+    Qed.
+
+    Lemma conv_l2_l1_minus {Ts:Type} {dom:SigmaAlgebra Ts} {prts: ProbSpace dom}
+        (X: Ts -> R)
+        (Xn: nat -> Ts -> R)
+        (rvx : RandomVariable dom borel_sa X)
+        (rvxn : forall n, RandomVariable dom borel_sa (Xn n)) 
+        (isl: forall n, IsLp prts 2 (rvminus X (Xn n))) :
+    is_lim_seq (fun n => FiniteExpectation prts (rvsqr (rvabs (rvminus X (Xn n))))) 0 ->
+    is_lim_seq (fun n => FiniteExpectation prts (rvabs (rvminus X (Xn n)))) 0.
+    Proof.
+      now apply conv_l2_l1.
     Qed.
 
