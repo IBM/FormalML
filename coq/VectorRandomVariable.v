@@ -945,6 +945,18 @@ Lemma SimpleRandomVariable_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
     - apply srv_vecsum.
       now apply srv_vecrvmult.
   Qed.
+
+  Global Program Instance srvmaxabs {n}
+         (rv_X : Ts -> vector R n)
+         {srv:SimpleRandomVariable rv_X}
+    : SimpleRandomVariable (rvmaxabs rv_X)
+  := { srv_vals := map Rvector_max_abs srv_vals }.
+  Next Obligation.
+    unfold rvmaxabs.
+    destruct srv.
+    now apply in_map.
+  Qed.
+
 End vector_ops.
 
 Lemma Rvector_borel_singleton {n} (c:vector R n) :
