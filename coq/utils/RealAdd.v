@@ -2827,3 +2827,35 @@ Proof.
     + apply Rmax_lub; eauto.
 Qed.
 
+Lemma Rsqrt_le_to_Rsqr: forall r x : nonnegreal, x <= r² <-> Rsqrt x <= r.
+Proof.
+  intros.
+  unfold Rsqrt.
+  match_destr.
+  destruct a as [? eqq].
+  rewrite eqq.
+  split; intros HH.
+  - apply Rsqr_le_abs_0 in HH.
+    destruct r; destruct x; simpl in *.
+    now repeat (rewrite Rabs_pos_eq in HH by lra).
+  - apply Rsqr_le_abs_1.
+    destruct r; destruct x; simpl in *.
+    now repeat (rewrite Rabs_pos_eq by lra).
+Qed.
+
+Lemma Rsqrt_lt_to_Rsqr: forall r x : nonnegreal, x < r² <-> Rsqrt x < r.
+Proof.
+  intros.
+  unfold Rsqrt.
+  match_destr.
+  destruct a as [? eqq].
+  rewrite eqq.
+  split; intros HH.
+  - apply Rsqr_lt_abs_0 in HH.
+    destruct r; destruct x; simpl in *.
+    now repeat (rewrite Rabs_pos_eq in HH by lra).
+  - apply Rsqr_lt_abs_1.
+    destruct r; destruct x; simpl in *.
+    now repeat (rewrite Rabs_pos_eq by lra).
+Qed.
+

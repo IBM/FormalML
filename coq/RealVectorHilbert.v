@@ -550,6 +550,24 @@ Section Rvector_defs.
       lra.
   Qed.
 
+  Lemma list_sum_bound_const_le (l : list R)
+        (c : R) :
+    l <> nil ->
+    (forall a : R, In a l -> a <= c) ->
+    RealAdd.list_sum l <= c * INR (length l).
+  Proof.
+    intros nnil bounded.
+    induction l; simpl in *; try congruence.
+    destruct l; simpl.
+    - ring_simplify.
+      auto.
+    - simpl in *.
+      cut_to IHl; try congruence; auto.
+      specialize (bounded a).
+      cut_to bounded; auto.
+      lra.
+  Qed.
+
   Program Lemma Rvector_sum_bound_const_lt (x:vector R n) c :
     n <> 0%nat ->
     (forall a, In a x -> (a < c)%R) ->
@@ -560,6 +578,19 @@ Section Rvector_defs.
     destruct x; simpl in *.
     subst.
     apply list_sum_bound_const_lt; trivial.
+    destruct x; simpl in *; congruence.
+  Qed.
+
+  Program Lemma Rvector_sum_bound_const_le (x:vector R n) c :
+    n <> 0%nat ->
+    (forall a, In a x -> (a <= c)%R) ->
+    ∑ x <= (c * INR n)%R.
+  Proof.
+    intros.
+    unfold Rvector_sum.
+    destruct x; simpl in *.
+    subst.
+    apply list_sum_bound_const_le; trivial.
     destruct x; simpl in *; congruence.
   Qed.
 
@@ -856,17 +887,22 @@ Section more_lemmas.
       lra.
   Qed.
 
-  Lemma Rvector_max_abs_nth_le {n} (v:vector R n) i pf:
-    Rabs (vector_nth i pf v) <= Rvector_max_abs v.
+  Lemma Rvector_max_abs_in_le {n} (v:vector R n) a :
+    In a (proj1_sig v) ->
+    Rabs a <= Rvector_max_abs v.
   Proof.
-    cut (In (vector_nth i pf v) (proj1_sig v)); [| apply vector_nth_In].
-    generalize (vector_nth i pf v).
     unfold Rvector_max_abs, vector_fold_left.
     destruct v; simpl.
-    clear n pf i e.
     intros.
     apply fold_left_Rmax_le.
     now apply in_map.
+  Qed.
+
+  Lemma Rvector_max_abs_nth_le {n} (v:vector R n) i pf:
+    Rabs (vector_nth i pf v) <= Rvector_max_abs v.
+  Proof.
+    apply Rvector_max_abs_in_le.
+    apply vector_nth_In.
   Qed.
 
   Lemma Rvector_max_abs_in {n} (v:vector R (S n)) :
@@ -921,6 +957,14 @@ Section more_lemmas.
     apply list_sum_pos_In_le.
   Qed.
 
+  
+  Lemma Rvector_max_abs_nonneg {n} (v: vector R n) : 0 <= Rvector_max_abs v.
+  Proof.
+    unfold Rvector_max_abs, vector_fold_left.
+    destruct v as [l lpf]; simpl; clear lpf.
+    apply fold_left_Rmax_init_le.
+  Qed.
+
   Lemma sqr_max_abs_le_inner {n:nat} (v : vector R n) :
     (Rvector_max_abs v)² <= Rvector_inner v v.
   Proof.
@@ -946,13 +990,26 @@ Section more_lemmas.
         now rewrite <- Rabs_sqr.
   Qed.
 
-  Lemma Rvector_max_abs_nonneg {n} (v: vector R n) : 0 <= Rvector_max_abs v.
+  Lemma inner_le_sqr_max_abs {n:nat} (v : vector R n) :
+    Rvector_inner v v <= INR n * (Rvector_max_abs v)².
   Proof.
-    unfold Rvector_max_abs, vector_fold_left.
-    destruct v as [l lpf]; simpl; clear lpf.
-    apply fold_left_Rmax_init_le.
-  Qed.
-  
+    rewrite rsqr_Rvector_max_abs.
+    unfold Rvector_inner.
+    rewrite <- Rvector_sqr_mult.
+    unfold Rvector_sqr.
+    rewrite Rmult_comm.
+    destruct n.
+    - destruct v.
+      destruct x; simpl in *; try discriminate.
+      vm_compute; lra.
+    - apply Rvector_sum_bound_const_le.
+      + congruence.
+      + intros.
+        eapply Rle_trans; try eapply Rle_abs.
+        now apply Rvector_max_abs_in_le.
+  Qed.        
+
+
   Lemma max_abs_le_sqrt_inner {n:nat} (v : vector R n) :
     (Rvector_max_abs v) <= Rsqrt (mknonnegreal (Rvector_inner v v) (Rvector_inner_pos v)).
   Proof.
@@ -961,5 +1018,5 @@ Section more_lemmas.
     apply Rsqr_le_to_Rsqrt; simpl.
     apply sqr_max_abs_le_inner.
   Qed.
-                            
+
 End more_lemmas.
