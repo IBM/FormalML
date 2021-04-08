@@ -1269,14 +1269,31 @@ Section RealRandomVariables.
       ; apply rv_measurable; trivial.
     Qed.
 
+    Definition srvsqrt_simplemapping l :=
+      map (fun x =>
+             match Rle_dec 0 x with
+             | left pf => Rsqrt (mknonnegreal _ pf)
+             | right _ => 0
+             end) l.
+
     Global Program Instance srvsqrt
            (rv_X : Ts -> R)
            {prv: PositiveRandomVariable rv_X}
            {srv:SimpleRandomVariable rv_X} : SimpleRandomVariable (rvsqrt rv_X prv)
-      := { srv_vals := map Rsqrt srv_vals }.
+      := { srv_vals := srvsqrt_simplemapping srv_vals }.
     Next Obligation.
+      unfold srvsqrt_simplemapping.
+      apply in_map_iff.
+      unfold rvsqrt; simpl.
+      exists (rv_X x); simpl.
       destruct srv.
-    Admitted.
+      red in prv0.
+      match_destr.
+      - split; trivial.
+        now apply Rsqrt_ext.
+      - generalize (prv0 x).
+        congruence.
+    Qed.
 
     Global Instance prvchoice (c:Ts->bool) (rv_X1 rv_X2 : Ts -> R)
            {prv1:PositiveRandomVariable rv_X1}

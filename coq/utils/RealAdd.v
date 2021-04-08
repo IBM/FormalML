@@ -2764,3 +2764,19 @@ Proof.
   rewrite <- Rplus_0_r at 1.
   now apply Rplus_le_compat_l.
 Qed.
+
+Lemma Rsqrt_ext x y : nonneg x = nonneg y -> Rsqrt x = Rsqrt y.
+Proof.
+  intros.
+  destruct x; destruct y; simpl in *.
+  subst.
+  unfold Rsqrt.
+  repeat match_destr.
+  simpl in *.
+  destruct a as [??].
+  destruct a0 as [??].
+  subst.
+  apply Rsqr_eq_abs_0 in H2.
+  now repeat rewrite Rabs_pos_eq in H2 by trivial.
+Qed.
+
