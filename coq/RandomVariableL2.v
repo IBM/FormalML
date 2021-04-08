@@ -643,6 +643,33 @@ Section L2.
     apply (lim_ball_center_dist _ _ F PF cF); now apply lim_picker_included.
   Qed.    
 
+  Lemma cauchy_filter_sum_bound 
+        (F : (PreHilbert_UniformSpace (E:= L2RRVq_PreHilbert) -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F) :
+    ex_series (fun n => 
+                 LpRRVq_norm prts 
+                             (LpRRVq_minus prts
+                                (L2RRVq_lim_picker F PF cF (S n))
+                                (L2RRVq_lim_picker F PF cF n))).
+  Proof.
+    apply (@ex_series_le R_AbsRing R_CompleteNormedModule) with
+        (b := fun n => 2 / pow 2 n).
+    intros; unfold norm; simpl.
+    unfold abs; simpl.
+    rewrite Rabs_pos_eq.
+    left.
+    apply (lim_filter_cauchy F PF cF n (S n) n); try lia.
+    rewrite <- LpRRVq_norm_norm.
+    apply norm_ge_0.
+    unfold Rdiv.
+    apply (@ex_series_scal_l R_AbsRing R_CompleteNormedModule).
+    apply ex_series_ext with (a := fun n => (/ 2)^n).
+    intros; now rewrite Rinv_pow.
+    apply ex_series_geom.
+    rewrite Rabs_pos_eq; lra.
+ Qed.
+
   Definition L2RRVq_lim_with_conditions (lim : (PreHilbert_UniformSpace (E:= L2RRVq_PreHilbert) -> Prop) -> Prop)
     (PF:ProperFilter lim)
     (cF:cauchy lim) : LpRRVq prts 2.
