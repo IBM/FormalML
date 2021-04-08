@@ -277,7 +277,7 @@ Section RealRandomVariables.
         + rewrite H2.
           apply H0.
     Qed.
-    
+
     Lemma measurable_open_continuous (f : Ts -> R) (g : R -> R) :
       continuity g ->
       (forall B: pre_event R, open_set B -> sa_sigma (pre_event_preimage f B)) ->
@@ -554,6 +554,7 @@ Section RealRandomVariables.
           * now apply Rpower_measurable.
     Qed.
     
+
     Section rvs.
 
       Global Instance rvscale_rv (c: R) (rv_X : Ts -> R) 
@@ -1238,6 +1239,45 @@ Section RealRandomVariables.
       ; apply rv_measurable; trivial.
     Qed.
     
+    Definition rvsqrt (rv_X : Ts -> R)
+                      (prv : PositiveRandomVariable rv_X) := 
+      fun omega => Rsqrt (mknonnegreal (rv_X omega) (prv omega)).
+
+    Instance rvsqrt_measurable (rv_X : Ts -> R) 
+             (xpos: PositiveRandomVariable rv_X) :
+      RealMeasurable rv_X ->
+      RealMeasurable (rvsqrt rv_X xpos).
+    Proof.
+      intros.
+      apply RealMeasurable_proper with
+          (x := rvpower (fun x => mknonnegreal (rv_X x) (xpos x)) (fun _ => / 2)).
+      intro x.
+      unfold rvpower.
+      now rewrite power_2_sqrt.
+      apply rvpower_measurable; trivial.
+      apply constant_measurable.
+    Qed.
+
+    Global Instance rvsqrt_rv 
+           (rv_X : Ts -> R)
+           {rv : RandomVariable dom borel_sa rv_X}
+           {prv: PositiveRandomVariable rv_X}:
+      RandomVariable dom borel_sa (rvsqrt rv_X prv).
+    Proof.
+      apply measurable_rv.
+      apply rvsqrt_measurable; trivial
+      ; apply rv_measurable; trivial.
+    Qed.
+
+    Global Program Instance srvsqrt
+           (rv_X : Ts -> R)
+           {prv: PositiveRandomVariable rv_X}
+           {srv:SimpleRandomVariable rv_X} : SimpleRandomVariable (rvsqrt rv_X prv)
+      := { srv_vals := map Rsqrt srv_vals }.
+    Next Obligation.
+      destruct srv.
+    Admitted.
+
     Global Instance prvchoice (c:Ts->bool) (rv_X1 rv_X2 : Ts -> R)
            {prv1:PositiveRandomVariable rv_X1}
            {prv2:PositiveRandomVariable rv_X2} :
