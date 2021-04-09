@@ -385,20 +385,18 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
 
   Lemma conv_l1_prob_le {Ts:Type} {dom:SigmaAlgebra Ts} {prts: ProbSpace dom}
         (eps : posreal) 
-        (X Xn: Ts -> R)
-        (rvx : RandomVariable dom borel_sa X)
-        (rvxn : RandomVariable dom borel_sa Xn) :
-    is_finite (Expectation_posRV (rvabs (rvminus X Xn))) ->
-    ps_P (event_ge dom (rvabs (rvminus X Xn)) eps) <=
-    (Expectation_posRV (rvabs (rvminus X Xn))) / eps.
+        (X: Ts -> R)
+        {rvx : RandomVariable dom borel_sa X}:
+    is_finite (Expectation_posRV (rvabs X)) ->
+    ps_P (event_ge dom (rvabs X) eps) <=
+    (Expectation_posRV (rvabs X)) / eps.
     Proof.
-      assert (RandomVariable dom borel_sa (rvabs (rvminus X Xn))).
-      - apply rvabs_rv.
-        now apply rvminus_rv.
-      - assert (PositiveRandomVariable (rvabs (rvminus X Xn))).
+      assert (RandomVariable dom borel_sa (rvabs X)).
+      - now apply rvabs_rv.
+      - assert (PositiveRandomVariable (rvabs X)).
         now apply prvabs.
         intros.
-        generalize (Markov_ineq_div (rvabs (rvminus X Xn)) H H0 eps); intros.
+        generalize (Markov_ineq_div (rvabs X) H H0 eps); intros.
         rewrite <- H1 in H2.
         intros.
         erewrite ps_proper; try eapply H2.
@@ -406,6 +404,18 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
         reflexivity.
     Qed.
         
+  Lemma conv_l1_prob_le_minus {Ts:Type} {dom:SigmaAlgebra Ts} {prts: ProbSpace dom}
+        (eps : posreal) 
+        (X Xn: Ts -> R)
+        {rvx : RandomVariable dom borel_sa X}
+        {rvxn : RandomVariable dom borel_sa Xn} :
+    is_finite (Expectation_posRV (rvabs (rvminus X Xn))) ->
+    ps_P (event_ge dom (rvabs (rvminus X Xn)) eps) <=
+    (Expectation_posRV (rvabs (rvminus X Xn))) / eps.
+    Proof.
+      apply conv_l1_prob_le.
+    Qed.
+
   Lemma conv_l2_prob1 {Ts:Type} {dom:SigmaAlgebra Ts} {prts: ProbSpace dom}
         (eps : posreal) 
         (Xn: nat -> Ts -> R)

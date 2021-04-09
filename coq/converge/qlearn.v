@@ -2371,6 +2371,15 @@ algorithm.
       - now apply equiv_ge_rvmaxabs_inter_rvabs_aux.
     Qed.
 
+    Instance rvmaxabs_pos {n}
+             (X : Ts -> vector R n) :
+      PositiveRandomVariable (rvmaxabs X).
+    Proof.
+      unfold PositiveRandomVariable, rvmaxabs.
+      intros.
+      apply Rvector_max_abs_nonneg.
+    Qed.
+
     Lemma conv_l2_vector_prob_max_abs {n:nat}
         (eps : posreal)
         (Xn: nat -> Ts -> vector R n) 
@@ -2382,10 +2391,55 @@ algorithm.
         is_lim_seq (fun n0 => ps_P (event_ge dom (rvmaxabs (Xn n0)) eps)) 0.
     Proof.
       intros.
-      generalize (conv_l2_conv_linf Xn H); intros.
-      
-      generalize (conv_l2_vector_prob eps Xn srvxn rvxn H); intros.
-      Admitted.
+      apply conv_l2_conv_linf in H.
+      apply is_lim_seq_le_le_loc with (u := fun _ => 0) 
+                                      (w := (fun n => (Expectation_posRV (rvmaxabs (Xn n))) / eps)).
+      - exists (0%nat); intros.
+        split.
+        + apply ps_pos.
+        + generalize (conv_l1_prob_le eps (rvmaxabs (Xn n0))); intros.
+          rewrite Expectation_posRV_ext with (prv2 := prvabs (rvmaxabs (Xn n0))).
+          * assert (event_equiv
+                      (event_ge dom (rvmaxabs (Xn n0)) eps)
+                      (event_ge dom (rvabs (rvmaxabs (Xn n0))) eps)).
+            {
+              intro x.
+              simpl.
+              unfold rvmaxabs, rvabs.
+              replace (Rabs (Rvector_max_abs (Xn n0 x))) with
+                  (Rvector_max_abs (Xn n0 x)); try lra.
+              rewrite Rabs_right; trivial.
+              apply Rle_ge.
+              apply Rvector_max_abs_nonneg.
+            }
+            rewrite (ps_proper _ _ H2).
+            apply H1.
+            generalize (simple_Expectation_posRV (rvabs (rvmaxabs (Xn n0)))); intros.
+            unfold is_finite.
+            rewrite <- H3.
+            simpl.
+            reflexivity.
+          * intro x.
+            unfold rvmaxabs, rvabs.
+            rewrite Rabs_right; trivial.
+            apply Rle_ge.
+            apply Rvector_max_abs_nonneg.
+      - apply is_lim_seq_const.
+      - apply is_lim_seq_ext with
+            (u := fun n0 => (/ eps) * SimpleExpectation (rvmaxabs (Xn n0))).
+        + intros.
+          unfold Rdiv.
+          rewrite Rmult_comm.
+          apply Rmult_eq_compat_r.
+          generalize (simple_Expectation_posRV (rvmaxabs (Xn n0))); intros.
+          rewrite <- H0.
+          reflexivity.
+        + replace (Finite 0) with (Rbar_mult (Finite (/ eps)) (Finite 0)).
+          * now apply is_lim_seq_scal_l.
+          * simpl.
+            rewrite Rbar_finite_eq.
+            lra.
+    Qed.
       
     Lemma Induction_I1_15 {n} (eps P : posreal) (C C0 : R) (w x : nat -> Ts -> vector R n) (xstar : vector R n)
           (rx : forall n0, RandomVariable dom (Rvector_borel_sa n) (x n0))
@@ -2456,9 +2510,15 @@ algorithm.
                          (rvinner (@L2_convergent_x n α (vecrvconst n 0) Ts (vecrvconst n 0) w n0)
                                   (@L2_convergent_x n α (vecrvconst n 0) Ts (vecrvconst n 0) w n0))) in H11.
 
-          * generalize (conv_l2_vector_prob 
-                          (mkposreal _ H13)
+          * assert (0 < (gamma + eps) ^k * (eps/2)).
+            apply Rmult_lt_0_compat; trivial.
+            apply pow_lt.
+            lra.
+            generalize (conv_l2_vector_prob_max_abs 
+                          (mkposreal _ H14)
                           (fun n0 => @L2_convergent_x n α (vecrvconst n 0) Ts (vecrvconst n 0) w n0) _ _ H11); intros.
+            apply is_lim_seq_spec in H15.
+            unfold is_lim_seq' in H15.
             admit.
           * intros.
             apply SimpleExpectation_ext.
