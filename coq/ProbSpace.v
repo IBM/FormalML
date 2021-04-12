@@ -670,3 +670,70 @@ Hint Resolve ps_none ps_one : prob.
       rewrite p2.
       lra.
   Qed.
+
+
+Section conditional_probability.
+
+  Context {T: Type} {σ:SigmaAlgebra T} (Ψ: ProbSpace σ).
+
+  Definition cond_prob
+               (A B : event σ) 
+    := ps_P (A ∩ B)/ps_P(B).
+
+  Lemma infinite_sum'_scal_r {f1 : nat -> R} {sum1 : R} (c : R) :
+    infinite_sum' f1 sum1 ->
+    infinite_sum' (fun x : nat => f1 x * c) (sum1 * c).
+  Proof.
+    intros.
+    rewrite Rmult_comm.
+    erewrite infinite_sum'_ext
+    ; [| intros; rewrite Rmult_comm; reflexivity].
+    now apply infinite_sum'_mult_const.
+  Qed.
+
+  Lemma infinite_sum'_scal_div {f1 : nat -> R} {sum1 : R} (c : R) :
+    infinite_sum' f1 sum1 ->
+    infinite_sum' (fun x : nat => f1 x / c) (sum1 / c).
+  Proof.
+    apply infinite_sum'_scal_r.
+  Qed.
+
+  Lemma event_inter_countable_union_distr_r  (A:event σ) (coll:nat->event σ) :
+    union_of_collection coll ∩ A === union_of_collection (fun n => (coll n) ∩ A).
+  Proof.
+    firstorder.
+  Qed.
+
+  Global Program Instance cond_prob_space (B:event σ) (pf:0 < ps_P B) : ProbSpace σ
+    := {
+    ps_P A := cond_prob A B
+      }.
+  Next Obligation.
+    intros ?? eqq.
+    unfold cond_prob.
+    now rewrite eqq.
+  Qed.
+  Next Obligation.
+    unfold cond_prob.
+    red.
+    apply infinite_sum'_scal_div.
+    rewrite event_inter_countable_union_distr_r.
+    apply ps_countable_disjoint_union.
+    apply collection_is_pairwise_disjoint_sub with (f:=fun e => e ∩ B); trivial.
+    intros.
+    eauto with prob.
+  Qed.
+  Next Obligation.
+    unfold cond_prob.
+    autorewrite with prob.
+    field_simplify; lra.
+  Qed.
+  Next Obligation.
+    unfold cond_prob.
+    apply Rmult_le_pos.
+    - apply ps_pos.
+    - left.
+      now apply Rinv_0_lt_compat.
+  Qed.
+
+End conditional_probability.
