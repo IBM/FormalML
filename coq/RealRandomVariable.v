@@ -1395,6 +1395,16 @@ Section RealRandomVariables.
 
 End RealRandomVariables.
 
+Instance Restricted_PositiveRandomVariable {Ts:Type} {dom : SigmaAlgebra Ts}
+         (e:event dom) (f : Ts -> R)
+         (prv: PositiveRandomVariable f) :
+  @PositiveRandomVariable (event_restricted_domain e) (event_restricted_function e f).
+Proof.
+  unfold PositiveRandomVariable in *.
+  intros.
+  apply prv.
+Qed.
+
 (*
 Section prob.
   Local Open Scope R.
