@@ -825,7 +825,32 @@ Section conditional_probability.
     sa_sigma (event_restricted_pre_event e f).
   Proof.
     unfold sa_sigma; simpl.
-  Admitted.
+    apply sa_proper with (x := event_inter e f).
+    {
+      split; intros.
+      - unfold event_inter, pre_event_inter in H.
+        destruct H.
+        exists (exist _ _ H).
+        split.
+        + now simpl.
+        + unfold event_restricted_pre_event.
+          now simpl.
+      - destruct H as [? [? ?]].
+        unfold event_restricted_pre_event in H0.
+        unfold event_restricted_domain in x0.
+        unfold event_inter, pre_event_inter.
+        simpl.
+        split.
+        + rewrite <- H.
+          apply (proj2_sig x0).
+        + now rewrite <- H.
+    }
+    apply sa_inter.
+    unfold event in e.
+    apply (proj2_sig e).
+    unfold event in f.
+    apply (proj2_sig f).
+  Qed.
 
   Definition event_restricted_event (e f:event σ) : event(event_restricted_sigma e)
     := exist _ _ (sa_pre_event_restricted_event e f).
