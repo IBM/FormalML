@@ -818,6 +818,22 @@ Section conditional_probability.
     event σ
     := exist _ _ (sa_pre_event_restricted_event_lift e A).
 
+  Definition event_restricted_pre_event (e f:event σ) : pre_event (event_restricted_domain e)
+    := fun (a':event_restricted_domain e) => f (proj1_sig a').
+
+  Lemma sa_pre_event_restricted_event (e f :event σ) : 
+    sa_sigma (event_restricted_pre_event e f).
+  Proof.
+    unfold sa_sigma; simpl.
+  Admitted.
+
+  Definition event_restricted_event (e f:event σ) : event(event_restricted_sigma e)
+    := exist _ _ (sa_pre_event_restricted_event e f).
+
+  Definition event_restricted_function {Td:Type} (e:event σ) (f : T -> Td) : 
+    (event_restricted_domain e) -> Td 
+    := fun a' => f (proj1_sig a').
+
   Instance event_restricted_event_lift_proper e : Proper (event_equiv ==> event_equiv) (event_restricted_event_lift e).
   Proof.
     intros ?? eqq x.
