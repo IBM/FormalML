@@ -831,24 +831,18 @@ Section conditional_probability.
       - unfold event_inter, pre_event_inter in H.
         destruct H.
         exists (exist _ _ H).
-        split.
-        + now simpl.
-        + unfold event_restricted_pre_event.
-          now simpl.
+        now simpl.
       - destruct H as [? [? ?]].
         unfold event_restricted_pre_event in H0.
         unfold event_restricted_domain in x0.
         unfold event_inter, pre_event_inter.
         simpl.
-        split.
-        + rewrite <- H.
-          apply (proj2_sig x0).
-        + now rewrite <- H.
+        rewrite <- H.
+        split; trivial.
+        apply (proj2_sig x0).
     }
     apply sa_inter.
-    unfold event in e.
     apply (proj2_sig e).
-    unfold event in f.
     apply (proj2_sig f).
   Qed.
 
