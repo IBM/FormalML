@@ -332,3 +332,29 @@ Section Finite.
     := discrete_sa {x : A | In x l}.
   
 End Finite.
+
+Section Event_restricted.
+  Context {Ts:Type} {Td:Type} {σ:SigmaAlgebra Ts} {cod : SigmaAlgebra Td}.
+
+  Program Instance Restricted_SimpleRandomVariable (e:event σ) (f : Ts -> Td)
+    (srv: SimpleRandomVariable f) :
+    SimpleRandomVariable (event_restricted_function e f) :=
+    { srv_vals := srv_vals }.
+  Next Obligation.
+    destruct srv.
+    apply srv_vals_complete0.
+  Qed.
+
+  Program Instance Restricted_RandomVariable (e:event σ) (f : Ts -> Td)
+          (rv : RandomVariable σ cod f) :
+    RandomVariable (event_restricted_sigma e) cod (event_restricted_function e f).
+  Next Obligation.
+    
+  Admitted.
+
+
+ End Event_restricted.
+
+  
+
+          
