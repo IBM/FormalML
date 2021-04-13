@@ -349,9 +349,26 @@ Section Event_restricted.
           (rv : RandomVariable σ cod f) :
     RandomVariable (event_restricted_sigma e) cod (event_restricted_function e f).
   Next Obligation.
-    
-  Admitted.
-
+    red in rv.
+    unfold event_preimage in *.
+    unfold event_restricted_function.
+    assert (HH:sa_sigma
+                (fun a : Ts =>
+                   e a /\ proj1_sig B (f a))).
+    - apply sa_inter.
+      + destruct e; auto.
+      + apply rv.
+    - eapply sa_proper; try eapply HH.
+      intros x.
+      split.
+      + intros [?[??]]; subst.
+        destruct x0; simpl in *.
+        tauto.
+      + intros [HH2 ?].
+        exists (exist _ _ HH2).
+        simpl.
+        tauto.
+  Qed.
 
  End Event_restricted.
 
