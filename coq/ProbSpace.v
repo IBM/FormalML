@@ -8,9 +8,10 @@ Require Import List.
 Require Import Morphisms EquivDec.
 
 Require Import Classical ClassicalFacts.
+Require Import ProofIrrelevance.
 Require Ensembles.
 
-Require Import Utils DVector.
+Require Import utils.Utils DVector.
 Import ListNotations.
 Require Export Event.
 
@@ -727,6 +728,190 @@ Section conditional_probability.
     unfold cond_prob.
     autorewrite with prob.
     field_simplify; lra.
+  Qed.
+  Next Obligation.
+    unfold cond_prob.
+    apply Rmult_le_pos.
+    - apply ps_pos.
+    - left.
+      now apply Rinv_0_lt_compat.
+  Qed.
+
+  Definition event_restricted_domain (e:event σ) : Type
+    := { x : T | e x }.
+
+  Lemma event_restricted_domain_ext (e1 e2:event σ) :
+    proj1_sig e1 = proj1_sig e2 -> e1 = e2.
+  Proof.
+    intros.
+    destruct e1; destruct e2; simpl in *.
+    now apply subset_eq_compat.
+  Qed.
+  
+  Global Program Instance event_restricted_sigma (e:event σ) : SigmaAlgebra (event_restricted_domain e)
+    := {
+    sa_sigma (A:pre_event (event_restricted_domain e)) 
+    := sa_sigma (fun a:T => exists (a':event_restricted_domain e), proj1_sig a' = a /\ A (a'))
+      }.
+  Next Obligation.
+    apply sa_countable_union in H.
+    eapply sa_proper; try eapply H.
+    intros x.
+    split.
+    - intros [?[?[n ?]]]; subst.
+      exists n; simpl.
+      eauto.
+    - intros [n [? [? HH]]]; subst.
+      exists x0.
+      split; trivial.
+      red; eauto.
+  Qed.
+  Next Obligation.
+    apply sa_complement in H.
+    generalize (sa_inter H (proj2_sig e)); clear H.
+    eapply sa_proper.
+    intros x.
+    split.
+    - intros [[??][??]]; subst.
+      unfold pre_event_complement, pre_event_inter; simpl in *.
+      split; trivial.
+      intros [[??][??]]; simpl in *.
+      apply H0.
+      eapply subset_eq_compat in H.
+      rewrite <- H.
+      eapply H1.
+    - intros HH.
+      red in HH.
+      unfold pre_event_complement in HH.
+      destruct HH as [HH1 HH2].
+      exists (exist _ _ HH2).
+      simpl.
+      split; trivial.
+      intros HH3; simpl in *.
+      apply HH1.
+      eexists; split; try apply HH3.
+      reflexivity.
+  Qed.
+  Next Obligation.
+    eapply sa_proper; try eapply (proj2_sig e).
+    unfold pre_Ω; simpl.
+    intros x; simpl.
+    split.
+    - intros [[??][??]]; simpl; subst.
+      simpl.
+      apply e0.
+    - intros.
+      exists (exist _ _ H); simpl.
+      tauto.
+  Qed.
+
+  Definition pre_event_restricted_pre_event_lift  (e:event σ) (A:pre_event (event_restricted_domain e)) : pre_event T
+    := (fun a:T => exists (a':event_restricted_domain e), proj1_sig a' = a /\ A (a')).
+
+  Lemma sa_pre_event_restricted_event_lift  (e:event σ) (A:event (event_restricted_sigma e)) 
+    : sa_sigma (fun a:T => exists (a':event_restricted_domain e), proj1_sig a' = a /\ A (a')).
+  Proof.
+    apply (proj2_sig A).
+  Qed.
+
+  Definition event_restricted_event_lift  (e:event σ) (A:event(event_restricted_sigma e)) :
+    event σ
+    := exist _ _ (sa_pre_event_restricted_event_lift e A).
+
+  Instance event_restricted_event_lift_proper e : Proper (event_equiv ==> event_equiv) (event_restricted_event_lift e).
+  Proof.
+    intros ?? eqq x.
+    unfold event_restricted_event_lift, pre_event_restricted_pre_event_lift.
+    simpl.
+    destruct x0; destruct y.
+    red in eqq.
+    simpl in *.
+    red in eqq.
+    firstorder.
+  Qed.
+
+  Lemma event_restricted_event_lift_disjoint e collection :
+    collection_is_pairwise_disjoint collection ->  
+    collection_is_pairwise_disjoint (fun n : nat => event_restricted_event_lift e (collection n)).
+  Proof.
+    unfold event_restricted_event_lift, pre_event_restricted_pre_event_lift.
+    intros disj n1 n2 neq x [[x1 ?] [??]] [[x2 ?] [??]]; simpl in *.
+    eapply disj; try eapply neq; subst x.
+    - eapply H0.
+    - eapply subset_eq_compat in H1.
+      rewrite <- H1.
+      eauto.
+  Qed.
+
+  Lemma event_restricted_event_lift_collection e collection :
+    event_equiv (event_restricted_event_lift e (union_of_collection collection))
+                (union_of_collection (fun n : nat => event_restricted_event_lift e (collection n))).
+  Proof.
+    unfold event_restricted_event_lift, pre_event_restricted_pre_event_lift.
+    unfold union_of_collection, pre_union_of_collection.
+    intros x; simpl.
+    split.
+    - intros [[??][?[n ?]]]; simpl in *; subst.
+      exists n.
+      exists ((exist (fun x : T => e x) x e0)); simpl; eauto.
+    - intros [n [[a' ?] [??]]]; simpl in *.
+      subst.
+      exists (exist (fun x : T => e x) x e0); simpl.
+      eauto.
+  Qed.
+
+  Lemma event_restricted_event_lift_Ω e :
+    event_equiv (event_restricted_event_lift e Ω) e.
+  Proof.
+    intros x.
+    split.
+    - intros [[??][??]]; simpl in *; subst; trivial.
+    - intros.
+      unfold event_restricted_event_lift; simpl.
+      exists (exist _ _ H); simpl.
+      unfold pre_Ω.
+      tauto.
+  Qed.
+
+  Global Program Instance event_restricted_prob_space (e:event σ) (pf:0 < ps_P e) :
+    ProbSpace (event_restricted_sigma e)
+    := {
+    ps_P A := cond_prob (event_restricted_event_lift e A) e
+      }.
+  Next Obligation.
+    intros ?? eqq.
+    unfold cond_prob.
+    
+    now rewrite eqq.
+  Qed.
+  Next Obligation.
+    unfold cond_prob.
+    red.
+    apply infinite_sum'_scal_div.
+    generalize (ps_countable_disjoint_union
+                  (fun x : nat => event_restricted_event_lift e (collection x) ∩ e))
+    ; intros HH.
+    unfold sum_of_probs_equals in HH.
+
+    assert (eqq: event_equiv
+              (event_restricted_event_lift e (union_of_collection collection) ∩ e)
+              (union_of_collection (fun x : nat => event_restricted_event_lift e (collection x) ∩ e))).
+    - rewrite <- event_inter_countable_union_distr_r.
+      rewrite event_restricted_event_lift_collection.
+      reflexivity.
+    - rewrite eqq.
+      apply HH.
+      apply collection_is_pairwise_disjoint_sub with (f:=fun x => x ∩ e); trivial.
+      + intros.
+        eauto with prob.
+      + now apply event_restricted_event_lift_disjoint.
+  Qed.
+  Next Obligation.
+    unfold cond_prob.
+    rewrite event_restricted_event_lift_Ω.
+    rewrite event_inter_self.
+    apply Rinv_r.
+    lra.
   Qed.
   Next Obligation.
     unfold cond_prob.
