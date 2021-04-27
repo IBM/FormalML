@@ -423,7 +423,7 @@ Section Lp.
         + congruence.
     Qed.
 
-    Program Definition LpRRVopp (rv:LpRRV) : LpRRV
+    Definition LpRRVopp (rv:LpRRV) : LpRRV
       := pack_LpRRV (rvopp rv).
     
     Global Instance LpRRV_opp_proper : Proper (LpRRV_eq ==> LpRRV_eq) LpRRVopp.
@@ -446,7 +446,7 @@ Section Lp.
       reflexivity.
     Qed.
 
-    Program Definition LpRRVabs (rv:LpRRV) : LpRRV
+    Definition LpRRVabs (rv:LpRRV) : LpRRV
       := pack_LpRRV (rvabs rv).
 
     Global Instance LpRRV_abs_proper : Proper (LpRRV_eq ==> LpRRV_eq) LpRRVabs.
@@ -1255,9 +1255,6 @@ Section Lp.
 
       Definition LpRRVsum (rvn:nat -> LpRRV p) (n:nat) : LpRRV p
         := pack_LpRRV (rvsum rvn n).
-
-      Definition LpRRVabs (rv : LpRRV p) : LpRRV p
-        := pack_LpRRV (rvabs rv).                                                 
 
       Lemma LpRRV_norm_sum (f : nat -> LpRRV p) :
         forall (n:nat), 
