@@ -446,6 +446,15 @@ Section Lp.
       reflexivity.
     Qed.
 
+    Program Definition LpRRVabs (rv:LpRRV) : LpRRV
+      := pack_LpRRV (rvabs rv).
+
+    Global Instance LpRRV_abs_proper : Proper (LpRRV_eq ==> LpRRV_eq) LpRRVabs.
+    Proof.
+      unfold Proper, respectful.
+      intros x y eqq.
+    Admitted.
+
     Section quoted.
 
       Definition LpRRVq : Type := quot LpRRV_eq.
@@ -487,6 +496,9 @@ Section Lp.
       Qed.
 
       Hint Rewrite LpRRVq_oppE : quot.
+      
+      Definition LpRRVq_abs  : LpRRVq -> LpRRVq
+        := quot_lift _ LpRRVabs.
 
     End quoted.
     
