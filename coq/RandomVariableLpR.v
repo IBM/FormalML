@@ -453,7 +453,8 @@ Section Lp.
     Proof.
       unfold Proper, respectful.
       intros x y eqq.
-    Admitted.
+      now apply rv_almost_eq_abs_proper.
+    Qed.
 
     Section quoted.
 
