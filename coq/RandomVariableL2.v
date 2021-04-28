@@ -447,12 +447,12 @@ Section L2.
   Qed.
 
   (* generalize to be over any normed space *)
-   Definition Cauchy_crit (Un : nat -> LpRRVq prts 2) : Prop :=
+   Definition Cauchy_crit (Un : nat -> LpRRV prts 2) : Prop :=
     forall eps:R,
       eps > 0 ->
       exists N : nat,
         (forall n m:nat,
-          (n >= N)%nat -> (m >= N)%nat -> LpRRVq_norm prts (LpRRVq_minus prts (Un n) (Un m)) < eps).
+          (n >= N)%nat -> (m >= N)%nat -> LpRRVnorm prts (LpRRVminus prts (Un n) (Un m)) < eps).
 
    Lemma inv_pow_2_pos (n : nat) :
         0 < / (pow 2 n) .
@@ -461,10 +461,10 @@ Section L2.
     apply pow_lt.
     lra.
   Qed.
-  
-  Definition L2RRVq_lim_ball_center (F : (PreHilbert_UniformSpace (E:= L2RRVq_PreHilbert) -> Prop) -> Prop) :
+
+  Definition L2RRV_lim_ball_center (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop) :
     ProperFilter F -> cauchy F ->
-    forall (n:nat), {b:LpRRVq prts 2->Prop | F b}.
+    forall (n:nat), {b:LpRRV prts 2 ->Prop | F b}.
   Proof.
     intros Pf cF n.
     pose ( ϵ := / (pow 2 n)).
@@ -472,43 +472,43 @@ Section L2.
     destruct (constructive_indefinite_description _ (cF (mkposreal ϵ ϵpos)))
       as [x Fx].
     simpl in *.
-    now exists  (Hierarchy.ball (M:= (PreHilbert_UniformSpace (E:= L2RRVq_PreHilbert))) x ϵ).
+    now exists  (Hierarchy.ball (M:= LpRRV_UniformSpace prts big2) x ϵ).
   Defined.
 
-  Definition L2RRVq_lim_ball_cumulative
-             (F : (PreHilbert_UniformSpace (E:= L2RRVq_PreHilbert) -> Prop) -> Prop)
+  Definition L2RRV_lim_ball_cumulative
+             (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
              (PF:ProperFilter F)
              (cF:cauchy F)
-             (n:nat) : {x:LpRRVq prts 2->Prop | F x}
+             (n:nat) : {x:LpRRV prts 2->Prop | F x}
     := fold_right (fun x y =>
                      exist _ _ (Hierarchy.filter_and
                        _ _ (proj2_sig x) (proj2_sig y)))
                   (exist _ _ Hierarchy.filter_true)
-                  (map (L2RRVq_lim_ball_center F PF cF) (seq 0 (S n))).
+                  (map (L2RRV_lim_ball_center F PF cF) (seq 0 (S n))).
 
-  Definition L2RRVq_lim_picker
-             (F : (PreHilbert_UniformSpace (E:= L2RRVq_PreHilbert) -> Prop) -> Prop)
+  Definition L2RRV_lim_picker
+             (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
              (PF:ProperFilter F)
              (cF:cauchy F)
-             (n:nat) : LpRRVq prts 2
+             (n:nat) : LpRRV prts 2
     := (proj1_sig (
             constructive_indefinite_description
               _
               (filter_ex
                  _
-                 (proj2_sig (L2RRVq_lim_ball_cumulative F PF cF n))))).
+                 (proj2_sig (L2RRV_lim_ball_cumulative F PF cF n))))).
 
     Lemma lim_picker_cumulative_included
-             (F : (PreHilbert_UniformSpace (E:= L2RRVq_PreHilbert) -> Prop) -> Prop)
+             (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
              (PF:ProperFilter F)
              (cF:cauchy F)
              (N n:nat) :
       (N <= n)%nat ->
       forall x,
-      proj1_sig (L2RRVq_lim_ball_cumulative F PF cF n) x ->
-       (proj1_sig (L2RRVq_lim_ball_center F PF cF N)) x.
+      proj1_sig (L2RRV_lim_ball_cumulative F PF cF n) x ->
+       (proj1_sig (L2RRV_lim_ball_center F PF cF N)) x.
     Proof.
-      unfold L2RRVq_lim_ball_cumulative.
+      unfold L2RRV_lim_ball_cumulative.
       intros.
       assert (inn:In N (seq 0 (S n))).
       {
@@ -528,16 +528,16 @@ Section L2.
     Qed.
     
   Lemma lim_picker_included
-             (F : (PreHilbert_UniformSpace (E:= L2RRVq_PreHilbert) -> Prop) -> Prop)
+             (F : (LpRRV_UniformSpace prts big2  -> Prop) -> Prop)
              (PF:ProperFilter F)
              (cF:cauchy F)
              (N n:nat) :
     (N <= n)%nat ->
-    (proj1_sig (L2RRVq_lim_ball_center F PF cF N)) 
-      (L2RRVq_lim_picker F PF cF n).
+    (proj1_sig (L2RRV_lim_ball_center F PF cF N)) 
+      (L2RRV_lim_picker F PF cF n).
   Proof.
     intros.
-    unfold L2RRVq_lim_picker.
+    unfold L2RRV_lim_picker.
     unfold proj1_sig at 2.
     match_destr.
     eapply lim_picker_cumulative_included; eauto.
@@ -585,16 +585,16 @@ Section L2.
     reflexivity.
   Qed.
     
-  Lemma lim_ball_center_dist (x y : LpRRVq prts 2)
-             (F : (PreHilbert_UniformSpace (E:= L2RRVq_PreHilbert) -> Prop) -> Prop)
+  Lemma lim_ball_center_dist (x y : LpRRV prts 2)
+             (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
              (PF:ProperFilter F)
              (cF:cauchy F)
              (N:nat) :
-    (proj1_sig (L2RRVq_lim_ball_center F PF cF N)) x ->
-    (proj1_sig (L2RRVq_lim_ball_center F PF cF N)) y ->
-    LpRRVq_norm prts (LpRRVq_minus prts x y) < 2 / pow 2 N.
+    (proj1_sig (L2RRV_lim_ball_center F PF cF N)) x ->
+    (proj1_sig (L2RRV_lim_ball_center F PF cF N)) y ->
+    LpRRVnorm prts (LpRRVminus prts x y) < 2 / pow 2 N.
   Proof.
-    unfold L2RRVq_lim_ball_center; simpl.
+    unfold L2RRV_lim_ball_center; simpl.
     unfold proj1_sig.
     match_case; intros.
     match_destr_in H.
@@ -605,7 +605,8 @@ Section L2.
     ; intros HH.
     field_simplify in HH.
     - eapply Rle_lt_trans; try eapply HH.
-      generalize (norm_triangle (minus x x1) (minus x1 y))
+      Admitted.
+(*      generalize (norm_triangle (minus x x1) (minus x1 y))
       ; intros HH2.
       unfold minus in HH2.
       repeat rewrite plus_assoc in HH2.
@@ -625,33 +626,34 @@ Section L2.
     - eelim pow_nzero; try eapply HH.
       lra.
   Qed.
-
+ *)
+  
   Lemma lim_filter_cauchy 
-        (F : (PreHilbert_UniformSpace (E:= L2RRVq_PreHilbert) -> Prop) -> Prop)
+        (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
         (PF:ProperFilter F)
         (cF:cauchy F) :
     forall N : nat,
       forall n m : nat,
         (n >= N)%nat ->
         (m >= N)%nat -> 
-        LpRRVq_norm prts (LpRRVq_minus 
+        LpRRVnorm prts (LpRRVminus 
                             prts  
-                            (L2RRVq_lim_picker F PF cF n)
-                            (L2RRVq_lim_picker F PF cF m)) < 2 / pow 2 N.
+                            (L2RRV_lim_picker F PF cF n)
+                            (L2RRV_lim_picker F PF cF m)) < 2 / pow 2 N.
   Proof.
     intros.
     apply (lim_ball_center_dist _ _ F PF cF); now apply lim_picker_included.
   Qed.    
 
   Lemma cauchy_filter_sum_bound 
-        (F : (PreHilbert_UniformSpace (E:= L2RRVq_PreHilbert) -> Prop) -> Prop)
+        (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
         (PF:ProperFilter F)
         (cF:cauchy F) :
     ex_series (fun n => 
-                 LpRRVq_norm prts 
-                             (LpRRVq_minus prts
-                                (L2RRVq_lim_picker F PF cF (S n))
-                                (L2RRVq_lim_picker F PF cF n))).
+                 LpRRVnorm prts 
+                             (LpRRVminus prts
+                                (L2RRV_lim_picker F PF cF (S n))
+                                (L2RRV_lim_picker F PF cF n))).
   Proof.
     apply (@ex_series_le R_AbsRing R_CompleteNormedModule) with
         (b := fun n => 2 / pow 2 n).
@@ -660,7 +662,9 @@ Section L2.
     rewrite Rabs_pos_eq.
     left.
     apply (lim_filter_cauchy F PF cF n (S n) n); try lia.
-    rewrite <- LpRRVq_norm_norm.
+  Admitted.
+  (*
+    rewrite <- LpRRV_norm_norm.
     apply norm_ge_0.
     unfold Rdiv.
     apply (@ex_series_scal_l R_AbsRing R_CompleteNormedModule).
@@ -669,23 +673,25 @@ Section L2.
     apply ex_series_geom.
     rewrite Rabs_pos_eq; lra.
  Qed.
+*)
 
-  Definition L2RRVq_lim_with_conditions (lim : (PreHilbert_UniformSpace (E:= L2RRVq_PreHilbert) -> Prop) -> Prop)
+  Definition L2RRV_lim_with_conditions (lim : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
     (PF:ProperFilter lim)
-    (cF:cauchy lim) : LpRRVq prts 2.
+    (cF:cauchy lim) : LpRRV prts 2.
   Admitted.
   
-  Definition L2RRVq_lim (lim : ((LpRRVq prts 2 -> Prop) -> Prop)) : LpRRVq prts 2.
+  Definition L2RRV_lim (lim : ((LpRRV prts 2 -> Prop) -> Prop)) : LpRRV prts 2.
   Proof.
     destruct (excluded_middle_informative (ProperFilter lim)).
-    - destruct (excluded_middle_informative (cauchy (T:=(PreHilbert_UniformSpace (E:= L2RRVq_PreHilbert))) lim)).
-      + exact (L2RRVq_lim_with_conditions _ p c).
-      + exact (LpRRVq_zero prts).
-    - exact (LpRRVq_zero prts).
+    - destruct (excluded_middle_informative (cauchy (T:= LpRRV_UniformSpace prts big2) lim)).
+      + exact (L2RRV_lim_with_conditions _ p c).
+      + exact (LpRRVzero prts).
+    - exact (LpRRVzero prts).
   Defined.
 
+  (*
   Lemma L2RRVq_lim_complete (F : (PreHilbert_UniformSpace -> Prop) -> Prop) :
-    ProperFilter F -> cauchy F -> forall eps : posreal, F (ball (L2RRVq_lim  F) eps).
+    ProperFilter F -> cauchy F -> forall eps : posreal, F (ball (L2RRV_lim  F) eps).
   Proof.
     intros.
     unfold L2RRVq_lim; simpl.
@@ -698,5 +704,5 @@ Section L2.
 
   Canonical L2RRVq_Hilbert :=
     Hilbert.Pack (LpRRVq prts 2) (Hilbert.Class _ _ L2RRVq_Hilbert_mixin) (LpRRVq prts 2).
-
+*)
 End L2.
