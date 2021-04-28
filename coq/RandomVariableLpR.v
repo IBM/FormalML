@@ -1632,6 +1632,15 @@ Section Lp.
         apply pow_le; lra.
      Qed.
 
+      Definition LpRRV_UniformSpace_mixin : UniformSpace.mixin_of (LpRRV p)
+        := UniformSpace.Mixin  (LpRRV p) (LpRRVpoint p) LpRRVball
+                               LpRRV_ball_refl
+                               LpRRV_ball_sym
+                               LpRRV_ball_trans.
+
+      Canonical LpRRV_UniformSpace :=
+        UniformSpace.Pack (LpRRV p) LpRRV_UniformSpace_mixin (LpRRV p).
+      
       Section quotbigp.
       Ltac LpRRVq_simpl :=
         repeat match goal with
