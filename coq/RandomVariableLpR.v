@@ -1340,14 +1340,124 @@ Section Lp.
       Definition rvlim (f : nat -> Ts -> R) : (Ts -> R) :=
         (fun omega => real (Lim_seq (fun n => f n omega))).
 
+      Instance LimSup_measurable (f : nat -> Ts -> R) : 
+        (forall n, RealMeasurable dom (f n)) ->
+        (forall omega, is_finite (LimSup_seq (fun n => f n omega))) ->
+        RealMeasurable dom (fun omega => LimSup_seq (fun n => f n omega)).
+      Proof.
+        clear p pnneg pbig.
+        intros.
+        unfold RealMeasurable; intros.
+        apply sa_proper with
+            (x := pre_inter_of_collection
+                    (fun j => 
+                       pre_union_of_collection
+                         (fun m => 
+                            pre_inter_of_collection
+                              (fun n : nat => 
+                                 (fun omega => f (n + m)%nat omega <= r + / (INR (S j))))))).
+        - intro x.
+          specialize (H0 x).
+          unfold pre_inter_of_collection, pre_union_of_collection, LimSup_seq; split; intros.
+          + unfold proj1_sig.
+            unfold LimSup_seq, proj1_sig in H0.
+            match_destr.
+            unfold is_LimSup_seq in i.
+            match_destr_in i.
+            destruct (Rle_dec r0 r); trivial.
+            assert (0 < (r0 - r)/2) by lra.
+            specialize (i (mkposreal _ H2)).
+            simpl in i.
+            destruct i.
+            replace (r0 - (r0 - r)/2) with (r + (r0 - r)/2) in H3 by lra.
+            specialize (H1 (Z.to_nat (up (2 / (r0 - r))))).
+            destruct H1.
+            specialize (H3 x0).
+            destruct H3 as [? [? ?]].            
+            specialize (H1 (x1 - x0)%nat).
+            replace (x1 - x0 + x0)%nat with x1 in H1 by lia.
+            generalize (Rlt_le_trans _ _ _ H5 H1); intros.
+            apply Rplus_lt_reg_l in H6.
+            replace ((r0 - r) / 2) with (/ (2 /(r0 - r))) in H6 by (field;lra).
+            assert (0 < 2 / (r0 - r)).
+            {
+              replace (2 / (r0 - r)) with (/((r0-r)/2)) by (field; lra).
+              now apply Rinv_0_lt_compat.
+            }
+            apply Rinv_lt_cancel in H6; trivial.
+            rewrite S_INR in H6.
+            rewrite INR_up_pos in H6; [|lra].
+            generalize (archimed (2 / (r0 - r))); intros.
+            destruct H8.
+            lra.
+          + unfold proj1_sig in H1.
+            unfold LimSup_seq, proj1_sig in H0.
+            match_destr_in H1.
+            unfold is_LimSup_seq in i.
+            match_destr_in i.
+            assert (0 < / INR (S n)).
+            { 
+              apply Rinv_0_lt_compat.
+              apply lt_0_INR; lia.
+            }
+            specialize (i (mkposreal _ H2)).
+            destruct i.
+            destruct H4.
+            exists x0.
+            intros.
+            specialize (H4 (n0 + x0)%nat).
+            cut_to H4; [|lia].
+            replace (pos (mkposreal _ H2)) with (/ INR (S n)) in H4 by auto.
+            left.
+            apply (Rlt_le_trans _ _ _ H4).
+            now apply Rplus_le_compat_r.
+        - apply sa_pre_countable_inter; intros.
+          apply sa_countable_union; intros.
+          apply sa_pre_countable_inter; intros.
+          apply H.
+        Qed.
+
+      Lemma x_plus_x_div_2 (x : Rbar) :
+        (Rbar_div_pos (Rbar_plus x x ) (mkposreal 2 Rlt_R0_R2)) = x.
+      Proof.
+        case_eq x; intros; simpl; trivial.
+        rewrite Rbar_finite_eq.
+        field.
+        Qed.
+
       Instance rvlim_measurable (f : nat -> Ts -> R) :
         (forall n, RealMeasurable dom (f n)) ->
         (forall (omega:Ts), ex_finite_lim_seq (fun n => f n omega)) ->
         RealMeasurable dom (rvlim f).
       Proof.
-        unfold RealMeasurable; intros.
-        
-      Admitted.
+        intros.
+        unfold rvlim.
+        assert (forall omega, ex_lim_seq (fun n => f n omega)).
+        {
+          intros.
+          now apply ex_finite_lim_seq_correct.
+        }
+        assert (forall omega, Lim_seq (fun n => f n omega) = 
+                              LimSup_seq (fun n => f n omega)).
+        {
+          intros.
+          specialize (H1 omega).
+          rewrite ex_lim_LimSup_LimInf_seq in H1.
+          unfold Lim_seq.
+          rewrite H1.
+          now rewrite x_plus_x_div_2.
+        }
+        apply RealMeasurable_proper with
+            (x := fun omega => LimSup_seq (fun n => f n omega)).
+        intro x; now rewrite H2.
+        apply LimSup_measurable; trivial.
+        intros.
+        specialize (H0 omega).
+        rewrite ex_finite_lim_seq_correct in H0.
+        destruct H0.
+        unfold is_finite.
+        now rewrite <- H2.
+      Qed.
 
       Global Instance rvlim_rv (f: nat -> Ts -> R)
              {rv : forall n, RandomVariable dom borel_sa (f n)} :

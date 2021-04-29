@@ -675,6 +675,21 @@ Section L2.
  Qed.
 *)
 
+  Lemma cauchy_filter_sum_abs
+        (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F) :
+    IsLp prts 2  
+         (rvlim
+            (rvsum
+               (fun n =>
+                  (LpRRVabs prts
+                            (LpRRVminus prts
+                                        (L2RRV_lim_picker F PF cF (S n))
+                                        (L2RRV_lim_picker F PF cF n)))))).
+  Proof.
+    Admitted.
+
   Definition L2RRV_lim_with_conditions (lim : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
     (PF:ProperFilter lim)
     (cF:cauchy lim) : LpRRV prts 2.
