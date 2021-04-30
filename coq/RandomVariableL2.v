@@ -690,18 +690,16 @@ Section L2.
                                         (L2RRV_lim_picker F PF cF (S n))))) n0)).
   Proof.
     apply (islp_lim_telescope_abs prts big2
-                                  (fun n => L2RRV_lim_picker F PF cF (S n))); intros.
+                                  (fun n => L2RRV_lim_picker F PF cF (S n))); [ | typeclasses eauto| ]; intros.
     generalize (lim_filter_cauchy F PF cF (S n) (S (S n)) (S n)); intros.
     cut_to H; try lia.
     simpl in H.
     unfold Rdiv in H.
-    rewrite Rinv_mult_distr in H; try lra.
+    rewrite Rinv_mult_distr in H; try lra; [|apply pow2_nzero].
     rewrite <- Rmult_assoc in H.
     rewrite Rinv_r in H; try lra.
     rewrite Rmult_1_l in H.
     admit.
-    apply pow2_nzero.
-    typeclasses eauto.
     
     Admitted.
 
