@@ -675,6 +675,37 @@ Section L2.
  Qed.
 *)
 
+  Lemma cauchy_filter_sum_abs0
+        (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F) :
+    IsLp prts 2
+         (rvlim
+            (fun n0 =>
+               LpRRVsum prts big2 
+                 (fun n =>
+                  (LpRRVabs prts
+                            (LpRRVminus prts
+                                        (L2RRV_lim_picker F PF cF (S (S n)))
+                                        (L2RRV_lim_picker F PF cF (S n))))) n0)).
+  Proof.
+    apply (islp_lim_telescope_abs prts big2
+                                  (fun n => L2RRV_lim_picker F PF cF (S n))); intros.
+    generalize (lim_filter_cauchy F PF cF (S n) (S (S n)) (S n)); intros.
+    cut_to H; try lia.
+    simpl in H.
+    unfold Rdiv in H.
+    rewrite Rinv_mult_distr in H; try lra.
+    rewrite <- Rmult_assoc in H.
+    rewrite Rinv_r in H; try lra.
+    rewrite Rmult_1_l in H.
+    admit.
+    apply pow2_nzero.
+    typeclasses eauto.
+    
+    Admitted.
+
+
   Lemma cauchy_filter_sum_abs
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
         (PF:ProperFilter F)
@@ -685,10 +716,22 @@ Section L2.
                (fun n =>
                   (LpRRVabs prts
                             (LpRRVminus prts
-                                        (L2RRV_lim_picker F PF cF (S n))
-                                        (L2RRV_lim_picker F PF cF n)))))).
+                                        (L2RRV_lim_picker F PF cF (S (S n)))
+                                        (L2RRV_lim_picker F PF cF (S n))))))).
   Proof.
-    Admitted.
+    apply (IsLp_proper prts 2 ) with
+        (x :=  (rvlim
+            (fun n0 =>
+               LpRRVsum prts big2 
+                 (fun n =>
+                  (LpRRVabs prts
+                            (LpRRVminus prts
+                                        (L2RRV_lim_picker F PF cF (S (S n)))
+                                        (L2RRV_lim_picker F PF cF (S n))))) n0))); trivial.
+    - intro x.
+      f_equal.
+    - apply cauchy_filter_sum_abs0.
+    Qed.
 
   Definition L2RRV_lim_with_conditions (lim : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
     (PF:ProperFilter lim)
