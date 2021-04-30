@@ -26,7 +26,7 @@ Section L2.
   Proof.
     lra.
   Qed.
-  Let nneg2 : nonnegreal := mknonnegreal 2 ltac:(lra).
+  Let nneg2 : nonnegreal := bignneg 2 big2.
   Canonical nneg2.
 
 
@@ -692,16 +692,17 @@ Section L2.
     apply (islp_lim_telescope_abs prts big2
                                   (fun n => L2RRV_lim_picker F PF cF (S n))); [ | typeclasses eauto| ]; intros.
     generalize (lim_filter_cauchy F PF cF (S n) (S (S n)) (S n)); intros.
+    simpl.
     cut_to H; try lia.
-    simpl in H.
-    unfold Rdiv in H.
-    rewrite Rinv_mult_distr in H; try lra; [|apply pow2_nzero].
-    rewrite <- Rmult_assoc in H.
-    rewrite Rinv_r in H; try lra.
-    rewrite Rmult_1_l in H.
-    admit.
-    
-    Admitted.
+    - simpl in H.
+      unfold Rdiv in H.
+      rewrite Rinv_mult_distr in H; try lra; [|apply pow2_nzero].
+      rewrite <- Rmult_assoc in H.
+      rewrite Rinv_r in H; try lra.
+      rewrite Rmult_1_l in H.
+      apply H.
+    - admit.
+  Admitted.
 
 
   Lemma cauchy_filter_sum_abs

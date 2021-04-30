@@ -308,6 +308,11 @@ Section Lp.
     typeclasses eauto.
   Qed.
 
+  Lemma big_nneg n (nbig: 1 <= n) : 0 <= n.
+  Proof.
+    lra.
+  Qed.
+  
   Lemma IsLp_Finite n (rv_X:Ts->R)
         {rrv:RandomVariable dom borel_sa rv_X}
         (nbig:1<=n)
@@ -854,12 +859,15 @@ Section Lp.
     End normish.
 
     Definition LpRRVpoint (p:R) : LpRRV p := LpRRVconst 0.
-    
+
+    Definition bignneg n (nbig: 1 <= n) : nonnegreal
+      := mknonnegreal n (big_nneg n nbig).
+
     Section packedbigp.
       Context {p:R}.
       Context (pbig:1 <= p).
 
-      Let pnneg : nonnegreal := mknonnegreal p ltac:(lra).
+      Let pnneg : nonnegreal := bignneg p pbig.
       Canonical pnneg.
       
       Lemma Minkowski_rv (x y : LpRRV p) (t:R): 
