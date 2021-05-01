@@ -704,7 +704,6 @@ Section L2.
     - admit.
   Admitted.
 
-
   Lemma cauchy_filter_sum_abs
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
         (PF:ProperFilter F)
