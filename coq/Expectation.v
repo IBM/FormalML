@@ -2925,6 +2925,60 @@ Section Expectation.
              now rewrite H8 in H9.
   Qed.
 
+  Lemma monotone_convergence2
+        (Xn : nat -> Ts -> R)
+        (posX: PositiveRandomVariable (rvlim Xn)) 
+        (Xn_rv : forall n, RandomVariable dom borel_sa (Xn n))
+        (Xn_pos : forall n, PositiveRandomVariable (Xn n)) :
+    (forall (n:nat), rv_le (Xn n) (rvlim Xn)) ->
+    (forall (n:nat), rv_le (Xn n) (Xn (S n))) ->
+    (forall (n:nat), is_finite (Expectation_posRV (Xn n))) ->
+    Lim_seq (fun n => Expectation_posRV (Xn n)) =  (Expectation_posRV (rvlim Xn)).
+  Proof.
+    generalize Expectation_posRV_le; intros.
+    assert (forall (n:nat), (Rbar_le (Expectation_posRV (Xn n)) (Expectation_posRV (rvlim Xn)))).
+    - intros.
+      apply H; trivial.
+    - assert (forall (n:nat), (Rbar_le (Expectation_posRV (Xn n)) (Expectation_posRV (Xn (S n))))).
+      + intros.
+        apply H; trivial.
+      + pose (a := (Lim_seq (fun n : nat => Expectation_posRV (Xn n)))).
+        generalize (Lim_seq_le_loc (fun n => Expectation_posRV (Xn n)) 
+                                   (fun _ => Expectation_posRV (rvlim Xn))); intros.
+        rewrite Lim_seq_const in H5.
+        assert (Rbar_le (Expectation_posRV (rvlim Xn)) (Lim_seq (fun n : nat => Expectation_posRV (Xn n)))).
+        * unfold Expectation_posRV at 1.
+          unfold SimpleExpectationSup.
+          {
+            unfold Lub_Rbar.
+            match goal with
+              [|- context [proj1_sig ?x]] => destruct x
+            end; simpl.
+            destruct i as [i0 i1].
+            apply i1.
+            red; intros y [? [?[?[??]]]].
+            subst.
+            unfold BoundedPositiveRandomVariable in H6.
+            destruct H6.
+            rewrite simple_Expectation_posRV with (prv := H6); trivial.
+            apply monotone_convergence00_2; trivial.
+          }
+        * apply Rbar_le_antisym; trivial.
+          case_eq (Expectation_posRV (rvlim Xn)); intros.
+          ++ rewrite H7 in H5; simpl in H5.
+             apply H5.
+             unfold Hierarchy.eventually.   
+             exists (0%nat).
+             intros.
+             specialize (H (Xn n) (rvlim Xn) (Xn_pos n) posX (H0 n)).
+             rewrite <- (H2 n) in H.
+             rewrite H7 in H.
+             now simpl in H.
+          ++ now destruct (Lim_seq (fun n : nat => Expectation_posRV (Xn n))).
+          ++ generalize (Expectation_posRV_pos (rvlim Xn)); intros.
+             now rewrite H7 in H8.
+  Qed.
+
   Global Instance LimInf_seq_pos
          (Xn : nat -> Ts -> R)
          (Xn_pos : forall n, PositiveRandomVariable (Xn n)) :
