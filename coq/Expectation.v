@@ -2927,7 +2927,6 @@ Section Expectation.
 
   Lemma monotone_convergence2
         (Xn : nat -> Ts -> R)
-        (posX: PositiveRandomVariable (rvlim Xn)) 
         (Xn_rv : forall n, RandomVariable dom borel_sa (Xn n))
         (Xn_pos : forall n, PositiveRandomVariable (Xn n)) :
     (forall (n:nat), rv_le (Xn n) (rvlim Xn)) ->
@@ -2970,7 +2969,7 @@ Section Expectation.
              unfold Hierarchy.eventually.   
              exists (0%nat).
              intros.
-             specialize (H (Xn n) (rvlim Xn) (Xn_pos n) posX (H0 n)).
+             specialize (H (Xn n) (rvlim Xn) (Xn_pos n) (prvlim Xn Xn_pos) (H0 n)).
              rewrite <- (H2 n) in H.
              rewrite H7 in H.
              now simpl in H.

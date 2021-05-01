@@ -1338,6 +1338,27 @@ Section RealRandomVariables.
       apply Rle_0_sqr.
     Qed.
 
+    Global Instance prvlim
+           (Xn : nat -> Ts -> R) 
+           (posrv : forall n, PositiveRandomVariable (Xn n)) :
+      PositiveRandomVariable (rvlim Xn).
+    Proof.
+      unfold PositiveRandomVariable, rvlim.
+      unfold PositiveRandomVariable in posrv.
+      intros.
+      generalize (Lim_seq_le_loc (fun _ => 0) (fun n => Xn n x)); intros.
+      rewrite Lim_seq_const in H.
+      cut_to H.
+      - destruct (classic (is_finite (Lim_seq (fun n : nat => Xn n x)))).
+        + rewrite <- H0 in H.
+          now simpl in H.
+        + unfold real.
+          match_destr; lra.
+      - exists 0%nat.
+        intros; try lia.
+        apply posrv.
+      Qed.
+
     Global Instance rvpow_prv
            (rv_X : Ts -> R) 
            (k : nat) 
