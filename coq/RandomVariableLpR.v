@@ -9,6 +9,7 @@ Require Import hilbert.
 
 Require Export RandomVariableFinite.
 Require Import quotient_space.
+Require Import RbarExpectation.
 
 Require Import AlmostEqual.
 Require Import utils.Utils.
@@ -1523,6 +1524,167 @@ Section Lp.
           apply ex_lim_seq_incr.
           now unfold rv_le, pointwise_relation in fincr.
         Qed.
+
+      Definition Rbar_power (x : Rbar) (n : R) : Rbar :=
+        match x with
+        | p_infty => p_infty
+        | m_infty => 0
+        | Finite x => power x p
+        end.
+
+      Lemma Rbar_power_nonneg (x : Rbar) (n : R) :
+        Rbar_le 0 (Rbar_power x n).
+       Proof.
+         destruct x.
+         - apply power_nonneg.
+         - simpl; lra.
+         - simpl; lra.
+       Qed.
+
+      Instance power_abs_pos n (rv_X : Ts -> Rbar) :
+        Rbar_PositiveRandomVariable
+          (fun omega => Rbar_power (Rbar_abs (rv_X omega)) n).
+      Proof.
+        intros x.
+        apply Rbar_power_nonneg.
+      Qed.
+
+      Definition IsLp_Rbar n (rv_X:Ts->Rbar)
+        := is_finite (Rbar_Expectation_posRV
+                        (fun omega => Rbar_power (Rbar_abs (rv_X omega)) n)).
+
+      Lemma is_lim_power_inf (f : nat -> R) :
+        is_lim_seq f p_infty -> is_lim_seq (fun n => power (f n) p) p_infty.
+      Proof.
+        do 2 rewrite <- is_lim_seq_spec.
+        unfold is_lim_seq'; intros.
+        specialize (H (power (Rmax M 0) (/p))).
+        destruct H.
+        exists x.
+        intros.
+        specialize (H n H0).
+        apply Rle_lt_trans with (r2 := Rmax M 0).
+        apply Rmax_l.
+        replace (Rmax M 0) with (power (power (Rmax M 0) (/p)) p).
+        apply Rlt_power_l.
+        lra.
+        split; trivial.
+        apply power_nonneg.
+        apply power_inv_cancel; try lra.
+        apply Rmax_r.
+      Qed.
+
+      Lemma lim_power_inf (f : nat -> R) :
+        ex_lim_seq f ->
+        Lim_seq f = p_infty -> Lim_seq (fun n => power (f n) p) = p_infty.
+      Proof.
+        intros.
+        apply Lim_seq_correct in H.
+        rewrite H0 in H.
+        apply is_lim_power_inf in H.
+        now apply is_lim_seq_unique in H.
+      Qed.
+
+      Lemma Rbar_power_lim_comm (f : nat -> Ts -> R) (x:Ts) :
+        (forall (n:nat), rv_le (f n) (f (S n))) ->
+        Rbar_power (Rbar_abs (Lim_seq (fun n : nat => f n x))) p = Lim_seq (fun n : nat => power (Rabs (f n x)) p).
+      Proof.
+        intros.
+        assert (exlim: ex_lim_seq (fun n => f n x)).
+        {
+          apply ex_lim_seq_incr.
+          intros; apply H.
+        }
+        case_eq (Lim_seq (fun n : nat => f n x)); intros.
+        - generalize (is_lim_seq_continuous (fun x => p_power (Rabs x)) (fun n => f n x) (Lim_seq (fun n => f n x))); intros.
+          cut_to H1.
+          + apply is_lim_seq_unique in H1.
+            unfold p_power in H1.
+            rewrite H0 in H1.
+            rewrite H1.
+            now simpl.
+          + apply continuity_p_power_Rabs.
+          + assert (is_finite (Lim_seq (fun n => f n x))) by now rewrite H0.
+            rewrite H2.
+            now apply Lim_seq_correct.
+        - simpl; symmetry.
+          generalize (ex_lim_seq_abs _ exlim); intros.
+          apply lim_power_inf; trivial.
+          rewrite Lim_seq_abs; trivial.
+          rewrite H0.
+          now simpl.
+        - simpl; symmetry.
+          generalize (ex_lim_seq_abs _ exlim); intros.
+          apply lim_power_inf; trivial.
+          rewrite Lim_seq_abs; trivial.
+          rewrite H0.
+          now simpl.
+      Qed.
+
+      (* stronger version monotone_convergence_Rbar allows us to remove
+         is_finite (Lim_seq (fun n : nat => f n omega))) hypothesis *)
+      Lemma islp_Rbar_rvlim_bounded (f : nat -> LpRRV p) (c : R) :
+        0 <= c ->
+        (forall (n:nat), LpRRVnorm (f n) <= c) ->
+        (forall (n:nat), RandomVariable dom borel_sa (f n)) ->
+        (forall (n:nat), PositiveRandomVariable  (f n)) ->
+        (forall (n:nat), rv_le (f n) (f (S n))) ->
+(*        (forall (omega:Ts), ex_finite_lim_seq (fun n : nat => f n omega)) -> *)
+        IsLp_Rbar p (Rbar_rvlim f).
+      Proof.
+        intros cpos fnorm f_rv fpos fincr.
+        unfold LpRRVnorm in fnorm.
+        unfold IsLp_Rbar.
+        assert (finexp: forall n, FiniteExpectation prts (rvpower (rvabs (f n)) (const p)) <= 
+                                  power c p).
+        {
+        intros.
+        apply power_inv_le; trivial.
+        lra.
+        apply FiniteExpectation_Lp_pos.
+
+        }
+        assert (forall n, PositiveRandomVariable (rvpower (rvabs (f n)) (const p))).
+        {
+          intros.
+          unfold PositiveRandomVariable, rvpower; intros.
+          apply power_nonneg.
+        }
+        generalize ( monotone_convergence_Rbar 
+                      (fun n => (rvpower (rvabs (f n)) (const p))) _ _ ); intro monc.
+        cut_to monc.
+        - assert (Rbar_le
+                    (Lim_seq (fun n : nat => Expectation_posRV (rvpower (rvabs (f n)) (const p)))) (power c p)).
+          {
+            replace (Finite (power c p)) with (Lim_seq (fun _ => power c p)).
+            - apply Lim_seq_le_loc.
+              exists (0%nat).
+              intros.
+              specialize (finexp n).
+              now rewrite FiniteExpectation_posRV with (posX := (H n)) in finexp.
+            - apply Lim_seq_const.
+          }
+          rewrite monc in H0.
+          assert (Rbar_PositiveRandomVariable (Rbar_rvlim (fun n : nat => rvpower (rvabs (f n)) (const p)))) by typeclasses eauto.
+          rewrite Rbar_Expectation_posRV_ext with (prv2 := H1).
+          + eapply bounded_is_finite.
+            * eapply Rbar_Expectation_posRV_pos.
+            * eapply H0.
+          + intro x.
+            unfold Rbar_rvlim, rvpower, rvabs, const.
+            apply (Rbar_power_lim_comm f x fincr).
+        - intros n x.
+          unfold rvpower.
+          apply Rle_power_l; [ unfold const; lra |].
+          split; [apply Rabs_pos |].
+          unfold rvabs.
+          rewrite Rabs_right by apply Rle_ge, fpos.
+          rewrite Rabs_right.
+          apply fincr.
+          apply Rle_ge, fpos.
+        - intros; apply IsFiniteExpectation_posRV.
+          apply (@LpRRV_LpS_FiniteLp p (f n)).
+    Qed.
 
       Lemma LpRRVsum_pos (f : nat -> LpRRV p) (n : nat) :
         (forall n, PositiveRandomVariable (f n)) ->
