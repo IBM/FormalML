@@ -84,6 +84,7 @@ MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	RealVectorHilbert \
 	SimpleExpectation \
 	Expectation \
+	RbarExpectation \
 	SigmaAlgebras \
 	VectorRandomVariable \
 	sumtest

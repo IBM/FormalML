@@ -40,6 +40,29 @@ Section RbarExpectation.
 
   Definition Rbar_rv_le := pointwise_relation Ts Rbar_le.
 
+  Global Instance Rbar_rv_le_pre : PreOrder Rbar_rv_le.
+  Proof.
+    unfold Rbar_rv_le.
+    constructor; intros.
+    - intros ??; apply Rbar_le_refl.
+    - intros ??????.
+      eapply Rbar_le_trans; eauto.
+  Qed.
+
+  Global Instance Rbar_rv_le_part : PartialOrder rv_eq Rbar_rv_le.
+  Proof.
+    intros ??.
+    split; intros eqq.
+    - repeat red.
+      repeat red in eqq.
+      split; intros ?; rewrite eqq; apply Rbar_le_refl.
+    - destruct eqq as [le1 le2].
+      intros y.
+      specialize (le1 y).
+      specialize (le2 y).
+      now apply Rbar_le_antisym.
+  Qed.
+
   Definition Rbar_Expectation_posRV
              (rv_X : Ts -> Rbar)
              {posrv:Rbar_PositiveRandomVariable rv_X} :  Rbar   :=
@@ -50,6 +73,64 @@ Section RbarExpectation.
            (srv2: SimpleRandomVariable rvx2) =>
            PositiveRandomVariable rvx2 /\ 
            (Rbar_rv_le rvx2 rv_X))).
+
+  Lemma Rbar_Expectation_posRV_ext 
+        {rv_X1 rv_X2 : Ts -> Rbar}
+        (prv1:Rbar_PositiveRandomVariable rv_X1) 
+        (prv2:Rbar_PositiveRandomVariable rv_X2):
+    rv_eq rv_X1 rv_X2 ->
+    Rbar_Expectation_posRV rv_X1 = Rbar_Expectation_posRV rv_X2.
+  Proof.
+    intros eqq.
+    unfold Rbar_Expectation_posRV, SimpleExpectationSup.
+    apply Lub_Rbar_eqset; intros x.
+    split; intros [y [ yrv [ysrv [??]]]].
+    - exists y; exists yrv; exists ysrv.
+      rewrite <- eqq.
+      auto.
+    - exists y; exists yrv; exists ysrv.
+      rewrite eqq.
+      auto.
+  Qed.
+
+  Definition Rbar_max (x y : Rbar) : Rbar :=
+    if Rbar_le_dec x y then y else x.
+
+  Definition Rbar_pos_fun_part (f : Ts -> Rbar) : (Ts -> Rbar) :=
+    fun x => Rbar_max (f x) 0.
+    
+  Definition Rbar_neg_fun_part (f : Ts -> Rbar) : (Ts -> Rbar) :=
+    fun x => Rbar_max (Rbar_opp (f x)) 0.
+
+  Instance Rbar_pos_fun_pos  (f : Ts -> Rbar)  :
+    Rbar_PositiveRandomVariable (Rbar_pos_fun_part f).
+  Proof.
+    unfold Rbar_PositiveRandomVariable, Rbar_pos_fun_part, Rbar_max.
+    intros.
+    match_destr.
+    - simpl; lra.
+    - destruct (f x).
+      + simpl in *; lra.
+      + now simpl.
+      + now simpl in n.
+  Qed.
+
+  Instance Rbar_neg_fun_pos  (f : Ts -> Rbar)  :
+    Rbar_PositiveRandomVariable (Rbar_neg_fun_part f).
+  Proof.
+    unfold Rbar_PositiveRandomVariable, Rbar_neg_fun_part, Rbar_max.
+    intros.
+    match_destr.
+    - simpl; lra.
+    - destruct (f x).
+      + simpl in *; lra.
+      + now simpl in n.
+      + now simpl.
+  Qed.
+
+  Definition Rbar_Expectation (rv_X : Ts -> Rbar) : option Rbar :=
+    Rbar_minus' (Rbar_Expectation_posRV (Rbar_pos_fun_part rv_X))
+                (Rbar_Expectation_posRV (Rbar_neg_fun_part rv_X)).
 
   Lemma Rbar_Expectation_posRV_le 
         (rv_X1 rv_X2 : Ts -> Rbar)
