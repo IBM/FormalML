@@ -132,6 +132,30 @@ Section RbarExpectation.
     Rbar_minus' (Rbar_Expectation_posRV (Rbar_pos_fun_part rv_X))
                 (Rbar_Expectation_posRV (Rbar_neg_fun_part rv_X)).
 
+  Lemma Rbar_Expectation_ext {rv_X1 rv_X2 : Ts -> Rbar} :
+    rv_eq rv_X1 rv_X2 ->
+    Rbar_Expectation rv_X1 = Rbar_Expectation rv_X2.
+  Proof.
+    intros eqq.
+    unfold Rbar_Expectation.
+    f_equal.
+    - apply Rbar_Expectation_posRV_ext.
+      intros x; simpl.
+      unfold Rbar_pos_fun_part.
+      now rewrite eqq.
+    - f_equal.
+      apply Rbar_Expectation_posRV_ext.
+      intros x; simpl.
+      unfold Rbar_neg_fun_part.
+      now rewrite eqq.
+  Qed.
+
+  Global Instance Rbar_Expectation_proper : Proper (rv_eq ==> eq) Rbar_Expectation.
+  Proof.
+    intros ???.
+    now apply Rbar_Expectation_ext.
+  Qed.
+
   Lemma Rbar_Expectation_posRV_le 
         (rv_X1 rv_X2 : Ts -> Rbar)
         {prv1 : Rbar_PositiveRandomVariable rv_X1}

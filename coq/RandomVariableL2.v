@@ -10,6 +10,7 @@ Require Import hilbert.
 
 Require Export RandomVariableLpR.
 Require Import quotient_space.
+Require Import RbarExpectation.
 
 Require Import AlmostEqual.
 Require Import utils.Utils.
@@ -679,37 +680,38 @@ Section L2.
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
         (PF:ProperFilter F)
         (cF:cauchy F) :
-    IsLp prts 2
-         (rvlim
-            (fun n0 =>
-               LpRRVsum prts big2 
-                 (fun n =>
-                  (LpRRVabs prts
-                            (LpRRVminus prts
-                                        (L2RRV_lim_picker F PF cF (S (S n)))
-                                        (L2RRV_lim_picker F PF cF (S n))))) n0)).
+    IsLp_Rbar (p:=2)
+      prts 
+      (Rbar_rvlim
+         (fun n0 =>
+            LpRRVsum prts big2 
+                     (fun n =>
+                        (LpRRVabs prts
+                                  (LpRRVminus prts
+                                              (L2RRV_lim_picker F PF cF (S (S n)))
+                                              (L2RRV_lim_picker F PF cF (S n))))) n0)).
   Proof.
-    apply (islp_lim_telescope_abs prts big2
-                                  (fun n => L2RRV_lim_picker F PF cF (S n))); [ | typeclasses eauto| ]; intros.
+    apply (islp_Rbar_lim_telescope_abs prts big2
+                                       (fun n => L2RRV_lim_picker F PF cF (S n)))
+    ; [ | typeclasses eauto ]; intros.
     generalize (lim_filter_cauchy F PF cF (S n) (S (S n)) (S n)); intros.
     simpl.
     cut_to H; try lia.
-    - simpl in H.
-      unfold Rdiv in H.
-      rewrite Rinv_mult_distr in H; try lra; [|apply pow2_nzero].
-      rewrite <- Rmult_assoc in H.
-      rewrite Rinv_r in H; try lra.
-      rewrite Rmult_1_l in H.
-      apply H.
-    - admit.
-  Admitted.
+    simpl in H.
+    unfold Rdiv in H.
+    rewrite Rinv_mult_distr in H; try lra; [|apply pow2_nzero].
+    rewrite <- Rmult_assoc in H.
+    rewrite Rinv_r in H; try lra.
+    rewrite Rmult_1_l in H.
+    apply H.
+  Qed.
 
   Lemma cauchy_filter_sum_abs
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
         (PF:ProperFilter F)
         (cF:cauchy F) :
-    IsLp prts 2  
-         (rvlim
+    IsLp_Rbar prts (p:=2)  
+         (Rbar_rvlim
             (rvsum
                (fun n =>
                   (LpRRVabs prts
@@ -717,8 +719,8 @@ Section L2.
                                         (L2RRV_lim_picker F PF cF (S (S n)))
                                         (L2RRV_lim_picker F PF cF (S n))))))).
   Proof.
-    apply (IsLp_proper prts 2 ) with
-        (x :=  (rvlim
+    apply (IsLp_Rbar_proper (p:=2) prts ) with
+        (x :=  (Rbar_rvlim
             (fun n0 =>
                LpRRVsum prts big2 
                  (fun n =>

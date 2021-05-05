@@ -1553,6 +1553,17 @@ Section Lp.
         := is_finite (Rbar_Expectation_posRV
                         (fun omega => Rbar_power (Rbar_abs (rv_X omega)))).
 
+      Global Instance IsLp_Rbar_proper
+        : Proper (rv_eq ==> iff) IsLp_Rbar.
+      Proof.
+        intros ?? eqq.
+        unfold IsLp_Rbar.
+        erewrite Rbar_Expectation_posRV_ext.
+        reflexivity.
+        intro xx.
+        now rewrite eqq.
+      Qed.
+
       Lemma is_lim_power_inf (f : nat -> R) :
         is_lim_seq f p_infty -> is_lim_seq (fun n => power (f n) p) p_infty.
       Proof.
