@@ -663,10 +663,8 @@ Section L2.
     rewrite Rabs_pos_eq.
     left.
     apply (lim_filter_cauchy F PF cF n (S n) n); try lia.
-  Admitted.
-  (*
-    rewrite <- LpRRV_norm_norm.
-    apply norm_ge_0.
+    unfold LpRRVnorm.
+    apply power_nonneg.
     unfold Rdiv.
     apply (@ex_series_scal_l R_AbsRing R_CompleteNormedModule).
     apply ex_series_ext with (a := fun n => (/ 2)^n).
@@ -674,7 +672,6 @@ Section L2.
     apply ex_series_geom.
     rewrite Rabs_pos_eq; lra.
  Qed.
-*)
 
   Lemma cauchy_filter_sum_abs0
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
