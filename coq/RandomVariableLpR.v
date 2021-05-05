@@ -1525,15 +1525,15 @@ Section Lp.
           now unfold rv_le, pointwise_relation in fincr.
         Qed.
 
-      Definition Rbar_power (x : Rbar) (n : R) : Rbar :=
+      Definition Rbar_power (x : Rbar)  : Rbar :=
         match x with
         | p_infty => p_infty
         | m_infty => 0
         | Finite x => power x p
         end.
 
-      Lemma Rbar_power_nonneg (x : Rbar) (n : R) :
-        Rbar_le 0 (Rbar_power x n).
+      Lemma Rbar_power_nonneg (x : Rbar) :
+        Rbar_le 0 (Rbar_power x).
        Proof.
          destruct x.
          - apply power_nonneg.
@@ -1541,17 +1541,17 @@ Section Lp.
          - simpl; lra.
        Qed.
 
-      Instance power_abs_pos n (rv_X : Ts -> Rbar) :
+      Instance power_abs_pos (rv_X : Ts -> Rbar) :
         Rbar_PositiveRandomVariable
-          (fun omega => Rbar_power (Rbar_abs (rv_X omega)) n).
+          (fun omega => Rbar_power (Rbar_abs (rv_X omega))).
       Proof.
         intros x.
         apply Rbar_power_nonneg.
       Qed.
 
-      Definition IsLp_Rbar n (rv_X:Ts->Rbar)
+      Definition IsLp_Rbar (rv_X:Ts->Rbar)
         := is_finite (Rbar_Expectation_posRV
-                        (fun omega => Rbar_power (Rbar_abs (rv_X omega)) n)).
+                        (fun omega => Rbar_power (Rbar_abs (rv_X omega)))).
 
       Lemma is_lim_power_inf (f : nat -> R) :
         is_lim_seq f p_infty -> is_lim_seq (fun n => power (f n) p) p_infty.
@@ -1587,7 +1587,7 @@ Section Lp.
 
       Lemma Rbar_power_lim_comm (f : nat -> Ts -> R) (x:Ts) :
         (forall (n:nat), rv_le (f n) (f (S n))) ->
-        Rbar_power (Rbar_abs (Lim_seq (fun n : nat => f n x))) p = Lim_seq (fun n : nat => power (Rabs (f n x)) p).
+        Rbar_power (Rbar_abs (Lim_seq (fun n : nat => f n x))) = Lim_seq (fun n : nat => power (Rabs (f n x)) p).
       Proof.
         intros.
         assert (exlim: ex_lim_seq (fun n => f n x)).
@@ -1630,7 +1630,7 @@ Section Lp.
         (forall (n:nat), PositiveRandomVariable  (f n)) ->
         (forall (n:nat), rv_le (f n) (f (S n))) ->
 (*        (forall (omega:Ts), ex_finite_lim_seq (fun n : nat => f n omega)) -> *)
-        IsLp_Rbar p (Rbar_rvlim f).
+        IsLp_Rbar (Rbar_rvlim f).
       Proof.
         intros cpos fnorm f_rv fpos fincr.
         unfold LpRRVnorm in fnorm.
@@ -1738,6 +1738,30 @@ Section Lp.
         - apply H1.
       Qed.
       
+      Lemma islp_Rbar_lim_telescope_abs (f : nat -> LpRRV p) :
+        (forall (n:nat), LpRRVnorm (LpRRVminus (f (S n)) (f n)) < / (pow 2 n)) ->
+        (forall (n:nat), RandomVariable dom borel_sa (f n)) ->
+        IsLp_Rbar (Rbar_rvlim
+                  (fun n => LpRRVsum (fun n0 => LpRRVabs (LpRRVminus (f (S n0)) (f n0))) n)).
+      Proof.
+        intros.
+        apply islp_Rbar_rvlim_bounded with (c := 2); try lra.
+        intros.
+        apply lp_telescope_norm_bound; trivial.
+        - intros.
+          typeclasses eauto.
+        - intros.
+          apply LpRRVsum_pos.
+          typeclasses eauto.
+        - intros n x.
+          unfold LpRRVsum, pack_LpRRV; simpl.
+          unfold rvsum.
+          rewrite sum_Sn.
+          apply Rplus_le_compat1_l.
+          unfold rvabs.
+          apply Rabs_pos.
+      Qed.
+
       Lemma lp_norm_seq_pow2 (f : nat -> LpRRV p) :
         (forall (n:nat), LpRRVnorm (LpRRVminus (f (S n)) (f n)) < / (pow 2 n)) ->
         forall (n m:nat), (m > S n)%nat -> 
