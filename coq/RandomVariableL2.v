@@ -606,6 +606,9 @@ Section L2.
     ; intros HH.
     field_simplify in HH.
     - eapply Rle_lt_trans; try eapply HH.
+      generalize (LpRRV_norm_plus prts big2 (LpRRVminus prts x x1) (LpRRVminus prts x1 y)); intros HH2.
+      repeat rewrite LpRRVminus_plus in HH2.
+      repeat rewrite LpRRVminus_plus.
       Admitted.
 (*      generalize (norm_triangle (minus x x1) (minus x1 y))
       ; intros HH2.
@@ -729,6 +732,48 @@ Section L2.
       f_equal.
     - apply cauchy_filter_sum_abs0.
     Qed.
+
+  Lemma Rbar_power_le (x y p : Rbar) :
+    0 <= p ->
+    Rbar_le 0 x ->
+    Rbar_le x y ->
+    Rbar_le (Rbar_power (p:=p) x) (Rbar_power (p := p) y).
+  Proof.
+    intros.
+    destruct x; destruct y; simpl in *; trivial; try tauto.
+    apply Rle_power_l; trivial; lra.
+  Qed.
+
+  Lemma Rbar_abs_nneg (x : Rbar) :
+    Rbar_le 0 (Rbar_abs x).
+  Proof.
+    unfold Rbar_abs; destruct x; simpl; try tauto.
+    apply Rabs_pos.
+  Qed.
+
+  Lemma cauchy_filter_sum
+        (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F) :
+    IsLp_Rbar prts (p:=2)  
+         (Rbar_rvlim
+            (rvsum
+               (fun n =>
+                            (LpRRVminus prts
+                                        (L2RRV_lim_picker F PF cF (S (S n)))
+                                        (L2RRV_lim_picker F PF cF (S n)))))).
+  Proof.
+    generalize (cauchy_filter_sum_abs F PF cF).
+    unfold IsLp_Rbar; intros.
+    eapply (is_finite_Rbar_Expectation_posRV_le _ _ _ H).
+    Unshelve.
+    intro x.
+    unfold Rbar_rvlim.
+    apply Rbar_power_le with (p := 2); [simpl; lra | apply Rbar_abs_nneg | ].
+    
+
+  Admitted.
+
 
   Definition L2RRV_lim_with_conditions (lim : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
     (PF:ProperFilter lim)

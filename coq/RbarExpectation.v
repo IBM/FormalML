@@ -229,6 +229,20 @@ Section RbarExpectation.
     apply Rbar_Expectation_posRV_le; trivial.
   Qed.
 
+  Lemma is_finite_Rbar_Expectation_posRV_le
+        (rv_X1 rv_X2 : Ts -> Rbar)
+        {prv1 : Rbar_PositiveRandomVariable rv_X1}
+        {prv2 : Rbar_PositiveRandomVariable rv_X2} :
+    Rbar_rv_le rv_X1 rv_X2 ->
+    is_finite (Rbar_Expectation_posRV rv_X2) ->
+    is_finite (Rbar_Expectation_posRV rv_X1).
+  Proof.
+    intros.
+    eapply bounded_is_finite with (b := (Rbar_Expectation_posRV rv_X2)).
+    apply Rbar_Expectation_posRV_pos.
+    rewrite H0.
+    now apply Rbar_Expectation_posRV_le.
+ Qed.
 
   Definition Rbar_rvlim (f : nat -> Ts -> R) : (Ts -> Rbar) :=
     (fun omega => Lim_seq (fun n => f n omega)).
