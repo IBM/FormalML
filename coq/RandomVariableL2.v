@@ -585,7 +585,11 @@ Section L2.
     rewrite opp_minus.
     reflexivity.
   Qed.
-    
+
+  Lemma LpRRV_norm_opp (x : LpRRV prts 2) : LpRRVnorm prts (LpRRVopp prts x) = LpRRVnorm prts x.
+  Proof.
+  Admitted.
+
   Lemma lim_ball_center_dist (x y : LpRRV prts 2)
              (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
              (PF:ProperFilter F)
@@ -609,28 +613,29 @@ Section L2.
       generalize (LpRRV_norm_plus prts big2 (LpRRVminus prts x x1) (LpRRVminus prts x1 y)); intros HH2.
       repeat rewrite LpRRVminus_plus in HH2.
       repeat rewrite LpRRVminus_plus.
-  Admitted.
-(*      generalize (norm_triangle (minus x x1) (minus x1 y))
-      ; intros HH2.
-      unfold minus in HH2.
-      repeat rewrite plus_assoc in HH2.
-      rewrite <- (plus_assoc x (opp x1)) in HH2.
-      rewrite plus_opp_l in HH2.
-      rewrite plus_zero_r in HH2.
-      unfold plus in HH2; simpl in HH2.
-      rewrite LpRRVq_norm_norm in HH2.
-      rewrite LpRRVq_minus_plus_opp'.
-      rewrite LpRRVq_opp_opp in HH2.
+      assert (eqq:LpRRV_seq (LpRRVplus prts (LpRRVplus prts x (LpRRVopp prts x1))
+                                   (LpRRVplus prts x1 (LpRRVopp prts y)))
+                            ((LpRRVplus prts x (LpRRVopp prts y)))).
+      {
+        intros ?; simpl.
+        rv_unfold; lra.
+      }
+      generalize (LpRRV_norm_opp (LpRRVplus prts x (LpRRVopp prts x1)))
+      ; intros eqq3.
+      subst nneg2.
+      rewrite <- eqq.
       eapply Rle_trans; try eapply HH2.
-      eapply Rplus_le_compat.
-      + rewrite Hnorm_minus_opp.
-        unfold minus.
-        now right.
-      + now right.
-    - eelim pow_nzero; try eapply HH.
+      apply Rplus_le_compat_r.
+      simpl in *.
+      rewrite <- eqq3.
+      right.
+      apply LpRRV_norm_sproper.
+      intros ?; simpl.
+      rv_unfold; lra.
+    - revert HH.
+      apply pow_nzero.
       lra.
   Qed.
- *)
   
   Lemma lim_filter_cauchy 
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
