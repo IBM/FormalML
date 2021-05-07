@@ -588,7 +588,16 @@ Section L2.
 
   Lemma LpRRV_norm_opp (x : LpRRV prts 2) : LpRRVnorm prts (LpRRVopp prts x) = LpRRVnorm prts x.
   Proof.
-  Admitted.
+    unfold LpRRVnorm, LpRRVopp.
+    f_equal.
+    apply FiniteExpectation_ext.
+    simpl.
+    intro z.
+    rv_unfold.
+    f_equal.
+    replace (-1 * (x z)) with (- x z) by lra.
+    now rewrite Rabs_Ropp.
+  Qed.
 
   Lemma lim_ball_center_dist (x y : LpRRV prts 2)
              (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
@@ -936,7 +945,8 @@ Section L2.
                    (fun n =>
                       (LpRRVminus prts
                               (L2RRV_lim_picker F PF cF (S (S n)))
-                              (L2RRV_lim_picker F PF cF (S n)))) n0))  (L2RRV_lim_picker F PF cF (S (S n0))).
+                              (L2RRV_lim_picker F PF cF (S n)))) n0))
+                (L2RRV_lim_picker F PF cF (S (S n0))).
   Proof.
     intros.
     apply (LpRRVsum_telescope 
@@ -965,6 +975,8 @@ Section L2.
                                           (L2RRV_lim_picker F PF cF (S (S n)))
                                           (L2RRV_lim_picker F PF cF (S n))))
                            n0)) z))).
+   intro z.
+   
    Admitted.
 
   Definition L2RRV_lim_with_conditions (lim : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
