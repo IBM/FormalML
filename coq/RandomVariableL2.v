@@ -609,9 +609,7 @@ Section L2.
       generalize (LpRRV_norm_plus prts big2 (LpRRVminus prts x x1) (LpRRVminus prts x1 y)); intros HH2.
       repeat rewrite LpRRVminus_plus in HH2.
       repeat rewrite LpRRVminus_plus.
-      
-      
-      Admitted.
+  Admitted.
 (*      generalize (norm_triangle (minus x x1) (minus x1 y))
       ; intros HH2.
       unfold minus in HH2.
