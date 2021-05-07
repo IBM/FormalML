@@ -954,30 +954,35 @@ Section L2.
                 L2RRV_lim_picker F PF cF (S n))).
   Qed.
 
-  Lemma cauchy_filter_lim
+  Lemma cauchy_filter_Rbar_lim
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
         (PF:ProperFilter F)
         (cF:cauchy F) :
     IsLp_Rbar prts (p:=2)  
          (Rbar_rvlim
-            (fun n => (L2RRV_lim_picker F PF cF (S n)))).
+            (fun n => LpRRVminus prts
+                        (L2RRV_lim_picker F PF cF (S (S n)))
+                        (L2RRV_lim_picker F PF cF (S 0%nat))
+                        
+         )).
   Proof.
-    
    apply (IsLp_Rbar_proper (p:=2) prts ) with
        (x :=  
-          (fun z => Rbar_plus 
-             ((L2RRV_lim_picker F PF cF (S 0%nat)) z)
-             ((Rbar_rvlim
+             (Rbar_rvlim
                (fun n0 =>
                   LpRRVsum prts big2 
                            (fun n =>
                               (LpRRVminus prts
                                           (L2RRV_lim_picker F PF cF (S (S n)))
                                           (L2RRV_lim_picker F PF cF (S n))))
-                           n0)) z))).
+                           n0))).
    intro z.
-   
-   Admitted.
+   unfold Rbar_rvlim.
+   apply Lim_seq_ext.
+   intros.
+   apply (LpRRVsum_telescope0 (fun n => (L2RRV_lim_picker F PF cF (S n)))).
+   apply cauchy_filter_sum.
+  Qed.
 
   Definition L2RRV_lim_with_conditions (lim : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
     (PF:ProperFilter lim)
