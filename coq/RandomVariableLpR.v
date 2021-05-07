@@ -379,12 +379,30 @@ Section Lp.
       : IsFiniteExpectation prts (rvpower (rvabs rv_X) (const p))
       := LpRRV_lp _.
 
+
     Definition pack_LpRRV (rv_X:Ts -> R) {rv:RandomVariable dom borel_sa rv_X} {lp:IsLp p rv_X}
       := LpRRV_of rv_X rv lp.
     
+    Definition LpRRV_seq (rv1 rv2:LpRRV) (* strict equality *)
+      := rv_eq (LpRRV_rv_X rv1) (LpRRV_rv_X rv2).
+
     Definition LpRRV_eq (rv1 rv2:LpRRV)
       := rv_almost_eq prts rv1 rv2.
+
+    Global Instance LpRRV_seq_eq : subrelation LpRRV_seq LpRRV_eq.
+    Proof.
+      red; unfold LpRRV_seq, LpRRV_eq, rv_eq.
+      intros x y eqq.
+      now apply rv_almost_eq_eq.
+    Qed.      
     
+    Global Instance LpRRV_seq_equiv : Equivalence (LpRRV_seq).
+    Proof.
+      unfold LpRRV_seq.
+      apply Equivalence_pullback.
+      apply rv_eq_equiv.
+    Qed.
+
     Global Instance LpRRV_eq_equiv : Equivalence LpRRV_eq.
     Proof.
       unfold LpRRV_eq.
@@ -405,6 +423,20 @@ Section Lp.
 
     Program Definition LpRRVscale (x:R) (rv:LpRRV) : LpRRV
       := pack_LpRRV (rvscale x rv).
+
+    Global Instance LpRRV_scale_sproper : Proper (eq ==> LpRRV_seq ==> LpRRV_seq) LpRRVscale.
+    Proof.
+      unfold Proper, respectful, LpRRV_eq.
+      intros ? x ? [x1??] [x2??] eqqx.
+      subst.
+      simpl in *.
+      unfold rvscale.
+      red.
+      simpl.
+      red in eqqx.
+      simpl in *.
+      now rewrite eqqx.
+    Qed.
 
     Global Instance LpRRV_scale_proper : Proper (eq ==> LpRRV_eq ==> LpRRV_eq) LpRRVscale.
     Proof.
@@ -432,6 +464,17 @@ Section Lp.
     Definition LpRRVopp (rv:LpRRV) : LpRRV
       := pack_LpRRV (rvopp rv).
     
+    Global Instance LpRRV_opp_sproper : Proper (LpRRV_seq ==> LpRRV_seq) LpRRVopp.
+    Proof.
+      unfold Proper, respectful.
+      intros x y eqq.
+      generalize (LpRRV_scale_sproper (-1) _ (eq_refl _) _ _ eqq)
+      ; intros HH.
+      destruct x as [x?]
+      ; destruct y as [y?].
+      apply HH.
+    Qed.
+
     Global Instance LpRRV_opp_proper : Proper (LpRRV_eq ==> LpRRV_eq) LpRRVopp.
     Proof.
       unfold Proper, respectful.
@@ -442,7 +485,7 @@ Section Lp.
       ; destruct y as [y?].
       apply HH.
     Qed.
-    
+
     Lemma LpRRVopp_scale (rv:LpRRV) :
       LpRRV_eq 
         (LpRRVopp rv) (LpRRVscale (-1) rv).
@@ -454,6 +497,15 @@ Section Lp.
 
     Definition LpRRVabs (rv:LpRRV) : LpRRV
       := pack_LpRRV (rvabs rv).
+
+    Global Instance LpRRV_abs_sproper : Proper (LpRRV_seq ==> LpRRV_seq) LpRRVabs.
+    Proof.
+      unfold Proper, respectful.
+      intros x y eqq.
+      red in eqq.
+      red; simpl.
+      now rewrite eqq.
+    Qed.
 
     Global Instance LpRRV_abs_proper : Proper (LpRRV_eq ==> LpRRV_eq) LpRRVabs.
     Proof.
@@ -527,6 +579,15 @@ Section Lp.
     Definition LpRRVplus (rv1 rv2:LpRRV p) : LpRRV p
       := pack_LpRRV (rvplus rv1  rv2).
 
+    Global Instance LpRRV_plus_sproper : Proper (LpRRV_seq ==> LpRRV_seq ==> LpRRV_seq) LpRRVplus.
+    Proof.
+      unfold Proper, respectful, LpRRV_seq.
+      intros [x1??] [x2??] eqqx [y1??] [y2??] eqqy.
+      simpl in *.
+      simpl in *.
+      now rewrite eqqx, eqqy.
+    Qed.
+
     Global Instance LpRRV_plus_proper : Proper (LpRRV_eq ==> LpRRV_eq ==> LpRRV_eq) LpRRVplus.
     Proof.
       unfold Proper, respectful, LpRRV_eq.
@@ -534,18 +595,26 @@ Section Lp.
       simpl in *.
       now apply rv_almost_eq_plus_proper.
     Qed.
-    
+
     Definition LpRRVminus (rv1 rv2:LpRRV p) : LpRRV p
       := pack_LpRRV (rvminus rv1 rv2).
 
     Lemma LpRRVminus_plus (rv1 rv2:LpRRV p) :
-      LpRRV_eq 
+      LpRRV_seq 
         (LpRRVminus rv1 rv2) (LpRRVplus rv1 (LpRRVopp rv2)).
     Proof.
-      apply rv_almost_eq_eq.
+      intros ?.
       reflexivity.
     Qed.
     
+    Global Instance LpRRV_minus_sproper : Proper (LpRRV_seq ==> LpRRV_seq ==> LpRRV_seq) LpRRVminus.
+    Proof.
+      unfold Proper, respectful, LpRRV_seq.
+
+      intros x1 x2 eqq1 y1 y2 eqq2; simpl.
+      now rewrite eqq1, eqq2.
+    Qed.
+
     Global Instance LpRRV_minus_proper : Proper (LpRRV_eq ==> LpRRV_eq ==> LpRRV_eq) LpRRVminus.
     Proof.
       unfold Proper, respectful, LpRRV_eq.
@@ -677,11 +746,11 @@ Section Lp.
         LpRRVq_minus rv1 rv2 = LpRRVq_plus rv1 (LpRRVq_opp rv2).
       Proof.
         LpRRVq_simpl.
-        apply LpRRVminus_plus.
+        now rewrite LpRRVminus_plus.
       Qed.
 
       Lemma LpRRVq_opp_scale (rv:LpRRVq p) :
-        LpRRVq_opp rv =LpRRVq_scale (-1) rv.
+        LpRRVq_opp rv = LpRRVq_scale (-1) rv.
       Proof.
         LpRRVq_simpl.
         apply LpRRVopp_scale.
@@ -797,6 +866,12 @@ Section Lp.
         apply rv_almost_eq_abs_proper
         ; trivial
         ; try typeclasses eauto.
+      Qed.
+
+      Global Instance LpRRV_norm_sproper : Proper (LpRRV_seq ==> eq) LpRRVnorm.
+      Proof.
+        unfold Proper, respectful; intros.
+        now rewrite H.
       Qed.
 
       Lemma almost0_lpf_almost0 (rv_X:Ts->R)
@@ -1086,6 +1161,14 @@ Section Lp.
             unfold LpRRVball, LpRRVnorm, LpRRVplus, LpRRVminus, LpRRVopp, LpRRVscale, LpRRVnorm in *
             ; simpl pack_LpRRV; simpl LpRRV_rv_X in *.
 
+
+      Global Instance LpRRV_ball_sproper : Proper (LpRRV_seq ==> eq ==> LpRRV_seq ==> iff) LpRRVball.
+      Proof.
+        intros ?? eqq1 ?? eqq2 ?? eqq3.
+        unfold LpRRVball in *.
+        rewrite <- eqq1, <- eqq2, <- eqq3.
+        reflexivity.
+      Qed.
 
       Global Instance LpRRV_ball_proper : Proper (LpRRV_eq ==> eq ==> LpRRV_eq ==> iff) LpRRVball.
       Proof.
@@ -1934,7 +2017,7 @@ Section Lp.
       Proof.
         unfold minus, plus, opp; simpl.
         LpRRVq_simpl.
-        apply LpRRVminus_plus.
+        now rewrite LpRRVminus_plus.
       Qed.
 
       Lemma LpRRVq_minus_plus_opp
@@ -1943,7 +2026,7 @@ Section Lp.
       Proof.
         unfold minus, plus, opp; simpl.
         LpRRVq_simpl.
-        apply LpRRVminus_plus.
+        now rewrite LpRRVminus_plus.
       Qed.
 
       Lemma LpRRVq_close_close (x y : LpRRVq p) (eps : R) :
@@ -2032,3 +2115,6 @@ Ltac LpRRV_simpl
      ; unfold LpRRVplus, LpRRVminus, LpRRVopp, LpRRVscale
      ; simpl
 .
+
+Global Arguments LpRRV_seq {Ts} {dom} {prts} {p} rv1 rv2.
+(* Global Arguments LpRRV_eq {Ts} {dom}{prts} {p} rv1 rv2. *)
