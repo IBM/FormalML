@@ -776,7 +776,6 @@ Section L2.
     ex_finite_lim_seq (sum_n f) <-> ex_series f.
   Proof.
     easy.
-    Search ex_finite_lim_seq.
   Qed.
 
   Lemma series_abs_bounded (f : nat -> R) :
@@ -881,6 +880,82 @@ Section L2.
     apply Rabs_lim_sum_le.
   Qed.
 
+  Lemma LpRRVsum_telescope0
+        (f: nat -> LpRRV prts 2) : 
+    forall n0,
+      (LpRRVsum prts big2
+                (fun n => (LpRRVminus prts (f (S n)) (f n))) 
+                n0) =
+      LpRRVminus prts (f (S n0)) (f 0%nat).
+   Proof.
+     intros; induction n0.
+     assert (rv_eq
+                 (LpRRVsum prts big2 (fun n : nat => LpRRVminus prts (f (S n)) (f n)) 0)
+                 (LpRRVminus prts (f (S 0%nat)) (f 0%nat))).
+       {
+         intro x.
+         unfold LpRRVsum; simpl.
+         unfold rvsum.
+         now rewrite sum_O.
+       }
+       
+   Admitted.
+
+   Lemma LpRRVsum_telescope
+        (f: nat -> LpRRV prts 2) : 
+     forall n0,
+       LpRRVplus prts (f 0%nat)
+                 (LpRRVsum prts big2
+                           (fun n => (LpRRVminus prts (f (S n)) (f n))) 
+                           n0) =
+      (f (S n0)).
+     Proof.
+       intros.
+       generalize (LpRRVsum_telescope0 f n0); intros.
+       rewrite H.
+    Admitted.
+
+  Lemma cauchy_filter_sum_telescope
+        (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F) :
+    forall n0, 
+      LpRRVplus prts
+                (L2RRV_lim_picker F PF cF (S 0%nat))
+                (LpRRVsum prts big2 
+                   (fun n =>
+                      (LpRRVminus prts
+                              (L2RRV_lim_picker F PF cF (S (S n)))
+                              (L2RRV_lim_picker F PF cF (S n)))) n0) = L2RRV_lim_picker F PF cF (S (S n0)).
+  Proof.
+    intros.
+    apply (LpRRVsum_telescope 
+             (fun n =>
+                L2RRV_lim_picker F PF cF (S n))).
+  Qed.
+
+(*
+  Lemma cauchy_filter_lim
+        (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F) :
+    IsLp_Rbar prts (p:=2)  
+         (Rbar_rvlim
+            (fun n => (L2RRV_lim_picker F PF cF (S n)))).
+  Proof.
+   apply (IsLp_Rbar_proper (p:=2) prts ) with
+       (x :=  
+          LpRRVplus 
+            prts (L2RRV_lim_picker F PF cF (S 0%nat))
+            (Rbar_rvlim
+               (fun n0 =>
+                  LpRRVsum prts big2 
+                           (fun n =>
+                              (LpRRVminus prts
+                                          (L2RRV_lim_picker F PF cF (S (S n)))
+                                          (L2RRV_lim_picker F PF cF (S n))))
+                           n0))).
+*)
   Definition L2RRV_lim_with_conditions (lim : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
     (PF:ProperFilter lim)
     (cF:cauchy lim) : LpRRV prts 2.
