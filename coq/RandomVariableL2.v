@@ -984,6 +984,85 @@ Section L2.
    apply cauchy_filter_sum.
   Qed.
 
+  Lemma IsLp_IsLp_Rbar (p:R) (f : LpRRV prts p) :
+    IsLp_Rbar (p:=p) prts (LpRRV_rv_X prts f).
+  Proof.
+    unfold IsLp_Rbar.
+    unfold IsLp, IsLp_Rbar; intros.
+    generalize (LpRRV_LpS_FiniteLp prts f); intros.
+    unfold IsFiniteExpectation in H.
+    generalize (rvpower_prv (rvabs f) (const p)); intros.
+    rewrite Expectation_pos_posRV with (prv := H0) in H.
+    match_case_in H; intros.
+    - rewrite Expectation_Rbar_Expectation in H1.
+      unfold rvpower, rvabs, const in H1.
+      unfold Rbar_power, Rbar_abs.
+      erewrite Rbar_Expectation_posRV_pf_irrel.
+      now rewrite H1.
+    - now rewrite H1 in H.
+    - generalize (Expectation_posRV_pos (rvpower (rvabs f) (const p))); intros.
+      rewrite H1 in H2.
+      now simpl in H2.
+   Qed.
+
+  Lemma IsLp_Rbar_IsLp (p:R) (f : Ts -> R) :
+    IsLp_Rbar prts (p := p) f ->
+    IsLp prts p f.
+  Proof.
+    unfold IsLp, IsLp_Rbar; intros.
+    unfold IsFiniteExpectation.
+    generalize (rvpower_prv (rvabs f) (const p)); intros.
+    rewrite Expectation_pos_posRV with (prv := H0).
+    rewrite Expectation_Rbar_Expectation.
+    unfold Rbar_power, Rbar_abs in H.
+    unfold rvpower, rvabs, const.
+    erewrite Rbar_Expectation_posRV_pf_irrel.
+    now rewrite <- H.
+  Qed.
+
+  Lemma IsLp_Rbar_plus (f g : Ts -> Rbar) :
+    IsLp_Rbar prts (p := 2) f -> IsLp_Rbar prts (p := 2) g ->
+    IsLp_Rbar prts (p := 2) (fun omega => Rbar_plus
+                                            (f omega) (g omega)).
+  Proof.
+    Admitted.
+
+  Lemma cauchy_filter_Rbar_lim1
+        (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F) :
+    IsLp_Rbar prts (p:=2)  
+              (Rbar_rvlim (fun n => (L2RRV_lim_picker F PF cF (S (S n))))).
+  Proof.
+    generalize (cauchy_filter_Rbar_lim F PF cF); intros.
+    generalize (IsLp_IsLp_Rbar 2 (L2RRV_lim_picker F PF cF 1)); intros.
+    generalize (IsLp_Rbar_plus _ _ H H0); intros.
+    eapply IsLp_Rbar_proper in H1.
+    apply H1.
+    intro x.
+    unfold Rbar_rvlim.
+    replace (Finite (L2RRV_lim_picker F PF cF 1 x))
+      with (Lim_seq (fun _ => (L2RRV_lim_picker F PF cF 1 x))) by
+        apply Lim_seq_const.
+    rewrite <- Lim_seq_plus.
+    - apply Lim_seq_ext.
+      intros.
+      unfold LpRRVminus; simpl.
+      unfold rvminus, rvplus, rvopp, rvscale.
+      lra.
+    - admit.
+    - apply ex_lim_seq_const.
+    - unfold ex_Rbar_plus.
+      simpl.
+      rewrite Lim_seq_const.
+      unfold Rbar_plus'.
+      destruct (Lim_seq
+                  (fun n : nat =>
+                     rvminus (L2RRV_lim_picker F PF cF (S (S n)))
+                             (L2RRV_lim_picker F PF cF 1) x)); now simpl.
+  Admitted.
+    
+
   Definition L2RRV_lim_with_conditions (lim : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
     (PF:ProperFilter lim)
     (cF:cauchy lim) : LpRRV prts 2.

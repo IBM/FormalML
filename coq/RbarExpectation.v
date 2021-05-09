@@ -93,6 +93,15 @@ Section RbarExpectation.
       auto.
   Qed.
 
+  Lemma Rbar_Expectation_posRV_pf_irrel 
+        {rv_X: Ts -> R}
+        (prv1 prv2:Rbar_PositiveRandomVariable rv_X) :
+    Rbar_Expectation_posRV rv_X (posrv:=prv1) = Rbar_Expectation_posRV rv_X (posrv:=prv2).
+  Proof.
+    apply Rbar_Expectation_posRV_ext.
+    reflexivity.
+  Qed.
+
   Definition Rbar_max (x y : Rbar) : Rbar :=
     if Rbar_le_dec x y then y else x.
 
