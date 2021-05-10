@@ -497,6 +497,16 @@ Section L2.
                  _
                  (proj2_sig (L2RRV_lim_ball_cumulative F PF cF n))))).
 
+  Definition L2RRV_lim_picker_ext0
+             (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+             (PF:ProperFilter F)
+             (cF:cauchy F)
+             (n:nat) : LpRRV prts 2
+    := match n with
+       | 0 => LpRRVzero prts
+       | S n' => L2RRV_lim_picker F PF cF n
+       end.
+
     Lemma lim_picker_cumulative_included
              (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
              (PF:ProperFilter F)
@@ -710,8 +720,7 @@ Section L2.
   Lemma islp_Rbar_lim_telescope_abs_gen (f : nat -> LpRRV prts 2) :
     ex_series (fun n => 
                  LpRRVnorm prts 
-                           (LpRRVabs prts
-                                     (LpRRVminus prts (f (S n)) (f n)))) ->
+                           (LpRRVminus prts (f (S n)) (f n))) ->
     (forall (n:nat), RandomVariable dom borel_sa (f n)) ->
     IsLp_Rbar prts (p:=2)
               (Rbar_rvlim
@@ -721,29 +730,33 @@ Section L2.
                                                                   (f n0))) n)).
   Proof.
     intros.
-    unfold ex_series in H.
-    destruct H.
-    apply islp_Rbar_rvlim_bounded with (c := x); try lra.
+    apply ex_series_ext with (b := fun n : nat => LpRRVnorm prts (LpRRVabs prts (LpRRVminus prts (f (S n)) (f n))))
+      in H.
+    - unfold ex_series in H.
+      destruct H.
+      apply islp_Rbar_rvlim_bounded with (c := x); try lra.
+      + intros.
+        eapply Rle_trans.
+        apply LpRRV_norm_sum.
+        apply series_sum_le; trivial.
+        intros.
+        unfold LpRRVnorm.
+        apply power_nonneg.
+      + intros.
+        typeclasses eauto.
+      + intros.
+        apply LpRRVsum_pos.
+        typeclasses eauto.
+      + intros n xx.
+        unfold LpRRVsum, pack_LpRRV; simpl.
+        unfold rvsum.
+        rewrite sum_Sn.
+        apply Rplus_le_compat1_l.
+        unfold rvabs.
+        apply Rabs_pos.
     - intros.
-      eapply Rle_trans.
-      apply LpRRV_norm_sum.
-      apply series_sum_le; trivial.
-      intros.
-      unfold LpRRVnorm.
-      apply power_nonneg.
-    - intros.
-      typeclasses eauto.
-    - intros.
-      apply LpRRVsum_pos.
-      typeclasses eauto.
-    - intros n xx.
-      unfold LpRRVsum, pack_LpRRV; simpl.
-      unfold rvsum.
-      rewrite sum_Sn.
-      apply Rplus_le_compat1_l.
-      unfold rvabs.
-      apply Rabs_pos.
-      Qed.
+      now rewrite norm_abs.
+  Qed.
 
   Lemma cauchy_filter_sum_abs0
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
@@ -774,6 +787,84 @@ Section L2.
     rewrite Rmult_1_l in H.
     apply H.
   Qed.
+
+  Lemma cauchy_filter_sum_abs_ext0
+        (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F) :
+    IsLp_Rbar (p:=2)
+      prts 
+      (Rbar_rvlim
+         (fun n0 =>
+            LpRRVsum prts big2 
+                     (fun n =>
+                        (LpRRVabs prts
+                                  (LpRRVminus prts
+                                              (L2RRV_lim_picker_ext0 F PF cF (S n))
+                                              (L2RRV_lim_picker_ext0 F PF cF n)))) n0)).
+  Proof.
+    apply  islp_Rbar_lim_telescope_abs_gen
+    ; [ | typeclasses eauto ]; intros.
+
+    apply (@ex_series_le R_AbsRing R_CompleteNormedModule) with
+        (b := fun n => match n with 
+                       | 0 => LpRRVnorm prts (L2RRV_lim_picker_ext0 F PF cF 1)
+                       | S n' => 2 / (pow 2 n')
+                       end).
+
+    - intros; unfold norm; simpl.
+      unfold abs; simpl.
+      rewrite Rabs_pos_eq.
+      match_destr.
+      + simpl.
+        unfold LpRRVminus, LpRRVzero.
+        unfold pack_LpRRV, LpRRVconst.
+        unfold rvminus, rvplus, rvopp, rvscale, const; simpl.
+        right.
+        apply LpRRV_norm_sproper.
+        intro z.
+        simpl.
+        ring.
+      + left.
+        simpl.
+        apply (lim_filter_cauchy F PF cF n (S (S n)) (S n)); try lia.
+      + unfold LpRRVnorm.
+        apply power_nonneg.
+    - rewrite ex_series_incr_1.
+      unfold Rdiv.
+      apply (@ex_series_scal_l R_AbsRing R_CompleteNormedModule).
+      apply ex_series_ext with (a := fun n => (/ 2)^n).
+      intros; now rewrite Rinv_pow.
+      apply ex_series_geom.
+      rewrite Rabs_pos_eq; lra.
+ Qed.
+
+  Lemma cauchy_filter_rvsum_abs_ext0
+        (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F) :
+    IsLp_Rbar prts (p:=2)  
+         (Rbar_rvlim
+            (rvsum
+               (fun n =>
+                  (LpRRVabs prts
+                            (LpRRVminus prts
+                                        (L2RRV_lim_picker_ext0 F PF cF (S n))
+                                        (L2RRV_lim_picker_ext0 F PF cF n)))))).
+  Proof.
+    apply (IsLp_Rbar_proper (p:=2) prts ) with
+        (x :=  (Rbar_rvlim
+            (fun n0 =>
+               LpRRVsum prts big2 
+                 (fun n =>
+                  (LpRRVabs prts
+                            (LpRRVminus prts
+                                        (L2RRV_lim_picker_ext0 F PF cF (S n))
+                                        (L2RRV_lim_picker_ext0 F PF cF n)))) n0))); trivial.
+    - intro x.
+      f_equal.
+    - apply cauchy_filter_sum_abs_ext0.
+    Qed.
 
   Lemma cauchy_filter_sum_abs
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
@@ -1007,6 +1098,30 @@ Section L2.
     apply Rbar_Rabs_lim_sum_le.
   Qed.
 
+  Lemma cauchy_filter_sum_ext0
+        (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F) :
+    IsLp_Rbar prts (p:=2)  
+         (Rbar_rvlim
+            (rvsum
+               (fun n =>
+                  (LpRRVminus prts
+                              (L2RRV_lim_picker_ext0 F PF cF (S n))
+                              (L2RRV_lim_picker_ext0 F PF cF n))))).
+  Proof.
+    generalize (cauchy_filter_sum_abs_ext0 F PF cF).
+    unfold IsLp_Rbar; intros.
+    unfold LpRRVnorm in H.
+    eapply (is_finite_Rbar_Expectation_posRV_le _ _ _ H).
+    Unshelve.
+    intro x.
+    unfold Rbar_rvlim.
+    apply Rbar_power_le with (p := 2); [simpl; lra | apply Rbar_abs_nneg | ].
+    simpl.
+    apply Rbar_Rabs_lim_sum_le.
+  Qed.
+
   Lemma cauchy_filter_rvlim_sum0
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
         (PF:ProperFilter F)
@@ -1121,6 +1236,36 @@ Section L2.
    apply cauchy_filter_sum.
   Qed.
 
+   Lemma cauchy_filter_Rbar_lim_ext0
+        (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F) :
+    IsLp_Rbar prts (p:=2)  
+         (Rbar_rvlim
+            (fun n => LpRRVminus prts
+                        (L2RRV_lim_picker_ext0 F PF cF (S n))
+                        (L2RRV_lim_picker_ext0 F PF cF 0%nat))
+                        
+         ).
+  Proof.
+   apply (IsLp_Rbar_proper (p:=2) prts ) with
+       (x :=  
+             (Rbar_rvlim
+               (fun n0 =>
+                  LpRRVsum prts big2 
+                           (fun n =>
+                              (LpRRVminus prts
+                                          (L2RRV_lim_picker_ext0 F PF cF (S n))
+                                          (L2RRV_lim_picker_ext0 F PF cF n)))
+                           n0))).
+   intro z.
+   unfold Rbar_rvlim.
+   apply Lim_seq_ext.
+   intros.
+   apply (LpRRVsum_telescope0 (fun n => (L2RRV_lim_picker_ext0 F PF cF n))).
+   apply  cauchy_filter_sum_ext0.
+  Qed.
+
   Lemma IsLp_IsLp_Rbar (p:R) (f : LpRRV prts p) :
     IsLp_Rbar (p:=p) prts (LpRRV_rv_X prts f).
   Proof.
@@ -1204,58 +1349,28 @@ Section L2.
    apply cauchy_filter_rvlim_sum.
   Qed.
 
-(*
-  Lemma cauchy_filter_rvlim1
+  Lemma cauchy_filter_Rbar_rvlim1
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
         (PF:ProperFilter F)
         (cF:cauchy F) :
     IsLp_Rbar prts (p := 2)
-         (Rbar_rvlim (fun n => (L2RRV_lim_picker F PF cF (S (S n))))).
-  Proof.
-    generalize (cauchy_filter_Rbar_lim F PF cF); intros.
-    generalize (IsLp_IsLp_Rbar 2 (L2RRV_lim_picker F PF cF (S O))); intros.
-    unfold IsLp_Rbar.
-    unfold IsLp_Rbar in H.
-    unfold IsLp_Rbar in H0.
-    
-
-    assert (RandomVariable dom borel_sa
-          (rvlim
-             (fun n : nat =>
-              LpRRVminus prts (L2RRV_lim_picker F PF cF (S (S n)))
-                         (L2RRV_lim_picker F PF cF 1)))).
-    admit.
-    generalize (IsLp_plus prts nneg2 (rvlim
-           (fun n : nat =>
-            LpRRVminus prts (L2RRV_lim_picker F PF cF (S (S n)))
-                       (L2RRV_lim_picker F PF cF 1)))
-                (L2RRV_lim_picker F PF cF 1)           
-               );intros.
-    eapply IsLp_proper in H2.
-    apply H2.
-    now simpl.
-    intro x.
-    unfold rvlim, rvplus.
-    replace (L2RRV_lim_picker F PF cF 1 x)
-      with (real (Lim_seq (fun _ => (L2RRV_lim_picker F PF cF 1 x)))).
-    rewrite <- Lim_seq_plus.
-    - apply Lim_seq_ext.
-      intros.
-      unfold LpRRVminus; simpl.
-      unfold rvminus, rvplus, rvopp, rvscale.
-      lra.
-    - admit.
-    - apply ex_lim_seq_const.
-    - unfold ex_Rbar_plus.
-      simpl.
-      rewrite Lim_seq_const.
-      unfold Rbar_plus'.
-      destruct (Lim_seq
-                  (fun n : nat =>
-                     rvminus (L2RRV_lim_picker F PF cF (S (S n)))
-                             (L2RRV_lim_picker F PF cF 1) x)); now simpl.
-  Admitted.
-*)    
+              (Rbar_rvlim (fun n => (L2RRV_lim_picker F PF cF (S n)))).
+   Proof.
+     generalize (cauchy_filter_Rbar_lim_ext0 F PF cF); intros.
+     unfold L2RRV_lim_picker_ext0 in H.
+     eapply IsLp_Rbar_proper.
+     shelve.
+     apply H.
+     Unshelve.
+     intro x.
+     unfold Rbar_rvlim.
+     apply Lim_seq_ext.
+     intros.
+     unfold LpRRVzero, LpRRVconst, const.
+     unfold pack_LpRRV; simpl.
+     unfold rvminus, rvplus, rvopp, rvscale.
+     ring.
+  Qed.
 
   Definition L2RRV_lim_with_conditions (lim : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
     (PF:ProperFilter lim)
