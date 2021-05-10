@@ -119,7 +119,7 @@ Section Lp.
   Qed.
 
   Lemma IsL1_Finite (rv_X:Ts->R)
-        {rrv:RandomVariable dom borel_sa rv_X}
+(*         {rrv:RandomVariable dom borel_sa rv_X} *)
         {lp:IsLp 1 rv_X} : IsFiniteExpectation prts rv_X.
   Proof.
     red.
@@ -193,7 +193,7 @@ Section Lp.
   Qed.
 
   Lemma Expectation_abs_neg_part_finite (rv_X : Ts -> R)
-        {rv:RandomVariable dom borel_sa rv_X} :
+(*        {rv:RandomVariable dom borel_sa rv_X} *) : 
     is_finite (Expectation_posRV (rvabs rv_X)) ->
     is_finite (Expectation_posRV (neg_fun_part rv_X)).
   Proof.
@@ -202,7 +202,7 @@ Section Lp.
   Qed.
   
   Lemma Expectation_neg_part_finite (rv_X : Ts -> R)
-        {rv:RandomVariable dom borel_sa rv_X}
+(*        {rv:RandomVariable dom borel_sa rv_X} *)
         {isfe:IsFiniteExpectation prts rv_X} :
     is_finite (Expectation_posRV (neg_fun_part rv_X)).
   Proof.
@@ -273,7 +273,7 @@ Section Lp.
          c
          (rv_X1 rv_X2 : Ts -> R)
          {rv1 : RandomVariable dom borel_sa rv_X1}
-         {rv2 : RandomVariable dom borel_sa rv_X2}
+         {rv2 : RandomVariable dom borel_sa rv_X2} 
          {islp1:IsLp p rv_X1}
          {islp2:IsLp p rv_X2} :
     IsLp p (rvchoice c rv_X1 rv_X2).
@@ -1513,7 +1513,6 @@ Section Lp.
       (* need stronger version of monotone_convergence to remove
          is_finite (Lim_seq (fun n : nat => f n omega))) hypothesis *)
       Lemma islp_rvlim_bounded (f : nat -> LpRRV p) (c : R) :
-        0 <= c ->
         (forall (n:nat), LpRRVnorm (f n) <= c) ->
         (forall (n:nat), RandomVariable dom borel_sa (f n)) ->
         (forall (n:nat), PositiveRandomVariable  (f n)) ->
@@ -1521,7 +1520,14 @@ Section Lp.
         (forall (omega:Ts), ex_finite_lim_seq (fun n : nat => f n omega)) ->
         IsLp p (rvlim f).
       Proof.
-        intros cpos fnorm f_rv fpos fincr exfinlim.
+        intros fnorm f_rv fpos fincr exfinlim.
+        assert (cpos: 0 <= c).
+        {
+          specialize (fnorm 0%nat).
+          apply Rle_trans with (r2 := (LpRRVnorm (f 0%nat))); trivial.
+          unfold LpRRVnorm.
+          apply power_nonneg.
+        }
         generalize (isfin_Lim_seq _ exfinlim); intros isfin_flim.
         unfold LpRRVnorm in fnorm.
         unfold IsLp.
@@ -1718,7 +1724,7 @@ Section Lp.
       (* stronger version monotone_convergence_Rbar allows us to remove
          is_finite (Lim_seq (fun n : nat => f n omega))) hypothesis *)
       Lemma islp_Rbar_rvlim_bounded (f : nat -> LpRRV p) (c : R) :
-        0 <= c ->
+(*        0 <= c -> *)
         (forall (n:nat), LpRRVnorm (f n) <= c) ->
         (forall (n:nat), RandomVariable dom borel_sa (f n)) ->
         (forall (n:nat), PositiveRandomVariable  (f n)) ->
@@ -1726,7 +1732,14 @@ Section Lp.
 (*        (forall (omega:Ts), ex_finite_lim_seq (fun n : nat => f n omega)) -> *)
         IsLp_Rbar (Rbar_rvlim f).
       Proof.
-        intros cpos fnorm f_rv fpos fincr.
+        intros fnorm f_rv fpos fincr.
+        assert (cpos: 0 <= c).
+        {
+          specialize (fnorm 0%nat).
+          apply Rle_trans with (r2 := (LpRRVnorm (f 0%nat))); trivial.
+          unfold LpRRVnorm.
+          apply power_nonneg.
+        }
         unfold LpRRVnorm in fnorm.
         unfold IsLp_Rbar.
         assert (finexp: forall n, FiniteExpectation prts (rvpower (rvabs (f n)) (const p)) <= 
@@ -1832,16 +1845,16 @@ Section Lp.
         - apply H1.
       Qed.
       
-      Lemma islp_Rbar_lim_telescope_abs (f : nat -> LpRRV p) :
-        (forall (n:nat), LpRRVnorm (LpRRVminus (f (S n)) (f n)) < / (pow 2 n)) ->
+      Lemma islp_Rbar_lim_telescope_abs_c (f : nat -> LpRRV p) (c : R) :
+        (forall n : nat,
+            LpRRVnorm
+              (LpRRVsum (fun n0 : nat => LpRRVabs (LpRRVminus (f (S n0)) (f n0))) n) <= c) ->
         (forall (n:nat), RandomVariable dom borel_sa (f n)) ->
         IsLp_Rbar (Rbar_rvlim
                   (fun n => LpRRVsum (fun n0 => LpRRVabs (LpRRVminus (f (S n0)) (f n0))) n)).
       Proof.
         intros.
-        apply islp_Rbar_rvlim_bounded with (c := 2); try lra.
-        intros.
-        apply lp_telescope_norm_bound; trivial.
+        apply islp_Rbar_rvlim_bounded with (c := c); trivial; try lra.
         - intros.
           typeclasses eauto.
         - intros.
@@ -1854,6 +1867,17 @@ Section Lp.
           apply Rplus_le_compat1_l.
           unfold rvabs.
           apply Rabs_pos.
+      Qed.
+
+      Lemma islp_Rbar_lim_telescope_abs (f : nat -> LpRRV p) :
+        (forall (n:nat), LpRRVnorm (LpRRVminus (f (S n)) (f n)) < / (pow 2 n)) ->
+        (forall (n:nat), RandomVariable dom borel_sa (f n)) ->
+        IsLp_Rbar (Rbar_rvlim
+                  (fun n => LpRRVsum (fun n0 => LpRRVabs (LpRRVminus (f (S n0)) (f n0))) n)).
+      Proof.
+        intros.
+        apply islp_Rbar_lim_telescope_abs_c with (c := 2); trivial.
+        now apply lp_telescope_norm_bound.
       Qed.
 
       Lemma lp_norm_seq_pow2 (f : nat -> LpRRV p) :

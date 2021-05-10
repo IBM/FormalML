@@ -904,7 +904,7 @@ Section Expectation.
   Qed.
 
   Lemma Expectation_abs_then_finite (rv_X:Ts->R)  
-        {rv : RandomVariable dom borel_sa rv_X}
+(*        {rv : RandomVariable dom borel_sa rv_X} *)
     :  match Expectation (rvabs rv_X) with
        | Some (Finite _) => True
        | _ => False
