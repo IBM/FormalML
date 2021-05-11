@@ -1333,10 +1333,10 @@ Section L2.
     repeat match_destr.
     apply rvlim_rv.
     - typeclasses eauto.
-    - intuition.
+    - tauto.
   Qed.
   
-  Program Definition L2RRV_lim_with_conditions (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+  Definition L2RRV_lim_with_conditions (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
              (PF:ProperFilter F)
              (cF:cauchy F) : LpRRV prts 2
       := pack_LpRRV prts (cauchy_rvlim_fun F PF cF).
@@ -1350,6 +1350,39 @@ Section L2.
     - exact (LpRRVzero prts).
   Defined.
 
+  Lemma LpRRVnorm_L2RRV_lim
+        (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F)
+        (eps : posreal) :
+    exists (x : LpRRV prts 2),
+      (F (Hierarchy.ball x eps)) /\
+      ((Hierarchy.ball (M := LpRRV_UniformSpace prts big2) x eps) (L2RRV_lim F)).
+  Proof.
+    Admitted.
+  
+  Lemma L2RRV_lim_complete (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop) 
+        (PF : ProperFilter F)
+        (cF : cauchy F) :
+    forall eps : posreal, F (Hierarchy.ball (L2RRV_lim  F) eps).
+  Proof.
+    intros.
+    assert (0 < eps/2).
+    apply Rlt_div_r; try lra.
+    rewrite Rmult_0_l.
+    apply cond_pos.
+    generalize (LpRRVnorm_L2RRV_lim F PF cF (mkposreal _ H)); intros.
+    destruct H0 as [? [? ?]].
+    generalize (Hierarchy.ball_triangle 
+                  (M := LpRRV_UniformSpace prts big2)); intros.
+    apply filter_imp with (P := (Hierarchy.ball x (mkposreal _ H))); trivial.
+    intros.
+    apply Hierarchy.ball_sym in H1.
+    replace (pos eps) with ((pos (mkposreal _ H)) + (pos (mkposreal _ H))).
+    apply (Hierarchy.ball_triangle _ _ _ _ _ H1 H3).
+    simpl; lra.
+  Qed.
+
   Program Definition L2RRVq_lim_with_conditions (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
           (PF:ProperFilter F)
           (cF:cauchy F) : LpRRVq prts 2
@@ -1361,13 +1394,23 @@ Section L2.
   Qed.
   
   Hint Rewrite L2RRVq_lim_with_conditionsE : quot.
-  
-(*  Definition L2RRVq_lim (F : (PreHilbert_UniformSpace -> Prop) -> Prop)  : LpRRVq prts 2
-    := Quot _ (L2RRV_lim F).
-  
+
+    Definition L2RRVq_lim_with_conditions2 (lim : (PreHilbert_UniformSpace (E:= L2RRVq_PreHilbert) -> Prop) -> Prop)
+    (PF:ProperFilter lim)
+    (cF:cauchy lim) : LpRRVq prts 2.
+  Admitted.
+
+  Definition L2RRVq_lim (lim : ((LpRRVq prts 2 -> Prop) -> Prop)) : LpRRVq prts 2.
+  Proof.
+    destruct (excluded_middle_informative (ProperFilter lim)).
+    - destruct (excluded_middle_informative (cauchy (T:=(PreHilbert_UniformSpace (E:= L2RRVq_PreHilbert))) lim)).
+      + exact (L2RRVq_lim_with_conditions2 _ p c).
+      + exact (LpRRVq_zero prts).
+    - exact (LpRRVq_zero prts).
+  Defined.
 
   Lemma L2RRVq_lim_complete (F : (PreHilbert_UniformSpace -> Prop) -> Prop) :
-    ProperFilter F -> cauchy F -> forall eps : posreal, F (ball (L2RRV_lim  F) eps).
+    ProperFilter F -> cauchy F -> forall eps : posreal, F (ball (L2RRVq_lim  F) eps).
   Proof.
     intros.
     unfold L2RRVq_lim; simpl.
@@ -1380,5 +1423,5 @@ Section L2.
 
   Canonical L2RRVq_Hilbert :=
     Hilbert.Pack (LpRRVq prts 2) (Hilbert.Class _ _ L2RRVq_Hilbert_mixin) (LpRRVq prts 2).
-*)
+
 End L2.
