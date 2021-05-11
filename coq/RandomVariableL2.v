@@ -12,6 +12,7 @@ Require Export RandomVariableLpR.
 Require Import quotient_space.
 Require Import RbarExpectation.
 
+Require Import Event.
 Require Import AlmostEqual.
 Require Import utils.Utils.
 Require Import List.
@@ -1248,6 +1249,20 @@ Section L2.
      ring.
    Qed.
 
+  Lemma cauchy_filter_rvlim_finite
+        (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F) :
+    exists (P: event dom),
+      exists (dec: forall x, {P x} + {~ P x}),
+        ps_P P = 0 /\
+        forall x,
+          ex_finite_lim_seq (fun n => (rvmult (EventIndicator dec)
+                                              (L2RRV_lim_picker F PF cF (S n)))
+                                        x).
+  Proof.
+    Admitted.
+  
   Definition L2RRV_lim_with_conditions (lim : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
     (PF:ProperFilter lim)
     (cF:cauchy lim) : LpRRV prts 2.
