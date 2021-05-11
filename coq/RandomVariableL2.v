@@ -1256,10 +1256,13 @@ Section L2.
     exists (P: event dom),
       exists (dec: forall x, {P x} + {~ P x}),
         ps_P P = 0 /\
-        forall x,
+        (forall x,
           ex_finite_lim_seq (fun n => (rvmult (EventIndicator dec)
                                               (L2RRV_lim_picker F PF cF (S n)))
-                                        x).
+                                        x) ) /\
+        IsLp prts 2
+             (rvlim (fun n => (rvmult (EventIndicator dec)
+                                      (L2RRV_lim_picker F PF cF (S n))))).
   Proof.
     Admitted.
   
