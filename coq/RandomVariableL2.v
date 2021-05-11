@@ -1350,7 +1350,22 @@ Section L2.
     - exact (LpRRVzero prts).
   Defined.
 
-  (*
+  Program Definition L2RRVq_lim_with_conditions (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+          (PF:ProperFilter F)
+          (cF:cauchy F) : LpRRVq prts 2
+    := Quot _ (L2RRV_lim_with_conditions F PF cF).
+
+  Lemma L2RRVq_lim_with_conditionsE F PF cF : L2RRVq_lim_with_conditions F PF cF  = Quot _ (L2RRV_lim_with_conditions F PF cF).
+  Proof.
+    reflexivity. 
+  Qed.
+  
+  Hint Rewrite L2RRVq_lim_with_conditionsE : quot.
+  
+(*  Definition L2RRVq_lim (F : (PreHilbert_UniformSpace -> Prop) -> Prop)  : LpRRVq prts 2
+    := Quot _ (L2RRV_lim F).
+  
+
   Lemma L2RRVq_lim_complete (F : (PreHilbert_UniformSpace -> Prop) -> Prop) :
     ProperFilter F -> cauchy F -> forall eps : posreal, F (ball (L2RRV_lim  F) eps).
   Proof.
