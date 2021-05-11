@@ -1255,7 +1255,7 @@ Section L2.
         (cF:cauchy F) :
     exists (P: event dom),
       exists (dec: forall x, {P x} + {~ P x}),
-        ps_P P = 0 /\
+        ps_P P = 1 /\
         (forall x,
           ex_finite_lim_seq (fun n => (rvmult (EventIndicator dec)
                                               (L2RRV_lim_picker F PF cF (S n)))
@@ -1264,13 +1264,83 @@ Section L2.
              (rvlim (fun n => (rvmult (EventIndicator dec)
                                       (L2RRV_lim_picker F PF cF (S n))))).
   Proof.
-    Admitted.
-  
-  Definition L2RRV_lim_with_conditions (lim : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
-    (PF:ProperFilter lim)
-    (cF:cauchy lim) : LpRRV prts 2.
   Admitted.
+
+  Lemma cauchy_filter_rvlim_finite1
+        (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F) :
+    { P: event dom | 
+         exists dec: forall x, {P x} + {~ P x},
+           ps_P P = 1 /\
+           (forall x,
+               ex_finite_lim_seq (fun n => (rvmult (EventIndicator dec)
+                                                (L2RRV_lim_picker F PF cF (S n)))
+                                          x) ) /\
+           IsLp prts 2
+                (rvlim (fun n => (rvmult (EventIndicator dec)
+                                      (L2RRV_lim_picker F PF cF (S n)))))
+    }.
+  Proof.
+    apply constructive_indefinite_description.
+    apply cauchy_filter_rvlim_finite.
+  Qed.
+
+  Lemma cauchy_filter_rvlim_finite2
+        (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F) :
+    { P: event dom &
+         {dec: forall x, {P x} + {~ P x} |
+           ps_P P = 1 /\
+           (forall x,
+               ex_finite_lim_seq (fun n => (rvmult (EventIndicator dec)
+                                                (L2RRV_lim_picker F PF cF (S n)))
+                                          x) ) /\
+           IsLp prts 2
+                (rvlim (fun n => (rvmult (EventIndicator dec)
+                                      (L2RRV_lim_picker F PF cF (S n)))))}
+    }.
+  Proof.
+    destruct (cauchy_filter_rvlim_finite1 F PF cF).
+    exists x.
+    apply constructive_indefinite_description.
+    apply e.
+  Qed.
+
+  Definition cauchy_rvlim_fun  (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+             (PF:ProperFilter F)
+             (cF:cauchy F) : Ts -> R
+    := match cauchy_filter_rvlim_finite2 F PF cF with
+       | existT P (exist dec PP) =>  (rvlim (fun n => (rvmult (EventIndicator dec)
+                                      (L2RRV_lim_picker F PF cF (S n)))))
+       end.
+
+  Global Instance cauchy_rvlim_fun_isl2 (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+             (PF:ProperFilter F)
+             (cF:cauchy F) : IsLp prts 2 (cauchy_rvlim_fun F PF cF).
+  Proof.
+    unfold cauchy_rvlim_fun.
+    repeat match_destr.
+    tauto.
+  Qed.
+
+  Global Instance cauchy_rvlim_fun_rv (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+             (PF:ProperFilter F)
+             (cF:cauchy F) : RandomVariable dom borel_sa (cauchy_rvlim_fun F PF cF).
+  Proof.
+    unfold cauchy_rvlim_fun.
+    repeat match_destr.
+    apply rvlim_rv.
+    - typeclasses eauto.
+    - intuition.
+  Qed.
   
+  Program Definition L2RRV_lim_with_conditions (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+             (PF:ProperFilter F)
+             (cF:cauchy F) : LpRRV prts 2
+      := pack_LpRRV prts (cauchy_rvlim_fun F PF cF).
+
   Definition L2RRV_lim (lim : ((LpRRV prts 2 -> Prop) -> Prop)) : LpRRV prts 2.
   Proof.
     destruct (excluded_middle_informative (ProperFilter lim)).
