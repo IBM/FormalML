@@ -34,6 +34,11 @@ Section RbarExpectation.
     Admitted.
  *)
   
+    (* For the Rbar_borel_sa, this is an equivalent definition *)
+  Class RbarMeasurable (f: Ts -> Rbar)
+      := rbarmeasurable : forall (r:Rbar), 
+          sa_sigma (fun omega : Ts => Rbar_le (f omega) r).
+
   Class Rbar_PositiveRandomVariable
           (rv_X:Ts->Rbar) : Prop :=
     prv : forall (x:Ts), (Rbar_le 0 (rv_X x)).

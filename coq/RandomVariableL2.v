@@ -723,7 +723,7 @@ Section L2.
                  LpRRVnorm prts 
                            (LpRRVminus prts (f (S n)) (f n))) ->
     (forall (n:nat), RandomVariable dom borel_sa (f n)) ->
-    IsLp_Rbar prts (p:=2)
+    IsLp_Rbar prts 2
               (Rbar_rvlim
                  (fun n => LpRRVsum 
                              prts big2
@@ -763,8 +763,8 @@ Section L2.
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
         (PF:ProperFilter F)
         (cF:cauchy F) :
-    IsLp_Rbar (p:=2)
-      prts 
+    IsLp_Rbar 
+      prts 2
       (Rbar_rvlim
          (fun n0 =>
             LpRRVsum prts big2 
@@ -793,8 +793,8 @@ Section L2.
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
         (PF:ProperFilter F)
         (cF:cauchy F) :
-    IsLp_Rbar (p:=2)
-      prts 
+    IsLp_Rbar 
+      prts 2
       (Rbar_rvlim
          (fun n0 =>
             LpRRVsum prts big2 
@@ -844,7 +844,7 @@ Section L2.
     0 <= p ->
     Rbar_le 0 x ->
     Rbar_le x y ->
-    Rbar_le (Rbar_power (p:=p) x) (Rbar_power (p := p) y).
+    Rbar_le (Rbar_power x p) (Rbar_power y p).
   Proof.
     intros.
     destruct x; destruct y; simpl in *; trivial; try tauto.
@@ -1025,7 +1025,7 @@ Section L2.
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
         (PF:ProperFilter F)
         (cF:cauchy F) :
-    IsLp_Rbar prts (p:=2)  
+    IsLp_Rbar prts 2  
          (Rbar_rvlim
             (rvsum
                (fun n =>
@@ -1049,7 +1049,7 @@ Section L2.
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
         (PF:ProperFilter F)
         (cF:cauchy F) :
-    IsLp_Rbar prts (p:=2)  
+    IsLp_Rbar prts 2
          (Rbar_rvlim
             (rvsum
                (fun n =>
@@ -1134,7 +1134,7 @@ Section L2.
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
         (PF:ProperFilter F)
         (cF:cauchy F) :
-    IsLp_Rbar prts (p:=2)  
+    IsLp_Rbar prts 2
          (Rbar_rvlim
             (fun n => LpRRVminus prts
                         (L2RRV_lim_picker F PF cF (S (S n)))
@@ -1142,7 +1142,7 @@ Section L2.
                         
          )).
   Proof.
-   apply (IsLp_Rbar_proper (p:=2) prts ) with
+   apply (IsLp_Rbar_proper prts 2) with
        (x :=  
              (Rbar_rvlim
                (fun n0 =>
@@ -1151,7 +1151,7 @@ Section L2.
                               (LpRRVminus prts
                                           (L2RRV_lim_picker F PF cF (S (S n)))
                                           (L2RRV_lim_picker F PF cF (S n))))
-                           n0))).
+                           n0))); trivial.
    intro z.
    unfold Rbar_rvlim.
    apply Lim_seq_ext.
@@ -1164,7 +1164,7 @@ Section L2.
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
         (PF:ProperFilter F)
         (cF:cauchy F) :
-    IsLp_Rbar prts (p:=2)  
+    IsLp_Rbar prts 2
          (Rbar_rvlim
             (fun n => LpRRVminus prts
                         (L2RRV_lim_picker_ext0 F PF cF (S n))
@@ -1172,7 +1172,7 @@ Section L2.
                         
          ).
   Proof.
-   apply (IsLp_Rbar_proper (p:=2) prts ) with
+   apply (IsLp_Rbar_proper prts 2) with
        (x :=  
              (Rbar_rvlim
                (fun n0 =>
@@ -1181,7 +1181,7 @@ Section L2.
                               (LpRRVminus prts
                                           (L2RRV_lim_picker_ext0 F PF cF (S n))
                                           (L2RRV_lim_picker_ext0 F PF cF n)))
-                           n0))).
+                           n0))); trivial.
    intro z.
    unfold Rbar_rvlim.
    apply Lim_seq_ext.
@@ -1191,7 +1191,7 @@ Section L2.
   Qed.
 
   Lemma IsLp_IsLp_Rbar (p:R) (f : LpRRV prts p) :
-    IsLp_Rbar (p:=p) prts (LpRRV_rv_X prts f).
+    IsLp_Rbar prts p (LpRRV_rv_X prts f).
   Proof.
     unfold IsLp_Rbar.
     unfold IsLp, IsLp_Rbar; intros.
@@ -1212,7 +1212,7 @@ Section L2.
    Qed.
 
   Lemma IsLp_Rbar_IsLp (p:R) (f : Ts -> R) :
-    IsLp_Rbar prts (p := p) f ->
+    IsLp_Rbar prts p f ->
     IsLp prts p f.
   Proof.
     unfold IsLp, IsLp_Rbar; intros.
@@ -1230,12 +1230,12 @@ Section L2.
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
         (PF:ProperFilter F)
         (cF:cauchy F) :
-    IsLp_Rbar prts (p := 2)
+    IsLp_Rbar prts 2
               (Rbar_rvlim (fun n => (L2RRV_lim_picker F PF cF (S n)))).
    Proof.
      generalize (cauchy_filter_Rbar_lim_ext0 F PF cF); intros.
      unfold L2RRV_lim_picker_ext0 in H.
-     eapply IsLp_Rbar_proper.
+     eapply IsLp_Rbar_proper; trivial.
      shelve.
      apply H.
      Unshelve.
@@ -1248,6 +1248,19 @@ Section L2.
      unfold rvminus, rvplus, rvopp, rvscale.
      ring.
    Qed.
+
+  Lemma cauchy_filter_rvlim_finite0
+        (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F) :
+    exists (P: event dom),
+      ps_P P = 1 /\
+      (forall x, P x -> 
+                 ex_finite_lim_seq (fun n => (L2RRV_lim_picker F PF cF (S n)) x)).
+  Proof.
+    generalize (cauchy_filter_Rbar_rvlim1 F PF cF); intros.
+    unfold IsLp_Rbar in H.
+    Admitted.
 
   Lemma cauchy_filter_rvlim_finite
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
@@ -1264,6 +1277,38 @@ Section L2.
              (rvlim (fun n => (rvmult (EventIndicator dec)
                                       (L2RRV_lim_picker F PF cF (S n))))).
   Proof.
+    generalize (cauchy_filter_rvlim_finite0 F PF cF); intros.
+    destruct H as [P [? ?]].
+    exists P.
+    assert (forall x: Ts, {P x} + {~ P x}).
+    {
+      intros.
+      apply ClassicalDescription.excluded_middle_informative.
+    }
+    exists X.
+    split; trivial.
+    split.
+    - intros.
+      destruct (X x).
+      + specialize (H0 x e).
+        unfold ex_finite_lim_seq.
+        unfold ex_finite_lim_seq in H0.
+        destruct H0.
+        exists x0.
+        eapply is_lim_seq_ext.
+        shelve.
+        apply H0.
+        Unshelve.
+        intros; simpl.
+        unfold rvmult, EventIndicator.
+        match_destr; try tauto; lra.
+      + unfold rvmult, EventIndicator, ex_finite_lim_seq.
+        exists 0.
+        apply is_lim_seq_ext with (u := (const 0)); [|apply is_lim_seq_const].
+        intros.
+        unfold const.
+        match_destr; try tauto; lra.
+    - generalize (cauchy_filter_Rbar_rvlim1 F PF cF); intros.
   Admitted.
 
   Lemma cauchy_filter_rvlim_finite1

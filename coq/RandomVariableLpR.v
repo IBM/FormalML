@@ -86,6 +86,46 @@ Section Lp.
     ; try typeclasses eauto.
   Qed.
 
+  Definition Rbar_power (x : Rbar) (p : R)  : Rbar :=
+    match x with
+    | p_infty => p_infty
+    | m_infty => 0
+    | Finite x => power x p
+    end.
+
+  Lemma Rbar_power_nonneg (x : Rbar) (p : R) :
+    Rbar_le 0 (Rbar_power x p).
+  Proof.
+    destruct x.
+    - apply power_nonneg.
+    - simpl; lra.
+    - simpl; lra.
+  Qed.
+
+  Instance power_abs_pos (rv_X : Ts -> Rbar) (p:R) :
+    Rbar_PositiveRandomVariable
+      (fun omega => Rbar_power (Rbar_abs (rv_X omega)) p ).
+  Proof.
+    intros x.
+    apply Rbar_power_nonneg.
+  Qed.
+
+  Definition IsLp_Rbar n (rv_X:Ts->Rbar)
+    := is_finite (Rbar_Expectation_posRV
+                    (fun omega => Rbar_power (Rbar_abs (rv_X omega)) n )).
+
+  Global Instance IsLp_Rbar_proper
+    : Proper (eq ==> rv_eq ==> iff) IsLp_Rbar.
+  Proof.
+    intros ?? eqq1 x y eqq2.
+    unfold IsLp_Rbar.
+    rewrite eqq1.
+    erewrite Rbar_Expectation_posRV_ext.
+    reflexivity.
+    intro xx.
+    now rewrite eqq2.
+  Qed.
+
   Lemma FiniteExpectation_Lp_pos p y
         {islp:IsLp p y} :
     0 <= FiniteExpectation prts (rvpower (rvabs y) (const p)).
@@ -1614,44 +1654,6 @@ Section Lp.
           now unfold rv_le, pointwise_relation in fincr.
         Qed.
 
-      Definition Rbar_power (x : Rbar)  : Rbar :=
-        match x with
-        | p_infty => p_infty
-        | m_infty => 0
-        | Finite x => power x p
-        end.
-
-      Lemma Rbar_power_nonneg (x : Rbar) :
-        Rbar_le 0 (Rbar_power x).
-       Proof.
-         destruct x.
-         - apply power_nonneg.
-         - simpl; lra.
-         - simpl; lra.
-       Qed.
-
-      Instance power_abs_pos (rv_X : Ts -> Rbar) :
-        Rbar_PositiveRandomVariable
-          (fun omega => Rbar_power (Rbar_abs (rv_X omega))).
-      Proof.
-        intros x.
-        apply Rbar_power_nonneg.
-      Qed.
-
-      Definition IsLp_Rbar (rv_X:Ts->Rbar)
-        := is_finite (Rbar_Expectation_posRV
-                        (fun omega => Rbar_power (Rbar_abs (rv_X omega)))).
-
-      Global Instance IsLp_Rbar_proper
-        : Proper (rv_eq ==> iff) IsLp_Rbar.
-      Proof.
-        intros ?? eqq.
-        unfold IsLp_Rbar.
-        erewrite Rbar_Expectation_posRV_ext.
-        reflexivity.
-        intro xx.
-        now rewrite eqq.
-      Qed.
 
       Lemma is_lim_power_inf (f : nat -> R) :
         is_lim_seq f p_infty -> is_lim_seq (fun n => power (f n) p) p_infty.
@@ -1687,7 +1689,7 @@ Section Lp.
 
       Lemma Rbar_power_lim_comm (f : nat -> Ts -> R) (x:Ts) :
         (forall (n:nat), rv_le (f n) (f (S n))) ->
-        Rbar_power (Rbar_abs (Lim_seq (fun n : nat => f n x))) = Lim_seq (fun n : nat => power (Rabs (f n x)) p).
+        Rbar_power (Rbar_abs (Lim_seq (fun n : nat => f n x))) p = Lim_seq (fun n : nat => power (Rabs (f n x)) p).
       Proof.
         intros.
         assert (exlim: ex_lim_seq (fun n => f n x)).
@@ -1730,7 +1732,7 @@ Section Lp.
         (forall (n:nat), PositiveRandomVariable  (f n)) ->
         (forall (n:nat), rv_le (f n) (f (S n))) ->
 (*        (forall (omega:Ts), ex_finite_lim_seq (fun n : nat => f n omega)) -> *)
-        IsLp_Rbar (Rbar_rvlim f).
+        IsLp_Rbar p (Rbar_rvlim f).
       Proof.
         intros fnorm f_rv fpos fincr.
         assert (cpos: 0 <= c).
@@ -1850,7 +1852,7 @@ Section Lp.
             LpRRVnorm
               (LpRRVsum (fun n0 : nat => LpRRVabs (LpRRVminus (f (S n0)) (f n0))) n) <= c) ->
         (forall (n:nat), RandomVariable dom borel_sa (f n)) ->
-        IsLp_Rbar (Rbar_rvlim
+        IsLp_Rbar p (Rbar_rvlim
                   (fun n => LpRRVsum (fun n0 => LpRRVabs (LpRRVminus (f (S n0)) (f n0))) n)).
       Proof.
         intros.
@@ -1872,7 +1874,7 @@ Section Lp.
       Lemma islp_Rbar_lim_telescope_abs (f : nat -> LpRRV p) :
         (forall (n:nat), LpRRVnorm (LpRRVminus (f (S n)) (f n)) < / (pow 2 n)) ->
         (forall (n:nat), RandomVariable dom borel_sa (f n)) ->
-        IsLp_Rbar (Rbar_rvlim
+        IsLp_Rbar p (Rbar_rvlim
                   (fun n => LpRRVsum (fun n0 => LpRRVabs (LpRRVminus (f (S n0)) (f n0))) n)).
       Proof.
         intros.
