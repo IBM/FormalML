@@ -1259,7 +1259,14 @@ Section L2.
                  ex_finite_lim_seq (fun n => (L2RRV_lim_picker F PF cF (S n)) x)).
   Proof.
     generalize (cauchy_filter_Rbar_rvlim1 F PF cF); intros.
-    unfold IsLp_Rbar in H.
+    pose (pickfin := fun x => ex_finite_lim_seq
+                                (fun n => L2RRV_lim_picker F PF cF (S n) x)).
+    assert (sa_sigma pickfin).
+    admit.
+    exists (exist _ pickfin H0).
+    split.
+    - admit.
+    - easy.
     Admitted.
 
   Lemma cauchy_filter_rvlim_finite
