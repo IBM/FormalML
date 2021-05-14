@@ -2925,6 +2925,23 @@ Section Expectation.
              now rewrite H8 in H9.
   Qed.
 
+  Lemma ex_monotone_convergence
+        (Xn : nat -> Ts -> R)
+        (Xn_rv : forall n, RandomVariable dom borel_sa (Xn n))
+        (Xn_pos : forall n, PositiveRandomVariable (Xn n)) :
+    (forall (n:nat), rv_le (Xn n) (Xn (S n))) ->
+    (forall (n:nat), is_finite (Expectation_posRV (Xn n))) ->
+    ex_lim_seq (fun n => Expectation_posRV (Xn n)).
+  Proof.
+    intros.
+    apply ex_lim_seq_incr.
+    intros.
+    generalize (Expectation_posRV_le (Xn n) (Xn (S n)) (H n)); intros.
+    rewrite <- (H0 n) in H1.
+    rewrite <- (H0 (S n)) in H1.
+    now simpl in H1.
+ Qed.
+
   Lemma monotone_convergence2
         (Xn : nat -> Ts -> R)
         (Xn_rv : forall n, RandomVariable dom borel_sa (Xn n))
