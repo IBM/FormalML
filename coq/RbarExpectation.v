@@ -62,7 +62,7 @@ Proof.
     exists r; intuition.
 Qed.
 
-    Instance Rbar_measurable_rv (rv_X:Ts->Rbar)
+    Global Instance Rbar_measurable_rv (rv_X:Ts->Rbar)
              {rm:RbarMeasurable rv_X}
       : RandomVariable dom Rbar_borel_sa rv_X.
     Proof.
@@ -230,6 +230,21 @@ Section RbarExpectation.
     prv : forall (x:Ts), (Rbar_le 0 (rv_X x)).
 
   Definition Rbar_rv_le := pointwise_relation Ts Rbar_le.
+
+  Definition Rbar_rvabs  (rv_X : Ts -> Rbar) := fun omega => Rbar_abs (rv_X omega).
+
+  Global Instance Rbar_rvabs_prv
+             (rv_X : Ts -> Rbar) :
+      Rbar_PositiveRandomVariable (Rbar_rvabs rv_X).
+    Proof.
+      unfold Rbar_PositiveRandomVariable, Rbar_rvabs.
+      intros.
+      unfold Rbar_abs.
+      match_destr.
+      - simpl; apply Rabs_pos.
+      - now simpl.
+      - now simpl.
+    Qed.
 
   Global Instance Rbar_rv_le_pre : PreOrder Rbar_rv_le.
   Proof.
