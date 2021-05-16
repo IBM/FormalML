@@ -366,7 +366,7 @@ Section RbarExpectation.
   Definition Rbar_neg_fun_part (f : Ts -> Rbar) : (Ts -> Rbar) :=
     fun x => Rbar_max (Rbar_opp (f x)) 0.
 
-  Instance Rbar_pos_fun_pos  (f : Ts -> Rbar)  :
+  Global Instance Rbar_pos_fun_pos  (f : Ts -> Rbar)  :
     Rbar_PositiveRandomVariable (Rbar_pos_fun_part f).
   Proof.
     unfold Rbar_PositiveRandomVariable, Rbar_pos_fun_part, Rbar_max.
@@ -379,7 +379,7 @@ Section RbarExpectation.
       + now simpl in n.
   Qed.
 
-  Instance Rbar_neg_fun_pos  (f : Ts -> Rbar)  :
+  Global Instance Rbar_neg_fun_pos  (f : Ts -> Rbar)  :
     Rbar_PositiveRandomVariable (Rbar_neg_fun_part f).
   Proof.
     unfold Rbar_PositiveRandomVariable, Rbar_neg_fun_part, Rbar_max.
