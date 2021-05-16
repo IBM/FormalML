@@ -51,7 +51,7 @@ Set Bullet Behavior "Strict Subproofs".
 
   Lemma Rbar_borel_sa_preimage2 
       (rvx: Ts -> Rbar):
-  (forall r:Rbar, sa_sigma (fun omega:Ts => Rbar_le (rvx omega) r)%R) <-> 
+  (forall r:Rbar, sa_sigma (fun omega:Ts => Rbar_le (rvx omega) r)) <-> 
   (forall B: event Rbar_borel_sa, (sa_sigma (event_preimage rvx B))).
 Proof.
   split; intros.
@@ -244,6 +244,55 @@ Section RbarExpectation.
       - simpl; apply Rabs_pos.
       - now simpl.
       - now simpl.
+    Qed.
+
+    Instance Rbar_Rabs_measurable (f : Ts -> Rbar) :
+      RbarMeasurable f ->
+      RbarMeasurable (Rbar_rvabs f).
+    Proof.
+      unfold RbarMeasurable, Rbar_rvabs.
+      intros.
+      assert (pre_event_equiv
+                (fun omega : Ts => Rbar_le (Rbar_abs (f omega)) r)
+                (pre_event_union
+                   (pre_event_inter
+                      (fun omega : Ts => Rbar_ge (f omega) 0 )
+                      (fun omega : Ts => Rbar_le (f omega) r))
+                   (pre_event_inter
+                      (fun omega : Ts => Rbar_le (f omega) 0)
+                      (fun omega : Ts => Rbar_ge (f omega) (Rbar_opp r))))).
+      intro x.
+      unfold pre_event_union, pre_event_inter, Rbar_abs.
+      match_destr.
+      - simpl; match_destr.
+        + simpl.
+          unfold Rabs.
+          match_destr; lra.
+        + simpl; lra.
+        + simpl; lra.
+      - simpl; match_destr; simpl; tauto.
+      - simpl; match_destr; simpl; tauto.
+      - rewrite H0.
+        apply sa_union.
+        + apply sa_inter; trivial.
+          now apply Rbar_sa_le_ge.
+        + apply sa_inter; trivial.
+          now apply Rbar_sa_le_ge.
+    Qed.
+
+    Global Instance Rbar_rvabs_rv
+           (rv_X : Ts -> Rbar)
+           {rv : RandomVariable dom Rbar_borel_sa rv_X} :
+      RandomVariable dom Rbar_borel_sa (Rbar_rvabs rv_X).
+    Proof.
+      unfold RandomVariable.
+      apply Rbar_borel_sa_preimage2.
+      apply Rbar_Rabs_measurable.
+      unfold RbarMeasurable.
+      generalize (Rbar_borel_sa_preimage2 rv_X); intros.
+      destruct H.
+      apply H0.
+      apply rv.
     Qed.
 
   Global Instance Rbar_rv_le_pre : PreOrder Rbar_rv_le.
