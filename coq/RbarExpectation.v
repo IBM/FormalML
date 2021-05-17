@@ -29,7 +29,7 @@ Set Bullet Behavior "Strict Subproofs".
 
   Lemma Rbar_borel_sa_preimage
       (rvx: Ts -> Rbar)
-      (pf_pre: forall r:Rbar, sa_sigma (fun omega:Ts => Rbar_le (rvx omega) r)%R) :
+      (pf_pre: forall r:Rbar, sa_sigma (fun omega:Ts => Rbar_le (rvx omega) r)) :
   (forall B: event Rbar_borel_sa, sa_sigma (event_preimage rvx B)).
   Proof.
     intros.
@@ -194,6 +194,35 @@ Qed.
       apply sa_inter; trivial.
       now apply Rbar_sa_le_ge.
    Qed.
+
+  Lemma RealMeasurable_RbarMeasurable (f : Ts -> R) :
+    RealMeasurable dom f <-> RbarMeasurable f.
+  Proof.
+    unfold RealMeasurable, RbarMeasurable.
+    split; intros.
+    - destruct r.
+      + apply H.
+      + apply sa_all.
+      + apply sa_none.      
+    - specialize (H r).
+      apply H.
+   Qed.
+
+  Lemma borel_Rbar_borel (f : Ts -> R) :
+    RandomVariable dom borel_sa f <-> RandomVariable dom Rbar_borel_sa f.
+  Proof.
+    unfold RandomVariable.
+    generalize (RealMeasurable_RbarMeasurable f); intros.
+    unfold RealMeasurable, RbarMeasurable in H.
+    destruct H.
+    split; intros.
+    - apply Rbar_borel_sa_preimage2.
+      apply H.
+      now apply borel_sa_preimage2.
+    - apply borel_sa_preimage2.
+      apply H0.
+      now apply Rbar_borel_sa_preimage2.
+  Qed.
 
   End RbarBorel.
 
