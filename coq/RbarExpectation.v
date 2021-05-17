@@ -70,6 +70,14 @@ Qed.
       apply Rbar_borel_sa_preimage2; trivial; intros.
     Qed.
 
+    Global Instance rv_Rbar_measurable (rv_X : Ts -> Rbar)
+             {rrv:RandomVariable dom Rbar_borel_sa rv_X}
+      : RbarMeasurable rv_X.
+    Proof.
+      red.
+      now rewrite Rbar_borel_sa_preimage2.
+    Qed.
+
     Definition Rbar_ge (x y : Rbar) := Rbar_le y x.
 
   Lemma Rbar_equiv_le_lt (f : Ts -> Rbar) (r:R) :
@@ -314,14 +322,7 @@ Section RbarExpectation.
            {rv : RandomVariable dom Rbar_borel_sa rv_X} :
       RandomVariable dom Rbar_borel_sa (Rbar_rvabs rv_X).
     Proof.
-      unfold RandomVariable.
-      apply Rbar_borel_sa_preimage2.
-      apply Rbar_Rabs_measurable.
-      unfold RbarMeasurable.
-      generalize (Rbar_borel_sa_preimage2 rv_X); intros.
-      destruct H.
-      apply H0.
-      apply rv.
+      typeclasses eauto.
     Qed.
 
   Global Instance Rbar_rv_le_pre : PreOrder Rbar_rv_le.
