@@ -3792,5 +3792,41 @@ Section Expectation.
         rewrite H.
         now rewrite H0.
   Qed.
+ 
+  Lemma Markov_ineq
+        (X : Ts -> R)
+        (rv : RandomVariable dom borel_sa X)
+        (posrv : PositiveRandomVariable X)
+        (a : posreal) :
+    Rbar_le (a * (ps_P (event_ge dom X a))) (Expectation_posRV X).
+  Proof.
+    generalize (SimpleExpectation_pre_EventIndicator (sa_le_ge_rv dom X a) (fun x => Rge_dec (X x) a)); intros.
+    unfold event_ge.
+    rewrite <- H.
+    generalize simple_Expectation_posRV; intros.
+    rewrite scaleSimpleExpectation.
+    erewrite H0.
+    apply Expectation_posRV_le.
+    unfold EventIndicator, rvscale; intros x.
+    specialize (posrv x).
+    destruct (Rge_dec (X x) a); lra.
+  Qed.    
+      
+  Lemma Markov_ineq_div 
+        (X : Ts -> R)
+        (rv : RandomVariable dom borel_sa X)
+        (posrv : PositiveRandomVariable X)
+        (a : posreal) :
+    Rbar_le (ps_P (event_ge dom X a)) (Rbar_div_pos (Expectation_posRV X) a).
+  Proof.
+    generalize (Markov_ineq X rv posrv a); intros.
+    rewrite Rbar_div_pos_le with (z := a) in H.
+    rewrite Rmult_comm in H.
+    unfold Rbar_div_pos at 1 in H.
+    unfold Rdiv in H.
+    rewrite Rmult_assoc in H.
+    rewrite <- Rinv_r_sym in H; [| apply Rgt_not_eq, cond_pos].
+    now rewrite Rmult_1_r in H.
+  Qed.
 
 End Expectation.

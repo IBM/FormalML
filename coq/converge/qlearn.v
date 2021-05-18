@@ -1883,7 +1883,8 @@ algorithm.
   Section qlearn4.
 
   Context (gamma : R) (α : nat -> R) {Ts : Type}
-          {dom: SigmaAlgebra Ts} {prts: ProbSpace dom}.
+          {dom: SigmaAlgebra Ts}.
+(*          {prts: ProbSpace dom}. *)
 
     Fixpoint RMseqTs (α : nat -> R) (f : nat -> Ts -> R) (init : Ts -> R) (n : nat) (omega : Ts) : R :=
       match n with
@@ -2441,6 +2442,9 @@ algorithm.
             lra.
     Qed.
       
+
+    
+
     Lemma Induction_I1_15 {n} (eps P C0: posreal) (C : R) (w x : nat -> Ts -> vector R (S n)) (xstar : vector R (S n))
           (rx : forall n0, RandomVariable dom (Rvector_borel_sa (S n)) (x n0))
           (rw : forall n0, RandomVariable dom (Rvector_borel_sa (S n)) (w n0))

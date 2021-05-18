@@ -305,7 +305,7 @@ Section defs.
       rv_le (fun x : Ts => pos_fun_part rv_X1 x) (fun x : Ts => pos_fun_part rv_X2 x).
     Proof.
       intros le12 a.
-      unfold pos_fun_part; simpl.
+      simpl.
       now apply Rle_max_compat_r.
     Qed.
 
@@ -314,7 +314,7 @@ Section defs.
       rv_le (fun x : Ts => neg_fun_part rv_X2 x) (fun x : Ts => neg_fun_part rv_X1 x).
     Proof.
       intros le12 a.
-      unfold pos_fun_part; simpl.
+      simpl.
       replace 0 with (- 0) by lra.
       repeat rewrite Rcomplements.Rmax_opp_Rmin.
       apply Ropp_le_contravar.

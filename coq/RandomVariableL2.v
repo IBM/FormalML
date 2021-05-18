@@ -334,6 +334,219 @@ Section L2.
       now unfold is_finite.
   Qed.
 
+
+  Lemma Rbar_div_div_pos (a:posreal) (x: Rbar) :
+    Rbar_div x a = Rbar_div_pos x a.
+  Proof.
+    unfold Rbar_div, Rbar_div_pos.
+    assert (0 < / a).
+    apply Rinv_0_lt_compat.
+    apply cond_pos.
+    destruct x.
+    - simpl.
+      now unfold Rdiv.
+    - unfold Rbar_div, Rbar_div_pos.
+      simpl.
+      destruct (Rle_dec 0 (/ a)); [| lra].
+      destruct (Rle_lt_or_eq_dec 0 (/ a) r); [|lra].
+      trivial.
+    - unfold Rbar_div, Rbar_div_pos.
+      simpl.
+      destruct (Rle_dec 0 (/ a)); [| lra].
+      destruct (Rle_lt_or_eq_dec 0 (/ a) r); [|lra].
+      trivial.
+  Qed.
+
+  Lemma Rsqr_pos (a : posreal) :
+    0 < Rsqr a.
+  Proof.
+    generalize (Rle_0_sqr a); intros.
+    destruct H; trivial.
+    generalize (cond_pos a); intros.
+    symmetry in H; apply Rsqr_eq_0 in H.
+    lra.
+  Qed.
+
+  Lemma mkpos_Rsqr (a : posreal) :
+    Rsqr a = mkposreal _ (Rsqr_pos a).
+  Proof.
+    now simpl.
+  Qed.
+
+
+  Lemma conv_l2_prob_le_div
+        (eps : posreal) 
+        (X : Ts -> R) 
+        (rv : RandomVariable dom borel_sa X)
+        (posrv: PositiveRandomVariable X) :
+  Rbar_le (ps_P (event_ge dom X eps))
+          (Rbar_div (Expectation_posRV (rvsqr X)) 
+                    (Rsqr eps)).
+    Proof.
+      assert (event_equiv (event_ge dom X eps)
+                          (event_ge dom (rvsqr X) (Rsqr eps))).
+      - intro x.
+        split; intros.
+        + apply Rge_le in H.
+          apply Rle_ge.
+          apply Rsqr_incr_1; trivial.
+          left; apply cond_pos.
+        + apply Rge_le in H.
+          apply Rle_ge.
+          apply Rsqr_incr_0; trivial.
+          left; apply cond_pos.
+      - rewrite H.
+        rewrite mkpos_Rsqr.
+        rewrite Rbar_div_div_pos.
+        apply Markov_ineq_div.
+    Qed.
+
+  Lemma conv_l2_prob_le1 
+        (eps : posreal) 
+        (Xn: Ts -> R)
+        (rvxn : RandomVariable dom borel_sa Xn) :
+    is_finite (Expectation_posRV (rvsqr (rvabs Xn))) ->
+    ps_P (event_ge dom (rvabs Xn) eps) <=
+    (Expectation_posRV (rvsqr (rvabs Xn))) / (Rsqr eps).
+    Proof.
+      assert (RandomVariable dom borel_sa (rvabs Xn)).
+      - now apply rvabs_rv.
+      - assert (PositiveRandomVariable (rvabs Xn)).
+        now apply prvabs.
+        intros.
+        generalize (conv_l2_prob_le_div eps (rvabs Xn) H H0).
+        rewrite <- H1.
+        simpl.
+        intros.
+        erewrite ps_proper; try eapply H2.
+        intros ?; simpl.
+        reflexivity.
+    Qed.
+
+  Lemma conv_l2_prob_le 
+        (eps : posreal) 
+        (X Xn: Ts -> R)
+        (rvx : RandomVariable dom borel_sa X)
+        (rvxn : RandomVariable dom borel_sa Xn) :
+    is_finite (Expectation_posRV (rvsqr (rvabs (rvminus X Xn)))) ->
+    ps_P (event_ge dom (rvabs (rvminus X Xn)) eps) <=
+    (Expectation_posRV (rvsqr (rvabs (rvminus X Xn)))) / (Rsqr eps).
+    Proof.
+      intros.
+      apply conv_l2_prob_le1; trivial.
+    Qed.
+
+  Lemma conv_l1_prob_le 
+        (eps : posreal) 
+        (X: Ts -> R)
+        {rvx : RandomVariable dom borel_sa X}:
+    is_finite (Expectation_posRV (rvabs X)) ->
+    ps_P (event_ge dom (rvabs X) eps) <=
+    (Expectation_posRV (rvabs X)) / eps.
+    Proof.
+      assert (RandomVariable dom borel_sa (rvabs X)).
+      - now apply rvabs_rv.
+      - assert (PositiveRandomVariable (rvabs X)).
+        now apply prvabs.
+        intros.
+        generalize (Markov_ineq_div (rvabs X) H H0 eps); intros.
+        rewrite <- H1 in H2.
+        intros.
+        erewrite ps_proper; try eapply H2.
+        intros ?; simpl.
+        reflexivity.
+    Qed.
+        
+  Lemma conv_l1_prob_le_minus
+        (eps : posreal) 
+        (X Xn: Ts -> R)
+        {rvx : RandomVariable dom borel_sa X}
+        {rvxn : RandomVariable dom borel_sa Xn} :
+    is_finite (Expectation_posRV (rvabs (rvminus X Xn))) ->
+    ps_P (event_ge dom (rvabs (rvminus X Xn)) eps) <=
+    (Expectation_posRV (rvabs (rvminus X Xn))) / eps.
+    Proof.
+      apply conv_l1_prob_le.
+    Qed.
+
+  Lemma conv_l2_prob1 
+        (eps : posreal) 
+        (Xn: nat -> Ts -> R)
+        (rvxn : forall n, RandomVariable dom borel_sa (Xn n)) :
+    (forall n, is_finite (Expectation_posRV (rvsqr (rvabs (Xn n))))) ->
+    is_lim_seq (fun n => Expectation_posRV (rvsqr (rvabs (Xn n)))) 0 ->
+    is_lim_seq (fun n => ps_P (event_ge dom (rvabs (Xn n)) eps)) 0.
+  Proof.
+    intros.
+    apply is_lim_seq_le_le_loc with (u := fun _ => 0) 
+                                    (w := (fun n => (Expectation_posRV (rvsqr (rvabs (Xn n)))) / (Rsqr eps))).
+    - unfold eventually.
+      exists (0%nat).
+      intros.
+      split.
+      + apply ps_pos.
+      + apply conv_l2_prob_le1; trivial.
+    - apply is_lim_seq_const.
+    - apply is_lim_seq_div with (l1 := 0) (l2 := Rsqr eps); trivial.
+      + apply is_lim_seq_const.
+      + apply Rbar_finite_neq.
+        apply Rgt_not_eq.
+        apply Rsqr_pos.
+      + unfold is_Rbar_div.
+        simpl.
+        unfold is_Rbar_mult, Rbar_mult'.
+        f_equal.
+        now rewrite Rmult_0_l.
+  Qed.
+
+  Lemma conv_l2_prob 
+        (eps : posreal) 
+        (X: Ts -> R)
+        (Xn: nat -> Ts -> R)
+        (rvx : RandomVariable dom borel_sa X)
+        (rvxn : forall n, RandomVariable dom borel_sa (Xn n)) :
+    (forall n, is_finite (Expectation_posRV (rvsqr (rvabs (rvminus X (Xn n)))))) ->
+    is_lim_seq (fun n => Expectation_posRV (rvsqr (rvabs (rvminus X (Xn n))))) 0 ->
+    is_lim_seq (fun n => ps_P (event_ge dom (rvabs (rvminus X (Xn n))) eps)) 0.
+  Proof.
+    intros.
+    apply conv_l2_prob1; trivial.
+  Qed.
+
+    Lemma conv_l1_prob
+        (eps : posreal) 
+        (X: Ts -> R)
+        (Xn: nat -> Ts -> R)
+        (rvx : RandomVariable dom borel_sa X)
+        (rvxn : forall n, RandomVariable dom borel_sa (Xn n)) :
+    (forall n, is_finite (Expectation_posRV (rvabs (rvminus X (Xn n))))) ->
+    is_lim_seq (fun n => Expectation_posRV (rvabs (rvminus X (Xn n)))) 0 ->
+    is_lim_seq (fun n => ps_P (event_ge dom (rvabs (rvminus X (Xn n))) eps)) 0.
+  Proof.
+    intros.
+    apply is_lim_seq_le_le_loc with (u := fun _ => 0) 
+                                    (w := (fun n => (Expectation_posRV (rvabs (rvminus X (Xn n)))) / eps)).
+    - unfold eventually.
+      exists (0%nat).
+      intros.
+      split.
+      + apply ps_pos.
+      + apply conv_l1_prob_le; trivial.
+    - apply is_lim_seq_const.
+    - apply is_lim_seq_div with (l1 := 0) (l2 := eps); trivial.
+      + apply is_lim_seq_const.
+      + apply Rbar_finite_neq.
+        apply Rgt_not_eq.
+        apply cond_pos.
+      + unfold is_Rbar_div.
+        simpl.
+        unfold is_Rbar_mult, Rbar_mult'.
+        f_equal.
+        now rewrite Rmult_0_l.
+  Qed.
+
+
+
   Lemma L2RRV_inner_plus (x y z : LpRRV prts 2) :
     L2RRVinner (LpRRVplus prts x y) z = L2RRVinner x z + L2RRVinner y z.
   Proof.
@@ -382,6 +595,151 @@ Section L2.
     rewrite L2RRV_inner_comm with (x := x2) (y := x1) in H.
     unfold Rsqr; lra.
   Qed.
+
+
+  Ltac L2RRV_simpl
+    := repeat match goal with
+              | [H : LpRRV _ _ |- _ ] => destruct H as [???]
+              end
+       ; unfold LpRRVplus, LpRRVminus, LpRRVopp, LpRRVscale
+       ; simpl.
+
+   Lemma L2RRV_L2_L1 
+         (x : LpRRV prts 2) :
+    Rsqr (FiniteExpectation prts x) <= FiniteExpectation prts (rvsqr x).
+   Proof.
+     generalize (L2RRV_Cauchy_Schwarz x (LpRRVconst prts 1)); intros.
+     assert (L2RRVinner (LpRRVconst prts 1) (LpRRVconst prts 1) = 1).
+     unfold L2RRVinner.
+     L2RRV_simpl.
+     unfold rvmult.
+     rewrite (FiniteExpectation_ext prts _ (const 1)).
+     - apply FiniteExpectation_const.
+     - intro x0.
+       unfold const; lra.
+     - rewrite H0 in H.
+       rewrite Rmult_1_r in H.
+       assert (L2RRVinner x (LpRRVconst prts 1) = FiniteExpectation prts x).
+       + unfold L2RRVinner.
+         rewrite (FiniteExpectation_ext _ _  x); trivial.
+         intro x0.
+         L2RRV_simpl.
+         unfold rvmult, const.
+         lra.
+       + rewrite H1 in H.
+         unfold L2RRVinner in H.
+         rewrite (FiniteExpectation_ext _ _ _ (symmetry (rvsqr_eq _))) in H.
+         apply H; lra.
+  Qed.
+
+
+
+    Definition Rsqrt_abs (r : R) : R := Rsqrt (mknonnegreal (Rabs r) (Rabs_pos r)).
+
+    Lemma Rsqrt_abs_0 :
+      Rsqrt_abs 0 = 0.
+     Proof.
+      unfold Rsqrt_abs, Rsqrt; simpl.
+      match_destr; destruct a.
+      rewrite Rabs_R0 in H0.
+      now apply Rsqr_eq_0.
+    Qed.
+
+    Lemma continuity_pt_Rsqrt_abs_0 :
+      continuity_pt Rsqrt_abs 0.
+    Proof.
+      unfold continuity_pt, continue_in.
+      unfold limit1_in, limit_in.
+      intros.
+      unfold dist; simpl.
+      unfold R_dist, D_x, no_cond.
+      exists (Rsqr eps).
+      split.
+      - unfold Rsqr.
+        now apply Rmult_gt_0_compat.
+      - intros.
+        destruct H0 as [[? ?] ?].
+        rewrite Rminus_0_r in H2.
+        rewrite Rsqrt_abs_0, Rminus_0_r.
+        unfold Rsqrt_abs.
+        rewrite Rabs_right by (apply Rle_ge, Rsqrt_positivity).
+        generalize Rsqr_lt_to_Rsqrt; intros.
+        assert (0 <= eps) by lra.
+        specialize (H3 (mknonnegreal _ H4) (mknonnegreal _ (Rabs_pos x))).
+        rewrite <- H3.
+        now simpl.
+     Qed.
+
+    (* TODO(Kody):
+       Move these to someplace more canonical. Like RealAdd.
+       Delete identical copies in mdp.v *)
+    Lemma nonneg_pf_irrel r1 (cond1 cond2:0 <= r1) :
+      mknonnegreal r1 cond1 = mknonnegreal r1 cond2.
+    Proof.
+      f_equal.
+      apply proof_irrelevance.
+    Qed.
+
+    Lemma nonneg_ext r1 cond1 r2 cond2:
+      r1 = r2 ->
+      mknonnegreal r1 cond1 = mknonnegreal r2 cond2.
+    Proof.
+      intros; subst.
+      apply nonneg_pf_irrel.
+    Qed.
+
+     Lemma conv_l2_l1 
+        (Xn: nat -> Ts -> R)
+        (rvxn : forall n, RandomVariable dom borel_sa (Xn n)) 
+        (isl: forall n, IsLp prts 2 (Xn n)):
+    is_lim_seq (fun n => FiniteExpectation prts (rvsqr (rvabs (Xn n)))) 0 ->
+    is_lim_seq (fun n => FiniteExpectation prts (rvabs (Xn n))) 0.
+    Proof.
+      intros.
+      assert (forall n, 0 <= FiniteExpectation prts (rvsqr (rvabs (Xn n)))).
+      - intros.
+        apply FiniteExpectation_pos.
+        unfold PositiveRandomVariable, rvabs, rvsqr; intros.
+        apply Rle_0_sqr.
+      - apply is_lim_seq_le_le_loc with 
+            (u := fun _ => 0) 
+            (w := (fun n => Rsqrt (mknonnegreal (FiniteExpectation prts (rvsqr (rvabs (Xn n)))) (H0 n)))).
+        + exists (0%nat); intros.
+          assert (0 <= FiniteExpectation prts (rvabs (Xn n))).
+          * apply FiniteExpectation_pos.
+            unfold rvabs, PositiveRandomVariable; intros.
+            apply Rabs_pos.
+          * split; trivial.
+            generalize (L2RRV_L2_L1 (pack_LpRRV prts (rvabs (Xn n))));intros.
+            generalize Rsqr_le_to_Rsqrt; intros.
+            specialize (H4 (mknonnegreal _ (H0 n))
+                           (mknonnegreal _ H2)).
+            apply H4; simpl.
+            apply H3.
+        + apply is_lim_seq_const.
+        + apply is_lim_seq_ext with 
+          (u := fun n=> Rsqrt_abs (FiniteExpectation prts (rvsqr (rvabs (Xn n))))).
+          * intros.
+            unfold Rsqrt_abs; f_equal.
+            apply nonneg_ext. (* CAUTION : This uses proof irrelevance. *)
+            now rewrite Rabs_pos_eq.
+          * replace (0) with (Rsqrt_abs 0) by apply Rsqrt_abs_0.
+            apply is_lim_seq_continuous; [|trivial].
+            apply continuity_pt_Rsqrt_abs_0.
+    Qed.
+
+    Lemma conv_l2_l1_minus 
+        (X: Ts -> R)
+        (Xn: nat -> Ts -> R)
+        (rvx : RandomVariable dom borel_sa X)
+        (rvxn : forall n, RandomVariable dom borel_sa (Xn n)) 
+        (isl: forall n, IsLp prts 2 (rvminus X (Xn n))) :
+    is_lim_seq (fun n => FiniteExpectation prts (rvsqr (rvabs (rvminus X (Xn n))))) 0 ->
+    is_lim_seq (fun n => FiniteExpectation prts (rvabs (rvminus X (Xn n)))) 0.
+    Proof.
+      now apply conv_l2_l1.
+    Qed.
+
 
   Definition L2RRVq_inner : LpRRVq prts 2 -> LpRRVq prts 2 -> R
     := quot_lift2_to _ L2RRVinner.
@@ -1249,6 +1607,524 @@ Section L2.
      ring.
    Qed.
 
+  Lemma sa_pinf_Rbar
+        (f : Ts -> Rbar) 
+        (rv : RandomVariable dom Rbar_borel_sa f) :
+    sa_sigma (fun x => (f x) = p_infty).
+  Proof.
+    apply Rbar_sa_le_pt.
+    now rewrite Rbar_borel_sa_preimage2.
+  Qed.
+
+  Lemma sa_minf_Rbar
+        (f : Ts -> Rbar) 
+        (rv : RandomVariable dom Rbar_borel_sa f) :
+    sa_sigma (fun x => (f x) = m_infty).
+  Proof.
+    apply Rbar_sa_le_pt.
+    now rewrite Rbar_borel_sa_preimage2.
+  Qed.
+
+  Lemma sa_finite_Rbar
+        (f : Ts -> Rbar) 
+        (rv : RandomVariable dom Rbar_borel_sa f) :
+    sa_sigma (fun x => is_finite (f x)).
+  Proof.
+    assert (pre_event_equiv (fun x => is_finite (f x))
+                            (pre_event_complement
+                               (pre_event_union
+                                  (fun omega => (f omega) = p_infty)
+                                  (fun omega => (f omega) = m_infty)
+                                  ))).
+    intro z.
+    unfold is_finite, pre_event_complement, pre_event_union.
+    destruct (f z); intuition discriminate.
+    rewrite H.
+    apply sa_complement.
+    apply sa_union.
+    + now apply sa_pinf_Rbar.
+    + now apply sa_minf_Rbar.
+  Qed.
+
+  Program Definition pinf_Indicator 
+          (f : Ts -> Rbar) :=
+    EventIndicator (P := (fun x => (f x) = p_infty)) _.
+  Next Obligation.
+    apply ClassicalDescription.excluded_middle_informative.
+  Qed.
+
+  Instance Rbar_positive_indicator_prod (f : Ts -> Rbar) (c : posreal) :
+    Rbar_PositiveRandomVariable (rvscale c (pinf_Indicator f)).
+  Proof.
+    unfold pinf_Indicator.
+    apply rvscale_prv.
+    typeclasses eauto.
+  Qed.
+
+  Lemma finite_Rbar_Expectation_posRV_le_inf
+        (f : Ts -> Rbar)
+        (fpos : Rbar_PositiveRandomVariable f) 
+        (c : posreal)   :
+    is_finite (Rbar_Expectation_posRV f) ->
+    Rbar_le (Expectation_posRV (rvscale c (pinf_Indicator f)))
+            (Rbar_Expectation_posRV f).
+  Proof.
+    generalize (Rbar_Expectation_posRV_le (rvscale c (pinf_Indicator f)) f); intros.
+    apply H.
+    intro x.
+    unfold rvscale, pinf_Indicator.
+    unfold EventIndicator.
+    match_destr.
+    - rewrite Rmult_1_r.
+      rewrite e.
+      now simpl.
+    - rewrite Rmult_0_r.
+      apply fpos.
+  Qed.
+  
+  Lemma finite_Rbar_Expectation_posRV_le_inf2
+        (f : Ts -> Rbar)
+        (rv : RandomVariable dom Rbar_borel_sa f) 
+        (fpos : Rbar_PositiveRandomVariable f) :
+    is_finite (Rbar_Expectation_posRV f) ->
+    forall (c:posreal), Rbar_le (c * (ps_P (exist _ _ (sa_pinf_Rbar f rv))))
+            (Rbar_Expectation_posRV f).
+  Proof.
+    intros.
+    generalize (finite_Rbar_Expectation_posRV_le_inf f fpos c H); intros.
+    rewrite Expectation_posRV_scale in H0.
+    unfold pinf_Indicator in H0.
+    assert (SimpleRandomVariable (EventIndicator (fun x : Ts => pinf_Indicator_obligation_1 f x))) by typeclasses eauto.
+    assert (RandomVariable dom borel_sa (EventIndicator (fun x : Ts => pinf_Indicator_obligation_1 f x))).
+    apply EventIndicator_pre_rv.
+    now apply sa_pinf_Rbar.
+    generalize (srv_Expectation_posRV (EventIndicator (fun x : Ts => pinf_Indicator_obligation_1 f x))); intros.
+    rewrite H2 in H0.
+    generalize (SimpleExpectation_pre_EventIndicator 
+                  (P := (fun x => f x = p_infty)) (sa_pinf_Rbar f rv)
+                  (fun x : Ts => pinf_Indicator_obligation_1 f x)); intros.
+    replace (@SimpleExpectation Ts dom prts
+                  (@EventIndicator Ts (fun x : Ts => @eq Rbar (f x) p_infty)
+                                   (fun x : Ts => pinf_Indicator_obligation_1 f x)) H1 X)
+      with
+        (ps_P (exist sa_sigma (fun x : Ts => f x = p_infty) (sa_pinf_Rbar f rv))) in H0.
+    apply H0.
+    rewrite SimpleExpectation_pf_irrel with (srv2 := X) in H3.
+    symmetry.
+    apply H3.
+   Qed.
+
+   Lemma finite_Rbar_Expectation_posRV_never_inf
+        (f : Ts -> Rbar)
+        (rv : RandomVariable dom Rbar_borel_sa f) 
+        (fpos : Rbar_PositiveRandomVariable f) :
+    is_finite (Rbar_Expectation_posRV f) ->
+    ps_P (exist sa_sigma _ (sa_pinf_Rbar f rv)) = 0.
+     Proof.
+       intros.
+       generalize (finite_Rbar_Expectation_posRV_le_inf2 f rv fpos H); intros.
+       rewrite <- H in H0.
+       simpl in H0.
+       destruct (Rlt_dec 
+                   0
+                   (ps_P (exist sa_sigma (fun x : Ts => f x = p_infty) (sa_pinf_Rbar f rv)))).
+       - assert (0 <
+                 ((real (Rbar_Expectation_posRV f))+1)
+                   /
+                   (ps_P (exist sa_sigma (fun x : Ts => f x = p_infty) (sa_pinf_Rbar f rv)))).
+         + unfold Rdiv.
+           apply Rmult_lt_0_compat.
+           generalize (Rbar_Expectation_posRV_pos f); intros.
+           rewrite <- H in H1; simpl in H1.
+           lra.
+           now apply Rinv_0_lt_compat.
+         + specialize (H0 (mkposreal _ H1)).
+           simpl in H0.
+           unfold Rdiv in H0.
+           rewrite Rmult_assoc in H0.
+           rewrite Rinv_l in H0.
+           lra.
+           now apply Rgt_not_eq.
+       - generalize (ps_pos (exist sa_sigma (fun x : Ts => f x = p_infty) (sa_pinf_Rbar f rv))); intros.
+         assert (0 >= ps_P (exist sa_sigma (fun x : Ts => f x = p_infty) (sa_pinf_Rbar f rv))) by lra.
+         intuition.
+   Qed.
+
+  Lemma finite_Rbar_Expectation_posRV_almost_finite
+        (f : Ts -> Rbar)
+        (rv : RandomVariable dom Rbar_borel_sa f) 
+        (fpos : Rbar_PositiveRandomVariable f) :
+    is_finite (Rbar_Expectation_posRV f) ->
+    ps_P (exist sa_sigma _ (sa_finite_Rbar f rv)) = 1.
+  Proof.
+    intros.
+    generalize (finite_Rbar_Expectation_posRV_never_inf f rv fpos H); intros.
+    assert (event_equiv
+              (exist sa_sigma (fun x : Ts => is_finite (f x)) (sa_finite_Rbar f rv))
+              (event_complement
+                 (exist sa_sigma (fun x : Ts => f x = p_infty) (sa_pinf_Rbar f rv)))).
+    - intro x.
+      simpl.
+      unfold pre_event_complement.
+      generalize (fpos x); intros.
+      destruct (f x); unfold is_finite.
+      + simpl in H1.
+        split; intros.
+        * discriminate.
+        * reflexivity.
+      + simpl.
+        split; intros.
+        * discriminate.
+        * tauto.
+      + now simpl in H1.
+    - rewrite H1.
+      rewrite ps_complement.
+      rewrite H0.
+      lra.
+   Qed.
+
+  Class Rbar_IsFiniteExpectation (rv_X:Ts->Rbar) 
+    := Rbar_is_finite_expectation :
+         match Rbar_Expectation rv_X with
+         | Some (Finite _) => True
+         | _ => False
+         end.
+
+  Definition Rbar_rvplus (rv_X1 rv_X2 : Ts -> Rbar) :=
+    (fun omega =>  Rbar_plus (rv_X1 omega) (rv_X2 omega)).
+
+  Lemma Rbar_rvabs_plus_posfun_negfun
+        (f : Ts -> Rbar ) :
+    rv_eq (Rbar_rvabs f)
+          (Rbar_rvplus (Rbar_pos_fun_part f) (Rbar_neg_fun_part f)).
+  Proof.
+    intro x.
+    unfold Rbar_rvabs, Rbar_rvplus, Rbar_pos_fun_part, Rbar_neg_fun_part.
+    destruct (f x).
+    - simpl.
+      unfold Rbar_max, Rabs, Rbar_plus, Rbar_plus'.
+      match_destr; simpl.
+      + destruct (Rbar_le_dec r 0); destruct (Rbar_le_dec (-r) 0); unfold Rbar_le in *
+        ; try lra.
+        now rewrite Rplus_0_l.
+      + destruct (Rbar_le_dec r 0); destruct (Rbar_le_dec (-r) 0); unfold Rbar_le in *
+        ; try lra.
+        * assert (r = 0) by lra; subst.
+          now rewrite Rplus_0_r.
+        * now rewrite Rplus_0_r.
+    - simpl.
+      unfold Rbar_max, Rabs, Rbar_plus, Rbar_plus'.
+      destruct (Rbar_le_dec p_infty 0); destruct (Rbar_le_dec m_infty 0); unfold Rbar_le in *; tauto.
+    - simpl.
+      unfold Rbar_max, Rabs, Rbar_plus, Rbar_plus'.
+      destruct (Rbar_le_dec p_infty 0); destruct (Rbar_le_dec m_infty 0); unfold Rbar_le in *; tauto.
+  Qed.
+
+
+  Global Instance pos_Rbar_plus (f g : Ts -> Rbar) 
+    (fpos : Rbar_PositiveRandomVariable f)
+    (gpos: Rbar_PositiveRandomVariable g) :
+    Rbar_PositiveRandomVariable (Rbar_rvplus f g).
+  Proof.
+    unfold Rbar_PositiveRandomVariable in *.
+    unfold Rbar_rvplus.
+    intro.
+    replace (Finite 0) with (Rbar_plus 0 0).
+    apply Rbar_plus_le_compat; trivial.
+    simpl.
+    now rewrite Rplus_0_r.
+  Qed.
+
+  Lemma Rbar_Expectation_posRV_plus (f g : Ts -> Rbar)
+    (fpos : Rbar_PositiveRandomVariable f)
+    (gpos: Rbar_PositiveRandomVariable g) :
+    Rbar_Expectation_posRV (Rbar_rvplus f g) =
+    Rbar_plus (Rbar_Expectation_posRV f) (Rbar_Expectation_posRV g).
+  Proof.
+    Admitted.
+
+
+  Lemma finiteExp_Rbar_rvabs 
+        (f : Ts -> Rbar) :
+    Rbar_IsFiniteExpectation f <->
+    is_finite (Rbar_Expectation_posRV (Rbar_rvabs f)).
+  Proof.
+    unfold Rbar_IsFiniteExpectation, Rbar_Expectation.
+    generalize (Rbar_rvabs_plus_posfun_negfun f); intros.
+    rewrite (Rbar_Expectation_posRV_ext _ _ H).
+    unfold Rbar_minus'.
+    unfold Rbar_plus', Rbar_opp.
+    rewrite Rbar_Expectation_posRV_plus.
+    generalize (Rbar_Expectation_posRV_pos (Rbar_pos_fun_part f)); intros.
+    generalize (Rbar_Expectation_posRV_pos (Rbar_neg_fun_part f)); intros.  
+    destruct (Rbar_Expectation_posRV (Rbar_pos_fun_part f)); unfold is_finite.
+    - destruct (Rbar_Expectation_posRV (Rbar_neg_fun_part f)); simpl; intuition discriminate.
+    - destruct (Rbar_Expectation_posRV (Rbar_neg_fun_part f)); simpl; intuition discriminate.
+    - now simpl in H0.
+  Qed.
+
+  Lemma finite_Rbar_Expectation_almost_finite
+        (f : Ts -> Rbar)
+        (rv : RandomVariable dom Rbar_borel_sa f) :
+    Rbar_IsFiniteExpectation f ->
+    ps_P (exist sa_sigma _ (sa_finite_Rbar f rv)) = 1.
+  Proof.
+    intros.
+    generalize (finite_Rbar_Expectation_posRV_almost_finite (Rbar_rvabs f) (Rbar_rvabs_rv f) (Rbar_rvabs_prv f)); intros.
+    assert (pre_event_equiv
+              (fun x : Ts => is_finite (Rbar_rvabs f x))
+              (fun x : Ts => is_finite (f x))).
+    {
+      intro x.
+      now unfold Rbar_rvabs, is_finite; destruct (f x); simpl.
+    }
+    assert (event_equiv
+              (exist sa_sigma (fun x : Ts => is_finite (Rbar_rvabs f x))
+                     (sa_finite_Rbar (Rbar_rvabs f) (Rbar_rvabs_rv f)))
+              (exist sa_sigma (fun x : Ts => is_finite (f x)) (sa_finite_Rbar f rv))).
+    easy.
+    rewrite <- H2.
+    apply H0.
+    now apply finiteExp_Rbar_rvabs.
+  Qed.    
+
+    Lemma Rbar_rv_le_pos_fun_part (rv_X1 rv_X2 : Ts -> Rbar) :
+      Rbar_rv_le rv_X1 rv_X2 ->
+      Rbar_rv_le (fun x : Ts => Rbar_pos_fun_part rv_X1 x) 
+                 (fun x : Ts => Rbar_pos_fun_part rv_X2 x).
+    Proof.
+      intros le12 a.
+      unfold Rbar_pos_fun_part, Rbar_max.
+      match_destr; match_destr; trivial.
+      - simpl; lra.
+      - unfold Rbar_le in *.
+        match_destr.
+        + lra.
+        + easy.
+      - specialize (le12 a).
+        unfold Rbar_le in *.
+        match_destr; match_destr_in le12; lra.
+    Qed.
+
+    Lemma Rbar_rv_le_neg_fun_part (rv_X1 rv_X2 : Ts -> Rbar) :
+      Rbar_rv_le rv_X1 rv_X2 ->
+      Rbar_rv_le (fun x : Ts => Rbar_neg_fun_part rv_X2 x) 
+                 (fun x : Ts => Rbar_neg_fun_part rv_X1 x).
+    Proof.
+      intros le12 a.
+      unfold Rbar_neg_fun_part, Rbar_max; simpl.
+      specialize (le12 a).
+      rewrite <- Rbar_opp_le in le12.
+      match_destr; match_destr; trivial.
+      - simpl; lra.
+      - unfold Rbar_le in *.
+        match_destr.
+        + lra.
+        + easy.
+      - unfold Rbar_le in *.
+        match_destr; match_destr_in le12; lra.
+    Qed.
+
+  Lemma Rbar_IsFiniteExpectation_bounded (rv_X1 rv_X2 rv_X3 : Ts -> Rbar)
+        {isfe1:Rbar_IsFiniteExpectation rv_X1}
+        {isfe2:Rbar_IsFiniteExpectation rv_X3}
+    :
+      Rbar_rv_le rv_X1 rv_X2 ->
+      Rbar_rv_le rv_X2 rv_X3 ->
+      Rbar_IsFiniteExpectation rv_X2.
+  Proof.
+    intros.
+    unfold Rbar_IsFiniteExpectation in *.
+    unfold Rbar_Expectation in *.
+    unfold Rbar_minus' in *.
+    match_case_in isfe1
+    ; [ intros ? eqq1 | intros eqq1]
+    ; rewrite eqq1 in isfe1
+    ; try contradiction.
+    match_case_in isfe2
+    ; [ intros ? eqq2 | intros eqq2]
+    ; rewrite eqq2 in isfe2
+    ; try contradiction.
+    match_destr_in isfe1; try contradiction.
+    match_destr_in isfe2; try contradiction.
+    apply Finite_Rbar_plus' in eqq1.
+    apply Finite_Rbar_plus' in eqq2.
+    destruct eqq1 as [eqq1pos eqq1neg].
+    destruct eqq2 as [eqq2pos eqq2neg].
+    generalize (Rbar_rv_le_pos_fun_part _ _ H0).
+    generalize (Rbar_rv_le_neg_fun_part _ _ H).
+    intros.
+    apply Finite_Rbar_opp in eqq1neg.
+    rewrite <- (is_finite_Rbar_Expectation_posRV_le _ _ H1); trivial.
+    rewrite <- (is_finite_Rbar_Expectation_posRV_le _ _ H2); simpl; trivial.
+  Qed.
+
+  Lemma Rbar_IsLp_bounded n (rv_X1 rv_X2 : Ts -> Rbar)
+        (rle:Rbar_rv_le (fun (omega : Ts) => Rbar_power ((rvabs rv_X1) omega) n) rv_X2)
+        {islp:Rbar_IsFiniteExpectation rv_X2}
+    :
+      IsLp_Rbar prts n rv_X1.
+  Proof.
+    unfold IsLp_Rbar.
+    assert (Rbar_IsFiniteExpectation (fun x => const 0 x)).
+    unfold Rbar_IsFiniteExpectation.
+    assert (PositiveRandomVariable (fun (x:Ts) => const 0 x)).
+    intro x.
+    unfold const; lra.
+(*    rewrite Expectation_Rbar_Expectation. *)
+    admit.
+    generalize (Rbar_IsFiniteExpectation_bounded (const 0) 
+                                                 (fun omega : Ts => Rbar_power (Rbar_abs (rv_X1 omega)) n)
+                                                 rv_X2); intros.
+    cut_to H0.
+    unfold Rbar_IsFiniteExpectation in H0.
+    
+    
+(*
+    eapply 
+    intros.
+    eapply
+    intros a.
+    unfold const, rvabs, rvpower.
+    apply power_nonneg.
+*)
+  Admitted.
+
+  Lemma IsLp_Rbar_down_le m n (rv_X:Ts->Rbar)
+        {rrv:RandomVariable dom Rbar_borel_sa rv_X}
+        (pfle:0 <= n <= m)
+        {lp:IsLp_Rbar prts m rv_X} : IsLp_Rbar prts n rv_X.
+  Proof.
+    red in lp; red.
+    (*
+    apply (@Rbar_IsLp_bounded _ _
+                           (rvmax
+                              (const 1)
+                              (rvpower (rvabs rv_X) (const m))))
+      ; [| typeclasses eauto].
+      intros a.
+      rv_unfold.
+      destruct (Rle_lt_dec 1 (Rabs (rv_X a))).
+      - eapply Rle_trans; [| eapply Rmax_r].
+        now apply Rle_power.
+      - eapply Rle_trans; [| eapply Rmax_l].
+        unfold power.
+        match_destr; [lra | ].
+        generalize (Rabs_pos (rv_X a)); intros.
+        destruct (Req_EM_T n 0).
+        + subst.
+          rewrite Rpower_O; lra.
+        + assert (eqq:1 = Rpower 1 n).
+          {
+            unfold Rpower.
+            rewrite ln_1.
+            rewrite Rmult_0_r.
+            now rewrite exp_0.
+          }
+          rewrite eqq.
+          apply Rle_Rpower_l; lra.
+  Qed.
+*)
+    Admitted.
+
+
+  Lemma IsL1_Rbar_abs_Finite (rv_X:Ts->Rbar)
+        {lp:IsLp_Rbar prts 1 rv_X} : is_finite (Rbar_Expectation_posRV (Rbar_rvabs rv_X)).
+  Proof.
+    red in lp.
+    assert (rv_eq (fun omega => Rbar_power (Rbar_abs (rv_X omega)) 1)
+                  (Rbar_rvabs rv_X)).
+    - intro x.
+      unfold Rbar_power, Rbar_rvabs.      
+      destruct (rv_X x); simpl; trivial.
+      unfold power.
+      match_destr.
+      + now rewrite e.
+      + rewrite Rpower_1; trivial.
+        apply Rabs_pos_lt.
+        unfold Rabs in n.
+        match_destr_in n; lra.
+    - now rewrite (Rbar_Expectation_posRV_ext _ _ H) in lp.
+    Qed.
+
+  Lemma IsL1_Rbar_Finite (rv_X:Ts->Rbar)
+        {lp:IsLp_Rbar prts 1 rv_X} : Rbar_IsFiniteExpectation rv_X.
+  Proof.
+    apply finiteExp_Rbar_rvabs.
+    now apply IsL1_Rbar_abs_Finite.
+  Qed.
+
+  Lemma Rbar_IsLp_IsFiniteExpectation (f : Ts -> Rbar) (n : R)
+        {rrv:RandomVariable dom Rbar_borel_sa f} :
+    1 <= n ->
+    IsLp_Rbar prts n f -> Rbar_IsFiniteExpectation f.
+  Proof.
+    intros.
+    apply IsL1_Rbar_Finite.
+    apply (IsLp_Rbar_down_le n 1 f); trivial.
+    lra.
+  Qed.
+
+  Instance picker_rv
+        (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F) 
+        (n : nat) :
+    RandomVariable dom borel_sa (LpRRV_rv_X prts (L2RRV_lim_picker F PF cF n)).
+  Proof.
+    exact (LpRRV_rv prts (L2RRV_lim_picker F PF cF n)).
+  Qed.
+
+  Lemma RealMeasurable_RbarMeasurable (f : Ts -> R) :
+    RealMeasurable dom f <-> RbarMeasurable f.
+  Proof.
+    unfold RealMeasurable, RbarMeasurable.
+    split; intros.
+    - destruct r.
+      + apply H.
+      + apply sa_all.
+      + apply sa_none.      
+    - specialize (H r).
+      apply H.
+   Qed.
+
+  Lemma borel_Rbar_borel (f : Ts -> R) :
+    RandomVariable dom borel_sa f <-> RandomVariable dom Rbar_borel_sa f.
+  Proof.
+    unfold RandomVariable.
+    generalize (RealMeasurable_RbarMeasurable f); intros.
+    unfold RealMeasurable, RbarMeasurable in H.
+    destruct H.
+    split; intros.
+    - apply Rbar_borel_sa_preimage2.
+      apply H.
+      now apply borel_sa_preimage2.
+    - apply borel_sa_preimage2.
+      apply H0.
+      now apply Rbar_borel_sa_preimage2.
+  Qed.
+
+  Lemma cauchy_filter_rvlim_finite00
+        (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F) :
+    exists (P: event dom),
+      ps_P P = 1 /\
+      (forall x, P x -> 
+                 is_finite (Lim_seq (fun n => (L2RRV_lim_picker F PF cF (S n)) x))).
+  Proof.
+    generalize (cauchy_filter_Rbar_rvlim1 F PF cF); intros.
+    pose (limpick := (Rbar_rvabs (rvlim
+                               (fun n => L2RRV_lim_picker F PF cF (S n))))).
+    assert (rv:RandomVariable dom Rbar_borel_sa limpick).
+    admit.
+    exists (exist _ _ (sa_finite_Rbar limpick rv)).
+    split.
+    - subst limpick.
+(*      apply finite_Rbar_Expectation_posRV_almost_finite. *)
+      admit.
+    Admitted.
+
   Lemma cauchy_filter_rvlim_finite0
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
         (PF:ProperFilter F)
@@ -1268,6 +2144,7 @@ Section L2.
     - admit.
     - easy.
     Admitted.
+
 
   Lemma cauchy_filter_rvlim_finite
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
@@ -1402,6 +2279,19 @@ Section L2.
     - exact (LpRRVzero prts).
   Defined.
 
+(*
+  Lemma LpRRVnorm_L2RRV_lim0
+        (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F)
+        (eps : posreal) :
+    exists (n : nat),
+      LpRRVnorm prts (LpRRVminus
+                        (Rbar_rvlim (fun n => (L2RRV_lim_picker F PF cF (S n))))
+      (F (Hierarchy.ball x eps)) /\
+      ((Hierarchy.ball (M := LpRRV_UniformSpace prts big2) x eps) (L2RRV_lim F))).
+  *)
+
   Lemma LpRRVnorm_L2RRV_lim
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
         (PF:ProperFilter F)
@@ -1411,7 +2301,29 @@ Section L2.
       (F (Hierarchy.ball x eps)) /\
       ((Hierarchy.ball (M := LpRRV_UniformSpace prts big2) x eps) (L2RRV_lim F)).
   Proof.
-    Admitted.
+    unfold cauchy in cF.
+    generalize (cauchy_filter_rvlim_finite2 F PF cF); intros.
+    destruct X as [P [dec [? [? ?]]]].
+    apply IsLp_down_le with (n := 1) in H1; try lra.
+    - apply IsL1_abs_Finite in H1.
+      apply IsFiniteExpectation_Finite in H1.
+      destruct H1.
+      erewrite Expectation_pos_posRV in e.
+      invcs e.
+      unfold rvlim in H2.
+      assert (forall x, ex_lim_seq_cauchy (fun n : nat => rvmult (EventIndicator dec) (L2RRV_lim_picker F PF cF (S n)) x)).
+      {
+        intros.
+        now rewrite <- ex_lim_seq_cauchy_corr.
+      }
+
+      admit.
+    - apply rvlim_rv.
+      typeclasses eauto.
+      apply H0.
+      Unshelve.
+      apply prvabs.
+  Admitted.
   
   Lemma L2RRV_lim_complete (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop) 
         (PF : ProperFilter F)
