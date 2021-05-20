@@ -2498,6 +2498,22 @@ algorithm.
       apply vector_nth_map.
     Qed.
 
+    Lemma opp_nth {n} (v : vector R n) (i : nat) (pf : (i < n)%nat):
+      vector_nth i pf (Rvector_opp v) = -1 * vector_nth i pf v.
+    Proof.
+      apply vector_nth_map.
+    Qed.
+
+    Lemma minus_nth {n} (v1 v2 : vector R n) (i : nat) (pf : (i < n)%nat):
+      vector_nth i pf (Rvector_minus v1 v2) = 
+      (vector_nth i pf v1) - (vector_nth i pf v2).
+    Proof.
+      unfold Rvector_minus.
+      rewrite plus_nth, opp_nth.
+      lra.
+    Qed.
+
+
     Declare Scope Rvector_scope.
     Delimit Scope Rvector_scope with Rvector.
     Bind Scope Rvector_scope with vector R.
@@ -2509,7 +2525,10 @@ algorithm.
     Lemma Rvector_plus_eq_compat_l {n} (v v1 v2 : vector R n) :
       v1 = v2 -> Rvector_plus v v1 = Rvector_plus v v2.
     Proof.
-      Admitted.
+      congruence.
+    Qed.
+
+    Hint Rewrite @plus_nth @scale_nth @mult_nth @minus_nth @opp_nth : vector.
 
     Lemma Induction_stepk_I1_15 {n} (k:nat) (eps P C0: posreal) (C : R) (w x : nat -> Ts -> vector R (S n)) (xstar : vector R (S n)) (F : (vector R (S n)) -> (vector R (S n)))
           {prts: ProbSpace dom}                              
@@ -2682,16 +2701,12 @@ algorithm.
                           unfold vecrvminus, const, vecrvplus, vecrvopp, vecrvscale in xrel.
                           rewrite xrel.
                           f_equal.
-                          do 4 rewrite Rvector_scale_plus_l.
-                          do 5 rewrite Rvector_scale_scale.
+                          apply vector_nth_eq; intros.
+                          autorewrite with vector.
                           rewrite Fxstar.
-                          do 5 rewrite <- Rvector_plus_assoc.
-                          rewrite Rvector_plus_comm.
-(*
-                          apply Rvector_plus_eq_compat_l with (v := Rvector_scale (α (n1 + nk)%nat) (F (x (n1 + nk)%nat z))).
-*)
-                       admit.
-                       ++ admit.
+                          ring.
+                       ++
+                         admit.
 
               - apply (ps_sub prts) in H14.
                 rewrite Rabs_right, Rminus_0_r in H7.
