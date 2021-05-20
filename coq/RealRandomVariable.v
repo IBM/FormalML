@@ -1547,6 +1547,32 @@ Section RealRandomVariables.
     : event dom
     := @exist (pre_event Ts) _ _ (sa_le_le_rv rv_X x).
 
+  Lemma sa_le_lt_rv 
+        (rv_X : Ts -> R) {rv : RandomVariable dom borel_sa rv_X} x
+    : sa_sigma (fun omega => rv_X omega < x).
+  Proof.
+    apply sa_le_lt.
+    now apply rv_measurable.
+  Qed.
+
+  Definition event_lt
+        (rv_X : Ts -> R) {rv : RandomVariable dom borel_sa rv_X} x
+    : event dom
+    := @exist (pre_event Ts) _ _ (sa_le_lt_rv rv_X x).
+  
+  Lemma sa_le_gt_rv 
+        (rv_X : Ts -> R) {rv : RandomVariable dom borel_sa rv_X} x
+    : sa_sigma (fun omega => rv_X omega > x).
+  Proof.
+    apply sa_le_gt.
+    now apply rv_measurable.
+  Qed.
+
+  Definition event_gt
+        (rv_X : Ts -> R) {rv : RandomVariable dom borel_sa rv_X} x
+    : event dom
+    := @exist (pre_event Ts) _ _ (sa_le_gt_rv rv_X x).
+
 End RealRandomVariables.
 
 Instance Restricted_PositiveRandomVariable {Ts:Type} {dom : SigmaAlgebra Ts}

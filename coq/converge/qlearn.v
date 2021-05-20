@@ -1988,9 +1988,10 @@ algorithm.
         apply Rle_0_sqr.
     Qed.
 
-    Lemma SimpleExpectation_rvsqr_pos (f : Ts -> R) 
+    Lemma SimpleExpectation_rvsqr_pos (f : Ts -> R)
+          {prts: ProbSpace dom}
           {rx : RandomVariable dom borel_sa f}
-          {srv: SimpleRandomVariable f} :
+          {srv: SimpleRandomVariable f}       :
       0 <= SimpleExpectation (rvsqr f).
     Proof.
       apply SimpleExpectation_pos.
@@ -2002,6 +2003,7 @@ algorithm.
     Lemma lim_rvinner_0 {n:nat}
         (i : nat)
         (pf : (i < n)%nat)
+        {prts: ProbSpace dom}
         (Xn: nat -> Ts -> vector R n) 
         (srvxn : forall n0, SimpleRandomVariable (Xn n0))
         (rvxn : forall n0, RandomVariable dom (Rvector_borel_sa n) (Xn n0)) :
@@ -2027,6 +2029,7 @@ algorithm.
     Qed.
 
     Lemma Induction_I1_15_helper {n}
+          {prts: ProbSpace dom}
           (eps : posreal) (C : R) (w : nat -> Ts -> vector R n)
           (rw : forall n0, RandomVariable dom (Rvector_borel_sa n) (w n0))
           (srw : forall n0, SimpleRandomVariable  (w n0)) (i : nat) (pf : (i < n)%nat) :
@@ -2091,6 +2094,7 @@ algorithm.
         (eps : posreal) 
         (i : nat)
         (pf : (i < n)%nat)
+        {prts: ProbSpace dom}
         (Xn: nat -> Ts -> vector R n) 
         (srvxn : forall n0, SimpleRandomVariable (Xn n0))
         (rvxn : forall n0, RandomVariable dom (Rvector_borel_sa n) (Xn n0)) :
@@ -2119,7 +2123,8 @@ algorithm.
    Qed.
 
     Lemma conv_l2_vector_prob {n:nat}
-        (eps : posreal) 
+          (eps : posreal)
+        {prts: ProbSpace dom}          
         (Xn: nat -> Ts -> vector R n) 
         (srvxn : forall n0, SimpleRandomVariable (Xn n0))
         (rvxn : forall n0, RandomVariable dom (Rvector_borel_sa n) (Xn n0)) :
@@ -2134,6 +2139,7 @@ algorithm.
     Qed.
 
     Lemma conv_l2_conv_linf_sqr {n:nat}
+        {prts: ProbSpace dom}                    
         (Xn: nat -> Ts -> vector R n) 
         (srvxn : forall n0, SimpleRandomVariable (Xn n0))
         (rvxn : forall n0, RandomVariable dom (Rvector_borel_sa n) (Xn n0)) :
@@ -2162,6 +2168,7 @@ algorithm.
 
     Instance IsFiniteExpectation_simple
         (X:  Ts -> R)
+        {prts: ProbSpace dom}                    
         {rv : RandomVariable dom borel_sa X} 
         {srv: SimpleRandomVariable X}  :       
       IsFiniteExpectation prts X.
@@ -2173,6 +2180,7 @@ algorithm.
 
     Program Instance srvpower
            (rv_X : Ts -> R) (r:R)
+           {prts: ProbSpace dom}                    
            {srv:SimpleRandomVariable rv_X} : 
       SimpleRandomVariable (rvpower (rvabs rv_X) (const r)) :=
       {srv_vals := map (fun x => power (Rabs x) r) srv_vals }.
@@ -2186,6 +2194,7 @@ algorithm.
 
     Instance IsLp_simple
         (X:  Ts -> R)
+        {prts: ProbSpace dom}                    
         (rv : RandomVariable dom borel_sa X) 
         (srv: SimpleRandomVariable X)  :       
       IsLp prts 2 X.
@@ -2198,6 +2207,7 @@ algorithm.
 
     Lemma finite_expectation_simple
         (X: Ts -> R)
+        {prts: ProbSpace dom}                    
         {rv : RandomVariable dom borel_sa X} 
         {srv : SimpleRandomVariable X} :
       SimpleExpectation X = FiniteExpectation prts X.
@@ -2208,14 +2218,15 @@ algorithm.
    Qed.
 
     Lemma conv_l2_l1_simple
-        (Xn: nat -> Ts -> R)
+          (Xn: nat -> Ts -> R)
+        {prts: ProbSpace dom}                              
         (rvxn : forall n, RandomVariable dom borel_sa (Xn n)) 
         (srvxn : forall n, SimpleRandomVariable (Xn n))  :       
     is_lim_seq (fun n => SimpleExpectation (rvsqr (Xn n))) 0 ->
     is_lim_seq (fun n => SimpleExpectation (rvabs (Xn n))) 0.
     Proof.
       intros.
-      generalize (conv_l2_l1 Xn rvxn _); intros.
+      generalize (conv_l2_l1 prts Xn rvxn _); intros.
       cut_to H0.
       - apply is_lim_seq_ext with 
             (v := fun n : nat => SimpleExpectation (rvabs (Xn n))) in H0.
@@ -2241,6 +2252,7 @@ algorithm.
 
     Lemma conv_l2_conv_linf {n:nat}
         (Xn: nat -> Ts -> vector R n) 
+        {prts: ProbSpace dom}                              
         {srvxn : forall n0, SimpleRandomVariable (Xn n0)}
         {rvxn : forall n0, RandomVariable dom (Rvector_borel_sa n) (Xn n0)} :
         is_lim_seq
@@ -2266,6 +2278,7 @@ algorithm.
 
     Lemma equiv_le_rvmaxabs_inter_rvabs {n}
           (eps : posreal)
+          {prts: ProbSpace dom}                              
           (X : Ts -> vector R n)
           (srv : SimpleRandomVariable X)
           (rv :  RandomVariable dom (Rvector_borel_sa n) X) :
@@ -2306,6 +2319,7 @@ algorithm.
 
     Lemma equiv_ge_rvmaxabs_inter_rvabs_aux {n}
           (eps : posreal)
+          {prts: ProbSpace dom}                              
           (X : Ts -> vector R (S n))
           (srv : SimpleRandomVariable X)
           (rv :  RandomVariable dom (Rvector_borel_sa (S n)) X) :
@@ -2348,6 +2362,7 @@ algorithm.
 
     Lemma equiv_ge_rvmaxabs_inter_rvabs {n}
           (eps : posreal)
+          {prts: ProbSpace dom}                              
           (X : Ts -> vector R n)
           (srv : SimpleRandomVariable X)
           (rv :  RandomVariable dom (Rvector_borel_sa n) X) :
@@ -2383,6 +2398,7 @@ algorithm.
 
     Lemma conv_l2_vector_prob_max_abs {n:nat}
         (eps : posreal)
+          {prts: ProbSpace dom}                              
         (Xn: nat -> Ts -> vector R n) 
         (srvxn : forall n0, SimpleRandomVariable (Xn n0))
         (rvxn : forall n0, RandomVariable dom (Rvector_borel_sa n) (Xn n0)) :
@@ -2398,7 +2414,7 @@ algorithm.
       - exists (0%nat); intros.
         split.
         + apply ps_pos.
-        + generalize (conv_l1_prob_le eps (rvmaxabs (Xn n0))); intros.
+        + generalize (conv_l1_prob_le prts eps (rvmaxabs (Xn n0))); intros.
           rewrite Expectation_posRV_ext with (prv2 := prvabs (rvmaxabs (Xn n0))).
           * assert (event_equiv
                       (event_ge dom (rvmaxabs (Xn n0)) eps)
@@ -2441,11 +2457,290 @@ algorithm.
             rewrite Rbar_finite_eq.
             lra.
     Qed.
-      
 
+    Lemma vecrvminus_zero {n} (rvx : Ts -> vector R n) :
+          rv_eq (vecrvminus rvx (const (vector_const 0 n))) rvx.
+    Proof.
+      intro x.
+      unfold vecrvminus, vecrvplus, vecrvopp, vecrvscale, const.
+      rewrite Rvector_scale_zero.
+      now rewrite Rvector_plus_zero.
+    Qed.
+
+    Definition Rvector_minus {n} (x y:vector R n) : vector R n
+      := Rvector_plus x (Rvector_opp y).
+
+    Lemma Rabs_le_both (a b : R) :
+      Rabs a <= b <-> -b <= a <= b.
+    Proof.
+      unfold Rabs.
+      destruct (Rcase_abs a); lra.
+    Qed.
+   
+    Lemma Rabs_lt_both (a b : R) :
+      Rabs a < b <-> -b < a < b.
+    Proof.
+      unfold Rabs.
+      destruct (Rcase_abs a); lra.
+    Qed.
+
+    Lemma plus_nth {n} (v1 v2 : vector R n) (i : nat) (pf : (i < n)%nat):
+      vector_nth i pf (Rvector_plus v1 v2) = 
+      (vector_nth i pf v1) + (vector_nth i pf v2).
+    Proof.
+      rewrite Rvector_plus_explode.
+      now rewrite vector_nth_create'.
+    Qed.
+
+    Lemma scale_nth {n} (c : R) (v : vector R n) (i : nat) (pf : (i < n)%nat):
+      vector_nth i pf (Rvector_scale c v) = c * vector_nth i pf v.
+    Proof.
+      apply vector_nth_map.
+    Qed.
+
+    Declare Scope Rvector_scope.
+    Delimit Scope Rvector_scope with Rvector.
+    Bind Scope Rvector_scope with vector R.
+    Local Open Scope Rvector_scope.
+
+    Notation "c .* v" := (Rvector_scale (c%R) v) (at level 41, right associativity) : Rvector_scope.
+    Notation "x + y" := (Rvector_plus x y) (at level 50, left associativity) : Rvector_scope.
+
+    Lemma Rvector_plus_eq_compat_l {n} (v v1 v2 : vector R n) :
+      v1 = v2 -> Rvector_plus v v1 = Rvector_plus v v2.
+    Proof.
+      Admitted.
+
+    Lemma Induction_stepk_I1_15 {n} (k:nat) (eps P C0: posreal) (C : R) (w x : nat -> Ts -> vector R (S n)) (xstar : vector R (S n)) (F : (vector R (S n)) -> (vector R (S n)))
+          {prts: ProbSpace dom}                              
+          (rx : forall n0, RandomVariable dom (Rvector_borel_sa (S n)) (x n0))
+          (rw : forall n0, RandomVariable dom (Rvector_borel_sa (S n)) (w n0))
+          (srw : forall n0, SimpleRandomVariable  (w n0)) :
+      P < 1 ->
+      0 <= C ->
+      0 <= gamma < 1 ->
+      gamma + eps < 1 ->
+      (forall n, 0 <= α n <= 1) ->       
+      is_lim_seq α 0 ->
+      is_lim_seq (sum_n α) p_infty ->
+      (forall (x y : vector R (S n)),
+          Rvector_max_abs (Rvector_minus (F x) (F y)) <= 
+          gamma * Rvector_max_abs (Rvector_minus x y)) ->
+      F xstar = xstar ->
+      (forall n,
+          (rv_eq (x (S n))
+                 (vecrvplus
+                    (vecrvscale (1 - α n) (x n)) 
+                    (vecrvscale (α n)
+                                (vecrvplus (fun v => F (x n v)) (w n)))))) ->
+      (forall n, forall omega, 
+            rvmaxabs (vecrvminus (x n) (const xstar)) omega <= C0) ->
+      (forall n0 : nat, SimpleExpectation (rvinner (w n0) (w n0)) < C) ->
+      (forall n0 : nat,
+          rv_eq
+            (vector_gen_SimpleConditionalExpectation 
+               (w n0)
+               (L2_convergent_hist 
+                  (@L2_convergent_x (S n) α (vecrvconst (S n) 0) Ts (vecrvconst (S n) 0) w) _ _ n0)) 
+            (const zero)) ->
+       (exists nk : nat,
+           forall n0 : nat,
+             rv_le (rvmaxabs (vecrvminus (x (n0 + nk)%nat) (const xstar)))
+             (const (C0 * (gamma + eps) ^ k))) ->
+      exists (nk : nat),
+      forall n0, 
+        ps_P 
+          (event_le dom
+             (rvmaxabs (vecrvminus (x (n0 + nk)%nat) (const xstar)))
+             (C0 * (gamma + eps)^(S k)))
+        >= P .
+    Proof.
+      intros Plim Clim glim geps alim aseq sumaseq Fcont Fxstar xrel xlim wexp condexp normbound.
+      generalize (RMseq_const_lim (C0 * (gamma + eps)^k) (C0 * (gamma + eps)^k) glim alim aseq sumaseq); intros.
+      generalize (@L2_convergent (S n) gamma α (fun _ => vector_const 0 (S n)) Ts dom prts C (vecrvconst (S n) 0) w (Rvector_const_rv (S n) 0) rw (srv_vecrvconst (S n) 0) srw Clim glim alim aseq sumaseq); intros.
+      cut_to H0; trivial.
+      + destruct H0 as [? [? ?]].
+        rewrite <- H0 in H1.
+        rewrite <- is_lim_seq_spec in H.
+        unfold is_lim_seq' in H.
+        generalize (cond_pos eps); intros.
+        assert ( 0 < eps/2) by lra.
+        specialize (H (mkposreal _ H2)).
+        destruct H; simpl in H.
+        apply is_lim_seq_ext with
+            (v :=  fun n0 : nat =>
+                     SimpleExpectation
+                       (rvinner (@L2_convergent_x (S n) α (vecrvconst (S n) 0) Ts (vecrvconst (S n) 0) w n0)
+                                (@L2_convergent_x (S n) α (vecrvconst (S n) 0) Ts (vecrvconst (S n) 0) w n0))) in H1.
+        * assert (0 < C0 * (gamma + eps) ^k * (eps/2)).
+          apply Rmult_lt_0_compat; trivial.
+          apply Rmult_lt_0_compat; trivial.
+          apply cond_pos.
+          apply pow_lt.
+          lra.
+          generalize (conv_l2_vector_prob_max_abs 
+                        (mkposreal _ H4)
+                        (fun n0 => @L2_convergent_x (S n) α (vecrvconst (S n) 0) Ts (vecrvconst (S n) 0) w n0) _ _ H1); intros.
+            apply is_lim_seq_spec in H5.
+            unfold is_lim_seq' in H5.
+            assert (0 < 1-P) by lra.
+            destruct (H5 (mkposreal _ H6)); simpl in H7.
+            assert (gamma * C0 * (gamma+eps)^k = gamma * C0 * (gamma+eps)^k); trivial.
+            generalize (product_sum_assumption_a α gamma glim alim aseq sumaseq 0%nat); intros.
+            apply is_lim_seq_ext with
+                (v := fun n : nat => prod_f_R0 (fun m : nat => g_alpha gamma (α m)) n)
+              in H9; [|(intros;
+                       apply prod_f_R0_proper; trivial;
+                       intro m; f_equal; f_equal; lia)].
+            generalize (@Deterministic_RM_2b 
+                          R_NormedModule
+                          (fun n0 => gamma * C0 * (gamma+eps)^k)
+                          α 
+                          (gamma * C0 * (gamma+eps)^k)
+                          gamma
+                          (gamma * C0 * (gamma+eps)^k)
+                          glim
+                          H8
+                          alim
+                          H9
+                       ); intros.
+            rewrite minus_eq_zero in H10.
+            rewrite norm_zero in H10.
+            cut_to H10; [|(intros; apply Rmult_le_pos; [lra | apply norm_ge_0])].
+            apply is_lim_seq_spec in H10.
+            unfold is_lim_seq' in H10.
+            destruct (H10 (mkposreal _ H4)); simpl in H11.
+            destruct normbound as [nk IHk].
+            assert (forall n, 
+                       (x2 <= n)%nat -> (x3 <= n)%nat ->
+                       ps_P (event_ge dom
+                                      (rvmaxabs (vecrvminus (x n) (const xstar)))
+                                      (C0 * (gamma + eps)^(S k))) < 1-P).
+            {
+              intros.
+              specialize (H11 n0 H13).
+              specialize (H7 n0 H12).
+              assert (event_sub 
+                          (event_ge dom (rvmaxabs (vecrvminus (x n0) (const xstar)))
+                                  (C0 * (gamma + eps) ^ S k))
+                        (event_ge dom 
+                                  (rvmaxabs (@L2_convergent_x (S n) α (vecrvconst (S n) 0) Ts (vecrvconst (S n) 0) w n0))
+                                  (C0 * (gamma + eps) ^ k * (eps / 2)))).
+              - intro omega. simpl.
+                unfold rvmaxabs; intros.
+                generalize (Rvector_max_abs_nth_in  (vecrvminus (x n0) (const xstar) omega) ); intros.
+                destruct H15 as [i [pf ?]].
+                rewrite H15 in H14.
+                apply Rge_trans with (r2 := Rabs (vector_nth i pf (@L2_convergent_x (S n) α (vecrvconst (S n) 0) Ts (vecrvconst (S n) 0) w n0 omega))).
+                + apply Rle_ge, Rvector_max_abs_nth_le.
+                + generalize (Induction_I2_15 (fun n0 => vecrvnth i pf (vecrvminus (x (n0+nk)%nat) (const xstar))) 
+                                        (vector_nth i pf xstar) (fun n0 => vecrvnth i pf (w (n0 + nk)%nat))
+                                        (C0 * (gamma + eps) ^ k) alim
+                       ); intros.
+                  cut_to H16.
+                  * specialize (H16 n0 omega).
+                    apply Rabs_le_both in H16.
+                    admit.
+                  * intros.
+                    specialize (IHk n1 omega0).
+                    unfold rvmaxabs in IHk.
+                    eapply Rle_trans.
+                    apply Rvector_max_abs_nth_le.
+                    apply IHk.
+                  * intros.
+                    assert 
+                      (forall n0 : nat,
+                          rv_le (rvmaxabs (vecrvminus 
+                                             (fun v => F ((x (n0 + nk)%nat) v))
+                                             (const (F xstar))))
+                                (const  (gamma * C0 * (gamma + eps) ^ k))).
+                    -- intros.
+                       intro v.
+                       unfold rvmaxabs, const, vecrvminus, vecrvplus, vecrvopp, vecrvscale.
+                       unfold Rvector_minus, Rvector_opp in Fcont.
+                       eapply Rle_trans.
+                       apply Fcont.
+                       rewrite Rmult_assoc.
+                       apply Rmult_le_compat_l; try lra.
+                       apply IHk.
+                    -- rewrite <- Ropp_mult_distr_l.
+                       rewrite <- Ropp_mult_distr_l.
+                       apply Rabs_le_both.
+                       replace (S n1 + nk)%nat with (S (n1 + nk)) by lia.
+                       specialize (xrel (n1 + nk)%nat).
+                       clear condexp H1 H9 H16.
+                       assert (rv_eq
+                                 (rvmaxabs (vecrvminus
+                                              (vecrvminus (vecrvminus (x (S (n1 + nk))) (const xstar))
+                                                          (vecrvscale  (1 - α (n1+nk)%nat) (vecrvminus (x (n1 + nk)%nat) (const xstar))))
+                                              (vecrvscale (α (n1+nk)%nat) (w (n1 + nk)%nat))))
+                                 (rvmaxabs (vecrvscale (α (n1+nk)%nat) (vecrvminus (fun v => F (x (n1 + nk)%nat v))
+                                                                          (const (F xstar)))))).
+                       ++ intro z.
+                          unfold rvmaxabs, vecrvminus, const, vecrvplus, vecrvopp, vecrvscale.
+                          unfold rv_eq, Morphisms.pointwise_relation in xrel.
+                          unfold vecrvminus, const, vecrvplus, vecrvopp, vecrvscale in xrel.
+                          rewrite xrel.
+                          f_equal.
+                          do 4 rewrite Rvector_scale_plus_l.
+                          do 5 rewrite Rvector_scale_scale.
+                          rewrite Fxstar.
+                          do 5 rewrite <- Rvector_plus_assoc.
+                          rewrite Rvector_plus_comm.
+(*
+                          apply Rvector_plus_eq_compat_l with (v := Rvector_scale (α (n1 + nk)%nat) (F (x (n1 + nk)%nat z))).
+*)
+                       admit.
+                       ++ admit.
+
+              - apply (ps_sub prts) in H14.
+                rewrite Rabs_right, Rminus_0_r in H7.
+                + eapply Rle_lt_trans.
+                  apply H14.
+                  apply H7.
+                + rewrite Rminus_0_r.
+                  apply Rle_ge.
+                  apply ps_pos.
+            }
+            exists (max x2 x3).
+            intros.
+            specialize (H12 (n0 + Init.Nat.max x2 x3)%nat).
+            cut_to H12; try lia.
+            assert (event_sub 
+                      (event_complement
+                         (event_ge 
+                            dom
+                            (rvmaxabs (vecrvminus (x (n0 + Init.Nat.max x2 x3)%nat) 
+                                                  (const xstar)))
+                            (C0 * (gamma + eps) ^ S k)))
+                      (event_le 
+                         dom
+                         (rvmaxabs (vecrvminus (x (n0 + Init.Nat.max x2 x3)%nat) 
+                                               (const xstar)))
+                         (C0 * (gamma + eps) ^ S k))) by
+                (intro z; simpl; unfold pre_event_complement; lra).
+            apply (ps_sub prts) in H13.
+            apply Rle_ge in H13. 
+            eapply Rge_trans.
+            apply H13.
+            rewrite ps_complement.
+            lra.
+        * intros.
+          apply SimpleExpectation_ext.
+          intro z.
+          unfold rvinner.
+          now rewrite vecrvminus_zero.
+      + intros.
+        rewrite minus_eq_zero.
+        generalize (@hilbert.norm_zero (@Rvector_PreHilbert (S n))); intros.
+        replace (@zero (@Rvector_AbelianGroup (S n))) with (@zero (hilbert.PreHilbert.AbelianGroup (@Rvector_PreHilbert (S n)))); trivial.
+        rewrite H1.
+        apply Rmult_le_pos; try lra.
+        now apply hilbert.norm_ge_0.
+    Admitted.
     
-
     Lemma Induction_I1_15 {n} (eps P C0: posreal) (C : R) (w x : nat -> Ts -> vector R (S n)) (xstar : vector R (S n))
+          {prts: ProbSpace dom}                              
           (rx : forall n0, RandomVariable dom (Rvector_borel_sa (S n)) (x n0))
           (rw : forall n0, RandomVariable dom (Rvector_borel_sa (S n)) (w n0))
           (srw : forall n0, SimpleRandomVariable  (w n0)) :
@@ -2614,3 +2909,5 @@ algorithm.
           apply Rmult_le_pos; try lra.
           now apply hilbert.norm_ge_0.
         Admitted.
+
+  End qlearn4.    
