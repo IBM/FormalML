@@ -2561,7 +2561,47 @@ algorithm.
         unfold Hierarchy.mult; simpl.
         ring.
      Qed.
-      
+
+    Lemma minus_half (r:R) :
+      r - r/2 = r/2.
+    Proof.
+      lra.
+    Qed.
+
+    Lemma seq_sum_shift (α : nat -> R) (nk:nat):
+      is_lim_seq (sum_n α) p_infty ->
+      is_lim_seq (sum_n (fun n0 => α (n0 + nk)%nat)) p_infty.
+    Proof.
+      intros.
+      destruct (Nat.eq_dec nk 0).
+      - subst.
+        eapply (is_lim_seq_ext _ _ _ _ H).
+        Unshelve.
+        intros.
+        apply sum_n_ext.
+        intros.
+        f_equal; lia.
+     -  apply is_lim_seq_incr_n with (N := nk) in H.
+        assert (0 < nk)%nat by lia.
+        apply is_lim_seq_ext 
+              with (v := (fun n => ((sum_n α (nk-1)%nat) + 
+                                    (sum_n (fun n1 : nat => α (n1 + nk)%nat) n))%R ))
+                   in H.
+        + eapply is_lim_seq_minus with (v := fun _ => sum_n α (nk-1)) in H.
+          * eapply is_lim_seq_ext in H.
+            -- apply H.
+            -- intros; lra.
+          * apply is_lim_seq_const.
+          * unfold is_Rbar_minus, is_Rbar_plus.
+            now simpl.
+        + intros.
+          unfold sum_n.
+          rewrite sum_split with (m := (nk-1)%nat); try lia.
+          apply Rplus_eq_compat_l.
+          replace (S (nk - 1)) with (nk) by lia.
+          apply sum_n_m_shift.
+    Qed.
+
     Lemma Induction_stepk_I1_15 {n} (k:nat) (eps P C0: posreal) (α : nat -> R)
           (C : R) (w x : nat -> Ts -> vector R (S n)) (xstar : vector R (S n))
           (F : (vector R (S n)) -> (vector R (S n)))
@@ -2609,8 +2649,16 @@ algorithm.
         >= P .
     Proof.
       intros Plim Clim glim geps alim aseq sumaseq Fcont Fxstar xrel xlim wexp condexp normbound.
-      generalize (RMseq_const_lim α (C0 * (gamma + eps)^k) (C0 * (gamma + eps)^k) glim alim aseq sumaseq); intros.
-      generalize (@L2_convergent (S n) gamma α (fun _ => vector_const 0 (S n)) Ts dom prts C (vecrvconst (S n) 0) w (Rvector_const_rv (S n) 0) rw (srv_vecrvconst (S n) 0) srw Clim glim alim aseq sumaseq); intros.
+      destruct normbound as [nk IHk].
+      assert (alimshift : (forall n, 0 <= α (n + nk)%nat <= 1)) by (intros; apply alim).
+      assert (aseqshift: is_lim_seq (fun n0 => α (n0 + nk)%nat) 0) by now apply is_lim_seq_incr_n.
+      assert (sumaseqshift: is_lim_seq (sum_n (fun n0 => α (n0 + nk)%nat)) p_infty) 
+        by    (apply seq_sum_shift; trivial).
+      generalize (RMseq_const_lim (fun n0 => α (n0 + nk)%nat)  (C0 * (gamma + eps)^k) (C0 * (gamma + eps)^k) glim alimshift aseqshift sumaseqshift); intros.
+      assert (rw2:forall n0 : nat, RandomVariable dom (Rvector_borel_sa (S n)) (w (n0 + nk)%nat)) by (intros; apply (rw (n0 + nk)%nat)).
+      assert (srw2:forall n0 : nat, SimpleRandomVariable (w (n0 + nk)%nat)) by
+          (intros; apply (srw (n0 + nk)%nat)).
+      generalize (@L2_convergent (S n) gamma (fun n0 => α (n0 + nk)%nat) (fun _ => vector_const 0 (S n)) Ts dom prts C (vecrvconst (S n) 0) (fun n => w (n + nk)%nat) (Rvector_const_rv (S n) 0) rw2 (srv_vecrvconst (S n) 0) srw2 Clim glim alimshift aseqshift sumaseqshift); intros.
       cut_to H0; trivial.
       + destruct H0 as [? [? ?]].
         rewrite <- H0 in H1.
@@ -2630,11 +2678,11 @@ algorithm.
         apply is_lim_seq_ext with
             (v :=  fun n0 : nat =>
                      SimpleExpectation
-                       (rvinner (@L2_convergent_x (S n) α (vecrvconst (S n) 0) Ts (vecrvconst (S n) 0) w n0)
-                                (@L2_convergent_x (S n) α (vecrvconst (S n) 0) Ts (vecrvconst (S n) 0) w n0))) in H1.
+                       (rvinner (@L2_convergent_x (S n) (fun n => α (n + nk)%nat) (vecrvconst (S n) 0) Ts (vecrvconst (S n) 0) (fun n => w (n + nk)%nat) n0)
+                                (@L2_convergent_x (S n) (fun n => α (n + nk)%nat) (vecrvconst (S n) 0) Ts (vecrvconst (S n) 0) (fun n => w (n + nk)%nat) n0))) in H1.
         * generalize (conv_l2_vector_prob_max_abs 
                         (mkposreal _ H3)
-                        (fun n0 => @L2_convergent_x (S n) α (vecrvconst (S n) 0) Ts (vecrvconst (S n) 0) w n0) _ _ H1); intros.
+                        (fun n0 => @L2_convergent_x (S n) (fun n => α (n + nk)%nat) (vecrvconst (S n) 0) Ts (vecrvconst (S n) 0) (fun n => w (n + nk)%nat) n0) _ _ H1); intros.
             apply is_lim_seq_spec in H4.
             unfold is_lim_seq' in H4.
             assert (0 < 1-P) by lra.
@@ -2664,34 +2712,36 @@ algorithm.
             apply is_lim_seq_spec in H9.
             unfold is_lim_seq' in H9.
             destruct (H9 (mkposreal _ H3)); simpl in H10.
-            destruct normbound as [nk IHk].
+
             assert (forall n, 
-                       (x2 <= n)%nat -> (x3 <= n)%nat -> (nk <= n)%nat ->
+                       (x1 <= n)%nat -> (x2 <= n)%nat ->
                        ps_P (event_ge dom
-                                      (rvmaxabs (vecrvminus (x n) (const xstar)))
+                                      (rvmaxabs (vecrvminus (x (n + nk)%nat) (const xstar)))
                                       (C0 * (gamma + eps)^(S k))) < 1-P).
             {
               intros.
-              specialize (H10 n0 H12).
-              specialize (H6 n0 H11).
+              specialize (H n0 H11).
+              specialize (H6 n0 H12).
               assert (event_sub 
-                          (event_ge dom (rvmaxabs (vecrvminus (x n0) (const xstar)))
+                          (event_ge dom (rvmaxabs (vecrvminus (x (n0 + nk)%nat) (const xstar)))
                                   (C0 * (gamma + eps) ^ S k))
                         (event_ge dom 
-                                  (rvmaxabs (@L2_convergent_x (S n) α (vecrvconst (S n) 0) Ts (vecrvconst (S n) 0) w n0))
+                                  (rvmaxabs (@L2_convergent_x (S n) (fun n => α (n + nk)%nat) (vecrvconst (S n) 0) Ts (vecrvconst (S n) 0) (fun n => w (n + nk)%nat) n0))
                                   (C0 * (gamma + eps) ^ k * (eps / 2)))).
               - intro omega. simpl.
                 unfold rvmaxabs; intros.
-                generalize (Rvector_max_abs_nth_in  (vecrvminus (x n0) (const xstar) omega) ); intros.
-                destruct H15 as [i [pf ?]].
-                rewrite H15 in H14.
+                generalize (Rvector_max_abs_nth_in  (vecrvminus (x (n0 + nk)%nat) (const xstar) omega) ); intros.
+                destruct H14 as [i [pf ?]].
+                rewrite H14 in H13.
                 apply Rge_trans with 
                     (r2 := Rabs (vector_nth i pf 
                                             (@L2_convergent_x 
-                                               (S n) α 
+                                               (S n) (fun n => α (n + nk)%nat)
                                                (vecrvconst (S n) 0) Ts 
-                                               (vecrvconst (S n) 0) w n0 omega))).
-                + apply Rle_ge, Rvector_max_abs_nth_le.
+                                               (vecrvconst (S n) 0) 
+                                               (fun n => w (n + nk)%nat) n0 omega))).
+                + apply Rle_ge.
+                  apply Rvector_max_abs_nth_le.
                 + rewrite L2_convergent_x_nth_RMseqTs.
                   generalize (Induction_I2_15 
                                 (fun n0 => α (n0 + nk)%nat) 
@@ -2700,10 +2750,33 @@ algorithm.
                                 (fun n0 => vecrvnth i pf (w (n0 + nk)%nat))
                                 (C0 * (gamma + eps) ^ k) 
                        ); intros.
-                  cut_to H16.
-                  * specialize (H16 n0 omega).
-                    apply Rabs_le_both in H16.
-                    admit.
+                  cut_to H15.
+                  * specialize (H15 n0 omega).
+                    apply Rabs_le_both in H15.
+                    clear H0.
+                    rewrite  Rabs_lt_both in H; destruct H.
+                    apply Rlt_minus_l in H0.
+                    generalize (Rle_lt_trans _ _ _ H15 H0); intros.
+                    generalize (Rabs_triang_inv
+                                  (vecrvnth i pf (vecrvminus (x (n0 + nk)%nat) (const xstar)) omega)
+                                  (RMseqTs (fun n0 : nat => α (n0 + nk)%nat)
+                                           (fun n0 : nat => vecrvnth i pf (w (n0 + nk)%nat)) 
+                                           (const 0) n0 omega)); intros.
+                    generalize (Rle_lt_trans _ _ _ H17 H16); intros.
+                    apply Rlt_minus_r in H18.
+                    unfold Rminus in H18.
+                    rewrite Ropp_involutive in H18.
+                    rewrite Rplus_comm in H18.
+                    apply Rlt_gt in H18.
+                    generalize (Rgt_ge_trans _ _ _ H18 H13); intros.
+                    apply Rplus_gt_compat_r 
+                      with (r := - (C0 * (gamma + eps) ^ k * eps / 2 + gamma * (C0 * (gamma + eps) ^ k))) in H19.
+                    ring_simplify in H19.
+                    rewrite Rplus_comm in H19.
+                    ring_simplify in H19.
+                    left.
+                    rewrite minus_half in H19.
+                    now field_simplify.
                   * intros; apply alim.
                   * intros.
                     specialize (IHk n1 omega0).
@@ -2732,7 +2805,6 @@ algorithm.
                        apply Rabs_le_both.
                        replace (S n1 + nk)%nat with (S (n1 + nk)) by lia.
                        specialize (xrel (n1 + nk)%nat).
-                       clear condexp H1 H9 H16.
                        assert (rv_eq
                                  (vecrvminus
                                     (vecrvminus (vecrvminus (x (S (n1 + nk))) (const xstar))
@@ -2750,36 +2822,39 @@ algorithm.
                           autorewrite with vector.
                           rewrite Fxstar.
                           ring.
-                       ++ specialize (H1 omega0).
-                          unfold rvmaxabs, vecrvminus, const, vecrvplus, vecrvopp, vecrvscale in H1.
-                          generalize (eq_vector_nths _ _ H1 i pf); intros.
-                          specialize (H17 n1 omega0).
+                       ++ specialize (H17 omega0).
                           unfold rvmaxabs, vecrvminus, const, vecrvplus, vecrvopp, vecrvscale in H17.
+                          generalize (eq_vector_nths _ _ H17 i pf); intros.
+                          specialize (H16 n1 omega0).
+                          unfold rvmaxabs, vecrvminus, const, vecrvplus, vecrvopp, vecrvscale in H16.
                           generalize (Rvector_max_abs_nth_le (F (x (n1 + nk)%nat omega0) + -1 .* F xstar) i pf); intros.
-                          generalize (Rle_trans _ _ _ H16 H17); intros.
-                          apply Rmult_le_compat_l with (r := Rabs (α (n1 + nk)%nat)) in H18; [|apply Rabs_pos].
-                          rewrite <- Rabs_mult, <- scale_nth, <- H9 in H18.
+                          generalize (Rle_trans _ _ _ H19 H16); intros.
+                          apply Rmult_le_compat_l with (r := Rabs (α (n1 + nk)%nat)) in H20; [|apply Rabs_pos].
+                          rewrite <- Rabs_mult, <- scale_nth, <- H18 in H20.
                           replace (Rabs (α (n1 + nk)%nat)) with (α (n1 + nk)%nat) in H18.
                           unfold vecrvnth, vecrvminus, const, vecrvplus, vecrvopp, vecrvscale.
                           unfold vecrvminus, const, vecrvplus, vecrvopp, vecrvscale in H18.                          
-                          autorewrite with vector in H18.
+                          autorewrite with vector in H20.
                           autorewrite with vector.
                           rewrite Rmult_assoc.
-                          rewrite Rmult_assoc in H18.
+                          rewrite Rmult_assoc in H20.
+                          rewrite Rabs_right with (r := (α (n1 + nk)%nat)) in H20.
                           eapply Rle_trans.
                           shelve.
-                          apply H18.
-                          rewrite Rabs_right; trivial.
+                          apply H20.
                           apply Rle_ge, alim.
+                          rewrite Rabs_right; trivial.
+                          apply Rle_ge, alim.                          
                           Unshelve.
                           right.
                           f_equal.
                           unfold Rminus.
                           ring.
-              - apply (ps_sub prts) in H14.
+              - apply (ps_sub prts) in H13.
                 rewrite Rabs_right in H6.
                 + eapply Rle_lt_trans.
-                  apply H14.
+                  
+                  apply H13.
                   replace (C0 * (gamma + eps) ^ k * (eps / 2)) with
                       (C0 * (gamma + eps) ^ k * eps / 2) by lra.
                   rewrite Rminus_0_r in H6.
@@ -2788,20 +2863,20 @@ algorithm.
                   apply Rle_ge.
                   apply ps_pos.
             }
-            exists (max (max x2 x3) nk).
+            exists ((max x1 x2) + nk)%nat.
             intros.
-            specialize (H11 (n0 + max (max x2 x3) nk)%nat).
+            specialize (H11 (n0 + (max x1 x2))%nat).
             cut_to H11; try lia.
             assert (event_sub 
                       (event_complement
                          (event_ge 
                             dom
-                            (rvmaxabs (vecrvminus (x (n0 + max (max x2 x3) nk)%nat) 
+                            (rvmaxabs (vecrvminus (x (n0 + (max x1 x2 + nk))%nat) 
                                                   (const xstar)))
                             (C0 * (gamma + eps) ^ S k)))
                       (event_le 
                          dom
-                         (rvmaxabs (vecrvminus (x (n0 + max (max x2 x3) nk)%nat)
+                         (rvmaxabs (vecrvminus (x (n0 + (max x1 x2 + nk))%nat)
                                                (const xstar)))
                          (C0 * (gamma + eps) ^ S k))) by
                 (intro z; simpl; unfold pre_event_complement; lra).
@@ -2810,12 +2885,20 @@ algorithm.
             eapply Rge_trans.
             apply H12.
             rewrite ps_complement.
+            replace (n0 + (Init.Nat.max x1 x2 + nk))%nat with
+                (n0 + Init.Nat.max x1 x2 + nk)%nat by lia.
             lra.
         * intros.
           apply SimpleExpectation_ext.
           intro z.
           unfold rvinner.
           now rewrite vecrvminus_zero.
+      + intros.
+        generalize (condexp (n0 + nk)%nat); intros.
+        admit.
+      + intros.
+        generalize (wexp (n0 + nk)%nat).
+        now erewrite SimpleExpectation_pf_irrel.
       + intros.
         rewrite minus_eq_zero.
         generalize (@hilbert.norm_zero (@Rvector_PreHilbert (S n))); intros.
