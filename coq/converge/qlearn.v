@@ -2831,20 +2831,17 @@ algorithm.
                           generalize (Rle_trans _ _ _ H19 H16); intros.
                           apply Rmult_le_compat_l with (r := Rabs (α (n1 + nk)%nat)) in H20; [|apply Rabs_pos].
                           rewrite <- Rabs_mult, <- scale_nth, <- H18 in H20.
-                          replace (Rabs (α (n1 + nk)%nat)) with (α (n1 + nk)%nat) in H18.
+                          rewrite Rabs_right with (r := (α (n1 + nk)%nat)) in H20.
                           unfold vecrvnth, vecrvminus, const, vecrvplus, vecrvopp, vecrvscale.
                           unfold vecrvminus, const, vecrvplus, vecrvopp, vecrvscale in H18.                          
                           autorewrite with vector in H20.
                           autorewrite with vector.
                           rewrite Rmult_assoc.
                           rewrite Rmult_assoc in H20.
-                          rewrite Rabs_right with (r := (α (n1 + nk)%nat)) in H20.
                           eapply Rle_trans.
                           shelve.
                           apply H20.
                           apply Rle_ge, alim.
-                          rewrite Rabs_right; trivial.
-                          apply Rle_ge, alim.                          
                           Unshelve.
                           right.
                           f_equal.
@@ -2909,6 +2906,7 @@ algorithm.
     Admitted.
     
     Lemma Induction_I1_15 {n} (eps P C0: posreal) (α : nat -> R) (C : R) (w x : nat -> Ts -> vector R (S n)) (xstar : vector R (S n))
+          (F : (vector R (S n)) -> (vector R (S n)))
           {prts: ProbSpace dom}                              
           (rx : forall n0, RandomVariable dom (Rvector_borel_sa (S n)) (x n0))
           (rw : forall n0, RandomVariable dom (Rvector_borel_sa (S n)) (w n0))
@@ -2920,7 +2918,17 @@ algorithm.
       (forall n, 0 <= α n <= 1) ->       
       is_lim_seq α 0 ->
       is_lim_seq (sum_n α) p_infty ->
-      (forall n, forall omega, 
+       (forall (x y : vector R (S n)),
+          Rvector_max_abs (Rvector_minus (F x) (F y)) <= 
+          gamma * Rvector_max_abs (Rvector_minus x y)) ->
+       F xstar = xstar ->
+       (forall n,
+           (rv_eq (x (S n))
+                  (vecrvplus
+                     (vecrvscale (1 - α n) (x n)) 
+                    (vecrvscale (α n)
+                                (vecrvplus (fun v => F (x n v)) (w n)))))) ->
+       (forall n, forall omega, 
             rvmaxabs (vecrvminus (x n) (const xstar)) omega <= C0) ->
       (forall n0 : nat, SimpleExpectation (rvinner (w n0) (w n0)) < C) ->
       (forall n0 : nat,
@@ -2939,8 +2947,8 @@ algorithm.
              (C0 * (gamma + eps)^k))
         >= P^k .
     Proof.
-      intros.
-      induction k.
+      intros Plim Clim glim geps alim aseq sumaseq Fcont Fxstar xrel xlim wexp condexp k.
+       induction k.
       - exists (0%nat).
         intros.
         replace (n0 + 0)%nat with n0 by lia.
@@ -2955,128 +2963,14 @@ algorithm.
         {
           intro omega.
           unfold  Ω, pre_Ω, sa_all; simpl.
-          specialize (H6 n0 omega).
+          specialize (xlim n0 omega).
           replace (n0 + 0)%nat with (n0) by lia.
           tauto.
         }
-        replace (n0 + 0)%nat with n0 in H9 by lia.
-        rewrite H9.
+        replace (n0 + 0)%nat with n0 in H by lia.
+        rewrite H.
         apply ps_one.
-      - generalize (RMseq_const_lim α (C0 * (gamma + eps)^k) (C0 * (gamma + eps)^k) H1 H3 H4 H5); intros.
-        generalize (@L2_convergent (S n) gamma α (fun _ => vector_const 0 (S n)) Ts dom prts C (vecrvconst (S n) 0) w (Rvector_const_rv (S n) 0) rw (srv_vecrvconst (S n) 0) srw H0 H1 H3 H4 H5); intros.
-        cut_to H10; trivial.
-        + destruct H10 as [? [? ?]].
-          rewrite <- H10 in H11.
-          rewrite <- is_lim_seq_spec in H9.
-          unfold is_lim_seq' in H9.
-          generalize (cond_pos eps); intros.
-          assert ( 0 < eps/2) by lra.
-          specialize (H9 (mkposreal _ H12)).
-          destruct H9; simpl in H9.
-          apply is_lim_seq_ext with
-              (v :=  fun n0 : nat =>
-                       SimpleExpectation
-                         (rvinner (@L2_convergent_x (S n) α (vecrvconst (S n) 0) Ts (vecrvconst (S n) 0) w n0)
-                                  (@L2_convergent_x (S n) α (vecrvconst (S n) 0) Ts (vecrvconst (S n) 0) w n0))) in H11.
-
-          * assert (0 < C0 * (gamma + eps) ^k * (eps/2)).
-            apply Rmult_lt_0_compat; trivial.
-            apply Rmult_lt_0_compat; trivial.
-            apply cond_pos.
-            apply pow_lt.
-            lra.
-            generalize (conv_l2_vector_prob_max_abs 
-                          (mkposreal _ H14)
-                          (fun n0 => @L2_convergent_x (S n) α (vecrvconst (S n) 0) Ts (vecrvconst (S n) 0) w n0) _ _ H11); intros.
-            apply is_lim_seq_spec in H15.
-            unfold is_lim_seq' in H15.
-            assert (0 < 1-P) by lra.
-            destruct (H15 (mkposreal _ H16)); simpl in H17.
-            assert (gamma * C0 * (gamma+eps)^k = gamma * C0 * (gamma+eps)^k); trivial.
-            generalize (product_sum_assumption_a α gamma H1 H3 H4 H5 0%nat); intros.
-            apply is_lim_seq_ext with
-                (v := fun n : nat => prod_f_R0 (fun m : nat => g_alpha gamma (α m)) n)
-              in H19.
-            generalize (@Deterministic_RM_2b 
-                          R_NormedModule
-                          (fun n0 => gamma * C0 * (gamma+eps)^k)
-                          α 
-                          (gamma * C0 * (gamma+eps)^k)
-                          gamma
-                          (gamma * C0 * (gamma+eps)^k)
-                          H1
-                          H18
-                          H3
-                          H19
-                       ); intros.
-            cut_to H20.
-            apply is_lim_seq_spec in H20.
-            unfold is_lim_seq' in H20.
-            destruct (H20 (mkposreal _ H14)); simpl in H21.
-            destruct IHk as [nk IHk].
-            assert (forall n, 
-                       (x2 <= n)%nat -> (x3 <= n)%nat ->
-                       ps_P (event_ge dom
-                                      (rvmaxabs (vecrvminus (x n) (const xstar)))
-                                      (C0 * (gamma + eps)^(S k))) < 1-P).
-            intros.
-            specialize (H21 n0 H23).
-            specialize (H17 n0 H22).
-            assert (event_sub 
-                      (event_ge dom (rvmaxabs (vecrvminus (x n0) (const xstar)))
-                                (C0 * (gamma + eps) ^ S k))
-                      (event_ge dom 
-                                (rvmaxabs (@L2_convergent_x (S n) α (vecrvconst (S n) 0) Ts (vecrvconst (S n) 0) w n0))
-                                (C0 * (gamma + eps) ^ k * (eps / 2)))).
-            intro omega. simpl.
-            unfold rvmaxabs.
-            intros.
-            generalize (Rvector_max_abs_nth_in  (vecrvminus (x n0) (const xstar) omega) ); intros.
-            destruct H25 as [i [pf ?]].
-            rewrite H25 in H24.
-            apply Rge_trans with (r2 := Rabs (vector_nth i pf (@L2_convergent_x (S n) α (vecrvconst (S n) 0) Ts (vecrvconst (S n) 0) w n0 omega))).
-            apply Rle_ge, Rvector_max_abs_nth_le.
-            generalize (Induction_I2_15  (fun n0 => α (n0 + nk)%nat) (fun n0 => vecrvnth i pf (vecrvminus (x (n0+nk)%nat) (const xstar))) 
-                                        (vector_nth i pf xstar) (fun n0 => vecrvnth i pf (w (n0 + nk)%nat))
-                                        (C0 * (gamma + eps) ^ k) 
-                       ); intros.
-            (*
-            cut_to H26.
-            specialize (H26 n0 omega).
-            *)
-            admit.
-            apply (ps_sub prts) in H24.
-            apply (Rle_lt_trans _ _ _ H24).
-            rewrite Rminus_0_r in H17.
-            rewrite Rabs_right in H17.
-            apply H17.
-            apply Rle_ge, ps_pos.
-            admit.
-            intros.
-            rewrite minus_eq_zero.
-            rewrite norm_zero.
-            apply Rmult_le_pos; [lra|].
-            apply norm_ge_0.
-            intros.
-            apply prod_f_R0_proper; trivial.
-            intro xx.
-            now replace (xx + 0)%nat with xx by lia.
-          * intros.
-            apply SimpleExpectation_ext.
-            intro xx.
-            unfold vecrvminus, vecrvplus, vecrvopp, vecrvscale, const.
-            rewrite Rvector_scale_zero.
-            f_equal; apply FunctionalExtensionality.functional_extensionality; intros.
-            now rewrite Rvector_plus_zero.
-            unfold vecrvminus, vecrvplus, vecrvopp, vecrvscale, const.
-            now rewrite Rvector_plus_zero.
-        + intros.
-          rewrite minus_eq_zero.
-          generalize (@hilbert.norm_zero (@Rvector_PreHilbert (S n))); intros.
-          replace (@zero (@Rvector_AbelianGroup (S n))) with (@zero (hilbert.PreHilbert.AbelianGroup (@Rvector_PreHilbert (S n)))); trivial.
-          rewrite H11.
-          apply Rmult_le_pos; try lra.
-          now apply hilbert.norm_ge_0.
+      - generalize (Induction_stepk_I1_15 k eps P C0 α C w x xstar F rx rw srw Plim Clim glim geps alim aseq sumaseq Fcont Fxstar xrel xlim wexp condexp); intros.
         Admitted.
 
   End qlearn4.    
