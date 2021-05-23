@@ -2973,4 +2973,86 @@ algorithm.
       - generalize (Induction_stepk_I1_15 k eps P C0 α C w x xstar F rx rw srw Plim Clim glim geps alim aseq sumaseq Fcont Fxstar xrel xlim wexp condexp); intros.
         Admitted.
 
+    Lemma qlearn_15 {n} (eps C0: posreal) (α : nat -> R) (C : R) (w x : nat -> Ts -> vector R (S n)) (xstar : vector R (S n))
+          (F : (vector R (S n)) -> (vector R (S n)))
+          {prts: ProbSpace dom}                              
+          (rx : forall n0, RandomVariable dom (Rvector_borel_sa (S n)) (x n0))
+          (rw : forall n0, RandomVariable dom (Rvector_borel_sa (S n)) (w n0))
+          (srw : forall n0, SimpleRandomVariable  (w n0)) :
+      0 <= gamma < 1 ->
+      gamma + eps < 1 -> 
+      (forall n, 0 <= α n <= 1) ->       
+      is_lim_seq α 0 ->
+      is_lim_seq (sum_n α) p_infty ->
+      F xstar = xstar ->
+       (forall n,
+           (rv_eq (x (S n))
+                  (vecrvplus
+                     (vecrvscale (1 - α n) (x n)) 
+                    (vecrvscale (α n)
+                                (vecrvplus (fun v => F (x n v)) (w n)))))) ->
+       (forall n, forall omega, 
+            rvmaxabs (vecrvminus (x n) (const xstar)) omega <= C0) ->
+      (forall P,
+        0 < P < 1 ->
+        forall (k:nat),
+        exists (nk : nat),
+        forall n0, 
+          ps_P 
+            (event_le dom
+                      (rvmaxabs (vecrvminus (x (n0 + nk)%nat) (const xstar)))
+                      (C0 * (gamma + eps)^k))
+          >= P^k) ->
+      forall (E : posreal),
+        is_lim_seq (fun n => 
+                      ps_P 
+                        (event_le dom 
+                                  (rvmaxabs (vecrvminus (x n) 
+                                                        (const xstar)))
+                                  E)) 1.
+    Proof.
+      intros.
+      rewrite <- is_lim_seq_spec.
+      unfold is_lim_seq'.
+      pose (kstar := (ln(E/C0)/ln((gamma+eps)%R))).
+      assert (pos E = C0 * (Rpower (gamma+eps)%R kstar)).
+      { 
+        assert (pos C0 <> 0) by apply Rgt_not_eq, cond_pos.
+        assert (/ C0 <> 0) by now apply Rinv_neq_0_compat.
+        rewrite Rmult_comm; trivial.
+        apply Rmult_eq_reg_r with (r := /C0); trivial.
+        field_simplify; trivial.
+        assert (ln (E / C0) = ln (Rpower (gamma + eps)%R kstar)).
+        - rewrite Rpower_ln.
+          assert (ln (gamma + eps)%R <> 0).
+          + assert (0 < gamma + eps).
+            * rewrite Rplus_comm.
+               apply Rplus_lt_le_0_compat; try lra.
+               apply cond_pos.
+            * generalize (ln_increasing (gamma+eps)%R 1 H10 H0); intros.
+               rewrite ln_1 in H11.
+               lra.
+          + assert (/ (ln (gamma + eps)%R) <> 0) by now apply Rinv_neq_0_compat.
+            apply Rmult_eq_reg_r with (r := / (ln (gamma + eps)%R)); trivial.
+            subst kstar.
+            field; trivial.
+        - assert (exp (ln (E / C0)) = exp (ln (Rpower (gamma + eps)%R kstar))) by
+              now f_equal.
+          assert (0 < E / C0).
+          + unfold Rdiv.
+            apply Rmult_lt_0_compat.
+            * apply cond_pos.
+            * apply Rinv_pos, cond_pos.
+          + rewrite exp_ln in H11; rewrite exp_ln in H11; trivial.
+            apply Rpower_pos.
+      }
+      pose (kkstar := Z.to_nat (up kstar)).
+      intros.
+      (* assumes eps < 1 ? *)
+      pose (pstar := 1 - eps0).
+      pose (P := Rpower pstar (/ INR kkstar)).
+      specialize (H7 P).
+      
+    Admitted.
+
   End qlearn4.    
