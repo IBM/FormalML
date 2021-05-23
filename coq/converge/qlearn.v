@@ -3070,10 +3070,11 @@ algorithm.
       exists x0; intros.
       specialize (H7 (n0-x0)%nat).
       replace (n0 - x0 + x0)%nat with (n0) in H7 by lia.
-      
-      
-      
-      
+      rewrite Rabs_left1.
+      - admit.
+      - apply Rplus_le_reg_r with (r := 1).
+        ring_simplify.
+        apply ps_le1.
     Admitted.
 
   End qlearn4.    
