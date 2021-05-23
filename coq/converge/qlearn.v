@@ -2973,6 +2973,30 @@ algorithm.
       - generalize (Induction_stepk_I1_15 k eps P C0 α C w x xstar F rx rw srw Plim Clim glim geps alim aseq sumaseq Fcont Fxstar xrel xlim wexp condexp); intros.
         Admitted.
 
+    Lemma log_power_base (e b : R ) :
+      0 < e -> 0 < b ->
+      b <> 1 -> Rpower b (ln e / ln b) = e.
+    Proof.
+      intros.
+      assert (exp (ln (Rpower b (ln e / ln b))) = exp (ln e)).
+      { 
+        f_equal.
+        rewrite Rpower_ln.
+        field.
+        destruct (Rlt_dec b 1).
+        - generalize (ln_increasing b 1 H0 r); intros.
+          rewrite ln_1 in H2.
+          lra.
+        - assert (1 < b) by lra.
+          assert (0 < 1) by lra.
+          generalize (ln_increasing 1 b H3 H2); intros.
+          rewrite ln_1 in H4.
+          lra.
+      }
+      rewrite exp_ln in H2; [|apply Rpower_pos].
+      now rewrite exp_ln in H2.
+    Qed.
+      
     Lemma qlearn_15 {n} (eps C0: posreal) (α : nat -> R) (C : R) (w x : nat -> Ts -> vector R (S n)) (xstar : vector R (S n))
           (F : (vector R (S n)) -> (vector R (S n)))
           {prts: ProbSpace dom}                              
@@ -3022,29 +3046,14 @@ algorithm.
         rewrite Rmult_comm; trivial.
         apply Rmult_eq_reg_r with (r := /C0); trivial.
         field_simplify; trivial.
-        assert (ln (E / C0) = ln (Rpower (gamma + eps)%R kstar)).
-        - rewrite Rpower_ln.
-          assert (ln (gamma + eps)%R <> 0).
-          + assert (0 < gamma + eps).
-            * rewrite Rplus_comm.
-               apply Rplus_lt_le_0_compat; try lra.
-               apply cond_pos.
-            * generalize (ln_increasing (gamma+eps)%R 1 H10 H0); intros.
-               rewrite ln_1 in H11.
-               lra.
-          + assert (/ (ln (gamma + eps)%R) <> 0) by now apply Rinv_neq_0_compat.
-            apply Rmult_eq_reg_r with (r := / (ln (gamma + eps)%R)); trivial.
-            subst kstar.
-            field; trivial.
-        - assert (exp (ln (E / C0)) = exp (ln (Rpower (gamma + eps)%R kstar))) by
-              now f_equal.
-          assert (0 < E / C0).
-          + unfold Rdiv.
-            apply Rmult_lt_0_compat.
-            * apply cond_pos.
-            * apply Rinv_pos, cond_pos.
-          + rewrite exp_ln in H11; rewrite exp_ln in H11; trivial.
-            apply Rpower_pos.
+        subst kstar.
+        rewrite log_power_base; try lra.
+        - unfold Rdiv.
+          apply Rmult_lt_0_compat; [apply cond_pos|].
+          apply Rinv_pos, cond_pos.
+        - rewrite Rplus_comm.
+          apply Rplus_lt_le_0_compat; try lra.
+          apply cond_pos.
       }
       pose (kkstar := Z.to_nat (up kstar)).
       intros.
