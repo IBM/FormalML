@@ -2984,14 +2984,12 @@ algorithm.
         rewrite Rpower_ln.
         field.
         destruct (Rlt_dec b 1).
-        - generalize (ln_increasing b 1 H0 r); intros.
-          rewrite ln_1 in H2.
-          lra.
-        - assert (1 < b) by lra.
-          assert (0 < 1) by lra.
-          generalize (ln_increasing 1 b H3 H2); intros.
-          rewrite ln_1 in H4.
-          lra.
+        - apply Rlt_not_eq.
+          rewrite <- ln_1.
+          apply ln_increasing; lra.
+        - apply Rgt_not_eq.
+          rewrite <- ln_1.
+          apply ln_increasing; lra.
       }
       rewrite exp_ln in H2; [|apply Rpower_pos].
       now rewrite exp_ln in H2.
@@ -3005,8 +3003,8 @@ algorithm.
       apply exp_increasing.
       assert (ln b < 0).
       - destruct H.
-        generalize (ln_increasing b 1 H H1); intros.
-        now rewrite ln_1 in H2.
+        rewrite <- ln_1.
+        apply ln_increasing; lra.
       - rewrite Rmult_comm with (r1 := z).
         rewrite Rmult_comm with (r1 := y).
         now apply Rmult_lt_gt_compat_neg_l.
