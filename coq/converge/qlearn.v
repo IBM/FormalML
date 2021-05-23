@@ -2997,6 +2997,21 @@ algorithm.
       now rewrite exp_ln in H2.
     Qed.
       
+    Lemma Rpower_lt1 (b y z : R ) :
+      0 < b < 1 -> y < z -> Rpower b y > Rpower b z.
+    Proof.
+      intros.
+      unfold Rpower.
+      apply exp_increasing.
+      assert (ln b < 0).
+      - destruct H.
+        generalize (ln_increasing b 1 H H1); intros.
+        now rewrite ln_1 in H2.
+      - rewrite Rmult_comm with (r1 := z).
+        rewrite Rmult_comm with (r1 := y).
+        now apply Rmult_lt_gt_compat_neg_l.
+    Qed.
+
     Lemma qlearn_15 {n} (eps C0: posreal) (α : nat -> R) (C : R) (w x : nat -> Ts -> vector R (S n)) (xstar : vector R (S n))
           (F : (vector R (S n)) -> (vector R (S n)))
           {prts: ProbSpace dom}                              
@@ -3057,6 +3072,20 @@ algorithm.
       }
       pose (kkstar := Z.to_nat (up kstar)).
       intros.
+      assert (pos E > C0 * (Rpower (gamma+eps)%R (INR kkstar))).
+      {
+        rewrite H8.
+        apply Rmult_gt_compat_l; [apply cond_pos|].
+        apply Rpower_lt1.
+        - split; trivial.
+          rewrite Rplus_comm.
+          apply Rplus_lt_le_0_compat; try lra.
+          apply cond_pos.          
+        - subst kstar; subst kkstar.
+          rewrite INR_up_pos.
+          + apply archimed.
+          + admit.
+      }
       pose (pstar := 1 - (Rmin eps0 (/2))).
       pose (P := Rpower pstar (/ INR kkstar)).
       specialize (H7 P).
@@ -3074,6 +3103,7 @@ algorithm.
             assert (0 < eps0) by apply cond_pos.
             match_destr; split; try lra.
       }
+      
       specialize (H7 H9 kkstar).
       destruct H7.
       exists x0; intros.
