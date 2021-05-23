@@ -3054,6 +3054,12 @@ algorithm.
       rewrite <- is_lim_seq_spec.
       unfold is_lim_seq'.
       pose (kstar := (ln(E/C0)/ln((gamma+eps)%R))).
+      assert (geps_pos: 0 < gamma + eps).
+      {
+        rewrite Rplus_comm.
+        apply Rplus_lt_le_0_compat; try lra.
+        apply cond_pos.
+      }
       assert (pos E = C0 * (Rpower (gamma+eps)%R kstar)).
       { 
         assert (pos C0 <> 0) by apply Rgt_not_eq, cond_pos.
@@ -3063,30 +3069,25 @@ algorithm.
         field_simplify; trivial.
         subst kstar.
         rewrite log_power_base; try lra.
-        - unfold Rdiv.
-          apply Rmult_lt_0_compat; [apply cond_pos|].
-          apply Rinv_pos, cond_pos.
-        - rewrite Rplus_comm.
-          apply Rplus_lt_le_0_compat; try lra.
-          apply cond_pos.
+        unfold Rdiv.
+        apply Rmult_lt_0_compat; [apply cond_pos|].
+        apply Rinv_pos, cond_pos.
       }
       pose (kkstar := Z.to_nat (up kstar)).
       intros.
-      assert (pos E > C0 * (Rpower (gamma+eps)%R (INR kkstar))).
+      assert (pos E > C0 * (gamma+eps)%R ^ kkstar).
       {
+        rewrite <- Rpower_pow; trivial.
         rewrite H8.
         apply Rmult_gt_compat_l; [apply cond_pos|].
         apply Rpower_lt1.
         - split; trivial.
-          rewrite Rplus_comm.
-          apply Rplus_lt_le_0_compat; try lra.
-          apply cond_pos.          
         - subst kstar; subst kkstar.
           rewrite INR_up_pos.
           + apply archimed.
           + admit.
       }
-      pose (pstar := 1 - (Rmin eps0 (/2))).
+      pose (pstar := Rmax (1 - eps0/2) (/2)).     
       pose (P := Rpower pstar (/ INR kkstar)).
       specialize (H7 P).
       assert (0 < P < 1).
@@ -3099,18 +3100,63 @@ algorithm.
           + apply Rinv_pos.
             admit.
           + subst pstar.
-            unfold Rmin.
+            unfold Rmax.
             assert (0 < eps0) by apply cond_pos.
             match_destr; split; try lra.
       }
-      
-      specialize (H7 H9 kkstar).
+      specialize (H7 H10 kkstar).
       destruct H7.
       exists x0; intros.
       specialize (H7 (n0-x0)%nat).
       replace (n0 - x0 + x0)%nat with (n0) in H7 by lia.
       rewrite Rabs_left1.
-      - admit.
+      - replace (pos eps0) with (- - (pos eps0)) by lra.
+        apply Ropp_lt_contravar.
+        apply Rplus_lt_reg_r with (x := 1).
+        ring_simplify.
+        apply Rgt_lt.
+        replace (- (pos eps0) + 1)%R with (1 - (pos eps0))%R by lra.
+        assert 
+          (event_sub
+             (event_le 
+                dom 
+                (rvmaxabs (vecrvminus (x n0) (const xstar))) 
+                (C0 * (gamma + eps) ^ kkstar))
+             (event_le 
+                dom 
+                (rvmaxabs (vecrvminus (x n0) (const xstar))) 
+                E)).
+        {
+          intro z; simpl.
+          intros.
+          apply Rgt_lt in H9.
+          left.
+          eapply Rle_lt_trans.
+          apply H12.
+          apply H9.
+        }
+        apply (ps_sub prts) in H12.
+        apply Rle_ge in H12.
+        subst P.
+        rewrite <- Rpower_pow with 
+            (x := Rpower pstar (/ INR kkstar)) in H7 by apply Rpower_pos.
+        rewrite Rpower_mult in H7.
+        rewrite <- Rinv_l_sym in H7.
+        + rewrite Rpower_1 in H7.
+          * assert (pstar > 1-eps0).
+            -- subst pstar.
+               unfold Rmax.
+               assert (0 < eps0) by apply cond_pos.
+               match_destr; lra.
+            -- generalize (Rge_trans _ _ _ H12 H7); intros.
+               eapply Rge_gt_trans.
+               apply H14.
+               apply H13.
+          * subst pstar.
+            unfold Rmax.
+            assert (0 < eps0) by apply cond_pos.
+            match_destr; lra.
+        + admit.
       - apply Rplus_le_reg_r with (r := 1).
         ring_simplify.
         apply ps_le1.
