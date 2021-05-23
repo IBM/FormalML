@@ -3059,7 +3059,20 @@ algorithm.
         - rewrite <- Rpower_base_1 with (x := (/ INR kkstar)).
           apply Rlt_Rpower_l.
           + apply Rinv_pos.
-            
+            admit.
+          + subst pstar.
+            unfold Rmin.
+            assert (0 < eps0) by apply cond_pos.
+            match_destr; split; try lra.
+      }
+      specialize (H7 H9 kkstar).
+      destruct H7.
+      exists x0; intros.
+      specialize (H7 (n0-x0)%nat).
+      replace (n0 - x0 + x0)%nat with (n0) in H7 by lia.
+      
+      
+      
       
     Admitted.
 
