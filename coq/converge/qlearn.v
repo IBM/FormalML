@@ -2602,6 +2602,20 @@ algorithm.
           apply sum_n_m_shift.
     Qed.
 
+    Instance indexed_srv_shifted {Td} (w : nat -> Ts -> Td) (nk : nat) :
+      (forall n, SimpleRandomVariable (w n)) ->
+      forall n, SimpleRandomVariable (w (n + nk)%nat).
+    Proof.
+      easy.
+    Qed.
+
+    Instance indexed_rv_shifted {Td} (sa : SigmaAlgebra Td) (w : nat -> Ts -> Td) (nk : nat) :
+      (forall n0, RandomVariable dom sa (w n0)) ->
+      forall n0, RandomVariable dom sa (w (n0 + nk)%nat).
+    Proof.
+      easy.
+    Qed.
+
     Lemma Induction_stepk_I1_15 {n} (k:nat) (eps P C0: posreal) (α : nat -> R)
           (C : R) (w x : nat -> Ts -> vector R (S n)) (xstar : vector R (S n))
           (F : (vector R (S n)) -> (vector R (S n)))
@@ -2629,13 +2643,16 @@ algorithm.
       (forall n, forall omega, 
             rvmaxabs (vecrvminus (x n) (const xstar)) omega <= C0) ->
       (forall n0 : nat, SimpleExpectation (rvinner (w n0) (w n0)) < C) ->
-      (forall n0 : nat,
+      (forall nk, forall n0,
           rv_eq
             (vector_gen_SimpleConditionalExpectation 
                (w n0)
                (L2_convergent_hist 
-                  (@L2_convergent_x (S n) α (vecrvconst (S n) 0) Ts (vecrvconst (S n) 0) w) _ _ n0)) 
-            (const zero)) ->
+                  (@L2_convergent_x (S n) (fun k => α (k + nk)%nat) 
+                                    (vecrvconst (S n) 0) Ts 
+                                    (vecrvconst (S n) 0) 
+                                    (fun k => w (k + nk)%nat)) _ _ n0)) 
+               (const zero)) ->
        (exists nk : nat,
            forall n0 : nat,
              rv_le (rvmaxabs (vecrvminus (x (n0 + nk)%nat) (const xstar)))
@@ -2655,10 +2672,7 @@ algorithm.
       assert (sumaseqshift: is_lim_seq (sum_n (fun n0 => α (n0 + nk)%nat)) p_infty) 
         by    (apply seq_sum_shift; trivial).
       generalize (RMseq_const_lim (fun n0 => α (n0 + nk)%nat)  (C0 * (gamma + eps)^k) (C0 * (gamma + eps)^k) glim alimshift aseqshift sumaseqshift); intros.
-      assert (rw2:forall n0 : nat, RandomVariable dom (Rvector_borel_sa (S n)) (w (n0 + nk)%nat)) by (intros; apply (rw (n0 + nk)%nat)).
-      assert (srw2:forall n0 : nat, SimpleRandomVariable (w (n0 + nk)%nat)) by
-          (intros; apply (srw (n0 + nk)%nat)).
-      generalize (@L2_convergent (S n) gamma (fun n0 => α (n0 + nk)%nat) (fun _ => vector_const 0 (S n)) Ts dom prts C (vecrvconst (S n) 0) (fun n => w (n + nk)%nat) (Rvector_const_rv (S n) 0) rw2 (srv_vecrvconst (S n) 0) srw2 Clim glim alimshift aseqshift sumaseqshift); intros.
+      generalize (@L2_convergent (S n) gamma (fun n0 => α (n0 + nk)%nat) (fun _ => vector_const 0 (S n)) Ts dom prts C (vecrvconst (S n) 0) (fun n => w (n + nk)%nat) (Rvector_const_rv (S n) 0) _ (srv_vecrvconst (S n) 0) _ Clim glim alimshift aseqshift sumaseqshift); intros.
       cut_to H0; trivial.
       + destruct H0 as [? [? ?]].
         rewrite <- H0 in H1.
@@ -2892,10 +2906,12 @@ algorithm.
           now rewrite vecrvminus_zero.
       + intros.
         generalize (condexp (n0 + nk)%nat); intros.
+        (* apply (H1 (n0 + nk)%nat).*)
         admit.
       + intros.
         generalize (wexp (n0 + nk)%nat).
-        now erewrite SimpleExpectation_pf_irrel.
+        admit.
+        (* now erewrite SimpleExpectation_pf_irrel. *)
       + intros.
         rewrite minus_eq_zero.
         generalize (@hilbert.norm_zero (@Rvector_PreHilbert (S n))); intros.
@@ -2931,13 +2947,16 @@ algorithm.
        (forall n, forall omega, 
             rvmaxabs (vecrvminus (x n) (const xstar)) omega <= C0) ->
       (forall n0 : nat, SimpleExpectation (rvinner (w n0) (w n0)) < C) ->
-      (forall n0 : nat,
+      (forall nk, forall n0,
           rv_eq
             (vector_gen_SimpleConditionalExpectation 
                (w n0)
                (L2_convergent_hist 
-                  (@L2_convergent_x (S n) α (vecrvconst (S n) 0) Ts (vecrvconst (S n) 0) w) _ _ n0)) 
-            (const zero)) ->
+                  (@L2_convergent_x (S n) (fun k => α (k + nk)%nat) 
+                                    (vecrvconst (S n) 0) Ts 
+                                    (vecrvconst (S n) 0) 
+                                    (fun k => w (k + nk)%nat)) _ _ n0)) 
+               (const zero)) ->
       forall (k:nat),
       exists (nk : nat),
       forall n0, 
