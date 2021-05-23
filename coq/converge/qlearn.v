@@ -2646,7 +2646,7 @@ algorithm.
       (forall nk, forall n0,
           rv_eq
             (vector_gen_SimpleConditionalExpectation 
-               (w n0)
+               (w (n0 + nk)%nat)
                (L2_convergent_hist 
                   (@L2_convergent_x (S n) (fun k => α (k + nk)%nat) 
                                     (vecrvconst (S n) 0) Ts 
@@ -2905,13 +2905,12 @@ algorithm.
           unfold rvinner.
           now rewrite vecrvminus_zero.
       + intros.
-        generalize (condexp (n0 + nk)%nat); intros.
-        (* apply (H1 (n0 + nk)%nat).*)
+        generalize (condexp nk n0); intros.
+        (* apply H1. n1 vs n0 ?? *)
         admit.
       + intros.
-        generalize (wexp (n0 + nk)%nat).
+        generalize (wexp (n0 + nk)%nat); intros.
         admit.
-        (* now erewrite SimpleExpectation_pf_irrel. *)
       + intros.
         rewrite minus_eq_zero.
         generalize (@hilbert.norm_zero (@Rvector_PreHilbert (S n))); intros.
@@ -2950,7 +2949,7 @@ algorithm.
       (forall nk, forall n0,
           rv_eq
             (vector_gen_SimpleConditionalExpectation 
-               (w n0)
+               (w ( n0 + nk)%nat)
                (L2_convergent_hist 
                   (@L2_convergent_x (S n) (fun k => α (k + nk)%nat) 
                                     (vecrvconst (S n) 0) Ts 
