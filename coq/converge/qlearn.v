@@ -3048,10 +3048,18 @@ algorithm.
       }
       pose (kkstar := Z.to_nat (up kstar)).
       intros.
-      (* assumes eps < 1 ? *)
-      pose (pstar := 1 - eps0).
+      pose (pstar := 1 - (Rmin eps0 (/2))).
       pose (P := Rpower pstar (/ INR kkstar)).
       specialize (H7 P).
+      assert (0 < P < 1).
+      {
+        subst P.
+        split.
+        - apply Rpower_pos.
+        - rewrite <- Rpower_base_1 with (x := (/ INR kkstar)).
+          apply Rlt_Rpower_l.
+          + apply Rinv_pos.
+            
       
     Admitted.
 
