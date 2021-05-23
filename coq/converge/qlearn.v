@@ -3051,6 +3051,27 @@ algorithm.
                                   E)) 1.
     Proof.
       intros.
+      destruct (Rge_dec E C0).
+      { 
+        apply is_lim_seq_ext with (u := fun _ => 1).
+        - intros.
+          assert 
+            (event_equiv
+               (event_le 
+                  dom
+                  (rvmaxabs (vecrvminus (x n0) (const xstar)))
+                  E)
+               Ω ).
+          + intro z; simpl.
+            unfold  pre_Ω.
+            split; intros; trivial.
+            specialize (H6 n0 z).
+            lra.
+          + rewrite H8.
+            now rewrite ps_all.
+        - apply is_lim_seq_const.
+      }
+      assert (Elim: E < C0) by lra.      
       rewrite <- is_lim_seq_spec.
       unfold is_lim_seq'.
       pose (kstar := (ln(E/C0)/ln((gamma+eps)%R))).
@@ -3085,7 +3106,28 @@ algorithm.
         - subst kstar; subst kkstar.
           rewrite INR_up_pos.
           + apply archimed.
-          + admit.
+          + unfold Rdiv.
+            replace (0) with (ln (E * / C0) * 0) by lra.
+            apply Rmult_le_ge_compat_neg_l.
+            * left.
+              replace (0) with (ln 1) by apply ln_1.
+              apply ln_increasing.
+              apply Rmult_lt_0_compat.
+              -- apply cond_pos.
+              -- apply Rinv_0_lt_compat.
+                 apply cond_pos.
+              -- rewrite Rmult_comm.
+                 apply Rmult_lt_reg_l with (r := C0).
+                 ++ apply cond_pos.
+                 ++ rewrite <- Rmult_assoc.   
+                    rewrite <- Rinv_r_sym.
+                    ** lra.
+                    ** apply Rgt_not_eq.
+                       apply cond_pos.
+            * left.
+              apply Rinv_lt_0_compat.
+              replace (0) with (ln 1) by apply ln_1.
+              apply ln_increasing; lra.
       }
       pose (pstar := Rmax (1 - eps0/2) (/2)).     
       pose (P := Rpower pstar (/ INR kkstar)).
@@ -3107,8 +3149,8 @@ algorithm.
       specialize (H7 H10 kkstar).
       destruct H7.
       exists x0; intros.
-      specialize (H7 (n0-x0)%nat).
-      replace (n0 - x0 + x0)%nat with (n0) in H7 by lia.
+      specialize (H7 (n1-x0)%nat).
+      replace (n1 - x0 + x0)%nat with (n1) in H7 by lia.
       rewrite Rabs_left1.
       - replace (pos eps0) with (- - (pos eps0)) by lra.
         apply Ropp_lt_contravar.
@@ -3120,11 +3162,11 @@ algorithm.
           (event_sub
              (event_le 
                 dom 
-                (rvmaxabs (vecrvminus (x n0) (const xstar))) 
+                (rvmaxabs (vecrvminus (x n1) (const xstar))) 
                 (C0 * (gamma + eps) ^ kkstar))
              (event_le 
                 dom 
-                (rvmaxabs (vecrvminus (x n0) (const xstar))) 
+                (rvmaxabs (vecrvminus (x n1) (const xstar))) 
                 E)).
         {
           intro z; simpl.
