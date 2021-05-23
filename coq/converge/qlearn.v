@@ -3096,8 +3096,9 @@ algorithm.
       }
       pose (kkstar := Z.to_nat (up kstar)).
       intros.
-      assert (kstar_pos: ln (E / C0) / ln (gamma + eps)%R > 0).
+      assert (kstar_pos: kstar > 0).
       {
+        subst kstar.
         unfold Rdiv.
         replace (0) with (ln (E * / C0) * 0) by lra.
         apply Rmult_lt_gt_compat_neg_l.
@@ -3126,10 +3127,9 @@ algorithm.
         apply Rmult_gt_compat_l; [apply cond_pos|].
         apply Rpower_lt1.
         - split; trivial.
-        - subst kstar; subst kkstar.
-          rewrite INR_up_pos.
-          + apply archimed.
-          + lra.
+        - subst kkstar.
+          rewrite INR_up_pos; try lra.
+          apply archimed.
       }
       pose (pstar := Rmax (1 - eps0/2) (/2)).     
       pose (P := Rpower pstar (/ INR kkstar)).
@@ -3143,10 +3143,8 @@ algorithm.
           apply Rlt_Rpower_l.
           + apply Rinv_pos.
             subst kkstar.
-            assert (0 < kstar).
-            * subst kstar; lra.
-            * rewrite INR_up_pos; try lra.
-              generalize (archimed kstar); lra.
+            rewrite INR_up_pos; try lra.
+            generalize (archimed kstar); lra.
           + subst pstar.
             unfold Rmax.
             assert (0 < eps0) by apply cond_pos.
@@ -3205,9 +3203,6 @@ algorithm.
             assert (0 < eps0) by apply cond_pos.
             match_destr; lra.
         + subst kkstar.
-          clear H5 H6 H7 H12.
-          assert (kstar > 0).
-          now subst kstar.
           rewrite INR_up_pos; try lra.
           generalize (archimed kstar); intros.
           lra.
