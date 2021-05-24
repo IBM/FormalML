@@ -2602,6 +2602,7 @@ algorithm.
           apply sum_n_m_shift.
     Qed.
 
+    (*
     Instance indexed_srv_shifted {Td} (w : nat -> Ts -> Td) (nk : nat) :
       (forall n, SimpleRandomVariable (w n)) ->
       forall n, SimpleRandomVariable (w (n + nk)%nat).
@@ -2615,6 +2616,7 @@ algorithm.
     Proof.
       easy.
     Qed.
+     *)
 
     Lemma Induction_stepk_I1_15 {n} (k:nat) (eps P C0: posreal) (α : nat -> R)
           (C : R) (w x : nat -> Ts -> vector R (S n)) (xstar : vector R (S n))
@@ -2906,6 +2908,12 @@ algorithm.
           now rewrite vecrvminus_zero.
       + intros.
         generalize (condexp nk n0); intros.
+        rewrite <- H1.
+        intros ?.
+        f_equal.
+        repeat f_equal.
+        exact H1.
+        apply H1.
         (* apply H1. n1 vs n0 ?? *)
         admit.
       + intros.
