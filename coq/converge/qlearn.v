@@ -2907,27 +2907,20 @@ algorithm.
           unfold rvinner.
           now rewrite vecrvminus_zero.
       + intros.
-        generalize (condexp nk n0); intros.
-        rewrite <- H1.
-        intros ?.
-        f_equal.
-        repeat f_equal.
-        exact H1.
-        apply H1.
-        (* apply H1. n1 vs n0 ?? *)
-        admit.
-      + intros.
-        generalize (wexp (n0 + nk)%nat); intros.
-        admit.
-      + intros.
         rewrite minus_eq_zero.
         generalize (@hilbert.norm_zero (@Rvector_PreHilbert (S n))); intros.
         replace (@zero (@Rvector_AbelianGroup (S n))) with (@zero (hilbert.PreHilbert.AbelianGroup (@Rvector_PreHilbert (S n)))); trivial.
         rewrite H1.
         apply Rmult_le_pos; try lra.
         now apply hilbert.norm_ge_0.
-    Admitted.
-    
+    Qed.
+
+  End qlearn4.
+
+  Section qlearn5.
+    Context (gamma : R) {Ts : Type}
+            {dom: SigmaAlgebra Ts}.
+
     Lemma Induction_I1_15 {n} (eps P C0: posreal) (α : nat -> R) (C : R) (w x : nat -> Ts -> vector R (S n)) (xstar : vector R (S n))
           (F : (vector R (S n)) -> (vector R (S n)))
           {prts: ProbSpace dom}                              
@@ -2996,7 +2989,37 @@ algorithm.
         replace (n0 + 0)%nat with n0 in H by lia.
         rewrite H.
         apply ps_one.
-      - generalize (Induction_stepk_I1_15 k eps P C0 α C w x xstar F rx rw srw Plim Clim glim geps alim aseq sumaseq Fcont Fxstar xrel xlim wexp condexp); intros.
+      - destruct IHk as [nk IHk].
+
+        assert (pspos : forall n0, 0 < ps_P (event_le dom (rvmaxabs (vecrvminus (x (n0 + nk)%nat) (const xstar))) (C0 * (gamma + eps) ^ k))).
+        {
+          intros n0.
+          specialize (IHk n0).
+          eapply Rge_le in IHk.
+          eapply Rlt_le_trans
+          ; [|  apply IHk].
+          apply pow_lt.
+          now destruct P.
+        } 
+        pose (condspace := fun n0 =>  event_restricted_prob_space _
+                                     (event_le dom (rvmaxabs (vecrvminus (x (n0 + nk)%nat) (const xstar))) (C0 * (gamma + eps) ^ k))
+                                     (pspos n0)).
+(*
+        generalize (@Induction_stepk_I1_15 gamma
+                                           _
+                                           (event_restricted_sigma (event_le dom (rvmaxabs (vecrvminus (x (n0 + nk)%nat) (const xstar))) (C0 * (gamma + eps) ^ k)))
+                      k eps P C0 α C w x xstar F rx rw srw Plim Clim glim geps alim aseq sumaseq Fcont Fxstar xrel xlim wexp condexp); intros IndHelper.
+        
+        
+        
+        event_restricted_prob_space 
+          
+        event_restricted_prob_space
+
+        
+        *)
+        
+        
         Admitted.
 
     Lemma log_power_base (e b : R ) :
@@ -3235,4 +3258,4 @@ algorithm.
         apply ps_le1.
    Qed.
 
-  End qlearn4.    
+  End qlearn5.
