@@ -2602,22 +2602,6 @@ algorithm.
           apply sum_n_m_shift.
     Qed.
 
-    (*
-    Instance indexed_srv_shifted {Td} (w : nat -> Ts -> Td) (nk : nat) :
-      (forall n, SimpleRandomVariable (w n)) ->
-      forall n, SimpleRandomVariable (w (n + nk)%nat).
-    Proof.
-      easy.
-    Qed.
-
-    Instance indexed_rv_shifted {Td} (sa : SigmaAlgebra Td) (w : nat -> Ts -> Td) (nk : nat) :
-      (forall n0, RandomVariable dom sa (w n0)) ->
-      forall n0, RandomVariable dom sa (w (n0 + nk)%nat).
-    Proof.
-      easy.
-    Qed.
-     *)
-
     Lemma Induction_stepk_I1_15 {n} (k:nat) (eps P C0: posreal) (α : nat -> R)
           (C : R) (w x : nat -> Ts -> vector R (S n)) (xstar : vector R (S n))
           (F : (vector R (S n)) -> (vector R (S n)))
