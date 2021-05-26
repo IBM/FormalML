@@ -24,3 +24,5 @@ documentation/html
 
 .lia.cache
 .nra.cache
+
+coq/LInt_p

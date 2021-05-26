@@ -24,9 +24,13 @@ QCERT_LIB_UTILS = LibUtilsAssoc LibUtilsBag LibUtilsBindings LibUtilsBindingsNat
 ELFIC_UTILS	= R_compl check_sub_structure compatible continuous_linear_map fixed_point \
 		  hierarchyD hilbert linear_map logic_tricks lax_milgram lax_milgram_cea
 
+LINTP_UTILS = LInt_p R_compl Rbar_compl UniformSpace_compl countable_sets list_compl \
+	      logic_compl measurable_fun measure sigma_algebra sigma_algebra_R_Rbar \
+	      simple_fun sort_compl subset_compl sum_Rbar_nonneg topo_bases_R
 
 MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	utils/BasicUtils \
+	$(addprefix LInt_p/,$(LINTP_UTILS)) \
 	$(addprefix converge/LM/,$(ELFIC_UTILS)) \
 	utils/Assoc \
 	utils/CoquelicotAdd \
