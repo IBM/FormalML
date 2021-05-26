@@ -21,6 +21,12 @@ COPY --chown=coq:coq _CoqProject Makefile Makefile.coq_modules ./formal_ml/
 COPY --chown=coq:coq coq ./formal_ml/coq
 COPY --chown=coq:coq ocaml ./formal_ml/ocaml
 
+RUN ["/bin/bash", "--login", "-c", "set -x \
+  && if [ -n \"${COMPILER_EDGE}\" ]; then opam switch ${COMPILER_EDGE} && eval $(opam env); fi \
+  && cd ./formal_ml && bash fetch_Lint_p.sh"]
+
+
+
 RUN ["/bin/bash", "--login", "-c", "set -x && cd formal_ml && \
      make && make doc"]
 
