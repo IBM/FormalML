@@ -24,7 +24,7 @@ Require Export Reals.
 Require Export logic_tricks.
 Require Export ProofIrrelevanceFacts.
 Require Export Reals Coquelicot.Coquelicot.
-Require Export R_compl.
+Require Export LM.R_compl.
 Require Export logic_tricks.
 Require Export compatible.
 

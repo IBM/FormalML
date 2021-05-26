@@ -15,7 +15,7 @@ COPYING file for more details.
 *)
 
 Require Export Reals Coquelicot.Coquelicot.
-Require Export R_compl.
+Require Export LM.R_compl.
 Require Export logic_tricks.
 
 (** * Fixed Point Theorem without subspaces *)

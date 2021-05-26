@@ -15,7 +15,7 @@ COPYING file for more details.
 *)
 
 Require Export linear_map.
-Require Export R_compl.
+Require Export LM.R_compl.
 Require Import mathcomp.ssreflect.ssreflect.
 Require Import FunctionalExtensionality.
 Require Import Decidable.
