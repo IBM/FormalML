@@ -20,6 +20,7 @@ jobs:
           persist-credentials: false
       - uses: coq-community/docker-coq-action@v1
         with:
+	  before_script: bash fetch_Lint_p.sh
           opam_file: 'Formal_ML.opam'
           coq_version: ${{ matrix.coq_version }}
           ocaml_version: ${{ matrix.ocaml_version }}
