@@ -967,13 +967,14 @@ Section Expectation.
     apply Rmax_lub; lra.
   Qed.
 
+  Definition Rbar_ge_dec (a b : Rbar) := Rbar_le_dec b a.
 
   (* sequence of simple random variables monotonically converging to X>=0 *)
-  Definition simple_approx (X:Ts->R) (n:nat) : Ts -> R
+  Definition simple_approx (X:Ts->Rbar) (n:nat) : Ts -> R
     := fun ω : Ts =>
          let Xw := X ω in
-         if Rge_dec Xw (INR n) then (INR n) else
-           match find (fun start => if Rge_dec Xw start then true else false) 
+         if Rbar_ge_dec Xw (INR n) then (INR n) else
+           match find (fun (start:R) => if Rbar_ge_dec Xw start then true else false) 
                       (rev (map (fun x => INR x / (2^n)) (seq 0 (n*(2^n))))) with
            | Some r => r
            | None => INR 0
@@ -1010,7 +1011,7 @@ Section Expectation.
     lra.
   Qed.
 
-  Lemma simple_approx_vals (X:Ts->R) (n:nat) :
+  Lemma simple_approx_vals (X:Ts->Rbar) (n:nat) :
     forall (omega:Ts), 
       In (simple_approx X n omega)
          (map (fun x => INR x / (2^n)) (seq 0 (S (n*(2^n))))).          
@@ -1052,31 +1053,45 @@ Section Expectation.
           lia.
   Qed.
 
-  Program Instance simple_approx_srv (X:Ts->R) (n:nat) : 
+  Program Instance simple_approx_srv (X:Ts->Rbar) (n:nat) : 
     SimpleRandomVariable (simple_approx X n) :=
     {srv_vals := map (fun x => INR x / (2^n)) (seq 0 (S (n*(2^n))))}.
   Next Obligation.
     apply simple_approx_vals.
   Qed.
 
-  Lemma simple_approx_preimage_inf (X:Ts -> R) (n:nat) :
-    PositiveRandomVariable X ->
-    forall (omega:Ts), simple_approx X n omega = INR n <-> X omega >= INR n.
+  Class Rbar_PositiveRandomVariable
+        (rv_X:Ts->Rbar) : Prop :=
+    prv : forall (x:Ts), (Rbar_le 0 (rv_X x)).
+
+  Definition Rbar_ge (a b : Rbar) := Rbar_le b a.
+
+  Lemma Rbar_not_ge_lt (r1 r2 : Rbar) :
+    ~ (Rbar_ge r1 r2) -> Rbar_lt r1 r2.
   Proof.
-    unfold PositiveRandomVariable; intro posX.
+    unfold Rbar_ge, Rbar_lt, Rbar_le; intros.
+    destruct r1; destruct r2; try lra; tauto.
+  Qed.
+
+  Lemma simple_approx_preimage_inf (X:Ts -> Rbar) (n:nat) :
+    Rbar_PositiveRandomVariable X ->
+    forall (omega:Ts), simple_approx X n omega = INR n <-> Rbar_ge (X omega) (INR n).
+  Proof.
+    unfold Rbar_PositiveRandomVariable; intro posX.
     intros.
     unfold simple_approx.
     match_case; intros.
     - tauto.
-    - split; [|lra].
-      generalize (Rnot_ge_lt _ _ n0); intros.
+    - split.
+      {
+      generalize (Rbar_not_ge_lt _ _ n0); intros.
       match_case_in H1; intros.
       + rewrite H2 in H1.
         apply find_some in H2.
         destruct H2.
         match_case_in H3; intros.
         * invcs H1.
-          lra.
+          now unfold Rbar_ge.
         * invcs H1.
           rewrite H4 in H3.
           congruence.
@@ -1089,7 +1104,7 @@ Section Expectation.
           match_case_in H3; intros.
           -- rewrite H4 in H3.
              congruence.
-          -- lra.
+          -- easy.
           -- apply in_map_iff.
              exists (0%nat).
              split.
@@ -1105,9 +1120,18 @@ Section Expectation.
                 lia.
         * assert (n = 0)%nat by lia.
           invcs H3.
-          simpl.
-          apply Rle_ge.
-          apply posX.
+          specialize (posX omega).
+          case_eq (X omega); intros.
+          -- rewrite H3 in posX.
+             apply posX.
+          -- now rewrite H3 in H0.
+          -- rewrite H3 in posX.
+             apply posX.
+      }
+      {
+        intros.
+        now unfold Rbar_ge in H0.
+      }
   Qed.
   
   Lemma find_some_break {A} f (l:list A) r :
@@ -1130,19 +1154,87 @@ Section Expectation.
         constructor; trivial.
   Qed.
 
-  Lemma simple_approx_preimage_fin0 (X:Ts -> R) (n:nat) :
-    PositiveRandomVariable X ->
-    forall (omega:Ts) (k:nat),
-      X omega < INR n ->
-      (simple_approx X n omega)*(2^n) = (INR k) <->
-      (INR k) <= (X omega)*(2^n) < (INR (S k)).
+  Lemma Rbar_R_mult_assoc (a : Rbar) (b c : R) :
+    Rbar_mult (Rbar_mult a b) c = Rbar_mult a (Rbar_mult b c).
   Proof.
-    unfold PositiveRandomVariable.
+    Admitted.
+
+  Lemma Rbar_mult_1_r (a : Rbar) :
+    Rbar_mult a 1 = a.
+  Proof.
+    destruct a.
+    - simpl.
+      now rewrite Rmult_1_r.
+    - simpl.
+      destruct (Rle_dec 0 1).
+      + match_case; intros.
+        * match_destr_in H.
+          now inversion H.
+        * match_destr_in H.
+          lra.
+      + lra.
+    - simpl.
+      destruct (Rle_dec 0 1).
+      + match_case; intros.
+        * match_destr_in H.
+          now inversion H.
+        * match_destr_in H.
+          lra.
+      + lra.
+    Qed.      
+        
+  Lemma Rbar_le_div_l (a b : Rbar) ( c : R) :
+    0 < c ->
+    (Rbar_le (Rbar_div a c) b) <-> 
+    (Rbar_le a (Rbar_mult b c)).
+  Proof.
+    intros.
+    unfold Rbar_div.
+    rewrite Rbar_mult_pos_le with (z := mkposreal _  H).
+    rewrite Rbar_mult_mult_pos.
+    rewrite Rbar_mult_mult_pos.
+    simpl.
+    rewrite Rbar_R_mult_assoc.
+    simpl.
+    rewrite Rinv_l.
+    now rewrite Rbar_mult_1_r.
+    now apply Rgt_not_eq.
+   Qed.
+
+  Lemma Rbar_lt_div_r (a b : Rbar) (c : R) :
+    0 < c ->
+    (Rbar_lt a (Rbar_div b c)) <-> 
+    (Rbar_lt (Rbar_mult a c) b).
+  Proof.
+    intros.
+    unfold Rbar_div.
+    rewrite Rbar_mult_pos_lt with (z := mkposreal _  H).    
+    rewrite Rbar_mult_mult_pos.
+    rewrite Rbar_mult_mult_pos.
+    simpl.
+    rewrite Rbar_R_mult_assoc.
+    simpl.
+    rewrite Rinv_l.
+    now rewrite Rbar_mult_1_r.
+    now apply Rgt_not_eq.
+   Qed.
+  
+  Lemma simple_approx_preimage_fin0 (X:Ts -> Rbar) (n:nat) :
+    Rbar_PositiveRandomVariable X ->
+    forall (omega:Ts) (k:nat),
+      Rbar_lt (X omega) (INR n) ->
+      (simple_approx X n omega)*(2^n) = (INR k) <->
+      ((Rbar_le (INR k) (Rbar_mult (X omega) (2^n))) /\
+       (Rbar_lt (Rbar_mult (X omega) (2^n)) (INR (S k)))).       
+  Proof.
+    unfold Rbar_PositiveRandomVariable.
     intros posX.
     intros omega k.
     intros Xlt.
     unfold simple_approx.
-    match_destr; [lra | ].
+    match_destr; [
+      case_eq (X omega); intros; rewrite H in Xlt; rewrite H in r; 
+        simpl in Xlt; simpl in r; [lra | tauto| tauto] | ].
     clear n0.
     assert (pos1:(n * 2 ^ n > 0)%nat).
     {
@@ -1150,7 +1242,8 @@ Section Expectation.
       - destruct n; try lia.
         simpl in Xlt.
         specialize (posX omega).
-        lra.
+        case_eq (X omega); intros; rewrite H in Xlt; rewrite H in posX;
+          simpl in Xlt; simpl in posX; [lra | tauto | tauto].
       - simpl.
         apply NPeano.Nat.Private_NZPow.pow_pos_nonneg
         ; lia.
@@ -1201,10 +1294,9 @@ Section Expectation.
         split; intros.
         * subst.
           split.
-          -- apply Rge_le in r0.
-             apply -> Rcomplements.Rle_div_l; trivial.
+          -- apply -> Rbar_le_div_l; trivial.
              apply pow2_pos.
-          -- apply  Rcomplements.Rlt_div_r; trivial.
+          -- apply Rbar_lt_div_r; trivial.
              ++ apply pow2_pos.
              ++ {
                  destruct c.
@@ -1217,12 +1309,13 @@ Section Expectation.
                    rewrite NPeano.Nat.sub_1_r.
                    rewrite Nat.succ_pred_pos by trivial.
                    rewrite mult_INR.
-                   unfold Rdiv.
+                   unfold Rbar_div.
+                   simpl.
                    rewrite Rmult_assoc.
                    rewrite pow_INR.
-                   simpl.
+                   replace (INR 2) with (2) by (simpl;lra).
                    rewrite Rinv_r.
-                   + lra.
+                   + now rewrite Rmult_1_r.
                    + apply pow_nzero; lra.
                  - generalize (f_equal (fun x => nth (length d+1) x 0)%nat); intros HH.
                    specialize (HH _ _ eqq2).
@@ -1238,7 +1331,8 @@ Section Expectation.
                          invcs Fl1.
                          match_destr_in H1.
                          rewrite NPeano.Nat.add_1_r in n0.
-                         lra.
+                         apply Rbar_not_le_lt in n0.
+                         now simpl.
                        + rewrite app_length; simpl.
                          lia.
                      - apply (f_equal (@length _)) in eqq2.
@@ -1250,8 +1344,9 @@ Section Expectation.
                    }
                }
         * destruct H as [le1 lt2].
-          apply Rge_le in r0.
-          apply Rcomplements.Rle_div_l in r0 ; [| apply pow2_pos].
+          replace (Finite (INR (length d) / 2 ^ n)) with
+               (Rbar_div (INR (length d)) ( 2 ^ n)) in r0.
+          rewrite Rbar_le_div_l in r0.
           {
             destruct (lt_eq_lt_dec (length d) k) as [[lt1|]|lt1]; trivial
             ; elimtype False.
@@ -1272,35 +1367,42 @@ Section Expectation.
                     specialize (Fl1 _ i).
                     match_destr_in Fl1.
                     apply n0.
-                    apply Rle_ge.
-                    apply  Rcomplements.Rle_div_l
+                    replace (Finite (INR k / 2^n)) with (Rbar_div (INR k) (2^n)).
+                    now apply  Rbar_le_div_l
                     ; [ apply pow2_pos |].
-                    lra.
+                    now simpl.
                   + rewrite app_length; simpl.
                     lia.
                 - apply INR_lt.
-                  eapply Rle_lt_trans
+                  replace (INR k < INR (n * 2 ^ n)) with
+                      (Rbar_lt (INR k) (INR (n * 2 ^ n))).
+                  eapply Rbar_le_lt_trans
                   ; try eapply le1.
-                  apply  Rcomplements.Rlt_div_r ; [ apply pow2_pos |].
+                  apply Rbar_lt_div_r; [ apply pow2_pos |].
                   rewrite mult_INR.
                   rewrite pow_INR.
-                  unfold Rdiv.
+                  unfold Rbar_div.
                   simpl.
                   rewrite Rmult_assoc.
                   rewrite Rinv_r.
                   + now rewrite Rmult_1_r.
                   + apply pow_nzero; lra.
+                  + now simpl.
               }
             - assert (le2:(S k <= length d)%nat) by lia.
               apply le_INR in le2.
+              generalize (Rbar_le_lt_trans _ _ _ r0 lt2); intros.
+              red in H.
               lra.
           }            
+          apply pow2_pos.
+          now simpl.
     - generalize (find_none _ _ H); intros HH.
       specialize (HH 0).
       cut_to HH.
       + match_destr_in HH.
         specialize (posX omega).
-        lra.
+        tauto.
       + apply -> in_rev.
         apply in_map_iff.
         exists 0%nat.
@@ -1311,13 +1413,14 @@ Section Expectation.
           split; trivial.
   Qed.
 
-  Lemma simple_approx_preimage_fin (X:Ts -> R) (n:nat) :
-    PositiveRandomVariable X ->
+  Lemma simple_approx_preimage_fin (X:Ts -> Rbar) (n:nat) :
+    Rbar_PositiveRandomVariable X ->
     forall (omega:Ts), 
-      X omega < INR n ->
+      Rbar_lt (X omega) (INR n) ->
       forall (k:nat),            
         simple_approx X n omega = (INR k)/2^n <->
-        (INR k)/2^n <= X omega < (INR (S k))/2^n.
+        (Rbar_le ((INR k)/2^n) (X omega) /\
+        Rbar_lt (X omega) ((INR (S k))/2^n)).
   Proof.
     intros.
     destruct (simple_approx_preimage_fin0 X n H omega k H0) as [HH1 HH2].
@@ -1325,8 +1428,10 @@ Section Expectation.
     - cut_to HH1.
       + destruct HH1 as [le1 lt1].
         split; intros.
-        * apply  Rcomplements.Rle_div_l; [ apply pow2_pos |]; trivial.
-        * apply  Rcomplements.Rlt_div_r; [ apply pow2_pos |]; trivial.
+        * replace (Finite (INR k / 2 ^ n)) with (Rbar_div (INR k) (2^n)) by (now simpl).
+          apply  Rbar_le_div_l; [ apply pow2_pos |]; trivial.
+        * replace (Finite (INR (S k) / 2 ^ n)) with (Rbar_div (INR (S k)) (2^n)) by (now simpl).
+          apply  Rbar_lt_div_r; [ apply pow2_pos |]; trivial.
       + rewrite HH.
         unfold Rdiv.
         rewrite Rmult_assoc.
@@ -1342,18 +1447,20 @@ Section Expectation.
         * now apply pow_nzero.
       + destruct HH as [le1 lt1].
         split; intros.
-        * apply  Rcomplements.Rle_div_l; [ apply pow2_pos |]; trivial.
-        * apply  Rcomplements.Rlt_div_r; [ apply pow2_pos |]; trivial.
+        * apply  Rbar_le_div_l; [ apply pow2_pos |]; trivial.
+        * apply  Rbar_lt_div_r; [ apply pow2_pos |]; trivial.
   Qed.       
   
-  Lemma simple_approx_preimage_fin2 (X:Ts -> R) (n:nat) :
-    PositiveRandomVariable X ->
+  Lemma simple_approx_preimage_fin2 (X:Ts -> Rbar) (n:nat) :
+    Rbar_PositiveRandomVariable X ->
     forall (omega:Ts), 
-    forall (k:nat), (k < n*2^n)%nat ->
-             simple_approx X n omega = (INR k)/2^n <->
-             (INR k)/2^n <= X omega < (INR (S k))/2^n.
+    forall (k:nat), 
+      (k < n*2^n)%nat ->
+      simple_approx X n omega = (INR k)/2^n <->
+      (Rbar_le ((INR k)/2^n) (X omega) /\
+       Rbar_lt (X omega) ((INR (S k))/2^n)).
   Proof.
-    unfold PositiveRandomVariable.
+    unfold Rbar_PositiveRandomVariable.
     intros posX.
     intros omega k.
     intros klt.
@@ -1376,7 +1483,7 @@ Section Expectation.
         rewrite Rmult_assoc in klt.
         rewrite Rinv_l in klt; [| apply pow_nzero; lra].
         lra.
-      + apply Rnot_ge_lt in n0.
+      + apply Rbar_not_ge_lt in n0.
         match_case_in HH; [intros x eqq1 | intros eqq1].
         * {
             rewrite eqq1 in HH.
@@ -1395,7 +1502,7 @@ Section Expectation.
             apply find_correct in eqq1.
             simpl in eqq1.
             match_destr_in eqq1; clear eqq1.
-            split; [lra | ].
+            split; [trivial | ].
             apply (f_equal (@rev _)) in eqq2.
             rewrite rev_involutive in eqq2.
             rewrite rev_app_distr in eqq2.
@@ -1416,7 +1523,7 @@ Section Expectation.
                   rewrite pow_INR.
                   simpl.
                   rewrite Rinv_r.
-                  * lra.
+                  * now rewrite Rmult_1_r.
                   * apply pow_nzero; lra.
                 - assert (k = length (rev l2)).
                   {
@@ -1453,7 +1560,7 @@ Section Expectation.
                       specialize (Fl1 (nth (length (n1 :: l1) - 1) (n1 :: l1) 0%nat)).
                       cut_to Fl1.
                       -- match_destr_in Fl1.
-                         lra.
+                         now apply Rbar_not_le_lt in n2.
                       -- apply nth_In.
                          simpl; lia.
                     * simpl length.
@@ -1473,7 +1580,7 @@ Section Expectation.
           cut_to HH2.
           -- match_destr_in HH2.
              specialize (posX omega).
-             lra.
+             tauto.
           -- apply -> in_rev.
              apply in_map_iff.
              exists 0%nat.
