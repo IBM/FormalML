@@ -1591,7 +1591,10 @@ Section Expectation.
                 lia.
     - destruct HH as [le1 lt2].
       match_destr.
-      + apply Rge_le in r.
+      + case_eq (X omega); intros.
+        rewrite H in r.
+        rewrite H in le1.
+        rewrite H in lt2.
         apply Rle_not_gt in r.
         elim r.
         apply Rlt_gt.
@@ -1605,6 +1608,11 @@ Section Expectation.
           rewrite mult_INR in klt.
           rewrite pow_INR in klt.
           apply klt.
+        * rewrite H in lt2.
+          now simpl in lt2.
+        * specialize (posX omega).
+          rewrite H in posX.
+          now simpl in posX.
       + match_case; [intros x eqq1 | intros eqq1].
         * destruct (find_some_break _ _ _ eqq1) as [l1 [l2 [eqq2 Fl1]]].
           apply find_correct in eqq1.
@@ -1655,6 +1663,9 @@ Section Expectation.
                     rewrite Forall_forall in Fl1.
                     specialize (Fl1 _ i).
                     match_destr_in Fl1.
+                    apply Rbar_not_le_lt in n1.
+                    generalize (Rbar_le_lt_trans _ _ _ le1 n1); intros.
+                    simpl in H.
                     lra.
                   + rewrite e in HH.
                     apply Rmult_eq_reg_r in HH.
@@ -1669,11 +1680,15 @@ Section Expectation.
               }
             - assert (le2:(S k <= length (rev l2))%nat) by lia.
               apply le_INR in le2.
-              apply  Rcomplements.Rlt_div_r in lt2
+              replace (Finite (INR (S k) / 2 ^ n)) with (Rbar_div (INR (S k)) (2 ^ n)) in lt2 by now simpl.
+              apply Rbar_lt_div_r in lt2
               ; [| apply pow_lt; lra].
-              apply Rge_le in r.
-              apply  Rcomplements.Rle_div_l in r
+              replace (Finite  (INR (length (rev l2)) / 2 ^ n) ) with
+                   (Rbar_div (INR (length (rev l2))) (2 ^ n)) in r by now simpl.
+              apply Rbar_le_div_l in r
               ; [| apply pow_lt; lra].
+              generalize (Rbar_le_lt_trans _ _ _ r lt2); intros.
+              red in H.
               lra.
           }            
         * generalize (find_none _ _ eqq1); intros HH.
@@ -1681,7 +1696,7 @@ Section Expectation.
           { cut_to HH.
             + match_destr_in HH.
               specialize (posX omega).
-              lra.
+              tauto.
             + apply -> in_rev.
               apply in_map_iff.
               exists 0%nat.
@@ -1693,20 +1708,22 @@ Section Expectation.
           } 
   Qed.
   
-  Lemma simple_approx_le (X:Ts->R) (posX : PositiveRandomVariable X) :
-    forall n ω, simple_approx X n ω <= X ω.
+  Lemma simple_approx_le (X:Ts->Rbar) (posX : Rbar_PositiveRandomVariable X) :
+    forall n ω, Rbar_le (simple_approx X n ω) (X ω).
   Proof.
     unfold simple_approx; intros.
-    match_case; intros.
-    - lra.
+    specialize (posX ω).
+    destruct (X ω).
     - match_case; intros.
-      apply find_some in H0.
-      destruct H0.
-      match_destr_in H1.
-      lra.
+      + match_case; intros.
+        apply find_some in H0.
+        destruct H0.
+        match_destr_in H1.
+    - match_case; intros.
+    - now simpl in posX.
   Qed.
 
-  Lemma simple_approx_exists (X:Ts -> R) (n:nat) :
+  Lemma simple_approx_exists (X:Ts -> Rbar) (n:nat) :
     forall (omega:Ts), 
     exists (k:nat), simple_approx X n omega = (INR k)/2^n.
   Proof.
@@ -1718,7 +1735,7 @@ Section Expectation.
     now symmetry in H.
   Qed.
 
-  Lemma simple_approx_pos (X:Ts->R) (n:nat) (ω:Ts) :
+  Lemma simple_approx_pos (X:Ts->Rbar) (n:nat) (ω:Ts) :
     simple_approx X n ω >= 0.
   Proof.
     generalize (simple_approx_exists X n ω); intros.
@@ -1735,18 +1752,19 @@ Section Expectation.
     apply pow2_nzero.
   Qed.
 
-  Instance simple_approx_posrv (X:Ts->R) (n:nat) : PositiveRandomVariable (simple_approx X n).
+  Instance simple_approx_posrv (X:Ts->Rbar) (n:nat) : PositiveRandomVariable (simple_approx X n).
   Proof.
     unfold PositiveRandomVariable; intros.
     apply Rge_le.
     apply simple_approx_pos.
   Qed.
 
-  Lemma simple_approx_range_event (X : Ts -> R) (n:nat) (r : R) :
-    let rvals :=  filter (fun z => if Rle_dec z r then true else false)
-                         (map (fun x : nat => INR x / 2 ^ n) (seq 0 (S (n * 2 ^ n)))) in
-    pre_event_equiv (fun omega : Ts => simple_approx X n omega <= r)
-                    (pre_list_union (map (fun z => (fun omega => simple_approx X n omega = z))
+  Lemma simple_approx_range_event (X : Ts -> Rbar) (n:nat) (r : Rbar) :
+    let rvals :=  filter (fun (z:Rbar) => if Rbar_le_dec z r then true else false)
+                         (map (fun x : nat => Finite(INR x / 2 ^ n))
+                              (seq 0 (S (n * 2 ^ n)))) in
+    pre_event_equiv (fun omega : Ts => Rbar_le (simple_approx X n omega) r)
+                    (pre_list_union (map (fun (z:Rbar) => (fun omega => (Finite (simple_approx X n omega)) = z))
                                  rvals)).
   Proof.
     generalize (simple_approx_vals X n); intros.
@@ -1758,18 +1776,20 @@ Section Expectation.
     rewrite <- H.
     unfold list_union.
     split; intros.
-    - exists (fun omega => simple_approx X n omega = INR k / 2^n).
+    - exists (fun omega => (Finite (simple_approx X n omega)) = (Finite (INR k / 2^n))).
       split.
       + rewrite in_map_iff.
-        exists (INR k / 2^n).
+        exists (Finite (INR k / 2^n)).
         split; trivial.
         rewrite filter_In.
         split.
         * rewrite in_map_iff.
           exists k.
           tauto.
-        * match_destr; congruence.
-      + now symmetry.
+        * match_destr.
+          tauto.
+      + apply Rbar_finite_eq.
+        now symmetry.
     - destruct H1 as [a [? ?]].
       rewrite in_map_iff in H1.
       destruct H1 as [x0 [? ?]].
@@ -1778,48 +1798,51 @@ Section Expectation.
       rewrite in_map_iff in H3.
       destruct H3 as [k0 [? ?]].
       rewrite <- H1 in H2.
-      rewrite H2 in H.
-      rewrite <- H in H4.
+      rewrite <- H in H2.
+      simpl in H2.
+      simpl in H4.
+      rewrite <- H2 in H4.
       match_destr_in H4.
   Qed.
 
-  Lemma simple_approx_inf_event (X:Ts -> R) (n:nat)
-        (posx : PositiveRandomVariable X) :
+  Lemma simple_approx_inf_event (X:Ts -> Rbar) (n:nat)
+        (posx : Rbar_PositiveRandomVariable X) :
     pre_event_equiv (pre_event_preimage (simple_approx X n) (pre_event_singleton (INR n)))
-                (pre_event_preimage X (fun r => r >= INR n)).
+                (pre_event_preimage X (fun r =>  Rbar_ge r (INR n))).
   Proof.
     generalize (simple_approx_preimage_inf X n posx); intros.
     unfold pre_event_equiv, pre_event_preimage, pre_event_singleton.
     apply H.
   Qed.
 
-  Lemma simple_approx_fin_event (X:Ts -> R) (n:nat) 
-        (posx : PositiveRandomVariable X) :
+  Lemma simple_approx_fin_event (X:Ts -> Rbar) (n:nat) 
+        (posx : Rbar_PositiveRandomVariable X) :
     forall (k : nat), 
       (k < n*2^n)%nat ->
       pre_event_equiv (pre_event_preimage (simple_approx X n) (pre_event_singleton ((INR k)/2^n)))
-                  (pre_event_preimage X (fun z => (INR k)/2^n <= z < (INR (S k))/2^n)).
+                  (pre_event_preimage X (fun z => (Rbar_le ((INR k)/2^n) z) /\
+                                                  (Rbar_lt z ((INR (S k))/2^n)))).
   Proof.
     unfold pre_event_equiv, pre_event_preimage, pre_event_singleton.
     intros.
     now apply simple_approx_preimage_fin2.
   Qed.
 
-  Lemma simple_approx_inf_measurable (X:Ts -> R) (n:nat)
-        (posx : PositiveRandomVariable X)
-        (ranx : RandomVariable dom borel_sa X) :
+  Lemma simple_approx_inf_measurable (X:Ts -> Rbar) (n:nat)
+        (posx : Rbar_PositiveRandomVariable X)
+        (ranx : RandomVariable dom Rbar_borel_sa X) :
     sa_sigma (pre_event_preimage (simple_approx X n) (pre_event_singleton (INR n))).
   Proof.
     generalize (simple_approx_inf_event X n posx); intros.
     rewrite H.
-    apply sa_le_ge.
-    apply borel_sa_preimage2; intros.
+    apply Rbar_sa_le_ge.
+    apply Rbar_borel_sa_preimage2; intros.
     now apply rv_preimage_sa.
   Qed.
 
-  Lemma simple_approx_fin_measurable (X:Ts -> R) (n:nat)
-        (posx : PositiveRandomVariable X)
-        (ranx : RandomVariable dom borel_sa X) :
+  Lemma simple_approx_fin_measurable (X:Ts -> Rbar) (n:nat)
+        (posx : Rbar_PositiveRandomVariable X)
+        (ranx : RandomVariable dom Rbar_borel_sa X) :
     forall (k : nat), 
       (k < n*2^n)%nat ->
       sa_sigma (pre_event_preimage (simple_approx X n) (pre_event_singleton ((INR k)/2^n))).
@@ -1827,41 +1850,41 @@ Section Expectation.
     intros.
     generalize (simple_approx_fin_event X n posx k H); intros.
     rewrite H0.
-    assert (pre_event_equiv (fun z : R => INR k / 2 ^ n <= z < INR (S k) / 2 ^ n)
-                            (pre_event_inter (fun z : R => z >= INR k / 2 ^ n)
-                                     (fun z : R => z < INR (S k) / 2 ^ n))).
+    assert (pre_event_equiv (fun z : Rbar => (Rbar_le (INR k / 2 ^ n) z) /\ 
+                                          (Rbar_lt z (INR (S k) / 2 ^ n)))
+                            (pre_event_inter (fun z : Rbar => Rbar_ge z (INR k / 2 ^ n))
+                                     (fun z : Rbar => Rbar_lt z  (INR (S k) / 2 ^ n)))).
     - intros x.
       unfold pre_event_inter.
-      lra.
+      now unfold Rbar_ge.
     - rewrite H1.
       unfold pre_event_preimage.
       assert (pre_event_equiv  (fun omega : Ts =>
-                              pre_event_inter (fun z : R => z >= INR k / 2 ^ n) 
-                                          (fun z : R => z < INR (S k) / 2 ^ n)
+                              pre_event_inter (fun z : Rbar => Rbar_ge z (INR k / 2 ^ n) )
+                                              (fun z : Rbar => Rbar_lt z (INR (S k) / 2 ^ n))
                                           (X omega))
-                           (pre_event_inter (fun omega => X omega >= INR k / 2^n)
-                                        (fun omega => X omega < INR (S k) / 2^n))).
+                           (pre_event_inter (fun omega => Rbar_ge (X omega) (INR k / 2^n))
+                                            (fun omega => Rbar_lt (X omega) (INR (S k) / 2^n)))).
       + intros x.
-        unfold pre_event_inter.
-        lra.
+        now unfold pre_event_inter.
       + rewrite H2.
         apply sa_inter.
-        * apply sa_le_ge.
-          apply borel_sa_preimage2; intros.
+        * apply Rbar_sa_le_ge.
+          apply Rbar_borel_sa_preimage2; intros.
           now apply rv_preimage_sa.
-        * apply sa_le_lt.
-          apply borel_sa_preimage2; intros.
+        * apply Rbar_sa_le_lt.
+          apply Rbar_borel_sa_preimage2; intros.
           now apply rv_preimage_sa.
   Qed.
 
-  Instance simple_approx_rv (X : Ts -> R)
-           {posx : PositiveRandomVariable X} 
-           {rvx : RandomVariable dom borel_sa X} 
-    : forall (n:nat), RandomVariable dom borel_sa (simple_approx X n).
+  Instance simple_approx_rv (X : Ts -> Rbar)
+           {posx : Rbar_PositiveRandomVariable X} 
+           {rvx : RandomVariable dom Rbar_borel_sa X} 
+    : forall (n:nat), RandomVariable dom Rbar_borel_sa (simple_approx X n).
   Proof.
     unfold RandomVariable.
     intros.
-    apply borel_sa_preimage; trivial.
+    apply Rbar_borel_sa_preimage; trivial.
     intros.
     generalize (simple_approx_vals X n); intros.
     generalize (simple_approx_range_event X n r); intros.
@@ -1882,10 +1905,30 @@ Section Expectation.
     rewrite Nat.lt_succ_r in H3.
     rewrite Nat.le_lteq in H3.
     destruct H3.
-    - apply simple_approx_fin_measurable; trivial.
+    - assert (pre_event_equiv
+                (fun omega : Ts => Finite(simple_approx X n omega) = Finite(INR k / 2 ^ n))
+                (fun omega : Ts => simple_approx X n omega = INR k / 2 ^ n)).
+      {
+        intros x.
+        split; intros.
+        - now apply Rbar_finite_eq in H4.
+        - now apply Rbar_finite_eq.
+      }
+      rewrite H4; trivial.
+      apply simple_approx_fin_measurable; trivial.
     - subst.
       replace (INR (n * 2 ^ n) / 2 ^ n) with (INR n).
-      + apply simple_approx_inf_measurable; trivial.
+      + assert (pre_event_equiv
+                  (fun omega : Ts => Finite(simple_approx X n omega) = Finite(INR n))
+                  (fun omega : Ts => simple_approx X n omega = INR n)).
+        {
+          intros x.
+          split; intros.
+          - now apply Rbar_finite_eq in H3.
+          - now apply Rbar_finite_eq.
+        }
+        rewrite H3; trivial.
+        apply simple_approx_inf_measurable; trivial.
       + rewrite mult_INR.
         rewrite pow_INR.
         unfold Rdiv.
@@ -1895,12 +1938,12 @@ Section Expectation.
         * apply pow2_nzero.
   Qed.
 
-  Lemma simple_approx_bound (X:Ts -> R) (n:nat) :
-    PositiveRandomVariable X ->
+  Lemma simple_approx_bound (X:Ts -> Rbar) (n:nat) :
+    Rbar_PositiveRandomVariable X ->
     forall (omega:Ts), 
-      X omega < INR n ->
-      forall (k:nat),  (INR k)/2^n <= X omega ->
-                (INR k)/2^n <= simple_approx X n omega .
+      Rbar_lt (X omega) (INR n) ->
+      forall (k:nat),  Rbar_le ((INR k)/2^n) (X omega) ->
+                       (INR k)/2^n <= simple_approx X n omega.
   Proof.
     intro posX.
     intros.
@@ -1917,22 +1960,27 @@ Section Expectation.
         specialize (H1 k).
         destruct H1.
         apply imply_to_or in H1.
-        destruct H1; [|lra].
-        destruct IHk.
-        * rewrite H2 in H4 |- *.
-          unfold Rdiv in H4 |- *.
-          apply Rmult_le_compat_r.
-          -- left.
-             apply Rinv_0_lt_compat.
-             apply pow2_pos.
-          -- apply Rmult_lt_reg_r in H4.
-             ++ apply INR_lt in H4.
-                apply le_INR.
-                lia.
-             ++ apply Rinv_0_lt_compat.
+        destruct H1.
+        * destruct IHk.
+          -- rewrite H2 in H4 |- *.
+             unfold Rdiv in H4 |- *.
+             apply Rmult_le_compat_r.
+             ++ left.
+                apply Rinv_0_lt_compat.
                 apply pow2_pos.
-        * congruence.
-      + eapply Rle_trans; try eapply H0.
+             ++ apply Rmult_lt_reg_r in H4.
+                ** apply INR_lt in H4.
+                   apply le_INR.
+                   lia.
+                ** apply Rinv_0_lt_compat.
+                   apply pow2_pos.
+          -- congruence.
+        * specialize (H3 H1).
+          destruct H1.
+          generalize (Rbar_le_lt_trans _ _ _ H0 H4); intros.
+          red in H5.
+          lra.
+      + eapply Rbar_le_trans; try eapply H0.
         rewrite S_INR.
         apply Rmult_le_compat_r.
         * left.
@@ -1941,7 +1989,7 @@ Section Expectation.
         * lra.
   Qed.
 
-  Lemma simple_approx_increasing  (X:Ts->R) (posX : PositiveRandomVariable X) 
+  Lemma simple_approx_increasing  (X:Ts->Rbar) (posX : Rbar_PositiveRandomVariable X) 
         (n:nat) (ω : Ts) :
     simple_approx X n ω <= simple_approx X (S n) ω.
   Proof.
@@ -1949,26 +1997,25 @@ Section Expectation.
     generalize (simple_approx_preimage_inf X n posX ω); intros.
     generalize (simple_approx_preimage_inf X (S n) posX ω); intros.
     destruct H; destruct H0.
-    case (Rge_dec (X ω) (INR n)); intros.
+    case (Rbar_ge_dec (X ω) (INR n)); intros.
     - specialize (H1 r).
-      case (Rge_dec (X ω) (INR (S n))); intros.        
+      case (Rbar_ge_dec (X ω) (INR (S n))); intros.        
       + specialize (H2 r0).
         rewrite S_INR in H2.
         lra.
       + rewrite H1.
-        apply Rnot_ge_lt in n0.
+        apply Rbar_not_le_lt in n0.
         assert (INR n = INR (n*2^(S n))/2^(S n)).
         * rewrite mult_INR, pow_INR.
           replace (INR 2) with (2) by easy.
           field.
           apply pow2_nzero.
         * rewrite H3 in r.
-          apply Rge_le in r.
           generalize (simple_approx_bound X (S n) posX ω n0 (n * 2 ^ S n) r); intros.
-          lra.
-    - apply Rnot_ge_lt in n0.
-      assert (X ω < INR (S n)).
-      apply Rlt_trans with (r2 := INR n); trivial; apply lt_INR; lia.
+          now rewrite <- H3 in H4.
+    - apply Rbar_not_le_lt in n0.
+      assert (Rbar_lt (X ω) (INR (S n))).
+      apply Rbar_lt_trans with (y := INR n); trivial; apply lt_INR; lia.
       generalize (simple_approx_exists X n ω); intros.
       destruct H4.
       rewrite H4.
@@ -1987,7 +2034,7 @@ Section Expectation.
         now rewrite H7 in H5.
   Qed.
   
-  Lemma simple_approx_increasing2  (X:Ts->R) (posX : PositiveRandomVariable X) 
+  Lemma simple_approx_increasing2  (X:Ts->Rbar) (posX : Rbar_PositiveRandomVariable X) 
         (k:nat) (ω : Ts) :
     forall (n:nat), simple_approx X n ω <= simple_approx X (n+k) ω.
   Proof.
@@ -2002,8 +2049,14 @@ Section Expectation.
       now replace (n + S k)%nat with (S n + k)%nat by lia.
   Qed.
 
-  Lemma simple_approx_delta (X:Ts -> R) (n:nat) (ω : Ts) (posX : PositiveRandomVariable X) :
-    (X ω < INR n) -> (X ω - simple_approx X n ω) < / (2^n).
+  Lemma Rbar_plus_lt_compat_l (a b : Rbar) (c : R) :
+    Rbar_lt a b -> Rbar_lt (Rbar_plus c a) (Rbar_plus c b).
+  Proof.
+    destruct a; destruct b; simpl; try lra; try easy.
+  Qed.
+
+  Lemma simple_approx_delta (X:Ts -> Rbar) (n:nat) (ω : Ts) (posX : Rbar_PositiveRandomVariable X) :
+    Rbar_lt (X ω) (INR n) -> Rbar_lt (Rbar_minus (X ω) (simple_approx X n ω)) ( / (2^n)).
   Proof.
     intros.
     generalize (simple_approx_preimage_fin X n posX ω H); intros.
@@ -2015,7 +2068,18 @@ Section Expectation.
     destruct H0.
     specialize (H0 H1).
     rewrite S_INR in H0.
-    lra.
+    destruct H0.
+    unfold Rbar_minus.
+    rewrite H1.
+    replace  ((INR x + 1) / 2 ^ n) with ((INR x / 2 ^ n) + (/ 2 ^ n)) in H4 by lra.
+    apply Rbar_plus_lt_compat_l with (c := - (INR x / 2^n)) in H4.
+    simpl in H4.
+    rewrite <- Rplus_assoc in H4.
+    rewrite Rplus_opp_l in H4.
+    rewrite Rplus_0_l in H4.
+    simpl.
+    rewrite Rbar_plus_comm in H4.
+    apply H4.
   Qed.
 
   Lemma simple_approx_lim (X:Ts -> R) (posX : PositiveRandomVariable X) (eps : posreal) :
@@ -2088,6 +2152,7 @@ Section Expectation.
     intros.
     generalize (simple_approx_le X posX n ω); intros. 
     rewrite Rabs_minus_sym.
+    simpl in H1.
     rewrite Rabs_right; [|lra].
     generalize (simple_approx_increasing2 X posX (n-x)%nat ω x); intros.
     replace (x + (n-x))%nat with (n) in H2 by lia.
@@ -2132,7 +2197,6 @@ Section Expectation.
     reflexivity.
   Qed.
 
-
   Lemma f_ge_g_le0_eq (f g : Ts -> R) :
     (pre_event_equiv (fun omega : Ts => f omega >= g omega)
                  (fun omega : Ts => (rvminus g f) omega <= 0)).
@@ -2150,6 +2214,25 @@ Section Expectation.
     apply minus_measurable; trivial
     ; now apply rv_measurable.
   Qed.
+
+  Global Instance pos_Rbar_pos (X : Ts -> R) 
+    (prv : PositiveRandomVariable X) :
+      Rbar_PositiveRandomVariable X.
+  Proof.
+    apply prv.
+  Qed.
+
+  Global Instance borel_Rbar_borel (X : Ts -> R)
+         (rv : RandomVariable dom borel_sa X) :
+    RandomVariable dom Rbar_borel_sa X.
+  Proof.
+  Admitted.
+  
+  Lemma Rbar_borel_borel (X : Ts -> R)
+         (rv : RandomVariable dom Rbar_borel_sa X) :
+    RandomVariable dom borel_sa X.
+  Proof.
+  Admitted.
 
   Lemma monotone_convergence_Ec
         (X : Ts -> R )
@@ -3492,7 +3575,7 @@ Section Expectation.
     Proof.
   Admitted.
  *)
-  
+
   Lemma Expectation_zero_pos 
         (X : Ts -> R)
         {rv : RandomVariable dom borel_sa X}
