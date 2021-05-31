@@ -199,7 +199,10 @@ Next Obligation.
         -- apply sum_Rbar_ext; intros.
            generalize (H1 i); intros.
            match_destr; try easy.
-           admit.
+           assert (event_equiv
+                     (exist (fun e : pre_event Ts => sa_sigma e) (A i) s1)
+                     (exist (fun e : pre_event Ts => sa_sigma e) (A i) s0)) by (intro x; now simpl).
+           now rewrite H6.
         -- now rewrite sum_Rbar_finite.
     + intros.
       rewrite sum_f_R0_peel.
@@ -211,8 +214,7 @@ Next Obligation.
     intros.
     specialize (H0 n1 n2 x H6 H7).
     lia.
-
-Admitted.
+  Qed.
   
   Definition Rbar_Expectation_posRV {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) (f : Ts -> Rbar) := 
     LInt_p (ProbSpace_measure prts) f.
