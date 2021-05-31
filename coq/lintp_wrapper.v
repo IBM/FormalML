@@ -268,19 +268,6 @@ Admitted.
     now apply measurable_fun_sa_sigma.    
   Qed.
     
-(*
-(* Definition 631 p. 123 *)
-
-Definition negligible : (E -> Prop) -> Prop :=
-  fun f => exists A : E -> Prop,
-    (forall x, f x -> A x) /\
-    (measurable gen A) /\
-    mu A = 0.
-
-(* Definition 641 p. 124 *)
-Definition ae : (E -> Prop) -> Prop := fun A => negligible (fun x => ~ A x).
-*)
-  
   Lemma Rbar_Expectation_posRV_finite_ae_finite {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) (f : Ts -> Rbar)
     {prv : Rbar_PositiveRandomVariable f}
     {rv : RandomVariable dom Rbar_borel_sa f} :
@@ -362,9 +349,4 @@ Definition ae : (E -> Prop) -> Prop := fun A => negligible (fun x => ~ A x).
     }
     lra.
   Qed.
-
-      
-    
-                                    
-
 
