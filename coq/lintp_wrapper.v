@@ -268,10 +268,103 @@ Admitted.
     now apply measurable_fun_sa_sigma.    
   Qed.
     
+(*
+(* Definition 631 p. 123 *)
 
+Definition negligible : (E -> Prop) -> Prop :=
+  fun f => exists A : E -> Prop,
+    (forall x, f x -> A x) /\
+    (measurable gen A) /\
+    mu A = 0.
 
-
+(* Definition 641 p. 124 *)
+Definition ae : (E -> Prop) -> Prop := fun A => negligible (fun x => ~ A x).
+*)
   
-                                         
+  Lemma Rbar_Expectation_posRV_finite_ae_finite {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) (f : Ts -> Rbar)
+    {prv : Rbar_PositiveRandomVariable f}
+    {rv : RandomVariable dom Rbar_borel_sa f} :
+    inhabited Ts ->
+    is_finite (Rbar_Expectation_posRV prts f) ->
+    ae (ProbSpace_measure prts) (fun x => is_finite (f x)).
+  Proof.
+    intros.
+    apply LInt_p_ae_finite; trivial.
+    now apply measurable_fun_sa_sigma.
+  Qed.
+
+  Lemma is_finite_ps_P  {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) :
+    is_finite_measure (ProbSpace_measure prts).
+  Proof.
+    unfold is_finite_measure, ProbSpace_measure; simpl.
+    unfold ps_P_pre.
+    generalize (sa_all); intros.
+    now match_destr.
+  Qed.
+
+  Lemma sa_sigma_is_finite {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) (f : Ts -> Rbar)
+    {prv : Rbar_PositiveRandomVariable f}
+    {rv : RandomVariable dom Rbar_borel_sa f} :
+    sa_sigma (fun x => is_finite (f x)).
+  Proof.
+    intros.
+    assert (pre_event_equiv (fun x => is_finite (f x))
+                            (fun x => Rbar_lt (f x) p_infty)).
+    {
+      intro x.
+      case_eq (f x); intros.
+      - now simpl.
+      - now simpl.
+      - specialize (prv x).
+        rewrite H in prv.
+        now simpl in prv.
+    }
+    rewrite H.
+    apply Rbar_sa_le_lt.
+    unfold RandomVariable in rv.
+    now apply Rbar_borel_sa_preimage2.
+  Qed.
+  
+  Lemma Rbar_Expectation_posRV_finite_Ps_p_1 {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) (f : Ts -> Rbar)
+    {prv : Rbar_PositiveRandomVariable f}
+    {rv : RandomVariable dom Rbar_borel_sa f} :
+    inhabited Ts ->
+    is_finite (Rbar_Expectation_posRV prts f) ->
+    ps_P_pre prts (fun x => is_finite (f x)) = 1.
+  Proof.
+    intros.
+    generalize (Rbar_Expectation_posRV_finite_ae_finite prts f H H0); intros.
+    unfold ae in H1.
+    unfold negligible in H1.
+    destruct H1 as [? [? [? ?]]].
+    unfold ProbSpace_measure in H3; simpl in H3.
+    apply measurable_pre_event in H2.
+    unfold ps_P_pre in H3.
+    match_destr_in H3; try easy.
+    unfold ps_P_pre_obligation_1 in H3.
+    generalize (sa_sigma_is_finite prts f); intros.
+    unfold ps_P_pre.
+    match_destr; try easy.
+    unfold ps_P_pre_obligation_1.
+    assert (1 - ps_P (exist (fun e : pre_event Ts => sa_sigma e) (fun x0 : Ts => is_finite (f x0)) s0) = 0).
+    { 
+      rewrite <- ps_complement.
+      generalize (ps_sub prts 
+                         (event_complement (exist (fun e : pre_event Ts => sa_sigma e) (fun x0 : Ts => is_finite (f x0)) s0))
+                         (exist (fun e : pre_event Ts => sa_sigma e) x s)); intros.
+      cut_to H5.
+      - generalize (ps_pos (event_complement (exist (fun e : pre_event Ts => sa_sigma e) (fun x0 : Ts => is_finite (f x0)) s0))); intros.
+        apply Rbar_finite_eq in H3. 
+        rewrite H3 in H5.
+        lra.
+      - intro z; simpl.
+        apply H1.
+    }
+    lra.
+  Qed.
+
+      
+    
+                                    
 
 
