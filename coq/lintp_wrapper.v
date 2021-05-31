@@ -128,12 +128,32 @@ Proof.
         unfold pre_event_complement.
         tauto.
       * now rewrite H0 in IHmeasurable.
-    + admit.
+    + now apply sa_countable_union.
   - now apply measurable_gen.
+ Qed.
+
+(* currently proven in DiscreteProbSpace *)
+Lemma lim_seq_sup_seq_incr (f : nat -> R) (l : Rbar) :
+  (forall n, f n <= f (S n)) ->
+  is_lim_seq f l <-> is_sup_seq f l.
+Proof.
 Admitted.
 
+Lemma sum_Rbar_finite (f : nat -> R) (n : nat) :
+  sum_Rbar n (fun n => Finite (f n)) = Finite (sum_f_R0 f n).
+Proof.
+  induction n.
+  - now simpl.
+  - simpl.
+    rewrite IHn.
+    simpl.
+    apply Rbar_finite_eq.
+    lra.
+ Qed.
+
 (* need to create a (measure gen) from probspace. *)
-Program Definition ProbSpace_measure {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) : measure (@sa_sigma Ts dom) := mk_measure _ (ps_P_pre prts) _ _ _  .
+Program Definition ProbSpace_measure {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) : measure (@sa_sigma Ts dom) :=
+  mk_measure _ (ps_P_pre prts) _ _ _  .
 Next Obligation.
   unfold ps_P_pre, ps_P_pre_obligation_1.
   match_destr.
@@ -151,12 +171,47 @@ Next Obligation.
   lra.
 Qed.
 Next Obligation.
+  assert (forall n, sa_sigma (A n)) by (intros; now apply measurable_pre_event).
+  generalize (sa_countable_union A H1); intros.
   unfold ps_P_pre, ps_P_pre_obligation_1.
-  apply disjoint_pre_collection in H0.
-  
-  match_destr.
-  - admit.
-  - 
+  match_destr; try easy.
+  assert (event_equiv
+            (exist (fun e : pre_event Ts => sa_sigma e) (fun x : Ts => exists n : nat, A n x) s)
+            (union_of_collection (fun n => exist _ (A n) (H1 n)))) by (intro x; now simpl).
+  generalize (ps_countable_disjoint_union (fun n => exist _ (A n) (H1 n))); intros.
+  cut_to H4.
+  - unfold sum_of_probs_equals in H4.
+    rewrite <- H3 in H4.
+    rewrite <- infinite_sum_infinite_sum' in H4.
+    rewrite <- infinite_sum_is_lim_seq in H4.
+    apply lim_seq_sup_seq_incr in H4.
+    + apply is_sup_seq_unique in H4.
+      rewrite <- H4.
+      symmetry.
+      rewrite Sup_seq_ext with 
+          (v :=
+             (fun n => Finite (sum_f_R0 (fun m => ps_P (exist (fun e : pre_event Ts => sa_sigma e) (A m) (H1 m))) n))).
+      * apply Sup_seq_ext.
+        now intros.
+      * intros.
+        replace (Finite (sum_f_R0 (fun m : nat => ps_P (exist (fun e : pre_event Ts => sa_sigma e) (A m) (H1 m))) n)) with
+            (sum_Rbar n (fun m : nat => ps_P (exist (fun e : pre_event Ts => sa_sigma e) (A m) (H1 m)))).
+        -- apply sum_Rbar_ext; intros.
+           generalize (H1 i); intros.
+           match_destr; try easy.
+           admit.
+        -- now rewrite sum_Rbar_finite.
+    + intros.
+      rewrite sum_f_R0_peel.
+      apply Rplus_le_pos_l.
+      apply ps_pos.
+  - unfold collection_is_pairwise_disjoint.
+    intros.
+    unfold event_disjoint, pre_event_disjoint; simpl.
+    intros.
+    specialize (H0 n1 n2 x H6 H7).
+    lia.
+
 Admitted.
   
   Definition Rbar_Expectation_posRV {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) (f : Ts -> Rbar) := 
