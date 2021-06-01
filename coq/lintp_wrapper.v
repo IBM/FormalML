@@ -99,6 +99,17 @@ Program Definition ps_P_pre {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) 
   fun (A : pre_event Ts) =>
     if (dec_pre_event dom A) then ps_P A else 0.
 
+Lemma ps_P_pre_sa_sigma {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) 
+        (E : pre_event Ts) 
+        (sa : sa_sigma E) :
+    ps_P_pre prts E = ps_P (exist _ E sa).
+  Proof.
+    unfold ps_P_pre, ps_P_pre_obligation_1.
+    match_destr; try easy.
+    apply ps_proper.
+    now intro x; simpl.
+  Qed.
+  
 Lemma disjoint_pre_collection {T} (coll : nat -> pre_event T) :
   pre_collection_is_pairwise_disjoint coll <->
   (forall n m x, coll n x -> coll m x -> n = m).
@@ -173,15 +184,15 @@ Qed.
 Next Obligation.
   assert (forall n, sa_sigma (A n)) by (intros; now apply measurable_pre_event).
   generalize (sa_countable_union A H1); intros.
-  unfold ps_P_pre, ps_P_pre_obligation_1.
-  match_destr; try easy.
+  rewrite ps_P_pre_sa_sigma with (sa := H2).
   assert (event_equiv
-            (exist (fun e : pre_event Ts => sa_sigma e) (fun x : Ts => exists n : nat, A n x) s)
-            (union_of_collection (fun n => exist _ (A n) (H1 n)))) by (intro x; now simpl).
+            (exist sa_sigma (pre_union_of_collection A) H2) 
+            (union_of_collection (fun n => exist _ (A n) (H1 n)))) by
+      (intro x; now simpl).
+  rewrite H3.
   generalize (ps_countable_disjoint_union (fun n => exist _ (A n) (H1 n))); intros.
   cut_to H4.
   - unfold sum_of_probs_equals in H4.
-    rewrite <- H3 in H4.
     rewrite <- infinite_sum_infinite_sum' in H4.
     rewrite <- infinite_sum_is_lim_seq in H4.
     apply lim_seq_sup_seq_incr in H4.
@@ -198,11 +209,7 @@ Next Obligation.
             (sum_Rbar n (fun m : nat => ps_P (exist (fun e : pre_event Ts => sa_sigma e) (A m) (H1 m)))).
         -- apply sum_Rbar_ext; intros.
            generalize (H1 i); intros.
-           match_destr; try easy.
-           assert (event_equiv
-                     (exist (fun e : pre_event Ts => sa_sigma e) (A i) s1)
-                     (exist (fun e : pre_event Ts => sa_sigma e) (A i) s0)) by (intro x; now simpl).
-           now rewrite H6.
+           now rewrite ps_P_pre_sa_sigma with (sa := s).
         -- now rewrite sum_Rbar_finite.
     + intros.
       rewrite sum_f_R0_peel.
@@ -286,9 +293,8 @@ Next Obligation.
     is_finite_measure (ProbSpace_measure prts).
   Proof.
     unfold is_finite_measure, ProbSpace_measure; simpl.
-    unfold ps_P_pre.
     generalize (sa_all); intros.
-    now match_destr.
+    now rewrite ps_P_pre_sa_sigma with (sa := H).
   Qed.
 
   Lemma sa_sigma_is_finite {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) (f : Ts -> Rbar)
@@ -313,13 +319,13 @@ Next Obligation.
     unfold RandomVariable in rv.
     now apply Rbar_borel_sa_preimage2.
   Qed.
-  
-  Lemma Rbar_Expectation_posRV_finite_Ps_p_1 {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) (f : Ts -> Rbar)
+
+  Lemma Rbar_Expectation_posRV_finite_ps_P_1 {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) (f : Ts -> Rbar)
     {prv : Rbar_PositiveRandomVariable f}
     {rv : RandomVariable dom Rbar_borel_sa f} :
     inhabited Ts ->
     is_finite (Rbar_Expectation_posRV prts f) ->
-    ps_P_pre prts (fun x => is_finite (f x)) = 1.
+    ps_P (exist sa_sigma (fun x => is_finite (f x)) (sa_sigma_is_finite prts f)) = 1.
   Proof.
     intros.
     generalize (Rbar_Expectation_posRV_finite_ae_finite prts f H H0); intros.
@@ -328,27 +334,20 @@ Next Obligation.
     destruct H1 as [? [? [? ?]]].
     unfold ProbSpace_measure in H3; simpl in H3.
     apply measurable_pre_event in H2.
-    unfold ps_P_pre in H3.
-    match_destr_in H3; try easy.
-    unfold ps_P_pre_obligation_1 in H3.
-    generalize (sa_sigma_is_finite prts f); intros.
-    unfold ps_P_pre.
-    match_destr; try easy.
-    unfold ps_P_pre_obligation_1.
-    assert (1 - ps_P (exist (fun e : pre_event Ts => sa_sigma e) (fun x0 : Ts => is_finite (f x0)) s0) = 0).
+    rewrite ps_P_pre_sa_sigma with (sa := H2) in H3.
+    assert (1 - ps_P (exist sa_sigma (fun x0 : Ts => is_finite (f x0)) (sa_sigma_is_finite prts f)) = 0).
     { 
       rewrite <- ps_complement.
       generalize (ps_sub prts 
-                         (event_complement (exist (fun e : pre_event Ts => sa_sigma e) (fun x0 : Ts => is_finite (f x0)) s0))
-                         (exist (fun e : pre_event Ts => sa_sigma e) x s)); intros.
-      cut_to H5.
-      - generalize (ps_pos (event_complement (exist (fun e : pre_event Ts => sa_sigma e) (fun x0 : Ts => is_finite (f x0)) s0))); intros.
+                         (event_complement (exist sa_sigma (fun x0 : Ts => is_finite (f x0)) (sa_sigma_is_finite prts f)))
+                         (exist sa_sigma x H2)); intros.
+      cut_to H4.
+      - generalize (ps_pos (event_complement (exist sa_sigma (fun x0 : Ts => is_finite (f x0)) (sa_sigma_is_finite prts f)))); intros.
         apply Rbar_finite_eq in H3. 
-        rewrite H3 in H5.
+        rewrite H3 in H4.
         lra.
       - intro z; simpl.
         apply H1.
     }
     lra.
   Qed.
-
