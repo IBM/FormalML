@@ -205,8 +205,8 @@ Next Obligation.
       * apply Sup_seq_ext.
         now intros.
       * intros.
-        replace (Finite (sum_f_R0 (fun m : nat => ps_P (exist sa_sigma (A m) (H1 m))) n)) with
-            (sum_Rbar n (fun m : nat => ps_P (exist sa_sigma (A m) (H1 m)))).
+        replace (Finite (sum_f_R0 (fun m => ps_P (exist sa_sigma (A m) (H1 m))) n)) with
+            (sum_Rbar n (fun m => ps_P (exist sa_sigma (A m) (H1 m)))).
         -- apply sum_Rbar_ext; intros.
            generalize (H1 i); intros.
            now rewrite ps_P_pre_sa_sigma with (sa := s).
@@ -234,17 +234,14 @@ Next Obligation.
         (prv : Rbar_PositiveRandomVariable f) :
     non_neg f.
   Proof.
-    unfold Rbar_PositiveRandomVariable in prv.
-    unfold non_neg.
-    apply prv.
+    easy.
   Qed.
 
   Lemma measurable_fun_sa_sigma {Ts} {dom : SigmaAlgebra Ts} (f : Ts -> Rbar)
         {rv : RandomVariable dom Rbar_borel_sa f} :
      measurable_fun_Rbar sa_sigma f.
   Proof.
-    unfold measurable_fun_Rbar.
-    unfold measurable_fun.
+    unfold measurable_fun_Rbar, measurable_fun.
     intros.
     unfold RandomVariable in rv.
     rewrite <- Rbar_borel_sa_preimage2 in rv.
@@ -335,14 +332,14 @@ Next Obligation.
     unfold ProbSpace_measure in H3; simpl in H3.
     apply measurable_pre_event in H2.
     rewrite ps_P_pre_sa_sigma with (sa := H2) in H3.
-    assert (1 - ps_P (exist sa_sigma (fun x0 : Ts => is_finite (f x0)) (sa_sigma_is_finite prts f)) = 0).
+    assert (1 - ps_P (exist sa_sigma (fun x0 => is_finite (f x0)) (sa_sigma_is_finite prts f)) = 0).
     { 
       rewrite <- ps_complement.
       generalize (ps_sub prts 
-                         (event_complement (exist sa_sigma (fun x0 : Ts => is_finite (f x0)) (sa_sigma_is_finite prts f)))
+                         (event_complement (exist sa_sigma (fun x0 => is_finite (f x0)) (sa_sigma_is_finite prts f)))
                          (exist sa_sigma x H2)); intros.
       cut_to H4.
-      - generalize (ps_pos (event_complement (exist sa_sigma (fun x0 : Ts => is_finite (f x0)) (sa_sigma_is_finite prts f)))); intros.
+      - generalize (ps_pos (event_complement (exist sa_sigma (fun x0 => is_finite (f x0)) (sa_sigma_is_finite prts f)))); intros.
         apply Rbar_finite_eq in H3. 
         rewrite H3 in H4.
         lra.
