@@ -2014,6 +2014,182 @@ Proof.
   - simpl in H.
     tauto.
 Qed.
+
+Section lim_seq_sup_seq.
+  
+    Lemma le_incr0 (f : nat -> R) :
+      (forall n, f n <= f (S n)) ->
+      (forall n k, f n <= f (n + k)%nat).
+    Proof.
+      intros.
+      induction k.
+      - replace (n + 0)%nat with n by lia.
+        lra.
+      - eapply Rle_trans.
+        apply IHk.
+        replace (n + S k)%nat with (S (n + k)%nat) by lia.
+        apply H.
+     Qed.
+
+    Lemma le_incr (f : nat -> R) :
+      (forall n, f n <= f (S n)) ->
+      (forall n m, (n<=m)%nat -> f n <= f m).
+    Proof.
+      intros.
+      replace (m) with (n + (m-n))%nat by lia.
+      now apply le_incr0.
+    Qed.
+
+    Lemma lim_seq_sup_seq_incr (f : nat -> R) (l : Rbar) :
+      (forall n, f n <= f (S n)) ->
+      is_lim_seq f l <-> is_sup_seq f l.
+   Proof.
+     intros.
+     split; intros.
+     apply is_lim_LimSup_seq in H0.
+     destruct l.
+     - unfold is_LimSup_seq in H0.
+       unfold is_sup_seq.
+       intros.
+       specialize (H0 eps).
+       destruct H0.
+       simpl.
+       split; intros.
+       + destruct H1.
+         destruct (le_dec x n).
+         * now apply H1.
+         * assert (n <= x)%nat by lia.
+           apply Rle_lt_trans with (r2 := f x).
+           now apply le_incr.
+           apply H1; lia.
+       + specialize (H0 0%nat).
+         destruct H0 as [n [? ?]].
+         exists n.
+         apply H2.
+     - unfold is_LimSup_seq in H0.
+       unfold is_sup_seq; simpl; intros.
+       specialize (H0 M 0%nat).
+       destruct H0 as [n [? ?]].
+       exists n.
+       apply H1.
+     - unfold is_LimSup_seq in H0.
+       unfold is_sup_seq; simpl; intros.
+       specialize (H0 M).
+       destruct H0 as [N H0].
+       destruct (le_dec N n).
+       + now apply H0.
+       + assert (n <= N)%nat by lia.
+         apply Rle_lt_trans with (r2 := f N).
+         * now apply le_incr.
+         * apply H0; lia.
+     - rewrite <- is_lim_seq_spec.
+       destruct l.
+       + unfold is_sup_seq in H0.
+         unfold is_lim_seq'; intros.
+         specialize (H0 eps).
+         destruct H0 as [? [n ?]].
+         simpl in H1; simpl in H0.
+         exists n; intros.
+         destruct (Rge_dec (f n0) r).
+         * specialize (H0 n0).
+           rewrite Rabs_right; lra.
+         * assert (f n0 < r) by lra.
+           rewrite Rabs_left; [|lra].
+           generalize (le_incr f H n n0 H2); intros.
+           lra.
+       + unfold is_sup_seq in H0.
+         unfold is_lim_seq'; intros.
+         specialize (H0 M); simpl in H0.
+         destruct H0 as [n ?].
+         exists n; intros.
+         apply Rlt_le_trans with (r2 := f n); trivial.
+         now apply le_incr.
+       + unfold is_sup_seq in H0.
+         unfold is_lim_seq'; intros.
+         specialize (H0 M); simpl in H0.
+         exists (0%nat); intros.
+         apply H0.
+    Qed.
+
+   Lemma is_lub_sup_seq (u : nat -> R) (l : Rbar) :
+     is_lub_Rbar (fun x => exists n, x = u n) l ->
+     is_sup_seq u l.
+   Proof.
+     intros.
+     apply Rbar_is_lub_sup_seq.
+     unfold is_lub_Rbar in H.
+     unfold Rbar_is_lub.
+     destruct H.
+     split.
+     - unfold Rbar_is_upper_bound.
+       unfold is_ub_Rbar in H.
+       intros.
+       destruct x.
+       + apply H.
+         destruct H1.
+         exists x.
+         now rewrite Rbar_finite_eq in H1.
+       + destruct H1.
+         discriminate.
+       + destruct H1.
+         discriminate.
+     - intros.
+       apply H0.
+       unfold is_ub_Rbar.
+       intros.
+       apply H1.
+       destruct H2.
+       exists x0.
+       rewrite H2.
+       reflexivity.
+   Qed.
+
+   Lemma is_sub_seq_lub_R (u : nat -> R) (l : Rbar) :
+     is_sup_seq u l -> is_lub_Rbar (fun x => exists n, x = u n) l.
+   Proof.
+     intros.
+     apply is_sup_seq_lub in H.
+     unfold Rbar_is_lub in H.
+     unfold is_lub_Rbar.
+     destruct H.
+     split.
+     - unfold Rbar_is_upper_bound in H.
+       unfold is_ub_Rbar.
+       intros.
+       apply H.
+       destruct H1.
+       exists x0.
+       rewrite H1.
+       reflexivity.
+     - intros.
+       apply H0.
+       unfold Rbar_is_upper_bound.
+       unfold is_ub_Rbar in H1.
+       intros.
+       destruct x.
+       + apply H1.
+         destruct H2.
+         exists x.
+         now rewrite Rbar_finite_eq in H2.
+       + destruct H2.
+         discriminate.
+       + destruct H2.
+         discriminate.
+   Qed.
+
+    Lemma lim_seq_is_lub_incr (f : nat -> R) (l : Rbar) :
+      (forall n, f n <= f (S n)) ->
+      (is_lim_seq f l) <-> (is_lub_Rbar (fun x => exists n, x = f n) l).
+    Proof.
+      intros.
+      rewrite lim_seq_sup_seq_incr; trivial.
+      split; intros.
+      now apply is_sub_seq_lub_R.
+      now apply is_lub_sup_seq.
+    Qed.
+
+End lim_seq_sup_seq.
+
 Section Rmax_list.
 
   (*

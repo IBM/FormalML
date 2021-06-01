@@ -322,7 +322,9 @@ Section RbarExpectation.
            {rv : RandomVariable dom Rbar_borel_sa rv_X} :
       RandomVariable dom Rbar_borel_sa (Rbar_rvabs rv_X).
     Proof.
-      typeclasses eauto.
+      apply Rbar_measurable_rv.
+      apply Rbar_Rabs_measurable.
+      now apply rv_Rbar_measurable.
     Qed.
 
   Global Instance Rbar_rv_le_pre : PreOrder Rbar_rv_le.
