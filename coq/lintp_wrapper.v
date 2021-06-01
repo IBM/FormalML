@@ -163,13 +163,13 @@ Proof.
  Qed.
 
 (* need to create a (measure gen) from probspace. *)
-Program Definition ProbSpace_measure {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) : measure (@sa_sigma Ts dom) :=
+Program Definition ProbSpace_measure {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) : measure sa_sigma :=
   mk_measure _ (ps_P_pre prts) _ _ _  .
 Next Obligation.
   unfold ps_P_pre, ps_P_pre_obligation_1.
   match_destr.
   assert (event_equiv
-            (exist (fun e : pre_event Ts => sa_sigma e) (fun _ : Ts => False) s)
+            (exist sa_sigma (fun _ : Ts => False) s)
             event_none) by 
       (intro x; simpl; tauto).
   rewrite H.
@@ -201,12 +201,12 @@ Next Obligation.
       symmetry.
       rewrite Sup_seq_ext with 
           (v :=
-             (fun n => Finite (sum_f_R0 (fun m => ps_P (exist (fun e : pre_event Ts => sa_sigma e) (A m) (H1 m))) n))).
+             (fun n => Finite (sum_f_R0 (fun m => ps_P (exist sa_sigma (A m) (H1 m))) n))).
       * apply Sup_seq_ext.
         now intros.
       * intros.
-        replace (Finite (sum_f_R0 (fun m : nat => ps_P (exist (fun e : pre_event Ts => sa_sigma e) (A m) (H1 m))) n)) with
-            (sum_Rbar n (fun m : nat => ps_P (exist (fun e : pre_event Ts => sa_sigma e) (A m) (H1 m)))).
+        replace (Finite (sum_f_R0 (fun m : nat => ps_P (exist sa_sigma (A m) (H1 m))) n)) with
+            (sum_Rbar n (fun m : nat => ps_P (exist sa_sigma (A m) (H1 m)))).
         -- apply sum_Rbar_ext; intros.
            generalize (H1 i); intros.
            now rewrite ps_P_pre_sa_sigma with (sa := s).
@@ -361,7 +361,7 @@ Next Obligation.
     Sup_seq (fun n => Rbar_Expectation_posRV prts (f n)).
   Proof.
     intros.
-    generalize (@Beppo_Levi Ts H (@sa_sigma Ts dom) (ProbSpace_measure prts) f); intros.
+    generalize (@Beppo_Levi Ts H sa_sigma (ProbSpace_measure prts) f); intros.
     apply H1; trivial.
     intros.
     now apply measurable_fun_sa_sigma.
