@@ -1906,6 +1906,15 @@ algorithm.
       - simpl.
       
 *)
+
+    Lemma ps_inter_bound (A B : event dom) (prts : ProbSpace dom) :
+      ps_P (event_inter A B) >= ps_P A + ps_P B - 1.
+    Proof.
+      generalize (ps_union prts A B); intros.
+      assert (ps_P (event_union A B) <= 1) by apply ps_le1.
+      lra.
+    Qed.
+
     Lemma Induction_I2_15 (α : nat -> R) (xtilde : nat -> Ts -> R) (xstar : R) (w : nat -> Ts -> R) (C:R) :
       (forall n, 0 <= α n <= 1) -> 
       (forall n, forall omega, Rabs (xtilde n omega) <= C) ->

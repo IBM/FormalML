@@ -1959,6 +1959,61 @@ Section L2.
     rewrite <- (is_finite_Rbar_Expectation_posRV_le _ _ H2); simpl; trivial.
   Qed.
 
+  Lemma Rbar_pos_fun_part_pos (rv_X : Ts -> Rbar) 
+        {prv : Rbar_PositiveRandomVariable rv_X} :
+    rv_eq rv_X (Rbar_pos_fun_part rv_X).
+  Proof.
+    unfold Rbar_pos_fun_part, Rbar_max.
+    intro x.
+    match_case; intros.
+    now apply Rbar_le_antisym.
+  Qed.
+
+  Lemma Rbar_neg_fun_part_pos (rv_X : Ts -> Rbar) 
+        {prv : Rbar_PositiveRandomVariable rv_X} :
+    rv_eq (Rbar_neg_fun_part rv_X) (fun x => (const 0) x).
+  Proof.
+    unfold Rbar_neg_fun_part, const, Rbar_max.
+    intro x.
+    specialize (prv x).
+    rewrite <- Rbar_opp_le in prv.
+    replace (Rbar_opp 0) with (Finite 0) in prv by (simpl; apply Rbar_finite_eq; lra).
+    match_case; intros.
+    now apply Rbar_le_antisym.
+  Qed.
+
+  Instance prv_0 :
+    (@Rbar_PositiveRandomVariable Ts (fun x => const 0 x)).
+  Proof.
+    unfold Rbar_PositiveRandomVariable.
+    intros.
+    simpl.
+    unfold const.
+    lra.
+  Qed.
+
+  Lemma Rbar_Expectation_pos_posRV (rv_X : Ts -> Rbar) 
+        {prv : Rbar_PositiveRandomVariable rv_X} :
+    Rbar_Expectation rv_X = Some (Rbar_Expectation_posRV rv_X).
+  Proof.
+    unfold Rbar_Expectation.
+    rewrite <- (Rbar_Expectation_posRV_ext _ _ (Rbar_pos_fun_part_pos rv_X)).
+    rewrite (Rbar_Expectation_posRV_ext _ _ (Rbar_neg_fun_part_pos rv_X)).
+    replace (Rbar_Expectation_posRV (const 0)) with (Finite 0).
+    - unfold Rbar_minus'.
+      simpl.
+      rewrite Ropp_0.
+      unfold Rbar_plus'.
+      match_case; intros.
+      + f_equal.
+        apply Rbar_finite_eq.
+        lra.
+    - generalize (Rbar_Expectation_posRV_const (Finite 0)); intros.
+      symmetry.
+      assert (0 <= 0) by lra.
+      apply (H H0).
+  Qed.
+
   Lemma Rbar_IsLp_bounded n (rv_X1 rv_X2 : Ts -> Rbar)
         (rle:Rbar_rv_le (fun (omega : Ts) => Rbar_power ((rvabs rv_X1) omega) n) rv_X2)
         {islp:Rbar_IsFiniteExpectation rv_X2}
@@ -1967,15 +2022,16 @@ Section L2.
   Proof.
     unfold IsLp_Rbar.
     assert (Rbar_IsFiniteExpectation (fun x => const 0 x)).
-    unfold Rbar_IsFiniteExpectation.
-    assert (PositiveRandomVariable (fun (x:Ts) => const 0 x)).
-    intro x.
-    unfold const; lra.
-(*    rewrite Expectation_Rbar_Expectation. *)
-    admit.
-    generalize (Rbar_IsFiniteExpectation_bounded (const 0) 
-                                                 (fun omega : Ts => Rbar_power (Rbar_abs (rv_X1 omega)) n)
-                                                 rv_X2); intros.
+    {
+      generalize (Rbar_Expectation_pos_posRV (fun x => Finite (const 0 x))); intros.
+      unfold Rbar_IsFiniteExpectation.
+      rewrite H.
+      assert (0 <= 0) by lra.
+      generalize (Rbar_Expectation_posRV_const 0 H0); intros.
+      rewrite Rbar_Expectation_posRV_pf_irrel with (prv2 := prv_0) in H1.
+      now rewrite H1.
+    }
+    generalize (Rbar_IsFiniteExpectation_bounded (const 0) (fun (omega : Ts) => Rbar_power ((rvabs rv_X1) omega) n) rv_X2); intros.
     cut_to H0.
     unfold Rbar_IsFiniteExpectation in H0.
     
@@ -2117,7 +2173,15 @@ Section L2.
     pose (limpick := (Rbar_rvabs (rvlim
                                (fun n => L2RRV_lim_picker F PF cF (S n))))).
     assert (rv:RandomVariable dom Rbar_borel_sa limpick).
-    admit.
+    {
+      subst limpick.
+      apply Rbar_rvabs_rv.
+      apply borel_Rbar_borel.
+      apply rvlim_rv.
+      - intros.
+        apply picker_rv.
+      - admit.
+    }
     exists (exist _ _ (sa_finite_Rbar limpick rv)).
     split.
     - subst limpick.
@@ -2316,7 +2380,7 @@ Section L2.
         intros.
         now rewrite <- ex_lim_seq_cauchy_corr.
       }
-
+      
       admit.
     - apply rvlim_rv.
       typeclasses eauto.
