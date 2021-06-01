@@ -361,7 +361,7 @@ Next Obligation.
     Sup_seq (fun n => Rbar_Expectation_posRV prts (f n)).
   Proof.
     intros.
-    generalize (@Beppo_Levi Ts H sa_sigma (ProbSpace_measure prts) f); intros.
+    generalize (Beppo_Levi H (ProbSpace_measure prts) f); intros.
     apply H1; trivial.
     intros.
     now apply measurable_fun_sa_sigma.
