@@ -8,8 +8,7 @@ Require Import Classical_Prop.
 Require Import Classical.
 
 Require Import Utils.
-Require Import NumberIso.
-Require Export SimpleExpectation.
+Require Import RealRandomVariable.
 Require Import AlmostEqual.
 Require Import Event.
 Require Import SigmaAlgebras.
