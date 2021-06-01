@@ -351,3 +351,19 @@ Next Obligation.
     }
     lra.
   Qed.
+
+  Lemma Rbar_Expectation_posRV_Sup_seq {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) (f : nat -> Ts -> Rbar)
+    {prv : forall n, Rbar_PositiveRandomVariable (f n)}
+    {rv : forall n, RandomVariable dom Rbar_borel_sa (f n)} :
+    inhabited Ts ->
+    (forall x n, Rbar_le (f n x) (f (S n) x)) ->
+    Rbar_Expectation_posRV prts (fun x => Sup_seq (fun n => f n x)) =
+    Sup_seq (fun n => Rbar_Expectation_posRV prts (f n)).
+  Proof.
+    intros.
+    generalize (@Beppo_Levi Ts H (@sa_sigma Ts dom) (ProbSpace_measure prts) f); intros.
+    apply H1; trivial.
+    intros.
+    now apply measurable_fun_sa_sigma.
+  Qed.
+    
