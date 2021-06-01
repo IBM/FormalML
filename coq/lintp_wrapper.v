@@ -20,6 +20,7 @@ Require Import LInt_p.measurable_fun.
 Require Import LInt_p.LInt_p.
 Require Import LInt_p.sigma_algebra_R_Rbar.
 Require Import LInt_p.sum_Rbar_nonneg.
+Require Import LInt_p.Rbar_compl.
 Require Import Classical.
 
 Set Bullet Behavior "Strict Subproofs".
@@ -370,15 +371,44 @@ Next Obligation.
     apply LInt_p_monotone.
   Qed.
 
-(*
+  Lemma measurable_fun_rv {Ts} {dom : SigmaAlgebra Ts} (f : Ts -> Rbar) :
+    measurable_fun_Rbar sa_sigma f ->
+    RandomVariable dom Rbar_borel_sa f.
+  Proof.
+    unfold measurable_fun_Rbar, RandomVariable.
+    intros.
+    unfold gen_Rbar, gen_Rbar_cu in H.
+    unfold event_preimage.
+    unfold event in B.
+    destruct B as [E ?].
+    simpl.
+    Admitted.
 
-(* Lemma 818 p. 173 *)
-Lemma LInt_p_Lim_seq' :
-  forall f: nat -> E -> Rbar,
-    (forall n, non_neg (f n)) ->
-    (forall n, measurable_fun_Rbar gen (f n)) ->
-    (forall x, ex_lim_seq' (fun n => f n x)) ->
-    let lim_f := fun x => Lim_seq' (fun n => f n x) in
-    (forall x n, Rbar_le (f n x) (lim_f x)) ->
-    LInt_p mu lim_f = Lim_seq' (fun n => LInt_p mu (f n)).
-*)
+  Lemma measurable_lim_seq' {Ts} (dom : SigmaAlgebra Ts)
+        (f : nat -> Ts -> Rbar)
+        (prv: forall n, Rbar_PositiveRandomVariable (f n))
+        (rv : forall n, RandomVariable dom Rbar_borel_sa (f n)) :
+    RandomVariable dom Rbar_borel_sa (fun x => Lim_seq' (fun n => f n x)).
+  Proof.
+    assert (forall n, measurable_fun_Rbar sa_sigma (f n)) by
+        (intros; now apply measurable_fun_sa_sigma).
+    apply measurable_fun_rv.
+    now apply measurable_fun_Lim_seq'.
+  Qed.        
+
+  Lemma Rbar_Expectation_posRV_Lim_seq' {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) 
+        (f : nat -> Ts -> Rbar)
+        (prv : forall n, Rbar_PositiveRandomVariable (f n))
+        (rv : forall n, RandomVariable dom Rbar_borel_sa (f n)) :
+        inhabited Ts ->
+        (forall x, ex_lim_seq' (fun n => f n x)) ->        
+        let lim_f := fun x => Lim_seq' (fun n => f n x) in
+        (forall x n, Rbar_le (f n x) (lim_f x)) ->
+        Rbar_Expectation_posRV prts lim_f = Lim_seq' (fun n => Rbar_Expectation_posRV prts (f n)).
+  Proof.
+    intros.
+    apply LInt_p_Lim_seq'; trivial.
+    intros.
+    now apply measurable_fun_sa_sigma.
+  Qed.
+        
