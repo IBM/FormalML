@@ -358,9 +358,28 @@ Next Obligation.
     Sup_seq (fun n => Rbar_Expectation_posRV prts (f n)).
   Proof.
     intros.
-    generalize (Beppo_Levi H (ProbSpace_measure prts) f); intros.
-    apply H1; trivial.
+    apply Beppo_Levi; trivial.
     intros.
     now apply measurable_fun_sa_sigma.
   Qed.
     
+  Lemma Rbar_Expectation_posRV_monotone {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) 
+        (f g : Ts -> Rbar) :
+    (forall x, Rbar_le (f x) (g x)) ->
+    Rbar_le (Rbar_Expectation_posRV prts f) (Rbar_Expectation_posRV prts g).
+  Proof.
+    apply LInt_p_monotone.
+  Qed.
+
+(*
+
+(* Lemma 818 p. 173 *)
+Lemma LInt_p_Lim_seq' :
+  forall f: nat -> E -> Rbar,
+    (forall n, non_neg (f n)) ->
+    (forall n, measurable_fun_Rbar gen (f n)) ->
+    (forall x, ex_lim_seq' (fun n => f n x)) ->
+    let lim_f := fun x => Lim_seq' (fun n => f n x) in
+    (forall x n, Rbar_le (f n x) (lim_f x)) ->
+    LInt_p mu lim_f = Lim_seq' (fun n => LInt_p mu (f n)).
+*)
