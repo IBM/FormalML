@@ -14,194 +14,12 @@ Import ListNotations.
 
 Set Bullet Behavior "Strict Subproofs".
 
-  Section RbarBorel.
-    
-  Instance Rbar_borel_sa : SigmaAlgebra Rbar
-    := generated_sa (fun (s:Rbar->Prop) => exists r, forall m, Rbar_le m r <-> s m).
+Local Open Scope R.
 
-  Context {Ts:Type}
-    {dom: SigmaAlgebra Ts}.
+Section RbarBorel.
 
-    (* For the Rbar_borel_sa, this is an equivalent definition *)
-  Class RbarMeasurable (f: Ts -> Rbar)
-      := rbarmeasurable : forall (r:Rbar), 
-          sa_sigma (fun omega : Ts => Rbar_le (f omega) r).
-
-  Lemma Rbar_borel_sa_preimage
-      (rvx: Ts -> Rbar)
-      (pf_pre: forall r:Rbar, sa_sigma (fun omega:Ts => Rbar_le (rvx omega) r)) :
-  (forall B: event Rbar_borel_sa, sa_sigma (event_preimage rvx B)).
-  Proof.
-    intros.
-    unfold event_preimage.
-    destruct B; simpl.
-    apply generated_sa_closure in s.
-    simpl in *.  
-    dependent induction s.
-    - apply sa_all.
-    - destruct H as [??].
-      generalize (pf_pre x).
-      apply sa_proper; intros xx.
-      specialize (H (rvx xx)).
-      tauto.
-    - apply sa_countable_union. 
-      eauto.
-    - apply sa_complement; eauto.
-  Qed.
-
-  Lemma Rbar_borel_sa_preimage2 
-      (rvx: Ts -> Rbar):
-  (forall r:Rbar, sa_sigma (fun omega:Ts => Rbar_le (rvx omega) r)) <-> 
-  (forall B: event Rbar_borel_sa, (sa_sigma (event_preimage rvx B))).
-Proof.
-  split; intros.
-  - now apply Rbar_borel_sa_preimage.
-  - unfold event_preimage in *.
-    refine (H (exist _  (fun x => Rbar_le x r) _)).
-    apply generated_sa_sub.
-    exists r; intuition.
-Qed.
-
-    Global Instance Rbar_measurable_rv (rv_X:Ts->Rbar)
-             {rm:RbarMeasurable rv_X}
-      : RandomVariable dom Rbar_borel_sa rv_X.
-    Proof.
-      intros ?.
-      apply Rbar_borel_sa_preimage2; trivial; intros.
-    Qed.
-
-    Global Instance rv_Rbar_measurable (rv_X : Ts -> Rbar)
-             {rrv:RandomVariable dom Rbar_borel_sa rv_X}
-      : RbarMeasurable rv_X.
-    Proof.
-      red.
-      now rewrite Rbar_borel_sa_preimage2.
-    Qed.
-
-    Definition Rbar_ge (x y : Rbar) := Rbar_le y x.
-
-  Lemma Rbar_equiv_le_lt (f : Ts -> Rbar) (r:R) :
-    pre_event_equiv (fun omega : Ts => Rbar_lt (f omega) r)
-                (pre_union_of_collection
-                   (fun (n:nat) => (fun omega : Ts => 
-                                      Rbar_le (f omega) 
-                                              (Rbar_minus r  (/ (1 + INR n)))))).
-  Proof.
-    unfold pre_event_equiv, pre_union_of_collection.
-    intros.
-    split ; intros.
-    - case_eq (f x); intros.
-      + rewrite H0 in H; simpl in H.
-        generalize (archimed_cor1 (r - r0)) ; intros.
-        assert (r - r0 > 0) by lra.
-        specialize (H1 H2).
-        clear H2.
-        destruct H1 as [N [HNf HN]].
-        exists N. left.
-        replace (1 + INR N) with (INR (S N)) by (apply S_O_plus_INR).
-        assert (r0 < r - / INR N) by lra.
-        eapply Rlt_trans ; eauto.
-        unfold Rminus.
-        apply Rplus_lt_compat_l, Ropp_lt_contravar.
-        apply Rinv_lt_contravar.
-        rewrite <-mult_INR. apply lt_0_INR ; lia.
-        apply lt_INR ; lia.
-      + rewrite H0 in H; now simpl in H.
-      + exists (0%nat); now simpl.
-   - destruct H.
-     assert (0 < / INR (S x0)).
-     { 
-       apply Rinv_0_lt_compat.
-       apply  lt_0_INR; lia.
-     }
-     replace (1 + INR x0) with (INR (S x0)) in H by (apply S_O_plus_INR).
-     eapply Rbar_le_lt_trans.
-     apply H.
-     simpl; simpl in H0; lra.
-   Qed.
-
-  Lemma Rbar_sa_le_ge (f : Ts -> Rbar) :
-    (forall (r:Rbar),  sa_sigma (fun omega : Ts => Rbar_le (f omega) r)) ->
-    (forall (r:Rbar),  sa_sigma (fun omega : Ts => Rbar_ge (f omega) r)).
-  Proof.
-    intros.
-    assert (pre_event_equiv (fun omega : Ts => Rbar_ge (f omega) r)
-                        (pre_event_complement (fun omega : Ts => Rbar_lt (f omega) r))).
-    {
-      intro x.
-      unfold pre_event_complement.
-      split; intros.
-      - now apply Rbar_le_not_lt.
-      - now apply Rbar_not_lt_le in H0.
-    }
-    destruct r.
-    - rewrite H0.
-      apply sa_complement.
-      rewrite Rbar_equiv_le_lt.
-      apply sa_countable_union.
-      intros.
-      apply H.
-    - rewrite H0.
-      apply sa_complement.
-      assert (pre_event_equiv 
-                (fun omega : Ts => Rbar_lt (f omega) p_infty)
-                (pre_union_of_collection
-                   (fun (n:nat) => (fun omega : Ts => 
-                                      Rbar_le (f omega) (INR n))))).
-      { 
-        intro x.
-        unfold pre_union_of_collection.
-        destruct (f x).
-        - split; intros.
-          + destruct (Rle_dec 0 r).
-            * exists (Z.to_nat (up r)).
-              rewrite INR_up_pos; try lra.
-              simpl.
-              left.
-              apply archimed.
-            * exists (0%nat).
-              simpl; lra.
-          + now simpl.
-        - split; intros.
-          + now simpl in H1.
-          + destruct H1; now simpl in H1.
-        - split; intros.
-          + exists (0%nat); now simpl.
-          + now simpl.
-      }
-      rewrite H1.
-      apply sa_countable_union.
-      intros.
-      apply H.
-    - assert (pre_event_equiv (fun omega : Ts => Rbar_ge (f omega) m_infty)
-                              (fun omega => True)).
-      {
-        intro x.
-        now simpl.
-      }
-      rewrite H1.
-      apply sa_all.
-   Qed.
-
-  Lemma Rbar_sa_le_pt (f : Ts -> Rbar) :
-    (forall (r:Rbar),  sa_sigma (fun omega : Ts => Rbar_le (f omega) r)) ->
-    (forall (pt:Rbar), sa_sigma (fun omega : Ts => f omega = pt)).
-  Proof.
-    intros.
-    assert (pre_event_equiv (fun omega : Ts => f omega = pt)
-                        (pre_event_inter (fun omega : Ts => Rbar_le (f omega) pt)
-                                     (fun omega : Ts => Rbar_ge (f omega) pt))).
-    - unfold pre_event_equiv, pre_event_inter; intros.
-      unfold Rbar_ge.
-      split; intros.
-      + rewrite H0; simpl.
-        split; apply Rbar_le_refl.
-      + destruct H0.
-        now apply Rbar_le_antisym.
-    - rewrite H0.
-      apply sa_inter; trivial.
-      now apply Rbar_sa_le_ge.
-   Qed.
+Context {Ts:Type}
+        {dom : SigmaAlgebra Ts}.
 
   Lemma RealMeasurable_RbarMeasurable (f : Ts -> R) :
     RealMeasurable dom f <-> RbarMeasurable f.
@@ -232,7 +50,21 @@ Qed.
       now apply Rbar_borel_sa_preimage2.
   Qed.
 
-  End RbarBorel.
+    Global Instance Rbar_measurable_rv (rv_X:Ts->Rbar)
+             {rm:RbarMeasurable rv_X}
+      : RandomVariable dom Rbar_borel_sa rv_X.
+    Proof.
+      intros ?.
+      apply Rbar_borel_sa_preimage2; trivial; intros.
+    Qed.
+
+    Global Instance rv_Rbar_measurable (rv_X : Ts -> Rbar)
+             {rrv:RandomVariable dom Rbar_borel_sa rv_X}
+      : RbarMeasurable rv_X.
+    Proof.
+      red.
+      now rewrite Rbar_borel_sa_preimage2.
+    Qed.
 
   Lemma Rbar_borel_singleton (c:Rbar) :
     sa_sigma (SigmaAlgebra:=Rbar_borel_sa) (pre_event_singleton c).
@@ -252,6 +84,8 @@ Qed.
     apply Rbar_borel_sa_preimage2; intros.
     now apply rv_preimage_sa.
   Qed.
+
+End RbarBorel.
 
 Section RbarExpectation.
   Context 
