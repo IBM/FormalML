@@ -664,6 +664,121 @@ Qed.
       now apply Rbar_sa_le_ge.
   Qed.
 
+  Definition Rbar_gt (x y : Rbar) := Rbar_lt y x.
+  
+  Lemma Rbar_equiv_ge_gt (f : Ts -> Rbar) (r:R) :
+    pre_event_equiv (fun omega : Ts => Rbar_gt (f omega) r)
+                (pre_union_of_collection
+                   (fun (n:nat) => (fun omega : Ts => Rbar_ge (f omega) (r + / (1 + INR n))))).
+  Proof.
+    unfold event_equiv, union_of_collection.
+    intros.
+    split ; intros.
+    - case_eq (f x); intros.
+      + rewrite H0 in H; simpl in H.
+        generalize (archimed_cor1 (f x - r )) ; intros.
+        assert (0 <  r0 - r) by lra. 
+        rewrite H0 in H1.
+        specialize (H1 H2).
+        clear H2.
+        destruct H1 as [N [HNf HN]].
+        exists N.
+        rewrite H0; simpl; left.
+        replace (1 + INR N) with (INR (S N)) by (apply S_O_plus_INR).
+        simpl in HNf.
+        assert (r0 > r + / INR N) by lra.
+        eapply Rlt_trans ; eauto.
+        unfold Rminus.
+        apply Rplus_lt_compat_l.
+        apply Rinv_lt_contravar.
+        rewrite <-mult_INR. apply lt_0_INR ; lia.
+        apply lt_INR ; lia.
+      + exists 0%nat.
+        rewrite H0.
+        now simpl.
+      + rewrite H0 in H.
+        now simpl in H.
+    - destruct H.
+      assert (0 < / INR (S x0)).
+      apply Rinv_0_lt_compat.
+      apply  lt_0_INR; lia.
+      replace (1 + INR x0) with (INR (S x0)) in H by (apply S_O_plus_INR).
+      unfold Rbar_gt; unfold Rbar_ge in H.
+      eapply Rbar_lt_le_trans.
+      shelve.
+      apply H.
+      Unshelve.
+      red.
+      lra.
+  Qed.
+
+  Lemma Rbar_sa_ge_le (f : Ts -> Rbar) :
+    (forall (r:Rbar),  sa_sigma (fun omega : Ts => Rbar_ge (f omega) r)) ->
+    (forall (r:Rbar),  sa_sigma (fun omega : Ts => Rbar_le (f omega) r)).
+  Proof.
+    intros.
+    assert (pre_event_equiv (fun omega : Ts => Rbar_le (f omega) r)
+                        (pre_event_complement (fun omega : Ts => Rbar_gt (f omega) r))).
+    {
+      intro x.
+      unfold pre_event_complement.
+      unfold Rbar_gt.
+      split; intros.
+      - now apply Rbar_le_not_lt.
+      - now apply Rbar_not_lt_le in H0.
+    }
+    destruct r.  
+    - rewrite H0.
+      apply sa_complement.
+      rewrite Rbar_equiv_ge_gt.
+      apply sa_countable_union.
+      intros.
+      apply H.
+    - assert (pre_event_equiv (fun omega : Ts => Rbar_le (f omega) p_infty)
+                              (fun omega => True)).
+      {
+        intro x.
+        unfold Rbar_le.
+        match_destr; easy.
+      }
+      rewrite H1.
+      apply sa_all.
+    - rewrite H0.
+      apply sa_complement.
+      assert (pre_event_equiv 
+                (fun omega : Ts => Rbar_gt (f omega) m_infty)
+                (pre_union_of_collection
+                   (fun (n:nat) => (fun omega : Ts => 
+                                      Rbar_ge (f omega) (- (INR n)))))).
+      { 
+        intro x.
+        unfold pre_union_of_collection.
+        destruct (f x).
+        - split; intros.
+          + destruct (Rle_dec r 0).
+            * exists (Z.to_nat (up (- r))).
+              rewrite INR_up_pos; try lra.
+              simpl.
+              left.
+              generalize (archimed (-r)); intros.
+              lra.
+            * exists (0%nat).
+              simpl; lra.
+          + now simpl.
+        - split; intros.
+          + exists 0%nat; now simpl.
+          + now simpl.
+        - split; intros.
+          + now simpl in H1.
+          + destruct H1.
+            now simpl in H1.
+      }
+      rewrite H1.
+      apply sa_countable_union.
+      intros.
+      apply H.
+  Qed.
+
   Lemma Rbar_sa_le_pt (f : Ts -> Rbar) :
     (forall (r:Rbar),  sa_sigma (fun omega : Ts => Rbar_le (f omega) r)) ->
     (forall (pt:Rbar), sa_sigma (fun omega : Ts => f omega = pt)).

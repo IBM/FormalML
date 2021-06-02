@@ -376,13 +376,30 @@ Next Obligation.
     RandomVariable dom Rbar_borel_sa f.
   Proof.
     unfold measurable_fun_Rbar, RandomVariable.
+    intro mfun.
+    apply Rbar_borel_sa_preimage2.
+    apply (Rbar_sa_ge_le dom).
     intros.
-    unfold gen_Rbar, gen_Rbar_cu in H.
-    unfold event_preimage.
-    unfold event in B.
-    destruct B as [E ?].
-    simpl.
-    Admitted.
+
+    unfold gen_Rbar, gen_Rbar_cu in mfun.
+    unfold measurable_fun in mfun.
+    specialize (mfun (fun x => Rbar_ge x r)).
+    induction mfun; trivial.
+    - apply sa_none.
+    - generalize sa_complement; intros.
+      apply sa_complement in IHm.
+      assert (pre_event_equiv (pre_event_complement (fun x : Ts => ~ A x)) A).
+      { 
+        intro x.
+        unfold pre_event_complement.
+        tauto.
+      }
+      now rewrite H0 in IHm.
+    - now apply sa_countable_union.
+    - apply measurable_gen.
+      exists r.
+      now unfold Rbar_ge.
+  Qed.
 
   Lemma measurable_lim_seq' {Ts} (dom : SigmaAlgebra Ts)
         (f : nat -> Ts -> Rbar)
