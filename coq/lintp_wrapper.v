@@ -378,7 +378,7 @@ Next Obligation.
     unfold measurable_fun_Rbar, RandomVariable.
     intro mfun.
     apply Rbar_borel_sa_preimage2.
-    apply (Rbar_sa_ge_le dom).
+    apply Rbar_sa_ge_le.
     intros.
 
     unfold gen_Rbar, gen_Rbar_cu in mfun.
