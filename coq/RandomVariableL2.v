@@ -2015,7 +2015,7 @@ Section L2.
   Qed.
 
   Lemma Rbar_IsLp_bounded n (rv_X1 rv_X2 : Ts -> Rbar)
-        (rle:Rbar_rv_le (fun (omega : Ts) => Rbar_power ((rvabs rv_X1) omega) n) rv_X2)
+        (rle:Rbar_rv_le (fun (omega : Ts) => Rbar_power (Rbar_abs (rv_X1 omega)) n) rv_X2)
         {islp:Rbar_IsFiniteExpectation rv_X2}
     :
       IsLp_Rbar prts n rv_X1.
@@ -2031,58 +2031,129 @@ Section L2.
       rewrite Rbar_Expectation_posRV_pf_irrel with (prv2 := prv_0) in H1.
       now rewrite H1.
     }
-    generalize (Rbar_IsFiniteExpectation_bounded (const 0) (fun (omega : Ts) => Rbar_power ((rvabs rv_X1) omega) n) rv_X2); intros.
-    cut_to H0.
-    unfold Rbar_IsFiniteExpectation in H0.
-    
-    
-(*
-    eapply 
-    intros.
-    eapply
-    intros a.
-    unfold const, rvabs, rvpower.
-    apply power_nonneg.
-*)
-  Admitted.
+    generalize (Rbar_IsFiniteExpectation_bounded (const 0)
+                                                 (fun (omega : Ts) => Rbar_power (Rbar_abs (rv_X1 omega)) n) rv_X2); intros.
+    cut_to H0; trivial.
+    - unfold Rbar_IsFiniteExpectation in H0.
+      rewrite Rbar_Expectation_pos_posRV with (prv := power_abs_pos rv_X1 n) in H0.
+      match_destr_in H0; easy.
+    - intro x.
+      unfold const.
+      apply Rbar_power_nonneg.
+  Qed.
+
+  Instance Rbar_power_pos m (rv_X: Ts -> Rbar) :
+    Rbar_PositiveRandomVariable 
+      (fun omega => Rbar_power (rv_X omega) m).
+  Proof.
+    intro x.
+    apply Rbar_power_nonneg.
+  Qed.
 
   Lemma IsLp_Rbar_down_le m n (rv_X:Ts->Rbar)
         {rrv:RandomVariable dom Rbar_borel_sa rv_X}
         (pfle:0 <= n <= m)
         {lp:IsLp_Rbar prts m rv_X} : IsLp_Rbar prts n rv_X.
   Proof.
-    red in lp; red.
-    (*
-    apply (@Rbar_IsLp_bounded _ _
-                           (rvmax
-                              (const 1)
-                              (rvpower (rvabs rv_X) (const m))))
-      ; [| typeclasses eauto].
-      intros a.
-      rv_unfold.
-      destruct (Rle_lt_dec 1 (Rabs (rv_X a))).
-      - eapply Rle_trans; [| eapply Rmax_r].
-        now apply Rle_power.
-      - eapply Rle_trans; [| eapply Rmax_l].
-        unfold power.
-        match_destr; [lra | ].
-        generalize (Rabs_pos (rv_X a)); intros.
-        destruct (Req_EM_T n 0).
-        + subst.
-          rewrite Rpower_O; lra.
-        + assert (eqq:1 = Rpower 1 n).
-          {
-            unfold Rpower.
-            rewrite ln_1.
-            rewrite Rmult_0_r.
-            now rewrite exp_0.
-          }
-          rewrite eqq.
-          apply Rle_Rpower_l; lra.
-  Qed.
-*)
-    Admitted.
-
+    apply Rbar_IsLp_bounded with (rv_X2 := fun omega => Rbar_max 1 (Rbar_power (Rbar_abs (rv_X omega)) m)).
+    - intros a.
+      case_eq (rv_X a); intros.
+      + unfold Rbar_abs, Rbar_power.
+        replace (Rbar_max 1 (power (Rabs r) m)) with (Finite (Rmax 1 (power (Rabs r) m))).
+        unfold Rbar_le.
+        destruct (Rle_lt_dec 1 (Rabs r)).
+        * eapply Rle_trans; [| eapply Rmax_r].
+          now apply Rle_power.
+        * eapply Rle_trans; [| eapply Rmax_l].
+          unfold power.
+          match_destr; [lra | ].
+          generalize (Rabs_pos r); intros.
+          destruct (Req_EM_T n 0).
+          -- subst.
+             rewrite Rpower_O; lra.
+          -- assert (eqq:1 = Rpower 1 n).
+             {
+               unfold Rpower.
+               rewrite ln_1.
+               rewrite Rmult_0_r.
+               now rewrite exp_0.
+             }
+             rewrite eqq.
+             apply Rle_Rpower_l; lra.
+        * unfold Rbar_max.
+          match_case; intros.
+          -- simpl in r0.
+             now rewrite Rmax_right.
+          -- simpl in n0.
+             rewrite Rmax_left; trivial.
+             left; lra.
+      + simpl.
+        unfold Rbar_max.
+        case_eq (Rbar_le_dec 1 p_infty); intros; trivial.
+        now simpl in n0.
+      + simpl.
+        unfold Rbar_max.
+        case_eq (Rbar_le_dec 1 p_infty); intros; trivial.
+        now simpl in n0.
+    - assert (Rbar_PositiveRandomVariable 
+                 (fun omega : Ts => Rbar_max 1 (Rbar_power (Rbar_abs (rv_X omega)) m))).
+      {
+        intro x.
+        unfold Rbar_max.
+        match_destr.
+        - apply Rbar_power_nonneg.
+        - simpl; lra.
+      }
+      unfold Rbar_IsFiniteExpectation.
+      rewrite Rbar_Expectation_pos_posRV with (prv := H).
+      unfold IsLp_Rbar in lp.
+      assert (0 <= 1) by lra.
+      generalize (Rbar_Expectation_posRV_plus (const (Finite 1))
+                                              (fun omega => (Rbar_power (Rbar_abs (rv_X omega)) m)) (prvconst _ H0) _ ); intros.
+      assert (is_finite
+                 (@Rbar_Expectation_posRV Ts dom prts
+            (Rbar_rvplus (@const Rbar Ts (Finite (IZR (Zpos xH))))
+               (fun omega : Ts => Rbar_power (Rbar_abs (rv_X omega)) m))
+            (pos_Rbar_plus (@const Rbar Ts (Finite (IZR (Zpos xH))))
+               (fun omega : Ts => Rbar_power (Rbar_abs (rv_X omega)) m) (prvconst _ H0)
+               (Rbar_power_pos m (fun omega : Ts => Rbar_abs (rv_X omega)))))).
+      {
+        rewrite H1.
+        assert (is_finite (@Rbar_Expectation_posRV Ts dom prts (@const Rbar Ts (Finite 1))  (prvconst _ H0))).
+        - generalize (Rbar_Expectation_posRV_const _ H0); intros.
+          unfold const in H2.
+          unfold const.
+          rewrite H2.
+          now simpl.
+        - rewrite <- H2.
+          rewrite <- lp.
+          now simpl.
+      } 
+      assert (Rbar_rv_le
+                (fun omega : Ts => Rbar_max 1 (Rbar_power (Rbar_abs (rv_X omega)) m))
+                (Rbar_rvplus (const (Finite 1))
+                             (fun omega => Rbar_power (Rbar_abs (rv_X omega)) m))).
+      {
+        intro x.
+        unfold Rbar_rvplus, const, Rbar_max.
+        match_destr.
+        - replace (Rbar_power (Rbar_abs (rv_X x)) m) with
+              (Rbar_plus (Finite 0) (Rbar_power (Rbar_abs (rv_X x)) m)) at 1.
+          + apply Rbar_plus_le_compat.
+            * simpl; lra.
+            * apply Rbar_le_refl.
+          + apply Rbar_plus_0_l.
+        - replace (Finite 1) with (Rbar_plus (Finite 1) (Finite 0)) at 1.
+          + apply Rbar_plus_le_compat.
+            * apply Rbar_le_refl.
+            * apply Rbar_power_nonneg.
+          + simpl.
+            apply Rbar_finite_eq.
+            lra.
+      }
+      generalize (is_finite_Rbar_Expectation_posRV_le _ _ H3 H2); intros.
+      now rewrite <- H4.
+   Qed.
 
   Lemma IsL1_Rbar_abs_Finite (rv_X:Ts->Rbar)
         {lp:IsLp_Rbar prts 1 rv_X} : is_finite (Rbar_Expectation_posRV (Rbar_rvabs rv_X)).
@@ -2160,6 +2231,8 @@ Section L2.
       now apply Rbar_borel_sa_preimage2.
   Qed.
 
+  Print rvlim.
+
   Lemma cauchy_filter_rvlim_finite00
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
         (PF:ProperFilter F)
@@ -2185,6 +2258,7 @@ Section L2.
     exists (exist _ _ (sa_finite_Rbar limpick rv)).
     split.
     - subst limpick.
+      
 (*      apply finite_Rbar_Expectation_posRV_almost_finite. *)
       admit.
     Admitted.
@@ -2427,6 +2501,8 @@ Section L2.
     (PF:ProperFilter lim)
     (cF:cauchy lim) : LpRRVq prts 2.
   Admitted.
+
+    Search "L2RRVq_lim".
 
   Definition L2RRVq_lim (lim : ((LpRRVq prts 2 -> Prop) -> Prop)) : LpRRVq prts 2.
   Proof.

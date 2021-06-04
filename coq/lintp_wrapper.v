@@ -89,10 +89,8 @@ Proof.
 Qed.
 
 Definition dec_pre_event {Ts} (dom : SigmaAlgebra Ts) ( A : pre_event Ts) :
-  {sa_sigma A} + {~ sa_sigma A}.
-Proof.
-  apply ClassicalDescription.excluded_middle_informative.
-Qed.
+  {sa_sigma A} + {~ sa_sigma A} :=
+  ClassicalDescription.excluded_middle_informative (sa_sigma A).
 
 Program Definition ps_P_pre {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) :
   (pre_event Ts -> R) :=
