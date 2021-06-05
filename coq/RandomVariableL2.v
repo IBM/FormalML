@@ -2231,7 +2231,189 @@ Section L2.
       now apply Rbar_borel_sa_preimage2.
   Qed.
 
-  Print rvlim.
+  Instance Rbar_sup_measurable (f : nat -> Ts -> Rbar) :
+    (forall n, RbarMeasurable (f n)) ->
+    RbarMeasurable (fun omega => Sup_seq (fun n => f n omega)).
+  Proof.
+    unfold RbarMeasurable; intros.
+    assert (pre_event_equiv
+              (fun omega : Ts => Rbar_le (Sup_seq (fun n : nat => f n omega)) r)
+              (pre_inter_of_collection
+                 (fun n => 
+                    fun omega => Rbar_le (f n omega) r))).
+    {
+      intro x.
+      unfold pre_inter_of_collection.
+      unfold Sup_seq, proj1_sig.
+      match_destr.
+      generalize (is_sup_seq_lub _ _ i); intros.
+      unfold Rbar_is_lub, Rbar_is_upper_bound in H0.
+      destruct H0.
+      split; intros.
+      - specialize (H0 (f n x)).
+        eapply Rbar_le_trans.
+        apply H0.
+        now exists n.
+        apply H2.
+      - specialize (H1 r).
+        apply H1.
+        intros.
+        destruct H3.
+        rewrite H3.
+        apply H2.
+    }
+    rewrite H0.
+    now apply sa_pre_countable_inter.
+  Qed.
+
+  Instance Rbar_inf_measurable (f : nat -> Ts -> Rbar) :
+    (forall n, RbarMeasurable (f n)) ->
+    RbarMeasurable (fun omega => Inf_seq (fun n => f n omega)).
+  Proof.
+    unfold RbarMeasurable; intros.
+    apply Rbar_sa_ge_le; intros.
+    assert (forall (n:nat) (r:Rbar), sa_sigma (fun omega : Ts => Rbar_ge (f n omega) r)) by
+        (intros; now apply Rbar_sa_le_ge).
+    assert (pre_event_equiv
+              (fun omega : Ts => Rbar_ge (Inf_seq (fun n : nat => f n omega)) r0)
+              (pre_inter_of_collection
+                 (fun n => 
+                    fun omega => Rbar_ge (f n omega) r0))).
+    {
+      intro x.
+      unfold pre_inter_of_collection.
+      unfold Inf_seq, proj1_sig.
+      match_destr.
+      generalize (is_inf_seq_glb _ _ i); intros.
+      unfold Rbar_is_glb, Rbar_is_lower_bound in H1.
+      destruct H1.
+      unfold Rbar_ge in *.
+      split; intros.
+      - specialize (H1 (f n x)).
+        eapply Rbar_le_trans.
+        apply H3.
+        apply H1.
+        now exists n.
+      - specialize (H2 r0).
+        apply H2.
+        intros.
+        destruct H4.
+        rewrite H4.
+        apply H3.
+    }
+    rewrite H1.
+    now apply sa_pre_countable_inter.
+  Qed.
+
+    Instance Rbar_rv_measurable (rv_X:Ts->Rbar)
+             {rrv:RandomVariable dom Rbar_borel_sa rv_X}
+      : RbarMeasurable rv_X.
+    Proof.
+      red.
+      now rewrite Rbar_borel_sa_preimage2.
+    Qed.
+
+  Global Instance RbarMeasurable_proper :
+    Proper (rv_eq ==> iff) RbarMeasurable.
+  Proof.
+    intros ???.
+    split; intros.
+    - apply Rbar_rv_measurable.
+      rewrite <- H.
+      now apply Rbar_measurable_rv.
+    - apply Rbar_rv_measurable.
+      rewrite H.
+      now apply Rbar_measurable_rv.
+  Qed.
+
+  Instance Rbar_lim_sup_measurable (f : nat -> Ts -> R) :
+    (forall n, RbarMeasurable (f n)) ->
+    RbarMeasurable (fun omega => LimSup_seq (fun n => f n omega)).
+  Proof.
+    intros.
+    assert (rv_eq (fun omega => LimSup_seq (fun n => f n omega))
+                  (fun omega => Inf_seq (fun m : nat => 
+                                           Sup_seq (fun n : nat => f (n + m)%nat omega)))) 
+      by (intro x; now rewrite LimSup_InfSup_seq).
+    apply (RbarMeasurable_proper _ _ H0).
+    apply Rbar_inf_measurable.
+    intros.
+    now apply Rbar_sup_measurable.
+  Qed.
+    
+  Instance Rbar_lim_inf_measurable (f : nat -> Ts -> R) :
+    (forall n, RbarMeasurable (f n)) ->
+    RbarMeasurable (fun omega => LimInf_seq (fun n => f n omega)).
+  Proof.
+    intros.
+    assert (rv_eq (fun omega : Ts => LimInf_seq (fun n : nat => f n omega))
+                  (fun omega =>
+                     Sup_seq (fun m : nat => Inf_seq (fun n : nat => f (n + m)%nat omega))))
+      by (intro x; now rewrite LimInf_SupInf_seq).
+    apply (RbarMeasurable_proper _ _ H0).
+    apply Rbar_sup_measurable.
+    intros.
+    now apply Rbar_inf_measurable.
+  Qed.
+    
+  Instance Rbar_div_pos_measurable (f : Ts -> Rbar) (c : posreal) :
+    RbarMeasurable f ->
+    RbarMeasurable (fun omega => Rbar_div_pos (f omega) c).
+  Proof.
+    unfold RbarMeasurable.
+    intros.
+    assert (pre_event_equiv
+              (fun omega : Ts => Rbar_le (Rbar_div_pos (f omega) c) r)
+              (fun omega : Ts => Rbar_le (f omega) (Rbar_mult_pos r c))).
+    {
+      intros x.
+      replace (r) with (Rbar_div_pos (Rbar_mult_pos r c) c) at 1.
+      now rewrite <- Rbar_div_pos_le.
+      unfold Rbar_div_pos, Rbar_mult_pos.
+      destruct r; trivial.
+      unfold Rdiv.
+      rewrite Rmult_assoc.
+      rewrite Rinv_r.
+      - rewrite Rmult_1_r.
+        reflexivity.
+      - apply Rgt_not_eq, cond_pos.
+    }
+    now rewrite H0.
+   Qed.
+
+  (* assume Rbar_plus is well defined everywhere *)
+  Instance Rbar_plus_measurable (f g : Ts -> Rbar) :
+    RbarMeasurable f -> RbarMeasurable g ->
+    (forall x, ex_Rbar_plus (f x) (g x)) ->
+    RbarMeasurable (fun omega => Rbar_plus (f omega) (g omega)).
+  Proof.
+    Admitted.
+
+  Instance Rbar_lim_seq_measurable (f : nat -> Ts -> R) :
+    (forall n, RbarMeasurable (f n)) ->
+    RbarMeasurable (fun omega => Lim_seq (fun n => f n omega)).
+  Proof.
+    intros.
+    unfold Lim_seq.
+    apply Rbar_div_pos_measurable.
+    apply Rbar_plus_measurable.
+    - now apply Rbar_lim_sup_measurable.
+    - now apply Rbar_lim_inf_measurable.
+    - admit.
+  Admitted.
+
+  Instance Rbar_lim_seq_measurable2 (f : nat -> Ts -> R) :
+    (forall n, RealMeasurable dom (f n)) ->
+    RbarMeasurable (fun omega => Lim_seq (fun n => f n omega)).
+  Proof.
+    intros.
+    assert (forall n, RbarMeasurable (f n)).
+    {
+      intro n.
+      now apply RealMeasurable_RbarMeasurable.
+    }
+    now apply Rbar_lim_seq_measurable.
+  Qed.
 
   Lemma cauchy_filter_rvlim_finite00
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
@@ -2250,10 +2432,17 @@ Section L2.
       subst limpick.
       apply Rbar_rvabs_rv.
       apply borel_Rbar_borel.
+      Locate rvlim_rv.
       apply rvlim_rv.
       - intros.
         apply picker_rv.
-      - admit.
+      - intros.
+        rewrite ex_finite_lim_seq_correct.
+        split.
+        + admit.
+        + 
+        
+admit.
     }
     exists (exist _ _ (sa_finite_Rbar limpick rv)).
     split.
@@ -2501,8 +2690,6 @@ Section L2.
     (PF:ProperFilter lim)
     (cF:cauchy lim) : LpRRVq prts 2.
   Admitted.
-
-    Search "L2RRVq_lim".
 
   Definition L2RRVq_lim (lim : ((LpRRVq prts 2 -> Prop) -> Prop)) : LpRRVq prts 2.
   Proof.
