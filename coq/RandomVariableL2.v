@@ -1238,6 +1238,14 @@ Section L2.
     easy.
   Qed.
 
+  Lemma ex_finite_lim_seq_abs (f : nat -> R) :
+    ex_finite_lim_seq (fun n => sum_n (fun m => Rabs (f m)) n) ->
+    ex_finite_lim_seq (sum_n f).
+  Proof.
+    do 2 rewrite ex_finite_lim_series.
+    apply ex_series_Rabs.
+  Qed.
+
   Lemma series_abs_bounded (f : nat -> R) :
     is_finite (Lim_seq (sum_n (fun n=> Rabs (f n)))) ->
     ex_series (fun n => Rabs (f n)).
@@ -1251,6 +1259,16 @@ Section L2.
     rewrite sum_Sn.
     apply Rplus_le_compat1_l.
     apply Rabs_pos.
+  Qed.
+
+  Lemma lim_sum_abs_bounded (f : nat -> R) :
+    is_finite (Lim_seq (sum_n (fun n=> Rabs (f n)))) ->
+    ex_finite_lim_seq (sum_n f).
+  Proof.
+    intros.
+    apply series_abs_bounded in H.
+    apply ex_series_Rabs in H.
+    now apply ex_finite_lim_series.
   Qed.
 
   Lemma Rbar_Rabs_lim_sum_le0 (f : nat -> Ts -> R) (x : Ts) :
@@ -1345,6 +1363,7 @@ Section L2.
       + rewrite H in H0.
         now simpl in H0.
   Qed.
+
 
   Lemma Rabs_lim_sum_le (f : nat -> Ts -> R) (x : Ts) :
     Rbar_le
@@ -2192,6 +2211,17 @@ Section L2.
     lra.
   Qed.
 
+  Lemma Rbar_IsLp_Almost_finite (f : Ts -> Rbar) (n : R)
+        {rrv:RandomVariable dom Rbar_borel_sa f} :
+    1 <= n ->
+    IsLp_Rbar prts n f ->
+    ps_P (exist sa_sigma _ (sa_finite_Rbar f rrv)) = 1.    
+  Proof.
+    intros.
+    apply Rbar_IsLp_IsFiniteExpectation in H0; trivial.
+    now apply finite_Rbar_Expectation_almost_finite.
+  Qed.
+
   Instance picker_rv
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
         (PF:ProperFilter F)
@@ -2402,6 +2432,167 @@ Section L2.
     - admit.
   Admitted.
 
+  Lemma ex_Rbar_plus_pos (x y : Rbar) :
+    Rbar_le 0 x -> Rbar_le 0 y -> ex_Rbar_plus x y.
+  Proof.
+    intros.
+    destruct x; destruct y; simpl; trivial.
+  Qed.
+
+  Instance Rbar_lim_seq_measurable_pos (f : nat -> Ts -> R) :
+    (forall n, RbarMeasurable (f n)) ->
+    (forall n, Rbar_PositiveRandomVariable (f n)) ->
+    RbarMeasurable (fun omega => Lim_seq (fun n => f n omega)).
+  Proof.
+    intros.
+    unfold Lim_seq.
+    apply Rbar_div_pos_measurable.
+    apply Rbar_plus_measurable.
+    - now apply Rbar_lim_sup_measurable.
+    - now apply Rbar_lim_inf_measurable.
+    - assert (Rbar_PositiveRandomVariable (fun x => LimSup_seq (fun n => f n x))).
+      {
+        intro x.
+        replace (Finite 0) with (LimSup_seq (fun _ => 0)).
+        apply LimSup_le.
+        exists (0%nat).
+        intros.
+        apply H0.
+        apply LimSup_seq_const.
+      }
+      assert (Rbar_PositiveRandomVariable (fun x => LimInf_seq (fun n => f n x))).      
+      {
+        intro x.
+        replace (Finite 0) with (LimInf_seq (fun _ => 0)).
+        apply LimInf_le.
+        exists (0%nat).
+        intros.
+        apply H0.
+        apply LimInf_seq_const.
+      }
+      intro x.
+      specialize (H1 x).
+      specialize (H2 x).
+      now apply ex_Rbar_plus_pos.
+  Qed.
+
+  Lemma Rbar_lim_seq_pos_rv
+        (f : nat -> Ts -> R) :
+    (forall n, RandomVariable dom Rbar_borel_sa (f n)) ->
+    (forall n, Rbar_PositiveRandomVariable (f n)) ->
+    RandomVariable dom Rbar_borel_sa (fun omega => Lim_seq (fun n => f n omega)).
+  Proof.
+    intros.
+    unfold RandomVariable.
+    apply Rbar_borel_sa_preimage2.    
+    intros.
+    apply Rbar_lim_seq_measurable_pos; trivial.
+    intros.
+    unfold RbarMeasurable.
+    apply Rbar_borel_sa_preimage2.        
+    apply H.
+  Qed.
+    
+   Lemma cauchy_filter_sum_abs_finite00
+        (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F) :
+    exists (P: event dom),
+      ps_P P = 1 /\
+      (forall x, 
+          P x -> 
+          is_finite (Lim_seq 
+                       (fun n0 =>
+                          LpRRVsum prts big2 
+                                   (fun n =>
+                                      (LpRRVabs prts
+                                                (LpRRVminus prts
+                                                            (L2RRV_lim_picker F PF cF (S (S n)))
+                                                            (L2RRV_lim_picker F PF cF (S n))))) n0 x))).
+   Proof.
+    generalize (cauchy_filter_sum_abs F PF cF); intros.
+    pose (limpick :=
+             (Rbar_rvlim
+           (fun n0 : nat =>
+            LpRRVsum prts big2
+              (fun n : nat =>
+               LpRRVabs prts
+                 (LpRRVminus prts (L2RRV_lim_picker F PF cF (S (S n)))
+                    (L2RRV_lim_picker F PF cF (S n)))) n0))).
+    assert (rv:RandomVariable dom Rbar_borel_sa limpick).
+    {
+      subst limpick.
+      unfold Rbar_rvlim.
+      apply Rbar_lim_seq_pos_rv.
+      - intros.
+        apply borel_Rbar_borel.
+        apply LpRRV_rv.
+      - intros.
+        apply positive_Rbar_positive.
+        apply LpRRVsum_pos.
+        intros.
+        unfold LpRRVabs, pack_LpRRV;simpl.
+        apply prvabs.
+    }
+    exists (exist _ _ (sa_finite_Rbar limpick rv)).
+    split.
+    - subst limpick.
+      apply Rbar_IsLp_Almost_finite with (n := 2); trivial.
+      lra.
+    - intros.
+      apply H0.
+  Qed.
+
+   Lemma cauchy_filter_sum_abs_ext0_finite00
+        (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F) :
+    exists (P: event dom),
+      ps_P P = 1 /\
+      (forall x, 
+          P x -> 
+          is_finite (Lim_seq 
+                       (fun n0 =>
+                          LpRRVsum prts big2 
+                                   (fun n =>
+                                      (LpRRVabs prts
+                                                (LpRRVminus prts
+                                                            (L2RRV_lim_picker_ext0 F PF cF (S n))
+                                                            (L2RRV_lim_picker_ext0 F PF cF n)))) n0 x))).
+   Proof.
+    generalize (cauchy_filter_sum_abs_ext0 F PF cF); intros.
+    pose (limpick :=
+             (Rbar_rvlim
+           (fun n0 : nat =>
+            LpRRVsum prts big2
+              (fun n : nat =>
+               LpRRVabs prts
+                 (LpRRVminus prts (L2RRV_lim_picker_ext0 F PF cF (S n))
+                    (L2RRV_lim_picker_ext0 F PF cF n))) n0))).
+    assert (rv:RandomVariable dom Rbar_borel_sa limpick).
+    {
+      subst limpick.
+      unfold Rbar_rvlim.
+      apply Rbar_lim_seq_pos_rv.
+      - intros.
+        apply borel_Rbar_borel.
+        apply LpRRV_rv.
+      - intros.
+        apply positive_Rbar_positive.
+        apply LpRRVsum_pos.
+        intros.
+        unfold LpRRVabs, pack_LpRRV;simpl.
+        apply prvabs.
+    }
+    exists (exist _ _ (sa_finite_Rbar limpick rv)).
+    split.
+    - subst limpick.
+      apply Rbar_IsLp_Almost_finite with (n := 2); trivial.
+      lra.
+    - intros.
+      apply H0.
+  Qed.
+
   Instance Rbar_lim_seq_measurable2 (f : nat -> Ts -> R) :
     (forall n, RealMeasurable dom (f n)) ->
     RbarMeasurable (fun omega => Lim_seq (fun n => f n omega)).
@@ -2414,6 +2605,7 @@ Section L2.
     }
     now apply Rbar_lim_seq_measurable.
   Qed.
+
 
   Lemma cauchy_filter_rvlim_finite00
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
@@ -2432,7 +2624,6 @@ Section L2.
       subst limpick.
       apply Rbar_rvabs_rv.
       apply borel_Rbar_borel.
-      Locate rvlim_rv.
       apply rvlim_rv.
       - intros.
         apply picker_rv.
