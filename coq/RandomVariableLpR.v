@@ -216,9 +216,6 @@ Definition Rbar_rvpower (rv_X1 : Ts -> Rbar) (rv_X2 : Ts -> R) :=
 
 (*
 Lemma Rbar_rv_almost_eq_power_abs_proper
-      {Ts:Type} 
-      {dom: SigmaAlgebra Ts}
-      (prts: ProbSpace dom) 
       (x1 x2: Ts -> Rbar)
       n
       {rvx1 : RandomVariable dom Rbar_borel_sa x1}
