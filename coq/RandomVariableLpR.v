@@ -221,7 +221,9 @@ Lemma Rbar_rv_almost_eq_power_abs_proper
       {rvx1 : RandomVariable dom Rbar_borel_sa x1}
       {rvx2: RandomVariable dom Rbar_borel_sa x2}
       (eqqx : rv_almost_eq prts (cod := Rbar_borel_sa) (rvabs x1) (rvabs x2)) :
-  rv_almost_eq prts (cod := Rbar_borel_sa) (Rbar_rvpower (Rbar_rvabs x1) (const n)) (Rbar_rvpower (Rbar_rvabs x2) (const n)).
+  rv_almost_eq prts (cod := Rbar_borel_sa) 
+        (Rbar_rvpower (Rbar_rvabs x1) (const n)) 
+        (Rbar_rvpower (Rbar_rvabs x2) (const n)).
 Proof.
   apply (rv_almost_eq_sub prts (rvabs x1) (rvabs x2) (fun x => rvpower x (const n))); trivial.
   intros.
