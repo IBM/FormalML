@@ -2419,19 +2419,6 @@ Section L2.
   Proof.
     Admitted.
 
-  Instance Rbar_lim_seq_measurable (f : nat -> Ts -> R) :
-    (forall n, RbarMeasurable (f n)) ->
-    RbarMeasurable (fun omega => Lim_seq (fun n => f n omega)).
-  Proof.
-    intros.
-    unfold Lim_seq.
-    apply Rbar_div_pos_measurable.
-    apply Rbar_plus_measurable.
-    - now apply Rbar_lim_sup_measurable.
-    - now apply Rbar_lim_inf_measurable.
-    - admit.
-  Admitted.
-
   Lemma ex_Rbar_plus_pos (x y : Rbar) :
     Rbar_le 0 x -> Rbar_le 0 y -> ex_Rbar_plus x y.
   Proof.
@@ -2593,56 +2580,6 @@ Section L2.
       apply H0.
   Qed.
 
-  Instance Rbar_lim_seq_measurable2 (f : nat -> Ts -> R) :
-    (forall n, RealMeasurable dom (f n)) ->
-    RbarMeasurable (fun omega => Lim_seq (fun n => f n omega)).
-  Proof.
-    intros.
-    assert (forall n, RbarMeasurable (f n)).
-    {
-      intro n.
-      now apply RealMeasurable_RbarMeasurable.
-    }
-    now apply Rbar_lim_seq_measurable.
-  Qed.
-
-
-  Lemma cauchy_filter_rvlim_finite00
-        (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
-        (PF:ProperFilter F)
-        (cF:cauchy F) :
-    exists (P: event dom),
-      ps_P P = 1 /\
-      (forall x, P x -> 
-                 is_finite (Lim_seq (fun n => (L2RRV_lim_picker F PF cF (S n)) x))).
-  Proof.
-    generalize (cauchy_filter_Rbar_rvlim1 F PF cF); intros.
-    pose (limpick := (Rbar_rvabs (rvlim
-                               (fun n => L2RRV_lim_picker F PF cF (S n))))).
-    assert (rv:RandomVariable dom Rbar_borel_sa limpick).
-    {
-      subst limpick.
-      apply Rbar_rvabs_rv.
-      apply borel_Rbar_borel.
-      apply rvlim_rv.
-      - intros.
-        apply picker_rv.
-      - intros.
-        rewrite ex_finite_lim_seq_correct.
-        split.
-        + admit.
-        + 
-        
-admit.
-    }
-    exists (exist _ _ (sa_finite_Rbar limpick rv)).
-    split.
-    - subst limpick.
-      
-(*      apply finite_Rbar_Expectation_posRV_almost_finite. *)
-      admit.
-    Admitted.
-
   Lemma cauchy_filter_sum_finite00
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
         (PF:ProperFilter F)
@@ -2669,6 +2606,27 @@ admit.
     unfold rvabs in H0.
     now apply lim_sum_abs_bounded.
  Qed.
+
+  Lemma ex_finite_lim_seq_ext (f g : nat -> R) :
+    (forall n, f n = g n) ->
+    ex_finite_lim_seq f <-> ex_finite_lim_seq g.
+  Proof.
+    intros.
+    unfold ex_finite_lim_seq.
+    split; intros;
+      destruct H0 as [l ?]; exists l.
+    - now apply is_lim_seq_ext with (u := f).      
+    - now apply is_lim_seq_ext with (u := g).      
+  Qed.
+
+  Lemma ex_finite_lim_seq_S (f : nat -> R) :
+    ex_finite_lim_seq f <-> ex_finite_lim_seq (fun n => f (S n)).
+  Proof.
+    unfold ex_finite_lim_seq.
+    split; intros; destruct H as [l ?]; exists l.
+    now apply is_lim_seq_incr_1 in H.
+    now apply is_lim_seq_incr_1.    
+  Qed.
 
   Lemma cauchy_filter_sum_ext0_finite00
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
@@ -2697,9 +2655,42 @@ admit.
     now apply lim_sum_abs_bounded.
  Qed.
     
-    
-
   Lemma cauchy_filter_rvlim_finite0
+        (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F) :
+    exists (P: event dom),
+      ps_P P = 1 /\
+      (forall x, P x -> 
+                 ex_finite_lim_seq (fun n => (L2RRV_lim_picker F PF cF (S (S n))) x)).
+  Proof.
+    generalize (cauchy_filter_sum_finite00 F PF cF); intros.
+    destruct H as [P [? ?]].
+    exists P; split; trivial.
+    intros.
+    specialize (H0 x H1).
+    rewrite ex_finite_lim_seq_ext in H0.
+    shelve.
+    intros.
+    generalize (LpRRVsum_telescope0 (fun n => L2RRV_lim_picker F PF cF (S n)) n); intros.
+    apply H2.
+    Unshelve.
+    unfold LpRRVminus, pack_LpRRV in H0; simpl in H0.
+    unfold rvminus, rvplus, rvopp, rvscale in H0.
+    unfold ex_finite_lim_seq in H0.
+    destruct H0 as [l ?].
+    unfold ex_finite_lim_seq.
+    exists (l + L2RRV_lim_picker F PF cF 1 x).
+    apply is_lim_seq_ext with
+        (u :=  fun n : nat =>
+                 (L2RRV_lim_picker F PF cF (S (S n)) x + -1 * L2RRV_lim_picker F PF cF 1 x)
+                   +
+                   (L2RRV_lim_picker F PF cF 1 x)); [(intros; lra) |].
+    apply is_lim_seq_plus'; trivial.
+    apply is_lim_seq_const.
+ Qed.
+
+    Lemma cauchy_filter_rvlim_ext0_finite0
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
         (PF:ProperFilter F)
         (cF:cauchy F) :
@@ -2708,24 +2699,41 @@ admit.
       (forall x, P x -> 
                  ex_finite_lim_seq (fun n => (L2RRV_lim_picker F PF cF (S n)) x)).
   Proof.
-    generalize (cauchy_filter_sum_finite00 F PF cF); intros.
+    generalize (cauchy_filter_sum_ext0_finite00 F PF cF); intros.
     destruct H as [P [? ?]].
     exists P; split; trivial.
     intros.
     specialize (H0 x H1).
-    Search ex_finite_lim_seq.
-(*
-    pose (pickfin := fun x => ex_finite_lim_seq
-                                (fun n => L2RRV_lim_picker F PF cF (S n) x)).
-    assert (sa_sigma pickfin).
-    admit.
-    exists (exist _ pickfin H0).
-    split.
-    - admit.
-    - easy.
-*)
-    Admitted.
+    rewrite ex_finite_lim_seq_ext in H0.
+    shelve.
+    intros.
+    generalize (LpRRVsum_telescope0 (fun n => L2RRV_lim_picker_ext0 F PF cF n) n); intros.
+    apply H2.
+    Unshelve.
+    unfold LpRRVminus, pack_LpRRV in H0; simpl in H0.
+    unfold rvminus, rvplus, rvopp, rvscale, const in H0.
+    rewrite ex_finite_lim_seq_ext in H0.
+    apply H0.
+    intros.
+    lra.
+ Qed.
 
+    Lemma cauchy_filter_rvlim_Sext0_finite0
+        (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F) :
+    exists (P: event dom),
+      ps_P P = 1 /\
+      (forall x, P x -> 
+                 ex_finite_lim_seq (fun n => (L2RRV_lim_picker F PF cF n) x)).
+   Proof.
+     generalize (cauchy_filter_rvlim_ext0_finite0 F PF cF); intros.
+     destruct H as [P [? ?]].
+     exists P.
+     split; trivial; intros.
+     specialize (H0 x H1).
+     now apply ex_finite_lim_seq_S.
+  Qed.
 
   Lemma cauchy_filter_rvlim_finite
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
@@ -2742,7 +2750,7 @@ admit.
              (rvlim (fun n => (rvmult (EventIndicator dec)
                                       (L2RRV_lim_picker F PF cF (S n))))).
   Proof.
-    generalize (cauchy_filter_rvlim_finite0 F PF cF); intros.
+    generalize (cauchy_filter_rvlim_ext0_finite0 F PF cF); intros.
     destruct H as [P [? ?]].
     exists P.
     assert (forall x: Ts, {P x} + {~ P x}).
@@ -2774,6 +2782,7 @@ admit.
         unfold const.
         match_destr; try tauto; lra.
     - generalize (cauchy_filter_Rbar_rvlim1 F PF cF); intros.
+      
   Admitted.
 
   Lemma cauchy_filter_rvlim_finite1

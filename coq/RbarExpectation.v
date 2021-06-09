@@ -85,6 +85,45 @@ Context {Ts:Type}
     now apply rv_preimage_sa.
   Qed.
 
+  Lemma sa_pinf_Rbar
+        (f : Ts -> Rbar) 
+        (rv : RandomVariable dom Rbar_borel_sa f) :
+    sa_sigma (fun x => (f x) = p_infty).
+  Proof.
+    apply Rbar_sa_le_pt.
+    now rewrite Rbar_borel_sa_preimage2.
+  Qed.
+
+  Lemma sa_minf_Rbar
+        (f : Ts -> Rbar) 
+        (rv : RandomVariable dom Rbar_borel_sa f) :
+    sa_sigma (fun x => (f x) = m_infty).
+  Proof.
+    apply Rbar_sa_le_pt.
+    now rewrite Rbar_borel_sa_preimage2.
+  Qed.
+
+  Lemma sa_finite_Rbar
+        (f : Ts -> Rbar) 
+        (rv : RandomVariable dom Rbar_borel_sa f) :
+    sa_sigma (fun x => is_finite (f x)).
+  Proof.
+    assert (pre_event_equiv (fun x => is_finite (f x))
+                            (pre_event_complement
+                               (pre_event_union
+                                  (fun omega => (f omega) = p_infty)
+                                  (fun omega => (f omega) = m_infty)
+                                  ))).
+    intro z.
+    unfold is_finite, pre_event_complement, pre_event_union.
+    destruct (f z); intuition discriminate.
+    rewrite H.
+    apply sa_complement.
+    apply sa_union.
+    + now apply sa_pinf_Rbar.
+    + now apply sa_minf_Rbar.
+  Qed.
+
 End RbarBorel.
 
 Section RbarExpectation.

@@ -126,6 +126,76 @@ Section Lp.
     now rewrite eqq2.
   Qed.
 
+  Global Instance borel_Rbar_haseqs : HasEventEq Rbar_borel_sa.
+  Proof.
+  red; intros.
+  assert (pre_event_equiv
+            (fun x : Ts0 => r1 x = r2 x)
+            (pre_event_union
+               (pre_event_union
+                  (pre_event_inter
+                     (fun x => r1 x = p_infty)
+                     (fun x => r2 x = p_infty))
+                  (pre_event_inter
+                     (fun x => r1 x = m_infty)
+                     (fun x => r2 x = m_infty)))
+               (pre_event_inter 
+                  (pre_event_inter
+                     (fun x => is_finite (r1 x))
+                     (fun x => is_finite (r2 x)))
+                  (fun x => (rvminus r1 r2) x = 0)))).
+  {
+    intro x.
+    unfold pre_event_union, pre_event_inter, rvminus, rvplus, rvopp, rvscale, is_finite.
+    split; intros.
+    - rewrite H.
+      destruct (r2 x); try tauto; try discriminate.
+      simpl.
+      replace (r + -1 * r) with (0) by lra.
+      tauto.
+    - destruct (r1 x); destruct (r2 x); try tauto; try firstorder; try discriminate.
+      + apply Rbar_finite_eq.
+        simpl in H0.
+        lra.
+  }
+  generalize (sa_finite_Rbar _ rv1); intros.
+  generalize (sa_finite_Rbar _ rv2); intros.  
+  unfold RandomVariable in rv1.
+  unfold RandomVariable in rv2.
+  rewrite <- Rbar_borel_sa_preimage2 in rv1.
+  rewrite <- Rbar_borel_sa_preimage2 in rv2.  
+  rewrite H.
+  apply sa_union.
+  - apply sa_union; apply sa_inter; now apply Rbar_sa_le_pt.
+  - apply sa_inter.
+    + apply sa_inter; trivial.
+    + apply sa_le_pt.
+      intros.
+      apply minus_measurable.
+      * admit.
+      * admit.
+  Admitted.
+
+(*
+  Lemma IsLp_Rbar_proper_almost n (rv_X1 rv_X2 : Ts -> Rbar)
+        {rrv1:RandomVariable dom Rbar_borel_sa rv_X1}
+        {rrv2:RandomVariable dom Rbar_borel_sa rv_X2}
+        {islp1:IsLp_Rbar n rv_X1}
+    :
+      rv_almost_eq prts (cod := Rbar_borel_sa) rv_X1 rv_X2 ->
+      IsLp_Rbar n rv_X2.
+  Proof.
+    unfold IsLp in *.
+    red; intros.
+    eapply (IsFiniteExpectation_proper_almost _ (rvpower (rvabs rv_X1) (const n)))
+    ; try eapply islp; trivial.
+    apply rv_almost_eq_power_abs_proper
+    ; try typeclasses eauto.
+    now apply rv_almost_eq_abs_proper
+    ; try typeclasses eauto.
+  Qed.
+*)
+
   Lemma FiniteExpectation_Lp_pos p y
         {islp:IsLp p y} :
     0 <= FiniteExpectation prts (rvpower (rvabs y) (const p)).
