@@ -185,8 +185,53 @@ Section Lp.
       * now apply Rbar_real_measurable.
       * now apply Rbar_real_measurable.
  Qed.
+                                                         
+Lemma Rbar_rv_almost_eq_sub
+      (x1 x2: Ts -> Rbar)
+      (f:(Ts->Rbar)->Ts->Rbar)
+      {rvx1 : RandomVariable dom Rbar_borel_sa x1}
+      {rvx2: RandomVariable dom Rbar_borel_sa x2}
+      {rvfx1 : RandomVariable dom Rbar_borel_sa (f x1)}
+      {rvfx2: RandomVariable dom Rbar_borel_sa (f x2)}
+      (eqqx : rv_almost_eq prts (cod := Rbar_borel_sa )x1 x2)
+      (fpres: forall x y a, x a = y a -> f x a = f y a)
+:
+  rv_almost_eq prts (cod := Rbar_borel_sa) (f x1) (f x2).
+Proof.
+  red in eqqx.
+  red.
+  apply Rle_antisym.
+  - apply ps_le1.
+  - generalize (ps_sub prts (event_eq (cod := Rbar_borel_sa) x1 x2) 
+                       (event_eq (cod := Rbar_borel_sa) (f x1) (f x2)))
+    ; intros HH.
+    rewrite eqqx in HH.
+    apply HH.
+    + intros a ?; simpl in *.
+      auto.
+Qed.
+
+Definition Rbar_rvpower (rv_X1 : Ts -> Rbar) (rv_X2 : Ts -> R) := 
+  fun omega => Rbar_power (rv_X1 omega) (rv_X2 omega).
 
 (*
+Lemma Rbar_rv_almost_eq_power_abs_proper
+      {Ts:Type} 
+      {dom: SigmaAlgebra Ts}
+      (prts: ProbSpace dom) 
+      (x1 x2: Ts -> Rbar)
+      n
+      {rvx1 : RandomVariable dom Rbar_borel_sa x1}
+      {rvx2: RandomVariable dom Rbar_borel_sa x2}
+      (eqqx : rv_almost_eq prts (cod := Rbar_borel_sa) (rvabs x1) (rvabs x2)) :
+  rv_almost_eq prts (cod := Rbar_borel_sa) (Rbar_rvpower (Rbar_rvabs x1) (const n)) (Rbar_rvpower (Rbar_rvabs x2) (const n)).
+Proof.
+  apply (rv_almost_eq_sub prts (rvabs x1) (rvabs x2) (fun x => rvpower x (const n))); trivial.
+  intros.
+  now unfold rvpower; rewrite H.
+Qed.
+
+
   Lemma IsLp_Rbar_proper_almost n (rv_X1 rv_X2 : Ts -> Rbar)
         {rrv1:RandomVariable dom Rbar_borel_sa rv_X1}
         {rrv2:RandomVariable dom Rbar_borel_sa rv_X2}
@@ -195,8 +240,10 @@ Section Lp.
       rv_almost_eq prts (cod := Rbar_borel_sa) rv_X1 rv_X2 ->
       IsLp_Rbar n rv_X2.
   Proof.
-    unfold IsLp in *.
+    unfold IsLp_Rbar in *.
+    intros.
     red; intros.
+    Locate IsFiniteExpectation_proper_almost.
     eapply (IsFiniteExpectation_proper_almost _ (rvpower (rvabs rv_X1) (const n)))
     ; try eapply islp; trivial.
     apply rv_almost_eq_power_abs_proper
