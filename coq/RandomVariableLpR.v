@@ -36,6 +36,15 @@ Set Bullet Behavior "Strict Subproofs".
 
 Local Notation NNR x := (mknonnegreal x ltac:(lra)) (only parsing).
 
+  Instance Rbar_real_measurable {Ts} {dom} (f : Ts -> Rbar) :
+    RbarMeasurable f ->
+    RealMeasurable dom (fun x => real (f x)).
+  Proof.
+    unfold RbarMeasurable, RealMeasurable; intros.
+    
+  Admitted.
+
+
 Section Lp.
   Context {Ts:Type} 
           {dom: SigmaAlgebra Ts}
@@ -126,6 +135,7 @@ Section Lp.
     now rewrite eqq2.
   Qed.
 
+  
   Global Instance borel_Rbar_haseqs : HasEventEq Rbar_borel_sa.
   Proof.
   red; intros.
@@ -172,9 +182,9 @@ Section Lp.
     + apply sa_le_pt.
       intros.
       apply minus_measurable.
-      * admit.
-      * admit.
-  Admitted.
+      * now apply Rbar_real_measurable.
+      * now apply Rbar_real_measurable.
+ Qed.
 
 (*
   Lemma IsLp_Rbar_proper_almost n (rv_X1 rv_X2 : Ts -> Rbar)

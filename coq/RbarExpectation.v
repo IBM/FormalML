@@ -156,6 +156,63 @@ Section RbarExpectation.
       - now simpl.
     Qed.
 
+    Instance Rbar_real_measurable (f : Ts -> Rbar) :
+      RbarMeasurable f ->
+      RealMeasurable dom (fun x => real (f x)).
+    Proof.
+      unfold RbarMeasurable, RealMeasurable; intros.
+      destruct (Rle_dec 0 r).
+      - assert (pre_event_equiv
+                  (fun omega => real (f omega ) <= r)
+                  (pre_event_union
+                     (pre_event_inter
+                        (fun omega => is_finite (f omega))
+                        (fun omega => Rbar_le (f omega) r))
+                     (pre_event_union
+                        (fun omega => f omega = p_infty)
+                        (fun omega => f omega = m_infty)))).
+        {
+          intro x.
+          unfold pre_event_inter, pre_event_union, is_finite.
+          destruct (f x); simpl.
+          - firstorder; congruence.
+          - firstorder; congruence.
+          - firstorder; congruence.
+        }
+        rewrite H0.
+        apply sa_union.
+        + apply sa_inter.
+          * apply sa_finite_Rbar.
+            now apply Rbar_measurable_rv.
+          * apply H.
+        + apply sa_union.
+          * now apply Rbar_sa_le_pt.
+          * now apply Rbar_sa_le_pt.
+      - assert (r < 0) by lra.
+        assert (pre_event_equiv
+                  (fun omega : Ts => f omega <= r)
+                  (pre_event_inter
+                     (fun omega => is_finite (f omega))
+                     (fun omega => Rbar_le (f omega) r))).
+        {
+          intro x.
+          unfold pre_event_inter, is_finite.
+          destruct (f x).
+          - simpl.
+            firstorder.
+          - simpl.
+            firstorder.
+          - simpl.
+            firstorder.
+            discriminate.
+        }
+        rewrite H1.
+        apply sa_inter.
+        + apply sa_finite_Rbar.
+          now apply Rbar_measurable_rv.
+        + apply H.
+    Qed.
+
     Instance Rbar_Rabs_measurable (f : Ts -> Rbar) :
       RbarMeasurable f ->
       RbarMeasurable (Rbar_rvabs f).
@@ -189,6 +246,7 @@ Section RbarExpectation.
         + apply sa_inter; trivial.
           now apply Rbar_sa_le_ge.
     Qed.
+
 
     Global Instance Rbar_rvabs_rv
            (rv_X : Ts -> Rbar)
