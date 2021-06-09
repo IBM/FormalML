@@ -211,6 +211,7 @@ Proof.
       auto.
 Qed.
 
+Check Rbar_power.
 Definition Rbar_rvpower (rv_X1 : Ts -> Rbar) (rv_X2 : Ts -> R) := 
   fun omega => Rbar_power (rv_X1 omega) (rv_X2 omega).
 
@@ -220,7 +221,7 @@ Lemma Rbar_rv_almost_eq_power_abs_proper
       n
       {rvx1 : RandomVariable dom Rbar_borel_sa x1}
       {rvx2: RandomVariable dom Rbar_borel_sa x2}
-      (eqqx : rv_almost_eq prts (cod := Rbar_borel_sa) (rvabs x1) (rvabs x2)) :
+      (eqqx : rv_almost_eq prts (cod := Rbar_borel_sa) (Rbar_rvabs x1) (Rbar_rvabs x2)) :
   rv_almost_eq prts (cod := Rbar_borel_sa) 
         (Rbar_rvpower (Rbar_rvabs x1) (const n)) 
         (Rbar_rvpower (Rbar_rvabs x2) (const n)).
