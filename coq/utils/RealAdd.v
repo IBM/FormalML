@@ -1703,11 +1703,9 @@ Proof.
   unfold power.
   match_destr.
   - red; intros.
-    match_destr; try lra.
-    Admitted.
-(*
-    clear e0.
+    assert (x = 0) by lra.
     subst.
+
     assert (dpos:0 <  (power eps (Rinv (y-1)))).
     {
       apply power_pos; lra.
@@ -1715,7 +1713,10 @@ Proof.
     exists (mkposreal _ dpos); intros.
     rewrite Rplus_0_l.
     match_destr.
-    -- apply Rcomplements.Rabs_eq_0 in e; lra.
+    -- rewrite Rabs_R0.
+       match_destr; try lra.
+       unfold Rabs.
+       match_destr; lra.
     -- simpl in *.
        rewrite Rmult_0_r.
        repeat rewrite Rminus_0_r.
@@ -1735,18 +1736,19 @@ Proof.
       unfold Rdiv.
       rewrite Rabs_mult.
       rewrite Rabs_Rinv by trivial.
+      rewrite Rabs_R0.
+      match_destr; try lra.
+      rewrite Rminus_0_r.
       rewrite (Rabs_pos_eq (Rpower (Rabs h) y)); trivial.
       left.
       apply Rpower_pos.
     + lra.
     + split; trivial.
       apply Rabs_pos.
-      -- subst.
-         rewrite Rabs_R0 in n; lra.
-  -
+  - assert ( 0 < x) by lra.
     generalize (derivable_pt_lim_comp
                   Rabs
-                  (fun x0 : R => if Req_EM_T x0 0 then 0 else Rpower x0 y)
+                  (fun x0 : R => if Rle_dec x0 0 then 0 else Rpower x0 y)
                   x
                   1
                   (y * Rpower x (y - 1)))
@@ -1760,7 +1762,6 @@ Proof.
       unfold power in HH.
       match_destr_in HH; try lra.
 Qed.
- *)
 
 Lemma Rpower_convex_pos (e:R) :
   1 <= e ->
