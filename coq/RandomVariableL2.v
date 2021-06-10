@@ -2146,7 +2146,9 @@ Section L2.
       destruct (rv_X x); simpl; trivial.
       unfold power.
       match_destr.
-      + now rewrite e.
+      + generalize (Rabs_pos r); intros.
+        apply Rbar_finite_eq.
+        lra.
       + rewrite Rpower_1; trivial.
         apply Rabs_pos_lt.
         unfold Rabs in n.
