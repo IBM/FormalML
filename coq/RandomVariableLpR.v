@@ -250,12 +250,15 @@ Qed.
       rv_unfold.
       unfold power.
       destruct (Req_EM_T (rv_X a)).
-      - rewrite Rabs_pos_eq by lra.
-        match_destr; congruence.
-      - match_destr.
-        + apply Rabs_eq_0 in e; congruence.
-        + rewrite Rpower_O; trivial.
-          generalize (Rabs_pos (rv_X a)); lra.
+      - rewrite e.
+        rewrite Rabs_R0.
+        match_destr.
+        lra.
+      - generalize (Rabs_pos (rv_X a)); intros.
+        match_destr.
+        + assert (e: Rabs (rv_X a) = 0) by lra.
+          apply Rabs_eq_0 in e; congruence.          
+        + rewrite Rpower_O; trivial; lra.
     } 
     rewrite eqq.
     typeclasses eauto.
@@ -374,7 +377,7 @@ Qed.
 
   Lemma IsLp_scale_inv p c rv_X 
         {islp:IsLp p (rvscale c rv_X)} :
-    c <> 0 ->
+    c > 0 ->
     IsLp p rv_X.
   Proof.
     intros.
@@ -385,7 +388,8 @@ Qed.
     generalize (power_pos (Rabs c) p); intros HH.
     cut_to HH.
     - lra.
-    - now apply Rabs_no_R0.
+    - apply Rabs_pos_lt.
+      now apply Rgt_not_eq.
   Qed.
   
   Global Instance IsLp_opp p (rv_X:Ts->R)
@@ -1034,7 +1038,10 @@ Qed.
             rewrite Rabs_R0.
             rewrite power0_Sbase; lra.
           + apply power_integral in eqq.
-            now apply Rabs_eq_0 in eqq.
+            simpl.
+            generalize (Rabs_pos (rv_X a)); intros.
+            assert (Rabs (rv_X a) = 0) by lra.
+            now apply Rabs_eq_0 in H0.
       Qed.
 
       (* If the norm is 0 then p is a.e. 0 *)
@@ -1061,6 +1068,12 @@ Qed.
         unfold LpRRVnorm, LpRRVzero, LpRRVconst.
         intros.
         apply power_integral in H.
+        generalize (FiniteExpectation_Lp_pos p x); intros.
+        
+        
+       Admitted.
+(*
+        assert (FiniteExpectation prts (rvpower (rvabs x) (const p)) = 0) by lra.
         eapply FiniteExpectation_zero_pos in H; try typeclasses eauto.
         erewrite ps_proper in H; try eapply H.
         intros a; simpl; unfold const.
@@ -1074,7 +1087,7 @@ Qed.
           Unshelve.
           typeclasses eauto.
       Qed.
-
+*)
     End normish.
 
     Definition LpRRVpoint (p:R) : LpRRV p := LpRRVconst 0.
@@ -1631,7 +1644,7 @@ Qed.
         - unfold p_power.
           repeat red; intros.
           exists (power eps (/ p)).
-          split; [now apply power_pos, Rgt_not_eq |].
+          split; [apply power_pos; lra | ].
           unfold dist; simpl; unfold R_dist.
           intros; subst.
           rewrite Rabs_R0.

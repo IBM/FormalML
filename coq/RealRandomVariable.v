@@ -520,38 +520,50 @@ Section RealRandomVariables.
     Qed.
 
     Instance rvpower_measurable (b e : Ts -> R) :
-      (forall (x:Ts), (0 <= b x)%R) ->
+(*      (forall (x:Ts), (0 <= b x)%R) -> *)
       RealMeasurable b ->
       RealMeasurable e ->
       RealMeasurable (rvpower b e).
     Proof.
       unfold rvpower, power, RealMeasurable.
-      intros bpos rb re r.
-      assert (pre_event_equiv  (fun omega : Ts => (if Req_EM_T (b omega) 0 
+      intros rb re r.
+      assert (pre_event_equiv  (fun omega : Ts => (if Rle_dec (b omega) 0 
                                             then 0 else Rpower (b omega) (e omega)) <= r)
                            (pre_event_union
-                              (pre_event_inter (fun omega => b omega = 0)
-                                           (fun omega => b omega <= r))
+                              (pre_event_inter (fun omega => b omega <= 0)
+                                           (fun omega => 0 <= r))
                               (pre_event_inter (fun omega => b omega > 0) 
                                            (fun omega => Rpower (b omega) (e omega) <= r)))).
       - intro x.
         unfold pre_event_inter, pre_event_union.
-        destruct (Req_EM_T (b x) 0).
-        + rewrite e0.
-          split; intros.
+        destruct (Rle_dec (b x) 0).
+        + split; intros.
           * now left.
           * destruct H; destruct H; lra.
-        + specialize (bpos x).
-          split; intros.
+        + split; intros.
           * right; lra.
           * destruct H; destruct H; lra.
       - rewrite H.
-        apply sa_union.
-        + apply sa_inter; trivial.
-          now apply sa_le_pt.
-        + apply sa_inter.
-          * now apply sa_le_gt.
-          * now apply Rpower_measurable.
+        destruct (Rle_dec 0 r).
+        + apply sa_union.
+          * apply sa_inter; trivial.
+            assert (pre_event_equiv  (fun _ : Ts => 0 <= r)
+                                     (fun _  => True)) by (intro xx; lra).
+            rewrite H0.
+            now apply sa_all.
+          * apply sa_inter.
+            -- now apply sa_le_gt.
+            -- now apply Rpower_measurable.
+        + assert (r < 0) by lra.
+          apply sa_union.
+          * apply sa_inter; trivial.
+            assert (pre_event_equiv  (fun _ : Ts => 0 <= r)
+                                     (fun _ => False)) by (intro xx; lra).
+            rewrite H1.
+            now apply sa_none.
+          * apply sa_inter.
+            -- now apply sa_le_gt.
+            -- now apply Rpower_measurable.
     Qed.
     
       (* note this is zero at points where the limit is infinite *)
