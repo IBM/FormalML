@@ -362,18 +362,6 @@ Definition Pmf_prod {A B : Type} (p : Pmf A) (q : Pmf B) : Pmf (A*B) :=
   b <- q;;
   ret (a,b).
 
-
-Lemma Pmf_prod_map1 {A B : Type} (p : Pmf A) (q : Pmf B) : p = fst <$> Pmf_prod p q.
-Proof.
-  unfold Pmf_prod.
-  simpl.
-  unfold Pmf_map, Pmf_prod.
-  rewrite Pmf_bind_of_bind.
-  setoid_rewrite Pmf_bind_of_bind.
-  setoid_rewrite Pmf_bind_of_ret.
-  unfold comp.
-Admitted.
-
 End Pmf.
 
 
