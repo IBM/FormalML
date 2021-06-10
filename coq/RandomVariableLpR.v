@@ -178,16 +178,6 @@ Proof.
       auto.
 Qed.
 
-Definition Rbar_rvpower (rv_X1 : Ts -> Rbar) (rv_X2 : Ts -> R) := 
-  fun omega => Rbar_power (rv_X1 omega) (rv_X2 omega).
-
-
-Global Instance Rbar_rvpower_rv (rv_X1 : Ts -> Rbar) (n:Rbar)
-   {rvx1 : RandomVariable dom Rbar_borel_sa rv_X1} :
-  RandomVariable dom Rbar_borel_sa (Rbar_rvpower rv_X1 (const n)).
-Proof.
-Admitted.
-
 Lemma Rbar_rv_almost_eq_power_abs_proper
       (x1 x2: Ts -> Rbar)
       (n:Rbar)
@@ -195,10 +185,10 @@ Lemma Rbar_rv_almost_eq_power_abs_proper
       {rvx2: RandomVariable dom Rbar_borel_sa x2}
       (eqqx : rv_almost_eq prts (cod := Rbar_borel_sa) (Rbar_rvabs x1) (Rbar_rvabs x2)) :
   rv_almost_eq (cod:=Rbar_borel_sa) prts 
-        (Rbar_rvpower (Rbar_rvabs x1) (const n)) 
-        (Rbar_rvpower (Rbar_rvabs x2) (const n)).
+        (Rbar_rvpower (Rbar_rvabs x1) n) 
+        (Rbar_rvpower (Rbar_rvabs x2) n).
 Proof.
-  apply (Rbar_rv_almost_eq_sub (Rbar_rvabs x1) (Rbar_rvabs x2) (fun x => Rbar_rvpower x (const n))); trivial.
+  apply (Rbar_rv_almost_eq_sub (Rbar_rvabs x1) (Rbar_rvabs x2) (fun x => Rbar_rvpower x n)); trivial.
   intros.
   now unfold Rbar_rvpower; rewrite H.
 Qed.
