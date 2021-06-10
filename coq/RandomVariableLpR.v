@@ -1069,17 +1069,15 @@ Qed.
         intros.
         apply power_integral in H.
         generalize (FiniteExpectation_Lp_pos p x); intros.
-        
-        
-       Admitted.
-(*
-        assert (FiniteExpectation prts (rvpower (rvabs x) (const p)) = 0) by lra.
-        eapply FiniteExpectation_zero_pos in H; try typeclasses eauto.
-        erewrite ps_proper in H; try eapply H.
+        assert (FiniteExpectation prts (rvpower (rvabs x) (const p)) = 0)
+               by now apply Rle_antisym.
+        eapply FiniteExpectation_zero_pos in H1; try typeclasses eauto.
+        erewrite ps_proper in H1; try eapply H1.
         intros a; simpl; unfold const.
         split; intros eqq.
         + apply power_integral in eqq.
-          now apply Rabs_eq_0.
+          unfold rvabs, Rabs in eqq.
+          match_destr_in eqq; lra.
         + unfold pre_event_preimage, pre_event_singleton; rv_unfold.
           erewrite eqq.
           rewrite Rabs_R0.
@@ -1087,7 +1085,7 @@ Qed.
           Unshelve.
           typeclasses eauto.
       Qed.
-*)
+
     End normish.
 
     Definition LpRRVpoint (p:R) : LpRRV p := LpRRVconst 0.
