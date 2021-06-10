@@ -217,6 +217,44 @@ Context {Ts:Type}
           now apply Rbar_sa_le_ge.
     Qed.
 
+  Class Rbar_PositiveRandomVariable
+          (rv_X:Ts->Rbar) : Prop :=
+    prv : forall (x:Ts), (Rbar_le 0 (rv_X x)).
+
+
+  Definition Rbar_power (x : Rbar) (p : R)  : Rbar :=
+    match x with
+    | p_infty => p_infty
+    | m_infty => 0
+    | Finite x => power x p
+    end.
+
+  Lemma Rbar_power_nonneg (x : Rbar) (p : R) :
+    Rbar_le 0 (Rbar_power x p).
+  Proof.
+    destruct x.
+    - apply power_nonneg.
+    - simpl; lra.
+    - simpl; lra.
+  Qed.
+
+  Global Instance power_abs_pos (rv_X : Ts -> Rbar) (p:R) :
+    Rbar_PositiveRandomVariable
+      (fun omega => Rbar_power (Rbar_abs (rv_X omega)) p ).
+  Proof.
+    intros x.
+    apply Rbar_power_nonneg.
+  Qed.
+
+  Definition Rbar_rvpower (rv_X1 : Ts -> Rbar) (n : R) := 
+    fun omega => Rbar_power (rv_X1 omega) n.
+
+  Instance Rbar_power_measurable (f : Ts -> Rbar) (n : R) :
+      RbarMeasurable f ->
+      RbarMeasurable (Rbar_rvpower f n).
+  Proof.
+  Admitted.
+  
 End RbarBorel.
 
 Section RbarExpectation.
@@ -226,12 +264,6 @@ Section RbarExpectation.
     {Prts: ProbSpace dom}.
 
   Local Open Scope prob.
-
-
-  Class Rbar_PositiveRandomVariable
-          (rv_X:Ts->Rbar) : Prop :=
-    prv : forall (x:Ts), (Rbar_le 0 (rv_X x)).
-
 
   Global Instance Rbar_rvabs_prv
              (rv_X : Ts -> Rbar) :
@@ -253,6 +285,15 @@ Section RbarExpectation.
     Proof.
       apply Rbar_measurable_rv.
       apply Rbar_Rabs_measurable.
+      now apply rv_Rbar_measurable.
+    Qed.
+
+    Global Instance Rbar_rvpower_rv (rv_X1 : Ts -> Rbar) (n:Rbar)
+           {rvx1 : RandomVariable dom Rbar_borel_sa rv_X1} :
+      RandomVariable dom Rbar_borel_sa (Rbar_rvpower rv_X1 n).
+    Proof.
+      apply Rbar_measurable_rv.
+      apply Rbar_power_measurable.
       now apply rv_Rbar_measurable.
     Qed.
 

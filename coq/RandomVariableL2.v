@@ -1626,45 +1626,6 @@ Section L2.
      ring.
    Qed.
 
-  Lemma sa_pinf_Rbar
-        (f : Ts -> Rbar) 
-        (rv : RandomVariable dom Rbar_borel_sa f) :
-    sa_sigma (fun x => (f x) = p_infty).
-  Proof.
-    apply Rbar_sa_le_pt.
-    now rewrite Rbar_borel_sa_preimage2.
-  Qed.
-
-  Lemma sa_minf_Rbar
-        (f : Ts -> Rbar) 
-        (rv : RandomVariable dom Rbar_borel_sa f) :
-    sa_sigma (fun x => (f x) = m_infty).
-  Proof.
-    apply Rbar_sa_le_pt.
-    now rewrite Rbar_borel_sa_preimage2.
-  Qed.
-
-  Lemma sa_finite_Rbar
-        (f : Ts -> Rbar) 
-        (rv : RandomVariable dom Rbar_borel_sa f) :
-    sa_sigma (fun x => is_finite (f x)).
-  Proof.
-    assert (pre_event_equiv (fun x => is_finite (f x))
-                            (pre_event_complement
-                               (pre_event_union
-                                  (fun omega => (f omega) = p_infty)
-                                  (fun omega => (f omega) = m_infty)
-                                  ))).
-    intro z.
-    unfold is_finite, pre_event_complement, pre_event_union.
-    destruct (f z); intuition discriminate.
-    rewrite H.
-    apply sa_complement.
-    apply sa_union.
-    + now apply sa_pinf_Rbar.
-    + now apply sa_minf_Rbar.
-  Qed.
-
   Program Definition pinf_Indicator 
           (f : Ts -> Rbar) :=
     EventIndicator (P := (fun x => (f x) = p_infty)) _.
@@ -2733,7 +2694,9 @@ Section L2.
      split; trivial; intros.
      specialize (H0 x H1).
      now apply ex_finite_lim_seq_S.
-  Qed.
+   Qed.
+
+
 
   Lemma cauchy_filter_rvlim_finite
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
@@ -2782,6 +2745,16 @@ Section L2.
         unfold const.
         match_destr; try tauto; lra.
     - generalize (cauchy_filter_Rbar_rvlim1 F PF cF); intros.
+      apply IsLp_Rbar_IsLp.
+      generalize (IsLp_Rbar_proper_almost 
+                    prts 2 
+                    (Rbar_rvlim (fun n : nat => L2RRV_lim_picker F PF cF (S n)))); intros.
+      specialize (H2 
+                    (fun x : Ts => Finite (
+                       rvlim
+                         (fun n : nat => rvmult (EventIndicator X) (L2RRV_lim_picker F PF cF (S n)))
+                         x))).
+      
       
   Admitted.
 

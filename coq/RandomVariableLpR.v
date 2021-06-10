@@ -136,29 +136,6 @@ Section Lp.
     ; try typeclasses eauto.
   Qed.
 
-  Definition Rbar_power (x : Rbar) (p : R)  : Rbar :=
-    match x with
-    | p_infty => p_infty
-    | m_infty => 0
-    | Finite x => power x p
-    end.
-
-  Lemma Rbar_power_nonneg (x : Rbar) (p : R) :
-    Rbar_le 0 (Rbar_power x p).
-  Proof.
-    destruct x.
-    - apply power_nonneg.
-    - simpl; lra.
-    - simpl; lra.
-  Qed.
-
-  Instance power_abs_pos (rv_X : Ts -> Rbar) (p:R) :
-    Rbar_PositiveRandomVariable
-      (fun omega => Rbar_power (Rbar_abs (rv_X omega)) p ).
-  Proof.
-    intros x.
-    apply Rbar_power_nonneg.
-  Qed.
 
   Definition IsLp_Rbar n (rv_X:Ts->Rbar)
     := is_finite (Rbar_Expectation_posRV
@@ -170,8 +147,8 @@ Section Lp.
     intros ?? eqq1 x y eqq2.
     unfold IsLp_Rbar.
     rewrite eqq1.
-    erewrite Rbar_Expectation_posRV_ext.
-    reflexivity.
+    rewrite Rbar_Expectation_posRV_ext with (prv2 := power_abs_pos y y0).
+    tauto.
     intro xx.
     now rewrite eqq2.
   Qed.
