@@ -544,26 +544,12 @@ Section RealRandomVariables.
           * right; lra.
           * destruct H; destruct H; lra.
       - rewrite H.
-        destruct (Rle_dec 0 r).
-        + apply sa_union.
-          * apply sa_inter; trivial.
-            assert (pre_event_equiv  (fun _ : Ts => 0 <= r)
-                                     (fun _  => True)) by (intro xx; lra).
-            rewrite H0.
-            now apply sa_all.
-          * apply sa_inter.
-            -- now apply sa_le_gt.
-            -- now apply Rpower_measurable.
-        + assert (r < 0) by lra.
-          apply sa_union.
-          * apply sa_inter; trivial.
-            assert (pre_event_equiv  (fun _ : Ts => 0 <= r)
-                                     (fun _ => False)) by (intro xx; lra).
-            rewrite H1.
-            now apply sa_none.
-          * apply sa_inter.
-            -- now apply sa_le_gt.
-            -- now apply Rpower_measurable.
+        apply sa_union.
+        + apply sa_inter; trivial.
+          now apply constant_measurable.
+        + apply sa_inter.
+          * now apply sa_le_gt.
+          * now apply Rpower_measurable.
     Qed.
     
       (* note this is zero at points where the limit is infinite *)

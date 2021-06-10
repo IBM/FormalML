@@ -63,9 +63,9 @@ Local Notation NNR x := (mknonnegreal x ltac:(lra)) (only parsing).
       simpl.
       replace (r + -1 * r) with (0) by lra.
       tauto.
-    - destruct (r1 x); destruct (r2 x); try tauto; try firstorder; try discriminate.
+    - destruct (r1 x); destruct (r2 x); try tauto; intuition try discriminate.
       + apply Rbar_finite_eq.
-        simpl in H0.
+        simpl in H1.
         lra.
   }
   generalize (sa_finite_Rbar _ rv1); intros.
