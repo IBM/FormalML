@@ -124,38 +124,6 @@ Context {Ts:Type}
     + now apply sa_minf_Rbar.
   Qed.
 
-End RbarBorel.
-
-Section RbarExpectation.
-  Context 
-    {Ts:Type}
-    {dom: SigmaAlgebra Ts}
-    {Prts: ProbSpace dom}.
-
-  Local Open Scope prob.
-
-
-  Class Rbar_PositiveRandomVariable
-          (rv_X:Ts->Rbar) : Prop :=
-    prv : forall (x:Ts), (Rbar_le 0 (rv_X x)).
-
-  Definition Rbar_rv_le := pointwise_relation Ts Rbar_le.
-
-  Definition Rbar_rvabs  (rv_X : Ts -> Rbar) := fun omega => Rbar_abs (rv_X omega).
-
-  Global Instance Rbar_rvabs_prv
-             (rv_X : Ts -> Rbar) :
-      Rbar_PositiveRandomVariable (Rbar_rvabs rv_X).
-    Proof.
-      unfold Rbar_PositiveRandomVariable, Rbar_rvabs.
-      intros.
-      unfold Rbar_abs.
-      match_destr.
-      - simpl; apply Rabs_pos.
-      - now simpl.
-      - now simpl.
-    Qed.
-
     Instance Rbar_real_measurable (f : Ts -> Rbar) :
       RbarMeasurable f ->
       RealMeasurable dom (fun x => real (f x)).
@@ -213,6 +181,8 @@ Section RbarExpectation.
         + apply H.
     Qed.
 
+  Definition Rbar_rvabs  (rv_X : Ts -> Rbar) := fun omega => Rbar_abs (rv_X omega).
+
     Instance Rbar_Rabs_measurable (f : Ts -> Rbar) :
       RbarMeasurable f ->
       RbarMeasurable (Rbar_rvabs f).
@@ -247,6 +217,34 @@ Section RbarExpectation.
           now apply Rbar_sa_le_ge.
     Qed.
 
+End RbarBorel.
+
+Section RbarExpectation.
+  Context 
+    {Ts:Type}
+    {dom: SigmaAlgebra Ts}
+    {Prts: ProbSpace dom}.
+
+  Local Open Scope prob.
+
+
+  Class Rbar_PositiveRandomVariable
+          (rv_X:Ts->Rbar) : Prop :=
+    prv : forall (x:Ts), (Rbar_le 0 (rv_X x)).
+
+
+  Global Instance Rbar_rvabs_prv
+             (rv_X : Ts -> Rbar) :
+      Rbar_PositiveRandomVariable (Rbar_rvabs rv_X).
+    Proof.
+      unfold Rbar_PositiveRandomVariable, Rbar_rvabs.
+      intros.
+      unfold Rbar_abs.
+      match_destr.
+      - simpl; apply Rabs_pos.
+      - now simpl.
+      - now simpl.
+    Qed.
 
     Global Instance Rbar_rvabs_rv
            (rv_X : Ts -> Rbar)
@@ -257,6 +255,8 @@ Section RbarExpectation.
       apply Rbar_Rabs_measurable.
       now apply rv_Rbar_measurable.
     Qed.
+
+  Definition Rbar_rv_le := pointwise_relation Ts Rbar_le.
 
   Global Instance Rbar_rv_le_pre : PreOrder Rbar_rv_le.
   Proof.

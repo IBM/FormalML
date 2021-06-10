@@ -36,14 +36,55 @@ Set Bullet Behavior "Strict Subproofs".
 
 Local Notation NNR x := (mknonnegreal x ltac:(lra)) (only parsing).
 
-  Instance Rbar_real_measurable {Ts} {dom} (f : Ts -> Rbar) :
-    RbarMeasurable f ->
-    RealMeasurable dom (fun x => real (f x)).
+  Global Instance borel_Rbar_haseqs : HasEventEq Rbar_borel_sa.
   Proof.
-    unfold RbarMeasurable, RealMeasurable; intros.
-    
-  Admitted.
-
+  red; intros.
+  assert (pre_event_equiv
+            (fun x : Ts => r1 x = r2 x)
+            (pre_event_union
+               (pre_event_union
+                  (pre_event_inter
+                     (fun x => r1 x = p_infty)
+                     (fun x => r2 x = p_infty))
+                  (pre_event_inter
+                     (fun x => r1 x = m_infty)
+                     (fun x => r2 x = m_infty)))
+               (pre_event_inter 
+                  (pre_event_inter
+                     (fun x => is_finite (r1 x))
+                     (fun x => is_finite (r2 x)))
+                  (fun x => (rvminus r1 r2) x = 0)))).
+  {
+    intro x.
+    unfold pre_event_union, pre_event_inter, rvminus, rvplus, rvopp, rvscale, is_finite.
+    split; intros.
+    - rewrite H.
+      destruct (r2 x); try tauto; try discriminate.
+      simpl.
+      replace (r + -1 * r) with (0) by lra.
+      tauto.
+    - destruct (r1 x); destruct (r2 x); try tauto; try firstorder; try discriminate.
+      + apply Rbar_finite_eq.
+        simpl in H0.
+        lra.
+  }
+  generalize (sa_finite_Rbar _ rv1); intros.
+  generalize (sa_finite_Rbar _ rv2); intros.  
+  unfold RandomVariable in rv1.
+  unfold RandomVariable in rv2.
+  rewrite <- Rbar_borel_sa_preimage2 in rv1.
+  rewrite <- Rbar_borel_sa_preimage2 in rv2.  
+  rewrite H.
+  apply sa_union.
+  - apply sa_union; apply sa_inter; now apply Rbar_sa_le_pt.
+  - apply sa_inter.
+    + apply sa_inter; trivial.
+    + apply sa_le_pt.
+      intros.
+      apply minus_measurable.
+      * now apply Rbar_real_measurable.
+      * now apply Rbar_real_measurable.
+ Qed.
 
 Section Lp.
   Context {Ts:Type} 
@@ -134,57 +175,6 @@ Section Lp.
     intro xx.
     now rewrite eqq2.
   Qed.
-
-  
-  Global Instance borel_Rbar_haseqs : HasEventEq Rbar_borel_sa.
-  Proof.
-  red; intros.
-  assert (pre_event_equiv
-            (fun x : Ts0 => r1 x = r2 x)
-            (pre_event_union
-               (pre_event_union
-                  (pre_event_inter
-                     (fun x => r1 x = p_infty)
-                     (fun x => r2 x = p_infty))
-                  (pre_event_inter
-                     (fun x => r1 x = m_infty)
-                     (fun x => r2 x = m_infty)))
-               (pre_event_inter 
-                  (pre_event_inter
-                     (fun x => is_finite (r1 x))
-                     (fun x => is_finite (r2 x)))
-                  (fun x => (rvminus r1 r2) x = 0)))).
-  {
-    intro x.
-    unfold pre_event_union, pre_event_inter, rvminus, rvplus, rvopp, rvscale, is_finite.
-    split; intros.
-    - rewrite H.
-      destruct (r2 x); try tauto; try discriminate.
-      simpl.
-      replace (r + -1 * r) with (0) by lra.
-      tauto.
-    - destruct (r1 x); destruct (r2 x); try tauto; try firstorder; try discriminate.
-      + apply Rbar_finite_eq.
-        simpl in H0.
-        lra.
-  }
-  generalize (sa_finite_Rbar _ rv1); intros.
-  generalize (sa_finite_Rbar _ rv2); intros.  
-  unfold RandomVariable in rv1.
-  unfold RandomVariable in rv2.
-  rewrite <- Rbar_borel_sa_preimage2 in rv1.
-  rewrite <- Rbar_borel_sa_preimage2 in rv2.  
-  rewrite H.
-  apply sa_union.
-  - apply sa_union; apply sa_inter; now apply Rbar_sa_le_pt.
-  - apply sa_inter.
-    + apply sa_inter; trivial.
-    + apply sa_le_pt.
-      intros.
-      apply minus_measurable.
-      * now apply Rbar_real_measurable.
-      * now apply Rbar_real_measurable.
- Qed.
                                                          
 Lemma Rbar_rv_almost_eq_sub
       (x1 x2: Ts -> Rbar)
@@ -231,8 +221,23 @@ Lemma Rbar_rv_almost_eq_power_abs_proper
         (Rbar_rvpower (Rbar_rvabs x1) (const n)) 
         (Rbar_rvpower (Rbar_rvabs x2) (const n)).
 Proof.
-Admitted.
+  apply (Rbar_rv_almost_eq_sub (Rbar_rvabs x1) (Rbar_rvabs x2) (fun x => Rbar_rvpower x (const n))); trivial.
+  intros.
+  now unfold Rbar_rvpower; rewrite H.
+Qed.
 
+Lemma Rbar_rv_almost_eq_abs_proper
+      (x1 x2: Ts -> Rbar)
+      {rvx1 : RandomVariable dom Rbar_borel_sa x1}
+      {rvx2: RandomVariable dom Rbar_borel_sa x2}
+      (eqqx : rv_almost_eq (cod := Rbar_borel_sa) prts x1 x2) :
+  rv_almost_eq prts (cod := Rbar_borel_sa) (Rbar_rvabs x1) (Rbar_rvabs x2).
+Proof.
+  eapply Rbar_rv_almost_eq_sub; eauto; try typeclasses eauto.
+  intros.
+  unfold Rbar_rvabs.
+  now rewrite H.
+Qed.
 
   Lemma IsLp_Rbar_proper_almost n (rv_X1 rv_X2 : Ts -> Rbar)
         {rrv1:RandomVariable dom Rbar_borel_sa rv_X1}
@@ -244,13 +249,15 @@ Admitted.
   Proof.
     unfold IsLp_Rbar in *.
     intros.
+  Admitted.
+(*  
     red; intros.
     Locate IsFiniteExpectation_proper_almost.
     eapply (IsFiniteExpectation_proper_almost _ (rvpower (rvabs rv_X1) (const n)))
     ; try eapply islp; trivial.
-    apply rv_almost_eq_power_abs_proper
+    apply Rbar_rv_almost_eq_power_abs_proper
     ; try typeclasses eauto.
-    now apply rv_almost_eq_abs_proper
+    now Rbar_apply rv_almost_eq_abs_proper
     ; try typeclasses eauto.
   Qed.
 *)
