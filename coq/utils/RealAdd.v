@@ -1100,16 +1100,16 @@ Section power.
 
   (* Rpower at 0 is problematic, so we define a variant that defines it to be 0. *)
   Definition power (b e : R)
-    := if Req_EM_T b 0
+    := if Rle_dec b 0
        then 0
        else Rpower b e.
 
   Lemma power_Rpower (b e : R) :
-    b <> 0 ->
+    0 < b ->
     power b e = Rpower b e.
   Proof.
     unfold power.
-    match_destr; congruence.
+    match_destr; lra.
   Qed.
 
   Lemma power_nonneg (b e : R) :
@@ -1121,7 +1121,7 @@ Section power.
   Qed.
 
   Lemma power_pos (b e : R) :
-    b <> 0 ->
+    0 < b ->
     0 < power b e .
   Proof.
     unfold power.
@@ -1130,7 +1130,7 @@ Section power.
   Qed.
 
   Lemma power_Ropp (x y : R) :
-    x <> 0 ->
+    0 < x ->
     power x (- y) = / power x y.
   Proof.
     intros.
@@ -1140,20 +1140,31 @@ Section power.
   
   Lemma power_integral b e :
     power b e = 0 ->
-    b = 0.
+    b <= 0.
   Proof.
     unfold power.
     match_destr.
     intros; eelim Rpower_nzero; eauto.
   Qed.
 
+  Lemma power_le_0 b e :
+    power b e <= 0 ->
+    b <= 0.
+  Proof.
+    unfold power.
+    match_destr.
+    generalize (Rpower_pos b e); intros.
+    lra.
+  Qed.
+
   Lemma power_mult (x y z : R) :
     power (power x y) z = power x (y * z).
   Proof.
     unfold power.
+    generalize (Rpower_pos x y); intros.
     repeat match_destr.
-    - eelim Rpower_nzero; eauto.
-    - congruence.
+    - lra.
+    - lra.
     - apply Rpower_mult.
   Qed.
 
@@ -1219,7 +1230,7 @@ Section power.
   Proof.
     unfold power.
     match_destr.
-    congruence.
+    lra.
   Qed.
 
   Lemma power_inv_cancel b e :
@@ -1271,7 +1282,8 @@ Section power.
   Proof.
     unfold power; intros.
     match_destr.
-    - subst.
+    - assert (x= 0) by lra.
+      subst.
       now rewrite pow0_Sbase.
     - apply Rpower_pow; lra.
   Qed.
@@ -1343,7 +1355,8 @@ Section power.
   Proof.
     unfold power; intros.
     match_destr.
-    - subst.
+    - assert (x = 0) by now apply Rle_antisym.
+      subst.
       now rewrite sqrt_0.
     - apply Rpower_sqrt; lra.
   Qed.
@@ -1355,10 +1368,15 @@ Section power.
   Proof.
     unfold power; intros.
     repeat match_destr; subst; try lra.
-    - apply Rmult_integral in e; intuition lra.
+    - assert (x = 0) by lra; subst; lra.
+    - assert (x = 0) by lra; subst; lra.
+    - assert (y = 0) by lra; subst; lra.
+    - assert (0 < x) by lra.
+      assert (0 < y) by lra.
+      generalize (Rmult_lt_0_compat _ _ H1 H2); intros.
+      lra.
     - apply Rpower_mult_distr; lra.
   Qed.
-
   
   Lemma power_incr_inv (x y:R) (n : R) :
     0 < n ->
@@ -1485,8 +1503,10 @@ Section ineqs.
   Proof.
     unfold power; intros apos bpos.
     repeat match_destr; subst.
-    - lra.
+    - assert (a = 0) by lra; subst.
+      lra.
     - destruct p; destruct q; simpl in *.
+      assert ( a = 0 ) by lra; subst.
       field_simplify; [| lra].
       apply Rmult_le_pos.
       + apply Rmult_le_pos; try lra.
@@ -1495,6 +1515,7 @@ Section ineqs.
         apply Rinv_pos.
         now apply Rmult_lt_0_compat.
     - destruct p; destruct q; simpl in *.
+      assert (b = 0) by lra; subst.
       field_simplify; [| lra].
       apply Rmult_le_pos.
       + apply Rmult_le_pos; try lra.
@@ -1683,6 +1704,8 @@ Proof.
   match_destr.
   - red; intros.
     match_destr; try lra.
+    Admitted.
+(*
     clear e0.
     subst.
     assert (dpos:0 <  (power eps (Rinv (y-1)))).
@@ -1737,6 +1760,7 @@ Proof.
       unfold power in HH.
       match_destr_in HH; try lra.
 Qed.
+ *)
 
 Lemma Rpower_convex_pos (e:R) :
   1 <= e ->
@@ -1800,7 +1824,7 @@ Section power_minkowski.
         * rewrite Rinv_involutive; lra.
         * left.
           now apply Rinv_pos.
-      + apply Rinv_neq_0_compat; lra.
+      + now apply Rinv_0_lt_compat.
     - left.
       now apply Rinv_pos.
   Qed.
