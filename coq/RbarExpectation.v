@@ -253,6 +253,49 @@ Context {Ts:Type}
       RbarMeasurable f ->
       RbarMeasurable (Rbar_rvpower f n).
   Proof.
+    unfold RbarMeasurable, Rbar_rvpower; intros.
+    destruct r.
+    - assert (pre_event_equiv
+                (fun omega : Ts => Rbar_le (Rbar_power (f omega) n) r)
+                (pre_event_union
+                   (pre_event_inter
+                      (fun omega => is_finite (f omega))
+                      (fun omega => power (f omega) n <= r))
+                   (pre_event_union
+                      (pre_event_inter
+                         (fun omega => f omega = p_infty)
+                         (fun omega => False))
+                      (pre_event_inter
+                         (fun omega => f omega = m_infty)
+                         (fun omega => 0 <= r))))).
+      {
+        intro x.
+        unfold pre_event_union, pre_event_inter, is_finite.
+        destruct (f x); simpl; intuition discriminate.
+      }
+      
+        
+admit.
+    - assert (pre_event_equiv
+                (fun omega : Ts => Rbar_le (Rbar_power (f omega) n) p_infty)
+                (fun omega => True)).
+      {
+        intro x.
+        unfold Rbar_le.
+        now match_destr.
+      }
+      rewrite H0.
+      apply sa_all.
+    - assert (pre_event_equiv
+                (fun omega : Ts => Rbar_le (Rbar_power (f omega) n) m_infty)
+                (fun omega => False)).
+      {
+        intro x.
+        unfold Rbar_power.
+        match_destr; now simpl.
+     }
+     rewrite H0.
+      apply sa_none.
   Admitted.
   
 End RbarBorel.
