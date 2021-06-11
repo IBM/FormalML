@@ -573,14 +573,6 @@ Section RbarExpectation.
   Definition Rbar_rvlim (f : nat -> Ts -> R) : (Ts -> Rbar) :=
     (fun omega => Lim_seq (fun n => f n omega)).
 
-(*
-  Global Instance Rbar_rvlim_rv (f: nat -> Ts -> R)
-         {rv : forall n, RandomVariable dom borel_sa (f n)} :
-    RandomVariable dom Rbar_borel_sa (Rbar_rvlim f).
-  Proof.
-  Admitted.
- *)
-  
   Global Instance Rbar_rvlim_prv
          (Xn : nat -> Ts -> R) 
          (posrv : forall n, PositiveRandomVariable (Xn n)) :
@@ -630,22 +622,6 @@ Section RbarExpectation.
     Proof.
       easy.
     Qed.
-
-(*
-    Instance rv_Rbar_rv
-             (rv_X : Ts -> R)
-             (rv : RandomVariable dom borel_sa rv_X) :
-      RandomVariable dom Rbar_borel_sa rv_X.
-    Proof.
-      Admitted.
-
-    Instance Rbar_rv_rv
-             (rv_X : Ts -> R)
-             (rv : RandomVariable dom Rbar_borel_sa rv_X) :
-      RandomVariable dom borel_sa rv_X.
-    Proof.
-      Admitted.
-*)
 
     Lemma Expectation_Rbar_Expectation
         (rv_X : Ts -> R)

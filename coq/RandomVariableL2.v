@@ -2426,6 +2426,44 @@ Section L2.
       now apply ex_Rbar_plus_pos.
   Qed.
 
+  Instance Rbar_rvlim_measurable (f : nat -> Ts -> R) :
+    (forall n, RealMeasurable dom (f n)) ->
+    (forall (omega:Ts), ex_lim_seq (fun n => f n omega)) -> 
+    RbarMeasurable (Rbar_rvlim f).
+  Proof.
+    intros.
+    unfold Rbar_rvlim.
+    assert (forall omega, Lim_seq (fun n => f n omega) = 
+                          LimSup_seq (fun n => f n omega)).
+    {
+      intros.
+      specialize (H0 omega).
+      rewrite ex_lim_LimSup_LimInf_seq in H0.
+      unfold Lim_seq.
+      rewrite H0.
+      now rewrite x_plus_x_div_2.
+    }
+    apply RbarMeasurable_proper with
+        (x := fun omega => LimSup_seq (fun n => f n omega)).
+    intro x; now rewrite H1.
+    apply Rbar_lim_sup_measurable; trivial.
+    intros.
+    now apply RealMeasurable_RbarMeasurable.
+  Qed.
+
+  Global Instance Rbar_rvlim_rv (f: nat -> Ts -> R)
+         {rv : forall n, RandomVariable dom borel_sa (f n)} :
+    (forall (omega:Ts), ex_lim_seq (fun n => f n omega)) ->     
+    RandomVariable dom Rbar_borel_sa (Rbar_rvlim f).
+  Proof.
+    intros.
+    apply Rbar_measurable_rv.
+    apply Rbar_rvlim_measurable; trivial.
+    intros n.
+    specialize (rv n).
+    now apply rv_measurable.
+  Qed.
+
   Lemma Rbar_lim_seq_pos_rv
         (f : nat -> Ts -> R) :
     (forall n, RandomVariable dom Rbar_borel_sa (f n)) ->
