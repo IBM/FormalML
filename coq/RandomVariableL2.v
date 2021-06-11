@@ -2789,7 +2789,11 @@ Section L2.
       assert (RandomVariable 
                 dom Rbar_borel_sa
                 (Rbar_rvlim (fun n : nat => L2RRV_lim_picker F PF cF (S n)))).
-      admit.
+      {
+        apply Rbar_rvlim_rv.
+        typeclasses eauto.
+        admit.
+      }
       assert (RandomVariable
                 dom Rbar_borel_sa
                 (fun x : Ts =>
