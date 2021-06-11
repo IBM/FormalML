@@ -2783,7 +2783,25 @@ Section L2.
       }  
       apply IsLp_Rbar_proper_almost with (rrv1 := H2) (rrv2 := H3); trivial.
       unfold rv_almost_eq.
-
+      apply Rle_antisym.
+      apply ps_le1.
+      rewrite <- H.
+      apply ps_sub.
+      intro x.
+      intros.
+      unfold event_eq.
+      simpl.
+      unfold rvlim, rvmult, EventIndicator.
+      destruct (X x).
+      + rewrite Lim_seq_ext with (v := (fun n : nat => L2RRV_lim_picker F PF cF (S n) x)); [|intros; lra].
+        unfold Rbar_rvlim.
+        specialize (H0 x e).
+        rewrite ex_finite_lim_seq_correct in H0.
+        destruct H0.
+        rewrite <- H5.
+        simpl.
+        reflexivity.
+      + tauto.
   Admitted.
 
   Lemma cauchy_filter_rvlim_finite1
