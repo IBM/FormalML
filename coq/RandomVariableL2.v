@@ -2748,16 +2748,42 @@ Section L2.
         match_destr; try tauto; lra.
     - generalize (cauchy_filter_Rbar_rvlim1 F PF cF); intros.
       apply IsLp_Rbar_IsLp.
-      generalize (IsLp_Rbar_proper_almost 
-                    prts 2 
-                    (Rbar_rvlim (fun n : nat => L2RRV_lim_picker F PF cF (S n)))); intros.
-      specialize (H2 
-                    (fun x : Ts => Finite (
-                       rvlim
-                         (fun n : nat => rvmult (EventIndicator X) (L2RRV_lim_picker F PF cF (S n)))
-                         x))).
-      
-      
+      assert (RandomVariable 
+                dom Rbar_borel_sa
+                (Rbar_rvlim (fun n : nat => L2RRV_lim_picker F PF cF (S n)))).
+      admit.
+      assert (RandomVariable
+                dom Rbar_borel_sa
+                (fun x : Ts =>
+                   rvlim
+                     (fun n : nat => rvmult (EventIndicator X) (L2RRV_lim_picker F PF cF (S n))) x)).
+      {
+        apply borel_Rbar_borel.
+        apply rvlim_rv.
+        typeclasses eauto.
+        intros.
+        specialize (H0 omega).
+        generalize (X omega); intros.
+        destruct H3.
+        - specialize (H0 e).
+          apply ex_finite_lim_seq_ext with (f := (fun n : nat => L2RRV_lim_picker F PF cF (S n) omega)); trivial.
+          intros.
+          unfold rvmult, EventIndicator.
+          destruct (X omega).
+          + lra.
+          + tauto.
+        - apply ex_finite_lim_seq_ext with (f := (fun n : nat => 0)); trivial.
+          + unfold rvmult, EventIndicator.
+            destruct (X omega).
+            * tauto.
+            * intros; lra.
+          + unfold ex_finite_lim_seq.
+            exists 0.
+            apply is_lim_seq_const.
+      }  
+      apply IsLp_Rbar_proper_almost with (rrv1 := H2) (rrv2 := H3); trivial.
+      unfold rv_almost_eq.
+
   Admitted.
 
   Lemma cauchy_filter_rvlim_finite1
