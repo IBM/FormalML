@@ -143,9 +143,9 @@ Context {Ts:Type}
           intro x.
           unfold pre_event_inter, pre_event_union, is_finite.
           destruct (f x); simpl.
-          - firstorder; congruence.
-          - firstorder; congruence.
-          - firstorder; congruence.
+          - intuition congruence.
+          - intuition congruence.
+          - intuition congruence.
         }
         rewrite H0.
         apply sa_union.
@@ -167,12 +167,11 @@ Context {Ts:Type}
           unfold pre_event_inter, is_finite.
           destruct (f x).
           - simpl.
-            firstorder.
+            intuition discriminate.
           - simpl.
-            firstorder.
+            intuition discriminate.
           - simpl.
-            firstorder.
-            discriminate.
+            intuition discriminate.
         }
         rewrite H1.
         apply sa_inter.
