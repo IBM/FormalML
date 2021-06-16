@@ -820,7 +820,23 @@ Section L2.
     lra.
   Qed.
 
-  Definition L2RRV_lim_ball_center (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop) :
+  Definition L2RRV_lim_ball_center_center 
+             (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop) :
+    ProperFilter F -> cauchy F ->
+    forall (n:nat), 
+      {b:LpRRV_UniformSpace prts big2 |
+        F (Hierarchy.ball (M:= LpRRV_UniformSpace prts big2) b (mkposreal _ (inv_pow_2_pos n)))}.
+  Proof.
+    intros Pf cF n.
+    pose ( ϵ := / (pow 2 n)).
+    assert (ϵpos : 0 < ϵ) by apply inv_pow_2_pos.
+    destruct (constructive_indefinite_description _ (cF (mkposreal ϵ ϵpos)))
+      as [x Fx].
+    now exists x.
+  Defined.
+
+  Definition L2RRV_lim_ball_center 
+             (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop) :
     ProperFilter F -> cauchy F ->
     forall (n:nat), {b:LpRRV prts 2 ->Prop | F b}.
   Proof.
@@ -910,6 +926,18 @@ Section L2.
     match_destr.
     eapply lim_picker_cumulative_included; eauto.
   Qed.
+
+  Lemma lim_picker_center_included
+        (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F)
+        (n:nat) :
+    (Hierarchy.ball (M:= LpRRV_UniformSpace prts big2)
+                    (proj1_sig (L2RRV_lim_ball_center_center F PF cF n))
+                    (mkposreal _ (inv_pow_2_pos n)))
+      (L2RRV_lim_picker F PF cF n).
+  Proof.
+    Admitted.
 
   Lemma LpRRVq_opp_opp (x : LpRRVq prts 2) :
     opp x = LpRRVq_opp prts x.
@@ -2930,18 +2958,56 @@ Section L2.
     - exact (LpRRVzero prts).
   Defined.
 
-(*
   Lemma LpRRVnorm_L2RRV_lim0
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
         (PF:ProperFilter F)
         (cF:cauchy F)
         (eps : posreal) :
-    exists (n : nat),
-      LpRRVnorm prts (LpRRVminus
-                        (Rbar_rvlim (fun n => (L2RRV_lim_picker F PF cF (S n))))
-      (F (Hierarchy.ball x eps)) /\
-      ((Hierarchy.ball (M := LpRRV_UniformSpace prts big2) x eps) (L2RRV_lim F))).
-  *)
+    exists (N : nat),
+    forall n, 
+      (n >= N)%nat ->
+      LpRRVnorm prts (LpRRVminus 
+                        prts 
+                        (L2RRV_lim F)
+                        (L2RRV_lim_picker F PF cF (S n))) < eps.
+    Proof.
+      Admitted.
+
+  Lemma two_pow_gt (r : R) :
+    exists n, r < pow 2 n.
+  Proof.
+    assert (2 > 1) by lra.
+    replace (2) with (Rabs 2) in H by (apply Rabs_right; lra).
+    generalize (Pow_x_infinity 2 H r); intros.
+    destruct H0 as [N ?].
+    exists (S N).
+    specialize (H0 N).
+    rewrite Rabs_right in H0.
+    cut_to H0; try lia.
+    apply Rge_le in H0.
+    eapply Rle_lt_trans.
+    apply H0.
+    replace (2^N) with (1 * (2^N)) by lra.
+    simpl.
+    apply Rmult_lt_compat_r; try lra.
+    apply pow2_pos.
+    left.
+    apply pow2_pos.
+  Qed.
+        
+  Lemma inv_two_pow_lt (eps : posreal) :
+    exists n, / (pow 2 n) < eps.
+  Proof.
+    generalize (two_pow_gt (/ eps)); intros.
+    destruct H.
+    exists x.
+    replace (pos eps) with (/ / eps) by
+        (rewrite Rinv_involutive; trivial; apply Rgt_not_eq; apply cond_pos).
+    apply Rinv_lt_contravar; trivial.
+    apply Rmult_lt_0_compat.
+    - apply Rinv_0_lt_compat, cond_pos.
+    - apply pow2_pos.
+  Qed.
 
   Lemma LpRRVnorm_L2RRV_lim
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
@@ -2962,12 +3028,28 @@ Section L2.
       erewrite Expectation_pos_posRV in e.
       invcs e.
       unfold rvlim in H2.
+      generalize (cF eps); intros.
+      destruct H1.
+      exists x0.
+      split; trivial.
+
+
       assert (forall x, ex_lim_seq_cauchy (fun n : nat => rvmult (EventIndicator dec) (L2RRV_lim_picker F PF cF (S n)) x)).
       {
         intros.
         now rewrite <- ex_lim_seq_cauchy_corr.
       }
-      
+      generalize (lim_filter_cauchy F PF cF); intros.
+      assert (0 < eps/2).
+      {
+        apply Rlt_div_r; try lra.
+        rewrite Rmult_0_l.
+        apply cond_pos.
+      }
+      generalize (inv_two_pow_lt (mkposreal _ H5)); intros.
+      destruct H6 as [N ?].
+      generalize cauchy_distance; intros.
+      unfold L2RRV_lim.
       admit.
     - apply rvlim_rv.
       typeclasses eauto.
@@ -2983,9 +3065,11 @@ Section L2.
   Proof.
     intros.
     assert (0 < eps/2).
-    apply Rlt_div_r; try lra.
-    rewrite Rmult_0_l.
-    apply cond_pos.
+    {
+      apply Rlt_div_r; try lra.
+      rewrite Rmult_0_l.
+      apply cond_pos.
+    }
     generalize (LpRRVnorm_L2RRV_lim F PF cF (mkposreal _ H)); intros.
     destruct H0 as [? [? ?]].
     generalize (Hierarchy.ball_triangle 
