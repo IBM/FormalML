@@ -927,6 +927,26 @@ Section L2.
     eapply lim_picker_cumulative_included; eauto.
   Qed.
 
+  Lemma lim_ball_center_ball_center_center  (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F)
+        (n:nat) :
+    forall (x:UniformSpace.sort (LpRRV_UniformSpace prts big2)),
+      (Hierarchy.ball (M:= LpRRV_UniformSpace prts big2)
+                      (proj1_sig (L2RRV_lim_ball_center_center F PF cF n))
+                      (mkposreal _ (inv_pow_2_pos n))) x
+
+      <-> proj1_sig (L2RRV_lim_ball_center F PF cF n) x.
+  Proof.
+    unfold L2RRV_lim_ball_center; simpl.
+    unfold L2RRV_lim_ball_center_center; simpl.
+    intros.
+    destruct ( constructive_indefinite_description
+            (fun x0 : LpRRV prts 2 => F (Hierarchy.ball x0 (/ 2 ^ n)))
+            (cF {| pos := / 2 ^ n; cond_pos := inv_pow_2_pos n |})); simpl.
+    tauto.
+  Qed.
+    
   Lemma lim_picker_center_included
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
         (PF:ProperFilter F)
@@ -937,7 +957,10 @@ Section L2.
                     (mkposreal _ (inv_pow_2_pos n)))
       (L2RRV_lim_picker F PF cF n).
   Proof.
-    Admitted.
+    simpl.
+    apply lim_ball_center_ball_center_center.
+    now apply lim_picker_included.
+  Qed.
 
   Lemma LpRRVq_opp_opp (x : LpRRVq prts 2) :
     opp x = LpRRVq_opp prts x.
