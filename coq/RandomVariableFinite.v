@@ -120,6 +120,16 @@ Section fe.
     intros x y eqq.
     now rewrite eqq.
   Qed.
+           
+  Lemma FiniteExpectation_ext_alt rv_X1 rv_X2
+        {isfe1:IsFiniteExpectation rv_X1}
+        (eqq: rv_eq rv_X1 rv_X2)
+    :
+    @FiniteExpectation rv_X1 isfe1 = 
+    @FiniteExpectation rv_X2 (proj1 (IsFiniteExpectation_proper _ _ eqq) isfe1).
+  Proof.
+    now apply FiniteExpectation_ext.
+  Qed.
 
   Global Instance IsFiniteExpectation_const c : IsFiniteExpectation (const c).
   Proof.
