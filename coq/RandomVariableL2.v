@@ -2399,7 +2399,19 @@ Section L2.
     intros.
     now apply Rbar_inf_measurable.
   Qed.
-    
+
+  Instance Rbar_lim_inf_rv (f : nat -> Ts -> R) :
+    (forall n, RandomVariable dom borel_sa (f n)) ->
+    RandomVariable dom Rbar_borel_sa (fun omega => LimInf_seq (fun n => f n omega)).
+  Proof.
+    intros.
+    apply Rbar_measurable_rv.
+    apply Rbar_lim_inf_measurable.
+    intros.
+    apply rv_Rbar_measurable.
+    now rewrite <- borel_Rbar_borel.
+  Qed.
+
   Instance Rbar_div_pos_measurable (f : Ts -> Rbar) (c : posreal) :
     RbarMeasurable f ->
     RbarMeasurable (fun omega => Rbar_div_pos (f omega) c).
@@ -2980,21 +2992,360 @@ Section L2.
       + exact (LpRRVzero prts).
     - exact (LpRRVzero prts).
   Defined.
+  
+  Lemma Lim_seq_continuous (f : R -> R) (u : nat -> R) :
+    continuity_pt f (Lim_seq u) ->
+    ex_finite_lim_seq u ->
+    Lim_seq (fun n => f (u n)) = f (Lim_seq u).
+  Proof.
+    intros.
+    unfold ex_finite_lim_seq in H0.
+    destruct H0.
+    generalize (is_lim_seq_continuous f u x); intros.
+    generalize (is_lim_seq_unique _ _ H0); intros.
+    rewrite H2 in H.
+    specialize (H1 H H0).
+    apply is_lim_seq_unique in H1.
+    now rewrite H2.
+  Qed.
 
-  Lemma LpRRVnorm_L2RRV_lim0
+  Lemma lim_seq_lim_inf (f : nat -> R) :
+    ex_lim_seq f ->
+    Lim_seq f = LimInf_seq f.
+  Proof.
+    intros.
+    rewrite ex_lim_LimSup_LimInf_seq in H.
+    unfold Lim_seq.
+    rewrite H.
+    now rewrite x_plus_x_div_2.
+  Qed.
+
+  Lemma LpRRVnorm_Expectation_posRV (p : R)
+        (f : LpRRV prts p)
+        (rv : RandomVariable dom borel_sa f) :
+    LpRRVnorm prts f = power (Expectation_posRV (rvpower (rvabs f)  (const p))) (/ p).
+  Proof.
+    unfold LpRRVnorm.
+    f_equal.
+    now erewrite FiniteExpectation_posRV.
+  Qed.
+
+   Lemma rvpowerabs_rvminus_rvlim_comm (f : nat -> Ts -> R) (p:R) (n:nat):
+     1 <= p ->
+     (forall x, ex_finite_lim_seq (fun n0 => f n0 x)) ->
+     (rv_eq
+        (rvpower (rvabs (rvminus (rvlim f) (f n))) (const p))
+        (rvlim (fun x => (rvpower (rvabs (rvminus (f x) (f n))) (const p))))).
+    Proof.
+      intros plim exfin z.
+      unfold rvpower, rvabs, rvminus, rvplus, rvopp, rvscale, rvlim, const.
+      pose (p_power_abs := fun x => @p_power p (Rabs x) ).
+      generalize (Lim_seq_ext 
+                    (fun n0 : nat => power (Rabs (f n0 z + -1 * f n z)) p)
+                    (fun n0 => p_power_abs (f n0 z + -1 * f n z))); intros.
+      rewrite H.
+      - rewrite Lim_seq_continuous; trivial.
+        + unfold p_power_abs, p_power.
+          rewrite Lim_seq_plus, Lim_seq_const.
+          * specialize (exfin z).
+            rewrite ex_finite_lim_seq_correct in exfin.
+            destruct exfin.
+            rewrite <- H1.
+            now simpl.
+          * specialize (exfin z).
+            rewrite ex_finite_lim_seq_correct in exfin.
+            now destruct exfin.
+          * apply ex_lim_seq_const.
+          * specialize (exfin z).
+            rewrite ex_finite_lim_seq_correct in exfin.
+            destruct exfin.
+            rewrite <- H1.
+            rewrite Lim_seq_const.
+            now simpl.
+        + apply continuity_p_power_Rabs; lra.
+        + unfold ex_finite_lim_seq.
+          specialize (exfin z).
+          unfold ex_finite_lim_seq in exfin.
+          destruct exfin.
+          exists (x + -1 * f n z).
+          apply is_lim_seq_plus'; trivial.
+          apply is_lim_seq_const.
+      - intros.
+        now unfold p_power_abs.
+   Qed.
+
+  Lemma norm_rvminus_rvlim
+        (f : nat -> LpRRV prts 2) 
+        (rv : forall n, RandomVariable dom borel_sa (f n)) 
+        (rvl : RandomVariable dom borel_sa (rvlim f))
+        (isl : IsLp prts 2 (rvlim f))    :
+    (forall x, ex_finite_lim_seq (fun n => f n x)) ->
+    ex_finite_lim_seq  (fun n0 : nat => LpRRVnorm prts (f n0)) ->
+    (forall n, IsLp prts 2 (f n)) ->
+    forall (eps : posreal),
+      exists (N : nat),
+        forall (n : nat), 
+          (n >= N)%nat ->
+          (LpRRVnorm prts (LpRRVminus prts (pack_LpRRV prts (rvlim f)) (f n))) < eps. 
+  Proof.
+    intros.
+    assert (forall x, ex_lim_seq_cauchy (fun n => f n x)) by (intros; now apply ex_lim_seq_cauchy_corr).
+    unfold ex_lim_seq_cauchy in H2.
+    eexists.
+    intros.
+    unfold LpRRVnorm, LpRRVminus, pack_LpRRV; simpl.
+    replace (pos eps) with (power (power eps 2) (/ 2)).
+    apply Rlt_power_l.
+    apply Rinv_0_lt_compat; lra.
+    split.
+    apply FiniteExpectation_pos; typeclasses eauto.
+    assert (1 <= 2) by lra.
+    generalize (rvpowerabs_rvminus_rvlim_comm f 2 n H4 H); intros.
+    rewrite (FiniteExpectation_ext_alt _ _ _ H5).
+    assert (rv_eq 
+              (rvlim (fun x : nat => rvpower (rvabs (rvminus (f x) (f n))) (const 2)))
+              (fun omega => LimInf_seq (fun x : nat => rvpower (rvabs (rvminus (f x) (f n))) (const 2) omega))).
+    {
+      intros z.
+      unfold rvlim.
+      rewrite lim_seq_lim_inf; trivial.
+      pose (p_power_abs := fun x => @p_power 2 (Rabs x) ).      
+      unfold rvpower, rvabs, const, rvminus, rvplus, rvopp, rvscale.
+      apply ex_lim_seq_ext with (u := fun n0 => p_power_abs (f n0 z + -1 * f n z)).
+      intros.
+      now unfold p_power_abs, p_power.
+      specialize (H z).
+      unfold ex_finite_lim_seq in H.
+      destruct H.
+      unfold ex_lim_seq.
+      exists (p_power_abs (x + -1 * f n z)).
+      apply is_lim_seq_continuous.
+      apply continuity_p_power_Rabs; lra.
+      apply is_lim_seq_plus'; trivial.
+      apply is_lim_seq_const.
+    }
+    rewrite (FiniteExpectation_ext_alt _ _ _ H6).
+    erewrite FiniteExpectation_posRV.
+    assert (Rbar_lt (Expectation_posRV (fun omega : Ts => LimInf_seq (fun x : nat => rvpower (rvabs (rvminus (f x) (f n))) (const 2) omega))) (power eps 2)).
+    {
+      assert (forall omega : Ts, is_finite (LimInf_seq (fun n0 : nat => rvpower (rvabs (rvminus (f n0) (f n))) (const 2) omega))).
+      admit.
+      eapply Rbar_le_lt_trans.
+      - apply Fatou; trivial.
+        + intros; typeclasses eauto.
+        + intros.
+          assert (0 <= 2) by lra.
+          generalize (IsLp_minus prts (mknonnegreal _ H8) (f n0) (f n)); intros.
+          unfold IsLp in H9.
+          unfold IsFiniteExpectation in H9.
+          erewrite Expectation_pos_posRV in H9.
+          simpl in H9.
+          match_case_in H9; intros.
+          * rewrite H10; now simpl.
+          * now rewrite H10 in H9.
+          * now rewrite H10 in H9.
+        + generalize (Rbar_lim_inf_rv  (fun n0 : nat => rvpower (rvabs (rvminus (f n0) (f n))) (const 2) )); intros.
+          rewrite borel_Rbar_borel.
+          admit.
+      - unfold LpRRVnorm in H0.
+        admit.
+    }
+    
+    admit.
+    apply inv_power_cancel.
+    left; apply cond_pos.
+    lra.
+    Admitted.
+    
+(*
+  Lemma LpRRVnorm_Infseq_diff 
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
         (PF:ProperFilter F)
         (cF:cauchy F)
         (eps : posreal) :
-    exists (N : nat),
-    forall n, 
-      (n >= N)%nat ->
-      LpRRVnorm prts (LpRRVminus 
-                        prts 
-                        (L2RRV_lim F)
-                        (L2RRV_lim_picker F PF cF (S n))) < eps.
+    { P: event dom &
+         {dec: forall x, {P x} + {~ P x} |
+           ps_P P = 1 /\
+           (forall x,
+               ex_finite_lim_seq (fun n => (rvmult (EventIndicator dec)
+                                                (L2RRV_lim_picker F PF cF (S n)))
+                                          x) ) /\
+    
+           (forall n,
+               Rbar_le
+                 (Expectation_posRV
+                    (fun x =>
+                       (Lim_seq
+                          (fun n0 =>
+                             (rvpower 
+                                (rvabs
+                                   (rvminus
+                                      (rvmult (EventIndicator dec) (L2RRV_lim_picker F PF cF n0))
+                                      (rvmult (EventIndicator dec) (L2RRV_lim_picker F PF cF n))))
+                                (const 2)) x))))
+               (2 / 2^n))}}.
+  Proof.
+    intros.
+    generalize (cauchy_filter_rvlim_Sext0_finite0 F PF cF); intros.
+    
+    destruct H as [P [? ?]].
+    exists P.
+    split; trivial.
+    intros.
+
+    apply Fatou.
+    - intros; typeclasses eauto.
+    - intros.
+      admit.
+    - intros.
+
+      specialize (H0 omega).
+      admit.
+    - Search LimInf_seq.
+      Locate Rbar_lim_inf_measurable.
+    Admitted.
+
+
+  Lemma LpRRVnorm_Infseq_diff2 
+        (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F)
+        (eps : posreal) :
+    forall n,
+      Rbar_lt
+        (Expectation_posRV
+           (fun x =>
+              (LimInf_seq
+                 (fun n0 =>
+                    (rvpower 
+                       (rvabs
+                          (rvminus
+                             (L2RRV_lim_picker F PF cF n0)
+                             (L2RRV_lim_picker F PF cF n)))
+                       (const 2)) x))))
+        (2 / 2^n).
+  Proof.
+    intros.
+    generalize (lim_filter_cauchy F PF cF); intros.
+
+    generalize (Fatou
+                  (fun n0 =>
+                     (rvpower 
+                        (rvabs
+                           (rvminus
+                              (L2RRV_lim_picker F PF cF n0)
+                              (L2RRV_lim_picker F PF cF n)))
+                        (const 2))) _ _ ); intros.
+    cut_to H0.
+    eapply Rbar_le_lt_trans.
+    apply H0.
+    Search "imInf_seq".
+    unfold LimInf_seq.
+    unfold ex_LimInf_seq.
+   *) 
+
+  Lemma LpRRVnorm_rvlim_diff 
+        (f : nat -> LpRRV prts 2) 
+        (rv : forall n, RandomVariable dom borel_sa (f n)) 
+        (rvl : RandomVariable dom borel_sa (rvlim f))
+        (isl : IsLp prts 2 (rvlim f))    :
+    (forall (x : Ts), ex_finite_lim_seq (fun n => f n x)) ->
+    forall (eps : posreal),
+      exists (N : nat),
+        forall n,
+        (N <= n)%nat ->
+        LpRRVnorm prts (LpRRVminus prts
+                                   (pack_LpRRV prts (rvlim f))
+                                   (f n)) < eps.
     Proof.
-      Admitted.
+      intros.
+      unfold LpRRVminus, pack_LpRRV; simpl.
+      unfold LpRRVnorm, pack_LpRRV; simpl.
+      eexists; intros.
+      assert (0 <= eps) by (left; apply cond_pos).
+      replace (pos eps) with (power (power eps 2) (/ 2)) by (apply inv_power_cancel; lra).
+      apply Rlt_power_l.
+      apply Rinv_0_lt_compat; lra.
+      split.
+      apply FiniteExpectation_pos.
+      typeclasses eauto.
+      assert (rv_eq
+                (rvpower (rvabs (rvminus (rvlim f) (f n))) (const 2))
+                (rvpower (rvabs (rvlim (fun x : nat => (rvminus (f x) (f n))))) (const 2))).
+      {
+        intro z.
+        unfold rvpower, rvabs, rvminus, rvplus, rvopp, rvscale, rvlim, const.
+        f_equal.
+        f_equal.
+        specialize (H z).
+        rewrite ex_finite_lim_seq_correct in H.
+        destruct H.
+        rewrite Lim_seq_plus; trivial.
+        rewrite <- H2.
+        rewrite <- H2.
+        rewrite Lim_seq_const.
+        now simpl.
+        apply ex_lim_seq_const.
+        rewrite <- H2.
+        rewrite Lim_seq_const.
+        now simpl.
+      }
+      rewrite FiniteExpectation_ext_alt with (eqq := H2).
+      assert (rv_eq
+                (rvpower (rvabs (rvlim (fun x : nat => rvminus (f x) (f n)))) (const 2))
+                (rvlim (fun x => (rvpower (rvabs (rvminus (f x) (f n))) (const 2))))).
+      {
+        intro z.
+        unfold rvpower, rvabs, rvminus, rvplus, rvopp, rvscale, rvlim, const.
+        pose (p_power_abs := fun x => @p_power 2 (Rabs x) ).
+        replace (power (Rabs (Lim_seq (fun n0 : nat => f n0 z + -1 * f n z))) 2) with
+            (p_power_abs (Lim_seq (fun n0 : nat => f n0 z + -1 * f n z))).
+        - generalize (Lim_seq_ext 
+                        (fun n0 : nat => power (Rabs (f n0 z + -1 * f n z)) 2)
+                        (fun n0 => p_power_abs (f n0 z + -1 * f n z))); intros.
+          rewrite H3.
+          + rewrite Lim_seq_continuous; trivial.
+            * unfold p_power_abs.
+              apply continuity_p_power_Rabs; lra.
+            * unfold ex_finite_lim_seq.
+              specialize (H z).
+              unfold ex_finite_lim_seq in H.
+              destruct H.
+              exists (x + -1 * f n z).
+              apply is_lim_seq_plus'; trivial.
+              apply is_lim_seq_const.
+          + intros.
+            now unfold p_power_abs.
+        - now unfold p_power_abs.
+      }
+      rewrite FiniteExpectation_ext_alt with (eqq := H3).
+      assert (rv_eq 
+                (rvlim (fun x : nat => rvpower (rvabs (rvminus (f x) (f n))) (const 2)))
+                (fun omega => LimInf_seq (fun x : nat => rvpower (rvabs (rvminus (f x) (f n))) (const 2) omega))).
+    {
+      intros z.
+      unfold rvlim.
+      rewrite lim_seq_lim_inf; trivial.
+      pose (p_power_abs := fun x => @p_power 2 (Rabs x) ).      
+      unfold rvpower, rvabs, const, rvminus, rvplus, rvopp, rvscale.
+      apply ex_lim_seq_ext with (u := fun n0 => p_power_abs (f n0 z + -1 * f n z)).
+      intros.
+      now unfold p_power_abs, p_power.
+      specialize (H z).
+      unfold ex_finite_lim_seq in H.
+      destruct H.
+      unfold ex_lim_seq.
+      exists (p_power_abs (x + -1 * f n z)).
+      apply is_lim_seq_continuous.
+      apply continuity_p_power_Rabs; lra.
+      apply is_lim_seq_plus'; trivial.
+      apply is_lim_seq_const.
+    }
+    rewrite (FiniteExpectation_ext_alt _ _ _ H4).
+    erewrite FiniteExpectation_posRV.
+    
+   Admitted.      
+
 
   Lemma two_pow_gt (r : R) :
     exists n, r < pow 2 n.
