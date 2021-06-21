@@ -295,36 +295,24 @@ Section fe.
 
   Hint Rewrite FiniteExpectation_plus : prob.
 
-  Lemma pos_fun_part_proper_almost x y 
-        {rvx:RandomVariable dom borel_sa x}
-        {rvy:RandomVariable dom borel_sa y} :
-    rv_almost_eq prts x y ->
-    rv_almost_eq prts (fun x0 => nonneg (pos_fun_part x x0)) (fun x0 => nonneg (pos_fun_part y x0)).
+  Instance pos_fun_part_proper_almost : Proper (almost prts eq ==> almost prts eq) 
+                                            (fun x x0 => nonneg (pos_fun_part x x0)).
   Proof.
+    intros x1 x2 eqq1.
+    apply (almost_sub prts eq (fun x x0 => nonneg (pos_fun_part x x0))); trivial.
+    intros.
     unfold pos_fun_part; simpl.
-    unfold rv_almost_eq; intros eqq.
-    apply Rle_antisym; trivial.
-    - apply ps_le1.
-    - rewrite <- eqq.
-      apply ps_sub.
-      intros a; intros eqq2.
-      congruence.
+    now rewrite H.
   Qed.
 
-  Lemma neg_fun_part_proper_almost x y 
-        {rvx:RandomVariable dom borel_sa x}
-        {rvy:RandomVariable dom borel_sa y} :
-    rv_almost_eq prts x y ->
-    rv_almost_eq prts (fun x0 => nonneg (neg_fun_part x x0)) (fun x0 => nonneg (neg_fun_part y x0)).
+  Instance neg_fun_part_proper_almost : Proper (almost prts eq ==> almost prts eq) 
+                                            (fun x x0 => nonneg (neg_fun_part x x0)).
   Proof.
+    intros x1 x2 eqq1.
+    apply (almost_sub prts eq (fun x x0 => nonneg (neg_fun_part x x0))); trivial.
+    intros.
     unfold neg_fun_part; simpl.
-    unfold rv_almost_eq; intros eqq.
-    apply Rle_antisym; trivial.
-    - apply ps_le1.
-    - rewrite <- eqq.
-      apply ps_sub.
-      intros a; intros eqq2.
-      congruence.
+    now rewrite H.
   Qed.
 
   Lemma list_sum0_is0 l :
@@ -337,30 +325,10 @@ Section fe.
     lra.
   Qed.
 
-  Lemma event_eq_const (x:Ts -> R)
-        {rvx:RandomVariable dom borel_sa x} 
-        (c:R) :
-    event_equiv
-      (event_eq x (const c)) ((preimage_singleton x c)).
-  Proof.
-    repeat red; simpl.
-    split; trivial.
-  Qed.
-
-  Lemma event_eq_const' (x:Ts -> R)
-        {rvx:RandomVariable dom borel_sa x} 
-        (c:R) :
-    event_equiv
-      (event_eq x (fun _ => c) (rv2:=rvconst _ _ _)) ((preimage_singleton x c)).
-  Proof.
-    repeat red; simpl.
-    split; trivial.
-  Qed.
-
   Lemma SimplePosExpectation_pos_zero x
         {rvx:RandomVariable dom borel_sa x} 
         {xsrv:SimpleRandomVariable x} :
-    rv_almost_eq prts x (const 0) ->
+    almost prts eq x (const 0) ->
     SimpleExpectation x = 0.
   Proof.
     intros eqq.
@@ -375,21 +343,26 @@ Section fe.
     destruct (Req_EM_T x1 0).
     - subst.
       lra.
-    - replace (ps_P (preimage_singleton x x1)) with 0 in H; [lra |].
-      apply Rle_antisym.
-      + apply ps_pos.
-      +
-        assert (event_sub (preimage_singleton x 0) (event_complement (preimage_singleton x x1))).
-        {
-          repeat red; intros; simpl in *.
-          unfold pre_event_preimage, pre_event_singleton in *.
-          lra.
-        }
-        apply (ps_sub prts) in H1.
-        * rewrite ps_complement in H1.
-          -- rewrite event_eq_const' in eqq.
-             rewrite eqq in H1.
-             lra.
+    - subst.
+      apply almost_alt_eq in eqq.
+      destruct eqq as [P[Pempty Pnone]].
+      assert (sub:preimage_singleton x x1 ≤ P).
+      {
+        intros a pre; simpl.
+        apply Pnone.
+        vm_compute in pre.
+        congruence.
+      }
+      generalize (ps_sub _ _ _ sub)
+      ; intros PP.
+      rewrite Pempty in PP.
+      assert (eqq1:ps_P (preimage_singleton x x1) = 0).
+      {
+        generalize (ps_pos (preimage_singleton x x1)).
+        lra.
+      }
+      rewrite eqq1.
+      lra.
   Qed.
 
   Lemma Expectation_simple_proper_almost x y
@@ -397,7 +370,7 @@ Section fe.
         {rvy:RandomVariable dom borel_sa y} 
         {xsrv:SimpleRandomVariable x}
         {ysrv:SimpleRandomVariable y} :
-    rv_almost_eq prts x y ->
+    almost prts eq x y ->
     SimpleExpectation x = SimpleExpectation y.
   Proof.
     intros.
@@ -414,22 +387,21 @@ Section fe.
         apply Rminus_diag_uniq_sym in HH.
         symmetry.
         apply HH.
-    - clear HH.
-      unfold rv_almost_eq in *.
-      unfold const.
-      rewrite ps_proper; try eapply H.
-      intros a.
-      unfold rvminus, rvplus, rvopp, rvscale; simpl.
-      split; intros; lra.
+    - destruct H as [P [Pa Pb]].
+      exists P.
+      split; trivial.
+      intros.
+      vm_compute.
+      rewrite Pb; trivial.
+      lra.
       Unshelve.
       typeclasses eauto.
       typeclasses eauto.
   Qed.
 
   Lemma Expectation_posRV_almost_0 x 
-        {rvx:RandomVariable dom borel_sa x}
         {prv:PositiveRandomVariable x} :
-    rv_almost_eq prts x (const 0) ->
+    almost prts eq x (const 0) ->
     Expectation_posRV x = 0.
   Proof.
     intros.
@@ -449,19 +421,17 @@ Section fe.
       + intros.
         unfold BoundedPositiveRandomVariable in H0.
         destruct H0 as [? [? [? [[? ?] ?]]]].
-        unfold rv_almost_eq in H.
-        assert (rv_almost_eq prts x2 (const 0)).
-        * unfold rv_almost_eq.
-          assert (event_sub (event_eq x (const 0))
-                            (event_eq x2 (const 0))).
-          -- unfold event_sub, pre_event_sub, const; simpl; intros.
-             specialize (H1 x5).
-             unfold PositiveRandomVariable in H0.
-             specialize (H0 x5).
-             lra.
-          -- apply (ps_sub prts) in H3; trivial.
-             generalize (ps_le1 prts (event_eq x2 (const 0))). 
-             lra.
+        simpl.
+        assert (almost prts eq x2 (const 0)).
+        * destruct H as [P [Pall eq_on]].
+          exists P.
+          split; trivial.
+          intros a ?.
+          specialize (H1 a).
+          rewrite eq_on in H1; trivial.
+          unfold const in *.
+          specialize (H0 a).
+          lra.
         * generalize (SimplePosExpectation_pos_zero x2 H3); intros.
           rewrite H4 in H2.
           rewrite <- H2.
@@ -475,88 +445,40 @@ Section fe.
       + apply SimpleExpectation_const.
   Qed.
 
-  Lemma Expectation_almost_0 x 
-        {rvx:RandomVariable dom borel_sa x} :
-    rv_almost_eq prts x (const 0) ->
+  Lemma Expectation_almost_0 x :
+    almost prts eq x (const 0) ->
     Expectation x = Some (Finite 0).
   Proof.
-    unfold rv_almost_eq.
     intros.
-    assert (RandomVariable dom borel_sa (pos_fun_part x)).
-    now apply positive_part_rv.
-    assert (RandomVariable dom borel_sa (neg_fun_part x)).
-    now apply negative_part_rv.
-    (*
-    unfold RandomVariable in rvx.
-    rewrite <- borel_sa_preimage2 in rvx.
-    assert (sa_sigma (fun x0 : Ts => nonneg(pos_fun_part x x0) = 0)).
-    { apply sa_le_pt.
-      apply rv_measurable.
-      typeclasses eauto.
-    }
-    assert (sa_sigma (fun x0 : Ts => nonneg(neg_fun_part x x0) = 0)).
-    { apply sa_le_pt.
-      apply rv_measurable.
-      typeclasses eauto.
-    }
-*)
     unfold Expectation.
-    assert (rv_almost_eq prts (fun omega => nonneg(pos_fun_part x omega)) (const 0)).
+    assert (almost prts eq (fun omega => nonneg(pos_fun_part x omega)) (const 0)).
     {
-      unfold rv_almost_eq.
-      assert (event_sub (event_eq x (const 0))
-                        (event_eq (fun x0 : Ts => nonneg(pos_fun_part x x0)) (const 0))).
-      {
-        intro x0.
-        unfold pos_fun_part, const; simpl.
-        unfold Rmax; match_destr.
-      } 
-      unfold const in *.
-      apply (ps_sub prts) in H2; trivial.
-      generalize (ps_le1 prts (event_eq (fun x0 : Ts => nonneg(pos_fun_part x x0)) (const 0))); intros.
-      unfold const in H3.
-      lra.
-    }
-    assert (rv_almost_eq prts (fun omega => nonneg(neg_fun_part x omega)) (const 0)).
+      rewrite (pos_fun_part_proper_almost _ _ H).
+      unfold const; simpl.
+      unfold Rmax.
+      match_destr; try lra.
+      reflexivity.
+    } 
+    assert (almost prts eq (fun omega => nonneg(neg_fun_part x omega)) (const 0)).
     {
-      unfold rv_almost_eq.
-      assert (event_sub (event_eq x (const 0))
-                        (event_eq (fun x0 : Ts => nonneg(neg_fun_part x x0)) (const 0))).
-      {
-        intro x0.
-        unfold neg_fun_part, const; simpl.
-        unfold Rmax; match_destr.
-        lra.
-      } 
-      unfold const in *.
-      apply (ps_sub prts) in H3; trivial.
-      generalize (ps_le1 prts (event_eq (fun x0 : Ts => nonneg(neg_fun_part x x0)) (const 0))); intros.
-      unfold const in H4.
-      lra.
+      rewrite (neg_fun_part_proper_almost _ _ H).
+      unfold const; simpl.
+      unfold Rmax.
+      match_destr; try lra.
+      reflexivity.
     }
-    rewrite (Expectation_posRV_almost_0 _ H2).
-    rewrite (Expectation_posRV_almost_0 _ H3).
-    simpl; do 2 f_equal.
+    rewrite (Expectation_posRV_almost_0 _ H0).
+    rewrite (Expectation_posRV_almost_0 _ H1).
+    simpl; repeat f_equal.
     lra.
   Qed.
-
-  Lemma event_eq_minus0
-        rv_X1 rv_X2
-        {rrv1:RandomVariable dom borel_sa rv_X1}
-        {rrv2:RandomVariable dom borel_sa rv_X2} :
-    (event_equiv (event_eq (rvminus rv_X1 rv_X2) (const 0)) (event_eq rv_X1 rv_X2)).
-  Proof.
-    intros a.
-    unfold event_eq, rvminus, rvplus, rvopp, rvscale, const; simpl.
-    split; intros; lra.
-  Qed.
-
+  
   Lemma IsFiniteExpectation_proper_almost rv_X1 rv_X2
         {rrv1:RandomVariable dom borel_sa rv_X1}
         {rrv2:RandomVariable dom borel_sa rv_X2}
         {isfe1:IsFiniteExpectation rv_X1}
     :
-      rv_almost_eq prts rv_X1 rv_X2 ->
+      almost prts eq rv_X1 rv_X2 ->
       IsFiniteExpectation rv_X2.
   Proof.
     intros.
@@ -572,8 +494,10 @@ Section fe.
       eapply IsFiniteExpectation_proper; try eapply isfe4.
       intros a.
       rv_unfold; lra.
-    - unfold rv_almost_eq in *.
-      now rewrite event_eq_minus0.
+    -  rewrite H.
+       apply almost_eq_subr.
+       rv_unfold; intros ?.
+       lra.
   Qed.
 
   Lemma FiniteExpectation_proper_almost rv_X1 rv_X2
@@ -582,7 +506,7 @@ Section fe.
         {isfe1:IsFiniteExpectation rv_X1}
         {isfe2:IsFiniteExpectation rv_X2}
     :
-      rv_almost_eq prts rv_X1 rv_X2 ->
+      almost prts eq rv_X1 rv_X2 ->
       FiniteExpectation rv_X1 = FiniteExpectation rv_X2.
 
   Proof.
@@ -593,9 +517,10 @@ Section fe.
     - apply (Expectation_FiniteExpectation _ _ (isfe:=IsFiniteExpectation_minus _ _)) in HH.
       rewrite FiniteExpectation_minus in HH.
       lra.
-    - unfold rv_almost_eq in *.
-      unfold const in *.
-      now rewrite event_eq_minus0.
+    - rewrite H.
+      apply almost_eq_subr.
+      rv_unfold; intros ?.
+      lra.
   Qed.
 
   Lemma FiniteExpectation_le rv_X1 rv_X2
@@ -812,7 +737,7 @@ Section fe.
     trivial.
   Qed.
 
-  Lemma FiniteExpectation_zero_pos 
+  Lemma FiniteExpectation_zero_pos'
         (X : Ts -> R)
         {rv : RandomVariable dom borel_sa X}
         {posrv :PositiveRandomVariable X}
@@ -826,17 +751,19 @@ Section fe.
     now apply Expectation_zero_pos.
   Qed.
 
-  Lemma FiniteExpectation_zero_pos'
+  Lemma FiniteExpectation_zero_pos
         (X : Ts -> R)
         {rv : RandomVariable dom borel_sa X}
         {posrv :PositiveRandomVariable X}
         {isfe:IsFiniteExpectation X} :
     FiniteExpectation X = 0%R ->
-    ps_P (event_eq X (const 0)) = 1.
+    almost prts eq X (const 0).
   Proof.
-    rewrite event_eq_const.
-    now apply FiniteExpectation_zero_pos.
-  Qed.    
+    intros eqq1.
+    apply (FiniteExpectation_zero_pos' X) in eqq1.
+    exists (preimage_singleton X 0).
+    split; trivial.
+  Qed.
 
   Lemma Lim_seq_pos (f : nat -> R) :
     (forall n, 0 <= f n) ->

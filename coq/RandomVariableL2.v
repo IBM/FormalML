@@ -215,9 +215,9 @@ Section L2.
 
     intros x1 x2 eqq1 y1 y2 eqq2.
     unfold L2RRVinner.
-    assert (eqq:rv_almost_eq prts (rvmult x1 y1) (rvmult x2 y2)).
+    assert (eqq:almost prts eq (rvmult x1 y1) (rvmult x2 y2)).
     - LpRRV_simpl.
-      now apply rv_almost_eq_mult_proper.
+      now apply almost_eq_mult_proper.
     - eapply FiniteExpectation_proper_almost; try eapply eqq
       ; try typeclasses eauto.
   Qed.    
@@ -248,16 +248,13 @@ Section L2.
   Proof.
     unfold L2RRVinner, LpRRV_eq; intros.
     eapply FiniteExpectation_zero_pos in H; try typeclasses eauto.
-    red.
-    erewrite ps_proper; try eapply H.
-    intros a.
-    unfold LpRRVconst, const, rvmult.
-    split; intros; simpl in *.
-    - unfold pre_event_preimage, pre_event_singleton.
-      rewrite H0; lra.
-    - now apply Rsqr_0_uniq in H0.
-      Unshelve.
-      typeclasses eauto.
+    destruct H as  [P [Pall eq_on]].
+    exists P.
+    split; trivial.
+    intros a Pa.
+    specialize (eq_on a Pa).
+    unfold LpRRVconst, const, rvmult; simpl in *.
+    now apply Rsqr_0_uniq in eq_on.
   Qed.
   
   Lemma L2RRV_inner_scal (x y : LpRRV prts 2) (l : R) :
@@ -1914,7 +1911,7 @@ Section L2.
                      (sa_finite_Rbar (Rbar_rvabs f) (Rbar_rvabs_rv f)))
               (exist sa_sigma (fun x : Ts => is_finite (f x)) (sa_finite_Rbar f rv))).
     easy.
-    rewrite <- H2.
+    erewrite <- ps_proper; try eapply H2.
     apply H0.
     now apply finiteExp_Rbar_rvabs.
   Qed.    
@@ -2363,10 +2360,10 @@ Section L2.
     intros ???.
     split; intros.
     - apply Rbar_rv_measurable.
-      rewrite <- H.
+      eapply RandomVariable_proper; try (symmetry; eapply H).
       now apply Rbar_measurable_rv.
     - apply Rbar_rv_measurable.
-      rewrite H.
+      eapply RandomVariable_proper; try eapply H.
       now apply Rbar_measurable_rv.
   Qed.
 
@@ -2886,27 +2883,19 @@ Section L2.
             exists 0.
             apply is_lim_seq_const.
       }  
-      apply IsLp_Rbar_proper_almost with (rrv1 := H2) (rrv2 := H3); trivial.
-      unfold rv_almost_eq.
-      apply Rle_antisym.
-      apply ps_le1.
-      rewrite <- H.
-      apply ps_sub.
-      intro x.
-      intros.
-      unfold event_eq.
-      simpl.
-      unfold rvlim, rvmult, EventIndicator.
-      destruct (X x).
-      + rewrite Lim_seq_ext with (v := (fun n : nat => L2RRV_lim_picker F PF cF (S n) x)); [|intros; lra].
-        unfold Rbar_rvlim.
-        specialize (H0 x e).
-        rewrite ex_finite_lim_seq_correct in H0.
-        destruct H0.
-        rewrite <- H5.
-        simpl.
-        reflexivity.
-      + tauto.
+      apply (IsLp_Rbar_proper_almost prts _ (Rbar_rvlim (fun n : nat => L2RRV_lim_picker F PF cF (S n))))
+      ; try typeclasses eauto; trivial.
+      exists P. split; trivial; intros a Pa.
+      specialize (H0 _ Pa).
+      unfold Rbar_rvlim.
+      unfold rvlim.
+      unfold rvmult, EventIndicator.
+      destruct (X a); [| tauto].
+      rewrite Lim_seq_ext with (u := (fun n : nat => 1 * L2RRV_lim_picker F PF cF (S n) a))
+                               (v := (fun n : nat => L2RRV_lim_picker F PF cF (S n) a)); [|intros; lra].
+      rewrite ex_finite_lim_seq_correct in H0.
+      destruct H0.
+      auto.
   Admitted.
 
   Lemma cauchy_filter_rvlim_finite1

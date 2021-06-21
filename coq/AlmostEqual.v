@@ -13,7 +13,9 @@ Require Import RealRandomVariable.
 Set Bullet Behavior "Strict Subproofs".
 
 Local Open Scope R.
+Local Open Scope prob.
 
+(*
 Class HasEventEq {Td:Type} (cod:SigmaAlgebra Td)
   := sa_event_eq :
        forall {Ts} {dom:SigmaAlgebra Ts} (r1 r2:Ts->Td)
@@ -30,271 +32,335 @@ Proof.
   unfold pre_event_preimage, pre_event_singleton, rvminus, rvplus, rvopp, rvscale.
   split; lra.
 Qed.
+*)
+Section almost.
 
-Section almost_eq.
+
   Context {Ts:Type} {Td:Type}
           {dom: SigmaAlgebra Ts}
-          {cod: SigmaAlgebra Td}
-          {has_eq:HasEventEq cod}
+          (prts: ProbSpace dom)
+          (R:Td->Td->Prop).
+
+  Definition almost (r1 r2:Ts -> Td)
+    := exists P, ps_P P = 1
+            /\ forall x, P x -> R (r1 x) (r2 x).
+
+  Definition almost_alt (r1 r2:Ts -> Td)
+    := exists P, ps_P P = 0
+            /\ forall x, ~ R (r1 x) (r2 x) -> P x.
+
+  Lemma almost_alt_eq
+        {r1 r2:Ts->Td}
+    : almost r1 r2 <-> almost_alt r1 r2.
+  Proof.
+    unfold almost, almost_alt.
+    split ; intros [P [Pall eq_on]]
+    ; exists (¬ P).
+    - split.
+      + rewrite ps_complement, Pall; lra.
+      + unfold event_complement; simpl.
+        firstorder.
+    - split.
+      + rewrite ps_complement, Pall; lra.
+      + unfold event_complement, pre_event_complement; simpl.
+        intros.
+        destruct (classic (R (r1 x) (r2 x))); trivial.
+        elim H.
+        now apply eq_on.
+  Qed.
+
+  (* Move *)
+  Lemma ps_union_sub 
+        {T : Type} {σ : SigmaAlgebra T} (ps : ProbSpace σ) (A B : event σ) :
+    ps_P A <= ps_P (A ∪ B).
+  Proof.
+    apply ps_sub.
+    auto with prob.
+  Qed.
+
+  Global Instance almost_refl {R_refl:Reflexive R}: Reflexive almost.
+  Proof.
+    unfold almost; intros eqq.
+    exists Ω.
+    split.
+    - auto with prob.
+    - intros x?.
+      reflexivity.
+  Qed.
+
+  Global Instance almost_symm {R_refl:Symmetric R}: Symmetric almost.
+  Proof.
+    unfold almost; intros ??.
+    intros [P [Pall eq_on]].
+    exists P.
+    firstorder.
+  Qed.
+
+  Global Instance almost_trans {R_refl:Transitive R}: Transitive almost.
+  Proof.
+    unfold almost; intros x y z.
+    intros [P1 [P1all eq_on1]] [P2 [P2all eq_on2]].
+    exists (P1 ∩ P2). split.
+    + now apply ps_one_inter.
+    + intros a [??]; simpl in *.
+      transitivity (y a); eauto.
+  Qed.
+
+  Global Instance almost_pre {R_pre:PreOrder R}: PreOrder almost.
+  Proof.
+    constructor; typeclasses eauto.
+  Qed.
+  
+  Global Instance almost_equiv {R_equiv:Equivalence R}: Equivalence almost.
+  Proof.
+    constructor; typeclasses eauto.
+  Qed.
+
+End almost.
+
+Section almost_part.
+  Context {Ts:Type} {Td:Type}
+          {dom: SigmaAlgebra Ts}
           (prts: ProbSpace dom).
 
-  Definition event_eq (r1 r2:Ts -> Td)
-         {rv1:RandomVariable dom cod r1}
-         {rv2:RandomVariable dom cod r2}
-    : event dom
-    := exist _ _ (sa_event_eq r1 r2).
-
-  Definition rv_almost_eq (r1 r2:Ts -> Td)
-             {rv1:RandomVariable dom cod r1}
-             {rv2:RandomVariable dom cod r2}
-    := ps_P (event_eq r1 r2) = 1.
-
-  Lemma rv_almost_eq_eq (r1 r2:Ts -> Td)
-             {rv1:RandomVariable dom cod r1}
-             {rv2:RandomVariable dom cod r2} :
-    rv_eq r1 r2 ->
-    rv_almost_eq r1 r2.
+  Global Instance almost_part {eqR preR:Td->Td->Prop} {R_equiv:Equivalence eqR} {R_pre:PreOrder preR} {R_part:PartialOrder eqR preR}:
+    PartialOrder (almost prts eqR) (almost prts preR).
   Proof.
-    unfold rv_almost_eq; intros eqq.
-    erewrite ps_proper; try eapply ps_one.
-    unfold Ω, pre_Ω.
-    split; simpl; trivial.
+    intros x y.
+    split.
+    - intros [P [Pall eq_on]].
+      split.
+      + red.
+        exists P.
+        split; trivial.
+        intros a Pa.
+        specialize (R_part (x a) (y a)).
+        simpl in R_part.
+        destruct R_part as [HH _].
+        apply HH; auto.
+      + exists P.
+        split; trivial.
+        intros a Pa.
+        specialize (R_part (x a) (y a)).
+        simpl in R_part.
+        destruct R_part as [HH _].
+        apply HH; auto.
+    - intros [[P1 [P1all eq_on1]] [P2 [P2all eq_on2]]].
+      exists (P1 ∩ P2). split.
+    + now apply ps_one_inter.
+    + intros a [??]; simpl in *.
+      transitivity (y a).
+      * apply R_part.
+        unfold relation_conjunction, predicate_intersection, flip; simpl.
+        intuition.
+      * intuition.
   Qed.
+
   
-  Lemma rv_almost_eq_alt_eq
-        {r1 r2:Ts->Td}
-        {rv1:RandomVariable dom cod r1}
-        {rv2:RandomVariable dom cod r2} 
-    : ps_P (event_eq r1 r2) = 1 <-> ps_P (event_complement (event_eq r1 r2)) = 0.
+  Global Instance almost_subrelation {R1 R2:Td->Td->Prop} {R_subr:subrelation R1 R2}:
+    subrelation (almost prts R1) (almost prts R2).
   Proof.
-    rewrite ps_complement.
-    split; auto with real.
+    intros ?? [P [Pall eq_on]].
+    exists P.
+    split; trivial.
+    intros.
+    apply R_subr; auto.
   Qed.
 
-Lemma rv_almost_eq_rv_refl
-      (x : Ts -> Td)
-      {rvx : RandomVariable dom cod x} :
-  rv_almost_eq x x.
-Proof.
-  unfold rv_almost_eq.
-  erewrite ps_proper.
-  - apply ps_one.
-  - unfold event_eq, Ω, pre_Ω.
-    intros ?; simpl.
-    intuition.
-Qed.
 
-Lemma rv_almost_eq_rv_sym
-      {r1 r2:Ts->Td}
-      {rv1:RandomVariable dom cod r1}
-      {rv2:RandomVariable dom cod r2} :
-  rv_almost_eq r1 r2 -> rv_almost_eq r2 r1.
-Proof.
-  unfold rv_almost_eq.
-  intros eqq.
-  rewrite <- eqq.
-  eapply ps_proper.
-  intros ?; simpl.
-  intuition.
-Qed.
-
-Lemma rv_almost_eq_rv_trans
-      (x y z: Ts -> Td)
-      {rvx : RandomVariable dom cod x} 
-      {rvy : RandomVariable dom cod y} 
-      {rvz : RandomVariable dom cod z} :
-  rv_almost_eq x y ->
-  rv_almost_eq y z ->
-  rv_almost_eq x z.
-Proof.
-  unfold rv_almost_eq.
-  intros ps1 ps2.
-  simpl in *.
-  generalize (ps_union prts (event_complement (event_eq x y)) (event_complement (event_eq y z)))
-  ; intros HH.
-  rewrite rv_almost_eq_alt_eq in ps1 by eauto with prob.
-  rewrite rv_almost_eq_alt_eq in ps2 by eauto with prob.
-  rewrite rv_almost_eq_alt_eq by eauto with prob.
-  rewrite ps1,ps2 in HH.
-  field_simplify in HH.
-  assert (HH2 : ps_P
-                  (event_inter (event_complement (event_eq x y))
-                               (event_complement (event_eq y z))) = 0).
-  {
-    assert (HH3:ps_P
-                  (event_union (event_complement (event_eq x y))
-                               (event_complement (event_eq y z))) 
-                +
-                ps_P
-                  (event_inter (event_complement (event_eq x y))
-                               (event_complement (event_eq y z))) = 0)
-           by (unfold event_complement, pre_event_complement in *; lra).
-    rewrite Rplus_comm in HH3.
-    apply Rplus_eq_0_l in HH3; trivial
-    ; apply ps_pos
-    ; eauto 6 with prob.
-  }
-  rewrite HH2, Ropp_0 in HH.
-
-  assert (ele:event_sub
-                (event_complement (event_eq x z))
-                (event_union (event_complement (event_eq x y))
-                             (event_complement (event_eq y z)))).
-  {
-    unfold event_complement, pre_event_complement in *; simpl in *.
-    intros ?; simpl; intros.
-    apply not_and_or.
-    intros [??].
-    congruence.
-  }
-
-  apply (@ps_sub _ _ prts) in ele; trivial.
-  * rewrite HH in ele.
-    apply Rle_antisym; trivial.
-    apply ps_pos; trivial.
-Qed.
-
-End almost_eq.
+End almost_part.
 
 Section borel_almost_eq.
-  
-Lemma rv_almost_eq_plus_proper
+
+Global Instance almost_eq_plus_proper
       {Ts:Type} 
       {dom: SigmaAlgebra Ts}
-      (prts: ProbSpace dom) 
-      (x1 x2 y1 y2 : Ts -> R)
-      {rvx1 : RandomVariable dom borel_sa x1}
-      {rvx2: RandomVariable dom borel_sa x2}
-      (eqqx : rv_almost_eq prts x1 x2)
-      {rvy1 : RandomVariable dom borel_sa y1}
-      {rvy2 : RandomVariable dom borel_sa y2}
-      (eqqy : rv_almost_eq prts y1 y2) :
-  rv_almost_eq prts (rvplus x1 y1) (rvplus x2 y2).
+      (prts: ProbSpace dom) : Proper (almost prts eq ==> almost prts eq ==> almost prts eq) rvplus.
 Proof.
-  unfold rv_almost_eq in *.
-  assert (event_sub (event_inter (event_eq x1 x2)
-                                 (event_eq y1 y2))
-                    (event_eq (rvplus x1 y1) (rvplus x2 y2))).
-  - intros ? [??]; simpl in *.
+  unfold almost in *.
+  intros x1 x2 [Px [Pxall eq_onx]] y1 y2 [Py [Pyall eq_ony]].
+  exists (Px ∩ Py).
+  split.
+  - now apply ps_one_inter.
+  - intros a [Pxa Pya].
     unfold rvplus.
-    congruence.
-  - assert (ps_P (event_inter (event_eq x1 x2) (event_eq y1 y2)) = 1).
-    + apply ps_one_inter; trivial.
-    + generalize (ps_sub prts (event_inter (event_eq x1 x2) (event_eq y1 y2))
-                         (event_eq (rvplus x1 y1) (rvplus x2 y2))); intros.
-      rewrite H0 in H1.
-      apply Rle_antisym.
-      * apply ps_le1.
-      * apply H1; trivial.
+    now rewrite eq_onx, eq_ony.
 Qed.
 
-
-Lemma rv_almost_eq_mult_proper
+Global Instance almost_eq_scale_proper
       {Ts:Type} 
       {dom: SigmaAlgebra Ts}
-      (prts: ProbSpace dom) 
-      (x1 x2 y1 y2 : Ts -> R)
-      {rvx1 : RandomVariable dom borel_sa x1}
-      {rvx2: RandomVariable dom borel_sa x2}
-      (eqqx : rv_almost_eq prts x1 x2)
-      {rvy1 : RandomVariable dom borel_sa y1}
-      {rvy2 : RandomVariable dom borel_sa y2}
-      (eqqy : rv_almost_eq prts y1 y2) :
-  rv_almost_eq prts (rvmult x1 y1) (rvmult x2 y2).
+      (prts: ProbSpace dom) : Proper (eq ==> almost prts eq ==> almost prts eq) rvscale.
 Proof.
-  unfold rv_almost_eq in *.
-  assert (event_sub (event_inter (event_eq x1 x2)
-                                 (event_eq y1 y2))
-                    (event_eq (rvmult x1 y1) (rvmult x2 y2))).
-  - intros ? [??]; simpl in *.
+  unfold almost in *.
+  intros ? c ? x1 x2 [Px [Pxall eq_onx]]; subst.
+  exists Px.
+  split; trivial.
+  intros.
+  unfold rvscale.
+  now rewrite eq_onx.
+Qed.
+
+Global Instance almost_eq_opp_proper
+      {Ts:Type} 
+      {dom: SigmaAlgebra Ts}
+      (prts: ProbSpace dom) : Proper (almost prts eq ==> almost prts eq) rvopp.
+Proof.
+  now apply almost_eq_scale_proper.
+Qed.
+
+Global Instance almost_eq_minus_proper
+      {Ts:Type} 
+      {dom: SigmaAlgebra Ts}
+      (prts: ProbSpace dom) : Proper (almost prts eq ==> almost prts eq ==> almost prts eq) rvminus.
+Proof.
+  intros ??????.
+  unfold rvminus.
+  now rewrite H, H0.
+Qed.  
+
+Global Instance almost_le_plus_proper
+      {Ts:Type} 
+      {dom: SigmaAlgebra Ts}
+      (prts: ProbSpace dom) : Proper (almost prts Rle ==> almost prts Rle ==> almost prts Rle) rvplus.
+Proof.
+  unfold almost in *.
+  intros x1 x2 [Px [Pxall eq_onx]] y1 y2 [Py [Pyall eq_ony]].
+  exists (Px ∩ Py).
+  split.
+  - now apply ps_one_inter.
+  - intros a [Pxa Pya].
+    unfold rvplus.
+    apply Rplus_le_compat; auto.
+Qed.
+
+Global Instance almost_le_lt_plus_proper
+      {Ts:Type} 
+      {dom: SigmaAlgebra Ts}
+      (prts: ProbSpace dom) : Proper (almost prts Rle ==> almost prts Rlt ==> almost prts Rlt) rvplus.
+Proof.
+  unfold almost in *.
+  intros x1 x2 [Px [Pxall eq_onx]] y1 y2 [Py [Pyall eq_ony]].
+  exists (Px ∩ Py).
+  split.
+  - now apply ps_one_inter.
+  - intros a [Pxa Pya].
+    unfold rvplus.
+    apply Rplus_le_lt_compat; auto.
+Qed.
+
+Global Instance almost_lt_le_plus_proper
+      {Ts:Type} 
+      {dom: SigmaAlgebra Ts}
+      (prts: ProbSpace dom) : Proper (almost prts Rlt ==> almost prts Rle ==> almost prts Rlt) rvplus.
+Proof.
+  unfold almost in *.
+  intros x1 x2 [Px [Pxall eq_onx]] y1 y2 [Py [Pyall eq_ony]].
+  exists (Px ∩ Py).
+  split.
+  - now apply ps_one_inter.
+  - intros a [Pxa Pya].
+    unfold rvplus.
+    apply Rplus_lt_le_compat; auto.
+Qed.
+
+Global Instance almost_eq_mult_proper
+      {Ts:Type} 
+      {dom: SigmaAlgebra Ts}
+      (prts: ProbSpace dom) : Proper (almost prts eq ==> almost prts eq ==> almost prts eq) rvmult.
+Proof.
+  unfold almost in *.
+  intros x1 x2 [Px [Pxall eq_onx]] y1 y2 [Py [Pyall eq_ony]].
+  exists (Px ∩ Py).
+  split.
+  - now apply ps_one_inter.
+  - intros a [Pxa Pya].
     unfold rvmult.
-    congruence.
-  - assert (ps_P (event_inter (event_eq x1 x2) (event_eq y1 y2)) = 1).
-    + apply ps_one_inter; trivial.
-    + generalize (ps_sub prts (event_inter (event_eq x1 x2) (event_eq y1 y2))
-                         (event_eq (rvmult x1 y1) (rvmult x2 y2))); intros.
-      rewrite H0 in H1.
-      apply Rle_antisym.
-      * apply ps_le1.
-      * apply H1; trivial.
+    now rewrite eq_onx, eq_ony.
 Qed.
 
-
-Lemma rv_almost_eq_sub
-      {Ts:Type} 
+Global Instance almost_sub
+      {Ts Td:Type} 
       {dom: SigmaAlgebra Ts}
-      (prts: ProbSpace dom) 
-      (x1 x2: Ts -> R)
-      (f:(Ts->R)->Ts->R)
-      {rvx1 : RandomVariable dom borel_sa x1}
-      {rvx2: RandomVariable dom borel_sa x2}
-      {rvfx1 : RandomVariable dom borel_sa (f x1)}
-      {rvfx2: RandomVariable dom borel_sa (f x2)}
-      (eqqx : rv_almost_eq prts x1 x2)
-      (fpres: forall x y a, x a = y a -> f x a = f y a)
-:
-  rv_almost_eq prts (f x1) (f x2).
+      (prts: ProbSpace dom)
+      (R:Td->Td->Prop)
+      (f:(Ts->Td)->Ts->Td)
+      (fpres: forall x y a, R (x a) (y a) -> R (f x a) (f y a))
+  : Proper (almost prts R ==> almost prts R) f.
 Proof.
-  red in eqqx.
-  red.
-  apply Rle_antisym.
-  - apply ps_le1.
-  - generalize (ps_sub prts (event_eq x1 x2) (event_eq (f x1) (f x2)))
-    ; intros HH.
-    rewrite eqqx in HH.
-    apply HH.
-    + intros a ?; simpl in *.
-      auto.
+  intros x1 x2 [Px [Pxall eq_onx]].
+  exists Px.
+  split; trivial.
+  intros; auto.
 Qed.
-                                                         
-  
-Lemma rv_almost_eq_pow_abs_proper
+
+Lemma almost_eq_pow_abs_proper
       {Ts:Type} 
       {dom: SigmaAlgebra Ts}
       (prts: ProbSpace dom) 
       (x1 x2: Ts -> R)
       n
-      {rvx1 : RandomVariable dom borel_sa x1}
-      {rvx2: RandomVariable dom borel_sa x2}
-      (eqqx : rv_almost_eq prts (rvabs x1) (rvabs x2)) :
-  rv_almost_eq prts (rvpow (rvabs x1) n) (rvpow (rvabs x2) n).
+      (eqqx : almost prts eq (rvabs x1) (rvabs x2)) :
+  almost prts eq (rvpow (rvabs x1) n) (rvpow (rvabs x2) n).
 Proof.
-  apply (rv_almost_eq_sub prts (rvabs x1) (rvabs x2) (fun x => rvpow x n)); trivial.
+  apply (almost_sub prts eq (fun x => rvpow x n)); trivial.
   intros.
   now unfold rvpow; rewrite H.
 Qed.
-      
-Lemma rv_almost_eq_power_abs_proper
+
+Global Instance almost_eq_power_proper
       {Ts:Type} 
       {dom: SigmaAlgebra Ts}
-      (prts: ProbSpace dom) 
-      (x1 x2: Ts -> R)
-      n
-      {rvx1 : RandomVariable dom borel_sa x1}
-      {rvx2: RandomVariable dom borel_sa x2}
-      (eqqx : rv_almost_eq prts (rvabs x1) (rvabs x2)) :
-  rv_almost_eq prts (rvpower (rvabs x1) (const n)) (rvpower (rvabs x2) (const n)).
+      (prts: ProbSpace dom) :
+   Proper (almost prts eq ==> eq ==> almost prts eq) rvpower.
 Proof.
-  apply (rv_almost_eq_sub prts (rvabs x1) (rvabs x2) (fun x => rvpower x (const n))); trivial.
+  intros x1 x2 eqq1 ? n ?; subst.
+  apply (almost_sub prts eq (fun x => rvpower x n)); trivial.
   intros.
-  now unfold rvpower; rewrite H.
+  unfold rvpower, RealAdd.power.
+  now rewrite H.
 Qed.
 
-Lemma rv_almost_eq_abs_proper
+Global Instance almost_eq_abs_proper
       {Ts:Type} 
       {dom: SigmaAlgebra Ts}
-      (prts: ProbSpace dom) 
-      (x1 x2: Ts -> R)
-      {rvx1 : RandomVariable dom borel_sa x1}
-      {rvx2: RandomVariable dom borel_sa x2}
-      (eqqx : rv_almost_eq prts x1 x2) :
-  rv_almost_eq prts (rvabs x1) (rvabs x2).
+      (prts: ProbSpace dom) : 
+  Proper (almost prts eq ==> almost prts eq) rvabs.
 Proof.
-  eapply rv_almost_eq_sub; eauto; try typeclasses eauto.
+  eapply almost_sub; eauto; try typeclasses eauto.
   intros.
   unfold rvabs.
   now rewrite H.
 Qed.
 
+Global Instance almost_eq_subr {Ts Td:Type} 
+      {dom: SigmaAlgebra Ts}
+      (prts: ProbSpace dom) :
+  subrelation (@rv_eq Ts Td) (almost prts eq).
+Proof.
+  intros ???.
+  exists Ω.
+  split; auto with prob.
+Qed.
+
+Global Instance almost_le_subr {Ts:Type} 
+      {dom: SigmaAlgebra Ts}
+      (prts: ProbSpace dom) :
+  subrelation (@rv_le Ts) (almost prts Rle).
+Proof.
+  intros ???.
+  exists Ω.
+  split; auto with prob.
+Qed.
+
+Global Instance rv_le_sub_eq {Ts:Type}: subrelation (@rv_eq Ts R) rv_le.
+Proof.
+  unfold rv_eq, rv_le.
+  intros ????.
+  rewrite H.
+  lra.
+Qed.
+
 End borel_almost_eq.
+
 

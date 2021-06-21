@@ -10,7 +10,6 @@ Require Import Classical.
 Require Import Utils.
 Require Import NumberIso.
 Require Export SimpleExpectation.
-Require Import AlmostEqual.
 
 Import ListNotations.
 

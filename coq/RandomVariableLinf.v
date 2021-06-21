@@ -147,37 +147,32 @@ Section Linf.
   Lemma rvclip_almost_bounded (rv_X : Ts -> R) (c : nonnegreal)
         {rv : RandomVariable dom borel_sa rv_X} :
     ps_P  (Linfty_term rv_X c) = 0 ->
-    rv_almost_eq prts rv_X (rvclip rv_X c).
+    almost prts eq rv_X (rvclip rv_X c).
  Proof.
    intros.
-   unfold rv_almost_eq.
-   generalize (ps_complement prts (Linfty_term rv_X c)); intros.
-   rewrite H, Rminus_0_r in H0.
-   rewrite <- H0.
-   apply ps_proper.
-   intros x.
-   unfold event_complement, pre_event_complement.
-   unfold rvclip, rvabs.
-   generalize (Rle_abs (rv_X x)); intros.       
-   simpl.
-   unfold rvabs.
-   match_destr; [lra |].
-   generalize (Rcomplements.Rabs_maj2 (rv_X x)); intros.
-   match_destr; [lra |].
-   split; [|lra].
-   intros.
-   unfold Rabs.
-   match_destr; lra.
+   apply almost_alt_eq.
+   exists (Linfty_term rv_X c).
+   split; trivial.
+   unfold rvclip, Linfty_term, rvabs.
+   intros a neq.
+   match_destr_in neq; simpl.
+   - unfold Rabs.
+     match_destr; lra.
+   - match_destr_in neq.
+     + assert (- rv_X a > c) by lra.
+       generalize (Rcomplements.Rabs_maj2 (rv_X a)); intros.
+       lra.
+     + lra.
  Qed.
 
  Lemma rvclip_almost_bounded_exists (rv_X : Ts -> R)
         (rv : RandomVariable dom borel_sa rv_X)
         {isl:IsLinfty rv_X} :
-    exists (c:nonnegreal), rv_almost_eq prts rv_X (rvclip rv_X c).
+    exists (c:nonnegreal), almost prts eq rv_X (rvclip rv_X c).
   Proof.
     destruct (is_Linfty_c_nonneg rv_X).
     exists x.
-    now apply rvclip_almost_bounded.
+    now eapply rvclip_almost_bounded.
   Qed.
 
   Lemma zero_prob_bound
@@ -327,8 +322,9 @@ Section Linf.
     destruct H as [c H0].
     generalize (rvclip_abs_le_c rv_X c); intros.
     generalize (IsLp_const_bounded n _ c (cond_nonneg _) H); intros.
-    eapply IsLp_proper_almost with (rv_X1 := (rvclip rv_X c)); trivial.
-    now apply rv_almost_eq_rv_sym.
+    eapply IsLp_proper_almost with (rv_X1 := (rvclip rv_X c)); trivial
+    ; try typeclasses eauto.
+    now symmetry.
   Qed.
 
   Definition posreal_nnneg (x:posreal) : nonnegreal
@@ -359,7 +355,7 @@ Section Linf.
       + assert (IsFiniteExpectation prts (rvpower (rvabs (rvclip rv_X (mknonnegreal _ H))) (const p))).
         * eapply (IsLp_proper_almost prts p rv_X); try eapply isl
           ; try typeclasses eauto.
-          apply rvclip_almost_bounded
+          eapply rvclip_almost_bounded
           ; try typeclasses eauto.
           simpl.
           now apply Linfty_norm_contains_finite_lim.
@@ -376,11 +372,16 @@ Section Linf.
              ++ split.
                 ** apply Rabs_pos.
                 ** apply rvclip_abs_bounded.
-          -- apply rv_almost_eq_power_abs_proper
+          -- apply rvpower_rv; try typeclasses eauto.
+             unfold const.
+             apply rvconst.
+          -- simpl.
+             unfold const.
+             apply almost_eq_power_proper
+             ; try typeclasses eauto; trivial.
+             apply almost_eq_abs_proper
              ; try typeclasses eauto.
-             apply rv_almost_eq_abs_proper
-             ; try typeclasses eauto.
-             apply rvclip_almost_bounded; trivial.
+             eapply rvclip_almost_bounded; trivial.
              now apply Linfty_norm_contains_finite_lim.
       + apply FiniteExpectation_pos
         ; typeclasses eauto.
@@ -412,7 +413,7 @@ Section Linf.
         apply power_nonneg.
       + erewrite LpRRV_norm_proper.
         * now apply Linfty_Lp_le.
-        * apply rv_almost_eq_eq.
+        * apply almost_eq_subr; intros ?.
           reflexivity.
     - apply is_lim_seq_const.
   Qed.
