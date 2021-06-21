@@ -3074,6 +3074,47 @@ Section L2.
         now unfold p_power_abs.
    Qed.
 
+    Lemma lt_Rbar_lt (x : Rbar) (y : R) :
+      0 < y ->
+      Rbar_lt x y -> (real x) < y.
+    Proof.
+      intros.
+      destruct x.
+      - now simpl in H.
+      - now simpl.
+      - now simpl.
+    Qed.
+
+    Lemma LimInf_seq_ext (f g : nat -> R) :
+      eventually (fun n => f n = g n) ->
+      LimInf_seq f = LimInf_seq g.
+    Proof.
+      intros.
+      unfold eventually in H.
+      destruct H.
+      apply Rbar_le_antisym.
+      - apply LimInf_le.
+        exists x.
+        intros.
+        specialize (H n H0).
+        lra.
+      - apply LimInf_le.
+        exists x.
+        intros.
+        specialize (H n H0).
+        lra.
+    Qed.
+
+  Instance Rbar_real_rv 
+           (f : Ts -> Rbar)
+           (rv : RandomVariable dom Rbar_borel_sa f) :
+    RandomVariable dom borel_sa (fun omega => real (f omega)).
+  Proof.
+    apply measurable_rv.
+    apply Rbar_real_measurable.
+    now apply Rbar_rv_measurable.
+  Qed.
+  
   Lemma norm_rvminus_rvlim
         (f : nat -> LpRRV prts 2) 
         (rv : forall n, RandomVariable dom borel_sa (f n)) 
@@ -3089,12 +3130,13 @@ Section L2.
           (LpRRVnorm prts (LpRRVminus prts (pack_LpRRV prts (rvlim f)) (f n))) < eps. 
   Proof.
     intros.
+    apply ex_lim_seq_cauchy_corr in H0.
+    unfold ex_lim_seq_cauchy in H0.
     assert (forall x, ex_lim_seq_cauchy (fun n => f n x)) by (intros; now apply ex_lim_seq_cauchy_corr).
-    unfold ex_lim_seq_cauchy in H2.
     eexists.
     intros.
     unfold LpRRVnorm, LpRRVminus, pack_LpRRV; simpl.
-    replace (pos eps) with (power (power eps 2) (/ 2)).
+    replace (pos eps) with (power (power eps 2) (/ 2)) by (apply inv_power_cancel; [left; apply cond_pos| lra]).
     apply Rlt_power_l.
     apply Rinv_0_lt_compat; lra.
     split.
@@ -3125,36 +3167,37 @@ Section L2.
       apply is_lim_seq_const.
     }
     rewrite (FiniteExpectation_ext_alt _ _ _ H6).
+    unfold LpRRVnorm in H0.
     erewrite FiniteExpectation_posRV.
-    assert (Rbar_lt (Expectation_posRV (fun omega : Ts => LimInf_seq (fun x : nat => rvpower (rvabs (rvminus (f x) (f n))) (const 2) omega))) (power eps 2)).
+    apply lt_Rbar_lt.
+    rewrite <- (power0_Sbase 2).
+    assert (0 < eps) by apply cond_pos.
+    apply Rlt_power_l; lra.
+    assert (forall omega : Ts, is_finite (LimInf_seq (fun n0 : nat => rvpower (rvabs (rvminus (f n0) (f n))) (const 2) omega))).
     {
-      assert (forall omega : Ts, is_finite (LimInf_seq (fun n0 : nat => rvpower (rvabs (rvminus (f n0) (f n))) (const 2) omega))).
       admit.
-      eapply Rbar_le_lt_trans.
-      - apply Fatou; trivial.
-        + intros; typeclasses eauto.
-        + intros.
-          assert (0 <= 2) by lra.
-          generalize (IsLp_minus prts (mknonnegreal _ H8) (f n0) (f n)); intros.
-          unfold IsLp in H9.
-          unfold IsFiniteExpectation in H9.
-          erewrite Expectation_pos_posRV in H9.
-          simpl in H9.
-          match_case_in H9; intros.
-          * rewrite H10; now simpl.
-          * now rewrite H10 in H9.
-          * now rewrite H10 in H9.
-        + generalize (Rbar_lim_inf_rv  (fun n0 : nat => rvpower (rvabs (rvminus (f n0) (f n))) (const 2) )); intros.
-          rewrite borel_Rbar_borel.
-          admit.
-      - unfold LpRRVnorm in H0.
-        admit.
     }
-    
-    admit.
-    apply inv_power_cancel.
-    left; apply cond_pos.
-    lra.
+    eapply Rbar_le_lt_trans.
+    - apply Fatou; trivial.
+      + intros; typeclasses eauto.
+      + intros.
+        assert (0 <= 2) by lra.
+        generalize (IsLp_minus prts (mknonnegreal _ H8) (f n0) (f n)); intros.
+        unfold IsLp in H9.
+        unfold IsFiniteExpectation in H9.
+        erewrite Expectation_pos_posRV in H9.
+        simpl in H9.
+        match_case_in H9; intros.
+        * rewrite H10; now simpl.
+        * now rewrite H10 in H9.
+        * now rewrite H10 in H9.
+      + apply Rbar_real_rv.
+        apply Rbar_lim_inf_rv.
+        intros.
+        typeclasses eauto.
+    - simpl.
+      admit.
+
     Admitted.
     
 (*
