@@ -3348,6 +3348,22 @@ Section L2_complete.
   Let nneg2 : nonnegreal := bignneg 2 big2.
   Canonical nneg2.
 
+  (*
+  Global Instance event_restricted_rv (n : R) (P : event dom) (pf:0 < ps_P P) :
+    forall rv : LpRRV prts n,
+      RandomVariable (event_restricted_sigma P) borel_sa (event_restricted_function P rv)).
+  
+*)
+  Program Definition event_restricted_LpRRV n P pf (rv:LpRRV prts n) : LpRRV (event_restricted_prob_space prts P pf) n
+    := {|
+    LpRRV_rv_X := event_restricted_function P (LpRRV_rv_X _ rv)
+      |} .
+  Next Obligation.
+  Admitted.
+  Next Obligation.
+  Admitted.
+  
+
   Lemma norm_rvminus_rvlim_almost 
         (f : nat -> LpRRV prts 2) 
         (rv : forall n, RandomVariable dom borel_sa (f n)) 
@@ -3373,7 +3389,10 @@ Section L2_complete.
     pose (ndom := event_restricted_sigma P).
     assert (pf : 0 < ps_P P).
     rewrite H; lra.
-    pose (nprts := cond_prob_space prts P pf).
+    pose (nprts := event_restricted_prob_space prts P pf).
+
+    
+    pose (fun n => event_restricted_LpRRV _ P pf (f n)).
   Admitted.
 (*
     pose (nf := (fun (n:nat) => 
