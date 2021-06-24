@@ -3330,7 +3330,22 @@ Section L2_complete.
     rewrite H.
     apply sa_inter; trivial.
     apply (proj2_sig P).
-   Qed.
+  Qed.
+
+  Lemma event_restricted_Expectation P (pf1 : ps_P P = 1) pf (f : Ts -> R) :
+    @Expectation Ts dom prts f = 
+    @Expectation _ _ (event_restricted_prob_space prts P pf) (event_restricted_function P f).
+  Proof.
+    Admitted.
+
+  Global Instance event_restricted_islp P n (pf1 : ps_P P = 1) pf 
+           (f : Ts -> R) 
+           (isl:  IsLp  prts n f):
+    IsLp (event_restricted_prob_space prts P pf) n (event_restricted_function P f).
+  Proof.
+    unfold IsLp, IsFiniteExpectation in *.
+    now rewrite event_restricted_Expectation with (P := P) (pf := pf) in isl.
+  Qed.
 
   Program Definition event_restricted_LpRRV n P (pf1 : ps_P P = 1) pf (rv:LpRRV prts n) :
     LpRRV (event_restricted_prob_space prts P pf) n
@@ -3343,30 +3358,62 @@ Section L2_complete.
     typeclasses eauto.
   Qed.
   Next Obligation.
-    unfold event_restricted_function; simpl.
-    unfold event_restricted_domain.
-    unfold IsFiniteExpectation.
     destruct rv.
-  Admitted.
+    now apply event_restricted_islp.
+  Qed.
 
   Lemma restricted_LpRRVminus P (pf1 : ps_P P = 1) pf
         (f g : LpRRV prts 2) :
-    ps_P P = 1 ->
-    LpRRV_eq (event_restricted_prob_space prts P pf)
+    LpRRV_seq 
       (LpRRVminus (event_restricted_prob_space prts P pf)
                   (event_restricted_LpRRV 2 P pf1 pf f)
                   (event_restricted_LpRRV 2 P pf1 pf g))
       (event_restricted_LpRRV 2 P pf1 pf (LpRRVminus prts f g)).
   Proof.
-    Admitted.
+    easy.
+  Qed.
 
   Lemma restricted_LpRRVnorm P (pf1 : ps_P P = 1) pf
         (f : LpRRV prts 2) :
-    ps_P P = 1 ->
     LpRRVnorm prts f = LpRRVnorm (event_restricted_prob_space prts P pf)
                                  (event_restricted_LpRRV 2 P pf1 pf f).
   Proof.
-    Admitted.
+    intros.
+    unfold LpRRVnorm.
+    f_equal.
+    unfold FiniteExpectation.
+    simpl.
+    destruct (IsFiniteExpectation_Finite prts (rvpower (rvabs f) (const 2))).
+    destruct (IsFiniteExpectation_Finite 
+                (event_restricted_prob_space prts P pf)
+                (rvpower (rvabs (event_restricted_function P f)) (const 2))).
+    simpl.
+    rewrite event_restricted_Expectation with (P := P) (pf := pf) in e; trivial.
+    assert (rv_eq
+              (event_restricted_function P (rvpower (rvabs f) (const 2)))
+              (rvpower (rvabs (event_restricted_function P f)) (const 2))) by easy.
+    rewrite (Expectation_ext H) in e.
+    rewrite e in e0.
+    now inversion e0.
+  Qed.
+
+  Lemma restricted_LpRRV_rvlim P (pf1 : ps_P P = 1) pf
+        (f : nat -> LpRRV prts 2) 
+        (rv : RandomVariable dom borel_sa (rvlim (fun x : nat => f x)))
+        (isl : IsLp prts 2 (rvlim (fun x : nat => f x)))
+        (rve : RandomVariable (event_restricted_sigma P) borel_sa
+         (rvlim (fun x : nat => event_restricted_LpRRV 2 P pf1 pf (f x)))) 
+        (isle : IsLp (event_restricted_prob_space prts P pf) 2
+         (rvlim (fun x : nat => event_restricted_LpRRV 2 P pf1 pf (f x)))) :
+    ps_P P = 1 ->
+    LpRRV_seq 
+      (pack_LpRRV (event_restricted_prob_space prts P pf)
+                  (rvlim (fun x : nat => event_restricted_LpRRV 2 P pf1 pf (f x))))
+      (event_restricted_LpRRV 2 P pf1 pf
+                               (pack_LpRRV prts (rvlim (fun x : nat => f x)))).
+  Proof.
+    easy.
+  Qed.
 
   Lemma norm_rvminus_rvlim_almost 
         (f : nat -> LpRRV prts 2) 
@@ -3398,10 +3445,19 @@ Section L2_complete.
     assert (rv_eq nrvlim (rvlim nf)) by easy.
     assert (nrvl : RandomVariable ndom borel_sa (rvlim nf)).
     {
-      admit.
+      apply rvlim_rv.
+      - typeclasses eauto.
+      - intros.
+        destruct omega; simpl.
+        apply H0.
+        now simpl.
     }
     assert (nisl : IsLp nprts nneg2 (rvlim nf)).
-    admit.
+    {
+      unfold nprts, nf.
+      generalize (event_restricted_islp P nneg2 H pf _ isl); intros.
+      apply H3.
+    }
     generalize (norm_rvminus_rvlim nprts nf nrvl nisl); intros.
     cut_to H3.
     - specialize (H3 eps).
@@ -3409,8 +3465,12 @@ Section L2_complete.
       exists N.
       intros.
       specialize (H3 n H4).
-      
-      admit.
+      rewrite restricted_LpRRVnorm with (P := P) (pf := pf) (pf1 := H); trivial.
+      unfold nprts in H3.
+      rewrite <- restricted_LpRRVminus; trivial.
+      unfold nf in H3.
+      rewrite restricted_LpRRV_rvlim in H3; trivial.
+      apply H3.
     - intros.
       unfold nf.
       unfold event_restricted_domain in x.
@@ -3424,11 +3484,11 @@ Section L2_complete.
       intros.
       specialize (H1 n m H4 H5).
       unfold nprts, nf.
-      generalize (restricted_LpRRVminus P H pf (f m) (f n) H); intros.
+      generalize (restricted_LpRRVminus P H pf (f m) (f n)); intros.
       unfold nneg2 in H6.
-      rewrite (LpRRV_norm_proper (event_restricted_prob_space prts P pf) _ _ H6).
+      rewrite (LpRRV_norm_sproper (event_restricted_prob_space prts P pf) _ _ H6).
       now rewrite  <- restricted_LpRRVnorm.
-  Admitted.
+   Qed.
 
 (*
   Lemma LpRRVnorm_Infseq_diff 
