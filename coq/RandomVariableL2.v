@@ -2846,43 +2846,6 @@ Section L2.
         match_destr; try tauto; lra.
     - generalize (cauchy_filter_Rbar_rvlim1 F PF cF); intros.
       apply IsLp_Rbar_IsLp.
-      assert (RandomVariable 
-                dom Rbar_borel_sa
-                (Rbar_rvlim (fun n : nat => L2RRV_lim_picker F PF cF (S n)))).
-      {
-        apply Rbar_rvlim_rv.
-        typeclasses eauto.
-        admit.
-      }
-      assert (RandomVariable
-                dom Rbar_borel_sa
-                (fun x : Ts =>
-                   rvlim
-                     (fun n : nat => rvmult (EventIndicator X) (L2RRV_lim_picker F PF cF (S n))) x)).
-      {
-        apply borel_Rbar_borel.
-        apply rvlim_rv.
-        typeclasses eauto.
-        intros.
-        specialize (H0 omega).
-        generalize (X omega); intros.
-        destruct H3.
-        - specialize (H0 e).
-          apply ex_finite_lim_seq_ext with (f := (fun n : nat => L2RRV_lim_picker F PF cF (S n) omega)); trivial.
-          intros.
-          unfold rvmult, EventIndicator.
-          destruct (X omega).
-          + lra.
-          + tauto.
-        - apply ex_finite_lim_seq_ext with (f := (fun n : nat => 0)); trivial.
-          + unfold rvmult, EventIndicator.
-            destruct (X omega).
-            * tauto.
-            * intros; lra.
-          + unfold ex_finite_lim_seq.
-            exists 0.
-            apply is_lim_seq_const.
-      }  
       apply (IsLp_Rbar_proper_almost prts _ (Rbar_rvlim (fun n : nat => L2RRV_lim_picker F PF cF (S n))))
       ; try typeclasses eauto; trivial.
       exists P. split; trivial; intros a Pa.
@@ -2896,7 +2859,7 @@ Section L2.
       rewrite ex_finite_lim_seq_correct in H0.
       destruct H0.
       auto.
-  Admitted.
+  Qed.
 
   Lemma cauchy_filter_rvlim_finite1
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
@@ -3160,7 +3123,6 @@ Section L2.
   
   Lemma norm_rvminus_rvlim_le
         (f : nat -> LpRRV prts 2) 
-        (rv : forall n, RandomVariable dom borel_sa (f n)) 
         (rvl : RandomVariable dom borel_sa (rvlim f)) 
         (isl : IsLp prts nneg2 (rvlim f)) :
     (forall x, ex_finite_lim_seq (fun n => f n x)) ->
@@ -3299,7 +3261,6 @@ Section L2.
     
   Lemma norm_rvminus_rvlim
         (f : nat -> LpRRV prts 2) 
-        (rv : forall n, RandomVariable dom borel_sa (f n)) 
         (rvl : RandomVariable dom borel_sa (rvlim f)) 
         (isl : IsLp prts nneg2 (rvlim f)) :
     (forall x, ex_finite_lim_seq (fun n => f n x)) ->
@@ -3318,7 +3279,7 @@ Section L2.
     intros.
     assert (0 < eps) by apply cond_pos.
     assert (0 < eps/2) by lra.
-    generalize (norm_rvminus_rvlim_le f rv rvl isl H H0 (mkposreal _ H2)); intros.
+    generalize (norm_rvminus_rvlim_le f rvl isl H H0 (mkposreal _ H2)); intros.
     destruct H3 as [N ?].
     exists N.
     intros.
@@ -3337,25 +3298,78 @@ Section L2_complete.
   Let nneg2 : nonnegreal := bignneg 2 big2.
   Canonical nneg2.
 
-  (*
-  Global Instance event_restricted_rv (n : R) (P : event dom) (pf:0 < ps_P P) :
-    forall rv : LpRRV prts n,
-      RandomVariable (event_restricted_sigma P) borel_sa (event_restricted_function P rv)).
-  
-*)
-  Program Definition event_restricted_LpRRV n P pf (rv:LpRRV prts n) : LpRRV (event_restricted_prob_space prts P pf) n
+  Global Instance event_restricted_rv (P : event dom) (pf:0 < ps_P P) 
+    (f : Ts -> R) 
+    (rv : RandomVariable dom borel_sa f) :
+    RandomVariable (event_restricted_sigma P) borel_sa (event_restricted_function P f).
+  Proof.
+    unfold RandomVariable in *.
+    intros.
+    specialize (rv B).
+    unfold sa_sigma; simpl.
+    assert (pre_event_equiv
+              (fun a : Ts => exists a' : event_restricted_domain P, proj1_sig a' = a /\ event_preimage (event_restricted_function P f) B a')
+              (pre_event_inter 
+                 (event_preimage f B)
+                 P)).
+    {
+      intro x.
+      unfold event_restricted_domain, event_preimage, event_restricted_function, pre_event_inter.
+      unfold event_preimage in rv.
+      split; intros.
+      - destruct H as [? [? ?]].
+        rewrite H in H0.
+        split; trivial.
+        destruct x0.
+        simpl in H.
+        now rewrite H in e.
+      - destruct H.
+        exists (exist _ _ H0).
+        now simpl.
+    }
+    rewrite H.
+    apply sa_inter; trivial.
+    apply (proj2_sig P).
+   Qed.
+
+  Program Definition event_restricted_LpRRV n P (pf1 : ps_P P = 1) pf (rv:LpRRV prts n) :
+    LpRRV (event_restricted_prob_space prts P pf) n
     := {|
     LpRRV_rv_X := event_restricted_function P (LpRRV_rv_X _ rv)
       |} .
   Next Obligation.
-  Admitted.
+    apply event_restricted_rv.
+    apply pf.
+    typeclasses eauto.
+  Qed.
   Next Obligation.
+    unfold event_restricted_function; simpl.
+    unfold event_restricted_domain.
+    unfold IsFiniteExpectation.
+    destruct rv.
   Admitted.
-  
+
+  Lemma restricted_LpRRVminus P (pf1 : ps_P P = 1) pf
+        (f g : LpRRV prts 2) :
+    ps_P P = 1 ->
+    LpRRV_eq (event_restricted_prob_space prts P pf)
+      (LpRRVminus (event_restricted_prob_space prts P pf)
+                  (event_restricted_LpRRV 2 P pf1 pf f)
+                  (event_restricted_LpRRV 2 P pf1 pf g))
+      (event_restricted_LpRRV 2 P pf1 pf (LpRRVminus prts f g)).
+  Proof.
+    Admitted.
+
+  Lemma restricted_LpRRVnorm P (pf1 : ps_P P = 1) pf
+        (f : LpRRV prts 2) :
+    ps_P P = 1 ->
+    LpRRVnorm prts f = LpRRVnorm (event_restricted_prob_space prts P pf)
+                                 (event_restricted_LpRRV 2 P pf1 pf f).
+  Proof.
+    Admitted.
 
   Lemma norm_rvminus_rvlim_almost 
         (f : nat -> LpRRV prts 2) 
-        (rv : forall n, RandomVariable dom borel_sa (f n)) 
         (rvl : RandomVariable dom borel_sa (rvlim f)) 
         (isl : IsLp prts nneg2 (rvlim f)) 
         (P : event dom) :
@@ -3379,27 +3393,42 @@ Section L2_complete.
     assert (pf : 0 < ps_P P).
     rewrite H; lra.
     pose (nprts := event_restricted_prob_space prts P pf).
-
-    
-    pose (fun n => event_restricted_LpRRV _ P pf (f n)).
+    pose (nf := fun n => event_restricted_LpRRV _ P H pf (f n)).
+    pose (nrvlim := event_restricted_function P (rvlim f)).
+    assert (rv_eq nrvlim (rvlim nf)) by easy.
+    assert (nrvl : RandomVariable ndom borel_sa (rvlim nf)).
+    {
+      admit.
+    }
+    assert (nisl : IsLp nprts nneg2 (rvlim nf)).
+    admit.
+    generalize (norm_rvminus_rvlim nprts nf nrvl nisl); intros.
+    cut_to H3.
+    - specialize (H3 eps).
+      destruct H3 as [N ?].
+      exists N.
+      intros.
+      specialize (H3 n H4).
+      
+      admit.
+    - intros.
+      unfold nf.
+      unfold event_restricted_domain in x.
+      apply H0.
+      destruct x.
+      now simpl.
+    - intros.
+      specialize (H1 eps0).
+      destruct H1 as [N ?].
+      exists N.
+      intros.
+      specialize (H1 n m H4 H5).
+      unfold nprts, nf.
+      generalize (restricted_LpRRVminus P H pf (f m) (f n) H); intros.
+      unfold nneg2 in H6.
+      rewrite (LpRRV_norm_proper (event_restricted_prob_space prts P pf) _ _ H6).
+      now rewrite  <- restricted_LpRRVnorm.
   Admitted.
-(*
-    pose (nf := (fun (n:nat) => 
-    generalize (norm_rvminus_rvlim nprts f rv rvl isl); intros.
-    intros.
-    assert (0 < eps) by apply cond_pos.
-    assert (0 < eps/2) by lra.
-    generalize (norm_rvminus_rvlim_le f rv rvl isl H H0 (mkposreal _ H2)); intros.
-    destruct H3 as [N ?].
-    exists N.
-    intros.
-    eapply Rle_lt_trans.
-    apply H3; trivial.
-    simpl; lra.
-  Qed.
-*)
-
-
 
 (*
   Lemma LpRRVnorm_Infseq_diff 

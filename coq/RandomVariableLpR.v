@@ -120,10 +120,7 @@ Proof.
 Qed.
 
   Lemma IsLp_Rbar_proper_almost n (rv_X1 rv_X2 : Ts -> Rbar)
-        {rrv1:RandomVariable dom Rbar_borel_sa rv_X1}
-        {rrv2:RandomVariable dom Rbar_borel_sa rv_X2}
-        {islp1:IsLp_Rbar n rv_X1}
-    :
+        {islp1:IsLp_Rbar n rv_X1} :
       almost prts eq rv_X1 rv_X2 ->
       IsLp_Rbar n rv_X2.
   Proof.
