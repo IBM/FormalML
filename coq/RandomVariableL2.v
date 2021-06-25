@@ -3411,7 +3411,6 @@ Section L2_complete.
     RandomVariable (event_restricted_sigma P) cod f ->
     RandomVariable dom cod (lift_event_restricted_domain_fun default f).
   Proof.
-    (*
     intros rv.
     unfold lift_event_restricted_domain_fun.
     unfold RandomVariable in *.
@@ -3419,23 +3418,59 @@ Section L2_complete.
     destruct (excluded_middle_informative (B default)).
     - eapply sa_proper with
           (y:=
-             (event_union P (event_restricted_event_lift P (exist _ (event_preimage f B) (rv B))))).
+             (event_union (event_complement P) 
+                          (event_restricted_event_lift P (exist _ (event_preimage f B) (rv B))))).
       + intros x.
-        unfold event_preimage, event_restricted_event_lift, event_union, pre_event_union; simpl.
+        unfold event_preimage, event_complement, event_restricted_event_lift, event_union, pre_event_union; simpl.
         split; intros HH.
         * match_destr_in HH; simpl in HH.
-          -- left; trivial.
           -- right.
              unfold event_restricted_domain.
-
-            right.
              eexists; split; [ | eapply HH].
              reflexivity.
-          -- 
+          -- left; trivial.
+        * destruct HH.
+          -- match_destr.
+             unfold pre_event_complement in H.
+             tauto.
+          -- destruct H as [? [? ?]].
+             match_destr.
+             subst.
+             destruct x0.
+             simpl.
+             simpl in e0.
+             replace e1 with e0 in H0.
+             apply H0.
+             admit.
       + apply sa_union.
-        * now destruct P; simpl.
+        * apply sa_complement.
+          now destruct P; simpl.
         * unfold proj1_sig; match_destr.
-    *)
+    - eapply sa_proper with
+          (y := event_restricted_event_lift P (exist _ (event_preimage f B) (rv B))).
+      + intros x.
+        unfold event_preimage, event_restricted_event_lift, event_union, pre_event_union; simpl.        
+        split; intros HH.
+        * match_destr_in HH; simpl in HH.
+          -- exists (exist P x e).
+             tauto.
+          -- tauto.
+        * destruct HH as [? [? ?]].
+          match_destr.
+          -- destruct x0.
+             subst.
+             simpl.
+             simpl in e.
+             replace e with e0.
+             apply H0.
+             admit.
+          -- destruct x0.
+             subst.
+             simpl in n0.
+             tauto.
+      + unfold event_restricted_event_lift; simpl.
+        generalize (sa_pre_event_restricted_event_lift P (exist _ (event_preimage f B) (rv B))); intros.
+        apply H.
   Admitted.
 
   Global Instance lift_event_restricted_domain_fun_srv {Td} (default:Td) {P} (f:event_restricted_domain P -> Td) :
