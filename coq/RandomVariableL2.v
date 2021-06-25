@@ -3396,8 +3396,9 @@ Section L2_complete.
       exists (exist _ _ H0).
       simpl.
       tauto.
-    - destruct HH as [?[??]]; subst; trivial.
-      Admitted.
+    - destruct HH as [[?][??]]; subst; simpl.
+      auto.
+  Qed.
 
   Definition lift_event_restricted_domain_fun {Td} (default:Td) {P} (f:event_restricted_domain P -> Td) : Ts -> Td
     := fun x =>
