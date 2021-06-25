@@ -3497,6 +3497,21 @@ Section L2_complete.
     lra.
   Qed.
 
+  Lemma restrict_lift {P} (f:event_restricted_domain P -> R) :
+    rv_eq (event_restricted_function P (lift_event_restricted_domain_fun 0 f)) f.
+  Proof.
+    intro x.
+    unfold event_restricted_function, lift_event_restricted_domain_fun.
+    match_destr.
+    - unfold event_restricted_domain in x.
+      destruct x.
+      simpl.
+      simpl in e.
+      admit.
+    - destruct x.
+      now simpl in n.
+  Admitted.
+
   Lemma event_restricted_Expectation_posRV P (pf1 : ps_P P = 1) pf (f : Ts -> R) 
         (prv : PositiveRandomVariable f) :
     @Expectation_posRV Ts dom prts f prv = 
@@ -3562,9 +3577,9 @@ Section L2_complete.
       + admit.
       + subst.
         erewrite event_restricted_SimpleExpectation; eauto.
-        admit.
+        apply SimpleExpectation_ext.
+        apply restrict_lift.
         Unshelve.
-        trivial.
     Admitted.
 
   Lemma event_restricted_Expectation P (pf1 : ps_P P = 1) pf (f : Ts -> R) :
