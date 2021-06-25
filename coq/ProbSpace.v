@@ -672,6 +672,76 @@ Hint Resolve ps_none ps_one : prob.
       lra.
   Qed.
 
+  Lemma ps_inter_r1 {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts: ProbSpace dom)
+          {A B} :
+    ps_P B = 1 ->
+    ps_P (A ∩ B) = ps_P A.
+  Proof.
+    intros HH.
+    generalize (ps_union prts A B)
+    ; intros HH2.
+    rewrite HH in HH2.
+    assert ( ps_P (A ∪ B) = 1).
+    {
+      apply Rle_antisym.
+      - apply ps_le1.
+      - rewrite <- HH.
+        apply ps_sub.
+        eauto with prob.
+    }
+    rewrite H in HH2.
+    lra.
+  Qed.
+
+  Lemma ps_inter_l1 {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts: ProbSpace dom)
+          {A B} :
+    ps_P A = 1 ->
+    ps_P (A ∩ B) = ps_P B.
+  Proof.
+    intros.
+    rewrite event_inter_comm.
+    now apply ps_inter_r1.
+  Qed.
+
+  Lemma ps_union_r0 {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts: ProbSpace dom)
+          {A B} :
+    ps_P B = 0 ->
+    ps_P (A ∪ B) = ps_P A.
+  Proof.
+    intros HH.
+    rewrite (ps_union prts A B).
+    rewrite HH.
+    assert ( ps_P (A ∩ B) = 0).
+    {
+      rewrite <- HH.
+      apply Rle_antisym.
+      - apply ps_sub.
+        auto with prob.
+      - rewrite HH.
+        apply ps_pos.
+    }
+    rewrite H.
+    lra.
+  Qed.
+
+  Lemma ps_union_l0 {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts: ProbSpace dom)
+          {A B} :
+    ps_P A = 0 ->
+    ps_P (A ∪ B) = ps_P B.
+  Proof.
+    intros.
+    rewrite event_union_comm.
+    now apply ps_union_r0.
+  Qed.
+
 
 Section conditional_probability.
 

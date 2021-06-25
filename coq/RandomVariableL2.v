@@ -1869,7 +1869,7 @@ Section L2.
     Rbar_Expectation_posRV (Rbar_rvplus f g) =
     Rbar_plus (Rbar_Expectation_posRV f) (Rbar_Expectation_posRV g).
   Proof.
-    Admitted.
+  Admitted.
 
 
   Lemma finiteExp_Rbar_rvabs 
@@ -3355,11 +3355,9 @@ Section L2_complete.
     now simpl.
   Qed.
 
-  Lemma event_restricted_rv_le P (f g : Ts -> R) :
-    rv_le f g ->
-    rv_le (event_restricted_function P f) (event_restricted_function P g).
+  Global Instance event_restricted_rv_le P : Proper (rv_le ==> rv_le) (event_restricted_function P).
   Proof.
-    intros rel x.
+    intros f g rel x.
     unfold event_restricted_function.
     unfold event_restricted_domain in x.
     destruct x.
@@ -3382,7 +3380,82 @@ Section L2_complete.
     apply map_ext.
     intros.
     apply Rmult_eq_compat_l.
+    unfold event_restricted_prob_space; simpl.
+    unfold cond_prob.
+    rewrite pf1.
+    field_simplify.
+    rewrite ps_inter_r1; trivial.
+    eapply ps_proper.
+    intros x.
+    unfold event_restricted_event_lift, preimage_singleton, pre_event_singleton, pre_event_preimage, pre_event_inter; simpl.
+    unfold pre_event_inter.
+    split; intros HH.
+    - subst.
+      admit.
+    - destruct HH as [?[??]]; subst; trivial.
     Admitted.
+
+  Definition lift_event_restricted_domain_fun {Td} (default:Td) {P} (f:event_restricted_domain P -> Td) : Ts -> Td
+    := fun x =>
+         match excluded_middle_informative (P x) with
+         | left pf => f (exist _ _ pf)
+         | right _ => default
+         end.
+
+  Global Instance lift_event_restricted_domain_fun_rv {Td} {cod} (default:Td) {P} (f:event_restricted_domain P -> Td) :
+    RandomVariable (event_restricted_sigma P) cod f ->
+    RandomVariable dom cod (lift_event_restricted_domain_fun default f).
+  Proof.
+    (*
+    intros rv.
+    unfold lift_event_restricted_domain_fun.
+    unfold RandomVariable in *.
+    intros.
+    destruct (excluded_middle_informative (B default)).
+    - eapply sa_proper with
+          (y:=
+             (event_union P (event_restricted_event_lift P (exist _ (event_preimage f B) (rv B))))).
+      + intros x.
+        unfold event_preimage, event_restricted_event_lift, event_union, pre_event_union; simpl.
+        split; intros HH.
+        * match_destr_in HH; simpl in HH.
+          -- left; trivial.
+          -- right.
+             unfold event_restricted_domain.
+
+            right.
+             eexists; split; [ | eapply HH].
+             reflexivity.
+          -- 
+      + apply sa_union.
+        * now destruct P; simpl.
+        * unfold proj1_sig; match_destr.
+    *)
+  Admitted.
+
+  Global Instance lift_event_restricted_domain_fun_srv {Td} (default:Td) {P} (f:event_restricted_domain P -> Td) :
+    SimpleRandomVariable f -> 
+    SimpleRandomVariable (lift_event_restricted_domain_fun default f).
+  Proof.
+    intros srv.
+    exists (default::srv_vals).
+    intros.
+    unfold lift_event_restricted_domain_fun.
+    match_destr.
+    - right.
+      apply srv_vals_complete.
+    - now left.
+  Qed.
+
+  Global Instance lift_event_restricted_domain_fun_prv {P} (f:event_restricted_domain P -> R) :
+    PositiveRandomVariable f -> 
+    PositiveRandomVariable (lift_event_restricted_domain_fun 0 f).
+  Proof.
+    unfold PositiveRandomVariable, lift_event_restricted_domain_fun.
+    intros prv x.
+    match_destr.
+    lra.
+  Qed.
 
   Lemma event_restricted_Expectation_posRV P (pf1 : ps_P P = 1) pf (f : Ts -> R) 
         (prv : PositiveRandomVariable f) :
@@ -3442,7 +3515,16 @@ Section L2_complete.
       unfold is_ub_Rbar in H.
       apply H.
       unfold BoundedPositiveRandomVariable.
-      
+      exists (lift_event_restricted_domain_fun 0 x2).
+      do 2 eexists.
+      split; [split |].
+      + typeclasses eauto.
+      + admit.
+      + subst.
+        erewrite event_restricted_SimpleExpectation; eauto.
+        admit.
+        Unshelve.
+        trivial.
     Admitted.
 
   Lemma event_restricted_Expectation P (pf1 : ps_P P = 1) pf (f : Ts -> R) :
