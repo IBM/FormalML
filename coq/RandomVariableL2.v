@@ -3385,15 +3385,19 @@ Section L2_complete.
     rewrite pf1.
     field_simplify.
     rewrite ps_inter_r1; trivial.
+    rewrite <- ps_inter_r1 with (B := P); trivial.
     eapply ps_proper.
     intros x.
     unfold event_restricted_event_lift, preimage_singleton, pre_event_singleton, pre_event_preimage, pre_event_inter; simpl.
     unfold pre_event_inter.
     split; intros HH.
     - subst.
-      admit.
+      destruct HH.
+      exists (exist _ _ H0).
+      simpl.
+      tauto.
     - destruct HH as [?[??]]; subst; trivial.
-    Admitted.
+      Admitted.
 
   Definition lift_event_restricted_domain_fun {Td} (default:Td) {P} (f:event_restricted_domain P -> Td) : Ts -> Td
     := fun x =>
