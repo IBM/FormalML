@@ -3967,6 +3967,51 @@ Section L2_complete.
     - apply pow2_pos.
   Qed.
 
+  Lemma Npow_eps (eps : posreal) :
+    exists (N : nat), 2 / (pow 2 N) < eps.
+  Proof.
+    Admitted.
+
+  Lemma LpRRVnorm_rvminus_rvlim_almost 
+        (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F)
+        (eps : posreal)
+        (rv : RandomVariable dom borel_sa (rvlim (fun n : nat => L2RRV_lim_picker prts F PF cF (S n))))
+        (islp : IsLp prts nneg2 (rvlim (fun n : nat => L2RRV_lim_picker prts F PF cF (S n)))):
+    let f := fun n => L2RRV_lim_picker prts F PF cF (S n)  in 
+    forall (eps : posreal),
+      exists (N : nat),
+        forall (n : nat), 
+          (n >= N)%nat ->
+          (LpRRVnorm prts (LpRRVminus prts (pack_LpRRV prts (rvlim f)) (f n))) < eps.
+
+  Proof.
+    unfold cauchy in cF.
+    generalize (cauchy_filter_rvlim_finite2 prts F PF cF); intros.
+    destruct X as [P [dec [? [? ?]]]].
+    apply norm_rvminus_rvlim_almost  with (P := P); trivial.
+    - intros.
+      specialize (H0 x).
+      rewrite ex_finite_lim_seq_ext in H0.
+      apply H0.
+      intros.
+      unfold rvmult, EventIndicator.
+      match_destr; try tauto.
+      subst f.
+      lra.
+    - intros.
+      generalize (lim_filter_cauchy prts F PF cF); intros.
+      generalize (Npow_eps eps1); intros.
+      destruct H3 as [N ?].
+      exists N; intros.
+      specialize (H2 N (S m) (S n)).
+      subst f.
+      eapply Rlt_trans.
+      apply H2; try lia.
+      apply H3.
+   Qed.
+  
   Lemma LpRRVnorm_L2RRV_lim
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
         (PF:ProperFilter F)
