@@ -3441,7 +3441,7 @@ Section L2_complete.
              simpl in e0.
              replace e1 with e0 in H0.
              apply H0.
-             admit.
+             apply proof_irrelevance.
       + apply sa_union.
         * apply sa_complement.
           now destruct P; simpl.
@@ -3463,7 +3463,7 @@ Section L2_complete.
              simpl in e.
              replace e with e0.
              apply H0.
-             admit.
+             apply proof_irrelevance.
           -- destruct x0.
              subst.
              simpl in n0.
@@ -3471,7 +3471,7 @@ Section L2_complete.
       + unfold event_restricted_event_lift; simpl.
         generalize (sa_pre_event_restricted_event_lift P (exist _ (event_preimage f B) (rv B))); intros.
         apply H.
-  Admitted.
+    Qed.
 
   Global Instance lift_event_restricted_domain_fun_srv {Td} (default:Td) {P} (f:event_restricted_domain P -> Td) :
     SimpleRandomVariable f -> 
@@ -3501,16 +3501,16 @@ Section L2_complete.
     rv_eq (event_restricted_function P (lift_event_restricted_domain_fun 0 f)) f.
   Proof.
     intro x.
+    destruct x.
     unfold event_restricted_function, lift_event_restricted_domain_fun.
     match_destr.
-    - unfold event_restricted_domain in x.
-      destruct x.
-      simpl.
-      simpl in e.
-      admit.
-    - destruct x.
-      now simpl in n.
-  Admitted.
+    - simpl.
+      simpl in e0.
+      f_equal.
+      f_equal.
+      apply proof_irrelevance.
+    - now simpl in n.
+  Qed.
 
   Lemma event_restricted_Expectation_posRV P (pf1 : ps_P P = 1) pf (f : Ts -> R) 
         (prv : PositiveRandomVariable f) :
