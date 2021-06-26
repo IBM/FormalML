@@ -3574,13 +3574,15 @@ Section L2_complete.
       do 2 eexists.
       split; [split |].
       + typeclasses eauto.
-      + admit.
+      + intro z.
+        unfold lift_event_restricted_domain_fun.
+        match_destr.
+        apply H5.
       + subst.
         erewrite event_restricted_SimpleExpectation; eauto.
         apply SimpleExpectation_ext.
         apply restrict_lift.
-        Unshelve.
-    Admitted.
+    Qed.
 
   Lemma event_restricted_Expectation P (pf1 : ps_P P = 1) pf (f : Ts -> R) :
     @Expectation Ts dom prts f = 
