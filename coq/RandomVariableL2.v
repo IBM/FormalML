@@ -3437,8 +3437,6 @@ Section L2_complete.
              match_destr.
              subst.
              destruct x0.
-             simpl.
-             simpl in e0.
              replace e1 with e0 in H0.
              apply H0.
              apply proof_irrelevance.
@@ -3459,14 +3457,11 @@ Section L2_complete.
           match_destr.
           -- destruct x0.
              subst.
-             simpl.
-             simpl in e.
              replace e with e0.
              apply H0.
              apply proof_irrelevance.
           -- destruct x0.
              subst.
-             simpl in n0.
              tauto.
       + unfold event_restricted_event_lift; simpl.
         generalize (sa_pre_event_restricted_event_lift P (exist _ (event_preimage f B) (rv B))); intros.
@@ -3503,13 +3498,9 @@ Section L2_complete.
     intro x.
     destruct x.
     unfold event_restricted_function, lift_event_restricted_domain_fun.
-    match_destr.
-    - simpl.
-      simpl in e0.
-      f_equal.
-      f_equal.
-      apply proof_irrelevance.
-    - now simpl in n.
+    match_destr; try easy.
+    do 2 f_equal.
+    apply proof_irrelevance.
   Qed.
 
   Lemma event_restricted_Expectation_posRV P (pf1 : ps_P P = 1) pf (f : Ts -> R) 
