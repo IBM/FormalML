@@ -3967,10 +3967,25 @@ Section L2_complete.
     - apply pow2_pos.
   Qed.
 
+
   Lemma Npow_eps (eps : posreal) :
     exists (N : nat), 2 / (pow 2 N) < eps.
   Proof.
-    Admitted.
+    generalize (cond_pos eps); intros.
+    assert (0 < eps/2) by lra.
+    generalize (inv_two_pow_lt (mkposreal _ H0)); intros.
+    destruct H1 as [N ?].
+    exists N.
+    unfold Rdiv.
+    rewrite Rmult_comm.
+    apply Rmult_lt_reg_r with (r := /2).
+    apply Rinv_0_lt_compat; lra.
+    rewrite Rmult_assoc.
+    rewrite <- Rinv_r_sym; try lra.
+    rewrite Rmult_1_r.
+    unfold Rdiv in H1.
+    apply H1.
+  Qed.
 
   Lemma LpRRVnorm_rvminus_rvlim_almost 
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
