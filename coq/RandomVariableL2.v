@@ -4096,7 +4096,9 @@ Section L2_complete.
       cut_to H10; try lia.
       generalize (Hierarchy.ball_triangle (M:= LpRRV_UniformSpace prts big2) _ _ _ _ _ H9 H10).
       replace ((mkposreal _ H5) + (mkposreal _ H5)) with (pos eps) by (simpl; lra).
-      admit.
+      rewrite (proof_irrelevance _ PF p).
+      rewrite (proof_irrelevance _ cF c).
+      trivial.
     - apply rvlim_rv.
       typeclasses eauto.
       apply H0.
