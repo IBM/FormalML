@@ -4081,7 +4081,21 @@ Section L2_complete.
                                    Hierarchy.ball (M:= LpRRV_UniformSpace prts big2)
                                                   (L2RRV_lim_picker prts F PF cF (S n)) eps
                                                   (pack_LpRRV prts (cauchy_rvlim_fun prts F PF cF))).
-      admit.
+      {
+        unfold cauchy_rvlim_fun.
+        intros.
+        unfold pack_LpRRV; simpl.
+        unfold Hierarchy.ball.
+        unfold UniformSpace.ball; simpl.
+        unfold LpRRVball, LpRRVnorm, LpRRVminus; simpl.
+        eexists; intros; simpl.
+
+        unfold FiniteExpectation, proj1_sig.
+        match_destr.
+        repeat match_destr_in e.
+        destruct a as [x2_p1 [x2fin x2islp]].
+        admit.
+      }
       unfold L2RRV_lim.
       match_destr; try tauto.
       match_destr; try tauto.
