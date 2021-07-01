@@ -2936,10 +2936,10 @@ Section L2.
              (cF:cauchy F) : LpRRV prts 2
       := pack_LpRRV prts (cauchy_rvlim_fun F PF cF).
 
-  Definition L2RRV_lim (lim : ((LpRRV prts 2 -> Prop) -> Prop)) : LpRRV prts 2.
+  Definition L2RRV_lim (F : ((LpRRV prts 2 -> Prop) -> Prop)) : LpRRV prts 2.
   Proof.
-    destruct (excluded_middle_informative (ProperFilter lim)).
-    - destruct (excluded_middle_informative (cauchy (T:= LpRRV_UniformSpace prts big2) lim)).
+    destruct (excluded_middle_informative (ProperFilter F)).
+    - destruct (excluded_middle_informative (cauchy (T:= LpRRV_UniformSpace prts big2) F)).
       + exact (L2RRV_lim_with_conditions _ p c).
       + exact (LpRRVzero prts).
     - exact (LpRRVzero prts).
@@ -4050,8 +4050,6 @@ Section L2_complete.
       destruct H1.
       exists x0.
       split; trivial.
-
-
       assert (forall x, ex_lim_seq_cauchy (fun n : nat => rvmult (EventIndicator dec) (L2RRV_lim_picker prts F PF cF (S n)) x)).
       {
         intros.
@@ -4067,7 +4065,37 @@ Section L2_complete.
       generalize (inv_two_pow_lt (mkposreal _ H5)); intros.
       destruct H6 as [N ?].
       generalize cauchy_distance; intros.
+      generalize (lim_picker_center_included prts F PF cF); intros.
+      simpl in H7.
+      simpl in H8.
+      assert (forall eps,
+                 exists (N:nat),
+                 forall (n:nat), (n >= N)%nat ->
+                                 Hierarchy.ball x0 eps  (L2RRV_lim_picker prts F PF cF (S n))).
+      {
+        admit.
+      }
+      assert (forall eps,
+                 exists (N:nat),
+                   forall (n:nat), (n >= N)%nat ->
+                                   Hierarchy.ball (M:= LpRRV_UniformSpace prts big2)
+                                                  (L2RRV_lim_picker prts F PF cF (S n)) eps
+                                                  (pack_LpRRV prts (cauchy_rvlim_fun prts F PF cF))).
+      admit.
       unfold L2RRV_lim.
+      match_destr; try tauto.
+      match_destr; try tauto.
+      unfold L2RRV_lim_with_conditions.
+      specialize (H9 (mkposreal _ H5)).
+      specialize (H10 (mkposreal _ H5)).
+      destruct H9 as [N2 ?].
+      destruct H10 as [N3 ?].
+      specialize (H9 (max N2 N3)).
+      specialize (H10 (max N2 N3)).
+      cut_to H9; try lia.
+      cut_to H10; try lia.
+      generalize (Hierarchy.ball_triangle (M:= LpRRV_UniformSpace prts big2) _ _ _ _ _ H9 H10).
+      replace ((mkposreal _ H5) + (mkposreal _ H5)) with (pos eps) by (simpl; lra).
       admit.
     - apply rvlim_rv.
       typeclasses eauto.
