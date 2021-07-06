@@ -959,6 +959,25 @@ Section L2.
     now apply lim_picker_included.
   Qed.
 
+  Lemma lim_picker_center_included2
+        (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F)
+        (N:nat) :
+    forall (n:nat), 
+      (n >= N)%nat ->
+      (Hierarchy.ball (M:= LpRRV_UniformSpace prts big2)
+                    (proj1_sig (L2RRV_lim_ball_center_center F PF cF N))
+                    (mkposreal _ (inv_pow_2_pos N)))
+      (L2RRV_lim_picker F PF cF n).
+  Proof.
+    intros.
+    simpl.
+    apply lim_ball_center_ball_center_center.
+    apply lim_picker_included.
+    lia.
+  Qed.
+
   Lemma LpRRVq_opp_opp (x : LpRRVq prts 2) :
     opp x = LpRRVq_opp prts x.
   Proof.
@@ -3669,7 +3688,7 @@ Section L2_complete.
   Lemma norm_rvminus_rvlim_almost 
         (f : nat -> LpRRV prts 2) 
         (rvl : RandomVariable dom borel_sa (rvlim f)) 
-        (isl : IsLp prts nneg2 (rvlim f)) 
+        (isl : IsLp prts nneg2 (rvlim f))
         (P : event dom) :
     ps_P P = 1 ->
     (forall x, P x -> ex_finite_lim_seq (fun n => f n x)) ->
@@ -3740,6 +3759,29 @@ Section L2_complete.
       rewrite (LpRRV_norm_sproper (event_restricted_prob_space prts P pf) _ _ H6).
       now rewrite  <- restricted_LpRRVnorm.
    Qed.
+
+  (*
+Lemma norm_rvminus_rvlim_almost_P_dec
+        (f : nat -> LpRRV prts 2) 
+        (rvl : RandomVariable dom borel_sa (rvlim f)) 
+        (isl : IsLp prts nneg2 (rvlim f))
+        (P : event dom) 
+        (dec : forall x, {P x} + {~ P x}) :
+    let nf := fun n : nat => pack_LpRRV prts (rvmult (EventIndicator dec) (f n)) in            
+    ps_P P = 1 ->
+    (forall x, P x -> ex_finite_lim_seq (fun n => f n x)) ->
+    (forall (eps:posreal),
+      exists (N : nat),
+        forall (n m : nat), 
+          (n >= N)%nat ->
+          (m >= N)%nat ->
+          (LpRRVnorm prts (LpRRVminus prts (nf m) (nf n))) < eps) ->
+    forall (eps : posreal),
+      exists (N : nat),
+        forall (n : nat), 
+          (n >= N)%nat ->
+          (LpRRVnorm prts (LpRRVminus prts (pack_LpRRV prts (rvlim nf)) (nf n))) < eps.
+*)
 
 (*
   Lemma LpRRVnorm_Infseq_diff 
@@ -3992,7 +4034,7 @@ Section L2_complete.
         (PF:ProperFilter F)
         (cF:cauchy F)
         (eps : posreal)
-        (rv : RandomVariable dom borel_sa (rvlim (fun n : nat => L2RRV_lim_picker prts F PF cF (S n))))
+        (rv : RandomVariable dom borel_sa (rvlim (fun n : nat => L2RRV_lim_picker prts F PF cF (S n)))) 
         (islp : IsLp prts nneg2 (rvlim (fun n : nat => L2RRV_lim_picker prts F PF cF (S n)))):
     let f := fun n => L2RRV_lim_picker prts F PF cF (S n)  in 
     forall (eps : posreal),
@@ -4027,30 +4069,301 @@ Section L2_complete.
       apply H3.
    Qed.
   
-  Lemma LpRRVnorm_L2RRV_lim
+  Global Instance IsLp_EventIndicator_mult {p : nonnegreal} {P : event dom} (dec : forall x, {P x} + {~ P x}) 
+         (rv_X: Ts -> R)
+         {rv : RandomVariable dom borel_sa rv_X}
+         {islp:IsLp prts p rv_X} :
+    IsLp prts p (rvmult (EventIndicator dec) rv_X).
+  Proof.
+    generalize (IsLp_bounded prts p (rvmult (EventIndicator dec) rv_X) (rvpower (rvabs rv_X) (const p))); intros.
+    apply H; trivial.
+    intro x.
+    unfold rvpower, rvabs, rvmult, const, EventIndicator.
+    apply Rle_power_l.
+    apply (cond_nonneg p).
+    split.
+    apply Rabs_pos.
+    match_destr.
+    - rewrite Rmult_1_l; now right.
+    - rewrite Rmult_0_l.
+      rewrite Rabs_R0.
+      apply Rabs_pos.
+  Qed.
+
+  Definition LpRRVindicator {p:nonnegreal} {P : event dom} (dec : forall x, {P x} + {~ P x}) (rv : LpRRV prts p) : LpRRV prts p
+    :=  pack_LpRRV prts (rvmult (EventIndicator dec) rv).
+
+  Instance rvlim_rv_almost_P 
+           (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+           (PF:ProperFilter F)
+           (cF:cauchy F)
+           {P : event dom} 
+           (dec : forall x, {P x} + {~ P x}) :
+    let f := fun n : nat => LpRRVindicator dec (L2RRV_lim_picker prts F PF cF (S n)) in
+    RandomVariable dom borel_sa (rvlim f).
+  Proof.
+    generalize (cauchy_filter_rvlim_finite2 prts F PF cF); intros.
+    destruct X as [? [? [? [? ?]]]].
+    subst f.
+    apply rvlim_rv.
+    unfold LpRRVindicator.
+    unfold pack_LpRRV; simpl.
+    typeclasses eauto.
+    intros.
+    Admitted.
+
+  Instance IsLp_rvlim_almost_P {p}
+           (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+           (PF:ProperFilter F)
+           (cF:cauchy F)
+           {P : event dom} 
+           (dec : forall x, {P x} + {~ P x}) :
+    let f := fun n : nat => LpRRVindicator dec (L2RRV_lim_picker prts F PF cF (S n)) in 
+    IsLp prts p (rvlim f).
+  Proof.
+    generalize (cauchy_filter_rvlim_finite2 prts F PF cF); intros.
+    destruct X as [? [? [? [? ?]]]].
+    subst f.
+  Admitted.
+
+  Lemma LpRRVminus_indicator_comm {p:nonnegreal} {P : event dom} (dec : forall x, {P x} + {~ P x})
+        (f g : LpRRV prts p) :
+    LpRRV_seq
+      (LpRRVminus prts (LpRRVindicator dec f) (LpRRVindicator dec g))
+      (LpRRVindicator dec (LpRRVminus prts f g)).
+  Proof.
+    intro x.
+    unfold LpRRVindicator.
+    unfold LpRRVminus, pack_LpRRV; simpl.
+    unfold EventIndicator, rvminus, rvmult, rvplus, rvopp, rvscale.
+    match_destr; lra.
+  Qed.
+
+  Lemma LpRRVnorm_indicator {p:nonnegreal} {P : event dom} (dec : forall x, {P x} + {~ P x})
+        (f : LpRRV prts p) :
+    ps_P P = 1 ->
+    LpRRVnorm prts f = LpRRVnorm prts (LpRRVindicator dec f).
+  Proof.
+    intros.
+    unfold LpRRVnorm.
+    f_equal.
+    apply FiniteExpectation_proper_almost.
+    typeclasses eauto.
+    typeclasses eauto.
+    unfold almost.
+    exists P.
+    split; trivial.
+    intros.
+    unfold LpRRVindicator, pack_LpRRV; simpl.
+    unfold rvpower, rvabs, const, rvmult, EventIndicator.
+    match_destr.
+    - now rewrite Rmult_1_l.
+    - tauto.
+  Qed.
+
+  Lemma LpRRVnorm_rvminus_rvlim_almost_P
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
         (PF:ProperFilter F)
         (cF:cauchy F)
-        (eps : posreal) :
-    exists (x : LpRRV prts 2),
-      (F (Hierarchy.ball x eps)) /\
-      ((Hierarchy.ball (M := LpRRV_UniformSpace prts big2) x eps) (L2RRV_lim prts F)).
+        (eps : posreal):
+    exists (P : event dom),
+    exists (dec: forall x, {P x} + {~ P x}),
+    let f := fun n : nat => LpRRVindicator dec (L2RRV_lim_picker prts F PF cF (S n)) in 
+    ps_P P = 1 /\
+    (forall x : Ts, ex_finite_lim_seq (fun n : nat => f n x)) /\
+    forall (eps : posreal),
+      exists (N : nat),
+        forall (n : nat), 
+          (n >= N)%nat ->
+          (LpRRVnorm prts (LpRRVminus prts (pack_LpRRV prts (rvlim f)) (f n))) < eps.
   Proof.
     unfold cauchy in cF.
     generalize (cauchy_filter_rvlim_finite2 prts F PF cF); intros.
     destruct X as [P [dec [? [? ?]]]].
-    apply IsLp_down_le with (n := 1) in H1; try lra.
-    - apply IsL1_abs_Finite in H1.
-      apply IsFiniteExpectation_Finite in H1.
-      destruct H1.
-      erewrite Expectation_pos_posRV in e.
-      invcs e.
-      unfold rvlim in H2.
-      generalize (cF eps); intros.
-      destruct H1.
-      exists x0.
-      split; trivial.
-      assert (forall x, ex_lim_seq_cauchy (fun n : nat => rvmult (EventIndicator dec) (L2RRV_lim_picker prts F PF cF (S n)) x)).
+    exists P.
+    exists dec.
+    intros.
+    generalize ( norm_rvminus_rvlim_almost f); intros.
+    simpl.
+    split; trivial.
+    split; trivial.
+    intros.
+    subst f.
+    specialize (H2 (rvlim_rv_almost_P F PF cF dec)).
+    specialize (H2 (IsLp_rvlim_almost_P F PF cF dec) P H).
+    apply H2; [intros; apply H0 |].
+    intros.
+    generalize (lim_filter_cauchy prts F PF cF); intros.
+    generalize (Npow_eps eps1); intros.
+    destruct H4 as [N ?].
+    exists N; intros.
+    specialize (H3 N (S m) (S n) ).
+    cut_to H3; try lia.
+    rewrite LpRRVminus_indicator_comm .
+    rewrite <- LpRRVnorm_indicator; trivial.
+    eapply Rlt_trans.
+    apply H3.
+    apply H4.
+  Qed.
+
+(*
+  Lemma LpRRVnorm_rvminus_rvlim_almost
+        (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F)
+        (eps : posreal)
+        (rv : RandomVariable dom borel_sa (rvlim (fun n : nat => L2RRV_lim_picker prts F PF cF (S n))))
+        (islp : IsLp prts nneg2 (rvlim (fun n : nat => L2RRV_lim_picker prts F PF cF (S n)))):
+    let f := fun n => L2RRV_lim_picker prts F PF cF (S n)  in 
+    forall (eps : posreal),
+      exists (N : nat),
+        forall (n : nat), 
+          (n >= N)%nat ->
+          (LpRRVnorm prts (LpRRVminus prts (pack_LpRRV prts (rvlim f)) (f n))) < eps.
+*)
+
+  Lemma LpRRVnorm_L2RRV_cauchy_picker
+        (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F)
+        (eps : posreal) :
+    exists (N : nat),
+    exists (x : LpRRV prts 2),
+      (F (Hierarchy.ball x eps)) /\
+      (forall (n:nat), (n >= N)%nat ->
+                       ((Hierarchy.ball (M := LpRRV_UniformSpace prts big2) x eps) 
+                          (L2RRV_lim_picker prts F PF cF n))).
+   Proof.
+     intros.
+     generalize (inv_two_pow_lt eps); intros.
+     destruct H as [N ?].
+     generalize (lim_picker_center_included2 prts F PF cF N); intros.
+     pose (x0 := (L2RRV_lim_ball_center_center prts F PF cF N)).     
+     exists N.
+     exists (proj1_sig x0).
+     intros.
+     generalize (ball_le (M:= LpRRV_UniformSpace prts big2) (proj1_sig x0) (mkposreal _ (inv_pow_2_pos N)) eps); intros.
+     split.
+     - destruct x0.
+       simpl in *.
+       eapply filter_imp; try eapply f.
+       apply ball_le.
+       lra.
+     - intros.
+       specialize (H0 n).
+       apply H1.
+       now left.
+       now apply H0.
+   Qed.
+
+   Lemma ball_L2RRV_lim_picker
+        (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F)
+        (eps : posreal) :
+     exists (N : nat),
+       forall (n : nat), (n >= N)%nat ->
+                         (Hierarchy.ball (M := LpRRV_UniformSpace prts big2) 
+                                         (L2RRV_lim_picker prts F PF cF n) eps (L2RRV_lim prts F)).
+     Proof.
+       generalize (LpRRVnorm_rvminus_rvlim_almost_P F PF cF eps); intros.
+       destruct H as [P [dec ?]].
+       simpl in H.
+       destruct H as [? [? ?]].
+       eexists.
+       intros.
+       unfold L2RRV_lim.
+       match_destr; try tauto.
+       match_destr; try tauto.
+       do 2 red; simpl.
+       unfold L2RRV_lim_with_conditions.
+       unfold LpRRVball, LpRRVnorm, LpRRVminus; simpl.
+       unfold cauchy_rvlim_fun.
+       unfold FiniteExpectation, proj1_sig.
+       match_destr.
+       repeat match_destr_in e.
+       destruct a as [x2_p1 [x2fin x2islp]].
+       erewrite Expectation_pos_posRV in e.
+       inversion e.
+       generalize (cond_pos eps); intro.
+       replace (pos eps) with (power (power eps 2) (/2)) by (apply inv_power_cancel; lra).
+       apply Rlt_power_l; try lra.
+       split.
+       assert (Rbar_le 0 x).
+       {
+         rewrite <- H4.
+         apply Expectation_posRV_pos.
+       }
+      now simpl in H5.
+(*
+      assert (nrvl : RandomVariable dom borel_sa (rvlim (fun n : nat => L2RRV_lim_picker prts F PF cF (S n)))).
+      {
+        apply rvlim_rv.
+        - typeclasses eauto.
+        - intros.
+          destruct omega; simpl.
+          apply H0.
+          now simpl.
+      }
+    
+    
+    rewrite Expectation
+
+
+    unfold cauchy_rvlim_fun.
+    unfold pack_LpRRV; simpl.
+    repeat red; simpl.
+    unfold 
+    red.
+    unfold Hierarchy.ball.
+
+       Admitted.
+
+
+      
+      specialize (H9 (mkposreal _ H5)).
+      specialize (H10 (mkposreal _ H5)).
+      destruct H9 as [N2 ?].
+      destruct H10 as [N3 ?].
+      specialize (H9 (max N2 N3)).
+      specialize (H10 (max N2 N3)).
+      cut_to H9; try lia.
+      cut_to H10; try lia.
+      generalize (Hierarchy.ball_triangle (M:= LpRRV_UniformSpace prts big2) _ _ _ _ _ H9 H10).
+      replace ((mkposreal _ H5) + (mkposreal _ H5)) with (pos eps) by (simpl; lra).
+      rewrite (proof_irrelevance _ PF p).
+      now rewrite (proof_irrelevance _ cF c).
+*)
+
+(*    
+    intros.
+    unfold cauchy in cF.
+    generalize (cauchy_filter_rvlim_finite2 prts F PF cF); intros.
+    destruct X as [P [dec [? [? ?]]]].
+    apply IsLp_down_le with (n := 1) in H1; [| apply rvlim_rv; [typeclasses eauto | apply H0] | lra].
+    apply IsL1_abs_Finite in H1.
+    apply IsFiniteExpectation_Finite in H1.
+    destruct H1.
+    erewrite Expectation_pos_posRV in e.
+    invcs e.
+    unfold rvlim in H2.
+    generalize (lim_picker_center_included prts F PF cF); intros.      
+    simpl in H1.
+    
+    generalize (inv_two_pow_lt eps); intros.
+    destruct H3 as [N ?].
+    specialize (H1 N).
+    pose (x0 := (L2RRV_lim_ball_center_center prts F PF cF N)).
+    exists (proj1_sig x0).
+    split.
+    - generalize (ball_le (M:= LpRRV_UniformSpace prts big2) (proj1_sig x0) (mkposreal _ (inv_pow_2_pos N)) eps); intros.
+      destruct x0.
+      cut_to H4.
+      + apply (filter_imp _ _ H4).
+        simpl.
+        apply f.
+      + left; apply H3.
+    - assert (forall x, ex_lim_seq_cauchy (fun n : nat => rvmult (EventIndicator dec) (L2RRV_lim_picker prts F PF cF (S n)) x)).
       {
         intros.
         now rewrite <- ex_lim_seq_cauchy_corr.
@@ -4065,7 +4378,7 @@ Section L2_complete.
       generalize (inv_two_pow_lt (mkposreal _ H5)); intros.
       destruct H6 as [N ?].
       generalize cauchy_distance; intros.
-      generalize (lim_picker_center_included prts F PF cF); intros.
+
       simpl in H7.
       simpl in H8.
       assert (forall eps,
@@ -4073,7 +4386,9 @@ Section L2_complete.
                  forall (n:nat), (n >= N)%nat ->
                                  Hierarchy.ball x0 eps  (L2RRV_lim_picker prts F PF cF (S n))).
       {
-        admit.
+        
+admit.
+        
       }
       assert (forall eps,
                  exists (N:nat),
@@ -4089,37 +4404,52 @@ Section L2_complete.
         unfold UniformSpace.ball; simpl.
         unfold LpRRVball, LpRRVnorm, LpRRVminus; simpl.
         eexists; intros; simpl.
-
         unfold FiniteExpectation, proj1_sig.
         match_destr.
         repeat match_destr_in e.
         destruct a as [x2_p1 [x2fin x2islp]].
         admit.
       }
-      unfold L2RRV_lim.
-      match_destr; try tauto.
-      match_destr; try tauto.
-      unfold L2RRV_lim_with_conditions.
-      specialize (H9 (mkposreal _ H5)).
-      specialize (H10 (mkposreal _ H5)).
-      destruct H9 as [N2 ?].
-      destruct H10 as [N3 ?].
-      specialize (H9 (max N2 N3)).
-      specialize (H10 (max N2 N3)).
-      cut_to H9; try lia.
-      cut_to H10; try lia.
-      generalize (Hierarchy.ball_triangle (M:= LpRRV_UniformSpace prts big2) _ _ _ _ _ H9 H10).
-      replace ((mkposreal _ H5) + (mkposreal _ H5)) with (pos eps) by (simpl; lra).
-      rewrite (proof_irrelevance _ PF p).
-      rewrite (proof_irrelevance _ cF c).
-      trivial.
+
     - apply rvlim_rv.
       typeclasses eauto.
       apply H0.
       Unshelve.
       apply prvabs.
+      exact (0%nat).
+ *)
   Admitted.
-  
+
+  Lemma LpRRVnorm_L2RRV_lim
+        (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F)
+        (eps : posreal) :
+    exists (x : LpRRV prts 2),
+      (F (Hierarchy.ball x eps)) /\
+      ((Hierarchy.ball (M := LpRRV_UniformSpace prts big2) x eps) (L2RRV_lim prts F)).
+  Proof.
+    generalize (cond_pos eps); intro eps_pos.
+    assert (eps_half: 0 < eps/2) by lra.
+    generalize (LpRRVnorm_L2RRV_cauchy_picker F PF cF (mkposreal _ eps_half)); intros.
+    destruct H as [N [x [? ?]]].
+    exists x.
+    split.
+    - generalize (ball_le (M:= LpRRV_UniformSpace prts big2) x (mkposreal _ eps_half) eps); intros.
+      eapply filter_imp.
+      apply H1.
+      simpl; lra.
+      apply H.
+    - generalize (ball_L2RRV_lim_picker F PF cF (mkposreal _ eps_half)); intros.
+      destruct H1.
+      specialize (H0 (max N x0)).
+      cut_to H0; try lia.
+      specialize (H1 (max N x0)).
+      cut_to H1; try lia.
+      replace (pos eps) with ((mkposreal _ eps_half) + (mkposreal _ eps_half)) by (simpl; lra).
+      now apply Hierarchy.ball_triangle with (y := (L2RRV_lim_picker prts F PF cF (max N x0))).
+   Qed.      
+
   Lemma L2RRV_lim_complete (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop) 
         (PF : ProperFilter F)
         (cF : cauchy F) :
