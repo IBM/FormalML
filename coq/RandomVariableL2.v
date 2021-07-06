@@ -4270,32 +4270,73 @@ Lemma norm_rvminus_rvlim_almost_P_dec
        destruct H as [P [dec ?]].
        simpl in H.
        destruct H as [? [? ?]].
-       eexists.
+       specialize (H1 eps).
+       destruct H1 as [N ?].
+       exists N.
        intros.
+       specialize (H1 n H2).
        unfold L2RRV_lim.
        match_destr; try tauto.
        match_destr; try tauto.
        do 2 red; simpl.
        unfold L2RRV_lim_with_conditions.
-       unfold LpRRVball, LpRRVnorm, LpRRVminus; simpl.
-       unfold cauchy_rvlim_fun.
-       unfold FiniteExpectation, proj1_sig.
+       unfold LpRRVball, LpRRVnorm.
+       unfold LpRRVnorm in H1.
+       unfold bignneg; simpl.
+       assert ((FiniteExpectation prts (rvpower (rvabs (rvminus (L2RRV_lim_picker prts F PF cF n) (cauchy_rvlim_fun prts F p c))) (const 2))) =
+                 (FiniteExpectation prts
+            (rvpower
+               (rvabs
+                  (LpRRVminus prts
+                     (pack_LpRRV prts (rvlim (fun n : nat => rvmult (EventIndicator dec) (L2RRV_lim_picker prts F PF cF (S n)))))
+                     (LpRRVindicator dec (L2RRV_lim_picker prts F PF cF (S n))))) (const 2)))).
+       {
+         apply FiniteExpectation_proper_almost.       
+         typeclasses eauto.
+         typeclasses eauto.
+         unfold almost.
+         exists P.
+         split; trivial.
+         intros.
+         unfold rvpower, const.
+         f_equal.
+         unfold rvabs, LpRRVminus, pack_LpRRV; simpl.
+         f_equal.
+         unfold rvminus, rvplus, rvopp, rvscale, cauchy_rvlim_fun.
+         match_destr.
+         destruct s as [x2_p1 [x2fin x2islp]].
+         unfold EventIndicator, rvmult, rvlim.
+         admit.
+       }
+      Admitted.
+         
+       
+     (*
        match_destr.
        repeat match_destr_in e.
-       destruct a as [x2_p1 [x2fin x2islp]].
+
        erewrite Expectation_pos_posRV in e.
        inversion e.
        generalize (cond_pos eps); intro.
+       unfold LpRRVnorm, LpRRVminus in H1.
+       unfold FiniteExpectation, proj1_sig in H1.
+       match_destr_in H1.
+       erewrite Expectation_pos_posRV in e0.
+       inversion e0.
+*)       
+(*
        replace (pos eps) with (power (power eps 2) (/2)) by (apply inv_power_cancel; lra).
        apply Rlt_power_l; try lra.
        split.
+
        assert (Rbar_le 0 x).
        {
          rewrite <- H4.
          apply Expectation_posRV_pos.
        }
-      now simpl in H5.
-(*
+       now simpl in H5.
+
+
       assert (nrvl : RandomVariable dom borel_sa (rvlim (fun n : nat => L2RRV_lim_picker prts F PF cF (S n)))).
       {
         apply rvlim_rv.
@@ -4418,7 +4459,6 @@ admit.
       apply prvabs.
       exact (0%nat).
  *)
-  Admitted.
 
   Lemma LpRRVnorm_L2RRV_lim
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
