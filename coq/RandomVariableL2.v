@@ -4279,6 +4279,22 @@ Section L2_complete.
     match_destr_in H1; [|tauto].
     match_destr_in H1; [|tauto].
     unfold Hierarchy.ball, UniformSpace.ball in H1; simpl in H1.
+    unfold L2RRVq_lim_with_conditions2.
+    rewrite  L2RRVq_lim_with_conditionsE.
+    assert (L2RRV_lim_with_conditions prts (LpRRVq_filter_to_LpRRV_filter F) p0 c0 =
+            L2RRV_lim_with_conditions 
+              prts
+              (LpRRVq_filter_to_LpRRV_filter (fun x : LpRRVq prts 2 -> Prop => F x))
+              (LpRRVq_filter_to_LpRRV_filter_proper
+                 (fun x : LpRRVq prts 2 -> Prop => F x) p)
+              (LpRRVq_filter_to_LpRRV_filter_cauchy
+                 (fun x : LpRRVq prts 2 -> Prop => F x) p c)).
+    {
+      f_equal.
+      admit.
+      admit.
+    }
+    rewrite <- H4.
     
   Admitted.
 
