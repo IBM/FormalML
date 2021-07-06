@@ -3869,7 +3869,7 @@ Lemma norm_rvminus_rvlim_almost_P_dec
     unfold LimInf_seq.
     unfold ex_LimInf_seq.
    *) 
-
+(*
   Lemma LpRRVnorm_rvlim_diff 
         (f : nat -> LpRRV prts 2) 
         (rv : forall n, RandomVariable dom borel_sa (f n)) 
@@ -3971,7 +3971,7 @@ Lemma norm_rvminus_rvlim_almost_P_dec
     erewrite FiniteExpectation_posRV.
     
    Admitted.      
-
+*)
 
   Lemma two_pow_gt (r : R) :
     exists n, r < pow 2 n.
