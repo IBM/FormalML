@@ -4301,9 +4301,31 @@ Section L2_complete.
       reflexivity.
     }
     rewrite <- H4.
-    unfold LpRRVq_filter_to_LpRRV_filter in H1.
-    
-  Admitted.
+    unfold LpRRVq_filter_to_LpRRV_filter in *.
+    eapply filter_imp; try eapply H1.
+    intros x; simpl in *.
+
+    unfold LpRRV_toLpRRVq_set in *; simpl; intros HH.
+    unfold ball, Hnorm, minus, plus, opp, inner; simpl.
+    LpRRVq_simpl.
+    rewrite L2RRVq_innerE.
+    specialize (HH _ (eq_refl _)).
+    simpl.
+    eapply Rle_lt_trans; try eapply HH.
+    unfold LpRRVnorm.
+    rewrite power_sqrt.
+    - apply sqrt_le_1_alt.
+      apply FiniteExpectation_le.
+      rewrite rvpower2; try typeclasses eauto.
+      intros ?.
+      rv_unfold; simpl.
+      rewrite <- Rsqr_abs.
+      unfold Rsqr.
+      rv_unfold.
+      lra.
+    - apply FiniteExpectation_pos.
+      typeclasses eauto.
+  Qed.
 
   Definition L2RRVq_Hilbert_mixin : Hilbert.mixin_of (L2RRVq_PreHilbert prts)
     := Hilbert.Mixin (L2RRVq_PreHilbert prts) L2RRVq_lim L2RRVq_lim_complete.
