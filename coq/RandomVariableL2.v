@@ -4084,7 +4084,10 @@ Section L2_complete.
        simpl in H2.
        clear H0.
        clear a.
-      Admitted.
+       erewrite FiniteExpectation_pf_irrel; rewrite H4.
+       erewrite FiniteExpectation_pf_irrel in H2.
+       apply H2.
+     Qed.
 
   Lemma LpRRVnorm_L2RRV_lim
         (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
