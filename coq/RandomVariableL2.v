@@ -4290,9 +4290,15 @@ Section L2_complete.
               (LpRRVq_filter_to_LpRRV_filter_cauchy
                  (fun x : LpRRVq prts 2 -> Prop => F x) p c)).
     {
-      f_equal.
-      admit.
-      admit.
+      rewrite (proof_irrelevance 
+                 _
+                 (LpRRVq_filter_to_LpRRV_filter_proper (fun x : LpRRVq prts 2 -> Prop => F x) p)
+                 p0).
+      rewrite (proof_irrelevance 
+                 _ 
+                 (LpRRVq_filter_to_LpRRV_filter_cauchy (fun x : LpRRVq prts 2 -> Prop => F x) p c)
+                 c0).
+      reflexivity.
     }
     rewrite <- H4.
     
