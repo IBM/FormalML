@@ -4271,6 +4271,15 @@ Section L2_complete.
     unfold L2RRVq_lim; simpl.
     match_destr; [| tauto].
     match_destr; [| tauto].
+    generalize (L2RRV_lim_complete (LpRRVq_filter_to_LpRRV_filter F)); intros.
+    generalize (LpRRVq_filter_to_LpRRV_filter_proper F H); intros.
+    generalize (LpRRVq_filter_to_LpRRV_filter_cauchy F H H0); intros.
+    specialize (H1 H2 H3 eps).
+    unfold L2RRV_lim in H1; simpl in H1.
+    match_destr_in H1; [|tauto].
+    match_destr_in H1; [|tauto].
+    unfold Hierarchy.ball, UniformSpace.ball in H1; simpl in H1.
+    
   Admitted.
 
   Definition L2RRVq_Hilbert_mixin : Hilbert.mixin_of (L2RRVq_PreHilbert prts)
