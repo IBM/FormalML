@@ -4281,26 +4281,8 @@ Section L2_complete.
     unfold Hierarchy.ball, UniformSpace.ball in H1; simpl in H1.
     unfold L2RRVq_lim_with_conditions2.
     rewrite  L2RRVq_lim_with_conditionsE.
-    assert (L2RRV_lim_with_conditions prts (LpRRVq_filter_to_LpRRV_filter F) p0 c0 =
-            L2RRV_lim_with_conditions 
-              prts
-              (LpRRVq_filter_to_LpRRV_filter (fun x : LpRRVq prts 2 -> Prop => F x))
-              (LpRRVq_filter_to_LpRRV_filter_proper
-                 (fun x : LpRRVq prts 2 -> Prop => F x) p)
-              (LpRRVq_filter_to_LpRRV_filter_cauchy
-                 (fun x : LpRRVq prts 2 -> Prop => F x) p c)).
-    {
-      rewrite (proof_irrelevance 
-                 _
-                 (LpRRVq_filter_to_LpRRV_filter_proper (fun x : LpRRVq prts 2 -> Prop => F x) p)
-                 p0).
-      rewrite (proof_irrelevance 
-                 _ 
-                 (LpRRVq_filter_to_LpRRV_filter_cauchy (fun x : LpRRVq prts 2 -> Prop => F x) p c)
-                 c0).
-      reflexivity.
-    }
-    rewrite <- H4.
+    rewrite (proof_irrelevance _ _ p0).
+    rewrite (proof_irrelevance _ _ c0).
     unfold LpRRVq_filter_to_LpRRV_filter in *.
     eapply filter_imp; try eapply H1.
     intros x; simpl in *.
