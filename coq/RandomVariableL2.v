@@ -4155,9 +4155,104 @@ Section L2_complete.
   
   Hint Rewrite L2RRVq_lim_with_conditionsE : quot.
 
-    Definition L2RRVq_lim_with_conditions2 (lim : (PreHilbert_UniformSpace (E:= L2RRVq_PreHilbert prts) -> Prop) -> Prop)
-    (PF:ProperFilter lim)
-    (cF:cauchy lim) : LpRRVq prts 2.
+  Definition LpRRV_toLpRRVq_set (s:(LpRRV prts 2)->Prop) (x:LpRRVq prts 2) : Prop
+    := forall y, x = Quot _ y -> s y.
+
+  Definition LpRRVq_filter_to_LpRRV_filter (F:((LpRRVq prts 2)->Prop)->Prop) : ((LpRRV prts 2)->Prop)->Prop
+    := (fun x:(LpRRV prts 2)->Prop => F (LpRRV_toLpRRVq_set x)).
+  
+  Lemma LpRRVq_filter_to_LpRRV_filter_filter (F:((LpRRVq prts 2)->Prop)->Prop) 
+        (FF:Filter F) :
+    Filter (LpRRVq_filter_to_LpRRV_filter F).
+  Proof.
+    destruct FF.
+    unfold LpRRVq_filter_to_LpRRV_filter, LpRRV_toLpRRVq_set.
+    constructor; intros.
+    - eapply filter_imp; try eapply filter_true; intros.
+      destruct (Quot_inv x); subst.
+      eauto.
+    - generalize (filter_and _ _ H H0); intros HH.
+      eapply filter_imp; try eapply HH; intros ? [??].
+      intros; subst.
+      specialize (H1 _ (eq_refl _)).
+      specialize (H2 _ (eq_refl _)).
+      tauto.
+    - eapply filter_imp; try eapply H0; simpl; intros.
+      subst.
+      apply H.
+      now apply H1.
+  Qed.
+
+  Lemma LpRRVq_filter_to_LpRRV_filter_proper (F:((LpRRVq prts 2)->Prop)->Prop) 
+        (PF:ProperFilter F) :
+    ProperFilter (LpRRVq_filter_to_LpRRV_filter F).
+  Proof.
+    destruct PF.
+    constructor.
+    - intros.
+      destruct (filter_ex (LpRRV_toLpRRVq_set P) H).
+      destruct (Quot_inv x); subst.
+      exists x0.
+      unfold LpRRV_toLpRRVq_set in *.
+      now apply H0.
+    - now apply LpRRVq_filter_to_LpRRV_filter_filter.
+  Qed.
+
+  Lemma rvpower2 (x:Ts->R) {posx:PositiveRandomVariable x} : rv_eq (rvpower x (const 2)) (rvsqr x).
+  Proof.
+    intros ?.
+    unfold rvpower, rvsqr, const.
+    apply power2_sqr.
+    apply posx.
+  Qed.
+          
+  Lemma LpRRVq_filter_to_LpRRV_filter_cauchy
+        (F : (PreHilbert_UniformSpace (E:= L2RRVq_PreHilbert prts) -> Prop) -> Prop)
+    (PF:ProperFilter F)
+    (cF:cauchy F) : 
+    @cauchy (LpRRV_UniformSpace prts big2) (LpRRVq_filter_to_LpRRV_filter F).
+  Proof.
+    unfold cauchy ; intros.
+    destruct (cF eps) as [??]; simpl in *.
+    unfold LpRRVq_filter_to_LpRRV_filter, LpRRV_toLpRRVq_set.
+    destruct (Quot_inv x); subst.
+    exists x0.
+    eapply filter_imp; try eapply H; intros; subst.
+    repeat red.
+    repeat red in H0.
+    unfold Hnorm, inner, minus, plus, opp in *.
+    simpl in H0.
+    autorewrite with quot in H0.
+    rewrite L2RRVq_innerE in H0.
+    unfold LpRRVnorm.
+    simpl.
+    rewrite power_sqrt.
+    - unfold L2RRVinner in H0.
+      LpRRV_simpl.
+      simpl in *.
+      eapply Rle_lt_trans; try eapply H0.
+      apply sqrt_le_1_alt.
+      apply FiniteExpectation_le.
+      rewrite rvpower2; try typeclasses eauto.
+      intros ?.
+      rv_unfold; simpl.
+      rewrite <- Rsqr_abs.
+      unfold Rsqr.
+      lra.
+    - apply FiniteExpectation_pos.
+      typeclasses eauto.
+  Qed.
+
+  
+  Definition L2RRVq_lim_with_conditions2 (F : (PreHilbert_UniformSpace (E:= L2RRVq_PreHilbert prts) -> Prop) -> Prop)
+    (PF:ProperFilter F)
+    (cF:cauchy F) : LpRRVq prts 2.
+    Proof.
+      simpl in F.
+      pose (LpRRVq_filter_to_LpRRV_filter F).
+      
+
+      
   Admitted.
 
   Definition L2RRVq_lim (lim : ((LpRRVq prts 2 -> Prop) -> Prop)) : LpRRVq prts 2.
