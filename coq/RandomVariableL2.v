@@ -4243,17 +4243,17 @@ Section L2_complete.
       typeclasses eauto.
   Qed.
 
-  
   Definition L2RRVq_lim_with_conditions2 (F : (PreHilbert_UniformSpace (E:= L2RRVq_PreHilbert prts) -> Prop) -> Prop)
     (PF:ProperFilter F)
     (cF:cauchy F) : LpRRVq prts 2.
     Proof.
       simpl in F.
       pose (LpRRVq_filter_to_LpRRV_filter F).
-      
-
-      
-  Admitted.
+      generalize (L2RRVq_lim_with_conditions P); intros.
+      specialize (X (LpRRVq_filter_to_LpRRV_filter_proper F PF)).
+      specialize (X (LpRRVq_filter_to_LpRRV_filter_cauchy F PF cF)).
+      exact X.
+  Defined.
 
   Definition L2RRVq_lim (lim : ((LpRRVq prts 2 -> Prop) -> Prop)) : LpRRVq prts 2.
   Proof.
