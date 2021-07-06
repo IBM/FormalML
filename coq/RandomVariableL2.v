@@ -4098,7 +4098,10 @@ Lemma norm_rvminus_rvlim_almost_P_dec
            (PF:ProperFilter F)
            (cF:cauchy F)
            {P : event dom} 
-           (dec : forall x, {P x} + {~ P x}) :
+           (dec : forall x, {P x} + {~ P x})
+           (pf:forall x : Ts,
+               ex_finite_lim_seq
+                 (fun n : nat => rvmult (EventIndicator dec) (L2RRV_lim_picker prts F PF cF (S n)) x)):
     let f := fun n : nat => LpRRVindicator dec (L2RRV_lim_picker prts F PF cF (S n)) in
     RandomVariable dom borel_sa (rvlim f).
   Proof.
@@ -4110,20 +4113,22 @@ Lemma norm_rvminus_rvlim_almost_P_dec
     unfold pack_LpRRV; simpl.
     typeclasses eauto.
     intros.
-    Admitted.
+    eauto.
+  Qed.
 
-  Instance IsLp_rvlim_almost_P {p}
+  Instance IsLp_rvlim_almost_P 
            (F : (LpRRV_UniformSpace prts big2 -> Prop) -> Prop)
            (PF:ProperFilter F)
            (cF:cauchy F)
            {P : event dom} 
            (dec : forall x, {P x} + {~ P x}) :
     let f := fun n : nat => LpRRVindicator dec (L2RRV_lim_picker prts F PF cF (S n)) in 
-    IsLp prts p (rvlim f).
+    IsLp prts 2 (rvlim f).
   Proof.
     generalize (cauchy_filter_rvlim_finite2 prts F PF cF); intros.
     destruct X as [? [? [? [? ?]]]].
     subst f.
+    trivial.
   Admitted.
 
   Lemma LpRRVminus_indicator_comm {p:nonnegreal} {P : event dom} (dec : forall x, {P x} + {~ P x})
@@ -4166,9 +4171,9 @@ Lemma norm_rvminus_rvlim_almost_P_dec
         (PF:ProperFilter F)
         (cF:cauchy F)
         (eps : posreal):
-    exists (P : event dom),
-    exists (dec: forall x, {P x} + {~ P x}),
+    let '(existT P (exist dec _)) := (cauchy_filter_rvlim_finite2 prts F PF cF) in
     let f := fun n : nat => LpRRVindicator dec (L2RRV_lim_picker prts F PF cF (S n)) in 
+    exists (rv:RandomVariable dom borel_sa (rvlim f)),
     ps_P P = 1 /\
     (forall x : Ts, ex_finite_lim_seq (fun n : nat => f n x)) /\
     forall (eps : posreal),
@@ -4178,18 +4183,17 @@ Lemma norm_rvminus_rvlim_almost_P_dec
           (LpRRVnorm prts (LpRRVminus prts (pack_LpRRV prts (rvlim f)) (f n))) < eps.
   Proof.
     unfold cauchy in cF.
-    generalize (cauchy_filter_rvlim_finite2 prts F PF cF); intros.
-    destruct X as [P [dec [? [? ?]]]].
-    exists P.
-    exists dec.
+    destruct (cauchy_filter_rvlim_finite2 prts F PF cF)
+             as [P [dec [? [? ?]]]].
     intros.
+    exists (rvlim_rv_almost_P _ _ _ _ H0).
     generalize ( norm_rvminus_rvlim_almost f); intros.
     simpl.
     split; trivial.
     split; trivial.
     intros.
     subst f.
-    specialize (H2 (rvlim_rv_almost_P F PF cF dec)).
+    specialize (H2 (rvlim_rv_almost_P F PF cF dec H0)).
     specialize (H2 (IsLp_rvlim_almost_P F PF cF dec) P H).
     apply H2; [intros; apply H0 |].
     intros.
@@ -4269,7 +4273,7 @@ Lemma norm_rvminus_rvlim_almost_P_dec
        generalize (LpRRVnorm_rvminus_rvlim_almost_P F PF cF eps); intros.
        destruct H as [P [dec ?]].
        simpl in H.
-       destruct H as [? [? ?]].
+       destruct H as [? [? [??]]].
        specialize (H1 eps).
        destruct H1 as [N ?].
        exists N.
@@ -4306,6 +4310,11 @@ Lemma norm_rvminus_rvlim_almost_P_dec
          match_destr.
          destruct s as [x2_p1 [x2fin x2islp]].
          unfold EventIndicator, rvmult, rvlim.
+         rewrite (proof_irrelevance _ PF p).
+         rewrite (proof_irrelevance _ cF c).
+         field_simplify.
+         repeat match_destr.
+         
          admit.
        }
       Admitted.
