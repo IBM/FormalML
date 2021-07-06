@@ -4301,6 +4301,7 @@ Section L2_complete.
       reflexivity.
     }
     rewrite <- H4.
+    unfold LpRRVq_filter_to_LpRRV_filter in H1.
     
   Admitted.
 
