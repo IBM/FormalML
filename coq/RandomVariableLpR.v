@@ -119,26 +119,33 @@ Proof.
   now rewrite H.
 Qed.
 
+  Lemma Rbar_Expectation_proper_almost (rv_X1 rv_X2 : Ts -> Rbar)
+        (rv1pos: Rbar_PositiveRandomVariable rv_X1)
+        (rv2pos: Rbar_PositiveRandomVariable rv_X2):
+        almost prts eq rv_X1 rv_X2 ->
+        Rbar_Expectation_posRV rv_X1 = 
+        Rbar_Expectation_posRV rv_X2.
+    Proof.
+      Admitted.
+
+
   Lemma IsLp_Rbar_proper_almost n (rv_X1 rv_X2 : Ts -> Rbar)
         {islp1:IsLp_Rbar n rv_X1} :
       almost prts eq rv_X1 rv_X2 ->
       IsLp_Rbar n rv_X2.
   Proof.
     unfold IsLp_Rbar in *; intros.
-    
+    assert (Rbar_PositiveRandomVariable
+              (fun omega : Ts => Rbar_power (Rbar_abs (rv_X1 omega)) n)) by
+        apply power_abs_pos.
+    erewrite Rbar_Expectation_proper_almost; trivial.
+    unfold almost in *.
+    destruct H as [P [? ?]].
+    exists P.
+    split; trivial.
     intros.
-  Admitted.
-(*  
-    red; intros.
-    Locate IsFiniteExpectation_proper_almost.
-    eapply (IsFiniteExpectation_proper_almost _ (rvpower (rvabs rv_X1) (const n)))
-    ; try eapply islp; trivial.
-    apply Rbar_rv_almost_eq_power_abs_proper
-    ; try typeclasses eauto.
-    now Rbar_apply rv_almost_eq_abs_proper
-    ; try typeclasses eauto.
+    now rewrite H1.
   Qed.
-*)
 
   Lemma FiniteExpectation_Lp_pos p y
         {islp:IsLp p y} :
