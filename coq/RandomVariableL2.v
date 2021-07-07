@@ -2459,7 +2459,136 @@ Section L2.
     (forall x, ex_Rbar_plus (f x) (g x)) ->
     RbarMeasurable (fun omega => Rbar_plus (f omega) (g omega)).
   Proof.
-    Admitted.
+    intros.
+    unfold RbarMeasurable.
+    destruct r.
+    - assert (pre_event_equiv
+                (fun omega : Ts => Rbar_le (Rbar_plus (f omega) (g omega)) r)
+                (pre_event_union
+                   (fun omega => (Rbar_plus (f omega) (g omega)) = m_infty)
+                   (pre_event_inter
+                      (pre_event_inter
+                         (fun omega => is_finite (f omega))
+                         (fun omega => is_finite (g omega)))
+                      (fun omega => (f omega) + (g omega) <= r)))).
+      {
+        intro x.
+        unfold pre_event_union, pre_event_inter.
+        specialize (H1 x).
+        destruct (f x); destruct (g x); simpl; split; intros; try tauto.
+        - right.
+          unfold is_finite.
+          tauto.
+        - destruct H2.
+          + discriminate.
+          + now destruct H2 as [[? ?] ?].
+        - destruct H2.
+          + discriminate.
+          + destruct H2 as [[? ?] ?].
+            discriminate.
+        - destruct H2.
+          + discriminate.
+          + destruct H2 as [[? ?] ?].
+            discriminate.
+        - destruct H2.
+          + discriminate.
+          + destruct H2 as [[? ?] ?].
+            discriminate.
+      }
+      rewrite H2.
+      apply sa_union.
+      + assert (pre_event_equiv
+                  (fun omega : Ts => Rbar_plus (f omega) (g omega) = m_infty)
+                  (pre_event_union
+                     (fun omega => f omega = m_infty)
+                     (fun omega => g omega = m_infty))).
+        {
+          intro x.
+          unfold pre_event_union.
+          specialize (H1 x).
+          destruct (f x); destruct (g x); simpl; split; intros; try tauto.
+          - discriminate.
+          - destruct H3; discriminate.
+          - destruct H3; discriminate.
+          - destruct H3; discriminate.
+        }
+        rewrite H3.
+        apply sa_union.
+        * now apply Rbar_sa_le_pt.
+        * now apply Rbar_sa_le_pt.        
+      + apply sa_inter.
+        * apply sa_inter.
+          -- apply sa_finite_Rbar.
+             now apply Rbar_measurable_rv.
+          -- apply sa_finite_Rbar.
+             now apply Rbar_measurable_rv.
+        * generalize (@plus_measurable Ts dom (fun omega => real (f omega)) (fun omega => real (g omega))); intros.
+          apply Rbar_real_measurable in H.
+          apply Rbar_real_measurable in H0.
+          specialize (H3 H H0).
+          apply H3.
+    - assert (pre_event_equiv 
+                (fun omega : Ts => Rbar_le (Rbar_plus (f omega) (g omega)) p_infty)
+                (fun _ => True)).
+      {
+        intro x.
+        unfold Rbar_le.
+        match_destr; tauto.
+      }
+      rewrite H2.
+      apply sa_all.
+    - assert (pre_event_equiv
+                (fun omega : Ts => Rbar_le (Rbar_plus (f omega) (g omega)) m_infty)
+                (pre_event_union
+                   (fun omega => (f omega) = m_infty)
+                   (fun omega => (g omega) = m_infty))).
+      { 
+        intro x.
+        unfold Rbar_le, pre_event_union.
+        unfold ex_Rbar_plus in H1.
+        unfold Rbar_plus.
+        specialize (H1 x).
+        match_case_in H1; intros.
+        - match_destr.
+          split; intros.
+          + tauto.
+          + destruct H3.
+            * rewrite H3 in H2.
+              simpl in H2.
+              match_destr_in H2.
+            * rewrite H3 in H2.
+              unfold Rbar_plus' in H2.
+              match_destr_in H2.
+          + split; intros.
+            * tauto.
+            * destruct H3.
+              -- rewrite H3 in H2.
+                 simpl in H2.
+                 match_destr_in H2.
+              -- rewrite H3 in H2.
+                 unfold Rbar_plus' in H2.
+                 match_destr_in H2.
+          + split; intros.
+            * unfold Rbar_plus' in H2.
+              repeat match_destr_in H2; tauto.
+            * destruct H3.
+              -- rewrite H3 in H2.
+                 unfold Rbar_plus' in H2.
+                 match_destr_in H2.
+              -- rewrite H3 in H2.
+                 unfold Rbar_plus' in H2.
+                 match_destr_in H2.
+        - split; intros.
+          + tauto.
+          + destruct H3.
+            * now rewrite H2 in H1.
+            * now rewrite H2 in H1.
+      }
+      rewrite H2.
+      apply sa_union.
+      + now apply Rbar_sa_le_pt.
+      + now apply Rbar_sa_le_pt.
+    Qed.
 
   Lemma ex_Rbar_plus_pos (x y : Rbar) :
     Rbar_le 0 x -> Rbar_le 0 y -> ex_Rbar_plus x y.
@@ -4287,7 +4416,7 @@ Section L2_complete.
     eapply filter_imp; try eapply H1.
     intros x; simpl in *.
 
-    unfold LpRRV_toLpRRVq_set in *; simpl; intros HH.
+    unfold LpRRV_toLpRRVq_set; simpl; intros HH.
     unfold ball, Hnorm, minus, plus, opp, inner; simpl.
     LpRRVq_simpl.
     rewrite L2RRVq_innerE.
