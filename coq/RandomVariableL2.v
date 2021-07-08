@@ -3480,6 +3480,41 @@ Section L2_complete.
     apply (proj2_sig P).
   Qed.
 
+  Global Instance Rbar_event_restricted_rv (P : event dom) (pf:0 < ps_P P) 
+    (f : Ts -> Rbar) 
+    (rv : RandomVariable dom Rbar_borel_sa f) :
+    RandomVariable (event_restricted_sigma P) Rbar_borel_sa (event_restricted_function P f).
+  Proof.
+    unfold RandomVariable in *.
+    intros.
+    specialize (rv B).
+    unfold sa_sigma; simpl.
+    assert (pre_event_equiv
+              (fun a : Ts => exists a' : event_restricted_domain P, proj1_sig a' = a /\ event_preimage (event_restricted_function P f) B a')
+              (pre_event_inter 
+                 (event_preimage f B)
+                 P)).
+    {
+      intro x.
+      unfold event_restricted_domain, event_preimage, event_restricted_function, pre_event_inter.
+      unfold event_preimage in rv.
+      split; intros.
+      - destruct H as [? [? ?]].
+        rewrite H in H0.
+        split; trivial.
+        destruct x0.
+        simpl in H.
+        now rewrite H in e.
+      - destruct H.
+        exists (exist _ _ H0).
+        now simpl.
+    }
+    rewrite H.
+    apply sa_inter; trivial.
+    apply (proj2_sig P).
+  Qed.
+
+
   Instance event_restricted_posrv P (f : Ts -> R)
            (prv : PositiveRandomVariable f) :
     PositiveRandomVariable (event_restricted_function P f).
@@ -3489,7 +3524,20 @@ Section L2_complete.
     unfold event_restricted_function.
     unfold event_restricted_domain in x.
     destruct x.
-    now simpl.
+    now unfold proj1_sig.
+  Qed.
+
+
+  Instance event_restricted_Rbar_posrv P (f : Ts -> Rbar)
+           (prv : Rbar_PositiveRandomVariable f) :
+    Rbar_PositiveRandomVariable (event_restricted_function P f).
+  Proof.
+    unfold Rbar_PositiveRandomVariable in *.
+    intros.
+    unfold event_restricted_function.
+    unfold event_restricted_domain in x.
+    destruct x.
+    now unfold proj1_sig.
   Qed.
 
   Program Instance event_restricted_srv P (f : Ts -> R)
@@ -3503,13 +3551,25 @@ Section L2_complete.
     now simpl.
   Qed.
 
+  Check Rbar_rv_le.
+
   Global Instance event_restricted_rv_le P : Proper (rv_le ==> rv_le) (event_restricted_function P).
   Proof.
     intros f g rel x.
     unfold event_restricted_function.
     unfold event_restricted_domain in x.
     destruct x.
-    simpl.
+    unfold proj1_sig.
+    apply rel.
+  Qed.
+
+  Global Instance event_restricted_Rbar_rv_le P : Proper (Rbar_rv_le ==> Rbar_rv_le) (event_restricted_function P).
+  Proof.
+    intros f g rel x.
+    unfold event_restricted_function.
+    unfold event_restricted_domain in x.
+    destruct x.
+    unfold proj1_sig.
     apply rel.
   Qed.
 
@@ -3640,8 +3700,30 @@ Section L2_complete.
     lra.
   Qed.
 
+  Global Instance lift_event_restricted_domain_fun_Rbar_prv {P} (f:event_restricted_domain P -> Rbar) :
+    Rbar_PositiveRandomVariable f -> 
+    Rbar_PositiveRandomVariable (lift_event_restricted_domain_fun (Finite 0) f).
+  Proof.
+    unfold Rbar_PositiveRandomVariable, lift_event_restricted_domain_fun.
+    intros prv x.
+    match_destr.
+    simpl; lra.
+  Qed.
+
   Lemma restrict_lift {P} (f:event_restricted_domain P -> R) :
     rv_eq (event_restricted_function P (lift_event_restricted_domain_fun 0 f)) f.
+  Proof.
+    intro x.
+    destruct x.
+    unfold event_restricted_function, lift_event_restricted_domain_fun.
+    match_destr; try easy.
+    do 2 f_equal.
+    apply proof_irrelevance.
+  Qed.
+
+
+  Lemma restrict_lift_Rbar {P} (f:event_restricted_domain P -> Rbar) :
+    rv_eq (event_restricted_function P (lift_event_restricted_domain_fun (Finite 0) f)) f.
   Proof.
     intro x.
     destruct x.
@@ -3723,6 +3805,124 @@ Section L2_complete.
         apply restrict_lift.
     Qed.
 
+  Lemma event_restricted_Rbar_Expectation_posRV P (pf1 : ps_P P = 1) pf (f : Ts -> Rbar) 
+        (prv : Rbar_PositiveRandomVariable f) :
+    @Rbar_Expectation_posRV Ts dom prts f prv = 
+    @Rbar_Expectation_posRV _ _ (event_restricted_prob_space prts P pf) 
+                       (event_restricted_function P f) _.
+  Proof.
+    unfold Rbar_Expectation_posRV.
+    unfold SimpleExpectationSup.
+    unfold Lub_Rbar.
+    destruct
+      (ex_lub_Rbar
+       (fun x : R =>
+        exists
+          (rvx : Ts -> R) (rv : RandomVariable dom borel_sa rvx) 
+        (srv : SimpleRandomVariable rvx),
+          (PositiveRandomVariable rvx /\ Rbar_rv_le (fun x0 : Ts => rvx x0) f) /\
+          SimpleExpectation rvx = x)).
+    destruct
+      (ex_lub_Rbar
+       (fun x0 : R =>
+        exists
+          (rvx : event_restricted_domain P -> R) (rv : 
+                                                  RandomVariable
+                                                    (event_restricted_sigma P)
+                                                    borel_sa rvx) 
+        (srv : SimpleRandomVariable rvx),
+          (PositiveRandomVariable rvx /\
+           Rbar_rv_le (fun x1 : event_restricted_domain P => rvx x1)
+             (event_restricted_function P f)) /\ SimpleExpectation rvx = x0)).
+    simpl.
+    unfold is_lub_Rbar in *.
+    destruct i; destruct i0.
+    apply Rbar_le_antisym.
+    - apply H0.
+      unfold is_ub_Rbar.
+      intros.
+      destruct H3 as [? [? [? [? ?]]]].
+      destruct H3.
+      unfold is_ub_Rbar in H1.
+      unfold is_ub_Rbar in H.
+      apply H1.
+      exists (event_restricted_function P x2).
+      exists (event_restricted_rv P pf x2 x3).
+      exists (event_restricted_srv P x2 x4).
+      split.
+      + split.
+        * now apply event_restricted_posrv.
+        * generalize (event_restricted_Rbar_rv_le P); intros.
+          admit.
+      + now rewrite <- event_restricted_SimpleExpectation.
+    - apply H2.
+      unfold is_ub_Rbar.
+      intros.
+      destruct H3 as [? [? [? [? ?]]]].
+      destruct H3.
+      unfold is_ub_Rbar in H1.
+      unfold is_ub_Rbar in H.
+      apply H.
+      exists (lift_event_restricted_domain_fun 0 x2).
+      do 2 eexists.
+      split; [split |].
+      + typeclasses eauto.
+      + intro z.
+        unfold lift_event_restricted_domain_fun.
+        match_destr.
+        apply H5.
+      + subst.
+        erewrite event_restricted_SimpleExpectation; eauto.
+        apply SimpleExpectation_ext.
+        apply restrict_lift.
+    Admitted.
+
+    Lemma Rbar_Expectation_proper_almost (rv_X1 rv_X2 : Ts -> Rbar)
+        (rv1pos: Rbar_PositiveRandomVariable rv_X1)
+        (rv2pos: Rbar_PositiveRandomVariable rv_X2):
+        almost prts eq rv_X1 rv_X2 ->
+        Rbar_Expectation_posRV rv_X1 = 
+        Rbar_Expectation_posRV rv_X2.
+  Proof.
+    unfold almost; intros.
+    destruct H as [P [? ?]].
+    assert (dec:forall x: Ts, {P x} + {~ P x}).
+    {
+      intros.
+      apply ClassicalDescription.excluded_middle_informative.
+    }
+    assert (0 < ps_P P) by lra.
+    generalize (event_restricted_Rbar_Expectation_posRV P H H1 rv_X1 rv1pos); intros.
+    generalize (event_restricted_Rbar_Expectation_posRV P H H1 rv_X2 rv2pos); intros.
+    rewrite H2, H3.
+    apply Rbar_Expectation_posRV_ext.
+    intro x.
+    unfold event_restricted_function.
+    destruct x.
+    simpl.
+    now apply H0.
+  Qed.
+
+(*
+  Lemma IsLp_Rbar_proper_almost n (rv_X1 rv_X2 : Ts -> Rbar)
+        {islp1:IsLp_Rbar prts n rv_X1} :
+      almost prts eq rv_X1 rv_X2 ->
+      IsLp_Rbar prts n rv_X2.
+  Proof.
+    unfold IsLp_Rbar in *; intros.
+    assert (Rbar_PositiveRandomVariable
+              (fun omega : Ts => Rbar_power (Rbar_abs (rv_X1 omega)) n)) by
+        apply power_abs_pos.
+    erewrite Rbar_Expectation_proper_almost; trivial.
+    unfold almost in *.
+    destruct H as [P [? ?]].
+    exists P.
+    split; trivial.
+    intros.
+    now rewrite H1.
+  Qed.
+ *)
+  
   Lemma event_restricted_Expectation P (pf1 : ps_P P = 1) pf (f : Ts -> R) :
     @Expectation Ts dom prts f = 
     @Expectation _ _ (event_restricted_prob_space prts P pf) 
@@ -3734,6 +3934,20 @@ Section L2_complete.
     rewrite H.
     generalize (event_restricted_Expectation_posRV 
                   P pf1 pf (neg_fun_part f) _); intros.
+    now rewrite H0.
+  Qed.
+
+  Lemma event_restricted_Rbar_Expectation P (pf1 : ps_P P = 1) pf (f : Ts -> Rbar) :
+    @Rbar_Expectation Ts dom prts f = 
+    @Rbar_Expectation _ _ (event_restricted_prob_space prts P pf) 
+                       (event_restricted_function P f).
+  Proof.
+    unfold Rbar_Expectation.
+    generalize (event_restricted_Rbar_Expectation_posRV 
+                  P pf1 pf (Rbar_pos_fun_part f) _); intros.
+    rewrite H.
+    generalize (event_restricted_Rbar_Expectation_posRV 
+                  P pf1 pf (Rbar_neg_fun_part f) _); intros.
     now rewrite H0.
   Qed.
 
