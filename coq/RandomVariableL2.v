@@ -3446,10 +3446,10 @@ Section L2_complete.
   Let nneg2 : nonnegreal := bignneg 2 big2.
   Canonical nneg2.
 
-  Global Instance event_restricted_rv (P : event dom) (pf:0 < ps_P P) 
-    (f : Ts -> R) 
-    (rv : RandomVariable dom borel_sa f) :
-    RandomVariable (event_restricted_sigma P) borel_sa (event_restricted_function P f).
+  Global Instance event_restricted_rv {Td} {sa} (P : event dom) (pf:0 < ps_P P) 
+    (f : Ts -> Td) 
+    (rv : RandomVariable dom sa f) :
+    RandomVariable (event_restricted_sigma P) sa (event_restricted_function P f).
   Proof.
     unfold RandomVariable in *.
     intros.
@@ -3479,41 +3479,6 @@ Section L2_complete.
     apply sa_inter; trivial.
     apply (proj2_sig P).
   Qed.
-
-  Global Instance Rbar_event_restricted_rv (P : event dom) (pf:0 < ps_P P) 
-    (f : Ts -> Rbar) 
-    (rv : RandomVariable dom Rbar_borel_sa f) :
-    RandomVariable (event_restricted_sigma P) Rbar_borel_sa (event_restricted_function P f).
-  Proof.
-    unfold RandomVariable in *.
-    intros.
-    specialize (rv B).
-    unfold sa_sigma; simpl.
-    assert (pre_event_equiv
-              (fun a : Ts => exists a' : event_restricted_domain P, proj1_sig a' = a /\ event_preimage (event_restricted_function P f) B a')
-              (pre_event_inter 
-                 (event_preimage f B)
-                 P)).
-    {
-      intro x.
-      unfold event_restricted_domain, event_preimage, event_restricted_function, pre_event_inter.
-      unfold event_preimage in rv.
-      split; intros.
-      - destruct H as [? [? ?]].
-        rewrite H in H0.
-        split; trivial.
-        destruct x0.
-        simpl in H.
-        now rewrite H in e.
-      - destruct H.
-        exists (exist _ _ H0).
-        now simpl.
-    }
-    rewrite H.
-    apply sa_inter; trivial.
-    apply (proj2_sig P).
-  Qed.
-
 
   Instance event_restricted_posrv P (f : Ts -> R)
            (prv : PositiveRandomVariable f) :
