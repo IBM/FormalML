@@ -3551,8 +3551,6 @@ Section L2_complete.
     now simpl.
   Qed.
 
-  Check Rbar_rv_le.
-
   Global Instance event_restricted_rv_le P : Proper (rv_le ==> rv_le) (event_restricted_function P).
   Proof.
     intros f g rel x.
