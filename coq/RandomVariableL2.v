@@ -3850,8 +3850,9 @@ Section L2_complete.
       split.
       + split.
         * now apply event_restricted_posrv.
-        * generalize (event_restricted_Rbar_rv_le P); intros.
-          admit.
+        * etransitivity; [| apply event_restricted_Rbar_rv_le; eapply H5].
+          intros ?; simpl.
+          now right.
       + now rewrite <- event_restricted_SimpleExpectation.
     - apply H2.
       unfold is_ub_Rbar.
@@ -3873,7 +3874,7 @@ Section L2_complete.
         erewrite event_restricted_SimpleExpectation; eauto.
         apply SimpleExpectation_ext.
         apply restrict_lift.
-    Admitted.
+  Qed.
 
     Lemma Rbar_Expectation_proper_almost (rv_X1 rv_X2 : Ts -> Rbar)
         (rv1pos: Rbar_PositiveRandomVariable rv_X1)
