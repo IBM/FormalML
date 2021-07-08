@@ -3829,3 +3829,94 @@ Section Expectation.
   Qed.
 
 End Expectation.
+Section EventRestricted.
+    Context {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts: ProbSpace dom).
+
+      Lemma event_restricted_Expectation_posRV P (pf1 : ps_P P = 1) pf (f : Ts -> R) 
+        (prv : PositiveRandomVariable f) :
+    @Expectation_posRV Ts dom prts f prv = 
+    @Expectation_posRV _ _ (event_restricted_prob_space prts P pf) 
+                       (event_restricted_function P f) _.
+  Proof.
+    unfold Expectation_posRV.
+    unfold SimpleExpectationSup.
+    unfold Lub_Rbar.
+    destruct
+      (ex_lub_Rbar
+         (fun x : R =>
+            exists
+              (rvx : Ts -> R) (rv : RandomVariable dom borel_sa rvx) 
+              (srv : SimpleRandomVariable rvx),
+              BoundedPositiveRandomVariable f rvx /\ SimpleExpectation rvx = x)).
+    destruct
+       (ex_lub_Rbar
+       (fun x : R =>
+        exists
+          (rvx : event_restricted_domain P -> R) (rv : RandomVariable
+                                                       (event_restricted_sigma P)
+                                                       borel_sa rvx) 
+        (srv : SimpleRandomVariable rvx),
+          BoundedPositiveRandomVariable (event_restricted_function P f) rvx /\
+          SimpleExpectation rvx = x)).
+    simpl.
+    unfold is_lub_Rbar in *.
+    destruct i; destruct i0.
+    apply Rbar_le_antisym.
+    - apply H0.
+      unfold is_ub_Rbar.
+      intros.
+      destruct H3 as [? [? [? [? ?]]]].
+      unfold BoundedPositiveRandomVariable in H3.
+      destruct H3.
+      unfold is_ub_Rbar in H1.
+      unfold is_ub_Rbar in H.
+      apply H1.
+      unfold BoundedPositiveRandomVariable.
+      exists (event_restricted_function P x2).
+      exists (Restricted_RandomVariable P x2 x3).
+      exists (Restricted_SimpleRandomVariable P x2 x4).
+      split.
+      + split.
+        * now apply Restricted_PositiveRandomVariable.
+        * now apply event_restricted_rv_le.
+      + now rewrite <- event_restricted_SimpleExpectation.
+    - apply H2.
+      unfold is_ub_Rbar.
+      intros.
+      destruct H3 as [? [? [? [? ?]]]].
+      unfold BoundedPositiveRandomVariable in H3.
+      destruct H3.
+      unfold is_ub_Rbar in H1.
+      unfold is_ub_Rbar in H.
+      apply H.
+      unfold BoundedPositiveRandomVariable.
+      exists (lift_event_restricted_domain_fun 0 x2).
+      do 2 eexists.
+      split; [split |].
+      + typeclasses eauto.
+      + intro z.
+        unfold lift_event_restricted_domain_fun.
+        match_destr.
+        apply H5.
+      + subst.
+        erewrite event_restricted_SimpleExpectation; eauto.
+        apply SimpleExpectation_ext.
+        apply restrict_lift.
+    Qed.
+
+  Lemma event_restricted_Expectation P (pf1 : ps_P P = 1) pf (f : Ts -> R) :
+    @Expectation Ts dom prts f = 
+    @Expectation _ _ (event_restricted_prob_space prts P pf) 
+                       (event_restricted_function P f).
+  Proof.
+    unfold Expectation.
+    generalize (event_restricted_Expectation_posRV 
+                  P pf1 pf (pos_fun_part f) _); intros.
+    rewrite H.
+    generalize (event_restricted_Expectation_posRV 
+                  P pf1 pf (neg_fun_part f) _); intros.
+    now rewrite H0.
+  Qed.
+End EventRestricted.

@@ -6,6 +6,7 @@ Require Import utils.Utils.
 Require Import List.
 (* For const *)
 Require Export Program.Basics.
+Require Import Coquelicot.Coquelicot.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -37,6 +38,31 @@ Section rels.
       specialize (le1 y).
       specialize (le2 y).
       lra.
+  Qed.
+
+  Definition Rbar_rv_le := pointwise_relation Ts Rbar_le.
+
+  Global Instance Rbar_rv_le_pre : PreOrder Rbar_rv_le.
+  Proof.
+    unfold Rbar_rv_le.
+    constructor; intros.
+    - intros ??; apply Rbar_le_refl.
+    - intros ??????.
+      eapply Rbar_le_trans; eauto.
+  Qed.
+
+  Global Instance Rbar_rv_le_part : PartialOrder rv_eq Rbar_rv_le.
+  Proof.
+    intros ??.
+    split; intros eqq.
+    - repeat red.
+      repeat red in eqq.
+      split; intros ?; rewrite eqq; apply Rbar_le_refl.
+    - destruct eqq as [le1 le2].
+      intros y.
+      specialize (le1 y).
+      specialize (le2 y).
+      now apply Rbar_le_antisym.
   Qed.
 
 End rels.

@@ -986,6 +986,48 @@ Section SimpleExpectation.
   Qed.
 
 End SimpleExpectation.
+Section EventRestricted.
+  
+  Context {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (Prts: ProbSpace dom).
+
+  Lemma event_restricted_SimpleExpectation P (pf1 : ps_P P = 1) pf (f : Ts -> R) 
+        {rv : RandomVariable dom borel_sa f} 
+        {srv : SimpleRandomVariable f} :
+    @SimpleExpectation _ _ Prts f rv srv = 
+    @SimpleExpectation _ _ (event_restricted_prob_space Prts P pf) 
+                       (event_restricted_function P f) 
+                       (Restricted_RandomVariable P f rv) _.
+  Proof.
+    unfold SimpleExpectation.
+    f_equal.
+    unfold event_restricted_function.
+    unfold event_restricted_domain.
+    apply map_ext.
+    intros.
+    apply Rmult_eq_compat_l.
+    unfold event_restricted_prob_space; simpl.
+    unfold cond_prob.
+    rewrite pf1.
+    field_simplify.
+    rewrite ps_inter_r1; trivial.
+    rewrite <- ps_inter_r1 with (B := P); trivial.
+    eapply ps_proper.
+    intros x.
+    unfold event_restricted_event_lift, preimage_singleton, pre_event_singleton, pre_event_preimage, pre_event_inter; simpl.
+    unfold pre_event_inter.
+    split; intros HH.
+    - subst.
+      destruct HH.
+      exists (exist _ _ H0).
+      simpl.
+      tauto.
+    - destruct HH as [[?][??]]; subst; simpl.
+      auto.
+  Qed.
+
+End EventRestricted.
 
 Section SimpleConditionalExpectation.
 

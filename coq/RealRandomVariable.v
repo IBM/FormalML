@@ -1211,6 +1211,10 @@ Section RealRandomVariables.
           (rv_X:Ts->R) : Prop :=
       prv : forall (x:Ts), (0 <= rv_X x)%R.
 
+    Class Rbar_PositiveRandomVariable
+          (rv_X:Ts->Rbar) : Prop :=
+      Rbar_prv : forall (x:Ts), (Rbar_le 0 (rv_X x)).
+
     Global Instance PositiveRandomVariable_proper : Proper (rv_eq ==> iff) PositiveRandomVariable.
     Proof.
       unfold PositiveRandomVariable, rv_eq, pointwise_relation.
@@ -1573,7 +1577,12 @@ Section RealRandomVariables.
 
 End RealRandomVariables.
 
-Instance Restricted_PositiveRandomVariable {Ts:Type} {dom : SigmaAlgebra Ts}
+Section EventRestricted.
+
+  Context {Ts:Type} 
+          {dom: SigmaAlgebra Ts}.
+
+Global Instance Restricted_PositiveRandomVariable
          (e:event dom) (f : Ts -> R)
          (prv: PositiveRandomVariable f) :
   PositiveRandomVariable (event_restricted_function e f).
@@ -1582,6 +1591,85 @@ Proof.
   intros.
   apply prv.
 Qed.
+
+Global Instance Restricted_Rbar_PositiveRandomVariable P (f : Ts -> Rbar)
+           (prv : Rbar_PositiveRandomVariable f) :
+    Rbar_PositiveRandomVariable (event_restricted_function P f).
+  Proof.
+    unfold Rbar_PositiveRandomVariable in *.
+    intros.
+    unfold event_restricted_function.
+    unfold event_restricted_domain in x.
+    destruct x.
+    now unfold proj1_sig.
+  Qed.
+
+  Global Instance event_restricted_rv_le P : Proper (rv_le ==> rv_le) (event_restricted_function P).
+  Proof.
+    intros f g rel x.
+    unfold event_restricted_function.
+    unfold event_restricted_domain in x.
+    destruct x.
+    unfold proj1_sig.
+    apply rel.
+  Qed.
+
+  Global Instance event_restricted_Rbar_rv_le P : Proper (Rbar_rv_le ==> Rbar_rv_le) (event_restricted_function P).
+  Proof.
+    intros f g rel x.
+    unfold event_restricted_function.
+    unfold event_restricted_domain in x.
+    destruct x.
+    unfold proj1_sig.
+    apply rel.
+  Qed.
+
+
+
+  Global Instance lift_event_restricted_domain_fun_prv {P} (f:event_restricted_domain P -> R) :
+    PositiveRandomVariable f -> 
+    PositiveRandomVariable (lift_event_restricted_domain_fun 0 f).
+  Proof.
+    unfold PositiveRandomVariable, lift_event_restricted_domain_fun.
+    intros prv x.
+    match_destr.
+    lra.
+  Qed.
+
+  Global Instance lift_event_restricted_domain_fun_Rbar_prv {P} (f:event_restricted_domain P -> Rbar) :
+    Rbar_PositiveRandomVariable f -> 
+    Rbar_PositiveRandomVariable (lift_event_restricted_domain_fun (Finite 0) f).
+  Proof.
+    unfold Rbar_PositiveRandomVariable, lift_event_restricted_domain_fun.
+    intros prv x.
+    match_destr.
+    simpl; lra.
+  Qed.
+
+  Lemma restrict_lift {P} (f:event_restricted_domain P -> R) :
+    rv_eq (event_restricted_function P (lift_event_restricted_domain_fun 0 f)) f.
+  Proof.
+    intro x.
+    destruct x.
+    unfold event_restricted_function, lift_event_restricted_domain_fun.
+    match_destr; try easy.
+    do 2 f_equal.
+    apply proof_irrelevance.
+  Qed.
+
+
+  Lemma restrict_lift_Rbar {P} (f:event_restricted_domain P -> Rbar) :
+    rv_eq (event_restricted_function P (lift_event_restricted_domain_fun (Finite 0) f)) f.
+  Proof.
+    intro x.
+    destruct x.
+    unfold event_restricted_function, lift_event_restricted_domain_fun.
+    match_destr; try easy.
+    do 2 f_equal.
+    apply proof_irrelevance.
+  Qed.
+
+End EventRestricted.
 
 (*
 Section prob.

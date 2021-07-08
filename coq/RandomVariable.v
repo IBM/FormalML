@@ -3,6 +3,8 @@ Require Import List Morphisms.
 
 Require Export LibUtils BasicUtils ProbSpace SigmaAlgebras.
 Require Classical.
+Require Import ClassicalDescription.
+
 
 Import ListNotations.
 
@@ -336,7 +338,7 @@ End Finite.
 Section Event_restricted.
   Context {Ts:Type} {Td:Type} {σ:SigmaAlgebra Ts} {cod : SigmaAlgebra Td}.
 
-  Program Instance Restricted_SimpleRandomVariable (e:event σ) (f : Ts -> Td)
+  Global Program Instance Restricted_SimpleRandomVariable (e:event σ) (f : Ts -> Td)
     (srv: SimpleRandomVariable f) :
     SimpleRandomVariable (event_restricted_function e f) :=
     { srv_vals := srv_vals }.
@@ -345,7 +347,7 @@ Section Event_restricted.
     apply srv_vals_complete0.
   Qed.
 
-  Program Instance Restricted_RandomVariable (e:event σ) (f : Ts -> Td)
+  Global Program Instance Restricted_RandomVariable (e:event σ) (f : Ts -> Td)
           (rv : RandomVariable σ cod f) :
     RandomVariable (event_restricted_sigma e) cod (event_restricted_function e f).
   Next Obligation.
@@ -368,6 +370,89 @@ Section Event_restricted.
         exists (exist _ _ HH2).
         simpl.
         tauto.
+  Qed.
+
+
+  Definition lift_event_restricted_domain_fun (default:Td) {P:event σ} (f:event_restricted_domain P -> Td) : Ts -> Td
+    := fun x =>
+         match excluded_middle_informative (P x) with
+         | left pf => f (exist _ _ pf)
+         | right _ => default
+         end.
+
+  Global Instance lift_event_restricted_domain_fun_rv (default:Td) {P:event σ} (f:event_restricted_domain P -> Td) :
+    RandomVariable (event_restricted_sigma P) cod f ->
+    RandomVariable σ cod (lift_event_restricted_domain_fun default f).
+  Proof.
+    intros rv.
+    unfold lift_event_restricted_domain_fun.
+    unfold RandomVariable in *.
+    intros.
+    destruct (excluded_middle_informative (B default)).
+    - eapply sa_proper with
+          (y:=
+             (event_union (event_complement P) 
+                          (event_restricted_event_lift P (exist _ (event_preimage f B) (rv B))))).
+      + intros x.
+        unfold event_preimage, event_complement, event_restricted_event_lift, event_union, pre_event_union; simpl.
+        split; intros HH.
+        * match_destr_in HH; simpl in HH.
+          -- right.
+             unfold event_restricted_domain.
+             eexists; split; [ | eapply HH].
+             reflexivity.
+          -- left; trivial.
+        * destruct HH.
+          -- match_destr.
+             unfold pre_event_complement in H.
+             tauto.
+          -- destruct H as [? [? ?]].
+             match_destr.
+             subst.
+             destruct x0.
+             replace e1 with e0 in H0.
+             apply H0.
+             apply proof_irrelevance.
+      + apply sa_union.
+        * apply sa_complement.
+          now destruct P; simpl.
+        * unfold proj1_sig; match_destr.
+    - eapply sa_proper with
+          (y := event_restricted_event_lift P (exist _ (event_preimage f B) (rv B))).
+      + intros x.
+        unfold event_preimage, event_restricted_event_lift, event_union, pre_event_union; simpl.        
+        split; intros HH.
+        * match_destr_in HH; simpl in HH.
+          -- exists (exist P x e).
+             tauto.
+          -- tauto.
+        * destruct HH as [? [? ?]].
+          match_destr.
+          -- destruct x0.
+             subst.
+             replace e with e0.
+             apply H0.
+             apply proof_irrelevance.
+          -- destruct x0.
+             subst.
+             tauto.
+      + unfold event_restricted_event_lift; simpl.
+        generalize (sa_pre_event_restricted_event_lift P (exist _ (event_preimage f B) (rv B))); intros.
+        apply H.
+    Qed.
+
+  Global Instance lift_event_restricted_domain_fun_srv (default:Td) {P:event σ} (f:event_restricted_domain P -> Td) :
+    SimpleRandomVariable f -> 
+    SimpleRandomVariable (lift_event_restricted_domain_fun default f).
+  Proof.
+    intros srv.
+    exists (default::srv_vals).
+    intros.
+    unfold lift_event_restricted_domain_fun.
+    match_destr.
+    - right.
+      apply srv_vals_complete.
+    - now left.
   Qed.
 
  End Event_restricted.

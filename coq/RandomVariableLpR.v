@@ -119,15 +119,32 @@ Proof.
   now rewrite H.
 Qed.
 
-  Lemma Rbar_Expectation_proper_almost (rv_X1 rv_X2 : Ts -> Rbar)
+
+    Lemma Rbar_Expectation_proper_almost (rv_X1 rv_X2 : Ts -> Rbar)
         (rv1pos: Rbar_PositiveRandomVariable rv_X1)
         (rv2pos: Rbar_PositiveRandomVariable rv_X2):
         almost prts eq rv_X1 rv_X2 ->
         Rbar_Expectation_posRV rv_X1 = 
         Rbar_Expectation_posRV rv_X2.
-    Proof.
-      Admitted.
-
+  Proof.
+    unfold almost; intros.
+    destruct H as [P [? ?]].
+    assert (dec:forall x: Ts, {P x} + {~ P x}).
+    {
+      intros.
+      apply ClassicalDescription.excluded_middle_informative.
+    }
+    assert (0 < ps_P P) by lra.
+    generalize (event_restricted_Rbar_Expectation_posRV prts P H H1 rv_X1 rv1pos); intros.
+    generalize (event_restricted_Rbar_Expectation_posRV prts P H H1 rv_X2 rv2pos); intros.
+    rewrite H2, H3.
+    apply Rbar_Expectation_posRV_ext.
+    intro x.
+    unfold event_restricted_function.
+    destruct x.
+    simpl.
+    now apply H0.
+  Qed.
 
   Lemma IsLp_Rbar_proper_almost n (rv_X1 rv_X2 : Ts -> Rbar)
         {islp1:IsLp_Rbar n rv_X1} :
