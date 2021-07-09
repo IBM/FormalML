@@ -3060,3 +3060,19 @@ Proof.
     now repeat (rewrite Rabs_pos_eq by lra).
 Qed.
 
+Lemma Rbar_mult_1_r (x:Rbar) : Rbar_mult x 1 = x.
+Proof.  
+  destruct x; simpl.
+  + rewrite Rbar_finite_eq; lra.
+  + destruct (Rle_dec 0 1); [|lra].
+    destruct (Rle_lt_or_eq_dec 0 1 r); intuition.
+  + destruct (Rle_dec 0 1); [|lra].
+    destruct (Rle_lt_or_eq_dec 0 1 r); intuition.
+Qed.
+
+Lemma Rbar_mult_1_l (x:Rbar) : Rbar_mult 1 x = x.
+Proof.
+  rewrite Rbar_mult_comm.
+  apply Rbar_mult_1_r.
+Qed.
+
