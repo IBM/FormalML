@@ -180,6 +180,144 @@ Context {Ts:Type}
         + apply H.
     Qed.
 
+
+  (* assume Rbar_plus is well defined everywhere *)
+  Instance Rbar_plus_measurable (f g : Ts -> Rbar) :
+    RbarMeasurable f -> RbarMeasurable g ->
+    (forall x, ex_Rbar_plus (f x) (g x)) ->
+    RbarMeasurable (fun omega => Rbar_plus (f omega) (g omega)).
+  Proof.
+    intros.
+    unfold RbarMeasurable.
+    destruct r.
+    - assert (pre_event_equiv
+                (fun omega : Ts => Rbar_le (Rbar_plus (f omega) (g omega)) r)
+                (pre_event_union
+                   (fun omega => (Rbar_plus (f omega) (g omega)) = m_infty)
+                   (pre_event_inter
+                      (pre_event_inter
+                         (fun omega => is_finite (f omega))
+                         (fun omega => is_finite (g omega)))
+                      (fun omega => (f omega) + (g omega) <= r)))).
+      {
+        intro x.
+        unfold pre_event_union, pre_event_inter.
+        specialize (H1 x).
+        destruct (f x); destruct (g x); simpl; split; intros; try tauto.
+        - right.
+          unfold is_finite.
+          tauto.
+        - destruct H2.
+          + discriminate.
+          + now destruct H2 as [[? ?] ?].
+        - destruct H2.
+          + discriminate.
+          + destruct H2 as [[? ?] ?].
+            discriminate.
+        - destruct H2.
+          + discriminate.
+          + destruct H2 as [[? ?] ?].
+            discriminate.
+        - destruct H2.
+          + discriminate.
+          + destruct H2 as [[? ?] ?].
+            discriminate.
+      }
+      rewrite H2.
+      apply sa_union.
+      + assert (pre_event_equiv
+                  (fun omega : Ts => Rbar_plus (f omega) (g omega) = m_infty)
+                  (pre_event_union
+                     (fun omega => f omega = m_infty)
+                     (fun omega => g omega = m_infty))).
+        {
+          intro x.
+          unfold pre_event_union.
+          specialize (H1 x).
+          destruct (f x); destruct (g x); simpl; split; intros; try tauto.
+          - discriminate.
+          - destruct H3; discriminate.
+          - destruct H3; discriminate.
+          - destruct H3; discriminate.
+        }
+        rewrite H3.
+        apply sa_union.
+        * now apply Rbar_sa_le_pt.
+        * now apply Rbar_sa_le_pt.        
+      + apply sa_inter.
+        * apply sa_inter.
+          -- apply sa_finite_Rbar.
+             now apply Rbar_measurable_rv.
+          -- apply sa_finite_Rbar.
+             now apply Rbar_measurable_rv.
+        * generalize (@plus_measurable Ts dom (fun omega => real (f omega)) (fun omega => real (g omega))); intros.
+          apply Rbar_real_measurable in H.
+          apply Rbar_real_measurable in H0.
+          specialize (H3 H H0).
+          apply H3.
+    - assert (pre_event_equiv 
+                (fun omega : Ts => Rbar_le (Rbar_plus (f omega) (g omega)) p_infty)
+                (fun _ => True)).
+      {
+        intro x.
+        unfold Rbar_le.
+        match_destr; tauto.
+      }
+      rewrite H2.
+      apply sa_all.
+    - assert (pre_event_equiv
+                (fun omega : Ts => Rbar_le (Rbar_plus (f omega) (g omega)) m_infty)
+                (pre_event_union
+                   (fun omega => (f omega) = m_infty)
+                   (fun omega => (g omega) = m_infty))).
+      { 
+        intro x.
+        unfold Rbar_le, pre_event_union.
+        unfold ex_Rbar_plus in H1.
+        unfold Rbar_plus.
+        specialize (H1 x).
+        match_case_in H1; intros.
+        - match_destr.
+          split; intros.
+          + tauto.
+          + destruct H3.
+            * rewrite H3 in H2.
+              simpl in H2.
+              match_destr_in H2.
+            * rewrite H3 in H2.
+              unfold Rbar_plus' in H2.
+              match_destr_in H2.
+          + split; intros.
+            * tauto.
+            * destruct H3.
+              -- rewrite H3 in H2.
+                 simpl in H2.
+                 match_destr_in H2.
+              -- rewrite H3 in H2.
+                 unfold Rbar_plus' in H2.
+                 match_destr_in H2.
+          + split; intros.
+            * unfold Rbar_plus' in H2.
+              repeat match_destr_in H2; tauto.
+            * destruct H3.
+              -- rewrite H3 in H2.
+                 unfold Rbar_plus' in H2.
+                 match_destr_in H2.
+              -- rewrite H3 in H2.
+                 unfold Rbar_plus' in H2.
+                 match_destr_in H2.
+        - split; intros.
+          + tauto.
+          + destruct H3.
+            * now rewrite H2 in H1.
+            * now rewrite H2 in H1.
+      }
+      rewrite H2.
+      apply sa_union.
+      + now apply Rbar_sa_le_pt.
+      + now apply Rbar_sa_le_pt.
+    Qed.
+
   Definition Rbar_rvabs  (rv_X : Ts -> Rbar) := fun omega => Rbar_abs (rv_X omega).
 
     Instance Rbar_Rabs_measurable (f : Ts -> Rbar) :
@@ -397,6 +535,126 @@ Section RbarExpectation.
     
   Definition Rbar_neg_fun_part (f : Ts -> Rbar) : (Ts -> Rbar) :=
     fun x => Rbar_max (Rbar_opp (f x)) 0.
+
+  Program Definition Rbar_neg_fun_part_alt (f : Ts -> Rbar) : (Ts -> Rbar) :=
+    Rbar_pos_fun_part (fun x => Rbar_opp (f x)).
+
+  Lemma Rbar_neg_fun_part_alt_rveq (f : Ts -> Rbar) :
+    rv_eq (Rbar_neg_fun_part f) (Rbar_neg_fun_part_alt f).
+  Proof.
+    easy.
+  Qed.
+
+  Instance Rbar_opp_measurable (f : Ts -> Rbar) :
+    RbarMeasurable f ->
+    RbarMeasurable (fun x => Rbar_opp (f x)).
+  Proof.
+    unfold RbarMeasurable; intros.
+    assert (pre_event_equiv
+              (fun omega : Ts => Rbar_le (Rbar_opp (f omega)) r)
+              (fun omega : Ts => Rbar_ge (f omega) (Rbar_opp r))).
+    {
+      intro x.
+      unfold Rbar_ge.
+      rewrite <- Rbar_opp_le.
+      now rewrite Rbar_opp_involutive.
+    }
+    rewrite H0.
+    now apply Rbar_sa_le_ge.
+  Qed.
+
+  Global Instance Rbar_pos_fun_part_measurable (f : Ts -> Rbar) :
+    RbarMeasurable f ->
+    RbarMeasurable (Rbar_pos_fun_part f).
+  Proof.
+    unfold RbarMeasurable, Rbar_pos_fun_part; intros.
+    assert (pre_event_equiv
+              (fun omega : Ts => Rbar_le (Rbar_max (f omega) 0) r)
+              (pre_event_union
+                 (pre_event_inter
+                    (fun omega : Ts => Rbar_ge (f omega) 0 )
+                    (fun omega : Ts => Rbar_le (f omega) r))
+                 (pre_event_inter
+                    (fun omega : Ts => Rbar_le (f omega) 0)
+                    (fun omega : Ts => Rbar_le 0 r)))).
+    {    
+      intro x.
+      unfold pre_event_union, pre_event_inter.
+      unfold Rbar_max.
+      match_destr.
+      - split; intros.
+        + tauto.
+        + destruct H0.
+          * destruct H0.
+            unfold Rbar_ge in H0.
+            generalize (Rbar_le_antisym _ _ r0 H0); intros.
+            now rewrite H2 in H1.
+          * tauto.
+      - split; intros.
+        + apply Rbar_not_le_lt in n.
+          left.
+          assert (Rbar_ge (f x) 0) by now apply Rbar_lt_le.
+          tauto.
+        + destruct H0.
+          * tauto.
+          * destruct H0.
+            eapply Rbar_le_trans.
+            apply H0.
+            apply H1.
+    }
+    rewrite H0.
+    apply sa_union.
+    - apply sa_inter; trivial.
+      now apply Rbar_sa_le_ge.
+    - apply sa_inter; trivial.
+      destruct (Rbar_le_dec 0 r).
+      + assert (pre_event_equiv
+                  (fun _ : Ts => Rbar_le 0 r)
+                  (fun _ => True)) by easy.
+        rewrite H1.
+        apply sa_all.
+      + assert (pre_event_equiv
+                  (fun _ : Ts => Rbar_le 0 r)
+                  (fun _ => False)) by easy.
+        rewrite H1.
+        apply sa_none.
+   Qed.
+
+  Instance Rbar_neg_fun_part_measurable (f : Ts -> Rbar) :
+      RbarMeasurable f ->
+      RbarMeasurable (Rbar_neg_fun_part f).
+    Proof.
+      unfold RbarMeasurable; intros.
+      assert (pre_event_equiv
+                (fun omega : Ts => Rbar_le (Rbar_neg_fun_part f omega) r)
+                (fun omega : Ts => Rbar_le (Rbar_pos_fun_part 
+                                              (fun x => Rbar_opp (f x)) omega) r)).
+      {
+        intro x.
+        now rewrite Rbar_neg_fun_part_alt_rveq.
+      }
+      rewrite H0.
+      apply Rbar_pos_fun_part_measurable.
+      now apply Rbar_opp_measurable.
+    Qed.
+
+  Global Instance Rbar_pos_fun_part_rv (f : Ts -> Rbar) 
+         (rv : RandomVariable dom Rbar_borel_sa f) :
+    RandomVariable dom Rbar_borel_sa (Rbar_pos_fun_part f).
+  Proof.
+    apply Rbar_measurable_rv.
+    apply rv_Rbar_measurable in rv.
+    typeclasses eauto.
+  Qed.
+
+  Global Instance Rbar_neg_fun_part_rv (f : Ts -> Rbar) 
+         (rv : RandomVariable dom Rbar_borel_sa f) :
+    RandomVariable dom Rbar_borel_sa (Rbar_neg_fun_part f).
+  Proof.
+    apply Rbar_measurable_rv.
+    apply rv_Rbar_measurable in rv.
+    typeclasses eauto.
+  Qed.
 
   Global Instance Rbar_pos_fun_pos  (f : Ts -> Rbar)  :
     Rbar_PositiveRandomVariable (Rbar_pos_fun_part f).
