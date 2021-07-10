@@ -21,51 +21,6 @@ Section RbarBorel.
 Context {Ts:Type}
         {dom : SigmaAlgebra Ts}.
 
-  Lemma RealMeasurable_RbarMeasurable (f : Ts -> R) :
-    RealMeasurable dom f <-> RbarMeasurable f.
-  Proof.
-    unfold RealMeasurable, RbarMeasurable.
-    split; intros.
-    - destruct r.
-      + apply H.
-      + apply sa_all.
-      + apply sa_none.      
-    - specialize (H r).
-      apply H.
-   Qed.
-
-  Lemma borel_Rbar_borel (f : Ts -> R) :
-    RandomVariable dom borel_sa f <-> RandomVariable dom Rbar_borel_sa f.
-  Proof.
-    unfold RandomVariable.
-    generalize (RealMeasurable_RbarMeasurable f); intros.
-    unfold RealMeasurable, RbarMeasurable in H.
-    destruct H.
-    split; intros.
-    - apply Rbar_borel_sa_preimage2.
-      apply H.
-      now apply borel_sa_preimage2.
-    - apply borel_sa_preimage2.
-      apply H0.
-      now apply Rbar_borel_sa_preimage2.
-  Qed.
-
-    Global Instance Rbar_measurable_rv (rv_X:Ts->Rbar)
-             {rm:RbarMeasurable rv_X}
-      : RandomVariable dom Rbar_borel_sa rv_X.
-    Proof.
-      intros ?.
-      apply Rbar_borel_sa_preimage2; trivial; intros.
-    Qed.
-
-    Global Instance rv_Rbar_measurable (rv_X : Ts -> Rbar)
-             {rrv:RandomVariable dom Rbar_borel_sa rv_X}
-      : RbarMeasurable rv_X.
-    Proof.
-      red.
-      now rewrite Rbar_borel_sa_preimage2.
-    Qed.
-
   Lemma Rbar_borel_singleton (c:Rbar) :
     sa_sigma (SigmaAlgebra:=Rbar_borel_sa) (pre_event_singleton c).
   Proof.
@@ -843,14 +798,6 @@ Section RbarExpectation.
         apply H.
     Qed.
       
-    Instance positive_Rbar_positive
-             (rv_X : Ts -> R)
-             (xpos : PositiveRandomVariable rv_X) :
-      Rbar_PositiveRandomVariable rv_X.
-    Proof.
-      easy.
-    Qed.
-
     Lemma Expectation_Rbar_Expectation
         (rv_X : Ts -> R)
         (xpos : PositiveRandomVariable rv_X) :

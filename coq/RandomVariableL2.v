@@ -1648,6 +1648,7 @@ Section L2.
       unfold rvpower, rvabs, const in H1.
       unfold Rbar_power, Rbar_abs.
       erewrite Rbar_Expectation_posRV_pf_irrel.
+      erewrite Rbar_Expectation_posRV_pf_irrel in H1.      
       now rewrite H1.
     - now rewrite H1 in H.
     - generalize (Expectation_posRV_pos (rvpower (rvabs f) (const p))); intros.
@@ -1667,6 +1668,7 @@ Section L2.
     unfold Rbar_power, Rbar_abs in H.
     unfold rvpower, rvabs, const.
     erewrite Rbar_Expectation_posRV_pf_irrel.
+    erewrite Rbar_Expectation_posRV_pf_irrel in H.
     now rewrite <- H.
   Qed.
 

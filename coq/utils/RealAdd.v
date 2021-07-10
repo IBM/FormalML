@@ -3,8 +3,7 @@ Require Import Coq.Reals.Rbase Coq.Reals.RList.
 Require Import Coq.Reals.Rfunctions.
 Require Import Coq.Reals.Rprod Coq.Reals.ROrderedType.
 Require Import Ranalysis_reg utils.Finite.
-Require Import Coquelicot.Hierarchy Coquelicot.PSeries Coquelicot.Series Coquelicot.ElemFct.
-Require Import Coquelicot.Lim_seq Coquelicot.Lub Coquelicot.Rbar.
+Require Import Coquelicot.Coquelicot.
 Require Import Lia Lra.
 Require Import Reals.Integration.
 Require Import Rtrigo_def.
@@ -1943,15 +1942,13 @@ Section power_minkowski.
          lra.
       + rewrite <- (Rinv_r (a+b)) by lra.
         fold (Rdiv (a+b) (a+b)).
-        rewrite <- Rdiv_minus_distr.
-        field_simplify; try lra; auto with real.
+        field_simplify; try lra.
     - rewrite (power_minus1 a p) by auto with real.
       rewrite <- Rmult_assoc, Rmult_comm, <- Rmult_assoc.
       rewrite power_mult_distr by auto with real.
       rewrite Rinv_r, power_base_1 by lra.
       lra.
   Qed.
-
   
   Lemma power_ineq_convex p :
     1 <= p ->
@@ -3076,3 +3073,100 @@ Proof.
   apply Rbar_mult_1_r.
 Qed.
 
+  Lemma Rbar_mult_mult_pos (c : posreal) (l : Rbar) :
+    Rbar_mult_pos l c = Rbar_mult l c.
+  Proof.
+    assert (0 < c) as cpos by apply cond_pos.
+    unfold Rbar_mult_pos.
+    unfold Rbar_mult, Rbar_mult'.
+    destruct l.
+    - trivial.
+    - match_case; intros; match_case_in H; intros; try lra; rewrite H0 in H; 
+        match_case_in H; intros; try lra; rewrite H1 in H; [now invcs H| congruence].
+    - match_case; intros; match_case_in H; intros; try lra; rewrite H0 in H; 
+        match_case_in H; intros; try lra; rewrite H1 in H; [now invcs H| congruence].
+  Qed.
+
+  Lemma Rbar_div_mult_pos (c : posreal) (l : Rbar) :
+    Rbar_mult_pos (Rbar_div l c) c = l.
+  Proof.
+    assert (c > 0) as cpos by apply cond_pos.
+    assert ((pos c) <> 0) as cneq0 by lra.
+    assert (/c > 0) by apply Rinv_0_lt_compat, cpos.
+    unfold Rbar_div; simpl.
+    unfold Rbar_mult, Rbar_mult', Rbar_mult_pos.
+    destruct l.
+    - f_equal; field; trivial.
+    - case (Rle_dec 0 (/ c)) ; intros; try lra.
+      match_case; intros; match_case_in H0; intros; match_case_in H1; intros; 
+        try lra; rewrite H2 in H0; invcs H0.
+    - case (Rle_dec 0 (/ c)) ; intros; try lra.
+      match_case; intros; match_case_in H0; intros; match_case_in H1; intros; 
+        try lra; rewrite H2 in H0; invcs H0.
+  Qed.
+
+  Lemma Rbar_lt_div_r (a b: Rbar) (c : R) :
+    c > 0 -> Rbar_lt (Rbar_mult a c) b <-> Rbar_lt a (Rbar_div b c).
+  Proof.
+    intros.
+    assert (0 < (/ c)) by now apply Rinv_pos.
+    destruct a; destruct b; simpl; destruct (Rle_dec 0 c); try lra
+      ; destruct (Rle_dec 0 (/ c)); try lra
+      ; destruct (Rle_lt_or_eq_dec 0 (/ c)); simpl; try lra
+      ; destruct (Rle_lt_or_eq_dec 0 (c)); simpl; try lra.
+    now apply Rcomplements.Rlt_div_r.
+  Qed.
+
+  Lemma Rbar_le_div_r (a b : Rbar) (c : R) :
+    c > 0 -> Rbar_le (Rbar_mult a c) b <-> Rbar_le a (Rbar_div b c).
+  Proof.
+    intros.
+    assert (0 < (/ c)) by now apply Rinv_pos.
+    destruct a; destruct b; simpl; destruct (Rle_dec 0 c); try lra
+      ; destruct (Rle_dec 0 (/ c)); try lra
+      ; destruct (Rle_lt_or_eq_dec 0 (/ c)); simpl; try lra
+      ; destruct (Rle_lt_or_eq_dec 0 (c)); simpl; try lra.
+    now apply Rcomplements.Rle_div_r.
+  Qed.
+
+  Lemma Rbar_lt_div_l (a b : Rbar) (c : R) :
+    c > 0 -> Rbar_lt (Rbar_div a c) b <-> Rbar_lt a (Rbar_mult b c).
+  Proof.
+    intros.
+    assert (0 < (/ c)) by now apply Rinv_pos.
+    destruct a; destruct b; simpl; destruct (Rle_dec 0 c); try lra
+      ; destruct (Rle_dec 0 (/ c)); try lra
+      ; destruct (Rle_lt_or_eq_dec 0 (/ c)); simpl; try lra
+      ; destruct (Rle_lt_or_eq_dec 0 (c)); simpl; try lra.
+    now apply Rcomplements.Rlt_div_l.
+  Qed.
+  
+  Lemma Rbar_le_div_l (a b : Rbar) (c : R) :
+    c > 0 -> Rbar_le (Rbar_div a c) b <-> Rbar_le a (Rbar_mult b c).
+  Proof.
+    intros.
+    assert (0 < (/ c)) by now apply Rinv_pos.
+    destruct a; destruct b; simpl; destruct (Rle_dec 0 c); try lra
+      ; destruct (Rle_dec 0 (/ c)); try lra
+      ; destruct (Rle_lt_or_eq_dec 0 (/ c)); simpl; try lra
+      ; destruct (Rle_lt_or_eq_dec 0 (c)); simpl; try lra.
+    now apply Rcomplements.Rle_div_l.
+  Qed.
+
+  Lemma Rbar_div_Rdiv (x y : R) :
+    Rbar_div (Rbar.Finite x) (Rbar.Finite y) = Rdiv x y.
+  Proof.
+    easy.
+  Qed.
+
+  Lemma Rbar_lt_Rlt (x y : R) :
+    Rbar_lt (Rbar.Finite x) (Rbar.Finite y) <-> Rlt x y.
+  Proof.
+    easy.
+  Qed.
+
+  Lemma Rbar_le_Rle (x y : R) :
+    Rbar_le (Rbar.Finite x) (Rbar.Finite y) <-> Rle x y.
+  Proof.
+    easy.
+  Qed.

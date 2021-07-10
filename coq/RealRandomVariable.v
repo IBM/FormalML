@@ -1215,6 +1215,14 @@ Section RealRandomVariables.
           (rv_X:Ts->Rbar) : Prop :=
       Rbar_prv : forall (x:Ts), (Rbar_le 0 (rv_X x)).
 
+    Global Instance positive_Rbar_positive
+           (rv_X:Ts->R) 
+           {prv : PositiveRandomVariable rv_X} :
+      Rbar_PositiveRandomVariable rv_X.
+   Proof.
+     easy.
+   Qed.
+
     Global Instance PositiveRandomVariable_proper : Proper (rv_eq ==> iff) PositiveRandomVariable.
     Proof.
       unfold PositiveRandomVariable, rv_eq, pointwise_relation.
@@ -1576,6 +1584,86 @@ Section RealRandomVariables.
     := @exist (pre_event Ts) _ _ (sa_le_gt_rv rv_X x).
 
 End RealRandomVariables.
+
+Section RbarRandomVariables.
+
+  Context {Ts:Type} 
+          {dom: SigmaAlgebra Ts}.
+
+  Lemma RealMeasurable_RbarMeasurable (f : Ts -> R) :
+    RealMeasurable dom f <-> RbarMeasurable f.
+  Proof.
+    unfold RealMeasurable, RbarMeasurable.
+    split; intros.
+    - destruct r.
+      + apply H.
+      + apply sa_all.
+      + apply sa_none.      
+    - specialize (H r).
+      apply H.
+   Qed.
+
+  Lemma borel_Rbar_borel (f : Ts -> R) :
+    RandomVariable dom borel_sa f <-> RandomVariable dom Rbar_borel_sa f.
+  Proof.
+    unfold RandomVariable.
+    generalize (RealMeasurable_RbarMeasurable f); intros.
+    unfold RealMeasurable, RbarMeasurable in H.
+    destruct H.
+    split; intros.
+    - apply Rbar_borel_sa_preimage2.
+      apply H.
+      now apply borel_sa_preimage2.
+    - apply borel_sa_preimage2.
+      apply H0.
+      now apply Rbar_borel_sa_preimage2.
+  Qed.
+
+    Global Instance Rbar_measurable_rv (rv_X:Ts->Rbar)
+             {rm:RbarMeasurable rv_X}
+      : RandomVariable dom Rbar_borel_sa rv_X.
+    Proof.
+      intros ?.
+      apply Rbar_borel_sa_preimage2; trivial; intros.
+    Qed.
+
+    Global Instance rv_Rbar_measurable (rv_X : Ts -> Rbar)
+             {rrv:RandomVariable dom Rbar_borel_sa rv_X}
+      : RbarMeasurable rv_X.
+    Proof.
+      red.
+      now rewrite Rbar_borel_sa_preimage2.
+    Qed.
+
+  Global Instance Real_Rbar_rv (rv_X:Ts->R)
+         {rv : RandomVariable dom borel_sa rv_X} :
+    RandomVariable dom Rbar_borel_sa rv_X.
+  Proof.
+    apply Rbar_measurable_rv.
+    apply rv_measurable in rv.
+    unfold RealMeasurable in rv.
+    unfold RbarMeasurable.
+    intros.
+    destruct r.
+    - assert (pre_event_equiv
+                (fun omega : Ts => Rbar_le (rv_X omega) r)
+                (fun omega : Ts => rv_X omega <= r)) by easy.
+      now rewrite H.
+    - assert (pre_event_equiv
+                (fun omega : Ts => Rbar_le (rv_X omega) p_infty)
+                (fun omega => True)) by easy.
+      rewrite H.
+      apply sa_all.
+    - assert (pre_event_equiv
+                (fun omega : Ts => Rbar_le (rv_X omega) m_infty)
+                (fun omega => False)) by easy.
+      rewrite H.
+      apply sa_none.
+   Qed.                
+
+
+End RbarRandomVariables.  
+  
 
 Section EventRestricted.
 
