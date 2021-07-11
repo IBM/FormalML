@@ -1866,19 +1866,6 @@ Section L2.
       destruct (Rbar_le_dec p_infty 0); destruct (Rbar_le_dec m_infty 0); unfold Rbar_le in *; tauto.
   Qed.
 
-(*
-  Lemma Rbar_Expectation_posRV_plus (f g : Ts -> Rbar)
-        {rv1 : RandomVariable dom Rbar_borel_sa f}
-        {rv2 : RandomVariable dom Rbar_borel_sa g}
-
-        {fpos : Rbar_PositiveRandomVariable f}
-        {gpos: Rbar_PositiveRandomVariable g} :
-    Rbar_Expectation_posRV (Rbar_rvplus f g) =
-    Rbar_plus (Rbar_Expectation_posRV f) (Rbar_Expectation_posRV g).
-  Proof.
-  Admitted.
-*)
-
   Lemma finiteExp_Rbar_rvabs 
         (f : Ts -> Rbar) 
         {rv : RandomVariable dom Rbar_borel_sa f}:

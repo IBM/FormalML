@@ -2531,7 +2531,7 @@ Section Expectation.
         (Xn : nat -> Ts -> R)
         (cphi : Ts -> R)
 
-        (rvx : RandomVariable dom borel_sa X)
+        (rvx : RandomVariable dom Rbar_borel_sa X)
         (Xn_rv : forall n, RandomVariable dom borel_sa (Xn n))
         (sphi : SimpleRandomVariable cphi)
         (phi_rv : RandomVariable dom borel_sa cphi)         
@@ -2650,7 +2650,7 @@ Section Expectation.
         (Xn : nat -> Ts -> R)
         (phi : Ts -> R)
 
-        (rvx : RandomVariable dom borel_sa X)
+        (rvx : RandomVariable dom Rbar_borel_sa X)
         (Xn_rv : forall n, RandomVariable dom borel_sa (Xn n))
         (sphi : SimpleRandomVariable phi)
         (phi_rv : RandomVariable dom borel_sa phi)         
@@ -2801,7 +2801,7 @@ Section Expectation.
         (Xn : nat -> Ts -> R)
         (phi : Ts -> R)
 
-        (rvx : RandomVariable dom borel_sa X)
+        (rvx : RandomVariable dom Rbar_borel_sa X)
         (Xn_rv : forall n, RandomVariable dom borel_sa (Xn n))
         (sphi : SimpleRandomVariable phi)
         (phi_rv : RandomVariable dom borel_sa phi)         
@@ -2983,6 +2983,7 @@ Section Expectation.
             destruct H7.
             rewrite simple_Expectation_posRV with (prv := H7); trivial.
             apply monotone_convergence00 with (X := X); trivial.
+            now apply borel_Rbar_borel.
           }
         * apply Rbar_le_antisym; trivial.
           case_eq (Expectation_posRV X); intros.
