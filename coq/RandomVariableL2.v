@@ -1839,9 +1839,6 @@ Section L2.
          | _ => False
          end.
 
-  Definition Rbar_rvplus (rv_X1 rv_X2 : Ts -> Rbar) :=
-    (fun omega =>  Rbar_plus (rv_X1 omega) (rv_X2 omega)).
-
   Lemma Rbar_rvabs_plus_posfun_negfun
         (f : Ts -> Rbar ) :
     rv_eq (Rbar_rvabs f)
@@ -1869,21 +1866,7 @@ Section L2.
       destruct (Rbar_le_dec p_infty 0); destruct (Rbar_le_dec m_infty 0); unfold Rbar_le in *; tauto.
   Qed.
 
-
-  Global Instance pos_Rbar_plus (f g : Ts -> Rbar) 
-    (fpos : Rbar_PositiveRandomVariable f)
-    (gpos: Rbar_PositiveRandomVariable g) :
-    Rbar_PositiveRandomVariable (Rbar_rvplus f g).
-  Proof.
-    unfold Rbar_PositiveRandomVariable in *.
-    unfold Rbar_rvplus.
-    intro.
-    replace (Finite 0) with (Rbar_plus 0 0).
-    apply Rbar_plus_le_compat; trivial.
-    simpl.
-    now rewrite Rplus_0_r.
-  Qed.
-
+(*
   Lemma Rbar_Expectation_posRV_plus (f g : Ts -> Rbar)
         {rv1 : RandomVariable dom Rbar_borel_sa f}
         {rv2 : RandomVariable dom Rbar_borel_sa g}
@@ -1894,7 +1877,7 @@ Section L2.
     Rbar_plus (Rbar_Expectation_posRV f) (Rbar_Expectation_posRV g).
   Proof.
   Admitted.
-
+*)
 
   Lemma finiteExp_Rbar_rvabs 
         (f : Ts -> Rbar) 
@@ -2172,7 +2155,7 @@ Section L2.
         apply Rbar_Rabs_measurable.
         now apply rv_Rbar_measurable.
       }
-      generalize (@Rbar_Expectation_posRV_plus 
+      generalize (@Rbar_Expectation_posRV_plus Ts dom prts
                     (const (Finite 1))
                     (fun omega => (Rbar_power (Rbar_abs (rv_X omega)) m))
                     _ _ (prvconst _ H0) _ ); intros.
@@ -2180,9 +2163,11 @@ Section L2.
                  (@Rbar_Expectation_posRV Ts dom prts
             (Rbar_rvplus (@const Rbar Ts (Finite (IZR (Zpos xH))))
                (fun omega : Ts => Rbar_power (Rbar_abs (rv_X omega)) m))
-            (pos_Rbar_plus (@const Rbar Ts (Finite (IZR (Zpos xH))))
-               (fun omega : Ts => Rbar_power (Rbar_abs (rv_X omega)) m) (prvconst _ H0)
-               (Rbar_power_pos m (fun omega : Ts => Rbar_abs (rv_X omega)))))).
+            (@pos_Rbar_plus Ts 
+                            (@const Rbar Ts (Finite (IZR (Zpos xH))))
+                            (fun omega : Ts => Rbar_power (Rbar_abs (rv_X omega)) m)
+                            (prvconst _ H0)
+                            (Rbar_power_pos m (fun omega : Ts => Rbar_abs (rv_X omega))) ))).
       {
         rewrite H1.
         assert (is_finite (@Rbar_Expectation_posRV Ts dom prts (@const Rbar Ts (Finite 1))  (prvconst _ H0))).

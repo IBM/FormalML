@@ -1706,8 +1706,24 @@ Section RbarRandomVariables.
         apply H.
     Qed.
 
+  Definition Rbar_rvplus (rv_X1 rv_X2 : Ts -> Rbar) :=
+    (fun omega =>  Rbar_plus (rv_X1 omega) (rv_X2 omega)).
 
+  Global Instance pos_Rbar_plus (f g : Ts -> Rbar) 
+         {fpos : Rbar_PositiveRandomVariable f}
+         {gpos: Rbar_PositiveRandomVariable g} :
+    Rbar_PositiveRandomVariable (Rbar_rvplus f g).
+  Proof.
+    unfold Rbar_PositiveRandomVariable in *.
+    unfold Rbar_rvplus.
+    intro.
+    replace (Finite 0) with (Rbar_plus 0 0).
+    apply Rbar_plus_le_compat; trivial.
+    simpl.
+    now rewrite Rplus_0_r.
+  Qed.
 
+  
 End RbarRandomVariables.  
   
 

@@ -2871,7 +2871,7 @@ Section Expectation.
       + now destruct (Expectation_posRV phi).
       + now apply Lim_seq_Expectation_m_infty in H5.
   Qed.
-
+(*
   Lemma monotone_convergence00_2
         (Xn : nat -> Ts -> R)
         (phi : Ts -> R)
@@ -2942,7 +2942,7 @@ Section Expectation.
       + now destruct (Expectation_posRV phi).
       + now apply Lim_seq_Expectation_m_infty in H3.
   Qed.
-
+*)
   Lemma monotone_convergence
         (X : Ts -> R )
         (Xn : nat -> Ts -> R)
