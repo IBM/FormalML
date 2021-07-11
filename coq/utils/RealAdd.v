@@ -3087,6 +3087,30 @@ Qed.
         match_case_in H; intros; try lra; rewrite H1 in H; [now invcs H| congruence].
   Qed.
 
+
+  Lemma Rbar_div_div_pos (a:posreal) (x: Rbar) :
+    Rbar_div x a = Rbar_div_pos x a.
+  Proof.
+    unfold Rbar_div, Rbar_div_pos.
+    assert (0 < / a).
+    apply Rinv_0_lt_compat.
+    apply cond_pos.
+    destruct x.
+    - simpl.
+      now unfold Rdiv.
+    - unfold Rbar_div, Rbar_div_pos.
+      simpl.
+      destruct (Rle_dec 0 (/ a)); [| lra].
+      destruct (Rle_lt_or_eq_dec 0 (/ a) r); [|lra].
+      trivial.
+    - unfold Rbar_div, Rbar_div_pos.
+      simpl.
+      destruct (Rle_dec 0 (/ a)); [| lra].
+      destruct (Rle_lt_or_eq_dec 0 (/ a) r); [|lra].
+      trivial.
+  Qed.
+
+
   Lemma Rbar_div_mult_pos (c : posreal) (l : Rbar) :
     Rbar_mult_pos (Rbar_div l c) c = l.
   Proof.
@@ -3176,5 +3200,21 @@ Qed.
   Proof.
     intros.
     destruct x; destruct y; simpl; trivial.
+  Qed.
+
+  Definition Rbar_power (x : Rbar) (p : R)  : Rbar :=
+    match x with
+    | p_infty => p_infty
+    | m_infty => 0
+    | Rbar.Finite x => power x p
+    end.
+
+  Lemma Rbar_power_nonneg (x : Rbar) (p : R) :
+    Rbar_le 0 (Rbar_power x p).
+  Proof.
+    destruct x.
+    - apply power_nonneg.
+    - simpl; lra.
+    - simpl; lra.
   Qed.
 

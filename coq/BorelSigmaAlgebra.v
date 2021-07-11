@@ -799,6 +799,22 @@ Qed.
       now apply Rbar_sa_le_ge.
    Qed.
 
+ End RbarBorel.
+ Section RbarBorel2.
 
-  End RbarBorel.
+  Context {Ts:Type}
+    {dom: SigmaAlgebra Ts}.
+
+  Lemma Rbar_borel_singleton (c:Rbar) :
+    sa_sigma (SigmaAlgebra:=Rbar_borel_sa) (pre_event_singleton c).
+  Proof.
+    apply Rbar_sa_le_pt.
+    apply Rbar_borel_sa_preimage2; intros.
+    destruct B.
+    unfold event_preimage.
+    simpl.
+    apply s.
+  Qed.
+
+  End RbarBorel2.
   
