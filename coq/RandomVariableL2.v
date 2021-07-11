@@ -2444,12 +2444,6 @@ Section L2.
     }
     now rewrite H0.
    Qed.
-  Lemma ex_Rbar_plus_pos (x y : Rbar) :
-    Rbar_le 0 x -> Rbar_le 0 y -> ex_Rbar_plus x y.
-  Proof.
-    intros.
-    destruct x; destruct y; simpl; trivial.
-  Qed.
 
   Instance Rbar_lim_seq_measurable_pos (f : nat -> Ts -> R) :
     (forall n, RbarMeasurable (f n)) ->

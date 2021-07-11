@@ -3170,3 +3170,11 @@ Qed.
   Proof.
     easy.
   Qed.
+
+  Lemma ex_Rbar_plus_pos (x y : Rbar) :
+    Rbar_le 0 x -> Rbar_le 0 y -> ex_Rbar_plus x y.
+  Proof.
+    intros.
+    destruct x; destruct y; simpl; trivial.
+  Qed.
+

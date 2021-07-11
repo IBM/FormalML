@@ -465,9 +465,8 @@ Section RbarExpectation.
     Proof.
       apply Rbar_rvplus_rv; trivial.
       intros.
-      unfold ex_Rbar_plus, Rbar_plus'.
       specialize (prvx1 x); specialize (prvx2 x).
-      destruct (rv_X1 x); destruct (rv_X2 x); trivial.
+      now apply ex_Rbar_plus_pos.
     Qed.
 
   Definition Rbar_Expectation_posRV
@@ -1376,8 +1375,7 @@ Section RbarExpectation.
       apply Rbar_plus_correct.
       generalize (prv1 omega); intros.
       generalize (prv2 omega); intros.
-      unfold ex_Rbar_plus, Rbar_plus'.
-      destruct (rv_X1 omega); destruct (rv_X2 omega); trivial.
+      now apply ex_Rbar_plus_pos.
   Qed.
 
 End RbarExpectation.
