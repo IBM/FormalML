@@ -2357,27 +2357,6 @@ Section L2.
     now apply sa_pre_countable_inter.
   Qed.
 
-    Instance Rbar_rv_measurable (rv_X:Ts->Rbar)
-             {rrv:RandomVariable dom Rbar_borel_sa rv_X}
-      : RbarMeasurable rv_X.
-    Proof.
-      red.
-      now rewrite Rbar_borel_sa_preimage2.
-    Qed.
-
-  Global Instance RbarMeasurable_proper :
-    Proper (rv_eq ==> iff) RbarMeasurable.
-  Proof.
-    intros ???.
-    split; intros.
-    - apply Rbar_rv_measurable.
-      eapply RandomVariable_proper; try (symmetry; eapply H).
-      now apply Rbar_measurable_rv.
-    - apply Rbar_rv_measurable.
-      eapply RandomVariable_proper; try eapply H.
-      now apply Rbar_measurable_rv.
-  Qed.
-
   Instance Rbar_lim_sup_measurable (f : nat -> Ts -> R) :
     (forall n, RbarMeasurable (f n)) ->
     RbarMeasurable (fun omega => LimSup_seq (fun n => f n omega)).
@@ -2420,30 +2399,6 @@ Section L2.
     now rewrite <- borel_Rbar_borel.
   Qed.
 
-  Instance Rbar_div_pos_measurable (f : Ts -> Rbar) (c : posreal) :
-    RbarMeasurable f ->
-    RbarMeasurable (fun omega => Rbar_div_pos (f omega) c).
-  Proof.
-    unfold RbarMeasurable.
-    intros.
-    assert (pre_event_equiv
-              (fun omega : Ts => Rbar_le (Rbar_div_pos (f omega) c) r)
-              (fun omega : Ts => Rbar_le (f omega) (Rbar_mult_pos r c))).
-    {
-      intros x.
-      replace (r) with (Rbar_div_pos (Rbar_mult_pos r c) c) at 1.
-      now rewrite <- Rbar_div_pos_le.
-      unfold Rbar_div_pos, Rbar_mult_pos.
-      destruct r; trivial.
-      unfold Rdiv.
-      rewrite Rmult_assoc.
-      rewrite Rinv_r.
-      - rewrite Rmult_1_r.
-        reflexivity.
-      - apply Rgt_not_eq, cond_pos.
-    }
-    now rewrite H0.
-   Qed.
 
   Instance Rbar_lim_seq_measurable_pos (f : nat -> Ts -> R) :
     (forall n, RbarMeasurable (f n)) ->
@@ -3114,7 +3069,7 @@ Section L2.
   Proof.
     apply measurable_rv.
     apply Rbar_real_measurable.
-    now apply Rbar_rv_measurable.
+    now apply rv_Rbar_measurable.
   Qed.
   
   Lemma norm_rvminus_rvlim_le

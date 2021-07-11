@@ -1635,6 +1635,19 @@ Section RbarRandomVariables.
       now rewrite Rbar_borel_sa_preimage2.
     Qed.
 
+  Global Instance RbarMeasurable_proper :
+    Proper (rv_eq ==> iff) RbarMeasurable.
+  Proof.
+    intros ???.
+    split; intros.
+    - apply rv_Rbar_measurable.
+      eapply RandomVariable_proper; try (symmetry; eapply H).
+      now apply Rbar_measurable_rv.
+    - apply rv_Rbar_measurable.
+      eapply RandomVariable_proper; try eapply H.
+      now apply Rbar_measurable_rv.
+  Qed.
+
   Global Instance Real_Rbar_rv (rv_X:Ts->R)
          {rv : RandomVariable dom borel_sa rv_X} :
     RandomVariable dom Rbar_borel_sa rv_X.
@@ -1724,6 +1737,31 @@ Section RbarRandomVariables.
   Qed.
 
   
+  Instance Rbar_div_pos_measurable (f : Ts -> Rbar) (c : posreal) :
+    RbarMeasurable f ->
+    RbarMeasurable (fun omega => Rbar_div_pos (f omega) c).
+  Proof.
+    unfold RbarMeasurable.
+    intros.
+    assert (pre_event_equiv
+              (fun omega : Ts => Rbar_le (Rbar_div_pos (f omega) c) r)
+              (fun omega : Ts => Rbar_le (f omega) (Rbar_mult_pos r c))).
+    {
+      intros x.
+      replace (r) with (Rbar_div_pos (Rbar_mult_pos r c) c) at 1.
+      now rewrite <- Rbar_div_pos_le.
+      unfold Rbar_div_pos, Rbar_mult_pos.
+      destruct r; trivial.
+      unfold Rdiv.
+      rewrite Rmult_assoc.
+      rewrite Rinv_r.
+      - rewrite Rmult_1_r.
+        reflexivity.
+      - apply Rgt_not_eq, cond_pos.
+    }
+    now rewrite H0.
+   Qed.
+
 End RbarRandomVariables.  
   
 
