@@ -753,50 +753,6 @@ Section RbarExpectation.
     now apply Rbar_Expectation_posRV_le.
  Qed.
 
-  Definition Rbar_rvlim (f : nat -> Ts -> R) : (Ts -> Rbar) :=
-    (fun omega => Lim_seq (fun n => f n omega)).
-
-  Global Instance Rbar_rvlim_prv
-         (Xn : nat -> Ts -> R) 
-         (posrv : forall n, PositiveRandomVariable (Xn n)) :
-      Rbar_PositiveRandomVariable (Rbar_rvlim Xn).
-    Proof.
-      unfold Rbar_PositiveRandomVariable, Rbar_rvlim.
-      unfold PositiveRandomVariable in posrv.
-      intros.
-      generalize (Lim_seq_le_loc (fun _ => 0) (fun n => Xn n x)); intros.
-      rewrite Lim_seq_const in H.
-      apply H.
-      now exists 0%nat.
-    Qed.
-
-    Lemma Rbar_rvlim_pos_ge
-        (Xn : nat -> Ts -> R)          
-        (Xn_pos : forall n, PositiveRandomVariable (Xn n)) :
-      (forall (n:nat), rv_le (Xn n) (Xn (S n))) ->
-      forall n, Rbar_rv_le (Xn n) (Rbar_rvlim Xn).
-    Proof.
-      intros.
-      intro x.
-      unfold Rbar_rvlim.
-      generalize (Lim_seq_correct (fun n => Xn n x)) ; intros.
-      cut_to H0.
-      - destruct (Lim_seq (fun n => Xn n x)).
-        + generalize (is_lim_seq_incr_compare _ _ H0); intros.
-          apply H1.
-          intros.
-          apply H.
-        + now simpl.
-        + generalize (is_lim_seq_const 0); intros.
-          unfold PositiveRandomVariable in Xn_pos.
-          assert (forall n, 0 <= Xn n x); intros.
-          apply Xn_pos.
-          generalize (is_lim_seq_le _ _ _ _ H2 H1 H0); intros.
-          now simpl in H3.
-      - apply ex_lim_seq_incr.
-        intros.
-        apply H.
-    Qed.
       
     Lemma Expectation_Rbar_Expectation
         (rv_X : Ts -> R)
@@ -1240,6 +1196,167 @@ Section RbarExpectation.
              now rewrite H8 in H9.
   Qed.
 
+(*
+  Lemma Rbar_monotone_convergence
+        (X : Ts -> Rbar )
+        (Xn : nat -> Ts -> R)
+        (rvx : RandomVariable dom borel_sa X)
+        (posX: Rbar_PositiveRandomVariable X) 
+        (Xn_rv : forall n, RandomVariable dom borel_sa (Xn n))
+        (Xn_pos : forall n, PositiveRandomVariable (Xn n)) :
+    (forall (n:nat), Rbar_rv_le (Xn n) X) ->
+    (forall (n:nat), rv_le (Xn n) (Xn (S n))) ->
+    (forall (n:nat), is_finite (Expectation_posRV (Xn n))) ->
+    (forall (omega:Ts), is_lim_seq (fun n => Xn n omega) (X omega)) ->
+    Lim_seq (fun n => Expectation_posRV (Xn n)) =  (Rbar_Expectation_posRV X).
+  Proof.
+    generalize Rbar_Expectation_posRV_le; intros.
+    assert (forall (n:nat), (Rbar_le (Rbar_Expectation_posRV (Xn n)) (Rbar_Expectation_posRV X))).
+    - intros.
+      apply H; trivial.
+    - assert (forall (n:nat), (Rbar_le (Expectation_posRV (Xn n)) (Expectation_posRV (Xn (S n))))).
+      {
+        generalize Expectation_posRV_le; intros.    
+        apply H5; trivial.
+      }
+      + pose (a := (Lim_seq (fun n : nat => Expectation_posRV (Xn n)))).
+        generalize (Lim_seq_le_loc (fun n => Expectation_posRV (Xn n)) 
+                                   (fun _ => Rbar_Expectation_posRV X)); intros.
+        rewrite Lim_seq_const in H6.
+        assert (Rbar_le (Rbar_Expectation_posRV X) (Lim_seq (fun n : nat => Expectation_posRV (Xn n)))).
+        * unfold Rbar_Expectation_posRV.
+          unfold SimpleExpectationSup.
+          {
+            unfold Lub_Rbar.
+            match goal with
+              [|- context [proj1_sig ?x]] => destruct x
+            end; simpl.
+            destruct i as [i0 i1].
+            apply i1.
+            red; intros y [? [?[?[??]]]].
+            subst.
+            unfold BoundedPositiveRandomVariable in H7.
+            destruct H7.
+            rewrite simple_Expectation_posRV with (prv := H7); trivial.
+            apply monotone_convergence00 with (X := X); trivial.
+          }
+        * apply Rbar_le_antisym; trivial.
+          case_eq (Expectation_posRV X); intros.
+          ++ rewrite H8 in H6; simpl in H6.
+             apply H6.
+             unfold Hierarchy.eventually.   
+             exists (0%nat).
+             intros.
+             specialize (H (Xn n) X (Xn_pos n) posX (H0 n)).
+             rewrite <- (H2 n) in H.
+             rewrite H8 in H.
+             now simpl in H.
+          ++ now destruct (Lim_seq (fun n : nat => Expectation_posRV (Xn n))).
+          ++ generalize (Expectation_posRV_pos X); intros.
+             now rewrite H8 in H9.
+  Qed.
+
+
+
+  Instance Rbar_sum_posrv (rv_X1 rv_X2 : Ts -> Rbar)
+        {prv1:Rbar_PositiveRandomVariable rv_X1}
+        {prv2:Rbar_PositiveRandomVariable rv_X2} :     
+    Rbar_PositiveRandomVariable (fun omega => Rbar_plus (rv_X1 omega) (rv_X2 omega)).
+  Proof.
+    Admitted.
+
+Lemma Rbar_Expectation_posRV_sum 
+        (rv_X1 rv_X2 : Ts -> Rbar)
+        {rv1 : RandomVariable dom Rbar_borel_sa rv_X1}
+        {rv2 : RandomVariable dom Rbar_borel_sa rv_X2}
+        {prv1:Rbar_PositiveRandomVariable rv_X1}
+        {prv2:Rbar_PositiveRandomVariable rv_X2} :     
+    Rbar_Expectation_posRV (fun omega => Rbar_plus (rv_X1 omega) (rv_X2 omega)) =
+    Rbar_plus (Rbar_Expectation_posRV rv_X1) (Rbar_Expectation_posRV rv_X2).
+  Proof.
+    generalize (simple_approx_lim_seq rv_X1 prv1); intros.
+    generalize (simple_approx_lim_seq rv_X2 prv2); intros.
+    generalize (simple_approx_rv rv_X1); intro apx_rv1.
+    generalize (simple_approx_rv rv_X2); intro apx_rv2.
+    generalize (simple_approx_posrv rv_X1); intro apx_prv1.
+    generalize (simple_approx_posrv rv_X2); intro apx_prv2.     
+    generalize (simple_approx_srv rv_X1); intro apx_srv1.
+    generalize (simple_approx_srv rv_X2); intro apx_srv2.
+    generalize (simple_approx_le rv_X1 prv1); intro apx_le1.
+    generalize (simple_approx_le rv_X2 prv2); intro apx_le2. 
+    generalize (simple_approx_increasing rv_X1 prv1); intro apx_inc1.
+    generalize (simple_approx_increasing rv_X2 prv2); intro apx_inc2.
+    
+    generalize (monotone_convergence_Rbar (simple_approx rv_X1) rv1 prv1 apx_rv1 apx_prv1 apx_le1 apx_inc1 (fun n => simple_expectation_real (simple_approx rv_X1 n))); intros.
+    generalize (monotone_convergence rv_X2 (simple_approx rv_X2) rv2 prv2 apx_rv2 apx_prv2 apx_le2 apx_inc2 (fun n => simple_expectation_real (simple_approx rv_X2 n))); intros.
+    cut_to H1; trivial.
+    cut_to H2; trivial.
+    generalize (fun n => rvplus_rv _ (simple_approx rv_X1 n) (simple_approx rv_X2 n)); intros.
+    generalize (fun n => rvplus_prv (simple_approx rv_X1 n) (simple_approx rv_X2 n)); intros.     
+    generalize (fun n => simple_expectation_real (simple_approx rv_X1 n)); intros apx_fin1.
+    generalize (fun n => simple_expectation_real (simple_approx rv_X2 n)); intros apx_fin2.     
+    generalize (monotone_convergence (rvplus rv_X1 rv_X2) 
+                                     (fun n => rvplus (simple_approx rv_X1 n)
+                                                   (simple_approx rv_X2 n))
+                                     (rvplus_rv _ rv_X1 rv_X2)
+                                     (rvplus_prv rv_X1 rv_X2) H3 H4); intros.
+    cut_to H5; trivial.
+    - rewrite Lim_seq_ext with (v := fun n => (Expectation_posRV (simple_approx rv_X1 n)) +
+                                           (Expectation_posRV (simple_approx rv_X2 n)))
+        in H5.
+      + rewrite Lim_seq_plus in H5.
+        * rewrite H1 in H5.
+          rewrite H2 in H5.
+          now symmetry.
+        * apply ex_lim_seq_incr.
+          intros.
+          generalize (Expectation_posRV_le (simple_approx rv_X1 n) (simple_approx rv_X1 (S n)) (apx_inc1 n)); intros.
+          rewrite <- apx_fin1 in H6; simpl in H6.
+          now rewrite <- apx_fin1 in H6; simpl in H6.           
+        * apply ex_lim_seq_incr.
+          intros.
+          generalize (Expectation_posRV_le (simple_approx rv_X2 n) (simple_approx rv_X2 (S n)) (apx_inc2 n)); intros.
+          rewrite <- apx_fin2 in H6; simpl in H6.
+          now rewrite <- apx_fin2 in H6; simpl in H6.           
+        * unfold ex_Rbar_plus, Rbar_plus'.
+          match_case; intros.
+          match_case_in H6; intros.
+          -- rewrite H7 in H6.
+             match_case_in H6; intros.
+             ++ rewrite H8 in H6; congruence.
+             ++ rewrite H8 in H6; congruence.
+             ++ now apply Lim_seq_Expectation_m_infty in H8.
+          -- rewrite H7 in H6.
+             match_case_in H6; intros.
+             ++ rewrite H8 in H6; congruence.
+             ++ rewrite H8 in H6; congruence.                 
+             ++ now apply Lim_seq_Expectation_m_infty in H8.
+          -- rewrite H7 in H6.
+             now apply Lim_seq_Expectation_m_infty in H7.
+      + intros.
+        rewrite <- simple_Expectation_posRV with (rv:=rvplus_rv _ _ _) (srv := srvplus (simple_approx rv_X1 n) (simple_approx rv_X2 n)); trivial.
+        rewrite <- sumSimpleExpectation; trivial.
+        rewrite <- simple_Expectation_posRV with (rv:=apx_rv1 n) (srv := apx_srv1 n); trivial.
+        rewrite <- simple_Expectation_posRV with (rv:=apx_rv2 n) (srv := apx_srv2 n); trivial.
+    - unfold rv_le, rvplus.
+      intros n x.
+      specialize (apx_le1 n x).
+      specialize (apx_le2 n x).       
+      simpl in apx_le1; simpl in apx_le2; lra.
+    - unfold rv_le, rvplus.
+      intros n x.
+      specialize (apx_inc1 n x).
+      specialize (apx_inc2 n x).       
+      lra.
+    - intros.
+      apply simple_expectation_real; trivial.
+      apply srvplus; trivial.
+    - intros.
+      unfold rvplus.
+      now apply is_lim_seq_plus with (l1 := rv_X1 omega) (l2 := rv_X2 omega).
+  Qed.
+  
+*)
 End RbarExpectation.
 
 Section EventRestricted.

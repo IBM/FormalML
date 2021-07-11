@@ -1661,6 +1661,52 @@ Section RbarRandomVariables.
       apply sa_none.
    Qed.                
 
+    Definition Rbar_rvlim (f : nat -> Ts -> R) : (Ts -> Rbar) :=
+    (fun omega => Lim_seq (fun n => f n omega)).
+
+  Global Instance Rbar_rvlim_prv
+         (Xn : nat -> Ts -> R) 
+         (posrv : forall n, PositiveRandomVariable (Xn n)) :
+      Rbar_PositiveRandomVariable (Rbar_rvlim Xn).
+    Proof.
+      unfold Rbar_PositiveRandomVariable, Rbar_rvlim.
+      unfold PositiveRandomVariable in posrv.
+      intros.
+      generalize (Lim_seq_le_loc (fun _ => 0) (fun n => Xn n x)); intros.
+      rewrite Lim_seq_const in H.
+      apply H.
+      now exists 0%nat.
+    Qed.
+
+    Lemma Rbar_rvlim_pos_ge
+        (Xn : nat -> Ts -> R)          
+        (Xn_pos : forall n, PositiveRandomVariable (Xn n)) :
+      (forall (n:nat), rv_le (Xn n) (Xn (S n))) ->
+      forall n, Rbar_rv_le (Xn n) (Rbar_rvlim Xn).
+    Proof.
+      intros.
+      intro x.
+      unfold Rbar_rvlim.
+      generalize (Lim_seq_correct (fun n => Xn n x)) ; intros.
+      cut_to H0.
+      - destruct (Lim_seq (fun n => Xn n x)).
+        + generalize (is_lim_seq_incr_compare _ _ H0); intros.
+          apply H1.
+          intros.
+          apply H.
+        + now simpl.
+        + generalize (is_lim_seq_const 0); intros.
+          unfold PositiveRandomVariable in Xn_pos.
+          assert (forall n, 0 <= Xn n x); intros.
+          apply Xn_pos.
+          generalize (is_lim_seq_le _ _ _ _ H2 H1 H0); intros.
+          now simpl in H3.
+      - apply ex_lim_seq_incr.
+        intros.
+        apply H.
+    Qed.
+
+
 
 End RbarRandomVariables.  
   
