@@ -553,7 +553,128 @@ Section defs.
       induction l; simpl; trivial.
       now rewrite IHl.
   Qed.
+
+      Lemma rvabs_bound (rv_X : Ts -> R) :
+    rv_le (rvabs rv_X) (rvplus (rvsqr rv_X) (const 1)).
+  Proof.
+    assert (forall x, 0 <= (rvsqr (rvplus (rvabs rv_X) (const (-1)))) x) by (intros; apply Rle_0_sqr).
+
+    assert (rv_eq (rvsqr (rvplus (rvabs rv_X) (const (-1))))
+                  (rvplus 
+                     (rvplus (rvsqr (rvabs rv_X)) (rvscale (-2) (rvabs rv_X)))
+                     (const 1))).
+    {
+      intro x.
+      unfold rvsqr, rvplus, rvscale, rvabs, const, Rsqr.
+      now ring_simplify.
+    }
+    intros x.
+    specialize (H x).
+    rewrite H0 in H.
+    unfold rvsqr, rvminus, rvplus, rvmult, rvopp, rvscale, rvabs, const in *.
+    rewrite Rsqr_abs.
+    unfold Rsqr in *.
+    apply Rplus_le_compat_l with (r := 2 * Rabs (rv_X x)) in H.
+    ring_simplify in H.
+    generalize (Rabs_pos (rv_X x)); intros.
+    lra.
+  Qed.
+
+  Lemma rvabs_sqr (rv_X : Ts -> R) :
+    rv_eq (rvabs (rvsqr rv_X)) (rvsqr rv_X).
+    Proof.
+      intro x.
+      unfold rvabs, rvsqr.
+      apply Rabs_pos_eq.
+      apply Rle_0_sqr.
+    Qed.
+      
+  Lemma rvsqr_abs (rv_X : Ts -> R) :
+    rv_eq (rvsqr (rvabs rv_X)) (rvsqr rv_X).
+    Proof.
+      intro x.
+      unfold rvabs, rvsqr.
+      now rewrite <- Rsqr_abs.
+    Qed.
+
+    Lemma rvmult_abs (rv_X1 rv_X2 : Ts -> R):
+      rv_eq (rvabs (rvmult rv_X1 rv_X2)) (rvmult (rvabs rv_X1) (rvabs rv_X2)).
+    Proof.
+      intro x.
+      unfold rvmult, rvabs.
+      apply Rabs_mult.
+    Qed.
     
+    Lemma rvprod_bound (rv_X1 rv_X2 : Ts->R) :
+      rv_le (rvscale 2 (rvmult rv_X1 rv_X2))
+            (rvplus (rvsqr rv_X1) (rvsqr rv_X2)).
+    Proof.
+      assert (forall x, 0 <= (rvsqr (rvminus rv_X1 rv_X2)) x) by (intros; apply Rle_0_sqr).
+      assert (rv_eq (rvsqr (rvminus rv_X1 rv_X2)) 
+                  (rvplus (rvplus (rvsqr rv_X1) (rvopp (rvscale 2 (rvmult rv_X1 rv_X2))))
+                          (rvsqr rv_X2))).
+    { 
+      intro x.
+      unfold rvsqr, rvminus, rvplus, rvmult, rvopp, rvscale, Rsqr.
+      now ring_simplify.
+    }
+    intros x; specialize (H x).
+    rewrite H0 in H; clear H0.
+    unfold rvsqr, rvminus, rvplus, rvmult, rvopp, rvscale, Rsqr in *.
+    lra.
+  Qed.  
+  
+  Lemma rvprod_abs_bound (rv_X1 rv_X2 : Ts->R) :
+    rv_le (rvscale 2 (rvabs (rvmult rv_X1 rv_X2)))
+                          (rvplus (rvsqr rv_X1) (rvsqr rv_X2)).
+  Proof.
+    generalize (rvprod_bound (rvabs rv_X1) (rvabs rv_X2)); intros.
+    do 2 rewrite rvsqr_abs in H.
+    now rewrite rvmult_abs.
+  Qed.
+
+  Lemma rvsum_sqr_bound (rv_X1 rv_X2 : Ts->R) :
+    rv_le (rvsqr (rvplus rv_X1 rv_X2)) 
+                          (rvscale 2 (rvplus (rvsqr rv_X1) (rvsqr rv_X2))).
+  Proof.
+    assert (forall x, 0 <= (rvsqr (rvminus rv_X1 rv_X2)) x) by (intros; apply Rle_0_sqr).
+    assert (rv_eq (rvsqr (rvminus rv_X1 rv_X2)) 
+                  (rvplus (rvplus (rvsqr rv_X1) (rvopp (rvscale 2 (rvmult rv_X1 rv_X2))))
+                          (rvsqr rv_X2))).
+    { 
+      intro x.
+      unfold rvsqr, rvminus, rvplus, rvmult, rvopp, rvscale, Rsqr.
+      now ring_simplify.
+    }
+    intros x; specialize (H x).
+    rewrite H0 in H; clear H0.
+    unfold rvsqr, rvminus, rvplus, rvmult, rvopp, rvscale, Rsqr in *.
+    apply Rplus_le_compat_l with (r:= ((rv_X1 x + rv_X2 x) * (rv_X1 x + rv_X2 x))) in H.
+    ring_simplify in H.
+    ring_simplify.
+    apply H.
+  Qed.    
+
+  Lemma rvsqr_eq (x:Ts->R): rv_eq (rvsqr x) (rvmult x x).
+  Proof.
+    intros ?.
+    reflexivity.
+  Qed.
+
+  Lemma rvprod_abs1_bound (rv_X1 rv_X2 : Ts->R) :
+    rv_le (rvabs (rvmult rv_X1 rv_X2))
+                          (rvplus (rvsqr rv_X1) (rvsqr rv_X2)).
+  Proof.
+    generalize (rvprod_abs_bound rv_X1 rv_X2).
+    unfold rv_le, rvscale, rvabs, rvmult, rvsqr, Rsqr; intros H x.
+    specialize (H x).
+    assert (Rabs (rv_X1 x * rv_X2 x) <= 2 * Rabs (rv_X1 x * rv_X2 x)).
+    apply Rplus_le_reg_l with (r := - Rabs(rv_X1 x * rv_X2 x)).
+    ring_simplify.
+    apply Rabs_pos.
+    lra.
+  Qed.
+
   End eqs.
 End defs.
 

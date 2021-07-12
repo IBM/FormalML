@@ -28,7 +28,7 @@ Set Bullet Behavior "Strict Subproofs".
    nonnegative p: Lp is a module space (vector space)
      p = 0: nothing extra :-). Note that this is the space of all RandomVariables modulo a.e.
      0 < p < 1: not done yet.
-     1 <= p: This is a normed vector space.
+     1 <= p: This is a complete normed vector space.
        p = 2: This is a hilbert space.  See RandomVariableL2 for more information.
      p = ∞: This is defined in the file RandomVariableLinf, see there for more information.
 

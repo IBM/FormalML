@@ -1,4 +1,5 @@
 Require Import Program.Basics.
+Require Import Classical.
 Require Import Coq.Reals.Rbase Coq.Reals.RList.
 Require Import Coq.Reals.Rfunctions.
 Require Import Coq.Reals.Rprod Coq.Reals.ROrderedType.
@@ -3218,3 +3219,88 @@ Qed.
     - simpl; lra.
   Qed.
 
+  Lemma Rsqr_pos (a : posreal) :
+    0 < Rsqr a.
+  Proof.
+    generalize (Rle_0_sqr a); intros.
+    destruct H; trivial.
+    generalize (cond_pos a); intros.
+    symmetry in H; apply Rsqr_eq_0 in H.
+    lra.
+  Qed.
+
+  Lemma mkpos_Rsqr (a : posreal) :
+    Rsqr a = mkposreal _ (Rsqr_pos a).
+  Proof.
+    now simpl.
+  Qed.
+
+
+    Definition Rsqrt_abs (r : R) : R := Rsqrt (mknonnegreal (Rabs r) (Rabs_pos r)).
+
+    Lemma Rsqrt_abs_0 :
+      Rsqrt_abs 0 = 0.
+     Proof.
+      unfold Rsqrt_abs, Rsqrt; simpl.
+      match_destr; destruct a.
+      rewrite Rabs_R0 in H0.
+      now apply Rsqr_eq_0.
+    Qed.
+
+    Lemma continuity_pt_Rsqrt_abs_0 :
+      continuity_pt Rsqrt_abs 0.
+    Proof.
+      unfold continuity_pt, continue_in.
+      unfold limit1_in, limit_in.
+      intros.
+      unfold dist; simpl.
+      unfold R_dist, D_x, no_cond.
+      exists (Rsqr eps).
+      split.
+      - unfold Rsqr.
+        now apply Rmult_gt_0_compat.
+      - intros.
+        destruct H0 as [[? ?] ?].
+        rewrite Rminus_0_r in H2.
+        rewrite Rsqrt_abs_0, Rminus_0_r.
+        unfold Rsqrt_abs.
+        rewrite Rabs_right by (apply Rle_ge, Rsqrt_positivity).
+        generalize Rsqr_lt_to_Rsqrt; intros.
+        assert (0 <= eps) by lra.
+        specialize (H3 (mknonnegreal _ H4) (mknonnegreal _ (Rabs_pos x))).
+        rewrite <- H3.
+        now simpl.
+     Qed.
+
+    (* TODO(Kody):
+       Move these to someplace more canonical. Like RealAdd.
+       Delete identical copies in mdp.v *)
+    Lemma nonneg_pf_irrel r1 (cond1 cond2:0 <= r1) :
+      mknonnegreal r1 cond1 = mknonnegreal r1 cond2.
+    Proof.
+      f_equal.
+      apply proof_irrelevance.
+    Qed.
+
+    Lemma nonneg_ext r1 cond1 r2 cond2:
+      r1 = r2 ->
+      mknonnegreal r1 cond1 = mknonnegreal r2 cond2.
+    Proof.
+      intros; subst.
+      apply nonneg_pf_irrel.
+    Qed.
+
+    Lemma Rinv_power (x : R) (n : R) : 0 < x -> / power x n = power (/ x) n.
+  Proof.
+    intros.
+    assert (x <> 0) by lra.
+    assert (power x n <> 0) by (generalize (power_pos x n); lra).
+    apply (Rmult_eq_reg_l (power x n)); trivial.
+    rewrite Rinv_r by trivial.
+    rewrite power_mult_distr.
+    + rewrite Rinv_r; trivial.
+      rewrite power_base_1; trivial.
+    + lra.
+    + left.
+      now apply Rinv_pos.
+  Qed.
