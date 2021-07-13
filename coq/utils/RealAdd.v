@@ -3304,3 +3304,84 @@ Qed.
     + left.
       now apply Rinv_pos.
   Qed.
+
+    Lemma Rbar_power_le (x y p : Rbar) :
+    0 <= p ->
+    Rbar_le 0 x ->
+    Rbar_le x y ->
+    Rbar_le (Rbar_power x p) (Rbar_power y p).
+  Proof.
+    intros.
+    destruct x; destruct y; simpl in *; trivial; try tauto.
+    apply Rle_power_l; trivial; lra.
+  Qed.
+
+  Lemma Rbar_abs_nneg (x : Rbar) :
+    Rbar_le 0 (Rbar_abs x).
+  Proof.
+    unfold Rbar_abs; destruct x; simpl; try tauto.
+    apply Rabs_pos.
+  Qed.
+
+
+  Lemma ex_series_is_lim_seq (f : nat -> R) :
+    ex_series f -> is_lim_seq (sum_n f) (Series f).
+  Proof.
+    intros.
+    now apply Series_correct in H.
+  Qed.
+
+  Lemma ex_series_Lim_seq (f : nat -> R) :
+    ex_series f -> Lim_seq (sum_n f) = Series f.
+  Proof.
+    intros.
+    apply ex_series_is_lim_seq in H.
+    now apply is_lim_seq_unique in H.
+  Qed.
+
+  Lemma ex_finite_lim_series (f : nat -> R) :
+    ex_finite_lim_seq (sum_n f) <-> ex_series f.
+  Proof.
+    easy.
+  Qed.
+
+  Lemma ex_finite_lim_seq_abs (f : nat -> R) :
+    ex_finite_lim_seq (fun n => sum_n (fun m => Rabs (f m)) n) ->
+    ex_finite_lim_seq (sum_n f).
+  Proof.
+    do 2 rewrite ex_finite_lim_series.
+    apply ex_series_Rabs.
+  Qed.
+
+  Lemma Rplus_le_compat1_l (a b : R) :
+    0 <= b -> a <= a + b.
+  Proof.
+    intros.
+    replace (a) with (a + 0) at 1 by lra.
+    now apply Rplus_le_compat_l.
+  Qed.
+
+  Lemma series_abs_bounded (f : nat -> R) :
+    is_finite (Lim_seq (sum_n (fun n=> Rabs (f n)))) ->
+    ex_series (fun n => Rabs (f n)).
+  Proof.
+    intros.
+    rewrite <- ex_finite_lim_series.
+    rewrite ex_finite_lim_seq_correct.
+    split; trivial.
+    apply ex_lim_seq_incr.
+    intros.
+    rewrite sum_Sn.
+    apply Rplus_le_compat1_l.
+    apply Rabs_pos.
+  Qed.
+
+  Lemma lim_sum_abs_bounded (f : nat -> R) :
+    is_finite (Lim_seq (sum_n (fun n=> Rabs (f n)))) ->
+    ex_finite_lim_seq (sum_n f).
+  Proof.
+    intros.
+    apply series_abs_bounded in H.
+    apply ex_series_Rabs in H.
+    now apply ex_finite_lim_series.
+  Qed.

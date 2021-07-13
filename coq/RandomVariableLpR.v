@@ -1804,14 +1804,6 @@ Qed.
           now apply Rplus_le_le_0_compat.
       Qed.
           
-      Lemma Rplus_le_compat1_l (a b : R) :
-        0 <= b -> a <= a + b.
-      Proof.
-        intros.
-        replace (a) with (a + 0) at 1 by lra.
-        now apply Rplus_le_compat_l.
-      Qed.
-
       Lemma islp_lim_telescope_abs (f : nat -> LpRRV p) :
         (forall (n:nat), LpRRVnorm (LpRRVminus (f (S n)) (f n)) < / (pow 2 n)) ->
         (forall (n:nat), RandomVariable dom borel_sa (f n)) ->
