@@ -3893,7 +3893,68 @@ Section Expectation.
     now rewrite Rmult_1_r in H.
   Qed.
 
+  Lemma rsqr_pos (a : posreal) : (0 < Rsqr a).
+  Proof.
+    apply Rlt_0_sqr.
+    apply Rgt_not_eq.
+    apply cond_pos.
+  Qed.
+
+  Lemma Rabs_Rsqr_ge (x : R) (a : posreal) :
+    Rabs x >= a <-> Rsqr x >= Rsqr a.
+  Proof.
+    replace (pos a) with (Rabs a) at 1 by (apply Rabs_right; left; apply cond_pos).
+    simpl.
+    split; intros; apply Rle_ge; apply Rge_le in H.
+    - now apply Rsqr_le_abs_1.
+    - now apply Rsqr_le_abs_0.
+  Qed.
+
+  Lemma Chebyshev_ineq_div_mean
+        (X : Ts -> R)
+        (rv : RandomVariable dom borel_sa X)
+        (mean : R)
+        (a : posreal) :
+    Rbar_le (ps_P (event_ge dom (rvabs (rvminus X (const mean))) a))
+            (Rbar_div_pos
+               (Expectation_posRV (rvsqr (rvminus X (const mean))))
+               (mkposreal _ (rsqr_pos a))).
+  Proof.
+    assert (event_equiv
+              (event_ge dom (rvabs (rvminus X (const mean))) a)
+              (event_ge dom (rvsqr (rvminus X (const mean)))
+               {| pos := a²; cond_pos := rsqr_pos a |})).
+    {
+      intro x.
+      unfold proj1_sig; simpl.
+      unfold rvabs, rvminus, const, rvsqr, rvplus, rvopp, rvscale.
+      now rewrite Rabs_Rsqr_ge.
+    }
+    rewrite H.
+    apply Markov_ineq_div.
+  Qed.
+
+  Lemma Chebyshev_ineq_div
+        (X : Ts -> R)
+        (rv : RandomVariable dom borel_sa X)
+        (a : posreal) :
+    match (Expectation X) with
+      | Some (Finite mean) => 
+        Rbar_le (ps_P (event_ge dom (rvabs (rvminus X (const mean))) a))
+                (Rbar_div_pos
+                   (Expectation_posRV (rvsqr (rvminus X (const mean))))
+                   (mkposreal _ (rsqr_pos a)))
+      | _ => True
+    end.
+  Proof.
+    case_eq (Expectation X); intros; trivial.
+    match_destr.
+    apply Chebyshev_ineq_div_mean.
+  Qed.
+
 End Expectation.
+
+
 Section EventRestricted.
     Context {Ts:Type} 
           {dom: SigmaAlgebra Ts}
