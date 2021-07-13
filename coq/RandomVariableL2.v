@@ -583,10 +583,10 @@ Section L2.
           (n >= N)%nat -> (m >= N)%nat -> LpRRVnorm prts (LpRRVminus prts (Un n) (Un m)) < eps).
 *)
    Lemma inv_power_pos (n : nat) :
-        0 < / (power p (INR n)) .
+        0 < / (p ^ n) .
   Proof.
     apply Rinv_0_lt_compat.
-    apply power_pos.
+    apply pow_lt.
     lra.
   Qed.
 
@@ -598,7 +598,7 @@ Section L2.
         F (Hierarchy.ball (M:= LpRRV_UniformSpace prts pbig) b (mkposreal _ (inv_power_pos n)))}.
   Proof.
     intros Pf cF n.
-    pose ( ϵ := / (power p (INR n))).
+    pose ( ϵ := / (p ^ n)).
     assert (ϵpos : 0 < ϵ) by apply inv_power_pos.
     destruct (constructive_indefinite_description _ (cF (mkposreal ϵ ϵpos)))
       as [x Fx].
@@ -611,7 +611,7 @@ Section L2.
     forall (n:nat), {b:LpRRV prts p ->Prop | F b}.
   Proof.
     intros Pf cF n.
-    pose ( ϵ := / (power p (INR n))).
+    pose ( ϵ := / (p ^ n)).
     assert (ϵpos : 0 < ϵ) by apply inv_power_pos.
     destruct (constructive_indefinite_description _ (cF (mkposreal ϵ ϵpos)))
       as [x Fx].
@@ -712,8 +712,8 @@ Section L2.
     unfold LpRRV_lim_ball_center_center; simpl.
     intros.
     destruct ( constructive_indefinite_description
-            (fun x0 : LpRRV prts p => F (Hierarchy.ball x0 (/ power p (INR n))))
-            (cF {| pos := / power p (INR n); cond_pos := inv_power_pos n |})); simpl.
+            (fun x0 : LpRRV prts p => F (Hierarchy.ball x0 (/ p ^ n)))
+            (cF {| pos := / p ^ n; cond_pos := inv_power_pos n |})); simpl.
     tauto.
   Qed.
     
@@ -816,7 +816,7 @@ Section L2.
              (N:nat) :
     (proj1_sig (LpRRV_lim_ball_center F PF cF N)) x ->
     (proj1_sig (LpRRV_lim_ball_center F PF cF N)) y ->
-    LpRRVnorm prts (LpRRVminus prts x y) < 2 / power p (INR N).
+    LpRRVnorm prts (LpRRVminus prts x y) < 2 / p ^ N.
   Proof.
     unfold LpRRV_lim_ball_center; simpl.
     unfold proj1_sig.
@@ -852,8 +852,7 @@ Section L2.
       intros ?; simpl.
       rv_unfold; lra.
     - revert HH.
-      generalize (power_pos p (INR N))
-      ; intros.
+      apply pow_nzero.
       lra.
   Qed.
   
@@ -868,7 +867,7 @@ Section L2.
         LpRRVnorm prts (LpRRVminus 
                             prts  
                             (LpRRV_lim_picker F PF cF n)
-                            (LpRRV_lim_picker F PF cF m)) < 2 / power p (INR N).
+                            (LpRRV_lim_picker F PF cF m)) < 2 / p ^ N.
   Proof.
     intros.
     apply (lim_ball_center_dist _ _ F PF cF); now apply lim_picker_included.
@@ -877,7 +876,7 @@ Section L2.
   Lemma cauchy_filter_sum_bound 
         (F : (LpRRV_UniformSpace prts pbig -> Prop) -> Prop)
         (PF:ProperFilter F)
-        (cF:cauchy F) :
+        (cF:cauchy F) (pbigger:1 < p):
     ex_series (fun n => 
                  LpRRVnorm prts 
                              (LpRRVminus prts
@@ -885,7 +884,7 @@ Section L2.
                                 (LpRRV_lim_picker F PF cF n))).
   Proof.
     apply (@ex_series_le R_AbsRing R_CompleteNormedModule) with
-        (b := fun n => 2 / power p (INR n)).
+        (b := fun n => 2 / p ^ n).
     intros; unfold norm; simpl.
     unfold abs; simpl.
     rewrite Rabs_pos_eq.
@@ -895,11 +894,15 @@ Section L2.
     apply power_nonneg.
     unfold Rdiv.
     apply (@ex_series_scal_l R_AbsRing R_CompleteNormedModule).
-    apply ex_series_ext with (a := fun n => power (/ p) (INR n)).
+    apply ex_series_ext with (a := fun n => (/ p) ^ n).
     - intros.
-    intros; rewrite Rinv_power; lra.
-    - Locate "^". apply ex_series_geom.
-      rewrite Rabs_pos_eq; lra.
+      intros; rewrite Rinv_pow; lra.
+    - apply ex_series_geom.
+      rewrite Rabs_Rinv by lra.
+      rewrite Rabs_pos_eq; try lra.
+      generalize (Rinv_lt_contravar 1 p).
+      rewrite Rinv_1; intros HH.
+      apply HH; lra.
  Qed.
   
   Lemma series_is_lim_seq (f:nat -> R) (l:R) :
@@ -921,12 +924,12 @@ Section L2.
     now apply Rplus_le_pos_l.
   Qed.    
 
-  Lemma islp_Rbar_lim_telescope_abs_gen (f : nat -> LpRRV prts 2) :
+  Lemma islp_Rbar_lim_telescope_abs_gen (f : nat -> LpRRV prts p) :
     ex_series (fun n => 
                  LpRRVnorm prts 
                            (LpRRVminus prts (f (S n)) (f n))) ->
     (forall (n:nat), RandomVariable dom borel_sa (f n)) ->
-    IsLp_Rbar prts 2
+    IsLp_Rbar prts p
               (Rbar_rvlim
                  (fun n => LpRRVsum 
                              prts pbig
@@ -961,31 +964,94 @@ Section L2.
     - intros.
       now rewrite norm_abs.
   Qed.
+(*
+  Lemma gen_lp_telescope_norm_bound (f : nat -> LpRRV prts p) (pbigger:1<p):
+        (forall (n:nat), LpRRVnorm prts (LpRRVminus prts (f (S n)) (f n)) < / (pow p n)) ->
+        forall (n:nat), 
+          LpRRVnorm prts (LpRRVsum prts pbig (fun n0 => LpRRVabs prts (LpRRVminus prts (f (S n0)) (f n0))) n) <= p.
+      Proof.
+        intros.
+        apply Rle_trans with (r2 := sum_n (fun n0 => LpRRVnorm prts (LpRRVabs prts  (LpRRVminus prts (f (S n0)) (f n0)))) n).
+        apply LpRRV_norm_sum.
+        apply Rle_trans with (r2 := sum_n (fun n0 => / p^n0) n).
+        unfold sum_n.
+        apply sum_n_m_le.
+        intros; left.
+        rewrite norm_abs.
+        apply H.
+        rewrite sum_n_ext with (b := fun n0 => (/ p)^n0).
+        - rewrite sum_geom.
+          + apply (Rmult_le_reg_r (/ p - 1)).
+            * admit.
+            * unfold Rdiv.
+              rewrite Rmult_assoc.
+              rewrite Rinv_l.
+              -- field_simplify; try lra.
 
+
+            generalize (c_pow_bound (/p) (S n)); intros.
+            apply (Rle_trans _ (1 / (1 - / p))).
+            * cut_to H0.
+              lra.
+            * 
+        - intros.
+          rewrite Rinv_pow; lra.
+      Qed.
+
+  Lemma gen_islp_lim_telescope_abs (f : nat -> LpRRV prts p) :
+        (forall (n:nat), LpRRVnorm prts (LpRRVminus prts (f (S n)) (f n)) < / (pow p n)) ->
+        (forall (n:nat), RandomVariable dom borel_sa (f n)) ->
+        (forall omega : Ts,
+            ex_finite_lim_seq
+              (fun n : nat =>
+                 LpRRVsum prts pbig (fun n0 : nat => LpRRVabs prts (LpRRVminus prts (f (S n0)) (f n0))) n omega)) ->
+        IsLp prts p (rvlim
+                  (fun n => LpRRVsum prts pbig (fun n0 => LpRRVabs prts (LpRRVminus prts (f (S n0)) (f n0))) n)).
+      Proof.
+        intros.
+        apply islp_rvlim_bounded with (c := p); try lra.
+        intros.
+        apply lp_telescope_norm_bound; trivial.
+        - intros.
+          typeclasses eauto.
+        - intros.
+          apply LpRRVsum_pos.
+          typeclasses eauto.
+        - intros n x.
+          unfold LpRRVsum, pack_LpRRV; simpl.
+          unfold rvsum.
+          rewrite sum_Sn.
+          apply Rplus_le_compat1_l.
+          unfold rvabs.
+          apply Rabs_pos.
+        - apply H1.
+      Qed.
+ *)
+  
   Lemma cauchy_filter_sum_abs
         (F : (LpRRV_UniformSpace prts pbig -> Prop) -> Prop)
         (PF:ProperFilter F)
         (cF:cauchy F) :
     IsLp_Rbar 
-      prts 2
+      prts p
       (Rbar_rvlim
          (fun n0 =>
             LpRRVsum prts pbig 
                      (fun n =>
                         (LpRRVabs prts
                                   (LpRRVminus prts
-                                              (L2RRV_lim_picker F PF cF (S (S n)))
-                                              (L2RRV_lim_picker F PF cF (S n))))) n0)).
+                                              (LpRRV_lim_picker F PF cF (S (S n)))
+                                              (LpRRV_lim_picker F PF cF (S n))))) n0)).
   Proof.
     apply (islp_Rbar_lim_telescope_abs prts pbig
-                                       (fun n => L2RRV_lim_picker F PF cF (S n)))
+                                       (fun n => LpRRV_lim_picker F PF cF (S n)))
     ; [ | typeclasses eauto ]; intros.
     generalize (lim_filter_cauchy F PF cF (S n) (S (S n)) (S n)); intros.
     simpl.
     cut_to H; try lia.
     simpl in H.
     unfold Rdiv in H.
-    rewrite Rinv_mult_distr in H; try lra; [|apply pow2_nzero].
+    rewrite Rinv_mult_distr in H; try lra; [|apply pow_nzero; lra].
     rewrite <- Rmult_assoc in H.
     rewrite Rinv_r in H; try lra.
     rewrite Rmult_1_l in H.
