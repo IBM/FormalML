@@ -7,16 +7,32 @@ Set Default Goal Selector "!".
 
 Definition bounded (x : nat -> R) := exists c : R, forall n, Rabs (x n) <= c.
 
+Lemma fin_seq_bounded (x : nat -> R) (N : nat) :
+  exists (c : R),
+    forall (n:nat), (n<N)%nat -> Rabs(x n) <= c.
+ Proof.
+ Admitted.
+
 Lemma is_lim_seq0_bounded (x : nat -> R): is_lim_seq x 0 -> bounded x.
 Proof.
   intros Hx.
-  rewrite is_lim_seq_Reals in Hx.
-  unfold Un_cv,R_dist in Hx.
-  setoid_rewrite Rminus_0_r in Hx.
-  destruct (Hx 1 Rlt_0_1) as [N HN].
+  rewrite <- is_lim_seq_spec in Hx.
+  unfold is_lim_seq' in Hx.
   unfold bounded.
-Admitted.
-
+  destruct (Hx posreal_one).
+  destruct (fin_seq_bounded x x0).
+  exists (Rmax x1 1); intros.
+  destruct (lt_dec n x0).
+  - eapply Rle_trans.
+    + apply H0; lia.
+    + apply Rmax_l.
+  - left.
+    eapply Rlt_le_trans.
+    + specialize (H n).
+      rewrite Rminus_0_r in H.
+      apply H; lia.
+    + apply Rmax_r.
+  Qed.
 
 Lemma sum_f_R0_Rabs_pos (x : nat -> R) : forall N, 0 <= sum_f_R0 (fun j => Rabs (x j)) N.
 Proof.
