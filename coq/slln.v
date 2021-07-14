@@ -15,11 +15,9 @@ Lemma fin_seq_bounded (x : nat -> R) (N : nat) :
     forall (n:nat), (n<N)%nat -> Rabs(x n) <= c.
 Proof.
   generalize (bounded_nat_finite N); intros Hn.
-  generalize (fin_fun_bounded_Rabs Hn); intros.
-  specialize (H (restrict x N)).
+  generalize (fin_fun_bounded_Rabs Hn (restrict x N)); intros.
   destruct H as [c Hc]. exists c; intros.
-  specialize (Hc (exist _ n H)).
-  now simpl in Hc.
+  now specialize (Hc (exist _ n H)).
 Qed.
 
 Lemma is_lim_seq0_bounded (x : nat -> R): is_lim_seq x 0 -> bounded x.
@@ -27,7 +25,6 @@ Proof.
   intros Hx.
   rewrite <- is_lim_seq_spec in Hx.
   unfold is_lim_seq' in Hx.
-  unfold bounded.
   destruct (Hx posreal_one).
   destruct (fin_seq_bounded x x0).
   exists (Rmax x1 1); intros.
