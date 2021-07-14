@@ -765,19 +765,6 @@ Section fe.
     split; trivial.
   Qed.
 
-  Lemma Lim_seq_pos (f : nat -> R) :
-    (forall n, 0 <= f n) ->
-    Rbar_le 0 (Lim_seq f).
-  Proof.
-    intros.
-    generalize (Lim_seq_le_loc (fun _ => 0) f); intros.
-    rewrite Lim_seq_const in H0.
-    apply H0.
-    exists (0%nat).
-    intros.
-    apply H.
-  Qed.
-
   Instance series_rv_pos
          (Xn : nat -> Ts -> R)
          (Xn_pos : forall n, PositiveRandomVariable (Xn n)) 

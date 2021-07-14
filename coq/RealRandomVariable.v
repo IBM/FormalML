@@ -1339,6 +1339,15 @@ Section RealRandomVariables.
       intros; apply Rabs_pos.
     Qed.
 
+    Lemma rvabs_pos_eq (rv_X:Ts->R) {prv:PositiveRandomVariable rv_X} :
+      rv_eq (rvabs rv_X) rv_X.
+    Proof.
+      intros a.
+      unfold rvabs.
+      now rewrite Rabs_pos_eq.
+    Qed.
+
+
     Global Instance prvsqr
            (rv_X : Ts -> R) :
       PositiveRandomVariable (rvsqr rv_X).
@@ -1347,6 +1356,7 @@ Section RealRandomVariables.
       intros.
       apply Rle_0_sqr.
     Qed.
+
 
     Global Instance prvlim
            (Xn : nat -> Ts -> R) 

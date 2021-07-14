@@ -553,7 +553,268 @@ Section defs.
       induction l; simpl; trivial.
       now rewrite IHl.
   Qed.
+
+      Lemma rvabs_bound (rv_X : Ts -> R) :
+    rv_le (rvabs rv_X) (rvplus (rvsqr rv_X) (const 1)).
+  Proof.
+    assert (forall x, 0 <= (rvsqr (rvplus (rvabs rv_X) (const (-1)))) x) by (intros; apply Rle_0_sqr).
+
+    assert (rv_eq (rvsqr (rvplus (rvabs rv_X) (const (-1))))
+                  (rvplus 
+                     (rvplus (rvsqr (rvabs rv_X)) (rvscale (-2) (rvabs rv_X)))
+                     (const 1))).
+    {
+      intro x.
+      unfold rvsqr, rvplus, rvscale, rvabs, const, Rsqr.
+      now ring_simplify.
+    }
+    intros x.
+    specialize (H x).
+    rewrite H0 in H.
+    unfold rvsqr, rvminus, rvplus, rvmult, rvopp, rvscale, rvabs, const in *.
+    rewrite Rsqr_abs.
+    unfold Rsqr in *.
+    apply Rplus_le_compat_l with (r := 2 * Rabs (rv_X x)) in H.
+    ring_simplify in H.
+    generalize (Rabs_pos (rv_X x)); intros.
+    lra.
+  Qed.
+
+  Lemma rvabs_sqr (rv_X : Ts -> R) :
+    rv_eq (rvabs (rvsqr rv_X)) (rvsqr rv_X).
+    Proof.
+      intro x.
+      unfold rvabs, rvsqr.
+      apply Rabs_pos_eq.
+      apply Rle_0_sqr.
+    Qed.
+      
+  Lemma rvsqr_abs (rv_X : Ts -> R) :
+    rv_eq (rvsqr (rvabs rv_X)) (rvsqr rv_X).
+    Proof.
+      intro x.
+      unfold rvabs, rvsqr.
+      now rewrite <- Rsqr_abs.
+    Qed.
+
+    Lemma rvmult_abs (rv_X1 rv_X2 : Ts -> R):
+      rv_eq (rvabs (rvmult rv_X1 rv_X2)) (rvmult (rvabs rv_X1) (rvabs rv_X2)).
+    Proof.
+      intro x.
+      unfold rvmult, rvabs.
+      apply Rabs_mult.
+    Qed.
     
+    Lemma rvprod_bound (rv_X1 rv_X2 : Ts->R) :
+      rv_le (rvscale 2 (rvmult rv_X1 rv_X2))
+            (rvplus (rvsqr rv_X1) (rvsqr rv_X2)).
+    Proof.
+      assert (forall x, 0 <= (rvsqr (rvminus rv_X1 rv_X2)) x) by (intros; apply Rle_0_sqr).
+      assert (rv_eq (rvsqr (rvminus rv_X1 rv_X2)) 
+                  (rvplus (rvplus (rvsqr rv_X1) (rvopp (rvscale 2 (rvmult rv_X1 rv_X2))))
+                          (rvsqr rv_X2))).
+    { 
+      intro x.
+      unfold rvsqr, rvminus, rvplus, rvmult, rvopp, rvscale, Rsqr.
+      now ring_simplify.
+    }
+    intros x; specialize (H x).
+    rewrite H0 in H; clear H0.
+    unfold rvsqr, rvminus, rvplus, rvmult, rvopp, rvscale, Rsqr in *.
+    lra.
+  Qed.  
+  
+  Lemma rvprod_abs_bound (rv_X1 rv_X2 : Ts->R) :
+    rv_le (rvscale 2 (rvabs (rvmult rv_X1 rv_X2)))
+                          (rvplus (rvsqr rv_X1) (rvsqr rv_X2)).
+  Proof.
+    generalize (rvprod_bound (rvabs rv_X1) (rvabs rv_X2)); intros.
+    do 2 rewrite rvsqr_abs in H.
+    now rewrite rvmult_abs.
+  Qed.
+
+  Lemma rvsum_sqr_bound (rv_X1 rv_X2 : Ts->R) :
+    rv_le (rvsqr (rvplus rv_X1 rv_X2)) 
+                          (rvscale 2 (rvplus (rvsqr rv_X1) (rvsqr rv_X2))).
+  Proof.
+    assert (forall x, 0 <= (rvsqr (rvminus rv_X1 rv_X2)) x) by (intros; apply Rle_0_sqr).
+    assert (rv_eq (rvsqr (rvminus rv_X1 rv_X2)) 
+                  (rvplus (rvplus (rvsqr rv_X1) (rvopp (rvscale 2 (rvmult rv_X1 rv_X2))))
+                          (rvsqr rv_X2))).
+    { 
+      intro x.
+      unfold rvsqr, rvminus, rvplus, rvmult, rvopp, rvscale, Rsqr.
+      now ring_simplify.
+    }
+    intros x; specialize (H x).
+    rewrite H0 in H; clear H0.
+    unfold rvsqr, rvminus, rvplus, rvmult, rvopp, rvscale, Rsqr in *.
+    apply Rplus_le_compat_l with (r:= ((rv_X1 x + rv_X2 x) * (rv_X1 x + rv_X2 x))) in H.
+    ring_simplify in H.
+    ring_simplify.
+    apply H.
+  Qed.    
+
+  Lemma rvsqr_eq (x:Ts->R): rv_eq (rvsqr x) (rvmult x x).
+  Proof.
+    intros ?.
+    reflexivity.
+  Qed.
+
+  Lemma rvprod_abs1_bound (rv_X1 rv_X2 : Ts->R) :
+    rv_le (rvabs (rvmult rv_X1 rv_X2))
+                          (rvplus (rvsqr rv_X1) (rvsqr rv_X2)).
+  Proof.
+    generalize (rvprod_abs_bound rv_X1 rv_X2).
+    unfold rv_le, rvscale, rvabs, rvmult, rvsqr, Rsqr; intros H x.
+    specialize (H x).
+    assert (Rabs (rv_X1 x * rv_X2 x) <= 2 * Rabs (rv_X1 x * rv_X2 x)).
+    apply Rplus_le_reg_l with (r := - Rabs(rv_X1 x * rv_X2 x)).
+    ring_simplify.
+    apply Rabs_pos.
+    lra.
+  Qed.
+
+    Lemma Rbar_Rabs_lim_sum_le0 (f : nat -> Ts -> R) (x : Ts) :
+    is_finite (Lim_seq (sum_n (fun n=> Rabs (f n x)))) ->
+    Rbar_le
+      (Rbar_abs (Lim_seq (fun n => (rvsum f) n x)))
+      (Rbar_abs (Lim_seq (fun n => (rvsum (fun n0 => (rvabs (f n0))) n x)))).
+  Proof.
+    intros.
+    apply series_abs_bounded in H.
+    generalize H; intros HH.
+    generalize (ex_series_Rabs (fun n => (f n x)) H); intros.
+    generalize (Series_Rabs (fun n => (f n x)) H); intros.
+    unfold rvsum, rvabs.
+    apply ex_series_Lim_seq in H.
+    apply ex_series_Lim_seq in H0.
+    replace (Lim_seq
+               (fun n : nat => sum_n (fun n0 : nat => f n0 x) n))
+      with (Finite ( Series (fun n : nat => f n x))).
+    replace (Lim_seq
+          (fun n : nat =>
+             sum_n (fun n0 : nat => Rabs (f n0 x)) n))
+      with (Finite (Series (fun n : nat => Rabs (f n x)))).
+    simpl.
+    apply Rge_le.
+    rewrite Rabs_right.
+    apply Rle_ge, H1.
+    apply Rle_ge, Series_nonneg; trivial.
+    intros.
+    apply Rabs_pos.
+  Qed.
+
+  Lemma Rabs_lim_sum_le0 (f : nat -> Ts -> R) (x : Ts) :
+    is_finite (Lim_seq (sum_n (fun n=> Rabs (f n x)))) ->
+    Rbar_le
+      (Rbar_abs (Finite (real (Lim_seq (fun n => (rvsum f) n x)))))
+      (Rbar_abs (Lim_seq (fun n => (rvsum (fun n0 => (rvabs (f n0))) n x)))).
+  Proof.
+    intros.
+    apply series_abs_bounded in H.
+    generalize H; intros HH.
+    generalize (ex_series_Rabs (fun n => (f n x)) H); intros.
+    generalize (Series_Rabs (fun n => (f n x)) H); intros.
+    unfold rvsum, rvabs.
+    apply ex_series_Lim_seq in H.
+    apply ex_series_Lim_seq in H0.
+    replace (Lim_seq
+               (fun n : nat => sum_n (fun n0 : nat => f n0 x) n))
+      with (Finite ( Series (fun n : nat => f n x))).
+    replace (Lim_seq
+          (fun n : nat =>
+             sum_n (fun n0 : nat => Rabs (f n0 x)) n))
+      with (Finite (Series (fun n : nat => Rabs (f n x)))).
+    simpl.
+    apply Rge_le.
+    rewrite Rabs_right.
+    apply Rle_ge, H1.
+    apply Rle_ge, Series_nonneg; trivial.
+    intros.
+    apply Rabs_pos.
+  Qed.
+
+  Lemma Lim_seq_pos (f : nat -> R) :
+    (forall n, 0 <= f n) ->
+    Rbar_le 0 (Lim_seq f).
+  Proof.
+    intros.
+    generalize (Lim_seq_le_loc (fun _ => 0) f); intros.
+    rewrite Lim_seq_const in H0.
+    apply H0.
+    exists (0%nat).
+    intros.
+    apply H.
+  Qed.
+
+  Lemma Rbar_Rabs_lim_sum_le (f : nat -> Ts -> R) (x : Ts) :
+    Rbar_le
+      (Rbar_abs (Lim_seq (fun n => (rvsum f) n x)))
+      (Rbar_abs (Lim_seq (fun n => (rvsum (fun n0 => (rvabs (f n0))) n x)))).
+  Proof.
+    case_eq (Lim_seq
+          (fun n : nat =>
+           rvsum (fun n0 : nat => rvabs (f n0)) n x)); intros.
+    - rewrite <- H.
+      apply Rbar_Rabs_lim_sum_le0.
+      unfold rvsum, rvabs in H.
+      replace  (Lim_seq (sum_n (fun n : nat => Rabs (f n x))))
+        with
+           (Lim_seq
+              (fun n : nat =>
+                 sum_n (fun n0 : nat => Rabs (f n0 x)) n)).
+      now rewrite H.
+      apply Lim_seq_ext.
+      intros; trivial.
+    - destruct (Lim_seq (fun n : nat => rvsum f n x)); now simpl.
+    - assert (Rbar_le 0 (Lim_seq
+        (fun n : nat =>
+         rvsum (fun n0 : nat => rvabs (f n0)) n x))).
+      + apply Lim_seq_pos.
+        intros.
+        unfold rvsum, rvabs.
+        apply sum_n_nneg.
+        intros.
+        apply Rabs_pos.
+      + rewrite H in H0.
+        now simpl in H0.
+  Qed.
+
+
+  Lemma Rabs_lim_sum_le (f : nat -> Ts -> R) (x : Ts) :
+    Rbar_le
+      (Rbar_abs (Finite (real (Lim_seq (fun n => (rvsum f) n x)))))
+      (Rbar_abs (Lim_seq (fun n => (rvsum (fun n0 => (rvabs (f n0))) n x)))).
+  Proof.
+    case_eq (Lim_seq
+          (fun n : nat =>
+           rvsum (fun n0 : nat => rvabs (f n0)) n x)); intros.
+    - rewrite <- H.
+      apply Rabs_lim_sum_le0.
+      unfold rvsum, rvabs in H.
+      replace  (Lim_seq (sum_n (fun n : nat => Rabs (f n x))))
+        with
+           (Lim_seq
+              (fun n : nat =>
+                 sum_n (fun n0 : nat => Rabs (f n0 x)) n)).
+      now rewrite H.
+      apply Lim_seq_ext.
+      intros; trivial.
+    - destruct (Lim_seq (fun n : nat => rvsum f n x)); now simpl.
+    - assert (Rbar_le 0 (Lim_seq
+        (fun n : nat =>
+         rvsum (fun n0 : nat => rvabs (f n0)) n x))).
+      + apply Lim_seq_pos.
+        intros.
+        unfold rvsum, rvabs.
+        apply sum_n_nneg.
+        intros.
+        apply Rabs_pos.
+      + rewrite H in H0.
+        now simpl in H0.
+  Qed.
+
   End eqs.
 End defs.
 

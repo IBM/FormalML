@@ -68,21 +68,6 @@ Proof.
   trivial. intros H. firstorder.
 Qed.
 
-Lemma nonneg_pf_irrel r1 (cond1 cond2:0 <= r1) : 
-  mknonnegreal r1 cond1 = mknonnegreal r1 cond2.
-Proof.
-  f_equal.
-  apply proof_irrelevance.
-Qed.
-
-Lemma nonneg_ext r1 cond1 r2 cond2: 
-  r1 = r2 ->
-  mknonnegreal r1 cond1 = mknonnegreal r2 cond2.
-Proof.
-  intros; subst.
-  apply nonneg_pf_irrel.
-Qed.
-
 Lemma mknonnegreal_assoc (r1 r2 r3 : nonnegreal) :
   mknonnegreal _ (prod_nonnegreal (mknonnegreal _ (prod_nonnegreal r1 r2) ) r3) = mknonnegreal _ (prod_nonnegreal r1 (mknonnegreal _ (prod_nonnegreal r2 r3))).
 Proof.

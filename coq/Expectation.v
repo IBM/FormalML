@@ -3952,6 +3952,12 @@ Section Expectation.
     apply Chebyshev_ineq_div_mean.
   Qed.
 
+  Lemma Expectation_sqr (rv_X :Ts->R)  :
+    Expectation (rvsqr rv_X) = Some (Expectation_posRV (rvsqr rv_X)).
+  Proof.
+    apply Expectation_pos_posRV.
+  Qed.
+
 End Expectation.
 
 

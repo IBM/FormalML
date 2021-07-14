@@ -1,4 +1,5 @@
 Require Import Program.Basics.
+Require Import Classical.
 Require Import Coq.Reals.Rbase Coq.Reals.RList.
 Require Import Coq.Reals.Rfunctions.
 Require Import Coq.Reals.Rprod Coq.Reals.ROrderedType.
@@ -3218,3 +3219,169 @@ Qed.
     - simpl; lra.
   Qed.
 
+  Lemma Rsqr_pos (a : posreal) :
+    0 < Rsqr a.
+  Proof.
+    generalize (Rle_0_sqr a); intros.
+    destruct H; trivial.
+    generalize (cond_pos a); intros.
+    symmetry in H; apply Rsqr_eq_0 in H.
+    lra.
+  Qed.
+
+  Lemma mkpos_Rsqr (a : posreal) :
+    Rsqr a = mkposreal _ (Rsqr_pos a).
+  Proof.
+    now simpl.
+  Qed.
+
+
+    Definition Rsqrt_abs (r : R) : R := Rsqrt (mknonnegreal (Rabs r) (Rabs_pos r)).
+
+    Lemma Rsqrt_abs_0 :
+      Rsqrt_abs 0 = 0.
+     Proof.
+      unfold Rsqrt_abs, Rsqrt; simpl.
+      match_destr; destruct a.
+      rewrite Rabs_R0 in H0.
+      now apply Rsqr_eq_0.
+    Qed.
+
+    Lemma continuity_pt_Rsqrt_abs_0 :
+      continuity_pt Rsqrt_abs 0.
+    Proof.
+      unfold continuity_pt, continue_in.
+      unfold limit1_in, limit_in.
+      intros.
+      unfold dist; simpl.
+      unfold R_dist, D_x, no_cond.
+      exists (Rsqr eps).
+      split.
+      - unfold Rsqr.
+        now apply Rmult_gt_0_compat.
+      - intros.
+        destruct H0 as [[? ?] ?].
+        rewrite Rminus_0_r in H2.
+        rewrite Rsqrt_abs_0, Rminus_0_r.
+        unfold Rsqrt_abs.
+        rewrite Rabs_right by (apply Rle_ge, Rsqrt_positivity).
+        generalize Rsqr_lt_to_Rsqrt; intros.
+        assert (0 <= eps) by lra.
+        specialize (H3 (mknonnegreal _ H4) (mknonnegreal _ (Rabs_pos x))).
+        rewrite <- H3.
+        now simpl.
+     Qed.
+
+    (* TODO(Kody):
+       Move these to someplace more canonical. Like RealAdd.
+       Delete identical copies in mdp.v *)
+    Lemma nonneg_pf_irrel r1 (cond1 cond2:0 <= r1) :
+      mknonnegreal r1 cond1 = mknonnegreal r1 cond2.
+    Proof.
+      f_equal.
+      apply proof_irrelevance.
+    Qed.
+
+    Lemma nonneg_ext r1 cond1 r2 cond2:
+      r1 = r2 ->
+      mknonnegreal r1 cond1 = mknonnegreal r2 cond2.
+    Proof.
+      intros; subst.
+      apply nonneg_pf_irrel.
+    Qed.
+
+    Lemma Rinv_power (x : R) (n : R) : 0 < x -> / power x n = power (/ x) n.
+  Proof.
+    intros.
+    assert (x <> 0) by lra.
+    assert (power x n <> 0) by (generalize (power_pos x n); lra).
+    apply (Rmult_eq_reg_l (power x n)); trivial.
+    rewrite Rinv_r by trivial.
+    rewrite power_mult_distr.
+    + rewrite Rinv_r; trivial.
+      rewrite power_base_1; trivial.
+    + lra.
+    + left.
+      now apply Rinv_pos.
+  Qed.
+
+    Lemma Rbar_power_le (x y p : Rbar) :
+    0 <= p ->
+    Rbar_le 0 x ->
+    Rbar_le x y ->
+    Rbar_le (Rbar_power x p) (Rbar_power y p).
+  Proof.
+    intros.
+    destruct x; destruct y; simpl in *; trivial; try tauto.
+    apply Rle_power_l; trivial; lra.
+  Qed.
+
+  Lemma Rbar_abs_nneg (x : Rbar) :
+    Rbar_le 0 (Rbar_abs x).
+  Proof.
+    unfold Rbar_abs; destruct x; simpl; try tauto.
+    apply Rabs_pos.
+  Qed.
+
+
+  Lemma ex_series_is_lim_seq (f : nat -> R) :
+    ex_series f -> is_lim_seq (sum_n f) (Series f).
+  Proof.
+    intros.
+    now apply Series_correct in H.
+  Qed.
+
+  Lemma ex_series_Lim_seq (f : nat -> R) :
+    ex_series f -> Lim_seq (sum_n f) = Series f.
+  Proof.
+    intros.
+    apply ex_series_is_lim_seq in H.
+    now apply is_lim_seq_unique in H.
+  Qed.
+
+  Lemma ex_finite_lim_series (f : nat -> R) :
+    ex_finite_lim_seq (sum_n f) <-> ex_series f.
+  Proof.
+    easy.
+  Qed.
+
+  Lemma ex_finite_lim_seq_abs (f : nat -> R) :
+    ex_finite_lim_seq (fun n => sum_n (fun m => Rabs (f m)) n) ->
+    ex_finite_lim_seq (sum_n f).
+  Proof.
+    do 2 rewrite ex_finite_lim_series.
+    apply ex_series_Rabs.
+  Qed.
+
+  Lemma Rplus_le_compat1_l (a b : R) :
+    0 <= b -> a <= a + b.
+  Proof.
+    intros.
+    replace (a) with (a + 0) at 1 by lra.
+    now apply Rplus_le_compat_l.
+  Qed.
+
+  Lemma series_abs_bounded (f : nat -> R) :
+    is_finite (Lim_seq (sum_n (fun n=> Rabs (f n)))) ->
+    ex_series (fun n => Rabs (f n)).
+  Proof.
+    intros.
+    rewrite <- ex_finite_lim_series.
+    rewrite ex_finite_lim_seq_correct.
+    split; trivial.
+    apply ex_lim_seq_incr.
+    intros.
+    rewrite sum_Sn.
+    apply Rplus_le_compat1_l.
+    apply Rabs_pos.
+  Qed.
+
+  Lemma lim_sum_abs_bounded (f : nat -> R) :
+    is_finite (Lim_seq (sum_n (fun n=> Rabs (f n)))) ->
+    ex_finite_lim_seq (sum_n f).
+  Proof.
+    intros.
+    apply series_abs_bounded in H.
+    apply ex_series_Rabs in H.
+    now apply ex_finite_lim_series.
+  Qed.
