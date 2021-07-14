@@ -961,69 +961,6 @@ Section L2.
     - intros.
       now rewrite norm_abs.
   Qed.
-(*
-  Lemma gen_lp_telescope_norm_bound (f : nat -> LpRRV prts p) (pbigger:1<p):
-        (forall (n:nat), LpRRVnorm prts (LpRRVminus prts (f (S n)) (f n)) < / (pow p n)) ->
-        forall (n:nat), 
-          LpRRVnorm prts (LpRRVsum prts pbig (fun n0 => LpRRVabs prts (LpRRVminus prts (f (S n0)) (f n0))) n) <= p.
-      Proof.
-        intros.
-        apply Rle_trans with (r2 := sum_n (fun n0 => LpRRVnorm prts (LpRRVabs prts  (LpRRVminus prts (f (S n0)) (f n0)))) n).
-        apply LpRRV_norm_sum.
-        apply Rle_trans with (r2 := sum_n (fun n0 => / p^n0) n).
-        unfold sum_n.
-        apply sum_n_m_le.
-        intros; left.
-        rewrite norm_abs.
-        apply H.
-        rewrite sum_n_ext with (b := fun n0 => (/ p)^n0).
-        - rewrite sum_geom.
-          + apply (Rmult_le_reg_r (/ p - 1)).
-            * admit.
-            * unfold Rdiv.
-              rewrite Rmult_assoc.
-              rewrite Rinv_l.
-              -- field_simplify; try lra.
-
-
-            generalize (c_pow_bound (/p) (S n)); intros.
-            apply (Rle_trans _ (1 / (1 - / p))).
-            * cut_to H0.
-              lra.
-            * 
-        - intros.
-          rewrite Rinv_pow; lra.
-      Qed.
-
-  Lemma gen_islp_lim_telescope_abs (f : nat -> LpRRV prts p) :
-        (forall (n:nat), LpRRVnorm prts (LpRRVminus prts (f (S n)) (f n)) < / (pow p n)) ->
-        (forall (n:nat), RandomVariable dom borel_sa (f n)) ->
-        (forall omega : Ts,
-            ex_finite_lim_seq
-              (fun n : nat =>
-                 LpRRVsum prts pbig (fun n0 : nat => LpRRVabs prts (LpRRVminus prts (f (S n0)) (f n0))) n omega)) ->
-        IsLp prts p (rvlim
-                  (fun n => LpRRVsum prts pbig (fun n0 => LpRRVabs prts (LpRRVminus prts (f (S n0)) (f n0))) n)).
-      Proof.
-        intros.
-        apply islp_rvlim_bounded with (c := p); try lra.
-        intros.
-        apply lp_telescope_norm_bound; trivial.
-        - intros.
-          typeclasses eauto.
-        - intros.
-          apply LpRRVsum_pos.
-          typeclasses eauto.
-        - intros n x.
-          unfold LpRRVsum, pack_LpRRV; simpl.
-          unfold rvsum.
-          rewrite sum_Sn.
-          apply Rplus_le_compat1_l.
-          unfold rvabs.
-          apply Rabs_pos.
-        - apply H1.
-      Qed.
- *)
 
   Lemma cauchy_filter_sum_abs
         (F : (LpRRV_UniformSpace prts pbig -> Prop) -> Prop)
@@ -3202,12 +3139,12 @@ Section L2_complete.
           (cF:cauchy F) : LpRRVq prts p
     := Quot _ (LpRRV_lim_with_conditions prts pbig F PF cF).
 
-  Lemma L2RRVq_lim_with_conditionsE F PF cF : LpRRVq_lim_with_conditions F PF cF  = Quot _ (LpRRV_lim_with_conditions prts pbig F PF cF).
+  Lemma LpRRVq_lim_with_conditionsE F PF cF : LpRRVq_lim_with_conditions F PF cF  = Quot _ (LpRRV_lim_with_conditions prts pbig F PF cF).
   Proof.
     reflexivity. 
   Qed.
   
-  Hint Rewrite L2RRVq_lim_with_conditionsE : quot.
+  Hint Rewrite LpRRVq_lim_with_conditionsE : quot.
 
   Definition LpRRV_toLpRRVq_set (s:(LpRRV prts p)->Prop) (x:LpRRVq prts p) : Prop
     := forall y, x = Quot _ y -> s y.
@@ -3261,7 +3198,7 @@ Section L2_complete.
   Qed.
           
   Lemma LpRRVq_filter_to_LpRRV_filter_cauchy
-        (F : (PreHilbert_UniformSpace (E:= L2RRVq_PreHilbert prts) -> Prop) -> Prop)
+        (F : (LpRRVq_UniformSpace prts p pbig -> Prop) -> Prop)
     (PF:ProperFilter F)
     (cF:cauchy F) : 
     @cauchy (LpRRV_UniformSpace prts pbig) (LpRRVq_filter_to_LpRRV_filter F).
@@ -3273,53 +3210,76 @@ Section L2_complete.
     exists x0.
     eapply filter_imp; try eapply H; intros; subst.
     repeat red.
-    repeat red in H0.
-    unfold Hnorm, inner, minus, plus, opp in *.
+    do 2 red in H0.
     simpl in H0.
-    autorewrite with quot in H0.
-    rewrite L2RRVq_innerE in H0.
-    unfold LpRRVnorm.
-    simpl.
-    rewrite power_sqrt.
-    - unfold L2RRVinner in H0.
-      LpRRV_simpl.
-      simpl in *.
-      eapply Rle_lt_trans; try eapply H0.
-      apply sqrt_le_1_alt.
-      apply FiniteExpectation_le.
-      rewrite rvpower2; try typeclasses eauto.
-      intros ?.
-      rv_unfold; simpl.
-      rewrite <- Rsqr_abs.
-      unfold Rsqr.
-      lra.
-    - apply FiniteExpectation_pos.
-      typeclasses eauto.
+    rewrite LpRRVq_ballE in H0.
+    apply H0.
   Qed.
 
-  Definition L2RRVq_lim_with_conditions2 (F : (PreHilbert_UniformSpace (E:= L2RRVq_PreHilbert prts) -> Prop) -> Prop)
+  Definition LpRRVq_lim_with_conditions2 (F : (LpRRVq_UniformSpace prts p pbig -> Prop) -> Prop)
     (PF:ProperFilter F)
-    (cF:cauchy F) : LpRRVq prts 2.
+    (cF:cauchy F) : LpRRVq prts p.
     Proof.
       simpl in F.
       pose (LpRRVq_filter_to_LpRRV_filter F).
-      generalize (L2RRVq_lim_with_conditions P); intros.
+      generalize (LpRRVq_lim_with_conditions P); intros.
       specialize (X (LpRRVq_filter_to_LpRRV_filter_proper F PF)).
       specialize (X (LpRRVq_filter_to_LpRRV_filter_cauchy F PF cF)).
       exact X.
   Defined.
 
-  Definition L2RRVq_lim (lim : ((LpRRVq prts 2 -> Prop) -> Prop)) : LpRRVq prts 2.
+  Definition LpRRVq_lim (lim : ((LpRRVq prts p -> Prop) -> Prop)) : LpRRVq prts p.
   Proof.
     destruct (excluded_middle_informative (ProperFilter lim)).
-    - destruct (excluded_middle_informative (cauchy (T:=(PreHilbert_UniformSpace (E:= L2RRVq_PreHilbert prts))) lim)).
-      + exact (L2RRVq_lim_with_conditions2 _ p c).
+    - destruct (excluded_middle_informative (cauchy (T:=LpRRVq_UniformSpace prts p pbig) lim)).
+      + exact (LpRRVq_lim_with_conditions2 _ p0 c).
       + exact (LpRRVq_zero prts).
     - exact (LpRRVq_zero prts).
   Defined.
 
-  Lemma L2RRVq_lim_complete (F : (PreHilbert_UniformSpace -> Prop) -> Prop) :
-    ProperFilter F -> cauchy F -> forall eps : posreal, F (ball (L2RRVq_lim  F) eps).
+  Lemma LpRRVq_lim_complete (F : (LpRRVq_UniformSpace prts p pbig -> Prop) -> Prop) :
+    ProperFilter F -> cauchy F -> forall eps : posreal, F (LpRRVq_ball prts pbig (LpRRVq_lim F) eps).
+  Proof.
+    intros.
+    unfold LpRRVq_lim; simpl.
+    match_destr; [| tauto].
+    match_destr; [| tauto].
+    generalize (L2RRV_lim_complete (LpRRVq_filter_to_LpRRV_filter F)); intros.
+    generalize (LpRRVq_filter_to_LpRRV_filter_proper F H); intros.
+    generalize (LpRRVq_filter_to_LpRRV_filter_cauchy F H H0); intros.
+    specialize (H1 H2 H3 eps).
+    unfold LpRRV_lim in H1; simpl in H1.
+    match_destr_in H1; [|tauto].
+    match_destr_in H1; [|tauto].
+    unfold Hierarchy.ball, UniformSpace.ball in H1; simpl in H1.
+    unfold LpRRVq_lim_with_conditions2.
+    rewrite  LpRRVq_lim_with_conditionsE.
+    rewrite (proof_irrelevance _ _ p1).
+    rewrite (proof_irrelevance _ _ c0).
+    unfold LpRRVq_filter_to_LpRRV_filter in *.
+    eapply filter_imp; try eapply H1.
+    intros x; simpl in *.
+
+    unfold LpRRV_toLpRRVq_set; simpl; intros HH.
+    unfold ball, Hnorm, minus, plus, opp, inner; simpl.
+    destruct (Quot_inv x); subst.
+    rewrite LpRRVq_ballE.
+    specialize (HH _ (eq_refl _)).
+    unfold LpRRVball in *.
+    eapply Rle_lt_trans; try eapply HH.
+    unfold LpRRVnorm.
+    apply Rle_power_l; [| split].
+    - simpl.
+      left; apply Rinv_pos; lra.
+    - apply FiniteExpectation_pos.
+      typeclasses eauto.
+    - apply FiniteExpectation_le.
+      reflexivity.
+  Qed.
+
+    
+  Lemma L2RRVq_lim_complete' (F : (PreHilbert_UniformSpace -> Prop) -> Prop) :
+    ProperFilter F -> cauchy F -> forall eps : posreal, F (ball (LpRRVq_lim F) eps).
   Proof.
     intros.
     unfold L2RRVq_lim; simpl.
