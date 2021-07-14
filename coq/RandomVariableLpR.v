@@ -4818,7 +4818,16 @@ Section complete.
     filter_le F2 F1 ->
     @close (LpRRVq_UniformSpace prts p pbig) (LpRRVq_lim F1) (LpRRVq_lim F2).
   Proof.
-  Admitted.
+    intros.
+    replace F1 with F2.
+    apply close_refl.
+    apply functional_extensionality.
+    intros x.
+    unfold filter_le in *.
+    apply prop_extensionality; split.
+    apply H.
+    apply H0.
+  Qed.
 
   Definition LpRRVq_Complete_mixin : CompleteSpace.mixin_of (LpRRVq_UniformSpace prts p pbig)
     := CompleteSpace.Mixin (LpRRVq_UniformSpace prts p pbig)
