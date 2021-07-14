@@ -1,5 +1,5 @@
 Require Import Lra Lia Reals RealAdd RandomVariableL2 Coquelicot.Coquelicot.
-Require Import Morphisms.
+Require Import Morphisms Finite.
 Require Import Sums.
 Set Bullet Behavior "Strict Subproofs".
 Set Default Goal Selector "!".
@@ -7,11 +7,20 @@ Set Default Goal Selector "!".
 
 Definition bounded (x : nat -> R) := exists c : R, forall n, Rabs (x n) <= c.
 
+Definition restrict (x : nat -> R) (N : nat) : {a : nat | (a < N)%nat} -> R :=
+  fun H => let (H0,_) := H in x H0.
+
 Lemma fin_seq_bounded (x : nat -> R) (N : nat) :
   exists (c : R),
     forall (n:nat), (n<N)%nat -> Rabs(x n) <= c.
- Proof.
- Admitted.
+Proof.
+  generalize (bounded_nat_finite N); intros Hn.
+  generalize (fin_fun_bounded_Rabs Hn); intros.
+  specialize (H (restrict x N)).
+  destruct H as [c Hc]. exists c; intros.
+  specialize (Hc (exist _ n H)).
+  now simpl in Hc.
+Qed.
 
 Lemma is_lim_seq0_bounded (x : nat -> R): is_lim_seq x 0 -> bounded x.
 Proof.
@@ -214,4 +223,5 @@ Proof.
   setoid_rewrite Rmult_minus_distr_l in H.
   replace x0 with (1*x0) by lra.
   rewrite is_lim_seq_sub_zero.
+
 Admitted.
