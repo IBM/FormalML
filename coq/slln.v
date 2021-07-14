@@ -1,10 +1,22 @@
 Require Import Lra Lia Reals RealAdd RandomVariableL2 Coquelicot.Coquelicot.
+Require Import Morphisms.
 Require Import Sums.
 Set Bullet Behavior "Strict Subproofs".
 Set Default Goal Selector "!".
 
 
 Definition bounded (x : nat -> R) := exists c : R, forall n, Rabs (x n) <= c.
+
+Lemma is_lim_seq0_bounded (x : nat -> R): is_lim_seq x 0 -> bounded x.
+Proof.
+  intros Hx.
+  rewrite is_lim_seq_Reals in Hx.
+  unfold Un_cv,R_dist in Hx.
+  setoid_rewrite Rminus_0_r in Hx.
+  destruct (Hx 1 Rlt_0_1) as [N HN].
+  unfold bounded.
+Admitted.
+
 
 Lemma sum_f_R0_Rabs_pos (x : nat -> R) : forall N, 0 <= sum_f_R0 (fun j => Rabs (x j)) N.
 Proof.
@@ -57,7 +69,7 @@ Lemma ash_6_1_1_a {x : nat -> R}{a : nat -> nat -> R} (ha : forall j, is_lim_seq
 Proof.
   intros y. destruct hx1 as [M HMx].
   destruct hb2 as [c Hc].
-  assert (hy1 : forall n j, Rabs (a n j * x j) <= M*Rabs(a n j))
+ assert (hy1 : forall n j, Rabs (a n j * x j) <= M*Rabs(a n j))
     by (intros ; rewrite Rabs_mult, Rmult_comm ;
         apply Rmult_le_compat_r; auto; apply Rabs_pos).
   assert (hy2 : forall n M, ex_series(fun j => M*Rabs(a n j)))
@@ -68,10 +80,6 @@ Proof.
     apply (ex_series_le (fun j => Rabs (a n j * x j)) (fun j => M*Rabs(a n j))); trivial.
     intros. rewrite Rabs_Rabsolu; auto.
   }
-  assert (hy4 : forall n, ex_series (fun j : nat => a n j * x j))
-    by (intro n; apply (ex_series_Rabs _ (hy3 n))).
-  assert (hy5 : forall n N, ex_series (fun j => Rabs (a n (N + j)%nat * x (N + j)%nat)))
-    by (intros; now rewrite <-ex_series_incr_n with (a0 := fun j => Rabs (a n j * x j))).
   assert (hy6 : forall n N, (0 < N)%nat -> Rabs(y n) <= sum_f_R0 (fun j => Rabs (a n j * x j)) (pred N)
                                                + Series (fun j => Rabs (a n (N + j)%nat * x (N +j)%nat)))
     by (intros; unfold y; eapply Rle_trans; try (apply Series_Rabs; trivial);
@@ -139,9 +147,55 @@ Proof.
        + apply (ex_series_scal_l) with (c0 := eps/(2*c))(a0 := fun j => Rabs(a n (N0+1+j)%nat)).
          now rewrite <-(ex_series_incr_n) with (n0 := (N0 + 1)%nat)(a0:=fun j => Rabs (a n j)).
      }
-     eapply Rle_lt_trans; eauto.
-     rewrite Series_scal_l. rewrite Rmult_comm.
-     apply Rmult_lt_compat_r; eauto; try(apply RIneq.Rdiv_lt_0_compat;lra).
-     generalize (Series_shift_le (fun n0 => Rabs_pos _) (hb1 n) (N0 + 1)); intros.
-     eapply Rle_lt_trans; eauto.
+  eapply Rle_lt_trans; eauto.
+  rewrite Series_scal_l. rewrite Rmult_comm.
+  apply Rmult_lt_compat_r; eauto; try(apply RIneq.Rdiv_lt_0_compat;lra).
+  generalize (Series_shift_le (fun n0 => Rabs_pos _) (hb1 n) (N0 + 1)); intros.
+  eapply Rle_lt_trans; eauto.
 Qed.
+
+Global Instance Series_proper :
+  Proper (pointwise_relation _ eq  ==> eq) (Series).
+Proof.
+  unfold Proper, pointwise_relation, respectful.
+  apply Series_ext.
+Qed.
+
+Global Instance is_lim_seq_proper:
+  Proper (pointwise_relation _ eq ==> eq ==> iff) (is_lim_seq).
+Proof.
+  unfold Proper, pointwise_relation, respectful.
+  intros.
+  split; subst; apply is_lim_seq_ext; eauto.
+Qed.
+
+Lemma is_lim_seq_sub_zero (x : nat -> R) (x0 : R) :
+  is_lim_seq x x0 <-> is_lim_seq (fun j => x j - x0) 0.
+Proof.
+  split; intros.
+  + rewrite is_lim_seq_Reals in *.
+    unfold Un_cv,R_dist. now setoid_rewrite Rminus_0_r.
+  + rewrite is_lim_seq_Reals in *.
+    unfold Un_cv, R_dist in H. now setoid_rewrite Rminus_0_r in H.
+Qed.
+
+Lemma ash_6_1_1_b {x : nat -> R}{a : nat -> nat -> R} (ha1 : forall j, is_lim_seq (fun n => (a n j)) 0)
+      (hb1 : forall n, ex_series(fun j => Rabs(a n j)))
+      (hb2 : exists c, forall n, Series (fun j => Rabs (a n j)) < c)
+      (hx1 : bounded x) (x0 : R) (hx2 : is_lim_seq x x0)
+      (ha2 : is_lim_seq (fun n => Series (fun j => a n j)) 1) :
+    let y := fun n => Series (fun j => (a n j)*(x j)) in is_lim_seq y x0.
+Proof.
+  intros y. unfold y.
+  assert (hxx : is_lim_seq (fun j => x j - x0) 0).
+  {
+    replace 0 with (x0 - x0) by lra.
+    apply is_lim_seq_minus'; auto.
+    apply is_lim_seq_const.
+  }
+  generalize (ash_6_1_1_a ha1 hb1 hb2 (is_lim_seq0_bounded _ hxx) hxx); intros.
+  unfold y in H.
+  setoid_rewrite Rmult_minus_distr_l in H.
+  replace x0 with (1*x0) by lra.
+  rewrite is_lim_seq_sub_zero.
+Admitted.
