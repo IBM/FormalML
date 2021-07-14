@@ -191,6 +191,24 @@ Proof.
   split; subst; apply is_lim_seq_ext; eauto.
 Qed.
 
+Global Instance Lim_seq_proper:
+  Proper (pointwise_relation _ eq ==> eq) (Lim_seq).
+Proof.
+  unfold Proper, pointwise_relation, respectful; intros.
+  now apply Lim_seq_ext.
+Qed.
+
+Check ex_lim_seq.
+
+Global Instance ex_lim_seq_proper:
+  Proper (pointwise_relation _ eq ==> iff) (ex_lim_seq).
+Proof.
+  unfold Proper,pointwise_relation, respectful; intros.
+  split; intros.
+  + eapply ex_lim_seq_ext; eauto.
+  + symmetry in H. eapply ex_lim_seq_ext; eauto.
+Qed.
+
 Lemma is_lim_seq_sub_zero (x : nat -> R) (x0 : R) :
   is_lim_seq x x0 <-> is_lim_seq (fun j => x j - x0) 0.
 Proof.
@@ -201,6 +219,15 @@ Proof.
     unfold Un_cv, R_dist in H. now setoid_rewrite Rminus_0_r in H.
 Qed.
 
+Lemma Rbar_minus_eq_zero_iff ( x y : Rbar ): Rbar_minus x y = 0 <-> x = y.
+Proof.
+  split; intros; try (subst; now apply Rbar_minus_eq_0).
+  destruct x; destruct y; (simpl in H; try congruence).
+  rewrite Rbar_finite_eq.
+  rewrite Rbar_finite_eq in H.
+  lra.
+Qed.
+
 Lemma ash_6_1_1_b {x : nat -> R}{a : nat -> nat -> R} (ha1 : forall j, is_lim_seq (fun n => (a n j)) 0)
       (hb1 : forall n, ex_series(fun j => Rabs(a n j)))
       (hb2 : exists c, forall n, Series (fun j => Rabs (a n j)) < c)
@@ -209,6 +236,18 @@ Lemma ash_6_1_1_b {x : nat -> R}{a : nat -> nat -> R} (ha1 : forall j, is_lim_se
     let y := fun n => Series (fun j => (a n j)*(x j)) in is_lim_seq y x0.
 Proof.
   intros y. unfold y.
+  destruct hx1 as [M HM].
+  assert (hy1 : forall n j, Rabs (a n j * x j) <= M*Rabs(a n j))
+    by (intros ; rewrite Rabs_mult, Rmult_comm ;
+        apply Rmult_le_compat_r; auto; apply Rabs_pos).
+  assert (hy2 : forall n M, ex_series(fun j => M*Rabs(a n j)))
+    by (intros; now apply (ex_series_scal_l) with (a0 := fun j => Rabs(a n j))).
+  assert (hy3 : forall n, ex_series (fun j : nat => Rabs(a n j * x j))).
+  {
+    intros n.
+    apply (ex_series_le (fun j => Rabs (a n j * x j)) (fun j => M*Rabs(a n j))); trivial.
+    intros. rewrite Rabs_Rabsolu; auto.
+  }
   assert (hxx : is_lim_seq (fun j => x j - x0) 0).
   {
     replace 0 with (x0 - x0) by lra.
@@ -217,8 +256,35 @@ Proof.
   }
   generalize (ash_6_1_1_a ha1 hb1 hb2 (is_lim_seq0_bounded _ hxx) hxx); intros.
   unfold y in H.
+  apply is_lim_seq_unique in H.
+  apply is_lim_seq_unique in hx2.
+  apply is_lim_seq_unique in ha2.
+  apply is_lim_seq_unique in hxx.
   setoid_rewrite Rmult_minus_distr_l in H.
-  replace x0 with (1*x0) by lra.
-  rewrite is_lim_seq_sub_zero.
-
+  assert (H1 : Lim_seq (fun n => Series (fun j => a n j * x j - a n j * x0))
+               = Lim_seq (fun n => Series( fun j => a n j * x j ) - Series( fun j => a n j* x0 ))).
+  {
+    apply Lim_seq_ext; intros.
+    apply Series_minus.
+    + apply ex_series_Rabs.
+      apply (ex_series_le (fun j => Rabs (a n j * x j)) (fun j => M*Rabs(a n j))); trivial.
+      intros. rewrite Rabs_Rabsolu; auto.
+    + apply ex_series_scal_r. now apply ex_series_Rabs.
+  }
+  rewrite H in H1. clear H.
+  symmetry in H1.
+  rewrite Lim_seq_minus in H1.
+  + rewrite Rbar_minus_eq_zero_iff in H1.
+    setoid_rewrite Series_scal_r in H1.
+    setoid_rewrite Lim_seq_scal_r in H1.
+    setoid_rewrite ha2 in H1.
+    rewrite Rbar_mult_1_l in H1.
+    rewrite <-H1. apply Lim_seq_correct.
+    admit.
+  + admit.
+  + setoid_rewrite Series_scal_r.
+    apply ex_lim_seq_scal_r.
+    exists 1. rewrite is_lim_seq_Reals.
+    admit.
+  +
 Admitted.
