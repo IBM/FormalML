@@ -228,6 +228,15 @@ Proof.
   lra.
 Qed.
 
+Lemma is_lim_seq_seq_minus_1 {a b : nat -> R} (a0 : R)
+      (ha : is_lim_seq a a0) (hb : is_lim_seq b 1) : is_lim_seq (fun j => a j - b j * a0) 0.
+Proof.
+  unfold Rminus.
+  replace 0 with (a0 - 1*a0) by lra.
+  apply is_lim_seq_minus'; trivial.
+  apply (is_lim_seq_scal_r b a0 1 hb).
+Qed.
+
 Lemma ash_6_1_1_b {x : nat -> R}{a : nat -> nat -> R} (ha1 : forall j, is_lim_seq (fun n => (a n j)) 0)
       (hb1 : forall n, ex_series(fun j => Rabs(a n j)))
       (hb2 : exists c, forall n, Series (fun j => Rabs (a n j)) < c)
@@ -256,35 +265,24 @@ Proof.
   }
   generalize (ash_6_1_1_a ha1 hb1 hb2 (is_lim_seq0_bounded _ hxx) hxx); intros.
   unfold y in H.
-  apply is_lim_seq_unique in H.
-  apply is_lim_seq_unique in hx2.
-  apply is_lim_seq_unique in ha2.
-  apply is_lim_seq_unique in hxx.
   setoid_rewrite Rmult_minus_distr_l in H.
-  assert (H1 : Lim_seq (fun n => Series (fun j => a n j * x j - a n j * x0))
-               = Lim_seq (fun n => Series( fun j => a n j * x j ) - Series( fun j => a n j* x0 ))).
-  {
-    apply Lim_seq_ext; intros.
+  apply is_lim_seq_ext with (v := fun n => Series(fun j => a n j * x j) - Series(fun j => a n j * x0)) in H.
+  + setoid_rewrite Series_scal_r in H.
+    apply is_lim_seq_plus with (l := x0) (l1 := x0) (u := fun n => Series (a n)*x0) in H.
+    -- setoid_rewrite Rplus_comm in H.
+       setoid_rewrite Rplus_assoc in H.
+      setoid_rewrite Rplus_opp_l in H.
+      now setoid_rewrite Rplus_0_r in H.
+    --
+      generalize (is_lim_seq_scal_r _ x0 _ ha2); intros.
+      simpl in H0. now rewrite Rmult_1_l in H0.
+    -- unfold is_Rbar_plus.
+       simpl. f_equal. rewrite Rbar_finite_eq.
+       lra.
+  + intros n.
     apply Series_minus.
-    + apply ex_series_Rabs.
-      apply (ex_series_le (fun j => Rabs (a n j * x j)) (fun j => M*Rabs(a n j))); trivial.
-      intros. rewrite Rabs_Rabsolu; auto.
-    + apply ex_series_scal_r. now apply ex_series_Rabs.
-  }
-  rewrite H in H1. clear H.
-  symmetry in H1.
-  rewrite Lim_seq_minus in H1.
-  + rewrite Rbar_minus_eq_zero_iff in H1.
-    setoid_rewrite Series_scal_r in H1.
-    setoid_rewrite Lim_seq_scal_r in H1.
-    setoid_rewrite ha2 in H1.
-    rewrite Rbar_mult_1_l in H1.
-    rewrite <-H1. apply Lim_seq_correct.
-    admit.
-  + admit.
-  + setoid_rewrite Series_scal_r.
-    apply ex_lim_seq_scal_r.
-    exists 1. rewrite is_lim_seq_Reals.
-    admit.
-  +
-Admitted.
+    ** apply ex_series_Rabs.
+       apply (ex_series_le (fun j => Rabs (a n j * x j)) (fun j => M*Rabs(a n j))); trivial.
+       intros. rewrite Rabs_Rabsolu; auto.
+    ** apply ex_series_scal_r. now apply ex_series_Rabs.
+Qed.
