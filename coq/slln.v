@@ -284,16 +284,16 @@ Proof.
     ** apply ex_series_scal_r. now apply ex_series_Rabs.
 Qed.
 
-(*
-Lemma series_partial_sums_bounded (a : nat -> nat -> R) :
-  (exists c, forall n, sum_n (fun j => Rabs (a n j)) n <= c) ->
-  exists c, forall n,
+Lemma Lim_seq_partial_sums_bounded (a : nat -> nat -> R) :
+  (exists (c:R), forall n n0, sum_n (fun j => Rabs (a n j)) n0 <= c) ->
+  exists (c:R), forall n,
       ex_series (fun j => Rabs (a n j)) /\
-      Series (fun j => Rabs (a n j)) <= c.
+      Rbar_le (Lim_seq (sum_n (fun j => Rabs (a n j)))) c.
 Proof.
   intros.
   destruct H as [c ?].
   exists c; intros.
+  unfold Series.
   split.
   - rewrite <- ex_finite_lim_series.
     rewrite ex_finite_lim_seq_correct.
@@ -304,19 +304,53 @@ Proof.
       unfold plus; simpl.
       apply Rplus_le_pos_l.
       apply Rabs_pos.
-    + 
-*)      
-
+    + apply is_finite_Lim_bounded with (m := 0) (M := c).
+      intros.
+      split.
+      * apply sum_n_nneg.
+        intros.
+        apply Rabs_pos.
+      * apply H.
+  - replace (Rbar.Finite c) with (Lim_seq (fun _ => c)) by apply Lim_seq_const.
+    apply Lim_seq_le_loc.
+    exists (0%nat).
+    now intros.
+ Qed.
+    
+Lemma Series_partial_sums_bounded (a : nat -> nat -> R) :
+  (exists (c:R), forall n n0, sum_n (fun j => Rabs (a n j)) n0 <= c) ->
+  exists (c:R), forall n,
+      ex_series (fun j => Rabs (a n j)) /\
+      Series (fun j => Rabs (a n j)) <= c.
+Proof.
+  intros.
+  destruct (Lim_seq_partial_sums_bounded _ H) as [c ?].
+  exists c; intros.
+  destruct (H0 n).
+  split; trivial.
+  unfold Series.
+  destruct (Lim_seq (sum_n (fun j : nat => Rabs (a n j)))).
+  - now simpl in H2.
+  - now simpl in H2.
+  - simpl.
+    destruct (H0 n).
+    generalize (Lim_seq_pos (sum_n (fun j : nat => Rabs (a n j)))); intros.
+    cut_to H5.
+    + apply (Rbar_le_trans _ _ _ H5 H4).
+    + intros.
+      apply sum_n_nneg; intros.
+      apply Rabs_pos.
+ Qed.
+    
 Lemma sum_n_sum_f_clipped (f : nat -> R) (N : nat) :
   forall (n:nat), 
     (n >= N)%nat ->
-    sum_f_R0 f N = sum_n (fun j => if (le_dec j N) then (f j) else 0) n.
+    sum_n f N = sum_n (fun j => if (le_dec j N) then (f j) else 0) n.
 Proof.
   intros.
   replace (n) with (N + (n - N))%nat by lia.
   induction (n-N)%nat.
-  - rewrite <- sum_n_Reals.
-    replace (N + 0)%nat with N by lia.
+  - replace (N + 0)%nat with N by lia.
     apply sum_n_ext_loc.
     intros.
     match_destr; tauto.
@@ -328,6 +362,7 @@ Proof.
     + unfold plus; simpl.
       now rewrite Rplus_0_r.
   Qed.
+(*rewrite <- sum_n_Reals.*)
 
 (* Toeplitz lemma. *)
 Lemma ash_6_1_2  {a x : nat -> R} {x0 : R}(ha : forall n, 0 <= a n)
@@ -354,6 +389,7 @@ Lemma ash_6_1_2  {a x : nat -> R} {x0 : R}(ha : forall n, 0 <= a n)
       exists n.
       intros.
       rewrite <- sum_n_sum_f_clipped with (N := n); try lia.
+      rewrite sum_n_Reals.
       unfold Rdiv.
       rewrite <- scal_sum.
       apply Rinv_l_sym.
@@ -372,6 +408,7 @@ Lemma ash_6_1_2  {a x : nat -> R} {x0 : R}(ha : forall n, 0 <= a n)
         rewrite sum_n_ext with
             (b := (fun j : nat => (if le_dec j n then (((a j)*(x j)) / sum_f_R0 a n) else 0))).
         * rewrite <- sum_n_sum_f_clipped with (N := n); try lia.
+          rewrite sum_n_Reals.
           unfold Rdiv.
           rewrite <- scal_sum.
           now rewrite Rmult_comm at 1.
