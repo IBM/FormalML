@@ -311,13 +311,32 @@ Proof.
     + 
 *)      
   
+Lemma sum_n_sum_f_R0 (f : nat -> R) (N : nat) :
+  sum_f_R0 f N = sum_n f N.
+Proof.
+  Admitted.
+
 Lemma sum_n_sum_f_clipped (f : nat -> R) (N : nat) :
   forall (n:nat), 
     (n >= N)%nat ->
     sum_f_R0 f N = sum_n (fun j => if (le_dec j N) then (f j) else 0) n.
 Proof.
   intros.
-  Admitted.
+  replace (n) with (N + (n - N))%nat by lia.
+  induction (n-N)%nat.
+  - rewrite sum_n_sum_f_R0.
+    replace (N + 0)%nat with N by lia.
+    apply sum_n_ext_loc.
+    intros.
+    match_destr; tauto.
+  - replace (N + S n0)%nat with (S (N + n0))%nat by lia.
+    rewrite sum_Sn.
+    match_destr.
+    + assert ( S N <= S (N + n0))%nat by lia.
+      lia.
+    + unfold plus; simpl.
+      now rewrite Rplus_0_r.
+  Qed.
 
 (* Toeplitz lemma. *)
 Lemma ash_6_1_2  {a x : nat -> R} {x0 : R}(ha : forall n, 0 <= a n)
