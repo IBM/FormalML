@@ -177,6 +177,7 @@ Proof.
   eapply Rle_lt_trans; eauto.
 Qed.
 
+(* Move these instances to RealAdd. *)
 Global Instance Series_proper :
   Proper (pointwise_relation _ eq  ==> eq) (Series).
 Proof.
@@ -198,8 +199,6 @@ Proof.
   unfold Proper, pointwise_relation, respectful; intros.
   now apply Lim_seq_ext.
 Qed.
-
-Check ex_lim_seq.
 
 Global Instance ex_lim_seq_proper:
   Proper (pointwise_relation _ eq ==> iff) (ex_lim_seq).
@@ -272,19 +271,16 @@ Proof.
     apply is_lim_seq_plus with (l := x0) (l1 := x0) (u := fun n => Series (a n)*x0) in H.
     -- setoid_rewrite Rplus_comm in H.
        setoid_rewrite Rplus_assoc in H.
-      setoid_rewrite Rplus_opp_l in H.
-      now setoid_rewrite Rplus_0_r in H.
-    --
-      generalize (is_lim_seq_scal_r _ x0 _ ha2); intros.
-      simpl in H0. now rewrite Rmult_1_l in H0.
+       setoid_rewrite Rplus_opp_l in H.
+       now setoid_rewrite Rplus_0_r in H.
+    -- generalize (is_lim_seq_scal_r _ x0 _ ha2); intros.
+       simpl in H0. now rewrite Rmult_1_l in H0.
     -- unfold is_Rbar_plus.
        simpl. f_equal. rewrite Rbar_finite_eq.
        lra.
   + intros n.
     apply Series_minus.
-    ** apply ex_series_Rabs.
-       apply (ex_series_le (fun j => Rabs (a n j * x j)) (fun j => M*Rabs(a n j))); trivial.
-       intros. rewrite Rabs_Rabsolu; auto.
+    ** now apply ex_series_Rabs.
     ** apply ex_series_scal_r. now apply ex_series_Rabs.
 Qed.
 
