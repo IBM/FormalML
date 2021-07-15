@@ -286,3 +286,17 @@ Proof.
        intros. rewrite Rabs_Rabsolu; auto.
     ** apply ex_series_scal_r. now apply ex_series_Rabs.
 Qed.
+
+
+(* Toeplitz lemma. *)
+Lemma ash_6_1_2  {a x : nat -> R} {x0 : R}(ha : forall n, 0 <= a n)
+      (hb1 : forall n, 0 < sum_f_R0 a n)(hb2 : is_lim_seq (sum_f_R0 a) p_infty)  (hx : is_lim_seq x x0):
+is_lim_seq (fun n => (sum_f_R0 (fun j => a j * x j) n)/(sum_f_R0 a n)) x0.
+Admitted.
+
+
+(* Kronecker Lemma *)
+Lemma ash_6_1_3 {b x : nat -> R} (hb1 : forall n, 0 < b n < b (S n)) (hb2 : is_lim_seq b p_infty)
+      (hx : ex_series x):
+  is_lim_seq (fun n => (sum_f_R0 (fun j => b j * x j) n)/(b n)) 0.
+Admitted.
