@@ -310,11 +310,6 @@ Proof.
       apply Rabs_pos.
     + 
 *)      
-  
-Lemma sum_n_sum_f_R0 (f : nat -> R) (N : nat) :
-  sum_f_R0 f N = sum_n f N.
-Proof.
-  Admitted.
 
 Lemma sum_n_sum_f_clipped (f : nat -> R) (N : nat) :
   forall (n:nat), 
@@ -324,7 +319,7 @@ Proof.
   intros.
   replace (n) with (N + (n - N))%nat by lia.
   induction (n-N)%nat.
-  - rewrite sum_n_sum_f_R0.
+  - rewrite <- sum_n_Reals.
     replace (N + 0)%nat with N by lia.
     apply sum_n_ext_loc.
     intros.
