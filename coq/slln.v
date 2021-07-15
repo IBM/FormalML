@@ -20,24 +20,25 @@ Proof.
   now specialize (Hc (exist _ n H)).
 Qed.
 
-Lemma is_lim_seq0_bounded (x : nat -> R): is_lim_seq x 0 -> bounded x.
+Lemma is_lim_seq_bounded (x : nat -> R) (c:R) : is_lim_seq x c -> bounded x.
 Proof.
   intros Hx.
   rewrite <- is_lim_seq_spec in Hx.
   unfold is_lim_seq' in Hx.
   destruct (Hx posreal_one).
   destruct (fin_seq_bounded x x0).
-  exists (Rmax x1 1); intros.
+  exists (Rmax x1 ((Rabs c)+1)); intros.
   destruct (lt_dec n x0).
   - eapply Rle_trans.
     + apply H0; lia.
     + apply Rmax_l.
   - left.
-    eapply Rlt_le_trans.
-    + specialize (H n).
-      rewrite Rminus_0_r in H.
-      apply H; lia.
-    + apply Rmax_r.
+    assert (x0 <= n)%nat by lia.
+    specialize (H n H1).
+    generalize (Rabs_triang_inv (x n) c); intros.
+    apply Rlt_le_trans with (r2 := (Rabs c)+1); [|apply Rmax_r].
+    simpl in H.
+    lra.
   Qed.
 
 Lemma sum_f_R0_Rabs_pos (x : nat -> R) : forall N, 0 <= sum_f_R0 (fun j => Rabs (x j)) N.
@@ -263,7 +264,7 @@ Proof.
     apply is_lim_seq_minus'; auto.
     apply is_lim_seq_const.
   }
-  generalize (ash_6_1_1_a ha1 hb1 hb2 (is_lim_seq0_bounded _ hxx) hxx); intros.
+  generalize (ash_6_1_1_a ha1 hb1 hb2 (is_lim_seq_bounded _ 0 hxx) hxx); intros.
   unfold y in H.
   setoid_rewrite Rmult_minus_distr_l in H.
   apply is_lim_seq_ext with (v := fun n => Series(fun j => a n j * x j) - Series(fun j => a n j * x0)) in H.
@@ -287,12 +288,118 @@ Proof.
     ** apply ex_series_scal_r. now apply ex_series_Rabs.
 Qed.
 
+(*
+Lemma series_partial_sums_bounded (a : nat -> nat -> R) :
+  (exists c, forall n, sum_n (fun j => Rabs (a n j)) n <= c) ->
+  exists c, forall n,
+      ex_series (fun j => Rabs (a n j)) /\
+      Series (fun j => Rabs (a n j)) <= c.
+Proof.
+  intros.
+  destruct H as [c ?].
+  exists c; intros.
+  split.
+  - rewrite <- ex_finite_lim_series.
+    rewrite ex_finite_lim_seq_correct.
+    split.
+    + apply ex_lim_seq_incr.
+      intros.
+      rewrite sum_Sn.
+      unfold plus; simpl.
+      apply Rplus_le_pos_l.
+      apply Rabs_pos.
+    + 
+*)      
+  
+Lemma sum_n_sum_f_clipped (f : nat -> R) (N : nat) :
+  forall (n:nat), 
+    (n >= N)%nat ->
+    sum_f_R0 f N = sum_n (fun j => if (le_dec j N) then (f j) else 0) n.
+Proof.
+  intros.
+  Admitted.
 
 (* Toeplitz lemma. *)
 Lemma ash_6_1_2  {a x : nat -> R} {x0 : R}(ha : forall n, 0 <= a n)
       (hb1 : forall n, 0 < sum_f_R0 a n)(hb2 : is_lim_seq (sum_f_R0 a) p_infty)  (hx : is_lim_seq x x0):
-is_lim_seq (fun n => (sum_f_R0 (fun j => a j * x j) n)/(sum_f_R0 a n)) x0.
-Admitted.
+  is_lim_seq (fun n => (sum_f_R0 (fun j => a j * x j) n)/(sum_f_R0 a n)) x0.
+  Proof.
+    pose (A := fun (n j : nat) => if (le_dec j  n) then (a j)/(sum_f_R0 a n) else 0).
+    assert (Apos: forall n j, 0 <= A n j).
+    {
+      intros.
+      unfold A.
+      match_destr; [|lra].
+      unfold Rdiv.
+      apply Rmult_le_pos; trivial.
+      left.
+      now apply Rinv_0_lt_compat.
+    }
+    assert (Aser: forall n, is_series (fun j => A n j) 1).
+    {
+      intros.
+      unfold A.
+      rewrite <-series_is_lim_seq.
+      apply is_lim_seq_ext_loc with (u := fun n => 1); [|apply is_lim_seq_const].
+      exists n.
+      intros.
+      rewrite <- sum_n_sum_f_clipped with (N := n); try lia.
+      unfold Rdiv.
+      rewrite <- scal_sum.
+      apply Rinv_l_sym.
+      apply Rgt_not_eq.
+      apply hb1.
+    }
+    apply is_lim_seq_ext with 
+        (u := fun n => Series (fun j => (A n j) * x j)).
+    - intros.
+      unfold Series.
+      unfold A.
+      rewrite Lim_seq_ext_loc with
+          (v := fun _ => sum_f_R0 (fun j : nat => a j * x j) n / sum_f_R0 a n).
+      + now rewrite Lim_seq_const.
+      + exists n; intros.
+        rewrite sum_n_ext with
+            (b := (fun j : nat => (if le_dec j n then (((a j)*(x j)) / sum_f_R0 a n) else 0))).
+        * rewrite <- sum_n_sum_f_clipped with (N := n); try lia.
+          unfold Rdiv.
+          rewrite <- scal_sum.
+          now rewrite Rmult_comm at 1.
+        * intros.
+          match_destr; lra.
+    - apply ash_6_1_1_b; trivial.
+      + intros.
+        unfold A.
+        apply is_lim_seq_ext_loc with (u := fun n => a j / sum_f_R0 a n).
+        * exists j.
+          intros.
+          match_destr; tauto.
+        * apply is_lim_seq_div with (l1 := a j) (l2 := p_infty); trivial.
+          -- apply is_lim_seq_const.
+          -- discriminate.
+          -- unfold is_Rbar_div; simpl.
+             unfold is_Rbar_mult; simpl.
+             now rewrite Rmult_0_r.
+     + intros.
+       apply ex_series_ext with (a0 := fun j => A n j).
+       * intros.
+         rewrite Rabs_right; trivial.
+         specialize (Apos n n0); lra.
+       * now exists 1.
+     + exists 2.
+       intros.
+       specialize (Aser n).
+       apply is_series_unique in Aser.
+       rewrite Series_ext with (b := (fun j => A n j)); [rewrite Aser;lra|].
+       intros.
+       rewrite Rabs_right; trivial.
+       specialize (Apos n n0); lra.
+     + now apply is_lim_seq_bounded with (c := x0).
+     + apply is_lim_seq_ext with ( u := fun n => 1); [|apply is_lim_seq_const].
+       intros.
+       specialize (Aser n).
+       apply is_series_unique in Aser; now symmetry.
+   Qed.
 
 
 (* Kronecker Lemma *)
