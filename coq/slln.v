@@ -321,22 +321,29 @@ Lemma Series_partial_sums_bounded (a : nat -> nat -> R) :
   (exists (c:R), forall n n0, sum_n (fun j => Rabs (a n j)) n0 <= c) ->
   exists (c:R), forall n,
       ex_series (fun j => Rabs (a n j)) /\
-      Series (fun j => Rabs (a n j)) <= c.
+      Series (fun j => Rabs (a n j)) < c.
 Proof.
   intros.
   destruct (Lim_seq_partial_sums_bounded _ H) as [c ?].
-  exists c; intros.
+  exists (c+1); intros.
   destruct (H0 n).
   split; trivial.
   unfold Series.
   destruct (Lim_seq (sum_n (fun j : nat => Rabs (a n j)))).
-  - now simpl in H2.
+  - simpl in H2.
+    eapply Rle_lt_trans.
+    + apply H2.
+    + lra.
   - now simpl in H2.
   - simpl.
     destruct (H0 n).
     generalize (Lim_seq_pos (sum_n (fun j : nat => Rabs (a n j)))); intros.
     cut_to H5.
-    + apply (Rbar_le_trans _ _ _ H5 H4).
+    + generalize (Rbar_le_trans _ _ _ H5 H4); intros.
+      simpl in H6.
+      eapply Rle_lt_trans.
+      * apply H6.
+      * lra.
     + intros.
       apply sum_n_nneg; intros.
       apply Rabs_pos.
