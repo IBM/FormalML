@@ -450,7 +450,111 @@ Lemma ash_6_1_2  {a x : nat -> R} {x0 : R}(ha : forall n, 0 <= a n)
 
 
 (* Kronecker Lemma *)
-Lemma ash_6_1_3 {b x : nat -> R} (hb1 : forall n, 0 < b n < b (S n)) (hb2 : is_lim_seq b p_infty)
+Lemma ash_6_1_3 {b x : nat -> R} (hb0: b (0%nat) = 0) (hb1 : forall n, 0 < b (S n) < b (S (S n))) (hb2 : is_lim_seq b p_infty)
       (hx : ex_series x):
-  is_lim_seq (fun n => (sum_f_R0 (fun j => b j * x j) n)/(b n)) 0.
-Admitted.
+  is_lim_seq (fun n => (sum_f_R0 (fun j => b j * x j) (S n))/(b (S n))) 0.
+Proof.
+  pose (s := sum_f_R0 x).
+  assert (forall n, sum_f_R0 (fun j => b j * x j) (S n) = 
+                    (b (S n))*(s (S n)) - sum_f_R0 (fun j => (s j) * ((b (S j)) - (b j))) n).
+  {
+    intros.
+    induction n.
+    - unfold s; simpl.
+      ring_simplify; lra.
+    - replace (S (S n)) with (S (n+1)) by lia.
+      simpl.
+      replace (n+1)%nat with (S n) by lia.
+      rewrite IHn.
+      apply Rplus_eq_reg_r with (r := sum_f_R0 (fun j : nat => s j * (b (S j) - b j)) n).
+      ring_simplify.
+      apply Rplus_eq_reg_r with (r := - (b (S n) * s (S n))).
+      ring_simplify.
+      unfold s.
+      replace (S n) with (n+1)%nat by lia.
+      simpl.
+      now ring_simplify.
+   }.
+  assert (forall n, b (S n) <> 0).
+  {
+    intros.
+    apply Rgt_not_eq.
+    apply hb1.
+  }
+  assert (forall n,
+             (s (S n)) - (sum_f_R0 (fun j : nat => s j * (b (S j) - b j)) n)/(b (S n)) = 
+             (sum_f_R0 (fun j : nat => b j * x j) (S n))/(b (S n))).
+
+  {
+    intros.
+    symmetry.
+    unfold Rdiv.
+    replace (s (S n)) with ((b (S n) * s (S n)) * / b (S n)).
+    - rewrite <- Rmult_minus_distr_r.
+      now apply Rmult_eq_compat_r.
+    - now field_simplify.
+  }
+  assert (bser: forall n, b (S n) - b (0%nat) = sum_f_R0 (fun j : nat => b (S j) - b j) n).
+  {
+    induction n.
+    - now simpl.
+    - simpl.
+      rewrite <- IHn.
+      lra.
+  }
+  destruct hx.
+  apply (is_lim_seq_ext _ _ _ H1).
+  rewrite <- series_is_lim_seq in H2.
+  apply is_lim_seq_ext with (v := s) in H2.
+  - apply is_lim_seq_minus with (l1 := x0) (l2 := x0).
+    + now rewrite is_lim_seq_incr_1 in H2.
+    + generalize (@ash_6_1_2 (fun j => b (S j) - b j) s x0); intros.
+      cut_to H3; trivial.
+      * eapply (is_lim_seq_ext _ _ x0 _ H3).
+      * intros.
+        destruct (lt_dec 0 n).
+        -- specialize (hb1 (n-1)%nat).
+           replace (S (n-1)) with (n) in hb1 by lia.
+           lra.
+        -- assert (n = 0%nat) by lia.
+           rewrite H4.
+           rewrite hb0.
+           rewrite Rminus_0_r.
+           left; apply hb1.
+      * intros.
+        rewrite <- sum_n_Reals.
+        apply sum_n_pos.
+        intros.
+        destruct (lt_dec 0 n0).
+        -- specialize (hb1 (n0-1)%nat).
+           replace (S (n0-1)) with (n0) in hb1 by lia.
+           lra.
+        -- assert (n0 = 0%nat) by lia.
+           rewrite H5.
+           rewrite hb0.
+           rewrite Rminus_0_r.
+           apply hb1.
+      * apply (is_lim_seq_ext _ _ _ bser).
+        apply is_lim_seq_minus with (l1 := p_infty) (l2 := b (0%nat)).
+        -- now apply is_lim_seq_incr_1 in hb2.
+        -- apply is_lim_seq_const.
+        -- red; simpl.
+           now red; simpl.
+    + red; simpl.
+      red; simpl.
+      now rewrite Rplus_opp_r.
+  - unfold s.
+    intros.
+    now rewrite sum_n_Reals.
+    Unshelve.
+    intros.
+    simpl.
+    specialize (bser n).
+    rewrite <- bser.
+    rewrite hb0.
+    rewrite Rminus_0_r.
+    f_equal.
+    apply sum_f_R0_ext.
+    intros.
+    now rewrite Rmult_comm.
+ Qed.
