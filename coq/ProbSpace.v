@@ -640,8 +640,8 @@ Hint Resolve ps_none ps_one : prob.
     intros p1 p2.
     rewrite ps_union by auto with prob.
     rewrite p1, p2.
-    field_simplify.
-    cut (ps_P (event_inter E1 E2) = 0); try lra.
+    ring_simplify.
+    apply Ropp_eq_0_compat.
 
     assert (HH:event_sub ((event_inter E1 E2)) E1)
       by auto with prob.
@@ -742,6 +742,21 @@ Hint Resolve ps_none ps_one : prob.
     now apply ps_union_r0.
   Qed.
 
+  Lemma ps_zero_countable_union {T:Type} 
+        {dom:SigmaAlgebra T} (prts:ProbSpace dom)
+        (coll: nat -> event dom) :
+    (forall (n:nat), ps_P (coll n) = 0) ->
+    ps_P (union_of_collection coll) = 0.
+  Proof.
+    generalize (ps_countable_boole_inequality prts coll); intros.
+    specialize (H 0).
+    apply Rle_antisym.
+    - apply H.
+      apply infinite_sum'_ext with (s1 := fun _ => 0).
+      + intros; symmetry; apply H0.
+      + apply infinite_sum'0.
+    - apply ps_pos.
+ Qed.
 
 Section conditional_probability.
 
