@@ -301,7 +301,7 @@ Section Linf.
    almost prts Rle (rvabs rv_X) (const (Linfty_norm rv_X)).
 Proof.   
   generalize (Linfty_norm_contains_finite_lim rv_X); intros.
-  exists (event_complement (Linfty_term rv_X (Linfty_norm rv_X))).
+  eexists.
   split.
   - rewrite ps_complement.
     rewrite H; lra.
