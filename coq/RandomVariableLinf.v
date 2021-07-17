@@ -41,7 +41,7 @@ Section Linf.
              {rv : RandomVariable dom borel_sa rv_X}  :=
     is_linfty : is_finite (Linfty_norm rv_X).
 
-  Lemma empty_glb_inf (E : R -> Prop) :
+ Lemma empty_glb_inf (E : R -> Prop) :
     (forall (r:R), ~ E r) -> is_glb_Rbar E p_infty.
   Proof.
     unfold is_glb_Rbar, is_lb_Rbar.
@@ -293,7 +293,24 @@ Section Linf.
                  simpl in *.
                  apply Rinv_0_lt_compat; lra.
          * simpl in *; apply Rgt_not_eq; lra.
-   Qed.
+  Qed.
+
+  Lemma almost_abs_le_Linfty_norm (rv_X : Ts -> R)
+             {rv : RandomVariable dom borel_sa rv_X} 
+             {isl: IsLinfty rv_X} :
+   almost prts Rle (rvabs rv_X) (const (Linfty_norm rv_X)).
+Proof.   
+  generalize (Linfty_norm_contains_finite_lim rv_X); intros.
+  exists (event_complement (Linfty_term rv_X (Linfty_norm rv_X))).
+  split.
+  - rewrite ps_complement.
+    rewrite H; lra.
+  - intros.
+    simpl in H0.
+    red in H0.
+    unfold const.
+    lra.
+  Qed.
 
   Instance IsLp_const_bounded (n:R) (rv_X : Ts -> R) (bound : R)
            {rv : RandomVariable dom borel_sa rv_X} :
