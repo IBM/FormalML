@@ -621,18 +621,20 @@ Global Instance srvrvmaxlist (X : nat -> Ts -> R)
        {rv : forall n, SimpleRandomVariable (X n)} (N : nat):
   SimpleRandomVariable (rvmaxlist X N).
 Proof.
-  induction N.
-  + unfold rvmaxlist.
-    simpl. apply srvconst.
-  + unfold rvmaxlist.
-    rewrite seq_S; simpl.
-    apply SimpleRandomVariable_ext
-         with (x := fun w => Rmax (Rmax_list (map (fun n => X n w) (seq 0 N))) (X (N)%nat w)).
-    -- intros a. rewrite Rmax_list_app; trivial.
-       rewrite not_nil_exists. exists 0%nat.
-       admit. (* what do I do here?? *)
-    -- apply srvmax; eauto.
-Admitted.
+  unfold rvmaxlist.
+  generalize (0%nat).
+  induction N; simpl; intros s.
+  - apply srvconst.
+  - assert (srv:SimpleRandomVariable (fun omega => Rmax (X s omega) (Rmax_list (map (fun n : nat => X n omega) (seq (S s) N))))).
+    {
+      apply srvmax; auto.
+    }
+    destruct N.
+    + simpl; auto.
+    + eapply SimpleRandomVariable_ext; try eapply srv.
+      intros ?.
+      reflexivity.
+Qed.
 
 (*Lemma ash_6_1_4 (X : nat -> Ts -> R)
     {rv : forall (n:nat), SimpleRandomVariable (X n)} :

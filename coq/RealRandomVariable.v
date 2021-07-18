@@ -943,6 +943,20 @@ Section RealRandomVariables.
       now apply in_map.
     Qed.
 
+
+    Global Instance srvchoice (c:Ts->bool) x y
+           {srvx:SimpleRandomVariable x}
+           {srvy:SimpleRandomVariable y}
+      : SimpleRandomVariable (rvchoice c x y).
+    Proof.
+      destruct srvx; destruct srvy.
+      exists (srv_vals ++ srv_vals0).
+      intros.
+      rewrite in_app_iff.
+      unfold rvchoice.
+      match_destr; auto.
+    Qed.
+    
     Global Program Instance srvmax
            (rv_X1 rv_X2 : Ts -> R)
            {srv1:SimpleRandomVariable rv_X1}
