@@ -8,6 +8,7 @@ Require Import List.
 Require Import Morphisms EquivDec.
 
 Require Import Classical ClassicalFacts.
+Require Import ClassicalChoice.
 Require Import ProofIrrelevance.
 Require Ensembles.
 
@@ -781,7 +782,43 @@ Hint Resolve ps_none ps_one : prob.
     intros.
     rewrite ps_complement, H.
     lra.
- Qed.
+  Qed.
+
+  Lemma double_countable_inter_ps_one {T:Type} 
+        {dom:SigmaAlgebra T} (prts:ProbSpace dom)
+        (f : nat -> nat -> T -> Prop) :
+    (forall (n m : nat), 
+        exists (P : event dom),
+          ps_P P = 1 /\ forall (x : T), P x -> f n m x) ->
+    exists (P : event dom),
+      ps_P P = 1 /\ forall (n m : nat), forall (x : T), P x -> f n m x.
+  Proof.
+    intros.
+
+    assert (HH: forall (nm:nat),
+               exists P : event dom, ps_P P = 1 /\ (forall x : T, P x -> (let '(n,m) := iso_b nm in f n m x))).
+    {
+      intros.
+      specialize (H (fst (iso_b nm)) (snd (iso_b nm))).
+      match_destr.
+    } 
+
+    destruct (choice _ HH) as [coll collp].
+    exists (inter_of_collection coll).
+    split.
+    - apply ps_one_countable_inter.
+      intros n.
+      now destruct (collp n).
+    - intros n m x ic.
+      destruct (collp (iso_f (n,m))) as [_ HH2].
+      match_case_in HH2.
+      intros ?? eqq1.
+      rewrite eqq1 in HH2.
+      rewrite iso_b_f in eqq1.
+      invcs eqq1.
+      apply HH2.
+      apply ic.
+  Qed.
 
 Section conditional_probability.
 
