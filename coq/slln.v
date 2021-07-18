@@ -1,9 +1,10 @@
 Require Import Lra Lia Reals RealAdd RandomVariableL2 Coquelicot.Coquelicot.
-Require Import Morphisms Finite.
+Require Import Morphisms Finite List ListAdd.
 Require Import Sums.
 Set Bullet Behavior "Strict Subproofs".
 Set Default Goal Selector "!".
 
+Import ListNotations.
 
 Definition bounded (x : nat -> R) := exists c : R, forall n, Rabs (x n) <= c.
 
@@ -565,3 +566,75 @@ Proof.
     intros.
     now rewrite Rmult_comm.
  Qed.
+
+Context {Ts:Type} {dom: SigmaAlgebra Ts}{Prts: ProbSpace dom}.
+
+Global Instance srvsum (X : nat -> Ts -> R)
+       {rv : forall (n:nat), SimpleRandomVariable (X n)} (n : nat) :
+  SimpleRandomVariable (rvsum X n).
+Proof.
+  induction n.
+  - assert (rv_eq  (rvsum X 0) (X 0%nat)).
+    + intro x.
+      unfold rvsum. cbn.
+      lra.
+    + eapply SimpleRandomVariable_ext.
+      * symmetry; apply H.
+      * apply rv.
+  - assert (rv_eq (rvsum X (S n)) (rvplus (X (S n)) (rvsum X n))).
+    + intro x.
+      unfold rvplus, rvsum.
+      rewrite sum_Sn; unfold plus; simpl.
+      lra.
+    + eapply SimpleRandomVariable_ext.
+      * rewrite H; reflexivity.
+      * apply srvplus; trivial.
+Qed.
+
+Global Instance srvite (X Y : Ts -> R){p : Prop}(dec : {p} + {~ p})
+       {rv_X : SimpleRandomVariable X} {rv_Y : SimpleRandomVariable Y} :
+  SimpleRandomVariable (if dec then X else Y).
+Proof.
+  match_destr.
+Qed.
+
+Definition rvmaxlist (X : nat -> Ts -> R) (N : nat) : Ts -> R :=
+  fun (omega : Ts) => Rmax_list (List.map (fun n => X n omega) (List.seq 0 N)).
+
+(* Move this to RealAdd. *)
+Lemma Rmax_list_app {A} {l : list A} (a : A) (f : A -> R) (hl : [] <> l) :
+  Rmax_list (map f (l ++ [a])) = Rmax (Rmax_list (map f l)) (f a).
+Proof.
+  rewrite map_app.
+  simpl.
+  assert (Rmax (Rmax_list (map f l)) (f a) = Rmax_list ((f a) :: (map f l))).
+  {
+    simpl. rewrite <-map_not_nil with (f0 := f) in hl.
+    match_destr; intuition.
+    apply Rmax_comm.
+  }
+  rewrite H.
+  now rewrite <-Permutation.Permutation_cons_append.
+Qed.
+
+Global Instance srvrvmaxlist (X : nat -> Ts -> R)
+       {rv : forall n, SimpleRandomVariable (X n)} (N : nat):
+  SimpleRandomVariable (rvmaxlist X N).
+Proof.
+  induction N.
+  + unfold rvmaxlist.
+    simpl. apply srvconst.
+  + unfold rvmaxlist.
+    rewrite seq_S; simpl.
+    apply SimpleRandomVariable_ext
+         with (x := fun w => Rmax (Rmax_list (map (fun n => X n w) (seq 0 N))) (X (N)%nat w)).
+    -- intros a. rewrite Rmax_list_app; trivial.
+       rewrite not_nil_exists. exists 0%nat.
+       admit. (* what do I do here?? *)
+    -- apply srvmax; eauto.
+Admitted.
+
+(*Lemma ash_6_1_4 (X : nat -> Ts -> R)
+    {rv : forall (n:nat), SimpleRandomVariable (X n)} :
+  let S := fun j => rvsum X j in
+forall eps:R, ps_P (rvabs(_)) <= _.*)
