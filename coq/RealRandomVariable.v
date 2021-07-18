@@ -979,6 +979,28 @@ Section RealRandomVariables.
       apply in_prod; trivial.
     Qed.
 
+    Global Instance srvsum (X : nat -> Ts -> R) 
+           {rv : forall (n:nat), SimpleRandomVariable (X n)} (n : nat) :
+      SimpleRandomVariable (rvsum X n).
+    Proof.
+      induction n.
+      - assert (rv_eq  (rvsum X 0) (X 0%nat)).
+        + intro x.
+          unfold rvsum. cbn.
+          lra.
+        + eapply SimpleRandomVariable_ext.
+          * symmetry; apply H.
+          * apply rv.
+      - assert (rv_eq (rvsum X (S n)) (rvplus (X (S n)) (rvsum X n))).
+        + intro x.
+          unfold rvplus, rvsum.
+          rewrite sum_Sn; unfold plus; simpl.
+          lra.
+        + eapply SimpleRandomVariable_ext.
+          * rewrite H; reflexivity.
+          * apply srvplus; trivial.
+    Qed.
+    
     Global Program Instance positive_part_srv'
            (rv_X : Ts -> R) 
            {srv: SimpleRandomVariable rv_X } : SimpleRandomVariable (pos_fun_part rv_X)
