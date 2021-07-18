@@ -758,6 +758,31 @@ Hint Resolve ps_none ps_one : prob.
     - apply ps_pos.
  Qed.
 
+  Lemma ps_one_countable_inter {T:Type} 
+        {dom:SigmaAlgebra T} (prts:ProbSpace dom)
+        (coll: nat -> event dom) :
+    (forall (n:nat), ps_P (coll n) = 1) ->
+    ps_P (inter_of_collection coll) = 1.
+  Proof.
+    intros.
+    assert (event_equiv (inter_of_collection coll)
+                        (event_complement 
+                           (union_of_collection 
+                              (fun n => event_complement (coll n))))).
+    {
+      intro x.
+      simpl.
+      intuition firstorder.
+      specialize (H0 n).
+      tauto.
+    }      
+    rewrite H0.
+    rewrite ps_complement, ps_zero_countable_union; try lra.
+    intros.
+    rewrite ps_complement, H.
+    lra.
+ Qed.
+
 Section conditional_probability.
 
   Context {T: Type} {σ:SigmaAlgebra T} (Ψ: ProbSpace σ).
