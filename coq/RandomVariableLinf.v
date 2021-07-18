@@ -29,9 +29,10 @@ Section Linf.
     typeclasses eauto.
   Qed.
 
-  Definition Linfty_term (rv_X : Ts -> R) {rv : RandomVariable dom borel_sa rv_X} x
+  Definition Linfty_term (rv_X : Ts -> R) {rv : RandomVariable dom borel_sa rv_X} x : event dom
     := exist _ (fun omega => (rvabs rv_X) omega > x) (sa_le_gt_rv _ _).
-  
+
+
   Definition Linfty_norm (rv_X : Ts -> R) 
              {rv : RandomVariable dom borel_sa rv_X} : Rbar :=
     Glb_Rbar (fun (x : R) =>
@@ -119,7 +120,21 @@ Section Linf.
         generalize (ps_all prts); intros.
         rewrite H in H2.
         lra.
-    Qed.                          
+    Qed.
+
+  Lemma Linfty_norm_Rbar_nneg (rv_X : Ts -> R)
+        {rv : RandomVariable dom borel_sa rv_X} :
+    Rbar_le 0 (Linfty_norm rv_X).
+  Proof.
+    intros.
+    unfold Linfty_norm, Glb_Rbar, proj1_sig.
+    match_destr.
+    destruct i as [lbx glbx].
+    apply (glbx 0).
+    intros ??.
+    apply abs_neg_psall in H.
+    apply H.
+  Qed.
 
   Lemma Linfty_norm_nneg (rv_X : Ts -> R)
         {rv : RandomVariable dom borel_sa rv_X}
@@ -127,21 +142,10 @@ Section Linf.
       0 <= Linfty_norm rv_X.
   Proof.
     intros.
-    generalize (Glb_Rbar_correct (fun x : R => ps_P (Linfty_term rv_X x) = 0)); intros.    
-    unfold is_glb_Rbar in H.
-    destruct H.
-    destruct (Rle_dec 0 (Linfty_norm rv_X)); trivial.
-    assert (0 > Linfty_norm rv_X) by lra.
-    unfold Linfty_norm in H1.
-    specialize (H0 0).
-    unfold IsLinfty, Linfty_norm in isl.
-    rewrite <- isl in H0.
-    simpl in H0.
-    cut_to H0.
-    lra.
-    unfold is_lb_Rbar; intros.
-    simpl.
-    now apply (abs_neg_psall rv_X x).
+    generalize (Linfty_norm_Rbar_nneg rv_X)
+    ; intros HH.
+    rewrite <- isl in HH.
+    apply HH.
   Qed.
 
   Lemma rvclip_almost_bounded (rv_X : Ts -> R) (c : nonnegreal)
@@ -174,6 +178,7 @@ Section Linf.
     exists x.
     now eapply rvclip_almost_bounded.
   Qed.
+
 
   Lemma zero_prob_bound
         (rv_X : Ts -> R)         
@@ -435,6 +440,439 @@ Proof.
     - apply is_lim_seq_const.
   Qed.
 
+  Lemma ps_almost_sub (P1 P2 : event dom) :
+    almost prts impl P1 P2 -> ps_P P1 <= ps_P P2.
+  Proof.
+    intros [a [??]].
+
+    rewrite <- (ps_inter_r1 prts H (A:=P1)).
+    rewrite <- (ps_inter_r1 prts H (A:=P2)).
+    apply ps_sub.
+    unfold event_inter, pre_event_inter.
+    intros ? [??]; simpl in *.
+    split; trivial.
+    now apply H0.
+  Qed.
+
+  Lemma almost_sub_event_prob0 (P1 P2 : event dom) :
+    ps_P P2 = 0 ->
+    almost prts impl P1 P2 -> ps_P P1 = 0.
+  Proof.
+    intros.
+    generalize (ps_almost_sub P1 P2 H0); intros.
+    generalize (ps_pos P1); intros.
+    lra.
+  Qed.
+
+  (* Move this *)
+  (* maybe make this just a generalzie almost_sub ? *)
+  Global Instance almost_same_lift {A B} R1 R2 (f : A -> B)
+        (p:Proper (R1 ==> R2) f) :
+    Proper (almost prts R1 ==> almost prts R2) (fun x t => f (x t)).
+  Proof.
+    intros P1 P2 [P [Pone PR1]].
+    exists P.
+    split; trivial.
+    intros ??.
+    specialize (PR1 _ H).
+    now apply p.
+  Qed.
+
+  Global Instance almost_sub_lift
+      {Td1 Td2:Type} 
+      (R1:Td1->Td1->Prop)
+      (R2:Td2->Td2->Prop)
+      (f:(Ts->Td1)->Ts->Td2)
+      (fpres: forall x y a, R1 (x a) (y a) -> R2 (f x a) (f y a))
+  : Proper (almost prts R1 ==> almost prts R2) f.
+Proof.
+  intros x1 x2 [Px [Pxall eq_onx]].
+  exists Px.
+  split; trivial.
+  intros; auto.
+Qed.
+
+    
+  Lemma Linfty_term_almost_Rle_impl rv_X1 rv_X2
+        {rv1:RandomVariable dom borel_sa rv_X1}
+        {rv2:RandomVariable dom borel_sa rv_X2} :
+    almost prts Rle (rvabs rv_X1) rv_X2 ->
+    forall a,
+      almost prts impl (Linfty_term rv_X1 a) (Linfty_term rv_X2 a).
+  Proof.
+    intros le1 a.
+    destruct le1 as [p[??]].
+    exists p.
+    split; trivial.
+    unfold Linfty_term.
+    intros x px ?.
+    unfold Linfty_term; simpl in *.
+    specialize (H0 _ px).
+    eapply Rge_gt_trans; try eapply H1.
+    eapply Rle_ge.
+    eapply Rle_trans; try eapply H0.
+    unfold rvabs.
+    apply Rle_abs.
+  Qed.
+              
+  Lemma Linfty_norm_almost_le rv_X1 rv_X2
+        {rv1:RandomVariable dom borel_sa rv_X1}
+        {rv2:RandomVariable dom borel_sa rv_X2}
+        (rle:almost prts Rle (rvabs rv_X1) rv_X2) :
+      Rbar_le (Linfty_norm rv_X1) (Linfty_norm rv_X2).
+    Proof.
+      generalize (Linfty_norm_Rbar_nneg rv_X1)
+      ; intros Hle1.
+      generalize (Linfty_norm_Rbar_nneg rv_X2)
+      ; intros Hle2.
+      unfold Linfty_norm.
+
+      unfold Glb_Rbar, proj1_sig.
+      repeat match_destr.
+      destruct i as [lb1 glb1].
+      destruct i0 as [lb2 glb2].
+      unfold is_lb_Rbar in *.
+      apply glb2.
+      intros a pa.
+      apply lb1.
+      eapply almost_sub_event_prob0; eauto.
+      now apply Linfty_term_almost_Rle_impl.
+    Qed.
+
+
+  Lemma IsLinfty_almost_le rv_X1 rv_X2
+        {rv1:RandomVariable dom borel_sa rv_X1}
+        {rv2:RandomVariable dom borel_sa rv_X2}
+        (rle:almost prts Rle (rvabs rv_X1) rv_X2)
+        {isli:IsLinfty rv_X2}
+    :
+      IsLinfty rv_X1.
+  Proof.
+    generalize (Linfty_norm_Rbar_nneg rv_X1)
+    ; intros HH1.
+
+    assert (HH3:Rbar_le (Linfty_norm rv_X1) (Linfty_norm rv_X2)).
+    {
+      now apply Linfty_norm_almost_le.
+    }
+    unfold IsLinfty in *.
+    unfold Linfty_norm in *.
+    rewrite <- isli in HH3.
+    simpl in *.
+    unfold Rbar_le in HH3.
+    match_destr_in HH1; try tauto.
+    reflexivity.
+  Qed.
+
+  Lemma Linfty_norm_const c : Linfty_norm (const c) = Rabs c.
+  Proof.
+    unfold Linfty_norm, Linfty_term.
+    rewrite Glb_Rbar_eqset with (E2:=fun x => if Rgt_dec (Rabs c) x then False else True).
+    {
+      apply is_glb_Rbar_unique.
+      red; split; intros ?.
+      - match_destr; [tauto |].
+        intros.
+        unfold Rbar_le.
+        apply Rge_le.
+        now apply Rnot_gt_ge in n.
+      - intros HH.
+        red in HH.
+        specialize (HH (Rabs c)).
+        match_destr_in HH.
+        + lra.
+        + auto.
+    }    
+    {
+      intros x; destruct (Rgt_dec (Rabs c) x).
+      - erewrite ps_proper.
+        + rewrite ps_all.
+          intuition.
+        + intros ?; simpl.
+          unfold pre_Ω; rv_unfold.
+          tauto.
+      - erewrite ps_proper.
+        + rewrite ps_none.
+          intuition.
+        + intros ?; simpl.
+          unfold pre_event_none; rv_unfold.
+          tauto.
+    }
+  Qed.
+  
+  Global Instance IsLi_const c : IsLinfty (const c).
+  Proof.
+    red.
+    now rewrite Linfty_norm_const.
+  Qed.
+
+  (*
+  Lemma Linfty_norm_scale c x (y:R) 
+    {rv_x:RandomVariable dom borel_sa x} :
+    Linfty_norm x = y ->
+    Linfty_norm (rvscale c x) = Rabs c * y.
+  Proof.
+    destruct (Req_EM_T c 0).
+    {
+      (* it is constant *)
+      admit.
+    } 
+    unfold Linfty_norm, Linfty_term; intros.
+    match type of H with
+    | Glb_Rbar ?x = _ =>    generalize (Glb_Rbar_correct x)
+                           ; rewrite H
+                           ; clear H; intros H
+    end.
+    destruct H as [HH1 HH2].
+    apply is_glb_Rbar_unique.
+    red; split; intros ??.
+    - unfold rvscale, rvabs in H; simpl in H.
+      cut (Rbar_le y (x0 / Rabs c)).
+      {
+        unfold Rbar_le.
+        intros.
+        rewrite Rmult_comm.
+        rewrite Rcomplements.Rle_div_r; trivial.
+        generalize (Rabs_pos c); intros.
+        assert (Rabs c <> 0) by now apply Rabs_no_R0.
+        lra.
+      }
+      red in HH1.
+      apply (HH1  (x0 / Rabs c)).
+      rewrite <- H.
+      apply ps_proper.
+      intros a; simpl.
+      unfold rvabs.
+      admit.
+    - 
+
+        
+      
+
+    
+    rewrite Glb_Rbar_eqset with (E2:=fun x => if Rgt_dec (Rabs c) x then False else True).
+    {
+      apply is_glb_Rbar_unique.
+      red; split; intros ?.
+      - match_destr; [tauto |].
+        intros.
+        unfold Rbar_le.
+        apply Rge_le.
+        now apply Rnot_gt_ge in n.
+      - intros HH.
+        red in HH.
+        specialize (HH (Rabs c)).
+        match_destr_in HH.
+        + lra.
+        + auto.
+    }    
+    {
+      intros x; destruct (Rgt_dec (Rabs c) x).
+      - erewrite ps_proper.
+        + rewrite ps_all.
+          intuition.
+        + intros ?; simpl.
+          unfold pre_Ω; rv_unfold.
+          tauto.
+      - erewrite ps_proper.
+        + rewrite ps_none.
+          intuition.
+        + intros ?; simpl.
+          unfold pre_event_none; rv_unfold.
+          tauto.
+    }
+  Qed.
+*)
+  Section packed.
+
+    Record LiRRV : Type
+      := LiRRV_of {
+             LiRRV_rv_X :> Ts -> R
+             ; LiRRV_rv :> RandomVariable dom borel_sa LiRRV_rv_X
+             ; LiRRV_lp :> IsLinfty LiRRV_rv_X
+           }.
+
+
+    Global Existing Instance LiRRV_rv.
+    Global Existing Instance LiRRV_lp.
+
+    Definition pack_LiRRV (rv_X:Ts -> R) {rv:RandomVariable dom borel_sa rv_X} {li:IsLinfty rv_X}
+      := LiRRV_of rv_X rv li.
+
+    (* We can view a LiRRV rv as a LpRRV for any 0<=p<infty *)
+    Definition LiRRV_LpRRV (n:nonnegreal) (rv:LiRRV)
+      : LpRRV prts n
+      := pack_LpRRV prts (LiRRV_rv_X rv).
+
+    Definition LiRRV_seq (rv1 rv2:LiRRV) (* strict equality *)
+      := rv_eq (LiRRV_rv_X rv1) (LiRRV_rv_X rv2).
+
+    Definition LiRRV_eq (rv1 rv2:LiRRV)
+      := almost prts eq rv1 rv2.
+
+    Global Instance LiRRV_seq_eq : subrelation LiRRV_seq LiRRV_eq.
+    Proof.
+      red; unfold LiRRV_seq, LiRRV_eq, rv_eq.
+      intros x y eqq.
+      now apply almost_eq_subr.
+    Qed.      
+    
+    Global Instance LiRRV_seq_equiv : Equivalence (LiRRV_seq).
+    Proof.
+      unfold LiRRV_seq.
+      apply Equivalence_pullback.
+      apply rv_eq_equiv.
+    Qed.
+
+    Global Instance LiRRV_eq_equiv : Equivalence LiRRV_eq.
+    Proof.
+      unfold LiRRV_eq.
+      constructor.
+      - intros [x?].
+        reflexivity.
+      - intros [x?] [y?] ps1; simpl in *.
+        now symmetry.
+      - intros [x??] [y??] [z??] ps1 ps2.
+        simpl in *.
+        etransitivity; eauto.
+    Qed.
+
+    Definition LiRRVconst (x:R) : LiRRV
+      := pack_LiRRV (const x).
+
+    Definition LiRRVzero : LiRRV := LiRRVconst 0.
+
+    (*
+    Program Definition LiRRVscale (x:R) (rv:LiRRV) : LiRRV
+      := pack_LiRRV (rvscale x rv).
+
+    Global Instance LiRRV_scale_sproper : Proper (eq ==> LiRRV_seq ==> LiRRV_seq) LiRRVscale.
+    Proof.
+      unfold Proper, respectful, LiRRV_eq.
+      intros ? x ? [x1??] [x2??] eqqx.
+      subst.
+      simpl in *.
+      unfold rvscale.
+      red.
+      simpl.
+      red in eqqx.
+      simpl in *.
+      now rewrite eqqx.
+    Qed.
+
+    Global Instance LiRRV_scale_proper : Proper (eq ==> LiRRV_eq ==> LiRRV_eq) LiRRVscale.
+    Proof.
+      unfold Proper, respectful, LiRRV_eq.
+      intros ? x ? [x1??] [x2??] eqqx.
+      subst.
+      simpl in *.
+      rewrite eqqx.
+      reflexivity.
+    Qed.
+
+    Definition LiRRVopp (rv:LiRRV) : LiRRV
+      := pack_LiRRV (rvopp rv).
+    
+    Global Instance LiRRV_opp_sproper : Proper (LiRRV_seq ==> LiRRV_seq) LiRRVopp.
+    Proof.
+      unfold Proper, respectful.
+      intros x y eqq.
+      generalize (LiRRV_scale_sproper (-1) _ (eq_refl _) _ _ eqq)
+      ; intros HH.
+      destruct x as [x?]
+      ; destruct y as [y?].
+      apply HH.
+    Qed.
+
+    Global Instance LiRRV_opp_proper : Proper (LiRRV_eq ==> LiRRV_eq) LiRRVopp.
+    Proof.
+      unfold Proper, respectful.
+      intros x y eqq.
+      generalize (LiRRV_scale_proper (-1) _ (eq_refl _) _ _ eqq)
+      ; intros HH.
+      destruct x as [x?]
+      ; destruct y as [y?].
+      apply HH.
+    Qed.
+
+    Lemma LiRRVopp_scale (rv:LiRRV) :
+      LiRRV_eq 
+        (LiRRVopp rv) (LiRRVscale (-1) rv).
+    Proof.
+      red.
+      reflexivity.
+    Qed.
+
+    Definition LiRRVabs (rv:LiRRV) : LiRRV
+      := pack_LiRRV (rvabs rv).
+
+    Global Instance LiRRV_abs_sproper : Proper (LiRRV_seq ==> LiRRV_seq) LiRRVabs.
+    Proof.
+      unfold Proper, respectful.
+      intros x y eqq.
+      red in eqq.
+      red; simpl.
+      now rewrite eqq.
+    Qed.
+
+    Global Instance LiRRV_abs_proper : Proper (LiRRV_eq ==> LiRRV_eq) LiRRVabs.
+    Proof.
+      unfold Proper, respectful.
+      intros x y eqq.
+      now apply almost_eq_abs_proper.
+    Qed.
+
+    Section quoted.
+
+      Definition LiRRVq : Type := quot LiRRV_eq.
+
+      Definition LiRRVq_const (x:R) : LiRRVq := Quot _ (LiRRVconst x).
+
+      Lemma LiRRVq_constE x : LiRRVq_const x = Quot _ (LiRRVconst x).
+      Proof.
+        reflexivity.
+      Qed.
+
+      Hint Rewrite LiRRVq_constE : quot.
+
+      Definition LiRRVq_zero : LiRRVq := LiRRVq_const 0.
+
+      Lemma LiRRVq_zeroE : LiRRVq_zero = LiRRVq_const 0.
+      Proof.
+        reflexivity.
+      Qed.
+
+      Hint Rewrite LiRRVq_zeroE : quot.
+
+      Definition LiRRVq_scale (x:R) : LiRRVq -> LiRRVq
+        := quot_lift _ (LiRRVscale x).
+
+      Lemma LiRRVq_scaleE x y : LiRRVq_scale x (Quot _ y)  = Quot _ (LiRRVscale x y).
+      Proof.
+        apply quot_liftE.
+      Qed.
+
+      Hint Rewrite LiRRVq_scaleE : quot.
+      
+      Definition LiRRVq_opp  : LiRRVq -> LiRRVq
+        := quot_lift _ LiRRVopp.
+
+      Lemma LiRRVq_oppE x : LiRRVq_opp (Quot _ x)  = Quot _ (LiRRVopp x).
+      Proof.
+        apply quot_liftE.
+      Qed.
+
+      Hint Rewrite LiRRVq_oppE : quot.
+      
+      Definition LiRRVq_abs  : LiRRVq -> LiRRVq
+        := quot_lift _ LiRRVabs.
+
+    End quoted.
+    
+*)
+
+  End packed.
+  
 End Linf.
 
 
