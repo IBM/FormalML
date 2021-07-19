@@ -1086,6 +1086,88 @@ Qed.
       apply HH.
     Qed.
 
+    Ltac LiRRV_simpl
+      := repeat match goal with
+                | [H : LiRRV |- _ ] => destruct H as [???]
+                end
+         ; unfold LiRRVplus, LiRRVminus, LiRRVopp, LiRRVscale, LiRRVabs
+         ; simpl.
+
+    Lemma LiRRV_plus_comm x y : LiRRV_eq (LiRRVplus x y) (LiRRVplus y x).
+    Proof.
+      red; intros.
+      LiRRV_simpl.
+      apply almost_eq_subr; intros ?.
+      unfold rvplus; lra.
+    Qed.
+    
+    Lemma LiRRV_plus_assoc (x y z : LiRRV) : LiRRV_eq (LiRRVplus x (LiRRVplus y z)) (LiRRVplus (LiRRVplus x y) z).
+    Proof.
+      red; intros.
+      LiRRV_simpl.
+      apply almost_eq_subr; intros ?.
+      unfold rvplus.
+      lra.
+    Qed.
+
+    Lemma LiRRV_plus_zero (x : LiRRV) : LiRRV_eq (LiRRVplus x (LiRRVconst 0)) x.
+    Proof.
+      red; intros.
+      LiRRV_simpl.
+      apply almost_eq_subr; intros ?.
+      unfold rvplus, const.
+      lra.
+    Qed.
+
+    Lemma LiRRV_plus_inv (x: LiRRV) : LiRRV_eq (LiRRVplus x (LiRRVopp x)) (LiRRVconst 0).
+    Proof.
+      red; intros.
+      LiRRV_simpl.
+      apply almost_eq_subr; intros ?.
+      unfold rvplus, rvopp, rvscale, const.
+      lra.
+    Qed.
+
+    Lemma LiRRV_scale_scale (x y : R) (u : LiRRV) :
+      LiRRV_eq (LiRRVscale x (LiRRVscale y u)) (LiRRVscale (x * y) u).
+    Proof.
+      red; intros.
+      LiRRV_simpl.
+      apply almost_eq_subr; intros ?.
+      unfold rvplus, rvopp, rvscale, const, mult; simpl.
+      lra.
+    Qed.
+
+    Lemma LiRRV_scale1 (u : LiRRV) :
+      LiRRV_eq (LiRRVscale one u) u.
+    Proof.
+      red; intros.
+      LiRRV_simpl.
+      apply almost_eq_subr; intros ?.
+      unfold rvplus, rvopp, rvscale, const, mult, one; simpl.
+      lra.
+    Qed.
+    
+    Lemma LiRRV_scale_plus_l (x : R) (u v : LiRRV) :
+      LiRRV_eq (LiRRVscale x (LiRRVplus u v)) (LiRRVplus (LiRRVscale x u) (LiRRVscale x v)).
+    Proof.
+      red; intros.
+      LiRRV_simpl.
+      apply almost_eq_subr; intros ?.
+      unfold rvplus, rvopp, rvscale, const, mult; simpl.
+      lra.
+    Qed.
+    
+    Lemma LiRRV_scale_plus_r (x y : R) (u : LiRRV) :
+      LiRRV_eq (LiRRVscale (x + y) u) (LiRRVplus (LiRRVscale x u) (LiRRVscale y u)).
+    Proof.
+      red; intros.
+      LiRRV_simpl.
+      apply almost_eq_subr; intros ?.
+      unfold rvplus, rvopp, rvscale, const, mult; simpl.
+      lra.
+    Qed.
+    
     Section quoted.
 
       Definition LiRRVq : Type := quot LiRRV_eq.
@@ -1158,6 +1240,62 @@ Qed.
 
       Hint Rewrite LiRRVq_minusE : quot.
 
+      Ltac LiRRVq_simpl
+        := repeat match goal with
+                  | [H: LiRRVq |- _ ] =>
+                    let xx := fresh H in destruct (Quot_inv H) as [xx ?]; subst H; rename xx into H
+                  end
+           ; try autorewrite with quot
+           ; try apply (@eq_Quot _ _ LiRRV_eq_equiv).
+
+      Lemma LiRRVq_minus_plus (rv1 rv2:LiRRVq) :
+        LiRRVq_minus rv1 rv2 = LiRRVq_plus rv1 (LiRRVq_opp rv2).
+      Proof.
+        LiRRVq_simpl.
+        now rewrite LiRRVminus_plus.
+      Qed.
+
+      Lemma LiRRVq_opp_scale (rv:LiRRVq) :
+        LiRRVq_opp rv = LiRRVq_scale (-1) rv.
+      Proof.
+        LiRRVq_simpl.
+        apply LiRRVopp_scale.
+      Qed.
+      
+      Lemma LiRRVq_plus_comm x y : LiRRVq_plus x y = LiRRVq_plus y x.
+      Proof.
+        LiRRVq_simpl.
+        apply LiRRV_plus_comm.
+      Qed.
+      
+      Lemma LiRRVq_plus_assoc (x y z : LiRRVq) : LiRRVq_plus x (LiRRVq_plus y z) = LiRRVq_plus (LiRRVq_plus x y) z.
+      Proof.
+        LiRRVq_simpl.
+        apply LiRRV_plus_assoc.
+      Qed.
+
+
+      Lemma LiRRVq_plus_zero (x : LiRRVq) : LiRRVq_plus x LiRRVq_zero = x.
+      Proof.
+        LiRRVq_simpl.
+        apply LiRRV_plus_zero.
+      Qed.
+
+      Lemma LiRRVq_plus_inv (x: LiRRVq) : LiRRVq_plus x (LiRRVq_opp x) = LiRRVq_zero.
+      Proof.
+        LiRRVq_simpl.
+        apply LiRRV_plus_inv.
+      Qed.
+      
+      Definition LiRRVq_AbelianGroup_mixin : AbelianGroup.mixin_of LiRRVq
+        := AbelianGroup.Mixin LiRRVq LiRRVq_plus LiRRVq_opp LiRRVq_zero
+                              LiRRVq_plus_comm LiRRVq_plus_assoc
+                              LiRRVq_plus_zero LiRRVq_plus_inv.
+
+      Canonical LiRRVq_AbelianGroup :=
+        AbelianGroup.Pack LiRRVq LiRRVq_AbelianGroup_mixin LiRRVq.
+
+      
     End quoted.
     
   End packed.
