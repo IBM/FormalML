@@ -887,6 +887,16 @@ Qed.
       apply IsLinfty_rvclip.
     Qed.
 
+    Global Instance IsLinfty_minus x y
+        {rv_x:RandomVariable dom borel_sa x} 
+        {rv_y:RandomVariable dom borel_sa y} 
+        {isli_x:IsLinfty x}
+        {isli_y:IsLinfty y} :
+      IsLinfty (rvminus x y).
+    Proof.
+      typeclasses eauto.
+    Qed.
+
   Section packed.
 
     Record LiRRV : Type
