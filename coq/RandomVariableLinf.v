@@ -1295,6 +1295,52 @@ Qed.
       Canonical LiRRVq_AbelianGroup :=
         AbelianGroup.Pack LiRRVq LiRRVq_AbelianGroup_mixin LiRRVq.
 
+      Ltac LiRRVq_simpl ::=
+        repeat match goal with
+               | [H: LiRRVq |- _ ] =>
+                 let xx := fresh H in destruct (Quot_inv H) as [xx ?]; subst H; rename xx into H
+               | [H: AbelianGroup.sort LiRRVq_AbelianGroup |- _ ] =>
+                 let xx := fresh H in destruct (Quot_inv H) as [xx ?]; subst H; rename xx into H
+               end
+        ; try autorewrite with quot
+        ; try apply (@eq_Quot _ _ LiRRV_eq_equiv).
+      
+      Lemma LiRRVq_scale_scale (x y : R_Ring) (u : LiRRVq_AbelianGroup) :
+        LiRRVq_scale x (LiRRVq_scale y u) = LiRRVq_scale (x * y) u.
+      Proof.
+        LiRRVq_simpl.
+        apply LiRRV_scale_scale.
+      Qed.
+      
+      Lemma LiRRVq_scale1 (u : LiRRVq_AbelianGroup) :
+        LiRRVq_scale one u = u.
+      Proof.
+        LiRRVq_simpl.
+        apply LiRRV_scale1.
+      Qed.
+      
+      Lemma LiRRVq_scale_plus_l (x : R_Ring) (u v : LiRRVq_AbelianGroup) :
+        LiRRVq_scale x (plus u v) = plus (LiRRVq_scale x u) (LiRRVq_scale x v).
+      Proof.
+        LiRRVq_simpl.
+        apply LiRRV_scale_plus_l.
+      Qed.
+
+      Lemma LiRRVq_scale_plus_r (x y : R_Ring) (u : LiRRVq_AbelianGroup) :
+        LiRRVq_scale (plus x y) u = plus (LiRRVq_scale x u) (LiRRVq_scale y u).
+      Proof.
+        LiRRVq_simpl.
+        apply LiRRV_scale_plus_r.
+      Qed.
+
+      Definition LiRRVq_ModuleSpace_mixin : ModuleSpace.mixin_of R_Ring LiRRVq_AbelianGroup
+        := ModuleSpace.Mixin R_Ring LiRRVq_AbelianGroup
+                             LiRRVq_scale LiRRVq_scale_scale LiRRVq_scale1
+                             LiRRVq_scale_plus_l LiRRVq_scale_plus_r.
+
+      Canonical LiRRVq_ModuleSpace :=
+        ModuleSpace.Pack R_Ring LiRRVq (ModuleSpace.Class R_Ring LiRRVq LiRRVq_AbelianGroup_mixin LiRRVq_ModuleSpace_mixin) LiRRVq.
+
       
     End quoted.
     
