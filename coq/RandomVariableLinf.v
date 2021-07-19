@@ -170,7 +170,7 @@ Section Linf.
  Qed.
 
  Lemma rvclip_almost_bounded_exists (rv_X : Ts -> R)
-        (rv : RandomVariable dom borel_sa rv_X)
+       {rv : RandomVariable dom borel_sa rv_X}
         {isl:IsLinfty rv_X} :
     exists (c:nonnegreal), almost prts eq rv_X (rvclip rv_X c).
   Proof.
@@ -340,7 +340,7 @@ Proof.
     : IsLp prts n rv_X.
   Proof.
     intros.
-    generalize (rvclip_almost_bounded_exists rv_X rv); intros.
+    generalize (rvclip_almost_bounded_exists rv_X); intros.
     destruct H as [c H0].
     generalize (rvclip_abs_le_c rv_X c); intros.
     generalize (IsLp_const_bounded n _ c (cond_nonneg _) H); intros.
@@ -613,7 +613,7 @@ Qed.
     }
   Qed.
   
-  Global Instance IsLi_const c : IsLinfty (const c).
+  Global Instance IsLinfty_const c : IsLinfty (const c).
   Proof.
     red.
     now rewrite Linfty_norm_const.
@@ -647,6 +647,17 @@ Qed.
       erewrite ps_almost_proper; [reflexivity |].
       apply Linfty_term_almost_eq.
       now symmetry.
+    Qed.
+
+    Lemma IsLinfty_almost_eq rv_X1 rv_X2
+        {rv1:RandomVariable dom borel_sa rv_X1}
+        {rv2:RandomVariable dom borel_sa rv_X2}
+        (req:almost prts eq rv_X1 rv_X2) :
+      IsLinfty rv_X1 <-> IsLinfty rv_X2.
+    Proof.
+      unfold IsLinfty.
+      erewrite Linfty_norm_almost_eq; eauto.
+      reflexivity.
     Qed.
 
   Lemma Linfty_norm_scale c x (y:R) 
@@ -746,7 +757,7 @@ Qed.
           }
   Qed.
 
-  Global Instance IsLi_scale c x
+  Global Instance IsLinfty_scale c x
          {rv_x:RandomVariable dom borel_sa x}
          {li_x:IsLinfty x}
     : IsLinfty (rvscale c x).
@@ -771,7 +782,7 @@ Qed.
     reflexivity.
   Qed.
 
-  Global Instance IsLi_abs x
+  Global Instance IsLinfty_abs x
          {rv_x:RandomVariable dom borel_sa x}
          {li_x:IsLinfty x}
     : IsLinfty (rvabs x).
@@ -780,6 +791,101 @@ Qed.
     now rewrite Linfty_norm_abs.
   Qed.
 
+  Lemma IsLinfty_abs_inv x
+         {rv_x:RandomVariable dom borel_sa x}
+         {li_x:IsLinfty (rvabs x)}
+    : IsLinfty x.
+  Proof.
+    red.
+    now rewrite <- Linfty_norm_abs.
+  Qed.
+
+  Existing Instance rvclip_rv.
+
+  Lemma Linfty_term_rvclip x c
+        {rv_x:RandomVariable dom borel_sa x} :
+    event_equiv (Linfty_term (rvclip x c) c) event_none.
+  Proof.
+    unfold rvclip, event_none, pre_event_none.
+    intros ?; simpl.
+    unfold rvabs.
+    split; intros HH; [| tauto].
+    destruct c; simpl in *.
+    match_destr_in HH.
+    - rewrite Rabs_pos_eq in HH; lra.
+    - match_destr_in HH.
+      + rewrite Rabs_Ropp in HH.
+        rewrite Rabs_pos_eq in HH; try lra.
+      + unfold Rabs in HH.
+        match_destr_in HH; lra.
+  Qed.
+              
+  Instance IsLinfty_rvclip x c 
+         {rv_x:RandomVariable dom borel_sa x} :
+    IsLinfty (rvclip x c).
+  Proof.
+    red.
+    generalize (Linfty_norm_Rbar_nneg (rvclip x c)).
+            
+    unfold Linfty_norm, Glb_Rbar, proj1_sig.
+    match_destr.
+    intros x0pos.
+    destruct i.
+    specialize (H c).
+    cut_to H.
+    - destruct x0; simpl in *
+      ; try tauto.
+      reflexivity.
+    - rewrite Linfty_term_rvclip.
+      apply ps_none.
+  Qed.
+
+  Global Instance IsLinfty_plus x y
+        {rv_x:RandomVariable dom borel_sa x} 
+        {rv_y:RandomVariable dom borel_sa y} 
+        {isli_x:IsLinfty x}
+        {isli_y:IsLinfty y} :
+    IsLinfty (rvplus x y).
+    Proof.
+      destruct (rvclip_almost_bounded_exists x) as [xc xeqq].
+      destruct (rvclip_almost_bounded_exists y) as [yc yeqq].
+      assert (almost prts eq (rvplus x y) (rvplus (rvclip x xc) (rvclip y yc)))
+        by now apply almost_eq_plus_proper.
+      apply (IsLinfty_almost_eq _ _ H).
+
+      assert (pf:0 <= xc + yc)
+        by (destruct xc; destruct yc; simpl; lra).
+
+      assert (pfle2:almost prts Rle (rvabs (rvplus (rvclip x xc) (rvclip y yc))) (rvabs (rvclip (rvabs (rvplus (rvclip x xc) (rvclip y yc))) (mknonnegreal _ pf)))).
+      {
+        apply almost_le_subr.
+        intros a.
+        rv_unfold.
+        unfold rvclip at 3; simpl.
+
+        assert (le1:Rabs (rvclip x xc a + rvclip y yc a) <= Rabs (xc + yc)).
+        {
+
+          eapply Rle_trans; try apply Rabs_triang.
+          rewrite (Rabs_pos_eq (xc + yc)); trivial.
+          generalize (rvclip_abs_bounded x xc a)
+          ; intros HH1.
+          generalize (rvclip_abs_bounded y yc a)
+          ; intros HH2.
+          lra.
+        } 
+
+
+        match_destr.
+        match_destr.
+        - rewrite Rabs_Ropp; trivial.
+        - rewrite Rabs_Rabsolu.
+          apply Rle_refl.
+      } 
+      apply (@IsLinfty_almost_le _ _  _ _ pfle2).
+      apply IsLinfty_abs.
+      apply IsLinfty_rvclip.
+    Qed.
 
   Section packed.
 
@@ -919,6 +1025,26 @@ Qed.
       now apply almost_eq_abs_proper.
     Qed.
 
+    Program Definition LiRRVplus (x y:LiRRV) : LiRRV
+      := pack_LiRRV (rvplus x y).
+
+    Global Instance LiRRV_plus_sproper : Proper (LiRRV_seq ==> LiRRV_seq ==> LiRRV_seq) LiRRVplus.
+    Proof.
+      unfold Proper, respectful.
+      intros x y eqq1 a b eqq2.
+      red in eqq1, eqq2.
+      red; simpl.
+      now rewrite eqq1, eqq2.
+    Qed.
+
+    Global Instance LiRRV_plus_proper : Proper (LiRRV_eq ==> LiRRV_eq ==> LiRRV_eq) LiRRVplus.
+    Proof.
+      unfold Proper, respectful.
+      intros x y eqq1 a b eqq2.
+      now apply almost_eq_plus_proper.
+    Qed.
+
+
     Section quoted.
 
       Definition LiRRVq : Type := quot LiRRV_eq.
@@ -964,6 +1090,23 @@ Qed.
       Definition LiRRVq_abs  : LiRRVq -> LiRRVq
         := quot_lift _ LiRRVabs.
 
+      Lemma LiRRVq_absE x : LiRRVq_abs (Quot _ x)  = Quot _ (LiRRVabs x).
+      Proof.
+        apply quot_liftE.
+      Qed.
+
+      Hint Rewrite LiRRVq_absE : quot.
+
+      Definition LiRRVq_plus  : LiRRVq -> LiRRVq -> LiRRVq
+        := quot_lift2 _ LiRRVplus.
+      
+      Lemma LiRRVq_plusE x y : LiRRVq_plus (Quot _ x) (Quot _ y) = Quot _ (LiRRVplus x y).
+      Proof.
+        apply quot_lift2E.
+      Qed.
+
+      Hint Rewrite LiRRVq_plusE : quot.
+
     End quoted.
     
   End packed.
@@ -972,13 +1115,12 @@ Qed.
   Hint Rewrite @LiRRVq_zeroE : quot.
   Hint Rewrite @LiRRVq_scaleE : quot.
   Hint Rewrite @LiRRVq_oppE : quot.
+  Hint Rewrite @LiRRVq_absE : quot.
+  Hint Rewrite @LiRRVq_plusE : quot.
       
 
   Global Arguments LiRRV : clear implicits.
   Global Arguments LiRRVq : clear implicits.
-
-  
-
   
 End Linf.
 
