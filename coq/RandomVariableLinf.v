@@ -1044,6 +1044,37 @@ Qed.
       now apply almost_eq_plus_proper.
     Qed.
 
+    Definition LiRRVminus (rv1 rv2:LiRRV) : LiRRV
+      := pack_LiRRV (rvminus rv1 rv2).
+
+    Lemma LiRRVminus_plus (rv1 rv2:LiRRV) :
+      LiRRV_seq 
+        (LiRRVminus rv1 rv2) (LiRRVplus rv1 (LiRRVopp rv2)).
+    Proof.
+      intros ?.
+      reflexivity.
+    Qed.
+    
+    Global Instance LiRRV_minus_sproper : Proper (LiRRV_seq ==> LiRRV_seq ==> LiRRV_seq) LiRRVminus.
+    Proof.
+      unfold Proper, respectful, LiRRV_seq.
+
+      intros x1 x2 eqq1 y1 y2 eqq2; simpl.
+      now rewrite eqq1, eqq2.
+    Qed.
+
+    Global Instance LiRRV_minus_proper : Proper (LiRRV_eq ==> LiRRV_eq ==> LiRRV_eq) LiRRVminus.
+    Proof.
+      unfold Proper, respectful, LiRRV_eq.
+
+      intros x1 x2 eqq1 y1 y2 eqq2.
+      
+      generalize (LiRRV_plus_proper _ _ eqq1 _ _ (LiRRV_opp_proper _ _ eqq2)) 
+      ; intros HH.
+      destruct x1 as [???]; destruct x2 as [???]
+      ; destruct y1 as [???]; destruct y2 as [???].
+      apply HH.
+    Qed.
 
     Section quoted.
 
@@ -1107,6 +1138,16 @@ Qed.
 
       Hint Rewrite LiRRVq_plusE : quot.
 
+      Definition LiRRVq_minus  : LiRRVq -> LiRRVq -> LiRRVq
+        := quot_lift2 _ LiRRVminus.
+      
+      Lemma LiRRVq_minusE x y : LiRRVq_minus (Quot _ x) (Quot _ y) = Quot _ (LiRRVminus x y).
+      Proof.
+        apply quot_lift2E.
+      Qed.
+
+      Hint Rewrite LiRRVq_minusE : quot.
+
     End quoted.
     
   End packed.
@@ -1117,6 +1158,7 @@ Qed.
   Hint Rewrite @LiRRVq_oppE : quot.
   Hint Rewrite @LiRRVq_absE : quot.
   Hint Rewrite @LiRRVq_plusE : quot.
+  Hint Rewrite @LiRRVq_minusE : quot.
       
 
   Global Arguments LiRRV : clear implicits.
