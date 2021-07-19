@@ -454,6 +454,19 @@ Proof.
     now apply H0.
   Qed.
 
+  Lemma ps_almost_proper (P1 P2 : event dom) :
+    almost prts iff P1 P2 -> ps_P P1 = ps_P P2.
+  Proof.
+    intros [a [??]].
+
+    rewrite <- (ps_inter_r1 prts H (A:=P1)).
+    rewrite <- (ps_inter_r1 prts H (A:=P2)).
+    apply ps_proper.
+    unfold event_inter, pre_event_inter; intros x; simpl.
+    specialize (H0 x).
+    tauto.
+  Qed.
+
   Lemma almost_sub_event_prob0 (P1 P2 : event dom) :
     ps_P P2 = 0 ->
     almost prts impl P1 P2 -> ps_P P1 = 0.
@@ -606,7 +619,36 @@ Qed.
     now rewrite Linfty_norm_const.
   Qed.
 
-  (*
+  Lemma Linfty_term_almost_eq  rv_X1 rv_X2
+        {rv1:RandomVariable dom borel_sa rv_X1}
+        {rv2:RandomVariable dom borel_sa rv_X2}
+        (req:almost prts eq rv_X1 rv_X2) :
+    forall x,
+      almost prts iff (Linfty_term rv_X2 x) (Linfty_term rv_X1 x).
+  Proof.
+    intros x.
+    destruct req as [p [pa HH]].
+    exists p.
+    split; trivial; intros.
+    unfold Linfty_term, rvabs; simpl.
+    rewrite (HH _ H).
+    tauto.
+  Qed.
+
+
+    Lemma Linfty_norm_almost_eq rv_X1 rv_X2
+        {rv1:RandomVariable dom borel_sa rv_X1}
+        {rv2:RandomVariable dom borel_sa rv_X2}
+        (req:almost prts eq rv_X1 rv_X2) :
+      Linfty_norm rv_X1 = Linfty_norm rv_X2.
+    Proof.
+      unfold Linfty_norm.
+      apply Glb_Rbar_eqset; intros.
+      erewrite ps_almost_proper; [reflexivity |].
+      apply Linfty_term_almost_eq.
+      now symmetry.
+    Qed.
+
   Lemma Linfty_norm_scale c x (y:R) 
     {rv_x:RandomVariable dom borel_sa x} :
     Linfty_norm x = y ->
@@ -614,8 +656,28 @@ Qed.
   Proof.
     destruct (Req_EM_T c 0).
     {
-      (* it is constant *)
-      admit.
+      subst.
+      intros.
+      erewrite (Linfty_norm_almost_eq _ (const 0)).
+      - rewrite Linfty_norm_const.
+        repeat rewrite Rabs_R0.
+        simpl.
+        f_equal.
+        lra.
+      - apply almost_eq_subr; intros ?.
+        rv_unfold.
+        f_equal.
+        lra.
+    }
+    assert (cgt:Rabs c > 0).
+    {
+      generalize (Rabs_pos c); intros.
+      assert (Rabs c <> 0) by now apply Rabs_no_R0.
+      lra.
+    } 
+    assert (cigt:/ Rabs c > 0).
+    {
+      now apply Rinv_0_lt_compat.
     } 
     unfold Linfty_norm, Linfty_term; intros.
     match type of H with
@@ -625,17 +687,15 @@ Qed.
     end.
     destruct H as [HH1 HH2].
     apply is_glb_Rbar_unique.
-    red; split; intros ??.
-    - unfold rvscale, rvabs in H; simpl in H.
+    red; split.
+    - intros ??.
+      unfold rvscale, rvabs in H; simpl in H.
       cut (Rbar_le y (x0 / Rabs c)).
       {
         unfold Rbar_le.
         intros.
         rewrite Rmult_comm.
         rewrite Rcomplements.Rle_div_r; trivial.
-        generalize (Rabs_pos c); intros.
-        assert (Rabs c <> 0) by now apply Rabs_no_R0.
-        lra.
       }
       red in HH1.
       apply (HH1  (x0 / Rabs c)).
@@ -643,46 +703,84 @@ Qed.
       apply ps_proper.
       intros a; simpl.
       unfold rvabs.
-      admit.
-    - 
+      split; intros eqq1.
+      + apply (Rmult_gt_compat_r (Rabs c)) in eqq1; trivial.
+        field_simplify in eqq1; try lra.
+        rewrite Rabs_mult.
+        lra.
+      + rewrite Rabs_mult in eqq1.
+        apply (Rmult_lt_reg_r (Rabs c)); trivial.
+        field_simplify; try lra.
+    - intros ??.
+      unfold rvscale, rvabs in *; simpl in *.
 
-        
-      
-
-    
-    rewrite Glb_Rbar_eqset with (E2:=fun x => if Rgt_dec (Rabs c) x then False else True).
-    {
-      apply is_glb_Rbar_unique.
-      red; split; intros ?.
-      - match_destr; [tauto |].
-        intros.
-        unfold Rbar_le.
-        apply Rge_le.
-        now apply Rnot_gt_ge in n.
-      - intros HH.
-        red in HH.
-        specialize (HH (Rabs c)).
-        match_destr_in HH.
-        + lra.
-        + auto.
-    }    
-    {
-      intros x; destruct (Rgt_dec (Rabs c) x).
-      - erewrite ps_proper.
-        + rewrite ps_all.
-          intuition.
-        + intros ?; simpl.
-          unfold pre_Ω; rv_unfold.
-          tauto.
-      - erewrite ps_proper.
-        + rewrite ps_none.
-          intuition.
-        + intros ?; simpl.
-          unfold pre_event_none; rv_unfold.
-          tauto.
-    }
+      unfold is_lb_Rbar in *.
+      specialize (HH2 (Rbar_div b (Rabs c))).
+      cut_to HH2.
+      + destruct b; simpl in *; trivial.
+        * rewrite Rcomplements.Rle_div_r in HH2; trivial.
+          rewrite Rmult_comm.
+          field_simplify in HH2; trivial.
+          lra.
+        * destruct (Rle_dec 0 (/ Rabs c)); try lra.
+          destruct ( Rle_lt_or_eq_dec 0 (/ Rabs c) r); try lra.
+          apply HH2.
+      + intros.
+        specialize (H (Rabs c * x0)).
+        cut_to H.
+        * destruct b; simpl in *; trivial.
+          -- rewrite Rcomplements.Rle_div_r; trivial.
+             field_simplify; lra.
+          --  tauto.
+          -- destruct (Rle_dec 0 (/ Rabs c)); try lra.
+             destruct ( Rle_lt_or_eq_dec 0 (/ Rabs c) r); try lra.
+             now red.
+        * erewrite ps_proper; try eapply H0.
+          intros ?; simpl.
+          {
+            split; intros eqq1.
+            + rewrite Rabs_mult in eqq1.
+              apply (Rmult_lt_reg_l (Rabs c)) in eqq1; trivial.
+            + rewrite Rabs_mult.
+              apply (Rmult_lt_compat_l (Rabs c)); trivial.
+          }
   Qed.
-*)
+
+  Global Instance IsLi_scale c x
+         {rv_x:RandomVariable dom borel_sa x}
+         {li_x:IsLinfty x}
+    : IsLinfty (rvscale c x).
+  Proof.
+    red.
+    red in li_x.
+    unfold is_finite in *.
+    erewrite (Linfty_norm_scale c x (real (@Linfty_norm x rv_x))); eauto.
+  Qed.
+
+  Lemma Linfty_norm_abs x  
+    {rv_x:RandomVariable dom borel_sa x} :
+    Linfty_norm (rvabs x) = Linfty_norm x.
+  Proof.
+    unfold Linfty_norm, Linfty_term.
+    apply Glb_Rbar_eqset.
+    intros.
+    erewrite ps_proper; [reflexivity |].
+    intros ?; simpl.
+    unfold rvabs.
+    rewrite Rabs_Rabsolu.
+    reflexivity.
+  Qed.
+
+  Global Instance IsLi_abs x
+         {rv_x:RandomVariable dom borel_sa x}
+         {li_x:IsLinfty x}
+    : IsLinfty (rvabs x).
+  Proof.
+    red.
+    now rewrite Linfty_norm_abs.
+  Qed.
+
+
   Section packed.
 
     Record LiRRV : Type
@@ -742,7 +840,6 @@ Qed.
 
     Definition LiRRVzero : LiRRV := LiRRVconst 0.
 
-    (*
     Program Definition LiRRVscale (x:R) (rv:LiRRV) : LiRRV
       := pack_LiRRV (rvscale x rv).
 
@@ -869,10 +966,19 @@ Qed.
 
     End quoted.
     
-*)
-
   End packed.
+
+  Hint Rewrite @LiRRVq_constE : quot.
+  Hint Rewrite @LiRRVq_zeroE : quot.
+  Hint Rewrite @LiRRVq_scaleE : quot.
+  Hint Rewrite @LiRRVq_oppE : quot.
+      
+
+  Global Arguments LiRRV : clear implicits.
+  Global Arguments LiRRVq : clear implicits.
+
+  
+
   
 End Linf.
-
 
