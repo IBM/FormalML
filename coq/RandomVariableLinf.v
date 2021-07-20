@@ -1312,6 +1312,90 @@ Qed.
       reflexivity.
     Qed.
 
+    Definition LiRRVpoint : LiRRV := LiRRVconst 0.
+
+    Definition LiRRVball (x:LiRRV) (e:R) (y:LiRRV): Prop
+        := LiRRVnorm (LiRRVminus x y) < e.
+
+    Ltac LiRRV_simpl
+      ::= repeat match goal with
+                 | [H : LiRRV |- _ ] => destruct H as [???]
+                 end;
+          unfold LiRRVball, LiRRVnorm, LiRRVplus, LiRRVminus, LiRRVopp, LiRRVscale, LiRRVnorm in *
+          ; simpl pack_LiRRV; simpl LiRRV_rv_X in *.
+
+      Global Instance LiRRV_ball_sproper : Proper (LiRRV_seq ==> eq ==> LiRRV_seq ==> iff) LiRRVball.
+      Proof.
+        intros ?? eqq1 ?? eqq2 ?? eqq3.
+        unfold LiRRVball in *.
+        rewrite <- eqq1, <- eqq2, <- eqq3.
+        reflexivity.
+      Qed.
+
+      Global Instance LiRRV_ball_proper : Proper (LiRRV_eq ==> eq ==> LiRRV_eq ==> iff) LiRRVball.
+      Proof.
+        intros ?? eqq1 ?? eqq2 ?? eqq3.
+        unfold LiRRVball in *.
+        rewrite <- eqq1, <- eqq2, <- eqq3.
+        reflexivity.
+      Qed.
+
+      Lemma LiRRV_ball_refl x (e : posreal) : LiRRVball x e x.
+      Proof.
+        LiRRV_simpl.
+        rewrite (Linfty_norm_almost_eq _ (const 0)).
+        - rewrite Linfty_norm_const.
+          rewrite Rabs_R0.
+          apply cond_pos.
+        - apply almost_eq_subr.
+          apply rvminus_self.
+      Qed.
+      
+      Lemma LiRRV_ball_sym x y e : LiRRVball x e y -> LiRRVball y e x.
+      Proof.
+        LiRRV_simpl.
+        intros.
+        rewrite <- Linfty_norm_abs in H.
+        rewrite <- Linfty_norm_abs.
+        erewrite (Linfty_norm_almost_eq _ (rvabs (rvminus LiRRV_rv_X1 LiRRV_rv_X0))); trivial.
+        apply almost_eq_subr.
+        apply rvabs_rvminus_sym.
+      Qed.
+
+      Lemma LiRRV_ball_trans x y z e1 e2 : LiRRVball x e1 y -> LiRRVball y e2 z -> LiRRVball x (e1+e2) z.
+      Proof.
+        generalize (LiRRV_norm_plus
+                      (LiRRVminus x y)
+                      (LiRRVminus y z)).
+        LiRRV_simpl.
+        intros.
+
+        erewrite (Linfty_norm_almost_eq _ (rvplus (rvminus LiRRV_rv_X2 LiRRV_rv_X1) (rvminus LiRRV_rv_X1 LiRRV_rv_X0))).
+        - eapply Rle_lt_trans; try eapply H.
+          lra.
+        - apply almost_eq_subr.
+          rv_unfold; intros ?; lra.
+      Qed.
+
+      Lemma LiRRV_close_close (x y : LiRRV) (eps : R) :
+        LiRRVnorm (LiRRVminus y x) < eps ->
+        LiRRVball x eps y.
+      Proof.
+        intros.
+        apply LiRRV_ball_sym.
+        apply H.
+      Qed.
+
+      Lemma LiRRV_norm_ball_compat (x y : LiRRV) (eps : posreal) :
+        LiRRVball x eps y -> LiRRVnorm (LiRRVminus y x) < LiRRVnorm_factor * eps.
+      Proof.
+        intros HH.
+        apply LiRRV_ball_sym in HH.
+        unfold LiRRVnorm_factor.
+        field_simplify.
+        apply HH.
+      Qed.
+      
     Section quoted.
 
       Definition LiRRVq : Type := quot LiRRV_eq.
@@ -1520,7 +1604,103 @@ Qed.
         autorewrite with quot in *.
         now apply LiRRV_norm0.
       Qed.
+
+      Definition LiRRVq_ball : LiRRVq -> R -> LiRRVq -> Prop
+        := quot_lift_ball LiRRV_eq LiRRVball.
+
+      Lemma LiRRVq_ballE x e y : LiRRVq_ball (Quot _ x) e (Quot _ y)  = LiRRVball x e y.
+      Proof.
+        apply quot_lift_ballE.
+      Qed.
+
+      Hint Rewrite LiRRVq_ballE : quot.
       
+      Definition LiRRVq_point: LiRRVq
+        := Quot _ (LiRRVpoint).
+
+      Lemma LiRRVq_ball_refl x (e : posreal) : LiRRVq_ball x e x.
+      Proof.
+        LiRRVq_simpl.
+        apply LiRRV_ball_refl.
+      Qed.
+      
+      Lemma LiRRVq_ball_sym x y e : LiRRVq_ball x e y -> LiRRVq_ball y e x.
+      Proof.
+        LiRRVq_simpl.
+        apply LiRRV_ball_sym.
+      Qed.
+
+      Lemma LiRRVq_ball_trans x y z e1 e2 : LiRRVq_ball x e1 y -> LiRRVq_ball y e2 z -> LiRRVq_ball x (e1+e2) z.
+      Proof.
+        LiRRVq_simpl.
+        apply LiRRV_ball_trans.
+      Qed.
+
+      Lemma LiRRVq_minus_minus (x y : LiRRVq) :
+        minus x y = LiRRVq_minus x y.
+      Proof.
+        unfold minus, plus, opp; simpl.
+        LiRRVq_simpl.
+        now rewrite LiRRVminus_plus.
+      Qed.
+
+      Lemma LiRRVq_close_close (x y : LiRRVq) (eps : R) :
+        LiRRVq_norm (minus y x) < eps ->
+        LiRRVq_ball x eps y.
+      Proof.
+        intros.
+        rewrite LiRRVq_minus_minus in H.
+        LiRRVq_simpl.
+        autorewrite with quot in *.
+        now apply LiRRV_close_close.
+      Qed.
+
+      Lemma LiRRVq_norm_ball_compat (x y : LiRRVq) (eps : posreal) :
+        LiRRVq_ball x eps y -> LiRRVq_norm (minus y x) < LiRRVnorm_factor * eps.
+      Proof.
+        intros.
+        rewrite LiRRVq_minus_minus.
+        LiRRVq_simpl.
+        autorewrite with quot in *.
+        now apply LiRRV_norm_ball_compat.
+      Qed.
+      
+
+      Definition LiRRVq_UniformSpace_mixin : UniformSpace.mixin_of LiRRVq
+        := UniformSpace.Mixin  LiRRVq LiRRVq_point LiRRVq_ball
+                               LiRRVq_ball_refl
+                               LiRRVq_ball_sym
+                               LiRRVq_ball_trans.
+
+      Canonical LiRRVq_UniformSpace :=
+        UniformSpace.Pack LiRRVq LiRRVq_UniformSpace_mixin LiRRVq.
+
+      Canonical LiRRVq_NormedModuleAux :=
+        NormedModuleAux.Pack R_AbsRing LiRRVq
+                             (NormedModuleAux.Class R_AbsRing LiRRVq
+                                                    (ModuleSpace.class _ LiRRVq_ModuleSpace)
+                                                    (LiRRVq_UniformSpace_mixin)) LiRRVq.
+
+
+      
+      Definition LiRRVq_NormedModule_mixin : NormedModule.mixin_of R_AbsRing LiRRVq_NormedModuleAux
+        := NormedModule.Mixin R_AbsRing LiRRVq_NormedModuleAux
+                              LiRRVq_norm
+                              LiRRVnorm_factor
+                              LiRRVq_norm_plus
+                              LiRRVq_norm_scal
+                              LiRRVq_close_close
+                              LiRRVq_norm_ball_compat
+                              LiRRVq_norm0.
+
+      Canonical LiRRVq_NormedModule :=
+        NormedModule.Pack R_AbsRing LiRRVq
+                          (NormedModule.Class R_AbsRing LiRRVq
+                                              (NormedModuleAux.class _ LiRRVq_NormedModuleAux)
+                                              LiRRVq_NormedModule_mixin)
+                          LiRRVq.
+
+
     End quoted.
     
   End packed.
