@@ -897,6 +897,64 @@ Qed.
       typeclasses eauto.
     Qed.
 
+    Lemma rvabs_triang (f g:Ts->R) :
+      rv_le (rvabs (rvplus f g)) (rvplus (rvabs f) (rvabs g)).
+    Proof.
+      rv_unfold; intros ?.
+      apply Rabs_triang.
+    Qed.
+
+
+    Global Instance Rle_pre : PreOrder Rle.
+    Proof.
+      constructor.
+      - intros ?. apply Rle_refl.
+      - intros ???. apply Rle_trans.
+    Qed.
+
+    Lemma Linfty_norm_minkowski   (x y : (Ts -> R))
+          {rv_x: RandomVariable dom borel_sa x}
+          {rv_y: RandomVariable dom borel_sa y}
+          {isli_x: IsLinfty x}
+          {isli_y: IsLinfty y} :
+      Linfty_norm (rvplus x y) <= Linfty_norm x + Linfty_norm y.
+    Proof.
+
+
+      generalize (almost_abs_le_Linfty_norm x); intros alex.
+      generalize (almost_abs_le_Linfty_norm y); intros aley.
+      generalize (almost_abs_le_Linfty_norm (rvplus x y)); intros alexy.
+      generalize (rvabs_triang x y); intros tri.
+
+      assert (le1:almost prts Rle (rvabs (rvplus x y)) (rvplus (const (Linfty_norm x)) (const (Linfty_norm y)))).
+      {
+        apply (almost_le_subr prts) in tri.
+        rewrite tri.
+        rewrite alex.
+        rewrite aley.
+        reflexivity.
+      }
+
+      assert (le2:
+        almost prts Rle (rvabs (rvplus x y))
+               (const (Linfty_norm x + Linfty_norm y))).
+      {
+        rewrite le1.
+        reflexivity.
+      }
+      generalize (Linfty_norm_almost_le _ _ le2)
+      ; intros le3.
+      rewrite Linfty_norm_const in le3.
+
+      assert (isli_xy:IsLinfty (rvplus x y)) by typeclasses eauto.
+      rewrite <- isli_xy in le3.
+      simpl in le3.
+      rewrite Rabs_pos_eq in le3; trivial.
+      apply Rplus_le_le_0_compat
+      ; now apply Linfty_norm_nneg.
+    Qed.
+      
+
   Section packed.
 
     Record LiRRV : Type
@@ -1167,7 +1225,41 @@ Qed.
       unfold rvplus, rvopp, rvscale, const, mult; simpl.
       lra.
     Qed.
+
+    Definition LiRRVnorm (rv_X:LiRRV) : R
+      := real (Linfty_norm rv_X).
+
+    Global Instance LiRRV_norm_proper : Proper (LiRRV_eq ==> eq) LiRRVnorm.
+    Proof.
+      unfold Proper, respectful, LiRRVnorm, LiRRV_eq.
+      intros.
+      f_equal.
+      now apply Linfty_norm_almost_eq.
+    Qed.
+
+    Global Instance LiRRV_norm_sproper : Proper (LiRRV_seq ==> eq) LiRRVnorm.
+    Proof.
+      unfold Proper, respectful; intros.
+      now rewrite H.
+    Qed.
     
+    Definition LiRRVnorm_factor : R := 1.
+
+    Lemma LiRRV_norm_plus (x y:LiRRV) : LiRRVnorm (LiRRVplus x y) <= LiRRVnorm x + LiRRVnorm y.
+    Proof.
+      unfold Proper, respectful, LiRRVnorm, LiRRVplus.
+      simpl.
+      destruct x; destruct y; simpl.
+      now apply Linfty_norm_minkowski.
+    Qed.
+
+(*    Lemma LiRRV_norm_scal (x:R) (y:LiRRV p) : LiRRVnorm (LiRRVscale x y) <= Rabs x * LiRRVnorm y.
+    Proof.
+      right.
+      apply LiRRV_norm_scal_strong.
+    Qed.
+*)
+
     Section quoted.
 
       Definition LiRRVq : Type := quot LiRRV_eq.
@@ -1341,6 +1433,21 @@ Qed.
       Canonical LiRRVq_ModuleSpace :=
         ModuleSpace.Pack R_Ring LiRRVq (ModuleSpace.Class R_Ring LiRRVq LiRRVq_AbelianGroup_mixin LiRRVq_ModuleSpace_mixin) LiRRVq.
 
+      Definition LiRRVq_norm : LiRRVq -> R
+        := quot_rec LiRRV_norm_proper.
+
+      Lemma LiRRVq_normE x : LiRRVq_norm (Quot _ x)  = LiRRVnorm x.
+      Proof.
+        apply quot_recE.
+      Qed.
+
+      Hint Rewrite LiRRVq_normE : quot.
+
+      Lemma LiRRVq_norm_plus (x y:LiRRVq) : LiRRVq_norm (LiRRVq_plus x y) <= LiRRVq_norm x + LiRRVq_norm y.
+      Proof.
+        LiRRVq_simpl.
+        now apply LiRRV_norm_plus.
+      Qed.
       
     End quoted.
     
@@ -1353,7 +1460,9 @@ Qed.
   Hint Rewrite @LiRRVq_absE : quot.
   Hint Rewrite @LiRRVq_plusE : quot.
   Hint Rewrite @LiRRVq_minusE : quot.
-      
+
+  Hint Rewrite LiRRVq_normE : quot.
+
 
   Global Arguments LiRRV : clear implicits.
   Global Arguments LiRRVq : clear implicits.
