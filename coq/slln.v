@@ -636,7 +636,30 @@ Proof.
       reflexivity.
 Qed.
 
-(*Lemma ash_6_1_4 (X : nat -> Ts -> R)
+Global Instance rvmaxlist_rv (X : nat -> Ts -> R)
+       {rv : forall n, RandomVariable dom borel_sa (X n)} (N : nat):
+  RandomVariable dom borel_sa (rvmaxlist X N).
+Proof.
+   unfold rvmaxlist.
+  generalize (0%nat).
+  induction N; simpl; intros s.
+  - apply rvconst.
+  - assert (srv:RandomVariable dom borel_sa (fun omega => Rmax (X s omega) (Rmax_list (map (fun n : nat => X n omega) (seq (S s) N))))).
+    {
+      apply rvmax_rv; auto.
+    }
+    destruct N.
+    + simpl; auto.
+    + eapply RandomVariable_proper; try eapply srv.
+      intros ?.
+      reflexivity.
+Qed.
+
+(*Context (X : nat -> Ts -> R) (n : nat) {rv : forall (n:nat), SimpleRandomVariable (X n)}.
+
+
+Lemma ash_6_1_4 (X : nat -> Ts -> R)(n : nat)
     {rv : forall (n:nat), SimpleRandomVariable (X n)} :
   let S := fun j => rvsum X j in
-forall eps:R, ps_P (rvabs(_)) <= _.*)
+forall eps:R, ps_P (event_ge _ (rvmaxlist_rv S n) eps) <= _.
+*)
