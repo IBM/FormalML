@@ -904,14 +904,6 @@ Qed.
       apply Rabs_triang.
     Qed.
 
-
-    Global Instance Rle_pre : PreOrder Rle.
-    Proof.
-      constructor.
-      - intros ?. apply Rle_refl.
-      - intros ???. apply Rle_trans.
-    Qed.
-
     Lemma Linfty_norm_minkowski   (x y : (Ts -> R))
           {rv_x: RandomVariable dom borel_sa x}
           {rv_y: RandomVariable dom borel_sa y}

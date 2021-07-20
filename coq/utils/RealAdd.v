@@ -21,6 +21,63 @@ Import ListNotations.
 
 Local Open Scope R.
 
+Global Instance Rle_pre : PreOrder Rle.
+Proof.
+  constructor.
+  - intros ?. apply Rle_refl.
+  - intros ???. apply Rle_trans.
+Qed.
+
+Global Instance Rge_pre : PreOrder Rle.
+Proof.
+  apply Rle_pre.
+Qed.
+
+Global Instance Rle_part : PartialOrder eq Rle.
+Proof.
+  split; intros; repeat red; unfold flip.
+  - subst. split; reflexivity.
+  - destruct H.
+    apply Rle_antisym; trivial.
+Qed.
+
+Global Instance Rge_part : PartialOrder eq Rle.
+Proof.
+  apply Rle_part.
+Qed.
+
+Global Instance Rlt_strict : StrictOrder Rlt.
+Proof.
+  constructor.
+  - intros ?.
+    apply Rlt_irrefl.
+  - intros ???.
+    apply Rlt_trans.
+Qed.
+
+Global Instance Rgt_strict : StrictOrder Rgt.
+Proof.
+  constructor.
+  - intros ?.
+    apply Rgt_irrefl.
+  - intros ???.
+    apply Rgt_trans.
+Qed.
+
+Global Instance Rlt_le_subr : subrelation Rlt Rle.
+Proof.
+  intros ???.
+  now apply Rlt_le.
+Qed.
+
+Global Instance Rgt_ge_subr : subrelation Rgt Rge.
+Proof.
+  intros ???.
+  now apply Rgt_ge.
+Qed.
+
+
+
 Lemma INR_nzero {n} :
   (n > 0)%nat -> INR n <> 0.
 Proof.
