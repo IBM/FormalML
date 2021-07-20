@@ -903,8 +903,8 @@ Qed.
       rv_unfold; intros ?.
       apply Rabs_triang.
     Qed.
-
-    Lemma Linfty_norm_minkowski   (x y : (Ts -> R))
+    
+    Lemma Linfty_norm_minkowski  (x y : (Ts -> R))
           {rv_x: RandomVariable dom borel_sa x}
           {rv_y: RandomVariable dom borel_sa y}
           {isli_x: IsLinfty x}
@@ -945,7 +945,48 @@ Qed.
       apply Rplus_le_le_0_compat
       ; now apply Linfty_norm_nneg.
     Qed.
-      
+
+    Lemma almost_eq_rvabs0 x :
+      almost prts eq (rvabs x) (const 0) <->
+      almost prts eq x (const 0).
+    Proof.
+      split; intros [p[pone peq]]
+      ; exists p; split; trivial
+      ; intros a pa
+      ; specialize (peq a pa)
+      ; rv_unfold.
+      - now apply Rcomplements.Rabs_eq_0.
+      - rewrite peq.
+        apply Rabs_R0.
+    Qed.
+    
+    Lemma Linfty_norm0 x 
+          {rv_x:RandomVariable dom borel_sa x} :
+      Linfty_norm x = 0 ->
+      almost prts eq x (const 0).
+    Proof.
+      intros HH.
+      assert (isli_x:IsLinfty x).
+      {
+        red; rewrite HH; reflexivity.
+      }
+      generalize (almost_abs_le_Linfty_norm x)
+      ; intros le1.
+      assert (le2:almost prts Rle  (fun x0 : Ts => const (Linfty_norm x) x0) (rvabs x)).
+      {
+        rewrite HH.
+        apply almost_le_subr.
+        intros ?.
+        rv_unfold.
+        apply Rabs_pos.
+      }
+      assert (eqq1:almost prts eq (rvabs x) (fun x0 : Ts => const (Linfty_norm x) x0)).
+      {
+        now apply antisymmetry.
+      }
+      rewrite HH in eqq1.
+      now apply almost_eq_rvabs0.
+    Qed.
 
   Section packed.
 
@@ -953,12 +994,12 @@ Qed.
       := LiRRV_of {
              LiRRV_rv_X :> Ts -> R
              ; LiRRV_rv :> RandomVariable dom borel_sa LiRRV_rv_X
-             ; LiRRV_lp :> IsLinfty LiRRV_rv_X
+             ; LiRRV_li :> IsLinfty LiRRV_rv_X
            }.
 
 
     Global Existing Instance LiRRV_rv.
-    Global Existing Instance LiRRV_lp.
+    Global Existing Instance LiRRV_li.
 
     Definition pack_LiRRV (rv_X:Ts -> R) {rv:RandomVariable dom borel_sa rv_X} {li:IsLinfty rv_X}
       := LiRRV_of rv_X rv li.
@@ -1245,12 +1286,31 @@ Qed.
       now apply Linfty_norm_minkowski.
     Qed.
 
-(*    Lemma LiRRV_norm_scal (x:R) (y:LiRRV p) : LiRRVnorm (LiRRVscale x y) <= Rabs x * LiRRVnorm y.
+    Lemma LiRRV_norm_scal_strong (x:R) (y:LiRRV) : LiRRVnorm (LiRRVscale x y) = Rabs x * LiRRVnorm y.
+    Proof.
+      unfold LiRRVnorm.
+      LiRRV_simpl; simpl.
+      erewrite Linfty_norm_scale; simpl.
+      - reflexivity.
+      - rewrite LiRRV_li0; reflexivity.
+    Qed.      
+
+    Lemma LiRRV_norm_scal (x:R) (y:LiRRV) : LiRRVnorm (LiRRVscale x y) <= Rabs x * LiRRVnorm y.
     Proof.
       right.
       apply LiRRV_norm_scal_strong.
     Qed.
-*)
+
+    Lemma LiRRV_norm0 (x:LiRRV) :
+        LiRRVnorm x = 0 ->
+        almost prts eq x LiRRVzero.
+    Proof.
+      unfold LiRRVnorm, LiRRVzero, LiRRVconst; intros; simpl.
+      eapply Linfty_norm0.
+      rewrite <- H.
+      rewrite LiRRV_li.
+      reflexivity.
+    Qed.
 
     Section quoted.
 
@@ -1439,6 +1499,26 @@ Qed.
       Proof.
         LiRRVq_simpl.
         now apply LiRRV_norm_plus.
+      Qed.
+
+      Lemma LiRRVq_norm_scal_strong (x:R) (y:LiRRVq) : LiRRVq_norm (LiRRVq_scale x y) = Rabs x * LiRRVq_norm y.
+      Proof.
+        LiRRVq_simpl.
+        now apply LiRRV_norm_scal_strong.
+      Qed.
+
+      Lemma LiRRVq_norm_scal x (y:LiRRVq) : LiRRVq_norm (LiRRVq_scale x y) <= Rabs x * LiRRVq_norm y.
+      Proof.
+        LiRRVq_simpl.
+        now apply LiRRV_norm_scal.
+      Qed.
+
+      Lemma LiRRVq_norm0 x : LiRRVq_norm x = 0 -> x = LiRRVq_zero.
+      Proof.
+        intros.
+        LiRRVq_simpl.
+        autorewrite with quot in *.
+        now apply LiRRV_norm0.
       Qed.
       
     End quoted.
