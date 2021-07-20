@@ -5,7 +5,7 @@ Require Import Lra Lia.
 Require Import Classical.
 Require Import Reals.
 Require Import FunctionalExtensionality.
-Require Import Coquelicot.Rbar Coquelicot.Lub Coquelicot.Lim_seq Coquelicot.Hierarchy.
+Require Import Coquelicot.Coquelicot.
 
 Require Export RandomVariableFinite RandomVariableLpR.
 Require Import quotient_space.
@@ -304,19 +304,33 @@ Section Linf.
              {rv : RandomVariable dom borel_sa rv_X} 
              {isl: IsLinfty rv_X} :
    almost prts Rle (rvabs rv_X) (const (Linfty_norm rv_X)).
-Proof.   
-  generalize (Linfty_norm_contains_finite_lim rv_X); intros.
-  eexists.
-  split.
-  - rewrite ps_complement.
-    rewrite H; lra.
-  - intros.
-    simpl in H0.
-    red in H0.
-    unfold const.
-    lra.
+  Proof.   
+    generalize (Linfty_norm_contains_finite_lim rv_X); intros.
+    eexists.
+    split.
+    - rewrite ps_complement.
+      rewrite H; lra.
+    - intros.
+      simpl in H0.
+      red in H0.
+      unfold const.
+      lra.
   Qed.
 
+  Lemma term_bound_Linfty_norm (rv_X : Ts -> R) (c : R)
+        {rv : RandomVariable dom borel_sa rv_X} :
+    ps_P (Linfty_term rv_X c) = 0 ->
+    Rbar_le (Linfty_norm rv_X) c.
+  Proof.
+    intros.
+    unfold Linfty_norm.
+    unfold Glb_Rbar, proj1_sig.
+    match_destr.
+    destruct i.
+    now specialize (H0 c H).
+  Qed.
+  
+  
   Instance IsLp_const_bounded (n:R) (rv_X : Ts -> R) (bound : R)
            {rv : RandomVariable dom borel_sa rv_X} :
     0 <= n ->
@@ -1395,7 +1409,7 @@ Qed.
         field_simplify.
         apply HH.
       Qed.
-      
+
     Section quoted.
 
       Definition LiRRVq : Type := quot LiRRV_eq.
@@ -1719,5 +1733,284 @@ Qed.
   Global Arguments LiRRV : clear implicits.
   Global Arguments LiRRVq : clear implicits.
   
+
+  Lemma Linf_sequential_uniformly_convergent
+        (f : nat -> Ts -> R)
+        {rv : forall n, RandomVariable dom borel_sa (f n)}
+        {isl : forall n, IsLinfty (f n)} :
+    (forall (eps : posreal),
+        exists (N : nat),
+          forall (n m : nat), 
+            (N <= n)%nat -> (N <= m)%nat ->
+            Linfty_norm (rvminus (f n) (f m)) < eps) ->
+    exists (P : event dom),
+      ps_P P = 1 /\
+      forall (eps : posreal),
+          exists (N : nat),
+            forall (n m : nat), 
+              (N <= n)%nat -> (N <= m)%nat ->
+              forall (x:Ts),
+                P x ->
+                rvabs (rvminus (f n) (f m)) x < eps.
+  Proof.
+    assert (forall (n m : nat),
+               exists (P : event dom),
+                 ps_P P = 1 /\
+                 forall (x : Ts), P x -> rvabs (rvminus (f n) (f m)) x <=
+                                         Linfty_norm (rvminus (f n) (f m))) by
+        (intros; apply (almost_abs_le_Linfty_norm (rvminus (f n) (f m)))).
+    intros.
+    assert (exists (P : event dom),
+               ps_P P = 1 /\
+               forall (n m : nat),
+                 forall (x : Ts), P x -> rvabs (rvminus (f n) (f m)) x <=
+                                         Linfty_norm (rvminus (f n) (f m))) by
+      now apply double_countable_inter_ps_one.
+    destruct H1 as [P [? ?]].
+    exists P.
+    split; trivial.
+    intros.
+    destruct (H0 eps) as [N ?].
+    exists N; intros.
+    eapply Rle_lt_trans; auto.
+  Qed.
+
+  Lemma uniformly_convergent_cauchy (f : nat -> Ts -> R)
+        {rv : forall n, RandomVariable dom borel_sa (f n)} :
+    (forall (eps : posreal),
+        exists (N : nat),
+          forall (n m : nat), 
+            (N <= n)%nat -> (N <= m)%nat ->
+            forall (x:Ts),
+              rvabs (rvminus (f n) (f m)) x < eps) ->
+    exists (g : Ts -> R),
+      RandomVariable dom borel_sa g /\
+      forall (eps:posreal),
+      exists (N : nat),
+      forall (n : nat), 
+        (N <= n)%nat ->
+        forall (x : Ts),
+          rvabs (rvminus g (f n)) x < eps.
+  Proof.
+    intros.
+    assert (forall x, ex_finite_lim_seq (fun n => f n x)).
+    {
+      intros.
+      apply ex_lim_seq_cauchy_corr.
+      unfold ex_lim_seq_cauchy.
+      intros.
+      destruct (H eps) as [N ?].
+      exists N; intros.
+      specialize (H0 n m H1 H2 x).
+      unfold rvabs in H0.
+      now rewrite rvminus_unfold in H0.
+    }      
+    exists (rvlim f).
+    split.
+    - now apply rvlim_rv.
+    - intros.
+      generalize (cond_pos eps); intros.
+      assert (0 < eps/2) by lra.
+      destruct (H (mkposreal _ H2)) as [N ?].
+      assert (forall (n:nat), 
+                 (N <= n)%nat ->
+                 forall (x : Ts), 
+                   Rbar_le (Lim_seq (fun n0 => Rabs (f n x - f n0 x))) (mkposreal _ H2)).
+      {
+        replace (Finite (mkposreal _ H2)) with (Lim_seq (const (mkposreal _ H2))).
+        - intros.
+          apply Lim_seq_le_loc.
+          exists N.
+          intros.
+          specialize (H3 n n0 H4 H5 x).
+          unfold rvabs in H3.
+          rewrite rvminus_unfold in H3.
+          now left.
+        - unfold const.
+          apply Lim_seq_const.
+      }
+      exists N; intros.
+      unfold rvlim.
+      unfold rvabs.
+      rewrite rvminus_unfold.
+      rewrite Rabs_minus_sym.
+      specialize (H4 n H5 x).
+      simpl in H4.
+      assert (Finite (Rabs (f n x - Lim_seq (fun n0 => f n0 x))) = 
+              Lim_seq (fun n0 => (Rabs (f n x - f n0 x)))).
+      {
+        specialize (H0 x).
+        rewrite ex_finite_lim_seq_correct in H0.
+        destruct H0.
+        assert (ex_lim_seq (fun _ => f n x)) by apply ex_lim_seq_const.
+        assert (ex_Rbar_minus (Lim_seq (fun _ => f n x)) (Lim_seq (fun n0 => f n0 x))).
+        - rewrite Lim_seq_const.
+          rewrite <- H6.
+          unfold ex_Rbar_minus, ex_Rbar_plus.
+          now simpl.
+        - rewrite Lim_seq_abs.
+          + rewrite Lim_seq_minus; trivial.
+            rewrite Lim_seq_const.
+            rewrite <- H6; simpl.
+            now unfold Rminus.
+          + now apply ex_lim_seq_minus.
+     }        
+      rewrite <- H6 in H4.
+      simpl in H4.
+      eapply Rle_lt_trans.
+      apply H4.
+      lra.
+   Qed.
+
+
 End Linf.
 
+  Section Linf2.
+    
+  Context {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts: ProbSpace dom).
+
+    Lemma uniformly_convergent_cauchy_almost 
+          (f : nat -> Ts -> R)
+          {rv : forall n, RandomVariable dom borel_sa (f n)} 
+          (P : event dom) 
+          (dec : forall x: Ts, {P x} + {~ P x}) :
+    ps_P P = 1 ->
+    (forall (eps : posreal),
+        exists (N : nat),
+          forall (n m : nat), 
+            (N <= n)%nat -> (N <= m)%nat ->
+            forall (x:Ts),
+              P x ->
+              rvabs (rvminus (f n) (f m)) x < eps) ->
+    exists (g : Ts -> R),
+      RandomVariable dom borel_sa g /\
+    forall (eps:posreal),
+    exists (N : nat),
+      forall (n : nat), 
+        (N <= n)%nat ->
+        forall (x : Ts),
+          P x ->
+          rvabs (rvminus g (f n)) x < eps.
+  Proof.
+    intros.
+    pose (rf := fun n => event_restricted_function P (f n)).
+    assert (rv_rf: forall n, RandomVariable (event_restricted_sigma P) borel_sa (rf n)) by (intros; typeclasses eauto).
+    generalize (@uniformly_convergent_cauchy 
+                  (event_restricted_domain P) 
+                  (event_restricted_sigma P) rf rv_rf); intros.
+    cut_to H1.
+    - destruct H1 as [g [? ?]].
+      exists (lift_event_restricted_domain_fun 0 g).
+      split.
+      + typeclasses eauto.
+      + intros.
+        destruct (H2 eps) as [N ?].
+        exists N; intros.
+        specialize (H3 n H4).
+        specialize (H3 (exist _ x H5)).
+        unfold lift_event_restricted_domain_fun; simpl.
+        unfold rvabs.
+        rewrite rvminus_unfold.
+        match_destr; [|tauto].
+        unfold rvabs in H3.
+        rewrite rvminus_unfold in H3.
+        unfold rf in H3.
+        unfold event_restricted_function in H3; simpl in H3.
+        now rewrite (proof_irrelevance _ e H5).
+    - intros.
+      destruct (H0 eps) as [N ?].
+      exists N; intros.
+      specialize (H2 n m H3 H4).
+      destruct x.
+      specialize (H2 x e).
+      unfold rvabs.
+      rewrite rvminus_unfold.
+      unfold rf, event_restricted_function; simpl.
+      unfold rvabs in H2.
+      now rewrite rvminus_unfold in H2.
+   Qed.
+
+  Lemma Linf_sequential_uniformly_convergent_complete
+        (f : nat -> Ts -> R)
+        {rv : forall n, RandomVariable dom borel_sa (f n)}
+        {isl : forall n, IsLinfty prts (f n)} 
+        (P : event dom) 
+        (dec : forall x: Ts, {P x} + {~ P x}) :
+    ps_P P = 1 ->
+    (forall (eps : posreal),
+        exists (N : nat),
+          forall (n m : nat), 
+            (N <= n)%nat -> (N <= m)%nat ->
+            forall (x:Ts),
+              P x ->
+              rvabs (rvminus (f n) (f m)) x < eps) ->
+    exists (g : Ts -> R),
+      exists (rvg:RandomVariable dom borel_sa g),
+      IsLinfty prts g /\
+      is_lim_seq (fun n => Linfty_norm prts (rvminus (f n) g)) 0.
+  Proof.
+    intros.
+    generalize (uniformly_convergent_cauchy_almost f P dec H H0); intros.
+    destruct H1 as [g [? ?]]; exists g; exists H1.
+    split.
+    admit.
+    apply is_lim_seq_spec; intro eps.
+    generalize (cond_pos eps); intros eps_pos.
+    assert (eps_half: 0 < eps/2) by lra.
+    destruct (H2 (mkposreal _ eps_half)) as [N ?].
+    exists N; intros.
+    specialize (H3 n H4).
+    rewrite Rminus_0_r.
+    generalize (Linfty_norm_Rbar_nneg prts (rvminus (f n) g) ); intros.
+    generalize (term_bound_Linfty_norm prts (rvminus (f n) g) (mkposreal _ eps_half)); intros.
+    cut_to H6.
+    - generalize (bounded_is_finite _ _ _ H5 H6); intros.
+      rewrite <- H7 in H5; simpl in H5.
+      rewrite <- H7 in H6; simpl in H6.
+      rewrite Rabs_right; lra.
+    - simpl.
+      simpl in H3.
+      assert (almost prts Rle (rvabs (rvminus (f n) g)) (const (eps / 2))).
+      {
+        exists P.
+        split; trivial.
+        intros.
+        unfold const.
+        specialize (H3 x H7).
+        unfold rvabs.
+        rewrite rvminus_unfold.
+        unfold rvabs in H3.
+        rewrite rvminus_unfold in H3.
+        rewrite Rabs_minus_sym.
+        now left.
+      }
+      unfold Linfty_term.
+      
+    
+    Admitted.
+
+  Lemma Linf_sequential_complete
+        (f : nat -> Ts -> R)
+        {rv : forall n, RandomVariable dom borel_sa (f n)}
+        {isl : forall n, IsLinfty prts (f n)} :
+    (forall (eps : posreal),
+        exists (N : nat),
+          forall (n m : nat), 
+            (N <= n)%nat -> (N <= m)%nat ->
+            Linfty_norm prts (rvminus (f n) (f m)) < eps) ->
+    exists (g : Ts -> R),
+      exists (rvg:RandomVariable dom borel_sa g),
+      IsLinfty prts g /\
+      is_lim_seq (fun n => Linfty_norm prts (rvminus (f n) g)) 0.
+  Proof.
+    intros.
+    generalize ( Linf_sequential_uniformly_convergent prts f H); intros.
+    destruct H0 as [P [? ?]].
+    assert (dec:forall x: Ts, {P x} + {~ P x}) by
+        (intros; apply ClassicalDescription.excluded_middle_informative).
+    now apply Linf_sequential_uniformly_convergent_complete with (P := P).
+  Qed.
+
+  End Linf2.
