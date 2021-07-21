@@ -793,20 +793,6 @@ Qed.
     erewrite (Linfty_norm_scale c x (real (@Linfty_norm x rv_x))); eauto.
   Qed.
 
-  Lemma Linfty_norm_opp x (y:R) 
-    {rv_x:RandomVariable dom borel_sa x} :
-    Linfty_norm x = y ->
-    Linfty_norm (rvopp x) = y.
-  Proof.
-    unfold rvopp; intros.
-    unfold rvopp_rv.
-    generalize (Linfty_norm_scale (-1) x y H); intros.
-    rewrite H0.
-    f_equal.
-    unfold Rabs.
-    match_destr; lra.
-  Qed.
-    
   Lemma Linfty_norm_abs x  
     {rv_x:RandomVariable dom borel_sa x} :
     Linfty_norm (rvabs x) = Linfty_norm x.
@@ -819,6 +805,20 @@ Qed.
     unfold rvabs.
     rewrite Rabs_Rabsolu.
     reflexivity.
+  Qed.
+
+  Lemma Linfty_norm_opp x
+    {rv_x:RandomVariable dom borel_sa x} :
+    Linfty_norm (rvopp x) = Linfty_norm x.
+  Proof.
+    rewrite <- (Linfty_norm_abs (rvopp x)).
+    rewrite <- (Linfty_norm_abs x).
+    apply Linfty_norm_almost_eq.
+    apply almost_eq_subr.
+    intros ?.
+    rv_unfold.
+    unfold Rabs.
+    repeat match_destr; try lra.
   Qed.
 
   Lemma Linfty_norm_minus_swap x y
@@ -2295,12 +2295,28 @@ End Linf.
     lia.
   Qed.
 
-(*
-    Lemma LiRRVq_lim_ball_center_dist (x y : LiRRVq prts)
-             (F : (LiRRVq_UniformSpace prts -> Prop) -> Prop)
-             (PF:ProperFilter F)
-             (cF:cauchy F)
-             (N:nat) :
+  Ltac LiRRVq_simpl :=
+    repeat match goal with
+           | [H: LiRRVq _ |- _ ] =>
+             let xx := fresh H in destruct (Quot_inv H) as [xx ?]; subst H; rename xx into H
+           | [H: AbelianGroup.sort LiRRVq_AbelianGroup |- _ ] =>
+             let xx := fresh H in destruct (Quot_inv H) as [xx ?]; subst H; rename xx into H
+           end
+    ; try autorewrite with quot
+        ; try apply (@eq_Quot _ _ LiRRV_eq_equiv).
+
+  
+  Lemma LiRRV_norm_opp (x : LiRRV prts) : LiRRVnorm prts (LiRRVopp prts x) = LiRRVnorm prts x.
+  Proof.
+    unfold LiRRVnorm, LiRRVopp; simpl.
+    now rewrite Linfty_norm_opp.
+  Qed.
+
+  Lemma LiRRVq_lim_ball_center_dist (x y : LiRRVq prts)
+        (F : (LiRRVq_UniformSpace prts -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F)
+        (N:nat) :
     (proj1_sig (LiRRVq_lim_ball_center F PF cF N)) x ->
     (proj1_sig (LiRRVq_lim_ball_center F PF cF N)) y ->
     LiRRVq_norm prts (LiRRVq_minus prts x y) < 2 / 2 ^ N.
@@ -2310,38 +2326,39 @@ End Linf.
     match_case; intros.
     match_destr_in H.
     invcs H.
+    LiRRVq_simpl.
     unfold Hierarchy.ball in *; simpl in *.
-    unfold ball in *; simpl in *.
+    rewrite LiRRVq_ballE in H0, H1.
     generalize (Rplus_lt_compat _ _ _ _ H0 H1)
     ; intros HH.
     field_simplify in HH.
     - eapply Rle_lt_trans; try eapply HH.
-      generalize (LpRRV_norm_plus prts pbig (LpRRVminus prts (p:=bignneg _ pbig) x x1) (LpRRVminus prts x1 y)); intros HH2.
-      repeat rewrite LpRRVminus_plus in HH2.
-      repeat rewrite LpRRVminus_plus.
-      assert (eqq:LpRRV_seq (LpRRVplus prts (LpRRVplus prts x (LpRRVopp prts x1))
-                                   (LpRRVplus prts x1 (LpRRVopp prts y)))
-                            ((LpRRVplus prts x (LpRRVopp prts y)))).
+      generalize (LiRRV_norm_plus prts (LiRRVminus prts x x1) (LiRRVminus prts x1 y)); intros HH2.
+      repeat rewrite LiRRVminus_plus in HH2.
+      rewrite LiRRVq_minusE, LiRRVq_normE.
+      repeat rewrite LiRRVminus_plus.
+      assert (eqq:LiRRV_seq prts (LiRRVplus prts (LiRRVplus prts x (LiRRVopp prts x1))
+                                            (LiRRVplus prts x1 (LiRRVopp prts y)))
+                            ((LiRRVplus prts x (LiRRVopp prts y)))).
       {
         intros ?; simpl.
         rv_unfold; lra.
       }
-      generalize (LpRRV_norm_opp (LpRRVplus prts x (LpRRVopp prts x1)))
+      generalize (LiRRV_norm_opp (LiRRVplus prts x (LiRRVopp prts x1)))
       ; intros eqq3.
-      subst pnneg.
       rewrite <- eqq.
       eapply Rle_trans; try eapply HH2.
       apply Rplus_le_compat_r.
       simpl in *.
       rewrite <- eqq3.
       right.
-      apply LpRRV_norm_sproper.
+      apply LiRRV_norm_sproper.
       intros ?; simpl.
       rv_unfold; lra.
     - revert HH.
       apply pow_nzero.
       lra.
   Qed.
-*)
+
 
   End complete.
