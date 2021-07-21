@@ -6,6 +6,7 @@ Require Import Classical.
 Require Import Reals.
 Require Import FunctionalExtensionality.
 Require Import Coquelicot.Coquelicot.
+Require Import IndefiniteDescription ClassicalDescription.
 
 Require Export RandomVariableFinite RandomVariableLpR.
 Require Import quotient_space.
@@ -13,7 +14,6 @@ Require Import quotient_space.
 Require Import AlmostEqual.
 Require Import utils.Utils.
 Require Import List.
-  Require Import Finite.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -2143,3 +2143,220 @@ End Linf.
   Qed.
 
   End Linf2.
+
+  Section complete.
+
+    Context {Ts:Type} 
+            {dom: SigmaAlgebra Ts}
+            (prts: ProbSpace dom).
+    
+  Definition LiRRVq_lim_ball_center_center 
+             (F : (LiRRVq_UniformSpace prts -> Prop) -> Prop) :
+    ProperFilter F -> cauchy F ->
+    forall (n:nat), 
+      {b:LiRRVq_UniformSpace prts |
+        F (Hierarchy.ball (M:= LiRRVq_UniformSpace prts) b (mkposreal _ (inv_pow_2_pos n)))}.
+  Proof.
+    intros Pf cF n.
+    pose ( ϵ := / (2 ^ n)).
+    assert (ϵpos : 0 < ϵ) by apply inv_pow_2_pos.
+    destruct (constructive_indefinite_description _ (cF (mkposreal ϵ ϵpos)))
+      as [x Fx].
+    now exists x.
+  Defined.
+
+  Definition LiRRVq_lim_ball_center 
+             (F : (LiRRVq_UniformSpace prts -> Prop) -> Prop) :
+    ProperFilter F -> cauchy F ->
+    forall (n:nat), {b:LiRRVq prts ->Prop | F b}.
+  Proof.
+    intros Pf cF n.
+    pose ( ϵ := / (2 ^ n)).
+    assert (ϵpos : 0 < ϵ) by apply inv_pow_2_pos.
+    destruct (constructive_indefinite_description _ (cF (mkposreal ϵ ϵpos)))
+      as [x Fx].
+    simpl in *.
+    now exists  (Hierarchy.ball (M:= LiRRVq_UniformSpace prts) x ϵ).
+  Defined.
+
+  Definition LiRRVq_lim_ball_cumulative
+             (F : (LiRRVq_UniformSpace prts -> Prop) -> Prop)
+             (PF:ProperFilter F)
+             (cF:cauchy F)
+             (n:nat) : {x:LiRRVq prts->Prop | F x}
+    := fold_right (fun x y =>
+                     exist _ _ (Hierarchy.filter_and
+                       _ _ (proj2_sig x) (proj2_sig y)))
+                  (exist _ _ Hierarchy.filter_true)
+                  (map (LiRRVq_lim_ball_center F PF cF) (seq 0 (S n))).
+
+  Definition LiRRVq_lim_picker
+             (F : (LiRRVq_UniformSpace prts -> Prop) -> Prop)
+             (PF:ProperFilter F)
+             (cF:cauchy F)
+             (n:nat) : LiRRVq prts
+    := (proj1_sig (
+            constructive_indefinite_description
+              _
+              (filter_ex
+                 _
+                 (proj2_sig (LiRRVq_lim_ball_cumulative F PF cF n))))).
+
+  Definition LiRRVq_lim_picker_ext0
+             (F : (LiRRVq_UniformSpace prts -> Prop) -> Prop)
+             (PF:ProperFilter F)
+             (cF:cauchy F)
+             (n:nat) : LiRRVq prts
+    := match n with
+       | 0 => LiRRVq_zero prts
+       | S n' => LiRRVq_lim_picker F PF cF n
+       end.
+
+    Lemma LiRRVq_lim_picker_cumulative_included
+             (F : (LiRRVq_UniformSpace prts -> Prop) -> Prop)
+             (PF:ProperFilter F)
+             (cF:cauchy F)
+             (N n:nat) :
+      (N <= n)%nat ->
+      forall x,
+      proj1_sig (LiRRVq_lim_ball_cumulative F PF cF n) x ->
+       (proj1_sig (LiRRVq_lim_ball_center F PF cF N)) x.
+    Proof.
+      unfold LiRRVq_lim_ball_cumulative.
+      intros.
+      assert (inn:In N (seq 0 (S n))).
+      {
+        apply in_seq.
+        lia.
+      }
+      revert inn H0.
+      generalize (seq 0 (S n)).
+      clear.
+      induction l; simpl.
+      - tauto.
+      - intros [eqq | inn]; intros.
+        + subst.
+          tauto.
+        + apply (IHl inn).
+          tauto.
+    Qed.
+    
+  Lemma LiRRVq_lim_picker_included
+             (F : (LiRRVq_UniformSpace prts  -> Prop) -> Prop)
+             (PF:ProperFilter F)
+             (cF:cauchy F)
+             (N n:nat) :
+    (N <= n)%nat ->
+    (proj1_sig (LiRRVq_lim_ball_center F PF cF N)) 
+      (LiRRVq_lim_picker F PF cF n).
+  Proof.
+    intros.
+    unfold LiRRVq_lim_picker.
+    unfold proj1_sig at 2.
+    match_destr.
+    eapply LiRRVq_lim_picker_cumulative_included; eauto.
+  Qed.
+
+  Lemma LiRRVq_lim_ball_center_ball_center_center  (F : (LiRRVq_UniformSpace prts -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F)
+        (n:nat) :
+    forall (x:UniformSpace.sort (LiRRVq_UniformSpace prts)),
+      (Hierarchy.ball (M:= LiRRVq_UniformSpace prts)
+                      (proj1_sig (LiRRVq_lim_ball_center_center F PF cF n))
+                      (mkposreal _ (inv_pow_2_pos n))) x
+
+      <-> proj1_sig (LiRRVq_lim_ball_center F PF cF n) x.
+  Proof.
+    unfold LiRRVq_lim_ball_center; simpl.
+    unfold LiRRVq_lim_ball_center_center; simpl.
+    intros.
+    destruct ( constructive_indefinite_description
+            (fun x0 : LiRRVq prts => F (Hierarchy.ball x0 (/ 2 ^ n)))
+            (cF {| pos := / 2 ^ n; cond_pos := inv_pow_2_pos n |})); simpl.
+    tauto.
+  Qed.
+    
+  Lemma LiRRVq_lim_picker_center_included
+        (F : (LiRRVq_UniformSpace prts -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F)
+        (n:nat) :
+    (Hierarchy.ball (M:= LiRRVq_UniformSpace prts)
+                    (proj1_sig (LiRRVq_lim_ball_center_center F PF cF n))
+                    (mkposreal _ (inv_pow_2_pos n)))
+      (LiRRVq_lim_picker F PF cF n).
+  Proof.
+    simpl.
+    apply LiRRVq_lim_ball_center_ball_center_center.
+    now apply LiRRVq_lim_picker_included.
+  Qed.
+
+  Lemma LiRRVq_lim_picker_center_included2
+        (F : (LiRRVq_UniformSpace prts -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F)
+        (N:nat) :
+    forall (n:nat), 
+      (n >= N)%nat ->
+      (Hierarchy.ball (M:= LiRRVq_UniformSpace prts)
+                    (proj1_sig (LiRRVq_lim_ball_center_center F PF cF N))
+                    (mkposreal _ (inv_pow_2_pos N)))
+      (LiRRVq_lim_picker F PF cF n).
+  Proof.
+    intros.
+    simpl.
+    apply LiRRVq_lim_ball_center_ball_center_center.
+    apply LiRRVq_lim_picker_included.
+    lia.
+  Qed.
+
+(*
+    Lemma LiRRVq_lim_ball_center_dist (x y : LiRRVq prts)
+             (F : (LiRRVq_UniformSpace prts -> Prop) -> Prop)
+             (PF:ProperFilter F)
+             (cF:cauchy F)
+             (N:nat) :
+    (proj1_sig (LiRRVq_lim_ball_center F PF cF N)) x ->
+    (proj1_sig (LiRRVq_lim_ball_center F PF cF N)) y ->
+    LiRRVq_norm prts (LiRRVq_minus prts x y) < 2 / 2 ^ N.
+  Proof.
+    unfold LiRRVq_lim_ball_center; simpl.
+    unfold proj1_sig.
+    match_case; intros.
+    match_destr_in H.
+    invcs H.
+    unfold Hierarchy.ball in *; simpl in *.
+    unfold ball in *; simpl in *.
+    generalize (Rplus_lt_compat _ _ _ _ H0 H1)
+    ; intros HH.
+    field_simplify in HH.
+    - eapply Rle_lt_trans; try eapply HH.
+      generalize (LpRRV_norm_plus prts pbig (LpRRVminus prts (p:=bignneg _ pbig) x x1) (LpRRVminus prts x1 y)); intros HH2.
+      repeat rewrite LpRRVminus_plus in HH2.
+      repeat rewrite LpRRVminus_plus.
+      assert (eqq:LpRRV_seq (LpRRVplus prts (LpRRVplus prts x (LpRRVopp prts x1))
+                                   (LpRRVplus prts x1 (LpRRVopp prts y)))
+                            ((LpRRVplus prts x (LpRRVopp prts y)))).
+      {
+        intros ?; simpl.
+        rv_unfold; lra.
+      }
+      generalize (LpRRV_norm_opp (LpRRVplus prts x (LpRRVopp prts x1)))
+      ; intros eqq3.
+      subst pnneg.
+      rewrite <- eqq.
+      eapply Rle_trans; try eapply HH2.
+      apply Rplus_le_compat_r.
+      simpl in *.
+      rewrite <- eqq3.
+      right.
+      apply LpRRV_norm_sproper.
+      intros ?; simpl.
+      rv_unfold; lra.
+    - revert HH.
+      apply pow_nzero.
+      lra.
+  Qed.
+*)
+
