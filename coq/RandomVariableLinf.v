@@ -13,6 +13,7 @@ Require Import quotient_space.
 Require Import AlmostEqual.
 Require Import utils.Utils.
 Require Import List.
+  Require Import Finite.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -133,6 +134,16 @@ Section Linf.
     apply (glbx 0).
     intros ??.
     apply abs_neg_psall in H.
+    apply H.
+  Qed.
+
+  Lemma IsLinfty_norm_bounded (rv_X : Ts -> R) (c : R)
+        {rv : RandomVariable dom borel_sa rv_X} :
+    Rbar_le (Linfty_norm rv_X) c -> IsLinfty rv_X.
+  Proof.
+    intros.
+    eapply bounded_is_finite.
+    apply Linfty_norm_Rbar_nneg.
     apply H.
   Qed.
 
@@ -1843,7 +1854,7 @@ Qed.
                  forall (x : Ts), 
                    Rbar_le (Lim_seq (fun n0 => Rabs (f n x - f n0 x))) (mkposreal _ H2)).
       {
-        replace (Finite (mkposreal _ H2)) with (Lim_seq (const (mkposreal _ H2))).
+        replace (Rbar.Finite (mkposreal _ H2)) with (Lim_seq (const (mkposreal _ H2))).
         - intros.
           apply Lim_seq_le_loc.
           exists N.
@@ -1862,7 +1873,7 @@ Qed.
       rewrite Rabs_minus_sym.
       specialize (H4 n H5 x).
       simpl in H4.
-      assert (Finite (Rabs (f n x - Lim_seq (fun n0 => f n0 x))) = 
+      assert (Rbar.Finite (Rabs (f n x - Lim_seq (fun n0 => f n0 x))) = 
               Lim_seq (fun n0 => (Rabs (f n x - f n0 x)))).
       {
         specialize (H0 x).
@@ -1996,7 +2007,47 @@ End Linf.
       specialize (px _ H).
       now apply compat in px.
   Qed.
-    
+
+(*
+
+Definition bounded (x : nat -> R) := exists c : R, forall n, Rabs (x n) <= c.
+
+Definition restrict (x : nat -> R) (N : nat) : {a : nat | (a < N)%nat} -> R :=
+  fun H => let (H0,_) := H in x H0.
+
+Lemma fin_seq_bounded (x : nat -> R) (N : nat) :
+  exists (c : R),
+    forall (n:nat), (n<N)%nat -> Rabs(x n) <= c.
+Proof.
+  generalize (bounded_nat_finite N); intros Hn.
+  generalize (fin_fun_bounded_Rabs Hn (restrict x N)); intros.
+  destruct H as [c Hc]. exists c; intros.
+  now specialize (Hc (exist _ n H)).
+Qed.
+
+Lemma is_lim_seq_bounded (x : nat -> R) (c:R) : is_lim_seq x c -> bounded x.
+Proof.
+  intros Hx.
+  rewrite <- is_lim_seq_spec in Hx.
+  unfold is_lim_seq' in Hx.
+  destruct (Hx posreal_one).
+  destruct (fin_seq_bounded x x0).
+  exists (Rmax x1 ((Rabs c)+1)); intros.
+  destruct (lt_dec n x0).
+  - eapply Rle_trans.
+    + apply H0; lia.
+    + apply Rmax_l.
+  - left.
+    assert (x0 <= n)%nat by lia.
+    specialize (H n H1).
+    generalize (Rabs_triang_inv (x n) c); intros.
+    apply Rlt_le_trans with (r2 := (Rabs c)+1); [|apply Rmax_r].
+    simpl in H.
+    lra.
+  Qed.
+
+*)
+
   Lemma Linf_sequential_uniformly_convergent_complete
         (f : nat -> Ts -> R)
         {rv : forall n, RandomVariable dom borel_sa (f n)}
@@ -2020,9 +2071,7 @@ End Linf.
     generalize (uniformly_convergent_cauchy_almost f P dec H H0); intros.
     destruct H1 as [g [? ?]]; exists g; exists H1.
     cut (is_lim_seq (fun n : nat => Linfty_norm prts (rvminus (f n) g)) 0).
-    - intros islim.
-      split; trivial.
-      admit.
+    - shelve.
     - apply is_lim_seq_spec; intro eps.
     generalize (cond_pos eps); intros eps_pos.
     assert (eps_half: 0 < eps/2) by lra.
@@ -2033,7 +2082,8 @@ End Linf.
     generalize (Linfty_norm_Rbar_nneg prts (rvminus (f n) g) ); intros.
     generalize (term_bound_Linfty_norm prts (rvminus (f n) g) (mkposreal _ eps_half)); intros.
     cut_to H6.
-    + generalize (bounded_is_finite _ _ _ H5 H6); intros.
+      + generalize (bounded_is_finite _ _ _ H5 H6); intros.
+
       rewrite <- H7 in H5; simpl in H5.
       rewrite <- H7 in H6; simpl in H6.
       rewrite Rabs_right; lra.
@@ -2073,6 +2123,7 @@ End Linf.
       unfold pre_event_complement.
       rv_unfold.
       split; lra.
+
     Admitted.
 
   Lemma Linf_sequential_complete

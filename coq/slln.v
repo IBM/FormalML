@@ -656,24 +656,21 @@ Proof.
       reflexivity.
 Qed.
 
-
 Fixpoint filtration_history (n : nat) (X : nat -> Ts -> R)
          {srv : forall n, SimpleRandomVariable (X n)}
          {rv : forall n, RandomVariable dom borel_sa (X n)}
   : list dec_sa_event :=
   match n with
-  | 0 => induced_sigma_generators (srv 0%nat)
-  | S k => refine_dec_sa_partitions (induced_sigma_generators (srv (S k))) (filtration_history k X)
+  | 0 => []
+  | S k => refine_dec_sa_partitions (induced_sigma_generators (srv k)) (filtration_history k X)
   end.
 
 Lemma ash_6_1_4 (X : nat -> Ts -> R)(n : nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
-    {srv : forall (n:nat), SimpleRandomVariable (X n)}
-    (HX1 : forall n, IsFiniteExpectation Prts (X n))
-    (HX2 : forall n, FiniteExpectation Prts (X n) = 0)
-    (HC : forall n, gen_SimpleConditionalExpectation (X n) (filtration_history n X)= fun w => 0)
-  :
+      {srv : forall (n:nat), SimpleRandomVariable (X n)}
+      (HC : forall n, 
+          gen_SimpleConditionalExpectation (X n) (filtration_history n X) = const 0)  :
   let S := fun j => rvabs (rvsum X j) in
-  forall eps:R, ps_P (event_ge dom (rvmaxlist S n) eps) <=
-           (Expectation_posRV (fun w => rvsqr (S n) w))/eps^2.
+  forall eps:posreal, ps_P (event_ge dom (rvmaxlist S n) eps) <=
+           (SimpleExpectation (rvsqr (S n)))/eps^2.
 Admitted.
