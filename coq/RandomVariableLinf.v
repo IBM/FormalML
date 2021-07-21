@@ -2008,45 +2008,62 @@ End Linf.
       now apply compat in px.
   Qed.
 
-(*
-
-Definition bounded (x : nat -> R) := exists c : R, forall n, Rabs (x n) <= c.
-
-Definition restrict (x : nat -> R) (N : nat) : {a : nat | (a < N)%nat} -> R :=
-  fun H => let (H0,_) := H in x H0.
-
-Lemma fin_seq_bounded (x : nat -> R) (N : nat) :
-  exists (c : R),
-    forall (n:nat), (n<N)%nat -> Rabs(x n) <= c.
-Proof.
-  generalize (bounded_nat_finite N); intros Hn.
-  generalize (fin_fun_bounded_Rabs Hn (restrict x N)); intros.
-  destruct H as [c Hc]. exists c; intros.
-  now specialize (Hc (exist _ n H)).
-Qed.
-
-Lemma is_lim_seq_bounded (x : nat -> R) (c:R) : is_lim_seq x c -> bounded x.
-Proof.
-  intros Hx.
-  rewrite <- is_lim_seq_spec in Hx.
-  unfold is_lim_seq' in Hx.
-  destruct (Hx posreal_one).
-  destruct (fin_seq_bounded x x0).
-  exists (Rmax x1 ((Rabs c)+1)); intros.
-  destruct (lt_dec n x0).
-  - eapply Rle_trans.
-    + apply H0; lia.
-    + apply Rmax_l.
-  - left.
-    assert (x0 <= n)%nat by lia.
-    specialize (H n H1).
-    generalize (Rabs_triang_inv (x n) c); intros.
-    apply Rlt_le_trans with (r2 := (Rabs c)+1); [|apply Rmax_r].
-    simpl in H.
-    lra.
+  Lemma almost_bounded_Rbar_le_Linfty_norm 
+        (g : Ts -> R)
+        {rv : RandomVariable dom borel_sa g}
+        (P : event dom)
+        (eps : R) :
+    ps_P P = 1 ->
+    (forall x, P x -> (rvabs g) x < eps) ->
+    Rbar_le (Linfty_norm prts g) eps.
+  Proof.
+    intros.
+    apply term_bound_Linfty_norm.
+    assert (almost prts Rle (rvabs g) (const eps)).
+    {
+      exists P.
+      split; trivial.
+      intros.
+      unfold const.
+      specialize (H0 x H1).
+      now left.
+    }
+    unfold Linfty_term.
+    cut (ps_P
+           (event_complement (exist sa_sigma (fun omega : Ts => rvabs g omega > eps)
+                                    (sa_le_gt_rv g eps))) = 1).
+      {
+        intros HH.
+        rewrite ps_complement in HH.
+        apply (f_equal (fun x => x - 1)) in HH.
+        field_simplify in HH.
+        apply Ropp_eq_0_compat in HH.
+        field_simplify in HH.
+        trivial.
+      }
+      unfold event_complement; simpl.
+      eapply almost_ps1; try eapply H1.
+      intros; simpl.
+      unfold pre_event_complement.
+      rv_unfold.
+      split; lra.
   Qed.
 
-*)
+  Lemma almost_bounded_IsLinfty
+        (g : Ts -> R)
+        {rv : RandomVariable dom borel_sa g}
+        (P : event dom)
+        (eps : R) :
+    ps_P P = 1 ->
+    (forall x, P x -> (rvabs g) x < eps) ->
+    IsLinfty prts g.
+  Proof.
+    intros.
+    eapply IsLinfty_norm_bounded.
+    eapply almost_bounded_Rbar_le_Linfty_norm.
+    apply H.
+    apply H0.
+  Qed.
 
   Lemma Linf_sequential_uniformly_convergent_complete
         (f : nat -> Ts -> R)
@@ -2070,62 +2087,39 @@ Proof.
     intros.
     generalize (uniformly_convergent_cauchy_almost f P dec H H0); intros.
     destruct H1 as [g [? ?]]; exists g; exists H1.
-    cut (is_lim_seq (fun n : nat => Linfty_norm prts (rvminus (f n) g)) 0).
-    - shelve.
-    - apply is_lim_seq_spec; intro eps.
+    intros; split.
+    - destruct (H2 posreal_one) as [N ?].
+      specialize (H3 N).
+      cut_to H3; try lia.
+      generalize (almost_bounded_IsLinfty _ P posreal_one H H3); intros.
+      generalize (Linfty_norm_minkowski prts (rvminus g (f N)) (f N)); intros.
+      generalize (IsLinfty_plus prts (rvminus g (f N)) (f N)); intros.
+      assert (rv_eq (rvplus (rvminus g (f N)) (f N)) g).
+      + intro x.
+        unfold rvminus, rvplus, rvopp, rvscale.
+        lra.
+      + eapply (IsLinfty_almost_eq _ (rvplus (rvminus g (f N)) (f N))); try apply H6.
+        now apply almost_eq_subr.
+   - apply is_lim_seq_spec; intro eps.
     generalize (cond_pos eps); intros eps_pos.
     assert (eps_half: 0 < eps/2) by lra.
     destruct (H2 (mkposreal _ eps_half)) as [N ?].
     exists N; intros.
-    specialize (H3 n H4).
     rewrite Rminus_0_r.
-    generalize (Linfty_norm_Rbar_nneg prts (rvminus (f n) g) ); intros.
-    generalize (term_bound_Linfty_norm prts (rvminus (f n) g) (mkposreal _ eps_half)); intros.
-    cut_to H6.
-      + generalize (bounded_is_finite _ _ _ H5 H6); intros.
+    specialize (H3 n H4).
+    simpl in H3.
+    generalize (almost_bounded_Rbar_le_Linfty_norm (rvminus g (f n)) P (eps/2) H H3); intros.
 
-      rewrite <- H7 in H5; simpl in H5.
-      rewrite <- H7 in H6; simpl in H6.
-      rewrite Rabs_right; lra.
-    + simpl.
-      simpl in H3.
-      assert (almost prts Rle (rvabs (rvminus (f n) g)) (const (eps / 2))).
-      {
-        exists P.
-        split; trivial.
-        intros.
-        unfold const.
-        specialize (H3 x H7).
-        unfold rvabs.
-        rewrite rvminus_unfold.
-        unfold rvabs in H3.
-        rewrite rvminus_unfold in H3.
-        rewrite Rabs_minus_sym.
-        now left.
-      }
-      unfold Linfty_term.
-      simpl in *.
-      cut (ps_P
-                (event_complement (exist sa_sigma (fun omega : Ts => rvabs (rvminus (f n) g) omega > eps / 2)
-                                         (sa_le_gt_rv (rvminus (f n) g) (eps / 2)))) = 1).
-      {
-        intros HH.
-        rewrite ps_complement in HH.
-        apply (f_equal (fun x => x - 1)) in HH.
-        field_simplify in HH.
-        apply Ropp_eq_0_compat in HH.
-        field_simplify in HH.
-        trivial.
-      }
-      unfold event_complement; simpl.
-      eapply almost_ps1; try eapply H7.
-      intros; simpl.
-      unfold pre_event_complement.
-      rv_unfold.
-      split; lra.
-
-    Admitted.
-
+    generalize (almost_bounded_IsLinfty (rvminus g (f n)) P (eps/2) H H3); intros.
+    rewrite <- H6 in H5.
+    simpl in H5.
+    rewrite Linfty_norm_minus_swap.
+    rewrite Rabs_right; try lra.
+    generalize (Linfty_norm_Rbar_nneg prts (rvminus g (f n))); intros.
+    rewrite <- H6 in H7; simpl in H7.
+    lra.
+ Qed.
+    
   Lemma Linf_sequential_complete
         (f : nat -> Ts -> R)
         {rv : forall n, RandomVariable dom borel_sa (f n)}
