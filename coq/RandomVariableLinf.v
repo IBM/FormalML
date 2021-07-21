@@ -2008,61 +2008,45 @@ End Linf.
       now apply compat in px.
   Qed.
 
+  (*
+    
+*)
+    
+
+
   Lemma almost_bounded_Rbar_le_Linfty_norm 
         (g : Ts -> R)
         {rv : RandomVariable dom borel_sa g}
         (P : event dom)
-        (eps : R) :
+        (eps : posreal) :
     ps_P P = 1 ->
     (forall x, P x -> (rvabs g) x < eps) ->
     Rbar_le (Linfty_norm prts g) eps.
   Proof.
+    generalize (Linfty_norm_almost_le prts g (const (pos eps)))
+    ; intros HH.
+    rewrite Linfty_norm_const in HH.
+    rewrite Rabs_pos_eq in HH by (destruct eps; simpl; lra).
+    intros; apply HH.
+    exists P.
+    split; trivial.
+    unfold const.
     intros.
-    apply term_bound_Linfty_norm.
-    assert (almost prts Rle (rvabs g) (const eps)).
-    {
-      exists P.
-      split; trivial.
-      intros.
-      unfold const.
-      specialize (H0 x H1).
-      now left.
-    }
-    unfold Linfty_term.
-    cut (ps_P
-           (event_complement (exist sa_sigma (fun omega : Ts => rvabs g omega > eps)
-                                    (sa_le_gt_rv g eps))) = 1).
-      {
-        intros HH.
-        rewrite ps_complement in HH.
-        apply (f_equal (fun x => x - 1)) in HH.
-        field_simplify in HH.
-        apply Ropp_eq_0_compat in HH.
-        field_simplify in HH.
-        trivial.
-      }
-      unfold event_complement; simpl.
-      eapply almost_ps1; try eapply H1.
-      intros; simpl.
-      unfold pre_event_complement.
-      rv_unfold.
-      split; lra.
+    left; auto.
   Qed.
 
   Lemma almost_bounded_IsLinfty
         (g : Ts -> R)
         {rv : RandomVariable dom borel_sa g}
         (P : event dom)
-        (eps : R) :
+        (eps : posreal) :
     ps_P P = 1 ->
     (forall x, P x -> (rvabs g) x < eps) ->
     IsLinfty prts g.
   Proof.
     intros.
     eapply IsLinfty_norm_bounded.
-    eapply almost_bounded_Rbar_le_Linfty_norm.
-    apply H.
-    apply H0.
+    eapply almost_bounded_Rbar_le_Linfty_norm; eauto.
   Qed.
 
   Lemma Linf_sequential_uniformly_convergent_complete
@@ -2108,9 +2092,9 @@ End Linf.
     rewrite Rminus_0_r.
     specialize (H3 n H4).
     simpl in H3.
-    generalize (almost_bounded_Rbar_le_Linfty_norm (rvminus g (f n)) P (eps/2) H H3); intros.
+    generalize (almost_bounded_Rbar_le_Linfty_norm (rvminus g (f n)) P (mkposreal (eps/2) eps_half) H H3); intros.
 
-    generalize (almost_bounded_IsLinfty (rvminus g (f n)) P (eps/2) H H3); intros.
+    generalize (almost_bounded_IsLinfty (rvminus g (f n)) P (mkposreal (eps/2) eps_half) H H3); intros.
     rewrite <- H6 in H5.
     simpl in H5.
     rewrite Linfty_norm_minus_swap.
