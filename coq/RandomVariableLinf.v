@@ -782,6 +782,20 @@ Qed.
     erewrite (Linfty_norm_scale c x (real (@Linfty_norm x rv_x))); eauto.
   Qed.
 
+  Lemma Linfty_norm_opp x (y:R) 
+    {rv_x:RandomVariable dom borel_sa x} :
+    Linfty_norm x = y ->
+    Linfty_norm (rvopp x) = y.
+  Proof.
+    unfold rvopp; intros.
+    unfold rvopp_rv.
+    generalize (Linfty_norm_scale (-1) x y H); intros.
+    rewrite H0.
+    f_equal.
+    unfold Rabs.
+    match_destr; lra.
+  Qed.
+    
   Lemma Linfty_norm_abs x  
     {rv_x:RandomVariable dom borel_sa x} :
     Linfty_norm (rvabs x) = Linfty_norm x.
@@ -794,6 +808,18 @@ Qed.
     unfold rvabs.
     rewrite Rabs_Rabsolu.
     reflexivity.
+  Qed.
+
+  Lemma Linfty_norm_minus_swap x y
+        {rv_x:RandomVariable dom borel_sa x}
+        {rv_y:RandomVariable dom borel_sa y} :
+    Linfty_norm (rvminus x y) = Linfty_norm (rvminus y x).
+  Proof.
+    rewrite <- (Linfty_norm_abs (rvminus x y)).
+    rewrite <- (Linfty_norm_abs (rvminus y x)).
+    apply Linfty_norm_almost_eq.
+    apply almost_eq_subr.
+    apply rvabs_rvminus_sym.
   Qed.
 
   Global Instance IsLinfty_abs x
@@ -1932,6 +1958,45 @@ End Linf.
       now rewrite rvminus_unfold in H2.
    Qed.
 
+  Local Open Scope prob.
+  Lemma ps_complement' {T:Type} {σ:SigmaAlgebra T} (ps:ProbSpace σ) (A: event σ) :
+    ps_P A = 1 - ps_P (¬ A).
+  Proof.
+    generalize (ps_complement ps (¬ A)); intros HH.
+    now rewrite event_not_not in HH; try apply sa_dec.
+  Qed.
+
+  Definition pre_event_transport
+             {T:Type} {σ:SigmaAlgebra T} (x:event σ) (y : pre_event T)
+             (eqq:pre_event_equiv (event_pre x) y)
+    : event σ
+    := exist _ y (proj1 (sa_proper σ (event_pre x) y eqq) (proj2_sig x)).
+  
+  Lemma pre_event_transport_equiv {T:Type} {σ:SigmaAlgebra T} (x:event σ) (y : pre_event T)
+    (eqq:pre_event_equiv (event_pre x) y) :
+      event_equiv x (pre_event_transport x y eqq).
+  Proof.
+    intros HH.
+    destruct x; simpl.
+    apply eqq.
+  Qed.
+
+  Lemma almost_ps1 {T:Type} {σ:SigmaAlgebra Ts} (ps:ProbSpace σ) (R:T->T->Prop) (E: event σ)  (x y:Ts->T) 
+        (compat:(forall omega, E omega <-> R (x omega) (y omega))) :
+    almost ps R x y -> 
+    ps_P E = 1.
+  Proof.
+    intros alm.
+    destruct alm as [p [pone px]].
+    generalize (ps_sub ps p E)
+    ; intros HH.
+    cut_to HH.
+    - generalize (ps_le1 _ E); lra.
+    - intros ??.
+      specialize (px _ H).
+      now apply compat in px.
+  Qed.
+    
   Lemma Linf_sequential_uniformly_convergent_complete
         (f : nat -> Ts -> R)
         {rv : forall n, RandomVariable dom borel_sa (f n)}
@@ -1954,9 +2019,11 @@ End Linf.
     intros.
     generalize (uniformly_convergent_cauchy_almost f P dec H H0); intros.
     destruct H1 as [g [? ?]]; exists g; exists H1.
-    split.
-    admit.
-    apply is_lim_seq_spec; intro eps.
+    cut (is_lim_seq (fun n : nat => Linfty_norm prts (rvminus (f n) g)) 0).
+    - intros islim.
+      split; trivial.
+      admit.
+    - apply is_lim_seq_spec; intro eps.
     generalize (cond_pos eps); intros eps_pos.
     assert (eps_half: 0 < eps/2) by lra.
     destruct (H2 (mkposreal _ eps_half)) as [N ?].
@@ -1966,11 +2033,11 @@ End Linf.
     generalize (Linfty_norm_Rbar_nneg prts (rvminus (f n) g) ); intros.
     generalize (term_bound_Linfty_norm prts (rvminus (f n) g) (mkposreal _ eps_half)); intros.
     cut_to H6.
-    - generalize (bounded_is_finite _ _ _ H5 H6); intros.
+    + generalize (bounded_is_finite _ _ _ H5 H6); intros.
       rewrite <- H7 in H5; simpl in H5.
       rewrite <- H7 in H6; simpl in H6.
       rewrite Rabs_right; lra.
-    - simpl.
+    + simpl.
       simpl in H3.
       assert (almost prts Rle (rvabs (rvminus (f n) g)) (const (eps / 2))).
       {
@@ -1987,8 +2054,25 @@ End Linf.
         now left.
       }
       unfold Linfty_term.
-      
-    
+      simpl in *.
+      cut (ps_P
+                (event_complement (exist sa_sigma (fun omega : Ts => rvabs (rvminus (f n) g) omega > eps / 2)
+                                         (sa_le_gt_rv (rvminus (f n) g) (eps / 2)))) = 1).
+      {
+        intros HH.
+        rewrite ps_complement in HH.
+        apply (f_equal (fun x => x - 1)) in HH.
+        field_simplify in HH.
+        apply Ropp_eq_0_compat in HH.
+        field_simplify in HH.
+        trivial.
+      }
+      unfold event_complement; simpl.
+      eapply almost_ps1; try eapply H7.
+      intros; simpl.
+      unfold pre_event_complement.
+      rv_unfold.
+      split; lra.
     Admitted.
 
   Lemma Linf_sequential_complete
