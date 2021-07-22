@@ -86,7 +86,7 @@ PROB_THEORY = \
 	Expectation \
 	RbarExpectation \
 	SigmaAlgebras \
-	VectorRandomVariable \
+	VectorRandomVariable
 
 MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	$(addprefix CertRL/LM/,$(ELFIC_UTILS)) \
