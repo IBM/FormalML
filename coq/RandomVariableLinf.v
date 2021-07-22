@@ -2226,16 +2226,6 @@ End Linf.
                  _
                  (proj2_sig (LiRRVq_lim_ball_cumulative F PF cF n))))).
 
-  Definition LiRRVq_lim_picker_ext0
-             (F : (LiRRVq_UniformSpace prts -> Prop) -> Prop)
-             (PF:ProperFilter F)
-             (cF:cauchy F)
-             (n:nat) : LiRRVq prts
-    := match n with
-       | 0 => LiRRVq_zero prts
-       | S n' => LiRRVq_lim_picker F PF cF n
-       end.
-
     Lemma LiRRVq_lim_picker_cumulative_included
              (F : (LiRRVq_UniformSpace prts -> Prop) -> Prop)
              (PF:ProperFilter F)
@@ -2414,75 +2404,128 @@ End Linf.
                             (LiRRVq_lim_picker F PF cF m)) < 2 / 2 ^ N.
   Proof.
     intros.
-    apply (LiRRVq_lim_ball_center_dist _ _ F PF cF); now apply LiRRVq_lim_picker_included.
+    apply (LiRRVq_lim_ball_center_dist _ _ F PF cF);
+      now apply LiRRVq_lim_picker_included.
   Qed.    
 
+  Lemma LiRRVq_lim_filter_cauchy_eps
+        (F : (LiRRVq_UniformSpace prts  -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F) :
+    forall (eps : posreal),
+    exists N : nat,
+      forall n m : nat,
+        (n >= N)%nat ->
+        (m >= N)%nat -> 
+        LiRRVq_norm prts (LiRRVq_minus 
+                            prts  
+                            (LiRRVq_lim_picker F PF cF n)
+                            (LiRRVq_lim_picker F PF cF m)) < eps.
+    Proof.
+      intros.
+      destruct (Npow_eps eps) as [N ?].
+      exists N.
+      intros.
+      eapply Rlt_trans.
+      apply LiRRVq_lim_filter_cauchy.
+      apply H0.
+      apply H1.
+      apply H.
+    Qed.
 
-  Lemma LiRRV_norm_nneg x : 0 <= LiRRVnorm prts x.
+  Lemma LiRRVq_lim_filter_cauchy_lim
+        (F : (LiRRVq_UniformSpace prts  -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F) :
+    exists (g : LiRRVq prts),
+      is_lim_seq (fun n => LiRRVq_norm 
+                             prts 
+                             (LiRRVq_minus prts (LiRRVq_lim_picker F PF cF n) g)) 0.
   Proof.
-    unfold LiRRVnorm.
-    apply Linfty_norm_nneg.
-    apply LiRRV_li.
+    apply LiRRVq_Linf_sequential_complete.
+    apply LiRRVq_lim_filter_cauchy_eps.
   Qed.
 
-  Lemma LiRRVq_norm_nneg x : 0 <= LiRRVq_norm prts x.
-  Proof.
-    LiRRVq_simpl.
-    rewrite LiRRVq_normE.
-    apply LiRRV_norm_nneg.
-  Qed.
-  
-  Lemma LiRRVq_cauchy_filter_sum_bound 
+  Lemma LiRRVq_cauchy_filter_explicit
         (F : (LiRRVq_UniformSpace prts -> Prop) -> Prop)
         (PF:ProperFilter F)
         (cF:cauchy F) :
-    ex_series (fun n => 
-                 LiRRVq_norm prts 
-                             (LiRRVq_minus prts
-                                (LiRRVq_lim_picker F PF cF (S n))
-                                (LiRRVq_lim_picker F PF cF n))).
+    {g : LiRRVq prts |
+      is_lim_seq (fun n => LiRRVq_norm 
+                             prts 
+                             (LiRRVq_minus prts (LiRRVq_lim_picker F PF cF n) g)) 0}.
   Proof.
-    apply (@ex_series_le R_AbsRing R_CompleteNormedModule) with
-        (b := fun n => 2 / 2 ^ n).
-    intros; unfold norm; simpl.
-    unfold abs; simpl.
-    rewrite Rabs_pos_eq.
-    left.
-    apply (LiRRVq_lim_filter_cauchy F PF cF n (S n) n); try lia.
-    apply LiRRVq_norm_nneg.
-    unfold Rdiv.
-    apply (@ex_series_scal_l R_AbsRing R_CompleteNormedModule).
-    apply ex_series_ext with (a := fun n => (/ 2) ^ n).
-    - intros.
-      intros; rewrite Rinv_pow; lra.
-    - apply ex_series_geom.
-      rewrite Rabs_Rinv by lra.
-      rewrite Rabs_pos_eq; try lra.
+    apply constructive_indefinite_description.
+    apply LiRRVq_lim_filter_cauchy_lim.
   Qed.
 
-  (*   Lemma Linf_sequential_complete
-        (f : nat -> Ts -> R)
-        {rv : forall n, RandomVariable dom borel_sa (f n)}
-        {isl : forall n, IsLinfty prts (f n)} :
-    (forall (eps : posreal),
-        exists (N : nat),
-          forall (n m : nat), 
-            (N <= n)%nat -> (N <= m)%nat ->
-            Linfty_norm prts (rvminus (f n) (f m)) < eps) ->
-    exists (g : Ts -> R),
-      exists (rvg:RandomVariable dom borel_sa g),
-      IsLinfty prts g /\
-      is_lim_seq (fun n => Linfty_norm prts (rvminus (f n) g)) 0.
+  Definition LiRRVq_cauchy_filter_fun  (F : (LiRRVq_UniformSpace prts -> Prop) -> Prop)
+             (PF:ProperFilter F)
+             (cF:cauchy F) : LiRRVq prts
+    := match LiRRVq_cauchy_filter_explicit F PF cF with
+       | exist g _ => g
+       end.
+
+  Definition LiRRVq_lim_with_conditions (F : (LiRRVq_UniformSpace prts -> Prop) -> Prop)
+             (PF:ProperFilter F)
+             (cF:cauchy F) : LiRRVq prts
+     := LiRRVq_cauchy_filter_fun F PF cF.
+
+  Definition LiRRVq_lim (F : ((LiRRVq prts -> Prop) -> Prop)) : LiRRVq prts.
+  Proof.
+    destruct (excluded_middle_informative (ProperFilter F)).
+    - destruct (excluded_middle_informative (cauchy (T:= LiRRVq_UniformSpace prts) F)).
+      + exact (LiRRVq_lim_with_conditions _ _ c).
+      + exact (LiRRVq_zero prts).
+    - exact (LiRRVq_zero prts).
+  Defined.
+
+  Lemma LiRRVq_lim_complete (F : (LiRRVq_UniformSpace prts -> Prop) -> Prop) 
+        (PF : ProperFilter F)
+        (cF : cauchy F) :
+    forall eps : posreal, F (Hierarchy.ball (LiRRVq_lim F) eps).
+  Proof.
+    Admitted.
+
+(*
+  Lemma LiRRVq_lim_close (F1 F2 : (LiRRVq_UniformSpace prts -> Prop) -> Prop) :
+    filter_le F1 F2 ->
+    filter_le F2 F1 ->
+    @close (LiRRVq_UniformSpace prts) (LiRRVq_lim F1) (LiRRVq_lim F2).
   Proof.
     intros.
-    generalize ( Linf_sequential_uniformly_convergent prts f H); intros.
-    destruct H0 as [P [? ?]].
-    assert (dec:forall x: Ts, {P x} + {~ P x}) by
-        (intros; apply ClassicalDescription.excluded_middle_informative).
-    now apply Linf_sequential_uniformly_convergent_complete with (P := P).
+    replace F1 with F2.
+    apply close_refl.
+    apply functional_extensionality.
+    intros x.
+    unfold filter_le in *.
+    apply prop_extensionality; split.
+    apply H.
+    apply H0.
   Qed.
 
-*)
+  Definition LiRRVq_Complete_mixin : CompleteSpace.mixin_of (LiRRVq_UniformSpace prts)
+    := CompleteSpace.Mixin (LiRRVq_UniformSpace prts)
+                           LiRRVq_lim
+                           LiRRVq_lim_complete
+                           LiRRVq_lim_close.
+
+
+  Canonical LiRRVq_Complete :=
+    CompleteSpace.Pack (LiRRVq prts)
+                       (CompleteSpace.Class _ (LiRRVq_UniformSpace_mixin prts)
+                       LiRRVq_Complete_mixin)       
+                       (LiRRVq prts).
+
+  Canonical LiRRVq_CompleteNormedModule :=
+        CompleteNormedModule.Pack R_AbsRing (LiRRVq prts)
+                                  (CompleteNormedModule.Class
+                                     R_AbsRing (LiRRVq prts)
+                                     (NormedModule.class R_AbsRing 
+                                     (LiRRVq_NormedModule prts))
+                                     LiRRVq_Complete_mixin)
+                                     (LiRRVq prts).
+  *)
 
 
   End complete.
