@@ -1289,7 +1289,7 @@ Proof.
   replace (-1 + (1 + u^2)) with (u^2) by lra.
   apply pow2_ge_0.
   apply exp_ineq1.
-  apply pow2_gt_0; lra.  
+  generalize (pow2_gt_0 u); lra.
   subst.
   replace (0^2) with (0) by lra.
   replace (1 + 0) with (1) by lra.
