@@ -25,51 +25,51 @@ ELFIC_UTILS	= R_compl check_sub_structure compatible continuous_linear_map fixed
 		  hierarchyD hilbert linear_map logic_tricks lax_milgram lax_milgram_cea
 
 
-MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
-	utils/BasicUtils \
-	$(addprefix converge/LM/,$(ELFIC_UTILS)) \
-	utils/Assoc \
-	utils/CoquelicotAdd \
-	utils/ExtrFloatishIEEE \
-	utils/improper_integrals \
-	utils/Isomorphism \
-	utils/ListAdd \
-	utils/Finite \
-	utils/NumberIso \
-	utils/PairEncoding \
-	utils/Quotient \
-	utils/quotient_space \
-	utils/RealAdd \
-	utils/RiemannAdd \
-	utils/StreamAdd \
-	utils/StreamLimits \
-	utils/Sums \
-	utils/nvector \
-	utils/Vector \
-	utils/DVector \
-	utils/Utils \
-	utils/Floatish/FloatishDef \
-	utils/Floatish/FloatishOps \
-	utils/Floatish/FloatishRealOps \
-	utils/Floatish/FloatishInterval \
-	utils/Floatish/FloatishIEEE \
-	utils/Floatish/FloatishReal \
-	utils/Floatish \
-	converge/pmf_monad \
-    converge/qvalues \
-	converge/mdp \
-	converge/mdp_turtle \
-	converge/finite_time \
-	converge/cond_expt \
+UTILS = BasicUtils \
+	Assoc \
+	CoquelicotAdd \
+	ExtrFloatishIEEE \
+	improper_integrals \
+	Isomorphism \
+	ListAdd \
+	Finite \
+	NumberIso \
+	PairEncoding \
+	Quotient \
+	quotient_space \
+	RealAdd \
+	RiemannAdd \
+	StreamAdd \
+	StreamLimits \
+	Sums \
+	nvector \
+	Vector \
+	DVector \
+	Utils \
+	Floatish/FloatishDef \
+	Floatish/FloatishOps \
+	Floatish/FloatishRealOps \
+	Floatish/FloatishInterval \
+	Floatish/FloatishIEEE \
+	Floatish/FloatishReal \
+	Floatish
+
+NEURAL_NETWORKS = AxiomaticNormedRealVectorSpace \
+		DefinedFunctions \
+		derivlemmas \
+		Gen_NN
+		
+
+CERTRL = pmf_monad \
+	qvalues \
+	mdp \
+	mdp_turtle \
+	finite_time \
+	cond_expt
+
+PROB_THEORY = \
 	AlmostEqual \
-	AxiomaticNormedRealVectorSpace \
 	BorelSigmaAlgebra \
-	DefinedFunctions \
-	derivlemmas \
-	Dvoretzky \
-	Gaussian \
-	Gen_NN \
-        infprod \
 	DiscreteProbSpace \
 	Event \
 	ProbSpace \
@@ -87,5 +87,15 @@ MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	RbarExpectation \
 	SigmaAlgebras \
 	VectorRandomVariable \
+
+MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
+	$(addprefix CertRL/LM/,$(ELFIC_UTILS)) \
+	$(addprefix utils/,$(UTILS)) \
+	$(addprefix NeuralNetworks/,$(NEURAL_NETWORKS)) \
+	$(addprefix CertRL/,$(CERTRL)) \
+	$(addprefix ProbTheory/,$(PROB_THEORY)) \
+	Dvoretzky \
+	Gaussian \
+        infprod \
 	sumtest
 	
