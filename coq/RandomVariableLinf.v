@@ -7,6 +7,7 @@ Require Import Reals.
 Require Import FunctionalExtensionality.
 Require Import Coquelicot.Coquelicot.
 Require Import IndefiniteDescription ClassicalDescription ClassicalChoice.
+Require Import hilbert.
 
 Require Export RandomVariableFinite RandomVariableLpR.
 Require Import quotient_space.
@@ -2623,7 +2624,6 @@ End Linf.
   Qed.
 
 
-(*
   Lemma LiRRVq_lim_close (F1 F2 : (LiRRVq_UniformSpace prts -> Prop) -> Prop) :
     filter_le F1 F2 ->
     filter_le F2 F1 ->
@@ -2635,7 +2635,8 @@ End Linf.
     apply functional_extensionality.
     intros x.
     unfold filter_le in *.
-    apply prop_extensionality; split.
+    apply prop_extensionality.
+    split.
     apply H.
     apply H0.
   Qed.
@@ -2661,7 +2662,5 @@ End Linf.
                                      (LiRRVq_NormedModule prts))
                                      LiRRVq_Complete_mixin)
                                      (LiRRVq prts).
-  *)
-
 
   End complete.
