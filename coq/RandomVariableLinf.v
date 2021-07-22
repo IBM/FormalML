@@ -2369,4 +2369,65 @@ End Linf.
       lra.
   Qed.
 
+  Lemma LiRRVq_lim_filter_cauchy 
+        (F : (LiRRVq_UniformSpace prts  -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F) :
+    forall N : nat,
+      forall n m : nat,
+        (n >= N)%nat ->
+        (m >= N)%nat -> 
+        LiRRVq_norm prts (LiRRVq_minus 
+                            prts  
+                            (LiRRVq_lim_picker F PF cF n)
+                            (LiRRVq_lim_picker F PF cF m)) < 2 / 2 ^ N.
+  Proof.
+    intros.
+    apply (LiRRVq_lim_ball_center_dist _ _ F PF cF); now apply LiRRVq_lim_picker_included.
+  Qed.    
+
+
+  Lemma LiRRV_norm_nneg x : 0 <= LiRRVnorm prts x.
+  Proof.
+    unfold LiRRVnorm.
+    apply Linfty_norm_nneg.
+    apply LiRRV_li.
+  Qed.
+
+  Lemma LiRRVq_norm_nneg x : 0 <= LiRRVq_norm prts x.
+  Proof.
+    LiRRVq_simpl.
+    rewrite LiRRVq_normE.
+    apply LiRRV_norm_nneg.
+  Qed.
+  
+  Lemma LiRRVq_cauchy_filter_sum_bound 
+        (F : (LiRRVq_UniformSpace prts -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F) :
+    ex_series (fun n => 
+                 LiRRVq_norm prts 
+                             (LiRRVq_minus prts
+                                (LiRRVq_lim_picker F PF cF (S n))
+                                (LiRRVq_lim_picker F PF cF n))).
+  Proof.
+    apply (@ex_series_le R_AbsRing R_CompleteNormedModule) with
+        (b := fun n => 2 / 2 ^ n).
+    intros; unfold norm; simpl.
+    unfold abs; simpl.
+    rewrite Rabs_pos_eq.
+    left.
+    apply (LiRRVq_lim_filter_cauchy F PF cF n (S n) n); try lia.
+    apply LiRRVq_norm_nneg.
+    unfold Rdiv.
+    apply (@ex_series_scal_l R_AbsRing R_CompleteNormedModule).
+    apply ex_series_ext with (a := fun n => (/ 2) ^ n).
+    - intros.
+      intros; rewrite Rinv_pow; lra.
+    - apply ex_series_geom.
+      rewrite Rabs_Rinv by lra.
+      rewrite Rabs_pos_eq; try lra.
+ Qed.
+
+
   End complete.
