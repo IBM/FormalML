@@ -2433,6 +2433,41 @@ End Linf.
       apply H.
     Qed.
 
+  Lemma LiRRVq_norm_LiRRV_cauchy_picker
+        (F : (LiRRVq_UniformSpace prts -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F)
+        (eps : posreal) :
+    exists (N : nat),
+    exists (x : LiRRVq prts),
+      (F (Hierarchy.ball x eps)) /\
+      (forall (n:nat), (n >= N)%nat ->
+                       ((Hierarchy.ball (M := LiRRVq_UniformSpace prts) x eps) 
+                          (LiRRVq_lim_picker F PF cF n))).
+   Proof.
+     intros.
+     generalize (inv_two_pow_lt eps); intros.
+     destruct H as [N ?].
+     generalize (LiRRVq_lim_picker_center_included2 F PF cF N); intros.
+     pose (x0 := (LiRRVq_lim_ball_center_center F PF cF N)).     
+     exists N.
+     exists (proj1_sig x0).
+     intros.
+     generalize (ball_le (M:= LiRRVq_UniformSpace prts) (proj1_sig x0) (mkposreal _ (inv_pow_2_pos N)) eps); intros.
+     split.
+     - destruct x0.
+       simpl in *.
+       eapply filter_imp; try eapply f.
+       apply ball_le.
+       lra.
+     - intros.
+       specialize (H0 n).
+       apply H1.
+       now left.
+       now apply H0.
+   Qed.
+
+     
   Lemma LiRRVq_lim_filter_cauchy_lim
         (F : (LiRRVq_UniformSpace prts  -> Prop) -> Prop)
         (PF:ProperFilter F)
@@ -2480,12 +2515,104 @@ End Linf.
     - exact (LiRRVq_zero prts).
   Defined.
 
+  Lemma LiRRVq_ball_LiRRVq_norm (x : LiRRVq prts) (e : R) (y : LiRRVq prts) :
+    LiRRVq_ball prts x e y <-> LiRRVq_norm prts (LiRRVq_minus prts x y) < e.
+  Admitted.
+
+  Lemma LiRRVq_norm_pos (x : LiRRVq prts) :
+    LiRRVq_norm prts x >= 0.
+  Proof.
+    Admitted.
+
+  Lemma LiRRVq_ball_LiRRV_lim_picker
+        (F : (LiRRVq_UniformSpace prts -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F)
+        (eps : posreal) :
+     exists (N : nat),
+       forall (n : nat), (n >= N)%nat ->
+                         (Hierarchy.ball (M := LiRRVq_UniformSpace prts) 
+                                         (LiRRVq_lim_picker F PF cF (S n)) eps (LiRRVq_lim F)).
+    Proof.
+      unfold LiRRVq_lim.
+      match_destr; try tauto.
+      match_destr; try tauto.
+      unfold LpRRV_lim_with_conditions.
+      unfold LiRRVq_lim_with_conditions.
+      unfold LiRRVq_cauchy_filter_fun.
+      case_eq ( LiRRVq_cauchy_filter_explicit F p c); intros.
+      destruct H.
+      apply is_lim_seq_spec in i.
+      unfold is_lim_seq' in i.
+      destruct (i eps) as [N ?].
+      exists N.
+      intros.
+      specialize (H (S n)).
+      cut_to H; try lia.
+      rewrite Rminus_0_r in H.
+      rewrite (proof_irrelevance _ PF p).
+      rewrite (proof_irrelevance _ cF c).
+      rewrite Rabs_right in H.
+      red; simpl.
+      rewrite LiRRVq_ball_LiRRVq_norm.
+      apply H.
+      apply LiRRVq_norm_pos.
+    Qed.
+
+  Lemma LiRRVnorm_LiRRV_lim
+        (F : (LiRRVq_UniformSpace prts -> Prop) -> Prop)
+        (PF:ProperFilter F)
+        (cF:cauchy F)
+        (eps : posreal) :
+    exists (x : LiRRVq prts),
+      (F (Hierarchy.ball x eps)) /\
+      ((Hierarchy.ball (M := LiRRVq_UniformSpace prts) x eps) (LiRRVq_lim F)).
+  Proof.
+    generalize (cond_pos eps); intro eps_pos.
+    assert (eps_half: 0 < eps/2) by lra.
+    generalize (LiRRVq_norm_LiRRV_cauchy_picker F PF cF (mkposreal _ eps_half)); intros.
+    destruct H as [N [x [? ?]]].
+    exists x.
+    split.
+    - generalize (ball_le (M:= LiRRVq_UniformSpace prts) x (mkposreal _ eps_half) eps); intros.
+      eapply filter_imp.
+      apply H1.
+      simpl; lra.
+      apply H.
+    - generalize (LiRRVq_ball_LiRRV_lim_picker F PF cF (mkposreal _ eps_half)); intros.
+      destruct H1.
+      specialize (H0 (S (max N x0))).
+      cut_to H0; try lia.
+      specialize (H1 (max N x0)).
+      cut_to H1; try lia.
+      replace (pos eps) with ((mkposreal _ eps_half) + (mkposreal _ eps_half)) by (simpl; lra).
+      now apply Hierarchy.ball_triangle with (y := (LiRRVq_lim_picker F PF cF (S (max N x0)))).
+   Qed.      
+
   Lemma LiRRVq_lim_complete (F : (LiRRVq_UniformSpace prts -> Prop) -> Prop) 
         (PF : ProperFilter F)
         (cF : cauchy F) :
     forall eps : posreal, F (Hierarchy.ball (LiRRVq_lim F) eps).
   Proof.
-    Admitted.
+    intros.
+    assert (0 < eps/2).
+    {
+      apply Rlt_div_r; try lra.
+      rewrite Rmult_0_l.
+      apply cond_pos.
+    }
+    generalize (LiRRVnorm_LiRRV_lim F PF cF (mkposreal _ H)); intros.
+    destruct H0 as [? [? ?]].
+    generalize (Hierarchy.ball_triangle 
+                  (M := LiRRVq_UniformSpace prts)); intros.
+    apply filter_imp with (P := (Hierarchy.ball x (mkposreal _ H))); trivial.
+    intros.
+    apply Hierarchy.ball_sym in H1.
+    replace (pos eps) with ((pos (mkposreal _ H)) + (pos (mkposreal _ H))).
+    apply (Hierarchy.ball_triangle _ _ _ _ _ H1 H3).
+    simpl; lra.
+  Qed.
+
 
 (*
   Lemma LiRRVq_lim_close (F1 F2 : (LiRRVq_UniformSpace prts -> Prop) -> Prop) :
