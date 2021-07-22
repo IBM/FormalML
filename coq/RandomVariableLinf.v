@@ -6,7 +6,7 @@ Require Import Classical.
 Require Import Reals.
 Require Import FunctionalExtensionality.
 Require Import Coquelicot.Coquelicot.
-Require Import IndefiniteDescription ClassicalDescription.
+Require Import IndefiniteDescription ClassicalDescription ClassicalChoice.
 
 Require Export RandomVariableFinite RandomVariableLpR.
 Require Import quotient_space.
@@ -2135,6 +2135,37 @@ End Linf.
     now apply Linf_sequential_uniformly_convergent_complete with (P := P).
   Qed.
 
+  Lemma LiRRVq_Linf_sequential_complete
+        (f : nat -> LiRRVq prts) :
+    (forall (eps : posreal),
+        exists (N : nat),
+          forall (n m : nat), 
+            (N <= n)%nat -> (N <= m)%nat ->
+            LiRRVq_norm prts (LiRRVq_minus prts (f n) (f m)) < eps) ->
+    exists (g : LiRRVq prts),
+      is_lim_seq (fun n => LiRRVq_norm prts (LiRRVq_minus prts (f n) g)) 0.
+  Proof.
+    intros.
+    destruct (choice _ (fun x => Quot_inv (f x))) as [f' feqq].
+    generalize (Linf_sequential_complete f'); intros HH.
+    destruct HH as [x [rvx [islx islimx]]].
+    - intros eps.
+      destruct (H eps) as [N HH].
+      exists N; intros n m Nn Nm.
+      specialize (HH n m Nn Nm).
+      repeat rewrite feqq in HH.
+      rewrite LiRRVq_minusE in HH.
+      rewrite LiRRVq_normE in HH.
+      apply HH.
+    - exists (Quot _ (pack_LiRRV prts x)).
+      eapply is_lim_seq_ext; try eapply islimx.
+      intros ?; simpl.
+      repeat rewrite feqq.
+      rewrite LiRRVq_minusE.
+      rewrite LiRRVq_normE.
+      reflexivity.
+  Qed.
+
   End Linf2.
 
   Section complete.
@@ -2427,7 +2458,31 @@ End Linf.
     - apply ex_series_geom.
       rewrite Rabs_Rinv by lra.
       rewrite Rabs_pos_eq; try lra.
- Qed.
+  Qed.
+
+  (*   Lemma Linf_sequential_complete
+        (f : nat -> Ts -> R)
+        {rv : forall n, RandomVariable dom borel_sa (f n)}
+        {isl : forall n, IsLinfty prts (f n)} :
+    (forall (eps : posreal),
+        exists (N : nat),
+          forall (n m : nat), 
+            (N <= n)%nat -> (N <= m)%nat ->
+            Linfty_norm prts (rvminus (f n) (f m)) < eps) ->
+    exists (g : Ts -> R),
+      exists (rvg:RandomVariable dom borel_sa g),
+      IsLinfty prts g /\
+      is_lim_seq (fun n => Linfty_norm prts (rvminus (f n) g)) 0.
+  Proof.
+    intros.
+    generalize ( Linf_sequential_uniformly_convergent prts f H); intros.
+    destruct H0 as [P [? ?]].
+    assert (dec:forall x: Ts, {P x} + {~ P x}) by
+        (intros; apply ClassicalDescription.excluded_middle_informative).
+    now apply Linf_sequential_uniformly_convergent_complete with (P := P).
+  Qed.
+
+*)
 
 
   End complete.
