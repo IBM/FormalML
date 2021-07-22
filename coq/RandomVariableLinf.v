@@ -1447,6 +1447,15 @@ Qed.
         apply HH.
       Qed.
 
+      Definition LiRRV_UniformSpace_mixin : UniformSpace.mixin_of LiRRV
+        := UniformSpace.Mixin  LiRRV LiRRVpoint LiRRVball
+                               LiRRV_ball_refl
+                               LiRRV_ball_sym
+                               LiRRV_ball_trans.
+
+      Canonical LiRRV_UniformSpace :=
+        UniformSpace.Pack LiRRV LiRRV_UniformSpace_mixin LiRRV.
+
     Section quoted.
 
       Definition LiRRVq : Type := quot LiRRV_eq.
@@ -2359,6 +2368,5 @@ End Linf.
       apply pow_nzero.
       lra.
   Qed.
-
 
   End complete.
