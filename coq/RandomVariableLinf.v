@@ -2517,12 +2517,21 @@ End Linf.
 
   Lemma LiRRVq_ball_LiRRVq_norm (x : LiRRVq prts) (e : R) (y : LiRRVq prts) :
     LiRRVq_ball prts x e y <-> LiRRVq_norm prts (LiRRVq_minus prts x y) < e.
-  Admitted.
-
+  Proof.
+    LiRRVq_simpl.
+    rewrite LiRRVq_ballE, LiRRVq_minusE, LiRRVq_normE.
+    reflexivity.
+  Qed.
+  
   Lemma LiRRVq_norm_pos (x : LiRRVq prts) :
     LiRRVq_norm prts x >= 0.
   Proof.
-    Admitted.
+    LiRRVq_simpl.
+    rewrite LiRRVq_normE.
+    apply Rle_ge.
+    apply Linfty_norm_nneg.
+    apply LiRRV_li.
+  Qed.
 
   Lemma LiRRVq_ball_LiRRV_lim_picker
         (F : (LiRRVq_UniformSpace prts -> Prop) -> Prop)
