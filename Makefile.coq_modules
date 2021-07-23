@@ -86,11 +86,15 @@ PROB_THEORY = \
 	Expectation \
 	RbarExpectation \
 	SigmaAlgebras \
-	VectorRandomVariable
+	VectorRandomVariable \
+	Gaussian
+
 
 QLEARN = \
 	Dvoretzky \
         infprod \
+	sumtest
+
 
 MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	$(addprefix CertRL/LM/,$(ELFIC_UTILS)) \
@@ -98,7 +102,5 @@ MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	$(addprefix NeuralNetworks/,$(NEURAL_NETWORKS)) \
 	$(addprefix ProbTheory/,$(PROB_THEORY)) \
 	$(addprefix CertRL/,$(CERTRL)) \
-	$(addprefix QLearn/,$(QLEARN)) \
-	Gaussian \
-	sumtest
+	$(addprefix QLearn/,$(QLEARN))
 	
