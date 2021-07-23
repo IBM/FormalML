@@ -614,17 +614,17 @@ Section vector_ops.
     now rewrite vector_nth_fun_to_vector in rv.
   Qed.
 
-  Global Program Instance vecrvnth_srv {n} i pf (rv_X : Ts -> vector R n)
+  Global Program Instance vecrvnth_frf {n} i pf (rv_X : Ts -> vector R n)
          {rv:FiniteRangeFunction rv_X} :
     FiniteRangeFunction (vecrvnth i pf rv_X)
     :=
       {
-    srv_vals := map (fun c => vector_nth i pf c) srv_vals
+    frf_vals := map (fun c => vector_nth i pf c) frf_vals
       }.
   Next Obligation.
     unfold vecrvnth.
     apply in_map.
-    apply srv_vals_complete.
+    apply frf_vals_complete.
   Qed.
 
   Global Instance Rvector_sum_pos {n} (f : Ts -> vector R n) :
@@ -672,16 +672,16 @@ Section vector_ops.
   Definition vector_Expectation {n} (rv_X : Ts -> vector R n) : option (vector Rbar n)
     := vectoro_to_ovector (vector_map Expectation (iso_f rv_X)).
 
-  Program Instance vec_srv {n} (rv_X : Ts -> vector R n) i (pf : (i < n)%nat)
-          (srv : FiniteRangeFunction rv_X) : FiniteRangeFunction
+  Program Instance vec_frf {n} (rv_X : Ts -> vector R n) i (pf : (i < n)%nat)
+          (frf : FiniteRangeFunction rv_X) : FiniteRangeFunction
                                                 (vector_nth i pf (iso_f rv_X)) 
     :=
       {
-    srv_vals := map (fun c => vector_nth i pf c) srv_vals
+    frf_vals := map (fun c => vector_nth i pf c) frf_vals
       }.
   Next Obligation.
     rewrite vector_nth_fun_to_vector.
-    destruct srv.
+    destruct frf.
     now apply in_map.
   Qed.
 
@@ -694,40 +694,40 @@ Section vector_ops.
     apply rv.
   Qed.
 
-  Global Program Instance srv_vecrvconst n c :
+  Global Program Instance frf_vecrvconst n c :
     FiniteRangeFunction (vecrvconst n c)
-    := { srv_vals := (vector_const c n)::nil }.
+    := { frf_vals := (vector_const c n)::nil }.
   
   Definition vector_SimpleExpectation {n} (rv_X : Ts -> vector R n)
              {rv: RandomVariable dom (Rvector_borel_sa n) rv_X}
-             {srv : FiniteRangeFunction rv_X} : vector R n
+             {frf : FiniteRangeFunction rv_X} : vector R n
     := 
       vector_create 0 n (fun m _ pf => 
                            SimpleExpectation (vector_nth m pf (iso_f rv_X))
-                                             (srv := (vec_srv rv_X m pf srv))).
+                                             (frf := (vec_frf rv_X m pf frf))).
 
   Definition vector_SimpleConditionalExpectationSA {n} (rv_X : Ts -> vector R n)
              {rv: RandomVariable dom (Rvector_borel_sa n) rv_X}
-             {srv : FiniteRangeFunction rv_X} 
+             {frf : FiniteRangeFunction rv_X} 
              (l : list dec_sa_event) : Ts -> vector R n 
     := iso_b (
            vector_create 0 n (fun m _ pf => 
                                 SimpleConditionalExpectationSA 
                                   (vector_nth m pf (iso_f rv_X))
-                                  (srv := (vec_srv rv_X m pf srv))
+                                  (frf := (vec_frf rv_X m pf frf))
                                   l)).
 
 
   Program Instance FiniteRangeFunction_nth_vector {n} {Td} (v:Ts->vector Td n)
-          (srvs:forall i pf1, FiniteRangeFunction (fun a => vector_nth i pf1 (v a))) :
+          (frfs:forall i pf1, FiniteRangeFunction (fun a => vector_nth i pf1 (v a))) :
     FiniteRangeFunction v
-    := { srv_vals :=
+    := { frf_vals :=
            if Nat.eq_dec n 0
            then [vector0]
            else 
              vector_list_product
                (vector_create 0 n
-                              (fun i _ pf => (@srv_vals _ _ _ (srvs i pf)))) }.
+                              (fun i _ pf => (@frf_vals _ _ _ (frfs i pf)))) }.
   Next Obligation.
     match_destr.
     - simpl.
@@ -739,7 +739,7 @@ Section vector_ops.
       apply vector_Forall2_nth_iff.
       intros.
       rewrite vector_nth_create'.
-      destruct (srvs i pf).
+      destruct (frfs i pf).
       auto.
   Qed.
 
@@ -754,7 +754,7 @@ Lemma FiniteRangeFunction_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
   Instance vec_gen_condexp_rv {n}
            (rv_X : Ts -> vector R n)
            {rv:RandomVariable dom (Rvector_borel_sa n) rv_X}
-           {srv : FiniteRangeFunction rv_X}
+           {frf : FiniteRangeFunction rv_X}
            (l : list dec_sa_event) :
     RandomVariable dom (Rvector_borel_sa n)
                    (vector_SimpleConditionalExpectationSA rv_X l).
@@ -777,7 +777,7 @@ Lemma FiniteRangeFunction_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
   Instance vector_SimpleConditionalExpectationSA_simpl {n}
            (rv_X : Ts -> vector R n)
            {rv: RandomVariable dom (Rvector_borel_sa n) rv_X}
-           {srv : FiniteRangeFunction rv_X}
+           {frf : FiniteRangeFunction rv_X}
            (l : list dec_sa_event) :
     FiniteRangeFunction (vector_SimpleConditionalExpectationSA rv_X l).
   Proof.
@@ -797,7 +797,7 @@ Lemma FiniteRangeFunction_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
   Lemma vector_gen_conditional_tower_law {n}
         (rv_X : Ts -> vector R n)
         {rv : RandomVariable dom (Rvector_borel_sa n) rv_X}
-        {srv : FiniteRangeFunction rv_X}
+        {frf : FiniteRangeFunction rv_X}
         (l : list dec_sa_event)
         (ispart: is_partition_list (map dsa_event l)) :
     vector_SimpleExpectation rv_X =
@@ -807,10 +807,10 @@ Lemma FiniteRangeFunction_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
     apply vector_create_ext.
     intros.
     unfold vector_SimpleConditionalExpectationSA.
-    transitivity (SimpleExpectation (srv:=(@SimpleConditionalExpectationSA_simpl Ts dom prts
+    transitivity (SimpleExpectation (frf:=(@SimpleConditionalExpectationSA_simpl Ts dom prts
                                                                                    (@vector_nth (Ts -> R) n i pf2 (@fun_to_vector_to_vector_of_funs Ts R n rv_X))
                                                                                    (vec_rv _ _ _ _)
-                                                                                   (@vec_srv n rv_X i pf2 srv) l))
+                                                                                   (@vec_frf n rv_X i pf2 frf) l))
                                     (SimpleConditionalExpectationSA (vector_nth i pf2 ((fun_to_vector_to_vector_of_funs rv_X))) l)).
     - apply gen_conditional_tower_law; trivial.
     - apply SimpleExpectation_ext.
@@ -818,17 +818,17 @@ Lemma FiniteRangeFunction_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
       now rewrite vector_nth_create'.
   Qed.
 
-  Program Instance srv_vecrvmult {n}
+  Program Instance frf_vecrvmult {n}
           (rv_X1 rv_X2 : Ts -> vector R n)
-          {srv1:FiniteRangeFunction rv_X1}
-          {srv2:FiniteRangeFunction rv_X2}
+          {frf1:FiniteRangeFunction rv_X1}
+          {frf2:FiniteRangeFunction rv_X2}
     : FiniteRangeFunction (vecrvmult rv_X1 rv_X2)
-    := { srv_vals := map (fun ab => Rvector_mult (fst ab) (snd ab)) 
-                         (list_prod (srv_vals (FiniteRangeFunction:=srv1))
-                                    (srv_vals (FiniteRangeFunction:=srv2))) }.
+    := { frf_vals := map (fun ab => Rvector_mult (fst ab) (snd ab)) 
+                         (list_prod (frf_vals (FiniteRangeFunction:=frf1))
+                                    (frf_vals (FiniteRangeFunction:=frf2))) }.
   Next Obligation.
-    destruct srv1.
-    destruct srv2.
+    destruct frf1.
+    destruct frf2.
     rewrite in_map_iff.
     exists (rv_X1 x, rv_X2 x).
     split.
@@ -836,17 +836,17 @@ Lemma FiniteRangeFunction_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
     apply in_prod; trivial.
   Qed.
 
-  Global Program Instance srv_vecrvplus {n}
+  Global Program Instance frf_vecrvplus {n}
           (rv_X1 rv_X2 : Ts -> vector R n)
-          {srv1:FiniteRangeFunction rv_X1}
-          {srv2:FiniteRangeFunction rv_X2}
+          {frf1:FiniteRangeFunction rv_X1}
+          {frf2:FiniteRangeFunction rv_X2}
     : FiniteRangeFunction (vecrvplus rv_X1 rv_X2)
-    := { srv_vals := map (fun ab => Rvector_plus (fst ab) (snd ab)) 
-                         (list_prod (srv_vals (FiniteRangeFunction:=srv1))
-                                    (srv_vals (FiniteRangeFunction:=srv2))) }.
+    := { frf_vals := map (fun ab => Rvector_plus (fst ab) (snd ab)) 
+                         (list_prod (frf_vals (FiniteRangeFunction:=frf1))
+                                    (frf_vals (FiniteRangeFunction:=frf2))) }.
   Next Obligation.
-    destruct srv1.
-    destruct srv2.
+    destruct frf1.
+    destruct frf2.
     rewrite in_map_iff.
     exists (rv_X1 x, rv_X2 x).
     split.
@@ -854,64 +854,64 @@ Lemma FiniteRangeFunction_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
     apply in_prod; trivial.
   Qed.
 
-  Global Program Instance srv_vecrvscale {n} (c:R)
+  Global Program Instance frf_vecrvscale {n} (c:R)
           (rv_X : Ts -> vector R n)
-          {srv:FiniteRangeFunction rv_X}
+          {frf:FiniteRangeFunction rv_X}
     : FiniteRangeFunction (vecrvscale c rv_X)
-    := { srv_vals := map (fun x => Rvector_scale c x)
-                         (srv_vals (FiniteRangeFunction := srv)) }.
+    := { frf_vals := map (fun x => Rvector_scale c x)
+                         (frf_vals (FiniteRangeFunction := frf)) }.
   Next Obligation.
-    destruct srv.
+    destruct frf.
     rewrite in_map_iff.
     exists (rv_X x).
     now split.
   Qed.
 
-  Global Instance srv_vecropp {n}
+  Global Instance frf_vecropp {n}
          (rv_X : Ts -> vector R n)
-         {srv:FiniteRangeFunction rv_X}
+         {frf:FiniteRangeFunction rv_X}
     : FiniteRangeFunction (vecrvopp rv_X)
-    :=  srv_vecrvscale (-1) rv_X.    
+    :=  frf_vecrvscale (-1) rv_X.    
 
-  Global Instance srv_vecrvminus {n}
+  Global Instance frf_vecrvminus {n}
          (rv_X1 rv_X2 : Ts -> vector R n)
-         {srv1 : FiniteRangeFunction rv_X1}
-         {srv2 : FiniteRangeFunction rv_X2}  :
+         {frf1 : FiniteRangeFunction rv_X1}
+         {frf2 : FiniteRangeFunction rv_X2}  :
     FiniteRangeFunction (vecrvminus rv_X1 rv_X2) := 
-    srv_vecrvplus rv_X1 (vecrvopp rv_X2).
+    frf_vecrvplus rv_X1 (vecrvopp rv_X2).
 
-  Program Instance srv_vecsum {n}
+  Program Instance frf_vecsum {n}
           (rv_X : Ts -> vector R n)
-          {srv:FiniteRangeFunction rv_X}
+          {frf:FiniteRangeFunction rv_X}
     : FiniteRangeFunction (vecrvsum rv_X)
-    := { srv_vals := map Rvector_sum srv_vals }.
+    := { frf_vals := map Rvector_sum frf_vals }.
   Next Obligation.
-    destruct srv.
+    destruct frf.
     rewrite in_map_iff.
     exists (rv_X x).
     easy.
   Qed.
 
-  Global Instance srvinner {n}
+  Global Instance frfinner {n}
          (rv_X1 rv_X2 : Ts -> vector R n)
-         {srv1:FiniteRangeFunction rv_X1}
-         {srv2:FiniteRangeFunction rv_X2}
+         {frf1:FiniteRangeFunction rv_X1}
+         {frf2:FiniteRangeFunction rv_X2}
     : FiniteRangeFunction (rvinner rv_X1 rv_X2).
   Proof.
     eapply FiniteRangeFunction_ext.
     - rewrite rvinner_unfold; reflexivity.
-    - apply srv_vecsum.
-      now apply srv_vecrvmult.
+    - apply frf_vecsum.
+      now apply frf_vecrvmult.
   Qed.
 
-  Global Program Instance srvmaxabs {n}
+  Global Program Instance frfmaxabs {n}
          (rv_X : Ts -> vector R n)
-         {srv:FiniteRangeFunction rv_X}
+         {frf:FiniteRangeFunction rv_X}
     : FiniteRangeFunction (rvmaxabs rv_X)
-  := { srv_vals := map Rvector_max_abs srv_vals }.
+  := { frf_vals := map Rvector_max_abs frf_vals }.
   Next Obligation.
     unfold rvmaxabs.
-    destruct srv.
+    destruct frf.
     now apply in_map.
   Qed.
 
@@ -953,8 +953,8 @@ Section vector_ops_ext.
   Lemma partition_measurable_vecrvplus {n} (rv_X1 rv_X2 : Ts -> vector R n)
         {rv1 : RandomVariable dom (Rvector_borel_sa n) rv_X1}
         {rv2 : RandomVariable dom (Rvector_borel_sa n) rv_X2} 
-        {srv1 : FiniteRangeFunction rv_X1}
-        {srv2 : FiniteRangeFunction rv_X2}         
+        {frf1 : FiniteRangeFunction rv_X1}
+        {frf2 : FiniteRangeFunction rv_X2}         
         (l : list (event dom)) :
     is_partition_list l ->
     partition_measurable (cod:=Rvector_borel_sa n) rv_X1 l ->
@@ -969,9 +969,9 @@ Section vector_ops_ext.
      destruct H1 as [c2 [? ?]].     
      exists (Rvector_plus c1 c2).
      split.
-     - destruct srv1.
-       destruct srv2.
-       unfold RandomVariable.srv_vals; simpl.
+     - destruct frf1.
+       destruct frf2.
+       unfold RandomVariable.frf_vals; simpl.
        apply in_map_iff.
        exists (c1, c2).
        split; [reflexivity | ].
@@ -986,7 +986,7 @@ Section vector_ops_ext.
    
   Lemma partition_measurable_vecrvscale {n} (c : R) (rv_X : Ts -> vector R n)
         {rv : RandomVariable dom (Rvector_borel_sa n) rv_X}
-        {srv : FiniteRangeFunction rv_X}
+        {frf : FiniteRangeFunction rv_X}
         (l : list (event dom)) :
     is_partition_list l ->
      partition_measurable (cod:=Rvector_borel_sa n) rv_X l ->     
@@ -998,8 +998,8 @@ Section vector_ops_ext.
      unfold vecrvscale.
      exists (Rvector_scale c c0).
      split.
-     - destruct srv.
-       unfold RandomVariable.srv_vals; simpl.
+     - destruct frf.
+       unfold RandomVariable.frf_vals; simpl.
        apply in_map_iff.
        exists c0.
        now split; [reflexivity | ].
@@ -1012,8 +1012,8 @@ Section vector_ops_ext.
    Lemma partition_measurable_vecrvminus {n} (rv_X1 rv_X2 : Ts -> vector R n) 
          {rv1 : RandomVariable dom (Rvector_borel_sa n) rv_X1}
          {rv2 : RandomVariable dom (Rvector_borel_sa n) rv_X2} 
-         {srv1 : FiniteRangeFunction rv_X1}
-         {srv2 : FiniteRangeFunction rv_X2}         
+         {frf1 : FiniteRangeFunction rv_X1}
+         {frf2 : FiniteRangeFunction rv_X2}         
          (l : list (event dom)) :
     is_partition_list l ->
      partition_measurable (cod:=Rvector_borel_sa n) rv_X1 l ->
@@ -1028,7 +1028,7 @@ Section vector_ops_ext.
    
   Instance rv_fun_simple_Rvector {n} (x:Ts -> vector R n) (f : vector R n -> vector R n)
            (rvx : RandomVariable dom (Rvector_borel_sa n) x) 
-           (srvx : FiniteRangeFunction x) :
+           (frfx : FiniteRangeFunction x) :
     RandomVariable dom (Rvector_borel_sa n) (fun u => f (x u)).
   Proof.
     eapply rv_fun_simple; eauto.
@@ -1038,7 +1038,7 @@ Section vector_ops_ext.
 
    Lemma partition_measurable_comp {n} (rv_X : Ts -> vector R n) (f : vector R n -> vector R n)
          {rv : RandomVariable dom (Rvector_borel_sa n) rv_X}
-         {srv : FiniteRangeFunction rv_X}
+         {frf : FiniteRangeFunction rv_X}
          (l : list (event dom)) :
     is_partition_list l ->
      partition_measurable (cod:=Rvector_borel_sa n) rv_X l ->
@@ -1048,8 +1048,8 @@ Section vector_ops_ext.
      specialize (H0 H p H2).
      destruct H0 as [c [? ?]].
      exists (f c).
-     destruct srv.
-     unfold RandomVariable.srv_vals; simpl.
+     destruct frf.
+     unfold RandomVariable.frf_vals; simpl.
      split.
      - rewrite in_map_iff.
        exists c.
@@ -1065,7 +1065,7 @@ Section vector_ops_ext.
    Proof.
      unfold partition_measurable; intros.
      exists c.
-     unfold srv_vals; simpl.
+     unfold frf_vals; simpl.
      split; [now left | ].
      repeat red.
      reflexivity.
@@ -1074,12 +1074,12 @@ Section vector_ops_ext.
   Program Definition vec_induced_sigma_generators {n}
           {rv_X : Ts -> vector R n}
           {rv:RandomVariable dom (Rvector_borel_sa n) rv_X}
-          (srv : FiniteRangeFunction rv_X)
+          (frf : FiniteRangeFunction rv_X)
     : list dec_sa_event
     :=
       map (fun (c:vector R n) => Build_dec_sa_event
                                 (preimage_singleton (σd:=(Rvector_borel_sa n)) rv_X c) _)
-          (nodup vector_eq_dec srv_vals).
+          (nodup vector_eq_dec frf_vals).
     Next Obligation.
       unfold event_preimage, event_singleton, dec_event.
       intros.
@@ -1089,22 +1089,22 @@ Section vector_ops_ext.
     Lemma is_partition_vec_induced_gen {n}
           {rv_X : Ts -> vector R n}
           {rv:RandomVariable dom (Rvector_borel_sa n) rv_X}
-          (srv : FiniteRangeFunction rv_X) :
-    is_partition_list (map dsa_event (vec_induced_sigma_generators srv)).
+          (frf : FiniteRangeFunction rv_X) :
+    is_partition_list (map dsa_event (vec_induced_sigma_generators frf)).
   Proof.
     unfold is_partition_list, vec_induced_sigma_generators.
     rewrite map_map; simpl.
     split.
     - apply event_disjoint_preimage_disj.
       apply NoDup_nodup.
-    - apply srv_nodup_preimage_list_union.
+    - apply frf_nodup_preimage_list_union.
   Qed.
 
   Lemma vec_induced_partition_measurable {n}
           {rv_X : Ts -> vector R n}
           {rv:RandomVariable dom (Rvector_borel_sa n) rv_X}
-          (srv : FiniteRangeFunction rv_X) :
-    partition_measurable (cod:=Rvector_borel_sa n) rv_X (map dsa_event (vec_induced_sigma_generators srv)).
+          (frf : FiniteRangeFunction rv_X) :
+    partition_measurable (cod:=Rvector_borel_sa n) rv_X (map dsa_event (vec_induced_sigma_generators frf)).
   Proof.
     unfold partition_measurable, vec_induced_sigma_generators.
     intros.
@@ -1145,17 +1145,17 @@ Section vector_ops_ext.
   Definition make_simple_vector_package {n}
              (rv_X : Ts -> vector R n)
              {rv:RandomVariable dom (Rvector_borel_sa n) rv_X}
-             {srv:FiniteRangeFunction rv_X} :
+             {frf:FiniteRangeFunction rv_X} :
     list ({rv_X:Ts -> R & RandomVariable dom borel_sa rv_X & FiniteRangeFunction rv_X})
     := proj1_sig (vector_create 0 n
-                                (fun i _ pf => existT2 _ _ _ (vec_rv _ i pf rv) (vec_srv _ i pf srv))).
+                                (fun i _ pf => existT2 _ _ _ (vec_rv _ i pf rv) (vec_frf _ i pf frf))).
   
   Lemma SimpleExpectation_fold_rvplus'
         (l : list ({rv_X:Ts -> R & RandomVariable dom borel_sa rv_X & FiniteRangeFunction rv_X})) : 
     SimpleExpectation (fold_right rvplus (const 0) (map (fun '(existT2 x _ _) => x) l))
                       (rv:=RandomVariable_exist2_part l)
-                      (srv:=FiniteRangeFunction_exist2_part l) =
-    list_sum (map (fun '(existT2 x rx sx)  => SimpleExpectation x (rv:=rx) (srv:=sx)) l).
+                      (frf:=FiniteRangeFunction_exist2_part l) =
+    list_sum (map (fun '(existT2 x rx sx)  => SimpleExpectation x (rv:=rx) (frf:=sx)) l).
   Proof.
     induction l; simpl.
     - now rewrite SimpleExpectation_const.
@@ -1166,7 +1166,7 @@ Section vector_ops_ext.
 
   Lemma make_simple_vector_package_proj1 {n} (rv_X:Ts -> vector R n)
         {rv:RandomVariable dom (Rvector_borel_sa n) rv_X}
-        {srv:FiniteRangeFunction rv_X} :
+        {frf:FiniteRangeFunction rv_X} :
     (map (fun '(@existT2 _ _ _ x _ _) => x) (make_simple_vector_package rv_X)) = proj1_sig (fun_to_vector_to_vector_of_funs rv_X).
   Proof.
     unfold make_simple_vector_package; simpl.
@@ -1177,8 +1177,8 @@ Section vector_ops_ext.
   
   Lemma SimpleExpectation_rvsum {n} (rv_X : Ts -> vector R n)
         {rv:RandomVariable dom (Rvector_borel_sa n) rv_X}
-        {srv1:FiniteRangeFunction rv_X} :
-    SimpleExpectation (vecrvsum rv_X)  (srv:=srv_vecsum rv_X)
+        {frf1:FiniteRangeFunction rv_X} :
+    SimpleExpectation (vecrvsum rv_X)  (frf:=frf_vecsum rv_X)
     = 
     Rvector_sum (vector_SimpleExpectation rv_X).
   Proof.
@@ -1205,12 +1205,12 @@ Section vector_ops_ext.
         by now rewrite vector_create_nth.
       now rewrite eqq2 at 1; simpl.
     }
-(*    assert (srv:FiniteRangeFunction (fun omega : Ts => list_sum (` (rv_X omega)))). *)
+(*    assert (frf:FiniteRangeFunction (fun omega : Ts => list_sum (` (rv_X omega)))). *)
 
     
     rewrite (SimpleExpectation_ext eqq1
                                    (rv2:=RandomVariable_exist2_part _)
-                                   (srv2:=FiniteRangeFunction_exist2_part _)).
+                                   (frf2:=FiniteRangeFunction_exist2_part _)).
     rewrite HH.
     f_equal.
     clear.
@@ -1221,21 +1221,21 @@ Section vector_ops_ext.
   Lemma SimpleExpectation_rvinner {n} (rv_X1 rv_X2 : Ts -> vector R n)
         {rv1:RandomVariable dom (Rvector_borel_sa n) rv_X1}
         {rv2:RandomVariable dom (Rvector_borel_sa n) rv_X2}
-        {srv1:FiniteRangeFunction rv_X1}
-        {srv2:FiniteRangeFunction rv_X2} :
-    SimpleExpectation (rvinner rv_X1 rv_X2) (rv:=Rvector_inner_rv _ _) (srv:=srvinner _ _)
+        {frf1:FiniteRangeFunction rv_X1}
+        {frf2:FiniteRangeFunction rv_X2} :
+    SimpleExpectation (rvinner rv_X1 rv_X2) (rv:=Rvector_inner_rv _ _) (frf:=frfinner _ _)
     = 
     Rvector_sum
       (vector_create 
          0 n 
          (fun m _ pf => 
-            SimpleExpectation (srv:=srvmult _ _ (srv1:=vec_srv _ m pf _) (srv2:=vec_srv _ m pf _)) (rv:=rvmult_rv _ _ _ (rv1:=vec_rv _ m pf _) (rv2:=vec_rv _ m pf _))
+            SimpleExpectation (frf:=frfmult _ _ (frf1:=vec_frf _ m pf _) (frf2:=vec_frf _ m pf _)) (rv:=rvmult_rv _ _ _ (rv1:=vec_rv _ m pf _) (rv2:=vec_rv _ m pf _))
                               (rvmult (vector_nth m pf (iso_f rv_X1))
                                       (vector_nth m pf (iso_f rv_X2))))).
   Proof.
     generalize (rvinner_unfold rv_X1 rv_X2); intros.
     rewrite (SimpleExpectation_ext H).
-    rewrite (SimpleExpectation_pf_irrel _ (srv_vecsum _ (srv:=(srv_vecrvmult _ _ )))).
+    rewrite (SimpleExpectation_pf_irrel _ (frf_vecsum _ (frf:=(frf_vecrvmult _ _ )))).
     rewrite SimpleExpectation_rvsum.
     f_equal.
     unfold vector_SimpleExpectation.
@@ -1255,14 +1255,14 @@ Section vector_ops_ext.
         (rv_X1 rv_X2 : Ts -> vector R n)
         {rv1:RandomVariable dom (Rvector_borel_sa n) rv_X1}
         {rv2:RandomVariable dom (Rvector_borel_sa n) rv_X2}
-        {srv1 : FiniteRangeFunction rv_X1}
-        {srv2 : FiniteRangeFunction rv_X2} 
+        {frf1 : FiniteRangeFunction rv_X1}
+        {frf2 : FiniteRangeFunction rv_X2} 
         (l : list dec_sa_event) :
     is_partition_list (map dsa_event l) ->
     partition_measurable  (cod:=Rvector_borel_sa n) rv_X1 (map dsa_event l) ->
-    SimpleExpectation (rvinner rv_X1 rv_X2)  (rv:=Rvector_inner_rv _ _) (srv:=srvinner _ _) =
+    SimpleExpectation (rvinner rv_X1 rv_X2)  (rv:=Rvector_inner_rv _ _) (frf:=frfinner _ _) =
     SimpleExpectation (rvinner rv_X1 (vector_SimpleConditionalExpectationSA rv_X2 l))
-                      (srv:=srvinner _ _ (srv2:=vector_SimpleConditionalExpectationSA_simpl _ _))
+                      (frf:=frfinner _ _ (frf2:=vector_SimpleConditionalExpectationSA_simpl _ _))
                       (rv:=Rvector_inner_rv _ _ (rv2:=vec_gen_condexp_rv _ _)).
   Proof.
     intros.
@@ -1285,10 +1285,10 @@ Section vector_ops_ext.
         specialize (H0 p H2).
         destruct H0 as [cvec [? ?]].
         exists (vector_nth i pf2 cvec).
-        destruct srv1.
-        unfold RandomVariable.srv_vals; simpl.
+        destruct frf1.
+        unfold RandomVariable.frf_vals; simpl.
         split.
-        * unfold RandomVariable.srv_vals in H0; simpl in H0.
+        * unfold RandomVariable.frf_vals in H0; simpl in H0.
           rewrite in_map_iff.
           exists cvec.
           tauto.
@@ -1303,13 +1303,13 @@ Section vector_ops_ext.
         (rv_X1 rv_X2 : Ts -> vector R n)
         {rv1:RandomVariable dom (Rvector_borel_sa n) rv_X1}
         {rv2:RandomVariable dom (Rvector_borel_sa n) rv_X2}
-        {srv1 : FiniteRangeFunction rv_X1}
-        {srv2 : FiniteRangeFunction rv_X2} 
+        {frf1 : FiniteRangeFunction rv_X1}
+        {frf2 : FiniteRangeFunction rv_X2} 
         (l : list dec_sa_event) :
     rv_eq (vector_SimpleConditionalExpectationSA rv_X2 l) (const Rvector_zero) ->
     is_partition_list (map dsa_event l) ->
     partition_measurable (cod:=Rvector_borel_sa n) rv_X1 (map dsa_event l) ->
-    SimpleExpectation (rvinner rv_X1 rv_X2) (rv:=Rvector_inner_rv _ _) (srv:=srvinner _ _) = 0.
+    SimpleExpectation (rvinner rv_X1 rv_X2) (rv:=Rvector_inner_rv _ _) (frf:=frfinner _ _) = 0.
   Proof.
     intros.
     rewrite simple_expection_rvinner_measurable with (l0 := l); trivial.

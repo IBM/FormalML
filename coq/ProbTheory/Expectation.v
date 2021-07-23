@@ -32,26 +32,26 @@ Section Expectation.
              (E :  forall 
                  (rvx:Ts -> R)
                  (rv : RandomVariable dom borel_sa rvx)
-                 (srv:FiniteRangeFunction rvx), Prop) : Rbar
+                 (frf:FiniteRangeFunction rvx), Prop) : Rbar
     := Lub_Rbar (fun (x : R) => 
-                   exists rvx rv srv, 
-                     E rvx rv srv /\ (SimpleExpectation rvx) = x).
+                   exists rvx rv frf, 
+                     E rvx rv frf /\ (SimpleExpectation rvx) = x).
   
   Definition NonnegExpectation
              (rv_X : Ts -> R)
-             {posrv:NonnegativeFunction rv_X} :  Rbar   :=
+             {pofrf:NonnegativeFunction rv_X} :  Rbar   :=
     (SimpleExpectationSup
        (fun
            (rvx2: Ts -> R)
            (rv2 : RandomVariable dom borel_sa rvx2)
-           (srv2:FiniteRangeFunction rvx2) =>
+           (frf2:FiniteRangeFunction rvx2) =>
            (BoundedNonnegativeFunction rv_X rvx2))).
 
-  Lemma srv_NonnegExpectation
+  Lemma frf_NonnegExpectation
         (rv_X : Ts -> R)
         {rvx_rv : RandomVariable dom borel_sa rv_X}
-        {posrv:NonnegativeFunction rv_X}
-        {srv:FiniteRangeFunction rv_X} :
+        {pofrf:NonnegativeFunction rv_X}
+        {frf:FiniteRangeFunction rv_X} :
     NonnegExpectation rv_X = SimpleExpectation rv_X.
   Proof.
     unfold NonnegExpectation.
@@ -75,7 +75,7 @@ Section Expectation.
         apply SimpleExpectation_le; trivial.
     - exists rv_X.
       exists rvx_rv.
-      exists srv.
+      exists frf.
       split; trivial.
       unfold BoundedNonnegativeFunction.
       split; trivial.
@@ -105,11 +105,11 @@ Section Expectation.
     intros eqq.
     unfold NonnegExpectation, SimpleExpectationSup.
     apply Lub_Rbar_eqset; intros x.
-    split; intros [y [ yrv [ysrv [??]]]].
-    - exists y; exists yrv; exists ysrv.
+    split; intros [y [ yrv [yfrf [??]]]].
+    - exists y; exists yrv; exists yfrf.
       rewrite <- eqq.
       auto.
-    - exists y; exists yrv; exists ysrv.
+    - exists y; exists yrv; exists yfrf.
       rewrite eqq.
       auto.
   Qed.
@@ -118,7 +118,7 @@ Section Expectation.
         {rv_X1 rv_X2 : Ts -> R}
         (eqq:rv_eq rv_X1 rv_X2)
         {prv1:NonnegativeFunction rv_X1} :
-    NonnegExpectation rv_X1 = NonnegExpectation rv_X2 (posrv:=((proj1 (NonnegativeFunction_proper _ _ eqq)) prv1)).
+    NonnegExpectation rv_X1 = NonnegExpectation rv_X2 (pofrf:=((proj1 (NonnegativeFunction_proper _ _ eqq)) prv1)).
   Proof.
     now apply NonnegExpectation_ext.
   Qed.
@@ -126,7 +126,7 @@ Section Expectation.
   Lemma NonnegExpectation_pf_irrel 
         {rv_X: Ts -> R}
         (prv1 prv2:NonnegativeFunction rv_X) :
-    NonnegExpectation rv_X (posrv:=prv1) = NonnegExpectation rv_X (posrv:=prv2).
+    NonnegExpectation rv_X (pofrf:=prv1) = NonnegExpectation rv_X (pofrf:=prv2).
   Proof.
     apply NonnegExpectation_ext.
     reflexivity.
@@ -258,7 +258,7 @@ Section Expectation.
 
   Lemma NonnegExpectation_scale (c: posreal) 
         (rv_X : Ts -> R)
-        {posrv:NonnegativeFunction rv_X} :
+        {pofrf:NonnegativeFunction rv_X} :
     NonnegExpectation (rvscale c rv_X) =
     Rbar_mult c (NonnegExpectation rv_X).
   Proof.
@@ -270,7 +270,7 @@ Section Expectation.
     split; intros [? [? [? [[??]?]]]].
     - exists (rvscale (/ c) x0).
       exists (rvscale_rv _ _ _ _).
-      exists (srvscale _ _).
+      exists (frfscale _ _).
       split; [split |].
       + assert (0 < / c).
         { destruct c; simpl.
@@ -295,7 +295,7 @@ Section Expectation.
         lra.
     - exists (rvscale c x0).
       exists (rvscale_rv _ _ _ _).
-      exists (srvscale c x0).
+      exists (frfscale c x0).
       split; [split |].
       + typeclasses eauto.
       + now rewrite H0.
@@ -660,7 +660,7 @@ Section Expectation.
         {prv:NonnegativeFunction rv_X} :
     Rbar_lt b l -> NonnegExpectation rv_X = l -> 
     exists (x:R), (exists (rvx : Ts -> R) (rv : RandomVariable dom borel_sa rvx)
-                (srv : FiniteRangeFunction rvx),
+                (frf : FiniteRangeFunction rvx),
                  BoundedNonnegativeFunction rv_X rvx /\ SimpleExpectation rvx = x) /\ x > b.
   Proof.
     unfold NonnegExpectation, SimpleExpectationSup.       
@@ -744,7 +744,7 @@ Section Expectation.
       now simpl.
     - exists (const c).
       exists (rvconst _ _ c).
-      exists (srvconst c).
+      exists (frfconst c).
       split; trivial; [| apply SimpleExpectation_const].
       unfold BoundedNonnegativeFunction.
       split; [ apply (prvconst c nnc) |].
@@ -784,7 +784,7 @@ Section Expectation.
       lra.
   Qed.
 
-  Lemma Expectation_pos_posRV (rv_X : Ts -> R) 
+  Lemma Expectation_pos_pofrf (rv_X : Ts -> R) 
         {prv : NonnegativeFunction rv_X} :
     Expectation rv_X = Some (NonnegExpectation rv_X).
   Proof.
@@ -808,11 +808,11 @@ Section Expectation.
   Lemma Expectation_simple
         (rv_X : Ts -> R)
         {rvx_rv : RandomVariable dom borel_sa rv_X}
-        {srv:FiniteRangeFunction rv_X} :
+        {frf:FiniteRangeFunction rv_X} :
     Expectation rv_X = Some (Finite (SimpleExpectation rv_X)).
   Proof.
     unfold Expectation.
-    repeat erewrite srv_NonnegExpectation.
+    repeat erewrite frf_NonnegExpectation.
     - simpl.
       f_equal.
       rewrite oppSimpleExpectation.
@@ -826,7 +826,7 @@ Section Expectation.
   Lemma Expectation_const (c:R) :
     Expectation (const c) = Some (Finite c).
   Proof.
-    now rewrite (Expectation_simple _ (srv:=srvconst c)), SimpleExpectation_const.
+    now rewrite (Expectation_simple _ (frf:=frfconst c)), SimpleExpectation_const.
   Qed.
 
   Lemma z_le_z : 0 <= 0.
@@ -882,7 +882,7 @@ Section Expectation.
        | _ => False
        end.
   Proof.
-    rewrite Expectation_pos_posRV with (prv := prvabs _).
+    rewrite Expectation_pos_pofrf with (prv := prvabs _).
     unfold Expectation.
     intros HH.
     match_case_in HH
@@ -1023,9 +1023,9 @@ Section Expectation.
           lia.
   Qed.
 
-  Program Instance simple_approx_srv (X:Ts->Rbar) (n:nat) : 
+  Program Instance simple_approx_frf (X:Ts->Rbar) (n:nat) : 
     FiniteRangeFunction (simple_approx X n) :=
-    {srv_vals := map (fun x => INR x / (2^n)) (seq 0 (S (n*(2^n))))}.
+    {frf_vals := map (fun x => INR x / (2^n)) (seq 0 (S (n*(2^n))))}.
   Next Obligation.
     apply simple_approx_vals.
   Qed.
@@ -1610,7 +1610,7 @@ Section Expectation.
     apply pow2_nzero.
   Qed.
 
-  Instance simple_approx_posrv (X:Ts->Rbar) (n:nat) : 
+  Instance simple_approx_pofrf (X:Ts->Rbar) (n:nat) : 
     NonnegativeFunction (simple_approx X n).
   Proof.
     unfold NonnegativeFunction; intros.
@@ -2042,7 +2042,7 @@ Section Expectation.
         (rv_X : Ts -> R)
         {rv : RandomVariable dom borel_sa rv_X}
         {prv : NonnegativeFunction rv_X} 
-        {srv : FiniteRangeFunction rv_X} :
+        {frf : FiniteRangeFunction rv_X} :
     Finite (SimpleExpectation rv_X) = NonnegExpectation rv_X.
   Proof.
     unfold NonnegExpectation.
@@ -2052,7 +2052,7 @@ Section Expectation.
     unfold is_lub_Rbar.
     unfold is_ub_Rbar.
     split; intros.
-    - destruct H as [rvx2 [rv2 [srv2 [? ?]]]].
+    - destruct H as [rvx2 [rv2 [frf2 [? ?]]]].
       unfold BoundedNonnegativeFunction in H.
       destruct H.
       simpl.
@@ -2060,7 +2060,7 @@ Section Expectation.
       now apply SimpleExpectation_le.
     - apply H.
       unfold BoundedNonnegativeFunction.
-      exists rv_X, rv, srv.
+      exists rv_X, rv, frf.
       split; now split.
   Qed.
 
@@ -2068,10 +2068,10 @@ Section Expectation.
         (rv_X : Ts -> R)
         {rv : RandomVariable dom borel_sa rv_X}
         {prv : NonnegativeFunction rv_X} 
-        {srv : FiniteRangeFunction rv_X} :
+        {frf : FiniteRangeFunction rv_X} :
     is_finite (NonnegExpectation rv_X).
   Proof.
-    rewrite <- (@simple_NonnegExpectation rv_X rv prv srv).
+    rewrite <- (@simple_NonnegExpectation rv_X rv prv frf).
     unfold is_finite.
     reflexivity.
   Qed.
@@ -2308,12 +2308,12 @@ Section Expectation.
     list_sum (map (fun v => v * (ps_P (event_inter
                                       (preimage_singleton phi v)
                                       P)))
-                  (nodup Req_EM_T srv_vals)).
+                  (nodup Req_EM_T frf_vals)).
   Proof.
     unfold SimpleExpectation.
     simpl.
     transitivity (list_sum
-                    (map (fun v : R => v * ps_P (preimage_singleton (rvmult phi (EventIndicator dec)) v)) (nodup Req_EM_T srv_vals))).
+                    (map (fun v : R => v * ps_P (preimage_singleton (rvmult phi (EventIndicator dec)) v)) (nodup Req_EM_T frf_vals))).
     - rewrite list_prod_swap; simpl.
       rewrite map_map; simpl.
       rewrite app_nil_r.
@@ -2324,7 +2324,7 @@ Section Expectation.
       rewrite (map_ext (fun x : R => x * 1) (fun x : R => x))
         by (intros; lra).
       rewrite map_id.
-      generalize srv_vals at 1.
+      generalize frf_vals at 1.
       induction l; simpl; trivial.
       match_destr; simpl.
       rewrite IHl.
@@ -2388,13 +2388,13 @@ Section Expectation.
              (fun n => SimpleExpectation 
                       (rv:=rv1 n) (rvmult cphi (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (cphi omega)))))).
     - intros.
-      rewrite <- simple_NonnegExpectation with (rv:=rv1 n) (srv := (srvmult cphi (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (cphi omega))))); trivial.
+      rewrite <- simple_NonnegExpectation with (rv:=rv1 n) (frf := (frfmult cphi (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (cphi omega))))); trivial.
     - apply (is_lim_seq_ext 
                (fun (n:nat) =>
                   (list_sum (map (fun v => v * (ps_P (event_inter
                                                      (preimage_singleton cphi v)
                                                      (exist _ (fun omega => Xn n omega >= cphi omega) (sa1 n)))))
-                                 (nodup Req_EM_T srv_vals))))).
+                                 (nodup Req_EM_T frf_vals))))).
       + intros.
         symmetry.
         erewrite <- simpleFunEventIndicator.
@@ -2407,9 +2407,9 @@ Section Expectation.
                                       ps_P
                                         (event_inter (preimage_singleton cphi v)
                                                    (exist _ (fun omega : Ts => Xn n omega >= cphi omega) (sa1 n))))
-                       (nodup Req_EM_T srv_vals))
+                       (nodup Req_EM_T frf_vals))
                     (map (fun v : R => v * ps_P (preimage_singleton cphi v))
-                         (nodup Req_EM_T srv_vals)))
+                         (nodup Req_EM_T frf_vals)))
       ; intros HH.
       cut_to HH.
       * eapply is_lim_seq_ext; try eapply HH.
@@ -2475,13 +2475,13 @@ Section Expectation.
              (fun n => SimpleExpectation 
                       (rv:=rv1 n) (rvmult cphi (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (cphi omega)))))).
     - intros.
-      rewrite <- simple_NonnegExpectation with (rv:=rv1 n) (srv := (srvmult cphi (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (cphi omega))))); trivial.
+      rewrite <- simple_NonnegExpectation with (rv:=rv1 n) (frf := (frfmult cphi (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (cphi omega))))); trivial.
     - apply (is_lim_seq_ext 
                (fun (n:nat) =>
                   (list_sum (map (fun v => v * (ps_P (event_inter
                                                      (preimage_singleton cphi v)
                                                      (exist _ (fun omega => Xn n omega >= cphi omega) (sa1 n)))))
-                                 (nodup Req_EM_T srv_vals))))).
+                                 (nodup Req_EM_T frf_vals))))).
       + intros.
         symmetry.
         erewrite <- simpleFunEventIndicator.
@@ -2494,9 +2494,9 @@ Section Expectation.
                                       ps_P
                                         (event_inter (preimage_singleton cphi v)
                                                    (exist _ (fun omega : Ts => Xn n omega >= cphi omega) (sa1 n))))
-                       (nodup Req_EM_T srv_vals))
+                       (nodup Req_EM_T frf_vals))
                     (map (fun v : R => v * ps_P (preimage_singleton cphi v))
-                         (nodup Req_EM_T srv_vals)))
+                         (nodup Req_EM_T frf_vals)))
       ; intros HH.
       cut_to HH.
       * eapply is_lim_seq_ext; try eapply HH.
@@ -2572,12 +2572,12 @@ Section Expectation.
         assert (is_finite (NonnegExpectation
                              (rvmult cphi
                                      (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (cphi omega)))))).
-        * assert (srv1:FiniteRangeFunction  (rvmult cphi (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (cphi omega))))).
+        * assert (frf1:FiniteRangeFunction  (rvmult cphi (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (cphi omega))))).
           {
-            apply srvmult; trivial.
-            apply EventIndicator_pre_srv.
+            apply frfmult; trivial.
+            apply EventIndicator_pre_frf.
           }
-          rewrite <- simple_NonnegExpectation with (rv := H7) (srv := srv1).
+          rewrite <- simple_NonnegExpectation with (rv := H7) (frf := frf1).
           now unfold is_finite.
         * rewrite <- H9 in H8.
           now simpl in H8.
@@ -2629,12 +2629,12 @@ Section Expectation.
         assert (is_finite (NonnegExpectation
                              (rvmult cphi
                                      (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (cphi omega)))))).
-        * assert (srv1:FiniteRangeFunction  (rvmult cphi (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (cphi omega))))).
+        * assert (frf1:FiniteRangeFunction  (rvmult cphi (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (cphi omega))))).
           {
-            apply srvmult; trivial.
-            apply EventIndicator_pre_srv.
+            apply frfmult; trivial.
+            apply EventIndicator_pre_frf.
           }
-          rewrite <- simple_NonnegExpectation with (rv := H5) (srv := srv1).
+          rewrite <- simple_NonnegExpectation with (rv := H5) (frf := frf1).
           now unfold is_finite.
         * rewrite <- H7 in H6.
           now simpl in H6.
@@ -2679,7 +2679,7 @@ Section Expectation.
       apply Rmult_le_pos; trivial.
       lra.
     - generalize (monotone_convergence0_cphi X Xn cphi rvx Xn_rv 
-                                             (srvscale c phi) (rvscale_rv _ c phi phi_rv) posX H5 Xn_pos).
+                                             (frfscale c phi) (rvscale_rv _ c phi phi_rv) posX H5 Xn_pos).
       intros.
       cut_to H6; trivial.
       + destruct H4.
@@ -2739,7 +2739,7 @@ Section Expectation.
       apply Rmult_le_pos; trivial.
       lra.
     - generalize (monotone_convergence0_cphi2 Xn cphi Xn_rv 
-                                             (srvscale c phi) (rvscale_rv _ c phi phi_rv) H3 Xn_pos).
+                                             (frfscale c phi) (rvscale_rv _ c phi phi_rv) H3 Xn_pos).
       intros.
       cut_to H4; trivial.
       + destruct H2.
@@ -3453,20 +3453,20 @@ Section Expectation.
   Lemma Expectation_zero_pos 
         (X : Ts -> R)
         {rv : RandomVariable dom borel_sa X}
-        {posrv :NonnegativeFunction X} :
+        {pofrf :NonnegativeFunction X} :
     Expectation X = Some (Finite 0) ->
     ps_P (preimage_singleton X 0) = 1.
   Proof.
-    rewrite Expectation_pos_posRV with (prv := posrv); intros.
+    rewrite Expectation_pos_pofrf with (prv := pofrf); intros.
     inversion H.
 
-    generalize (simple_approx_lim_seq X posrv); intros.
+    generalize (simple_approx_lim_seq X pofrf); intros.
     generalize (simple_approx_rv X); intro apx_rv1.
-    generalize (simple_approx_posrv X); intro apx_prv1.
-    generalize (simple_approx_srv X); intro apx_srv1.
-    generalize (simple_approx_le X posrv); intro apx_le1.
-    generalize (simple_approx_increasing X posrv); intro apx_inc1.
-    generalize (monotone_convergence X (simple_approx X) rv posrv apx_rv1 apx_prv1 apx_le1 apx_inc1 (fun n => simple_expectation_real (simple_approx X n)) H0); intros.
+    generalize (simple_approx_pofrf X); intro apx_prv1.
+    generalize (simple_approx_frf X); intro apx_frf1.
+    generalize (simple_approx_le X pofrf); intro apx_le1.
+    generalize (simple_approx_increasing X pofrf); intro apx_inc1.
+    generalize (monotone_convergence X (simple_approx X) rv pofrf apx_rv1 apx_prv1 apx_le1 apx_inc1 (fun n => simple_expectation_real (simple_approx X n)) H0); intros.
 
     assert (forall n:nat, NonnegExpectation (simple_approx X n) = 0).
     intros.
@@ -3477,8 +3477,8 @@ Section Expectation.
 
     assert (forall n:nat, ps_P (preimage_singleton (simple_approx X n) 0) = 1).
     intros.
-    apply SimplePosExpectation_zero_pos with (srv := apx_srv1 n); trivial.
-    generalize (srv_NonnegExpectation (simple_approx X n)); intros.
+    apply SimplePosExpectation_zero_pos with (frf := apx_frf1 n); trivial.
+    generalize (frf_NonnegExpectation (simple_approx X n)); intros.
     rewrite H3 in H4; symmetry in H4.
     now apply Rbar_finite_eq in H4.
 
@@ -3524,7 +3524,7 @@ Section Expectation.
         clear H H1 H2 H3 H4 H5 HH.
         apply Rdichotomy in H6.
         destruct H6.
-        * specialize (posrv x); lra.
+        * specialize (pofrf x); lra.
         * apply is_lim_seq_spec in H0.
           unfold is_lim_seq' in H0.
           specialize (H0 (mkposreal _ H)).
@@ -3555,10 +3555,10 @@ Section Expectation.
     generalize (simple_approx_lim_seq rv_X2 prv2); intros.
     generalize (simple_approx_rv rv_X1); intro apx_rv1.
     generalize (simple_approx_rv rv_X2); intro apx_rv2.
-    generalize (simple_approx_posrv rv_X1); intro apx_prv1.
-    generalize (simple_approx_posrv rv_X2); intro apx_prv2.     
-    generalize (simple_approx_srv rv_X1); intro apx_srv1.
-    generalize (simple_approx_srv rv_X2); intro apx_srv2.
+    generalize (simple_approx_pofrf rv_X1); intro apx_prv1.
+    generalize (simple_approx_pofrf rv_X2); intro apx_prv2.     
+    generalize (simple_approx_frf rv_X1); intro apx_frf1.
+    generalize (simple_approx_frf rv_X2); intro apx_frf2.
     generalize (simple_approx_le rv_X1 prv1); intro apx_le1.
     generalize (simple_approx_le rv_X2 prv2); intro apx_le2. 
     generalize (simple_approx_increasing rv_X1 prv1); intro apx_inc1.
@@ -3611,10 +3611,10 @@ Section Expectation.
           -- rewrite H7 in H6.
              now apply Lim_seq_Expectation_m_infty in H7.
       + intros.
-        rewrite <- simple_NonnegExpectation with (rv:=rvplus_rv _ _ _) (srv := srvplus (simple_approx rv_X1 n) (simple_approx rv_X2 n)); trivial.
+        rewrite <- simple_NonnegExpectation with (rv:=rvplus_rv _ _ _) (frf := frfplus (simple_approx rv_X1 n) (simple_approx rv_X2 n)); trivial.
         rewrite <- sumSimpleExpectation; trivial.
-        rewrite <- simple_NonnegExpectation with (rv:=apx_rv1 n) (srv := apx_srv1 n); trivial.
-        rewrite <- simple_NonnegExpectation with (rv:=apx_rv2 n) (srv := apx_srv2 n); trivial.
+        rewrite <- simple_NonnegExpectation with (rv:=apx_rv1 n) (frf := apx_frf1 n); trivial.
+        rewrite <- simple_NonnegExpectation with (rv:=apx_rv2 n) (frf := apx_frf2 n); trivial.
     - unfold rv_le, rvplus.
       intros n x.
       specialize (apx_le1 n x).
@@ -3627,7 +3627,7 @@ Section Expectation.
       lra.
     - intros.
       apply simple_expectation_real; trivial.
-      apply srvplus; trivial.
+      apply frfplus; trivial.
     - intros.
       unfold rvplus.
       now apply is_lim_seq_plus with (l1 := rv_X1 omega) (l2 := rv_X2 omega).
@@ -3860,7 +3860,7 @@ Section Expectation.
   Lemma Markov_ineq
         (X : Ts -> R)
         (rv : RandomVariable dom borel_sa X)
-        (posrv : NonnegativeFunction X)
+        (pofrf : NonnegativeFunction X)
         (a : posreal) :
     Rbar_le (a * (ps_P (event_ge dom X a))) (NonnegExpectation X).
   Proof.
@@ -3872,18 +3872,18 @@ Section Expectation.
     erewrite H0.
     apply NonnegExpectation_le.
     unfold EventIndicator, rvscale; intros x.
-    specialize (posrv x).
+    specialize (pofrf x).
     destruct (Rge_dec (X x) a); lra.
   Qed.    
       
   Lemma Markov_ineq_div 
         (X : Ts -> R)
         (rv : RandomVariable dom borel_sa X)
-        (posrv : NonnegativeFunction X)
+        (pofrf : NonnegativeFunction X)
         (a : posreal) :
     Rbar_le (ps_P (event_ge dom X a)) (Rbar_div_pos (NonnegExpectation X) a).
   Proof.
-    generalize (Markov_ineq X rv posrv a); intros.
+    generalize (Markov_ineq X rv pofrf a); intros.
     rewrite Rbar_div_pos_le with (z := a) in H.
     rewrite Rmult_comm in H.
     unfold Rbar_div_pos at 1 in H.
@@ -3955,7 +3955,7 @@ Section Expectation.
   Lemma Expectation_sqr (rv_X :Ts->R)  :
     Expectation (rvsqr rv_X) = Some (NonnegExpectation (rvsqr rv_X)).
   Proof.
-    apply Expectation_pos_posRV.
+    apply Expectation_pos_pofrf.
   Qed.
 
 End Expectation.
@@ -3980,7 +3980,7 @@ Section EventRestricted.
          (fun x : R =>
             exists
               (rvx : Ts -> R) (rv : RandomVariable dom borel_sa rvx) 
-              (srv : FiniteRangeFunction rvx),
+              (frf : FiniteRangeFunction rvx),
               BoundedNonnegativeFunction f rvx /\ SimpleExpectation rvx = x)).
     destruct
        (ex_lub_Rbar
@@ -3989,7 +3989,7 @@ Section EventRestricted.
           (rvx : event_restricted_domain P -> R) (rv : RandomVariable
                                                        (event_restricted_sigma P)
                                                        borel_sa rvx) 
-        (srv : FiniteRangeFunction rvx),
+        (frf : FiniteRangeFunction rvx),
           BoundedNonnegativeFunction (event_restricted_function P f) rvx /\
           SimpleExpectation rvx = x)).
     simpl.

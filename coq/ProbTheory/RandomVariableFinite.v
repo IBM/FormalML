@@ -327,7 +327,7 @@ Section fe.
 
   Lemma SimplePosExpectation_pos_zero x
         {rvx:RandomVariable dom borel_sa x} 
-        {xsrv:FiniteRangeFunction x} :
+        {xfrf:FiniteRangeFunction x} :
     almost prts eq x (const 0) ->
     SimpleExpectation x = 0.
   Proof.
@@ -368,8 +368,8 @@ Section fe.
   Lemma Expectation_simple_proper_almost x y
         {rvx:RandomVariable dom borel_sa x}
         {rvy:RandomVariable dom borel_sa y} 
-        {xsrv:FiniteRangeFunction x}
-        {ysrv:FiniteRangeFunction y} :
+        {xfrf:FiniteRangeFunction x}
+        {yfrf:FiniteRangeFunction y} :
     almost prts eq x y ->
     SimpleExpectation x = SimpleExpectation y.
   Proof.
@@ -379,10 +379,10 @@ Section fe.
     cut_to HH.
     - unfold rvminus in HH.
       erewrite SimpleExpectation_pf_irrel in HH.
-      erewrite sumSimpleExpectation' with (srv1:=xsrv) (srv2:=srvopp) in HH; trivial.
+      erewrite sumSimpleExpectation' with (frf1:=xfrf) (frf2:=frfopp) in HH; trivial.
       + unfold rvopp in HH.
         erewrite (@SimpleExpectation_pf_irrel _ _ _ (rvscale (-1) y)) in HH.
-        erewrite <- scaleSimpleExpectation with (srv:=ysrv) in HH.
+        erewrite <- scaleSimpleExpectation with (frf:=yfrf) in HH.
         field_simplify in HH.
         apply Rminus_diag_uniq_sym in HH.
         symmetry.
@@ -436,7 +436,7 @@ Section fe.
           rewrite H4 in H2.
           rewrite <- H2.
           simpl; lra.
-    - exists (const 0); exists (rvconst _ _ 0); exists (srvconst 0).
+    - exists (const 0); exists (rvconst _ _ 0); exists (frfconst 0).
       split.
       + unfold BoundedNonnegativeFunction.
         split.
@@ -730,7 +730,7 @@ Section fe.
     unfold FiniteExpectation.
     simpl_finite.
     generalize (NonnegExpectation_pos rv_X).
-    erewrite Expectation_pos_posRV in e.
+    erewrite Expectation_pos_pofrf in e.
     invcs e.
     rewrite H0.
     simpl.
@@ -740,7 +740,7 @@ Section fe.
   Lemma FiniteExpectation_zero_pos'
         (X : Ts -> R)
         {rv : RandomVariable dom borel_sa X}
-        {posrv :NonnegativeFunction X}
+        {pofrf :NonnegativeFunction X}
         {isfe:IsFiniteExpectation X} :
     FiniteExpectation X = 0%R ->
     ps_P (preimage_singleton X 0) = 1.
@@ -754,7 +754,7 @@ Section fe.
   Lemma FiniteExpectation_zero_pos
         (X : Ts -> R)
         {rv : RandomVariable dom borel_sa X}
-        {posrv :NonnegativeFunction X}
+        {pofrf :NonnegativeFunction X}
         {isfe:IsFiniteExpectation X} :
     FiniteExpectation X = 0%R ->
     almost prts eq X (const 0).
@@ -837,7 +837,7 @@ Section fe.
       unfold FiniteExpectation.
       unfold proj1_sig.
       match_destr.
-      rewrite (Expectation_pos_posRV) with  (prv:=posX) in e.
+      rewrite (Expectation_pos_pofrf) with  (prv:=posX) in e.
       invcs e.
       rewrite H0.
       now simpl.
@@ -849,7 +849,7 @@ Section fe.
       is_finite (NonnegExpectation  X).
     Proof.
       red in isfeX.
-      rewrite Expectation_pos_posRV with (prv:=posX) in isfeX.
+      rewrite Expectation_pos_pofrf with (prv:=posX) in isfeX.
       match_destr_in isfeX; try tauto.
       reflexivity.
    Qed.
@@ -875,7 +875,7 @@ Section fe.
       + rewrite H2.
         rewrite FiniteNonnegExpectation with (posX:=posX).
         red in isfeX.
-        rewrite Expectation_pos_posRV with (prv:=posX) in isfeX.
+        rewrite Expectation_pos_pofrf with (prv:=posX) in isfeX.
         match_destr_in isfeX; try tauto.
       + intros n.
         now rewrite FiniteNonnegExpectation with (posX:=Xn_pos n).

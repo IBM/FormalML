@@ -459,11 +459,11 @@ Section pmf_prob.
 
 Lemma SimpleExpectation_preimage_indicator
       (rv_X : A -> R)
-      {srv : FiniteRangeFunction rv_X} :
+      {frf : FiniteRangeFunction rv_X} :
      SimpleExpectation (Prts := ps_pmf) rv_X = 
      list_sum (map (fun v => v *
                              (SimpleExpectation (Prts:=ps_pmf) (point_preimage_indicator rv_X v)))
-                   (nodup Req_EM_T srv_vals)).
+                   (nodup Req_EM_T frf_vals)).
   Proof.
     unfold SimpleExpectation at 1.
     apply list_sum_Proper.
@@ -483,18 +483,18 @@ Lemma SimpleExpectation_preimage_indicator
 
   Lemma expt_value_preimage_indicator
        (rv_X : A -> R)
-       {srv : FiniteRangeFunction rv_X} :
+       {frf : FiniteRangeFunction rv_X} :
      expt_value pmf rv_X = 
      list_sum (map (fun v => v *
                              (expt_value pmf (point_preimage_indicator rv_X v)))
-                   (nodup Req_EM_T srv_vals)).
+                   (nodup Req_EM_T frf_vals)).
   Proof.
     transitivity (expt_value pmf (fun a => list_sum 
                  (map 
                     (fun c => c * (point_preimage_indicator rv_X c a))
-                    (nodup Req_EM_T srv_vals)))).
+                    (nodup Req_EM_T frf_vals)))).
     - apply expt_value_Proper; trivial.
-      apply srv_preimage_indicator'.
+      apply frf_preimage_indicator'.
     - rewrite expt_value_sum_comm.
       f_equal.
       apply map_ext; intros.
@@ -502,11 +502,11 @@ Lemma SimpleExpectation_preimage_indicator
   Qed.
 
   Theorem pmf_SimpleExpectation_value (rv_X : A -> R)
-          {srv:FiniteRangeFunction rv_X} 
+          {frf:FiniteRangeFunction rv_X} 
    : SimpleExpectation (Prts:=ps_pmf) rv_X = expt_value pmf rv_X.
  Proof.
     rewrite SimpleExpectation_preimage_indicator.   
-    rewrite expt_value_preimage_indicator with (srv := srv).
+    rewrite expt_value_preimage_indicator with (frf := frf).
     apply list_sum_Proper.
     apply refl_refl.
     apply map_ext.
@@ -520,11 +520,11 @@ Lemma SimpleExpectation_preimage_indicator
             then rv_X a
             else default.
    
- Program Global Instance srv_restricted_range
+ Program Global Instance frf_restricted_range
         {B} {decB:EqDec B eq} (default:B) (l:list B) (rv_X: A -> B)
    : FiniteRangeFunction (rv_restricted_range default l rv_X)
    := {|
-   srv_vals := default::l
+   frf_vals := default::l
      |}.
  Next Obligation.
    unfold rv_restricted_range.

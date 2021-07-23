@@ -570,7 +570,7 @@ Proof.
 
 Context {Ts:Type} {dom: SigmaAlgebra Ts}{Prts: ProbSpace dom}.
 
-Global Instance srvsum (X : nat -> Ts -> R)
+Global Instance frfsum (X : nat -> Ts -> R)
        {rv : forall (n:nat), FiniteRangeFunction (X n)} (n : nat) :
   FiniteRangeFunction (rvsum X n).
 Proof.
@@ -589,10 +589,10 @@ Proof.
       lra.
     + eapply FiniteRangeFunction_ext.
       * rewrite H; reflexivity.
-      * apply srvplus; trivial.
+      * apply frfplus; trivial.
 Qed.
 
-Global Instance srvite (X Y : Ts -> R){p : Prop}(dec : {p} + {~ p})
+Global Instance frfite (X Y : Ts -> R){p : Prop}(dec : {p} + {~ p})
        {rv_X : FiniteRangeFunction X} {rv_Y : FiniteRangeFunction Y} :
   FiniteRangeFunction (if dec then X else Y).
 Proof.
@@ -618,21 +618,21 @@ Proof.
   now rewrite <-Permutation.Permutation_cons_append.
 Qed.
 
-Global Instance srvrvmaxlist (X : nat -> Ts -> R)
+Global Instance frfrvmaxlist (X : nat -> Ts -> R)
        {rv : forall n, FiniteRangeFunction (X n)} (N : nat):
   FiniteRangeFunction (rvmaxlist X N).
 Proof.
   unfold rvmaxlist.
   generalize (0%nat).
   induction N; simpl; intros s.
-  - apply srvconst.
-  - assert (srv:FiniteRangeFunction (fun omega => Rmax (X s omega) (Rmax_list (map (fun n : nat => X n omega) (seq (S s) N))))).
+  - apply frfconst.
+  - assert (frf:FiniteRangeFunction (fun omega => Rmax (X s omega) (Rmax_list (map (fun n : nat => X n omega) (seq (S s) N))))).
     {
-      apply srvmax; auto.
+      apply frfmax; auto.
     }
     destruct N.
     + simpl; auto.
-    + eapply FiniteRangeFunction_ext; try eapply srv.
+    + eapply FiniteRangeFunction_ext; try eapply frf.
       intros ?.
       reflexivity.
 Qed.
@@ -645,29 +645,29 @@ Proof.
   generalize (0%nat).
   induction N; simpl; intros s.
   - apply rvconst.
-  - assert (srv:RandomVariable dom borel_sa (fun omega => Rmax (X s omega) (Rmax_list (map (fun n : nat => X n omega) (seq (S s) N))))).
+  - assert (frf:RandomVariable dom borel_sa (fun omega => Rmax (X s omega) (Rmax_list (map (fun n : nat => X n omega) (seq (S s) N))))).
     {
       apply rvmax_rv; auto.
     }
     destruct N.
     + simpl; auto.
-    + eapply RandomVariable_proper; try eapply srv.
+    + eapply RandomVariable_proper; try eapply frf.
       intros ?.
       reflexivity.
 Qed.
 
 Fixpoint filtration_history (n : nat) (X : nat -> Ts -> R)
-         {srv : forall n, FiniteRangeFunction (X n)}
+         {frf : forall n, FiniteRangeFunction (X n)}
          {rv : forall n, RandomVariable dom borel_sa (X n)}
   : list dec_sa_event :=
   match n with
   | 0 => []
-  | S k => refine_dec_sa_partitions (induced_sigma_generators (srv k)) (filtration_history k X)
+  | S k => refine_dec_sa_partitions (induced_sigma_generators (frf k)) (filtration_history k X)
   end.
 
 Lemma ash_6_1_4 (X : nat -> Ts -> R)(n : nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
-      {srv : forall (n:nat), FiniteRangeFunction (X n)}
+      {frf : forall (n:nat), FiniteRangeFunction (X n)}
       (HC : forall n, 
           SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
   let S := fun j => rvabs (rvsum X j) in

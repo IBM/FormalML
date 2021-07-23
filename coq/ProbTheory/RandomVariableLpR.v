@@ -1598,7 +1598,7 @@ Qed.
             unfold NonnegativeFunction, rvpower; intros.
             apply power_nonneg.            
           }
-          rewrite Expectation_pos_posRV with (prv := H0).
+          rewrite Expectation_pos_pofrf with (prv := H0).
           assert (Rbar_le
                     (Lim_seq (fun n : nat => NonnegExpectation (rvpower (rvabs (f n)) (const p)))) (power c p)).
           replace (Finite (power c p)) with (Lim_seq (fun _ => power c p)).
@@ -2755,7 +2755,7 @@ Section complete.
     generalize (LpRRV_LpS_FiniteLp prts f); intros.
     unfold IsFiniteExpectation in H.
     generalize (rvpower_prv (rvabs f) (const p)); intros.
-    rewrite Expectation_pos_posRV with (prv := H0) in H.
+    rewrite Expectation_pos_pofrf with (prv := H0) in H.
     match_case_in H; intros.
     - rewrite Expectation_Rbar_Expectation in H1.
       unfold rvpower, rvabs, const in H1.
@@ -2776,7 +2776,7 @@ Section complete.
     unfold IsLp, IsLp_Rbar; intros.
     unfold IsFiniteExpectation.
     generalize (rvpower_prv (rvabs f) (const p)); intros.
-    rewrite Expectation_pos_posRV with (prv := H0).
+    rewrite Expectation_pos_pofrf with (prv := H0).
     rewrite Expectation_Rbar_Expectation.
     unfold Rbar_power, Rbar_abs in H.
     unfold rvpower, rvabs, const.
@@ -2860,7 +2860,7 @@ Section complete.
     assert (RandomVariable dom borel_sa (EventIndicator (fun x : Ts => pinf_Indicator_obligation_1 f x))).
     apply EventIndicator_pre_rv.
     now apply sa_pinf_Rbar.
-    generalize (srv_NonnegExpectation (EventIndicator (fun x : Ts => pinf_Indicator_obligation_1 f x))); intros.
+    generalize (frf_NonnegExpectation (EventIndicator (fun x : Ts => pinf_Indicator_obligation_1 f x))); intros.
     rewrite H2 in H0.
     generalize (SimpleExpectation_pre_EventIndicator 
                   (P := (fun x => f x = p_infty)) (sa_pinf_Rbar f rv)
@@ -2871,7 +2871,7 @@ Section complete.
       with
         (ps_P (exist sa_sigma (fun x : Ts => f x = p_infty) (sa_pinf_Rbar f rv))) in H0.
     apply H0.
-    rewrite SimpleExpectation_pf_irrel with (srv2 := X) in H3.
+    rewrite SimpleExpectation_pf_irrel with (frf2 := X) in H3.
     symmetry.
     apply H3.
    Qed.
@@ -3130,7 +3130,7 @@ Section complete.
     lra.
   Qed.
 
-  Lemma Rbar_Expectation_pos_posRV (rv_X : Ts -> Rbar) 
+  Lemma Rbar_Expectation_pos_pofrf (rv_X : Ts -> Rbar) 
         {prv : Rbar_NonnegativeFunction rv_X} :
     Rbar_Expectation rv_X = Some (Rbar_NonnegExpectation rv_X).
   Proof.
@@ -3161,7 +3161,7 @@ Section complete.
     unfold IsLp_Rbar.
     assert (Rbar_IsFiniteExpectation (fun x => const 0 x)).
     {
-      generalize (Rbar_Expectation_pos_posRV (fun x => Finite (const 0 x))); intros.
+      generalize (Rbar_Expectation_pos_pofrf (fun x => Finite (const 0 x))); intros.
       unfold Rbar_IsFiniteExpectation.
       rewrite H.
       assert (0 <= 0) by lra.
@@ -3173,7 +3173,7 @@ Section complete.
                                                  (fun (omega : Ts) => Rbar_power (Rbar_abs (rv_X1 omega)) n) rv_X2); intros.
     cut_to H0; trivial.
     - unfold Rbar_IsFiniteExpectation in H0.
-      rewrite Rbar_Expectation_pos_posRV with (prv := power_abs_pos rv_X1 n) in H0.
+      rewrite Rbar_Expectation_pos_pofrf with (prv := power_abs_pos rv_X1 n) in H0.
       match_destr_in H0; easy.
     - intro x.
       unfold const.
@@ -3243,7 +3243,7 @@ Section complete.
         - simpl; lra.
       }
       unfold Rbar_IsFiniteExpectation.
-      rewrite Rbar_Expectation_pos_posRV with (prv := H).
+      rewrite Rbar_Expectation_pos_pofrf with (prv := H).
       unfold IsLp_Rbar in lp.
       assert (0 <= 1) by lra.
 
@@ -4059,7 +4059,7 @@ Section complete.
         generalize (IsLp_minus prts pnneg (f n0) (f n)); intros.
         unfold IsLp in H6.
         unfold IsFiniteExpectation in H6.
-        erewrite Expectation_pos_posRV in H6.
+        erewrite Expectation_pos_pofrf in H6.
         simpl in H6.
         match_case_in H6; intros.
         * rewrite H7; now simpl.

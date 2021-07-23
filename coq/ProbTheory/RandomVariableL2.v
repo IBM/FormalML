@@ -62,7 +62,7 @@ Section L2.
     - generalize (rvprod_abs_bound x y)
       ; intros xyle.
 
-      rewrite (Expectation_pos_posRV _).
+      rewrite (Expectation_pos_pofrf _).
       generalize (Finite_NonnegExpectation_le (rvabs (rvmult x y))
                                               (rvplus (rvsqr x) (rvsqr y))
                                               _
@@ -83,8 +83,8 @@ Section L2.
 
         rewrite rvpower_abs2_unfold in eqq1, eqq2.
         
-        rewrite (Expectation_pos_posRV _) in eqq1.
-        rewrite (Expectation_pos_posRV _) in eqq2.
+        rewrite (Expectation_pos_pofrf _) in eqq1.
+        rewrite (Expectation_pos_pofrf _) in eqq2.
         invcs eqq1.
         invcs eqq2.
         rewrite H0, H1.
@@ -162,14 +162,14 @@ Section L2.
 
   Proof.
     assert (NonnegativeFunction (rvabs (rvmult rv_X1 rv_X2))) by apply prvabs.
-    generalize (Expectation_pos_posRV (rvabs (rvmult rv_X1 rv_X2))); intros.
+    generalize (Expectation_pos_pofrf (rvabs (rvmult rv_X1 rv_X2))); intros.
     generalize (rvprod_abs1_bound rv_X1 rv_X2); intros.
     assert (NonnegativeFunction (rvplus (rvsqr rv_X1) (rvsqr rv_X2)))
       by (apply rvplus_prv; apply prvsqr).
     generalize (Finite_NonnegExpectation_le _ _ H H2 H1); intros.
     unfold IsLp, IsFiniteExpectation in *.
-    rewrite (Expectation_pos_posRV _) in l21.
-    rewrite (Expectation_pos_posRV _)  in l22.    
+    rewrite (Expectation_pos_pofrf _) in l21.
+    rewrite (Expectation_pos_pofrf _)  in l22.    
     match_case_in l21
     ; [intros ? eqq1 | intros eqq1..]
     ; rewrite eqq1 in l21
@@ -182,7 +182,7 @@ Section L2.
     assert (NonnegativeFunction (rvsqr rv_X2)) by apply prvsqr.
     generalize (NonnegExpectation_sum (rvsqr rv_X1) (rvsqr rv_X2)); intros.
     cut_to H3.
-    - rewrite Expectation_pos_posRV with (prv := H).
+    - rewrite Expectation_pos_pofrf with (prv := H).
       now rewrite <- H3.
     - erewrite NonnegExpectation_pf_irrel in H6.
       rewrite H6.
@@ -200,7 +200,7 @@ Section L2.
         (eps : posreal) 
         (X : Ts -> R) 
         (rv : RandomVariable dom borel_sa X)
-        (posrv: NonnegativeFunction X) :
+        (pofrf: NonnegativeFunction X) :
   Rbar_le (ps_P (event_ge dom X eps))
           (Rbar_div (NonnegExpectation (rvsqr X)) 
                     (Rsqr eps)).

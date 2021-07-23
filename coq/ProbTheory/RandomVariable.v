@@ -72,12 +72,12 @@ Section Const.
   Class ConstantRandomVariable
         (rv_X:Ts -> Td)
     := { 
-    srv_val : Td;
-    srv_val_complete : forall x, rv_X x = srv_val
+    frf_val : Td;
+    frf_val_complete : forall x, rv_X x = frf_val
       }.
   
   Global Program Instance crvconst c : ConstantRandomVariable (const c)
-    := { srv_val := c }.
+    := { frf_val := c }.
 
   Global Instance discrete_sa_rv
          {cod:SigmaAlgebra Td} (rv_X: Ts -> Td) 
@@ -113,8 +113,8 @@ Section Simple.
   Class FiniteRangeFunction
         (rv_X:Ts->Td)
     := { 
-    srv_vals : list Td ;
-    srv_vals_complete : forall x, In (rv_X x) srv_vals;
+    frf_vals : list Td ;
+    frf_vals_complete : forall x, In (rv_X x) frf_vals;
       }.
 
   Lemma FiniteRangeFunction_ext (x y:Ts->Td) :
@@ -124,59 +124,59 @@ Section Simple.
   Proof.
     repeat red; intros.
     invcs X.
-    exists srv_vals0.
+    exists frf_vals0.
     intros.
     now rewrite <- H.
   Qed.
 
-  Global Program Instance srv_crv (rv_X:Ts->Td) {crv:ConstantRandomVariable rv_X} :
+  Global Program Instance frf_crv (rv_X:Ts->Td) {crv:ConstantRandomVariable rv_X} :
     FiniteRangeFunction rv_X
     := {
-    srv_vals := [srv_val]
+    frf_vals := [frf_val]
       }.
   Next Obligation.
     left.
-    rewrite (@srv_val_complete _ _ _ crv).
+    rewrite (@frf_val_complete _ _ _ crv).
     reflexivity.
   Qed.
 
-  Global Program Instance srv_fun (rv_X : Ts -> Td) (f : Td -> Td)
-          (srv:FiniteRangeFunction rv_X) : 
+  Global Program Instance frf_fun (rv_X : Ts -> Td) (f : Td -> Td)
+          (frf:FiniteRangeFunction rv_X) : 
     FiniteRangeFunction (fun v => f (rv_X v)) :=
-    {srv_vals := map f srv_vals}.
+    {frf_vals := map f frf_vals}.
   Next Obligation.
-    destruct srv.
+    destruct frf.
     now apply in_map.
   Qed.
 
-  Definition srvconst c : FiniteRangeFunction (const c)
-    := srv_crv (const c).
+  Definition frfconst c : FiniteRangeFunction (const c)
+    := frf_crv (const c).
 
   Program Instance nodup_simple_random_variable (dec:forall (x y:Td), {x = y} + {x <> y})
           {rv_X:Ts->Td}
-          (srv:FiniteRangeFunction rv_X) : FiniteRangeFunction rv_X
-    := { srv_vals := nodup dec srv_vals }.
+          (frf:FiniteRangeFunction rv_X) : FiniteRangeFunction rv_X
+    := { frf_vals := nodup dec frf_vals }.
   Next Obligation.
     apply nodup_In.
-    apply srv_vals_complete.
+    apply frf_vals_complete.
   Qed.
 
   Lemma nodup_simple_random_variable_NoDup
         (dec:forall (x y:Td), {x = y} + {x <> y})
         {rv_X}
-        (srv:FiniteRangeFunction rv_X) :
-    NoDup (srv_vals (FiniteRangeFunction:=nodup_simple_random_variable dec srv)).
+        (frf:FiniteRangeFunction rv_X) :
+    NoDup (frf_vals (FiniteRangeFunction:=nodup_simple_random_variable dec frf)).
   Proof.
     simpl.
     apply NoDup_nodup.
   Qed.
 
 
-Lemma srv_singleton_rv (rv_X : Ts -> Td)
-        (srv:FiniteRangeFunction rv_X) 
+Lemma frf_singleton_rv (rv_X : Ts -> Td)
+        (frf:FiniteRangeFunction rv_X) 
         (dom: SigmaAlgebra Ts)
         (cod: SigmaAlgebra Td) :
-    (forall (c : Td), In c srv_vals -> sa_sigma (pre_event_preimage rv_X (pre_event_singleton c))) ->
+    (forall (c : Td), In c frf_vals -> sa_sigma (pre_event_preimage rv_X (pre_event_singleton c))) ->
     RandomVariable dom cod rv_X.
 Proof.
   intros Fs.
@@ -184,13 +184,13 @@ Proof.
   unfold event_preimage, pre_event_preimage in *.
   unfold pre_event_singleton in *.
 
-  destruct srv.
-  assert (exists ld, incl ld srv_vals0 /\
+  destruct frf.
+  assert (exists ld, incl ld frf_vals0 /\
                 (forall d: Td, In d ld -> x d) /\
-                (forall d: Td, In d srv_vals0 -> x d -> In d ld)).
+                (forall d: Td, In d frf_vals0 -> x d -> In d ld)).
   {
-    clear srv_vals_complete0 Fs.
-    induction srv_vals0.
+    clear frf_vals_complete0 Fs.
+    induction frf_vals0.
     - exists nil.
       split.
       + intros ?; trivial.
@@ -198,7 +198,7 @@ Proof.
         * simpl; tauto.
         * intros ??.
           auto.
-    - destruct IHsrv_vals0 as [ld [ldincl [In1 In2]]].
+    - destruct IHfrf_vals0 as [ld [ldincl [In1 In2]]].
       destruct (Classical_Prop.classic (x a)).
       + exists (a::ld).
         split; [| split].
@@ -241,15 +241,15 @@ Instance rv_fun_simple {dom: SigmaAlgebra Ts}
          {cod: SigmaAlgebra Td}
          (x : Ts -> Td) (f : Td -> Td)
          {rvx : RandomVariable dom cod x}
-         {srvx : FiniteRangeFunction x} :
-      (forall (c : Td), In c srv_vals -> sa_sigma (pre_event_preimage x (pre_event_singleton c))) ->
+         {frfx : FiniteRangeFunction x} :
+      (forall (c : Td), In c frf_vals -> sa_sigma (pre_event_preimage x (pre_event_singleton c))) ->
      RandomVariable dom cod (fun u => f (x u)).    
 Proof.
   intros Hsingleton.
-    generalize (srv_fun x f srvx); intros.
-    apply srv_singleton_rv with (srv:=X); trivial.
+    generalize (frf_fun x f frfx); intros.
+    apply frf_singleton_rv with (frf:=X); trivial.
     destruct X.
-    destruct srvx.
+    destruct frfx.
     intros c cinn.
     simpl in cinn.
     unfold pre_event_preimage, pre_event_singleton.
@@ -258,12 +258,12 @@ Proof.
                            (map (fun sval =>
                                    (fun omega =>
                                       (x omega = sval) /\ (f sval = c)))
-                                srv_vals1))).
+                                frf_vals1))).
     { 
       intro v.
       unfold pre_list_union.
       split; intros.
-      - specialize (srv_vals_complete0 v).
+      - specialize (frf_vals_complete0 v).
         eexists.
         rewrite in_map_iff.
         split.
@@ -311,7 +311,7 @@ Section Finite.
   Program Instance Finite_FiniteRangeFunction {fin:Finite Ts}  (rv_X:Ts->Td)
     : FiniteRangeFunction rv_X
     := {| 
-    srv_vals := map rv_X elms
+    frf_vals := map rv_X elms
       |}.
   Next Obligation.
     generalize (finite x); intros.
@@ -339,12 +339,12 @@ Section Event_restricted.
   Context {Ts:Type} {Td:Type} {σ:SigmaAlgebra Ts} {cod : SigmaAlgebra Td}.
 
   Global Program Instance Restricted_FiniteRangeFunction (e:event σ) (f : Ts -> Td)
-    (srv: FiniteRangeFunction f) :
+    (frf: FiniteRangeFunction f) :
     FiniteRangeFunction (event_restricted_function e f) :=
-    { srv_vals := srv_vals }.
+    { frf_vals := frf_vals }.
   Next Obligation.
-    destruct srv.
-    apply srv_vals_complete0.
+    destruct frf.
+    apply frf_vals_complete0.
   Qed.
 
   Global Program Instance Restricted_RandomVariable (e:event σ) (f : Ts -> Td)
@@ -441,17 +441,17 @@ Section Event_restricted.
         apply H.
     Qed.
 
-  Global Instance lift_event_restricted_domain_fun_srv (default:Td) {P:event σ} (f:event_restricted_domain P -> Td) :
+  Global Instance lift_event_restricted_domain_fun_frf (default:Td) {P:event σ} (f:event_restricted_domain P -> Td) :
     FiniteRangeFunction f -> 
     FiniteRangeFunction (lift_event_restricted_domain_fun default f).
   Proof.
-    intros srv.
-    exists (default::srv_vals).
+    intros frf.
+    exists (default::frf_vals).
     intros.
     unfold lift_event_restricted_domain_fun.
     match_destr.
     - right.
-      apply srv_vals_complete.
+      apply frf_vals_complete.
     - now left.
   Qed.
 

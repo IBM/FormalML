@@ -49,7 +49,7 @@ Section Dvoretzky.
  Local Open Scope rv.
 
       
- Lemma srv_vals_offset
+ Lemma frf_vals_offset
         (offset: R)
         (vals : list R) :
     map (fun ab : R * R => fst ab + snd ab) (list_prod vals [offset]) =  
@@ -81,7 +81,7 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
     assert (rv_eq (rvminus (X (S n)) (const theta)) 
                   (rvminus (rvplus (fun r => T n (X n r)) (Y n)) (const theta))).
     now rewrite H1.
-    rewrite (SimpleExpectation_transport (srvsqr (rvminus (X (S n)) (const theta)))
+    rewrite (SimpleExpectation_transport (frfsqr (rvminus (X (S n)) (const theta)))
                                         (rvsqr_proper _ _ H3)).    
    assert (eqq1:rv_eq (rvsqr (rvminus (rvplus (fun r : R => T n (X n r)) (Y n)) (const theta))) 
                       (rvplus (rvsqr (rvminus (fun r : R => T n (X n r)) (const theta)))
@@ -117,7 +117,7 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
        unfold rvmult, const; intros ?; simpl; field.
      } 
      rewrite (SimpleExpectation_transport _ eqq4).
-     rewrite (SimpleExpectation_pf_irrel _ (srvconst _)).
+     rewrite (SimpleExpectation_pf_irrel _ (frfconst _)).
      rewrite SimpleExpectation_const.
      rewrite Rmult_0_r, Rplus_0_r.
      specialize (H n).
@@ -139,7 +139,7 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
      unfold event_preimage, event_singleton.
      destruct svx.
      destruct svt.
-     unfold RandomVariable.srv_vals; simpl.
+     unfold RandomVariable.frf_vals; simpl.
      unfold rvminus, rvopp, rvplus, rvscale, const.
      intros.
      
@@ -148,8 +148,8 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
        split.
        * destruct H5 as [??].
          subst.
-         assert (In (T n (X n x)) srv_vals0); auto.
-         rewrite srv_vals_offset, in_map_iff.
+         assert (In (T n (X n x)) frf_vals0); auto.
+         rewrite frf_vals_offset, in_map_iff.
          exists (T n (X n x)).
          split; trivial.
        * intros x; simpl.
@@ -157,8 +157,8 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
          now rewrite eqq2.
      + exists (T n (X n 0) + (-1)*theta).
        split.
-       * assert (In (T n (X n 0)) srv_vals0); auto.
-         rewrite srv_vals_offset, in_map_iff.
+       * assert (In (T n (X n 0)) frf_vals0); auto.
+         rewrite frf_vals_offset, in_map_iff.
          exists (T n (X n 0)).
          split; trivial.
        * intros ?; simpl.

@@ -841,44 +841,44 @@ Section RealRandomVariables.
     Global Program Instance scale_constant_random_variable (c: R)
            (rv_X : Ts -> R)
            {crv:ConstantRandomVariable rv_X} : ConstantRandomVariable (rvscale c rv_X)
-      := { srv_val := Rmult c srv_val }.
+      := { frf_val := Rmult c frf_val }.
     Next Obligation.
       destruct crv.
       unfold rvscale.
-      now rewrite (srv_val_complete x).
+      now rewrite (frf_val_complete x).
     Qed.
 
   End Const.
 
   Section Simple.
     
-    Global Program Instance srvscale (c: R)
+    Global Program Instance frfscale (c: R)
            (rv_X : Ts -> R)
-           {srv:FiniteRangeFunction rv_X} : FiniteRangeFunction (rvscale c rv_X)
-      := { srv_vals := map (fun v => Rmult c v) srv_vals }.
+           {frf:FiniteRangeFunction rv_X} : FiniteRangeFunction (rvscale c rv_X)
+      := { frf_vals := map (fun v => Rmult c v) frf_vals }.
     Next Obligation.
-      destruct srv.
+      destruct frf.
       rewrite in_map_iff.
       exists (rv_X x).
       split; trivial.
     Qed.
 
-    Global Instance srvopp 
+    Global Instance frfopp 
            {rv_X : Ts -> R}
-           {srv:FiniteRangeFunction rv_X} : FiniteRangeFunction (rvopp rv_X)
-      := srvscale (-1) rv_X.    
+           {frf:FiniteRangeFunction rv_X} : FiniteRangeFunction (rvopp rv_X)
+      := frfscale (-1) rv_X.    
 
-    Global Program Instance srvplus
+    Global Program Instance frfplus
            (rv_X1 rv_X2 : Ts -> R)
-           {srv1:FiniteRangeFunction rv_X1}
-           {srv2:FiniteRangeFunction rv_X2}
+           {frf1:FiniteRangeFunction rv_X1}
+           {frf2:FiniteRangeFunction rv_X2}
       : FiniteRangeFunction (rvplus rv_X1 rv_X2)
-      := { srv_vals := map (fun ab => Rplus (fst ab) (snd ab)) 
-                           (list_prod (srv_vals (FiniteRangeFunction:=srv1))
-                                      (srv_vals (FiniteRangeFunction:=srv2))) }.
+      := { frf_vals := map (fun ab => Rplus (fst ab) (snd ab)) 
+                           (list_prod (frf_vals (FiniteRangeFunction:=frf1))
+                                      (frf_vals (FiniteRangeFunction:=frf2))) }.
     Next Obligation.
-      destruct srv1.
-      destruct srv2.
+      destruct frf1.
+      destruct frf2.
       rewrite in_map_iff.
       exists (rv_X1 x, rv_X2 x).
       split.
@@ -886,24 +886,24 @@ Section RealRandomVariables.
       apply in_prod; trivial.
     Qed.
 
-    Global Instance srvminus 
+    Global Instance frfminus 
            (rv_X1 rv_X2 : Ts -> R)
-           {srv1 : FiniteRangeFunction rv_X1}
-           {srv2 : FiniteRangeFunction rv_X2}  :
+           {frf1 : FiniteRangeFunction rv_X1}
+           {frf2 : FiniteRangeFunction rv_X2}  :
       FiniteRangeFunction (rvminus rv_X1 rv_X2) := 
-      srvplus rv_X1 (rvopp rv_X2).
+      frfplus rv_X1 (rvopp rv_X2).
 
-    Global Program Instance srvmult
+    Global Program Instance frfmult
            (rv_X1 rv_X2 : Ts -> R)
-           {srv1:FiniteRangeFunction rv_X1}
-           {srv2:FiniteRangeFunction rv_X2}
+           {frf1:FiniteRangeFunction rv_X1}
+           {frf2:FiniteRangeFunction rv_X2}
       : FiniteRangeFunction (rvmult rv_X1 rv_X2)
-      := { srv_vals := map (fun ab => Rmult (fst ab) (snd ab)) 
-                           (list_prod (srv_vals (FiniteRangeFunction:=srv1))
-                                      (srv_vals (FiniteRangeFunction:=srv2))) }.
+      := { frf_vals := map (fun ab => Rmult (fst ab) (snd ab)) 
+                           (list_prod (frf_vals (FiniteRangeFunction:=frf1))
+                                      (frf_vals (FiniteRangeFunction:=frf2))) }.
     Next Obligation.
-      destruct srv1.
-      destruct srv2.
+      destruct frf1.
+      destruct frf2.
       rewrite in_map_iff.
       exists (rv_X1 x, rv_X2 x).
       split.
@@ -911,63 +911,63 @@ Section RealRandomVariables.
       apply in_prod; trivial.
     Qed.
 
-    Global Program Instance srvsqr
+    Global Program Instance frfsqr
            (rv_X : Ts -> R)
-           {srv:FiniteRangeFunction rv_X} : FiniteRangeFunction (rvsqr rv_X)
-      := { srv_vals := map Rsqr srv_vals }.
+           {frf:FiniteRangeFunction rv_X} : FiniteRangeFunction (rvsqr rv_X)
+      := { frf_vals := map Rsqr frf_vals }.
     Next Obligation.
-      destruct srv.
+      destruct frf.
       unfold rvsqr.
       now apply in_map.
     Qed.
 
-    Global Program Instance srvpow
+    Global Program Instance frfpow
            (rv_X : Ts -> R) n
-           {srv:FiniteRangeFunction rv_X} : FiniteRangeFunction (rvpow rv_X n)
-      := { srv_vals := map (fun x => pow x n) srv_vals }.
+           {frf:FiniteRangeFunction rv_X} : FiniteRangeFunction (rvpow rv_X n)
+      := { frf_vals := map (fun x => pow x n) frf_vals }.
     Next Obligation.
-      destruct srv.
+      destruct frf.
       unfold rvpow.
       simpl.
       apply in_map_iff.
       eauto.
     Qed.
 
-    Global Program Instance srvabs
+    Global Program Instance frfabs
            (rv_X : Ts -> R)
-           {srv:FiniteRangeFunction rv_X} : FiniteRangeFunction (rvabs rv_X)
-      := { srv_vals := map Rabs srv_vals }.
+           {frf:FiniteRangeFunction rv_X} : FiniteRangeFunction (rvabs rv_X)
+      := { frf_vals := map Rabs frf_vals }.
     Next Obligation.
-      destruct srv.
+      destruct frf.
       unfold rvabs.
       now apply in_map.
     Qed.
 
 
-    Global Instance srvchoice (c:Ts->bool) x y
-           {srvx:FiniteRangeFunction x}
-           {srvy:FiniteRangeFunction y}
+    Global Instance frfchoice (c:Ts->bool) x y
+           {frfx:FiniteRangeFunction x}
+           {frfy:FiniteRangeFunction y}
       : FiniteRangeFunction (rvchoice c x y).
     Proof.
-      destruct srvx; destruct srvy.
-      exists (srv_vals ++ srv_vals0).
+      destruct frfx; destruct frfy.
+      exists (frf_vals ++ frf_vals0).
       intros.
       rewrite in_app_iff.
       unfold rvchoice.
       match_destr; auto.
     Qed.
     
-    Global Program Instance srvmax
+    Global Program Instance frfmax
            (rv_X1 rv_X2 : Ts -> R)
-           {srv1:FiniteRangeFunction rv_X1}
-           {srv2:FiniteRangeFunction rv_X2}
+           {frf1:FiniteRangeFunction rv_X1}
+           {frf2:FiniteRangeFunction rv_X2}
       : FiniteRangeFunction (rvmax rv_X1 rv_X2)
-      := { srv_vals := map (fun ab => Rmax (fst ab) (snd ab)) 
-                           (list_prod (srv_vals (FiniteRangeFunction:=srv1))
-                                      (srv_vals (FiniteRangeFunction:=srv2))) }.
+      := { frf_vals := map (fun ab => Rmax (fst ab) (snd ab)) 
+                           (list_prod (frf_vals (FiniteRangeFunction:=frf1))
+                                      (frf_vals (FiniteRangeFunction:=frf2))) }.
     Next Obligation.
-      destruct srv1.
-      destruct srv2.
+      destruct frf1.
+      destruct frf2.
       rewrite in_map_iff.
       exists (rv_X1 x, rv_X2 x).
       split.
@@ -975,17 +975,17 @@ Section RealRandomVariables.
       apply in_prod; trivial.
     Qed.
 
-    Global Program Instance srvmin
+    Global Program Instance frfmin
            (rv_X1 rv_X2 : Ts -> R)
-           {srv1:FiniteRangeFunction rv_X1}
-           {srv2:FiniteRangeFunction rv_X2}
+           {frf1:FiniteRangeFunction rv_X1}
+           {frf2:FiniteRangeFunction rv_X2}
       : FiniteRangeFunction (rvmin rv_X1 rv_X2)
-      := { srv_vals := map (fun ab => Rmin (fst ab) (snd ab)) 
-                           (list_prod (srv_vals (FiniteRangeFunction:=srv1))
-                                      (srv_vals (FiniteRangeFunction:=srv2))) }.
+      := { frf_vals := map (fun ab => Rmin (fst ab) (snd ab)) 
+                           (list_prod (frf_vals (FiniteRangeFunction:=frf1))
+                                      (frf_vals (FiniteRangeFunction:=frf2))) }.
     Next Obligation.
-      destruct srv1.
-      destruct srv2.
+      destruct frf1.
+      destruct frf2.
       rewrite in_map_iff.
       exists (rv_X1 x, rv_X2 x).
       split.
@@ -993,7 +993,7 @@ Section RealRandomVariables.
       apply in_prod; trivial.
     Qed.
 
-    Global Instance srvsum (X : nat -> Ts -> R) 
+    Global Instance frfsum (X : nat -> Ts -> R) 
            {rv : forall (n:nat), FiniteRangeFunction (X n)} (n : nat) :
       FiniteRangeFunction (rvsum X n).
     Proof.
@@ -1012,76 +1012,76 @@ Section RealRandomVariables.
           lra.
         + eapply FiniteRangeFunction_ext.
           * rewrite H; reflexivity.
-          * apply srvplus; trivial.
+          * apply frfplus; trivial.
     Qed.
     
-    Global Program Instance positive_part_srv'
+    Global Program Instance positive_part_frf'
            (rv_X : Ts -> R) 
-           {srv: FiniteRangeFunction rv_X } : FiniteRangeFunction (pos_fun_part rv_X)
-      :=  { srv_vals := map (fun x => mknonnegreal (Rmax x 0) _) srv_vals}.
+           {frf: FiniteRangeFunction rv_X } : FiniteRangeFunction (pos_fun_part rv_X)
+      :=  { frf_vals := map (fun x => mknonnegreal (Rmax x 0) _) frf_vals}.
     Next Obligation.
       apply Rmax_r.
     Defined.
     Next Obligation.
-      destruct srv.
+      destruct frf.
       apply in_map_iff.
-      unfold RandomVariable.srv_vals.
+      unfold RandomVariable.frf_vals.
       exists (rv_X x).
       split; trivial.
     Qed.
     
-    Global Program Instance positive_part_srv
+    Global Program Instance positive_part_frf
            (rv_X : Ts -> R) 
-           {srv: FiniteRangeFunction rv_X } : FiniteRangeFunction (fun x => nonneg (pos_fun_part rv_X x))
-      :=  { srv_vals := map (fun x => (Rmax x 0)) srv_vals}.
+           {frf: FiniteRangeFunction rv_X } : FiniteRangeFunction (fun x => nonneg (pos_fun_part rv_X x))
+      :=  { frf_vals := map (fun x => (Rmax x 0)) frf_vals}.
     Next Obligation.
-      destruct srv.
+      destruct frf.
       apply in_map_iff.
-      unfold RandomVariable.srv_vals.
+      unfold RandomVariable.frf_vals.
       exists (rv_X x).
       split; trivial.
     Qed.    
 
-    Global Program Instance negative_part_srv'
+    Global Program Instance negative_part_frf'
            (rv_X : Ts -> R) 
-           {srv: FiniteRangeFunction rv_X } : FiniteRangeFunction (neg_fun_part rv_X)
-      :=  { srv_vals := map (fun x => mknonnegreal (Rmax (- x) 0) _) srv_vals}.
+           {frf: FiniteRangeFunction rv_X } : FiniteRangeFunction (neg_fun_part rv_X)
+      :=  { frf_vals := map (fun x => mknonnegreal (Rmax (- x) 0) _) frf_vals}.
     Next Obligation.
       apply Rmax_r.
     Defined.
     Next Obligation.
-      destruct srv.
+      destruct frf.
       apply in_map_iff.
-      unfold RandomVariable.srv_vals.
+      unfold RandomVariable.frf_vals.
       unfold neg_fun_part.
       exists (rv_X x).
       split; trivial.
     Qed.
 
-    Global Program Instance negative_part_srv
+    Global Program Instance negative_part_frf
            (rv_X : Ts -> R) 
-           {srv: FiniteRangeFunction rv_X } : FiniteRangeFunction (fun x => nonneg (neg_fun_part rv_X x))
-      :=  { srv_vals := map (fun x => (Rmax (- x) 0)) srv_vals}.
+           {frf: FiniteRangeFunction rv_X } : FiniteRangeFunction (fun x => nonneg (neg_fun_part rv_X x))
+      :=  { frf_vals := map (fun x => (Rmax (- x) 0)) frf_vals}.
     Next Obligation.
-      destruct srv.
+      destruct frf.
       apply in_map_iff.
-      unfold RandomVariable.srv_vals.
+      unfold RandomVariable.frf_vals.
       exists (rv_X x).
       split; trivial.
     Qed.
 
     Program Instance FiniteRangeFunction_enlarged
             {rv_X : Ts -> R}
-            (srv:FiniteRangeFunction rv_X)
+            (frf:FiniteRangeFunction rv_X)
             (l:list R)
-            (lincl : incl srv_vals l)
+            (lincl : incl frf_vals l)
       : FiniteRangeFunction rv_X :=
       {
-      srv_vals := l
+      frf_vals := l
       }.
     Next Obligation.
       apply lincl.
-      apply srv_vals_complete.
+      apply frf_vals_complete.
     Qed.
 
 
@@ -1098,7 +1098,7 @@ Section RealRandomVariables.
     Global Program Instance IndicatorRandomVariableSimpl
            rv_X
            {irv: IndicatorRandomVariable rv_X} : FiniteRangeFunction rv_X
-      := {srv_vals := [0;1]}.
+      := {frf_vals := [0;1]}.
     Next Obligation.
       apply irv.
     Qed.
@@ -1143,11 +1143,11 @@ Section RealRandomVariables.
       match_destr; tauto.
     Qed.
 
-    Global Program Instance EventIndicator_pre_srv {P : pre_event Ts} (dec:forall x, {P x} + {~ P x})
+    Global Program Instance EventIndicator_pre_frf {P : pre_event Ts} (dec:forall x, {P x} + {~ P x})
       : FiniteRangeFunction (EventIndicator dec) :=
       IndicatorRandomVariableSimpl (EventIndicator dec).
 
-    Global Program Instance EventIndicator_srv {P : event dom} (dec:forall x, {P x} + {~ P x})
+    Global Program Instance EventIndicator_frf {P : event dom} (dec:forall x, {P x} + {~ P x})
       : FiniteRangeFunction (EventIndicator dec) :=
       IndicatorRandomVariableSimpl (EventIndicator dec).
 
@@ -1173,7 +1173,7 @@ Section RealRandomVariables.
       now apply sa_preimage_singleton.
     Qed.    
     
-    Global Instance point_preimage_indicator_srv
+    Global Instance point_preimage_indicator_frf
              {rv_X:Ts -> R}
              (rv: RandomVariable dom borel_sa rv_X)
              (c:R) : FiniteRangeFunction (point_preimage_indicator rv_X c)
@@ -1199,28 +1199,28 @@ Section RealRandomVariables.
   Qed.
 
 
- Lemma srv_preimage_indicator (rv_X : Ts -> R) {srv:FiniteRangeFunction rv_X} :
+ Lemma frf_preimage_indicator (rv_X : Ts -> R) {frf:FiniteRangeFunction rv_X} :
    forall a:Ts, rv_X a =
                list_sum 
                  (map 
                     (fun c => c * (point_preimage_indicator rv_X c a))
-                    (nodup Req_EM_T srv_vals)).
+                    (nodup Req_EM_T frf_vals)).
   Proof.
     intros.
-    destruct srv; simpl.
-    specialize (srv_vals_complete a).
-    induction srv_vals; simpl in srv_vals_complete; [tauto |].
+    destruct frf; simpl.
+    specialize (frf_vals_complete a).
+    induction frf_vals; simpl in frf_vals_complete; [tauto |].
     simpl.
     match_destr.
-    - apply IHsrv_vals.
+    - apply IHfrf_vals.
       intuition congruence.
     - simpl.
-      destruct srv_vals_complete.
+      destruct frf_vals_complete.
       + subst.
         rewrite preimage_indicator_notin; trivial.
         unfold point_preimage_indicator, EventIndicator.
         match_destr; lra.
-      + rewrite IHsrv_vals; trivial.
+      + rewrite IHfrf_vals; trivial.
         unfold point_preimage_indicator, EventIndicator.
         match_destr.
         * subst.
@@ -1228,15 +1228,15 @@ Section RealRandomVariables.
         * lra.
   Qed.
 
-  Lemma srv_preimage_indicator' (rv_X : Ts -> R) {srv:FiniteRangeFunction rv_X} :
+  Lemma frf_preimage_indicator' (rv_X : Ts -> R) {frf:FiniteRangeFunction rv_X} :
     pointwise_relation Ts eq rv_X
                (fun a => list_sum 
                  (map 
                     (fun c => c * (point_preimage_indicator rv_X c a))
-                    (nodup Req_EM_T srv_vals))).
+                    (nodup Req_EM_T frf_vals))).
   Proof.
     repeat red; intros.
-    apply srv_preimage_indicator.
+    apply frf_preimage_indicator.
   Qed.
 
   End Indicator.
@@ -1336,14 +1336,14 @@ Section RealRandomVariables.
 
     Global Instance indicator_prod_pos 
            (rv_X : Ts -> R) 
-           (posrv : NonnegativeFunction rv_X)
+           (pofrf : NonnegativeFunction rv_X)
            {P : pre_event Ts} 
            (dec:forall x, {P x} + {~ P x}) : 
       NonnegativeFunction (rvmult rv_X (EventIndicator dec)).
     Proof.
       intros x.
       unfold rvmult, EventIndicator.
-      unfold NonnegativeFunction in posrv.
+      unfold NonnegativeFunction in pofrf.
       apply Rmult_le_pos; trivial.
       match_destr; lra.
     Qed.
@@ -1358,7 +1358,7 @@ Section RealRandomVariables.
 
     Global Instance rvscale_prv (phival : posreal)
            (rv_X : Ts -> R) 
-           (posrv : NonnegativeFunction rv_X) :
+           (pofrf : NonnegativeFunction rv_X) :
       NonnegativeFunction (rvscale phival rv_X).
     Proof.
       intro x.
@@ -1396,11 +1396,11 @@ Section RealRandomVariables.
 
     Global Instance prvlim
            (Xn : nat -> Ts -> R) 
-           (posrv : forall n, NonnegativeFunction (Xn n)) :
+           (pofrf : forall n, NonnegativeFunction (Xn n)) :
       NonnegativeFunction (rvlim Xn).
     Proof.
       unfold NonnegativeFunction, rvlim.
-      unfold NonnegativeFunction in posrv.
+      unfold NonnegativeFunction in pofrf.
       intros.
       generalize (Lim_seq_le_loc (fun _ => 0) (fun n => Xn n x)); intros.
       rewrite Lim_seq_const in H.
@@ -1412,7 +1412,7 @@ Section RealRandomVariables.
           match_destr; lra.
       - exists 0%nat.
         intros; try lia.
-        apply posrv.
+        apply pofrf.
       Qed.
 
     Global Instance rvpow_prv
@@ -1479,24 +1479,24 @@ Section RealRandomVariables.
       ; apply rv_measurable; trivial.
     Qed.
 
-    Definition srvsqrt_simplemapping l :=
+    Definition frfsqrt_simplemapping l :=
       map (fun x =>
              match Rle_dec 0 x with
              | left pf => Rsqrt (mknonnegreal _ pf)
              | right _ => 0
              end) l.
 
-    Global Program Instance srvsqrt
+    Global Program Instance frfsqrt
            (rv_X : Ts -> R)
            {prv: NonnegativeFunction rv_X}
-           {srv:FiniteRangeFunction rv_X} : FiniteRangeFunction (rvsqrt rv_X prv)
-      := { srv_vals := srvsqrt_simplemapping srv_vals }.
+           {frf:FiniteRangeFunction rv_X} : FiniteRangeFunction (rvsqrt rv_X prv)
+      := { frf_vals := frfsqrt_simplemapping frf_vals }.
     Next Obligation.
-      unfold srvsqrt_simplemapping.
+      unfold frfsqrt_simplemapping.
       apply in_map_iff.
       unfold rvsqrt; simpl.
       exists (rv_X x); simpl.
-      destruct srv.
+      destruct frf.
       red in prv0.
       match_destr.
       - split; trivial.
@@ -1570,7 +1570,7 @@ Section RealRandomVariables.
 
   Instance rv_fun_simple_R (x : Ts -> R) (f : R -> R)
             (rvx : RandomVariable dom borel_sa x) 
-            (srvx : FiniteRangeFunction x) :
+            (frfx : FiniteRangeFunction x) :
      RandomVariable dom borel_sa (fun u => f (x u)).    
   Proof.
     eapply rv_fun_simple; eauto.
@@ -1765,11 +1765,11 @@ Section RbarRandomVariables.
 
   Global Instance Rbar_rvlim_prv
          (Xn : nat -> Ts -> R) 
-         (posrv : forall n, NonnegativeFunction (Xn n)) :
+         (pofrf : forall n, NonnegativeFunction (Xn n)) :
       Rbar_NonnegativeFunction (Rbar_rvlim Xn).
     Proof.
       unfold Rbar_NonnegativeFunction, Rbar_rvlim.
-      unfold NonnegativeFunction in posrv.
+      unfold NonnegativeFunction in pofrf.
       intros.
       generalize (Lim_seq_le_loc (fun _ => 0) (fun n => Xn n x)); intros.
       rewrite Lim_seq_const in H.
