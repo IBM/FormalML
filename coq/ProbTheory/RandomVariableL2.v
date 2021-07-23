@@ -680,3 +680,17 @@ Section L2.
     Hilbert.Pack (LpRRVq prts 2) (Hilbert.Class _ _ L2RRVq_Hilbert_mixin) (LpRRVq prts 2).
 
 End L2.
+
+Section cond_exp.
+  
+Program Definition ortho_projection_hilbert (E:PreHilbert) 
+           (phi: E -> Prop) (phi_mod: compatible_m phi) (phi_compl: complete_subset phi)
+           (u : E) : E.
+  generalize (ortho_projection_subspace phi phi_mod phi_compl u);intros.
+  cut_to H.
+  apply constructive_definite_description in H.
+  exact (proj1_sig H).
+  intro; apply classic.
+Qed.
+
+End cond_exp.
