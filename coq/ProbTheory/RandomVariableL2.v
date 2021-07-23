@@ -161,11 +161,11 @@ Section L2.
     :  IsFiniteExpectation prts (rvabs (rvmult rv_X1 rv_X2)).
 
   Proof.
-    assert (NonnegativeFunction (rvabs (rvmult rv_X1 rv_X2))) by apply prvabs.
+    assert (NonnegativeFunction (rvabs (rvmult rv_X1 rv_X2))) by apply nnfabs.
     generalize (Expectation_pos_pofrf (rvabs (rvmult rv_X1 rv_X2))); intros.
     generalize (rvprod_abs1_bound rv_X1 rv_X2); intros.
     assert (NonnegativeFunction (rvplus (rvsqr rv_X1) (rvsqr rv_X2)))
-      by (apply rvplus_prv; apply prvsqr).
+      by (apply rvplus_nnf; apply nnfsqr).
     generalize (Finite_NonnegExpectation_le _ _ H H2 H1); intros.
     unfold IsLp, IsFiniteExpectation in *.
     rewrite (Expectation_pos_pofrf _) in l21.
@@ -178,11 +178,11 @@ Section L2.
     ; [intros ? eqq2 | intros eqq2..]
     ; rewrite eqq2 in l22
     ; try contradiction.
-    assert (NonnegativeFunction (rvsqr rv_X1)) by apply prvsqr.
-    assert (NonnegativeFunction (rvsqr rv_X2)) by apply prvsqr.
+    assert (NonnegativeFunction (rvsqr rv_X1)) by apply nnfsqr.
+    assert (NonnegativeFunction (rvsqr rv_X2)) by apply nnfsqr.
     generalize (NonnegExpectation_sum (rvsqr rv_X1) (rvsqr rv_X2)); intros.
     cut_to H3.
-    - rewrite Expectation_pos_pofrf with (prv := H).
+    - rewrite Expectation_pos_pofrf with (nnf := H).
       now rewrite <- H3.
     - erewrite NonnegExpectation_pf_irrel in H6.
       rewrite H6.
@@ -234,7 +234,7 @@ Section L2.
       assert (RandomVariable dom borel_sa (rvabs Xn)).
       - now apply rvabs_rv.
       - assert (NonnegativeFunction (rvabs Xn)).
-        now apply prvabs.
+        now apply nnfabs.
         intros.
         generalize (conv_l2_prob_le_div eps (rvabs Xn) H H0).
         rewrite <- H1.
@@ -269,7 +269,7 @@ Section L2.
       assert (RandomVariable dom borel_sa (rvabs X)).
       - now apply rvabs_rv.
       - assert (NonnegativeFunction (rvabs X)).
-        now apply prvabs.
+        now apply nnfabs.
         intros.
         generalize (Markov_ineq_div (rvabs X) H H0 eps); intros.
         rewrite <- H1 in H2.

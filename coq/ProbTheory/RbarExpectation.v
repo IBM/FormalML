@@ -24,7 +24,7 @@ Section RbarExpectation.
 
   Local Open Scope prob.
 
-  Global Instance Rbar_rvabs_prv
+  Global Instance Rbar_rvabs_nnf
              (rv_X : Ts -> Rbar) :
       Rbar_NonnegativeFunction (Rbar_rvabs rv_X).
     Proof.
@@ -72,13 +72,13 @@ Section RbarExpectation.
     Global Instance Rbar_rvplus_pos_rv  (rv_X1 rv_X2 : Ts -> Rbar)
            {rvx1 : RandomVariable dom Rbar_borel_sa rv_X1} 
            {rvx2 : RandomVariable dom Rbar_borel_sa rv_X2} 
-           {prvx1 : Rbar_NonnegativeFunction rv_X1}
-           {prvx2 : Rbar_NonnegativeFunction rv_X2} :
+           {nnfx1 : Rbar_NonnegativeFunction rv_X1}
+           {nnfx2 : Rbar_NonnegativeFunction rv_X2} :
       RandomVariable dom Rbar_borel_sa (Rbar_rvplus rv_X1 rv_X2).
     Proof.
       apply Rbar_rvplus_rv; trivial.
       intros.
-      specialize (prvx1 x); specialize (prvx2 x).
+      specialize (nnfx1 x); specialize (nnfx2 x).
       now apply ex_Rbar_plus_pos.
     Qed.
 
@@ -95,8 +95,8 @@ Section RbarExpectation.
 
   Lemma Rbar_NonnegExpectation_ext 
         {rv_X1 rv_X2 : Ts -> Rbar}
-        (prv1:Rbar_NonnegativeFunction rv_X1) 
-        (prv2:Rbar_NonnegativeFunction rv_X2):
+        (nnf1:Rbar_NonnegativeFunction rv_X1) 
+        (nnf2:Rbar_NonnegativeFunction rv_X2):
     rv_eq rv_X1 rv_X2 ->
     Rbar_NonnegExpectation rv_X1 = Rbar_NonnegExpectation rv_X2.
   Proof.
@@ -114,8 +114,8 @@ Section RbarExpectation.
 
   Lemma Rbar_NonnegExpectation_pf_irrel 
         {rv_X: Ts -> R}
-        (prv1 prv2:Rbar_NonnegativeFunction rv_X) :
-    Rbar_NonnegExpectation rv_X (pofrf:=prv1) = Rbar_NonnegExpectation rv_X (pofrf:=prv2).
+        (nnf1 nnf2:Rbar_NonnegativeFunction rv_X) :
+    Rbar_NonnegExpectation rv_X (pofrf:=nnf1) = Rbar_NonnegExpectation rv_X (pofrf:=nnf2).
   Proof.
     apply Rbar_NonnegExpectation_ext.
     reflexivity.
@@ -306,8 +306,8 @@ Section RbarExpectation.
 
   Lemma Rbar_NonnegExpectation_le 
         (rv_X1 rv_X2 : Ts -> Rbar)
-        {prv1 : Rbar_NonnegativeFunction rv_X1}
-        {prv2 : Rbar_NonnegativeFunction rv_X2} :
+        {nnf1 : Rbar_NonnegativeFunction rv_X1}
+        {nnf2 : Rbar_NonnegativeFunction rv_X2} :
     Rbar_rv_le rv_X1 rv_X2 ->
     Rbar_le (Rbar_NonnegExpectation rv_X1) (Rbar_NonnegExpectation rv_X2).
   Proof.
@@ -329,7 +329,7 @@ Section RbarExpectation.
   Qed.
 
   Lemma Rbar_NonnegExpectation_const (c : R) (nnc : 0 <= c) :
-    (@Rbar_NonnegExpectation (const c) (prvconst _ nnc)) = c.
+    (@Rbar_NonnegExpectation (const c) (nnfconst _ nnc)) = c.
   Proof.
     unfold Rbar_NonnegExpectation, SimpleExpectationSup.
     unfold Lub_Rbar.
@@ -356,21 +356,21 @@ Section RbarExpectation.
       exists (rvconst _ _ c).
       exists (frfconst c).
       split; trivial; [| apply SimpleExpectation_const].
-      split; [ apply (prvconst c nnc) |].
+      split; [ apply (nnfconst c nnc) |].
       unfold rv_le, const; intros ?.
       simpl.
       lra.
   Qed.
 
   Lemma Rbar_NonnegExpectation_const0 :
-    (@Rbar_NonnegExpectation (const 0) (prvconst _ z_le_z)) = 0.
+    (@Rbar_NonnegExpectation (const 0) (nnfconst _ z_le_z)) = 0.
   Proof.
     apply Rbar_NonnegExpectation_const.
   Qed.
 
   Lemma Rbar_NonnegExpectation_pos
         (rv_X : Ts -> Rbar)
-        {prv : Rbar_NonnegativeFunction rv_X} :
+        {nnf : Rbar_NonnegativeFunction rv_X} :
     Rbar_le 0 (Rbar_NonnegExpectation rv_X).
   Proof.
     rewrite <- Rbar_NonnegExpectation_const0.
@@ -379,8 +379,8 @@ Section RbarExpectation.
 
   Lemma is_finite_Rbar_NonnegExpectation_le
         (rv_X1 rv_X2 : Ts -> Rbar)
-        {prv1 : Rbar_NonnegativeFunction rv_X1}
-        {prv2 : Rbar_NonnegativeFunction rv_X2} :
+        {nnf1 : Rbar_NonnegativeFunction rv_X1}
+        {nnf2 : Rbar_NonnegativeFunction rv_X2} :
     Rbar_rv_le rv_X1 rv_X2 ->
     is_finite (Rbar_NonnegExpectation rv_X2) ->
     is_finite (Rbar_NonnegExpectation rv_X1).
@@ -814,7 +814,7 @@ Section RbarExpectation.
             red; intros y [? [?[?[??]]]].
             subst.
             destruct H6.
-            rewrite simple_NonnegExpectation with (prv := H6); trivial.
+            rewrite simple_NonnegExpectation with (nnf := H6); trivial.
 
             
             apply monotone_convergence00_Rbar_rvlim; trivial.
@@ -875,7 +875,7 @@ Section RbarExpectation.
             subst.
             unfold BoundedNonnegativeFunction in H7.
             destruct H7.
-            rewrite simple_NonnegExpectation with (prv := H7); trivial.
+            rewrite simple_NonnegExpectation with (nnf := H7); trivial.
             apply monotone_convergence00 with (X0 := X); trivial.
           }
         * apply Rbar_le_antisym; trivial.
@@ -898,30 +898,30 @@ Section RbarExpectation.
         (rv_X1 rv_X2 : Ts -> Rbar)
         {rv1 : RandomVariable dom Rbar_borel_sa rv_X1}
         {rv2 : RandomVariable dom Rbar_borel_sa rv_X2}
-        {prv1:Rbar_NonnegativeFunction rv_X1}
-        {prv2:Rbar_NonnegativeFunction rv_X2} :     
+        {nnf1:Rbar_NonnegativeFunction rv_X1}
+        {nnf2:Rbar_NonnegativeFunction rv_X2} :     
     Rbar_NonnegExpectation (Rbar_rvplus rv_X1 rv_X2) =
     Rbar_plus (Rbar_NonnegExpectation rv_X1) (Rbar_NonnegExpectation rv_X2).
   Proof.
-    generalize (simple_approx_lim_seq rv_X1 prv1); intros.
-    generalize (simple_approx_lim_seq rv_X2 prv2); intros.
+    generalize (simple_approx_lim_seq rv_X1 nnf1); intros.
+    generalize (simple_approx_lim_seq rv_X2 nnf2); intros.
     generalize (simple_approx_rv rv_X1); intro apx_rv1.
     generalize (simple_approx_rv rv_X2); intro apx_rv2.
-    generalize (simple_approx_pofrf rv_X1); intro apx_prv1.
-    generalize (simple_approx_pofrf rv_X2); intro apx_prv2.     
+    generalize (simple_approx_pofrf rv_X1); intro apx_nnf1.
+    generalize (simple_approx_pofrf rv_X2); intro apx_nnf2.     
     generalize (simple_approx_frf rv_X1); intro apx_frf1.
     generalize (simple_approx_frf rv_X2); intro apx_frf2.
-    generalize (simple_approx_le rv_X1 prv1); intro apx_le1.
-    generalize (simple_approx_le rv_X2 prv2); intro apx_le2. 
-    generalize (simple_approx_increasing rv_X1 prv1); intro apx_inc1.
-    generalize (simple_approx_increasing rv_X2 prv2); intro apx_inc2.
+    generalize (simple_approx_le rv_X1 nnf1); intro apx_le1.
+    generalize (simple_approx_le rv_X2 nnf2); intro apx_le2. 
+    generalize (simple_approx_increasing rv_X1 nnf1); intro apx_inc1.
+    generalize (simple_approx_increasing rv_X2 nnf2); intro apx_inc2.
     
-    generalize (Rbar_monotone_convergence rv_X1 (simple_approx rv_X1) rv1 prv1 apx_rv1 apx_prv1 apx_le1 apx_inc1 (fun n => simple_expectation_real (simple_approx rv_X1 n))); intros.
-    generalize (Rbar_monotone_convergence rv_X2 (simple_approx rv_X2) rv2 prv2 apx_rv2 apx_prv2 apx_le2 apx_inc2 (fun n => simple_expectation_real (simple_approx rv_X2 n))); intros.
+    generalize (Rbar_monotone_convergence rv_X1 (simple_approx rv_X1) rv1 nnf1 apx_rv1 apx_nnf1 apx_le1 apx_inc1 (fun n => simple_expectation_real (simple_approx rv_X1 n))); intros.
+    generalize (Rbar_monotone_convergence rv_X2 (simple_approx rv_X2) rv2 nnf2 apx_rv2 apx_nnf2 apx_le2 apx_inc2 (fun n => simple_expectation_real (simple_approx rv_X2 n))); intros.
     cut_to H1; trivial.
     cut_to H2; trivial.
     generalize (fun n => rvplus_rv _ (simple_approx rv_X1 n) (simple_approx rv_X2 n)); intros.
-    generalize (fun n => rvplus_prv (simple_approx rv_X1 n) (simple_approx rv_X2 n)); intros.     
+    generalize (fun n => rvplus_nnf (simple_approx rv_X1 n) (simple_approx rv_X2 n)); intros.     
     generalize (fun n => simple_expectation_real (simple_approx rv_X1 n)); intros apx_fin1.
     generalize (fun n => simple_expectation_real (simple_approx rv_X2 n)); intros apx_fin2.     
     generalize (Rbar_monotone_convergence (Rbar_rvplus rv_X1 rv_X2) 
@@ -986,8 +986,8 @@ Section RbarExpectation.
       unfold Rbar_rvplus.
       apply is_lim_seq_plus with (l1 := rv_X1 omega) (l2 := rv_X2 omega); trivial.
       apply Rbar_plus_correct.
-      generalize (prv1 omega); intros.
-      generalize (prv2 omega); intros.
+      generalize (nnf1 omega); intros.
+      generalize (nnf2 omega); intros.
       now apply ex_Rbar_plus_pos.
   Qed.
 
@@ -1000,8 +1000,8 @@ Section EventRestricted.
 
     
   Lemma event_restricted_Rbar_NonnegExpectation P (pf1 : ps_P P = 1) pf (f : Ts -> Rbar) 
-        (prv : Rbar_NonnegativeFunction f) :
-    @Rbar_NonnegExpectation Ts dom prts f prv = 
+        (nnf : Rbar_NonnegativeFunction f) :
+    @Rbar_NonnegExpectation Ts dom prts f nnf = 
     @Rbar_NonnegExpectation _ _ (event_restricted_prob_space prts P pf) 
                        (event_restricted_function P f) _.
   Proof.

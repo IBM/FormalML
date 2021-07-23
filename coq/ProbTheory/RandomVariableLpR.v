@@ -95,7 +95,7 @@ Section Lp.
     intros ?? eqq1 x y eqq2.
     unfold IsLp_Rbar.
     rewrite eqq1.
-    rewrite Rbar_NonnegExpectation_ext with (prv2 := power_abs_pos y y0).
+    rewrite Rbar_NonnegExpectation_ext with (nnf2 := power_abs_pos y y0).
     tauto.
     intro xx.
     now rewrite eqq2.
@@ -1598,7 +1598,7 @@ Qed.
             unfold NonnegativeFunction, rvpower; intros.
             apply power_nonneg.            
           }
-          rewrite Expectation_pos_pofrf with (prv := H0).
+          rewrite Expectation_pos_pofrf with (nnf := H0).
           assert (Rbar_le
                     (Lim_seq (fun n : nat => NonnegExpectation (rvpower (rvabs (f n)) (const p)))) (power c p)).
           replace (Finite (power c p)) with (Lim_seq (fun _ => power c p)).
@@ -1770,7 +1770,7 @@ Qed.
           }
           rewrite monc in H0.
           assert (Rbar_NonnegativeFunction (Rbar_rvlim (fun n : nat => rvpower (rvabs (f n)) (const p)))) by typeclasses eauto.
-          rewrite Rbar_NonnegExpectation_ext with (prv2 := H1).
+          rewrite Rbar_NonnegExpectation_ext with (nnf2 := H1).
           + eapply bounded_is_finite.
             * eapply Rbar_NonnegExpectation_pos.
             * eapply H0.
@@ -2754,8 +2754,8 @@ Section complete.
     unfold IsLp, IsLp_Rbar; intros.
     generalize (LpRRV_LpS_FiniteLp prts f); intros.
     unfold IsFiniteExpectation in H.
-    generalize (rvpower_prv (rvabs f) (const p)); intros.
-    rewrite Expectation_pos_pofrf with (prv := H0) in H.
+    generalize (rvpower_nnf (rvabs f) (const p)); intros.
+    rewrite Expectation_pos_pofrf with (nnf := H0) in H.
     match_case_in H; intros.
     - rewrite Expectation_Rbar_Expectation in H1.
       unfold rvpower, rvabs, const in H1.
@@ -2775,8 +2775,8 @@ Section complete.
   Proof.
     unfold IsLp, IsLp_Rbar; intros.
     unfold IsFiniteExpectation.
-    generalize (rvpower_prv (rvabs f) (const p)); intros.
-    rewrite Expectation_pos_pofrf with (prv := H0).
+    generalize (rvpower_nnf (rvabs f) (const p)); intros.
+    rewrite Expectation_pos_pofrf with (nnf := H0).
     rewrite Expectation_Rbar_Expectation.
     unfold Rbar_power, Rbar_abs in H.
     unfold rvpower, rvabs, const.
@@ -2819,7 +2819,7 @@ Section complete.
     Rbar_NonnegativeFunction (rvscale c (pinf_Indicator f)).
   Proof.
     unfold pinf_Indicator.
-    apply rvscale_prv.
+    apply rvscale_nnf.
     typeclasses eauto.
   Qed.
 
@@ -3008,7 +3008,7 @@ Section complete.
     ps_P (exist sa_sigma _ (sa_finite_Rbar f rv)) = 1.
   Proof.
     intros.
-    generalize (finite_Rbar_NonnegExpectation_almost_finite (Rbar_rvabs f) (Rbar_rvabs_rv f) (Rbar_rvabs_prv f)); intros.
+    generalize (finite_Rbar_NonnegExpectation_almost_finite (Rbar_rvabs f) (Rbar_rvabs_rv f) (Rbar_rvabs_nnf f)); intros.
     assert (pre_event_equiv
               (fun x : Ts => is_finite (Rbar_rvabs f x))
               (fun x : Ts => is_finite (f x))).
@@ -3098,7 +3098,7 @@ Section complete.
   Qed.
 
   Lemma Rbar_pos_fun_part_pos (rv_X : Ts -> Rbar) 
-        {prv : Rbar_NonnegativeFunction rv_X} :
+        {nnf : Rbar_NonnegativeFunction rv_X} :
     rv_eq rv_X (Rbar_pos_fun_part rv_X).
   Proof.
     unfold Rbar_pos_fun_part, Rbar_max.
@@ -3108,19 +3108,19 @@ Section complete.
   Qed.
 
   Lemma Rbar_neg_fun_part_pos (rv_X : Ts -> Rbar) 
-        {prv : Rbar_NonnegativeFunction rv_X} :
+        {nnf : Rbar_NonnegativeFunction rv_X} :
     rv_eq (Rbar_neg_fun_part rv_X) (fun x => (const 0) x).
   Proof.
     unfold Rbar_neg_fun_part, const, Rbar_max.
     intro x.
-    specialize (prv x).
-    rewrite <- Rbar_opp_le in prv.
-    replace (Rbar_opp 0) with (Finite 0) in prv by (simpl; apply Rbar_finite_eq; lra).
+    specialize (nnf x).
+    rewrite <- Rbar_opp_le in nnf.
+    replace (Rbar_opp 0) with (Finite 0) in nnf by (simpl; apply Rbar_finite_eq; lra).
     match_case; intros.
     now apply Rbar_le_antisym.
   Qed.
 
-  Instance prv_0 :
+  Instance nnf_0 :
     (@Rbar_NonnegativeFunction Ts (fun x => const 0 x)).
   Proof.
     unfold Rbar_NonnegativeFunction.
@@ -3131,7 +3131,7 @@ Section complete.
   Qed.
 
   Lemma Rbar_Expectation_pos_pofrf (rv_X : Ts -> Rbar) 
-        {prv : Rbar_NonnegativeFunction rv_X} :
+        {nnf : Rbar_NonnegativeFunction rv_X} :
     Rbar_Expectation rv_X = Some (Rbar_NonnegExpectation rv_X).
   Proof.
     unfold Rbar_Expectation.
@@ -3166,14 +3166,14 @@ Section complete.
       rewrite H.
       assert (0 <= 0) by lra.
       generalize (Rbar_NonnegExpectation_const 0 H0); intros.
-      rewrite Rbar_NonnegExpectation_pf_irrel with (prv2 := prv_0) in H1.
+      rewrite Rbar_NonnegExpectation_pf_irrel with (nnf2 := nnf_0) in H1.
       now rewrite H1.
     }
     generalize (Rbar_IsFiniteExpectation_bounded (const 0)
                                                  (fun (omega : Ts) => Rbar_power (Rbar_abs (rv_X1 omega)) n) rv_X2); intros.
     cut_to H0; trivial.
     - unfold Rbar_IsFiniteExpectation in H0.
-      rewrite Rbar_Expectation_pos_pofrf with (prv := power_abs_pos rv_X1 n) in H0.
+      rewrite Rbar_Expectation_pos_pofrf with (nnf := power_abs_pos rv_X1 n) in H0.
       match_destr_in H0; easy.
     - intro x.
       unfold const.
@@ -3243,7 +3243,7 @@ Section complete.
         - simpl; lra.
       }
       unfold Rbar_IsFiniteExpectation.
-      rewrite Rbar_Expectation_pos_pofrf with (prv := H).
+      rewrite Rbar_Expectation_pos_pofrf with (nnf := H).
       unfold IsLp_Rbar in lp.
       assert (0 <= 1) by lra.
 
@@ -3258,7 +3258,7 @@ Section complete.
       generalize (@Rbar_NonnegExpectation_plus Ts dom prts
                     (const (Finite 1))
                     (fun omega => (Rbar_power (Rbar_abs (rv_X omega)) m))
-                    _ _ (prvconst _ H0) _ ); intros.
+                    _ _ (nnfconst _ H0) _ ); intros.
       assert (is_finite
                  (@Rbar_NonnegExpectation Ts dom prts
             (Rbar_rvplus (@const Rbar Ts (Finite (IZR (Zpos xH))))
@@ -3266,11 +3266,11 @@ Section complete.
             (@pos_Rbar_plus Ts 
                             (@const Rbar Ts (Finite (IZR (Zpos xH))))
                             (fun omega : Ts => Rbar_power (Rbar_abs (rv_X omega)) m)
-                            (prvconst _ H0)
+                            (nnfconst _ H0)
                             (Rbar_power_pos m (fun omega : Ts => Rbar_abs (rv_X omega))) ))).
       {
         rewrite H1.
-        assert (is_finite (@Rbar_NonnegExpectation Ts dom prts (@const Rbar Ts (Finite 1))  (prvconst _ H0))).
+        assert (is_finite (@Rbar_NonnegExpectation Ts dom prts (@const Rbar Ts (Finite 1))  (nnfconst _ H0))).
         - generalize (Rbar_NonnegExpectation_const _ H0); intros.
           unfold const in H2.
           unfold const.
@@ -3423,7 +3423,7 @@ Section complete.
         apply LpRRVsum_pos.
         intros.
         unfold LpRRVabs, pack_LpRRV;simpl.
-        apply prvabs.
+        apply nnfabs.
     }
     exists (exist _ _ (sa_finite_Rbar limpick rv)).
     split.
@@ -3472,7 +3472,7 @@ Section complete.
         apply LpRRVsum_pos.
         intros.
         unfold LpRRVabs, pack_LpRRV;simpl.
-        apply prvabs.
+        apply nnfabs.
     }
     exists (exist _ _ (sa_finite_Rbar limpick rv)).
     split.

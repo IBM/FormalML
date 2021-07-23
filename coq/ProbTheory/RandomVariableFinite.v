@@ -400,7 +400,7 @@ Section fe.
   Qed.
 
   Lemma NonnegExpectation_almost_0 x 
-        {prv:NonnegativeFunction x} :
+        {nnf:NonnegativeFunction x} :
     almost prts eq x (const 0) ->
     NonnegExpectation x = 0.
   Proof.
@@ -440,8 +440,8 @@ Section fe.
       split.
       + unfold BoundedNonnegativeFunction.
         split.
-        * apply prvconst; lra.
-        * apply prv.
+        * apply nnfconst; lra.
+        * apply nnf.
       + apply SimpleExpectation_const.
   Qed.
 
@@ -604,13 +604,13 @@ Section fe.
     rewrite <- (Finite_NonnegExpectation_le
                  ((fun x : Ts => pos_fun_part (rvmin rv_X1 rv_X2) x))
                  ((fun x : Ts => pos_fun_part (rvplus rv_X1 rv_X2) x))
-                 (positive_part_prv _)
-                 (positive_part_prv _)).
+                 (positive_part_nnf _)
+                 (positive_part_nnf _)).
     -
       rewrite <- (Finite_NonnegExpectation_le
                    ((fun x : Ts => neg_fun_part (rvmin rv_X1 rv_X2) x))
                    (rvplus (fun x : Ts => neg_fun_part rv_X1 x) (fun x : Ts => neg_fun_part rv_X2 x))
-                   (negative_part_prv _)
+                   (negative_part_nnf _)
                    _).
       + now simpl.
       + intros a.
@@ -672,13 +672,13 @@ Section fe.
     rewrite <- (Finite_NonnegExpectation_le
                  ((fun x : Ts => pos_fun_part (rvmax rv_X1 rv_X2) x))
                  (rvplus (fun x : Ts => pos_fun_part rv_X1 x) (fun x : Ts => pos_fun_part rv_X2 x))
-                 (positive_part_prv _)
+                 (positive_part_nnf _)
                  _).
     -
       rewrite <- (Finite_NonnegExpectation_le
                    ((fun x : Ts => neg_fun_part (rvmax rv_X1 rv_X2) x))
                    (rvplus (fun x : Ts => neg_fun_part rv_X1 x) (fun x : Ts => neg_fun_part rv_X2 x))
-                   (negative_part_prv _)
+                   (negative_part_nnf _)
                    _).
       + now simpl.
       + intros a.
@@ -723,7 +723,7 @@ Section fe.
   Qed.
 
   Lemma FiniteExpectation_pos  (rv_X : Ts -> R)
-        {prv : NonnegativeFunction rv_X}
+        {nnf : NonnegativeFunction rv_X}
         {isfe:IsFiniteExpectation rv_X} :
     0 <= FiniteExpectation rv_X.
   Proof.
@@ -837,7 +837,7 @@ Section fe.
       unfold FiniteExpectation.
       unfold proj1_sig.
       match_destr.
-      rewrite (Expectation_pos_pofrf) with  (prv:=posX) in e.
+      rewrite (Expectation_pos_pofrf) with  (nnf:=posX) in e.
       invcs e.
       rewrite H0.
       now simpl.
@@ -849,7 +849,7 @@ Section fe.
       is_finite (NonnegExpectation  X).
     Proof.
       red in isfeX.
-      rewrite Expectation_pos_pofrf with (prv:=posX) in isfeX.
+      rewrite Expectation_pos_pofrf with (nnf:=posX) in isfeX.
       match_destr_in isfeX; try tauto.
       reflexivity.
    Qed.
@@ -875,7 +875,7 @@ Section fe.
       + rewrite H2.
         rewrite FiniteNonnegExpectation with (posX:=posX).
         red in isfeX.
-        rewrite Expectation_pos_pofrf with (prv:=posX) in isfeX.
+        rewrite Expectation_pos_pofrf with (nnf:=posX) in isfeX.
         match_destr_in isfeX; try tauto.
       + intros n.
         now rewrite FiniteNonnegExpectation with (posX:=Xn_pos n).
