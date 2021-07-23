@@ -88,14 +88,17 @@ PROB_THEORY = \
 	SigmaAlgebras \
 	VectorRandomVariable
 
+QLEARN = \
+	Dvoretzky \
+        infprod \
+
 MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	$(addprefix CertRL/LM/,$(ELFIC_UTILS)) \
 	$(addprefix utils/,$(UTILS)) \
 	$(addprefix NeuralNetworks/,$(NEURAL_NETWORKS)) \
-	$(addprefix CertRL/,$(CERTRL)) \
 	$(addprefix ProbTheory/,$(PROB_THEORY)) \
-	Dvoretzky \
+	$(addprefix CertRL/,$(CERTRL)) \
+	$(addprefix QLearn/,$(QLEARN)) \
 	Gaussian \
-        infprod \
 	sumtest
 	
