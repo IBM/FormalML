@@ -214,7 +214,7 @@ Next Obligation.
     lia.
   Qed.
   
-  Definition Rbar_Expectation_posRV {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) (f : Ts -> Rbar) := 
+  Definition Rbar_NonnegExpectation {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) (f : Ts -> Rbar) := 
     LInt_p (ProbSpace_measure prts) f.
 
   Class Rbar_PositiveRandomVariable {Ts}
@@ -249,27 +249,27 @@ Next Obligation.
     - now apply measurable_union_countable.
   Qed.
 
-  Lemma Rbar_Expectation_posRV_plus {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) (f g : Ts -> Rbar) 
+  Lemma Rbar_NonnegExpectation_plus {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) (f g : Ts -> Rbar) 
     {prv1 : Rbar_PositiveRandomVariable f}
     {prv2 : Rbar_PositiveRandomVariable g} 
     {rv1 : RandomVariable dom Rbar_borel_sa f}
     {rv2 : RandomVariable dom Rbar_borel_sa g}    :
     inhabited Ts ->
-    Rbar_Expectation_posRV prts (fun x => Rbar_plus (f x) (g x)) = 
-    Rbar_plus (Rbar_Expectation_posRV prts f) (Rbar_Expectation_posRV prts g).
+    Rbar_NonnegExpectation prts (fun x => Rbar_plus (f x) (g x)) = 
+    Rbar_plus (Rbar_NonnegExpectation prts f) (Rbar_NonnegExpectation prts g).
   Proof.
     intros.
-    unfold Rbar_Expectation_posRV.
+    unfold Rbar_NonnegExpectation.
     apply LInt_p_plus; trivial.
     now apply measurable_fun_sa_sigma.
     now apply measurable_fun_sa_sigma.    
   Qed.
     
-  Lemma Rbar_Expectation_posRV_finite_ae_finite {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) (f : Ts -> Rbar)
+  Lemma Rbar_NonnegExpectation_finite_ae_finite {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) (f : Ts -> Rbar)
     {prv : Rbar_PositiveRandomVariable f}
     {rv : RandomVariable dom Rbar_borel_sa f} :
     inhabited Ts ->
-    is_finite (Rbar_Expectation_posRV prts f) ->
+    is_finite (Rbar_NonnegExpectation prts f) ->
     ae (ProbSpace_measure prts) (fun x => is_finite (f x)).
   Proof.
     intros.
@@ -308,15 +308,15 @@ Next Obligation.
     now apply Rbar_borel_sa_preimage2.
   Qed.
 
-  Lemma Rbar_Expectation_posRV_finite_ps_P_1 {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) (f : Ts -> Rbar)
+  Lemma Rbar_NonnegExpectation_finite_ps_P_1 {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) (f : Ts -> Rbar)
     {prv : Rbar_PositiveRandomVariable f}
     {rv : RandomVariable dom Rbar_borel_sa f} :
     inhabited Ts ->
-    is_finite (Rbar_Expectation_posRV prts f) ->
+    is_finite (Rbar_NonnegExpectation prts f) ->
     ps_P (exist sa_sigma (fun x => is_finite (f x)) (sa_sigma_is_finite prts f)) = 1.
   Proof.
     intros.
-    generalize (Rbar_Expectation_posRV_finite_ae_finite prts f H H0); intros.
+    generalize (Rbar_NonnegExpectation_finite_ae_finite prts f H H0); intros.
     unfold ae in H1.
     unfold negligible in H1.
     destruct H1 as [? [? [? ?]]].
@@ -340,13 +340,13 @@ Next Obligation.
     lra.
   Qed.
 
-  Lemma Rbar_Expectation_posRV_Sup_seq {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) (f : nat -> Ts -> Rbar)
+  Lemma Rbar_NonnegExpectation_Sup_seq {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) (f : nat -> Ts -> Rbar)
     {prv : forall n, Rbar_PositiveRandomVariable (f n)}
     {rv : forall n, RandomVariable dom Rbar_borel_sa (f n)} :
     inhabited Ts ->
     (forall x n, Rbar_le (f n x) (f (S n) x)) ->
-    Rbar_Expectation_posRV prts (fun x => Sup_seq (fun n => f n x)) =
-    Sup_seq (fun n => Rbar_Expectation_posRV prts (f n)).
+    Rbar_NonnegExpectation prts (fun x => Sup_seq (fun n => f n x)) =
+    Sup_seq (fun n => Rbar_NonnegExpectation prts (f n)).
   Proof.
     intros.
     apply Beppo_Levi; trivial.
@@ -354,10 +354,10 @@ Next Obligation.
     now apply measurable_fun_sa_sigma.
   Qed.
     
-  Lemma Rbar_Expectation_posRV_monotone {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) 
+  Lemma Rbar_NonnegExpectation_monotone {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) 
         (f g : Ts -> Rbar) :
     (forall x, Rbar_le (f x) (g x)) ->
-    Rbar_le (Rbar_Expectation_posRV prts f) (Rbar_Expectation_posRV prts g).
+    Rbar_le (Rbar_NonnegExpectation prts f) (Rbar_NonnegExpectation prts g).
   Proof.
     apply LInt_p_monotone.
   Qed.
@@ -404,7 +404,7 @@ Next Obligation.
     now apply measurable_fun_Lim_seq'.
   Qed.        
 
-  Lemma Rbar_Expectation_posRV_Lim_seq' {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) 
+  Lemma Rbar_NonnegExpectation_Lim_seq' {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) 
         (f : nat -> Ts -> Rbar)
         (prv : forall n, Rbar_PositiveRandomVariable (f n))
         (rv : forall n, RandomVariable dom Rbar_borel_sa (f n)) :
@@ -412,7 +412,7 @@ Next Obligation.
         (forall x, ex_lim_seq' (fun n => f n x)) ->        
         let lim_f := fun x => Lim_seq' (fun n => f n x) in
         (forall x n, Rbar_le (f n x) (lim_f x)) ->
-        Rbar_Expectation_posRV prts lim_f = Lim_seq' (fun n => Rbar_Expectation_posRV prts (f n)).
+        Rbar_NonnegExpectation prts lim_f = Lim_seq' (fun n => Rbar_NonnegExpectation prts (f n)).
   Proof.
     intros.
     apply LInt_p_Lim_seq'; trivial.

@@ -1104,7 +1104,7 @@ algorithm.
     Lemma isfinexp_finite_neg_part (rv_X : Ts -> R)
           {rv : RandomVariable dom borel_sa rv_X} :
       IsFiniteExpectation prts rv_X ->
-      is_finite (Expectation_posRV (neg_fun_part rv_X)).
+      is_finite (NonnegExpectation (neg_fun_part rv_X)).
     Proof.
       intros.
       apply IsFiniteExpectation_Finite in H.
@@ -1131,7 +1131,7 @@ algorithm.
 
   Lemma Expectation_pos_finite_neg_part (rv_X : Ts -> R) 
         {prv : PositiveRandomVariable rv_X} :
-    is_finite (Expectation_posRV (neg_fun_part rv_X)).
+    is_finite (NonnegExpectation (neg_fun_part rv_X)).
   Proof.
     unfold neg_fun_part; simpl.
     unfold PositiveRandomVariable in prv.
@@ -1140,10 +1140,10 @@ algorithm.
     specialize (prv x).
     unfold const.
     rewrite Rmax_right; lra.
-    rewrite (Expectation_posRV_re H).
+    rewrite (NonnegExpectation_re H).
     assert (0 <= 0) by lra.
-    generalize (Expectation_posRV_const 0 H0); intros.
-    erewrite Expectation_posRV_pf_irrel.
+    generalize (NonnegExpectation_const 0 H0); intros.
+    erewrite NonnegExpectation_pf_irrel.
     rewrite H1.
     reflexivity.
   Qed.
@@ -2069,13 +2069,13 @@ algorithm.
                       (rvinner (@L2_convergent_x n α (vecrvconst n 0) Ts (vecrvconst n 0) w n0)
                                (@L2_convergent_x n α (vecrvconst n 0) Ts (vecrvconst n 0) w n0))) in H7.
         + apply conv_l2_prob1; intros.
-          * erewrite srv_Expectation_posRV.
+          * erewrite srv_NonnegExpectation.
             now unfold is_finite.
           * apply is_lim_seq_ext with 
                 (u := fun n0 : nat =>
                         SimpleExpectation (rvsqr (rvabs (vecrvnth i pf (@L2_convergent_x n α (vecrvconst n 0) Ts (vecrvconst n 0) w n0))))).
             -- intros.
-               erewrite srv_Expectation_posRV.
+               erewrite srv_NonnegExpectation.
                reflexivity.
             -- now apply lim_rvinner_0.
         + intros.
@@ -2116,10 +2116,10 @@ algorithm.
       intros.
       apply conv_l2_prob1.
       intros.
-      replace (Expectation_posRV (rvsqr (rvabs (vecrvnth i pf (Xn n0)))))
+      replace (NonnegExpectation (rvsqr (rvabs (vecrvnth i pf (Xn n0)))))
         with (Finite (SimpleExpectation (rvsqr (rvabs (vecrvnth i pf (Xn n0)))))).
       now simpl.
-      generalize (srv_Expectation_posRV (rvsqr (rvabs (vecrvnth i pf (Xn n0))))).      
+      generalize (srv_NonnegExpectation (rvsqr (rvabs (vecrvnth i pf (Xn n0))))).      
       intros.
       symmetry.
       apply H0.
@@ -2127,7 +2127,7 @@ algorithm.
           (u :=  (fun n0 : nat => SimpleExpectation (rvsqr (rvabs (vecrvnth i pf (Xn n0)))))).  
       intros.
       symmetry.
-      generalize (srv_Expectation_posRV (rvsqr (rvabs (vecrvnth i pf (Xn n0))))); intros.
+      generalize (srv_NonnegExpectation (rvsqr (rvabs (vecrvnth i pf (Xn n0))))); intros.
       now rewrite H0.
       now apply lim_rvinner_0 with (srvxn0 := srvxn).
    Qed.
@@ -2420,12 +2420,12 @@ algorithm.
       intros.
       apply conv_l2_conv_linf in H.
       apply is_lim_seq_le_le_loc with (u := fun _ => 0) 
-                                      (w := (fun n => (Expectation_posRV (rvmaxabs (Xn n))) / eps)).
+                                      (w := (fun n => (NonnegExpectation (rvmaxabs (Xn n))) / eps)).
       - exists (0%nat); intros.
         split.
         + apply ps_pos.
         + generalize (conv_l1_prob_le prts eps (rvmaxabs (Xn n0))); intros.
-          rewrite Expectation_posRV_ext with (prv2 := prvabs (rvmaxabs (Xn n0))).
+          rewrite NonnegExpectation_ext with (prv2 := prvabs (rvmaxabs (Xn n0))).
           * assert (event_equiv
                       (event_ge dom (rvmaxabs (Xn n0)) eps)
                       (event_ge dom (rvabs (rvmaxabs (Xn n0))) eps)).
@@ -2441,7 +2441,7 @@ algorithm.
             }
             rewrite (ps_proper _ _ H2).
             apply H1.
-            generalize (simple_Expectation_posRV (rvabs (rvmaxabs (Xn n0)))); intros.
+            generalize (simple_NonnegExpectation (rvabs (rvmaxabs (Xn n0)))); intros.
             unfold is_finite.
             rewrite <- H3.
             simpl.
@@ -2458,7 +2458,7 @@ algorithm.
           unfold Rdiv.
           rewrite Rmult_comm.
           apply Rmult_eq_compat_r.
-          generalize (simple_Expectation_posRV (rvmaxabs (Xn n0))); intros.
+          generalize (simple_NonnegExpectation (rvmaxabs (Xn n0))); intros.
           rewrite <- H0.
           reflexivity.
         + replace (Finite 0) with (Rbar_mult (Finite (/ eps)) (Finite 0)).

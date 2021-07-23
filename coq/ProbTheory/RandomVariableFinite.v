@@ -399,13 +399,13 @@ Section fe.
       typeclasses eauto.
   Qed.
 
-  Lemma Expectation_posRV_almost_0 x 
+  Lemma NonnegExpectation_almost_0 x 
         {prv:PositiveRandomVariable x} :
     almost prts eq x (const 0) ->
-    Expectation_posRV x = 0.
+    NonnegExpectation x = 0.
   Proof.
     intros.
-    unfold Expectation_posRV, SimpleExpectationSup.
+    unfold NonnegExpectation, SimpleExpectationSup.
     unfold Lub_Rbar.
     repeat match goal with
              [|- context [proj1_sig ?x]] => destruct x; simpl
@@ -467,8 +467,8 @@ Section fe.
       match_destr; try lra.
       reflexivity.
     }
-    rewrite (Expectation_posRV_almost_0 _ H0).
-    rewrite (Expectation_posRV_almost_0 _ H1).
+    rewrite (NonnegExpectation_almost_0 _ H0).
+    rewrite (NonnegExpectation_almost_0 _ H1).
     simpl; repeat f_equal.
     lra.
   Qed.
@@ -569,8 +569,8 @@ Section fe.
     intros.
     apply Finite_Rbar_opp in eqq1neg.
 
-    rewrite <- (Finite_Expectation_posRV_le _ _ _ _ H1); trivial.
-    rewrite <- (Finite_Expectation_posRV_le _ _ _ _ H2); simpl; trivial.
+    rewrite <- (Finite_NonnegExpectation_le _ _ _ _ H1); trivial.
+    rewrite <- (Finite_NonnegExpectation_le _ _ _ _ H2); simpl; trivial.
   Qed.
 
   Global Instance IsFiniteExpectation_min
@@ -601,13 +601,13 @@ Section fe.
     destruct eqq1 as [eqq1pos eqq1neg].
     destruct eqq2 as [eqq2pos eqq2neg].
     
-    rewrite <- (Finite_Expectation_posRV_le
+    rewrite <- (Finite_NonnegExpectation_le
                  ((fun x : Ts => pos_fun_part (rvmin rv_X1 rv_X2) x))
                  ((fun x : Ts => pos_fun_part (rvplus rv_X1 rv_X2) x))
                  (positive_part_prv _)
                  (positive_part_prv _)).
     -
-      rewrite <- (Finite_Expectation_posRV_le
+      rewrite <- (Finite_NonnegExpectation_le
                    ((fun x : Ts => neg_fun_part (rvmin rv_X1 rv_X2) x))
                    (rvplus (fun x : Ts => neg_fun_part rv_X1 x) (fun x : Ts => neg_fun_part rv_X2 x))
                    (negative_part_prv _)
@@ -618,7 +618,7 @@ Section fe.
         unfold Rmax, Rmin.
         destruct ( Rle_dec (rv_X1 a) (rv_X2 a))
         ; repeat match_destr; try lra.
-      + rewrite Expectation_posRV_sum.
+      + rewrite NonnegExpectation_sum.
         * apply Finite_Rbar_opp in eqq1neg.
           apply Finite_Rbar_opp in eqq2neg.
           rewrite <- eqq1neg.
@@ -669,13 +669,13 @@ Section fe.
     destruct eqq1 as [eqq1pos eqq1neg].
     destruct eqq2 as [eqq2pos eqq2neg].
     
-    rewrite <- (Finite_Expectation_posRV_le
+    rewrite <- (Finite_NonnegExpectation_le
                  ((fun x : Ts => pos_fun_part (rvmax rv_X1 rv_X2) x))
                  (rvplus (fun x : Ts => pos_fun_part rv_X1 x) (fun x : Ts => pos_fun_part rv_X2 x))
                  (positive_part_prv _)
                  _).
     -
-      rewrite <- (Finite_Expectation_posRV_le
+      rewrite <- (Finite_NonnegExpectation_le
                    ((fun x : Ts => neg_fun_part (rvmax rv_X1 rv_X2) x))
                    (rvplus (fun x : Ts => neg_fun_part rv_X1 x) (fun x : Ts => neg_fun_part rv_X2 x))
                    (negative_part_prv _)
@@ -686,7 +686,7 @@ Section fe.
         unfold Rmax, Rmin.
         destruct ( Rle_dec (rv_X1 a) (rv_X2 a))
         ; repeat match_destr; try lra.
-      + rewrite Expectation_posRV_sum.
+      + rewrite NonnegExpectation_sum.
         * apply Finite_Rbar_opp in eqq1neg.
           apply Finite_Rbar_opp in eqq2neg.
           rewrite <- eqq1neg.
@@ -699,7 +699,7 @@ Section fe.
       unfold Rmax, Rmin.
       destruct ( Rle_dec (rv_X1 a) (rv_X2 a))
       ; repeat match_destr; try lra.
-    - rewrite Expectation_posRV_sum.
+    - rewrite NonnegExpectation_sum.
       + rewrite <- eqq1pos.
         rewrite <- eqq2pos.
         reflexivity.
@@ -729,7 +729,7 @@ Section fe.
   Proof.
     unfold FiniteExpectation.
     simpl_finite.
-    generalize (Expectation_posRV_pos rv_X).
+    generalize (NonnegExpectation_pos rv_X).
     erewrite Expectation_pos_posRV in e.
     invcs e.
     rewrite H0.
@@ -829,10 +829,10 @@ Section fe.
         lia.
   Qed.
 
-    Lemma FiniteExpectation_posRV (X:Ts->R) 
+    Lemma FiniteNonnegExpectation (X:Ts->R) 
           {posX: PositiveRandomVariable X}
           {isfeX: IsFiniteExpectation X} :
-      FiniteExpectation X = real (Expectation_posRV  X).
+      FiniteExpectation X = real (NonnegExpectation  X).
     Proof.
       unfold FiniteExpectation.
       unfold proj1_sig.
@@ -843,10 +843,10 @@ Section fe.
       now simpl.
     Qed.
     
-    Lemma IsFiniteExpectation_posRV (X:Ts->R) 
+    Lemma IsFiniteNonnegExpectation (X:Ts->R) 
           {posX: PositiveRandomVariable X}
           {isfeX: IsFiniteExpectation X} :
-      is_finite (Expectation_posRV  X).
+      is_finite (NonnegExpectation  X).
     Proof.
       red in isfeX.
       rewrite Expectation_pos_posRV with (prv:=posX) in isfeX.
@@ -871,16 +871,16 @@ Section fe.
     intros.
     generalize (monotone_convergence X Xn rvx posX Xn_rv Xn_pos H H0); intros.
     cut_to H2; trivial.
-    - rewrite (Lim_seq_ext _  (fun n : nat => Expectation_posRV (Xn n))).
+    - rewrite (Lim_seq_ext _  (fun n : nat => NonnegExpectation (Xn n))).
       + rewrite H2.
-        rewrite FiniteExpectation_posRV with (posX:=posX).
+        rewrite FiniteNonnegExpectation with (posX:=posX).
         red in isfeX.
         rewrite Expectation_pos_posRV with (prv:=posX) in isfeX.
         match_destr_in isfeX; try tauto.
       + intros n.
-        now rewrite FiniteExpectation_posRV with (posX:=Xn_pos n).
+        now rewrite FiniteNonnegExpectation with (posX:=Xn_pos n).
     - intros.
-      now apply IsFiniteExpectation_posRV.
+      now apply IsFiniteNonnegExpectation.
   Qed.
 
 Lemma Fatou_FiniteExpectation
@@ -898,21 +898,21 @@ Lemma Fatou_FiniteExpectation
     Rbar_le (FiniteExpectation (fun omega => LimInf_seq (fun n => Xn n omega)))
             (LimInf_seq (fun n => FiniteExpectation (Xn n))).
   Proof.
-    assert (fin_exp: forall n, is_finite (Expectation_posRV (Xn n))).
+    assert (fin_exp: forall n, is_finite (NonnegExpectation (Xn n))).
     - intros.
-      now apply IsFiniteExpectation_posRV.
+      now apply IsFiniteNonnegExpectation.
     - generalize (Fatou Xn Xn_pos Xn_rv fin_exp isf lim_rv); intros.
-      rewrite FiniteExpectation_posRV with (posX := LimInf_seq_pos Xn Xn_pos).
+      rewrite FiniteNonnegExpectation with (posX := LimInf_seq_pos Xn Xn_pos).
       unfold LimInf_seq.
       destruct (ex_LimInf_seq (fun n : nat => FiniteExpectation (Xn n))).
       generalize (is_LimInf_seq_ext  (fun n : nat => FiniteExpectation (Xn n)) 
-                                     (fun n : nat => Expectation_posRV (Xn n)) x); intros.
+                                     (fun n : nat => NonnegExpectation (Xn n)) x); intros.
       cut_to H0; trivial.
       apply is_LimInf_seq_unique in H0.      
       rewrite <- H0.
-      now rewrite IsFiniteExpectation_posRV.
+      now rewrite IsFiniteNonnegExpectation.
       intros.
-      now rewrite FiniteExpectation_posRV with (posX :=Xn_pos n).
+      now rewrite FiniteNonnegExpectation with (posX :=Xn_pos n).
    Qed.
 
   Lemma Lim_seq_increasing_le (f : nat -> R) :

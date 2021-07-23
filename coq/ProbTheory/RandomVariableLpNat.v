@@ -232,28 +232,28 @@ Section Lp.
 
   Lemma Expectation_abs_neg_part_finite (rv_X : Ts -> R)
         {rv:RandomVariable dom borel_sa rv_X} :
-    is_finite (Expectation_posRV (rvabs rv_X)) ->
-    is_finite (Expectation_posRV (neg_fun_part rv_X)).
+    is_finite (NonnegExpectation (rvabs rv_X)) ->
+    is_finite (NonnegExpectation (neg_fun_part rv_X)).
   Proof.
-    apply Finite_Expectation_posRV_le.
+    apply Finite_NonnegExpectation_le.
     apply neg_fun_part_le.
   Qed.
   
   Lemma Expectation_neg_part_finite (rv_X : Ts -> R)
         {rv:RandomVariable dom borel_sa rv_X}
         {isfe:IsFiniteExpectation prts rv_X} :
-    is_finite (Expectation_posRV (neg_fun_part rv_X)).
+    is_finite (NonnegExpectation (neg_fun_part rv_X)).
   Proof.
     red in isfe.
     unfold Expectation in isfe.
-    destruct (Expectation_posRV (fun x : Ts => pos_fun_part rv_X x)).
-    destruct (Expectation_posRV (fun x : Ts => neg_fun_part rv_X x)).     
+    destruct (NonnegExpectation (fun x : Ts => pos_fun_part rv_X x)).
+    destruct (NonnegExpectation (fun x : Ts => neg_fun_part rv_X x)).     
     now unfold is_finite.
     simpl in isfe; tauto.
     simpl in isfe; tauto.     
-    destruct (Expectation_posRV (fun x : Ts => neg_fun_part rv_X x));
+    destruct (NonnegExpectation (fun x : Ts => neg_fun_part rv_X x));
       simpl in isfe; tauto.
-    destruct (Expectation_posRV (fun x : Ts => neg_fun_part rv_X x));
+    destruct (NonnegExpectation (fun x : Ts => neg_fun_part rv_X x));
       simpl in isfe; tauto.
   Qed.
   

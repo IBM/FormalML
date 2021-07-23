@@ -63,7 +63,7 @@ Section L2.
       ; intros xyle.
 
       rewrite (Expectation_pos_posRV _).
-      generalize (Finite_Expectation_posRV_le (rvabs (rvmult x y))
+      generalize (Finite_NonnegExpectation_le (rvabs (rvmult x y))
                                               (rvplus (rvsqr x) (rvsqr y))
                                               _
                                               _
@@ -76,9 +76,9 @@ Section L2.
         assert (0 <= Rabs (x a * y a))
           by apply Rabs_pos.
         lra.
-      + generalize (Expectation_posRV_sum (rvsqr x) (rvsqr y))
+      + generalize (NonnegExpectation_sum (rvsqr x) (rvsqr y))
         ; intros HH3.
-        erewrite Expectation_posRV_pf_irrel in HH3.
+        erewrite NonnegExpectation_pf_irrel in HH3.
         rewrite HH3.
 
         rewrite rvpower_abs2_unfold in eqq1, eqq2.
@@ -166,7 +166,7 @@ Section L2.
     generalize (rvprod_abs1_bound rv_X1 rv_X2); intros.
     assert (PositiveRandomVariable (rvplus (rvsqr rv_X1) (rvsqr rv_X2)))
       by (apply rvplus_prv; apply prvsqr).
-    generalize (Finite_Expectation_posRV_le _ _ H H2 H1); intros.
+    generalize (Finite_NonnegExpectation_le _ _ H H2 H1); intros.
     unfold IsLp, IsFiniteExpectation in *.
     rewrite (Expectation_pos_posRV _) in l21.
     rewrite (Expectation_pos_posRV _)  in l22.    
@@ -180,17 +180,17 @@ Section L2.
     ; try contradiction.
     assert (PositiveRandomVariable (rvsqr rv_X1)) by apply prvsqr.
     assert (PositiveRandomVariable (rvsqr rv_X2)) by apply prvsqr.
-    generalize (Expectation_posRV_sum (rvsqr rv_X1) (rvsqr rv_X2)); intros.
+    generalize (NonnegExpectation_sum (rvsqr rv_X1) (rvsqr rv_X2)); intros.
     cut_to H3.
     - rewrite Expectation_pos_posRV with (prv := H).
       now rewrite <- H3.
-    - erewrite Expectation_posRV_pf_irrel in H6.
+    - erewrite NonnegExpectation_pf_irrel in H6.
       rewrite H6.
-      rewrite (Expectation_posRV_ext _ _ (rvpower_abs2_unfold _)) in eqq1.
-      rewrite (Expectation_posRV_ext _ _  (rvpower_abs2_unfold _)) in eqq2.
-      erewrite Expectation_posRV_pf_irrel in eqq1.
+      rewrite (NonnegExpectation_ext _ _ (rvpower_abs2_unfold _)) in eqq1.
+      rewrite (NonnegExpectation_ext _ _  (rvpower_abs2_unfold _)) in eqq2.
+      erewrite NonnegExpectation_pf_irrel in eqq1.
       rewrite eqq1.
-      erewrite Expectation_posRV_pf_irrel in eqq2.
+      erewrite NonnegExpectation_pf_irrel in eqq2.
       rewrite eqq2.
       simpl.
       now unfold is_finite.
@@ -202,7 +202,7 @@ Section L2.
         (rv : RandomVariable dom borel_sa X)
         (posrv: PositiveRandomVariable X) :
   Rbar_le (ps_P (event_ge dom X eps))
-          (Rbar_div (Expectation_posRV (rvsqr X)) 
+          (Rbar_div (NonnegExpectation (rvsqr X)) 
                     (Rsqr eps)).
     Proof.
       assert (event_equiv (event_ge dom X eps)
@@ -227,9 +227,9 @@ Section L2.
         (eps : posreal) 
         (Xn: Ts -> R)
         (rvxn : RandomVariable dom borel_sa Xn) :
-    is_finite (Expectation_posRV (rvsqr (rvabs Xn))) ->
+    is_finite (NonnegExpectation (rvsqr (rvabs Xn))) ->
     ps_P (event_ge dom (rvabs Xn) eps) <=
-    (Expectation_posRV (rvsqr (rvabs Xn))) / (Rsqr eps).
+    (NonnegExpectation (rvsqr (rvabs Xn))) / (Rsqr eps).
     Proof.
       assert (RandomVariable dom borel_sa (rvabs Xn)).
       - now apply rvabs_rv.
@@ -250,9 +250,9 @@ Section L2.
         (X Xn: Ts -> R)
         (rvx : RandomVariable dom borel_sa X)
         (rvxn : RandomVariable dom borel_sa Xn) :
-    is_finite (Expectation_posRV (rvsqr (rvabs (rvminus X Xn)))) ->
+    is_finite (NonnegExpectation (rvsqr (rvabs (rvminus X Xn)))) ->
     ps_P (event_ge dom (rvabs (rvminus X Xn)) eps) <=
-    (Expectation_posRV (rvsqr (rvabs (rvminus X Xn)))) / (Rsqr eps).
+    (NonnegExpectation (rvsqr (rvabs (rvminus X Xn)))) / (Rsqr eps).
     Proof.
       intros.
       apply conv_l2_prob_le1; trivial.
@@ -262,9 +262,9 @@ Section L2.
         (eps : posreal) 
         (X: Ts -> R)
         {rvx : RandomVariable dom borel_sa X}:
-    is_finite (Expectation_posRV (rvabs X)) ->
+    is_finite (NonnegExpectation (rvabs X)) ->
     ps_P (event_ge dom (rvabs X) eps) <=
-    (Expectation_posRV (rvabs X)) / eps.
+    (NonnegExpectation (rvabs X)) / eps.
     Proof.
       assert (RandomVariable dom borel_sa (rvabs X)).
       - now apply rvabs_rv.
@@ -284,9 +284,9 @@ Section L2.
         (X Xn: Ts -> R)
         {rvx : RandomVariable dom borel_sa X}
         {rvxn : RandomVariable dom borel_sa Xn} :
-    is_finite (Expectation_posRV (rvabs (rvminus X Xn))) ->
+    is_finite (NonnegExpectation (rvabs (rvminus X Xn))) ->
     ps_P (event_ge dom (rvabs (rvminus X Xn)) eps) <=
-    (Expectation_posRV (rvabs (rvminus X Xn))) / eps.
+    (NonnegExpectation (rvabs (rvminus X Xn))) / eps.
     Proof.
       apply conv_l1_prob_le.
     Qed.
@@ -295,13 +295,13 @@ Section L2.
         (eps : posreal) 
         (Xn: nat -> Ts -> R)
         (rvxn : forall n, RandomVariable dom borel_sa (Xn n)) :
-    (forall n, is_finite (Expectation_posRV (rvsqr (rvabs (Xn n))))) ->
-    is_lim_seq (fun n => Expectation_posRV (rvsqr (rvabs (Xn n)))) 0 ->
+    (forall n, is_finite (NonnegExpectation (rvsqr (rvabs (Xn n))))) ->
+    is_lim_seq (fun n => NonnegExpectation (rvsqr (rvabs (Xn n)))) 0 ->
     is_lim_seq (fun n => ps_P (event_ge dom (rvabs (Xn n)) eps)) 0.
   Proof.
     intros.
     apply is_lim_seq_le_le_loc with (u := fun _ => 0) 
-                                    (w := (fun n => (Expectation_posRV (rvsqr (rvabs (Xn n)))) / (Rsqr eps))).
+                                    (w := (fun n => (NonnegExpectation (rvsqr (rvabs (Xn n)))) / (Rsqr eps))).
     - unfold eventually.
       exists (0%nat).
       intros.
@@ -327,8 +327,8 @@ Section L2.
         (Xn: nat -> Ts -> R)
         (rvx : RandomVariable dom borel_sa X)
         (rvxn : forall n, RandomVariable dom borel_sa (Xn n)) :
-    (forall n, is_finite (Expectation_posRV (rvsqr (rvabs (rvminus X (Xn n)))))) ->
-    is_lim_seq (fun n => Expectation_posRV (rvsqr (rvabs (rvminus X (Xn n))))) 0 ->
+    (forall n, is_finite (NonnegExpectation (rvsqr (rvabs (rvminus X (Xn n)))))) ->
+    is_lim_seq (fun n => NonnegExpectation (rvsqr (rvabs (rvminus X (Xn n))))) 0 ->
     is_lim_seq (fun n => ps_P (event_ge dom (rvabs (rvminus X (Xn n))) eps)) 0.
   Proof.
     intros.
@@ -341,13 +341,13 @@ Section L2.
         (Xn: nat -> Ts -> R)
         (rvx : RandomVariable dom borel_sa X)
         (rvxn : forall n, RandomVariable dom borel_sa (Xn n)) :
-    (forall n, is_finite (Expectation_posRV (rvabs (rvminus X (Xn n))))) ->
-    is_lim_seq (fun n => Expectation_posRV (rvabs (rvminus X (Xn n)))) 0 ->
+    (forall n, is_finite (NonnegExpectation (rvabs (rvminus X (Xn n))))) ->
+    is_lim_seq (fun n => NonnegExpectation (rvabs (rvminus X (Xn n)))) 0 ->
     is_lim_seq (fun n => ps_P (event_ge dom (rvabs (rvminus X (Xn n))) eps)) 0.
   Proof.
     intros.
     apply is_lim_seq_le_le_loc with (u := fun _ => 0) 
-                                    (w := (fun n => (Expectation_posRV (rvabs (rvminus X (Xn n)))) / eps)).
+                                    (w := (fun n => (NonnegExpectation (rvabs (rvminus X (Xn n)))) / eps)).
     - unfold eventually.
       exists (0%nat).
       intros.
