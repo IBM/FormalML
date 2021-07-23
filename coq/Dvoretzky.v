@@ -61,13 +61,13 @@ Section Dvoretzky.
 
 Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
       (rvy : RandomVariable dom borel_sa (Y n)) 
-      (svy : SimpleRandomVariable (Y n)) 
+      (svy : FiniteRangeFunction (Y n)) 
       (rvx : RandomVariable dom borel_sa (X n)) 
-      (svx: SimpleRandomVariable (X n))
+      (svx: FiniteRangeFunction (X n))
       (rvt : RandomVariable dom borel_sa (fun r:R => T n (X n r))) 
-      (svt: SimpleRandomVariable (fun r:R => T n (X n r))) 
+      (svt: FiniteRangeFunction (fun r:R => T n (X n r))) 
       (rvx2 : RandomVariable dom borel_sa (X (S n)))
-      (svx2: SimpleRandomVariable (X (S n))) :
+      (svx2: FiniteRangeFunction (X (S n))) :
   (forall (n:nat), F n >= 0) ->
   (forall (n:nat) (r:R), Rle (Rabs ((T n r) - theta)) (F n * Rabs (r-theta))) ->
   (forall (n:nat), rv_eq (X (S n)) (rvplus (fun r => T n (X n r)) (Y n))) ->

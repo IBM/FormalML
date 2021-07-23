@@ -2856,7 +2856,7 @@ Section complete.
     generalize (finite_Rbar_Expectation_posRV_le_inf f fpos c H); intros.
     rewrite Expectation_posRV_scale in H0.
     unfold pinf_Indicator in H0.
-    assert (SimpleRandomVariable (EventIndicator (fun x : Ts => pinf_Indicator_obligation_1 f x))) by typeclasses eauto.
+    assert (FiniteRangeFunction (EventIndicator (fun x : Ts => pinf_Indicator_obligation_1 f x))) by typeclasses eauto.
     assert (RandomVariable dom borel_sa (EventIndicator (fun x : Ts => pinf_Indicator_obligation_1 f x))).
     apply EventIndicator_pre_rv.
     now apply sa_pinf_Rbar.

@@ -459,7 +459,7 @@ Section pmf_prob.
 
 Lemma SimpleExpectation_preimage_indicator
       (rv_X : A -> R)
-      {srv : SimpleRandomVariable rv_X} :
+      {srv : FiniteRangeFunction rv_X} :
      SimpleExpectation (Prts := ps_pmf) rv_X = 
      list_sum (map (fun v => v *
                              (SimpleExpectation (Prts:=ps_pmf) (point_preimage_indicator rv_X v)))
@@ -483,7 +483,7 @@ Lemma SimpleExpectation_preimage_indicator
 
   Lemma expt_value_preimage_indicator
        (rv_X : A -> R)
-       {srv : SimpleRandomVariable rv_X} :
+       {srv : FiniteRangeFunction rv_X} :
      expt_value pmf rv_X = 
      list_sum (map (fun v => v *
                              (expt_value pmf (point_preimage_indicator rv_X v)))
@@ -502,7 +502,7 @@ Lemma SimpleExpectation_preimage_indicator
   Qed.
 
   Theorem pmf_SimpleExpectation_value (rv_X : A -> R)
-          {srv:SimpleRandomVariable rv_X} 
+          {srv:FiniteRangeFunction rv_X} 
    : SimpleExpectation (Prts:=ps_pmf) rv_X = expt_value pmf rv_X.
  Proof.
     rewrite SimpleExpectation_preimage_indicator.   
@@ -522,7 +522,7 @@ Lemma SimpleExpectation_preimage_indicator
    
  Program Global Instance srv_restricted_range
         {B} {decB:EqDec B eq} (default:B) (l:list B) (rv_X: A -> B)
-   : SimpleRandomVariable (rv_restricted_range default l rv_X)
+   : FiniteRangeFunction (rv_restricted_range default l rv_X)
    := {|
    srv_vals := default::l
      |}.

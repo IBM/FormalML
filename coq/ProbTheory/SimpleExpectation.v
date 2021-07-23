@@ -24,16 +24,16 @@ Section SimpleExpectation.
 
   Local Open Scope prob.
     
-  Definition simpleRandomVariable_partition_image 
+  Definition FiniteRangeFunction_partition_image 
              {rv_X : Ts -> R}
              {rrv : RandomVariable dom borel_sa rv_X}
-             (srv : SimpleRandomVariable rv_X) : list (event dom) :=
+             (srv : FiniteRangeFunction rv_X) : list (event dom) :=
     map (preimage_singleton rv_X) srv_vals.
   
   Definition SimpleExpectation
              (rv_X : Ts -> R)
              {rv:RandomVariable dom borel_sa rv_X}
-             {srv : SimpleRandomVariable rv_X} : R :=
+             {srv : FiniteRangeFunction rv_X} : R :=
     list_sum (map (fun v => Rmult v (ps_P (preimage_singleton rv_X v)))
                   (nodup Req_EM_T srv_vals)).
 
@@ -45,7 +45,7 @@ Section SimpleExpectation.
         dec
         {rv_X : Ts -> Td}
         {rv: RandomVariable dom cod rv_X}
-        (srv : SimpleRandomVariable rv_X) :
+        (srv : FiniteRangeFunction rv_X) :
     event_equiv (list_union (map (preimage_singleton rv_X) (nodup dec srv_vals)))  Ω .
   Proof.
     intros x.
@@ -102,7 +102,7 @@ Section SimpleExpectation.
         (x : Ts -> R)
         {rv : RandomVariable dom borel_sa x}
         {posrv :PositiveRandomVariable x} 
-        {srv : SimpleRandomVariable x} :
+        {srv : FiniteRangeFunction x} :
     SimpleExpectation x = 0 ->
     ps_P (preimage_singleton x 0) = 1.
   Proof.
@@ -160,7 +160,7 @@ Section SimpleExpectation.
   Lemma scaleSimpleExpectation (c:R)
         (rv_X : Ts -> R)
         {rv : RandomVariable dom borel_sa rv_X}
-        {srv : SimpleRandomVariable rv_X} : 
+        {srv : FiniteRangeFunction rv_X} : 
     (c * SimpleExpectation rv_X)%R = SimpleExpectation (rvscale c rv_X).
   Proof.
     unfold SimpleExpectation, srvscale, rvscale.
@@ -226,7 +226,7 @@ Section SimpleExpectation.
   Lemma oppSimpleExpectation
         (rv_X : Ts -> R)
         {rv : RandomVariable dom borel_sa rv_X}
-        {srv : SimpleRandomVariable rv_X} : 
+        {srv : FiniteRangeFunction rv_X} : 
     (- SimpleExpectation rv_X)%R = SimpleExpectation (rvopp rv_X).
   Proof.
     replace (- SimpleExpectation rv_X) with (-1 * SimpleExpectation rv_X) by lra.
@@ -256,7 +256,7 @@ Section SimpleExpectation.
 
   Lemma non_empty_srv_vals 
         (rv_X : Ts -> R)
-        (srv : SimpleRandomVariable rv_X) :
+        (srv : FiniteRangeFunction rv_X) :
     NonEmpty Ts -> srv_vals <> nil.
   Proof.
     intros.
@@ -269,7 +269,7 @@ Section SimpleExpectation.
 
   Lemma nil_srv_vals_empty_Ts
         {rv_X : Ts -> R}
-        (srv : SimpleRandomVariable rv_X) :
+        (srv : FiniteRangeFunction rv_X) :
     srv_vals = nil -> (forall (x:Ts), False).
   Proof.
     intros.
@@ -282,7 +282,7 @@ Section SimpleExpectation.
   Lemma list_union_srv_preimage
         {rv_X : Ts -> R}
         {rv : RandomVariable dom borel_sa rv_X}
-        (srv : SimpleRandomVariable rv_X) :
+        (srv : FiniteRangeFunction rv_X) :
     event_equiv (list_union (map (preimage_singleton rv_X) srv_vals))  Ω .
   Proof.
     intros x.
@@ -358,7 +358,7 @@ Section SimpleExpectation.
   Lemma srv_vals_nodup_preimage_disj
         (rv_X : Ts -> R)
         {rv : RandomVariable dom borel_sa rv_X}
-        {srv : SimpleRandomVariable rv_X} :
+        {srv : FiniteRangeFunction rv_X} :
     ForallOrdPairs event_disjoint (map (preimage_singleton rv_X) (nodup Req_EM_T srv_vals)).
   Proof.
     intros.
@@ -369,7 +369,7 @@ Section SimpleExpectation.
   Lemma srv_vals_prob_1 
         (rv_X : Ts -> R)
         {rv: RandomVariable dom borel_sa rv_X}
-        {srv : SimpleRandomVariable rv_X} :
+        {srv : FiniteRangeFunction rv_X} :
     list_sum (map (fun x : R => ps_P (preimage_singleton rv_X x)) 
                   (nodup Req_EM_T srv_vals)) = 1.
   Proof.
@@ -390,7 +390,7 @@ Section SimpleExpectation.
   Lemma simple_random_all
         (rv_X : Ts -> R)
         {rv : RandomVariable dom borel_sa rv_X}
-        {srv : SimpleRandomVariable rv_X} :
+        {srv : FiniteRangeFunction rv_X} :
     event_equiv (list_union (map (preimage_singleton rv_X) srv_vals))
                 Ω .   
   Proof.
@@ -410,14 +410,14 @@ Section SimpleExpectation.
         {rv_X1 rv_X2 : Ts -> R}
         {rv1: RandomVariable dom borel_sa rv_X1}
         {rv2: RandomVariable dom borel_sa rv_X2}                               
-        (srv1 : SimpleRandomVariable rv_X1) 
-        (srv2 : SimpleRandomVariable rv_X2)
+        (srv1 : FiniteRangeFunction rv_X1) 
+        (srv2 : FiniteRangeFunction rv_X2)
         (a:R) :
-    NoDup (srv_vals (SimpleRandomVariable := srv2)) ->
+    NoDup (srv_vals (FiniteRangeFunction := srv2)) ->
     ps_P (preimage_singleton rv_X1 a) =
     list_sum
       (map (fun x : R => ps_P (preimage_singleton rv_X1 a ∩ preimage_singleton rv_X2 x)) 
-           (srv_vals (SimpleRandomVariable:=srv2))).
+           (srv_vals (FiniteRangeFunction:=srv2))).
   Proof.
     intros.
     rewrite list_sum_fold_right.
@@ -439,14 +439,14 @@ Section SimpleExpectation.
         {rv_X1 rv_X2 : Ts -> R}
         {rv1: RandomVariable dom borel_sa rv_X1}
         {rv2: RandomVariable dom borel_sa rv_X2}                               
-        (srv1 : SimpleRandomVariable rv_X1) 
-        (srv2 : SimpleRandomVariable rv_X2)
+        (srv1 : FiniteRangeFunction rv_X1) 
+        (srv2 : FiniteRangeFunction rv_X2)
         (a:R) :
-    NoDup (srv_vals (SimpleRandomVariable := srv1)) ->
+    NoDup (srv_vals (FiniteRangeFunction := srv1)) ->
     ps_P (preimage_singleton rv_X2 a) =
     list_sum
       (map (fun x : R => ps_P (preimage_singleton rv_X1 x ∩ preimage_singleton rv_X2 a)) 
-           (srv_vals (SimpleRandomVariable:=srv1))).
+           (srv_vals (FiniteRangeFunction:=srv1))).
   Proof.
     intros.
     rewrite (prob_inter_all1 srv2 srv1 a H); intros.
@@ -471,16 +471,16 @@ Section SimpleExpectation.
         {rv_X rv_X2 : Ts -> R}
         {rv: RandomVariable dom borel_sa rv_X}
         {rv2: RandomVariable dom borel_sa rv_X2}                               
-        (srv : SimpleRandomVariable rv_X)
-        (srv2 : SimpleRandomVariable rv_X2) :  
+        (srv : FiniteRangeFunction rv_X)
+        (srv2 : FiniteRangeFunction rv_X2) :  
     list_sum
       (map (fun v : R => v * ps_P (preimage_singleton rv_X v))
-           (nodup Req_EM_T (srv_vals (SimpleRandomVariable:=srv)))) = 
+           (nodup Req_EM_T (srv_vals (FiniteRangeFunction:=srv)))) = 
     list_sum
       (map (fun vv : R*R => 
               (fst vv) * ps_P ((preimage_singleton rv_X (fst vv)) ∩ (preimage_singleton rv_X2 (snd vv))))
-           (list_prod (nodup Req_EM_T (srv_vals (SimpleRandomVariable:=srv)))
-                      (nodup Req_EM_T (srv_vals (SimpleRandomVariable:=srv2))))).
+           (list_prod (nodup Req_EM_T (srv_vals (FiniteRangeFunction:=srv)))
+                      (nodup Req_EM_T (srv_vals (FiniteRangeFunction:=srv2))))).
   Proof.
     induction (nodup Req_EM_T (@srv_vals Ts R rv_X srv)); simpl; trivial.
     rewrite IHl.
@@ -490,7 +490,7 @@ Section SimpleExpectation.
     rewrite map_map.
     simpl.
     transitivity (list_sum (List.map (fun z => a*z)
-                                     (map (fun x : R => ps_P ((preimage_singleton rv_X a) ∩ (preimage_singleton rv_X2 x))) (nodup Req_EM_T (srv_vals (SimpleRandomVariable:=srv2)))))).
+                                     (map (fun x : R => ps_P ((preimage_singleton rv_X a) ∩ (preimage_singleton rv_X2 x))) (nodup Req_EM_T (srv_vals (FiniteRangeFunction:=srv2)))))).
     - rewrite list_sum_mult_const.
       f_equal.
       rewrite map_map.
@@ -518,8 +518,8 @@ Section SimpleExpectation.
         (rv_X1 rv_X2 : Ts -> R)
         {rv1: RandomVariable dom borel_sa rv_X1}
         {rv2: RandomVariable dom borel_sa rv_X2}                               
-        {srv1 : SimpleRandomVariable rv_X1}
-        {srv2 : SimpleRandomVariable rv_X2} : 
+        {srv1 : FiniteRangeFunction rv_X1}
+        {srv2 : FiniteRangeFunction rv_X2} : 
     rv_le rv_X1 rv_X2 ->
     SimpleExpectation rv_X1 <= SimpleExpectation rv_X2.
   Proof.
@@ -569,24 +569,24 @@ Section SimpleExpectation.
         {rv_X1 rv_X2 : Ts -> R}
         {rv1: RandomVariable dom borel_sa rv_X1}
         {rv2: RandomVariable dom borel_sa rv_X2}
-        (srv1 : SimpleRandomVariable rv_X1) 
-        (srv2 : SimpleRandomVariable rv_X2) :
-    (srv_vals (SimpleRandomVariable := srv2)) <> nil ->
-    NoDup (srv_vals (SimpleRandomVariable := srv1)) ->
-    NoDup (srv_vals (SimpleRandomVariable := srv2)) ->    
+        (srv1 : FiniteRangeFunction rv_X1) 
+        (srv2 : FiniteRangeFunction rv_X2) :
+    (srv_vals (FiniteRangeFunction := srv2)) <> nil ->
+    NoDup (srv_vals (FiniteRangeFunction := srv1)) ->
+    NoDup (srv_vals (FiniteRangeFunction := srv2)) ->    
     list_sum
       (map (fun v : R => v * ps_P (preimage_singleton rv_X1 v))
-           (srv_vals (SimpleRandomVariable := srv1))) =
+           (srv_vals (FiniteRangeFunction := srv1))) =
     list_sum
       (map
          (fun v : R * R =>
             (fst v) *
             ps_P (preimage_singleton rv_X1 (fst v) ∩ preimage_singleton rv_X2 (snd v)))
-         (list_prod (srv_vals (SimpleRandomVariable := srv1))
-                    (srv_vals (SimpleRandomVariable := srv2)))).
+         (list_prod (srv_vals (FiniteRangeFunction := srv1))
+                    (srv_vals (FiniteRangeFunction := srv2)))).
   Proof.
     intros.
-    induction (srv_vals (SimpleRandomVariable := srv1)).
+    induction (srv_vals (FiniteRangeFunction := srv1)).
     - now simpl.
     - simpl.
       invcs H0.
@@ -604,24 +604,24 @@ Section SimpleExpectation.
         {rv_X1 rv_X2 : Ts -> R}
         {rv1: RandomVariable dom borel_sa rv_X1}
         {rv2: RandomVariable dom borel_sa rv_X2}         
-        (srv1 : SimpleRandomVariable rv_X1) 
-        (srv2 : SimpleRandomVariable rv_X2) :
-    (srv_vals (SimpleRandomVariable := srv1)) <> nil ->
-    NoDup (srv_vals (SimpleRandomVariable := srv1)) ->
-    NoDup (srv_vals (SimpleRandomVariable := srv2)) ->    
+        (srv1 : FiniteRangeFunction rv_X1) 
+        (srv2 : FiniteRangeFunction rv_X2) :
+    (srv_vals (FiniteRangeFunction := srv1)) <> nil ->
+    NoDup (srv_vals (FiniteRangeFunction := srv1)) ->
+    NoDup (srv_vals (FiniteRangeFunction := srv2)) ->    
     list_sum
       (map (fun v : R => v * ps_P (preimage_singleton rv_X2 v))
-           (srv_vals (SimpleRandomVariable := srv2))) =
+           (srv_vals (FiniteRangeFunction := srv2))) =
     list_sum
       (map
          (fun v : R * R =>
             (snd v) *
             ps_P (preimage_singleton rv_X1 (fst v) ∩ preimage_singleton rv_X2 (snd v)))
-         (list_prod (srv_vals (SimpleRandomVariable := srv1))
-                    (srv_vals (SimpleRandomVariable := srv2)))).
+         (list_prod (srv_vals (FiniteRangeFunction := srv1))
+                    (srv_vals (FiniteRangeFunction := srv2)))).
   Proof.
     intros.
-    induction (srv_vals (SimpleRandomVariable := srv2)).
+    induction (srv_vals (FiniteRangeFunction := srv2)).
     - rewrite list_prod_nil_r.
       now simpl.
     - rewrite list_prod_swap.
@@ -644,19 +644,19 @@ Section SimpleExpectation.
         {rv_X1 rv_X2 : Ts -> R}
         {rv1: RandomVariable dom borel_sa rv_X1}
         {rv2: RandomVariable dom borel_sa rv_X2}         
-        (srv1 : SimpleRandomVariable rv_X1) 
-        (srv2 : SimpleRandomVariable rv_X2) :
-    (srv_vals (SimpleRandomVariable := srv2)) <> nil ->
+        (srv1 : FiniteRangeFunction rv_X1) 
+        (srv2 : FiniteRangeFunction rv_X2) :
+    (srv_vals (FiniteRangeFunction := srv2)) <> nil ->
     list_sum
       (map (fun v : R => v * ps_P (preimage_singleton rv_X1 v))
-           (nodup Req_EM_T (srv_vals (SimpleRandomVariable := srv1)))) =
+           (nodup Req_EM_T (srv_vals (FiniteRangeFunction := srv1)))) =
     list_sum
       (map
          (fun v : R * R =>
             (fst v) *
             ps_P (preimage_singleton rv_X1 (fst v) ∩ preimage_singleton rv_X2 (snd v)))
-         (list_prod (nodup Req_EM_T (srv_vals (SimpleRandomVariable := srv1))) 
-                    (nodup Req_EM_T (srv_vals (SimpleRandomVariable := srv2))))).
+         (list_prod (nodup Req_EM_T (srv_vals (FiniteRangeFunction := srv1))) 
+                    (nodup Req_EM_T (srv_vals (FiniteRangeFunction := srv2))))).
   Proof.
     intros.
     apply (sumSimpleExpectation00 (nodup_simple_random_variable Req_EM_T srv1) (nodup_simple_random_variable Req_EM_T srv2)); simpl; try apply NoDup_nodup.
@@ -668,19 +668,19 @@ Section SimpleExpectation.
         {rv_X1 rv_X2 : Ts -> R}
         {rv1: RandomVariable dom borel_sa rv_X1}
         {rv2: RandomVariable dom borel_sa rv_X2}         
-        (srv1 : SimpleRandomVariable rv_X1) 
-        (srv2 : SimpleRandomVariable rv_X2) :
-    (srv_vals (SimpleRandomVariable := srv1)) <> nil ->
+        (srv1 : FiniteRangeFunction rv_X1) 
+        (srv2 : FiniteRangeFunction rv_X2) :
+    (srv_vals (FiniteRangeFunction := srv1)) <> nil ->
     list_sum
       (map (fun v : R => v * ps_P (preimage_singleton rv_X2 v))
-           (nodup Req_EM_T (srv_vals (SimpleRandomVariable := srv2)))) =
+           (nodup Req_EM_T (srv_vals (FiniteRangeFunction := srv2)))) =
     list_sum
       (map
          (fun v : R * R =>
             (snd v) *
             ps_P (preimage_singleton rv_X1 (fst v) ∩ preimage_singleton rv_X2 (snd v)))
-         (list_prod (nodup Req_EM_T (srv_vals (SimpleRandomVariable := srv1))) 
-                    (nodup Req_EM_T (srv_vals (SimpleRandomVariable := srv2))))).
+         (list_prod (nodup Req_EM_T (srv_vals (FiniteRangeFunction := srv1))) 
+                    (nodup Req_EM_T (srv_vals (FiniteRangeFunction := srv2))))).
   Proof.
     intros.
     apply (sumSimpleExpectation11 (nodup_simple_random_variable Req_EM_T srv1) (nodup_simple_random_variable Req_EM_T srv2)); simpl; try apply NoDup_nodup.
@@ -776,8 +776,8 @@ Section SimpleExpectation.
         (rv_X1 rv_X2 : Ts -> R)
         {rv1: RandomVariable dom borel_sa rv_X1}
         {rv2: RandomVariable dom borel_sa rv_X2}
-        {srv1 : SimpleRandomVariable rv_X1} 
-        {srv2 : SimpleRandomVariable rv_X2} :
+        {srv1 : FiniteRangeFunction rv_X1} 
+        {srv2 : FiniteRangeFunction rv_X2} :
     @srv_vals Ts R rv_X1 srv1 <> nil -> 
     @srv_vals Ts R rv_X2 srv2 <> nil ->
     (SimpleExpectation rv_X1) + (SimpleExpectation rv_X2)%R =
@@ -927,7 +927,7 @@ Section SimpleExpectation.
   Lemma not_in_srv_vals_event_none
         (rv_X : Ts -> R)
         {rv : RandomVariable dom borel_sa rv_X}
-        {srv:SimpleRandomVariable rv_X} :
+        {srv:FiniteRangeFunction rv_X} :
     forall (x:R), ~ (In x srv_vals) ->
              event_equiv (preimage_singleton rv_X x) event_none.
   Proof.
@@ -942,10 +942,10 @@ Section SimpleExpectation.
   Lemma SimpleExpectation_simpl_incl 
         {rv_X : Ts -> R}
         {rv : RandomVariable dom borel_sa rv_X}
-        (srv:SimpleRandomVariable rv_X)
+        (srv:FiniteRangeFunction rv_X)
         (l:list R)
         (lincl : incl srv_vals l) :
-    SimpleExpectation rv_X (srv:=srv) = SimpleExpectation rv_X (srv:=(SimpleRandomVariable_enlarged srv l lincl)).
+    SimpleExpectation rv_X (srv:=srv) = SimpleExpectation rv_X (srv:=(FiniteRangeFunction_enlarged srv l lincl)).
   Proof.
     unfold SimpleExpectation; simpl.
     unfold event_preimage, event_singleton.
@@ -994,7 +994,7 @@ Section EventRestricted.
 
   Lemma event_restricted_SimpleExpectation P (pf1 : ps_P P = 1) pf (f : Ts -> R) 
         {rv : RandomVariable dom borel_sa f} 
-        {srv : SimpleRandomVariable f} :
+        {srv : FiniteRangeFunction f} :
     @SimpleExpectation _ _ Prts f rv srv = 
     @SimpleExpectation _ _ (event_restricted_prob_space Prts P pf) 
                        (event_restricted_function P f) 
@@ -1039,7 +1039,7 @@ Section SimpleConditionalExpectation.
   Program Definition gen_simple_conditional_expectation_scale (P : event dom)
              (rv_X : Ts -> R)
              {rv : RandomVariable dom borel_sa rv_X}
-             {srv : SimpleRandomVariable rv_X}
+             {srv : FiniteRangeFunction rv_X}
              (dec:forall x, {P x} + {~ P x}) :=
     rvscale (if (Req_EM_T (ps_P P) 0) then 0 else
                ((SimpleExpectation  ((rvmult rv_X (EventIndicator dec)))) / (ps_P P)))
@@ -1048,7 +1048,7 @@ Section SimpleConditionalExpectation.
   Instance gen_simple_conditional_expectation_scale_rv (P : event dom)
            (rv_X : Ts -> R)
            {rv : RandomVariable dom borel_sa rv_X}
-           {srv : SimpleRandomVariable rv_X}
+           {srv : FiniteRangeFunction rv_X}
            (dec:forall x, {P x} + {~ P x}) :
     RandomVariable dom borel_sa  (gen_simple_conditional_expectation_scale P rv_X dec).
   Proof.
@@ -1059,9 +1059,9 @@ Section SimpleConditionalExpectation.
   Instance gen_simple_conditional_expectation_scale_simpl (P : event dom)
            (rv_X : Ts -> R)
            {rv : RandomVariable dom borel_sa rv_X}
-           {srv : SimpleRandomVariable rv_X}
+           {srv : FiniteRangeFunction rv_X}
            (dec:forall x, {P x} + {~ P x}) :
-    SimpleRandomVariable (gen_simple_conditional_expectation_scale P rv_X dec).
+    FiniteRangeFunction (gen_simple_conditional_expectation_scale P rv_X dec).
   Proof.
     unfold gen_simple_conditional_expectation_scale.
     apply srvscale; apply EventIndicator_srv.
@@ -1073,7 +1073,7 @@ Section SimpleConditionalExpectation.
   Definition gen_SimpleConditionalExpectation
              (rv_X : Ts -> R)
              {rv : RandomVariable dom borel_sa rv_X}
-             {srv : SimpleRandomVariable rv_X}
+             {srv : FiniteRangeFunction rv_X}
              (l : list dec_sa_event) :=
     fold_right rvplus (const 0)
                (map
@@ -1083,9 +1083,9 @@ Section SimpleConditionalExpectation.
   Instance gen_SimpleConditionalExpectation_simpl
            (rv_X : Ts -> R)
            {rv : RandomVariable dom borel_sa rv_X}
-           {srv : SimpleRandomVariable rv_X}
+           {srv : FiniteRangeFunction rv_X}
            (l : list dec_sa_event) :
-    SimpleRandomVariable (gen_SimpleConditionalExpectation rv_X l).
+    FiniteRangeFunction (gen_SimpleConditionalExpectation rv_X l).
   Proof.
     unfold gen_SimpleConditionalExpectation.
     induction l; simpl.
@@ -1098,7 +1098,7 @@ Section SimpleConditionalExpectation.
   Global Instance gen_simple_conditional_expectation_rv 
            (rv_X : Ts -> R)
            {rv:RandomVariable dom borel_sa rv_X}
-           {srv : SimpleRandomVariable rv_X}
+           {srv : FiniteRangeFunction rv_X}
            (l : list dec_sa_event) :
     RandomVariable dom borel_sa (gen_SimpleConditionalExpectation rv_X l).
   Proof.
@@ -1110,8 +1110,8 @@ Section SimpleConditionalExpectation.
              (rv_X rv_X2 : Ts -> R)
              {rv : RandomVariable dom borel_sa rv_X}
              {rv2 : RandomVariable dom borel_sa rv_X2}
-             {srv : SimpleRandomVariable rv_X}
-             {srv2 : SimpleRandomVariable rv_X2} : R :=
+             {srv : FiniteRangeFunction rv_X}
+             {srv2 : FiniteRangeFunction rv_X2} : R :=
     if Req_EM_T (ps_P (preimage_singleton rv_X2 c)) 0 then 0 else
       ((SimpleExpectation 
           (rvmult rv_X
@@ -1122,18 +1122,18 @@ Section SimpleConditionalExpectation.
              (rv_X1 rv_X2 : Ts -> R)
              {rv : RandomVariable dom borel_sa rv_X1}
              {rv : RandomVariable dom borel_sa rv_X2}
-             {srv1 : SimpleRandomVariable rv_X1}
-             {srv2 : SimpleRandomVariable rv_X2}
+             {srv1 : FiniteRangeFunction rv_X1}
+             {srv2 : FiniteRangeFunction rv_X2}
     := map (fun c => (rvscale (simple_conditional_expectation_scale_coef c rv_X1 rv_X2)
                               (point_preimage_indicator rv_X2 c)))
-           (nodup Req_EM_T (srv_vals (SimpleRandomVariable:=srv2))).
+           (nodup Req_EM_T (srv_vals (FiniteRangeFunction:=srv2))).
 
   Definition SimpleConditionalExpectation
              (rv_X1 rv_X2 : Ts -> R)
              {rv : RandomVariable dom borel_sa rv_X1}
              {rv : RandomVariable dom borel_sa rv_X2}
-             {srv1 : SimpleRandomVariable rv_X1} 
-             {srv2 : SimpleRandomVariable rv_X2} :=
+             {srv1 : FiniteRangeFunction rv_X1} 
+             {srv2 : FiniteRangeFunction rv_X2} :=
     fold_right rvplus (const 0)
                (SimpleConditionalExpectation_list rv_X1 rv_X2).
 
@@ -1141,8 +1141,8 @@ Section SimpleConditionalExpectation.
         (rv_X1 rv_X2 : Ts -> R)
         {rv1 : RandomVariable dom borel_sa rv_X1}
         {rv2 : RandomVariable dom borel_sa rv_X2}                          
-        {srv1 : SimpleRandomVariable rv_X1}
-        {srv2 : SimpleRandomVariable rv_X2} :
+        {srv1 : FiniteRangeFunction rv_X1}
+        {srv2 : FiniteRangeFunction rv_X2} :
     Forall (RandomVariable dom borel_sa) (SimpleConditionalExpectation_list rv_X1 rv_X2).
   Proof.
     unfold SimpleConditionalExpectation_list.
@@ -1157,9 +1157,9 @@ Section SimpleConditionalExpectation.
         (rv_X1 rv_X2 : Ts -> R)
         {rv1 : RandomVariable dom borel_sa rv_X1}
         {rv2 : RandomVariable dom borel_sa rv_X2}                          
-        {srv1 : SimpleRandomVariable rv_X1}
-        {srv2 : SimpleRandomVariable rv_X2} :
-    Forallt SimpleRandomVariable (SimpleConditionalExpectation_list rv_X1 rv_X2).
+        {srv1 : FiniteRangeFunction rv_X1}
+        {srv2 : FiniteRangeFunction rv_X2} :
+    Forallt FiniteRangeFunction (SimpleConditionalExpectation_list rv_X1 rv_X2).
   Proof.
     unfold SimpleConditionalExpectation_list.
     induction srv_vals; simpl.
@@ -1173,8 +1173,8 @@ Section SimpleConditionalExpectation.
            (rv_X1 rv_X2 : Ts -> R)
            {rv1 : RandomVariable dom borel_sa rv_X1}
            {rv2 : RandomVariable dom borel_sa rv_X2}                          
-           {srv1 : SimpleRandomVariable rv_X1}
-           {srv2 : SimpleRandomVariable rv_X2}
+           {srv1 : FiniteRangeFunction rv_X1}
+           {srv2 : FiniteRangeFunction rv_X2}
     : RandomVariable dom borel_sa (SimpleConditionalExpectation rv_X1 rv_X2).
   Proof.
     unfold SimpleConditionalExpectation; simpl.
@@ -1189,9 +1189,9 @@ Section SimpleConditionalExpectation.
            (rv_X1 rv_X2 : Ts -> R)
            {rv1 : RandomVariable dom borel_sa rv_X1}
            {rv2 : RandomVariable dom borel_sa rv_X2}                          
-           {srv1 : SimpleRandomVariable rv_X1}
-           {srv2 : SimpleRandomVariable rv_X2}
-    : SimpleRandomVariable (SimpleConditionalExpectation rv_X1 rv_X2).
+           {srv1 : FiniteRangeFunction rv_X1}
+           {srv2 : FiniteRangeFunction rv_X2}
+    : FiniteRangeFunction (SimpleConditionalExpectation rv_X1 rv_X2).
   Proof.
     unfold SimpleConditionalExpectation; simpl.
     generalize (SimpleConditionalExpectation_list_simple rv_X1 rv_X2).
@@ -1263,9 +1263,9 @@ Section SimpleConditionalExpectation.
 
   Instance fold_rvplus_prod_indicator_simpl
            (rv_X : Ts -> R)
-           {srv : SimpleRandomVariable rv_X}
+           {srv : FiniteRangeFunction rv_X}
            (l : list dec_sa_event) :
-    SimpleRandomVariable (fold_rvplus_prod_indicator rv_X l).
+    FiniteRangeFunction (fold_rvplus_prod_indicator rv_X l).
   Proof.
     unfold fold_rvplus_prod_indicator.
     induction l; simpl; typeclasses eauto.
@@ -1275,7 +1275,7 @@ Section SimpleConditionalExpectation.
         {rv_X : Ts -> R}
         (rv1 : RandomVariable dom borel_sa rv_X)
         (rv2 : RandomVariable dom borel_sa rv_X)
-        {srv:SimpleRandomVariable rv_X} :
+        {srv:FiniteRangeFunction rv_X} :
     SimpleExpectation rv_X (rv:=rv1) = SimpleExpectation rv_X (rv:=rv2).
   Proof.
     unfold SimpleExpectation.
@@ -1291,15 +1291,15 @@ Section SimpleConditionalExpectation.
         {rv_X : Ts -> R}
         {rv1 : RandomVariable dom borel_sa rv_X}
         {rv2 : RandomVariable dom borel_sa rv_X}
-        (srv1 srv2:SimpleRandomVariable rv_X):
+        (srv1 srv2:FiniteRangeFunction rv_X):
     SimpleExpectation rv_X (rv:=rv1) (srv:=srv1) = SimpleExpectation rv_X (rv:=rv2) (srv:=srv2).
   Proof.
     rewrite (SimpleExpectation_rv_irrel rv1 rv2).
-    assert (lincl1:incl (srv_vals (SimpleRandomVariable:=srv1)) (srv_vals (SimpleRandomVariable:=srv1)++(srv_vals (SimpleRandomVariable:=srv2)))).
+    assert (lincl1:incl (srv_vals (FiniteRangeFunction:=srv1)) (srv_vals (FiniteRangeFunction:=srv1)++(srv_vals (FiniteRangeFunction:=srv2)))).
     { apply incl_appl.
       reflexivity.
     }
-    assert (lincl2:incl (srv_vals (SimpleRandomVariable:=srv2)) (srv_vals (SimpleRandomVariable:=srv1)++(srv_vals (SimpleRandomVariable:=srv2)))).
+    assert (lincl2:incl (srv_vals (FiniteRangeFunction:=srv2)) (srv_vals (FiniteRangeFunction:=srv1)++(srv_vals (FiniteRangeFunction:=srv2)))).
     { apply incl_appr.
       reflexivity.
     }
@@ -1323,9 +1323,9 @@ Section SimpleConditionalExpectation.
   Lemma scaleSimpleExpectation' (c:R)
         (rv_X : Ts -> R)
         {rv : RandomVariable dom borel_sa rv_X}
-        {srv : SimpleRandomVariable rv_X} 
+        {srv : FiniteRangeFunction rv_X} 
         {rv' : RandomVariable dom borel_sa (rvscale c rv_X)} 
-        {srv' : SimpleRandomVariable (rvscale c rv_X)} : 
+        {srv' : FiniteRangeFunction (rvscale c rv_X)} : 
     SimpleExpectation (rv:=rv') (srv:=srv') (rvscale c rv_X) = (c * SimpleExpectation rv_X)%R.
   Proof.
     rewrite scaleSimpleExpectation.
@@ -1342,11 +1342,11 @@ Section SimpleConditionalExpectation.
     now apply (RandomVariable_proper dom borel_sa rv_X1 rv_X2 eqq).
   Qed.
 
-  Program Instance SimpleRandomVariable_transport
+  Program Instance FiniteRangeFunction_transport
           {rv_X1 rv_X2:Ts->R}
-          (srv1:SimpleRandomVariable rv_X1)
+          (srv1:FiniteRangeFunction rv_X1)
           (eqq:rv_eq rv_X1 rv_X2) :
-    SimpleRandomVariable rv_X2
+    FiniteRangeFunction rv_X2
     := { srv_vals := srv_vals }.
   Next Obligation.
     rewrite <- (eqq x).
@@ -1369,9 +1369,9 @@ Section SimpleConditionalExpectation.
   
   Lemma SimpleExpectation_transport {rv_X1 rv_X2:Ts->R}
         {rv1 : RandomVariable dom borel_sa rv_X1}
-        (srv1:SimpleRandomVariable rv_X1)
+        (srv1:FiniteRangeFunction rv_X1)
         (eqq:rv_eq rv_X1 rv_X2) :
-    SimpleExpectation rv_X1 = SimpleExpectation rv_X2 (rv:=RandomVariable_transport eqq) (srv:=SimpleRandomVariable_transport srv1 eqq).
+    SimpleExpectation rv_X1 = SimpleExpectation rv_X2 (rv:=RandomVariable_transport eqq) (srv:=FiniteRangeFunction_transport srv1 eqq).
   Proof.
     unfold SimpleExpectation.
     simpl.
@@ -1391,8 +1391,8 @@ Section SimpleConditionalExpectation.
         {rv_X1 rv_X2 : Ts -> R}
         {rv1 : RandomVariable dom borel_sa rv_X1}
         {rv2 : RandomVariable dom borel_sa rv_X2}
-        {srv1:SimpleRandomVariable rv_X1}
-        {srv2:SimpleRandomVariable rv_X2}:
+        {srv1:FiniteRangeFunction rv_X1}
+        {srv2:FiniteRangeFunction rv_X2}:
     rv_eq rv_X1 rv_X2 ->
     SimpleExpectation rv_X1 = SimpleExpectation rv_X2.
   Proof.
@@ -1404,8 +1404,8 @@ Section SimpleConditionalExpectation.
   Lemma gen_SimpleConditionalExpectation_ext (x y:Ts->R)
         {rvx : RandomVariable dom borel_sa x}
         {rvy : RandomVariable dom borel_sa y}
-        {srvx : SimpleRandomVariable x}
-        {srvy : SimpleRandomVariable y}          
+        {srvx : FiniteRangeFunction x}
+        {srvy : FiniteRangeFunction y}          
         (l : list dec_sa_event) :
       rv_eq x y ->
       rv_eq (gen_SimpleConditionalExpectation x l)
@@ -1426,8 +1426,8 @@ Section SimpleConditionalExpectation.
         (rv_X1 rv_X2 : Ts -> R)
         {rv1: RandomVariable dom borel_sa rv_X1}
         {rv2: RandomVariable dom borel_sa rv_X2}
-        {srv1 : SimpleRandomVariable rv_X1} 
-        {srv2 : SimpleRandomVariable rv_X2} :
+        {srv1 : FiniteRangeFunction rv_X1} 
+        {srv2 : FiniteRangeFunction rv_X2} :
     (SimpleExpectation rv_X1) + (SimpleExpectation rv_X2)%R = 
     SimpleExpectation (rvplus rv_X1 rv_X2).
   Proof.
@@ -1445,10 +1445,10 @@ Section SimpleConditionalExpectation.
         (rv_X1 rv_X2 : Ts -> R)
         {rv1: RandomVariable dom borel_sa rv_X1}
         {rv2: RandomVariable dom borel_sa rv_X2}
-        {srv1 : SimpleRandomVariable rv_X1} 
-        {srv2 : SimpleRandomVariable rv_X2}
+        {srv1 : FiniteRangeFunction rv_X1} 
+        {srv2 : FiniteRangeFunction rv_X2}
         {rv': RandomVariable dom borel_sa (rvplus rv_X1 rv_X2)}
-        {srv' : SimpleRandomVariable (rvplus rv_X1 rv_X2)} :
+        {srv' : FiniteRangeFunction (rvplus rv_X1 rv_X2)} :
     SimpleExpectation (rv:=rv') (srv:=srv') (rvplus rv_X1 rv_X2) =
     (SimpleExpectation rv_X1) + (SimpleExpectation rv_X2)%R.
   Proof.
@@ -1459,7 +1459,7 @@ Section SimpleConditionalExpectation.
   Lemma expectation_indicator_sum0 
         (rv_X : Ts -> R)
         (rv : RandomVariable dom borel_sa rv_X)
-        {srv : SimpleRandomVariable rv_X}
+        {srv : FiniteRangeFunction rv_X}
         (l : list dec_sa_event) :
     
     list_sum
@@ -1521,8 +1521,8 @@ Section SimpleConditionalExpectation.
 
 
   Instance fr_plus0_simple (l : list (Ts -> R)) 
-           (srvs : Forallt SimpleRandomVariable l) :
-    SimpleRandomVariable (fold_right rvplus (const 0) l).
+           (srvs : Forallt FiniteRangeFunction l) :
+    FiniteRangeFunction (fold_right rvplus (const 0) l).
   Proof.
     induction l; simpl.
     - typeclasses eauto.
@@ -1564,7 +1564,7 @@ Section SimpleConditionalExpectation.
   
   Lemma SimpleExpectation_fold_rvplus (l : list (Ts -> R)) 
         (rvs : Forall (RandomVariable dom borel_sa) l) 
-        (srvs : Forallt SimpleRandomVariable l) :
+        (srvs : Forallt FiniteRangeFunction l) :
     SimpleExpectation (fold_right rvplus (const 0) l) (rv:=very_specific_fold_right_rv_because_barry_waiting _ rvs) (srv:=fr_plus0_simple _ srvs) =
     list_sum (Forallt_map (fun x pf => SimpleExpectation x (rv:=fst pf) (srv:=snd pf)) (Forallt_conj (Forall_Forallt rvs) srvs)).
   Proof.
@@ -1578,9 +1578,9 @@ Section SimpleConditionalExpectation.
 
   Lemma SimpleExpectation_fold_rvplus' (l : list (Ts -> R))
         {rv : RandomVariable dom borel_sa (fold_right rvplus (const 0) l)}
-        {srv : SimpleRandomVariable (fold_right rvplus (const 0) l)}
+        {srv : FiniteRangeFunction (fold_right rvplus (const 0) l)}
         (rvs : Forall (RandomVariable dom borel_sa) l) 
-        (srvs : Forallt SimpleRandomVariable l) :
+        (srvs : Forallt FiniteRangeFunction l) :
     SimpleExpectation (fold_right rvplus (const 0) l) (rv:=rv) (srv:=srv) =
     list_sum (Forallt_map (fun x pf => SimpleExpectation x (rv:=fst pf) (srv:=snd pf)) (Forallt_conj (Forall_Forallt rvs) srvs)).
   Proof.
@@ -1614,7 +1614,7 @@ Section SimpleConditionalExpectation.
   Lemma expectation_indicator_sum_gen
         (rv_X : Ts -> R)
         {rv : RandomVariable dom borel_sa rv_X}
-        {srv : SimpleRandomVariable rv_X}
+        {srv : FiniteRangeFunction rv_X}
         (l : list dec_sa_event)
         (is_disj: ForallOrdPairs event_disjoint (map dsa_event l)) :
     SimpleExpectation (rvmult rv_X (EventIndicator (list_union_dec l))) =
@@ -1652,7 +1652,7 @@ Section SimpleConditionalExpectation.
   Lemma expectation_indicator_sum 
         (rv_X : Ts -> R)
         {rv : RandomVariable dom borel_sa rv_X}
-        {srv : SimpleRandomVariable rv_X}
+        {srv : FiniteRangeFunction rv_X}
         (l : list dec_sa_event)
         (is_part: is_partition_list (map dsa_event l)) :
     SimpleExpectation rv_X = 
@@ -1692,7 +1692,7 @@ Section SimpleConditionalExpectation.
         (P : event dom) 
         {rv_X : Ts -> R}
         {rv : RandomVariable dom borel_sa rv_X}
-        {srv : SimpleRandomVariable rv_X}
+        {srv : FiniteRangeFunction rv_X}
         (dec:forall x, {P x} + {~ P x})        
         (a : R) :
     ps_P P = 0 -> 
@@ -1714,7 +1714,7 @@ Section SimpleConditionalExpectation.
         (P : event dom) 
         {rv_X : Ts -> R}
         {rv : RandomVariable dom borel_sa rv_X}
-        {srv : SimpleRandomVariable rv_X}
+        {srv : FiniteRangeFunction rv_X}
         (dec:forall x, {P x} + {~ P x}) :
     ps_P P = 0 -> 
     SimpleExpectation (rvmult rv_X (EventIndicator dec)) = 0.
@@ -1734,7 +1734,7 @@ Section SimpleConditionalExpectation.
   Lemma gen_simple_conditional_expectation_scale_tower (P : event dom) 
         {rv_X : Ts -> R}
         {rv : RandomVariable dom borel_sa rv_X}
-        {srv : SimpleRandomVariable rv_X}
+        {srv : FiniteRangeFunction rv_X}
         (dec:forall x, {P x} + {~ P x}) :
     SimpleExpectation (gen_simple_conditional_expectation_scale P rv_X dec) =
     SimpleExpectation (rvmult rv_X (EventIndicator dec)).
@@ -1761,7 +1761,7 @@ Section SimpleConditionalExpectation.
   Lemma rv_md_gen_simple_scale
         (rv_X : Ts -> R)
         {rv : RandomVariable dom borel_sa rv_X}
-        {srv : SimpleRandomVariable rv_X}
+        {srv : FiniteRangeFunction rv_X}
         (l : list dec_sa_event) :
     Forall (RandomVariable dom borel_sa)
            (map (fun ev =>
@@ -1779,9 +1779,9 @@ Section SimpleConditionalExpectation.
   Lemma srv_md_gen_simple_scale
         (rv_X : Ts -> R)
         {rv : RandomVariable dom borel_sa rv_X}
-        {srv : SimpleRandomVariable rv_X}
+        {srv : FiniteRangeFunction rv_X}
         (l : list dec_sa_event) :
-    Forallt SimpleRandomVariable
+    Forallt FiniteRangeFunction
             (map (fun ev =>
                     gen_simple_conditional_expectation_scale
                       (dsa_event ev) rv_X (dsa_dec ev))
@@ -1797,7 +1797,7 @@ Section SimpleConditionalExpectation.
   Lemma gen_conditional_tower_law 
         (rv_X : Ts -> R)
         {rv : RandomVariable dom borel_sa rv_X}
-        {srv : SimpleRandomVariable rv_X}
+        {srv : FiniteRangeFunction rv_X}
         (l : list dec_sa_event)
         (ispart: is_partition_list (map dsa_event l)) :
     SimpleExpectation rv_X =
@@ -1828,7 +1828,7 @@ Section SimpleConditionalExpectation.
   Program Definition induced_sigma_generators
           {rv_X : Ts -> R}
           {rv:RandomVariable dom borel_sa rv_X}
-          (srv : SimpleRandomVariable rv_X)
+          (srv : FiniteRangeFunction rv_X)
     : list dec_sa_event
     :=
       map (fun c => Build_dec_sa_event
@@ -1843,7 +1843,7 @@ Section SimpleConditionalExpectation.
   Lemma induced_gen_ispart
         {rv_X : Ts -> R}
         {rv:RandomVariable dom borel_sa rv_X}
-        (srv : SimpleRandomVariable rv_X) :
+        (srv : FiniteRangeFunction rv_X) :
     is_partition_list (map dsa_event (induced_sigma_generators srv)).
   Proof. 
     unfold is_partition_list.
@@ -1873,8 +1873,8 @@ Section SimpleConditionalExpectation.
         (rv_X1 rv_X2 : Ts -> R)
         (rv1 : RandomVariable dom borel_sa rv_X1)
         (rv2 : RandomVariable dom borel_sa rv_X2)        
-        {srv1 : SimpleRandomVariable rv_X1}
-        {srv2 : SimpleRandomVariable rv_X2} :
+        {srv1 : FiniteRangeFunction rv_X1}
+        {srv2 : FiniteRangeFunction rv_X2} :
 
     SimpleExpectation (SimpleConditionalExpectation rv_X1 rv_X2) = SimpleExpectation rv_X1.
   Proof.
@@ -1902,10 +1902,10 @@ Section SimpleConditionalExpectation.
              (rv_X1 rv_X2 : Ts -> R)
              {rv1 : RandomVariable dom borel_sa rv_X1}
              {rv2 : RandomVariable dom borel_sa rv_X2}
-             {srv1 : SimpleRandomVariable rv_X1}
-             {srv2 : SimpleRandomVariable rv_X2} : Prop :=
-    forall (c2:R), In c2 (srv_vals (SimpleRandomVariable:=srv2)) ->
-                   exists (c1:R), In c1 (srv_vals (SimpleRandomVariable:=srv1)) /\
+             {srv1 : FiniteRangeFunction rv_X1}
+             {srv2 : FiniteRangeFunction rv_X2} : Prop :=
+    forall (c2:R), In c2 (srv_vals (FiniteRangeFunction:=srv2)) ->
+                   exists (c1:R), In c1 (srv_vals (FiniteRangeFunction:=srv1)) /\
                              (event_sub (preimage_singleton rv_X2 c2)
                                         (preimage_singleton rv_X1 c1)).
 
@@ -1988,7 +1988,7 @@ Section SimpleConditionalExpectation.
              {has_pre:HasPreimageSingleton cod}
              (rv_X : Ts -> Td)
              {rv : RandomVariable dom cod rv_X}
-             {srv : SimpleRandomVariable rv_X}
+             {srv : FiniteRangeFunction rv_X}
              (l : list (event dom)) : Prop :=
     is_partition_list l ->
     forall (p:event dom),
@@ -2191,8 +2191,8 @@ Section SimpleConditionalExpectation.
         (rv_X1 rv_X2 : Ts -> R)
         {rv1 : RandomVariable dom borel_sa rv_X1}
         {rv2 : RandomVariable dom borel_sa rv_X2}
-        {srv1 : SimpleRandomVariable rv_X1}
-        {srv2 : SimpleRandomVariable rv_X2} 
+        {srv1 : FiniteRangeFunction rv_X1}
+        {srv2 : FiniteRangeFunction rv_X2} 
         (dec:  (forall x, {p x} + {~ p x})) :
     (forall (omega:Ts), p omega -> rv_X1 omega = c) ->
     SimpleExpectation
@@ -2230,8 +2230,8 @@ Section SimpleConditionalExpectation.
         (rv_X1 rv_X2 : Ts -> R)
         {rv1 : RandomVariable dom borel_sa rv_X1}
         {rv2 : RandomVariable dom borel_sa rv_X2}
-        {srv1 : SimpleRandomVariable rv_X1}
-        {srv2 : SimpleRandomVariable rv_X2} 
+        {srv1 : FiniteRangeFunction rv_X1}
+        {srv2 : FiniteRangeFunction rv_X2} 
         (l : list dec_sa_event) :
     is_partition_list (map dsa_event l) ->
     partition_measurable rv_X1 (map dsa_event l) ->
@@ -2281,9 +2281,9 @@ Section SimpleConditionalExpectation.
         {rv2 : RandomVariable dom borel_sa rv_X2}
         {rv3 : RandomVariable dom borel_sa rv_X3}
 
-        {srv1 : SimpleRandomVariable rv_X1}
-        {srv2 : SimpleRandomVariable rv_X2} 
-        {srv3 : SimpleRandomVariable rv_X3} :     
+        {srv1 : FiniteRangeFunction rv_X1}
+        {srv2 : FiniteRangeFunction rv_X2} 
+        {srv3 : FiniteRangeFunction rv_X3} :     
     
     simple_sigma_measurable rv_X1 rv_X3 ->
     rv_eq (SimpleConditionalExpectation (rvmult rv_X1 rv_X2) rv_X3)

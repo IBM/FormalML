@@ -89,7 +89,7 @@ Section RbarExpectation.
        (fun
            (rvx2: Ts -> R)
            (rv2 : RandomVariable dom borel_sa rvx2)
-           (srv2: SimpleRandomVariable rvx2) =>
+           (srv2: FiniteRangeFunction rvx2) =>
            PositiveRandomVariable rvx2 /\ 
            (Rbar_rv_le rvx2 rv_X))).
 
@@ -440,7 +440,7 @@ Section RbarExpectation.
         (cphi : Ts -> R)
 
         (Xn_rv : forall n, RandomVariable dom borel_sa (Xn n))
-        (sphi : SimpleRandomVariable cphi)
+        (sphi : FiniteRangeFunction cphi)
         (phi_rv : RandomVariable dom borel_sa cphi)         
 
         (posphi: PositiveRandomVariable cphi)
@@ -516,7 +516,7 @@ Section RbarExpectation.
         (cphi : Ts -> R)
 
         (Xn_rv : forall n, RandomVariable dom borel_sa (Xn n))
-        (sphi : SimpleRandomVariable cphi)
+        (sphi : FiniteRangeFunction cphi)
         (phi_rv : RandomVariable dom borel_sa cphi)         
 
         (posphi: PositiveRandomVariable cphi)
@@ -603,7 +603,7 @@ Section RbarExpectation.
         (cphi : Ts -> R)
 
         (Xn_rv : forall n, RandomVariable dom borel_sa (Xn n))
-        (sphi : SimpleRandomVariable cphi)
+        (sphi : FiniteRangeFunction cphi)
         (phi_rv : RandomVariable dom borel_sa cphi)         
 
         (posphi: PositiveRandomVariable cphi)
@@ -639,7 +639,7 @@ Section RbarExpectation.
         assert (is_finite (Expectation_posRV
                              (rvmult cphi
                                      (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (cphi omega)))))).
-        * assert (srv1:SimpleRandomVariable  (rvmult cphi (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (cphi omega))))).
+        * assert (srv1:FiniteRangeFunction  (rvmult cphi (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (cphi omega))))).
           {
             apply srvmult; trivial.
             apply EventIndicator_pre_srv.
@@ -660,7 +660,7 @@ Section RbarExpectation.
         (phi : Ts -> R)
 
         (Xn_rv : forall n, RandomVariable dom borel_sa (Xn n))
-        (sphi : SimpleRandomVariable phi)
+        (sphi : FiniteRangeFunction phi)
         (phi_rv : RandomVariable dom borel_sa phi)         
 
         (posphi: PositiveRandomVariable phi)
@@ -715,7 +715,7 @@ Section RbarExpectation.
         (phi : Ts -> R)
 
         (Xn_rv : forall n, RandomVariable dom borel_sa (Xn n))
-        (sphi : SimpleRandomVariable phi)
+        (sphi : FiniteRangeFunction phi)
         (phi_rv : RandomVariable dom borel_sa phi)         
 
         (posphi: PositiveRandomVariable phi)
@@ -1013,7 +1013,7 @@ Section EventRestricted.
        (fun x : R =>
         exists
           (rvx : Ts -> R) (rv : RandomVariable dom borel_sa rvx) 
-        (srv : SimpleRandomVariable rvx),
+        (srv : FiniteRangeFunction rvx),
           (PositiveRandomVariable rvx /\ Rbar_rv_le (fun x0 : Ts => rvx x0) f) /\
           SimpleExpectation rvx = x)).
     destruct
@@ -1024,7 +1024,7 @@ Section EventRestricted.
                                                   RandomVariable
                                                     (event_restricted_sigma P)
                                                     borel_sa rvx) 
-        (srv : SimpleRandomVariable rvx),
+        (srv : FiniteRangeFunction rvx),
           (PositiveRandomVariable rvx /\
            Rbar_rv_le (fun x1 : event_restricted_domain P => rvx x1)
              (event_restricted_function P f)) /\ SimpleExpectation rvx = x0)).
@@ -1042,7 +1042,7 @@ Section EventRestricted.
       apply H1.
       exists (event_restricted_function P x2).
       exists (Restricted_RandomVariable P x2 x3).
-      exists (Restricted_SimpleRandomVariable P x2 x4).
+      exists (Restricted_FiniteRangeFunction P x2 x4).
       split.
       + split.
         * now apply Restricted_PositiveRandomVariable.

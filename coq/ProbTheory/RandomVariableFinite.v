@@ -327,7 +327,7 @@ Section fe.
 
   Lemma SimplePosExpectation_pos_zero x
         {rvx:RandomVariable dom borel_sa x} 
-        {xsrv:SimpleRandomVariable x} :
+        {xsrv:FiniteRangeFunction x} :
     almost prts eq x (const 0) ->
     SimpleExpectation x = 0.
   Proof.
@@ -368,8 +368,8 @@ Section fe.
   Lemma Expectation_simple_proper_almost x y
         {rvx:RandomVariable dom borel_sa x}
         {rvy:RandomVariable dom borel_sa y} 
-        {xsrv:SimpleRandomVariable x}
-        {ysrv:SimpleRandomVariable y} :
+        {xsrv:FiniteRangeFunction x}
+        {ysrv:FiniteRangeFunction y} :
     almost prts eq x y ->
     SimpleExpectation x = SimpleExpectation y.
   Proof.

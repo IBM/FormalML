@@ -571,15 +571,15 @@ Proof.
 Context {Ts:Type} {dom: SigmaAlgebra Ts}{Prts: ProbSpace dom}.
 
 Global Instance srvsum (X : nat -> Ts -> R)
-       {rv : forall (n:nat), SimpleRandomVariable (X n)} (n : nat) :
-  SimpleRandomVariable (rvsum X n).
+       {rv : forall (n:nat), FiniteRangeFunction (X n)} (n : nat) :
+  FiniteRangeFunction (rvsum X n).
 Proof.
   induction n.
   - assert (rv_eq  (rvsum X 0) (X 0%nat)).
     + intro x.
       unfold rvsum. cbn.
       lra.
-    + eapply SimpleRandomVariable_ext.
+    + eapply FiniteRangeFunction_ext.
       * symmetry; apply H.
       * apply rv.
   - assert (rv_eq (rvsum X (S n)) (rvplus (X (S n)) (rvsum X n))).
@@ -587,14 +587,14 @@ Proof.
       unfold rvplus, rvsum.
       rewrite sum_Sn; unfold plus; simpl.
       lra.
-    + eapply SimpleRandomVariable_ext.
+    + eapply FiniteRangeFunction_ext.
       * rewrite H; reflexivity.
       * apply srvplus; trivial.
 Qed.
 
 Global Instance srvite (X Y : Ts -> R){p : Prop}(dec : {p} + {~ p})
-       {rv_X : SimpleRandomVariable X} {rv_Y : SimpleRandomVariable Y} :
-  SimpleRandomVariable (if dec then X else Y).
+       {rv_X : FiniteRangeFunction X} {rv_Y : FiniteRangeFunction Y} :
+  FiniteRangeFunction (if dec then X else Y).
 Proof.
   match_destr.
 Qed.
@@ -619,20 +619,20 @@ Proof.
 Qed.
 
 Global Instance srvrvmaxlist (X : nat -> Ts -> R)
-       {rv : forall n, SimpleRandomVariable (X n)} (N : nat):
-  SimpleRandomVariable (rvmaxlist X N).
+       {rv : forall n, FiniteRangeFunction (X n)} (N : nat):
+  FiniteRangeFunction (rvmaxlist X N).
 Proof.
   unfold rvmaxlist.
   generalize (0%nat).
   induction N; simpl; intros s.
   - apply srvconst.
-  - assert (srv:SimpleRandomVariable (fun omega => Rmax (X s omega) (Rmax_list (map (fun n : nat => X n omega) (seq (S s) N))))).
+  - assert (srv:FiniteRangeFunction (fun omega => Rmax (X s omega) (Rmax_list (map (fun n : nat => X n omega) (seq (S s) N))))).
     {
       apply srvmax; auto.
     }
     destruct N.
     + simpl; auto.
-    + eapply SimpleRandomVariable_ext; try eapply srv.
+    + eapply FiniteRangeFunction_ext; try eapply srv.
       intros ?.
       reflexivity.
 Qed.
@@ -657,7 +657,7 @@ Proof.
 Qed.
 
 Fixpoint filtration_history (n : nat) (X : nat -> Ts -> R)
-         {srv : forall n, SimpleRandomVariable (X n)}
+         {srv : forall n, FiniteRangeFunction (X n)}
          {rv : forall n, RandomVariable dom borel_sa (X n)}
   : list dec_sa_event :=
   match n with
@@ -667,7 +667,7 @@ Fixpoint filtration_history (n : nat) (X : nat -> Ts -> R)
 
 Lemma ash_6_1_4 (X : nat -> Ts -> R)(n : nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
-      {srv : forall (n:nat), SimpleRandomVariable (X n)}
+      {srv : forall (n:nat), FiniteRangeFunction (X n)}
       (HC : forall n, 
           gen_SimpleConditionalExpectation (X n) (filtration_history n X) = const 0)  :
   let S := fun j => rvabs (rvsum X j) in

@@ -110,17 +110,17 @@ End Const.
 Section Simple.
   Context {Ts:Type} {Td:Type}.
 
-  Class SimpleRandomVariable
+  Class FiniteRangeFunction
         (rv_X:Ts->Td)
     := { 
     srv_vals : list Td ;
     srv_vals_complete : forall x, In (rv_X x) srv_vals;
       }.
 
-  Lemma SimpleRandomVariable_ext (x y:Ts->Td) :
+  Lemma FiniteRangeFunction_ext (x y:Ts->Td) :
     rv_eq x y ->
-    SimpleRandomVariable x ->
-    SimpleRandomVariable y.
+    FiniteRangeFunction x ->
+    FiniteRangeFunction y.
   Proof.
     repeat red; intros.
     invcs X.
@@ -130,7 +130,7 @@ Section Simple.
   Qed.
 
   Global Program Instance srv_crv (rv_X:Ts->Td) {crv:ConstantRandomVariable rv_X} :
-    SimpleRandomVariable rv_X
+    FiniteRangeFunction rv_X
     := {
     srv_vals := [srv_val]
       }.
@@ -141,20 +141,20 @@ Section Simple.
   Qed.
 
   Global Program Instance srv_fun (rv_X : Ts -> Td) (f : Td -> Td)
-          (srv:SimpleRandomVariable rv_X) : 
-    SimpleRandomVariable (fun v => f (rv_X v)) :=
+          (srv:FiniteRangeFunction rv_X) : 
+    FiniteRangeFunction (fun v => f (rv_X v)) :=
     {srv_vals := map f srv_vals}.
   Next Obligation.
     destruct srv.
     now apply in_map.
   Qed.
 
-  Definition srvconst c : SimpleRandomVariable (const c)
+  Definition srvconst c : FiniteRangeFunction (const c)
     := srv_crv (const c).
 
   Program Instance nodup_simple_random_variable (dec:forall (x y:Td), {x = y} + {x <> y})
           {rv_X:Ts->Td}
-          (srv:SimpleRandomVariable rv_X) : SimpleRandomVariable rv_X
+          (srv:FiniteRangeFunction rv_X) : FiniteRangeFunction rv_X
     := { srv_vals := nodup dec srv_vals }.
   Next Obligation.
     apply nodup_In.
@@ -164,8 +164,8 @@ Section Simple.
   Lemma nodup_simple_random_variable_NoDup
         (dec:forall (x y:Td), {x = y} + {x <> y})
         {rv_X}
-        (srv:SimpleRandomVariable rv_X) :
-    NoDup (srv_vals (SimpleRandomVariable:=nodup_simple_random_variable dec srv)).
+        (srv:FiniteRangeFunction rv_X) :
+    NoDup (srv_vals (FiniteRangeFunction:=nodup_simple_random_variable dec srv)).
   Proof.
     simpl.
     apply NoDup_nodup.
@@ -173,7 +173,7 @@ Section Simple.
 
 
 Lemma srv_singleton_rv (rv_X : Ts -> Td)
-        (srv:SimpleRandomVariable rv_X) 
+        (srv:FiniteRangeFunction rv_X) 
         (dom: SigmaAlgebra Ts)
         (cod: SigmaAlgebra Td) :
     (forall (c : Td), In c srv_vals -> sa_sigma (pre_event_preimage rv_X (pre_event_singleton c))) ->
@@ -241,7 +241,7 @@ Instance rv_fun_simple {dom: SigmaAlgebra Ts}
          {cod: SigmaAlgebra Td}
          (x : Ts -> Td) (f : Td -> Td)
          {rvx : RandomVariable dom cod x}
-         {srvx : SimpleRandomVariable x} :
+         {srvx : FiniteRangeFunction x} :
       (forall (c : Td), In c srv_vals -> sa_sigma (pre_event_preimage x (pre_event_singleton c))) ->
      RandomVariable dom cod (fun u => f (x u)).    
 Proof.
@@ -308,8 +308,8 @@ Require Import Finite ListAdd SigmaAlgebras.
 Section Finite.
   Context {Ts:Type}{Td:Type}.
 
-  Program Instance Finite_SimpleRandomVariable {fin:Finite Ts}  (rv_X:Ts->Td)
-    : SimpleRandomVariable rv_X
+  Program Instance Finite_FiniteRangeFunction {fin:Finite Ts}  (rv_X:Ts->Td)
+    : FiniteRangeFunction rv_X
     := {| 
     srv_vals := map rv_X elms
       |}.
@@ -338,9 +338,9 @@ End Finite.
 Section Event_restricted.
   Context {Ts:Type} {Td:Type} {σ:SigmaAlgebra Ts} {cod : SigmaAlgebra Td}.
 
-  Global Program Instance Restricted_SimpleRandomVariable (e:event σ) (f : Ts -> Td)
-    (srv: SimpleRandomVariable f) :
-    SimpleRandomVariable (event_restricted_function e f) :=
+  Global Program Instance Restricted_FiniteRangeFunction (e:event σ) (f : Ts -> Td)
+    (srv: FiniteRangeFunction f) :
+    FiniteRangeFunction (event_restricted_function e f) :=
     { srv_vals := srv_vals }.
   Next Obligation.
     destruct srv.
@@ -442,8 +442,8 @@ Section Event_restricted.
     Qed.
 
   Global Instance lift_event_restricted_domain_fun_srv (default:Td) {P:event σ} (f:event_restricted_domain P -> Td) :
-    SimpleRandomVariable f -> 
-    SimpleRandomVariable (lift_event_restricted_domain_fun default f).
+    FiniteRangeFunction f -> 
+    FiniteRangeFunction (lift_event_restricted_domain_fun default f).
   Proof.
     intros srv.
     exists (default::srv_vals).

@@ -1077,23 +1077,23 @@ algorithm.
       now apply Expectation_ext.
     Qed.
 
-    Lemma forall_SimpleRandomVariable_ext {rv1 rv2 : nat -> Ts -> R} 
-          {srv1 : forall n, SimpleRandomVariable (rv1 n)} :
+    Lemma forall_FiniteRangeFunction_ext {rv1 rv2 : nat -> Ts -> R} 
+          {srv1 : forall n, FiniteRangeFunction (rv1 n)} :
       (forall n, rv_eq (rv1 n) (rv2 n)) ->
-      forall n, SimpleRandomVariable (rv2 n).
+      forall n, FiniteRangeFunction (rv2 n).
     Proof.
       intros.
       specialize (srv1 n).
       specialize (H n).
-      generalize (SimpleRandomVariable_ext _ _ H srv1).
+      generalize (FiniteRangeFunction_ext _ _ H srv1).
       trivial.
     Qed.
 
     Lemma forall_SimpleExpectation_ext {rv1 rv2 : nat -> Ts -> R}
           {rrv1 : forall n, RandomVariable dom borel_sa (rv1 n)}
-          {srv1 : forall n, SimpleRandomVariable (rv1 n)}
+          {srv1 : forall n, FiniteRangeFunction (rv1 n)}
           {rrv2 : forall n, RandomVariable dom borel_sa (rv2 n)}
-          {srv2 : forall n, SimpleRandomVariable (rv2 n)} :
+          {srv2 : forall n, FiniteRangeFunction (rv2 n)} :
       (forall n, rv_eq (rv1 n) (rv2 n)) ->
       forall n, SimpleExpectation (rv1 n) = SimpleExpectation (rv2 n).
     Proof.
@@ -1217,7 +1217,7 @@ algorithm.
 
    Instance rv_Fa (a:R) (x: Ts -> vector R I) 
             (rvx : RandomVariable dom (Rvector_borel_sa I) x) 
-            (srvx : SimpleRandomVariable x) :
+            (srvx : FiniteRangeFunction x) :
      RandomVariable dom (Rvector_borel_sa I) (F_alpha a x).
    Proof.
      eapply srv_singleton_rv; intros.
@@ -1229,8 +1229,8 @@ algorithm.
    Lemma L2_convergent_helper (C : R) (w x : nat -> Ts -> vector R I) (xstar : vector R I) (n:nat)
          (rx : forall n, RandomVariable dom (Rvector_borel_sa I) (x n))
          (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
-         (srw : forall n, SimpleRandomVariable  (w n)) 
-         (srx : forall n, SimpleRandomVariable  (x n)) :
+         (srw : forall n, FiniteRangeFunction  (w n)) 
+         (srx : forall n, FiniteRangeFunction  (x n)) :
      (forall k, (x (S k)) = 
                  vecrvplus (F_alpha (α k) (x k))
                            (vecrvscale (α k) (w k))) ->
@@ -1314,7 +1314,7 @@ algorithm.
 
     Lemma SimpleExpectation_pos (f : Ts -> R)
           (rx : RandomVariable dom borel_sa f)
-          (srv: SimpleRandomVariable f) :
+          (srv: FiniteRangeFunction f) :
       (forall omega, 0 <= f omega) ->
       0 <= SimpleExpectation f.
     Proof.
@@ -1327,7 +1327,7 @@ algorithm.
 
     Lemma SimpleExpectation_rvinner_pos (f : Ts -> vector R I) 
           (rx : RandomVariable dom (Rvector_borel_sa I) f)
-          (srv: SimpleRandomVariable f) :
+          (srv: FiniteRangeFunction f) :
       0 <= SimpleExpectation (rvinner f f).
     Proof.
       apply SimpleExpectation_pos.
@@ -1337,7 +1337,7 @@ algorithm.
 
     Lemma SimpleExpectation_rvmaxabs_pos (f : Ts -> vector R I) 
           (rx : RandomVariable dom (Rvector_borel_sa I) f)
-          (srv: SimpleRandomVariable f) :
+          (srv: FiniteRangeFunction f) :
       0 <= SimpleExpectation (rvmaxabs f).
     Proof.
       apply SimpleExpectation_pos.
@@ -1350,7 +1350,7 @@ algorithm.
 
     Lemma aux_seq (C: R) (x : nat -> Ts -> vector R I) (v : nat -> R) (xstar : vector R I)
          (rx : forall n, RandomVariable dom (Rvector_borel_sa I) (x n))
-         (srx : forall n, SimpleRandomVariable  (x n)) :
+         (srx : forall n, FiniteRangeFunction  (x n)) :
       v (0%nat) = SimpleExpectation 
                     (rvinner 
                        (vecrvminus (x (0%nat)) (const xstar))
@@ -1387,7 +1387,7 @@ algorithm.
     
     Lemma aux_seq_lim (C: R) (x : nat -> Ts -> vector R I) (v : nat -> R) (xstar : vector R I)
          (rx : forall n, RandomVariable dom (Rvector_borel_sa I) (x n))
-         (srx : forall n, SimpleRandomVariable  (x n)) :
+         (srx : forall n, FiniteRangeFunction  (x n)) :
       0 <= C ->
       0 <= gamma < 1 ->
       (forall n, 0 <= α n <= 1) -> 
@@ -1579,7 +1579,7 @@ algorithm.
 
    Lemma partition_measurable_vecrvminus_F_alpha_const (x : Ts -> vector R I)
          {rv : RandomVariable dom (Rvector_borel_sa I) x}
-         {srv : SimpleRandomVariable x}
+         {srv : FiniteRangeFunction x}
          (a : R) (xstar : vector R I) 
          (l : list (event dom)) :
      is_partition_list l ->
@@ -1598,7 +1598,7 @@ algorithm.
   Definition update_sa_dec_history (l : list dec_sa_event)
           {rv_X : Ts -> vector R I}
           {rv:RandomVariable dom (Rvector_borel_sa I) rv_X}
-          (srv : SimpleRandomVariable rv_X) : list dec_sa_event
+          (srv : FiniteRangeFunction rv_X) : list dec_sa_event
     :=                                                   
       refine_dec_sa_partitions (vec_induced_sigma_generators srv) l.
 
@@ -1606,7 +1606,7 @@ algorithm.
           (l : list dec_sa_event)
           {rv_X : Ts -> vector R I}
           {rv:RandomVariable dom (Rvector_borel_sa I) rv_X}
-          (srv : SimpleRandomVariable rv_X) :
+          (srv : FiniteRangeFunction rv_X) :
     is_partition_list (map dsa_event l) ->
     is_partition_list (map dsa_event (update_sa_dec_history l srv)).
   Proof.
@@ -1620,7 +1620,7 @@ algorithm.
           (l : list dec_sa_event)
           {rv_X : Ts -> vector R I}
           {rv:RandomVariable dom (Rvector_borel_sa I) rv_X}
-          (srv : SimpleRandomVariable rv_X) :
+          (srv : FiniteRangeFunction rv_X) :
     partition_measurable (cod:=Rvector_borel_sa I) rv_X (map dsa_event (update_sa_dec_history l srv)).
   Proof.
     unfold partition_measurable, update_sa_dec_history.
@@ -1657,8 +1657,8 @@ algorithm.
          (hist : nat -> list dec_sa_event) 
          (rx : forall n, RandomVariable dom (Rvector_borel_sa I) (x n))
          (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
-         (srw : forall n, SimpleRandomVariable  (w n)) 
-         (srx : forall n, SimpleRandomVariable  (x n)) :
+         (srw : forall n, FiniteRangeFunction  (w n)) 
+         (srx : forall n, FiniteRangeFunction  (x n)) :
       0 <= C ->
       0 <= gamma < 1 ->
       xstar = F xstar ->
@@ -1784,9 +1784,9 @@ algorithm.
          end.
     
     Global Instance L2_convergent_x_srv (xinit:Ts->vector R I) (w: nat -> Ts -> vector R I) (n:nat)
-          (srx : SimpleRandomVariable xinit)
-          (srw : forall n, SimpleRandomVariable (w n)) :
-      SimpleRandomVariable (L2_convergent_x xinit w n).
+          (srx : FiniteRangeFunction xinit)
+          (srw : forall n, FiniteRangeFunction (w n)) :
+      FiniteRangeFunction (L2_convergent_x xinit w n).
     Proof.
       induction n.
       - now simpl.
@@ -1795,9 +1795,9 @@ algorithm.
 
     Global Instance L2_convergent_x_rv (xinit:Ts->vector R I) (w: nat -> Ts -> vector R I) (n:nat)
           (rx : RandomVariable dom (Rvector_borel_sa I) xinit)
-          (srx : SimpleRandomVariable xinit)
+          (srx : FiniteRangeFunction xinit)
           (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n)) 
-          (srw : forall n, SimpleRandomVariable (w n)) :
+          (srw : forall n, FiniteRangeFunction (w n)) :
       RandomVariable dom (Rvector_borel_sa I) (L2_convergent_x xinit w n). 
     Proof.
       induction n.
@@ -1809,7 +1809,7 @@ algorithm.
     Section hist.
       Context (x:nat->Ts->vector R I).
       Context (rvx:forall n, RandomVariable dom (Rvector_borel_sa I) (x n)).
-      Context (srvx: forall n, SimpleRandomVariable (x n)).
+      Context (srvx: forall n, FiniteRangeFunction (x n)).
       
       Fixpoint L2_convergent_hist (n:nat) : list dec_sa_event
         := match n with
@@ -1847,8 +1847,8 @@ algorithm.
     Theorem L2_convergent (C : R) (xinit:Ts->vector R I) (w : nat -> Ts -> vector R I)
           (rxinit : RandomVariable dom (Rvector_borel_sa I) xinit)
           (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
-          (srvxinit : SimpleRandomVariable xinit)
-          (srw : forall n, SimpleRandomVariable  (w n)) :
+          (srvxinit : FiniteRangeFunction xinit)
+          (srw : forall n, FiniteRangeFunction  (w n)) :
       0 <= C ->
       0 <= gamma < 1 ->
       (forall n, 0 <= α n <= 1) -> 
@@ -2000,7 +2000,7 @@ algorithm.
     Lemma SimpleExpectation_rvsqr_pos (f : Ts -> R)
           {prts: ProbSpace dom}
           {rx : RandomVariable dom borel_sa f}
-          {srv: SimpleRandomVariable f}       :
+          {srv: FiniteRangeFunction f}       :
       0 <= SimpleExpectation (rvsqr f).
     Proof.
       apply SimpleExpectation_pos.
@@ -2014,7 +2014,7 @@ algorithm.
         (pf : (i < n)%nat)
         {prts: ProbSpace dom}
         (Xn: nat -> Ts -> vector R n) 
-        (srvxn : forall n0, SimpleRandomVariable (Xn n0))
+        (srvxn : forall n0, FiniteRangeFunction (Xn n0))
         (rvxn : forall n0, RandomVariable dom (Rvector_borel_sa n) (Xn n0)) :
 
         is_lim_seq
@@ -2042,7 +2042,7 @@ algorithm.
           (α : nat -> R)
           (eps : posreal) (C : R) (w : nat -> Ts -> vector R n)
           (rw : forall n0, RandomVariable dom (Rvector_borel_sa n) (w n0))
-          (srw : forall n0, SimpleRandomVariable  (w n0)) (i : nat) (pf : (i < n)%nat) :
+          (srw : forall n0, FiniteRangeFunction  (w n0)) (i : nat) (pf : (i < n)%nat) :
       0 <= C ->
       0 <= gamma < 1 ->
       (forall n, 0 <= α n <= 1) ->       
@@ -2106,7 +2106,7 @@ algorithm.
         (pf : (i < n)%nat)
         {prts: ProbSpace dom}
         (Xn: nat -> Ts -> vector R n) 
-        (srvxn : forall n0, SimpleRandomVariable (Xn n0))
+        (srvxn : forall n0, FiniteRangeFunction (Xn n0))
         (rvxn : forall n0, RandomVariable dom (Rvector_borel_sa n) (Xn n0)) :
         is_lim_seq
           (fun n0 : nat =>
@@ -2136,7 +2136,7 @@ algorithm.
           (eps : posreal)
         {prts: ProbSpace dom}          
         (Xn: nat -> Ts -> vector R n) 
-        (srvxn : forall n0, SimpleRandomVariable (Xn n0))
+        (srvxn : forall n0, FiniteRangeFunction (Xn n0))
         (rvxn : forall n0, RandomVariable dom (Rvector_borel_sa n) (Xn n0)) :
         is_lim_seq
           (fun n0 : nat =>
@@ -2151,7 +2151,7 @@ algorithm.
     Lemma conv_l2_conv_linf_sqr {n:nat}
         {prts: ProbSpace dom}                    
         (Xn: nat -> Ts -> vector R n) 
-        (srvxn : forall n0, SimpleRandomVariable (Xn n0))
+        (srvxn : forall n0, FiniteRangeFunction (Xn n0))
         (rvxn : forall n0, RandomVariable dom (Rvector_borel_sa n) (Xn n0)) :
         is_lim_seq
           (fun n0 : nat =>
@@ -2180,7 +2180,7 @@ algorithm.
         (X:  Ts -> R)
         {prts: ProbSpace dom}                    
         {rv : RandomVariable dom borel_sa X} 
-        {srv: SimpleRandomVariable X}  :       
+        {srv: FiniteRangeFunction X}  :       
       IsFiniteExpectation prts X.
     Proof.
       generalize (Expectation_simple X); intros.
@@ -2191,8 +2191,8 @@ algorithm.
     Program Instance srvpower
            (rv_X : Ts -> R) (r:R)
            {prts: ProbSpace dom}                    
-           {srv:SimpleRandomVariable rv_X} : 
-      SimpleRandomVariable (rvpower (rvabs rv_X) (const r)) :=
+           {srv:FiniteRangeFunction rv_X} : 
+      FiniteRangeFunction (rvpower (rvabs rv_X) (const r)) :=
       {srv_vals := map (fun x => power (Rabs x) r) srv_vals }.
     Next Obligation.
       unfold rvpower, rvabs, const.
@@ -2206,7 +2206,7 @@ algorithm.
         (X:  Ts -> R)
         {prts: ProbSpace dom}                    
         (rv : RandomVariable dom borel_sa X) 
-        (srv: SimpleRandomVariable X)  :       
+        (srv: FiniteRangeFunction X)  :       
       IsLp prts 2 X.
     Proof.
       unfold IsLp.
@@ -2219,7 +2219,7 @@ algorithm.
         (X: Ts -> R)
         {prts: ProbSpace dom}                    
         {rv : RandomVariable dom borel_sa X} 
-        {srv : SimpleRandomVariable X} :
+        {srv : FiniteRangeFunction X} :
       SimpleExpectation X = FiniteExpectation prts X.
       generalize (Expectation_simple X); intros.
       generalize (FiniteExpectation_Expectation prts X); intros.
@@ -2231,7 +2231,7 @@ algorithm.
           (Xn: nat -> Ts -> R)
         {prts: ProbSpace dom}                              
         (rvxn : forall n, RandomVariable dom borel_sa (Xn n)) 
-        (srvxn : forall n, SimpleRandomVariable (Xn n))  :       
+        (srvxn : forall n, FiniteRangeFunction (Xn n))  :       
     is_lim_seq (fun n => SimpleExpectation (rvsqr (Xn n))) 0 ->
     is_lim_seq (fun n => SimpleExpectation (rvabs (Xn n))) 0.
     Proof.
@@ -2263,7 +2263,7 @@ algorithm.
     Lemma conv_l2_conv_linf {n:nat}
         (Xn: nat -> Ts -> vector R n) 
         {prts: ProbSpace dom}                              
-        {srvxn : forall n0, SimpleRandomVariable (Xn n0)}
+        {srvxn : forall n0, FiniteRangeFunction (Xn n0)}
         {rvxn : forall n0, RandomVariable dom (Rvector_borel_sa n) (Xn n0)} :
         is_lim_seq
           (fun n0 : nat =>
@@ -2290,7 +2290,7 @@ algorithm.
           (eps : posreal)
           {prts: ProbSpace dom}                              
           (X : Ts -> vector R n)
-          (srv : SimpleRandomVariable X)
+          (srv : FiniteRangeFunction X)
           (rv :  RandomVariable dom (Rvector_borel_sa n) X) :
       pre_event_equiv
         (fun omega => rvmaxabs X omega <= eps)
@@ -2331,7 +2331,7 @@ algorithm.
           (eps : posreal)
           {prts: ProbSpace dom}                              
           (X : Ts -> vector R (S n))
-          (srv : SimpleRandomVariable X)
+          (srv : FiniteRangeFunction X)
           (rv :  RandomVariable dom (Rvector_borel_sa (S n)) X) :
       pre_event_equiv
         (fun omega => rvmaxabs X omega >= eps)
@@ -2374,7 +2374,7 @@ algorithm.
           (eps : posreal)
           {prts: ProbSpace dom}                              
           (X : Ts -> vector R n)
-          (srv : SimpleRandomVariable X)
+          (srv : FiniteRangeFunction X)
           (rv :  RandomVariable dom (Rvector_borel_sa n) X) :
       pre_event_equiv
         (fun omega => rvmaxabs X omega >= eps)
@@ -2410,7 +2410,7 @@ algorithm.
         (eps : posreal)
           {prts: ProbSpace dom}                              
         (Xn: nat -> Ts -> vector R n) 
-        (srvxn : forall n0, SimpleRandomVariable (Xn n0))
+        (srvxn : forall n0, FiniteRangeFunction (Xn n0))
         (rvxn : forall n0, RandomVariable dom (Rvector_borel_sa n) (Xn n0)) :
         is_lim_seq
           (fun n0 : nat =>
@@ -2617,7 +2617,7 @@ algorithm.
           {prts: ProbSpace dom}                              
           (rx : forall n0, RandomVariable dom (Rvector_borel_sa (S n)) (x n0))
           (rw : forall n0, RandomVariable dom (Rvector_borel_sa (S n)) (w n0))
-          (srw : forall n0, SimpleRandomVariable  (w n0)) :
+          (srw : forall n0, FiniteRangeFunction  (w n0)) :
       P < 1 ->
       0 <= C ->
       0 <= gamma < 1 ->
@@ -2919,7 +2919,7 @@ algorithm.
           {prts: ProbSpace dom}                              
           (rx : forall n0, RandomVariable dom (Rvector_borel_sa (S n)) (x n0))
           (rw : forall n0, RandomVariable dom (Rvector_borel_sa (S n)) (w n0))
-          (srw : forall n0, SimpleRandomVariable  (w n0)) :
+          (srw : forall n0, FiniteRangeFunction  (w n0)) :
       P < 1 ->
       0 <= C ->
       0 <= gamma < 1 ->
@@ -3057,7 +3057,7 @@ algorithm.
           {prts: ProbSpace dom}                              
           (rx : forall n0, RandomVariable dom (Rvector_borel_sa (S n)) (x n0))
           (rw : forall n0, RandomVariable dom (Rvector_borel_sa (S n)) (w n0))
-          (srw : forall n0, SimpleRandomVariable  (w n0)) :
+          (srw : forall n0, FiniteRangeFunction  (w n0)) :
       0 <= gamma < 1 ->
       gamma + eps < 1 -> 
       (forall n, 0 <= α n <= 1) ->       
