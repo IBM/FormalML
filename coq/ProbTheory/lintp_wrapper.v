@@ -217,12 +217,12 @@ Next Obligation.
   Definition Rbar_NonnegExpectation {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) (f : Ts -> Rbar) := 
     LInt_p (ProbSpace_measure prts) f.
 
-  Class Rbar_PositiveRandomVariable {Ts}
+  Class Rbar_NonnegativeFunction {Ts}
           (rv_X:Ts->Rbar) : Prop :=
     prv : forall (x:Ts), (Rbar_le 0 (rv_X x)).
 
   Lemma Rbar_pos_nonneg {Ts} (f : Ts -> Rbar) 
-        (prv : Rbar_PositiveRandomVariable f) :
+        (prv : Rbar_NonnegativeFunction f) :
     non_neg f.
   Proof.
     easy.
@@ -250,8 +250,8 @@ Next Obligation.
   Qed.
 
   Lemma Rbar_NonnegExpectation_plus {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) (f g : Ts -> Rbar) 
-    {prv1 : Rbar_PositiveRandomVariable f}
-    {prv2 : Rbar_PositiveRandomVariable g} 
+    {prv1 : Rbar_NonnegativeFunction f}
+    {prv2 : Rbar_NonnegativeFunction g} 
     {rv1 : RandomVariable dom Rbar_borel_sa f}
     {rv2 : RandomVariable dom Rbar_borel_sa g}    :
     inhabited Ts ->
@@ -266,7 +266,7 @@ Next Obligation.
   Qed.
     
   Lemma Rbar_NonnegExpectation_finite_ae_finite {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) (f : Ts -> Rbar)
-    {prv : Rbar_PositiveRandomVariable f}
+    {prv : Rbar_NonnegativeFunction f}
     {rv : RandomVariable dom Rbar_borel_sa f} :
     inhabited Ts ->
     is_finite (Rbar_NonnegExpectation prts f) ->
@@ -286,7 +286,7 @@ Next Obligation.
   Qed.
 
   Lemma sa_sigma_is_finite {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) (f : Ts -> Rbar)
-    {prv : Rbar_PositiveRandomVariable f}
+    {prv : Rbar_NonnegativeFunction f}
     {rv : RandomVariable dom Rbar_borel_sa f} :
     sa_sigma (fun x => is_finite (f x)).
   Proof.
@@ -309,7 +309,7 @@ Next Obligation.
   Qed.
 
   Lemma Rbar_NonnegExpectation_finite_ps_P_1 {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) (f : Ts -> Rbar)
-    {prv : Rbar_PositiveRandomVariable f}
+    {prv : Rbar_NonnegativeFunction f}
     {rv : RandomVariable dom Rbar_borel_sa f} :
     inhabited Ts ->
     is_finite (Rbar_NonnegExpectation prts f) ->
@@ -341,7 +341,7 @@ Next Obligation.
   Qed.
 
   Lemma Rbar_NonnegExpectation_Sup_seq {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) (f : nat -> Ts -> Rbar)
-    {prv : forall n, Rbar_PositiveRandomVariable (f n)}
+    {prv : forall n, Rbar_NonnegativeFunction (f n)}
     {rv : forall n, RandomVariable dom Rbar_borel_sa (f n)} :
     inhabited Ts ->
     (forall x n, Rbar_le (f n x) (f (S n) x)) ->
@@ -394,7 +394,7 @@ Next Obligation.
 
   Lemma measurable_lim_seq' {Ts} (dom : SigmaAlgebra Ts)
         (f : nat -> Ts -> Rbar)
-        (prv: forall n, Rbar_PositiveRandomVariable (f n))
+        (prv: forall n, Rbar_NonnegativeFunction (f n))
         (rv : forall n, RandomVariable dom Rbar_borel_sa (f n)) :
     RandomVariable dom Rbar_borel_sa (fun x => Lim_seq' (fun n => f n x)).
   Proof.
@@ -406,7 +406,7 @@ Next Obligation.
 
   Lemma Rbar_NonnegExpectation_Lim_seq' {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) 
         (f : nat -> Ts -> Rbar)
-        (prv : forall n, Rbar_PositiveRandomVariable (f n))
+        (prv : forall n, Rbar_NonnegativeFunction (f n))
         (rv : forall n, RandomVariable dom Rbar_borel_sa (f n)) :
         inhabited Ts ->
         (forall x, ex_lim_seq' (fun n => f n x)) ->        

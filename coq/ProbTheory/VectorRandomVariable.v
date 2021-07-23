@@ -628,8 +628,8 @@ Section vector_ops.
   Qed.
 
   Global Instance Rvector_sum_pos {n} (f : Ts -> vector R n) :
-    (forall i pf, PositiveRandomVariable (fun x => vector_nth i pf (f x))) ->
-    PositiveRandomVariable (vecrvsum f).
+    (forall i pf, NonnegativeFunction (fun x => vector_nth i pf (f x))) ->
+    NonnegativeFunction (vecrvsum f).
   Proof.
     intros FP ?.
     apply Rvector_sum_pos.
@@ -640,8 +640,8 @@ Section vector_ops.
   Qed.
 
   Global Instance Rvector_inner_pos_mult {n} (f g : Ts -> vector R n) :
-    (forall i pf, PositiveRandomVariable (fun x => vector_nth i pf (f x) * vector_nth i pf (g x))) ->
-    PositiveRandomVariable (rvinner f g).
+    (forall i pf, NonnegativeFunction (fun x => vector_nth i pf (f x) * vector_nth i pf (g x))) ->
+    NonnegativeFunction (rvinner f g).
   Proof.
     intros ?.
     apply Rvector_sum_pos; intros.
@@ -651,18 +651,18 @@ Section vector_ops.
   Qed.
 
   Global Instance Rvector_inner_self_pos {n} (f : Ts -> vector R n) :
-    PositiveRandomVariable (rvinner f f).
+    NonnegativeFunction (rvinner f f).
   Proof.
     intros ?.
     apply Rvector_inner_pos.
   Qed.
 
   Global Instance Rvector_inner_pos {n} (f g : Ts -> vector R n) :
-    (forall i pf, PositiveRandomVariable (fun x => vector_nth i pf (f x))) ->
-    (forall i pf, PositiveRandomVariable (fun x => vector_nth i pf (g x))) ->
-    PositiveRandomVariable (rvinner f g).
+    (forall i pf, NonnegativeFunction (fun x => vector_nth i pf (f x))) ->
+    (forall i pf, NonnegativeFunction (fun x => vector_nth i pf (g x))) ->
+    NonnegativeFunction (rvinner f g).
   Proof.
-    unfold PositiveRandomVariable.
+    unfold NonnegativeFunction.
     intros ??.
     apply Rvector_inner_pos_mult.
     intros i pf ?.

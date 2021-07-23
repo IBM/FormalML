@@ -26,9 +26,9 @@ Section RbarExpectation.
 
   Global Instance Rbar_rvabs_prv
              (rv_X : Ts -> Rbar) :
-      Rbar_PositiveRandomVariable (Rbar_rvabs rv_X).
+      Rbar_NonnegativeFunction (Rbar_rvabs rv_X).
     Proof.
-      unfold Rbar_PositiveRandomVariable, Rbar_rvabs.
+      unfold Rbar_NonnegativeFunction, Rbar_rvabs.
       intros.
       unfold Rbar_abs.
       match_destr.
@@ -72,8 +72,8 @@ Section RbarExpectation.
     Global Instance Rbar_rvplus_pos_rv  (rv_X1 rv_X2 : Ts -> Rbar)
            {rvx1 : RandomVariable dom Rbar_borel_sa rv_X1} 
            {rvx2 : RandomVariable dom Rbar_borel_sa rv_X2} 
-           {prvx1 : Rbar_PositiveRandomVariable rv_X1}
-           {prvx2 : Rbar_PositiveRandomVariable rv_X2} :
+           {prvx1 : Rbar_NonnegativeFunction rv_X1}
+           {prvx2 : Rbar_NonnegativeFunction rv_X2} :
       RandomVariable dom Rbar_borel_sa (Rbar_rvplus rv_X1 rv_X2).
     Proof.
       apply Rbar_rvplus_rv; trivial.
@@ -84,19 +84,19 @@ Section RbarExpectation.
 
   Definition Rbar_NonnegExpectation
              (rv_X : Ts -> Rbar)
-             {posrv:Rbar_PositiveRandomVariable rv_X} :  Rbar   :=
+             {posrv:Rbar_NonnegativeFunction rv_X} :  Rbar   :=
     (SimpleExpectationSup
        (fun
            (rvx2: Ts -> R)
            (rv2 : RandomVariable dom borel_sa rvx2)
            (srv2: FiniteRangeFunction rvx2) =>
-           PositiveRandomVariable rvx2 /\ 
+           NonnegativeFunction rvx2 /\ 
            (Rbar_rv_le rvx2 rv_X))).
 
   Lemma Rbar_NonnegExpectation_ext 
         {rv_X1 rv_X2 : Ts -> Rbar}
-        (prv1:Rbar_PositiveRandomVariable rv_X1) 
-        (prv2:Rbar_PositiveRandomVariable rv_X2):
+        (prv1:Rbar_NonnegativeFunction rv_X1) 
+        (prv2:Rbar_NonnegativeFunction rv_X2):
     rv_eq rv_X1 rv_X2 ->
     Rbar_NonnegExpectation rv_X1 = Rbar_NonnegExpectation rv_X2.
   Proof.
@@ -114,7 +114,7 @@ Section RbarExpectation.
 
   Lemma Rbar_NonnegExpectation_pf_irrel 
         {rv_X: Ts -> R}
-        (prv1 prv2:Rbar_PositiveRandomVariable rv_X) :
+        (prv1 prv2:Rbar_NonnegativeFunction rv_X) :
     Rbar_NonnegExpectation rv_X (posrv:=prv1) = Rbar_NonnegExpectation rv_X (posrv:=prv2).
   Proof.
     apply Rbar_NonnegExpectation_ext.
@@ -251,9 +251,9 @@ Section RbarExpectation.
   Qed.
 
   Global Instance Rbar_pos_fun_pos  (f : Ts -> Rbar)  :
-    Rbar_PositiveRandomVariable (Rbar_pos_fun_part f).
+    Rbar_NonnegativeFunction (Rbar_pos_fun_part f).
   Proof.
-    unfold Rbar_PositiveRandomVariable, Rbar_pos_fun_part, Rbar_max.
+    unfold Rbar_NonnegativeFunction, Rbar_pos_fun_part, Rbar_max.
     intros.
     match_destr.
     - simpl; lra.
@@ -264,9 +264,9 @@ Section RbarExpectation.
   Qed.
 
   Global Instance Rbar_neg_fun_pos  (f : Ts -> Rbar)  :
-    Rbar_PositiveRandomVariable (Rbar_neg_fun_part f).
+    Rbar_NonnegativeFunction (Rbar_neg_fun_part f).
   Proof.
-    unfold Rbar_PositiveRandomVariable, Rbar_neg_fun_part, Rbar_max.
+    unfold Rbar_NonnegativeFunction, Rbar_neg_fun_part, Rbar_max.
     intros.
     match_destr.
     - simpl; lra.
@@ -306,8 +306,8 @@ Section RbarExpectation.
 
   Lemma Rbar_NonnegExpectation_le 
         (rv_X1 rv_X2 : Ts -> Rbar)
-        {prv1 : Rbar_PositiveRandomVariable rv_X1}
-        {prv2 : Rbar_PositiveRandomVariable rv_X2} :
+        {prv1 : Rbar_NonnegativeFunction rv_X1}
+        {prv2 : Rbar_NonnegativeFunction rv_X2} :
     Rbar_rv_le rv_X1 rv_X2 ->
     Rbar_le (Rbar_NonnegExpectation rv_X1) (Rbar_NonnegExpectation rv_X2).
   Proof.
@@ -370,7 +370,7 @@ Section RbarExpectation.
 
   Lemma Rbar_NonnegExpectation_pos
         (rv_X : Ts -> Rbar)
-        {prv : Rbar_PositiveRandomVariable rv_X} :
+        {prv : Rbar_NonnegativeFunction rv_X} :
     Rbar_le 0 (Rbar_NonnegExpectation rv_X).
   Proof.
     rewrite <- Rbar_NonnegExpectation_const0.
@@ -379,8 +379,8 @@ Section RbarExpectation.
 
   Lemma is_finite_Rbar_NonnegExpectation_le
         (rv_X1 rv_X2 : Ts -> Rbar)
-        {prv1 : Rbar_PositiveRandomVariable rv_X1}
-        {prv2 : Rbar_PositiveRandomVariable rv_X2} :
+        {prv1 : Rbar_NonnegativeFunction rv_X1}
+        {prv2 : Rbar_NonnegativeFunction rv_X2} :
     Rbar_rv_le rv_X1 rv_X2 ->
     is_finite (Rbar_NonnegExpectation rv_X2) ->
     is_finite (Rbar_NonnegExpectation rv_X1).
@@ -395,7 +395,7 @@ Section RbarExpectation.
       
     Lemma Expectation_Rbar_Expectation
         (rv_X : Ts -> R)
-        (xpos : PositiveRandomVariable rv_X) :
+        (xpos : NonnegativeFunction rv_X) :
       NonnegExpectation rv_X = Rbar_NonnegExpectation rv_X.
     Proof.
       unfold NonnegExpectation, Rbar_NonnegExpectation.
@@ -411,7 +411,7 @@ Section RbarExpectation.
 
     Lemma Expectation_rvlim_ge
         (Xn : nat -> Ts -> R)          
-        (Xn_pos : forall n, PositiveRandomVariable (Xn n)) :
+        (Xn_pos : forall n, NonnegativeFunction (Xn n)) :
       (forall (n:nat), rv_le (Xn n) (Xn (S n))) ->
       forall n, Rbar_le (NonnegExpectation (Xn n)) (Rbar_NonnegExpectation (Rbar_rvlim Xn)).
   Proof.
@@ -443,8 +443,8 @@ Section RbarExpectation.
         (sphi : FiniteRangeFunction cphi)
         (phi_rv : RandomVariable dom borel_sa cphi)         
 
-        (posphi: PositiveRandomVariable cphi)
-        (Xn_pos : forall n, PositiveRandomVariable (Xn n))
+        (posphi: NonnegativeFunction cphi)
+        (Xn_pos : forall n, NonnegativeFunction (Xn n))
     :
       (forall (n:nat), rv_le (Xn n) (Xn (S n))) ->
       (forall (omega:Ts), cphi omega = 0 \/ Rbar_lt (cphi omega) ((Rbar_rvlim Xn) omega)) ->
@@ -519,8 +519,8 @@ Section RbarExpectation.
         (sphi : FiniteRangeFunction cphi)
         (phi_rv : RandomVariable dom borel_sa cphi)         
 
-        (posphi: PositiveRandomVariable cphi)
-        (Xn_pos : forall n, PositiveRandomVariable (Xn n))
+        (posphi: NonnegativeFunction cphi)
+        (Xn_pos : forall n, NonnegativeFunction (Xn n))
     :
 
       (forall (n:nat), rv_le (Xn n) (Xn (S n))) ->
@@ -606,8 +606,8 @@ Section RbarExpectation.
         (sphi : FiniteRangeFunction cphi)
         (phi_rv : RandomVariable dom borel_sa cphi)         
 
-        (posphi: PositiveRandomVariable cphi)
-        (Xn_pos : forall n, PositiveRandomVariable (Xn n))
+        (posphi: NonnegativeFunction cphi)
+        (Xn_pos : forall n, NonnegativeFunction (Xn n))
     :
 
       (forall (n:nat), rv_le (Xn n) (Xn (S n))) ->
@@ -623,7 +623,7 @@ Section RbarExpectation.
     apply Lim_seq_le_loc.
     unfold Hierarchy.eventually.
     exists (0%nat); intros.
-    assert (PositiveRandomVariable
+    assert (NonnegativeFunction
               (rvmult cphi (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (cphi omega))))).
     now apply indicator_prod_pos.
     assert (RandomVariable _ borel_sa  (rvmult cphi
@@ -651,7 +651,7 @@ Section RbarExpectation.
       + unfold rv_le; intros x.
         unfold rvmult, EventIndicator.
         destruct (Rge_dec (Xn n x) (cphi x)); [lra | ].
-        unfold PositiveRandomVariable in Xn_pos.
+        unfold NonnegativeFunction in Xn_pos.
         generalize (Xn_pos n x); lra.
   Qed.
 
@@ -663,8 +663,8 @@ Section RbarExpectation.
         (sphi : FiniteRangeFunction phi)
         (phi_rv : RandomVariable dom borel_sa phi)         
 
-        (posphi: PositiveRandomVariable phi)
-        (Xn_pos : forall n, PositiveRandomVariable (Xn n))
+        (posphi: NonnegativeFunction phi)
+        (Xn_pos : forall n, NonnegativeFunction (Xn n))
     :
 
       (forall (n:nat), rv_le (Xn n) (Xn (S n))) ->
@@ -676,9 +676,9 @@ Section RbarExpectation.
   Proof.
     intros.
     pose (cphi := rvscale c phi).
-    assert (PositiveRandomVariable cphi).
-    - unfold PositiveRandomVariable, cphi, rvscale.
-      unfold PositiveRandomVariable in posphi.
+    assert (NonnegativeFunction cphi).
+    - unfold NonnegativeFunction, cphi, rvscale.
+      unfold NonnegativeFunction in posphi.
       intros.
       destruct H2.
       apply Rmult_le_pos; trivial.
@@ -694,7 +694,7 @@ Section RbarExpectation.
         destruct H2.
         unfold rv_le in H1.
         specialize (H1 omega).
-        unfold PositiveRandomVariable in posphi.
+        unfold NonnegativeFunction in posphi.
         specialize (posphi omega).
         unfold Rle in posphi.
         destruct posphi.
@@ -718,8 +718,8 @@ Section RbarExpectation.
         (sphi : FiniteRangeFunction phi)
         (phi_rv : RandomVariable dom borel_sa phi)         
 
-        (posphi: PositiveRandomVariable phi)
-        (Xn_pos : forall n, PositiveRandomVariable (Xn n)) :
+        (posphi: NonnegativeFunction phi)
+        (Xn_pos : forall n, NonnegativeFunction (Xn n)) :
 
     (forall (n:nat), rv_le (Xn n) (Xn (S n))) ->
     (forall (n:nat), is_finite (NonnegExpectation (Xn n))) ->
@@ -784,7 +784,7 @@ Section RbarExpectation.
     Lemma monotone_convergence_Rbar
         (Xn : nat -> Ts -> R)
         (Xn_rv : forall n, RandomVariable dom borel_sa (Xn n))
-        (Xn_pos : forall n, PositiveRandomVariable (Xn n)) :
+        (Xn_pos : forall n, NonnegativeFunction (Xn n)) :
     (forall (n:nat), rv_le (Xn n) (Xn (S n))) ->
     (forall (n:nat), is_finite (NonnegExpectation (Xn n))) ->
     Lim_seq (fun n => NonnegExpectation (Xn n)) = Rbar_NonnegExpectation (Rbar_rvlim Xn).
@@ -839,9 +839,9 @@ Section RbarExpectation.
         (X : Ts -> Rbar )
         (Xn : nat -> Ts -> R)
         (rvx : RandomVariable dom Rbar_borel_sa X)
-        (posX: Rbar_PositiveRandomVariable X) 
+        (posX: Rbar_NonnegativeFunction X) 
         (Xn_rv : forall n, RandomVariable dom borel_sa (Xn n))
-        (Xn_pos : forall n, PositiveRandomVariable (Xn n)) :
+        (Xn_pos : forall n, NonnegativeFunction (Xn n)) :
     (forall (n:nat), Rbar_rv_le (Xn n) X) ->
     (forall (n:nat), rv_le (Xn n) (Xn (S n))) ->
     (forall (n:nat), is_finite (NonnegExpectation (Xn n))) ->
@@ -873,7 +873,7 @@ Section RbarExpectation.
             apply i1.
             red; intros y [? [?[?[??]]]].
             subst.
-            unfold BoundedPositiveRandomVariable in H7.
+            unfold BoundedNonnegativeFunction in H7.
             destruct H7.
             rewrite simple_NonnegExpectation with (prv := H7); trivial.
             apply monotone_convergence00 with (X0 := X); trivial.
@@ -898,8 +898,8 @@ Section RbarExpectation.
         (rv_X1 rv_X2 : Ts -> Rbar)
         {rv1 : RandomVariable dom Rbar_borel_sa rv_X1}
         {rv2 : RandomVariable dom Rbar_borel_sa rv_X2}
-        {prv1:Rbar_PositiveRandomVariable rv_X1}
-        {prv2:Rbar_PositiveRandomVariable rv_X2} :     
+        {prv1:Rbar_NonnegativeFunction rv_X1}
+        {prv2:Rbar_NonnegativeFunction rv_X2} :     
     Rbar_NonnegExpectation (Rbar_rvplus rv_X1 rv_X2) =
     Rbar_plus (Rbar_NonnegExpectation rv_X1) (Rbar_NonnegExpectation rv_X2).
   Proof.
@@ -1000,7 +1000,7 @@ Section EventRestricted.
 
     
   Lemma event_restricted_Rbar_NonnegExpectation P (pf1 : ps_P P = 1) pf (f : Ts -> Rbar) 
-        (prv : Rbar_PositiveRandomVariable f) :
+        (prv : Rbar_NonnegativeFunction f) :
     @Rbar_NonnegExpectation Ts dom prts f prv = 
     @Rbar_NonnegExpectation _ _ (event_restricted_prob_space prts P pf) 
                        (event_restricted_function P f) _.
@@ -1014,7 +1014,7 @@ Section EventRestricted.
         exists
           (rvx : Ts -> R) (rv : RandomVariable dom borel_sa rvx) 
         (srv : FiniteRangeFunction rvx),
-          (PositiveRandomVariable rvx /\ Rbar_rv_le (fun x0 : Ts => rvx x0) f) /\
+          (NonnegativeFunction rvx /\ Rbar_rv_le (fun x0 : Ts => rvx x0) f) /\
           SimpleExpectation rvx = x)).
     destruct
       (ex_lub_Rbar
@@ -1025,7 +1025,7 @@ Section EventRestricted.
                                                     (event_restricted_sigma P)
                                                     borel_sa rvx) 
         (srv : FiniteRangeFunction rvx),
-          (PositiveRandomVariable rvx /\
+          (NonnegativeFunction rvx /\
            Rbar_rv_le (fun x1 : event_restricted_domain P => rvx x1)
              (event_restricted_function P f)) /\ SimpleExpectation rvx = x0)).
     simpl.
@@ -1045,7 +1045,7 @@ Section EventRestricted.
       exists (Restricted_FiniteRangeFunction P x2 x4).
       split.
       + split.
-        * now apply Restricted_PositiveRandomVariable.
+        * now apply Restricted_NonnegativeFunction.
         * etransitivity; [| apply event_restricted_Rbar_rv_le; eapply H5].
           intros ?; simpl.
           now right.

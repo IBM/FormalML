@@ -400,7 +400,7 @@ Section fe.
   Qed.
 
   Lemma NonnegExpectation_almost_0 x 
-        {prv:PositiveRandomVariable x} :
+        {prv:NonnegativeFunction x} :
     almost prts eq x (const 0) ->
     NonnegExpectation x = 0.
   Proof.
@@ -419,7 +419,7 @@ Section fe.
     - cut_to xlub.
       + now apply Rbar_le_antisym.
       + intros.
-        unfold BoundedPositiveRandomVariable in H0.
+        unfold BoundedNonnegativeFunction in H0.
         destruct H0 as [? [? [? [[? ?] ?]]]].
         simpl.
         assert (almost prts eq x2 (const 0)).
@@ -438,7 +438,7 @@ Section fe.
           simpl; lra.
     - exists (const 0); exists (rvconst _ _ 0); exists (srvconst 0).
       split.
-      + unfold BoundedPositiveRandomVariable.
+      + unfold BoundedNonnegativeFunction.
         split.
         * apply prvconst; lra.
         * apply prv.
@@ -723,7 +723,7 @@ Section fe.
   Qed.
 
   Lemma FiniteExpectation_pos  (rv_X : Ts -> R)
-        {prv : PositiveRandomVariable rv_X}
+        {prv : NonnegativeFunction rv_X}
         {isfe:IsFiniteExpectation rv_X} :
     0 <= FiniteExpectation rv_X.
   Proof.
@@ -740,7 +740,7 @@ Section fe.
   Lemma FiniteExpectation_zero_pos'
         (X : Ts -> R)
         {rv : RandomVariable dom borel_sa X}
-        {posrv :PositiveRandomVariable X}
+        {posrv :NonnegativeFunction X}
         {isfe:IsFiniteExpectation X} :
     FiniteExpectation X = 0%R ->
     ps_P (preimage_singleton X 0) = 1.
@@ -754,7 +754,7 @@ Section fe.
   Lemma FiniteExpectation_zero_pos
         (X : Ts -> R)
         {rv : RandomVariable dom borel_sa X}
-        {posrv :PositiveRandomVariable X}
+        {posrv :NonnegativeFunction X}
         {isfe:IsFiniteExpectation X} :
     FiniteExpectation X = 0%R ->
     almost prts eq X (const 0).
@@ -767,12 +767,12 @@ Section fe.
 
   Instance series_rv_pos
          (Xn : nat -> Ts -> R)
-         (Xn_pos : forall n, PositiveRandomVariable (Xn n)) 
+         (Xn_pos : forall n, NonnegativeFunction (Xn n)) 
          (is_fin_lim : 
             forall omega, is_finite (Lim_seq (sum_n (fun n => Xn n omega)))):
-    PositiveRandomVariable (fun omega => Lim_seq (sum_n (fun n => Xn n omega))).
+    NonnegativeFunction (fun omega => Lim_seq (sum_n (fun n => Xn n omega))).
   Proof.
-    unfold PositiveRandomVariable in *; intros.
+    unfold NonnegativeFunction in *; intros.
     generalize (Lim_seq_pos (sum_n (fun n : nat => Xn n x))).
     rewrite <- is_fin_lim; simpl.
     intros; apply H.
@@ -802,7 +802,7 @@ Section fe.
 
   Lemma sum_expectation
         (Xn : nat -> Ts -> R)
-        (Xn_pos : forall n, PositiveRandomVariable (Xn n))
+        (Xn_pos : forall n, NonnegativeFunction (Xn n))
         (Xn_rv : forall n, RandomVariable dom borel_sa  (Xn n)) 
         (isfe : forall n, IsFiniteExpectation (Xn n)) :
     forall (n:nat),
@@ -830,7 +830,7 @@ Section fe.
   Qed.
 
     Lemma FiniteNonnegExpectation (X:Ts->R) 
-          {posX: PositiveRandomVariable X}
+          {posX: NonnegativeFunction X}
           {isfeX: IsFiniteExpectation X} :
       FiniteExpectation X = real (NonnegExpectation  X).
     Proof.
@@ -844,7 +844,7 @@ Section fe.
     Qed.
     
     Lemma IsFiniteNonnegExpectation (X:Ts->R) 
-          {posX: PositiveRandomVariable X}
+          {posX: NonnegativeFunction X}
           {isfeX: IsFiniteExpectation X} :
       is_finite (NonnegExpectation  X).
     Proof.
@@ -858,9 +858,9 @@ Section fe.
         (X : Ts -> R )
         (Xn : nat -> Ts -> R)
         (rvx : RandomVariable dom borel_sa X)
-        (posX: PositiveRandomVariable X) 
+        (posX: NonnegativeFunction X) 
         (Xn_rv : forall n, RandomVariable dom borel_sa (Xn n))
-        (Xn_pos : forall n, PositiveRandomVariable (Xn n))
+        (Xn_pos : forall n, NonnegativeFunction (Xn n))
         (isfeX: IsFiniteExpectation X)
         (isfe: forall (n:nat), IsFiniteExpectation (Xn n)) :
     (forall (n:nat), rv_le (Xn n) X) ->
@@ -885,7 +885,7 @@ Section fe.
 
 Lemma Fatou_FiniteExpectation
         (Xn : nat -> Ts -> R)
-        (Xn_pos : forall n, PositiveRandomVariable (Xn n)) 
+        (Xn_pos : forall n, NonnegativeFunction (Xn n)) 
         (Xn_rv : forall n, RandomVariable dom borel_sa (Xn n))
         (isfe_Xn : forall n, IsFiniteExpectation (Xn n))
         (isfe_limInf : IsFiniteExpectation
@@ -928,7 +928,7 @@ Lemma Fatou_FiniteExpectation
   Qed.
 
   Lemma rvsum_le_series (Xn : nat -> Ts -> R) 
-        (Xn_pos : forall n, PositiveRandomVariable (Xn n)) :
+        (Xn_pos : forall n, NonnegativeFunction (Xn n)) :
     (forall omega, is_finite (Lim_seq (fun n => rvsum Xn n omega))) ->
     forall n:nat,
       rv_le (rvsum Xn n)
@@ -950,7 +950,7 @@ Lemma Fatou_FiniteExpectation
 
   Lemma series_expectation
         (Xn : nat -> Ts -> R)
-        (Xn_pos : forall n, PositiveRandomVariable (Xn n))
+        (Xn_pos : forall n, NonnegativeFunction (Xn n))
         (Xn_rv : forall n, RandomVariable dom borel_sa  (Xn n))
         (isfe : forall n, IsFiniteExpectation (Xn n)) 
         (lim_rv : RandomVariable dom borel_sa 
@@ -959,7 +959,7 @@ Lemma Fatou_FiniteExpectation
             is_finite (Lim_seq (fun n : nat => rvsum Xn n omega)))
         (lim_fe : IsFiniteExpectation
                     (fun omega : Ts => Lim_seq (fun n : nat => rvsum Xn n omega)))
-        (lim_pos : PositiveRandomVariable
+        (lim_pos : NonnegativeFunction
            (fun omega : Ts => Lim_seq (fun n : nat => rvsum Xn n omega))):    
     (forall omega, ex_lim_seq (fun n : nat => rvsum Xn n omega)) ->
     Lim_seq (sum_n (fun n => FiniteExpectation (Xn n))) =

@@ -101,7 +101,7 @@ Section SimpleExpectation.
   Lemma SimplePosExpectation_zero_pos
         (x : Ts -> R)
         {rv : RandomVariable dom borel_sa x}
-        {posrv :PositiveRandomVariable x} 
+        {posrv :NonnegativeFunction x} 
         {srv : FiniteRangeFunction x} :
     SimpleExpectation x = 0 ->
     ps_P (preimage_singleton x 0) = 1.

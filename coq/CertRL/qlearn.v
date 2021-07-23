@@ -1062,9 +1062,9 @@ algorithm.
           {dom: SigmaAlgebra Ts} {prts: ProbSpace dom}.
 
     Global Instance positive_inner (f : Ts -> vector R I) :
-      PositiveRandomVariable (fun v => inner (f v) (f v) ).
+      NonnegativeFunction (fun v => inner (f v) (f v) ).
     Proof.
-      unfold PositiveRandomVariable.
+      unfold NonnegativeFunction.
       intros.
       apply inner_ge_0.
     Qed.
@@ -1130,11 +1130,11 @@ algorithm.
    Qed.
 
   Lemma Expectation_pos_finite_neg_part (rv_X : Ts -> R) 
-        {prv : PositiveRandomVariable rv_X} :
+        {prv : NonnegativeFunction rv_X} :
     is_finite (NonnegExpectation (neg_fun_part rv_X)).
   Proof.
     unfold neg_fun_part; simpl.
-    unfold PositiveRandomVariable in prv.
+    unfold NonnegativeFunction in prv.
     assert (rv_eq (fun x : Ts => Rmax (- rv_X x) 0) (const 0)).
     intro x.
     specialize (prv x).
@@ -1152,7 +1152,7 @@ algorithm.
         (rv_X1 rv_X2 : Ts -> R)
         {rv1 : RandomVariable dom borel_sa rv_X1}
         {rv2 : RandomVariable dom borel_sa rv_X2} 
-        {prv2 : PositiveRandomVariable rv_X2} :
+        {prv2 : NonnegativeFunction rv_X2} :
     forall (e1:R) (e2 : Rbar), 
       Expectation rv_X1 = Some (Finite e1) ->
       Expectation rv_X2 = Some e2 ->
@@ -2399,9 +2399,9 @@ algorithm.
 
     Instance rvmaxabs_pos {n}
              (X : Ts -> vector R n) :
-      PositiveRandomVariable (rvmaxabs X).
+      NonnegativeFunction (rvmaxabs X).
     Proof.
-      unfold PositiveRandomVariable, rvmaxabs.
+      unfold NonnegativeFunction, rvmaxabs.
       intros.
       apply Rvector_max_abs_nonneg.
     Qed.

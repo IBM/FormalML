@@ -161,10 +161,10 @@ Section L2.
     :  IsFiniteExpectation prts (rvabs (rvmult rv_X1 rv_X2)).
 
   Proof.
-    assert (PositiveRandomVariable (rvabs (rvmult rv_X1 rv_X2))) by apply prvabs.
+    assert (NonnegativeFunction (rvabs (rvmult rv_X1 rv_X2))) by apply prvabs.
     generalize (Expectation_pos_posRV (rvabs (rvmult rv_X1 rv_X2))); intros.
     generalize (rvprod_abs1_bound rv_X1 rv_X2); intros.
-    assert (PositiveRandomVariable (rvplus (rvsqr rv_X1) (rvsqr rv_X2)))
+    assert (NonnegativeFunction (rvplus (rvsqr rv_X1) (rvsqr rv_X2)))
       by (apply rvplus_prv; apply prvsqr).
     generalize (Finite_NonnegExpectation_le _ _ H H2 H1); intros.
     unfold IsLp, IsFiniteExpectation in *.
@@ -178,8 +178,8 @@ Section L2.
     ; [intros ? eqq2 | intros eqq2..]
     ; rewrite eqq2 in l22
     ; try contradiction.
-    assert (PositiveRandomVariable (rvsqr rv_X1)) by apply prvsqr.
-    assert (PositiveRandomVariable (rvsqr rv_X2)) by apply prvsqr.
+    assert (NonnegativeFunction (rvsqr rv_X1)) by apply prvsqr.
+    assert (NonnegativeFunction (rvsqr rv_X2)) by apply prvsqr.
     generalize (NonnegExpectation_sum (rvsqr rv_X1) (rvsqr rv_X2)); intros.
     cut_to H3.
     - rewrite Expectation_pos_posRV with (prv := H).
@@ -200,7 +200,7 @@ Section L2.
         (eps : posreal) 
         (X : Ts -> R) 
         (rv : RandomVariable dom borel_sa X)
-        (posrv: PositiveRandomVariable X) :
+        (posrv: NonnegativeFunction X) :
   Rbar_le (ps_P (event_ge dom X eps))
           (Rbar_div (NonnegExpectation (rvsqr X)) 
                     (Rsqr eps)).
@@ -233,7 +233,7 @@ Section L2.
     Proof.
       assert (RandomVariable dom borel_sa (rvabs Xn)).
       - now apply rvabs_rv.
-      - assert (PositiveRandomVariable (rvabs Xn)).
+      - assert (NonnegativeFunction (rvabs Xn)).
         now apply prvabs.
         intros.
         generalize (conv_l2_prob_le_div eps (rvabs Xn) H H0).
@@ -268,7 +268,7 @@ Section L2.
     Proof.
       assert (RandomVariable dom borel_sa (rvabs X)).
       - now apply rvabs_rv.
-      - assert (PositiveRandomVariable (rvabs X)).
+      - assert (NonnegativeFunction (rvabs X)).
         now apply prvabs.
         intros.
         generalize (Markov_ineq_div (rvabs X) H H0 eps); intros.
@@ -465,7 +465,7 @@ Section L2.
       assert (forall n, 0 <= FiniteExpectation prts (rvsqr (rvabs (Xn n)))).
       - intros.
         apply FiniteExpectation_pos.
-        unfold PositiveRandomVariable, rvabs, rvsqr; intros.
+        unfold NonnegativeFunction, rvabs, rvsqr; intros.
         apply Rle_0_sqr.
       - apply is_lim_seq_le_le_loc with 
             (u := fun _ => 0) 
@@ -473,7 +473,7 @@ Section L2.
         + exists (0%nat); intros.
           assert (0 <= FiniteExpectation prts (rvabs (Xn n))).
           * apply FiniteExpectation_pos.
-            unfold rvabs, PositiveRandomVariable; intros.
+            unfold rvabs, NonnegativeFunction; intros.
             apply Rabs_pos.
           * split; trivial.
             generalize (L2RRV_L2_L1 (pack_LpRRV prts (rvabs (Xn n))));intros.

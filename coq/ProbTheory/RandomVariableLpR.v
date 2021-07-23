@@ -122,8 +122,8 @@ Qed.
 
 
     Lemma Rbar_Expectation_proper_almost (rv_X1 rv_X2 : Ts -> Rbar)
-        (rv1pos: Rbar_PositiveRandomVariable rv_X1)
-        (rv2pos: Rbar_PositiveRandomVariable rv_X2):
+        (rv1pos: Rbar_NonnegativeFunction rv_X1)
+        (rv2pos: Rbar_NonnegativeFunction rv_X2):
         almost prts eq rv_X1 rv_X2 ->
         Rbar_NonnegExpectation rv_X1 = 
         Rbar_NonnegExpectation rv_X2.
@@ -153,7 +153,7 @@ Qed.
       IsLp_Rbar n rv_X2.
   Proof.
     unfold IsLp_Rbar in *; intros.
-    assert (Rbar_PositiveRandomVariable
+    assert (Rbar_NonnegativeFunction
               (fun omega : Ts => Rbar_power (Rbar_abs (rv_X1 omega)) n)) by
         apply power_abs_pos.
     erewrite Rbar_Expectation_proper_almost; trivial.
@@ -1485,7 +1485,7 @@ Qed.
       Qed.
 
       Lemma rvlim_incr (f : nat -> LpRRV p)  :
-        (forall (n:nat), PositiveRandomVariable  (f n)) ->
+        (forall (n:nat), NonnegativeFunction  (f n)) ->
         (forall (n:nat), rv_le (f n) (f (S n))) ->
         (forall (omega:Ts), ex_finite_lim_seq (fun n => f n omega)) ->
         (forall (n:nat), rv_le (f n) (rvlim f)).
@@ -1550,7 +1550,7 @@ Qed.
       Lemma islp_rvlim_bounded (f : nat -> LpRRV p) (c : R) :
         (forall (n:nat), LpRRVnorm (f n) <= c) ->
         (forall (n:nat), RandomVariable dom borel_sa (f n)) ->
-        (forall (n:nat), PositiveRandomVariable  (f n)) ->
+        (forall (n:nat), NonnegativeFunction  (f n)) ->
         (forall (n:nat), rv_le (f n) (f (S n))) ->
         (forall (omega:Ts), ex_finite_lim_seq (fun n : nat => f n omega)) ->
         IsLp p (rvlim f).
@@ -1575,10 +1575,10 @@ Qed.
         apply FiniteExpectation_Lp_pos.
 
         }
-        assert (forall n, PositiveRandomVariable (rvpower (rvabs (f n)) (const p))).
+        assert (forall n, NonnegativeFunction (rvpower (rvabs (f n)) (const p))).
         {
           intros.
-          unfold PositiveRandomVariable, rvpower; intros.
+          unfold NonnegativeFunction, rvpower; intros.
           apply power_nonneg.
         }
         assert (rvlim_rv: RandomVariable dom borel_sa (rvpower (rvabs (rvlim (fun x : nat => f x))) (const p))).
@@ -1593,9 +1593,9 @@ Qed.
 
         cut_to monc.
         - unfold IsFiniteExpectation.
-          assert (PositiveRandomVariable  (rvpower (rvabs (rvlim (fun x : nat => f x))) (const p))).
+          assert (NonnegativeFunction  (rvpower (rvabs (rvlim (fun x : nat => f x))) (const p))).
           {
-            unfold PositiveRandomVariable, rvpower; intros.
+            unfold NonnegativeFunction, rvpower; intros.
             apply power_nonneg.            
           }
           rewrite Expectation_pos_posRV with (prv := H0).
@@ -1724,7 +1724,7 @@ Qed.
 (*        0 <= c -> *)
         (forall (n:nat), LpRRVnorm (f n) <= c) ->
         (forall (n:nat), RandomVariable dom borel_sa (f n)) ->
-        (forall (n:nat), PositiveRandomVariable  (f n)) ->
+        (forall (n:nat), NonnegativeFunction  (f n)) ->
         (forall (n:nat), rv_le (f n) (f (S n))) ->
 (*        (forall (omega:Ts), ex_finite_lim_seq (fun n : nat => f n omega)) -> *)
         IsLp_Rbar p (Rbar_rvlim f).
@@ -1748,10 +1748,10 @@ Qed.
         apply FiniteExpectation_Lp_pos.
 
         }
-        assert (forall n, PositiveRandomVariable (rvpower (rvabs (f n)) (const p))).
+        assert (forall n, NonnegativeFunction (rvpower (rvabs (f n)) (const p))).
         {
           intros.
-          unfold PositiveRandomVariable, rvpower; intros.
+          unfold NonnegativeFunction, rvpower; intros.
           apply power_nonneg.
         }
         generalize ( monotone_convergence_Rbar 
@@ -1769,7 +1769,7 @@ Qed.
             - apply Lim_seq_const.
           }
           rewrite monc in H0.
-          assert (Rbar_PositiveRandomVariable (Rbar_rvlim (fun n : nat => rvpower (rvabs (f n)) (const p)))) by typeclasses eauto.
+          assert (Rbar_NonnegativeFunction (Rbar_rvlim (fun n : nat => rvpower (rvabs (f n)) (const p)))) by typeclasses eauto.
           rewrite Rbar_NonnegExpectation_ext with (prv2 := H1).
           + eapply bounded_is_finite.
             * eapply Rbar_NonnegExpectation_pos.
@@ -1791,10 +1791,10 @@ Qed.
     Qed.
 
       Lemma LpRRVsum_pos (f : nat -> LpRRV p) (n : nat) :
-        (forall n, PositiveRandomVariable (f n)) ->
-        PositiveRandomVariable (LpRRVsum f n).
+        (forall n, NonnegativeFunction (f n)) ->
+        NonnegativeFunction (LpRRVsum f n).
       Proof.
-        unfold PositiveRandomVariable.
+        unfold NonnegativeFunction.
         intros.
         unfold LpRRVsum, pack_LpRRV; simpl.
         unfold rvsum.
@@ -2816,7 +2816,7 @@ Section complete.
   Qed.
 
   Instance Rbar_positive_indicator_prod (f : Ts -> Rbar) (c : posreal) :
-    Rbar_PositiveRandomVariable (rvscale c (pinf_Indicator f)).
+    Rbar_NonnegativeFunction (rvscale c (pinf_Indicator f)).
   Proof.
     unfold pinf_Indicator.
     apply rvscale_prv.
@@ -2825,7 +2825,7 @@ Section complete.
 
   Lemma finite_Rbar_NonnegExpectation_le_inf
         (f : Ts -> Rbar)
-        (fpos : Rbar_PositiveRandomVariable f) 
+        (fpos : Rbar_NonnegativeFunction f) 
         (c : posreal)   :
     is_finite (Rbar_NonnegExpectation f) ->
     Rbar_le (NonnegExpectation (rvscale c (pinf_Indicator f)))
@@ -2847,7 +2847,7 @@ Section complete.
   Lemma finite_Rbar_NonnegExpectation_le_inf2
         (f : Ts -> Rbar)
         (rv : RandomVariable dom Rbar_borel_sa f) 
-        (fpos : Rbar_PositiveRandomVariable f) :
+        (fpos : Rbar_NonnegativeFunction f) :
     is_finite (Rbar_NonnegExpectation f) ->
     forall (c:posreal), Rbar_le (c * (ps_P (exist _ _ (sa_pinf_Rbar f rv))))
             (Rbar_NonnegExpectation f).
@@ -2879,7 +2879,7 @@ Section complete.
    Lemma finite_Rbar_NonnegExpectation_never_inf
         (f : Ts -> Rbar)
         (rv : RandomVariable dom Rbar_borel_sa f) 
-        (fpos : Rbar_PositiveRandomVariable f) :
+        (fpos : Rbar_NonnegativeFunction f) :
     is_finite (Rbar_NonnegExpectation f) ->
     ps_P (exist sa_sigma _ (sa_pinf_Rbar f rv)) = 0.
      Proof.
@@ -2915,7 +2915,7 @@ Section complete.
   Lemma finite_Rbar_NonnegExpectation_almost_finite
         (f : Ts -> Rbar)
         (rv : RandomVariable dom Rbar_borel_sa f) 
-        (fpos : Rbar_PositiveRandomVariable f) :
+        (fpos : Rbar_NonnegativeFunction f) :
     is_finite (Rbar_NonnegExpectation f) ->
     ps_P (exist sa_sigma _ (sa_finite_Rbar f rv)) = 1.
   Proof.
@@ -3098,7 +3098,7 @@ Section complete.
   Qed.
 
   Lemma Rbar_pos_fun_part_pos (rv_X : Ts -> Rbar) 
-        {prv : Rbar_PositiveRandomVariable rv_X} :
+        {prv : Rbar_NonnegativeFunction rv_X} :
     rv_eq rv_X (Rbar_pos_fun_part rv_X).
   Proof.
     unfold Rbar_pos_fun_part, Rbar_max.
@@ -3108,7 +3108,7 @@ Section complete.
   Qed.
 
   Lemma Rbar_neg_fun_part_pos (rv_X : Ts -> Rbar) 
-        {prv : Rbar_PositiveRandomVariable rv_X} :
+        {prv : Rbar_NonnegativeFunction rv_X} :
     rv_eq (Rbar_neg_fun_part rv_X) (fun x => (const 0) x).
   Proof.
     unfold Rbar_neg_fun_part, const, Rbar_max.
@@ -3121,9 +3121,9 @@ Section complete.
   Qed.
 
   Instance prv_0 :
-    (@Rbar_PositiveRandomVariable Ts (fun x => const 0 x)).
+    (@Rbar_NonnegativeFunction Ts (fun x => const 0 x)).
   Proof.
-    unfold Rbar_PositiveRandomVariable.
+    unfold Rbar_NonnegativeFunction.
     intros.
     simpl.
     unfold const.
@@ -3131,7 +3131,7 @@ Section complete.
   Qed.
 
   Lemma Rbar_Expectation_pos_posRV (rv_X : Ts -> Rbar) 
-        {prv : Rbar_PositiveRandomVariable rv_X} :
+        {prv : Rbar_NonnegativeFunction rv_X} :
     Rbar_Expectation rv_X = Some (Rbar_NonnegExpectation rv_X).
   Proof.
     unfold Rbar_Expectation.
@@ -3181,7 +3181,7 @@ Section complete.
   Qed.
 
   Instance Rbar_power_pos m (rv_X: Ts -> Rbar) :
-    Rbar_PositiveRandomVariable 
+    Rbar_NonnegativeFunction 
       (fun omega => Rbar_power (rv_X omega) m).
   Proof.
     intro x.
@@ -3233,7 +3233,7 @@ Section complete.
         unfold Rbar_max.
         case_eq (Rbar_le_dec 1 p_infty); intros; trivial.
         now simpl in n0.
-    - assert (Rbar_PositiveRandomVariable 
+    - assert (Rbar_NonnegativeFunction 
                  (fun omega : Ts => Rbar_max 1 (Rbar_power (Rbar_abs (rv_X omega)) m))).
       {
         intro x.
@@ -3370,7 +3370,7 @@ Section complete.
   Lemma Rbar_lim_seq_pos_rv
         (f : nat -> Ts -> R) :
     (forall n, RandomVariable dom Rbar_borel_sa (f n)) ->
-    (forall n, Rbar_PositiveRandomVariable (f n)) ->
+    (forall n, Rbar_NonnegativeFunction (f n)) ->
     RandomVariable dom Rbar_borel_sa (fun omega => Lim_seq (fun n => f n omega)).
   Proof.
     intros.
@@ -4725,7 +4725,7 @@ Section complete.
     - now apply LpRRVq_filter_to_LpRRV_filter_filter.
   Qed.
 
-  Lemma rvpower2 (x:Ts->R) {posx:PositiveRandomVariable x} : rv_eq (rvpower x (const 2)) (rvsqr x).
+  Lemma rvpower2 (x:Ts->R) {posx:NonnegativeFunction x} : rv_eq (rvpower x (const 2)) (rvsqr x).
   Proof.
     intros ?.
     unfold rvpower, rvsqr, const.

@@ -750,7 +750,7 @@ Section RealRandomVariables.
         typeclasses eauto.
       Qed.
 
-      (* rvpower_rv declared below since it uses PositiveRandomvariable *)
+      (* rvpower_rv declared below since it uses NonnegativeFunction *)
       
       Global Instance rvsqr_rv
              (rv_X : Ts -> R)
@@ -1243,39 +1243,39 @@ Section RealRandomVariables.
 
   Section Pos.
     
-    Class PositiveRandomVariable
+    Class NonnegativeFunction
           (rv_X:Ts->R) : Prop :=
       prv : forall (x:Ts), (0 <= rv_X x)%R.
 
-    Class Rbar_PositiveRandomVariable
+    Class Rbar_NonnegativeFunction
           (rv_X:Ts->Rbar) : Prop :=
       Rbar_prv : forall (x:Ts), (Rbar_le 0 (rv_X x)).
 
     Global Instance positive_Rbar_positive
            (rv_X:Ts->R) 
-           {prv : PositiveRandomVariable rv_X} :
-      Rbar_PositiveRandomVariable rv_X.
+           {prv : NonnegativeFunction rv_X} :
+      Rbar_NonnegativeFunction rv_X.
    Proof.
      easy.
    Qed.
 
-    Global Instance PositiveRandomVariable_proper : Proper (rv_eq ==> iff) PositiveRandomVariable.
+    Global Instance NonnegativeFunction_proper : Proper (rv_eq ==> iff) NonnegativeFunction.
     Proof.
-      unfold PositiveRandomVariable, rv_eq, pointwise_relation.
+      unfold NonnegativeFunction, rv_eq, pointwise_relation.
       intros x y eqq.
       split; intros lle z.
       - rewrite <- eqq; auto.
       - rewrite eqq; auto.
     Qed.
 
-    Global Instance PositiveRandomVariable_le_proper : Proper (rv_le ==> impl) PositiveRandomVariable.
+    Global Instance NonnegativeFunction_le_proper : Proper (rv_le ==> impl) NonnegativeFunction.
     Proof.
-      unfold PositiveRandomVariable, rv_le.
+      unfold NonnegativeFunction, rv_le.
       intros x y eqq lle z.
       eapply Rle_trans; eauto.
     Qed.
 
-    Global Instance prvconst c (cpos:0<=c) : PositiveRandomVariable (const c).
+    Global Instance prvconst c (cpos:0<=c) : NonnegativeFunction (const c).
     Proof.
       intros x.
       unfold const; trivial.
@@ -1283,7 +1283,7 @@ Section RealRandomVariables.
 
     Global Instance IndicatorRandomVariable_positive (rv_X:Ts->R)
            {irvx:IndicatorRandomVariable rv_X} :
-      PositiveRandomVariable rv_X.
+      NonnegativeFunction rv_X.
     Proof.
       red in irvx; simpl in irvx.
       intros x.
@@ -1293,8 +1293,8 @@ Section RealRandomVariables.
 
     Global Instance positive_scale_prv (c:posreal) 
            (rv_X : Ts -> R)
-           {prv : PositiveRandomVariable rv_X} :
-      PositiveRandomVariable (rvscale c rv_X).
+           {prv : NonnegativeFunction rv_X} :
+      NonnegativeFunction (rvscale c rv_X).
     Proof.
       red; intros.
       red in prv.
@@ -1307,11 +1307,11 @@ Section RealRandomVariables.
     Qed.
 
     Global Instance rvplus_prv (rv_X1 rv_X2 : Ts -> R)
-           {rv1 : PositiveRandomVariable rv_X1}
-           {rv2 : PositiveRandomVariable rv_X2} :
-      PositiveRandomVariable (rvplus rv_X1 rv_X2).
+           {rv1 : NonnegativeFunction rv_X1}
+           {rv2 : NonnegativeFunction rv_X2} :
+      NonnegativeFunction (rvplus rv_X1 rv_X2).
     Proof.
-      unfold PositiveRandomVariable in *.
+      unfold NonnegativeFunction in *.
       unfold rvplus.
       intros.
       specialize (rv1 x); specialize (rv2 x).
@@ -1319,12 +1319,12 @@ Section RealRandomVariables.
     Qed.
 
     Global Instance rvsum_pos (Xn : nat -> Ts -> R)
-           {Xn_pos : forall n, PositiveRandomVariable (Xn n)} :
-      forall (n:nat), PositiveRandomVariable (rvsum Xn n).
+           {Xn_pos : forall n, NonnegativeFunction (Xn n)} :
+      forall (n:nat), NonnegativeFunction (rvsum Xn n).
     Proof.
       intros.
-      unfold PositiveRandomVariable in Xn_pos.
-      unfold PositiveRandomVariable, rvsum; intros.
+      unfold NonnegativeFunction in Xn_pos.
+      unfold NonnegativeFunction, rvsum; intros.
       induction n.
       - unfold Hierarchy.sum_n.
         now rewrite Hierarchy.sum_n_n.
@@ -1336,21 +1336,21 @@ Section RealRandomVariables.
 
     Global Instance indicator_prod_pos 
            (rv_X : Ts -> R) 
-           (posrv : PositiveRandomVariable rv_X)
+           (posrv : NonnegativeFunction rv_X)
            {P : pre_event Ts} 
            (dec:forall x, {P x} + {~ P x}) : 
-      PositiveRandomVariable (rvmult rv_X (EventIndicator dec)).
+      NonnegativeFunction (rvmult rv_X (EventIndicator dec)).
     Proof.
       intros x.
       unfold rvmult, EventIndicator.
-      unfold PositiveRandomVariable in posrv.
+      unfold NonnegativeFunction in posrv.
       apply Rmult_le_pos; trivial.
       match_destr; lra.
     Qed.
 
 
     Global Instance EventIndicator_pos {P : pre_event Ts} (dec:forall x, {P x} + {~ P x})
-      : PositiveRandomVariable (EventIndicator dec).
+      : NonnegativeFunction (EventIndicator dec).
     Proof.
       typeclasses eauto.
     Qed.
@@ -1358,8 +1358,8 @@ Section RealRandomVariables.
 
     Global Instance rvscale_prv (phival : posreal)
            (rv_X : Ts -> R) 
-           (posrv : PositiveRandomVariable rv_X) :
-      PositiveRandomVariable (rvscale phival rv_X).
+           (posrv : NonnegativeFunction rv_X) :
+      NonnegativeFunction (rvscale phival rv_X).
     Proof.
       intro x.
       unfold rvscale.
@@ -1369,13 +1369,13 @@ Section RealRandomVariables.
 
     Global Instance prvabs
            (rv_X : Ts -> R) :
-      PositiveRandomVariable (rvabs rv_X).
+      NonnegativeFunction (rvabs rv_X).
     Proof.
-      unfold PositiveRandomVariable, rvabs.
+      unfold NonnegativeFunction, rvabs.
       intros; apply Rabs_pos.
     Qed.
 
-    Lemma rvabs_pos_eq (rv_X:Ts->R) {prv:PositiveRandomVariable rv_X} :
+    Lemma rvabs_pos_eq (rv_X:Ts->R) {prv:NonnegativeFunction rv_X} :
       rv_eq (rvabs rv_X) rv_X.
     Proof.
       intros a.
@@ -1386,9 +1386,9 @@ Section RealRandomVariables.
 
     Global Instance prvsqr
            (rv_X : Ts -> R) :
-      PositiveRandomVariable (rvsqr rv_X).
+      NonnegativeFunction (rvsqr rv_X).
     Proof.
-      unfold PositiveRandomVariable, rvsqr.
+      unfold NonnegativeFunction, rvsqr.
       intros.
       apply Rle_0_sqr.
     Qed.
@@ -1396,11 +1396,11 @@ Section RealRandomVariables.
 
     Global Instance prvlim
            (Xn : nat -> Ts -> R) 
-           (posrv : forall n, PositiveRandomVariable (Xn n)) :
-      PositiveRandomVariable (rvlim Xn).
+           (posrv : forall n, NonnegativeFunction (Xn n)) :
+      NonnegativeFunction (rvlim Xn).
     Proof.
-      unfold PositiveRandomVariable, rvlim.
-      unfold PositiveRandomVariable in posrv.
+      unfold NonnegativeFunction, rvlim.
+      unfold NonnegativeFunction in posrv.
       intros.
       generalize (Lim_seq_le_loc (fun _ => 0) (fun n => Xn n x)); intros.
       rewrite Lim_seq_const in H.
@@ -1418,20 +1418,20 @@ Section RealRandomVariables.
     Global Instance rvpow_prv
            (rv_X : Ts -> R) 
            (k : nat) 
-           (prv : PositiveRandomVariable rv_X) :
-      PositiveRandomVariable (rvpow rv_X k).
+           (prv : NonnegativeFunction rv_X) :
+      NonnegativeFunction (rvpow rv_X k).
     Proof.
-      unfold PositiveRandomVariable, rvpow.
-      unfold PositiveRandomVariable in prv.
+      unfold NonnegativeFunction, rvpow.
+      unfold NonnegativeFunction in prv.
       intros.
       now apply pow_le.
     Qed.
 
     Global Instance rvpower_prv
            (rv_X1 rv_X2 : Ts -> R) :
-      PositiveRandomVariable (rvpower rv_X1 rv_X2).
+      NonnegativeFunction (rvpower rv_X1 rv_X2).
     Proof.
-      unfold PositiveRandomVariable, rvpower in *.
+      unfold NonnegativeFunction, rvpower in *.
       intros.
       apply power_nonneg.
     Qed.
@@ -1441,7 +1441,7 @@ Section RealRandomVariables.
            (rv_X1 rv_X2 : Ts -> R)
            {rv1 : RandomVariable dom borel_sa rv_X1}
            {rv2 : RandomVariable dom borel_sa rv_X2}
-           {prv1: PositiveRandomVariable rv_X1}:
+           {prv1: NonnegativeFunction rv_X1}:
       RandomVariable dom borel_sa (rvpower rv_X1 rv_X2).
     Proof.
       apply measurable_rv.
@@ -1450,11 +1450,11 @@ Section RealRandomVariables.
     Qed.
     
     Definition rvsqrt (rv_X : Ts -> R)
-                      (prv : PositiveRandomVariable rv_X) := 
+                      (prv : NonnegativeFunction rv_X) := 
       fun omega => Rsqrt (mknonnegreal (rv_X omega) (prv omega)).
 
     Instance rvsqrt_measurable (rv_X : Ts -> R) 
-             (xpos: PositiveRandomVariable rv_X) :
+             (xpos: NonnegativeFunction rv_X) :
       RealMeasurable rv_X ->
       RealMeasurable (rvsqrt rv_X xpos).
     Proof.
@@ -1471,7 +1471,7 @@ Section RealRandomVariables.
     Global Instance rvsqrt_rv 
            (rv_X : Ts -> R)
            {rv : RandomVariable dom borel_sa rv_X}
-           {prv: PositiveRandomVariable rv_X}:
+           {prv: NonnegativeFunction rv_X}:
       RandomVariable dom borel_sa (rvsqrt rv_X prv).
     Proof.
       apply measurable_rv.
@@ -1488,7 +1488,7 @@ Section RealRandomVariables.
 
     Global Program Instance srvsqrt
            (rv_X : Ts -> R)
-           {prv: PositiveRandomVariable rv_X}
+           {prv: NonnegativeFunction rv_X}
            {srv:FiniteRangeFunction rv_X} : FiniteRangeFunction (rvsqrt rv_X prv)
       := { srv_vals := srvsqrt_simplemapping srv_vals }.
     Next Obligation.
@@ -1506,29 +1506,29 @@ Section RealRandomVariables.
     Qed.
 
     Global Instance prvchoice (c:Ts->bool) (rv_X1 rv_X2 : Ts -> R)
-           {prv1:PositiveRandomVariable rv_X1}
-           {prv2:PositiveRandomVariable rv_X2} :
-      PositiveRandomVariable (rvchoice c rv_X1 rv_X2).
+           {prv1:NonnegativeFunction rv_X1}
+           {prv2:NonnegativeFunction rv_X2} :
+      NonnegativeFunction (rvchoice c rv_X1 rv_X2).
     Proof.
-      unfold PositiveRandomVariable in *.
+      unfold NonnegativeFunction in *.
       intros x.
       unfold rvchoice.
       match_destr.
     Qed.
 
     Global Instance prvmin (rv_X1 rv_X2 : Ts -> R)
-           {prv1:PositiveRandomVariable rv_X1}
-           {prv2:PositiveRandomVariable rv_X2} :
-      PositiveRandomVariable (rvmin rv_X1 rv_X2).
+           {prv1:NonnegativeFunction rv_X1}
+           {prv2:NonnegativeFunction rv_X2} :
+      NonnegativeFunction (rvmin rv_X1 rv_X2).
     Proof.
-      unfold PositiveRandomVariable in *.
+      unfold NonnegativeFunction in *.
       intros x.
       unfold rvmin.
       eapply Rmin_glb; eauto.
     Qed.
 
     Global Instance prvmax_l  (rv_X1 rv_X2 : Ts -> R)
-           {prv1:PositiveRandomVariable rv_X1} : PositiveRandomVariable (rvmax rv_X1 rv_X2).
+           {prv1:NonnegativeFunction rv_X1} : NonnegativeFunction (rvmax rv_X1 rv_X2).
     Proof.
       intros x.
       unfold rvmax.
@@ -1537,7 +1537,7 @@ Section RealRandomVariables.
     Qed.
 
     Global Instance prvmax_r  (rv_X1 rv_X2 : Ts -> R)
-           {prv1:PositiveRandomVariable rv_X2} : PositiveRandomVariable (rvmax rv_X1 rv_X2).
+           {prv1:NonnegativeFunction rv_X2} : NonnegativeFunction (rvmax rv_X1 rv_X2).
     Proof.
       intros x.
       unfold rvmax.
@@ -1547,9 +1547,9 @@ Section RealRandomVariables.
 
     Global Instance positive_part_prv 
            (rv_X : Ts -> R) :
-      PositiveRandomVariable (pos_fun_part rv_X).
+      NonnegativeFunction (pos_fun_part rv_X).
     Proof.
-      unfold PositiveRandomVariable.
+      unfold NonnegativeFunction.
       unfold pos_fun_part; simpl.
       intros.
       apply Rmax_r.
@@ -1558,9 +1558,9 @@ Section RealRandomVariables.
     
     Global Instance negative_part_prv
            (rv_X : Ts -> R) :
-      PositiveRandomVariable (neg_fun_part rv_X).
+      NonnegativeFunction (neg_fun_part rv_X).
     Proof.
-      unfold PositiveRandomVariable.
+      unfold NonnegativeFunction.
       unfold neg_fun_part.
       intros.
       apply cond_nonneg.
@@ -1765,11 +1765,11 @@ Section RbarRandomVariables.
 
   Global Instance Rbar_rvlim_prv
          (Xn : nat -> Ts -> R) 
-         (posrv : forall n, PositiveRandomVariable (Xn n)) :
-      Rbar_PositiveRandomVariable (Rbar_rvlim Xn).
+         (posrv : forall n, NonnegativeFunction (Xn n)) :
+      Rbar_NonnegativeFunction (Rbar_rvlim Xn).
     Proof.
-      unfold Rbar_PositiveRandomVariable, Rbar_rvlim.
-      unfold PositiveRandomVariable in posrv.
+      unfold Rbar_NonnegativeFunction, Rbar_rvlim.
+      unfold NonnegativeFunction in posrv.
       intros.
       generalize (Lim_seq_le_loc (fun _ => 0) (fun n => Xn n x)); intros.
       rewrite Lim_seq_const in H.
@@ -1779,7 +1779,7 @@ Section RbarRandomVariables.
 
     Lemma Rbar_rvlim_pos_ge
         (Xn : nat -> Ts -> R)          
-        (Xn_pos : forall n, PositiveRandomVariable (Xn n)) :
+        (Xn_pos : forall n, NonnegativeFunction (Xn n)) :
       (forall (n:nat), rv_le (Xn n) (Xn (S n))) ->
       forall n, Rbar_rv_le (Xn n) (Rbar_rvlim Xn).
     Proof.
@@ -1795,7 +1795,7 @@ Section RbarRandomVariables.
           apply H.
         + now simpl.
         + generalize (is_lim_seq_const 0); intros.
-          unfold PositiveRandomVariable in Xn_pos.
+          unfold NonnegativeFunction in Xn_pos.
           assert (forall n, 0 <= Xn n x); intros.
           apply Xn_pos.
           generalize (is_lim_seq_le _ _ _ _ H2 H1 H0); intros.
@@ -1809,11 +1809,11 @@ Section RbarRandomVariables.
     (fun omega =>  Rbar_plus (rv_X1 omega) (rv_X2 omega)).
 
   Global Instance pos_Rbar_plus (f g : Ts -> Rbar) 
-         {fpos : Rbar_PositiveRandomVariable f}
-         {gpos: Rbar_PositiveRandomVariable g} :
-    Rbar_PositiveRandomVariable (Rbar_rvplus f g).
+         {fpos : Rbar_NonnegativeFunction f}
+         {gpos: Rbar_NonnegativeFunction g} :
+    Rbar_NonnegativeFunction (Rbar_rvplus f g).
   Proof.
-    unfold Rbar_PositiveRandomVariable in *.
+    unfold Rbar_NonnegativeFunction in *.
     unfold Rbar_rvplus.
     intro.
     replace (Finite 0) with (Rbar_plus 0 0).
@@ -2200,7 +2200,7 @@ Section RbarRandomVariables.
 
   Instance Rbar_lim_seq_measurable_pos (f : nat -> Ts -> R) :
     (forall n, RbarMeasurable (f n)) ->
-    (forall n, Rbar_PositiveRandomVariable (f n)) ->
+    (forall n, Rbar_NonnegativeFunction (f n)) ->
     RbarMeasurable (fun omega => Lim_seq (fun n => f n omega)).
   Proof.
     intros.
@@ -2209,7 +2209,7 @@ Section RbarRandomVariables.
     apply Rbar_plus_measurable.
     - now apply Rbar_lim_sup_measurable.
     - now apply Rbar_lim_inf_measurable.
-    - assert (Rbar_PositiveRandomVariable (fun x => LimSup_seq (fun n => f n x))).
+    - assert (Rbar_NonnegativeFunction (fun x => LimSup_seq (fun n => f n x))).
       {
         intro x.
         replace (Finite 0) with (LimSup_seq (fun _ => 0)).
@@ -2219,7 +2219,7 @@ Section RbarRandomVariables.
         apply H0.
         apply LimSup_seq_const.
       }
-      assert (Rbar_PositiveRandomVariable (fun x => LimInf_seq (fun n => f n x))).      
+      assert (Rbar_NonnegativeFunction (fun x => LimInf_seq (fun n => f n x))).      
       {
         intro x.
         replace (Finite 0) with (LimInf_seq (fun _ => 0)).
@@ -2275,7 +2275,7 @@ Section RbarRandomVariables.
 
 
   Global Instance power_abs_pos (rv_X : Ts -> Rbar) (p:R) :
-    Rbar_PositiveRandomVariable
+    Rbar_NonnegativeFunction
       (fun omega => Rbar_power (Rbar_abs (rv_X omega)) p ).
   Proof.
     intros x.
@@ -2357,21 +2357,21 @@ Section EventRestricted.
   Context {Ts:Type} 
           {dom: SigmaAlgebra Ts}.
 
-Global Instance Restricted_PositiveRandomVariable
+Global Instance Restricted_NonnegativeFunction
          (e:event dom) (f : Ts -> R)
-         (prv: PositiveRandomVariable f) :
-  PositiveRandomVariable (event_restricted_function e f).
+         (prv: NonnegativeFunction f) :
+  NonnegativeFunction (event_restricted_function e f).
 Proof.
-  unfold PositiveRandomVariable in *.
+  unfold NonnegativeFunction in *.
   intros.
   apply prv.
 Qed.
 
-Global Instance Restricted_Rbar_PositiveRandomVariable P (f : Ts -> Rbar)
-           (prv : Rbar_PositiveRandomVariable f) :
-    Rbar_PositiveRandomVariable (event_restricted_function P f).
+Global Instance Restricted_Rbar_NonnegativeFunction P (f : Ts -> Rbar)
+           (prv : Rbar_NonnegativeFunction f) :
+    Rbar_NonnegativeFunction (event_restricted_function P f).
   Proof.
-    unfold Rbar_PositiveRandomVariable in *.
+    unfold Rbar_NonnegativeFunction in *.
     intros.
     unfold event_restricted_function.
     unfold event_restricted_domain in x.
@@ -2402,20 +2402,20 @@ Global Instance Restricted_Rbar_PositiveRandomVariable P (f : Ts -> Rbar)
 
 
   Global Instance lift_event_restricted_domain_fun_prv {P} (f:event_restricted_domain P -> R) :
-    PositiveRandomVariable f -> 
-    PositiveRandomVariable (lift_event_restricted_domain_fun 0 f).
+    NonnegativeFunction f -> 
+    NonnegativeFunction (lift_event_restricted_domain_fun 0 f).
   Proof.
-    unfold PositiveRandomVariable, lift_event_restricted_domain_fun.
+    unfold NonnegativeFunction, lift_event_restricted_domain_fun.
     intros prv x.
     match_destr.
     lra.
   Qed.
 
   Global Instance lift_event_restricted_domain_fun_Rbar_prv {P} (f:event_restricted_domain P -> Rbar) :
-    Rbar_PositiveRandomVariable f -> 
-    Rbar_PositiveRandomVariable (lift_event_restricted_domain_fun (Finite 0) f).
+    Rbar_NonnegativeFunction f -> 
+    Rbar_NonnegativeFunction (lift_event_restricted_domain_fun (Finite 0) f).
   Proof.
-    unfold Rbar_PositiveRandomVariable, lift_event_restricted_domain_fun.
+    unfold Rbar_NonnegativeFunction, lift_event_restricted_domain_fun.
     intros prv x.
     match_destr.
     simpl; lra.
