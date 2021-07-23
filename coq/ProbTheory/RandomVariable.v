@@ -69,14 +69,14 @@ Definition preimage_singleton {Ts Td} {σs:SigmaAlgebra Ts} {σd:SigmaAlgebra Td
 Section Const.
   Context {Ts Td:Type}.
 
-  Class ConstantRandomVariable
+  Class ConstantRangeFunction
         (rv_X:Ts -> Td)
     := { 
     frf_val : Td;
     frf_val_complete : forall x, rv_X x = frf_val
       }.
   
-  Global Program Instance crvconst c : ConstantRandomVariable (const c)
+  Global Program Instance crvconst c : ConstantRangeFunction (const c)
     := { frf_val := c }.
 
   Global Instance discrete_sa_rv
@@ -129,7 +129,7 @@ Section Simple.
     now rewrite <- H.
   Qed.
 
-  Global Program Instance frf_crv (rv_X:Ts->Td) {crv:ConstantRandomVariable rv_X} :
+  Global Program Instance frf_crv (rv_X:Ts->Td) {crv:ConstantRangeFunction rv_X} :
     FiniteRangeFunction rv_X
     := {
     frf_vals := [frf_val]

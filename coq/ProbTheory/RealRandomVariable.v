@@ -840,7 +840,7 @@ Section RealRandomVariables.
 
     Global Program Instance scale_constant_random_variable (c: R)
            (rv_X : Ts -> R)
-           {crv:ConstantRandomVariable rv_X} : ConstantRandomVariable (rvscale c rv_X)
+           {crv:ConstantRangeFunction rv_X} : ConstantRangeFunction (rvscale c rv_X)
       := { frf_val := Rmult c frf_val }.
     Next Obligation.
       destruct crv.
