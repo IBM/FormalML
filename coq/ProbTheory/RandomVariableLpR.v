@@ -5,9 +5,10 @@ Require Import Lra Lia.
 Require Import Classical.
 Require Import FunctionalExtensionality.
 Require Import IndefiniteDescription ClassicalDescription.
+Require Import PropExtensionality.
 
-Require Import hilbert.
-
+Require Import Reals.
+Require Import Coquelicot.Coquelicot.
 Require Export RandomVariableFinite.
 Require Import quotient_space.
 Require Import RbarExpectation.
@@ -4797,7 +4798,7 @@ Section complete.
     intros x; simpl in *.
 
     unfold LpRRV_toLpRRVq_set; simpl; intros HH.
-    unfold ball, Hnorm, minus, plus, opp, inner; simpl.
+    unfold ball, minus, plus, opp; simpl.
     destruct (Quot_inv x); subst.
     rewrite LpRRVq_ballE.
     specialize (HH _ (eq_refl _)).
@@ -4824,7 +4825,7 @@ Section complete.
     apply functional_extensionality.
     intros x.
     unfold filter_le in *.
-    apply prop_extensionality; split.
+    apply propositional_extensionality; split.
     apply H.
     apply H0.
   Qed.

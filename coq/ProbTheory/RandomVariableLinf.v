@@ -7,8 +7,7 @@ Require Import Reals.
 Require Import FunctionalExtensionality.
 Require Import Coquelicot.Coquelicot.
 Require Import IndefiniteDescription ClassicalDescription ClassicalChoice.
-Require Import hilbert.
-
+Require Import PropExtensionality.
 Require Export RandomVariableFinite RandomVariableLpR.
 Require Import quotient_space.
 
@@ -2635,7 +2634,7 @@ End Linf.
     apply functional_extensionality.
     intros x.
     unfold filter_le in *.
-    apply prop_extensionality.
+    apply propositional_extensionality.
     split.
     apply H.
     apply H0.
