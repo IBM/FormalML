@@ -669,7 +669,7 @@ Lemma ash_6_1_4 (X : nat -> Ts -> R)(n : nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
       {srv : forall (n:nat), FiniteRangeFunction (X n)}
       (HC : forall n, 
-          gen_SimpleConditionalExpectation (X n) (filtration_history n X) = const 0)  :
+          SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
   let S := fun j => rvabs (rvsum X j) in
   forall eps:posreal, ps_P (event_ge dom (rvmaxlist S n) eps) <=
            (SimpleExpectation (rvsqr (S n)))/eps^2.

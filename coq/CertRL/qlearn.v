@@ -1670,7 +1670,7 @@ algorithm.
       (forall k, (x (S k)) = 
                  vecrvplus (F_alpha (α k) (x k))
                            (vecrvscale (α k) (w k))) ->
-      (forall n, rv_eq (vector_gen_SimpleConditionalExpectation (w n) (hist n)) (const zero)) ->
+      (forall n, rv_eq (vector_SimpleConditionalExpectationSA (w n) (hist n)) (const zero)) ->
       (forall n, SimpleExpectation (rvinner (w n) (w n)) < C)  ->
       (forall x1 y : vector R I, Hnorm (minus (F x1) (F y)) <= gamma * Hnorm (minus x1 y)) -> 
       is_lim_seq 
@@ -1854,7 +1854,7 @@ algorithm.
       (forall n, 0 <= α n <= 1) -> 
       is_lim_seq α 0 ->
       is_lim_seq (sum_n α) p_infty ->
-      (forall n, rv_eq (vector_gen_SimpleConditionalExpectation 
+      (forall n, rv_eq (vector_SimpleConditionalExpectationSA 
                           (w n) 
                           (L2_convergent_hist (L2_convergent_x xinit w) _ _ n)) 
                        (const zero)) ->
@@ -2050,7 +2050,7 @@ algorithm.
       is_lim_seq (sum_n α) p_infty ->
       (forall n0 : nat,
           rv_eq
-            (vector_gen_SimpleConditionalExpectation 
+            (vector_SimpleConditionalExpectationSA 
                (w n0)
                (L2_convergent_hist 
                   (@L2_convergent_x n α (vecrvconst n 0) Ts (vecrvconst n 0) w) _ _ n0)) 
@@ -2640,7 +2640,7 @@ algorithm.
       (forall n0 : nat, SimpleExpectation (rvinner (w n0) (w n0)) < C) ->
       (forall nk, forall n0,
           rv_eq
-            (vector_gen_SimpleConditionalExpectation 
+            (vector_SimpleConditionalExpectationSA 
                (w (n0 + nk)%nat)
                (L2_convergent_hist 
                   (@L2_convergent_x (S n) (fun k => α (k + nk)%nat) 
@@ -2942,7 +2942,7 @@ algorithm.
       (forall n0 : nat, SimpleExpectation (rvinner (w n0) (w n0)) < C) ->
       (forall nk, forall n0,
           rv_eq
-            (vector_gen_SimpleConditionalExpectation 
+            (vector_SimpleConditionalExpectationSA 
                (w ( n0 + nk)%nat)
                (L2_convergent_hist 
                   (@L2_convergent_x (S n) (fun k => α (k + nk)%nat) 

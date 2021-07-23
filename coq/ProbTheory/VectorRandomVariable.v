@@ -706,13 +706,13 @@ Section vector_ops.
                            SimpleExpectation (vector_nth m pf (iso_f rv_X))
                                              (srv := (vec_srv rv_X m pf srv))).
 
-  Definition vector_gen_SimpleConditionalExpectation {n} (rv_X : Ts -> vector R n)
+  Definition vector_SimpleConditionalExpectationSA {n} (rv_X : Ts -> vector R n)
              {rv: RandomVariable dom (Rvector_borel_sa n) rv_X}
              {srv : FiniteRangeFunction rv_X} 
              (l : list dec_sa_event) : Ts -> vector R n 
     := iso_b (
            vector_create 0 n (fun m _ pf => 
-                                gen_SimpleConditionalExpectation 
+                                SimpleConditionalExpectationSA 
                                   (vector_nth m pf (iso_f rv_X))
                                   (srv := (vec_srv rv_X m pf srv))
                                   l)).
@@ -757,9 +757,9 @@ Lemma FiniteRangeFunction_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
            {srv : FiniteRangeFunction rv_X}
            (l : list dec_sa_event) :
     RandomVariable dom (Rvector_borel_sa n)
-                   (vector_gen_SimpleConditionalExpectation rv_X l).
+                   (vector_SimpleConditionalExpectationSA rv_X l).
   Proof.
-    unfold vector_gen_SimpleConditionalExpectation.
+    unfold vector_SimpleConditionalExpectationSA.
     simpl.
     rewrite vector_of_funs_vector_create.
     apply RealVectorMeasurableRandomVariable.
@@ -774,23 +774,23 @@ Lemma FiniteRangeFunction_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
     - typeclasses eauto.
   Qed.
 
-  Instance vector_gen_SimpleConditionalExpectation_simpl {n}
+  Instance vector_SimpleConditionalExpectationSA_simpl {n}
            (rv_X : Ts -> vector R n)
            {rv: RandomVariable dom (Rvector_borel_sa n) rv_X}
            {srv : FiniteRangeFunction rv_X}
            (l : list dec_sa_event) :
-    FiniteRangeFunction (vector_gen_SimpleConditionalExpectation rv_X l).
+    FiniteRangeFunction (vector_SimpleConditionalExpectationSA rv_X l).
   Proof.
-    unfold vector_gen_SimpleConditionalExpectation; simpl.
+    unfold vector_SimpleConditionalExpectationSA; simpl.
     apply FiniteRangeFunction_nth_vector; intros.
     apply FiniteRangeFunction_ext with 
         (x:= fun a =>
-               (gen_SimpleConditionalExpectation
+               (SimpleConditionalExpectationSA
                   (vector_nth i pf1 (fun_to_vector_to_vector_of_funs rv_X)) l a)).
     - intros ?.
       rewrite vector_of_funs_vector_create.
       now rewrite vector_nth_create'.
-    - apply gen_SimpleConditionalExpectation_simpl.
+    - apply SimpleConditionalExpectationSA_simpl.
   Qed.
 
   
@@ -802,16 +802,16 @@ Lemma FiniteRangeFunction_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
         (ispart: is_partition_list (map dsa_event l)) :
     vector_SimpleExpectation rv_X =
     vector_SimpleExpectation
-      (vector_gen_SimpleConditionalExpectation rv_X l).
+      (vector_SimpleConditionalExpectationSA rv_X l).
   Proof.
     apply vector_create_ext.
     intros.
-    unfold vector_gen_SimpleConditionalExpectation.
-    transitivity (SimpleExpectation (srv:=(@gen_SimpleConditionalExpectation_simpl Ts dom prts
+    unfold vector_SimpleConditionalExpectationSA.
+    transitivity (SimpleExpectation (srv:=(@SimpleConditionalExpectationSA_simpl Ts dom prts
                                                                                    (@vector_nth (Ts -> R) n i pf2 (@fun_to_vector_to_vector_of_funs Ts R n rv_X))
                                                                                    (vec_rv _ _ _ _)
                                                                                    (@vec_srv n rv_X i pf2 srv) l))
-                                    (gen_SimpleConditionalExpectation (vector_nth i pf2 ((fun_to_vector_to_vector_of_funs rv_X))) l)).
+                                    (SimpleConditionalExpectationSA (vector_nth i pf2 ((fun_to_vector_to_vector_of_funs rv_X))) l)).
     - apply gen_conditional_tower_law; trivial.
     - apply SimpleExpectation_ext.
       rewrite iso_f_b.
@@ -1261,8 +1261,8 @@ Section vector_ops_ext.
     is_partition_list (map dsa_event l) ->
     partition_measurable  (cod:=Rvector_borel_sa n) rv_X1 (map dsa_event l) ->
     SimpleExpectation (rvinner rv_X1 rv_X2)  (rv:=Rvector_inner_rv _ _) (srv:=srvinner _ _) =
-    SimpleExpectation (rvinner rv_X1 (vector_gen_SimpleConditionalExpectation rv_X2 l))
-                      (srv:=srvinner _ _ (srv2:=vector_gen_SimpleConditionalExpectation_simpl _ _))
+    SimpleExpectation (rvinner rv_X1 (vector_SimpleConditionalExpectationSA rv_X2 l))
+                      (srv:=srvinner _ _ (srv2:=vector_SimpleConditionalExpectationSA_simpl _ _))
                       (rv:=Rvector_inner_rv _ _ (rv2:=vec_gen_condexp_rv _ _)).
   Proof.
     intros.
@@ -1275,7 +1275,7 @@ Section vector_ops_ext.
       rewrite gen_conditional_scale_measurable; trivial.
       + intro x.
         f_equal.
-        unfold vector_gen_SimpleConditionalExpectation.
+        unfold vector_SimpleConditionalExpectationSA.
         rewrite iso_f_b.
         now rewrite vector_nth_create'.
       + unfold partition_measurable.
@@ -1306,7 +1306,7 @@ Section vector_ops_ext.
         {srv1 : FiniteRangeFunction rv_X1}
         {srv2 : FiniteRangeFunction rv_X2} 
         (l : list dec_sa_event) :
-    rv_eq (vector_gen_SimpleConditionalExpectation rv_X2 l) (const Rvector_zero) ->
+    rv_eq (vector_SimpleConditionalExpectationSA rv_X2 l) (const Rvector_zero) ->
     is_partition_list (map dsa_event l) ->
     partition_measurable (cod:=Rvector_borel_sa n) rv_X1 (map dsa_event l) ->
     SimpleExpectation (rvinner rv_X1 rv_X2) (rv:=Rvector_inner_rv _ _) (srv:=srvinner _ _) = 0.
@@ -1314,7 +1314,7 @@ Section vector_ops_ext.
     intros.
     rewrite simple_expection_rvinner_measurable with (l0 := l); trivial.
     assert (rv_eq  
-              (rvinner rv_X1 (vector_gen_SimpleConditionalExpectation rv_X2 l))
+              (rvinner rv_X1 (vector_SimpleConditionalExpectationSA rv_X2 l))
               (const 0)).
     {
       rewrite H.
