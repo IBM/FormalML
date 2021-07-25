@@ -822,9 +822,9 @@ Definition ortho_phi  (dom2 : SigmaAlgebra Ts)
                     exists z, Quot _ z = y /\
                          RandomVariable dom2 borel_sa (LpRRV_rv_X prts z)).
 
-Search closed.
-Locate closed_le.
-Lemma ortho_phi_closed (dom2 : SigmaAlgebra Ts) :
+Lemma ortho_phi_closed 
+      (dom2 : SigmaAlgebra Ts) 
+      (sub : sa_sub dom2 dom) :
   @closed (LpRRVq_UniformSpace prts 2 big2) (ortho_phi dom2).
 Proof.
   unfold closed, ortho_phi, locally.
@@ -850,14 +850,32 @@ Proof.
   }
   clear HH2.
   
-  assert (HH4: forall n : posreal,
-             exists z : LpRRV prts 2,
-               @Hierarchy.ball (LpRRVq_UniformSpace prts 2 big2) (Quot (LpRRV_eq prts) x0) n (Quot (LpRRV_eq prts) z)).
+  assert (HH4: forall eps : posreal,
+      exists z : LpRRV prts 2,
+        (@Hierarchy.ball (LpRRVq_UniformSpace prts 2 big2)
+                         (Quot (LpRRV_eq prts) x0) eps
+                         (Quot (LpRRV_eq prts) z)) /\
+        (RandomVariable dom2 borel_sa z)).
   {
-    intros n.
-    destruct (HH3 n) as [x [xH1 [z [xH2 xH3]]]]; subst.
+    intros eps.
+    destruct (HH3 eps) as [x [xH1 [z [xH2 xH3]]]]; subst.
     eauto.
-  } 
+  }
+  clear HH3.
+  assert (HH5: forall eps : posreal,
+      exists z : LpRRV prts 2,
+        (@Hierarchy.ball (LpRRV_UniformSpace prts big2)
+                         x0 eps z) /\
+        (RandomVariable dom2 borel_sa z)).
+  {
+    intros eps.
+    destruct (HH4 eps) as [x [? ?]].
+    red in H; simpl in H.
+    rewrite LpRRVq_ballE in H.
+    eauto.
+  }
+  
+  
 Admitted.
 
 Lemma ortho_phi_complete
