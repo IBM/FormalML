@@ -682,7 +682,7 @@ Section L2.
 End L2.
 
 Section cond_exp.
-  
+
 Program Definition ortho_projection_hilbert (E:PreHilbert) 
            (phi: E -> Prop) (phi_mod: compatible_m phi) (phi_compl: complete_subset phi)
            (u : E) : E.
@@ -822,6 +822,8 @@ Definition ortho_phi  (dom2 : SigmaAlgebra Ts)
                     exists z, Quot _ z = y /\
                          RandomVariable dom2 borel_sa (LpRRV_rv_X prts z)).
 
+Search closed.
+Locate closed_le.
 Lemma ortho_phi_closed (dom2 : SigmaAlgebra Ts) :
   @closed (LpRRVq_UniformSpace prts 2 big2) (ortho_phi dom2).
 Proof.
@@ -858,6 +860,19 @@ Proof.
   } 
 Admitted.
 
+Lemma ortho_phi_complete
+           (dom2 : SigmaAlgebra Ts)
+           (sub : sa_sub dom2 dom) :
+  @complete_subset (@PreHilbert_NormedModule (@L2RRVq_PreHilbert Ts dom prts)) (ortho_phi dom2).
+Proof.
+  unfold complete_subset.
+  exists (LpRRVq_lim prts big2).
+  intros.
+  generalize (L2RRV_lim_complete (prob_space_sa_sub dom2 sub) big2 ); intros.
+  unfold ortho_phi in *.
+  Admitted.
+
+
 Definition conditional_expectation_L2q
            (dom2 : SigmaAlgebra Ts)
            (sub : sa_sub dom2 dom)
@@ -889,10 +904,53 @@ Proof.
         rewrite LpRRVq_scaleE.
         reflexivity.
       * typeclasses eauto.
-  -
-
+  - now apply ortho_phi_complete.
+  - 
 
 Admitted.
-  
+
+Program Definition conditional_expectation_L2fun (f : Ts -> R) 
+        (dom2 : SigmaAlgebra Ts)
+        (sub : sa_sub dom2 dom)
+        {rv : RandomVariable dom borel_sa f}
+        {isl : IsLp prts 2 f} : LpRRV prts 2 :=
+  _ (Quot_inv (conditional_expectation_L2q dom2 sub (Quot _ (pack_LpRRV prts f)))).
+Next Obligation.
+  apply constructive_indefinite_description in x.
+  exact (proj1_sig x).
+Qed.
+
+Instance IsLp_min_const_nat (f : Ts -> R) (n : nat) 
+         {nneg : NonnegativeFunction f} :
+  IsLp prts 2 (rvmin f (const (INR n))).
+Proof.
+  intros.
+  apply IsLp_bounded with (rv_X2 := const (power (INR n) 2)).
+  - intro x.
+    unfold rvpower, rvabs, rvmin, const.
+    apply Rle_power_l; try lra.
+    split.
+    + apply Rabs_pos.
+    + rewrite Rabs_right.
+      apply Rmin_r.
+      specialize (nneg x).
+      apply Rmin_case; try lra.
+      apply Rle_ge, pos_INR.
+ - apply IsFiniteExpectation_const.
+Qed.
+
+Definition NonNegConditionalExpectation (f : Ts -> R) 
+           (dom2 : SigmaAlgebra Ts)
+           (sub : sa_sub dom2 dom)
+           {rv : RandomVariable dom borel_sa f}
+           {nneg : NonnegativeFunction f} : Ts -> Rbar :=
+  Rbar_rvlim (fun n => conditional_expectation_L2fun (rvmin f (const (INR n))) dom2 sub).
+
+Definition ConditionalExpectation (f : Ts -> R) 
+           (dom2 : SigmaAlgebra Ts)
+           (sub : sa_sub dom2 dom)
+           (rv : RandomVariable dom borel_sa f) :=
+  Rbar_rvplus (NonNegConditionalExpectation (pos_fun_part f) dom2 sub)
+              (fun x => Rbar_opp (NonNegConditionalExpectation (neg_fun_part f) dom2 sub x)).
 
 End cond_exp.
