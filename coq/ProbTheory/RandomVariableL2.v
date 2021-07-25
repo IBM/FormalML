@@ -693,4 +693,206 @@ Program Definition ortho_projection_hilbert (E:PreHilbert)
   intro; apply classic.
 Qed.
 
+Context {Ts:Type} 
+        {dom: SigmaAlgebra Ts}
+        (prts: ProbSpace dom).
+
+(* the conditional expectation of x over the sub-algebra dom2 *)
+
+Definition event_sa_sub {dom2 : SigmaAlgebra Ts}
+           (sub : sa_sub dom2 dom) (x:event dom2) : event dom
+    := exist _ (event_pre x) (sub _ (proj2_sig x)).
+
+Global Instance event_sa_sub_equiv_proper {dom2 : SigmaAlgebra Ts} (sub:sa_sub dom2 dom) :
+  Proper (event_equiv ==> event_equiv) (event_sa_sub sub).
+Proof.
+  repeat red; intros.
+  simpl.
+  specialize (H x0).
+  destruct x; destruct y; simpl in *.
+  intuition.
+Qed.
+
+Lemma collection_is_pairwise_disjoint_sa_sub
+      {dom2 : SigmaAlgebra Ts} (sub:sa_sub dom2 dom) collection :
+      collection_is_pairwise_disjoint collection ->
+      collection_is_pairwise_disjoint (fun n : nat => event_sa_sub sub (collection n)).
+Proof.
+  unfold collection_is_pairwise_disjoint; intros.
+  unfold event_disjoint; simpl.
+  now apply H.
+Qed.
+
+Lemma union_of_collection_sa_sub {dom2 : SigmaAlgebra Ts} (sub:sa_sub dom2 dom) collection :
+  event_equiv
+    (event_sa_sub sub (union_of_collection collection))
+    (union_of_collection (fun n : nat => event_sa_sub sub (collection n))).
+
+Proof.
+  intros x; simpl.
+  reflexivity.
+Qed.
+
+Instance prob_space_sa_sub (dom2 : SigmaAlgebra Ts)
+       (sub : sa_sub dom2 dom) : ProbSpace dom2.
+Proof.
+  exists (fun x => ps_P (event_sa_sub sub x)).
+  - repeat red; intros.
+    now rewrite H.
+  - intros.
+    generalize (ps_countable_disjoint_union (fun n => event_sa_sub sub (collection n)))
+    ; intros HH.
+    cut_to HH.
+    + rewrite union_of_collection_sa_sub.
+      unfold sum_of_probs_equals in *.
+      apply HH.
+    + now apply collection_is_pairwise_disjoint_sa_sub.
+  - erewrite ps_proper; try eapply ps_one.
+    unfold Ω, pre_Ω.
+    repeat red; intros; simpl; tauto.
+  - intros.
+    apply ps_pos.
+Qed.
+
+Instance RandomVariable_sa_sub (dom2 : SigmaAlgebra Ts)
+         (sub : sa_sub dom2 dom)
+         x
+         {rv_x:RandomVariable dom2 borel_sa x}
+  : RandomVariable dom borel_sa x.
+Proof.
+  intros e.
+  specialize (rv_x e).
+  now apply sub.
+Qed.
+
+Lemma almost_eq_plus_inv {x y z} :
+  almost prts eq z (rvplus x y) ->
+  exists x' y',
+    almost prts eq x x' /\
+    almost prts eq y y' /\ 
+    rv_eq z (rvplus x' y').
+Proof.
+  intros [p [pone px]].
+  exists (fun a => if ClassicalDescription.excluded_middle_informative (p a) then x a else 0).
+  exists (fun a => if ClassicalDescription.excluded_middle_informative (p a) then y a else z a).
+  split; [| split].
+  - exists p.
+    split; trivial.
+    intros ??.
+    match_destr.
+    tauto.
+  - exists p.
+    split; trivial.
+    intros ??.
+    match_destr.
+    tauto.
+  - intros a; simpl.
+    rv_unfold.
+    match_destr.
+    + auto.
+    + lra.
+Qed.
+
+Lemma almost_eq_opp_inv {x z} :
+  almost prts eq z (rvopp x) ->
+  exists x',
+    almost prts eq x x' /\
+    rv_eq z (rvopp x').
+Proof.
+  intros [p [pone px]].
+
+  exists (fun a => if ClassicalDescription.excluded_middle_informative (p a) then x a else - z a).
+  split.
+  - exists p.
+    split; trivial.
+    intros ??.
+    match_destr.
+    tauto.
+  - intros ?.
+    rv_unfold.
+    match_destr.
+    + auto.
+    + lra.
+Qed.
+
+
+Definition ortho_phi  (dom2 : SigmaAlgebra Ts)
+           : LpRRVq prts 2 -> Prop
+           := (fun y:LpRRVq prts 2 =>
+                    exists z, Quot _ z = y /\
+                         RandomVariable dom2 borel_sa (LpRRV_rv_X prts z)).
+
+Lemma ortho_phi_closed (dom2 : SigmaAlgebra Ts) :
+  @closed (LpRRVq_UniformSpace prts 2 big2) (ortho_phi dom2).
+Proof.
+  unfold closed, ortho_phi, locally.
+  intros.
+  destruct (Quot_inv x); subst.
+  generalize (not_ex_all_not _ _ H)
+  ; intros HH1; clear H.
+  generalize (fun n => not_all_ex_not _ _ (HH1 n))
+  ; intros HH2; clear HH1.
+
+  assert (HH3: forall n : posreal,
+        exists n0 : LpRRVq_UniformSpace prts 2 big2,
+          @Hierarchy.ball  (LpRRVq_UniformSpace prts 2 big2) (Quot (LpRRV_eq prts) x0) n n0 /\
+           (exists z : LpRRV prts 2,
+               Quot (LpRRV_eq prts) z = n0 /\ RandomVariable dom2 borel_sa z)).
+  {
+    intros n.
+    destruct (HH2 n).
+    exists x.
+    apply not_all_not_ex in H.
+    destruct H.
+    tauto.
+  }
+  clear HH2.
+  
+  assert (HH4: forall n : posreal,
+             exists z : LpRRV prts 2,
+               @Hierarchy.ball (LpRRVq_UniformSpace prts 2 big2) (Quot (LpRRV_eq prts) x0) n (Quot (LpRRV_eq prts) z)).
+  {
+    intros n.
+    destruct (HH3 n) as [x [xH1 [z [xH2 xH3]]]]; subst.
+    eauto.
+  } 
+Admitted.
+
+Definition conditional_expectation_L2q
+           (dom2 : SigmaAlgebra Ts)
+           (sub : sa_sub dom2 dom)
+           (x:LpRRVq prts 2)
+  : LpRRVq prts 2.
+Proof.
+  apply (ortho_projection_hilbert (L2RRVq_PreHilbert prts)
+                                  (ortho_phi dom2)).
+  - split; [split | ]; intros.
+    + destruct H as [a [eqqa rv_a]]; subst.
+      destruct H0 as [b [eqqb rv_b]]; subst.
+      unfold plus, opp; simpl.
+      rewrite LpRRVq_oppE, LpRRVq_plusE.
+      eexists.
+      split.
+      * reflexivity.
+      * typeclasses eauto.
+    + exists (LpRRVq_zero prts).
+      exists (LpRRVzero prts).
+      simpl.
+      split.
+      * reflexivity.
+      * typeclasses eauto.
+    + destruct H as [a [eqqa Ha]]; subst.
+      exists (LpRRVscale prts l a).
+      simpl.
+      split.
+      * unfold scal; simpl.
+        rewrite LpRRVq_scaleE.
+        reflexivity.
+      * typeclasses eauto.
+  -
+
+
+Admitted.
+  
+
 End cond_exp.
