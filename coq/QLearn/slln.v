@@ -700,10 +700,10 @@ Fixpoint cutoff_eps (n : nat) (eps : R) (X : nat -> R) :=
                     else (cutoff_eps k eps X)
   end.
 
-Lemma cutoff_eps_lt_eps eps (X : nat -> R) :
-   (forall k, X k < eps) -> (forall n, cutoff_eps n eps X = X n).
+Lemma cutoff_eps_lt_eps eps n (X : nat -> R) :
+   (forall k, (k <= n)%nat -> X k < eps) -> (cutoff_eps n eps X = X n).
 Proof.
-  intros H n.
+  intros H.
   induction n.
   + now simpl.
   + simpl.
@@ -715,7 +715,9 @@ Proof.
       intros.
       rewrite in_map_iff in H0.
       destruct H0 as [x0 [Hx0 Hx1]].
-      subst; auto.
+      subst; auto. apply H.
+      rewrite in_seq in Hx1. destruct Hx1.
+      intuition.
     }
     exfalso; firstorder.
 Qed.
@@ -746,46 +748,93 @@ Proof.
   lia.
 Qed.
 
-Lemma Rmax_list_map_ge_eps (eps : R) {n : nat} (X : nat -> R):
-  (0<n)%nat -> eps <= Rmax_list_map (seq 0 n) X -> (exists k, (k <= n)%nat -> eps <= X k).
+Lemma Rmax_list_map_seq_ge (eps : R) {n : nat} (X : nat -> R):
+  (0<n)%nat -> eps <= Rmax_list_map (seq 0 n) X <-> (exists k, (k < n)%nat /\ eps <= X k).
 Proof.
-  intros Hn Heps.
-  unfold Rmax_list_map in Heps.
-  generalize (Rmax_list_map_exist X (seq 0%nat n)); intros.
-  generalize (seq_not_nil n Hn); intros.
-  specialize (H H0).
-  destruct H as [k [Hin Heq]].
-  exists k; intros.
-  now rewrite <-Heq in Heps.
+  intros Hn.
+  split; intros Heps.
+  + unfold Rmax_list_map in Heps.
+    generalize (Rmax_list_map_exist X (seq 0%nat n)); intros.
+    generalize (seq_not_nil n Hn); intros.
+    specialize (H H0).
+    destruct H as [k [Hin Heq]].
+    exists k; intros.
+    rewrite <-Heq in Heps.
+    split; trivial.
+    rewrite in_seq in Hin; now destruct Hin.
+  + destruct Heps as [k1 [Hk1 Heps1]].
+    eapply Rle_trans; eauto.
+    unfold Rmax_list_map.
+    apply Rmax_spec. rewrite in_map_iff.
+    exists k1; split; trivial.
+    rewrite in_seq; split; lia.
 Qed.
 
+Lemma Rmax_list_map_seq_lt (eps : R) {n : nat} (X : nat -> R):
+ (0 < n)%nat -> Rmax_list (map X (seq 0 n)) < eps <-> (forall k, (k < n)%nat -> X k < eps).
+Proof.
+  intros Hn. split.
+  + intros Heps k Hk.
+    rewrite Rmax_list_lt_iff in Heps; try (apply map_not_nil; now apply seq_not_nil).
+    apply Heps.
+    rewrite in_map_iff.
+    exists k; split; trivial.
+    rewrite in_seq; lia.
+  + intros Heps.
+    rewrite Rmax_list_lt_iff; try (apply map_not_nil; now apply seq_not_nil).
+    intros x Hx. rewrite in_map_iff in Hx.
+    destruct Hx as [k [Hk1 Hk2]].
+    rewrite <-Hk1. apply Heps.
+    rewrite in_seq in Hk2. now destruct Hk2.
+Qed.
 
 Lemma cutoff_ge_eps_exists  (n : nat) (eps : R) ( X : nat -> R ):
-  (eps <= cutoff_eps n eps X) -> exists k, (k <= n)%nat -> eps <= X k.
+  (eps <= cutoff_eps n eps X) -> exists k, (k <= n)%nat /\ eps <= X k.
 Proof.
   intros Hn.
   induction n.
   -- simpl in Hn. exists 0%nat.
-     lra.
+     split; trivial; lra.
   -- simpl in Hn.
      match_destr_in Hn.
-     ++  exists (S n). lra.
+     ++  exists (S n). split; trivial; lra.
      ++ apply Rnot_lt_ge in n0.
         specialize (IHn Hn).
         destruct IHn as [k Hk].
-        destruct (k == S n).
-        * apply Rmax_list_map_ge_eps; try lia.
-          simpl; lra.
-        * exists k. intros Hnk.
-          apply Hk. apply ne_le_succ; trivial.
+        exists k. destruct Hk. split; trivial.
+        etransitivity; eauto; lia.
 Qed.
 
-Lemma cutoff_ge_eps_exists' (n : nat) (eps : R) (X : nat -> R):
-  (exists k, (k <= n)%nat -> eps <= X k) -> (eps <= cutoff_eps n eps X).
+Lemma cutoff_ge_eps_exists_contrapose (n : nat) (eps : R) (X : nat -> R):
+   (cutoff_eps n eps X < eps) -> (forall k, (k <= n)%nat -> X k < eps).
 Proof.
   intros Heps.
-
-Admitted.
+  induction n.
+  + simpl in Heps. intros.
+    assert (k = 0%nat) by lia; subst; trivial.
+  + simpl in Heps.
+    match_destr_in Heps.
+    ++ intros. destruct (k == S n).
+       -- now rewrite e.
+       -- apply IHn; try(apply ne_le_succ; eauto).
+          unfold Rmax_list_map in r.
+          replace (0%nat :: seq 1 n) with (seq 0%nat (S n)) in r by (now simpl).
+          rewrite Rmax_list_lt_iff in r; try (apply map_not_nil; apply seq_not_nil; lia).
+          rewrite cutoff_eps_lt_eps; intros; try (apply r; rewrite in_map_iff).
+          ** exists n; split; trivial. rewrite in_seq; lia.
+          ** exists k0; split; trivial. rewrite in_seq; lia.
+    ++ intros. specialize (IHn Heps).
+       apply Rnot_lt_ge in n0.
+       replace (0%nat :: seq 1 n) with (seq 0%nat (S n)) in n0 by (now simpl).
+       unfold Rmax_list_map in n0.
+       assert ((0 < S n)%nat) by lia.
+       apply Rge_le in n0.
+       rewrite (Rmax_list_map_seq_ge eps X H0) in n0.
+       destruct n0 as [k1 [Hk1 Heps1]].
+       assert (k1 <= n)%nat by lia.
+       specialize (IHn k1 H1).
+       exfalso; lra.
+Qed.
 
 
 Definition cutoff_eps_rv (n : nat) (eps : R) (X : nat -> Ts -> R) :=
