@@ -600,7 +600,13 @@ Proof.
 Qed.
 
 Definition rvmaxlist (X : nat -> Ts -> R) (N : nat) : Ts -> R :=
-  fun (omega : Ts) => Rmax_list (List.map (fun n => X n omega) (List.seq 0 N)).
+  fun (omega : Ts) => Rmax_list (List.map (fun n => X n omega) (List.seq 0 (S N))).
+
+Lemma seq_not_nil : forall n, (0 < n)%nat  -> [] <> seq 0 n.
+Proof.
+  induction n; simpl; intuition.
+  generalize (nil_cons H0); trivial.
+Qed.
 
 (* Move this to RealAdd. *)
 Lemma Rmax_list_app {A} {l : list A} (a : A) (f : A -> R) (hl : [] <> l) :
@@ -618,6 +624,24 @@ Proof.
   now rewrite <-Permutation.Permutation_cons_append.
 Qed.
 
+Lemma rvmaxlist_monotone (X : nat -> Ts -> R) :
+  forall n omega, rvmaxlist X n omega <= rvmaxlist X (S n) omega.
+Proof.
+  intros n omega.
+  unfold rvmaxlist.
+  assert (seq 0 (S (S n)) = seq 0 (S n) ++ [S n]).
+  {
+    generalize (S n); intros n0.
+    rewrite seq_S.
+    f_equal.
+  }
+  rewrite H.
+  rewrite Rmax_list_app.
+  + apply Rmax_l.
+  + apply seq_not_nil; lia.
+Qed.
+
+
 Global Instance frfrvmaxlist (X : nat -> Ts -> R)
        {rv : forall n, FiniteRangeFunction (X n)} (N : nat):
   FiniteRangeFunction (rvmaxlist X N).
@@ -625,8 +649,8 @@ Proof.
   unfold rvmaxlist.
   generalize (0%nat).
   induction N; simpl; intros s.
-  - apply frfconst.
-  - assert (frf:FiniteRangeFunction (fun omega => Rmax (X s omega) (Rmax_list (map (fun n : nat => X n omega) (seq (S s) N))))).
+  - apply rv.
+  - assert (frf:FiniteRangeFunction (fun omega => Rmax (X s omega) (Rmax_list (map (fun n : nat => X n omega) (seq (S s) (S N)))))).
     {
       apply frfmax; auto.
     }
@@ -644,8 +668,8 @@ Proof.
    unfold rvmaxlist.
   generalize (0%nat).
   induction N; simpl; intros s.
-  - apply rvconst.
-  - assert (frf:RandomVariable dom borel_sa (fun omega => Rmax (X s omega) (Rmax_list (map (fun n : nat => X n omega) (seq (S s) N))))).
+  - apply rv.
+  - assert (frf:RandomVariable dom borel_sa (fun omega => Rmax (X s omega) (Rmax_list (map (fun n : nat => X n omega) (seq (S s) (S N)))))).
     {
       apply rvmax_rv; auto.
     }
@@ -664,6 +688,98 @@ Fixpoint filtration_history (n : nat) (X : nat -> Ts -> R)
   | 0 => []
   | S k => refine_dec_sa_partitions (induced_sigma_generators (frf k)) (filtration_history k X)
   end.
+
+(* Few properties about cutoff sequences. Move to RealAdd. *)
+Fixpoint cutoff_eps (n : nat) (eps : R) (X : nat -> R) :=
+  match n with
+  | 0 => X 0%nat
+  | S k => if (Rlt_dec (Rmax_list_map (seq 0 (S k)) X) eps) then X (S k)
+                    else (cutoff_eps k eps X)
+  end.
+
+Lemma cutoff_eps_lt_eps eps (X : nat -> R) :
+   (forall k, X k < eps) -> (forall n, cutoff_eps n eps X = X n).
+Proof.
+  intros H n.
+  induction n.
+  + now simpl.
+  + simpl.
+    match_destr.
+    assert (H1 : Rmax_list_map (seq 0 (S n)) X < eps).
+    {
+      unfold Rmax_list_map.
+      rewrite Rmax_list_lt_iff; try (apply map_not_nil; apply seq_not_nil; lia).
+      intros.
+      rewrite in_map_iff in H0.
+      destruct H0 as [x0 [Hx0 Hx1]].
+      subst; auto.
+    }
+    exfalso; firstorder.
+Qed.
+
+Lemma cutoff_eps_ge_eps eps (X : nat -> R) :
+   (forall k:nat, eps <= X k) -> (forall n, cutoff_eps n eps X = X 0%nat).
+Proof.
+  intros H n.
+  simpl.
+  induction n.
+  ++ now simpl in H.
+  ++ simpl. match_destr.
+     assert (X n <= Rmax_list_map (0%nat :: seq 1 n) X).
+     {
+       unfold Rmax_list_map.
+       apply Rmax_spec.
+       rewrite in_map_iff.
+       exists n; split; trivial.
+       replace (0%nat :: seq 1 (n)) with (seq 0%nat (S n)) by (now simpl).
+       rewrite in_seq; lia.
+     }
+     specialize (H n).
+     lra.
+Qed.
+
+
+Lemma cutoff_eps_ge_lt_eps (eps:R) (X : nat -> R) :
+  (exists k, eps < X k) ->
+  (exists k, forall n, ((k <= n)%nat -> cutoff_eps n eps X = X k)).
+Proof.
+  intros [k Hk].
+  exists k. intros n Hnk.
+Admitted.
+
+
+Definition cutoff_eps_rv (n : nat) (eps : R) (X : nat -> Ts -> R) :=
+  fun omega => cutoff_eps n eps (fun k => X k omega).
+
+
+Lemma rvmaxlist_ge (X : nat -> Ts -> R): forall n omega, X n omega <= rvmaxlist X n omega.
+Proof.
+  intros.
+  unfold rvmaxlist.
+  apply Rmax_spec.
+  rewrite in_map_iff.
+  exists n; split; trivial.
+  rewrite in_seq; lia.
+Qed.
+
+
+Lemma cutoff_eps_rv_lt_eps eps (X : nat -> Ts -> R) : forall omega,
+   (forall k, X k omega < eps) -> (forall n, cutoff_eps_rv n eps X omega = X n omega).
+Proof.
+  intros omega H n.
+  unfold cutoff_eps_rv.
+  now apply cutoff_eps_lt_eps.
+Qed.
+
+Lemma cutoff_eps_rv_ge_eps eps (X : nat -> Ts -> R) : forall omega,
+   (forall k:nat, eps <= X k omega) -> (forall n, cutoff_eps_rv n eps X omega = X 0%nat omega).
+Proof.
+  intros omega H n.
+  unfold cutoff_eps_rv.
+  now apply cutoff_eps_ge_eps.
+Qed.
+
+
 
 Lemma ash_6_1_4 (X : nat -> Ts -> R)(n : nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
