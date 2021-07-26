@@ -1,6 +1,7 @@
 Require Import Lra Lia Reals RealAdd RandomVariableL2 Coquelicot.Coquelicot.
 Require Import Morphisms Finite List ListAdd.
 Require Import Sums SimpleExpectation.
+Require Import EquivDec.
 
 Set Bullet Behavior "Strict Subproofs".
 Set Default Goal Selector "!".
@@ -653,6 +654,44 @@ Fixpoint filtration_history (n : nat) (X : nat -> Ts -> R)
   | S k => refine_dec_sa_partitions (induced_sigma_generators (frf k)) (filtration_history k X)
   end.
 
+Lemma sublist_seq_le :
+  forall n k, (n <= k)%nat -> sublist (seq 0 n) (seq 0 k).
+Proof.
+  intros n k Hnk.
+  induction Hnk; intuition.
+  replace (seq 0 (S m)) with (seq 0 m ++ [m]).
+  + rewrite <-app_nil_r with (l := seq 0 n).
+    apply sublist_app; trivial.
+    apply sublist_nil_l.
+  + replace (S m) with (m + 1)%nat by lia.
+    rewrite seq_app.
+    f_equal.
+Qed.
+
+Lemma Rmax_list_sublist_le {A : Type}(f : A -> R):
+  forall l1 l2 : list A, ([] <> l1) -> sublist l1 l2 -> Rmax_list_map l1 f <= Rmax_list_map l2 f.
+Proof.
+  intros l1 l2 Hl1 Hl2.
+  generalize (sublist_In Hl2); intros.
+  unfold Rmax_list_map.
+  apply Rmax_spec.
+  rewrite in_map_iff.
+  rewrite  <-(map_not_nil) with (f0 := f) (l := l1) in Hl1.
+  generalize (Rmax_list_In _ Hl1); intros .
+  rewrite in_map_iff in H0.
+  destruct H0 as [x [Hx1 Hx2]].
+  exists x; split; trivial; auto.
+Qed.
+
+Lemma Rmax_seq_map_monotone (X : nat -> R):
+  forall n k, (0 < n <= k)%nat  -> Rmax_list_map (seq 0 n) X <= Rmax_list_map (seq 0 k) X.
+Proof.
+  intros n k Hnk.
+  apply Rmax_list_sublist_le.
+  + apply seq_not_nil; now destruct Hnk.
+  + apply sublist_seq_le. destruct Hnk; lia.
+Qed.
+
 (* Few properties about cutoff sequences. Move to RealAdd. *)
 Fixpoint cutoff_eps (n : nat) (eps : R) (X : nat -> R) :=
   match n with
@@ -702,13 +741,50 @@ Proof.
      lra.
 Qed.
 
-
-Lemma cutoff_eps_ge_lt_eps (eps:R) (X : nat -> R) :
-  (exists k, eps < X k) ->
-  (exists k, forall n, ((k <= n)%nat -> cutoff_eps n eps X = X k)).
+Lemma ne_le_succ {k n : nat} (hk1 : k <> S n) (hk2 : (k <= S n)%nat) : (k <= n)%nat.
 Proof.
-  intros [k Hk].
-  exists k. intros n Hnk.
+  lia.
+Qed.
+
+Lemma Rmax_list_map_ge_eps (eps : R) {n : nat} (X : nat -> R):
+  (0<n)%nat -> eps <= Rmax_list_map (seq 0 n) X -> (exists k, (k <= n)%nat -> eps <= X k).
+Proof.
+  intros Hn Heps.
+  unfold Rmax_list_map in Heps.
+  generalize (Rmax_list_map_exist X (seq 0%nat n)); intros.
+  generalize (seq_not_nil n Hn); intros.
+  specialize (H H0).
+  destruct H as [k [Hin Heq]].
+  exists k; intros.
+  now rewrite <-Heq in Heps.
+Qed.
+
+
+Lemma cutoff_ge_eps_exists  (n : nat) (eps : R) ( X : nat -> R ):
+  (eps <= cutoff_eps n eps X) -> exists k, (k <= n)%nat -> eps <= X k.
+Proof.
+  intros Hn.
+  induction n.
+  -- simpl in Hn. exists 0%nat.
+     lra.
+  -- simpl in Hn.
+     match_destr_in Hn.
+     ++  exists (S n). lra.
+     ++ apply Rnot_lt_ge in n0.
+        specialize (IHn Hn).
+        destruct IHn as [k Hk].
+        destruct (k == S n).
+        * apply Rmax_list_map_ge_eps; try lia.
+          simpl; lra.
+        * exists k. intros Hnk.
+          apply Hk. apply ne_le_succ; trivial.
+Qed.
+
+Lemma cutoff_ge_eps_exists' (n : nat) (eps : R) (X : nat -> R):
+  (exists k, (k <= n)%nat -> eps <= X k) -> (eps <= cutoff_eps n eps X).
+Proof.
+  intros Heps.
+
 Admitted.
 
 

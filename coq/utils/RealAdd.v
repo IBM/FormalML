@@ -2408,7 +2408,7 @@ Proof.
   -- intro H. apply H ; auto. now apply Rmax_list_In.
 Qed.
 
-Definition Rmax_list_incl l1 l2 : nil <> l1 -> incl l1 l2 -> Rmax_list l1 <= Rmax_list l2.
+Lemma Rmax_list_incl l1 l2 : nil <> l1 -> incl l1 l2 -> Rmax_list l1 <= Rmax_list l2.
 Proof.
   unfold Proper, respectful, incl
   ; intros.
