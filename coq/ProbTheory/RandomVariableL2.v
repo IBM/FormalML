@@ -752,7 +752,7 @@ Proof.
     repeat red; intros; simpl; tauto.
   - intros.
     apply ps_pos.
-Qed.
+Defined.
 
 Instance RandomVariable_sa_sub (dom2 : SigmaAlgebra Ts)
          (sub : sa_sub dom2 dom)
@@ -893,6 +893,13 @@ Proof.
   }
   pose (f := fun (n : nat) => proj1_sig (X n)).
   assert (IsLp prts 2 (rvlim f)).
+(*  {
+    eapply islp_rvlim_bounded; eauto.
+    - lra.
+    - admit.
+    - 
+  }    
+*)
   admit.
   assert (RandomVariable dom borel_sa (rvlim f)).
   admit.
@@ -904,6 +911,29 @@ Proof.
   
 Admitted.
 
+
+Lemma IsLp_prob_space_sa_sub
+      p dom2 sub x
+  {rv:RandomVariable dom2 borel_sa x} :
+  IsLp prts p x ->
+  IsLp (prob_space_sa_sub dom2 sub) p x.
+Proof.
+Admitted.
+
+Definition prob_space_sa_sub_set_lift
+           dom2 sub
+           (s:LpRRV (prob_space_sa_sub dom2 sub) 2 -> Prop)
+           (x:LpRRV prts 2) : Prop.
+Proof.
+  destruct x.
+  destruct (ClassicalDescription.excluded_middle_informative (RandomVariable dom2 borel_sa LpRRV_rv_X)).
+  - apply s.
+    exists LpRRV_rv_X; trivial.
+    now apply IsLp_prob_space_sa_sub.
+  - exact False.
+Qed.
+
+    
 Lemma ortho_phi_complete
            (dom2 : SigmaAlgebra Ts)
            (sub : sa_sub dom2 dom) :
@@ -911,9 +941,48 @@ Lemma ortho_phi_complete
 Proof.
   unfold complete_subset.
   exists (LpRRVq_lim prts big2).
-  intros.
-  generalize (L2RRV_lim_complete (prob_space_sa_sub dom2 sub) big2 ); intros.
+  intros F PF cF HH.
+  assert (HHclassic: forall P : PreHilbert_NormedModule -> Prop,
+             F P -> (exists x : PreHilbert_NormedModule, P x /\ ortho_phi dom2 x)).
+  {
+    intros P FP.
+    specialize (HH P FP).
+    now apply NNPP in HH.
+  }
+  clear HH.
+  generalize (L2RRV_lim_complete (prob_space_sa_sub dom2 sub) big2); intros HH.
+  simpl in *.
+
+  specialize  (HH (fun s:(LpRRV (prob_space_sa_sub dom2 sub) 2 -> Prop)=>
+                 (LpRRVq_filter_to_LpRRV_filter prts F) (prob_space_sa_sub_set_lift dom2 sub s)
+              )).
+  cut_to HH.
+(*
+
+      generalize (L2RRV_lim_complete (LpRRVq_filter_to_LpRRV_filter F)); intros.
+    generalize (LpRRVq_filter_to_LpRRV_filter_proper F H); intros.
+    generalize (LpRRVq_filter_to_LpRRV_filter_cauchy F H H0); intros.
+
+  
+  
+
+  
+  
+
+  
+  pose (FF := (fun s:(LpRRVq prts 2 -> Prop) => F s /\ forall x, s x -> ortho_phi dom2 x)).
+  
+  generalize (L2RRV_lim_complete prts big2); intros HH2.
+
+  split.
+  - admit.
+  - specialize (HH2 F PF cF).
+  
+
+  
+  
   unfold ortho_phi in *.
+*)
   Admitted.
 
 
@@ -923,8 +992,8 @@ Definition conditional_expectation_L2q
            (x:LpRRVq prts 2)
   : LpRRVq prts 2.
 Proof.
-  apply (ortho_projection_hilbert (L2RRVq_PreHilbert prts)
-                                  (ortho_phi dom2)).
+  refine (ortho_projection_hilbert (L2RRVq_PreHilbert prts)
+                                  (ortho_phi dom2) _ _ x).
   - split; [split | ]; intros.
     + destruct H as [a [eqqa rv_a]]; subst.
       destruct H0 as [b [eqqb rv_b]]; subst.
@@ -949,9 +1018,7 @@ Proof.
         reflexivity.
       * typeclasses eauto.
   - now apply ortho_phi_complete.
-  - 
-
-Admitted.
+Qed.
 
 Program Definition conditional_expectation_L2fun (f : Ts -> R) 
         (dom2 : SigmaAlgebra Ts)
