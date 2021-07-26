@@ -874,7 +874,33 @@ Proof.
     rewrite LpRRVq_ballE in H.
     eauto.
   }
-  
+  assert (forall (n : nat), 0 < (/ (INR (S n)))).
+  {
+    intros.
+    apply Rinv_0_lt_compat.
+    apply lt_0_INR.
+    lia.
+  }
+  assert (forall (n:nat),
+             {z:LpRRV prts 2 |
+               (LpRRVball prts big2 x0 (mkposreal _ (H n)) z) /\
+               (RandomVariable dom2 borel_sa z)}).
+  {
+    intros.
+    destruct (constructive_indefinite_description _ (HH5 (mkposreal _ (H n))))
+      as [x Fx].
+    now exists x.
+  }
+  pose (f := fun (n : nat) => proj1_sig (X n)).
+  assert (IsLp prts 2 (rvlim f)).
+  admit.
+  assert (RandomVariable dom borel_sa (rvlim f)).
+  admit.
+  assert (RandomVariable dom2 borel_sa (rvlim f)).
+  admit.
+  assert (Quot (LpRRV_eq prts) (pack_LpRRV prts (rvlim f)) = Quot (LpRRV_eq prts) x0).
+  admit.
+  now exists (pack_LpRRV prts (rvlim f)).
   
 Admitted.
 
