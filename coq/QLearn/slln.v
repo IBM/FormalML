@@ -836,6 +836,30 @@ Proof.
        exfalso; lra.
 Qed.
 
+Lemma cutoff_ge_eps_exists_iff (n : nat) (eps : R) (X : nat -> R):
+  (eps <= cutoff_eps n eps X) <-> exists k, (k <= n)%nat /\ eps <= X k.
+Proof.
+  split.
+  + apply cutoff_ge_eps_exists.
+  + intro H. apply ROrderedType.ROrder.not_gt_le.
+    revert H. apply ssrbool.contraPnot.
+    intro H. generalize (cutoff_ge_eps_exists_contrapose n eps X H); intros.
+    apply Classical_Pred_Type.all_not_not_ex.
+    intros k. specialize (H0 k).
+    apply Classical_Prop.or_not_and.
+    apply Classical_Prop.imply_to_or; intros.
+    specialize (H0 H1).  apply Rgt_not_le; trivial.
+Qed.
+
+Lemma cutoff_ge_eps_Rmax_list_iff (n : nat) (eps : R) (X : nat -> R):
+  (eps <= cutoff_eps n eps X) <-> eps <= Rmax_list_map (seq 0 (S n)) X.
+Proof.
+  assert (Hn : (0 < S n)%nat) by lia.
+  rewrite (Rmax_list_map_seq_ge eps X Hn).
+  rewrite cutoff_ge_eps_exists_iff.
+  split; intros; destruct H as [x [Hx1 Hx2]]; exists x; split; trivial; lia.
+Qed.
+
 
 Definition cutoff_eps_rv (n : nat) (eps : R) (X : nat -> Ts -> R) :=
   fun omega => cutoff_eps n eps (fun k => X k omega).
