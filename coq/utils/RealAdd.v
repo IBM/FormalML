@@ -3475,3 +3475,39 @@ Proof.
   - left.
     now apply exp_ineq1.
 Qed.
+
+Definition bounded (x : nat -> R) := exists c : R, forall n, Rabs (x n) <= c.
+
+Definition restrict (x : nat -> R) (N : nat) : {a : nat | (a < N)%nat} -> R :=
+  fun H => let (H0,_) := H in x H0.
+
+Lemma fin_seq_bounded (x : nat -> R) (N : nat) :
+  exists (c : R),
+    forall (n:nat), (n<N)%nat -> Rabs(x n) <= c.
+Proof.
+  generalize (bounded_nat_finite N); intros Hn.
+  generalize (fin_fun_bounded_Rabs Hn (restrict x N)); intros.
+  destruct H as [c Hc]. exists c; intros.
+  now specialize (Hc (exist _ n H)).
+Qed.
+
+Lemma is_lim_seq_bounded (x : nat -> R) (c:R) : is_lim_seq x c -> bounded x.
+Proof.
+  intros Hx.
+  rewrite <- is_lim_seq_spec in Hx.
+  unfold is_lim_seq' in Hx.
+  destruct (Hx posreal_one).
+  destruct (fin_seq_bounded x x0).
+  exists (Rmax x1 ((Rabs c)+1)); intros.
+  destruct (lt_dec n x0).
+  - eapply Rle_trans.
+    + apply H0; lia.
+    + apply Rmax_l.
+  - left.
+    assert (x0 <= n)%nat by lia.
+    specialize (H n H1).
+    generalize (Rabs_triang_inv (x n) c); intros.
+    apply Rlt_le_trans with (r2 := (Rabs c)+1); [|apply Rmax_r].
+    simpl in H.
+    lra.
+  Qed.
