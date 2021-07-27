@@ -2,7 +2,7 @@ Require Import Classical.
 Require Import ClassicalChoice.
 Require Import FinFun.
 
-Require Import List.
+Require Import List Permutation.
 Require Import Morphisms EquivDec Program.
 
 Require Import Utils DVector.
@@ -691,6 +691,46 @@ Instance list_partition_sa {T} (l:list (pre_event T)) (is_part:is_pre_partition_
 
 Definition is_partition_list {T} {σ:SigmaAlgebra T} (l:list (event σ)) :=
   ForallOrdPairs event_disjoint l /\ list_union l === Ω.
+
+Global Instance is_partition_list_perm {T} {σ:SigmaAlgebra T}  :
+  Proper (@Permutation _ ==> iff) (@is_partition_list T σ).
+Proof.
+  cut (Proper (@Permutation _ ==> impl) is_partition_list).
+  {
+    unfold Proper, respectful, impl; intros HH x y perm.
+    split; intros.
+    - eauto.
+    - symmetry in perm.
+      eauto.
+  }
+  unfold is_partition_list.
+  unfold Proper, respectful, impl; intros x y perm [HH HHunion].
+  split.
+  - eapply ForallOrdPairs_perm; try eapply HH.
+    + apply event_disjoint_sym.
+    + now symmetry.
+  - now rewrite <- perm.
+Qed.
+
+Global Instance is_partition_list_event_equiv {T} {σ:SigmaAlgebra T}:
+  Proper (Forall2 event_equiv ==> iff) (@is_partition_list T σ).
+Proof.
+  cut (Proper (Forall2 event_equiv ==> impl) is_partition_list).
+  {
+    unfold Proper, respectful, impl; intros HH x y perm.
+    split; intros.
+    - eauto.
+    - symmetry in perm.
+      eauto.
+  }
+  unfold is_partition_list.
+  unfold Proper, respectful, impl; intros x y perm [HH HHunion].
+  split.
+  - eapply ForallOrdPairs_Forall2_prop; eauto.
+    apply event_disjoint_proper'.
+  - rewrite <- HHunion.
+    now apply list_union_Forall2_prop.
+Qed.
 
 Section dec.
 

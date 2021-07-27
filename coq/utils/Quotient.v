@@ -364,33 +364,6 @@ Section more_quotient.
     intuition.
   Qed.
 
-  Global Instance ForallOrdPairs_perm {A} R {sym:Symmetric R} : Proper (@Permutation A ==> iff) (ForallOrdPairs R).
-  Proof.
-    cut (forall l l', Permutation l l' -> (fun l l' => ForallOrdPairs R l -> ForallOrdPairs R l') l l').
-    {
-      unfold Proper, respectful; simpl; split; intros.
-      - eapply H; try eapply H1; eauto.
-      - eapply H; try eapply H1.
-        symmetry; eauto.
-    } 
-    apply Permutation_ind_bis; simpl; intros.
-    - trivial.
-    - invcs H1.
-      constructor; auto 2.
-      now rewrite <- H.
-    - invcs H1.
-      invcs H5.
-      invcs H4.
-      constructor.
-      + rewrite <- H.
-        constructor; trivial.
-        now symmetry.
-      + constructor.
-        * now rewrite <- H.
-        * eauto.
-    - eauto.
-  Qed.
-
   Global Instance different_buckets_symmetric {A} (R:A->A->Prop) {sym:Symmetric R} : Symmetric (different_buckets R).
   Proof.
     unfold Symmetric, different_buckets; intros.

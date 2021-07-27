@@ -1,5 +1,5 @@
 Require Import Lra Lia Reals RealAdd RandomVariableL2 Coquelicot.Coquelicot.
-Require Import Morphisms Finite List ListAdd.
+Require Import Morphisms Finite List ListAdd Permutation.
 Require Import Sums SimpleExpectation.
 Require Import EquivDec.
 
@@ -701,13 +701,48 @@ Proof.
   - easy.
 Qed.
 
-Lemma event_sub_trans (A B C : event dom) :
-  event_sub A B -> event_sub B C -> event_sub A C.
+Global Instance partition_measurable_perm (f : Ts -> R)
+   {frf : FiniteRangeFunction f}
+   {rvf : RandomVariable dom borel_sa f} :
+  Proper (@Permutation _ ==> iff) (partition_measurable f).
 Proof.
-  unfold event_sub, pre_event_sub; intros.
-  apply H0.
-  now apply H.
+  cut (Proper (Permutation (A:=event dom) ==> impl) (partition_measurable f)).
+  {
+    unfold Proper, respectful, impl; intros HH x y perm.
+    split; intros.
+    - eauto.
+    - symmetry in perm.
+      eauto.
+  }
+  unfold partition_measurable.
+  unfold Proper, respectful, impl; intros x y perm HH isp e ein.
+  rewrite <- perm in isp.
+  rewrite <- perm in ein.
+  now apply HH.
 Qed.
+
+Instance partition_measurable_event_equiv (f : Ts -> R)
+   {frf : FiniteRangeFunction f}
+   {rvf : RandomVariable dom borel_sa f} :
+  Proper (Forall2 event_equiv ==> iff) (partition_measurable f).
+Proof.
+  cut (Proper (Forall2 event_equiv ==> impl) (partition_measurable f)).
+  {
+    unfold Proper, respectful, impl; intros HH x y perm.
+    split; intros.
+    - eauto.
+    - symmetry in perm.
+      eauto.
+  }
+  unfold partition_measurable, impl.
+  intros x y F2 HH isp p inp.
+  rewrite <- F2 in isp.
+  destruct (Forall2_In_r F2 inp) as [p' [??]].
+  destruct (HH isp p') as [c [cin csub]]; trivial.
+  exists c.
+  split; trivial.
+  now rewrite <- H0.
+Qed.  
 
 Lemma part_meas_refine_commute
       (f : Ts -> R) 
@@ -719,7 +754,14 @@ Lemma part_meas_refine_commute
   partition_measurable f (map dsa_event
                               (refine_dec_sa_partitions l2 l1)).
 Proof.
-  Admitted.
+  destruct (refine_dec_sa_partitions_symm l1 l2) as [l' [perm F2]].
+  transitivity (partition_measurable f (map dsa_event l')).
+  - apply partition_measurable_perm.
+    now apply Permutation_map.
+  - apply partition_measurable_event_equiv.
+    apply Forall2_map_f.
+    apply F2.
+Qed.
 
 Lemma part_meas_refine_l (f : Ts -> R) 
       (l1 l2 : list dec_sa_event)
@@ -754,7 +796,7 @@ Proof.
     rewrite in_map_iff in H3.
     destruct H3 as [? [? ?]].
     rewrite <- H1.
-    apply event_sub_trans with (B := dsa_event x1); trivial.
+    transitivity (dsa_event x1); trivial.
     rewrite <- H3.
     simpl.
     apply Event.event_inter_sub_l.

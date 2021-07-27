@@ -214,7 +214,52 @@ Section fp.
     (forall x1 x2, R x1 x2) -> ForallPairs R l.
   Proof.
     firstorder.
-  Qed. 
+  Qed.
+
+  Global Instance ForallOrdPairs_perm {A} R {sym:Symmetric R} : Proper (@Permutation A ==> iff) (ForallOrdPairs R).
+  Proof.
+    cut (forall l l', Permutation l l' -> (fun l l' => ForallOrdPairs R l -> ForallOrdPairs R l') l l').
+    {
+      unfold Proper, respectful; simpl; split; intros.
+      - eapply H; try eapply H1; eauto.
+      - eapply H; try eapply H1.
+        symmetry; eauto.
+    } 
+    apply Permutation_ind_bis; simpl; intros.
+    - trivial.
+    - invcs H1.
+      constructor; auto 2.
+      now rewrite <- H.
+    - invcs H1.
+      invcs H5.
+      invcs H4.
+      constructor.
+      + rewrite <- H.
+        constructor; trivial.
+        now symmetry.
+      + constructor.
+        * now rewrite <- H.
+        * eauto.
+    - eauto.
+  Qed.
+
+  Instance ForallOrdPairs_Forall2_prop {A:Type} (R1 R2:A->A->Prop) (Rprop:Proper (R1 ==> R1 ==> impl) R2) :
+    Proper (Forall2 R1 ==> impl) (ForallOrdPairs R2).
+  Proof.
+    intros x y xyeq; unfold impl in *.
+    induction xyeq.
+    - trivial.
+    - intros FO.
+      invcs FO.
+      constructor.
+      + rewrite Forall_forall in *.
+        intros ? inn.
+        unfold Proper, respectful in Rprop.
+        destruct (Forall2_In_r xyeq inn) as [?[??]].
+        eauto.
+      + eauto.
+  Qed.
+
 
 End fp.
 

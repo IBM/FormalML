@@ -4,7 +4,8 @@ Require Import Coq.Reals.Rfunctions.
 Require Import Coq.Reals.RiemannInt.
 
 Require Import Lra Lia.
-Require Import List.
+Require Import List Permutation.
+
 Require Import Morphisms EquivDec.
 
 Require Import Classical ClassicalFacts.
@@ -1108,6 +1109,20 @@ Section event.
 
   Hint Resolve event_disjoint_complement : prob.
 
+  Global Instance event_disjoint_sym : Symmetric event_disjoint.
+  Proof.
+    unfold event_disjoint, pre_event_disjoint; intros [??][??]; simpl; eauto.
+  Qed.
+
+  Instance event_disjoint_proper' : 
+    Proper (event_equiv ==> event_equiv ==> impl) event_disjoint.
+  Proof.
+    unfold Proper, respectful, event_disjoint, pre_event_disjoint, impl, event_equiv, pre_event_equiv; intros.
+    eapply H1.
+    - apply H; eauto.
+    - apply H0; eauto.
+  Qed.
+
   Lemma event_sub_true  (A:event σ) : A ≤ Ω.
   Proof.
     firstorder.
@@ -1788,6 +1803,46 @@ Section event.
     eauto.
   Qed.
 
+  Lemma list_union_cons_proper x y l1 l2 :
+    event_equiv x y ->
+    event_equiv (list_union l1) (list_union l2) ->
+    event_equiv (list_union (x::l1)) (list_union (y::l2)).
+  Proof.
+    unfold list_union, pre_list_union, event_equiv, pre_event_equiv; simpl; intros.
+    destruct (H0 x0) as [HH1 HH2].
+    split; intros [?[[?|?]?]]; subst.
+    - apply H in H2.
+      eauto.
+    - destruct HH1; eauto.
+      exists x2; tauto.
+    - apply H in H2.
+      eauto.
+    - destruct HH2; eauto.
+      exists x2; tauto.
+  Qed.
+
+  Global Instance list_union_perm :
+    Proper (@Permutation _ ==> event_equiv) list_union.
+  Proof.
+    intros x y perm.
+    induction perm.
+    - reflexivity.
+    - now apply list_union_cons_proper.
+    - unfold list_union, pre_list_union, event_equiv, pre_event_equiv; simpl.
+      firstorder.
+    - etransitivity; eauto.
+  Qed.
+
+
+  Global Instance list_union_Forall2_prop :
+    Proper (Forall2 event_equiv ==> event_equiv) list_union.
+  Proof.
+    intros x y F2.
+    induction F2.
+    - reflexivity.
+    - now apply list_union_cons_proper.
+  Qed.
+
 End event.
 
 Definition event_preimage {Ts: Type} {Td: Type} {σ:SigmaAlgebra Td}
@@ -1927,6 +1982,16 @@ Section dec.
     ; dsa_dec :  dec_event dsa_event
     }.
 
+  Definition dsa_equiv (x y : dec_sa_event) : Prop
+    := event_equiv (dsa_event x) (dsa_event y).
+
+  Global Instance dsa_equiv_equiv : Equivalence dsa_equiv.
+  Proof.
+    unfold dsa_equiv.
+    apply Equivalence_pullback.
+    apply event_equiv_equiv.
+  Qed.
+  
   Program Definition dsa_Ω : dec_sa_event
     := {| dsa_event := Ω |}.
   Next Obligation.
@@ -2013,6 +2078,39 @@ Section dec.
       + apply in_map_iff; eauto.
   Qed.        
 
+  Lemma Forall2_concat {A} R (l1 l2:list (list A)):
+    Forall2 (Forall2 R) l1 l2 ->
+    Forall2 R (concat l1) (concat l2).
+  Proof.
+    induction 1; simpl.
+    - constructor.
+    - apply Forall2_app; auto.
+  Qed.
+    
+  Lemma refine_dec_sa_partitions_symm (l1 l2 : list dec_sa_event) :
+    exists l',
+      Permutation (refine_dec_sa_partitions l1 l2) l' /\
+      Forall2 dsa_equiv l' (refine_dec_sa_partitions l2 l1).
+  Proof.
+    exists (concat
+         (map
+            (fun x : dec_sa_event =>
+               map (fun y : dec_sa_event => (dec_sa_event_inter y x)) l1) l2)).
+    unfold refine_dec_sa_partitions, refine_dec_sa_event.
+    repeat rewrite flat_map_concat_map.
+    split.
+    - apply concat_map_swap_perm. 
+    - apply Forall2_concat.
+      apply Forall2_map_f.
+      apply Forall2_refl.
+      intros ?.
+      apply Forall2_map_f.
+      apply Forall2_refl.
+      intros ?.
+      red; simpl.
+      apply event_inter_comm.
+  Qed.
+  
   Lemma event_equiv_list_union_refine_event a l :
     event_equiv (list_union (map dsa_event l)) Ω ->
     event_equiv (list_union (map dsa_event (refine_dec_sa_event a l))) (dsa_event a).
