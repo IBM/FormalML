@@ -571,7 +571,6 @@ Section SimpleExpectation.
         {rv2: RandomVariable dom borel_sa rv_X2}
         (frf1 : FiniteRangeFunction rv_X1) 
         (frf2 : FiniteRangeFunction rv_X2) :
-    (frf_vals (FiniteRangeFunction := frf2)) <> nil ->
     NoDup (frf_vals (FiniteRangeFunction := frf1)) ->
     NoDup (frf_vals (FiniteRangeFunction := frf2)) ->    
     list_sum
@@ -589,7 +588,7 @@ Section SimpleExpectation.
     induction (frf_vals (FiniteRangeFunction := frf1)).
     - now simpl.
     - simpl.
-      invcs H0.
+      invcs H.
       rewrite IHl by trivial.
       rewrite map_app.
       rewrite list_sum_cat.
@@ -606,7 +605,6 @@ Section SimpleExpectation.
         {rv2: RandomVariable dom borel_sa rv_X2}         
         (frf1 : FiniteRangeFunction rv_X1) 
         (frf2 : FiniteRangeFunction rv_X2) :
-    (frf_vals (FiniteRangeFunction := frf1)) <> nil ->
     NoDup (frf_vals (FiniteRangeFunction := frf1)) ->
     NoDup (frf_vals (FiniteRangeFunction := frf2)) ->    
     list_sum
@@ -629,7 +627,7 @@ Section SimpleExpectation.
       rewrite list_prod_swap.
       repeat rewrite map_map.
       simpl.
-      invcs H1.
+      invcs H0.
       rewrite IHl by trivial.
       rewrite map_app.
       repeat rewrite map_map.
@@ -646,7 +644,6 @@ Section SimpleExpectation.
         {rv2: RandomVariable dom borel_sa rv_X2}         
         (frf1 : FiniteRangeFunction rv_X1) 
         (frf2 : FiniteRangeFunction rv_X2) :
-    (frf_vals (FiniteRangeFunction := frf2)) <> nil ->
     list_sum
       (map (fun v : R => v * ps_P (preimage_singleton rv_X1 v))
            (nodup Req_EM_T (frf_vals (FiniteRangeFunction := frf1)))) =
@@ -660,9 +657,7 @@ Section SimpleExpectation.
   Proof.
     intros.
     apply (sumSimpleExpectation00 (nodup_simple_random_variable Req_EM_T frf1) (nodup_simple_random_variable Req_EM_T frf2)); simpl; try apply NoDup_nodup.
-    now apply nodup_not_nil.
   Qed.
-
 
   Lemma sumSimpleExpectation1
         {rv_X1 rv_X2 : Ts -> R}
@@ -670,7 +665,6 @@ Section SimpleExpectation.
         {rv2: RandomVariable dom borel_sa rv_X2}         
         (frf1 : FiniteRangeFunction rv_X1) 
         (frf2 : FiniteRangeFunction rv_X2) :
-    (frf_vals (FiniteRangeFunction := frf1)) <> nil ->
     list_sum
       (map (fun v : R => v * ps_P (preimage_singleton rv_X2 v))
            (nodup Req_EM_T (frf_vals (FiniteRangeFunction := frf2)))) =
@@ -684,7 +678,6 @@ Section SimpleExpectation.
   Proof.
     intros.
     apply (sumSimpleExpectation11 (nodup_simple_random_variable Req_EM_T frf1) (nodup_simple_random_variable Req_EM_T frf2)); simpl; try apply NoDup_nodup.
-    now apply nodup_not_nil.
   Qed.
 
   Definition sums_same (x y:R*R) := fst x + snd x = fst y + snd y.
@@ -768,24 +761,18 @@ Section SimpleExpectation.
       apply H1, H3.
   Qed.
 
-
-  Existing Instance Equivalence_pullback.
-  Existing Instance EqDec_pullback.
-  
-  Lemma sumSimpleExpectation_nempty
+  Lemma sumSimpleExpectation
         (rv_X1 rv_X2 : Ts -> R)
         {rv1: RandomVariable dom borel_sa rv_X1}
         {rv2: RandomVariable dom borel_sa rv_X2}
         {frf1 : FiniteRangeFunction rv_X1} 
         {frf2 : FiniteRangeFunction rv_X2} :
-    @frf_vals Ts R rv_X1 frf1 <> nil -> 
-    @frf_vals Ts R rv_X2 frf2 <> nil ->
     (SimpleExpectation rv_X1) + (SimpleExpectation rv_X2)%R =
-    SimpleExpectation (rvplus rv_X1 rv_X2) (frf:=frfplus _ _).
+    SimpleExpectation (rvplus rv_X1 rv_X2).
   Proof.
     unfold SimpleExpectation; intros.
-    generalize (sumSimpleExpectation0 frf1 frf2 H0); intros.
-    generalize (sumSimpleExpectation1 frf1 frf2 H); intros.   
+    generalize (sumSimpleExpectation0 frf1 frf2); intros.
+    generalize (sumSimpleExpectation1 frf1 frf2); intros.   
     generalize (@sa_sigma_inter_pts _ _ rv_X1 rv_X2). intro sa_sigma.
     destruct frf1.
     destruct frf2.
@@ -797,14 +784,14 @@ Section SimpleExpectation.
                     (map (fun v : R*R => (fst v + snd v) * ps_P
                                                           (preimage_singleton rv_X1 (fst v) ∩ preimage_singleton rv_X2 (snd v)))
                          (list_prod (nodup Req_EM_T frf_vals) (nodup Req_EM_T frf_vals0)))).
-    - rewrite H1.
-      rewrite H2.
+    - rewrite H.
+      rewrite H0.
       rewrite <-list_sum_map_add.
       f_equal.
       apply map_ext.
       intros.
       lra.
-    - clear H1 H2.
+    - clear H H0.
       assert (HH:forall x y : R * R, {x = y} + {x <> y})
         by apply (pair_eqdec (H:=Req_EM_T) (H0:=Req_EM_T)).
       
@@ -851,8 +838,8 @@ Section SimpleExpectation.
              unfold all_equivs, all_different.
              repeat rewrite Forall_forall.
              intros Hdiff Hequiv Hnnil.
-             specialize (Hnnil _ H2).
-             specialize (Hequiv _ H2).
+             specialize (Hnnil _ H0).
+             specialize (Hequiv _ H0).
              
              unfold is_equiv_class, ForallPairs in Hequiv.
              destruct a; simpl in *; [congruence | ]; clear Hnnil.
@@ -892,21 +879,21 @@ Section SimpleExpectation.
                        assert (Hin:In (rv_X1 x, rv_X2 x) l) by apply Hcomplete.
                        destruct (quotient_in sums_same _ _ Hin) as [xx [xxin inxx]].
                        generalize (all_different_same_eq sums_same (quotient sums_same l) xx (p::a) (rv_X1 x, rv_X2 x) (fst p, snd p)); simpl; trivial; intros.
-                       rewrite H4 in inxx; trivial
+                       rewrite H2 in inxx; trivial
                        ; destruct p; simpl; eauto.
                        destruct inxx.
                        +++ eexists.
                            split; [left; reflexivity | ]; simpl.
-                           invcs H5; tauto.
+                           invcs H3; tauto.
                        +++ eexists.
                            split.
                            *** right.
                                apply in_map.
-                               apply H5.
+                               apply H3.
                            *** simpl.
                                tauto.
                 ** apply event_disjoint_preimage_disj_pairs.
-                   generalize (quotient_bucket_NoDup sums_same l H1); rewrite Forall_forall; eauto.
+                   generalize (quotient_bucket_NoDup sums_same l H); rewrite Forall_forall; eauto.
           -- apply list_sum_Proper.
              apply Permutation_map.
              rewrite <- (nodup_hd_quotient Req_EM_T 0).
@@ -1422,6 +1409,7 @@ Section SimpleConditionalExpectation.
       now rewrite H.
     Qed.
 
+(*
   Lemma sumSimpleExpectation
         (rv_X1 rv_X2 : Ts -> R)
         {rv1: RandomVariable dom borel_sa rv_X1}
@@ -1440,7 +1428,7 @@ Section SimpleConditionalExpectation.
     rewrite sumSimpleExpectation_nempty; simpl; trivial; try congruence.
     apply SimpleExpectation_pf_irrel.
   Qed.
-
+*)
   Lemma sumSimpleExpectation'
         (rv_X1 rv_X2 : Ts -> R)
         {rv1: RandomVariable dom borel_sa rv_X1}
