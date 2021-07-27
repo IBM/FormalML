@@ -686,18 +686,98 @@ Lemma part_meas_induced (f : Ts -> R)
       {rv : RandomVariable dom borel_sa f} :
   partition_measurable f (map dsa_event (induced_sigma_generators frf)).
 Proof.
+  unfold partition_measurable, induced_sigma_generators.
+  intros.
+  rewrite in_map_iff in H0.  
+  destruct H0 as [? [? ?]].
+  rewrite in_map_iff in H1.
+  destruct H1 as [? [? ?]].
+  rewrite <- H1 in H0; simpl in H0.
+  destruct frf.
+  exists x0.
+  rewrite H0.
+  split.
+  - now rewrite nodup_In in H2.
+  - easy.
+Qed.
+
+Lemma event_sub_trans (A B C : event dom) :
+  event_sub A B -> event_sub B C -> event_sub A C.
+Proof.
+  unfold event_sub, pre_event_sub; intros.
+  apply H0.
+  now apply H.
+Qed.
+
+Lemma part_meas_refine_commute
+      (f : Ts -> R) 
+      (l1 l2 : list dec_sa_event)
+      {frf : FiniteRangeFunction f}
+      {rvf : RandomVariable dom borel_sa f} :
+  partition_measurable f (map dsa_event
+                              (refine_dec_sa_partitions l1 l2)) <->
+  partition_measurable f (map dsa_event
+                              (refine_dec_sa_partitions l2 l1)).
+Proof.
   Admitted.
+
+Lemma part_meas_refine_l (f : Ts -> R) 
+      (l1 l2 : list dec_sa_event)
+      {frf : FiniteRangeFunction f}
+      {rvf : RandomVariable dom borel_sa f} :
+  (is_partition_list (map dsa_event l1)) ->
+  (is_partition_list (map dsa_event l2)) ->  
+  (partition_measurable f (map dsa_event l1)) ->
+  partition_measurable f (map dsa_event
+                              (refine_dec_sa_partitions l1 l2)).
+Proof.
+  intros ispartl1 ispartl2; intros.
+  unfold partition_measurable, refine_dec_sa_partitions.
+  intros.
+  rewrite in_map_iff in H1.
+  destruct H1 as [? [? ?]].
+  rewrite flat_map_concat_map in H2.
+  rewrite concat_In in H2.
+  destruct H2 as [? [? ?]].
+  rewrite in_map_iff in H2.
+  destruct H2 as [? [? ?]].
+  unfold partition_measurable in H.    
+  destruct frf.
+  rewrite <- H2 in H3.
+  cut_to H; trivial.
+  specialize (H (dsa_event x1)).
+  cut_to H.
+  - destruct H as [? [? ?]].
+    exists x2.
+    split; trivial.
+    unfold refine_dec_sa_event in H3.
+    rewrite in_map_iff in H3.
+    destruct H3 as [? [? ?]].
+    rewrite <- H1.
+    apply event_sub_trans with (B := dsa_event x1); trivial.
+    rewrite <- H3.
+    simpl.
+    apply Event.event_inter_sub_l.
+  - now apply in_map.
+Qed.
 
 Lemma part_meas_refine (f : Ts -> R) 
       (l1 l2 : list dec_sa_event)
       {frf : FiniteRangeFunction f}
       {rvf : RandomVariable dom borel_sa f} :
+  (is_partition_list (map dsa_event l1)) ->
+  (is_partition_list (map dsa_event l2)) ->  
   (partition_measurable f (map dsa_event l1)) \/ 
   (partition_measurable f (map dsa_event l2)) ->  
   partition_measurable f (map dsa_event
                               (refine_dec_sa_partitions l1 l2)).
 Proof.
-Admitted.
+  intros.
+  destruct H1.
+  - now apply part_meas_refine_l.
+  - rewrite part_meas_refine_commute.
+    now apply part_meas_refine_l.
+Qed.
 
 Lemma part_meas_hist  (j k : nat) (X : nat -> Ts -> R)
          {frf : forall n, FiniteRangeFunction (X n)}
@@ -708,13 +788,19 @@ Proof.
   - replace (S j + 0)%nat with (S j) by lia.
     simpl.
     apply part_meas_refine.
-    left.
-    apply part_meas_induced.
+    + apply induced_gen_ispart.
+    + apply part_list_history.
+    + left.
+      apply part_meas_induced.
   - replace (S j + S k)%nat with (S (S j + k))%nat by lia.
     simpl.
     apply part_meas_refine.
-    right.
-    apply IHk.
+    + apply induced_gen_ispart.
+    + apply is_partition_refine.
+      * apply induced_gen_ispart.
+      * apply part_list_history.
+    + right.
+      apply IHk.
  Qed.
                      
 Lemma expec_cross_zero (X : nat -> Ts -> R)
