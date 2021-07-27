@@ -827,6 +827,53 @@ Lemma expec_cross_zero (X : nat -> Ts -> R)
      now apply part_meas_hist.
 Qed.
 
+Lemma SimpleExpectation_rvsum {n}  
+      (X : nat -> Ts -> R)
+      {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
+      {frf : forall (n:nat), FiniteRangeFunction (X n)} :
+  SimpleExpectation (rvsum X n) =
+  sum_n (fun m => SimpleExpectation (X m)) n.
+Proof.
+  induction n.
+  - rewrite sum_O.
+    assert (rv_eq (rvsum X 0%nat) (X 0%nat)).
+    {
+      unfold rvsum.
+      intro x.
+      now rewrite sum_O.
+    }
+    now erewrite SimpleExpectation_ext; [|apply H].
+  - replace (SimpleExpectation (rvsum X (S n))) with
+        (SimpleExpectation (rvplus (rvsum X n) (X (S n)))).
+    + rewrite <- sumSimpleExpectation.
+      rewrite IHn.
+      rewrite sum_Sn.
+      now unfold plus; simpl.
+    + apply SimpleExpectation_ext.
+      intro x.
+      unfold rvplus, rvsum.
+      now rewrite sum_Sn.
+Qed.
+
+Lemma expec_cross_zero_sum (X : nat -> Ts -> R)
+      {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
+      {frf : forall (n:nat), FiniteRangeFunction (X n)}
+      (HC : forall n, 
+          SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
+  forall (j k : nat), 
+    (j < k)%nat ->
+    SimpleExpectation(rvsum (fun n => rvmult (X n) (X k)) j) = 0.
+Proof.
+  intros.
+  rewrite SimpleExpectation_rvsum.
+  rewrite sum_n_ext_loc with (b := fun _ => 0).
+  - rewrite sum_n_const.
+    lra.
+  - intros.
+    apply expec_cross_zero; trivial.
+    lia.
+ Qed.
+
 Lemma sublist_seq_le :
   forall n k, (n <= k)%nat -> sublist (seq 0 n) (seq 0 k).
 Proof.
