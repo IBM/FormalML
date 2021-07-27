@@ -874,6 +874,37 @@ Proof.
     lia.
  Qed.
 
+Lemma rvsum_distr_r {n} (X : nat -> Ts -> R) (f : Ts -> R) :
+  rv_eq (rvsum (fun j => rvmult (X j) f) n) (rvmult (rvsum X n) f).
+Proof.
+  intro x; unfold rvsum, rvmult.
+  induction n.
+  - rewrite sum_O.
+    now rewrite sum_O.
+  - rewrite sum_Sn.
+    rewrite sum_Sn.
+    unfold plus; simpl.
+    rewrite IHn.
+    lra.
+ Qed.
+
+Lemma expec_cross_zero_sum2 (X : nat -> Ts -> R)
+      {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
+      {frf : forall (n:nat), FiniteRangeFunction (X n)}
+      (HC : forall n, 
+          SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
+  forall (j k : nat), 
+    (j < k)%nat ->
+    SimpleExpectation (rvmult (rvsum X j) (X k)) = 0.
+Proof.
+  intros.
+  generalize (expec_cross_zero_sum X HC j k H); intros.
+  rewrite <- H0.
+  apply SimpleExpectation_ext.
+  symmetry.
+  apply rvsum_distr_r.
+Qed.
+
 Lemma sublist_seq_le :
   forall n k, (n <= k)%nat -> sublist (seq 0 n) (seq 0 k).
 Proof.
