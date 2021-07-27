@@ -650,9 +650,96 @@ Fixpoint filtration_history (n : nat) (X : nat -> Ts -> R)
          {rv : forall n, RandomVariable dom borel_sa (X n)}
   : list dec_sa_event :=
   match n with
-  | 0 => []
+  | 0 => [dsa_Ω]
   | S k => refine_dec_sa_partitions (induced_sigma_generators (frf k)) (filtration_history k X)
   end.
+
+Lemma rvmult_zero (f : Ts -> R) :
+  rv_eq (rvmult f (const 0)) (const 0).
+Proof.
+  intro x.
+  unfold rvmult, const.
+  lra.
+Qed.
+
+Lemma part_list_history (n : nat) (X : nat -> Ts -> R)
+         {frf : forall n, FiniteRangeFunction (X n)}
+         {rv : forall n, RandomVariable dom borel_sa (X n)} :
+  is_partition_list (map dsa_event (filtration_history n X)).
+Proof.
+  induction n.
+  - simpl.
+    unfold is_partition_list.
+    split.
+    + apply FOP_cons.
+      * apply Forall_nil.
+      * apply FOP_nil.
+    + apply list_union_singleton.
+  - simpl.
+    apply is_partition_refine.
+    + apply induced_gen_ispart.
+    + apply IHn.
+ Qed.
+
+Lemma part_meas_induced (f : Ts -> R) 
+      {frf : FiniteRangeFunction f}
+      {rv : RandomVariable dom borel_sa f} :
+  partition_measurable f (map dsa_event (induced_sigma_generators frf)).
+Proof.
+  Admitted.
+
+Lemma part_meas_refine (f : Ts -> R) 
+      (l1 l2 : list dec_sa_event)
+      {frf : FiniteRangeFunction f}
+      {rvf : RandomVariable dom borel_sa f} :
+  (partition_measurable f (map dsa_event l1)) \/ 
+  (partition_measurable f (map dsa_event l2)) ->  
+  partition_measurable f (map dsa_event
+                              (refine_dec_sa_partitions l1 l2)).
+Proof.
+Admitted.
+
+Lemma part_meas_hist  (j k : nat) (X : nat -> Ts -> R)
+         {frf : forall n, FiniteRangeFunction (X n)}
+         {rv : forall n, RandomVariable dom borel_sa (X n)} :
+  partition_measurable (X j) (map dsa_event (filtration_history ((S j) + k)%nat X)).
+Proof.
+  induction k.
+  - replace (S j + 0)%nat with (S j) by lia.
+    simpl.
+    apply part_meas_refine.
+    left.
+    apply part_meas_induced.
+  - replace (S j + S k)%nat with (S (S j + k))%nat by lia.
+    simpl.
+    apply part_meas_refine.
+    right.
+    apply IHk.
+ Qed.
+                     
+Lemma expec_cross_zero (X : nat -> Ts -> R)
+      {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
+      {frf : forall (n:nat), FiniteRangeFunction (X n)}
+      (HC : forall n, 
+          SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
+  forall (j k : nat), 
+    (j < k)%nat ->
+    SimpleExpectation(rvmult (X j) (X k)) = 0.
+ Proof.
+   intros j k jltk.
+   pose (l := @filtration_history k _ frf rv).
+   generalize (part_list_history k X); intros ispart.
+   rewrite gen_conditional_tower_law with (l0 := l); trivial.
+   generalize (gen_conditional_scale_measurable (X j) (X k) l ispart); intros.
+   unfold l in H; unfold l.
+   cut_to H.
+   - rewrite (HC k) in H.
+     rewrite (SimpleExpectation_ext H).
+     rewrite (SimpleExpectation_ext (rvmult_zero (X j))).
+     now rewrite SimpleExpectation_const.
+   - replace (k) with (S j + (k - S j))%nat by lia.
+     now apply part_meas_hist.
+Qed.
 
 Lemma sublist_seq_le :
   forall n k, (n <= k)%nat -> sublist (seq 0 n) (seq 0 k).
