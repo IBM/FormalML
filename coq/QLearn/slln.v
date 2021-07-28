@@ -1339,6 +1339,32 @@ Proof.
     + now rewrite <-cutoff_ge_eps_rv_rvmaxlist_iff.
   }
   rewrite H1.
-  generalize (Markov_ineq_div (cutoff_eps_rv n eps Sum) H0 nnf); intros H2.
-
+(*  generalize (Markov_ineq_div (cutoff_eps_rv n eps Sum) H0 nnf eps); intros H2. *)
+  generalize (Chebyshev_ineq_div_mean (cutoff_eps_rv n eps Sum) H0 0 eps); intros H3.
+  erewrite <- simple_NonnegExpectation in H3.  
+  simpl in H3.
+  assert (event_equiv 
+            (event_ge dom (rvabs (rvminus (cutoff_eps_rv n eps Sum) (const 0))) eps) 
+            (event_ge dom (cutoff_eps_rv n eps Sum) eps)).
+  {
+    intro x.
+    unfold rvabs, rvminus, const, rvopp, rvscale, rvplus, event_ge; simpl.
+    rewrite Rmult_0_r.
+    rewrite Rplus_0_r.
+    rewrite Rabs_right; [tauto |].
+    apply Rle_ge.
+    apply nnf_cutoff_eps_rv.
+    intro; typeclasses eauto.
+  }
+  rewrite H in H3.
+  assert (rv_eq (rvsqr (rvminus (cutoff_eps_rv n eps Sum) (const 0)))
+                (rvsqr (cutoff_eps_rv n eps Sum))).
+  {
+    intros x.
+    unfold rvsqr, Rsqr.
+    rewrite rvminus_unfold.
+    unfold const; lra.
+  }
+  rewrite (SimpleExpectation_ext H2) in H3.
+  clear H H2.
 Admitted.

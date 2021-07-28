@@ -911,6 +911,32 @@ Proof.
   
 Admitted.
 
+Lemma SimpleExpectation_prob_space_sa_sub
+      dom2 sub x
+  {rv:RandomVariable dom borel_sa x} 
+  {rv2:RandomVariable dom2 borel_sa x} 
+  {frf:FiniteRangeFunction x} :
+  @SimpleExpectation Ts dom prts x rv frf = 
+  @SimpleExpectation Ts dom2 (prob_space_sa_sub dom2 sub) x rv2 frf.
+Proof.
+  unfold SimpleExpectation.
+  f_equal.
+  apply map_ext; intros.
+  f_equal.
+  
+  
+Admitted.
+
+Lemma NonnegExpectation_prob_space_sa_sub
+      dom2 sub x
+  {rv:RandomVariable dom2 borel_sa x} :
+  @NonnegExpectation Ts dom prts x = 
+  @NonnegExpectation Ts dom2 (prob_space_sa_sub dom2 sub) x.
+Proof.
+  unfold NonnegExpectation.
+  unfold SimpleExpectationSup.
+  generalize (RandomVariable_sa_sub dom2 sub x); intros.
+  Admitted.
 
 Lemma IsLp_prob_space_sa_sub
       p dom2 sub x
@@ -918,7 +944,14 @@ Lemma IsLp_prob_space_sa_sub
   IsLp prts p x ->
   IsLp (prob_space_sa_sub dom2 sub) p x.
 Proof.
-Admitted.
+  unfold IsLp, IsFiniteExpectation; intros.
+  assert (NonnegativeFunction (rvpower (rvabs x) (const p))) by
+      typeclasses eauto.
+  rewrite Expectation_pos_pofrf with (nnf := H0).
+  rewrite Expectation_pos_pofrf with (nnf := H0) in H.
+  rewrite <- NonnegExpectation_prob_space_sa_sub; trivial.
+  typeclasses eauto.
+Qed.
 
 Definition prob_space_sa_sub_set_lift
            dom2 sub
@@ -957,6 +990,7 @@ Proof.
                  (LpRRVq_filter_to_LpRRV_filter prts F) (prob_space_sa_sub_set_lift dom2 sub s)
               )).
   cut_to HH.
+  - 
 (*
 
       generalize (L2RRV_lim_complete (LpRRVq_filter_to_LpRRV_filter F)); intros.
