@@ -1295,28 +1295,25 @@ Proof.
     + destruct IHn as [k [? ?]].
       exists k.
       now split; try lia.
-Qed.    
+Qed.
 
+Local Obligation Tactic := idtac.
 Program Instance frf_cutoff_eps_rv (n : nat) (eps : R) (X : nat -> Ts -> R) 
          {frf: forall n, FiniteRangeFunction (X n)} :
   FiniteRangeFunction (cutoff_eps_rv n eps X) := {
   frf_vals := flat_map (fun k => frf_vals (FiniteRangeFunction := frf k)) (seq 0 (S n))
   }.
 Next Obligation.
-  unfold cutoff_eps_rv.
-  cut (In (cutoff_eps n eps (fun k : nat => X k x)) (flat_map (fun k : nat => frf_vals) (seq 0 (S n)))).
-(*
-  - simpl.
-  Search flat_map.
-  - induction n.
-    + simpl.
-      rewrite app_nil_r.
-      now destruct (frf 0%nat).
-    + simpl.
-      match_destr.
-      * 
-*)
-Admitted.  
+  intros.
+  apply in_flat_map.
+  destruct (cutoff_eps_values n eps X x) as [k [kle ck]].
+  exists k.
+  split.
+  - apply in_seq; lia.
+  - rewrite ck.
+    apply frf.
+Qed.
+Local Obligation Tactic := unfold complement, equiv; Tactics.program_simpl.
 
 Lemma ash_6_1_4 (X : nat -> Ts -> R)(n : nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
