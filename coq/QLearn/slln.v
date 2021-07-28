@@ -1367,4 +1367,14 @@ Proof.
   }
   rewrite (SimpleExpectation_ext H2) in H3.
   clear H H2.
+  rewrite <- Rsqr_pow2.
+  eapply Rle_trans; [apply H3 |].
+  unfold Rdiv.
+  apply Rmult_le_compat_r.
+  - left.
+    apply Rinv_0_lt_compat.
+    apply Rlt_0_sqr.
+    apply Rgt_not_eq.
+    apply cond_pos.
+  - 
 Admitted.
