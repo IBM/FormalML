@@ -1185,14 +1185,37 @@ Proof.
   now apply cutoff_eps_ge_eps.
 Qed.
 
-
+Lemma cutoff_ge_eps_rv_rvmaxlist_iff (n : nat) (eps : R) (X : nat -> Ts -> R): forall omega,
+  (eps <= cutoff_eps_rv n eps X omega) <-> eps <= rvmaxlist X n omega.
+Proof.
+  intros omega.
+  unfold rvmaxlist, cutoff_eps_rv.
+  now rewrite cutoff_ge_eps_Rmax_list_iff.
+Qed.
 
 Lemma ash_6_1_4 (X : nat -> Ts -> R)(n : nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
       {frf : forall (n:nat), FiniteRangeFunction (X n)}
       (HC : forall n, 
           SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
-  let S := fun j => rvabs (rvsum X j) in
-  forall eps:posreal, ps_P (event_ge dom (rvmaxlist S n) eps) <=
-           (SimpleExpectation (rvsqr (S n)))/eps^2.
+  let Sum := fun j => rvabs (rvsum X j) in
+  forall eps:posreal, ps_P (event_ge dom (rvmaxlist Sum n) eps) <=
+           (SimpleExpectation (rvsqr (Sum n)))/eps^2.
+Proof.
+  intros.
+  assert (H0 : RandomVariable dom borel_sa (cutoff_eps_rv n eps Sum)).
+  {
+    admit.
+  }
+  assert (H1 : event_equiv (event_ge dom (rvmaxlist Sum n) eps)
+                           (event_ge dom (cutoff_eps_rv n eps Sum) eps)).
+  {
+    intro omega.
+    unfold proj1_sig; simpl.
+    split; intros H; try (apply Rle_ge; apply Rge_le in H).
+    + now rewrite cutoff_ge_eps_rv_rvmaxlist_iff.
+    + now rewrite <-cutoff_ge_eps_rv_rvmaxlist_iff.
+  }
+  rewrite H1.
+  generalize (Markov_ineq_div (cutoff_eps_rv n eps Sum) H0); intros H2.
 Admitted.
