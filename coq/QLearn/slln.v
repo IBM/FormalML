@@ -1275,7 +1275,48 @@ Proof.
     simpl in IHn.
     match_destr.
     apply nnf.
+Qed.
+
+Lemma cutoff_eps_values (n : nat) (eps : R) (X : nat -> Ts -> R) :
+  forall (x:Ts),
+  exists (k : nat), 
+    (k <= n)%nat /\
+    cutoff_eps_rv n eps X x = X k x.
+Proof.
+  intros.
+  unfold cutoff_eps_rv.
+  induction n.
+  - exists (0%nat); simpl.
+    now split; try lia.
+  - simpl.
+    match_destr.
+    + exists (S n).
+      now split; try lia.
+    + destruct IHn as [k [? ?]].
+      exists k.
+      now split; try lia.
 Qed.    
+
+Program Instance frf_cutoff_eps_rv (n : nat) (eps : R) (X : nat -> Ts -> R) 
+         {frf: forall n, FiniteRangeFunction (X n)} :
+  FiniteRangeFunction (cutoff_eps_rv n eps X) := {
+  frf_vals := flat_map (fun k => frf_vals (FiniteRangeFunction := frf k)) (seq 0 (S n))
+  }.
+Next Obligation.
+  unfold cutoff_eps_rv.
+  cut (In (cutoff_eps n eps (fun k : nat => X k x)) (flat_map (fun k : nat => frf_vals) (seq 0 (S n)))).
+(*
+  - simpl.
+  Search flat_map.
+  - induction n.
+    + simpl.
+      rewrite app_nil_r.
+      now destruct (frf 0%nat).
+    + simpl.
+      match_destr.
+      * 
+*)
+Admitted.  
 
 Lemma ash_6_1_4 (X : nat -> Ts -> R)(n : nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
@@ -1301,5 +1342,6 @@ Proof.
     + now rewrite <-cutoff_ge_eps_rv_rvmaxlist_iff.
   }
   rewrite H1.
-  generalize (Markov_ineq_div (cutoff_eps_rv n eps Sum) H0); intros H2.
+  generalize (Markov_ineq_div (cutoff_eps_rv n eps Sum) H0 nnf); intros H2.
+
 Admitted.
