@@ -1370,11 +1370,7 @@ Proof.
   rewrite <- Rsqr_pow2.
   eapply Rle_trans; [apply H3 |].
   unfold Rdiv.
-  apply Rmult_le_compat_r.
-  - left.
-    apply Rinv_0_lt_compat.
-    apply Rlt_0_sqr.
-    apply Rgt_not_eq.
-    apply cond_pos.
-  - 
+  apply Rmult_le_compat_r; 
+    [left; apply Rinv_0_lt_compat, Rlt_0_sqr, Rgt_not_eq, cond_pos |].
+  
 Admitted.
