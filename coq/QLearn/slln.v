@@ -1193,6 +1193,90 @@ Proof.
   now rewrite cutoff_ge_eps_Rmax_list_iff.
 Qed.
 
+Instance max_list_measurable (k : nat) (X : nat -> Ts -> R)
+  {rm: forall n, RealMeasurable dom (X n)} :
+    RealMeasurable dom (fun omega => Rmax_list_map (seq 0 (S k)) (fun n => X n omega)).
+Proof.
+  unfold Rmax_list_map.
+  induction k.
+  - now simpl.
+  - unfold RealMeasurable in *; intros.
+    assert (pre_event_equiv
+               (fun omega : Ts =>
+                  Rmax_list (map (fun n : nat => X n omega) (seq 0 (S (S k)))) <= r)
+               (pre_event_inter
+                  (fun omega : Ts =>
+                     Rmax_list (map (fun n : nat => X n omega) (seq 0 (S k))) <= r)
+                  (fun omega => X (S k) omega <= r))).
+    {
+      intro x; unfold pre_event_inter.
+      admit.
+    }
+    rewrite H.
+    apply sa_inter.
+    + apply IHk.
+    + apply rm.  
+  Admitted.
+
+Instance rv_cutoff_eps_rv (n : nat) (eps : R) (X : nat -> Ts -> R) 
+         {rv: forall n, RandomVariable dom borel_sa (X n)} :
+  RandomVariable dom borel_sa (cutoff_eps_rv n eps X).
+Proof.
+  unfold cutoff_eps_rv.
+  apply measurable_rv.
+  assert (mrv : forall n, RealMeasurable dom (X n)) 
+    by (intro; now apply rv_measurable).
+  unfold RealMeasurable in *.
+  intros.
+  induction n.
+  - simpl; apply mrv.
+  - simpl.
+    assert (pre_event_equiv
+               (fun omega : Ts =>
+                  (if Rlt_dec (Rmax_list_map (0%nat :: seq 1 n) 
+                                             (fun k : nat => X k omega)) eps
+                   then X (S n) omega
+                   else cutoff_eps n eps (fun k : nat => X k omega)) <= r)
+               (pre_event_union
+                  (pre_event_inter
+                     (fun omega => Rmax_list_map (0%nat :: seq 1 n) (fun k : nat => X k omega) < eps)
+                     (fun omega => X (S n) omega <= r))
+                  (pre_event_inter
+                     (pre_event_complement
+                        (fun omega => Rmax_list_map (0%nat :: seq 1 n) (fun k : nat => X k omega) < eps))
+                     (fun omega => cutoff_eps n eps (fun k : nat => X k omega) <= r)))).
+    {
+      intro x; unfold pre_event_union, pre_event_inter, pre_event_complement.
+      match_destr; lra.
+    }
+    rewrite H.
+    apply sa_union.
+    + apply sa_inter.
+      * apply sa_le_lt.
+        now apply max_list_measurable.
+      * apply mrv.
+    + apply sa_inter.
+      * apply sa_complement.
+        apply sa_le_lt.
+        now apply max_list_measurable.        
+      * apply IHn.
+  Qed.
+
+Instance nnf_cutoff_eps_rv (n : nat) (eps : R) (X : nat -> Ts -> R) 
+         {nnf: forall n, NonnegativeFunction (X n)} :
+  NonnegativeFunction (cutoff_eps_rv n eps X).
+Proof.
+  unfold cutoff_eps_rv.
+  induction n.
+  - now simpl.
+  - simpl.
+    intro x.
+    specialize (IHn x).
+    simpl in IHn.
+    match_destr.
+    apply nnf.
+Qed.    
+
 Lemma ash_6_1_4 (X : nat -> Ts -> R)(n : nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
       {frf : forall (n:nat), FiniteRangeFunction (X n)}
@@ -1203,10 +1287,10 @@ Lemma ash_6_1_4 (X : nat -> Ts -> R)(n : nat)
            (SimpleExpectation (rvsqr (Sum n)))/eps^2.
 Proof.
   intros.
-  assert (H0 : RandomVariable dom borel_sa (cutoff_eps_rv n eps Sum)).
-  {
-    admit.
-  }
+  assert (H0 : RandomVariable dom borel_sa (cutoff_eps_rv n eps Sum)) 
+    by typeclasses eauto.
+  assert (nnf : NonnegativeFunction (cutoff_eps_rv n eps Sum)) 
+    by typeclasses eauto.
   assert (H1 : event_equiv (event_ge dom (rvmaxlist Sum n) eps)
                            (event_ge dom (cutoff_eps_rv n eps Sum) eps)).
   {
