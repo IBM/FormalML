@@ -1355,6 +1355,34 @@ Qed.
 
 Local Obligation Tactic := unfold complement, equiv; Tactics.program_simpl.
 
+Lemma Rmax_list_map_succ eps (Y : nat -> R):
+  forall n, (0 < n)%nat -> (Rmax_list_map (seq 0 (S n)) Y< eps)
+       -> (Rmax_list_map (seq 0 n) Y < eps).
+Proof.
+  intros n Hz Hn.
+  rewrite seq_S in Hn.
+  unfold Rmax_list_map in Hn. rewrite Rmax_list_app in Hn; try (apply seq_not_nil; lia).
+  eapply Rle_lt_trans; try (apply Hn).
+  apply Rmax_l.
+Qed.
+
+Lemma cutoff_eps_succ_minus eps (X : nat -> R) :
+  forall n, cutoff_eps (S n) eps X - cutoff_eps n eps X =
+       if (Rlt_dec (Rmax_list_map (seq 0 (S n)) (fun n => Rabs (X n))) eps) then
+         (X (S n) - X n) else 0.
+Proof.
+  intros n.
+  simpl.
+  match_destr; intuition; try lra.
+  f_equal.
+  replace (0%nat :: seq 1 n) with (seq 0 (S n)) in r by (now simpl).
+  induction n; try (now simpl).
+  assert (0 < S n)%nat by lia.
+  generalize (Rmax_list_map_succ eps (fun n => Rabs (X n)) (S n) H r); intros.
+  specialize (IHn H0).
+  simpl. match_destr; intuition; try lra.
+Qed.
+
 Lemma ash_6_1_4 (X : nat -> Ts -> R)(n : nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
       {frf : forall (n:nat), FiniteRangeFunction (X n)}
@@ -1422,8 +1450,7 @@ Proof.
        unfold Rsqr; ring.
      + apply (SimpleExpectation_ext H0).
   }
-  
-  assert (Zrel:forall j, SimpleExpectation(rvsqr (cutoff_eps_rv (S j) eps Sum)) = 
+  assert (Zrel:forall j, SimpleExpectation(rvsqr (cutoff_eps_rv (S j) eps Sum)) =
                     SimpleExpectation(rvsqr (cutoff_eps_rv j eps Sum)) + 
                     SimpleExpectation(rvsqr (rvminus (cutoff_eps_rv (S j) eps Sum) 
                                                      (cutoff_eps_rv j eps Sum)))).
@@ -1471,8 +1498,16 @@ Proof.
    intro x.
    unfold rvsqr.
    rewrite rvminus_unfold.
-   admit.
-   
+   unfold cutoff_eps_rv.
+   simpl.
+   match_destr; try (do 2 rewrite Rsqr_pow2; rewrite Rminus_eq_0).
+   + generalize (cutoff_eps_succ_minus eps (fun j => Sum j x) n); intros Hcut.
+     simpl in Hcut. match_destr_in Hcut; intuition; try (lra).
+     rewrite Hcut. unfold Sum. right.
+     f_equal. unfold rvsum. rewrite sum_Sn. unfold plus.
+     simpl. now ring_simplify.
+   + rewrite <-Rsqr_pow2. unfold Rsqr. eapply Rle_trans; try (apply pow2_ge_0).
+     lra.
 Admitted.
 
 Lemma var_sum_cross_0 (X : nat -> Ts -> R)(n : nat)
