@@ -448,7 +448,7 @@ Proof.
       replace (S n) with (n+1)%nat by lia.
       simpl.
       now ring_simplify.
-   }.
+   }
   assert (forall n, b (S n) <> 0).
   {
     intros.
