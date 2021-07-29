@@ -1193,6 +1193,15 @@ Proof.
   now rewrite cutoff_ge_eps_Rmax_list_iff.
 Qed.
 
+Lemma Rle_Rmax : forall r1 r2 r : R, Rmax r1 r2 <= r <-> r1 <= r /\ r2 <= r.
+Proof.
+  split; intros.
+  + split.
+    -- eapply Rle_trans; try (apply H); apply Rmax_l.
+    -- eapply Rle_trans; try (apply H); apply Rmax_r.
+  + destruct H; apply Rmax_lub; trivial.
+Qed.
+
 Instance max_list_measurable (k : nat) (X : nat -> Ts -> R)
   {rm: forall n, RealMeasurable dom (X n)} :
     RealMeasurable dom (fun omega => Rmax_list_map (seq 0 (S k)) (fun n => X n omega)).
@@ -1210,13 +1219,16 @@ Proof.
                   (fun omega => X (S k) omega <= r))).
     {
       intro x; unfold pre_event_inter.
-      admit.
+      replace (seq 0 (S(S k))) with (seq 0 (S k) ++ [S k]) by
+          (do 3 rewrite seq_S; f_equal; lra).
+      rewrite Rmax_list_app; try (apply seq_not_nil; lia).
+      apply Rle_Rmax.
     }
     rewrite H.
     apply sa_inter.
     + apply IHk.
     + apply rm.  
-  Admitted.
+Qed.
 
 Instance rv_cutoff_eps_rv (n : nat) (eps : R) (X : nat -> Ts -> R) 
          {rv: forall n, RandomVariable dom borel_sa (X n)} :
@@ -1298,6 +1310,7 @@ Proof.
 Qed.
 
 Local Obligation Tactic := idtac.
+
 Program Instance frf_cutoff_eps_rv (n : nat) (eps : R) (X : nat -> Ts -> R) 
          {frf: forall n, FiniteRangeFunction (X n)} :
   FiniteRangeFunction (cutoff_eps_rv n eps X) := {
@@ -1313,6 +1326,7 @@ Next Obligation.
   - rewrite ck.
     apply frf.
 Qed.
+
 Local Obligation Tactic := unfold complement, equiv; Tactics.program_simpl.
 
 Lemma ash_6_1_4 (X : nat -> Ts -> R)(n : nat)
@@ -1339,7 +1353,6 @@ Proof.
     + now rewrite <-cutoff_ge_eps_rv_rvmaxlist_iff.
   }
   rewrite H1.
-(*  generalize (Markov_ineq_div (cutoff_eps_rv n eps Sum) H0 nnf eps); intros H2. *)
   generalize (Chebyshev_ineq_div_mean (cutoff_eps_rv n eps Sum) H0 0 eps); intros H3.
   erewrite <- simple_NonnegExpectation in H3.  
   simpl in H3.
@@ -1372,5 +1385,6 @@ Proof.
   unfold Rdiv.
   apply Rmult_le_compat_r; 
     [left; apply Rinv_0_lt_compat, Rlt_0_sqr, Rgt_not_eq, cond_pos |].
+
   
 Admitted.
