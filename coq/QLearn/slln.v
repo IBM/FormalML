@@ -1492,7 +1492,19 @@ Proof.
          unfold Sum, rvsum. rewrite sum_Sn. unfold plus. simpl.
          now rewrite Rplus_minus_cancel1.
         }
-        erewrite <-(SimpleExpectation_ext Heq).
+        assert (rv1 : RandomVariable dom borel_sa
+          (fun w : Ts =>
+           cutoff_eps_rv j eps Sum w *
+           (if Rlt_dec (Rmax_list_map (seq 0 (S j)) (fun n : nat => Rabs (Sum n w))) eps
+            then X (S j) w
+            else const 0 w))) by admit.
+        assert (frf1 : FiniteRangeFunction
+           (fun w : Ts =>
+            cutoff_eps_rv j eps Sum w *
+            (if Rlt_dec (Rmax_list_map (seq 0 (S j)) (fun n : nat => Rabs (Sum n w))) eps
+             then X (S j) w
+             else const 0 w))) by admit.
+        rewrite <-(SimpleExpectation_ext Heq).
         admit.
         Unshelve.
        -- typeclasses eauto.
