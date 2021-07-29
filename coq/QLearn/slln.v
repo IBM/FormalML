@@ -989,19 +989,19 @@ Qed.
 Fixpoint cutoff_eps (n : nat) (eps : R) (X : nat -> R) :=
   match n with
   | 0 => X 0%nat
-  | S k => if (Rlt_dec (Rmax_list_map (seq 0 (S k)) X) eps) then X (S k)
+  | S k => if (Rlt_dec (Rmax_list_map (seq 0 (S k)) (fun n => Rabs(X n))) eps) then X (S k)
                     else (cutoff_eps k eps X)
   end.
 
 Lemma cutoff_eps_lt_eps eps n (X : nat -> R) :
-   (forall k, (k <= n)%nat -> X k < eps) -> (cutoff_eps n eps X = X n).
+   (forall k, (k <= n)%nat -> Rabs (X k) < eps) -> (cutoff_eps n eps X = X n).
 Proof.
   intros H.
   induction n.
   + now simpl.
   + simpl.
     match_destr.
-    assert (H1 : Rmax_list_map (seq 0 (S n)) X < eps).
+    assert (H1 : Rmax_list_map (seq 0 (S n)) (fun n => Rabs(X n)) < eps).
     {
       unfold Rmax_list_map.
       rewrite Rmax_list_lt_iff; try (apply map_not_nil; apply seq_not_nil; lia).
@@ -1016,14 +1016,14 @@ Proof.
 Qed.
 
 Lemma cutoff_eps_ge_eps eps (X : nat -> R) :
-   (forall k:nat, eps <= X k) -> (forall n, cutoff_eps n eps X = X 0%nat).
+   (forall k:nat, eps <= Rabs(X k)) -> (forall n, cutoff_eps n eps X = X 0%nat).
 Proof.
   intros H n.
   simpl.
   induction n.
   ++ now simpl in H.
   ++ simpl. match_destr.
-     assert (X n <= Rmax_list_map (0%nat :: seq 1 n) X).
+     assert (Rabs(X n) <= Rmax_list_map (0%nat :: seq 1 n) (fun n => Rabs(X n))).
      {
        unfold Rmax_list_map.
        apply Rmax_spec.
@@ -1035,6 +1035,27 @@ Proof.
      specialize (H n).
      lra.
 Qed.
+
+
+(*Lemma cutoff_eps_le_inc_seq eps {X : nat -> R} (hn : forall n, 0 <= X n <= X (S n)):
+  forall n, - X n <= cutoff_eps n eps X <= X n.
+Proof.
+  intros n.
+  split.
+  ** induction n.
+     + simpl. destruct (hn 0%nat); lra.
+     + simpl; match_destr.
+       -- destruct (hn (S n)); lra.
+       -- apply Rle_trans with (r2 := - X n); try lra.
+          apply Ropp_ge_le_contravar.
+          specialize (hn n); lra.
+  ** induction n.
+     + simpl; easy.
+     + simpl; match_destr; try easy.
+       apply Rnot_lt_ge in n0.
+       eapply Rle_trans; eauto.
+       specialize (hn n); lra.
+Qed.*)
 
 Lemma ne_le_succ {k n : nat} (hk1 : k <> S n) (hk2 : (k <= S n)%nat) : (k <= n)%nat.
 Proof.
@@ -1082,12 +1103,12 @@ Proof.
 Qed.
 
 Lemma cutoff_ge_eps_exists  (n : nat) (eps : R) ( X : nat -> R ):
-  (eps <= cutoff_eps n eps X) -> exists k, (k <= n)%nat /\ eps <= X k.
+  (eps <= Rabs(cutoff_eps n eps X)) -> exists k, (k <= n)%nat /\ eps <= Rabs(X k).
 Proof.
   intros Hn.
   induction n.
   -- simpl in Hn. exists 0%nat.
-     split; trivial; lra.
+     split; trivial.
   -- simpl in Hn.
      match_destr_in Hn.
      ++  exists (S n). split; trivial; lra.
@@ -1099,7 +1120,7 @@ Proof.
 Qed.
 
 Lemma cutoff_ge_eps_exists_contrapose (n : nat) (eps : R) (X : nat -> R):
-   (cutoff_eps n eps X < eps) -> (forall k, (k <= n)%nat -> X k < eps).
+   (Rabs(cutoff_eps n eps X) < eps) -> (forall k, (k <= n)%nat -> Rabs(X k) < eps).
 Proof.
   intros Heps.
   induction n.
@@ -1122,7 +1143,7 @@ Proof.
        unfold Rmax_list_map in n0.
        assert ((0 < S n)%nat) by lia.
        apply Rge_le in n0.
-       rewrite (Rmax_list_map_seq_ge eps X H0) in n0.
+       rewrite (Rmax_list_map_seq_ge eps (fun n => Rabs (X n)) H0) in n0.
        destruct n0 as [k1 [Hk1 Heps1]].
        assert (k1 <= n)%nat by lia.
        specialize (IHn k1 H1).
@@ -1130,7 +1151,7 @@ Proof.
 Qed.
 
 Lemma cutoff_ge_eps_exists_iff (n : nat) (eps : R) (X : nat -> R):
-  (eps <= cutoff_eps n eps X) <-> exists k, (k <= n)%nat /\ eps <= X k.
+  (eps <= Rabs(cutoff_eps n eps X)) <-> exists k, (k <= n)%nat /\ eps <= Rabs(X k).
 Proof.
   split.
   + apply cutoff_ge_eps_exists.
@@ -1145,10 +1166,10 @@ Proof.
 Qed.
 
 Lemma cutoff_ge_eps_Rmax_list_iff (n : nat) (eps : R) (X : nat -> R):
-  (eps <= cutoff_eps n eps X) <-> eps <= Rmax_list_map (seq 0 (S n)) X.
+  (eps <= Rabs(cutoff_eps n eps X)) <-> eps <= Rmax_list_map (seq 0 (S n)) (fun n => Rabs (X n)).
 Proof.
   assert (Hn : (0 < S n)%nat) by lia.
-  rewrite (Rmax_list_map_seq_ge eps X Hn).
+  rewrite (Rmax_list_map_seq_ge eps (fun n => Rabs (X n)) Hn).
   rewrite cutoff_ge_eps_exists_iff.
   split; intros; destruct H as [x [Hx1 Hx2]]; exists x; split; trivial; lia.
 Qed.
@@ -1170,7 +1191,7 @@ Qed.
 
 
 Lemma cutoff_eps_rv_lt_eps eps (X : nat -> Ts -> R) : forall omega,
-   (forall k, X k omega < eps) -> (forall n, cutoff_eps_rv n eps X omega = X n omega).
+   (forall k, Rabs(X k omega) < eps) -> (forall n, cutoff_eps_rv n eps X omega = X n omega).
 Proof.
   intros omega H n.
   unfold cutoff_eps_rv.
@@ -1178,7 +1199,7 @@ Proof.
 Qed.
 
 Lemma cutoff_eps_rv_ge_eps eps (X : nat -> Ts -> R) : forall omega,
-   (forall k:nat, eps <= X k omega) -> (forall n, cutoff_eps_rv n eps X omega = X 0%nat omega).
+   (forall k:nat, eps <= Rabs(X k omega)) -> (forall n, cutoff_eps_rv n eps X omega = X 0%nat omega).
 Proof.
   intros omega H n.
   unfold cutoff_eps_rv.
@@ -1186,7 +1207,8 @@ Proof.
 Qed.
 
 Lemma cutoff_ge_eps_rv_rvmaxlist_iff (n : nat) (eps : R) (X : nat -> Ts -> R): forall omega,
-  (eps <= cutoff_eps_rv n eps X omega) <-> eps <= rvmaxlist X n omega.
+    eps <= Rabs(cutoff_eps_rv n eps X omega) <->
+    eps <= rvmaxlist (fun k => fun omega => Rabs (X k omega)) n omega.
 Proof.
   intros omega.
   unfold rvmaxlist, cutoff_eps_rv.
@@ -1206,7 +1228,7 @@ Instance max_list_measurable (k : nat) (X : nat -> Ts -> R)
   {rm: forall n, RealMeasurable dom (X n)} :
     RealMeasurable dom (fun omega => Rmax_list_map (seq 0 (S k)) (fun n => X n omega)).
 Proof.
-  unfold Rmax_list_map.
+(*  unfold Rmax_list_map.
   induction k.
   - now simpl.
   - unfold RealMeasurable in *; intros.
@@ -1227,14 +1249,15 @@ Proof.
     rewrite H.
     apply sa_inter.
     + apply IHk.
-    + apply rm.  
-Qed.
+    + apply rm.
+ Qed.*)
+Admitted.
 
 Instance rv_cutoff_eps_rv (n : nat) (eps : R) (X : nat -> Ts -> R) 
          {rv: forall n, RandomVariable dom borel_sa (X n)} :
   RandomVariable dom borel_sa (cutoff_eps_rv n eps X).
 Proof.
-  unfold cutoff_eps_rv.
+(*  unfold cutoff_eps_rv.
   apply measurable_rv.
   assert (mrv : forall n, RealMeasurable dom (X n)) 
     by (intro; now apply rv_measurable).
@@ -1272,7 +1295,8 @@ Proof.
         apply sa_le_lt.
         now apply max_list_measurable.        
       * apply IHn.
-  Qed.
+  Qed. *)
+Admitted.
 
 Instance nnf_cutoff_eps_rv (n : nat) (eps : R) (X : nat -> Ts -> R) 
          {nnf: forall n, NonnegativeFunction (X n)} :
@@ -1334,8 +1358,8 @@ Lemma ash_6_1_4 (X : nat -> Ts -> R)(n : nat)
       {frf : forall (n:nat), FiniteRangeFunction (X n)}
       (HC : forall n, 
           SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
-  let Sum := fun j => rvabs (rvsum X j) in
-  forall eps:posreal, ps_P (event_ge dom (rvmaxlist Sum n) eps) <=
+  let Sum := fun j => (rvsum X j) in
+  forall eps:posreal, ps_P (event_ge dom (rvmaxlist (fun k => fun w => Rabs(Sum k w)) n) eps) <=
            (SimpleExpectation (rvsqr (Sum n)))/eps^2.
 Proof.
   intros.
