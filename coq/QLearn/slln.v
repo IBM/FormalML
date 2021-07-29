@@ -1386,7 +1386,7 @@ Proof.
     [left; apply Rinv_0_lt_compat, Rlt_0_sqr, Rgt_not_eq, cond_pos |].
   assert (Srel:forall j, SimpleExpectation(rvsqr (Sum (S j))) =
                     SimpleExpectation(rvsqr (Sum j)) + 
-                    SimpleExpectation(rvsqr (rvminus (Sum (S j)) (Sum j)))).
+                    SimpleExpectation(rvsqr (X (S j)))).
   {
     intros.
     assert (rv_eq (rvsqr (Sum (S j)))
@@ -1407,12 +1407,22 @@ Proof.
      rewrite <- sumSimpleExpectation.
      rewrite <- sumSimpleExpectation.
      rewrite <- Rplus_assoc.
-     f_equal.
      rewrite <- scaleSimpleExpectation.
-     unfold Sum.
      rewrite (expec_cross_zero_sum2 X HC); try lia.
-     lra.
+     ring_simplify.
+     f_equal.
+     assert (rv_eq (rvsqr (rvminus (Sum (S j)) (Sum j)))
+                   (rvsqr (X (S j)))).
+     + intro x.
+       unfold Sum, rvsqr.
+       rewrite rvminus_unfold.
+       unfold rvsum.
+       rewrite sum_Sn.
+       unfold plus; simpl.
+       unfold Rsqr; ring.
+     + apply (SimpleExpectation_ext H0).
   }
+  
   assert (Zrel:forall j, SimpleExpectation(rvsqr (cutoff_eps_rv (S j) eps Sum)) = 
                     SimpleExpectation(rvsqr (cutoff_eps_rv j eps Sum)) + 
                     SimpleExpectation(rvsqr (rvminus (cutoff_eps_rv (S j) eps Sum) 
@@ -1447,6 +1457,33 @@ Proof.
      + rewrite H0.
        lra.
  }
-    
-    
+ assert (forall j, SimpleExpectation (rvsqr (rvminus (cutoff_eps_rv (S j) eps Sum) 
+                                                     (cutoff_eps_rv j eps Sum))) <=
+                   SimpleExpectation (rvsqr (X (S j)))).
+ {
+   admit.
+ }
+ unfold cutoff_eps_rv.
+ clear H1 H3.
+ induction n.
+ - simpl.
+   right.
+   apply SimpleExpectation_ext.
+   intro x.
+   now unfold rvsqr, Sum.
+ - rewrite Srel.
+   specialize (Zrel n).
+   replace (SimpleExpectation
+              (rvsqr (fun omega : Ts => cutoff_eps (S n) eps (fun k : nat => Sum k omega))))
+     with
+       (SimpleExpectation (rvsqr (cutoff_eps_rv (S n) eps Sum))) by
+       apply SimpleExpectation_pf_irrel.
+   rewrite Zrel.
+   replace (SimpleExpectation
+              (rvsqr (fun omega : Ts => cutoff_eps n eps (fun k : nat => Sum k omega))))
+     with
+       (SimpleExpectation (rvsqr (cutoff_eps_rv n eps Sum))) in IHn by
+       apply SimpleExpectation_pf_irrel.
+   specialize (H n).
+   now apply Rplus_le_compat.
 Admitted.
