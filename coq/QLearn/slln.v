@@ -1339,8 +1339,6 @@ Lemma ash_6_1_4 (X : nat -> Ts -> R)(n : nat)
            (SimpleExpectation (rvsqr (Sum n)))/eps^2.
 Proof.
   intros.
-  assert (H0 : RandomVariable dom borel_sa (cutoff_eps_rv n eps Sum)) 
-    by typeclasses eauto.
   assert (H1 : event_equiv (event_ge dom (rvmaxlist Sum n) eps)
                            (event_ge dom (cutoff_eps_rv n eps Sum) eps)).
   {
@@ -1351,7 +1349,7 @@ Proof.
     + now rewrite <-cutoff_ge_eps_rv_rvmaxlist_iff.
   }
   rewrite H1.
-  generalize (Chebyshev_ineq_div_mean0 (cutoff_eps_rv n eps Sum) H0 eps); intros H2.
+  generalize (Chebyshev_ineq_div_mean0 (cutoff_eps_rv n eps Sum) _ eps); intros H2.
   erewrite <- simple_NonnegExpectation in H2; simpl in H2.
   assert (event_equiv 
             (event_ge dom (rvabs (cutoff_eps_rv n eps Sum)) eps) 
