@@ -1457,17 +1457,6 @@ Proof.
      + rewrite H0.
        lra.
  }
- assert (forall j, SimpleExpectation (rvsqr (rvminus (cutoff_eps_rv (S j) eps Sum) 
-                                                     (cutoff_eps_rv j eps Sum))) <=
-                   SimpleExpectation (rvsqr (X (S j)))).
- {
-   intros.
-   apply SimpleExpectation_le.
-   intro x.
-   unfold rvsqr.
-   rewrite rvminus_unfold.
-   admit.
- }
  clear H1 H3.
  induction n.
  - simpl.
@@ -1477,5 +1466,11 @@ Proof.
    now unfold rvsqr, Sum.
  - rewrite Srel.
    rewrite Zrel.
-   now apply Rplus_le_compat.
+   apply Rplus_le_compat; trivial.
+   apply SimpleExpectation_le.
+   intro x.
+   unfold rvsqr.
+   rewrite rvminus_unfold.
+   admit.
+   
 Admitted.
