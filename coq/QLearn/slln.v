@@ -1461,6 +1461,11 @@ Proof.
                                                      (cutoff_eps_rv j eps Sum))) <=
                    SimpleExpectation (rvsqr (X (S j)))).
  {
+   intros.
+   apply SimpleExpectation_le.
+   intro x.
+   unfold rvsqr.
+   rewrite rvminus_unfold.
    admit.
  }
  unfold cutoff_eps_rv.
