@@ -3910,6 +3910,29 @@ Section Expectation.
     - now apply Rsqr_le_abs_0.
   Qed.
 
+  Lemma Chebyshev_ineq_div_mean0
+        (X : Ts -> R)
+        (rv : RandomVariable dom borel_sa X)
+        (a : posreal) :
+    Rbar_le (ps_P (event_ge dom (rvabs X) a))
+            (Rbar_div_pos
+               (NonnegExpectation (rvsqr X))
+               (mkposreal _ (rsqr_pos a))).
+  Proof.
+    assert (event_equiv
+              (event_ge dom (rvabs X) a)
+              (event_ge dom (rvsqr X)
+               {| pos := a²; cond_pos := rsqr_pos a |})).
+    {
+      intro x.
+      unfold proj1_sig; simpl.
+      unfold rvabs, const, rvsqr.
+      now rewrite Rabs_Rsqr_ge.
+    }
+    rewrite H.
+    apply Markov_ineq_div.
+  Qed.
+
   Lemma Chebyshev_ineq_div_mean
         (X : Ts -> R)
         (rv : RandomVariable dom borel_sa X)
@@ -3920,18 +3943,7 @@ Section Expectation.
                (NonnegExpectation (rvsqr (rvminus X (const mean))))
                (mkposreal _ (rsqr_pos a))).
   Proof.
-    assert (event_equiv
-              (event_ge dom (rvabs (rvminus X (const mean))) a)
-              (event_ge dom (rvsqr (rvminus X (const mean)))
-               {| pos := a²; cond_pos := rsqr_pos a |})).
-    {
-      intro x.
-      unfold proj1_sig; simpl.
-      unfold rvabs, rvminus, const, rvsqr, rvplus, rvopp, rvscale.
-      now rewrite Rabs_Rsqr_ge.
-    }
-    rewrite H.
-    apply Markov_ineq_div.
+    apply Chebyshev_ineq_div_mean0.
   Qed.
 
   Lemma Chebyshev_ineq_div

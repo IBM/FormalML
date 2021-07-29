@@ -1341,8 +1341,6 @@ Proof.
   intros.
   assert (H0 : RandomVariable dom borel_sa (cutoff_eps_rv n eps Sum)) 
     by typeclasses eauto.
-  assert (nnf : NonnegativeFunction (cutoff_eps_rv n eps Sum)) 
-    by typeclasses eauto.
   assert (H1 : event_equiv (event_ge dom (rvmaxlist Sum n) eps)
                            (event_ge dom (cutoff_eps_rv n eps Sum) eps)).
   {
@@ -1353,38 +1351,23 @@ Proof.
     + now rewrite <-cutoff_ge_eps_rv_rvmaxlist_iff.
   }
   rewrite H1.
-  generalize (Chebyshev_ineq_div_mean (cutoff_eps_rv n eps Sum) H0 0 eps); intros H3.
-  erewrite <- simple_NonnegExpectation in H3.  
-  simpl in H3.
+  generalize (Chebyshev_ineq_div_mean0 (cutoff_eps_rv n eps Sum) H0 eps); intros H2.
+  erewrite <- simple_NonnegExpectation in H2; simpl in H2.
   assert (event_equiv 
-            (event_ge dom (rvabs (rvminus (cutoff_eps_rv n eps Sum) (const 0))) eps) 
+            (event_ge dom (rvabs (cutoff_eps_rv n eps Sum)) eps) 
             (event_ge dom (cutoff_eps_rv n eps Sum) eps)).
   {
     intro x.
-    unfold rvabs, rvminus, const, rvopp, rvscale, rvplus, event_ge; simpl.
-    rewrite Rmult_0_r.
-    rewrite Rplus_0_r.
+    unfold rvabs, const, event_ge; simpl.
     rewrite Rabs_right; [tauto |].
-    apply Rle_ge.
-    apply nnf_cutoff_eps_rv.
+    apply Rle_ge, nnf_cutoff_eps_rv.
     intro; typeclasses eauto.
   }
-  rewrite H in H3.
-  assert (rv_eq (rvsqr (rvminus (cutoff_eps_rv n eps Sum) (const 0)))
-                (rvsqr (cutoff_eps_rv n eps Sum))).
-  {
-    intros x.
-    unfold rvsqr, Rsqr.
-    rewrite rvminus_unfold.
-    unfold const; lra.
-  }
-  rewrite (SimpleExpectation_ext H2) in H3.
-  clear H H2.
+  rewrite H in H2; clear H.
   rewrite <- Rsqr_pow2.
-  eapply Rle_trans; [apply H3 |].
+  eapply Rle_trans; [apply H2 |].
   unfold Rdiv.
   apply Rmult_le_compat_r; 
     [left; apply Rinv_0_lt_compat, Rlt_0_sqr, Rgt_not_eq, cond_pos |].
-
   
 Admitted.
