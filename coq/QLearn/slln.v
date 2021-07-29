@@ -1474,3 +1474,46 @@ Proof.
    admit.
    
 Admitted.
+
+Lemma var_sum_cross_0 (X : nat -> Ts -> R)(n : nat)
+      {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
+      {frf : forall (n:nat), FiniteRangeFunction (X n)}
+      (HC : forall n, 
+          SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
+  forall j, SimpleExpectation(rvsqr (rvsum X j)) =
+            sum_n (fun n => SimpleExpectation (rvsqr (X n))) j.
+Proof.
+  intros.
+  induction j.
+  - assert (rv_eq (rvsqr (rvsum X 0%nat)) (rvsqr (X 0%nat))). 
+    + intro x.
+      unfold rvsqr, rvsum; simpl.
+      now rewrite sum_O.
+    + rewrite (SimpleExpectation_ext H).
+      now rewrite sum_O.
+  - rewrite sum_Sn.
+    unfold plus; simpl.
+    assert (rv_eq (rvsqr (rvsum X (S j)))
+                  (rvplus (rvsqr (rvsum X j))
+                          (rvplus
+                             (rvscale 2
+                                      (rvmult (rvsum X j) (X (S j))))
+                             (rvsqr (X (S j)))))).
+    + intro x.
+      unfold rvsqr, rvplus, rvsum.
+      rewrite sum_Sn.
+      unfold plus; simpl.
+      unfold Rsqr, rvscale, rvmult.
+      ring.
+    + rewrite (SimpleExpectation_ext H).
+      rewrite <- sumSimpleExpectation.
+      rewrite <- sumSimpleExpectation.
+      rewrite <- scaleSimpleExpectation.
+      rewrite (expec_cross_zero_sum2 X HC); try lia.
+      rewrite <- IHj.
+      ring.
+Qed.
+
+      
+      
+      
