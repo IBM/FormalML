@@ -1365,8 +1365,6 @@ Lemma ash_6_1_4 (X : nat -> Ts -> R)(n : nat)
            (SimpleExpectation (rvsqr (Sum n)))/eps^2.
 Proof.
   intros.
-  assert (H0 : RandomVariable dom borel_sa (fun w => Rabs(cutoff_eps_rv n eps Sum w)))
-    by typeclasses eauto.
   assert (H1 : event_equiv (event_ge dom (rvmaxlist (fun k => fun w => Rabs(Sum k w)) n) eps)
                            (event_ge dom (fun w => Rabs(cutoff_eps_rv n eps Sum w)) eps)).
   {
@@ -1377,32 +1375,11 @@ Proof.
     + now rewrite <-cutoff_ge_eps_rv_rvmaxlist_iff.
   }
   rewrite H1.
-  generalize (Chebyshev_ineq_div_mean0 (fun w => Rabs(cutoff_eps_rv n eps Sum w)) H0 eps); intros H3.
+  generalize (Chebyshev_ineq_div_mean0 (fun w => cutoff_eps_rv n eps Sum w) _ eps); intros H3.
   erewrite <- simple_NonnegExpectation in H3.  
   simpl in H3.
-  assert (event_equiv 
-            (event_ge dom (rvabs (fun w => Rabs(cutoff_eps_rv n eps Sum w))) eps)
-            (event_ge dom (fun w => Rabs(cutoff_eps_rv n eps Sum w)) eps)).
-  {
-    intro x.
-    unfold rvabs, const, event_ge; simpl.
-    rewrite Rabs_Rabsolu.
-    split; trivial.
-    Unshelve.
-    + typeclasses eauto.
-    + typeclasses eauto.
-  }
-  rewrite H in H3.
-  assert (rv_eq (rvsqr (fun w => Rabs(cutoff_eps_rv n eps Sum w)))
-                (rvsqr (cutoff_eps_rv n eps Sum))).
-  {
-    intros x.
-    unfold rvsqr, const.
-    now rewrite <-Rsqr_abs.
-  }
-  rewrite (SimpleExpectation_ext H2) in H3.
-  clear H H2.
   rewrite <- Rsqr_pow2.
+  unfold rvabs in H3.
   eapply Rle_trans; [apply H3 |].
   unfold Rdiv.
   apply Rmult_le_compat_r; 
