@@ -1468,7 +1468,6 @@ Proof.
    rewrite rvminus_unfold.
    admit.
  }
- unfold cutoff_eps_rv.
  clear H1 H3.
  induction n.
  - simpl.
@@ -1477,18 +1476,6 @@ Proof.
    intro x.
    now unfold rvsqr, Sum.
  - rewrite Srel.
-   specialize (Zrel n).
-   replace (SimpleExpectation
-              (rvsqr (fun omega : Ts => cutoff_eps (S n) eps (fun k : nat => Sum k omega))))
-     with
-       (SimpleExpectation (rvsqr (cutoff_eps_rv (S n) eps Sum))) by
-       apply SimpleExpectation_pf_irrel.
    rewrite Zrel.
-   replace (SimpleExpectation
-              (rvsqr (fun omega : Ts => cutoff_eps n eps (fun k : nat => Sum k omega))))
-     with
-       (SimpleExpectation (rvsqr (cutoff_eps_rv n eps Sum))) in IHn by
-       apply SimpleExpectation_pf_irrel.
-   specialize (H n).
    now apply Rplus_le_compat.
 Admitted.
