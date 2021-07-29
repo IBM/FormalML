@@ -93,7 +93,8 @@ PROB_THEORY = \
 QLEARN = \
 	Dvoretzky \
         infprod \
-	sumtest
+	sumtest \
+    slln
 
 
 MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
