@@ -1375,7 +1375,7 @@ Proof.
     + now rewrite <-cutoff_ge_eps_rv_rvmaxlist_iff.
   }
   rewrite H1.
-  generalize (Chebyshev_ineq_div_mean0 (fun w => cutoff_eps_rv n eps Sum w) _ eps); intros H3.
+  generalize (Chebyshev_ineq_div_mean0 (cutoff_eps_rv n eps Sum) _ eps); intros H3.
   erewrite <- simple_NonnegExpectation in H3.  
   simpl in H3.
   rewrite <- Rsqr_pow2.
@@ -1384,4 +1384,69 @@ Proof.
   unfold Rdiv.
   apply Rmult_le_compat_r; 
     [left; apply Rinv_0_lt_compat, Rlt_0_sqr, Rgt_not_eq, cond_pos |].
+  assert (Srel:forall j, SimpleExpectation(rvsqr (Sum (S j))) =
+                    SimpleExpectation(rvsqr (Sum j)) + 
+                    SimpleExpectation(rvsqr (rvminus (Sum (S j)) (Sum j)))).
+  {
+    intros.
+    assert (rv_eq (rvsqr (Sum (S j)))
+                  (rvplus (rvsqr (Sum j))
+                          (rvplus 
+                             (rvscale 2
+                                      (rvmult (Sum j) (X (S j))))
+                             (rvsqr (rvminus (Sum (S j)) (Sum j)))))).
+    - intro x.
+      unfold rvsqr, rvminus, rvopp, rvscale, rvplus, rvmult.
+      unfold Rsqr.
+      replace (Sum (S j) x) with ((Sum j x) + (X (S j) x)).
+      + now ring_simplify.
+      + unfold Sum, rvsum.
+        rewrite sum_Sn.
+        now unfold plus; simpl.
+   - rewrite (SimpleExpectation_ext H).
+     rewrite <- sumSimpleExpectation.
+     rewrite <- sumSimpleExpectation.
+     rewrite <- Rplus_assoc.
+     f_equal.
+     rewrite <- scaleSimpleExpectation.
+     unfold Sum.
+     rewrite (expec_cross_zero_sum2 X HC); try lia.
+     lra.
+  }
+  assert (Zrel:forall j, SimpleExpectation(rvsqr (cutoff_eps_rv (S j) eps Sum)) = 
+                    SimpleExpectation(rvsqr (cutoff_eps_rv j eps Sum)) + 
+                    SimpleExpectation(rvsqr (rvminus (cutoff_eps_rv (S j) eps Sum) 
+                                                     (cutoff_eps_rv j eps Sum)))).
+  {
+    intros.
+    assert (rv_eq (rvsqr (cutoff_eps_rv (S j) eps Sum)) 
+                  (rvplus (rvsqr (cutoff_eps_rv j eps Sum))
+                          (rvplus
+                             (rvscale 2
+                                      (rvmult (cutoff_eps_rv j eps Sum)
+                                              (rvminus (cutoff_eps_rv (S j) eps Sum) 
+                                                     (cutoff_eps_rv j eps Sum))))
+                             (rvsqr (rvminus (cutoff_eps_rv (S j) eps Sum) 
+                                             (cutoff_eps_rv j eps Sum)))))).
+    - intro x.
+      unfold rvsqr, rvminus, rvopp, rvscale, rvplus, rvmult.
+      unfold Rsqr.
+      replace (Sum (S j) x) with ((Sum j x) + (X (S j) x)).
+      + now ring_simplify.
+      + unfold Sum, rvsum.
+        rewrite sum_Sn.
+        now unfold plus; simpl.
+   - rewrite (SimpleExpectation_ext H).
+     rewrite <- sumSimpleExpectation.
+     rewrite <- sumSimpleExpectation.
+     rewrite <- Rplus_assoc.
+     f_equal.
+     rewrite <- scaleSimpleExpectation.
+     assert (SimpleExpectation (rvmult (cutoff_eps_rv j eps Sum) (rvminus (cutoff_eps_rv (S j) eps Sum) (cutoff_eps_rv j eps Sum))) = 0).
+     + admit.
+     + rewrite H0.
+       lra.
+ }
+    
+    
 Admitted.
