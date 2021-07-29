@@ -1400,11 +1400,11 @@ Proof.
     unfold rvsqr, const.
     now rewrite <-Rsqr_abs.
   }
-  rewrite H in H2; clear H.
+  rewrite (SimpleExpectation_ext H2) in H3.
+  clear H H2.
   rewrite <- Rsqr_pow2.
-  eapply Rle_trans; [apply H2 |].
+  eapply Rle_trans; [apply H3 |].
   unfold Rdiv.
   apply Rmult_le_compat_r; 
     [left; apply Rinv_0_lt_compat, Rlt_0_sqr, Rgt_not_eq, cond_pos |].
-  
 Admitted.
