@@ -1228,7 +1228,7 @@ Instance max_list_measurable (k : nat) (X : nat -> Ts -> R)
   {rm: forall n, RealMeasurable dom (X n)} :
     RealMeasurable dom (fun omega => Rmax_list_map (seq 0 (S k)) (fun n => X n omega)).
 Proof.
-(*  unfold Rmax_list_map.
+  unfold Rmax_list_map.
   induction k.
   - now simpl.
   - unfold RealMeasurable in *; intros.
@@ -1250,14 +1250,13 @@ Proof.
     apply sa_inter.
     + apply IHk.
     + apply rm.
- Qed.*)
-Admitted.
+ Qed.
 
 Instance rv_cutoff_eps_rv (n : nat) (eps : R) (X : nat -> Ts -> R) 
          {rv: forall n, RandomVariable dom borel_sa (X n)} :
   RandomVariable dom borel_sa (cutoff_eps_rv n eps X).
 Proof.
-(*  unfold cutoff_eps_rv.
+  unfold cutoff_eps_rv.
   apply measurable_rv.
   assert (mrv : forall n, RealMeasurable dom (X n)) 
     by (intro; now apply rv_measurable).
@@ -1269,16 +1268,16 @@ Proof.
     assert (pre_event_equiv
                (fun omega : Ts =>
                   (if Rlt_dec (Rmax_list_map (0%nat :: seq 1 n) 
-                                             (fun k : nat => X k omega)) eps
+                                             (fun k : nat => Rabs (X k omega))) eps
                    then X (S n) omega
                    else cutoff_eps n eps (fun k : nat => X k omega)) <= r)
                (pre_event_union
                   (pre_event_inter
-                     (fun omega => Rmax_list_map (0%nat :: seq 1 n) (fun k : nat => X k omega) < eps)
+                     (fun omega => Rmax_list_map (0%nat :: seq 1 n) (fun k : nat => Rabs (X k omega)) < eps)
                      (fun omega => X (S n) omega <= r))
                   (pre_event_inter
                      (pre_event_complement
-                        (fun omega => Rmax_list_map (0%nat :: seq 1 n) (fun k : nat => X k omega) < eps))
+                        (fun omega => Rmax_list_map (0%nat :: seq 1 n) (fun k : nat => Rabs (X k omega)) < eps))
                      (fun omega => cutoff_eps n eps (fun k : nat => X k omega) <= r)))).
     {
       intro x; unfold pre_event_union, pre_event_inter, pre_event_complement.
@@ -1288,15 +1287,18 @@ Proof.
     apply sa_union.
     + apply sa_inter.
       * apply sa_le_lt.
-        now apply max_list_measurable.
+        apply max_list_measurable.
+        intros.
+        now apply Rabs_measurable.
       * apply mrv.
     + apply sa_inter.
       * apply sa_complement.
         apply sa_le_lt.
-        now apply max_list_measurable.        
+        apply max_list_measurable.        
+        intros.
+        now apply Rabs_measurable.        
       * apply IHn.
-  Qed. *)
-Admitted.
+  Qed. 
 
 Instance nnf_cutoff_eps_rv (n : nat) (eps : R) (X : nat -> Ts -> R) 
          {nnf: forall n, NonnegativeFunction (X n)} :
@@ -1363,8 +1365,10 @@ Lemma ash_6_1_4 (X : nat -> Ts -> R)(n : nat)
            (SimpleExpectation (rvsqr (Sum n)))/eps^2.
 Proof.
   intros.
-  assert (H1 : event_equiv (event_ge dom (rvmaxlist Sum n) eps)
-                           (event_ge dom (cutoff_eps_rv n eps Sum) eps)).
+  assert (H0 : RandomVariable dom borel_sa (fun w => Rabs(cutoff_eps_rv n eps Sum w)))
+    by typeclasses eauto.
+  assert (H1 : event_equiv (event_ge dom (rvmaxlist (fun k => fun w => Rabs(Sum k w)) n) eps)
+                           (event_ge dom (fun w => Rabs(cutoff_eps_rv n eps Sum w)) eps)).
   {
     intro omega.
     unfold proj1_sig; simpl.
@@ -1373,17 +1377,28 @@ Proof.
     + now rewrite <-cutoff_ge_eps_rv_rvmaxlist_iff.
   }
   rewrite H1.
-  generalize (Chebyshev_ineq_div_mean0 (cutoff_eps_rv n eps Sum) _ eps); intros H2.
-  erewrite <- simple_NonnegExpectation in H2; simpl in H2.
+  generalize (Chebyshev_ineq_div_mean0 (fun w => Rabs(cutoff_eps_rv n eps Sum w)) H0 eps); intros H3.
+  erewrite <- simple_NonnegExpectation in H3.  
+  simpl in H3.
   assert (event_equiv 
-            (event_ge dom (rvabs (cutoff_eps_rv n eps Sum)) eps) 
-            (event_ge dom (cutoff_eps_rv n eps Sum) eps)).
+            (event_ge dom (rvabs (fun w => Rabs(cutoff_eps_rv n eps Sum w))) eps)
+            (event_ge dom (fun w => Rabs(cutoff_eps_rv n eps Sum w)) eps)).
   {
     intro x.
     unfold rvabs, const, event_ge; simpl.
-    rewrite Rabs_right; [tauto |].
-    apply Rle_ge, nnf_cutoff_eps_rv.
-    intro; typeclasses eauto.
+    rewrite Rabs_Rabsolu.
+    split; trivial.
+    Unshelve.
+    + typeclasses eauto.
+    + typeclasses eauto.
+  }
+  rewrite H in H3.
+  assert (rv_eq (rvsqr (fun w => Rabs(cutoff_eps_rv n eps Sum w)))
+                (rvsqr (cutoff_eps_rv n eps Sum))).
+  {
+    intros x.
+    unfold rvsqr, const.
+    now rewrite <-Rsqr_abs.
   }
   rewrite H in H2; clear H.
   rewrite <- Rsqr_pow2.
