@@ -1383,6 +1383,60 @@ Proof.
   simpl. match_destr; intuition; try lra.
 Qed.
 
+Definition pre_cutoff_event (n : nat) (eps : R) (X : nat -> Ts -> R) : pre_event Ts :=
+  fun x => Rmax_list_map (seq 0 n) (fun n => Rabs (X n x)) < eps.
+
+Program Definition cutoff_indicator (n : nat) (eps : R) (X : nat -> Ts -> R) :=
+  EventIndicator (P := pre_cutoff_event n eps X) _.
+Next Obligation.
+  apply ClassicalDescription.excluded_middle_informative.
+Defined.
+
+Instance cutoff_ind_rv (j:nat) (eps:R) (X: nat -> Ts -> R) 
+      {rv : forall n, RandomVariable dom borel_sa (X n)}
+      {fsf : forall n, FiniteRangeFunction (X n)} :
+  RandomVariable dom borel_sa
+                 (cutoff_indicator (S j) eps (rvsum X)).
+Proof.
+  unfold cutoff_indicator.
+  apply EventIndicator_pre_rv.
+  unfold pre_cutoff_event.
+  apply sa_le_lt.
+  intros.
+  apply max_list_measurable.        
+  intros.
+  apply Rabs_measurable.
+  apply rvsum_measurable.
+  intros.
+  now apply rv_measurable.
+Qed.
+
+Lemma indicator_prod_cross (j:nat) (eps:R) (X: nat -> Ts -> R) 
+      {rv : forall n, RandomVariable dom borel_sa (X n)}
+      {frf : forall n, FiniteRangeFunction (X n)} 
+      (HC : forall n, 
+          SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
+
+  SimpleExpectation 
+    (rvmult (rvmult (cutoff_eps_rv j eps (rvsum X))
+                    (cutoff_indicator (S j) eps (rvsum X)))
+            (X (S j))) = 0.
+  Proof.
+    pose (l := @filtration_history (S j) _ frf rv).
+    generalize (part_list_history (S j) X); intros ispart.
+    rewrite gen_conditional_tower_law with (l0 := l); trivial.
+    generalize (gen_conditional_scale_measurable (rvmult (cutoff_eps_rv j eps (rvsum X))
+                    (cutoff_indicator (S j) eps (rvsum X))) (X (S j)) l ispart); intros.    unfold l in H; unfold l.
+    cut_to H.
+    - rewrite (HC (S j)) in H.
+      rewrite (SimpleExpectation_ext H).
+      rewrite (SimpleExpectation_ext (rvmult_zero _)).
+      now rewrite SimpleExpectation_const.
+    -     
+
+    Admitted.
+
+
 Lemma ash_6_1_4 (X : nat -> Ts -> R)(n : nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
       {frf : forall (n:nat), FiniteRangeFunction (X n)}
@@ -1481,36 +1535,36 @@ Proof.
      rewrite <- scaleSimpleExpectation.
      assert (SimpleExpectation (rvmult (cutoff_eps_rv j eps Sum) (rvminus (cutoff_eps_rv (S j) eps Sum) (cutoff_eps_rv j eps Sum))) = 0).
      + assert (Heq :rv_eq
-                      (fun w => (cutoff_eps_rv j eps Sum w)* (if (Rlt_dec (Rmax_list_map (seq 0 (S j)) (fun n => Rabs (Sum n w))) eps)
-                             then (X (S j) w) else (const 0 w)))
-                      (rvmult (cutoff_eps_rv j eps Sum) (rvminus (cutoff_eps_rv (S j) eps Sum) (cutoff_eps_rv j eps Sum)))).
+                      (rvmult (cutoff_eps_rv j eps Sum) 
+                              (rvmult 
+                                 (cutoff_indicator (S j) eps Sum)
+                                 (X (S j))))
+                      (rvmult 
+                         (cutoff_eps_rv j eps Sum) 
+                         (rvminus (cutoff_eps_rv (S j) eps Sum) 
+                                  (cutoff_eps_rv j eps Sum)))).
         {
          intros w.
          rv_unfold. f_equal. ring_simplify.
-         unfold cutoff_eps_rv.
+         unfold cutoff_eps_rv, cutoff_indicator, EventIndicator.
          rewrite (cutoff_eps_succ_minus eps (fun k => Sum k w) j).
          unfold Sum, rvsum. rewrite sum_Sn. unfold plus. simpl.
-         now rewrite Rplus_minus_cancel1.
+         rewrite Rplus_comm.
+         unfold Rminus; rewrite Rplus_assoc.
+         replace  (sum_n (fun n0 : nat => X n0 w) j + - sum_n (fun n0 : nat => X n0 w) j) with 0 by lra.
+         rewrite Rplus_0_r.
+         admit.
         }
-        assert (rv1 : RandomVariable dom borel_sa
-          (fun w : Ts =>
-           cutoff_eps_rv j eps Sum w *
-           (if Rlt_dec (Rmax_list_map (seq 0 (S j)) (fun n : nat => Rabs (Sum n w))) eps
-            then X (S j) w
-            else const 0 w))) by admit.
-        assert (frf1 : FiniteRangeFunction
-           (fun w : Ts =>
-            cutoff_eps_rv j eps Sum w *
-            (if Rlt_dec (Rmax_list_map (seq 0 (S j)) (fun n : nat => Rabs (Sum n w))) eps
-             then X (S j) w
-             else const 0 w))) by admit.
-        rewrite <-(SimpleExpectation_ext Heq).
-        admit.
-        Unshelve.
-       -- typeclasses eauto.
-       -- typeclasses eauto.
-(*     apply SimpleExpectation_ext.
-        unfold rvmult. rv_unfold. setoid_rewrite <-Heq.*)
+        erewrite <-(SimpleExpectation_ext Heq).
+        assert (rv_eq
+                  (rvmult (cutoff_eps_rv j eps Sum)
+                          (rvmult (cutoff_indicator (S j) eps Sum) (X (S j))))
+                  (rvmult 
+                     (rvmult (cutoff_eps_rv j eps Sum)
+                             (cutoff_indicator (S j) eps Sum))
+                     (X (S j)))) by now rewrite rvmult_assoc.
+        erewrite (SimpleExpectation_ext H0).
+        now apply indicator_prod_cross.
      + rewrite H0.
        lra.
  }
