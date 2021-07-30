@@ -1458,24 +1458,19 @@ Qed.
        destruct (H0 p H2) as [c [? ?]].
        exists c.
        unfold rvsum.
-       unfold R_AbelianGroup; simpl.
-       unfold R_AbelianGroup_mixin; simpl.
        split.
-       + simpl.
-         unfold FiniteRangeFunction_ext; simpl.
+       + unfold FiniteRangeFunction_ext; simpl.
          now destruct (frf 0%nat); simpl in *.
        + rewrite H4.
          intros ?; simpl.
          unfold pre_event_preimage; simpl.
          now rewrite sum_O.
      - unfold rvsum.
+       generalize H0; intros HH0.
        specialize (H0 (S j)).
        cut_to H0; try lia; trivial.
-       unfold AbelianGroup.sort, R_AbelianGroup.
-       unfold R_AbelianGroup_mixin; simpl.
        cut_to IHj.
        + specialize (H0 p H2).
-         unfold R_AbelianGroup; simpl.
          destruct IHj as [c0 [? ?]].
          destruct H0 as [c1 [? ?]].
          exists (c1 + c0).
@@ -1492,8 +1487,10 @@ Qed.
            rewrite (Rplus_comm c1 c0).
            unfold rvsum in *.
            f_equal; auto.
-       + admit.
-  Admitted.
+       + intros.
+         apply HH0; trivial.
+         lia.
+  Qed.
 
   Lemma partition_measurable_rvmult (rv_X1 rv_X2 : Ts -> R)
         {rv1 : RandomVariable dom borel_sa rv_X1}
