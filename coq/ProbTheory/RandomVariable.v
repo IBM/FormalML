@@ -127,7 +127,7 @@ Section Simple.
     exists frf_vals0.
     intros.
     now rewrite <- H.
-  Qed.
+    Defined.
 
   Global Program Instance frf_crv (rv_X:Ts->Td) {crv:ConstantRangeFunction rv_X} :
     FiniteRangeFunction rv_X

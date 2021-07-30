@@ -555,7 +555,7 @@ Proof.
     + eapply FiniteRangeFunction_ext.
       * rewrite H; reflexivity.
       * apply frfplus; trivial.
-Qed.
+Defined.
 
 Global Instance frfite (X Y : Ts -> R){p : Prop}(dec : {p} + {~ p})
        {rv_X : FiniteRangeFunction X} {rv_Y : FiniteRangeFunction Y} :
@@ -1461,16 +1461,13 @@ Qed.
        unfold R_AbelianGroup; simpl.
        unfold R_AbelianGroup_mixin; simpl.
        split.
-       + unfold frf_vals.
-         match_destr.
-         admit.
-       + assert (event_equiv
-                   (@preimage_singleton Ts R dom borel_sa borel_has_preimages (X O) (rv O) c)
-                   (@preimage_singleton Ts R dom borel_sa borel_has_preimages
-                                        (fun omega : Ts => @sum_n R_AbelianGroup (fun n0 : nat => X n0 omega) O) (@rvsum_rv Ts dom X rv O) c)).
-         * admit.
-         * rewrite <- H5.
-           apply H4.
+       + simpl.
+         unfold FiniteRangeFunction_ext; simpl.
+         now destruct (frf 0%nat); simpl in *.
+       + rewrite H4.
+         intros ?; simpl.
+         unfold pre_event_preimage; simpl.
+         now rewrite sum_O.
      - unfold rvsum.
        specialize (H0 (S j)).
        cut_to H0; try lia; trivial.
@@ -1481,8 +1478,22 @@ Qed.
          unfold R_AbelianGroup; simpl.
          destruct IHj as [c0 [? ?]].
          destruct H0 as [c1 [? ?]].
-         exists (c0 + c1).
-         Admitted.
+         exists (c1 + c0).
+         split.
+         * replace (c1 + c0) with ((fun ab : R * R => fst ab + snd ab) (c1,c0)) by reflexivity.
+           apply in_map with (f:=(fun ab : R * R => fst ab + snd ab)).
+           apply in_prod_iff.
+           auto.
+         * intros x; simpl.
+           repeat red in H5, H4.
+           unfold pre_event_preimage, pre_event_singleton in *; simpl in *; intros px.
+           rewrite sum_Sn.
+           unfold plus; simpl.
+           rewrite (Rplus_comm c1 c0).
+           unfold rvsum in *.
+           f_equal; auto.
+       + admit.
+  Admitted.
 
   Lemma partition_measurable_rvmult (rv_X1 rv_X2 : Ts -> R)
         {rv1 : RandomVariable dom borel_sa rv_X1}
