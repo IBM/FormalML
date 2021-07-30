@@ -1553,7 +1553,13 @@ Proof.
          unfold Rminus; rewrite Rplus_assoc.
          replace  (sum_n (fun n0 : nat => X n0 w) j + - sum_n (fun n0 : nat => X n0 w) j) with 0 by lra.
          rewrite Rplus_0_r.
-         admit.
+         match_destr.
+         - match_destr.
+           + lra.
+           + tauto.
+         - match_destr.
+           + tauto.
+           + lra.
         }
         erewrite <-(SimpleExpectation_ext Heq).
         assert (rv_eq
@@ -1592,7 +1598,7 @@ Proof.
      simpl. now ring_simplify.
    + rewrite <-Rsqr_pow2. unfold Rsqr. eapply Rle_trans; try (apply pow2_ge_0).
      lra.
-Admitted.
+Qed.
 
 Lemma var_sum_cross_0 (X : nat -> Ts -> R)(n : nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
