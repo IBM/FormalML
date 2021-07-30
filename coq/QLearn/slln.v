@@ -1411,6 +1411,135 @@ Proof.
   now apply rv_measurable.
 Qed.
 
+  Lemma partition_measurable_rvplus (rv_X1 rv_X2 : Ts -> R)
+        {rv1 : RandomVariable dom borel_sa rv_X1}
+        {rv2 : RandomVariable dom borel_sa rv_X2} 
+        {frf1 : FiniteRangeFunction rv_X1}
+        {frf2 : FiniteRangeFunction rv_X2}         
+        (l : list (event dom)) :
+    is_partition_list l ->
+    partition_measurable  rv_X1 l ->
+    partition_measurable  rv_X2 l ->     
+    partition_measurable  (rvplus rv_X1 rv_X2) l.
+  Proof.
+     unfold partition_measurable. intros.
+     specialize (H0 H p H3).
+     specialize (H1 H p H3).
+     destruct H0 as [c1 [? ?]].
+     destruct H1 as [c2 [? ?]].     
+     exists (Rplus c1 c2).
+     split.
+     - destruct frf1.
+       destruct frf2.
+       unfold RandomVariable.frf_vals; simpl.
+       apply in_map_iff.
+       exists (c1, c2).
+       split; [reflexivity | ].
+       now apply in_prod.
+     - intros ?.
+       simpl.
+       unfold pre_event_sub, pre_event_preimage, pre_event_singleton in *; simpl.
+       unfold rvplus; simpl; intros.
+       now rewrite (H4 x H6), (H5 x H6).
+     Qed.
+
+  Lemma partition_measurable_rvsum (j : nat) (X : nat -> Ts -> R)
+        {rv : forall n, RandomVariable dom borel_sa (X n)}
+        {frf : forall n, FiniteRangeFunction (X n)}
+        (l : list (event dom)) :
+    is_partition_list l ->
+    (forall k, (k <= j)%nat -> partition_measurable (X k) l) ->
+    partition_measurable (rvsum X j) l.
+  Proof.
+     unfold partition_measurable; intros.
+     induction j.
+     - specialize (H0 0%nat).
+       cut_to H0; try lia; trivial.
+       destruct (H0 p H2) as [c [? ?]].
+       exists c.
+       unfold rvsum.
+       unfold R_AbelianGroup; simpl.
+       unfold R_AbelianGroup_mixin; simpl.
+       split.
+       + unfold frf_vals.
+         match_destr.
+         admit.
+       + assert (event_equiv
+                   (@preimage_singleton Ts R dom borel_sa borel_has_preimages (X O) (rv O) c)
+                   (@preimage_singleton Ts R dom borel_sa borel_has_preimages
+                                        (fun omega : Ts => @sum_n R_AbelianGroup (fun n0 : nat => X n0 omega) O) (@rvsum_rv Ts dom X rv O) c)).
+         * admit.
+         * rewrite <- H5.
+           apply H4.
+     - unfold rvsum.
+       specialize (H0 (S j)).
+       cut_to H0; try lia; trivial.
+       unfold AbelianGroup.sort, R_AbelianGroup.
+       unfold R_AbelianGroup_mixin; simpl.
+       cut_to IHj.
+       + specialize (H0 p H2).
+         unfold R_AbelianGroup; simpl.
+         destruct IHj as [c0 [? ?]].
+         destruct H0 as [c1 [? ?]].
+         exists (c0 + c1).
+         Admitted.
+
+  Lemma partition_measurable_rvmult (rv_X1 rv_X2 : Ts -> R)
+        {rv1 : RandomVariable dom borel_sa rv_X1}
+        {rv2 : RandomVariable dom borel_sa rv_X2} 
+        {frf1 : FiniteRangeFunction rv_X1}
+        {frf2 : FiniteRangeFunction rv_X2}         
+        (l : list (event dom)) :
+    is_partition_list l ->
+    partition_measurable  rv_X1 l ->
+    partition_measurable  rv_X2 l ->     
+    partition_measurable  (rvmult rv_X1 rv_X2) l.
+  Proof.
+     unfold partition_measurable. intros.
+     specialize (H0 H p H3).
+     specialize (H1 H p H3).
+     destruct H0 as [c1 [? ?]].
+     destruct H1 as [c2 [? ?]].     
+     exists (Rmult c1 c2).
+     split.
+     - destruct frf1.
+       destruct frf2.
+       unfold RandomVariable.frf_vals; simpl.
+       apply in_map_iff.
+       exists (c1, c2).
+       split; [reflexivity | ].
+       now apply in_prod.
+     - intros ?.
+       simpl.
+       unfold pre_event_sub, pre_event_preimage, pre_event_singleton in *; simpl.
+       unfold rvmult; simpl; intros.
+       now rewrite (H4 x H6), (H5 x H6).
+     Qed.
+
+  Lemma partition_measurable_cutoff_ind (X : nat -> Ts -> R) (eps : R)
+        {rv : forall n, RandomVariable dom borel_sa (X n)}
+        {frf : forall n, FiniteRangeFunction (X n)} :
+    forall j, partition_measurable (cutoff_indicator (S j) eps (rvsum X)) (map dsa_event (filtration_history (S j) X)).
+  Proof.
+    intros.
+    unfold partition_measurable; intros.
+    unfold cutoff_indicator.
+    unfold cutoff_indicator_obligation_1.
+
+    Admitted.
+
+
+  Lemma partition_measurable_cutoff_eps (X : nat -> Ts -> R) (eps : R)
+        {rv : forall n, RandomVariable dom borel_sa (X n)}
+        {frf : forall n, FiniteRangeFunction (X n)} :
+    forall j, partition_measurable (cutoff_eps_rv j eps (rvsum X)) (map dsa_event (filtration_history (S j) X)).
+  Proof.
+    intros.
+    unfold partition_measurable; intros.
+    generalize part_meas_hist; intros.
+    unfold cutoff_eps_rv.
+    Admitted.
+
 Lemma indicator_prod_cross (j:nat) (eps:R) (X: nat -> Ts -> R) 
       {rv : forall n, RandomVariable dom borel_sa (X n)}
       {frf : forall n, FiniteRangeFunction (X n)} 
@@ -1432,10 +1561,10 @@ Lemma indicator_prod_cross (j:nat) (eps:R) (X: nat -> Ts -> R)
       rewrite (SimpleExpectation_ext H).
       rewrite (SimpleExpectation_ext (rvmult_zero _)).
       now rewrite SimpleExpectation_const.
-    -     
-
-    Admitted.
-
+    - apply partition_measurable_rvmult; trivial.
+      + apply partition_measurable_cutoff_eps.
+      + apply partition_measurable_cutoff_ind.
+  Qed.
 
 Lemma ash_6_1_4 (X : nat -> Ts -> R)(n : nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
