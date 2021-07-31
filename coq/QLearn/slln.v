@@ -1524,6 +1524,35 @@ Qed.
        now rewrite (H4 x H6), (H5 x H6).
      Qed.
 
+  Lemma partition_measurable_indicator 
+        {P : event dom} 
+        (dec:forall x, {P x} + {~ P x}) 
+        (l : list (event dom)) :
+    (forall (Q : event dom), 
+        In Q l ->
+        (event_sub Q P) \/ (event_sub Q (event_complement P))) ->
+    partition_measurable (EventIndicator dec) l.
+  Proof.
+    intros.
+    unfold partition_measurable; intros.
+    unfold frf_vals, EventIndicator_frf, IndicatorRandomVariableSimpl.
+    unfold preimage_singleton, EventIndicator, event_sub.
+    unfold pre_event_sub, pre_event_preimage, pre_event_singleton.
+    destruct (H p H1).
+    - exists 1.
+      split.
+      + apply in_cons, in_eq.
+      + simpl; intros.
+        match_destr.
+        now specialize (H2 x H3).
+   - exists 0.
+     split.
+     + apply in_eq.
+      + simpl; intros.
+        match_destr.
+        now specialize (H2 x H3).
+  Qed.    
+
   Lemma partition_measurable_cutoff_ind (X : nat -> Ts -> R) (eps : R)
         {rv : forall n, RandomVariable dom borel_sa (X n)}
         {frf : forall n, FiniteRangeFunction (X n)} :
@@ -1776,6 +1805,69 @@ Proof.
       ring.
 Qed.
 
-      
-      
-      
+Lemma sa_sigma_cauchy (X : nat -> Ts -> R) (eps:posreal) (N : nat) 
+      {rv : forall (n:nat), RandomVariable dom borel_sa (X n)} :
+  sa_sigma (fun omega =>
+              exists (n m : nat),
+                (n >= N)%nat /\ (m >= N)%nat /\
+                Rabs ((X n omega) - (X m omega)) >= eps) .
+Proof.
+  assert (pre_event_equiv
+           (fun omega =>
+              exists (n m : nat),
+                (n >= N)%nat /\ (m >= N)%nat /\
+                Rabs ((X n omega) - (X m omega)) >= eps)
+           (pre_union_of_collection 
+              (fun n => pre_union_of_collection
+                          (fun m =>
+                             (fun omega =>
+                                (n >= N)%nat /\ (m >= N)%nat /\
+                                Rabs ((X n omega) - (X m omega)) >= eps))))) .
+  {
+    intro x.
+    now unfold pre_union_of_collection.
+  }
+  rewrite H.
+  apply sa_countable_union; intros.
+  apply sa_countable_union; intros.  
+  assert (pre_event_equiv
+             (fun omega : Ts =>
+                (n >= N)%nat /\ (n0 >= N)%nat /\ Rabs (X n omega - X n0 omega) >= eps)
+             (pre_event_inter
+                (fun _ =>  (n >= N)%nat /\ (n0 >= N)%nat)
+                (fun omega => Rabs (X n omega - X n0 omega) >= eps))).
+  {
+    intro x.
+    unfold pre_event_inter.
+    tauto.
+  }
+  rewrite H0.
+  apply sa_inter.
+  - apply sa_sigma_const_classic.
+  - apply sa_le_ge; intros.
+    apply Rabs_measurable.
+    generalize (minus_measurable dom (X n) (X n0)); intros.
+    rewrite rvminus_unfold in H1.
+    apply H1.
+    + now apply rv_measurable.
+    + now apply rv_measurable.      
+  Qed.                            
+
+(* ash prob 2.5.4 *)
+Lemma almost_cauchy (X : nat -> Ts -> R) 
+      {rv : forall (n:nat), RandomVariable dom borel_sa (X n)} :
+  (exists P, 
+      ps_P P = 1 /\
+      forall omega, 
+        P omega ->
+        forall (eps:posreal),
+        exists (N:nat), 
+        forall (n m : nat), 
+          (n >= N)%nat -> (m >= N)%nat ->
+          Rabs ((X n omega) - (X m omega)) < eps) <->
+  (forall (eps:posreal),
+      Lim_seq (fun N => 
+                 ps_P (exist sa_sigma _ (sa_sigma_cauchy X eps N))) = 0).
+Proof.
+  Admitted.
+
