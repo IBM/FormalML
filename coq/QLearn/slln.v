@@ -1615,12 +1615,6 @@ Qed.
     apply H3.
   Qed.
 
-  Lemma empty_dec (Q : event dom) : {Q = event_none} + {Q <> event_none}.
-  Proof.
-    apply EM_dec'.
-    apply classic.
-  Qed.
-
    Lemma filtration_history_var_const_ex (X : nat -> Ts -> R) (eps : R) (j:nat) 
         {rv : forall n, RandomVariable dom borel_sa (X n)}
         {frf : forall n, FiniteRangeFunction (X n)} :
@@ -1724,6 +1718,16 @@ Qed.
       now rewrite H0.
   Qed.
 
+   Lemma cutoff_eps_const_history (X : nat -> Ts -> R) (eps : R) (j:nat)
+        {rv : forall n, RandomVariable dom borel_sa (X n)}
+        {frf : forall n, FiniteRangeFunction (X n)} :
+    forall (Q : event dom), 
+      In Q (map dsa_event (filtration_history (S j) X)) ->
+      exists (c:R),
+      forall x, Q x -> (cutoff_eps_rv j eps (rvsum X)) x = c.
+   Proof.
+     Admitted.
+
   Lemma partition_measurable_cutoff_eps (X : nat -> Ts -> R) (eps : R)
         {rv : forall n, RandomVariable dom borel_sa (X n)}
         {frf : forall n, FiniteRangeFunction (X n)} :
@@ -1736,6 +1740,16 @@ Qed.
     unfold preimage_singleton.
     unfold pre_event_preimage, pre_event_singleton.
     unfold partition_measurable in H1.
+    generalize (cutoff_eps_const_history X eps j p H0); intros.
+    destruct H2 as [c ?].
+    exists c.
+    split.
+    - admit.
+    - unfold event_sub, pre_event_sub; intros.
+      specialize (H2 x H3).
+      unfold proj1_sig; simpl.
+      unfold cutoff_eps_rv in H2.
+      apply H2.
     Admitted.
 
 Lemma indicator_prod_cross (j:nat) (eps:R) (X: nat -> Ts -> R) 
