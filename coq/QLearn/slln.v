@@ -1726,6 +1726,8 @@ Qed.
       exists (c:R),
       forall x, Q x -> (cutoff_eps_rv j eps (rvsum X)) x = c.
    Proof.
+     intros.
+     
      Admitted.
 
   Lemma partition_measurable_cutoff_eps (X : nat -> Ts -> R) (eps : R)
@@ -1744,7 +1746,13 @@ Qed.
     destruct H2 as [c ?].
     exists c.
     split.
-    - admit.
+    - unfold frf_vals.
+      match_destr.
+      assert (exists x, p x) by admit.
+      destruct H3.
+      specialize (H2 x H3).
+      rewrite <- H2.
+      apply frf_vals_complete.
     - unfold event_sub, pre_event_sub; intros.
       specialize (H2 x H3).
       unfold proj1_sig; simpl.
