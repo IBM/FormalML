@@ -1727,7 +1727,14 @@ Qed.
       forall x, Q x -> (cutoff_eps_rv j eps (rvsum X)) x = c.
    Proof.
      intros.
-     
+     induction j.
+     - unfold cutoff_eps_rv; simpl.
+       unfold rvsum.
+       setoid_rewrite sum_O.
+       generalize (filtration_history_var_const X eps 0%nat Q H 0%nat); intros.
+       apply H0.
+       lia.
+     -  generalize (filtration_history_var_const_fun X eps j Q); intros.
      Admitted.
 
   Lemma partition_measurable_cutoff_eps (X : nat -> Ts -> R) (eps : R)
@@ -1736,28 +1743,24 @@ Qed.
     forall j, partition_measurable (cutoff_eps_rv j eps (rvsum X)) (map dsa_event (filtration_history (S j) X)).
   Proof.
     intros.
-    unfold partition_measurable; intros.
-    generalize part_meas_hist; intros.
-    unfold cutoff_eps_rv.
-    unfold preimage_singleton.
-    unfold pre_event_preimage, pre_event_singleton.
-    unfold partition_measurable in H1.
-    generalize (cutoff_eps_const_history X eps j p H0); intros.
-    destruct H2 as [c ?].
+    unfold partition_measurable, cutoff_eps_rv; intros.
+    unfold preimage_singleton, pre_event_preimage, pre_event_singleton.
+    generalize (cutoff_eps_const_history X eps j p H0); intros HH.
+    destruct HH as [c ?].
     exists c.
     split.
     - unfold frf_vals.
       match_destr.
-      assert (exists x, p x) by admit.
-      destruct H3.
-      specialize (H2 x H3).
-      rewrite <- H2.
+      assert (HH1:exists x, p x) by admit.
+      destruct HH1.
+      specialize (H1 x H2).
+      rewrite <- H1.
       apply frf_vals_complete.
     - unfold event_sub, pre_event_sub; intros.
-      specialize (H2 x H3).
+      specialize (H1 x H2).
       unfold proj1_sig; simpl.
-      unfold cutoff_eps_rv in H2.
-      apply H2.
+      unfold cutoff_eps_rv in H1.
+      apply H1.
     Admitted.
 
 Lemma indicator_prod_cross (j:nat) (eps:R) (X: nat -> Ts -> R) 
