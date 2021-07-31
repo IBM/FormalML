@@ -1553,18 +1553,143 @@ Qed.
         now specialize (H2 x H3).
   Qed.    
 
+  Lemma partition_measurable_indicator_pre
+        {P : pre_event Ts} 
+        (dec:forall x, {P x} + {~ P x}) 
+        {rv : RandomVariable dom borel_sa (EventIndicator dec)}
+        (l : list (event dom)) :
+    (forall (Q : event dom), 
+        In Q l ->
+        (pre_event_sub Q P) \/ (pre_event_sub Q (pre_event_complement P))) ->
+    partition_measurable (EventIndicator dec) l.
+  Proof.
+    intros.
+    unfold partition_measurable; intros.
+    unfold frf_vals, EventIndicator_frf, IndicatorRandomVariableSimpl.
+    unfold preimage_singleton, EventIndicator, event_sub.
+    unfold pre_event_sub, pre_event_preimage, pre_event_singleton.
+    destruct (H p H1).
+    - exists 1.
+      split.
+      + apply in_cons, in_eq.
+      + simpl; intros.
+        match_destr.
+        now specialize (H2 x H3).
+   - exists 0.
+     split.
+     + apply in_eq.
+      + simpl; intros.
+        match_destr.
+        now specialize (H2 x H3).
+  Qed.
+
+  Lemma filtration_history_var_const (X : nat -> Ts -> R) (eps : R) (j:nat) 
+        {rv : forall n, RandomVariable dom borel_sa (X n)}
+        {frf : forall n, FiniteRangeFunction (X n)} :
+  forall (Q : event dom),
+      In Q (map dsa_event (filtration_history (S j) X)) ->
+      forall (k:nat), 
+        (k <= j)%nat ->
+        exists (c:R),
+        forall x, Q x -> X k x = c.
+  Proof.
+    intros.
+    generalize (part_meas_hist k (j - k)%nat X); intros.
+    unfold partition_measurable in H1.
+    generalize (part_list_history (S j) X); intros.
+    replace (S k + (j - k))%nat with (S j) in H1 by lia.
+    cut_to H1; trivial.
+    specialize (H1 Q).
+    cut_to H1; trivial.
+    destruct H1 as [c [? ?]].
+    exists c.
+    unfold event_sub, preimage_singleton in H3.
+    unfold pre_event_sub, pre_event_preimage, pre_event_singleton in H3.
+    intros.
+    specialize (H3 x H4).
+    unfold proj1_sig in H3.
+    apply H3.
+  Qed.
+
+  Lemma filtration_history_var_const_fun (X : nat -> Ts -> R) (eps : R) (j:nat) 
+        {rv : forall n, RandomVariable dom borel_sa (X n)}
+        {frf : forall n, FiniteRangeFunction (X n)} :
+  forall (Q : event dom),
+    In Q (map dsa_event (filtration_history (S j) X)) ->
+    exists (f : nat -> R),
+      forall (k:nat), 
+        (k <= j)%nat ->
+        forall x, Q x -> X k x = f k.
+  Proof.
+    intros.
+    generalize (filtration_history_var_const X eps j Q H); intros.
+    
+  Admitted.
+
+  Lemma Rmax_list_map_seq_ext_loc (f g : nat -> R) (j : nat) :
+    (forall (n:nat), (n <= j)%nat -> f n = g n) ->
+    Rmax_list_map (seq 0 (S j)) f = Rmax_list_map (seq 0 (S j)) g.
+  Proof.
+    unfold Rmax_list_map.
+    intros.
+    induction j.
+    - simpl.
+      apply H.
+      lia.
+    - rewrite seq_Sn.
+      replace (0 + S j)%nat with (S j) by lia.
+      rewrite Rmax_list_app.
+      + rewrite Rmax_list_app.
+        * cut_to IHj.
+          -- rewrite IHj.
+             now rewrite H.
+          -- intros.
+             apply H.
+             lia.
+        * now simpl.
+      + now simpl.
+  Qed.
+
+  Lemma pre_cutoff_event_const_history (X : nat -> Ts -> R) (eps : R) (j:nat)
+        {rv : forall n, RandomVariable dom borel_sa (X n)}
+        {frf : forall n, FiniteRangeFunction (X n)} :
+    forall (Q : event dom), 
+      In Q (map dsa_event (filtration_history (S j) X)) ->
+      exists (c:R),
+      forall x, Q x -> Rmax_list_map (seq 0 (S j)) (fun n : nat => Rabs (rvsum X n x)) = c.
+  Proof.
+    intros.
+    generalize (filtration_history_var_const_fun X eps j Q H); intros.
+    destruct H0 as [f ?].
+    unfold rvsum.
+    exists (Rmax_list_map (seq 0 (S j)) (fun n => Rabs (sum_n f n))).
+    intros.
+    apply Rmax_list_map_seq_ext_loc.
+    intros.
+    f_equal.
+    apply sum_n_ext_loc.
+    intros.
+    apply H0; trivial; lia.
+  Qed.
+
   Lemma partition_measurable_cutoff_ind (X : nat -> Ts -> R) (eps : R)
         {rv : forall n, RandomVariable dom borel_sa (X n)}
         {frf : forall n, FiniteRangeFunction (X n)} :
     forall j, partition_measurable (cutoff_indicator (S j) eps (rvsum X)) (map dsa_event (filtration_history (S j) X)).
   Proof.
     intros.
-    unfold partition_measurable; intros.
-    unfold cutoff_indicator.
-    unfold cutoff_indicator_obligation_1.
-
-    Admitted.
-
+    apply partition_measurable_indicator_pre; intros.
+    generalize (pre_cutoff_event_const_history X eps j Q H); intros.
+    unfold pre_event_sub, pre_cutoff_event, pre_event_complement.
+    destruct H0 as [c ?].
+    destruct (Rlt_dec c eps).
+    - left.
+      intros.
+      now rewrite H0.
+    - right.
+      intros.
+      now rewrite H0.
+  Qed.
 
   Lemma partition_measurable_cutoff_eps (X : nat -> Ts -> R) (eps : R)
         {rv : forall n, RandomVariable dom borel_sa (X n)}
@@ -1575,6 +1700,9 @@ Qed.
     unfold partition_measurable; intros.
     generalize part_meas_hist; intros.
     unfold cutoff_eps_rv.
+    unfold preimage_singleton.
+    unfold pre_event_preimage, pre_event_singleton.
+    unfold partition_measurable in H1.
     Admitted.
 
 Lemma indicator_prod_cross (j:nat) (eps:R) (X: nat -> Ts -> R) 
