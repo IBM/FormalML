@@ -2,6 +2,10 @@ Require Import Lra Lia Reals RealAdd RandomVariableL2 Coquelicot.Coquelicot.
 Require Import Morphisms Finite List ListAdd Permutation.
 Require Import Sums SimpleExpectation.
 Require Import EquivDec.
+Require Import Classical.
+Require Import ClassicalChoice.
+Require Import IndefiniteDescription ClassicalDescription.
+
 
 Set Bullet Behavior "Strict Subproofs".
 Set Default Goal Selector "!".
@@ -1611,20 +1615,46 @@ Qed.
     apply H3.
   Qed.
 
+  Lemma empty_dec (Q : event dom) : {Q = event_none} + {Q <> event_none}.
+  Proof.
+    apply EM_dec'.
+    apply classic.
+  Qed.
+
+   Lemma filtration_history_var_const_ex (X : nat -> Ts -> R) (eps : R) (j:nat) 
+        {rv : forall n, RandomVariable dom borel_sa (X n)}
+        {frf : forall n, FiniteRangeFunction (X n)} :
+  forall (Q : event dom),
+      In Q (map dsa_event (filtration_history (S j) X)) ->
+      forall (k:nat), 
+        (k <= j)%nat ->
+        {c:R |
+            forall x, Q x -> X k x = c}.
+     Proof.
+       intros.
+       generalize (filtration_history_var_const X eps j Q H k H0); intros.
+       now apply constructive_indefinite_description in H1.
+   Qed.
+
   Lemma filtration_history_var_const_fun (X : nat -> Ts -> R) (eps : R) (j:nat) 
         {rv : forall n, RandomVariable dom borel_sa (X n)}
         {frf : forall n, FiniteRangeFunction (X n)} :
   forall (Q : event dom),
     In Q (map dsa_event (filtration_history (S j) X)) ->
-    exists (f : nat -> R),
-      forall (k:nat), 
-        (k <= j)%nat ->
-        forall x, Q x -> X k x = f k.
+    exists (f :  {n':nat | n' <= j}%nat -> R),
+      forall (k:  {n':nat | n' <= j}%nat), 
+        forall x, Q x -> X (proj1_sig k) x = f k.
   Proof.
     intros.
-    generalize (filtration_history_var_const X eps j Q H); intros.
-    
-  Admitted.
+    generalize (filtration_history_var_const_ex X eps j Q H); intros.
+    exists (fun k => (proj1_sig (H0 (proj1_sig k) (proj2_sig k)))).
+    intros.
+    destruct k; simpl.
+    generalize (H0 x0 l); intros.
+    destruct s.
+    simpl.
+    now apply e.
+  Qed.
 
   Lemma Rmax_list_map_seq_ext_loc (f g : nat -> R) (j : nat) :
     (forall (n:nat), (n <= j)%nat -> f n = g n) ->
@@ -1662,6 +1692,8 @@ Qed.
     generalize (filtration_history_var_const_fun X eps j Q H); intros.
     destruct H0 as [f ?].
     unfold rvsum.
+    Admitted.
+(*
     exists (Rmax_list_map (seq 0 (S j)) (fun n => Rabs (sum_n f n))).
     intros.
     apply Rmax_list_map_seq_ext_loc.
@@ -1671,7 +1703,8 @@ Qed.
     intros.
     apply H0; trivial; lia.
   Qed.
-
+ *)
+    
   Lemma partition_measurable_cutoff_ind (X : nat -> Ts -> R) (eps : R)
         {rv : forall n, RandomVariable dom borel_sa (X n)}
         {frf : forall n, FiniteRangeFunction (X n)} :
