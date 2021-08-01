@@ -2897,27 +2897,6 @@ Proof.
   rewrite H.
   now rewrite <-Permutation.Permutation_cons_append.
 Qed.
-(* Move these somewhere else? *)
-Lemma seq_not_nil : forall n, (0 < n)%nat  -> [] <> seq 0 n.
-Proof.
-  induction n; simpl; intuition.
-  generalize (nil_cons H0); trivial.
-Qed.
-
-
-Lemma sublist_seq_le :
-  forall n k, (n <= k)%nat -> sublist (seq 0 n) (seq 0 k).
-Proof.
-  intros n k Hnk.
-  induction Hnk; intuition.
-  replace (seq 0 (S m)) with (seq 0 m ++ [m]).
-  + rewrite <-app_nil_r with (l := seq 0 n).
-    apply sublist_app; trivial.
-    apply sublist_nil_l.
-  + replace (S m) with (m + 1)%nat by lia.
-    rewrite seq_app.
-    f_equal.
-Qed.
 
 Lemma Rmax_list_sublist_le {A : Type}(f : A -> R):
   forall l1 l2 : list A, ([] <> l1) -> sublist l1 l2 -> Rmax_list_map l1 f <= Rmax_list_map l2 f.

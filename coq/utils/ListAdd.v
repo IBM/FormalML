@@ -189,6 +189,27 @@ Section Seq.
       trivial.
   Qed.
 
+  Lemma seq_not_nil : forall n, (0 < n)%nat  -> [] <> seq 0 n.
+  Proof.
+    induction n; simpl; intuition.
+    generalize (nil_cons H0); trivial.
+  Qed.
+
+
+  Lemma sublist_seq_le :
+    forall n k, (n <= k)%nat -> sublist (seq 0 n) (seq 0 k).
+  Proof.
+    intros n k Hnk.
+    induction Hnk; intuition.
+    replace (seq 0 (S m)) with (seq 0 m ++ [m]).
+    + rewrite <-app_nil_r with (l := seq 0 n).
+      apply sublist_app; trivial.
+      apply sublist_nil_l.
+    + replace (S m) with (m + 1)%nat by lia.
+      rewrite seq_app.
+      f_equal.
+  Qed.
+
 End Seq.
 
 Section fp.
