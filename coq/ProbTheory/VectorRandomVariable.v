@@ -965,24 +965,15 @@ Section vector_ops_ext.
      unfold partition_measurable. intros.
      specialize (H0 H p H3).
      specialize (H1 H p H3).
-     destruct H0 as [c1 [? ?]].
-     destruct H1 as [c2 [? ?]].     
+     destruct H0 as [c1 ?].
+     destruct H1 as [c2 ?].     
      exists (Rvector_plus c1 c2).
-     split.
-     - destruct frf1.
-       destruct frf2.
-       unfold RandomVariable.frf_vals; simpl.
-       apply in_map_iff.
-       exists (c1, c2).
-       split; [reflexivity | ].
-       now apply in_prod.
-     - intros ?.
-       simpl.
-       unfold pre_event_sub, pre_event_preimage, pre_event_singleton in *; simpl.
-       unfold vecrvplus; simpl; intros.
-       now rewrite (H4 x H6), (H5 x H6).
-     Qed.
-
+     intros ?.
+     simpl.
+     unfold pre_event_sub, pre_event_preimage, pre_event_singleton in *; simpl.
+     unfold vecrvplus; simpl; intros.
+     now rewrite (H0 x H4), (H1 x H4).
+  Qed.
    
   Lemma partition_measurable_vecrvscale {n} (c : R) (rv_X : Ts -> vector R n)
         {rv : RandomVariable dom (Rvector_borel_sa n) rv_X}
@@ -994,20 +985,14 @@ Section vector_ops_ext.
    Proof.
      unfold partition_measurable. intros.
      specialize (H0 H p H2).
-     destruct H0 as [c0 [? ?]].
+     destruct H0 as [c0 ?].
      unfold vecrvscale.
      exists (Rvector_scale c c0).
-     split.
-     - destruct frf.
-       unfold RandomVariable.frf_vals; simpl.
-       apply in_map_iff.
-       exists c0.
-       now split; [reflexivity | ].
-     - intros ?.
-       unfold vecrvscale; simpl; intros.
-       unfold pre_event_sub, pre_event_preimage, pre_event_singleton in *; simpl.
-       now rewrite (H3 x H4).
-     Qed.
+     intros ?.
+     unfold vecrvscale; simpl; intros.
+     unfold pre_event_sub, pre_event_preimage, pre_event_singleton in *; simpl.
+     now rewrite (H0 x).
+   Qed.
 
    Lemma partition_measurable_vecrvminus {n} (rv_X1 rv_X2 : Ts -> vector R n) 
          {rv1 : RandomVariable dom (Rvector_borel_sa n) rv_X1}
@@ -1046,17 +1031,13 @@ Section vector_ops_ext.
    Proof.
      unfold partition_measurable; intros.
      specialize (H0 H p H2).
-     destruct H0 as [c [? ?]].
+     destruct H0 as [c ?].
      exists (f c).
      destruct frf.
      unfold RandomVariable.frf_vals; simpl.
-     split.
-     - rewrite in_map_iff.
-       exists c.
-       easy.
-     - unfold event_sub, pre_event_sub, event_preimage, preimage_singleton, pre_event_preimage, pre_event_singleton in *; simpl; intros.
-       now rewrite H3.
-     Qed.
+      unfold event_sub, pre_event_sub, event_preimage, preimage_singleton, pre_event_preimage, pre_event_singleton in *; simpl; intros.
+      now rewrite H0.
+   Qed.
 
    Lemma partition_measurable_const {n} (c : vector R n)
          (l : list (event dom)) :
@@ -1066,7 +1047,6 @@ Section vector_ops_ext.
      unfold partition_measurable; intros.
      exists c.
      unfold frf_vals; simpl.
-     split; [now left | ].
      repeat red.
      reflexivity.
    Qed.
@@ -1115,9 +1095,7 @@ Section vector_ops_ext.
     rewrite <- H1 in H0.
     simpl in H0.
     exists x0.
-    split; trivial.
-    - eapply nodup_In; eauto.
-    - now rewrite H0.
+    now rewrite H0.
   Qed.
 
   Lemma FiniteRangeFunction_exist2_part
@@ -1283,20 +1261,15 @@ Section vector_ops_ext.
         intros.
         cut_to H0; trivial.
         specialize (H0 p H2).
-        destruct H0 as [cvec [? ?]].
+        destruct H0 as [cvec ?].
         exists (vector_nth i pf2 cvec).
         destruct frf1.
         unfold RandomVariable.frf_vals; simpl.
-        split.
-        * unfold RandomVariable.frf_vals in H0; simpl in H0.
-          rewrite in_map_iff.
-          exists cvec.
-          tauto.
-        * intros ?; simpl.
-          rewrite vector_nth_fun_to_vector.
-          unfold event_sub, pre_event_sub, event_preimage, pre_event_preimage, event_singleton, pre_event_singleton in *.
-          intros.
-          now rewrite H3.
+        intros ?; simpl.
+        rewrite vector_nth_fun_to_vector.
+        unfold event_sub, pre_event_sub, event_preimage, pre_event_preimage, event_singleton, pre_event_singleton in *.
+        intros.
+        now rewrite H0.
   Qed.       
 
   Lemma simple_expection_rvinner_measurable_zero {n}

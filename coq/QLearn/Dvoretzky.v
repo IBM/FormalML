@@ -133,26 +133,14 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
      
      destruct (classic ( exists x, X n x = c2)).
      + exists (T n c2 + (-1)*theta).
-       split.
-       * destruct H5 as [??].
-         subst.
-         assert (In (T n (X n x)) frf_vals0); auto.
-         rewrite frf_vals_offset, in_map_iff.
-         exists (T n (X n x)).
-         split; trivial.
-       * intros x; simpl.
-         unfold pre_event_preimage, pre_event_singleton; intros eqq2.
-         now rewrite eqq2.
+       intros x; simpl.
+       unfold pre_event_preimage, pre_event_singleton; intros eqq2.
+       now rewrite eqq2.
      + exists (T n (X n 0) + (-1)*theta).
-       split.
-       * assert (In (T n (X n 0)) frf_vals0); auto.
-         rewrite frf_vals_offset, in_map_iff.
-         exists (T n (X n 0)).
-         split; trivial.
-       * intros ?; simpl.
-         unfold pre_event_preimage, pre_event_singleton; intros eqq2.
-         elim H5.
-         eauto.
+       intros ?; simpl.
+       unfold pre_event_preimage, pre_event_singleton; intros eqq2.
+       elim H5.
+       eauto.
   Qed.
 
   Lemma exp_sum (a : nat -> R) (n : nat) :

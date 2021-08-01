@@ -700,9 +700,7 @@ Proof.
   destruct frf.
   exists x0.
   rewrite H0.
-  split.
-  - now rewrite nodup_In in H2.
-  - easy.
+  easy.
 Qed.
 
 Global Instance partition_measurable_perm (f : Ts -> R)
@@ -742,9 +740,8 @@ Proof.
   intros x y F2 HH isp p inp.
   rewrite <- F2 in isp.
   destruct (Forall2_In_r F2 inp) as [p' [??]].
-  destruct (HH isp p') as [c [cin csub]]; trivial.
+  destruct (HH isp p') as [c csub]; trivial.
   exists c.
-  split; trivial.
   now rewrite <- H0.
 Qed.  
 
@@ -793,9 +790,8 @@ Proof.
   cut_to H; trivial.
   specialize (H (dsa_event x1)).
   cut_to H.
-  - destruct H as [? [? ?]].
+  - destruct H as [? ?].
     exists x2.
-    split; trivial.
     unfold refine_dec_sa_event in H3.
     rewrite in_map_iff in H3.
     destruct H3 as [? [? ?]].
@@ -1429,23 +1425,15 @@ Qed.
      unfold partition_measurable. intros.
      specialize (H0 H p H3).
      specialize (H1 H p H3).
-     destruct H0 as [c1 [? ?]].
-     destruct H1 as [c2 [? ?]].     
+     destruct H0 as [c1 ?].
+     destruct H1 as [c2 ?].     
      exists (Rplus c1 c2).
-     split.
-     - destruct frf1.
-       destruct frf2.
-       unfold RandomVariable.frf_vals; simpl.
-       apply in_map_iff.
-       exists (c1, c2).
-       split; [reflexivity | ].
-       now apply in_prod.
-     - intros ?.
-       simpl.
-       unfold pre_event_sub, pre_event_preimage, pre_event_singleton in *; simpl.
-       unfold rvplus; simpl; intros.
-       now rewrite (H4 x H6), (H5 x H6).
-     Qed.
+     intros ?.
+     simpl.
+     unfold pre_event_sub, pre_event_preimage, pre_event_singleton in *; simpl.
+     unfold rvplus; simpl; intros.
+     now rewrite (H0 x), (H1 x).
+  Qed.
 
   Lemma partition_measurable_rvsum (j : nat) (X : nat -> Ts -> R)
         {rv : forall n, RandomVariable dom borel_sa (X n)}
@@ -1459,38 +1447,30 @@ Qed.
      induction j.
      - specialize (H0 0%nat).
        cut_to H0; try lia; trivial.
-       destruct (H0 p H2) as [c [? ?]].
+       destruct (H0 p H2) as [c ?].
        exists c.
        unfold rvsum.
-       split.
-       + unfold FiniteRangeFunction_ext; simpl.
-         now destruct (frf 0%nat); simpl in *.
-       + rewrite H4.
-         intros ?; simpl.
-         unfold pre_event_preimage; simpl.
-         now rewrite sum_O.
+       rewrite H3.
+       intros ?; simpl.
+       unfold pre_event_preimage; simpl.
+       now rewrite sum_O.
      - unfold rvsum.
        generalize H0; intros HH0.
        specialize (H0 (S j)).
        cut_to H0; try lia; trivial.
        cut_to IHj.
        + specialize (H0 p H2).
-         destruct IHj as [c0 [? ?]].
-         destruct H0 as [c1 [? ?]].
+         destruct IHj as [c0 ?].
+         destruct H0 as [c1 ?].
          exists (c1 + c0).
-         split.
-         * replace (c1 + c0) with ((fun ab : R * R => fst ab + snd ab) (c1,c0)) by reflexivity.
-           apply in_map with (f:=(fun ab : R * R => fst ab + snd ab)).
-           apply in_prod_iff.
-           auto.
-         * intros x; simpl.
-           repeat red in H5, H4.
-           unfold pre_event_preimage, pre_event_singleton in *; simpl in *; intros px.
-           rewrite sum_Sn.
-           unfold plus; simpl.
-           rewrite (Rplus_comm c1 c0).
-           unfold rvsum in *.
-           f_equal; auto.
+         intros x; simpl.
+         repeat red in H0, H3.
+         unfold pre_event_preimage, pre_event_singleton in *; simpl in *; intros px.
+         rewrite sum_Sn.
+         unfold plus; simpl.
+         rewrite (Rplus_comm c1 c0).
+         unfold rvsum in *.
+         f_equal; auto.
        + intros.
          apply HH0; trivial.
          lia.
@@ -1510,23 +1490,15 @@ Qed.
      unfold partition_measurable. intros.
      specialize (H0 H p H3).
      specialize (H1 H p H3).
-     destruct H0 as [c1 [? ?]].
-     destruct H1 as [c2 [? ?]].     
+     destruct H0 as [c1 ?].
+     destruct H1 as [c2 ?].     
      exists (Rmult c1 c2).
-     split.
-     - destruct frf1.
-       destruct frf2.
-       unfold RandomVariable.frf_vals; simpl.
-       apply in_map_iff.
-       exists (c1, c2).
-       split; [reflexivity | ].
-       now apply in_prod.
-     - intros ?.
-       simpl.
-       unfold pre_event_sub, pre_event_preimage, pre_event_singleton in *; simpl.
-       unfold rvmult; simpl; intros.
-       now rewrite (H4 x H6), (H5 x H6).
-     Qed.
+     intros ?.
+     simpl.
+     unfold pre_event_sub, pre_event_preimage, pre_event_singleton in *; simpl.
+     unfold rvmult; simpl; intros.
+     now rewrite (H0 x), (H1 x).
+  Qed.
 
   Lemma partition_measurable_indicator 
         {P : event dom} 
@@ -1544,17 +1516,13 @@ Qed.
     unfold pre_event_sub, pre_event_preimage, pre_event_singleton.
     destruct (H p H1).
     - exists 1.
-      split.
-      + apply in_cons, in_eq.
-      + simpl; intros.
-        match_destr.
-        now specialize (H2 x H3).
+      simpl; intros.
+      match_destr.
+      now specialize (H2 x H3).
    - exists 0.
-     split.
-     + apply in_eq.
-      + simpl; intros.
-        match_destr.
-        now specialize (H2 x H3).
+     simpl; intros.
+     match_destr.
+     now specialize (H2 x H3).
   Qed.    
 
   Lemma partition_measurable_indicator_pre
@@ -1574,17 +1542,13 @@ Qed.
     unfold pre_event_sub, pre_event_preimage, pre_event_singleton.
     destruct (H p H1).
     - exists 1.
-      split.
-      + apply in_cons, in_eq.
-      + simpl; intros.
-        match_destr.
-        now specialize (H2 x H3).
+      simpl; intros.
+      match_destr.
+      now specialize (H2 x H3).
    - exists 0.
-     split.
-     + apply in_eq.
-      + simpl; intros.
-        match_destr.
-        now specialize (H2 x H3).
+     simpl; intros.
+     match_destr.
+     now specialize (H2 x H3).
   Qed.
 
   Lemma filtration_history_var_const (X : nat -> Ts -> R) (eps : R) (j:nat) 
@@ -1605,14 +1569,6 @@ Qed.
     cut_to H1; trivial.
     specialize (H1 Q).
     cut_to H1; trivial.
-    destruct H1 as [c [? ?]].
-    exists c.
-    unfold event_sub, preimage_singleton in H3.
-    unfold pre_event_sub, pre_event_preimage, pre_event_singleton in H3.
-    intros.
-    specialize (H3 x H4).
-    unfold proj1_sig in H3.
-    apply H3.
   Qed.
 
   Lemma filtration_history_rvsum_var_const (X : nat -> Ts -> R) (eps : R) (j:nat) 
@@ -1631,16 +1587,8 @@ Qed.
     cut_to H1; trivial.
     - unfold partition_measurable in H1.
       cut_to H1; trivial.
-      + specialize (H1 Q).
-        cut_to H1; trivial.
-        destruct H1 as [c [? ?]].
-        exists c.
-        unfold event_sub, preimage_singleton in H3.
-        unfold pre_event_sub, pre_event_preimage, pre_event_singleton in H3.
-        intros.
-        specialize (H3 x H4).
-        unfold proj1_sig in H3.
-        apply H3.
+      specialize (H1 Q).
+      cut_to H1; trivial.
   - intros.
     generalize (part_meas_hist k0 (j - k0)%nat X); intros.
     now replace (S k0 + (j - k0))%nat with (S j) in H4 by lia.
@@ -1836,21 +1784,14 @@ Qed.
   Proof.
      unfold partition_measurable. intros.
      specialize (H0 H p H2).
-     destruct H0 as [c1 [? ?]].
+     destruct H0 as [c1 ?].
      exists (Rabs c1).
-     split.
-     - destruct frf.
-       unfold RandomVariable.frf_vals; simpl.
-       apply in_map_iff.
-       exists (c1).
-       split; [reflexivity | ].
-       apply H0.
-     - intros ?.
-       simpl.
-       unfold pre_event_sub, pre_event_preimage, pre_event_singleton in *; simpl.
-       unfold rvabs; simpl; intros.
-       now rewrite (H3 x H4).
-     Qed.
+     intros ?.
+     simpl.
+     unfold pre_event_sub, pre_event_preimage, pre_event_singleton in *; simpl.
+     unfold rvabs; simpl; intros.
+     now rewrite (H0 x).
+  Qed.
 
   Lemma partition_measurable_Rmax_list_map (j : nat) (X : nat -> Ts -> R)
         {rv : forall n, RandomVariable dom borel_sa (X n)}
@@ -1872,42 +1813,39 @@ Qed.
     - assert (Hz : (0 <= 0)%nat) by lia.
       specialize (Hr 0%nat Hz). clear Hz.
       cut_to Hr; try lia; trivial.
-      destruct (Hr H p H2) as [c [? ?]].
+      destruct (Hr H p H2) as [c ?].
       unfold frf_vals in H3.
-      exists c. split.
-      + admit.
-      + rewrite H4.
-        intros ?; simpl.
-        unfold pre_event_preimage; simpl.
-        unfold Rmax_list_map. simpl.
-        unfold rvabs. trivial.
+      exists c.
+      rewrite H3.
+      intros ?; simpl.
+      unfold pre_event_preimage; simpl.
+      unfold Rmax_list_map. simpl.
+      unfold rvabs. trivial.
     - generalize (Hr); intros HHr.
       specialize (Hr (S j)).
       cut_to Hr; try lia; trivial.
       cut_to IHj.
       + specialize (Hr H p H2).
-        destruct IHj as [c0 [? ?]].
-        destruct Hr as [c1 [? ?]].
+        destruct IHj as [c0 ?].
+        destruct Hr as [c1 ?].
         exists (Rmax (c0) (c1)).
-        split.
-        * admit.
-        * intros x; simpl.
-          repeat red in H4, H6.
-          unfold pre_event_preimage, pre_event_singleton in *; simpl in *; intros px.
-          replace (0%nat :: 1%nat :: seq 2%nat j) with (seq 0%nat (S j) ++ [S j]).
-          -- unfold Rmax_list_map.
-             rewrite Rmax_list_app; try (apply seq_not_nil; lia).
-             unfold Rmax_list_map in H4.
-             rewrite H4; trivial. f_equal.
-             apply H6; trivial.
-          -- rewrite <-seq_S.
-             now simpl.
+        intros x; simpl.
+        repeat red in H4, H6.
+        unfold pre_event_preimage, pre_event_singleton in *; simpl in *; intros px.
+        replace (0%nat :: 1%nat :: seq 2%nat j) with (seq 0%nat (S j) ++ [S j]).
+        -- unfold Rmax_list_map.
+           rewrite Rmax_list_app; try (apply seq_not_nil; lia).
+           unfold Rmax_list_map in H3.
+           rewrite H3; trivial. f_equal.
+           apply H4; trivial.
+        -- rewrite <-seq_S.
+           now simpl.
       + intros.
         unfold partition_measurable in H0.
         apply H0; trivial.
         lia.
       + intros; apply HHr; trivial; try lia.
-  Admitted.
+  Qed.
 
   Lemma partition_measurable_Rmax_list_map_rvsum (j : nat) (X : nat -> Ts -> R)
         {rv : forall n, RandomVariable dom borel_sa (X n)}
@@ -1984,34 +1922,53 @@ Qed.
        now unfold proj1_sig; simpl.
   Qed.
 
-  Lemma partition_measurable_cutoff_eps (X : nat -> Ts -> R) (eps : R)
+   Lemma event_sub_preimage_singleton (f : Ts -> R) c
+         (rv : RandomVariable dom borel_sa f):
+     forall (p : event dom), event_sub p (preimage_singleton f c) <->
+                             (forall x, p x -> f x = c).
+   Proof.
+     intros; split; intros.
+     + repeat red in H.
+       apply H. unfold proj1_sig.
+       apply H0.
+     + repeat red.
+       apply H.
+   Qed.
+   
+   Lemma partition_constant_measurable 
+         (f : Ts -> R)
+         (rv : RandomVariable dom borel_sa f)
+         (frf : FiniteRangeFunction f)
+         (l : list (event dom)) :
+     is_partition_list l ->
+     (forall (p : event dom),
+       In p l ->
+       exists c, forall x, p x -> f x = c) <->
+     partition_measurable f l.
+   Proof.
+     unfold partition_measurable.
+     intros.
+     split; intros.
+     - destruct (H0 p H2) as [c ?].
+       exists c.
+       now repeat red.
+     - now apply H0.
+   Qed.
+
+   Lemma partition_measurable_cutoff_eps (X : nat -> Ts -> R) (eps : R)
         {rv : forall n, RandomVariable dom borel_sa (X n)}
         {frf : forall n, FiniteRangeFunction (X n)} :
     forall j, partition_measurable (cutoff_eps_rv j eps (rvsum X))
                               (map dsa_event (filtration_history (S j) X)).
   Proof.
     intros.
-    unfold partition_measurable, cutoff_eps_rv; intros.
-    unfold preimage_singleton, pre_event_preimage, pre_event_singleton.
-    generalize (cutoff_eps_const_history X eps j p H0); intros HH.
-    destruct HH as [c ?].
-    exists c.
-    split.
-    - unfold frf_vals.
-      match_destr.
-      assert (HH1:exists x, p x) by admit.
-      destruct HH1.
-      specialize (H1 x H2).
-      rewrite <- H1.
-      apply frf_vals_complete.
-    - unfold event_sub, pre_event_sub; intros.
-      specialize (H1 x H2).
-      unfold proj1_sig; simpl.
-      unfold cutoff_eps_rv in H1.
-      apply H1.
-    Admitted.
+    apply partition_constant_measurable.
+    - apply part_list_history.
+    - intros.
+      apply (cutoff_eps_const_history X eps j p H).
+  Qed.
 
-Lemma indicator_prod_cross (j:nat) (eps:R) (X: nat -> Ts -> R) 
+  Lemma indicator_prod_cross (j:nat) (eps:R) (X: nat -> Ts -> R) 
       {rv : forall n, RandomVariable dom borel_sa (X n)}
       {frf : forall n, FiniteRangeFunction (X n)} 
       (HC : forall n, 

@@ -1893,7 +1893,7 @@ Section SimpleConditionalExpectation.
              {frf1 : FiniteRangeFunction rv_X1}
              {frf2 : FiniteRangeFunction rv_X2} : Prop :=
     forall (c2:R), In c2 (frf_vals (FiniteRangeFunction:=frf2)) ->
-                   exists (c1:R), In c1 (frf_vals (FiniteRangeFunction:=frf1)) /\
+                   exists (c1:R), (* In c1 (frf_vals (FiniteRangeFunction:=frf1)) /\ *)
                              (event_sub (preimage_singleton rv_X2 c2)
                                         (preimage_singleton rv_X1 c1)).
 
@@ -1981,8 +1981,7 @@ Section SimpleConditionalExpectation.
     is_partition_list l ->
     forall (p:event dom),
       In p l ->
-      exists c, (In c frf_vals) /\
-                    event_sub p (preimage_singleton rv_X c).
+      exists c, event_sub p (preimage_singleton rv_X c).
   
 (*
   Lemma in_list_in_partition_union {T} (x:event T) l d :
@@ -2248,7 +2247,7 @@ Section SimpleConditionalExpectation.
           case_eq (dsa_dec a x); [intros d _ | intros d eqq].
           -- specialize (meas (dsa_event a)).
              cut_to meas; [| simpl; intuition].
-             destruct meas as [c [cinn ceq]].
+             destruct meas as [c ceq].
              rewrite (expectation_const_factor_subset (rv_X1 x)).
              ++ unfold rvscale, rvplus, rvmult.
                 field; trivial.
