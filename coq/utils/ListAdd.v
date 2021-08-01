@@ -214,6 +214,38 @@ End Seq.
 
 Section fp.
 
+  Instance ForallOrdPairs_sub1 {A:Type} :
+    Proper (subrelation ==> eq ==> impl) (@ForallOrdPairs A).
+  Proof.
+    intros R1 R2 rsub l1 l2 lsub FO.
+    subst.
+    induction FO; constructor; trivial.
+    eapply Forall_impl; try eapply H.
+    apply rsub.
+  Qed.
+
+  Instance ForallOrdPairs_sub2 {A:Type} :
+    Proper (eq ==> sublist --> impl) (@ForallOrdPairs A).
+  Proof.
+    unfold flip.
+    intros R1 R2 rsub l1 l2 lsub FO; subst.
+    induction lsub.
+    - constructor.
+    - invcs FO.
+      constructor; auto 3.
+      now rewrite lsub.
+    - invcs FO.
+      auto.
+  Qed.
+
+  Global Instance ForallOrdPairs_sub {A:Type} :
+    Proper (subrelation ==> sublist --> impl) (@ForallOrdPairs A).
+  Proof.
+    unfold flip.
+    intros R1 R2 rsub l1 l2 lsub FO.
+    now rewrite <- rsub, lsub.
+  Qed.
+  
   Lemma ForallOrdPairs_impl {A:Type} (R:A->A->Prop) (l:list A) (f:A->A) :
     ForallOrdPairs R l ->
     ForallOrdPairs (fun x y => R x y -> R (f x) (f y)) l ->
