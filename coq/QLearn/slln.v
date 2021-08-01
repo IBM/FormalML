@@ -1685,6 +1685,22 @@ Qed.
     now rewrite <-Permutation_rev.
   Qed.
 
+  Lemma Rmax_list_map_ext {A} (l : list A) (f g : A -> R) :
+    (forall x, f x = g x) -> Rmax_list_map l f = Rmax_list_map l g.
+  Proof.
+    intros Hfg.
+    unfold Rmax_list_map.
+    rewrite map_ext with (f:= f)(g := g); trivial.
+  Qed.
+
+  Lemma Rmax_list_map_ext_in {A} (l : list A) (f g : A -> R) :
+    (forall x, In x l -> f x = g x) -> Rmax_list_map l f = Rmax_list_map l g.
+  Proof.
+    intros Hfg.
+    unfold Rmax_list_map.
+    rewrite map_ext_in with (f:= f)(g := g); trivial.
+  Qed.
+
   Lemma pre_cutoff_event_const_history (X : nat -> Ts -> R) (eps : R) (j:nat)
         {rv : forall n, RandomVariable dom borel_sa (X n)}
         {frf : forall n, FiniteRangeFunction (X n)} :
@@ -1700,15 +1716,13 @@ Qed.
     setoid_rewrite Rmax_list_seq_bounded_nat.
     exists (Rmax_list_map (bounded_nat_finite_list' j)
                      (fun k => Rabs (sum_n (fun _ => f k) (proj1_sig k)))).
-(*    intros.
-    apply Rmax_list_map_seq_ext_loc.
     intros.
-    f_equal.
-    apply sum_n_ext_loc.
+    (*apply Rmax_list_map_ext_in; intros.
+    f_equal. apply sum_n_ext_loc.
     intros.
-    apply H0; trivial; lia.
-  Qed.
- *)Admitted.
+    specialize (H0 x0 x H1).
+    rewrite <-H0.*)
+Admitted.
 
   Lemma partition_measurable_cutoff_ind (X : nat -> Ts -> R) (eps : R)
         {rv : forall n, RandomVariable dom borel_sa (X n)}
