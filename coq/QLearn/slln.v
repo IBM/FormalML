@@ -1767,30 +1767,6 @@ Qed.
     rewrite map_ext_in with (f:= f)(g := g); trivial.
   Qed.
 
-  Program Definition bounded_nat_lt_le j (x : {m:nat | (m < j)%nat}) :
-    {m : nat | (m <= j)%nat} := exist _ (proj1_sig x) _.
-
-  Program Definition bounded_nat_lt_succ_le j (x : {m:nat | (m < j)%nat}) :
-    {m : nat | (m <= S j)%nat} := exist _ (proj1_sig x) _.
-  Next Obligation.
-    lia.
-  Defined.
-
-  Program Definition bounded_nat_lt_succ_lt j (x : {m:nat | (m < j)%nat}) :
-    {m : nat | (m < S j)%nat} := exist _ (proj1_sig x) _.
-
-  Program Definition bounded_nat_le_succ_lt j (x : {m:nat | (m <= j)%nat}) :
-    {m : nat | (m < S j)%nat} := exist _ (proj1_sig x) _.
-  Next Obligation.
-    lia.
-  Defined.
-
-  Program Definition bounded_nat_lt_succ_le j (x : {m:nat | (m < S j)%nat}) :
-    {m : nat | (m <= j)%nat} := exist _ (proj1_sig x) _.
-  Next Obligation.
-    lia.
-  Defined.
-
  Lemma pre_cutoff_event_const_history0 (X : nat -> Ts -> R) (eps : R) (j:nat)
         {rv : forall n, RandomVariable dom borel_sa (X n)}
         {frf : forall n, FiniteRangeFunction (X n)} :

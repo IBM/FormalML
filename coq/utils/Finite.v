@@ -377,3 +377,27 @@ Proof.
   f_equal.
   now apply map_ext; intros [??].
 Qed.
+
+  Program Definition bounded_nat_lt_le j (x : {m:nat | (m < j)%nat}) :
+    {m : nat | (m <= j)%nat} := exist _ (proj1_sig x) _.
+
+  Program Definition bounded_nat_lt_succ_le j (x : {m:nat | (m < j)%nat}) :
+    {m : nat | (m <= S j)%nat} := exist _ (proj1_sig x) _.
+  Next Obligation.
+    lia.
+  Defined.
+
+  Program Definition bounded_nat_lt_succ_lt j (x : {m:nat | (m < j)%nat}) :
+    {m : nat | (m < S j)%nat} := exist _ (proj1_sig x) _.
+
+  Program Definition bounded_nat_le_succ_lt j (x : {m:nat | (m <= j)%nat}) :
+    {m : nat | (m < S j)%nat} := exist _ (proj1_sig x) _.
+  Next Obligation.
+    lia.
+  Defined.
+
+  Program Definition bounded_nat_lt_succ_le j (x : {m:nat | (m < S j)%nat}) :
+    {m : nat | (m <= j)%nat} := exist _ (proj1_sig x) _.
+  Next Obligation.
+    lia.
+  Defined.
