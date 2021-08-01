@@ -571,28 +571,6 @@ Qed.
 Definition rvmaxlist (X : nat -> Ts -> R) (N : nat) : Ts -> R :=
   fun (omega : Ts) => Rmax_list (List.map (fun n => X n omega) (List.seq 0 (S N))).
 
-Lemma seq_not_nil : forall n, (0 < n)%nat  -> [] <> seq 0 n.
-Proof.
-  induction n; simpl; intuition.
-  generalize (nil_cons H0); trivial.
-Qed.
-
-(* Move this to RealAdd. *)
-Lemma Rmax_list_app {A} {l : list A} (a : A) (f : A -> R) (hl : [] <> l) :
-  Rmax_list (map f (l ++ [a])) = Rmax (Rmax_list (map f l)) (f a).
-Proof.
-  rewrite map_app.
-  simpl.
-  assert (Rmax (Rmax_list (map f l)) (f a) = Rmax_list ((f a) :: (map f l))).
-  {
-    simpl. rewrite <-map_not_nil with (f0 := f) in hl.
-    match_destr; intuition.
-    apply Rmax_comm.
-  }
-  rewrite H.
-  now rewrite <-Permutation.Permutation_cons_append.
-Qed.
-
 Lemma rvmaxlist_monotone (X : nat -> Ts -> R) :
   forall n omega, rvmaxlist X n omega <= rvmaxlist X (S n) omega.
 Proof.
@@ -947,44 +925,6 @@ Proof.
   apply rvsum_distr_r.
 Qed.
 
-Lemma sublist_seq_le :
-  forall n k, (n <= k)%nat -> sublist (seq 0 n) (seq 0 k).
-Proof.
-  intros n k Hnk.
-  induction Hnk; intuition.
-  replace (seq 0 (S m)) with (seq 0 m ++ [m]).
-  + rewrite <-app_nil_r with (l := seq 0 n).
-    apply sublist_app; trivial.
-    apply sublist_nil_l.
-  + replace (S m) with (m + 1)%nat by lia.
-    rewrite seq_app.
-    f_equal.
-Qed.
-
-Lemma Rmax_list_sublist_le {A : Type}(f : A -> R):
-  forall l1 l2 : list A, ([] <> l1) -> sublist l1 l2 -> Rmax_list_map l1 f <= Rmax_list_map l2 f.
-Proof.
-  intros l1 l2 Hl1 Hl2.
-  generalize (sublist_In Hl2); intros.
-  unfold Rmax_list_map.
-  apply Rmax_spec.
-  rewrite in_map_iff.
-  rewrite  <-(map_not_nil) with (f0 := f) (l := l1) in Hl1.
-  generalize (Rmax_list_In _ Hl1); intros .
-  rewrite in_map_iff in H0.
-  destruct H0 as [x [Hx1 Hx2]].
-  exists x; split; trivial; auto.
-Qed.
-
-Lemma Rmax_seq_map_monotone (X : nat -> R):
-  forall n k, (0 < n <= k)%nat  -> Rmax_list_map (seq 0 n) X <= Rmax_list_map (seq 0 k) X.
-Proof.
-  intros n k Hnk.
-  apply Rmax_list_sublist_le.
-  + apply seq_not_nil; now destruct Hnk.
-  + apply sublist_seq_le. destruct Hnk; lia.
-Qed.
-
 (* Few properties about cutoff sequences. Move to RealAdd. *)
 Fixpoint cutoff_eps (n : nat) (eps : R) (X : nat -> R) :=
   match n with
@@ -1062,45 +1002,6 @@ Proof.
   lia.
 Qed.
 
-Lemma Rmax_list_map_seq_ge (eps : R) {n : nat} (X : nat -> R):
-  (0<n)%nat -> eps <= Rmax_list_map (seq 0 n) X <-> (exists k, (k < n)%nat /\ eps <= X k).
-Proof.
-  intros Hn.
-  split; intros Heps.
-  + unfold Rmax_list_map in Heps.
-    generalize (Rmax_list_map_exist X (seq 0%nat n)); intros.
-    generalize (seq_not_nil n Hn); intros.
-    specialize (H H0).
-    destruct H as [k [Hin Heq]].
-    exists k; intros.
-    rewrite <-Heq in Heps.
-    split; trivial.
-    rewrite in_seq in Hin; now destruct Hin.
-  + destruct Heps as [k1 [Hk1 Heps1]].
-    eapply Rle_trans; eauto.
-    unfold Rmax_list_map.
-    apply Rmax_spec. rewrite in_map_iff.
-    exists k1; split; trivial.
-    rewrite in_seq; split; lia.
-Qed.
-
-Lemma Rmax_list_map_seq_lt (eps : R) {n : nat} (X : nat -> R):
- (0 < n)%nat -> Rmax_list (map X (seq 0 n)) < eps <-> (forall k, (k < n)%nat -> X k < eps).
-Proof.
-  intros Hn. split.
-  + intros Heps k Hk.
-    rewrite Rmax_list_lt_iff in Heps; try (apply map_not_nil; now apply seq_not_nil).
-    apply Heps.
-    rewrite in_map_iff.
-    exists k; split; trivial.
-    rewrite in_seq; lia.
-  + intros Heps.
-    rewrite Rmax_list_lt_iff; try (apply map_not_nil; now apply seq_not_nil).
-    intros x Hx. rewrite in_map_iff in Hx.
-    destruct Hx as [k [Hk1 Hk2]].
-    rewrite <-Hk1. apply Heps.
-    rewrite in_seq in Hk2. now destruct Hk2.
-Qed.
 
 Lemma cutoff_ge_eps_exists  (n : nat) (eps : R) ( X : nat -> R ):
   (eps <= Rabs(cutoff_eps n eps X)) -> exists k, (k <= n)%nat /\ eps <= Rabs(X k).
@@ -1354,17 +1255,6 @@ Next Obligation.
 Qed.
 
 Local Obligation Tactic := unfold complement, equiv; Tactics.program_simpl.
-
-Lemma Rmax_list_map_succ eps (Y : nat -> R):
-  forall n, (0 < n)%nat -> (Rmax_list_map (seq 0 (S n)) Y< eps)
-       -> (Rmax_list_map (seq 0 n) Y < eps).
-Proof.
-  intros n Hz Hn.
-  rewrite seq_S in Hn.
-  unfold Rmax_list_map in Hn. rewrite Rmax_list_app in Hn; try (apply seq_not_nil; lia).
-  eapply Rle_lt_trans; try (apply Hn).
-  apply Rmax_l.
-Qed.
 
 Lemma cutoff_eps_succ_minus eps (X : nat -> R) :
   forall n, cutoff_eps (S n) eps X - cutoff_eps n eps X =
@@ -1662,57 +1552,6 @@ Qed.
     destruct s.
     simpl.
     now apply e.
-  Qed.
-
-  Lemma Rmax_list_map_seq_ext_loc (f g : nat -> R) (j : nat) :
-    (forall (n:nat), (n <= j)%nat -> f n = g n) ->
-    Rmax_list_map (seq 0 (S j)) f = Rmax_list_map (seq 0 (S j)) g.
-  Proof.
-    unfold Rmax_list_map.
-    intros.
-    induction j.
-    - simpl.
-      apply H.
-      lia.
-    - rewrite seq_Sn.
-      replace (0 + S j)%nat with (S j) by lia.
-      rewrite Rmax_list_app.
-      + rewrite Rmax_list_app.
-        * cut_to IHj.
-          -- rewrite IHj.
-             now rewrite H.
-          -- intros.
-             apply H.
-             lia.
-        * now simpl.
-      + now simpl.
-  Qed.
-
-  Lemma Rmax_list_seq_bounded_nat (n : nat) (g : nat -> R) :
-      Rmax_list_map (seq 0 n) g =
-      Rmax_list_map  (bounded_nat_finite_list n) (fun x => g (proj1_sig x)).
-  Proof.
-    unfold Rmax_list_map. symmetry.
-    rewrite <-map_map.
-    rewrite bounded_nat_finite_list_proj.
-    rewrite map_rev.
-    now rewrite <-Permutation_rev.
-  Qed.
-
-  Lemma Rmax_list_map_ext {A} (l : list A) (f g : A -> R) :
-    (forall x, f x = g x) -> Rmax_list_map l f = Rmax_list_map l g.
-  Proof.
-    intros Hfg.
-    unfold Rmax_list_map.
-    rewrite map_ext with (f:= f)(g := g); trivial.
-  Qed.
-
-  Lemma Rmax_list_map_ext_in {A} (l : list A) (f g : A -> R) :
-    (forall x, In x l -> f x = g x) -> Rmax_list_map l f = Rmax_list_map l g.
-  Proof.
-    intros Hfg.
-    unfold Rmax_list_map.
-    rewrite map_ext_in with (f:= f)(g := g); trivial.
   Qed.
 
  Lemma pre_cutoff_event_const_history0 (X : nat -> Ts -> R) (eps : R) (j:nat)
