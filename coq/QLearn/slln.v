@@ -1856,8 +1856,21 @@ Qed.
     partition_measurable (fun x => 
                             (Rmax_list_map (seq 0 (S j)) 
                                            (fun n : nat => Rabs (rvsum X n x)))) l.
-    Proof.
-      Admitted.
+  Proof.
+    intros.
+    assert (forall n, FiniteRangeFunction (rvsum X n)).
+    {
+      intros.
+      typeclasses eauto.
+    }
+    generalize (partition_measurable_Rmax_list_map j (rvsum X) l H); intros.
+    apply H1.
+    intros.
+    apply (partition_measurable_rvsum k X l H).
+    intros.
+    apply H0.
+    lia.
+   Qed.
 
    Lemma cutoff_eps_const_history (X : nat -> Ts -> R) (eps : R) (j:nat)
         {rv : forall n, RandomVariable dom borel_sa (X n)}
