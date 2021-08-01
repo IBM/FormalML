@@ -1674,10 +1674,21 @@ Qed.
       + now simpl.
   Qed.
 
+  Lemma Rmax_list_seq_bounded_nat (n : nat) (g : nat -> R) :
+      Rmax_list_map (seq 0 n) g =
+      Rmax_list_map  (bounded_nat_finite_list' n) (fun x => g (proj1_sig x)).
+  Proof.
+    unfold Rmax_list_map. symmetry.
+    rewrite <-map_map.
+    rewrite bounded_nat_finite_list_proj'.
+    rewrite map_rev.
+    now rewrite <-Permutation_rev.
+  Qed.
+
   Lemma pre_cutoff_event_const_history (X : nat -> Ts -> R) (eps : R) (j:nat)
         {rv : forall n, RandomVariable dom borel_sa (X n)}
         {frf : forall n, FiniteRangeFunction (X n)} :
-    forall (Q : event dom), 
+    forall (Q : event dom),
       In Q (map dsa_event (filtration_history (S j) X)) ->
       exists (c:R),
       forall x, Q x -> Rmax_list_map (seq 0 (S j)) (fun n : nat => Rabs (rvsum X n x)) = c.
@@ -1686,10 +1697,10 @@ Qed.
     generalize (filtration_history_var_const_fun X eps j Q H); intros.
     destruct H0 as [f ?].
     unfold rvsum.
-    Admitted.
-(*
-    exists (Rmax_list_map (seq 0 (S j)) (fun n => Rabs (sum_n f n))).
-    intros.
+    setoid_rewrite Rmax_list_seq_bounded_nat.
+    exists (Rmax_list_map (bounded_nat_finite_list' j)
+                     (fun k => Rabs (sum_n (fun _ => f k) (proj1_sig k)))).
+(*    intros.
     apply Rmax_list_map_seq_ext_loc.
     intros.
     f_equal.
@@ -1697,8 +1708,8 @@ Qed.
     intros.
     apply H0; trivial; lia.
   Qed.
- *)
-    
+ *)Admitted.
+
   Lemma partition_measurable_cutoff_ind (X : nat -> Ts -> R) (eps : R)
         {rv : forall n, RandomVariable dom borel_sa (X n)}
         {frf : forall n, FiniteRangeFunction (X n)} :
