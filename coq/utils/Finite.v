@@ -352,3 +352,28 @@ Next Obligation.
     simpl in *; subst.
     erewrite index_pf_irrel; eauto.
 Qed.
+
+Definition bounded_nat_finite_list' n : list {x : nat | (x <= n)%nat}.
+Proof.
+  induction n.
+  - exact nil.
+  - apply cons.
+    + exists n; lia.
+    + eapply List.map; [| exact IHn].
+      intros [x ?].
+      exists x; lia.
+Defined.
+
+Lemma bounded_nat_finite_list_proj' n :
+  List.map (@proj1_sig _ _) (bounded_nat_finite_list' n) = rev (seq 0 n).
+Proof.
+  induction n; trivial.
+  rewrite ListAdd.seq_Sn.
+  rewrite List.rev_app_distr.
+  simpl rev.
+  simpl.
+  rewrite List.map_map; simpl.
+  rewrite <- IHn.
+  f_equal.
+  now apply map_ext; intros [??].
+Qed.
