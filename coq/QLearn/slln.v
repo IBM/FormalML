@@ -1826,6 +1826,88 @@ Qed.
       now rewrite H0.
   Qed.
 
+  Lemma partition_measurable_rvabs (rv_X : Ts -> R)
+        {rv : RandomVariable dom borel_sa rv_X}
+        {frf : FiniteRangeFunction rv_X}
+        (l : list (event dom)) :
+    is_partition_list l ->
+    partition_measurable  rv_X l ->
+    partition_measurable  (rvabs rv_X) l.
+  Proof.
+     unfold partition_measurable. intros.
+     specialize (H0 H p H2).
+     destruct H0 as [c1 [? ?]].
+     exists (Rabs c1).
+     split.
+     - destruct frf.
+       unfold RandomVariable.frf_vals; simpl.
+       apply in_map_iff.
+       exists (c1).
+       split; [reflexivity | ].
+       apply H0.
+     - intros ?.
+       simpl.
+       unfold pre_event_sub, pre_event_preimage, pre_event_singleton in *; simpl.
+       unfold rvabs; simpl; intros.
+       now rewrite (H3 x H4).
+     Qed.
+
+  Lemma partition_measurable_Rmax_list_map (j : nat) (X : nat -> Ts -> R)
+        {rv : forall n, RandomVariable dom borel_sa (X n)}
+        {frf : forall n, FiniteRangeFunction (X n)}
+        (l : list (event dom)) :
+    is_partition_list l ->
+    (forall k, (k <= j)%nat -> partition_measurable (X k) l) ->
+    partition_measurable (fun x =>
+                            (Rmax_list_map (seq 0 (S j))
+                                           (fun n : nat => Rabs (X n x)))) l.
+  Proof.
+    unfold partition_measurable; intros.
+   assert (Hr : forall k, (k <= j)%nat -> is_partition_list l -> partition_measurable (rvabs (X k)) l).
+    {
+      intros. apply partition_measurable_rvabs; eauto.
+      unfold partition_measurable; eauto.
+    }
+    induction j.
+    - assert (Hz : (0 <= 0)%nat) by lia.
+      specialize (Hr 0%nat Hz). clear Hz.
+      cut_to Hr; try lia; trivial.
+      destruct (Hr H p H2) as [c [? ?]].
+      exists c. split.
+      + admit.
+      + rewrite H4.
+        intros ?; simpl.
+        unfold pre_event_preimage; simpl.
+        unfold Rmax_list_map. simpl.
+        unfold rvabs. trivial.
+    - generalize (Hr); intros HHr.
+      specialize (Hr (S j)).
+      cut_to Hr; try lia; trivial.
+      cut_to IHj.
+      + specialize (Hr H p H2).
+        destruct IHj as [c0 [? ?]].
+        destruct Hr as [c1 [? ?]].
+        exists (Rmax (c0) (c1)).
+        split.
+        * admit.
+        * intros x; simpl.
+          repeat red in H4, H6.
+          unfold pre_event_preimage, pre_event_singleton in *; simpl in *; intros px.
+          replace (0%nat :: 1%nat :: seq 2%nat j) with (seq 0%nat (S j) ++ [S j]).
+          -- unfold Rmax_list_map.
+             rewrite Rmax_list_app; try (apply seq_not_nil; lia).
+             unfold Rmax_list_map in H4.
+             rewrite H4; trivial. f_equal.
+             apply H6; trivial.
+          -- rewrite <-seq_S.
+             now simpl.
+      + intros.
+        unfold partition_measurable in H0.
+        apply H0; trivial.
+        lia.
+      + intros; apply HHr; trivial; try lia.
+  Admitted.
+
    Lemma cutoff_eps_const_history (X : nat -> Ts -> R) (eps : R) (j:nat)
         {rv : forall n, RandomVariable dom borel_sa (X n)}
         {frf : forall n, FiniteRangeFunction (X n)} :
@@ -1849,7 +1931,8 @@ Qed.
   Lemma partition_measurable_cutoff_eps (X : nat -> Ts -> R) (eps : R)
         {rv : forall n, RandomVariable dom borel_sa (X n)}
         {frf : forall n, FiniteRangeFunction (X n)} :
-    forall j, partition_measurable (cutoff_eps_rv j eps (rvsum X)) (map dsa_event (filtration_history (S j) X)).
+    forall j, partition_measurable (cutoff_eps_rv j eps (rvsum X))
+                              (map dsa_event (filtration_history (S j) X)).
   Proof.
     intros.
     unfold partition_measurable, cutoff_eps_rv; intros.
