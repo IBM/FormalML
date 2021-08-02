@@ -2184,9 +2184,7 @@ Qed.
       rewrite <- Rbar_div_div_pos.
       destruct x; now simpl.
     Qed.
-    Require Import Coq.Program.Tactics.
 
-    (* Transparent rv_max_sum_shift. *)
 
 (*ash 6.2.1 *)
 Lemma Ash_6_2_1_helper (X : nat -> Ts -> R) (eps : posreal) (m : nat)
@@ -2205,20 +2203,19 @@ Proof.
   - simpl in H.
     generalize (Lim_seq_le _ _ H); intros.
     unfold Sum.
-    eapply Rbar_le_trans.
-    + apply H0.
-    + replace (eps * (eps * 1)) with (Rsqr eps) by (unfold Rsqr; lra).
-      unfold Rdiv.
-      rewrite Lim_seq_scal_r.
-      replace (Rbar.Finite (/ (Rsqr (pos eps)))) with (Rbar.Finite (/ (pos (mkposreal _ (sqr_pos eps))))) by now simpl.
-      rewrite Rbar_mult_div_pos.
-      apply Rbar_div_pos_le.
-      generalize (var_sum_cross_0 (fun k => X (k+m)%nat)); intros.
-      cut_to H1.
-      * rewrite Lim_seq_ext with (v := sum_n (fun n : nat => SimpleExpectation (rvsqr (X (n + m)%nat)))).
-        -- apply Lim_seq_sup_le .
-        -- apply H1.
-      * admit.
+    eapply Rbar_le_trans; try (apply H0).
+    replace (eps * (eps * 1)) with (Rsqr eps) by (unfold Rsqr; lra).
+    unfold Rdiv.
+    rewrite Lim_seq_scal_r.
+    replace (Rbar.Finite (/ (Rsqr (pos eps)))) with (Rbar.Finite (/ (pos (mkposreal _ (sqr_pos eps))))) by now simpl.
+    rewrite Rbar_mult_div_pos.
+    apply Rbar_div_pos_le.
+    generalize (var_sum_cross_0 (fun k => X (k+m)%nat)); intros.
+    cut_to H1.
+    * rewrite Lim_seq_ext with (v := sum_n (fun n : nat => SimpleExpectation (rvsqr (X (n + m)%nat)))).
+      -- apply Lim_seq_sup_le .
+      -- apply H1.
+    * admit.
  - admit.
 
 Admitted.
