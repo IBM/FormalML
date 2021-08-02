@@ -1846,11 +1846,11 @@ Qed.
       + apply partition_measurable_cutoff_ind.
   Qed.
 
-Lemma ash_6_1_4 (X : nat -> Ts -> R) (eps:posreal)
+Lemma ash_6_1_4 (X: nat -> Ts -> R) (eps:posreal)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
       {frf : forall (n:nat), FiniteRangeFunction (X n)}
       (HC : forall n, 
-          SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
+          SimpleConditionalExpectationSA (X n) (filtration_history n Y) = const 0)  :
   let Sum := fun j => (rvsum X j) in
   forall (n:nat), ps_P (event_ge dom (rvmaxlist (fun k => rvabs(Sum k)) n) eps) <=
            (SimpleExpectation (rvsqr (Sum n)))/eps^2.
@@ -2009,7 +2009,7 @@ Proof.
      lra.
 Qed.
 
-Lemma var_sum_cross_0 (X : nat -> Ts -> R)(n : nat)
+Lemma var_sum_cross_0 (X : nat -> Ts -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
       {frf : forall (n:nat), FiniteRangeFunction (X n)}
       (HC : forall n, 
@@ -2134,6 +2134,55 @@ Proof.
   apply H.
 Qed.
 
+  Lemma event_ge_pf_irrel {x}
+        {rv_X : Ts -> R}
+        {rv1 : RandomVariable dom borel_sa rv_X}
+        {rv2 : RandomVariable dom borel_sa rv_X} :
+    event_equiv (event_ge dom rv_X (rv:=rv1) x)
+                (event_ge dom rv_X (rv:=rv2) x).
+  Proof.
+    Proof.
+      repeat red; intros.
+      split; intros; trivial.
+    Qed.
+
+    Lemma sqr_pos (eps : posreal) :
+      0 < Rsqr eps.
+    Proof.
+      apply Rsqr_pos_lt.
+      apply Rgt_not_eq.
+      apply cond_pos.
+    Qed.
+
+    Lemma Lim_seq_sup_le (f : nat -> R) :
+      Rbar_le (Lim_seq f) (LimSup_seq f).
+    Proof.
+      unfold Lim_seq.
+      generalize (LimSup_LimInf_seq_le f); intros.
+      replace (LimSup_seq f) with (Rbar_div_pos (Rbar_plus (LimSup_seq f) (LimSup_seq f))
+       {| pos := 2; cond_pos := Rlt_R0_R2 |}) at 2.
+      - apply Rbar_div_pos_le.
+        apply Rbar_plus_le_compat.
+        + apply Rbar_le_refl.
+        + apply LimSup_LimInf_seq_le.
+      - destruct (LimSup_seq f).
+        + simpl; rewrite Rbar_finite_eq; field_simplify.
+          rewrite Rmult_comm.
+          unfold Rdiv; rewrite Rmult_assoc.
+          rewrite <- Rinv_r_sym.
+          * now rewrite Rmult_1_r.
+          * lra.
+        + now simpl.
+        + now simpl.
+   Qed.
+
+    Lemma Rbar_mult_div_pos (x : Rbar) (c : posreal) :
+      Rbar_mult x (/ c) = Rbar_div_pos x c.
+    Proof.
+      rewrite <- Rbar_div_div_pos.
+      destruct x; now simpl.
+    Qed.
+
 (*ash 6.2.1 *)
 Lemma Ash_6_2_1_helper (X : nat -> Ts -> R) (eps : posreal) (m : nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
@@ -2142,7 +2191,7 @@ Lemma Ash_6_2_1_helper (X : nat -> Ts -> R) (eps : posreal) (m : nat)
           SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
   let Sum := fun j => rvsum (fun k w => X (k+m)%nat w) j in
   Rbar_le (Lim_seq (fun n => ps_P (event_ge dom (rvmaxlist (fun k => rvabs (Sum k)) n) eps)))
-          (LimSup_seq (sum_n (fun n => SimpleExpectation (rvsqr (X (m + n)%nat))))/(Rsqr eps)).
+          (Rbar_div_pos (LimSup_seq (sum_n (fun n => SimpleExpectation (rvsqr (X (n + m)%nat))))) (mkposreal _ (sqr_pos eps))).
 Proof.
   intros.
   generalize (ash_6_1_4 (fun k w => X (k + m)%nat w)); intros.
@@ -2156,7 +2205,90 @@ Proof.
     generalize (Lim_seq_le _ _ H); intros.
     unfold Sum.
     eapply Rbar_le_trans.
-    + 
+    + assert
+        (Lim_seq
+            (fun n : nat =>
+             @ps_P Ts dom Prts
+               (@event_ge Ts dom
+                  (rvmaxlist
+                     (fun k : nat =>
+                      @rvabs Ts
+                        (@rvsum Ts
+                           (fun (k0 : nat) (w : Ts) => X (Init.Nat.add k0 m) w) k))
+                     n)
+                  (@rvmaxlist_rv
+                     (fun k : nat =>
+                      @rvabs Ts
+                        (@rvsum Ts
+                           (fun (k0 : nat) (w : Ts) => X (Init.Nat.add k0 m) w) k))
+                     (fun n0 : nat =>
+                      @rvabs_rv Ts dom
+                        (@rvsum Ts
+                           (fun (k : nat) (w : Ts) => X (Init.Nat.add k m) w) n0)
+                        (@rvsum_rv Ts dom
+                           (fun (k : nat) (w : Ts) => X (Init.Nat.add k m) w) H0 n0))
+                     n) (pos eps))) =
+          (Lim_seq
+       (fun n : nat =>
+        @ps_P Ts dom Prts
+          (@event_ge Ts dom
+             (rvmaxlist
+                (fun k : nat =>
+                 @rvabs Ts
+                   (@rvsum Ts (fun (k0 : nat) (w : Ts) => X (Init.Nat.add k0 m) w) k))
+                n) (@rv_max_sum_shift X m n rv) (pos eps)))) ).
+      * apply Lim_seq_ext; intros.
+        assert (event_equiv
+                  (@event_ge Ts dom
+          (rvmaxlist
+             (fun k : nat =>
+              @rvabs Ts
+                (@rvsum Ts (fun (k0 : nat) (w : Ts) => X (Init.Nat.add k0 m) w) k))
+             n)
+          (@rvmaxlist_rv
+             (fun k : nat =>
+              @rvabs Ts
+                (@rvsum Ts (fun (k0 : nat) (w : Ts) => X (Init.Nat.add k0 m) w) k))
+             (fun n0 : nat =>
+              @rvabs_rv Ts dom
+                (@rvsum Ts (fun (k : nat) (w : Ts) => X (Init.Nat.add k m) w) n0)
+                (@rvsum_rv Ts dom (fun (k : nat) (w : Ts) => X (Init.Nat.add k m) w)
+                   H0 n0)) n) (pos eps))
+                  
+      (@event_ge Ts dom
+          (rvmaxlist
+             (fun k : nat =>
+              @rvabs Ts
+                (@rvsum Ts (fun (k0 : nat) (w : Ts) => X (Init.Nat.add k0 m) w) k))
+             n) (@rv_max_sum_shift X m n rv) (pos eps))).
+        -- apply  event_ge_pf_irrel.
+        -- now rewrite H2.
+      * rewrite H2 in H1.
+        apply H1.
+    + replace (eps * (eps * 1)) with (Rsqr eps) by (unfold Rsqr; lra).
+      unfold Rdiv.
+      rewrite Lim_seq_scal_r.
+      replace (Rbar.Finite (/ (Rsqr (pos eps)))) with (Rbar.Finite (/ (pos (mkposreal _ (sqr_pos eps))))) by now simpl.
+      rewrite Rbar_mult_div_pos.
+      apply Rbar_div_pos_le.
+      generalize (var_sum_cross_0 (fun k => X (k+m)%nat)); intros.
+      cut_to H2.
+      * rewrite Lim_seq_ext with (v := sum_n (fun n : nat => SimpleExpectation (rvsqr (X (n + m)%nat)))).
+        -- rewrite Lim_seq_ext with
+               (v :=  (@sum_n R_AbelianGroup
+          (fun n : nat =>
+           @SimpleExpectation Ts dom Prts (@rvsqr Ts (X (Init.Nat.add n m)))
+             (@rvsqr_rv Ts dom (X (Init.Nat.add n m)) (rv (Init.Nat.add n m)))
+             (@frfsqr Ts (X (Init.Nat.add n m)) (frf (Init.Nat.add n m)))))).
+           ++ apply Lim_seq_sup_le.
+           ++ intros; apply sum_n_ext.
+              intros.
+              apply SimpleExpectation_pf_irrel.
+        -- intros.
+           apply H2.
+      * admit.
+    - admit.
+
 Admitted.
 
     
