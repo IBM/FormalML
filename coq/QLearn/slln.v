@@ -2192,40 +2192,40 @@ Lemma Ash_6_2_1_helper (X : nat -> Ts -> R) (eps : posreal) (m : nat)
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
       (HC : forall n, 
           SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
-  let Sum := fun j => rvsum (fun k w => X (k+m)%nat w) j in
+  let Sum := fun j => rvsum (fun k => X (k+m)%nat) j in
   Rbar_le (Lim_seq (fun n => ps_P (event_ge dom (rvmaxlist (fun k => rvabs (Sum k)) n) eps)))
           (Rbar_div_pos (LimSup_seq (sum_n (fun n => SimpleExpectation (rvsqr (X (n + m)%nat))))) (mkposreal _ (sqr_pos eps))).
 Proof.
   intros.
-  generalize (ash_6_1_4 (fun k w => X (k + m)%nat w)); intros.
-  specialize (H eps (fun n1 : nat => rv (Init.Nat.add n1 m)) (fun n1 : nat => frf (Init.Nat.add n1 m))).
-  cut_to H.
-  - simpl in H.
-    generalize (Lim_seq_le _ _ H); intros.
-    unfold Sum.
-    eapply Rbar_le_trans; try (apply H0).
-    replace (eps * (eps * 1)) with (Rsqr eps) by (unfold Rsqr; lra).
+  generalize (ash_6_1_4 X); intros.
+  specialize (H eps _ _ HC).
+  simpl in H.
+  generalize (Lim_seq_le _ _ H); intros.
+  unfold Sum.
+  assert (Rbar_le (Lim_seq (fun n : nat => ps_P (event_ge dom (rvmaxlist (fun k : nat => rvabs (rvsum (fun k => X (k + m)%nat) k)) n) eps)))
+                  (Lim_seq (fun n : nat => SimpleExpectation (rvsqr (rvsum (fun k => X (k + m)%nat) n)) / (eps * (eps * 1))))) by admit.
+  eapply Rbar_le_trans.
+  - apply H1.
+  - replace (eps * (eps * 1)) with (Rsqr eps) by (unfold Rsqr; lra).
     unfold Rdiv.
     rewrite Lim_seq_scal_r.
     replace (Rbar.Finite (/ (Rsqr (pos eps)))) with (Rbar.Finite (/ (pos (mkposreal _ (sqr_pos eps))))) by now simpl.
     rewrite Rbar_mult_div_pos.
     apply Rbar_div_pos_le.
-    generalize (var_sum_cross_0 (fun k => X (k+m)%nat)); intros.
-    cut_to H1.
-    * rewrite Lim_seq_ext with (v := sum_n (fun n : nat => SimpleExpectation (rvsqr (X (n + m)%nat)))).
-      -- apply Lim_seq_sup_le .
-      -- apply H1.
-    * admit.
- - admit.
+    generalize (var_sum_cross_0 X HC); intros.
+    assert (forall j : nat, SimpleExpectation (rvsqr (rvsum (fun k => X (k + m)%nat) j)) = sum_n (fun n : nat => SimpleExpectation (rvsqr (X (n + m)%nat))) j) by admit.
+    rewrite Lim_seq_ext with (v := sum_n (fun n : nat => SimpleExpectation (rvsqr (X (n + m)%nat)))).
+    + apply Lim_seq_sup_le.
+    + apply H3.
 
 Admitted.
 
-    
   Lemma Ash_6_2_1_helper2 (X : nat -> Ts -> R) (eps : posreal)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
       (HC : forall n, 
           SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
+    ex_series (fun n => SimpleExpectation (rvsqr (X n))) ->
     Lim_seq (fun m => LimSup_seq (sum_n (fun n => SimpleExpectation (rvsqr (X (n + m)%nat))))) = 0.
   Proof.
     Admitted.
