@@ -1850,7 +1850,7 @@ Lemma ash_6_1_4 (X: nat -> Ts -> R) (eps:posreal)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
       {frf : forall (n:nat), FiniteRangeFunction (X n)}
       (HC : forall n, 
-          SimpleConditionalExpectationSA (X n) (filtration_history n Y) = const 0)  :
+          SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
   let Sum := fun j => (rvsum X j) in
   forall (n:nat), ps_P (event_ge dom (rvmaxlist (fun k => rvabs(Sum k)) n) eps) <=
            (SimpleExpectation (rvsqr (Sum n)))/eps^2.
@@ -2123,7 +2123,9 @@ Proof.
   apply rvabs_rv.
   apply rvsum_rv; intros.
   apply rv.
-Qed.
+Defined.
+
+Transparent rv_max_sum_shift.
 
 Lemma Lim_seq_le (u v : nat -> R):
   (forall n, u n <= v n) -> Rbar_le (Lim_seq u) (Lim_seq v).
@@ -2182,6 +2184,9 @@ Qed.
       rewrite <- Rbar_div_div_pos.
       destruct x; now simpl.
     Qed.
+    Require Import Coq.Program.Tactics.
+
+    (* Transparent rv_max_sum_shift. *)
 
 (*ash 6.2.1 *)
 Lemma Ash_6_2_1_helper (X : nat -> Ts -> R) (eps : posreal) (m : nat)
@@ -2195,17 +2200,18 @@ Lemma Ash_6_2_1_helper (X : nat -> Ts -> R) (eps : posreal) (m : nat)
 Proof.
   intros.
   generalize (ash_6_1_4 (fun k w => X (k + m)%nat w)); intros.
-  assert (forall n, RandomVariable dom borel_sa (X (n + m)%nat)) by
+(*  assert (forall n, RandomVariable dom borel_sa (X (n + m)%nat)) by
       (intros; apply rv).
   assert (forall n, FiniteRangeFunction (X (n + m)%nat)) by
-      (intros; apply frf).
-  specialize (H eps H0 X0).
+      (intros; apply frf).*)
+  specialize (H eps (fun n1 : nat => rv (Init.Nat.add n1 m)) (fun n1 : nat => frf (Init.Nat.add n1 m))).
   cut_to H.
   - simpl in H.
     generalize (Lim_seq_le _ _ H); intros.
     unfold Sum.
     eapply Rbar_le_trans.
-    + assert
+    + apply H0.
+   (* assert
         (Lim_seq
             (fun n : nat =>
              @ps_P Ts dom Prts
@@ -2254,7 +2260,7 @@ Proof.
                 (@rvsum Ts (fun (k : nat) (w : Ts) => X (Init.Nat.add k m) w) n0)
                 (@rvsum_rv Ts dom (fun (k : nat) (w : Ts) => X (Init.Nat.add k m) w)
                    H0 n0)) n) (pos eps))
-                  
+
       (@event_ge Ts dom
           (rvmaxlist
              (fun k : nat =>
@@ -2264,7 +2270,7 @@ Proof.
         -- apply  event_ge_pf_irrel.
         -- now rewrite H2.
       * rewrite H2 in H1.
-        apply H1.
+        apply H1.*)
     + replace (eps * (eps * 1)) with (Rsqr eps) by (unfold Rsqr; lra).
       unfold Rdiv.
       rewrite Lim_seq_scal_r.
