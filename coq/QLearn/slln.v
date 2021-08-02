@@ -1846,21 +1846,21 @@ Qed.
       + apply partition_measurable_cutoff_ind.
   Qed.
 
-Lemma ash_6_1_4 (X : nat -> Ts -> R)(n : nat)
+Lemma ash_6_1_4 (X : nat -> Ts -> R) (eps:posreal)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
       {frf : forall (n:nat), FiniteRangeFunction (X n)}
       (HC : forall n, 
           SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
   let Sum := fun j => (rvsum X j) in
-  forall eps:posreal, ps_P (event_ge dom (rvmaxlist (fun k => fun w => Rabs(Sum k w)) n) eps) <=
+  forall (n:nat), ps_P (event_ge dom (rvmaxlist (fun k => rvabs(Sum k)) n) eps) <=
            (SimpleExpectation (rvsqr (Sum n)))/eps^2.
 Proof.
   intros.
-  assert (H1 : event_equiv (event_ge dom (rvmaxlist (fun k => fun w => Rabs(Sum k w)) n) eps)
-                           (event_ge dom (fun w => Rabs(cutoff_eps_rv n eps Sum w)) eps)).
+  assert (H1 : event_equiv (event_ge dom (rvmaxlist (fun k => rvabs(Sum k)) n) eps)
+                           (event_ge dom (rvabs(cutoff_eps_rv n eps Sum)) eps)).
   {
     intro omega.
-    unfold proj1_sig; simpl.
+    unfold proj1_sig, rvabs; simpl.
     split; intros H; try (apply Rle_ge; apply Rge_le in H).
     + now rewrite cutoff_ge_eps_rv_rvmaxlist_iff.
     + now rewrite <-cutoff_ge_eps_rv_rvmaxlist_iff.
@@ -2114,3 +2114,50 @@ Lemma almost_cauchy (X : nat -> Ts -> R)
 Proof.
   Admitted.
 
+Instance rv_max_sum_shift (X : nat -> Ts -> R) (m n : nat) 
+         {rv : forall (n:nat), RandomVariable dom borel_sa (X n)} :
+  let Sum := fun j => (rvsum (fun k w => X (k+m)%nat w) j) in
+  RandomVariable dom borel_sa (rvmaxlist (fun k : nat => rvabs (Sum k)) n).
+Proof.
+  apply rvmaxlist_rv; intros.
+  apply rvabs_rv.
+  apply rvsum_rv; intros.
+  apply rv.
+Qed.
+
+Lemma Lim_seq_le (u v : nat -> R):
+  (forall n, u n <= v n) -> Rbar_le (Lim_seq u) (Lim_seq v).
+Proof.
+  intros.
+  apply Lim_seq_le_loc.
+  exists (0%nat); intros.
+  apply H.
+Qed.
+
+(*ash 6.2.1 *)
+Lemma Ash_6_2_1_helper (X : nat -> Ts -> R) (eps : posreal) (m : nat)
+      {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
+      {frf : forall (n:nat), FiniteRangeFunction (X (n))}
+      (HC : forall n, 
+          SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
+  let Sum := fun j => rvsum (fun k w => X (k+m)%nat w) j in
+  Rbar_le (Lim_seq (fun n => ps_P (event_ge dom (rvmaxlist (fun k => rvabs (Sum k)) n) eps)))
+          (LimSup_seq (sum_n (fun n => SimpleExpectation (rvsqr (X (m + n)%nat))))/(Rsqr eps)).
+Proof.
+  intros.
+  generalize (ash_6_1_4 (fun k w => X (k + m)%nat w)); intros.
+  assert (forall n, RandomVariable dom borel_sa (X (n + m)%nat)) by
+      (intros; apply rv).
+  assert (forall n, FiniteRangeFunction (X (n + m)%nat)) by
+      (intros; apply frf).
+  specialize (H eps H0 X0).
+  cut_to H.
+  - simpl in H.
+    generalize (Lim_seq_le _ _ H); intros.
+    unfold Sum.
+    eapply Rbar_le_trans.
+    + 
+Admitted.
+
+    
+  
