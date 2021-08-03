@@ -2203,7 +2203,10 @@ Proof.
   generalize (Lim_seq_le _ _ H); intros.
   unfold Sum.
   assert (Rbar_le (Lim_seq (fun n : nat => ps_P (event_ge dom (rvmaxlist (fun k : nat => rvabs (rvsum (fun k => X (k + m)%nat) k)) n) eps)))
-                  (Lim_seq (fun n : nat => SimpleExpectation (rvsqr (rvsum (fun k => X (k + m)%nat) n)) / (eps * (eps * 1))))) by admit.
+                  (Lim_seq (fun n : nat => SimpleExpectation (rvsqr (rvsum (fun k => X (k + m)%nat) n)) / (eps * (eps * 1))))).
+  {
+    admit.
+  }
   eapply Rbar_le_trans.
   - apply H1.
   - replace (eps * (eps * 1)) with (Rsqr eps) by (unfold Rsqr; lra).
@@ -2213,7 +2216,11 @@ Proof.
     rewrite Rbar_mult_div_pos.
     apply Rbar_div_pos_le.
     generalize (var_sum_cross_0 X HC); intros.
-    assert (forall j : nat, SimpleExpectation (rvsqr (rvsum (fun k => X (k + m)%nat) j)) = sum_n (fun n : nat => SimpleExpectation (rvsqr (X (n + m)%nat))) j) by admit.
+    assert (forall j : nat, SimpleExpectation (rvsqr (rvsum (fun k => X (k + m)%nat) j)) = sum_n (fun n : nat => SimpleExpectation (rvsqr (X (n + m)%nat))) j).
+    {
+      intros.
+      admit.
+    }
     rewrite Lim_seq_ext with (v := sum_n (fun n : nat => SimpleExpectation (rvsqr (X (n + m)%nat)))).
     + apply Lim_seq_sup_le.
     + apply H3.
@@ -2226,8 +2233,17 @@ Admitted.
       (HC : forall n, 
           SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
     ex_series (fun n => SimpleExpectation (rvsqr (X n))) ->
-    Lim_seq (fun m => LimSup_seq (sum_n (fun n => SimpleExpectation (rvsqr (X (n + m)%nat))))) = 0.
+    is_lim_seq (fun m => LimSup_seq (sum_n (fun n => SimpleExpectation (rvsqr (X (n + m)%nat))))) 0.
   Proof.
+    intros.
+    generalize (Cauchy_ex_series _ H); intros.
+    unfold Cauchy_series in H0.
+    unfold norm in H0; simpl in H0.
+    unfold abs in H0; simpl in H0.
+    apply is_lim_seq_spec.
+    unfold is_lim_seq'.
+    intros.
+    destruct (H0 eps) as [N ?].
     Admitted.
     
   
