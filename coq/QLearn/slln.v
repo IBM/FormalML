@@ -2097,7 +2097,7 @@ Proof.
   Qed.                            
 
 (* ash prob 2.5.4 *)
-Lemma almost_cauchy (X : nat -> Ts -> R) 
+Lemma almostR2_cauchy (X : nat -> Ts -> R) 
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)} :
   (exists P, 
       ps_P P = 1 /\

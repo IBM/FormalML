@@ -159,10 +159,10 @@ Section Linf.
     apply HH.
   Qed.
 
-  Lemma rvclip_almost_bounded (rv_X : Ts -> R) (c : nonnegreal)
+  Lemma rvclip_almostR2_bounded (rv_X : Ts -> R) (c : nonnegreal)
         {rv : RandomVariable dom borel_sa rv_X} :
     ps_P  (Linfty_term rv_X c) = 0 ->
-    almost prts eq rv_X (rvclip rv_X c).
+    almostR2 prts eq rv_X (rvclip rv_X c).
  Proof.
    intros.
    apply almost_alt_eq.
@@ -180,14 +180,14 @@ Section Linf.
      + lra.
  Qed.
 
- Lemma rvclip_almost_bounded_exists (rv_X : Ts -> R)
+ Lemma rvclip_almostR2_bounded_exists (rv_X : Ts -> R)
        {rv : RandomVariable dom borel_sa rv_X}
         {isl:IsLinfty rv_X} :
-    exists (c:nonnegreal), almost prts eq rv_X (rvclip rv_X c).
+    exists (c:nonnegreal), almostR2 prts eq rv_X (rvclip rv_X c).
   Proof.
     destruct (is_Linfty_c_nonneg rv_X).
     exists x.
-    now eapply rvclip_almost_bounded.
+    now eapply rvclip_almostR2_bounded.
   Qed.
 
 
@@ -311,10 +311,10 @@ Section Linf.
          * simpl in *; apply Rgt_not_eq; lra.
   Qed.
 
-  Lemma almost_abs_le_Linfty_norm (rv_X : Ts -> R)
+  Lemma almostR2_abs_le_Linfty_norm (rv_X : Ts -> R)
              {rv : RandomVariable dom borel_sa rv_X} 
              {isl: IsLinfty rv_X} :
-   almost prts Rle (rvabs rv_X) (const (Linfty_norm rv_X)).
+   almostR2 prts Rle (rvabs rv_X) (const (Linfty_norm rv_X)).
   Proof.   
     generalize (Linfty_norm_contains_finite_lim rv_X); intros.
     eexists.
@@ -365,11 +365,11 @@ Section Linf.
     : IsLp prts n rv_X.
   Proof.
     intros.
-    generalize (rvclip_almost_bounded_exists rv_X); intros.
+    generalize (rvclip_almostR2_bounded_exists rv_X); intros.
     destruct H as [c H0].
     generalize (rvclip_abs_le_c rv_X c); intros.
     generalize (IsLp_const_bounded n _ c (cond_nonneg _) H); intros.
-    eapply IsLp_proper_almost with (rv_X1 := (rvclip rv_X c)); trivial
+    eapply IsLp_proper_almostR2 with (rv_X1 := (rvclip rv_X c)); trivial
     ; try typeclasses eauto.
     now symmetry.
   Qed.
@@ -400,13 +400,13 @@ Section Linf.
     - unfold LpRRVnorm.
       rewrite power_inv_cancel.
       + assert (IsFiniteExpectation prts (rvpower (rvabs (rvclip rv_X (mknonnegreal _ H))) (const p))).
-        * eapply (IsLp_proper_almost prts p rv_X); try eapply isl
+        * eapply (IsLp_proper_almostR2 prts p rv_X); try eapply isl
           ; try typeclasses eauto.
-          eapply rvclip_almost_bounded
+          eapply rvclip_almostR2_bounded
           ; try typeclasses eauto.
           simpl.
           now apply Linfty_norm_contains_finite_lim.
-        * erewrite FiniteExpectation_proper_almost with 
+        * erewrite FiniteExpectation_proper_almostR2 with 
             (rv_X2 := (rvpower (rvabs (rvclip rv_X (mknonnegreal _ H))) (const p)))
             (isfe2 := H0)
           ; try typeclasses eauto.
@@ -424,11 +424,11 @@ Section Linf.
              apply rvconst.
           -- simpl.
              unfold const.
-             apply almost_eq_power_proper
+             apply almostR2_eq_power_proper
              ; try typeclasses eauto; trivial.
-             apply almost_eq_abs_proper
+             apply almostR2_eq_abs_proper
              ; try typeclasses eauto.
-             eapply rvclip_almost_bounded; trivial.
+             eapply rvclip_almostR2_bounded; trivial.
              now apply Linfty_norm_contains_finite_lim.
       + apply FiniteExpectation_pos
         ; typeclasses eauto.
@@ -460,13 +460,13 @@ Section Linf.
         apply power_nonneg.
       + erewrite LpRRV_norm_proper.
         * now apply Linfty_Lp_le.
-        * apply almost_eq_subr; intros ?.
+        * apply almostR2_eq_subr; intros ?.
           reflexivity.
     - apply is_lim_seq_const.
   Qed.
 
-  Lemma ps_almost_sub (P1 P2 : event dom) :
-    almost prts impl P1 P2 -> ps_P P1 <= ps_P P2.
+  Lemma ps_almostR2_sub (P1 P2 : event dom) :
+    almostR2 prts impl P1 P2 -> ps_P P1 <= ps_P P2.
   Proof.
     intros [a [??]].
 
@@ -479,8 +479,8 @@ Section Linf.
     now apply H0.
   Qed.
 
-  Lemma ps_almost_proper (P1 P2 : event dom) :
-    almost prts iff P1 P2 -> ps_P P1 = ps_P P2.
+  Lemma ps_almostR2_proper (P1 P2 : event dom) :
+    almostR2 prts iff P1 P2 -> ps_P P1 = ps_P P2.
   Proof.
     intros [a [??]].
 
@@ -492,21 +492,21 @@ Section Linf.
     tauto.
   Qed.
 
-  Lemma almost_sub_event_prob0 (P1 P2 : event dom) :
+  Lemma almostR2_sub_event_prob0 (P1 P2 : event dom) :
     ps_P P2 = 0 ->
-    almost prts impl P1 P2 -> ps_P P1 = 0.
+    almostR2 prts impl P1 P2 -> ps_P P1 = 0.
   Proof.
     intros.
-    generalize (ps_almost_sub P1 P2 H0); intros.
+    generalize (ps_almostR2_sub P1 P2 H0); intros.
     generalize (ps_pos P1); intros.
     lra.
   Qed.
 
   (* Move this *)
-  (* maybe make this just a generalzie almost_sub ? *)
-  Global Instance almost_same_lift {A B} R1 R2 (f : A -> B)
+  (* maybe make this just a generalzie almostR2_sub ? *)
+  Global Instance almostR2_same_lift {A B} R1 R2 (f : A -> B)
         (p:Proper (R1 ==> R2) f) :
-    Proper (almost prts R1 ==> almost prts R2) (fun x t => f (x t)).
+    Proper (almostR2 prts R1 ==> almostR2 prts R2) (fun x t => f (x t)).
   Proof.
     intros P1 P2 [P [Pone PR1]].
     exists P.
@@ -516,13 +516,13 @@ Section Linf.
     now apply p.
   Qed.
 
-  Global Instance almost_sub_lift
+  Global Instance almostR2_sub_lift
       {Td1 Td2:Type} 
       (R1:Td1->Td1->Prop)
       (R2:Td2->Td2->Prop)
       (f:(Ts->Td1)->Ts->Td2)
       (fpres: forall x y a, R1 (x a) (y a) -> R2 (f x a) (f y a))
-  : Proper (almost prts R1 ==> almost prts R2) f.
+  : Proper (almostR2 prts R1 ==> almostR2 prts R2) f.
 Proof.
   intros x1 x2 [Px [Pxall eq_onx]].
   exists Px.
@@ -531,12 +531,12 @@ Proof.
 Qed.
 
     
-  Lemma Linfty_term_almost_Rle_impl rv_X1 rv_X2
+  Lemma Linfty_term_almostR2_Rle_impl rv_X1 rv_X2
         {rv1:RandomVariable dom borel_sa rv_X1}
         {rv2:RandomVariable dom borel_sa rv_X2} :
-    almost prts Rle (rvabs rv_X1) rv_X2 ->
+    almostR2 prts Rle (rvabs rv_X1) rv_X2 ->
     forall a,
-      almost prts impl (Linfty_term rv_X1 a) (Linfty_term rv_X2 a).
+      almostR2 prts impl (Linfty_term rv_X1 a) (Linfty_term rv_X2 a).
   Proof.
     intros le1 a.
     destruct le1 as [p[??]].
@@ -553,10 +553,10 @@ Qed.
     apply Rle_abs.
   Qed.
               
-  Lemma Linfty_norm_almost_le rv_X1 rv_X2
+  Lemma Linfty_norm_almostR2_le rv_X1 rv_X2
         {rv1:RandomVariable dom borel_sa rv_X1}
         {rv2:RandomVariable dom borel_sa rv_X2}
-        (rle:almost prts Rle (rvabs rv_X1) rv_X2) :
+        (rle:almostR2 prts Rle (rvabs rv_X1) rv_X2) :
       Rbar_le (Linfty_norm rv_X1) (Linfty_norm rv_X2).
     Proof.
       generalize (Linfty_norm_Rbar_nneg rv_X1)
@@ -573,15 +573,15 @@ Qed.
       apply glb2.
       intros a pa.
       apply lb1.
-      eapply almost_sub_event_prob0; eauto.
-      now apply Linfty_term_almost_Rle_impl.
+      eapply almostR2_sub_event_prob0; eauto.
+      now apply Linfty_term_almostR2_Rle_impl.
     Qed.
 
 
-  Lemma IsLinfty_almost_le rv_X1 rv_X2
+  Lemma IsLinfty_almostR2_le rv_X1 rv_X2
         {rv1:RandomVariable dom borel_sa rv_X1}
         {rv2:RandomVariable dom borel_sa rv_X2}
-        (rle:almost prts Rle (rvabs rv_X1) rv_X2)
+        (rle:almostR2 prts Rle (rvabs rv_X1) rv_X2)
         {isli:IsLinfty rv_X2}
     :
       IsLinfty rv_X1.
@@ -591,7 +591,7 @@ Qed.
 
     assert (HH3:Rbar_le (Linfty_norm rv_X1) (Linfty_norm rv_X2)).
     {
-      now apply Linfty_norm_almost_le.
+      now apply Linfty_norm_almostR2_le.
     }
     unfold IsLinfty in *.
     unfold Linfty_norm in *.
@@ -644,12 +644,12 @@ Qed.
     now rewrite Linfty_norm_const.
   Qed.
 
-  Lemma Linfty_term_almost_eq  rv_X1 rv_X2
+  Lemma Linfty_term_almostR2_eq  rv_X1 rv_X2
         {rv1:RandomVariable dom borel_sa rv_X1}
         {rv2:RandomVariable dom borel_sa rv_X2}
-        (req:almost prts eq rv_X1 rv_X2) :
+        (req:almostR2 prts eq rv_X1 rv_X2) :
     forall x,
-      almost prts iff (Linfty_term rv_X2 x) (Linfty_term rv_X1 x).
+      almostR2 prts iff (Linfty_term rv_X2 x) (Linfty_term rv_X1 x).
   Proof.
     intros x.
     destruct req as [p [pa HH]].
@@ -661,27 +661,27 @@ Qed.
   Qed.
 
 
-    Lemma Linfty_norm_almost_eq rv_X1 rv_X2
+    Lemma Linfty_norm_almostR2_eq rv_X1 rv_X2
         {rv1:RandomVariable dom borel_sa rv_X1}
         {rv2:RandomVariable dom borel_sa rv_X2}
-        (req:almost prts eq rv_X1 rv_X2) :
+        (req:almostR2 prts eq rv_X1 rv_X2) :
       Linfty_norm rv_X1 = Linfty_norm rv_X2.
     Proof.
       unfold Linfty_norm.
       apply Glb_Rbar_eqset; intros.
-      erewrite ps_almost_proper; [reflexivity |].
-      apply Linfty_term_almost_eq.
+      erewrite ps_almostR2_proper; [reflexivity |].
+      apply Linfty_term_almostR2_eq.
       now symmetry.
     Qed.
 
-    Lemma IsLinfty_almost_eq rv_X1 rv_X2
+    Lemma IsLinfty_almostR2_eq rv_X1 rv_X2
         {rv1:RandomVariable dom borel_sa rv_X1}
         {rv2:RandomVariable dom borel_sa rv_X2}
-        (req:almost prts eq rv_X1 rv_X2) :
+        (req:almostR2 prts eq rv_X1 rv_X2) :
       IsLinfty rv_X1 <-> IsLinfty rv_X2.
     Proof.
       unfold IsLinfty.
-      erewrite Linfty_norm_almost_eq; eauto.
+      erewrite Linfty_norm_almostR2_eq; eauto.
       reflexivity.
     Qed.
 
@@ -694,13 +694,13 @@ Qed.
     {
       subst.
       intros.
-      erewrite (Linfty_norm_almost_eq _ (const 0)).
+      erewrite (Linfty_norm_almostR2_eq _ (const 0)).
       - rewrite Linfty_norm_const.
         repeat rewrite Rabs_R0.
         simpl.
         f_equal.
         lra.
-      - apply almost_eq_subr; intros ?.
+      - apply almostR2_eq_subr; intros ?.
         rv_unfold.
         f_equal.
         lra.
@@ -813,8 +813,8 @@ Qed.
   Proof.
     rewrite <- (Linfty_norm_abs (rvopp x)).
     rewrite <- (Linfty_norm_abs x).
-    apply Linfty_norm_almost_eq.
-    apply almost_eq_subr.
+    apply Linfty_norm_almostR2_eq.
+    apply almostR2_eq_subr.
     intros ?.
     rv_unfold.
     unfold Rabs.
@@ -828,8 +828,8 @@ Qed.
   Proof.
     rewrite <- (Linfty_norm_abs (rvminus x y)).
     rewrite <- (Linfty_norm_abs (rvminus y x)).
-    apply Linfty_norm_almost_eq.
-    apply almost_eq_subr.
+    apply Linfty_norm_almostR2_eq.
+    apply almostR2_eq_subr.
     apply rvabs_rvminus_sym.
   Qed.
 
@@ -898,18 +898,18 @@ Qed.
         {isli_y:IsLinfty y} :
     IsLinfty (rvplus x y).
     Proof.
-      destruct (rvclip_almost_bounded_exists x) as [xc xeqq].
-      destruct (rvclip_almost_bounded_exists y) as [yc yeqq].
-      assert (almost prts eq (rvplus x y) (rvplus (rvclip x xc) (rvclip y yc)))
-        by now apply almost_eq_plus_proper.
-      apply (IsLinfty_almost_eq _ _ H).
+      destruct (rvclip_almostR2_bounded_exists x) as [xc xeqq].
+      destruct (rvclip_almostR2_bounded_exists y) as [yc yeqq].
+      assert (almostR2 prts eq (rvplus x y) (rvplus (rvclip x xc) (rvclip y yc)))
+        by now apply almostR2_eq_plus_proper.
+      apply (IsLinfty_almostR2_eq _ _ H).
 
       assert (pf:0 <= xc + yc)
         by (destruct xc; destruct yc; simpl; lra).
 
-      assert (pfle2:almost prts Rle (rvabs (rvplus (rvclip x xc) (rvclip y yc))) (rvabs (rvclip (rvabs (rvplus (rvclip x xc) (rvclip y yc))) (mknonnegreal _ pf)))).
+      assert (pfle2:almostR2 prts Rle (rvabs (rvplus (rvclip x xc) (rvclip y yc))) (rvabs (rvclip (rvabs (rvplus (rvclip x xc) (rvclip y yc))) (mknonnegreal _ pf)))).
       {
-        apply almost_le_subr.
+        apply almostR2_le_subr.
         intros a.
         rv_unfold.
         unfold rvclip at 3; simpl.
@@ -933,7 +933,7 @@ Qed.
         - rewrite Rabs_Rabsolu.
           apply Rle_refl.
       } 
-      apply (@IsLinfty_almost_le _ _  _ _ pfle2).
+      apply (@IsLinfty_almostR2_le _ _  _ _ pfle2).
       apply IsLinfty_abs.
       apply IsLinfty_rvclip.
     Qed.
@@ -964,14 +964,14 @@ Qed.
     Proof.
 
 
-      generalize (almost_abs_le_Linfty_norm x); intros alex.
-      generalize (almost_abs_le_Linfty_norm y); intros aley.
-      generalize (almost_abs_le_Linfty_norm (rvplus x y)); intros alexy.
+      generalize (almostR2_abs_le_Linfty_norm x); intros alex.
+      generalize (almostR2_abs_le_Linfty_norm y); intros aley.
+      generalize (almostR2_abs_le_Linfty_norm (rvplus x y)); intros alexy.
       generalize (rvabs_triang x y); intros tri.
 
-      assert (le1:almost prts Rle (rvabs (rvplus x y)) (rvplus (const (Linfty_norm x)) (const (Linfty_norm y)))).
+      assert (le1:almostR2 prts Rle (rvabs (rvplus x y)) (rvplus (const (Linfty_norm x)) (const (Linfty_norm y)))).
       {
-        apply (almost_le_subr prts) in tri.
+        apply (almostR2_le_subr prts) in tri.
         rewrite tri.
         rewrite alex.
         rewrite aley.
@@ -979,13 +979,13 @@ Qed.
       }
 
       assert (le2:
-        almost prts Rle (rvabs (rvplus x y))
+        almostR2 prts Rle (rvabs (rvplus x y))
                (const (Linfty_norm x + Linfty_norm y))).
       {
         rewrite le1.
         reflexivity.
       }
-      generalize (Linfty_norm_almost_le _ _ le2)
+      generalize (Linfty_norm_almostR2_le _ _ le2)
       ; intros le3.
       rewrite Linfty_norm_const in le3.
 
@@ -997,9 +997,9 @@ Qed.
       ; now apply Linfty_norm_nneg.
     Qed.
 
-    Lemma almost_eq_rvabs0 x :
-      almost prts eq (rvabs x) (const 0) <->
-      almost prts eq x (const 0).
+    Lemma almostR2_eq_rvabs0 x :
+      almostR2 prts eq (rvabs x) (const 0) <->
+      almostR2 prts eq x (const 0).
     Proof.
       split; intros [p[pone peq]]
       ; exists p; split; trivial
@@ -1014,29 +1014,29 @@ Qed.
     Lemma Linfty_norm0 x 
           {rv_x:RandomVariable dom borel_sa x} :
       Linfty_norm x = 0 ->
-      almost prts eq x (const 0).
+      almostR2 prts eq x (const 0).
     Proof.
       intros HH.
       assert (isli_x:IsLinfty x).
       {
         red; rewrite HH; reflexivity.
       }
-      generalize (almost_abs_le_Linfty_norm x)
+      generalize (almostR2_abs_le_Linfty_norm x)
       ; intros le1.
-      assert (le2:almost prts Rle  (fun x0 : Ts => const (Linfty_norm x) x0) (rvabs x)).
+      assert (le2:almostR2 prts Rle  (fun x0 : Ts => const (Linfty_norm x) x0) (rvabs x)).
       {
         rewrite HH.
-        apply almost_le_subr.
+        apply almostR2_le_subr.
         intros ?.
         rv_unfold.
         apply Rabs_pos.
       }
-      assert (eqq1:almost prts eq (rvabs x) (fun x0 : Ts => const (Linfty_norm x) x0)).
+      assert (eqq1:almostR2 prts eq (rvabs x) (fun x0 : Ts => const (Linfty_norm x) x0)).
       {
         now apply antisymmetry.
       }
       rewrite HH in eqq1.
-      now apply almost_eq_rvabs0.
+      now apply almostR2_eq_rvabs0.
     Qed.
 
   Section packed.
@@ -1064,13 +1064,13 @@ Qed.
       := rv_eq (LiRRV_rv_X rv1) (LiRRV_rv_X rv2).
 
     Definition LiRRV_eq (rv1 rv2:LiRRV)
-      := almost prts eq rv1 rv2.
+      := almostR2 prts eq rv1 rv2.
 
     Global Instance LiRRV_seq_eq : subrelation LiRRV_seq LiRRV_eq.
     Proof.
       red; unfold LiRRV_seq, LiRRV_eq, rv_eq.
       intros x y eqq.
-      now apply almost_eq_subr.
+      now apply almostR2_eq_subr.
     Qed.      
     
     Global Instance LiRRV_seq_equiv : Equivalence (LiRRV_seq).
@@ -1174,7 +1174,7 @@ Qed.
     Proof.
       unfold Proper, respectful.
       intros x y eqq.
-      now apply almost_eq_abs_proper.
+      now apply almostR2_eq_abs_proper.
     Qed.
 
     Program Definition LiRRVplus (x y:LiRRV) : LiRRV
@@ -1193,7 +1193,7 @@ Qed.
     Proof.
       unfold Proper, respectful.
       intros x y eqq1 a b eqq2.
-      now apply almost_eq_plus_proper.
+      now apply almostR2_eq_plus_proper.
     Qed.
 
     Definition LiRRVminus (rv1 rv2:LiRRV) : LiRRV
@@ -1239,7 +1239,7 @@ Qed.
     Proof.
       red; intros.
       LiRRV_simpl.
-      apply almost_eq_subr; intros ?.
+      apply almostR2_eq_subr; intros ?.
       unfold rvplus; lra.
     Qed.
     
@@ -1247,7 +1247,7 @@ Qed.
     Proof.
       red; intros.
       LiRRV_simpl.
-      apply almost_eq_subr; intros ?.
+      apply almostR2_eq_subr; intros ?.
       unfold rvplus.
       lra.
     Qed.
@@ -1256,7 +1256,7 @@ Qed.
     Proof.
       red; intros.
       LiRRV_simpl.
-      apply almost_eq_subr; intros ?.
+      apply almostR2_eq_subr; intros ?.
       unfold rvplus, const.
       lra.
     Qed.
@@ -1265,7 +1265,7 @@ Qed.
     Proof.
       red; intros.
       LiRRV_simpl.
-      apply almost_eq_subr; intros ?.
+      apply almostR2_eq_subr; intros ?.
       unfold rvplus, rvopp, rvscale, const.
       lra.
     Qed.
@@ -1275,7 +1275,7 @@ Qed.
     Proof.
       red; intros.
       LiRRV_simpl.
-      apply almost_eq_subr; intros ?.
+      apply almostR2_eq_subr; intros ?.
       unfold rvplus, rvopp, rvscale, const, mult; simpl.
       lra.
     Qed.
@@ -1285,7 +1285,7 @@ Qed.
     Proof.
       red; intros.
       LiRRV_simpl.
-      apply almost_eq_subr; intros ?.
+      apply almostR2_eq_subr; intros ?.
       unfold rvplus, rvopp, rvscale, const, mult, one; simpl.
       lra.
     Qed.
@@ -1295,7 +1295,7 @@ Qed.
     Proof.
       red; intros.
       LiRRV_simpl.
-      apply almost_eq_subr; intros ?.
+      apply almostR2_eq_subr; intros ?.
       unfold rvplus, rvopp, rvscale, const, mult; simpl.
       lra.
     Qed.
@@ -1305,7 +1305,7 @@ Qed.
     Proof.
       red; intros.
       LiRRV_simpl.
-      apply almost_eq_subr; intros ?.
+      apply almostR2_eq_subr; intros ?.
       unfold rvplus, rvopp, rvscale, const, mult; simpl.
       lra.
     Qed.
@@ -1318,7 +1318,7 @@ Qed.
       unfold Proper, respectful, LiRRVnorm, LiRRV_eq.
       intros.
       f_equal.
-      now apply Linfty_norm_almost_eq.
+      now apply Linfty_norm_almostR2_eq.
     Qed.
 
     Global Instance LiRRV_norm_sproper : Proper (LiRRV_seq ==> eq) LiRRVnorm.
@@ -1354,7 +1354,7 @@ Qed.
 
     Lemma LiRRV_norm0 (x:LiRRV) :
         LiRRVnorm x = 0 ->
-        almost prts eq x LiRRVzero.
+        almostR2 prts eq x LiRRVzero.
     Proof.
       unfold LiRRVnorm, LiRRVzero, LiRRVconst; intros; simpl.
       eapply Linfty_norm0.
@@ -1394,11 +1394,11 @@ Qed.
       Lemma LiRRV_ball_refl x (e : posreal) : LiRRVball x e x.
       Proof.
         LiRRV_simpl.
-        rewrite (Linfty_norm_almost_eq _ (const 0)).
+        rewrite (Linfty_norm_almostR2_eq _ (const 0)).
         - rewrite Linfty_norm_const.
           rewrite Rabs_R0.
           apply cond_pos.
-        - apply almost_eq_subr.
+        - apply almostR2_eq_subr.
           apply rvminus_self.
       Qed.
       
@@ -1408,8 +1408,8 @@ Qed.
         intros.
         rewrite <- Linfty_norm_abs in H.
         rewrite <- Linfty_norm_abs.
-        erewrite (Linfty_norm_almost_eq _ (rvabs (rvminus LiRRV_rv_X1 LiRRV_rv_X0))); trivial.
-        apply almost_eq_subr.
+        erewrite (Linfty_norm_almostR2_eq _ (rvabs (rvminus LiRRV_rv_X1 LiRRV_rv_X0))); trivial.
+        apply almostR2_eq_subr.
         apply rvabs_rvminus_sym.
       Qed.
 
@@ -1421,10 +1421,10 @@ Qed.
         LiRRV_simpl.
         intros.
 
-        erewrite (Linfty_norm_almost_eq _ (rvplus (rvminus LiRRV_rv_X2 LiRRV_rv_X1) (rvminus LiRRV_rv_X1 LiRRV_rv_X0))).
+        erewrite (Linfty_norm_almostR2_eq _ (rvplus (rvminus LiRRV_rv_X2 LiRRV_rv_X1) (rvminus LiRRV_rv_X1 LiRRV_rv_X0))).
         - eapply Rle_lt_trans; try eapply H.
           lra.
-        - apply almost_eq_subr.
+        - apply almostR2_eq_subr.
           rv_unfold; intros ?; lra.
       Qed.
 
@@ -1804,7 +1804,7 @@ Qed.
                  ps_P P = 1 /\
                  forall (x : Ts), P x -> rvabs (rvminus (f n) (f m)) x <=
                                          Linfty_norm (rvminus (f n) (f m))) by
-        (intros; apply (almost_abs_le_Linfty_norm (rvminus (f n) (f m)))).
+        (intros; apply (almostR2_abs_le_Linfty_norm (rvminus (f n) (f m)))).
     intros.
     assert (exists (P : event dom),
                ps_P P = 1 /\
@@ -1917,7 +1917,7 @@ End Linf.
           {dom: SigmaAlgebra Ts}
           (prts: ProbSpace dom).
 
-    Lemma uniformly_convergent_cauchy_almost 
+    Lemma uniformly_convergent_cauchy_almostR2 
           (f : nat -> Ts -> R)
           {rv : forall n, RandomVariable dom borel_sa (f n)} 
           (P : event dom) 
@@ -2001,9 +2001,9 @@ End Linf.
     apply eqq.
   Qed.
 
-  Lemma almost_ps1 {T:Type} {σ:SigmaAlgebra Ts} (ps:ProbSpace σ) (R:T->T->Prop) (E: event σ)  (x y:Ts->T) 
+  Lemma almostR2_ps1 {T:Type} {σ:SigmaAlgebra Ts} (ps:ProbSpace σ) (R:T->T->Prop) (E: event σ)  (x y:Ts->T) 
         (compat:(forall omega, E omega <-> R (x omega) (y omega))) :
-    almost ps R x y -> 
+    almostR2 ps R x y -> 
     ps_P E = 1.
   Proof.
     intros alm.
@@ -2023,7 +2023,7 @@ End Linf.
     
 
 
-  Lemma almost_bounded_Rbar_le_Linfty_norm 
+  Lemma almostR2_bounded_Rbar_le_Linfty_norm 
         (g : Ts -> R)
         {rv : RandomVariable dom borel_sa g}
         (P : event dom)
@@ -2032,7 +2032,7 @@ End Linf.
     (forall x, P x -> (rvabs g) x < eps) ->
     Rbar_le (Linfty_norm prts g) eps.
   Proof.
-    generalize (Linfty_norm_almost_le prts g (const (pos eps)))
+    generalize (Linfty_norm_almostR2_le prts g (const (pos eps)))
     ; intros HH.
     rewrite Linfty_norm_const in HH.
     rewrite Rabs_pos_eq in HH by (destruct eps; simpl; lra).
@@ -2044,7 +2044,7 @@ End Linf.
     left; auto.
   Qed.
 
-  Lemma almost_bounded_IsLinfty
+  Lemma almostR2_bounded_IsLinfty
         (g : Ts -> R)
         {rv : RandomVariable dom borel_sa g}
         (P : event dom)
@@ -2055,7 +2055,7 @@ End Linf.
   Proof.
     intros.
     eapply IsLinfty_norm_bounded.
-    eapply almost_bounded_Rbar_le_Linfty_norm; eauto.
+    eapply almostR2_bounded_Rbar_le_Linfty_norm; eauto.
   Qed.
 
   Lemma Linf_sequential_uniformly_convergent_complete
@@ -2078,21 +2078,21 @@ End Linf.
       is_lim_seq (fun n => Linfty_norm prts (rvminus (f n) g)) 0.
   Proof.
     intros.
-    generalize (uniformly_convergent_cauchy_almost f P dec H H0); intros.
+    generalize (uniformly_convergent_cauchy_almostR2 f P dec H H0); intros.
     destruct H1 as [g [? ?]]; exists g; exists H1.
     intros; split.
     - destruct (H2 posreal_one) as [N ?].
       specialize (H3 N).
       cut_to H3; try lia.
-      generalize (almost_bounded_IsLinfty _ P posreal_one H H3); intros.
+      generalize (almostR2_bounded_IsLinfty _ P posreal_one H H3); intros.
       generalize (Linfty_norm_minkowski prts (rvminus g (f N)) (f N)); intros.
       generalize (IsLinfty_plus prts (rvminus g (f N)) (f N)); intros.
       assert (rv_eq (rvplus (rvminus g (f N)) (f N)) g).
       + intro x.
         unfold rvminus, rvplus, rvopp, rvscale.
         lra.
-      + eapply (IsLinfty_almost_eq _ (rvplus (rvminus g (f N)) (f N))); try apply H6.
-        now apply almost_eq_subr.
+      + eapply (IsLinfty_almostR2_eq _ (rvplus (rvminus g (f N)) (f N))); try apply H6.
+        now apply almostR2_eq_subr.
    - apply is_lim_seq_spec; intro eps.
     generalize (cond_pos eps); intros eps_pos.
     assert (eps_half: 0 < eps/2) by lra.
@@ -2101,9 +2101,9 @@ End Linf.
     rewrite Rminus_0_r.
     specialize (H3 n H4).
     simpl in H3.
-    generalize (almost_bounded_Rbar_le_Linfty_norm (rvminus g (f n)) P (mkposreal (eps/2) eps_half) H H3); intros.
+    generalize (almostR2_bounded_Rbar_le_Linfty_norm (rvminus g (f n)) P (mkposreal (eps/2) eps_half) H H3); intros.
 
-    generalize (almost_bounded_IsLinfty (rvminus g (f n)) P (mkposreal (eps/2) eps_half) H H3); intros.
+    generalize (almostR2_bounded_IsLinfty (rvminus g (f n)) P (mkposreal (eps/2) eps_half) H H3); intros.
     rewrite <- H6 in H5.
     simpl in H5.
     rewrite Linfty_norm_minus_swap.

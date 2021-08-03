@@ -557,10 +557,10 @@ Proof.
     firstorder.
 Qed.
 
-Lemma pmf_restricted_range_almost_eq rv_X :
-  rv_almost_eq ps_pmf rv_X  (rv_restricted_range 0 (pmf_image rv_X) rv_X).
+Lemma pmf_restricted_range_almostR2_eq rv_X :
+  rv_almostR2_eq ps_pmf rv_X  (rv_restricted_range 0 (pmf_image rv_X) rv_X).
 Proof.
-  apply rv_almost_eq_alt_eq.
+  apply rv_almostR2_eq_alt_eq.
   simpl.
   unfold ps_of_pmf, proj1_sig.
   match_destr.
@@ -596,13 +596,13 @@ Qed.
 Global Instance pmf_value_IsFinite (rv_X : A -> R) :
   IsFiniteExpectation ps_pmf rv_X.
 Proof.
-  apply (IsFiniteExpectation_proper_almost _ _ _ (rv_almost_eq_rv_sym _ (pmf_restricted_range_almost_eq rv_X))).
+  apply (IsFiniteExpectation_proper_almostR2 _ _ _ (rv_almostR2_eq_rv_sym _ (pmf_restricted_range_almostR2_eq rv_X))).
 Qed.
 
 Lemma pmf_expectation_on_restricted_range rv_X :
   Expectation (Prts:=ps_pmf) rv_X = Expectation (Prts:=ps_pmf) (rv_restricted_range 0 (pmf_image rv_X) rv_X).
 Proof.
-  generalize (FiniteExpectation_proper_almost ps_pmf _ _ (pmf_restricted_range_almost_eq rv_X)).
+  generalize (FiniteExpectation_proper_almostR2 ps_pmf _ _ (pmf_restricted_range_almostR2_eq rv_X)).
   unfold FiniteExpectation, proj1_sig.
   repeat match_destr.
   congruence.

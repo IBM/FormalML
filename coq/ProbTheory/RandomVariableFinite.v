@@ -295,21 +295,21 @@ Section fe.
 
   Hint Rewrite FiniteExpectation_plus : prob.
 
-  Instance pos_fun_part_proper_almost : Proper (almost prts eq ==> almost prts eq) 
+  Instance pos_fun_part_proper_almostR2 : Proper (almostR2 prts eq ==> almostR2 prts eq) 
                                             (fun x x0 => nonneg (pos_fun_part x x0)).
   Proof.
     intros x1 x2 eqq1.
-    apply (almost_sub prts eq (fun x x0 => nonneg (pos_fun_part x x0))); trivial.
+    apply (almostR2_sub prts eq (fun x x0 => nonneg (pos_fun_part x x0))); trivial.
     intros.
     unfold pos_fun_part; simpl.
     now rewrite H.
   Qed.
 
-  Instance neg_fun_part_proper_almost : Proper (almost prts eq ==> almost prts eq) 
+  Instance neg_fun_part_proper_almostR2 : Proper (almostR2 prts eq ==> almostR2 prts eq) 
                                             (fun x x0 => nonneg (neg_fun_part x x0)).
   Proof.
     intros x1 x2 eqq1.
-    apply (almost_sub prts eq (fun x x0 => nonneg (neg_fun_part x x0))); trivial.
+    apply (almostR2_sub prts eq (fun x x0 => nonneg (neg_fun_part x x0))); trivial.
     intros.
     unfold neg_fun_part; simpl.
     now rewrite H.
@@ -328,7 +328,7 @@ Section fe.
   Lemma SimplePosExpectation_pos_zero x
         {rvx:RandomVariable dom borel_sa x} 
         {xfrf:FiniteRangeFunction x} :
-    almost prts eq x (const 0) ->
+    almostR2 prts eq x (const 0) ->
     SimpleExpectation x = 0.
   Proof.
     intros eqq.
@@ -365,12 +365,12 @@ Section fe.
       lra.
   Qed.
 
-  Lemma Expectation_simple_proper_almost x y
+  Lemma Expectation_simple_proper_almostR2 x y
         {rvx:RandomVariable dom borel_sa x}
         {rvy:RandomVariable dom borel_sa y} 
         {xfrf:FiniteRangeFunction x}
         {yfrf:FiniteRangeFunction y} :
-    almost prts eq x y ->
+    almostR2 prts eq x y ->
     SimpleExpectation x = SimpleExpectation y.
   Proof.
     intros.
@@ -399,9 +399,9 @@ Section fe.
       typeclasses eauto.
   Qed.
 
-  Lemma NonnegExpectation_almost_0 x 
+  Lemma NonnegExpectation_almostR2_0 x 
         {nnf:NonnegativeFunction x} :
-    almost prts eq x (const 0) ->
+    almostR2 prts eq x (const 0) ->
     NonnegExpectation x = 0.
   Proof.
     intros.
@@ -422,7 +422,7 @@ Section fe.
         unfold BoundedNonnegativeFunction in H0.
         destruct H0 as [? [? [? [[? ?] ?]]]].
         simpl.
-        assert (almost prts eq x2 (const 0)).
+        assert (almostR2 prts eq x2 (const 0)).
         * destruct H as [P [Pall eq_on]].
           exists P.
           split; trivial.
@@ -445,44 +445,44 @@ Section fe.
       + apply SimpleExpectation_const.
   Qed.
 
-  Lemma Expectation_almost_0 x :
-    almost prts eq x (const 0) ->
+  Lemma Expectation_almostR2_0 x :
+    almostR2 prts eq x (const 0) ->
     Expectation x = Some (Finite 0).
   Proof.
     intros.
     unfold Expectation.
-    assert (almost prts eq (fun omega => nonneg(pos_fun_part x omega)) (const 0)).
+    assert (almostR2 prts eq (fun omega => nonneg(pos_fun_part x omega)) (const 0)).
     {
-      rewrite (pos_fun_part_proper_almost _ _ H).
+      rewrite (pos_fun_part_proper_almostR2 _ _ H).
       unfold const; simpl.
       unfold Rmax.
       match_destr; try lra.
       reflexivity.
     } 
-    assert (almost prts eq (fun omega => nonneg(neg_fun_part x omega)) (const 0)).
+    assert (almostR2 prts eq (fun omega => nonneg(neg_fun_part x omega)) (const 0)).
     {
-      rewrite (neg_fun_part_proper_almost _ _ H).
+      rewrite (neg_fun_part_proper_almostR2 _ _ H).
       unfold const; simpl.
       unfold Rmax.
       match_destr; try lra.
       reflexivity.
     }
-    rewrite (NonnegExpectation_almost_0 _ H0).
-    rewrite (NonnegExpectation_almost_0 _ H1).
+    rewrite (NonnegExpectation_almostR2_0 _ H0).
+    rewrite (NonnegExpectation_almostR2_0 _ H1).
     simpl; repeat f_equal.
     lra.
   Qed.
   
-  Lemma IsFiniteExpectation_proper_almost rv_X1 rv_X2
+  Lemma IsFiniteExpectation_proper_almostR2 rv_X1 rv_X2
         {rrv1:RandomVariable dom borel_sa rv_X1}
         {rrv2:RandomVariable dom borel_sa rv_X2}
         {isfe1:IsFiniteExpectation rv_X1}
     :
-      almost prts eq rv_X1 rv_X2 ->
+      almostR2 prts eq rv_X1 rv_X2 ->
       IsFiniteExpectation rv_X2.
   Proof.
     intros.
-    generalize (Expectation_almost_0 (rvminus rv_X1 rv_X2))
+    generalize (Expectation_almostR2_0 (rvminus rv_X1 rv_X2))
     ; intros HH.
     cut_to HH.
     - assert (isfe2:IsFiniteExpectation (rvminus rv_X1 rv_X2))
@@ -495,30 +495,30 @@ Section fe.
       intros a.
       rv_unfold; lra.
     -  rewrite H.
-       apply almost_eq_subr.
+       apply almostR2_eq_subr.
        rv_unfold; intros ?.
        lra.
   Qed.
 
-  Lemma FiniteExpectation_proper_almost rv_X1 rv_X2
+  Lemma FiniteExpectation_proper_almostR2 rv_X1 rv_X2
         {rrv1:RandomVariable dom borel_sa rv_X1}
         {rrv2:RandomVariable dom borel_sa rv_X2}
         {isfe1:IsFiniteExpectation rv_X1}
         {isfe2:IsFiniteExpectation rv_X2}
     :
-      almost prts eq rv_X1 rv_X2 ->
+      almostR2 prts eq rv_X1 rv_X2 ->
       FiniteExpectation rv_X1 = FiniteExpectation rv_X2.
 
   Proof.
     intros.
-    generalize (Expectation_almost_0 (rvminus rv_X1 rv_X2))
+    generalize (Expectation_almostR2_0 (rvminus rv_X1 rv_X2))
     ; intros HH.
     cut_to HH.
     - apply (Expectation_FiniteExpectation _ _ (isfe:=IsFiniteExpectation_minus _ _)) in HH.
       rewrite FiniteExpectation_minus in HH.
       lra.
     - rewrite H.
-      apply almost_eq_subr.
+      apply almostR2_eq_subr.
       rv_unfold; intros ?.
       lra.
   Qed.
@@ -757,7 +757,7 @@ Section fe.
         {pofrf :NonnegativeFunction X}
         {isfe:IsFiniteExpectation X} :
     FiniteExpectation X = 0%R ->
-    almost prts eq X (const 0).
+    almostR2 prts eq X (const 0).
   Proof.
     intros eqq1.
     apply (FiniteExpectation_zero_pos' X) in eqq1.

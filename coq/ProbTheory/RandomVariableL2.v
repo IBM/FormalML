@@ -100,10 +100,10 @@ Section L2.
 
     intros x1 x2 eqq1 y1 y2 eqq2.
     unfold L2RRVinner.
-    assert (eqq:almost prts eq (rvmult x1 y1) (rvmult x2 y2)).
+    assert (eqq:almostR2 prts eq (rvmult x1 y1) (rvmult x2 y2)).
     - LpRRV_simpl.
-      now apply almost_eq_mult_proper.
-    - eapply FiniteExpectation_proper_almost; try eapply eqq
+      now apply almostR2_eq_mult_proper.
+    - eapply FiniteExpectation_proper_almostR2; try eapply eqq
       ; try typeclasses eauto.
   Qed.    
 
@@ -765,11 +765,11 @@ Proof.
   now apply sub.
 Qed.
 
-Lemma almost_eq_plus_inv {x y z} :
-  almost prts eq z (rvplus x y) ->
+Lemma almostR2_eq_plus_inv {x y z} :
+  almostR2 prts eq z (rvplus x y) ->
   exists x' y',
-    almost prts eq x x' /\
-    almost prts eq y y' /\ 
+    almostR2 prts eq x x' /\
+    almostR2 prts eq y y' /\ 
     rv_eq z (rvplus x' y').
 Proof.
   intros [p [pone px]].
@@ -793,10 +793,10 @@ Proof.
     + lra.
 Qed.
 
-Lemma almost_eq_opp_inv {x z} :
-  almost prts eq z (rvopp x) ->
+Lemma almostR2_eq_opp_inv {x z} :
+  almostR2 prts eq z (rvopp x) ->
   exists x',
-    almost prts eq x x' /\
+    almostR2 prts eq x x' /\
     rv_eq z (rvopp x').
 Proof.
   intros [p [pone px]].

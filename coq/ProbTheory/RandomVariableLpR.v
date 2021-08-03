@@ -22,7 +22,7 @@ Set Bullet Behavior "Strict Subproofs".
 (** This defines the space Lp (https://en.wikipedia.org/wiki/Lp_space) for finite p. 
     This is the space of RandomVariables, where the pth power of its absolute value
     has a finite expectation, module (quotiented by) the a.e relation.
-    The a.e. (almost equal) relation is an equivalence relation  that equates random variables
+    The a.e. (almostR2 equal) relation is an equivalence relation  that equates random variables
     that are equal with probablity 1.
 *)
 (**
@@ -70,17 +70,17 @@ Section Lp.
     now rewrite eqq1, eqq2.
   Qed.
 
-  Lemma IsLp_proper_almost n rv_X1 rv_X2
+  Lemma IsLp_proper_almostR2 n rv_X1 rv_X2
         {rrv1:RandomVariable dom borel_sa rv_X1}
         {rrv2:RandomVariable dom borel_sa rv_X2}
         {islp1:IsLp n rv_X1}
     :
-      almost prts eq rv_X1 rv_X2 ->
+      almostR2 prts eq rv_X1 rv_X2 ->
       IsLp n rv_X2.
   Proof.
     unfold IsLp in *.
     red; intros.
-    eapply (IsFiniteExpectation_proper_almost _ (rvpower (rvabs rv_X1) (const n)))
+    eapply (IsFiniteExpectation_proper_almostR2 _ (rvpower (rvabs rv_X1) (const n)))
     ; try eapply islp; trivial
     ; try typeclasses eauto.
     now rewrite H.
@@ -102,34 +102,34 @@ Section Lp.
     now rewrite eqq2.
   Qed.
 
-  Global Instance almost_eq_Rbar_power_proper :
-   Proper (almost prts eq ==> eq ==> almost prts eq) Rbar_rvpower.
+  Global Instance almostR2_eq_Rbar_power_proper :
+   Proper (almostR2 prts eq ==> eq ==> almostR2 prts eq) Rbar_rvpower.
 Proof.
   intros x1 x2 eqq1 ? n ?; subst.
-  apply (almost_sub prts eq (fun x => Rbar_rvpower x n)); trivial.
+  apply (almostR2_sub prts eq (fun x => Rbar_rvpower x n)); trivial.
   intros.
   unfold Rbar_rvpower, Rbar_power.
   now rewrite H.
 Qed.
 
-Global Instance almost_eq_Rbar_abs_proper :
-  Proper (almost prts eq ==> almost prts eq) Rbar_rvabs.
+Global Instance almostR2_eq_Rbar_abs_proper :
+  Proper (almostR2 prts eq ==> almostR2 prts eq) Rbar_rvabs.
 Proof.
-  eapply almost_sub; eauto; try typeclasses eauto.
+  eapply almostR2_sub; eauto; try typeclasses eauto.
   intros.
   unfold Rbar_rvabs.
   now rewrite H.
 Qed.
 
 
-    Lemma Rbar_Expectation_proper_almost (rv_X1 rv_X2 : Ts -> Rbar)
+    Lemma Rbar_Expectation_proper_almostR2 (rv_X1 rv_X2 : Ts -> Rbar)
         (rv1pos: Rbar_NonnegativeFunction rv_X1)
         (rv2pos: Rbar_NonnegativeFunction rv_X2):
-        almost prts eq rv_X1 rv_X2 ->
+        almostR2 prts eq rv_X1 rv_X2 ->
         Rbar_NonnegExpectation rv_X1 = 
         Rbar_NonnegExpectation rv_X2.
   Proof.
-    unfold almost; intros.
+    unfold almostR2; intros.
     destruct H as [P [? ?]].
     assert (dec:forall x: Ts, {P x} + {~ P x}).
     {
@@ -148,17 +148,17 @@ Qed.
     now apply H0.
   Qed.
 
-  Lemma IsLp_Rbar_proper_almost n (rv_X1 rv_X2 : Ts -> Rbar)
+  Lemma IsLp_Rbar_proper_almostR2 n (rv_X1 rv_X2 : Ts -> Rbar)
         {islp1:IsLp_Rbar n rv_X1} :
-      almost prts eq rv_X1 rv_X2 ->
+      almostR2 prts eq rv_X1 rv_X2 ->
       IsLp_Rbar n rv_X2.
   Proof.
     unfold IsLp_Rbar in *; intros.
     assert (Rbar_NonnegativeFunction
               (fun omega : Ts => Rbar_power (Rbar_abs (rv_X1 omega)) n)) by
         apply power_abs_pos.
-    erewrite Rbar_Expectation_proper_almost; trivial.
-    unfold almost in *.
+    erewrite Rbar_Expectation_proper_almostR2; trivial.
+    unfold almostR2 in *.
     destruct H as [P [? ?]].
     exists P.
     split; trivial.
@@ -471,13 +471,13 @@ Qed.
       := rv_eq (LpRRV_rv_X rv1) (LpRRV_rv_X rv2).
 
     Definition LpRRV_eq (rv1 rv2:LpRRV)
-      := almost prts eq rv1 rv2.
+      := almostR2 prts eq rv1 rv2.
 
     Global Instance LpRRV_seq_eq : subrelation LpRRV_seq LpRRV_eq.
     Proof.
       red; unfold LpRRV_seq, LpRRV_eq, rv_eq.
       intros x y eqq.
-      now apply almost_eq_subr.
+      now apply almostR2_eq_subr.
     Qed.      
     
     Global Instance LpRRV_seq_equiv : Equivalence (LpRRV_seq).
@@ -581,7 +581,7 @@ Qed.
     Proof.
       unfold Proper, respectful.
       intros x y eqq.
-      now apply almost_eq_abs_proper.
+      now apply almostR2_eq_abs_proper.
     Qed.
 
     Section quoted.
@@ -663,7 +663,7 @@ Qed.
       unfold Proper, respectful, LpRRV_eq.
       intros [x1??] [x2??] eqqx [y1??] [y2??] eqqy.
       simpl in *.
-      now apply almost_eq_plus_proper.
+      now apply almostR2_eq_plus_proper.
     Qed.
 
     Definition LpRRVminus (rv1 rv2:LpRRV p) : LpRRV p
@@ -710,7 +710,7 @@ Qed.
     Proof.
       red; intros.
       LpRRV_simpl.
-      apply almost_eq_subr; intros ?.
+      apply almostR2_eq_subr; intros ?.
       unfold rvplus; lra.
     Qed.
     
@@ -718,7 +718,7 @@ Qed.
     Proof.
       red; intros.
       LpRRV_simpl.
-      apply almost_eq_subr; intros ?.
+      apply almostR2_eq_subr; intros ?.
       unfold rvplus.
       lra.
     Qed.
@@ -727,7 +727,7 @@ Qed.
     Proof.
       red; intros.
       LpRRV_simpl.
-      apply almost_eq_subr; intros ?.
+      apply almostR2_eq_subr; intros ?.
       unfold rvplus, const.
       lra.
     Qed.
@@ -736,7 +736,7 @@ Qed.
     Proof.
       red; intros.
       LpRRV_simpl.
-      apply almost_eq_subr; intros ?.
+      apply almostR2_eq_subr; intros ?.
       unfold rvplus, rvopp, rvscale, const.
       lra.
     Qed.
@@ -746,7 +746,7 @@ Qed.
     Proof.
       red; intros.
       LpRRV_simpl.
-      apply almost_eq_subr; intros ?.
+      apply almostR2_eq_subr; intros ?.
       unfold rvplus, rvopp, rvscale, const, mult; simpl.
       lra.
     Qed.
@@ -756,7 +756,7 @@ Qed.
     Proof.
       red; intros.
       LpRRV_simpl.
-      apply almost_eq_subr; intros ?.
+      apply almostR2_eq_subr; intros ?.
       unfold rvplus, rvopp, rvscale, const, mult, one; simpl.
       lra.
     Qed.
@@ -766,7 +766,7 @@ Qed.
     Proof.
       red; intros.
       LpRRV_simpl.
-      apply almost_eq_subr; intros ?.
+      apply almostR2_eq_subr; intros ?.
       unfold rvplus, rvopp, rvscale, const, mult; simpl.
       lra.
     Qed.
@@ -776,7 +776,7 @@ Qed.
     Proof.
       red; intros.
       LpRRV_simpl.
-      apply almost_eq_subr; intros ?.
+      apply almostR2_eq_subr; intros ?.
       unfold rvplus, rvopp, rvscale, const, mult; simpl.
       lra.
     Qed.
@@ -909,7 +909,7 @@ Qed.
   End packednonneg.
 
     (** At this point, we will be spliting into three cases:
-        p = 0       => This is the space of Random Variables modulo almost-equal.  
+        p = 0       => This is the space of Random Variables modulo almostR2-equal.  
                       We already showed what we know about it.  (It is a ModuleSpace)
         1 <= p < ∞  => This is a normed vector space
         0 < p < 1   => This is a metric space.
@@ -929,7 +929,7 @@ Qed.
         unfold Proper, respectful, LpRRVnorm, LpRRV_eq.
         intros.
         f_equal.
-        eapply FiniteExpectation_proper_almost
+        eapply FiniteExpectation_proper_almostR2
         ; try typeclasses eauto.
         rewrite H.
         reflexivity.
@@ -941,14 +941,14 @@ Qed.
         now rewrite H.
       Qed.
 
-      Lemma almost0_lpf_almost0 (rv_X:Ts->R)
+      Lemma almostR20_lpf_almostR20 (rv_X:Ts->R)
             {rrv:RandomVariable dom borel_sa rv_X}
             {isfe: IsFiniteExpectation prts (rvpower (rvabs rv_X) (const p))}:
-        almost prts eq rv_X (const 0) <->
-        almost prts eq (rvpower (rvabs rv_X) (const p)) (const 0).
+        almostR2 prts eq rv_X (const 0) <->
+        almostR2 prts eq (rvpower (rvabs rv_X) (const p)) (const 0).
       Proof.
         intros.
-      unfold almost in *.
+      unfold almostR2 in *.
       split; intros [P [Pall eq_on]]
       ; exists P; split; trivial
       ; intros a Pa
@@ -963,22 +963,22 @@ Qed.
       Qed.
 
       (* If the norm is 0 then p is a.e. 0 *)
-      Theorem LpFin0_almost0 (rv_X:Ts->R)
+      Theorem LpFin0_almostR20 (rv_X:Ts->R)
             {rrv:RandomVariable dom borel_sa rv_X}
             {isfe: IsFiniteExpectation prts (rvpower (rvabs rv_X) (const p))}:
         FiniteExpectation prts (rvpower (rvabs rv_X) (const p)) = 0 ->
-        almost prts eq rv_X (const 0).
+        almostR2 prts eq rv_X (const 0).
       Proof.
         intros fin0.
         eapply FiniteExpectation_zero_pos in fin0
         ; try typeclasses eauto.
-        now apply almost0_lpf_almost0
+        now apply almostR20_lpf_almostR20
         ; try typeclasses eauto.
       Qed.
 
       Lemma LpRRV_norm0 (x:LpRRV p) :
         LpRRVnorm x = 0 ->
-        almost prts eq x (LpRRVzero (p:=p)).
+        almostR2 prts eq x (LpRRVzero (p:=p)).
       Proof.
         unfold LpRRVnorm, LpRRVzero, LpRRVconst.
         intros.
@@ -986,7 +986,7 @@ Qed.
         generalize (FiniteExpectation_Lp_pos p x); intros.
         assert (FiniteExpectation prts (rvpower (rvabs x) (const p)) = 0)
           by now apply Rle_antisym.
-        now apply  LpFin0_almost0 in H1; try typeclasses eauto.
+        now apply  LpFin0_almostR20 in H1; try typeclasses eauto.
       Qed.
 
     End normish.
@@ -1126,11 +1126,11 @@ Qed.
               rewrite power0_Sbase
                 by (apply Rinv_neq_0_compat; lra).
               symmetry in H0.
-              eapply LpFin0_almost0 in H0; try typeclasses eauto.
-              rewrite (FiniteExpectation_proper_almost prts (rvpower (rvabs (rvplus x y)) (const p)) (rvpower (rvabs x) (const p))).
+              eapply LpFin0_almostR20 in H0; try typeclasses eauto.
+              rewrite (FiniteExpectation_proper_almostR2 prts (rvpower (rvabs (rvplus x y)) (const p)) (rvpower (rvabs x) (const p))).
               + lra.
               + rewrite H0.
-                apply almost_eq_subr.
+                apply almostR2_eq_subr.
                 intros ?.
                 rv_unfold.
                 repeat f_equal.
@@ -1140,11 +1140,11 @@ Qed.
           rewrite power0_Sbase
             by (apply Rinv_neq_0_compat; lra).
           symmetry in H.
-          eapply LpFin0_almost0 in H; try typeclasses eauto.
-          rewrite (FiniteExpectation_proper_almost prts (rvpower (rvabs (rvplus x y)) (const p)) (rvpower (rvabs y) (const p))).
+          eapply LpFin0_almostR20 in H; try typeclasses eauto.
+          rewrite (FiniteExpectation_proper_almostR2 prts (rvpower (rvabs (rvplus x y)) (const p)) (rvpower (rvabs y) (const p))).
           + lra.
           + rewrite H.
-            apply almost_eq_subr.
+            apply almostR2_eq_subr.
             intros a.
             rv_unfold.
             repeat f_equal.
@@ -1293,7 +1293,7 @@ Qed.
       Proof.
         unfold LpRRVminus, LpRRVplus, LpRRVopp.
         simpl.
-        apply almost_eq_subr.
+        apply almostR2_eq_subr.
         intros ?.
         reflexivity.
       Qed.
@@ -1395,7 +1395,7 @@ Qed.
         - unfold sum_n.
           rewrite sum_n_n.
           assert (LpRRV_eq  (LpRRVsum f 0) (f 0%nat)).
-          + apply almost_eq_subr.
+          + apply almostR2_eq_subr.
             intro x.
             unfold LpRRVsum; simpl.
             unfold rvsum.
@@ -1403,7 +1403,7 @@ Qed.
           + rewrite H; lra.
         - rewrite sum_n_Sm; [|lia].
           assert (LpRRV_eq (LpRRVsum f (S n)) (LpRRVplus (LpRRVsum f n) (f (S n)))).
-          + apply almost_eq_subr.
+          + apply almostR2_eq_subr.
             intro x.
             unfold LpRRVsum; simpl.
             unfold rvsum, sum_n.
@@ -2913,7 +2913,7 @@ Section complete.
          intuition.
    Qed.
 
-  Lemma finite_Rbar_NonnegExpectation_almost_finite
+  Lemma finite_Rbar_NonnegExpectation_almostR2_finite
         (f : Ts -> Rbar)
         (rv : RandomVariable dom Rbar_borel_sa f) 
         (fpos : Rbar_NonnegativeFunction f) :
@@ -3002,14 +3002,14 @@ Section complete.
     - now apply Rbar_neg_fun_part_rv.      
   Qed.
 
-  Lemma finite_Rbar_Expectation_almost_finite
+  Lemma finite_Rbar_Expectation_almostR2_finite
         (f : Ts -> Rbar)
         (rv : RandomVariable dom Rbar_borel_sa f) :
     Rbar_IsFiniteExpectation f ->
     ps_P (exist sa_sigma _ (sa_finite_Rbar f rv)) = 1.
   Proof.
     intros.
-    generalize (finite_Rbar_NonnegExpectation_almost_finite (Rbar_rvabs f) (Rbar_rvabs_rv f) (Rbar_rvabs_nnf f)); intros.
+    generalize (finite_Rbar_NonnegExpectation_almostR2_finite (Rbar_rvabs f) (Rbar_rvabs_rv f) (Rbar_rvabs_nnf f)); intros.
     assert (pre_event_equiv
               (fun x : Ts => is_finite (Rbar_rvabs f x))
               (fun x : Ts => is_finite (f x))).
@@ -3347,7 +3347,7 @@ Section complete.
     lra.
   Qed.
 
-  Lemma Rbar_IsLp_Almost_finite (f : Ts -> Rbar) (n : R)
+  Lemma Rbar_IsLp_almostR2_finite (f : Ts -> Rbar) (n : R)
         {rrv:RandomVariable dom Rbar_borel_sa f} :
     1 <= n ->
     IsLp_Rbar prts n f ->
@@ -3355,7 +3355,7 @@ Section complete.
   Proof.
     intros.
     apply Rbar_IsLp_IsFiniteExpectation in H0; trivial.
-    now apply finite_Rbar_Expectation_almost_finite.
+    now apply finite_Rbar_Expectation_almostR2_finite.
   Qed.
 
   Instance picker_rv
@@ -3429,7 +3429,7 @@ Section complete.
     exists (exist _ _ (sa_finite_Rbar limpick rv)).
     split.
     - subst limpick.
-      apply Rbar_IsLp_Almost_finite with (n := p); trivial.
+      apply Rbar_IsLp_almostR2_finite with (n := p); trivial.
     - intros.
       apply H0.
   Qed.
@@ -3478,7 +3478,7 @@ Section complete.
     exists (exist _ _ (sa_finite_Rbar limpick rv)).
     split.
     - subst limpick.
-      apply Rbar_IsLp_Almost_finite with (n := p); trivial.
+      apply Rbar_IsLp_almostR2_finite with (n := p); trivial.
     - intros.
       apply H0.
   Qed.
@@ -3688,7 +3688,7 @@ Section complete.
         match_destr; try tauto; lra.
     - generalize (cauchy_filter_Rbar_rvlim1 F PF cF); intros.
       apply IsLp_Rbar_IsLp.
-      apply (IsLp_Rbar_proper_almost prts _ (Rbar_rvlim (fun n : nat => LpRRV_lim_picker F PF cF (S n))))
+      apply (IsLp_Rbar_proper_almostR2 prts _ (Rbar_rvlim (fun n : nat => LpRRV_lim_picker F PF cF (S n))))
       ; try typeclasses eauto; trivial.
       exists P. split; trivial; intros a Pa.
       specialize (H0 _ Pa).
@@ -4214,7 +4214,7 @@ Section complete.
     easy.
   Qed.
 
-  Lemma norm_rvminus_rvlim_almost 
+  Lemma norm_rvminus_rvlim_almostR2 
         (f : nat -> LpRRV prts p) 
         (rvl : RandomVariable dom borel_sa (rvlim f)) 
         (isl : IsLp prts p (rvlim f))
@@ -4346,7 +4346,7 @@ Section complete.
     apply H1.
   Qed.
 
-  Lemma LpRRVnorm_rvminus_rvlim_almost 
+  Lemma LpRRVnorm_rvminus_rvlim_almostR2 
         (F : (LpRRV_UniformSpace prts pbig -> Prop) -> Prop)
         (PF:ProperFilter F)
         (cF:cauchy F)
@@ -4364,7 +4364,7 @@ Section complete.
     unfold cauchy in cF.
     generalize (cauchy_filter_rvlim_finite2 prts pbig F PF cF); intros.
     destruct X as [P [dec [? [? ?]]]].
-    apply norm_rvminus_rvlim_almost  with (P := P); trivial.
+    apply norm_rvminus_rvlim_almostR2  with (P := P); trivial.
     - intros.
       specialize (H0 x).
       rewrite ex_finite_lim_seq_ext in H0.
@@ -4410,7 +4410,7 @@ Section complete.
   Definition LpRRVindicator {P : event dom} (dec : forall x, {P x} + {~ P x}) (rv : LpRRV prts p) : LpRRV prts p
     :=  pack_LpRRV prts (rvmult (EventIndicator dec) rv).
 
-  Instance rvlim_rv_almost_P 
+  Instance rvlim_rv_almostR2_P 
            (F : (LpRRV_UniformSpace prts pbig -> Prop) -> Prop)
            (PF:ProperFilter F)
            (cF:cauchy F)
@@ -4453,10 +4453,10 @@ Section complete.
     intros.
     unfold LpRRVnorm.
     f_equal.
-    apply FiniteExpectation_proper_almost.
+    apply FiniteExpectation_proper_almostR2.
     typeclasses eauto.
     typeclasses eauto.
-    unfold almost.
+    unfold almostR2.
     exists P.
     split; trivial.
     intros.
@@ -4467,7 +4467,7 @@ Section complete.
     - tauto.
   Qed.
 
-  Lemma LpRRVnorm_rvminus_rvlim_almost_P
+  Lemma LpRRVnorm_rvminus_rvlim_almostR2_P
         (F : (LpRRV_UniformSpace prts pbig -> Prop) -> Prop)
         (PF:ProperFilter F)
         (cF:cauchy F)
@@ -4488,15 +4488,15 @@ Section complete.
     destruct (cauchy_filter_rvlim_finite2 prts pbig F PF cF)
              as [P [dec [? [? ?]]]].
     intros.
-    exists (rvlim_rv_almost_P _ _ _ _ H0).
+    exists (rvlim_rv_almostR2_P _ _ _ _ H0).
     exists H1.
-    generalize ( norm_rvminus_rvlim_almost f); intros.
+    generalize ( norm_rvminus_rvlim_almostR2 f); intros.
     simpl.
     split; trivial.
     split; trivial.
     intros.
     subst f.
-    specialize (H2 (rvlim_rv_almost_P F PF cF dec H0)).
+    specialize (H2 (rvlim_rv_almostR2_P F PF cF dec H0)).
     specialize (H2 H1 P H).
     apply H2; [intros; apply H0 |].
     intros.
@@ -4557,7 +4557,7 @@ Section complete.
                          (Hierarchy.ball (M := LpRRV_UniformSpace prts pbig) 
                                          (LpRRV_lim_picker prts pbig F PF cF (S n)) eps (LpRRV_lim prts pbig F)).
      Proof.
-       generalize (LpRRVnorm_rvminus_rvlim_almost_P F PF cF eps); intros.
+       generalize (LpRRVnorm_rvminus_rvlim_almostR2_P F PF cF eps); intros.
        match_case_in H; intros.
        rewrite H0 in H.
        match_destr_in H.
@@ -4584,10 +4584,10 @@ Section complete.
                      (pack_LpRRV prts (rvlim (fun n : nat => rvmult (EventIndicator x0) (LpRRV_lim_picker prts pbig F PF cF (S n)))))
                      (LpRRVindicator x0 (LpRRV_lim_picker prts pbig F PF cF (S n))))) (const p)))).
        {
-         apply FiniteExpectation_proper_almost.       
+         apply FiniteExpectation_proper_almostR2.       
          typeclasses eauto.
          typeclasses eauto.
-         unfold almost.
+         unfold almostR2.
          exists x.
          split; trivial.
          intros.
