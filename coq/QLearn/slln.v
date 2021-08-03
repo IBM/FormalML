@@ -894,6 +894,25 @@ Proof.
     lia.
  Qed.
 
+Lemma expec_cross_zero_sum_shift (X : nat -> Ts -> R) (m:nat)
+      {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
+      {frf : forall (n:nat), FiniteRangeFunction (X n)}
+      (HC : forall n, 
+          SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
+  forall (j k : nat), 
+    (j < k)%nat ->
+    SimpleExpectation(rvsum (fun n => rvmult (X (n+m)%nat) (X (k+m)%nat)) j) = 0.
+Proof.
+  intros.
+  rewrite SimpleExpectation_rvsum.
+  rewrite sum_n_ext_loc with (b := fun _ => 0).
+  - rewrite sum_n_const.
+    lra.
+  - intros.
+    apply expec_cross_zero; trivial.
+    lia.
+ Qed.
+
 Lemma rvsum_distr_r {n} (X : nat -> Ts -> R) (f : Ts -> R) :
   rv_eq (rvsum (fun j => rvmult (X j) f) n) (rvmult (rvsum X n) f).
 Proof.
@@ -919,6 +938,23 @@ Lemma expec_cross_zero_sum2 (X : nat -> Ts -> R)
 Proof.
   intros.
   generalize (expec_cross_zero_sum X HC j k H); intros.
+  rewrite <- H0.
+  apply SimpleExpectation_ext.
+  symmetry.
+  apply rvsum_distr_r.
+Qed.
+
+Lemma expec_cross_zero_sum2_shift (X : nat -> Ts -> R) (m : nat)
+      {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
+      {frf : forall (n:nat), FiniteRangeFunction (X n)}
+      (HC : forall n, 
+          SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
+  forall (j k : nat), 
+    (j < k)%nat ->
+    SimpleExpectation (rvmult (rvsum (fun n => X (n + m)%nat) j) (X (k+m)%nat)) = 0.
+Proof.
+  intros.
+  generalize (expec_cross_zero_sum_shift X m HC j k H); intros.
   rewrite <- H0.
   apply SimpleExpectation_ext.
   symmetry.
@@ -2048,6 +2084,47 @@ Proof.
       ring.
 Qed.
 
+Lemma var_sum_cross_0_offset (X : nat -> Ts -> R) (m : nat)
+      {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
+      {frf : forall (n:nat), FiniteRangeFunction (X n)}
+      (HC : forall n, 
+          SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
+  let Xm := fun n => X (n + m)%nat in
+  forall j, SimpleExpectation(rvsqr (rvsum Xm j)) =
+            sum_n (fun n => SimpleExpectation (rvsqr (X (n + m)%nat))) j.
+Proof.
+  intros.
+  induction j.
+  - assert (rv_eq (rvsqr (rvsum Xm 0%nat)) (rvsqr (X m))). 
+    + intro x.
+      unfold Xm, rvsqr, rvsum; simpl.
+      now rewrite sum_O.
+    + rewrite (SimpleExpectation_ext H).
+      now rewrite sum_O.
+  - rewrite sum_Sn.
+    unfold plus; simpl.
+    assert (rv_eq (rvsqr (rvsum Xm (S j)))
+                  (rvplus (rvsqr (rvsum Xm j))
+                          (rvplus
+                             (rvscale 2
+                                      (rvmult (rvsum Xm j) (X ((S j)+m)%nat)))
+                             (rvsqr (X ((S j)+m)%nat))))).
+    + intro x.
+      unfold Xm, rvsqr, rvplus, rvsum.
+      rewrite sum_Sn.
+      unfold plus; simpl.
+      unfold Rsqr, rvscale, rvmult.
+      ring.
+    + rewrite (SimpleExpectation_ext H).
+      rewrite <- sumSimpleExpectation.
+      rewrite <- sumSimpleExpectation.
+      rewrite <- scaleSimpleExpectation.
+      rewrite (expec_cross_zero_sum2_shift X m HC); try lia.
+      rewrite <- IHj.
+      ring_simplify.
+      reflexivity.
+Qed.
+
 Lemma sa_sigma_cauchy (X : nat -> Ts -> R) (eps:posreal) (N : nat) 
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)} :
   sa_sigma (fun omega =>
@@ -2215,16 +2292,11 @@ Proof.
     replace (Rbar.Finite (/ (Rsqr (pos eps)))) with (Rbar.Finite (/ (pos (mkposreal _ (sqr_pos eps))))) by now simpl.
     rewrite Rbar_mult_div_pos.
     apply Rbar_div_pos_le.
-    generalize (var_sum_cross_0 X HC); intros.
-    assert (forall j : nat, SimpleExpectation (rvsqr (rvsum (fun k => X (k + m)%nat) j)) = sum_n (fun n : nat => SimpleExpectation (rvsqr (X (n + m)%nat))) j).
-    {
-      intros.
-      admit.
-    }
+    generalize (var_sum_cross_0_offset X m HC); intros.
+    simpl in H2.
     rewrite Lim_seq_ext with (v := sum_n (fun n : nat => SimpleExpectation (rvsqr (X (n + m)%nat)))).
     + apply Lim_seq_sup_le.
-    + apply H3.
-
+    + apply H2.
 Admitted.
 
   Lemma Ash_6_2_1_helper2 (X : nat -> Ts -> R) (eps : posreal)
