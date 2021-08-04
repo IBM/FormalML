@@ -2470,7 +2470,6 @@ Qed.
 Lemma is_lim_seq_LimSup_shift_0 {a : nat -> R} (ha : ex_series a) :
   is_lim_seq (fun m => LimSup_seq (sum_n (fun n => a((n+m)%nat)))) 0.
 Proof.
-  generalize (ex_series_lim_0 a ha); intros HHa.
   assert (forall m:nat, LimSup_seq (sum_n (fun n => a (n+m)%nat)) = Series (fun n => a(n+m)%nat)).
   {
     intros m.
