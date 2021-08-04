@@ -1,11 +1,10 @@
 Require Import Lra Lia Reals RealAdd RandomVariableL2 Coquelicot.Coquelicot.
-Require Import Morphisms Finite List ListAdd Permutation.
+Require Import Morphisms Finite List ListAdd Permutation infprod.
 Require Import Sums SimpleExpectation.
 Require Import EquivDec.
 Require Import Classical.
 Require Import ClassicalChoice.
 Require Import IndefiniteDescription ClassicalDescription.
-
 
 Set Bullet Behavior "Strict Subproofs".
 Set Default Goal Selector "!".
@@ -178,6 +177,16 @@ Proof.
   split; intros.
   + eapply ex_lim_seq_ext; eauto.
   + symmetry in H. eapply ex_lim_seq_ext; eauto.
+Qed.
+
+Global Instance ex_series_proper (K : AbsRing) (V : NormedModule K):
+  Proper (pointwise_relation _ eq ==> iff) (@ex_series K V).
+Proof.
+  unfold Proper,pointwise_relation,respectful; intros.
+  split; intros.
+  + now apply ex_series_ext with (a := x).
+  + apply ex_series_ext with (a := y); trivial.
+    now congruence.
 Qed.
 
 Lemma is_lim_seq_sub_zero (x : nat -> R) (x0 : R) :
@@ -1640,7 +1649,9 @@ Qed.
                                      (fun n : nat => Rabs (rvsum (fun k => X (k + m)%nat) n x)) = c.
   Proof.
     intros.
-Admitted.
+    setoid_rewrite Rmax_list_seq_bounded_nat.
+
+  Admitted.
 (*
     generalize (filtration_history_rvsum_var_const_fun X eps j Q H); intros.
     destruct H0 as [f ?].
@@ -2453,20 +2464,33 @@ Proof.
     rewrite Lim_seq_ext with (v := sum_n (fun n : nat => SimpleExpectation (rvsqr (X (n + m)%nat)))).
     + apply Lim_seq_sup_le.
     + apply H1.
- Qed.
+Qed.
 
+(* TODO(Kody) : Move this and ``zerotails`` in infprod somewhere else.  *)
 Lemma is_lim_seq_LimSup_shift_0 {a : nat -> R} (ha : ex_series a) :
   is_lim_seq (fun m => LimSup_seq (sum_n (fun n => a((n+m)%nat)))) 0.
 Proof.
-  generalize (ex_series_is_lim_seq a ha); intros.
-  setoid_rewrite LimSup_InfSup_seq.
-Admitted.
+  generalize (ex_series_lim_0 a ha); intros HHa.
+  assert (forall m:nat, LimSup_seq (sum_n (fun n => a (n+m)%nat)) = Series (fun n => a(n+m)%nat)).
+  {
+    intros m.
+    rewrite ex_series_incr_n with (n:=m) in ha.
+    assert (ha' : ex_series (fun k => a (k + m)%nat))
+    by (apply ex_series_ext with (a0 := (fun k => a (m+k)%nat)); [intros; f_equal; lia|trivial]).
+    generalize (ex_series_is_lim_seq (fun n => a (n+m)%nat) ha'); intros.
+    apply is_LimSup_seq_unique. now apply is_lim_LimSup_seq.
+  }
+  setoid_rewrite H; clear H.
+  generalize (zerotails a ha); intros.
+  rewrite is_lim_seq_incr_1.
+  apply is_lim_seq_ext with (u := fun n => Series (fun k => a (S (n+k)%nat))); [|trivial].
+  intros; apply Series_ext.
+  intros; f_equal; lia.
+Qed.
 
-  Lemma Ash_6_2_1_helper2 (X : nat -> Ts -> R) (eps : posreal)
+  Lemma Ash_6_2_1_helper2 (X : nat -> Ts -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
-      {frf : forall (n:nat), FiniteRangeFunction (X (n))}
-      (HC : forall n, 
-          SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
+      {frf : forall (n:nat), FiniteRangeFunction (X (n))}:
     ex_series (fun n => SimpleExpectation (rvsqr (X n))) ->
     is_lim_seq (fun m => LimSup_seq (sum_n (fun n =>
                                            SimpleExpectation (rvsqr (X (n + m)%nat))))) 0.
@@ -2474,13 +2498,3 @@ Admitted.
     intros ha.
     apply (is_lim_seq_LimSup_shift_0 ha).
   Qed.
-(*    intros.
-    generalize (Cauchy_ex_series _ H); intros.
-    unfold Cauchy_series in H0.
-    unfold norm in H0; simpl in H0.
-    unfold abs in H0; simpl in H0.
-    apply is_lim_seq_spec.
-    unfold is_lim_seq'.
-    intros.
-    destruct (H0 eps) as [N ?].
-    Admitted.*)
