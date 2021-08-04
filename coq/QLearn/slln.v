@@ -1630,6 +1630,30 @@ Qed.
     rewrite <-H0. f_equal.
  Qed.
 
+  Lemma pre_cutoff_event_const_history_shift (X : nat -> Ts -> R) (eps : R) (j m:nat)
+        {rv : forall n, RandomVariable dom borel_sa (X n)}
+        {frf : forall n, FiniteRangeFunction (X n)} :
+    forall (Q : event dom),
+      In Q (map dsa_event (filtration_history (S j + m)%nat X)) ->
+      exists (c:R),
+      forall x, Q x -> Rmax_list_map (seq 0 (S j)) 
+                                     (fun n : nat => Rabs (rvsum (fun k => X (k + m)%nat) n x)) = c.
+  Proof.
+    intros.
+Admitted.
+(*
+    generalize (filtration_history_rvsum_var_const_fun X eps j Q H); intros.
+    destruct H0 as [f ?].
+    setoid_rewrite Rmax_list_seq_bounded_nat.
+    exists (Rmax_list_map (bounded_nat_finite_list (S j))
+                     (fun x0 => Rabs (f (bounded_nat_lt_succ_le j x0)))).
+    intros.
+    apply Rmax_list_map_ext_in; intros.
+    f_equal. specialize (H0 (bounded_nat_lt_succ_le j x0) x H1).
+    rewrite <-H0. f_equal.
+ Qed.
+ *)
+
   Lemma partition_measurable_cutoff_ind (X : nat -> Ts -> R) (eps : R)
         {rv : forall n, RandomVariable dom borel_sa (X n)}
         {frf : forall n, FiniteRangeFunction (X n)} :
@@ -1649,6 +1673,29 @@ Qed.
       now rewrite H0.
   Qed.
 
+
+  Lemma partition_measurable_cutoff_ind_shift (X : nat -> Ts -> R) (eps : R) (m:nat)
+        {rv : forall n, RandomVariable dom borel_sa (X n)}
+        {frf : forall n, FiniteRangeFunction (X n)} :
+    forall j, partition_measurable (cutoff_indicator (S j) eps (rvsum (fun n => X (n + m)%nat))) (map dsa_event (filtration_history (S j + m)%nat X)).
+  Proof.
+    intros.
+    apply partition_measurable_indicator_pre; intros.
+    - generalize (pre_cutoff_event_const_history_shift X eps j m Q H); intros.
+      unfold pre_event_sub, pre_cutoff_event, pre_event_complement.
+      destruct H0 as [c ?].
+      destruct (Rlt_dec c eps).
+      + left.
+        intros.
+        now rewrite H0.
+Admitted.
+(*
+      + 
+    - right.
+      intros.
+      now rewrite H0.
+  Qed.
+*)
   Lemma partition_measurable_rvabs (rv_X : Ts -> R)
         {rv : RandomVariable dom borel_sa rv_X}
         {frf : FiniteRangeFunction rv_X}
@@ -1747,7 +1794,7 @@ Qed.
     lia.
    Qed.
 
-   Lemma cutoff_eps_const_history (X : nat -> Ts -> R) (eps : R) (j:nat)
+  Lemma cutoff_eps_const_history (X : nat -> Ts -> R) (eps : R) (j:nat)
         {rv : forall n, RandomVariable dom borel_sa (X n)}
         {frf : forall n, FiniteRangeFunction (X n)} :
     forall (Q : event dom), 
@@ -1810,6 +1857,74 @@ Qed.
        now unfold proj1_sig; simpl.
   Qed.
 
+   Lemma cutoff_eps_const_history_shift (X : nat -> Ts -> R) (eps : R) (j m:nat)
+        {rv : forall n, RandomVariable dom borel_sa (X n)}
+        {frf : forall n, FiniteRangeFunction (X n)} :
+    forall (Q : event dom), 
+      In Q (map dsa_event (filtration_history (S j + m)%nat X)) ->
+      exists (c:R),
+      forall x, Q x -> (cutoff_eps_rv j eps (rvsum (fun n => X (n + m)%nat))) x = c.
+   Proof.
+     unfold cutoff_eps_rv.
+     induction j; intros.
+     - simpl.
+       unfold rvsum.
+       setoid_rewrite sum_O.
+       replace (1 + m)%nat with (S m) in H by lia.
+       generalize (filtration_history_var_const X eps m Q H m); intros.
+       cut_to H0; try lia.
+       destruct H0 as [c ?].
+       exists c.
+       now apply H0.
+     - assert (exists (QQ: event dom), (event_sub Q QQ) /\
+                                      (In QQ (map dsa_event (filtration_history (S j + m)%nat X)))).
+       {
+         replace (S j) with (j+1)%nat in H by lia.
+         simpl in H.
+         replace (j+1)%nat with (S j) in H by lia.
+         unfold refine_dec_sa_partitions in H.
+         rewrite in_map_iff in H.
+         destruct H as [? [? ?]].
+         unfold refine_dec_sa_event in H0.
+         rewrite in_flat_map in H0.
+         destruct H0 as [? [? ?]].
+         rewrite in_map_iff in H1.
+         destruct H1 as [? [? ?]].
+         exists (dsa_event x1).
+         split; [|now apply in_map].
+         unfold dec_sa_event_inter in H1.
+         assert (event_inter (dsa_event x0) (dsa_event x1) = dsa_event x).
+         - rewrite <- H1.
+           now simpl.
+         - rewrite H in H3.
+           rewrite <- H3.
+           apply event_inter_sub_r.
+       }
+       destruct H0 as [QQ [? ?]].
+Admitted.
+(*
+       generalize (filtration_history_rvsum_var_const_fun X eps (S j + m)%nat Q H); intros.
+       simpl.
+       generalize (pre_cutoff_event_const_history X eps (j+m)%nat QQ H1); intros.
+       destruct H3 as [c1 ?].
+       specialize (IHj QQ H1).
+       destruct IHj as [c2 ?].
+       destruct H2 as [f ?].
+       assert (S j + m <= S j +m )%nat by lia.
+       exists (if Rlt_dec c1 eps then (f (exist _ _ H5)) else c2).
+       intros.
+       specialize (H0 x H6).
+       specialize (H4 x H0).
+       rewrite H4.
+       specialize (H3 x H0).
+       replace (0%nat :: seq 1 j) with (seq 0%nat (S j)) by now simpl.
+
+       rewrite H3.
+       rewrite <- (H2 (exist _ _ H5) x H6).       
+       now unfold proj1_sig; simpl.
+  Qed.
+*)
+
    Lemma event_sub_preimage_singleton (f : Ts -> R) c
          (rv : RandomVariable dom borel_sa f):
      forall (p : event dom), event_sub p (preimage_singleton f c) <->
@@ -1856,6 +1971,19 @@ Qed.
       apply (cutoff_eps_const_history X eps j p H).
   Qed.
 
+   Lemma partition_measurable_cutoff_eps_shift (X : nat -> Ts -> R) (eps : R) (m:nat)
+        {rv : forall n, RandomVariable dom borel_sa (X n)}
+        {frf : forall n, FiniteRangeFunction (X n)} :
+    forall j, partition_measurable (cutoff_eps_rv j eps (rvsum (fun n => X (n+m)%nat)))
+                              (map dsa_event (filtration_history ((S j)+m)%nat X)).
+  Proof.
+    intros.
+    apply partition_constant_measurable.
+    - apply part_list_history.
+    - intros.
+      apply (cutoff_eps_const_history_shift X eps j m p H).
+  Qed.
+
   Lemma indicator_prod_cross (j:nat) (eps:R) (X: nat -> Ts -> R) 
       {rv : forall n, RandomVariable dom borel_sa (X n)}
       {frf : forall n, FiniteRangeFunction (X n)} 
@@ -1871,7 +1999,8 @@ Qed.
     generalize (part_list_history (S j) X); intros ispart.
     rewrite gen_conditional_tower_law with (l0 := l); trivial.
     generalize (gen_conditional_scale_measurable (rvmult (cutoff_eps_rv j eps (rvsum X))
-                    (cutoff_indicator (S j) eps (rvsum X))) (X (S j)) l ispart); intros.    unfold l in H; unfold l.
+                                                         (cutoff_indicator (S j) eps (rvsum X))) (X (S j)) l ispart); intros.
+    unfold l in H; unfold l.
     cut_to H.
     - rewrite (HC (S j)) in H.
       rewrite (SimpleExpectation_ext H).
@@ -1882,12 +2011,44 @@ Qed.
       + apply partition_measurable_cutoff_ind.
   Qed.
 
-Lemma ash_6_1_4 (X: nat -> Ts -> R) (eps:posreal)
+  Lemma indicator_prod_cross_shift (j m:nat) (eps:R) (X: nat -> Ts -> R) 
+      {rv : forall n, RandomVariable dom borel_sa (X n)}
+      {frf : forall n, FiniteRangeFunction (X n)} 
+      (HC : forall n, 
+          SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
+
+  let Xm := fun n => X (n + m)%nat in 
+  SimpleExpectation 
+    (rvmult (rvmult (cutoff_eps_rv j eps (rvsum Xm))
+                    (cutoff_indicator (S j) eps (rvsum Xm)))
+            (Xm (S j))) = 0.
+  Proof.
+    pose (l := @filtration_history ((S j)+m)%nat _ frf rv).
+    pose (Xm := fun n => X (n + m)%nat).
+    generalize (part_list_history ((S j)+m)%nat X); intros ispart.
+    simpl.
+    rewrite gen_conditional_tower_law with (l0 := l); trivial.
+    generalize (gen_conditional_scale_measurable (rvmult (cutoff_eps_rv j eps (rvsum Xm))
+                                                         (cutoff_indicator (S j) eps (rvsum Xm))) (Xm (S j)) l ispart); intros.
+    unfold l in H; unfold l.
+    unfold Xm in *.
+    cut_to H.
+    - rewrite (HC ((S j)+m)%nat) in H.
+      unfold Xm in *.
+      rewrite (SimpleExpectation_ext H).
+      rewrite (SimpleExpectation_ext (rvmult_zero _)).
+      now rewrite SimpleExpectation_const.
+    - apply partition_measurable_rvmult; trivial.
+      + apply partition_measurable_cutoff_eps_shift.
+      + apply partition_measurable_cutoff_ind_shift.
+  Qed.
+
+Lemma ash_6_1_4 (X: nat -> Ts -> R) (eps:posreal) (m:nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
       {frf : forall (n:nat), FiniteRangeFunction (X n)}
       (HC : forall n, 
           SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
-  let Sum := fun j => (rvsum X j) in
+  let Sum := fun j => (rvsum (fun n => X (n + m)%nat) j) in
   forall (n:nat), ps_P (event_ge dom (rvmaxlist (fun k => rvabs(Sum k)) n) eps) <=
            (SimpleExpectation (rvsqr (Sum n)))/eps^2.
 Proof.
@@ -1913,33 +2074,34 @@ Proof.
     [left; apply Rinv_0_lt_compat, Rlt_0_sqr, Rgt_not_eq, cond_pos |].
   assert (Srel:forall j, SimpleExpectation(rvsqr (Sum (S j))) =
                     SimpleExpectation(rvsqr (Sum j)) + 
-                    SimpleExpectation(rvsqr (X (S j)))).
+                    SimpleExpectation(rvsqr (X ((S j)+m)%nat))).
   {
     intros.
     assert (rv_eq (rvsqr (Sum (S j)))
                   (rvplus (rvsqr (Sum j))
                           (rvplus 
                              (rvscale 2
-                                      (rvmult (Sum j) (X (S j))))
+                                      (rvmult (Sum j) (X ((S j)+m)%nat)))
                              (rvsqr (rvminus (Sum (S j)) (Sum j)))))).
     - intro x.
       unfold rvsqr, rvminus, rvopp, rvscale, rvplus, rvmult.
       unfold Rsqr.
-      replace (Sum (S j) x) with ((Sum j x) + (X (S j) x)).
+      replace (Sum (S j) x) with ((Sum j x) + (X ((S j)+m)%nat x)).
       + now ring_simplify.
       + unfold Sum, rvsum.
         rewrite sum_Sn.
+        unfold plus; simpl.
         now unfold plus; simpl.
    - rewrite (SimpleExpectation_ext H).
      rewrite <- sumSimpleExpectation.
      rewrite <- sumSimpleExpectation.
      rewrite <- Rplus_assoc.
      rewrite <- scaleSimpleExpectation.
-     rewrite (expec_cross_zero_sum2 X HC); try lia.
+     rewrite (expec_cross_zero_sum2_shift X m HC); try lia.
      ring_simplify.
      f_equal.
      assert (rv_eq (rvsqr (rvminus (Sum (S j)) (Sum j)))
-                   (rvsqr (X (S j)))).
+                   (rvsqr (X ((S j)+m)%nat))).
      + intro x.
        unfold Sum, rvsqr.
        rewrite rvminus_unfold.
@@ -1967,7 +2129,7 @@ Proof.
     - intro x.
       unfold rvsqr, rvminus, rvopp, rvscale, rvplus, rvmult.
       unfold Rsqr.
-      replace (Sum (S j) x) with ((Sum j x) + (X (S j) x)).
+      replace (Sum (S j) x) with ((Sum j x) + (X ((S j)+m)%nat x)).
       + now ring_simplify.
       + unfold Sum, rvsum.
         rewrite sum_Sn.
@@ -1983,7 +2145,7 @@ Proof.
                       (rvmult (cutoff_eps_rv j eps Sum) 
                               (rvmult 
                                  (cutoff_indicator (S j) eps Sum)
-                                 (X (S j))))
+                                 (X ((S j)+m)%nat)))
                       (rvmult 
                          (cutoff_eps_rv j eps Sum) 
                          (rvminus (cutoff_eps_rv (S j) eps Sum) 
@@ -1996,7 +2158,7 @@ Proof.
          unfold Sum, rvsum. rewrite sum_Sn. unfold plus. simpl.
          rewrite Rplus_comm.
          unfold Rminus; rewrite Rplus_assoc.
-         replace  (sum_n (fun n0 : nat => X n0 w) j + - sum_n (fun n0 : nat => X n0 w) j) with 0 by lra.
+         replace  (sum_n (fun n0 : nat => X (n0+m)%nat w) j + - sum_n (fun n0 : nat => X (n0+m)%nat w) j) with 0 by lra.
          rewrite Rplus_0_r.
          match_destr.
          - match_destr.
@@ -2009,13 +2171,14 @@ Proof.
         erewrite <-(SimpleExpectation_ext Heq).
         assert (rv_eq
                   (rvmult (cutoff_eps_rv j eps Sum)
-                          (rvmult (cutoff_indicator (S j) eps Sum) (X (S j))))
+                          (rvmult (cutoff_indicator (S j) eps Sum) (X ((S j)+m)%nat)))
                   (rvmult 
                      (rvmult (cutoff_eps_rv j eps Sum)
                              (cutoff_indicator (S j) eps Sum))
-                     (X (S j)))) by now rewrite rvmult_assoc.
+                     (X ((S j)+m)%nat))) by now rewrite rvmult_assoc.
         erewrite (SimpleExpectation_ext H0).
-        now apply indicator_prod_cross.
+
+        now apply indicator_prod_cross_shift.
      + rewrite H0.
        lra.
  }
@@ -2275,17 +2438,12 @@ Lemma Ash_6_2_1_helper (X : nat -> Ts -> R) (eps : posreal) (m : nat)
 Proof.
   intros.
   generalize (ash_6_1_4 X); intros.
-  specialize (H eps _ _ HC).
+  specialize (H eps m _ _ HC).
   simpl in H.
   generalize (Lim_seq_le _ _ H); intros.
   unfold Sum.
-  assert (Rbar_le (Lim_seq (fun n : nat => ps_P (event_ge dom (rvmaxlist (fun k : nat => rvabs (rvsum (fun k => X (k + m)%nat) k)) n) eps)))
-                  (Lim_seq (fun n : nat => SimpleExpectation (rvsqr (rvsum (fun k => X (k + m)%nat) n)) / (eps * (eps * 1))))).
-  {
-    admit.
-  }
   eapply Rbar_le_trans.
-  - apply H1.
+  - apply H0.
   - replace (eps * (eps * 1)) with (Rsqr eps) by (unfold Rsqr; lra).
     unfold Rdiv.
     rewrite Lim_seq_scal_r.
@@ -2293,11 +2451,11 @@ Proof.
     rewrite Rbar_mult_div_pos.
     apply Rbar_div_pos_le.
     generalize (var_sum_cross_0_offset X m HC); intros.
-    simpl in H2.
+    simpl in H1.
     rewrite Lim_seq_ext with (v := sum_n (fun n : nat => SimpleExpectation (rvsqr (X (n + m)%nat)))).
     + apply Lim_seq_sup_le.
-    + apply H2.
-Admitted.
+    + apply H1.
+ Qed.
 
   Lemma Ash_6_2_1_helper2 (X : nat -> Ts -> R) (eps : posreal)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
