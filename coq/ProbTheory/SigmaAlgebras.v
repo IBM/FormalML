@@ -692,6 +692,26 @@ Instance list_partition_sa {T} (l:list (pre_event T)) (is_part:is_pre_partition_
 Definition is_partition_list {T} {σ:SigmaAlgebra T} (l:list (event σ)) :=
   ForallOrdPairs event_disjoint l /\ list_union l === Ω.
 
+Lemma is_partition_list_pre {T} {σ:SigmaAlgebra T}
+      (l : list (event σ))
+      (isp:is_pre_partition_list (map event_pre l)) :
+  is_partition_list l <->
+  is_pre_partition_list (map event_pre l).
+Proof.
+  unfold is_partition_list, is_pre_partition_list.
+  rewrite list_union_as_pre.
+  unfold equiv.
+  unfold event_equiv; simpl.
+  unfold event_pre; simpl.
+  split; intros [??]; split; trivial.
+  - apply ForallOrdPairs_map.
+    revert H.
+    apply ForallOrdPairs_sub; try reflexivity.
+  - rewrite ForallOrdPairs_map in H.
+    revert H.
+    apply ForallOrdPairs_sub; try reflexivity.
+Qed.
+
 Global Instance is_partition_list_perm {T} {σ:SigmaAlgebra T}  :
   Proper (@Permutation _ ==> iff) (@is_partition_list T σ).
 Proof.

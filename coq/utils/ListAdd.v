@@ -314,6 +314,54 @@ Section fp.
   Qed.
 
 
+  
+  Lemma ForallOrdPairs_In_nth_symm {A} {R} {sym:Symmetric R} (l:list A) d1 d2 n1 n2
+        (FP:ForallOrdPairs R l)
+        (n1bound:(n1 < length l)%nat)
+        (n2bound:(n2 < length l)%nat) :
+    n1 = n2 \/ R (nth n1 l d1) (nth n2 l d2).
+  Proof.
+    revert n1 n2 n1bound n2bound.
+    induction FP; simpl; intros.
+    - eelim Nat.nlt_0_r; eauto.
+    - simpl in *.
+      destruct n1; destruct n2; simpl in *.
+      + auto.
+      + right.
+        rewrite Forall_forall in H.
+        apply H.
+        apply nth_In.
+        now apply lt_S_n.
+      + right.
+        rewrite Forall_forall in H.
+        symmetry.
+        apply H.
+        apply nth_In.
+        now apply lt_S_n.
+      + apply lt_S_n in n1bound.
+        apply lt_S_n in n2bound.
+        destruct (IHFP _ _ n1bound n2bound) as [?|?]; auto.
+  Qed.
+
+  Lemma ForallOrdPairs_In_nth {A} {R} (l:list A) d1 d2 n1 n2
+        (FP:ForallOrdPairs R l)
+        (n1bound:(n1 < length l)%nat)
+        (n2bound:(n2 < length l)%nat) :
+    n1 = n2 \/ R (nth n1 l d1) (nth n2 l d2) \/ R (nth n2 l d2) (nth n1 l d1).
+  Proof.
+    assert (FP2:ForallOrdPairs (fun x y => R x y \/ R y x) l).
+    {
+      revert FP.
+      apply ForallOrdPairs_sub1; trivial.
+      red; eauto.
+    }
+    assert (FP2sym:Symmetric  (fun x y : A => R x y \/ R y x)).
+    {
+      repeat red; tauto.
+    } 
+    destruct (ForallOrdPairs_In_nth_symm l d1 d2 n1 n2 FP2 n1bound n2bound); eauto.
+  Qed.
+
 End fp.
 
 Lemma nth_tl {A} idx (l:list A) d : nth idx (tl l) d = nth (S idx) l d.
@@ -603,10 +651,10 @@ Section bucket.
   Fixpoint find_bucket (needle:A) (haystack:list A)
     := match haystack with
        | x::((y::_) as more) => if R_dec x needle
-                             then if R_dec needle y
-                                  then Some (x,y)
-                                  else find_bucket needle more
-                             else None
+                                then if R_dec needle y
+                                     then Some (x,y)
+                                     else find_bucket needle more
+                                else None
        | _ => None
        end.
   
@@ -1880,10 +1928,10 @@ Section cross_product.
   Proof.
     destruct l; simpl; trivial.
     cut (forall acc n, Forall (fun x : list T => length x = n) acc ->
-                  Forall (fun x : list T => length x = n + length l0)
-                         (fold_left
-                            (fun (acc : list (list T)) (b : list T) =>
-                               map (fun '(a, b0) => b0 ++ [a]) (list_prod b acc)) l0 acc)).
+                       Forall (fun x : list T => length x = n + length l0)
+                              (fold_left
+                                 (fun (acc : list (list T)) (b : list T) =>
+                                    map (fun '(a, b0) => b0 ++ [a]) (list_prod b acc)) l0 acc)).
     - intros HH.
       apply (HH _ 1).
       rewrite Forall_forall; intros ? inn.

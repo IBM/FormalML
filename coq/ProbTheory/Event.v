@@ -80,6 +80,11 @@ Section pre_ev.
 
   Local Open Scope prob.
 
+  Global Instance pre_event_disjoint_symm {T}: Symmetric (@pre_event_disjoint T).
+  Proof.
+    firstorder.
+  Qed.
+  
   Global Instance pre_event_union_proper {T} :
     Proper (pre_event_equiv ==> pre_event_equiv ==> pre_event_equiv) (@pre_event_union T).
   Proof.

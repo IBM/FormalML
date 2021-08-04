@@ -1982,40 +1982,209 @@ Section SimpleConditionalExpectation.
     forall (p:event dom),
       In p l ->
       exists c, event_sub p (preimage_singleton rv_X c).
-  
-(*
-  Lemma in_list_in_partition_union {T} (x:event T) l d :
-    In x l -> 
-    in_partition_union (list_collection l d) x.
-  Proof.
-    intros inn.
-    unfold in_partition_union.
-    unfold list_collection.
-    apply (In_nth l x d) in inn.
-    destruct inn as [n [nlen neqq]].
-    exists ((fun y => if y == n then x else event_none)%nat).
-    unfold event_none.
-    split.
-    - unfold sub_partition; intros.
-      match_destr.
-      + red in e; subst.
-        left; reflexivity.
-      + right.
-        intros ?; unfold event_none.
-        tauto.
-    - unfold union_of_collection.
-      intros y; simpl.
-      split.
-      + intros [??].
-        match_destr_in H.
-        tauto.
-      + intros.
-        exists n.
-        match_destr.
-        congruence.
-  Qed.
-*)
 
+  Lemma event_none_or_witness (E : event dom) :
+    E === event_none \/ exists (x:Ts), E x.
+  Proof.
+    classical_left.
+    unfold event_none, pre_event_none.
+    intros x; split; simpl; intros y
+    ; [| tauto].
+    apply H.
+    eexists; apply y.
+  Qed.
+
+  Global Instance pre_union_of_collection_sub_partition_proper {T} :
+    Proper (pre_sub_partition ==> pre_event_sub) (@pre_union_of_collection T).
+  Proof.
+    unfold pre_sub_partition, pre_event_sub, pre_union_of_collection.
+    intros ?? sub x [n xn].
+    destruct (sub n).
+    - apply H in xn; eauto.
+    - eapply H in xn.
+      red in xn; tauto.
+  Qed.
+
+  Lemma is_pre_partition_list_contains_all {l:list (pre_event Ts)} :
+    is_pre_partition_list l ->
+    forall a, exists! e, In e l /\ e a.
+  Proof.
+    intros [FP lall] a.
+    destruct (lall a) as [_ HH].
+    destruct (HH I) as [e [??]].
+    exists e.
+    split; [tauto | ].
+    intros ?[??].
+    destruct (ForallOrdPairs_In FP _ _ H H1) as [?|[?|?]]; trivial.
+    elim (H3 _ H0 H2).    
+    elim (H3 _ H2 H0).    
+  Qed.
+
+  Lemma partition_measurable_list_rv_f {Td}
+             {cod:SigmaAlgebra Td}
+             {has_pre:HasPreimageSingleton cod}
+             (rv_X : Ts -> Td)
+             {rv : RandomVariable dom cod rv_X}
+             {frf : FiniteRangeFunction rv_X}
+             (has_singles: forall x, sa_sigma (SigmaAlgebra:=cod) (pre_event_singleton x))
+             (l : list (event dom))
+             (isp:is_pre_partition_list (map event_pre l)) :
+    partition_measurable rv_X l -> RandomVariable (list_partition_sa (map event_pre l)
+                                                                    isp) cod rv_X.
+  Proof.
+    unfold RandomVariable; simpl.
+    unfold partition_measurable.
+    intros HH B.
+    red.
+    cut_to HH; [| now apply is_partition_list_pre].
+
+    exists (fun n => pre_event_inter (event_preimage rv_X B) (pre_list_collection (map event_pre l) pre_event_none n)).
+    split.
+    + intros n.
+      unfold pre_list_collection.
+      destruct (@nth_in_or_default (pre_event Ts) n (map event_pre l) pre_event_none).
+      * replace (@pre_event_none Ts) with (proj1_sig (P:=fun e : pre_event Ts => sa_sigma e) (@event_none Ts dom)) in i by reflexivity.
+        rewrite map_nth in i.
+        apply in_map_iff in i.
+        destruct i as [? [eqq inn]]; subst.
+        destruct (HH _ inn) as [c csub].
+        destruct (sa_dec B c).
+        -- left.
+           unfold pre_event_inter.
+           intros ?.
+           split; [firstorder |].
+           split; trivial.
+           red.
+           specialize (csub x0).
+           simpl in csub.
+           unfold pre_event_preimage, pre_event_singleton in csub.
+           rewrite csub; trivial.
+           unfold event_pre in eqq.
+           rewrite eqq.
+           replace (@pre_event_none Ts) with (proj1_sig (P:=fun e : pre_event Ts => sa_sigma e) (@event_none Ts dom)) in H0  by reflexivity.
+           now rewrite map_nth in H0.
+        -- right.
+           intros ?.
+           unfold pre_event_none, pre_event_inter.
+           split; [| tauto]; intros [HH1 HH2].
+           elim H.
+           specialize (csub x0).
+           red in HH2.
+           unfold preimage_singleton, pre_event_preimage, pre_event_singleton in csub.
+           simpl in csub.
+           rewrite <- csub; trivial.
+           unfold event_pre in eqq.
+           rewrite eqq.
+           rewrite <- map_nth.
+           apply HH2.
+      * rewrite e.
+        rewrite pre_event_inter_false_r.
+        left; reflexivity.
+    + rewrite <- pre_event_inter_countable_union_distr.
+      rewrite pre_list_union_union.
+      destruct isp.
+      rewrite H0.
+      rewrite pre_event_inter_true_r.
+      reflexivity.
+  Qed.
+    
+    Lemma partition_measurable_list_rv_b {Td} {nempty:NonEmpty Td}
+             {cod:SigmaAlgebra Td}
+             {has_pre:HasPreimageSingleton cod}
+             (rv_X : Ts -> Td)
+             {rv : RandomVariable dom cod rv_X}
+             {frf : FiniteRangeFunction rv_X}
+             (has_singles: forall x, sa_sigma (SigmaAlgebra:=cod) (pre_event_singleton x))
+             (l : list (event dom))
+             (isp:is_pre_partition_list (map event_pre l)) :
+    RandomVariable (list_partition_sa (map event_pre l) isp) cod rv_X -> partition_measurable rv_X l.
+  Proof.
+    intros HH _ p inp.
+    destruct frf.
+    destruct isp as [HH2 HH3].
+    destruct (event_none_or_witness p) as [Hnone | [a pa]].
+    + exists nempty.
+      intros ??.
+      apply Hnone in H.
+      repeat red in H.
+      tauto.
+    + specialize (HH (event_singleton (rv_X a) (has_singles _))).
+      destruct HH as [C [Csub Ceqq]].
+      unfold event_sub.
+      unfold equiv, event_equiv in Ceqq.
+      unfold preimage_singleton; simpl.
+      unfold event_preimage in Ceqq.
+      simpl in Ceqq.
+      red in Csub.
+      red in Ceqq.
+      unfold pre_event_singleton in Ceqq.
+      assert (inp':In (event_pre p) (map event_pre l))
+        by (apply in_map_iff; eauto).
+      destruct (In_nth _ _ (@pre_event_none Ts) inp')
+        as [n [??]].
+      destruct (Csub n).
+      * exists (rv_X a).
+        intros x px.
+        unfold preimage_singleton; simpl.
+        unfold pre_event_preimage, pre_event_singleton; simpl.
+        apply Ceqq.
+        red.
+        exists n.
+        apply H1.
+        red.
+        now rewrite H0.
+      * specialize (Ceqq a).
+        destruct Ceqq as [_ Ca].
+        specialize (Ca (eq_refl _)).
+        destruct Ca as [n' Cn'a].
+        assert (Cn'ne:~ C n' === pre_event_none).
+        {
+          intros x.
+          apply x in Cn'a.
+          red in Cn'a.
+          tauto.
+        } 
+        destruct (Csub n'); [| tauto].
+        rewrite <- H0 in pa.
+        unfold pre_list_collection in H2.
+        assert (n'bound:(n' < length (map event_pre l))%nat).
+        {
+          destruct (lt_dec n' (length (map event_pre l))%nat); trivial.
+          apply not_lt in n0.
+          unfold pre_event in H2.
+          rewrite (nth_overflow (map event_pre l) pre_event_none n0) in H2.
+          elim (Cn'ne H2).
+        }
+
+        destruct (ForallOrdPairs_In_nth_symm
+                      (map event_pre l)
+                      pre_event_none pre_event_none
+                      n n'
+                      HH2
+                      H n'bound).
+        -- subst.
+           elim (Cn'ne H1).
+        -- elim (H3 a); trivial.
+           now apply H2.
+  Qed.           
+
+  Lemma partition_measurable_list_rv {Td} {nempty:NonEmpty Td}
+             {cod:SigmaAlgebra Td}
+             {has_pre:HasPreimageSingleton cod}
+             (rv_X : Ts -> Td)
+             {rv : RandomVariable dom cod rv_X}
+             {frf : FiniteRangeFunction rv_X}
+             (has_singles: forall x, sa_sigma (SigmaAlgebra:=cod) (pre_event_singleton x))
+             (l : list (event dom))
+             (isp:is_pre_partition_list (map event_pre l)) :
+    partition_measurable rv_X l <-> RandomVariable (list_partition_sa (map event_pre l)
+                                                                    isp) cod rv_X.
+  Proof.
+    split.
+    - now apply partition_measurable_list_rv_f.
+    - now apply partition_measurable_list_rv_b.
+  Qed.
+    
   Lemma nth_map_default_equiv {A} {R} n (l:list A) (d1 d2:A)
         {refl:Reflexive R} :
     R d1 d2 ->
