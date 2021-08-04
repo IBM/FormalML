@@ -1688,14 +1688,12 @@ Admitted.
       + left.
         intros.
         now rewrite H0.
-Admitted.
-(*
-      + 
-    - right.
-      intros.
-      now rewrite H0.
+      + apply Rnot_lt_ge in n.
+        right; intros.
+        apply Rge_not_lt.
+        rewrite H0; trivial.
   Qed.
-*)
+
   Lemma partition_measurable_rvabs (rv_X : Ts -> R)
         {rv : RandomVariable dom borel_sa rv_X}
         {frf : FiniteRangeFunction rv_X}
@@ -2457,15 +2455,26 @@ Proof.
     + apply H1.
  Qed.
 
+Lemma is_lim_seq_LimSup_shift_0 {a : nat -> R} (ha : ex_series a) :
+  is_lim_seq (fun m => LimSup_seq (sum_n (fun n => a((n+m)%nat)))) 0.
+Proof.
+  generalize (ex_series_is_lim_seq a ha); intros.
+  setoid_rewrite LimSup_InfSup_seq.
+Admitted.
+
   Lemma Ash_6_2_1_helper2 (X : nat -> Ts -> R) (eps : posreal)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
       (HC : forall n, 
           SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
     ex_series (fun n => SimpleExpectation (rvsqr (X n))) ->
-    is_lim_seq (fun m => LimSup_seq (sum_n (fun n => SimpleExpectation (rvsqr (X (n + m)%nat))))) 0.
+    is_lim_seq (fun m => LimSup_seq (sum_n (fun n =>
+                                           SimpleExpectation (rvsqr (X (n + m)%nat))))) 0.
   Proof.
-    intros.
+    intros ha.
+    apply (is_lim_seq_LimSup_shift_0 ha).
+  Qed.
+(*    intros.
     generalize (Cauchy_ex_series _ H); intros.
     unfold Cauchy_series in H0.
     unfold norm in H0; simpl in H0.
@@ -2474,6 +2483,4 @@ Proof.
     unfold is_lim_seq'.
     intros.
     destruct (H0 eps) as [N ?].
-    Admitted.
-    
-  
+    Admitted.*)
