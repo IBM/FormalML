@@ -1527,9 +1527,33 @@ Qed.
   - intros.
     generalize (part_meas_hist k0 (j - k0)%nat X); intros.
     now replace (S k0 + (j - k0))%nat with (S j) in H4 by lia.
+  Qed.
+
+Lemma filtration_history_rvsum_var_const_shift (X : nat -> Ts -> R) (eps : R) (m j:nat)
+        {rv : forall n, RandomVariable dom borel_sa (X n)}
+        {frf : forall n, FiniteRangeFunction (X n)} :
+  forall (Q : event dom),
+      In Q (map dsa_event (filtration_history (S j + m)%nat X)) ->
+      forall (k:nat),
+        (k <= j)%nat ->
+        exists (c:R),
+        forall x, Q x -> rvsum (fun n => X(n+m)%nat) k x = c.
+  Proof.
+    intros.
+    generalize (partition_measurable_rvsum k (fun n => X (n+m)%nat)
+                                           (map dsa_event (filtration_history (S j + m)%nat X))); intros.
+    generalize (part_list_history (S j + m)%nat X); intros.
+    cut_to H1; trivial.
+    - unfold partition_measurable in H1.
+      cut_to H1; trivial.
+      specialize (H1 Q).
+      cut_to H1; trivial.
+  - intros.
+    generalize (part_meas_hist (k0+m) (j - k0)%nat X); intros.
+    now replace (S (k0 + m) + (j - k0))%nat with (S j + m)%nat in H4 by lia.
  Qed.
 
-   Lemma filtration_history_var_const_ex (X : nat -> Ts -> R) (eps : R) (j:nat) 
+ Lemma filtration_history_var_const_ex (X : nat -> Ts -> R) (eps : R) (j:nat)
         {rv : forall n, RandomVariable dom borel_sa (X n)}
         {frf : forall n, FiniteRangeFunction (X n)} :
   forall (Q : event dom),
@@ -1558,6 +1582,22 @@ Qed.
        generalize (filtration_history_rvsum_var_const X eps j Q H k H0); intros.
        now apply constructive_indefinite_description in H1.
    Qed.
+
+  Lemma filtration_history_rvsum_var_const_ex_shift (X : nat -> Ts -> R) (eps : R) (m j:nat)
+        {rv : forall n, RandomVariable dom borel_sa (X n)}
+        {frf : forall n, FiniteRangeFunction (X n)} :
+  forall (Q : event dom),
+      In Q (map dsa_event (filtration_history (S j + m)%nat X)) ->
+      forall (k:nat),
+        (k <= j)%nat ->
+        {c:R |
+            forall x, Q x -> rvsum (fun n => X (n+m)%nat) k x = c}.
+     Proof.
+       intros.
+       generalize (filtration_history_rvsum_var_const_shift X eps m j Q H k H0); intros.
+       now apply constructive_indefinite_description in H1.
+   Qed.
+
 
   Lemma filtration_history_var_const_fun (X : nat -> Ts -> R) (eps : R) (j:nat) 
         {rv : forall n, RandomVariable dom borel_sa (X n)}
@@ -1590,6 +1630,26 @@ Qed.
   Proof.
     intros.
     generalize (filtration_history_rvsum_var_const_ex X eps j Q H); intros.
+    exists (fun k => (proj1_sig (H0 (proj1_sig k) (proj2_sig k)))).
+    intros.
+    destruct k; simpl.
+    generalize (H0 x0 l); intros.
+    destruct s.
+    simpl.
+    now apply e.
+  Qed.
+
+  Lemma filtration_history_rvsum_var_const_fun_shift (X : nat -> Ts -> R) (eps : R) (m j:nat)
+        {rv : forall n, RandomVariable dom borel_sa (X n)}
+        {frf : forall n, FiniteRangeFunction (X n)} :
+  forall (Q : event dom),
+    In Q (map dsa_event (filtration_history (S j + m)%nat X)) ->
+    exists (f :  {n':nat | n' <= j}%nat -> R),
+      forall (k:  {n':nat | n' <= j}%nat),
+        forall x, Q x -> rvsum (fun n => X(n+m)%nat) (proj1_sig k) x = f k.
+  Proof.
+    intros.
+    generalize (filtration_history_rvsum_var_const_ex_shift X eps m j Q H); intros.
     exists (fun k => (proj1_sig (H0 (proj1_sig k) (proj2_sig k)))).
     intros.
     destruct k; simpl.
@@ -1649,11 +1709,7 @@ Qed.
                                      (fun n : nat => Rabs (rvsum (fun k => X (k + m)%nat) n x)) = c.
   Proof.
     intros.
-    setoid_rewrite Rmax_list_seq_bounded_nat.
-
-  Admitted.
-(*
-    generalize (filtration_history_rvsum_var_const_fun X eps j Q H); intros.
+    generalize (filtration_history_rvsum_var_const_fun_shift X eps m j Q H); intros.
     destruct H0 as [f ?].
     setoid_rewrite Rmax_list_seq_bounded_nat.
     exists (Rmax_list_map (bounded_nat_finite_list (S j))
@@ -1662,8 +1718,7 @@ Qed.
     apply Rmax_list_map_ext_in; intros.
     f_equal. specialize (H0 (bounded_nat_lt_succ_le j x0) x H1).
     rewrite <-H0. f_equal.
- Qed.
- *)
+  Qed.
 
   Lemma partition_measurable_cutoff_ind (X : nat -> Ts -> R) (eps : R)
         {rv : forall n, RandomVariable dom borel_sa (X n)}
@@ -1910,7 +1965,25 @@ Qed.
            apply event_inter_sub_r.
        }
        destruct H0 as [QQ [? ?]].
-Admitted.
+       generalize (filtration_history_rvsum_var_const_fun_shift X eps m (S j)%nat Q H); intros.
+       simpl.
+       generalize (pre_cutoff_event_const_history_shift X eps j m QQ H1); intros.
+       destruct H3 as [c1 ?].
+       specialize (IHj QQ H1).
+       destruct IHj as [c2 ?].
+       destruct H2 as [f ?].
+       assert (S j <= S j)%nat by lia.
+       exists (if Rlt_dec c1 eps then (f (exist _ _ H5)) else c2).
+       intros.
+       specialize (H0 x H6).
+       specialize (H4 x H0).
+       rewrite H4.
+       specialize (H3 x H0).
+       replace (0%nat :: seq 1 j) with (seq 0%nat (S j)) by now simpl.
+       rewrite H3.
+       rewrite <- (H2 (exist _ _ H5) x H6).
+       now unfold proj1_sig; simpl.
+Qed.
 (*
        generalize (filtration_history_rvsum_var_const_fun X eps (S j + m)%nat Q H); intros.
        simpl.
