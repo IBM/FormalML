@@ -2206,6 +2206,33 @@ Qed.
     is_lim_seq b p_infty ->
     ex_series (fun n => SimpleExpectation (rvsqr (X n)) / (Rsqr (b n))) ->
     almost Prts (fun (x : Ts) => is_lim_seq (fun n => (rvsum X n x)/(b n)) 0). 
-   Proof.
+  Proof.
+    intros.
+    assert (forall n, 0 < b n).
+    {
+      induction n; trivial.
+      eapply Rlt_le_trans.
+      - apply IHn.
+      - apply H0.
+    }
+    assert (forall n, rv_eq (rvscale (/ (b n)) (rvsum X n))
+                            (rvscale (/ (b n)) 
+                                     (rvsum (fun k => 
+                                               rvscale (b k) 
+                                                       (rvscale (/ (b k)) (X k))) n))).
+    {
+      intros n x.
+      unfold rvscale.
+      f_equal.
+      unfold rvsum.
+      apply sum_n_ext.
+      intros.
+      rewrite <- Rmult_assoc.
+      rewrite <- Rinv_r_sym.
+      - now rewrite Rmult_1_l.
+      - apply Rgt_not_eq.
+        apply H3.
+   }
+                                                                        
      Admitted.
         
