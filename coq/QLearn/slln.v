@@ -1,5 +1,5 @@
 Require Import Lra Lia Reals RealAdd RandomVariableL2 Coquelicot.Coquelicot.
-Require Import Morphisms Finite List ListAdd Permutation infprod.
+Require Import Morphisms Finite List ListAdd Permutation infprod AlmostEqual.
 Require Import Sums SimpleExpectation.
 Require Import EquivDec.
 Require Import Classical.
@@ -2195,3 +2195,17 @@ Qed.
     intros ha.
     apply (is_lim_seq_LimSup_shift_0 ha).
   Qed.
+
+  Lemma Ash_6_2_2 (X : nat -> Ts -> R) (b : nat -> R)
+      {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
+      {frf : forall (n:nat), FiniteRangeFunction (X (n))}
+      (HC : forall n, 
+          SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
+    0 < b 0%nat ->
+    (forall n, b n <= b (S n)) ->
+    is_lim_seq b p_infty ->
+    ex_series (fun n => SimpleExpectation (rvsqr (X n)) / (Rsqr (b n))) ->
+    almost Prts (fun (x : Ts) => is_lim_seq (fun n => (rvsum X n x)/(b n)) 0). 
+   Proof.
+     Admitted.
+        
