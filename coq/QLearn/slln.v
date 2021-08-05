@@ -1947,6 +1947,16 @@ Qed.
     apply (is_lim_seq_LimSup_shift_0 ha).
   Qed.
 
+  Lemma Ash_6_2_1 (X : nat -> Ts -> R)
+      {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
+      {frf : forall (n:nat), FiniteRangeFunction (X (n))}
+      (HC : forall n, 
+          SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
+    ex_series (fun n => SimpleExpectation (rvsqr (X n))) ->
+    almost Prts (fun (x : Ts) => ex_series (fun n => rvsum X n x)).
+  Proof.
+    Admitted.
+
   Lemma Ash_6_2_2 (X : nat -> Ts -> R) (b : nat -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
@@ -1955,8 +1965,8 @@ Qed.
     0 < b 0%nat ->
     (forall n, b n <= b (S n)) ->
     is_lim_seq b p_infty ->
-    ex_series (fun n => SimpleExpectation (rvsqr (X n)) / (Rsqr (b n))) ->
-    almost Prts (fun (x : Ts) => is_lim_seq (fun n => (rvsum X n x)/(b n)) 0). 
+    ex_series (fun n => SimpleExpectation (rvsqr (rvscale (/ (b n)) (X n)))) ->
+    almost Prts (fun (x : Ts) => is_lim_seq (fun n => (rvscale (/ (b n)) (rvsum X n)) x) 0). 
   Proof.
     intros.
     assert (forall n, 0 < b n).
@@ -1983,7 +1993,12 @@ Qed.
       - now rewrite Rmult_1_l.
       - apply Rgt_not_eq.
         apply H3.
-   }
+    }
+    assert (forall n : nat,
+        SimpleConditionalExpectationSA (rvscale (/ b n) (X n))
+          (filtration_history n (fun n0 : nat => rvscale (/ b n0) (X n0))) =
+        const 0) by admit.
+    generalize (Ash_6_2_1 (fun n => rvscale (/ (b n)) (X n)) H5 H2); intros.
                                                                         
      Admitted.
         
