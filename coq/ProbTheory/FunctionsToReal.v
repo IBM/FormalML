@@ -1,4 +1,4 @@
-Require Import Reals.
+Require Import Reals utils.RealAdd.
 Require Import Coquelicot.Hierarchy.
 Require Import Morphisms Equivalence.
 Require Import Lra.
@@ -735,20 +735,7 @@ Section defs.
     apply Rabs_pos.
   Qed.
 
-  Lemma Lim_seq_pos (f : nat -> R) :
-    (forall n, 0 <= f n) ->
-    Rbar_le 0 (Lim_seq f).
-  Proof.
-    intros.
-    generalize (Lim_seq_le_loc (fun _ => 0) f); intros.
-    rewrite Lim_seq_const in H0.
-    apply H0.
-    exists (0%nat).
-    intros.
-    apply H.
-  Qed.
-
-  Lemma Rbar_Rabs_lim_sum_le (f : nat -> Ts -> R) (x : Ts) :
+    Lemma Rbar_Rabs_lim_sum_le (f : nat -> Ts -> R) (x : Ts) :
     Rbar_le
       (Rbar_abs (Lim_seq (fun n => (rvsum f) n x)))
       (Rbar_abs (Lim_seq (fun n => (rvsum (fun n0 => (rvabs (f n0))) n x)))).

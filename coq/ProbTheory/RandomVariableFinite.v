@@ -1008,25 +1008,6 @@ Lemma Fatou_FiniteExpectation
     now rewrite map_map.
   Qed.    
   
-  Lemma is_finite_Lim_bounded (f : nat -> R) (m M : R) :
-    (forall (n:nat), m <= f n <= M) ->
-    is_finite (Lim_seq f).
-  Proof.
-    generalize (Lim_seq_le_loc f (fun _ => M)); intros.
-    generalize (Lim_seq_le_loc (fun _ => m) f); intros.    
-    cut_to H.
-    cut_to H1.
-    rewrite Lim_seq_const in H.
-    rewrite Lim_seq_const in H1.
-    unfold is_finite.
-    destruct (Lim_seq f).
-    reflexivity.
-    now simpl in H.
-    now simpl in H1.
-    exists (0%nat); intros; apply H0.
-    exists (0%nat); intros; apply H0.
-  Qed.    
-
   Lemma is_finite_Lim_seq_psP (E : nat -> event dom) :
     is_finite (Lim_seq (fun n => ps_P (E n))).
   Proof.

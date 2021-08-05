@@ -360,29 +360,6 @@ End products.
 
 Section series_sequences.
 
-Lemma zerotails (a : nat -> R) :
-  ex_series a -> is_lim_seq (fun (n:nat) => Series (fun k => a (S (n+k)%nat))) 0.
-Proof.
-  intros.
-  assert (H' := H).
-  unfold ex_series in H.
-  destruct H.
-  apply (is_lim_seq_ext (fun (n:nat) => x - sum_n a n)).
-  - intros.
-    apply is_series_unique in H.
-    rewrite <- H.
-    rewrite Series_incr_n with (n := (S n)); [| lia | trivial]; simpl.
-    replace (sum_f_R0 a n) with (sum_n a n); [lra | ].
-    induction n; simpl.
-    + compute; lra.
-    + rewrite sum_Sn.
-      now rewrite <- IHn.
-  - replace (0) with (x - x) by lra.
-    apply is_lim_seq_minus with (l1 := x) (l2 := x); trivial.
-    apply is_lim_seq_const.
-    now compute.
-Qed.
-
 Lemma series_seq (a : nat -> R) (l:R) :
   is_series a l <-> is_lim_seq (sum_n a) l.
 Proof.
