@@ -2036,7 +2036,7 @@ Qed.
       (HC : forall n, 
           SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
     ex_series (fun n => SimpleExpectation (rvsqr (X n))) ->
-    almost Prts (fun (x : Ts) => ex_series (fun n => rvsum X n x)).
+    almost Prts (fun (x : Ts) => ex_series (fun n => X n x)).
   Proof.
     Admitted.
 
@@ -2060,15 +2060,10 @@ Qed.
     exists x.
     split; trivial.
     intros.
-    specialize (H4 x0 H5).
-    assert (ex_series (fun n => rvscale (/ (b n)) (X n) x0)).
-    {
-      admit.
-    }
-    generalize (ash_6_1_3_strong H H0 H6); intros.
+    generalize (ash_6_1_3_strong H H0 (H4 x0 H5)); intros.
     eapply is_lim_seq_ext.
     - shelve.
-    - apply H7.
+    - apply H6.
       Unshelve.
       intros.
       simpl.
