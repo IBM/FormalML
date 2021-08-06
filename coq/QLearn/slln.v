@@ -367,7 +367,6 @@ Lemma ash_6_1_3_strong1 {b x : nat -> R} (hb1 : forall n, 0 < b n < b (S n)) (hb
       (hx : ex_series x):
   is_lim_seq (fun n => (sum_n_m (fun j => b j * x j) 1 n)/(b n)) 0.
 Proof.
-  Search sum_n.
   pose (bb  := fun n => if (lt_dec 0 n) then (b n) else 0).
   generalize (@ash_6_1_3 bb x); intros.
   cut_to H; trivial.
