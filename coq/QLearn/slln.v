@@ -237,7 +237,6 @@ Lemma ash_6_1_2  {a x : nat -> R} {x0 : R}(ha : forall n, 0 <= a n)
        apply is_series_unique in Aser; now symmetry.
    Qed.
 
-
 (* Kronecker Lemma *)
 Lemma ash_6_1_3 {b x : nat -> R} (hb0: b (0%nat) = 0) (hb1 : forall n, 0 < b (S n) < b (S (S n))) (hb2 : is_lim_seq b p_infty)
       (hx : ex_series x):
@@ -347,6 +346,91 @@ Proof.
     intros.
     now rewrite Rmult_comm.
  Qed.
+
+Lemma sum_n_zeroval (f : nat -> R)  (n:nat) :
+  f 0%nat = 0 ->
+  sum_n_m f 0%nat n = sum_n_m f 1%nat n.
+Proof.
+  intros.
+  induction n.
+  - rewrite sum_n_n.
+    rewrite H.
+    rewrite sum_n_m_zero; try lia.
+    reflexivity.
+  - rewrite sum_n_Sm; try lia.
+    rewrite sum_n_Sm; try lia.
+    unfold plus; simpl.
+    now rewrite IHn.
+Qed.
+
+Lemma ash_6_1_3_strong1 {b x : nat -> R} (hb1 : forall n, 0 < b n < b (S n)) (hb2 : is_lim_seq b p_infty)
+      (hx : ex_series x):
+  is_lim_seq (fun n => (sum_n_m (fun j => b j * x j) 1 n)/(b n)) 0.
+Proof.
+  Search sum_n.
+  pose (bb  := fun n => if (lt_dec 0 n) then (b n) else 0).
+  generalize (@ash_6_1_3 bb x); intros.
+  cut_to H; trivial.
+  - apply is_lim_seq_ext with (v := fun n => sum_n_m (fun j => b j * x j) 1 (S n) / (b (S n))) in H.
+    + apply is_lim_seq_incr_1.
+      apply H.
+    + intros.
+      rewrite <- sum_n_Reals.
+      unfold sum_n.
+      replace (bb (S n)) with (b (S n)).
+      * f_equal.
+        rewrite sum_n_zeroval.
+        -- rewrite sum_n_m_ext_loc with (b0 :=  (fun j : nat => b j * x j)); [easy | ].
+           intros.
+           unfold bb.
+           match_destr.
+           lia.
+        -- unfold bb.
+           simpl.
+           lra.
+      * unfold bb.
+        match_destr.
+        lia.
+  - unfold bb.
+    now simpl.
+  - unfold bb.
+    apply is_lim_seq_incr_1.
+    apply is_lim_seq_ext with (u := (fun n => b (S n))).
+    + intros.
+      match_destr.
+      lia.
+    + now apply is_lim_seq_incr_1 in hb2.
+Qed.
+
+Lemma ash_6_1_3_strong {b x : nat -> R} (hb1 : forall n, 0 < b n < b (S n)) (hb2 : is_lim_seq b p_infty)
+      (hx : ex_series x):
+  is_lim_seq (fun n => (sum_n (fun j => b j * x j) n)/(b n)) 0.
+Proof.
+  apply is_lim_seq_incr_1.
+  apply is_lim_seq_ext with (u := fun n => ((b 0%nat)*(x 0%nat) + sum_n_m (fun j : nat => b j * x j) 1 (S n))/(b (S n))).
+  - intros.
+    f_equal.
+  - apply is_lim_seq_ext with (u := fun n => (b 0%nat)*(x 0%nat)/(b (S n)) + (sum_n_m (fun j : nat => b j * x j) 1 (S n))/(b (S n))).
+    + intros.
+      field.
+      apply Rgt_not_eq.
+      apply (hb1 (S n)).
+    + apply is_lim_seq_plus with (l1 := 0) (l2 := 0).
+      * unfold Rdiv.
+        replace (Rbar.Finite 0) with (Rbar_mult (Rmult (b 0%nat) (x 0%nat)) 0).
+        -- apply is_lim_seq_scal_l.
+           replace (Rbar.Finite 0) with (Rbar_inv p_infty).
+           ++ apply is_lim_seq_inv.
+              ** now apply is_lim_seq_incr_1 in hb2.
+              ** discriminate.
+           ++ now simpl.
+        -- now rewrite Rbar_mult_0_r.
+      * generalize (ash_6_1_3_strong1 hb1 hb2 hx); intros.
+        now apply is_lim_seq_incr_1 in H.
+      * red; simpl.
+        f_equal.
+        now rewrite Rplus_0_r.
+Qed.
 
 Context {Ts:Type} {dom: SigmaAlgebra Ts}{Prts: ProbSpace dom}.
 
@@ -1962,43 +2046,43 @@ Qed.
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
       (HC : forall n, 
           SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
-    0 < b 0%nat ->
-    (forall n, b n <= b (S n)) ->
+    (forall n, 0 < b n < b (S n)) ->
     is_lim_seq b p_infty ->
     ex_series (fun n => SimpleExpectation (rvsqr (rvscale (/ (b n)) (X n)))) ->
     almost Prts (fun (x : Ts) => is_lim_seq (fun n => (rvscale (/ (b n)) (rvsum X n)) x) 0). 
   Proof.
     intros.
-    assert (forall n, 0 < b n).
-    {
-      induction n; trivial.
-      eapply Rlt_le_trans.
-      - apply IHn.
-      - apply H0.
-    }
-    assert (forall n, rv_eq (rvscale (/ (b n)) (rvsum X n))
-                            (rvscale (/ (b n)) 
-                                     (rvsum (fun k => 
-                                               rvscale (b k) 
-                                                       (rvscale (/ (b k)) (X k))) n))).
-    {
-      intros n x.
-      unfold rvscale.
-      f_equal.
-      unfold rvsum.
-      apply sum_n_ext.
-      intros.
-      rewrite <- Rmult_assoc.
-      rewrite <- Rinv_r_sym.
-      - now rewrite Rmult_1_l.
-      - apply Rgt_not_eq.
-        apply H3.
-    }
     assert (forall n : nat,
         SimpleConditionalExpectationSA (rvscale (/ b n) (X n))
           (filtration_history n (fun n0 : nat => rvscale (/ b n0) (X n0))) =
         const 0) by admit.
-    generalize (Ash_6_2_1 (fun n => rvscale (/ (b n)) (X n)) H5 H2); intros.
-                                                                        
-     Admitted.
-        
+    generalize (Ash_6_2_1 (fun n => rvscale (/ (b n)) (X n)) H2 H1); intros.
+    destruct H3 as [? [? ?]].
+    assert (almost Prts (fun x => ex_series (fun n => rvscale (/ (b n)) (X n) x))) by admit.
+    destruct H5 as [? [? ?]].
+    unfold almost.
+    exists (event_inter x x0).
+    split.
+    - now rewrite ps_inter_r1.
+    - intros.
+      assert (x0 x1).
+      + generalize (event_inter_sub_r x x0); intros.
+        apply H8.
+        apply H7.
+      + generalize (ash_6_1_3_strong H H0 (H6 x1 H8)); intros.
+        eapply is_lim_seq_ext.
+        * shelve.
+        * apply H9.
+          Unshelve.
+          intros.
+          simpl.
+          unfold rvsum, rvscale, Rdiv.
+          rewrite Rmult_comm.
+          f_equal.
+          apply sum_n_ext.
+          intros.
+          simpl; field.
+          apply Rgt_not_eq.
+          apply H.
+
+Admitted.          
