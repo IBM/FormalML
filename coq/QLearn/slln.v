@@ -2057,31 +2057,28 @@ Qed.
         const 0) by admit.
     generalize (Ash_6_2_1 (fun n => rvscale (/ (b n)) (X n)) H2 H1); intros.
     destruct H3 as [? [? ?]].
-    assert (almost Prts (fun x => ex_series (fun n => rvscale (/ (b n)) (X n) x))) by admit.
-    destruct H5 as [? [? ?]].
-    unfold almost.
-    exists (event_inter x x0).
-    split.
-    - now rewrite ps_inter_r1.
-    - intros.
-      assert (x0 x1).
-      + generalize (event_inter_sub_r x x0); intros.
-        apply H8.
-        apply H7.
-      + generalize (ash_6_1_3_strong H H0 (H6 x1 H8)); intros.
-        eapply is_lim_seq_ext.
-        * shelve.
-        * apply H9.
-          Unshelve.
-          intros.
-          simpl.
-          unfold rvsum, rvscale, Rdiv.
-          rewrite Rmult_comm.
-          f_equal.
-          apply sum_n_ext.
-          intros.
-          simpl; field.
-          apply Rgt_not_eq.
-          apply H.
+    exists x.
+    split; trivial.
+    intros.
+    specialize (H4 x0 H5).
+    assert (ex_series (fun n => rvscale (/ (b n)) (X n) x0)).
+    {
+      admit.
+    }
+    generalize (ash_6_1_3_strong H H0 H6); intros.
+    eapply is_lim_seq_ext.
+    - shelve.
+    - apply H7.
+      Unshelve.
+      intros.
+      simpl.
+      unfold rvsum, rvscale, Rdiv.
+      rewrite Rmult_comm.
+      f_equal.
+      apply sum_n_ext.
+      intros.
+      simpl; field.
+      apply Rgt_not_eq.
+      apply H.
 
 Admitted.          
