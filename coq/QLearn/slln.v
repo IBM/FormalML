@@ -2040,26 +2040,27 @@ Qed.
   Proof.
   Admitted.
 
-  Program Instance frf_const (c : R) :
-    FiniteRangeFunction (fun (x:Ts) => c) 
-     := { frf_vals := [c] }.
-
   Lemma induced_sigma_scale (X : nat -> Ts -> R) (b : nat -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))} :
+    (forall n, b n <> 0) ->
     forall n, (induced_sigma_generators (frf n)) = (induced_sigma_generators (frfscale (/ b n) (X n))).
   Proof.
     intros.
     unfold induced_sigma_generators, SimpleExpectation.induced_sigma_generators_obligation_1.
     simpl.
-    rewrite <- nodup_map_nodup with (decA := Req_EM_T).
+    assert (forall n, / b n <> 0) by (intros; now apply Rinv_neq_0_compat).
+    rewrite <- nodup_scaled, map_map; trivial.
     unfold rvscale, preimage_singleton.
     unfold pre_event_preimage, pre_event_singleton.
-    Admitted.
+    apply map_ext.
+    intros.
+  Admitted.
 
   Lemma filtration_history_scale (X : nat -> Ts -> R) (b : nat -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))} :
+    (forall n, b n <> 0) ->
     forall n, (filtration_history n X) = (filtration_history n (fun n0 : nat => rvscale (/ b n0) (X n0))).
   Proof.
     induction n.
@@ -2075,13 +2076,14 @@ Qed.
       (HC : forall n, 
           rv_eq (SimpleConditionalExpectationSA (X n) (filtration_history n X))
                 (const 0))  :
+    (forall n, b n <> 0) ->
     forall n, rv_eq (SimpleConditionalExpectationSA 
                 (rvscale (/ (b n)) (X n))           
                 (filtration_history n (fun n0 : nat => rvscale (/ b n0) (X n0))))
               (const 0).
   Proof.
-    intros.
-    rewrite <- filtration_history_scale with (b := b).
+    intros bneq n.
+    rewrite <- filtration_history_scale with (b := b); trivial.
     assert (rv_eq (rvscale (/ b n) (X n))
                   (rvmult (const (/ b n)) (X n))).
     {
@@ -2117,7 +2119,13 @@ Qed.
     almost Prts (fun (x : Ts) => is_lim_seq (fun n => (rvscale (/ (b n)) (rvsum X n)) x) 0). 
   Proof.
     intros.
-    generalize (SCESA_scale X b HC); intros.
+    assert (bneq0:forall n, b n <> 0).
+    {
+      intros.
+      apply Rgt_not_eq.
+      apply H.
+    }
+    generalize (SCESA_scale X b HC bneq0); intros.
     generalize (Ash_6_2_1 (fun n => rvscale (/ (b n)) (X n)) H2 H1); intros.
     destruct H3 as [? [? ?]].
     exists x.
