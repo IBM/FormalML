@@ -303,7 +303,7 @@ Proof.
 
 End Simple.
 
-Require Import Finite ListAdd SigmaAlgebras.
+Require Import Finite ListAdd SigmaAlgebras EquivDec Eqdep_dec.
 
 Section Finite.
   Context {Ts:Type}{Td:Type}.
@@ -318,17 +318,53 @@ Section Finite.
     apply in_map_iff; eauto.
   Qed.
 
-(*
-  Program Instance Finite_finitesubset {A:Type} (l:list A)
+  Lemma Finite_finitsubset1 {A:Type} {decA:EqDec A eq} (x:A) (l:list A) :
+    { pfs : list (In x l) | forall pf, In pf pfs} .
+  Proof.
+    induction l; simpl.
+    - exists nil.
+      tauto.
+    - destruct IHl as [ll pfs].
+      
+      destruct (a == x).
+      + exists ((or_introl e) :: (map (@or_intror _ _) ll)).
+        intros [?|?].
+        * left.
+          f_equal.
+          apply eq_proofs_unicity; intros.
+          destruct (decA x0 y); tauto.
+        * right.
+          apply in_map.
+          apply pfs.
+      +  exists (map (@or_intror _ _) ll).
+         intros [?|?].
+         * congruence.
+         * apply in_map.
+           apply pfs.
+  Defined.
+
+  Definition Finite_finitsubset2 {A:Type} {decA:EqDec A eq} (x:A) (l:list A) :
+    list {x : A | In x l}.
+  Proof.
+    destruct (Finite_finitsubset1 x l).
+    exact (map (fun y => exist _ x y) x0).
+  Defined.
+  
+  Program Instance Finite_finitesubset_dec {A:Type} {decA:EqDec A eq} (l:list A)
     : Finite {x : A | In x l}.
   Next Obligation.
-    apply (list_dep_zip l).
-    apply Forall_forall; trivial.
+    exact (flat_map (fun x => Finite_finitsubset2 x l) l).
   Defined.
   Next Obligation.
-    (* TODO: either fix the witness or use a stronger In *)
-  Admitted.
-*)
+    unfold Finite_finitesubset_dec_obligation_1.
+    apply in_flat_map.
+    exists x.
+    split; trivial.
+    unfold Finite_finitsubset2.
+    destruct (Finite_finitsubset1 x l).
+    apply in_map.
+    apply i.
+  Qed.
 
   Definition finitesubset_sa {A} (l:list A) : SigmaAlgebra {x : A | In x l}
     := discrete_sa {x : A | In x l}.
