@@ -48,7 +48,7 @@ Proof.
 Qed.
 
 (* When we have a decidable equality, we can define a version of In which 
-   only admits unique proofs. This is important for avoiding proof irrelevance.
+   has only unique proofs. This is important for avoiding proof irrelevance.
  *)
 Fixpoint Inb {A} {dec:EqDec A eq} (a:A) l
   := match l with
