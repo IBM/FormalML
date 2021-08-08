@@ -426,37 +426,6 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
       now rewrite e, e0.
     Qed.
 
-(*
-    Lemma ex_deriv_div (f g :R ->R) (x:R) :
-      ex_derive (fun t => (f t)/(g t)) x -> (g x) <> 0.
-      Admitted.
-
-
-
-    Lemma ex_deriv_log (f : R -> R) (x:R) :
-      ex_derive (fun t => ln (f t)) x -> (f x) > 0.
-      Admitted.
-
-    Lemma ex_deriv_abs (f : R -> R) (x:R) :
-      ex_derive f x -> ex_derive (fun t => Rabs (f t)) x ->
-      f x <> 0 \/ is_derive f x 0.
-      Admitted.
-
-    Lemma ex_deriv_sign (f : R -> R) (x:R) :
-      ex_derive f x -> ex_derive (fun t => sign (f t)) x ->
-      f x <> 0 \/ locally x (fun t => f t = 0).
-      Admitted.
-
-    Lemma ex_deriv_psign (f : R -> R) (x:R) :
-      ex_derive f x -> ex_derive (fun t => psign (f t)) x ->
-      f x <> 0 \/ locally x (fun t => f t >= 0).
-      Admitted.
-     
-    Lemma ex_deriv_max (f g : R -> R) (x: R) :
-      ex_derive f x -> ex_derive g x -> ex_derive (fun t => Rmax (f t) (g t)) x ->
-      (f x) <> (g x) \/ is_derive (fun t => (f t) - (g t)) x 0.
-    Admitted.
-*)    
     Lemma floatish_sign :
       forall (x:R), sign x = FloatishOps.sign x.
     Proof.
