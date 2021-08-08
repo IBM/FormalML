@@ -1388,27 +1388,50 @@ Section SimpleConditionalExpectation.
     apply SimpleExpectation_pf_irrel.
   Qed.
 
+  Lemma EventIndicator_ext {P1 P2 : Ts->Prop} (dec1:forall x, {P1 x} + {~ P1 x}) (dec2:forall x, {P2 x} + {~ P2 x}) : 
+    pre_event_equiv P1 P2 -> rv_eq (EventIndicator dec1) (EventIndicator dec2).
+  Proof.
+    unfold EventIndicator, pre_event_equiv, rv_eq.
+    intros ??.
+    repeat match_destr
+    ; apply H in p; congruence.
+  Qed.
+
   Lemma SimpleConditionalExpectationSA_ext (x y:Ts->R)
         {rvx : RandomVariable dom borel_sa x}
         {rvy : RandomVariable dom borel_sa y}
         {frfx : FiniteRangeFunction x}
         {frfy : FiniteRangeFunction y}          
-        (l : list dec_sa_event) :
-      rv_eq x y ->
-      rv_eq (SimpleConditionalExpectationSA x l)
-            (SimpleConditionalExpectationSA y l).
-    Proof.
-      repeat red; intros.
-      unfold SimpleConditionalExpectationSA.
+        (l1 l2 : list dec_sa_event) :
+    rv_eq x y ->
+    Forall2 dsa_equiv l1 l2 ->
+    rv_eq (SimpleConditionalExpectationSA x l1)
+          (SimpleConditionalExpectationSA y l2).
+  Proof.
+    repeat red; intros.
+    unfold SimpleConditionalExpectationSA.
+    induction H0; simpl; trivial.
+    unfold rvplus.
+    f_equal; trivial.
+    unfold gen_simple_conditional_expectation_scale.
+    red in H0.
+    match_destr.
+    - rewrite H0 in e.
+      match_destr; [| congruence].
+      unfold rvscale.
+      lra.
+    - rewrite H0 in n.      
+      match_destr; [congruence |].
+      unfold rvscale.
       f_equal.
-      apply map_ext; intros.
-      unfold gen_simple_conditional_expectation_scale.
-      match_destr.
-      do 2 f_equal.
-      apply SimpleExpectation_ext.
-      now rewrite H.
-    Qed.
-
+      + f_equal.
+        * apply SimpleExpectation_ext.
+          apply rvmult_proper; trivial.
+          now apply EventIndicator_ext.
+        * now rewrite H0.
+      + now apply EventIndicator_ext.
+  Qed.
+  
 (*
   Lemma sumSimpleExpectation
         (rv_X1 rv_X2 : Ts -> R)

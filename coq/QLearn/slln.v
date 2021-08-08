@@ -2044,7 +2044,7 @@ Qed.
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))} :
     (forall n, b n <> 0) ->
-    forall n, (induced_sigma_generators (frf n)) = (induced_sigma_generators (frfscale (/ b n) (X n))).
+    forall n, Forall2 dsa_equiv (induced_sigma_generators (frf n)) (induced_sigma_generators (frfscale (/ b n) (X n))).
   Proof.
     intros.
     unfold induced_sigma_generators, SimpleExpectation.induced_sigma_generators_obligation_1.
@@ -2053,23 +2053,28 @@ Qed.
     rewrite <- nodup_scaled, map_map; trivial.
     unfold rvscale, preimage_singleton.
     unfold pre_event_preimage, pre_event_singleton.
-    apply map_ext.
-    intros.
-  Admitted.
+    rewrite <- Forall2_map.
+    apply Forall2_refl.
+    intros ??; simpl.
+    split; intros.
+    - subst; lra.
+    - apply Rmult_eq_reg_l in H1; trivial.
+  Qed.
 
   Lemma filtration_history_scale (X : nat -> Ts -> R) (b : nat -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))} :
     (forall n, b n <> 0) ->
-    forall n, (filtration_history n X) = (filtration_history n (fun n0 : nat => rvscale (/ b n0) (X n0))).
+    forall n, Forall2 dsa_equiv (filtration_history n X) (filtration_history n (fun n0 : nat => rvscale (/ b n0) (X n0))).
   Proof.
     induction n.
     - now simpl.
     - simpl.
-      rewrite <- IHn.
-      now rewrite induced_sigma_scale with (b := b).
-   Qed.
-    
+      apply refine_dec_sa_partitions_proper.
+      + now apply induced_sigma_scale.
+      + apply IHn.
+  Qed.
+  
   Lemma SCESA_scale (X : nat -> Ts -> R) (b : nat -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
@@ -2083,22 +2088,18 @@ Qed.
               (const 0).
   Proof.
     intros bneq n.
-    rewrite <- filtration_history_scale with (b := b); trivial.
-    assert (rv_eq (rvscale (/ b n) (X n))
-                  (rvmult (const (/ b n)) (X n))).
-    {
-      intro x.
-      now unfold rvscale, rvmult, const.
+    transitivity (SimpleConditionalExpectationSA (rvmult (const (/ b n)) (X n))
+                                                 (filtration_history n X)).
+    { 
+      apply SimpleConditionalExpectationSA_ext.
+      - intros x.
+        now unfold rvscale, rvmult, const.
+      - symmetry.
+        now apply filtration_history_scale.
     }
-    generalize (SimpleConditionalExpectationSA_ext _ _ (filtration_history n X) H); intros.
-    generalize (gen_conditional_scale_measurable (const (/ (b n))) (X n) (filtration_history n X)); intros.
-    cut_to H1.
-    - rewrite <- H0 in H1.
-      rewrite H1.
-      rewrite HC.
-      intro x.
-      unfold rvmult, const.
-      now rewrite Rmult_0_r.
+    rewrite (gen_conditional_scale_measurable (const (/ (b n))) (X n) (filtration_history n X)); intros.
+    - rewrite HC.
+      intros ?; rv_unfold; lra.
     - apply part_list_history.
     - apply partition_constant_measurable.
       + apply part_list_history.

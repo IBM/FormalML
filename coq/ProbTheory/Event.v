@@ -2026,6 +2026,44 @@ Section dec.
   Definition refine_dec_sa_partitions (l1 l2 : list dec_sa_event) :=
     flat_map (fun e1 => refine_dec_sa_event e1 l2) l1.
 
+  Global Instance dec_sa_event_inter_proper :
+    Proper (dsa_equiv ==> dsa_equiv ==> dsa_equiv) dec_sa_event_inter.
+  Proof.
+    unfold dec_sa_event_inter, dsa_equiv.
+    intros ??????; simpl.
+    now apply event_inter_proper.
+  Qed.
+
+  Global Instance dec_sa_event_union_proper :
+    Proper (dsa_equiv ==> dsa_equiv ==> dsa_equiv) dec_sa_event_union.
+  Proof.
+    unfold dec_sa_event_union, dsa_equiv.
+    intros ??????; simpl.
+    now apply event_union_proper.
+  Qed.
+
+  Global Instance refine_dec_sa_event_proper :
+    Proper (dsa_equiv ==> Forall2 dsa_equiv ==> Forall2 dsa_equiv) refine_dec_sa_event.
+  Proof.
+    intros ????? F2.
+    unfold refine_dec_sa_event.
+    rewrite <- Forall2_map.
+    revert F2.
+    apply Forall2_incl; intros.
+    now apply dec_sa_event_inter_proper.
+  Qed.
+
+  Global Instance refine_dec_sa_partitions_proper :
+    Proper (Forall2 dsa_equiv ==> Forall2 dsa_equiv ==> Forall2 dsa_equiv) refine_dec_sa_partitions.
+  Proof.
+    unfold refine_dec_sa_partitions.
+    intros ?? F21.
+    induction F21; intros ?? F22; simpl; trivial.
+    apply Forall2_app.
+    - now apply refine_dec_sa_event_proper.
+    - now apply IHF21.
+  Qed.
+
   Lemma events_disjoint_refine_event (a : dec_sa_event) (l : list dec_sa_event) :
     ForallOrdPairs event_disjoint (map dsa_event l) ->
     ForallOrdPairs event_disjoint (map dsa_event (refine_dec_sa_event a l)).
@@ -2155,6 +2193,7 @@ Section dec.
       + now apply IHl1.
   Qed.
 
+  
 End dec.
 
 Coercion event_pre : event >-> Funclass.
