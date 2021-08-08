@@ -718,7 +718,17 @@ Qed.
 
  Lemma expt_value_prod_pmf {A B : Type} (f : A -> B -> R) (p : Pmf A) (q : Pmf B):
    expt_value (Pmf_prod p q) (fun '(a,b) => f a b) = expt_value p (fun a => expt_value q (fun b => f a b)).
- Admitted.
+ Proof.
+   unfold Pmf_prod.
+   simpl.
+   rewrite expt_value_bind.
+   apply expt_value_Proper; trivial.
+   intros ?.
+   rewrite expt_value_bind.
+   apply expt_value_Proper; trivial.
+   intros ?.
+   now rewrite expt_value_pure.
+ Qed.
 
 End expected_value. 
 
