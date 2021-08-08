@@ -2044,12 +2044,30 @@ Qed.
     FiniteRangeFunction (fun (x:Ts) => c) 
      := { frf_vals := [c] }.
 
+  Lemma induced_sigma_scale (X : nat -> Ts -> R) (b : nat -> R)
+      {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
+      {frf : forall (n:nat), FiniteRangeFunction (X (n))} :
+    forall n, (induced_sigma_generators (frf n)) = (induced_sigma_generators (frfscale (/ b n) (X n))).
+  Proof.
+    intros.
+    unfold induced_sigma_generators, SimpleExpectation.induced_sigma_generators_obligation_1.
+    simpl.
+    rewrite <- nodup_map_nodup with (decA := Req_EM_T).
+    unfold rvscale, preimage_singleton.
+    unfold pre_event_preimage, pre_event_singleton.
+    Admitted.
+
   Lemma filtration_history_scale (X : nat -> Ts -> R) (b : nat -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))} :
     forall n, (filtration_history n X) = (filtration_history n (fun n0 : nat => rvscale (/ b n0) (X n0))).
   Proof.
-    Admitted.
+    induction n.
+    - now simpl.
+    - simpl.
+      rewrite <- IHn.
+      now rewrite induced_sigma_scale with (b := b).
+   Qed.
     
   Lemma SCESA_scale (X : nat -> Ts -> R) (b : nat -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
