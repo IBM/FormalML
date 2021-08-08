@@ -2034,27 +2034,72 @@ Qed.
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
       (HC : forall n, 
-          SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
+          rv_eq (SimpleConditionalExpectationSA (X n) (filtration_history n X)) (const 0))  :
     ex_series (fun n => SimpleExpectation (rvsqr (X n))) ->
     almost Prts (fun (x : Ts) => ex_series (fun n => X n x)).
   Proof.
-    Admitted.
+  Admitted.
 
+  Program Instance frf_const (c : R) :
+    FiniteRangeFunction (fun (x:Ts) => c) 
+     := { frf_vals := [c] }.
+
+  Lemma filtration_history_scale (X : nat -> Ts -> R) (b : nat -> R)
+      {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
+      {frf : forall (n:nat), FiniteRangeFunction (X (n))} :
+    forall n, (filtration_history n X) = (filtration_history n (fun n0 : nat => rvscale (/ b n0) (X n0))).
+  Proof.
+    Admitted.
+    
+  Lemma SCESA_scale (X : nat -> Ts -> R) (b : nat -> R)
+      {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
+      {frf : forall (n:nat), FiniteRangeFunction (X (n))}
+      (HC : forall n, 
+          rv_eq (SimpleConditionalExpectationSA (X n) (filtration_history n X))
+                (const 0))  :
+    forall n, rv_eq (SimpleConditionalExpectationSA 
+                (rvscale (/ (b n)) (X n))           
+                (filtration_history n (fun n0 : nat => rvscale (/ b n0) (X n0))))
+              (const 0).
+  Proof.
+    intros.
+    rewrite <- filtration_history_scale with (b := b).
+    assert (rv_eq (rvscale (/ b n) (X n))
+                  (rvmult (const (/ b n)) (X n))).
+    {
+      intro x.
+      now unfold rvscale, rvmult, const.
+    }
+    generalize (SimpleConditionalExpectationSA_ext _ _ (filtration_history n X) H); intros.
+    generalize (gen_conditional_scale_measurable (const (/ (b n))) (X n) (filtration_history n X)); intros.
+    cut_to H1.
+    - rewrite <- H0 in H1.
+      rewrite H1.
+      rewrite HC.
+      intro x.
+      unfold rvmult, const.
+      now rewrite Rmult_0_r.
+    - apply part_list_history.
+    - apply partition_constant_measurable.
+      + apply part_list_history.
+      + intros.
+        exists (/ b n).
+        intros.
+        now unfold const.
+  Qed.
+      
   Lemma Ash_6_2_2 (X : nat -> Ts -> R) (b : nat -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
       (HC : forall n, 
-          SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
+          rv_eq (SimpleConditionalExpectationSA (X n) (filtration_history n X)) (const 0))  :
     (forall n, 0 < b n < b (S n)) ->
     is_lim_seq b p_infty ->
     ex_series (fun n => SimpleExpectation (rvsqr (rvscale (/ (b n)) (X n)))) ->
     almost Prts (fun (x : Ts) => is_lim_seq (fun n => (rvscale (/ (b n)) (rvsum X n)) x) 0). 
   Proof.
     intros.
-    assert (forall n : nat,
-        SimpleConditionalExpectationSA (rvscale (/ b n) (X n))
-          (filtration_history n (fun n0 : nat => rvscale (/ b n0) (X n0))) =
-        const 0) by admit.
+    generalize (SCESA_scale X b HC); intros.
     generalize (Ash_6_2_1 (fun n => rvscale (/ (b n)) (X n)) H2 H1); intros.
     destruct H3 as [? [? ?]].
     exists x.
@@ -2075,5 +2120,4 @@ Qed.
       simpl; field.
       apply Rgt_not_eq.
       apply H.
-
-Admitted.          
+Qed.
