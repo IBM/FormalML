@@ -721,7 +721,7 @@ Lemma expec_cross_zero (X : nat -> Ts -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
       {frf : forall (n:nat), FiniteRangeFunction (X n)}
       (HC : forall n, 
-          SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
+          rv_eq (SimpleConditionalExpectationSA (X n) (filtration_history n X)) (const 0))  :
   forall (j k : nat), 
     (j < k)%nat ->
     SimpleExpectation(rvmult (X j) (X k)) = 0.
@@ -773,7 +773,7 @@ Lemma expec_cross_zero_sum_shift (X : nat -> Ts -> R) (m:nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
       {frf : forall (n:nat), FiniteRangeFunction (X n)}
       (HC : forall n, 
-          SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
+          rv_eq (SimpleConditionalExpectationSA (X n) (filtration_history n X)) (const 0))  :
   forall (j k : nat), 
     (j < k)%nat ->
     SimpleExpectation(rvsum (fun n => rvmult (X (n+m)%nat) (X (k+m)%nat)) j) = 0.
@@ -806,7 +806,7 @@ Lemma expec_cross_zero_sum2_shift (X : nat -> Ts -> R) (m : nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
       {frf : forall (n:nat), FiniteRangeFunction (X n)}
       (HC : forall n, 
-          SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
+          rv_eq (SimpleConditionalExpectationSA (X n) (filtration_history n X)) (const 0))  :
   forall (j k : nat), 
     (j < k)%nat ->
     SimpleExpectation (rvmult (rvsum (fun n => X (n + m)%nat) j) (X (k+m)%nat)) = 0.
@@ -1646,7 +1646,7 @@ Qed.
       {rv : forall n, RandomVariable dom borel_sa (X n)}
       {frf : forall n, FiniteRangeFunction (X n)} 
       (HC : forall n, 
-          SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
+          rv_eq (SimpleConditionalExpectationSA (X n) (filtration_history n X)) (const 0))  :
 
   let Xm := fun n => X (n + m)%nat in 
   SimpleExpectation 
@@ -1678,7 +1678,7 @@ Lemma ash_6_1_4 (X: nat -> Ts -> R) (eps:posreal) (m:nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
       {frf : forall (n:nat), FiniteRangeFunction (X n)}
       (HC : forall n, 
-          SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
+          rv_eq (SimpleConditionalExpectationSA (X n) (filtration_history n X)) (const 0))  :
   let Sum := fun j => (rvsum (fun n => X (n + m)%nat) j) in
   forall (n:nat), ps_P (event_ge dom (rvmaxlist (fun k => rvabs(Sum k)) n) eps) <=
            (SimpleExpectation (rvsqr (Sum n)))/eps^2.
@@ -1843,7 +1843,7 @@ Lemma var_sum_cross_0_offset (X : nat -> Ts -> R) (m : nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
       {frf : forall (n:nat), FiniteRangeFunction (X n)}
       (HC : forall n, 
-          SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
+          rv_eq (SimpleConditionalExpectationSA (X n) (filtration_history n X)) (const 0))  :
   let Xm := fun n => X (n + m)%nat in
   forall j, SimpleExpectation(rvsqr (rvsum Xm j)) =
             sum_n (fun n => SimpleExpectation (rvsqr (X (n + m)%nat))) j.
@@ -1993,7 +1993,7 @@ Lemma Ash_6_2_1_helper (X : nat -> Ts -> R) (eps : posreal) (m : nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
       (HC : forall n, 
-          SimpleConditionalExpectationSA (X n) (filtration_history n X) = const 0)  :
+          rv_eq (SimpleConditionalExpectationSA (X n) (filtration_history n X)) (const 0))  :
   let Sum := fun j => rvsum (fun k => X (k+m)%nat) j in
   Rbar_le (Lim_seq (fun n => ps_P (event_ge dom (rvmaxlist (fun k => rvabs (Sum k)) n) eps)))
           (Rbar_div_pos (LimSup_seq (sum_n (fun n => SimpleExpectation (rvsqr (X (n + m)%nat))))) (mkposreal _ (sqr_pos eps))).
