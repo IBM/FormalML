@@ -83,6 +83,7 @@ PROB_THEORY = \
 	RandomVariableLinf \
 	RealVectorHilbert \
 	SimpleExpectation \
+	ConditionalExpectation \
 	Expectation \
 	RbarExpectation \
 	SigmaAlgebras \
