@@ -7140,6 +7140,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
          + now rewrite H4 in H.
     Qed.
 
+     (*
      Theorem df_eval_deriv_same {T} (σ:df_env) (df:DefinedFunction UnitAnn T) (s:SubVar) :
         let v := (s, DTfloat) in 
         let vl := map (fun ve => projT1 ve) σ in
@@ -7240,7 +7241,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
           assert ( df_eval_deriv [mk_env_entry (v, DTfloat) (d x)] df1 (v, DTfloat) =
                    df_eval σ (df_subst (df_deriv df1 (v, DTfloat)) (v, DTfloat) 
                                        (VectorElem () df2 x))).
-          admit.
+          XXX
           now rewrite H2.
         + assert ( df_eval σ (df_deriv df2 (s, DTfloat)) <> None ); [|tauto].
           apply eval_fully_closed_not_none.
@@ -7257,7 +7258,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
           assert ( df_eval_deriv [mk_env_entry (v, DTfloat) (d x x0)] df1 (v, DTfloat) =
                    df_eval σ (df_subst (df_deriv df1 (v, DTfloat)) (v, DTfloat) 
                                        (MatrixElem () df2 x x0))).
-          admit.
+          XXX
           now rewrite H2.
         + assert ( df_eval σ (df_deriv df2 (s, DTfloat)) <> None ); [|tauto].
           apply eval_fully_closed_not_none.
@@ -7271,7 +7272,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         do 2 match_option.
         + do 2 f_equal.
           apply functional_extensionality; intros.
-          admit.
+          XXX
         + generalize (vectoro_to_ovector_exists_None eqq2).
           intros; destruct H2.
           assert (df_eval 
@@ -7298,7 +7299,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
         match_option.
         do 2 match_option.
         + do 2 f_equal.
-          admit.
+          XXX
         + generalize (vectoro_to_ovector_exists_None eqq2); intros; destruct H2.
           generalize (vectoro_to_ovector_exists_None e); intros; destruct H2.
           match_option_in e0.
@@ -7322,7 +7323,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                                  mk_env_entry (v2, DTfloat) (r x x0)]
            df1 (v1, DTfloat) <> None); [|tauto].
           apply eval_deriv_fully_closed_not_none; trivial.
-      Admitted.          
+    *)
      
      Theorem df_eval_deriv_scalar_same (σ:df_env) (df:DefinedFunction UnitAnn DTfloat) (s:SubVar) :
         let v := (s, DTfloat) in 
