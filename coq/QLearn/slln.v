@@ -12,7 +12,6 @@ Set Default Goal Selector "!".
 Import ListNotations.
 
 
-(*TODO(Kody) : Strengthen by using partial sums bounded instead of hb1 and hb2. *)
 Lemma ash_6_1_1_a {x : nat -> R}{a : nat -> nat -> R} (ha : forall j, is_lim_seq (fun n => (a n j)) 0)
       (hb1 : forall n, ex_series(fun j => Rabs(a n j)))
       (hb2 : exists c, forall n, Series (fun j => Rabs (a n j)) < c)
@@ -2133,18 +2132,14 @@ Qed.
     split; trivial.
     intros.
     generalize (ash_6_1_3_strong H H0 (H4 x0 H5)); intros.
-    eapply is_lim_seq_ext.
-    - shelve.
-    - apply H6.
-      Unshelve.
-      intros.
-      simpl.
-      unfold rvsum, rvscale, Rdiv.
-      rewrite Rmult_comm.
-      f_equal.
-      apply sum_n_ext.
-      intros.
-      simpl; field.
-      apply Rgt_not_eq.
-      apply H.
+    eapply is_lim_seq_ext; try (apply H6).
+    intros; simpl.
+    unfold rvsum, rvscale, Rdiv.
+    rewrite Rmult_comm.
+    f_equal.
+    apply sum_n_ext.
+    intros.
+    simpl; field.
+    apply Rgt_not_eq.
+    apply H.
 Qed.

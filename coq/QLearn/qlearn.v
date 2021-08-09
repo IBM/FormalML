@@ -127,7 +127,7 @@ algorithm.
                   apply (@norm_zero R_AbsRing).
     Qed.
 
-    (*TODO(Kody): Use this to simplify the proof above. *)
+    (*TODO: Use this to simplify the proof above. *)
     Lemma is_contraction_falpha' (γ r : R) :
       0<=r<=1 -> (forall x y, norm(minus (F x) (F y)) <= γ*(norm (minus x y)))
       -> (forall x y,
