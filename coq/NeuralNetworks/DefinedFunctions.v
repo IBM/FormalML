@@ -4810,7 +4810,6 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
          end) (eq_refl _)
       | None => None
       end.
-g
 
     Definition transpose_lifted_type {T1 T2} :
                lifted_type (definition_function_types_interp T1) T2 ->

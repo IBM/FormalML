@@ -9,6 +9,7 @@ Require Import ExtLib.Structures.Functor.
 
 Import MonadNotation FunctorNotation.
 Set Bullet Behavior "Strict Subproofs".
+Require List.
 
 (*
 
@@ -298,16 +299,55 @@ Global Instance Pmf_MonadLaws : MonadLaws Monad_Pmf := {|
   bind_associativity := @Pmf_bind_of_bind;
 |}.
 
-(*Lemma Pmf_bind_comm {A B C : Type} (p : Pmf A) (q : Pmf B) (f : A -> B -> Pmf C) :
+
+Definition dist_bind_outcomes_alt
+         {A B : Type} (f : A ->  list (nonnegreal * B)) (p : list (nonnegreal*A)) : list(nonnegreal*B) :=
+  flatten (map (fun '(n,a) =>
+                 map (fun (py:nonnegreal*B) => (mknonnegreal _ (prod_nonnegreal n py.1),py.2)) (f a)) p).
+
+Instance dist_bind_outcomes_alt_eq_ext_proper {A B : Type} :
+  Proper (pointwise_relation A eq ==> eq ==> eq) (@dist_bind_outcomes_alt A B).
+Proof.
+  intros ??????; subst.
+  unfold dist_bind_outcomes_alt.
+  f_equal.
+  eapply eq_map.
+  intros ?.
+  destruct x0; simpl.
+  rewrite H.
+  eapply eq_map.
+  intros ?.
+  reflexivity.
+Qed.
+
+Lemma dist_bind_outcomes_alt_eq {A B : Type}
+      (f : A -> Pmf  B)
+      (p : list (nonnegreal*A)) :
+  dist_bind_outcomes f p = dist_bind_outcomes_alt (fun x => (f x).(outcomes)) p.
+Proof.
+  unfold dist_bind_outcomes_alt.
+  induction p; simpl; trivial.
+  destruct a.
+  simpl.
+  now f_equal.
+Qed.
+
+(*
+This should be true only up to permutation of the outcomes
+Lemma Pmf_bind_comm {A B C : Type} (p : Pmf A) (q : Pmf B) (f : A -> B -> Pmf C) :
   Pmf_bind p (fun a => Pmf_bind q (f a)) = Pmf_bind q (fun b => Pmf_bind p (fun a => f a b)).
 Proof.
   apply Pmf_ext ; simpl.
-  revert q.
-  induction p.(outcomes).
-  simpl. intros q. induction q.(outcomes). simpl. reflexivity.
-  simpl. rewrite <-IHl. destruct a. 
-Admitted.*)
-
+  unfold Pmf_bind; simpl.
+  destruct p as [p p1]; destruct q as [q q1].
+  repeat rewrite dist_bind_outcomes_alt_eq; simpl.
+  erewrite dist_bind_outcomes_alt_eq_ext_proper
+  ; try (intros ?; apply dist_bind_outcomes_alt_eq); try reflexivity.
+  erewrite (dist_bind_outcomes_alt_eq_ext_proper (fun x : B => dist_bind_outcomes (f^~ x) p))
+  ; try (intros ?; apply dist_bind_outcomes_alt_eq); try reflexivity.
+  
+  clear p1 q1.
+*)
 
 (* The functorial action of Pmf. *)
 Definition Pmf_map {A B : Type}(f : A -> B) (p : Pmf A) : Pmf B := p >>= (ret \o f).
