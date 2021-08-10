@@ -10,6 +10,7 @@ Require Import ExtLib.Structures.Functor.
 Import MonadNotation FunctorNotation.
 Set Bullet Behavior "Strict Subproofs".
 Require List.
+Require Import Permutation.
 
 (*
 
@@ -305,6 +306,21 @@ Definition dist_bind_outcomes_alt
   flatten (map (fun '(n,a) =>
                  map (fun (py:nonnegreal*B) => (mknonnegreal _ (prod_nonnegreal n py.1),py.2)) (f a)) p).
 
+Definition dist_bind_outcomes_alt2
+         {A B : Type} (f : A ->  list (nonnegreal * B)) (p : list (nonnegreal*A)) : list(nonnegreal*B) :=
+  List.concat (List.map (fun na => 
+                 List.map (fun (py:nonnegreal*B) => (mknonnegreal _ (prod_nonnegreal (fst na) py.1),py.2)) (f (snd na))) p).
+
+Lemma dist_bind_outcomes_alt2_eq {A B : Type} (f : A ->  list (nonnegreal * B)) (p : list (nonnegreal*A)) :
+  dist_bind_outcomes_alt f p = dist_bind_outcomes_alt2 f p.
+Proof.
+  induction p; simpl; trivial.
+  unfold dist_bind_outcomes_alt, dist_bind_outcomes_alt2 in *.
+  destruct a; simpl.
+  rewrite IHp.
+  firstorder.
+Qed.
+
 Instance dist_bind_outcomes_alt_eq_ext_proper {A B : Type} :
   Proper (pointwise_relation A eq ==> eq ==> eq) (@dist_bind_outcomes_alt A B).
 Proof.
@@ -332,22 +348,58 @@ Proof.
   now f_equal.
 Qed.
 
-(*
-This should be true only up to permutation of the outcomes
-Lemma Pmf_bind_comm {A B C : Type} (p : Pmf A) (q : Pmf B) (f : A -> B -> Pmf C) :
-  Pmf_bind p (fun a => Pmf_bind q (f a)) = Pmf_bind q (fun b => Pmf_bind p (fun a => f a b)).
+Lemma dist_bind_outcomes_alt_comm {A B C : Type} (p:seq (nonnegreal * A)) (q:seq (nonnegreal * B)) (f : A -> B -> Pmf C) :
+  Permutation (dist_bind_outcomes_alt2 (fun a : A => dist_bind_outcomes_alt2 (fun x : B => f a x) q) p)
+    (dist_bind_outcomes_alt2 (fun a : B => dist_bind_outcomes_alt2 (fun x : A => (f^~ a) x) p) q).
 Proof.
-  apply Pmf_ext ; simpl.
+  unfold dist_bind_outcomes_alt2.
+  erewrite List.map_ext.
+  2: {
+    intros.
+    rewrite List.concat_map.
+    rewrite List.map_map.
+    reflexivity.
+  }
+  symmetry.
+  erewrite List.map_ext.
+  2: {
+    intros.
+    rewrite List.concat_map.
+    rewrite List.map_map.
+    reflexivity.
+  }
+  symmetry.
+  repeat rewrite concat_map_concat'.
+  rewrite concat_map_swap_perm.
+  apply Permutation_concat.
+  apply Permutation_concat.
+  match goal with
+  | [|- Permutation ?x ?y ] => cut (x = y); [intros eqqq; rewrite eqqq; reflexivity | ]
+  end.
+  repeat (apply List.map_ext; intros).
+  repeat rewrite List.map_map.
+  repeat (apply List.map_ext; intros).
+  simpl.
+  f_equal.
+  apply nonneg_ext.
+  lra.
+Qed.
+
+Lemma Pmf_bind_comm {A B C : Type} (p : Pmf A) (q : Pmf B) (f : A -> B -> Pmf C) :
+  Permutation (Pmf_bind p (fun a => Pmf_bind q (f a))) (Pmf_bind q (fun b => Pmf_bind p (fun a => f a b))).
+Proof.
   unfold Pmf_bind; simpl.
   destruct p as [p p1]; destruct q as [q q1].
   repeat rewrite dist_bind_outcomes_alt_eq; simpl.
   erewrite dist_bind_outcomes_alt_eq_ext_proper
-  ; try (intros ?; apply dist_bind_outcomes_alt_eq); try reflexivity.
+  ; try (intros ?; rewrite dist_bind_outcomes_alt_eq; apply dist_bind_outcomes_alt2_eq)
+  ; try reflexivity.
   erewrite (dist_bind_outcomes_alt_eq_ext_proper (fun x : B => dist_bind_outcomes (f^~ x) p))
-  ; try (intros ?; apply dist_bind_outcomes_alt_eq); try reflexivity.
-  
-  clear p1 q1.
-*)
+  ; try (intros ?; rewrite dist_bind_outcomes_alt_eq; apply dist_bind_outcomes_alt2_eq)
+  ; try reflexivity.
+    repeat rewrite dist_bind_outcomes_alt2_eq; simpl.
+  apply dist_bind_outcomes_alt_comm.
+Qed.
 
 (* The functorial action of Pmf. *)
 Definition Pmf_map {A B : Type}(f : A -> B) (p : Pmf A) : Pmf B := p >>= (ret \o f).

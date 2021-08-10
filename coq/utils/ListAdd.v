@@ -40,7 +40,21 @@ Section Map.
       apply Permutation_app; trivial.
       apply Permutation_app_swap.
   Qed.
-  
+
+  Lemma concat_map_concat {A} (l:list (list (list A))) : concat (map (@concat _) l) = concat (concat l).
+  Proof.
+    induction l; simpl; trivial.
+    rewrite IHl.
+    now rewrite concat_app.
+  Qed.
+
+  Lemma concat_map_concat' {A B} (f:A->list (list B)) (l:list A) : concat (map (fun x => concat (f x)) l) = concat (concat (map f l)).
+  Proof.
+    induction l; simpl; trivial.
+    rewrite IHl.
+    now rewrite concat_app.
+  Qed.
+
   Lemma map_app_interleave_perm {A B} (l:list A) (fl:list (A->B)) :
     Permutation (concat (map (fun f => map (fun x => f x) l) fl)) (concat (map (fun x => map (fun f => f x) fl) l)).
   Proof.
