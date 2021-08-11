@@ -2018,15 +2018,31 @@ Proof.
     + apply H1.
 Qed.
 
-  Lemma Ash_6_2_1_helper2 (X : nat -> Ts -> R)
+ Lemma Ash_6_2_1_helper2 (X : nat -> Ts -> R) (eps : posreal)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}:
     ex_series (fun n => SimpleExpectation (rvsqr (X n))) ->
-    is_lim_seq (fun m => LimSup_seq (sum_n (fun n =>
-                                           SimpleExpectation (rvsqr (X (n + m)%nat))))) 0.
+    is_lim_seq (fun m =>
+                  (Rbar_div_pos (LimSup_seq (sum_n (fun n => SimpleExpectation (rvsqr (X (n + m)%nat))))) 
+                                (mkposreal _ (sqr_pos eps)))) 0.
   Proof.
-    intros ha.
-    apply (is_lim_seq_LimSup_shift_0 ha).
+    intros.
+    apply is_lim_seq_ext with
+        (u := fun m => (Rbar_div_pos (Series (fun n => SimpleExpectation (rvsqr (X (n + m)%nat))))
+                                     (mkposreal _ (sqr_pos eps)))).
+    {
+      intros.
+      generalize (LimSup_seq_series H n); intros.
+      now rewrite H0.
+    }
+    simpl.
+    unfold Rdiv.
+    replace (Rbar.Finite 0) with (Rbar_mult 0 (/ (mkposreal _ (sqr_pos eps)))).
+    - apply is_lim_seq_scal_r.
+      generalize (is_lim_seq_series_shift_0 H); intros.
+      apply H0.
+    - simpl.
+      now rewrite Rmult_0_l.
   Qed.
 
   Lemma Ash_6_2_1 (X : nat -> Ts -> R)
