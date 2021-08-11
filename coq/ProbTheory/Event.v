@@ -1848,6 +1848,47 @@ Section event.
     - now apply list_union_cons_proper.
   Qed.
 
+  Lemma diff_inter_compl (A B : event σ) :
+    (event_equiv (event_diff A B) 
+                 (event_inter A (event_complement B))).
+  Proof.
+    firstorder.
+  Qed.
+  
+  Lemma union_diff (A B : event σ) :
+    event_equiv A (event_union (event_diff A B) (event_inter A B)).
+  Proof.
+    unfold event_union, event_diff, event_inter, event_equiv.
+    unfold pre_event_union, pre_event_diff, pre_event_inter.
+    repeat red; simpl; intros.
+    tauto.
+  Qed.
+
+  Lemma sub_diff_union (A B : event σ) :
+    event_sub B A ->
+    event_equiv A (event_union (event_diff A B) B).
+  Proof.
+    unfold event_union, event_diff, event_inter, event_equiv, event_sub.
+    unfold pre_event_union, pre_event_diff, pre_event_inter, pre_event_sub.
+    repeat red; simpl; intros.
+    split; intros.
+    - destruct (classic (proj1_sig B x)); tauto.
+    - intuition.
+  Qed.
+
+  Lemma union_diff_inter (A:event σ) (E : nat -> event σ) :
+        event_equiv (union_of_collection (fun n : nat => event_diff A (E n)))
+                    (event_diff A (inter_of_collection E)).
+  Proof.
+    unfold event_equiv, union_of_collection, event_diff, inter_of_collection.
+    unfold pre_event_equiv, pre_union_of_collection, pre_event_equiv, pre_inter_of_collection; simpl.
+    intros.
+    split; [firstorder |]; intros.
+    destruct H.
+    apply not_all_ex_not in H0.
+    firstorder.
+  Qed.
+
 End event.
 
 Definition event_preimage {Ts: Type} {Td: Type} {σ:SigmaAlgebra Td}

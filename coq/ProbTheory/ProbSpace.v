@@ -11,6 +11,7 @@ Require Import Classical ClassicalFacts.
 Require Import ClassicalChoice.
 Require Import ProofIrrelevance.
 Require Ensembles.
+Require Import hilbert.
 
 Require Import utils.Utils DVector.
 Import ListNotations.
@@ -334,6 +335,18 @@ Proof.
   apply make_collection_disjoint_disjoint.
 Qed.
 
+Lemma ps_diff_sub {T:Type} {σ:SigmaAlgebra T} (ps:ProbSpace σ) (A B : event σ) :
+  event_sub B A ->
+  ps_P (event_diff A B) = ps_P A - ps_P B.
+Proof.
+  intros.
+  generalize (ps_disjoint_union ps (event_diff A B) B); intros.
+  cut_to H0.
+  - rewrite <- sub_diff_union in H0; trivial.
+    lra.
+  - firstorder.
+Qed.
+
 (*
 Section prob.
   Local Open Scope R.
@@ -518,7 +531,18 @@ Section take.
     eapply collection_is_pairwise_disjoint_event_sub_proper; eauto.
     apply collection_take_sub.
   Qed.
+
+  Lemma sum_prob_fold_right  (ps:ProbSpace σ) (E : nat -> event σ) n :
+        sum_n (fun n0 : nat => ps_P (E n0)) n =
+        fold_right Rplus 0 (map ps_P (collection_take E (S n))).
+  Proof.
+    rewrite sum_n_fold_right_seq.
+    f_equal.
+    unfold collection_take.
+    now rewrite map_map.
+  Qed.    
   
+
 End take.
 
 Hint Rewrite @collection_take_Sn @collection_take1 : prob.
@@ -594,6 +618,91 @@ Section ascending.
          unfold pre_event_diff, pre_event_union; simpl.
          tauto.
  Qed.
+
+  Lemma is_lim_ascending (ps:ProbSpace σ) (E : nat -> event σ) :
+    ascending_collection E ->
+    is_lim_seq (fun n => ps_P (E n)) (ps_P (union_of_collection E)).
+  Proof.
+    intros asc.
+    generalize (union_of_make_collection_disjoint ps E); intros HH.
+    unfold sum_of_probs_equals in HH.
+    rewrite <- make_collection_disjoint_union in HH.
+    rewrite <- infinite_sum_infinite_sum' in HH.
+    rewrite <- is_series_Reals in HH.
+    generalize (ex_series_is_lim_seq  (fun n : nat => ps_P (make_collection_disjoint E n)))
+    ; intros HH2.
+    cut_to HH2; [| eexists; eauto].
+    apply is_lim_seq_ext with (v  := fun n => ps_P (E n)) in HH2.
+    - replace (Series (fun n : nat => ps_P (make_collection_disjoint E n)))
+        with (ps_P (union_of_collection E)) in HH2; trivial.
+      apply is_series_unique in HH.
+      auto.
+    - intros.
+      rewrite sum_prob_fold_right.
+      rewrite <- ascending_make_disjoint_collection_take_union by trivial.
+      rewrite ps_list_disjoint_union; trivial.
+      apply collection_take_preserves_disjoint.
+      apply make_collection_disjoint_disjoint.
+  Qed.
+    
+  Lemma lim_ascending (ps:ProbSpace σ) (E : nat -> event σ) :
+    ascending_collection E ->
+    Lim_seq (fun n => ps_P (E n)) =  (ps_P (union_of_collection E)).
+  Proof.
+    intros asc.
+    apply is_lim_seq_unique.
+    now apply is_lim_ascending.
+  Qed.
+
+    Lemma event_sub_descending (ps:ProbSpace σ) (E : nat -> event σ) :
+    (forall n, event_sub (E (S n)) (E n)) ->
+    forall n, event_sub (E n) (E 0%nat).
+  Proof.
+    induction n.
+    intro x.
+    tauto.
+    now eapply transitivity.
+  Qed.
+
+  Lemma is_lim_descending (ps:ProbSpace σ) (E : nat -> event σ) :
+    (forall n, event_sub (E (S n)) (E n)) ->
+    is_lim_seq (fun n => ps_P (E n)) (ps_P (inter_of_collection E)).
+  Proof.
+    intros desc.
+    generalize (is_lim_ascending ps (fun n => event_diff (E 0%nat) (E n))); intros asc.
+    cut_to asc.
+    - apply is_lim_seq_ext with (v := (fun n => (ps_P (E 0%nat)) - (ps_P (E n)))) in asc.
+      + rewrite union_diff_inter in asc. 
+        rewrite ps_diff_sub in asc.
+        * generalize (is_lim_seq_const (ps_P (E 0%nat))); intros lim2.
+
+          generalize (is_lim_seq_minus' _ _ _ _ asc lim2)
+          ; intros lim3.
+          apply is_lim_seq_opp in lim3.
+          simpl in lim3.
+          replace  (- (ps_P (E 0%nat) - ps_P (inter_of_collection E) - ps_P (E 0%nat)))
+            with (ps_P (inter_of_collection E)) in lim3 by lra.
+          eapply is_lim_seq_ext; try eapply lim3.
+          intros; simpl; lra.
+        * intros ? HH.
+          apply (HH 0%nat).
+      + intros.
+        apply ps_diff_sub; trivial.
+        now apply event_sub_descending.
+    - unfold ascending_collection; intros.
+      apply event_diff_sub_proper.
+      + reflexivity.
+      + apply desc.
+  Qed.
+
+  Lemma lim_descending (ps:ProbSpace σ) (E : nat -> event σ) :
+    (forall n, event_sub (E (S n)) (E n)) ->
+    Lim_seq (fun n => ps_P (E n)) = (ps_P (inter_of_collection E)).
+  Proof.
+    intros.
+    apply is_lim_seq_unique.
+    now apply is_lim_descending.
+  Qed.
 
 End ascending.
 
