@@ -1488,8 +1488,22 @@ Section event.
     split; [intros [_ HH] | intros HH]; trivial.
     now exists 0%nat.
   Qed.
-  
+
+  Lemma union_of_collection_complement (coll : nat -> event σ) :
+    event_equiv (¬ union_of_collection coll) (inter_of_collection (fun n => ¬ (coll n))).
+  Proof.
+    firstorder.
+  Qed.
+
+  Lemma inter_of_collection_complement (coll : nat -> event σ) :
+    event_equiv (¬ inter_of_collection coll) (union_of_collection (fun n => ¬ (coll n))).
+  Proof.
+    repeat red; firstorder; now apply not_all_ex_not.
+  Qed.
+
   Hint Rewrite @union_of_collection_const : prob.
+  Hint Rewrite @union_of_collection_complement : prob.
+  Hint Rewrite @inter_of_collection_complement : prob.
 
   Lemma collection_is_pairwise_disjoint_sub (coll:nat -> event σ) (f:event σ -> event σ):
     (forall a, f a ≤ a) ->
