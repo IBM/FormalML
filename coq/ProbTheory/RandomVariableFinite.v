@@ -1019,9 +1019,9 @@ Lemma Fatou_FiniteExpectation
     now apply ps_le1.
   Qed.
 
-  Lemma lim_ascending (E : nat -> event dom) :
+  Lemma is_lim_ascending (E : nat -> event dom) :
     ascending_collection E ->
-    Lim_seq (fun n => ps_P (E n)) =  (ps_P (union_of_collection E)).
+    is_lim_seq (fun n => ps_P (E n)) (ps_P (union_of_collection E)).
   Proof.
     intros asc.
     generalize (union_of_make_collection_disjoint prts E); intros HH.
@@ -1029,20 +1029,31 @@ Lemma Fatou_FiniteExpectation
     rewrite <- make_collection_disjoint_union in HH.
     rewrite <- infinite_sum_infinite_sum' in HH.
     rewrite <- is_series_Reals in HH.
-    apply is_series_unique in HH.
-    unfold Series in HH.
-    rewrite <- is_finite_Lim_seq_psP; trivial.
-    rewrite Rbar_finite_eq.
-    rewrite Lim_seq_ext with (v  := fun n => ps_P (E n)) in HH.
-    apply HH.
-    intros.
-    rewrite <- ascending_make_disjoint_collection_take_union by trivial.
-    rewrite ps_list_disjoint_union.
-    - apply  sum_prob_fold_right.
-    - apply collection_take_preserves_disjoint.
+    generalize (ex_series_is_lim_seq  (fun n : nat => ps_P (make_collection_disjoint E n)))
+    ; intros HH2.
+    cut_to HH2; [| eexists; eauto].
+    apply is_lim_seq_ext with (v  := fun n => ps_P (E n)) in HH2.
+    - replace (Series (fun n : nat => ps_P (make_collection_disjoint E n)))
+        with (ps_P (union_of_collection E)) in HH2; trivial.
+      apply is_series_unique in HH.
+      auto.
+    - intros.
+      rewrite sum_prob_fold_right.
+      rewrite <- ascending_make_disjoint_collection_take_union by trivial.
+      rewrite ps_list_disjoint_union; trivial.
+      apply collection_take_preserves_disjoint.
       apply make_collection_disjoint_disjoint.
   Qed.
-
+    
+  Lemma lim_ascending (E : nat -> event dom) :
+    ascending_collection E ->
+    Lim_seq (fun n => ps_P (E n)) =  (ps_P (union_of_collection E)).
+  Proof.
+    intros asc.
+    apply is_lim_seq_unique.
+    now apply is_lim_ascending.
+  Qed.
+  
   Lemma diff_inter_compl (A B : event dom) :
     (event_equiv (event_diff A B) 
                  (event_inter A (event_complement B))).
@@ -1105,39 +1116,45 @@ Lemma Fatou_FiniteExpectation
     apply not_all_ex_not in H0.
     firstorder.
   Qed.
-    
+
+  Lemma is_lim_descending (E : nat -> event dom) :
+    (forall n, event_sub (E (S n)) (E n)) ->
+    is_lim_seq (fun n => ps_P (E n)) (ps_P (inter_of_collection E)).
+  Proof.
+    intros desc.
+    generalize (is_lim_ascending (fun n => event_diff (E 0%nat) (E n))); intros asc.
+    cut_to asc.
+    - apply is_lim_seq_ext with (v := (fun n => (ps_P (E 0%nat)) - (ps_P (E n)))) in asc.
+      + rewrite union_diff_inter in asc. 
+        rewrite ps_diff_sub in asc.
+        * generalize (is_lim_seq_const (ps_P (E 0%nat))); intros lim2.
+
+          generalize (is_lim_seq_minus' _ _ _ _ asc lim2)
+          ; intros lim3.
+          apply is_lim_seq_opp in lim3.
+          simpl in lim3.
+          replace  (- (ps_P (E 0%nat) - ps_P (inter_of_collection E) - ps_P (E 0%nat)))
+            with (ps_P (inter_of_collection E)) in lim3 by lra.
+          eapply is_lim_seq_ext; try eapply lim3.
+          intros; simpl; lra.
+        * intros ? HH.
+          apply (HH 0%nat).
+      + intros.
+        apply ps_diff_sub; trivial.
+        now apply event_sub_descending.
+    - unfold ascending_collection; intros.
+      apply event_diff_sub_proper.
+      + reflexivity.
+      + apply desc.
+  Qed.
+
   Lemma lim_descending (E : nat -> event dom) :
     (forall n, event_sub (E (S n)) (E n)) ->
     Lim_seq (fun n => ps_P (E n)) = (ps_P (inter_of_collection E)).
   Proof.
     intros.
-    generalize (lim_ascending (fun n => event_diff (E 0%nat) (E n))); intros asc.
-    generalize (is_finite_Lim_seq_psP E); intros isf.
-    cut_to asc.
-    - rewrite Lim_seq_ext with (v := (fun n => (ps_P (E 0%nat)) - (ps_P (E n)))) in asc.
-      + rewrite union_diff_inter in asc. 
-        rewrite ps_diff_sub in asc.
-        * rewrite Lim_seq_minus in asc.
-          -- rewrite Lim_seq_const in asc.
-             rewrite <- isf in asc.
-             simpl in asc.
-             rewrite Rbar_finite_eq in asc.
-             ring_simplify in asc.
-             rewrite <- isf.
-             rewrite Rbar_finite_eq.
-             lra.
-          -- apply ex_lim_seq_const.
-          -- apply ex_lim_seq_decr.
-             intros.
-             now apply ps_sub.
-          -- rewrite Lim_seq_const.
-             now rewrite <- isf.
-        * firstorder.
-      + intros.
-        apply ps_diff_sub; trivial.
-        now apply event_sub_descending.
-    - unfold ascending_collection; intros.
-      firstorder.
+    apply is_lim_seq_unique.
+    now apply is_lim_descending.
   Qed.
     
   Lemma sum_shift (f : nat -> R) (n n0 : nat) :
