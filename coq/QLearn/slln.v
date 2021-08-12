@@ -2094,7 +2094,7 @@ Qed.
     - simpl.
       now rewrite Rmult_0_l.
   Qed.
-
+    
  Lemma Ash_6_2_1_helper3 (X : nat -> Ts -> R) (eps : posreal) (m : nat) 
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}:
@@ -2109,26 +2109,7 @@ Qed.
              Lim_seq (fun n => ps_P (list_union (collection_take (fun k : nat => event_ge dom (rvabs (rvminus (Sum (m + k)%nat) (Sum m))) eps) (S n))))).
      {
        rewrite lim_ascending.
-       - apply Rbar_finite_eq.
-         apply ps_proper.
-         intro x.
-         split.
-         + intros.
-           destruct H0.
-           exists x0.
-           exists (event_ge dom (rvabs (rvminus (Sum (m + x0)%nat) (Sum m))) eps).
-           split; trivial.
-           rewrite collection_take_Sn.
-           apply in_or_app.
-           right.
-           simpl.
-           tauto.
-         + intros.
-           do 2 red in H0.
-           destruct H0 as [n ?].
-           unfold collection_take in H0.
-           simpl.
-           admit.
+       - now rewrite event_union_list_union.
        - unfold ascending_collection.
          intros.
          replace (S n) with (n+1)%nat by lia.
@@ -2140,12 +2121,11 @@ Qed.
      apply Lim_seq_ext.
      intros.
      apply ps_proper.
-     intro x.
-     split; intros.
-     - destruct H1 as [a [? ?]].
-       unfold collection_take in H1.
-       rewrite in_map_iff in H1.
-       destruct H1 as [? [??]].
+     split.
+     - intros [a [ain ax]]; simpl.
+       apply In_collection_take in ain.
+       destruct ain as [i [ilt ?]]; subst.
+       simpl in ax.
        admit.
      - unfold collection_take.
        admit.

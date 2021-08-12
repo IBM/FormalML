@@ -468,7 +468,17 @@ Section pre_ev.
     firstorder.
   Qed.
 
+  Global Instance pre_union_of_collection_sub_proper {T:Type} : Proper (pointwise_relation _ pre_event_sub ==> pre_event_sub) (@pre_union_of_collection T).
+  Proof.
+    firstorder.
+  Qed.
+
   Global Instance pre_inter_of_collection_proper {T:Type} : Proper (pointwise_relation _ pre_event_equiv ==> pre_event_equiv) (@pre_inter_of_collection T).
+  Proof.
+    firstorder.
+  Qed.
+
+  Global Instance pre_inter_of_collection_sub_proper {T:Type} : Proper (pointwise_relation _ pre_event_sub ==> pre_event_sub) (@pre_inter_of_collection T).
   Proof.
     firstorder.
   Qed.
@@ -1450,7 +1460,17 @@ Section event.
     firstorder.
   Qed.
 
+  Global Instance union_of_collection_sub_proper : Proper (pointwise_relation _ event_sub ==> event_sub) union_of_collection.
+  Proof.
+    firstorder.
+  Qed.
+
   Global Instance inter_of_collection_proper : Proper (pointwise_relation _ event_equiv ==> event_equiv) inter_of_collection.
+  Proof.
+    firstorder.
+  Qed.
+
+  Global Instance inter_of_collection_sub_proper : Proper (pointwise_relation _ event_sub ==> event_sub) inter_of_collection.
   Proof.
     firstorder.
   Qed.
@@ -1903,7 +1923,113 @@ Section event.
     firstorder.
   Qed.
 
+  Section take.
+  (* define primitives for taking a prefix of a collection *)
+  Definition collection_take (En : nat -> event σ) (n:nat) := map En (seq 0 n).
+
+  Lemma collection_take_length (En : nat -> event σ) (n:nat) :
+    length (collection_take En n) = n.
+  Proof.
+    unfold collection_take.
+    now rewrite map_length, seq_length.
+  Qed.
+
+  Lemma collection_take_nth_in a En n x:
+    proj1_sig (nth a (collection_take En n) event_none) x <->
+    (a < n /\ proj1_sig (En a) x)%nat.
+  Proof.
+    unfold collection_take.
+    split.
+    - intros na.
+      destruct (lt_dec a n).
+      + split; trivial.
+        destruct (map_nth_in_exists En (seq 0 n) event_none a).
+        * now rewrite seq_length.
+        * rewrite H in na.
+          rewrite seq_nth in na by trivial.
+          now simpl in na.
+      + rewrite nth_overflow in na.
+        * red in na; tauto.
+        * rewrite map_length, seq_length.
+          lia.
+    - intros [alt Ea].
+      destruct (map_nth_in_exists En (seq 0 n) event_none a).
+      + now rewrite seq_length.
+      + rewrite H.
+        rewrite seq_nth by trivial.
+        now simpl.
+  Qed.
+
+  Lemma In_collection_take (En : nat -> event σ) a n:
+    In a (collection_take En n) ->
+    exists m, m < n /\ a = En m.
+  Proof.
+    intros inn.
+    unfold collection_take in *.
+    rewrite in_map_iff in inn.
+    destruct inn as [m [eqq inn]].
+    apply in_seq in inn.
+    eexists; split; eauto.
+    destruct inn as [??].
+    now simpl in H0.
+  Qed.
+  
+  Lemma collection_take_Sn n En :
+    (collection_take En (S n)) = collection_take En n ++ (En n::nil).
+  Proof.
+    unfold collection_take.
+    rewrite seq_Sn, map_app.
+    reflexivity.
+  Qed.
+
+  Lemma collection_take1 En : collection_take En 1 = [En 0%nat].
+  Proof.
+    reflexivity.
+  Qed.
+
+  Lemma collection_take_sub (En:nat -> event σ) n :
+    pointwise_relation _ event_sub (list_collection (collection_take En n) event_none) En.
+  Proof.
+    repeat red; intros.
+    red in H.
+    apply collection_take_nth_in in H.
+    tauto.
+  Qed.
+
+  Lemma collection_take_preserves_disjoint En n:
+    collection_is_pairwise_disjoint En ->
+    ForallOrdPairs event_disjoint (collection_take En n).
+  Proof.
+    intros disj.
+    apply list_collection_disjoint.
+    eapply collection_is_pairwise_disjoint_event_sub_proper; eauto.
+    apply collection_take_sub.
+  Qed.
+
+  End take.
+
+  Lemma event_union_list_union (c:nat->event σ) :
+    event_equiv 
+      (union_of_collection
+         (fun n => list_union
+                  (collection_take c (S n))))
+      (union_of_collection c).
+  Proof.
+    apply antisymmetry.
+    - intros x [n [a [inn ax]]].
+      simpl.
+      apply In_collection_take in inn.
+      destruct inn as [?[??]]; subst.
+      eauto.
+    - apply union_of_collection_sub_proper.
+      intros n m cnm.
+      eexists; split; eauto.
+      rewrite collection_take_Sn, in_app_iff; simpl.
+      tauto.
+  Qed.
+
 End event.
+
 
 Definition event_preimage {Ts: Type} {Td: Type} {σ:SigmaAlgebra Td}
            (X: Ts -> Td)
