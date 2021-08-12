@@ -1905,7 +1905,7 @@ Proof.
   apply sa_countable_union; intros.
   apply sa_countable_union; intros.  
   assert (pre_event_equiv
-             (fun omega : Ts =>
+              (fun omega : Ts =>
                 (n >= N)%nat /\ (n0 >= N)%nat /\ Rabs (X n omega - X n0 omega) >= eps)
              (pre_event_inter
                 (fun _ =>  (n >= N)%nat /\ (n0 >= N)%nat)
@@ -1927,6 +1927,48 @@ Proof.
     + now apply rv_measurable.      
   Qed.                            
 
+(* Ash 2.5.4
+Lemma ash_2_5_4 (X : nat -> Ts -> R)
+      {rv : forall (n:nat), RandomVariable dom borel_sa (X n)} :
+  (exists P,
+      ps_P P = 1 /\
+      forall omega,
+        P omega ->
+        forall (eps:posreal),
+        exists (N:nat),
+        forall (n : nat),
+          (n >= N)%nat  ->
+          Rabs ((X n omega) - (X m omega)) < eps) <->
+  (forall (eps:posreal),
+      Lim_seq (fun N =>
+                 ps_P (exist sa_sigma _ (sa_sigma_cauchy X eps N))) = 0).
+Proof.*)
+
+Lemma sa_sigma_cauchy_descending (X : nat -> Ts -> R)(eps : posreal)
+      {rv : forall n, RandomVariable dom borel_sa (X n)}:
+  forall n, let E := fun n => exist sa_sigma _ (sa_sigma_cauchy X eps n) in
+    event_sub (E (S n)) (E n).
+Proof.
+  intros n E.
+  repeat red. intros omega H.
+  red in H. destruct H as [n0 [m0 [H1 [H2 H3]]]].
+  exists n0; exists m0.
+  repeat split; try lia; trivial.
+Qed.
+
+Lemma sa_sigma_cauchy_inter_event_sub (X : nat -> Ts -> R) {eps1 eps2 : posreal}
+      {rv : forall n, RandomVariable dom borel_sa (X n)} (Heps : eps2 < eps1) (n : nat):
+  event_sub (inter_of_collection (fun n => exist sa_sigma _ (sa_sigma_cauchy X eps1 n)))
+            (inter_of_collection (fun n => exist sa_sigma _ (sa_sigma_cauchy X eps2 n))).
+Proof.
+  repeat red. intros omega H.
+  repeat red in H. intros m.
+  specialize (H m).
+  destruct H as [n0 [m0 [H1 [H2 H3]]]].
+  exists n0; exists m0.
+  repeat split; try lia; try lra.
+Qed.
+
 (* ash prob 2.5.4 *)
 Lemma almostR2_cauchy (X : nat -> Ts -> R) 
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)} :
@@ -1943,7 +1985,15 @@ Lemma almostR2_cauchy (X : nat -> Ts -> R)
       Lim_seq (fun N => 
                  ps_P (exist sa_sigma _ (sa_sigma_cauchy X eps N))) = 0).
 Proof.
-  Admitted.
+  assert (H1 : forall (eps: posreal),let E := fun n => exist sa_sigma _ (sa_sigma_cauchy X eps n) in
+                                is_lim_seq (fun k => ps_P (E k)) (ps_P (inter_of_collection E))).
+  {
+    intros eps E.
+    apply is_lim_descending.
+    apply sa_sigma_cauchy_descending.
+  }
+
+Admitted.
 
 Instance rv_max_sum_shift (X : nat -> Ts -> R) (m n : nat) 
          {rv : forall (n:nat), RandomVariable dom borel_sa (X n)} :
