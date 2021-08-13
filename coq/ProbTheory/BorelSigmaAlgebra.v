@@ -340,11 +340,17 @@ Qed.
     exists (Qmake (up (IZR x * l)) (Z.to_pos x)).
     apply Z.gt_lt in H1.
     assert (0 < IZR x) by (now apply IZR_lt in H1).
+    assert (IZR (up (IZR x * l)) = IZR x * Qreals.Q2R (up (IZR x * l) # Z.to_pos x)).
+    {
+       admit.
+    }
     split.
     - apply Rmult_lt_reg_l with (r := IZR x); trivial.
-      admit.
+      rewrite <- H5.
+      apply archimed.
     - apply Rmult_lt_reg_l with (r := IZR x); trivial.
-      admit.
+      rewrite <- H5.
+      apply H3.
    Admitted.
 
   Axiom Q_dense :
