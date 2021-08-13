@@ -2073,7 +2073,7 @@ Lemma ps_union_countable_union_iff (coll : nat -> event dom):
  Qed.
 
   (* ash prob 2.5.4 *)
-Lemma almostR2_cauchy (X : nat -> Ts -> R) 
+Lemma almost_cauchy_seq_at_iff (X : nat -> Ts -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)} :
   almost _ (fun omega => cauchy_seq_at omega X) <->
   (forall (eps:posreal),
@@ -2141,13 +2141,75 @@ Proof.
 Qed.
 
 
-(*Lemma almostR2_cauchy' (X : nat -> Ts -> R)
+(*TODO(Kody): Simplify this proof using the above.*)
+Lemma almost_cauchy_is_lim_seq_iff (X : nat -> Ts -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)} :
-  (almost _ (fun omega => cauchy_seq_at omega X)) <->
+  almost _ (fun omega => cauchy_seq_at omega X) <->
   (forall (eps:posreal),
-      Lim_seq (fun N =>
-                 ps_P (exist sa_sigma _ (sa_sigma_not_cauchy X eps N))) = 0).
-Proof.*)
+      is_lim_seq (fun N =>
+                 ps_P (exist sa_sigma _ (sa_sigma_not_cauchy X eps N))) 0).
+Proof.
+  assert (H1 : forall (eps: posreal),let E := fun n => exist sa_sigma _ (sa_sigma_not_cauchy X eps n) in
+                                is_lim_seq (fun k => ps_P (E k)) (ps_P (inter_of_collection E))).
+  {
+    intros eps E.
+    apply is_lim_descending.
+    apply sa_sigma_cauchy_descending.
+  }
+  unfold cauchy_seq_at.
+  split; intros.
+  + rewrite almost_alt_eq in H.
+    unfold almost_alt in H.
+    destruct H as [E [HE Heps]].
+    specialize (H1 eps). simpl in H1.
+    enough (Hpsp : ps_P (
+                    inter_of_collection(
+                        fun n => (exist sa_sigma _ (sa_sigma_not_cauchy X eps n)))) = 0).
+    - now rewrite <-Hpsp.
+    - apply ps_P_sub_zero with E; trivial.
+      intros omega.
+      simpl; specialize (Heps omega).
+      intros. apply Heps. apply ex_not_not_all.
+      exists eps. apply all_not_not_ex.
+      intros n1. destruct (H n1) as [n2 [m2 Hnm]].
+      apply ex_not_not_all. exists n2.
+      apply ex_not_not_all. exists m2.
+      destruct Hnm as [Hn2 [Hm2 Hepsnm]].
+      intros Hnot. specialize (Hnot Hn2 Hm2).
+      lra.
+  + (* forall 0<δ, P(B_δ) = 0*)
+    assert (Hinter : forall eps:posreal, let E :=
+         fun n : nat => exist sa_sigma _ (sa_sigma_not_cauchy X eps n) in
+                                    (ps_P (inter_of_collection E)) = 0).
+    {
+      intros eps E.
+      rewrite <-Rbar_finite_eq.
+      rewrite <-(is_lim_seq_unique _ _ (H eps)). symmetry.
+      apply is_lim_seq_unique. apply H1.
+    }
+    clear H.
+    rewrite almost_alt_eq.
+    unfold almost_alt.
+    exists (exist sa_sigma _ (sa_sigma_not_full_cauchy X)).
+    split.
+    ++ rewrite almost_cauchy_iff.
+       rewrite <-ps_union_countable_union_iff.
+       intros n; apply (Hinter ({| pos := /(1 + INR n); cond_pos := recip_pos n|})).
+    ++ intros omega Hnot.
+       simpl. apply not_all_ex_not in Hnot.
+       destruct Hnot as [eps Hnot1].
+       exists eps. intros N. generalize (not_ex_all_not _ _ Hnot1 N); intros.
+       clear Hnot1. apply not_all_ex_not in H.
+       destruct H as [n H2]. exists n.
+       apply not_all_ex_not in H2. destruct H2 as [m H3].
+       exists m. apply imply_to_and in H3.
+       split; try (now destruct H3).
+       destruct H3 as [Hn H4].
+       apply imply_to_and in H4.
+       split; try (now destruct H4).
+       destruct H4 as [Hm H5].
+       now apply Rnot_lt_ge in H5.
+Qed.
 
 Instance rv_max_sum_shift (X : nat -> Ts -> R) (m n : nat) 
          {rv : forall (n:nat), RandomVariable dom borel_sa (X n)} :
