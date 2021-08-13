@@ -2232,7 +2232,7 @@ Qed.
    let Sum := fun j => rvsum (fun k => X (k)%nat) j in
     ex_series (fun n => SimpleExpectation (rvsqr (X n))) ->
     Rbar.Finite (ps_P (union_of_collection (fun k =>  event_ge dom (rvabs (rvminus (Sum (m+k)%nat) (Sum m))) eps))) =
-    Lim_seq (fun n => ps_P (event_ge dom (rvmaxlist (fun k => rvabs (Sum k)) (S n)) eps)).
+    Lim_seq (fun n => ps_P (event_ge dom (rvmaxlist (fun k => rvabs (rvminus (Sum (m + k)%nat) (Sum m))) n) eps)).
    Proof.
      intros.
      assert (Rbar.Finite (ps_P
@@ -2252,15 +2252,8 @@ Qed.
      apply Lim_seq_ext.
      intros.
      apply ps_proper.
-     split.
-     - intros [a [ain ax]]; simpl.
-       apply In_collection_take in ain.
-       destruct ain as [i [ilt ?]]; subst.
-       simpl in ax.
-       admit.
-     - unfold collection_take.
-       admit.
- Admitted.
+     apply list_union_rvmaxlist.
+  Qed.
 
   Lemma Ash_6_2_1 (X : nat -> Ts -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
