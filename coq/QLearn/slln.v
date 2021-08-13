@@ -2351,16 +2351,15 @@ Qed.
 
  Lemma Ash_6_2_1_helper3 (X : nat -> Ts -> R) (eps : posreal) (m : nat) 
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
-      {frf : forall (n:nat), FiniteRangeFunction (X (n))}:
+      {frf : forall (n:nat), FiniteRangeFunction (X (n))} :
    let Sum := fun j => rvsum (fun k => X (k)%nat) j in
-    ex_series (fun n => SimpleExpectation (rvsqr (X n))) ->
-    Rbar.Finite (ps_P (union_of_collection (fun k =>  event_ge dom (rvabs (rvminus (Sum (m+k)%nat) (Sum m))) eps))) =
-    Lim_seq (fun n => ps_P (event_ge dom (rvmaxlist (fun k => rvabs (rvminus (Sum (m + k)%nat) (Sum m))) n) eps)).
+    Rbar.Finite (ps_P (union_of_collection (fun k =>  event_ge dom (rvabs (rvminus (Sum (k+(S m))%nat) (Sum m))) eps))) =
+    Lim_seq (fun n => ps_P (event_ge dom (rvmaxlist (fun k => rvabs (rvminus (Sum (k + (S m))%nat) (Sum m))) n) eps)).
    Proof.
      intros.
      assert (Rbar.Finite (ps_P
-               (union_of_collection (fun k : nat => event_ge dom (rvabs (rvminus (Sum (m + k)%nat) (Sum m))) eps))) =
-             Lim_seq (fun n => ps_P (list_union (collection_take (fun k : nat => event_ge dom (rvabs (rvminus (Sum (m + k)%nat) (Sum m))) eps) (S n))))).
+               (union_of_collection (fun k : nat => event_ge dom (rvabs (rvminus (Sum (k + (S m))%nat) (Sum m))) eps))) =
+             Lim_seq (fun n => ps_P (list_union (collection_take (fun k : nat => event_ge dom (rvabs (rvminus (Sum (k + (S m))%nat) (Sum m))) eps) (S n))))).
      {
        rewrite lim_ascending.
        - now rewrite event_union_list_union.
@@ -2371,12 +2370,67 @@ Qed.
          rewrite list_union_app.
          apply event_sub_union_l.
      }
-     rewrite H0.
+     rewrite H.
      apply Lim_seq_ext.
      intros.
      apply ps_proper.
      apply list_union_rvmaxlist.
   Qed.
+
+   Lemma sum_shift_diff (X : nat -> R) (m a : nat) :
+     sum_n X (a + S m) - sum_n X m =
+     sum_n (fun n0 : nat => X (n0 + S m)%nat) a.
+   Proof.
+     rewrite <- sum_n_m_shift.
+     unfold sum_n.
+     rewrite sum_split with (m := m); try lia.
+     lra.
+   Qed.
+
+  Lemma Ash_6_2_1_helper4 (X : nat -> Ts -> R) (eps : posreal) (m : nat) 
+      {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
+      {frf : forall (n:nat), FiniteRangeFunction (X (n))}
+      (HC : forall n, 
+          rv_eq (SimpleConditionalExpectationSA (X n) (filtration_history n X)) (const 0))  :
+   let Sum := fun j => rvsum (fun k => X (k)%nat) j in
+    Rbar_le (ps_P (union_of_collection (fun k =>  event_ge dom (rvabs (rvminus (Sum (k + (S m))%nat) (Sum m))) eps)))
+            (Rbar_div_pos (LimSup_seq (sum_n (fun n => SimpleExpectation (rvsqr (X (n + (S m))%nat))))) (mkposreal _ (sqr_pos eps))).
+    Proof.
+      intros.
+      unfold Sum.
+      rewrite Ash_6_2_1_helper3; trivial.
+      generalize (Ash_6_2_1_helper X eps (S m) HC); intros.
+      simpl in H.
+      rewrite Lim_seq_ext with
+          (v :=  fun n : nat =>
+            ps_P
+              (event_ge dom
+                 (rvmaxlist
+                    (fun k : nat => rvabs (rvsum (fun k0 : nat => X (k0 + (S m))%nat) k))
+                    n) eps)).
+      - apply H.
+      - intros.
+        apply ps_proper.
+        assert (rv_eq
+                  (rvmaxlist
+                     (fun k : nat =>
+                        rvabs
+                          (rvminus (rvsum (fun k0 : nat => X k0) (k + (S m)))
+                                   (rvsum (fun k0 : nat => X k0) m))) n)
+                   (rvmaxlist (fun k : nat => rvabs (rvsum (fun k0 : nat => X (k0 + (S m))%nat) k))
+          n)).
+        + intro x.
+          unfold rvmaxlist.
+          apply Rmax_list_Proper, refl_refl, map_ext.
+          intros.
+          unfold rvabs, rvsum.
+          rewrite rvminus_unfold.
+          f_equal.
+          now rewrite sum_shift_diff.
+        + intro x.
+          simpl.
+          now rewrite H0.
+    Qed.
 
   Lemma Ash_6_2_1 (X : nat -> Ts -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
@@ -2386,6 +2440,10 @@ Qed.
     ex_series (fun n => SimpleExpectation (rvsqr (X n))) ->
     almost Prts (fun (x : Ts) => ex_series (fun n => X n x)).
   Proof.
+    intros.
+    generalize (Cauchy_ex_series _ H); intros.
+    unfold Cauchy_series in H0.
+
   Admitted.
 
   Lemma induced_sigma_scale (X : nat -> Ts -> R) (b : nat -> R)
