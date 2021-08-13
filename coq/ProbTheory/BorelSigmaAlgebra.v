@@ -304,6 +304,49 @@ Qed.
   Definition Q_interval (l r : Q) (x:R) : Prop :=
     Qreals.Q2R l < x < Qreals.Q2R r.
   
+   Lemma zsep1 (x y : R) :
+    y - x > 1 ->
+    x < IZR (up x) < y.
+  Proof.
+    destruct (archimed x); intros.
+    split.
+    - apply H.
+    - lra.
+  Qed.
+
+  Lemma zsep2 (x y : R) :
+    y - x > 0 ->
+    exists (n : Z), (n > 0)%Z /\ IZR(n)*(y-x) > 1.
+  Proof.
+    destruct (archimed (/ (y - x))); intros.
+    exists (up (/ (y - x))).
+    split.
+    - apply up_pos.
+      now apply Rinv_0_lt_compat.
+    - apply Rmult_gt_compat_r with (r := y-x) in H; trivial.
+      rewrite <- Rinv_l_sym in H; trivial.
+      now apply Rgt_not_eq.
+  Qed.
+
+  Lemma Qsep (l r : R) :
+    (l < r)%R ->
+    (exists (m:Q), l < Qreals.Q2R m < r).
+  Proof.
+    intros.
+    assert (r - l > 0) by lra.
+    destruct (zsep2 l r H0) as [? [? ?]].
+    generalize (zsep1 (IZR x * l) (IZR x * r)); intros.
+    cut_to H3; try lra.
+    exists (Qmake (up (IZR x * l)) (Z.to_pos x)).
+    apply Z.gt_lt in H1.
+    assert (0 < IZR x) by (now apply IZR_lt in H1).
+    split.
+    - apply Rmult_lt_reg_l with (r := IZR x); trivial.
+      admit.
+    - apply Rmult_lt_reg_l with (r := IZR x); trivial.
+      admit.
+   Admitted.
+
   Axiom Q_dense :
     forall (l r : R),
     (l < r)%R -> (exists (m:Q), l < Qreals.Q2R m < r).
