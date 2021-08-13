@@ -1929,47 +1929,12 @@ Proof.
 
 Lemma sa_sigma_not_full_cauchy (X : nat -> Ts -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)} :
-  sa_sigma (fun omega => exists (n m : nat),
-             exists (eps : posreal), forall N:nat,
+  sa_sigma (fun omega =>
+             exists (eps : posreal), forall N:nat, exists n m,
                 (n >= N)%nat /\ (m >= N)%nat /\
                 Rabs ((X n omega) - (X m omega)) >= eps).
 Proof.
-  assert (pre_event_equiv
-           (fun omega => exists (n m : nat),
-             exists (eps : posreal), forall N:nat,
-                (n >= N)%nat /\ (m >= N)%nat /\
-                Rabs ((X n omega) - (X m omega)) >= eps)
-           (pre_union_of_collection
-              (fun n => pre_union_of_collection
-                          (fun m =>
-                             (fun omega => exists (eps : posreal), forall N:nat,
-                                (n >= N)%nat /\ (m >= N)%nat /\
-                                Rabs ((X n omega) - (X m omega)) >= eps))))) .
-  {
-    intro x.
-    now unfold pre_union_of_collection.
-  }
-  rewrite H.
-  apply sa_countable_union; intros.
-  apply sa_countable_union; intros.
 Admitted.
-
-(* Ash 2.5.4
-Lemma ash_2_5_4 (X : nat -> Ts -> R)
-      {rv : forall (n:nat), RandomVariable dom borel_sa (X n)} :
-  (exists P,
-      ps_P P = 1 /\
-      forall omega,
-        P omega ->
-        forall (eps:posreal),
-        exists (N:nat),
-        forall (n : nat),
-          (n >= N)%nat  ->
-          Rabs ((X n omega) - (X m omega)) < eps) <->
-  (forall (eps:posreal),
-      Lim_seq (fun N =>
-                 ps_P (exist sa_sigma _ (sa_sigma_cauchy X eps N))) = 0).
-Proof.*)
 
 Definition cauchy_seq_at (omega : Ts) (X : nat -> Ts -> R) := forall (eps:posreal),
     exists (N:nat), forall (n m : nat),  (n >= N)%nat -> (m >= N)%nat -> Rabs ((X n omega) - (X m omega)) < eps.
@@ -2023,7 +1988,7 @@ Lemma ps_union_countable_union_iff (coll : nat -> event dom):
     lra.
   Qed.
 
- (*Lemma almost_cauchy_iff (X : nat -> Ts -> R) (n : nat)
+ Lemma almost_cauchy_iff (X : nat -> Ts -> R) (n : nat)
     {rv : forall n, RandomVariable dom borel_sa (X n)}:
    event_equiv ((exist sa_sigma _ (sa_sigma_not_full_cauchy X)))
                (union_of_collection
@@ -2033,7 +1998,7 @@ Lemma ps_union_countable_union_iff (coll : nat -> event dom):
    simpl.
    intros omega. simpl.
    split; intros.
-   + destruct H as [n0 [m0 [eps H2]]].
+   + destruct H as [eps Heps].
      generalize (archimed_cor1 eps (cond_pos eps)); intros.
      destruct H as [N [HN1 HN2]].
      assert (/(1 + INR N) < eps).
@@ -2046,18 +2011,18 @@ Lemma ps_union_countable_union_iff (coll : nat -> event dom):
      }
      exists N.
      intros n1.
-     specialize (H2 n1). exists n0. exists m0.
-     destruct H2 as [H3 [H4 H5]].
+     specialize (Heps n1).
+     destruct Heps as [n0 [m0 [Hn0 [Hm0 Hnm]]]].
+     exists n0. exists m0.
      repeat split; try trivial.
      eapply Rge_trans; eauto.
      lra.
    + destruct H as [N HN].
-     specialize (HN N).
-     destruct HN as [n0 [m0 [Hn0 [Hm0 Hnm]]]].
-     exists n0. exists m0.
      exists (mkposreal (/(1 + INR N)) (recip_pos _)).
-     simpl; intros.
-  *)
+     simpl. intros N0.
+     specialize (HN N0).
+     assumption.
+ Qed.
 
   (* ash prob 2.5.4 *)
 Lemma almostR2_cauchy (X : nat -> Ts -> R) 
@@ -2067,8 +2032,6 @@ Lemma almostR2_cauchy (X : nat -> Ts -> R)
       is_lim_seq (fun N =>
                  ps_P (exist sa_sigma _ (sa_sigma_not_cauchy X eps N))) 0).
 Proof.
-  rewrite almost_alt_eq.
-  unfold almost_alt.
   assert (H1 : forall (eps: posreal),let E := fun n => exist sa_sigma _ (sa_sigma_not_cauchy X eps n) in
                                 is_lim_seq (fun k => ps_P (E k)) (ps_P (inter_of_collection E))).
   {
