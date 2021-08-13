@@ -2187,7 +2187,45 @@ Qed.
     - simpl.
       now rewrite Rmult_0_l.
   Qed.
-    
+
+  Lemma list_union_rvmaxlist (f : nat -> Ts -> R) (eps : posreal) (n : nat) 
+        (rv: forall n, RandomVariable dom borel_sa (f n)) :
+    event_equiv
+      (list_union
+         (collection_take (fun k => event_ge dom (f k) eps) (S n)))
+      (event_ge dom (rvmaxlist f n) eps).
+  Proof.
+    split.
+    - intros [a [inn ax]].
+      apply In_collection_take in inn.
+      destruct inn as [m [mlt ?]]; subst.
+      simpl in ax.
+      simpl.
+      unfold rvmaxlist.
+      apply Rle_ge.
+      apply Rge_le in ax.
+      eapply Rmax_list_ge; eauto.
+      apply in_map_iff.
+      eexists; split; eauto.
+      apply in_seq.
+      lia.
+    - intros rvm.
+      simpl in rvm.
+      unfold rvmaxlist in rvm.
+      generalize (Rmax_list_In (map (fun n : nat => f n x) (seq 0 (S n))))
+      ; intros HH.
+      cut_to HH; [| simpl; congruence].
+      apply in_map_iff in HH.
+      destruct HH as [m [fm mini]].
+      exists (event_ge dom (f m) eps).
+      split.
+      + unfold collection_take.
+        apply in_map_iff.
+        eexists; split; eauto.
+      + simpl.
+        congruence.
+  Qed.
+
  Lemma Ash_6_2_1_helper3 (X : nat -> Ts -> R) (eps : posreal) (m : nat) 
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}:
