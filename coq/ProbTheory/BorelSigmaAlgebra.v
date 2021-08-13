@@ -328,7 +328,23 @@ Qed.
       now apply Rgt_not_eq.
   Qed.
 
-  Lemma Qsep (l r : R) :
+  Lemma Qmult_den (num den : Z) :
+    (0 < den)%Z ->
+    IZR num = IZR den * Qreals.Q2R (Qmake num (Z.to_pos den)).
+  Proof.
+    intros.
+    unfold Qreals.Q2R.
+    simpl.
+    replace (Z.pos (Z.to_pos den)) with den.
+    - field.
+      apply Rgt_not_eq.
+      now apply IZR_lt.
+    - unfold Z.to_pos.
+      match_destr.
+   Qed.
+
+  Lemma Q_dense :
+    forall (l r : R),
     (l < r)%R ->
     (exists (m:Q), l < Qreals.Q2R m < r).
   Proof.
@@ -340,22 +356,14 @@ Qed.
     exists (Qmake (up (IZR x * l)) (Z.to_pos x)).
     apply Z.gt_lt in H1.
     assert (0 < IZR x) by (now apply IZR_lt in H1).
-    assert (IZR (up (IZR x * l)) = IZR x * Qreals.Q2R (up (IZR x * l) # Z.to_pos x)).
-    {
-       admit.
-    }
     split.
     - apply Rmult_lt_reg_l with (r := IZR x); trivial.
-      rewrite <- H5.
+      rewrite <- Qmult_den; trivial.
       apply archimed.
     - apply Rmult_lt_reg_l with (r := IZR x); trivial.
-      rewrite <- H5.
+      rewrite <- Qmult_den; trivial.
       apply H3.
-   Admitted.
-
-  Axiom Q_dense :
-    forall (l r : R),
-    (l < r)%R -> (exists (m:Q), l < Qreals.Q2R m < r).
+   Qed.
 
   Lemma Q_neighborhood_included (D:R -> Prop) (x:R) :
         neighbourhood D x -> 
