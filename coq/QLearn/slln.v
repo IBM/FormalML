@@ -2024,13 +2024,23 @@ Lemma ps_union_countable_union_iff (coll : nat -> event dom):
      assumption.
  Qed.
 
+ Lemma ps_P_sub_zero (E1 E2 : event dom) :
+   event_sub E1 E2 -> ps_P E2 = 0 -> ps_P E1 = 0.
+ Proof.
+   intros.
+   generalize (ps_sub _ E1 E2 H); intros.
+   rewrite H0 in H1.
+   generalize (ps_pos E1); intros.
+   lra.
+ Qed.
+
   (* ash prob 2.5.4 *)
 Lemma almostR2_cauchy (X : nat -> Ts -> R) 
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)} :
   almost _ (fun omega => cauchy_seq_at omega X) <->
   (forall (eps:posreal),
-      is_lim_seq (fun N =>
-                 ps_P (exist sa_sigma _ (sa_sigma_not_cauchy X eps N))) 0).
+      Lim_seq (fun N =>
+                 ps_P (exist sa_sigma _ (sa_sigma_not_cauchy X eps N))) = 0).
 Proof.
   assert (H1 : forall (eps: posreal),let E := fun n => exist sa_sigma _ (sa_sigma_not_cauchy X eps n) in
                                 is_lim_seq (fun k => ps_P (E k)) (ps_P (inter_of_collection E))).
@@ -2039,7 +2049,26 @@ Proof.
     apply is_lim_descending.
     apply sa_sigma_cauchy_descending.
   }
-
+  unfold cauchy_seq_at.
+  rewrite almost_alt_eq.
+  unfold almost_alt.
+  split; intros.
+  + destruct H as [E [HE Heps]].
+    specialize (H1 eps). simpl in H1.
+    apply is_lim_seq_unique in H1. rewrite H1.
+    rewrite Rbar_finite_eq.
+    apply ps_P_sub_zero with E; trivial.
+    intros omega.
+    simpl; specialize (Heps omega).
+    intros. apply Heps. apply ex_not_not_all.
+    exists eps. apply all_not_not_ex.
+    intros n1. destruct (H n1) as [n2 [m2 Hnm]].
+    apply ex_not_not_all. exists n2.
+    apply ex_not_not_all. exists m2.
+    destruct Hnm as [Hn2 [Hm2 Hepsnm]].
+    intros Hnot. specialize (Hnot Hn2 Hm2).
+    lra.
+  + admit.
 Admitted.
 
 
