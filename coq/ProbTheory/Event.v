@@ -972,6 +972,47 @@ Section pre_ev.
     eauto.
   Qed.
 
+(* by a chance of index, the union of any countably indexed collection
+   of things in the sigma algebra are in the sigma algebra *)
+Lemma sa_countable_union_iso {T : Type} (SigmaAlgebra : SigmaAlgebra T) {Index: Type} {iso:Isomorphism Index nat}
+      (collection : Index -> pre_event T) :
+  (forall i, sa_sigma (collection i)) -> sa_sigma (fun omega => exists i:Index, collection i omega).
+Proof.
+  intros.
+  assert (eqq1:pre_event_equiv
+                 (fun omega : T => exists i:Index, collection i omega)
+                 (fun omega : T => exists n:nat, collection (iso_f n) omega)).
+  {
+    split; intros [j ?].
+    - exists (iso_b j).
+      now rewrite iso_f_b.
+    - eauto.    
+  }
+  rewrite eqq1.
+  now apply sa_countable_union.
+Qed.
+
+(* by a chance of index, the union of any countably indexed collection
+   of things in the sigma algebra are in the sigma algebra *)
+Lemma sa_pre_countable_inter_iso {T : Type} (SigmaAlgebra : SigmaAlgebra T) {Index: Type} {iso:Isomorphism Index nat}
+      (collection : Index -> pre_event T) :
+  (forall i, sa_sigma (collection i)) -> sa_sigma (fun omega => forall i:Index, collection i omega).
+Proof.
+  intros.
+  assert (eqq1:pre_event_equiv
+                 (fun omega : T => forall i:Index, collection i omega)
+                 (fun omega : T => forall n:nat, collection (iso_f n) omega)).
+  {
+    intros x.
+    split; intros cx j.
+    - apply cx.
+    - specialize (cx (iso_b j)).
+      now rewrite iso_f_b in cx.
+  }
+  rewrite eqq1.
+  now apply sa_pre_countable_inter.
+Qed.
+  
 End pre_ev.
 
 Section event.

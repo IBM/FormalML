@@ -1,10 +1,12 @@
 Require Import Lra Lia Reals RealAdd RandomVariableL2 Coquelicot.Coquelicot.
-Require Import Morphisms Finite List ListAdd Permutation infprod AlmostEqual.
+Require Import Morphisms Finite List ListAdd Permutation infprod AlmostEqual NumberIso.
 Require Import Sums SimpleExpectation.
 Require Import EquivDec.
 Require Import Classical.
 Require Import ClassicalChoice.
 Require Import IndefiniteDescription ClassicalDescription.
+Require QArith.
+Require Import BorelSigmaAlgebra.
 
 Set Bullet Behavior "Strict Subproofs".
 Set Default Goal Selector "!".
@@ -525,7 +527,7 @@ Fixpoint filtration_history (n : nat) (X : nat -> Ts -> R)
          {rv : forall n, RandomVariable dom borel_sa (X n)}
   : list dec_sa_event :=
   match n with
-  | 0 => [dsa_Ω]
+  | 0%nat => [dsa_Ω]
   | S k => refine_dec_sa_partitions (induced_sigma_generators (frf k)) (filtration_history k X)
   end.
 
@@ -821,7 +823,7 @@ Qed.
 (* Few properties about cutoff sequences. Move to RealAdd. *)
 Fixpoint cutoff_eps (n : nat) (eps : R) (X : nat -> R) :=
   match n with
-  | 0 => X 0%nat
+  | 0%nat => X 0%nat
   | S k => if (Rlt_dec (Rmax_list_map (seq 0 (S k)) (fun n => Rabs(X n))) eps) then X (S k)
                     else (cutoff_eps k eps X)
   end.
@@ -1877,7 +1879,7 @@ Proof.
       rewrite <- IHj.
       ring_simplify.
       reflexivity.
-Qed.
+Qed.  
 
 Lemma sa_sigma_not_cauchy (X : nat -> Ts -> R) (eps:posreal) (N : nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)} :
@@ -1886,55 +1888,91 @@ Lemma sa_sigma_not_cauchy (X : nat -> Ts -> R) (eps:posreal) (N : nat)
                 (n >= N)%nat /\ (m >= N)%nat /\
                 Rabs ((X n omega) - (X m omega)) >= eps) .
 Proof.
-  assert (pre_event_equiv
-           (fun omega =>
-              exists (n m : nat),
-                (n >= N)%nat /\ (m >= N)%nat /\
-                Rabs ((X n omega) - (X m omega)) >= eps)
-           (pre_union_of_collection 
-              (fun n => pre_union_of_collection
-                          (fun m =>
-                             (fun omega =>
-                                (n >= N)%nat /\ (m >= N)%nat /\
-                                Rabs ((X n omega) - (X m omega)) >= eps))))) .
-  {
-    intro x.
-    now unfold pre_union_of_collection.
-  }
-  rewrite H.
-  apply sa_countable_union; intros.
-  apply sa_countable_union; intros.  
-  assert (pre_event_equiv
-              (fun omega : Ts =>
-                (n >= N)%nat /\ (n0 >= N)%nat /\ Rabs (X n omega - X n0 omega) >= eps)
-             (pre_event_inter
-                (fun _ =>  (n >= N)%nat /\ (n0 >= N)%nat)
-                (fun omega => Rabs (X n omega - X n0 omega) >= eps))).
-  {
-    intro x.
-    unfold pre_event_inter.
-    tauto.
-  }
-  rewrite H0.
+  apply sa_countable_union; intros n.
+  apply sa_countable_union; intros m.
   apply sa_inter.
   - apply sa_sigma_const_classic.
-  - apply sa_le_ge; intros.
-    apply Rabs_measurable.
-    generalize (minus_measurable dom (X n) (X n0)); intros.
-    rewrite rvminus_unfold in H1.
-    apply H1.
-    + now apply rv_measurable.
-    + now apply rv_measurable.      
-  Qed.                            
-
+  - apply sa_inter.
+    + apply sa_sigma_const_classic.
+    + apply sa_le_ge; intros.
+      apply Rabs_measurable.
+      generalize (minus_measurable dom (X n) (X m)); intros.
+      rewrite rvminus_unfold in H.
+      apply H; now apply rv_measurable.
+Qed.
+                                                  
 Lemma sa_sigma_not_full_cauchy (X : nat -> Ts -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)} :
-  sa_sigma (fun omega =>
-             exists (eps : posreal), forall N:nat, exists n m,
-                (n >= N)%nat /\ (m >= N)%nat /\
-                Rabs ((X n omega) - (X m omega)) >= eps).
+  sa_sigma (fun omega => exists (eps : posreal), forall N:nat,
+                  exists (n m : nat),
+                    (n >= N)%nat /\ (m >= N)%nat /\
+                    Rabs ((X n omega) - (X m omega)) >= eps).
 Proof.
-Admitted.
+  assert (eqq1:pre_event_equiv
+                 (fun omega => exists (eps : posreal), forall N:nat,
+                        exists (n m : nat),
+                          (n >= N)%nat /\ (m >= N)%nat /\
+                          Rabs ((X n omega) - (X m omega)) >= eps)
+                 (fun omega => exists (eps : QArith_base.Q),
+                      (QArith_base.Qlt {| QArith_base.Qnum := 0; QArith_base.Qden := 1 |} eps) /\
+                      forall N:nat,
+                      exists (n m : nat),
+                        (n >= N)%nat /\ (m >= N)%nat /\
+                        Rabs ((X n omega) - (X m omega)) >= Qreals.Q2R eps)).
+  {
+    intros x.
+    split.
+    - intros [eps HH].
+      destruct (Q_dense 0 eps) as [q [ql qr]].
+      + apply cond_pos.
+      + exists q.
+        split.
+        * apply Qreals.Rlt_Qlt.
+          unfold QArith_base.inject_Z.
+          unfold Qreals.Q2R.
+          simpl.
+          rewrite Rmult_0_l.
+          apply ql.
+        * intros N.
+          destruct (HH N) as [n [m [? [? HH3]]]].
+          exists n; exists m.
+          intuition lra.
+    - intros [eps [epos HH]].
+      assert (qepspos: 0 < Qreals.Q2R eps).
+      {
+        apply Qreals.Qlt_Rlt in epos.
+        now rewrite RMicromega.Q2R_0 in epos.
+      }
+      exists (mkposreal (Qreals.Q2R eps) qepspos).
+      intros N.
+      destruct (HH N) as [n [m [? [HH3]]]].
+      exists n; exists m.
+      intuition lra.
+  }
+  rewrite eqq1.
+  apply sa_countable_union_iso; try typeclasses eauto.
+  intros.
+  destruct (Rlt_dec 0 (Qreals.Q2R i)).
+  - assert (QArith_base.Qlt {| QArith_base.Qnum := 0; QArith_base.Qden := 1 |} i).
+    {
+      apply Qreals.Rlt_Qlt.
+      now rewrite RMicromega.Q2R_0.
+    } 
+    eapply (sa_proper _  (fun omega => (forall N : nat,
+      exists n m : nat,
+        (n >= N)%nat /\ (m >= N)%nat /\ Rabs (X n omega - X m omega) >= Qreals.Q2R i))).
+    + firstorder.
+    + apply sa_pre_countable_inter; intros N.
+      now apply (sa_sigma_not_cauchy X (mkposreal _ r)).
+  - eapply sa_proper; try apply sa_none.
+    assert (~ QArith_base.Qlt {| QArith_base.Qnum := 0; QArith_base.Qden := 1 |} i).
+    {
+      intros qlt.
+      apply Qreals.Qlt_Rlt in qlt.
+      now rewrite RMicromega.Q2R_0 in qlt.
+    } 
+    firstorder.
+Qed.
 
 Definition cauchy_seq_at (omega : Ts) (X : nat -> Ts -> R) := forall (eps:posreal),
     exists (N:nat), forall (n m : nat),  (n >= N)%nat -> (m >= N)%nat -> Rabs ((X n omega) - (X m omega)) < eps.
