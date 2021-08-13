@@ -1988,7 +1988,7 @@ Lemma ps_union_countable_union_iff (coll : nat -> event dom):
     lra.
   Qed.
 
- Lemma almost_cauchy_iff (X : nat -> Ts -> R) (n : nat)
+ Lemma almost_cauchy_iff (X : nat -> Ts -> R)
     {rv : forall n, RandomVariable dom borel_sa (X n)}:
    event_equiv ((exist sa_sigma _ (sa_sigma_not_full_cauchy X)))
                (union_of_collection
@@ -2050,10 +2050,10 @@ Proof.
     apply sa_sigma_cauchy_descending.
   }
   unfold cauchy_seq_at.
-  rewrite almost_alt_eq.
-  unfold almost_alt.
   split; intros.
-  + destruct H as [E [HE Heps]].
+  + rewrite almost_alt_eq in H.
+    unfold almost_alt in H.
+    destruct H as [E [HE Heps]].
     specialize (H1 eps). simpl in H1.
     apply is_lim_seq_unique in H1. rewrite H1.
     rewrite Rbar_finite_eq.
@@ -2068,8 +2068,39 @@ Proof.
     destruct Hnm as [Hn2 [Hm2 Hepsnm]].
     intros Hnot. specialize (Hnot Hn2 Hm2).
     lra.
-  + admit.
-Admitted.
+  + (* forall 0<δ, P(B_δ) = 0*)
+    assert (Hinter : forall eps:posreal, let E :=
+         fun n : nat => exist sa_sigma _ (sa_sigma_not_cauchy X eps n) in
+                                    (ps_P (inter_of_collection E)) = 0).
+    {
+      intros eps E.
+      rewrite <-Rbar_finite_eq.
+      rewrite <-H with eps. symmetry.
+      apply is_lim_seq_unique. apply H1.
+    }
+    clear H.
+    rewrite almost_alt_eq.
+    unfold almost_alt.
+    exists (exist sa_sigma _ (sa_sigma_not_full_cauchy X)).
+    split.
+    ++ rewrite almost_cauchy_iff.
+       rewrite <-ps_union_countable_union_iff.
+       intros n; apply (Hinter ({| pos := /(1 + INR n); cond_pos := recip_pos n|})).
+    ++ intros omega Hnot.
+       simpl. apply not_all_ex_not in Hnot.
+       destruct Hnot as [eps Hnot1].
+       exists eps. intros N. generalize (not_ex_all_not _ _ Hnot1 N); intros.
+       clear Hnot1. apply not_all_ex_not in H.
+       destruct H as [n H2]. exists n.
+       apply not_all_ex_not in H2. destruct H2 as [m H3].
+       exists m. apply imply_to_and in H3.
+       split; try (now destruct H3).
+       destruct H3 as [Hn H4].
+       apply imply_to_and in H4.
+       split; try (now destruct H4).
+       destruct H4 as [Hm H5].
+       now apply Rnot_lt_ge in H5.
+Qed.
 
 
 (*Lemma almostR2_cauchy' (X : nat -> Ts -> R)
