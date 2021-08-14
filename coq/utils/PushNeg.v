@@ -86,11 +86,6 @@ Section rewrites.
 
 End rewrites.
 
-Ltac f t := match t with
-           | context [ (exists _, ~ ?t) ] => idtac "?t = " t; fail
-           | _ => idtac
-            end.
-
 Ltac push_neg :=
   repeat match goal with
   | [ |- context[~ (_ < _)%R]] => setoid_rewrite not_lt
