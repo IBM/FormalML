@@ -2462,14 +2462,14 @@ Qed.
           rewrite rvminus_unfold.
           now replace (n - S N + S N)%nat with (n) by lia.
         - assert (Rabs (X n x - X N x) < eps / 2) by lra.
+          generalize (Rabs_triang (X n x - X N x) (X N x - X m x));intros.
+          replace  (X n x - X N x + (X N x - X m x)) with (X n x - X m x) in H3 by lra.
+          assert (Rabs (X N x - X m x) >= eps/2) by lra.
           assert (m > N)%nat by admit.
           exists (m - (S N))%nat.
           rewrite rvminus_unfold.
           replace (m - S N + S N)%nat with (m) by lia.          
-          rewrite Rabs_minus_sym.
-          generalize (Rabs_triang (X n x - X N x) (X N x - X m x));intros.
-          replace  (X n x - X N x + (X N x - X m x)) with (X n x - X m x) in H4 by lra.
-          lra.
+          now rewrite Rabs_minus_sym.
         Admitted.
 
     Lemma Ash_6_2_1_helper6b (X : nat -> Ts -> R) (eps : posreal) (N : nat) 
