@@ -1,6 +1,6 @@
 Require Import Lra Lia Reals RealAdd RandomVariableL2 Coquelicot.Coquelicot.
 Require Import Morphisms Finite List ListAdd Permutation infprod AlmostEqual NumberIso.
-Require Import Sums SimpleExpectation.
+Require Import Sums SimpleExpectation PushNeg.
 Require Import EquivDec.
 Require Import Classical.
 Require Import ClassicalChoice.
@@ -2098,14 +2098,9 @@ Proof.
     apply ps_P_sub_zero with E; trivial.
     intros omega.
     simpl; specialize (Heps omega).
-    intros. apply Heps. apply ex_not_not_all.
-    exists eps. apply all_not_not_ex.
-    intros n1. destruct (H n1) as [n2 [m2 Hnm]].
-    apply ex_not_not_all. exists n2.
-    apply ex_not_not_all. exists m2.
-    destruct Hnm as [Hn2 [Hm2 Hepsnm]].
-    intros Hnot. specialize (Hnot Hn2 Hm2).
-    lra.
+    intros. apply Heps. push_neg.
+    push_neg_in Heps.
+    now exists eps.
   + (* forall 0<δ, P(B_δ) = 0*)
     assert (Hinter : forall eps:posreal, let E :=
          fun n : nat => exist sa_sigma _ (sa_sigma_not_cauchy X eps n) in
@@ -2125,19 +2120,7 @@ Proof.
        rewrite <-ps_union_countable_union_iff.
        intros n; apply (Hinter ({| pos := /(1 + INR n); cond_pos := recip_pos n|})).
     ++ intros omega Hnot.
-       simpl. apply not_all_ex_not in Hnot.
-       destruct Hnot as [eps Hnot1].
-       exists eps. intros N. generalize (not_ex_all_not _ _ Hnot1 N); intros.
-       clear Hnot1. apply not_all_ex_not in H.
-       destruct H as [n H2]. exists n.
-       apply not_all_ex_not in H2. destruct H2 as [m H3].
-       exists m. apply imply_to_and in H3.
-       split; try (now destruct H3).
-       destruct H3 as [Hn H4].
-       apply imply_to_and in H4.
-       split; try (now destruct H4).
-       destruct H4 as [Hm H5].
-       now apply Rnot_lt_ge in H5.
+       simpl. now push_neg_in Hnot.
 Qed.
 
 
@@ -2169,14 +2152,9 @@ Proof.
     - apply ps_P_sub_zero with E; trivial.
       intros omega.
       simpl; specialize (Heps omega).
-      intros. apply Heps. apply ex_not_not_all.
-      exists eps. apply all_not_not_ex.
-      intros n1. destruct (H n1) as [n2 [m2 Hnm]].
-      apply ex_not_not_all. exists n2.
-      apply ex_not_not_all. exists m2.
-      destruct Hnm as [Hn2 [Hm2 Hepsnm]].
-      intros Hnot. specialize (Hnot Hn2 Hm2).
-      lra.
+      intros. apply Heps. push_neg.
+      push_neg_in Heps.
+      now exists eps.
   + (* forall 0<δ, P(B_δ) = 0*)
     assert (Hinter : forall eps:posreal, let E :=
          fun n : nat => exist sa_sigma _ (sa_sigma_not_cauchy X eps n) in
@@ -2196,19 +2174,7 @@ Proof.
        rewrite <-ps_union_countable_union_iff.
        intros n; apply (Hinter ({| pos := /(1 + INR n); cond_pos := recip_pos n|})).
     ++ intros omega Hnot.
-       simpl. apply not_all_ex_not in Hnot.
-       destruct Hnot as [eps Hnot1].
-       exists eps. intros N. generalize (not_ex_all_not _ _ Hnot1 N); intros.
-       clear Hnot1. apply not_all_ex_not in H.
-       destruct H as [n H2]. exists n.
-       apply not_all_ex_not in H2. destruct H2 as [m H3].
-       exists m. apply imply_to_and in H3.
-       split; try (now destruct H3).
-       destruct H3 as [Hn H4].
-       apply imply_to_and in H4.
-       split; try (now destruct H4).
-       destruct H4 as [Hm H5].
-       now apply Rnot_lt_ge in H5.
+       simpl. now push_neg_in Hnot.
 Qed.
 
 Instance rv_max_sum_shift (X : nat -> Ts -> R) (m n : nat) 
