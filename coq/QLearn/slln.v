@@ -2327,7 +2327,7 @@ Qed.
  Lemma Ash_6_2_1_helper3 (X : nat -> Ts -> R) (eps : posreal) (m : nat) 
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))} :
-   let Sum := fun j => rvsum (fun k => X (k)%nat) j in
+   let Sum := fun j => rvsum X j in
     Rbar.Finite (ps_P (union_of_collection (fun k =>  event_ge dom (rvabs (rvminus (Sum (k+(S m))%nat) (Sum m))) eps))) =
     Lim_seq (fun n => ps_P (event_ge dom (rvmaxlist (fun k => rvabs (rvminus (Sum (k + (S m))%nat) (Sum m))) n) eps)).
    Proof.
@@ -2367,7 +2367,7 @@ Qed.
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
       (HC : forall n, 
           rv_eq (SimpleConditionalExpectationSA (X n) (filtration_history n X)) (const 0))  :
-   let Sum := fun j => rvsum (fun k => X (k)%nat) j in
+   let Sum := fun j => rvsum X j in
     Rbar_le (ps_P (union_of_collection (fun k =>  event_ge dom (rvabs (rvminus (Sum (k + (S m))%nat) (Sum m))) eps)))
             (Rbar_div_pos (LimSup_seq (sum_n (fun n => SimpleExpectation (rvsqr (X (n + (S m))%nat))))) (mkposreal _ (sqr_pos eps))).
     Proof.
@@ -2413,7 +2413,7 @@ Qed.
       (HC : forall n, 
           rv_eq (SimpleConditionalExpectationSA (X n) (filtration_history n X)) (const 0))  :
     ex_series (fun n => SimpleExpectation (rvsqr (X n))) ->
-   let Sum := fun j => rvsum (fun k => X (k)%nat) j in
+   let Sum := fun j => rvsum X j in
      is_lim_seq (fun m => ps_P (union_of_collection (fun k => event_ge dom (rvabs (rvminus (Sum (k + (S m))%nat) (Sum m))) eps))) 0. 
     Proof.
       intros.
@@ -2447,6 +2447,19 @@ Qed.
       apply is_lim_seq_const.
    Qed.
     
+  Lemma Ash_6_2_1_helper6 (X : nat -> Ts -> R) (eps : posreal) (N : nat)
+      {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
+      {frf : forall (n:nat), FiniteRangeFunction (X (n))} :
+   let Sum := fun j => rvsum X j in
+    event_equiv
+      (exist sa_sigma _ (sa_sigma_not_cauchy Sum eps N))
+      (union_of_collection (fun k => event_ge dom (rvabs (rvminus (Sum (k + (S N))%nat) (Sum N))) eps)).
+    Proof.
+      simpl.
+      intro x; simpl.
+      Admitted.
+      
+
   Lemma Ash_6_2_1 (X : nat -> Ts -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
@@ -2456,8 +2469,6 @@ Qed.
     almost Prts (fun (x : Ts) => ex_series (fun n => X n x)).
   Proof.
     intros.
-    generalize (Cauchy_ex_series _ H); intros.
-    unfold Cauchy_series in H0.
 
   Admitted.
 
