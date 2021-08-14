@@ -2540,6 +2540,13 @@ Qed.
        + apply H.
    Qed.            
 
+    Global Instance almost_Proper : Proper (eq ==> iff) (@almost _ _ Prts).
+    Proof.
+      unfold Proper, respectful.
+      intros.
+      rewrite H. reflexivity.
+    Qed.
+
   Lemma Ash_6_2_1 (X : nat -> Ts -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
@@ -2556,9 +2563,21 @@ Qed.
     generalize (Ash_6_2_1_helper5 X HC H); intros.
     simpl in H1.
     rewrite <- H0 in H1.
-    
-    Admitted.
-    
+    unfold almost.
+    destruct H1 as [E HE].
+    exists E. destruct HE. split; trivial.
+    intros.  specialize (H2 x H3).
+    generalize (ex_series_Cauchy (fun n => X n x)); intros.
+    apply H4. rewrite Cauchy_series_Reals.
+    unfold Cauchy_crit_series.
+    unfold cauchy_seq_at in H2.
+    unfold Cauchy_crit. unfold rvsum in H2.
+    setoid_rewrite sum_n_Reals in H2.
+    intros. unfold R_dist.
+    specialize (H2 (mkposreal eps H5)).
+    apply H2.
+  Qed.
+
   Lemma induced_sigma_scale (X : nat -> Ts -> R) (b : nat -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))} :
