@@ -1974,7 +1974,7 @@ Proof.
     firstorder.
 Qed.
 
-Definition cauchy_seq_at (omega : Ts) (X : nat -> Ts -> R) := forall (eps:posreal),
+Definition cauchy_seq_at {A : Type}(omega : A) (X : nat -> A -> R) := forall (eps:posreal),
     exists (N:nat), forall (n m : nat),  (n >= N)%nat -> (m >= N)%nat -> Rabs ((X n omega) - (X m omega)) < eps.
 
 Lemma sa_sigma_cauchy_descending (X : nat -> Ts -> R)(eps : posreal)
@@ -2540,11 +2540,28 @@ Qed.
        + apply H.
    Qed.            
 
+    (* Maybe remove this?*)
     Global Instance almost_Proper : Proper (eq ==> iff) (@almost _ _ Prts).
     Proof.
       unfold Proper, respectful.
       intros.
       rewrite H. reflexivity.
+    Qed.
+
+    Lemma cauchy_seq_at_ex_series {A : Type} (X : nat -> A -> R)
+      : forall x:A,
+        cauchy_seq_at x (fun (n : nat) (omega : A) => sum_n (fun n0 : nat => X n0 omega) n)
+        -> ex_series (fun n => X n x).
+    Proof.
+      intros x Hx.
+      generalize (ex_series_Cauchy (fun n => X n x)); intros.
+      apply H. clear H. unfold cauchy_seq_at in Hx.
+      rewrite Cauchy_series_Reals.
+      unfold Cauchy_crit_series.
+      unfold Cauchy_crit.
+      setoid_rewrite sum_n_Reals in Hx.
+      intros. unfold R_dist.
+      specialize (Hx (mkposreal eps H)); eauto.
     Qed.
 
   Lemma Ash_6_2_1 (X : nat -> Ts -> R)
@@ -2567,14 +2584,7 @@ Qed.
     destruct H1 as [E HE].
     exists E. destruct HE. split; trivial.
     intros.  specialize (H2 x H3).
-    generalize (ex_series_Cauchy (fun n => X n x)); intros.
-    apply H4. rewrite Cauchy_series_Reals.
-    unfold Cauchy_crit_series.
-    unfold cauchy_seq_at in H2.
-    unfold Cauchy_crit. unfold rvsum in H2.
-    setoid_rewrite sum_n_Reals in H2.
-    intros. unfold R_dist.
-    specialize (H2 (mkposreal eps H5)).
+    apply cauchy_seq_at_ex_series.
     apply H2.
   Qed.
 
