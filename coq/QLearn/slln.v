@@ -2407,13 +2407,14 @@ Qed.
           now rewrite H0.
     Qed.
 
-  Lemma Ash_6_2_1_helper5 (X : nat -> Ts -> R) (eps : posreal)
+  Lemma Ash_6_2_1_helper5 (X : nat -> Ts -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
       (HC : forall n, 
           rv_eq (SimpleConditionalExpectationSA (X n) (filtration_history n X)) (const 0))  :
     ex_series (fun n => SimpleExpectation (rvsqr (X n))) ->
    let Sum := fun j => rvsum X j in
+   forall (eps : posreal),
      is_lim_seq (fun m => ps_P (union_of_collection (fun k => event_ge dom (rvabs (rvminus (Sum (k + (S m))%nat) (Sum m))) eps))) 0. 
     Proof.
       intros.
@@ -2548,9 +2549,16 @@ Qed.
     almost Prts (fun (x : Ts) => ex_series (fun n => X n x)).
   Proof.
     intros.
-
-  Admitted.
-
+    generalize (almost_cauchy_is_lim_seq_iff (rvsum X)); intros.
+    generalize (Ash_6_2_1_helper6 (rvsum X)); intros.
+    rewrite <- H1 in H0.
+    clear H1.
+    generalize (Ash_6_2_1_helper5 X HC H); intros.
+    simpl in H1.
+    rewrite <- H0 in H1.
+    
+    Admitted.
+    
   Lemma induced_sigma_scale (X : nat -> Ts -> R) (b : nat -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))} :
