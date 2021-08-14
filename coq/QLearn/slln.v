@@ -2447,18 +2447,46 @@ Qed.
       apply is_lim_seq_const.
    Qed.
     
-  Lemma Ash_6_2_1_helper6 (X : nat -> Ts -> R) (eps : posreal) (N : nat)
-      {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
-      {frf : forall (n:nat), FiniteRangeFunction (X (n))} :
-   let Sum := fun j => rvsum X j in
-    event_equiv
-      (exist sa_sigma _ (sa_sigma_not_cauchy Sum eps N))
-      (union_of_collection (fun k => event_ge dom (rvabs (rvminus (Sum (k + (S N))%nat) (Sum N))) eps)).
-    Proof.
-      simpl.
-      intro x; simpl.
-      Admitted.
-      
+    Lemma Ash_6_2_1_helper6a (X : nat -> Ts -> R) (eps : posreal) (N : nat) 
+      {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))} :
+      event_sub
+        (exist sa_sigma _ (sa_sigma_not_cauchy X eps N))
+        (union_of_collection (fun k => event_ge dom (rvabs (rvminus (X (k + (S N))%nat) (X N))) (eps/2))).
+      Proof.
+        unfold rvabs.
+        intro x; simpl; intros.
+        destruct H as [n [m [? [? ?]]]].
+        destruct (Rge_dec (Rabs (X n x - X N x)) (eps/2)).
+        - assert (n > N)%nat by admit.
+          exists (n - (S N))%nat.
+          rewrite rvminus_unfold.
+          now replace (n - S N + S N)%nat with (n) by lia.
+        - assert (Rabs (X n x - X N x) < eps / 2) by lra.
+          assert (m > N)%nat by admit.
+          exists (m - (S N))%nat.
+          rewrite rvminus_unfold.
+          replace (m - S N + S N)%nat with (m) by lia.          
+          rewrite Rabs_minus_sym.
+          generalize (Rabs_triang (X n x - X N x) (X N x - X m x));intros.
+          replace  (X n x - X N x + (X N x - X m x)) with (X n x - X m x) in H4 by lra.
+          lra.
+        Admitted.
+
+    Lemma Ash_6_2_1_helper6b (X : nat -> Ts -> R) (eps : posreal) (N : nat) 
+      {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))} :
+      event_sub
+        (union_of_collection (fun k => event_ge dom (rvabs (rvminus (X (k + (S N))%nat) (X N))) eps))
+        (exist sa_sigma _ (sa_sigma_not_cauchy X eps N)).
+      Proof.
+        unfold rvabs.
+        intro x; simpl; intros.
+        destruct H.
+        exists (x0 + S N)%nat.
+        exists N.
+        rewrite rvminus_unfold in H.
+        split; try lia.
+        split; try lia; trivial.
+    Qed.
 
   Lemma Ash_6_2_1 (X : nat -> Ts -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
