@@ -2457,20 +2457,30 @@ Qed.
         intro x; simpl; intros.
         destruct H as [n [m [? [? ?]]]].
         destruct (Rge_dec (Rabs (X n x - X N x)) (eps/2)).
-        - assert (n > N)%nat by admit.
-          exists (n - (S N))%nat.
-          rewrite rvminus_unfold.
-          now replace (n - S N + S N)%nat with (n) by lia.
+        - destruct (n == N).
+          ++ rewrite e in r.
+             rewrite Rminus_eq_0 in r.
+             rewrite Rabs_R0 in r.
+             generalize (is_pos_div_2 eps); intros; lra.
+          ++ assert (n > N)%nat by (destruct H; try lia;firstorder).
+             exists (n - (S N))%nat.
+             rewrite rvminus_unfold.
+             now replace (n - S N + S N)%nat with (n) by lia.
         - assert (Rabs (X n x - X N x) < eps / 2) by lra.
           generalize (Rabs_triang (X n x - X N x) (X N x - X m x));intros.
           replace  (X n x - X N x + (X N x - X m x)) with (X n x - X m x) in H3 by lra.
           assert (Rabs (X N x - X m x) >= eps/2) by lra.
-          assert (m > N)%nat by admit.
-          exists (m - (S N))%nat.
-          rewrite rvminus_unfold.
-          replace (m - S N + S N)%nat with (m) by lia.          
-          now rewrite Rabs_minus_sym.
-        Admitted.
+          destruct (m == N).
+          ++ rewrite e in H4.
+             rewrite Rminus_eq_0 in H4.
+             rewrite Rabs_R0 in H4.
+             generalize (is_pos_div_2 eps); intros; lra.
+          ++ assert (m > N)%nat by (destruct H0; try lia; firstorder).
+             exists (m - (S N))%nat.
+             rewrite rvminus_unfold.
+             replace (m - S N + S N)%nat with (m) by lia.
+             now rewrite Rabs_minus_sym.
+      Qed.
 
     Lemma Ash_6_2_1_helper6b (X : nat -> Ts -> R) (eps : posreal) (N : nat) 
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))} :
