@@ -2466,14 +2466,13 @@ Qed.
              exists (n - (S N))%nat.
              rewrite rvminus_unfold.
              now replace (n - S N + S N)%nat with (n) by lia.
-        - assert (Rabs (X n x - X N x) < eps / 2) by lra.
-          generalize (Rabs_triang (X n x - X N x) (X N x - X m x));intros.
-          replace  (X n x - X N x + (X N x - X m x)) with (X n x - X m x) in H3 by lra.
+        - generalize (Rabs_triang (X n x - X N x) (X N x - X m x));intros.
+          replace  (X n x - X N x + (X N x - X m x)) with (X n x - X m x) in H2 by lra.
           assert (Rabs (X N x - X m x) >= eps/2) by lra.
           destruct (m == N).
-          ++ rewrite e in H4.
-             rewrite Rminus_eq_0 in H4.
-             rewrite Rabs_R0 in H4.
+          ++ rewrite e in H3.
+             rewrite Rminus_eq_0 in H3.
+             rewrite Rabs_R0 in H3.
              generalize (is_pos_div_2 eps); intros; lra.
           ++ assert (m > N)%nat by (destruct H0; try lia; firstorder).
              exists (m - (S N))%nat.
@@ -2497,6 +2496,48 @@ Qed.
         split; try lia.
         split; try lia; trivial.
     Qed.
+
+  Lemma Ash_6_2_1_helper6  (X : nat -> Ts -> R) 
+        {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))} :
+    (forall (eps:posreal), 
+        is_lim_seq (fun m => ps_P (union_of_collection (fun k => event_ge dom (rvabs (rvminus (X (k + (S m))%nat) (X m))) eps))) 0) <->
+    (forall (eps:posreal), 
+        is_lim_seq (fun N => ps_P (exist sa_sigma _ (sa_sigma_not_cauchy X eps N))) 0).
+    Proof.
+      split; intros.
+      - generalize (is_pos_div_2 eps); intros.
+        specialize (H (mkposreal _ H0)).
+        apply is_lim_seq_le_le with 
+            (u := const 0) 
+            (w :=  (fun m : nat =>
+                      ps_P
+                        (union_of_collection
+                           (fun k : nat =>
+                              event_ge dom (rvabs (rvminus (X (k + S m)%nat) (X m)))
+                                       {| pos := eps / 2; cond_pos := H0 |})))).
+        + intros; split.
+          * apply ps_pos.
+          * apply ps_sub.
+            apply Ash_6_2_1_helper6a.
+        + apply is_lim_seq_const.
+        + apply H.
+     - specialize (H eps).
+       apply is_lim_seq_le_le with
+           (u := const 0)
+           (w :=  (fun N : nat =>
+         ps_P
+           (exist sa_sigma
+              (fun omega : Ts =>
+               exists n m : nat,
+                 (n >= N)%nat /\ (m >= N)%nat /\ Rabs (X n omega - X m omega) >= eps)
+              (sa_sigma_not_cauchy X eps N)))).
+       + intros; split.
+         * apply ps_pos.
+         * apply ps_sub.
+           apply Ash_6_2_1_helper6b.
+       + apply is_lim_seq_const.
+       + apply H.
+   Qed.            
 
   Lemma Ash_6_2_1 (X : nat -> Ts -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
