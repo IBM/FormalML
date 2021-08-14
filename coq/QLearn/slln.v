@@ -2255,24 +2255,33 @@ Qed.
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}:
     ex_series (fun n => SimpleExpectation (rvsqr (X n))) ->
     is_lim_seq (fun m =>
-                  (Rbar_div_pos (LimSup_seq (sum_n (fun n => SimpleExpectation (rvsqr (X (n + m)%nat))))) 
+                  (Rbar_div_pos (LimSup_seq (sum_n (fun n => SimpleExpectation (rvsqr (X (n + (S m))%nat))))) 
                                 (mkposreal _ (sqr_pos eps)))) 0.
   Proof.
     intros.
     apply is_lim_seq_ext with
-        (u := fun m => (Rbar_div_pos (Series (fun n => SimpleExpectation (rvsqr (X (n + m)%nat))))
+        (u := fun m => (Rbar_div_pos (Series (fun n => SimpleExpectation (rvsqr (X (n + (S m))%nat))))
                                      (mkposreal _ (sqr_pos eps)))).
     {
       intros.
-      generalize (LimSup_seq_series H n); intros.
+      generalize (LimSup_seq_series H); intros.
       now rewrite H0.
     }
     simpl.
     unfold Rdiv.
     replace (Rbar.Finite 0) with (Rbar_mult 0 (/ (mkposreal _ (sqr_pos eps)))).
     - apply is_lim_seq_scal_r.
-      generalize (is_lim_seq_series_shift_0 H); intros.
-      apply H0.
+      generalize (zerotails _ H); intros.
+      apply is_lim_seq_ext with
+          (u :=  (fun n : nat =>
+          Series (fun k : nat => SimpleExpectation (rvsqr (X (S (n + k))))))).
+      + intros.
+        apply Series_ext.
+        intros.
+        apply SimpleExpectation_ext.
+        intro x.
+        now replace (n0 + S n)%nat with (S (n + n0))%nat by lia.
+      + apply H0.
     - simpl.
       now rewrite Rmult_0_l.
   Qed.
@@ -2398,6 +2407,46 @@ Qed.
           now rewrite H0.
     Qed.
 
+  Lemma Ash_6_2_1_helper5 (X : nat -> Ts -> R) (eps : posreal)
+      {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
+      {frf : forall (n:nat), FiniteRangeFunction (X (n))}
+      (HC : forall n, 
+          rv_eq (SimpleConditionalExpectationSA (X n) (filtration_history n X)) (const 0))  :
+    ex_series (fun n => SimpleExpectation (rvsqr (X n))) ->
+   let Sum := fun j => rvsum (fun k => X (k)%nat) j in
+     is_lim_seq (fun m => ps_P (union_of_collection (fun k => event_ge dom (rvabs (rvminus (Sum (k + (S m))%nat) (Sum m))) eps))) 0. 
+    Proof.
+      intros.
+      generalize (Ash_6_2_1_helper2 X eps H); intros.
+      assert (forall m, 
+                 0 <= (fun m : nat =>
+                                ps_P
+                                  (union_of_collection
+                                     (fun k : nat =>
+                                        event_ge dom (rvabs (rvminus (Sum (k + S m)%nat) (Sum m))) eps))) m <=
+                 (fun m : nat =>
+          Rbar_div_pos
+            (LimSup_seq
+               (sum_n (fun n : nat => SimpleExpectation (rvsqr (X (n + (S m))%nat)))))
+            {| pos := eps²; cond_pos := sqr_pos eps |}) m).
+      {
+        intros.
+        split.
+        - apply ps_pos.
+        - generalize (Ash_6_2_1_helper4 X eps m HC); intros.
+          unfold Sum in H1.
+          generalize (LimSup_seq_series H); intros.
+          rewrite H2 in H1.
+          simpl in H1.
+          rewrite H2.
+          simpl.
+          unfold Sum.
+          apply H1.
+      }
+      apply (is_lim_seq_le_le _ _ _ 0 H1); trivial.
+      apply is_lim_seq_const.
+   Qed.
+    
   Lemma Ash_6_2_1 (X : nat -> Ts -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}

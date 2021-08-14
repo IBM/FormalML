@@ -3930,17 +3930,6 @@ Proof.
   apply is_LimSup_seq_unique. now apply is_lim_LimSup_seq.
 Qed.
 
-Lemma is_lim_seq_series_shift_0 {a : nat -> R} (ha : ex_series a) :
-  is_lim_seq (fun m => Series (fun n => a((n+m)%nat))) 0.
-Proof.
-  generalize (zerotails a ha); intros.
-  rewrite is_lim_seq_incr_1.
-  apply is_lim_seq_ext with (u := fun n => Series (fun k => a (S (n+k)%nat))); [|trivial].
-  intros; apply Series_ext.
-  intros; f_equal; lia.
-Qed.
-
-
 Lemma Lim_seq_sup_le (f : nat -> R) :
   Rbar_le (Lim_seq f) (LimSup_seq f).
 Proof.
