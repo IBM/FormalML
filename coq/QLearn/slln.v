@@ -2540,15 +2540,7 @@ Qed.
        + apply H.
    Qed.            
 
-    (* Maybe remove this?*)
-    Global Instance almost_Proper : Proper (eq ==> iff) (@almost _ _ Prts).
-    Proof.
-      unfold Proper, respectful.
-      intros.
-      rewrite H. reflexivity.
-    Qed.
-
-    Lemma cauchy_seq_at_ex_series {A : Type} (X : nat -> A -> R)
+  Lemma cauchy_seq_at_ex_series {A : Type} (X : nat -> A -> R)
       : forall x:A,
         cauchy_seq_at x (fun (n : nat) (omega : A) => sum_n (fun n0 : nat => X n0 omega) n)
         -> ex_series (fun n => X n x).
