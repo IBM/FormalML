@@ -68,6 +68,20 @@ Section almost.
         now apply eq_on.
   Qed.
 
+    Global Instance almost_proper : Proper (pointwise_relation _ impl ==> impl) almost.
+  Proof.
+    intros ?? eqq [E [eone ?]].
+    exists E.
+    split; trivial; intros.
+    apply eqq; auto.
+  Qed.
+
+  Global Instance almost_proper_iff : Proper (pointwise_relation _ iff ==> iff) almost.
+  Proof.
+    intros ?? eqq.
+    split; apply almost_proper; firstorder.
+  Qed.
+    
   (* Move *)
   Lemma ps_union_sub 
         {T : Type} {σ : SigmaAlgebra T} (ps : ProbSpace σ) (A B : event σ) :
