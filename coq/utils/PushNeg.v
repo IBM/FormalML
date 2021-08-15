@@ -4,8 +4,13 @@ Require Import micromega.Lra.
 
 (*
 ****************************************************************************************
-This file develops the tactic `push_neg` which pushes negations into nested quantifiers.
-For example, if we have a hypothesis like this in the local context:
+This file develops the tactics `push_neg` and `contrapose` which are inspired by similar
+tactics available in Lean's mathlib library.
+
+* `push_neg` and `push_neg_in` push negations into hypotheses containing nested
+  quantifiers.
+
+ For example, if we have a hypothesis like this in the local context:
 
  (H : ~ (forall ϵ:posreal, exists δ:posreal, forall x, (Rabs(x - x0) <= δ)%R ->
                                              ((Rabs (f x - f x0))< ϵ)%R))
@@ -16,6 +21,9 @@ For example, if we have a hypothesis like this in the local context:
         forall x1 : posreal,
         exists x2 : R, (Rabs (x2 - x0) <= x1)%R /\ (Rabs (f x2 - f x0) >= x)%R
 
+ *`contrapose` and `contrapose_in` replace an implication by it's contrapositive.
+
+ NOTE: These tactics may utilize classical axioms (the law of excluded middle).
 ****************************************************************************************
 *)
 
@@ -84,6 +92,11 @@ Section rewrites.
     reflexivity.
   Qed.
 
+  Lemma not_impl_contr (p q : Prop) : (~q -> ~p) <-> (p -> q).
+  Proof.
+    split; intros; try (apply NNPP); firstorder.
+  Qed.
+
 End rewrites.
 
 Ltac push_neg :=
@@ -116,6 +129,23 @@ Ltac push_neg_in H :=
   | context[~ exists _, _] => setoid_rewrite not_exists in H
   | context[~ (forall _, _)] => setoid_rewrite not_forall in H
   end.
+
+Ltac contrapose :=
+  match goal with
+| [ |- ~ (_ -> _)] => setoid_rewrite not_impl_contr
+| [ |- (_ -> _)] => setoid_rewrite <-not_impl_contr
+  end.
+
+
+Ltac contrapose_in H :=
+  match type of H with
+| ~ (_ -> _) => setoid_rewrite not_impl_contr in H
+| (_ -> _) => setoid_rewrite <-not_impl_contr in H
+  end.
+
+Ltac contra_neg := contrapose; push_neg.
+
+Ltac contra_neg_in H := contrapose_in H ; push_neg_in H.
 
 Lemma tests1
       (p q : Prop)
@@ -160,4 +190,19 @@ Lemma test3 {f : R -> R}(x0 : R)
 Proof.
   push_neg_in H.
   trivial.
+Qed.
+
+Lemma test4 {p q : Prop} (Hpq1 : (p -> q)) (Hpq2 : ~q -> ~p) : (~q -> ~p) /\ (p -> q).
+Proof.
+  split.
+  + clear Hpq2. contrapose_in Hpq1. exact Hpq1.
+  + clear Hpq1. contrapose_in Hpq2. push_neg_in Hpq2.
+    exact Hpq2.
+Qed.
+
+Lemma test5 {p q : Prop} (Hpq1 : (p -> q)) (Hpq2 : ~q -> ~p) : (~q -> ~p) /\ (p -> q).
+Proof.
+  split.
+  + clear Hpq2. now contra_neg.
+  + clear Hpq1. now contra_neg_in Hpq2.
 Qed.
