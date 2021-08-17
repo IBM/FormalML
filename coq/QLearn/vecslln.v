@@ -852,9 +852,22 @@ Qed.
   Proof.
     unfold rvsumvec.
     induction m.
-    Admitted.
+    - eapply FiniteRangeFunction_ext; try eapply (rv 0%nat).
+      intros ?.
+      now rewrite sum_O; simpl.
+    - destruct IHm as [l1 pf1].
+      destruct (rv (S m)) as [l2 pf2].
+      exists (map (fun '(x,y) => plus x y) (list_prod l1 l2)).
+      intros.
+      rewrite sum_Sn.
+      change (In ((fun '(x0, y) => plus x0 y) ((sum_n (fun n0 : nat => f n0 x) m), (f (S m) x)))
+                  (map (fun '(x0, y) => plus x0 y) (list_prod l1 l2))).
+      apply in_map.
+      apply in_prod_iff.
+      split; trivial.
+  Qed.
 
-Lemma vec_expec_cross_zero_sum2_shift {I:nat} (X : nat -> Ts -> vector R I) (m : nat)
+  Lemma vec_expec_cross_zero_sum2_shift {I:nat} (X : nat -> Ts -> vector R I) (m : nat)
       {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa I) (X n)}
       {frf : forall (n:nat), FiniteRangeFunction (X n)}
       (HC : forall n, rv_eq (vector_SimpleConditionalExpectationSA (X n) (vec_filtration_history n X)) (const zero)) :
