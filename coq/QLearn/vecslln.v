@@ -804,7 +804,7 @@ Proof.
       now rewrite sum_Sn.
 Qed.
 
-Lemma expec_cross_zero_sum_shift {I:nat} (X : nat -> Ts -> vector R I) (m:nat)
+Lemma vec_expec_cross_zero_sum_shift {I:nat} (X : nat -> Ts -> vector R I) (m:nat)
       {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa I) (X n)}
       {frf : forall (n:nat), FiniteRangeFunction (X n)}
       (HC : forall n, rv_eq (vector_SimpleConditionalExpectationSA (X n) (vec_filtration_history n X)) (const zero)) :
@@ -838,8 +838,32 @@ Proof.
     now rewrite Rvector_inner_plus.
 Qed.
   
-(* next statement won't typecheck *)
-Lemma expec_cross_zero_sum2_shift {I:nat} (X : nat -> Ts -> vector R I) (m : nat)
+  Global Instance rvsumvec_rv {n} (f : nat -> Ts -> vector R n) (m:nat)
+         {rv:forall k, RandomVariable dom (Rvector_borel_sa n) (f k)} :
+    RandomVariable dom (Rvector_borel_sa n) (rvsumvec f m).
+  Proof.
+    unfold rvsumvec.
+    induction m.
+    - apply RandomVariable_proper with (x := f 0%nat).
+      + intro x.
+        now rewrite sum_O.
+      + typeclasses eauto.
+    - apply RandomVariable_proper with (x := (fun ts : Ts => plus (sum_n (fun n : nat => f n ts) m) (f (S m) ts))).
+      + intro x.
+        now rewrite sum_Sn.
+      + typeclasses eauto.
+   Qed.
+
+  Global Instance rvsumvec_frf {n} (f : nat -> Ts -> vector R n) (m:nat)
+         {rv:forall k, FiniteRangeFunction (f k)} :
+    FiniteRangeFunction (rvsumvec f m).
+  Proof.
+    unfold rvsumvec.
+    induction m.
+    
+    Admitted.
+
+Lemma vec_expec_cross_zero_sum2_shift {I:nat} (X : nat -> Ts -> vector R I) (m : nat)
       {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa I) (X n)}
       {frf : forall (n:nat), FiniteRangeFunction (X n)}
       (HC : forall n, rv_eq (vector_SimpleConditionalExpectationSA (X n) (vec_filtration_history n X)) (const zero)) :
@@ -848,11 +872,11 @@ Lemma expec_cross_zero_sum2_shift {I:nat} (X : nat -> Ts -> vector R I) (m : nat
     SimpleExpectation (rvinner (rvsumvec (fun n => X (n + m)%nat) j) (X (k+m)%nat)) = 0.
 Proof.
   intros.
-  generalize (expec_cross_zero_sum_shift X m HC j k H); intros.
+  generalize (vec_expec_cross_zero_sum_shift X m HC j k H); intros.
   rewrite <- H0.
   apply SimpleExpectation_ext.
   symmetry.
-  apply rvsum_distr_r.
+  apply vec_rvsum_distr_r.
 Qed.
 
 (* Few properties about cutoff sequences. Move to RealAdd. *)
