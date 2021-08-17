@@ -95,6 +95,7 @@ Section defs.
       fun omega => (rv_X1 omega) * (rv_X2 omega).
 
     Definition rvsqr (rv_X : Ts -> R) := fun omega => Rsqr (rv_X omega).
+    Definition rvsqrt (rv_X : Ts -> R) := fun omega => sqrt (rv_X omega).    
 
     Definition rvpow (rv_X : Ts -> R) (n:nat) := fun omega => pow (rv_X omega) n.
 

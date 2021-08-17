@@ -350,6 +350,19 @@ Section RealRandomVariables.
       apply H.
     Qed.
 
+    Instance Rsqrt_measurable f :
+      RealMeasurable f ->
+      RealMeasurable (rvsqrt f).
+    Proof.
+      intros.
+      unfold rvsqrt.
+      apply measurable_continuous; trivial.
+      generalize continuous_sqrt; intros.
+      unfold continuity; intros.
+      rewrite continuity_pt_filterlim.
+      apply H0.
+    Qed.
+
     Instance max_measurable (f g : Ts -> R) :
       RealMeasurable f ->
       RealMeasurable g ->
@@ -768,6 +781,14 @@ Section RealRandomVariables.
         typeclasses eauto.
       Qed.
 
+      Global Instance rvsqrt_rv
+             (rv_X : Ts -> R)
+             {rv : RandomVariable dom borel_sa rv_X} :
+        RandomVariable dom borel_sa (rvsqrt rv_X).
+      Proof.
+        typeclasses eauto.
+      Qed.
+
       Global Instance rvmax_rv
              (rv_X1 rv_X2 : Ts -> R)
              {rv1 : RandomVariable dom borel_sa rv_X1}
@@ -918,6 +939,16 @@ Section RealRandomVariables.
     Next Obligation.
       destruct frf.
       unfold rvsqr.
+      now apply in_map.
+    Qed.
+
+    Global Program Instance frfsqrt
+           (rv_X : Ts -> R)
+           {frf:FiniteRangeFunction rv_X} : FiniteRangeFunction (rvsqrt rv_X)
+      := { frf_vals := map sqrt frf_vals }.
+    Next Obligation.
+      destruct frf.
+      unfold rvsqrt.
       now apply in_map.
     Qed.
 
@@ -1449,6 +1480,7 @@ Section RealRandomVariables.
       ; apply rv_measurable; trivial.
     Qed.
     
+(*
     Definition rvsqrt (rv_X : Ts -> R)
                       (nnf : NonnegativeFunction rv_X) := 
       fun omega => Rsqrt (mknonnegreal (rv_X omega) (nnf omega)).
@@ -1504,7 +1536,7 @@ Section RealRandomVariables.
       - generalize (nnf0 x).
         congruence.
     Qed.
-
+*)
     Global Instance nnfchoice (c:Ts->bool) (rv_X1 rv_X2 : Ts -> R)
            {nnf1:NonnegativeFunction rv_X1}
            {nnf2:NonnegativeFunction rv_X2} :
