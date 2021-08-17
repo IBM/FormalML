@@ -433,26 +433,6 @@ Proof.
     now apply is_product_iff_is_log_sum with (l := mkposreal (exp x) H1).
 Qed.
 
-Lemma sum_S (f : nat -> R) (n : nat) :
-  sum_n f (S n) = sum_n f n + f (S n).
-Proof.
-  unfold sum_n, sum_n_m.
-  unfold Iter.iter_nat.
-  repeat rewrite Iter.iter_iter'.
-  unfold Iter.iter'.
-  rewrite iota_is_an_annoying_seq.
-  rewrite (iota_is_an_annoying_seq 0 (S n - 0)).
-  replace (S (S n) - 0)%nat with (S n + 1)%nat by lia.
-  rewrite seq_plus.
-  replace (0 + S n)%nat with (S n) by lia.
-  replace (S n - 0)%nat with (S n) by lia.  
-  rewrite List.fold_right_app.
-  simpl.
-  unfold plus, zero; simpl.
-  rewrite fold_right_plus_acc.
-  lra.
-Qed.  
-
 Lemma sum_split (f : nat -> R) (n1 n2 m : nat) :
   (n1 <= m)%nat -> (m < n2)%nat -> 
   sum_n_m f n1 n2 = sum_n_m f n1 m + sum_n_m f (S m) n2.
