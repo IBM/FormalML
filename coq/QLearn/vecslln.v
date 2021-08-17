@@ -822,29 +822,21 @@ Proof.
     lia.
  Qed.
 
-Definition rvsumvec {I:nat} (Xn : nat -> Ts -> vector R I) (n : nat) : Ts -> vector R I.
-Admitted.
-(*
-    Definition rvsum (Xn : nat -> Ts -> R) (n : nat) :=
-      (fun omega => sum_n (fun n0 => Xn n0 omega) n).
-*)
+Definition rvsumvec {I:nat} (Xn : nat -> Ts -> vector R I) (n : nat) : Ts -> vector R I
+  := fun ts => sum_n (fun n => Xn n ts) n.
 
 Lemma vec_rvsum_distr_r {I:nat} {n} (X : nat -> Ts -> vector R I) (f : Ts -> vector R I) :
   rv_eq (rvsum (fun j => rvinner (X j) f) n) (rvinner (rvsumvec X n) f).
 Proof.
-  Admitted.
-(*
-  intro x; unfold rvsum, rvmult.
-  induction n.
-  - rewrite sum_O.
-    now rewrite sum_O.
-  - rewrite sum_Sn.
-    rewrite sum_Sn.
-    unfold plus; simpl.
+  intros ?.
+  unfold rvsum, rvinner, rvsumvec.
+  induction n; simpl.
+  - now repeat rewrite sum_O.
+  - repeat rewrite sum_Sn.
     rewrite IHn.
-    lra.
- Qed.
- *)
+    unfold plus; simpl.
+    now rewrite Rvector_inner_plus.
+Qed.
   
 (* next statement won't typecheck *)
 Lemma expec_cross_zero_sum2_shift {I:nat} (X : nat -> Ts -> vector R I) (m : nat)
@@ -852,7 +844,7 @@ Lemma expec_cross_zero_sum2_shift {I:nat} (X : nat -> Ts -> vector R I) (m : nat
       {frf : forall (n:nat), FiniteRangeFunction (X n)}
       (HC : forall n, rv_eq (vector_SimpleConditionalExpectationSA (X n) (vec_filtration_history n X)) (const zero)) :
   forall (j k : nat), 
-    (j < k)%nat ->
+    (j < k)%nat -> 
     SimpleExpectation (rvinner (rvsumvec (fun n => X (n + m)%nat) j) (X (k+m)%nat)) = 0.
 Proof.
   intros.
