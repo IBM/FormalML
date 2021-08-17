@@ -759,22 +759,14 @@ Lemma vec_expec_cross_zero {I:nat} (X : nat -> Ts -> vector R I)
     SimpleExpectation(rvinner (X j) (X k)) = 0.
  Proof.
    intros j k jltk.
-   pose (l := @vec_filtration_history I k _ frf rv).
    generalize (vec_part_list_history k X); intros ispart.
- Admitted.
- (*
-   rewrite gen_conditional_tower_law with (l0 := l); trivial.
-   generalize (gen_conditional_scale_measurable (X j) (X k) l ispart); intros.
-   unfold l in H; unfold l.
-   cut_to H.
-   - rewrite (HC k) in H.
-     rewrite (SimpleExpectation_ext H).
-     rewrite (SimpleExpectation_ext (rvmult_zero (X j))).
-     now rewrite SimpleExpectation_const.
-   - replace (k) with (S j + (k - S j))%nat by lia.
-     now apply part_meas_hist.
-Qed.
-*)
+   generalize (simple_expectation_rvinner_measurable_zero (X j) (X k) (vec_filtration_history k X) (HC k) ispart); intros.
+   generalize (vec_part_meas_hist j (k - S j) X); intros.
+   replace (S j + (k - S j))%nat with (k) in H0 by lia.   
+   specialize (H H0).
+   rewrite <- H.
+   apply SimpleExpectation_rv_irrel.
+ Qed.
 
 Lemma SimpleExpectation_rvsum {n}  
       (X : nat -> Ts -> R)
@@ -860,7 +852,6 @@ Qed.
   Proof.
     unfold rvsumvec.
     induction m.
-    
     Admitted.
 
 Lemma vec_expec_cross_zero_sum2_shift {I:nat} (X : nat -> Ts -> vector R I) (m : nat)

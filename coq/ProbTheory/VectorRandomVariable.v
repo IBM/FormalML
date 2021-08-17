@@ -1272,7 +1272,7 @@ Section vector_ops_ext.
         now rewrite H0.
   Qed.       
 
-  Lemma simple_expection_rvinner_measurable_zero {n}
+  Lemma simple_expectation_rvinner_measurable_zero {n}
         (rv_X1 rv_X2 : Ts -> vector R n)
         {rv1:RandomVariable dom (Rvector_borel_sa n) rv_X1}
         {rv2:RandomVariable dom (Rvector_borel_sa n) rv_X2}
