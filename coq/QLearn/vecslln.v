@@ -25,16 +25,36 @@ Section vec_cauchy.
       exists (N:nat), forall (n m : nat),  (n >= N)%nat -> (m >= N)%nat ->
                              hilbert.Hnorm (minus (X n omega) (X m omega)) < eps.
 
-  Definition nth_exist_join_aux {T} {size:nat} {P} (f:forall (i:nat) (pf:(i < size)%nat), exists (t:T), P i pf t) :
+  Lemma nth_exist_join_aux {T} {size:nat} {P} (f:forall (i:nat) (pf:(i < size)%nat), exists (t:T), P i pf t) :
     forall bound, (bound <= size)%nat ->
-    exists (ts:list T), forall i pf d, (i < bound)%nat -> P i pf (nth i ts d).
+    exists (ts:list T), length ts = bound /\ forall i pf d, (i < bound)%nat -> P i pf (nth i ts d).
   Proof.
-  Admitted.
+    induction bound; simpl.
+    - exists nil; simpl.
+      split; trivial; lia.
+    - intros bpf.
+      destruct IHbound as [ts [tslen tspf]]; [lia |].
+      destruct (f _ bpf) as [t tpf].
+      exists (ts ++ [t]).
+      split.
+      + rewrite app_length; simpl; lia.
+      + intros i pf d ipf.
+        destruct (i == bound); unfold equiv, complement in *.
+        * subst.
+          rewrite app_nth2 by lia.
+          rewrite Nat.sub_diag; simpl.
+          replace pf with bpf; trivial.
+          apply digit_pf_irrel.
+        * rewrite app_nth1 by lia.
+          apply tspf.
+          lia.
+  Qed.
 
-  Definition nth_exist_join {T} {size:nat} {P} (f:forall (i:nat) (pf:(i < size)%nat), exists (t:T), P i pf t) :
-    exists (ts:list T), forall i pf d, P i pf (nth i ts d).
+  Lemma nth_exist_join {T} {size:nat} {P} (f:forall (i:nat) (pf:(i < size)%nat), exists (t:T), P i pf t) :
+    exists (ts:list T), length ts = size /\ forall i pf d, P i pf (nth i ts d).
   Proof.
-  Admitted.
+    destruct (nth_exist_join_aux f _ (le_refl _)) as [??]; firstorder.
+  Qed.
 
   Lemma Hnorm_vector0 (x : vector R 0) : hilbert.Hnorm x = 0.
   Proof.
@@ -72,7 +92,7 @@ Section vec_cauchy.
         admit.
       }
       destruct (nth_exist_join (fun i pf => H i pf (mkposreal _ eps_div_pos)))
-        as [ts tspfs].
+        as [ts [_ tspfs]].
       exists (fold_right max 0%nat ts).
       intros n1 n2 n1big n2big.
       apply (@Nth_Hnorm n); [ lia | ].
