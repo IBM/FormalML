@@ -15,6 +15,36 @@ Set Default Goal Selector "!".
 Import ListNotations.
 
 
+Section vec_cauchy.
+
+  Definition cauchy_seq_at {A : Type}(omega : A) (X : nat -> A -> R) := forall (eps:posreal),
+    exists (N:nat), forall (n m : nat),  (n >= N)%nat -> (m >= N)%nat -> Rabs ((X n omega) - (X m omega)) < eps.
+
+  Definition vec_cauchy_seq_at {A : Type} (N : nat) (omega : A) (X : nat -> A -> vector R N)
+    := forall (eps:posreal),
+      exists (N:nat), forall (n m : nat),  (n >= N)%nat -> (m >= N)%nat ->
+                             hilbert.Hnorm (minus (X n omega) (X m omega)) < eps.
+
+  Lemma vec_cauchy_seq_at_iff {A : Type} (n : nat) (omega : A) (X : nat -> A -> vector R n):
+    vec_cauchy_seq_at n omega X <->
+    (forall (i:nat) (pf: (i < n)%nat), cauchy_seq_at omega (fun k a => vector_nth _ pf (X k a))).
+  Proof.
+    split; intros.
+    + unfold vec_cauchy_seq_at in H.
+      intros eps.
+      specialize (H eps).
+      destruct H as [N HN].
+      exists N; intros n1 m1 Hn1 Hm1.
+      specialize (HN n1 m1 Hn1 Hm1).
+      generalize (Hnorm_nth1 _ eps i pf HN); intros HK.
+      rewrite <-minus_nth in HK.
+      apply HK.
+    + intros eps.
+      generalize (@Nth_Hnorm n); intros.
+  Admitted.
+
+End vec_cauchy.
+
 Lemma ash_6_1_1_a {x : nat -> R}{a : nat -> nat -> R} (ha : forall j, is_lim_seq (fun n => (a n j)) 0)
       (hb1 : forall n, ex_series(fun j => Rabs(a n j)))
       (hb2 : exists c, forall n, Series (fun j => Rabs (a n j)) < c)
