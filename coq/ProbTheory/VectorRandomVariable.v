@@ -103,6 +103,9 @@ Section vector_ops.
   Definition vecrvscale {n} (c:R) (rv_X : Ts -> vector R n) :=
     fun omega => Rvector_scale c (rv_X omega).
 
+  Definition vecrvscalerv {n} (c: Ts -> R) (rv_X : Ts -> vector R n) :=
+    fun omega => Rvector_scale (c omega) (rv_X omega).
+
   Definition vecrvopp {n} (rv_X : Ts -> vector R n) := 
     vecrvscale (-1) rv_X.
 
@@ -363,6 +366,23 @@ Section vector_ops.
       now rewrite vector_nth_fun_to_vector in H.
   Qed.
 
+  Instance Rvector_scale_rv_measurable {n} (c : Ts -> R) (f : Ts -> vector R n) :
+    RealVectorMeasurable f ->
+    RealMeasurable dom c ->
+    RealVectorMeasurable (vecrvscalerv c f).
+  Proof.
+    unfold RealVectorMeasurable; simpl; intros.
+    rewrite vector_nth_fun_to_vector.
+    unfold vecrvscalerv, Rvector_scale.
+    eapply RealMeasurable_proper.
+    - intros x.
+      rewrite vector_nth_map.
+      reflexivity.
+    - apply mult_measurable; trivial.
+      specialize (H i pf).
+      now rewrite vector_nth_fun_to_vector in H.
+  Qed.
+
   Instance Rvector_opp_measurable {n} (f : Ts -> vector R n) :
     RealVectorMeasurable f ->
     RealVectorMeasurable (vecrvopp f).
@@ -540,6 +560,18 @@ Section vector_ops.
     now apply RandomVariableRealVectorMeasurable.
   Qed.
   
+  Global Instance Rvector_scale_rv_rv {n} (c : Ts -> R) (f : Ts -> vector R n) :
+    RandomVariable dom borel_sa c ->
+    RandomVariable dom (Rvector_borel_sa n) f ->
+    RandomVariable dom (Rvector_borel_sa n) (vecrvscalerv c f).
+  Proof.
+    intros.
+    apply RealVectorMeasurableRandomVariable.
+    apply Rvector_scale_rv_measurable.
+    - now apply RandomVariableRealVectorMeasurable.
+    - now apply rv_measurable.
+  Qed.
+
   Global Instance Rvector_opp_rv {n} (f : Ts -> vector R n) :
     RandomVariable dom (Rvector_borel_sa n) f ->
     RandomVariable dom (Rvector_borel_sa n) (vecrvopp f).
@@ -865,6 +897,24 @@ Lemma FiniteRangeFunction_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
     rewrite in_map_iff.
     exists (rv_X x).
     now split.
+  Qed.
+
+  Global Program Instance frf_vecrvscalerv {n} (c:Ts -> R)
+          (rv_X : Ts -> vector R n)
+          {frfc:FiniteRangeFunction c}
+          {frf:FiniteRangeFunction rv_X}
+    : FiniteRangeFunction (vecrvscalerv c rv_X)
+    := { frf_vals := map (fun ab => Rvector_scale (fst ab) (snd ab)) 
+                         (list_prod (frf_vals (FiniteRangeFunction:=frfc))
+                                    (frf_vals (FiniteRangeFunction:=frf))) }.
+  Next Obligation.
+    destruct frfc.
+    destruct frf.
+    rewrite in_map_iff.
+    exists (c x, rv_X x).
+    split.
+    now simpl.
+    apply in_prod; trivial.
   Qed.
 
   Global Instance frf_vecropp {n}
