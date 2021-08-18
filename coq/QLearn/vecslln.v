@@ -914,22 +914,22 @@ Proof.
 Qed.
 
 (* Few properties about cutoff sequences. Move to RealAdd. *)
-Fixpoint cutoff_eps (n : nat) (eps : R) (X : nat -> R) :=
+Fixpoint vec_cutoff_eps {i:nat} (n : nat) (eps : R) (X : nat -> vector R i) :=
   match n with
   | 0%nat => X 0%nat
-  | S k => if (Rlt_dec (Rmax_list_map (seq 0 (S k)) (fun n => Rabs(X n))) eps) then X (S k)
-                    else (cutoff_eps k eps X)
+  | S k => if (Rlt_dec (Rmax_list_map (seq 0 (S k)) (fun n => hilbert.Hnorm(X n))) eps) then X (S k)
+                    else (vec_cutoff_eps k eps X)
   end.
 
-Lemma cutoff_eps_lt_eps eps n (X : nat -> R) :
-   (forall k, (k <= n)%nat -> Rabs (X k) < eps) -> (cutoff_eps n eps X = X n).
+Lemma vec_cutoff_eps_lt_eps {i:nat} eps n (X : nat -> vector R i) :
+   (forall k, (k <= n)%nat -> hilbert.Hnorm (X k) < eps) -> (vec_cutoff_eps n eps X = X n).
 Proof.
   intros H.
   induction n.
   + now simpl.
   + simpl.
     match_destr.
-    assert (H1 : Rmax_list_map (seq 0 (S n)) (fun n => Rabs(X n)) < eps).
+    assert (H1 : Rmax_list_map (seq 0 (S n)) (fun n => hilbert.Hnorm(X n)) < eps).
     {
       unfold Rmax_list_map.
       rewrite Rmax_list_lt_iff; try (apply map_not_nil; apply seq_not_nil; lia).
@@ -943,15 +943,16 @@ Proof.
     exfalso; firstorder.
 Qed.
 
-Lemma cutoff_eps_ge_eps eps (X : nat -> R) :
-   (forall k:nat, eps <= Rabs(X k)) -> (forall n, cutoff_eps n eps X = X 0%nat).
+Lemma vec_cutoff_eps_ge_eps {i:nat} eps (X : nat -> vector R i) :
+   (forall k:nat, eps <= hilbert.Hnorm(X k)) -> (forall n, vec_cutoff_eps n eps X = X 0%nat).
 Proof.
   intros H n.
   simpl.
   induction n.
   ++ now simpl in H.
   ++ simpl. match_destr.
-     assert (Rabs(X n) <= Rmax_list_map (0%nat :: seq 1 n) (fun n => Rabs(X n))).
+     assert (hilbert.Hnorm(X n) <= Rmax_list_map (0%nat :: seq 1 n) 
+                                                 (fun n => hilbert.Hnorm(X n))).
      {
        unfold Rmax_list_map.
        apply Rmax_spec.
@@ -969,9 +970,9 @@ Proof.
   lia.
 Qed.
 
-
-Lemma cutoff_ge_eps_exists  (n : nat) (eps : R) ( X : nat -> R ):
-  (eps <= Rabs(cutoff_eps n eps X)) -> exists k, (k <= n)%nat /\ eps <= Rabs(X k).
+Lemma vec_cutoff_ge_eps_exists {i:nat} (n : nat) (eps : R) ( X : nat -> vector R i ):
+  (eps <= hilbert.Hnorm(vec_cutoff_eps n eps X)) -> 
+  exists k, (k <= n)%nat /\ eps <= hilbert.Hnorm(X k).
 Proof.
   intros Hn.
   induction n.
@@ -987,8 +988,9 @@ Proof.
         etransitivity; eauto; lia.
 Qed.
 
-Lemma cutoff_ge_eps_exists_contrapose (n : nat) (eps : R) (X : nat -> R):
-   (Rabs(cutoff_eps n eps X) < eps) -> (forall k, (k <= n)%nat -> Rabs(X k) < eps).
+Lemma vec_cutoff_ge_eps_exists_contrapose {i:nat} (n : nat) (eps : R) (X : nat -> vector R i):
+   (hilbert.Hnorm(vec_cutoff_eps n eps X) < eps) -> 
+   (forall k, (k <= n)%nat -> hilbert.Hnorm(X k) < eps).
 Proof.
   intros Heps.
   induction n.
@@ -1002,7 +1004,7 @@ Proof.
           unfold Rmax_list_map in r.
           replace (0%nat :: seq 1 n) with (seq 0%nat (S n)) in r by (now simpl).
           rewrite Rmax_list_lt_iff in r; try (apply map_not_nil; apply seq_not_nil; lia).
-          rewrite cutoff_eps_lt_eps; intros; try (apply r; rewrite in_map_iff).
+          rewrite vec_cutoff_eps_lt_eps; intros; try (apply r; rewrite in_map_iff).
           ** exists n; split; trivial. rewrite in_seq; lia.
           ** exists k0; split; trivial. rewrite in_seq; lia.
     ++ intros. specialize (IHn Heps).
@@ -1011,21 +1013,22 @@ Proof.
        unfold Rmax_list_map in n0.
        assert ((0 < S n)%nat) by lia.
        apply Rge_le in n0.
-       rewrite (Rmax_list_map_seq_ge eps (fun n => Rabs (X n)) H0) in n0.
+       rewrite (Rmax_list_map_seq_ge eps (fun n => hilbert.Hnorm (X n)) H0) in n0.
        destruct n0 as [k1 [Hk1 Heps1]].
        assert (k1 <= n)%nat by lia.
        specialize (IHn k1 H1).
        exfalso; lra.
 Qed.
 
-Lemma cutoff_ge_eps_exists_iff (n : nat) (eps : R) (X : nat -> R):
-  (eps <= Rabs(cutoff_eps n eps X)) <-> exists k, (k <= n)%nat /\ eps <= Rabs(X k).
+Lemma vec_cutoff_ge_eps_exists_iff {i:nat} (n : nat) (eps : R) (X : nat -> vector R i):
+  (eps <= hilbert.Hnorm(vec_cutoff_eps n eps X)) <-> 
+  exists k, (k <= n)%nat /\ eps <= hilbert.Hnorm(X k).
 Proof.
   split.
-  + apply cutoff_ge_eps_exists.
+  + apply vec_cutoff_ge_eps_exists.
   + intro H. apply ROrderedType.ROrder.not_gt_le.
     revert H. apply ssrbool.contraPnot.
-    intro H. generalize (cutoff_ge_eps_exists_contrapose n eps X H); intros.
+    intro H. generalize (vec_cutoff_ge_eps_exists_contrapose n eps X H); intros.
     apply Classical_Pred_Type.all_not_not_ex.
     intros k. specialize (H0 k).
     apply Classical_Prop.or_not_and.
@@ -1033,18 +1036,17 @@ Proof.
     specialize (H0 H1).  apply Rgt_not_le; trivial.
 Qed.
 
-Lemma cutoff_ge_eps_Rmax_list_iff (n : nat) (eps : R) (X : nat -> R):
-  (eps <= Rabs(cutoff_eps n eps X)) <-> eps <= Rmax_list_map (seq 0 (S n)) (fun n => Rabs (X n)).
+Lemma vec_cutoff_ge_eps_Rmax_list_iff {i:nat} (n : nat) (eps : R) (X : nat -> vector R i):
+  (eps <= hilbert.Hnorm(vec_cutoff_eps n eps X)) <-> eps <= Rmax_list_map (seq 0 (S n)) (fun n => hilbert.Hnorm (X n)).
 Proof.
   assert (Hn : (0 < S n)%nat) by lia.
-  rewrite (Rmax_list_map_seq_ge eps (fun n => Rabs (X n)) Hn).
-  rewrite cutoff_ge_eps_exists_iff.
+  rewrite (Rmax_list_map_seq_ge eps (fun n => hilbert.Hnorm (X n)) Hn).
+  rewrite vec_cutoff_ge_eps_exists_iff.
   split; intros; destruct H as [x [Hx1 Hx2]]; exists x; split; trivial; lia.
 Qed.
 
-
-Definition cutoff_eps_rv (n : nat) (eps : R) (X : nat -> Ts -> R) :=
-  fun omega => cutoff_eps n eps (fun k => X k omega).
+Definition vec_cutoff_eps_rv {i:nat} (n : nat) (eps : R) (X : nat -> Ts -> vector R i) :=
+  fun omega => vec_cutoff_eps n eps (fun k => X k omega).
 
 
 Lemma rvmaxlist_ge (X : nat -> Ts -> R): forall n omega, X n omega <= rvmaxlist X n omega.
@@ -1057,30 +1059,31 @@ Proof.
   rewrite in_seq; lia.
 Qed.
 
-
-Lemma cutoff_eps_rv_lt_eps eps (X : nat -> Ts -> R) : forall omega,
-   (forall k, Rabs(X k omega) < eps) -> (forall n, cutoff_eps_rv n eps X omega = X n omega).
+Lemma vec_cutoff_eps_rv_lt_eps eps {i:nat} (X : nat -> Ts -> vector R i) : forall omega,
+    (forall k, hilbert.Hnorm(X k omega) < eps) ->
+    (forall n, vec_cutoff_eps_rv n eps X omega = X n omega).
 Proof.
   intros omega H n.
-  unfold cutoff_eps_rv.
-  now apply cutoff_eps_lt_eps.
+  unfold vec_cutoff_eps_rv.
+  now apply (vec_cutoff_eps_lt_eps eps n (fun k => X k omega)).
 Qed.
 
-Lemma cutoff_eps_rv_ge_eps eps (X : nat -> Ts -> R) : forall omega,
-   (forall k:nat, eps <= Rabs(X k omega)) -> (forall n, cutoff_eps_rv n eps X omega = X 0%nat omega).
+Lemma vec_cutoff_eps_rv_ge_eps eps {i:nat} (X : nat -> Ts -> vector R i) : forall omega,
+    (forall k:nat, eps <= hilbert.Hnorm(X k omega)) ->
+    (forall n, vec_cutoff_eps_rv n eps X omega = X 0%nat omega).
 Proof.
   intros omega H n.
-  unfold cutoff_eps_rv.
-  now apply cutoff_eps_ge_eps.
+  unfold vec_cutoff_eps_rv.
+  now apply (vec_cutoff_eps_ge_eps eps (fun k => X k omega)).
 Qed.
 
-Lemma cutoff_ge_eps_rv_rvmaxlist_iff (n : nat) (eps : R) (X : nat -> Ts -> R): forall omega,
-    eps <= Rabs(cutoff_eps_rv n eps X omega) <->
-    eps <= rvmaxlist (fun k => fun omega => Rabs (X k omega)) n omega.
+Lemma vec_cutoff_ge_eps_rv_rvmaxlist_iff {i:nat} (n : nat) (eps : R) (X : nat -> Ts -> vector R i): forall omega,
+    eps <= hilbert.Hnorm(vec_cutoff_eps_rv n eps X omega) <->
+    eps <= rvmaxlist (fun k => fun omega => hilbert.Hnorm (X k omega)) n omega.
 Proof.
   intros omega.
-  unfold rvmaxlist, cutoff_eps_rv.
-  now rewrite cutoff_ge_eps_Rmax_list_iff.
+  unfold rvmaxlist, vec_cutoff_eps_rv.
+  now rewrite vec_cutoff_ge_eps_Rmax_list_iff.
 Qed.
 
 Lemma Rle_Rmax : forall r1 r2 r : R, Rmax r1 r2 <= r <-> r1 <= r /\ r2 <= r.
@@ -1120,33 +1123,36 @@ Proof.
     + apply rm.
  Qed.
 
-Instance rv_cutoff_eps_rv (n : nat) (eps : R) (X : nat -> Ts -> R) 
-         {rv: forall n, RandomVariable dom borel_sa (X n)} :
-  RandomVariable dom borel_sa (cutoff_eps_rv n eps X).
+Instance vec_rv_cutoff_eps_rv {i:nat} (n : nat) (eps : R) (X : nat -> Ts -> vector R i) 
+         {rv: forall n, RandomVariable dom (Rvector_borel_sa i) (X n)} :
+  RandomVariable dom (Rvector_borel_sa i) (vec_cutoff_eps_rv n eps X).
 Proof.
-  unfold cutoff_eps_rv.
-  apply measurable_rv.
-  assert (mrv : forall n, RealMeasurable dom (X n)) 
-    by (intro; now apply rv_measurable).
-  unfold RealMeasurable in *.
+  unfold vec_cutoff_eps_rv.
+  apply RealVectorMeasurableRandomVariable.
+  assert (mrv : forall n, RealVectorMeasurable (X n)) 
+    by (intro; now apply RandomVariableRealVectorMeasurable).
+  unfold RealVectorMeasurable in *.
   intros.
+  intro.
   induction n.
   - simpl; apply mrv.
   - simpl.
+Admitted.
+(*
     assert (pre_event_equiv
                (fun omega : Ts =>
                   (if Rlt_dec (Rmax_list_map (0%nat :: seq 1 n) 
-                                             (fun k : nat => Rabs (X k omega))) eps
+                                             (fun k : nat => hilbert.Hnorm (X k omega))) eps
                    then X (S n) omega
-                   else cutoff_eps n eps (fun k : nat => X k omega)) <= r)
+                   else vec_cutoff_eps n eps (fun k : nat => X k omega)) <= r)
                (pre_event_union
                   (pre_event_inter
-                     (fun omega => Rmax_list_map (0%nat :: seq 1 n) (fun k : nat => Rabs (X k omega)) < eps)
+                     (fun omega => Rmax_list_map (0%nat :: seq 1 n) (fun k : nat => hilbert.Hnorm (X k omega)) < eps)
                      (fun omega => X (S n) omega <= r))
                   (pre_event_inter
                      (pre_event_complement
-                        (fun omega => Rmax_list_map (0%nat :: seq 1 n) (fun k : nat => Rabs (X k omega)) < eps))
-                     (fun omega => cutoff_eps n eps (fun k : nat => X k omega) <= r)))).
+                        (fun omega => Rmax_list_map (0%nat :: seq 1 n) (fun k : nat => hilbert.Hnorm (X k omega)) < eps))
+                     (fun omega => vec_cutoff_eps n eps (fun k : nat => X k omega) <= r)))).
     {
       intro x; unfold pre_event_union, pre_event_inter, pre_event_complement.
       match_destr; lra.
@@ -1167,8 +1173,10 @@ Proof.
         now apply Rabs_measurable.        
       * apply IHn.
   Qed. 
+ *)
 
-Instance nnf_cutoff_eps_rv (n : nat) (eps : R) (X : nat -> Ts -> R) 
+(*
+Instance vec_nnf_cutoff_eps_rv {i:nat} (n : nat) (eps : R) (X : nat -> Ts -> vector R i) 
          {nnf: forall n, NonnegativeFunction (X n)} :
   NonnegativeFunction (cutoff_eps_rv n eps X).
 Proof.
@@ -1182,15 +1190,16 @@ Proof.
     match_destr.
     apply nnf.
 Qed.
+ *)
 
-Lemma cutoff_eps_values (n : nat) (eps : R) (X : nat -> Ts -> R) :
+Lemma vec_cutoff_eps_values {i:nat} (n : nat) (eps : R) (X : nat -> Ts -> vector R i) :
   forall (x:Ts),
   exists (k : nat), 
     (k <= n)%nat /\
-    cutoff_eps_rv n eps X x = X k x.
+    vec_cutoff_eps_rv n eps X x = X k x.
 Proof.
   intros.
-  unfold cutoff_eps_rv.
+  unfold vec_cutoff_eps_rv.
   induction n.
   - exists (0%nat); simpl.
     now split; try lia.
@@ -1205,15 +1214,15 @@ Qed.
 
 Local Obligation Tactic := idtac.
 
-Program Instance frf_cutoff_eps_rv (n : nat) (eps : R) (X : nat -> Ts -> R) 
+Program Instance frf_cutoff_eps_rv {i:nat} (n : nat) (eps : R) (X : nat -> Ts -> vector R i) 
          {frf: forall n, FiniteRangeFunction (X n)} :
-  FiniteRangeFunction (cutoff_eps_rv n eps X) := {
+  FiniteRangeFunction (vec_cutoff_eps_rv n eps X) := {
   frf_vals := flat_map (fun k => frf_vals (FiniteRangeFunction := frf k)) (seq 0 (S n))
   }.
 Next Obligation.
   intros.
   apply in_flat_map.
-  destruct (cutoff_eps_values n eps X x) as [k [kle ck]].
+  destruct (vec_cutoff_eps_values n eps X x) as [k [kle ck]].
   exists k.
   split.
   - apply in_seq; lia.
@@ -1223,49 +1232,53 @@ Qed.
 
 Local Obligation Tactic := unfold complement, equiv; Tactics.program_simpl.
 
-Lemma cutoff_eps_succ_minus eps (X : nat -> R) :
-  forall n, cutoff_eps (S n) eps X - cutoff_eps n eps X =
-       if (Rlt_dec (Rmax_list_map (seq 0 (S n)) (fun n => Rabs (X n))) eps) then
-         (X (S n) - X n) else 0.
+Lemma vec_cutoff_eps_succ_minus {i:nat} eps (X : nat -> vector R i) :
+  forall n, minus (vec_cutoff_eps (S n) eps X) (vec_cutoff_eps n eps X) =
+       if (Rlt_dec (Rmax_list_map (seq 0 (S n)) (fun n => hilbert.Hnorm (X n))) eps) then
+         minus (X (S n)) (X n) else (vector_const 0 i).
 Proof.
   intros n.
   simpl.
   match_destr; intuition; try lra.
-  f_equal.
-  replace (0%nat :: seq 1 n) with (seq 0 (S n)) in r by (now simpl).
-  induction n; try (now simpl).
-  assert (0 < S n)%nat by lia.
-  generalize (Rmax_list_map_succ eps (fun n => Rabs (X n)) (S n) H r); intros.
-  specialize (IHn H0).
-  simpl. match_destr; intuition; try lra.
+  - f_equal.
+    replace (0%nat :: seq 1 n) with (seq 0 (S n)) in r by (now simpl).
+    induction n; try (now simpl).
+    assert (0 < S n)%nat by lia.
+    generalize (Rmax_list_map_succ eps (fun n => hilbert.Hnorm (X n)) (S n) H r); intros.
+    specialize (IHn H0).
+    simpl. match_destr; intuition; try lra.
+  - now rewrite minus_eq_zero.
 Qed.
 
-Definition pre_cutoff_event (n : nat) (eps : R) (X : nat -> Ts -> R) : pre_event Ts :=
-  fun x => Rmax_list_map (seq 0 n) (fun n => Rabs (X n x)) < eps.
+Definition vec_pre_cutoff_event {i:nat} (n : nat) (eps : R) (X : nat -> Ts -> vector R i) : pre_event Ts :=
+  fun x => Rmax_list_map (seq 0 n) (fun n => hilbert.Hnorm (X n x)) < eps.
 
-Program Definition cutoff_indicator (n : nat) (eps : R) (X : nat -> Ts -> R) :=
-  EventIndicator (P := pre_cutoff_event n eps X) _.
+Program Definition vec_cutoff_indicator {i:nat} (n : nat) (eps : R) (X : nat -> Ts -> vector R i) :=
+  EventIndicator (P := vec_pre_cutoff_event n eps X) _.
 Next Obligation.
   apply ClassicalDescription.excluded_middle_informative.
 Defined.
 
-Instance cutoff_ind_rv (j:nat) (eps:R) (X: nat -> Ts -> R) 
-      {rv : forall n, RandomVariable dom borel_sa (X n)}
+Instance vec_cutoff_ind_rv {i:nat} (j:nat) (eps:R) (X: nat -> Ts -> vector R i) 
+      {rv : forall n, RandomVariable dom (Rvector_borel_sa i) (X n)}
       {fsf : forall n, FiniteRangeFunction (X n)} :
   RandomVariable dom borel_sa
-                 (cutoff_indicator (S j) eps (rvsum X)).
+                 (vec_cutoff_indicator (S j) eps (rvsumvec X)).
 Proof.
-  unfold cutoff_indicator.
+  unfold vec_cutoff_indicator.
   apply EventIndicator_pre_rv.
-  unfold pre_cutoff_event.
+  unfold vec_pre_cutoff_event.
   apply sa_le_lt.
   intros.
   apply max_list_measurable.        
   intros.
-  apply Rabs_measurable.
-  apply rvsum_measurable.
-  intros.
-  now apply rv_measurable.
+  unfold hilbert.Hnorm, hilbert.inner; simpl.
+  apply Rsqrt_measurable.
+  apply Rvector_inner_measurable.
+  - apply RandomVariableRealVectorMeasurable.
+    now apply rvsumvec_rv.
+  - apply RandomVariableRealVectorMeasurable.
+    now apply rvsumvec_rv.
 Qed.
 
   Lemma partition_measurable_rvplus (rv_X1 rv_X2 : Ts -> R)
@@ -1408,37 +1421,51 @@ Qed.
      now specialize (H2 x H3).
   Qed.
 
-  Lemma filtration_history_var_const (X : nat -> Ts -> R) (eps : R) (j:nat) 
-        {rv : forall n, RandomVariable dom borel_sa (X n)}
+  Lemma vec_Chebyshev_ineq_div_mean0 {I:nat}
+        (X : Ts -> vector R I )
+        (rv : RandomVariable dom (Rvector_borel_sa I) X)
+        (a : posreal) :
+    Rbar_le (ps_P (event_ge dom (rvinner X X) (mkposreal _ (rsqr_pos a))))
+            (Rbar_div_pos
+               (NonnegExpectation (rvinner X X))
+               (mkposreal _ (rsqr_pos a))).
+  Proof.
+    apply Markov_ineq_div.
+  Qed.
+
+  Lemma vec_filtration_history_var_const {I:nat} (X : nat -> Ts -> vector R I) (eps : R) (j:nat) 
+        {rv : forall n, RandomVariable dom (Rvector_borel_sa I) (X n)}
         {frf : forall n, FiniteRangeFunction (X n)} :
   forall (Q : event dom),
-      In Q (map dsa_event (filtration_history (S j) X)) ->
+      In Q (map dsa_event (vec_filtration_history (S j) X)) ->
       forall (k:nat), 
         (k <= j)%nat ->
-        exists (c:R),
+        exists (c:vector R I),
         forall x, Q x -> X k x = c.
   Proof.
     intros.
-    generalize (part_meas_hist k (j - k)%nat X); intros.
+    generalize (vec_part_meas_hist k (j - k)%nat X); intros.
     unfold partition_measurable in H1.
-    generalize (part_list_history (S j) X); intros.
+    generalize (vec_part_list_history (S j) X); intros.
     replace (S k + (j - k))%nat with (S j) in H1 by lia.
     cut_to H1; trivial.
     specialize (H1 Q).
     cut_to H1; trivial.
   Qed.
 
-Lemma filtration_history_rvsum_var_const_shift (X : nat -> Ts -> R) (eps : R) (m j:nat)
-        {rv : forall n, RandomVariable dom borel_sa (X n)}
+Lemma vec_filtration_history_rvsum_var_const_shift {I:nat} (X : nat -> Ts -> vector R I) (eps : R) (m j:nat)
+        {rv : forall n, RandomVariable dom (Rvector_borel_sa I) (X n)}
         {frf : forall n, FiniteRangeFunction (X n)} :
   forall (Q : event dom),
-      In Q (map dsa_event (filtration_history (S j + m)%nat X)) ->
+      In Q (map dsa_event (vec_filtration_history (S j + m)%nat X)) ->
       forall (k:nat),
         (k <= j)%nat ->
-        exists (c:R),
-        forall x, Q x -> rvsum (fun n => X(n+m)%nat) k x = c.
+        exists (c:vector R I),
+        forall x, Q x -> rvsumvec (fun n => X(n+m)%nat) k x = c.
   Proof.
     intros.
+   Admitted.
+(*
     generalize (partition_measurable_rvsum k (fun n => X (n+m)%nat)
                                            (map dsa_event (filtration_history (S j + m)%nat X))); intros.
     generalize (part_list_history (S j + m)%nat X); intros.
@@ -1451,7 +1478,7 @@ Lemma filtration_history_rvsum_var_const_shift (X : nat -> Ts -> R) (eps : R) (m
     generalize (part_meas_hist (k0+m) (j - k0)%nat X); intros.
     now replace (S (k0 + m) + (j - k0))%nat with (S j + m)%nat in H4 by lia.
  Qed.
-
+*)
   Lemma filtration_history_rvsum_var_const_ex_shift (X : nat -> Ts -> R) (eps : R) (m j:nat)
         {rv : forall n, RandomVariable dom borel_sa (X n)}
         {frf : forall n, FiniteRangeFunction (X n)} :
