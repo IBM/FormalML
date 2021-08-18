@@ -67,6 +67,17 @@ Section vec_cauchy.
     apply H0.
   Qed.
 
+  Lemma In_le_list_sum (ts : list nat): forall i, In i ts -> (i <= list_sum ts)%nat.
+  Proof.
+    intros i Hi.
+    induction ts.
+    + simpl in Hi; lia.
+    + simpl in Hi. destruct Hi.
+      -- rewrite H. simpl; lia.
+      -- specialize (IHts H). simpl; lia.
+  Qed.
+
+
   Lemma vec_cauchy_seq_at_iff {A : Type} (n : nat) (omega : A) (X : nat -> A -> vector R n):
     vec_cauchy_seq_at omega X <->
     (forall (i:nat) (pf: (i < n)%nat), cauchy_seq_at omega (fun k a => vector_nth _ pf (X k a))).
@@ -89,18 +100,17 @@ Section vec_cauchy.
         rewrite Hnorm_vector0.
         apply cond_pos.
       } 
-    unfold equiv, complement in c.
-
-
+      unfold equiv, complement in c.
       intros eps.
       unfold cauchy_seq_at in H.
       assert (eps_div_pos:0 < (eps / INR n)).
       {
-        admit.
+        apply Rdiv_lt_0_compat; try (apply cond_pos).
+        apply lt_0_INR; lia.
       }
       destruct (nth_exist_join (fun i pf => H i pf (mkposreal _ eps_div_pos)))
-        as [ts [_ tspfs]].
-      exists (fold_right max 0%nat ts).
+        as [ts [Hsize tspfs]].
+      exists (list_sum ts).
       intros n1 n2 n1big n2big.
       apply (@Nth_Hnorm n); [ lia | ].
       intros i pf.
@@ -108,9 +118,13 @@ Section vec_cauchy.
       cut_to tspfs.
       * rewrite Rabs_minus_sym in tspfs.
         apply tspfs.
-      * admit.
-      * admit.
-  Admitted.
+      * apply Nat.le_trans with (list_sum ts); auto.
+        apply In_le_list_sum; apply nth_In.
+        now rewrite Hsize.
+      * apply Nat.le_trans with (list_sum ts); auto.
+        apply In_le_list_sum; apply nth_In.
+        now rewrite Hsize.
+  Qed.
 
 End vec_cauchy.
 
