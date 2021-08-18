@@ -58,7 +58,15 @@ Section vec_cauchy.
 
   Lemma Hnorm_vector0 (x : vector R 0) : hilbert.Hnorm x = 0.
   Proof.
-  Admitted.
+    destruct x.
+    destruct x; simpl in *; [| lia].
+    vm_compute.
+    repeat match_destr.
+    destruct a.
+    symmetry in H0.
+    apply Rsqr_eq_0 in H0.
+    apply H0.
+  Qed.
 
   Lemma vec_cauchy_seq_at_iff {A : Type} (n : nat) (omega : A) (X : nat -> A -> vector R n):
     vec_cauchy_seq_at n omega X <->
