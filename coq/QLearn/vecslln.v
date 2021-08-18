@@ -20,10 +20,25 @@ Section vec_cauchy.
   Definition cauchy_seq_at {A : Type}(omega : A) (X : nat -> A -> R) := forall (eps:posreal),
     exists (N:nat), forall (n m : nat),  (n >= N)%nat -> (m >= N)%nat -> Rabs ((X n omega) - (X m omega)) < eps.
 
-  Definition vec_cauchy_seq_at {A : Type} (N : nat) (omega : A) (X : nat -> A -> vector R N)
+  Definition vec_cauchy_seq_at {A : Type} (size : nat) (omega : A) (X : nat -> A -> vector R size)
     := forall (eps:posreal),
       exists (N:nat), forall (n m : nat),  (n >= N)%nat -> (m >= N)%nat ->
                              hilbert.Hnorm (minus (X n omega) (X m omega)) < eps.
+
+  Definition nth_exist_join_aux {T} {size:nat} {P} (f:forall (i:nat) (pf:(i < size)%nat), exists (t:T), P i pf t) :
+    forall bound, (bound <= size)%nat ->
+    exists (ts:list T), forall i pf d, (i < bound)%nat -> P i pf (nth i ts d).
+  Proof.
+  Admitted.
+
+  Definition nth_exist_join {T} {size:nat} {P} (f:forall (i:nat) (pf:(i < size)%nat), exists (t:T), P i pf t) :
+    exists (ts:list T), forall i pf d, P i pf (nth i ts d).
+  Proof.
+  Admitted.
+
+  Lemma Hnorm_vector0 (x : vector R 0) : hilbert.Hnorm x = 0.
+  Proof.
+  Admitted.
 
   Lemma vec_cauchy_seq_at_iff {A : Type} (n : nat) (omega : A) (X : nat -> A -> vector R n):
     vec_cauchy_seq_at n omega X <->
@@ -39,8 +54,35 @@ Section vec_cauchy.
       generalize (Hnorm_nth1 _ eps i pf HN); intros HK.
       rewrite <-minus_nth in HK.
       apply HK.
-    + intros eps.
-      generalize (@Nth_Hnorm n); intros.
+    + destruct (n == 0%nat).
+      {
+        red in e; subst.
+        red; intros.
+        exists 0%nat; intros.
+        rewrite Hnorm_vector0.
+        apply cond_pos.
+      } 
+    unfold equiv, complement in c.
+
+
+      intros eps.
+      unfold cauchy_seq_at in H.
+      assert (eps_div_pos:0 < (eps / INR n)).
+      {
+        admit.
+      }
+      destruct (nth_exist_join (fun i pf => H i pf (mkposreal _ eps_div_pos)))
+        as [ts tspfs].
+      exists (fold_right max 0%nat ts).
+      intros n1 n2 n1big n2big.
+      apply (@Nth_Hnorm n); [ lia | ].
+      intros i pf.
+      specialize (tspfs i pf 0%nat n1 n2).
+      cut_to tspfs.
+      * rewrite Rabs_minus_sym in tspfs.
+        apply tspfs.
+      * admit.
+      * admit.
   Admitted.
 
 End vec_cauchy.
