@@ -1749,6 +1749,16 @@ Lemma vec_filtration_history_rvsum_var_const_shift {size:nat} (X : nat -> Ts -> 
         -- unfold Rmax_list_map.
            rewrite Rmax_list_app; try (apply seq_not_nil; lia).
            unfold Rmax_list_map in H3.
+           specialize (H3 x px).
+           specialize (H4 x px).
+           unfold preimage_singleton, pre_event_preimage, pre_event_preimage, pre_event_singleton, proj1_sig in H3, H4.
+           subst.
+           reflexivity.
+        -- simpl.
+           now rewrite <- seq_S; simpl.
+      + admit.
+      + admit.
+           
      Admitted.
    (*
            rewrite H3; trivial. f_equal.
