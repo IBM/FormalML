@@ -2382,7 +2382,7 @@ Proof.
   repeat split; try lia; trivial.
 Qed.
 
-Lemma sa_sigma_cauchy_inter_event_sub {size:nat} (X : nat -> Ts -> vector R size) {eps1 eps2 : posreal}
+Lemma vec_sa_sigma_cauchy_inter_event_sub {size:nat} (X : nat -> Ts -> vector R size) {eps1 eps2 : posreal}
       {rv : forall n, RandomVariable dom (Rvector_borel_sa size) (X n)} (Heps : eps2 < eps1) (n : nat):
   event_sub (inter_of_collection (fun n => exist sa_sigma _ (vec_sa_sigma_not_cauchy X eps1 n)))
             (inter_of_collection (fun n => exist sa_sigma _ (vec_sa_sigma_not_cauchy X eps2 n))).
@@ -2731,16 +2731,60 @@ Qed.
      apply list_union_rvmaxlist.
   Qed.
 
-   Lemma sum_shift_diff (X : nat -> R) (m a : nat) :
-     sum_n X (a + S m) - sum_n X m =
-     sum_n (fun n0 : nat => X (n0 + S m)%nat) a.
+   Lemma vec_sum_n_m_shift {size:nat} (α : nat -> vector R size) (k n0 : nat) :
+     sum_n_m α k (n0 + k)%nat = sum_n (fun n1 : nat => α (n1 + k)%nat) n0.
    Proof.
-     rewrite <- sum_n_m_shift.
      unfold sum_n.
-     rewrite sum_split with (m := m); try lia.
-     lra.
+     induction n0.
+     - replace (0 + k)%nat with (k) by lia.
+       do 2 rewrite sum_n_n.
+       f_equal; lia.
+     - replace (S n0 + k)%nat with (S (n0 + k)%nat) by lia.
+       rewrite sum_n_Sm; try lia.
+       rewrite sum_n_Sm; try lia.
+       replace (S n0 + k)%nat with (S (n0 + k)%nat) by lia.
+       now rewrite IHn0.
    Qed.
 
+
+Lemma vec_sum_split {size:nat} (f : nat -> vector R size) (n1 n2 m : nat) :
+  (n1 <= m)%nat -> (m < n2)%nat -> 
+  sum_n_m f n1 n2 = plus (sum_n_m f n1 m) (sum_n_m f (S m) n2).
+Proof.
+  intros.
+  unfold sum_n_m.
+  unfold Iter.iter_nat.
+  repeat rewrite Iter.iter_iter'.
+  unfold Iter.iter'.
+  rewrite iota_is_an_annoying_seq.
+  rewrite (iota_is_an_annoying_seq n1  (S m - n1)).
+  rewrite (iota_is_an_annoying_seq (S m) (S n2 - S m)).  
+  replace (S n2 - n1)%nat with ((S m - n1) + (S n2 - S m))%nat by lia.
+  rewrite seq_plus.
+  rewrite List.fold_right_app.
+ Admitted.
+(*
+  rewrite fold_right_plus_acc.
+  replace (n1 + (S m - n1))%nat with (S m) by lia.
+  unfold plus, zero.
+  simpl.
+  lra.
+Qed.
+*)
+
+   Lemma vec_sum_shift_diff {size:nat} (X : nat -> vector R size) (m a : nat) :
+     minus (sum_n X (a + S m)) (sum_n X m) =
+     sum_n (fun n0 : nat => X (n0 + S m)%nat) a.
+   Proof.
+     rewrite <- vec_sum_n_m_shift.
+     unfold sum_n.
+     rewrite vec_sum_split with (m0 := m); try lia.
+   Admitted.
+(*     
+lra.
+   Qed.
+ *)
+   
   Lemma vec_Ash_6_2_1_helper4 {size:nat} (X : nat -> Ts -> vector R size) (eps : posreal) (m : nat) 
       {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
@@ -2776,22 +2820,16 @@ Qed.
           unfold rvmaxlist.
           apply Rmax_list_Proper, refl_refl, map_ext.
           intros.
-          unfold vecrvminus, rvsumvec, vecrvopp, vecrvplus, vecrvscale, rvnorm.
+          unfold vecrvminus, rvsumvec, vecrvopp, vecrvplus, vecrvscale, rvnorm, rvsqrt, rvinner.
           f_equal.
           f_equal.
-    Admitted.
-(*    
-
-          simpl.
-          f_equal.
-          rewrite rvminus_unfold.
-          f_equal.
-          now rewrite sum_shift_diff.
+          * apply vec_sum_shift_diff.
+          * apply vec_sum_shift_diff.            
         + intro x.
           simpl.
           now rewrite H0.
     Qed.
-*)
+
   Lemma vec_Ash_6_2_1_helper5 {size:nat} (X : nat -> Ts -> vector R size)
       {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
