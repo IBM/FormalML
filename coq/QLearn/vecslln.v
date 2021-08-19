@@ -2179,7 +2179,10 @@ Proof.
               rewrite (Rvector_plus_comm (X (S (j + m)%nat) w) _).
               rewrite Rvector_plus_assoc.
               rewrite Rvector_plus_comm.
-              admit.
+              replace ((Rvector_scale (-1) (sum_n (fun n0 : nat => X (n0 + m)%nat w) j)))
+                with (Rvector_opp (sum_n (fun n0 : nat => X (n0 + m)%nat w) j)) by reflexivity.
+              rewrite Rvector_plus_inv.
+              now rewrite Rvector_plus_zero.
             + tauto.
           - match_destr.
             + tauto.
