@@ -2965,6 +2965,19 @@ Qed.
       specialize (Hx (mkposreal eps H)); eauto.
     Qed.
 
+    Global Instance cauchy_seq_at_proper {A}: Proper (eq ==> (pointwise_relation _ (pointwise_relation _ eq)) ==> iff) (@cauchy_seq_at A).
+    Proof.
+      intros ??????; subst.
+      unfold cauchy_seq_at.
+      repeat red in H0.
+      split; intros HH eps
+      ; destruct (HH eps) as [N HH1]
+      ; exists N
+      ; intros n m HH2 HH3
+      ; specialize (HH1 _ _ HH2 HH3)
+      ; congruence.
+    Qed.
+
   Lemma vec_Ash_6_2_1 {size:nat} (X : nat -> Ts -> vector R size)
       {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
@@ -2991,15 +3004,10 @@ Qed.
     unfold vecrvnth.
     unfold rvsumvec in H2.
     specialize (H2 i pf).
-    unfold cauchy_seq_at.
-    unfold cauchy_seq_at in H2.
-    intros.
-    destruct (H2 eps).
-    exists x0; intros.
-    rewrite <- vector_nth_sum_n.
-    rewrite <- vector_nth_sum_n.
-    now apply H4.
-  Qed.
+    eapply cauchy_seq_at_proper; try eapply H2; trivial.
+    repeat red; intros.
+    now rewrite vector_nth_sum_n.
+  Qed.    
 
   Lemma nodup_vecscaled {size:nat} (c : R) (frf_vals : list (vector R size)) :
     c <> 0 -> map (fun v : vector R size => Rvector_scale c v) (nodup vec_Req_EM_T frf_vals) =
