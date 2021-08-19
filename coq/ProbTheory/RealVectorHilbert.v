@@ -74,6 +74,11 @@ Section Rvector_defs.
 
   Local Open Scope Rvector_scope.
 
+  Lemma Rvector_nth_zero i pf : vector_nth i pf Rvector_zero = 0%R.
+  Proof.
+    apply vector_nth_const.
+  Qed.
+  
   Lemma Rvector_plus_explode (x y:vector R n) :
     x + y = vector_create 0 n (fun i _ pf => (vector_nth i pf x + vector_nth i pf y)%R).
   Proof.
@@ -81,6 +86,15 @@ Section Rvector_defs.
     rewrite vector_zip_explode.
     rewrite vector_map_create.
     reflexivity.
+  Qed.
+
+  Lemma Rvector_nth_plus (x y:vector R n) i pf :
+    vector_nth i pf (x + y) = Rplus (vector_nth i pf x) (vector_nth i pf y).
+  Proof.
+    rewrite Rvector_plus_explode.
+    rewrite vector_nth_create.
+    simpl.
+    f_equal; apply vector_nth_ext.
   Qed.
 
   Lemma Rvector_mult_explode (x y:vector R n) :
@@ -92,6 +106,15 @@ Section Rvector_defs.
     reflexivity.
   Qed.
 
+  Lemma Rvector_nth_mult (x y:vector R n) i pf :
+    vector_nth i pf (x * y) = Rmult (vector_nth i pf x) (vector_nth i pf y).
+  Proof.
+    rewrite Rvector_mult_explode.
+    rewrite vector_nth_create.
+    simpl.
+    f_equal; apply vector_nth_ext.
+  Qed.
+  
   Lemma Rvector_plus_comm (x y:vector R n) : x + y = y + x.
   Proof.
     repeat rewrite Rvector_plus_explode.
@@ -167,13 +190,10 @@ Section Rvector_defs.
 
   Lemma Rvector_plus_zero (x:vector R n) : x + 0 = x.
   Proof.
-    rewrite Rvector_plus_explode.
     apply vector_nth_eq; intros.
-    rewrite vector_nth_create; simpl.
-    unfold Rvector_zero.
-    rewrite vector_nth_const.
-    rewrite Rplus_0_r.
-    apply vector_nth_ext.
+    rewrite Rvector_nth_plus.
+    rewrite Rvector_nth_zero.
+    now rewrite Rplus_0_r.
   Qed.
 
   Lemma Rvector_mult_zero (x:vector R n) : x * 0 = 0.
@@ -1027,6 +1047,18 @@ Section more_lemmas.
         (nonneg (mknonnegreal (Rvector_max_abs v) (Rvector_max_abs_nonneg v))) by reflexivity.
     apply Rsqr_le_to_Rsqrt; simpl.
     apply sqr_max_abs_le_inner.
+  Qed.
+
+  Lemma vector_nth_sum_n {n:nat} i pf k (f:nat->vector R n) :
+    vector_nth i pf (sum_n (fun j => f j) k) =
+    sum_n (fun j => vector_nth i pf (f j)) k.
+  Proof.
+    unfold sum_n, sum_n_m, Iter.iter_nat, plus, zero; simpl.
+    generalize (0%nat).
+    induction k; simpl; intros.
+    - now rewrite Rvector_nth_plus, Rvector_nth_zero. 
+    - rewrite Rvector_nth_plus.
+      now rewrite IHk.
   Qed.
 
 End more_lemmas.
