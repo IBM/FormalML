@@ -1918,7 +1918,7 @@ Qed.
       apply (vec_cutoff_eps_const_history_shift X eps j m p H).
   Qed.
 
-  Lemma indicator_prod_cross_shift {size:nat} (j m:nat) (eps:R) (X: nat -> Ts -> vector R size) 
+  Lemma vec_indicator_prod_cross_shift {size:nat} (j m:nat) (eps:R) (X: nat -> Ts -> vector R size) 
       {rv : forall n, RandomVariable dom (Rvector_borel_sa size) (X n)}
       {frf : forall n, FiniteRangeFunction (X n)} 
       (HC : forall n, rv_eq (vector_SimpleConditionalExpectationSA (X n) (vec_filtration_history n X)) (const zero)) :
@@ -2161,64 +2161,63 @@ Proof.
           intros w.
           unfold rvinner, vecrvminus, vecrvopp, vecrvplus, vecrvscale, vecrvscalerv.
           f_equal.
-        Admitted.
-(*
-          rv_unfold. f_equal. ring_simplify.
-         unfold cutoff_eps_rv, cutoff_indicator, EventIndicator.
-         rewrite (cutoff_eps_succ_minus eps (fun k => Sum k w) j).
-         unfold Sum, rvsum. rewrite sum_Sn. unfold plus. simpl.
-         rewrite Rplus_comm.
-         unfold Rminus; rewrite Rplus_assoc.
-         replace  (sum_n (fun n0 : nat => X (n0+m)%nat w) j + - sum_n (fun n0 : nat => X (n0+m)%nat w) j) with 0 by lra.
-         rewrite Rplus_0_r.
-         match_destr.
-         - match_destr.
-           + lra.
-           + tauto.
-         - match_destr.
-           + tauto.
-           + lra.
+          unfold vec_cutoff_eps_rv, vec_cutoff_indicator, EventIndicator.
+          unfold vec_cutoff_indicator_obligation_1.
+          generalize (vec_cutoff_eps_succ_minus eps (fun k => Sum k w) j); intros.
+          unfold minus, plus, opp, Rvector_opp in H0; simpl in H0.
+          simpl.
+          unfold Rvector_opp in H0.
+          rewrite H0.
+          unfold vec_pre_cutoff_event.
+          match_destr.
+          - match_destr.
+            + rewrite Rvector_scale1.
+              unfold Sum, rvsumvec.
+              admit.
+            + tauto.
+          - match_destr.
+            + tauto.
+            + now rewrite Rvector_scale0.
         }
         erewrite <-(SimpleExpectation_ext Heq).
         assert (rv_eq
-                  (rvmult (cutoff_eps_rv j eps Sum)
-                          (rvmult (cutoff_indicator (S j) eps Sum) (X ((S j)+m)%nat)))
-                  (rvmult 
-                     (rvmult (cutoff_eps_rv j eps Sum)
-                             (cutoff_indicator (S j) eps Sum))
-                     (X ((S j)+m)%nat))) by now rewrite rvmult_assoc.
+                  (rvinner (vec_cutoff_eps_rv j eps Sum)
+                           (vecrvscalerv (vec_cutoff_indicator (S j) eps Sum) (X ((S j)+m)%nat)))
+                   (rvinner
+                      (vecrvscalerv (vec_cutoff_indicator (S j) eps (rvsumvec (fun n => X (n +  m)%nat)))
+                                    (vec_cutoff_eps_rv j eps (rvsumvec (fun n => X (n +  m)%nat))) )
+                      (X (S j + m)%nat))) by admit.
         erewrite (SimpleExpectation_ext H0).
-
-        now apply indicator_prod_cross_shift.
+        now apply vec_indicator_prod_cross_shift.
      + rewrite H0.
        lra.
  }
- clear H1 H3.
+ clear H1 H3 H3eq.
  induction n.
  + simpl.
    right.
    apply SimpleExpectation_ext.
    intro x.
    now unfold Sum.
- - rewrite Srel.
+ + rewrite Srel.
    rewrite Zrel.
-   apply Rplus_le_compat.
-   + apply SimpleExpectation_le.
-     intro x.
-     unfold rvinner.
-     unfold vec_cutoff_eps_rv.
-     (*
-     match_destr; try (do 2 rewrite Rsqr_pow2; rewrite Rminus_eq_0).
-     *)
-   + apply SimpleExpectation_le.
-     intro x.
-     unfold rvinner, vecrvminus, vecrvplus, vecrvopp, vecrvscale.
-   + generalize (vec_cutoff_eps_succ_minus eps (fun j => Sum j x) n); intros Hcut.
+   apply Rplus_le_compat; trivial.
+   apply SimpleExpectation_le.
+   intro x.
+   unfold rvinner, vecrvminus, vecrvplus, vecrvopp, vecrvscale.
+   unfold vec_cutoff_eps_rv.
+   generalize (vec_cutoff_eps_succ_minus eps (fun j => Sum j x) n); intros Hcut.
+   simpl in Hcut. match_destr_in Hcut; intuition.
+   * unfold minus, plus, opp in Hcut; simpl in Hcut; unfold Rvector_opp in Hcut.
+Admitted.
+
+(*
+   * 
      simpl in Hcut. match_destr_in Hcut; intuition; try (lra).
      rewrite Hcut. unfold Sum. right.
      f_equal. unfold rvsum. rewrite sum_Sn. unfold plus.
      simpl. now ring_simplify.
-   + rewrite <-Rsqr_pow2. unfold Rsqr. eapply Rle_trans; try (apply pow2_ge_0).
+   * rewrite <-Rsqr_pow2. unfold Rsqr. eapply Rle_trans; try (apply pow2_ge_0).
      lra.
 Qed.
 *)
@@ -2362,11 +2361,6 @@ Proof.
     } 
     firstorder.
 Qed.
-
-(*
-Definition cauchy_seq_at {A : Type}(omega : A) (X : nat -> A -> R) := forall (eps:posreal),
-    exists (N:nat), forall (n m : nat),  (n >= N)%nat -> (m >= N)%nat -> Rabs ((X n omega) - (X m omega)) < eps.
- *)
 
 Lemma vec_sa_sigma_cauchy_descending {size:nat} (X : nat -> Ts -> vector R size )(eps : posreal)
       {rv : forall n, RandomVariable dom (Rvector_borel_sa size) (X n)}:
@@ -2847,13 +2841,7 @@ Qed.
       apply (is_lim_seq_le_le _ _ _ 0 H1); trivial.
       apply is_lim_seq_const.
    Qed.
-    
-(*
-  Import hilbert.
-  Context {I : nat}.
-  Canonical Rvector_UniformSpace := @PreHilbert_UniformSpace (@Rvector_PreHilbert I).
-  Canonical Rvector_NormedModule := @PreHilbert_NormedModule (@Rvector_PreHilbert I).
-*)
+
     Lemma vec_Ash_6_2_1_helper6a {size:nat} (X : nat -> Ts -> vector R size) (eps : posreal) (N : nat) 
       {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))} :
       event_sub
@@ -2865,32 +2853,45 @@ Qed.
         destruct H as [n [m [? [? ?]]]].
         destruct (Rge_dec (hilbert.Hnorm (minus (X n x) (X N x))) (eps/2)).
         - destruct (n == N).
-          ++ rewrite e in r.
-             rewrite minus_eq_zero in r.
-             generalize (@hilbert.norm_zero); intros.
-             rewrite H2 in r.
-             generalize (is_pos_div_2 eps); intros; lra.
-          ++ assert (n > N)%nat by (destruct H; try lia;firstorder).
-             exists (n - (S N))%nat.
-             unfold vecrvminus.
-             now replace (n - S N + S N)%nat with (n) by lia.
-        -
-          (* generalize (@norm_triangle R_AbsRing _ (@minus (X n x) (X N x)) (minus (X N x) (X m x)));intros. *)
-      (*-generalize (Rabs_triang (X n x - X N x) (X N x - X m x));intros.
-          replace  (X n x - X N x + (X N x - X m x)) with (X n x - X m x) in H2 by lra.
-          assert (Rabs (X N x - X m x) >= eps/2) by lra.
-          destruct (m == N).
-          ++ rewrite e in H3.
-             rewrite Rminus_eq_0 in H3.
-             rewrite Rabs_R0 in H3.
-             generalize (is_pos_div_2 eps); intros; lra.
-          ++ assert (m > N)%nat by (destruct H0; try lia; firstorder).
-             exists (m - (S N))%nat.
-             rewrite rvminus_unfold.
-             replace (m - S N + S N)%nat with (m) by lia.
-             now rewrite Rabs_minus_sym.
+          + rewrite e in r.
+            rewrite minus_eq_zero in r.
+            rewrite (@hilbert.norm_zero) in r.
+            generalize (is_pos_div_2 eps); intros; lra.
+          + assert (n > N)%nat by (destruct H; try lia;firstorder).
+            exists (n - (S N))%nat.
+            unfold vecrvminus.
+            now replace (n - S N + S N)%nat with (n) by lia.
+        - generalize (@norm_triangle R_AbsRing (@hilbert.PreHilbert_NormedModule (@Rvector_PreHilbert size)) (minus (X n x) (X N x)) (minus (X N x) (X m x)));intros.
+          unfold norm in H2; simpl in H2.
+          unfold minus, plus, opp in H2; simpl in H2.
+          replace (Rvector_plus (Rvector_plus (X n x) (Rvector_opp (X N x)))
+                                (Rvector_plus (X N x) (Rvector_opp (X m x)))) with
+              (Rvector_plus (X n x) (Rvector_opp (X m x))) in H2.
+          + unfold minus, plus, opp in H1; simpl in H1.
+            unfold minus, plus, opp in n0; simpl in n0.
+            assert (hilbert.Hnorm (Rvector_plus (X N x) (Rvector_opp (X m x))) >= eps/2) by lra.
+            destruct (m == N).
+            * rewrite e in H3.
+              rewrite Rvector_plus_inv in H3.
+              rewrite (@hilbert.norm_zero) in H3.
+              assert (0 < eps) by apply cond_pos.
+              lra.
+            * assert (m > N)%nat by (destruct H0; try lia; firstorder).
+              exists (m - (S N))%nat.
+              replace (m - S N + S N)%nat with (m) by lia.
+              replace (Rvector_plus (X N x) (Rvector_opp (X m x))) with 
+                  (minus (X N x) (X m x)) in H3.
+              -- rewrite (@Hnorm_minus_opp) in H3.
+                 apply H3.
+              -- reflexivity.
+          + rewrite <- Rvector_plus_assoc. 
+            f_equal.
+            rewrite Rvector_plus_assoc.
+            rewrite (Rvector_plus_comm (Rvector_opp (X N x)) (X N x)).
+            rewrite Rvector_plus_inv.
+            rewrite Rvector_plus_comm.
+            now rewrite Rvector_plus_zero.
       Qed.
- *)Admitted.
       
     Lemma vec_Ash_6_2_1_helper6b {size:nat} (X : nat -> Ts -> vector R size) (eps : posreal) (N : nat) 
       {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))} :
