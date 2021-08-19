@@ -2778,7 +2778,17 @@ Qed.
      rewrite <- vec_sum_n_m_shift.
      unfold sum_n.
      rewrite vec_sum_split with (m0 := m); try lia.
-   Admitted.
+     unfold minus,plus,opp; simpl.
+     generalize (sum_n_m X 0 m) as k.
+     generalize (sum_n_m X (S m) (a + S m)).
+     intros s k.
+     rewrite Rvector_plus_comm.
+     rewrite Rvector_plus_assoc.
+     rewrite (Rvector_plus_comm _ k).
+     rewrite Rvector_plus_inv.
+     rewrite Rvector_plus_comm.
+     apply Rvector_plus_zero.
+   Qed.
 (*     
 lra.
    Qed.
