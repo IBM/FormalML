@@ -3012,6 +3012,9 @@ lra.
     exists E. destruct HE. split; trivial.
     intros.  specialize (H2 x H3).
     apply (vec_cauchy_seq_at_ex_series (fun k => fun x => vecrvnth i pf (X k) x)).
+    rewrite vec_cauchy_seq_at_iff in H2.
+    unfold vecrvnth.
+    unfold rvsumvec in H2.
     Admitted.
 (*
     apply H2.
