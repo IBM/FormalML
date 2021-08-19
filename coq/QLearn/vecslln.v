@@ -1219,8 +1219,52 @@ Proof.
   intro.
   induction n.
   - simpl; apply mrv.
-  - simpl.
-Admitted.
+  - simpl in *.
+    unfold RealMeasurable in mrv.
+    rewrite vector_nth_fun_to_vector.
+    rewrite vector_nth_fun_to_vector in IHn.
+    specialize (mrv (S n) i pf).
+    rewrite vector_nth_fun_to_vector in mrv.
+    assert (sa1 : sa_sigma (fun omega : Ts => Rmax_list_map (0%nat :: seq 1 n) (fun n0 : nat => hilbert.Hnorm (X n0 omega)) < eps)).
+    {
+      apply sa_le_lt.
+      apply (max_list_measurable n); intros.
+      unfold hilbert.Hnorm.
+      apply Rsqrt_measurable.
+      unfold hilbert.inner; simpl.
+      apply Rvector_inner_measurable
+      ; now apply RandomVariableRealVectorMeasurable.
+    } 
+    rewrite (sa_proper _ _
+                       (pre_event_union 
+                          (pre_event_inter 
+                             (fun omega : Ts => (Rmax_list_map (0%nat :: seq 1 n) (fun n0 : nat => hilbert.Hnorm (X n0 omega))) < eps)
+                             (fun omega => vector_nth i pf (X (S n) omega) <= r))
+                          (pre_event_inter 
+                             (pre_event_complement (fun omega : Ts => (Rmax_list_map (0%nat :: seq 1 n) (fun n0 : nat => hilbert.Hnorm (X n0 omega))) < eps))
+                             (fun omega => (vector_nth i pf (vec_cutoff_eps n eps (fun k : nat => X k omega))) <= r)))).
+    + apply sa_union.
+      * apply sa_inter; trivial.
+      * apply sa_inter; trivial.
+        apply sa_complement; trivial.
+    + red; intros.
+      match_destr.
+      * split; intros.
+        -- left.
+           split; trivial.
+        -- destruct H.
+           ++ destruct H; trivial.
+           ++ destruct H.
+              now elim H.
+      * split; intros.
+        -- right.
+           split; trivial.
+        -- destruct H.
+           ++ destruct H.
+              tauto.
+           ++ destruct H; trivial.
+Qed.
+
 (*
     assert (pre_event_equiv
                (fun omega : Ts =>
