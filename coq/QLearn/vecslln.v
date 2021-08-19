@@ -1735,17 +1735,14 @@ Lemma vec_filtration_history_rvsum_var_const_shift {size:nat} (X : nat -> Ts -> 
       intros.
       typeclasses eauto.
     }
-  Admitted.
-  (*
-    generalize (partition_measurable_Rmax_list_map j (rvsumvec X) l H); intros.
+    generalize (vec_partition_measurable_Rmax_list_map j (rvsumvec X) l H); intros.
     apply H1.
     intros.
-    apply (partition_measurable_rvsum k X l H).
+    apply (partition_measurable_rvsumvec k X l H).
     intros.
     apply H0.
     lia.
    Qed.
-   *)
   
    Lemma vec_cutoff_eps_const_history_shift {size:nat} (X : nat -> Ts -> vector R size) (eps : R) (j m:nat)
         {rv : forall n, RandomVariable dom (Rvector_borel_sa size) (X n)}
@@ -1947,7 +1944,17 @@ Qed.
     (X z) = (vecrvplus Y 
                         (vecrvminus X Y)) z.
   Proof.
-    Admitted.
+    unfold vecrvminus, vecrvplus.
+    rewrite Rvector_plus_assoc.
+    rewrite Rvector_plus_comm.
+    rewrite Rvector_plus_assoc.
+    rewrite (Rvector_plus_comm (vecrvopp Y z) (Y z)).
+    replace (vecrvopp Y z) with (Rvector_opp (Y z)).
+    - rewrite Rvector_plus_inv.
+      rewrite Rvector_plus_comm.
+      now rewrite Rvector_plus_zero.
+    - now unfold Rvector_opp, vecrvopp, vecrvscale.
+  Qed.
 
   Lemma rvmaxlist_rvnorm_hnorm {size:nat} (n : nat) (X : nat -> Ts -> vector R size) :
     forall omega,
