@@ -1918,7 +1918,36 @@ Qed.
       (rvnorm X) omega = hilbert.Hnorm (X omega).
   Proof.
     auto.
-  Qed.    
+  Qed.
+
+  Lemma Rvector_inner_plus_r {n:nat} (x y z:vector R n)  : 
+    Rvector_inner x (Rvector_plus y z) = Rplus (Rvector_inner x y) (Rvector_inner x z).
+  Proof.
+    rewrite Rvector_inner_comm.
+    rewrite (Rvector_inner_comm x y).
+    rewrite (Rvector_inner_comm x z).    
+    apply Rvector_inner_plus.
+  Qed.
+
+  Lemma rvinner_sum {size:nat} (X Y : Ts -> vector R size) :
+    rv_eq (rvinner (vecrvplus X Y) (vecrvplus X Y))
+          (rvplus (rvinner X X) 
+                  (rvplus (rvscale 2 (rvinner X Y))
+                          (rvinner Y Y))).
+    Proof.
+      intros x.
+      unfold rvinner, vecrvplus, rvplus, rvscale.
+      rewrite Rvector_inner_plus.
+      do 2 rewrite Rvector_inner_plus_r.
+      rewrite (Rvector_inner_comm (Y x) (X x)).
+      ring.
+    Qed.
+
+  Lemma vecrvplus_minus {size:nat} (X Y : Ts -> vector R size) (z:Ts) :
+    (X z) = (vecrvplus Y 
+                        (vecrvminus X Y)) z.
+  Proof.
+    Admitted.
 
   Lemma rvmaxlist_rvnorm_hnorm {size:nat} (n : nat) (X : nat -> Ts -> vector R size) :
     forall omega,
@@ -2004,92 +2033,87 @@ Proof.
                     SimpleExpectation(rvinner (X ((S j)+m)%nat) (X ((S j)+m)%nat))).
   {
     intros.
-    admit.
-(*
-    assert (rv_eq (rvinner (Sum (S j)) (Sum (S j)))
-                  (rvplus (rvinner (Sum j) (Sum j))
-                          (rvplus 
-                             (rvscale 2
-                                      (rvinner (Sum j) (X ((S j)+m)%nat)))
-                             (rvinner (vecrvminus (Sum (S j)) (Sum j))
-                                      (vecrvminus (Sum (S j)) (Sum j)))))).
+    assert (rv_eq (Sum (S j)) (vecrvplus (Sum j) (X (S j + m)%nat))).
     - intro x.
-      unfold rvinner, vecrvminus, vecrvplus, vecrvopp, vecrvscale, rvscale, rvplus, rvmult.
-      replace (Sum (S j) x) with (plus (Sum j x) (X ((S j)+m)%nat x)).
-      + unfold plus; simpl.
-        ring_simplify.
-      + unfold Sum, rvsum.
-        rewrite sum_Sn.
-        unfold plus; simpl.
-        now unfold plus; simpl.
-   - rewrite (SimpleExpectation_ext H).
-     rewrite <- sumSimpleExpectation.
-     rewrite <- sumSimpleExpectation.
-     rewrite <- Rplus_assoc.
-     rewrite <- scaleSimpleExpectation.
-     rewrite (expec_cross_zero_sum2_shift X m HC); try lia.
-     ring_simplify.
-     f_equal.
-     assert (rv_eq (rvsqr (rvminus (Sum (S j)) (Sum j)))
-                   (rvsqr (X ((S j)+m)%nat))).
-     + intro x.
-       unfold Sum, rvsqr.
-       rewrite rvminus_unfold.
-       unfold rvsum.
-       rewrite sum_Sn.
-       unfold plus; simpl.
-       unfold Rsqr; ring.
-     + apply (SimpleExpectation_ext H0).
-*)
+      unfold vecrvplus.
+      unfold Sum, rvsumvec.
+      now rewrite sum_Sn.
+    - generalize (rvinner_sum (Sum j) (X (S j + m)%nat)); intros.
+      rewrite <- H in H0.
+      rewrite (SimpleExpectation_ext H0).
+      rewrite <- sumSimpleExpectation.
+      rewrite <- sumSimpleExpectation.
+      rewrite <- Rplus_assoc.
+      rewrite <- scaleSimpleExpectation.
+      rewrite (vec_expec_cross_zero_sum2_shift X m HC); try lia.
+      ring.
   }
-  assert (Zrel:forall j, SimpleExpectation(rvinner (vec_cutoff_eps_rv (S j) eps Sum)
-                                          (vec_cutoff_eps_rv (S j) eps Sum)) =
-                    SimpleExpectation(rvinner (vec_cutoff_eps_rv j eps Sum)
-                                              (vec_cutoff_eps_rv j eps Sum)) + 
-                    SimpleExpectation(rvinner (vecrvminus (vec_cutoff_eps_rv (S j) eps Sum) 
-                                                          (vec_cutoff_eps_rv j eps Sum))
-                                              (vecrvminus (vec_cutoff_eps_rv (S j) eps Sum) 
-                                                          (vec_cutoff_eps_rv j eps Sum)))).
+  assert (Zrel:forall j, 
+             SimpleExpectation(rvinner (vec_cutoff_eps_rv (S j) eps Sum)
+                                       (vec_cutoff_eps_rv (S j) eps Sum)) =
+             SimpleExpectation(rvinner (vec_cutoff_eps_rv j eps Sum)
+                                       (vec_cutoff_eps_rv j eps Sum)) + 
+             SimpleExpectation(rvinner (vecrvminus (vec_cutoff_eps_rv (S j) eps Sum) 
+                                                   (vec_cutoff_eps_rv j eps Sum))
+                                       (vecrvminus (vec_cutoff_eps_rv (S j) eps Sum) 
+                                                   (vec_cutoff_eps_rv j eps Sum)))).
   {
     intros.
-    admit.
-(*    
-    assert (rv_eq (rvsqr (cutoff_eps_rv (S j) eps Sum)) 
-                  (rvplus (rvsqr (cutoff_eps_rv j eps Sum))
+    assert (rv_eq (rvinner (vec_cutoff_eps_rv (S j) eps Sum)
+                           (vec_cutoff_eps_rv (S j) eps Sum)) 
+                  (rvplus (rvinner (vec_cutoff_eps_rv j eps Sum)
+                                   (vec_cutoff_eps_rv j eps Sum))
                           (rvplus
                              (rvscale 2
-                                      (rvmult (cutoff_eps_rv j eps Sum)
-                                              (rvminus (cutoff_eps_rv (S j) eps Sum) 
-                                                     (cutoff_eps_rv j eps Sum))))
-                             (rvsqr (rvminus (cutoff_eps_rv (S j) eps Sum) 
-                                             (cutoff_eps_rv j eps Sum)))))).
+                                      (rvinner (vec_cutoff_eps_rv j eps Sum)
+                                               (vecrvminus 
+                                                  (vec_cutoff_eps_rv (S j) eps Sum) 
+                                                  (vec_cutoff_eps_rv j eps Sum))))
+                             (rvinner (vecrvminus (vec_cutoff_eps_rv (S j) eps Sum) 
+                                                  (vec_cutoff_eps_rv j eps Sum))
+                                      (vecrvminus (vec_cutoff_eps_rv (S j) eps Sum) 
+                                                  (vec_cutoff_eps_rv j eps Sum)))))).
     - intro x.
-      unfold rvsqr, rvminus, rvopp, rvscale, rvplus, rvmult.
-      unfold Rsqr.
-      replace (Sum (S j) x) with ((Sum j x) + (X ((S j)+m)%nat x)).
-      + now ring_simplify.
-      + unfold Sum, rvsum.
-        rewrite sum_Sn.
-        now unfold plus; simpl.
+      assert (rv_eq (rvinner (vec_cutoff_eps_rv (S j) eps Sum) (vec_cutoff_eps_rv (S j) eps Sum))
+                    (rvinner (vecrvplus (vec_cutoff_eps_rv j eps Sum)
+                                        (vecrvminus 
+                                           (vec_cutoff_eps_rv (S j) eps Sum) 
+                                           (vec_cutoff_eps_rv j eps Sum)))
+                             (vecrvplus (vec_cutoff_eps_rv j eps Sum)
+                                        (vecrvminus 
+                                           (vec_cutoff_eps_rv (S j) eps Sum) 
+                                           (vec_cutoff_eps_rv j eps Sum))))).
+      + unfold rvinner.
+        intro z; simpl.
+        now rewrite <- vecrvplus_minus.
+      + rewrite H.
+        now rewrite rvinner_sum.         
    - rewrite (SimpleExpectation_ext H).
      rewrite <- sumSimpleExpectation.
      rewrite <- sumSimpleExpectation.
      rewrite <- Rplus_assoc.
      f_equal.
      rewrite <- scaleSimpleExpectation.
-     assert (SimpleExpectation (rvmult (cutoff_eps_rv j eps Sum) (rvminus (cutoff_eps_rv (S j) eps Sum) (cutoff_eps_rv j eps Sum))) = 0).
+     assert (SimpleExpectation (rvinner (vec_cutoff_eps_rv j eps Sum) 
+                                        (vecrvminus (vec_cutoff_eps_rv (S j) eps Sum) 
+                                                    (vec_cutoff_eps_rv j eps Sum))) = 0).
      + assert (Heq :rv_eq
-                      (rvmult (cutoff_eps_rv j eps Sum) 
-                              (rvmult 
-                                 (cutoff_indicator (S j) eps Sum)
-                                 (X ((S j)+m)%nat)))
-                      (rvmult 
-                         (cutoff_eps_rv j eps Sum) 
-                         (rvminus (cutoff_eps_rv (S j) eps Sum) 
-                                  (cutoff_eps_rv j eps Sum)))).
+                      (rvinner 
+                         (vec_cutoff_eps_rv j eps Sum) 
+                         (vecrvscalerv 
+                            (vec_cutoff_indicator (S j) eps Sum)
+                            (X ((S j)+m)%nat)))
+                      (rvinner 
+                         (vec_cutoff_eps_rv j eps Sum) 
+                         (vecrvminus (vec_cutoff_eps_rv (S j) eps Sum) 
+                                     (vec_cutoff_eps_rv j eps Sum)))).
         {
-         intros w.
-         rv_unfold. f_equal. ring_simplify.
+          intros w.
+          unfold rvinner, vecrvminus, vecrvopp, vecrvplus, vecrvscale, vecrvscalerv.
+          f_equal.
+        Admitted.
+(*
+          rv_unfold. f_equal. ring_simplify.
          unfold cutoff_eps_rv, cutoff_indicator, EventIndicator.
          rewrite (cutoff_eps_succ_minus eps (fun k => Sum k w) j).
          unfold Sum, rvsum. rewrite sum_Sn. unfold plus. simpl.
@@ -2118,11 +2142,10 @@ Proof.
         now apply indicator_prod_cross_shift.
      + rewrite H0.
        lra.
-*)
  }
  clear H1 H3.
  induction n.
- - simpl.
+ + simpl.
    right.
    apply SimpleExpectation_ext.
    intro x.
@@ -2130,8 +2153,6 @@ Proof.
  - rewrite Srel.
    rewrite Zrel.
    apply Rplus_le_compat.
- Admitted.
-(*
    + apply SimpleExpectation_le.
      intro x.
      unfold rvinner.
@@ -2194,12 +2215,12 @@ Admitted.
       reflexivity.
 Qed.  
 *)
-Lemma sa_sigma_not_cauchy (X : nat -> Ts -> R) (eps:posreal) (N : nat)
-      {rv : forall (n:nat), RandomVariable dom borel_sa (X n)} :
+Lemma vec_sa_sigma_not_cauchy {size:nat} (X : nat -> Ts -> vector R size) (eps:posreal) (N : nat)
+      {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X n)} :
   sa_sigma (fun omega =>
               exists (n m : nat),
                 (n >= N)%nat /\ (m >= N)%nat /\
-                Rabs ((X n omega) - (X m omega)) >= eps) .
+                hilbert.Hnorm (minus (X n omega) (X m omega)) >= eps) .
 Proof.
   apply sa_countable_union; intros n.
   apply sa_countable_union; intros m.
@@ -2208,30 +2229,36 @@ Proof.
   - apply sa_inter.
     + apply sa_sigma_const_classic.
     + apply sa_le_ge; intros.
-      apply Rabs_measurable.
-      generalize (minus_measurable dom (X n) (X m)); intros.
-      rewrite rvminus_unfold in H.
-      apply H; now apply rv_measurable.
+      apply Rsqrt_measurable.
+      apply Rvector_inner_measurable.
+      * apply Rvector_plus_measurable.
+        -- now apply RandomVariableRealVectorMeasurable.
+        -- apply Rvector_opp_measurable.
+           now apply RandomVariableRealVectorMeasurable.
+      * apply Rvector_plus_measurable.
+        -- now apply RandomVariableRealVectorMeasurable.
+        -- apply Rvector_opp_measurable.
+           now apply RandomVariableRealVectorMeasurable.
 Qed.
-                                                  
-Lemma sa_sigma_not_full_cauchy (X : nat -> Ts -> R)
-      {rv : forall (n:nat), RandomVariable dom borel_sa (X n)} :
+
+Lemma vec_sa_sigma_not_full_cauchy {size:nat} (X : nat -> Ts -> vector R size)
+      {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X n)} :
   sa_sigma (fun omega => exists (eps : posreal), forall N:nat,
                   exists (n m : nat),
                     (n >= N)%nat /\ (m >= N)%nat /\
-                    Rabs ((X n omega) - (X m omega)) >= eps).
+                    hilbert.Hnorm (minus (X n omega) (X m omega)) >= eps).
 Proof.
   assert (eqq1:pre_event_equiv
                  (fun omega => exists (eps : posreal), forall N:nat,
                         exists (n m : nat),
                           (n >= N)%nat /\ (m >= N)%nat /\
-                          Rabs ((X n omega) - (X m omega)) >= eps)
+                          hilbert.Hnorm (minus (X n omega) (X m omega)) >= eps)
                  (fun omega => exists (eps : QArith_base.Q),
                       (QArith_base.Qlt {| QArith_base.Qnum := 0; QArith_base.Qden := 1 |} eps) /\
                       forall N:nat,
                       exists (n m : nat),
                         (n >= N)%nat /\ (m >= N)%nat /\
-                        Rabs ((X n omega) - (X m omega)) >= Qreals.Q2R eps)).
+                        hilbert.Hnorm (minus (X n omega) (X m omega)) >= Qreals.Q2R eps)).
   {
     intros x.
     split.
@@ -2273,10 +2300,10 @@ Proof.
     } 
     eapply (sa_proper _  (fun omega => (forall N : nat,
       exists n m : nat,
-        (n >= N)%nat /\ (m >= N)%nat /\ Rabs (X n omega - X m omega) >= Qreals.Q2R i))).
+        (n >= N)%nat /\ (m >= N)%nat /\ hilbert.Hnorm (minus (X n omega) (X m omega)) >= Qreals.Q2R i))).
     + firstorder.
     + apply sa_pre_countable_inter; intros N.
-      now apply (sa_sigma_not_cauchy X (mkposreal _ r)).
+      now apply (vec_sa_sigma_not_cauchy X (mkposreal _ r)).
   - eapply sa_proper; try apply sa_none.
     assert (~ QArith_base.Qlt {| QArith_base.Qnum := 0; QArith_base.Qden := 1 |} i).
     {
@@ -2292,9 +2319,9 @@ Definition cauchy_seq_at {A : Type}(omega : A) (X : nat -> A -> R) := forall (ep
     exists (N:nat), forall (n m : nat),  (n >= N)%nat -> (m >= N)%nat -> Rabs ((X n omega) - (X m omega)) < eps.
  *)
 
-Lemma sa_sigma_cauchy_descending (X : nat -> Ts -> R)(eps : posreal)
-      {rv : forall n, RandomVariable dom borel_sa (X n)}:
-  forall n, let E := fun n => exist sa_sigma _ (sa_sigma_not_cauchy X eps n) in
+Lemma vec_sa_sigma_cauchy_descending {size:nat} (X : nat -> Ts -> vector R size )(eps : posreal)
+      {rv : forall n, RandomVariable dom (Rvector_borel_sa size) (X n)}:
+  forall n, let E := fun n => exist sa_sigma _ (vec_sa_sigma_not_cauchy X eps n) in
     event_sub (E (S n)) (E n).
 Proof.
   intros n E.
@@ -2304,10 +2331,10 @@ Proof.
   repeat split; try lia; trivial.
 Qed.
 
-Lemma sa_sigma_cauchy_inter_event_sub (X : nat -> Ts -> R) {eps1 eps2 : posreal}
-      {rv : forall n, RandomVariable dom borel_sa (X n)} (Heps : eps2 < eps1) (n : nat):
-  event_sub (inter_of_collection (fun n => exist sa_sigma _ (sa_sigma_not_cauchy X eps1 n)))
-            (inter_of_collection (fun n => exist sa_sigma _ (sa_sigma_not_cauchy X eps2 n))).
+Lemma sa_sigma_cauchy_inter_event_sub {size:nat} (X : nat -> Ts -> vector R size) {eps1 eps2 : posreal}
+      {rv : forall n, RandomVariable dom (Rvector_borel_sa size) (X n)} (Heps : eps2 < eps1) (n : nat):
+  event_sub (inter_of_collection (fun n => exist sa_sigma _ (vec_sa_sigma_not_cauchy X eps1 n)))
+            (inter_of_collection (fun n => exist sa_sigma _ (vec_sa_sigma_not_cauchy X eps2 n))).
 Proof.
   repeat red. intros omega H.
   repeat red in H. intros m.
@@ -2341,12 +2368,12 @@ Lemma ps_union_countable_union_iff (coll : nat -> event dom):
     lra.
   Qed.
 
- Lemma almost_cauchy_iff (X : nat -> Ts -> R)
-    {rv : forall n, RandomVariable dom borel_sa (X n)}:
-   event_equiv ((exist sa_sigma _ (sa_sigma_not_full_cauchy X)))
+ Lemma vec_almost_cauchy_iff {size:nat} (X : nat -> Ts -> vector R size)
+    {rv : forall n, RandomVariable dom (Rvector_borel_sa size) (X n)}:
+   event_equiv ((exist sa_sigma _ (vec_sa_sigma_not_full_cauchy X)))
                (union_of_collection
                   (fun m => inter_of_collection
-                           (fun k => exist sa_sigma _ (sa_sigma_not_cauchy X (mkposreal (/(1 + INR m)) (recip_pos _)) k)))).
+                           (fun k => exist sa_sigma _ (vec_sa_sigma_not_cauchy X (mkposreal (/(1 + INR m)) (recip_pos _)) k)))).
  Proof.
    simpl.
    intros omega. simpl.
@@ -2388,21 +2415,21 @@ Lemma ps_union_countable_union_iff (coll : nat -> event dom):
  Qed.
 
   (* ash prob 2.5.4 *)
-Lemma almost_cauchy_seq_at_iff (X : nat -> Ts -> R)
-      {rv : forall (n:nat), RandomVariable dom borel_sa (X n)} :
-  almost _ (fun omega => cauchy_seq_at omega X) <->
+Lemma vec_almost_cauchy_seq_at_iff {size:nat} (X : nat -> Ts -> vector R size)
+      {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X n)} :
+  almost _ (fun omega => vec_cauchy_seq_at omega X) <->
   (forall (eps:posreal),
       Lim_seq (fun N =>
-                 ps_P (exist sa_sigma _ (sa_sigma_not_cauchy X eps N))) = 0).
+                 ps_P (exist sa_sigma _ (vec_sa_sigma_not_cauchy X eps N))) = 0).
 Proof.
-  assert (H1 : forall (eps: posreal),let E := fun n => exist sa_sigma _ (sa_sigma_not_cauchy X eps n) in
+  assert (H1 : forall (eps: posreal),let E := fun n => exist sa_sigma _ (vec_sa_sigma_not_cauchy X eps n) in
                                 is_lim_seq (fun k => ps_P (E k)) (ps_P (inter_of_collection E))).
   {
     intros eps E.
     apply is_lim_descending.
-    apply sa_sigma_cauchy_descending.
+    apply vec_sa_sigma_cauchy_descending.
   }
-  unfold cauchy_seq_at.
+  unfold vec_cauchy_seq_at.
   split; intros.
   + rewrite almost_alt_eq in H.
     unfold almost_alt in H.
@@ -2418,7 +2445,7 @@ Proof.
     now exists eps.
   + (* forall 0<δ, P(B_δ) = 0*)
     assert (Hinter : forall eps:posreal, let E :=
-         fun n : nat => exist sa_sigma _ (sa_sigma_not_cauchy X eps n) in
+         fun n : nat => exist sa_sigma _ (vec_sa_sigma_not_cauchy X eps n) in
                                     (ps_P (inter_of_collection E)) = 0).
     {
       intros eps E.
@@ -2429,9 +2456,9 @@ Proof.
     clear H.
     rewrite almost_alt_eq.
     unfold almost_alt.
-    exists (exist sa_sigma _ (sa_sigma_not_full_cauchy X)).
+    exists (exist sa_sigma _ (vec_sa_sigma_not_full_cauchy X)).
     split.
-    ++ rewrite almost_cauchy_iff.
+    ++ rewrite vec_almost_cauchy_iff.
        rewrite <-ps_union_countable_union_iff.
        intros n; apply (Hinter ({| pos := /(1 + INR n); cond_pos := recip_pos n|})).
     ++ intros omega Hnot.
@@ -2440,21 +2467,21 @@ Qed.
 
 
 (*TODO(Kody): Simplify this proof using the above.*)
-Lemma almost_cauchy_is_lim_seq_iff (X : nat -> Ts -> R)
-      {rv : forall (n:nat), RandomVariable dom borel_sa (X n)} :
-  almost _ (fun omega => cauchy_seq_at omega X) <->
+Lemma vec_almost_cauchy_is_lim_seq_iff {size:nat} (X : nat -> Ts -> vector R size)
+      {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X n)} :
+  almost _ (fun omega => vec_cauchy_seq_at omega X) <->
   (forall (eps:posreal),
       is_lim_seq (fun N =>
-                 ps_P (exist sa_sigma _ (sa_sigma_not_cauchy X eps N))) 0).
+                 ps_P (exist sa_sigma _ (vec_sa_sigma_not_cauchy X eps N))) 0).
 Proof.
-  assert (H1 : forall (eps: posreal),let E := fun n => exist sa_sigma _ (sa_sigma_not_cauchy X eps n) in
+  assert (H1 : forall (eps: posreal),let E := fun n => exist sa_sigma _ (vec_sa_sigma_not_cauchy X eps n) in
                                 is_lim_seq (fun k => ps_P (E k)) (ps_P (inter_of_collection E))).
   {
     intros eps E.
     apply is_lim_descending.
-    apply sa_sigma_cauchy_descending.
+    apply vec_sa_sigma_cauchy_descending.
   }
-  unfold cauchy_seq_at.
+  unfold vec_cauchy_seq_at.
   split; intros.
   + rewrite almost_alt_eq in H.
     unfold almost_alt in H.
@@ -2462,7 +2489,7 @@ Proof.
     specialize (H1 eps). simpl in H1.
     enough (Hpsp : ps_P (
                     inter_of_collection(
-                        fun n => (exist sa_sigma _ (sa_sigma_not_cauchy X eps n)))) = 0).
+                        fun n => (exist sa_sigma _ (vec_sa_sigma_not_cauchy X eps n)))) = 0).
     - now rewrite <-Hpsp.
     - apply ps_P_sub_zero with E; trivial.
       intros omega.
@@ -2472,7 +2499,7 @@ Proof.
       now exists eps.
   + (* forall 0<δ, P(B_δ) = 0*)
     assert (Hinter : forall eps:posreal, let E :=
-         fun n : nat => exist sa_sigma _ (sa_sigma_not_cauchy X eps n) in
+         fun n : nat => exist sa_sigma _ (vec_sa_sigma_not_cauchy X eps n) in
                                     (ps_P (inter_of_collection E)) = 0).
     {
       intros eps E.
@@ -2483,27 +2510,14 @@ Proof.
     clear H.
     rewrite almost_alt_eq.
     unfold almost_alt.
-    exists (exist sa_sigma _ (sa_sigma_not_full_cauchy X)).
+    exists (exist sa_sigma _ (vec_sa_sigma_not_full_cauchy X)).
     split.
-    ++ rewrite almost_cauchy_iff.
+    ++ rewrite vec_almost_cauchy_iff.
        rewrite <-ps_union_countable_union_iff.
        intros n; apply (Hinter ({| pos := /(1 + INR n); cond_pos := recip_pos n|})).
     ++ intros omega Hnot.
        simpl. now push_neg_in Hnot.
 Qed.
-
-Instance rv_max_sum_shift (X : nat -> Ts -> R) (m n : nat) 
-         {rv : forall (n:nat), RandomVariable dom borel_sa (X n)} :
-  let Sum := fun j => (rvsum (fun k w => X (k+m)%nat w) j) in
-  RandomVariable dom borel_sa (rvmaxlist (fun k : nat => rvabs (Sum k)) n).
-Proof.
-  apply rvmaxlist_rv; intros.
-  apply rvabs_rv.
-  apply rvsum_rv; intros.
-  apply rv.
-Defined.
-
-Transparent rv_max_sum_shift.
 
 Lemma Lim_seq_le (u v : nat -> R):
   (forall n, u n <= v n) -> Rbar_le (Lim_seq u) (Lim_seq v).
@@ -2544,7 +2558,7 @@ Lemma vec_Ash_6_2_1_helper {size:nat} (X : nat -> Ts -> vector R size) (eps : po
           (Rbar_div_pos (LimSup_seq (sum_n (fun n => SimpleExpectation (rvinner (X (n + m)%nat) (X (n + m)%nat))))) (mkposreal _ (sqr_pos eps))).
 Proof.
   intros.
-  generalize (ash_6_1_4 X); intros.
+  generalize (vec_ash_6_1_4 X); intros.
   specialize (H eps m _ _ HC).
   simpl in H.
   generalize (Lim_seq_le _ _ H); intros.
@@ -2686,8 +2700,8 @@ Qed.
     Proof.
       intros.
       unfold Sum.
-      rewrite Ash_6_2_1_helper3; trivial.
-      generalize (Ash_6_2_1_helper X eps (S m) HC); intros.
+      rewrite vec_Ash_6_2_1_helper3; trivial.
+      generalize (vec_Ash_6_2_1_helper X eps (S m) HC); intros.
       simpl in H.
       rewrite Lim_seq_ext with
           (v :=  fun n : nat =>
@@ -2737,23 +2751,23 @@ Qed.
      is_lim_seq (fun m => ps_P (union_of_collection (fun k => event_ge dom (rvnorm (vecrvminus (Sum (k + (S m))%nat) (Sum m))) eps))) 0. 
     Proof.
       intros.
-      generalize (Ash_6_2_1_helper2 X eps H); intros.
+      generalize (vec_Ash_6_2_1_helper2 X eps H); intros.
       assert (forall m, 
                  0 <= (fun m : nat =>
                                 ps_P
                                   (union_of_collection
                                      (fun k : nat =>
-                                        event_ge dom (rvabs (rvminus (Sum (k + S m)%nat) (Sum m))) eps))) m <=
+                                        event_ge dom (rvnorm (vecrvminus (Sum (k + S m)%nat) (Sum m))) eps))) m <=
                  (fun m : nat =>
           Rbar_div_pos
             (LimSup_seq
-               (sum_n (fun n : nat => SimpleExpectation (rvsqr (X (n + (S m))%nat)))))
+               (sum_n (fun n : nat => SimpleExpectation (rvinner  (X (n + (S m))%nat)  (X (n + (S m))%nat)))))
             {| pos := eps²; cond_pos := sqr_pos eps |}) m).
       {
         intros.
         split.
         - apply ps_pos.
-        - generalize (Ash_6_2_1_helper4 X eps m HC); intros.
+        - generalize (vec_Ash_6_2_1_helper4 X eps m HC); intros.
           unfold Sum in H1.
           generalize (LimSup_seq_series H); intros.
           rewrite H2 in H1.
@@ -2767,19 +2781,22 @@ Qed.
       apply is_lim_seq_const.
    Qed.
     
-    Lemma Ash_6_2_1_helper6a (X : nat -> Ts -> R) (eps : posreal) (N : nat) 
-      {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))} :
+    Lemma vec_Ash_6_2_1_helper6a {size:nat} (X : nat -> Ts -> vector R size) (eps : posreal) (N : nat) 
+      {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))} :
       event_sub
-        (exist sa_sigma _ (sa_sigma_not_cauchy X eps N))
-        (union_of_collection (fun k => event_ge dom (rvabs (rvminus (X (k + (S N))%nat) (X N))) (eps/2))).
+        (exist sa_sigma _ (vec_sa_sigma_not_cauchy X eps N))
+        (union_of_collection (fun k => event_ge dom (rvnorm (vecrvminus (X (k + (S N))%nat) (X N))) (eps/2))).
       Proof.
         unfold rvabs.
         intro x; simpl; intros.
         destruct H as [n [m [? [? ?]]]].
-        destruct (Rge_dec (Rabs (X n x - X N x)) (eps/2)).
+        destruct (Rge_dec (hilbert.Hnorm (minus (X n x) (X N x))) (eps/2)).
         - destruct (n == N).
           ++ rewrite e in r.
-             rewrite Rminus_eq_0 in r.
+             rewrite minus_eq_zero in r.
+      Admitted.
+(*      
+             rewrite (@hilbert.norm_zero (@Rvector_PreHilbert size)) in r.
              rewrite Rabs_R0 in r.
              generalize (is_pos_div_2 eps); intros; lra.
           ++ assert (n > N)%nat by (destruct H; try lia;firstorder).
@@ -2800,29 +2817,29 @@ Qed.
              replace (m - S N + S N)%nat with (m) by lia.
              now rewrite Rabs_minus_sym.
       Qed.
-
-    Lemma Ash_6_2_1_helper6b (X : nat -> Ts -> R) (eps : posreal) (N : nat) 
-      {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))} :
+ *)
+      
+    Lemma vec_Ash_6_2_1_helper6b {size:nat} (X : nat -> Ts -> vector R size) (eps : posreal) (N : nat) 
+      {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))} :
       event_sub
-        (union_of_collection (fun k => event_ge dom (rvabs (rvminus (X (k + (S N))%nat) (X N))) eps))
-        (exist sa_sigma _ (sa_sigma_not_cauchy X eps N)).
+        (union_of_collection (fun k => event_ge dom (rvnorm (fun omega => minus (X (k + (S N))%nat omega) (X N omega))) eps))
+        (exist sa_sigma _ (vec_sa_sigma_not_cauchy X eps N)).
       Proof.
-        unfold rvabs.
+        unfold rvnorm.
         intro x; simpl; intros.
         destruct H.
         exists (x0 + S N)%nat.
         exists N.
-        rewrite rvminus_unfold in H.
         split; try lia.
         split; try lia; trivial.
     Qed.
 
-  Lemma Ash_6_2_1_helper6  (X : nat -> Ts -> R) 
-        {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))} :
+  Lemma vec_Ash_6_2_1_helper6 {size:nat} (X : nat -> Ts -> vector R size) 
+        {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))} :
     (forall (eps:posreal), 
-        is_lim_seq (fun m => ps_P (union_of_collection (fun k => event_ge dom (rvabs (rvminus (X (k + (S m))%nat) (X m))) eps))) 0) <->
+        is_lim_seq (fun m => ps_P (union_of_collection (fun k => event_ge dom (rvnorm (vecrvminus (X (k + (S m))%nat) (X m))) eps))) 0) <->
     (forall (eps:posreal), 
-        is_lim_seq (fun N => ps_P (exist sa_sigma _ (sa_sigma_not_cauchy X eps N))) 0).
+        is_lim_seq (fun N => ps_P (exist sa_sigma _ (vec_sa_sigma_not_cauchy X eps N))) 0).
     Proof.
       split; intros.
       - generalize (is_pos_div_2 eps); intros.
@@ -2833,12 +2850,12 @@ Qed.
                       ps_P
                         (union_of_collection
                            (fun k : nat =>
-                              event_ge dom (rvabs (rvminus (X (k + S m)%nat) (X m)))
+                              event_ge dom (rvnorm (vecrvminus (X (k + S m)%nat) (X m)))
                                        {| pos := eps / 2; cond_pos := H0 |})))).
         + intros; split.
           * apply ps_pos.
           * apply ps_sub.
-            apply Ash_6_2_1_helper6a.
+            apply vec_Ash_6_2_1_helper6a.
         + apply is_lim_seq_const.
         + apply H.
      - specialize (H eps).
@@ -2849,17 +2866,17 @@ Qed.
            (exist sa_sigma
               (fun omega : Ts =>
                exists n m : nat,
-                 (n >= N)%nat /\ (m >= N)%nat /\ Rabs (X n omega - X m omega) >= eps)
-              (sa_sigma_not_cauchy X eps N)))).
+                 (n >= N)%nat /\ (m >= N)%nat /\ hilbert.Hnorm (minus (X n omega) (X m omega)) >= eps)
+              (vec_sa_sigma_not_cauchy X eps N)))).
        + intros; split.
          * apply ps_pos.
          * apply ps_sub.
-           apply Ash_6_2_1_helper6b.
+           apply vec_Ash_6_2_1_helper6b.
        + apply is_lim_seq_const.
        + apply H.
    Qed.            
 
-  Lemma cauchy_seq_at_ex_series {A : Type} (X : nat -> A -> R)
+  Lemma vec_cauchy_seq_at_ex_series {A : Type} (X : nat -> A -> R)
       : forall x:A,
         cauchy_seq_at x (fun (n : nat) (omega : A) => sum_n (fun n0 : nat => X n0 omega) n)
         -> ex_series (fun n => X n x).
@@ -2875,35 +2892,37 @@ Qed.
       specialize (Hx (mkposreal eps H)); eauto.
     Qed.
 
-  Lemma Ash_6_2_1 (X : nat -> Ts -> R)
-      {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
+  Lemma vec_Ash_6_2_1 {size:nat} (X : nat -> Ts -> vector R size)
+      {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
-      (HC : forall n, 
-          rv_eq (SimpleConditionalExpectationSA (X n) (filtration_history n X)) (const 0))  :
-    ex_series (fun n => SimpleExpectation (rvsqr (X n))) ->
-    almost Prts (fun (x : Ts) => ex_series (fun n => X n x)).
+      (HC : forall n, rv_eq (vector_SimpleConditionalExpectationSA (X n) (vec_filtration_history n X)) (const zero)) :
+    ex_series (fun n => SimpleExpectation (rvinner (X n) (X n))) ->
+    almost Prts (fun (x : Ts) => ex_series (fun n => rvinner (X n) (X n) x)).
   Proof.
     intros.
-    generalize (almost_cauchy_is_lim_seq_iff (rvsum X)); intros.
-    generalize (Ash_6_2_1_helper6 (rvsum X)); intros.
+    generalize (vec_almost_cauchy_is_lim_seq_iff (rvsumvec X)); intros.
+    generalize (vec_Ash_6_2_1_helper6 (rvsumvec X)); intros.
     rewrite <- H1 in H0.
     clear H1.
-    generalize (Ash_6_2_1_helper5 X HC H); intros.
+    generalize (vec_Ash_6_2_1_helper5 X HC H); intros.
     simpl in H1.
     rewrite <- H0 in H1.
     unfold almost.
     destruct H1 as [E HE].
     exists E. destruct HE. split; trivial.
     intros.  specialize (H2 x H3).
-    apply cauchy_seq_at_ex_series.
+Admitted.
+(*
+    apply vec_cauchy_seq_at_ex_series.
     apply H2.
   Qed.
-
-  Lemma induced_sigma_scale (X : nat -> Ts -> R) (b : nat -> R)
-      {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
+*)
+(*
+  Lemma induced_sigma_scale {size:nat} (X : nat -> Ts -> vector R size) (b : nat -> R)
+      {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))} :
     (forall n, b n <> 0) ->
-    forall n, Forall2 dsa_equiv (induced_sigma_generators (frf n)) (induced_sigma_generators (frfscale (/ b n) (X n))).
+    forall n, Forall2 dsa_equiv (vec_induced_sigma_generators (frf n)) (vec_induced_sigma_generators (frfscale (/ b n) (X n))).
   Proof.
     intros.
     unfold induced_sigma_generators, SimpleExpectation.induced_sigma_generators_obligation_1.
@@ -2919,32 +2938,33 @@ Qed.
     - subst; lra.
     - apply Rmult_eq_reg_l in H1; trivial.
   Qed.
-
-  Lemma filtration_history_scale (X : nat -> Ts -> R) (b : nat -> R)
-      {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
+*)
+  Lemma filtration_history_scale {size:nat} (X : nat -> Ts -> vector R size) (b : nat -> R)
+      {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))} :
     (forall n, b n <> 0) ->
-    forall n, Forall2 dsa_equiv (filtration_history n X) (filtration_history n (fun n0 : nat => rvscale (/ b n0) (X n0))).
+    forall n, Forall2 dsa_equiv (vec_filtration_history n X) (vec_filtration_history n (fun n0 : nat => vecrvscale (/ b n0) (X n0))).
   Proof.
     induction n.
     - now simpl.
     - simpl.
       apply refine_dec_sa_partitions_proper.
+  Admitted.
+(*
       + now apply induced_sigma_scale.
       + apply IHn.
   Qed.
+ *)
   
-  Lemma SCESA_scale (X : nat -> Ts -> R) (b : nat -> R)
-      {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
+  Lemma SCESA_scale {size:nat} (X : nat -> Ts -> vector R size) (b : nat -> R)
+      {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
-      (HC : forall n, 
-          rv_eq (SimpleConditionalExpectationSA (X n) (filtration_history n X))
-                (const 0))  :
+      (HC : forall n, rv_eq (vector_SimpleConditionalExpectationSA (X n) (vec_filtration_history n X)) (const zero)) :
     (forall n, b n <> 0) ->
-    forall n, rv_eq (SimpleConditionalExpectationSA 
-                (rvscale (/ (b n)) (X n))           
-                (filtration_history n (fun n0 : nat => rvscale (/ b n0) (X n0))))
-              (const 0).
+    forall n, rv_eq (vector_SimpleConditionalExpectationSA 
+                (vecrvscale (/ (b n)) (X n))           
+                (vec_filtration_history n (fun n0 : nat => vecrvscale (/ b n0) (X n0))))
+              (const (vector_const 0 size)).
   Proof.
     intros bneq n.
     transitivity (SimpleConditionalExpectationSA (rvmult (const (/ b n)) (X n))
