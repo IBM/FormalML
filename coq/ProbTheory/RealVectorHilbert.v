@@ -258,7 +258,7 @@ Section Rvector_defs.
     apply map_ext; intros.
     lra.
   Qed.
-
+  
   Definition Rvector_ModuleSpace_mixin : ModuleSpace.mixin_of R_Ring Rvector_AbelianGroup
         := ModuleSpace.Mixin R_Ring Rvector_AbelianGroup
                              Rvector_scale Rvector_scale_scale Rvector_scale1
@@ -267,6 +267,16 @@ Section Rvector_defs.
   Canonical Rvector_ModuleSpace :=
     ModuleSpace.Pack R_Ring (vector R n) (ModuleSpace.Class R_Ring (vector R n) Rvector_AbelianGroup_mixin Rvector_ModuleSpace_mixin) (vector R n).
 
+  Lemma Rvector_scale_inj (c:R) (x y:vector R n) :
+    c <> 0%R -> c .* x = c .* y  -> x = y.
+  Proof.
+    intros.
+    apply (f_equal (Rvector_scale (/ c))) in H0.
+    repeat rewrite Rvector_scale_scale in H0.
+    repeat rewrite Rinv_l in H0 by trivial.
+    now repeat rewrite Rvector_scale1 in H0.
+  Qed.
+  
   Lemma Rvector_inner_comm (x y:vector R n) : x ⋅ y = y ⋅ x.
   Proof.
     unfold Rvector_inner.
