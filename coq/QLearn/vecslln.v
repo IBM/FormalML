@@ -2899,7 +2899,7 @@ lra.
              exists (n - (S N))%nat.
              unfold vecrvminus.
              now replace (n - S N + S N)%nat with (n) by lia.
-
+        - (*generalize (norm_triangle (minus (X n x) (X N x)) (minus (X N x) (X m x)));intros. *)
       (*-generalize (Rabs_triang (X n x - X N x) (X N x - X m x));intros.
           replace  (X n x - X N x + (X N x - X m x)) with (X n x - X m x) in H2 by lra.
           assert (Rabs (X N x - X m x) >= eps/2) by lra.
@@ -2973,7 +2973,7 @@ lra.
        + apply H.
    Qed.            
 
-  Lemma vec_cauchy_seq_at_ex_series {A : Type} (X : nat -> A -> R)
+  Lemma cauchy_seq_at_ex_series {A : Type} (X : nat -> A -> R)
       : forall x:A,
         cauchy_seq_at x (fun (n : nat) (omega : A) => sum_n (fun n0 : nat => X n0 omega) n)
         -> ex_series (fun n => X n x).
@@ -3011,7 +3011,7 @@ lra.
     destruct H1 as [E HE].
     exists E. destruct HE. split; trivial.
     intros.  specialize (H2 x H3).
-    apply (vec_cauchy_seq_at_ex_series (fun k => fun x => vecrvnth i pf (X k) x)).
+    apply (cauchy_seq_at_ex_series (fun k => fun x => vecrvnth i pf (X k) x)).
     rewrite vec_cauchy_seq_at_iff in H2.
     unfold vecrvnth.
     unfold rvsumvec in H2.
