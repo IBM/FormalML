@@ -2195,7 +2195,17 @@ Proof.
                    (rvinner
                       (vecrvscalerv (vec_cutoff_indicator (S j) eps (rvsumvec (fun n => X (n +  m)%nat)))
                                     (vec_cutoff_eps_rv j eps (rvsumvec (fun n => X (n +  m)%nat))) )
-                      (X (S j + m)%nat))) by admit.
+                      (X (S j + m)%nat))).
+        {
+          subst Sum.
+          intros x.
+          unfold rvinner, vecrvscalerv.
+          rewrite Rvector_inner_scal.
+          rewrite Rvector_inner_comm.
+          rewrite Rvector_inner_scal.
+          rewrite Rvector_inner_comm.
+          trivial.
+        }
         erewrite (SimpleExpectation_ext H0).
         now apply vec_indicator_prod_cross_shift.
      + rewrite H0.
@@ -2218,6 +2228,7 @@ Proof.
    generalize (vec_cutoff_eps_succ_minus eps (fun j => Sum j x) n); intros Hcut.
    simpl in Hcut. match_destr_in Hcut; intuition.
    * unfold minus, plus, opp in Hcut; simpl in Hcut; unfold Rvector_opp in Hcut.
+     
 Admitted.
 
 (*
