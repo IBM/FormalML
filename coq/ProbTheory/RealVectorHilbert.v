@@ -1050,7 +1050,7 @@ Section more_lemmas.
   Qed.
 
   Lemma vector_nth_sum_n {n:nat} i pf k (f:nat->vector R n) :
-    vector_nth i pf (sum_n (fun j => f j) k) =
+    vector_nth i pf (sum_n f k) =
     sum_n (fun j => vector_nth i pf (f j)) k.
   Proof.
     unfold sum_n, sum_n_m, Iter.iter_nat, plus, zero; simpl.
