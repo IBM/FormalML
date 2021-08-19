@@ -2009,6 +2009,12 @@ Qed.
       now setoid_rewrite rvnorm_hnorm.
     Qed.
 
+    Lemma Rvector_opp_scale {size:nat} (X : vector R size) :
+      Rvector_opp X = Rvector_scale (-1) X.
+    Proof.
+      easy.
+    Qed.
+
     Lemma vec_ash_6_1_4 {size:nat} (X: nat -> Ts -> vector R size) (eps:posreal) (m:nat)
       {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X n)}
       {frf : forall (n:nat), FiniteRangeFunction (X n)}
@@ -2164,9 +2170,9 @@ Proof.
           unfold vec_cutoff_eps_rv, vec_cutoff_indicator, EventIndicator.
           unfold vec_cutoff_indicator_obligation_1.
           generalize (vec_cutoff_eps_succ_minus eps (fun k => Sum k w) j); intros.
-          unfold minus, plus, opp, Rvector_opp in H0; simpl in H0.
+          unfold minus, plus, opp in H0; simpl in H0.
           simpl.
-          unfold Rvector_opp in H0.
+          rewrite <- Rvector_opp_scale.
           rewrite H0.
           unfold vec_pre_cutoff_event.
           match_destr.
@@ -2178,10 +2184,8 @@ Proof.
               rewrite <- Rvector_plus_assoc.
               rewrite (Rvector_plus_comm (X (S (j + m)%nat) w) _).
               rewrite Rvector_plus_assoc.
-              rewrite Rvector_plus_comm.
-              replace ((Rvector_scale (-1) (sum_n (fun n0 : nat => X (n0 + m)%nat w) j)))
-                with (Rvector_opp (sum_n (fun n0 : nat => X (n0 + m)%nat w) j)) by reflexivity.
               rewrite Rvector_plus_inv.
+              rewrite Rvector_plus_comm.
               now rewrite Rvector_plus_zero.
             + tauto.
           - match_destr.
@@ -2197,14 +2201,13 @@ Proof.
                                     (vec_cutoff_eps_rv j eps (rvsumvec (fun n => X (n +  m)%nat))) )
                       (X (S j + m)%nat))).
         {
-          subst Sum.
-          intros x.
           unfold rvinner, vecrvscalerv.
+          intro x.
           rewrite Rvector_inner_scal.
           rewrite Rvector_inner_comm.
           rewrite Rvector_inner_scal.
           rewrite Rvector_inner_comm.
-          trivial.
+          now unfold Sum, rvsumvec.
         }
         erewrite (SimpleExpectation_ext H0).
         now apply vec_indicator_prod_cross_shift.
@@ -2228,7 +2231,7 @@ Proof.
    generalize (vec_cutoff_eps_succ_minus eps (fun j => Sum j x) n); intros Hcut.
    simpl in Hcut. match_destr_in Hcut; intuition.
    * unfold minus, plus, opp in Hcut; simpl in Hcut; unfold Rvector_opp in Hcut.
-     
+
 Admitted.
 
 (*
