@@ -3011,9 +3011,9 @@ lra.
     destruct H1 as [E HE].
     exists E. destruct HE. split; trivial.
     intros.  specialize (H2 x H3).
-Admitted.
+    apply (vec_cauchy_seq_at_ex_series (fun k => fun x => vecrvnth i pf (X k) x)).
+    Admitted.
 (*
-    apply vec_cauchy_seq_at_ex_series.
     apply H2.
   Qed.
 *)
