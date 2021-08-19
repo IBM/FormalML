@@ -2207,7 +2207,6 @@ Proof.
      intro x.
      unfold rvinner.
      unfold vec_cutoff_eps_rv.
-     admit.
      (*
      match_destr; try (do 2 rewrite Rsqr_pow2; rewrite Rminus_eq_0).
      *)
@@ -2744,7 +2743,7 @@ Qed.
        replace (S n0 + k)%nat with (S (n0 + k)%nat) by lia.
        now rewrite IHn0.
    Qed.
-   
+
    Lemma vec_sum_shift_diff {size:nat} (X : nat -> vector R size) (m a : nat) :
      minus (sum_n X (a + S m)) (sum_n X m) =
      sum_n (fun n0 : nat => X (n0 + S m)%nat) a.
@@ -2849,6 +2848,12 @@ Qed.
       apply is_lim_seq_const.
    Qed.
     
+(*
+  Import hilbert.
+  Context {I : nat}.
+  Canonical Rvector_UniformSpace := @PreHilbert_UniformSpace (@Rvector_PreHilbert I).
+  Canonical Rvector_NormedModule := @PreHilbert_NormedModule (@Rvector_PreHilbert I).
+*)
     Lemma vec_Ash_6_2_1_helper6a {size:nat} (X : nat -> Ts -> vector R size) (eps : posreal) (N : nat) 
       {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))} :
       event_sub
@@ -2869,7 +2874,8 @@ Qed.
              exists (n - (S N))%nat.
              unfold vecrvminus.
              now replace (n - S N + S N)%nat with (n) by lia.
-        - (*generalize (norm_triangle (minus (X n x) (X N x)) (minus (X N x) (X m x)));intros. *)
+        -
+          (* generalize (@norm_triangle R_AbsRing _ (@minus (X n x) (X N x)) (minus (X N x) (X m x)));intros. *)
       (*-generalize (Rabs_triang (X n x - X N x) (X N x - X m x));intros.
           replace  (X n x - X N x + (X N x - X m x)) with (X n x - X m x) in H2 by lra.
           assert (Rabs (X N x - X m x) >= eps/2) by lra.
@@ -2959,7 +2965,6 @@ Qed.
       specialize (Hx (mkposreal eps H)); eauto.
     Qed.
 
-    Lemma sum_n_vector_nth n : forall i pf, vector_nth (fun x => sum_n )
   Lemma vec_Ash_6_2_1 {size:nat} (X : nat -> Ts -> vector R size)
       {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
@@ -2991,6 +2996,16 @@ Qed.
   Qed.
 *)
 
+  Lemma nodup_vecscaled {size:nat} (c : R) (frf_vals : list (vector R size)) :
+    c <> 0 -> map (fun v : vector R size => Rvector_scale c v) (nodup vec_Req_EM_T frf_vals) =
+            nodup vec_Req_EM_T (map (fun v : vector R size => Rvector_scale c v) frf_vals).
+  Proof.
+    intros.
+    symmetry.
+    apply nodup_map_inj; intros.
+    now apply Rvector_scale_inj in H2.
+  Qed.
+
   Lemma vec_induced_sigma_scale {size:nat} (X : nat -> Ts -> vector R size) (b : nat -> R)
       {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))} :
@@ -3002,19 +3017,17 @@ Qed.
     unfold VectorRandomVariable.vec_induced_sigma_generators_obligation_1.
     simpl.
     assert (forall n, / b n <> 0) by (intros; now apply Rinv_neq_0_compat).
-    Admitted.
-(*
-    rewrite <- nodup_scaled, map_map; trivial.
+    rewrite <- nodup_vecscaled, map_map; trivial.
     unfold rvscale, preimage_singleton.
     unfold pre_event_preimage, pre_event_singleton.
     rewrite <- Forall2_map.
     apply Forall2_refl.
     intros ??; simpl.
+    unfold vecrvscale.
     split; intros.
-    - subst; lra.
-    - apply Rmult_eq_reg_l in H1; trivial.
+    - now subst.
+    - now apply Rvector_scale_inj in H1.
   Qed.
-*)
 
   Lemma vec_filtration_history_scale {size:nat} (X : nat -> Ts -> vector R size) (b : nat -> R)
       {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
