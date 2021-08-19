@@ -2990,11 +2990,16 @@ Qed.
     rewrite vec_cauchy_seq_at_iff in H2.
     unfold vecrvnth.
     unfold rvsumvec in H2.
-    Admitted.
-(*
-    apply H2.
+    specialize (H2 i pf).
+    unfold cauchy_seq_at.
+    unfold cauchy_seq_at in H2.
+    intros.
+    destruct (H2 eps).
+    exists x0; intros.
+    rewrite <- vector_nth_sum_n.
+    rewrite <- vector_nth_sum_n.
+    now apply H4.
   Qed.
-*)
 
   Lemma nodup_vecscaled {size:nat} (c : R) (frf_vals : list (vector R size)) :
     c <> 0 -> map (fun v : vector R size => Rvector_scale c v) (nodup vec_Req_EM_T frf_vals) =
@@ -3054,6 +3059,22 @@ Qed.
               (const (vector_const 0 size)).
   Proof.
     intros bneq n.
+    unfold vector_SimpleConditionalExpectationSA.
+    intro x.
+    unfold const.
+    simpl.
+    rewrite vector_of_funs_vector_create.
+    unfold vector_const.
+    apply vector_create_ext.
+    intros.
+    assert (rv_eq 
+              (vector_nth i pf2
+                          (fun_to_vector_to_vector_of_funs (vecrvscale (/ b n) (X n))))
+              (fun x : Ts => vector_nth i pf2 (vecrvscale (/ b n) (X n) x))).
+    {
+       intro z. 
+       now rewrite vector_nth_fun_to_vector.
+    }
     Admitted.
 (*
     transitivity (SimpleConditionalExpectationSA (rvmult (const (/ b n)) (X n))
