@@ -1756,22 +1756,11 @@ Lemma vec_filtration_history_rvsum_var_const_shift {size:nat} (X : nat -> Ts -> 
            reflexivity.
         -- simpl.
            now rewrite <- seq_S; simpl.
-      + admit.
-      + admit.
-           
-     Admitted.
-   (*
-           rewrite H3; trivial. f_equal.
-           apply H4; trivial.
-        -- rewrite <-seq_S.
-           now simpl.
       + intros.
-        unfold partition_measurable in H0.
         apply H0; trivial.
         lia.
       + intros; apply HHr; trivial; try lia.
-  Qed.
-    *)
+   Qed.
   
   Lemma vec_partition_measurable_Rmax_list_map_rvsumvec {size:nat} (j : nat) (X : nat -> Ts -> vector R size)
         {rv : forall n, RandomVariable dom (Rvector_borel_sa size) (X n)}
@@ -2996,7 +2985,9 @@ lra.
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
       (HC : forall n, rv_eq (vector_SimpleConditionalExpectationSA (X n) (vec_filtration_history n X)) (const zero)) :
     ex_series (fun n => SimpleExpectation (rvinner (X n) (X n))) ->
-    almost Prts (fun (x : Ts) => ex_series (fun n => rvinner (X n) (X n) x)).
+    almost Prts (fun (x : Ts) => 
+                   (forall (i:nat) (pf : (i<size)%nat),
+                       ex_series (fun k => (vecrvnth i pf (X k)) x))).
   Proof.
     intros.
     generalize (vec_almost_cauchy_is_lim_seq_iff (rvsumvec X)); intros.
@@ -3016,17 +3007,20 @@ Admitted.
     apply H2.
   Qed.
 *)
-(*
-  Lemma induced_sigma_scale {size:nat} (X : nat -> Ts -> vector R size) (b : nat -> R)
+
+  Lemma vec_induced_sigma_scale {size:nat} (X : nat -> Ts -> vector R size) (b : nat -> R)
       {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))} :
     (forall n, b n <> 0) ->
-    forall n, Forall2 dsa_equiv (vec_induced_sigma_generators (frf n)) (vec_induced_sigma_generators (frfscale (/ b n) (X n))).
+    forall n, Forall2 dsa_equiv (vec_induced_sigma_generators (frf n)) (vec_induced_sigma_generators (frf_vecrvscale (/ b n) (X n))).
   Proof.
     intros.
-    unfold induced_sigma_generators, SimpleExpectation.induced_sigma_generators_obligation_1.
+    unfold vec_induced_sigma_generators.
+    unfold VectorRandomVariable.vec_induced_sigma_generators_obligation_1.
     simpl.
     assert (forall n, / b n <> 0) by (intros; now apply Rinv_neq_0_compat).
+    Admitted.
+(*
     rewrite <- nodup_scaled, map_map; trivial.
     unfold rvscale, preimage_singleton.
     unfold pre_event_preimage, pre_event_singleton.
@@ -3038,7 +3032,8 @@ Admitted.
     - apply Rmult_eq_reg_l in H1; trivial.
   Qed.
 *)
-  Lemma filtration_history_scale {size:nat} (X : nat -> Ts -> vector R size) (b : nat -> R)
+
+  Lemma vec_filtration_history_scale {size:nat} (X : nat -> Ts -> vector R size) (b : nat -> R)
       {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))} :
     (forall n, b n <> 0) ->
@@ -3048,14 +3043,11 @@ Admitted.
     - now simpl.
     - simpl.
       apply refine_dec_sa_partitions_proper.
-  Admitted.
-(*
-      + now apply induced_sigma_scale.
+      + now apply vec_induced_sigma_scale.
       + apply IHn.
   Qed.
- *)
   
-  Lemma SCESA_scale {size:nat} (X : nat -> Ts -> vector R size) (b : nat -> R)
+  Lemma vec_SCESA_scale {size:nat} (X : nat -> Ts -> vector R size) (b : nat -> R)
       {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
       (HC : forall n, rv_eq (vector_SimpleConditionalExpectationSA (X n) (vec_filtration_history n X)) (const zero)) :
@@ -3066,6 +3058,8 @@ Admitted.
               (const (vector_const 0 size)).
   Proof.
     intros bneq n.
+    Admitted.
+(*
     transitivity (SimpleConditionalExpectationSA (rvmult (const (/ b n)) (X n))
                                                  (filtration_history n X)).
     { 
@@ -3086,16 +3080,20 @@ Admitted.
         intros.
         now unfold const.
   Qed.
-      
-  Lemma Ash_6_2_2 (X : nat -> Ts -> R) (b : nat -> R)
-      {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
+ *)
+  
+  Lemma vec_Ash_6_2_2 {size:nat} (X : nat -> Ts -> vector R size) (b : nat -> R)
+      {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
-      (HC : forall n, 
-          rv_eq (SimpleConditionalExpectationSA (X n) (filtration_history n X)) (const 0))  :
+      (HC : forall n, rv_eq (vector_SimpleConditionalExpectationSA (X n) (vec_filtration_history n X)) (const zero)) :
     (forall n, 0 < b n < b (S n)) ->
     is_lim_seq b p_infty ->
-    ex_series (fun n => SimpleExpectation (rvsqr (rvscale (/ (b n)) (X n)))) ->
-    almost Prts (fun (x : Ts) => is_lim_seq (fun n => (rvscale (/ (b n)) (rvsum X n)) x) 0). 
+    ex_series (fun n => SimpleExpectation (rvinner (vecrvscale (/ (b n)) (X n))
+                                                   (vecrvscale (/ (b n)) (X n)))) ->
+    almost Prts 
+           (fun (x : Ts) => 
+              (forall (i:nat) (pf : (i<size)%nat),
+                  is_lim_seq (fun n => (rvscale (/ (b n)) (rvsum (fun k => (vecrvnth i pf (X k))) n)) x) 0)). 
   Proof.
     intros.
     assert (bneq0:forall n, b n <> 0).
@@ -3104,21 +3102,24 @@ Admitted.
       apply Rgt_not_eq.
       apply H.
     }
-    generalize (SCESA_scale X b HC bneq0); intros.
-    generalize (Ash_6_2_1 (fun n => rvscale (/ (b n)) (X n)) H2 H1); intros.
+    generalize (vec_SCESA_scale X b HC bneq0); intros.
+    generalize (vec_Ash_6_2_1 (fun n => vecrvscale (/ (b n)) (X n)) H2 H1); intros.
     destruct H3 as [? [? ?]].
     exists x.
     split; trivial.
     intros.
-    generalize (ash_6_1_3_strong H H0 (H4 x0 H5)); intros.
+    generalize (ash_6_1_3_strong H H0 (H4 x0 H5 i pf)); intros.
     eapply is_lim_seq_ext; try (apply H6).
     intros; simpl.
-    unfold rvsum, rvscale, Rdiv.
+    unfold rvsum, rvscale, Rdiv, vecrvnth, vecrvscale.
     rewrite Rmult_comm.
     f_equal.
     apply sum_n_ext.
     intros.
+    unfold Rvector_scale.
+    rewrite vector_nth_map.
     simpl; field.
     apply Rgt_not_eq.
     apply H.
 Qed.
+
