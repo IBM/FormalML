@@ -2173,6 +2173,12 @@ Proof.
           - match_destr.
             + rewrite Rvector_scale1.
               unfold Sum, rvsumvec.
+              rewrite sum_Sn.
+              unfold plus; simpl.
+              rewrite <- Rvector_plus_assoc.
+              rewrite (Rvector_plus_comm (X (S (j + m)%nat) w) _).
+              rewrite Rvector_plus_assoc.
+              rewrite Rvector_plus_comm.
               admit.
             + tauto.
           - match_destr.
@@ -2751,8 +2757,7 @@ Qed.
      intros s k.
      rewrite Rvector_plus_comm.
      rewrite Rvector_plus_assoc.
-     rewrite (Rvector_plus_comm _ k).
-     rewrite Rvector_plus_inv.
+     rewrite Rvector_inv_plus.
      rewrite Rvector_plus_comm.
      apply Rvector_plus_zero.
    Qed.
@@ -2887,8 +2892,7 @@ Qed.
           + rewrite <- Rvector_plus_assoc. 
             f_equal.
             rewrite Rvector_plus_assoc.
-            rewrite (Rvector_plus_comm (Rvector_opp (X N x)) (X N x)).
-            rewrite Rvector_plus_inv.
+            rewrite Rvector_inv_plus.
             rewrite Rvector_plus_comm.
             now rewrite Rvector_plus_zero.
       Qed.
