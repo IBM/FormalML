@@ -2744,40 +2744,14 @@ Qed.
        replace (S n0 + k)%nat with (S (n0 + k)%nat) by lia.
        now rewrite IHn0.
    Qed.
-
-
-Lemma vec_sum_split {size:nat} (f : nat -> vector R size) (n1 n2 m : nat) :
-  (n1 <= m)%nat -> (m < n2)%nat -> 
-  sum_n_m f n1 n2 = plus (sum_n_m f n1 m) (sum_n_m f (S m) n2).
-Proof.
-  intros.
-  unfold sum_n_m.
-  unfold Iter.iter_nat.
-  repeat rewrite Iter.iter_iter'.
-  unfold Iter.iter'.
-  rewrite iota_is_an_annoying_seq.
-  rewrite (iota_is_an_annoying_seq n1  (S m - n1)).
-  rewrite (iota_is_an_annoying_seq (S m) (S n2 - S m)).  
-  replace (S n2 - n1)%nat with ((S m - n1) + (S n2 - S m))%nat by lia.
-  rewrite seq_plus.
-  rewrite List.fold_right_app.
- Admitted.
-(*
-  rewrite fold_right_plus_acc.
-  replace (n1 + (S m - n1))%nat with (S m) by lia.
-  unfold plus, zero.
-  simpl.
-  lra.
-Qed.
-*)
-
+   
    Lemma vec_sum_shift_diff {size:nat} (X : nat -> vector R size) (m a : nat) :
      minus (sum_n X (a + S m)) (sum_n X m) =
      sum_n (fun n0 : nat => X (n0 + S m)%nat) a.
    Proof.
      rewrite <- vec_sum_n_m_shift.
      unfold sum_n.
-     rewrite vec_sum_split with (m0 := m); try lia.
+     rewrite sum_split with (m0 := m); try lia.
      unfold minus,plus,opp; simpl.
      generalize (sum_n_m X 0 m) as k.
      generalize (sum_n_m X (S m) (a + S m)).
@@ -2789,10 +2763,6 @@ Qed.
      rewrite Rvector_plus_comm.
      apply Rvector_plus_zero.
    Qed.
-(*     
-lra.
-   Qed.
- *)
    
   Lemma vec_Ash_6_2_1_helper4 {size:nat} (X : nat -> Ts -> vector R size) (eps : posreal) (m : nat) 
       {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}

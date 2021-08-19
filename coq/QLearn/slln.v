@@ -2358,7 +2358,8 @@ Qed.
    Proof.
      rewrite <- sum_n_m_shift.
      unfold sum_n.
-     rewrite sum_split with (m := m); try lia.
+     rewrite sum_split with (m0 := m); try lia.
+     unfold plus; simpl.
      lra.
    Qed.
 

@@ -85,15 +85,15 @@ Proof.
     now rewrite <- Rmax_assoc.
 Qed.
 
-Lemma fold_right_plus_acc (f : nat -> R) (acc : R) (l : list nat) :
-  List.fold_right (fun (i : nat) (acc : R) => f i + acc) acc l =
-  List.fold_right (fun (i : nat) (acc : R) => f i + acc) 0 l + acc.
+Lemma fold_right_plus_acc {G: AbelianGroup} (f : nat -> G) (acc : G) (l : list nat) :
+  List.fold_right (fun (i : nat) (acc : G) => plus (f i) acc) acc l =
+  plus (List.fold_right (fun (i : nat) (acc : G) => plus (f i) acc) zero l) acc.
 Proof.
   revert acc.
   induction l; simpl; intros acc.
-  - lra.
+  - now rewrite plus_zero_l.
   - rewrite IHl.
-    lra.
+    now rewrite plus_assoc.
 Qed.
 
 Lemma fold_right_rmax_const acc l c:
@@ -433,9 +433,9 @@ Proof.
     now apply is_product_iff_is_log_sum with (l := mkposreal (exp x) H1).
 Qed.
 
-Lemma sum_split (f : nat -> R) (n1 n2 m : nat) :
+Lemma sum_split {G : AbelianGroup} (f : nat -> G) (n1 n2 m : nat) :
   (n1 <= m)%nat -> (m < n2)%nat -> 
-  sum_n_m f n1 n2 = sum_n_m f n1 m + sum_n_m f (S m) n2.
+  sum_n_m f n1 n2 = plus (sum_n_m f n1 m) (sum_n_m f (S m) n2).
 Proof.
   intros.
   unfold sum_n_m.
@@ -449,10 +449,7 @@ Proof.
   rewrite seq_plus.
   rewrite List.fold_right_app.
   rewrite fold_right_plus_acc.
-  replace (n1 + (S m - n1))%nat with (S m) by lia.
-  unfold plus, zero.
-  simpl.
-  lra.
+  now replace (n1 + (S m - n1))%nat with (S m) by lia.
 Qed.
 
 Lemma nneg_sum_n_m_sq  (a : nat -> R) (n m : nat) :
@@ -864,7 +861,7 @@ Proof.
   intros.
   specialize (H Vsqle n).
   unfold sum_n in H.
-  rewrite sum_split with (m := m) in H; trivial; [|lia].
+  rewrite sum_split with (m0 := m) in H; trivial; [|lia].
   generalize (sum_bound_prod_A F sigma A n m F1); intros.
   generalize (max_prod_le (pos_sq_fun F) 0 (S m) n); intros.
   generalize (sum_bound3_max F sigma n m); intros.
@@ -873,7 +870,10 @@ Proof.
   assert (S m <= n)%nat by lia.
   specialize (H2 H3).
   generalize (Rplus_le_compat _ _ _ _ H0 H1); intros.
-  generalize (Rplus_le_compat _ _ _ _ H2 H4); intros; lra.
+  generalize (Rplus_le_compat _ _ _ _ H2 H4); intros.
+  unfold plus, zero in *.
+  simpl in *.
+  lra.
 Qed.
 
 
