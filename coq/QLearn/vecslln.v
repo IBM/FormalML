@@ -2892,16 +2892,15 @@ lra.
         - destruct (n == N).
           ++ rewrite e in r.
              rewrite minus_eq_zero in r.
-      Admitted.
-(*      
-             rewrite (@hilbert.norm_zero (@Rvector_PreHilbert size)) in r.
-             rewrite Rabs_R0 in r.
+             generalize (@hilbert.norm_zero); intros.
+             rewrite H2 in r.
              generalize (is_pos_div_2 eps); intros; lra.
           ++ assert (n > N)%nat by (destruct H; try lia;firstorder).
              exists (n - (S N))%nat.
-             rewrite rvminus_unfold.
+             unfold vecrvminus.
              now replace (n - S N + S N)%nat with (n) by lia.
-        - generalize (Rabs_triang (X n x - X N x) (X N x - X m x));intros.
+
+      (*-generalize (Rabs_triang (X n x - X N x) (X N x - X m x));intros.
           replace  (X n x - X N x + (X N x - X m x)) with (X n x - X m x) in H2 by lra.
           assert (Rabs (X N x - X m x) >= eps/2) by lra.
           destruct (m == N).
@@ -2915,7 +2914,7 @@ lra.
              replace (m - S N + S N)%nat with (m) by lia.
              now rewrite Rabs_minus_sym.
       Qed.
- *)
+ *)Admitted.
       
     Lemma vec_Ash_6_2_1_helper6b {size:nat} (X : nat -> Ts -> vector R size) (eps : posreal) (N : nat) 
       {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))} :
@@ -2990,6 +2989,7 @@ lra.
       specialize (Hx (mkposreal eps H)); eauto.
     Qed.
 
+    Lemma sum_n_vector_nth n : forall i pf, vector_nth (fun x => sum_n )
   Lemma vec_Ash_6_2_1 {size:nat} (X : nat -> Ts -> vector R size)
       {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
