@@ -1266,43 +1266,6 @@ Proof.
 Qed.
 
 (*
-    assert (pre_event_equiv
-               (fun omega : Ts =>
-                  (if Rlt_dec (Rmax_list_map (0%nat :: seq 1 n) 
-                                             (fun k : nat => hilbert.Hnorm (X k omega))) eps
-                   then X (S n) omega
-                   else vec_cutoff_eps n eps (fun k : nat => X k omega)) <= r)
-               (pre_event_union
-                  (pre_event_inter
-                     (fun omega => Rmax_list_map (0%nat :: seq 1 n) (fun k : nat => hilbert.Hnorm (X k omega)) < eps)
-                     (fun omega => X (S n) omega <= r))
-                  (pre_event_inter
-                     (pre_event_complement
-                        (fun omega => Rmax_list_map (0%nat :: seq 1 n) (fun k : nat => hilbert.Hnorm (X k omega)) < eps))
-                     (fun omega => vec_cutoff_eps n eps (fun k : nat => X k omega) <= r)))).
-    {
-      intro x; unfold pre_event_union, pre_event_inter, pre_event_complement.
-      match_destr; lra.
-    }
-    rewrite H.
-    apply sa_union.
-    + apply sa_inter.
-      * apply sa_le_lt.
-        apply max_list_measurable.
-        intros.
-        now apply Rabs_measurable.
-      * apply mrv.
-    + apply sa_inter.
-      * apply sa_complement.
-        apply sa_le_lt.
-        apply max_list_measurable.        
-        intros.
-        now apply Rabs_measurable.        
-      * apply IHn.
-  Qed. 
- *)
-
-(*
 Instance vec_nnf_cutoff_eps_rv {size:nat} (n : nat) (eps : R) (X : nat -> Ts -> vector R size) 
          {nnf: forall n, NonnegativeFunction (X n)} :
   NonnegativeFunction (cutoff_eps_rv n eps X).
@@ -1969,20 +1932,6 @@ Qed.
     apply Rvector_inner_plus.
   Qed.
 
-  Lemma rvinner_sum {size:nat} (X Y : Ts -> vector R size) :
-    rv_eq (rvinner (vecrvplus X Y) (vecrvplus X Y))
-          (rvplus (rvinner X X) 
-                  (rvplus (rvscale 2 (rvinner X Y))
-                          (rvinner Y Y))).
-    Proof.
-      intros x.
-      unfold rvinner, vecrvplus, rvplus, rvscale.
-      rewrite Rvector_inner_plus.
-      do 2 rewrite Rvector_inner_plus_r.
-      rewrite (Rvector_inner_comm (Y x) (X x)).
-      ring.
-    Qed.
-
   Lemma Rvector_inner_sum {size:nat} (X Y : vector R size) :
     (Rvector_inner (Rvector_plus X Y) (Rvector_plus X Y)) = 
     (Rplus (Rvector_inner X X) 
@@ -1995,6 +1944,16 @@ Qed.
       ring.
     Qed.
 
+  Lemma rvinner_sum {size:nat} (X Y : Ts -> vector R size) :
+    rv_eq (rvinner (vecrvplus X Y) (vecrvplus X Y))
+          (rvplus (rvinner X X) 
+                  (rvplus (rvscale 2 (rvinner X Y))
+                          (rvinner Y Y))).
+    Proof.
+      intros x.
+      unfold rvinner, vecrvplus, rvplus, rvscale.
+      now rewrite Rvector_inner_sum.
+    Qed.
 
   Lemma vecrvplus_minus {size:nat} (X Y : Ts -> vector R size) (z:Ts) :
     (X z) = (vecrvplus Y 
