@@ -251,6 +251,16 @@ Section Rvector_defs.
     apply Rvector_plus_inv.
   Qed.
 
+  Lemma Rvector_plus_inv' (x:vector R n) : x + (-1 .* x) = 0.
+  Proof.
+    apply Rvector_plus_inv.
+  Qed.
+
+  Lemma Rvector_inv_plus' (x:vector R n) : (-1 .* x) + x = 0.
+  Proof.
+    apply Rvector_inv_plus.
+  Qed.
+
   Definition Rvector_AbelianGroup_mixin : AbelianGroup.mixin_of (vector R n)
     := AbelianGroup.Mixin (vector R n) Rvector_plus Rvector_opp Rvector_zero
                           Rvector_plus_comm Rvector_plus_assoc
