@@ -1431,6 +1431,36 @@ Section SimpleConditionalExpectation.
         * now rewrite H0.
       + now apply EventIndicator_ext.
   Qed.
+
+  Lemma SimpleConditionalExpectationSA_transport (x y:Ts->R)
+        {rvx : RandomVariable dom borel_sa x}
+        {frfx : FiniteRangeFunction x}
+        (l1 l2 : list dec_sa_event)
+        (eqq:rv_eq x y) :
+    Forall2 dsa_equiv l1 l2 ->
+    rv_eq (SimpleConditionalExpectationSA x l1)
+          (SimpleConditionalExpectationSA y l2 (rv:=RandomVariable_transport eqq) (frf:=FiniteRangeFunction_transport frfx eqq)).
+  Proof.
+    now apply SimpleConditionalExpectationSA_ext.
+  Qed.
+
+  Lemma SimpleConditionalExpectationSA_pf_irrel (x:Ts->R)
+        {rv1 rv2 : RandomVariable dom borel_sa x}
+        {frf1 frf2: FiniteRangeFunction x}
+        l :
+    SimpleConditionalExpectationSA x l (rv:=rv1) (frf:=frf1) = 
+    (SimpleConditionalExpectationSA x l (rv:=rv1) (frf:=frf2)).
+  Proof.
+    unfold SimpleConditionalExpectationSA.
+    f_equal.
+    apply map_ext; intros.
+    unfold gen_simple_conditional_expectation_scale.
+    match_destr.
+    f_equal.
+    f_equal.
+    apply SimpleExpectation_pf_irrel.
+  Qed.
+
   
 (*
   Lemma sumSimpleExpectation

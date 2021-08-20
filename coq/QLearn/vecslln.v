@@ -3108,11 +3108,12 @@ Qed.
              {rv: RandomVariable dom (Rvector_borel_sa size) rv_X}
              {frf : FiniteRangeFunction rv_X} 
              (l : list dec_sa_event) :
+    is_partition_list (map dsa_event l) ->
     rv_eq
       (vector_SimpleConditionalExpectationSA (vecrvscale b rv_X) l)
       (vecrvscale b (vector_SimpleConditionalExpectationSA rv_X l)).
   Proof.
-    intro x.
+    intros isp x.
     unfold vector_SimpleConditionalExpectationSA; simpl.
     rewrite vector_of_funs_vector_create.
     unfold vecrvscale.
@@ -3121,9 +3122,26 @@ Qed.
     rewrite vector_map_create.
     apply vector_create_ext.
     intros.
-    unfold fun_to_vector_to_vector_of_funs.
+
+    assert (eqq1:rv_eq (vector_nth i pf2
+                                   (fun_to_vector_to_vector_of_funs (fun omega : Ts => vector_map (fun a : R => b * a) (rv_X omega))))
+                             (rvscale b (fun a => vector_nth i pf2 (rv_X a)))).
+    {
+      intros ?.
+      rewrite vector_nth_fun_to_vector.
+      now rewrite vector_nth_map.
+    }
+    rewrite (SimpleConditionalExpectationSA_ext _ _ _ l eqq1); [| reflexivity].
     
-     Admitted.
+    assert (eqq2:rv_eq (vector_nth i pf2 (fun_to_vector_to_vector_of_funs rv_X))
+                       (fun a => vector_nth i pf2 (rv_X a))).
+    {
+      intros ?.
+      now rewrite vector_nth_fun_to_vector.
+    }
+    rewrite (SimpleConditionalExpectationSA_ext _ _ _ l eqq2); [| reflexivity].
+    now apply SimpleConditionalExpectationSA_rvscale.
+  Qed.
 
   Lemma vec_SCESA_scale {size:nat} (X : nat -> Ts -> vector R size) (b : nat -> R)
       {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
