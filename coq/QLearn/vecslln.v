@@ -1901,30 +1901,12 @@ Qed.
                      (vec_cutoff_eps_rv j eps (rvsumvec (fun n : nat => X (n + m)%nat))))
                   (X (S (j + m))) l (HC (S (j+m)%nat)) ispart); intros.
     cut_to H.
-    - 
-
-    Admitted.
-(*
-    rewrite simple_expectation_rvinner_measurable_zero.
-    rewrite gen_conditional_tower_law with (l0 := l); trivial.
-
-    generalize (gen_conditional_scale_measurable (vecrvscalerv (vec_cutoff_indicator (S j) eps (rvsumvec Xm))
-                           (vec_cutoff_eps_rv j eps (rvsumvec Xm))) (Xm (S j)) l ispart).
-(rvmult (cutoff_eps_rv j eps (rvsum Xm))
-                                                         (cutoff_indicator (S j) eps (rvsum Xm))) (Xm (S j)) l ispart); intros.
-    unfold l in H; unfold l.
-    unfold Xm in *.
-    cut_to H.
-    - rewrite (HC ((S j)+m)%nat) in H.
-      unfold Xm in *.
-      rewrite (SimpleExpectation_ext H).
-      rewrite (SimpleExpectation_ext (rvmult_zero _)).
-      now rewrite SimpleExpectation_const.
-    - apply partition_measurable_rvmult; trivial.
-      + apply partition_measurable_cutoff_eps_shift.
-      + apply partition_measurable_cutoff_ind_shift.
+    - rewrite <-H.
+      apply SimpleExpectation_pf_irrel.
+    - apply partition_measurable_vecrvscalerv; trivial.
+      + apply vec_partition_measurable_cutoff_ind_shift.
+      + apply vec_partition_measurable_cutoff_eps_shift.
   Qed.
- *)
   
   Lemma rvnorm_hnorm {size:nat} (X : Ts -> vector R size) :
     forall omega,
@@ -3173,12 +3155,13 @@ Qed.
         now apply vec_filtration_history_scale.
     }
     rewrite vector_SimpleConditionalExpectationSA_vecrvscale.
-    rewrite HC.
-    intro x.
-    unfold vecrvscale, const.
-    unfold zero; simpl.
-    rewrite Rvector_scale_zero.
-    reflexivity.
+    - rewrite HC.
+      intro x.
+      unfold vecrvscale, const.
+      unfold zero; simpl.
+      rewrite Rvector_scale_zero.
+      reflexivity.
+    - apply vec_part_list_history.
   Qed.
   
   Lemma vec_Ash_6_2_2 {size:nat} (X : nat -> Ts -> vector R size) (b : nat -> R)

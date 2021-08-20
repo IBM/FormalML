@@ -1044,6 +1044,31 @@ Section vector_ops_ext.
      now rewrite (H0 x).
    Qed.
 
+  Lemma partition_measurable_vecrvscalerv {n} (rv_c : Ts -> R) 
+        (rv_X : Ts -> vector R n)
+        {rv : RandomVariable dom (Rvector_borel_sa n) rv_X}
+        {rvc : RandomVariable dom borel_sa rv_c}        
+        {frf : FiniteRangeFunction rv_X}
+        {frfc : FiniteRangeFunction rv_c}        
+        (l : list (event dom)) :
+    is_partition_list l ->
+     partition_measurable rv_c l ->     
+     partition_measurable (cod:=Rvector_borel_sa n) rv_X l ->     
+     partition_measurable (cod:=Rvector_borel_sa n) (vecrvscalerv rv_c rv_X) l.
+   Proof.
+     unfold partition_measurable. intros.
+     specialize (H0 H p H3).
+     specialize (H1 H p H3).
+     destruct H0 as [c0 ?].
+     destruct H1 as [c1 ?].     
+     unfold vecrvscalerv.
+     exists (Rvector_scale c0 c1).
+     intros ?; simpl; intros.
+     unfold pre_event_sub, pre_event_preimage, pre_event_singleton in *; simpl.
+     rewrite (H0 x); trivial.
+     now rewrite (H1 x).
+   Qed.
+
    Lemma partition_measurable_vecrvminus {n} (rv_X1 rv_X2 : Ts -> vector R n) 
          {rv1 : RandomVariable dom (Rvector_borel_sa n) rv_X1}
          {rv2 : RandomVariable dom (Rvector_borel_sa n) rv_X2} 
