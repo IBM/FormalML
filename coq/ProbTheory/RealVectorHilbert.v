@@ -403,13 +403,13 @@ Section Rvector_defs.
       eauto.
   Qed.
 
-  Lemma Rvector_inner_zero : 0 ⋅ 0 = 0%R.
+  Lemma Rvector_inner_zero (x:vector R n) : x ⋅ 0 = 0%R.
   Proof.
     unfold Rvector_inner; simpl.
     rewrite Rvector_mult_zero.
     apply Rvector_sum0.
   Qed.
-
+  
   Lemma Rvector_inner_zero_inv (x:vector R n) : x ⋅ x = 0%R  -> x = 0.
   Proof.
     unfold Rvector_inner.
