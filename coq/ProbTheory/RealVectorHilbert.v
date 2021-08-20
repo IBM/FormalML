@@ -329,6 +329,23 @@ Section Rvector_defs.
     now rewrite Rvector_mult_comm.
   Qed.
 
+  Lemma Rvector_sum_const c : ∑ (vector_const c n) = (INR n * c)%R.
+  Proof.
+    unfold Rvector_sum; simpl.
+    generalize (list_sum_map_const (vector_list_create 0 n (fun (m : nat) (_ : (0 <= m)%nat) (_ : (m < n)%nat) => c)) 0%R (fun _ => c%R))
+    ; intros HH.
+    rewrite vector_list_create_length in HH.
+    rewrite <- HH.
+    now rewrite vector_list_create_map; simpl.
+  Qed.
+
+  Program Lemma Rvector_sum0 : ∑ 0 = 0%R.
+  Proof.
+    unfold Rvector_zero.
+    rewrite Rvector_sum_const.
+    lra.
+  Qed.
+
   Program Lemma Rvector_sum_pos (x:vector R n) :
     (forall a, In a x -> 0%R <= a) -> 0 <= ∑ x.
   Proof.
@@ -384,6 +401,13 @@ Section Rvector_defs.
     - now apply Rsqr_0_uniq.
     - apply in_map_iff.
       eauto.
+  Qed.
+
+  Lemma Rvector_inner_zero (x:vector R n) : 0 ⋅ 0 = 0%R.
+  Proof.
+    unfold Rvector_inner; simpl.
+    rewrite Rvector_mult_zero.
+    apply Rvector_sum0.
   Qed.
 
   Lemma Rvector_inner_zero_inv (x:vector R n) : x ⋅ x = 0%R  -> x = 0.
