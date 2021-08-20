@@ -409,7 +409,23 @@ Section Rvector_defs.
     rewrite Rvector_mult_zero.
     apply Rvector_sum0.
   Qed.
-  
+
+  Lemma Rvector_inner_one_r (x:vector R n) : x ⋅ vector_const 1%R n = ∑ x.
+  Proof.
+    unfold Rvector_inner.
+    f_equal.
+    apply vector_nth_eq; intros.
+    rewrite Rvector_nth_mult.
+    rewrite vector_nth_const.
+    lra.
+  Qed.
+
+  Lemma Rvector_inner_one_l (x:vector R n) : vector_const 1%R n ⋅ x = ∑ x.
+  Proof.
+    rewrite Rvector_inner_comm.
+    apply Rvector_inner_one_r.
+  Qed.
+
   Lemma Rvector_inner_zero_inv (x:vector R n) : x ⋅ x = 0%R  -> x = 0.
   Proof.
     unfold Rvector_inner.
@@ -443,6 +459,26 @@ Section Rvector_defs.
   Proof.
     unfold Rvector_inner.
     now rewrite Rvector_scale_mult_l, Rvector_scale_sum.
+  Qed.
+
+  Lemma Rvector_scal_one c : c .* vector_const 1 n = vector_const c n.
+  Proof.
+    apply vector_nth_eq; intros.
+    rewrite vector_nth_const.
+    unfold Rvector_scale.
+    rewrite vector_nth_map, vector_nth_const.
+    lra.
+  Qed.
+
+  Lemma Rvector_inner_const_l (x:vector R n) c : vector_const c n ⋅ x = (c * ∑ x)%R.
+  Proof.
+    now rewrite <- Rvector_scal_one, Rvector_inner_scal, Rvector_inner_one_l.
+  Qed.
+
+  Lemma Rvector_inner_const_r (x:vector R n) c : x ⋅ vector_const c n  = (c * ∑ x)%R.
+  Proof.
+    rewrite Rvector_inner_comm.
+    apply Rvector_inner_const_l.
   Qed.
 
   Lemma Rvector_mult_plus_distr_r (x y z:vector R n) :
