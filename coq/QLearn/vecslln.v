@@ -1895,9 +1895,19 @@ Qed.
     pose (Xm := fun n => X (n + m)%nat).
     generalize (vec_part_list_history ((S j)+m)%nat X); intros ispart.
     simpl.
-    rewrite gen_conditional_tower_law with (l0 := l); trivial.
+    generalize (simple_expectation_rvinner_measurable_zero 
+                  (vecrvscalerv
+                     (vec_cutoff_indicator (S j) eps (rvsumvec (fun n : nat => X (n + m)%nat)))
+                     (vec_cutoff_eps_rv j eps (rvsumvec (fun n : nat => X (n + m)%nat))))
+                  (X (S (j + m))) l (HC (S (j+m)%nat)) ispart); intros.
+    cut_to H.
+    - 
+
     Admitted.
 (*
+    rewrite simple_expectation_rvinner_measurable_zero.
+    rewrite gen_conditional_tower_law with (l0 := l); trivial.
+
     generalize (gen_conditional_scale_measurable (vecrvscalerv (vec_cutoff_indicator (S j) eps (rvsumvec Xm))
                            (vec_cutoff_eps_rv j eps (rvsumvec Xm))) (Xm (S j)) l ispart).
 (rvmult (cutoff_eps_rv j eps (rvsum Xm))
