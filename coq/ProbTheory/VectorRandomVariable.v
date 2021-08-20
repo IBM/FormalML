@@ -689,7 +689,7 @@ Section vector_ops.
     apply Rvector_inner_pos.
   Qed.
 
-  Global Instance Rvector_inner_pos {n} (f g : Ts -> vector R n) :
+  Global Instance Rvector_inner_nneg_pos {n} (f g : Ts -> vector R n) :
     (forall i pf, NonnegativeFunction (fun x => vector_nth i pf (f x))) ->
     (forall i pf, NonnegativeFunction (fun x => vector_nth i pf (g x))) ->
     NonnegativeFunction (rvinner f g).

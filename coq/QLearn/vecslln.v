@@ -1983,6 +1983,19 @@ Qed.
       ring.
     Qed.
 
+  Lemma Rvector_inner_sum {size:nat} (X Y : vector R size) :
+    (Rvector_inner (Rvector_plus X Y) (Rvector_plus X Y)) = 
+    (Rplus (Rvector_inner X X) 
+           (Rplus (Rmult 2 (Rvector_inner X Y))
+                  (Rvector_inner Y Y))).
+    Proof.
+      rewrite Rvector_inner_plus.
+      do 2 rewrite Rvector_inner_plus_r.
+      rewrite (Rvector_inner_comm Y X).
+      ring.
+    Qed.
+
+
   Lemma vecrvplus_minus {size:nat} (X Y : Ts -> vector R size) (z:Ts) :
     (X z) = (vecrvplus Y 
                         (vecrvminus X Y)) z.
@@ -2229,21 +2242,26 @@ Proof.
    unfold rvinner, vecrvminus, vecrvplus, vecrvopp, vecrvscale.
    unfold vec_cutoff_eps_rv.
    generalize (vec_cutoff_eps_succ_minus eps (fun j => Sum j x) n); intros Hcut.
-   simpl in Hcut. match_destr_in Hcut; intuition.
-   * unfold minus, plus, opp in Hcut; simpl in Hcut; unfold Rvector_opp in Hcut.
+   replace ( minus (vec_cutoff_eps (S n) eps (fun j : nat => Sum j x))
+                   (vec_cutoff_eps n eps (fun j : nat => Sum j x))) with
+        (Rvector_plus (vec_cutoff_eps (S n) eps (fun k : nat => Sum k x))
+                      (Rvector_scale (-1) (vec_cutoff_eps n eps (fun k : nat => Sum k x)))) in Hcut by reflexivity.
+   rewrite Hcut.
+   match_destr.
+   * right.
+     unfold Sum, rvsumvec, minus, plus, opp; simpl.
+     rewrite sum_Sn.
+     unfold plus; simpl.
+     rewrite <- Rvector_plus_assoc.
+     rewrite (Rvector_plus_comm (X (S (n + m)%nat) x) _).
+     rewrite Rvector_plus_assoc.
+     rewrite Rvector_plus_inv.
+     rewrite Rvector_plus_comm.
+     now rewrite Rvector_plus_zero.
+   * rewrite Rvector_inner_zero.
+     apply Rvector_inner_pos.
+ Qed.
 
-Admitted.
-
-(*
-   * 
-     simpl in Hcut. match_destr_in Hcut; intuition; try (lra).
-     rewrite Hcut. unfold Sum. right.
-     f_equal. unfold rvsum. rewrite sum_Sn. unfold plus.
-     simpl. now ring_simplify.
-   * rewrite <-Rsqr_pow2. unfold Rsqr. eapply Rle_trans; try (apply pow2_ge_0).
-     lra.
-Qed.
-*)
 Lemma vec_var_sum_cross_0_offset {size:nat} (X : nat -> Ts -> vector R size) (m : nat)
       {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X n)}
       {frf : forall (n:nat), FiniteRangeFunction (X n)}
@@ -2262,30 +2280,28 @@ Proof.
       now rewrite sum_O.
   - rewrite sum_Sn.
     unfold plus; simpl.
-Admitted.
-(*
-    assert (rv_eq (rvsqr (rvsum Xm (S j)))
-                  (rvplus (rvsqr (rvsum Xm j))
+    assert (rv_eq (rvinner (rvsumvec Xm (S j)) (rvsumvec Xm (S j)))
+                  (rvplus (rvinner (rvsumvec Xm j) (rvsumvec Xm j))
                           (rvplus
                              (rvscale 2
-                                      (rvmult (rvsum Xm j) (X ((S j)+m)%nat)))
-                             (rvsqr (X ((S j)+m)%nat))))).
+                                      (rvinner (rvsumvec Xm j) (X ((S j)+m)%nat)))
+                             (rvinner (X ((S j)+m)%nat) (X ((S j)+m)%nat) )))).
     + intro x.
-      unfold Xm, rvsqr, rvplus, rvsum.
+      unfold Xm, rvinner, vecrvplus, rvsumvec.
       rewrite sum_Sn.
       unfold plus; simpl.
-      unfold Rsqr, rvscale, rvmult.
-      ring.
+      rewrite Rvector_inner_sum.
+      now unfold rvplus, rvscale; simpl.
     + rewrite (SimpleExpectation_ext H).
       rewrite <- sumSimpleExpectation.
       rewrite <- sumSimpleExpectation.
       rewrite <- scaleSimpleExpectation.
-      rewrite (expec_cross_zero_sum2_shift X m HC); try lia.
+      rewrite (vec_expec_cross_zero_sum2_shift X m HC); try lia.
       rewrite <- IHj.
       ring_simplify.
       reflexivity.
 Qed.  
-*)
+
 Lemma vec_sa_sigma_not_cauchy {size:nat} (X : nat -> Ts -> vector R size) (eps:posreal) (N : nat)
       {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X n)} :
   sa_sigma (fun omega =>
