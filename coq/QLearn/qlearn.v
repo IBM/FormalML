@@ -577,7 +577,7 @@ algorithm.
             rewrite Rmult_1_l.
             rewrite Rmult_minus_distr_l.
             rewrite Rmult_1_r.
-            apply Rge_trans with (r2 := 1 - x (S N) - sum_n x N); [ | lra].
+            apply Rge_trans with (r2 := 1 - x (S N) - sum_n x N); [ |unfold plus; simpl; lra].
             unfold Rminus.
             apply Rplus_ge_compat_l.
             ring_simplify.
@@ -1641,8 +1641,7 @@ algorithm.
     destruct H3 as [? [? ?]].
     unfold RandomVariable.frf_vals in *.
     exists x2.
-    split.
-    now rewrite nodup_In in H4.
+    rewrite nodup_In in H4.
     unfold refine_dec_sa_event in H2.
     rewrite in_map_iff in H2.
     destruct H2 as [? [? ?]].
@@ -1693,7 +1692,7 @@ algorithm.
         eapply L2_convergent_helper with (w := w) (srw := srw); trivial.
         generalize (partition_measurable_vecrvminus_F_alpha_const (x n) (α n)
                    xstar (map dsa_event (hist n)) (ispart n) (part_meas n)); intros.
-        generalize (simple_expection_rvinner_measurable_zero 
+        generalize (simple_expectation_rvinner_measurable_zero
                       (vecrvminus (F_alpha (α n) (x n)) (const xstar))
                       (w n) (hist n) (xterm n) (ispart n) H); intros.
         erewrite SimpleExpectation_pf_irrel in H0.
