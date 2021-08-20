@@ -1427,7 +1427,6 @@ Qed.
          repeat red in H0, H3.
          unfold pre_event_preimage, pre_event_singleton in *; simpl in *; intros px.
          rewrite sum_Sn.
-         Search plus.
          rewrite (plus_comm c1 c0).
          unfold plus; simpl.
          f_equal; auto.

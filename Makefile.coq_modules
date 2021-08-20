@@ -96,7 +96,8 @@ QLEARN = \
 	Dvoretzky \
         infprod \
 	sumtest \
-    slln
+   	slln \
+	vecslln
 
 
 MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
