@@ -1,5 +1,5 @@
 Require Import List.
-Require Import converge.mdp fixed_point.
+Require Import mdp fixed_point.
 Require Import RealAdd CoquelicotAdd.
 Require Import utils.Utils.
 Require Import Lra Lia.
@@ -9,6 +9,7 @@ Require Import SigmaAlgebras ProbSpace.
 Require Import DVector RealVectorHilbert VectorRandomVariable.
 Require Import RandomVariableL2.
 Require hilbert.
+Require Import vecslln.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -540,7 +541,7 @@ algorithm.
       - destruct (le_dec n N).
         + apply IHN; trivial.
           intros; apply H; lia.
-          rewrite sum_S in H0.
+          rewrite sum_Sn in H0.
           apply Rle_lt_trans with (r2 := sum_n f N + f (S N)); trivial.
           replace (sum_n f N) with ((sum_n f N) + 0) at 1 by lra.
           apply Rplus_le_compat_l.
@@ -548,7 +549,7 @@ algorithm.
         + assert (n = S N) by lia.
           rewrite H2.
           apply Rle_lt_trans with (r2 := sum_n f (S N)); trivial.
-          rewrite sum_S.
+          rewrite sum_Sn.
           replace (f (S N)) with (0 + (f (S N))) at 1 by lra.
           apply Rplus_le_compat_r.
           apply sum_n_nneg.
@@ -565,7 +566,7 @@ algorithm.
         rewrite sum_O.
         lra.
       - simpl.
-        rewrite sum_S.
+        rewrite sum_Sn.
         cut_to IHN.
         + apply Rge_trans with (r2 := (1-sum_n x N) * (1 - x (S N))).
           * apply Rmult_ge_compat_r; trivial.
