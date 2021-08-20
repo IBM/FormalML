@@ -3053,6 +3053,78 @@ Qed.
       + apply IHn.
   Qed.
   
+  Lemma vector_SimpleConditionalExpectationSA_ext {size:nat} (x y:Ts-> vector R size)
+        {rvx : RandomVariable dom (Rvector_borel_sa size) x}
+        {rvy : RandomVariable dom (Rvector_borel_sa size) y}        
+        {frfx : FiniteRangeFunction x}
+        {frfy : FiniteRangeFunction y}        
+        (l1 l2 : list dec_sa_event) :
+    rv_eq x y ->
+    Forall2 dsa_equiv l1 l2 ->
+    rv_eq (vector_SimpleConditionalExpectationSA x l1)
+          (vector_SimpleConditionalExpectationSA y l2).
+  Proof.
+    repeat red; intros.
+    unfold vector_SimpleConditionalExpectationSA.
+    simpl.
+    rewrite vector_of_funs_vector_create.
+    rewrite vector_of_funs_vector_create.    
+    apply vector_create_ext.
+    intros.
+    apply SimpleConditionalExpectationSA_ext; trivial.
+    intro z.
+    unfold fun_to_vector_to_vector_of_funs.
+    rewrite vector_nth_create.
+    rewrite vector_nth_create.    
+    now rewrite H.
+ Qed.
+
+  Lemma SimpleConditionalExpectationSA_rvscale (c:R)
+        (rv_X : Ts -> R)
+        {rv : RandomVariable dom borel_sa rv_X}
+        {frf : FiniteRangeFunction rv_X}
+        (l : list dec_sa_event) :
+    is_partition_list (map dsa_event l) ->
+    rv_eq (SimpleConditionalExpectationSA (rvscale c rv_X) l)
+          (rvscale c (SimpleConditionalExpectationSA rv_X l  )).
+  Proof.
+    intros.
+    transitivity (SimpleConditionalExpectationSA (rvmult (const c) rv_X) l).
+    { 
+      apply SimpleConditionalExpectationSA_ext.
+      - intros x.
+        now unfold rvscale, rvmult, const.
+      - easy.
+    }
+    apply gen_conditional_scale_measurable; trivial.
+    unfold partition_measurable; intros.
+    exists c.
+    repeat red.
+    reflexivity.
+  Qed.
+
+  Lemma vector_SimpleConditionalExpectationSA_vecrvscale {size:nat} 
+             (rv_X : Ts -> vector R size) (b : R) 
+             {rv: RandomVariable dom (Rvector_borel_sa size) rv_X}
+             {frf : FiniteRangeFunction rv_X} 
+             (l : list dec_sa_event) :
+    rv_eq
+      (vector_SimpleConditionalExpectationSA (vecrvscale b rv_X) l)
+      (vecrvscale b (vector_SimpleConditionalExpectationSA rv_X l)).
+  Proof.
+    intro x.
+    unfold vector_SimpleConditionalExpectationSA; simpl.
+    rewrite vector_of_funs_vector_create.
+    unfold vecrvscale.
+    rewrite vector_of_funs_vector_create.
+    unfold Rvector_scale.
+    rewrite vector_map_create.
+    apply vector_create_ext.
+    intros.
+    unfold fun_to_vector_to_vector_of_funs.
+    
+     Admitted.
+
   Lemma vec_SCESA_scale {size:nat} (X : nat -> Ts -> vector R size) (b : nat -> R)
       {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
@@ -3064,45 +3136,22 @@ Qed.
               (const (vector_const 0 size)).
   Proof.
     intros bneq n.
-    unfold vector_SimpleConditionalExpectationSA.
-    intro x.
-    unfold const.
-    simpl.
-    rewrite vector_of_funs_vector_create.
-    unfold vector_const.
-    apply vector_create_ext.
-    intros.
-    assert (rv_eq 
-              (vector_nth i pf2
-                          (fun_to_vector_to_vector_of_funs (vecrvscale (/ b n) (X n))))
-              (fun x : Ts => vector_nth i pf2 (vecrvscale (/ b n) (X n) x))).
-    {
-       intro z. 
-       now rewrite vector_nth_fun_to_vector.
-    }
-    Admitted.
-(*
-    transitivity (SimpleConditionalExpectationSA (rvmult (const (/ b n)) (X n))
-                                                 (filtration_history n X)).
+    transitivity (vector_SimpleConditionalExpectationSA (vecrvscale (/ b n) (X n))
+                                                 (vec_filtration_history n X)).
     { 
-      apply SimpleConditionalExpectationSA_ext.
-      - intros x.
-        now unfold rvscale, rvmult, const.
+      apply vector_SimpleConditionalExpectationSA_ext.
+      - easy.
       - symmetry.
-        now apply filtration_history_scale.
+        now apply vec_filtration_history_scale.
     }
-    rewrite (gen_conditional_scale_measurable (const (/ (b n))) (X n) (filtration_history n X)); intros.
-    - rewrite HC.
-      intros ?; rv_unfold; lra.
-    - apply part_list_history.
-    - apply partition_constant_measurable.
-      + apply part_list_history.
-      + intros.
-        exists (/ b n).
-        intros.
-        now unfold const.
+    rewrite vector_SimpleConditionalExpectationSA_vecrvscale.
+    rewrite HC.
+    intro x.
+    unfold vecrvscale, const.
+    unfold zero; simpl.
+    rewrite Rvector_scale_zero.
+    reflexivity.
   Qed.
- *)
   
   Lemma vec_Ash_6_2_2 {size:nat} (X : nat -> Ts -> vector R size) (b : nat -> R)
       {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
