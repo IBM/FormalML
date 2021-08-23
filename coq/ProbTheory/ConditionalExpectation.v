@@ -268,80 +268,95 @@ Proof.
   tauto.
 Qed.
 
-Lemma NonnegExpectation_prob_space_sa_sub_le
-      dom2 sub x
-      {rv:RandomVariable dom2 borel_sa x}
-      {pofrf:NonnegativeFunction x}
-  :
-    Rbar_le (@NonnegExpectation Ts dom2 (prob_space_sa_sub dom2 sub) x pofrf)
-            (@NonnegExpectation Ts dom prts x pofrf).
-
-Proof.
-  unfold NonnegExpectation.
-  unfold SimpleExpectationSup.
-  eapply is_lub_Rbar_subset; [| try eapply Lub_Rbar_correct..]; simpl.
-  intros ? [? [? [? [??]]]].
-  exists x1.
-  exists (RandomVariable_sa_sub _ sub x1).
-  exists x3.
-  split; trivial.
-  erewrite SimpleExpectation_prob_space_sa_sub; eauto.
-Qed.
-
-(*
 Lemma NonnegExpectation_prob_space_sa_sub
       dom2 sub x
-      {rv:RandomVariable dom2 borel_sa x}
       {pofrf:NonnegativeFunction x}
+      {rv:RandomVariable dom2 borel_sa x}
+            
   :
-  @NonnegExpectation Ts dom2 (prob_space_sa_sub dom2 sub) x pofrf =
+  @NonnegExpectation Ts dom2 (prob_space_sa_sub dom2 sub)  x pofrf =
   @NonnegExpectation Ts dom prts x pofrf.
-
 Proof.
-  unfold NonnegExpectation.
-  unfold SimpleExpectationSup.
-  
-  eapply Lub_Rbar_eqset; intros.
-  split; intros [? [? [? [??]]]].
-  - admit.
-  - 
-  - exists x1.
-    exists (RandomVariable_sa_sub _ sub x1).
+ generalize ((RandomVariable_sa_sub _ sub x (rv_x:=rv)))
+ ; intros rv1.
+ 
 
-  exists x1.
-  exists (RandomVariable_sa_sub _ sub x1).
-  exists x3.
-  split; trivial.
-  erewrite SimpleExpectation_prob_space_sa_sub; eauto.
+ assert (forall n, RandomVariable dom borel_sa (simple_approx (fun x0 : Ts => x x0) n)).
+  {
+    apply simple_approx_rv.
+    * now apply positive_Rbar_positive.
+    * typeclasses eauto.
+  } 
+
+  assert (forall n, RandomVariable dom2 borel_sa (simple_approx (fun x0 : Ts => x x0) n)).
+  {
+    apply simple_approx_rv.
+    * now apply positive_Rbar_positive.
+    * typeclasses eauto.
+  } 
+
+ rewrite <- (monotone_convergence x (simple_approx x)
+                                  rv1 pofrf
+                                  (fun n => simple_approx_rv _ _)
+                                  (fun n => simple_approx_pofrf _ _)).
+ rewrite <- (monotone_convergence x (simple_approx x)
+                                  rv pofrf
+                                  (fun n => simple_approx_rv _ _)
+                                  (fun n => simple_approx_pofrf _ _)).
+ - apply Lim_seq_ext; intros n.
+   repeat erewrite <- simple_NonnegExpectation.
+   symmetry.
+   apply SimpleExpectation_prob_space_sa_sub.
+ - intros n a.
+   apply (simple_approx_le x pofrf n a).
+ - intros n a.
+   apply (simple_approx_increasing x pofrf n a).
+ - intros n.
+   apply simple_expectation_real; trivial.
+   apply simple_approx_frf.
+ - intros.
+   apply (simple_approx_lim_seq x).
+   now apply positive_Rbar_positive.
+ - intros n a.
+   apply (simple_approx_le x pofrf n a).
+ - intros n a.
+   apply (simple_approx_increasing x pofrf n a).
+ - intros n.
+   apply simple_expectation_real; trivial.
+   apply simple_approx_frf.
+ - intros.
+   apply (simple_approx_lim_seq x).
+   now apply positive_Rbar_positive.
+
+   Unshelve.
+   apply simple_approx_frf.
 Qed.
-*)
+
+Lemma Expectation_prob_space_sa_sub
+      dom2 sub x
+      {rv:RandomVariable dom2 borel_sa x}
+            
+  :
+  @Expectation Ts dom2 (prob_space_sa_sub dom2 sub)  x =
+  @Expectation Ts dom prts x.
+Proof.
+  generalize ((RandomVariable_sa_sub _ sub x (rv_x:=rv)))
+  ; intros rv1.
+
+  unfold Expectation.
+  repeat rewrite NonnegExpectation_prob_space_sa_sub by typeclasses eauto.
+  reflexivity.
+Qed.
 
 Lemma IsLp_prob_space_sa_sub
       p dom2 sub x
   {rv:RandomVariable dom2 borel_sa x} :
-  IsLp prts p x ->
+  IsLp prts p x <->
   IsLp (prob_space_sa_sub dom2 sub) p x.
 Proof.
   unfold IsLp, IsFiniteExpectation; intros.
-  assert (NonnegativeFunction (rvpower (rvabs x) (const p))) by
-      typeclasses eauto.
-  rewrite Expectation_pos_pofrf with (nnf := H0).
-  rewrite Expectation_pos_pofrf with (nnf := H0) in H.
-  generalize (NonnegExpectation_prob_space_sa_sub_le _ sub _ (pofrf:=H0))
-  ; intros HH1.
-  generalize (NonnegExpectation_pos _ (Prts:=prob_space_sa_sub dom2 sub) (nnf:=H0))
-  ; intros HH2.
-  match_destr_in H; try tauto.
-  match_destr.
+  now rewrite Expectation_prob_space_sa_sub by typeclasses eauto.
 Qed.
-
-Lemma IsLp_prob_space_sa_sub_b
-      p dom2 sub x
-  {rv:RandomVariable dom2 borel_sa x} :
-  IsLp (prob_space_sa_sub dom2 sub) p x ->
-  IsLp prts p x.
-Proof.
-Admitted.
 
 Definition prob_space_sa_sub_set_lift
            dom2 sub
@@ -364,7 +379,7 @@ Proof.
   destruct s.
   exists LpRRV_rv_X.
   - eapply RandomVariable_sa_sub; eauto.
-  - eapply IsLp_prob_space_sa_sub_b; eauto.
+  - eapply IsLp_prob_space_sa_sub; eauto.
 Defined.
 
 Lemma ortho_phi_complete
