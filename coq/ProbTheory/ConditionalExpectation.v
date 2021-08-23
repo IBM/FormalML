@@ -399,7 +399,12 @@ Proof.
   }
   clear HH.
   split.
-  - admit.
+  - apply ortho_phi_closed; trivial.
+    simpl.
+    unfold locally.
+    intros [eps HH].
+    (* eapply HH. *)
+    admit.
   - intros.
     assert (cF':@cauchy (@LpRRVq_UniformSpace Ts dom prts (IZR (Zpos (xO xH))) big2) F).
     {
