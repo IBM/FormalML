@@ -250,7 +250,6 @@ Proof.
     admit.
   } 
     
-  admit.
   now exists (pack_LpRRV prts (rvlim f)).
   
 Admitted.
