@@ -599,7 +599,21 @@ Section L2.
     - apply FiniteExpectation_pos.
       typeclasses eauto.
   Qed.
-  
+
+  Lemma L2RRVq_ball_ball (x : LpRRVq prts 2) eps (y : LpRRVq prts 2) :
+    ball x eps y <-> LpRRVq_ball prts big2 x eps y.
+  Proof.
+    unfold ball.
+    rewrite L2RRVq_norm_norm.
+    LpRRVq_simpl.
+    rewrite LpRRVq_ballE.
+    unfold minus, plus, opp; simpl.
+    autorewrite with quot.
+    rewrite LpRRVq_normE.
+    unfold LpRRVball.
+    now rewrite LpRRVminus_plus.
+  Qed.
+
   Lemma Hnorm_minus_opp {T:PreHilbert} (a b:T) :
     (Hnorm (minus a b) = Hnorm (minus b a)).
   Proof.
