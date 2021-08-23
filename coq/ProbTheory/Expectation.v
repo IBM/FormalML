@@ -3542,6 +3542,26 @@ Section Expectation.
           rewrite Rabs_pos_eq; lra.
   Qed.
 
+  Lemma NonnegExpectation_simple_approx
+        (rv_X1  : Ts -> R)
+        {rv1 : RandomVariable dom borel_sa rv_X1}
+        {nnf1:NonnegativeFunction rv_X1} :
+     Lim_seq
+         (fun n : nat =>
+          NonnegExpectation (simple_approx (fun x : Ts => rv_X1 x) n)) =
+       NonnegExpectation rv_X1.
+  Proof.
+    generalize (simple_approx_lim_seq rv_X1 nnf1); intros.
+    generalize (simple_approx_rv rv_X1); intro apx_rv1.
+    generalize (simple_approx_pofrf rv_X1); intro apx_nnf1.
+    generalize (simple_approx_frf rv_X1); intro apx_frf1.
+    generalize (simple_approx_le rv_X1 nnf1); intro apx_le1.
+    generalize (simple_approx_increasing rv_X1 nnf1); intro apx_inc1.
+    generalize (monotone_convergence rv_X1 (simple_approx rv_X1) rv1 nnf1 apx_rv1 apx_nnf1 apx_le1 apx_inc1 (fun n => simple_expectation_real (simple_approx rv_X1 n))); intros.
+    apply H0.
+    apply H.
+  Qed.        
+
   Lemma NonnegExpectation_sum 
         (rv_X1 rv_X2 : Ts -> R)
         {rv1 : RandomVariable dom borel_sa rv_X1}
