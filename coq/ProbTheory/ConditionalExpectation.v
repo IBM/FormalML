@@ -398,12 +398,45 @@ Proof.
     now apply NNPP in HH.
   }
   clear HH.
+  assert (forall eps : posreal,
+     F
+       (@Hierarchy.ball
+          (NormedModule.UniformSpace R_AbsRing
+             (@PreHilbert_NormedModule (@L2RRVq_PreHilbert Ts dom prts)))
+          (@LpRRVq_lim Ts dom prts (IZR (Zpos (xO xH))) big2 F) 
+          (pos eps))).
+  {
+    intros.
+    assert (cF':@cauchy (@LpRRVq_UniformSpace Ts dom prts (IZR (Zpos (xO xH))) big2) F).
+    {
+      now apply cauchy_pre_uniform.
+    } 
+    generalize (LpRRVq_lim_complete prts big2 F PF); intros.
+    eapply filter_imp; try eapply (H cF' eps).
+    + intros.
+      unfold Hierarchy.ball; simpl.
+      now apply L2RRVq_ball_ball.
+  }
   split.
   - apply ortho_phi_closed; trivial.
     simpl.
     unfold locally.
     intros [eps HH].
-    (* eapply HH. *)
+    specialize (H eps).
+    destruct (HHclassic _ H) as [? [? ?]].
+    specialize (HH x).
+    Admitted.
+(*
+    
+  assert (forall eps : posreal, F (Hierarchy.ball (LpRRVq_lim prts big2 F) eps)).
+  split.
+  - apply ortho_phi_closed; trivial.
+    Search LpRRVq_lim.
+    simpl.
+    unfold locally.
+    intros [eps HH].
+    eapply HH.
+    admit.
     admit.
   - intros.
     assert (cF':@cauchy (@LpRRVq_UniformSpace Ts dom prts (IZR (Zpos (xO xH))) big2) F).
@@ -415,7 +448,7 @@ Proof.
     + intros.
       unfold Hierarchy.ball; simpl.
       now apply L2RRVq_ball_ball.
-      
+*)      
       
 (*
     unfold Hierarchy.ball; simpl.
