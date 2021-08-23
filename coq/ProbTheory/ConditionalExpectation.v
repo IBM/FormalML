@@ -261,20 +261,60 @@ Proof.
   f_equal.
   apply map_ext; intros.
   f_equal.
-  
-  
-Admitted.
+  simpl.
+  apply ps_proper.
+  intros ?.
+  unfold preimage_singleton; simpl.
+  tauto.
+Qed.
 
-Lemma NonnegExpectation_prob_space_sa_sub
+Lemma NonnegExpectation_prob_space_sa_sub_le
       dom2 sub x
-  {rv:RandomVariable dom2 borel_sa x} :
-  @NonnegExpectation Ts dom prts x = 
-  @NonnegExpectation Ts dom2 (prob_space_sa_sub dom2 sub) x.
+      {rv:RandomVariable dom2 borel_sa x}
+      {pofrf:NonnegativeFunction x}
+  :
+    Rbar_le (@NonnegExpectation Ts dom2 (prob_space_sa_sub dom2 sub) x pofrf)
+            (@NonnegExpectation Ts dom prts x pofrf).
+
 Proof.
   unfold NonnegExpectation.
   unfold SimpleExpectationSup.
-  generalize (RandomVariable_sa_sub dom2 sub x); intros.
-  Admitted.
+  eapply is_lub_Rbar_subset; [| try eapply Lub_Rbar_correct..]; simpl.
+  intros ? [? [? [? [??]]]].
+  exists x1.
+  exists (RandomVariable_sa_sub _ sub x1).
+  exists x3.
+  split; trivial.
+  erewrite SimpleExpectation_prob_space_sa_sub; eauto.
+Qed.
+
+(*
+Lemma NonnegExpectation_prob_space_sa_sub
+      dom2 sub x
+      {rv:RandomVariable dom2 borel_sa x}
+      {pofrf:NonnegativeFunction x}
+  :
+  @NonnegExpectation Ts dom2 (prob_space_sa_sub dom2 sub) x pofrf =
+  @NonnegExpectation Ts dom prts x pofrf.
+
+Proof.
+  unfold NonnegExpectation.
+  unfold SimpleExpectationSup.
+  
+  eapply Lub_Rbar_eqset; intros.
+  split; intros [? [? [? [??]]]].
+  - admit.
+  - 
+  - exists x1.
+    exists (RandomVariable_sa_sub _ sub x1).
+
+  exists x1.
+  exists (RandomVariable_sa_sub _ sub x1).
+  exists x3.
+  split; trivial.
+  erewrite SimpleExpectation_prob_space_sa_sub; eauto.
+Qed.
+*)
 
 Lemma IsLp_prob_space_sa_sub
       p dom2 sub x
@@ -287,8 +327,12 @@ Proof.
       typeclasses eauto.
   rewrite Expectation_pos_pofrf with (nnf := H0).
   rewrite Expectation_pos_pofrf with (nnf := H0) in H.
-  rewrite <- NonnegExpectation_prob_space_sa_sub; trivial.
-  typeclasses eauto.
+  generalize (NonnegExpectation_prob_space_sa_sub_le _ sub _ (pofrf:=H0))
+  ; intros HH1.
+  generalize (NonnegExpectation_pos _ (Prts:=prob_space_sa_sub dom2 sub) (nnf:=H0))
+  ; intros HH2.
+  match_destr_in H; try tauto.
+  match_destr.
 Qed.
 
 Definition prob_space_sa_sub_set_lift
@@ -304,7 +348,6 @@ Proof.
   - exact False.
 Qed.
 
-    
 Lemma ortho_phi_complete
            (dom2 : SigmaAlgebra Ts)
            (sub : sa_sub dom2 dom) :
