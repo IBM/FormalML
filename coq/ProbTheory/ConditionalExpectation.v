@@ -244,6 +244,12 @@ Proof.
   assert (RandomVariable dom2 borel_sa (rvlim f)).
   admit.
   assert (Quot (LpRRV_eq prts) (pack_LpRRV prts (rvlim f)) = Quot (LpRRV_eq prts) x0).
+  {
+    apply eq_Quot; try typeclasses eauto.
+    red; simpl.
+    admit.
+  } 
+    
   admit.
   now exists (pack_LpRRV prts (rvlim f)).
   
