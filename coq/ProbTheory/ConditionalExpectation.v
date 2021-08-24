@@ -172,8 +172,9 @@ Proof.
   apply Rabs_minus_sym.
  Qed.
 
- Definition LpRRV_filter_from_seq (f : nat -> LpRRV prts 2) : ((LpRRV_UniformSpace prts big2 -> Prop) -> Prop) :=
-   fun (P : (LpRRV_UniformSpace prts big2 -> Prop)) => exists (N:nat), forall (n:nat), (n >= N)%nat -> P (f n).
+Definition LpRRV_filter_from_seq {dom2:SigmaAlgebra Ts} {prts2 : ProbSpace dom2}
+           (f : nat -> LpRRV prts2 2) : ((LpRRV_UniformSpace prts2 big2 -> Prop) -> Prop) :=
+   fun (P : (LpRRV_UniformSpace prts2 big2 -> Prop)) => exists (N:nat), forall (n:nat), (n >= N)%nat -> P (f n).
 
  Lemma cauchy_filterlim_almost_unique_eps (F : ((LpRRV_UniformSpace prts big2 -> Prop) -> Prop))
        (PF : ProperFilter F)
@@ -381,8 +382,15 @@ Proof.
     rewrite LpRRVnorm_minus_sym in H9.
     simpl in H8; simpl in H9; lra.
   }
+  pose (prts2 := prob_space_sa_sub dom2 sub).
+
+
+  generalize (L2RRV_lim_complete prts2 big2); intros HH.
+
   generalize (L2RRV_lim_complete prts big2); intros.
   pose (F :=  LpRRV_filter_from_seq f).
+  pose (dom2pred := fun v => RandomVariable dom2 borel_sa v).
+  pose (F2 := subset_filter F dom2pred ).
   specialize (H3 F).
   assert (ProperFilter F).
   {
