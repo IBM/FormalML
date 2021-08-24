@@ -230,6 +230,66 @@ Proof.
     now exists x.
   }
   pose (f := fun (n : nat) => proj1_sig (X n)).
+  assert (is_lim_seq (fun n => LpRRVnorm prts (LpRRVminus (p := bignneg 2 big2) prts  (f n) x0)) 0).
+  {
+    apply is_lim_seq_spec.
+    unfold is_lim_seq'.
+    intros.
+    exists (Z.to_nat (up (/ eps))).
+    intros.
+    rewrite Rminus_0_r.
+    rewrite Rabs_pos_eq.
+    - unfold f.
+      destruct (X n) as [? [? ?]].
+      simpl.
+      apply LpRRV_ball_sym in l.
+      unfold LpRRVball in l.
+      eapply Rlt_trans.
+      apply l.
+      replace (pos eps) with (/ / eps).
+      + apply Rinv_lt_contravar.
+        apply Rmult_lt_0_compat.
+        * apply Rinv_0_lt_compat.
+          apply cond_pos.
+        * apply lt_0_INR.
+          lia.
+        * destruct (archimed (/ eps)).
+          eapply Rlt_trans.
+          apply H1.
+          rewrite <- INR_up_pos.
+          -- apply lt_INR.
+             lia.
+          -- left; apply Rinv_0_lt_compat.
+             apply cond_pos.
+      + apply Rinv_involutive.
+        apply Rgt_not_eq.
+        apply cond_pos.
+    - unfold LpRRVnorm.
+      apply power_nonneg.
+  }
+  assert (bounded (fun n => LpRRVnorm prts (f n))).
+  {
+    destruct (is_lim_seq_bounded _ _ H0).
+    unfold bounded.
+    exists (LpRRVnorm prts x0 + x).
+    intros.
+    specialize (H1 n).
+    generalize (LpRRV_norm_plus prts big2 x0 (LpRRVminus prts (p := bignneg 2 big2) (f n) x0)); intros.
+    rewrite Rabs_pos_eq by apply power_nonneg.
+    rewrite Rabs_pos_eq in H1 by apply power_nonneg.
+    rewrite LpRRV_plus_comm in H2.
+    rewrite LpRRVminus_plus in H2.
+    rewrite <- LpRRV_plus_assoc in H2.
+    rewrite (LpRRV_plus_comm prts (p := bignneg 2 big2) _ x0) in H2.
+    rewrite LpRRV_plus_inv in H2.
+    rewrite LpRRV_plus_zero in H2.
+    eapply Rle_trans.
+    apply H2.
+    apply Rplus_le_compat_l.
+    now rewrite LpRRVminus_plus in H1.
+  }
+  
+    
   assert (IsLp prts 2 (rvlim f)).
 (*  {
     eapply islp_rvlim_bounded; eauto.
