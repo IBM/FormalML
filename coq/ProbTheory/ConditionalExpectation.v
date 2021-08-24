@@ -160,6 +160,82 @@ Definition ortho_phi  (dom2 : SigmaAlgebra Ts)
                     exists z, Quot _ z = y /\
                          RandomVariable dom2 borel_sa (LpRRV_rv_X prts z)).
 
+Lemma LpRRVnorm_minus_sym  (x y : LpRRV prts 2) :
+  LpRRVnorm prts (LpRRVminus prts (p := bignneg 2 big2) x y) = LpRRVnorm prts (LpRRVminus prts (p := bignneg 2 big2) y x).
+Proof.
+  unfold LpRRVnorm, LpRRVminus.
+  f_equal.
+  apply FiniteExpectation_ext.
+  intro z.
+  unfold rvpower, rvabs, pack_LpRRV; f_equal; simpl.
+  do 2 rewrite rvminus_unfold.
+  apply Rabs_minus_sym.
+ Qed.
+
+ Definition LpRRV_filter_from_seq (f : nat -> LpRRV prts 2) : ((LpRRV_UniformSpace prts big2 -> Prop) -> Prop) :=
+   fun (P : (LpRRV_UniformSpace prts big2 -> Prop)) => exists (N:nat), forall (n:nat), (n >= N)%nat -> P (f n).
+
+ Lemma cauchy_filterlim_almost_unique_eps (F : ((LpRRV_UniformSpace prts big2 -> Prop) -> Prop))
+       (PF : ProperFilter F)
+       (x y : LpRRV prts 2) :
+   (forall (eps:posreal), F (LpRRVball prts big2 x eps)) ->
+   (forall (eps:posreal), F (LpRRVball prts big2 y eps)) ->
+   forall (eps:posreal), LpRRVnorm prts (LpRRVminus prts (p := bignneg 2 big2) x y) < eps.
+   Proof.
+     intros.
+     assert (0 < eps) by apply cond_pos.
+     assert (0 < eps/2) by lra.
+     specialize (H (mkposreal _ H2)).
+     specialize (H0 (mkposreal _ H2)).     
+     generalize (Hierarchy.filter_and _ _ H H0); intros.
+     apply filter_ex in H3.
+     unfold LpRRVball in H3.
+     destruct H3 as [? [? ?]].
+     generalize (LpRRV_norm_plus prts big2 (LpRRVminus prts (p := bignneg 2 big2) x x0) (LpRRVminus prts (p := bignneg 2 big2) x0 y)); intros.
+     rewrite LpRRVnorm_minus_sym in H4.
+     do 2 rewrite LpRRVminus_plus in H5.
+     rewrite <- LpRRV_plus_assoc in H5.
+     rewrite (LpRRV_plus_assoc prts (p := bignneg 2 big2) (LpRRVopp prts x0) _) in H5.     
+     rewrite (LpRRV_plus_comm prts (p := bignneg 2 big2) _ x0) in H5.
+     rewrite LpRRV_plus_inv in H5.
+     rewrite (LpRRV_plus_comm prts (p := bignneg 2 big2) (LpRRVconst prts 0) _ ) in H5.
+     rewrite LpRRV_plus_zero in H5.
+     repeat rewrite <- LpRRVminus_plus in H5.
+     eapply Rle_lt_trans.
+     apply H5.
+     simpl in H3; simpl in H4.
+     lra.
+  Qed.     
+
+ Lemma cauchy_filterlim_almost_unique_0 (F : ((LpRRV_UniformSpace prts big2 -> Prop) -> Prop))
+       (PF : ProperFilter F)
+       (x y : LpRRV prts 2) :
+   (forall (eps:posreal), F (LpRRVball prts big2 x eps)) ->
+   (forall (eps:posreal), F (LpRRVball prts big2 y eps)) ->
+   LpRRVnorm prts (LpRRVminus prts (p := bignneg 2 big2) x y) = 0.
+ Proof.
+   intros.
+   generalize (cauchy_filterlim_almost_unique_eps _ _ _ _ H H0); intros.
+   destruct (Rgt_dec (LpRRVnorm prts (LpRRVminus prts (p := bignneg 2 big2) x y)) 0).
+   - specialize (H1 (mkposreal _ r)).
+     simpl in H1.
+     lra.
+   - apply Rle_antisym; try lra.
+     apply power_nonneg.
+  Qed.
+
+ Lemma cauchy_filterlim_almost_unique (F : ((LpRRV_UniformSpace prts big2 -> Prop) -> Prop))
+       (PF : ProperFilter F)
+       (x y : LpRRV prts 2) :
+   (forall (eps:posreal), F (LpRRVball prts big2 x eps)) ->
+   (forall (eps:posreal), F (LpRRVball prts big2 y eps)) ->
+   almostR2 prts eq x y.
+ Proof.
+   intros.
+   generalize (cauchy_filterlim_almost_unique_0 _ _ _ _ H H0); intros.
+   apply LpRRV_norm0 in H1.
+   Admitted.
+
 Lemma ortho_phi_closed 
       (dom2 : SigmaAlgebra Ts) 
       (sub : sa_sub dom2 dom) :
@@ -235,10 +311,12 @@ Proof.
     apply is_lim_seq_spec.
     unfold is_lim_seq'.
     intros.
-    exists (Z.to_nat (up (/ eps))).
+    assert (0 < eps) by apply cond_pos.
+    generalize (archimed_cor1 eps H0); intros.
+    destruct H1 as [? [? ?]].
+    exists x.
     intros.
-    rewrite Rminus_0_r.
-    rewrite Rabs_pos_eq.
+    rewrite Rminus_0_r, Rabs_pos_eq.
     - unfold f.
       destruct (X n) as [? [? ?]].
       simpl.
@@ -246,24 +324,12 @@ Proof.
       unfold LpRRVball in l.
       eapply Rlt_trans.
       apply l.
-      replace (pos eps) with (/ / eps).
-      + apply Rinv_lt_contravar.
-        apply Rmult_lt_0_compat.
-        * apply Rinv_0_lt_compat.
-          apply cond_pos.
-        * apply lt_0_INR.
-          lia.
-        * destruct (archimed (/ eps)).
-          eapply Rlt_trans.
-          apply H1.
-          rewrite <- INR_up_pos.
-          -- apply lt_INR.
-             lia.
-          -- left; apply Rinv_0_lt_compat.
-             apply cond_pos.
-      + apply Rinv_involutive.
-        apply Rgt_not_eq.
-        apply cond_pos.
+      apply Rlt_trans with (r2 := / INR x); trivial.
+      apply Rinv_lt_contravar.
+      apply Rmult_lt_0_compat.
+      + now apply lt_0_INR.
+      + apply lt_0_INR; lia.
+      + apply lt_INR; lia.
     - unfold LpRRVnorm.
       apply power_nonneg.
   }
@@ -277,40 +343,67 @@ Proof.
     generalize (LpRRV_norm_plus prts big2 x0 (LpRRVminus prts (p := bignneg 2 big2) (f n) x0)); intros.
     rewrite Rabs_pos_eq by apply power_nonneg.
     rewrite Rabs_pos_eq in H1 by apply power_nonneg.
-    rewrite LpRRV_plus_comm in H2.
-    rewrite LpRRVminus_plus in H2.
+    rewrite LpRRV_plus_comm, LpRRVminus_plus in H2.
     rewrite <- LpRRV_plus_assoc in H2.
     rewrite (LpRRV_plus_comm prts (p := bignneg 2 big2) _ x0) in H2.
-    rewrite LpRRV_plus_inv in H2.
-    rewrite LpRRV_plus_zero in H2.
+    rewrite LpRRV_plus_inv, LpRRV_plus_zero in H2.
     eapply Rle_trans.
     apply H2.
     apply Rplus_le_compat_l.
     now rewrite LpRRVminus_plus in H1.
   }
-  
-    
-  assert (IsLp prts 2 (rvlim f)).
-(*  {
-    eapply islp_rvlim_bounded; eauto.
-    - lra.
-    - admit.
-    - 
-  }    
-*)
-  admit.
-  assert (RandomVariable dom borel_sa (rvlim f)).
-  admit.
-  assert (RandomVariable dom2 borel_sa (rvlim f)).
-  admit.
-  assert (Quot (LpRRV_eq prts) (pack_LpRRV prts (rvlim f)) = Quot (LpRRV_eq prts) x0).
+  assert (forall (eps:posreal), 
+             exists (N:nat), 
+               forall (n m : nat), 
+                 (n>=N)%nat -> (m >= N)%nat -> LpRRVnorm prts (LpRRVminus prts (p := bignneg 2 big2) (f n) (f m)) < eps).
   {
-    apply eq_Quot; try typeclasses eauto.
-    red; simpl.
+    intros.
+    apply is_lim_seq_spec in H0.
+    assert (0 < eps) by apply cond_pos.
+    assert (0 < eps/2) by lra.
+    destruct (H0 (mkposreal _ H3)).
+    exists x; intros.
+    generalize (LpRRV_norm_plus prts big2 (LpRRVminus prts (p := bignneg 2 big2) (f n) x0) (LpRRVminus prts (p := bignneg 2 big2) x0 (f m))); intros.
+    generalize (H4 n H5); intros.
+    generalize (H4 m H6); intros.
+    rewrite Rminus_0_r in H8.
+    rewrite Rabs_pos_eq in H8 by apply power_nonneg.
+    rewrite Rminus_0_r in H9.
+    rewrite Rabs_pos_eq in H9 by apply power_nonneg.
+    do 2 rewrite LpRRVminus_plus in H7.
+    rewrite <- LpRRV_plus_assoc in H7.
+    rewrite (LpRRV_plus_assoc (p := bignneg 2 big2) prts _ x0 _) in H7.
+    rewrite (LpRRV_plus_comm prts (p := bignneg 2 big2) _ x0) in H7.
+    rewrite LpRRV_plus_inv in H7.
+    rewrite (LpRRV_plus_comm prts (p := bignneg 2 big2) (LpRRVconst prts 0) _ ) in H7.    
+    rewrite LpRRV_plus_zero in H7.
+    do 3 rewrite <- LpRRVminus_plus in H7.
+    rewrite LpRRVnorm_minus_sym in H9.
+    simpl in H8; simpl in H9; lra.
+  }
+  generalize (L2RRV_lim_complete prts big2); intros.
+  pose (F :=  LpRRV_filter_from_seq f).
+  specialize (H3 F).
+  assert (ProperFilter F).
+  {
     admit.
-  } 
-    
-  now exists (pack_LpRRV prts (rvlim f)).
+  }
+  assert (cauchy F).
+  {
+    unfold cauchy.
+    intros.
+    destruct (H2 eps).
+    unfold Hierarchy.ball; simpl.
+    unfold LpRRVball.
+    exists (f x).
+    unfold F.
+    unfold LpRRV_filter_from_seq.
+    exists x.
+    intros.
+    apply H5; lia.
+  }
+  specialize (H3 H4 H5).
+  exists (LpRRV_lim prts big2 F).
   
 Admitted.
 
