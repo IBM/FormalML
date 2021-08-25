@@ -235,7 +235,8 @@ Definition LpRRV_filter_from_seq {dom2:SigmaAlgebra Ts} {prts2 : ProbSpace dom2}
    intros.
    generalize (cauchy_filterlim_almost_unique_0 _ _ _ _ H H0); intros.
    apply LpRRV_norm0 in H1.
-   Admitted.
+   now apply LpRRValmost_sub_zero_eq in H1.
+ Qed.
 
 Lemma ortho_phi_closed 
       (dom2 : SigmaAlgebra Ts) 
