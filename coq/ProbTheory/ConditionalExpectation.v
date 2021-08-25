@@ -813,12 +813,10 @@ Proof.
     replace (pos eps) with ((eps/2) + (eps/2)) by lra.
     assert (sNeps2:/ INR (S N) < eps /2).
     {
-      apply Rlt_trans with (r2 := / INR N); trivial.
-      apply Rinv_1_lt_contravar.
-      - assert (1 <= N)%nat by lia.
-        replace (1) with (INR 1) by now compute.
-        now apply le_INR.
-      - apply lt_INR; lia.
+      apply Rle_lt_trans with (r2 := / INR N); trivial.
+      apply Rinv_le_contravar.
+      - apply lt_0_INR; lia.
+      - apply le_INR; lia.
     }
     assert (sneps2:/ INR (S n) < eps /2).
     {
