@@ -538,6 +538,27 @@ Proof.
   - eapply IsLp_prob_space_sa_sub; eauto.
 Defined.
 
+Instance prob_space_sa_sub_LpRRV_lift_rv dom2 sub (X:LpRRV (prob_space_sa_sub dom2 sub) 2)
+      {rvx:RandomVariable dom2 borel_sa X} :
+  RandomVariable dom2 borel_sa (prob_space_sa_sub_LpRRV_lift dom2 sub X).
+Proof.
+  now destruct X; simpl in *.
+Qed.
+
+Lemma FiniteExpectation_prob_space_sa_sub
+      dom2 sub x
+      {rv:RandomVariable dom2 borel_sa x}
+      {isfe1:IsFiniteExpectation (prob_space_sa_sub dom2 sub) x}
+      {isfe2:IsFiniteExpectation prts x} :
+  FiniteExpectation (prob_space_sa_sub dom2 sub) x =
+  FiniteExpectation prts x.
+Proof.
+  unfold FiniteExpectation, proj1_sig.
+  repeat match_destr.
+  rewrite Expectation_prob_space_sa_sub in e by trivial.
+  congruence.
+Qed.
+
 Lemma ortho_phi_closed 
       (dom2 : SigmaAlgebra Ts) 
       (sub : sa_sub dom2 dom) :
@@ -753,13 +774,65 @@ Proof.
 
   assert (F3cauchy:cauchy F3).
   {
-    unfold cauchy.
-    intros.
-    destruct (H5 eps).
+    unfold F3, F2.
+    unfold subset_filter_to_sa_sub_filter.
+    intros eps; simpl.
+    unfold F, f.
+    unfold LpRRV_filter_from_seq; simpl.
+    unfold dom2pred.
+    assert (eps2pos:0 < eps / 2).
+    {
+      destruct eps; simpl.
+      lra.
+    } 
+
+    destruct (archimed_cor1 (eps/2) eps2pos) as [N [Nlt Npos]].
+
+    destruct (X N)
+      as [x [XH XR]].
+    assert (xlp:IsLp (prob_space_sa_sub dom2 sub) 2 x).
+    {
+      apply IsLp_prob_space_sa_sub; typeclasses eauto.
+    } 
+    exists (pack_LpRRV (prob_space_sa_sub dom2 sub) x).
+    red.
+    exists N.
+    simpl.
+    intros n nN ?.
+    destruct (X n) as [Xn [XnH XnRv]]; simpl in *.
+    unfold pack_LpRRV; simpl.
+    generalize (LpRRV_dist_triang x x0 Xn)
+    ; intros triag.
+    unfold LpRRV_dist in triag.
+    unfold Hierarchy.ball; simpl.
+    unfold LpRRVball; simpl.
+    simpl in *.
+
+    destruct Xn as [Xn ??]; simpl in *.
+    apply LpRRV_ball_sym in XH.
+    LpRRV_simpl.
+    simpl in *.
+    unfold LpRRVball in XnH, XH, triag.
+    simpl in XnH, XH, triag.
+    unfold LpRRVminus in XnH, XH, triag; simpl in XnH, XH, triag.
     
-    
-    admit.
-  }
+    unfold LpRRVnorm in *.
+    erewrite FiniteExpectation_prob_space_sa_sub; try typeclasses eauto.
+    unfold pack_LpRRV, prob_space_sa_sub in XnH, XH, triag |- *; simpl in *.
+    eapply Rle_lt_trans; try eapply triag.
+    replace (pos eps) with ((eps/2) + (eps/2)) by lra.
+    assert (sNeps2:/ INR (S N) < eps /2).
+    {
+      admit.
+    }
+    assert (sneps2:/ INR (S n) < eps /2).
+    {
+      admit.
+    }
+    apply Rplus_lt_compat.
+    - rewrite <- sNeps2; trivial.
+    - rewrite <- sneps2; trivial.
+  } 
   cut_to HH1; trivial.
 
   assert (RandomVariable dom2 borel_sa (LpRRV_lim prts2 big2 F3)).
@@ -769,7 +842,10 @@ Proof.
 
 
   exists (prob_space_sa_sub_LpRRV_lift dom2 sub (LpRRV_lim prts2 big2 F3)).
-  
+  split.
+  admit.
+
+
   specialize (H3 H4 H5).
 
   generalize (cauchy_filterlim_almost_unique_alt F H4 (LpRRV_lim prts big2 F) x0); intros.
