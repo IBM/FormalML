@@ -676,6 +676,24 @@ Qed.
       intros ?.
       reflexivity.
     Qed.
+
+    Lemma LpRRValmost_sub_zero_eq (x y:LpRRV p)
+      (eqq: almostR2 prts eq (LpRRVminus x y) (LpRRVzero (p:=p))) :
+      almostR2 prts eq x y.
+    Proof.
+      generalize (almostR2_eq_plus_proper prts _ _ eqq _ _ (reflexivity y))
+      ; intros HH.
+      transitivity (rvplus (LpRRVzero (p:=p)) y).
+      - rewrite <- HH.
+        apply almostR2_eq_subr.
+        intros ?; simpl.
+        rv_unfold.
+        lra.
+      - apply almostR2_eq_subr.
+        intros ?; simpl.
+        rv_unfold.
+        lra.
+    Qed.
     
     Global Instance LpRRV_minus_sproper : Proper (LpRRV_seq ==> LpRRV_seq ==> LpRRV_seq) LpRRVminus.
     Proof.
