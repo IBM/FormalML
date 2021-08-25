@@ -395,7 +395,25 @@ Proof.
   specialize (H3 F).
   assert (ProperFilter F).
   {
-    admit.
+    subst F f.
+    unfold LpRRV_filter_from_seq; simpl.
+    split.
+    - intros P [N HP].
+      exists (proj1_sig (X N)).
+      apply HP.
+      lia.
+    - split.
+      + exists 0%nat; trivial.
+      + intros P Q [NP HP] [NQ HQ].
+        exists (max NP NQ); intros n nN.
+        split.
+        * apply HP.
+          generalize (Max.le_max_l NP NQ); lia.
+        * apply HQ.
+          generalize (Max.le_max_r NP NQ); lia.
+      + intros P Q Himp [N HP].
+        exists N; intros n nN.
+        auto.
   }
   assert (cauchy F).
   {
