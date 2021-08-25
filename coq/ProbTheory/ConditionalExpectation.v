@@ -514,6 +514,30 @@ Defined.
      now apply subset_filter_to_sa_sub_filter_Filter.
  Qed.
 
+Definition prob_space_sa_sub_set_lift
+           dom2 sub
+           (s:LpRRV (prob_space_sa_sub dom2 sub) 2 -> Prop)
+           (x:LpRRV prts 2) : Prop.
+Proof.
+  destruct x.
+  destruct (ClassicalDescription.excluded_middle_informative (RandomVariable dom2 borel_sa LpRRV_rv_X)).
+  - apply s.
+    exists LpRRV_rv_X; trivial.
+    now apply IsLp_prob_space_sa_sub.
+  - exact False.
+Defined.
+
+Definition prob_space_sa_sub_LpRRV_lift
+           dom2 sub
+           (s:LpRRV (prob_space_sa_sub dom2 sub) 2)
+           : LpRRV prts 2.
+Proof.
+  destruct s.
+  exists LpRRV_rv_X.
+  - eapply RandomVariable_sa_sub; eauto.
+  - eapply IsLp_prob_space_sa_sub; eauto.
+Defined.
+
 Lemma ortho_phi_closed 
       (dom2 : SigmaAlgebra Ts) 
       (sub : sa_sub dom2 dom) :
@@ -729,17 +753,25 @@ Proof.
 
   assert (F3cauchy:cauchy F3).
   {
+    unfold cauchy.
+    intros.
+    destruct (H5 eps).
+    
+    
     admit.
   }
   cut_to HH1; trivial.
 
   assert (RandomVariable dom2 borel_sa (LpRRV_lim prts2 big2 F3)).
   {
-    admit.
+    apply LpRRV_rv.
   } 
+
+
+  exists (prob_space_sa_sub_LpRRV_lift dom2 sub (LpRRV_lim prts2 big2 F3)).
   
   specialize (H3 H4 H5).
-  exists (LpRRV_lim prts big2 F).
+
   generalize (cauchy_filterlim_almost_unique_alt F H4 (LpRRV_lim prts big2 F) x0); intros.
   cut_to H7.
   admit.
@@ -766,29 +798,6 @@ Proof.
   
 Admitted.
 
-Definition prob_space_sa_sub_set_lift
-           dom2 sub
-           (s:LpRRV (prob_space_sa_sub dom2 sub) 2 -> Prop)
-           (x:LpRRV prts 2) : Prop.
-Proof.
-  destruct x.
-  destruct (ClassicalDescription.excluded_middle_informative (RandomVariable dom2 borel_sa LpRRV_rv_X)).
-  - apply s.
-    exists LpRRV_rv_X; trivial.
-    now apply IsLp_prob_space_sa_sub.
-  - exact False.
-Defined.
-
-Definition prob_space_sa_sub_LpRRV_lift
-           dom2 sub
-           (s:LpRRV (prob_space_sa_sub dom2 sub) 2)
-           : LpRRV prts 2.
-Proof.
-  destruct s.
-  exists LpRRV_rv_X.
-  - eapply RandomVariable_sa_sub; eauto.
-  - eapply IsLp_prob_space_sa_sub; eauto.
-Defined.
 
 Lemma ortho_phi_complete
            (dom2 : SigmaAlgebra Ts)
