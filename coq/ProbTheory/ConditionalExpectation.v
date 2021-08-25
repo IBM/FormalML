@@ -29,7 +29,7 @@ Program Definition ortho_projection_hilbert (E:PreHilbert)
   apply constructive_definite_description in H.
   exact (proj1_sig H).
   intro; apply classic.
-Qed.
+Defined.
 
 Context {Ts:Type} 
         {dom: SigmaAlgebra Ts}
@@ -741,7 +741,7 @@ Proof.
   specialize (H3 H4 H5).
   exists (LpRRV_lim prts big2 F).
   generalize (cauchy_filterlim_almost_unique_alt F H4 (LpRRV_lim prts big2 F) x0); intros.
-  cut_to H6.
+  cut_to H7.
   admit.
   - intros.
     exists (LpRRV_lim prts big2 F).
@@ -904,7 +904,7 @@ Definition NonNegConditionalExpectation (f : Ts -> R)
 Definition ConditionalExpectation (f : Ts -> R) 
            (dom2 : SigmaAlgebra Ts)
            (sub : sa_sub dom2 dom)
-           (rv : RandomVariable dom borel_sa f) :=
+           (rv : RandomVariable dom borel_sa f) : Ts -> Rbar :=
   Rbar_rvplus (NonNegConditionalExpectation (pos_fun_part f) dom2 sub)
               (fun x => Rbar_opp (NonNegConditionalExpectation (neg_fun_part f) dom2 sub x)).
 
