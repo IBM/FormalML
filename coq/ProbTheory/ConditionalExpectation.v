@@ -813,33 +813,86 @@ Proof.
     replace (pos eps) with ((eps/2) + (eps/2)) by lra.
     assert (sNeps2:/ INR (S N) < eps /2).
     {
-      admit.
+      apply Rlt_trans with (r2 := / INR N); trivial.
+      apply Rinv_1_lt_contravar.
+      - assert (1 <= N)%nat by lia.
+        replace (1) with (INR 1) by now compute.
+        now apply le_INR.
+      - apply lt_INR; lia.
     }
     assert (sneps2:/ INR (S n) < eps /2).
     {
-      admit.
+      apply Rle_lt_trans with (r2 := / INR (S N)); trivial.
+      apply Rinv_le_contravar.
+      - apply lt_0_INR; lia.
+      - apply le_INR; lia.
     }
     apply Rplus_lt_compat.
     - rewrite <- sNeps2; trivial.
     - rewrite <- sneps2; trivial.
   } 
   cut_to HH1; trivial.
-
-  assert (RandomVariable dom2 borel_sa (LpRRV_lim prts2 big2 F3)).
-  {
-    apply LpRRV_rv.
-  } 
-
-
   exists (prob_space_sa_sub_LpRRV_lift dom2 sub (LpRRV_lim prts2 big2 F3)).
-  split.
-  admit.
+  split; [|typeclasses eauto].
+  LpRRVq_simpl.
+  unfold LpRRV_eq.
+  apply (LpRRValmost_sub_zero_eq prts (p := bignneg 2 big2)).
+  apply LpRRV_norm0.
+  apply nneg_lt_eps_zero; [apply power_nonneg |].
+  assert (forall (eps:posreal),
+             (LpRRVball prts big2 (prob_space_sa_sub_LpRRV_lift dom2 sub (LpRRV_lim prts2 big2 F3)) eps x0)).
+  {
+    intros.
+    admit.
+  }
+  apply H6.
+
+  Admitted.
+
+(*
 
 
+  (prob_space_sa_sub_LpRRV_lift dom2 sub (LpRRV_lim prts2 big2 F3)) x0).
+  unfold LpRRVball in H6.
+  generalize 
+  
+  assert (forall n, 
+
+  unfold F3, F2, F.
+  unfold LpRRV_filter_from_seq.
+  
+  
+  
+  
   specialize (H3 H4 H5).
 
+  assert (almostR2 prts eq 
+                   (prob_space_sa_sub_LpRRV_lift dom2 sub (LpRRV_lim prts2 big2 F3))
+                   (LpRRV_lim prts big2 F)).
+  {
+    admit.
+  }
+  assert (almostR2 prts eq (LpRRV_lim prts big2 F) x0 ).
+  {
+    generalize (cauchy_filterlim_almost_unique_alt F H4 (LpRRV_lim prts big2 F) x0); intros.
+    unfold F.
+    unfold LpRRV_filter_from_seq.
+    admit.
+  }
+  LpRRVq_simpl.
+  unfold LpRRV_eq.
+  eapply transitivity.
+  apply H6.
+  apply H7.
+  Admitted.
+*)
+  
+(*
+  
+
+
   generalize (cauchy_filterlim_almost_unique_alt F H4 (LpRRV_lim prts big2 F) x0); intros.
-  cut_to H7.
+  cut_to H6.
   admit.
   - intros.
     exists (LpRRV_lim prts big2 F).
@@ -856,14 +909,7 @@ Proof.
         -- unfold LpRRV_lim_with_conditions.
            unfold cauchy_rvlim_fun.
            unfold pack_LpRRV.
-           
-      
-      
-    
-
-  
-Admitted.
-
+*)  
 
 Lemma ortho_phi_complete
            (dom2 : SigmaAlgebra Ts)
