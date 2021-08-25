@@ -345,6 +345,175 @@ Definition LpRRV_filter_from_seq {dom2:SigmaAlgebra Ts} {prts2 : ProbSpace dom2}
    now apply LpRRValmost_sub_zero_eq in H1.
 Qed.
 
+ 
+Lemma SimpleExpectation_prob_space_sa_sub
+      dom2 sub x
+  {rv:RandomVariable dom borel_sa x} 
+  {rv2:RandomVariable dom2 borel_sa x} 
+  {frf:FiniteRangeFunction x} :
+  @SimpleExpectation Ts dom prts x rv frf = 
+  @SimpleExpectation Ts dom2 (prob_space_sa_sub dom2 sub) x rv2 frf.
+Proof.
+  unfold SimpleExpectation.
+  f_equal.
+  apply map_ext; intros.
+  f_equal.
+  simpl.
+  apply ps_proper.
+  intros ?.
+  unfold preimage_singleton; simpl.
+  tauto.
+Qed.
+
+Lemma NonnegExpectation_prob_space_sa_sub
+      dom2 sub x
+      {pofrf:NonnegativeFunction x}
+      {rv:RandomVariable dom2 borel_sa x}
+            
+  :
+  @NonnegExpectation Ts dom2 (prob_space_sa_sub dom2 sub)  x pofrf =
+  @NonnegExpectation Ts dom prts x pofrf.
+Proof.
+ generalize ((RandomVariable_sa_sub _ sub x (rv_x:=rv)))
+ ; intros rv1.
+ 
+
+ assert (forall n, RandomVariable dom borel_sa (simple_approx (fun x0 : Ts => x x0) n)).
+  {
+    apply simple_approx_rv.
+    * now apply positive_Rbar_positive.
+    * typeclasses eauto.
+  } 
+
+  assert (forall n, RandomVariable dom2 borel_sa (simple_approx (fun x0 : Ts => x x0) n)).
+  {
+    apply simple_approx_rv.
+    * now apply positive_Rbar_positive.
+    * typeclasses eauto.
+  } 
+
+ rewrite <- (monotone_convergence x (simple_approx x)
+                                  rv1 pofrf
+                                  (fun n => simple_approx_rv _ _)
+                                  (fun n => simple_approx_pofrf _ _)).
+ rewrite <- (monotone_convergence x (simple_approx x)
+                                  rv pofrf
+                                  (fun n => simple_approx_rv _ _)
+                                  (fun n => simple_approx_pofrf _ _)).
+ - apply Lim_seq_ext; intros n.
+   repeat erewrite <- simple_NonnegExpectation.
+   symmetry.
+   apply SimpleExpectation_prob_space_sa_sub.
+ - intros n a.
+   apply (simple_approx_le x pofrf n a).
+ - intros n a.
+   apply (simple_approx_increasing x pofrf n a).
+ - intros n.
+   apply simple_expectation_real; trivial.
+   apply simple_approx_frf.
+ - intros.
+   apply (simple_approx_lim_seq x).
+   now apply positive_Rbar_positive.
+ - intros n a.
+   apply (simple_approx_le x pofrf n a).
+ - intros n a.
+   apply (simple_approx_increasing x pofrf n a).
+ - intros n.
+   apply simple_expectation_real; trivial.
+   apply simple_approx_frf.
+ - intros.
+   apply (simple_approx_lim_seq x).
+   now apply positive_Rbar_positive.
+
+   Unshelve.
+   apply simple_approx_frf.
+Qed.
+
+Lemma Expectation_prob_space_sa_sub
+      dom2 sub x
+      {rv:RandomVariable dom2 borel_sa x}
+            
+  :
+  @Expectation Ts dom2 (prob_space_sa_sub dom2 sub)  x =
+  @Expectation Ts dom prts x.
+Proof.
+  generalize ((RandomVariable_sa_sub _ sub x (rv_x:=rv)))
+  ; intros rv1.
+
+  unfold Expectation.
+  repeat rewrite NonnegExpectation_prob_space_sa_sub by typeclasses eauto.
+  reflexivity.
+Qed.
+
+Lemma IsLp_prob_space_sa_sub
+      p dom2 sub x
+  {rv:RandomVariable dom2 borel_sa x} :
+  IsLp prts p x <->
+  IsLp (prob_space_sa_sub dom2 sub) p x.
+Proof.
+  unfold IsLp, IsFiniteExpectation; intros.
+  now rewrite Expectation_prob_space_sa_sub by typeclasses eauto.
+Qed.
+
+Definition subset_to_sa_sub   (dom2 : SigmaAlgebra Ts) 
+           (sub : sa_sub dom2 dom)
+           (set:LpRRV_UniformSpace (prob_space_sa_sub dom2 sub) big2 -> Prop) :
+  {x : LpRRV_UniformSpace prts big2 | RandomVariable dom2 borel_sa x} -> Prop.
+Proof.
+  intros [x pfx].
+  apply set.
+  simpl.
+  destruct x; simpl in *.
+  exists LpRRV_rv_X; trivial.
+  apply IsLp_prob_space_sa_sub; trivial.
+Defined.
+
+ Definition subset_filter_to_sa_sub_filter
+            (dom2 : SigmaAlgebra Ts) 
+            (sub : sa_sub dom2 dom)
+            (F:({x : LpRRV_UniformSpace prts big2 | RandomVariable dom2 borel_sa x} -> Prop) -> Prop) :
+   (LpRRV_UniformSpace (prob_space_sa_sub dom2 sub) big2 -> Prop) -> Prop.
+ Proof.
+   intros sa.
+   apply F.
+   eapply subset_to_sa_sub; eauto.
+ Defined.
+
+  Lemma subset_filter_to_sa_sub_filter_Filter dom2 sub F :
+   Filter F ->
+   Filter (subset_filter_to_sa_sub_filter dom2 sub F).
+  Proof.
+   intros [FF1 FF2 FF3].
+   unfold subset_filter_to_sa_sub_filter, subset_to_sa_sub.
+   split.
+   - eapply FF3; try eapply FF1; intros.
+     destruct x; trivial.
+   - intros.
+     eapply FF3; try eapply FF2; [| eapply H | eapply H0].
+     intros [??]; simpl; intros.
+     tauto.
+   - intros.
+     eapply FF3; [| eapply H0].
+     intros [??].
+     eapply H.
+  Qed.
+
+ Lemma subset_filter_to_sa_sub_filter_proper dom2 sub F :
+   ProperFilter F ->
+   ProperFilter (subset_filter_to_sa_sub_filter dom2 sub F).
+ Proof.
+   intros pf.
+   unfold subset_filter_to_sa_sub_filter; simpl.
+   constructor.
+   - intros.
+     destruct pf.
+     destruct (filter_ex _ H).
+     destruct x; simpl in *.
+     eexists; eapply H0.
+   - destruct pf.
+     now apply subset_filter_to_sa_sub_filter_Filter.
+ Qed.
+
 Lemma ortho_phi_closed 
       (dom2 : SigmaAlgebra Ts) 
       (sub : sa_sub dom2 dom) :
@@ -486,7 +655,7 @@ Proof.
     simpl in H8; simpl in H9; simpl; lra.
   }
   pose (prts2 := prob_space_sa_sub dom2 sub).
-
+  
 
   generalize (L2RRV_lim_complete prts2 big2); intros HH.
 
@@ -494,6 +663,11 @@ Proof.
   pose (F :=  LpRRV_filter_from_seq f).
   pose (dom2pred := fun v => RandomVariable dom2 borel_sa v).
   pose (F2 := subset_filter F dom2pred ).
+
+  pose (F3:=subset_filter_to_sa_sub_filter _ sub F2).
+
+  generalize (HH F3); intros HH1.
+  
   specialize (H3 F).
   assert (ProperFilter F).
   {
@@ -531,6 +705,39 @@ Proof.
     intros.
     apply H5; lia.
   }
+
+  assert (pfsub:ProperFilter (subset_filter F (fun v : LpRRV prts 2 => dom2pred v))).
+  {
+    apply subset_filter_proper; intros.
+    subst F.
+    subst f.
+    unfold LpRRV_filter_from_seq in H6.
+    destruct H6 as [? HH2].
+    unfold dom2pred.
+    exists (proj1_sig (X x)).
+    split.
+    - destruct (X x); simpl.
+      tauto.
+    - apply HH2; lia.
+  } 
+    
+  assert (F3proper:ProperFilter F3).
+  {
+    unfold F3, F2.
+    now apply subset_filter_to_sa_sub_filter_proper.
+  }
+
+  assert (F3cauchy:cauchy F3).
+  {
+    admit.
+  }
+  cut_to HH1; trivial.
+
+  assert (RandomVariable dom2 borel_sa (LpRRV_lim prts2 big2 F3)).
+  {
+    admit.
+  } 
+  
   specialize (H3 H4 H5).
   exists (LpRRV_lim prts big2 F).
   generalize (cauchy_filterlim_almost_unique_alt F H4 (LpRRV_lim prts big2 F) x0); intros.
@@ -558,115 +765,6 @@ Proof.
 
   
 Admitted.
-
-Lemma SimpleExpectation_prob_space_sa_sub
-      dom2 sub x
-  {rv:RandomVariable dom borel_sa x} 
-  {rv2:RandomVariable dom2 borel_sa x} 
-  {frf:FiniteRangeFunction x} :
-  @SimpleExpectation Ts dom prts x rv frf = 
-  @SimpleExpectation Ts dom2 (prob_space_sa_sub dom2 sub) x rv2 frf.
-Proof.
-  unfold SimpleExpectation.
-  f_equal.
-  apply map_ext; intros.
-  f_equal.
-  simpl.
-  apply ps_proper.
-  intros ?.
-  unfold preimage_singleton; simpl.
-  tauto.
-Qed.
-
-Lemma NonnegExpectation_prob_space_sa_sub
-      dom2 sub x
-      {pofrf:NonnegativeFunction x}
-      {rv:RandomVariable dom2 borel_sa x}
-            
-  :
-  @NonnegExpectation Ts dom2 (prob_space_sa_sub dom2 sub)  x pofrf =
-  @NonnegExpectation Ts dom prts x pofrf.
-Proof.
- generalize ((RandomVariable_sa_sub _ sub x (rv_x:=rv)))
- ; intros rv1.
- 
-
- assert (forall n, RandomVariable dom borel_sa (simple_approx (fun x0 : Ts => x x0) n)).
-  {
-    apply simple_approx_rv.
-    * now apply positive_Rbar_positive.
-    * typeclasses eauto.
-  } 
-
-  assert (forall n, RandomVariable dom2 borel_sa (simple_approx (fun x0 : Ts => x x0) n)).
-  {
-    apply simple_approx_rv.
-    * now apply positive_Rbar_positive.
-    * typeclasses eauto.
-  } 
-
- rewrite <- (monotone_convergence x (simple_approx x)
-                                  rv1 pofrf
-                                  (fun n => simple_approx_rv _ _)
-                                  (fun n => simple_approx_pofrf _ _)).
- rewrite <- (monotone_convergence x (simple_approx x)
-                                  rv pofrf
-                                  (fun n => simple_approx_rv _ _)
-                                  (fun n => simple_approx_pofrf _ _)).
- - apply Lim_seq_ext; intros n.
-   repeat erewrite <- simple_NonnegExpectation.
-   symmetry.
-   apply SimpleExpectation_prob_space_sa_sub.
- - intros n a.
-   apply (simple_approx_le x pofrf n a).
- - intros n a.
-   apply (simple_approx_increasing x pofrf n a).
- - intros n.
-   apply simple_expectation_real; trivial.
-   apply simple_approx_frf.
- - intros.
-   apply (simple_approx_lim_seq x).
-   now apply positive_Rbar_positive.
- - intros n a.
-   apply (simple_approx_le x pofrf n a).
- - intros n a.
-   apply (simple_approx_increasing x pofrf n a).
- - intros n.
-   apply simple_expectation_real; trivial.
-   apply simple_approx_frf.
- - intros.
-   apply (simple_approx_lim_seq x).
-   now apply positive_Rbar_positive.
-
-   Unshelve.
-   apply simple_approx_frf.
-Qed.
-
-Lemma Expectation_prob_space_sa_sub
-      dom2 sub x
-      {rv:RandomVariable dom2 borel_sa x}
-            
-  :
-  @Expectation Ts dom2 (prob_space_sa_sub dom2 sub)  x =
-  @Expectation Ts dom prts x.
-Proof.
-  generalize ((RandomVariable_sa_sub _ sub x (rv_x:=rv)))
-  ; intros rv1.
-
-  unfold Expectation.
-  repeat rewrite NonnegExpectation_prob_space_sa_sub by typeclasses eauto.
-  reflexivity.
-Qed.
-
-Lemma IsLp_prob_space_sa_sub
-      p dom2 sub x
-  {rv:RandomVariable dom2 borel_sa x} :
-  IsLp prts p x <->
-  IsLp (prob_space_sa_sub dom2 sub) p x.
-Proof.
-  unfold IsLp, IsFiniteExpectation; intros.
-  now rewrite Expectation_prob_space_sa_sub by typeclasses eauto.
-Qed.
 
 Definition prob_space_sa_sub_set_lift
            dom2 sub
