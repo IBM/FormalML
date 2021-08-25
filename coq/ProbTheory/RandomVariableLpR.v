@@ -3407,10 +3407,7 @@ Section complete.
         (F : (LpRRV_UniformSpace prts pbig -> Prop) -> Prop)
         (PF:ProperFilter F)
         (cF:cauchy F) :
-    exists (P: event dom),
-      ps_P P = 1 /\
-      (forall x, 
-          P x -> 
+     almost prts (fun x =>
           is_finite (Lim_seq 
                        (fun n0 =>
                           LpRRVsum prts pbig 
@@ -3456,10 +3453,7 @@ Section complete.
         (F : (LpRRV_UniformSpace prts pbig -> Prop) -> Prop)
         (PF:ProperFilter F)
         (cF:cauchy F) :
-    exists (P: event dom),
-      ps_P P = 1 /\
-      (forall x, 
-          P x -> 
+    almost prts (fun x =>
           is_finite (Lim_seq 
                        (fun n0 =>
                           LpRRVsum prts pbig 
@@ -3505,10 +3499,7 @@ Section complete.
         (F : (LpRRV_UniformSpace prts pbig -> Prop) -> Prop)
         (PF:ProperFilter F)
         (cF:cauchy F) :
-    exists (P: event dom),
-      ps_P P = 1 /\
-      (forall x, 
-          P x -> 
+    almost prts (fun x =>
           ex_finite_lim_seq
             (fun n0 =>
                LpRRVsum prts pbig 
@@ -3553,10 +3544,7 @@ Section complete.
         (F : (LpRRV_UniformSpace prts pbig -> Prop) -> Prop)
         (PF:ProperFilter F)
         (cF:cauchy F) :
-    exists (P: event dom),
-      ps_P P = 1 /\
-      (forall x, 
-          P x -> 
+    almost prts (fun x =>
           ex_finite_lim_seq
             (fun n0 =>
                LpRRVsum prts pbig 
@@ -3580,10 +3568,8 @@ Section complete.
         (F : (LpRRV_UniformSpace prts pbig -> Prop) -> Prop)
         (PF:ProperFilter F)
         (cF:cauchy F) :
-    exists (P: event dom),
-      ps_P P = 1 /\
-      (forall x, P x -> 
-                 ex_finite_lim_seq (fun n => (LpRRV_lim_picker F PF cF (S (S n))) x)).
+    almost prts (fun x =>
+                   ex_finite_lim_seq (fun n => (LpRRV_lim_picker F PF cF (S (S n))) x)).
   Proof.
     generalize (cauchy_filter_sum_finite00 F PF cF); intros.
     destruct H as [P [? ?]].
@@ -3615,10 +3601,8 @@ Section complete.
         (F : (LpRRV_UniformSpace prts pbig -> Prop) -> Prop)
         (PF:ProperFilter F)
         (cF:cauchy F) :
-    exists (P: event dom),
-      ps_P P = 1 /\
-      (forall x, P x -> 
-                 ex_finite_lim_seq (fun n => (LpRRV_lim_picker F PF cF (S n)) x)).
+    almost prts (fun x =>
+                   ex_finite_lim_seq (fun n => (LpRRV_lim_picker F PF cF (S n)) x)).
   Proof.
     generalize (cauchy_filter_sum_ext0_finite00 F PF cF); intros.
     destruct H as [P [? ?]].
@@ -3643,10 +3627,8 @@ Section complete.
         (F : (LpRRV_UniformSpace prts pbig -> Prop) -> Prop)
         (PF:ProperFilter F)
         (cF:cauchy F) :
-    exists (P: event dom),
-      ps_P P = 1 /\
-      (forall x, P x -> 
-                 ex_finite_lim_seq (fun n => (LpRRV_lim_picker F PF cF n) x)).
+    almost prts (fun x =>
+                   ex_finite_lim_seq (fun n => (LpRRV_lim_picker F PF cF n) x)).
    Proof.
      generalize (cauchy_filter_rvlim_ext0_finite0 F PF cF); intros.
      destruct H as [P [? ?]].
@@ -3655,8 +3637,6 @@ Section complete.
      specialize (H0 x H1).
      now apply ex_finite_lim_seq_S.
    Qed.
-
-
 
   Lemma cauchy_filter_rvlim_finite
         (F : (LpRRV_UniformSpace prts pbig -> Prop) -> Prop)
