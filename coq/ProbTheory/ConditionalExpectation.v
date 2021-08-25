@@ -21,16 +21,6 @@ Set Bullet Behavior "Strict Subproofs".
 
 Section cond_exp.
 
-Program Definition ortho_projection_hilbert (E:PreHilbert) 
-           (phi: E -> Prop) (phi_mod: compatible_m phi) (phi_compl: complete_subset phi)
-           (u : E) : E.
-  generalize (ortho_projection_subspace phi phi_mod phi_compl u);intros.
-  cut_to H.
-  apply constructive_definite_description in H.
-  exact (proj1_sig H).
-  intro; apply classic.
-Defined.
-
 Context {Ts:Type} 
         {dom: SigmaAlgebra Ts}
         (prts: ProbSpace dom).
@@ -915,49 +905,138 @@ Proof.
       now apply L2RRVq_ball_ball.
 Qed.
 
+Program Definition ortho_projection_hilbert (E:PreHilbert) 
+           (phi: E -> Prop) (phi_mod: compatible_m phi) (phi_compl: complete_subset phi)
+           (u : E) : {v:E |
+                       unique (fun v => phi v /\ norm (minus u v) = Glb_Rbar (fun r : R => exists w : E, phi w /\ r = norm (minus u w))) v}.
+  generalize (ortho_projection_subspace phi phi_mod phi_compl u);intros.
+  cut_to H.
+- destruct (constructive_definite_description _ H) as [x xH].
+  exists x.
+  split; trivial.
+  destruct H as [y [yH1 yH2]].
+  intros.
+  transitivity y; [| eauto].
+  symmetry; eauto.
+- intro; apply classic.
+Qed.
+
+Lemma ortho_phi_compatible_m
+      (dom2 : SigmaAlgebra Ts)
+      (sub : sa_sub dom2 dom)
+  : compatible_m (E:=(L2RRVq_PreHilbert prts)) (ortho_phi dom2).
+Proof.
+  split; [split | ]; intros.
+  - destruct H as [a [eqqa rv_a]]; subst.
+    destruct H0 as [b [eqqb rv_b]]; subst.
+    unfold plus, opp; simpl.
+    rewrite LpRRVq_oppE, LpRRVq_plusE.
+    eexists.
+    split.
+    + reflexivity.
+    + typeclasses eauto.
+  - exists (LpRRVq_zero prts).
+    exists (LpRRVzero prts).
+    simpl.
+    split.
+    + reflexivity.
+    + typeclasses eauto.
+  - destruct H as [a [eqqa Ha]]; subst.
+    exists (LpRRVscale prts l a).
+    simpl.
+    split.
+    + unfold scal; simpl.
+      rewrite LpRRVq_scaleE.
+      reflexivity.
+    + typeclasses eauto.
+Qed.
+
 Definition conditional_expectation_L2q
            (dom2 : SigmaAlgebra Ts)
            (sub : sa_sub dom2 dom)
            (x:LpRRVq prts 2)
-  : LpRRVq prts 2.
+  : {v : L2RRVq_PreHilbert prts
+      | unique
+          (fun v : L2RRVq_PreHilbert prts =>
+             ortho_phi dom2 v /\
+             norm (minus (G:=(PreHilbert.AbelianGroup (L2RRVq_PreHilbert prts))) x v) =
+             Glb_Rbar (fun r : R => exists w : L2RRVq_PreHilbert prts,
+                           ortho_phi dom2 w /\
+                           r = norm (minus (G:=(PreHilbert.AbelianGroup (L2RRVq_PreHilbert  prts)))x w)))
+          v}.
 Proof.
-  refine (ortho_projection_hilbert (L2RRVq_PreHilbert prts)
-                                  (ortho_phi dom2) _ _ x).
-  - split; [split | ]; intros.
-    + destruct H as [a [eqqa rv_a]]; subst.
-      destruct H0 as [b [eqqb rv_b]]; subst.
-      unfold plus, opp; simpl.
-      rewrite LpRRVq_oppE, LpRRVq_plusE.
-      eexists.
-      split.
-      * reflexivity.
-      * typeclasses eauto.
-    + exists (LpRRVq_zero prts).
-      exists (LpRRVzero prts).
-      simpl.
-      split.
-      * reflexivity.
-      * typeclasses eauto.
-    + destruct H as [a [eqqa Ha]]; subst.
-      exists (LpRRVscale prts l a).
-      simpl.
-      split.
-      * unfold scal; simpl.
-        rewrite LpRRVq_scaleE.
-        reflexivity.
-      * typeclasses eauto.
-  - now apply ortho_phi_complete.
+  apply (ortho_projection_hilbert (L2RRVq_PreHilbert prts)
+                                       (ortho_phi dom2)
+                                       (ortho_phi_compatible_m _ sub)
+                                       (ortho_phi_complete _ sub)
+                                       x).
 Qed.
 
-Program Definition conditional_expectation_L2fun (f : Ts -> R) 
+Let nneg2 : nonnegreal := bignneg 2 big2.
+Canonical nneg2.
+
+(* Note that we lose uniqueness, since it only holds over the quotiented space. *)
+Definition conditional_expectation_L2 (f :LpRRV prts 2)
+        (dom2 : SigmaAlgebra Ts)
+        (sub : sa_sub dom2 dom) :
+   {v : LpRRV prts 2 
+      | RandomVariable dom2 borel_sa v /\
+        LpRRVnorm prts (LpRRVminus prts f v) =
+        Glb_Rbar (fun r : R => exists w : LpRRV prts 2,
+                      RandomVariable dom2 borel_sa (LpRRV_rv_X prts w) /\
+                      r = LpRRVnorm prts (LpRRVminus prts f w))
+     }.
+Proof.
+  destruct ((conditional_expectation_L2q dom2 sub (Quot _ f))).
+  destruct u as [[HH1 HH2] HH3].
+  red in HH1.
+  apply constructive_indefinite_description in HH1.
+  destruct HH1 as [y [eqqy rvy]].
+  exists y.
+  split; trivial.
+  subst.
+  unfold norm, minus, plus, opp in HH2; simpl in HH2.
+  rewrite L2RRVq_norm_norm in HH2.
+  autorewrite with quot in HH2.
+  rewrite LpRRVq_normE in HH2.
+  rewrite LpRRVminus_plus.
+  unfold nonneg in HH2 |- *; simpl in *.
+  rewrite HH2.
+  f_equal.
+  apply Glb_Rbar_eqset; intros.
+  split; intros [w [wrv wnorm]].
+  - rewrite L2RRVq_norm_norm in wnorm.
+    destruct wrv as [w' [? rvw']]; subst.
+    exists w'.
+    split; trivial.
+    autorewrite with quot.
+    rewrite LpRRVq_normE.
+    now rewrite LpRRVminus_plus.
+  - subst.
+    exists (Quot _ w).
+    split.
+    + exists w.
+      split; trivial.
+    + rewrite L2RRVq_norm_norm.
+      autorewrite with quot.
+      rewrite LpRRVq_normE.
+      now rewrite LpRRVminus_plus.
+Qed.
+
+Definition conditional_expectation_L2fun (f : Ts -> R) 
         (dom2 : SigmaAlgebra Ts)
         (sub : sa_sub dom2 dom)
         {rv : RandomVariable dom borel_sa f}
-        {isl : IsLp prts 2 f} : LpRRV prts 2 :=
-  _ (Quot_inv (conditional_expectation_L2q dom2 sub (Quot _ (pack_LpRRV prts f)))).
-Next Obligation.
-  apply constructive_indefinite_description in x.
-  exact (proj1_sig x).
+        {isl : IsLp prts 2 f} :
+   {v : LpRRV prts 2 
+      | RandomVariable dom2 borel_sa v /\
+        LpRRVnorm prts (LpRRVminus prts (pack_LpRRV prts f) v) =
+        Glb_Rbar (fun r : R => exists w : LpRRV prts 2,
+                      RandomVariable dom2 borel_sa (LpRRV_rv_X prts w) /\
+                      r = LpRRVnorm prts (LpRRVminus prts (pack_LpRRV prts f) w))
+     }.
+Proof.
+  apply (conditional_expectation_L2 (pack_LpRRV prts f) _ sub).
 Qed.
 
 Instance IsLp_min_const_nat (f : Ts -> R) (n : nat) 
@@ -984,7 +1063,7 @@ Definition NonNegConditionalExpectation (f : Ts -> R)
            (sub : sa_sub dom2 dom)
            {rv : RandomVariable dom borel_sa f}
            {nneg : NonnegativeFunction f} : Ts -> Rbar :=
-  Rbar_rvlim (fun n => conditional_expectation_L2fun (rvmin f (const (INR n))) dom2 sub).
+  Rbar_rvlim (fun n => proj1_sig (conditional_expectation_L2fun (rvmin f (const (INR n))) dom2 sub)).
 
 Definition ConditionalExpectation (f : Ts -> R) 
            (dom2 : SigmaAlgebra Ts)
