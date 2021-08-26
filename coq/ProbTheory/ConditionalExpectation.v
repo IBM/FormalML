@@ -550,6 +550,73 @@ Proof.
   congruence.
 Qed.
 
+Lemma is_lim_seq_filter_ball_center f x 
+  (pf :ProperFilter (LpRRV_filter_from_seq f)) 
+  (cF : cauchy (LpRRV_filter_from_seq f)) :
+  is_lim_seq (fun n : nat => LpRRV_dist (f n) x) 0 ->
+  (forall (n:nat),  proj1_sig (LpRRV_lim_ball_center prts big2 (LpRRV_filter_from_seq f) pf cF n) x).
+  Proof.
+    intros.
+    pose (F := (LpRRV_filter_from_seq f)).
+    unfold cauchy, LpRRV_filter_from_seq in cF.
+    unfold LpRRV_lim_ball_center.
+    unfold proj1_sig.
+    match_case; intros.
+    simpl in H0.
+    match_case_in H0; intros.
+    destruct H1.
+    match_destr_in H0.
+    
+    
+    unfold cauchy in cF.
+    destruct (cF {| pos := / 2 ^ n; cond_pos := inv_pow_2_pos n |}) in H0.
+    
+    unfold cF in H0.
+    destruct (
+    match_destr_in H0.
+    
+*)
+    
+
+(*
+Lemma is_lim_seq_filter_lim f x:
+  ProperFilter (LpRRV_filter_from_seq f) ->
+  cauchy (LpRRV_filter_from_seq f) ->
+  is_lim_seq (fun n : nat => LpRRV_dist (f n) x) 0 ->
+  forall eps : posreal, LpRRV_dist (LpRRV_lim prts big2 (LpRRV_filter_from_seq f)) x < eps.
+Proof.
+  intros pf cF isl eps.
+  generalize (ball_LpRRV_lim_picker prts big2 (LpRRV_filter_from_seq f) pf cF eps)
+  ; intros[N HH].
+
+  generalize (lim_picker_included prts big2 (LpRRV_filter_from_seq f) pf cF); intros.
+  generalize (lim_ball_center_dist prts big2 (LpRRV_lim_picker prts big2 (LpRRV_filter_from_seq f) pf cF n) x); intros.
+  
+  
+  admit.
+  
+  assert (exists N2, forall n : nat,
+             (n >= N2)%nat ->
+             LpRRV_dist (LpRRV_lim_picker prts big2 (LpRRV_filter_from_seq f) pf cF (S n)) x < eps/2).
+  {
+    clear HH.
+    unfold LpRRV_dist.
+    unfold LpRRV_filter_from_seq.
+    unfold LpRRV_lim_picker.
+    generalize (lim_picker_included prts big2 (LpRRV_filter_from_seq f) p c); intros.
+
+
+     Lemma lim_ball_center_dist (x y : LpRRV prts p)
+             (F : (LpRRV_UniformSpace prts pbig -> Prop) -> Prop)
+             (PF:ProperFilter F)
+             (cF:cauchy F)
+             (N:nat) :
+    unfold LpRRV_lim_ball_center_center in H0.
+    admit.
+  }
+  
+ *)
+
 Lemma ortho_phi_closed 
       (dom2 : SigmaAlgebra Ts) 
       (sub : sa_sub dom2 dom) :
