@@ -861,6 +861,26 @@ Proof.
     unfold LpRRV_filter_from_seq.
     specialize (H3 H4 H5).
     unfold LpRRV_dist.
+    generalize (ball_LpRRV_lim_picker prts big2 F H4 H5 eps); intros.
+    destruct (H6 eps).
+    destruct H7.
+    unfold Hierarchy.ball in H7; simpl in H7.
+    unfold LpRRVball, LpRRV_lim_picker in H7.
+    specialize (H7 (max x x1)).
+    cut_to H7; try lia.
+    unfold proj1_sig in H7.
+    match_destr_in H7.
+
+(*
+    
+    simpl in y.
+
+    destruct y as [? [? ?]].
+    
+    unfold LpRRV_lim_ball_cumulative in y.
+
+    simpl in H7.
+*)    
     
     
     admit.
@@ -873,11 +893,47 @@ Proof.
   }
   apply F3limball.
 
-  Admitted.
+Admitted.
+
+
+Lemma is_lim_seq_min (x : R) :
+      is_lim_seq (fun n : nat => Rmin x (INR n)) x.
+Proof.
+  apply is_lim_seq_spec.
+  unfold is_lim_seq'.
+  intros.
+  exists (Z.to_nat (up x)).
+  intros.
+  rewrite Rmin_left.
+  - rewrite Rminus_eq_0.
+    rewrite Rabs_R0.
+    apply cond_pos.
+  - destruct (archimed x).
+    destruct (Rge_dec x 0).
+    + rewrite <- INR_up_pos in H0; trivial.
+      apply Rge_le.
+      left.
+      apply Rge_gt_trans with (r2 := INR (Z.to_nat (up x))); trivial.
+      apply Rle_ge.
+      now apply le_INR.
+    + generalize (pos_INR n); intros.
+      lra.
+  Qed.
+
+Lemma rvlim_rvmin (f : Ts -> R) :
+  rv_eq (Rbar_rvlim (fun n => rvmin f (const (INR n)))) f.
+Proof.
+  intro x.
+  unfold Rbar_rvlim, rvmin, const.
+  generalize (is_lim_seq_min (f x)); intros.
+  now apply is_lim_seq_unique in H.
+Qed.
 
 (*
 
 
+
+almostR2 prts eq (Rbar_rvlim (fun n : nat => rvmin f (const (INR n)))) (fun x : Ts => f x)
   (prob_space_sa_sub_LpRRV_lift dom2 sub (LpRRV_lim prts2 big2 F3)) x0).
   unfold LpRRVball in H6.
   generalize 
