@@ -566,16 +566,8 @@ Lemma is_lim_seq_filter_ball_center f x
     match_case_in H0; intros.
     destruct H1.
     match_destr_in H0.
-    
-    
-    unfold cauchy in cF.
-    destruct (cF {| pos := / 2 ^ n; cond_pos := inv_pow_2_pos n |}) in H0.
-    
-    unfold cF in H0.
-    destruct (
-    match_destr_in H0.
-    
-*)
+    invcs H0.
+    unfold LpRRV_filter_from_seq in l0.
     
 
 (*
