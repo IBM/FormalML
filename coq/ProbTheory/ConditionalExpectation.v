@@ -619,7 +619,7 @@ Proof.
     now exists x.
   }
   pose (f := fun (n : nat) => proj1_sig (X n)).
-  assert (is_lim_seq (fun n => LpRRVnorm prts (LpRRVminus (p := bignneg 2 big2) prts  (f n) x0)) 0).
+  assert (is_lim_seq (fun n => LpRRV_dist (f n) x0) 0).
   {
     apply is_lim_seq_spec.
     unfold is_lim_seq'.
@@ -663,12 +663,12 @@ Proof.
     eapply Rle_trans.
     apply H2.
     apply Rplus_le_compat_l.
-    now rewrite LpRRVminus_plus in H1.
+    now rewrite <- LpRRVminus_plus.
   }
   assert (forall (eps:posreal), 
              exists (N:nat), 
                forall (n m : nat), 
-                 (n>=N)%nat -> (m >= N)%nat -> LpRRVnorm prts (LpRRVminus prts (p := bignneg 2 big2) (f n) (f m)) < eps).
+                 (n>=N)%nat -> (m >= N)%nat -> LpRRV_dist (f n) (f m) < eps).
   {
     intros.
     apply is_lim_seq_spec in H0.
@@ -686,7 +686,8 @@ Proof.
     unfold LpRRV_dist in H7.
     eapply Rle_lt_trans.
     apply H7.
-    rewrite LpRRVnorm_minus_sym in H9.
+    rewrite LpRRV_dist_comm in H9.
+    unfold LpRRV_dist in H8; unfold LpRRV_dist in H9.
     simpl in H8; simpl in H9; simpl; lra.
   }
   pose (prts2 := prob_space_sa_sub dom2 sub).
@@ -838,12 +839,38 @@ Proof.
   apply LpRRV_norm0.
   apply nneg_lt_eps_zero; [apply power_nonneg |].
   assert (forall (eps:posreal),
-             (LpRRVball prts big2 (prob_space_sa_sub_LpRRV_lift dom2 sub (LpRRV_lim prts2 big2 F3)) eps x0)).
+             exists (N:nat),
+               forall (n:nat), (n>=N)%nat ->
+                               LpRRV_dist (f n) x0 < eps).
+  {
+    intros.
+    apply is_lim_seq_spec in H0.
+    destruct (H0 eps).
+    exists x; intros.
+    specialize (H6 n H7).
+    rewrite Rminus_0_r in H6.
+    now rewrite Rabs_pos_eq in H6 by apply power_nonneg.
+  }
+    
+  assert (forall (eps:posreal),
+             (LpRRV_dist (LpRRV_lim prts big2 F) x0) < eps).
+  {
+    intros.
+    unfold F.
+    unfold LpRRV_filter_from_seq.
+    specialize (H3 H4 H5).
+    unfold LpRRV_dist.
+    
+    
+    admit.
+  }
+  assert (F3limball:forall (eps:posreal),
+             (LpRRV_dist (prob_space_sa_sub_LpRRV_lift dom2 sub (LpRRV_lim prts2 big2 F3)) x0) < eps).
   {
     intros.
     admit.
   }
-  apply H6.
+  apply F3limball.
 
   Admitted.
 
@@ -862,7 +889,7 @@ Proof.
   
   
   
-  specialize (H3 H4 H5).
+
 
   assert (almostR2 prts eq 
                    (prob_space_sa_sub_LpRRV_lift dom2 sub (LpRRV_lim prts2 big2 F3))
