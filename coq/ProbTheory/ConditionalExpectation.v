@@ -1068,21 +1068,41 @@ Proof.
 Qed.
 
 Definition conditional_expectation_L2fun (f : Ts -> R) 
-        (dom2 : SigmaAlgebra Ts)
+        {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
         {rv : RandomVariable dom borel_sa f}
         {isl : IsLp prts 2 f} :
-   {v : LpRRV prts 2 
-      | RandomVariable dom2 borel_sa v /\
-        LpRRVnorm prts (LpRRVminus prts (pack_LpRRV prts f) v) =
-        Glb_Rbar (fun r : R => exists w : LpRRV prts 2,
-                      RandomVariable dom2 borel_sa (LpRRV_rv_X prts w) /\
-                      r = LpRRVnorm prts (LpRRVminus prts (pack_LpRRV prts f) w))
-     }.
+  LpRRV prts 2
+  := proj1_sig (conditional_expectation_L2 (pack_LpRRV prts f) _ sub).
+
+Instance conditional_expectation_L2fun_rv
+         (f : Ts -> R) 
+         (dom2 : SigmaAlgebra Ts)
+         (sub : sa_sub dom2 dom)
+         {rv : RandomVariable dom borel_sa f}
+         {isl : IsLp prts 2 f} :
+  RandomVariable dom2 borel_sa (conditional_expectation_L2fun f sub).
 Proof.
-  apply (conditional_expectation_L2 (pack_LpRRV prts f) _ sub).
+  unfold conditional_expectation_L2fun, proj1_sig.
+  match_destr; tauto.
 Qed.
 
+Lemma conditional_expectation_L2fun_eq
+      (f : Ts -> R) 
+      {dom2 : SigmaAlgebra Ts}
+      (sub : sa_sub dom2 dom)
+      {rv : RandomVariable dom borel_sa f}
+      {isl : IsLp prts 2 f} :
+  LpRRVnorm prts (LpRRVminus prts (pack_LpRRV prts f) (conditional_expectation_L2fun f sub)) =
+      Glb_Rbar
+        (fun r : R =>
+         exists w : LpRRV prts 2,
+           RandomVariable dom2 borel_sa w /\ r = LpRRVnorm prts (LpRRVminus prts (pack_LpRRV prts f) w)).
+Proof.
+  unfold conditional_expectation_L2fun, proj1_sig.
+  match_destr; tauto.
+Qed.
+  
 Instance IsLp_min_const_nat (f : Ts -> R) (n : nat) 
          {nneg : NonnegativeFunction f} :
   IsLp prts 2 (rvmin f (const (INR n))).
@@ -1103,17 +1123,90 @@ Proof.
 Qed.
 
 Definition NonNegConditionalExpectation (f : Ts -> R) 
-           (dom2 : SigmaAlgebra Ts)
+           {dom2 : SigmaAlgebra Ts}
            (sub : sa_sub dom2 dom)
            {rv : RandomVariable dom borel_sa f}
            {nneg : NonnegativeFunction f} : Ts -> Rbar :=
-  Rbar_rvlim (fun n => proj1_sig (conditional_expectation_L2fun (rvmin f (const (INR n))) dom2 sub)).
+  Rbar_rvlim (fun n => conditional_expectation_L2fun (rvmin f (const (INR n))) sub).
 
 Definition ConditionalExpectation (f : Ts -> R) 
-           (dom2 : SigmaAlgebra Ts)
+           {dom2 : SigmaAlgebra Ts}
            (sub : sa_sub dom2 dom)
            (rv : RandomVariable dom borel_sa f) : Ts -> Rbar :=
-  Rbar_rvplus (NonNegConditionalExpectation (pos_fun_part f) dom2 sub)
-              (fun x => Rbar_opp (NonNegConditionalExpectation (neg_fun_part f) dom2 sub x)).
+  Rbar_rvplus (NonNegConditionalExpectation (pos_fun_part f) sub)
+              (fun x => Rbar_opp (NonNegConditionalExpectation (neg_fun_part f) sub x)).
 
 End cond_exp.
+
+Section cond_exp_props.
+
+  Context {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts: ProbSpace dom).
+
+  Existing Instance RandomVariable_sa_sub.
+  Existing Instance conditional_expectation_L2fun_rv.
+
+  Lemma LpRRVnorm_const {p} c : p <> 0 -> LpRRVnorm (p:=p) prts (LpRRVconst prts c) = Rabs c.
+  Proof.
+    intros.
+    unfold LpRRVnorm; simpl.
+    rv_unfold.
+    generalize (FiniteExpectation_const prts (power (Rabs c) p))
+    ; intros HH.
+    unfold const in HH.
+    erewrite FiniteExpectation_pf_irrel.
+    rewrite HH.
+    apply inv_power_cancel; trivial.
+    apply Rabs_pos.
+  Qed.
+  
+  Lemma LpRRVnorm0 {p} : p <> 0 -> LpRRVnorm (p:=p) prts (LpRRVzero prts) = 0.
+  Proof.
+    intros.
+    unfold LpRRVzero.
+    rewrite LpRRVnorm_const; trivial.
+    now rewrite Rabs_R0.
+  Qed.
+    
+  Lemma conditional_expectation_L2fun_rv_eq f
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        {rv : RandomVariable dom2 borel_sa f}
+        {isl : IsLp prts 2 f} :
+    LpRRV_eq prts
+             (conditional_expectation_L2fun prts f sub (rv:=RandomVariable_sa_sub _ sub f))
+             (pack_LpRRV prts f (rv:=RandomVariable_sa_sub _ sub f)).
+  Proof.
+    unfold conditional_expectation_L2fun, proj1_sig.
+    match_destr.
+    destruct a as [xrv xeq].
+    match type of xeq with
+    |  _ = (real ?x) => replace x with (Finite 0) in xeq
+    end.
+    - apply LpRRV_norm0 in xeq.
+      apply LpRRValmost_sub_zero_eq in xeq.
+      symmetry.
+      apply xeq.
+    - symmetry.
+      unfold Glb_Rbar, proj1_sig.
+      match_destr.
+      destruct i as [lb glb].
+      unfold is_lb_Rbar in *.
+      apply Rbar_le_antisym.
+      + apply lb.
+        exists (pack_LpRRV prts f (rv:=RandomVariable_sa_sub _ sub f)).
+        split; trivial.
+        LpRRV_simpl.
+        rewrite (LpRRV_norm_proper prts _ (LpRRVzero prts)).
+        * rewrite LpRRVnorm0; trivial.
+        * apply LpRRV_seq_eq.
+          unfold LpRRV_seq; simpl.
+          rewrite rvminus_self.
+          reflexivity.
+      + apply glb; intros y [w [rvw eqw]].
+        subst.
+        unfold LpRRVnorm; simpl.
+        apply power_nonneg.
+  Qed.
+    
