@@ -1489,7 +1489,9 @@ Canonical nneg2.
       apply rvlim_rvmin.
   Qed.
 
-  Lemma ConditionalExpectation_rv_eq f
+  (* If f is dom2-measurable, then its conditional expectation with
+     respect to dom2 is almost itself *)
+  Theorem ConditionalExpectation_rv_eq f
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
         {rv : RandomVariable dom borel_sa f}
