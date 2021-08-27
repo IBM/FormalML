@@ -536,6 +536,16 @@ Proof.
   now destruct X; simpl in *.
 Qed.
 
+Lemma IsFiniteExpectation_prob_space_sa_sub
+      dom2 sub x
+      {rv:RandomVariable dom2 borel_sa x}
+      {isfe1:IsFiniteExpectation (prob_space_sa_sub dom2 sub) x} :
+  IsFiniteExpectation prts x.
+Proof.
+  unfold IsFiniteExpectation in *.
+  now rewrite Expectation_prob_space_sa_sub in isfe1 by trivial.
+Qed.
+
 Lemma FiniteExpectation_prob_space_sa_sub
       dom2 sub x
       {rv:RandomVariable dom2 borel_sa x}
@@ -899,19 +909,75 @@ Proof.
     apply Rplus_lt_compat.
     apply H11.
     unfold dom2pred in H10.
-    assert (RandomVariable dom2 borel_sa (proj1_sig (X (Init.Nat.max x x1)))).
+    assert (frv:RandomVariable dom2 borel_sa (f (Init.Nat.max x x1))).
     {
-      admit.
-    }
-    specialize (H10 H13).
-    
-    
-    admit.
-  }
+      unfold f.
+      unfold proj1_sig.
+      match_destr; tauto.
+    } 
+    specialize (H10 frv).
+    unfold subset_to_sa_sub, Hierarchy.ball in H10.
+    simpl in H10.
+    unfold LpRRVball in H10.
+    unfold LpRRVnorm in H10.
+    simpl in H10.
+    unfold prts2 in H10.
+    assert (isfe2:IsFiniteExpectation prts
+             (rvpower
+                (rvabs
+                   (rvminus
+                      (LpRRV_lim (prob_space_sa_sub dom2 sub) big2
+                         (subset_filter_to_sa_sub_filter dom2 sub
+                            (subset_filter
+                               (fun P : LpRRV prts 2 -> Prop =>
+                                exists N : nat, forall n : nat, (n >= N)%nat -> P (f n))
+                               (fun v : LpRRV prts 2 => RandomVariable dom2 borel_sa v))))
+                      (match
+                         f (Init.Nat.max x x1) as l
+                         return (RandomVariable dom2 borel_sa l -> LpRRV (prob_space_sa_sub dom2 sub) 2)
+                       with
+                       | {| LpRRV_rv_X := LpRRV_rv_X; LpRRV_lp := LpRRV_lp |} =>
+                           fun pfx : RandomVariable dom2 borel_sa LpRRV_rv_X =>
+                           {|
+                           LpRRV_rv_X := LpRRV_rv_X;
+                           LpRRV_rv := pfx;
+                           LpRRV_lp := match IsLp_prob_space_sa_sub 2 dom2 sub LpRRV_rv_X with
+                                       | conj x _ => x
+                                       end LpRRV_lp |}
+                        end frv))) (const 2))).
+    {
+      eapply (IsFiniteExpectation_prob_space_sa_sub _ sub); try typeclasses eauto.
+      unfold FiniteExpectation, proj1_sig in H10.
+      match_destr_in H10.
+      red.
+      now rewrite e.
+    }       
+    rewrite (FiniteExpectation_prob_space_sa_sub _ _ _ (isfe2:=isfe2)) in H10.
+    unfold LpRRV_dist, LpRRVnorm.
+    simpl.
+    unfold f in *.
+    eapply Rle_lt_trans; try eapply H10.
+    right.
+    f_equal.
+    apply FiniteExpectation_ext; intros ?.
+    rv_unfold.
+    f_equal.
+    f_equal.
+    f_equal.
+    - unfold prob_space_sa_sub_LpRRV_lift; simpl.
+      unfold F3, F2, F.
+      unfold LpRRV_filter_from_seq.
+      simpl.
+      unfold prts2, dom2pred.
+      match_destr.
+    - f_equal.
+      clear H10.
+
+      destruct (X (Init.Nat.max x x1)); simpl.
+      match_destr.
+  } 
   apply F3limball.
-
-Admitted.
-
+Qed.
 
 Lemma ortho_phi_complete
            (dom2 : SigmaAlgebra Ts)
