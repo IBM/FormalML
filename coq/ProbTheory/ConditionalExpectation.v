@@ -879,6 +879,33 @@ Proof.
              (LpRRV_dist (prob_space_sa_sub_LpRRV_lift dom2 sub (LpRRV_lim prts2 big2 F3)) x0) < eps).
   {
     intros.
+    assert (0 < eps) by apply cond_pos.
+    assert (0 < eps/2) by lra.
+    destruct (HH1 (mkposreal _ H9)).
+    destruct (H6 (mkposreal _ H9)).
+    specialize (H11 (max x x1)).
+    specialize (H10 (max x x1)).
+    cut_to H10; try lia.
+    cut_to H11; try lia.
+    unfold F3 in H10.
+    unfold F2 in H10.
+    unfold F in H10.
+    unfold LpRRV_filter_from_seq in H10.
+    generalize (LpRRV_dist_triang (prob_space_sa_sub_LpRRV_lift dom2 sub (LpRRV_lim prts2 big2 F3)) (f (max x x1)) x0); intros.
+    rewrite Rplus_comm in H12.
+    eapply Rle_lt_trans.
+    apply H12.
+    replace (pos eps) with ((eps/2) + (eps/2)) by lra.
+    apply Rplus_lt_compat.
+    apply H11.
+    unfold dom2pred in H10.
+    assert (RandomVariable dom2 borel_sa (proj1_sig (X (Init.Nat.max x x1)))).
+    {
+      admit.
+    }
+    specialize (H10 H13).
+    
+    
     admit.
   }
   apply F3limball.
