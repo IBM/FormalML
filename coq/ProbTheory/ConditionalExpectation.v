@@ -738,28 +738,14 @@ Proof.
         exists N; intros n nN.
         auto.
   }
-  assert (cauchy F).
-  {
-    unfold cauchy.
-    intros.
-    destruct (H2 eps).
-    unfold Hierarchy.ball; simpl.
-    unfold LpRRVball.
-    exists (f x).
-    unfold F.
-    unfold LpRRV_filter_from_seq.
-    exists x.
-    intros.
-    apply H5; lia.
-  }
 
   assert (pfsub:ProperFilter (subset_filter F (fun v : LpRRV prts 2 => dom2pred v))).
   {
     apply subset_filter_proper; intros.
     subst F.
     subst f.
-    unfold LpRRV_filter_from_seq in H6.
-    destruct H6 as [? HH2].
+    unfold LpRRV_filter_from_seq in H5.
+    destruct H5 as [? HH2].
     unfold dom2pred.
     exists (proj1_sig (X x)).
     split.
@@ -858,31 +844,9 @@ Proof.
     apply is_lim_seq_spec in H0.
     destruct (H0 eps).
     exists x; intros.
-    specialize (H6 n H7).
-    rewrite Rminus_0_r in H6.
-    now rewrite Rabs_pos_eq in H6 by apply power_nonneg.
-  }
-  assert (forall (eps:posreal),
-             (LpRRV_dist (LpRRV_lim prts big2 F) x0) < eps).
-  {
-    intros.
-    specialize (H3 H4 H5).
-    assert (0 < eps) by apply cond_pos.
-    assert (0 < eps/2) by lra.
-    unfold F, LpRRV_filter_from_seq in H3.
-    destruct (H3 (mkposreal _ H8)).
-    destruct (H6 (mkposreal _ H8)).
-    specialize (H9 (max x x1)).
-    specialize (H10 (max x x1)).
-    cut_to H9; try lia.
-    cut_to H10; try lia.
-    generalize (LpRRV_dist_triang (LpRRV_lim prts big2 F) (f (max x x1)) x0); intros.
-    eapply Rle_lt_trans.
-    apply H11.
-    replace (pos eps) with ((eps/2) + (eps/2)) by lra.
-    apply Rplus_lt_compat.
-    apply H9.
-    apply H10.
+    specialize (H5 n H6).
+    rewrite Rminus_0_r in H5.
+    now rewrite Rabs_pos_eq in H5 by apply power_nonneg.
   }
 
   assert (F3limball:forall (eps:posreal),
@@ -891,37 +855,37 @@ Proof.
     intros.
     assert (0 < eps) by apply cond_pos.
     assert (0 < eps/2) by lra.
-    destruct (HH1 (mkposreal _ H9)).
-    destruct (H6 (mkposreal _ H9)).
-    specialize (H11 (max x x1)).
-    specialize (H10 (max x x1)).
-    cut_to H10; try lia.
-    cut_to H11; try lia.
-    unfold F3 in H10.
-    unfold F2 in H10.
-    unfold F in H10.
-    unfold LpRRV_filter_from_seq in H10.
+    destruct (HH1 (mkposreal _ H7)).
+    destruct (H5 (mkposreal _ H7)).
+    specialize (H9 (max x x1)).
+    specialize (H8 (max x x1)).
+    cut_to H8; try lia.
+    cut_to H9; try lia.
+    unfold F3 in H8.
+    unfold F2 in H8.
+    unfold F in H8.
+    unfold LpRRV_filter_from_seq in H8.
     generalize (LpRRV_dist_triang (prob_space_sa_sub_LpRRV_lift dom2 sub (LpRRV_lim prts2 big2 F3)) (f (max x x1)) x0); intros.
-    rewrite Rplus_comm in H12.
+    rewrite Rplus_comm in H10.
     eapply Rle_lt_trans.
-    apply H12.
+    apply H10.
     replace (pos eps) with ((eps/2) + (eps/2)) by lra.
     apply Rplus_lt_compat.
-    apply H11.
-    unfold dom2pred in H10.
+    apply H9.
+    unfold dom2pred in H8.
     assert (frv:RandomVariable dom2 borel_sa (f (Init.Nat.max x x1))).
     {
       unfold f.
       unfold proj1_sig.
       match_destr; tauto.
     } 
-    specialize (H10 frv).
-    unfold subset_to_sa_sub, Hierarchy.ball in H10.
-    simpl in H10.
-    unfold LpRRVball in H10.
-    unfold LpRRVnorm in H10.
-    simpl in H10.
-    unfold prts2 in H10.
+    specialize (H8 frv).
+    unfold subset_to_sa_sub, Hierarchy.ball in H8.
+    simpl in H8.
+    unfold LpRRVball in H8.
+    unfold LpRRVnorm in H8.
+    simpl in H8.
+    unfold prts2 in H8.
     assert (isfe2:IsFiniteExpectation prts
              (rvpower
                 (rvabs
@@ -947,16 +911,16 @@ Proof.
                         end frv))) (const 2))).
     {
       eapply (IsFiniteExpectation_prob_space_sa_sub _ sub); try typeclasses eauto.
-      unfold FiniteExpectation, proj1_sig in H10.
-      match_destr_in H10.
+      unfold FiniteExpectation, proj1_sig in H8.
+      match_destr_in H8.
       red.
       now rewrite e.
     }       
-    rewrite (FiniteExpectation_prob_space_sa_sub _ _ _ (isfe2:=isfe2)) in H10.
+    rewrite (FiniteExpectation_prob_space_sa_sub _ _ _ (isfe2:=isfe2)) in H8.
     unfold LpRRV_dist, LpRRVnorm.
     simpl.
     unfold f in *.
-    eapply Rle_lt_trans; try eapply H10.
+    eapply Rle_lt_trans; try eapply H8.
     right.
     f_equal.
     apply FiniteExpectation_ext; intros ?.
@@ -971,7 +935,7 @@ Proof.
       unfold prts2, dom2pred.
       match_destr.
     - f_equal.
-      clear H10.
+      clear H8.
 
       destruct (X (Init.Nat.max x x1)); simpl.
       match_destr.
