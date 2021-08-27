@@ -685,16 +685,13 @@ Proof.
   pose (prts2 := prob_space_sa_sub dom2 sub).
   generalize (L2RRV_lim_complete prts2 big2); intros HH.
 
-  generalize (L2RRV_lim_complete prts big2); intros.
   pose (F :=  LpRRV_filter_from_seq f).
   pose (dom2pred := fun v => RandomVariable dom2 borel_sa v).
   pose (F2 := subset_filter F dom2pred ).
-
   pose (F3:=subset_filter_to_sa_sub_filter _ sub F2).
 
   generalize (HH F3); intros HH1.
   
-  specialize (H2 F).
   assert (ProperFilter F).
   {
     subst F f.
@@ -723,8 +720,8 @@ Proof.
     apply subset_filter_proper; intros.
     subst F.
     subst f.
-    unfold LpRRV_filter_from_seq in H4.
-    destruct H4 as [? HH2].
+    unfold LpRRV_filter_from_seq in H3.
+    destruct H3 as [? HH2].
     unfold dom2pred.
     exists (proj1_sig (X x)).
     split.
@@ -823,9 +820,9 @@ Proof.
     apply is_lim_seq_spec in H0.
     destruct (H0 eps).
     exists x; intros.
-    specialize (H4 n H5).
-    rewrite Rminus_0_r in H4.
-    now rewrite Rabs_pos_eq in H4 by apply power_nonneg.
+    specialize (H3 n H4).
+    rewrite Rminus_0_r in H3.
+    now rewrite Rabs_pos_eq in H3 by apply power_nonneg.
   }
 
   assert (F3limball:forall (eps:posreal),
@@ -834,34 +831,34 @@ Proof.
     intros.
     assert (0 < eps) by apply cond_pos.
     assert (0 < eps/2) by lra.
-    destruct (HH1 (mkposreal _ H6)).
-    destruct (H4 (mkposreal _ H6)).
-    specialize (H8 (max x x1)).
+    destruct (HH1 (mkposreal _ H5)).
+    destruct (H3 (mkposreal _ H5)).
     specialize (H7 (max x x1)).
+    specialize (H6 (max x x1)).
+    cut_to H6; try lia.
     cut_to H7; try lia.
-    cut_to H8; try lia.
-    unfold F3, F2, F in H7.
-    unfold LpRRV_filter_from_seq in H7.
+    unfold F3, F2, F in H6.
+    unfold LpRRV_filter_from_seq in H6.
     generalize (LpRRV_dist_triang (prob_space_sa_sub_LpRRV_lift dom2 sub (LpRRV_lim prts2 big2 F3)) (f (max x x1)) x0); intros.
-    rewrite Rplus_comm in H9.
+    rewrite Rplus_comm in H8.
     eapply Rle_lt_trans.
-    apply H9.
+    apply H8.
     replace (pos eps) with ((eps/2) + (eps/2)) by lra.
     apply Rplus_lt_compat.
-    apply H8.
-    unfold dom2pred in H7.
+    apply H7.
+    unfold dom2pred in H6.
     assert (frv:RandomVariable dom2 borel_sa (f (Init.Nat.max x x1))).
     {
       unfold f.
       unfold proj1_sig.
       match_destr; tauto.
     } 
-    specialize (H7 frv).
-    unfold subset_to_sa_sub, Hierarchy.ball in H7.
-    simpl in H7.
-    unfold LpRRVball, LpRRVnorm in H7.
-    simpl in H7.
-    unfold prts2 in H7.
+    specialize (H6 frv).
+    unfold subset_to_sa_sub, Hierarchy.ball in H6.
+    simpl in H6.
+    unfold LpRRVball, LpRRVnorm in H6.
+    simpl in H6.
+    unfold prts2 in H6.
     assert (isfe2:IsFiniteExpectation prts
              (rvpower
                 (rvabs
@@ -887,16 +884,16 @@ Proof.
                         end frv))) (const 2))).
     {
       eapply (IsFiniteExpectation_prob_space_sa_sub _ sub); try typeclasses eauto.
-      unfold FiniteExpectation, proj1_sig in H7.
-      match_destr_in H7.
+      unfold FiniteExpectation, proj1_sig in H6.
+      match_destr_in H6.
       red.
       now rewrite e.
     }       
-    rewrite (FiniteExpectation_prob_space_sa_sub _ _ _ (isfe2:=isfe2)) in H7.
+    rewrite (FiniteExpectation_prob_space_sa_sub _ _ _ (isfe2:=isfe2)) in H6.
     unfold LpRRV_dist, LpRRVnorm.
     simpl.
     unfold f in *.
-    eapply Rle_lt_trans; try eapply H7.
+    eapply Rle_lt_trans; try eapply H6.
     right.
     f_equal.
     apply FiniteExpectation_ext; intros ?.
@@ -911,7 +908,7 @@ Proof.
       unfold prts2, dom2pred.
       match_destr.
     - f_equal.
-      clear H7.
+      clear H6.
 
       destruct (X (Init.Nat.max x x1)); simpl.
       match_destr.
