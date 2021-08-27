@@ -550,65 +550,6 @@ Proof.
   congruence.
 Qed.
 
-Lemma is_lim_seq_filter_ball_center f x 
-  (pf :ProperFilter (LpRRV_filter_from_seq f)) 
-  (cF : cauchy (LpRRV_filter_from_seq f)) :
-  is_lim_seq (fun n : nat => LpRRV_dist (f n) x) 0 ->
-  (forall (n:nat),  proj1_sig (LpRRV_lim_ball_center prts big2 (LpRRV_filter_from_seq f) pf cF n) x).
-  Proof.
-    intros.
-    pose (F := (LpRRV_filter_from_seq f)).
-    unfold cauchy, LpRRV_filter_from_seq in cF.
-    unfold LpRRV_lim_ball_center.
-    unfold proj1_sig.
-    match_case; intros.
-    simpl in H0.
-    match_case_in H0; intros.
-    destruct H1.
-    match_destr_in H0.
-    invcs H0.
-    unfold LpRRV_filter_from_seq in l0.
-    
-
-(*
-Lemma is_lim_seq_filter_lim f x:
-  ProperFilter (LpRRV_filter_from_seq f) ->
-  cauchy (LpRRV_filter_from_seq f) ->
-  is_lim_seq (fun n : nat => LpRRV_dist (f n) x) 0 ->
-  forall eps : posreal, LpRRV_dist (LpRRV_lim prts big2 (LpRRV_filter_from_seq f)) x < eps.
-Proof.
-  intros pf cF isl eps.
-  generalize (ball_LpRRV_lim_picker prts big2 (LpRRV_filter_from_seq f) pf cF eps)
-  ; intros[N HH].
-
-  generalize (lim_picker_included prts big2 (LpRRV_filter_from_seq f) pf cF); intros.
-  generalize (lim_ball_center_dist prts big2 (LpRRV_lim_picker prts big2 (LpRRV_filter_from_seq f) pf cF n) x); intros.
-  
-  
-  admit.
-  
-  assert (exists N2, forall n : nat,
-             (n >= N2)%nat ->
-             LpRRV_dist (LpRRV_lim_picker prts big2 (LpRRV_filter_from_seq f) pf cF (S n)) x < eps/2).
-  {
-    clear HH.
-    unfold LpRRV_dist.
-    unfold LpRRV_filter_from_seq.
-    unfold LpRRV_lim_picker.
-    generalize (lim_picker_included prts big2 (LpRRV_filter_from_seq f) p c); intros.
-
-
-     Lemma lim_ball_center_dist (x y : LpRRV prts p)
-             (F : (LpRRV_UniformSpace prts pbig -> Prop) -> Prop)
-             (PF:ProperFilter F)
-             (cF:cauchy F)
-             (N:nat) :
-    unfold LpRRV_lim_ball_center_center in H0.
-    admit.
-  }
-  
- *)
-
 Lemma ortho_phi_closed 
       (dom2 : SigmaAlgebra Ts) 
       (sub : sa_sub dom2 dom) :
@@ -911,39 +852,29 @@ Proof.
     rewrite Rminus_0_r in H6.
     now rewrite Rabs_pos_eq in H6 by apply power_nonneg.
   }
-    
   assert (forall (eps:posreal),
              (LpRRV_dist (LpRRV_lim prts big2 F) x0) < eps).
   {
     intros.
-    unfold F.
-    unfold LpRRV_filter_from_seq.
     specialize (H3 H4 H5).
-    unfold LpRRV_dist.
-    generalize (ball_LpRRV_lim_picker prts big2 F H4 H5 eps); intros.
-    destruct (H6 eps).
-    destruct H7.
-    unfold Hierarchy.ball in H7; simpl in H7.
-    unfold LpRRVball, LpRRV_lim_picker in H7.
-    specialize (H7 (max x x1)).
-    cut_to H7; try lia.
-    unfold proj1_sig in H7.
-    match_destr_in H7.
-
-(*
-    
-    simpl in y.
-
-    destruct y as [? [? ?]].
-    
-    unfold LpRRV_lim_ball_cumulative in y.
-
-    simpl in H7.
-*)    
-    
-    
-    admit.
+    assert (0 < eps) by apply cond_pos.
+    assert (0 < eps/2) by lra.
+    unfold F, LpRRV_filter_from_seq in H3.
+    destruct (H3 (mkposreal _ H8)).
+    destruct (H6 (mkposreal _ H8)).
+    specialize (H9 (max x x1)).
+    specialize (H10 (max x x1)).
+    cut_to H9; try lia.
+    cut_to H10; try lia.
+    generalize (LpRRV_dist_triang (LpRRV_lim prts big2 F) (f (max x x1)) x0); intros.
+    eapply Rle_lt_trans.
+    apply H11.
+    replace (pos eps) with ((eps/2) + (eps/2)) by lra.
+    apply Rplus_lt_compat.
+    apply H9.
+    apply H10.
   }
+
   assert (F3limball:forall (eps:posreal),
              (LpRRV_dist (prob_space_sa_sub_LpRRV_lift dom2 sub (LpRRV_lim prts2 big2 F3)) x0) < eps).
   {
@@ -954,103 +885,6 @@ Proof.
 
 Admitted.
 
-
-Lemma is_lim_seq_min (x : R) :
-      is_lim_seq (fun n : nat => Rmin x (INR n)) x.
-Proof.
-  apply is_lim_seq_spec.
-  unfold is_lim_seq'.
-  intros.
-  exists (Z.to_nat (up x)).
-  intros.
-  rewrite Rmin_left.
-  - rewrite Rminus_eq_0.
-    rewrite Rabs_R0.
-    apply cond_pos.
-  - destruct (archimed x).
-    destruct (Rge_dec x 0).
-    + rewrite <- INR_up_pos in H0; trivial.
-      apply Rge_le.
-      left.
-      apply Rge_gt_trans with (r2 := INR (Z.to_nat (up x))); trivial.
-      apply Rle_ge.
-      now apply le_INR.
-    + generalize (pos_INR n); intros.
-      lra.
-  Qed.
-
-Lemma rvlim_rvmin (f : Ts -> R) :
-  rv_eq (Rbar_rvlim (fun n => rvmin f (const (INR n)))) f.
-Proof.
-  intro x.
-  unfold Rbar_rvlim, rvmin, const.
-  generalize (is_lim_seq_min (f x)); intros.
-  now apply is_lim_seq_unique in H.
-Qed.
-
-(*
-
-
-
-almostR2 prts eq (Rbar_rvlim (fun n : nat => rvmin f (const (INR n)))) (fun x : Ts => f x)
-  (prob_space_sa_sub_LpRRV_lift dom2 sub (LpRRV_lim prts2 big2 F3)) x0).
-  unfold LpRRVball in H6.
-  generalize 
-  
-  assert (forall n, 
-
-  unfold F3, F2, F.
-  unfold LpRRV_filter_from_seq.
-  
-  
-  
-  
-
-
-  assert (almostR2 prts eq 
-                   (prob_space_sa_sub_LpRRV_lift dom2 sub (LpRRV_lim prts2 big2 F3))
-                   (LpRRV_lim prts big2 F)).
-  {
-    admit.
-  }
-  assert (almostR2 prts eq (LpRRV_lim prts big2 F) x0 ).
-  {
-    generalize (cauchy_filterlim_almost_unique_alt F H4 (LpRRV_lim prts big2 F) x0); intros.
-    unfold F.
-    unfold LpRRV_filter_from_seq.
-    admit.
-  }
-  LpRRVq_simpl.
-  unfold LpRRV_eq.
-  eapply transitivity.
-  apply H6.
-  apply H7.
-  Admitted.
-*)
-  
-(*
-  
-
-
-  generalize (cauchy_filterlim_almost_unique_alt F H4 (LpRRV_lim prts big2 F) x0); intros.
-  cut_to H6.
-  admit.
-  - intros.
-    exists (LpRRV_lim prts big2 F).
-    split.
-    + apply H3.
-    + apply LpRRV_ball_refl.
-  - intros.
-    exists (LpRRV_lim prts big2 F).
-    split.
-    + apply H3.
-    + unfold LpRRVball, LpRRV_lim.
-      match_destr.
-      * match_destr.
-        -- unfold LpRRV_lim_with_conditions.
-           unfold cauchy_rvlim_fun.
-           unfold pack_LpRRV.
-*)  
 
 Lemma ortho_phi_complete
            (dom2 : SigmaAlgebra Ts)
