@@ -657,31 +657,6 @@ Proof.
     - unfold LpRRVnorm.
       apply power_nonneg.
   }
-  assert (forall (eps:posreal), 
-             exists (N:nat), 
-               forall (n m : nat), 
-                 (n>=N)%nat -> (m >= N)%nat -> LpRRV_dist (f n) (f m) < eps).
-  {
-    intros.
-    apply is_lim_seq_spec in H0.
-    assert (0 < eps) by apply cond_pos.
-    assert (0 < eps/2) by lra.
-    destruct (H0 (mkposreal _ H2)).
-    exists x; intros.
-    generalize (LpRRV_dist_triang (f n) x0 (f m)); intros.
-    generalize (H3 n H4); intros.
-    generalize (H3 m H5); intros.
-    rewrite Rminus_0_r in H7.
-    rewrite Rabs_pos_eq in H7 by apply power_nonneg.
-    rewrite Rminus_0_r in H8.
-    rewrite Rabs_pos_eq in H8 by apply power_nonneg.
-    unfold LpRRV_dist in H6.
-    eapply Rle_lt_trans.
-    apply H6.
-    rewrite LpRRV_dist_comm in H8.
-    unfold LpRRV_dist in H7; unfold LpRRV_dist in H8.
-    simpl in H7; simpl in H8; simpl; lra.
-  }
   pose (prts2 := prob_space_sa_sub dom2 sub).
   generalize (L2RRV_lim_complete prts2 big2); intros HH.
 
@@ -720,8 +695,8 @@ Proof.
     apply subset_filter_proper; intros.
     subst F.
     subst f.
-    unfold LpRRV_filter_from_seq in H3.
-    destruct H3 as [? HH2].
+    unfold LpRRV_filter_from_seq in H2.
+    destruct H2 as [? HH2].
     unfold dom2pred.
     exists (proj1_sig (X x)).
     split.
@@ -820,9 +795,9 @@ Proof.
     apply is_lim_seq_spec in H0.
     destruct (H0 eps).
     exists x; intros.
-    specialize (H3 n H4).
-    rewrite Rminus_0_r in H3.
-    now rewrite Rabs_pos_eq in H3 by apply power_nonneg.
+    specialize (H2 n H3).
+    rewrite Rminus_0_r in H2.
+    now rewrite Rabs_pos_eq in H2 by apply power_nonneg.
   }
 
   assert (F3limball:forall (eps:posreal),
@@ -831,34 +806,34 @@ Proof.
     intros.
     assert (0 < eps) by apply cond_pos.
     assert (0 < eps/2) by lra.
-    destruct (HH1 (mkposreal _ H5)).
-    destruct (H3 (mkposreal _ H5)).
-    specialize (H7 (max x x1)).
+    destruct (HH1 (mkposreal _ H4)).
+    destruct (H2 (mkposreal _ H4)).
     specialize (H6 (max x x1)).
+    specialize (H5 (max x x1)).
+    cut_to H5; try lia.
     cut_to H6; try lia.
-    cut_to H7; try lia.
-    unfold F3, F2, F in H6.
-    unfold LpRRV_filter_from_seq in H6.
+    unfold F3, F2, F in H5.
+    unfold LpRRV_filter_from_seq in H5.
     generalize (LpRRV_dist_triang (prob_space_sa_sub_LpRRV_lift dom2 sub (LpRRV_lim prts2 big2 F3)) (f (max x x1)) x0); intros.
-    rewrite Rplus_comm in H8.
+    rewrite Rplus_comm in H7.
     eapply Rle_lt_trans.
-    apply H8.
+    apply H7.
     replace (pos eps) with ((eps/2) + (eps/2)) by lra.
     apply Rplus_lt_compat.
-    apply H7.
-    unfold dom2pred in H6.
+    apply H6.
+    unfold dom2pred in H5.
     assert (frv:RandomVariable dom2 borel_sa (f (Init.Nat.max x x1))).
     {
       unfold f.
       unfold proj1_sig.
       match_destr; tauto.
     } 
-    specialize (H6 frv).
-    unfold subset_to_sa_sub, Hierarchy.ball in H6.
-    simpl in H6.
-    unfold LpRRVball, LpRRVnorm in H6.
-    simpl in H6.
-    unfold prts2 in H6.
+    specialize (H5 frv).
+    unfold subset_to_sa_sub, Hierarchy.ball in H5.
+    simpl in H5.
+    unfold LpRRVball, LpRRVnorm in H5.
+    simpl in H5.
+    unfold prts2 in H5.
     assert (isfe2:IsFiniteExpectation prts
              (rvpower
                 (rvabs
@@ -884,16 +859,16 @@ Proof.
                         end frv))) (const 2))).
     {
       eapply (IsFiniteExpectation_prob_space_sa_sub _ sub); try typeclasses eauto.
-      unfold FiniteExpectation, proj1_sig in H6.
-      match_destr_in H6.
+      unfold FiniteExpectation, proj1_sig in H5.
+      match_destr_in H5.
       red.
       now rewrite e.
     }       
-    rewrite (FiniteExpectation_prob_space_sa_sub _ _ _ (isfe2:=isfe2)) in H6.
+    rewrite (FiniteExpectation_prob_space_sa_sub _ _ _ (isfe2:=isfe2)) in H5.
     unfold LpRRV_dist, LpRRVnorm.
     simpl.
     unfold f in *.
-    eapply Rle_lt_trans; try eapply H6.
+    eapply Rle_lt_trans; try eapply H5.
     right.
     f_equal.
     apply FiniteExpectation_ext; intros ?.
