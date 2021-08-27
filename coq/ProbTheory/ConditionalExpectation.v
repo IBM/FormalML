@@ -658,14 +658,14 @@ Proof.
       apply power_nonneg.
   }
   pose (prts2 := prob_space_sa_sub dom2 sub).
-  generalize (L2RRV_lim_complete prts2 big2); intros HH.
 
   pose (F :=  LpRRV_filter_from_seq f).
   pose (dom2pred := fun v => RandomVariable dom2 borel_sa v).
   pose (F2 := subset_filter F dom2pred ).
   pose (F3:=subset_filter_to_sa_sub_filter _ sub F2).
 
-  generalize (HH F3); intros HH1.
+  generalize (L2RRV_lim_complete prts2 big2 F3); intros HH1.
+
   
   assert (ProperFilter F).
   {
