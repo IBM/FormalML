@@ -1603,8 +1603,65 @@ Canonical nneg2.
     f_equal.
     etransitivity; try (symmetry; eapply eqq).
     lra.
-Qed.
+  Qed.
 
+  Corollary ConditionalExpectation_const c
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom) :
+    almostR2 prts eq
+             (ConditionalExpectation prts (const c) sub)
+             (const c).
+  Proof.
+    apply ConditionalExpectation_rv_eq.
+    apply rvconst.
+  Qed.
+
+
+  Lemma conditional_expectation_L2fun_scale f
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        {rv : RandomVariable dom borel_sa f}
+        {isl : IsLp prts 2 f}
+        c :
+    LpRRV_eq prts
+             (conditional_expectation_L2fun prts (rvscale c f) sub)
+             (LpRRVscale prts c (conditional_expectation_L2fun prts f sub)).
+  Proof.
+    symmetry.
+    apply (conditional_expectation_L2fun_unique2)
+    ; try typeclasses eauto.
+    intros.
+    transitivity (L2RRVinner prts (LpRRVscale prts c (pack_LpRRV prts f)) w); try reflexivity.
+    repeat rewrite L2RRV_inner_scal.
+    f_equal.
+    now apply conditional_expectation_L2fun_eq2.
+  Qed.
+
+  Existing Instance IsLp_min_const_nat.
+
+  Lemma NonNegConditionalExpectation_scale f
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        {rv : RandomVariable dom borel_sa f}
+        {nnf : NonnegativeFunction f}
+        (c:posreal) :
+      almostR2 prts eq
+               (NonNegConditionalExpectation prts (rvscale c f) sub)
+             (fun omega => Rbar_mult c (NonNegConditionalExpectation prts f sub omega)).
+    Proof.
+      unfold NonNegConditionalExpectation.
+      transitivity (Rbar_rvlim (fun n : nat => rvscale c (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub))).
+      - transitivity
+          (Rbar_rvlim (fun n : nat => (conditional_expectation_L2fun prts (rvscale c (rvmin f (const (INR n)))) sub))).
+        + admit.
+        + apply Rbar_rvlim_almost_proper; intros n.
+          apply (conditional_expectation_L2fun_scale (rvmin f (const (INR n))) sub c).
+      - apply almostR2_eq_subr.
+        intros ?.
+        unfold Rbar_rvlim.
+        unfold rvscale.
+        now rewrite Lim_seq_scal_l; simpl.
+    Admitted.
 
 End cond_exp_props.
     
