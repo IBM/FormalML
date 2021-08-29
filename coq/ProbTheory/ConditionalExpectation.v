@@ -1011,16 +1011,30 @@ Definition conditional_expectation_L2 (f :LpRRV prts 2)
         Glb_Rbar (fun r : R => exists w : LpRRV prts 2,
                       RandomVariable dom2 borel_sa (LpRRV_rv_X prts w) /\
                       r = LpRRVnorm prts (LpRRVminus prts f w)) /\
+        (forall w:LpRRV prts 2, RandomVariable dom2 borel_sa w -> L2RRVinner prts (LpRRVminus prts f v) (LpRRVminus prts w v) <= 0) /\
+        (forall w:LpRRV prts 2, RandomVariable dom2 borel_sa w -> L2RRVinner prts v w = L2RRVinner prts (pack_LpRRV prts f) w) /\
+
         (forall z: LpRRV prts 2, RandomVariable dom2 borel_sa z ->
               (LpRRVnorm prts (LpRRVminus prts f z) =
               Glb_Rbar (fun r : R => exists w : LpRRV prts 2,
                             RandomVariable dom2 borel_sa (LpRRV_rv_X prts w) /\
-                            r = LpRRVnorm prts (LpRRVminus prts f w))) -> LpRRV_eq prts z v)
+                            r = LpRRVnorm prts (LpRRVminus prts f w))) -> LpRRV_eq prts z v) /\
+        
+        (forall z: LpRRV prts 2, RandomVariable dom2 borel_sa z ->
+                            (forall w:LpRRV prts 2, RandomVariable dom2 borel_sa w -> L2RRVinner prts (LpRRVminus prts f z) (LpRRVminus prts w z) <= 0) -> LpRRV_eq prts z v) /\
+        (forall z: LpRRV prts 2, RandomVariable dom2 borel_sa z ->
+                            (forall w:LpRRV prts 2, RandomVariable dom2 borel_sa w -> L2RRVinner prts z w = L2RRVinner prts (pack_LpRRV prts f) w)  -> LpRRV_eq prts z v)
 
      }.
 Proof.
   destruct ((conditional_expectation_L2q dom2 sub (Quot _ f))).
   destruct u as [[HH1 HH2] HH3].
+  destruct (charac_ortho_projection_subspace1 _ (ortho_phi_compatible_m _ sub) (Quot (LpRRV_eq prts) f) _ HH1)
+    as [cops1_f _].
+  destruct (charac_ortho_projection_subspace2 _ (ortho_phi_compatible_m _ sub) (Quot (LpRRV_eq prts) f) _ HH1)
+    as [cops2_f _].
+  specialize (cops1_f HH2).
+  specialize (cops2_f HH2).
   red in HH1.
   apply constructive_indefinite_description in HH1.
   destruct HH1 as [y [eqqy rvy]].
@@ -1064,8 +1078,29 @@ Proof.
         rewrite LpRRVq_normE.
         now rewrite LpRRVminus_plus.
   } 
-  split.
+  repeat split.
   - now f_equal.
+  - intros.
+    specialize (cops1_f (Quot _ w)).
+    cut_to cops1_f.
+    + unfold inner in cops1_f; simpl in cops1_f.
+      LpRRVq_simpl.
+      rewrite L2RRVq_innerE in cops1_f.
+      etransitivity; try eapply cops1_f.
+      right.
+      apply L2RRV_inner_proper.
+      * apply LpRRV_seq_eq; intros ?; simpl.
+        rv_unfold; lra.
+      * apply LpRRV_seq_eq; intros ?; simpl.
+        rv_unfold; lra.
+    + red; eauto.
+  - intros.
+    specialize (cops2_f (Quot _ w)).
+    cut_to cops2_f.
+    + unfold inner in cops2_f; simpl in cops2_f.
+      repeat rewrite L2RRVq_innerE in cops2_f.
+      apply cops2_f.
+    + red; eauto.
   - intros x xrv xeqq.
     specialize (HH3 (Quot _ x)).
     cut_to HH3.
@@ -1082,6 +1117,53 @@ Proof.
         rewrite xeqq.
         symmetry.
         now f_equal.
+  - intros x xrv xeqq.
+    specialize (HH3 (Quot _ x)).
+    cut_to HH3.
+    + apply Quot_inj in HH3; try typeclasses eauto.
+      now symmetry.
+    + split.
+      * unfold ortho_phi.
+        eauto.
+      * destruct (charac_ortho_projection_subspace1 _
+                                                    (ortho_phi_compatible_m _ sub)
+                                                    (Quot (LpRRV_eq prts) f)
+                                                    (Quot _ x))
+          as [_ cops1_b].
+        -- red; eauto.
+        -- apply cops1_b; intros.
+           destruct H as [z [? rvz]]; subst.
+           specialize (xeqq _ rvz).
+           etransitivity; try eapply xeqq.
+           right.
+           unfold inner, minus, plus, opp; simpl.
+           LpRRVq_simpl.
+           rewrite L2RRVq_innerE.
+           apply L2RRV_inner_proper.
+           ++ now rewrite <- LpRRVminus_plus.
+           ++ now rewrite <- LpRRVminus_plus.
+  - intros x xrv xeqq.
+    specialize (HH3 (Quot _ x)).
+    cut_to HH3.
+    + apply Quot_inj in HH3; try typeclasses eauto.
+      now symmetry.
+    + split.
+      * unfold ortho_phi.
+        eauto.
+      * destruct (charac_ortho_projection_subspace2 _
+                                                    (ortho_phi_compatible_m _ sub)
+                                                    (Quot (LpRRV_eq prts) f)
+                                                    (Quot _ x))
+          as [_ cops2_b].
+        -- red; eauto.
+        -- apply cops2_b; intros.
+           destruct H as [z [? rvz]]; subst.
+           specialize (xeqq _ rvz).
+           unfold inner, minus, plus, opp; simpl.
+           repeat rewrite L2RRVq_innerE.
+           rewrite xeqq.
+           apply L2RRV_inner_proper; try reflexivity.
+           now apply LpRRV_seq_eq; intros ?; simpl.
 Qed.
 
 Definition conditional_expectation_L2fun (f : Ts -> R) 
@@ -1120,6 +1202,30 @@ Proof.
   match_destr; tauto.
 Qed.
 
+Lemma conditional_expectation_L2fun_eq1
+      (f : Ts -> R) 
+      {dom2 : SigmaAlgebra Ts}
+      (sub : sa_sub dom2 dom)
+      {rv : RandomVariable dom borel_sa f}
+      {isl : IsLp prts 2 f} :
+  (forall w:LpRRV prts 2, RandomVariable dom2 borel_sa w -> L2RRVinner prts (LpRRVminus prts (pack_LpRRV prts f) (conditional_expectation_L2fun f sub)) (LpRRVminus prts w (conditional_expectation_L2fun f sub)) <= 0).
+Proof.
+  unfold conditional_expectation_L2fun, proj1_sig.
+  match_destr; tauto.
+Qed.
+
+Lemma conditional_expectation_L2fun_eq2
+      (f : Ts -> R) 
+      {dom2 : SigmaAlgebra Ts}
+      (sub : sa_sub dom2 dom)
+      {rv : RandomVariable dom borel_sa f}
+      {isl : IsLp prts 2 f} :
+  (forall w:LpRRV prts 2, RandomVariable dom2 borel_sa w -> L2RRVinner prts (conditional_expectation_L2fun f sub) w = L2RRVinner prts (pack_LpRRV prts f) w).
+Proof.
+  unfold conditional_expectation_L2fun, proj1_sig.
+  match_destr; tauto.
+Qed.
+
 Lemma conditional_expectation_L2fun_unique
       (f : Ts -> R) 
       {dom2 : SigmaAlgebra Ts}
@@ -1136,8 +1242,39 @@ Lemma conditional_expectation_L2fun_unique
 Proof.
   unfold conditional_expectation_L2fun, proj1_sig.
   match_destr.
-  destruct a as [?[? HH]].
-  now apply HH.
+  intuition.
+Qed.
+
+Lemma conditional_expectation_L2fun_unique1
+      (f : Ts -> R) 
+      {dom2 : SigmaAlgebra Ts}
+      (sub : sa_sub dom2 dom)
+      {rv : RandomVariable dom borel_sa f}
+      {isl : IsLp prts 2 f}
+      (z: LpRRV prts 2)
+      {z_rv:RandomVariable dom2 borel_sa z} :
+        (forall z: LpRRV prts 2, RandomVariable dom2 borel_sa z ->
+                            (forall w:LpRRV prts 2, RandomVariable dom2 borel_sa w -> L2RRVinner prts (LpRRVminus prts (pack_LpRRV prts f) z) (LpRRVminus prts w z) <= 0) -> LpRRV_eq prts z (conditional_expectation_L2fun f sub)).
+Proof.
+  unfold conditional_expectation_L2fun, proj1_sig.
+  match_destr.
+  intuition.
+Qed.
+
+Lemma conditional_expectation_L2fun_unique2
+      (f : Ts -> R) 
+      {dom2 : SigmaAlgebra Ts}
+      (sub : sa_sub dom2 dom)
+      {rv : RandomVariable dom borel_sa f}
+      {isl : IsLp prts 2 f}
+      (z: LpRRV prts 2)
+      {z_rv:RandomVariable dom2 borel_sa z} :
+        (forall z: LpRRV prts 2, RandomVariable dom2 borel_sa z ->
+                            (forall w:LpRRV prts 2, RandomVariable dom2 borel_sa w -> L2RRVinner prts z w = L2RRVinner prts (pack_LpRRV prts f) w)  -> LpRRV_eq prts z (conditional_expectation_L2fun f sub)).
+Proof.
+  unfold conditional_expectation_L2fun, proj1_sig.
+  match_destr.
+  intuition.
 Qed.
 
 Instance IsLp_min_const_nat (f : Ts -> R) (n : nat) 
@@ -1174,9 +1311,9 @@ Proof.
   intros eqq.
   unfold conditional_expectation_L2fun, proj1_sig.
   repeat match_destr.
-  destruct a as [xrv [xeq xuniq]].
+  destruct a as [xrv [xeq [? [? [xuniq ?]]]]].
   rename x0 into y.
-  destruct a0 as [yrv [yeq yuniq]].
+  destruct a0 as [yrv [yeq [? [? [yuniq ?]]]]].
   apply yuniq; trivial.
   rewrite (LpRRV_norm_proper prts _ (LpRRVminus prts (pack_LpRRV prts f2) x)) in xeq.
   - unfold nneg2, bignneg, nonneg in *.
