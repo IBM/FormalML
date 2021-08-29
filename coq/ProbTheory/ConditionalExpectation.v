@@ -1253,8 +1253,7 @@ Lemma conditional_expectation_L2fun_unique1
       {isl : IsLp prts 2 f}
       (z: LpRRV prts 2)
       {z_rv:RandomVariable dom2 borel_sa z} :
-        (forall z: LpRRV prts 2, RandomVariable dom2 borel_sa z ->
-                            (forall w:LpRRV prts 2, RandomVariable dom2 borel_sa w -> L2RRVinner prts (LpRRVminus prts (pack_LpRRV prts f) z) (LpRRVminus prts w z) <= 0) -> LpRRV_eq prts z (conditional_expectation_L2fun f sub)).
+  (forall w:LpRRV prts 2, RandomVariable dom2 borel_sa w -> L2RRVinner prts (LpRRVminus prts (pack_LpRRV prts f) z) (LpRRVminus prts w z) <= 0) -> LpRRV_eq prts z (conditional_expectation_L2fun f sub).
 Proof.
   unfold conditional_expectation_L2fun, proj1_sig.
   match_destr.
@@ -1269,8 +1268,7 @@ Lemma conditional_expectation_L2fun_unique2
       {isl : IsLp prts 2 f}
       (z: LpRRV prts 2)
       {z_rv:RandomVariable dom2 borel_sa z} :
-        (forall z: LpRRV prts 2, RandomVariable dom2 borel_sa z ->
-                            (forall w:LpRRV prts 2, RandomVariable dom2 borel_sa w -> L2RRVinner prts z w = L2RRVinner prts (pack_LpRRV prts f) w)  -> LpRRV_eq prts z (conditional_expectation_L2fun f sub)).
+  (forall w:LpRRV prts 2, RandomVariable dom2 borel_sa w -> L2RRVinner prts z w = L2RRVinner prts (pack_LpRRV prts f) w)  -> LpRRV_eq prts z (conditional_expectation_L2fun f sub).
 Proof.
   unfold conditional_expectation_L2fun, proj1_sig.
   match_destr.
@@ -1606,8 +1604,6 @@ Canonical nneg2.
     etransitivity; try (symmetry; eapply eqq).
     lra.
 Qed.
-
-
 
 
 End cond_exp_props.
