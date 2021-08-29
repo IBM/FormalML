@@ -1663,5 +1663,62 @@ Canonical nneg2.
         now rewrite Lim_seq_scal_l; simpl.
     Admitted.
 
+    Lemma conditional_expectation_L2fun_plus f1 f2
+          {dom2 : SigmaAlgebra Ts}
+          (sub : sa_sub dom2 dom)
+          {rv1 : RandomVariable dom borel_sa f1}
+          {rv2 : RandomVariable dom borel_sa f2}
+          {isl1 : IsLp prts 2 f1}
+          {isl2 : IsLp prts 2 f2} :
+      LpRRV_eq prts
+               (conditional_expectation_L2fun prts (rvplus f1 f2) sub)
+               (LpRRVplus prts (conditional_expectation_L2fun prts f1 sub) (conditional_expectation_L2fun prts f2 sub)).
+    Proof.
+      symmetry.
+    apply (conditional_expectation_L2fun_unique2)
+    ; try typeclasses eauto.
+    intros.
+    replace (pack_LpRRV prts (rvplus f1 f2)) with
+        (LpRRVplus prts (pack_LpRRV prts f1) (pack_LpRRV prts f2)) by reflexivity.
+    repeat rewrite L2RRV_inner_plus.
+    f_equal
+    ; now apply conditional_expectation_L2fun_eq2.
+  Qed.
+
+(*
+    Lemma neg_fun_part_scale_eq c f x : 0 < c ->
+      rv_eq (neg_fun_part (rvscale c f)) (rvscale c (fun x : Ts => neg_fun_part f x)).
+
+  Theorem ConditionalExpectation_scale_pos f
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        {rv : RandomVariable dom borel_sa f}
+        c :
+      almostR2 prts eq
+               (ConditionalExpectation prts (rvscale c f) sub)
+             (fun omega => Rbar_mult c (ConditionalExpectation prts f sub omega)).
+  Proof.
+    destruct (Rtotal_order c 0) as [?|[?|?]].
+    - admit.
+    - subst.
+      unfold rvscale.
+      rewrite (ConditionalExpectation_proper prts _ (const 0))
+      ; [| apply almostR2_eq_subr; intros ?; unfold const; lra].
+      rewrite ConditionalExpectation_const.
+      apply almostR2_eq_subr; intros ?.
+      rewrite Rbar_mult_0_l.
+      reflexivity.
+    - unfold ConditionalExpectation.
+      pose (cc:=mkposreal c H).
+      rewrite (NonNegConditionalExpectation_proper prts (fun x : Ts => pos_fun_part (rvscale c f) x) (rvscale cc (pos_fun_part f)))
+              , (NonNegConditionalExpectation_proper prts (fun x : Ts => neg_fun_part (rvscale c f) x) (rvscale cc (neg_fun_part f))).
+      + admit.
+      + apply almostR2_eq_subr.
+        unfold rvscale; simpl.
+        unfold Rmax.
+        repeat match_destr; try lra.
+        
+  Qed.
+
 End cond_exp_props.
     
