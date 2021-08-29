@@ -1550,13 +1550,19 @@ Canonical nneg2.
         lra.
   Qed.
 
+  Lemma Lim_seq_min (x : R) :
+    Lim_seq (fun n => Rmin x (INR n)) = x.
+  Proof.
+    generalize (is_lim_seq_min x); intros.
+    now apply is_lim_seq_unique in H.
+  Qed.
+
   Lemma rvlim_rvmin (f : Ts -> R) :
     rv_eq (Rbar_rvlim (fun n => rvmin f (const (INR n)))) f.
   Proof.
     intro x.
     unfold Rbar_rvlim, rvmin, const.
-    generalize (is_lim_seq_min (f x)); intros.
-    now apply is_lim_seq_unique in H.
+    now rewrite Lim_seq_min.
   Qed.
           
   Lemma NonNegConditionalExpectation_rv_eq f
@@ -1639,6 +1645,61 @@ Canonical nneg2.
 
   Existing Instance IsLp_min_const_nat.
 
+  Lemma NonNegCondexp_l2fun_lim_incr (f : nat -> Ts -> R)
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        {rv : forall n, RandomVariable dom borel_sa (f n)}
+        {limrv : RandomVariable dom borel_sa (Rbar_rvlim f)}        
+        {nnf : forall n, NonnegativeFunction (f n)} 
+        {islp : forall n, IsLp prts 2 (f n)} :
+    (forall n, rv_le (f n) (f (S n))) ->
+    almostR2 prts eq
+             (NonNegConditionalExpectation prts (Rbar_rvlim f) sub)
+             (Rbar_rvlim (fun n =>
+                            (conditional_expectation_L2fun prts (f n) sub))).
+  Proof.
+    Admitted.
+  
+  Lemma Lim_seq_min_n_scale (fx c : R) :
+    Lim_seq (fun n : nat => Rmin (c * fx) (INR n)) = 
+    Lim_seq (fun n : nat => c * Rmin (fx) (INR n)).
+  Proof.
+    rewrite Lim_seq_min.
+    rewrite Lim_seq_scal_l.
+    rewrite Lim_seq_min.
+    now simpl.
+  Qed.
+
+  Lemma rvmin_INR_le (f : Ts -> R) :
+    forall (n:nat),
+      rv_le (rvmin f (const (INR n))) (rvmin f (const (INR (S n)))).
+  Proof.
+    intros n x.
+    unfold rvmin, const.
+    apply Rle_min_compat_l.
+    apply le_INR.
+    lia.
+  Qed.
+
+  Instance NonNeg_rvmin (f g : Ts -> R)
+           {nnf: NonnegativeFunction f}
+           {nng: NonnegativeFunction g} :
+    NonnegativeFunction (rvmin f g).
+  Proof.
+    unfold NonnegativeFunction in *.
+    unfold rvmin.
+    intros.
+    now apply Rmin_glb.
+  Qed.
+
+  Instance NonNeg_INR (n : nat) :
+    @NonnegativeFunction Ts (const (INR n)).
+  Proof.
+    unfold NonnegativeFunction.
+    intro.
+    apply pos_INR.
+  Qed.
+
   Lemma NonNegConditionalExpectation_scale f
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
@@ -1653,7 +1714,39 @@ Canonical nneg2.
       transitivity (Rbar_rvlim (fun n : nat => rvscale c (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub))).
       - transitivity
           (Rbar_rvlim (fun n : nat => (conditional_expectation_L2fun prts (rvscale c (rvmin f (const (INR n)))) sub))).
-        + admit.
+        + assert (RandomVariable dom borel_sa
+            (fun x : Ts =>
+               Rbar_rvlim (fun n : nat => rvmin (rvscale c f) 
+                                                (const (INR n))) x)).
+            {
+              apply RandomVariable_proper with (x := rvscale c f); [|typeclasses eauto].
+              intro x.
+              unfold Rbar_rvlim, rvmin.
+              now rewrite Lim_seq_min.
+            }  
+          generalize (NonNegCondexp_l2fun_lim_incr (fun n => rvmin (rvscale c f) (const (INR n))) sub); intros.
+          assert (RandomVariable dom borel_sa
+            (fun x : Ts =>
+               Rbar_rvlim (fun n : nat => rvscale c (rvmin f (const (INR n)))) x)).
+          {
+            apply RandomVariable_proper with (x := rvscale c f); [|typeclasses eauto].            
+            intro x.
+            unfold Rbar_rvlim, rvmin, rvscale.
+            rewrite Lim_seq_scal_l.
+            rewrite Lim_seq_min.
+            now simpl.
+          }
+          generalize (NonNegCondexp_l2fun_lim_incr (fun n => rvscale c (rvmin f (const (INR n)))) sub); intros.
+          cut_to H0; [| intros; apply  rvmin_INR_le].
+          cut_to H2; [| intros; apply rv_scale_le_proper, rvmin_INR_le].
+          rewrite <- H0.
+          rewrite <- H2.
+          apply NonNegConditionalExpectation_proper.
+          apply almostR2_eq_subr.
+          intro x.
+          unfold Rbar_rvlim.
+          unfold rvmin, rvscale, const.
+          now rewrite Lim_seq_min_n_scale.
         + apply Rbar_rvlim_almost_proper; intros n.
           apply (conditional_expectation_L2fun_scale (rvmin f (const (INR n))) sub c).
       - apply almostR2_eq_subr.
@@ -1661,7 +1754,7 @@ Canonical nneg2.
         unfold Rbar_rvlim.
         unfold rvscale.
         now rewrite Lim_seq_scal_l; simpl.
-    Admitted.
+    Qed.
 
     Lemma conditional_expectation_L2fun_plus f1 f2
           {dom2 : SigmaAlgebra Ts}
@@ -1719,6 +1812,7 @@ Canonical nneg2.
         repeat match_destr; try lra.
         
   Qed.
+*)
 
 End cond_exp_props.
     
