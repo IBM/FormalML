@@ -1756,6 +1756,128 @@ Canonical nneg2.
         now rewrite Lim_seq_scal_l; simpl.
     Qed.
 
+    Lemma pos_fun_part_scale_pos_eq c f : 0 < c ->
+
+                                                   rv_eq (fun x => nonneg (pos_fun_part (rvscale c f) x)) (rvscale c (fun x : Ts => pos_fun_part f x)).
+    Proof.
+      intros ??.
+      unfold rvscale; simpl.
+      now rewrite (scale_Rmax0 (mkposreal c H)); simpl.
+    Qed.
+
+    Lemma neg_fun_part_scale_pos_eq c f : 0 < c ->
+                                               rv_eq (fun x => nonneg (neg_fun_part (rvscale c f) x)) (rvscale c (fun x : Ts => neg_fun_part f x)).
+    Proof.
+      intros ??.
+      unfold rvscale; simpl.
+      rewrite Ropp_mult_distr_r.
+      now rewrite (scale_Rmax0 (mkposreal c H)); simpl.
+    Qed.
+
+    Lemma pos_fun_part_scale_neg_eq c f : 0 < c ->
+
+                                                   rv_eq (fun x => nonneg (pos_fun_part (rvscale (- c) f) x)) (rvscale c (fun x : Ts => neg_fun_part f x)).
+    Proof.
+      intros ??.
+      unfold rvscale; simpl.
+      rewrite <- (scale_Rmax0 (mkposreal c H)); simpl.
+      f_equal; lra.
+    Qed.
+
+    Lemma neg_fun_part_scale_neg_eq c f : 0 < c ->
+                                               rv_eq (fun x => nonneg (neg_fun_part (rvscale (- c) f) x)) (rvscale c (fun x : Ts => pos_fun_part f x)).
+    Proof.
+      intros ??.
+      unfold rvscale; simpl.
+      rewrite Ropp_mult_distr_r.
+      rewrite <- (scale_Rmax0 (mkposreal c H)); simpl.
+      f_equal; lra.
+    Qed.
+
+    Lemma Rbar_mult_r_plus_distr (c:R) x y:
+      Rbar_mult c (Rbar_plus x y) =
+      Rbar_plus (Rbar_mult c x) (Rbar_mult c y).
+    Proof.
+      destruct x; destruct y; simpl;
+        try
+          solve [
+            f_equal; lra
+          |
+          destruct (Rle_dec 0 c); trivial
+          ; destruct (Rle_lt_or_eq_dec 0 c r0); simpl; trivial
+          ; subst
+          ; f_equal; lra
+          |
+          destruct (Rle_dec 0 c); trivial
+          ; simpl; try (f_equal; lra)
+          ; destruct (Rle_lt_or_eq_dec 0 c r); simpl; trivial
+          ; f_equal; lra
+          ].
+    Qed.
+
+  Theorem ConditionalExpectation_scale f
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        {rv : RandomVariable dom borel_sa f}
+        c :
+      almostR2 prts eq
+               (ConditionalExpectation prts (rvscale c f) sub)
+             (fun omega => Rbar_mult c (ConditionalExpectation prts f sub omega)).
+  Proof.
+    destruct (Rtotal_order c 0) as [?|[?|?]].
+    - unfold ConditionalExpectation.
+      assert (cpos:0 < - c) by lra.
+      pose (cc:=mkposreal _ cpos).
+      rewrite (NonNegConditionalExpectation_proper prts (fun x : Ts => pos_fun_part (rvscale c f) x) (rvscale cc (neg_fun_part f)))
+              , (NonNegConditionalExpectation_proper prts (fun x : Ts => neg_fun_part (rvscale c f) x) (rvscale cc (pos_fun_part f))).
+      + repeat rewrite NonNegConditionalExpectation_scale.
+        simpl.
+        apply almostR2_eq_subr; intros ?.
+        unfold Rbar_rvplus, Rbar_rvopp.
+        replace (Finite (- c)) with (Rbar_opp (Finite c)) by reflexivity.
+        
+        rewrite <- Rbar_mult_opp_l.
+        rewrite Rbar_opp_involutive.
+        rewrite Rbar_mult_opp_l.
+        rewrite <- Rbar_mult_opp_r.
+        rewrite <- Rbar_mult_r_plus_distr.
+        now rewrite Rbar_plus_comm.
+      + apply almostR2_eq_subr.
+        rewrite <- neg_fun_part_scale_neg_eq.
+        * simpl.
+          now rewrite Ropp_involutive.
+        * unfold cc; simpl; lra.
+      + apply almostR2_eq_subr.
+        rewrite <- pos_fun_part_scale_neg_eq.
+        * simpl.
+          now rewrite Ropp_involutive.
+        * unfold cc; simpl; lra.
+    - subst.
+      unfold rvscale.
+      rewrite (ConditionalExpectation_proper prts _ (const 0))
+      ; [| apply almostR2_eq_subr; intros ?; unfold const; lra].
+      rewrite ConditionalExpectation_const.
+      apply almostR2_eq_subr; intros ?.
+      rewrite Rbar_mult_0_l.
+      reflexivity.
+    - unfold ConditionalExpectation.
+      pose (cc:=mkposreal c H).
+      rewrite (NonNegConditionalExpectation_proper prts (fun x : Ts => pos_fun_part (rvscale c f) x) (rvscale cc (pos_fun_part f)))
+              , (NonNegConditionalExpectation_proper prts (fun x : Ts => neg_fun_part (rvscale c f) x) (rvscale cc (neg_fun_part f))).
+      + repeat rewrite NonNegConditionalExpectation_scale.
+        simpl.
+        apply almostR2_eq_subr; intros ?.
+        unfold Rbar_rvplus, Rbar_rvopp.
+        rewrite <- Rbar_mult_opp_r.
+        now rewrite Rbar_mult_r_plus_distr.
+      + apply almostR2_eq_subr.
+        apply neg_fun_part_scale_pos_eq.
+        unfold cc; simpl; lra.
+      + apply almostR2_eq_subr.
+        apply pos_fun_part_scale_pos_eq.
+        unfold cc; simpl; lra.
+  Qed.
+
     Lemma conditional_expectation_L2fun_plus f1 f2
           {dom2 : SigmaAlgebra Ts}
           (sub : sa_sub dom2 dom)
@@ -1778,40 +1900,19 @@ Canonical nneg2.
     ; now apply conditional_expectation_L2fun_eq2.
   Qed.
 
-(*
-    Lemma neg_fun_part_scale_eq c f x : 0 < c ->
-      rv_eq (neg_fun_part (rvscale c f)) (rvscale c (fun x : Ts => neg_fun_part f x)).
-
-  Theorem ConditionalExpectation_scale_pos f
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
-        {rv : RandomVariable dom borel_sa f}
-        c :
+    (*
+    Lemma NonNegConditionalExpectation_plus f1 f2
+          {dom2 : SigmaAlgebra Ts}
+          (sub : sa_sub dom2 dom)
+          {rv1 : RandomVariable dom borel_sa f1}
+          {rv2 : RandomVariable dom borel_sa f2}
+          {nnf1 : NonnegativeFunction f1}
+          {nnf2 : NonnegativeFunction f2} :
       almostR2 prts eq
-               (ConditionalExpectation prts (rvscale c f) sub)
-             (fun omega => Rbar_mult c (ConditionalExpectation prts f sub omega)).
-  Proof.
-    destruct (Rtotal_order c 0) as [?|[?|?]].
-    - admit.
-    - subst.
-      unfold rvscale.
-      rewrite (ConditionalExpectation_proper prts _ (const 0))
-      ; [| apply almostR2_eq_subr; intros ?; unfold const; lra].
-      rewrite ConditionalExpectation_const.
-      apply almostR2_eq_subr; intros ?.
-      rewrite Rbar_mult_0_l.
-      reflexivity.
-    - unfold ConditionalExpectation.
-      pose (cc:=mkposreal c H).
-      rewrite (NonNegConditionalExpectation_proper prts (fun x : Ts => pos_fun_part (rvscale c f) x) (rvscale cc (pos_fun_part f)))
-              , (NonNegConditionalExpectation_proper prts (fun x : Ts => neg_fun_part (rvscale c f) x) (rvscale cc (neg_fun_part f))).
-      + admit.
-      + apply almostR2_eq_subr.
-        unfold rvscale; simpl.
-        unfold Rmax.
-        repeat match_destr; try lra.
-        
-  Qed.
+               (NonNegConditionalExpectation prts (rvplus f1 f2) sub)
+               (rvplus (NonNegConditionalExpectation prts f1 sub) (NonNegConditionalExpectation prts f2 sub)).
+    Proof.
+      unfold NonNegConditionalExpectation.
 *)
 
 End cond_exp_props.
