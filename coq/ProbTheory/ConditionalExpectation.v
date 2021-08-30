@@ -2094,7 +2094,6 @@ Canonical nneg2.
       }
       generalize (conditional_expectation_L2fun_plus (fun x : Ts => pos_fun_part f x) (rvopp (fun x : Ts => neg_fun_part f x)) sub)
       ; intros HH.
-      Set Printing All.
       simpl in HH.
       apply almostR2_Finite.
       transitivity ( (fun x : Ts => conditional_expectation_L2fun prts
