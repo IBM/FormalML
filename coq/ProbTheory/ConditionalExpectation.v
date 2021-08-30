@@ -2116,6 +2116,12 @@ Canonical nneg2.
         now rewrite <- rv_pos_neg_id.
     Qed.
 
+    Lemma almost_Rbar_rvlim (f1 f2 : nat -> Ts -> R) :
+      (forall n, almostR2 prts eq (f1 n) (f2 n)) ->
+      almostR2 prts eq (Rbar_rvlim f1) (Rbar_rvlim f2).
+    Proof.
+      Admitted.
+
     Lemma NonNegConditionalExpectation_plus f1 f2
           {dom2 : SigmaAlgebra Ts}
           (sub : sa_sub dom2 dom)
@@ -2173,6 +2179,37 @@ Canonical nneg2.
         rewrite <- H2.
         rewrite H1.
         unfold NonNegConditionalExpectation.
+        -- assert (
+               almostR2 prts eq
+                        (Rbar_rvlim
+                           (fun n : nat =>
+                              conditional_expectation_L2fun 
+                                prts
+                                (rvplus (rvmin f1 (const (INR n))) 
+                                        (rvmin f2 (const (INR n)))) sub))
+                        (Rbar_rvlim
+                           (fun n =>
+                              (rvplus
+                                 (conditional_expectation_L2fun 
+                                    prts (rvmin f1 (const (INR n))) sub)
+                                 (conditional_expectation_L2fun 
+                                    prts (rvmin f1 (const (INR n))) sub))))).
+           {
+             
+             unfold Rbar_rvlim.
+             apply almost_Rbar_rvlim.
+             intros.
+             generalize (conditional_expectation_L2fun_plus 
+                           (rvmin f1 (const (INR n)))
+                           (rvmin f2 (const (INR n))) sub); intros.
+             unfold LpRRV_eq in H3.
+             admit.
+           }
+           rewrite H3.
+           unfold Rbar_rvlim at 1.
+           unfold rvplus.
+           
+                              
         Admitted.
 
 
