@@ -2116,11 +2116,87 @@ Canonical nneg2.
         now rewrite <- rv_pos_neg_id.
     Qed.
 
-    Lemma almost_Rbar_rvlim (f1 f2 : nat -> Ts -> R) :
-      (forall n, almostR2 prts eq (f1 n) (f2 n)) ->
-      almostR2 prts eq (Rbar_rvlim f1) (Rbar_rvlim f2).
+    Lemma conditional_expectation_L2fun_le
+          f1 f2
+          {dom2 : SigmaAlgebra Ts}
+          (sub : sa_sub dom2 dom)
+          {rv1 : RandomVariable dom borel_sa f1}
+          {rv2 : RandomVariable dom borel_sa f2}
+          {isl1 : IsLp prts 2 f1}
+          {isl2 : IsLp prts 2 f2} :
+          rv_le f1 f2 ->
+          rv_le (conditional_expectation_L2fun prts f1 sub) (conditional_expectation_L2fun prts f2 sub).
     Proof.
-      Admitted.
+    Admitted.
+
+    Lemma NonNegConditionalExpectation_le
+          f1 f2
+          {dom2 : SigmaAlgebra Ts}
+          (sub : sa_sub dom2 dom)
+          {rv1 : RandomVariable dom borel_sa f1}
+          {rv2 : RandomVariable dom borel_sa f2}
+          {nnf1 : NonnegativeFunction f1}
+          {nnf2 : NonnegativeFunction f2} :
+          rv_le f1 f2 ->
+          Rbar_rv_le (NonNegConditionalExpectation prts f1 sub) (NonNegConditionalExpectation prts f2 sub).
+    Proof.
+    Admitted.
+    
+    Theorem ConditionalExpectation_le
+          f1 f2
+          {dom2 : SigmaAlgebra Ts}
+          (sub : sa_sub dom2 dom)
+          {rv1 : RandomVariable dom borel_sa f1}
+          {rv2 : RandomVariable dom borel_sa f2} :
+          rv_le f1 f2 ->
+          Rbar_rv_le (ConditionalExpectation prts f1 sub) (ConditionalExpectation prts f2 sub).
+    Proof.
+    Admitted.
+
+    Lemma NonNegConditionalExpectation_nonneg f
+          {dom2 : SigmaAlgebra Ts}
+          (sub : sa_sub dom2 dom)
+          {rv : RandomVariable dom borel_sa f}
+          {nnf : NonnegativeFunction f}
+      : almostR2 prts Rbar_le (const 0) (NonNegConditionalExpectation prts f sub).
+    Proof.
+    Admitted.
+    (*red.
+      generalize (NonNegConditionalExpectation_le (const 0) f sub (nnf1:=fun _ => z_le_z))
+      ; intros HH.
+      cut_to HH.
+      - generalize (NonNegConditionalExpectation_const 0 (fun _ => z_le_z) sub)
+        ; intros HH2.
+        intros x.
+        specialize (HH x).
+        eapply Rbar_le_trans; try eapply HH.
+        
+
+    Admitted.
+    *)
+    Instance rvmin_le_proper : Proper (rv_le ==> rv_le ==> rv_le) (@rvmin Ts).
+    Proof.
+      unfold rv_le, rvmin, pointwise_relation.
+      intros ???????.
+      unfold Rmin.
+      repeat match_destr.
+      - etransitivity; eauto.
+      - etransitivity; try eapply H.
+        lra.
+    Qed.
+
+    Instance const_le_proper : Proper (Rle ==> rv_le) (const (B:=Ts)).
+    Proof.
+      intros ????.
+      now unfold const.
+    Qed.
+
+    Global Instance rvplus_le_proper : Proper (rv_le ==> rv_le ==> rv_le) (rvplus (Ts:=Ts)).
+    Proof.
+      unfold rv_le, rvplus, pointwise_relation.
+      intros ???????.
+      apply Rplus_le_compat; auto.
+    Qed.
 
     Lemma NonNegConditionalExpectation_plus f1 f2
           {dom2 : SigmaAlgebra Ts}
@@ -2131,7 +2207,7 @@ Canonical nneg2.
           {nnf2 : NonnegativeFunction f2} :
       almostR2 prts eq
                (NonNegConditionalExpectation prts (rvplus f1 f2) sub)
-               (rvplus (NonNegConditionalExpectation prts f1 sub) (NonNegConditionalExpectation prts f2 sub)).
+               (Rbar_rvplus (NonNegConditionalExpectation prts f1 sub) (NonNegConditionalExpectation prts f2 sub)).
     Proof.
       generalize (Rbar_rvlim_plus_min f1 f2); intros plus_min.
       assert (RandomVariable dom borel_sa
@@ -2174,12 +2250,18 @@ Canonical nneg2.
              (NonNegConditionalExpectation prts (rvplus f1 f2) sub)).
         {
           apply NonNegConditionalExpectation_proper.
-          admit.
+          etransitivity.
+          - apply almostR2_eq_subr; intros ?.
+            rewrite plus_min.
+            reflexivity.
+          - apply almostR2_eq_subr.
+            intros ?; simpl.
+            now rewrite rvlim_rvmin.
         }
         rewrite <- H2.
         rewrite H1.
         unfold NonNegConditionalExpectation.
-        -- assert (
+        assert (
                almostR2 prts eq
                         (Rbar_rvlim
                            (fun n : nat =>
@@ -2193,25 +2275,50 @@ Canonical nneg2.
                                  (conditional_expectation_L2fun 
                                     prts (rvmin f1 (const (INR n))) sub)
                                  (conditional_expectation_L2fun 
-                                    prts (rvmin f1 (const (INR n))) sub))))).
+                                    prts (rvmin f2 (const (INR n))) sub))))).
            {
              
              unfold Rbar_rvlim.
-             apply almost_Rbar_rvlim.
-             intros.
+             apply Rbar_rvlim_almost_proper; intros.
              generalize (conditional_expectation_L2fun_plus 
                            (rvmin f1 (const (INR n)))
-                           (rvmin f2 (const (INR n))) sub); intros.
-             unfold LpRRV_eq in H3.
-             admit.
+                           (rvmin f2 (const (INR n))) sub); intros HH.
+             unfold LpRRV_eq in HH.
+             etransitivity; [| apply HH].
+             now apply conditional_expectation_L2fun_proper.
            }
            rewrite H3.
-           unfold Rbar_rvlim at 1.
-           unfold rvplus.
-           
-                              
-        Admitted.
+           apply almostR2_eq_subr; intros ?; simpl.
+           unfold Rbar_rvlim, rvplus.
+           apply Lim_seq_plus.
+        + apply ex_lim_seq_incr; intros.
+          apply conditional_expectation_L2fun_le.
+          rewrite le_INR; try reflexivity.
+          lia.
+        +
+    Admitted.
 
+    (*
+          apply ex_lim_seq_incr; intros.
+          apply conditional_expectation_L2fun_le.
+          rewrite le_INR; try reflexivity.
+          lia.
+        + generalize (NonNegConditionalExpectation_nonneg f1 sub)
+          ; intros HH1.
+          generalize (NonNegConditionalExpectation_nonneg f2 sub)
+          ; intros HH2.
+          unfold NonNegConditionalExpectation, Rbar_rvlim in HH1, HH2.
+          apply ex_Rbar_plus_pos.
+          * 
+          * apply HH2.
+      - intros.
+        apply rvplus_le_proper
+        ; apply rvmin_le_proper; try reflexivity
+        ; apply const_le_proper
+        ; apply le_INR
+        ; lia.
+    Qed.
+*)
 
 End cond_exp_props.
     
