@@ -1840,6 +1840,12 @@ Section RbarRandomVariables.
   Definition Rbar_rvplus (rv_X1 rv_X2 : Ts -> Rbar) :=
     (fun omega =>  Rbar_plus (rv_X1 omega) (rv_X2 omega)).
 
+  Definition Rbar_rvopp (rv_X : Ts -> Rbar) :=
+    (fun omega =>  Rbar_opp (rv_X omega)).
+
+  Definition Rbar_rvminus (rv_X1 rv_X2 : Ts -> Rbar) :=
+    Rbar_rvplus rv_X1 (Rbar_rvopp rv_X2).
+
   Global Instance pos_Rbar_plus (f g : Ts -> Rbar) 
          {fpos : Rbar_NonnegativeFunction f}
          {gpos: Rbar_NonnegativeFunction g} :
