@@ -1582,6 +1582,17 @@ Canonical nneg2.
       apply rvlim_rvmin.
   Qed.
 
+  Corollary NonNegConditionalExpectation_const c pf
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom) :
+    almostR2 prts eq
+             (NonNegConditionalExpectation prts (const c) sub (nnf:=pf))
+             (const c).
+  Proof.
+    apply NonNegConditionalExpectation_rv_eq.
+    apply rvconst.
+  Qed.
+
   (* If f is dom2-measurable, then its conditional expectation with
      respect to dom2 is almost itself *)
   Theorem ConditionalExpectation_rv_eq f
@@ -1639,6 +1650,22 @@ Canonical nneg2.
     repeat rewrite L2RRV_inner_scal.
     f_equal.
     now apply conditional_expectation_L2fun_eq2.
+  Qed.
+
+  Lemma conditional_expectation_L2fun_opp f
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        {rv : RandomVariable dom borel_sa f}
+        {isl : IsLp prts 2 f} :
+    LpRRV_eq prts
+             (conditional_expectation_L2fun prts (rvopp f) sub)
+             (LpRRVopp prts (conditional_expectation_L2fun prts f sub)).
+  Proof.
+    etransitivity.
+    - etransitivity; [| apply (conditional_expectation_L2fun_scale f sub (-1))].
+      now apply conditional_expectation_L2fun_proper.
+    - apply almostR2_eq_subr; intros ?; simpl.
+      reflexivity.
   Qed.
 
   Existing Instance IsLp_min_const_nat.
@@ -1927,6 +1954,169 @@ Canonical nneg2.
         now simpl.
     Qed.
     
+    Lemma ConditionalExpectation_nonneg f
+          {dom2 : SigmaAlgebra Ts}
+          (sub : sa_sub dom2 dom)
+          {rv : RandomVariable dom borel_sa f}
+          {nnf : NonnegativeFunction f}
+      :
+        almostR2 prts eq (ConditionalExpectation prts f sub)
+                 (NonNegConditionalExpectation prts f sub).
+    Proof.
+      unfold ConditionalExpectation.
+      transitivity ((Rbar_rvplus (NonNegConditionalExpectation prts (fun x : Ts => pos_fun_part f x) sub)
+                                 (Rbar_rvopp (const 0)))).
+      - apply Rbar_rvplus_almost_proper; try reflexivity.
+        apply Rbar_rvopp_almost_proper.
+        transitivity (NonNegConditionalExpectation prts (const 0) sub (nnf:=fun _ => z_le_z)).
+        + apply NonNegConditionalExpectation_proper.
+          apply almostR2_eq_subr.
+          rewrite <- neg_fun_part_pos; trivial.
+          reflexivity.
+        + apply NonNegConditionalExpectation_const.
+      - transitivity (NonNegConditionalExpectation prts (fun x : Ts => pos_fun_part f x) sub).
+        + apply almostR2_eq_subr; intros ?.
+          unfold Rbar_rvplus, Rbar_rvopp, const; simpl.
+          rewrite Ropp_0.
+          apply Rbar_plus_0_r.
+        + apply NonNegConditionalExpectation_proper.
+          apply almostR2_eq_subr; intros ?.
+          rewrite <- pos_fun_part_pos; trivial.
+    Qed.
+
+    Lemma NonNegConditionalExpectation_L2 f
+          {dom2 : SigmaAlgebra Ts}
+          (sub : sa_sub dom2 dom)
+          {rv : RandomVariable dom borel_sa f}
+          {nnf : NonnegativeFunction f}
+          {isl : IsLp prts 2 f}
+      :
+        almostR2 prts eq (NonNegConditionalExpectation prts f sub)
+                 (LpRRV_rv_X prts (conditional_expectation_L2fun prts f sub)).
+    Proof.
+      assert (eqq:rv_eq (fun x : Ts => Rbar_rvlim (fun _ : nat => f) x) f).
+      {
+        intros ?.
+        unfold Rbar_rvlim.
+        apply Lim_seq_const.
+      }
+      assert (eqq2:(rv_eq (Rbar_rvlim (fun n : nat => conditional_expectation_L2fun prts f sub)) (fun a => conditional_expectation_L2fun prts f sub a))).
+      {
+        intros ?.
+        unfold Rbar_rvlim; simpl.
+        apply Lim_seq_const.
+      }
+      assert (limrv : RandomVariable dom borel_sa (fun x : Ts => Rbar_rvlim (fun _ : nat => f) x)).
+      {
+        eapply RandomVariable_proper.
+        - intros ?.
+          rewrite eqq.
+          reflexivity.
+        - trivial.
+      } 
+      generalize (NonNegCondexp_l2fun_lim_incr (fun _ => f) sub (fun _ => reflexivity _))
+      ; intros HH.
+
+      transitivity (NonNegConditionalExpectation prts (fun x : Ts => Rbar_rvlim (fun _ : nat => f) x) sub).
+      - apply NonNegConditionalExpectation_proper.
+        apply almostR2_eq_subr.
+        intros ?.
+        rewrite eqq.
+        reflexivity.
+      - rewrite HH.
+        now apply almostR2_eq_subr.
+    Qed.
+
+    Global Instance pos_fun_part_islp (p:nonnegreal) f :
+      IsLp prts p f ->
+      IsLp prts p (pos_fun_part f).
+    Proof.
+      intros islp.
+      eapply IsLp_bounded; try eapply islp.
+      intros ?.
+      rv_unfold; simpl.
+      apply Rle_power_l.
+      - apply cond_nonneg.
+      - split.
+        + apply Rabs_pos.
+        + unfold Rmax.
+          match_destr.
+          * rewrite Rabs_R0.
+            apply Rabs_pos.
+          * reflexivity.
+    Qed.
+
+    Global Instance neg_fun_part_islp (p:nonnegreal) f :
+      IsLp prts p f ->
+      IsLp prts p (neg_fun_part f).
+    Proof.
+      intros islp.
+      assert (islp2:IsLp prts p (rvopp f)) by now apply IsLp_opp.
+      generalize (pos_fun_part_islp p (rvopp f) islp2).
+      apply IsLp_proper; trivial.
+      unfold rvopp; intros a.
+      generalize (pos_fun_part_scale_neg_eq 1 f).
+      replace (- (1)) with (-1) by lra.
+      intros HH.
+      rewrite HH by lra.
+      unfold rvscale.
+      lra.
+    Qed.
+
+    Lemma almostR2_Finite (x y:Ts->R) :
+      almostR2 prts eq (fun a => (Finite (x a))) (fun a => (Finite (y a))) <->
+      almostR2 prts eq x y.
+    Proof.
+      split
+      ; intros [p[pone peqq]]
+      ; exists p; split; trivial
+      ; intros a pa
+      ; specialize (peqq a pa).
+      - now invcs peqq.
+      - now rewrite peqq.
+    Qed.
+
+    Lemma ConditionalExpectation_L2 f
+          {dom2 : SigmaAlgebra Ts}
+          (sub : sa_sub dom2 dom)
+          {rv : RandomVariable dom borel_sa f}
+          {isl : IsLp prts 2 f}
+      :
+        almostR2 prts eq (ConditionalExpectation prts f sub)
+                 (LpRRV_rv_X prts (conditional_expectation_L2fun prts f sub)).
+    Proof.
+      unfold ConditionalExpectation.
+      unfold Rbar_rvminus.
+      repeat rewrite NonNegConditionalExpectation_L2.
+      assert (islp2:IsLp prts 2 (rvplus (fun x : Ts => pos_fun_part f x) (rvopp (fun x : Ts => neg_fun_part f x)))).
+      {
+        eapply IsLp_proper; try (symmetry; eapply rv_pos_neg_id); eauto.
+      }
+      generalize (conditional_expectation_L2fun_plus (fun x : Ts => pos_fun_part f x) (rvopp (fun x : Ts => neg_fun_part f x)) sub)
+      ; intros HH.
+      Set Printing All.
+      simpl in HH.
+      apply almostR2_Finite.
+      transitivity ( (fun x : Ts => conditional_expectation_L2fun prts
+                                                               (rvplus (fun x : Ts => pos_fun_part f x) (rvopp (fun x : Ts => neg_fun_part f x))) sub x)).
+      - red in HH.
+        simpl in *.
+        symmetry.
+        etransitivity.
+        + etransitivity; [| eapply HH].
+          now apply conditional_expectation_L2fun_proper.
+        + apply almostR2_eq_plus_proper; try reflexivity.
+          etransitivity; [apply conditional_expectation_L2fun_opp |].
+          simpl.
+          apply almostR2_eq_subr; intros ?.
+          unfold rvopp, rvscale.
+          field_simplify.
+          reflexivity.
+      - apply conditional_expectation_L2fun_proper.
+        apply almostR2_eq_subr.
+        now rewrite <- rv_pos_neg_id.
+    Qed.
+
     Lemma NonNegConditionalExpectation_plus f1 f2
           {dom2 : SigmaAlgebra Ts}
           (sub : sa_sub dom2 dom)
@@ -1989,3 +2179,4 @@ Canonical nneg2.
 
 End cond_exp_props.
     
+
