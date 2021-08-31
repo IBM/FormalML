@@ -1226,6 +1226,49 @@ Proof.
   match_destr; tauto.
 Qed.
 
+Lemma conditional_expectation_L2fun_eq3
+      (f : Ts -> R) 
+      {dom2 : SigmaAlgebra Ts}
+      (sub : sa_sub dom2 dom)
+      {rv : RandomVariable dom borel_sa f}
+      {isl : IsLp prts 2 f} :
+  forall (E : dec_sa_event),
+    Expectation (rvmult f (EventIndicator (dsa_dec E)) ) =
+    Expectation (rvmult (conditional_expectation_L2fun f sub) (EventIndicator (dsa_dec E)) ).
+Proof.
+  intros.
+  assert (RandomVariable dom2 borel_sa (EventIndicator (dsa_dec E))) by typeclasses eauto.
+  assert (RandomVariable dom borel_sa (EventIndicator (dsa_dec E))) by now apply RandomVariable_sa_sub with (dom2 := dom2).
+  assert (IsLp prts 2 (EventIndicator (dsa_dec E))).
+  {
+    unfold IsLp.
+    apply IsFiniteExpectation_bounded with (rv_X1 := const 0) (rv_X3 := const 1).
+    - apply IsFiniteExpectation_const.
+    - apply IsFiniteExpectation_const.
+    - intro x.
+      unfold const, rvpower.
+      apply power_nonneg.
+    - intro x.
+      unfold rvpower, const.
+      replace (1) with (power 1 2).
+      + apply Rle_power_l; [lra |].
+        unfold rvabs.
+        split.
+        * apply Rabs_pos.
+        * unfold EventIndicator.
+          match_destr.
+          -- rewrite Rabs_R1; lra.
+          -- rewrite Rabs_R0; lra.
+      + now rewrite power_base_1.
+  }
+  generalize (conditional_expectation_L2fun_eq2 f sub (pack_LpRRV prts (EventIndicator (dsa_dec E))) H); intros.
+  unfold L2RRVinner in H2.
+  simpl in H2.
+  symmetry in H2.
+  unfold FiniteExpectation, proj1_sig in H2.
+  do 2 match_destr_in H2.
+  Admitted.
+
 Lemma conditional_expectation_L2fun_unique
       (f : Ts -> R) 
       {dom2 : SigmaAlgebra Ts}
@@ -1692,6 +1735,36 @@ Canonical nneg2.
   Qed.
   
   Existing Instance IsLp_min_const_nat.
+
+(*
+  Instance NonNegCondexp_rv (f : Ts -> R)
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        {rvf : RandomVariable dom borel_sa f} 
+        {nnf : NonnegativeFunction f} :
+    RandomVariable dom2 borel_sa (NonNegConditionalExpectation prts f sub).
+  Proof.
+    Admitted.
+ *)
+  
+  Lemma NonNegCondexp_prop (f g : Ts -> R)
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        {nnf : NonnegativeFunction f}
+        {nng : NonnegativeFunction g}         
+        {rvf : RandomVariable dom borel_sa f}
+        {rvg : RandomVariable dom2 borel_sa g} :
+          almostR2 prts eq g
+                   (NonNegConditionalExpectation prts f sub)
+          <->
+          forall (E : dec_sa_event),
+            Expectation (rvmult (EventIndicator (dsa_dec E)) g) =
+            Expectation (rvmult (EventIndicator (dsa_dec E)) f).
+    Proof.
+      Admitted.
+            
+                   
+    
 
   Lemma NonNegCondexp_l2fun_lim_incr (f : nat -> Ts -> R)
         {dom2 : SigmaAlgebra Ts}
