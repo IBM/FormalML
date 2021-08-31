@@ -1668,6 +1668,35 @@ Canonical nneg2.
       reflexivity.
   Qed.
 
+  Lemma conditional_expectation_L2fun_Expectation f
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        {rv : RandomVariable dom borel_sa f}
+        {isl : IsLp prts 2 f} :
+    Expectation (conditional_expectation_L2fun prts f sub) = Expectation f.
+  Proof.
+    generalize (conditional_expectation_L2fun_eq2 prts f sub (LpRRVconst prts 1)); intros HH.
+    cut_to HH; try typeclasses eauto.
+    unfold L2RRVinner in HH.
+    unfold LpRRVconst in HH; simpl in HH.
+    rewrite (FiniteExpectation_ext prts
+               (rvmult (conditional_expectation_L2fun prts f sub) (const 1))
+               (conditional_expectation_L2fun prts f sub)
+            ) in HH by (intros ?; rv_unfold; lra).
+    rewrite (FiniteExpectation_ext prts
+              (rvmult f (const 1))
+               f
+            ) in HH by (intros ?; rv_unfold; lra).
+    unfold FiniteExpectation, proj1_sig in HH.
+    repeat match_destr_in HH; congruence.
+  Qed.
+    
+    
+    generalize (EventIndicator (fun a => ClassicalDescription.excluded_middle_informative (sa_sigma (SigmaAlgebra:=dom2) a))).
+    
+  Qed.
+
+  
   Existing Instance IsLp_min_const_nat.
 
   Lemma NonNegCondexp_l2fun_lim_incr (f : nat -> Ts -> R)
@@ -1683,6 +1712,7 @@ Canonical nneg2.
              (Rbar_rvlim (fun n =>
                             (conditional_expectation_L2fun prts (f n) sub))).
   Proof.
+    
     Admitted.
   
   Lemma Lim_seq_min_n_scale (fx c : R) :
@@ -2360,6 +2390,18 @@ Canonical nneg2.
     Qed.
 *)
 
+    Theorem ConditionalExpectation_plus f1 f2
+          {dom2 : SigmaAlgebra Ts}
+          (sub : sa_sub dom2 dom)
+          {rv1 : RandomVariable dom borel_sa f1}
+          {rv2 : RandomVariable dom borel_sa f2} :
+      almostR2 prts eq
+               (ConditionalExpectation prts (rvplus f1 f2) sub)
+               (Rbar_rvplus (ConditionalExpectation prts f1 sub) (ConditionalExpectation prts f2 sub)).
+    Proof.
+      unfold ConditionalExpectation.
+    Admitted.
+    
 End cond_exp_props.
     
 
