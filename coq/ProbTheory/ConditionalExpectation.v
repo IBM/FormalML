@@ -1431,8 +1431,9 @@ Proof.
     assert (eqq2:Expectation (rvmult ce1 (In n)) = Expectation (rvmult ce2 (In n) )).
     {
       unfold In, Dn.
-      admit.
-      (* congruence. *)
+      rewrite <- isce1, <- isce2; trivial
+      ; unfold event_pre, proj1_sig
+      ; match_destr.
     }
     assert (isfee:IsFiniteExpectation prts (rvmult (rvplus ce1 (const (/ (INR (S n))))) (In n))).
     {
@@ -1566,7 +1567,7 @@ Proof.
     rewrite le1.
     rewrite Nlt.
     lra.
-Admitted.
+Qed.
 
 Lemma is_conditional_expectation_eq
       {dom2 : SigmaAlgebra Ts}
