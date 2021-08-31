@@ -1226,6 +1226,386 @@ Proof.
   match_destr; tauto.
 Qed.
 
+Global Instance EventIndicator_islp (p:nonnegreal) σ (E : dec_sa_event (σ:=σ)) :
+  IsLp prts p (EventIndicator (dsa_dec E)).
+Proof.
+  unfold IsLp.
+    apply IsFiniteExpectation_bounded with (rv_X1 := const 0) (rv_X3 := const 1).
+    - apply IsFiniteExpectation_const.
+    - apply IsFiniteExpectation_const.
+    - intro x.
+      unfold const, rvpower.
+      apply power_nonneg.
+    - intro x.
+      unfold rvpower, const.
+      replace (1) with (power 1 p).
+      + apply Rle_power_l.
+        { apply cond_nonneg.
+        } 
+        unfold rvabs.
+        split.
+        * apply Rabs_pos.
+        * unfold EventIndicator.
+          match_destr.
+          -- rewrite Rabs_R1; lra.
+          -- rewrite Rabs_R0; lra.
+      + now rewrite power_base_1.
+Qed.
+
+Definition dec_pre_event {T} (P:T->Prop) := forall x, {P x} + {~ P x}.
+
+Definition is_conditional_expectation
+           {dom2 : SigmaAlgebra Ts}
+           (sub : sa_sub dom2 dom)
+           (f ce : Ts -> R)
+           {rvf : RandomVariable dom borel_sa f}
+           {rvce : RandomVariable dom2 borel_sa ce}
+  := forall P (dec:dec_pre_event P),
+    Expectation (rvmult f (EventIndicator dec)) =
+    Expectation (rvmult ce (EventIndicator dec)).
+
+Lemma event_Rgt_sa (σ:SigmaAlgebra Ts) x1 x2
+      {rv1:RandomVariable σ borel_sa x1}
+      {rv2:RandomVariable σ borel_sa x2}
+  : sa_sigma (fun x => x1 x > x2 x).
+Proof.
+  apply (sa_proper _ (fun x => (rvminus x1 x2) x > 0)).
+  -  red; intros.
+     rv_unfold.
+    intuition lra.
+  - apply sa_le_gt; intros.
+    apply rv_measurable.
+    typeclasses eauto.
+Qed.
+
+Definition event_Rgt (σ:SigmaAlgebra Ts) x1 x2
+      {rv1:RandomVariable σ borel_sa x1}
+      {rv2:RandomVariable σ borel_sa x2} : event σ
+  := exist _ _ (event_Rgt_sa σ x1 x2).
+
+Lemma event_Rgt_dec (σ:SigmaAlgebra Ts) x1 x2
+      {rv1:RandomVariable σ borel_sa x1}
+      {rv2:RandomVariable σ borel_sa x2} :
+  dec_event (event_Rgt σ x1 x2).
+Proof.
+  unfold event_Rgt.
+  intros x; simpl.
+  apply Rgt_dec.
+Qed.
+
+Definition dec_sa_event_Rgt (σ:SigmaAlgebra Ts) x1 x2
+      {rv1:RandomVariable σ borel_sa x1}
+      {rv2:RandomVariable σ borel_sa x2}
+  : dec_sa_event (σ:=σ)
+  := {| dsa_event := event_Rgt σ x1 x2
+        ; dsa_dec := event_Rgt_dec σ x1 x2
+     |}.
+
+Lemma event_ge_dec (σ:SigmaAlgebra Ts) x1 n
+  {rv1:RandomVariable σ borel_sa x1} :
+  dec_event (event_ge σ x1 n).
+Proof.
+  unfold event_ge.
+  intros x; simpl.
+  apply Rge_dec.
+Qed.
+
+Lemma event_ge_pre_dec (σ:SigmaAlgebra Ts) x1 n
+  {rv1:RandomVariable σ borel_sa x1} :
+  dec_pre_event (event_ge σ x1 n).
+Proof.
+  unfold event_ge.
+  intros x; simpl.
+  apply Rge_dec.
+Qed.
+
+Definition dec_sa_event_ge (σ:SigmaAlgebra Ts) x1 n
+      {rv1:RandomVariable σ borel_sa x1}
+  : dec_sa_event (σ:=σ)
+  := {| dsa_event := event_ge σ x1 n
+        ; dsa_dec := event_ge_dec σ x1 n
+     |}.
+
+Global Instance IsFiniteExpectation_indicator f {P} (dec:dec_pre_event P):
+  IsFiniteExpectation prts f ->
+  IsFiniteExpectation prts (rvmult f (EventIndicator dec)).
+Proof.
+Admitted.
+
+Lemma is_conditional_expectation_isfe {dom2 : SigmaAlgebra Ts} (sub : sa_sub dom2 dom)
+      f ce
+      {rvf:RandomVariable dom borel_sa f} 
+      {rvce:RandomVariable dom2 borel_sa ce} :
+  is_conditional_expectation sub f ce ->
+  IsFiniteExpectation prts f ->
+  IsFiniteExpectation prts ce.
+Proof.
+  unfold is_conditional_expectation, IsFiniteExpectation; intros isce isf.
+  specialize (isce _ (dsa_dec dsa_Ω)).
+
+  assert (eqq:forall f, Expectation (rvmult f (EventIndicator (dsa_dec dsa_Ω))) = Expectation f).
+  {
+    intros.
+    apply Expectation_proper.
+    rv_unfold; intros ?; simpl.
+    lra.
+  }
+  repeat rewrite eqq in isce.
+  now rewrite isce in isf.
+Qed.
+
+Lemma FiniteExpectation_plus':
+  forall (rv_X1 rv_X2 : Ts -> R)
+    {rv1 : RandomVariable dom borel_sa rv_X1} {rv2 : RandomVariable dom borel_sa rv_X2}
+    {rv12 : RandomVariable dom borel_sa (rvplus rv_X1 rv_X2)}
+    {isfe1 : IsFiniteExpectation prts rv_X1} {isfe2 : IsFiniteExpectation prts rv_X2}
+   {isfe12 : IsFiniteExpectation prts (rvplus rv_X1 rv_X2)},
+    FiniteExpectation prts (rvplus rv_X1 rv_X2) = FiniteExpectation prts rv_X1 + FiniteExpectation prts rv_X2.
+Proof.
+  intros.
+  generalize (FiniteExpectation_plus prts rv_X1 rv_X2)
+  ; intros eqq.
+  etransitivity.
+  - etransitivity; [| eapply eqq].
+    apply FiniteExpectation_ext; reflexivity.
+  - f_equal; apply FiniteExpectation_ext; reflexivity.
+Qed.
+
+  Lemma FiniteExpectation_scale' c rv_X 
+        {isfe:IsFiniteExpectation prts rv_X} {isfe2:IsFiniteExpectation prts (rvscale c rv_X)} :
+    FiniteExpectation prts (rvscale c rv_X) = c * FiniteExpectation prts rv_X.
+  Proof.
+    intros.
+    generalize (FiniteExpectation_scale prts c rv_X)
+    ; intros eqq.
+    rewrite <- eqq.
+    apply FiniteExpectation_ext.
+    reflexivity.
+  Qed.
+
+Lemma Expectation_EventIndicator:
+  forall {Ts : Type} {dom : SigmaAlgebra Ts} {Prts : ProbSpace dom} {P : event dom}
+    (dec : forall x : Ts, {P x} + {~ P x}), Expectation (EventIndicator dec) = Some (Finite (ps_P P)).
+Proof.
+  intros.
+  erewrite Expectation_simple.
+  now rewrite SimpleExpectation_EventIndicator.
+Qed.
+  
+Existing Instance RandomVariable_sa_sub.
+Lemma is_conditional_expectation_le
+      {dom2 : SigmaAlgebra Ts}
+      (sub : sa_sub dom2 dom)
+      (f ce1 ce2 : Ts -> R)
+      {isfe:IsFiniteExpectation prts f}
+      {rvf : RandomVariable dom borel_sa f}
+      {rvce1 : RandomVariable dom2 borel_sa ce1}
+      {rvce2 : RandomVariable dom2 borel_sa ce2}
+  : is_conditional_expectation sub f ce1 ->
+    is_conditional_expectation sub f ce2 ->
+    almostR2 (prob_space_sa_sub _ sub) Rle ce2 ce1.
+Proof.
+  unfold is_conditional_expectation.
+  intros isce1 isce2.
+  generalize (is_conditional_expectation_isfe sub _ _ isce1 isfe); intros isfe1.
+  generalize (is_conditional_expectation_isfe sub _ _ isce2 isfe); intros isfe2.
+  
+  pose (An:=fun n => event_ge dom2 (rvminus ce2 ce1) (/ (INR (S n)))).
+  pose (Dn:= fun n => (event_ge_pre_dec dom2 (rvminus ce2 ce1) (/ (INR (S n))))).
+  pose (In:=fun n => EventIndicator (Dn n)).
+
+  
+  assert (eqq1: forall n, ps_P (ProbSpace:=(prob_space_sa_sub _ sub)) (An n) = 0).
+  { 
+    intros n.
+     assert (npos: 0 < / INR (S n)).
+     {
+       apply Rinv_0_lt_compat.
+       apply lt_0_INR.
+       lia.
+     } 
+    assert (eqq2:Expectation (rvmult ce1 (In n)) = Expectation (rvmult ce2 (In n) )).
+    {
+      unfold In.
+      congruence.
+    }
+    assert (isfee:IsFiniteExpectation prts (rvmult (rvplus ce1 (const (/ (INR (S n))))) (In n))).
+    {
+      unfold In.
+      apply (IsFiniteExpectation_indicator _ (Dn n)).
+      apply IsFiniteExpectation_plus; try typeclasses eauto.
+      eapply RandomVariable_sa_sub; eauto.
+    } 
+      
+    assert (eqq3:rv_eq (rvmult (rvplus ce1 (const (/ (INR (S n))))) (In n))
+                       (rvplus (rvmult ce1 (In n)) (rvmult (const (/ INR (S n))) (In n)))).
+    {
+      rv_unfold.
+      intros ?; lra.
+    }
+
+    assert (eqq4:Rge (FiniteExpectation prts (rvmult ce2 (In n))) (FiniteExpectation prts (rvmult (rvplus ce1 (const (/ (INR (S n))))) (In n)))).
+    {
+      apply Rle_ge.
+      apply FiniteExpectation_le.
+      intros ?.
+      unfold In, Dn.
+      rv_unfold.
+      match_destr; try lra.
+      simpl in *.
+      lra.
+    }
+
+    rewrite (FiniteExpectation_ext_alt _ _ _ eqq3) in eqq4.
+    erewrite FiniteExpectation_plus' in eqq4; unfold In; try typeclasses eauto.
+    - assert (eqq5:FiniteExpectation prts (rvmult ce2 (EventIndicator (Dn n))) =
+                     FiniteExpectation prts (rvmult ce1 (EventIndicator (Dn n)))).
+        {
+          unfold FiniteExpectation, proj1_sig.
+          repeat match_destr.
+          subst In.
+          cut (Some (Finite x) = Some (Finite x0)); [now intros HH; invcs HH |].
+          rewrite <- e, <- e0.
+          etransitivity.
+          - etransitivity; [| symmetry; apply eqq2].
+            now apply Expectation_proper.
+          - now apply Expectation_proper.
+        }
+        unfold In in eqq4.
+        rewrite <- eqq5 in eqq4.
+        match type of eqq4 with
+          ?x >= _  => replace x with (x + 0) in eqq4 at 1 by lra
+        end.
+        apply Rplus_ge_reg_l in eqq4.
+        assert (eqq6:FiniteExpectation prts (rvmult (const (/ INR (S n))) (EventIndicator (Dn n))) = 0).
+        {
+          apply antisymmetry.
+          - apply Rge_le.
+            apply eqq4.
+          - apply FiniteExpectation_pos.
+            intros ?.
+            rv_unfold.
+            assert (0 <= / INR (S n)).
+            {
+              left.
+              apply Rinv_0_lt_compat.
+              apply lt_0_INR.
+              lia.
+            } 
+            match_destr; lra.
+        } 
+        assert (eqq7:rv_eq (rvmult (const (/ INR (S n))) (EventIndicator (Dn n)))
+                           (rvscale  (/ INR (S n)) (EventIndicator (Dn n)))).
+        {
+          intros ?.
+          rv_unfold; lra.
+        } 
+        rewrite (FiniteExpectation_ext_alt _ _ _ eqq7) in eqq6.
+        unfold FiniteExpectation, proj1_sig in eqq6.
+        match_destr_in eqq6; subst.
+        rewrite Expectation_scale in e; [| lra].
+        erewrite <- (Expectation_prob_space_sa_sub _ sub) in e.
+      + rewrite Expectation_EventIndicator in e.
+        unfold An.
+        invcs e.
+        rewrite H0.
+        apply Rmult_integral in H0.
+        destruct H0.
+        * assert (/ INR (S n) = 0) by apply H.
+          lra.
+        * apply H.
+      + unfold Dn.
+        typeclasses eauto.
+    - apply rvmult_rv.
+      + eapply RandomVariable_sa_sub; eauto.
+      + unfold EventIndicator.
+        eapply RandomVariable_sa_sub; trivial.
+        apply EventIndicator_rv.
+    - apply rvmult_rv.
+      + apply rvconst.
+      + unfold EventIndicator.
+        eapply RandomVariable_sa_sub; trivial.
+        apply EventIndicator_rv.
+    - { apply rvplus_rv.
+        - apply rvmult_rv.
+          + eapply RandomVariable_sa_sub; eauto.
+          + unfold EventIndicator.
+            eapply RandomVariable_sa_sub; trivial.
+            apply EventIndicator_rv.
+        - apply rvmult_rv.
+          + apply rvconst.
+          + unfold EventIndicator.
+            eapply RandomVariable_sa_sub; trivial.
+            apply EventIndicator_rv.
+      } 
+  }
+  apply almost_alt_eq.
+  exists (union_of_collection An).
+  split.
+  - apply (ps_zero_countable_union _ _ eqq1)
+    ; intros HH.
+  - intros x xgt.
+    apply Rnot_le_gt in xgt.
+    simpl.
+    assert (pos:0 < ce2 x - ce1 x) by lra.
+    destruct (archimed_cor1 _ pos) as [N [Nlt Npos]].
+    exists N.
+    rv_unfold.
+    apply Rle_ge.
+    assert (le1:/ (INR (S N)) <= / (INR N)).
+    {
+      apply Rinv_le_contravar.
+      - now apply lt_0_INR.
+      - rewrite S_INR; lra.
+    }
+    rewrite le1.
+    rewrite Nlt.
+    lra.
+Qed.    
+
+Lemma is_conditional_expectation_eq
+      {dom2 : SigmaAlgebra Ts}
+      (sub : sa_sub dom2 dom)
+      (f ce1 ce2 : Ts -> R)
+      {rvf : RandomVariable dom borel_sa f}
+      {isfe:IsFiniteExpectation prts f}
+      {rvce1 : RandomVariable dom2 borel_sa ce1}
+      {rvce2 : RandomVariable dom2 borel_sa ce2}
+  : is_conditional_expectation sub f ce1 ->
+    is_conditional_expectation sub f ce2 ->
+    almostR2 (prob_space_sa_sub _ sub) eq ce1 ce2.
+Proof.
+  unfold is_conditional_expectation.
+  intros isce1 isce2.
+  apply antisymmetry
+  ; eapply is_conditional_expectation_le; eauto.
+Qed.
+
+
+Lemma conditional_expectation_L2fun_eq3
+      {dom2 : SigmaAlgebra Ts}
+      (sub : sa_sub dom2 dom)
+      (f : Ts -> R) 
+      {rv : RandomVariable dom borel_sa f}
+      {isl : IsLp prts 2 f} :
+  is_conditional_expectation sub f (conditional_expectation_L2fun f sub).
+Proof.
+  unfold is_conditional_expectation.
+  intros.
+  assert (RandomVariable dom2 borel_sa (EventIndicator (dsa_dec E))) by typeclasses eauto.
+  assert (RandomVariable dom borel_sa (EventIndicator (dsa_dec E))) by now apply RandomVariable_sa_sub with (dom2 := dom2).
+  generalize (conditional_expectation_L2fun_eq2 f sub (pack_LpRRV prts (EventIndicator (dsa_dec E))) H); intros.
+  unfold L2RRVinner in H1.
+  simpl in H1.
+  symmetry in H1.
+  unfold FiniteExpectation, proj1_sig in H1.
+  do 2 match_destr_in H1.
+  subst.
+  erewrite Expectation_ext; [rewrite e | reflexivity].
+  erewrite Expectation_ext; [rewrite e0 | reflexivity].
+  trivial.
+Qed.
+
 Lemma conditional_expectation_L2fun_eq3
       (f : Ts -> R) 
       {dom2 : SigmaAlgebra Ts}
@@ -1236,42 +1616,7 @@ Lemma conditional_expectation_L2fun_eq3
     Expectation (rvmult f (EventIndicator (dsa_dec E)) ) =
     Expectation (rvmult (conditional_expectation_L2fun f sub) (EventIndicator (dsa_dec E)) ).
 Proof.
-  intros.
-  assert (RandomVariable dom2 borel_sa (EventIndicator (dsa_dec E))) by typeclasses eauto.
-  assert (RandomVariable dom borel_sa (EventIndicator (dsa_dec E))) by now apply RandomVariable_sa_sub with (dom2 := dom2).
-  assert (IsLp prts 2 (EventIndicator (dsa_dec E))).
-  {
-    unfold IsLp.
-    apply IsFiniteExpectation_bounded with (rv_X1 := const 0) (rv_X3 := const 1).
-    - apply IsFiniteExpectation_const.
-    - apply IsFiniteExpectation_const.
-    - intro x.
-      unfold const, rvpower.
-      apply power_nonneg.
-    - intro x.
-      unfold rvpower, const.
-      replace (1) with (power 1 2).
-      + apply Rle_power_l; [lra |].
-        unfold rvabs.
-        split.
-        * apply Rabs_pos.
-        * unfold EventIndicator.
-          match_destr.
-          -- rewrite Rabs_R1; lra.
-          -- rewrite Rabs_R0; lra.
-      + now rewrite power_base_1.
-  }
-  generalize (conditional_expectation_L2fun_eq2 f sub (pack_LpRRV prts (EventIndicator (dsa_dec E))) H); intros.
-  unfold L2RRVinner in H2.
-  simpl in H2.
-  symmetry in H2.
-  unfold FiniteExpectation, proj1_sig in H2.
-  do 2 match_destr_in H2.
-  subst.
-  erewrite Expectation_ext; [rewrite e | reflexivity].
-  erewrite Expectation_ext; [rewrite e0 | reflexivity].
-  trivial.
-Qed.
+
 
 Lemma conditional_expectation_L2fun_unique
       (f : Ts -> R) 
