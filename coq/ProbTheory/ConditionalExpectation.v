@@ -1261,6 +1261,7 @@ Definition is_conditional_expectation
            {rvf : RandomVariable dom borel_sa f}
            {rvce : RandomVariable dom2 borel_sa ce}
   := forall P (dec:dec_pre_event P),
+    sa_sigma (SigmaAlgebra := dom2) P ->
     Expectation (rvmult f (EventIndicator dec)) =
     Expectation (rvmult ce (EventIndicator dec)).
 
@@ -1351,7 +1352,10 @@ Proof.
     lra.
   }
   repeat rewrite eqq in isce.
-  now rewrite isce in isf.
+  rewrite isce in isf.
+  - apply isf.
+  - simpl.
+    apply sa_all.
 Qed.
 
 Lemma FiniteExpectation_plus':
@@ -1426,8 +1430,9 @@ Proof.
      } 
     assert (eqq2:Expectation (rvmult ce1 (In n)) = Expectation (rvmult ce2 (In n) )).
     {
-      unfold In.
-      congruence.
+      unfold In, Dn.
+      admit.
+      (* congruence. *)
     }
     assert (isfee:IsFiniteExpectation prts (rvmult (rvplus ce1 (const (/ (INR (S n))))) (In n))).
     {
@@ -1561,7 +1566,7 @@ Proof.
     rewrite le1.
     rewrite Nlt.
     lra.
-Qed.    
+Admitted.
 
 Lemma is_conditional_expectation_eq
       {dom2 : SigmaAlgebra Ts}
@@ -1582,6 +1587,9 @@ Proof.
 Qed.
 
 
+Locate EventIndicator_rv.
+
+
 Lemma conditional_expectation_L2fun_eq3
       {dom2 : SigmaAlgebra Ts}
       (sub : sa_sub dom2 dom)
@@ -1592,19 +1600,21 @@ Lemma conditional_expectation_L2fun_eq3
 Proof.
   unfold is_conditional_expectation.
   intros.
-  assert (RandomVariable dom2 borel_sa (EventIndicator dec)) by admit.
+  assert (RandomVariable dom2 borel_sa (EventIndicator dec)) by now apply EventIndicator_pre_rv.
   assert (RandomVariable dom borel_sa (EventIndicator dec)) by now apply RandomVariable_sa_sub with (dom2 := dom2).
-  generalize (conditional_expectation_L2fun_eq2 f sub (pack_LpRRV prts (EventIndicator dec)) H); intros.
-  unfold L2RRVinner in H1.
-  simpl in H1.
-  symmetry in H1.
-  unfold FiniteExpectation, proj1_sig in H1.
-  do 2 match_destr_in H1.
-  subst.
-  erewrite Expectation_ext; [rewrite e | reflexivity].
-  erewrite Expectation_ext; [rewrite e0 | reflexivity].
-  trivial.
-Admitted.
+  generalize (conditional_expectation_L2fun_eq2 f sub (pack_LpRRV prts (EventIndicator dec))); intros.
+  cut_to H2.
+  - unfold L2RRVinner in H2.
+    simpl in H2.
+    symmetry in H2.
+    unfold FiniteExpectation, proj1_sig in H2.
+    do 2 match_destr_in H2.
+    subst.
+    erewrite Expectation_ext; [rewrite e | reflexivity].
+    erewrite Expectation_ext; [rewrite e0 | reflexivity].
+    trivial.
+  - now apply EventIndicator_pre_rv.
+Qed.
 
 Lemma conditional_expectation_L2fun_unique
       (f : Ts -> R) 
