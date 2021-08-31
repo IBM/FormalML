@@ -28,9 +28,11 @@ Proof.
   - intros ???. apply Rle_trans.
 Qed.
 
-Global Instance Rge_pre : PreOrder Rle.
+Local Instance Rge_pre : PreOrder Rge.
 Proof.
-  apply Rle_pre.
+  constructor.
+  - intros ?. apply Rge_refl.
+  - intros ???. apply Rge_trans.
 Qed.
 
 Global Instance Rle_part : PartialOrder eq Rle.
@@ -41,9 +43,12 @@ Proof.
     apply Rle_antisym; trivial.
 Qed.
 
-Global Instance Rge_part : PartialOrder eq Rle.
+Local Instance Rge_part : PartialOrder eq Rge.
 Proof.
-  apply Rle_part.
+  split; intros; repeat red; unfold flip.
+  - subst. split; reflexivity.
+  - destruct H.
+    apply Rge_antisym; trivial.
 Qed.
 
 Global Instance Rlt_strict : StrictOrder Rlt.
@@ -76,6 +81,37 @@ Proof.
   now apply Rgt_ge.
 Qed.
 
+Local Instance Rbar_le_pre : PreOrder Rbar_le.
+Proof.
+  constructor.
+  - intros ?. apply Rbar_le_refl.
+  - intros ???. apply Rbar_le_trans.
+Qed.
+
+Local Instance Rbar_le_part : PartialOrder eq Rbar_le.
+Proof.
+  split; intros; repeat red; unfold flip.
+  - subst. split; reflexivity.
+  - destruct H.
+    apply Rbar_le_antisym; trivial.
+Qed.
+
+Local Instance Rbar_lt_strict : StrictOrder Rbar_lt.
+Proof.
+  constructor.
+  - intros ?.
+    red.
+    destruct x; simpl; trivial.
+    apply Rlt_irrefl.
+  - intros ???.
+    apply Rbar_lt_trans.
+Qed.
+
+Local Instance Rbar_lt_le_subr : subrelation Rbar_lt Rbar_le.
+Proof.
+  intros ???.
+  now apply Rbar_lt_le.
+Qed.
 
 
 Lemma INR_nzero {n} :
