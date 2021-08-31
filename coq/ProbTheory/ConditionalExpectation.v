@@ -1267,7 +1267,11 @@ Proof.
   symmetry in H2.
   unfold FiniteExpectation, proj1_sig in H2.
   do 2 match_destr_in H2.
-  Admitted.
+  subst.
+  erewrite Expectation_ext; [rewrite e | reflexivity].
+  erewrite Expectation_ext; [rewrite e0 | reflexivity].
+  trivial.
+Qed.
 
 Lemma conditional_expectation_L2fun_unique
       (f : Ts -> R) 
