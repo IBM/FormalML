@@ -1226,8 +1226,10 @@ Proof.
   match_destr; tauto.
 Qed.
 
-Global Instance EventIndicator_islp (p:nonnegreal) σ (E : dec_sa_event (σ:=σ)) :
-  IsLp prts p (EventIndicator (dsa_dec E)).
+Definition dec_pre_event {T} (P:T->Prop) := forall x, {P x} + {~ P x}.
+
+Global Instance EventIndicator_islp (p:nonnegreal) {P} (dec : dec_pre_event P) :
+  IsLp prts p (EventIndicator dec).
 Proof.
   unfold IsLp.
     apply IsFiniteExpectation_bounded with (rv_X1 := const 0) (rv_X3 := const 1).
@@ -1251,8 +1253,6 @@ Proof.
           -- rewrite Rabs_R0; lra.
       + now rewrite power_base_1.
 Qed.
-
-Definition dec_pre_event {T} (P:T->Prop) := forall x, {P x} + {~ P x}.
 
 Definition is_conditional_expectation
            {dom2 : SigmaAlgebra Ts}
@@ -1592,9 +1592,9 @@ Lemma conditional_expectation_L2fun_eq3
 Proof.
   unfold is_conditional_expectation.
   intros.
-  assert (RandomVariable dom2 borel_sa (EventIndicator (dsa_dec E))) by typeclasses eauto.
-  assert (RandomVariable dom borel_sa (EventIndicator (dsa_dec E))) by now apply RandomVariable_sa_sub with (dom2 := dom2).
-  generalize (conditional_expectation_L2fun_eq2 f sub (pack_LpRRV prts (EventIndicator (dsa_dec E))) H); intros.
+  assert (RandomVariable dom2 borel_sa (EventIndicator dec)) by admit.
+  assert (RandomVariable dom borel_sa (EventIndicator dec)) by now apply RandomVariable_sa_sub with (dom2 := dom2).
+  generalize (conditional_expectation_L2fun_eq2 f sub (pack_LpRRV prts (EventIndicator dec)) H); intros.
   unfold L2RRVinner in H1.
   simpl in H1.
   symmetry in H1.
@@ -1604,19 +1604,7 @@ Proof.
   erewrite Expectation_ext; [rewrite e | reflexivity].
   erewrite Expectation_ext; [rewrite e0 | reflexivity].
   trivial.
-Qed.
-
-Lemma conditional_expectation_L2fun_eq3
-      (f : Ts -> R) 
-      {dom2 : SigmaAlgebra Ts}
-      (sub : sa_sub dom2 dom)
-      {rv : RandomVariable dom borel_sa f}
-      {isl : IsLp prts 2 f} :
-  forall (E : dec_sa_event),
-    Expectation (rvmult f (EventIndicator (dsa_dec E)) ) =
-    Expectation (rvmult (conditional_expectation_L2fun f sub) (EventIndicator (dsa_dec E)) ).
-Proof.
-
+Admitted.
 
 Lemma conditional_expectation_L2fun_unique
       (f : Ts -> R) 
