@@ -2,7 +2,7 @@ Require Import Morphisms.
 Require Import Equivalence.
 Require Import Program.Basics.
 Require Import Lra Lia.
-Require Import Classical ClassicalChoice.
+Require Import Classical ClassicalChoice RelationClasses.
 
 Require Import FunctionalExtensionality.
 Require Import IndefiniteDescription ClassicalDescription.
@@ -2124,8 +2124,8 @@ Canonical nneg2.
           {rv2 : RandomVariable dom borel_sa f2}
           {isl1 : IsLp prts 2 f1}
           {isl2 : IsLp prts 2 f2} :
-          rv_le f1 f2 ->
-          rv_le (conditional_expectation_L2fun prts f1 sub) (conditional_expectation_L2fun prts f2 sub).
+          almostR2 prts Rle f1 f2 ->
+          almostR2 prts Rle (conditional_expectation_L2fun prts f1 sub) (conditional_expectation_L2fun prts f2 sub).
     Proof.
     Admitted.
 
@@ -2137,8 +2137,8 @@ Canonical nneg2.
           {rv2 : RandomVariable dom borel_sa f2}
           {nnf1 : NonnegativeFunction f1}
           {nnf2 : NonnegativeFunction f2} :
-          rv_le f1 f2 ->
-          Rbar_rv_le (NonNegConditionalExpectation prts f1 sub) (NonNegConditionalExpectation prts f2 sub).
+      almostR2 prts Rle f1 f2 ->
+      almostR2 prts Rbar_le (NonNegConditionalExpectation prts f1 sub) (NonNegConditionalExpectation prts f2 sub).
     Proof.
     Admitted.
     
@@ -2148,11 +2148,12 @@ Canonical nneg2.
           (sub : sa_sub dom2 dom)
           {rv1 : RandomVariable dom borel_sa f1}
           {rv2 : RandomVariable dom borel_sa f2} :
-          rv_le f1 f2 ->
-          Rbar_rv_le (ConditionalExpectation prts f1 sub) (ConditionalExpectation prts f2 sub).
+          almostR2 prts Rle f1 f2 ->
+          almostR2 prts Rbar_le (ConditionalExpectation prts f1 sub) (ConditionalExpectation prts f2 sub).
     Proof.
     Admitted.
 
+    Local Existing Instance Rbar_le_pre.
     Lemma NonNegConditionalExpectation_nonneg f
           {dom2 : SigmaAlgebra Ts}
           (sub : sa_sub dom2 dom)
@@ -2160,20 +2161,18 @@ Canonical nneg2.
           {nnf : NonnegativeFunction f}
       : almostR2 prts Rbar_le (const 0) (NonNegConditionalExpectation prts f sub).
     Proof.
-    Admitted.
-    (*red.
       generalize (NonNegConditionalExpectation_le (const 0) f sub (nnf1:=fun _ => z_le_z))
       ; intros HH.
       cut_to HH.
-      - generalize (NonNegConditionalExpectation_const 0 (fun _ => z_le_z) sub)
+      - rewrite <- HH.
+        generalize (NonNegConditionalExpectation_const 0 (fun _ => z_le_z) sub)
         ; intros HH2.
-        intros x.
-        specialize (HH x).
-        eapply Rbar_le_trans; try eapply HH.
-        
+        apply (almostR2_subrelation prts (R_subr:=eq_subrelation _)).
+        now symmetry.
+      - apply almostR2_le_subr.
+        apply nnf.
+    Qed.
 
-    Admitted.
-    *)
     Instance rvmin_le_proper : Proper (rv_le ==> rv_le ==> rv_le) (@rvmin Ts).
     Proof.
       unfold rv_le, rvmin, pointwise_relation.
@@ -2196,6 +2195,42 @@ Canonical nneg2.
       unfold rv_le, rvplus, pointwise_relation.
       intros ???????.
       apply Rplus_le_compat; auto.
+    Qed.
+
+    Lemma almostR2_le_split x y :
+      almostR2 prts Rle x y ->
+      exists x', almostR2 prts eq x x' /\
+            rv_le x' y.
+    Proof.
+      intros [p [pone ph]].
+      generalize (fun ts => sa_dec p ts).
+      exists (fun ts => if ClassicalDescription.excluded_middle_informative (p ts) then x ts else y ts).
+      split.
+      - exists p.
+        split; trivial; intros.
+        now match_destr.
+      - intros ?.
+        match_destr.
+        + auto.
+        + reflexivity.
+    Qed.
+
+    Lemma almostR2_Rbar_le_split x y :
+      almostR2 prts Rbar_le x y ->
+      exists x', almostR2 prts eq x x' /\
+            Rbar_rv_le x' y.
+    Proof.
+      intros [p [pone ph]].
+      generalize (fun ts => sa_dec p ts).
+      exists (fun ts => if ClassicalDescription.excluded_middle_informative (p ts) then x ts else y ts).
+      split.
+      - exists p.
+        split; trivial; intros.
+        now match_destr.
+      - intros ?.
+        match_destr.
+        + auto.
+        + reflexivity.
     Qed.
 
     Lemma NonNegConditionalExpectation_plus f1 f2
@@ -2288,15 +2323,20 @@ Canonical nneg2.
              now apply conditional_expectation_L2fun_proper.
            }
            rewrite H3.
+           unfold Rbar_rvlim.
            apply almostR2_eq_subr; intros ?; simpl.
-           unfold Rbar_rvlim, rvplus.
+    Admitted.
+    (*
            apply Lim_seq_plus.
-        + apply ex_lim_seq_incr; intros.
-          apply conditional_expectation_L2fun_le.
+        + apply ex_lim_seq_incr; intros n.
+           generalize (conditional_expectation_L2fun_le (rvmin f1 (const (INR n))) (rvmin f1 (const (INR (S n)))))
+          ; intros HH.
+
           rewrite le_INR; try reflexivity.
           lia.
         +
-    Admitted.
+
+     *)
 
     (*
           apply ex_lim_seq_incr; intros.
