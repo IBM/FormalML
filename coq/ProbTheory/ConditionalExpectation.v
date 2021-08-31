@@ -1690,12 +1690,6 @@ Canonical nneg2.
     unfold FiniteExpectation, proj1_sig in HH.
     repeat match_destr_in HH; congruence.
   Qed.
-    
-    
-    generalize (EventIndicator (fun a => ClassicalDescription.excluded_middle_informative (sa_sigma (SigmaAlgebra:=dom2) a))).
-    
-  Qed.
-
   
   Existing Instance IsLp_min_const_nat.
 
