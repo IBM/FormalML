@@ -1589,6 +1589,20 @@ Proof.
   ; eapply is_conditional_expectation_le; eauto.
 Qed.
 
+Lemma almostR2_prob_space_sa_sub_lift
+      {dom2 : SigmaAlgebra Ts}
+      (sub : sa_sub dom2 dom)
+      (f1 f2:Ts -> R) :
+  almostR2 (prob_space_sa_sub _ sub) eq f1 f2 ->
+  almostR2 prts eq f1 f2.
+Proof.
+  intros [p [pone peqq]].
+  red.
+  simpl in *.
+  exists (event_sa_sub sub p).
+  split; trivial.
+Qed.
+ 
 Lemma is_conditional_expectation_eq_prts
       {dom2 : SigmaAlgebra Ts}
       (sub : sa_sub dom2 dom)
@@ -1602,17 +1616,9 @@ Lemma is_conditional_expectation_eq_prts
     almostR2 prts eq ce1 ce2.
  Proof.
    intros.
-   generalize (is_conditional_expectation_eq sub f ce1 ce2 H H0); intros.
-   destruct H1 as [? [? ?]].
-   exists (event_sa_sub sub x).
-   split.
-   - unfold event_sa_sub.
-     unfold proj1_sig.
-     match_destr.
-   - intros.
-     apply H2.
-     apply H3.
-  Qed.
+   apply (almostR2_prob_space_sa_sub_lift sub).
+   eapply is_conditional_expectation_eq; eauto.
+ Qed.
 
 Lemma conditional_expectation_L2fun_eq3
       {dom2 : SigmaAlgebra Ts}
