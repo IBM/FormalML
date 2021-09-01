@@ -1331,7 +1331,8 @@ Global Instance IsFiniteExpectation_indicator f {P} (dec:dec_pre_event P):
   IsFiniteExpectation prts f ->
   IsFiniteExpectation prts (rvmult f (EventIndicator dec)).
 Proof.
-Admitted.
+  intros.
+  Admitted.
 
 Lemma is_conditional_expectation_isfe {dom2 : SigmaAlgebra Ts} (sub : sa_sub dom2 dom)
       f ce
@@ -1569,6 +1570,7 @@ Proof.
     lra.
 Qed.
 
+
 Lemma is_conditional_expectation_eq
       {dom2 : SigmaAlgebra Ts}
       (sub : sa_sub dom2 dom)
@@ -1587,9 +1589,30 @@ Proof.
   ; eapply is_conditional_expectation_le; eauto.
 Qed.
 
-
-Locate EventIndicator_rv.
-
+Lemma is_conditional_expectation_eq_prts
+      {dom2 : SigmaAlgebra Ts}
+      (sub : sa_sub dom2 dom)
+      (f ce1 ce2 : Ts -> R)
+      {rvf : RandomVariable dom borel_sa f}
+      {isfe:IsFiniteExpectation prts f}
+      {rvce1 : RandomVariable dom2 borel_sa ce1}
+      {rvce2 : RandomVariable dom2 borel_sa ce2}
+  : is_conditional_expectation sub f ce1 ->
+    is_conditional_expectation sub f ce2 ->
+    almostR2 prts eq ce1 ce2.
+ Proof.
+   intros.
+   generalize (is_conditional_expectation_eq sub f ce1 ce2 H H0); intros.
+   destruct H1 as [? [? ?]].
+   exists (event_sa_sub sub x).
+   split.
+   - unfold event_sa_sub.
+     unfold proj1_sig.
+     match_destr.
+   - intros.
+     apply H2.
+     apply H3.
+  Qed.
 
 Lemma conditional_expectation_L2fun_eq3
       {dom2 : SigmaAlgebra Ts}
@@ -2127,7 +2150,7 @@ Canonical nneg2.
              (Rbar_rvlim (fun n =>
                             (conditional_expectation_L2fun prts (f n) sub))).
   Proof.
-    
+    intros.
     Admitted.
   
   Lemma Lim_seq_min_n_scale (fx c : R) :
@@ -2814,7 +2837,6 @@ Canonical nneg2.
                (ConditionalExpectation prts (rvplus f1 f2) sub)
                (Rbar_rvplus (ConditionalExpectation prts f1 sub) (ConditionalExpectation prts f2 sub)).
     Proof.
-      unfold ConditionalExpectation.
     Admitted.
     
 End cond_exp_props.
