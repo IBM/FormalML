@@ -1532,8 +1532,12 @@ Proof.
   erewrite Expectation_simple.
   now rewrite SimpleExpectation_EventIndicator.
 Qed.
+
+Lemma sa_sigma_event_pre {T} {σ : SigmaAlgebra T} (E:event σ): sa_sigma E.
+Proof.
+  now destruct E; simpl.
+Qed.
   
-Existing Instance RandomVariable_sa_sub.
 Lemma is_conditional_expectation_le
       {dom2 : SigmaAlgebra Ts}
       (sub : sa_sub dom2 dom)
@@ -1569,18 +1573,19 @@ Proof.
     {
       unfold In, Dn.
       rewrite <- isce1, <- isce2; trivial
-      ; unfold event_pre, proj1_sig
-      ; match_destr.
+      ; apply sa_sigma_event_pre.
     }
     assert (isfee:IsFiniteExpectation prts (rvmult (rvplus ce1 (const (/ (INR (S n))))) (In n))).
     {
       unfold In.
-      assert (RandomVariable dom borel_sa (rvplus ce1 (const (/ INR (S n))))) by admit.
-      
+      assert (RandomVariable dom borel_sa (rvplus ce1 (const (/ INR (S n))))).
+      { apply rvplus_rv; try typeclasses eauto.
+        eapply RandomVariable_sa_sub; eauto.
+      } 
       apply (IsFiniteExpectation_indicator _ (Dn n)).
-      admit.
-      apply IsFiniteExpectation_plus; try typeclasses eauto.
-      eapply RandomVariable_sa_sub; eauto.
+      - apply sub; apply sa_sigma_event_pre. 
+      - apply IsFiniteExpectation_plus; try typeclasses eauto.
+        eapply RandomVariable_sa_sub; eauto.
     } 
       
     assert (eqq3:rv_eq (rvmult (rvplus ce1 (const (/ (INR (S n))))) (In n))
@@ -1589,7 +1594,21 @@ Proof.
       rv_unfold.
       intros ?; lra.
     }
-    assert (isfe2n: IsFiniteExpectation prts (rvmult ce2 (In n))) by admit.
+    assert (isfe1n: IsFiniteExpectation prts (rvmult ce1 (In n))).
+    {
+      unfold In.
+      apply IsFiniteExpectation_indicator; trivial.
+      - eapply RandomVariable_sa_sub; eauto.
+      - apply sub; apply sa_sigma_event_pre. 
+    }
+
+    assert (isfe2n: IsFiniteExpectation prts (rvmult ce2 (In n))).
+    {
+      unfold In.
+      apply IsFiniteExpectation_indicator; trivial.
+      - eapply RandomVariable_sa_sub; eauto.
+      - apply sub; apply sa_sigma_event_pre. 
+    }
     assert (eqq4:Rge (FiniteExpectation prts (rvmult ce2 (In n))) (FiniteExpectation prts (rvmult (rvplus ce1 (const (/ (INR (S n))))) (In n)))).
     {
       apply Rle_ge.
@@ -1601,12 +1620,16 @@ Proof.
       simpl in *.
       lra.
     }
-
+    assert (isfe3n: IsFiniteExpectation prts (rvmult (const (/ INR (S n))) (EventIndicator (Dn n)))).
+    {
+      apply IsFiniteExpectation_indicator; try typeclasses eauto.
+      apply sub; apply sa_sigma_event_pre.
+    }
+    
     rewrite (FiniteExpectation_ext_alt _ _ _ eqq3) in eqq4.
     erewrite FiniteExpectation_plus' in eqq4; unfold In; try typeclasses eauto.
     
-    - assert (isfe1n: IsFiniteExpectation prts (rvmult ce1 (EventIndicator (Dn n)))) by admit.
-      assert (eqq5:FiniteExpectation prts (rvmult ce2 (EventIndicator (Dn n))) =
+    - assert (eqq5:FiniteExpectation prts (rvmult ce2 (EventIndicator (Dn n))) =
                      FiniteExpectation prts (rvmult ce1 (EventIndicator (Dn n)))).
         {
           unfold FiniteExpectation, proj1_sig.
@@ -1624,9 +1647,13 @@ Proof.
         match type of eqq4 with
           ?x >= _  => replace x with (x + 0) in eqq4 at 1 by lra
         end.
-        Admitted.
-  (*
+        match type of eqq4 with
+          FiniteExpectation prts ?a (isfe:=?af) + _ >= FiniteExpectation prts ?b (isfe:=?bf) + _ =>
+          replace (FiniteExpectation prts a (isfe:=af)) with (FiniteExpectation prts b (isfe:=bf)) in eqq4
+        end.
+      + 
         apply Rplus_ge_reg_l in eqq4.
+
         assert (eqq6:FiniteExpectation prts (rvmult (const (/ INR (S n))) (EventIndicator (Dn n))) = 0).
         {
           apply antisymmetry.
@@ -1655,17 +1682,18 @@ Proof.
         match_destr_in eqq6; subst.
         rewrite Expectation_scale in e; [| lra].
         erewrite <- (Expectation_prob_space_sa_sub _ sub) in e.
-      + rewrite Expectation_EventIndicator in e.
+      * rewrite Expectation_EventIndicator in e.
         unfold An.
         invcs e.
         rewrite H0.
         apply Rmult_integral in H0.
         destruct H0.
-        * assert (/ INR (S n) = 0) by apply H.
+        -- assert (/ INR (S n) = 0) by apply H.
           lra.
-        * apply H.
-      + unfold Dn.
+        -- apply H.
+      * unfold Dn.
         typeclasses eauto.
+      + apply FiniteExpectation_ext; reflexivity.
     - apply rvmult_rv.
       + eapply RandomVariable_sa_sub; eauto.
       + unfold EventIndicator.
@@ -1711,8 +1739,9 @@ Proof.
     rewrite le1.
     rewrite Nlt.
     lra.
+    Unshelve.
+    trivial.
 Qed.
-*)
 
 Lemma is_conditional_expectation_eq
       {dom2 : SigmaAlgebra Ts}
