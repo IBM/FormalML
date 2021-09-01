@@ -83,11 +83,11 @@ Proof.
     apply ps_pos.
 Defined.
 
-Instance RandomVariable_sa_sub (dom2 : SigmaAlgebra Ts)
+Instance RandomVariable_sa_sub {Td} (dom2 : SigmaAlgebra Ts) {cod : SigmaAlgebra Td}
          (sub : sa_sub dom2 dom)
          x
-         {rv_x:RandomVariable dom2 borel_sa x}
-  : RandomVariable dom borel_sa x.
+         {rv_x:RandomVariable dom2 cod x}
+  : RandomVariable dom cod x.
 Proof.
   intros e.
   specialize (rv_x e).
@@ -1774,7 +1774,7 @@ Proof.
   unfold is_conditional_expectation.
   intros.
   assert (RandomVariable dom2 borel_sa (EventIndicator dec)) by now apply EventIndicator_pre_rv.
-  assert (RandomVariable dom borel_sa (EventIndicator dec)) by now apply RandomVariable_sa_sub with (dom2 := dom2).
+  assert (RandomVariable dom borel_sa (EventIndicator dec)) by now apply RandomVariable_sa_sub with (dom3 := dom2).
   generalize (conditional_expectation_L2fun_eq2 f sub (pack_LpRRV prts (EventIndicator dec))); intros.
   cut_to H2.
   - unfold L2RRVinner in H2.
@@ -1907,6 +1907,24 @@ Definition NonNegConditionalExpectation (f : Ts -> R)
            {nnf : NonnegativeFunction f} : Ts -> Rbar :=
   Rbar_rvlim (fun n => conditional_expectation_L2fun (rvmin f (const (INR n))) sub).
 
+Instance NonNegCondexp_rv (f : Ts -> R) 
+           {dom2 : SigmaAlgebra Ts}
+           (sub : sa_sub dom2 dom)
+           {rv : RandomVariable dom borel_sa f}
+           {nnf : NonnegativeFunction f} :
+  RandomVariable dom2 Rbar_borel_sa (NonNegConditionalExpectation f sub).
+Proof.
+  Admitted.
+
+Lemma NonNegCondexp_is_Rbar_condexp  (f : Ts -> R) 
+           {dom2 : SigmaAlgebra Ts}
+           (sub : sa_sub dom2 dom)
+           {rv : RandomVariable dom borel_sa f}
+           {nnf : NonnegativeFunction f} : 
+  is_Rbar_conditional_expectation sub f (NonNegConditionalExpectation f sub).
+  Proof.
+    Admitted.
+
 Lemma NonNegCond_almost_finite (f : Ts -> R)
            {dom2 : SigmaAlgebra Ts}
            (sub : sa_sub dom2 dom)
@@ -1915,15 +1933,46 @@ Lemma NonNegCond_almost_finite (f : Ts -> R)
   IsFiniteExpectation prts f ->
   almost prts (fun x => is_finite ((NonNegConditionalExpectation f sub) x)).
 Proof.
-  assert (RandomVariable dom Rbar_borel_sa (NonNegConditionalExpectation f sub)) by admit.
+  assert (RandomVariable dom Rbar_borel_sa (NonNegConditionalExpectation f sub)).
+  {
+    apply RandomVariable_sa_sub with (dom3 := dom2); trivial.
+    typeclasses eauto.
+  }
   assert (Rbar_NonnegativeFunction (NonNegConditionalExpectation f sub)) by admit.
   generalize (finite_Rbar_NonnegExpectation_almost_finite 
                 prts
                 (NonNegConditionalExpectation f sub) H H0); intros.
   apply H1.
+  generalize (NonNegCondexp_is_Rbar_condexp f sub); intros.
+  unfold is_Rbar_conditional_expectation in H3.
+  specialize (H3 _ (dsa_dec dsa_Ω)).
+  assert (Expectation (rvmult f (EventIndicator (dsa_dec dsa_Ω))) = Expectation f).
+  {
+    intros.
+    apply Expectation_proper.
+    rv_unfold; intros ?; simpl.
+    lra.
+  }
+  assert (forall (f : Ts -> Rbar), Rbar_Expectation (Rbar_rvmult f (EventIndicator (dsa_dec dsa_Ω))) = Rbar_Expectation f).
+  {
+    intros.
+    apply Rbar_Expectation_proper.
+    intro x.
+    rv_unfold; unfold Rbar_rvmult; simpl.
+    now rewrite Rbar_mult_1_r.
+  }
+  rewrite H4 in H3.
+  rewrite H5 in H3.
+  cut_to H3; [| apply sa_all].
+  rewrite Expectation_pos_pofrf with (nnf0 := nnf) in H3.
+  rewrite Rbar_Expectation_pos_pofrf with (nnf0 := H0) in H3.
+  inversion H3.
+  unfold IsFiniteExpectation in H2.
+  rewrite Expectation_pos_pofrf with (nnf0 := nnf) in H2.
+  match_destr_in H2; now simpl.
+
   Admitted.
            
-
 (* if f has finite exp, we can discard the infinite points *)
 Definition FiniteNonNegConditionalExpectation (f : Ts -> R) 
            {dom2 : SigmaAlgebra Ts}
@@ -1932,6 +1981,24 @@ Definition FiniteNonNegConditionalExpectation (f : Ts -> R)
            {isfe : IsFiniteExpectation prts f}
            {nnf : NonnegativeFunction f} : Ts -> R :=
   rvlim (fun n => conditional_expectation_L2fun (rvmin f (const (INR n))) sub).
+
+Lemma FiniteNonNegCondexp_almost_eq (f : Ts -> R) 
+           {dom2 : SigmaAlgebra Ts}
+           (sub : sa_sub dom2 dom)
+           {rv : RandomVariable dom borel_sa f}
+           {isfe : IsFiniteExpectation prts f}
+           {nnf : NonnegativeFunction f} : 
+  almostR2 prts eq (NonNegConditionalExpectation f sub) (FiniteNonNegConditionalExpectation f sub).
+Proof.
+  destruct (NonNegCond_almost_finite f sub isfe) as [? [? ?]].
+  exists x.
+  split; trivial.
+  intros.
+  specialize (H0 x0 H1).
+  unfold NonNegConditionalExpectation, Rbar_rvlim in *.
+  unfold FiniteNonNegConditionalExpectation, rvlim.
+  now rewrite H0.
+Qed.
 
 Definition ConditionalExpectation (f : Ts -> R) 
            {dom2 : SigmaAlgebra Ts}
