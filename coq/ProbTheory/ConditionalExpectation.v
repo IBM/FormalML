@@ -1265,6 +1265,21 @@ Definition is_conditional_expectation
     Expectation (rvmult f (EventIndicator dec)) =
     Expectation (rvmult ce (EventIndicator dec)).
 
+  Definition Rbar_rvmult (rv_X1 rv_X2 : Ts -> Rbar) :=
+    (fun omega =>  Rbar_mult (rv_X1 omega) (rv_X2 omega)).
+
+Definition is_Rbar_conditional_expectation
+           {dom2 : SigmaAlgebra Ts}
+           (sub : sa_sub dom2 dom)
+           (f : Ts -> R)
+           (ce : Ts -> Rbar)           
+           {rvf : RandomVariable dom borel_sa f}
+           {rvce : RandomVariable dom2 Rbar_borel_sa ce}
+  := forall P (dec:dec_pre_event P),
+    sa_sigma (SigmaAlgebra := dom2) P ->
+    Expectation (rvmult f (EventIndicator dec)) =
+    Rbar_Expectation (Rbar_rvmult ce (EventIndicator dec)).
+
 Lemma event_Rgt_sa (σ:SigmaAlgebra Ts) x1 x2
       {rv1:RandomVariable σ borel_sa x1}
       {rv2:RandomVariable σ borel_sa x2}
@@ -1327,12 +1342,133 @@ Definition dec_sa_event_ge (σ:SigmaAlgebra Ts) x1 n
         ; dsa_dec := event_ge_dec σ x1 n
      |}.
 
-Global Instance IsFiniteExpectation_indicator f {P} (dec:dec_pre_event P):
+Lemma IsFiniteExpectation_parts f :
+  IsFiniteExpectation prts f ->
+  IsFiniteExpectation prts (pos_fun_part f) /\
+  IsFiniteExpectation prts (neg_fun_part f).
+Proof.
+  unfold IsFiniteExpectation, Expectation.
+  intros.
+  assert (pp:NonnegExpectation (pos_fun_part (pos_fun_part f)) = 
+          NonnegExpectation (pos_fun_part f)).
+  {
+    apply NonnegExpectation_ext.
+    intro x.
+    rv_unfold; simpl.
+    unfold Rmax.
+    do 2 match_destr; lra.
+  }    
+  assert (pn:NonnegExpectation (pos_fun_part (neg_fun_part f)) = 
+          NonnegExpectation (neg_fun_part f)).
+  {
+    apply NonnegExpectation_ext.
+    intro x.
+    rv_unfold; simpl.
+    unfold Rmax.
+    do 2 match_destr; lra.
+  }    
+  assert (np:NonnegExpectation (neg_fun_part (pos_fun_part f)) =  0).
+  {
+    rewrite <- NonnegExpectation_const0.
+    apply NonnegExpectation_ext.    
+    intro x.
+    rv_unfold; simpl.
+    unfold Rmax.
+    do 2 match_destr; lra.
+  }    
+  assert (nn:NonnegExpectation (neg_fun_part (neg_fun_part f)) =  0).
+  {
+    rewrite <- NonnegExpectation_const0.
+    apply NonnegExpectation_ext.        
+    intro x.
+    rv_unfold; simpl.
+    unfold Rmax.
+    do 2 match_destr; lra.
+  }    
+  rewrite pp, np, pn, nn.
+  match_case_in H; intros.
+  - rewrite H0 in H.
+    match_case_in H; intros.
+    + rewrite H1 in H0.
+      unfold Rbar_minus', Rbar_plus' in H0.
+      match_case_in H0; intros.
+      * split; [now simpl |].
+        rewrite H2 in H0.
+        match_case_in H0; intros.
+        -- unfold Rbar_opp in H3.
+           match_case_in H3; intros.
+           ++ now simpl.
+           ++ rewrite H4 in H0.
+              discriminate.
+           ++ rewrite H4 in H0.
+              discriminate.
+        -- rewrite H3 in H0.
+           discriminate.
+        -- rewrite H3 in H0.
+           discriminate.
+      * rewrite H2 in H0.
+        match_destr_in H0.
+      * rewrite H2 in H0.
+        match_destr_in H0.
+    + now rewrite H1 in H.
+    + now rewrite H1 in H.
+  - now rewrite H0 in H.
+Qed.
+
+Global Instance IsFiniteExpectation_indicator f {P} (dec:dec_pre_event P)
+       {rv : RandomVariable dom borel_sa f}:
+  sa_sigma P ->
   IsFiniteExpectation prts f ->
   IsFiniteExpectation prts (rvmult f (EventIndicator dec)).
 Proof.
   intros.
-  Admitted.
+  destruct (IsFiniteExpectation_parts f H0).
+  generalize (rv_pos_neg_id f); intros.
+  rewrite H3.
+  assert (rv_eq
+            (rvmult
+               (rvplus (pos_fun_part f) (rvopp (neg_fun_part f)))
+               (EventIndicator dec))
+            (rvplus (rvmult (pos_fun_part f) (EventIndicator dec))
+                    (rvopp (rvmult (neg_fun_part f) (EventIndicator dec))))).
+  {
+    intro x.
+    rv_unfold; simpl.
+    lra.
+  }
+  assert (RandomVariable dom borel_sa (EventIndicator dec)) by now apply EventIndicator_pre_rv.
+  apply (IsFiniteExpectation_proper _ _ _ H4).
+  apply IsFiniteExpectation_plus.
+  - typeclasses eauto.
+  - typeclasses eauto.
+  - apply IsFiniteExpectation_bounded with (rv_X1 := const 0) (rv_X3 := pos_fun_part f); trivial.
+    + apply IsFiniteExpectation_const.
+    + intro x.
+      rv_unfold; simpl.
+      apply Rmult_le_pos.
+      * apply Rmax_r.
+      * match_destr; lra.
+    + intro x.
+      rv_unfold; simpl.
+      destruct (dec x).
+      * lra.
+      * rewrite Rmult_0_r.
+        apply Rmax_r.
+  - apply IsFiniteExpectation_opp.
+    apply IsFiniteExpectation_bounded with (rv_X1 := const 0) (rv_X3 := neg_fun_part f); trivial.
+    + apply IsFiniteExpectation_const.
+    + intro x.
+      rv_unfold; simpl.
+      apply Rmult_le_pos.
+      * apply Rmax_r.
+      * match_destr; lra.
+    + intro x.
+      rv_unfold; simpl.
+      destruct (dec x).
+      * lra.
+      * rewrite Rmult_0_r.
+        apply Rmax_r.
+  Qed.
 
 Lemma is_conditional_expectation_isfe {dom2 : SigmaAlgebra Ts} (sub : sa_sub dom2 dom)
       f ce
@@ -1439,7 +1575,10 @@ Proof.
     assert (isfee:IsFiniteExpectation prts (rvmult (rvplus ce1 (const (/ (INR (S n))))) (In n))).
     {
       unfold In.
+      assert (RandomVariable dom borel_sa (rvplus ce1 (const (/ INR (S n))))) by admit.
+      
       apply (IsFiniteExpectation_indicator _ (Dn n)).
+      admit.
       apply IsFiniteExpectation_plus; try typeclasses eauto.
       eapply RandomVariable_sa_sub; eauto.
     } 
@@ -1450,7 +1589,7 @@ Proof.
       rv_unfold.
       intros ?; lra.
     }
-
+    assert (isfe2n: IsFiniteExpectation prts (rvmult ce2 (In n))) by admit.
     assert (eqq4:Rge (FiniteExpectation prts (rvmult ce2 (In n))) (FiniteExpectation prts (rvmult (rvplus ce1 (const (/ (INR (S n))))) (In n)))).
     {
       apply Rle_ge.
@@ -1465,7 +1604,9 @@ Proof.
 
     rewrite (FiniteExpectation_ext_alt _ _ _ eqq3) in eqq4.
     erewrite FiniteExpectation_plus' in eqq4; unfold In; try typeclasses eauto.
-    - assert (eqq5:FiniteExpectation prts (rvmult ce2 (EventIndicator (Dn n))) =
+    
+    - assert (isfe1n: IsFiniteExpectation prts (rvmult ce1 (EventIndicator (Dn n)))) by admit.
+      assert (eqq5:FiniteExpectation prts (rvmult ce2 (EventIndicator (Dn n))) =
                      FiniteExpectation prts (rvmult ce1 (EventIndicator (Dn n)))).
         {
           unfold FiniteExpectation, proj1_sig.
@@ -1479,10 +1620,12 @@ Proof.
           - now apply Expectation_proper.
         }
         unfold In in eqq4.
-        rewrite <- eqq5 in eqq4.
+        rewrite eqq5 in eqq4.
         match type of eqq4 with
           ?x >= _  => replace x with (x + 0) in eqq4 at 1 by lra
         end.
+        Admitted.
+  (*
         apply Rplus_ge_reg_l in eqq4.
         assert (eqq6:FiniteExpectation prts (rvmult (const (/ INR (S n))) (EventIndicator (Dn n))) = 0).
         {
@@ -1569,7 +1712,7 @@ Proof.
     rewrite Nlt.
     lra.
 Qed.
-
+*)
 
 Lemma is_conditional_expectation_eq
       {dom2 : SigmaAlgebra Ts}
@@ -1764,12 +1907,47 @@ Definition NonNegConditionalExpectation (f : Ts -> R)
            {nnf : NonnegativeFunction f} : Ts -> Rbar :=
   Rbar_rvlim (fun n => conditional_expectation_L2fun (rvmin f (const (INR n))) sub).
 
+Lemma NonNegCond_almost_finite (f : Ts -> R)
+           {dom2 : SigmaAlgebra Ts}
+           (sub : sa_sub dom2 dom)
+           {rv : RandomVariable dom borel_sa f}
+           {nnf : NonnegativeFunction f} :
+  IsFiniteExpectation prts f ->
+  almost prts (fun x => is_finite ((NonNegConditionalExpectation f sub) x)).
+Proof.
+  assert (RandomVariable dom Rbar_borel_sa (NonNegConditionalExpectation f sub)) by admit.
+  assert (Rbar_NonnegativeFunction (NonNegConditionalExpectation f sub)) by admit.
+  generalize (finite_Rbar_NonnegExpectation_almost_finite 
+                prts
+                (NonNegConditionalExpectation f sub) H H0); intros.
+  apply H1.
+  Admitted.
+           
+
+(* if f has finite exp, we can discard the infinite points *)
+Definition FiniteNonNegConditionalExpectation (f : Ts -> R) 
+           {dom2 : SigmaAlgebra Ts}
+           (sub : sa_sub dom2 dom)
+           {rv : RandomVariable dom borel_sa f}
+           {isfe : IsFiniteExpectation prts f}
+           {nnf : NonnegativeFunction f} : Ts -> R :=
+  rvlim (fun n => conditional_expectation_L2fun (rvmin f (const (INR n))) sub).
+
 Definition ConditionalExpectation (f : Ts -> R) 
            {dom2 : SigmaAlgebra Ts}
            (sub : sa_sub dom2 dom)
            {rv : RandomVariable dom borel_sa f} : Ts -> Rbar :=
   Rbar_rvminus (NonNegConditionalExpectation (pos_fun_part f) sub)
                (NonNegConditionalExpectation (neg_fun_part f) sub).
+
+Definition FiniteConditionalExpectation (f : Ts -> R) 
+           {dom2 : SigmaAlgebra Ts}
+           (sub : sa_sub dom2 dom)
+           {isfep : IsFiniteExpectation prts (pos_fun_part f)}
+           {isfen : IsFiniteExpectation prts (neg_fun_part f)}           
+           {rv : RandomVariable dom borel_sa f} : Ts -> R :=
+  rvminus (FiniteNonNegConditionalExpectation (pos_fun_part f) sub) 
+          (FiniteNonNegConditionalExpectation (neg_fun_part f) sub).
 
 Lemma Rbar_rvlim_almost_proper (f1 f2:nat->Ts->R) :
       (forall n, almostR2 prts eq (f1 n) (f2 n)) ->
