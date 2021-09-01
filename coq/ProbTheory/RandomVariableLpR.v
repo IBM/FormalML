@@ -2964,6 +2964,19 @@ Section complete.
       lra.
    Qed.
 
+  Lemma finite_Rbar_NonnegExpectation_almost_finite
+        (f : Ts -> Rbar)
+        (rv : RandomVariable dom Rbar_borel_sa f) 
+        (fpos : Rbar_NonnegativeFunction f) :
+    is_finite (Rbar_NonnegExpectation f) ->
+    almost prts (fun x => is_finite (f x)).
+  Proof.
+    intros.
+    generalize (finite_Rbar_NonnegExpectation_almostR2_finite f rv fpos H); intros.
+    exists  (exist sa_sigma (fun x : Ts => is_finite (f x)) (sa_finite_Rbar f rv)).
+    split; trivial.
+  Qed.
+
   Class Rbar_IsFiniteExpectation (rv_X:Ts->Rbar) 
     := Rbar_is_finite_expectation :
          match Rbar_Expectation rv_X with
