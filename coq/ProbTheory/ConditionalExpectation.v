@@ -2979,7 +2979,7 @@ Canonical nneg2.
       apply rv_pos_neg_id.
     Qed.
 
-    Lemma Expectation_mult_indicator_almost_nonneg_zero
+    Lemma Expectation_mult_indicator_almost_nonneg_zero'
           (X : Ts -> R)
           {rv : RandomVariable dom borel_sa X} :
       (forall P (dec:dec_event P),
@@ -3087,7 +3087,7 @@ Canonical nneg2.
       apply Rmax_r.
     Qed.
 
-    Lemma Expectation_mult_indicator_almost_nonneg
+    Lemma Expectation_mult_indicator_almost_nonneg'
           (X : Ts -> R)
           {rv : RandomVariable dom borel_sa X} :
       (forall P (dec:dec_event P),
@@ -3099,9 +3099,103 @@ Canonical nneg2.
     Proof.
       intros.
       apply neg_fun_part_eq_0_nonneg_almost; trivial.
-      now apply Expectation_mult_indicator_almost_nonneg_zero.
+      now apply Expectation_mult_indicator_almost_nonneg_zero'.
     Qed.      
 
+    Lemma Expectation_mult_indicator_almost_nonneg_zero
+          (X : Ts -> R)
+          {rv : RandomVariable dom borel_sa X} :
+      (forall P (dec:dec_event P),
+          match Expectation (rvmult X (EventIndicator dec)) with
+          | Some r => Rbar_le 0 r
+          | _ => False
+          end) ->
+      almostR2 prts eq (fun x : Ts => nonneg (neg_fun_part X x)) (const 0).
+    Proof.               
+      intros.
+      apply (Expectation_mult_indicator_almost_zero (neg_fun_part X)).
+      - intros P dec.
+      generalize (neg_fun_mult_ind_le' X)
+      ; intros eqq1.
+      assert (rv_eq (rvmult (fun x : Ts => neg_fun_part X x) (EventIndicator dec))
+                    (rvopp (rvmult X (EventIndicator (dec_event_inter (event_le_dec dom X 0) dec))))).
+      {
+        intros ?.
+        rv_unfold; simpl.
+        unfold Rmax.
+        destruct (dec_event_inter (event_le_dec dom X 0) dec a); simpl in *.
+        - destruct p.
+          repeat match_destr; try lra; tauto.
+        - repeat match_destr; try lra.
+          elim n.
+          split; trivial.
+          lra.
+      }
+      transitivity (Expectation (rvopp (rvmult X (EventIndicator (dec_event_inter (event_le_dec dom X 0) dec))))).
+      {
+        now apply Expectation_proper.
+      }
+
+      specialize (H _ (dec_event_inter (event_le_dec dom X 0) dec)).
+      match_option_in H; simpl in H; try tauto.
+      destruct r; try tauto.
+        + assert (r = 0).
+          { 
+            assert (eqq2:Expectation (rvopp (rvmult X (EventIndicator (dec_event_inter (event_le_dec dom X 0) dec)))) =Some (Finite (- r))).
+            {
+              now rewrite Expectation_opp, eqq; simpl.
+            }
+            
+            rewrite <- H0 in eqq2.
+            assert (nnf:NonnegativeFunction (rvmult (fun x : Ts => neg_fun_part X x) (EventIndicator dec))).
+            {
+              typeclasses eauto.
+            } 
+            rewrite (Expectation_pos_pofrf _ (nnf:=nnf)) in eqq2.
+            invcs eqq2.
+            generalize (NonnegExpectation_pos (rvmult (fun x : Ts => Rmax (- X x) 0) (EventIndicator dec)))
+            ; intros HH2.
+            simpl in HH2.
+            match_destr_in HH2.
+            invcs H2.
+            lra.
+          }
+          rewrite Expectation_opp, eqq, H1.
+          simpl.
+          now rewrite Ropp_0.
+        + assert (eqq2:Expectation (rvopp (rvmult X (EventIndicator (dec_event_inter (event_le_dec dom X 0) dec)))) = Some (m_infty)).
+          {
+            now rewrite Expectation_opp, eqq; simpl.
+          }
+            rewrite <- H0 in eqq2.
+            assert (nnf:NonnegativeFunction (rvmult (fun x : Ts => neg_fun_part X x) (EventIndicator dec))).
+            {
+              typeclasses eauto.
+            } 
+            rewrite (Expectation_pos_pofrf _ (nnf:=nnf)) in eqq2.
+            invcs eqq2.
+            generalize (NonnegExpectation_pos (rvmult (fun x : Ts => Rmax (- X x) 0) (EventIndicator dec)))
+            ; intros HH2.
+            simpl in HH2.
+            match_destr_in HH2.
+            invcs H2.
+            lra.
+    Qed.
+
+    Lemma Expectation_mult_indicator_almost_nonneg
+          (X : Ts -> R)
+          {rv : RandomVariable dom borel_sa X} :
+      (forall P (dec:dec_event P),
+          match Expectation (rvmult X (EventIndicator dec)) with
+          | Some r => Rbar_le 0 r
+          | _ => False
+          end) ->
+      almostR2 prts Rle (const 0) X.
+    Proof.
+      intros.
+      apply neg_fun_part_eq_0_nonneg_almost; trivial.
+      now apply Expectation_mult_indicator_almost_nonneg_zero.
+    Qed.      
     
     
     Lemma conditional_expectation_L2fun_le
