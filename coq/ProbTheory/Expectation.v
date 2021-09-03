@@ -4084,3 +4084,4 @@ Section EventRestricted.
     now rewrite H0.
   Qed.
 End EventRestricted.
+
