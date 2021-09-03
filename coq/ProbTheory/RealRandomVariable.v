@@ -1663,6 +1663,74 @@ Section RealRandomVariables.
 
 End RealRandomVariables.
 
+Section MoreRealRandomVariable.
+
+  Context {Ts:Type}.
+
+  Lemma event_Rgt_sa (σ:SigmaAlgebra Ts) x1 x2
+      {rv1:RandomVariable σ borel_sa x1}
+      {rv2:RandomVariable σ borel_sa x2}
+  : sa_sigma (fun x => x1 x > x2 x).
+Proof.
+  apply (sa_proper _ (fun x => (rvminus x1 x2) x > 0)).
+  -  red; intros.
+     rv_unfold.
+    intuition lra.
+  - apply sa_le_gt; intros.
+    apply rv_measurable.
+    typeclasses eauto.
+Qed.
+
+Definition event_Rgt (σ:SigmaAlgebra Ts) x1 x2
+      {rv1:RandomVariable σ borel_sa x1}
+      {rv2:RandomVariable σ borel_sa x2} : event σ
+  := exist _ _ (event_Rgt_sa σ x1 x2).
+
+Lemma event_Rgt_dec (σ:SigmaAlgebra Ts) x1 x2
+      {rv1:RandomVariable σ borel_sa x1}
+      {rv2:RandomVariable σ borel_sa x2} :
+  dec_event (event_Rgt σ x1 x2).
+Proof.
+  unfold event_Rgt.
+  intros x; simpl.
+  apply Rgt_dec.
+Qed.
+
+Definition dec_sa_event_Rgt (σ:SigmaAlgebra Ts) x1 x2
+      {rv1:RandomVariable σ borel_sa x1}
+      {rv2:RandomVariable σ borel_sa x2}
+  : dec_sa_event (σ:=σ)
+  := {| dsa_event := event_Rgt σ x1 x2
+        ; dsa_dec := event_Rgt_dec σ x1 x2
+     |}.
+
+Lemma event_ge_dec (σ:SigmaAlgebra Ts) x1 n
+  {rv1:RandomVariable σ borel_sa x1} :
+  dec_event (event_ge σ x1 n).
+Proof.
+  unfold event_ge.
+  intros x; simpl.
+  apply Rge_dec.
+Qed.
+
+Lemma event_ge_pre_dec (σ:SigmaAlgebra Ts) x1 n
+  {rv1:RandomVariable σ borel_sa x1} :
+  dec_pre_event (event_ge σ x1 n).
+Proof.
+  unfold event_ge.
+  intros x; simpl.
+  apply Rge_dec.
+Qed.
+
+Definition dec_sa_event_ge (σ:SigmaAlgebra Ts) x1 n
+      {rv1:RandomVariable σ borel_sa x1}
+  : dec_sa_event (σ:=σ)
+  := {| dsa_event := event_ge σ x1 n
+        ; dsa_dec := event_ge_dec σ x1 n
+     |}.
+
+End MoreRealRandomVariable.
+
 Section RbarRandomVariables.
 
   Context {Ts:Type} 

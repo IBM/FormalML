@@ -2179,6 +2179,8 @@ End vec.
 
 Section dec.
 
+  Definition dec_pre_event {T} (P:T->Prop) := forall x, {P x} + {~ P x}.
+
   Context {T:Type} {σ:SigmaAlgebra T}.
 
   Definition dec_event (a:event σ) := forall x, {proj1_sig a x} + {~ proj1_sig a x}.
