@@ -567,8 +567,7 @@ Section fe.
     generalize (rv_le_pos_fun_part _ _ H0).
     generalize (rv_le_neg_fun_part _ _ H).
     intros.
-    apply Finite_Rbar_opp in eqq1neg.
-
+    rewrite Finite_Rbar_opp in eqq1neg.
     rewrite <- (Finite_NonnegExpectation_le _ _ _ _ H1); trivial.
     rewrite <- (Finite_NonnegExpectation_le _ _ _ _ H2); simpl; trivial.
   Qed.
@@ -619,8 +618,8 @@ Section fe.
         destruct ( Rle_dec (rv_X1 a) (rv_X2 a))
         ; repeat match_destr; try lra.
       + rewrite NonnegExpectation_sum.
-        * apply Finite_Rbar_opp in eqq1neg.
-          apply Finite_Rbar_opp in eqq2neg.
+        * rewrite Finite_Rbar_opp in eqq1neg.
+          rewrite Finite_Rbar_opp in eqq2neg.
           rewrite <- eqq1neg.
           rewrite <- eqq2neg.
           reflexivity.
@@ -687,8 +686,8 @@ Section fe.
         destruct ( Rle_dec (rv_X1 a) (rv_X2 a))
         ; repeat match_destr; try lra.
       + rewrite NonnegExpectation_sum.
-        * apply Finite_Rbar_opp in eqq1neg.
-          apply Finite_Rbar_opp in eqq2neg.
+        * rewrite Finite_Rbar_opp in eqq1neg.
+          rewrite Finite_Rbar_opp in eqq2neg.
           rewrite <- eqq1neg.
           rewrite <- eqq2neg.
           reflexivity.

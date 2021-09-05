@@ -3124,7 +3124,7 @@ Section complete.
     generalize (Rbar_rv_le_pos_fun_part _ _ H0).
     generalize (Rbar_rv_le_neg_fun_part _ _ H).
     intros.
-    apply Finite_Rbar_opp in eqq1neg.
+    rewrite Finite_Rbar_opp in eqq1neg.
     rewrite <- (is_finite_Rbar_NonnegExpectation_le _ _ H1); trivial.
     rewrite <- (is_finite_Rbar_NonnegExpectation_le _ _ H2); simpl; trivial.
   Qed.

@@ -3790,6 +3790,68 @@ Section Expectation.
       reflexivity.
   Qed.
 
+  Lemma Expectation_not_none 
+        (rv_X : Ts -> R)
+        {rv : RandomVariable dom borel_sa rv_X} :
+    match Expectation rv_X with
+    | Some r => True
+    | _ => False
+    end ->
+    is_finite (NonnegExpectation (pos_fun_part rv_X)) \/
+    is_finite (NonnegExpectation (neg_fun_part rv_X)).
+  Proof.
+    match_case; intros; try tauto.
+    unfold Expectation in H.
+    unfold Rbar_minus', Rbar_plus' in H.
+    match_case_in H; intros; rewrite H1 in H.
+    - left; now simpl.
+    - right.
+      match_case_in H; intros; apply (f_equal Rbar_opp) in H2;
+        rewrite Rbar_opp_involutive in H2.
+      + rewrite H2.
+        now simpl.
+      + generalize (NonnegExpectation_pos (neg_fun_part rv_X)); intros.
+        rewrite H2 in H3.
+        now simpl in H3.
+      + rewrite H2 in H.
+        simpl in H.
+        congruence.
+    - right.
+      generalize (NonnegExpectation_pos (pos_fun_part rv_X)); intros.
+      rewrite H1 in H2.
+      now simpl.
+  Qed.
+
+  Lemma neg_fun_opp (rv_X : Ts -> R) :
+    rv_eq (fun x => nonneg ((neg_fun_part (rvopp rv_X)) x)) 
+          (fun x => nonneg ((pos_fun_part rv_X) x)).
+  Proof.
+    intro x.
+    unfold neg_fun_part, rvopp, pos_fun_part, rvscale.
+    unfold FunctionsToReal.neg_fun_part_obligation_1.
+    unfold FunctionsToReal.pos_fun_part_obligation_1.
+    now replace (- (-1 * rv_X x)) with (rv_X x) by lra.
+  Qed.
+
+  Lemma Expectation_not_none_alt
+        (rv_X : Ts -> R)
+        {rv : RandomVariable dom borel_sa rv_X} :
+    match Expectation rv_X with
+    | Some r => True
+    | _ => False
+    end ->
+    is_finite (NonnegExpectation (neg_fun_part (rvopp rv_X))) \/
+    is_finite (NonnegExpectation (neg_fun_part rv_X)).
+  Proof.
+    intros.
+    generalize (Expectation_not_none _ H); intros.
+    destruct H0.
+    - left.
+      generalize (neg_fun_opp rv_X); intros.
+      now rewrite (NonnegExpectation_ext _ _ H1).
+    - now right.
+  Qed.
+
   Lemma Finite_Rbar_plus' (a b : Rbar) :
     forall (c:R),
       Rbar_plus' a b = Some (Finite c) ->
@@ -3803,10 +3865,10 @@ Section Expectation.
   Qed.
 
   Lemma Finite_Rbar_opp (a : Rbar) :
-    is_finite (Rbar_opp a) -> is_finite a.
+    is_finite (Rbar_opp a) <-> is_finite a.
   Proof.
     unfold is_finite, Rbar_opp.
-    match_destr.
+    split; match_destr.
   Qed.
 
   Lemma Finite_Rbar_minus' (a b : Rbar) :
@@ -3819,8 +3881,62 @@ Section Expectation.
     specialize (H c H0).
     generalize (Finite_Rbar_opp b); intros.
     destruct H.
-    specialize (H1 H2).
+    rewrite <- H1.
     tauto.
+  Qed.
+
+  Lemma rvopp_opp (f : Ts -> R) :
+    rv_eq (rvopp (rvopp f)) f.
+  Proof.
+    intro x.
+    rv_unfold.
+    lra.
+  Qed.
+
+  Lemma Expectation_sum_isfin_fun2
+        (rv_X1 rv_X2 : Ts -> R)
+        {rv1 : RandomVariable dom borel_sa rv_X1}
+        {rv2 : RandomVariable dom borel_sa rv_X2} :
+    forall (c:R), 
+      Expectation rv_X2 = Some (Finite c) ->
+      match Expectation rv_X1 with
+      | Some exp1 => Expectation (rvplus rv_X1 rv_X2) = Some (Rbar_plus exp1 c)
+      | _ => True
+      end.
+  Proof.
+    intros.
+    generalize (Expectation_not_none_alt rv_X1); intros.
+    generalize (Finite_Rbar_minus' _ _ _ H); intro finparts.
+    match_case; intros.
+    rewrite H1 in H0.
+    cut_to H0; trivial.
+    destruct H0.
+    - generalize (Expectation_sum (rvopp rv_X1) (rvopp rv_X2) H0); intros.
+      cut_to H2.
+      + assert (rv_eq (rvplus (rvopp rv_X1) (rvopp rv_X2))
+                      (rvopp (rvplus rv_X1 rv_X2))) by (intro x; rv_unfold; lra).
+        rewrite (Expectation_ext H3) in H2.
+        generalize (Expectation_opp (rvopp (rvplus rv_X1 rv_X2))); intros.
+        simpl in H4.
+        generalize (Expectation_opp rv_X1); intros.
+        rewrite H1 in H5; simpl in H5.
+        generalize (Expectation_opp rv_X2); intros.
+        rewrite H in H6; simpl in H6.
+        rewrite H5, H6 in H2.
+        generalize (rvopp_opp (rvplus rv_X1 rv_X2)); intros.
+        rewrite (Expectation_ext H7) in H4.
+        rewrite H2 in H4.
+        rewrite <- Rbar_plus_opp in H4.
+        rewrite Rbar_opp_involutive in H4.
+        simpl in H4.
+        now rewrite Ropp_involutive in H4.
+      + generalize (Expectation_opp rv_X2); intros.
+        rewrite H in H3; simpl in H3.
+        generalize (Finite_Rbar_minus' _ _ _ H3); intros. 
+        tauto.
+    - destruct finparts.
+      generalize (Expectation_sum rv_X1 rv_X2 H0 H3); intros.
+      now rewrite H1, H in H4.
   Qed.
 
   Lemma Expectation_sum_finite 
