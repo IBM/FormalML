@@ -1971,54 +1971,22 @@ Lemma conditional_expectation_L2fun_le_prts (f1 f2 : Ts -> R)
         {isl1 : IsLp prts 2 f1}
         {isl2 : IsLp prts 2 f2} :
   rv_le f1 f2 ->
-  almostR2 prts Rle (conditional_expectation_L2fun f1 sub) 
-           (conditional_expectation_L2fun f2 sub).
+  almostR2 prts Rle (conditional_expectation_L2fun prts f1 sub) 
+           (conditional_expectation_L2fun prts f2 sub).
 Proof.
+  intros.
   apply almostR2_prob_space_sa_sub_lift with (sub0 := sub).
   now apply conditional_expectation_L2fun_le.
 Qed.
 
-(*
-  almostR2 prts Rle
-    (conditional_expectation_L2fun f1 sub)
-    (conditional_expectation_L2fun f2 sub).
-  Proof.
-    intros eqq.
-    assert (NonnegativeFunction (rvplus f2 (rvopp f1))).
-    {
-      intro x.
-      unfold rvopp, rvplus, rvscale.
-      specialize(eqq x).
-      lra.
-    }
-    generalize (conditional_expectation_L2fun_nonneg_prts (rvplus f2 (rvopp f1)) sub); intros.
-    generalize (conditional_expectation_L2fun_plus f2 (rvopp f1) sub); intros.
-    replace (conditional_expectation_L2fun (rvplus f2 (rvopp f1)) sub)
-      with
-         (LpRRVplus prts (conditional_expectation_L2fun f2 sub)
-            (LpRRVopp prts (conditional_expectation_L2fun f1 sub))) in H0.
-    - destruct H0 as [? [? ?]].
-      exists x.
-      split; trivial.
-      intros.
-      specialize (H2 x0 H3).
-      unfold const, LpRRVplus, LpRRVopp in H2.
-      unfold pack_LpRRV, rvplus, rvopp, rvscale in H2.
-      simpl in H2.
-      lra.
-    - 
-      
-    Admitted.
-
- *)
-  
 Definition NonNegConditionalExpectation (f : Ts -> R) 
            {dom2 : SigmaAlgebra Ts}
            (sub : sa_sub dom2 dom)
            {rv : RandomVariable dom borel_sa f}
            {nnf : NonnegativeFunction f} : Ts -> Rbar :=
-  Rbar_rvlim (fun n => conditional_expectation_L2fun (rvmin f (const (INR n))) sub).
+  Rbar_rvlim (fun n => conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub).
 
+(*
 Lemma NonNegCondexp_almost_rv (f : Ts -> R) 
            {dom2 : SigmaAlgebra Ts}
            (prs2 : ProbSpace dom2)
@@ -2050,7 +2018,7 @@ Proof.
   split; trivial.
   unfold NonNegConditionalExpectation.
   Admitted.
-  
+*)  
 
 Instance NonNegCondexp_rv (f : Ts -> R) 
            {dom2 : SigmaAlgebra Ts}
@@ -2273,7 +2241,7 @@ Proof.
 Qed.
   
 
-End cond_exp.
+End cond_exp2.
 
 Section cond_exp_props.
 
