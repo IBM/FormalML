@@ -1999,22 +1999,22 @@ Definition FiniteNonNegConditionalExpectation (f : Ts -> R)
 
 Lemma NonNegCondexp_almost_increasing (f : Ts -> R) 
            {dom2 : SigmaAlgebra Ts}
-           (prs2 : ProbSpace dom2)
            (sub : sa_sub dom2 dom)
            {rv : RandomVariable dom borel_sa f}
            {nnf : NonnegativeFunction f} :
-  almost prts (fun x => 
+  almost (prob_space_sa_sub prts _ sub)
+         (fun x => 
                  forall n,
                    conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub x
                    <= conditional_expectation_L2fun prts (rvmin f (const (INR (S n)))) sub x).
   Proof.
     assert (forall n,
-               almostR2 prts Rle
+               almostR2 (prob_space_sa_sub prts _ sub) Rle
                         (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub)
                         (conditional_expectation_L2fun prts (rvmin f (const (INR (S n)))) sub)).
     {
       intros.
-      apply conditional_expectation_L2fun_le_prts.
+      apply conditional_expectation_L2fun_le.
       intro x.
       rv_unfold.
       apply Rle_min_compat_l.
@@ -2031,34 +2031,24 @@ Lemma NonNegCondexp_almost_increasing (f : Ts -> R)
       destruct (H n) as [? HH].
       apply (HH x (icx n)).
   Qed.
-    
+
 Lemma NonNegCondexp_almost_rv (f : Ts -> R) 
            {dom2 : SigmaAlgebra Ts}
-           (prs2 : ProbSpace dom2)
            (sub : sa_sub dom2 dom)
            {rv : RandomVariable dom borel_sa f}
            {nnf : NonnegativeFunction f} :
   exists (E: event dom2),
-    ps_P E = 1 /\
-    (RandomVariable (event_restricted_sigma E) Rbar_borel_sa (event_restricted_function E (NonNegConditionalExpectation  f sub))).
+    ps_P (ProbSpace:=(prob_space_sa_sub prts _ sub)) E = 1 /\
+    (RandomVariable (event_restricted_sigma E) Rbar_borel_sa
+                    (event_restricted_function E
+                                               (NonNegConditionalExpectation f sub))).
 Proof.
-  generalize (NonNegCondexp_almost_increasing f prs2 sub); intros.
-  
-
-  assert (almost prs2 (fun x => forall (n:nat), 
-                           ((conditional_expectation_L2fun (rvmin f (const (INR n))) sub) x) <
-                           ((conditional_expectation_L2fun (rvmin f (const (INR (S n)))) sub) x))).
-  {
-
-    
-    admit.
-  }
-  destruct H as [? [? ?]].
-  exists x.
+  destruct (NonNegCondexp_almost_increasing f sub)
+    as [E [Eone EH]].
+  exists E.
   split; trivial.
   unfold NonNegConditionalExpectation.
-  Admitted.
-*)  
+Admitted.
 
 Instance NonNegCondexp_rv (f : Ts -> R) 
            {dom2 : SigmaAlgebra Ts}
