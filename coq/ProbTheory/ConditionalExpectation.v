@@ -1945,19 +1945,24 @@ Proof.
         - now do 2 rewrite Rmult_1_r.
         - lra.
       }
-    + generalize (IsFiniteExpectation_indicator prts f2).
+    + generalize (IsFiniteExpectation_indicator prts f2 dec)
+      ; intros HH.
+      cut_to HH; trivial.
+      * red in HH.
+        simpl in HH.
+        now rewrite H3 in HH.
+      * simpl.
+        now apply sub.
+  - + generalize (IsFiniteExpectation_indicator prts f1 dec)
+      ; intros HH.
+      cut_to HH; trivial.
+      * red in HH.
+        simpl in HH.
+        now rewrite H2 in HH.
+      * simpl.
+        now apply sub.
+Qed.
 
-  - admit.  
-        
-      
-      now rewrite H1 in H0.
-    + simpl in H0.
-      now rewrite H1 in H0.
-  - apply rvmult_rv.
-    + 
-    + now 
-  Qed.
-  *)
 Lemma conditional_expectation_L2fun_le_prts (f1 f2 : Ts -> R)
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
