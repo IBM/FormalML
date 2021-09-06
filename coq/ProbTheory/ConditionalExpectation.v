@@ -539,13 +539,23 @@ Qed.
 Lemma IsFiniteExpectation_prob_space_sa_sub
       dom2 sub x
       {rv:RandomVariable dom2 borel_sa x}
-      {isfe1:IsFiniteExpectation (prob_space_sa_sub dom2 sub) x} :
+      {isfe:IsFiniteExpectation (prob_space_sa_sub dom2 sub) x} :
   IsFiniteExpectation prts x.
 Proof.
   unfold IsFiniteExpectation in *.
-  now rewrite Expectation_prob_space_sa_sub in isfe1 by trivial.
+  now rewrite Expectation_prob_space_sa_sub in isfe by trivial.
 Qed.
 
+Lemma IsFiniteExpectation_prob_space_sa_sub_b
+      dom2 sub x
+      {rv:RandomVariable dom2 borel_sa x}
+      {isfe:IsFiniteExpectation (prob_space_sa_sub dom2 sub) x} :
+  IsFiniteExpectation prts x.
+Proof.
+  unfold IsFiniteExpectation in *.
+  now rewrite Expectation_prob_space_sa_sub in isfe by trivial.
+Qed.
+  
 Lemma FiniteExpectation_prob_space_sa_sub
       dom2 sub x
       {rv:RandomVariable dom2 borel_sa x}
