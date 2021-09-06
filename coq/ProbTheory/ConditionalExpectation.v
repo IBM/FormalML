@@ -2005,8 +2005,8 @@ Lemma NonNegCondexp_almost_increasing (f : Ts -> R)
            {nnf : NonnegativeFunction f} :
   almost prts (fun x => 
                  forall n,
-                   rv_le (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub)
-                         (conditional_expectation_L2fun prts (rvmin f (const (INR (S n)))) sub)).
+                   conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub x
+                   <= conditional_expectation_L2fun prts (rvmin f (const (INR (S n)))) sub x).
   Proof.
     assert (forall n,
                almostR2 prts Rle
@@ -2020,8 +2020,17 @@ Lemma NonNegCondexp_almost_increasing (f : Ts -> R)
       apply Rle_min_compat_l.
       apply le_INR.
       lia.
-   }
-   Admitted.
+    }
+    apply choice in H.
+    destruct H as [c ?].
+    exists (inter_of_collection c).
+    split.
+    - apply ps_one_countable_inter; intros n.
+      now destruct (H n).
+    - intros x icx n.
+      destruct (H n) as [? HH].
+      apply (HH x (icx n)).
+  Qed.
     
 Lemma NonNegCondexp_almost_rv (f : Ts -> R) 
            {dom2 : SigmaAlgebra Ts}
