@@ -1878,22 +1878,6 @@ Qed.
     ; now apply conditional_expectation_L2fun_eq2.
   Qed.
     
-Definition NonNegConditionalExpectation (f : Ts -> R) 
-           {dom2 : SigmaAlgebra Ts}
-           (sub : sa_sub dom2 dom)
-           {rv : RandomVariable dom borel_sa f}
-           {nnf : NonnegativeFunction f} : Ts -> Rbar :=
-  Rbar_rvlim (fun n => conditional_expectation_L2fun (rvmin f (const (INR n))) sub).
-
-(* if f has finite exp, we can discard the infinite points *)
-Definition FiniteNonNegConditionalExpectation (f : Ts -> R) 
-           {dom2 : SigmaAlgebra Ts}
-           (sub : sa_sub dom2 dom)
-           {rv : RandomVariable dom borel_sa f}
-           {isfe : IsFiniteExpectation prts f}
-           {nnf : NonnegativeFunction f} : Ts -> R :=
-  rvlim (fun n => conditional_expectation_L2fun (rvmin f (const (INR n))) sub).
-
  End cond_exp.
  Section cond_exp2.      
 
@@ -1995,8 +1979,51 @@ Proof.
   now apply conditional_expectation_L2fun_le.
 Qed.
 
+Existing Instance IsLp_min_const_nat.
 
-(*
+Definition NonNegConditionalExpectation (f : Ts -> R) 
+           {dom2 : SigmaAlgebra Ts}
+           (sub : sa_sub dom2 dom)
+           {rv : RandomVariable dom borel_sa f}
+           {nnf : NonnegativeFunction f} : Ts -> Rbar :=
+  Rbar_rvlim (fun n => conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub).
+
+(* if f has finite exp, we can discard the infinite points *)
+Definition FiniteNonNegConditionalExpectation (f : Ts -> R) 
+           {dom2 : SigmaAlgebra Ts}
+           (sub : sa_sub dom2 dom)
+           {rv : RandomVariable dom borel_sa f}
+           {isfe : IsFiniteExpectation prts f}
+           {nnf : NonnegativeFunction f} : Ts -> R :=
+  rvlim (fun n => conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub).
+
+Lemma NonNegCondexp_almost_increasing (f : Ts -> R) 
+           {dom2 : SigmaAlgebra Ts}
+           (prs2 : ProbSpace dom2)
+           (sub : sa_sub dom2 dom)
+           {rv : RandomVariable dom borel_sa f}
+           {nnf : NonnegativeFunction f} :
+  almost prts (fun x => 
+                 forall n,
+                   rv_le (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub)
+                         (conditional_expectation_L2fun prts (rvmin f (const (INR (S n)))) sub)).
+  Proof.
+    assert (forall n,
+               almostR2 prts Rle
+                        (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub)
+                        (conditional_expectation_L2fun prts (rvmin f (const (INR (S n)))) sub)).
+    {
+      intros.
+      apply conditional_expectation_L2fun_le_prts.
+      intro x.
+      rv_unfold.
+      apply Rle_min_compat_l.
+      apply le_INR.
+      lia.
+   }
+    
+
+
 Lemma NonNegCondexp_almost_rv (f : Ts -> R) 
            {dom2 : SigmaAlgebra Ts}
            (prs2 : ProbSpace dom2)
@@ -2005,8 +2032,9 @@ Lemma NonNegCondexp_almost_rv (f : Ts -> R)
            {nnf : NonnegativeFunction f} :
   exists (E: event dom2),
     ps_P E = 1 /\
-    (RandomVariable (event_restricted_sigma E) Rbar_borel_sa (event_restricted_function E (NonNegConditionalExpectation f sub))).
+    (RandomVariable (event_restricted_sigma E) Rbar_borel_sa (event_restricted_function E (NonNegConditionalExpectation prts f sub))).
 Proof.
+  
   assert (forall (n:nat),
              almostR2 prs2 Rle (conditional_expectation_L2fun (rvmin f (const (INR n))) sub))
                                (conditional_expectation_L2fun (rvmin f (const (INR (S n)))) sub))).
