@@ -2033,14 +2033,8 @@ Lemma NonNegCondexp_almost_rv (f : Ts -> R)
     ps_P E = 1 /\
     (RandomVariable (event_restricted_sigma E) Rbar_borel_sa (event_restricted_function E (NonNegConditionalExpectation  f sub))).
 Proof.
+  generalize (NonNegCondexp_almost_increasing f prs2 sub); intros.
   
-  assert (forall (n:nat),
-             almostR2 prs2 Rle (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub)
-                      (conditional_expectation_L2fun prts (rvmin f (const (INR (S n)))) sub)).
-  {
-    intros.
-    generalize (conditional_expectation_L2fun_le (rvmin f (const (INR n))) (rvmin f (const (INR (S n)))) sub); intros.
-    apply conditional_expectation_L2fun_le.
 
   assert (almost prs2 (fun x => forall (n:nat), 
                            ((conditional_expectation_L2fun (rvmin f (const (INR n))) sub) x) <
