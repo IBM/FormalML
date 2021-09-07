@@ -1999,30 +1999,14 @@ Definition FiniteNonNegConditionalExpectation (f : Ts -> R)
            {nnf : NonnegativeFunction f} : Ts -> R :=
   rvlim (fun n => conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub).
 
-Lemma NonNegCondexp_almost_increasing (f : Ts -> R) 
-           {dom2 : SigmaAlgebra Ts}
-           (sub : sa_sub dom2 dom)
-           {rv : RandomVariable dom borel_sa f}
-           {nnf : NonnegativeFunction f} :
-  almost (prob_space_sa_sub prts _ sub)
-         (fun x => 
-                 forall n,
-                   conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub x
-                   <= conditional_expectation_L2fun prts (rvmin f (const (INR (S n)))) sub x).
+  Lemma almost_forall 
+        {ndom : SigmaAlgebra Ts}
+        (nprts : ProbSpace ndom) 
+        {f : nat -> Ts -> Prop} :
+    (forall n, almost nprts (f n)) ->
+    almost nprts (fun x => forall n, f n x).
   Proof.
-    assert (forall n,
-               almostR2 (prob_space_sa_sub prts _ sub) Rle
-                        (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub)
-                        (conditional_expectation_L2fun prts (rvmin f (const (INR (S n)))) sub)).
-    {
-      intros.
-      apply conditional_expectation_L2fun_le.
-      intro x.
-      rv_unfold.
-      apply Rle_min_compat_l.
-      apply le_INR.
-      lia.
-    }
+    intros.
     apply choice in H.
     destruct H as [c ?].
     exists (inter_of_collection c).
@@ -2034,6 +2018,27 @@ Lemma NonNegCondexp_almost_increasing (f : Ts -> R)
       apply (HH x (icx n)).
   Qed.
 
+Lemma NonNegCondexp_almost_increasing (f : Ts -> R) 
+           {dom2 : SigmaAlgebra Ts}
+           (sub : sa_sub dom2 dom)
+           {rv : RandomVariable dom borel_sa f}
+           {nnf : NonnegativeFunction f} :
+  almost (prob_space_sa_sub prts _ sub)
+         (fun x => 
+                 forall n,
+                   conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub x
+                   <= conditional_expectation_L2fun prts (rvmin f (const (INR (S n)))) sub x).
+Proof.
+  apply almost_forall.
+  intros.
+  apply conditional_expectation_L2fun_le.
+  intro x.
+  rv_unfold.
+  apply Rle_min_compat_l.
+  apply le_INR.
+  lia.
+Qed.
+    
   Lemma NonNegCondexp_almost_rv (f : Ts -> R) 
            {dom2 : SigmaAlgebra Ts}
            (sub : sa_sub dom2 dom)
@@ -2070,9 +2075,10 @@ Proof.
     almostR2 prts Rbar_le (const 0) (NonNegConditionalExpectation f sub).
   Proof.
     unfold NonNegConditionalExpectation.
-    assert (forall n,
-               almostR2 prts Rle (const 0) (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub)).
+    assert (almost prts (fun x => forall n,
+                             0 <= (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub) x)).
     {
+      apply almost_forall.
       intros.
       apply conditional_expectation_L2fun_nonneg_prts.
       intro x.
@@ -2080,30 +2086,17 @@ Proof.
       apply Rmin_glb; trivial.
       apply pos_INR.
     }
-    assert (almost prts (fun x => forall n,
-                             0 <= (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub) x)).
-    {
-      apply choice in H.
-      destruct H as [c ?].
-      exists (inter_of_collection c).
-      split.
-      - apply ps_one_countable_inter; intros n.
-        now destruct (H n).
-      - intros x icx n.
-        destruct (H n) as [? HH].
-        apply (HH x (icx n)).
-    }
-    destruct H0 as [? [? ?]].
+    destruct H as [? [? ?]].
     exists x.
     split; trivial.
     intros.
-    specialize (H1 x0 H2).
+    specialize (H0 x0 H1).
     unfold const, Rbar_rvlim.
     replace (Finite 0) with (Lim_seq (fun _ => 0)) by apply Lim_seq_const.
     apply Lim_seq_le_loc.
     exists 0%nat.
     intros.
-    apply H1.
+    apply H0.
   Qed.
 
   Lemma NonNegCondexp_is_Rbar_condexp  (f : Ts -> R) 
