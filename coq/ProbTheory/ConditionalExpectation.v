@@ -2062,7 +2062,51 @@ Proof.
     apply e.
   Qed.
 
-Lemma NonNegCondexp_is_Rbar_condexp  (f : Ts -> R) 
+  Lemma NonNegCondexp_almost_nonneg (f : Ts -> R) 
+           {dom2 : SigmaAlgebra Ts}
+           (sub : sa_sub dom2 dom)
+           {rv : RandomVariable dom borel_sa f}
+           {nnf : NonnegativeFunction f} :
+    almostR2 prts Rbar_le (const 0) (NonNegConditionalExpectation f sub).
+  Proof.
+    unfold NonNegConditionalExpectation.
+    assert (forall n,
+               almostR2 prts Rle (const 0) (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub)).
+    {
+      intros.
+      apply conditional_expectation_L2fun_nonneg_prts.
+      intro x.
+      unfold rvmin, const.
+      apply Rmin_glb; trivial.
+      apply pos_INR.
+    }
+    assert (almost prts (fun x => forall n,
+                             0 <= (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub) x)).
+    {
+      apply choice in H.
+      destruct H as [c ?].
+      exists (inter_of_collection c).
+      split.
+      - apply ps_one_countable_inter; intros n.
+        now destruct (H n).
+      - intros x icx n.
+        destruct (H n) as [? HH].
+        apply (HH x (icx n)).
+    }
+    destruct H0 as [? [? ?]].
+    exists x.
+    split; trivial.
+    intros.
+    specialize (H1 x0 H2).
+    unfold const, Rbar_rvlim.
+    replace (Finite 0) with (Lim_seq (fun _ => 0)) by apply Lim_seq_const.
+    apply Lim_seq_le_loc.
+    exists 0%nat.
+    intros.
+    apply H1.
+  Qed.
+
+  Lemma NonNegCondexp_is_Rbar_condexp  (f : Ts -> R) 
            {dom2 : SigmaAlgebra Ts}
            (sub : sa_sub dom2 dom)
            {rv : RandomVariable dom borel_sa f}
@@ -2072,7 +2116,12 @@ Lemma NonNegCondexp_is_Rbar_condexp  (f : Ts -> R)
 Proof.
   unfold is_Rbar_conditional_expectation, NonNegConditionalExpectation.
   intros.
-    Admitted.
+  assert (forall n,
+             is_conditional_expectation prts sub (rvmin f (const (INR n)))
+                                        (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub)) by
+      (intros; apply conditional_expectation_L2fun_eq3).
+  unfold is_conditional_expectation in H0.
+Admitted.
 
 Lemma NonNegCond_almost_finite (f : Ts -> R)
            {dom2 : SigmaAlgebra Ts}
