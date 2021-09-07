@@ -1747,4 +1747,25 @@ Proof.
         lra.
    Qed.
 
+    Lemma Expectation_mult_indicator_nonneg_almost_le_alt
+        (X1 X2 : Ts -> R)
+        {nn1: NonnegativeFunction X1}
+        {nn2: NonnegativeFunction X2}        
+        {rv1 : RandomVariable dom borel_sa X1} 
+        {rv2 : RandomVariable dom borel_sa X2} :
+    (forall P (dec:dec_event P),
+        Rbar_le (NonnegExpectation (rvmult X1 (EventIndicator dec)))
+                (NonnegExpectation (rvmult X2 (EventIndicator dec)))) ->
+    almostR2 prts Rle X1 X2.
+    Proof.
+      intros.
+      assert (almostR2 prts eq (fun x : Ts => nonneg (neg_fun_part (rvminus X2 X1) x)) (const 0)).
+      { 
+        apply Expectation_mult_indicator_almost_nonneg_zero; [typeclasses eauto |].
+        intros.
+        
+        
+        
+      
+
 End ExpNonNeg.
