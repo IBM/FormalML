@@ -2142,6 +2142,65 @@ Proof.
     apply H0.
   Qed.
 
+  Global Instance nnfconstinr (c : nat) : NonnegativeFunction (Ts:=Ts) (const (INR c)).
+  Proof.
+    apply nnfconst.
+    apply pos_INR.
+  Qed.
+
+  Lemma is_lim_seq_min (x : R) :
+    is_lim_seq (fun n : nat => Rmin x (INR n)) x.
+  Proof.
+    apply is_lim_seq_spec.
+    unfold is_lim_seq'.
+    intros.
+    exists (Z.to_nat (up x)).
+    intros.
+    rewrite Rmin_left.
+    - rewrite Rminus_eq_0.
+      rewrite Rabs_R0.
+      apply cond_pos.
+    - destruct (archimed x).
+      destruct (Rge_dec x 0).
+      + rewrite <- INR_up_pos in H0; trivial.
+        apply Rge_le.
+        left.
+        apply Rge_gt_trans with (r2 := INR (Z.to_nat (up x))); trivial.
+        apply Rle_ge.
+        now apply le_INR.
+      + generalize (pos_INR n); intros.
+        lra.
+  Qed.
+
+  Lemma Lim_seq_min (x : R) :
+    Lim_seq (fun n => Rmin x (INR n)) = x.
+  Proof.
+    generalize (is_lim_seq_min x); intros.
+    now apply is_lim_seq_unique in H.
+  Qed.
+
+  Lemma rvlim_rvmin (f : Ts -> R) :
+    rv_eq (Rbar_rvlim (fun n => rvmin f (const (INR n)))) f.
+  Proof.
+    intro x.
+    unfold Rbar_rvlim, rvmin, const.
+    now rewrite Lim_seq_min.
+  Qed.
+
+  Lemma rvlim_rvmin_indicator (f : Ts -> R) (P:pre_event Ts) (dec:dec_pre_event P) :
+    rv_eq (fun  x=> Finite (rvmult f (EventIndicator dec) x))
+          (Rbar_rvlim (fun n : nat => rvmult (rvmin f (const (INR n))) (EventIndicator dec))).
+  Proof.
+    intros a.
+    unfold rvmult.
+    unfold Rbar_rvlim.
+    rewrite Lim_seq_scal_r.
+    generalize (rvlim_rvmin f); intros HH.
+    unfold Rbar_rvlim in HH.
+    rewrite HH.
+    now simpl.
+  Qed.
+                                                               
   Lemma NonNegCondexp_is_Rbar_condexp_always  (f : Ts -> R) 
            {dom2 : SigmaAlgebra Ts}
            (sub : sa_sub dom2 dom)
@@ -2265,9 +2324,23 @@ Proof.
                IsFiniteExpectation prts
                  (rvmult (rvmin f (const (INR n))) (EventIndicator dec))).
     {
-      admit.
+      intros.
+      apply IsFiniteExpectation_indicator; try typeclasses eauto.
+      now apply sub.
     }
     
+    erewrite Lim_seq_ext.
+    2: {
+      intros.
+      rewrite <- H9.
+      reflexivity.
+    }
+
+    rewrite (monotone_convergence_Rbar
+                  (fun n =>  (rvmult (rvmin f (const (INR n))) (EventIndicator dec)))).
+    + rewrite Expectation_Rbar_Expectation.
+      apply Rbar_NonnegExpectation_ext; intros a.
+      now rewrite rvlim_rvmin_indicator.
 Admitted.
 
 
@@ -2526,45 +2599,6 @@ Canonical nneg2.
         subst.
         unfold LpRRVnorm; simpl.
         apply power_nonneg.
-  Qed.
-
-  Lemma is_lim_seq_min (x : R) :
-    is_lim_seq (fun n : nat => Rmin x (INR n)) x.
-  Proof.
-    apply is_lim_seq_spec.
-    unfold is_lim_seq'.
-    intros.
-    exists (Z.to_nat (up x)).
-    intros.
-    rewrite Rmin_left.
-    - rewrite Rminus_eq_0.
-      rewrite Rabs_R0.
-      apply cond_pos.
-    - destruct (archimed x).
-      destruct (Rge_dec x 0).
-      + rewrite <- INR_up_pos in H0; trivial.
-        apply Rge_le.
-        left.
-        apply Rge_gt_trans with (r2 := INR (Z.to_nat (up x))); trivial.
-        apply Rle_ge.
-        now apply le_INR.
-      + generalize (pos_INR n); intros.
-        lra.
-  Qed.
-
-  Lemma Lim_seq_min (x : R) :
-    Lim_seq (fun n => Rmin x (INR n)) = x.
-  Proof.
-    generalize (is_lim_seq_min x); intros.
-    now apply is_lim_seq_unique in H.
-  Qed.
-
-  Lemma rvlim_rvmin (f : Ts -> R) :
-    rv_eq (Rbar_rvlim (fun n => rvmin f (const (INR n)))) f.
-  Proof.
-    intro x.
-    unfold Rbar_rvlim, rvmin, const.
-    now rewrite Lim_seq_min.
   Qed.
           
   Lemma NonNegConditionalExpectation_rv_eq f
