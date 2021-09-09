@@ -1588,6 +1588,20 @@ Proof.
   split; trivial.
 Qed.
  
+Lemma almost_prob_space_sa_sub_lift
+      {dom2 : SigmaAlgebra Ts}
+      (sub : sa_sub dom2 dom)
+      (prop : Ts -> Prop) :
+  almost (prob_space_sa_sub _ sub) prop ->
+  almost prts prop.
+Proof.
+  intros [p [pone peqq]].
+  red.
+  simpl in *.
+  exists (event_sa_sub sub p).
+  split; trivial.
+Qed.
+
 Lemma is_conditional_expectation_eq_prts
       {dom2 : SigmaAlgebra Ts}
       (sub : sa_sub dom2 dom)
@@ -1679,6 +1693,20 @@ Proof.
   match_destr.
   intuition.
 Qed.
+
+Lemma conditional_expectation_L2fun_const
+      {dom2 : SigmaAlgebra Ts}
+      (sub : sa_sub dom2 dom)
+      (c : R) :
+  LpRRV_eq prts
+    (LpRRVconst prts c)
+    (conditional_expectation_L2fun (const c) sub).
+  Proof.
+    apply conditional_expectation_L2fun_unique2.
+    - typeclasses eauto.
+    - intros.
+      now unfold LpRRVconst.
+  Qed.
 
 Instance IsLp_min_const_nat (f : Ts -> R) (n : nat) 
          {nneg : NonnegativeFunction f} :
@@ -2038,7 +2066,22 @@ Proof.
   apply le_INR.
   lia.
 Qed.
-    
+
+Lemma NonNegCondexp_almost_increasing_prts (f : Ts -> R) 
+           {dom2 : SigmaAlgebra Ts}
+           (sub : sa_sub dom2 dom)
+           {rv : RandomVariable dom borel_sa f}
+           {nnf : NonnegativeFunction f} :
+  almost prts
+         (fun x => 
+                 forall n,
+                   conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub x
+                   <= conditional_expectation_L2fun prts (rvmin f (const (INR (S n)))) sub x).
+  Proof.
+    apply almost_prob_space_sa_sub_lift with (sub0 := sub).
+    apply NonNegCondexp_almost_increasing.
+  Qed.
+
   Lemma NonNegCondexp_almost_rv (f : Ts -> R) 
            {dom2 : SigmaAlgebra Ts}
            (sub : sa_sub dom2 dom)
@@ -2099,22 +2142,135 @@ Proof.
     apply H0.
   Qed.
 
-  Lemma NonNegCondexp_is_Rbar_condexp  (f : Ts -> R) 
+  Lemma NonNegCondexp_is_Rbar_condexp_always  (f : Ts -> R) 
            {dom2 : SigmaAlgebra Ts}
            (sub : sa_sub dom2 dom)
            {rv : RandomVariable dom borel_sa f}
            {nnf : NonnegativeFunction f} 
            {rvce : RandomVariable dom2 Rbar_borel_sa (NonNegConditionalExpectation  f sub)} :
+    (forall n : nat,
+                  NonnegativeFunction
+                    (conditional_expectation_L2fun prts 
+                                                   (rvmin f (const (INR n))) sub)) ->
+    (forall n : nat,
+        rv_le (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub)
+          (conditional_expectation_L2fun prts (rvmin f (const (INR (S n)))) sub)) ->
+    (forall n : nat,
+        rv_le (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub)
+              (conditional_expectation_L2fun prts (const (INR n)) sub)) ->
+(*    (forall n : nat,
+        rv_eq (const n) (conditional_expectation_L2fun prts (const (INR n)) sub)) -> *)
   is_Rbar_conditional_expectation prts sub f (NonNegConditionalExpectation  f sub).
 Proof.
   unfold is_Rbar_conditional_expectation, NonNegConditionalExpectation.
   intros.
-  assert (forall n,
-             is_conditional_expectation prts sub (rvmin f (const (INR n)))
-                                        (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub)) by
-      (intros; apply conditional_expectation_L2fun_eq3).
-  unfold is_conditional_expectation in H0.
+  assert (forall n : nat,
+             RandomVariable dom borel_sa
+                            (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub)) by (intros; typeclasses eauto).
+  assert  (forall n : nat,
+        is_finite
+          (NonnegExpectation
+             (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub))).
+  {
+    intros.
+    generalize (conditional_expectation_L2fun_eq3 prts sub (rvmin f (const (INR n)))); intro eqq.
+    generalize  (is_conditional_expectation_isfe prts
+                   sub (rvmin f (const (INR n))) 
+                   (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub)  eqq); intros.
+    apply IsFiniteNonnegExpectation.
+    apply H4.
+    apply IsFiniteExpectation_bounded with (rv_X1 := const 0) (rv_X3 := const (INR n)).
+    - apply IsFiniteExpectation_const.
+    - apply IsFiniteExpectation_const.
+    - intro x.
+      rv_unfold.
+      apply Rmin_glb.
+      + apply nnf.
+      + apply pos_INR.
+    - intro x.
+      rv_unfold.
+      apply Rmin_r.
+  }
+  generalize (monotone_convergence_Rbar
+                (fun n => conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub) H3 H H0 H4); intros.
+  assert (forall n : nat,
+             RandomVariable dom borel_sa
+                            (rvmult (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub) (EventIndicator dec))).
+  {
+    intros.
+    apply rvmult_rv.
+    - typeclasses eauto.
+    - apply RandomVariable_sa_sub with (dom3 := dom2); trivial.
+      now apply EventIndicator_pre_rv.
+  }
+  assert  (forall n : nat,
+                  NonnegativeFunction
+                    (rvmult (conditional_expectation_L2fun prts 
+                                                   (rvmin f (const (INR n))) sub)
+                            (EventIndicator dec)
+                    )) by (intros; now apply indicator_prod_pos).
+  generalize (monotone_convergence_Rbar
+                (fun n => rvmult (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub) (EventIndicator dec)) H6 H7); intros.
+  cut_to H8.
+  - assert 
+      (rv_eq
+         (Rbar_rvlim
+            (fun n : nat =>
+               rvmult
+                 (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub)
+                 (EventIndicator dec)))
+         (Rbar_rvmult
+            (Rbar_rvlim
+               (fun n : nat =>
+                  conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub))
+            (fun x : Ts => EventIndicator dec x))).
+    {
+      intro x.
+      rv_unfold.
+      unfold Rbar_rvlim, Rbar_rvmult.
+      destruct (dec x).
+      - rewrite Lim_seq_mult.
+        + now rewrite Lim_seq_const.
+        + apply ex_lim_seq_incr.
+          intros.
+          apply H0.
+        + apply ex_lim_seq_const.
+        + rewrite Lim_seq_const.
+          unfold ex_Rbar_mult.
+          match_destr.
+      - setoid_rewrite Rmult_0_r.
+        rewrite Lim_seq_const.
+        unfold Rbar_mult.
+        admit.
+  }
+    rewrite <- (Rbar_Expectation_ext H9); clear H9.
+    erewrite Rbar_Expectation_pos_pofrf.
+    rewrite <- H8.
+    erewrite Expectation_pos_pofrf.
+    f_equal.
+    eassert (forall n,
+               NonnegExpectation (rvmult (rvmin f (const (INR n))) (EventIndicator dec)) =
+               NonnegExpectation
+                 (rvmult
+                    (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub)
+                    (EventIndicator dec))).
+    {
+      intros.
+      generalize (conditional_expectation_L2fun_eq3 prts sub
+                                                    (rvmin f (const (INR n))) P dec H2); intros.
+      erewrite Expectation_pos_pofrf in H9.
+      erewrite Expectation_pos_pofrf in H9.      
+      now inversion H9.
+    }
+    assert (forall n,
+               IsFiniteExpectation prts
+                 (rvmult (rvmin f (const (INR n))) (EventIndicator dec))).
+    {
+      admit.
+    }
+    
 Admitted.
+
 
 Lemma NonNegCond_almost_finite (f : Ts -> R)
            {dom2 : SigmaAlgebra Ts}
