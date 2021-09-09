@@ -2240,8 +2240,7 @@ Proof.
           match_destr.
       - setoid_rewrite Rmult_0_r.
         rewrite Lim_seq_const.
-        unfold Rbar_mult.
-        admit.
+        now rewrite Rbar_mult_0_r.
   }
     rewrite <- (Rbar_Expectation_ext H9); clear H9.
     erewrite Rbar_Expectation_pos_pofrf.
