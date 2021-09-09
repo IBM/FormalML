@@ -2115,15 +2115,16 @@ Proof.
            (sub : sa_sub dom2 dom)
            {rv : RandomVariable dom borel_sa f}
            {nnf : NonnegativeFunction f} :
-    almostR2 prts Rbar_le (const 0) (NonNegConditionalExpectation f sub).
+    almostR2 (prob_space_sa_sub prts _ sub) Rbar_le (const 0) (NonNegConditionalExpectation f sub).
   Proof.
     unfold NonNegConditionalExpectation.
-    assert (almost prts (fun x => forall n,
-                             0 <= (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub) x)).
+    assert (almost (prob_space_sa_sub prts _ sub)
+                   (fun x => forall n,
+                        0 <= (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub) x)).
     {
       apply almost_forall.
       intros.
-      apply conditional_expectation_L2fun_nonneg_prts.
+      apply conditional_expectation_L2fun_nonneg.
       intro x.
       unfold rvmin, const.
       apply Rmin_glb; trivial.
@@ -2140,6 +2141,17 @@ Proof.
     exists 0%nat.
     intros.
     apply H0.
+  Qed.
+
+  Lemma NonNegCondexp_almost_nonneg_prts (f : Ts -> R) 
+           {dom2 : SigmaAlgebra Ts}
+           (sub : sa_sub dom2 dom)
+           {rv : RandomVariable dom borel_sa f}
+           {nnf : NonnegativeFunction f} :
+    almostR2 prts Rbar_le (const 0) (NonNegConditionalExpectation f sub).
+  Proof.
+    apply almost_prob_space_sa_sub_lift with (sub0 := sub).
+    apply NonNegCondexp_almost_nonneg.
   Qed.
 
   Global Instance nnfconstinr (c : nat) : NonnegativeFunction (Ts:=Ts) (const (INR c)).
@@ -2356,6 +2368,39 @@ Proof.
    + typeclasses eauto.
 Qed.
 
+  Lemma NonNegCondexp_is_Rbar_condexp_almost0  (f : Ts -> R) 
+           {dom2 : SigmaAlgebra Ts}
+           (sub : sa_sub dom2 dom)
+           {rv : RandomVariable dom borel_sa f}
+           {nnf : NonnegativeFunction f} :
+    exists (g : nat -> Ts -> R),
+      forall n,
+        (NonnegativeFunction (g n)) /\
+        (rv_le (g n) (g (S n))) /\
+        (RandomVariable dom2 Rbar_borel_sa (Rbar_rvlim g)) /\
+        (almostR2 (prob_space_sa_sub prts _ sub) eq (g n)
+               (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub)).   
+  Proof.
+   destruct (NonNegCondexp_almost_increasing f sub) as [? [? ?]].
+   destruct (NonNegCondexp_almost_nonneg f sub) as [? [? ?]].
+   destruct (NonNegCondexp_almost_rv f sub) as [? [? ?]].
+   pose (E := event_inter x (event_inter x0 x1)).
+   assert (ps_P (ProbSpace := (prob_space_sa_sub prts _ sub)) E = 1).
+   {
+     unfold E.
+     rewrite ps_inter_l1; trivial.
+     rewrite ps_inter_l1; trivial.
+   }
+   exists (fun n => rvmult 
+                      (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub)
+                      EventIndicator
+
+
+
+        
+      
+    
+
 
   Lemma NonNegCondexp_is_Rbar_condexp_almost  (f : Ts -> R) 
            {dom2 : SigmaAlgebra Ts}
@@ -2364,12 +2409,18 @@ Qed.
            {nnf : NonnegativeFunction f} 
            {rvce : RandomVariable dom2 Rbar_borel_sa (NonNegConditionalExpectation  f sub)} :
   exists (E: event dom2),
-    ps_P (ProbSpace:=(prob_space_sa_sub prts _ sub)) E = 1 /\
+    ps_P (ProbSpace:=(prob_space_sa_sub prts _ sub)) E = 1. (* /\
     is_Rbar_conditional_expectation 
       (event_restricted_prob_space (prob_space_sa_sub prts _ sub) E _) sub 
       (event_restricted_function E f) 
-      (NonNegConditionalExpectation  (event_restricted_function f) sub).    
-
+      (NonNegConditionalExpectation  (event_restricted_function f) sub).    *)
+ Proof.                                                           
+   destruct (NonNegCondexp_almost_increasing f sub) as [? [? ?]].
+   destruct (NonNegCondexp_almost_nonneg f sub) as [? [? ?]].
+   exists (event_inter x x0).
+   generalize (NonNegCondexp_is_Rbar_condexp_always f sub); intros.
+   now rewrite ps_inter_l1.
+ Qed.
 
 Lemma NonNegCond_almost_finite (f : Ts -> R)
            {dom2 : SigmaAlgebra Ts}
