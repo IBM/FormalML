@@ -2368,21 +2368,53 @@ Proof.
    + typeclasses eauto.
 Qed.
 
+Definition dec_event_classic {A} {σ:SigmaAlgebra A} (E:event σ) : dec_event E.
+Proof.
+  intros ?.
+  apply ClassicalDescription.excluded_middle_informative.
+Defined.
+
+Lemma is_conditional_expectation_proper
+           {dom2 : SigmaAlgebra Ts}
+           (sub : sa_sub dom2 dom)
+           (f ce1 ce2 : Ts -> R)
+           {rvf : RandomVariable dom borel_sa f}
+           {rvce1 : RandomVariable dom2 borel_sa ce1}
+           {rvce2 : RandomVariable dom2 borel_sa ce2}
+  : almostR2 (prob_space_sa_sub _ _ sub) eq ce1 ce2 ->
+    is_conditional_expectation prts sub f ce1 ->
+    is_conditional_expectation prts sub f ce2.
+Proof.
+  unfold is_conditional_expectation; intros.
+  rewrite H0; trivial.
+  specialize (H0 _ dec H1).
+Admitted.
+  
+
   Lemma NonNegCondexp_is_Rbar_condexp_almost0  (f : Ts -> R) 
            {dom2 : SigmaAlgebra Ts}
            (sub : sa_sub dom2 dom)
            {rv : RandomVariable dom borel_sa f}
            {nnf : NonnegativeFunction f} :
     exists (g : nat -> Ts -> R),
-      forall n,
+    forall n,
+      exists (g_rv:RandomVariable dom2 borel_sa (g n)),
         (NonnegativeFunction (g n)) /\
         (rv_le (g n) (g (S n))) /\
         (RandomVariable dom2 Rbar_borel_sa (Rbar_rvlim g)) /\
-        (almostR2 (prob_space_sa_sub prts _ sub) eq (g n)
-               (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub)).   
+        is_conditional_expectation prts sub (rvmin f (const (INR n))) (g n).
   Proof.
-   destruct (NonNegCondexp_almost_increasing f sub) as [? [? ?]].
-   destruct (NonNegCondexp_almost_nonneg f sub) as [? [? ?]].
+    assert (HHsuc:forall n, rv_le (rvmin f (const (INR n))) (rvmin f (const (INR (S n))))).
+    {
+      intros n ?.
+      rv_unfold.
+      apply Rle_min_compat_l.
+      apply le_INR; lia.
+    }
+    
+    destruct (almost_forall _ (fun n => conditional_expectation_L2fun_le (rvmin f (const (INR n))) (rvmin f (const (INR (S n)))) sub (HHsuc n))) as [? [??]].
+    destruct (almost_forall _ (fun n => conditional_expectation_L2fun_nonneg prts (rvmin f (const (INR n))) sub))
+             as [? [??]].
    destruct (NonNegCondexp_almost_rv f sub) as [? [? ?]].
    pose (E := event_inter x (event_inter x0 x1)).
    assert (ps_P (ProbSpace := (prob_space_sa_sub prts _ sub)) E = 1).
@@ -2391,16 +2423,47 @@ Qed.
      rewrite ps_inter_l1; trivial.
      rewrite ps_inter_l1; trivial.
    }
+   
    exists (fun n => rvmult 
-                      (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub)
-                      EventIndicator
-
-
-
-        
-      
-    
-
+              (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub)
+              (EventIndicator (dec_event_classic E))).
+   intros n.
+   assert (g_rv :  RandomVariable dom2 borel_sa
+             (rvmult (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub)
+                     (EventIndicator (dec_event_classic E)))).
+   {
+     typeclasses eauto.
+   }
+   exists g_rv.
+   repeat split.
+   - intros a.
+     unfold EventIndicator, rvmult; simpl.
+     match_destr; try lra.
+     field_simplify.
+     destruct p as [px [px0 px1]].
+     apply (H2 _ px0).
+   - intros a.
+     unfold EventIndicator, rvmult; simpl.
+     match_destr; try lra.
+     field_simplify.
+     destruct p as [px [px0 px1]].
+     apply (H0 _ px).
+   - admit.
+   -  assert (eqq1: (almostR2 (prob_space_sa_sub prts _ sub) eq ((rvmult (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub)
+       (EventIndicator (dec_event_classic E))))
+                              (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub))).
+      {
+        exists E.
+        split; trivial.
+        intros.
+        rv_unfold.
+        match_destr; [| tauto].
+        lra.
+      }
+      symmetry in eqq1.
+      apply (is_conditional_expectation_proper sub _ _ _ eqq1).
+      apply conditional_expectation_L2fun_eq3.
+Admitted.
 
   Lemma NonNegCondexp_is_Rbar_condexp_almost  (f : Ts -> R) 
            {dom2 : SigmaAlgebra Ts}
