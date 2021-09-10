@@ -2110,11 +2110,6 @@ Proof.
     apply e.
   Qed.
 *)
-Definition dec_event_classic {A} {σ:SigmaAlgebra A} (E:event σ) : dec_event E.
-Proof.
-  intros ?.
-  apply ClassicalDescription.excluded_middle_informative.
-Defined.
 
   Lemma almost_Rbar_rvlim_condexp_incr_indicator_rv (f : Ts -> R) 
            {dom2 : SigmaAlgebra Ts}
@@ -2133,7 +2128,7 @@ Defined.
        (Rbar_rvlim
           (fun n0 : nat =>
              rvmult (conditional_expectation_L2fun prts (rvmin f (const (INR n0))) sub)
-                    (EventIndicator (dec_event_classic E))))).
+                    (EventIndicator (classic_dec E))))).
 Proof.
   intros.
   apply Rbar_rvlim_rv.
@@ -2145,7 +2140,7 @@ Proof.
     match_destr.
     + setoid_rewrite Rmult_1_r.
       apply H0.
-      apply p.
+      apply e.
     + setoid_rewrite Rmult_0_r.
       lra.
   Qed.
@@ -2312,11 +2307,11 @@ Lemma NonNegCondexp_is_Rbar_condexp_almost0  (f : Ts -> R)
    }
    exists (fun n => rvmult 
               (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub)
-              (EventIndicator (dec_event_classic E))).
+              (EventIndicator (classic_dec E))).
    intros n.
    assert (g_rv :  RandomVariable dom2 borel_sa
              (rvmult (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub)
-                     (EventIndicator (dec_event_classic E)))).
+                     (EventIndicator (classic_dec E)))).
    {
      typeclasses eauto.
    }
@@ -2339,7 +2334,7 @@ Lemma NonNegCondexp_is_Rbar_condexp_almost0  (f : Ts -> R)
      apply H0.
      apply H4.
    -  assert (eqq1: (almostR2 (prob_space_sa_sub prts _ sub) eq ((rvmult (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub)
-       (EventIndicator (dec_event_classic E))))
+       (EventIndicator (classic_dec E))))
                               (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub))).
       {
         exists E.
