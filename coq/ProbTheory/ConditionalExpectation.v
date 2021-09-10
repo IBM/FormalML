@@ -2514,6 +2514,52 @@ Admitted.
      * typeclasses eauto.
 Qed.
 
+  Lemma NonNegCondexp'  (f : Ts -> R) 
+           {dom2 : SigmaAlgebra Ts}
+           (sub : sa_sub dom2 dom)
+           {rv : RandomVariable dom borel_sa f}
+           {nnf : NonnegativeFunction f} :
+    { g : Ts -> Rbar |
+      exists (g_rv : RandomVariable dom2 Rbar_borel_sa g),
+      is_Rbar_conditional_expectation prts sub f g }.
+  Proof.
+    apply constructive_indefinite_description.
+    destruct (NonNegCondexp_is_Rbar_condexp_g f sub) as [?[?[?[??]]]].
+    eauto.
+  Qed.
+
+  Definition NonNegCondexp  (f : Ts -> R) 
+           {dom2 : SigmaAlgebra Ts}
+           (sub : sa_sub dom2 dom)
+           {rv : RandomVariable dom borel_sa f}
+           {nnf : NonnegativeFunction f} : Ts -> Rbar
+    := proj1_sig (NonNegCondexp' f sub).
+
+  Global Instance NonNegCondexp_rv (f : Ts -> R) 
+           {dom2 : SigmaAlgebra Ts}
+           (sub : sa_sub dom2 dom)
+           {rv : RandomVariable dom borel_sa f}
+           {nnf : NonnegativeFunction f} :
+    RandomVariable dom2 Rbar_borel_sa (NonNegCondexp f sub).
+  Proof.
+    unfold NonNegCondexp, proj1_sig; match_destr.
+    destruct e; eauto.
+  Qed.
+
+  Lemma NonNegCondexp_cond_exp (f : Ts -> R) 
+           {dom2 : SigmaAlgebra Ts}
+           (sub : sa_sub dom2 dom)
+           {rv : RandomVariable dom borel_sa f}
+           {nnf : NonnegativeFunction f} :
+    is_Rbar_conditional_expectation prts sub f (NonNegCondexp f sub).
+  Proof.
+    unfold NonNegCondexp.
+    unfold is_Rbar_conditional_expectation; intros.
+    unfold proj1_sig.
+    match_destr.
+    destruct e; eauto.
+  Qed.
+                                      
 Lemma NonNegCond_almost_finite (f : Ts -> R)
            {dom2 : SigmaAlgebra Ts}
            (sub : sa_sub dom2 dom)
