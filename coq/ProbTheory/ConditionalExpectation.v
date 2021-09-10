@@ -2573,22 +2573,22 @@ Lemma NonNegCond_almost_finite (f : Ts -> R)
            {nnf : NonnegativeFunction f}
            {rvce : RandomVariable dom2 Rbar_borel_sa (NonNegConditionalExpectation  f sub)} :
   IsFiniteExpectation prts f ->
-  almost prts (fun x => is_finite ((NonNegConditionalExpectation f sub) x)).
+  almost prts (fun x => is_finite ((NonNegCondexp f sub) x)).
 Proof.
-  assert (RandomVariable dom Rbar_borel_sa (NonNegConditionalExpectation f sub)).
+  assert (RandomVariable dom Rbar_borel_sa (NonNegCondexp f sub)).
   {
     apply RandomVariable_sa_sub with (dom3 := dom2); trivial.
+    typeclasses eauto.
   }
-  assert (Rbar_NonnegativeFunction (NonNegConditionalExpectation f sub)) by admit.
+  assert (Rbar_NonnegativeFunction (NonNegCondexp f sub)) by admit.
   generalize (finite_Rbar_NonnegExpectation_almost_finite 
                 prts
-                (NonNegConditionalExpectation f sub) H H0); intros.
+                (NonNegCondexp f sub) H H0); intros.
   apply H1.
-  Admitted.
-(*
-  generalize (NonNegCondexp_is_Rbar_condexp f sub); intros.
+  generalize (NonNegCondexp_is_Rbar_condexp_g f sub); intros.
   unfold is_Rbar_conditional_expectation in H3.
-  specialize (H3 _ (dsa_dec dsa_Ω)).
+  destruct H3 as [? [? [? [? ?]]]].
+  specialize (H4 _ (dsa_dec dsa_Ω)).
   assert (Expectation (rvmult f (EventIndicator (dsa_dec dsa_Ω))) = Expectation f).
   {
     intros.
@@ -2600,22 +2600,28 @@ Proof.
   {
     intros.
     apply Rbar_Expectation_proper.
-    intro x.
+    intro xx.
     rv_unfold; unfold Rbar_rvmult; simpl.
     now rewrite Rbar_mult_1_r.
   }
-  rewrite H4 in H3.
-  rewrite H5 in H3.
-  cut_to H3; [| apply sa_all].
-  rewrite Expectation_pos_pofrf with (nnf0 := nnf) in H3.
-  rewrite Rbar_Expectation_pos_pofrf with (nnf0 := H0) in H3.
-  inversion H3.
+  rewrite H5 in H4.
+  rewrite H6 in H4.
+  cut_to H4; [| apply sa_all].
+  rewrite Expectation_pos_pofrf with (nnf0 := nnf) in H4.
+  assert (Rbar_NonnegativeFunction (Rbar_rvlim x)).
+  {
+    admit.
+  }
+  rewrite Rbar_Expectation_pos_pofrf with (nnf0 := H7) in H4.
+  inversion H4.
+(*  
   unfold IsFiniteExpectation in H2.
   rewrite Expectation_pos_pofrf with (nnf0 := nnf) in H2.
-  match_destr_in H2; now simpl.
-
+  match_destr_in H2.
+  ; now simpl.
+*)
   Admitted.
-*)           
+
 
 Lemma FiniteNonNegCondexp_almost_eq (f : Ts -> R) 
            {dom2 : SigmaAlgebra Ts}
