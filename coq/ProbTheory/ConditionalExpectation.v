@@ -2593,30 +2593,34 @@ Proof.
     now erewrite (is_Rbar_conditional_expectation_Expectation) by eauto.
   Qed.
   
-  Lemma IsFiniteExpectation_nneg_is_finite (f : Ts -> Rbar)
+  Lemma IsFiniteExpectation_nneg_is_almost_finite (f : Ts -> Rbar)
         {rv : RandomVariable dom Rbar_borel_sa f}
         {nnf : Rbar_NonnegativeFunction f} :
     Rbar_IsFiniteExpectation prts f ->
     almost prts (fun x => is_finite (f x)).
   Proof.
-  Admitted.
-
+    intros isfe.
+    generalize (finite_Rbar_Expectation_almostR2_finite prts f rv isfe)
+    ; intros HH.
+    eexists.
+    split; try eapply HH.
+    now simpl.
+  Qed.
   
 Lemma NonNegCond_almost_finite (f : Ts -> R)
            {dom2 : SigmaAlgebra Ts}
            (sub : sa_sub dom2 dom)
            {rv : RandomVariable dom borel_sa f}
            {nnf : NonnegativeFunction f}
-           {rvce : RandomVariable dom2 Rbar_borel_sa (NonNegConditionalExpectation  f sub)} :
+           {rvce : RandomVariable dom2 Rbar_borel_sa (NonNegCondexp  f sub)} :
   IsFiniteExpectation prts f ->
   almost prts (fun x => is_finite ((NonNegCondexp f sub) x)).
 Proof.
   intros isfe.
-  apply IsFiniteExpectation_nneg_is_finite.
+  apply IsFiniteExpectation_nneg_is_almost_finite; trivial.
   - apply (RandomVariable_sa_sub _ sub); trivial.
-    apply NonNegCondexp_rv.
   - apply NonNegCondexp_nneg.
-  - eapply is_Rbar_conditional_expectation_FiniteExpectation; eauto.
+  - eapply (is_Rbar_conditional_expectation_FiniteExpectation sub); eauto.
     apply NonNegCondexp_cond_exp.
 Qed.
 
