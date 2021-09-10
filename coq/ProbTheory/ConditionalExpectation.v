@@ -2260,16 +2260,27 @@ Lemma is_conditional_expectation_proper
            {rvf : RandomVariable dom borel_sa f}
            {rvce1 : RandomVariable dom2 borel_sa ce1}
            {rvce2 : RandomVariable dom2 borel_sa ce2}
-  : almostR2 (prob_space_sa_sub _ _ sub) eq ce1 ce2 ->
+  : almostR2 prts eq ce1 ce2 ->
     is_conditional_expectation prts sub f ce1 ->
     is_conditional_expectation prts sub f ce2.
 Proof.
   unfold is_conditional_expectation; intros.
   rewrite H0; trivial.
   specialize (H0 _ dec H1).
-Admitted.
-
-  Lemma NonNegCondexp_is_Rbar_condexp_almost0  (f : Ts -> R) 
+  apply Expectation_almostR2_proper; trivial.
+  - apply rvmult_rv.
+    + eapply RandomVariable_sa_sub; eauto.
+    + apply EventIndicator_pre_rv.
+      now apply sub.
+  - apply rvmult_rv.
+    + eapply RandomVariable_sa_sub; eauto.
+    + apply EventIndicator_pre_rv.
+      now apply sub.
+  - apply almostR2_eq_mult_proper; trivial.
+    reflexivity.
+Qed.
+    
+Lemma NonNegCondexp_is_Rbar_condexp_almost0  (f : Ts -> R) 
            {dom2 : SigmaAlgebra Ts}
            (sub : sa_sub dom2 dom)
            {rv : RandomVariable dom borel_sa f}
@@ -2339,7 +2350,7 @@ Admitted.
         lra.
       }
       symmetry in eqq1.
-      apply (is_conditional_expectation_proper sub _ _ _ eqq1).
+      apply (is_conditional_expectation_proper sub _ _ _ (almostR2_prob_space_sa_sub_lift prts sub _ _ _ eqq1)).
       apply conditional_expectation_L2fun_eq3.
   Qed.
 

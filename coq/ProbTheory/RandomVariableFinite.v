@@ -445,6 +445,70 @@ Section fe.
       + apply SimpleExpectation_const.
   Qed.
 
+  Definition classic_dec {T : Type} (P : pre_event T)
+    := (fun a => ClassicalDescription.excluded_middle_informative (P a)).
+  
+  Definition EventIndicator_classic {T : Type} (P : pre_event T) : T -> R
+    := EventIndicator (classic_dec P).
+
+  Lemma NonnegExpectation_EventIndicator_as x {P} (dec:dec_event P)
+        {xrv:RandomVariable dom borel_sa x}                 
+        {xnnf:NonnegativeFunction x}
+    :
+      ps_P P = 1 ->
+    NonnegExpectation x = NonnegExpectation (rvmult x (EventIndicator dec)).
+  Proof.
+    intros pone.
+    assert (eqq1:rv_eq x
+                  (rvplus (rvmult x (EventIndicator dec))
+                          (rvmult x (EventIndicator (classic_dec (pre_event_complement P)))))).
+    {
+      intros ?.
+      unfold EventIndicator_classic.
+      rv_unfold.
+      unfold pre_event_complement.
+      repeat match_destr; try tauto; lra.
+    }
+
+    rewrite (NonnegExpectation_ext _ _ eqq1).
+    rewrite NonnegExpectation_sum.
+    - assert (eqq2:almostR2 prts eq (rvmult x (EventIndicator_classic (pre_event_complement P))) (const 0)).
+      {
+        exists P.
+        split; trivial.
+        intros.
+        unfold EventIndicator_classic, pre_event_complement.
+        rv_unfold.
+        match_destr; try tauto; lra.
+      }
+      rewrite (NonnegExpectation_almostR2_0 _ eqq2).
+      now rewrite Rbar_plus_0_r.
+    - typeclasses eauto.
+    - unfold EventIndicator_classic.
+      apply rvmult_rv; trivial.
+      + apply EventIndicator_pre_rv.
+        apply sa_complement.
+        destruct P; trivial.
+  Qed.
+  
+  Lemma NonnegExpectation_almostR2_proper x y
+        {xrv:RandomVariable dom borel_sa x}
+        {yrv:RandomVariable dom borel_sa y}
+        {xnnf:NonnegativeFunction x}
+        {ynnf:NonnegativeFunction y} :
+    almostR2 prts eq x y ->
+    NonnegExpectation x = NonnegExpectation y.
+  Proof.
+    intros [P [Pone Peqq]].
+    rewrite (NonnegExpectation_EventIndicator_as x (classic_dec P) Pone).
+    rewrite (NonnegExpectation_EventIndicator_as y (classic_dec P) Pone).
+    apply NonnegExpectation_ext.
+    intros ?.
+    rv_unfold.
+    match_destr; try lra.
+    now rewrite Peqq.
+  Qed.
+  
   Lemma Expectation_almostR2_0 x :
     almostR2 prts eq x (const 0) ->
     Expectation x = Some (Finite 0).
@@ -471,6 +535,21 @@ Section fe.
     rewrite (NonnegExpectation_almostR2_0 _ H1).
     simpl; repeat f_equal.
     lra.
+  Qed.
+
+  Lemma Expectation_almostR2_proper x y
+        {xrv:RandomVariable dom borel_sa x}
+        {yrv:RandomVariable dom borel_sa y} :
+    almostR2 prts eq x y ->
+    Expectation x = Expectation y.
+  Proof.
+    intros eqq.
+    unfold Expectation.
+    rewrite (NonnegExpectation_almostR2_proper (fun x0 : Ts => pos_fun_part x x0) (fun x0 : Ts => pos_fun_part y x0))
+      by now apply pos_fun_part_proper_almostR2.
+    rewrite (NonnegExpectation_almostR2_proper (fun x0 : Ts => neg_fun_part x x0) (fun x0 : Ts => neg_fun_part y x0))
+      by now apply neg_fun_part_proper_almostR2.
+    reflexivity.
   Qed.
   
   Lemma IsFiniteExpectation_proper_almostR2 rv_X1 rv_X2
