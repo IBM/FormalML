@@ -2624,6 +2624,7 @@ Proof.
     apply NonNegCondexp_cond_exp.
 Qed.
 
+(*
 Lemma FiniteNonNegCondexp_almost_eq (f : Ts -> R) 
            {dom2 : SigmaAlgebra Ts}
            (sub : sa_sub dom2 dom)
@@ -2631,7 +2632,7 @@ Lemma FiniteNonNegCondexp_almost_eq (f : Ts -> R)
            {isfe : IsFiniteExpectation prts f}
            {nnf : NonnegativeFunction f} 
            {rvce : RandomVariable dom2 Rbar_borel_sa (NonNegConditionalExpectation  f sub)} :
-  almostR2 prts eq (NonNegConditionalExpectation f sub) (FiniteNonNegConditionalExpectation f sub).
+  almostR2 prts eq (NonNegCondexp f sub) (FiniteNonNegCondexp f sub).
 Proof.
   destruct (NonNegCond_almost_finite f sub isfe) as [? [? ?]].
   exists x.
@@ -2642,14 +2643,16 @@ Proof.
   unfold FiniteNonNegConditionalExpectation, rvlim.
   now rewrite H0.
 Qed.
+ *)
 
 Definition ConditionalExpectation (f : Ts -> R) 
            {dom2 : SigmaAlgebra Ts}
            (sub : sa_sub dom2 dom)
            {rv : RandomVariable dom borel_sa f} : Ts -> Rbar :=
-  Rbar_rvminus (NonNegConditionalExpectation (pos_fun_part f) sub)
-               (NonNegConditionalExpectation (neg_fun_part f) sub).
+  Rbar_rvminus (NonNegCondexp (pos_fun_part f) sub)
+               (NonNegCondexp (neg_fun_part f) sub).
 
+(*
 Definition FiniteConditionalExpectation (f : Ts -> R) 
            {dom2 : SigmaAlgebra Ts}
            (sub : sa_sub dom2 dom)
@@ -2658,6 +2661,7 @@ Definition FiniteConditionalExpectation (f : Ts -> R)
            {rv : RandomVariable dom borel_sa f} : Ts -> R :=
   rvminus (FiniteNonNegConditionalExpectation (pos_fun_part f) sub) 
           (FiniteNonNegConditionalExpectation (neg_fun_part f) sub).
+ *)
 
 Lemma Rbar_rvlim_almost_proper (f1 f2:nat->Ts->R) :
       (forall n, almostR2 prts eq (f1 n) (f2 n)) ->
@@ -2719,12 +2723,12 @@ Lemma NonNegConditionalExpectation_proper (f1 f2 : Ts -> R)
         {nnf2 : NonnegativeFunction f2} :
   almostR2 prts eq f1 f2 ->
   almostR2 prts eq
-           (NonNegConditionalExpectation f1 sub)
-           (NonNegConditionalExpectation f2 sub).
+           (NonNegCondexp f1 sub)
+           (NonNegCondexp f2 sub).
 Proof.
   
   intros eqq.
-  unfold NonNegConditionalExpectation.
+  unfold NonNegCondexp.
   apply Rbar_rvlim_almost_proper; intros n.
   apply conditional_expectation_L2fun_proper.
   apply rvmin_almost_proper; trivial.
