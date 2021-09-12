@@ -2609,12 +2609,85 @@ Section RbarRandomVariables.
         Show 2.
     Qed.
  *)
-  (* we only really need this for non-negative functions *)
   Global Instance Rbar_rvmult_meas (x y : Ts -> Rbar)
          {xrv:RbarMeasurable x} 
          {yrv:RbarMeasurable y} :
     RbarMeasurable (Rbar_rvmult x y).
   Proof.
+    intros r.
+
+    pose (efin := pre_list_inter [(fun omega => is_finite (x omega))
+                              ; (fun omega => is_finite (y omega))
+                              ; fun omega => Rbar_le (rvmult (Rbar_finite_part x) (Rbar_finite_part y) omega) r]).
+    pose (e0 := pre_event_union (fun omega => (x omega) = 0) (fun omega => (y omega) = 0)).
+    pose (epinf := pre_list_union [
+                       (pre_event_inter (fun omega => x omega = p_infty) (pre_event_complement (fun omega => Rbar_le (y omega) 0)))
+                       ; (pre_event_inter (fun omega => y omega = p_infty) (pre_event_complement (fun omega => Rbar_le (x omega) 0)))
+                       ; (pre_event_inter (fun omega => x omega = m_infty) (pre_event_complement (fun omega => Rbar_ge (x omega) 0)))
+                       ; (pre_event_inter (fun omega => y omega = m_infty) (pre_event_complement (fun omega => Rbar_ge (y omega) 0)))]).
+    pose (eminf := pre_list_union [
+                       (pre_event_inter (fun omega => x omega = m_infty) (pre_event_complement(fun omega => Rbar_le (y omega) 0)))
+                       ; (pre_event_inter (fun omega => y omega = m_infty) (pre_event_complement(fun omega => Rbar_le (x omega) 0)))
+                       ; (pre_event_inter (fun omega => x omega = p_infty) (pre_event_complement(fun omega => Rbar_ge (x omega) 0)))
+                       ; (pre_event_inter (fun omega => y omega = p_infty) (pre_event_complement(fun omega => Rbar_ge (y omega) 0)))]).
+    
+    assert (eqq:pre_event_equiv (fun omega : Ts => Rbar_le (Rbar_rvmult x y omega) r)
+                            (pre_list_union [efin; e0; epinf; eminf])).
+    {
+      admit.
+    }
+    rewrite eqq.
+    apply sa_pre_list_union; intros ?.
+    simpl.
+    intros [?|[?|[?|[?|?]]]]; subst.
+    - unfold efin.
+      apply sa_pre_list_inter; intros ?.
+      intros [?|[?|[?|?]]]; subst.
+      + apply sa_finite_Rbar.
+        now apply Rbar_measurable_rv.
+      + apply sa_finite_Rbar.
+        now apply Rbar_measurable_rv.
+      + assert (RbarMeasurable (fun omega => (rvmult (Rbar_finite_part x) (Rbar_finite_part y) omega))).
+        {
+          apply RealMeasurable_RbarMeasurable.
+          apply mult_measurable.
+          - apply Rbar_finite_part_rv.
+            now apply Rbar_measurable_rv.
+          - apply Rbar_finite_part_rv.
+            now apply Rbar_measurable_rv.
+        }
+        apply H.
+      + tauto.
+    - unfold e0.
+      apply sa_union.
+      + now apply Rbar_sa_le_pt.
+      + now apply Rbar_sa_le_pt.
+    - unfold epinf.
+      apply sa_pre_list_union; intros ?.
+      intros [?|[?|[?|[?|?]]]]; subst
+      ; (try tauto; try apply sa_inter
+      ; try apply sa_pre_event_union
+      ; try now apply Rbar_sa_le_pt)
+      ; apply sa_complement
+      ; trivial.
+      + admit.
+      + admit.
+    - unfold eminf.
+      apply sa_pre_list_union; intros ?.
+      intros [?|[?|[?|[?|?]]]]; subst
+      ; (try tauto; try apply sa_inter
+      ; try apply sa_pre_event_union
+      ; try now apply Rbar_sa_le_pt)
+      ; apply sa_complement
+      ; trivial.
+      + admit.
+      + admit.
+    - tauto.
+  Qed.
+
+    
+    
+    
   Admitted.
   
   Global Instance Rbar_rvmult_rv (x y : Ts -> Rbar)
