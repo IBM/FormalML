@@ -2515,7 +2515,8 @@ Section RbarRandomVariables.
      rewrite H0.
       apply sa_none.
   Qed.
-
+  
+(*
   Lemma Rbar_rvmult_unfold (f g:Ts->Rbar) :
     (forall omega, ex_Rbar_mult (f omega) (g omega)) ->
     rv_eq (Rbar_rvmult f g) (fun omega => Rbar_div_pos (Rbar_rvminus (Rbar_rvsqr (Rbar_rvplus f g))
@@ -2535,19 +2536,15 @@ Section RbarRandomVariables.
         + 
         Show 2.
     Qed.
-
+ *)
   (* we only really need this for non-negative functions *)
   Global Instance Rbar_rvmult_meas (x y : Ts -> Rbar)
          {xrv:RbarMeasurable x} 
          {yrv:RbarMeasurable y} :
     RbarMeasurable (Rbar_rvmult x y).
   Proof.
-    rewrite rvmult_unfold.
-      typeclasses eauto.
-    Qed.
-
   Admitted.
-
+  
   Global Instance Rbar_rvmult_rv (x y : Ts -> Rbar)
          {xrv:RandomVariable dom Rbar_borel_sa x} 
          {yrv:RandomVariable dom Rbar_borel_sa y} :
