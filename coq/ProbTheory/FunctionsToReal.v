@@ -114,6 +114,12 @@ Section defs.
     Definition rvchoice (c:Ts -> bool) (rv_X1 rv_X2 : Ts -> R)
       := fun omega => if c omega then  rv_X1 omega else rv_X2 omega.
 
+    Definition Rbar_rvchoice (c:Ts -> bool) (rv_X1 rv_X2 : Ts -> Rbar)
+      := fun omega => if c omega then  rv_X1 omega else rv_X2 omega.
+
+    Definition Rbar_rvchoice (c:Ts -> bool) (rv_X1 rv_X2 : Ts -> Rbar)
+      := fun omega => if c omega then rv_X1 omega else rv_X2 omega.
+
     Definition bvmin_choice (rv_X1 rv_X2:Ts -> R) : Ts -> bool
       := fun omega => if Rle_dec (rv_X1 omega) (rv_X2 omega) then true else false.
 

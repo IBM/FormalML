@@ -469,6 +469,40 @@ Section RealRandomVariables.
         now apply sa_le_pt.
     Qed.
 
+    Definition Rbar_rvchoice (c:Ts -> bool) (rv_X1 rv_X2 : Ts -> Rbar)
+      := fun omega => if c omega then rv_X1 omega else rv_X2 omega.
+
+    Instance Rbar_rvchoice_measurable (c : Ts -> R) (f g : Ts -> Rbar) :
+      RealMeasurable c ->
+      RbarMeasurable f ->
+      RbarMeasurable g ->
+      RbarMeasurable (Rbar_rvchoice (fun x => if Req_EM_T (c x) 0 then false else true)  f g).
+    Proof.
+      unfold RealMeasurable, RbarMeasurable.
+      intros.
+      assert (pre_event_equiv
+                (fun omega : Ts =>
+                   Rbar_le
+                     (Rbar_rvchoice (fun x : Ts => if Req_EM_T (c x) 0 then false else true) 
+                            f g omega )
+                     r)
+                (pre_event_union 
+                   (pre_event_inter 
+                      (fun omega : Ts => c omega = 0)
+                      (fun omega : Ts => Rbar_le (g omega) r))
+                   (pre_event_inter 
+                      (pre_event_complement (fun omega : Ts => c omega = 0))
+                      (fun omega : Ts => Rbar_le (f omega) r)))).
+      - intro x.
+        unfold Rbar_rvchoice, pre_event_union, pre_event_inter, pre_event_complement.
+        destruct (Req_EM_T (c x) 0); intuition lra.
+      - rewrite H2.
+        apply sa_union; apply sa_inter; trivial.
+        + now apply sa_le_pt.
+        + apply sa_complement.
+          now apply sa_le_pt.
+    Qed.
+
     Instance ln_measurable (b : Ts -> R) :
       RealMeasurable b ->
       RealMeasurable (fun (x:Ts) => ln (b x)).
@@ -852,6 +886,7 @@ Section RealRandomVariables.
       Proof.
         typeclasses eauto.
       Qed.
+
 
     End rvs.
 
@@ -1793,6 +1828,19 @@ Section RbarRandomVariables.
       eapply RandomVariable_proper; try eapply H.
       now apply Rbar_measurable_rv.
   Qed.
+
+  Global Instance Rbar_rvchoice_rv
+         (rv_C : Ts -> R) (rv_X1 rv_X2 : Ts -> Rbar)
+         {rvc : RandomVariable dom borel_sa rv_C}
+         {rv1 : RandomVariable dom Rbar_borel_sa rv_X1}
+         {rv2 : RandomVariable dom Rbar_borel_sa rv_X2}  :
+    RbarMeasurable (Rbar_rvchoice (fun x => if Req_EM_T (rv_C x) 0 then false else true) rv_X1 rv_X2).
+      Proof.
+        apply Rbar_rvchoice_measurable.
+        - now apply rv_measurable.
+        - typeclasses eauto.
+        - typeclasses eauto.
+      Qed.
 
 
   Lemma sa_pinf_Rbar
