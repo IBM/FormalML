@@ -1274,10 +1274,6 @@ Definition is_conditional_expectation
     Expectation (rvmult ce (EventIndicator dec)).
 
 
-  Definition Rbar_rvmult (rv_X1 rv_X2 : Ts -> Rbar) :=
-    (fun omega =>  Rbar_mult (rv_X1 omega) (rv_X2 omega)).
-
-
 Definition is_Rbar_conditional_expectation
            {dom2 : SigmaAlgebra Ts}
            (sub : sa_sub dom2 dom)
@@ -2712,6 +2708,60 @@ Proof.
   - intros ??.
     unfold Rbar_rvopp.
     rewrite eqq1; trivial.
+Qed.
+
+Lemma is_Rbar_conditional_expectation_proper
+           {dom2 : SigmaAlgebra Ts}
+           (sub : sa_sub dom2 dom)
+           (f1 f2 : Ts -> R)
+           (ce1 ce2 : Ts -> Rbar)
+           {rvf1 : RandomVariable dom borel_sa f1}
+           {rvf2 : RandomVariable dom borel_sa f2}
+           {rvce1 : RandomVariable dom2 Rbar_borel_sa ce1}
+           {rvce2 : RandomVariable dom2 Rbar_borel_sa ce2}
+  : almostR2 prts eq f1 f2 ->
+    almostR2 prts eq ce1 ce2 ->
+    is_Rbar_conditional_expectation prts sub f1 ce1 ->
+    is_Rbar_conditional_expectation prts sub f2 ce2.
+Proof.
+  unfold is_Rbar_conditional_expectation
+  ; intros eqq1 eqq2 is1 P dec saP.
+  specialize (is1 P dec saP).
+  etransitivity.
+  - etransitivity; [| apply is1].
+    apply Expectation_almostR2_proper.
+    + apply rvmult_rv; trivial.
+      apply EventIndicator_pre_rv.
+      now apply sub.
+    + apply rvmult_rv; trivial.
+      apply EventIndicator_pre_rv.
+      now apply sub.
+    + apply almostR2_eq_mult_proper; trivial.
+      * now symmetry.
+      * reflexivity.
+  - apply Rbar_Expectation_almostR2_proper.
+    + apply Rbar_rvmult_rv; trivial.
+Qed.
+
+
+    
+  
+Admitted.
+(*
+  unfold is_conditional_expectation; intros.
+  rewrite H0; trivial.
+  specialize (H0 _ dec H1).
+  apply Expectation_almostR2_proper; trivial.
+  - apply rvmult_rv.
+    + eapply RandomVariable_sa_sub; eauto.
+    + apply EventIndicator_pre_rv.
+      now apply sub.
+  - apply rvmult_rv.
+    + eapply RandomVariable_sa_sub; eauto.
+    + apply EventIndicator_pre_rv.
+      now apply sub.
+  - apply almostR2_eq_mult_proper; trivial.
+    reflexivity.
 Qed.
 
 Lemma NonNegConditionalExpectation_proper (f1 f2 : Ts -> R) 

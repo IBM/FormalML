@@ -16,6 +16,8 @@ Set Bullet Behavior "Strict Subproofs".
 
 Local Open Scope R.
 
+Require Import RandomVariableFinite.
+
 Section RbarExpectation.
   Context 
     {Ts:Type}
@@ -1087,3 +1089,162 @@ Section EventRestricted.
   Qed.
 
 End EventRestricted.
+
+Require Import AlmostEqual.
+
+Section almost.
+
+    Context {Ts:Type} 
+          {dom: SigmaAlgebra Ts}.
+
+  Definition classic_dec {T : Type} (P : pre_event T)
+    := (fun a => ClassicalDescription.excluded_middle_informative (P a)).
+
+  Context (prts: ProbSpace dom).
+
+  Instance Rbar_pos_fun_part_proper_almostR2 : Proper (almostR2 prts eq ==> almostR2 prts eq) 
+                                            (fun x x0 => Rbar_pos_fun_part x x0).
+  Proof.
+    intros x1 x2 eqq1.
+    apply (almostR2_sub prts eq (fun x x0 => Rbar_pos_fun_part x x0)); trivial.
+    intros.
+    unfold Rbar_pos_fun_part; simpl.
+    now rewrite H.
+  Qed.
+
+  Instance Rbar_neg_fun_part_proper_almostR2 : Proper (almostR2 prts eq ==> almostR2 prts eq) 
+                                            (fun x x0 => Rbar_neg_fun_part x x0).
+  Proof.
+    intros x1 x2 eqq1.
+    apply (almostR2_sub prts eq (fun x x0 => Rbar_neg_fun_part x x0)); trivial.
+    intros.
+    unfold Rbar_neg_fun_part; simpl.
+    now rewrite H.
+  Qed.
+
+  Lemma Rbar_NonnegExpectation_almostR2_0 x 
+        {nnf:Rbar_NonnegativeFunction x} :
+    almostR2 prts eq x (const 0) ->
+    Rbar_NonnegExpectation x = 0.
+  Proof.
+    intros.
+    unfold Rbar_NonnegExpectation, SimpleExpectationSup.
+    unfold Lub_Rbar.
+    repeat match goal with
+             [|- context [proj1_sig ?x]] => destruct x; simpl
+           end.
+    destruct i as [xub xlub].
+    unfold is_ub_Rbar in xub.
+    specialize (xub 0).
+    specialize (xlub 0).
+    unfold is_ub_Rbar in xlub.
+    cut_to xub.
+    - cut_to xlub.
+      + now apply Rbar_le_antisym.
+      + intros.
+        unfold BoundedNonnegativeFunction in H0.
+        destruct H0 as [? [? [? [[? ?] ?]]]].
+        simpl.
+        assert (almostR2 prts eq x2 (const 0)).
+        * destruct H as [P [Pall eq_on]].
+          exists P.
+          split; trivial.
+          intros a ?.
+          specialize (H1 a).
+          rewrite eq_on in H1; trivial.
+          unfold const in *.
+          specialize (H0 a).
+          simpl in H1.
+          lra.
+        * generalize (SimplePosExpectation_pos_zero prts x2 H3); intros.
+          rewrite H4 in H2.
+          rewrite <- H2.
+          simpl; lra.
+    - exists (const 0); exists (rvconst _ _ 0); exists (frfconst 0).
+      split.
+      + unfold BoundedNonnegativeFunction.
+        split.
+        * apply nnfconst; lra.
+        * apply nnf.
+      + apply SimpleExpectation_const.
+  Qed.
+  
+  Lemma Rbar_NonnegExpectation_EventIndicator_as x {P} (dec:dec_event P)
+        {xrv:RandomVariable dom Rbar_borel_sa x}                 
+        {xnnf:Rbar_NonnegativeFunction x}
+    :
+      ps_P P = 1 ->
+    Rbar_NonnegExpectation x = Rbar_NonnegExpectation (Rbar_rvmult x (EventIndicator dec)).
+  Proof.
+    intros pone.
+    assert (eqq1:rv_eq x
+                  (Rbar_rvplus (Rbar_rvmult x (EventIndicator dec))
+                          (Rbar_rvmult x (EventIndicator (classic_dec (pre_event_complement P)))))).
+    {
+      intros ?.
+      unfold EventIndicator, Rbar_rvmult, Rbar_rvplus, pre_event_complement.
+      repeat match_destr; try tauto.
+      - now rewrite Rbar_mult_1_r, Rbar_mult_0_r, Rbar_plus_0_r.
+      - now rewrite Rbar_mult_1_r, Rbar_mult_0_r, Rbar_plus_0_l.
+    }
+
+    rewrite (Rbar_NonnegExpectation_ext _ _ eqq1).
+    rewrite Rbar_NonnegExpectation_plus.
+    - assert (eqq2:almostR2 prts eq (Rbar_rvmult x (EventIndicator (classic_dec (pre_event_complement P)))) (const 0)).
+      {
+        exists P.
+        split; trivial.
+        intros.
+        unfold EventIndicator, pre_event_complement, Rbar_rvmult.
+        match_destr; try tauto.
+        now rewrite Rbar_mult_0_r.
+      }
+      rewrite (Rbar_NonnegExpectation_almostR2_0 _ eqq2).
+      now rewrite Rbar_plus_0_r. 
+    - apply Rbar_rvmult_rv; trivial.
+      apply Real_Rbar_rv.
+      typeclasses eauto.
+    - apply Rbar_rvmult_rv; trivial.
+      apply Real_Rbar_rv.
+      apply EventIndicator_pre_rv.
+      apply sa_complement.
+      destruct P; trivial.
+Qed.
+
+  
+  Lemma Rbar_NonnegExpectation_almostR2_proper x y
+        {xrv:RandomVariable dom Rbar_borel_sa x}
+        {yrv:RandomVariable dom Rbar_borel_sa y}
+        {xnnf:Rbar_NonnegativeFunction x}
+        {ynnf:Rbar_NonnegativeFunction y} :
+    almostR2 prts eq x y ->
+    Rbar_NonnegExpectation x = Rbar_NonnegExpectation y.
+  Proof.
+    intros [P [Pone Peqq]].
+    rewrite (Rbar_NonnegExpectation_EventIndicator_as x (classic_dec P) Pone).
+    rewrite (Rbar_NonnegExpectation_EventIndicator_as y (classic_dec P) Pone).
+    apply Rbar_NonnegExpectation_ext.
+    intros ?.
+    unfold Rbar_rvmult, EventIndicator.
+    match_destr.
+    - repeat rewrite Rbar_mult_1_r.
+      now rewrite Peqq.
+    - now repeat rewrite Rbar_mult_0_r.
+  Qed.
+
+  Lemma Rbar_Expectation_almostR2_proper x y
+        {xrv:RandomVariable dom Rbar_borel_sa x}
+        {yrv:RandomVariable dom Rbar_borel_sa y} :
+    almostR2 prts eq x y ->
+    Rbar_Expectation x = Rbar_Expectation y.
+  Proof.
+    intros eqq.
+    unfold Rbar_Expectation.
+    rewrite (Rbar_NonnegExpectation_almostR2_proper (fun x0 : Ts => Rbar_pos_fun_part x x0) (fun x0 : Ts => Rbar_pos_fun_part y x0))
+      by now apply Rbar_pos_fun_part_proper_almostR2.
+    rewrite (Rbar_NonnegExpectation_almostR2_proper (fun x0 : Ts => Rbar_neg_fun_part x x0) (fun x0 : Ts => Rbar_neg_fun_part y x0))
+      by now apply Rbar_neg_fun_part_proper_almostR2.
+    reflexivity.
+  Qed.
+
+End almost.

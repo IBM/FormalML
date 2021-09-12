@@ -1962,6 +1962,19 @@ Section RbarRandomVariables.
   Definition Rbar_rvminus (rv_X1 rv_X2 : Ts -> Rbar) :=
     Rbar_rvplus rv_X1 (Rbar_rvopp rv_X2).
 
+  Definition Rbar_sqr (x:Rbar)
+    := match x with
+       | Finite x' => Finite (Rsqr x')
+       | p_infty => p_infty
+       | m_infty => m_infty
+       end.
+  
+  Definition Rbar_rvsqr (rv_X : Ts -> Rbar) :=
+    (fun omega =>  Rbar_sqr (rv_X omega)).
+
+  Definition Rbar_rvmult (x y:Ts->Rbar) omega :=
+    Rbar_mult (x omega) (y omega).
+
   Global Instance pos_Rbar_plus (f g : Ts -> Rbar) 
          {fpos : Rbar_NonnegativeFunction f}
          {gpos: Rbar_NonnegativeFunction g} :
@@ -2501,6 +2514,66 @@ Section RbarRandomVariables.
      }
      rewrite H0.
       apply sa_none.
+  Qed.
+
+  Lemma Rbar_rvmult_unfold (f g:Ts->Rbar) :
+    (forall omega, ex_Rbar_mult (f omega) (g omega)) ->
+    rv_eq (Rbar_rvmult f g) (fun omega => Rbar_div_pos (Rbar_rvminus (Rbar_rvsqr (Rbar_rvplus f g))
+                                            (Rbar_rvsqr (Rbar_rvminus f g)) omega) (mkposreal 4 ltac:(lra))).
+    Proof.
+      intros mex omega.
+      specialize (mex omega).
+      unfold Rbar_rvmult, Rbar_rvminus, Rbar_rvplus, Rbar_rvsqr, Rbar_rvopp, Rbar_div_pos; simpl.
+      destruct (f omega); destruct (g omega); simpl.
+      - f_equal.
+        unfold Rsqr.
+        lra. 
+      - destruct (Rle_dec 0 r).
+        + destruct (Rle_lt_or_eq_dec 0 r r0); trivial.
+          simpl in mex.
+          lra.
+        + 
+        Show 2.
+    Qed.
+
+  (* we only really need this for non-negative functions *)
+  Global Instance Rbar_rvmult_meas (x y : Ts -> Rbar)
+         {xrv:RbarMeasurable x} 
+         {yrv:RbarMeasurable y} :
+    RbarMeasurable (Rbar_rvmult x y).
+  Proof.
+    rewrite rvmult_unfold.
+      typeclasses eauto.
+    Qed.
+
+  Admitted.
+
+  Global Instance Rbar_rvmult_rv (x y : Ts -> Rbar)
+         {xrv:RandomVariable dom Rbar_borel_sa x} 
+         {yrv:RandomVariable dom Rbar_borel_sa y} :
+    RandomVariable dom Rbar_borel_sa (Rbar_rvmult x y).
+  Proof.
+    intros.
+    apply Rbar_measurable_rv.
+    now apply Rbar_rvmult_meas; apply rv_Rbar_measurable.
+  Qed.
+
+  Global Instance Rbar_rvmult_nnf (x y : Ts -> Rbar)
+           {xnnf:Rbar_NonnegativeFunction x}
+           {ynnf:Rbar_NonnegativeFunction y} :
+    Rbar_NonnegativeFunction (Rbar_rvmult x y).
+  Proof.
+    intros omega; simpl.
+    specialize (xnnf omega).
+    specialize (ynnf omega).
+    unfold Rbar_rvmult.
+    destruct x; simpl in *; try tauto
+    ; destruct y; simpl in *; try tauto.
+    - now apply Rmult_le_pos.
+    - destruct (Rle_dec 0 r); try tauto.
+      destruct (Rle_lt_or_eq_dec 0 r r0); lra.
+    - destruct (Rle_dec 0 r); try tauto.
+      destruct (Rle_lt_or_eq_dec 0 r r0); lra.
   Qed.
 
 End RbarRandomVariables.  
