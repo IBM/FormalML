@@ -1842,6 +1842,78 @@ Section RbarRandomVariables.
         - typeclasses eauto.
       Qed.
 
+  Definition Rbar_finite_part (rv_X : Ts -> Rbar) : (Ts -> R) :=
+    (fun x => real (rv_X x)).
+
+  Instance Rbar_finite_part_rv (rv_X : Ts -> Rbar) 
+           (rv : RandomVariable dom Rbar_borel_sa rv_X) :
+    RealMeasurable dom (Rbar_finite_part rv_X).
+  Proof.
+    unfold RealMeasurable.
+    intros.
+    apply rv_Rbar_measurable in rv.
+    unfold RbarMeasurable in rv.
+    destruct (Rle_dec 0 r).
+    - assert (pre_event_equiv
+                (fun omega : Ts =>
+                   (Rbar_finite_part rv_X) omega <= r)
+                (pre_event_union 
+                   (fun omega : Ts => rv_X omega = p_infty)
+                   (fun omega : Ts => Rbar_le (rv_X omega) r))).
+      + intro x.
+        unfold pre_event_union, Rbar_finite_part.
+        destruct (rv_X x).
+        * simpl.
+          split; intros.
+          -- now right.
+          -- destruct H.
+             ++ now simpl.
+             ++ apply H.
+        * split; intros.
+          -- now left.
+          -- destruct H.
+             ++ now simpl.
+             ++ now simpl in H.
+        * split; intros.
+          -- right; now simpl.
+          -- destruct H.
+             ++ congruence.
+             ++ now simpl.
+   + rewrite H.
+     apply sa_union.
+     * now apply Rbar_sa_le_pt.
+     * apply rv.
+ - assert (0 > r) by lra.
+   assert (pre_event_equiv
+                (fun omega : Ts =>
+                   (Rbar_finite_part rv_X) omega <= r)
+                (pre_event_inter
+                   (pre_event_complement
+                      (fun omega : Ts => (rv_X omega) = m_infty ))
+                   (fun omega : Ts => Rbar_le (rv_X omega) r))).
+   + intro x.
+     unfold pre_event_inter, pre_event_complement, Rbar_finite_part.
+     destruct (rv_X x).
+     * simpl.
+       split; intros.
+       -- split; trivial.
+          discriminate.
+       -- tauto.
+     * simpl.
+       split; intros.
+       -- lra.
+       -- tauto.
+     * simpl.
+       split; intros.
+       -- lra.
+       -- destruct H0.
+          tauto.
+   + rewrite H0.
+     apply sa_inter.
+     * apply sa_complement.
+       now apply Rbar_sa_le_pt.
+     * apply rv.
+  Qed.
 
   Lemma sa_pinf_Rbar
         (f : Ts -> Rbar) 
