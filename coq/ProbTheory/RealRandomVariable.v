@@ -2595,24 +2595,171 @@ Section RbarRandomVariables.
     pose (epinf := pre_list_union [
                        (pre_event_inter (fun omega => x omega = p_infty)  (fun omega => Rbar_gt (y omega) 0))
                        ; (pre_event_inter (fun omega => y omega = p_infty) (fun omega => Rbar_gt (x omega) 0))
-                       ; (pre_event_inter (fun omega => x omega = m_infty)  (fun omega => Rbar_lt (x omega) 0))
-                       ; (pre_event_inter (fun omega => y omega = m_infty)  (fun omega => Rbar_lt (y omega) 0))]).
+                       ; (pre_event_inter (fun omega => x omega = m_infty)  (fun omega => Rbar_lt (y omega) 0))
+                       ; (pre_event_inter (fun omega => y omega = m_infty)  (fun omega => Rbar_lt (x omega) 0))]).
     pose (eminf := pre_list_union [
                        (pre_event_inter (fun omega => x omega = m_infty) (fun omega => Rbar_gt (y omega) 0))
                        ; (pre_event_inter (fun omega => y omega = m_infty) (fun omega => Rbar_gt (x omega) 0))
-                       ; (pre_event_inter (fun omega => x omega = p_infty) (fun omega => Rbar_lt (x omega) 0))
-                       ; (pre_event_inter (fun omega => y omega = p_infty) (fun omega => Rbar_lt (y omega) 0))]).
+                       ; (pre_event_inter (fun omega => x omega = p_infty) (fun omega => Rbar_lt (y omega) 0))
+                       ; (pre_event_inter (fun omega => y omega = p_infty) (fun omega => Rbar_lt (x omega) 0))]).
     
     assert (eqq:pre_event_equiv (fun omega : Ts => Rbar_le (Rbar_rvmult x y omega) r)
                             (pre_list_union [efin; e0; epinf; eminf])).
     {
       intro z.
-      unfold pre_list_union.
-      subst efin; subst e0; subst epinf; subst eminf.
+      unfold pre_list_union, Rbar_rvmult.
       split; intros.
-      - admit.
-      - destruct H.
-        
+      - case_eq (x z); case_eq (y z); intros.
+        exists efin.
+        + split; [apply in_eq | ].
+          subst efin.
+          unfold pre_list_inter; intros.
+          destruct H2.
+          * rewrite <- H2.
+            unfold is_finite; rewrite H1; now simpl.
+          * destruct H2.
+            -- rewrite <- H2.
+               unfold is_finite; rewrite H0; now simpl.
+            -- destruct H2.
+               ++ rewrite <- H2.
+                  rewrite H0, H1 in H.
+                  unfold rvmult, Rbar_finite_part.
+                  rewrite H0, H1.
+                  apply H.
+               ++ now apply in_nil in H2.
+       + destruct (Req_EM_T r0 0).
+         * exists e0.
+           split; [apply in_cons, in_eq |].
+           subst e0.
+           unfold pre_event_union.
+           rewrite e in H1; tauto.
+         * destruct (Rlt_dec 0 r0).
+           -- exists epinf.
+              split; [apply in_cons, in_cons, in_eq |].
+              subst epinf.
+              unfold pre_list_union, pre_event_inter.
+              exists (fun x0 : Ts => y x0 = p_infty /\ Rbar_gt (x x0) 0).
+              split; [apply in_cons, in_eq |].
+              ++ split; trivial.
+                 rewrite H1.
+                 now simpl.
+           -- exists eminf.
+              split; [apply in_cons, in_cons, in_cons, in_eq |].
+              subst eminf.
+              unfold pre_list_union, pre_event_inter.
+              exists (fun x0 : Ts => y x0 = p_infty /\ Rbar_lt (x x0) 0).
+              split; [apply in_cons, in_cons, in_cons, in_eq |].
+              split; trivial.
+              rewrite H1; simpl; lra.
+       + destruct (Req_EM_T r0 0).
+         * exists e0.
+           split; [apply in_cons, in_eq |].
+           subst e0.
+           unfold pre_event_union.
+           rewrite e in H1; tauto.
+         * destruct (Rlt_dec 0 r0).
+           -- exists eminf.
+              split; [apply in_cons, in_cons, in_cons, in_eq |].
+              subst eminf.
+              unfold pre_list_union, pre_event_inter.
+              exists (fun x0 : Ts => y x0 = m_infty /\ Rbar_gt (x x0) 0).
+              split; [apply in_cons, in_eq |].
+              ++ split; trivial.
+                 rewrite H1.
+                 now simpl.
+           -- exists epinf.
+              split; [apply in_cons, in_cons, in_eq |].
+              subst epinf.
+              unfold pre_list_union, pre_event_inter.
+              exists (fun x0 : Ts => y x0 = m_infty /\ Rbar_lt (x x0) 0).
+              split; [apply in_cons, in_cons, in_cons, in_eq |].
+              split; trivial.
+              rewrite H1; simpl; lra.
+        + destruct (Req_EM_T r0 0).
+         * exists e0.
+           split; [apply in_cons, in_eq |].
+           subst e0.
+           unfold pre_event_union.
+           rewrite e in H0; tauto.
+         * destruct (Rlt_dec 0 r0).
+           -- exists epinf.
+              split; [apply in_cons, in_cons, in_eq |].
+              subst epinf.
+              unfold pre_list_union, pre_event_inter.
+              exists (fun x0 : Ts => x x0 = p_infty /\ Rbar_gt (y x0) 0).
+              split; [apply in_eq |].
+              ++ split; trivial.
+                 rewrite H0.
+                 now simpl.
+           -- exists eminf.
+              split; [apply in_cons, in_cons, in_cons, in_eq |].
+              subst eminf.
+              unfold pre_list_union, pre_event_inter.
+              exists (fun x0 : Ts => x x0 = p_infty /\ Rbar_lt (y x0) 0).
+              split; [apply in_cons, in_cons, in_eq | ].
+              split; trivial.
+              rewrite H0; simpl; lra.       
+       + exists epinf.
+         split; [apply in_cons, in_cons, in_eq |].
+         subst epinf.
+         unfold pre_list_union, pre_event_inter.
+         exists (fun x0 : Ts => x x0 = p_infty /\ Rbar_gt (y x0) 0).
+         split; [apply in_eq |].
+         ++ split; trivial.
+            rewrite H0.
+            now simpl.
+       + exists eminf.
+         split; [apply in_cons, in_cons, in_cons, in_eq |].
+         subst eminf.
+         unfold pre_list_union, pre_event_inter.
+         exists (fun x0 : Ts => x x0 = p_infty /\ Rbar_lt (y x0) 0).
+         split; [apply in_cons, in_cons, in_eq |].
+         ++ split; trivial.
+            rewrite H0.
+            now simpl.
+        + destruct (Req_EM_T r0 0).
+         * exists e0.
+           split; [apply in_cons, in_eq |].
+           subst e0.
+           unfold pre_event_union.
+           rewrite e in H0; tauto.
+         * destruct (Rlt_dec 0 r0).
+           -- exists eminf.
+              split; [apply in_cons, in_cons, in_cons, in_eq |].
+              subst eminf.
+              unfold pre_list_union, pre_event_inter.
+              exists (fun x0 : Ts => x x0 = m_infty /\ Rbar_gt (y x0) 0).
+              split; [apply in_eq |].
+              ++ split; trivial.
+                 rewrite H0.
+                 now simpl.
+           -- exists epinf.
+              split; [apply in_cons, in_cons, in_eq |].
+              subst epinf.
+              unfold pre_list_union, pre_event_inter.
+              exists (fun x0 : Ts => x x0 = m_infty /\ Rbar_lt (y x0) 0).
+              split; [apply in_cons, in_cons, in_eq | ].
+              split; trivial.
+              rewrite H0; simpl; lra.
+        + exists eminf.
+          split; [apply in_cons, in_cons, in_cons, in_eq |].
+          subst eminf.
+          unfold pre_list_union, pre_event_inter.
+          exists (fun x0 : Ts => x x0 = m_infty /\ Rbar_gt (y x0) 0).
+          split; [apply in_eq |].
+          ++ split; trivial.
+            rewrite H0.
+            now simpl.
+        + exists epinf.
+          split; [apply in_cons, in_cons, in_eq |].
+          subst epinf.
+          unfold pre_list_union, pre_event_inter.
+          exists (fun x0 : Ts => x x0 = m_infty /\ Rbar_lt (y x0) 0).
+          split; [apply in_cons, in_cons, in_eq |].
+          ++ split; trivial.
+             rewrite H0.
+             now simpl.
+     - admit.        
         
     }
     rewrite eqq.
