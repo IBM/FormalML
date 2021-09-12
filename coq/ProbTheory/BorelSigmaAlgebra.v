@@ -720,7 +720,25 @@ Qed.
   Qed.
 
   Definition Rbar_gt (x y : Rbar) := Rbar_lt y x.
-  
+
+   Lemma Rbar_sa_le_gt (f : Ts -> Rbar) :
+    (forall (r:Rbar),  sa_sigma (fun omega : Ts => Rbar_le (f omega) r)) ->
+    (forall (r:Rbar),  sa_sigma (fun omega : Ts => Rbar_gt (f omega) r)).
+  Proof. 
+    intros.
+    assert (pre_event_equiv (fun omega : Ts => Rbar_gt (f omega) r)
+                        (pre_event_complement (fun omega : Ts => Rbar_le (f omega) r))).
+    - intro x.
+      unfold pre_event_complement.
+      split; intros.
+      + unfold Rbar_le.
+        now apply Rbar_lt_not_le.
+      + unfold Rbar_le in H0.
+        now apply Rbar_not_le_lt in H0.
+    - rewrite H0.
+      now apply sa_complement.
+  Qed.
+
   Lemma Rbar_equiv_ge_gt (f : Ts -> Rbar) (r:R) :
     pre_event_equiv (fun omega : Ts => Rbar_gt (f omega) r)
                 (pre_union_of_collection
