@@ -1845,7 +1845,7 @@ Section RbarRandomVariables.
   Definition Rbar_finite_part (rv_X : Ts -> Rbar) : (Ts -> R) :=
     (fun x => real (rv_X x)).
 
-  Instance Rbar_finite_part_rv (rv_X : Ts -> Rbar) 
+  Instance Rbar_finite_part_meas (rv_X : Ts -> Rbar) 
            (rv : RandomVariable dom Rbar_borel_sa rv_X) :
     RealMeasurable dom (Rbar_finite_part rv_X).
   Proof.
@@ -1862,23 +1862,8 @@ Section RbarRandomVariables.
                    (fun omega : Ts => Rbar_le (rv_X omega) r))).
       + intro x.
         unfold pre_event_union, Rbar_finite_part.
-        destruct (rv_X x).
-        * simpl.
-          split; intros.
-          -- now right.
-          -- destruct H.
-             ++ now simpl.
-             ++ apply H.
-        * split; intros.
-          -- now left.
-          -- destruct H.
-             ++ now simpl.
-             ++ now simpl in H.
-        * split; intros.
-          -- right; now simpl.
-          -- destruct H.
-             ++ congruence.
-             ++ now simpl.
+        destruct (rv_X x); split; intros; simpl; trivial; try tauto.
+        destruct H; trivial; now simpl.
    + rewrite H.
      apply sa_union.
      * now apply Rbar_sa_le_pt.
@@ -1893,21 +1878,8 @@ Section RbarRandomVariables.
                    (fun omega : Ts => Rbar_le (rv_X omega) r))).
    + intro x.
      unfold pre_event_inter, pre_event_complement, Rbar_finite_part.
-     destruct (rv_X x).
-     * simpl.
-       split; intros.
-       -- split; trivial.
-          discriminate.
-       -- tauto.
-     * simpl.
-       split; intros.
-       -- lra.
-       -- tauto.
-     * simpl.
-       split; intros.
-       -- lra.
-       -- destruct H0.
-          tauto.
+     destruct (rv_X x); split; intros; simpl; trivial; try tauto.
+     split; trivial; discriminate.
    + rewrite H0.
      apply sa_inter.
      * apply sa_complement.
@@ -2621,20 +2593,27 @@ Section RbarRandomVariables.
                               ; fun omega => Rbar_le (rvmult (Rbar_finite_part x) (Rbar_finite_part y) omega) r]).
     pose (e0 := pre_event_union (fun omega => (x omega) = 0) (fun omega => (y omega) = 0)).
     pose (epinf := pre_list_union [
-                       (pre_event_inter (fun omega => x omega = p_infty) (pre_event_complement (fun omega => Rbar_le (y omega) 0)))
-                       ; (pre_event_inter (fun omega => y omega = p_infty) (pre_event_complement (fun omega => Rbar_le (x omega) 0)))
-                       ; (pre_event_inter (fun omega => x omega = m_infty) (pre_event_complement (fun omega => Rbar_ge (x omega) 0)))
-                       ; (pre_event_inter (fun omega => y omega = m_infty) (pre_event_complement (fun omega => Rbar_ge (y omega) 0)))]).
+                       (pre_event_inter (fun omega => x omega = p_infty)  (fun omega => Rbar_gt (y omega) 0))
+                       ; (pre_event_inter (fun omega => y omega = p_infty) (fun omega => Rbar_gt (x omega) 0))
+                       ; (pre_event_inter (fun omega => x omega = m_infty)  (fun omega => Rbar_lt (x omega) 0))
+                       ; (pre_event_inter (fun omega => y omega = m_infty)  (fun omega => Rbar_lt (y omega) 0))]).
     pose (eminf := pre_list_union [
-                       (pre_event_inter (fun omega => x omega = m_infty) (pre_event_complement(fun omega => Rbar_le (y omega) 0)))
-                       ; (pre_event_inter (fun omega => y omega = m_infty) (pre_event_complement(fun omega => Rbar_le (x omega) 0)))
-                       ; (pre_event_inter (fun omega => x omega = p_infty) (pre_event_complement(fun omega => Rbar_ge (x omega) 0)))
-                       ; (pre_event_inter (fun omega => y omega = p_infty) (pre_event_complement(fun omega => Rbar_ge (y omega) 0)))]).
+                       (pre_event_inter (fun omega => x omega = m_infty) (fun omega => Rbar_gt (y omega) 0))
+                       ; (pre_event_inter (fun omega => y omega = m_infty) (fun omega => Rbar_gt (x omega) 0))
+                       ; (pre_event_inter (fun omega => x omega = p_infty) (fun omega => Rbar_lt (x omega) 0))
+                       ; (pre_event_inter (fun omega => y omega = p_infty) (fun omega => Rbar_lt (y omega) 0))]).
     
     assert (eqq:pre_event_equiv (fun omega : Ts => Rbar_le (Rbar_rvmult x y omega) r)
                             (pre_list_union [efin; e0; epinf; eminf])).
     {
-      admit.
+      intro z.
+      unfold pre_list_union.
+      subst efin; subst e0; subst epinf; subst eminf.
+      split; intros.
+      - admit.
+      - destruct H.
+        
+        
     }
     rewrite eqq.
     apply sa_pre_list_union; intros ?.
@@ -2651,9 +2630,9 @@ Section RbarRandomVariables.
         {
           apply RealMeasurable_RbarMeasurable.
           apply mult_measurable.
-          - apply Rbar_finite_part_rv.
+          - apply Rbar_finite_part_meas.
             now apply Rbar_measurable_rv.
-          - apply Rbar_finite_part_rv.
+          - apply Rbar_finite_part_meas.
             now apply Rbar_measurable_rv.
         }
         apply H.
@@ -2667,26 +2646,22 @@ Section RbarRandomVariables.
       intros [?|[?|[?|[?|?]]]]; subst
       ; (try tauto; try apply sa_inter
       ; try apply sa_pre_event_union
-      ; try now apply Rbar_sa_le_pt)
-      ; apply sa_complement
-      ; trivial.
-      + admit.
-      + admit.
+      ; try now apply Rbar_sa_le_pt).
+      + now apply Rbar_sa_le_gt.
+      + now apply Rbar_sa_le_gt.
+      + now apply Rbar_sa_le_lt.
+      + now apply Rbar_sa_le_lt.
     - unfold eminf.
       apply sa_pre_list_union; intros ?.
       intros [?|[?|[?|[?|?]]]]; subst
       ; (try tauto; try apply sa_inter
       ; try apply sa_pre_event_union
-      ; try now apply Rbar_sa_le_pt)
-      ; apply sa_complement
-      ; trivial.
-      + admit.
-      + admit.
+      ; try now apply Rbar_sa_le_pt).
+      + now apply Rbar_sa_le_gt.
+      + now apply Rbar_sa_le_gt.
+      + now apply Rbar_sa_le_lt.
+      + now apply Rbar_sa_le_lt.
     - tauto.
-  Qed.
-
-    
-    
     
   Admitted.
   
