@@ -2791,19 +2791,27 @@ Qed.
 
   Lemma Rbar_NonnegExpectation_minus_bounded2 
         (rv_X1 : Ts -> Rbar)
-        (rv_X2 : Ts -> R)
+        (rv_X2 : Ts -> Rbar)
         {rv1 : RandomVariable dom Rbar_borel_sa rv_X1}
-        {rv2 : RandomVariable dom borel_sa rv_X2}
+        {rv2 : RandomVariable dom Rbar_borel_sa rv_X2}
         {nnf1:Rbar_NonnegativeFunction rv_X1}
         (c:R)
         (cpos:0 <= c)
-        (bounded2: rv_le rv_X2 (const c))
-        {nnf2:NonnegativeFunction rv_X2}
+        (bounded2: Rbar_rv_le rv_X2 (const c))
+        {nnf2:Rbar_NonnegativeFunction rv_X2}
         {nnf12:Rbar_NonnegativeFunction (Rbar_rvminus rv_X1 rv_X2)} :
       Rbar_NonnegExpectation (Rbar_rvminus rv_X1 rv_X2) =
       Rbar_minus (Rbar_NonnegExpectation rv_X1) (Rbar_NonnegExpectation rv_X2).
   Proof.
-    assert (isf:is_finite (Rbar_NonnegExpectation rv_X2)).
+    assert (isf:forall omega, is_finite (rv_X2 omega)).
+    {
+      intros omega.
+      specialize (bounded2 omega).
+      simpl in bounded2.
+      eapply bounded_is_finite; eauto.
+    } 
+      
+    assert (isfe:is_finite (Rbar_NonnegExpectation rv_X2)).
     {
       eapply (is_finite_Rbar_NonnegExpectation_le _ (const c)).
       - intros ?.
@@ -2820,6 +2828,8 @@ Qed.
       apply Rbar_rvplus_rv; trivial.
       - typeclasses eauto.
       - intros.
+        unfold Rbar_rvopp.
+        rewrite <- isf.
         apply ex_Rbar_plus_Finite_r.
     } 
       
@@ -2829,7 +2839,8 @@ Qed.
     { 
       intros a.
       unfold Rbar_rvminus, Rbar_rvopp, Rbar_rvplus in *.
-      clear eqq1 isf.
+      rewrite <- isf.
+      clear eqq1 isf isfe.
       specialize (nnf12 a).
       specialize (nnf1 a).
       specialize (nnf2 a).
@@ -2842,34 +2853,114 @@ Qed.
     generalize (Rbar_NonnegExpectation_pos _ (nnf:=nnf12))
     ; intros nneg12.
     clear eqq1 eqq2.
-    rewrite <- Expectation_Rbar_Expectation.
 
-    now rewrite <- isf, Rbar_minus_plus_fin.
+    now rewrite <- isfe, Rbar_minus_plus_fin.
       Unshelve.
     - intros ?; simpl.
       now unfold const.
     - trivial.
   Qed.
   
+(*  Lemma event_Rbar_Rgt_sa (σ:SigmaAlgebra Ts) (x1 x2:Ts->Rbar)
+      {rv1:RandomVariable σ Rbar_borel_sa x1}
+      {rv2:RandomVariable σ Rbar_borel_sa x2}
+      (forall x, ex_Rbar_plus (x1 x) (Rbar_opp (x2 x)))
+  : sa_sigma (fun x => Rbar_gt (x1 x) (x2 x)).
+Proof.
+  apply (sa_proper _ (fun x => (Rbar_rvminus x1 x2) x > 0)).
+  - unfold Rbar_rvminus.
+    intros ?.
+    unfold Rbar_rvminus, Rbar_gt, Rbar_rvopp, Rbar_rvplus.
+    destruct x1; destruct x2; simpl; try (intuition lra).
 
-      (*  
+    
+    + split; trivial; intros.
 
-  Lemma is_Rbar_conditional_expectation_le
+    intuition lra.
+  - apply sa_le_gt; intros.
+    apply rv_measurable.
+    typeclasses eauto.
+Qed.
+
+  Definition event_Rbar_Rgt (σ:SigmaAlgebra Ts) x1 x2
+      {rv1:RandomVariable σ borel_sa x1}
+      {rv2:RandomVariable σ borel_sa x2} : event σ
+  := exist _ _ (event_Rgt_sa σ x1 x2).
+
+Lemma event_Rbar_Rgt_dec (σ:SigmaAlgebra Ts) x1 x2
+      {rv1:RandomVariable σ borel_sa x1}
+      {rv2:RandomVariable σ borel_sa x2} :
+  dec_event (event_Rgt σ x1 x2).
+Proof.
+  unfold event_Rgt.
+  intros x; simpl.
+  apply Rgt_dec.
+Qed.
+*)
+  Lemma is_Rbar_conditional_expectation_nneg_le
       {dom2 : SigmaAlgebra Ts}
       (sub : sa_sub dom2 dom)
       (f : Ts->R)
       (ce1 ce2 : Ts -> Rbar)
-      {isfe:Rbar_IsFiniteExpectation prts f}
       {rvf : RandomVariable dom borel_sa f}
       {rvce1 : RandomVariable dom2 Rbar_borel_sa ce1}
       {rvce2 : RandomVariable dom2 Rbar_borel_sa ce2}
+      {nnf : NonnegativeFunction f}
+      {nnf1 : Rbar_NonnegativeFunction ce1}
+      {nnf2 : Rbar_NonnegativeFunction ce2}
   : is_Rbar_conditional_expectation prts sub f ce1 ->
     is_Rbar_conditional_expectation prts sub f ce2 ->
     almostR2 (prob_space_sa_sub prts _ sub) Rbar_le ce2 ce1.
   Proof.
-    unfold is_Rbar_conditional_expectation; intros.
+    unfold is_Rbar_conditional_expectation; intros isce1 isce2.
+
+    pose (G := fun x:R => pre_event_inter (fun omega => Rbar_gt (ce1 omega) (ce2 omega)) (fun omega => Rbar_gt x (ce2 omega))).
+    assert (sa_G : forall x:R, sa_sigma (G x)).
+    {
+      intros x.
+      unfold G.
+      unfold pre_event_inter.
+      apply (sa_proper _ 
+                       (fun x0 : Ts => (is_finite (ce2 x0) /\ Rbar_ge (Rbar_minus (ce1 x0) (ce2 x0)) 0) /\ Rbar_gt x (ce2 x0))).
+      - admit.
+      - apply sa_inter.
+        + admit.
+        + admit.
+    }
+
+    pose (IG := fun x:R => EventIndicator (classic_dec (G x))).
+
+    assert (nneg12I:forall x:R, Rbar_NonnegativeFunction (Rbar_rvmult (Rbar_rvminus ce1 ce2) (fun omega : Ts => IG x omega))).
+    {
+      intros x omega.
+      unfold IG, classic_dec; simpl.
+      unfold Rbar_rvmult, Rbar_rvminus, Rbar_rvplus, Rbar_rvopp; simpl.
+      rv_unfold.
+      destruct (excluded_middle_informative (G x omega)).
+      - rewrite Rbar_mult_1_r.
+        destruct g.
+        destruct (ce1 omega); destruct (ce2 omega); simpl in *; try tauto.
+        lra.
+      - rewrite Rbar_mult_0_r.
+        lra.
+    } 
+      
+    assert (eqq1:forall n, Rbar_NonnegExpectation (Rbar_rvmult (Rbar_rvminus ce1 ce2) (IG n)) =
+                 Rbar_minus (Rbar_NonnegExpectation (Rbar_rvmult ce1 (IG n)))
+                            (Rbar_NonnegExpectation (Rbar_rvmult ce2 (IG n)))).
+    {
+      intros n.
+
+      generalize (@Rbar_NonnegExpectation_minus_bounded2 (Rbar_rvmult ce1 (fun x : Ts => IG n x)) (Rbar_rvmult ce2 (fun x : Ts => IG n x))); intros HH.
+      
+      admit.
+    }
+
+    
+  Admitted.
 
 
+(*
   Lemma is_Rbar_conditional_expectation_le
       {dom2 : SigmaAlgebra Ts}
       (sub : sa_sub dom2 dom)
