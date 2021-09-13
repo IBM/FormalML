@@ -2600,11 +2600,13 @@ Section RbarRandomVariables.
                        ; (pre_event_inter (fun omega => y omega = m_infty)  (fun omega => Rbar_lt (x omega) 0))])
          (fun omega => Rbar_le p_infty r)).
 
-    pose (eminf := pre_list_union [
+    pose (eminf := 
+                       pre_list_union [
                        (pre_event_inter (fun omega => x omega = m_infty) (fun omega => Rbar_gt (y omega) 0))
                        ; (pre_event_inter (fun omega => y omega = m_infty) (fun omega => Rbar_gt (x omega) 0))
                        ; (pre_event_inter (fun omega => x omega = p_infty) (fun omega => Rbar_lt (y omega) 0))
-                       ; (pre_event_inter (fun omega => y omega = p_infty) (fun omega => Rbar_lt (x omega) 0))]).
+                       ; (pre_event_inter (fun omega => y omega = p_infty) (fun omega => Rbar_lt (x omega) 0))])
+                   .
     
     assert (eqq:pre_event_equiv (fun omega : Ts => Rbar_le (Rbar_rvmult x y omega) r)
                             (pre_list_union [efin; e0; epinf; eminf])).
@@ -2658,10 +2660,10 @@ Section RbarRandomVariables.
               split; [apply in_cons, in_cons, in_cons, in_eq |].
               subst eminf.
               unfold pre_list_union, pre_event_inter.
-              exists (fun x0 : Ts => y x0 = p_infty /\ Rbar_lt (x x0) 0).
-              split; [apply in_cons, in_cons, in_cons, in_eq |].
-              split; trivial.
-              rewrite H1; simpl; lra.
+              ++ exists (fun x0 : Ts => y x0 = p_infty /\ Rbar_lt (x x0) 0).
+                 split; [apply in_cons, in_cons, in_cons, in_eq |].
+                 split; trivial.
+                 rewrite H1; simpl; lra.
        + destruct (Req_EM_T r0 0).
          * exists e0.
            split; [apply in_cons, in_eq |].
@@ -2801,7 +2803,7 @@ Section RbarRandomVariables.
       - destruct H as [a [inn az]].
         unfold efin, e0, epinf, eminf in inn.
         simpl in inn.
-        destruct inn as [?|[?|[?|?]]]; subst.
+        destruct inn as [?|[?|[?|[?|?]]]]; subst.
         + unfold pre_list_inter in az; simpl in az.
           generalize (az (fun omega : Ts => is_finite (x omega)))
           ; intros HH1.
@@ -2831,7 +2833,47 @@ Section RbarRandomVariables.
             match_destr_in H0.
             -- now rewrite Rbar_mult_p_infty_pos by trivial.
             -- now simpl.
-          * 
+          * destruct H0.
+            rewrite H.
+            match_destr_in H0; try tauto.
+            rewrite Rbar_mult_comm.
+            rewrite Rbar_mult_p_infty_pos; trivial.
+          * destruct r; try tauto.
+            unfold Rbar_le.
+            match_destr.
+          * destruct r; try tauto.
+            unfold Rbar_le.
+            match_destr.
+        + destruct az as [?[??]].
+          simpl in H.
+          (repeat destruct H)
+          ; try solve [destruct H0
+            ; rewrite H; simpl
+            ; match_destr_in H0
+            ; [unfold Rbar_mult, Rbar_mult'
+               ; destruct (Rle_dec 0 r0); try lra
+               ; destruct (Rle_lt_or_eq_dec 0 r0 r1); try lra
+               ; now simpl
+              | tauto]].
+          * destruct H0.
+            rewrite H; simpl.
+            unfold Rbar_lt in H0.
+            match_destr_in H0.
+            -- unfold Rbar_mult, Rbar_mult'.
+               destruct (Rle_dec 0 r0); try lra.
+               destruct (Rle_lt_or_eq_dec 0 r0 r1); try lra.
+               now simpl.
+            -- tauto.
+          * destruct H0.
+            rewrite H; simpl.
+            unfold Rbar_lt in H0.
+            match_destr_in H0.
+            -- unfold Rbar_mult, Rbar_mult'.
+               destruct (Rle_dec 0 r0); try lra.
+               destruct (Rle_lt_or_eq_dec 0 r0 r1); try lra.
+               now simpl.
+            -- tauto.
+        + tauto.
     }
     rewrite eqq.
     apply sa_pre_list_union; intros ?.
@@ -2856,32 +2898,35 @@ Section RbarRandomVariables.
         apply H.
       + tauto.
     - unfold e0.
-      apply sa_union.
-      + now apply Rbar_sa_le_pt.
-      + now apply Rbar_sa_le_pt.
+      apply sa_inter.
+      + apply sa_union.
+        * now apply Rbar_sa_le_pt.
+        * now apply Rbar_sa_le_pt.
+      + admit.
     - unfold epinf.
-      apply sa_pre_list_union; intros ?.
-      intros [?|[?|[?|[?|?]]]]; subst
-      ; (try tauto; try apply sa_inter
-      ; try apply sa_pre_event_union
-      ; try now apply Rbar_sa_le_pt).
-      + now apply Rbar_sa_le_gt.
-      + now apply Rbar_sa_le_gt.
-      + now apply Rbar_sa_le_lt.
-      + now apply Rbar_sa_le_lt.
+      apply sa_inter.
+      + apply sa_pre_list_union; intros ?.
+        intros [?|[?|[?|[?|?]]]]; subst
+        ; (try tauto; try apply sa_inter
+           ; try apply sa_pre_event_union
+           ; try now apply Rbar_sa_le_pt).
+        * now apply Rbar_sa_le_gt.
+        * now apply Rbar_sa_le_gt.
+        * now apply Rbar_sa_le_lt.
+        * now apply Rbar_sa_le_lt.
+      + admit.
     - unfold eminf.
       apply sa_pre_list_union; intros ?.
       intros [?|[?|[?|[?|?]]]]; subst
       ; (try tauto; try apply sa_inter
       ; try apply sa_pre_event_union
       ; try now apply Rbar_sa_le_pt).
-      + now apply Rbar_sa_le_gt.
-      + now apply Rbar_sa_le_gt.
-      + now apply Rbar_sa_le_lt.
-      + now apply Rbar_sa_le_lt.
+      * now apply Rbar_sa_le_gt.
+      * now apply Rbar_sa_le_gt.
+      * now apply Rbar_sa_le_lt.
+      * now apply Rbar_sa_le_lt.
     - tauto.
-    
-  Admitted.
+  Qed.
   
   Global Instance Rbar_rvmult_rv (x y : Ts -> Rbar)
          {xrv:RandomVariable dom Rbar_borel_sa x} 
