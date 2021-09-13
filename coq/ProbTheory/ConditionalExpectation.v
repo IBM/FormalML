@@ -2741,12 +2741,20 @@ Proof.
       * reflexivity.
   - apply Rbar_Expectation_almostR2_proper.
     + apply Rbar_rvmult_rv; trivial.
+      * eapply RandomVariable_sa_sub; eauto.
+      * apply borel_Rbar_borel.
+        apply EventIndicator_pre_rv.
+        now apply sub.
+    + apply Rbar_rvmult_rv; trivial.
+      * eapply RandomVariable_sa_sub; eauto.
+      * apply borel_Rbar_borel.
+        apply EventIndicator_pre_rv.
+        now apply sub.
+    + apply almostR2_eq_Rbar_mult_proper; trivial.
+      reflexivity.
 Qed.
 
 
-    
-  
-Admitted.
 (*
   unfold is_conditional_expectation; intros.
   rewrite H0; trivial.
@@ -2805,9 +2813,10 @@ Proof.
     now apply neg_fun_part_proper_almostR2.
 Qed.
   
+ *)
 
 End cond_exp2.
-
+(*
 Section cond_exp_props.
 
   Context {Ts:Type} 
@@ -3677,7 +3686,6 @@ Canonical nneg2.
                (Rbar_rvplus (ConditionalExpectation prts f1 sub) (ConditionalExpectation prts f2 sub)).
     Proof.
     Admitted.
-    
-End cond_exp_props.
+*)
     
 

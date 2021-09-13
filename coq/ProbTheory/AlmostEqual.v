@@ -321,6 +321,21 @@ Proof.
     now rewrite eq_onx, eq_ony.
 Qed.
 
+Global Instance almostR2_eq_Rbar_mult_proper
+      {Ts:Type} 
+      {dom: SigmaAlgebra Ts}
+      (prts: ProbSpace dom) : Proper (almostR2 prts eq ==> almostR2 prts eq ==> almostR2 prts eq) Rbar_rvmult.
+Proof.
+  unfold almostR2 in *.
+  intros x1 x2 [Px [Pxall eq_onx]] y1 y2 [Py [Pyall eq_ony]].
+  exists (Px ∩ Py).
+  split.
+  - now apply ps_one_inter.
+  - intros a [Pxa Pya].
+    unfold Rbar_rvmult.
+    now rewrite eq_onx, eq_ony.
+Qed.
+
 Global Instance almostR2_sub
       {Ts Td:Type} 
       {dom: SigmaAlgebra Ts}
