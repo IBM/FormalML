@@ -2902,7 +2902,8 @@ Section RbarRandomVariables.
       + apply sa_union.
         * now apply Rbar_sa_le_pt.
         * now apply Rbar_sa_le_pt.
-      + admit.
+      + apply RealMeasurable_RbarMeasurable.
+        apply constant_measurable.
     - unfold epinf.
       apply sa_inter.
       + apply sa_pre_list_union; intros ?.
@@ -2914,7 +2915,11 @@ Section RbarRandomVariables.
         * now apply Rbar_sa_le_gt.
         * now apply Rbar_sa_le_lt.
         * now apply Rbar_sa_le_lt.
-      + admit.
+      + destruct (Rbar_le_dec p_infty r).
+        * eapply sa_proper; try eapply sa_all.
+          red; unfold pre_Ω; tauto.
+        * eapply sa_proper; try eapply sa_none.
+          red; unfold pre_event_none; tauto.
     - unfold eminf.
       apply sa_pre_list_union; intros ?.
       intros [?|[?|[?|[?|?]]]]; subst
