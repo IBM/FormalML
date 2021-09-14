@@ -2775,9 +2775,9 @@ Qed.
     f_equal; lra.
   Qed.
 
-  Global Instance Rbar_rvopp_rv (x:Ts -> Rbar) 
-         {xrv:RandomVariable dom Rbar_borel_sa x} :
-    RandomVariable dom Rbar_borel_sa (Rbar_rvopp x).
+  Global Instance Rbar_rvopp_rv {domx} (x:Ts -> Rbar) 
+         {xrv:RandomVariable domx Rbar_borel_sa x} :
+    RandomVariable domx Rbar_borel_sa (Rbar_rvopp x).
   Proof.
     apply Rbar_measurable_rv.
     intros ?.
@@ -2921,11 +2921,46 @@ Qed.
       unfold G.
       unfold pre_event_inter.
       apply (sa_proper _ 
-                       (fun x0 : Ts => (is_finite (ce2 x0) /\ Rbar_ge (Rbar_minus (ce1 x0) (ce2 x0)) 0) /\ Rbar_gt x (ce2 x0))).
-      - admit.
+                       (fun x0 : Ts => (Rbar_gt ((Rbar_rvminus ce1 (Rbar_finite_part ce2)) x0) 0) /\ Rbar_lt (ce2 x0) x )).
+      - intro z.
+        unfold Rbar_rvminus, Rbar_rvopp, Rbar_finite_part.
+        split; intros.
+        + destruct H.
+          split; try easy.
+          unfold Rbar_rvplus in H.
+          assert (is_finite (ce2 z)).
+          * eapply bounded_is_finite.
+            apply nnf2.
+            apply Rbar_lt_le.
+            apply H0.
+          * rewrite <- H1 in H.
+            unfold Rbar_opp in H.
+            admit.
+        + destruct H.
+          unfold Rbar_gt in H0.
+          assert (is_finite (ce2 z)).
+          * eapply bounded_is_finite.
+            apply nnf2.
+            apply Rbar_lt_le.
+            apply H0.
+          * split; try easy.
+            unfold Rbar_rvplus.
+            rewrite <- H1 in H.
+            admit.
       - apply sa_inter.
-        + admit.
-        + admit.
+        + apply Rbar_sa_le_gt; intros.
+          apply Rbar_plus_measurable.
+          * typeclasses eauto.
+          * apply rv_Rbar_measurable.
+            apply Rbar_rvopp_rv.
+            apply Real_Rbar_rv.
+            apply measurable_rv.
+            now apply Rbar_finite_part_meas.
+          * intros.
+            apply ex_Rbar_plus_Finite_r.
+        + apply Rbar_sa_le_lt.
+          intros.
+          now apply rv_Rbar_measurable.
     }
 
     pose (IG := fun x:R => EventIndicator (classic_dec (G x))).
@@ -2952,10 +2987,14 @@ Qed.
       intros n.
 
       generalize (@Rbar_NonnegExpectation_minus_bounded2 (Rbar_rvmult ce1 (fun x : Ts => IG n x)) (Rbar_rvmult ce2 (fun x : Ts => IG n x))); intros HH.
-      
       admit.
     }
-
+    assert (eqq2: forall n, Rbar_NonnegExpectation (Rbar_rvmult (Rbar_rvminus ce1 ce2) (IG n)) = 0).
+    {
+      intros.
+      rewrite eqq1.
+      admit.
+    }
     
   Admitted.
 
