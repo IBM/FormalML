@@ -3158,6 +3158,27 @@ Qed.
       apply le_INR; lia.
   Admitted.
 
+  Local Existing Instance Rbar_le_part.
+  
+  Lemma is_Rbar_conditional_expectation_nneg_unique
+      {dom2 : SigmaAlgebra Ts}
+      (sub : sa_sub dom2 dom)
+      (f : Ts->R)
+      (ce1 ce2 : Ts -> Rbar)
+      {rvf : RandomVariable dom borel_sa f}
+      {rvce1 : RandomVariable dom2 Rbar_borel_sa ce1}
+      {rvce2 : RandomVariable dom2 Rbar_borel_sa ce2}
+      {nnf : NonnegativeFunction f}
+      {nnf1 : Rbar_NonnegativeFunction ce1}
+      {nnf2 : Rbar_NonnegativeFunction ce2}
+  : is_Rbar_conditional_expectation prts sub f ce1 ->
+    is_Rbar_conditional_expectation prts sub f ce2 ->
+    almostR2 (prob_space_sa_sub prts _ sub) eq ce1 ce2.
+  Proof.
+    intros.
+    apply antisymmetry
+    ; eapply is_Rbar_conditional_expectation_nneg_le; eauto.
+  Qed.
 
 (*
   Lemma is_Rbar_conditional_expectation_le
