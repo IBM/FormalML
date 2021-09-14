@@ -10,7 +10,7 @@ Require Import RealRandomVariable.
 
 Require Import Utils.
 Require Export SimpleExpectation Expectation.
-
+Require Import AlmostEqual.
 Import ListNotations.
 
 Set Bullet Behavior "Strict Subproofs".
@@ -1167,6 +1167,19 @@ Section RbarExpectation.
          * tauto.
   Qed.
 
+  Lemma Rbar_Expectation_nonneg_zero_almost_zero
+        (X : Ts -> Rbar)
+        {rv : RandomVariable dom Rbar_borel_sa X}
+        {pofrf :Rbar_NonnegativeFunction X} :
+    Rbar_Expectation X = Some (Finite 0) ->
+    almostR2 Prts eq X (const (Finite 0)).
+  Proof.
+    exists (preimage_singleton (has_pre := Rbar_borel_has_preimages) X 0).
+    split.
+    - now apply Rbar_Expectation_zero_pos.
+    - intros.
+      apply H0.
+  Qed.
 
 End RbarExpectation.
 
