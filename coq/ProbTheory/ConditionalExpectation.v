@@ -2996,7 +2996,59 @@ Qed.
       intros x.
 
       generalize (@Rbar_NonnegExpectation_minus_bounded2 (Rbar_rvmult ce1 (IG x)) (Rbar_rvmult ce2 (IG x))); intros HH.
-      admit.
+      cut_to HH.
+      - unfold IG in HH.
+        specialize (HH _ (Rabs x) (Rabs_pos _)).
+        cut_to HH.
+        + specialize (HH _).
+          assert ( nnf12 : Rbar_NonnegativeFunction
+                   (Rbar_rvminus (Rbar_rvmult ce1 (IG x))
+                                 (Rbar_rvmult ce2 (IG x)))).
+          {
+            intros a.
+            unfold Rbar_rvmult, Rbar_rvminus, Rbar_rvplus, Rbar_rvopp, IG, EventIndicator; simpl.
+            destruct (classic_dec (G x) a); simpl.
+            - repeat rewrite Rbar_mult_1_r.
+              destruct g as [??].
+              destruct (ce1 a); destruct (ce2 a); simpl in *; lra.
+            - repeat rewrite Rbar_mult_0_r; simpl.
+              lra.
+          }
+          specialize (HH nnf12).
+          unfold IG.
+          rewrite <- HH.
+          eapply Rbar_NonnegExpectation_ext.
+          intros a.
+          unfold Rbar_rvmult, Rbar_rvminus, Rbar_rvplus, Rbar_rvopp, EventIndicator; simpl.
+          match_destr.
+          * now repeat rewrite Rbar_mult_1_r.
+          * repeat rewrite Rbar_mult_0_r.
+            simpl; f_equal; lra.
+        + intros ?.
+          unfold G.
+          unfold Rbar_rvmult, EventIndicator, const; simpl.
+          match_destr.
+          * destruct p.
+            destruct (ce2 a); simpl in *; try tauto.
+            -- field_simplify.
+               eapply Rle_trans; [| apply RRle_abs].
+               now left.
+            -- destruct (Rle_dec 0 1); try lra.
+               destruct (Rle_lt_or_eq_dec 0 1 r); try lra.
+               now simpl.
+          * rewrite Rbar_mult_0_r.
+            simpl.
+            apply Rabs_pos.
+      - apply Rbar_rvmult_rv; trivial.
+        + eapply RandomVariable_sa_sub; eauto.
+        + apply borel_Rbar_borel.
+          apply EventIndicator_pre_rv.
+          now apply sub.
+      - apply Rbar_rvmult_rv; trivial.
+        + eapply RandomVariable_sa_sub; eauto.
+        + apply borel_Rbar_borel.
+          apply EventIndicator_pre_rv.
+          now apply sub.
     }
     
     assert (eqq2: forall x, Rbar_NonnegExpectation (Rbar_rvmult (Rbar_rvminus ce1 ce2) (IG x)) = 0).
