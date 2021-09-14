@@ -1139,7 +1139,9 @@ Section RbarExpectation.
         }
         apply is_lim_seq_spec in H0.
         unfold is_lim_seq' in H0.
-        destruct (X x).
+        case_eq (X x)
+        ; [intros ? eqq1 | intros eqq1..]
+        ; rewrite eqq1 in *.
         * specialize (H0 (mkposreal _ H)).
           destruct H0.
           specialize (H0 x0).
@@ -1149,15 +1151,14 @@ Section RbarExpectation.
           simpl in H0.
           specialize (apx_le1 x0 x).
           rewrite <- Rabs_Ropp in H0.
-          Admitted.
-(*
-          replace (Rabs (-(simple_approx X x0 x - X x))) with (X x - simple_approx X x0 x) in H0.
-          -- 
-          lra.
+          replace (Rabs (-(simple_approx X x0 x - r))) with (r - simple_approx X x0 x) in H0
+          ; try lra.
           simpl in apx_le1.
-          rewrite Rabs_pos_eq; lra.
-  Qed.
-*)
+          rewrite Rabs_pos_eq; try lra.
+          rewrite eqq1 in apx_le1.
+          lra.
+  Admitted.
+
 
 End RbarExpectation.
 
