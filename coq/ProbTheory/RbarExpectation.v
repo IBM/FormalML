@@ -6,6 +6,7 @@ Require Import Morphisms EquivDec Program.
 Require Import Coquelicot.Coquelicot.
 Require Import Classical_Prop.
 Require Import Classical.
+Require Import RealRandomVariable.
 
 Require Import Utils.
 Require Export SimpleExpectation Expectation.
@@ -992,6 +993,171 @@ Section RbarExpectation.
       generalize (nnf2 omega); intros.
       now apply ex_Rbar_plus_pos.
   Qed.
+
+  Lemma Rbar_pos_fun_part_pos (rv_X : Ts -> Rbar) 
+        {nnf : Rbar_NonnegativeFunction rv_X} :
+    rv_eq rv_X (Rbar_pos_fun_part rv_X).
+  Proof.
+    unfold Rbar_pos_fun_part.
+    intro x.
+    simpl.
+    specialize (nnf x).
+    unfold Rbar_max.
+    match_destr.
+    now apply Rbar_le_antisym.
+  Qed.
+
+  Lemma Rbar_neg_fun_part_pos (rv_X : Ts -> Rbar) 
+        {nnf : Rbar_NonnegativeFunction rv_X} :
+    rv_eq (const (Finite 0)) (Rbar_neg_fun_part rv_X).
+  Proof.
+    unfold Rbar_neg_fun_part, const.
+    intro x.
+    simpl.
+    specialize (nnf x).
+    unfold Rbar_max, Rbar_opp.
+    match_destr.
+    match_destr.
+    - simpl in *; lra.
+    - tauto.
+    - tauto.
+  Qed.
+
+  Lemma Rbar_Expectation_pos_pofrf (rv_X : Ts -> Rbar) 
+        {nnf : Rbar_NonnegativeFunction rv_X} :
+    Rbar_Expectation rv_X = Some (Rbar_NonnegExpectation rv_X).
+  Proof.
+    unfold Rbar_Expectation.
+    replace (Rbar_NonnegExpectation (Rbar_pos_fun_part rv_X)) with (Rbar_NonnegExpectation rv_X).
+    - replace (Rbar_NonnegExpectation (Rbar_neg_fun_part rv_X)) with (Finite 0).
+      + unfold Rbar_minus', Rbar_plus', Rbar_opp.
+        match_destr.
+        f_equal; apply Rbar_finite_eq; lra.
+      + generalize (Rbar_neg_fun_part_pos rv_X); intros.
+        assert (Rbar_NonnegativeFunction (fun (x : Ts) => 0)).
+        {
+          intro x.
+          now simpl.
+        }
+        rewrite Rbar_NonnegExpectation_ext with (nnf2 := H0).
+        symmetry.
+        * assert (0 <= 0) by lra.
+          apply (Rbar_NonnegExpectation_const _ H1).
+        * now symmetry.
+    - apply Rbar_NonnegExpectation_ext; trivial.
+      now apply Rbar_pos_fun_part_pos.
+  Qed.
+
+  Lemma Rbar_Expectation_zero_pos 
+        (X : Ts -> Rbar)
+        {rv : RandomVariable dom Rbar_borel_sa X}
+        {pofrf : Rbar_NonnegativeFunction X} :
+    Rbar_Expectation X = Some (Finite 0) ->
+    ps_P (preimage_singleton (has_pre := Rbar_borel_has_preimages) X (Finite 0)) = 1.
+  Proof.
+    rewrite Rbar_Expectation_pos_pofrf with (nnf := pofrf); intros.
+    inversion H.
+
+    generalize (simple_approx_lim_seq X pofrf); intros.
+    generalize (simple_approx_rv X); intro apx_rv1.
+    generalize (simple_approx_pofrf X); intro apx_nnf1.
+    generalize (simple_approx_frf X); intro apx_frf1.
+    generalize (simple_approx_le X pofrf); intro apx_le1.
+    generalize (simple_approx_increasing X pofrf); intro apx_inc1.
+    generalize (Rbar_monotone_convergence X (simple_approx X) rv pofrf apx_rv1 apx_nnf1 apx_le1 apx_inc1 (fun n => simple_expectation_real (simple_approx X n)) H0); intros.
+
+    assert (forall n:nat, NonnegExpectation (simple_approx X n) = 0).
+    intros.
+    generalize (Rbar_NonnegExpectation_le (simple_approx X n) X (apx_le1 n)); intros.
+    rewrite H1 in H3.
+    generalize (NonnegExpectation_pos (simple_approx X n)); intros.
+    apply Rbar_le_antisym; trivial.
+  
+
+    assert (forall n:nat, ps_P (preimage_singleton (simple_approx X n) 0) = 1).
+    intros.
+    apply SimplePosExpectation_zero_pos with (frf := apx_frf1 n); trivial.
+    generalize (frf_NonnegExpectation (simple_approx X n)); intros.
+    rewrite H3 in H4; symmetry in H4.
+    now apply Rbar_finite_eq in H4.
+
+    assert (forall n:nat, ps_P (event_complement (preimage_singleton (has_pre := borel_has_preimages) (simple_approx X n) 0)) = 0).
+    {
+      intros.
+      rewrite ps_complement.
+      rewrite H4; lra.
+    } 
+    generalize (lim_prob (fun n => (event_complement (preimage_singleton (has_pre := borel_has_preimages) (simple_approx X n) 0)))
+                         (event_complement (preimage_singleton (has_pre := Rbar_borel_has_preimages) X 0))
+               ); trivial; intros HH.
+    cut_to HH; trivial.
+    - apply is_lim_seq_ext with (v := (fun n => 0)) in HH.
+      + apply is_lim_seq_unique in HH.    
+        rewrite Lim_seq_const in HH.
+        rewrite ps_complement in HH.
+        apply Rbar_finite_eq in HH.
+        rewrite H1; lra.
+      + trivial.
+    -
+      unfold event_sub, pre_event_sub, event_complement, pre_event_complement; simpl; intros.
+      unfold NonnegativeFunction in apx_nnf1.
+      apply Rgt_not_eq.
+      apply Rdichotomy in H6.
+      destruct H6.
+      + generalize (apx_nnf1 n); intros.
+        specialize (H7 x); lra.
+      + specialize (apx_inc1 n x).
+        lra.
+    - unfold event_complement, pre_event_complement.
+      intro x; simpl.
+      split; intros.
+      + destruct H6.
+        unfold pre_event_preimage, pre_event_singleton.
+        apply Rdichotomy in H6.
+        destruct H6.
+        generalize (apx_nnf1 x0 x); intros; lra.        
+        specialize (apx_le1 x0 x); simpl in apx_le1.
+        destruct (X x).
+        * apply Rbar_finite_neq.
+          apply Rgt_not_eq; lra.
+        * discriminate.
+        * discriminate.
+      + specialize (H0 x).
+        clear H H1 H2 H3 H4 H5 HH.
+        unfold pre_event_preimage, pre_event_singleton in *.
+        assert (Rbar_gt (X x) 0).
+        {
+          specialize (pofrf x).
+          destruct (X x).
+          - apply Rbar_finite_neq in H6.
+            apply Rdichotomy in H6.
+            destruct H6.
+            + simpl in pofrf; lra.
+            + now simpl.
+          - now simpl.
+          - tauto.
+        }
+        apply is_lim_seq_spec in H0.
+        unfold is_lim_seq' in H0.
+        destruct (X x).
+        * specialize (H0 (mkposreal _ H)).
+          destruct H0.
+          specialize (H0 x0).
+          exists x0.
+          apply Rgt_not_eq.
+          cut_to H0; [|lia].
+          simpl in H0.
+          specialize (apx_le1 x0 x).
+          rewrite <- Rabs_Ropp in H0.
+          Admitted.
+(*
+          replace (Rabs (-(simple_approx X x0 x - X x))) with (X x - simple_approx X x0 x) in H0.
+          -- 
+          lra.
+          simpl in apx_le1.
+          rewrite Rabs_pos_eq; lra.
+  Qed.
+*)
 
 End RbarExpectation.
 
