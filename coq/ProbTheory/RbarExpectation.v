@@ -1157,7 +1157,15 @@ Section RbarExpectation.
           rewrite Rabs_pos_eq; try lra.
           rewrite eqq1 in apx_le1.
           lra.
-  Admitted.
+         * exists (1%nat).
+           unfold simple_approx.
+           match_destr.
+           -- apply not_0_INR.
+              lia.
+           -- rewrite eqq1 in n.
+              tauto.
+         * tauto.
+  Qed.
 
 
 End RbarExpectation.
