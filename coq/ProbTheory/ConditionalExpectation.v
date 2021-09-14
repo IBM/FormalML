@@ -2897,6 +2897,7 @@ Proof.
   apply Rgt_dec.
 Qed.
 *)
+
   Lemma is_Rbar_conditional_expectation_nneg_le
       {dom2 : SigmaAlgebra Ts}
       (sub : sa_sub dom2 dom)
@@ -2910,7 +2911,7 @@ Qed.
       {nnf2 : Rbar_NonnegativeFunction ce2}
   : is_Rbar_conditional_expectation prts sub f ce1 ->
     is_Rbar_conditional_expectation prts sub f ce2 ->
-    almostR2 (prob_space_sa_sub prts _ sub) Rbar_le ce2 ce1.
+    almostR2 (prob_space_sa_sub prts _ sub) Rbar_le ce1 ce2.
   Proof.
     unfold is_Rbar_conditional_expectation; intros isce1 isce2.
 
@@ -2933,9 +2934,13 @@ Qed.
             apply nnf2.
             apply Rbar_lt_le.
             apply H0.
-          * rewrite <- H1 in H.
+          * rewrite <- H1 in H |- *.
             unfold Rbar_opp in H.
-            admit.
+            unfold Rbar_gt in *.
+            apply (Rbar_plus_lt_compat_r _ _ (ce2 z)) in H.
+            rewrite Rbar_plus_0_l in H.
+            destruct ((ce1 z)); simpl in *; trivial.
+            f_equal; lra.
         + destruct H.
           unfold Rbar_gt in H0.
           assert (is_finite (ce2 z)).
@@ -2945,8 +2950,12 @@ Qed.
             apply H0.
           * split; try easy.
             unfold Rbar_rvplus.
-            rewrite <- H1 in H.
-            admit.
+            rewrite <- H1 in H |- *.
+            unfold Rbar_opp.
+            unfold Rbar_gt in *.
+            apply (Rbar_plus_lt_compat_r _ _ (- ce2 z)) in H.
+            destruct ((ce1 z)); simpl in *; trivial.
+            f_equal; lra.
       - apply sa_inter.
         + apply Rbar_sa_le_gt; intros.
           apply Rbar_plus_measurable.
@@ -2980,22 +2989,121 @@ Qed.
         lra.
     } 
       
-    assert (eqq1:forall n, Rbar_NonnegExpectation (Rbar_rvmult (Rbar_rvminus ce1 ce2) (IG n)) =
-                 Rbar_minus (Rbar_NonnegExpectation (Rbar_rvmult ce1 (IG n)))
-                            (Rbar_NonnegExpectation (Rbar_rvmult ce2 (IG n)))).
+    assert (eqq1:forall x, Rbar_NonnegExpectation (Rbar_rvmult (Rbar_rvminus ce1 ce2) (IG x)) =
+                 Rbar_minus (Rbar_NonnegExpectation (Rbar_rvmult ce1 (IG x)))
+                            (Rbar_NonnegExpectation (Rbar_rvmult ce2 (IG x)))).
     {
-      intros n.
+      intros x.
 
-      generalize (@Rbar_NonnegExpectation_minus_bounded2 (Rbar_rvmult ce1 (fun x : Ts => IG n x)) (Rbar_rvmult ce2 (fun x : Ts => IG n x))); intros HH.
-      admit.
-    }
-    assert (eqq2: forall n, Rbar_NonnegExpectation (Rbar_rvmult (Rbar_rvminus ce1 ce2) (IG n)) = 0).
-    {
-      intros.
-      rewrite eqq1.
+      generalize (@Rbar_NonnegExpectation_minus_bounded2 (Rbar_rvmult ce1 (IG x)) (Rbar_rvmult ce2 (IG x))); intros HH.
       admit.
     }
     
+    assert (eqq2: forall x, Rbar_NonnegExpectation (Rbar_rvmult (Rbar_rvminus ce1 ce2) (IG x)) = 0).
+    {
+      intros.
+      rewrite eqq1.
+      generalize (isce1 (G x) (classic_dec (G x)) (sa_G x))
+      ; intros HH1.
+      generalize (isce2 (G x) (classic_dec (G x)) (sa_G x))
+      ; intros HH2.
+      rewrite (Rbar_Expectation_pos_pofrf _ _ (nnf:=_)) in HH1.
+      rewrite (Rbar_Expectation_pos_pofrf _ _ (nnf:=_)) in HH2.
+      rewrite (Expectation_pos_pofrf _ (nnf:=_)) in HH1.
+      rewrite (Expectation_pos_pofrf _ (nnf:=_)) in HH2.
+      invcs HH1.
+      invcs HH2.
+      unfold IG.
+      rewrite <- H0, <- H1.
+      apply Rbar_minus_eq_0.
+    }
+
+    assert (psG0:forall x, ps_P (ProbSpace:=((prob_space_sa_sub prts _ sub))) (exist _ (G x) (sa_G x)) = 0).
+    {
+      intros x.
+      specialize (eqq2 x).
+      assert (Rbar_NonnegExpectation_zero_pos:almostR2 ((prob_space_sa_sub prts _ sub)) eq (Rbar_rvmult (Rbar_rvminus ce1 ce2) (fun x0 : Ts => IG x x0)) (const 0)).
+      {
+        admit.
+      }
+
+      destruct Rbar_NonnegExpectation_zero_pos as [P [pone pH]].
+      unfold const in pH.
+      unfold Rbar_rvmult, IG, EventIndicator in pH.
+      apply NNPP.
+      intros neq.
+      assert (HH1:ps_P  (ProbSpace:=((prob_space_sa_sub prts _ sub))) (event_inter P (exist sa_sigma (G x) (sa_G x))) <> 0).
+      {
+        rewrite ps_inter_l1; trivial.
+      } 
+      destruct (zero_prob_or_witness _ HH1) as [a [Pa Ga]]; simpl in *.
+      specialize (pH _ Pa).
+      match_destr_in pH; try tauto.
+      rewrite Rbar_mult_1_r in pH.
+      destruct Ga as [??].
+      unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp in pH.
+      destruct (ce1 a); destruct (ce2 a); simpl in *; try (invcs pH; lra).
+    }
+
+    generalize (is_lim_ascending (prob_space_sa_sub prts _ sub) (fun n => exist _ _ (sa_G (INR n))))
+    ; intros HH.
+    cut_to HH.
+    - apply (is_lim_seq_ext _ (fun _ => 0)) in HH.
+      + apply is_lim_seq_unique in HH.
+        rewrite Lim_seq_const in HH.
+        assert (eqq3:pre_event_equiv (union_of_collection (fun n : nat => exist sa_sigma (G (INR n)) (sa_G (INR n))))
+                                (fun omega : Ts => Rbar_gt (ce1 omega) (ce2 omega))).
+        {
+          intros a.
+          split; simpl.
+          - now intros [?[??]].
+          - unfold G.
+            intros.
+            exists (Z.to_nat (up (ce2 a))).
+            split; trivial.
+            assert (isf:is_finite (ce2 a)).
+            {
+              generalize (nnf2 a); intros ?.
+              destruct (ce2 a).
+              - reflexivity.
+              - destruct (ce1 a); simpl in *; tauto.
+              - simpl in H0; tauto.
+            }
+            rewrite <- isf.
+            simpl.
+            rewrite INR_up_pos.
+            * apply archimed.
+            * generalize (nnf2 a); intros HH2.
+              rewrite <- isf in HH2; simpl in HH2.
+              lra.
+        } 
+        destruct (sa_proper dom2 _ _ eqq3) as [sa1 _].
+        cut_to sa1.
+        * rewrite (ps_proper _ (exist _ _ sa1)) in HH by (now red).
+
+          generalize (ps_complement (prob_space_sa_sub prts _ sub)
+                                    (exist _ _ sa1))
+          ; intros eqq4.
+          invcs HH.
+          simpl in *.
+          rewrite <- H0 in eqq4.
+          field_simplify in eqq4.
+          eexists.
+          split; [apply eqq4|].
+          intros a; simpl.
+          unfold pre_event_complement.
+          unfold Rbar_gt.
+          intros.
+          now apply Rbar_not_lt_le.
+        * apply sa_sigma_event_pre.
+      + trivial.
+    - intros ??.
+      unfold G.
+      intros [??].
+      split; trivial.
+      unfold Rbar_gt in *.
+      eapply Rbar_lt_le_trans; try eapply H0.
+      apply le_INR; lia.
   Admitted.
 
 
