@@ -38,6 +38,14 @@ Section RealRandomVariables.
     now apply rv_preimage_sa.
   Qed.
 
+  Global Instance Rbar_borel_has_preimages : HasPreimageSingleton Rbar_borel_sa.
+  Proof.
+    red; intros.
+    apply Rbar_sa_le_pt; intros.
+    apply Rbar_borel_sa_preimage2; intros.
+    now apply rv_preimage_sa.
+  Qed.
+
   Context {Ts:Type}
           (dom: SigmaAlgebra Ts).
 
