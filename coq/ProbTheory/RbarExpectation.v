@@ -1242,6 +1242,65 @@ Section RbarExpectation.
     simpl; trivial.
   Qed.
 
+    Lemma Rbar_rv_pos_neg_id (rv_X:Ts->Rbar) : 
+      rv_eq (rv_X) (Rbar_rvplus (Rbar_pos_fun_part rv_X) (Rbar_rvopp (Rbar_neg_fun_part rv_X))).
+    Proof.
+      intros x.
+      unfold Rbar_rvplus, Rbar_rvopp, Rbar_pos_fun_part, Rbar_neg_fun_part; simpl.
+      assert (Rbar_opp 0 = 0).
+      {
+        unfold Rbar_opp.
+        rewrite Rbar_finite_eq.
+        lra.
+      }
+      unfold Rbar_max; repeat match_destr.
+      - rewrite H.
+        rewrite <- H in r0.
+        rewrite Rbar_opp_le in r0.
+        rewrite Rbar_plus_0_r.
+        apply Rbar_le_antisym; eauto.
+      - rewrite Rbar_opp_involutive.
+        now rewrite Rbar_plus_0_l.
+      - rewrite H.
+        now rewrite Rbar_plus_0_r.
+      - rewrite Rbar_opp_involutive.
+        rewrite <- H in n0.
+        rewrite Rbar_opp_le in n0.
+        apply Rbar_not_le_lt in n0.
+        apply Rbar_not_le_lt in n.
+        generalize (Rbar_lt_trans _ _ _ n n0); intros.
+        simpl in H0; lra.
+    Qed.
+
+  Lemma Rbar_Expectation_opp
+        (rv_X : Ts -> R) :
+    let Ex_rv := Rbar_Expectation rv_X in
+    let Ex_o_rv := Rbar_Expectation (Rbar_rvopp rv_X) in
+    Ex_o_rv = 
+    match Ex_rv with
+    | Some x => Some (Rbar_opp x)
+    | None => None
+    end.
+  Proof.
+    unfold Rbar_Expectation.
+    rewrite Rbar_NonnegExpectation_ext with (nnf2 := Rbar_neg_fun_pos rv_X).
+    - replace (Rbar_NonnegExpectation (Rbar_neg_fun_part (Rbar_rvopp rv_X) )) with
+          (Rbar_NonnegExpectation (Rbar_pos_fun_part rv_X)).
+      + unfold Rbar_minus'.
+        case_eq  (Rbar_NonnegExpectation (Rbar_pos_fun_part rv_X)); intros.
+        * case_eq  (Rbar_NonnegExpectation (Rbar_neg_fun_part rv_X)); intros; simpl; f_equal.
+          rewrite Rbar_finite_eq; lra.
+        * case_eq  (Rbar_NonnegExpectation (Rbar_neg_fun_part rv_X)); intros; simpl; f_equal.
+        * case_eq  (Rbar_NonnegExpectation (Rbar_neg_fun_part rv_X)); intros; simpl; f_equal.
+      + symmetry.
+        rewrite Rbar_NonnegExpectation_ext with (nnf2 := Rbar_pos_fun_pos rv_X).
+        * reflexivity.
+        * intro x.
+          unfold Rbar_neg_fun_part, Rbar_rvopp, Rbar_pos_fun_part; simpl.
+          now rewrite Ropp_involutive.
+    - intro x.
+      now unfold Rbar_neg_fun_part, Rbar_rvopp, Rbar_pos_fun_part; simpl.
+  Qed.
 
 End RbarExpectation.
 
