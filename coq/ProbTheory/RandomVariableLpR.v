@@ -3129,29 +3129,6 @@ Section complete.
     rewrite <- (is_finite_Rbar_NonnegExpectation_le _ _ H2); simpl; trivial.
   Qed.
 
-  Lemma Rbar_pos_fun_part_pos (rv_X : Ts -> Rbar) 
-        {nnf : Rbar_NonnegativeFunction rv_X} :
-    rv_eq rv_X (Rbar_pos_fun_part rv_X).
-  Proof.
-    unfold Rbar_pos_fun_part, Rbar_max.
-    intro x.
-    match_case; intros.
-    now apply Rbar_le_antisym.
-  Qed.
-
-  Lemma Rbar_neg_fun_part_pos (rv_X : Ts -> Rbar) 
-        {nnf : Rbar_NonnegativeFunction rv_X} :
-    rv_eq (Rbar_neg_fun_part rv_X) (fun x => (const 0) x).
-  Proof.
-    unfold Rbar_neg_fun_part, const, Rbar_max.
-    intro x.
-    specialize (nnf x).
-    rewrite <- Rbar_opp_le in nnf.
-    replace (Rbar_opp 0) with (Finite 0) in nnf by (simpl; apply Rbar_finite_eq; lra).
-    match_case; intros.
-    now apply Rbar_le_antisym.
-  Qed.
-
   Instance nnf_0 :
     (@Rbar_NonnegativeFunction Ts (fun x => const 0 x)).
   Proof.
@@ -3160,28 +3137,6 @@ Section complete.
     simpl.
     unfold const.
     lra.
-  Qed.
-
-  Lemma Rbar_Expectation_pos_pofrf (rv_X : Ts -> Rbar) 
-        {nnf : Rbar_NonnegativeFunction rv_X} :
-    Rbar_Expectation rv_X = Some (Rbar_NonnegExpectation rv_X).
-  Proof.
-    unfold Rbar_Expectation.
-    rewrite <- (Rbar_NonnegExpectation_ext _ _ (Rbar_pos_fun_part_pos rv_X)).
-    rewrite (Rbar_NonnegExpectation_ext _ _ (Rbar_neg_fun_part_pos rv_X)).
-    replace (Rbar_NonnegExpectation (const 0)) with (Finite 0).
-    - unfold Rbar_minus'.
-      simpl.
-      rewrite Ropp_0.
-      unfold Rbar_plus'.
-      match_case; intros.
-      + f_equal.
-        apply Rbar_finite_eq.
-        lra.
-    - generalize (Rbar_NonnegExpectation_const (Finite 0)); intros.
-      symmetry.
-      assert (0 <= 0) by lra.
-      apply (H H0).
   Qed.
 
   Lemma Rbar_IsLp_bounded n (rv_X1 rv_X2 : Ts -> Rbar)
