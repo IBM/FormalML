@@ -3059,8 +3059,8 @@ Qed.
       ; intros HH1.
       generalize (isce2 (G x) (classic_dec (G x)) (sa_G x))
       ; intros HH2.
-      rewrite (Rbar_Expectation_pos_pofrf _ _ (nnf:=_)) in HH1.
-      rewrite (Rbar_Expectation_pos_pofrf _ _ (nnf:=_)) in HH2.
+      rewrite (Rbar_Expectation_pos_pofrf _ (nnf:=_)) in HH1.
+      rewrite (Rbar_Expectation_pos_pofrf _ (nnf:=_)) in HH2.
       rewrite (Expectation_pos_pofrf _ (nnf:=_)) in HH1.
       rewrite (Expectation_pos_pofrf _ (nnf:=_)) in HH2.
       invcs HH1.
@@ -3074,17 +3074,49 @@ Qed.
     {
       intros x.
       specialize (eqq2 x).
-      assert (Rbar_NonnegExpectation_zero_pos:almostR2 ((prob_space_sa_sub prts _ sub)) eq (Rbar_rvmult (Rbar_rvminus ce1 ce2) (fun x0 : Ts => IG x x0)) (const 0)).
+      assert (Rbar_NonnegExpectation_zero_pos':almostR2 prts eq (Rbar_rvmult (Rbar_rvminus ce1 ce2) (fun x0 : Ts => IG x x0)) (const 0)).
       {
-        admit.
+        apply Rbar_Expectation_nonneg_zero_almost_zero; trivial.
+        - apply (RandomVariable_proper _ _ (Rbar_rvminus (Rbar_rvmult ce1 (IG x))
+                                                         (Rbar_rvmult ce2 (IG x)))).
+          + intros ?.
+            unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp, Rbar_rvmult; simpl.
+            unfold IG, EventIndicator; simpl.
+            match_destr.
+            * now repeat rewrite Rbar_mult_1_r.
+            * repeat rewrite Rbar_mult_0_r.
+              simpl.
+              f_equal; lra.
+          + apply Rbar_rvplus_rv.
+            * apply Rbar_rvmult_rv.
+              -- eapply RandomVariable_sa_sub; eauto.
+              -- apply borel_Rbar_borel.
+                 apply EventIndicator_pre_rv.
+                 now apply sub.
+            * apply Rbar_rvopp_rv.
+              apply Rbar_rvmult_rv.
+              -- eapply RandomVariable_sa_sub; eauto.
+              -- apply borel_Rbar_borel.
+                 apply EventIndicator_pre_rv.
+                 now apply sub.
+            * intros.
+              unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp, Rbar_rvmult; simpl.
+              unfold IG, EventIndicator; simpl.
+              match_destr.
+              -- repeat rewrite Rbar_mult_1_r.
+                 destruct g as [??].
+                 destruct (ce1 x0); destruct (ce2 x0); simpl in *; tauto.
+              -- now repeat rewrite Rbar_mult_0_r; simpl.
+
+        - now rewrite (Rbar_Expectation_pos_pofrf _ (nnf:=_)), eqq2.
       }
 
-      destruct Rbar_NonnegExpectation_zero_pos as [P [pone pH]].
+      destruct Rbar_NonnegExpectation_zero_pos' as [P [pone pH]].
       unfold const in pH.
       unfold Rbar_rvmult, IG, EventIndicator in pH.
       apply NNPP.
       intros neq.
-      assert (HH1:ps_P  (ProbSpace:=((prob_space_sa_sub prts _ sub))) (event_inter P (exist sa_sigma (G x) (sa_G x))) <> 0).
+      assert (HH1:ps_P  (ProbSpace:=prts) (event_inter P (event_sa_sub sub (exist sa_sigma (G x) (sa_G x)))) <> 0).
       {
         rewrite ps_inter_l1; trivial.
       } 
@@ -3156,7 +3188,7 @@ Qed.
       unfold Rbar_gt in *.
       eapply Rbar_lt_le_trans; try eapply H0.
       apply le_INR; lia.
-  Admitted.
+  Qed.
 
   Local Existing Instance Rbar_le_part.
   
