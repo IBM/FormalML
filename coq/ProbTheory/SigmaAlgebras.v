@@ -428,67 +428,92 @@ Proof.
     reflexivity.
 Qed.
 
-Definition pre_event_pullback {X Y:Type} (f:X->Y) (ex:pre_event X) : pre_event Y
+Definition pre_event_push_forward {X Y:Type} (f:X->Y) (ex:pre_event X) : pre_event Y
   := fun y => exists x, f x = y /\ ex x.
 
-Instance pre_event_pullback_proper {X Y:Type} (f:X->Y) : Proper (equiv ==> equiv) (pre_event_pullback f).
+Instance pre_event_push_forward_proper {X Y:Type} (f:X->Y) : Proper (equiv ==> equiv) (pre_event_push_forward f).
 Proof.
   firstorder congruence.
 Qed.
 
-Instance pullback_sa {X Y:Type} (sa:SigmaAlgebra Y) (f:X->Y) : SigmaAlgebra X
-  := generated_sa (fun e => sa_sigma (pre_event_pullback f e)).
+Definition pullback_sa_sigma {X Y:Type} (sa:SigmaAlgebra Y) (f:X->Y) : pre_event X -> Prop
+  := fun (xe:pre_event X) =>
+       exists ye:pre_event Y,
+         sa_sigma (SigmaAlgebra:=sa) ye /\
+         forall a, xe a <-> ye (f a).
 
-Instance pullback_sa_proper {X Y:Type} : Proper (equiv ==> (pointwise_relation X equiv) ==> equiv) (@pullback_sa X Y).
-Proof.
-  unfold pointwise_relation, equiv.
-  repeat red; intros; simpl.
-  split; intros HH; intros.
-  - apply HH.
-    revert H1.
-    apply all_included_proper; intros e.
-    unfold pre_event_pullback.
-    unfold sa_equiv in H.
-    
-    split; intros HH2.
-    + apply H.
-      revert HH2.
-      apply sa_proper.
-      red; intros.
-      split; intros [?[??]]; subst; eauto.
-    + apply H.
-      revert HH2.
-      apply sa_proper.
-      red; intros.
-      split; intros [?[??]]; subst; eauto.
-  - apply HH.
-    revert H1.
-    apply all_included_proper; intros e.
-    unfold pre_event_pullback.
-    unfold sa_equiv in H.
-    
-    split; intros HH2.
-    + apply H.
-      revert HH2.
-      apply sa_proper.
-      red; intros.
-      split; intros [?[??]]; subst; eauto.
-    + apply H.
-      revert HH2.
-      apply sa_proper.
-      red; intros.
-      split; intros [?[??]]; subst; eauto.
+Program Instance pullback_sa {X Y:Type} (sa:SigmaAlgebra Y) (f:X->Y) : SigmaAlgebra X
+  := {|
+  sa_sigma := pullback_sa_sigma sa f |}.
+Next Obligation.
+  unfold pullback_sa_sigma in *.
+  apply choice in H.
+  destruct H as [ce Hce].
+  exists (pre_union_of_collection ce).
+  split.
+  - apply sa_countable_union; intros n.
+    apply Hce.
+  - intros a.
+    unfold pre_union_of_collection.
+    split; intros [n ?]
+    ; exists n
+    ; now apply Hce.
+Qed.
+Next Obligation.
+  unfold pullback_sa_sigma in *.
+  destruct H as [y [??]].
+  exists (pre_event_complement y).
+  split.
+  - now apply sa_complement.
+  - unfold pre_event_complement.
+    intros a.
+    split; intros HH1 HH2
+    ; now apply H0 in HH2.
+Qed.
+Next Obligation.
+  unfold pullback_sa_sigma in *.
+  exists pre_Ω.
+  split.
+  - apply sa_all.
+  - unfold pre_Ω.
+    tauto.
 Qed.
 
-Lemma pullback_sa_pullback {X Y:Type} (sa:SigmaAlgebra Y) (f:X->Y) x :
-  sa_sigma (pre_event_pullback f x) ->
-  sa_sigma (SigmaAlgebra:=pullback_sa sa f) x.
+Instance pullback_sa_sigma_proper {X Y:Type} :
+  Proper (equiv ==> (pointwise_relation X equiv) ==> equiv)
+         (@pullback_sa_sigma X Y).
+Proof.
+  unfold pointwise_relation, equiv, pullback_sa_sigma.
+  repeat red; intros; simpl.
+  split; intros [ye [??]].
+  - exists ye.
+    split.
+    + now apply H.
+    + now intros; rewrite H2, H0.
+  - exists ye.
+    split.
+    + now apply H.
+    + now intros; rewrite H2, H0.
+Qed.
+  
+Instance pullback_sa_proper {X Y:Type} :
+  Proper (equiv ==> (pointwise_relation X equiv) ==> equiv)
+         (@pullback_sa X Y).
+Proof.
+  unfold pointwise_relation, equiv.
+  apply pullback_sa_sigma_proper.
+Qed.
+
+Lemma pullback_sa_pullback {X Y:Type} (sa:SigmaAlgebra Y) (f:X->Y) (y:pre_event Y) :
+  sa_sigma y -> sa_sigma (SigmaAlgebra:=pullback_sa sa f) (pre_event_preimage f y).
 Proof.
   simpl.
-  unfold pre_event_pullback.
-  intros ?? HH.
-  now apply (HH x).
-Qed.  
+  unfold pre_event_preimage, pullback_sa_sigma.
+  intros say.
+  exists y.
+  split; trivial.
+  reflexivity.
+Qed.
 
 Definition is_countable {T} (e:pre_event T)
   := exists (coll:nat -> T -> Prop),

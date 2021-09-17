@@ -493,6 +493,33 @@ Section Event_restricted.
 
  End Event_restricted.
 
-  
+Section pullback.
+
+  Instance pullback_rv {Ts:Type} {Td:Type}
+      (cod: SigmaAlgebra Td)
+      (f: Ts -> Td) : RandomVariable (pullback_sa cod f) cod f.
+  Proof.
+    red; intros.
+    apply pullback_sa_pullback.
+    now destruct B.
+  Qed.
+
+  Lemma pullback_rv_sub
+        {Ts:Type} {Td:Type}
+        (dom : SigmaAlgebra Ts)
+        (cod: SigmaAlgebra Td)
+        (f: Ts -> Td) :
+    RandomVariable dom cod f ->
+    sa_sub (pullback_sa cod f) dom.
+  Proof.
+    intros frv x [y[say yeqq]]; simpl in *.
+    apply (sa_proper _ (fun a => y (f a))).
+    - intros ?.
+      now rewrite yeqq.
+    - specialize (frv (exist _ _ say)).
+      apply frv.
+  Qed.
+
+End pullback.
 
           
