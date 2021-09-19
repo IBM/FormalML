@@ -3328,14 +3328,15 @@ Qed.
        ; try (simpl; trivial; f_equal; lra)).
   Qed.
     
-  Lemma is_Rbar_conditional_expectation_le
+  Lemma is_Rbar_conditional_expectation_almostfinite_le
       {dom2 : SigmaAlgebra Ts}
       (sub : sa_sub dom2 dom)
       (f : Ts->R)
       (ce1 ce2 : Ts -> Rbar)
       {rvf : RandomVariable dom borel_sa f}
       {rvce1 : RandomVariable dom2 Rbar_borel_sa ce1}
-      {rvce2 : RandomVariable dom2 Rbar_borel_sa ce2} :
+      {rvce2 : RandomVariable dom2 Rbar_borel_sa ce2}
+      (isf2:almost (prob_space_sa_sub prts _ sub) (fun a => is_finite (ce2 a))) :
     is_Rbar_conditional_expectation prts sub f ce1 ->
     is_Rbar_conditional_expectation prts sub f ce2 ->
     almostR2 (prob_space_sa_sub prts _ sub) Rbar_le ce1 ce2.
@@ -3344,9 +3345,7 @@ Qed.
     unfold is_Rbar_conditional_expectation; intros isce1 isce2.
 
     pose (G := fun x:R => pre_event_inter (fun omega => Rbar_gt (ce1 omega) (ce2 omega))
-                                       (pre_event_inter
-                                          (fun omega => Rbar_ge x ((Rbar_rvabs ce1) omega))
-                                          (fun omega => Rbar_ge x ((Rbar_rvabs ce2) omega)))).
+                                          (fun omega => Rbar_ge x ((Rbar_rvabs ce2) omega))).
     assert (sa_G : forall x:R, sa_sigma (G x)).
     {
       admit.
@@ -3360,13 +3359,14 @@ Qed.
       destruct (classic_dec (G x) a); simpl.
       - rewrite Rbar_mult_1_r.
         unfold G, Rbar_rvabs in g.
-        destruct g as [?[??]].
+        destruct g as [??].
         destruct (ce1 a); destruct (ce2 a); simpl in *; try tauto.
         lra.
       - now rewrite Rbar_mult_0_r.
     } 
 
-    assert (isfe1abs : forall x,
+    (*
+      assert (isfe1abs : forall x,
                match Rbar_Expectation (Rbar_rvabs (Rbar_rvmult ce1 (EventIndicator (classic_dec (G x))))) with
                    | Some (Finite _) => True
                    | _ => False
@@ -3388,7 +3388,7 @@ Qed.
         unfold Rbar_rvabs, Rbar_rvmult, const, EventIndicator.
         match_destr.
         + rewrite Rbar_mult_1_r.
-          destruct g as [?[??]].
+          destruct g as [??].
           unfold Rbar_rvabs in *.
           destruct (Rbar_abs (ce1 a)); simpl in *; try tauto.
           etransitivity; try eapply H0.
@@ -3397,7 +3397,7 @@ Qed.
           rewrite Rabs_R0.
           apply Rabs_pos.
     } 
-
+*)
     assert (isfe2abs : forall x,
                match Rbar_Expectation (Rbar_rvabs (Rbar_rvmult ce2 (EventIndicator (classic_dec (G x))))) with
                    | Some (Finite _) => True
@@ -3420,24 +3420,14 @@ Qed.
         unfold Rbar_rvabs, Rbar_rvmult, const, EventIndicator.
         match_destr.
         + rewrite Rbar_mult_1_r.
-          destruct g as [?[??]].
+          destruct g as [??].
           unfold Rbar_rvabs in *.
           destruct (Rbar_abs (ce2 a)); simpl in *; try tauto.
-          etransitivity; try eapply H1.
+          etransitivity; try eapply H0.
           apply RRle_abs.
         + rewrite Rbar_mult_0_r; simpl.
           rewrite Rabs_R0.
           apply Rabs_pos.
-    } 
-
-    assert (isfe1 : forall x,
-               match Rbar_Expectation (Rbar_rvmult ce1 (EventIndicator (classic_dec (G x)))) with
-                   | Some (Finite _) => True
-                   | _ => False
-               end).
-    {
-      (* by Rbar equivalent of Expectation_abs_then_finite *)
-      admit.
     } 
 
     assert (isfe2 : forall x,
@@ -3446,10 +3436,21 @@ Qed.
                    | _ => False
                end).
     {
-      (* by Rbar equivalent of Expectation_abs_then_finite *)
-      admit.
-    }
+      intros.
+      apply Rbar_Expectation_abs_then_finite.
+      apply isfe2abs.
+    } 
 
+    assert (eqq0:forall x, rv_eq (Rbar_rvmult (Rbar_rvminus ce1 ce2) (EventIndicator (classic_dec (G x))))
+                            ((Rbar_rvminus (Rbar_rvmult ce1 (EventIndicator (classic_dec (G x))))
+                             (Rbar_rvmult ce2 (EventIndicator (classic_dec (G x))))))).
+    {
+      intros x a.
+      unfold Rbar_rvminus, Rbar_rvmult, Rbar_rvplus, Rbar_rvopp.
+      rewrite Rbar_mult_plus_distr_fin_r.
+      now rewrite Rbar_mult_opp_l.
+    } 
+              
     assert (eqqlin:forall x, Rbar_Expectation (Rbar_rvmult (Rbar_rvminus ce1 ce2) (EventIndicator (classic_dec (G x)))) =
 
                  match Rbar_Expectation (Rbar_rvmult ce1 (EventIndicator (classic_dec (G x)))),
@@ -3463,11 +3464,7 @@ Qed.
       transitivity (Rbar_Expectation (Rbar_rvminus (Rbar_rvmult ce1 (EventIndicator (classic_dec (G x))))
                                                    (Rbar_rvmult ce2 (EventIndicator (classic_dec (G x)))))).
       {
-        apply Rbar_Expectation_ext.
-        intros a.
-        unfold Rbar_rvminus, Rbar_rvmult, Rbar_rvplus, Rbar_rvopp.
-        rewrite Rbar_mult_plus_distr_fin_r.
-        now rewrite Rbar_mult_opp_l.
+        now apply Rbar_Expectation_ext.
       } 
       (* linearity of finite Rbar expectation *)
       admit.
@@ -3479,10 +3476,10 @@ Qed.
       rewrite eqqlin.
       specialize (isce1 _ (classic_dec _) (sa_G x)).
       specialize (isce2 _ (classic_dec _) (sa_G x)).
-      specialize (isfe1 x).
+      specialize (isfe2 x).
       rewrite <- isce1, <- isce2.
-      rewrite <- isce1 in isfe1.
-      match_destr_in isfe1; try tauto.
+      rewrite <- isce2 in isfe2.
+      match_destr_in isfe2; try tauto.
       now rewrite Rbar_minus_eq_0.
     }
 
@@ -3491,7 +3488,24 @@ Qed.
                              (Rbar_rvmult (Rbar_rvminus ce1 ce2) (fun x0 : Ts => EventIndicator (classic_dec (G x)) x0))).
     {
       intros x.
-      admit.
+      eapply RandomVariable_proper; try eapply eqq0.
+      apply Rbar_rvplus_rv.
+      - apply Rbar_rvmult_rv; trivial.
+        apply Real_Rbar_rv.
+        now apply EventIndicator_pre_rv.
+      - apply Rbar_rvopp_rv.
+        apply Rbar_rvmult_rv; trivial.
+        apply Real_Rbar_rv.
+        now apply EventIndicator_pre_rv.
+      - intros a.
+        unfold Rbar_rvmult, Rbar_rvopp, EventIndicator.
+        match_destr.
+        + repeat rewrite Rbar_mult_1_r.
+          destruct g.
+          unfold Rbar_rvabs in *.
+          destruct (ce1 a); destruct (ce2 a); simpl in *; trivial.
+        + repeat rewrite Rbar_mult_0_r.
+          now simpl.
     } 
 
     assert (psG0:forall x, ps_P (ProbSpace:=((prob_space_sa_sub prts _ sub))) (exist _ (G x) (sa_G x)) = 0).
@@ -3522,6 +3536,97 @@ Qed.
       - rewrite Rbar_Expectation_prob_space_sa_sub; trivial.
     }
 
+    destruct isf2 as [P [Pone ?]].
+    assert (psG0' : forall x, ps_P
+                              (event_inter
+                                 (event_sa_sub sub (exist _ (G x) (sa_G x)))
+                                 (event_sa_sub sub P))
+                               = 0).
+    {
+      intros a; simpl in *.
+      now rewrite ps_inter_r1.
+    }
+
+    generalize (is_lim_ascending prts (fun x => (event_inter
+                                 (event_sa_sub sub (exist _ (G (INR x)) (sa_G (INR x))))
+                                 (exist _ _ (sa_finite_Rbar ce2 (RandomVariable_sa_sub _ sub _))))))
+    ; intros HH.
+    cut_to HH.
+    - apply (is_lim_seq_ext _ (fun _ => 0)) in HH.
+      + apply is_lim_seq_unique in HH.
+        rewrite Lim_seq_const in HH.
+        assert (eqq3:pre_event_equiv
+                       (union_of_collection
+                          (fun x : nat => event_inter (event_sa_sub sub (exist sa_sigma (G (INR x)) (sa_G (INR x)))) (exist _ _ (sa_finite_Rbar ce2 (RandomVariable_sa_sub _ sub _)))))
+                       (pre_event_inter 
+                          (fun omega : Ts => Rbar_gt (ce1 omega) (ce2 omega))
+                          (fun a => is_finite (ce2 a)))).
+        { 
+          intros a.
+          split; simpl.
+          - intros [?[[??]?]].
+            split; trivial.
+          - unfold G.
+            intros [??].
+            exists (Z.to_nat (up (Rabs (ce2 a)))).
+            split; trivial.
+            split; trivial.
+            unfold Rbar_ge, Rbar_rvabs.
+            rewrite <- H1; simpl.
+            rewrite INR_up_pos.
+            * apply Rge_le.
+              left. apply archimed.
+            * apply Rle_ge.
+              apply Rabs_pos.
+        } 
+        destruct (sa_proper dom2 _ _ eqq3) as [sa1 _].
+        cut_to sa1.
+        * rewrite (ps_proper _ (event_sa_sub sub ((exist _ _ sa1)))) in HH by (now red).
+          generalize (ps_complement (prob_space_sa_sub _ _ sub)
+                                    ((exist _ _ sa1)))
+          ; intros eqq4.
+          invcs HH.
+          simpl in *.
+          rewrite <- H1 in eqq4.
+          field_simplify in eqq4.
+          eexists.
+          split.
+          -- rewrite ps_inter_r1.
+             ++ apply eqq4.
+             ++ apply Pone.
+          -- intros a; simpl.
+             unfold pre_event_complement.
+             unfold Rbar_gt.
+             intros [??].
+             apply not_and_or in H0.
+             specialize (H _ H2).
+             destruct H0; try tauto.
+             now apply Rbar_not_lt_le.
+        * apply  sa_countable_union
+          ; intros n.
+          simpl.
+          apply sa_inter; trivial.
+          now apply sa_finite_Rbar.
+      + intros n.
+        simpl in *.
+        rewrite ps_inter_r1; trivial.
+        erewrite <- ps_inter_r1; try eapply Pone.
+        rewrite ps_proper; try eapply Pone.
+        intros ?; simpl.
+        split.
+        * intros [??]; trivial.
+        * intros; split; auto.
+    - intros ??.
+      unfold G.
+      intros [[??]?].
+      split; trivial.
+      split; trivial.
+      unfold Rbar_gt, Rbar_ge in *.
+      eapply Rbar_le_trans; try eapply H1.
+      apply le_INR; lia.
+  Admitted.
+
+    
     generalize (is_lim_ascending (prob_space_sa_sub prts _ sub) (fun n => exist _ _ (sa_G (INR n))))
     ; intros HH.
     cut_to HH.
