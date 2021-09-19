@@ -135,7 +135,7 @@ Proof.
   now rewrite Rabs_minus_sym.
 Qed.
 
-Lemma LpRRV_dist_triang p (bigp : 1 <= p) (x y z : LpRRV prts p) :
+Lemma LpRRV_dist_triang {p} (bigp : 1 <= p) (x y z : LpRRV prts p) :
   LpRRV_dist (p:=bignneg _ bigp) x z <= LpRRV_dist (p:=bignneg _ bigp) x y + LpRRV_dist (p:=bignneg _ bigp) y z.
 Proof.
   unfold LpRRV_dist.
@@ -170,7 +170,7 @@ Definition LpRRV_filter_from_seq {dom2:SigmaAlgebra Ts} {prts2 : ProbSpace dom2}
      apply filter_ex in H3.
      unfold LpRRVball in H3.
      destruct H3 as [? [? ?]].
-     generalize (LpRRV_dist_triang x x0 y); intros.
+     generalize (LpRRV_dist_triang big2 x x0 y); intros.
      unfold LpRRV_dist in H5.
      eapply Rle_lt_trans.
      apply H5.
@@ -195,11 +195,11 @@ Definition LpRRV_filter_from_seq {dom2:SigmaAlgebra Ts} {prts2 : ProbSpace dom2}
      apply filter_ex in H7.
      unfold LpRRVball in H7.
      destruct H7 as [? [? ?]].
-     generalize (LpRRV_dist_triang x x0 x1); intros.
-     generalize (LpRRV_dist_triang x1 y0 y); intros.
+     generalize (LpRRV_dist_triang big2 x x0 x1); intros.
+     generalize (LpRRV_dist_triang big2 x1 y0 y); intros.
      unfold LpRRV_dist in H9.
      unfold LpRRV_dist in H10.
-     generalize (LpRRV_dist_triang x x1 y); intros.
+     generalize (LpRRV_dist_triang big2 x x1 y); intros.
      unfold LpRRV_dist in H11.
      apply LpRRV_ball_sym in H4; unfold LpRRVball in H4; simpl in H4.
      simpl in H7.
@@ -684,7 +684,7 @@ Proof.
     now exists x.
   }
   pose (f := fun (n : nat) => proj1_sig (X n)).
-  assert (is_lim_seq (fun n => LpRRV_dist (f n) x0) 0).
+  assert (is_lim_seq (fun n => LpRRV_dist (p:=bignneg _ big2) (f n) x0) 0).
   {
     apply is_lim_seq_spec.
     unfold is_lim_seq'.
@@ -794,7 +794,7 @@ Proof.
     intros n nN ?.
     destruct (X n) as [Xn [XnH XnRv]]; simpl in *.
     unfold pack_LpRRV; simpl.
-    generalize (LpRRV_dist_triang x x0 Xn)
+    generalize (LpRRV_dist_triang big2 x x0 Xn)
     ; intros triag.
     unfold LpRRV_dist in triag.
     unfold Hierarchy.ball; simpl.
@@ -843,7 +843,7 @@ Proof.
   assert (forall (eps:posreal),
              exists (N:nat),
                forall (n:nat), (n>=N)%nat ->
-                               LpRRV_dist (f n) x0 < eps).
+                               LpRRV_dist (p:=bignneg _ big2) (f n) x0 < eps).
   {
     intros.
     apply is_lim_seq_spec in H0.
@@ -855,7 +855,7 @@ Proof.
   }
 
   assert (F3limball:forall (eps:posreal),
-             (LpRRV_dist (prob_space_sa_sub_LpRRV_lift dom2 sub (LpRRV_lim prts2 big2 F3)) x0) < eps).
+             (LpRRV_dist (p:=bignneg _ big2) (prob_space_sa_sub_LpRRV_lift dom2 sub (LpRRV_lim prts2 big2 F3)) x0) < eps).
   {
     intros.
     assert (0 < eps) by apply cond_pos.
@@ -868,7 +868,7 @@ Proof.
     cut_to H6; try lia.
     unfold F3, F2, F in H5.
     unfold LpRRV_filter_from_seq in H5.
-    generalize (LpRRV_dist_triang (prob_space_sa_sub_LpRRV_lift dom2 sub (LpRRV_lim prts2 big2 F3)) (f (max x x1)) x0); intros.
+    generalize (LpRRV_dist_triang (p:=bignneg _ big2) big2 (prob_space_sa_sub_LpRRV_lift dom2 sub (LpRRV_lim prts2 big2 F3)) (f (max x x1)) x0); intros.
     rewrite Rplus_comm in H7.
     eapply Rle_lt_trans.
     apply H7.
