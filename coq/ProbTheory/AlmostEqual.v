@@ -3,7 +3,7 @@ Require Import Equivalence.
 Require Import Program.Basics.
 Require Import Lra.
 Require Import Reals.
-Require Import Classical.
+Require Import Classical ClassicalChoice.
 
 Require Import BorelSigmaAlgebra.
 Require Import ProbSpace.
@@ -124,7 +124,7 @@ Section almost.
       lra.
   Qed.
 
-  Lemma almost_and {P1 P2:Ts->Prop} :
+  Lemma almost_and {P1 P2:pre_event Ts} :
     almost P1 ->
     almost P2 ->
     almost (pre_event_inter P1 P2).
@@ -138,6 +138,22 @@ Section almost.
       split; auto.
   Qed.
 
+  Lemma almost_countable_and {Pn:nat -> pre_event Ts} :
+    (forall n, almost (Pn n)) ->
+    almost (pre_inter_of_collection Pn).
+  Proof.
+    intros a.
+    apply choice in a.
+    destruct a as [pn ?].
+    exists (inter_of_collection pn).
+    split.
+    - apply ps_one_countable_inter; intros.
+      apply H.
+    - intros ?? n.
+      apply (H n).
+      apply H0.
+  Qed.
+  
   Lemma almost_impl {P1 P2:Ts->Prop} :
     almost P1 ->
     almost (fun x => P1 x -> P2 x) ->
