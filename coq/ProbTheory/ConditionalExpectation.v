@@ -3348,6 +3348,8 @@ Qed.
                                           (fun omega => Rbar_ge x ((Rbar_rvabs ce2) omega))).
     assert (sa_G : forall x:R, sa_sigma (G x)).
     {
+      intros a.
+      unfold G.
       admit.
     }
 
@@ -3439,6 +3441,20 @@ Qed.
       intros.
       apply Rbar_Expectation_abs_then_finite.
       apply isfe2abs.
+    } 
+
+    assert (isfe1 : forall x,
+               match Rbar_Expectation (Rbar_rvmult ce1 (EventIndicator (classic_dec (G x)))) with
+               | Some (Finite _) => True
+               | _ => False
+               end).
+    {
+      intros a.
+      specialize (isfe2 a).
+      specialize (isce1 _ (classic_dec _) (sa_G a)).
+      specialize (isce2 _ (classic_dec _) (sa_G a)).
+      rewrite <- isce1.
+      now rewrite <- isce2 in isfe2.
     } 
 
     assert (eqq0:forall x, rv_eq (Rbar_rvmult (Rbar_rvminus ce1 ce2) (EventIndicator (classic_dec (G x))))
