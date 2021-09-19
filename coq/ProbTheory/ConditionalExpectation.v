@@ -94,65 +94,14 @@ Proof.
   now apply sub.
 Qed.
 
-Lemma almostR2_eq_plus_inv {x y z} :
-  almostR2 prts eq z (rvplus x y) ->
-  exists x' y',
-    almostR2 prts eq x x' /\
-    almostR2 prts eq y y' /\ 
-    rv_eq z (rvplus x' y').
-Proof.
-  intros [p [pone px]].
-  exists (fun a => if ClassicalDescription.excluded_middle_informative (p a) then x a else 0).
-  exists (fun a => if ClassicalDescription.excluded_middle_informative (p a) then y a else z a).
-  split; [| split].
-  - exists p.
-    split; trivial.
-    intros ??.
-    match_destr.
-    tauto.
-  - exists p.
-    split; trivial.
-    intros ??.
-    match_destr.
-    tauto.
-  - intros a; simpl.
-    rv_unfold.
-    match_destr.
-    + auto.
-    + lra.
-Qed.
-
-Lemma almostR2_eq_opp_inv {x z} :
-  almostR2 prts eq z (rvopp x) ->
-  exists x',
-    almostR2 prts eq x x' /\
-    rv_eq z (rvopp x').
-Proof.
-  intros [p [pone px]].
-
-  exists (fun a => if ClassicalDescription.excluded_middle_informative (p a) then x a else - z a).
-  split.
-  - exists p.
-    split; trivial.
-    intros ??.
-    match_destr.
-    tauto.
-  - intros ?.
-    rv_unfold.
-    match_destr.
-    + auto.
-    + lra.
-Qed.
-
-
 Definition ortho_phi  (dom2 : SigmaAlgebra Ts)
            : LpRRVq prts 2 -> Prop
            := (fun y:LpRRVq prts 2 =>
                     exists z, Quot _ z = y /\
                          RandomVariable dom2 borel_sa (LpRRV_rv_X prts z)).
 
-Lemma LpRRVnorm_minus_sym  (x y : LpRRV prts 2) :
-  LpRRVnorm prts (LpRRVminus prts (p := bignneg 2 big2) x y) = LpRRVnorm prts (LpRRVminus prts (p := bignneg 2 big2) y x).
+Lemma LpRRVnorm_minus_sym {p:nonnegreal} (x y : LpRRV prts p) :
+  LpRRVnorm prts (LpRRVminus prts x y) = LpRRVnorm prts (LpRRVminus prts y x).
 Proof.
   unfold LpRRVnorm, LpRRVminus.
   f_equal.
@@ -163,16 +112,16 @@ Proof.
   apply Rabs_minus_sym.
  Qed.
 
-Definition LpRRV_dist (x y : LpRRV prts 2) := 
-  LpRRVnorm prts (LpRRVminus prts (p := bignneg 2 big2) x y).
+Definition LpRRV_dist {p:nonnegreal} (x y : LpRRV prts p) := 
+  LpRRVnorm prts (LpRRVminus prts x y).
 
-Lemma LpRRV_norm_dist (x y : LpRRV prts 2) :
-  LpRRV_dist x y = LpRRVnorm prts (LpRRVminus prts (p := bignneg 2 big2) x y).  
+Lemma LpRRV_norm_dist {p:nonnegreal} (x y : LpRRV prts p) :
+  LpRRV_dist x y = LpRRVnorm prts (LpRRVminus prts x y).  
 Proof.
   easy.
 Qed.
   
-Lemma LpRRV_dist_comm (x y : LpRRV prts 2) :
+Lemma LpRRV_dist_comm {p:nonnegreal} (x y : LpRRV prts p) :
   LpRRV_dist x y = LpRRV_dist y x.
 Proof.
   unfold LpRRV_dist, LpRRVnorm, LpRRVminus.
@@ -186,17 +135,17 @@ Proof.
   now rewrite Rabs_minus_sym.
 Qed.
 
-Lemma LpRRV_dist_triang (x y z : LpRRV prts 2) :
-  LpRRV_dist x z <= LpRRV_dist x y + LpRRV_dist y z.
+Lemma LpRRV_dist_triang p (bigp : 1 <= p) (x y z : LpRRV prts p) :
+  LpRRV_dist (p:=bignneg _ bigp) x z <= LpRRV_dist (p:=bignneg _ bigp) x y + LpRRV_dist (p:=bignneg _ bigp) y z.
 Proof.
   unfold LpRRV_dist.
-  generalize (LpRRV_norm_plus prts big2 (LpRRVminus prts (p := bignneg 2 big2) x y) (LpRRVminus prts (p := bignneg 2 big2) y z)); intros.
+  generalize (LpRRV_norm_plus prts bigp (LpRRVminus prts (p := bignneg _ bigp) x y) (LpRRVminus prts (p := bignneg _ bigp) y z)); intros.
   do 2 rewrite LpRRVminus_plus in H.
   rewrite <- LpRRV_plus_assoc in H.
-  rewrite (LpRRV_plus_assoc prts (p := bignneg 2 big2) (LpRRVopp prts y) _) in H.     
-  rewrite (LpRRV_plus_comm prts (p := bignneg 2 big2) _ y) in H.
+  rewrite (LpRRV_plus_assoc prts (p := bignneg _ bigp) (LpRRVopp prts y) _) in H.     
+  rewrite (LpRRV_plus_comm prts (p :=  bignneg _ bigp) _ y) in H.
   rewrite LpRRV_plus_inv in H.
-  rewrite (LpRRV_plus_comm prts (p := bignneg 2 big2) (LpRRVconst prts 0) _ ) in H.
+  rewrite (LpRRV_plus_comm prts (p := bignneg _ bigp) (LpRRVconst prts 0) _ ) in H.
   rewrite LpRRV_plus_zero in H.
   now repeat rewrite <- LpRRVminus_plus in H.
 Qed.  

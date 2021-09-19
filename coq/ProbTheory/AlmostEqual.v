@@ -418,6 +418,60 @@ Proof.
   lra.
 Qed.
 
+Lemma almostR2_eq_plus_inv  {Ts:Type} 
+      {dom: SigmaAlgebra Ts}
+      (prts: ProbSpace dom) {x y z} :
+  almostR2 prts eq z (rvplus x y) ->
+  exists x' y',
+    almostR2 prts eq x x' /\
+    almostR2 prts eq y y' /\ 
+    rv_eq z (rvplus x' y').
+Proof.
+  intros [p [pone px]].
+  exists (fun a => if ClassicalDescription.excluded_middle_informative (p a) then x a else 0).
+  exists (fun a => if ClassicalDescription.excluded_middle_informative (p a) then y a else z a).
+  split; [| split].
+  - exists p.
+    split; trivial.
+    intros ??.
+    match_destr.
+    tauto.
+  - exists p.
+    split; trivial.
+    intros ??.
+    match_destr.
+    tauto.
+  - intros a; simpl.
+    rv_unfold.
+    match_destr.
+    + auto.
+    + lra.
+Qed.
+
+Lemma almostR2_eq_opp_inv  {Ts:Type} 
+      {dom: SigmaAlgebra Ts}
+      (prts: ProbSpace dom) {x z} :
+  almostR2 prts eq z (rvopp x) ->
+  exists x',
+    almostR2 prts eq x x' /\
+    rv_eq z (rvopp x').
+Proof.
+  intros [p [pone px]].
+
+  exists (fun a => if ClassicalDescription.excluded_middle_informative (p a) then x a else - z a).
+  split.
+  - exists p.
+    split; trivial.
+    intros ??.
+    match_destr.
+    tauto.
+  - intros ?.
+    rv_unfold.
+    match_destr.
+    + auto.
+    + lra.
+Qed.
+
 End borel_almostR2_eq.
 
 
