@@ -9,6 +9,7 @@ Require Import BorelSigmaAlgebra.
 Require Import ProbSpace.
 Require Import RandomVariable.
 Require Import RealRandomVariable.
+Require Import Coquelicot.Rbar.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -280,16 +281,19 @@ Section almostR2_part.
     firstorder.
   Qed.
 
+  Definition classic_dec {T : Type} (P : pre_event T)
+    := (fun a => ClassicalDescription.excluded_middle_informative (P a)).
+
   Lemma almost_map_split {B} {f:Ts->B} {P:B->Prop} :
     almost prts (fun x => P (f x)) ->
     exists f', almostR2 prts eq f f' /\
-          forall x, P (f' x).
+          (forall x, P (f' x)).
   Proof.
     intros aP.
     destruct (almost_witness _ aP) as [x Px].
     destruct aP as [p [pone ph]].
     exists (fun ts:Ts => if ClassicalDescription.excluded_middle_informative (p ts) then f ts else (f x)).
-    split.
+    repeat split.
     - exists p.
       split; trivial.
       intros.
@@ -298,6 +302,71 @@ Section almostR2_part.
       match_destr; eauto.
   Qed.
 
+  Lemma almost_map_R_split {f:Ts->R} {P:R->Prop} :
+    almost prts (fun x => P (f x)) ->
+    exists f', almostR2 prts eq f f' /\
+          (forall x, P (f' x)) /\
+          (RandomVariable dom borel_sa f -> RandomVariable dom borel_sa f').
+  Proof.
+    intros aP.
+    destruct (almost_witness _ aP) as [x Px].
+    destruct aP as [p [pone ph]].
+    exists (rvchoice (fun x => if Req_EM_T (((EventIndicator (classic_dec p))) x) 0 then false else true)
+
+                f
+                (const (f x))
+             ).
+    repeat split.
+    - exists p.
+      split; trivial.
+      intros.
+      rv_unfold.
+      destruct (classic_dec p x0); try tauto.
+      destruct (Req_EM_T 1 0); try lra; tauto.
+    - intros.
+      rv_unfold.
+      destruct (classic_dec p x0); try tauto.
+      + destruct (Req_EM_T 1 0); try lra; auto.
+      + destruct (Req_EM_T 0 0); try lra; auto.
+    - intros.
+      apply measurable_rv.
+      eapply rvchoice_rv; trivial.
+      + apply EventIndicator_rv.
+      + typeclasses eauto.
+  Qed.
+
+  Lemma almost_map_Rbar_split {f:Ts->Rbar} {P:Rbar->Prop} :
+    almost prts (fun x => P (f x)) ->
+    exists f', almostR2 prts eq f f' /\
+          (forall x, P (f' x)) /\
+          (RandomVariable dom Rbar_borel_sa f -> RandomVariable dom Rbar_borel_sa f').
+  Proof.
+    intros aP.
+    destruct (almost_witness _ aP) as [x Px].
+    destruct aP as [p [pone ph]].
+    exists (Rbar_rvchoice (fun x => if Req_EM_T (((EventIndicator (classic_dec p))) x) 0 then false else true)
+
+                f
+                (const (f x))
+             ).
+    repeat split.
+    - exists p.
+      split; trivial.
+      intros.
+      rv_unfold; unfold Rbar_rvchoice.
+      destruct (classic_dec p x0); try tauto.
+      destruct (Req_EM_T 1 0); try lra; try tauto.
+    - intros.
+      rv_unfold; unfold Rbar_rvchoice.
+      destruct (classic_dec p x0); try tauto.
+      + destruct (Req_EM_T 1 0); try lra; auto.
+      + destruct (Req_EM_T 0 0); try lra; auto.
+    - intros.
+      apply Rbar_measurable_rv.
+      eapply Rbar_rvchoice_rv; trivial.
+      + apply EventIndicator_rv.
+      + typeclasses eauto.
+  Qed.
 
 End almostR2_part.
 
