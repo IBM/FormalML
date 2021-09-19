@@ -155,7 +155,7 @@ Section almost.
       apply H0.
   Qed.
   
-  Lemma almost_impl {P1 P2:Ts->Prop} :
+  Lemma almost_impl' {P1 P2:Ts->Prop} :
     almost P1 ->
     almost (fun x => P1 x -> P2 x) ->
     almost P2.
@@ -170,16 +170,14 @@ Section almost.
     almost (pre_event_union P1 P2).
   Proof.
     intros a.
-    apply (almost_impl a).
+    apply (almost_impl' a).
     apply all_almost; firstorder.
   Qed.
 
   Context (R:Td->Td->Prop).
 
   Definition almostR2 (r1 r2:Ts -> Td)
-    := exists E, ps_P E = 1
-            /\ forall x, E x -> R (r1 x) (r2 x).
-
+    := almost (fun x => R (r1 x) (r2 x)).
   
   Global Instance almost_refl {R_refl:Reflexive R}: Reflexive almostR2.
   Proof.
@@ -279,6 +277,24 @@ Section almostR2_part.
     exists p.
     split; trivial.
     firstorder.
+  Qed.
+
+  Global Instance almost_impl
+    : Proper (almostR2 prts impl ==> impl) (almost prts).
+  Proof.
+    unfold almostR2.
+    intros ????.
+    eapply almost_impl'; eauto.
+  Qed.
+
+  Global Instance almost_iff
+    : Proper (almostR2 prts iff ==> iff) (almost prts).
+  Proof.
+    unfold almostR2.
+    intros ?? a1
+    ; split; intros a2
+    ; generalize (almost_and prts a1 a2)
+    ; apply almost_proper; intros ?[??]; tauto.
   Qed.
 
   Definition classic_dec {T : Type} (P : pre_event T)
