@@ -630,7 +630,7 @@ Proof.
   unfold IsFiniteExpectation in *.
   now erewrite Expectation_prob_space_sa_sub.
 Qed.
-  
+
 Lemma FiniteExpectation_prob_space_sa_sub
       dom2 sub x
       {rv:RandomVariable dom2 borel_sa x}
@@ -643,6 +643,26 @@ Proof.
   repeat match_destr.
   rewrite Expectation_prob_space_sa_sub in e by trivial.
   congruence.
+Qed.
+
+Lemma Rbar_IsFiniteExpectation_prob_space_sa_sub
+      dom2 sub x
+      {rv:RandomVariable dom2 Rbar_borel_sa x}
+      {isfe:Rbar_IsFiniteExpectation (prob_space_sa_sub dom2 sub) x} :
+  Rbar_IsFiniteExpectation prts x.
+Proof.
+  unfold Rbar_IsFiniteExpectation in *.
+  now rewrite Rbar_Expectation_prob_space_sa_sub in isfe by trivial.
+Qed.
+
+Lemma Rbar_IsFiniteExpectation_prob_space_sa_sub_f
+      dom2 sub x
+      {rv:RandomVariable dom2 Rbar_borel_sa x}
+      {isfe:Rbar_IsFiniteExpectation prts x} :
+      Rbar_IsFiniteExpectation (prob_space_sa_sub dom2 sub) x.
+Proof.
+  unfold Rbar_IsFiniteExpectation in *.
+  now erewrite Rbar_Expectation_prob_space_sa_sub.
 Qed.
 
 Lemma ortho_phi_closed 
@@ -2664,14 +2684,14 @@ Proof.
     now erewrite (is_Rbar_conditional_expectation_Expectation) by eauto.
   Qed.
   
-  Lemma IsFiniteExpectation_nneg_is_almost_finite (f : Ts -> Rbar)
-        {rv : RandomVariable dom Rbar_borel_sa f}
+  Lemma IsFiniteExpectation_nneg_is_almost_finite {dom2} {prtss} (f : Ts -> Rbar)
+        {rv : RandomVariable dom2 Rbar_borel_sa f}
         {nnf : Rbar_NonnegativeFunction f} :
-    Rbar_IsFiniteExpectation prts f ->
-    almost prts (fun x => is_finite (f x)).
+    Rbar_IsFiniteExpectation prtss f ->
+    almost prtss (fun x => is_finite (f x)).
   Proof.
     intros isfe.
-    generalize (finite_Rbar_Expectation_almostR2_finite prts f rv isfe)
+    generalize (finite_Rbar_Expectation_almostR2_finite prtss f rv isfe)
     ; intros HH.
     eexists.
     split; try eapply HH.
@@ -3341,7 +3361,6 @@ Qed.
     is_Rbar_conditional_expectation prts sub f ce2 ->
     almostR2 (prob_space_sa_sub prts _ sub) Rbar_le ce1 ce2.
   Proof.
-    (* Y~ := ce1, Y := ce2 *)
     unfold is_Rbar_conditional_expectation; intros isce1 isce2.
 
     pose (G := fun x:R => pre_event_inter (fun omega => Rbar_gt (ce1 omega) (ce2 omega))
@@ -3367,39 +3386,6 @@ Qed.
       - now rewrite Rbar_mult_0_r.
     } 
 
-    (*
-      assert (isfe1abs : forall x,
-               match Rbar_Expectation (Rbar_rvabs (Rbar_rvmult ce1 (EventIndicator (classic_dec (G x))))) with
-                   | Some (Finite _) => True
-                   | _ => False
-               end).
-    {
-      intros x.
-      rewrite (Rbar_Expectation_pos_pofrf _ (nnf:=_)).
-      generalize (Rbar_NonnegExpectation_le (nnf2:=(@nnfconst Ts (Rabs x) (Rabs_pos x))) (Rbar_rvabs (Rbar_rvmult ce1 (fun x0 : Ts => EventIndicator (classic_dec (G x)) x0))) (const (Rabs x)))
-      ; intros HH1.
-      cut_to HH1.
-      - simpl in *.
-        rewrite Rbar_NonnegExpectation_const in HH1.
-        generalize (Rbar_NonnegExpectation_pos
-                      (Rbar_rvabs (Rbar_rvmult ce1 (fun x0 : Ts => EventIndicator (classic_dec (G x)) x0))))
-        ; intros HH2.
-        simpl in *.
-        match_destr.
-      - intros a.
-        unfold Rbar_rvabs, Rbar_rvmult, const, EventIndicator.
-        match_destr.
-        + rewrite Rbar_mult_1_r.
-          destruct g as [??].
-          unfold Rbar_rvabs in *.
-          destruct (Rbar_abs (ce1 a)); simpl in *; try tauto.
-          etransitivity; try eapply H0.
-          apply RRle_abs.
-        + rewrite Rbar_mult_0_r; simpl.
-          rewrite Rabs_R0.
-          apply Rabs_pos.
-    } 
-*)
     assert (isfe2abs : forall x,
                match Rbar_Expectation (Rbar_rvabs (Rbar_rvmult ce2 (EventIndicator (classic_dec (G x))))) with
                    | Some (Finite _) => True
@@ -3642,75 +3628,58 @@ Qed.
       apply le_INR; lia.
   Admitted.
 
+  Lemma is_Rbar_conditional_expectation_almostfinite_unique
+      {dom2 : SigmaAlgebra Ts}
+      (sub : sa_sub dom2 dom)
+      (f : Ts->R)
+      (ce1 ce2 : Ts -> Rbar)
+      {rvf : RandomVariable dom borel_sa f}
+      {rvce1 : RandomVariable dom2 Rbar_borel_sa ce1}
+      {rvce2 : RandomVariable dom2 Rbar_borel_sa ce2}
+      (isf1:almost (prob_space_sa_sub prts _ sub) (fun a => is_finite (ce1 a)))
+      (isf2:almost (prob_space_sa_sub prts _ sub) (fun a => is_finite (ce2 a))) :
+    is_Rbar_conditional_expectation prts sub f ce1 ->
+    is_Rbar_conditional_expectation prts sub f ce2 ->
+    almostR2 (prob_space_sa_sub prts _ sub) eq ce1 ce2.
+  Proof.
+    intros.
+    apply antisymmetry
+    ; eapply is_Rbar_conditional_expectation_almostfinite_le; eauto.
+  Qed.
+
+  Lemma is_Rbar_conditional_expectation_finexp_unique
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        (f : Ts->R)
+        (ce1 ce2 : Ts -> Rbar)
+        {rvf : RandomVariable dom borel_sa f}
+        {rvce1 : RandomVariable dom2 Rbar_borel_sa ce1}
+        {rvce2 : RandomVariable dom2 Rbar_borel_sa ce2}
+        {isfe:IsFiniteExpectation prts f} :
+    is_Rbar_conditional_expectation prts sub f ce1 ->
+    is_Rbar_conditional_expectation prts sub f ce2 ->
+    almostR2 (prob_space_sa_sub prts _ sub) eq ce1 ce2.
+  Proof.
+    intros.
     
-    generalize (is_lim_ascending (prob_space_sa_sub prts _ sub) (fun n => exist _ _ (sa_G (INR n))))
-    ; intros HH.
-    cut_to HH.
-    - apply (is_lim_seq_ext _ (fun _ => 0)) in HH.
-      + apply is_lim_seq_unique in HH.
-        rewrite Lim_seq_const in HH.
-        assert (eqq3:pre_event_equiv (union_of_collection (fun n : nat => exist sa_sigma (G (INR n)) (sa_G (INR n))))
-                                (fun omega : Ts => Rbar_gt (ce1 omega) (ce2 omega))).
-        {
-          intros a.
-          split; simpl.
-          - now intros [?[??]].
-          - unfold G.
-            intros.
-            exists (Z.to_nat (up (Rmax (Rabs (ce1 a)) (Rabs (ce2 a))))).
-            split; trivial.
-            split.
-            + unfold Rbar_ge.
-              unfold Rbar_rvabs.
-              simpl.
-            + unfold Rbar_ge.
-              unfold Rbar_gt in H.
-              
-            assert (isf:is_finite (ce2 a)).
-            {
-              generalize (nnf2 a); intros ?.
-              destruct (ce2 a).
-              - reflexivity.
-              - destruct (ce1 a); simpl in *; tauto.
-              - simpl in H0; tauto.
-            }
-            rewrite <- isf.
-            simpl.
-            rewrite INR_up_pos.
-            * apply archimed.
-            * generalize (nnf2 a); intros HH2.
-              rewrite <- isf in HH2; simpl in HH2.
-              lra.
-        } 
-        destruct (sa_proper dom2 _ _ eqq3) as [sa1 _].
-        cut_to sa1.
-        * rewrite (ps_proper _ (exist _ _ sa1)) in HH by (now red).
-
-          generalize (ps_complement (prob_space_sa_sub prts _ sub)
-                                    (exist _ _ sa1))
-          ; intros eqq4.
-          invcs HH.
-          simpl in *.
-          rewrite <- H0 in eqq4.
-          field_simplify in eqq4.
-          eexists.
-          split; [apply eqq4|].
-          intros a; simpl.
-          unfold pre_event_complement.
-          unfold Rbar_gt.
-          intros.
-          now apply Rbar_not_lt_le.
-        * apply sa_sigma_event_pre.
-      + trivial.
-    - intros ??.
-      unfold G.
-      intros [??].
-      split; trivial.
-      unfold Rbar_gt in *.
-      eapply Rbar_lt_le_trans; try eapply H0.
-      apply le_INR; lia.
-  Admitted.
-
+    eapply is_Rbar_conditional_expectation_almostfinite_unique; eauto.
+    - generalize (finite_Rbar_Expectation_almostR2_finite _ ce1)
+      ; intros HH1.
+      eexists.
+      split.
+      + apply (finite_Rbar_Expectation_almostR2_finite _ ce1).
+        apply Rbar_IsFiniteExpectation_prob_space_sa_sub_f; trivial.
+        eapply is_Rbar_conditional_expectation_FiniteExpectation; eauto.
+      + now simpl.
+    - generalize (finite_Rbar_Expectation_almostR2_finite _ ce2)
+      ; intros HH1.
+      eexists.
+      split.
+      + apply (finite_Rbar_Expectation_almostR2_finite _ ce2).
+        apply Rbar_IsFiniteExpectation_prob_space_sa_sub_f; trivial.
+        eapply is_Rbar_conditional_expectation_FiniteExpectation; eauto.
+      + now simpl.
+  Qed.
 
     
     
