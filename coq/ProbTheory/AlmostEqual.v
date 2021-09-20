@@ -98,15 +98,6 @@ Section almost.
     split; apply almost_alt_proper; firstorder.
   Qed.
 
-  (* Move *)
-  Lemma ps_union_sub 
-        {T : Type} {σ : SigmaAlgebra T} (ps : ProbSpace σ) (A B : event σ) :
-    ps_P A <= ps_P (A ∪ B).
-  Proof.
-    apply ps_sub.
-    auto with prob.
-  Qed.
-
   Lemma all_almost {P:Ts->Prop} :
     (forall x, P x) ->
     almost P.

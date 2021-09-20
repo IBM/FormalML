@@ -783,6 +783,15 @@ Hint Resolve ps_none ps_one : prob.
     now apply ps_union_r0.
   Qed.
 
+  Lemma ps_union_sub 
+        {T : Type} {σ : SigmaAlgebra T} (ps : ProbSpace σ) (A B : event σ) :
+    ps_P A <= ps_P (A ∪ B).
+  Proof.
+    apply ps_sub.
+    auto with prob.
+  Qed.
+
+
   Lemma ps_zero_countable_union {T:Type} 
         {dom:SigmaAlgebra T} (prts:ProbSpace dom)
         (coll: nat -> event dom) :
