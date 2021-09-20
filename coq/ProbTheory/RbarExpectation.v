@@ -10,7 +10,7 @@ Require Import RealRandomVariable.
 
 Require Import Utils.
 Require Export SimpleExpectation Expectation.
-Require Import AlmostEqual.
+Require Import Almost.
 Import ListNotations.
 
 Set Bullet Behavior "Strict Subproofs".
@@ -1538,15 +1538,10 @@ Section EventRestricted.
 
 End EventRestricted.
 
-Require Import AlmostEqual.
-
 Section almost.
 
     Context {Ts:Type} 
           {dom: SigmaAlgebra Ts}.
-
-  Definition classic_dec {T : Type} (P : pre_event T)
-    := (fun a => ClassicalDescription.excluded_middle_informative (P a)).
 
   Context (prts: ProbSpace dom).
 
@@ -1604,7 +1599,7 @@ Section almost.
           specialize (H0 a).
           simpl in H1.
           lra.
-        * generalize (SimplePosExpectation_pos_zero prts x2 H3); intros.
+        * generalize (SimplePosExpectation_pos_zero x2 H3); intros.
           rewrite H4 in H2.
           rewrite <- H2.
           simpl; lra.

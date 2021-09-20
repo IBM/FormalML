@@ -4,7 +4,7 @@ Require Import LibUtils utils.Utils.
 Require Import ProbSpace DiscreteProbSpace SigmaAlgebras.
 Require Import pmf_monad mdp.
 Require Import RealRandomVariable SimpleExpectation Expectation RandomVariableFinite.
-Require Import AlmostEqual.
+Require Import Almost.
 
 Require Import cond_expt.
 Require Import Lia.

@@ -14,7 +14,7 @@ Require Import quotient_space.
 Require Import RbarExpectation.
 
 Require Import Event.
-Require Import AlmostEqual.
+Require Import Almost.
 Require Import utils.Utils.
 Require Import List.
 
@@ -3355,7 +3355,7 @@ Qed.
       assert (Rbar_NonnegExpectation_zero_pos':almostR2 prts eq (Rbar_rvmult (Rbar_rvminus ce1 ce2) (fun x0 : Ts => IG x x0)) (const 0)).
       {
         apply Rbar_Expectation_nonneg_zero_almost_zero; trivial.
-        - apply (RandomVariable_proper _ _ (Rbar_rvminus (Rbar_rvmult ce1 (IG x))
+        - apply (RandomVariable_proper _ _ (reflexivity _) _ _ (reflexivity _) (Rbar_rvminus (Rbar_rvmult ce1 (IG x))
                                                          (Rbar_rvmult ce2 (IG x)))).
           + intros ?.
             unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp, Rbar_rvmult; simpl.
@@ -4059,7 +4059,7 @@ Qed.
                              (Rbar_rvmult (Rbar_rvminus ce1 ce2) (fun x0 : Ts => EventIndicator (classic_dec (G x)) x0))).
     {
       intros x.
-      eapply RandomVariable_proper; try eapply eqq0.
+      eapply (RandomVariable_proper _ _ (reflexivity _) _ _ (reflexivity _)); try eapply eqq0.
       apply Rbar_rvplus_rv.
       - apply Rbar_rvmult_rv; trivial.
         apply Real_Rbar_rv.

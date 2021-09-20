@@ -11,7 +11,7 @@ Require Import PropExtensionality.
 Require Export RandomVariableFinite RandomVariableLpR.
 Require Import quotient_space.
 
-Require Import AlmostEqual.
+Require Import Almost.
 Require Import utils.Utils.
 Require Import List.
 
@@ -463,43 +463,6 @@ Section Linf.
         * apply almostR2_eq_subr; intros ?.
           reflexivity.
     - apply is_lim_seq_const.
-  Qed.
-
-  Lemma ps_almostR2_sub (P1 P2 : event dom) :
-    almostR2 prts impl P1 P2 -> ps_P P1 <= ps_P P2.
-  Proof.
-    intros [a [??]].
-
-    rewrite <- (ps_inter_r1 prts H (A:=P1)).
-    rewrite <- (ps_inter_r1 prts H (A:=P2)).
-    apply ps_sub.
-    unfold event_inter, pre_event_inter.
-    intros ? [??]; simpl in *.
-    split; trivial.
-    now apply H0.
-  Qed.
-
-  Lemma ps_almostR2_proper (P1 P2 : event dom) :
-    almostR2 prts iff P1 P2 -> ps_P P1 = ps_P P2.
-  Proof.
-    intros [a [??]].
-
-    rewrite <- (ps_inter_r1 prts H (A:=P1)).
-    rewrite <- (ps_inter_r1 prts H (A:=P2)).
-    apply ps_proper.
-    unfold event_inter, pre_event_inter; intros x; simpl.
-    specialize (H0 x).
-    tauto.
-  Qed.
-
-  Lemma almostR2_sub_event_prob0 (P1 P2 : event dom) :
-    ps_P P2 = 0 ->
-    almostR2 prts impl P1 P2 -> ps_P P1 = 0.
-  Proof.
-    intros.
-    generalize (ps_almostR2_sub P1 P2 H0); intros.
-    generalize (ps_pos P1); intros.
-    lra.
   Qed.
 
   (* Move this *)

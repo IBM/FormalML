@@ -31,14 +31,20 @@ Definition rv_preimage
   := fun b => exist _ _ (rv_preimage_sa b).
 
 Global Instance RandomVariable_proper {Ts:Type} {Td:Type}
-       (dom: SigmaAlgebra Ts)
-       (cod: SigmaAlgebra Td) : Proper (rv_eq ==> iff) (RandomVariable dom cod).
+  : Proper (sa_equiv ==> sa_equiv ==> rv_eq ==> iff) (@RandomVariable Ts Td).
 Proof.
-  intros x y eqq.
   unfold RandomVariable.
   split; intros.
-  - rewrite <- eqq; auto.
-  - rewrite eqq; auto.
+  - rewrite <- H1.
+    apply H.
+    destruct B.
+    destruct (H0 x2) as [_ HH].
+    apply (H2 (exist _ x2 (HH s))).
+  - rewrite H1.
+    apply H.
+    destruct B.
+    destruct (H0 x2) as [HH _].
+    apply (H2 (exist _ x2 (HH s))).
 Qed.
 
 Global Instance rv_preimage_proper
@@ -521,5 +527,3 @@ Section pullback.
   Qed.
 
 End pullback.
-
-          

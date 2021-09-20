@@ -1,5 +1,5 @@
 Require Import Lra Lia Reals RealAdd RandomVariableL2 Coquelicot.Coquelicot.
-Require Import Morphisms Finite List ListAdd Permutation infprod AlmostEqual NumberIso.
+Require Import Morphisms Finite List ListAdd Permutation infprod Almost NumberIso.
 Require Import Sums SimpleExpectation PushNeg.
 Require Import EquivDec.
 Require Import Classical.
@@ -631,7 +631,7 @@ Proof.
     }
     destruct N.
     + simpl; auto.
-    + eapply RandomVariable_proper; try eapply frf.
+    + eapply RandomVariable_proper; try reflexivity; try eapply frf.
       intros ?.
       reflexivity.
 Qed.
@@ -949,11 +949,11 @@ Qed.
   Proof.
     unfold rvsumvec.
     induction m.
-    - apply RandomVariable_proper with (x := f 0%nat).
+    - apply (RandomVariable_proper _ _ (reflexivity _) _ _ (reflexivity _) (f 0%nat)).
       + intro x.
         now rewrite sum_O.
       + typeclasses eauto.
-    - apply RandomVariable_proper with (x := (fun ts : Ts => plus (sum_n (fun n : nat => f n ts) m) (f (S m) ts))).
+    - apply (RandomVariable_proper _ _ (reflexivity _) _ _ (reflexivity _) (fun ts : Ts => plus (sum_n (fun n : nat => f n ts) m) (f (S m) ts))).
       + intro x.
         now rewrite sum_Sn.
       + typeclasses eauto.

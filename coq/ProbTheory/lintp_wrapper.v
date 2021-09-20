@@ -9,7 +9,7 @@ Require Import Classical.
 
 Require Import Utils.
 Require Import RealRandomVariable.
-Require Import AlmostEqual.
+Require Import Almost.
 Require Import Event.
 Require Import SigmaAlgebras.
 Require Import ProbSpace.

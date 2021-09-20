@@ -10,6 +10,7 @@ Require Import Classical.
 Require Import Utils.
 Require Import NumberIso.
 Require Import SigmaAlgebras.
+Require Export Almost.
 Require Export FunctionsToReal ProbSpace BorelSigmaAlgebra.
 Require Export RandomVariable.
 
@@ -71,13 +72,14 @@ Section RealRandomVariables.
       now rewrite borel_sa_preimage2.
     Qed.
 
+
     Global Instance RealMeasurable_proper :
       Proper (rv_eq ==> iff) RealMeasurable.
     Proof.
       intros ???.
       split; intros.
       - apply rv_measurable.
-        rewrite <- H.
+        setoid_rewrite <- H.
         now apply measurable_rv.
       - apply rv_measurable.
         rewrite H.
@@ -854,6 +856,9 @@ Section RealRandomVariables.
              (rv : RandomVariable dom borel_sa rv_X) :
         RandomVariable dom borel_sa (pos_fun_part rv_X).
       Proof.
+        apply measurable_rv.
+        apply pos_fun_part_measurable.
+        apply rv_measurable.
         typeclasses eauto.
       Qed.
 
@@ -1830,10 +1835,10 @@ Section RbarRandomVariables.
     intros ???.
     split; intros.
     - apply rv_Rbar_measurable.
-      eapply RandomVariable_proper; try (symmetry; eapply H).
+      rewrite <- H.
       now apply Rbar_measurable_rv.
     - apply rv_Rbar_measurable.
-      eapply RandomVariable_proper; try eapply H.
+      rewrite H.
       now apply Rbar_measurable_rv.
   Qed.
 
@@ -3105,7 +3110,344 @@ Section RbarRandomVariables.
   Qed.
 
 End RbarRandomVariables.  
-  
+
+Section rv_almost.
+
+  Lemma almost_map_R_split
+        {Ts:Type} {Td:Type}
+          {dom: SigmaAlgebra Ts}
+          (prts: ProbSpace dom)
+        {f:Ts->R} {P:R->Prop} :
+    almost prts (fun x => P (f x)) ->
+    exists f', almostR2 prts eq f f' /\
+          (forall x, P (f' x)) /\
+          (RandomVariable dom borel_sa f -> RandomVariable dom borel_sa f').
+  Proof.
+    intros aP.
+    destruct (almost_witness _ aP) as [x Px].
+    destruct aP as [p [pone ph]].
+    exists (rvchoice (fun x => if Req_EM_T (((EventIndicator (classic_dec p))) x) 0 then false else true)
+
+                f
+                (const (f x))
+             ).
+    repeat split.
+    - exists p.
+      split; trivial.
+      intros.
+      rv_unfold.
+      destruct (classic_dec p x0); try tauto.
+      destruct (Req_EM_T 1 0); try lra; tauto.
+    - intros.
+      rv_unfold.
+      destruct (classic_dec p x0); try tauto.
+      + destruct (Req_EM_T 1 0); try lra; auto.
+      + destruct (Req_EM_T 0 0); try lra; auto.
+    - intros.
+      apply measurable_rv.
+      eapply rvchoice_rv; trivial.
+      + apply EventIndicator_rv.
+      + typeclasses eauto.
+  Qed.
+
+  Lemma almost_map_Rbar_split
+        {Ts:Type} {Td:Type}
+        {dom: SigmaAlgebra Ts}
+        (prts: ProbSpace dom)
+        {f:Ts->Rbar} {P:Rbar->Prop} :
+    almost prts (fun x => P (f x)) ->
+    exists f', almostR2 prts eq f f' /\
+          (forall x, P (f' x)) /\
+          (RandomVariable dom Rbar_borel_sa f -> RandomVariable dom Rbar_borel_sa f').
+  Proof.
+    intros aP.
+    destruct (almost_witness _ aP) as [x Px].
+    destruct aP as [p [pone ph]].
+    exists (Rbar_rvchoice (fun x => if Req_EM_T (((EventIndicator (classic_dec p))) x) 0 then false else true)
+
+                f
+                (const (f x))
+             ).
+    repeat split.
+    - exists p.
+      split; trivial.
+      intros.
+      rv_unfold; unfold Rbar_rvchoice.
+      destruct (classic_dec p x0); try tauto.
+      destruct (Req_EM_T 1 0); try lra; try tauto.
+    - intros.
+      rv_unfold; unfold Rbar_rvchoice.
+      destruct (classic_dec p x0); try tauto.
+      + destruct (Req_EM_T 1 0); try lra; auto.
+      + destruct (Req_EM_T 0 0); try lra; auto.
+    - intros.
+      apply Rbar_measurable_rv.
+      eapply Rbar_rvchoice_rv; trivial.
+      + apply EventIndicator_rv.
+      + typeclasses eauto.
+
+  Qed.
+
+  Open Scope prob.
+  Global Instance almostR2_eq_plus_proper
+         {Ts:Type} 
+         {dom: SigmaAlgebra Ts}
+         (prts: ProbSpace dom) : Proper (almostR2 prts eq ==> almostR2 prts eq ==> almostR2 prts eq) rvplus.
+  Proof.
+    unfold almostR2 in *.
+    intros x1 x2 [Px [Pxall eq_onx]] y1 y2 [Py [Pyall eq_ony]].
+    exists (Px ∩ Py).
+    split.
+    - now apply ps_one_inter.
+    - intros a [Pxa Pya].
+      unfold rvplus.
+      now rewrite eq_onx, eq_ony.
+  Qed.
+
+  Global Instance almostR2_eq_scale_proper
+         {Ts:Type} 
+         {dom: SigmaAlgebra Ts}
+         (prts: ProbSpace dom) : Proper (eq ==> almostR2 prts eq ==> almostR2 prts eq) rvscale.
+  Proof.
+    unfold almostR2 in *.
+    intros ? c ? x1 x2 [Px [Pxall eq_onx]]; subst.
+    exists Px.
+    split; trivial.
+    intros.
+    unfold rvscale.
+    now rewrite eq_onx.
+  Qed.
+
+  Global Instance almostR2_eq_opp_proper
+         {Ts:Type} 
+         {dom: SigmaAlgebra Ts}
+         (prts: ProbSpace dom) : Proper (almostR2 prts eq ==> almostR2 prts eq) rvopp.
+  Proof.
+    now apply almostR2_eq_scale_proper.
+  Qed.
+
+  Global Instance almostR2_eq_minus_proper
+         {Ts:Type} 
+         {dom: SigmaAlgebra Ts}
+         (prts: ProbSpace dom) : Proper (almostR2 prts eq ==> almostR2 prts eq ==> almostR2 prts eq) rvminus.
+  Proof.
+    intros ??????.
+    unfold rvminus.
+    now rewrite H, H0.
+  Qed.  
+
+  Global Instance almostR2_le_plus_proper
+         {Ts:Type} 
+         {dom: SigmaAlgebra Ts}
+         (prts: ProbSpace dom) : Proper (almostR2 prts Rle ==> almostR2 prts Rle ==> almostR2 prts Rle) rvplus.
+  Proof.
+    unfold almostR2 in *.
+    intros x1 x2 [Px [Pxall eq_onx]] y1 y2 [Py [Pyall eq_ony]].
+    exists (Px ∩ Py).
+    split.
+    - now apply ps_one_inter.
+    - intros a [Pxa Pya].
+      unfold rvplus.
+      apply Rplus_le_compat; auto.
+  Qed.
+
+  Global Instance almostR2_le_lt_plus_proper
+         {Ts:Type} 
+         {dom: SigmaAlgebra Ts}
+         (prts: ProbSpace dom) : Proper (almostR2 prts Rle ==> almostR2 prts Rlt ==> almostR2 prts Rlt) rvplus.
+  Proof.
+    unfold almostR2 in *.
+    intros x1 x2 [Px [Pxall eq_onx]] y1 y2 [Py [Pyall eq_ony]].
+    exists (Px ∩ Py).
+    split.
+    - now apply ps_one_inter.
+    - intros a [Pxa Pya].
+      unfold rvplus.
+      apply Rplus_le_lt_compat; auto.
+  Qed.
+
+  Global Instance almostR2_lt_le_plus_proper
+         {Ts:Type} 
+         {dom: SigmaAlgebra Ts}
+         (prts: ProbSpace dom) : Proper (almostR2 prts Rlt ==> almostR2 prts Rle ==> almostR2 prts Rlt) rvplus.
+  Proof.
+    unfold almostR2 in *.
+    intros x1 x2 [Px [Pxall eq_onx]] y1 y2 [Py [Pyall eq_ony]].
+    exists (Px ∩ Py).
+    split.
+    - now apply ps_one_inter.
+    - intros a [Pxa Pya].
+      unfold rvplus.
+      apply Rplus_lt_le_compat; auto.
+  Qed.
+
+  Global Instance almostR2_eq_mult_proper
+         {Ts:Type} 
+         {dom: SigmaAlgebra Ts}
+         (prts: ProbSpace dom) : Proper (almostR2 prts eq ==> almostR2 prts eq ==> almostR2 prts eq) rvmult.
+  Proof.
+    unfold almostR2 in *.
+    intros x1 x2 [Px [Pxall eq_onx]] y1 y2 [Py [Pyall eq_ony]].
+    exists (Px ∩ Py).
+    split.
+    - now apply ps_one_inter.
+    - intros a [Pxa Pya].
+      unfold rvmult.
+      now rewrite eq_onx, eq_ony.
+  Qed.
+
+  Global Instance almostR2_eq_Rbar_mult_proper
+         {Ts:Type} 
+         {dom: SigmaAlgebra Ts}
+         (prts: ProbSpace dom) : Proper (almostR2 prts eq ==> almostR2 prts eq ==> almostR2 prts eq) Rbar_rvmult.
+  Proof.
+    unfold almostR2 in *.
+    intros x1 x2 [Px [Pxall eq_onx]] y1 y2 [Py [Pyall eq_ony]].
+    exists (Px ∩ Py).
+    split.
+    - now apply ps_one_inter.
+    - intros a [Pxa Pya].
+      unfold Rbar_rvmult.
+      now rewrite eq_onx, eq_ony.
+  Qed.
+
+  Global Instance almostR2_sub
+         {Ts Td:Type} 
+         {dom: SigmaAlgebra Ts}
+         (prts: ProbSpace dom)
+         (R:Td->Td->Prop)
+         (f:(Ts->Td)->Ts->Td)
+         (fpres: forall x y a, R (x a) (y a) -> R (f x a) (f y a))
+    : Proper (almostR2 prts R ==> almostR2 prts R) f.
+  Proof.
+    intros x1 x2 [Px [Pxall eq_onx]].
+    exists Px.
+    split; trivial.
+    intros; auto.
+  Qed.
+
+  Lemma almostR2_eq_pow_abs_proper
+        {Ts:Type} 
+        {dom: SigmaAlgebra Ts}
+        (prts: ProbSpace dom) 
+        (x1 x2: Ts -> R)
+        n
+        (eqqx : almostR2 prts eq (rvabs x1) (rvabs x2)) :
+    almostR2 prts eq (rvpow (rvabs x1) n) (rvpow (rvabs x2) n).
+  Proof.
+    apply (almostR2_sub prts eq (fun x => rvpow x n)); trivial.
+    intros.
+    now unfold rvpow; rewrite H.
+  Qed.
+
+  Global Instance almostR2_eq_power_proper
+         {Ts:Type} 
+         {dom: SigmaAlgebra Ts}
+         (prts: ProbSpace dom) :
+    Proper (almostR2 prts eq ==> eq ==> almostR2 prts eq) rvpower.
+  Proof.
+    intros x1 x2 eqq1 ? n ?; subst.
+    apply (almostR2_sub prts eq (fun x => rvpower x n)); trivial.
+    intros.
+    unfold rvpower, RealAdd.power.
+    now rewrite H.
+  Qed.
+
+  Global Instance almostR2_eq_abs_proper
+         {Ts:Type} 
+         {dom: SigmaAlgebra Ts}
+         (prts: ProbSpace dom) : 
+    Proper (almostR2 prts eq ==> almostR2 prts eq) rvabs.
+  Proof.
+    eapply almostR2_sub; eauto; try typeclasses eauto.
+    intros.
+    unfold rvabs.
+    now rewrite H.
+  Qed.
+
+  Global Instance almostR2_eq_subr {Ts Td:Type} 
+         {dom: SigmaAlgebra Ts}
+         (prts: ProbSpace dom) :
+    subrelation (@rv_eq Ts Td) (almostR2 prts eq).
+  Proof.
+    intros ???.
+    exists Ω.
+    split; auto with prob.
+  Qed.
+
+  Global Instance almostR2_le_subr {Ts:Type} 
+         {dom: SigmaAlgebra Ts}
+         (prts: ProbSpace dom) :
+    subrelation (@rv_le Ts) (almostR2 prts Rle).
+  Proof.
+    intros ???.
+    exists Ω.
+    split; auto with prob.
+  Qed.
+
+  Global Instance rv_le_sub_eq {Ts:Type}: subrelation (@rv_eq Ts R) rv_le.
+  Proof.
+    unfold rv_eq, rv_le.
+    intros ????.
+    rewrite H.
+    lra.
+  Qed.
+
+  Lemma almostR2_eq_plus_inv  {Ts:Type} 
+        {dom: SigmaAlgebra Ts}
+        (prts: ProbSpace dom) {x y z} :
+    almostR2 prts eq z (rvplus x y) ->
+    exists x' y',
+      almostR2 prts eq x x' /\
+      almostR2 prts eq y y' /\ 
+      rv_eq z (rvplus x' y').
+  Proof.
+    intros [p [pone px]].
+    exists (fun a => if ClassicalDescription.excluded_middle_informative (p a) then x a else 0).
+    exists (fun a => if ClassicalDescription.excluded_middle_informative (p a) then y a else z a).
+    split; [| split].
+    - exists p.
+      split; trivial.
+      intros ??.
+      match_destr.
+      tauto.
+    - exists p.
+      split; trivial.
+      intros ??.
+      match_destr.
+      tauto.
+    - intros a; simpl.
+      rv_unfold.
+      match_destr.
+      + auto.
+      + lra.
+  Qed.
+
+  Lemma almostR2_eq_opp_inv  {Ts:Type} 
+        {dom: SigmaAlgebra Ts}
+        (prts: ProbSpace dom) {x z} :
+    almostR2 prts eq z (rvopp x) ->
+    exists x',
+      almostR2 prts eq x x' /\
+      rv_eq z (rvopp x').
+  Proof.
+    intros [p [pone px]].
+
+    exists (fun a => if ClassicalDescription.excluded_middle_informative (p a) then x a else - z a).
+    split.
+    - exists p.
+      split; trivial.
+      intros ??.
+      match_destr.
+      tauto.
+    - intros ?.
+      rv_unfold.
+      match_destr.
+      + auto.
+      + lra.
+  Qed.
+
+End rv_almost.
 
 Section EventRestricted.
 

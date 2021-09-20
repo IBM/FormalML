@@ -2,6 +2,7 @@ Require Import Program.Basics.
 Require Import Coq.Reals.Rbase.
 Require Import Coq.Reals.Rfunctions.
 Require Import Coq.Reals.RiemannInt.
+Require ClassicalDescription.
 
 Require Import Lra Lia.
 Require Import List Permutation.
@@ -2417,7 +2418,9 @@ Section dec.
       + now apply IHl1.
   Qed.
 
-  
+  Definition classic_dec (P : pre_event T) : dec_pre_event P
+    := (fun a => ClassicalDescription.excluded_middle_informative (P a)).
+
 End dec.
 
 Coercion event_pre : event >-> Funclass.

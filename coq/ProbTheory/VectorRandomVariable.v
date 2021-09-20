@@ -177,12 +177,11 @@ Section vector_ops.
   Qed.
   
   Lemma rvinner_unfold {n} (rv_X1 rv_X2 : Ts -> vector R n)
-    : rvinner rv_X1 rv_X2 === vecrvsum (vecrvmult rv_X1 rv_X2).
+    : rv_eq (rvinner rv_X1 rv_X2) (vecrvsum (vecrvmult rv_X1 rv_X2)).
   Proof.
     intros ?.
     reflexivity.
   Qed.
-
   
   Class RealVectorMeasurable {n} (rv_X : Ts -> vector R n) :=
     vecmeasurable : forall i pf, RealMeasurable dom (vector_nth i pf (iso_f rv_X)).
@@ -327,7 +326,7 @@ Section vector_ops.
   Qed.
 
   Lemma vecrvsum_rvsum {n} (f : Ts -> vector R n) :
-    (vecrvsum f) === (rvsum (fun i x => match lt_dec i n with
+    rv_eq (vecrvsum f) (rvsum (fun i x => match lt_dec i n with
                                         | left pf => vector_nth i pf (f x)
                                         | right _ => 0%R
                                         end)
@@ -407,6 +406,7 @@ Section vector_ops.
       now rewrite vector_nth_fun_to_vector in H.
   Qed.
 
+  Existing Instance RealMeasurable_proper.
   Instance Rvector_sum_measurable {n} (f : Ts -> vector R n) :
     RealVectorMeasurable f ->
     RealMeasurable dom (vecrvsum f).
@@ -799,7 +799,7 @@ Lemma FiniteRangeFunction_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
     apply rv_measurable.
     simpl.
     rewrite vector_nth_fun_to_vector.
-    eapply RandomVariable_proper.
+    eapply RandomVariable_proper; try reflexivity.
     - intros ?.
       rewrite vector_nth_create'.
       reflexivity.

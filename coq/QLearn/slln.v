@@ -1,5 +1,5 @@
 Require Import Lra Lia Reals RealAdd RandomVariableL2 Coquelicot.Coquelicot.
-Require Import Morphisms Finite List ListAdd Permutation infprod AlmostEqual NumberIso.
+Require Import Morphisms Finite List ListAdd Permutation infprod Almost NumberIso.
 Require Import Sums SimpleExpectation PushNeg.
 Require Import EquivDec.
 Require Import Classical.
@@ -517,7 +517,7 @@ Proof.
     }
     destruct N.
     + simpl; auto.
-    + eapply RandomVariable_proper; try eapply frf.
+    + eapply RandomVariable_proper; try reflexivity; try eapply frf.
       intros ?.
       reflexivity.
 Qed.

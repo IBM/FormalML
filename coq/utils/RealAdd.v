@@ -3987,3 +3987,13 @@ Proof.
     + now simpl.
     + now simpl.
 Qed.
+
+Lemma list_sum0_is0 l :
+  Forall (fun x => x = 0) l ->
+  list_sum l = 0%R.
+Proof.
+  induction l; simpl; trivial.
+  inversion 1; subst.
+  rewrite IHl; trivial.
+  lra.
+Qed.

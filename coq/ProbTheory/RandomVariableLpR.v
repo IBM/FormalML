@@ -13,7 +13,7 @@ Require Export RandomVariableFinite.
 Require Import quotient_space.
 Require Import RbarExpectation.
 
-Require Import AlmostEqual.
+Require Import Almost.
 Require Import utils.Utils.
 Require Import List.
 

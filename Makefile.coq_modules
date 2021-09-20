@@ -69,7 +69,7 @@ CERTRL = pmf_monad \
 	cond_expt
 
 PROB_THEORY = \
-	AlmostEqual \
+	Almost \
 	BorelSigmaAlgebra \
 	DiscreteProbSpace \
 	Event \
