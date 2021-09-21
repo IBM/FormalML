@@ -3522,7 +3522,6 @@ Qed.
               | [H: context [proj1_sig ?x] |- _] => destruct x; simpl in H
               end.
 
-
   Lemma Rbar_Expectation_sum_finite 
         (rv_X1 rv_X2 : Ts -> Rbar)
         {rv1 : RandomVariable dom Rbar_borel_sa rv_X1}
@@ -3533,20 +3532,60 @@ Qed.
       Rbar_Expectation (Rbar_rvplus rv_X1 rv_X2) = Some (Finite (e1 + e2)).
   Proof.
     intros.
-(*
-    generalize (Rbar_Expectation_sum rv_X1 rv_X2); intros.
-    rewrite H, H0 in H1.
-    unfold Expectation in H.
-    apply Finite_Rbar_minus' in H.
-    unfold Expectation in H0.
-    apply Finite_Rbar_minus' in H0.    
-    destruct H; destruct H0.
-    specialize (H1 H2 H3).
-    rewrite H1.
-    now simpl.
+    assert (isfe1: Rbar_IsFiniteExpectation prts rv_X1).
+    {
+      unfold Rbar_IsFiniteExpectation.
+      now rewrite H.
+    }
+    assert (isfe2: Rbar_IsFiniteExpectation prts rv_X2).
+    {
+      unfold Rbar_IsFiniteExpectation.
+      now rewrite H0.
+    }
+    generalize (Rbar_finexp_finexp rv_X1 isfe1); intros.
+    generalize (Rbar_finexp_finexp rv_X2 isfe2); intros.    
+    assert (RandomVariable dom borel_sa (Rbar_finite_part rv_X1)) by typeclasses eauto.
+    assert (RandomVariable dom borel_sa (Rbar_finite_part rv_X2)) by typeclasses eauto.
+    generalize (Expectation_sum_finite (Rbar_finite_part rv_X1)(Rbar_finite_part rv_X2) e1 e2); intros.
+    generalize (Rbar_Expectation_almostR2_proper prts  (Rbar_rvplus rv_X1 rv_X2)); intros.
+    specialize (H6 (rvplus (Rbar_finite_part rv_X1) (Rbar_finite_part rv_X2))).
+    rewrite H6.
+    - rewrite <- gen_Expectation_Rbar_Expectation.
+      apply H5.
+      + rewrite gen_Expectation_Rbar_Expectation.
+        generalize (Rbar_Expectation_almostR2_proper prts rv_X1 (Rbar_finite_part rv_X1)); intros.
+        rewrite <- H7.
+        apply H.
+        now apply finexp_almost_finite_part.
+      + rewrite gen_Expectation_Rbar_Expectation.
+        generalize (Rbar_Expectation_almostR2_proper prts rv_X2 (Rbar_finite_part rv_X2)); intros.
+        rewrite <- H7.
+        apply H0.
+        now apply finexp_almost_finite_part.        
+    - now apply Rbar_rvplus_rv.      
+    - typeclasses eauto.
+    - now apply Rbar_finexp_almost_plus.
   Qed.
- *)
-    Admitted.
+
+   Lemma Rbar_Expectation_minus_finite 
+        (rv_X1 rv_X2 : Ts -> Rbar)
+        {rv1 : RandomVariable dom Rbar_borel_sa rv_X1}
+        {rv2 : RandomVariable dom Rbar_borel_sa rv_X2} :
+    forall (e1 e2:R), 
+      Rbar_Expectation rv_X1 = Some (Finite e1) ->
+      Rbar_Expectation rv_X2 = Some (Finite e2) ->
+      Rbar_Expectation (Rbar_rvminus rv_X1 rv_X2) = Some (Finite (e1 - e2)).
+   Proof.
+     intros.
+     unfold Rbar_rvminus.
+     apply Rbar_Expectation_sum_finite; trivial.
+     - typeclasses eauto.
+     - generalize (Rbar_Expectation_opp rv_X2); intros.
+       simpl in H1.
+       rewrite H1.
+       rewrite H0.
+       now simpl.
+   Qed.
 
   Lemma Rbar_FiniteExpectation_Rbar_Expectation (rv_X:Ts->Rbar)
         {isfe:Rbar_IsFiniteExpectation prts rv_X} : 
@@ -5120,5 +5159,6 @@ Canonical nneg2.
         Admitted.
         
         
+End cond_exp_props.
       
 

@@ -1259,7 +1259,7 @@ Section RbarExpectation.
     Qed.
 
   Lemma Rbar_Expectation_opp
-        (rv_X : Ts -> R) :
+        (rv_X : Ts -> Rbar) :
     let Ex_rv := Rbar_Expectation rv_X in
     let Ex_o_rv := Rbar_Expectation (Rbar_rvopp rv_X) in
     Ex_o_rv = 
@@ -1283,7 +1283,7 @@ Section RbarExpectation.
         * reflexivity.
         * intro x.
           unfold Rbar_neg_fun_part, Rbar_rvopp, Rbar_pos_fun_part; simpl.
-          now rewrite Ropp_involutive.
+          now rewrite Rbar_opp_involutive.
     - intro x.
       now unfold Rbar_neg_fun_part, Rbar_rvopp, Rbar_pos_fun_part; simpl.
   Qed.
