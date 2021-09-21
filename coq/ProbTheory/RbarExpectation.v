@@ -62,7 +62,6 @@ Section RbarExpectation.
     Global Instance Rbar_rvplus_rv  (rv_X1 rv_X2 : Ts -> Rbar)
            {rvx1 : RandomVariable dom Rbar_borel_sa rv_X1} 
            {rvx2 : RandomVariable dom Rbar_borel_sa rv_X2} :      
-    (forall x, ex_Rbar_plus (rv_X1 x) (rv_X2 x)) ->
       RandomVariable dom Rbar_borel_sa (Rbar_rvplus rv_X1 rv_X2).
    Proof.
      intros.
@@ -71,19 +70,6 @@ Section RbarExpectation.
      apply rv_Rbar_measurable in rvx2.     
      now apply Rbar_plus_measurable.
   Qed.
-
-    Global Instance Rbar_rvplus_pos_rv  (rv_X1 rv_X2 : Ts -> Rbar)
-           {rvx1 : RandomVariable dom Rbar_borel_sa rv_X1} 
-           {rvx2 : RandomVariable dom Rbar_borel_sa rv_X2} 
-           {nnfx1 : Rbar_NonnegativeFunction rv_X1}
-           {nnfx2 : Rbar_NonnegativeFunction rv_X2} :
-      RandomVariable dom Rbar_borel_sa (Rbar_rvplus rv_X1 rv_X2).
-    Proof.
-      apply Rbar_rvplus_rv; trivial.
-      intros.
-      specialize (nnfx1 x); specialize (nnfx2 x).
-      now apply ex_Rbar_plus_pos.
-    Qed.
 
   Definition Rbar_NonnegExpectation
              (rv_X : Ts -> Rbar)
@@ -930,7 +916,7 @@ Section RbarExpectation.
     generalize (Rbar_monotone_convergence (Rbar_rvplus rv_X1 rv_X2) 
                                      (fun n => rvplus (simple_approx rv_X1 n)
                                                    (simple_approx rv_X2 n))
-                                         (Rbar_rvplus_pos_rv rv_X1 rv_X2)
+                                         (Rbar_rvplus_rv rv_X1 rv_X2)
                                          (pos_Rbar_plus rv_X1 rv_X2) H3 H4); intros.
     cut_to H5; trivial.
     - rewrite Lim_seq_ext with (v := fun n => (NonnegExpectation (simple_approx rv_X1 n)) +
@@ -1302,6 +1288,159 @@ Section RbarExpectation.
       now unfold Rbar_neg_fun_part, Rbar_rvopp, Rbar_pos_fun_part; simpl.
   Qed.
 
+(*
+  Lemma Rbar_Expectation_dif_pos_unique2 
+        (rxp1 rxn1 rxp2 rxn2 : Ts -> R)
+        (rp1 : RandomVariable dom Rbar_borel_sa rxp1)
+        (rn1 : RandomVariable dom Rbar_borel_sa rxn1)
+        (rp2 : RandomVariable dom Rbar_borel_sa rxp2)
+        (rn2 : RandomVariable dom Rbar_borel_sa rxn2)        
+
+        (pp1 : Rbar_NonnegativeFunction rxp1)
+        (pn1 : Rbar_NonnegativeFunction rxn1)        
+        (pp2 : Rbar_NonnegativeFunction rxp2)
+        (pn2 : Rbar_NonnegativeFunction rxn2) :
+    rv_eq (Rbar_rvminus rxp1 rxn1) (Rbar_rvminus rxp2 rxn2) ->
+    is_finite (Rbar_NonnegExpectation rxn1) ->
+    is_finite (Rbar_NonnegExpectation rxn2) ->    
+    Rbar_minus (Rbar_NonnegExpectation rxp1) (Rbar_NonnegExpectation rxn1) =
+    Rbar_minus (Rbar_NonnegExpectation rxp2) (Rbar_NonnegExpectation rxn2).
+  Proof.
+    intros.
+    assert (rv_eq (Rbar_rvplus rxp1 rxn2) (Rbar_rvplus rxp2 rxn1)).
+    - unfold rv_eq, pointwise_relation, Rbar_rvminus, Rbar_rvopp, Rbar_rvplus in *.
+      intros.
+      specialize (H a).
+      admit.
+    - generalize (Rbar_NonnegExpectation_ext _ _ H2); intros.
+      rewrite Rbar_NonnegExpectation_plus in H3; trivial.
+      rewrite Rbar_NonnegExpectation_plus in H3; trivial.
+
+      generalize (Rbar_NonnegExpectation_pos rxp1); intros.
+      generalize (Rbar_NonnegExpectation_pos rxp2); intros.
+
+      unfold is_finite in *.
+      rewrite <- H0, <- H1 in H3; simpl in H3.
+      rewrite <- H0, <- H1; simpl.
+      
+      destruct  (Rbar_NonnegExpectation rxp1); destruct  (Rbar_NonnegExpectation rxp2); try easy.
+      + simpl in *.
+        rewrite Rbar_finite_eq in H3.
+        rewrite Rbar_finite_eq.
+        lra.
+  Admitted.
+
+  Lemma Rbar_Expectation_dif_pos_unique 
+        (rvp rvn : Ts -> Rbar)
+        (pr : RandomVariable dom Rbar_borel_sa rvp)
+        (nr : RandomVariable dom Rbar_borel_sa rvn)        
+        (p : Rbar_NonnegativeFunction rvp)
+        (n : Rbar_NonnegativeFunction rvn) :
+    is_finite (Rbar_NonnegExpectation rvn) ->
+    Rbar_Expectation (Rbar_rvminus rvp rvn) =
+    Rbar_minus' (Rbar_NonnegExpectation rvp)
+                (Rbar_NonnegExpectation rvn).
+  Proof.
+    Admitted.
+
+  Lemma Rbar_Expectation_isfe_neg1_isfe2_plus
+        (rv_X1: Ts -> Rbar)
+        (rv_X2 : Ts -> R)        
+        {rv1 : RandomVariable dom Rbar_borel_sa rv_X1}
+        {rv2 : RandomVariable dom borel_sa rv_X2} :
+    is_finite (Rbar_NonnegExpectation (Rbar_neg_fun_part rv_X1)) ->
+    IsFiniteExpectation Prts rv_X2 ->
+    Rbar_Expectation (Rbar_rvplus rv_X1 rv_X2) =
+    match Rbar_Expectation rv_X1, Expectation rv_X2 with
+    | Some exp1, Some exp2 => Some (Rbar_plus exp1 exp2)
+    | _, _ => None
+    end.
+  Proof.
+    intros isfe_neg1 isfe2.
+    generalize (IsFiniteExpectation_parts _ _ isfe2); intro HH.
+    destruct HH as [isfe_pos isfe_neg].
+    assert (eqq1:rv_eq 
+                   (Rbar_rvplus rv_X1 rv_X2) 
+                   (Rbar_rvminus (Rbar_rvplus (Rbar_pos_fun_part rv_X1) 
+                                              (pos_fun_part rv_X2)) 
+                                 (Rbar_rvplus (Rbar_neg_fun_part rv_X1) 
+                                              (neg_fun_part rv_X2)))).
+    {
+      intro x.
+      unfold Rbar_rvplus.
+      rewrite (Rbar_rv_pos_neg_id rv_X1) at 1.
+      rewrite (rv_pos_neg_id rv_X2) at 1.
+      unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp, rvplus, rvopp, rvscale.
+      rewrite <- Rbar_plus_opp.
+      
+      simpl.
+      case_eq (Rbar_pos_fun_part rv_X1 x); case_eq (Rbar_neg_fun_part rv_X1 x); intros.
+      - simpl; apply Rbar_finite_eq; lra.
+      - now simpl.
+      - now simpl.
+      - now simpl.
+      - unfold Rbar_pos_fun_part, Rbar_max in H0.
+        unfold Rbar_neg_fun_part, Rbar_max in H.
+        match_destr_in H0.
+        rewrite H0 in H; simpl in H.
+        match_destr_in H.
+      - now simpl.
+      - now simpl.
+      - now simpl.
+      - unfold Rbar_pos_fun_part, Rbar_max in H0.
+        unfold Rbar_neg_fun_part, Rbar_max in H.
+        match_destr_in H0.
+        rewrite H0 in H; simpl in H.
+        match_destr_in H.
+    }
+    rewrite (Rbar_Expectation_ext eqq1); clear eqq1.
+    erewrite Rbar_Expectation_dif_pos_unique.
+    - repeat rewrite Rbar_NonnegExpectation_plus by typeclasses eauto.
+      unfold Rbar_Expectation, Expectation.
+      unfold Rbar_minus'.
+      generalize (Rbar_NonnegExpectation_pos (Rbar_pos_fun_part rv_X1)); intros.
+      generalize (NonnegExpectation_pos (pos_fun_part rv_X2)); intros.      
+      rewrite <- Rbar_plus_opp.
+      rewrite <- Expectation_Rbar_Expectation.
+      rewrite <- Expectation_Rbar_Expectation.
+      unfold IsFiniteExpectation in isfe_pos.
+      unfold IsFiniteExpectation in isfe_neg.      
+      erewrite Expectation_pos_pofrf in isfe_pos.
+      erewrite Expectation_pos_pofrf in isfe_neg.
+      destruct (NonnegExpectation (fun x : Ts => pos_fun_part rv_X2 x)); try tauto.
+      destruct (NonnegExpectation (fun x : Ts => neg_fun_part rv_X2 x)); try tauto.
+      destruct (Rbar_NonnegExpectation (fun x : Ts => Rbar_neg_fun_part rv_X1 x));
+      destruct (Rbar_NonnegExpectation (fun x : Ts => Rbar_pos_fun_part rv_X1 x)); try now simpl.
+      simpl; f_equal; apply Rbar_finite_eq; lra.
+    - apply Rbar_rvplus_rv.
+      + typeclasses eauto.
+      + typeclasses eauto.
+      + intros.
+        apply ex_Rbar_plus_pos.
+        * apply Rbar_pos_fun_pos.
+        * apply positive_part_nnf.
+    - apply Rbar_rvplus_rv.
+      + typeclasses eauto.
+      + typeclasses eauto.
+      + intros.
+        apply ex_Rbar_plus_pos.
+        * apply Rbar_neg_fun_pos.
+        * apply negative_part_nnf.
+    - rewrite Rbar_NonnegExpectation_plus by typeclasses eauto.
+      rewrite <- isfe_neg1.
+      unfold IsFiniteExpectation in isfe_neg.
+      erewrite Expectation_pos_pofrf in isfe_neg.
+      match_case_in isfe_neg; intros.
+      + rewrite H; simpl.
+        now unfold is_finite; simpl.
+      + now rewrite H in isfe_neg.
+      + now rewrite H in isfe_neg.
+        Unshelve.
+        typeclasses eauto.
+        typeclasses eauto.
+        typeclasses eauto.                
+  Qed.
+*)
 End RbarExpectation.
 
 Section EventRestricted.
@@ -1477,9 +1616,79 @@ Section almost.
         * apply nnf.
       + apply SimpleExpectation_const.
   Qed.
+
+(*
+    Lemma Rbar_NonnegExpectation_almostR2_eq f1 f2
+          {nnf1:Rbar_NonnegativeFunction f1} 
+          {nnf2:Rbar_NonnegativeFunction f2} :      
+    almostR2 prts eq f1 f2 ->
+    Rbar_NonnegExpectation f1 = Rbar_NonnegExpectation f2.
+  Proof.
+    intros.
+    unfold Rbar_NonnegExpectation, SimpleExpectationSup.
+    unfold Lub_Rbar.
+    repeat match goal with
+             [|- context [proj1_sig ?x]] => destruct x; simpl
+           end.
+    destruct i as [xub xlub].
+    destruct i0 as [xub0 xlub0].    
+    unfold is_ub_Rbar in xub.
+    unfold is_ub_Rbar in xub0.    
+    apply Rbar_le_antisym.
+    - apply xlub.
+      unfold is_ub_Rbar; intros.
+      destruct H0 as [? [? [? [[? ?] ?]]]].
+      assert (almostR2 prts Rbar_le x2 f2).
+      + destruct H as [P [Pall eq_on]].
+        exists P.
+        split;trivial.
+        intros a ?.
+        specialize (H1 a).
+        rewrite eq_on in H1; trivial.
+      + apply xub0.
+        exists x2; exists x3; exists x4.
+        split; trivial.
+        split; trivial.
+        Locate SimplePosExpectation_pos_zero.
+      
+
+    specialize (xub 0).
+    specialize (xlub 0).
+    unfold is_ub_Rbar in xlub.
+    cut_to xub.
+    - cut_to xlub.
+      + now apply Rbar_le_antisym.
+      + intros.
+        unfold BoundedNonnegativeFunction in H0.
+        destruct H0 as [? [? [? [[? ?] ?]]]].
+        simpl.
+        assert (almostR2 prts eq x2 (const 0)).
+        * destruct H as [P [Pall eq_on]].
+          exists P.
+          split; trivial.
+          intros a ?.
+          specialize (H1 a).
+          rewrite eq_on in H1; trivial.
+          unfold const in *.
+          specialize (H0 a).
+          simpl in H1.
+          lra.
+        * generalize (SimplePosExpectation_pos_zero prts x2 H3); intros.
+          rewrite H4 in H2.
+          rewrite <- H2.
+          simpl; lra.
+    - exists (const 0); exists (rvconst _ _ 0); exists (frfconst 0).
+      split.
+      + unfold BoundedNonnegativeFunction.
+        split.
+        * apply nnfconst; lra.
+        * apply nnf.
+      + apply SimpleExpectation_const.
+  Qed.
+*)
   
   Lemma Rbar_NonnegExpectation_EventIndicator_as x {P} (dec:dec_event P)
-        {xrv:RandomVariable dom Rbar_borel_sa x}                 
+        {xrv:RandomVariable dom Rbar_borel_sa x}                
         {xnnf:Rbar_NonnegativeFunction x}
     :
       ps_P P = 1 ->
