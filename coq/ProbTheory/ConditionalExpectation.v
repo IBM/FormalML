@@ -2779,6 +2779,70 @@ Definition ConditionalExpectation (f : Ts -> R)
     - typeclasses eauto.
   Qed.
 
+  Lemma Rbar_pos_neg_id (x:Rbar) : 
+      x = Rbar_plus (Rbar_max x 0) (Rbar_opp (Rbar_max (Rbar_opp x) 0)).
+    Proof.
+      assert (Rbar_opp 0 = 0).
+      {
+        unfold Rbar_opp.
+        rewrite Rbar_finite_eq.
+        lra.
+      }
+      unfold Rbar_max; repeat match_destr.
+      - rewrite H.
+        rewrite <- H in r0.
+        rewrite Rbar_opp_le in r0.
+        rewrite Rbar_plus_0_r.
+        apply Rbar_le_antisym; eauto.
+      - rewrite Rbar_opp_involutive.
+        now rewrite Rbar_plus_0_l.
+      - rewrite H.
+        now rewrite Rbar_plus_0_r.
+      - rewrite Rbar_opp_involutive.
+        rewrite <- H in n0.
+        rewrite Rbar_opp_le in n0.
+        apply Rbar_not_le_lt in n0.
+        apply Rbar_not_le_lt in n.
+        generalize (Rbar_lt_trans _ _ _ n n0); intros.
+        simpl in H0; lra.
+    Qed.
+
+  Lemma Rbar_max_minus_nneg (x y : Rbar) :
+    Rbar_le 0 x ->
+    Rbar_le 0 y ->
+    (x = 0 \/ y = 0) ->
+    Rbar_max (Rbar_minus x y) 0 = x.
+  Proof.
+    intros.
+    unfold Rbar_max, Rbar_minus.
+    destruct x; destruct y; try tauto.
+    simpl in H; simpl in H0.
+    - match_destr.
+     + simpl in r1.
+       destruct H1; apply Rbar_finite_eq in H1; apply Rbar_finite_eq; lra.
+     + apply Rbar_not_le_lt in n.
+       simpl; simpl in n.
+       destruct H1; apply Rbar_finite_eq in H1; apply Rbar_finite_eq; lra.
+    - match_destr; destruct H1; try congruence.
+      rewrite H1 in n.
+      now simpl in n.
+    - destruct H1; try congruence.
+      rewrite H1; simpl.
+      match_destr; try congruence.
+      now simpl in r0.
+    - destruct H1; congruence.
+  Qed.
+
+  Lemma NonNegCondexp_part0 (f : Ts -> R)
+           {dom2 : SigmaAlgebra Ts}
+           (sub : sa_sub dom2 dom)
+           {rv : RandomVariable dom borel_sa f} :
+    forall (omega : Ts),
+      NonNegCondexp (pos_fun_part f) sub omega = 0 \/
+      NonNegCondexp (neg_fun_part f) sub omega = 0.
+ Proof.
+   Admitted.
+
 
 Lemma Condexp_cond_exp (f : Ts -> R) 
            {dom2 : SigmaAlgebra Ts}
@@ -2793,9 +2857,101 @@ Proof.
   unfold Expectation, Rbar_Expectation.
   f_equal.
   - generalize (NonNegCondexp_cond_exp (pos_fun_part f) sub P dec H); intros.
-    Admitted.
-    
-  
+    erewrite Expectation_pos_pofrf in H0.
+    erewrite Rbar_Expectation_pos_pofrf in H0.
+    invcs H0.
+    assert (rv_eq (fun x => nonneg ((pos_fun_part (rvmult f (EventIndicator dec))) x))
+                  (rvmult (pos_fun_part f) (EventIndicator dec))).
+    {
+      intro x.
+      rv_unfold; simpl.
+      match_destr.
+      - now do 2 rewrite Rmult_1_r.
+      - do 2 rewrite Rmult_0_r.
+        apply Rmax_left; lra.
+   }
+    rewrite (NonnegExpectation_ext _ _ H0).
+    rewrite H2.
+    apply Rbar_NonnegExpectation_ext.
+    intro x.
+    unfold Rbar_pos_fun_part, Rbar_rvmult.
+    replace
+      (Rbar_max
+    (Rbar_mult
+       (Rbar_rvminus (NonNegCondexp (fun x0 : Ts => pos_fun_part f x0) sub)
+          (NonNegCondexp (fun x0 : Ts => neg_fun_part f x0) sub) x)
+       (EventIndicator dec x)) 0) with
+        (Rbar_mult (Rbar_max 
+      (Rbar_rvminus (NonNegCondexp (fun x0 : Ts => pos_fun_part f x0) sub)
+          (NonNegCondexp (fun x0 : Ts => neg_fun_part f x0) sub) x) 0)
+                   (EventIndicator dec x)).
+    + f_equal.
+      unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp.
+      symmetry.
+      apply Rbar_max_minus_nneg.
+      * apply NonNegCondexp_nneg.
+      * apply NonNegCondexp_nneg.
+      * apply  NonNegCondexp_part0 .
+    + unfold EventIndicator.
+      match_destr.
+      * now do 2 rewrite Rbar_mult_1_r.
+      * do 2 rewrite Rbar_mult_0_r.
+        unfold Rbar_max.
+        now match_destr.
+  - generalize (NonNegCondexp_cond_exp (neg_fun_part f) sub P dec H); intros.
+    erewrite Expectation_pos_pofrf in H0.
+    erewrite Rbar_Expectation_pos_pofrf in H0.
+    invcs H0.
+    assert (rv_eq (fun x => nonneg ((neg_fun_part (rvmult f (EventIndicator dec))) x))
+                  (rvmult (neg_fun_part f) (EventIndicator dec))).
+    {
+      intro x.
+      rv_unfold; simpl.
+      match_destr.
+      - now do 2 rewrite Rmult_1_r.
+      - do 2 rewrite Rmult_0_r.
+        apply Rmax_right; lra.
+   }
+    rewrite (NonnegExpectation_ext _ _ H0).
+    rewrite H2.
+    apply Rbar_NonnegExpectation_ext.
+    intro x.
+    unfold Rbar_neg_fun_part, Rbar_rvmult.
+    replace
+      (Rbar_max (Rbar_opp
+    (Rbar_mult
+       (Rbar_rvminus (NonNegCondexp (fun x0 : Ts => pos_fun_part f x0) sub)
+          (NonNegCondexp (fun x0 : Ts => neg_fun_part f x0) sub) x)
+       (EventIndicator dec x))) 0) with
+        (Rbar_mult (Rbar_max 
+      (Rbar_rvminus (NonNegCondexp (fun x0 : Ts => neg_fun_part f x0) sub)
+          (NonNegCondexp (fun x0 : Ts => pos_fun_part f x0) sub) x) 0)
+                   (EventIndicator dec x)).
+    + f_equal.
+      unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp.
+      symmetry.
+      apply Rbar_max_minus_nneg.
+      * apply NonNegCondexp_nneg.
+      * apply NonNegCondexp_nneg.
+      * rewrite or_comm.
+        apply NonNegCondexp_part0.
+    + unfold EventIndicator.
+      match_destr.
+      * do 2 rewrite Rbar_mult_1_r.
+        unfold Rbar_rvminus, Rbar_rvopp, Rbar_rvplus.
+        rewrite <- Rbar_plus_opp.
+        rewrite Rbar_opp_involutive.
+        now rewrite Rbar_plus_comm.
+      * do 2 rewrite Rbar_mult_0_r.
+        unfold Rbar_max.
+        match_destr.
+        simpl.
+        apply Rbar_finite_eq; lra.
+        Unshelve.
+        -- typeclasses eauto.
+        -- typeclasses eauto.
+  Qed.
+
 (*
 Definition FiniteConditionalExpectation (f : Ts -> R) 
            {dom2 : SigmaAlgebra Ts}
