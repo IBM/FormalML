@@ -3833,9 +3833,23 @@ Qed.
                                                    (Rbar_rvmult ce2 (EventIndicator (classic_dec (G x)))))).
       {
         now apply Rbar_Expectation_ext.
-      } 
-      (* linearity of finite Rbar expectation *)
-      admit.
+      }
+      specialize (isfe1 x); specialize (isfe2 x).
+      match_case_in isfe1; intros; rewrite H in isfe1; try tauto.
+      match_destr_in isfe1; try tauto.
+      match_case_in isfe2; intros; rewrite H0 in isfe2; try tauto.
+      match_destr_in isfe2; try tauto.
+      apply Rbar_Expectation_minus_finite; trivial.
+      - apply Rbar_rvmult_rv.
+        + now apply RandomVariable_sa_sub with (dom3 := dom2).
+        + apply Real_Rbar_rv.
+          apply EventIndicator_pre_rv.
+          now apply sub.
+      - apply Rbar_rvmult_rv.
+        + now apply RandomVariable_sa_sub with (dom3 := dom2).
+        + apply Real_Rbar_rv.
+          apply EventIndicator_pre_rv.
+          now apply sub.
     }
 
     assert (eqq2: forall x,  Rbar_Expectation (Rbar_rvmult (Rbar_rvminus ce1 ce2) (fun x0 : Ts => EventIndicator (classic_dec (G x)) x0)) = Some (Finite 0)).
@@ -3983,7 +3997,7 @@ Qed.
       unfold Rbar_gt, Rbar_ge in *.
       eapply Rbar_le_trans; try eapply H1.
       apply le_INR; lia.
-  Admitted.
+  Qed.
 
   Lemma is_Rbar_conditional_expectation_almostfinite_unique
       {dom2 : SigmaAlgebra Ts}
@@ -4297,24 +4311,6 @@ Canonical nneg2.
     repeat match_destr_in HH; congruence.
   Qed.
 
-(*
-  Lemma NonNegCondexp_l2fun_lim_incr (f : nat -> Ts -> R)
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
-        {rv : forall n, RandomVariable dom borel_sa (f n)}
-        {limrv : RandomVariable dom borel_sa (Rbar_rvlim f)}        
-        {nnf : forall n, NonnegativeFunction (f n)} 
-        {islp : forall n, IsLp prts 2 (f n)} :
-    (forall n, rv_le (f n) (f (S n))) ->
-    almostR2 prts eq
-             (NonNegConditionalExpectation prts (Rbar_rvlim f) sub)
-             (Rbar_rvlim (fun n =>
-                            (conditional_expectation_L2fun prts (f n) sub))).
-  Proof.
-    intros.
-    Admitted.
-*)
-  
   Lemma Lim_seq_min_n_scale (fx c : R) :
     Lim_seq (fun n : nat => Rmin (c * fx) (INR n)) = 
     Lim_seq (fun n : nat => c * Rmin (fx) (INR n)).
@@ -5196,15 +5192,14 @@ Canonical nneg2.
         erewrite Expectation_pos_pofrf.
         erewrite Rbar_Expectation_pos_pofrf.
         f_equal.
-
-
-        generalize (NonNegCondexp_cond_exp prts (rvmult g f) sub P dec H1); intros.
-(*
-        erewrite Expectation_pos_pofrf in H2.        
-        erewrite Rbar_Expectation_pos_pofrf in H2.
-        inversion H2.
-        rewrite H4.
-*)
+        erewrite Expectation_pos_pofrf in H6.
+        erewrite Rbar_Expectation_pos_pofrf in H6.
+        cut_to H6.
+        + invcs H6.
+          rewrite <- H8.
+          symmetry in H2.
+          rewrite (NonnegExpectation_ext _ _ H2).
+          
         Admitted.
         
         
