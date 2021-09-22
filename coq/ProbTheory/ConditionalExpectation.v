@@ -2743,6 +2743,59 @@ Definition ConditionalExpectation (f : Ts -> R)
   Rbar_rvminus (NonNegCondexp (pos_fun_part f) sub)
                (NonNegCondexp (neg_fun_part f) sub).
 
+  Lemma sa_le_Rbar_ge_rv {domm}
+        (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
+    : sa_sigma (fun omega => Rbar_ge (rv_X omega) x).
+  Proof.
+    apply Rbar_sa_le_ge.
+    now apply rv_Rbar_measurable.
+  Qed.
+
+
+  Global Instance Rbar_rvopp_rv {domx} (x:Ts -> Rbar) 
+         {xrv:RandomVariable domx Rbar_borel_sa x} :
+    RandomVariable domx Rbar_borel_sa (Rbar_rvopp x).
+  Proof.
+    apply Rbar_measurable_rv.
+    intros ?.
+    apply (sa_proper _ (fun omega => Rbar_ge (x omega) (Rbar_opp r))).
+    - intros ?.
+      unfold Rbar_rvopp.
+      destruct (x x0); destruct r; simpl; try tauto.
+      lra.
+    - now apply sa_le_Rbar_ge_rv.
+  Qed.
+
+  Global Instance Condexp_rv (f : Ts -> R) 
+           {dom2 : SigmaAlgebra Ts}
+           (sub : sa_sub dom2 dom)
+           {rv : RandomVariable dom borel_sa f}
+           {nnf : NonnegativeFunction f} :
+    RandomVariable dom2 Rbar_borel_sa (ConditionalExpectation f sub).
+  Proof.
+    unfold ConditionalExpectation, Rbar_rvminus.
+    apply Rbar_rvplus_rv.
+    - typeclasses eauto.
+    - typeclasses eauto.
+  Qed.
+
+
+Lemma Condexp_cond_exp (f : Ts -> R) 
+           {dom2 : SigmaAlgebra Ts}
+           (sub : sa_sub dom2 dom)
+           {rv : RandomVariable dom borel_sa f} 
+  (* why is next line needed ?? *)
+           {ce: RandomVariable dom2 Rbar_borel_sa (ConditionalExpectation f sub)} :
+  is_Rbar_conditional_expectation prts sub f (ConditionalExpectation f sub).
+Proof.
+  unfold is_Rbar_conditional_expectation, ConditionalExpectation.
+  intros.
+  unfold Expectation, Rbar_Expectation.
+  f_equal.
+  - generalize (NonNegCondexp_cond_exp (pos_fun_part f) sub P dec H); intros.
+    Admitted.
+    
+  
 (*
 Definition FiniteConditionalExpectation (f : Ts -> R) 
            {dom2 : SigmaAlgebra Ts}
@@ -2850,13 +2903,6 @@ Proof.
 Qed.
 
 
-  Lemma sa_le_Rbar_ge_rv {domm}
-        (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
-    : sa_sigma (fun omega => Rbar_ge (rv_X omega) x).
-  Proof.
-    apply Rbar_sa_le_ge.
-    now apply rv_Rbar_measurable.
-  Qed.
 
   Definition event_Rbar_ge {domm}
         (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
@@ -2870,19 +2916,6 @@ Qed.
     f_equal; lra.
   Qed.
 
-  Global Instance Rbar_rvopp_rv {domx} (x:Ts -> Rbar) 
-         {xrv:RandomVariable domx Rbar_borel_sa x} :
-    RandomVariable domx Rbar_borel_sa (Rbar_rvopp x).
-  Proof.
-    apply Rbar_measurable_rv.
-    intros ?.
-    apply (sa_proper _ (fun omega => Rbar_ge (x omega) (Rbar_opp r))).
-    - intros ?.
-      unfold Rbar_rvopp.
-      destruct (x x0); destruct r; simpl; try tauto.
-      lra.
-    - now apply sa_le_Rbar_ge_rv.
-  Qed.
 
   Lemma Rbar_NonnegExpectation_minus_bounded2 
         (rv_X1 : Ts -> Rbar)
