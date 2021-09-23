@@ -2816,8 +2816,7 @@ Definition ConditionalExpectation (f : Ts -> R)
   Global Instance Condexp_rv (f : Ts -> R) 
            {dom2 : SigmaAlgebra Ts}
            (sub : sa_sub dom2 dom)
-           {rv : RandomVariable dom borel_sa f}
-           {nnf : NonnegativeFunction f} :
+           {rv : RandomVariable dom borel_sa f} :
     RandomVariable dom2 Rbar_borel_sa (ConditionalExpectation f sub).
   Proof.
     unfold ConditionalExpectation, Rbar_rvminus.
@@ -2894,9 +2893,7 @@ Definition ConditionalExpectation (f : Ts -> R)
 Lemma Condexp_cond_exp (f : Ts -> R) 
            {dom2 : SigmaAlgebra Ts}
            (sub : sa_sub dom2 dom)
-           {rv : RandomVariable dom borel_sa f} 
-  (* why is next line needed ?? *)
-           {ce: RandomVariable dom2 Rbar_borel_sa (ConditionalExpectation f sub)} :
+           {rv : RandomVariable dom borel_sa f} :
   is_Rbar_conditional_expectation prts sub f (ConditionalExpectation f sub).
 Proof.
   unfold is_Rbar_conditional_expectation, ConditionalExpectation.
