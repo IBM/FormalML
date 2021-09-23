@@ -4266,11 +4266,10 @@ Proof.
   intros eqq.
   generalize (NonNegCondexp_cond_exp f1 sub); intros HH1.
   generalize (NonNegCondexp_cond_exp f2 sub); intros HH2.
-  generalize (is_Rbar_conditional_expectation_nneg_unique sub f1 (NonNegCondexp f1 sub) (NonNegCondexp f2 sub) HH1); intros HH.
-  apply HH.
-  eapply is_Rbar_conditional_expectation_proper; try eapply HH2.
-  now symmetry.
-  reflexivity.
+  apply (is_Rbar_conditional_expectation_nneg_unique sub f1 (NonNegCondexp f1 sub) (NonNegCondexp f2 sub) HH1).
+  apply (is_Rbar_conditional_expectation_proper sub f2 f1 (NonNegCondexp f2 sub) (NonNegCondexp f2 sub)); trivial.
+  - now symmetry.
+  - reflexivity.
  Qed.
 
 Lemma ConditionalExpectation_proper (f1 f2 : Ts -> R) 
