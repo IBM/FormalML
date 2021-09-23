@@ -3114,7 +3114,7 @@ End RbarRandomVariables.
 Section rv_almost.
 
   Lemma almost_map_R_split
-        {Ts:Type} {Td:Type}
+        {Ts:Type}
           {dom: SigmaAlgebra Ts}
           (prts: ProbSpace dom)
         {f:Ts->R} {P:R->Prop} :
@@ -3151,7 +3151,7 @@ Section rv_almost.
   Qed.
 
   Lemma almost_map_Rbar_split
-        {Ts:Type} {Td:Type}
+        {Ts:Type} 
         {dom: SigmaAlgebra Ts}
         (prts: ProbSpace dom)
         {f:Ts->Rbar} {P:Rbar->Prop} :

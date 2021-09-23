@@ -315,5 +315,15 @@ Section almostR2_part.
     generalize (ps_pos P1); intros.
     lra.
   Qed.
+
+  Lemma almost_f_equal {B C} (f:B->C) (x1 x2:Ts->B) :
+    almostR2 prts eq (fun x => x1 x) (fun x => x2 x) ->
+    almostR2 prts eq (fun x => f (x1 x)) (fun x => f (x2 x)).
+  Proof.
+    eapply almost_impl; try eapply a1.
+    apply all_almost; intros ??.
+    congruence.
+  Qed.
+
   
 End almostR2_part.
