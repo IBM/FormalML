@@ -3280,134 +3280,130 @@ Proof.
     now rewrite <- Rbar_mult_opp_r.
 Qed.
 
-  
-  Lemma NonNegCondexp_part0 (f : Ts -> R)
+
+Lemma is_Rbar_conditional_expectation_proper
            {dom2 : SigmaAlgebra Ts}
            (sub : sa_sub dom2 dom)
-           {rv : RandomVariable dom borel_sa f} :
-    almost prts
-           (fun omega => (NonNegCondexp (pos_fun_part f) sub omega = 0 \/
-                       NonNegCondexp (neg_fun_part f) sub omega = 0)).
- Proof.
-   Admitted.
-
-
-Lemma Condexp_cond_exp (f : Ts -> R) 
-           {dom2 : SigmaAlgebra Ts}
-           (sub : sa_sub dom2 dom)
-           {rv : RandomVariable dom borel_sa f} :
-  is_Rbar_conditional_expectation prts sub f (ConditionalExpectation f sub).
+           (f1 f2 : Ts -> R)
+           (ce1 ce2 : Ts -> Rbar)
+           {rvf1 : RandomVariable dom borel_sa f1}
+           {rvf2 : RandomVariable dom borel_sa f2}
+           {rvce1 : RandomVariable dom2 Rbar_borel_sa ce1}
+           {rvce2 : RandomVariable dom2 Rbar_borel_sa ce2}
+  : almostR2 prts eq f1 f2 ->
+    almostR2 prts eq ce1 ce2 ->
+    is_Rbar_conditional_expectation prts sub f1 ce1 ->
+    is_Rbar_conditional_expectation prts sub f2 ce2.
 Proof.
-  unfold is_Rbar_conditional_expectation, ConditionalExpectation.
-  intros.
-  unfold Expectation, Rbar_Expectation.
-  f_equal.
-  - generalize (NonNegCondexp_cond_exp (pos_fun_part f) sub P dec H); intros.
-    erewrite Expectation_pos_pofrf in H0.
-    erewrite Rbar_Expectation_pos_pofrf in H0.
-    invcs H0.
-    assert (rv_eq (fun x => nonneg ((pos_fun_part (rvmult f (EventIndicator dec))) x))
-                  (rvmult (pos_fun_part f) (EventIndicator dec))).
-    {
-      intro x.
-      rv_unfold; simpl.
-      match_destr.
-      - now do 2 rewrite Rmult_1_r.
-      - do 2 rewrite Rmult_0_r.
-        apply Rmax_left; lra.
-   }
-    rewrite (NonnegExpectation_ext _ _ H0).
-    rewrite H2.
-    apply Rbar_NonnegExpectation_ext.
-    intro x.
-    unfold Rbar_pos_fun_part, Rbar_rvmult.
-    replace
-      (Rbar_max
-    (Rbar_mult
-       (Rbar_rvminus (NonNegCondexp (fun x0 : Ts => pos_fun_part f x0) sub)
-          (NonNegCondexp (fun x0 : Ts => neg_fun_part f x0) sub) x)
-       (EventIndicator dec x)) 0) with
-        (Rbar_mult (Rbar_max 
-      (Rbar_rvminus (NonNegCondexp (fun x0 : Ts => pos_fun_part f x0) sub)
-          (NonNegCondexp (fun x0 : Ts => neg_fun_part f x0) sub) x) 0)
-                   (EventIndicator dec x)).
-    + f_equal.
-      unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp.
-      symmetry.
-      apply Rbar_max_minus_nneg.
-      * apply NonNegCondexp_nneg.
-      * apply NonNegCondexp_nneg.
-      * apply  NonNegCondexp_part0 .
-    + unfold EventIndicator.
-      match_destr.
-      * now do 2 rewrite Rbar_mult_1_r.
-      * do 2 rewrite Rbar_mult_0_r.
-        unfold Rbar_max.
-        now match_destr.
-  - generalize (NonNegCondexp_cond_exp (neg_fun_part f) sub P dec H); intros.
-    erewrite Expectation_pos_pofrf in H0.
-    erewrite Rbar_Expectation_pos_pofrf in H0.
-    invcs H0.
-    assert (rv_eq (fun x => nonneg ((neg_fun_part (rvmult f (EventIndicator dec))) x))
-                  (rvmult (neg_fun_part f) (EventIndicator dec))).
-    {
-      intro x.
-      rv_unfold; simpl.
-      match_destr.
-      - now do 2 rewrite Rmult_1_r.
-      - do 2 rewrite Rmult_0_r.
-        apply Rmax_right; lra.
-   }
-    rewrite (NonnegExpectation_ext _ _ H0).
-    rewrite H2.
-    apply Rbar_NonnegExpectation_ext.
-    intro x.
-    unfold Rbar_neg_fun_part, Rbar_rvmult.
-    replace
-      (Rbar_max (Rbar_opp
-    (Rbar_mult
-       (Rbar_rvminus (NonNegCondexp (fun x0 : Ts => pos_fun_part f x0) sub)
-          (NonNegCondexp (fun x0 : Ts => neg_fun_part f x0) sub) x)
-       (EventIndicator dec x))) 0) with
-        (Rbar_mult (Rbar_max 
-      (Rbar_rvminus (NonNegCondexp (fun x0 : Ts => neg_fun_part f x0) sub)
-          (NonNegCondexp (fun x0 : Ts => pos_fun_part f x0) sub) x) 0)
-                   (EventIndicator dec x)).
-    + f_equal.
-      unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp.
-      symmetry.
-      apply Rbar_max_minus_nneg.
-      * apply NonNegCondexp_nneg.
-      * apply NonNegCondexp_nneg.
-      * rewrite or_comm.
-        apply NonNegCondexp_part0.
-    + unfold EventIndicator.
-      match_destr.
-      * do 2 rewrite Rbar_mult_1_r.
-        unfold Rbar_rvminus, Rbar_rvopp, Rbar_rvplus.
-        rewrite <- Rbar_plus_opp.
-        rewrite Rbar_opp_involutive.
-        now rewrite Rbar_plus_comm.
-      * do 2 rewrite Rbar_mult_0_r.
-        unfold Rbar_max.
-        match_destr.
-        simpl.
-        apply Rbar_finite_eq; lra.
-        Unshelve.
-        -- typeclasses eauto.
-        -- typeclasses eauto.
-  Qed.
+  unfold is_Rbar_conditional_expectation
+  ; intros eqq1 eqq2 is1 P dec saP.
+  specialize (is1 P dec saP).
+  etransitivity.
+  - etransitivity; [| apply is1].
+    apply Expectation_almostR2_proper.
+    + apply rvmult_rv; trivial.
+      apply EventIndicator_pre_rv.
+      now apply sub.
+    + apply rvmult_rv; trivial.
+      apply EventIndicator_pre_rv.
+      now apply sub.
+    + apply almostR2_eq_mult_proper; trivial.
+      * now symmetry.
+      * reflexivity.
+  - apply Rbar_Expectation_almostR2_proper.
+    + apply Rbar_rvmult_rv; trivial.
+      * eapply RandomVariable_sa_sub; eauto.
+      * apply borel_Rbar_borel.
+        apply EventIndicator_pre_rv.
+        now apply sub.
+    + apply Rbar_rvmult_rv; trivial.
+      * eapply RandomVariable_sa_sub; eauto.
+      * apply borel_Rbar_borel.
+        apply EventIndicator_pre_rv.
+        now apply sub.
+    + apply almostR2_eq_Rbar_mult_proper; trivial.
+      reflexivity.
+Qed.
 
-(*
-Definition FiniteConditionalExpectation (f : Ts -> R) 
+Lemma is_Rbar_conditional_expectation_finexp_plus
            {dom2 : SigmaAlgebra Ts}
            (sub : sa_sub dom2 dom)
-           {isfep : IsFiniteExpectation prts (pos_fun_part f)}
-           {isfen : IsFiniteExpectation prts (neg_fun_part f)}           
-           {rv : RandomVariable dom borel_sa f} : Ts -> R :=
-  rvminus (FiniteNonNegConditionalExpectation (pos_fun_part f) sub) 
-          (FiniteNonNegConditionalExpectation (neg_fun_part f) sub).
- *)
+           (f1 f2 : Ts -> R)
+           (ce1 ce2 : Ts -> Rbar)
+           {isfe1:IsFiniteExpectation prts f1}
+           {isfe2:IsFiniteExpectation prts f2}
+           {rvf1 : RandomVariable dom borel_sa f1}
+           {rvf2 : RandomVariable dom borel_sa f2}
+           {rvce1 : RandomVariable dom2 Rbar_borel_sa ce1}
+           {rvce2 : RandomVariable dom2 Rbar_borel_sa ce2}
+  :
+    is_Rbar_conditional_expectation prts sub f1 ce1 ->
+    is_Rbar_conditional_expectation prts sub f2 ce2 ->
+    is_Rbar_conditional_expectation prts sub (rvplus f1 f2) (Rbar_rvplus ce1 ce2)
+                                    (rvce:= Rbar_rvplus_rv _ _).
+Proof.
+  intros isce1 isce2 ???.
+  generalize (rvmult_rvadd_distr (EventIndicator dec) f1 f2); intros eqq1.
+  rewrite rvmult_comm in eqq1.
+  rewrite (Expectation_ext eqq1).
+  generalize (IsFiniteExpectation_indicator prts f1 dec (sub _ H) isfe1)
+  ; intros isfe1'.
+  generalize (IsFiniteExpectation_indicator prts f2 dec (sub _ H) isfe2)
+  ; intros isfe2'.
+  
+  red in isfe1', isfe2'.
+  match_option_in isfe1'; try tauto.
+  match_option_in isfe2'; try tauto.
+  destruct r; try tauto.
+  destruct r0; try tauto.
+  rewrite Expectation_sum_finite with (e1:=r) (e2:=r0); trivial.
+  - rewrite isce1 in eqq; trivial.
+    rewrite isce2 in eqq0; trivial.
+    assert (rv_eq (Rbar_rvmult (Rbar_rvplus ce1 ce2) (EventIndicator dec))
+                  (Rbar_rvplus (Rbar_rvmult (EventIndicator dec) ce1) (Rbar_rvmult (EventIndicator dec) ce2))).
+    {
+      intros ?.
+      unfold Rbar_rvminus, Rbar_rvmult, Rbar_rvplus, Rbar_rvopp.
+      simpl.
+      rewrite (Rbar_mult_comm _ (EventIndicator dec a)).
+      now rewrite Rbar_mult_r_plus_distr.
+    }
+    
+    rewrite (Rbar_Expectation_ext H0).
+    rewrite Rbar_Expectation_sum_finite with (e1:=r) (e2:=r0); trivial.
+    + apply Rbar_rvmult_rv; trivial.
+      * apply borel_Rbar_borel.
+        apply EventIndicator_pre_rv.
+        now apply sub.
+      * eapply RandomVariable_sa_sub; eauto.
+    + apply Rbar_rvmult_rv; trivial.
+      * apply borel_Rbar_borel.
+        apply EventIndicator_pre_rv.
+        now apply sub.
+      * eapply RandomVariable_sa_sub; eauto.
+    + rewrite <- eqq.
+      apply Rbar_Expectation_ext.
+      intros ?.
+      unfold Rbar_rvmult.
+      apply Rbar_mult_comm.
+    + rewrite <- eqq0.
+      apply Rbar_Expectation_ext.
+      intros ?.
+      unfold Rbar_rvmult.
+      apply Rbar_mult_comm.
+  - apply rvmult_rv; trivial.
+    apply EventIndicator_pre_rv.
+    now apply sub.
+  - apply rvmult_rv; trivial.
+    apply EventIndicator_pre_rv.
+    now apply sub.
+  - rewrite <- eqq.
+    apply Expectation_ext.
+    apply rvmult_comm.
+  - rewrite <- eqq0.
+    apply Expectation_ext.
+    apply rvmult_comm.
+Qed.
 
 Lemma Rbar_rvlim_almost_proper (f1 f2:nat->Ts->R) :
       (forall n, almostR2 prts eq (f1 n) (f2 n)) ->
@@ -3458,50 +3454,6 @@ Proof.
   - intros ??.
     unfold Rbar_rvopp.
     rewrite eqq1; trivial.
-Qed.
-
-Lemma is_Rbar_conditional_expectation_proper
-           {dom2 : SigmaAlgebra Ts}
-           (sub : sa_sub dom2 dom)
-           (f1 f2 : Ts -> R)
-           (ce1 ce2 : Ts -> Rbar)
-           {rvf1 : RandomVariable dom borel_sa f1}
-           {rvf2 : RandomVariable dom borel_sa f2}
-           {rvce1 : RandomVariable dom2 Rbar_borel_sa ce1}
-           {rvce2 : RandomVariable dom2 Rbar_borel_sa ce2}
-  : almostR2 prts eq f1 f2 ->
-    almostR2 prts eq ce1 ce2 ->
-    is_Rbar_conditional_expectation prts sub f1 ce1 ->
-    is_Rbar_conditional_expectation prts sub f2 ce2.
-Proof.
-  unfold is_Rbar_conditional_expectation
-  ; intros eqq1 eqq2 is1 P dec saP.
-  specialize (is1 P dec saP).
-  etransitivity.
-  - etransitivity; [| apply is1].
-    apply Expectation_almostR2_proper.
-    + apply rvmult_rv; trivial.
-      apply EventIndicator_pre_rv.
-      now apply sub.
-    + apply rvmult_rv; trivial.
-      apply EventIndicator_pre_rv.
-      now apply sub.
-    + apply almostR2_eq_mult_proper; trivial.
-      * now symmetry.
-      * reflexivity.
-  - apply Rbar_Expectation_almostR2_proper.
-    + apply Rbar_rvmult_rv; trivial.
-      * eapply RandomVariable_sa_sub; eauto.
-      * apply borel_Rbar_borel.
-        apply EventIndicator_pre_rv.
-        now apply sub.
-    + apply Rbar_rvmult_rv; trivial.
-      * eapply RandomVariable_sa_sub; eauto.
-      * apply borel_Rbar_borel.
-        apply EventIndicator_pre_rv.
-        now apply sub.
-    + apply almostR2_eq_Rbar_mult_proper; trivial.
-      reflexivity.
 Qed.
 
 
