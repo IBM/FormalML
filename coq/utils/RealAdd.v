@@ -4039,3 +4039,73 @@ Proof.
   generalize (is_lim_seq_min x); intros.
   now apply is_lim_seq_unique in H.
 Qed.
+
+Lemma Rbar_mult_r_plus_distr (c:R) x y:
+  Rbar_mult c (Rbar_plus x y) =
+  Rbar_plus (Rbar_mult c x) (Rbar_mult c y).
+Proof.
+  destruct x; destruct y; simpl;
+    try
+      solve [
+        f_equal; lra
+      |
+      destruct (Rle_dec 0 c); trivial
+      ; destruct (Rle_lt_or_eq_dec 0 c r0); simpl; trivial
+      ; subst
+      ; f_equal; lra
+      |
+      destruct (Rle_dec 0 c); trivial
+      ; simpl; try (f_equal; lra)
+      ; destruct (Rle_lt_or_eq_dec 0 c r); simpl; trivial
+      ; f_equal; lra
+      ].
+Qed.
+
+
+Lemma Rbar_abs_mult_distr (x y : Rbar) :
+  Rbar_abs (Rbar_mult x y) = Rbar_mult (Rbar_abs x) (Rbar_abs y).
+Proof.
+  destruct x; destruct y; simpl; trivial
+  ; try solve[(unfold Rabs
+               ; destruct (Rcase_abs r)
+               ; destruct (Rle_dec 0 r)
+               ; try lra
+               ; destruct (Rle_dec 0 (- r))
+               ; try lra
+               ; destruct (Rle_dec 0 (Rabs r))
+               ; simpl; try lra
+               ; (try destruct (Rle_lt_or_eq_dec 0 r r1)
+                  ; simpl
+                  ; (try destruct (Rle_lt_or_eq_dec 0 (- r) r2)
+                     ; simpl)
+                  ; try lra
+                  ; (try destruct (Rle_lt_or_eq_dec 0 (- r) r1)
+                     ; simpl)
+                  ; try lra; trivial
+                 )
+               ; try rewrite Rabs_R0
+               ; trivial)].
+  now rewrite Rabs_mult.
+Qed.
+
+Lemma Rbar_mult_plus_distr_fin_r (a b:Rbar) (c:R) :
+  Rbar_mult (Rbar_plus a b) c = Rbar_plus (Rbar_mult a c) (Rbar_mult b c).
+Proof.
+  destruct a; destruct b; simpl
+  ; try (simpl; f_equal; lra)
+  ; (try destruct (Rle_dec 0 c)
+     ; try (simpl; f_equal; lra)
+     ; (try destruct (Rle_lt_or_eq_dec 0 c r0)
+        ; try (simpl; trivial; f_equal; lra)))
+  ; simpl; subst
+  ; try (f_equal; lra)
+  ; (try destruct (Rle_lt_or_eq_dec 0 c r)
+     ; try (simpl; trivial; f_equal; lra)).
+Qed.
+
+Lemma Rbar_minus_plus_fin (x:Rbar) (y:R) :
+  Rbar_minus (Rbar_plus x y) y = x.
+Proof.
+  destruct x; simpl; trivial.
+  f_equal; lra.
+Qed.

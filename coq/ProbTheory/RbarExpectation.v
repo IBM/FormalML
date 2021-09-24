@@ -2489,5 +2489,73 @@ Qed.
     trivial.
   Qed.
 
+  Lemma Rbar_NonnegExpectation_minus_bounded2 
+        (rv_X1 : Ts -> Rbar)
+        (rv_X2 : Ts -> Rbar)
+        {rv1 : RandomVariable dom Rbar_borel_sa rv_X1}
+        {rv2 : RandomVariable dom Rbar_borel_sa rv_X2}
+        {nnf1:Rbar_NonnegativeFunction rv_X1}
+        (c:R)
+        (cpos:0 <= c)
+        (bounded2: Rbar_rv_le rv_X2 (const c))
+        {nnf2:Rbar_NonnegativeFunction rv_X2}
+        {nnf12:Rbar_NonnegativeFunction (Rbar_rvminus rv_X1 rv_X2)} :
+    Rbar_NonnegExpectation (Rbar_rvminus rv_X1 rv_X2) =
+    Rbar_minus (Rbar_NonnegExpectation rv_X1) (Rbar_NonnegExpectation rv_X2).
+  Proof.
+    assert (isf:forall omega, is_finite (rv_X2 omega)).
+    {
+      intros omega.
+      specialize (bounded2 omega).
+      simpl in bounded2.
+      eapply bounded_is_finite; eauto.
+    } 
+    
+    assert (isfe:is_finite (Rbar_NonnegExpectation rv_X2)).
+    {
+      eapply (is_finite_Rbar_NonnegExpectation_le _ (const c)).
+      - intros ?.
+        unfold const.
+        simpl.
+        apply bounded2.
+      - erewrite (Rbar_NonnegExpectation_pf_irrel _ (nnfconst _ _)).
+        rewrite Rbar_NonnegExpectation_const.
+        now trivial.
+    } 
+
+    assert (minus_rv:RandomVariable dom Rbar_borel_sa (Rbar_rvminus rv_X1 rv_X2)).
+    {
+      apply Rbar_rvplus_rv; trivial.
+      typeclasses eauto.
+    } 
+    
+    generalize (Rbar_NonnegExpectation_plus (Rbar_rvminus rv_X1 rv_X2) rv_X2)
+    ; intros eqq1.
+    assert (eqq2:rv_eq (Rbar_rvplus (Rbar_rvminus rv_X1 rv_X2) rv_X2) rv_X1).
+    { 
+      intros a.
+      unfold Rbar_rvminus, Rbar_rvopp, Rbar_rvplus in *.
+      rewrite <- isf.
+      clear eqq1 isf isfe.
+      specialize (nnf12 a).
+      specialize (nnf1 a).
+      specialize (nnf2 a).
+      simpl in *.
+      destruct (rv_X1 a); simpl in *; try tauto.
+      f_equal; lra.
+    }
+    rewrite (Rbar_NonnegExpectation_ext _ _ eqq2) in eqq1.
+    rewrite eqq1.
+    generalize (Rbar_NonnegExpectation_pos _ (nnf:=nnf12))
+    ; intros nneg12.
+    clear eqq1 eqq2.
+
+    now rewrite <- isfe, Rbar_minus_plus_fin.
+    Unshelve.
+    - intros ?; simpl.
+      now unfold const.
+    - trivial.
+  Qed.
+
 End almost.
 
