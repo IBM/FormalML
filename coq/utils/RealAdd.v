@@ -3997,3 +3997,45 @@ Proof.
   rewrite IHl; trivial.
   lra.
 Qed.
+
+Lemma nneg_lt_eps_zero (x : R) :
+  0 <= x ->
+  (forall (eps:posreal), x < eps) -> x = 0.
+Proof.
+  intros.
+  destruct (Rgt_dec x 0).
+  - specialize (H0 (mkposreal _ r)).
+    simpl in H0; lra.
+  - lra.
+Qed.
+
+Lemma is_lim_seq_min (x : R) :
+  is_lim_seq (fun n : nat => Rmin x (INR n)) x.
+Proof.
+  apply is_lim_seq_spec.
+  unfold is_lim_seq'.
+  intros.
+  exists (Z.to_nat (up x)).
+  intros.
+  rewrite Rmin_left.
+  - rewrite Rminus_eq_0.
+    rewrite Rabs_R0.
+    apply cond_pos.
+  - destruct (archimed x).
+    destruct (Rge_dec x 0).
+    + rewrite <- INR_up_pos in H0; trivial.
+      apply Rge_le.
+      left.
+      apply Rge_gt_trans with (r2 := INR (Z.to_nat (up x))); trivial.
+      apply Rle_ge.
+      now apply le_INR.
+    + generalize (pos_INR n); intros.
+      lra.
+Qed.
+
+Lemma Lim_seq_min (x : R) :
+  Lim_seq (fun n => Rmin x (INR n)) = x.
+Proof.
+  generalize (is_lim_seq_min x); intros.
+  now apply is_lim_seq_unique in H.
+Qed.

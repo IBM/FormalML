@@ -1024,6 +1024,11 @@ Section event.
   Definition event_pre {σ:SigmaAlgebra T} : event σ -> (T->Prop)
     := fun e => proj1_sig e.
 
+  Lemma sa_sigma_event_pre {σ : SigmaAlgebra T} (E:event σ): sa_sigma (event_pre E).
+  Proof.
+    now destruct E; simpl.
+  Qed.
+
   Context {σ:SigmaAlgebra T}.
   
   Program Definition event_sub (x y:event σ) := pre_event_sub x y.

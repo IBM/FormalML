@@ -1359,6 +1359,12 @@ Section RealRandomVariables.
       intros x.
       unfold const; trivial.
     Qed.
+    
+    Global Instance nnfconstinr (c : nat) : NonnegativeFunction (const (INR c)).
+    Proof.
+      apply nnfconst.
+      apply pos_INR.
+    Qed.
 
     Global Instance IndicatorRandomVariable_positive (rv_X:Ts->R)
            {irvx:IndicatorRandomVariable rv_X} :
@@ -1427,6 +1433,15 @@ Section RealRandomVariables.
       match_destr; lra.
     Qed.
 
+    Global Instance NonNegMult (f g : Ts -> R)
+             {nnf : NonnegativeFunction f}
+             {nng : NonnegativeFunction g} :
+      NonnegativeFunction (rvmult g f).
+    Proof.
+      intro x.
+      unfold rvmult.
+      now apply Rmult_le_pos.
+    Qed.
 
     Global Instance EventIndicator_pos {P : pre_event Ts} (dec:forall x, {P x} + {~ P x})
       : NonnegativeFunction (EventIndicator dec).
@@ -2008,6 +2023,14 @@ Section RbarRandomVariables.
     - apply ex_lim_seq_incr.
       intros.
       apply H.
+  Qed.
+
+  Lemma rvlim_rvmin (f : Ts -> R) :
+    rv_eq (Rbar_rvlim (fun n => rvmin f (const (INR n)))) f.
+  Proof.
+    intro x.
+    unfold Rbar_rvlim, rvmin, const.
+    now rewrite Lim_seq_min.
   Qed.
 
   Definition Rbar_rvplus (rv_X1 rv_X2 : Ts -> Rbar) :=
@@ -3447,6 +3470,92 @@ Section rv_almost.
     intros ????.
     rewrite H.
     lra.
+  Qed.
+
+  Lemma almostR2_le_split {Ts:Type} 
+         {dom: SigmaAlgebra Ts}
+         (prts: ProbSpace dom)
+         x y :
+    almostR2 prts Rle x y ->
+    exists x', almostR2 prts eq x x' /\
+          rv_le x' y.
+  Proof.
+    intros [p [pone ph]].
+    generalize (fun ts => sa_dec p ts).
+    exists (fun ts => if ClassicalDescription.excluded_middle_informative (p ts) then x ts else y ts).
+    split.
+    - exists p.
+      split; trivial; intros.
+      now match_destr.
+    - intros ?.
+      match_destr.
+      + auto.
+      + reflexivity.
+  Qed.
+
+  Lemma almostR2_le_split_r {Ts:Type} 
+         {dom: SigmaAlgebra Ts}
+         (prts: ProbSpace dom)
+         x y :
+    almostR2 prts Rle x y ->
+    exists y', almostR2 prts eq y y' /\
+          rv_le x y'.
+  Proof.
+    intros [p [pone ph]].
+    generalize (fun ts => sa_dec p ts).
+    exists (fun ts => if ClassicalDescription.excluded_middle_informative (p ts) then y ts else x ts).
+    split.
+    - exists p.
+      split; trivial; intros.
+      now match_destr.
+    - intros ?.
+      match_destr.
+      + auto.
+      + reflexivity.
+  Qed.
+
+  Local Existing Instance Rbar_le_pre.
+  
+  Lemma almostR2_Rbar_le_split {Ts:Type} 
+         {dom: SigmaAlgebra Ts}
+         (prts: ProbSpace dom)
+         x y :
+    almostR2 prts Rbar_le x y ->
+    exists x', almostR2 prts eq x x' /\
+          Rbar_rv_le x' y.
+  Proof.
+    intros [p [pone ph]].
+    generalize (fun ts => sa_dec p ts).
+    exists (fun ts => if ClassicalDescription.excluded_middle_informative (p ts) then x ts else y ts).
+    split.
+    - exists p.
+      split; trivial; intros.
+      now match_destr.
+    - intros ?.
+      match_destr.
+      + auto.
+      + reflexivity.
+  Qed.
+
+  Lemma almostR2_Rbar_le_split_r {Ts:Type} 
+         {dom: SigmaAlgebra Ts}
+         (prts: ProbSpace dom)
+         x y :
+    almostR2 prts Rbar_le x y ->
+    exists y', almostR2 prts eq y y' /\
+          Rbar_rv_le x y'.
+  Proof.
+    intros [p [pone ph]].
+    generalize (fun ts => sa_dec p ts).
+    exists (fun ts => if ClassicalDescription.excluded_middle_informative (p ts) then y ts else x ts).
+    split.
+    - exists p.
+      split; trivial; intros.
+      now match_destr.
+    - intros ?.
+      match_destr.
+      + auto.
+      + reflexivity.
   Qed.
 
 End rv_almost.

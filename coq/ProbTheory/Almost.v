@@ -103,7 +103,7 @@ Section almost.
       split; auto.
   Qed.
 
-  Lemma almost_countable_and {Pn:nat -> pre_event Ts} :
+  Lemma almost_forall {Pn:nat -> pre_event Ts} :
     (forall n, almost (Pn n)) ->
     almost (pre_inter_of_collection Pn).
   Proof.

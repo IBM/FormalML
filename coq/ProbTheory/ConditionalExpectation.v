@@ -69,291 +69,295 @@ Section sa_sub_props.
     now apply sub.
   Qed.
 
-  Section sa_sub_prob.
-    Context (prts:ProbSpace dom).
-
-    Instance prob_space_sa_sub : ProbSpace dom2.
-    Proof.
-      exists (fun x => ps_P (event_sa_sub x)).
-      - repeat red; intros.
-        now rewrite H.
-      - intros.
-        generalize (ps_countable_disjoint_union (fun n => event_sa_sub (collection n)))
-        ; intros HH.
-        cut_to HH.
-        + rewrite union_of_collection_sa_sub.
-          unfold sum_of_probs_equals in *.
-          apply HH.
-        + now apply collection_is_pairwise_disjoint_sa_sub.
-      - erewrite ps_proper; try eapply ps_one.
-        unfold Ω, pre_Ω.
-        repeat red; intros; simpl; tauto.
-      - intros.
-        apply ps_pos.
-    Defined.
-
-    Lemma almostR2_prob_space_sa_sub_lift
-          RR
-          (f1 f2:Ts -> R):
-      almostR2 prob_space_sa_sub RR f1 f2 ->
-      almostR2 prts RR f1 f2.
-    Proof.
-      intros [p [pone peqq]].
-      red.
-      simpl in *.
-      exists (event_sa_sub p).
-      split; trivial.
-    Qed.
-    
-    Lemma almost_prob_space_sa_sub_lift
-          (prop : Ts -> Prop) :
-      almost prob_space_sa_sub prop ->
-      almost prts prop.
-    Proof.
-      intros [p [pone peqq]].
-      red.
-      simpl in *.
-      exists (event_sa_sub p).
-      split; trivial.
-    Qed.
-
-    Lemma SimpleExpectation_prob_space_sa_sub
-          (x:Ts->R)
-          {rv:RandomVariable dom borel_sa x} 
-          {rv2:RandomVariable dom2 borel_sa x} 
-          {frf:FiniteRangeFunction x} :
-      @SimpleExpectation Ts dom2 prob_space_sa_sub x rv2 frf =
-      @SimpleExpectation Ts dom prts x rv frf.
-    Proof.
-      unfold SimpleExpectation.
-      f_equal.
-      apply map_ext; intros.
-      f_equal.
-      simpl.
-      apply ps_proper.
-      intros ?.
-      unfold preimage_singleton; simpl.
-      tauto.
-    Qed.
-
-    Lemma NonnegExpectation_prob_space_sa_sub
-          (x:Ts -> R)
-          {pofrf:NonnegativeFunction x}
-          {rv:RandomVariable dom2 borel_sa x}
-          
-      :
-        @NonnegExpectation Ts dom2 prob_space_sa_sub  x pofrf =
-        @NonnegExpectation Ts dom prts x pofrf.
-    Proof.
-      generalize ((RandomVariable_sa_sub x (rv_x:=rv)))
-      ; intros rv1.
-      
-
-      assert (forall n, RandomVariable dom borel_sa (simple_approx (fun x0 : Ts => x x0) n)).
-      {
-        apply simple_approx_rv.
-        * now apply positive_Rbar_positive.
-        * typeclasses eauto.
-      } 
-
-      assert (forall n, RandomVariable dom2 borel_sa (simple_approx (fun x0 : Ts => x x0) n)).
-      {
-        apply simple_approx_rv.
-        * now apply positive_Rbar_positive.
-        * typeclasses eauto.
-      } 
-
-      rewrite <- (monotone_convergence x (simple_approx x)
-                                      rv1 pofrf
-                                      (fun n => simple_approx_rv _ _)
-                                      (fun n => simple_approx_pofrf _ _)).
-      rewrite <- (monotone_convergence x (simple_approx x)
-                                      rv pofrf
-                                      (fun n => simple_approx_rv _ _)
-                                      (fun n => simple_approx_pofrf _ _)).
-      - apply Lim_seq_ext; intros n.
-        repeat erewrite <- simple_NonnegExpectation.
-        apply SimpleExpectation_prob_space_sa_sub.
-      - intros n a.
-        apply (simple_approx_le x pofrf n a).
-      - intros n a.
-        apply (simple_approx_increasing x pofrf n a).
-      - intros n.
-        apply simple_expectation_real; trivial.
-        apply simple_approx_frf.
-      - intros.
-        apply (simple_approx_lim_seq x).
-        now apply positive_Rbar_positive.
-      - intros n a.
-        apply (simple_approx_le x pofrf n a).
-      - intros n a.
-        apply (simple_approx_increasing x pofrf n a).
-      - intros n.
-        apply simple_expectation_real; trivial.
-        apply simple_approx_frf.
-      - intros.
-        apply (simple_approx_lim_seq x).
-        now apply positive_Rbar_positive.
-
-        Unshelve.
-        apply simple_approx_frf.
-    Qed.
-
-    Lemma Expectation_prob_space_sa_sub
-          (x:Ts->R)
-          {rv:RandomVariable dom2 borel_sa x} :
-      @Expectation Ts dom2 prob_space_sa_sub  x =
-      @Expectation Ts dom prts x.
-    Proof.
-      generalize ((RandomVariable_sa_sub x (rv_x:=rv)))
-      ; intros rv1.
-
-      unfold Expectation.
-      repeat rewrite NonnegExpectation_prob_space_sa_sub by typeclasses eauto.
-      reflexivity.
-    Qed.
-
-    Lemma Rbar_NonnegExpectation_prob_space_sa_sub
-          (x:Ts->Rbar)
-          {pofrf:Rbar_NonnegativeFunction x}
-          {rv:RandomVariable dom2 Rbar_borel_sa x}
-          
-      :
-        @Rbar_NonnegExpectation Ts dom2 prob_space_sa_sub x pofrf =
-        @Rbar_NonnegExpectation Ts dom prts x pofrf.
-    Proof.
-      generalize ((RandomVariable_sa_sub x (rv_x:=rv)))
-      ; intros rv1.
-      
-
-      assert (forall n, RandomVariable dom borel_sa (simple_approx (fun x0 : Ts => x x0) n)).
-      {
-        intros.
-        apply simple_approx_rv; trivial.
-      } 
-
-      assert (forall n, RandomVariable dom2 borel_sa (simple_approx (fun x0 : Ts => x x0) n)).
-      {
-        intros.
-        apply simple_approx_rv; trivial.
-      } 
-
-      rewrite <- (Rbar_monotone_convergence x (simple_approx x)
-                                           rv1 pofrf
-                                           (fun n => simple_approx_rv _ _)
-                                           (fun n => simple_approx_pofrf _ _)).
-      rewrite <- (Rbar_monotone_convergence x (simple_approx x)
-                                           rv pofrf
-                                           (fun n => simple_approx_rv _ _)
-                                           (fun n => simple_approx_pofrf _ _)).
-      - apply Lim_seq_ext; intros n.
-        repeat erewrite <- simple_NonnegExpectation.
-        apply SimpleExpectation_prob_space_sa_sub.
-      - intros n a.
-        apply (simple_approx_le x pofrf n a).
-      - intros n a.
-        apply (simple_approx_increasing x pofrf n a).
-      - intros n.
-        apply simple_expectation_real; trivial.
-        apply simple_approx_frf.
-      - intros.
-        apply (simple_approx_lim_seq x); trivial.
-      - intros n a.
-        apply (simple_approx_le x pofrf n a).
-      - intros n a.
-        apply (simple_approx_increasing x pofrf n a).
-      - intros n.
-        apply simple_expectation_real; trivial.
-        apply simple_approx_frf.
-      - intros.
-        apply (simple_approx_lim_seq x); trivial.
-        Unshelve.
-        apply simple_approx_frf.
-    Qed.
-
-    Lemma Rbar_Expectation_prob_space_sa_sub
-          (x:Ts->Rbar)
-          {rv:RandomVariable dom2 Rbar_borel_sa x} :
-      @Rbar_Expectation Ts dom2 prob_space_sa_sub  x =
-      @Rbar_Expectation Ts dom prts x.
-    Proof.
-      generalize ((RandomVariable_sa_sub x (rv_x:=rv)))
-      ; intros rv1.
-
-      unfold Rbar_Expectation.
-      repeat rewrite Rbar_NonnegExpectation_prob_space_sa_sub by typeclasses eauto.
-      reflexivity.
-    Qed.
-
-    Lemma IsLp_prob_space_sa_sub
-          p (x:Ts->R)
-          {rv:RandomVariable dom2 borel_sa x} :
-      IsLp prts p x <->
-      IsLp prob_space_sa_sub p x.
-    Proof.
-      unfold IsLp, IsFiniteExpectation; intros.
-      now rewrite Expectation_prob_space_sa_sub by typeclasses eauto.
-    Qed.
-
-    Lemma IsFiniteExpectation_prob_space_sa_sub
-          (x:Ts->R)
-          {rv:RandomVariable dom2 borel_sa x}
-          {isfe:IsFiniteExpectation prob_space_sa_sub x} :
-      IsFiniteExpectation prts x.
-    Proof.
-      unfold IsFiniteExpectation in *.
-      now rewrite Expectation_prob_space_sa_sub in isfe by trivial.
-    Qed.
-
-    Lemma IsFiniteExpectation_prob_space_sa_sub_f
-          (x:Ts->R)
-          {rv:RandomVariable dom2 borel_sa x}
-          {isfe:IsFiniteExpectation prts x} :
-      IsFiniteExpectation prob_space_sa_sub x.
-    Proof.
-      unfold IsFiniteExpectation in *.
-      now erewrite Expectation_prob_space_sa_sub.
-    Qed.
-
-    Lemma FiniteExpectation_prob_space_sa_sub
-          (x:Ts->R)
-          {rv:RandomVariable dom2 borel_sa x}
-          {isfe1:IsFiniteExpectation prob_space_sa_sub x}
-          {isfe2:IsFiniteExpectation prts x} :
-      FiniteExpectation prob_space_sa_sub x =
-      FiniteExpectation prts x.
-    Proof.
-      unfold FiniteExpectation, proj1_sig.
-      repeat match_destr.
-      rewrite Expectation_prob_space_sa_sub in e by trivial.
-      congruence.
-    Qed.
-
-    Lemma Rbar_IsFiniteExpectation_prob_space_sa_sub
-          (x:Ts->Rbar)
-          {rv:RandomVariable dom2 Rbar_borel_sa x}
-          {isfe:Rbar_IsFiniteExpectation prob_space_sa_sub x} :
-      Rbar_IsFiniteExpectation prts x.
-    Proof.
-      unfold Rbar_IsFiniteExpectation in *.
-      now rewrite Rbar_Expectation_prob_space_sa_sub in isfe by trivial.
-    Qed.
-
-    Lemma Rbar_IsFiniteExpectation_prob_space_sa_sub_f
-          (x:Ts->Rbar)
-          {rv:RandomVariable dom2 Rbar_borel_sa x}
-          {isfe:Rbar_IsFiniteExpectation prts x} :
-      Rbar_IsFiniteExpectation prob_space_sa_sub x.
-    Proof.
-      unfold Rbar_IsFiniteExpectation in *.
-      now erewrite Rbar_Expectation_prob_space_sa_sub.
-    Qed.
-
-  End sa_sub_prob.
-
 End sa_sub_props.
 
-Section cond_exp.
+Section sa_sub_prob.
+  Context {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts:ProbSpace dom)
+          {dom2 : SigmaAlgebra Ts}
+          (sub : sa_sub dom2 dom).
+
+  Instance prob_space_sa_sub : ProbSpace dom2.
+  Proof.
+    exists (fun x => ps_P (event_sa_sub sub x)).
+    - repeat red; intros.
+      now rewrite H.
+    - intros.
+      generalize (ps_countable_disjoint_union (fun n => event_sa_sub sub (collection n)))
+      ; intros HH.
+      cut_to HH.
+      + rewrite union_of_collection_sa_sub.
+        unfold sum_of_probs_equals in *.
+        apply HH.
+      + now apply collection_is_pairwise_disjoint_sa_sub.
+    - erewrite ps_proper; try eapply ps_one.
+      unfold Ω, pre_Ω.
+      repeat red; intros; simpl; tauto.
+    - intros.
+      apply ps_pos.
+  Defined.
+
+  Lemma almostR2_prob_space_sa_sub_lift
+        RR
+        (f1 f2:Ts -> R):
+    almostR2 prob_space_sa_sub RR f1 f2 ->
+    almostR2 prts RR f1 f2.
+  Proof.
+    intros [p [pone peqq]].
+    red.
+    simpl in *.
+    exists (event_sa_sub sub p).
+    split; trivial.
+  Qed.
+  
+  Lemma almost_prob_space_sa_sub_lift
+        (prop : Ts -> Prop) :
+    almost prob_space_sa_sub prop ->
+    almost prts prop.
+  Proof.
+    intros [p [pone peqq]].
+    red.
+    simpl in *.
+    exists (event_sa_sub sub p).
+    split; trivial.
+  Qed.
+
+  Lemma SimpleExpectation_prob_space_sa_sub
+        (x:Ts->R)
+        {rv:RandomVariable dom borel_sa x} 
+        {rv2:RandomVariable dom2 borel_sa x} 
+        {frf:FiniteRangeFunction x} :
+    @SimpleExpectation Ts dom2 prob_space_sa_sub x rv2 frf =
+    @SimpleExpectation Ts dom prts x rv frf.
+  Proof.
+    unfold SimpleExpectation.
+    f_equal.
+    apply map_ext; intros.
+    f_equal.
+    simpl.
+    apply ps_proper.
+    intros ?.
+    unfold preimage_singleton; simpl.
+    tauto.
+  Qed.
+
+  Lemma NonnegExpectation_prob_space_sa_sub
+        (x:Ts -> R)
+        {pofrf:NonnegativeFunction x}
+        {rv:RandomVariable dom2 borel_sa x}
+        
+    :
+      @NonnegExpectation Ts dom2 prob_space_sa_sub  x pofrf =
+      @NonnegExpectation Ts dom prts x pofrf.
+  Proof.
+    generalize ((RandomVariable_sa_sub sub x (rv_x:=rv)))
+    ; intros rv1.
+    
+
+    assert (forall n, RandomVariable dom borel_sa (simple_approx (fun x0 : Ts => x x0) n)).
+    {
+      apply simple_approx_rv.
+      * now apply positive_Rbar_positive.
+      * typeclasses eauto.
+    } 
+
+    assert (forall n, RandomVariable dom2 borel_sa (simple_approx (fun x0 : Ts => x x0) n)).
+    {
+      apply simple_approx_rv.
+      * now apply positive_Rbar_positive.
+      * typeclasses eauto.
+    } 
+
+    rewrite <- (monotone_convergence x (simple_approx x)
+                                    rv1 pofrf
+                                    (fun n => simple_approx_rv _ _)
+                                    (fun n => simple_approx_pofrf _ _)).
+    rewrite <- (monotone_convergence x (simple_approx x)
+                                    rv pofrf
+                                    (fun n => simple_approx_rv _ _)
+                                    (fun n => simple_approx_pofrf _ _)).
+    - apply Lim_seq_ext; intros n.
+      repeat erewrite <- simple_NonnegExpectation.
+      apply SimpleExpectation_prob_space_sa_sub.
+    - intros n a.
+      apply (simple_approx_le x pofrf n a).
+    - intros n a.
+      apply (simple_approx_increasing x pofrf n a).
+    - intros n.
+      apply simple_expectation_real; trivial.
+      apply simple_approx_frf.
+    - intros.
+      apply (simple_approx_lim_seq x).
+      now apply positive_Rbar_positive.
+    - intros n a.
+      apply (simple_approx_le x pofrf n a).
+    - intros n a.
+      apply (simple_approx_increasing x pofrf n a).
+    - intros n.
+      apply simple_expectation_real; trivial.
+      apply simple_approx_frf.
+    - intros.
+      apply (simple_approx_lim_seq x).
+      now apply positive_Rbar_positive.
+
+      Unshelve.
+      apply simple_approx_frf.
+  Qed.
+
+  Lemma Expectation_prob_space_sa_sub
+        (x:Ts->R)
+        {rv:RandomVariable dom2 borel_sa x} :
+    @Expectation Ts dom2 prob_space_sa_sub  x =
+    @Expectation Ts dom prts x.
+  Proof.
+    generalize ((RandomVariable_sa_sub sub x (rv_x:=rv)))
+    ; intros rv1.
+
+    unfold Expectation.
+    repeat rewrite NonnegExpectation_prob_space_sa_sub by typeclasses eauto.
+    reflexivity.
+  Qed.
+
+  Lemma Rbar_NonnegExpectation_prob_space_sa_sub
+        (x:Ts->Rbar)
+        {pofrf:Rbar_NonnegativeFunction x}
+        {rv:RandomVariable dom2 Rbar_borel_sa x}
+        
+    :
+      @Rbar_NonnegExpectation Ts dom2 prob_space_sa_sub x pofrf =
+      @Rbar_NonnegExpectation Ts dom prts x pofrf.
+  Proof.
+    generalize ((RandomVariable_sa_sub sub x (rv_x:=rv)))
+    ; intros rv1.
+    
+
+    assert (forall n, RandomVariable dom borel_sa (simple_approx (fun x0 : Ts => x x0) n)).
+    {
+      intros.
+      apply simple_approx_rv; trivial.
+    } 
+
+    assert (forall n, RandomVariable dom2 borel_sa (simple_approx (fun x0 : Ts => x x0) n)).
+    {
+      intros.
+      apply simple_approx_rv; trivial.
+    } 
+
+    rewrite <- (Rbar_monotone_convergence x (simple_approx x)
+                                         rv1 pofrf
+                                         (fun n => simple_approx_rv _ _)
+                                         (fun n => simple_approx_pofrf _ _)).
+    rewrite <- (Rbar_monotone_convergence x (simple_approx x)
+                                         rv pofrf
+                                         (fun n => simple_approx_rv _ _)
+                                         (fun n => simple_approx_pofrf _ _)).
+    - apply Lim_seq_ext; intros n.
+      repeat erewrite <- simple_NonnegExpectation.
+      apply SimpleExpectation_prob_space_sa_sub.
+    - intros n a.
+      apply (simple_approx_le x pofrf n a).
+    - intros n a.
+      apply (simple_approx_increasing x pofrf n a).
+    - intros n.
+      apply simple_expectation_real; trivial.
+      apply simple_approx_frf.
+    - intros.
+      apply (simple_approx_lim_seq x); trivial.
+    - intros n a.
+      apply (simple_approx_le x pofrf n a).
+    - intros n a.
+      apply (simple_approx_increasing x pofrf n a).
+    - intros n.
+      apply simple_expectation_real; trivial.
+      apply simple_approx_frf.
+    - intros.
+      apply (simple_approx_lim_seq x); trivial.
+      Unshelve.
+      apply simple_approx_frf.
+  Qed.
+
+  Lemma Rbar_Expectation_prob_space_sa_sub
+        (x:Ts->Rbar)
+        {rv:RandomVariable dom2 Rbar_borel_sa x} :
+    @Rbar_Expectation Ts dom2 prob_space_sa_sub  x =
+    @Rbar_Expectation Ts dom prts x.
+  Proof.
+    generalize ((RandomVariable_sa_sub sub x (rv_x:=rv)))
+    ; intros rv1.
+
+    unfold Rbar_Expectation.
+    repeat rewrite Rbar_NonnegExpectation_prob_space_sa_sub by typeclasses eauto.
+    reflexivity.
+  Qed.
+
+  Lemma IsLp_prob_space_sa_sub
+        p (x:Ts->R)
+        {rv:RandomVariable dom2 borel_sa x} :
+    IsLp prts p x <->
+    IsLp prob_space_sa_sub p x.
+  Proof.
+    unfold IsLp, IsFiniteExpectation; intros.
+    now rewrite Expectation_prob_space_sa_sub by typeclasses eauto.
+  Qed.
+
+  Lemma IsFiniteExpectation_prob_space_sa_sub
+        (x:Ts->R)
+        {rv:RandomVariable dom2 borel_sa x}
+        {isfe:IsFiniteExpectation prob_space_sa_sub x} :
+    IsFiniteExpectation prts x.
+  Proof.
+    unfold IsFiniteExpectation in *.
+    now rewrite Expectation_prob_space_sa_sub in isfe by trivial.
+  Qed.
+
+  Lemma IsFiniteExpectation_prob_space_sa_sub_f
+        (x:Ts->R)
+        {rv:RandomVariable dom2 borel_sa x}
+        {isfe:IsFiniteExpectation prts x} :
+    IsFiniteExpectation prob_space_sa_sub x.
+  Proof.
+    unfold IsFiniteExpectation in *.
+    now erewrite Expectation_prob_space_sa_sub.
+  Qed.
+
+  Lemma FiniteExpectation_prob_space_sa_sub
+        (x:Ts->R)
+        {rv:RandomVariable dom2 borel_sa x}
+        {isfe1:IsFiniteExpectation prob_space_sa_sub x}
+        {isfe2:IsFiniteExpectation prts x} :
+    FiniteExpectation prob_space_sa_sub x =
+    FiniteExpectation prts x.
+  Proof.
+    unfold FiniteExpectation, proj1_sig.
+    repeat match_destr.
+    rewrite Expectation_prob_space_sa_sub in e by trivial.
+    congruence.
+  Qed.
+
+  Lemma Rbar_IsFiniteExpectation_prob_space_sa_sub
+        (x:Ts->Rbar)
+        {rv:RandomVariable dom2 Rbar_borel_sa x}
+        {isfe:Rbar_IsFiniteExpectation prob_space_sa_sub x} :
+    Rbar_IsFiniteExpectation prts x.
+  Proof.
+    unfold Rbar_IsFiniteExpectation in *.
+    now rewrite Rbar_Expectation_prob_space_sa_sub in isfe by trivial.
+  Qed.
+
+  Lemma Rbar_IsFiniteExpectation_prob_space_sa_sub_f
+        (x:Ts->Rbar)
+        {rv:RandomVariable dom2 Rbar_borel_sa x}
+        {isfe:Rbar_IsFiniteExpectation prts x} :
+    Rbar_IsFiniteExpectation prob_space_sa_sub x.
+  Proof.
+    unfold Rbar_IsFiniteExpectation in *.
+    now erewrite Rbar_Expectation_prob_space_sa_sub.
+  Qed.
+
+End sa_sub_prob.
+
+Section ortho_project.
 
   Context {Ts:Type} 
           {dom: SigmaAlgebra Ts}
@@ -361,61 +365,11 @@ Section cond_exp.
 
   (* the conditional expectation of x over the sub-algebra dom2 *)
 
-  Definition ortho_phi  (dom2 : SigmaAlgebra Ts)
+  Definition ortho_phi (dom2 : SigmaAlgebra Ts)
     : LpRRVq prts 2 -> Prop
     := (fun y:LpRRVq prts 2 =>
           exists z, Quot _ z = y /\
                RandomVariable dom2 borel_sa (LpRRV_rv_X prts z)).
-
-  Lemma LpRRVnorm_minus_sym  (x y : LpRRV prts 2) :
-    LpRRVnorm prts (LpRRVminus prts (p := bignneg 2 big2) x y) = LpRRVnorm prts (LpRRVminus prts (p := bignneg 2 big2) y x).
-  Proof.
-    unfold LpRRVnorm, LpRRVminus.
-    f_equal.
-    apply FiniteExpectation_ext.
-    intro z.
-    unfold rvpower, rvabs, pack_LpRRV; f_equal; simpl.
-    do 2 rewrite rvminus_unfold.
-    apply Rabs_minus_sym.
-  Qed.
-
-  Definition LpRRV_dist (x y : LpRRV prts 2) := 
-    LpRRVnorm prts (LpRRVminus prts (p := bignneg 2 big2) x y).
-
-  Lemma LpRRV_norm_dist (x y : LpRRV prts 2) :
-    LpRRV_dist x y = LpRRVnorm prts (LpRRVminus prts (p := bignneg 2 big2) x y).  
-  Proof.
-    easy.
-  Qed.
-  
-  Lemma LpRRV_dist_comm (x y : LpRRV prts 2) :
-    LpRRV_dist x y = LpRRV_dist y x.
-  Proof.
-    unfold LpRRV_dist, LpRRVnorm, LpRRVminus.
-    f_equal.
-    apply FiniteExpectation_ext.
-    intro z.
-    unfold rvpower, rvabs, pack_LpRRV.
-    f_equal.
-    simpl.
-    do 2 rewrite rvminus_unfold.
-    now rewrite Rabs_minus_sym.
-  Qed.
-
-  Lemma LpRRV_dist_triang (x y z : LpRRV prts 2) :
-    LpRRV_dist x z <= LpRRV_dist x y + LpRRV_dist y z.
-  Proof.
-    unfold LpRRV_dist.
-    generalize (LpRRV_norm_plus prts big2 (LpRRVminus prts (p := bignneg 2 big2) x y) (LpRRVminus prts (p := bignneg 2 big2) y z)); intros.
-    do 2 rewrite LpRRVminus_plus in H.
-    rewrite <- LpRRV_plus_assoc in H.
-    rewrite (LpRRV_plus_assoc prts (p := bignneg 2 big2) (LpRRVopp prts y) _) in H.     
-    rewrite (LpRRV_plus_comm prts (p := bignneg 2 big2) _ y) in H.
-    rewrite LpRRV_plus_inv in H.
-    rewrite (LpRRV_plus_comm prts (p := bignneg 2 big2) (LpRRVconst prts 0) _ ) in H.
-    rewrite LpRRV_plus_zero in H.
-    now repeat rewrite <- LpRRVminus_plus in H.
-  Qed.  
 
   Definition LpRRV_filter_from_seq {dom2:SigmaAlgebra Ts} {prts2 : ProbSpace dom2}
              (f : nat -> LpRRV prts2 2) : ((LpRRV_UniformSpace prts2 big2 -> Prop) -> Prop) :=
@@ -437,7 +391,7 @@ Section cond_exp.
     apply filter_ex in H3.
     unfold LpRRVball in H3.
     destruct H3 as [? [? ?]].
-    generalize (LpRRV_dist_triang x x0 y); intros.
+    generalize (LpRRV_dist_triang prts big2 x x0 y); intros.
     unfold LpRRV_dist in H5.
     eapply Rle_lt_trans.
     apply H5.
@@ -462,11 +416,11 @@ Section cond_exp.
     apply filter_ex in H7.
     unfold LpRRVball in H7.
     destruct H7 as [? [? ?]].
-    generalize (LpRRV_dist_triang x x0 x1); intros.
-    generalize (LpRRV_dist_triang x1 y0 y); intros.
+    generalize (LpRRV_dist_triang prts big2 x x0 x1); intros.
+    generalize (LpRRV_dist_triang prts big2 x1 y0 y); intros.
     unfold LpRRV_dist in H9.
     unfold LpRRV_dist in H10.
-    generalize (LpRRV_dist_triang x x1 y); intros.
+    generalize (LpRRV_dist_triang prts big2 x x1 y); intros.
     unfold LpRRV_dist in H11.
     apply LpRRV_ball_sym in H4; unfold LpRRVball in H4; simpl in H4.
     simpl in H7.
@@ -488,17 +442,6 @@ Section cond_exp.
     }
     lra.
   Qed.     
-
-  Lemma nneg_lt_eps_zero (x : R) :
-    0 <= x ->
-    (forall (eps:posreal), x < eps) -> x = 0.
-  Proof.
-    intros.
-    destruct (Rgt_dec x 0).
-    - specialize (H0 (mkposreal _ r)).
-      simpl in H0; lra.
-    - lra.
-  Qed.
 
   Lemma cauchy_filterlim_almost_unique_0 (F : ((LpRRV_UniformSpace prts big2 -> Prop) -> Prop))
         (PF : ProperFilter F)
@@ -552,9 +495,10 @@ Section cond_exp.
     now apply LpRRValmost_sub_zero_eq in H1.
   Qed.
   
-  Definition subset_to_sa_sub   {dom2 : SigmaAlgebra Ts}
+  Definition subset_to_sa_sub
+             {dom2 : SigmaAlgebra Ts}
              (sub : sa_sub dom2 dom)
-             (set:LpRRV_UniformSpace (prob_space_sa_sub sub prts) big2 -> Prop) :
+             (set:LpRRV_UniformSpace (prob_space_sa_sub prts sub) big2 -> Prop) :
     {x : LpRRV_UniformSpace prts big2 | RandomVariable dom2 borel_sa x} -> Prop.
   Proof.
     intros [x pfx].
@@ -569,7 +513,7 @@ Section cond_exp.
              {dom2 : SigmaAlgebra Ts}
              (sub : sa_sub dom2 dom)
              (F:({x : LpRRV_UniformSpace prts big2 | RandomVariable dom2 borel_sa x} -> Prop) -> Prop) :
-    (LpRRV_UniformSpace (prob_space_sa_sub sub prts) big2 -> Prop) -> Prop.
+    (LpRRV_UniformSpace (prob_space_sa_sub prts sub) big2 -> Prop) -> Prop.
   Proof.
     intros sa.
     apply F.
@@ -577,7 +521,7 @@ Section cond_exp.
   Defined.
 
   Lemma subset_filter_to_sa_sub_filter_Filter {dom2 : SigmaAlgebra Ts}
-             (sub : sa_sub dom2 dom) F :
+        (sub : sa_sub dom2 dom) F :
     Filter F ->
     Filter (subset_filter_to_sa_sub_filter sub F).
   Proof.
@@ -597,7 +541,7 @@ Section cond_exp.
   Qed.
 
   Lemma subset_filter_to_sa_sub_filter_proper {dom2 : SigmaAlgebra Ts}
-             (sub : sa_sub dom2 dom) F :
+        (sub : sa_sub dom2 dom) F :
     ProperFilter F ->
     ProperFilter (subset_filter_to_sa_sub_filter sub F).
   Proof.
@@ -615,7 +559,7 @@ Section cond_exp.
 
   Definition prob_space_sa_sub_set_lift
              {dom2} (sub:sa_sub dom2 dom)
-             (s:LpRRV (prob_space_sa_sub sub prts) 2 -> Prop)
+             (s:LpRRV (prob_space_sa_sub prts sub) 2 -> Prop)
              (x:LpRRV prts 2) : Prop.
   Proof.
     destruct x.
@@ -627,8 +571,8 @@ Section cond_exp.
   Defined.
 
   Definition prob_space_sa_sub_LpRRV_lift
-              {dom2} (sub:sa_sub dom2 dom)
-             (s:LpRRV (prob_space_sa_sub sub prts) 2)
+             {dom2} (sub:sa_sub dom2 dom)
+             (s:LpRRV (prob_space_sa_sub prts sub) 2)
     : LpRRV prts 2.
   Proof.
     destruct s.
@@ -637,7 +581,7 @@ Section cond_exp.
     - eapply IsLp_prob_space_sa_sub; eauto.
   Defined.
 
-  Instance prob_space_sa_sub_LpRRV_lift_rv {dom2} (sub:sa_sub dom2 dom) (X:LpRRV (prob_space_sa_sub sub prts) 2)
+  Instance prob_space_sa_sub_LpRRV_lift_rv {dom2} (sub:sa_sub dom2 dom) (X:LpRRV (prob_space_sa_sub prts sub) 2)
            {rvx:RandomVariable dom2 borel_sa X} :
     RandomVariable dom2 borel_sa (prob_space_sa_sub_LpRRV_lift sub X).
   Proof.
@@ -714,7 +658,7 @@ Section cond_exp.
       now exists x.
     }
     pose (f := fun (n : nat) => proj1_sig (X n)).
-    assert (is_lim_seq (fun n => LpRRV_dist (f n) x0) 0).
+    assert (is_lim_seq (fun n => LpRRV_dist prts (p:=bignneg _ big2) (f n) x0) 0).
     {
       apply is_lim_seq_spec.
       unfold is_lim_seq'.
@@ -741,7 +685,7 @@ Section cond_exp.
       - unfold LpRRVnorm.
         apply power_nonneg.
     }
-    pose (prts2 := prob_space_sa_sub sub prts).
+    pose (prts2 := prob_space_sa_sub prts sub).
 
     pose (F :=  LpRRV_filter_from_seq f).
     pose (dom2pred := fun v => RandomVariable dom2 borel_sa v).
@@ -813,18 +757,18 @@ Section cond_exp.
 
       destruct (X N)
         as [x [XH XR]].
-      assert (xlp:IsLp (prob_space_sa_sub sub prts) 2 x).
+      assert (xlp:IsLp (prob_space_sa_sub prts sub) 2 x).
       {
         apply IsLp_prob_space_sa_sub; typeclasses eauto.
       } 
-      exists (pack_LpRRV (prob_space_sa_sub sub prts) x).
+      exists (pack_LpRRV (prob_space_sa_sub prts sub) x).
       red.
       exists N.
       simpl.
       intros n nN ?.
       destruct (X n) as [Xn [XnH XnRv]]; simpl in *.
       unfold pack_LpRRV; simpl.
-      generalize (LpRRV_dist_triang x x0 Xn)
+      generalize (LpRRV_dist_triang prts big2 x x0 Xn)
       ; intros triag.
       unfold LpRRV_dist in triag.
       unfold Hierarchy.ball; simpl.
@@ -873,7 +817,7 @@ Section cond_exp.
     assert (forall (eps:posreal),
                exists (N:nat),
                  forall (n:nat), (n>=N)%nat ->
-                          LpRRV_dist (f n) x0 < eps).
+                          LpRRV_dist prts (p:=bignneg _ big2) (f n) x0 < eps).
     {
       intros.
       apply is_lim_seq_spec in H0.
@@ -885,7 +829,7 @@ Section cond_exp.
     }
 
     assert (F3limball:forall (eps:posreal),
-               (LpRRV_dist (prob_space_sa_sub_LpRRV_lift sub (LpRRV_lim prts2 big2 F3)) x0) < eps).
+               (LpRRV_dist prts  (p:=bignneg _ big2) (prob_space_sa_sub_LpRRV_lift sub (LpRRV_lim prts2 big2 F3)) x0) < eps).
     {
       intros.
       assert (0 < eps) by apply cond_pos.
@@ -898,7 +842,7 @@ Section cond_exp.
       cut_to H6; try lia.
       unfold F3, F2, F in H5.
       unfold LpRRV_filter_from_seq in H5.
-      generalize (LpRRV_dist_triang (prob_space_sa_sub_LpRRV_lift sub (LpRRV_lim prts2 big2 F3)) (f (max x x1)) x0); intros.
+      generalize (LpRRV_dist_triang prts big2 (prob_space_sa_sub_LpRRV_lift sub (LpRRV_lim prts2 big2 F3)) (f (max x x1)) x0); intros.
       rewrite Rplus_comm in H7.
       eapply Rle_lt_trans.
       apply H7.
@@ -922,7 +866,7 @@ Section cond_exp.
                                         (rvpower
                                            (rvabs
                                               (rvminus
-                                                 (LpRRV_lim (prob_space_sa_sub sub prts) big2
+                                                 (LpRRV_lim (prob_space_sa_sub prts sub) big2
                                                             (subset_filter_to_sa_sub_filter sub
                                                                                             (subset_filter
                                                                                                (fun P : LpRRV prts 2 -> Prop =>
@@ -930,19 +874,19 @@ Section cond_exp.
                                                                                                (fun v : LpRRV prts 2 => RandomVariable dom2 borel_sa v))))
                                                  (match
                                                      f (Init.Nat.max x x1) as l
-                                                     return (RandomVariable dom2 borel_sa l -> LpRRV (prob_space_sa_sub sub prts) 2)
+                                                     return (RandomVariable dom2 borel_sa l -> LpRRV (prob_space_sa_sub prts sub) 2)
                                                    with
                                                    | {| LpRRV_rv_X := LpRRV_rv_X; LpRRV_lp := LpRRV_lp |} =>
                                                      fun pfx : RandomVariable dom2 borel_sa LpRRV_rv_X =>
                                                        {|
                                                          LpRRV_rv_X := LpRRV_rv_X;
                                                          LpRRV_rv := pfx;
-                                                         LpRRV_lp := match IsLp_prob_space_sa_sub sub prts 2 LpRRV_rv_X with
+                                                         LpRRV_lp := match IsLp_prob_space_sa_sub prts sub 2 LpRRV_rv_X with
                                                                      | conj x _ => x
                                                                      end LpRRV_lp |}
                                                    end frv))) (const 2))).
       {
-        eapply (IsFiniteExpectation_prob_space_sa_sub sub); try typeclasses eauto.
+        eapply (IsFiniteExpectation_prob_space_sa_sub prts sub); try typeclasses eauto.
         unfold FiniteExpectation, proj1_sig in H5.
         match_destr_in H5.
         red.
@@ -976,7 +920,7 @@ Section cond_exp.
   Qed.
 
   Lemma ortho_phi_complete
-        (dom2 : SigmaAlgebra Ts)
+        {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom) :
     @complete_subset (@PreHilbert_NormedModule (@L2RRVq_PreHilbert Ts dom prts)) (ortho_phi dom2).
   Proof.
@@ -1032,7 +976,7 @@ Section cond_exp.
   Qed.
 
   Lemma ortho_phi_compatible_m
-        (dom2 : SigmaAlgebra Ts)
+        {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
     : compatible_m (E:=(L2RRVq_PreHilbert prts)) (ortho_phi dom2).
   Proof.
@@ -1061,24 +1005,35 @@ Section cond_exp.
       + typeclasses eauto.
   Qed.
 
+End ortho_project.
+
+Section cond_exp.
+
+  Context {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts: ProbSpace dom)
+          {dom2 : SigmaAlgebra Ts}
+          (sub : sa_sub dom2 dom).
+
+  (* For functions in the quotiented L2 space, we define conditional expectation
+     via the orthonormal projection 
+   *)
   Definition conditional_expectation_L2q
-             (dom2 : SigmaAlgebra Ts)
-             (sub : sa_sub dom2 dom)
              (x:LpRRVq prts 2)
     : {v : L2RRVq_PreHilbert prts
         | unique
             (fun v : L2RRVq_PreHilbert prts =>
-               ortho_phi dom2 v /\
+               ortho_phi prts dom2 v /\
                norm (minus (G:=(PreHilbert.AbelianGroup (L2RRVq_PreHilbert prts))) x v) =
                Glb_Rbar (fun r : R => exists w : L2RRVq_PreHilbert prts,
-                             ortho_phi dom2 w /\
+                             ortho_phi prts dom2 w /\
                              r = norm (minus (G:=(PreHilbert.AbelianGroup (L2RRVq_PreHilbert  prts)))x w)))
             v}.
   Proof.
     apply (ortho_projection_hilbert (L2RRVq_PreHilbert prts)
-                                    (ortho_phi dom2)
-                                    (ortho_phi_compatible_m _ sub)
-                                    (ortho_phi_complete _ sub)
+                                    (ortho_phi prts dom2)
+                                    (ortho_phi_compatible_m prts sub)
+                                    (ortho_phi_complete prts sub)
                                     x).
   Qed.
 
@@ -1086,9 +1041,7 @@ Section cond_exp.
   Canonical nneg2.
 
   (* Note that we lose uniqueness, since it only holds over the quotiented space. *)
-  Definition conditional_expectation_L2 (f :LpRRV prts 2)
-             (dom2 : SigmaAlgebra Ts)
-             (sub : sa_sub dom2 dom) :
+  Definition conditional_expectation_L2 (f :LpRRV prts 2) :
     {v : LpRRV prts 2 
       | RandomVariable dom2 borel_sa v /\
         LpRRVnorm prts (LpRRVminus prts f v) =
@@ -1111,7 +1064,7 @@ Section cond_exp.
 
     }.
   Proof.
-    destruct ((conditional_expectation_L2q dom2 sub (Quot _ f))).
+    destruct ((conditional_expectation_L2q (Quot _ f))).
     destruct u as [[HH1 HH2] HH3].
     destruct (charac_ortho_projection_subspace1 _ (ortho_phi_compatible_m _ sub) (Quot (LpRRV_eq prts) f) _ HH1)
       as [cops1_f _].
@@ -1136,7 +1089,7 @@ Section cond_exp.
               Glb_Rbar
                 (fun r : R =>
                    exists w : LpRRVq prts 2,
-                     ortho_phi dom2 w /\ r = Hnorm (LpRRVq_plus prts (Quot (LpRRV_eq prts) f) (LpRRVq_opp prts w)))
+                     ortho_phi prts dom2 w /\ r = Hnorm (LpRRVq_plus prts (Quot (LpRRV_eq prts) f) (LpRRVq_opp prts w)))
               =
               Glb_Rbar
                 (fun r : R =>
@@ -1251,20 +1204,16 @@ Section cond_exp.
   Qed.
 
   Definition conditional_expectation_L2fun (f : Ts -> R) 
-             {dom2 : SigmaAlgebra Ts}
-             (sub : sa_sub dom2 dom)
              {rv : RandomVariable dom borel_sa f}
              {isl : IsLp prts 2 f} :
     LpRRV prts 2
-    := proj1_sig (conditional_expectation_L2 (pack_LpRRV prts f) _ sub).
+    := proj1_sig (conditional_expectation_L2 (pack_LpRRV prts f)).
 
   Instance conditional_expectation_L2fun_rv
            (f : Ts -> R) 
-           (dom2 : SigmaAlgebra Ts)
-           (sub : sa_sub dom2 dom)
            {rv : RandomVariable dom borel_sa f}
            {isl : IsLp prts 2 f} :
-    RandomVariable dom2 borel_sa (conditional_expectation_L2fun f sub).
+    RandomVariable dom2 borel_sa (conditional_expectation_L2fun f).
   Proof.
     unfold conditional_expectation_L2fun, proj1_sig.
     match_destr; tauto.
@@ -1272,11 +1221,9 @@ Section cond_exp.
 
   Lemma conditional_expectation_L2fun_eq
         (f : Ts -> R) 
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         {rv : RandomVariable dom borel_sa f}
         {isl : IsLp prts 2 f} :
-    LpRRVnorm prts (LpRRVminus prts (pack_LpRRV prts f) (conditional_expectation_L2fun f sub)) =
+    LpRRVnorm prts (LpRRVminus prts (pack_LpRRV prts f) (conditional_expectation_L2fun f)) =
     Glb_Rbar
       (fun r : R =>
          exists w : LpRRV prts 2,
@@ -1288,11 +1235,9 @@ Section cond_exp.
 
   Lemma conditional_expectation_L2fun_eq1
         (f : Ts -> R) 
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         {rv : RandomVariable dom borel_sa f}
         {isl : IsLp prts 2 f} :
-    (forall w:LpRRV prts 2, RandomVariable dom2 borel_sa w -> L2RRVinner prts (LpRRVminus prts (pack_LpRRV prts f) (conditional_expectation_L2fun f sub)) (LpRRVminus prts w (conditional_expectation_L2fun f sub)) <= 0).
+    (forall w:LpRRV prts 2, RandomVariable dom2 borel_sa w -> L2RRVinner prts (LpRRVminus prts (pack_LpRRV prts f) (conditional_expectation_L2fun f)) (LpRRVminus prts w (conditional_expectation_L2fun f)) <= 0).
   Proof.
     unfold conditional_expectation_L2fun, proj1_sig.
     match_destr; tauto.
@@ -1300,40 +1245,12 @@ Section cond_exp.
 
   Lemma conditional_expectation_L2fun_eq2
         (f : Ts -> R) 
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         {rv : RandomVariable dom borel_sa f}
         {isl : IsLp prts 2 f} :
-    (forall w:LpRRV prts 2, RandomVariable dom2 borel_sa w -> L2RRVinner prts (conditional_expectation_L2fun f sub) w = L2RRVinner prts (pack_LpRRV prts f) w).
+    (forall w:LpRRV prts 2, RandomVariable dom2 borel_sa w -> L2RRVinner prts (conditional_expectation_L2fun f) w = L2RRVinner prts (pack_LpRRV prts f) w).
   Proof.
     unfold conditional_expectation_L2fun, proj1_sig.
     match_destr; tauto.
-  Qed.
-
-  Global Instance EventIndicator_islp (p:nonnegreal) {P} (dec : dec_pre_event P) :
-    IsLp prts p (EventIndicator dec).
-  Proof.
-    unfold IsLp.
-    apply IsFiniteExpectation_bounded with (rv_X1 := const 0) (rv_X3 := const 1).
-    - apply IsFiniteExpectation_const.
-    - apply IsFiniteExpectation_const.
-    - intro x.
-      unfold const, rvpower.
-      apply power_nonneg.
-    - intro x.
-      unfold rvpower, const.
-      replace (1) with (power 1 p).
-      + apply Rle_power_l.
-        { apply cond_nonneg.
-        } 
-        unfold rvabs.
-        split.
-        * apply Rabs_pos.
-        * unfold EventIndicator.
-          match_destr.
-          -- rewrite Rabs_R1; lra.
-          -- rewrite Rabs_R0; lra.
-      + now rewrite power_base_1.
   Qed.
 
   Definition is_conditional_expectation
@@ -1360,7 +1277,7 @@ Section cond_exp.
       Expectation (rvmult f (EventIndicator dec)) =
       Rbar_Expectation (Rbar_rvmult ce (EventIndicator dec)).
 
-  Lemma is_conditional_expectation_isfe {dom2 : SigmaAlgebra Ts} (sub : sa_sub dom2 dom)
+  Lemma is_conditional_expectation_isfe
         f ce
         {rvf:RandomVariable dom borel_sa f} 
         {rvce:RandomVariable dom2 borel_sa ce} :
@@ -1384,45 +1301,8 @@ Section cond_exp.
     - simpl.
       apply sa_all.
   Qed.
-
-  Lemma FiniteExpectation_plus':
-    forall (rv_X1 rv_X2 : Ts -> R)
-      {rv1 : RandomVariable dom borel_sa rv_X1} {rv2 : RandomVariable dom borel_sa rv_X2}
-      {rv12 : RandomVariable dom borel_sa (rvplus rv_X1 rv_X2)}
-      {isfe1 : IsFiniteExpectation prts rv_X1} {isfe2 : IsFiniteExpectation prts rv_X2}
-      {isfe12 : IsFiniteExpectation prts (rvplus rv_X1 rv_X2)},
-      FiniteExpectation prts (rvplus rv_X1 rv_X2) = FiniteExpectation prts rv_X1 + FiniteExpectation prts rv_X2.
-  Proof.
-    intros.
-    generalize (FiniteExpectation_plus prts rv_X1 rv_X2)
-    ; intros eqq.
-    etransitivity.
-    - etransitivity; [| eapply eqq].
-      apply FiniteExpectation_ext; reflexivity.
-    - f_equal; apply FiniteExpectation_ext; reflexivity.
-  Qed.
-
-  Lemma FiniteExpectation_scale' c rv_X 
-        {isfe:IsFiniteExpectation prts rv_X} {isfe2:IsFiniteExpectation prts (rvscale c rv_X)} :
-    FiniteExpectation prts (rvscale c rv_X) = c * FiniteExpectation prts rv_X.
-  Proof.
-    intros.
-    generalize (FiniteExpectation_scale prts c rv_X)
-    ; intros eqq.
-    rewrite <- eqq.
-    apply FiniteExpectation_ext.
-    reflexivity.
-  Qed.
-
-
-  Lemma sa_sigma_event_pre {T} {σ : SigmaAlgebra T} (E:event σ): sa_sigma E.
-  Proof.
-    now destruct E; simpl.
-  Qed.
   
   Lemma is_conditional_expectation_le
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         (f ce1 ce2 : Ts -> R)
         {isfe:IsFiniteExpectation prts f}
         {rvf : RandomVariable dom borel_sa f}
@@ -1430,19 +1310,19 @@ Section cond_exp.
         {rvce2 : RandomVariable dom2 borel_sa ce2}
     : is_conditional_expectation sub f ce1 ->
       is_conditional_expectation sub f ce2 ->
-      almostR2 (prob_space_sa_sub sub prts) Rle ce2 ce1.
+      almostR2 (prob_space_sa_sub prts sub) Rle ce2 ce1.
   Proof.
     unfold is_conditional_expectation.
     intros isce1 isce2.
-    generalize (is_conditional_expectation_isfe sub _ _ isce1 isfe); intros isfe1.
-    generalize (is_conditional_expectation_isfe sub _ _ isce2 isfe); intros isfe2.
+    generalize (is_conditional_expectation_isfe _ _ isce1 isfe); intros isfe1.
+    generalize (is_conditional_expectation_isfe _ _ isce2 isfe); intros isfe2.
     
     pose (An:=fun n => event_ge dom2 (rvminus ce2 ce1) (/ (INR (S n)))).
     pose (Dn:= fun n => (event_ge_pre_dec dom2 (rvminus ce2 ce1) (/ (INR (S n))))).
     pose (In:=fun n => EventIndicator (Dn n)).
 
     
-    assert (eqq1: forall n, ps_P (ProbSpace:=(prob_space_sa_sub sub prts)) (An n) = 0).
+    assert (eqq1: forall n, ps_P (ProbSpace:=(prob_space_sa_sub prts sub)) (An n) = 0).
     { 
       intros n.
       assert (npos: 0 < / INR (S n)).
@@ -1563,7 +1443,7 @@ Section cond_exp.
           unfold FiniteExpectation, proj1_sig in eqq6.
           match_destr_in eqq6; subst.
           rewrite Expectation_scale in e; [| lra].
-          erewrite <- (Expectation_prob_space_sa_sub sub) in e.
+          erewrite <- (Expectation_prob_space_sa_sub) in e.
           * rewrite Expectation_EventIndicator in e.
             unfold An.
             invcs e.
@@ -1626,8 +1506,6 @@ Section cond_exp.
   Qed.
 
   Lemma is_conditional_expectation_eq
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         (f ce1 ce2 : Ts -> R)
         {rvf : RandomVariable dom borel_sa f}
         {isfe:IsFiniteExpectation prts f}
@@ -1635,7 +1513,7 @@ Section cond_exp.
         {rvce2 : RandomVariable dom2 borel_sa ce2}
     : is_conditional_expectation sub f ce1 ->
       is_conditional_expectation sub f ce2 ->
-      almostR2 (prob_space_sa_sub sub prts) eq ce1 ce2.
+      almostR2 (prob_space_sa_sub prts sub) eq ce1 ce2.
   Proof.
     unfold is_conditional_expectation.
     intros isce1 isce2.
@@ -1645,8 +1523,6 @@ Section cond_exp.
 
 
   Lemma is_conditional_expectation_eq_prts
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         (f ce1 ce2 : Ts -> R)
         {rvf : RandomVariable dom borel_sa f}
         {isfe:IsFiniteExpectation prts f}
@@ -1657,23 +1533,21 @@ Section cond_exp.
       almostR2 prts eq ce1 ce2.
   Proof.
     intros.
-    apply (almostR2_prob_space_sa_sub_lift sub).
+    apply (almostR2_prob_space_sa_sub_lift prts sub).
     eapply is_conditional_expectation_eq; eauto.
   Qed.
 
   Lemma conditional_expectation_L2fun_eq3
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         (f : Ts -> R) 
         {rv : RandomVariable dom borel_sa f}
         {isl : IsLp prts 2 f} :
-    is_conditional_expectation sub f (conditional_expectation_L2fun f sub).
+    is_conditional_expectation sub f (conditional_expectation_L2fun f).
   Proof.
     unfold is_conditional_expectation.
     intros.
     assert (RandomVariable dom2 borel_sa (EventIndicator dec)) by now apply EventIndicator_pre_rv.
     assert (RandomVariable dom borel_sa (EventIndicator dec)) by now apply RandomVariable_sa_sub.
-    generalize (conditional_expectation_L2fun_eq2 f sub (pack_LpRRV prts (EventIndicator dec))); intros.
+    generalize (conditional_expectation_L2fun_eq2 f (pack_LpRRV prts (EventIndicator dec))); intros.
     cut_to H2.
     - unfold L2RRVinner in H2.
       simpl in H2.
@@ -1689,8 +1563,6 @@ Section cond_exp.
 
   Lemma conditional_expectation_L2fun_unique
         (f : Ts -> R) 
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         {rv : RandomVariable dom borel_sa f}
         {isl : IsLp prts 2 f}
         (z: LpRRV prts 2)
@@ -1699,7 +1571,7 @@ Section cond_exp.
      Glb_Rbar (fun r : R => exists w : LpRRV prts 2,
                    RandomVariable dom2 borel_sa (LpRRV_rv_X prts w) /\
                    r = LpRRVnorm prts (LpRRVminus prts (pack_LpRRV prts f) w))) ->
-    LpRRV_eq prts z (conditional_expectation_L2fun f sub).
+    LpRRV_eq prts z (conditional_expectation_L2fun f).
   Proof.
     unfold conditional_expectation_L2fun, proj1_sig.
     match_destr.
@@ -1708,13 +1580,11 @@ Section cond_exp.
 
   Lemma conditional_expectation_L2fun_unique1
         (f : Ts -> R) 
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         {rv : RandomVariable dom borel_sa f}
         {isl : IsLp prts 2 f}
         (z: LpRRV prts 2)
         {z_rv:RandomVariable dom2 borel_sa z} :
-    (forall w:LpRRV prts 2, RandomVariable dom2 borel_sa w -> L2RRVinner prts (LpRRVminus prts (pack_LpRRV prts f) z) (LpRRVminus prts w z) <= 0) -> LpRRV_eq prts z (conditional_expectation_L2fun f sub).
+    (forall w:LpRRV prts 2, RandomVariable dom2 borel_sa w -> L2RRVinner prts (LpRRVminus prts (pack_LpRRV prts f) z) (LpRRVminus prts w z) <= 0) -> LpRRV_eq prts z (conditional_expectation_L2fun f).
   Proof.
     unfold conditional_expectation_L2fun, proj1_sig.
     match_destr.
@@ -1723,13 +1593,11 @@ Section cond_exp.
 
   Lemma conditional_expectation_L2fun_unique2
         (f : Ts -> R) 
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         {rv : RandomVariable dom borel_sa f}
         {isl : IsLp prts 2 f}
         (z: LpRRV prts 2)
         {z_rv:RandomVariable dom2 borel_sa z} :
-    (forall w:LpRRV prts 2, RandomVariable dom2 borel_sa w -> L2RRVinner prts z w = L2RRVinner prts (pack_LpRRV prts f) w)  -> LpRRV_eq prts z (conditional_expectation_L2fun f sub).
+    (forall w:LpRRV prts 2, RandomVariable dom2 borel_sa w -> L2RRVinner prts z w = L2RRVinner prts (pack_LpRRV prts f) w)  -> LpRRV_eq prts z (conditional_expectation_L2fun f).
   Proof.
     unfold conditional_expectation_L2fun, proj1_sig.
     match_destr.
@@ -1737,12 +1605,10 @@ Section cond_exp.
   Qed.
 
   Lemma conditional_expectation_L2fun_const
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         (c : R) :
     LpRRV_eq prts
              (LpRRVconst prts c)
-             (conditional_expectation_L2fun (const c) sub).
+             (conditional_expectation_L2fun (const c)).
   Proof.
     apply conditional_expectation_L2fun_unique2.
     - typeclasses eauto.
@@ -1770,16 +1636,14 @@ Section cond_exp.
   Qed.
 
   Lemma conditional_expectation_L2fun_proper (f1 f2 : Ts -> R) 
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         {rv1 : RandomVariable dom borel_sa f1}
         {rv2 : RandomVariable dom borel_sa f2}
         {isl1 : IsLp prts 2 f1}
         {isl2 : IsLp prts 2 f2} :
     almostR2 prts eq f1 f2 ->
     LpRRV_eq prts
-             (conditional_expectation_L2fun f1 sub)
-             (conditional_expectation_L2fun f2 sub).
+             (conditional_expectation_L2fun f1)
+             (conditional_expectation_L2fun f2).
   Proof.
     intros eqq.
     unfold conditional_expectation_L2fun, proj1_sig.
@@ -1812,14 +1676,12 @@ Section cond_exp.
   Qed.
 
   Lemma conditional_expectation_L2fun_nonneg (f : Ts -> R) 
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         {rv : RandomVariable dom borel_sa f}
         {isl : IsLp prts 2 f}
         {nneg: NonnegativeFunction f} :
-    almostR2 (prob_space_sa_sub sub prts) Rle (const 0) (conditional_expectation_L2fun f sub).
+    almostR2 (prob_space_sa_sub prts sub) Rle (const 0) (conditional_expectation_L2fun f).
   Proof.
-    generalize (conditional_expectation_L2fun_eq3 sub f); intros.
+    generalize (conditional_expectation_L2fun_eq3 f); intros.
     unfold is_conditional_expectation in H.
     apply Expectation_mult_indicator_almost_nonneg; [typeclasses eauto|].
     intros.
@@ -1841,101 +1703,25 @@ Section cond_exp.
   Qed.
   
   Lemma conditional_expectation_L2fun_nonneg_prts (f : Ts -> R) 
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         {rv : RandomVariable dom borel_sa f}
         {isl : IsLp prts 2 f}
         {nneg: NonnegativeFunction f} :
-    almostR2 prts Rle (const 0) (conditional_expectation_L2fun f sub).
+    almostR2 prts Rle (const 0) (conditional_expectation_L2fun f).
   Proof.
     apply almostR2_prob_space_sa_sub_lift with (sub0 := sub).
     now apply conditional_expectation_L2fun_nonneg.
   Qed.
 
-  Lemma almostR2_le_split x y :
-    almostR2 prts Rle x y ->
-    exists x', almostR2 prts eq x x' /\
-               rv_le x' y.
-  Proof.
-    intros [p [pone ph]].
-    generalize (fun ts => sa_dec p ts).
-    exists (fun ts => if ClassicalDescription.excluded_middle_informative (p ts) then x ts else y ts).
-    split.
-    - exists p.
-      split; trivial; intros.
-      now match_destr.
-    - intros ?.
-      match_destr.
-      + auto.
-      + reflexivity.
-  Qed.
-
-  Lemma almostR2_le_split_r x y :
-    almostR2 prts Rle x y ->
-    exists y', almostR2 prts eq y y' /\
-               rv_le x y'.
-  Proof.
-    intros [p [pone ph]].
-    generalize (fun ts => sa_dec p ts).
-    exists (fun ts => if ClassicalDescription.excluded_middle_informative (p ts) then y ts else x ts).
-    split.
-    - exists p.
-      split; trivial; intros.
-      now match_destr.
-    - intros ?.
-      match_destr.
-      + auto.
-      + reflexivity.
-  Qed.
-
   Local Existing Instance Rbar_le_pre.
-  
-  Lemma almostR2_Rbar_le_split x y :
-    almostR2 prts Rbar_le x y ->
-    exists x', almostR2 prts eq x x' /\
-               Rbar_rv_le x' y.
-  Proof.
-    intros [p [pone ph]].
-    generalize (fun ts => sa_dec p ts).
-    exists (fun ts => if ClassicalDescription.excluded_middle_informative (p ts) then x ts else y ts).
-    split.
-    - exists p.
-      split; trivial; intros.
-      now match_destr.
-    - intros ?.
-      match_destr.
-      + auto.
-      + reflexivity.
-  Qed.
-
-  Lemma almostR2_Rbar_le_split_r x y :
-    almostR2 prts Rbar_le x y ->
-    exists y', almostR2 prts eq y y' /\
-               Rbar_rv_le x y'.
-  Proof.
-    intros [p [pone ph]].
-    generalize (fun ts => sa_dec p ts).
-    exists (fun ts => if ClassicalDescription.excluded_middle_informative (p ts) then y ts else x ts).
-    split.
-    - exists p.
-      split; trivial; intros.
-      now match_destr.
-    - intros ?.
-      match_destr.
-      + auto.
-      + reflexivity.
-  Qed.
 
   Lemma conditional_expectation_L2fun_plus f1 f2
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         {rv1 : RandomVariable dom borel_sa f1}
         {rv2 : RandomVariable dom borel_sa f2}
         {isl1 : IsLp prts 2 f1}
         {isl2 : IsLp prts 2 f2} :
     LpRRV_eq prts
-             (conditional_expectation_L2fun (rvplus f1 f2) sub)
-             (LpRRVplus prts (conditional_expectation_L2fun f1 sub) (conditional_expectation_L2fun f2 sub)).
+             (conditional_expectation_L2fun (rvplus f1 f2))
+             (LpRRVplus prts (conditional_expectation_L2fun f1) (conditional_expectation_L2fun f2)).
   Proof.
     symmetry.
     apply (conditional_expectation_L2fun_unique2)
@@ -1949,29 +1735,30 @@ Section cond_exp.
   Qed.
   
 End cond_exp.
+
 Section cond_exp2.      
 
   Context {Ts:Type} 
           {dom: SigmaAlgebra Ts}
-          (prts: ProbSpace dom).
+          (prts: ProbSpace dom)
+          {dom2 : SigmaAlgebra Ts}
+          (sub : sa_sub dom2 dom).
 
   Lemma conditional_expectation_L2fun_le (f1 f2 : Ts -> R)
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         {rv1 : RandomVariable dom borel_sa f1}
         {rv2 : RandomVariable dom borel_sa f2}
         {isl1 : IsLp prts 2 f1}
         {isl2 : IsLp prts 2 f2} :
     rv_le f1 f2 ->
-    almostR2 (prob_space_sa_sub sub prts) Rle (conditional_expectation_L2fun prts f1 sub) 
-             (conditional_expectation_L2fun prts f2 sub).
+    almostR2 (prob_space_sa_sub prts sub) Rle (conditional_expectation_L2fun prts sub f1) 
+             (conditional_expectation_L2fun prts sub f2).
   Proof.
     intros.
     generalize (conditional_expectation_L2fun_eq3 prts sub f1); intro eqq1.
     generalize (conditional_expectation_L2fun_eq3 prts sub f2); intros eqq2.
     assert (isfe1:IsFiniteExpectation prts f1) by (apply (IsLp_Finite prts 2); trivial; lra).
     assert (isfe2:IsFiniteExpectation prts f2) by (apply (IsLp_Finite prts 2); trivial; lra).
-    generalize (is_conditional_expectation_isfe prts sub f2 (conditional_expectation_L2fun prts f2 sub) eqq2 isfe2); intros isce2.  
+    generalize (is_conditional_expectation_isfe prts sub f2 (conditional_expectation_L2fun prts sub f2) eqq2 isfe2); intros isce2.  
     apply Expectation_mult_indicator_almost_le;
       [apply conditional_expectation_L2fun_rv |   
        apply conditional_expectation_L2fun_rv | | ].
@@ -1983,7 +1770,7 @@ Section cond_exp2.
     specialize (eqq2 x dec s).
     assert (RandomVariable 
               dom2 borel_sa
-              (rvmult (conditional_expectation_L2fun prts f1 sub) (EventIndicator dec))).
+              (rvmult (conditional_expectation_L2fun prts sub f1) (EventIndicator dec))).
     {
       apply rvmult_rv.
       - apply conditional_expectation_L2fun_rv.
@@ -1992,7 +1779,7 @@ Section cond_exp2.
         apply s.
     }
     assert (RandomVariable dom2 borel_sa
-                           (rvmult (conditional_expectation_L2fun prts f2 sub) (EventIndicator dec))).
+                           (rvmult (conditional_expectation_L2fun prts sub f2) (EventIndicator dec))).
     {
       apply rvmult_rv.
       - apply conditional_expectation_L2fun_rv.
@@ -2034,15 +1821,13 @@ Section cond_exp2.
   Qed.
 
   Lemma conditional_expectation_L2fun_le_prts (f1 f2 : Ts -> R)
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         {rv1 : RandomVariable dom borel_sa f1}
         {rv2 : RandomVariable dom borel_sa f2}
         {isl1 : IsLp prts 2 f1}
         {isl2 : IsLp prts 2 f2} :
     rv_le f1 f2 ->
-    almostR2 prts Rle (conditional_expectation_L2fun prts f1 sub) 
-             (conditional_expectation_L2fun prts f2 sub).
+    almostR2 prts Rle (conditional_expectation_L2fun prts sub f1) 
+             (conditional_expectation_L2fun prts sub f2).
   Proof.
     intros.
     apply almostR2_prob_space_sa_sub_lift with (sub0 := sub).
@@ -2054,50 +1839,25 @@ Section cond_exp2.
   Local Existing Instance conditional_expectation_L2fun_rv.
 
   Definition NonNegConditionalExpectation (f : Ts -> R) 
-             {dom2 : SigmaAlgebra Ts}
-             (sub : sa_sub dom2 dom)
              {rv : RandomVariable dom borel_sa f}
              {nnf : NonnegativeFunction f} : Ts -> Rbar :=
-    Rbar_rvlim (fun n => conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub).
+    Rbar_rvlim (fun n => conditional_expectation_L2fun prts sub (rvmin f (const (INR n)))).
 
   (* if f has finite exp, we can discard the infinite points *)
   Definition FiniteNonNegConditionalExpectation (f : Ts -> R) 
-             {dom2 : SigmaAlgebra Ts}
-             (sub : sa_sub dom2 dom)
              {rv : RandomVariable dom borel_sa f}
              {isfe : IsFiniteExpectation prts f}
              {nnf : NonnegativeFunction f} : Ts -> R :=
-    rvlim (fun n => conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub).
-
-  Lemma almost_forall 
-        {ndom : SigmaAlgebra Ts}
-        (nprts : ProbSpace ndom) 
-        {f : nat -> Ts -> Prop} :
-    (forall n, almost nprts (f n)) ->
-    almost nprts (fun x => forall n, f n x).
-  Proof.
-    intros.
-    apply choice in H.
-    destruct H as [c ?].
-    exists (inter_of_collection c).
-    split.
-    - apply ps_one_countable_inter; intros n.
-      now destruct (H n).
-    - intros x icx n.
-      destruct (H n) as [? HH].
-      apply (HH x (icx n)).
-  Qed.
+    rvlim (fun n => conditional_expectation_L2fun prts sub (rvmin f (const (INR n)))).
 
   Lemma NonNegCondexp_almost_increasing (f : Ts -> R) 
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
-        {rv : RandomVariable dom borel_sa f}
+          {rv : RandomVariable dom borel_sa f}
         {nnf : NonnegativeFunction f} :
-    almost (prob_space_sa_sub sub prts)
+    almost (prob_space_sa_sub prts sub)
            (fun x => 
               forall n,
-                conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub x
-                <= conditional_expectation_L2fun prts (rvmin f (const (INR (S n)))) sub x).
+                conditional_expectation_L2fun prts sub (rvmin f (const (INR n))) x
+                <= conditional_expectation_L2fun prts sub (rvmin f (const (INR (S n)))) x).
   Proof.
     apply almost_forall.
     intros.
@@ -2110,66 +1870,33 @@ Section cond_exp2.
   Qed.
 
   Lemma NonNegCondexp_almost_increasing_prts (f : Ts -> R) 
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         {rv : RandomVariable dom borel_sa f}
         {nnf : NonnegativeFunction f} :
     almost prts
            (fun x => 
               forall n,
-                conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub x
-                <= conditional_expectation_L2fun prts (rvmin f (const (INR (S n)))) sub x).
+                conditional_expectation_L2fun prts sub (rvmin f (const (INR n))) x
+                <= conditional_expectation_L2fun prts sub (rvmin f (const (INR (S n)))) x).
   Proof.
     apply almost_prob_space_sa_sub_lift with (sub0 := sub).
     apply NonNegCondexp_almost_increasing.
   Qed.
-  (*
-  Lemma NonNegCondexp_almost_rv (f : Ts -> R) 
-           {dom2 : SigmaAlgebra Ts}
-           (sub : sa_sub dom2 dom)
-           {rv : RandomVariable dom borel_sa f}
-           {nnf : NonnegativeFunction f} :
-  exists (E: event dom2),
-    ps_P (ProbSpace:=(prob_space_sa_sub sub prts)) E = 1 /\
-    (RandomVariable (event_restricted_sigma E) Rbar_borel_sa
-                    (event_restricted_function E
-                                               (NonNegConditionalExpectation f sub))).
-Proof.
-  destruct (NonNegCondexp_almost_increasing f sub)
-    as [E [Eone EH]].
-  exists E.
-  split; trivial.
-  apply Rbar_rvlim_rv.
-  - intros.
-    apply Restricted_RandomVariable.
-    apply conditional_expectation_L2fun_rv.
-  - intros.
-    apply ex_lim_seq_incr.
-    intros.
-    unfold event_restricted_function.
-    destruct omega.
-    apply EH.
-    apply e.
-  Qed.
-   *)
 
   Lemma almost_Rbar_rvlim_condexp_incr_indicator_rv (f : Ts -> R) 
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         {rv : RandomVariable dom borel_sa f}
         {nnf : NonnegativeFunction f} 
         (E : event dom2) :
-    ps_P (ProbSpace:=(prob_space_sa_sub sub prts)) E = 1 ->
+    ps_P (ProbSpace:=(prob_space_sa_sub prts sub)) E = 1 ->
     (forall x0 : Ts,
         E x0 ->
         forall n : nat,
-          conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub x0 <=
-          conditional_expectation_L2fun prts (rvmin f (const (INR (S n)))) sub x0) ->
+          conditional_expectation_L2fun prts sub (rvmin f (const (INR n))) x0 <=
+          conditional_expectation_L2fun prts sub (rvmin f (const (INR (S n)))) x0) ->
     (RandomVariable 
        dom2 Rbar_borel_sa
        (Rbar_rvlim
           (fun n0 : nat =>
-             rvmult (conditional_expectation_L2fun prts (rvmin f (const (INR n0))) sub)
+             rvmult (conditional_expectation_L2fun prts sub (rvmin f (const (INR n0))))
                     (EventIndicator (classic_dec E))))).
   Proof.
     intros.
@@ -2188,16 +1915,14 @@ Proof.
   Qed.
 
   Lemma NonNegCondexp_almost_nonneg (f : Ts -> R) 
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         {rv : RandomVariable dom borel_sa f}
         {nnf : NonnegativeFunction f} :
-    almostR2 (prob_space_sa_sub sub prts) Rbar_le (const 0) (NonNegConditionalExpectation f sub).
+    almostR2 (prob_space_sa_sub prts sub) Rbar_le (const 0) (NonNegConditionalExpectation f).
   Proof.
     unfold NonNegConditionalExpectation.
-    assert (almost (prob_space_sa_sub sub prts)
+    assert (almost (prob_space_sa_sub prts sub)
                    (fun x => forall n,
-                        0 <= (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub) x)).
+                        0 <= (conditional_expectation_L2fun prts sub (rvmin f (const (INR n)))) x)).
     {
       apply almost_forall.
       intros.
@@ -2221,59 +1946,12 @@ Proof.
   Qed.
 
   Lemma NonNegCondexp_almost_nonneg_prts (f : Ts -> R) 
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         {rv : RandomVariable dom borel_sa f}
         {nnf : NonnegativeFunction f} :
-    almostR2 prts Rbar_le (const 0) (NonNegConditionalExpectation f sub).
+    almostR2 prts Rbar_le (const 0) (NonNegConditionalExpectation f).
   Proof.
     apply almost_prob_space_sa_sub_lift with (sub0 := sub).
     apply NonNegCondexp_almost_nonneg.
-  Qed.
-
-  Global Instance nnfconstinr (c : nat) : NonnegativeFunction (Ts:=Ts) (const (INR c)).
-  Proof.
-    apply nnfconst.
-    apply pos_INR.
-  Qed.
-
-  Lemma is_lim_seq_min (x : R) :
-    is_lim_seq (fun n : nat => Rmin x (INR n)) x.
-  Proof.
-    apply is_lim_seq_spec.
-    unfold is_lim_seq'.
-    intros.
-    exists (Z.to_nat (up x)).
-    intros.
-    rewrite Rmin_left.
-    - rewrite Rminus_eq_0.
-      rewrite Rabs_R0.
-      apply cond_pos.
-    - destruct (archimed x).
-      destruct (Rge_dec x 0).
-      + rewrite <- INR_up_pos in H0; trivial.
-        apply Rge_le.
-        left.
-        apply Rge_gt_trans with (r2 := INR (Z.to_nat (up x))); trivial.
-        apply Rle_ge.
-        now apply le_INR.
-      + generalize (pos_INR n); intros.
-        lra.
-  Qed.
-
-  Lemma Lim_seq_min (x : R) :
-    Lim_seq (fun n => Rmin x (INR n)) = x.
-  Proof.
-    generalize (is_lim_seq_min x); intros.
-    now apply is_lim_seq_unique in H.
-  Qed.
-
-  Lemma rvlim_rvmin (f : Ts -> R) :
-    rv_eq (Rbar_rvlim (fun n => rvmin f (const (INR n)))) f.
-  Proof.
-    intro x.
-    unfold Rbar_rvlim, rvmin, const.
-    now rewrite Lim_seq_min.
   Qed.
 
   Lemma rvlim_rvmin_indicator (f : Ts -> R) (P:pre_event Ts) (dec:dec_pre_event P) :
@@ -2291,8 +1969,6 @@ Proof.
   Qed.
 
   Lemma is_conditional_expectation_proper
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         (f ce1 ce2 : Ts -> R)
         {rvf : RandomVariable dom borel_sa f}
         {rvce1 : RandomVariable dom2 borel_sa ce1}
@@ -2318,8 +1994,6 @@ Proof.
   Qed.
   
   Lemma NonNegCondexp_is_Rbar_condexp_almost0  (f : Ts -> R) 
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         {rv : RandomVariable dom borel_sa f}
         {nnf : NonnegativeFunction f} :
     exists (g : nat -> Ts -> R),
@@ -2337,21 +2011,21 @@ Proof.
       apply le_INR; lia.
     }
     
-    destruct (almost_forall _ (fun n => conditional_expectation_L2fun_le (rvmin f (const (INR n))) (rvmin f (const (INR (S n)))) sub (HHsuc n))) as [? [??]].
-    destruct (almost_forall _ (fun n => conditional_expectation_L2fun_nonneg prts (rvmin f (const (INR n))) sub))
+    destruct (almost_forall _ (fun n => conditional_expectation_L2fun_le (rvmin f (const (INR n))) (rvmin f (const (INR (S n)))) (HHsuc n))) as [? [??]].
+    destruct (almost_forall _ (fun n => conditional_expectation_L2fun_nonneg prts sub (rvmin f (const (INR n)))))
       as [? [??]].
     pose (E := event_inter x x0).    
-    assert (ps_P (ProbSpace := (prob_space_sa_sub sub prts)) E = 1).
+    assert (ps_P (ProbSpace := (prob_space_sa_sub prts sub)) E = 1).
     {
       unfold E.
       now rewrite ps_inter_l1.
     }
     exists (fun n => rvmult 
-                       (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub)
-                       (EventIndicator (classic_dec E))).
+               (conditional_expectation_L2fun prts sub (rvmin f (const (INR n))))
+               (EventIndicator (classic_dec E))).
     assert (g_rv :  forall n, RandomVariable dom2 borel_sa
-                                             (rvmult (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub)
-                                                     (EventIndicator (classic_dec E)))).
+                                        (rvmult (conditional_expectation_L2fun prts sub (rvmin f (const (INR n))))
+                                                (EventIndicator (classic_dec E)))).
     {
       typeclasses eauto.
     }
@@ -2374,9 +2048,9 @@ Proof.
        apply H4.
     - exists g_rv.
       intros n.
-      + assert (eqq1: (almostR2 (prob_space_sa_sub sub prts) eq ((rvmult (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub)
-                                                                           (EventIndicator (classic_dec E))))
-                                (conditional_expectation_L2fun prts (rvmin f (const (INR n))) sub))).
+      + assert (eqq1: (almostR2 (prob_space_sa_sub prts sub) eq ((rvmult (conditional_expectation_L2fun prts sub (rvmin f (const (INR n))))
+                                                                         (EventIndicator (classic_dec E))))
+                                (conditional_expectation_L2fun prts sub (rvmin f (const (INR n)))))).
         {
           exists E.
           split; trivial.
@@ -2386,13 +2060,11 @@ Proof.
           lra.
         }
         symmetry in eqq1.
-        apply (is_conditional_expectation_proper sub _ _ _ (almostR2_prob_space_sa_sub_lift sub prts _ _ _ eqq1)).
+        apply (is_conditional_expectation_proper _ _ _ (almostR2_prob_space_sa_sub_lift prts sub _ _ _ eqq1)).
         apply conditional_expectation_L2fun_eq3.
   Qed.
 
   Lemma NonNegCondexp_is_Rbar_condexp_g  (f : Ts -> R) 
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         {rv : RandomVariable dom borel_sa f}
         {nnf : NonnegativeFunction f} :
     exists (g : nat -> Ts -> R),
@@ -2400,7 +2072,7 @@ Proof.
       /\ exists (g_rv : RandomVariable dom2 Rbar_borel_sa (Rbar_rvlim g)),
         is_Rbar_conditional_expectation prts sub f (Rbar_rvlim g).      
   Proof.
-    destruct (NonNegCondexp_is_Rbar_condexp_almost0 f sub) as [g [gnnf [gincr [glimrv [grv giscond]]]]].
+    destruct (NonNegCondexp_is_Rbar_condexp_almost0 f) as [g [gnnf [gincr [glimrv [grv giscond]]]]].
     generalize 3; intros.
     exists g.
     split.
@@ -2536,8 +2208,6 @@ Proof.
   Qed.
 
   Lemma NonNegCondexp'  (f : Ts -> R) 
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         {rv : RandomVariable dom borel_sa f}
         {nnf : NonnegativeFunction f} :
     { g : Ts -> Rbar |
@@ -2546,79 +2216,37 @@ Proof.
           is_Rbar_conditional_expectation prts sub f g }.
   Proof.
     apply constructive_indefinite_description.
-    destruct (NonNegCondexp_is_Rbar_condexp_g f sub) as [g [?[??]]].
+    destruct (NonNegCondexp_is_Rbar_condexp_g f) as [g [?[??]]].
     exists (Rbar_rvlim g); eauto.
   Qed.
 
   Definition NonNegCondexp  (f : Ts -> R) 
-             {dom2 : SigmaAlgebra Ts}
-             (sub : sa_sub dom2 dom)
              {rv : RandomVariable dom borel_sa f}
              {nnf : NonnegativeFunction f} : Ts -> Rbar
-    := proj1_sig (NonNegCondexp' f sub).
+    := proj1_sig (NonNegCondexp' f).
 
   Global Instance NonNegCondexp_nneg (f : Ts -> R) 
-         {dom2 : SigmaAlgebra Ts}
-         (sub : sa_sub dom2 dom)
          {rv : RandomVariable dom borel_sa f}
          {nnf : NonnegativeFunction f} :
-    Rbar_NonnegativeFunction (NonNegCondexp f sub).
+    Rbar_NonnegativeFunction (NonNegCondexp f).
   Proof.
     unfold NonNegCondexp, proj1_sig; match_destr.
     destruct a as [?[??]]; eauto.
   Qed.
 
   Global Instance NonNegCondexp_rv (f : Ts -> R) 
-         {dom2 : SigmaAlgebra Ts}
-         (sub : sa_sub dom2 dom)
          {rv : RandomVariable dom borel_sa f}
          {nnf : NonnegativeFunction f} :
-    RandomVariable dom2 Rbar_borel_sa (NonNegCondexp f sub).
+    RandomVariable dom2 Rbar_borel_sa (NonNegCondexp f).
   Proof.
     unfold NonNegCondexp, proj1_sig; match_destr.
     destruct a as [?[??]]; eauto.
   Qed.
 
-  Lemma Rbar_pos_fun_pos_fun (rv_X : Ts -> R) :
-    rv_eq (Rbar_pos_fun_part rv_X) (pos_fun_part rv_X).
-  Proof.
-    intro x.
-    unfold Rbar_pos_fun_part, pos_fun_part.
-    unfold Rbar_max; simpl.
-    unfold Rmax.
-    repeat match_destr; simpl in *; lra.
-  Qed.
-  
-  Lemma Rbar_neg_fun_neg_fun (rv_X : Ts -> R) :
-    rv_eq (Rbar_neg_fun_part rv_X) (neg_fun_part rv_X).
-  Proof.
-    intro x.
-    unfold Rbar_neg_fun_part, neg_fun_part.
-    unfold Rbar_max; simpl.
-    unfold Rmax.
-    repeat match_destr; simpl in *; lra.
-  Qed.
-
-  Lemma gen_Expectation_Rbar_Expectation
-        (rv_X : Ts -> R) :
-    Expectation rv_X = Rbar_Expectation rv_X.
-  Proof.
-    unfold Expectation, Rbar_Expectation.
-    f_equal.
-    - rewrite Expectation_Rbar_Expectation.
-      apply Rbar_NonnegExpectation_ext.
-      intro x.
-      now rewrite Rbar_pos_fun_pos_fun.
-    - rewrite Expectation_Rbar_Expectation.
-      apply Rbar_NonnegExpectation_ext.
-      intro x.
-      now rewrite Rbar_neg_fun_neg_fun.
-  Qed.
-
   Lemma conditional_expectation_L2fun_cond_exp 
-        {dom2 : SigmaAlgebra Ts} (sub : sa_sub dom2 dom) (f : Ts -> R)
+        (f : Ts -> R)
         {rv : RandomVariable dom borel_sa f} {isl : IsLp prts 2 f} :
-    is_Rbar_conditional_expectation prts sub f (LpRRV_rv_X _ (conditional_expectation_L2fun prts f sub)).
+    is_Rbar_conditional_expectation prts sub f (LpRRV_rv_X _ (conditional_expectation_L2fun prts sub f)).
   Proof.
     intros ???.
     unfold Rbar_rvmult; simpl.
@@ -2627,11 +2255,9 @@ Proof.
   Qed.    
   
   Lemma NonNegCondexp_cond_exp (f : Ts -> R) 
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         {rv : RandomVariable dom borel_sa f}
         {nnf : NonnegativeFunction f} :
-    is_Rbar_conditional_expectation prts sub f (NonNegCondexp f sub).
+    is_Rbar_conditional_expectation prts sub f (NonNegCondexp f).
   Proof.
     unfold NonNegCondexp.
     unfold is_Rbar_conditional_expectation; intros.
@@ -2642,8 +2268,6 @@ Proof.
 
 
   Lemma is_Rbar_conditional_expectation_Expectation
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         (f : Ts -> R)
         (ce : Ts -> Rbar)           
         {rvf : RandomVariable dom borel_sa f}
@@ -2668,8 +2292,6 @@ Proof.
   Qed.
 
   Lemma is_Rbar_conditional_expectation_FiniteExpectation
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         (f : Ts -> R)
         (ce : Ts -> Rbar)           
         {rvf : RandomVariable dom borel_sa f}
@@ -2681,452 +2303,35 @@ Proof.
     intros HH.
     now erewrite (is_Rbar_conditional_expectation_Expectation) by eauto.
   Qed.
-  
-  Lemma IsFiniteExpectation_nneg_is_almost_finite {dom2} {prtss} (f : Ts -> Rbar)
-        {rv : RandomVariable dom2 Rbar_borel_sa f}
-        {nnf : Rbar_NonnegativeFunction f} :
-    Rbar_IsFiniteExpectation prtss f ->
-    almost prtss (fun x => is_finite (f x)).
-  Proof.
-    intros isfe.
-    generalize (finite_Rbar_Expectation_almostR2_finite prtss f rv isfe)
-    ; intros HH.
-    eexists.
-    split; try eapply HH.
-    now simpl.
-  Qed.
-  
+    
   Lemma NonNegCond_almost_finite (f : Ts -> R)
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         {rv : RandomVariable dom borel_sa f}
         {nnf : NonnegativeFunction f}
-        {rvce : RandomVariable dom2 Rbar_borel_sa (NonNegCondexp  f sub)} :
+        {rvce : RandomVariable dom2 Rbar_borel_sa (NonNegCondexp f)} :
     IsFiniteExpectation prts f ->
-    almost prts (fun x => is_finite ((NonNegCondexp f sub) x)).
+    almost prts (fun x => is_finite ((NonNegCondexp f) x)).
   Proof.
     intros isfe.
     apply IsFiniteExpectation_nneg_is_almost_finite; trivial.
     - apply (RandomVariable_sa_sub sub); trivial.
     - apply NonNegCondexp_nneg.
-    - eapply (is_Rbar_conditional_expectation_FiniteExpectation sub); eauto.
+    - eapply (is_Rbar_conditional_expectation_FiniteExpectation); eauto.
       apply NonNegCondexp_cond_exp.
   Qed.
 
-  (*
-Lemma FiniteNonNegCondexp_almost_eq (f : Ts -> R) 
-           {dom2 : SigmaAlgebra Ts}
-           (sub : sa_sub dom2 dom)
-           {rv : RandomVariable dom borel_sa f}
-           {isfe : IsFiniteExpectation prts f}
-           {nnf : NonnegativeFunction f} 
-           {rvce : RandomVariable dom2 Rbar_borel_sa (NonNegConditionalExpectation  f sub)} :
-  almostR2 prts eq (NonNegCondexp f sub) (FiniteNonNegCondexp f sub).
-Proof.
-  destruct (NonNegCond_almost_finite f sub isfe) as [? [? ?]].
-  exists x.
-  split; trivial.
-  intros.
-  specialize (H0 x0 H1).
-  unfold NonNegConditionalExpectation, Rbar_rvlim in *.
-  unfold FiniteNonNegConditionalExpectation, rvlim.
-  now rewrite H0.
-Qed.
-   *)
-
   Definition ConditionalExpectation (f : Ts -> R) 
-             {dom2 : SigmaAlgebra Ts}
-             (sub : sa_sub dom2 dom)
              {rv : RandomVariable dom borel_sa f} : Ts -> Rbar :=
-    Rbar_rvminus (NonNegCondexp (pos_fun_part f) sub)
-                 (NonNegCondexp (neg_fun_part f) sub).
-
-  Lemma sa_le_Rbar_ge_rv {domm}
-        (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
-    : sa_sigma (fun omega => Rbar_ge (rv_X omega) x).
-  Proof.
-    apply Rbar_sa_le_ge.
-    now apply rv_Rbar_measurable.
-  Qed.
-
-
-  Global Instance Rbar_rvopp_rv {domx} (x:Ts -> Rbar) 
-         {xrv:RandomVariable domx Rbar_borel_sa x} :
-    RandomVariable domx Rbar_borel_sa (Rbar_rvopp x).
-  Proof.
-    apply Rbar_measurable_rv.
-    intros ?.
-    apply (sa_proper _ (fun omega => Rbar_ge (x omega) (Rbar_opp r))).
-    - intros ?.
-      unfold Rbar_rvopp.
-      destruct (x x0); destruct r; simpl; try tauto.
-      lra.
-    - now apply sa_le_Rbar_ge_rv.
-  Qed.
+    Rbar_rvminus (NonNegCondexp (pos_fun_part f))
+                 (NonNegCondexp (neg_fun_part f)).
 
   Global Instance Condexp_rv (f : Ts -> R) 
-         {dom2 : SigmaAlgebra Ts}
-         (sub : sa_sub dom2 dom)
          {rv : RandomVariable dom borel_sa f} :
-    RandomVariable dom2 Rbar_borel_sa (ConditionalExpectation f sub).
+    RandomVariable dom2 Rbar_borel_sa (ConditionalExpectation f).
   Proof.
     unfold ConditionalExpectation, Rbar_rvminus.
     apply Rbar_rvplus_rv.
     - typeclasses eauto.
     - typeclasses eauto.
-  Qed.
-
-  Lemma Rbar_pos_neg_id (x:Rbar) : 
-    x = Rbar_plus (Rbar_max x 0) (Rbar_opp (Rbar_max (Rbar_opp x) 0)).
-  Proof.
-    assert (Rbar_opp 0 = 0).
-    {
-      unfold Rbar_opp.
-      rewrite Rbar_finite_eq.
-      lra.
-    }
-    unfold Rbar_max; repeat match_destr.
-    - rewrite H.
-      rewrite <- H in r0.
-      rewrite Rbar_opp_le in r0.
-      rewrite Rbar_plus_0_r.
-      apply Rbar_le_antisym; eauto.
-    - rewrite Rbar_opp_involutive.
-      now rewrite Rbar_plus_0_l.
-    - rewrite H.
-      now rewrite Rbar_plus_0_r.
-    - rewrite Rbar_opp_involutive.
-      rewrite <- H in n0.
-      rewrite Rbar_opp_le in n0.
-      apply Rbar_not_le_lt in n0.
-      apply Rbar_not_le_lt in n.
-      generalize (Rbar_lt_trans _ _ _ n n0); intros.
-      simpl in H0; lra.
-  Qed.
-
-  Lemma Rbar_max_minus_nneg (x y : Rbar) :
-    Rbar_le 0 x ->
-    Rbar_le 0 y ->
-    (x = 0 \/ y = 0) ->
-    Rbar_max (Rbar_minus x y) 0 = x.
-  Proof.
-    intros.
-    unfold Rbar_max, Rbar_minus.
-    destruct x; destruct y; try tauto.
-    simpl in H; simpl in H0.
-    - match_destr.
-      + simpl in r1.
-        destruct H1; apply Rbar_finite_eq in H1; apply Rbar_finite_eq; lra.
-      + apply Rbar_not_le_lt in n.
-        simpl; simpl in n.
-        destruct H1; apply Rbar_finite_eq in H1; apply Rbar_finite_eq; lra.
-    - match_destr; destruct H1; try congruence.
-      rewrite H1 in n.
-      now simpl in n.
-    - destruct H1; try congruence.
-      rewrite H1; simpl.
-      match_destr; try congruence.
-      now simpl in r0.
-    - destruct H1; congruence.
-  Qed.
-
-  Lemma Rbar_IsFiniteExpectation_parts f :
-    Rbar_IsFiniteExpectation prts f ->
-    Rbar_IsFiniteExpectation prts (Rbar_pos_fun_part f) /\
-    Rbar_IsFiniteExpectation prts (Rbar_neg_fun_part f).
-  Proof.
-    unfold Rbar_IsFiniteExpectation; intros.
-    unfold Rbar_Expectation, Rbar_minus' in H.
-    do 2 erewrite Rbar_Expectation_pos_pofrf.
-    destruct (Rbar_NonnegExpectation (Rbar_pos_fun_part f));
-      destruct (Rbar_NonnegExpectation (Rbar_neg_fun_part f)); try now simpl in H.
-  Qed.
-
-  Lemma finexp_almost_finite rv_X
-        {rv : RandomVariable dom Rbar_borel_sa rv_X} :
-    Rbar_IsFiniteExpectation prts rv_X ->
-    almost prts (fun x => is_finite (rv_X x)).
-  Proof.
-    intros.
-    destruct (Rbar_IsFiniteExpectation_parts rv_X H).
-    generalize (IsFiniteExpectation_nneg_is_almost_finite (Rbar_pos_fun_part rv_X) H0); intros.
-    generalize (IsFiniteExpectation_nneg_is_almost_finite (Rbar_neg_fun_part rv_X) H1); intros.
-    generalize (Rbar_rv_pos_neg_id rv_X); intros.
-    destruct H2 as [? [? ?]].
-    destruct H3 as [? [? ?]].
-    exists (event_inter x x0).
-    split.
-    - rewrite <- H3.
-      now apply ps_inter_l1.
-    - intros.
-      rewrite H4.
-      unfold Rbar_rvplus, Rbar_rvopp.
-      specialize (H5 x1).
-      specialize (H6 x1).
-      cut_to H5; try now apply (event_inter_sub_l x x0 x1).
-      cut_to H6; try now apply (event_inter_sub_r x x0 x1).
-      rewrite <- H5, <- H6.
-      now simpl.
-  Qed.
-
-  Lemma finexp_almost_finite_part rv_X
-        {rv : RandomVariable dom Rbar_borel_sa rv_X} :
-    Rbar_IsFiniteExpectation prts rv_X ->
-    almostR2 prts eq rv_X (Rbar_finite_part rv_X).
-  Proof.
-    intros.
-    destruct (finexp_almost_finite rv_X H) as [? [? ?]].
-    exists x.
-    split; trivial.
-    intros.
-    unfold Rbar_finite_part.
-    now rewrite <- H1.
-  Qed.
-
-
-  Global Instance finite_part_rv rv_X
-         {rv : RandomVariable dom Rbar_borel_sa rv_X} :
-    RandomVariable dom borel_sa (Rbar_finite_part rv_X).
-  Proof.
-    apply measurable_rv.
-    now apply Rbar_finite_part_meas.
-  Qed.
-
-  Lemma finexp_Rbar_exp_finpart rv_X
-        {rv : RandomVariable dom Rbar_borel_sa rv_X} :
-    Rbar_IsFiniteExpectation prts rv_X ->
-    Rbar_Expectation rv_X = Expectation (Rbar_finite_part rv_X).
-  Proof.
-    intros.
-    rewrite gen_Expectation_Rbar_Expectation.
-    apply Rbar_Expectation_almostR2_proper; trivial.
-    - typeclasses eauto.
-    - now apply finexp_almost_finite_part.
-  Qed.
-  
-  Lemma Rbar_finexp_finexp rv_X
-        {rv : RandomVariable dom Rbar_borel_sa rv_X} :
-    Rbar_IsFiniteExpectation prts rv_X ->
-    IsFiniteExpectation prts (Rbar_finite_part rv_X).
-  Proof.
-    unfold Rbar_IsFiniteExpectation, IsFiniteExpectation; intros.
-    now rewrite <- finexp_Rbar_exp_finpart.
-  Qed.
-
-  Lemma Rbar_finexp_almost_plus rv_X1 rv_X2
-        {rv1 : RandomVariable dom Rbar_borel_sa rv_X1} 
-        {rv2 : RandomVariable dom Rbar_borel_sa rv_X2} :    
-    Rbar_IsFiniteExpectation prts rv_X1 ->
-    Rbar_IsFiniteExpectation prts rv_X2 ->
-    almostR2 prts eq (Rbar_rvplus rv_X1 rv_X2) (rvplus (Rbar_finite_part rv_X1) (Rbar_finite_part rv_X2)).
-  Proof.
-    intros.
-    destruct (finexp_almost_finite_part rv_X1 H) as [? [? ?]].
-    destruct (finexp_almost_finite_part rv_X2 H0) as [? [? ?]].
-    exists (event_inter x x0).
-    split.
-    - rewrite <- H3.
-      now apply ps_inter_l1.
-    - intros.
-      specialize (H2 x1).
-      specialize (H4 x1).
-      cut_to H2; try now apply (event_inter_sub_l x x0 x1).
-      cut_to H4; try now apply (event_inter_sub_r x x0 x1).
-      unfold Rbar_rvplus.
-      rewrite H2, H4.
-      now unfold rvplus.
-  Qed.
-
-  Global Instance Rbar_is_finite_expectation_isfe_plus 
-         (rv_X1 rv_X2 : Ts -> Rbar)
-         {rv1 : RandomVariable dom Rbar_borel_sa rv_X1} 
-         {rv2 : RandomVariable dom Rbar_borel_sa rv_X2}
-         {isfe1: Rbar_IsFiniteExpectation prts rv_X1}
-         {isfe2: Rbar_IsFiniteExpectation prts rv_X2} :
-    Rbar_IsFiniteExpectation prts (Rbar_rvplus rv_X1 rv_X2).
-  Proof.
-    intros.
-    generalize (Rbar_finexp_finexp rv_X1 isfe1); intros.
-    generalize (Rbar_finexp_finexp rv_X2 isfe2); intros.    
-    generalize (Rbar_finexp_almost_plus rv_X1 rv_X2 isfe1 isfe2); intros.
-    assert (RandomVariable dom borel_sa (Rbar_finite_part rv_X1)) by typeclasses eauto.
-    assert (RandomVariable dom borel_sa (Rbar_finite_part rv_X2)) by typeclasses eauto.
-    generalize (IsFiniteExpectation_plus prts (Rbar_finite_part rv_X1) (Rbar_finite_part rv_X2) ); intros.
-    unfold Rbar_IsFiniteExpectation.
-    assert (RandomVariable dom Rbar_borel_sa (rvplus (Rbar_finite_part rv_X1) (Rbar_finite_part rv_X2))) by (apply Real_Rbar_rv; typeclasses eauto).
-    generalize (Rbar_Expectation_almostR2_proper prts  (Rbar_rvplus rv_X1 rv_X2)); intros.
-    specialize (H6 (rvplus (Rbar_finite_part rv_X1) (Rbar_finite_part rv_X2))).
-    cut_to H6; trivial.
-    - rewrite H6.
-      rewrite <- gen_Expectation_Rbar_Expectation.
-      apply H4.    
-    - apply Rbar_rvplus_rv; trivial.
-  Qed.
-
-  Lemma Rbar_IsFiniteExpectation_Finite (rv_X:Ts->Rbar)
-        {isfe:Rbar_IsFiniteExpectation prts rv_X} :
-    { x : R | Rbar_Expectation rv_X = Some (Finite x)}.
-  Proof.
-    red in isfe.
-    match_destr_in isfe; try contradiction.
-    destruct r; try contradiction.
-    eauto.
-  Qed.
-
-  Definition Rbar_FiniteExpectation (rv_X:Ts->Rbar)
-             {isfe:Rbar_IsFiniteExpectation prts rv_X} : R
-    := proj1_sig (Rbar_IsFiniteExpectation_Finite rv_X).
-
-
-  Ltac Rbar_simpl_finite
-    := repeat match goal with
-              | [|- context [proj1_sig ?x]] => destruct x; simpl
-              | [H: context [proj1_sig ?x] |- _] => destruct x; simpl in H
-              end.
-
-  Lemma Rbar_Expectation_sum_finite 
-        (rv_X1 rv_X2 : Ts -> Rbar)
-        {rv1 : RandomVariable dom Rbar_borel_sa rv_X1}
-        {rv2 : RandomVariable dom Rbar_borel_sa rv_X2} :
-    forall (e1 e2:R), 
-      Rbar_Expectation rv_X1 = Some (Finite e1) ->
-      Rbar_Expectation rv_X2 = Some (Finite e2) ->
-      Rbar_Expectation (Rbar_rvplus rv_X1 rv_X2) = Some (Finite (e1 + e2)).
-  Proof.
-    intros.
-    assert (isfe1: Rbar_IsFiniteExpectation prts rv_X1).
-    {
-      unfold Rbar_IsFiniteExpectation.
-      now rewrite H.
-    }
-    assert (isfe2: Rbar_IsFiniteExpectation prts rv_X2).
-    {
-      unfold Rbar_IsFiniteExpectation.
-      now rewrite H0.
-    }
-    generalize (Rbar_finexp_finexp rv_X1 isfe1); intros.
-    generalize (Rbar_finexp_finexp rv_X2 isfe2); intros.    
-    assert (RandomVariable dom borel_sa (Rbar_finite_part rv_X1)) by typeclasses eauto.
-    assert (RandomVariable dom borel_sa (Rbar_finite_part rv_X2)) by typeclasses eauto.
-    generalize (Expectation_sum_finite (Rbar_finite_part rv_X1)(Rbar_finite_part rv_X2) e1 e2); intros.
-    generalize (Rbar_Expectation_almostR2_proper prts  (Rbar_rvplus rv_X1 rv_X2)); intros.
-    specialize (H6 (rvplus (Rbar_finite_part rv_X1) (Rbar_finite_part rv_X2))).
-    rewrite H6.
-    - rewrite <- gen_Expectation_Rbar_Expectation.
-      apply H5.
-      + rewrite gen_Expectation_Rbar_Expectation.
-        generalize (Rbar_Expectation_almostR2_proper prts rv_X1 (Rbar_finite_part rv_X1)); intros.
-        rewrite <- H7.
-        apply H.
-        now apply finexp_almost_finite_part.
-      + rewrite gen_Expectation_Rbar_Expectation.
-        generalize (Rbar_Expectation_almostR2_proper prts rv_X2 (Rbar_finite_part rv_X2)); intros.
-        rewrite <- H7.
-        apply H0.
-        now apply finexp_almost_finite_part.        
-    - now apply Rbar_rvplus_rv.      
-    - typeclasses eauto.
-    - now apply Rbar_finexp_almost_plus.
-  Qed.
-
-  Lemma Rbar_Expectation_minus_finite 
-        (rv_X1 rv_X2 : Ts -> Rbar)
-        {rv1 : RandomVariable dom Rbar_borel_sa rv_X1}
-        {rv2 : RandomVariable dom Rbar_borel_sa rv_X2} :
-    forall (e1 e2:R), 
-      Rbar_Expectation rv_X1 = Some (Finite e1) ->
-      Rbar_Expectation rv_X2 = Some (Finite e2) ->
-      Rbar_Expectation (Rbar_rvminus rv_X1 rv_X2) = Some (Finite (e1 - e2)).
-  Proof.
-    intros.
-    unfold Rbar_rvminus.
-    apply Rbar_Expectation_sum_finite; trivial.
-    - typeclasses eauto.
-    - generalize (Rbar_Expectation_opp rv_X2); intros.
-      simpl in H1.
-      rewrite H1.
-      rewrite H0.
-      now simpl.
-  Qed.
-
-  Lemma Rbar_FiniteExpectation_Rbar_Expectation (rv_X:Ts->Rbar)
-        {isfe:Rbar_IsFiniteExpectation prts rv_X} : 
-    Rbar_Expectation rv_X = Some (Finite (Rbar_FiniteExpectation rv_X)).
-  Proof.
-    unfold Rbar_IsFiniteExpectation in isfe.
-    unfold Rbar_FiniteExpectation.
-    unfold Rbar_Expectation.
-    now Rbar_simpl_finite.
-  Qed.
-
-  Lemma Rbar_FiniteExpectation_plus
-        (rv_X1 rv_X2 : Ts -> Rbar)
-        {rv1 : RandomVariable dom Rbar_borel_sa rv_X1}
-        {rv2 : RandomVariable dom Rbar_borel_sa rv_X2} 
-        {isfe1:Rbar_IsFiniteExpectation prts rv_X1}
-        {isfe2:Rbar_IsFiniteExpectation prts rv_X2} :
-    Rbar_FiniteExpectation (Rbar_rvplus rv_X1 rv_X2) =
-    Rbar_FiniteExpectation rv_X1 + Rbar_FiniteExpectation rv_X2.
-  Proof.
-    destruct (Rbar_IsFiniteExpectation_Finite rv_X1) as [r1 e1].
-    destruct (Rbar_IsFiniteExpectation_Finite rv_X2) as [r2 e2].
-    generalize (Rbar_Expectation_sum_finite rv_X1 rv_X2 r1 r2 e1 e2); trivial
-    ; intros HH.
-    erewrite Rbar_FiniteExpectation_Rbar_Expectation in e1,e2,HH.
-    invcs HH.
-    invcs e1.
-    invcs e2.
-    rewrite H0, H1, H2.
-    trivial.
-  Qed.
-
-  Lemma Rbar_IsFiniteExpectation_opp (rv_X : Ts -> Rbar)
-        {rv : RandomVariable dom Rbar_borel_sa rv_X} 
-        {isfe: Rbar_IsFiniteExpectation prts rv_X} :
-    Rbar_IsFiniteExpectation prts (Rbar_rvopp rv_X).
-  Proof.
-    generalize (Rbar_Expectation_opp rv_X); intros.
-    simpl in H.
-    unfold Rbar_IsFiniteExpectation.
-    rewrite H.
-    unfold Rbar_IsFiniteExpectation in isfe.
-    match_destr_in isfe.
-    destruct r; tauto.
-  Qed.
-
-  Global Instance Rbar_is_finite_expectation_isfe_minus
-         (rv_X1 rv_X2 : Ts -> Rbar)
-         {rv1 : RandomVariable dom Rbar_borel_sa rv_X1} 
-         {rv2 : RandomVariable dom Rbar_borel_sa rv_X2}
-         {isfe1: Rbar_IsFiniteExpectation prts rv_X1}
-         {isfe2: Rbar_IsFiniteExpectation prts rv_X2} :
-    Rbar_IsFiniteExpectation prts (Rbar_rvminus rv_X1 rv_X2).
-  Proof.
-    unfold Rbar_rvminus.
-    apply Rbar_is_finite_expectation_isfe_plus; trivial.
-    - typeclasses eauto.
-    - now apply Rbar_IsFiniteExpectation_opp.
-  Qed.
-  
-  Lemma Rbar_FiniteExpectation_minus
-        (rv_X1 rv_X2 : Ts -> Rbar)
-        {rv1 : RandomVariable dom Rbar_borel_sa rv_X1}
-        {rv2 : RandomVariable dom Rbar_borel_sa rv_X2} 
-        {isfe1:Rbar_IsFiniteExpectation prts rv_X1}
-        {isfe2:Rbar_IsFiniteExpectation prts rv_X2} :
-    Rbar_FiniteExpectation (Rbar_rvminus rv_X1 rv_X2) =
-    Rbar_FiniteExpectation rv_X1 - Rbar_FiniteExpectation rv_X2.
-  Proof.
-    destruct (Rbar_IsFiniteExpectation_Finite rv_X1) as [r1 e1].
-    destruct (Rbar_IsFiniteExpectation_Finite rv_X2) as [r2 e2].
-    generalize (Rbar_Expectation_minus_finite rv_X1 rv_X2 r1 r2 e1 e2); trivial
-    ; intros HH.
-    erewrite Rbar_FiniteExpectation_Rbar_Expectation in e1,e2,HH.
-    invcs HH.
-    invcs e1.
-    invcs e2.
-    rewrite H0, H1, H2.
-    trivial.
   Qed.
 
   Lemma Rbar_mult_r_plus_distr (c:R) x y:
@@ -3151,12 +2356,10 @@ Qed.
   Qed.
 
   Lemma Condexp_cond_exp (f : Ts -> R) 
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         {rv : RandomVariable dom borel_sa f}
         {isfe:IsFiniteExpectation prts f}
     :
-      is_Rbar_conditional_expectation prts sub f (ConditionalExpectation f sub).
+      is_Rbar_conditional_expectation prts sub f (ConditionalExpectation f).
   Proof.
     intros P dec sa_P.
     assert (isfe1:IsFiniteExpectation prts (rvmult f (EventIndicator dec))).
@@ -3172,10 +2375,10 @@ Qed.
     unfold ConditionalExpectation.
     transitivity (Rbar_Expectation
                     (Rbar_rvminus (Rbar_rvmult
-                                     (NonNegCondexp (fun x : Ts => pos_fun_part f x) sub)
+                                     (NonNegCondexp (fun x : Ts => pos_fun_part f x))
                                      (fun x : Ts => EventIndicator dec x))
                                   (Rbar_rvmult
-                                     (NonNegCondexp (fun x : Ts => neg_fun_part f x) sub)
+                                     (NonNegCondexp (fun x : Ts => neg_fun_part f x))
                                      (fun x : Ts => EventIndicator dec x)))).
     - unfold IsFiniteExpectation in isfep, isfen.
       match_option_in isfep; try tauto.
@@ -3233,8 +2436,6 @@ Qed.
 
 
   Lemma is_Rbar_conditional_expectation_proper
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         (f1 f2 : Ts -> R)
         (ce1 ce2 : Ts -> Rbar)
         {rvf1 : RandomVariable dom borel_sa f1}
@@ -3277,8 +2478,6 @@ Qed.
   Qed.
 
   Lemma is_Rbar_conditional_expectation_finexp_plus
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         (f1 f2 : Ts -> R)
         (ce1 ce2 : Ts -> Rbar)
         {rvf1 : RandomVariable dom borel_sa f1}
@@ -3528,8 +2727,6 @@ Qed.
    *)
 
   Lemma is_Rbar_conditional_expectation_nneg_le
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         (f : Ts->R)
         (ce1 ce2 : Ts -> Rbar)
         {rvf : RandomVariable dom borel_sa f}
@@ -3540,7 +2737,7 @@ Qed.
         {nnf2 : Rbar_NonnegativeFunction ce2}
     : is_Rbar_conditional_expectation prts sub f ce1 ->
       is_Rbar_conditional_expectation prts sub f ce2 ->
-      almostR2 (prob_space_sa_sub sub prts) Rbar_le ce1 ce2.
+      almostR2 (prob_space_sa_sub prts sub) Rbar_le ce1 ce2.
   Proof.
     unfold is_Rbar_conditional_expectation; intros isce1 isce2.
 
@@ -3697,7 +2894,7 @@ Qed.
       apply Rbar_minus_eq_0.
     }
 
-    assert (psG0:forall x, ps_P (ProbSpace:=((prob_space_sa_sub sub prts))) (exist _ (G x) (sa_G x)) = 0).
+    assert (psG0:forall x, ps_P (ProbSpace:=((prob_space_sa_sub prts sub))) (exist _ (G x) (sa_G x)) = 0).
     {
       intros x.
       specialize (eqq2 x).
@@ -3747,7 +2944,7 @@ Qed.
       destruct (ce1 a); destruct (ce2 a); simpl in *; try (invcs pH; lra).
     }
 
-    generalize (is_lim_ascending (prob_space_sa_sub sub prts) (fun n => exist _ _ (sa_G (INR n))))
+    generalize (is_lim_ascending (prob_space_sa_sub prts sub) (fun n => exist _ _ (sa_G (INR n))))
     ; intros HH.
     cut_to HH.
     - apply (is_lim_seq_ext _ (fun _ => 0)) in HH.
@@ -3783,7 +2980,7 @@ Qed.
         cut_to sa1.
         * rewrite (ps_proper _ (exist _ _ sa1)) in HH by (now red).
 
-          generalize (ps_complement (prob_space_sa_sub sub prts)
+          generalize (ps_complement (prob_space_sa_sub prts sub)
                                     (exist _ _ sa1))
           ; intros eqq4.
           invcs HH.
@@ -3811,8 +3008,6 @@ Qed.
   Local Existing Instance Rbar_le_part.
   
   Lemma is_Rbar_conditional_expectation_nneg_unique
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         (f : Ts->R)
         (ce1 ce2 : Ts -> Rbar)
         {rvf : RandomVariable dom borel_sa f}
@@ -3823,7 +3018,7 @@ Qed.
         {nnf2 : Rbar_NonnegativeFunction ce2}
     : is_Rbar_conditional_expectation prts sub f ce1 ->
       is_Rbar_conditional_expectation prts sub f ce2 ->
-      almostR2 (prob_space_sa_sub sub prts) eq ce1 ce2.
+      almostR2 (prob_space_sa_sub prts sub) eq ce1 ce2.
   Proof.
     intros.
     apply antisymmetry
@@ -3874,17 +3069,15 @@ Qed.
 
 
   Lemma is_Rbar_conditional_expectation_almostfinite_le
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         (f : Ts->R)
         (ce1 ce2 : Ts -> Rbar)
         {rvf : RandomVariable dom borel_sa f}
         {rvce1 : RandomVariable dom2 Rbar_borel_sa ce1}
         {rvce2 : RandomVariable dom2 Rbar_borel_sa ce2}
-        (isf2:almost (prob_space_sa_sub sub prts) (fun a => is_finite (ce2 a))) :
+        (isf2:almost (prob_space_sa_sub prts sub) (fun a => is_finite (ce2 a))) :
     is_Rbar_conditional_expectation prts sub f ce1 ->
     is_Rbar_conditional_expectation prts sub f ce2 ->
-    almostR2 (prob_space_sa_sub sub prts) Rbar_le ce1 ce2.
+    almostR2 (prob_space_sa_sub prts sub) Rbar_le ce1 ce2.
   Proof.
     unfold is_Rbar_conditional_expectation; intros isce1 isce2.
 
@@ -4027,11 +3220,11 @@ Qed.
     
     assert (eqqlin:forall x, Rbar_Expectation (Rbar_rvmult (Rbar_rvminus ce1 ce2) (EventIndicator (classic_dec (G x)))) =
 
-                             match Rbar_Expectation (Rbar_rvmult ce1 (EventIndicator (classic_dec (G x)))),
-                                   Rbar_Expectation (Rbar_rvmult ce2 (EventIndicator (classic_dec (G x)))) with
-                             | Some exp1, Some exp2 => Some (Rbar_minus exp1 exp2)
-                             | _, _ => None
-                             end).
+                        match Rbar_Expectation (Rbar_rvmult ce1 (EventIndicator (classic_dec (G x)))),
+                              Rbar_Expectation (Rbar_rvmult ce2 (EventIndicator (classic_dec (G x)))) with
+                        | Some exp1, Some exp2 => Some (Rbar_minus exp1 exp2)
+                        | _, _ => None
+                        end).
     {
       intros x.
 
@@ -4087,11 +3280,11 @@ Qed.
         now apply EventIndicator_pre_rv.
     } 
 
-    assert (psG0:forall x, ps_P (ProbSpace:=((prob_space_sa_sub sub prts))) (exist _ (G x) (sa_G x)) = 0).
+    assert (psG0:forall x, ps_P (ProbSpace:=((prob_space_sa_sub prts sub))) (exist _ (G x) (sa_G x)) = 0).
     {
       intros x.
       specialize (eqq2 x).
-      generalize (@Rbar_Expectation_nonneg_zero_almost_zero _ _ ((prob_space_sa_sub sub prts))
+      generalize (@Rbar_Expectation_nonneg_zero_almost_zero _ _ ((prob_space_sa_sub prts sub))
                                                             (Rbar_rvmult (Rbar_rvminus ce1 ce2) (fun x0 : Ts => EventIndicator (classic_dec (G x)) x0)))
       ; intros HH2.
       cut_to HH2; trivial.
@@ -4101,7 +3294,7 @@ Qed.
         apply NNPP.
         intros neq.
         simpl in *.
-        assert (HH1:ps_P (ProbSpace:=((prob_space_sa_sub sub prts))) (event_inter P (exist sa_sigma (G x) (sa_G x))) <> 0).
+        assert (HH1:ps_P (ProbSpace:=((prob_space_sa_sub prts sub))) (event_inter P (exist sa_sigma (G x) (sa_G x))) <> 0).
         {
           rewrite ps_inter_l1; trivial.
         } 
@@ -4117,18 +3310,18 @@ Qed.
 
     destruct isf2 as [P [Pone ?]].
     assert (psG0' : forall x, ps_P
-                                (event_inter
-                                   (event_sa_sub sub (exist _ (G x) (sa_G x)))
-                                   (event_sa_sub sub P))
-                              = 0).
+                           (event_inter
+                              (event_sa_sub sub (exist _ (G x) (sa_G x)))
+                              (event_sa_sub sub P))
+                         = 0).
     {
       intros a; simpl in *.
       now rewrite ps_inter_r1.
     }
 
     generalize (is_lim_ascending prts (fun x => (event_inter
-                                                   (event_sa_sub sub (exist _ (G (INR x)) (sa_G (INR x))))
-                                                   (exist _ _ (sa_finite_Rbar ce2 (RandomVariable_sa_sub sub _))))))
+                                                (event_sa_sub sub (exist _ (G (INR x)) (sa_G (INR x))))
+                                                (exist _ _ (sa_finite_Rbar ce2 (RandomVariable_sa_sub sub _))))))
     ; intros HH.
     cut_to HH.
     - apply (is_lim_seq_ext _ (fun _ => 0)) in HH.
@@ -4161,7 +3354,7 @@ Qed.
         destruct (sa_proper dom2 _ _ eqq3) as [sa1 _].
         cut_to sa1.
         * rewrite (ps_proper _ (event_sa_sub sub ((exist _ _ sa1)))) in HH by (now red).
-          generalize (ps_complement (prob_space_sa_sub sub prts)
+          generalize (ps_complement (prob_space_sa_sub prts sub)
                                     ((exist _ _ sa1)))
           ; intros eqq4.
           invcs HH.
@@ -4206,18 +3399,16 @@ Qed.
   Qed.
 
   Lemma is_Rbar_conditional_expectation_almostfinite_unique
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         (f : Ts->R)
         (ce1 ce2 : Ts -> Rbar)
         {rvf : RandomVariable dom borel_sa f}
         {rvce1 : RandomVariable dom2 Rbar_borel_sa ce1}
         {rvce2 : RandomVariable dom2 Rbar_borel_sa ce2}
-        (isf1:almost (prob_space_sa_sub sub prts) (fun a => is_finite (ce1 a)))
-        (isf2:almost (prob_space_sa_sub sub prts) (fun a => is_finite (ce2 a))) :
+        (isf1:almost (prob_space_sa_sub prts sub) (fun a => is_finite (ce1 a)))
+        (isf2:almost (prob_space_sa_sub prts sub) (fun a => is_finite (ce2 a))) :
     is_Rbar_conditional_expectation prts sub f ce1 ->
     is_Rbar_conditional_expectation prts sub f ce2 ->
-    almostR2 (prob_space_sa_sub sub prts) eq ce1 ce2.
+    almostR2 (prob_space_sa_sub prts sub) eq ce1 ce2.
   Proof.
     intros.
     apply antisymmetry
@@ -4225,8 +3416,6 @@ Qed.
   Qed.
 
   Lemma is_Rbar_conditional_expectation_finexp_unique
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         (f : Ts->R)
         (ce1 ce2 : Ts -> Rbar)
         {rvf : RandomVariable dom borel_sa f}
@@ -4235,7 +3424,7 @@ Qed.
         {isfe:IsFiniteExpectation prts f} :
     is_Rbar_conditional_expectation prts sub f ce1 ->
     is_Rbar_conditional_expectation prts sub f ce2 ->
-    almostR2 (prob_space_sa_sub sub prts) eq ce1 ce2.
+    almostR2 (prob_space_sa_sub prts sub) eq ce1 ce2.
   Proof.
     intros.
     
@@ -4260,35 +3449,31 @@ Qed.
 
   
   Lemma NonNegConditionalExpectation_proper (f1 f2 : Ts -> R) 
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         {rv1 : RandomVariable dom borel_sa f1}
         {rv2 : RandomVariable dom borel_sa f2}
         {nnf1 : NonnegativeFunction f1} 
         {nnf2 : NonnegativeFunction f2} :
     almostR2 prts eq f1 f2 ->
-    almostR2 (prob_space_sa_sub sub prts) eq
-             (NonNegCondexp f1 sub)
-             (NonNegCondexp f2 sub).
+    almostR2 (prob_space_sa_sub prts sub) eq
+             (NonNegCondexp f1)
+             (NonNegCondexp f2).
   Proof.
     intros eqq.
-    generalize (NonNegCondexp_cond_exp f1 sub); intros HH1.
-    generalize (NonNegCondexp_cond_exp f2 sub); intros HH2.
-    apply (is_Rbar_conditional_expectation_nneg_unique sub f1 (NonNegCondexp f1 sub) (NonNegCondexp f2 sub) HH1).
-    apply (is_Rbar_conditional_expectation_proper sub f2 f1 (NonNegCondexp f2 sub) (NonNegCondexp f2 sub)); trivial.
+    generalize (NonNegCondexp_cond_exp f1); intros HH1.
+    generalize (NonNegCondexp_cond_exp f2); intros HH2.
+    apply (is_Rbar_conditional_expectation_nneg_unique f1 (NonNegCondexp f1) (NonNegCondexp f2) HH1).
+    apply (is_Rbar_conditional_expectation_proper f2 f1 (NonNegCondexp f2) (NonNegCondexp f2)); trivial.
     - now symmetry.
     - reflexivity.
   Qed.
 
   Lemma ConditionalExpectation_proper (f1 f2 : Ts -> R) 
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
         {rv1 : RandomVariable dom borel_sa f1}
         {rv2 : RandomVariable dom borel_sa f2} :
     almostR2 prts eq f1 f2 ->
-    almostR2 (prob_space_sa_sub sub prts) eq
-             (ConditionalExpectation f1 sub)
-             (ConditionalExpectation f2 sub).
+    almostR2 (prob_space_sa_sub prts sub) eq
+             (ConditionalExpectation f1)
+             (ConditionalExpectation f2).
   Proof.
     intros eqq.
     unfold ConditionalExpectation.
@@ -4338,14 +3523,15 @@ Section cond_exp_props.
     now rewrite Rabs_R0.
   Qed.
   
-  Lemma conditional_expectation_L2fun_rv_eq f
+  Lemma conditional_expectation_L2fun_rv_eq
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
+        f
         {rv : RandomVariable dom borel_sa f}
         {rv2 : RandomVariable dom2 borel_sa f}
         {isl : IsLp prts 2 f} :
     LpRRV_eq prts
-             (conditional_expectation_L2fun prts f sub)
+             (conditional_expectation_L2fun prts sub f)
              (pack_LpRRV prts f).
   Proof.
     unfold conditional_expectation_L2fun, proj1_sig.
@@ -4388,8 +3574,8 @@ Section cond_exp_props.
         {rv : RandomVariable dom borel_sa f}
         {rv2 : RandomVariable dom2 borel_sa f}
         {nnf : NonnegativeFunction f} :
-    almostR2  (prob_space_sa_sub sub prts) eq
-              (NonNegCondexp prts f sub)
+    almostR2  (prob_space_sa_sub prts sub) eq
+              (NonNegCondexp prts sub f)
               f.
   Proof.
     eapply is_Rbar_conditional_expectation_nneg_unique; trivial.
@@ -4411,8 +3597,8 @@ Section cond_exp_props.
   Corollary NonNegConditionalExpectation_const c pf
             {dom2 : SigmaAlgebra Ts}
             (sub : sa_sub dom2 dom) :
-    almostR2 (prob_space_sa_sub sub prts) eq
-             (NonNegCondexp prts (const c) sub (nnf:=pf))
+    almostR2 (prob_space_sa_sub prts sub) eq
+             (NonNegCondexp prts sub (const c) (nnf:=pf))
              (const c).
   Proof.
     apply NonNegConditionalExpectation_rv_eq.
@@ -4421,13 +3607,14 @@ Section cond_exp_props.
 
   (* If f is dom2-measurable, then its conditional expectation with
      respect to dom2 is almost itself *)
-  Theorem ConditionalExpectation_rv_eq f
+  Theorem ConditionalExpectation_rv_eq
           {dom2 : SigmaAlgebra Ts}
           (sub : sa_sub dom2 dom)
+          f
           {rv : RandomVariable dom borel_sa f}
           {rv2 : RandomVariable dom2 borel_sa f} :
-    almostR2 (prob_space_sa_sub sub prts) eq
-             (ConditionalExpectation prts f sub)
+    almostR2 (prob_space_sa_sub prts sub) eq
+             (ConditionalExpectation prts sub f)
              f.
   Proof.
     unfold ConditionalExpectation, Rbar_rvminus.
@@ -4446,26 +3633,27 @@ Section cond_exp_props.
     lra.
   Qed.
 
-  Corollary ConditionalExpectation_const c
+  Corollary ConditionalExpectation_const
             {dom2 : SigmaAlgebra Ts}
-            (sub : sa_sub dom2 dom) :
-    almostR2 (prob_space_sa_sub sub prts) eq
-             (ConditionalExpectation prts (const c) sub)
+            (sub : sa_sub dom2 dom) c :
+    almostR2 (prob_space_sa_sub prts sub) eq
+             (ConditionalExpectation prts sub (const c))
              (const c).
   Proof.
     apply ConditionalExpectation_rv_eq.
     apply rvconst.
   Qed.
 
-  Lemma conditional_expectation_L2fun_scale f
+  Lemma conditional_expectation_L2fun_scale
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
+        f
         {rv : RandomVariable dom borel_sa f}
         {isl : IsLp prts 2 f}
         c :
     LpRRV_eq prts
-             (conditional_expectation_L2fun prts (rvscale c f) sub)
-             (LpRRVscale prts c (conditional_expectation_L2fun prts f sub)).
+             (conditional_expectation_L2fun prts sub (rvscale c f))
+             (LpRRVscale prts c (conditional_expectation_L2fun prts sub f)).
   Proof.
     symmetry.
     apply (conditional_expectation_L2fun_unique2)
@@ -4477,36 +3665,38 @@ Section cond_exp_props.
     now apply conditional_expectation_L2fun_eq2.
   Qed.
 
-  Lemma conditional_expectation_L2fun_opp f
+  Lemma conditional_expectation_L2fun_opp
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
+        f
         {rv : RandomVariable dom borel_sa f}
         {isl : IsLp prts 2 f} :
     LpRRV_eq prts
-             (conditional_expectation_L2fun prts (rvopp f) sub)
-             (LpRRVopp prts (conditional_expectation_L2fun prts f sub)).
+             (conditional_expectation_L2fun prts sub (rvopp f))
+             (LpRRVopp prts (conditional_expectation_L2fun prts sub f)).
   Proof.
     etransitivity.
-    - etransitivity; [| apply (conditional_expectation_L2fun_scale f sub (-1))].
+    - etransitivity; [| apply (conditional_expectation_L2fun_scale sub f (-1))].
       now apply conditional_expectation_L2fun_proper.
     - apply almostR2_eq_subr; intros ?; simpl.
       reflexivity.
   Qed.
 
-  Lemma conditional_expectation_L2fun_Expectation f
+  Lemma conditional_expectation_L2fun_Expectation
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
+        f
         {rv : RandomVariable dom borel_sa f}
         {isl : IsLp prts 2 f} :
-    Expectation (conditional_expectation_L2fun prts f sub) = Expectation f.
+    Expectation (conditional_expectation_L2fun prts sub f) = Expectation f.
   Proof.
-    generalize (conditional_expectation_L2fun_eq2 prts f sub (LpRRVconst prts 1)); intros HH.
+    generalize (conditional_expectation_L2fun_eq2 prts sub f (LpRRVconst prts 1)); intros HH.
     cut_to HH; try typeclasses eauto.
     unfold L2RRVinner in HH.
     unfold LpRRVconst in HH; simpl in HH.
     rewrite (FiniteExpectation_ext prts
-                                   (rvmult (conditional_expectation_L2fun prts f sub) (const 1))
-                                   (conditional_expectation_L2fun prts f sub)
+                                   (rvmult (conditional_expectation_L2fun prts sub f) (const 1))
+                                   (conditional_expectation_L2fun prts sub f)
             ) in HH by (intros ?; rv_unfold; lra).
     rewrite (FiniteExpectation_ext prts
                                    (rvmult f (const 1))
@@ -4662,25 +3852,26 @@ Section cond_exp_props.
       apply H.
   Qed.
 
-  Lemma NonNegConditionalExpectation_scale f
+  Lemma NonNegConditionalExpectation_scale
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
+        f
         {rv : RandomVariable dom borel_sa f}
         {nnf : NonnegativeFunction f}
         (c:posreal) :
-    almostR2 (prob_space_sa_sub sub prts) eq
-             (NonNegCondexp prts (rvscale c f) sub)
-             (fun omega => Rbar_mult c (NonNegCondexp prts f sub omega)).
+    almostR2 (prob_space_sa_sub prts sub) eq
+             (NonNegCondexp prts sub (rvscale c f))
+             (fun omega => Rbar_mult c (NonNegCondexp prts sub f omega)).
   Proof.
     generalize (is_Rbar_conditional_expectation_nneg_unique 
                   prts sub (rvscale c f) 
-                  (NonNegCondexp prts (rvscale c f) sub)); intros.
-    specialize (H (fun omega => Rbar_mult c (NonNegCondexp prts f sub omega))).
+                  (NonNegCondexp prts sub (rvscale c f))); intros.
+    specialize (H (fun omega => Rbar_mult c (NonNegCondexp prts sub f omega))).
     specialize (H _ _).
-    assert (rvce2 : RandomVariable dom2 Rbar_borel_sa (fun omega : Ts => Rbar_mult c (NonNegCondexp prts f sub omega))).
+    assert (rvce2 : RandomVariable dom2 Rbar_borel_sa (fun omega : Ts => Rbar_mult c (NonNegCondexp prts sub f omega))).
     {
       apply Rbar_measurable_rv.
-      apply RbarMeasurable_proper with (x := fun omega => Rbar_mult_pos (NonNegCondexp prts f sub omega) c).
+      apply RbarMeasurable_proper with (x := fun omega => Rbar_mult_pos (NonNegCondexp prts sub f omega) c).
       - intro x.
         rewrite Rbar_mult_mult_pos.
         apply Rbar_mult_comm.
@@ -4700,7 +3891,7 @@ Section cond_exp_props.
         now rewrite Rmult_0_l.
     - apply NonNegCondexp_cond_exp.
     - unfold is_Rbar_conditional_expectation; intros.
-      generalize (NonNegCondexp_cond_exp prts f sub P dec H0); intros.
+      generalize (NonNegCondexp_cond_exp prts sub f P dec H0); intros.
       assert (rv_eq (rvmult (rvscale c f) (EventIndicator dec)) (rvscale c (rvmult f (EventIndicator dec)))).
       {
         intro x.
@@ -4711,7 +3902,7 @@ Section cond_exp_props.
       erewrite Expectation_pos_pofrf.
       erewrite Expectation_pos_pofrf in H1.
       assert (Rbar_NonnegativeFunction 
-                (Rbar_rvmult (NonNegCondexp prts f sub) (fun x : Ts => EventIndicator dec x))).
+                (Rbar_rvmult (NonNegCondexp prts sub f) (fun x : Ts => EventIndicator dec x))).
       {
         intro x.
         unfold EventIndicator, Rbar_rvmult.
@@ -4722,7 +3913,7 @@ Section cond_exp_props.
           now simpl.
       }
       assert (Rbar_NonnegativeFunction
-                (Rbar_rvmult (fun omega : Ts => Rbar_mult c (NonNegCondexp prts f sub omega)) 
+                (Rbar_rvmult (fun omega : Ts => Rbar_mult c (NonNegCondexp prts sub f omega)) 
                              (fun x : Ts => EventIndicator dec x))).
       {
         intro x.
@@ -4749,7 +3940,7 @@ Section cond_exp_props.
       apply Rbar_NonnegExpectation_ext.
       intro x.
       unfold Rbar_rvmult.
-      destruct (NonNegCondexp prts f sub x).
+      destruct (NonNegCondexp prts sub f x).
       + simpl; now rewrite Rmult_assoc.
       + unfold EventIndicator.
         replace (Rbar_mult c p_infty) with (p_infty).
@@ -4827,21 +4018,22 @@ Section cond_exp_props.
   Qed.
 
 
-  Theorem ConditionalExpectation_scale f
+  Theorem ConditionalExpectation_scale
           {dom2 : SigmaAlgebra Ts}
           (sub : sa_sub dom2 dom)
+          f
           {rv : RandomVariable dom borel_sa f}
           c :
-    almostR2 (prob_space_sa_sub sub prts) eq
-             (ConditionalExpectation prts (rvscale c f) sub)
-             (fun omega => Rbar_mult c (ConditionalExpectation prts f sub omega)).
+    almostR2 (prob_space_sa_sub prts sub) eq
+             (ConditionalExpectation prts sub (rvscale c f))
+             (fun omega => Rbar_mult c (ConditionalExpectation prts sub f omega)).
   Proof.
     destruct (Rtotal_order c 0) as [?|[?|?]].
     - unfold ConditionalExpectation, Rbar_rvminus.
       assert (cpos:0 < - c) by lra.
       pose (cc:=mkposreal _ cpos).
-      rewrite (NonNegConditionalExpectation_proper prts (fun x : Ts => pos_fun_part (rvscale c f) x) (rvscale cc (neg_fun_part f)))
-      , (NonNegConditionalExpectation_proper prts (fun x : Ts => neg_fun_part (rvscale c f) x) (rvscale cc (pos_fun_part f))).
+      rewrite (NonNegConditionalExpectation_proper prts sub (fun x : Ts => pos_fun_part (rvscale c f) x) (rvscale cc (neg_fun_part f)))
+      , (NonNegConditionalExpectation_proper prts sub (fun x : Ts => neg_fun_part (rvscale c f) x) (rvscale cc (pos_fun_part f))).
       + repeat rewrite NonNegConditionalExpectation_scale.
         simpl.
         apply almostR2_eq_subr; intros ?.
@@ -4866,7 +4058,7 @@ Section cond_exp_props.
         * unfold cc; simpl; lra.
     - subst.
       unfold rvscale.
-      rewrite (ConditionalExpectation_proper prts _ (const 0))
+      rewrite (ConditionalExpectation_proper prts sub _ (const 0))
       ; [| apply almostR2_eq_subr; intros ?; unfold const; lra].
       rewrite ConditionalExpectation_const.
       apply almostR2_eq_subr; intros ?.
@@ -4874,8 +4066,8 @@ Section cond_exp_props.
       reflexivity.
     - unfold ConditionalExpectation, Rbar_rvminus.
       pose (cc:=mkposreal c H).
-      rewrite (NonNegConditionalExpectation_proper prts (fun x : Ts => pos_fun_part (rvscale c f) x) (rvscale cc (pos_fun_part f)))
-      , (NonNegConditionalExpectation_proper prts (fun x : Ts => neg_fun_part (rvscale c f) x) (rvscale cc (neg_fun_part f))).
+      rewrite (NonNegConditionalExpectation_proper prts sub (fun x : Ts => pos_fun_part (rvscale c f) x) (rvscale cc (pos_fun_part f)))
+      , (NonNegConditionalExpectation_proper prts sub (fun x : Ts => neg_fun_part (rvscale c f) x) (rvscale cc (neg_fun_part f))).
       + repeat rewrite NonNegConditionalExpectation_scale.
         simpl.
         apply almostR2_eq_subr; intros ?.
@@ -4919,27 +4111,28 @@ Section cond_exp_props.
       now simpl.
   Qed.
   
-  Lemma ConditionalExpectation_nonneg f
+  Lemma ConditionalExpectation_nonneg
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
+        f
         {rv : RandomVariable dom borel_sa f}
         {nnf : NonnegativeFunction f}
     :
-      almostR2 (prob_space_sa_sub sub prts) eq (ConditionalExpectation prts f sub)
-               (NonNegCondexp prts f sub).
+      almostR2 (prob_space_sa_sub prts sub) eq (ConditionalExpectation prts sub f)
+               (NonNegCondexp prts sub f).
   Proof.
     unfold ConditionalExpectation.
-    transitivity ((Rbar_rvplus (NonNegCondexp prts (fun x : Ts => pos_fun_part f x) sub)
+    transitivity ((Rbar_rvplus (NonNegCondexp prts sub (fun x : Ts => pos_fun_part f x))
                                (Rbar_rvopp (const 0)))).
     - apply Rbar_rvplus_almost_proper; try reflexivity.
       apply Rbar_rvopp_almost_proper.
-      transitivity (NonNegCondexp prts (const 0) sub (nnf:=fun _ => z_le_z)).
+      transitivity (NonNegCondexp prts sub (const 0) (nnf:=fun _ => z_le_z)).
       + apply NonNegConditionalExpectation_proper.
         apply almostR2_eq_subr.
         rewrite <- neg_fun_part_pos; trivial.
         reflexivity.
       + apply NonNegConditionalExpectation_const.
-    - transitivity (NonNegCondexp prts (fun x : Ts => pos_fun_part f x) sub).
+    - transitivity (NonNegCondexp prts sub (fun x : Ts => pos_fun_part f x)).
       + apply almostR2_eq_subr; intros ?.
         unfold Rbar_rvplus, Rbar_rvopp, const; simpl.
         rewrite Ropp_0.
@@ -4949,21 +4142,22 @@ Section cond_exp_props.
         rewrite <- pos_fun_part_pos; trivial.
   Qed.
   
-  Lemma NonNegConditionalExpectation_L2 f
+  Lemma NonNegConditionalExpectation_L2
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
+        f
         {rv : RandomVariable dom borel_sa f}
         {nnf : NonnegativeFunction f}
         {isl : IsLp prts 2 f}
     :
-      almostR2  (prob_space_sa_sub sub prts) eq (NonNegCondexp prts f sub)
-                (LpRRV_rv_X prts (conditional_expectation_L2fun prts f sub)).
+      almostR2  (prob_space_sa_sub prts sub) eq (NonNegCondexp prts sub f)
+                (LpRRV_rv_X prts (conditional_expectation_L2fun prts sub f)).
   Proof.
     generalize (is_Rbar_conditional_expectation_nneg_unique 
                   prts sub f
-                  (NonNegCondexp prts f sub) ); intros uniq.
-    generalize (conditional_expectation_L2fun_rv prts f dom2 sub); intros cond_rv.
-    generalize (conditional_expectation_L2fun_nonneg prts f sub); intros anneg.
+                  (NonNegCondexp prts sub f) ); intros uniq.
+    generalize (conditional_expectation_L2fun_rv prts sub f); intros cond_rv.
+    generalize (conditional_expectation_L2fun_nonneg prts sub f); intros anneg.
     unfold almostR2, const in anneg.
     destruct (almost_map_R_split _ anneg)
       as [ce [eqq1 [nneg ce_rv]]].
@@ -4978,7 +4172,7 @@ Section cond_exp_props.
     - apply
         is_Rbar_conditional_expectation_proper
         with (f1:=f)
-             (ce1:=(LpRRV_rv_X _ (conditional_expectation_L2fun prts f sub)))
+             (ce1:=(LpRRV_rv_X _ (conditional_expectation_L2fun prts sub f)))
              (rvf1:=rv)
              (rvce1:=cond_rv).
       + reflexivity.
@@ -5043,7 +4237,7 @@ Section cond_exp_props.
           {rv : RandomVariable dom borel_sa f}
           {isl : IsLp prts 2 f}
       :
-        almostR2  (prob_space_sa_sub sub prts) eq (ConditionalExpectation prts f sub)
+        almostR2  (prob_space_sa_sub prts sub) eq (ConditionalExpectation prts f sub)
                  (LpRRV_rv_X prts (conditional_expectation_L2fun prts f sub)).
     Proof.
       unfold ConditionalExpectation.
@@ -5056,7 +4250,7 @@ Section cond_exp_props.
       generalize (conditional_expectation_L2fun_plus prts (fun x : Ts => pos_fun_part f x) (rvopp (fun x : Ts => neg_fun_part f x)) sub)
       ; intros HH.
       simpl in HH.
-      apply (almostR2_Finite (prob_space_sa_sub sub prts)).
+      apply (almostR2_Finite (prob_space_sa_sub prts sub)).
       transitivity ( (fun x : Ts => conditional_expectation_L2fun prts
                                                                (rvplus (fun x : Ts => pos_fun_part f x) (rvopp (fun x : Ts => neg_fun_part f x))) sub x)).
       - red in HH.
@@ -5087,35 +4281,35 @@ Section cond_exp_props.
         {isfe1:IsFiniteExpectation prts f1}
         {isfe2:IsFiniteExpectation prts f2}
     :
-      almostR2 (prob_space_sa_sub sub prts) eq
-               (ConditionalExpectation prts (rvplus f1 f2) sub)
-               (Rbar_rvplus (ConditionalExpectation prts f1 sub)
-                            (ConditionalExpectation prts f2 sub)).
+      almostR2 (prob_space_sa_sub prts sub) eq
+               (ConditionalExpectation prts sub (rvplus f1 f2))
+               (Rbar_rvplus (ConditionalExpectation prts sub f1)
+                            (ConditionalExpectation prts sub f2)).
   Proof.
     generalize (is_Rbar_conditional_expectation_finexp_plus prts sub f1 f2
-                                                            (ConditionalExpectation prts f1 sub)
-                                                            (ConditionalExpectation prts f2 sub))
+                                                            (ConditionalExpectation prts sub f1)
+                                                            (ConditionalExpectation prts sub f2))
     ; intros HH.
 
     cut_to HH
     ; try now apply Condexp_cond_exp.
-    generalize (Condexp_cond_exp prts (rvplus f1 f2) sub)
+    generalize (Condexp_cond_exp prts sub (rvplus f1 f2))
     ; intros HH2.
 
     generalize (is_Rbar_conditional_expectation_finexp_unique prts sub (rvplus f1 f2))
     ; intros HH3.
     specialize (HH3 
-                  (ConditionalExpectation prts (rvplus f1 f2) sub)
-                  (Rbar_rvplus (ConditionalExpectation prts f1 sub)(ConditionalExpectation prts f2 sub))
+                  (ConditionalExpectation prts sub (rvplus f1 f2))
+                  (Rbar_rvplus (ConditionalExpectation prts sub f1)(ConditionalExpectation prts sub f2))
                   _ ).
     assert (rvce1 : RandomVariable dom2 Rbar_borel_sa
-                                   (ConditionalExpectation prts (rvplus f1 f2) sub)).
+                                   (ConditionalExpectation prts sub (rvplus f1 f2))).
     {
       apply Condexp_rv.
     }
     assert (rvce2 : RandomVariable dom2 Rbar_borel_sa
-                                   (Rbar_rvplus (ConditionalExpectation prts f1 sub)
-                                                (ConditionalExpectation prts f2 sub))).
+                                   (Rbar_rvplus (ConditionalExpectation prts sub f1)
+                                                (ConditionalExpectation prts sub f2))).
     {
       apply Rbar_rvplus_rv
       ; apply Condexp_rv.
@@ -5126,44 +4320,45 @@ Section cond_exp_props.
 
 
   Lemma NonNegConditionalExpectation_le
-        f1 f2
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
+        f1 f2
         {rv1 : RandomVariable dom borel_sa f1}
         {rv2 : RandomVariable dom borel_sa f2}
         {nnf1 : NonnegativeFunction f1}
         {nnf2 : NonnegativeFunction f2} :
     almostR2 prts Rle f1 f2 ->
-    almostR2 (prob_space_sa_sub sub prts) Rbar_le (NonNegCondexp prts f1 sub) (NonNegCondexp prts f2 sub).
+    almostR2 (prob_space_sa_sub prts sub) Rbar_le (NonNegCondexp prts sub f1) (NonNegCondexp prts sub f2).
   Proof.
   Admitted.
   
   Theorem ConditionalExpectation_le
-          f1 f2
           {dom2 : SigmaAlgebra Ts}
           (sub : sa_sub dom2 dom)
+          f1 f2
           {rv1 : RandomVariable dom borel_sa f1}
           {rv2 : RandomVariable dom borel_sa f2} :
     almostR2 prts Rle f1 f2 ->
-    almostR2 (prob_space_sa_sub sub prts) Rbar_le (ConditionalExpectation prts f1 sub) (ConditionalExpectation prts f2 sub).
+    almostR2 (prob_space_sa_sub prts sub) Rbar_le (ConditionalExpectation prts sub f1) (ConditionalExpectation prts sub f2).
   Proof.
   Admitted.
 
   Local Existing Instance Rbar_le_pre.
-  Lemma NonNegConditionalExpectation_nonneg f
+  Lemma NonNegConditionalExpectation_nonneg
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
+        f
         {rv : RandomVariable dom borel_sa f}
         {nnf : NonnegativeFunction f}
-    : almostR2 (prob_space_sa_sub sub prts) Rbar_le (const 0) (NonNegCondexp prts f sub).
+    : almostR2 (prob_space_sa_sub prts sub) Rbar_le (const 0) (NonNegCondexp prts sub f).
   Proof.
-    generalize (NonNegConditionalExpectation_le (const 0) f sub (nnf1:=fun _ => z_le_z))
+    generalize (NonNegConditionalExpectation_le sub (const 0) f (nnf1:=fun _ => z_le_z))
     ; intros HH.
     cut_to HH.
     - rewrite <- HH.
       generalize (NonNegConditionalExpectation_const 0 (fun _ => z_le_z) sub)
       ; intros HH2.
-      apply (almostR2_subrelation (prob_space_sa_sub sub prts) (R_subr:=eq_subrelation _)).
+      apply (almostR2_subrelation (prob_space_sa_sub prts sub) (R_subr:=eq_subrelation _)).
       now symmetry.
     - apply almostR2_le_subr.
       apply nnf.
@@ -5201,14 +4396,15 @@ Section cond_exp_props.
     now rewrite Rbar_mult_comm.
   Qed.
 
-  Instance nncondexp_mult_ind_rv f {P} (dec : dec_pre_event P) 
+  Instance nncondexp_mult_ind_rv 
            {dom2 : SigmaAlgebra Ts}
            (sub : sa_sub dom2 dom)
+           f {P} (dec : dec_pre_event P) 
            {rv : RandomVariable dom borel_sa f}
            {nnf : NonnegativeFunction f} :
     sa_sigma P ->
     RandomVariable dom Rbar_borel_sa
-                   (Rbar_rvmult (NonNegCondexp prts f sub)
+                   (Rbar_rvmult (NonNegCondexp prts sub f)
                                 (fun x : Ts => EventIndicator dec x)).
   Proof.
     intros.
@@ -5219,22 +4415,23 @@ Section cond_exp_props.
       apply EventIndicator_pre_rv; trivial.
   Qed.
 
-  Lemma NonNegConditionalExpectation_plus f1 f2
+  Lemma NonNegConditionalExpectation_plus
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
+        f1 f2
         {rv1 : RandomVariable dom borel_sa f1}
         {rv2 : RandomVariable dom borel_sa f2}
         {nnf1 : NonnegativeFunction f1}
         {nnf2 : NonnegativeFunction f2} :
-    almostR2 (prob_space_sa_sub sub prts) eq
-             (NonNegCondexp prts (rvplus f1 f2) sub)
-             (Rbar_rvplus (NonNegCondexp prts f1 sub) (NonNegCondexp prts f2 sub)).
+    almostR2 (prob_space_sa_sub prts sub) eq
+             (NonNegCondexp prts sub (rvplus f1 f2))
+             (Rbar_rvplus (NonNegCondexp prts sub f1) (NonNegCondexp prts sub f2)).
   Proof.
     generalize (is_Rbar_conditional_expectation_nneg_unique 
                   prts sub (rvplus f1 f2)
-                  (NonNegCondexp prts (rvplus f1 f2) sub)); intros.
-    specialize (H (Rbar_rvplus (NonNegCondexp prts f1 sub) (NonNegCondexp prts f2 sub)) _ _).
-    assert (rvce2 : RandomVariable dom2 Rbar_borel_sa (Rbar_rvplus (NonNegCondexp prts f1 sub) (NonNegCondexp prts f2 sub))).
+                  (NonNegCondexp prts sub (rvplus f1 f2))); intros.
+    specialize (H (Rbar_rvplus (NonNegCondexp prts sub f1) (NonNegCondexp prts sub f2)) _ _).
+    assert (rvce2 : RandomVariable dom2 Rbar_borel_sa (Rbar_rvplus (NonNegCondexp prts sub f1) (NonNegCondexp prts sub f2))).
     {
       apply Rbar_rvplus_rv.
       - typeclasses eauto.
@@ -5244,13 +4441,13 @@ Section cond_exp_props.
     apply H.
     - apply NonNegCondexp_cond_exp.
     - unfold is_Rbar_conditional_expectation; intros.
-      generalize (NonNegCondexp_cond_exp prts f1 sub P dec H0); intros.
-      generalize (NonNegCondexp_cond_exp prts f2 sub P dec H0); intros.        
+      generalize (NonNegCondexp_cond_exp prts sub f1 P dec H0); intros.
+      generalize (NonNegCondexp_cond_exp prts sub f2 P dec H0); intros.        
       erewrite Expectation_pos_pofrf.
       erewrite Expectation_pos_pofrf in H1.
       erewrite Expectation_pos_pofrf in H2.        
       assert (Rbar_NonnegativeFunction 
-                (Rbar_rvmult (Rbar_rvplus (NonNegCondexp prts f1 sub) (NonNegCondexp prts f2 sub)) 
+                (Rbar_rvmult (Rbar_rvplus (NonNegCondexp prts sub f1) (NonNegCondexp prts sub f2)) 
                              (fun x : Ts => EventIndicator dec x))).
       {
         intro x.
@@ -5265,10 +4462,10 @@ Section cond_exp_props.
       f_equal.
       assert
         (rv_eq 
-           (Rbar_rvmult (Rbar_rvplus (NonNegCondexp prts f1 sub) (NonNegCondexp prts f2 sub)) 
+           (Rbar_rvmult (Rbar_rvplus (NonNegCondexp prts sub f1) (NonNegCondexp prts sub f2)) 
                         (fun x : Ts => EventIndicator dec x))
-           (Rbar_rvplus (Rbar_rvmult (NonNegCondexp prts f1 sub) (fun x : Ts => EventIndicator dec x))
-                        (Rbar_rvmult (NonNegCondexp prts f2 sub) (fun x : Ts => EventIndicator dec x)))).
+           (Rbar_rvplus (Rbar_rvmult (NonNegCondexp prts sub f1) (fun x : Ts => EventIndicator dec x))
+                        (Rbar_rvmult (NonNegCondexp prts sub f2) (fun x : Ts => EventIndicator dec x)))).
       {
         intro x.
         unfold Rbar_rvmult, Rbar_rvplus.
@@ -5289,17 +4486,17 @@ Section cond_exp_props.
       rewrite (NonnegExpectation_ext _ _ H5).
       generalize (NonnegExpectation_sum (rvmult f1 (EventIndicator dec))); intros.
       specialize (H6 (rvmult f2 (EventIndicator dec))).
-      generalize (Rbar_NonnegExpectation_plus (Rbar_rvmult (NonNegCondexp prts f1 sub) (fun x : Ts => EventIndicator dec x))); intros.
-      specialize (H7 (Rbar_rvmult (NonNegCondexp prts f2 sub) (fun x : Ts => EventIndicator dec x)) ).
+      generalize (Rbar_NonnegExpectation_plus (Rbar_rvmult (NonNegCondexp prts sub f1) (fun x : Ts => EventIndicator dec x))); intros.
+      specialize (H7 (Rbar_rvmult (NonNegCondexp prts sub f2) (fun x : Ts => EventIndicator dec x)) ).
       specialize (H7
-                    (nncondexp_mult_ind_rv f1 dec sub H0)
-                    (nncondexp_mult_ind_rv f2 dec sub H0) _ _).
+                    (nncondexp_mult_ind_rv sub f1 dec H0)
+                    (nncondexp_mult_ind_rv sub f2 dec H0) _ _).
       rewrite H7.
       cut_to H6.
       + specialize (H6 _ _).
         rewrite H6.
-        generalize (NonNegCondexp_cond_exp prts f1 sub P dec H0); intros.
-        generalize (NonNegCondexp_cond_exp prts f2 sub P dec H0); intros.
+        generalize (NonNegCondexp_cond_exp prts sub f1 P dec H0); intros.
+        generalize (NonNegCondexp_cond_exp prts sub f2 P dec H0); intros.
         erewrite Expectation_pos_pofrf in H8.
         erewrite Expectation_pos_pofrf in H9.
         erewrite Rbar_Expectation_pos_pofrf in H8.
@@ -5323,62 +4520,55 @@ Section cond_exp_props.
   Qed.
 
 
-  Theorem ConditionalExpectation_plus f1 f2
+  Theorem ConditionalExpectation_plus
           {dom2 : SigmaAlgebra Ts}
           (sub : sa_sub dom2 dom)
+          f1 f2
           {rv1 : RandomVariable dom borel_sa f1}
           {rv2 : RandomVariable dom borel_sa f2} :
     almostR2 prts eq
-             (ConditionalExpectation prts (rvplus f1 f2) sub)
-             (Rbar_rvplus (ConditionalExpectation prts f1 sub) (ConditionalExpectation prts f2 sub)).
+             (ConditionalExpectation prts sub (rvplus f1 f2))
+             (Rbar_rvplus (ConditionalExpectation prts sub f1) (ConditionalExpectation prts sub f2)).
   Proof.
   Admitted.
 
-  Instance NonNegMult (f g : Ts -> R)
-           {nnf : NonnegativeFunction f}
-           {nng : NonnegativeFunction g} :
-    NonnegativeFunction (rvmult g f).
-  Proof.
-    intro x.
-    unfold rvmult.
-    now apply Rmult_le_pos.
-  Qed.
-
-  Lemma NonNegCondexp_factor_out0 f g
+  Lemma NonNegCondexp_factor_out0 
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
+        f g
         {rvf : RandomVariable dom borel_sa f}
         {rvg : RandomVariable dom2 borel_sa g}
         {rvgf: RandomVariable dom borel_sa (rvmult g f)}
         {nnf : NonnegativeFunction f}
         {nng : NonnegativeFunction g} :
     IsFiniteExpectation prts (rvmult g f) ->
-    Expectation (NonNegCondexp prts (rvmult g f) sub) =
-    Rbar_Expectation (Rbar_rvmult g (NonNegCondexp prts f sub)).
+    Expectation (NonNegCondexp prts sub (rvmult g f)) =
+    Rbar_Expectation (Rbar_rvmult g (NonNegCondexp prts sub f)).
   Proof.
   Admitted.
   
 
-  Lemma NonNegCondexp_factor_out f g    
+  Lemma NonNegCondexp_factor_out 
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
+        f g 
         {rvf : RandomVariable dom borel_sa f}
         {rvg : RandomVariable dom2 borel_sa g}
         {rvgf: RandomVariable dom borel_sa (rvmult g f)}
         {nnf : NonnegativeFunction f}
         {nng : NonnegativeFunction g} :
     IsFiniteExpectation prts (rvmult g f) ->
-    almostR2 (prob_space_sa_sub sub prts) eq
-             (NonNegCondexp prts (rvmult g f) sub)
-             (Rbar_rvmult g (NonNegCondexp prts f sub)).
+    almostR2 (prob_space_sa_sub prts sub) eq
+             (NonNegCondexp prts sub (rvmult g f))
+             (Rbar_rvmult g (NonNegCondexp prts sub f)).
   Proof.
     intros isfin.
     generalize (is_Rbar_conditional_expectation_nneg_unique 
                   prts sub (rvmult g f)
-                  (NonNegCondexp prts (rvmult g f) sub)); intros.
-    specialize (H (Rbar_rvmult g (NonNegCondexp prts f sub)) _ _).
+                  (NonNegCondexp prts sub (rvmult g f))); intros.
+    specialize (H (Rbar_rvmult g (NonNegCondexp prts sub f)) _ _).
     assert (RandomVariable dom2 Rbar_borel_sa
-                           (Rbar_rvmult (fun x : Ts => g x) (NonNegCondexp prts f sub))).
+                           (Rbar_rvmult (fun x : Ts => g x) (NonNegCondexp prts sub f))).
     {
       apply Rbar_rvmult_rv.
       - now apply Real_Rbar_rv.
@@ -5397,10 +4587,10 @@ Section cond_exp_props.
       }
       rewrite (Expectation_ext H2).
       assert (rv_eq  
-                (Rbar_rvmult (Rbar_rvmult g (NonNegCondexp prts f sub))
+                (Rbar_rvmult (Rbar_rvmult g (NonNegCondexp prts sub f))
                              (EventIndicator dec))
                 (Rbar_rvmult (fun x => real ((rvmult g (EventIndicator dec)) x))
-                             (NonNegCondexp prts f sub))).
+                             (NonNegCondexp prts sub f))).
       {
         intro x.
         unfold Rbar_rvmult; rv_unfold.
@@ -5422,7 +4612,7 @@ Section cond_exp_props.
         apply rvmult_rv; trivial.
         apply RandomVariable_sa_sub; trivial.
       }
-      generalize (NonNegCondexp_factor_out0 f (rvmult g (EventIndicator dec)) sub); intros.
+      generalize (NonNegCondexp_factor_out0 sub f (rvmult g (EventIndicator dec))); intros.
       
       erewrite Expectation_pos_pofrf.
       erewrite Rbar_Expectation_pos_pofrf.

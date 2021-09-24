@@ -186,6 +186,23 @@ Section fe.
 
   Hint Rewrite FiniteExpectation_plus : prob.
 
+  Lemma FiniteExpectation_plus':
+    forall (rv_X1 rv_X2 : Ts -> R)
+      {rv1 : RandomVariable dom borel_sa rv_X1} {rv2 : RandomVariable dom borel_sa rv_X2}
+      {rv12 : RandomVariable dom borel_sa (rvplus rv_X1 rv_X2)}
+      {isfe1 : IsFiniteExpectation rv_X1} {isfe2 : IsFiniteExpectation rv_X2}
+      {isfe12 : IsFiniteExpectation (rvplus rv_X1 rv_X2)},
+      FiniteExpectation (rvplus rv_X1 rv_X2) = FiniteExpectation rv_X1 + FiniteExpectation rv_X2.
+  Proof.
+    intros.
+    generalize (FiniteExpectation_plus rv_X1 rv_X2)
+    ; intros eqq.
+    etransitivity.
+    - etransitivity; [| eapply eqq].
+      apply FiniteExpectation_ext; reflexivity.
+    - f_equal; apply FiniteExpectation_ext; reflexivity.
+  Qed.
+
   Global Instance IsFiniteExpectation_scale (c:R) (rv_X:Ts->R)
          {isfe:IsFiniteExpectation rv_X} :
     IsFiniteExpectation (rvscale c rv_X).
@@ -236,6 +253,18 @@ Section fe.
   Qed.
 
   Hint Rewrite FiniteExpectation_scale : prob.
+
+  Lemma FiniteExpectation_scale' c rv_X 
+        {isfe:IsFiniteExpectation rv_X} {isfe2:IsFiniteExpectation (rvscale c rv_X)} :
+    FiniteExpectation (rvscale c rv_X) = c * FiniteExpectation rv_X.
+  Proof.
+    intros.
+    generalize (FiniteExpectation_scale c rv_X)
+    ; intros eqq.
+    rewrite <- eqq.
+    apply FiniteExpectation_ext.
+    reflexivity.
+  Qed.
 
   Global Instance IsFiniteExpectation_opp rv_X 
          {isfe:IsFiniteExpectation rv_X} :
