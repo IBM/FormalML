@@ -85,14 +85,14 @@ Section RealRandomVariables.
         rewrite H.
         now apply measurable_rv.
     Qed.
-      
+    
     Instance scale_measurable_pos (f : Ts -> R) (c:posreal) :
       RealMeasurable f ->
       RealMeasurable (rvscale c f).
     Proof.
       intros ? r.
       assert (pre_event_equiv (fun omega : Ts => (c * f omega <= r)%R)
-                          (fun omega : Ts => (f omega <= r/c)%R)).
+                              (fun omega : Ts => (f omega <= r/c)%R)).
       - red; intros.
         assert (0 < c) by apply (cond_pos c).
         split; intros.
@@ -115,7 +115,7 @@ Section RealRandomVariables.
     Proof.
       intros ? r.
       assert (pre_event_equiv (fun omega : Ts => ((-c) * f omega <= r)%R)
-                          (fun omega : Ts => (c * f omega >= -r)%R)).
+                              (fun omega : Ts => (c * f omega >= -r)%R)).
       - red; intros.
         assert (0 < c) by apply (cond_pos c).
         lra.
@@ -130,13 +130,13 @@ Section RealRandomVariables.
       intros r.
       destruct (Rle_dec c r).
       - assert (pre_event_equiv (fun _ : Ts => c <= r)
-                            (fun _ : Ts => True)).
+                                (fun _ : Ts => True)).
         red; intros.
         intuition.
         rewrite H.
         apply sa_all.
       - assert (pre_event_equiv (fun _ : Ts => c <= r)
-                            event_none).
+                                event_none).
         red; intros.
         intuition.
         rewrite H.
@@ -170,7 +170,7 @@ Section RealRandomVariables.
           {rv2: RandomVariable dom borel_sa rv_X2}         
           (c1 c2 : R) :
       sa_sigma (fun omega : Ts => rv_X1 omega = c1 /\ 
-                               rv_X2 omega = c2).
+                                  rv_X2 omega = c2).
     Proof.
       apply sa_inter.
       - now apply sa_preimage_singleton.
@@ -184,7 +184,7 @@ Section RealRandomVariables.
     Proof.
       intros ??.
       assert (pre_event_equiv (fun omega : Ts => rvopp f omega <= r)
-                          (fun omega : Ts => (f omega) >= -r)).
+                              (fun omega : Ts => (f omega) >= -r)).
       unfold pre_event_equiv; intros.
       unfold rvopp, rvscale; lra.
       rewrite H0.
@@ -198,7 +198,7 @@ Section RealRandomVariables.
     Proof.
       intros ?? r.
       assert (pre_event_equiv (fun omega : Ts => rvplus f g omega <= r)
-                          (pre_event_complement (fun omega : Ts => f omega + g omega > r))).
+                              (pre_event_complement (fun omega : Ts => f omega + g omega > r))).
       - unfold pre_event_equiv, pre_event_complement, rvplus; intros.
         lra.
       - rewrite H1.
@@ -228,21 +228,21 @@ Section RealRandomVariables.
           now apply sa_le_gt.
     Qed.
 
- Instance rvsum_measurable 
-           (Xn : nat -> Ts -> R)
-           (Xn_rv : forall n, RealMeasurable (Xn n)) :
+    Instance rvsum_measurable 
+             (Xn : nat -> Ts -> R)
+             (Xn_rv : forall n, RealMeasurable (Xn n)) :
       forall (n:nat), RealMeasurable (rvsum Xn n).
     Proof.
       unfold RealMeasurable in *.
       induction n; intros.
       - assert (pre_event_equiv (fun omega : Ts => rvsum Xn 0 omega <= r)
-                            (fun omega : Ts => Xn 0%nat omega <= r)).
+                                (fun omega : Ts => Xn 0%nat omega <= r)).
         + intro x.
           unfold rvsum, Hierarchy.sum_n.
           now rewrite Hierarchy.sum_n_n.
         + now rewrite H.
       - assert (pre_event_equiv  (fun omega : Ts => rvsum Xn (S n) omega <= r)
-                             (fun omega => (rvplus (rvsum Xn n) (Xn (S n))) omega <= r)).
+                                 (fun omega => (rvplus (rvsum Xn n) (Xn (S n))) omega <= r)).
         + intro x.
           unfold rvsum, rvplus, Hierarchy.sum_n.
           rewrite Hierarchy.sum_n_Sm.
@@ -271,7 +271,7 @@ Section RealRandomVariables.
       intros ?? r.
       destruct (Rgt_dec 0 r).
       - assert (equiv (fun omega : Ts => rvsqr f omega <= r)
-                            (fun _ => False)).
+                      (fun _ => False)).
         + unfold equiv, pre_event_equiv; intros.
           generalize (Rle_0_sqr (f x)).
           unfold rvsqr.
@@ -280,7 +280,7 @@ Section RealRandomVariables.
           apply sa_none.
       - assert (0 <= r) by lra.
         assert (pre_event_equiv (fun omega : Ts => rvsqr f omega <= r)
-                            (fun omega : Ts => (f omega) <= Rsqrt (mknonnegreal _ H1)) ).
+                                (fun omega : Ts => (f omega) <= Rsqrt (mknonnegreal _ H1)) ).
         + unfold pre_event_equiv, rvsqr; intros.
           specialize (H x).
           apply Rsqr_le_to_Rsqrt with (r := mknonnegreal _ H1) (x := mknonnegreal _ H).
@@ -292,7 +292,7 @@ Section RealRandomVariables.
       continuity g ->
       (forall B: pre_event R, open_set B -> sa_sigma (pre_event_preimage f B)) ->
       (forall B: pre_event R, open_set B -> 
-                     sa_sigma (pre_event_preimage (fun omega => g (f omega)) B)).
+                              sa_sigma (pre_event_preimage (fun omega => g (f omega)) B)).
     Proof.
       intros.
       generalize (continuity_P3 g); intros.
@@ -401,7 +401,7 @@ Section RealRandomVariables.
       generalize (rvclip_abs_bounded f c); intros.
       destruct (Rge_dec r c).
       - assert (pre_event_equiv (fun omega : Ts => rvclip f c omega <= r)
-                            Ω ).
+                                Ω ).
         + intro x.
           specialize (H0 x).
           generalize (Rle_abs (rvclip f c x)); intros.
@@ -411,7 +411,7 @@ Section RealRandomVariables.
           apply sa_all.
       - destruct (Rlt_dec r (-c)).
         + assert (pre_event_equiv (fun omega : Ts => rvclip f c omega <= r)
-                              event_none ).
+                                  event_none ).
           * intro x.
             specialize (H0 x).
             generalize (Rle_abs (- rvclip f c x)); intros.
@@ -423,7 +423,7 @@ Section RealRandomVariables.
             apply sa_none.
         + unfold RealMeasurable in H.
           assert (pre_event_equiv (fun omega : Ts => rvclip f c omega <= r)
-                              (fun omega : Ts => f omega <= r)).
+                                  (fun omega : Ts => f omega <= r)).
           * intro x.
             unfold rvclip.
             match_destr.
@@ -494,7 +494,7 @@ Section RealRandomVariables.
                 (fun omega : Ts =>
                    Rbar_le
                      (Rbar_rvchoice (fun x : Ts => if Req_EM_T (c x) 0 then false else true) 
-                            f g omega )
+                                    f g omega )
                      r)
                 (pre_event_union 
                    (pre_event_inter 
@@ -521,11 +521,11 @@ Section RealRandomVariables.
       intros rb.
       intros.
       assert (pre_event_equiv (fun omega : Ts => ln (b omega) <= r)
-                          (pre_event_union
-                             (pre_event_inter (fun omega : Ts => b omega <= 0)
-                                          (fun omega : Ts => 0 <= r))
-                             (pre_event_inter (fun omega : Ts => b omega > 0 )
-                                          (fun omega : Ts => b omega <= exp r)))).
+                              (pre_event_union
+                                 (pre_event_inter (fun omega : Ts => b omega <= 0)
+                                                  (fun omega : Ts => 0 <= r))
+                                 (pre_event_inter (fun omega : Ts => b omega > 0 )
+                                                  (fun omega : Ts => b omega <= exp r)))).
       - intro x.
         unfold pre_event_union, pre_event_inter.
         split; intros.
@@ -577,7 +577,7 @@ Section RealRandomVariables.
     Qed.
 
     Instance rvpower_measurable (b e : Ts -> R) :
-(*      (forall (x:Ts), (0 <= b x)%R) -> *)
+      (*      (forall (x:Ts), (0 <= b x)%R) -> *)
       RealMeasurable b ->
       RealMeasurable e ->
       RealMeasurable (rvpower b e).
@@ -585,12 +585,12 @@ Section RealRandomVariables.
       unfold rvpower, power, RealMeasurable.
       intros rb re r.
       assert (pre_event_equiv  (fun omega : Ts => (if Rle_dec (b omega) 0 
-                                            then 0 else Rpower (b omega) (e omega)) <= r)
-                           (pre_event_union
-                              (pre_event_inter (fun omega => b omega <= 0)
-                                           (fun omega => 0 <= r))
-                              (pre_event_inter (fun omega => b omega > 0) 
-                                           (fun omega => Rpower (b omega) (e omega) <= r)))).
+                                                   then 0 else Rpower (b omega) (e omega)) <= r)
+                               (pre_event_union
+                                  (pre_event_inter (fun omega => b omega <= 0)
+                                                   (fun omega => 0 <= r))
+                                  (pre_event_inter (fun omega => b omega > 0) 
+                                                   (fun omega => Rpower (b omega) (e omega) <= r)))).
       - intro x.
         unfold pre_event_inter, pre_event_union.
         destruct (Rle_dec (b x) 0).
@@ -609,127 +609,127 @@ Section RealRandomVariables.
           * now apply Rpower_measurable.
     Qed.
     
-      (* note this is zero at points where the limit is infinite *)
-      Definition rvlim (f : nat -> Ts -> R) : (Ts -> R) :=
-        (fun omega => real (Lim_seq (fun n => f n omega))).
+    (* note this is zero at points where the limit is infinite *)
+    Definition rvlim (f : nat -> Ts -> R) : (Ts -> R) :=
+      (fun omega => real (Lim_seq (fun n => f n omega))).
 
-      Instance LimSup_measurable (f : nat -> Ts -> R) : 
-        (forall n, RealMeasurable (f n)) ->
-        (forall omega, is_finite (LimSup_seq (fun n => f n omega))) ->
-        RealMeasurable (fun omega => LimSup_seq (fun n => f n omega)).
-      Proof.
-        intros.
-        unfold RealMeasurable; intros.
-        apply sa_proper with
-            (x := pre_inter_of_collection
-                    (fun j => 
-                       pre_union_of_collection
-                         (fun m => 
-                            pre_inter_of_collection
-                              (fun n : nat => 
-                                 (fun omega => f (n + m)%nat omega <= r + / (INR (S j))))))).
-        - intro x.
-          specialize (H0 x).
-          unfold pre_inter_of_collection, pre_union_of_collection, LimSup_seq; split; intros.
-          + unfold proj1_sig.
-            unfold LimSup_seq, proj1_sig in H0.
-            match_destr.
-            unfold is_LimSup_seq in i.
-            match_destr_in i.
-            destruct (Rle_dec r0 r); trivial.
-            assert (0 < (r0 - r)/2) by lra.
-            specialize (i (mkposreal _ H2)).
-            simpl in i.
-            destruct i.
-            replace (r0 - (r0 - r)/2) with (r + (r0 - r)/2) in H3 by lra.
-            specialize (H1 (Z.to_nat (up (2 / (r0 - r))))).
-            destruct H1.
-            specialize (H3 x0).
-            destruct H3 as [? [? ?]].            
-            specialize (H1 (x1 - x0)%nat).
-            replace (x1 - x0 + x0)%nat with x1 in H1 by lia.
-            generalize (Rlt_le_trans _ _ _ H5 H1); intros.
-            apply Rplus_lt_reg_l in H6.
-            replace ((r0 - r) / 2) with (/ (2 /(r0 - r))) in H6 by (field;lra).
-            assert (0 < 2 / (r0 - r)).
-            {
-              replace (2 / (r0 - r)) with (/((r0-r)/2)) by (field; lra).
-              now apply Rinv_0_lt_compat.
-            }
-            apply Rinv_lt_cancel in H6; trivial.
-            rewrite S_INR in H6.
-            rewrite INR_up_pos in H6; [|lra].
-            generalize (archimed (2 / (r0 - r))); intros.
-            destruct H8.
-            lra.
-          + unfold proj1_sig in H1.
-            unfold LimSup_seq, proj1_sig in H0.
-            match_destr_in H1.
-            unfold is_LimSup_seq in i.
-            match_destr_in i.
-            assert (0 < / INR (S n)).
-            { 
-              apply Rinv_0_lt_compat.
-              apply lt_0_INR; lia.
-            }
-            specialize (i (mkposreal _ H2)).
-            destruct i.
-            destruct H4.
-            exists x0.
-            intros.
-            specialize (H4 (n0 + x0)%nat).
-            cut_to H4; [|lia].
-            replace (pos (mkposreal _ H2)) with (/ INR (S n)) in H4 by auto.
-            left.
-            apply (Rlt_le_trans _ _ _ H4).
-            now apply Rplus_le_compat_r.
-        - apply sa_pre_countable_inter; intros.
-          apply sa_countable_union; intros.
-          apply sa_pre_countable_inter; intros.
-          apply H.
-        Qed.
-
-      Lemma x_plus_x_div_2 (x : Rbar) :
-        (Rbar_div_pos (Rbar_plus x x ) (mkposreal 2 Rlt_R0_R2)) = x.
-      Proof.
-        case_eq x; intros; simpl; trivial.
-        rewrite Rbar_finite_eq.
-        field.
-        Qed.
-
-      Instance rvlim_measurable (f : nat -> Ts -> R) :
-        (forall n, RealMeasurable (f n)) ->
-        (forall (omega:Ts), ex_finite_lim_seq (fun n => f n omega)) ->
-        RealMeasurable (rvlim f).
-      Proof.
-        intros.
-        unfold rvlim.
-        assert (forall omega, ex_lim_seq (fun n => f n omega)).
-        {
+    Instance LimSup_measurable (f : nat -> Ts -> R) : 
+      (forall n, RealMeasurable (f n)) ->
+      (forall omega, is_finite (LimSup_seq (fun n => f n omega))) ->
+      RealMeasurable (fun omega => LimSup_seq (fun n => f n omega)).
+    Proof.
+      intros.
+      unfold RealMeasurable; intros.
+      apply sa_proper with
+          (x := pre_inter_of_collection
+                  (fun j => 
+                     pre_union_of_collection
+                       (fun m => 
+                          pre_inter_of_collection
+                            (fun n : nat => 
+                               (fun omega => f (n + m)%nat omega <= r + / (INR (S j))))))).
+      - intro x.
+        specialize (H0 x).
+        unfold pre_inter_of_collection, pre_union_of_collection, LimSup_seq; split; intros.
+        + unfold proj1_sig.
+          unfold LimSup_seq, proj1_sig in H0.
+          match_destr.
+          unfold is_LimSup_seq in i.
+          match_destr_in i.
+          destruct (Rle_dec r0 r); trivial.
+          assert (0 < (r0 - r)/2) by lra.
+          specialize (i (mkposreal _ H2)).
+          simpl in i.
+          destruct i.
+          replace (r0 - (r0 - r)/2) with (r + (r0 - r)/2) in H3 by lra.
+          specialize (H1 (Z.to_nat (up (2 / (r0 - r))))).
+          destruct H1.
+          specialize (H3 x0).
+          destruct H3 as [? [? ?]].            
+          specialize (H1 (x1 - x0)%nat).
+          replace (x1 - x0 + x0)%nat with x1 in H1 by lia.
+          generalize (Rlt_le_trans _ _ _ H5 H1); intros.
+          apply Rplus_lt_reg_l in H6.
+          replace ((r0 - r) / 2) with (/ (2 /(r0 - r))) in H6 by (field;lra).
+          assert (0 < 2 / (r0 - r)).
+          {
+            replace (2 / (r0 - r)) with (/((r0-r)/2)) by (field; lra).
+            now apply Rinv_0_lt_compat.
+          }
+          apply Rinv_lt_cancel in H6; trivial.
+          rewrite S_INR in H6.
+          rewrite INR_up_pos in H6; [|lra].
+          generalize (archimed (2 / (r0 - r))); intros.
+          destruct H8.
+          lra.
+        + unfold proj1_sig in H1.
+          unfold LimSup_seq, proj1_sig in H0.
+          match_destr_in H1.
+          unfold is_LimSup_seq in i.
+          match_destr_in i.
+          assert (0 < / INR (S n)).
+          { 
+            apply Rinv_0_lt_compat.
+            apply lt_0_INR; lia.
+          }
+          specialize (i (mkposreal _ H2)).
+          destruct i.
+          destruct H4.
+          exists x0.
           intros.
-          now apply ex_finite_lim_seq_correct.
-        }
-        assert (forall omega, Lim_seq (fun n => f n omega) = 
-                              LimSup_seq (fun n => f n omega)).
-        {
-          intros.
-          specialize (H1 omega).
-          rewrite ex_lim_LimSup_LimInf_seq in H1.
-          unfold Lim_seq.
-          rewrite H1.
-          now rewrite x_plus_x_div_2.
-        }
-        apply RealMeasurable_proper with
-            (x := fun omega => LimSup_seq (fun n => f n omega)).
-        intro x; now rewrite H2.
-        apply LimSup_measurable; trivial.
+          specialize (H4 (n0 + x0)%nat).
+          cut_to H4; [|lia].
+          replace (pos (mkposreal _ H2)) with (/ INR (S n)) in H4 by auto.
+          left.
+          apply (Rlt_le_trans _ _ _ H4).
+          now apply Rplus_le_compat_r.
+      - apply sa_pre_countable_inter; intros.
+        apply sa_countable_union; intros.
+        apply sa_pre_countable_inter; intros.
+        apply H.
+    Qed.
+
+    Lemma x_plus_x_div_2 (x : Rbar) :
+      (Rbar_div_pos (Rbar_plus x x ) (mkposreal 2 Rlt_R0_R2)) = x.
+    Proof.
+      case_eq x; intros; simpl; trivial.
+      rewrite Rbar_finite_eq.
+      field.
+    Qed.
+
+    Instance rvlim_measurable (f : nat -> Ts -> R) :
+      (forall n, RealMeasurable (f n)) ->
+      (forall (omega:Ts), ex_finite_lim_seq (fun n => f n omega)) ->
+      RealMeasurable (rvlim f).
+    Proof.
+      intros.
+      unfold rvlim.
+      assert (forall omega, ex_lim_seq (fun n => f n omega)).
+      {
         intros.
-        specialize (H0 omega).
-        rewrite ex_finite_lim_seq_correct in H0.
-        destruct H0.
-        unfold is_finite.
-        now rewrite <- H2.
-      Qed.
+        now apply ex_finite_lim_seq_correct.
+      }
+      assert (forall omega, Lim_seq (fun n => f n omega) = 
+                            LimSup_seq (fun n => f n omega)).
+      {
+        intros.
+        specialize (H1 omega).
+        rewrite ex_lim_LimSup_LimInf_seq in H1.
+        unfold Lim_seq.
+        rewrite H1.
+        now rewrite x_plus_x_div_2.
+      }
+      apply RealMeasurable_proper with
+          (x := fun omega => LimSup_seq (fun n => f n omega)).
+      intro x; now rewrite H2.
+      apply LimSup_measurable; trivial.
+      intros.
+      specialize (H0 omega).
+      rewrite ex_finite_lim_seq_correct in H0.
+      destruct H0.
+      unfold is_finite.
+      now rewrite <- H2.
+    Qed.
 
     Section rvs.
 
@@ -747,7 +747,7 @@ Section RealRandomVariables.
 
       Global Instance rvscale_rv (c: R) (rv_X : Ts -> R) 
              (rv : RandomVariable dom borel_sa rv_X) 
-      : RandomVariable dom borel_sa (rvscale c rv_X).
+        : RandomVariable dom borel_sa (rvscale c rv_X).
       Proof.
         typeclasses eauto.
       Qed.
@@ -1192,13 +1192,13 @@ Section RealRandomVariables.
       - unfold EventIndicator.
         simpl.
         assert (pre_event_equiv (fun omega : Ts => (if dec omega then 1 else 0) <= r)
-                            event_none).
+                                event_none).
         + unfold pre_event_equiv, event_none, pre_event_none; intros; simpl.
           destruct (dec x); lra.
         + rewrite H0; apply sa_none.
       - destruct (Rlt_dec r 1).
         + assert (pre_event_equiv (fun omega : Ts => (if dec omega then 1 else 0) <= r)
-                              (fun omega : Ts => ~ P omega)).
+                                  (fun omega : Ts => ~ P omega)).
           * unfold pre_event_equiv; intros.
             destruct (dec x).
             -- split; [lra | congruence].
@@ -1206,7 +1206,7 @@ Section RealRandomVariables.
           * rewrite H0.
             now apply sa_complement.
         + assert (pre_event_equiv (fun omega : Ts => (if dec omega then 1 else 0) <= r)
-                              (fun omega : Ts => True)).
+                                  (fun omega : Ts => True)).
           * unfold pre_event_equiv; intros.
             destruct (dec x); lra.
           * rewrite H0.
@@ -1243,9 +1243,9 @@ Section RealRandomVariables.
       EventIndicator (fun x => Req_EM_T (rv_X x) c).
 
     Global Instance point_preimage_indicator_rv
-             {rv_X:Ts -> R}
-             (rv: RandomVariable dom borel_sa rv_X)
-             (c:R) : RandomVariable dom borel_sa (point_preimage_indicator rv_X c).
+           {rv_X:Ts -> R}
+           (rv: RandomVariable dom borel_sa rv_X)
+           (c:R) : RandomVariable dom borel_sa (point_preimage_indicator rv_X c).
     Proof.
       unfold point_preimage_indicator.
       apply EventIndicator_pre_rv.
@@ -1253,70 +1253,70 @@ Section RealRandomVariables.
     Qed.    
     
     Global Instance point_preimage_indicator_frf
-             {rv_X:Ts -> R}
-             (rv: RandomVariable dom borel_sa rv_X)
-             (c:R) : FiniteRangeFunction (point_preimage_indicator rv_X c)
+           {rv_X:Ts -> R}
+           (rv: RandomVariable dom borel_sa rv_X)
+           (c:R) : FiniteRangeFunction (point_preimage_indicator rv_X c)
       := IndicatorRandomVariableSimpl _.
 
-  Lemma preimage_indicator_notin (rv_X : Ts -> R) l :
-    forall a:Ts,
-      ~ In (rv_X a) l ->
-                       list_sum 
-                         (map 
-                            (fun c => c * (point_preimage_indicator rv_X c a))
-                            (nodup Req_EM_T l)) = 0.
-  Proof.
-    intros.
-    erewrite map_ext_in.
-    - apply list_sum_map_zero.
-    - intros.
-      apply nodup_In in H0.
-      unfold point_preimage_indicator, EventIndicator.
-      match_destr.
-      + congruence.
-      + lra.
-  Qed.
-
-
- Lemma frf_preimage_indicator (rv_X : Ts -> R) {frf:FiniteRangeFunction rv_X} :
-   forall a:Ts, rv_X a =
-               list_sum 
-                 (map 
-                    (fun c => c * (point_preimage_indicator rv_X c a))
-                    (nodup Req_EM_T frf_vals)).
-  Proof.
-    intros.
-    destruct frf; simpl.
-    specialize (frf_vals_complete a).
-    induction frf_vals; simpl in frf_vals_complete; [tauto |].
-    simpl.
-    match_destr.
-    - apply IHfrf_vals.
-      intuition congruence.
-    - simpl.
-      destruct frf_vals_complete.
-      + subst.
-        rewrite preimage_indicator_notin; trivial.
-        unfold point_preimage_indicator, EventIndicator.
-        match_destr; lra.
-      + rewrite IHfrf_vals; trivial.
+    Lemma preimage_indicator_notin (rv_X : Ts -> R) l :
+      forall a:Ts,
+        ~ In (rv_X a) l ->
+        list_sum 
+          (map 
+             (fun c => c * (point_preimage_indicator rv_X c a))
+             (nodup Req_EM_T l)) = 0.
+    Proof.
+      intros.
+      erewrite map_ext_in.
+      - apply list_sum_map_zero.
+      - intros.
+        apply nodup_In in H0.
         unfold point_preimage_indicator, EventIndicator.
         match_destr.
-        * subst.
-          tauto.
-        * lra.
-  Qed.
+        + congruence.
+        + lra.
+    Qed.
 
-  Lemma frf_preimage_indicator' (rv_X : Ts -> R) {frf:FiniteRangeFunction rv_X} :
-    pointwise_relation Ts eq rv_X
-               (fun a => list_sum 
-                 (map 
-                    (fun c => c * (point_preimage_indicator rv_X c a))
-                    (nodup Req_EM_T frf_vals))).
-  Proof.
-    repeat red; intros.
-    apply frf_preimage_indicator.
-  Qed.
+
+    Lemma frf_preimage_indicator (rv_X : Ts -> R) {frf:FiniteRangeFunction rv_X} :
+      forall a:Ts, rv_X a =
+                   list_sum 
+                     (map 
+                        (fun c => c * (point_preimage_indicator rv_X c a))
+                        (nodup Req_EM_T frf_vals)).
+    Proof.
+      intros.
+      destruct frf; simpl.
+      specialize (frf_vals_complete a).
+      induction frf_vals; simpl in frf_vals_complete; [tauto |].
+      simpl.
+      match_destr.
+      - apply IHfrf_vals.
+        intuition congruence.
+      - simpl.
+        destruct frf_vals_complete.
+        + subst.
+          rewrite preimage_indicator_notin; trivial.
+          unfold point_preimage_indicator, EventIndicator.
+          match_destr; lra.
+        + rewrite IHfrf_vals; trivial.
+          unfold point_preimage_indicator, EventIndicator.
+          match_destr.
+          * subst.
+            tauto.
+          * lra.
+    Qed.
+
+    Lemma frf_preimage_indicator' (rv_X : Ts -> R) {frf:FiniteRangeFunction rv_X} :
+      pointwise_relation Ts eq rv_X
+                         (fun a => list_sum 
+                                     (map 
+                                        (fun c => c * (point_preimage_indicator rv_X c a))
+                                        (nodup Req_EM_T frf_vals))).
+    Proof.
+      repeat red; intros.
+      apply frf_preimage_indicator.
+    Qed.
 
   End Indicator.
 
@@ -1334,9 +1334,9 @@ Section RealRandomVariables.
            (rv_X:Ts->R) 
            {nnf : NonnegativeFunction rv_X} :
       Rbar_NonnegativeFunction rv_X.
-   Proof.
-     easy.
-   Qed.
+    Proof.
+      easy.
+    Qed.
 
     Global Instance NonnegativeFunction_proper : Proper (rv_eq ==> iff) NonnegativeFunction.
     Proof.
@@ -1492,7 +1492,7 @@ Section RealRandomVariables.
       - exists 0%nat.
         intros; try lia.
         apply pofrf.
-      Qed.
+    Qed.
 
     Global Instance rvpow_nnf
            (rv_X : Ts -> R) 
@@ -1528,7 +1528,7 @@ Section RealRandomVariables.
       ; apply rv_measurable; trivial.
     Qed.
     
-(*
+    (*
     Definition rvsqrt (rv_X : Ts -> R)
                       (nnf : NonnegativeFunction rv_X) := 
       fun omega => Rsqrt (mknonnegreal (rv_X omega) (nnf omega)).
@@ -1584,7 +1584,7 @@ Section RealRandomVariables.
       - generalize (nnf0 x).
         congruence.
     Qed.
-*)
+     *)
     Global Instance nnfchoice (c:Ts->bool) (rv_X1 rv_X2 : Ts -> R)
            {nnf1:NonnegativeFunction rv_X1}
            {nnf2:NonnegativeFunction rv_X2} :
@@ -1649,9 +1649,9 @@ Section RealRandomVariables.
   End Pos.
 
   Instance rv_fun_simple_R (x : Ts -> R) (f : R -> R)
-            (rvx : RandomVariable dom borel_sa x) 
-            (frfx : FiniteRangeFunction x) :
-     RandomVariable dom borel_sa (fun u => f (x u)).    
+           (rvx : RandomVariable dom borel_sa x) 
+           (frfx : FiniteRangeFunction x) :
+    RandomVariable dom borel_sa (fun u => f (x u)).    
   Proof.
     eapply rv_fun_simple; eauto.
     intros.
@@ -1667,7 +1667,7 @@ Section RealRandomVariables.
   Qed.
 
   Definition event_ge 
-        (rv_X : Ts -> R) {rv : RandomVariable dom borel_sa rv_X} x
+             (rv_X : Ts -> R) {rv : RandomVariable dom borel_sa rv_X} x
     : event dom
     := @exist (pre_event Ts) _ _ (sa_le_ge_rv rv_X x).
 
@@ -1679,7 +1679,7 @@ Section RealRandomVariables.
   Qed.
 
   Definition event_le
-        (rv_X : Ts -> R) {rv : RandomVariable dom borel_sa rv_X} x
+             (rv_X : Ts -> R) {rv : RandomVariable dom borel_sa rv_X} x
     : event dom
     := @exist (pre_event Ts) _ _ (sa_le_le_rv rv_X x).
 
@@ -1692,7 +1692,7 @@ Section RealRandomVariables.
   Qed.
 
   Definition event_lt
-        (rv_X : Ts -> R) {rv : RandomVariable dom borel_sa rv_X} x
+             (rv_X : Ts -> R) {rv : RandomVariable dom borel_sa rv_X} x
     : event dom
     := @exist (pre_event Ts) _ _ (sa_le_lt_rv rv_X x).
   
@@ -1705,7 +1705,7 @@ Section RealRandomVariables.
   Qed.
 
   Definition event_gt
-        (rv_X : Ts -> R) {rv : RandomVariable dom borel_sa rv_X} x
+             (rv_X : Ts -> R) {rv : RandomVariable dom borel_sa rv_X} x
     : event dom
     := @exist (pre_event Ts) _ _ (sa_le_gt_rv rv_X x).
 
@@ -1716,66 +1716,66 @@ Section MoreRealRandomVariable.
   Context {Ts:Type}.
 
   Lemma event_Rgt_sa (σ:SigmaAlgebra Ts) x1 x2
-      {rv1:RandomVariable σ borel_sa x1}
-      {rv2:RandomVariable σ borel_sa x2}
-  : sa_sigma (fun x => x1 x > x2 x).
-Proof.
-  apply (sa_proper _ (fun x => (rvminus x1 x2) x > 0)).
-  -  red; intros.
-     rv_unfold.
-    intuition lra.
-  - apply sa_le_gt; intros.
-    apply rv_measurable.
-    typeclasses eauto.
-Qed.
+        {rv1:RandomVariable σ borel_sa x1}
+        {rv2:RandomVariable σ borel_sa x2}
+    : sa_sigma (fun x => x1 x > x2 x).
+  Proof.
+    apply (sa_proper _ (fun x => (rvminus x1 x2) x > 0)).
+    -  red; intros.
+       rv_unfold.
+       intuition lra.
+    - apply sa_le_gt; intros.
+      apply rv_measurable.
+      typeclasses eauto.
+  Qed.
 
-Definition event_Rgt (σ:SigmaAlgebra Ts) x1 x2
-      {rv1:RandomVariable σ borel_sa x1}
-      {rv2:RandomVariable σ borel_sa x2} : event σ
-  := exist _ _ (event_Rgt_sa σ x1 x2).
+  Definition event_Rgt (σ:SigmaAlgebra Ts) x1 x2
+             {rv1:RandomVariable σ borel_sa x1}
+             {rv2:RandomVariable σ borel_sa x2} : event σ
+    := exist _ _ (event_Rgt_sa σ x1 x2).
 
-Lemma event_Rgt_dec (σ:SigmaAlgebra Ts) x1 x2
-      {rv1:RandomVariable σ borel_sa x1}
-      {rv2:RandomVariable σ borel_sa x2} :
-  dec_event (event_Rgt σ x1 x2).
-Proof.
-  unfold event_Rgt.
-  intros x; simpl.
-  apply Rgt_dec.
-Qed.
+  Lemma event_Rgt_dec (σ:SigmaAlgebra Ts) x1 x2
+        {rv1:RandomVariable σ borel_sa x1}
+        {rv2:RandomVariable σ borel_sa x2} :
+    dec_event (event_Rgt σ x1 x2).
+  Proof.
+    unfold event_Rgt.
+    intros x; simpl.
+    apply Rgt_dec.
+  Qed.
 
-Definition dec_sa_event_Rgt (σ:SigmaAlgebra Ts) x1 x2
-      {rv1:RandomVariable σ borel_sa x1}
-      {rv2:RandomVariable σ borel_sa x2}
-  : dec_sa_event (σ:=σ)
-  := {| dsa_event := event_Rgt σ x1 x2
-        ; dsa_dec := event_Rgt_dec σ x1 x2
-     |}.
+  Definition dec_sa_event_Rgt (σ:SigmaAlgebra Ts) x1 x2
+             {rv1:RandomVariable σ borel_sa x1}
+             {rv2:RandomVariable σ borel_sa x2}
+    : dec_sa_event (σ:=σ)
+    := {| dsa_event := event_Rgt σ x1 x2
+          ; dsa_dec := event_Rgt_dec σ x1 x2
+       |}.
 
-Lemma event_ge_dec (σ:SigmaAlgebra Ts) x1 n
-  {rv1:RandomVariable σ borel_sa x1} :
-  dec_event (event_ge σ x1 n).
-Proof.
-  unfold event_ge.
-  intros x; simpl.
-  apply Rge_dec.
-Qed.
+  Lemma event_ge_dec (σ:SigmaAlgebra Ts) x1 n
+        {rv1:RandomVariable σ borel_sa x1} :
+    dec_event (event_ge σ x1 n).
+  Proof.
+    unfold event_ge.
+    intros x; simpl.
+    apply Rge_dec.
+  Qed.
 
-Lemma event_ge_pre_dec (σ:SigmaAlgebra Ts) x1 n
-  {rv1:RandomVariable σ borel_sa x1} :
-  dec_pre_event (event_ge σ x1 n).
-Proof.
-  unfold event_ge.
-  intros x; simpl.
-  apply Rge_dec.
-Qed.
+  Lemma event_ge_pre_dec (σ:SigmaAlgebra Ts) x1 n
+        {rv1:RandomVariable σ borel_sa x1} :
+    dec_pre_event (event_ge σ x1 n).
+  Proof.
+    unfold event_ge.
+    intros x; simpl.
+    apply Rge_dec.
+  Qed.
 
-Definition dec_sa_event_ge (σ:SigmaAlgebra Ts) x1 n
-      {rv1:RandomVariable σ borel_sa x1}
-  : dec_sa_event (σ:=σ)
-  := {| dsa_event := event_ge σ x1 n
-        ; dsa_dec := event_ge_dec σ x1 n
-     |}.
+  Definition dec_sa_event_ge (σ:SigmaAlgebra Ts) x1 n
+             {rv1:RandomVariable σ borel_sa x1}
+    : dec_sa_event (σ:=σ)
+    := {| dsa_event := event_ge σ x1 n
+          ; dsa_dec := event_ge_dec σ x1 n
+       |}.
 
 End MoreRealRandomVariable.
 
@@ -1795,7 +1795,7 @@ Section RbarRandomVariables.
       + apply sa_none.      
     - specialize (H r).
       apply H.
-   Qed.
+  Qed.
 
   Lemma borel_Rbar_borel (f : Ts -> R) :
     RandomVariable dom borel_sa f <-> RandomVariable dom Rbar_borel_sa f.
@@ -1813,21 +1813,21 @@ Section RbarRandomVariables.
       now apply Rbar_borel_sa_preimage2.
   Qed.
 
-    Global Instance Rbar_measurable_rv (rv_X:Ts->Rbar)
-             {rm:RbarMeasurable rv_X}
-      : RandomVariable dom Rbar_borel_sa rv_X.
-    Proof.
-      intros ?.
-      apply Rbar_borel_sa_preimage2; trivial; intros.
-    Qed.
+  Global Instance Rbar_measurable_rv (rv_X:Ts->Rbar)
+         {rm:RbarMeasurable rv_X}
+    : RandomVariable dom Rbar_borel_sa rv_X.
+  Proof.
+    intros ?.
+    apply Rbar_borel_sa_preimage2; trivial; intros.
+  Qed.
 
-    Global Instance rv_Rbar_measurable (rv_X : Ts -> Rbar)
-             {rrv:RandomVariable dom Rbar_borel_sa rv_X}
-      : RbarMeasurable rv_X.
-    Proof.
-      red.
-      now rewrite Rbar_borel_sa_preimage2.
-    Qed.
+  Global Instance rv_Rbar_measurable (rv_X : Ts -> Rbar)
+         {rrv:RandomVariable dom Rbar_borel_sa rv_X}
+    : RbarMeasurable rv_X.
+  Proof.
+    red.
+    now rewrite Rbar_borel_sa_preimage2.
+  Qed.
 
   Global Instance RbarMeasurable_proper :
     Proper (rv_eq ==> iff) RbarMeasurable.
@@ -1848,12 +1848,12 @@ Section RbarRandomVariables.
          {rv1 : RandomVariable dom Rbar_borel_sa rv_X1}
          {rv2 : RandomVariable dom Rbar_borel_sa rv_X2}  :
     RbarMeasurable (Rbar_rvchoice (fun x => if Req_EM_T (rv_C x) 0 then false else true) rv_X1 rv_X2).
-      Proof.
-        apply Rbar_rvchoice_measurable.
-        - now apply rv_measurable.
-        - typeclasses eauto.
-        - typeclasses eauto.
-      Qed.
+  Proof.
+    apply Rbar_rvchoice_measurable.
+    - now apply rv_measurable.
+    - typeclasses eauto.
+    - typeclasses eauto.
+  Qed.
 
   Definition Rbar_finite_part (rv_X : Ts -> Rbar) : (Ts -> R) :=
     (fun x => real (rv_X x)).
@@ -1877,27 +1877,27 @@ Section RbarRandomVariables.
         unfold pre_event_union, Rbar_finite_part.
         destruct (rv_X x); split; intros; simpl; trivial; try tauto.
         destruct H; trivial; now simpl.
-   + rewrite H.
-     apply sa_union.
-     * now apply Rbar_sa_le_pt.
-     * apply rv.
- - assert (0 > r) by lra.
-   assert (pre_event_equiv
+      + rewrite H.
+        apply sa_union.
+        * now apply Rbar_sa_le_pt.
+        * apply rv.
+    - assert (0 > r) by lra.
+      assert (pre_event_equiv
                 (fun omega : Ts =>
                    (Rbar_finite_part rv_X) omega <= r)
                 (pre_event_inter
                    (pre_event_complement
                       (fun omega : Ts => (rv_X omega) = m_infty ))
                    (fun omega : Ts => Rbar_le (rv_X omega) r))).
-   + intro x.
-     unfold pre_event_inter, pre_event_complement, Rbar_finite_part.
-     destruct (rv_X x); split; intros; simpl; trivial; try tauto.
-     split; trivial; discriminate.
-   + rewrite H0.
-     apply sa_inter.
-     * apply sa_complement.
-       now apply Rbar_sa_le_pt.
-     * apply rv.
+      + intro x.
+        unfold pre_event_inter, pre_event_complement, Rbar_finite_part.
+        destruct (rv_X x); split; intros; simpl; trivial; try tauto.
+        split; trivial; discriminate.
+      + rewrite H0.
+        apply sa_inter.
+        * apply sa_complement.
+          now apply Rbar_sa_le_pt.
+        * apply rv.
   Qed.
 
   Lemma sa_pinf_Rbar
@@ -1928,7 +1928,7 @@ Section RbarRandomVariables.
                                (pre_event_union
                                   (fun omega => (f omega) = p_infty)
                                   (fun omega => (f omega) = m_infty)
-                                  ))).
+           ))).
     intro z.
     unfold is_finite, pre_event_complement, pre_event_union.
     destruct (f z); intuition discriminate.
@@ -1963,52 +1963,52 @@ Section RbarRandomVariables.
                 (fun omega => False)) by easy.
       rewrite H.
       apply sa_none.
-   Qed.                
+  Qed.                
 
-    Definition Rbar_rvlim (f : nat -> Ts -> R) : (Ts -> Rbar) :=
+  Definition Rbar_rvlim (f : nat -> Ts -> R) : (Ts -> Rbar) :=
     (fun omega => Lim_seq (fun n => f n omega)).
 
   Global Instance Rbar_rvlim_nnf
          (Xn : nat -> Ts -> R) 
          (pofrf : forall n, NonnegativeFunction (Xn n)) :
-      Rbar_NonnegativeFunction (Rbar_rvlim Xn).
-    Proof.
-      unfold Rbar_NonnegativeFunction, Rbar_rvlim.
-      unfold NonnegativeFunction in pofrf.
-      intros.
-      generalize (Lim_seq_le_loc (fun _ => 0) (fun n => Xn n x)); intros.
-      rewrite Lim_seq_const in H.
-      apply H.
-      now exists 0%nat.
-    Qed.
+    Rbar_NonnegativeFunction (Rbar_rvlim Xn).
+  Proof.
+    unfold Rbar_NonnegativeFunction, Rbar_rvlim.
+    unfold NonnegativeFunction in pofrf.
+    intros.
+    generalize (Lim_seq_le_loc (fun _ => 0) (fun n => Xn n x)); intros.
+    rewrite Lim_seq_const in H.
+    apply H.
+    now exists 0%nat.
+  Qed.
 
-    Lemma Rbar_rvlim_pos_ge
+  Lemma Rbar_rvlim_pos_ge
         (Xn : nat -> Ts -> R)          
         (Xn_pos : forall n, NonnegativeFunction (Xn n)) :
-      (forall (n:nat), rv_le (Xn n) (Xn (S n))) ->
-      forall n, Rbar_rv_le (Xn n) (Rbar_rvlim Xn).
-    Proof.
-      intros.
-      intro x.
-      unfold Rbar_rvlim.
-      generalize (Lim_seq_correct (fun n => Xn n x)) ; intros.
-      cut_to H0.
-      - destruct (Lim_seq (fun n => Xn n x)).
-        + generalize (is_lim_seq_incr_compare _ _ H0); intros.
-          apply H1.
-          intros.
-          apply H.
-        + now simpl.
-        + generalize (is_lim_seq_const 0); intros.
-          unfold NonnegativeFunction in Xn_pos.
-          assert (forall n, 0 <= Xn n x); intros.
-          apply Xn_pos.
-          generalize (is_lim_seq_le _ _ _ _ H2 H1 H0); intros.
-          now simpl in H3.
-      - apply ex_lim_seq_incr.
+    (forall (n:nat), rv_le (Xn n) (Xn (S n))) ->
+    forall n, Rbar_rv_le (Xn n) (Rbar_rvlim Xn).
+  Proof.
+    intros.
+    intro x.
+    unfold Rbar_rvlim.
+    generalize (Lim_seq_correct (fun n => Xn n x)) ; intros.
+    cut_to H0.
+    - destruct (Lim_seq (fun n => Xn n x)).
+      + generalize (is_lim_seq_incr_compare _ _ H0); intros.
+        apply H1.
         intros.
         apply H.
-    Qed.
+      + now simpl.
+      + generalize (is_lim_seq_const 0); intros.
+        unfold NonnegativeFunction in Xn_pos.
+        assert (forall n, 0 <= Xn n x); intros.
+        apply Xn_pos.
+        generalize (is_lim_seq_le _ _ _ _ H2 H1 H0); intros.
+        now simpl in H3.
+    - apply ex_lim_seq_incr.
+      intros.
+      apply H.
+  Qed.
 
   Definition Rbar_rvplus (rv_X1 rv_X2 : Ts -> Rbar) :=
     (fun omega =>  Rbar_plus (rv_X1 omega) (rv_X2 omega)).
@@ -2070,7 +2070,7 @@ Section RbarRandomVariables.
       - apply Rgt_not_eq, cond_pos.
     }
     now rewrite H0.
-   Qed.
+  Qed.
 
   Instance Rbar_inf_measurable (f : nat -> Ts -> Rbar) :
     (forall n, RbarMeasurable (f n)) ->
@@ -2100,12 +2100,12 @@ Section RbarRandomVariables.
         apply H3.
         apply H1.
         now exists n.
-      - specialize (H2 r0).
-        apply H2.
-        intros.
-        destruct H4.
-        rewrite H4.
-        apply H3.
+                   - specialize (H2 r0).
+                     apply H2.
+                     intros.
+                     destruct H4.
+                     rewrite H4.
+                     apply H3.
     }
     rewrite H1.
     now apply sa_pre_countable_inter.
@@ -2135,13 +2135,13 @@ Section RbarRandomVariables.
         eapply Rbar_le_trans.
         apply H0.
         now exists n.
-        apply H2.
-      - specialize (H1 r).
-        apply H1.
-        intros.
-        destruct H3.
-        rewrite H3.
-        apply H2.
+                   apply H2.
+                   - specialize (H1 r).
+                     apply H1.
+                     intros.
+                     destruct H3.
+                     rewrite H3.
+                     apply H2.
     }
     rewrite H0.
     now apply sa_pre_countable_inter.
@@ -2161,7 +2161,7 @@ Section RbarRandomVariables.
     intros.
     now apply Rbar_sup_measurable.
   Qed.
-    
+  
   Instance Rbar_lim_inf_measurable (f : nat -> Ts -> R) :
     (forall n, RbarMeasurable (f n)) ->
     RbarMeasurable (fun omega => LimInf_seq (fun n => f n omega)).
@@ -2228,63 +2228,63 @@ Section RbarRandomVariables.
     now rewrite <- borel_Rbar_borel.
   Qed.
 
-    Instance Rbar_real_measurable (f : Ts -> Rbar) :
-      RbarMeasurable f ->
-      RealMeasurable dom (fun x => real (f x)).
-    Proof.
-      unfold RbarMeasurable, RealMeasurable; intros.
-      destruct (Rle_dec 0 r).
-      - assert (pre_event_equiv
-                  (fun omega => real (f omega ) <= r)
-                  (pre_event_union
-                     (pre_event_inter
-                        (fun omega => is_finite (f omega))
-                        (fun omega => Rbar_le (f omega) r))
-                     (pre_event_union
-                        (fun omega => f omega = p_infty)
-                        (fun omega => f omega = m_infty)))).
-        {
-          intro x.
-          unfold pre_event_inter, pre_event_union, is_finite.
-          destruct (f x); simpl.
-          - intuition congruence.
-          - intuition congruence.
-          - intuition congruence.
-        }
-        rewrite H0.
-        apply sa_union.
-        + apply sa_inter.
-          * apply sa_finite_Rbar.
-            now apply Rbar_measurable_rv.
-          * apply H.
-        + apply sa_union.
-          * now apply Rbar_sa_le_pt.
-          * now apply Rbar_sa_le_pt.
-      - assert (r < 0) by lra.
-        assert (pre_event_equiv
-                  (fun omega : Ts => f omega <= r)
-                  (pre_event_inter
-                     (fun omega => is_finite (f omega))
-                     (fun omega => Rbar_le (f omega) r))).
-        {
-          intro x.
-          unfold pre_event_inter, is_finite.
-          destruct (f x).
-          - simpl.
-            intuition discriminate.
-          - simpl.
-            intuition discriminate.
-          - simpl.
-            intuition discriminate.
-        }
-        rewrite H1.
-        apply sa_inter.
-        + apply sa_finite_Rbar.
+  Instance Rbar_real_measurable (f : Ts -> Rbar) :
+    RbarMeasurable f ->
+    RealMeasurable dom (fun x => real (f x)).
+  Proof.
+    unfold RbarMeasurable, RealMeasurable; intros.
+    destruct (Rle_dec 0 r).
+    - assert (pre_event_equiv
+                (fun omega => real (f omega ) <= r)
+                (pre_event_union
+                   (pre_event_inter
+                      (fun omega => is_finite (f omega))
+                      (fun omega => Rbar_le (f omega) r))
+                   (pre_event_union
+                      (fun omega => f omega = p_infty)
+                      (fun omega => f omega = m_infty)))).
+      {
+        intro x.
+        unfold pre_event_inter, pre_event_union, is_finite.
+        destruct (f x); simpl.
+        - intuition congruence.
+        - intuition congruence.
+        - intuition congruence.
+      }
+      rewrite H0.
+      apply sa_union.
+      + apply sa_inter.
+        * apply sa_finite_Rbar.
           now apply Rbar_measurable_rv.
-        + apply H.
-    Qed.
+        * apply H.
+      + apply sa_union.
+        * now apply Rbar_sa_le_pt.
+        * now apply Rbar_sa_le_pt.
+    - assert (r < 0) by lra.
+      assert (pre_event_equiv
+                (fun omega : Ts => f omega <= r)
+                (pre_event_inter
+                   (fun omega => is_finite (f omega))
+                   (fun omega => Rbar_le (f omega) r))).
+      {
+        intro x.
+        unfold pre_event_inter, is_finite.
+        destruct (f x).
+        - simpl.
+          intuition discriminate.
+        - simpl.
+          intuition discriminate.
+        - simpl.
+          intuition discriminate.
+      }
+      rewrite H1.
+      apply sa_inter.
+      + apply sa_finite_Rbar.
+        now apply Rbar_measurable_rv.
+      + apply H.
+  Qed.
 
-(*
+  (*
   (* assume Rbar_plus is well defined everywhere *)
   Instance Rbar_plus_measurable (f g : Ts -> Rbar) :
     RbarMeasurable f -> RbarMeasurable g ->
@@ -2421,7 +2421,7 @@ Section RbarRandomVariables.
       + now apply Rbar_sa_le_pt.
       + now apply Rbar_sa_le_pt.
     Qed.
-*)
+   *)
 
   Lemma Rbar_rvplus_minf (f g : Ts -> Rbar) :
     pre_event_equiv
@@ -2437,33 +2437,33 @@ Section RbarRandomVariables.
             (pre_event_inter
                (fun omega => is_finite (f omega))
                (fun omega => g omega = m_infty) ))).
-   Proof.
-     intro x.
-     unfold pre_event_union, pre_event_inter.
-     destruct (f x); destruct (g x); simpl; split; intros; try tauto; try discriminate.
-     - destruct H; destruct H.
-       + discriminate.
-       + destruct H; discriminate.
-       + destruct H; discriminate.
-     - destruct H; destruct H.
-       + discriminate.
-       + destruct H; discriminate.
-       + destruct H; discriminate.
-     - right; right; now split.
-     - destruct H; destruct H.
-       + discriminate.
-       + destruct H; discriminate.
-       + destruct H; discriminate.
-     - destruct H; destruct H.
-       + discriminate.
-       + destruct H; discriminate.
-       + destruct H; discriminate.
-     - right; left; now split.
-     - destruct H; destruct H.
-       + discriminate.
-       + destruct H; discriminate.
-       + destruct H; discriminate.
-    Qed.
+  Proof.
+    intro x.
+    unfold pre_event_union, pre_event_inter.
+    destruct (f x); destruct (g x); simpl; split; intros; try tauto; try discriminate.
+    - destruct H; destruct H.
+      + discriminate.
+      + destruct H; discriminate.
+      + destruct H; discriminate.
+    - destruct H; destruct H.
+      + discriminate.
+      + destruct H; discriminate.
+      + destruct H; discriminate.
+    - right; right; now split.
+    - destruct H; destruct H.
+      + discriminate.
+      + destruct H; discriminate.
+      + destruct H; discriminate.
+    - destruct H; destruct H.
+      + discriminate.
+      + destruct H; discriminate.
+      + destruct H; discriminate.
+    - right; left; now split.
+    - destruct H; destruct H.
+      + discriminate.
+      + destruct H; discriminate.
+      + destruct H; discriminate.
+  Qed.
 
   Instance Rbar_plus_measurable (f g : Ts -> Rbar) :
     RbarMeasurable f -> RbarMeasurable g ->
@@ -2480,7 +2480,7 @@ Section RbarRandomVariables.
                     (pre_event_inter
                        (fun omega => f omega = m_infty)
                        (fun omega => g omega = p_infty))
-                    ))).
+           ))).
     {
       intro x.
       unfold Rbar_plus'.
@@ -2524,7 +2524,7 @@ Section RbarRandomVariables.
           split; trivial; lra.          
         - destruct H; try discriminate.
           destruct H; destruct H; try lra.
-     }
+      }
       rewrite H.
       apply sa_union.
       + rewrite  Rbar_rvplus_minf.
@@ -2549,10 +2549,10 @@ Section RbarRandomVariables.
         * apply sa_inter.
           -- apply sa_inter; apply sa_finite_Rbar; now apply Rbar_measurable_rv.
           -- generalize (@plus_measurable Ts dom (fun omega => real (f omega)) (fun omega => real (g omega))); intros.
-          apply Rbar_real_measurable in fmeas.
-          apply Rbar_real_measurable in gmeas.
-          specialize (H0 fmeas gmeas).
-          apply H0.
+             apply Rbar_real_measurable in fmeas.
+             apply Rbar_real_measurable in gmeas.
+             specialize (H0 fmeas gmeas).
+             apply H0.
     - assert (pre_event_equiv 
                 (fun omega : Ts => Rbar_le (Rbar_plus (f omega) (g omega)) p_infty)
                 (fun _ => True)).
@@ -2581,7 +2581,7 @@ Section RbarRandomVariables.
         * apply sa_inter.
           -- apply sa_finite_Rbar; now apply Rbar_measurable_rv.
           -- now apply Rbar_sa_le_pt.
-    Qed.
+  Qed.
 
   Instance Rbar_lim_seq_measurable_pos (f : nat -> Ts -> R) :
     (forall n, RbarMeasurable (f n)) ->
@@ -2598,39 +2598,39 @@ Section RbarRandomVariables.
 
   Definition Rbar_rvabs  (rv_X : Ts -> Rbar) := fun omega => Rbar_abs (rv_X omega).
 
-    Instance Rbar_Rabs_measurable (f : Ts -> Rbar) :
-      RbarMeasurable f ->
-      RbarMeasurable (Rbar_rvabs f).
-    Proof.
-      unfold RbarMeasurable, Rbar_rvabs.
-      intros.
-      assert (pre_event_equiv
-                (fun omega : Ts => Rbar_le (Rbar_abs (f omega)) r)
-                (pre_event_union
-                   (pre_event_inter
-                      (fun omega : Ts => Rbar_ge (f omega) 0 )
-                      (fun omega : Ts => Rbar_le (f omega) r))
-                   (pre_event_inter
-                      (fun omega : Ts => Rbar_le (f omega) 0)
-                      (fun omega : Ts => Rbar_ge (f omega) (Rbar_opp r))))).
-      intro x.
-      unfold pre_event_union, pre_event_inter, Rbar_abs.
-      match_destr.
-      - simpl; match_destr.
-        + simpl.
-          unfold Rabs.
-          match_destr; lra.
-        + simpl; lra.
-        + simpl; lra.
-      - simpl; match_destr; simpl; tauto.
-      - simpl; match_destr; simpl; tauto.
-      - rewrite H0.
-        apply sa_union.
-        + apply sa_inter; trivial.
-          now apply Rbar_sa_le_ge.
-        + apply sa_inter; trivial.
-          now apply Rbar_sa_le_ge.
-    Qed.
+  Instance Rbar_Rabs_measurable (f : Ts -> Rbar) :
+    RbarMeasurable f ->
+    RbarMeasurable (Rbar_rvabs f).
+  Proof.
+    unfold RbarMeasurable, Rbar_rvabs.
+    intros.
+    assert (pre_event_equiv
+              (fun omega : Ts => Rbar_le (Rbar_abs (f omega)) r)
+              (pre_event_union
+                 (pre_event_inter
+                    (fun omega : Ts => Rbar_ge (f omega) 0 )
+                    (fun omega : Ts => Rbar_le (f omega) r))
+                 (pre_event_inter
+                    (fun omega : Ts => Rbar_le (f omega) 0)
+                    (fun omega : Ts => Rbar_ge (f omega) (Rbar_opp r))))).
+    intro x.
+    unfold pre_event_union, pre_event_inter, Rbar_abs.
+    match_destr.
+    - simpl; match_destr.
+      + simpl.
+        unfold Rabs.
+        match_destr; lra.
+      + simpl; lra.
+      + simpl; lra.
+    - simpl; match_destr; simpl; tauto.
+    - simpl; match_destr; simpl; tauto.
+    - rewrite H0.
+      apply sa_union.
+      + apply sa_inter; trivial.
+        now apply Rbar_sa_le_ge.
+      + apply sa_inter; trivial.
+        now apply Rbar_sa_le_ge.
+  Qed.
 
 
   Global Instance power_abs_pos (rv_X : Ts -> Rbar) (p:R) :
@@ -2645,8 +2645,8 @@ Section RbarRandomVariables.
     fun omega => Rbar_power (rv_X1 omega) n.
 
   Instance Rbar_power_measurable (f : Ts -> Rbar) (n : R) :
-      RbarMeasurable f ->
-      RbarMeasurable (Rbar_rvpower f n).
+    RbarMeasurable f ->
+    RbarMeasurable (Rbar_rvpower f n).
   Proof.
     intros.
     unfold Rbar_rvpower, RbarMeasurable.
@@ -2703,12 +2703,12 @@ Section RbarRandomVariables.
         intro x.
         unfold Rbar_power.
         match_destr; now simpl.
-     }
-     rewrite H0.
+      }
+      rewrite H0.
       apply sa_none.
   Qed.
   
-(*
+  (*
   Lemma Rbar_rvmult_unfold (f g:Ts->Rbar) :
     (forall omega, ex_Rbar_mult (f omega) (g omega)) ->
     rv_eq (Rbar_rvmult f g) (fun omega => Rbar_div_pos (Rbar_rvminus (Rbar_rvsqr (Rbar_rvplus f g))
@@ -2728,7 +2728,7 @@ Section RbarRandomVariables.
         + 
         Show 2.
     Qed.
- *)
+   *)
   Global Instance Rbar_rvmult_meas (x y : Ts -> Rbar)
          {xrv:RbarMeasurable x} 
          {yrv:RbarMeasurable y} :
@@ -2737,27 +2737,27 @@ Section RbarRandomVariables.
     intros r.
 
     pose (efin := pre_list_inter [(fun omega => is_finite (x omega))
-                              ; (fun omega => is_finite (y omega))
-                              ; fun omega => Rbar_le (rvmult (Rbar_finite_part x) (Rbar_finite_part y) omega) r]).
+                                  ; (fun omega => is_finite (y omega))
+                                  ; fun omega => Rbar_le (rvmult (Rbar_finite_part x) (Rbar_finite_part y) omega) r]).
     pose (e0 := pre_event_inter (pre_event_union (fun omega => (x omega) = 0) (fun omega => (y omega) = 0)) ((fun omega => Rbar_le 0 r))).
     pose (epinf := pre_event_inter (
                        pre_list_union [
-                       (pre_event_inter (fun omega => x omega = p_infty)  (fun omega => Rbar_gt (y omega) 0))
-                       ; (pre_event_inter (fun omega => y omega = p_infty) (fun omega => Rbar_gt (x omega) 0))
-                       ; (pre_event_inter (fun omega => x omega = m_infty)  (fun omega => Rbar_lt (y omega) 0))
-                       ; (pre_event_inter (fun omega => y omega = m_infty)  (fun omega => Rbar_lt (x omega) 0))])
-         (fun omega => Rbar_le p_infty r)).
+                           (pre_event_inter (fun omega => x omega = p_infty)  (fun omega => Rbar_gt (y omega) 0))
+                           ; (pre_event_inter (fun omega => y omega = p_infty) (fun omega => Rbar_gt (x omega) 0))
+                           ; (pre_event_inter (fun omega => x omega = m_infty)  (fun omega => Rbar_lt (y omega) 0))
+                           ; (pre_event_inter (fun omega => y omega = m_infty)  (fun omega => Rbar_lt (x omega) 0))])
+                                   (fun omega => Rbar_le p_infty r)).
 
     pose (eminf := 
-                       pre_list_union [
-                       (pre_event_inter (fun omega => x omega = m_infty) (fun omega => Rbar_gt (y omega) 0))
-                       ; (pre_event_inter (fun omega => y omega = m_infty) (fun omega => Rbar_gt (x omega) 0))
-                       ; (pre_event_inter (fun omega => x omega = p_infty) (fun omega => Rbar_lt (y omega) 0))
-                       ; (pre_event_inter (fun omega => y omega = p_infty) (fun omega => Rbar_lt (x omega) 0))])
-                   .
+            pre_list_union [
+                (pre_event_inter (fun omega => x omega = m_infty) (fun omega => Rbar_gt (y omega) 0))
+                ; (pre_event_inter (fun omega => y omega = m_infty) (fun omega => Rbar_gt (x omega) 0))
+                ; (pre_event_inter (fun omega => x omega = p_infty) (fun omega => Rbar_lt (y omega) 0))
+                ; (pre_event_inter (fun omega => y omega = p_infty) (fun omega => Rbar_lt (x omega) 0))])
+    .
     
     assert (eqq:pre_event_equiv (fun omega : Ts => Rbar_le (Rbar_rvmult x y omega) r)
-                            (pre_list_union [efin; e0; epinf; eminf])).
+                                (pre_list_union [efin; e0; epinf; eminf])).
     {
       intro z.
       unfold pre_list_union, Rbar_rvmult.
@@ -2780,153 +2780,153 @@ Section RbarRandomVariables.
                   rewrite H0, H1.
                   apply H.
                ++ now apply in_nil in H2.
-       + destruct (Req_EM_T r0 0).
-         * exists e0.
-           split; [apply in_cons, in_eq |].
-           subst e0.
-           split.
-           -- unfold pre_event_union.
-              rewrite e in H1; tauto.
-           -- subst.
-              rewrite H0, H1 in H.
-              now rewrite Rbar_mult_0_l in H.
-         * destruct (Rlt_dec 0 r0).
-           -- exists epinf.
-              split; [apply in_cons, in_cons, in_eq |].
-              subst epinf.
-              unfold pre_list_union, pre_event_inter.
-              split.
-              ++ exists (fun x0 : Ts => y x0 = p_infty /\ Rbar_gt (x x0) 0).
-                 split; [apply in_cons, in_eq |].
-                 ** split; trivial.
-                    rewrite H1.
-                    now simpl.
-              ++ rewrite H0, H1 in H.
-                 rewrite Rbar_mult_comm in H.
-                 now rewrite Rbar_mult_p_infty_pos in H by trivial.
-           -- exists eminf.
-              split; [apply in_cons, in_cons, in_cons, in_eq |].
-              subst eminf.
-              unfold pre_list_union, pre_event_inter.
-              ++ exists (fun x0 : Ts => y x0 = p_infty /\ Rbar_lt (x x0) 0).
-                 split; [apply in_cons, in_cons, in_cons, in_eq |].
-                 split; trivial.
-                 rewrite H1; simpl; lra.
-       + destruct (Req_EM_T r0 0).
-         * exists e0.
-           split; [apply in_cons, in_eq |].
-           subst e0.
-           unfold pre_event_union.
-           split.
-           -- rewrite e in H1; tauto.
-           -- subst.
-              rewrite H0, H1 in H.
-              now rewrite Rbar_mult_0_l in H.              
-         * destruct (Rlt_dec 0 r0).
-           -- exists eminf.
-              split; [apply in_cons, in_cons, in_cons, in_eq |].
-              subst eminf.
-              unfold pre_list_union, pre_event_inter.
-              exists (fun x0 : Ts => y x0 = m_infty /\ Rbar_gt (x x0) 0).
-              split; [apply in_cons, in_eq |].
-              ++ split; trivial.
-                 rewrite H1.
-                 now simpl.
-           -- exists epinf.
-              split; [apply in_cons, in_cons, in_eq |].
-              subst epinf.
-              unfold pre_list_union, pre_event_inter.
-              split.
-              ++ exists (fun x0 : Ts => y x0 = m_infty /\ Rbar_lt (x x0) 0).
-                 split; [apply in_cons, in_cons, in_cons, in_eq |].
-                 split; trivial.
-                 rewrite H1; simpl; lra.
-              ++ rewrite H0, H1 in H.
-                 rewrite Rbar_mult_comm in H.
-                 now rewrite Rbar_mult_m_infty_neg in H by lra.
         + destruct (Req_EM_T r0 0).
-         * exists e0.
-           split; [apply in_cons, in_eq |].
-           subst e0.
-           unfold pre_event_union.
-           split.
-           -- rewrite e in H0; tauto.
-           -- subst.
-              rewrite H0, H1 in H.
-              now rewrite Rbar_mult_0_r in H.
-         * destruct (Rlt_dec 0 r0).
-           -- exists epinf.
-              split; [apply in_cons, in_cons, in_eq |].
-              subst epinf.
-              unfold pre_list_union, pre_event_inter.
-              split.
-              ++ exists (fun x0 : Ts => x x0 = p_infty /\ Rbar_gt (y x0) 0).
-                 split; [apply in_eq |].
-                 split; trivial.
-                 rewrite H0.
-                 now simpl.
-              ++ rewrite H0, H1 in H.
-                 now rewrite Rbar_mult_p_infty_pos in H by trivial.
-           -- exists eminf.
-              split; [apply in_cons, in_cons, in_cons, in_eq |].
-              subst eminf.
-              unfold pre_list_union, pre_event_inter.
-              exists (fun x0 : Ts => x x0 = p_infty /\ Rbar_lt (y x0) 0).
-              split; [apply in_cons, in_cons, in_eq | ].
-              split; trivial.
-              rewrite H0; simpl; lra.       
-       + exists epinf.
-         split; [apply in_cons, in_cons, in_eq |].
-         subst epinf.
-         unfold pre_list_union, pre_event_inter.
-         split.
-         ++ exists (fun x0 : Ts => x x0 = p_infty /\ Rbar_gt (y x0) 0).
-            split; [apply in_eq |].
-            split; trivial.
-            rewrite H0.
-            now simpl.
-         ++ rewrite H0, H1 in H.
-            apply H.
-       + exists eminf.
-         split; [apply in_cons, in_cons, in_cons, in_eq |].
-         subst eminf.
-         unfold pre_list_union, pre_event_inter.
-         exists (fun x0 : Ts => x x0 = p_infty /\ Rbar_lt (y x0) 0).
-         split; [apply in_cons, in_cons, in_eq |].
-         ++ split; trivial.
-            rewrite H0.
-            now simpl.
+          * exists e0.
+            split; [apply in_cons, in_eq |].
+            subst e0.
+            split.
+            -- unfold pre_event_union.
+               rewrite e in H1; tauto.
+            -- subst.
+               rewrite H0, H1 in H.
+               now rewrite Rbar_mult_0_l in H.
+          * destruct (Rlt_dec 0 r0).
+            -- exists epinf.
+               split; [apply in_cons, in_cons, in_eq |].
+               subst epinf.
+               unfold pre_list_union, pre_event_inter.
+               split.
+               ++ exists (fun x0 : Ts => y x0 = p_infty /\ Rbar_gt (x x0) 0).
+                  split; [apply in_cons, in_eq |].
+                  ** split; trivial.
+                     rewrite H1.
+                     now simpl.
+               ++ rewrite H0, H1 in H.
+                  rewrite Rbar_mult_comm in H.
+                  now rewrite Rbar_mult_p_infty_pos in H by trivial.
+            -- exists eminf.
+               split; [apply in_cons, in_cons, in_cons, in_eq |].
+               subst eminf.
+               unfold pre_list_union, pre_event_inter.
+               ++ exists (fun x0 : Ts => y x0 = p_infty /\ Rbar_lt (x x0) 0).
+                  split; [apply in_cons, in_cons, in_cons, in_eq |].
+                  split; trivial.
+                  rewrite H1; simpl; lra.
         + destruct (Req_EM_T r0 0).
-         * exists e0.
-           split; [apply in_cons, in_eq |].
-           subst e0.
-           unfold pre_event_union.
-           split.
-           -- rewrite e in H0; tauto.
-           -- subst.
-              rewrite H0, H1 in H.
-              now rewrite Rbar_mult_0_r in H.
-         * destruct (Rlt_dec 0 r0).
-           -- exists eminf.
-              split; [apply in_cons, in_cons, in_cons, in_eq |].
-              subst eminf.
-              unfold pre_list_union, pre_event_inter.
-              exists (fun x0 : Ts => x x0 = m_infty /\ Rbar_gt (y x0) 0).
-              split; [apply in_eq |].
-              ++ split; trivial.
-                 rewrite H0.
-                 now simpl.
-           -- exists epinf.
-              split; [apply in_cons, in_cons, in_eq |].
-              subst epinf.
-              unfold pre_list_union, pre_event_inter.
-              split.
-              ++ exists (fun x0 : Ts => x x0 = m_infty /\ Rbar_lt (y x0) 0).
-                 split; [apply in_cons, in_cons, in_eq | ].
-                 split; trivial.
-                 rewrite H0; simpl; lra.
-              ++ rewrite H0, H1 in H.
-                 now rewrite Rbar_mult_m_infty_neg in H by lra.
+          * exists e0.
+            split; [apply in_cons, in_eq |].
+            subst e0.
+            unfold pre_event_union.
+            split.
+            -- rewrite e in H1; tauto.
+            -- subst.
+               rewrite H0, H1 in H.
+               now rewrite Rbar_mult_0_l in H.              
+          * destruct (Rlt_dec 0 r0).
+            -- exists eminf.
+               split; [apply in_cons, in_cons, in_cons, in_eq |].
+               subst eminf.
+               unfold pre_list_union, pre_event_inter.
+               exists (fun x0 : Ts => y x0 = m_infty /\ Rbar_gt (x x0) 0).
+               split; [apply in_cons, in_eq |].
+               ++ split; trivial.
+                  rewrite H1.
+                  now simpl.
+            -- exists epinf.
+               split; [apply in_cons, in_cons, in_eq |].
+               subst epinf.
+               unfold pre_list_union, pre_event_inter.
+               split.
+               ++ exists (fun x0 : Ts => y x0 = m_infty /\ Rbar_lt (x x0) 0).
+                  split; [apply in_cons, in_cons, in_cons, in_eq |].
+                  split; trivial.
+                  rewrite H1; simpl; lra.
+               ++ rewrite H0, H1 in H.
+                  rewrite Rbar_mult_comm in H.
+                  now rewrite Rbar_mult_m_infty_neg in H by lra.
+        + destruct (Req_EM_T r0 0).
+          * exists e0.
+            split; [apply in_cons, in_eq |].
+            subst e0.
+            unfold pre_event_union.
+            split.
+            -- rewrite e in H0; tauto.
+            -- subst.
+               rewrite H0, H1 in H.
+               now rewrite Rbar_mult_0_r in H.
+          * destruct (Rlt_dec 0 r0).
+            -- exists epinf.
+               split; [apply in_cons, in_cons, in_eq |].
+               subst epinf.
+               unfold pre_list_union, pre_event_inter.
+               split.
+               ++ exists (fun x0 : Ts => x x0 = p_infty /\ Rbar_gt (y x0) 0).
+                  split; [apply in_eq |].
+                  split; trivial.
+                  rewrite H0.
+                  now simpl.
+               ++ rewrite H0, H1 in H.
+                  now rewrite Rbar_mult_p_infty_pos in H by trivial.
+            -- exists eminf.
+               split; [apply in_cons, in_cons, in_cons, in_eq |].
+               subst eminf.
+               unfold pre_list_union, pre_event_inter.
+               exists (fun x0 : Ts => x x0 = p_infty /\ Rbar_lt (y x0) 0).
+               split; [apply in_cons, in_cons, in_eq | ].
+               split; trivial.
+               rewrite H0; simpl; lra.       
+        + exists epinf.
+          split; [apply in_cons, in_cons, in_eq |].
+          subst epinf.
+          unfold pre_list_union, pre_event_inter.
+          split.
+          ++ exists (fun x0 : Ts => x x0 = p_infty /\ Rbar_gt (y x0) 0).
+             split; [apply in_eq |].
+             split; trivial.
+             rewrite H0.
+             now simpl.
+          ++ rewrite H0, H1 in H.
+             apply H.
+        + exists eminf.
+          split; [apply in_cons, in_cons, in_cons, in_eq |].
+          subst eminf.
+          unfold pre_list_union, pre_event_inter.
+          exists (fun x0 : Ts => x x0 = p_infty /\ Rbar_lt (y x0) 0).
+          split; [apply in_cons, in_cons, in_eq |].
+          ++ split; trivial.
+             rewrite H0.
+             now simpl.
+        + destruct (Req_EM_T r0 0).
+          * exists e0.
+            split; [apply in_cons, in_eq |].
+            subst e0.
+            unfold pre_event_union.
+            split.
+            -- rewrite e in H0; tauto.
+            -- subst.
+               rewrite H0, H1 in H.
+               now rewrite Rbar_mult_0_r in H.
+          * destruct (Rlt_dec 0 r0).
+            -- exists eminf.
+               split; [apply in_cons, in_cons, in_cons, in_eq |].
+               subst eminf.
+               unfold pre_list_union, pre_event_inter.
+               exists (fun x0 : Ts => x x0 = m_infty /\ Rbar_gt (y x0) 0).
+               split; [apply in_eq |].
+               ++ split; trivial.
+                  rewrite H0.
+                  now simpl.
+            -- exists epinf.
+               split; [apply in_cons, in_cons, in_eq |].
+               subst epinf.
+               unfold pre_list_union, pre_event_inter.
+               split.
+               ++ exists (fun x0 : Ts => x x0 = m_infty /\ Rbar_lt (y x0) 0).
+                  split; [apply in_cons, in_cons, in_eq | ].
+                  split; trivial.
+                  rewrite H0; simpl; lra.
+               ++ rewrite H0, H1 in H.
+                  now rewrite Rbar_mult_m_infty_neg in H by lra.
         + exists eminf.
           split; [apply in_cons, in_cons, in_cons, in_eq |].
           subst eminf.
@@ -2934,8 +2934,8 @@ Section RbarRandomVariables.
           exists (fun x0 : Ts => x x0 = m_infty /\ Rbar_gt (y x0) 0).
           split; [apply in_eq |].
           ++ split; trivial.
-            rewrite H0.
-            now simpl.
+             rewrite H0.
+             now simpl.
         + exists epinf.
           split; [apply in_cons, in_cons, in_eq |].
           subst epinf.
@@ -2996,13 +2996,13 @@ Section RbarRandomVariables.
           simpl in H.
           (repeat destruct H)
           ; try solve [destruct H0
-            ; rewrite H; simpl
-            ; match_destr_in H0
-            ; [unfold Rbar_mult, Rbar_mult'
-               ; destruct (Rle_dec 0 r0); try lra
-               ; destruct (Rle_lt_or_eq_dec 0 r0 r1); try lra
-               ; now simpl
-              | tauto]].
+                       ; rewrite H; simpl
+                       ; match_destr_in H0
+                       ; [unfold Rbar_mult, Rbar_mult'
+                          ; destruct (Rle_dec 0 r0); try lra
+                          ; destruct (Rle_lt_or_eq_dec 0 r0 r1); try lra
+                          ; now simpl
+                         | tauto]].
           * destruct H0.
             rewrite H; simpl.
             unfold Rbar_lt in H0.
@@ -3072,8 +3072,8 @@ Section RbarRandomVariables.
       apply sa_pre_list_union; intros ?.
       intros [?|[?|[?|[?|?]]]]; subst
       ; (try tauto; try apply sa_inter
-      ; try apply sa_pre_event_union
-      ; try now apply Rbar_sa_le_pt).
+         ; try apply sa_pre_event_union
+         ; try now apply Rbar_sa_le_pt).
       * now apply Rbar_sa_le_gt.
       * now apply Rbar_sa_le_gt.
       * now apply Rbar_sa_le_lt.
@@ -3092,8 +3092,8 @@ Section RbarRandomVariables.
   Qed.
 
   Global Instance Rbar_rvmult_nnf (x y : Ts -> Rbar)
-           {xnnf:Rbar_NonnegativeFunction x}
-           {ynnf:Rbar_NonnegativeFunction y} :
+         {xnnf:Rbar_NonnegativeFunction x}
+         {ynnf:Rbar_NonnegativeFunction y} :
     Rbar_NonnegativeFunction (Rbar_rvmult x y).
   Proof.
     intros omega; simpl.
@@ -3115,8 +3115,8 @@ Section rv_almost.
 
   Lemma almost_map_R_split
         {Ts:Type}
-          {dom: SigmaAlgebra Ts}
-          (prts: ProbSpace dom)
+        {dom: SigmaAlgebra Ts}
+        (prts: ProbSpace dom)
         {f:Ts->R} {P:R->Prop} :
     almost prts (fun x => P (f x)) ->
     exists f', almostR2 prts eq f f' /\
@@ -3130,7 +3130,7 @@ Section rv_almost.
 
                 f
                 (const (f x))
-             ).
+      ).
     repeat split.
     - exists p.
       split; trivial.
@@ -3165,9 +3165,9 @@ Section rv_almost.
     destruct aP as [p [pone ph]].
     exists (Rbar_rvchoice (fun x => if Req_EM_T (((EventIndicator (classic_dec p))) x) 0 then false else true)
 
-                f
-                (const (f x))
-             ).
+                     f
+                     (const (f x))
+      ).
     repeat split.
     - exists p.
       split; trivial.
@@ -3235,6 +3235,57 @@ Section rv_almost.
     unfold rvminus.
     now rewrite H, H0.
   Qed.  
+
+  Lemma almostR2_eq_plus_inv {x y z} :
+    almostR2 prts eq z (rvplus x y) ->
+    exists x' y',
+      almostR2 prts eq x x' /\
+      almostR2 prts eq y y' /\ 
+      rv_eq z (rvplus x' y').
+  Proof.
+    intros [p [pone px]].
+    exists (fun a => if ClassicalDescription.excluded_middle_informative (p a) then x a else 0).
+    exists (fun a => if ClassicalDescription.excluded_middle_informative (p a) then y a else z a).
+    split; [| split].
+    - exists p.
+      split; trivial.
+      intros ??.
+      match_destr.
+      tauto.
+    - exists p.
+      split; trivial.
+      intros ??.
+      match_destr.
+      tauto.
+    - intros a; simpl.
+      rv_unfold.
+      match_destr.
+      + auto.
+      + lra.
+  Qed.
+
+  Lemma almostR2_eq_opp_inv {x z} :
+    almostR2 prts eq z (rvopp x) ->
+    exists x',
+      almostR2 prts eq x x' /\
+      rv_eq z (rvopp x').
+  Proof.
+    intros [p [pone px]].
+
+    exists (fun a => if ClassicalDescription.excluded_middle_informative (p a) then x a else - z a).
+    split.
+    - exists p.
+      split; trivial.
+      intros ??.
+      match_destr.
+      tauto.
+    - intros ?.
+      rv_unfold.
+      match_destr.
+      + auto.
+      + lra.
+  Qed.
+
 
   Global Instance almostR2_le_plus_proper
          {Ts:Type} 
@@ -3454,18 +3505,18 @@ Section EventRestricted.
   Context {Ts:Type} 
           {dom: SigmaAlgebra Ts}.
 
-Global Instance Restricted_NonnegativeFunction
+  Global Instance Restricted_NonnegativeFunction
          (e:event dom) (f : Ts -> R)
          (nnf: NonnegativeFunction f) :
-  NonnegativeFunction (event_restricted_function e f).
-Proof.
-  unfold NonnegativeFunction in *.
-  intros.
-  apply nnf.
-Qed.
+    NonnegativeFunction (event_restricted_function e f).
+  Proof.
+    unfold NonnegativeFunction in *.
+    intros.
+    apply nnf.
+  Qed.
 
-Global Instance Restricted_Rbar_NonnegativeFunction P (f : Ts -> Rbar)
-           (nnf : Rbar_NonnegativeFunction f) :
+  Global Instance Restricted_Rbar_NonnegativeFunction P (f : Ts -> Rbar)
+         (nnf : Rbar_NonnegativeFunction f) :
     Rbar_NonnegativeFunction (event_restricted_function P f).
   Proof.
     unfold Rbar_NonnegativeFunction in *.
@@ -3630,4 +3681,4 @@ Section zmBoundedVariance.
     has_bounded_variance: Prop;
     }.
 End zmBoundedVariance.
-*)
+ *)
