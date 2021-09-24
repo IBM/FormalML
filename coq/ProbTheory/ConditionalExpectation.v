@@ -3330,10 +3330,10 @@ Lemma is_Rbar_conditional_expectation_finexp_plus
            (sub : sa_sub dom2 dom)
            (f1 f2 : Ts -> R)
            (ce1 ce2 : Ts -> Rbar)
-           {isfe1:IsFiniteExpectation prts f1}
-           {isfe2:IsFiniteExpectation prts f2}
            {rvf1 : RandomVariable dom borel_sa f1}
            {rvf2 : RandomVariable dom borel_sa f2}
+           {isfe1:IsFiniteExpectation prts f1}
+           {isfe2:IsFiniteExpectation prts f2}
            {rvce1 : RandomVariable dom2 Rbar_borel_sa ce1}
            {rvce2 : RandomVariable dom2 Rbar_borel_sa ce2}
   :
@@ -5125,7 +5125,55 @@ Canonical nneg2.
         apply almostR2_eq_subr.
         now rewrite <- rv_pos_neg_id.
     Qed.
-*)    
+ *)
+
+    Lemma ConditionalExpectation_finexp_plus
+           {dom2 : SigmaAlgebra Ts}
+           (sub : sa_sub dom2 dom)
+           (f1 f2 : Ts -> R)
+           {rvf1 : RandomVariable dom borel_sa f1}
+           {rvf2 : RandomVariable dom borel_sa f2}
+           {isfe1:IsFiniteExpectation prts f1}
+           {isfe2:IsFiniteExpectation prts f2}
+  :
+    almostR2 (prob_space_sa_sub prts _ sub) eq
+             (ConditionalExpectation prts (rvplus f1 f2) sub)
+             (Rbar_rvplus (ConditionalExpectation prts f1 sub)
+                          (ConditionalExpectation prts f2 sub)).
+Proof.
+  generalize (is_Rbar_conditional_expectation_finexp_plus prts sub f1 f2
+                                                          (ConditionalExpectation prts f1 sub)
+                                                          (ConditionalExpectation prts f2 sub))
+  ; intros HH.
+
+  cut_to HH
+  ; try now apply Condexp_cond_exp.
+  generalize (Condexp_cond_exp prts (rvplus f1 f2) sub)
+  ; intros HH2.
+
+  generalize (is_Rbar_conditional_expectation_finexp_unique prts sub (rvplus f1 f2))
+  ; intros HH3.
+  specialize (HH3 
+                (ConditionalExpectation prts (rvplus f1 f2) sub)
+                (Rbar_rvplus (ConditionalExpectation prts f1 sub)(ConditionalExpectation prts f2 sub))
+                _ ).
+  assert (rvce1 : RandomVariable dom2 Rbar_borel_sa
+                                 (ConditionalExpectation prts (rvplus f1 f2) sub)).
+  {
+    apply Condexp_rv.
+  }
+  assert (rvce2 : RandomVariable dom2 Rbar_borel_sa
+                     (Rbar_rvplus (ConditionalExpectation prts f1 sub)
+                                  (ConditionalExpectation prts f2 sub))).
+  {
+    apply Rbar_rvplus_rv
+    ; apply Condexp_rv.
+  } 
+  apply (HH3 _ _); trivial.
+  typeclasses eauto.
+Qed.  
+
+
     Lemma NonNegConditionalExpectation_le
           f1 f2
           {dom2 : SigmaAlgebra Ts}
