@@ -4205,6 +4205,116 @@ Section cond_exp_props.
         * typeclasses eauto.
   Qed.
 
+  Lemma Condexp_factor_out_indicator
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        (f : Ts -> R)
+        (P : event dom2)
+        {rvf : RandomVariable dom borel_sa f}
+        {rve: RandomVariable dom borel_sa (rvmult (EventIndicator (classic_dec P)) f)}:
+    IsFiniteExpectation prts f ->
+    Rbar_Expectation (ConditionalExpectation prts sub (rvmult (EventIndicator (classic_dec P))  f)) =
+    Rbar_Expectation (Rbar_rvmult (EventIndicator (classic_dec P)) (ConditionalExpectation prts sub f)).
+  Proof.
+    intros.
+    generalize (Condexp_cond_exp prts sub f P (classic_dec P)); intros.
+    assert (rv_eq 
+              (Rbar_rvmult (ConditionalExpectation prts sub f)
+                           (EventIndicator (classic_dec P)))
+              (Rbar_rvmult (EventIndicator (classic_dec P))
+                           (ConditionalExpectation prts sub f))) by apply Rbar_rvmult_comm.
+    specialize (H0 (proj2_sig P)).
+    rewrite (Rbar_Expectation_ext H1) in H0.
+    rewrite <- H0.
+    assert (rv_eq
+               (rvmult f (EventIndicator (classic_dec P)))
+               (rvmult (EventIndicator (classic_dec P)) f)) by apply rvmult_comm.
+    rewrite (Expectation_ext H2).
+    symmetry.
+    apply Rbar_Expec_Condexp.
+    symmetry in H2.
+    apply (IsFiniteExpectation_proper prts _ _ H2).
+    apply IsFiniteExpectation_indicator; trivial.
+    apply sub.
+    apply (proj2_sig P).
+ Qed.
+
+  Definition val_indicator (f : Ts -> R) (c : R) :=
+    EventIndicator (classic_dec (fun omega => f omega = c)).
+
+  Definition scale_val_indicator (f : Ts -> R) (c : R) :=
+    rvscale c (val_indicator f c).
+
+  Definition frf_indicator (f : Ts -> R)
+        {frf : FiniteRangeFunction f} :=
+    (fun omega =>
+       (RealAdd.list_sum (map (fun c => scale_val_indicator f c omega)
+                              (nodup Req_EM_T frf_vals)))).
+
+  Lemma frf_indicator_sum (f : Ts -> R)
+        (frf : FiniteRangeFunction f) :
+    rv_eq f
+          (frf_indicator f).
+  Proof.
+    Admitted.
+
+  Lemma Condexp_factor_out_scale
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        (f g : Ts -> R)
+        (c : R)
+        {rvf : RandomVariable dom borel_sa f}
+        {rvg : RandomVariable dom2 borel_sa g}
+        {rvgf: RandomVariable dom borel_sa (rvmult g f)} 
+        {rvcgf: RandomVariable dom borel_sa (rvmult (rvscale c g) f)} :    
+    IsFiniteExpectation prts (rvmult g f) ->
+    Rbar_Expectation (ConditionalExpectation prts sub (rvmult g f)) =
+    Rbar_Expectation (Rbar_rvmult g (ConditionalExpectation prts sub f)) ->
+    Rbar_Expectation (ConditionalExpectation prts sub (rvmult (rvscale c g) f)) =
+    Rbar_Expectation (Rbar_rvmult (rvscale c g) (ConditionalExpectation prts sub f)).
+  Proof.
+    intros.
+    apply Rbar_Expectation_almostR2_proper.
+    - apply RandomVariable_sa_sub; trivial.
+      apply Condexp_rv.
+    - apply Rbar_rvmult_rv.
+      + apply Real_Rbar_rv.
+        apply RandomVariable_sa_sub; trivial.
+        typeclasses eauto.
+      + apply RandomVariable_sa_sub; trivial.
+        apply Condexp_rv.
+    - generalize (ConditionalExpectation_scale sub (rvmult g f) c); intros.
+      assert (almostR2 prts eq 
+                (rvmult (rvscale c g) f)
+                (rvscale c (rvmult g f))).
+      {
+        apply almostR2_eq_subr.
+        intros x.
+        rv_unfold.
+        lra.
+      }
+      generalize (ConditionalExpectation_proper prts sub _ _ H2); intros.
+      generalize (almostR2_prob_space_sa_sub_lift prts sub (@eq Rbar)).
+
+    Admitted.
+
+
+  Lemma Condexp_factor_out_simple
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        f g
+        {frfg : FiniteRangeFunction g}
+        {rvf : RandomVariable dom borel_sa f}
+        {rvg : RandomVariable dom2 borel_sa g}
+        {rvgf: RandomVariable dom borel_sa (rvmult g f)} :
+    IsFiniteExpectation prts f ->
+    Rbar_Expectation (ConditionalExpectation prts sub (rvmult g f)) =
+    Rbar_Expectation (Rbar_rvmult g (ConditionalExpectation prts sub f)).
+  Proof.
+    intros.
+    Admitted.
+
+
   Lemma Condexp_factor_out0 
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
