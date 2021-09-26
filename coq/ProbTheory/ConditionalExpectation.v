@@ -4492,25 +4492,6 @@ Section cond_exp_props.
     
     Admitted.
     
-  Definition val_indicator (f : Ts -> R) (c : R) :=
-    EventIndicator (classic_dec (fun omega => f omega = c)).
-
-  Definition scale_val_indicator (f : Ts -> R) (c : R) :=
-    rvscale c (val_indicator f c).
-
-  Definition frf_indicator (f : Ts -> R)
-        {frf : FiniteRangeFunction f} :=
-    (fun omega =>
-       (RealAdd.list_sum (map (fun c => scale_val_indicator f c omega)
-                              (nodup Req_EM_T frf_vals)))).
-
-  Lemma frf_indicator_sum (f : Ts -> R)
-        (frf : FiniteRangeFunction f) :
-    rv_eq f
-          (frf_indicator f).
-  Proof.
-    Admitted.
-
 
   Lemma Condexp_factor_out_frf
         {dom2 : SigmaAlgebra Ts}
