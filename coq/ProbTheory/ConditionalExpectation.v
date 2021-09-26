@@ -1795,6 +1795,107 @@ Section is_cond_exp.
       + now simpl.
   Qed.
 
+  Existing Instance Rbar_rvmult_rv.
+  
+  Lemma is_conditional_expectation_scale (c:R)
+        (f : Ts -> R)
+        (ce : Ts -> Rbar)
+        {rv : RandomVariable dom borel_sa f}
+(*        {isf1:IsFiniteExpectation prts f1} *)
+        {rvce : RandomVariable dom2 Rbar_borel_sa ce}
+    :
+      c <> 0 ->
+      is_conditional_expectation dom2 f ce ->
+      is_conditional_expectation dom2 (rvscale c f) (Rbar_rvmult (const c) ce)
+                                 (rvce:=Rbar_rvmult_rv _ _)
+  .
+  Proof.
+    intros cnzero isce P Pdec saP.
+
+    
+    
+    generalize (Expectation_scale c (rvmult f (EventIndicator Pdec)) cnzero)
+    ; intros HH1.
+    generalize (Rbar_Expectation_scale c f cnzero)
+    ; intros HH1.
+    
+    
+      Lemma Expectation_scale (c: R) 
+        (rv_X : Ts -> R) :
+    c <> 0 ->
+    let Ex_rv := Expectation rv_X in
+    let Ex_c_rv := Expectation (rvscale c rv_X) in
+    Ex_c_rv = 
+    match Ex_rv with
+    | Some x => Some (Rbar_mult c x)
+    | None => None
+    end.
+  Proof. 
+
+    intros isce1 isce2 ???.
+    generalize (rvmult_rvadd_distr (EventIndicator dec) f1 f2); intros eqq1.
+    rewrite rvmult_comm in eqq1.
+    rewrite (Expectation_ext eqq1).
+    generalize (IsFiniteExpectation_indicator prts f1 dec (sub _ H) isfe1)
+    ; intros isfe1'.
+    generalize (IsFiniteExpectation_indicator prts f2 dec (sub _ H) isfe2)
+    ; intros isfe2'.
+    
+    red in isfe1', isfe2'.
+    match_option_in isfe1'; try tauto.
+    match_option_in isfe2'; try tauto.
+    destruct r; try tauto.
+    destruct r0; try tauto.
+    rewrite Expectation_sum_finite with (e1:=r) (e2:=r0); trivial.
+    - rewrite isce1 in eqq; trivial.
+      rewrite isce2 in eqq0; trivial.
+      assert (rv_eq (Rbar_rvmult (Rbar_rvplus ce1 ce2) (EventIndicator dec))
+                    (Rbar_rvplus (Rbar_rvmult (EventIndicator dec) ce1) (Rbar_rvmult (EventIndicator dec) ce2))).
+      {
+        intros ?.
+        unfold Rbar_rvminus, Rbar_rvmult, Rbar_rvplus, Rbar_rvopp.
+        simpl.
+        rewrite (Rbar_mult_comm _ (EventIndicator dec a)).
+        now rewrite Rbar_mult_r_plus_distr.
+      }
+      
+      rewrite (Rbar_Expectation_ext H0).
+      rewrite Rbar_Expectation_sum_finite with (e1:=r) (e2:=r0); trivial.
+      + apply Rbar_rvmult_rv; trivial.
+        * apply borel_Rbar_borel.
+          apply EventIndicator_pre_rv.
+          now apply sub.
+        * eapply RandomVariable_sa_sub; eauto.
+      + apply Rbar_rvmult_rv; trivial.
+        * apply borel_Rbar_borel.
+          apply EventIndicator_pre_rv.
+          now apply sub.
+        * eapply RandomVariable_sa_sub; eauto.
+      + rewrite <- eqq.
+        apply Rbar_Expectation_ext.
+        intros ?.
+        unfold Rbar_rvmult.
+        apply Rbar_mult_comm.
+      + rewrite <- eqq0.
+        apply Rbar_Expectation_ext.
+        intros ?.
+        unfold Rbar_rvmult.
+        apply Rbar_mult_comm.
+    - apply rvmult_rv; trivial.
+      apply EventIndicator_pre_rv.
+      now apply sub.
+    - apply rvmult_rv; trivial.
+      apply EventIndicator_pre_rv.
+      now apply sub.
+    - rewrite <- eqq.
+      apply Expectation_ext.
+      apply rvmult_comm.
+    - rewrite <- eqq0.
+      apply Expectation_ext.
+      apply rvmult_comm.
+  Qed.
+
+
   Lemma is_conditional_expectation_plus
         (f1 f2 : Ts -> R)
         (ce1 ce2 : Ts -> Rbar)

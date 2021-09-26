@@ -919,6 +919,140 @@ Section RbarExpectation.
              now rewrite H8 in H9.
   Qed.
 
+  Global Instance Rbar_NonnegativeFunction_const_posreal (c: posreal) :
+    Rbar_NonnegativeFunction (const (B:=Ts) c).
+  Proof.
+    destruct c.
+    apply nnfconst.
+    lra.
+  Qed.
+  
+  Lemma Rbar_NonnegExpectation_scale (c: posreal) 
+        (rv_X : Ts -> Rbar)
+        {pofrf:Rbar_NonnegativeFunction rv_X} :
+    Rbar_NonnegExpectation (Rbar_rvmult (const c) rv_X) =
+    Rbar_mult c (Rbar_NonnegExpectation rv_X).
+  Proof.
+    destruct c as [c cpos].
+    unfold Rbar_rvmult, const.
+    unfold Rbar_NonnegExpectation.
+    unfold SimpleExpectationSup.
+    rewrite <- lub_rbar_scale.
+    apply Lub_Rbar_eqset; intros.
+    split; intros [? [? [? [[??]?]]]].
+    - exists (rvscale (/ c) x0).
+      exists (rvscale_rv _ _ _ _).
+      exists (frfscale _ _).
+      split; [split |].
+      + assert (0 < / c).
+        { 
+          now apply Rinv_0_lt_compat.
+        } 
+        apply (positive_scale_nnf (mkposreal _ H2) x0). 
+      + unfold rv_le, rvscale in *.
+        intros y.
+        specialize (H0 y).
+        simpl in H0.
+        destruct (rv_X y); simpl in *; try tauto
+        ; [|
+           destruct (Rle_dec 0 c); try lra
+           ; destruct (Rle_lt_or_eq_dec 0 c r); try lra
+          ].
+        apply (Rmult_le_compat_l (/ c)) in H0.
+        * rewrite <- Rmult_assoc in H0.
+          rewrite Rinv_l in H0; lra.
+        * left.
+          now apply Rinv_0_lt_compat.
+      + rewrite <- scaleSimpleExpectation.
+        rewrite H1; simpl.
+        lra.
+    - exists (rvscale c x0).
+      exists (rvscale_rv _ _ _ _).
+      exists (frfscale c x0).
+      split; [split |].
+      + now apply (rvscale_nnf (mkposreal c cpos)). 
+      + intros a.
+        specialize (H0 a).
+        simpl in *.
+        destruct (rv_X a); simpl in *; try tauto.
+        * unfold rvscale.
+          apply Rmult_le_compat_l; lra.
+        * destruct (Rle_dec 0 c); try lra
+          ; destruct (Rle_lt_or_eq_dec 0 c r); try lra.
+      + rewrite <- scaleSimpleExpectation.
+        rewrite H1; simpl.
+        field; trivial.
+        lra.
+  Qed.
+
+  Lemma scale_Rbar_max0 (c:posreal) x : (Rbar_max (Rbar_mult c x) 0 = Rbar_mult c (Rbar_max x 0)).
+  Proof.
+    unfold Rbar_max, Rbar_mult.
+    destruct x; simpl
+    ; destruct c as [c cpos]; simpl
+    ; destruct (Rle_dec 0 c); try lra.
+    - destruct (Rle_dec 0 r)
+      ; destruct (Rbar_le_dec (c * r) 0)
+      ; simpl in *
+      ; try f_equal; try lra
+      ; destruct (Rbar_le_dec r 0)
+      ; simpl in *; try f_equal; try lra.
+      + assert (0 <= c * r)
+          by now apply Rmult_le_pos.
+        lra.
+      + assert (r = 0) by lra.
+        subst.
+        lra.
+      + assert (c * r <= 0)
+               by now apply Rmult_le_0_l.
+        tauto.
+    - destruct (Rle_lt_or_eq_dec 0 c r); simpl.
+      destruct (Rbar_le_dec p_infty 0); try f_equal; trivial; try lra.
+      lra.
+    - destruct (Rle_lt_or_eq_dec 0 c r); simpl.
+      destruct (Rbar_le_dec m_infty 0); try f_equal; trivial; try lra.
+      lra.
+  Qed.
+
+  Lemma Rbar_Expectation_scale_pos (c:posreal) (rv_X : Ts -> Rbar) :
+    Rbar_NonnegExpectation (Rbar_pos_fun_part (Rbar_rvmult (const c) rv_X)) =
+    Rbar_mult c (Rbar_NonnegExpectation (Rbar_pos_fun_part rv_X)).
+  Proof.
+    rewrite <- Rbar_NonnegExpectation_scale.
+    apply Rbar_NonnegExpectation_ext.
+    intros x.
+    unfold Rbar_pos_fun_part, Rbar_rvmult, const.
+    now rewrite scale_Rbar_max0.
+  Qed.
+  
+  Lemma Rbar_Expectation_scale_neg (c:posreal) (rv_X : Ts -> Rbar) :
+    Rbar_NonnegExpectation (fun x : Ts => Rbar_neg_fun_part (Rbar_rvmult (const c) rv_X) x) =
+    Rbar_mult c (Rbar_NonnegExpectation (Rbar_neg_fun_part rv_X)).
+  Proof.
+    rewrite <- Rbar_NonnegExpectation_scale.
+    apply Rbar_NonnegExpectation_ext.
+    intros x.
+    unfold Rbar_neg_fun_part, Rbar_rvmult, const.
+    rewrite <- Rbar_mult_opp_r.
+    now rewrite scale_Rbar_max0.
+  Qed.
+
+  Lemma Rbar_Expectation_scale_posreal (c: posreal) 
+        (rv_X : Ts -> Rbar) :
+    let Ex_rv := Rbar_Expectation rv_X in
+    let Ex_c_rv := Rbar_Expectation (Rbar_rvmult (const c) rv_X) in
+    Ex_c_rv = 
+    match Ex_rv with
+    | Some x => Some (Rbar_mult c x)
+    | None => None
+    end.
+  Proof. 
+    unfold Rbar_Expectation.
+    rewrite Rbar_Expectation_scale_pos; trivial.
+    rewrite Rbar_Expectation_scale_neg; trivial.
+    apply scale_Rbar_diff.
+  Qed.
+
   Lemma Rbar_NonnegExpectation_plus
         (rv_X1 rv_X2 : Ts -> Rbar)
         {rv1 : RandomVariable dom Rbar_borel_sa rv_X1}
@@ -1322,6 +1456,40 @@ Section RbarExpectation.
           now rewrite Rbar_opp_involutive.
     - intro x.
       now unfold Rbar_neg_fun_part, Rbar_rvopp, Rbar_pos_fun_part; simpl.
+  Qed.
+
+  Lemma Rbar_Expectation_scale (c: R) 
+        (rv_X : Ts -> Rbar) :
+    c <> 0 ->
+    let Ex_rv := Rbar_Expectation rv_X in
+    let Ex_c_rv := Rbar_Expectation (Rbar_rvmult (const c) rv_X) in
+    Ex_c_rv = 
+    match Ex_rv with
+    | Some x => Some (Rbar_mult c x)
+    | None => None
+    end.
+  Proof. 
+    intros.
+    destruct (Rlt_dec 0 c).
+    apply (Rbar_Expectation_scale_posreal (mkposreal c r)).
+    destruct (Rlt_dec 0 (- c)).
+    - unfold Ex_c_rv.
+      rewrite (@Rbar_Expectation_ext _ (Rbar_rvopp (Rbar_rvmult (const (- c)) rv_X))).
+      + rewrite Rbar_Expectation_opp.
+        rewrite (Rbar_Expectation_scale_posreal (mkposreal (-c) r)).
+        unfold Ex_rv.
+        case_eq (Rbar_Expectation rv_X); intros; trivial.
+        f_equal; simpl.
+        rewrite <- Rbar_mult_opp_l.
+        simpl.
+        now replace (- - c) with (c) by lra.
+      + intro x.
+        unfold Rbar_rvmult, Rbar_rvopp, const.
+        simpl.
+        rewrite <- Rbar_mult_opp_l; simpl.
+        now replace (- - c) with (c) by lra.
+    - unfold Ex_c_rv, Ex_rv.
+      lra.
   Qed.
 
 (*
