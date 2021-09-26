@@ -23,7 +23,7 @@ Section SimpleExpectation.
     {Prts: ProbSpace dom}.
 
   Local Open Scope prob.
-  
+
   Definition FiniteRangeFunction_partition_image 
              {rv_X : Ts -> R}
              {rrv : RandomVariable dom borel_sa rv_X}
@@ -1096,6 +1096,65 @@ Section SimpleExpectation.
       typeclasses eauto.
   Qed.
   
+  Definition val_indicator (f : Ts -> R) (c : R) :=
+    EventIndicator (classic_dec (fun omega => f omega = c)).
+
+  Definition scale_val_indicator (f : Ts -> R) (c : R) :=
+    rvscale c (val_indicator f c).
+
+  Definition frf_indicator (f : Ts -> R)
+        {frf : FiniteRangeFunction f} :=
+    (fun omega =>
+       (RealAdd.list_sum (map (fun c => scale_val_indicator f c omega)
+                              (nodup Req_EM_T frf_vals)))).
+
+  Lemma frf_indicator_sum_helper f l a:
+    NoDup l ->
+    In (f a) l ->
+    f a = 
+    list_sum (map (fun c : R => scale_val_indicator f c a) l).
+  Proof.
+    induction l; simpl; [tauto |].
+    intros nd inn.
+    invcs nd.
+    specialize (IHl H2).
+    unfold scale_val_indicator, val_indicator, EventIndicator, rvscale in *.
+    match_destr.
+    - field_simplify.
+      cut (list_sum
+             (map
+                (fun c : R =>
+                   c * (if classic_dec (fun omega : Ts => f omega = c) a then 1 else 0)) l)
+           = 0); [lra | ].
+      rewrite <- e in H1.
+      revert H1.
+      clear.
+      induction l; simpl; trivial.
+      intros ninn.
+      apply not_or_and in ninn.
+      destruct ninn as [??].
+      rewrite IHl by trivial.
+      match_destr; lra.
+    - field_simplify.
+      apply IHl.
+      destruct inn; trivial.
+      congruence.
+  Qed.
+
+  (* Any finite range function can be viewed as a linear combination
+     of EventIndicators 
+   *)
+  Theorem frf_indicator_sum (f : Ts -> R)
+        {frf : FiniteRangeFunction f} :
+    rv_eq f (frf_indicator f).
+  Proof.
+    intros a.
+    apply frf_indicator_sum_helper.
+    - apply NoDup_nodup.
+    - apply nodup_In.
+      apply frf_vals_complete.
+  Qed.
+
 End SimpleExpectation.
 Section EventRestricted.
   
