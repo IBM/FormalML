@@ -1083,7 +1083,7 @@ Section is_cond_exp.
   Qed.
 
   (* is_conditional_expectation is proper up to almost *)
-  Lemma is_conditional_expectation_proper
+  Theorem is_conditional_expectation_proper
         (f1 f2 : Ts -> R)
         (ce1 ce2 : Ts -> Rbar)
         {rvf1 : RandomVariable dom borel_sa f1}
@@ -1824,7 +1824,16 @@ Section is_cond_exp.
     rv_unfold; lra.
   Qed.
 
-  Lemma is_conditional_expectation_scale (c:R)
+  Theorem is_conditional_expectation_const (c:R)
+    :
+      is_conditional_expectation dom2 (const c) (const c).
+  Proof.
+    intros P Pdec saP.
+    unfold Rbar_rvmult, rvmult, const; simpl.
+    now rewrite gen_Expectation_Rbar_Expectation.
+  Qed.
+  
+  Lemma is_conditional_expectation_scale_nzero (c:R)
         (f : Ts -> R)
         (ce : Ts -> Rbar)
         {rv : RandomVariable dom borel_sa f}
@@ -1854,7 +1863,45 @@ Section is_cond_exp.
     now invcs isce.
   Qed.
 
-  Lemma is_conditional_expectation_scale_inv (c:R)
+  Corollary is_conditional_expectation_propere
+            {f1 f2 : Ts -> R}
+            (eq1:almostR2 prts eq f1 f2) 
+            {ce1 ce2 : Ts -> Rbar}
+            (eq2:almostR2 prts eq ce1 ce2)
+            (rvf1 : RandomVariable dom borel_sa f1)
+            (rvf2 : RandomVariable dom borel_sa f2)
+            (rvce1 : RandomVariable dom2 Rbar_borel_sa ce1)
+            (rvce2 : RandomVariable dom2 Rbar_borel_sa ce2)
+            :
+      is_conditional_expectation dom2 f1 ce1 ->
+      is_conditional_expectation dom2 f2 ce2.
+    Proof.
+      now apply is_conditional_expectation_proper.
+    Qed.
+    
+  Theorem is_conditional_expectation_scale (c:R)
+        (f : Ts -> R)
+        (ce : Ts -> Rbar)
+        {rv : RandomVariable dom borel_sa f}
+        {rvce : RandomVariable dom2 Rbar_borel_sa ce}
+    :
+      is_conditional_expectation dom2 f ce ->
+      is_conditional_expectation dom2 (rvscale c f) (Rbar_rvmult (const c) ce)
+                                 (rvce:=Rbar_rvmult_rv _ _).
+  Proof.
+    destruct (Req_EM_T c 0).
+    - subst.
+      intros.
+      unfold rvscale, Rbar_rvmult, const.
+      apply (is_conditional_expectation_proper (const 0) _ (const 0) _).
+      + apply all_almost; intros; unfold const; lra.
+      + apply all_almost; intros; unfold const.
+        now rewrite Rbar_mult_0_l.
+      + apply is_conditional_expectation_const.        
+    - now apply is_conditional_expectation_scale_nzero.
+  Qed.
+  
+  Corollary is_conditional_expectation_scale_inv (c:R)
         (f : Ts -> R)
         (ce : Ts -> Rbar)
         {rv : RandomVariable dom borel_sa f}
@@ -1866,10 +1913,7 @@ Section is_cond_exp.
       is_conditional_expectation dom2 f ce.
   Proof.
     intros cnzero isce.
-    assert (cinv_nzero: / c <> 0)
-           by now apply Rinv_neq_0_compat.
-
-    generalize (is_conditional_expectation_scale (/ c) _ _ cinv_nzero isce).
+    generalize (is_conditional_expectation_scale (/ c) _ _ isce).
     apply is_conditional_expectation_proper
     ; apply all_almost
     ; intros ?
@@ -1878,7 +1922,7 @@ Section is_cond_exp.
     - rewrite Rbar_mult_div_fin_cancel_l; trivial.
   Qed.
 
-  Lemma is_conditional_expectation_plus
+  Theorem is_conditional_expectation_plus
         (f1 f2 : Ts -> R)
         (ce1 ce2 : Ts -> Rbar)
         {rvf1 : RandomVariable dom borel_sa f1}
@@ -2012,7 +2056,7 @@ Section is_cond_exp.
     : event domm
     := @exist (pre_event Ts) _ _ (sa_le_Rbar_ge_rv rv_X x).
 
-  Lemma is_conditional_expectation_isfe
+  Theorem is_conditional_expectation_isfe
         f ce
         {rvf:RandomVariable dom borel_sa f} 
         {rvce:RandomVariable dom2 Rbar_borel_sa ce} :
@@ -2045,7 +2089,7 @@ Section is_cond_exp.
     - simpl.
       apply sa_all.
   Qed.
-
+  
 End is_cond_exp.
 
 Section cond_exp_l2.
