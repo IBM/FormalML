@@ -4462,7 +4462,33 @@ Section cond_exp_props.
     apply ConditionalExpectation_proper with (sub0 := sub) (rv1 := rve)
       (rv2 := (@rvplus_rv Ts dom (@rvmult Ts g1 f) (@rvmult Ts g2 f) rvg1f rvg2f)) in H4.
     apply almostR2_prob_space_sa_sub_lift_Rbar in H4.
-    
+    generalize (almostR2_trans prts _ _ _ _ H4 H3); intros.
+    assert (RandomVariable dom Rbar_borel_sa (ConditionalExpectation prts sub (rvmult (rvplus g1 g2) f))).
+    {
+      apply RandomVariable_sa_sub; trivial.
+      typeclasses eauto.
+    }
+    assert (RandomVariable dom Rbar_borel_sa  (Rbar_rvplus (ConditionalExpectation prts sub (rvmult g1 f))
+            (ConditionalExpectation prts sub (rvmult g2 f)))).
+    {
+      apply Rbar_rvplus_rv.
+      + apply RandomVariable_sa_sub; trivial.
+        typeclasses eauto.
+      + apply RandomVariable_sa_sub; trivial.
+        typeclasses eauto.
+    }
+    rewrite (Rbar_Expectation_almostR2_proper prts _ _ H5).
+    assert (rv_eq  (Rbar_rvmult (fun omega : Ts => rvplus g1 g2 omega)
+                                (ConditionalExpectation prts sub f))
+                   (Rbar_rvplus 
+                      (Rbar_rvmult g1 (ConditionalExpectation prts sub f))
+                      (Rbar_rvmult g2 (ConditionalExpectation prts sub f)))).
+    {
+      intro x.
+      unfold Rbar_rvmult.
+      admit.
+    }
+    rewrite (Rbar_Expectation_ext H8).
     
     Admitted.
     
