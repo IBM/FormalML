@@ -545,30 +545,30 @@ Section list_sum.
     lra.
   Qed.
 
-Lemma list_sum_pos_pos' l :
-  Forall (fun x => 0 <= x) l ->
-  0 <= list_sum l.
-Proof.
-  induction l; simpl; try lra.
-  intros HH; invcs HH.
-  specialize (IHl H2).
-  lra.
-Qed.
+  Lemma list_sum_pos_pos' l :
+    Forall (fun x => 0 <= x) l ->
+    0 <= list_sum l.
+  Proof.
+    induction l; simpl; try lra.
+    intros HH; invcs HH.
+    specialize (IHl H2).
+    lra.
+  Qed.
 
-Lemma list_sum_all_pos_zero_all_zero l : list_sum l = 0 ->
-                                         Forall (fun x => x >= 0) l ->
-                                         Forall (fun x => x = 0) l.
-Proof.
-  induction l; intros.
-  - constructor.
-  - invcs H0.
-    simpl in H.
-    generalize (list_sum_pos_pos _ H4); intros HH.
-    assert (a = 0) by lra.
-    subst.
-    field_simplify in H.
-    auto.
-Qed.
+  Lemma list_sum_all_pos_zero_all_zero l : list_sum l = 0 ->
+                                           Forall (fun x => x >= 0) l ->
+                                           Forall (fun x => x = 0) l.
+  Proof.
+    induction l; intros.
+    - constructor.
+    - invcs H0.
+      simpl in H.
+      generalize (list_sum_pos_pos _ H4); intros HH.
+      assert (a = 0) by lra.
+      subst.
+      field_simplify in H.
+      auto.
+  Qed.
 
 End list_sum.
 
@@ -1625,7 +1625,7 @@ Section ineqs.
 
   Theorem youngs_ineq_2 {p q : posreal} (Hpq : 1/p + 1/q = 1):
     forall (t a b : R), 0 <= a -> 0 <= b -> 0 < t ->
-                   (power a (1/p))*(power b (1/q)) <= (power t (-1/q))*a/p + (power t (1/p))*b/q.
+                        (power a (1/p))*(power b (1/q)) <= (power t (-1/q))*a/p + (power t (1/p))*b/q.
   Proof.
     intros t a b apos bpos tpos.
     assert (Hq : pos q <> 0)
@@ -1665,7 +1665,7 @@ Section ineqs.
 
   Theorem Rpower_youngs_ineq_2 {p q : posreal} (Hpq : 1/p + 1/q = 1):
     forall (t a b : R), 0 < a -> 0 < b -> 0 < t ->
-                   (Rpower a (1/p))*(Rpower b (1/q)) <= (Rpower t (-1/q))*a/p + (Rpower t (1/p))*b/q.
+                        (Rpower a (1/p))*(Rpower b (1/q)) <= (Rpower t (-1/q))*a/p + (Rpower t (1/p))*b/q.
   Proof.
     intros.
     generalize (youngs_ineq_2 Hpq t a b) ; intros HH.
@@ -1699,7 +1699,7 @@ Section ineqs.
   Qed.
 
   Lemma pow_minkowski_helper_aux (p:nat) (a t : R) : 0 < t ->
-                                                   t*(pow(a/t) (S p)) = (pow a (S p))*(pow (/t) p).
+                                                     t*(pow(a/t) (S p)) = (pow a (S p))*(pow (/t) p).
   Proof.
     intros.
     unfold Rdiv.
@@ -1962,7 +1962,7 @@ Section power_minkowski.
     generalize (Rle_power a 0 e pbig nne).
     rewrite power_O; lra.
   Qed.
-    
+  
   Lemma power_minkowski_helper (p : R) {a b t : R}:
     (0 <= a) ->
     (0 <= b) ->
@@ -1988,11 +1988,11 @@ Section power_minkowski.
         rewrite Rmult_0_r.
         repeat rewrite Rplus_0_r.
         apply Rmult_bigpos_le_l.
-      * apply power_nonneg.
-      * assert (1 <= / t).
-        -- rewrite <- Rinv_1 at 1.
-          apply Rinv_le_contravar; lra.
-        -- apply power_big_big; lra.
+        * apply power_nonneg.
+        * assert (1 <= / t).
+          -- rewrite <- Rinv_1 at 1.
+             apply Rinv_le_contravar; lra.
+          -- apply power_big_big; lra.
       + apply power_minkowski_helper_lt; trivial; lra.
   Qed.
 
@@ -2023,17 +2023,17 @@ Section power_minkowski.
     replace (power (/ a) (p-1) * (power a p)) with (a).
     - replace (/ (1 - a / (a + b))) with ((a+b)/b).
       + unfold Rdiv; rewrite <- power_mult_distr, Rmult_assoc by (try lra; auto with real).
-       replace (power (/ b) (p-1) * ( power b p)) with (b).
-       * rewrite <- Rmult_plus_distr_l.
-         rewrite Rmult_comm.
-         rewrite <- power_minus1; trivial.
-         lra.
-       * rewrite (power_minus1 b) by lra.
-         rewrite <-  Rmult_assoc, Rmult_comm, <- Rmult_assoc.
-         rewrite power_mult_distr by (try lra; auto with real).
-         rewrite Rinv_r by lra.
-         rewrite power_base_1.
-         lra.
+        replace (power (/ b) (p-1) * ( power b p)) with (b).
+        * rewrite <- Rmult_plus_distr_l.
+          rewrite Rmult_comm.
+          rewrite <- power_minus1; trivial.
+          lra.
+        * rewrite (power_minus1 b) by lra.
+          rewrite <-  Rmult_assoc, Rmult_comm, <- Rmult_assoc.
+          rewrite power_mult_distr by (try lra; auto with real).
+          rewrite Rinv_r by lra.
+          rewrite power_base_1.
+          lra.
       + rewrite <- (Rinv_r (a+b)) by lra.
         fold (Rdiv (a+b) (a+b)).
         field_simplify; try lra.
@@ -2047,7 +2047,7 @@ Section power_minkowski.
   Lemma power_ineq_convex p :
     1 <= p ->
     forall (x y : R), 0 < x -> 0 < y -> 
-                 power (x + y) p <= (power 2 (p-1))*(power x p + power y p).
+                      power (x + y) p <= (power 2 (p-1))*(power x p + power y p).
   Proof.
     intros pbig; intros.
     assert (0 <= (/2) <= 1) by lra.
@@ -2117,7 +2117,7 @@ Proof.
   intros f1 f2 feqq N N' xeqq; subst N'.
   induction N; simpl; congruence.
 Qed.
-  
+
 Lemma bounded_is_finite (a b : R) (x : Rbar) :
   Rbar_le a x -> Rbar_le x b -> is_finite x.
 Proof.
@@ -2133,176 +2133,176 @@ Qed.
 
 Section lim_seq_sup_seq.
   
-    Lemma le_incr0 (f : nat -> R) :
-      (forall n, f n <= f (S n)) ->
-      (forall n k, f n <= f (n + k)%nat).
-    Proof.
+  Lemma le_incr0 (f : nat -> R) :
+    (forall n, f n <= f (S n)) ->
+    (forall n k, f n <= f (n + k)%nat).
+  Proof.
+    intros.
+    induction k.
+    - replace (n + 0)%nat with n by lia.
+      lra.
+    - eapply Rle_trans.
+      apply IHk.
+      replace (n + S k)%nat with (S (n + k)%nat) by lia.
+      apply H.
+  Qed.
+
+  Lemma le_incr (f : nat -> R) :
+    (forall n, f n <= f (S n)) ->
+    (forall n m, (n<=m)%nat -> f n <= f m).
+  Proof.
+    intros.
+    replace (m) with (n + (m-n))%nat by lia.
+    now apply le_incr0.
+  Qed.
+
+  Lemma lim_seq_sup_seq_incr (f : nat -> R) (l : Rbar) :
+    (forall n, f n <= f (S n)) ->
+    is_lim_seq f l <-> is_sup_seq f l.
+  Proof.
+    intros.
+    split; intros.
+    apply is_lim_LimSup_seq in H0.
+    destruct l.
+    - unfold is_LimSup_seq in H0.
+      unfold is_sup_seq.
       intros.
-      induction k.
-      - replace (n + 0)%nat with n by lia.
-        lra.
-      - eapply Rle_trans.
-        apply IHk.
-        replace (n + S k)%nat with (S (n + k)%nat) by lia.
-        apply H.
-     Qed.
-
-    Lemma le_incr (f : nat -> R) :
-      (forall n, f n <= f (S n)) ->
-      (forall n m, (n<=m)%nat -> f n <= f m).
-    Proof.
-      intros.
-      replace (m) with (n + (m-n))%nat by lia.
-      now apply le_incr0.
-    Qed.
-
-    Lemma lim_seq_sup_seq_incr (f : nat -> R) (l : Rbar) :
-      (forall n, f n <= f (S n)) ->
-      is_lim_seq f l <-> is_sup_seq f l.
-   Proof.
-     intros.
-     split; intros.
-     apply is_lim_LimSup_seq in H0.
-     destruct l.
-     - unfold is_LimSup_seq in H0.
-       unfold is_sup_seq.
-       intros.
-       specialize (H0 eps).
-       destruct H0.
-       simpl.
-       split; intros.
-       + destruct H1.
-         destruct (le_dec x n).
-         * now apply H1.
-         * assert (n <= x)%nat by lia.
-           apply Rle_lt_trans with (r2 := f x).
-           now apply le_incr.
-           apply H1; lia.
-       + specialize (H0 0%nat).
-         destruct H0 as [n [? ?]].
-         exists n.
-         apply H2.
-     - unfold is_LimSup_seq in H0.
-       unfold is_sup_seq; simpl; intros.
-       specialize (H0 M 0%nat).
-       destruct H0 as [n [? ?]].
-       exists n.
-       apply H1.
-     - unfold is_LimSup_seq in H0.
-       unfold is_sup_seq; simpl; intros.
-       specialize (H0 M).
-       destruct H0 as [N H0].
-       destruct (le_dec N n).
-       + now apply H0.
-       + assert (n <= N)%nat by lia.
-         apply Rle_lt_trans with (r2 := f N).
-         * now apply le_incr.
-         * apply H0; lia.
-     - rewrite <- is_lim_seq_spec.
-       destruct l.
-       + unfold is_sup_seq in H0.
-         unfold is_lim_seq'; intros.
-         specialize (H0 eps).
-         destruct H0 as [? [n ?]].
-         simpl in H1; simpl in H0.
-         exists n; intros.
-         destruct (Rge_dec (f n0) r).
-         * specialize (H0 n0).
-           rewrite Rabs_right; lra.
-         * assert (f n0 < r) by lra.
-           rewrite Rabs_left; [|lra].
-           generalize (le_incr f H n n0 H2); intros.
-           lra.
-       + unfold is_sup_seq in H0.
-         unfold is_lim_seq'; intros.
-         specialize (H0 M); simpl in H0.
-         destruct H0 as [n ?].
-         exists n; intros.
-         apply Rlt_le_trans with (r2 := f n); trivial.
-         now apply le_incr.
-       + unfold is_sup_seq in H0.
-         unfold is_lim_seq'; intros.
-         specialize (H0 M); simpl in H0.
-         exists (0%nat); intros.
-         apply H0.
-    Qed.
-
-   Lemma is_lub_sup_seq (u : nat -> R) (l : Rbar) :
-     is_lub_Rbar (fun x => exists n, x = u n) l ->
-     is_sup_seq u l.
-   Proof.
-     intros.
-     apply Rbar_is_lub_sup_seq.
-     unfold is_lub_Rbar in H.
-     unfold Rbar_is_lub.
-     destruct H.
-     split.
-     - unfold Rbar_is_upper_bound.
-       unfold is_ub_Rbar in H.
-       intros.
-       destruct x.
-       + apply H.
-         destruct H1.
-         exists x.
-         now rewrite Rbar_finite_eq in H1.
-       + destruct H1.
-         discriminate.
-       + destruct H1.
-         discriminate.
-     - intros.
-       apply H0.
-       unfold is_ub_Rbar.
-       intros.
-       apply H1.
-       destruct H2.
-       exists x0.
-       rewrite H2.
-       reflexivity.
-   Qed.
-
-   Lemma is_sub_seq_lub_R (u : nat -> R) (l : Rbar) :
-     is_sup_seq u l -> is_lub_Rbar (fun x => exists n, x = u n) l.
-   Proof.
-     intros.
-     apply is_sup_seq_lub in H.
-     unfold Rbar_is_lub in H.
-     unfold is_lub_Rbar.
-     destruct H.
-     split.
-     - unfold Rbar_is_upper_bound in H.
-       unfold is_ub_Rbar.
-       intros.
-       apply H.
-       destruct H1.
-       exists x0.
-       rewrite H1.
-       reflexivity.
-     - intros.
-       apply H0.
-       unfold Rbar_is_upper_bound.
-       unfold is_ub_Rbar in H1.
-       intros.
-       destruct x.
-       + apply H1.
-         destruct H2.
-         exists x.
-         now rewrite Rbar_finite_eq in H2.
-       + destruct H2.
-         discriminate.
-       + destruct H2.
-         discriminate.
-   Qed.
-
-    Lemma lim_seq_is_lub_incr (f : nat -> R) (l : Rbar) :
-      (forall n, f n <= f (S n)) ->
-      (is_lim_seq f l) <-> (is_lub_Rbar (fun x => exists n, x = f n) l).
-    Proof.
-      intros.
-      rewrite lim_seq_sup_seq_incr; trivial.
+      specialize (H0 eps).
+      destruct H0.
+      simpl.
       split; intros.
-      now apply is_sub_seq_lub_R.
-      now apply is_lub_sup_seq.
-    Qed.
+      + destruct H1.
+        destruct (le_dec x n).
+        * now apply H1.
+        * assert (n <= x)%nat by lia.
+          apply Rle_lt_trans with (r2 := f x).
+          now apply le_incr.
+          apply H1; lia.
+      + specialize (H0 0%nat).
+        destruct H0 as [n [? ?]].
+        exists n.
+        apply H2.
+    - unfold is_LimSup_seq in H0.
+      unfold is_sup_seq; simpl; intros.
+      specialize (H0 M 0%nat).
+      destruct H0 as [n [? ?]].
+      exists n.
+      apply H1.
+    - unfold is_LimSup_seq in H0.
+      unfold is_sup_seq; simpl; intros.
+      specialize (H0 M).
+      destruct H0 as [N H0].
+      destruct (le_dec N n).
+      + now apply H0.
+      + assert (n <= N)%nat by lia.
+        apply Rle_lt_trans with (r2 := f N).
+        * now apply le_incr.
+        * apply H0; lia.
+    - rewrite <- is_lim_seq_spec.
+      destruct l.
+      + unfold is_sup_seq in H0.
+        unfold is_lim_seq'; intros.
+        specialize (H0 eps).
+        destruct H0 as [? [n ?]].
+        simpl in H1; simpl in H0.
+        exists n; intros.
+        destruct (Rge_dec (f n0) r).
+        * specialize (H0 n0).
+          rewrite Rabs_right; lra.
+        * assert (f n0 < r) by lra.
+          rewrite Rabs_left; [|lra].
+          generalize (le_incr f H n n0 H2); intros.
+          lra.
+      + unfold is_sup_seq in H0.
+        unfold is_lim_seq'; intros.
+        specialize (H0 M); simpl in H0.
+        destruct H0 as [n ?].
+        exists n; intros.
+        apply Rlt_le_trans with (r2 := f n); trivial.
+        now apply le_incr.
+      + unfold is_sup_seq in H0.
+        unfold is_lim_seq'; intros.
+        specialize (H0 M); simpl in H0.
+        exists (0%nat); intros.
+        apply H0.
+  Qed.
+
+  Lemma is_lub_sup_seq (u : nat -> R) (l : Rbar) :
+    is_lub_Rbar (fun x => exists n, x = u n) l ->
+    is_sup_seq u l.
+  Proof.
+    intros.
+    apply Rbar_is_lub_sup_seq.
+    unfold is_lub_Rbar in H.
+    unfold Rbar_is_lub.
+    destruct H.
+    split.
+    - unfold Rbar_is_upper_bound.
+      unfold is_ub_Rbar in H.
+      intros.
+      destruct x.
+      + apply H.
+        destruct H1.
+        exists x.
+        now rewrite Rbar_finite_eq in H1.
+      + destruct H1.
+        discriminate.
+      + destruct H1.
+        discriminate.
+    - intros.
+      apply H0.
+      unfold is_ub_Rbar.
+      intros.
+      apply H1.
+      destruct H2.
+      exists x0.
+      rewrite H2.
+      reflexivity.
+  Qed.
+
+  Lemma is_sub_seq_lub_R (u : nat -> R) (l : Rbar) :
+    is_sup_seq u l -> is_lub_Rbar (fun x => exists n, x = u n) l.
+  Proof.
+    intros.
+    apply is_sup_seq_lub in H.
+    unfold Rbar_is_lub in H.
+    unfold is_lub_Rbar.
+    destruct H.
+    split.
+    - unfold Rbar_is_upper_bound in H.
+      unfold is_ub_Rbar.
+      intros.
+      apply H.
+      destruct H1.
+      exists x0.
+      rewrite H1.
+      reflexivity.
+    - intros.
+      apply H0.
+      unfold Rbar_is_upper_bound.
+      unfold is_ub_Rbar in H1.
+      intros.
+      destruct x.
+      + apply H1.
+        destruct H2.
+        exists x.
+        now rewrite Rbar_finite_eq in H2.
+      + destruct H2.
+        discriminate.
+      + destruct H2.
+        discriminate.
+  Qed.
+
+  Lemma lim_seq_is_lub_incr (f : nat -> R) (l : Rbar) :
+    (forall n, f n <= f (S n)) ->
+    (is_lim_seq f l) <-> (is_lub_Rbar (fun x => exists n, x = f n) l).
+  Proof.
+    intros.
+    rewrite lim_seq_sup_seq_incr; trivial.
+    split; intros.
+    now apply is_sub_seq_lub_R.
+    now apply is_lub_sup_seq.
+  Qed.
 
 End lim_seq_sup_seq.
 
@@ -2313,702 +2313,702 @@ Section Rmax_list.
    Dump this into RealAdd.
    *)
 
-Open Scope list_scope.
-Open Scope R_scope.
+  Open Scope list_scope.
+  Open Scope R_scope.
 
-Import ListNotations.
+  Import ListNotations.
 
-Fixpoint Rmax_list (l : list R) : R :=
-  match l with
-  | nil => 0
-  | a :: nil => a
-  | a :: l1 => Rmax a (Rmax_list l1)
-  end.
-
-
-Lemma Rmax_spec_map {A} (l : list A) (f : A -> R) : forall a:A, In a l -> f a <= Rmax_list (List.map f l).
-Proof.
-  intros a Ha.
-  induction l.
-  - simpl ; firstorder.
-  - simpl in *. intuition.
-    + rewrite H. destruct l. simpl. right; reflexivity.
-      simpl. apply Rmax_l.
-    + destruct l. simpl in *; firstorder.
-      simpl in *. eapply Rle_trans ; eauto. apply Rmax_r.
-Qed.
-
-Lemma Rmax_spec {l : list R} : forall a:R, In a l -> a <= Rmax_list l.
-Proof.
-  intros a Ha.
-  induction l.
-  - simpl ; firstorder.
-  - simpl in *. intuition.
-    + rewrite H. destruct l. simpl. right; reflexivity.
-      simpl. apply Rmax_l.
-    + destruct l. simpl in *; firstorder.
-      simpl in *. eapply Rle_trans ; eauto. apply Rmax_r.
-Qed.
-
-Lemma Rmax_list_map_const_mul {A} (l : list A) (f : A -> R) {r : R} (hr : 0 <= r) :
-  Rmax_list (List.map (fun a => r*f(a)) l) = r*(Rmax_list (List.map f l)).
-Proof.
-  induction l.
-  - simpl ; lra.
-  - simpl. rewrite IHl.
-    rewrite RmaxRmult ; trivial.
-    destruct l.
-    + simpl ; reflexivity.
-    + simpl in *. f_equal ; trivial.
-Qed.
-
-Lemma Rmax_list_const_add (l : list R) (d : R) :
-  Rmax_list (List.map (fun x => x + d) l) =
-  if (l <> []) then ((Rmax_list l) + d) else 0.
-Proof.
-  induction l.
-  - simpl ; reflexivity.
-  - simpl in *.
-    destruct l.
-    + simpl ; reflexivity.
-    + simpl in * ; rewrite IHl.
-      now rewrite Rcomplements.Rplus_max_distr_r.
-Qed.
-
-Lemma Rmax_list_zero {A} (l : list A) :
-  Rmax_list (List.map (fun x => 0) l) = 0.
-Proof.
-  induction l.
-  -- simpl ; reflexivity.
-  -- simpl in *. rewrite IHl.
-     replace (Rmax 0 0) with 0.
-     destruct l ; [simpl ; reflexivity | simpl ; reflexivity] .
-     symmetry. apply Rmax_left ; lra.
-Qed.
+  Fixpoint Rmax_list (l : list R) : R :=
+    match l with
+    | nil => 0
+    | a :: nil => a
+    | a :: l1 => Rmax a (Rmax_list l1)
+    end.
 
 
-Lemma Rmax_list_ge (l : list R) (r : R) :
-  forall x, In x l -> r <= x -> r <= Rmax_list l.
-Proof.
-  intros x Hx Hrx.
-  eapply Rle_trans ; eauto.
-  now apply Rmax_spec.
-Qed.
+  Lemma Rmax_spec_map {A} (l : list A) (f : A -> R) : forall a:A, In a l -> f a <= Rmax_list (List.map f l).
+  Proof.
+    intros a Ha.
+    induction l.
+    - simpl ; firstorder.
+    - simpl in *. intuition.
+      + rewrite H. destruct l. simpl. right; reflexivity.
+        simpl. apply Rmax_l.
+      + destruct l. simpl in *; firstorder.
+        simpl in *. eapply Rle_trans ; eauto. apply Rmax_r.
+  Qed.
 
-Lemma Rmax_list_le (l : list R) (r : R) :
-  Rmax_list l <= r -> forall x, In x l -> x <= r.
-Proof.
-  intros H x Hx.
-  set (Rmax_spec x Hx).
-  eapply Rle_trans; eauto.
-Qed.
+  Lemma Rmax_spec {l : list R} : forall a:R, In a l -> a <= Rmax_list l.
+  Proof.
+    intros a Ha.
+    induction l.
+    - simpl ; firstorder.
+    - simpl in *. intuition.
+      + rewrite H. destruct l. simpl. right; reflexivity.
+        simpl. apply Rmax_l.
+      + destruct l. simpl in *; firstorder.
+        simpl in *. eapply Rle_trans ; eauto. apply Rmax_r.
+  Qed.
 
+  Lemma Rmax_list_map_const_mul {A} (l : list A) (f : A -> R) {r : R} (hr : 0 <= r) :
+    Rmax_list (List.map (fun a => r*f(a)) l) = r*(Rmax_list (List.map f l)).
+  Proof.
+    induction l.
+    - simpl ; lra.
+    - simpl. rewrite IHl.
+      rewrite RmaxRmult ; trivial.
+      destruct l.
+      + simpl ; reflexivity.
+      + simpl in *. f_equal ; trivial.
+  Qed.
 
-Lemma Rmax_list_In (l : list R):
-  ([] <> l) -> In (Rmax_list l) l.
-Proof.
-  induction l.
-  - simpl ; firstorder.
-  - intros H. simpl in *.
-    destruct l.
-    -- now left.
-    -- assert ([] <> r :: l)  by apply nil_cons.
-       specialize (IHl H0) ; clear H0.
-       destruct (Rle_dec a (Rmax_list (r :: l))).
-       ++ rewrite Rmax_right. now right ; assumption. assumption.
-       ++ rewrite Rmax_left. now left.
-          left ; apply ROrder.not_ge_lt ; assumption.
-Qed.
+  Lemma Rmax_list_const_add (l : list R) (d : R) :
+    Rmax_list (List.map (fun x => x + d) l) =
+    if (l <> []) then ((Rmax_list l) + d) else 0.
+  Proof.
+    induction l.
+    - simpl ; reflexivity.
+    - simpl in *.
+      destruct l.
+      + simpl ; reflexivity.
+      + simpl in * ; rewrite IHl.
+        now rewrite Rcomplements.Rplus_max_distr_r.
+  Qed.
 
-Lemma Rmax_list_lub (l : list R) (r : R):
-  ([] <> l) -> (forall x, In x l -> x <= r) -> Rmax_list l <= r.
-Proof.
-  intros Hl H.
-  apply H. eapply Rmax_list_In ; auto.
-Qed.
-
-Lemma Rmax_list_le_iff {l : list R} (hl : [] <> l) (r : R):
-  Rmax_list l <= r <-> (forall x, In x l -> x <= r)  .
-Proof.
-  split.
-  apply Rmax_list_le.
-  apply Rmax_list_lub ; auto.
-Qed.
-
-Lemma Rmax_list_lt_iff {l : list R} (hl : [] <> l) (r : R):
-  Rmax_list l < r <-> (forall x, In x l -> x < r)  .
-Proof.
-  split.
-  -- intros Hr x Hx.
-     eapply Rle_lt_trans. eapply Rmax_spec ; eauto. assumption.
-  -- intro H. apply H ; auto. now apply Rmax_list_In.
-Qed.
-
-Lemma Rmax_list_incl l1 l2 : nil <> l1 -> incl l1 l2 -> Rmax_list l1 <= Rmax_list l2.
-Proof.
-  unfold Proper, respectful, incl
-  ; intros.
-  apply Rmax_list_le_iff; trivial.
-  intros.
-  apply Rmax_spec; auto.
-Qed.
-
-Global Instance Rmax_list_equivlist : Proper (equivlist ==> eq) Rmax_list.
-Proof.
-  unfold Proper, respectful; intros x y equivs.
-  destruct x.
-  - symmetry in equivs.
-    apply equivlist_nil in equivs.
-    subst; simpl; trivial.
-  - destruct y.
-    + apply equivlist_nil in equivs.
-      discriminate.
-    + apply equivlist_incls in equivs.
-      destruct equivs.
-      generalize (Rmax_list_incl (r::x) (r0::y)); intros HH1.
-      generalize (Rmax_list_incl (r0::y) (r::x)); intros HH2.
-      cut_to HH1; trivial; try discriminate.
-      cut_to HH2; trivial; try discriminate.
-      lra.
-Qed.
-
-Lemma Rmax_list_sum {A B} {la : list A} (lb : list B) (f : A -> B -> R) (Hla : [] <> la):
-  Rmax_list (List.map (fun a => list_sum (List.map (f a) lb)) la) <=
-  list_sum (List.map (fun b => Rmax_list (List.map (fun a => f a b) la)) lb).
-Proof.
-  rewrite Rmax_list_le_iff.
-  * intro x. rewrite in_map_iff.
-    intros [x0 [Hlsx Hin]].
-    rewrite <-Hlsx. apply list_sum_le.
-    intro b. apply (Rmax_spec_map la (fun a => f a b) x0 Hin).
-  * now rewrite map_not_nil.
-Qed.
+  Lemma Rmax_list_zero {A} (l : list A) :
+    Rmax_list (List.map (fun x => 0) l) = 0.
+  Proof.
+    induction l.
+    -- simpl ; reflexivity.
+    -- simpl in *. rewrite IHl.
+       replace (Rmax 0 0) with 0.
+       destruct l ; [simpl ; reflexivity | simpl ; reflexivity] .
+       symmetry. apply Rmax_left ; lra.
+  Qed.
 
 
-Lemma Rmax_list_cons_cons (l : list R) (a b : R) :
-  Rmax_list (a :: b :: l) = Rmax a (Rmax_list (b :: l)).
-Proof.
-  constructor.
-Qed.
+  Lemma Rmax_list_ge (l : list R) (r : R) :
+    forall x, In x l -> r <= x -> r <= Rmax_list l.
+  Proof.
+    intros x Hx Hrx.
+    eapply Rle_trans ; eauto.
+    now apply Rmax_spec.
+  Qed.
 
-Lemma Rmax_list_Rmax_swap (l : list R) (a b : R) :
-  Rmax a (Rmax_list (b :: l)) = Rmax b (Rmax_list (a :: l)).
-Proof.
-  induction l.
-  - simpl ; apply Rmax_comm.
-  - do 2 rewrite Rmax_list_cons_cons.
-    do 2 rewrite Rmax_assoc.
-    now rewrite (Rmax_comm _ b).
-Qed.
-
-Lemma Rmax_list_cons (x0 : R)  (l1 l2 : list R) :
-  Permutation l1 l2 -> (Rmax_list l1 = Rmax_list l2) -> Rmax_list (x0 :: l1) = Rmax_list(x0 :: l2).
-Proof.
-  intros Hpl Hrl.
-  case_eq l1.
-  * intro Hl. rewrite Hl in Hpl. set (Permutation_nil Hpl).
-    now rewrite e.
-  * case_eq l2.
-    ++ intro Hl2. rewrite Hl2 in Hpl. symmetry in Hpl. set (Permutation_nil Hpl).
-       now rewrite e.
-    ++ intros r l H r0 l0 H0.
-       rewrite <-H0, <-H. simpl ; rewrite Hrl.
-       now rewrite H0, H.
-Qed.
-
-Lemma Rmax_list_cons_swap (x0 y0 : R)  (l1 l2 : list R) :
-  Permutation l1 l2 -> (Rmax_list l1 = Rmax_list l2) ->
-  Rmax_list (x0 :: y0 :: l1) = Rmax_list(y0 :: x0 :: l2).
-Proof.
-  intros Hpl Hrl.
-  rewrite Rmax_list_cons_cons. rewrite Rmax_list_Rmax_swap.
-  rewrite <-Rmax_list_cons_cons.
-  case_eq l1.
-  * intro Hl. rewrite Hl in Hpl. set (Permutation_nil Hpl).
-    now rewrite e.
-  * case_eq l2.
-    ++ intro Hl2. rewrite Hl2 in Hpl. symmetry in Hpl. set (Permutation_nil Hpl).
-       now rewrite e.
-    ++ intros r l H r0 l0 H0.  rewrite <-H0, <-H. simpl ; rewrite Hrl.
-       now rewrite H0, H.
-Qed.
-
-Global Instance Rmax_list_Proper : Proper (@Permutation R ++> eq) Rmax_list.
-Proof.
-  unfold Proper. intros x y H.
-  apply (@Permutation_ind_bis R (fun a b => Rmax_list a = Rmax_list b)).
-  - simpl ; lra.
-  - intros x0. apply Rmax_list_cons.
-  - intros x0 y0 l l' H0 H1. apply Rmax_list_cons_swap ; trivial.
-  - intros l l' l'' H0 H1 H2 H3. rewrite H1. rewrite <-H3. reflexivity.
-  - assumption.
-Qed.
-
-Definition Rmax_list_map {A} (l : list A) (f : A -> R) := Rmax_list (List.map f l).
-
-Declare Scope rmax_scope.
-Notation "Max_{ l } ( f )" := (Rmax_list (List.map f l)) (at level 50) : rmax_scope.
-
-Open Scope rmax_scope.
-Delimit Scope rmax_scope with rmax.
-
-(* This is very important. *)
-Lemma Rmax_list_map_exist {A} (f : A -> R) (l : list A) :
-  [] <> l -> exists a:A, In a l /\ f a = Max_{l}(f).
-Proof.
-  intro Hne.
-  set (Hmap := Rmax_list_In (List.map f l)).
-  rewrite <-(map_not_nil l f) in Hne.
-  specialize (Hmap Hne).
-  rewrite in_map_iff in Hmap.
-  destruct Hmap as  [a [Hfa Hin]].
-  now exists a.
-Qed.
-
-Lemma exists_in_strengthen_dec {A} (P:A->Prop) l (dec:forall x, {P x} + {~ P x})
-      (ex:exists x, In x l /\ P x) : {x | In x l /\ P x}.
-Proof.
-  induction l; simpl.
-  - elimtype False.
-    destruct ex ; intuition.
-  - destruct (dec a).
-    + exists a ; eauto.
-    + destruct IHl as [x [inx px]].
-      * destruct ex as [x [inx px]].
-        destruct inx.
-        -- congruence.
-        -- eauto.
-      * eauto.
-Qed.
-
-(* This is very important too. *)
-Lemma Rmax_list_map_exist_sig {A} (f : A -> R) {l : list A} :
-  [] <> l -> { a:A | In a l /\ f a = Max_{l}(f)}.
-Proof.
-  intro Hne.
-  apply exists_in_strengthen_dec.
-  - intro x. apply Req_EM_T.
-  - now apply Rmax_list_map_exist.
-Qed.
-
-Definition argmax {A} {l : list A} (hl : [] <> l)(f : A -> R) : A :=
-  proj1_sig (Rmax_list_map_exist_sig f hl).
-
-Lemma argmax_is_max {A} {l : list A} (hl : [] <> l) (f : A->R) :
-  f (argmax hl f) = Max_{l}(f).
-Proof.
-  unfold argmax.
-  destruct (Rmax_list_map_exist_sig f hl).
-  simpl. now destruct a.
-Qed.
-
-Lemma argmax_in_list {A} {l : list A} (hl : [] <> l) (f : A -> R):
-  In (argmax hl f) l.
-Proof.
-  unfold argmax.
-  destruct (Rmax_list_map_exist_sig f hl).
-  simpl. now destruct a.
-Qed.
-
-Global Instance Rmax_eq_Proper {A} {l : list A} (hl : [] <> l) :
-  Proper (pointwise_relation _ eq ++> eq) (@Rmax_list_map A l).
-Proof.
-  unfold Proper, respectful, pointwise_relation.
-  intros f g H.
-  unfold Rmax_list_map.
-  induction l.
-  -- simpl. reflexivity.
-  -- simpl. destruct l.
-     ++ simpl. apply H.
-     ++ simpl. rewrite H. simpl in IHl. rewrite IHl. reflexivity.
-        apply nil_cons.
-Qed.
-
-Lemma Rmax_list_prod_le {A B} (f : A -> B -> R) {la : list A} {lb : list B}
-      (Hla : [] <> la) (Hlb : [] <> lb) :
-  Max_{la}(fun a => Max_{lb} (fun b => f a b)) =
-  Max_{list_prod la lb} (fun ab => f (fst ab) (snd ab)).
-Proof.
-  apply Rle_antisym.
-  ++  rewrite Rmax_list_le_iff.
-      -- intros x Hx. eapply (@Rmax_list_ge _ _ x).
-         ** rewrite in_map_iff in *.
-            destruct Hx as [a [Hx' HInx']].
-            set (Hmax := Rmax_list_map_exist (fun b => f a b) lb).
-            specialize (Hmax Hlb).
-            destruct Hmax as [b Hb].
-            exists (a,b). simpl. split; [now rewrite <-Hx' |].
-            apply in_prod ; trivial; intuition.
-         ** now right.
-      -- now rewrite map_not_nil.
-  ++ rewrite Rmax_list_le_iff.
-     * intros x Hx.
-       rewrite in_map_iff in Hx.
-       destruct Hx as [ab [Hab HInab]].
-       eapply (@Rmax_list_ge _ _ (Rmax_list (List.map (fun b : B => f (fst ab) b) lb))).
-       --- rewrite in_map_iff.
-           exists (fst ab). split ; trivial.
-           setoid_rewrite surjective_pairing in HInab.
-           rewrite in_prod_iff in HInab. destruct HInab ; trivial.
-       --- eapply (Rmax_list_ge _ _ (f (fst ab) (snd ab))).
-           +++ rewrite in_map_iff. exists (snd ab). split ; trivial.
-               setoid_rewrite surjective_pairing in HInab.
-               rewrite in_prod_iff in HInab. destruct HInab ; trivial.
-           +++ rewrite <-Hab. right ; trivial.
-     * rewrite map_not_nil. now apply list_prod_not_nil.
-Qed.
-
-(* There has to be a better way of doing this... *)
-Lemma Rmax_list_prod_le' {A B} (f : A -> B -> R) {la : list A} {lb : list B}
-      (Hla : [] <> la) (Hlb : [] <> lb) :
-   Max_{lb}(fun b => Max_{la} (fun a => f a b))  =
-   Max_{list_prod la lb} (fun ab => f (fst ab) (snd ab)).
-Proof.
-  apply Rle_antisym.
-  ++  rewrite Rmax_list_le_iff.
-      -- intros x Hx. eapply (@Rmax_list_ge _ _ x).
-         ** rewrite in_map_iff in *.
-            destruct Hx as [b [Hx' HInx']].
-            set (Hmax := Rmax_list_map_exist (fun a => f a b) la).
-            specialize (Hmax Hla).
-            destruct Hmax as [a Ha].
-            exists (a,b). simpl. split; [now rewrite <-Hx' |].
-            apply in_prod ; trivial; intuition.
-         ** now right.
-      -- now rewrite map_not_nil.
-  ++ rewrite Rmax_list_le_iff.
-     * intros x Hx.
-       rewrite in_map_iff in Hx.
-       destruct Hx as [ab [Hab HInab]].
-       eapply (@Rmax_list_ge _ _ (Rmax_list (List.map (fun a : A  => f a (snd ab)) la))).
-       --- rewrite in_map_iff.
-           exists (snd ab). split ; trivial.
-           setoid_rewrite surjective_pairing in HInab.
-           rewrite in_prod_iff in HInab. destruct HInab ; trivial.
-       --- eapply (Rmax_list_ge _ _ (f (fst ab) (snd ab))).
-           +++ rewrite in_map_iff. exists (fst ab). split ; trivial.
-               setoid_rewrite surjective_pairing in HInab.
-               rewrite in_prod_iff in HInab. destruct HInab ; trivial.
-           +++ rewrite <-Hab. right ; trivial.
-     * rewrite map_not_nil. now apply list_prod_not_nil.
-Qed.
-
-Lemma Rmax_list_map_comm {A B} (f : A -> B -> R) {la : list A} {lb : list B}
-      (Hla : [] <> la) (Hlb : [] <> lb) :
-  Max_{la}(fun a => Max_{lb} (fun b => f a b)) = Max_{lb}(fun b => Max_{la} (fun a => f a b)) .
-Proof.
-  etransitivity; [|symmetry].
-  - apply Rmax_list_prod_le ; trivial.
-  - apply Rmax_list_prod_le'; trivial.
-Qed.
-
-Lemma Rmax_list_prod_combine {A B} (f : A -> B -> R) {la : list A} {lb : list B}
-      (Hla : [] <> la) (Hlb : [] <> lb) :
-  equivlist (list_prod la lb) (combine la lb) ->
-  Max_{la}(fun a => Max_{lb} (fun b => f a b))  =
-  Max_{combine la lb} (fun ab => f (fst ab) (snd ab)).
-Proof.
-  intros. rewrite <- H.
-  now apply Rmax_list_prod_le.
-Qed.
-
-
-Lemma Rmax_list_minus_le {A} {B : A -> Type} (f g : forall a, B a -> R) (la : forall a, list (B a)):
- forall a:A, (Max_{la a}(f a) - Max_{la a}(g a)) <= Max_{la a}(fun x => f a x - g a x).
-Proof.
-  intro a0.
-  destruct (is_nil_dec (la a0)).
-  - setoid_rewrite e. simpl. lra.
-  - rewrite Rcomplements.Rle_minus_l.
-    rewrite Rmax_list_le_iff. intros x Hin.
-    rewrite in_map_iff in Hin.
-    destruct Hin as [a [Ha Hina]]. rewrite <-Ha.
-    replace (f a0 a) with ((f a0 a - g a0 a) + g a0 a) by ring.
-    apply Rplus_le_compat.
-    -- apply Rmax_spec. rewrite in_map_iff.
-       exists a ; split ; trivial.
-    -- apply Rmax_spec. rewrite in_map_iff.
-       exists a ; split ; trivial.
-    -- rewrite map_not_nil. congruence.
-Qed.
-
-Lemma Rmax_list_map_triangle {A} (f g : A -> R) (l : list A):
-  Max_{ l}(fun a : A => Rabs (f a + g a)) <=
-  Max_{ l}(fun a : A => Rabs (f a)) + (Max_{ l}(fun a : A => Rabs (g a))).
-Proof.
-   destruct (is_nil_dec l).
-  - subst; simpl. lra.
-  - rewrite Rmax_list_le_iff.
-    intros x Hx. rewrite in_map_iff in Hx.
-    destruct Hx as [a [Ha Hina]].
-    rewrite <-Ha.
-    eapply Rle_trans; try apply Rabs_triang.
-    apply Rplus_le_compat; try (apply Rmax_spec; rewrite in_map_iff; exists a; split ; trivial).
-    rewrite map_not_nil.
-    congruence.
-Qed.
-
-Lemma Rmax_list_minus_le_abs {A} (f g : A -> R) (la : list A):
-  Rabs (Max_{la}(f) - Max_{la}(g)) <= Max_{la}(fun a => Rabs(f a - g a)).
-Proof.
-   destruct (is_nil_dec la).
-  - subst; simpl. replace (0-0) with 0 by ring. right. now apply Rabs_R0.
-  - rewrite Rcomplements.Rabs_le_between'.
-    split.
-    -- rewrite Rcomplements.Rle_minus_l.
-       rewrite Rmax_list_le_iff ; [| apply map_not_nil ; congruence].
-       intros x Hin.
-       rewrite in_map_iff in Hin.
-       destruct Hin as [a [Ha Hina]]. rewrite <-Ha.
-       replace (g a) with (f a + (g a - f a)) by ring.
-       apply Rplus_le_compat.
-       --- apply Rmax_spec. rewrite in_map_iff.
-           exists a ; split ; trivial.
-       --- eapply Rle_trans ; first apply Rle_abs.
-           rewrite Rabs_minus_sym. apply Rmax_spec. rewrite in_map_iff.
-           exists a ; split ; trivial.
-    -- rewrite Rmax_list_le_iff ; [| apply map_not_nil ; congruence].
-       intros x Hin.
-       rewrite in_map_iff in Hin.
-       destruct Hin as [a [Ha Hina]]. rewrite <-Ha.
-       replace (f a) with (g a + (f a - g a)) by ring.
-       apply Rplus_le_compat.
-       --- apply Rmax_spec. rewrite in_map_iff.
-           exists a ; split ; trivial.
-       --- eapply Rle_trans ; first apply Rle_abs.
-           rewrite Rabs_minus_sym. apply Rmax_spec. rewrite in_map_iff.
-           exists a ; split ; trivial. apply Rabs_minus_sym.
-Qed.
-
-
-Lemma Rmax_list_minus_le_abs' {A} {B : A -> Type} (f g : forall a, B a -> R) (la : forall a, list (B a)):
- forall a:A, Rabs (Max_{la a}(f a) - Max_{la a}(g a)) <= Max_{la a}(fun x => Rabs(f a x - g a x)).
-Proof.
-  intro a0.
-  destruct (is_nil_dec (la a0)).
-  - setoid_rewrite e. simpl. replace (0-0) with 0 by ring. right. now apply Rabs_R0.
-  - rewrite Rcomplements.Rabs_le_between'.
-    split.
-    -- rewrite Rcomplements.Rle_minus_l.
-       rewrite Rmax_list_le_iff ; [| apply map_not_nil ; congruence].
-       intros x Hin.
-       rewrite in_map_iff in Hin.
-       destruct Hin as [a [Ha Hina]]. rewrite <-Ha.
-       replace (g a0 a) with (f a0 a + (g a0 a - f a0 a)) by ring.
-       apply Rplus_le_compat.
-       --- apply Rmax_spec. rewrite in_map_iff.
-           exists a ; split ; trivial.
-       --- eapply Rle_trans ; first apply Rle_abs.
-           rewrite Rabs_minus_sym. apply Rmax_spec. rewrite in_map_iff.
-           exists a ; split ; trivial.
-    -- rewrite Rmax_list_le_iff ; [| apply map_not_nil ; congruence].
-       intros x Hin.
-       rewrite in_map_iff in Hin.
-       destruct Hin as [a [Ha Hina]]. rewrite <-Ha.
-       replace (f a0 a) with (g a0 a + (f a0 a - g a0 a)) by ring.
-       apply Rplus_le_compat.
-       --- apply Rmax_spec. rewrite in_map_iff.
-           exists a ; split ; trivial.
-       --- eapply Rle_trans ; first apply Rle_abs.
-           rewrite Rabs_minus_sym. apply Rmax_spec. rewrite in_map_iff.
-           exists a ; split ; trivial. apply Rabs_minus_sym.
-Qed.
-
-
-(* max_{x:A} (max_{f:A->B}(g (f a) f)) = max_{f:A->B} (max_{a:map f A} (g (a,f))) *)
-
-Lemma Rmax_list_fun_swap {A B} {lf : list(A -> B)}{la : list A}
-      (g :B -> (A -> B) -> R)
-      (hl : [] <> lf) (hla : [] <> la)  :
-      Max_{la} (fun s => Max_{lf} (fun f => g (f s) f))  =
-      Max_{lf} (fun f => Max_{List.map f la} (fun b => g b f)).
-Proof.
-  rewrite Rmax_list_map_comm; trivial.
-  f_equal. apply map_ext.
-  intros a.
-  now rewrite map_map.
-Qed.
-
-Lemma Rmax_list_le_range {A B} (f : A -> B) (g : B -> R) {la : list A} {lb : list B}
-      (hla : [] <> la)
-      (hf : forall {a}, In a la -> In (f a) lb) :
-  Max_{la} (fun a => g(f a)) <= Max_{lb} (fun b => g b).
-Proof.
-  rewrite Rmax_list_le_iff.
-  intros x Hx.
-  rewrite in_map_iff in Hx.
-  -- destruct Hx as [a [Ha Hina]].
-     eapply Rmax_list_ge.
-     rewrite in_map_iff. exists (f a). split;eauto.
-     now right.
-  -- now rewrite map_not_nil.
-Qed.
-
-Lemma Rmax_list_le_range' {A B} (g : B -> R) lf {lb : list B}
-      (hlf : [] <> lf){a : A}
-      (hfa : forall f, In (f a) lb)  :
-  Max_{lf} (fun f => g(f a)) <= Max_{lb} (fun b => g b).
-Proof.
-  destruct (Rmax_list_map_exist (fun f => g (f a)) lf hlf) as [f [Hf Hinf]].
-  rewrite <-Hinf.
-  eapply Rmax_spec_map. apply hfa.
-Qed.
-
-Lemma Rmax_list_fun_le {A} {la : list A}
-      (f : A -> R) (g : A -> R) :
-      (forall a, f a <= g a) ->
-      Max_{la} (fun a => f a) <= Max_{la} (fun a => g a).
-Proof.
-  intros Hfg.
-  destruct (is_nil_dec la) ; [subst ; simpl ; lra|].
-  assert (n' : [] <> la) by congruence.
-  destruct (Rmax_list_map_exist (fun a => g a) la n') as [a1 [Ha1 Hina1]].
-  destruct (Rmax_list_map_exist (fun a => f a) la n') as [a2 [Ha2 Hina2]].
-  rewrite <-Hina1.
-  rewrite Rmax_list_le_iff.
-  intros x Hx. rewrite in_map_iff in Hx.
-  destruct Hx as [a0 [ha0 hina0]]. rewrite <-ha0.
-  enough (f a0 <= f a2).
-  assert (f a2 <= g a2) by (apply Hfg).
-  enough (g a2 <= g a1).
-  lra.
-  rewrite Hina1. apply Rmax_spec. rewrite in_map_iff. exists a2 ; split ; trivial.
-  rewrite Hina2. apply Rmax_spec. rewrite in_map_iff. exists a0 ; split ; trivial.
-  now rewrite map_not_nil.
-Qed.
-
-Lemma Rmax_list_map_nonneg {A} {la : list A}
-      (f : A -> R):
-      (forall a, 0 <= f a) ->
-      0 <= Max_{la}(fun a => f a).
-Proof.
-  intros Hf.
-  rewrite <-(Rmax_list_zero la).
-  now apply Rmax_list_fun_le.
-Qed.
-
-Lemma Rmax_list_map_transf {A B} (l : list A) (f : A -> R) (f' : B -> R) (g : A -> B) :
- (List.Forall (fun x => f x = f'(g x)) l) -> Max_{l}(f) = Max_{List.map g l}(f').
-Proof.
-  intros H.
-  rewrite Forall_forall in H.
-  rewrite map_map. f_equal.
-  apply List.map_ext_in.
-  assumption.
-Qed.
-
-Lemma fin_fun_bounded {A} (finA : Finite A) (f : A -> R) : {D | forall a, f a <= D}.
-Proof.
-  exists (Max_{@elms _ finA}(f)).
-  intro a.
-  apply Rmax_spec.
-  rewrite in_map_iff.
-  exists a ; split ; trivial.
-  destruct finA ; eauto.
-Qed.
-
-Lemma fin_fun_bounded_Rabs {A} (finA : Finite A) (f : A -> R) : { D | forall a, Rabs(f a) <= D }.
-Proof.
-  exists (Max_{@elms _ finA}(fun x => Rabs (f x))).
-  intros a.
-  apply Rmax_spec.
-  rewrite in_map_iff.
-  exists a.
-  split; trivial.
-  apply finite.
-Qed.
-
-(* Move this to RealAdd. *)
-Lemma Rmax_list_app {A} {l : list A} (a : A) (f : A -> R) (hl : [] <> l) :
-  Rmax_list (map f (l ++ [a])) = Rmax (Rmax_list (map f l)) (f a).
-Proof.
-  rewrite map_app.
-  simpl.
-  assert (Rmax (Rmax_list (map f l)) (f a) = Rmax_list ((f a) :: (map f l))).
-  {
-    simpl. rewrite <-map_not_nil with (f0 := f) in hl.
-    match_destr; intuition.
-    apply Rmax_comm.
-  }
-  rewrite H.
-  now rewrite <-Permutation.Permutation_cons_append.
-Qed.
-
-Lemma Rmax_list_sublist_le {A : Type}(f : A -> R):
-  forall l1 l2 : list A, ([] <> l1) -> sublist l1 l2 -> Rmax_list_map l1 f <= Rmax_list_map l2 f.
-Proof.
-  intros l1 l2 Hl1 Hl2.
-  generalize (sublist_In Hl2); intros.
-  unfold Rmax_list_map.
-  apply Rmax_spec.
-  rewrite in_map_iff.
-  rewrite  <-(map_not_nil) with (f0 := f) (l := l1) in Hl1.
-  generalize (Rmax_list_In _ Hl1); intros .
-  rewrite in_map_iff in H0.
-  destruct H0 as [x [Hx1 Hx2]].
-  exists x; split; trivial; auto.
-Qed.
-
-Lemma Rmax_seq_map_monotone (X : nat -> R):
-  forall n k, (0 < n <= k)%nat  -> Rmax_list_map (seq 0 n) X <= Rmax_list_map (seq 0 k) X.
-Proof.
-  intros n k Hnk.
-  apply Rmax_list_sublist_le.
-  + apply seq_not_nil; now destruct Hnk.
-  + apply sublist_seq_le. destruct Hnk; lia.
-Qed.
-
-Lemma Rmax_list_map_seq_ge (eps : R) {n : nat} (X : nat -> R):
-  (0<n)%nat -> eps <= Rmax_list_map (seq 0 n) X <-> (exists k, (k < n)%nat /\ eps <= X k).
-Proof.
-  intros Hn.
-  split; intros Heps.
-  + unfold Rmax_list_map in Heps.
-    generalize (Rmax_list_map_exist X (seq 0%nat n)); intros.
-    generalize (seq_not_nil n Hn); intros.
-    specialize (H H0).
-    destruct H as [k [Hin Heq]].
-    exists k; intros.
-    rewrite <-Heq in Heps.
-    split; trivial.
-    rewrite in_seq in Hin; now destruct Hin.
-  + destruct Heps as [k1 [Hk1 Heps1]].
+  Lemma Rmax_list_le (l : list R) (r : R) :
+    Rmax_list l <= r -> forall x, In x l -> x <= r.
+  Proof.
+    intros H x Hx.
+    set (Rmax_spec x Hx).
     eapply Rle_trans; eauto.
+  Qed.
+
+
+  Lemma Rmax_list_In (l : list R):
+    ([] <> l) -> In (Rmax_list l) l.
+  Proof.
+    induction l.
+    - simpl ; firstorder.
+    - intros H. simpl in *.
+      destruct l.
+      -- now left.
+      -- assert ([] <> r :: l)  by apply nil_cons.
+         specialize (IHl H0) ; clear H0.
+         destruct (Rle_dec a (Rmax_list (r :: l))).
+         ++ rewrite Rmax_right. now right ; assumption. assumption.
+         ++ rewrite Rmax_left. now left.
+            left ; apply ROrder.not_ge_lt ; assumption.
+  Qed.
+
+  Lemma Rmax_list_lub (l : list R) (r : R):
+    ([] <> l) -> (forall x, In x l -> x <= r) -> Rmax_list l <= r.
+  Proof.
+    intros Hl H.
+    apply H. eapply Rmax_list_In ; auto.
+  Qed.
+
+  Lemma Rmax_list_le_iff {l : list R} (hl : [] <> l) (r : R):
+    Rmax_list l <= r <-> (forall x, In x l -> x <= r)  .
+  Proof.
+    split.
+    apply Rmax_list_le.
+    apply Rmax_list_lub ; auto.
+  Qed.
+
+  Lemma Rmax_list_lt_iff {l : list R} (hl : [] <> l) (r : R):
+    Rmax_list l < r <-> (forall x, In x l -> x < r)  .
+  Proof.
+    split.
+    -- intros Hr x Hx.
+       eapply Rle_lt_trans. eapply Rmax_spec ; eauto. assumption.
+    -- intro H. apply H ; auto. now apply Rmax_list_In.
+  Qed.
+
+  Lemma Rmax_list_incl l1 l2 : nil <> l1 -> incl l1 l2 -> Rmax_list l1 <= Rmax_list l2.
+  Proof.
+    unfold Proper, respectful, incl
+    ; intros.
+    apply Rmax_list_le_iff; trivial.
+    intros.
+    apply Rmax_spec; auto.
+  Qed.
+
+  Global Instance Rmax_list_equivlist : Proper (equivlist ==> eq) Rmax_list.
+  Proof.
+    unfold Proper, respectful; intros x y equivs.
+    destruct x.
+    - symmetry in equivs.
+      apply equivlist_nil in equivs.
+      subst; simpl; trivial.
+    - destruct y.
+      + apply equivlist_nil in equivs.
+        discriminate.
+      + apply equivlist_incls in equivs.
+        destruct equivs.
+        generalize (Rmax_list_incl (r::x) (r0::y)); intros HH1.
+        generalize (Rmax_list_incl (r0::y) (r::x)); intros HH2.
+        cut_to HH1; trivial; try discriminate.
+        cut_to HH2; trivial; try discriminate.
+        lra.
+  Qed.
+
+  Lemma Rmax_list_sum {A B} {la : list A} (lb : list B) (f : A -> B -> R) (Hla : [] <> la):
+    Rmax_list (List.map (fun a => list_sum (List.map (f a) lb)) la) <=
+    list_sum (List.map (fun b => Rmax_list (List.map (fun a => f a b) la)) lb).
+  Proof.
+    rewrite Rmax_list_le_iff.
+    * intro x. rewrite in_map_iff.
+      intros [x0 [Hlsx Hin]].
+      rewrite <-Hlsx. apply list_sum_le.
+      intro b. apply (Rmax_spec_map la (fun a => f a b) x0 Hin).
+    * now rewrite map_not_nil.
+  Qed.
+
+
+  Lemma Rmax_list_cons_cons (l : list R) (a b : R) :
+    Rmax_list (a :: b :: l) = Rmax a (Rmax_list (b :: l)).
+  Proof.
+    constructor.
+  Qed.
+
+  Lemma Rmax_list_Rmax_swap (l : list R) (a b : R) :
+    Rmax a (Rmax_list (b :: l)) = Rmax b (Rmax_list (a :: l)).
+  Proof.
+    induction l.
+    - simpl ; apply Rmax_comm.
+    - do 2 rewrite Rmax_list_cons_cons.
+      do 2 rewrite Rmax_assoc.
+      now rewrite (Rmax_comm _ b).
+  Qed.
+
+  Lemma Rmax_list_cons (x0 : R)  (l1 l2 : list R) :
+    Permutation l1 l2 -> (Rmax_list l1 = Rmax_list l2) -> Rmax_list (x0 :: l1) = Rmax_list(x0 :: l2).
+  Proof.
+    intros Hpl Hrl.
+    case_eq l1.
+    * intro Hl. rewrite Hl in Hpl. set (Permutation_nil Hpl).
+      now rewrite e.
+    * case_eq l2.
+      ++ intro Hl2. rewrite Hl2 in Hpl. symmetry in Hpl. set (Permutation_nil Hpl).
+         now rewrite e.
+      ++ intros r l H r0 l0 H0.
+         rewrite <-H0, <-H. simpl ; rewrite Hrl.
+         now rewrite H0, H.
+  Qed.
+
+  Lemma Rmax_list_cons_swap (x0 y0 : R)  (l1 l2 : list R) :
+    Permutation l1 l2 -> (Rmax_list l1 = Rmax_list l2) ->
+    Rmax_list (x0 :: y0 :: l1) = Rmax_list(y0 :: x0 :: l2).
+  Proof.
+    intros Hpl Hrl.
+    rewrite Rmax_list_cons_cons. rewrite Rmax_list_Rmax_swap.
+    rewrite <-Rmax_list_cons_cons.
+    case_eq l1.
+    * intro Hl. rewrite Hl in Hpl. set (Permutation_nil Hpl).
+      now rewrite e.
+    * case_eq l2.
+      ++ intro Hl2. rewrite Hl2 in Hpl. symmetry in Hpl. set (Permutation_nil Hpl).
+         now rewrite e.
+      ++ intros r l H r0 l0 H0.  rewrite <-H0, <-H. simpl ; rewrite Hrl.
+         now rewrite H0, H.
+  Qed.
+
+  Global Instance Rmax_list_Proper : Proper (@Permutation R ++> eq) Rmax_list.
+  Proof.
+    unfold Proper. intros x y H.
+    apply (@Permutation_ind_bis R (fun a b => Rmax_list a = Rmax_list b)).
+    - simpl ; lra.
+    - intros x0. apply Rmax_list_cons.
+    - intros x0 y0 l l' H0 H1. apply Rmax_list_cons_swap ; trivial.
+    - intros l l' l'' H0 H1 H2 H3. rewrite H1. rewrite <-H3. reflexivity.
+    - assumption.
+  Qed.
+
+  Definition Rmax_list_map {A} (l : list A) (f : A -> R) := Rmax_list (List.map f l).
+
+  Declare Scope rmax_scope.
+  Notation "Max_{ l } ( f )" := (Rmax_list (List.map f l)) (at level 50) : rmax_scope.
+
+  Open Scope rmax_scope.
+  Delimit Scope rmax_scope with rmax.
+
+  (* This is very important. *)
+  Lemma Rmax_list_map_exist {A} (f : A -> R) (l : list A) :
+    [] <> l -> exists a:A, In a l /\ f a = Max_{l}(f).
+  Proof.
+    intro Hne.
+    set (Hmap := Rmax_list_In (List.map f l)).
+    rewrite <-(map_not_nil l f) in Hne.
+    specialize (Hmap Hne).
+    rewrite in_map_iff in Hmap.
+    destruct Hmap as  [a [Hfa Hin]].
+    now exists a.
+  Qed.
+
+  Lemma exists_in_strengthen_dec {A} (P:A->Prop) l (dec:forall x, {P x} + {~ P x})
+        (ex:exists x, In x l /\ P x) : {x | In x l /\ P x}.
+  Proof.
+    induction l; simpl.
+    - elimtype False.
+      destruct ex ; intuition.
+    - destruct (dec a).
+      + exists a ; eauto.
+      + destruct IHl as [x [inx px]].
+        * destruct ex as [x [inx px]].
+          destruct inx.
+          -- congruence.
+          -- eauto.
+        * eauto.
+  Qed.
+
+  (* This is very important too. *)
+  Lemma Rmax_list_map_exist_sig {A} (f : A -> R) {l : list A} :
+    [] <> l -> { a:A | In a l /\ f a = Max_{l}(f)}.
+  Proof.
+    intro Hne.
+    apply exists_in_strengthen_dec.
+    - intro x. apply Req_EM_T.
+    - now apply Rmax_list_map_exist.
+  Qed.
+
+  Definition argmax {A} {l : list A} (hl : [] <> l)(f : A -> R) : A :=
+    proj1_sig (Rmax_list_map_exist_sig f hl).
+
+  Lemma argmax_is_max {A} {l : list A} (hl : [] <> l) (f : A->R) :
+    f (argmax hl f) = Max_{l}(f).
+  Proof.
+    unfold argmax.
+    destruct (Rmax_list_map_exist_sig f hl).
+    simpl. now destruct a.
+  Qed.
+
+  Lemma argmax_in_list {A} {l : list A} (hl : [] <> l) (f : A -> R):
+    In (argmax hl f) l.
+  Proof.
+    unfold argmax.
+    destruct (Rmax_list_map_exist_sig f hl).
+    simpl. now destruct a.
+  Qed.
+
+  Global Instance Rmax_eq_Proper {A} {l : list A} (hl : [] <> l) :
+    Proper (pointwise_relation _ eq ++> eq) (@Rmax_list_map A l).
+  Proof.
+    unfold Proper, respectful, pointwise_relation.
+    intros f g H.
     unfold Rmax_list_map.
-    apply Rmax_spec. rewrite in_map_iff.
-    exists k1; split; trivial.
-    rewrite in_seq; split; lia.
-Qed.
+    induction l.
+    -- simpl. reflexivity.
+    -- simpl. destruct l.
+       ++ simpl. apply H.
+       ++ simpl. rewrite H. simpl in IHl. rewrite IHl. reflexivity.
+          apply nil_cons.
+  Qed.
 
-Lemma Rmax_list_map_seq_lt (eps : R) {n : nat} (X : nat -> R):
- (0 < n)%nat -> Rmax_list (map X (seq 0 n)) < eps <-> (forall k, (k < n)%nat -> X k < eps).
-Proof.
-  intros Hn. split.
-  + intros Heps k Hk.
-    rewrite Rmax_list_lt_iff in Heps; try (apply map_not_nil; now apply seq_not_nil).
-    apply Heps.
-    rewrite in_map_iff.
-    exists k; split; trivial.
-    rewrite in_seq; lia.
-  + intros Heps.
-    rewrite Rmax_list_lt_iff; try (apply map_not_nil; now apply seq_not_nil).
+  Lemma Rmax_list_prod_le {A B} (f : A -> B -> R) {la : list A} {lb : list B}
+        (Hla : [] <> la) (Hlb : [] <> lb) :
+    Max_{la}(fun a => Max_{lb} (fun b => f a b)) =
+    Max_{list_prod la lb} (fun ab => f (fst ab) (snd ab)).
+  Proof.
+    apply Rle_antisym.
+    ++  rewrite Rmax_list_le_iff.
+    -- intros x Hx. eapply (@Rmax_list_ge _ _ x).
+       ** rewrite in_map_iff in *.
+          destruct Hx as [a [Hx' HInx']].
+          set (Hmax := Rmax_list_map_exist (fun b => f a b) lb).
+          specialize (Hmax Hlb).
+          destruct Hmax as [b Hb].
+          exists (a,b). simpl. split; [now rewrite <-Hx' |].
+          apply in_prod ; trivial; intuition.
+       ** now right.
+    -- now rewrite map_not_nil.
+       ++ rewrite Rmax_list_le_iff.
+    * intros x Hx.
+      rewrite in_map_iff in Hx.
+      destruct Hx as [ab [Hab HInab]].
+      eapply (@Rmax_list_ge _ _ (Rmax_list (List.map (fun b : B => f (fst ab) b) lb))).
+      --- rewrite in_map_iff.
+          exists (fst ab). split ; trivial.
+          setoid_rewrite surjective_pairing in HInab.
+          rewrite in_prod_iff in HInab. destruct HInab ; trivial.
+      --- eapply (Rmax_list_ge _ _ (f (fst ab) (snd ab))).
+          +++ rewrite in_map_iff. exists (snd ab). split ; trivial.
+              setoid_rewrite surjective_pairing in HInab.
+              rewrite in_prod_iff in HInab. destruct HInab ; trivial.
+          +++ rewrite <-Hab. right ; trivial.
+    * rewrite map_not_nil. now apply list_prod_not_nil.
+  Qed.
+
+  (* There has to be a better way of doing this... *)
+  Lemma Rmax_list_prod_le' {A B} (f : A -> B -> R) {la : list A} {lb : list B}
+        (Hla : [] <> la) (Hlb : [] <> lb) :
+    Max_{lb}(fun b => Max_{la} (fun a => f a b))  =
+    Max_{list_prod la lb} (fun ab => f (fst ab) (snd ab)).
+  Proof.
+    apply Rle_antisym.
+    ++  rewrite Rmax_list_le_iff.
+    -- intros x Hx. eapply (@Rmax_list_ge _ _ x).
+       ** rewrite in_map_iff in *.
+          destruct Hx as [b [Hx' HInx']].
+          set (Hmax := Rmax_list_map_exist (fun a => f a b) la).
+          specialize (Hmax Hla).
+          destruct Hmax as [a Ha].
+          exists (a,b). simpl. split; [now rewrite <-Hx' |].
+          apply in_prod ; trivial; intuition.
+       ** now right.
+    -- now rewrite map_not_nil.
+       ++ rewrite Rmax_list_le_iff.
+    * intros x Hx.
+      rewrite in_map_iff in Hx.
+      destruct Hx as [ab [Hab HInab]].
+      eapply (@Rmax_list_ge _ _ (Rmax_list (List.map (fun a : A  => f a (snd ab)) la))).
+      --- rewrite in_map_iff.
+          exists (snd ab). split ; trivial.
+          setoid_rewrite surjective_pairing in HInab.
+          rewrite in_prod_iff in HInab. destruct HInab ; trivial.
+      --- eapply (Rmax_list_ge _ _ (f (fst ab) (snd ab))).
+          +++ rewrite in_map_iff. exists (fst ab). split ; trivial.
+              setoid_rewrite surjective_pairing in HInab.
+              rewrite in_prod_iff in HInab. destruct HInab ; trivial.
+          +++ rewrite <-Hab. right ; trivial.
+    * rewrite map_not_nil. now apply list_prod_not_nil.
+  Qed.
+
+  Lemma Rmax_list_map_comm {A B} (f : A -> B -> R) {la : list A} {lb : list B}
+        (Hla : [] <> la) (Hlb : [] <> lb) :
+    Max_{la}(fun a => Max_{lb} (fun b => f a b)) = Max_{lb}(fun b => Max_{la} (fun a => f a b)) .
+  Proof.
+    etransitivity; [|symmetry].
+    - apply Rmax_list_prod_le ; trivial.
+    - apply Rmax_list_prod_le'; trivial.
+  Qed.
+
+  Lemma Rmax_list_prod_combine {A B} (f : A -> B -> R) {la : list A} {lb : list B}
+        (Hla : [] <> la) (Hlb : [] <> lb) :
+    equivlist (list_prod la lb) (combine la lb) ->
+    Max_{la}(fun a => Max_{lb} (fun b => f a b))  =
+    Max_{combine la lb} (fun ab => f (fst ab) (snd ab)).
+  Proof.
+    intros. rewrite <- H.
+    now apply Rmax_list_prod_le.
+  Qed.
+
+
+  Lemma Rmax_list_minus_le {A} {B : A -> Type} (f g : forall a, B a -> R) (la : forall a, list (B a)):
+    forall a:A, (Max_{la a}(f a) - Max_{la a}(g a)) <= Max_{la a}(fun x => f a x - g a x).
+  Proof.
+    intro a0.
+    destruct (is_nil_dec (la a0)).
+    - setoid_rewrite e. simpl. lra.
+    - rewrite Rcomplements.Rle_minus_l.
+      rewrite Rmax_list_le_iff. intros x Hin.
+      rewrite in_map_iff in Hin.
+      destruct Hin as [a [Ha Hina]]. rewrite <-Ha.
+      replace (f a0 a) with ((f a0 a - g a0 a) + g a0 a) by ring.
+      apply Rplus_le_compat.
+      -- apply Rmax_spec. rewrite in_map_iff.
+         exists a ; split ; trivial.
+      -- apply Rmax_spec. rewrite in_map_iff.
+         exists a ; split ; trivial.
+      -- rewrite map_not_nil. congruence.
+  Qed.
+
+  Lemma Rmax_list_map_triangle {A} (f g : A -> R) (l : list A):
+    Max_{ l}(fun a : A => Rabs (f a + g a)) <=
+    Max_{ l}(fun a : A => Rabs (f a)) + (Max_{ l}(fun a : A => Rabs (g a))).
+  Proof.
+    destruct (is_nil_dec l).
+    - subst; simpl. lra.
+    - rewrite Rmax_list_le_iff.
+      intros x Hx. rewrite in_map_iff in Hx.
+      destruct Hx as [a [Ha Hina]].
+      rewrite <-Ha.
+      eapply Rle_trans; try apply Rabs_triang.
+      apply Rplus_le_compat; try (apply Rmax_spec; rewrite in_map_iff; exists a; split ; trivial).
+      rewrite map_not_nil.
+      congruence.
+  Qed.
+
+  Lemma Rmax_list_minus_le_abs {A} (f g : A -> R) (la : list A):
+    Rabs (Max_{la}(f) - Max_{la}(g)) <= Max_{la}(fun a => Rabs(f a - g a)).
+  Proof.
+    destruct (is_nil_dec la).
+    - subst; simpl. replace (0-0) with 0 by ring. right. now apply Rabs_R0.
+    - rewrite Rcomplements.Rabs_le_between'.
+      split.
+      -- rewrite Rcomplements.Rle_minus_l.
+         rewrite Rmax_list_le_iff ; [| apply map_not_nil ; congruence].
+         intros x Hin.
+         rewrite in_map_iff in Hin.
+         destruct Hin as [a [Ha Hina]]. rewrite <-Ha.
+         replace (g a) with (f a + (g a - f a)) by ring.
+         apply Rplus_le_compat.
+         --- apply Rmax_spec. rewrite in_map_iff.
+             exists a ; split ; trivial.
+         --- eapply Rle_trans ; first apply Rle_abs.
+             rewrite Rabs_minus_sym. apply Rmax_spec. rewrite in_map_iff.
+             exists a ; split ; trivial.
+      -- rewrite Rmax_list_le_iff ; [| apply map_not_nil ; congruence].
+         intros x Hin.
+         rewrite in_map_iff in Hin.
+         destruct Hin as [a [Ha Hina]]. rewrite <-Ha.
+         replace (f a) with (g a + (f a - g a)) by ring.
+         apply Rplus_le_compat.
+         --- apply Rmax_spec. rewrite in_map_iff.
+             exists a ; split ; trivial.
+         --- eapply Rle_trans ; first apply Rle_abs.
+             rewrite Rabs_minus_sym. apply Rmax_spec. rewrite in_map_iff.
+             exists a ; split ; trivial. apply Rabs_minus_sym.
+  Qed.
+
+
+  Lemma Rmax_list_minus_le_abs' {A} {B : A -> Type} (f g : forall a, B a -> R) (la : forall a, list (B a)):
+    forall a:A, Rabs (Max_{la a}(f a) - Max_{la a}(g a)) <= Max_{la a}(fun x => Rabs(f a x - g a x)).
+  Proof.
+    intro a0.
+    destruct (is_nil_dec (la a0)).
+    - setoid_rewrite e. simpl. replace (0-0) with 0 by ring. right. now apply Rabs_R0.
+    - rewrite Rcomplements.Rabs_le_between'.
+      split.
+      -- rewrite Rcomplements.Rle_minus_l.
+         rewrite Rmax_list_le_iff ; [| apply map_not_nil ; congruence].
+         intros x Hin.
+         rewrite in_map_iff in Hin.
+         destruct Hin as [a [Ha Hina]]. rewrite <-Ha.
+         replace (g a0 a) with (f a0 a + (g a0 a - f a0 a)) by ring.
+         apply Rplus_le_compat.
+         --- apply Rmax_spec. rewrite in_map_iff.
+             exists a ; split ; trivial.
+         --- eapply Rle_trans ; first apply Rle_abs.
+             rewrite Rabs_minus_sym. apply Rmax_spec. rewrite in_map_iff.
+             exists a ; split ; trivial.
+      -- rewrite Rmax_list_le_iff ; [| apply map_not_nil ; congruence].
+         intros x Hin.
+         rewrite in_map_iff in Hin.
+         destruct Hin as [a [Ha Hina]]. rewrite <-Ha.
+         replace (f a0 a) with (g a0 a + (f a0 a - g a0 a)) by ring.
+         apply Rplus_le_compat.
+         --- apply Rmax_spec. rewrite in_map_iff.
+             exists a ; split ; trivial.
+         --- eapply Rle_trans ; first apply Rle_abs.
+             rewrite Rabs_minus_sym. apply Rmax_spec. rewrite in_map_iff.
+             exists a ; split ; trivial. apply Rabs_minus_sym.
+  Qed.
+
+
+  (* max_{x:A} (max_{f:A->B}(g (f a) f)) = max_{f:A->B} (max_{a:map f A} (g (a,f))) *)
+
+  Lemma Rmax_list_fun_swap {A B} {lf : list(A -> B)}{la : list A}
+        (g :B -> (A -> B) -> R)
+        (hl : [] <> lf) (hla : [] <> la)  :
+    Max_{la} (fun s => Max_{lf} (fun f => g (f s) f))  =
+    Max_{lf} (fun f => Max_{List.map f la} (fun b => g b f)).
+  Proof.
+    rewrite Rmax_list_map_comm; trivial.
+    f_equal. apply map_ext.
+    intros a.
+    now rewrite map_map.
+  Qed.
+
+  Lemma Rmax_list_le_range {A B} (f : A -> B) (g : B -> R) {la : list A} {lb : list B}
+        (hla : [] <> la)
+        (hf : forall {a}, In a la -> In (f a) lb) :
+    Max_{la} (fun a => g(f a)) <= Max_{lb} (fun b => g b).
+  Proof.
+    rewrite Rmax_list_le_iff.
+    intros x Hx.
+    rewrite in_map_iff in Hx.
+    -- destruct Hx as [a [Ha Hina]].
+       eapply Rmax_list_ge.
+       rewrite in_map_iff. exists (f a). split;eauto.
+       now right.
+    -- now rewrite map_not_nil.
+  Qed.
+
+  Lemma Rmax_list_le_range' {A B} (g : B -> R) lf {lb : list B}
+        (hlf : [] <> lf){a : A}
+        (hfa : forall f, In (f a) lb)  :
+    Max_{lf} (fun f => g(f a)) <= Max_{lb} (fun b => g b).
+  Proof.
+    destruct (Rmax_list_map_exist (fun f => g (f a)) lf hlf) as [f [Hf Hinf]].
+    rewrite <-Hinf.
+    eapply Rmax_spec_map. apply hfa.
+  Qed.
+
+  Lemma Rmax_list_fun_le {A} {la : list A}
+        (f : A -> R) (g : A -> R) :
+    (forall a, f a <= g a) ->
+    Max_{la} (fun a => f a) <= Max_{la} (fun a => g a).
+  Proof.
+    intros Hfg.
+    destruct (is_nil_dec la) ; [subst ; simpl ; lra|].
+    assert (n' : [] <> la) by congruence.
+    destruct (Rmax_list_map_exist (fun a => g a) la n') as [a1 [Ha1 Hina1]].
+    destruct (Rmax_list_map_exist (fun a => f a) la n') as [a2 [Ha2 Hina2]].
+    rewrite <-Hina1.
+    rewrite Rmax_list_le_iff.
     intros x Hx. rewrite in_map_iff in Hx.
-    destruct Hx as [k [Hk1 Hk2]].
-    rewrite <-Hk1. apply Heps.
-    rewrite in_seq in Hk2. now destruct Hk2.
-Qed.
+    destruct Hx as [a0 [ha0 hina0]]. rewrite <-ha0.
+    enough (f a0 <= f a2).
+    assert (f a2 <= g a2) by (apply Hfg).
+    enough (g a2 <= g a1).
+    lra.
+    rewrite Hina1. apply Rmax_spec. rewrite in_map_iff. exists a2 ; split ; trivial.
+    rewrite Hina2. apply Rmax_spec. rewrite in_map_iff. exists a0 ; split ; trivial.
+    now rewrite map_not_nil.
+  Qed.
+
+  Lemma Rmax_list_map_nonneg {A} {la : list A}
+        (f : A -> R):
+    (forall a, 0 <= f a) ->
+    0 <= Max_{la}(fun a => f a).
+  Proof.
+    intros Hf.
+    rewrite <-(Rmax_list_zero la).
+    now apply Rmax_list_fun_le.
+  Qed.
+
+  Lemma Rmax_list_map_transf {A B} (l : list A) (f : A -> R) (f' : B -> R) (g : A -> B) :
+    (List.Forall (fun x => f x = f'(g x)) l) -> Max_{l}(f) = Max_{List.map g l}(f').
+  Proof.
+    intros H.
+    rewrite Forall_forall in H.
+    rewrite map_map. f_equal.
+    apply List.map_ext_in.
+    assumption.
+  Qed.
+
+  Lemma fin_fun_bounded {A} (finA : Finite A) (f : A -> R) : {D | forall a, f a <= D}.
+  Proof.
+    exists (Max_{@elms _ finA}(f)).
+    intro a.
+    apply Rmax_spec.
+    rewrite in_map_iff.
+    exists a ; split ; trivial.
+    destruct finA ; eauto.
+  Qed.
+
+  Lemma fin_fun_bounded_Rabs {A} (finA : Finite A) (f : A -> R) : { D | forall a, Rabs(f a) <= D }.
+  Proof.
+    exists (Max_{@elms _ finA}(fun x => Rabs (f x))).
+    intros a.
+    apply Rmax_spec.
+    rewrite in_map_iff.
+    exists a.
+    split; trivial.
+    apply finite.
+  Qed.
+
+  (* Move this to RealAdd. *)
+  Lemma Rmax_list_app {A} {l : list A} (a : A) (f : A -> R) (hl : [] <> l) :
+    Rmax_list (map f (l ++ [a])) = Rmax (Rmax_list (map f l)) (f a).
+  Proof.
+    rewrite map_app.
+    simpl.
+    assert (Rmax (Rmax_list (map f l)) (f a) = Rmax_list ((f a) :: (map f l))).
+    {
+      simpl. rewrite <-map_not_nil with (f0 := f) in hl.
+      match_destr; intuition.
+      apply Rmax_comm.
+    }
+    rewrite H.
+    now rewrite <-Permutation.Permutation_cons_append.
+  Qed.
+
+  Lemma Rmax_list_sublist_le {A : Type}(f : A -> R):
+    forall l1 l2 : list A, ([] <> l1) -> sublist l1 l2 -> Rmax_list_map l1 f <= Rmax_list_map l2 f.
+  Proof.
+    intros l1 l2 Hl1 Hl2.
+    generalize (sublist_In Hl2); intros.
+    unfold Rmax_list_map.
+    apply Rmax_spec.
+    rewrite in_map_iff.
+    rewrite  <-(map_not_nil) with (f0 := f) (l := l1) in Hl1.
+    generalize (Rmax_list_In _ Hl1); intros .
+    rewrite in_map_iff in H0.
+    destruct H0 as [x [Hx1 Hx2]].
+    exists x; split; trivial; auto.
+  Qed.
+
+  Lemma Rmax_seq_map_monotone (X : nat -> R):
+    forall n k, (0 < n <= k)%nat  -> Rmax_list_map (seq 0 n) X <= Rmax_list_map (seq 0 k) X.
+  Proof.
+    intros n k Hnk.
+    apply Rmax_list_sublist_le.
+    + apply seq_not_nil; now destruct Hnk.
+    + apply sublist_seq_le. destruct Hnk; lia.
+  Qed.
+
+  Lemma Rmax_list_map_seq_ge (eps : R) {n : nat} (X : nat -> R):
+    (0<n)%nat -> eps <= Rmax_list_map (seq 0 n) X <-> (exists k, (k < n)%nat /\ eps <= X k).
+  Proof.
+    intros Hn.
+    split; intros Heps.
+    + unfold Rmax_list_map in Heps.
+      generalize (Rmax_list_map_exist X (seq 0%nat n)); intros.
+      generalize (seq_not_nil n Hn); intros.
+      specialize (H H0).
+      destruct H as [k [Hin Heq]].
+      exists k; intros.
+      rewrite <-Heq in Heps.
+      split; trivial.
+      rewrite in_seq in Hin; now destruct Hin.
+    + destruct Heps as [k1 [Hk1 Heps1]].
+      eapply Rle_trans; eauto.
+      unfold Rmax_list_map.
+      apply Rmax_spec. rewrite in_map_iff.
+      exists k1; split; trivial.
+      rewrite in_seq; split; lia.
+  Qed.
+
+  Lemma Rmax_list_map_seq_lt (eps : R) {n : nat} (X : nat -> R):
+    (0 < n)%nat -> Rmax_list (map X (seq 0 n)) < eps <-> (forall k, (k < n)%nat -> X k < eps).
+  Proof.
+    intros Hn. split.
+    + intros Heps k Hk.
+      rewrite Rmax_list_lt_iff in Heps; try (apply map_not_nil; now apply seq_not_nil).
+      apply Heps.
+      rewrite in_map_iff.
+      exists k; split; trivial.
+      rewrite in_seq; lia.
+    + intros Heps.
+      rewrite Rmax_list_lt_iff; try (apply map_not_nil; now apply seq_not_nil).
+      intros x Hx. rewrite in_map_iff in Hx.
+      destruct Hx as [k [Hk1 Hk2]].
+      rewrite <-Hk1. apply Heps.
+      rewrite in_seq in Hk2. now destruct Hk2.
+  Qed.
 
 
-Lemma Rmax_list_map_succ eps (Y : nat -> R):
-  forall n, (0 < n)%nat -> (Rmax_list_map (seq 0 (S n)) Y< eps)
-       -> (Rmax_list_map (seq 0 n) Y < eps).
-Proof.
-  intros n Hz Hn.
-  rewrite seq_S in Hn.
-  unfold Rmax_list_map in Hn. rewrite Rmax_list_app in Hn; try (apply seq_not_nil; lia).
-  eapply Rle_lt_trans; try (apply Hn).
-  apply Rmax_l.
-Qed.
+  Lemma Rmax_list_map_succ eps (Y : nat -> R):
+    forall n, (0 < n)%nat -> (Rmax_list_map (seq 0 (S n)) Y< eps)
+              -> (Rmax_list_map (seq 0 n) Y < eps).
+  Proof.
+    intros n Hz Hn.
+    rewrite seq_S in Hn.
+    unfold Rmax_list_map in Hn. rewrite Rmax_list_app in Hn; try (apply seq_not_nil; lia).
+    eapply Rle_lt_trans; try (apply Hn).
+    apply Rmax_l.
+  Qed.
 
 
   Lemma Rmax_list_map_seq_ext_loc (f g : nat -> R) (j : nat) :
@@ -3036,8 +3036,8 @@ Qed.
   Qed.
 
   Lemma Rmax_list_seq_bounded_nat (n : nat) (g : nat -> R) :
-      Rmax_list_map (seq 0 n) g =
-      Rmax_list_map  (bounded_nat_finite_list n) (fun x => g (proj1_sig x)).
+    Rmax_list_map (seq 0 n) g =
+    Rmax_list_map  (bounded_nat_finite_list n) (fun x => g (proj1_sig x)).
   Proof.
     unfold Rmax_list_map. symmetry.
     rewrite <-map_map.
@@ -3137,9 +3137,9 @@ Qed.
 Lemma list_sum_sum_n (l:list R) :
   list_sum l =
   @Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun i:nat => match nth_error l i with
-                                                     | Some x => x
-                                                     | None => 0%R
-                                                     end) (length l).
+                                                          | Some x => x
+                                                          | None => 0%R
+                                                          end) (length l).
 Proof.
   rewrite sum_n_fold_right_seq.
   rewrite  list_sum_fold_right.
@@ -3187,7 +3187,7 @@ Proof.
     lia.
 Qed.
 
-                                   
+
 Lemma sum_n_pos_incr a n1 n2 : (forall n, (n1 < n <= n2)%nat -> 0 <= a n) -> 
                                (n1 <= n2)%nat -> sum_n a n1 <= sum_n a n2.
 Proof.
@@ -3363,325 +3363,325 @@ Proof.
   apply Rbar_mult_1_r.
 Qed.
 
-  Lemma Rbar_mult_mult_pos (c : posreal) (l : Rbar) :
-    Rbar_mult_pos l c = Rbar_mult l c.
-  Proof.
-    assert (0 < c) as cpos by apply cond_pos.
-    unfold Rbar_mult_pos.
-    unfold Rbar_mult, Rbar_mult'.
-    destruct l.
-    - trivial.
-    - match_case; intros; match_case_in H; intros; try lra; rewrite H0 in H; 
-        match_case_in H; intros; try lra; rewrite H1 in H; [now invcs H| congruence].
-    - match_case; intros; match_case_in H; intros; try lra; rewrite H0 in H; 
-        match_case_in H; intros; try lra; rewrite H1 in H; [now invcs H| congruence].
-  Qed.
+Lemma Rbar_mult_mult_pos (c : posreal) (l : Rbar) :
+  Rbar_mult_pos l c = Rbar_mult l c.
+Proof.
+  assert (0 < c) as cpos by apply cond_pos.
+  unfold Rbar_mult_pos.
+  unfold Rbar_mult, Rbar_mult'.
+  destruct l.
+  - trivial.
+  - match_case; intros; match_case_in H; intros; try lra; rewrite H0 in H; 
+      match_case_in H; intros; try lra; rewrite H1 in H; [now invcs H| congruence].
+  - match_case; intros; match_case_in H; intros; try lra; rewrite H0 in H; 
+      match_case_in H; intros; try lra; rewrite H1 in H; [now invcs H| congruence].
+Qed.
 
 
-  Lemma Rbar_div_div_pos (a:posreal) (x: Rbar) :
-    Rbar_div x a = Rbar_div_pos x a.
-  Proof.
-    unfold Rbar_div, Rbar_div_pos.
-    assert (0 < / a).
-    apply Rinv_0_lt_compat.
-    apply cond_pos.
-    destruct x.
-    - simpl.
-      now unfold Rdiv.
-    - unfold Rbar_div, Rbar_div_pos.
-      simpl.
-      destruct (Rle_dec 0 (/ a)); [| lra].
-      destruct (Rle_lt_or_eq_dec 0 (/ a) r); [|lra].
-      trivial.
-    - unfold Rbar_div, Rbar_div_pos.
-      simpl.
-      destruct (Rle_dec 0 (/ a)); [| lra].
-      destruct (Rle_lt_or_eq_dec 0 (/ a) r); [|lra].
-      trivial.
-  Qed.
+Lemma Rbar_div_div_pos (a:posreal) (x: Rbar) :
+  Rbar_div x a = Rbar_div_pos x a.
+Proof.
+  unfold Rbar_div, Rbar_div_pos.
+  assert (0 < / a).
+  apply Rinv_0_lt_compat.
+  apply cond_pos.
+  destruct x.
+  - simpl.
+    now unfold Rdiv.
+  - unfold Rbar_div, Rbar_div_pos.
+    simpl.
+    destruct (Rle_dec 0 (/ a)); [| lra].
+    destruct (Rle_lt_or_eq_dec 0 (/ a) r); [|lra].
+    trivial.
+  - unfold Rbar_div, Rbar_div_pos.
+    simpl.
+    destruct (Rle_dec 0 (/ a)); [| lra].
+    destruct (Rle_lt_or_eq_dec 0 (/ a) r); [|lra].
+    trivial.
+Qed.
 
-  Lemma Rbar_mult_div_pos (x : Rbar) (c : posreal) :
-    Rbar_mult x (/ c) = Rbar_div_pos x c.
-  Proof.
-    rewrite <- Rbar_div_div_pos.
-    destruct x; now simpl.
-  Qed.
+Lemma Rbar_mult_div_pos (x : Rbar) (c : posreal) :
+  Rbar_mult x (/ c) = Rbar_div_pos x c.
+Proof.
+  rewrite <- Rbar_div_div_pos.
+  destruct x; now simpl.
+Qed.
 
-  Lemma Rbar_div_mult_pos (c : posreal) (l : Rbar) :
-    Rbar_mult_pos (Rbar_div l c) c = l.
-  Proof.
-    assert (c > 0) as cpos by apply cond_pos.
-    assert ((pos c) <> 0) as cneq0 by lra.
-    assert (/c > 0) by apply Rinv_0_lt_compat, cpos.
-    unfold Rbar_div; simpl.
-    unfold Rbar_mult, Rbar_mult', Rbar_mult_pos.
-    destruct l.
-    - f_equal; field; trivial.
-    - case (Rle_dec 0 (/ c)) ; intros; try lra.
-      match_case; intros; match_case_in H0; intros; match_case_in H1; intros; 
-        try lra; rewrite H2 in H0; invcs H0.
-    - case (Rle_dec 0 (/ c)) ; intros; try lra.
-      match_case; intros; match_case_in H0; intros; match_case_in H1; intros; 
-        try lra; rewrite H2 in H0; invcs H0.
-  Qed.
+Lemma Rbar_div_mult_pos (c : posreal) (l : Rbar) :
+  Rbar_mult_pos (Rbar_div l c) c = l.
+Proof.
+  assert (c > 0) as cpos by apply cond_pos.
+  assert ((pos c) <> 0) as cneq0 by lra.
+  assert (/c > 0) by apply Rinv_0_lt_compat, cpos.
+  unfold Rbar_div; simpl.
+  unfold Rbar_mult, Rbar_mult', Rbar_mult_pos.
+  destruct l.
+  - f_equal; field; trivial.
+  - case (Rle_dec 0 (/ c)) ; intros; try lra.
+    match_case; intros; match_case_in H0; intros; match_case_in H1; intros; 
+      try lra; rewrite H2 in H0; invcs H0.
+  - case (Rle_dec 0 (/ c)) ; intros; try lra.
+    match_case; intros; match_case_in H0; intros; match_case_in H1; intros; 
+      try lra; rewrite H2 in H0; invcs H0.
+Qed.
 
-  Lemma Rbar_lt_div_r (a b: Rbar) (c : R) :
-    c > 0 -> Rbar_lt (Rbar_mult a c) b <-> Rbar_lt a (Rbar_div b c).
-  Proof.
-    intros.
-    assert (0 < (/ c)) by now apply Rinv_pos.
-    destruct a; destruct b; simpl; destruct (Rle_dec 0 c); try lra
-      ; destruct (Rle_dec 0 (/ c)); try lra
-      ; destruct (Rle_lt_or_eq_dec 0 (/ c)); simpl; try lra
-      ; destruct (Rle_lt_or_eq_dec 0 (c)); simpl; try lra.
-    now apply Rcomplements.Rlt_div_r.
-  Qed.
+Lemma Rbar_lt_div_r (a b: Rbar) (c : R) :
+  c > 0 -> Rbar_lt (Rbar_mult a c) b <-> Rbar_lt a (Rbar_div b c).
+Proof.
+  intros.
+  assert (0 < (/ c)) by now apply Rinv_pos.
+  destruct a; destruct b; simpl; destruct (Rle_dec 0 c); try lra
+  ; destruct (Rle_dec 0 (/ c)); try lra
+  ; destruct (Rle_lt_or_eq_dec 0 (/ c)); simpl; try lra
+  ; destruct (Rle_lt_or_eq_dec 0 (c)); simpl; try lra.
+  now apply Rcomplements.Rlt_div_r.
+Qed.
 
-  Lemma Rbar_le_div_r (a b : Rbar) (c : R) :
-    c > 0 -> Rbar_le (Rbar_mult a c) b <-> Rbar_le a (Rbar_div b c).
-  Proof.
-    intros.
-    assert (0 < (/ c)) by now apply Rinv_pos.
-    destruct a; destruct b; simpl; destruct (Rle_dec 0 c); try lra
-      ; destruct (Rle_dec 0 (/ c)); try lra
-      ; destruct (Rle_lt_or_eq_dec 0 (/ c)); simpl; try lra
-      ; destruct (Rle_lt_or_eq_dec 0 (c)); simpl; try lra.
-    now apply Rcomplements.Rle_div_r.
-  Qed.
+Lemma Rbar_le_div_r (a b : Rbar) (c : R) :
+  c > 0 -> Rbar_le (Rbar_mult a c) b <-> Rbar_le a (Rbar_div b c).
+Proof.
+  intros.
+  assert (0 < (/ c)) by now apply Rinv_pos.
+  destruct a; destruct b; simpl; destruct (Rle_dec 0 c); try lra
+  ; destruct (Rle_dec 0 (/ c)); try lra
+  ; destruct (Rle_lt_or_eq_dec 0 (/ c)); simpl; try lra
+  ; destruct (Rle_lt_or_eq_dec 0 (c)); simpl; try lra.
+  now apply Rcomplements.Rle_div_r.
+Qed.
 
-  Lemma Rbar_lt_div_l (a b : Rbar) (c : R) :
-    c > 0 -> Rbar_lt (Rbar_div a c) b <-> Rbar_lt a (Rbar_mult b c).
-  Proof.
-    intros.
-    assert (0 < (/ c)) by now apply Rinv_pos.
-    destruct a; destruct b; simpl; destruct (Rle_dec 0 c); try lra
-      ; destruct (Rle_dec 0 (/ c)); try lra
-      ; destruct (Rle_lt_or_eq_dec 0 (/ c)); simpl; try lra
-      ; destruct (Rle_lt_or_eq_dec 0 (c)); simpl; try lra.
-    now apply Rcomplements.Rlt_div_l.
-  Qed.
-  
-  Lemma Rbar_le_div_l (a b : Rbar) (c : R) :
-    c > 0 -> Rbar_le (Rbar_div a c) b <-> Rbar_le a (Rbar_mult b c).
-  Proof.
-    intros.
-    assert (0 < (/ c)) by now apply Rinv_pos.
-    destruct a; destruct b; simpl; destruct (Rle_dec 0 c); try lra
-      ; destruct (Rle_dec 0 (/ c)); try lra
-      ; destruct (Rle_lt_or_eq_dec 0 (/ c)); simpl; try lra
-      ; destruct (Rle_lt_or_eq_dec 0 (c)); simpl; try lra.
-    now apply Rcomplements.Rle_div_l.
-  Qed.
+Lemma Rbar_lt_div_l (a b : Rbar) (c : R) :
+  c > 0 -> Rbar_lt (Rbar_div a c) b <-> Rbar_lt a (Rbar_mult b c).
+Proof.
+  intros.
+  assert (0 < (/ c)) by now apply Rinv_pos.
+  destruct a; destruct b; simpl; destruct (Rle_dec 0 c); try lra
+  ; destruct (Rle_dec 0 (/ c)); try lra
+  ; destruct (Rle_lt_or_eq_dec 0 (/ c)); simpl; try lra
+  ; destruct (Rle_lt_or_eq_dec 0 (c)); simpl; try lra.
+  now apply Rcomplements.Rlt_div_l.
+Qed.
 
-  Lemma Rbar_div_Rdiv (x y : R) :
-    Rbar_div (Rbar.Finite x) (Rbar.Finite y) = Rdiv x y.
-  Proof.
-    easy.
-  Qed.
+Lemma Rbar_le_div_l (a b : Rbar) (c : R) :
+  c > 0 -> Rbar_le (Rbar_div a c) b <-> Rbar_le a (Rbar_mult b c).
+Proof.
+  intros.
+  assert (0 < (/ c)) by now apply Rinv_pos.
+  destruct a; destruct b; simpl; destruct (Rle_dec 0 c); try lra
+  ; destruct (Rle_dec 0 (/ c)); try lra
+  ; destruct (Rle_lt_or_eq_dec 0 (/ c)); simpl; try lra
+  ; destruct (Rle_lt_or_eq_dec 0 (c)); simpl; try lra.
+  now apply Rcomplements.Rle_div_l.
+Qed.
 
-  Lemma Rbar_lt_Rlt (x y : R) :
-    Rbar_lt (Rbar.Finite x) (Rbar.Finite y) <-> Rlt x y.
-  Proof.
-    easy.
-  Qed.
+Lemma Rbar_div_Rdiv (x y : R) :
+  Rbar_div (Rbar.Finite x) (Rbar.Finite y) = Rdiv x y.
+Proof.
+  easy.
+Qed.
 
-  Lemma Rbar_le_Rle (x y : R) :
-    Rbar_le (Rbar.Finite x) (Rbar.Finite y) <-> Rle x y.
-  Proof.
-    easy.
-  Qed.
+Lemma Rbar_lt_Rlt (x y : R) :
+  Rbar_lt (Rbar.Finite x) (Rbar.Finite y) <-> Rlt x y.
+Proof.
+  easy.
+Qed.
 
-  Lemma ex_Rbar_plus_pos (x y : Rbar) :
-    Rbar_le 0 x -> Rbar_le 0 y -> ex_Rbar_plus x y.
-  Proof.
-    intros.
-    destruct x; destruct y; simpl; trivial.
-  Qed.
+Lemma Rbar_le_Rle (x y : R) :
+  Rbar_le (Rbar.Finite x) (Rbar.Finite y) <-> Rle x y.
+Proof.
+  easy.
+Qed.
 
-  Definition Rbar_power (x : Rbar) (p : R)  : Rbar :=
-    match x with
-    | p_infty => p_infty
-    | m_infty => 0
-    | Rbar.Finite x => power x p
-    end.
+Lemma ex_Rbar_plus_pos (x y : Rbar) :
+  Rbar_le 0 x -> Rbar_le 0 y -> ex_Rbar_plus x y.
+Proof.
+  intros.
+  destruct x; destruct y; simpl; trivial.
+Qed.
 
-  Lemma Rbar_power_nonneg (x : Rbar) (p : R) :
-    Rbar_le 0 (Rbar_power x p).
-  Proof.
-    destruct x.
-    - apply power_nonneg.
-    - simpl; lra.
-    - simpl; lra.
-  Qed.
+Definition Rbar_power (x : Rbar) (p : R)  : Rbar :=
+  match x with
+  | p_infty => p_infty
+  | m_infty => 0
+  | Rbar.Finite x => power x p
+  end.
 
-  Lemma Rsqr_pos (a : posreal) :
-    0 < Rsqr a.
-  Proof.
-    generalize (Rle_0_sqr a); intros.
-    destruct H; trivial.
-    generalize (cond_pos a); intros.
-    symmetry in H; apply Rsqr_eq_0 in H.
-    lra.
-  Qed.
+Lemma Rbar_power_nonneg (x : Rbar) (p : R) :
+  Rbar_le 0 (Rbar_power x p).
+Proof.
+  destruct x.
+  - apply power_nonneg.
+  - simpl; lra.
+  - simpl; lra.
+Qed.
 
-  Lemma mkpos_Rsqr (a : posreal) :
-    Rsqr a = mkposreal _ (Rsqr_pos a).
-  Proof.
+Lemma Rsqr_pos (a : posreal) :
+  0 < Rsqr a.
+Proof.
+  generalize (Rle_0_sqr a); intros.
+  destruct H; trivial.
+  generalize (cond_pos a); intros.
+  symmetry in H; apply Rsqr_eq_0 in H.
+  lra.
+Qed.
+
+Lemma mkpos_Rsqr (a : posreal) :
+  Rsqr a = mkposreal _ (Rsqr_pos a).
+Proof.
+  now simpl.
+Qed.
+
+
+Definition Rsqrt_abs (r : R) : R := Rsqrt (mknonnegreal (Rabs r) (Rabs_pos r)).
+
+Lemma Rsqrt_abs_0 :
+  Rsqrt_abs 0 = 0.
+Proof.
+  unfold Rsqrt_abs, Rsqrt; simpl.
+  match_destr; destruct a.
+  rewrite Rabs_R0 in H0.
+  now apply Rsqr_eq_0.
+Qed.
+
+Lemma continuity_pt_Rsqrt_abs_0 :
+  continuity_pt Rsqrt_abs 0.
+Proof.
+  unfold continuity_pt, continue_in.
+  unfold limit1_in, limit_in.
+  intros.
+  unfold dist; simpl.
+  unfold R_dist, D_x, no_cond.
+  exists (Rsqr eps).
+  split.
+  - unfold Rsqr.
+    now apply Rmult_gt_0_compat.
+  - intros.
+    destruct H0 as [[? ?] ?].
+    rewrite Rminus_0_r in H2.
+    rewrite Rsqrt_abs_0, Rminus_0_r.
+    unfold Rsqrt_abs.
+    rewrite Rabs_right by (apply Rle_ge, Rsqrt_positivity).
+    generalize Rsqr_lt_to_Rsqrt; intros.
+    assert (0 <= eps) by lra.
+    specialize (H3 (mknonnegreal _ H4) (mknonnegreal _ (Rabs_pos x))).
+    rewrite <- H3.
     now simpl.
-  Qed.
+Qed.
 
-
-    Definition Rsqrt_abs (r : R) : R := Rsqrt (mknonnegreal (Rabs r) (Rabs_pos r)).
-
-    Lemma Rsqrt_abs_0 :
-      Rsqrt_abs 0 = 0.
-     Proof.
-      unfold Rsqrt_abs, Rsqrt; simpl.
-      match_destr; destruct a.
-      rewrite Rabs_R0 in H0.
-      now apply Rsqr_eq_0.
-    Qed.
-
-    Lemma continuity_pt_Rsqrt_abs_0 :
-      continuity_pt Rsqrt_abs 0.
-    Proof.
-      unfold continuity_pt, continue_in.
-      unfold limit1_in, limit_in.
-      intros.
-      unfold dist; simpl.
-      unfold R_dist, D_x, no_cond.
-      exists (Rsqr eps).
-      split.
-      - unfold Rsqr.
-        now apply Rmult_gt_0_compat.
-      - intros.
-        destruct H0 as [[? ?] ?].
-        rewrite Rminus_0_r in H2.
-        rewrite Rsqrt_abs_0, Rminus_0_r.
-        unfold Rsqrt_abs.
-        rewrite Rabs_right by (apply Rle_ge, Rsqrt_positivity).
-        generalize Rsqr_lt_to_Rsqrt; intros.
-        assert (0 <= eps) by lra.
-        specialize (H3 (mknonnegreal _ H4) (mknonnegreal _ (Rabs_pos x))).
-        rewrite <- H3.
-        now simpl.
-     Qed.
-
-    (* TODO(Kody):
+(* TODO(Kody):
        Move these to someplace more canonical. Like RealAdd.
        Delete identical copies in mdp.v *)
-    Lemma nonneg_pf_irrel r1 (cond1 cond2:0 <= r1) :
-      mknonnegreal r1 cond1 = mknonnegreal r1 cond2.
-    Proof.
-      f_equal.
-      apply proof_irrelevance.
-    Qed.
+Lemma nonneg_pf_irrel r1 (cond1 cond2:0 <= r1) :
+  mknonnegreal r1 cond1 = mknonnegreal r1 cond2.
+Proof.
+  f_equal.
+  apply proof_irrelevance.
+Qed.
 
-    Lemma nonneg_ext r1 cond1 r2 cond2:
-      r1 = r2 ->
-      mknonnegreal r1 cond1 = mknonnegreal r2 cond2.
-    Proof.
-      intros; subst.
-      apply nonneg_pf_irrel.
-    Qed.
+Lemma nonneg_ext r1 cond1 r2 cond2:
+  r1 = r2 ->
+  mknonnegreal r1 cond1 = mknonnegreal r2 cond2.
+Proof.
+  intros; subst.
+  apply nonneg_pf_irrel.
+Qed.
 
-    Lemma Rinv_power (x : R) (n : R) : 0 < x -> / power x n = power (/ x) n.
-  Proof.
-    intros.
-    assert (x <> 0) by lra.
-    assert (power x n <> 0) by (generalize (power_pos x n); lra).
-    apply (Rmult_eq_reg_l (power x n)); trivial.
-    rewrite Rinv_r by trivial.
-    rewrite power_mult_distr.
-    + rewrite Rinv_r; trivial.
-      rewrite power_base_1; trivial.
-    + lra.
-    + left.
-      now apply Rinv_pos.
-  Qed.
+Lemma Rinv_power (x : R) (n : R) : 0 < x -> / power x n = power (/ x) n.
+Proof.
+  intros.
+  assert (x <> 0) by lra.
+  assert (power x n <> 0) by (generalize (power_pos x n); lra).
+  apply (Rmult_eq_reg_l (power x n)); trivial.
+  rewrite Rinv_r by trivial.
+  rewrite power_mult_distr.
+  + rewrite Rinv_r; trivial.
+    rewrite power_base_1; trivial.
+  + lra.
+  + left.
+    now apply Rinv_pos.
+Qed.
 
-    Lemma Rbar_power_le (x y p : Rbar) :
-    0 <= p ->
-    Rbar_le 0 x ->
-    Rbar_le x y ->
-    Rbar_le (Rbar_power x p) (Rbar_power y p).
-  Proof.
-    intros.
-    destruct x; destruct y; simpl in *; trivial; try tauto.
-    apply Rle_power_l; trivial; lra.
-  Qed.
+Lemma Rbar_power_le (x y p : Rbar) :
+  0 <= p ->
+  Rbar_le 0 x ->
+  Rbar_le x y ->
+  Rbar_le (Rbar_power x p) (Rbar_power y p).
+Proof.
+  intros.
+  destruct x; destruct y; simpl in *; trivial; try tauto.
+  apply Rle_power_l; trivial; lra.
+Qed.
 
-  Lemma Rbar_abs_nneg (x : Rbar) :
-    Rbar_le 0 (Rbar_abs x).
-  Proof.
-    unfold Rbar_abs; destruct x; simpl; try tauto.
-    apply Rabs_pos.
-  Qed.
+Lemma Rbar_abs_nneg (x : Rbar) :
+  Rbar_le 0 (Rbar_abs x).
+Proof.
+  unfold Rbar_abs; destruct x; simpl; try tauto.
+  apply Rabs_pos.
+Qed.
 
 
-  Lemma ex_series_is_lim_seq (f : nat -> R) :
-    ex_series f -> is_lim_seq (sum_n f) (Series f).
-  Proof.
-    intros.
-    now apply Series_correct in H.
-  Qed.
+Lemma ex_series_is_lim_seq (f : nat -> R) :
+  ex_series f -> is_lim_seq (sum_n f) (Series f).
+Proof.
+  intros.
+  now apply Series_correct in H.
+Qed.
 
-  Lemma ex_series_Lim_seq (f : nat -> R) :
-    ex_series f -> Lim_seq (sum_n f) = Series f.
-  Proof.
-    intros.
-    apply ex_series_is_lim_seq in H.
-    now apply is_lim_seq_unique in H.
-  Qed.
+Lemma ex_series_Lim_seq (f : nat -> R) :
+  ex_series f -> Lim_seq (sum_n f) = Series f.
+Proof.
+  intros.
+  apply ex_series_is_lim_seq in H.
+  now apply is_lim_seq_unique in H.
+Qed.
 
-  Lemma ex_finite_lim_series (f : nat -> R) :
-    ex_finite_lim_seq (sum_n f) <-> ex_series f.
-  Proof.
-    easy.
-  Qed.
+Lemma ex_finite_lim_series (f : nat -> R) :
+  ex_finite_lim_seq (sum_n f) <-> ex_series f.
+Proof.
+  easy.
+Qed.
 
-  Lemma ex_finite_lim_seq_abs (f : nat -> R) :
-    ex_finite_lim_seq (fun n => sum_n (fun m => Rabs (f m)) n) ->
-    ex_finite_lim_seq (sum_n f).
-  Proof.
-    do 2 rewrite ex_finite_lim_series.
-    apply ex_series_Rabs.
-  Qed.
+Lemma ex_finite_lim_seq_abs (f : nat -> R) :
+  ex_finite_lim_seq (fun n => sum_n (fun m => Rabs (f m)) n) ->
+  ex_finite_lim_seq (sum_n f).
+Proof.
+  do 2 rewrite ex_finite_lim_series.
+  apply ex_series_Rabs.
+Qed.
 
-  Lemma Rplus_le_compat1_l (a b : R) :
-    0 <= b -> a <= a + b.
-  Proof.
-    intros.
-    replace (a) with (a + 0) at 1 by lra.
-    now apply Rplus_le_compat_l.
-  Qed.
+Lemma Rplus_le_compat1_l (a b : R) :
+  0 <= b -> a <= a + b.
+Proof.
+  intros.
+  replace (a) with (a + 0) at 1 by lra.
+  now apply Rplus_le_compat_l.
+Qed.
 
-  Lemma series_abs_bounded (f : nat -> R) :
-    is_finite (Lim_seq (sum_n (fun n=> Rabs (f n)))) ->
-    ex_series (fun n => Rabs (f n)).
-  Proof.
-    intros.
-    rewrite <- ex_finite_lim_series.
-    rewrite ex_finite_lim_seq_correct.
-    split; trivial.
-    apply ex_lim_seq_incr.
-    intros.
-    rewrite sum_Sn.
-    apply Rplus_le_compat1_l.
-    apply Rabs_pos.
-  Qed.
+Lemma series_abs_bounded (f : nat -> R) :
+  is_finite (Lim_seq (sum_n (fun n=> Rabs (f n)))) ->
+  ex_series (fun n => Rabs (f n)).
+Proof.
+  intros.
+  rewrite <- ex_finite_lim_series.
+  rewrite ex_finite_lim_seq_correct.
+  split; trivial.
+  apply ex_lim_seq_incr.
+  intros.
+  rewrite sum_Sn.
+  apply Rplus_le_compat1_l.
+  apply Rabs_pos.
+Qed.
 
-  Lemma lim_sum_abs_bounded (f : nat -> R) :
-    is_finite (Lim_seq (sum_n (fun n=> Rabs (f n)))) ->
-    ex_finite_lim_seq (sum_n f).
-  Proof.
-    intros.
-    apply series_abs_bounded in H.
-    apply ex_series_Rabs in H.
-    now apply ex_finite_lim_series.
-  Qed.
+Lemma lim_sum_abs_bounded (f : nat -> R) :
+  is_finite (Lim_seq (sum_n (fun n=> Rabs (f n)))) ->
+  ex_finite_lim_seq (sum_n f).
+Proof.
+  intros.
+  apply series_abs_bounded in H.
+  apply ex_series_Rabs in H.
+  now apply ex_finite_lim_series.
+Qed.
 
-  Lemma exp_ineq1 : forall x : R, x <> 0 -> 1 + x < exp x.
+Lemma exp_ineq1 : forall x : R, x <> 0 -> 1 + x < exp x.
 Proof.
   assert (Hd : forall c : R,
              derivable_pt_lim (fun x : R => exp x - (x + 1)) c (exp c - 1)).
@@ -3748,7 +3748,7 @@ Proof.
     apply Rlt_le_trans with (r2 := (Rabs c)+1); [|apply Rmax_r].
     simpl in H.
     lra.
-  Qed.
+Qed.
 
 Lemma sum_f_R0_Rabs_pos (x : nat -> R) : forall N, 0 <= sum_f_R0 (fun j => Rabs (x j)) N.
 Proof.
@@ -3812,24 +3812,24 @@ Proof.
   apply (is_lim_seq_scal_r b a0 1 hb).
 Qed.
 
-  Lemma is_finite_Lim_bounded (f : nat -> R) (m M : R) :
-    (forall (n:nat), m <= f n <= M) ->
-    is_finite (Lim_seq f).
-  Proof.
-    generalize (Lim_seq_le_loc f (fun _ => M)); intros.
-    generalize (Lim_seq_le_loc (fun _ => m) f); intros.
-    cut_to H.
-    cut_to H1.
-    rewrite Lim_seq_const in H.
-    rewrite Lim_seq_const in H1.
-    unfold is_finite.
-    destruct (Lim_seq f).
-    reflexivity.
-    now simpl in H.
-    now simpl in H1.
-    exists (0%nat); intros; apply H0.
-    exists (0%nat); intros; apply H0.
-  Qed.
+Lemma is_finite_Lim_bounded (f : nat -> R) (m M : R) :
+  (forall (n:nat), m <= f n <= M) ->
+  is_finite (Lim_seq f).
+Proof.
+  generalize (Lim_seq_le_loc f (fun _ => M)); intros.
+  generalize (Lim_seq_le_loc (fun _ => m) f); intros.
+  cut_to H.
+  cut_to H1.
+  rewrite Lim_seq_const in H.
+  rewrite Lim_seq_const in H1.
+  unfold is_finite.
+  destruct (Lim_seq f).
+  reflexivity.
+  now simpl in H.
+  now simpl in H1.
+  exists (0%nat); intros; apply H0.
+  exists (0%nat); intros; apply H0.
+Qed.
 
 
 Lemma Lim_seq_partial_sums_bounded (a : nat -> nat -> R) :
@@ -3863,20 +3863,20 @@ Proof.
     apply Lim_seq_le_loc.
     exists (0%nat).
     now intros.
- Qed.
+Qed.
 
-    Lemma Lim_seq_pos (f : nat -> R) :
-    (forall n, 0 <= f n) ->
-    Rbar_le 0 (Lim_seq f).
-  Proof.
-    intros.
-    generalize (Lim_seq_le_loc (fun _ => 0) f); intros.
-    rewrite Lim_seq_const in H0.
-    apply H0.
-    exists (0%nat).
-    intros.
-    apply H.
-  Qed.
+Lemma Lim_seq_pos (f : nat -> R) :
+  (forall n, 0 <= f n) ->
+  Rbar_le 0 (Lim_seq f).
+Proof.
+  intros.
+  generalize (Lim_seq_le_loc (fun _ => 0) f); intros.
+  rewrite Lim_seq_const in H0.
+  apply H0.
+  exists (0%nat).
+  intros.
+  apply H.
+Qed.
 
 
 Lemma Series_partial_sums_bounded (a : nat -> nat -> R) :
@@ -3909,7 +3909,7 @@ Proof.
     + intros.
       apply sum_n_nneg; intros.
       apply Rabs_pos.
- Qed.
+Qed.
 
 Lemma sum_n_sum_f_clipped (f : nat -> R) (N : nat) :
   forall (n:nat),
@@ -3930,7 +3930,7 @@ Proof.
       lia.
     + unfold plus; simpl.
       now rewrite Rplus_0_r.
-  Qed.
+Qed.
 
 Lemma zerotails (a : nat -> R) :
   ex_series a -> is_lim_seq (fun (n:nat) => Series (fun k => a (S (n+k)%nat))) 0.
@@ -4040,6 +4040,9 @@ Proof.
   now apply is_lim_seq_unique in H.
 Qed.
 
+Definition Rbar_max (x y : Rbar) : Rbar :=
+  if Rbar_le_dec x y then y else x.
+
 Lemma Rbar_mult_r_plus_distr (c:R) x y:
   Rbar_mult c (Rbar_plus x y) =
   Rbar_plus (Rbar_mult c x) (Rbar_mult c y).
@@ -4108,4 +4111,101 @@ Lemma Rbar_minus_plus_fin (x:Rbar) (y:R) :
 Proof.
   destruct x; simpl; trivial.
   f_equal; lra.
+Qed.
+
+Lemma scale_Rbar_max0 (c:posreal) x : (Rbar_max (Rbar_mult c x) 0 = Rbar_mult c (Rbar_max x 0)).
+Proof.
+  unfold Rbar_max, Rbar_mult.
+  destruct x; simpl
+  ; destruct c as [c cpos]; simpl
+  ; destruct (Rle_dec 0 c); try lra.
+  - destruct (Rle_dec 0 r)
+    ; destruct (Rbar_le_dec (c * r) 0)
+    ; simpl in *
+    ; try f_equal; try lra
+    ; destruct (Rbar_le_dec r 0)
+    ; simpl in *; try f_equal; try lra.
+    + assert (0 <= c * r)
+        by now apply Rmult_le_pos.
+      lra.
+    + assert (r = 0) by lra.
+      subst.
+      lra.
+    + assert (c * r <= 0)
+        by now apply Rmult_le_0_l.
+      tauto.
+  - destruct (Rle_lt_or_eq_dec 0 c r); simpl.
+    destruct (Rbar_le_dec p_infty 0); try f_equal; trivial; try lra.
+    lra.
+  - destruct (Rle_lt_or_eq_dec 0 c r); simpl.
+    destruct (Rbar_le_dec m_infty 0); try f_equal; trivial; try lra.
+    lra.
+Qed.
+
+Lemma Rbar_mult_assoc_RbR (a:R) (b:Rbar) (c:R) :
+  Rbar_mult a (Rbar_mult b c) = Rbar_mult (Rbar_mult a b) c.
+Proof.
+  destruct b; simpl; [f_equal; lra | |]
+  ;  destruct (Rle_dec 0 c)
+  ; try destruct (Rle_lt_or_eq_dec 0 c r)
+  ; try destruct (Rle_dec 0 a)
+  ; try destruct (Rle_lt_or_eq_dec 0 a r1)
+  ; simpl; try f_equal; try lra
+  ; try destruct (Rle_dec 0 c)
+  ; try destruct (Rle_lt_or_eq_dec 0 c _)
+  ; simpl; trivial ; try f_equal; try lra
+  ; try destruct (Rle_lt_or_eq_dec 0 a r0)
+  ; simpl; trivial ; try f_equal; try lra
+  ; try destruct (Rle_dec 0 a)
+  ; simpl; trivial ; try f_equal; try lra
+  ; try destruct (Rle_lt_or_eq_dec 0 a _)
+  ; simpl; trivial ; try f_equal; try lra
+  ; try destruct (Rle_dec 0 c); try lra
+  ; try destruct (Rle_lt_or_eq_dec 0 c _)
+  ; simpl; trivial ; try f_equal; try lra
+  ; try destruct (Rle_lt_or_eq_dec 0 a _)
+  ; simpl; trivial ; try f_equal; try lra
+  ; try destruct (Rle_dec 0 c); try lra
+  ; try destruct (Rle_lt_or_eq_dec 0 c _)
+  ; simpl; trivial ; try f_equal; try lra
+
+  .
+Qed.
+
+Lemma Rbar_mult_div_fin_cancel_l (a:R) (b:Rbar) : a <> 0 ->
+                                                  Rbar_mult (/ a) (Rbar_mult a b) = b.
+Proof.
+  intros .
+  destruct b; simpl.
+  - f_equal; now field_simplify.
+  - destruct (Rle_dec 0 a); simpl.
+    + destruct (Rle_lt_or_eq_dec 0 a _); simpl; try lra.
+      destruct (Rle_dec 0 (/ a)); simpl.
+      * destruct (Rle_lt_or_eq_dec 0 (/ a) _); trivial; simpl; try lra.
+        apply Rinv_neq_0_compat in H.
+        lra.
+      * apply Rinv_0_lt_compat in r0.
+        lra.
+    + destruct (Rle_dec 0 (/ a)); simpl; trivial.
+      destruct (Rle_lt_or_eq_dec 0 (/ a) _); simpl; try lra.
+      * apply Rinv_0_lt_compat in r0.
+        rewrite Rinv_involutive in r0 by trivial.
+        lra.
+      * apply Rinv_neq_0_compat in H.
+        lra.
+  - destruct (Rle_dec 0 a); simpl.
+    + destruct (Rle_lt_or_eq_dec 0 a _); simpl; try lra.
+      destruct (Rle_dec 0 (/ a)); simpl.
+      * destruct (Rle_lt_or_eq_dec 0 (/ a) _); trivial; simpl; try lra.
+        apply Rinv_neq_0_compat in H.
+        lra.
+      * apply Rinv_0_lt_compat in r0.
+        lra.
+    + destruct (Rle_dec 0 (/ a)); simpl; trivial.
+      destruct (Rle_lt_or_eq_dec 0 (/ a) _); simpl; try lra.
+      * apply Rinv_0_lt_compat in r0.
+        rewrite Rinv_involutive in r0 by trivial.
+        lra.
+      * apply Rinv_neq_0_compat in H.
+        lra.
 Qed.

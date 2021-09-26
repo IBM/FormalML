@@ -110,9 +110,6 @@ Section RbarExpectation.
     reflexivity.
   Qed.
 
-  Definition Rbar_max (x y : Rbar) : Rbar :=
-    if Rbar_le_dec x y then y else x.
-
   Definition Rbar_pos_fun_part (f : Ts -> Rbar) : (Ts -> Rbar) :=
     fun x => Rbar_max (f x) 0.
     
@@ -983,35 +980,6 @@ Section RbarExpectation.
         rewrite H1; simpl.
         field; trivial.
         lra.
-  Qed.
-
-  Lemma scale_Rbar_max0 (c:posreal) x : (Rbar_max (Rbar_mult c x) 0 = Rbar_mult c (Rbar_max x 0)).
-  Proof.
-    unfold Rbar_max, Rbar_mult.
-    destruct x; simpl
-    ; destruct c as [c cpos]; simpl
-    ; destruct (Rle_dec 0 c); try lra.
-    - destruct (Rle_dec 0 r)
-      ; destruct (Rbar_le_dec (c * r) 0)
-      ; simpl in *
-      ; try f_equal; try lra
-      ; destruct (Rbar_le_dec r 0)
-      ; simpl in *; try f_equal; try lra.
-      + assert (0 <= c * r)
-          by now apply Rmult_le_pos.
-        lra.
-      + assert (r = 0) by lra.
-        subst.
-        lra.
-      + assert (c * r <= 0)
-               by now apply Rmult_le_0_l.
-        tauto.
-    - destruct (Rle_lt_or_eq_dec 0 c r); simpl.
-      destruct (Rbar_le_dec p_infty 0); try f_equal; trivial; try lra.
-      lra.
-    - destruct (Rle_lt_or_eq_dec 0 c r); simpl.
-      destruct (Rbar_le_dec m_infty 0); try f_equal; trivial; try lra.
-      lra.
   Qed.
 
   Lemma Rbar_Expectation_scale_pos (c:posreal) (rv_X : Ts -> Rbar) :
