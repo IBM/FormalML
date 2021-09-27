@@ -4188,7 +4188,7 @@ Proof.
   lra.
 Qed.
 
-  Ltac rbar_prover :=
+Ltac rbar_prover :=
   repeat progress (try match goal with
           | [|- context [Rle_dec ?x ?y]] => destruct (Rle_dec x y)
           | [|- context [Rle_lt_or_eq_dec ?x ?y ?z]] => destruct (Rle_lt_or_eq_dec x y z)
@@ -4216,6 +4216,17 @@ Proof.
   ; rbar_prover.
 Qed.
 
+Lemma Rbar_mult_plus_distr_l {x y z:Rbar} :
+    Rbar_le 0 y -> Rbar_le 0 z ->
+    Rbar_mult x (Rbar_plus y z) = Rbar_plus (Rbar_mult x y) (Rbar_mult x z).
+Proof.
+  intros.
+  unfold Rbar_mult, Rbar_mult', Rbar_plus, Rbar_plus'.
+
+  destruct x; destruct y; destruct z; simpl
+  ; simpl in *; rbar_prover.
+Qed.  
+  
 Lemma Rbar_mult_div_fin_cancel_l (a:R) (b:Rbar) : a <> 0 ->
                                                   Rbar_mult (/ a) (Rbar_mult a b) = b.
 Proof.
