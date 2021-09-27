@@ -4701,6 +4701,32 @@ Section cond_exp_props.
     - now rewrite <- Rbar_Expec_Condexp.
     - now rewrite <- Rbar_Expec_Condexp.
    Qed.
+  
+  Instance almostR2_eq_Rbar_plus_proper
+          : Proper (almostR2 prts eq ==> almostR2 prts eq  ==> almostR2 prts eq) Rbar_rvplus.
+  Proof.
+    unfold almostR2 in *.
+    intros x1 x2 [Px [Pxall eq_onx]] y1 y2 [Py [Pyall eq_ony]].
+    exists (event_inter Px Py).
+    split.
+    - now apply ps_one_inter.
+    - intros a [Pxa Pya].
+      unfold Rbar_rvplus.
+      now rewrite eq_onx, eq_ony.
+  Qed.
+
+  Instance almostR2_eq_Rbar_mult_proper
+          : Proper (almostR2 prts eq ==> almostR2 prts eq  ==> almostR2 prts eq) Rbar_rvmult.
+  Proof.
+    unfold almostR2 in *.
+    intros x1 x2 [Px [Pxall eq_onx]] y1 y2 [Py [Pyall eq_ony]].
+    exists (event_inter Px Py).
+    split.
+    - now apply ps_one_inter.
+    - intros a [Pxa Pya].
+      unfold Rbar_rvmult.
+      now rewrite eq_onx, eq_ony.
+  Qed.
 
   Lemma Condexp_factor_out_frf
         {dom2 : SigmaAlgebra Ts}
@@ -4715,6 +4741,54 @@ Section cond_exp_props.
     Rbar_Expectation (Rbar_rvmult g (ConditionalExpectation prts sub f)).
   Proof.
     intros.
+    generalize (frf_indicator_sum g); intros.
+    unfold frf_indicator in H0.
+    assert (rv_eq (rvmult g f)
+                  (rvmult  
+                     (fun omega : Ts =>
+                        RealAdd.list_sum
+                          (map (fun c : R => scale_val_indicator g c omega)
+                               (nodup Req_EM_T frf_vals))) f)) by now rewrite H0.
+    apply (all_almost prts) in H1.
+    assert (RandomVariable dom borel_sa
+          (rvmult
+             (fun omega : Ts =>
+              RealAdd.list_sum
+                (map (fun c : R => scale_val_indicator g c omega)
+                     (nodup Req_EM_T frf_vals))) f)) by admit.
+    apply Rbar_Expectation_almostR2_proper.
+    - apply RandomVariable_sa_sub; trivial.
+      apply Condexp_rv.
+    - apply Rbar_rvmult_rv.
+      + apply RandomVariable_sa_sub; trivial.
+        now apply Real_Rbar_rv.
+      + apply RandomVariable_sa_sub; trivial.
+        apply Condexp_rv.
+    - generalize (ConditionalExpectation_proper prts sub _ _ H1); intros.
+      apply almostR2_prob_space_sa_sub_lift_Rbar in H3.
+      rewrite H3.
+      assert (RandomVariable dom borel_sa g) by now apply RandomVariable_sa_sub.
+      assert (RandomVariable dom borel_sa
+          (fun omega : Ts =>
+           RealAdd.list_sum
+             (map (fun c : R => scale_val_indicator g c omega)
+                  (nodup Req_EM_T frf_vals)))) by admit.
+      assert (rv_eq (fun (omega:Ts) => Finite (g omega))
+                    (fun omega : Ts => Finite (RealAdd.list_sum (map (fun c : R => scale_val_indicator g c omega) (nodup Req_EM_T frf_vals))))).
+      {
+        intro x.
+        simpl.
+        now rewrite H0.
+      }
+      assert (rv_eq (ConditionalExpectation prts sub f) (ConditionalExpectation prts sub f)).
+      {
+        intro.
+        reflexivity.
+      }
+      apply (almostR2_eq_subr prts) in H6.
+      apply (almostR2_eq_subr prts) in H7.      
+      rewrite (almostR2_eq_Rbar_mult_proper _ _ H6 _ _ H7).
+      
     Admitted.
 
 
