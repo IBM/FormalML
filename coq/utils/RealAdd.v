@@ -4142,34 +4142,78 @@ Proof.
     lra.
 Qed.
 
-Lemma Rbar_mult_assoc_RbR (a:R) (b:Rbar) (c:R) :
+
+Lemma Rmult_nnneg_neg {x y:R} :
+  (~ 0 <= x * y) -> x < 0 \/ y < 0.
+Proof.
+  intros HH.
+  apply Rnot_le_lt in HH.
+  destruct (Rle_dec 0 x); [| lra].
+  destruct (Rle_dec 0 y); [| lra].
+  generalize (Rmult_le_pos _ _ r r0)
+  ; lra.
+Qed.
+
+Lemma Rmult_pos_parts {x y}: (0 < x * y) ->
+                             (0 < x /\ 0 < y) \/ (x < 0 /\ y < 0).
+Proof.
+  intros HH.
+  destruct (Rlt_dec 0 x)
+  ; destruct (Rlt_dec 0 y).
+  - lra.
+  - apply Rnot_lt_le in n.
+    destruct n; [| subst; lra].
+    apply Rlt_not_le in HH.
+    elim HH.
+    apply Rmult_le_0_l; lra.
+  - apply Rnot_lt_le in n.
+    destruct n; [| subst; lra].
+    apply Rlt_not_le in HH.
+    elim HH.
+    apply Rmult_le_0_r; lra.
+  - apply Rnot_lt_le in n.
+    apply Rnot_lt_le in n0.
+    destruct n; [| subst; lra].
+    destruct n0; [| subst; lra].
+    lra.
+Qed.
+
+Lemma Rmult_le_pos_from_neg: forall r1 r2 : R, r1 <= 0 -> r2 <= 0 -> 0 <= r1 * r2.
+Proof.
+  intros.
+  assert (0 <= (- r1) * (- r2)).
+  {
+    apply Rmult_le_pos; lra.
+  }
+  lra.
+Qed.
+
+Lemma Rbar_mult_assoc (a b c:Rbar) :
   Rbar_mult a (Rbar_mult b c) = Rbar_mult (Rbar_mult a b) c.
 Proof.
-  destruct b; simpl; [f_equal; lra | |]
-  ;  destruct (Rle_dec 0 c)
-  ; try destruct (Rle_lt_or_eq_dec 0 c r)
-  ; try destruct (Rle_dec 0 a)
-  ; try destruct (Rle_lt_or_eq_dec 0 a r1)
-  ; simpl; try f_equal; try lra
-  ; try destruct (Rle_dec 0 c)
-  ; try destruct (Rle_lt_or_eq_dec 0 c _)
-  ; simpl; trivial ; try f_equal; try lra
-  ; try destruct (Rle_lt_or_eq_dec 0 a r0)
-  ; simpl; trivial ; try f_equal; try lra
-  ; try destruct (Rle_dec 0 a)
-  ; simpl; trivial ; try f_equal; try lra
-  ; try destruct (Rle_lt_or_eq_dec 0 a _)
-  ; simpl; trivial ; try f_equal; try lra
-  ; try destruct (Rle_dec 0 c); try lra
-  ; try destruct (Rle_lt_or_eq_dec 0 c _)
-  ; simpl; trivial ; try f_equal; try lra
-  ; try destruct (Rle_lt_or_eq_dec 0 a _)
-  ; simpl; trivial ; try f_equal; try lra
-  ; try destruct (Rle_dec 0 c); try lra
-  ; try destruct (Rle_lt_or_eq_dec 0 c _)
-  ; simpl; trivial ; try f_equal; try lra
+  unfold Rbar_mult, Rbar_mult'.
 
-  .
+  Ltac t :=
+  repeat progress (try match goal with
+          | [|- context [Rle_dec ?x ?y]] => destruct (Rle_dec x y)
+          | [|- context [Rle_lt_or_eq_dec ?x ?y ?z]] => destruct (Rle_lt_or_eq_dec x y z)
+          | [H: 0 = ?x * ?y |- _] => symmetry in H; apply Rmult_integral in H
+          | [H: ?x * ?y = 0 |- _] => apply Rmult_integral in H
+          | [H: ~ 0 <= ?x * ?xy |- _] => 
+            solve [apply Rmult_nnneg_neg in H; t]
+          | [H: 0 < ?x * ?xy |- _] => 
+            solve [apply Rmult_pos_parts in H; t]
+          | [H: ~ 0 <= ?x * ?y |- _ ] =>
+            solve [elim H; solve [ apply Rmult_le_pos; lra
+                                 | apply Rmult_le_pos_from_neg; lra]]
+          end
+          ; trivial
+          ; try subst
+          ; try f_equal
+          ; try lra).
+  
+  destruct a; destruct b; destruct c; simpl
+  ; t.
 Qed.
 
 Lemma Rbar_mult_div_fin_cancel_l (a:R) (b:Rbar) : a <> 0 ->

@@ -1810,11 +1810,11 @@ Section is_cond_exp.
 
   Existing Instance Rbar_rvmult_rv.
 
-  Lemma Rbar_rvmult_assoc_RbR (a:Ts->R) (b:Ts->Rbar) (c:Ts->R) :
+  Lemma Rbar_rvmult_assoc (a:Ts->Rbar) (b:Ts->Rbar) (c:Ts->Rbar) :
     rv_eq (Rbar_rvmult a (Rbar_rvmult b c)) (Rbar_rvmult (Rbar_rvmult a b) c).
   Proof.
     intros ?.
-    apply Rbar_mult_assoc_RbR.
+    apply Rbar_mult_assoc.
   Qed.
 
   Lemma rvmult_rvscale c (a b:Ts->R) : 
@@ -1854,7 +1854,7 @@ Section is_cond_exp.
     specialize (isce P Pdec saP).
     simpl in *.
     
-    rewrite <- (Rbar_Expectation_ext (Rbar_rvmult_assoc_RbR _ _ _)).
+    rewrite <- (Rbar_Expectation_ext (Rbar_rvmult_assoc _ _ _)).
     rewrite (Expectation_ext (rvmult_rvscale _ _ _)).
     match_destr_in HH1
     ; match_destr_in HH2
@@ -2219,7 +2219,7 @@ Section is_cond_exp.
     ; trivial; try reflexivity.
     eapply is_conditional_expectation_nneg; eauto.
   Qed.
-  
+
 End is_cond_exp.
 
 Section cond_exp_l2.
@@ -4509,12 +4509,6 @@ Section cond_exp_props.
     apply (proj2_sig P).
  Qed.
 
-  (* proved in LIntp/Rbar_compl *)
-  Lemma Rbar_mult_assoc (x y z : Rbar) :
-    Rbar_mult x (Rbar_mult y z) = Rbar_mult (Rbar_mult x y) z.
-  Proof.
-    Admitted.
-
   Lemma Condexp_factor_out_scale_indicator
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
@@ -4883,6 +4877,3 @@ Section cond_exp_props.
    Qed.
   
 End cond_exp_props.
-
-
-
