@@ -2220,6 +2220,98 @@ Section is_cond_exp.
     eapply is_conditional_expectation_nneg; eauto.
   Qed.
 
+  Lemma is_conditional_expectation_factor_out_frf
+        f g ce
+        {frfg : FiniteRangeFunction g}
+        {rvf : RandomVariable dom borel_sa f}
+        {rvg : RandomVariable dom2 borel_sa g}
+        {rvce : RandomVariable dom2 borel_sa ce}
+        {rvgf: RandomVariable dom borel_sa (rvmult f g)} :
+    IsFiniteExpectation prts f ->
+    is_conditional_expectation dom2 f ce ->
+    is_conditional_expectation dom2 (rvmult f g) (Rbar_rvmult g ce).
+  Proof.
+    unfold is_conditional_expectation.
+    intros isfe isce P decP saP.
+    assert (eqq1:rv_eq
+              (rvmult (rvmult f g) (EventIndicator decP))
+              (rvmult (rvmult f (frf_indicator g)) (EventIndicator decP))).
+    {
+      apply rvmult_proper; try reflexivity.
+      apply rvmult_proper; try reflexivity.
+      apply (frf_indicator_sum g).
+    }
+    rewrite (Expectation_ext eqq1).
+    unfold frf_indicator.
+    
+    assert (eqq2:
+              rv_eq
+                (rvmult (rvmult f (frf_indicator g)) (EventIndicator decP))
+                (fun omega : Ts =>
+                   RealAdd.list_sum
+                     (map (fun c : R => (f omega) * scale_val_indicator g c omega * EventIndicator decP omega)
+                          (nodup Req_EM_T frf_vals)))).
+    {
+      intros ?.
+      admit.
+    } 
+    rewrite eqq2.
+
+    assert (isfe1:forall c, IsFiniteExpectation prts
+                                      (fun omega : Ts =>
+                                         f omega * val_indicator g c omega * EventIndicator decP omega)).
+    {
+      admit.
+    }
+
+    assert (eqq3:Expectation
+              (fun omega : Ts =>
+                 RealAdd.list_sum
+                   (map
+                      (fun c : R =>
+                         f omega * scale_val_indicator g c omega * EventIndicator decP omega)
+                      (nodup Req_EM_T frf_vals))) =
+            Some (Finite (RealAdd.list_sum
+              (map
+          (fun c : R =>
+             c * FiniteExpectation prts
+               (fun omega => f omega * val_indicator g c omega * EventIndicator decP omega))
+          (nodup Req_EM_T frf_vals))))).
+    {
+      admit.
+    }
+
+    rewrite eqq3.
+    unfold val_indicator.
+  Admitted.
+
+  Theorem is_conditional_expectation_factor_nneg
+          f g ce
+          {nnegg : NonnegativeFunction g}
+          {rvf : RandomVariable dom borel_sa f}
+          {rvg : RandomVariable dom2 borel_sa g}
+          {rvce : RandomVariable dom2 borel_sa ce}
+          {rvgf: RandomVariable dom borel_sa (rvmult f g)} :
+    IsFiniteExpectation prts f ->
+    IsFiniteExpectation prts (rvmult f g) ->
+    is_conditional_expectation dom2 f ce ->
+    is_conditional_expectation dom2 (rvmult f g) (Rbar_rvmult g ce).
+  Proof.
+  Admitted.
+
+  Theorem is_conditional_expectation_factor_out
+        f g ce
+        {rvf : RandomVariable dom borel_sa f}
+        {rvg : RandomVariable dom2 borel_sa g}
+        {rvce : RandomVariable dom2 borel_sa ce}
+        {rvgf: RandomVariable dom borel_sa (rvmult f g)} :
+    IsFiniteExpectation prts f ->
+    IsFiniteExpectation prts (rvmult f g) ->
+    is_conditional_expectation dom2 f ce ->
+    is_conditional_expectation dom2 (rvmult f g) (Rbar_rvmult g ce).
+  Proof.
+  Admitted.
+
 End is_cond_exp.
 
 Section cond_exp_l2.
@@ -4600,7 +4692,7 @@ Section cond_exp_props.
     destruct  z.
     - simpl; apply Rbar_finite_eq; lra.
   Admitted.
-  
+
   Lemma Condexp_factor_out_plus
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
