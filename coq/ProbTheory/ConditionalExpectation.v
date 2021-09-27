@@ -2090,7 +2090,6 @@ Section is_cond_exp.
       apply sa_all.
   Qed.
 
-  (* (prob_space_sa_sub prts sub) *)
   Theorem is_conditional_expectation_nneg
         (f : Ts -> R)
         (ce : Ts -> Rbar)
@@ -2099,7 +2098,7 @@ Section is_cond_exp.
         {nnf:NonnegativeFunction f}
     :
       is_conditional_expectation dom2 f ce ->
-      almostR2 prts Rbar_le (const 0) ce.
+      almostR2 (prob_space_sa_sub prts sub) Rbar_le (const 0) ce.
   Proof.
     unfold is_conditional_expectation.
     intros isce.
@@ -2168,7 +2167,7 @@ Section is_cond_exp.
       ; intros HH1; simpl in HH1.
       rewrite eqq1 in HH1; simpl in HH1.
       rewrite Ropp_0 in HH1.
-      assert (rv1:RandomVariable dom Rbar_borel_sa
+      assert (rv1:RandomVariable dom2 Rbar_borel_sa
                                  (Rbar_rvopp
                                     (Rbar_rvmult ce
                                                  (fun x : Ts =>
@@ -2177,14 +2176,13 @@ Section is_cond_exp.
         apply Rbar_rvopp_rv.
         {
           apply Rbar_rvmult_rv; trivial.
-          - apply (RandomVariable_sa_sub sub); trivial.
-          - apply borel_Rbar_borel.
-            apply EventIndicator_pre_rv.
-            apply Rbar_sa_le_lt; intros.
-            apply rv_Rbar_measurable.
-            apply (RandomVariable_sa_sub sub); trivial.
+          apply borel_Rbar_borel.
+          apply EventIndicator_pre_rv.
+          apply Rbar_sa_le_lt; intros.
+          now apply rv_Rbar_measurable.
         }
-      } 
+      }
+      rewrite <- (Rbar_Expectation_prob_space_sa_sub prts sub) in HH1; trivial.
       apply (Rbar_Expectation_nonneg_zero_almost_zero _) in HH1; trivial.
       eapply almost_impl; try eapply HH1.
       apply all_almost.
@@ -2210,7 +2208,7 @@ Section is_cond_exp.
     :
       almostR2 prts Rle (const 0) f ->
       is_conditional_expectation dom2 f ce ->
-      almostR2 prts Rbar_le (const 0) ce.
+      almostR2 (prob_space_sa_sub prts sub) Rbar_le (const 0) ce.
   Proof.
     intros anneg isce.
     unfold almostR2, const in anneg.
