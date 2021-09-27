@@ -4225,7 +4225,18 @@ Proof.
 
   destruct x; destruct y; destruct z; simpl
   ; simpl in *; rbar_prover.
-Qed.  
+Qed.
+
+Lemma Rbar_plus_assoc {x y z:Rbar} :
+    (Rbar_le 0 x) -> (Rbar_le 0 y) -> (Rbar_le 0 z) ->
+    Rbar_plus (Rbar_plus  x y) z = Rbar_plus x (Rbar_plus y z).
+Proof.
+  intros.
+  unfold Rbar_plus, Rbar_plus'.
+
+  destruct x; destruct y; destruct z; simpl
+  ; simpl in *; rbar_prover.
+Qed.
   
 Lemma Rbar_mult_div_fin_cancel_l (a:R) (b:Rbar) : a <> 0 ->
                                                   Rbar_mult (/ a) (Rbar_mult a b) = b.
