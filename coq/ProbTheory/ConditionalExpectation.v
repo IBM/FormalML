@@ -4598,8 +4598,15 @@ Section cond_exp_props.
     apply IsFiniteExpectation_indicator; trivial.
     apply sub.
     apply (proj2_sig P).
- Qed.
-    
+  Qed.
+  
+  Lemma Rbar_mult_plus_R (a b : R) (z : Rbar) :
+    Rbar_mult z (a + b) = Rbar_plus (Rbar_mult z a) (Rbar_mult z b).
+  Proof.
+    destruct  z.
+    - simpl; apply Rbar_finite_eq; lra.
+  Admitted.
+  
   Lemma Condexp_factor_out_plus
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
@@ -4660,12 +4667,40 @@ Section cond_exp_props.
     {
       intro x.
       unfold Rbar_rvmult.
-      admit.
+      unfold rvplus, Rbar_rvplus.
+      rewrite Rbar_mult_comm.
+      rewrite Rbar_mult_comm with (x := g1 x).
+      rewrite Rbar_mult_comm with (x := g2 x).      
+      apply Rbar_mult_plus_R.
     }
     rewrite (Rbar_Expectation_ext H8).
-    
-    Admitted.
-    
+    generalize (IsFiniteExpectation_Finite prts (rvmult g1 f)); intros.
+    generalize (IsFiniteExpectation_Finite prts (rvmult g2 f)); intros.    
+    destruct H9 as [r1 ?].
+    destruct H10 as [r2 ?].
+    rewrite Rbar_Expectation_sum_finite with (e1 := r1) (e2 := r2); trivial.
+    rewrite Rbar_Expectation_sum_finite with (e1 := r1) (e2 := r2); trivial.
+    - apply Rbar_rvmult_rv.
+      + apply Real_Rbar_rv.
+        apply RandomVariable_sa_sub; trivial.
+      + apply RandomVariable_sa_sub; trivial.
+        apply Condexp_rv.
+    - apply Rbar_rvmult_rv.
+      + apply Real_Rbar_rv.
+        apply RandomVariable_sa_sub; trivial.
+      + apply RandomVariable_sa_sub; trivial.
+        apply Condexp_rv.
+    - rewrite <- H1.
+      now rewrite <- Rbar_Expec_Condexp.
+    - rewrite <- H2.
+      now rewrite <- Rbar_Expec_Condexp.
+    - apply RandomVariable_sa_sub; trivial.
+      apply Condexp_rv.
+    - apply RandomVariable_sa_sub; trivial.
+      apply Condexp_rv.
+    - now rewrite <- Rbar_Expec_Condexp.
+    - now rewrite <- Rbar_Expec_Condexp.
+   Qed.
 
   Lemma Condexp_factor_out_frf
         {dom2 : SigmaAlgebra Ts}
