@@ -3217,14 +3217,10 @@ Section rv_almost.
          {dom: SigmaAlgebra Ts}
          (prts: ProbSpace dom) : Proper (almostR2 prts eq ==> almostR2 prts eq ==> almostR2 prts eq) rvplus.
   Proof.
-    unfold almostR2 in *.
-    intros x1 x2 [Px [Pxall eq_onx]] y1 y2 [Py [Pyall eq_ony]].
-    exists (Px ∩ Py).
-    split.
-    - now apply ps_one_inter.
-    - intros a [Pxa Pya].
-      unfold rvplus.
-      now rewrite eq_onx, eq_ony.
+    intros ??????.
+    eapply almost_impl; [| eapply almost_and; [exact H | exact H0]].
+    apply all_almost; intros ? [??].
+    unfold rvplus; congruence.
   Qed.
 
   Global Instance almostR2_eq_scale_proper
