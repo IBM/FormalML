@@ -4227,7 +4227,7 @@ Proof.
   ; simpl in *; rbar_prover.
 Qed.
 
-Lemma Rbar_plus_assoc {x y z:Rbar} :
+Lemma Rbar_plus_assoc_nneg {x y z:Rbar} :
     (Rbar_le 0 x) -> (Rbar_le 0 y) -> (Rbar_le 0 z) ->
     Rbar_plus (Rbar_plus  x y) z = Rbar_plus x (Rbar_plus y z).
 Proof.
@@ -4238,7 +4238,7 @@ Proof.
   ; simpl in *; rbar_prover.
 Qed.
 
-Lemma Rbar_plus_assoc_ex_Rbar_plus {x y z:Rbar} :
+Lemma Rbar_plus_assoc {x y z:Rbar} :
     ex_Rbar_plus x y -> ex_Rbar_plus y z ->
     Rbar_plus (Rbar_plus  x y) z = Rbar_plus x (Rbar_plus y z).
 Proof.
