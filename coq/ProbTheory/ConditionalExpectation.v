@@ -2287,15 +2287,21 @@ Section is_cond_exp.
 
   Lemma frf_min (f : Ts -> R) 
     {frf : FiniteRangeFunction f} :
-    forall x, fold_right Rmin 0 frf_vals  <= f x.
+    forall x, RList.MinRlist frf_vals  <= f x.
   Proof.
-    Admitted.
+    intros.
+    destruct frf; simpl.
+    now apply RList.MinRlist_P1.
+  Qed.
 
   Lemma frf_max (f : Ts -> R) 
     {frf : FiniteRangeFunction f} :
-    forall x, f x <= fold_right Rmax 0 frf_vals.
+    forall x, f x <= RList.MaxRlist frf_vals.
   Proof.
-  Admitted.
+    intros.
+    destruct frf; simpl.
+    now apply RList.MaxRlist_P1.
+  Qed.
   
   Lemma IsFiniteExpectation_mult_finite_range_pos (f g : Ts -> R) 
     {frf : FiniteRangeFunction g} :
@@ -2304,8 +2310,8 @@ Section is_cond_exp.
     IsFiniteExpectation prts (rvmult f g).
   Proof.
     intros.
-    pose (gmin := fold_right Rmin 0 frf_vals).
-    pose (gmax := fold_right Rmax 0 frf_vals).    
+    pose (gmin := RList.MinRlist frf_vals).
+    pose (gmax := RList.MaxRlist frf_vals).    
     apply (IsFiniteExpectation_bounded prts (rvscale gmin f) (rvmult f g) (rvscale gmax f)).
     - intro x.
       rv_unfold; unfold gmin.
@@ -2563,7 +2569,17 @@ Section is_cond_exp.
          apply IsFiniteExpectation_indicator; trivial.
          apply sub; trivial.
       }
-       generalize (IsFiniteExpectation_mult_finite_range (rvmult ce (EventIndicator dec)) (simple_approx g n) H15 (X n)); intros.
+       assert (rvceind: RandomVariable dom borel_sa (rvmult ce (EventIndicator dec))).
+       {
+         apply rvmult_rv.
+         - apply RandomVariable_sa_sub; trivial.
+         - apply EventIndicator_pre_rv.
+           apply sub.
+           apply H.
+       }
+       assert (rvapprox: RandomVariable dom borel_sa (simple_approx (fun x : Ts => g x) n)) by
+         now apply RandomVariable_sa_sub.
+       generalize (IsFiniteExpectation_mult_finite_range (rvmult ce (EventIndicator dec)) (simple_approx g n) H15); intros.
        assert (rv_eq 
                  (rvmult (rvmult (fun x : Ts => simple_approx (fun x0 : Ts => g x0) n x) (fun x : Ts => ce x))
                          (fun x : Ts => EventIndicator dec x))
