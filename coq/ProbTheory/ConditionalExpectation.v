@@ -2638,6 +2638,21 @@ Section is_cond_exp.
    
   Qed.
 
+  Theorem is_conditional_expectation_factor_out_nneg
+          (f g ce : Ts -> R)
+          {nnegg : NonnegativeFunction g}
+          {rvf : RandomVariable dom borel_sa f}
+          {rvg : RandomVariable dom2 borel_sa g}
+          {rvce : RandomVariable dom2 borel_sa ce}
+          {rvgf: RandomVariable dom borel_sa (rvmult f g)} :
+    IsFiniteExpectation prts f ->
+    IsFiniteExpectation prts (rvmult f g) ->
+    is_conditional_expectation dom2 f ce ->
+    is_conditional_expectation dom2 (rvmult f g) (Rbar_rvmult g ce).
+  Proof.
+    intros.
+  Admitted.
+
   Theorem is_conditional_expectation_factor_out
         f g ce
         {rvf : RandomVariable dom borel_sa f}
@@ -2649,6 +2664,136 @@ Section is_cond_exp.
     is_conditional_expectation dom2 f ce ->
     is_conditional_expectation dom2 (rvmult f g) (Rbar_rvmult g ce).
   Proof.
+    intros.
+    generalize (is_conditional_expectation_isfe f ce H1 H); intro isfe_ce.
+    unfold is_conditional_expectation.
+    intros.
+    generalize (rv_pos_neg_id g); intros.
+    assert (rv_eq  (rvmult (rvmult f g) (EventIndicator dec)) 
+                   (rvplus (rvmult (rvmult f (pos_fun_part g)) (EventIndicator dec))
+                           (rvopp (rvmult (rvmult f (neg_fun_part g)) (EventIndicator dec))))).
+    {
+      intro x.
+      rv_unfold.
+      specialize (H3 x).
+      simpl.
+      simpl in H3.
+      rewrite H3 at 1.
+      ring.
+    }
+    rewrite (Expectation_ext H4).
+    assert (rv_eq (Rbar_rvmult (Rbar_rvmult (fun x : Ts => g x) (fun x : Ts => ce x)) (fun x : Ts => EventIndicator dec x))
+                  (Rbar_rvplus
+                     (rvmult (rvmult (pos_fun_part g) (fun x : Ts => ce x)) (fun x : Ts => EventIndicator dec x))
+                     (rvopp (rvmult (rvmult (neg_fun_part g) (fun x : Ts => ce x)) (fun x : Ts => EventIndicator dec x))))).
+    {
+      intro x.
+      rv_unfold; unfold Rbar_rvmult.
+      simpl.
+      specialize (H3 x).
+      simpl in H3.
+      rewrite H3 at 1.
+      apply Rbar_finite_eq.
+      ring.
+    }
+    rewrite (Rbar_Expectation_ext H5).
+    assert (RandomVariable dom borel_sa (rvmult f (fun x : Ts => pos_fun_part g x))).
+    {
+      apply rvmult_rv; trivial.
+      apply RandomVariable_sa_sub; trivial.
+      typeclasses eauto.
+    }
+    assert (IsFiniteExpectation prts (rvmult f (fun x : Ts => pos_fun_part g x))) by admit.
+    generalize (is_conditional_expectation_factor_out_nneg f (pos_fun_part g) ce H H7 H1 P dec H2); intros.
+    assert (RandomVariable dom borel_sa (rvmult f (fun x : Ts => neg_fun_part g x))).
+    {
+      apply rvmult_rv; trivial.
+      apply RandomVariable_sa_sub; trivial.
+      typeclasses eauto.
+    }
+    assert (IsFiniteExpectation prts (rvmult f (fun x : Ts => neg_fun_part g x))) by admit.
+    generalize (is_conditional_expectation_factor_out_nneg f (neg_fun_part g) ce H H10 H1 P dec H2); intros.    
+    rewrite Expectation_sum.
+    rewrite H8.
+    generalize (Expectation_opp  (rvmult (rvmult f (fun x : Ts => neg_fun_part g x)) (EventIndicator dec))); intros.
+    simpl in H12; simpl; rewrite H12.
+    simpl in H11; rewrite H11.
+    - assert (Rbar_IsFiniteExpectation prts (Rbar_rvmult (Rbar_rvmult (fun x : Ts => Rmax (g x) 0) (fun x : Ts => ce x)) (fun x : Ts => EventIndicator dec x))) by admit.
+      assert (Rbar_IsFiniteExpectation prts 
+            (Rbar_rvmult (Rbar_rvmult (fun x : Ts => Rmax (- g x) 0) (fun x : Ts => ce x)) (fun x : Ts => EventIndicator dec x))) by admit.
+      match_case; intros.
+      match_case; intros.
+      match_case_in H16; intros.
+      + assert (is_finite r) by admit.
+        assert (is_finite r1) by admit.
+        rewrite <- H18.
+        rewrite <- H18 in H15.
+        rewrite H17 in H16.
+        rewrite <- H19 in H16.
+        inversion H16.
+        rewrite <- H19.
+        simpl.
+        symmetry.
+        apply Rbar_Expectation_sum_finite; trivial.
+        * apply Real_Rbar_rv.
+          apply rvmult_rv.
+          -- apply rvmult_rv.
+             ++ apply positive_part_rv.
+                apply RandomVariable_sa_sub; trivial.
+             ++ apply RandomVariable_sa_sub; trivial.
+          -- apply EventIndicator_pre_rv.
+             now apply sub.
+        * apply Real_Rbar_rv.
+          apply rvopp_rv.
+          apply rvmult_rv.
+          -- apply rvmult_rv.
+             ++ apply negative_part_rv.
+                apply RandomVariable_sa_sub; trivial.
+             ++ apply RandomVariable_sa_sub; trivial.
+          -- apply EventIndicator_pre_rv.
+             now apply sub.
+        * generalize (Rbar_Expectation_opp (rvmult (rvmult (fun x : Ts => Rmax (- g x) 0) (fun x : Ts => ce x)) (fun x : Ts => EventIndicator dec x))); intros.
+          simpl in H20.
+          setoid_rewrite H17 in H20.
+          rewrite <- H19 in H20.
+          simpl in H20.
+          assert (rv_eq 
+                    (Rbar_rvopp
+                       (fun omega : Ts =>
+                          rvmult (rvmult (fun x : Ts => Rmax (- g x) 0) (fun x : Ts => ce x)) 
+                                 (fun x : Ts => EventIndicator dec x) omega)) 
+                    (fun omega : Ts =>
+                       rvopp (rvmult (rvmult (fun x : Ts => Rmax (- g x) 0) (fun x : Ts => ce x)) 
+                                     (fun x : Ts => EventIndicator dec x)) omega)).
+          {
+            intro x.
+            unfold Rbar_rvopp; rv_unfold; simpl; apply Rbar_finite_eq; ring.
+          }
+          now rewrite (Rbar_Expectation_ext H22) in H20.
+      + rewrite H17 in H16.
+        discriminate.
+      + match_case_in H16; intros.
+         * rewrite H17 in H16; discriminate.
+         * unfold Rbar_IsFiniteExpectation in H14.
+           now rewrite H17 in H14.
+      + unfold Rbar_IsFiniteExpectation in H13.
+        now rewrite H15 in H13.
+    - apply rvmult_rv.
+      + apply rvmult_rv; trivial.
+        apply RandomVariable_sa_sub; trivial.
+        now apply positive_part_rv.
+      + apply EventIndicator_pre_rv.
+        now apply sub.
+    - apply rvopp_rv.
+      apply rvmult_rv.
+      + apply rvmult_rv; trivial.
+        apply RandomVariable_sa_sub; trivial.
+        now apply negative_part_rv.
+      + apply EventIndicator_pre_rv.
+        now apply sub.
+   - admit.
+   - admit.
+
   Admitted.
 
 End is_cond_exp.
