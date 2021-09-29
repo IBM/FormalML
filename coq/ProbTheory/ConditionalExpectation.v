@@ -2783,8 +2783,18 @@ Proof.
       match_case; intros.
       match_case; intros.
       match_case_in H16; intros.
-      + assert (is_finite r) by admit.
-        assert (is_finite r1) by admit.
+      + assert (is_finite r).
+        {
+          unfold Rbar_IsFiniteExpectation in H13.
+          rewrite H15 in H13.
+          case_eq r; intros; rewrite H18 in H13; now simpl in H13.
+        }
+        assert (is_finite r1).
+        {
+          unfold Rbar_IsFiniteExpectation in H14.
+          rewrite H17 in H14.
+          case_eq r1; intros; rewrite H19 in H14; now simpl in H14.          
+        }
         rewrite <- H18.
         rewrite <- H18 in H15.
         rewrite H17 in H16.
