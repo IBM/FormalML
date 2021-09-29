@@ -2860,10 +2860,21 @@ Proof.
         now apply negative_part_rv.
       + apply EventIndicator_pre_rv.
         now apply sub.
-   - admit.
-   - admit.
-
-  Admitted.
+    - generalize (IsFiniteExpectation_indicator prts (rvmult f (fun x0 : Ts => pos_fun_part g x0)) dec); intros.
+      cut_to H12; trivial.
+      + generalize (IsFiniteExpectation_parts prts _ H12); intros.
+        destruct H13.
+        now apply IsFiniteNonnegExpectation.
+      + now apply sub.
+    - generalize (IsFiniteExpectation_indicator prts (rvmult f (fun x0 : Ts => neg_fun_part g x0)) dec); intros.
+      cut_to H12; trivial.
+      + generalize (IsFiniteExpectation_opp prts); intros.
+        specialize (H13 _ H12).
+        generalize (IsFiniteExpectation_parts prts _ H13); intros.
+        destruct H14.
+        now apply IsFiniteNonnegExpectation.
+      + now apply sub.
+  Qed.
 
 End is_cond_exp.
 
