@@ -2653,6 +2653,16 @@ Section is_cond_exp.
     intros.
   Admitted.
 
+
+Lemma IsFiniteExpectation_prod_parts f g :
+  IsFiniteExpectation prts (rvmult f g) ->
+  IsFiniteExpectation prts (rvmult f (pos_fun_part g)) /\
+  IsFiniteExpectation prts (rvmult f (neg_fun_part g)).
+Proof.
+  intros.
+  generalize (IsFiniteExpectation_parts prts g); intros.
+  Admitted.
+
   Theorem is_conditional_expectation_factor_out
         f g ce
         {rvf : RandomVariable dom borel_sa f}
@@ -2703,7 +2713,8 @@ Section is_cond_exp.
       apply RandomVariable_sa_sub; trivial.
       typeclasses eauto.
     }
-    assert (IsFiniteExpectation prts (rvmult f (fun x : Ts => pos_fun_part g x))) by admit.
+    generalize (IsFiniteExpectation_prod_parts f g H0); intros isfinprod.
+    destruct isfinprod.
     generalize (is_conditional_expectation_factor_out_nneg f (pos_fun_part g) ce H H7 H1 P dec H2); intros.
     assert (RandomVariable dom borel_sa (rvmult f (fun x : Ts => neg_fun_part g x))).
     {
@@ -2711,16 +2722,29 @@ Section is_cond_exp.
       apply RandomVariable_sa_sub; trivial.
       typeclasses eauto.
     }
-    assert (IsFiniteExpectation prts (rvmult f (fun x : Ts => neg_fun_part g x))) by admit.
-    generalize (is_conditional_expectation_factor_out_nneg f (neg_fun_part g) ce H H10 H1 P dec H2); intros.    
+    generalize (is_conditional_expectation_factor_out_nneg f (neg_fun_part g) ce H H8 H1 P dec H2); intros.    
     rewrite Expectation_sum.
-    rewrite H8.
+    rewrite H9.
     generalize (Expectation_opp  (rvmult (rvmult f (fun x : Ts => neg_fun_part g x)) (EventIndicator dec))); intros.
     simpl in H12; simpl; rewrite H12.
     simpl in H11; rewrite H11.
-    - assert (Rbar_IsFiniteExpectation prts (Rbar_rvmult (Rbar_rvmult (fun x : Ts => Rmax (g x) 0) (fun x : Ts => ce x)) (fun x : Ts => EventIndicator dec x))) by admit.
+    - assert (Rbar_IsFiniteExpectation prts (Rbar_rvmult (Rbar_rvmult (fun x : Ts => Rmax (g x) 0) (fun x : Ts => ce x)) (fun x : Ts => EventIndicator dec x))).
+      {
+        unfold Rbar_IsFiniteExpectation.
+        simpl in H9.
+        rewrite <- H9.
+        apply IsFiniteExpectation_indicator; trivial.
+        now apply sub.
+      }
       assert (Rbar_IsFiniteExpectation prts 
-            (Rbar_rvmult (Rbar_rvmult (fun x : Ts => Rmax (- g x) 0) (fun x : Ts => ce x)) (fun x : Ts => EventIndicator dec x))) by admit.
+                                       (Rbar_rvmult (Rbar_rvmult (fun x : Ts => Rmax (- g x) 0) (fun x : Ts => ce x)) (fun x : Ts => EventIndicator dec x))).
+      {
+        unfold Rbar_IsFiniteExpectation.
+        simpl in H11.
+        rewrite <- H11.
+        apply IsFiniteExpectation_indicator; trivial.
+        now apply sub.
+      }
       match_case; intros.
       match_case; intros.
       match_case_in H16; intros.
