@@ -2511,6 +2511,9 @@ Admitted.
     apply IsFiniteExpectation_minus; trivial; typeclasses eauto.
   Qed.
 
+  (* should be generalized to (ce : Ts -> Rbar) almost is_finite
+        and almost Rbar_NonnegativeFunction *)
+     
   Theorem is_conditional_expectation_factor_out_nneg_both
           (f g ce : Ts -> R)
           {nnegf : NonnegativeFunction f}          
@@ -2807,19 +2810,59 @@ Admitted.
    
   Qed.
 
+  Local Existing Instance Rbar_le_pre.
+
   Theorem is_conditional_expectation_factor_out_nneg
-          (f g ce : Ts -> R)
+          (f g : Ts -> R)
+          (ce ace : Ts -> Rbar)
           {nnegg : NonnegativeFunction g}
           {rvf : RandomVariable dom borel_sa f}
           {rvg : RandomVariable dom2 borel_sa g}
-          {rvce : RandomVariable dom2 borel_sa ce}
-          {rvgf: RandomVariable dom borel_sa (rvmult f g)} :
+          {rvce : RandomVariable dom2 Rbar_borel_sa ce}
+          {rvace : RandomVariable dom2 Rbar_borel_sa ace}          
+          {rvgf: RandomVariable dom borel_sa (rvmult f g)} 
+          {rvgce: RandomVariable dom2 Rbar_borel_sa (Rbar_rvmult g ce)} :
     IsFiniteExpectation prts f ->
     IsFiniteExpectation prts (rvmult f g) ->
     is_conditional_expectation dom2 f ce ->
+    is_conditional_expectation dom2 (rvabs f) ace ->    
     is_conditional_expectation dom2 (rvmult f g) (Rbar_rvmult g ce).
   Proof.
     intros.
+    generalize (is_conditional_expectation_nneg (rvabs f) ace H2); intros.
+    generalize (simple_approx_pofrf g); intros.
+    assert (almostR2 prts Rbar_le (Rbar_rvabs ce) ace) by admit.
+    assert (forall n, almostR2 prts Rbar_le 
+                               (Rbar_rvabs (Rbar_rvmult (simple_approx g n) ce)) 
+                               (Rbar_rvmult g ace)).
+    {
+      intros.
+      assert (almostR2 prts Rbar_le 
+                       (Rbar_rvabs (Rbar_rvmult (simple_approx g n) ce)) 
+                       (Rbar_rvmult (simple_approx g n) ace)).
+      {
+        assert (rv_eq
+                  (Rbar_rvabs
+                     (Rbar_rvmult (simple_approx g n) ce))
+                  (Rbar_rvmult (simple_approx g n) (Rbar_rvabs ce))).
+        - admit.
+        - admit.
+      }
+      assert (almostR2 prts Rbar_le 
+                       (Rbar_rvmult (simple_approx g n) ace)
+                       (Rbar_rvmult g ace)).
+      {
+        generalize (simple_approx_le g nnegg n); intros.
+        admit.
+      }
+      eapply almostR2_trans.
+      - apply Rbar_le_pre.
+      - apply H6.
+      - apply H7.
+    }
+    generalize (is_conditional_expectation_factor_out_nneg_both (rvabs f) g); intros.
+    (* need version where ce is almost Rbar_Nonnegative *)
+    (* now use dominated convergence theorem twice *)
   Admitted.
 
 
