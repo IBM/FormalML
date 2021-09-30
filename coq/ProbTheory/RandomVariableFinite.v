@@ -1066,8 +1066,6 @@ Proof.
   - now rewrite H0 in H.
 Qed.
 
-
-
 Global Instance IsFiniteExpectation_indicator f {P} (dec:dec_pre_event P)
        {rv : RandomVariable dom borel_sa f}:
   sa_sigma P ->
@@ -1123,6 +1121,52 @@ Proof.
         apply Rmax_r.
   Qed.
 
+
+Lemma IsFiniteExpectation_prod_parts f g 
+      {dom2 : SigmaAlgebra Ts}
+      (sub : sa_sub dom2 dom)
+      {rvf : RandomVariable dom borel_sa (rvmult f g)}
+      {rvg : RandomVariable dom2 borel_sa g} :
+  IsFiniteExpectation prts (rvmult f g) ->
+  IsFiniteExpectation prts (rvmult f (pos_fun_part g)) /\
+  IsFiniteExpectation prts (rvmult f (neg_fun_part g)).
+Proof.
+  intros.
+  split.
+  - pose (P := event_ge dom2 g 0).
+    assert (rv_eq (rvmult f (pos_fun_part g)) (rvmult (rvmult f g) (EventIndicator (classic_dec P)))).
+    {
+      intro x.
+      rv_unfold.
+      rewrite Rmult_assoc.
+      f_equal.
+      simpl.
+      unfold Rmax.
+      repeat match_destr; lra.
+    }
+    generalize (IsFiniteExpectation_indicator (rvmult f g) (classic_dec P)); intros.
+    rewrite H0.
+    apply H1; trivial.
+    destruct P.
+    now apply sub.
+  - pose (P := event_ge dom2 (rvopp g) 0).
+    assert (rv_eq (rvmult f (neg_fun_part g)) (rvmult (rvopp (rvmult f g)) (EventIndicator (classic_dec P)))).
+    {
+      intro x.
+      rv_unfold.
+      simpl.
+      unfold Rmax; simpl.
+      repeat match_destr; try lra.
+      assert (g x = 0) by lra.
+      rewrite H0; lra.
+    }
+    generalize (IsFiniteExpectation_opp prts (rvmult f g)); intros.
+    generalize (IsFiniteExpectation_indicator (rvopp (rvmult f g)) (classic_dec P)); intros.
+    rewrite H0.
+    apply H2; trivial.
+    destruct P.
+    now apply sub.
+  Qed.
 
     Lemma Expectation_mult_indicator_almost_le
         (X1 X2 : Ts -> R)

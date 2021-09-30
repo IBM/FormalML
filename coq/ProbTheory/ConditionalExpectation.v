@@ -2823,50 +2823,6 @@ Admitted.
   Admitted.
 
 
-Lemma IsFiniteExpectation_prod_parts f g 
-      {rvf : RandomVariable dom borel_sa (rvmult f g)}
-      {rvg : RandomVariable dom2 borel_sa g} :
-  IsFiniteExpectation prts (rvmult f g) ->
-  IsFiniteExpectation prts (rvmult f (pos_fun_part g)) /\
-  IsFiniteExpectation prts (rvmult f (neg_fun_part g)).
-Proof.
-  intros.
-  split.
-  - pose (P := event_ge dom2 g 0).
-    assert (rv_eq (rvmult f (pos_fun_part g)) (rvmult (rvmult f g) (EventIndicator (classic_dec P)))).
-    {
-      intro x.
-      rv_unfold.
-      rewrite Rmult_assoc.
-      f_equal.
-      simpl.
-      unfold Rmax.
-      repeat match_destr; lra.
-    }
-    generalize (IsFiniteExpectation_indicator prts (rvmult f g) (classic_dec P)); intros.
-    rewrite H0.
-    apply H1; trivial.
-    destruct P.
-    now apply sub.
-  - pose (P := event_ge dom2 (rvopp g) 0).
-    assert (rv_eq (rvmult f (neg_fun_part g)) (rvmult (rvopp (rvmult f g)) (EventIndicator (classic_dec P)))).
-    {
-      intro x.
-      rv_unfold.
-      simpl.
-      unfold Rmax; simpl.
-      repeat match_destr; try lra.
-      assert (g x = 0) by lra.
-      rewrite H0; lra.
-    }
-    generalize (IsFiniteExpectation_opp prts (rvmult f g)); intros.
-    generalize (IsFiniteExpectation_indicator prts (rvopp (rvmult f g)) (classic_dec P)); intros.
-    rewrite H0.
-    apply H2; trivial.
-    destruct P.
-    now apply sub.
-  Qed.
-
   Theorem is_conditional_expectation_factor_out
         f g ce
         {rvf : RandomVariable dom borel_sa f}
@@ -2878,8 +2834,6 @@ Proof.
     is_conditional_expectation dom2 f ce ->
     is_conditional_expectation dom2 (rvmult f g) (Rbar_rvmult g ce).
   Proof.
-    intros.
-    generalize (is_conditional_expectation_isfe f ce H1 H); intro isfe_ce.
     unfold is_conditional_expectation.
     intros.
     generalize (rv_pos_neg_id g); intros.
@@ -2917,7 +2871,7 @@ Proof.
       apply RandomVariable_sa_sub; trivial.
       typeclasses eauto.
     }
-    generalize (IsFiniteExpectation_prod_parts f g H0); intros isfinprod.
+    generalize (IsFiniteExpectation_prod_parts prts f g sub H0); intros isfinprod.
     destruct isfinprod.
     generalize (is_conditional_expectation_factor_out_nneg f (pos_fun_part g) ce H H7 H1 P dec H2); intros.
     assert (RandomVariable dom borel_sa (rvmult f (fun x : Ts => neg_fun_part g x))).
