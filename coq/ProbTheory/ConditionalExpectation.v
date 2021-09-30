@@ -2810,9 +2810,22 @@ Admitted.
    
   Qed.
 
-  Local Existing Instance Rbar_le_pre.
-
   Theorem is_conditional_expectation_factor_out_nneg
+          (f g ce : Ts -> R)
+          {nnegg : NonnegativeFunction g}
+          {rvf : RandomVariable dom borel_sa f}
+          {rvg : RandomVariable dom2 borel_sa g}
+          {rvce : RandomVariable dom2 borel_sa ce}
+          {rvgf: RandomVariable dom borel_sa (rvmult f g)} 
+          {rvgce: RandomVariable dom2 borel_sa (Rbar_rvmult g ce)} :
+    IsFiniteExpectation prts f ->
+    IsFiniteExpectation prts (rvmult f g) ->
+    is_conditional_expectation dom2 f ce ->
+    is_conditional_expectation dom2 (rvmult f g) (Rbar_rvmult g ce).
+  Proof.
+   Admitted.
+
+  Theorem is_conditional_expectation_factor_out_nneg_ext
           (f g : Ts -> R)
           (ce ace : Ts -> Rbar)
           {nnegg : NonnegativeFunction g}
