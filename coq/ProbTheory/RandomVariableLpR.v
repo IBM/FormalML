@@ -2776,7 +2776,7 @@ Section complete.
     generalize (rvpower_nnf (rvabs f) (const p)); intros.
     rewrite Expectation_pos_pofrf with (nnf := H0) in H.
     match_case_in H; intros.
-    - rewrite Expectation_Rbar_Expectation in H1.
+    - rewrite NNExpectation_Rbar_NNExpectation in H1.
       unfold rvpower, rvabs, const in H1.
       unfold Rbar_power, Rbar_abs.
       erewrite Rbar_NonnegExpectation_pf_irrel.
@@ -2796,7 +2796,7 @@ Section complete.
     unfold IsFiniteExpectation.
     generalize (rvpower_nnf (rvabs f) (const p)); intros.
     rewrite Expectation_pos_pofrf with (nnf := H0).
-    rewrite Expectation_Rbar_Expectation.
+    rewrite NNExpectation_Rbar_NNExpectation.
     unfold Rbar_power, Rbar_abs in H.
     unfold rvpower, rvabs, const.
     erewrite Rbar_NonnegExpectation_pf_irrel.

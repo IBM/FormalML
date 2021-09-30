@@ -379,7 +379,7 @@ Section RbarExpectation.
  Qed.
 
       
-  Lemma Expectation_Rbar_Expectation
+  Lemma NNExpectation_Rbar_NNExpectation
         (rv_X : Ts -> R)
         (xpos : NonnegativeFunction rv_X) :
     NonnegExpectation rv_X = Rbar_NonnegExpectation rv_X.
@@ -415,17 +415,17 @@ Section RbarExpectation.
     repeat match_destr; simpl in *; lra.
   Qed.
 
-  Lemma gen_Expectation_Rbar_Expectation
+  Lemma Expectation_Rbar_Expectation
         (rv_X : Ts -> R) :
     Expectation rv_X = Rbar_Expectation rv_X.
   Proof.
     unfold Expectation, Rbar_Expectation.
     f_equal.
-    - rewrite Expectation_Rbar_Expectation.
+    - rewrite NNExpectation_Rbar_NNExpectation.
       apply Rbar_NonnegExpectation_ext.
       intro x.
       now rewrite Rbar_pos_fun_pos_fun.
-    - rewrite Expectation_Rbar_Expectation.
+    - rewrite NNExpectation_Rbar_NNExpectation.
       apply Rbar_NonnegExpectation_ext.
       intro x.
       now rewrite Rbar_neg_fun_neg_fun.
@@ -438,7 +438,7 @@ Section RbarExpectation.
       forall n, Rbar_le (NonnegExpectation (Xn n)) (Rbar_NonnegExpectation (Rbar_rvlim Xn)).
   Proof.
     intros.
-    rewrite Expectation_Rbar_Expectation.
+    rewrite NNExpectation_Rbar_NNExpectation.
     unfold Rbar_NonnegExpectation, NonnegExpectation.
     unfold SimpleExpectationSup, Lub_Rbar.
     repeat match goal with
@@ -1573,8 +1573,8 @@ Section RbarExpectation.
       generalize (Rbar_NonnegExpectation_pos (Rbar_pos_fun_part rv_X1)); intros.
       generalize (NonnegExpectation_pos (pos_fun_part rv_X2)); intros.      
       rewrite <- Rbar_plus_opp.
-      rewrite <- Expectation_Rbar_Expectation.
-      rewrite <- Expectation_Rbar_Expectation.
+      rewrite <- NNExpectation_Rbar_NNExpectation.
+      rewrite <- NNExpectation_Rbar_NNExpectation.
       unfold IsFiniteExpectation in isfe_pos.
       unfold IsFiniteExpectation in isfe_neg.      
       erewrite Expectation_pos_pofrf in isfe_pos.
@@ -2372,7 +2372,7 @@ Qed.
     Rbar_Expectation rv_X = Expectation (Rbar_finite_part rv_X).
   Proof.
     intros.
-    rewrite gen_Expectation_Rbar_Expectation.
+    rewrite Expectation_Rbar_Expectation.
     apply Rbar_Expectation_almostR2_proper; trivial.
     - typeclasses eauto.
     - now apply finexp_almost_finite_part.
@@ -2432,7 +2432,7 @@ Qed.
     specialize (H6 (rvplus (Rbar_finite_part rv_X1) (Rbar_finite_part rv_X2))).
     cut_to H6; trivial.
     - rewrite H6.
-      rewrite <- gen_Expectation_Rbar_Expectation.
+      rewrite <- Expectation_Rbar_Expectation.
       apply H4.    
     - apply Rbar_rvplus_rv; trivial.
   Qed.
@@ -2486,14 +2486,14 @@ Qed.
     generalize (Rbar_Expectation_almostR2_proper  (Rbar_rvplus rv_X1 rv_X2)); intros.
     specialize (H6 (rvplus (Rbar_finite_part rv_X1) (Rbar_finite_part rv_X2))).
     rewrite H6.
-    - rewrite <- gen_Expectation_Rbar_Expectation.
+    - rewrite <- Expectation_Rbar_Expectation.
       apply H5.
-      + rewrite gen_Expectation_Rbar_Expectation.
+      + rewrite Expectation_Rbar_Expectation.
         generalize (Rbar_Expectation_almostR2_proper rv_X1 (Rbar_finite_part rv_X1)); intros.
         rewrite <- H7.
         apply H.
         now apply finexp_almost_finite_part.
-      + rewrite gen_Expectation_Rbar_Expectation.
+      + rewrite Expectation_Rbar_Expectation.
         generalize (Rbar_Expectation_almostR2_proper rv_X2 (Rbar_finite_part rv_X2)); intros.
         rewrite <- H7.
         apply H0.

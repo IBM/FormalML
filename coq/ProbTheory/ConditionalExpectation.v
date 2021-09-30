@@ -1830,7 +1830,7 @@ Section is_cond_exp.
   Proof.
     intros P Pdec saP.
     unfold Rbar_rvmult, rvmult, const; simpl.
-    now rewrite gen_Expectation_Rbar_Expectation.
+    now rewrite Expectation_Rbar_Expectation.
   Qed.
   
   Lemma is_conditional_expectation_scale_nzero (c:R)
@@ -2652,7 +2652,7 @@ Admitted.
        now rv_unfold; unfold Rbar_rvmult; simpl.
      }               
      rewrite (Rbar_Expectation_ext H11) in H3.
-     rewrite <- gen_Expectation_Rbar_Expectation in H3.
+     rewrite <- Expectation_Rbar_Expectation in H3.
      rewrite Expectation_pos_pofrf with (nnf := (H10 n)) in H3.     
      now inversion H3.
    }
@@ -2733,7 +2733,7 @@ Admitted.
            now rv_unfold; unfold Rbar_rvmult; simpl.
          }
          rewrite (Rbar_Expectation_ext H15) in iscondf.
-         rewrite <- gen_Expectation_Rbar_Expectation in iscondf.
+         rewrite <- Expectation_Rbar_Expectation in iscondf.
          rewrite <- iscondf.
          apply IsFiniteExpectation_indicator; trivial.
          apply sub; trivial.
@@ -3267,7 +3267,7 @@ Section cond_exp_l2.
       subst.
       erewrite Expectation_ext; [rewrite e | reflexivity].
       unfold Rbar_rvmult; simpl.
-      rewrite <- gen_Expectation_Rbar_Expectation.
+      rewrite <- Expectation_Rbar_Expectation.
       erewrite Expectation_ext; [rewrite e0 | reflexivity].
       trivial.
     - now apply EventIndicator_pre_rv.
@@ -3402,7 +3402,7 @@ Section cond_exp_l2.
     rewrite Expectation_prob_space_sa_sub.
     - simpl.
       unfold Rbar_rvmult, rvmult in *; simpl in *.
-      rewrite <- gen_Expectation_Rbar_Expectation in H.
+      rewrite <- Expectation_Rbar_Expectation in H.
       rewrite <- H.
       erewrite Expectation_pos_pofrf.
       generalize (NonnegExpectation_pos (rvmult f (EventIndicator dec))); intros.
@@ -3508,7 +3508,7 @@ Section cond_exp2.
     }
     rewrite Expectation_prob_space_sa_sub; trivial.
     unfold Rbar_rvmult in *; simpl in *.
-    rewrite <- gen_Expectation_Rbar_Expectation in eqq1, eqq2.
+    rewrite <- Expectation_Rbar_Expectation in eqq1, eqq2.
     unfold rvmult; simpl.
     simpl; rewrite <- eqq1.
     match_case; intros.
@@ -3876,7 +3876,7 @@ Section cond_exp2.
           unfold is_conditional_expectation in giscond.
           specialize (giscond n P dec H0).
           unfold Rbar_rvmult in giscond; simpl in *.
-          rewrite <- gen_Expectation_Rbar_Expectation in giscond.
+          rewrite <- Expectation_Rbar_Expectation in giscond.
           rewrite (Expectation_pos_pofrf _ (nnf:=_)) in giscond.
           rewrite (Expectation_pos_pofrf _ (nnf:=_))in giscond.
           now inversion giscond.
@@ -3889,7 +3889,7 @@ Section cond_exp2.
         }
         rewrite (monotone_convergence_Rbar
                    (fun n =>  (rvmult (rvmin f (const (INR n))) (EventIndicator dec)))).
-        * rewrite Expectation_Rbar_Expectation.
+        * rewrite NNExpectation_Rbar_NNExpectation.
           apply Rbar_NonnegExpectation_ext; intros a.
           now rewrite rvlim_rvmin_indicator.
         * intros.
@@ -4313,7 +4313,7 @@ Section cond_exp_props.
         now simpl.
       }
       rewrite (Rbar_Expectation_ext H0).
-      apply gen_Expectation_Rbar_Expectation.
+      apply Expectation_Rbar_Expectation.
   Qed.
 
   Corollary NonNegConditionalExpectation_const c pf
