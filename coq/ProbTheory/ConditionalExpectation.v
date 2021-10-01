@@ -1045,6 +1045,18 @@ Section is_cond_exp.
   Context {dom2 : SigmaAlgebra Ts}
           (sub : sa_sub dom2 dom).
 
+  Theorem is_conditional_expectation_id
+          (f : Ts -> R)
+          {rvf : RandomVariable dom borel_sa f}
+          {rvf2 : RandomVariable dom2 borel_sa f} :
+    is_conditional_expectation dom2 f (fun x => Finite (f x)).
+  Proof.
+    unfold is_conditional_expectation; intros.
+    unfold Rbar_rvmult; simpl.
+    rewrite Expectation_Rbar_Expectation.
+    reflexivity.
+  Qed.
+
   Theorem is_conditional_expectation_Expectation
         (f : Ts -> R)
         (ce : Ts -> Rbar)           
@@ -4389,20 +4401,56 @@ Section cond_exp2.
   Lemma NonNegCondexp'  (f : Ts -> R) 
         {rv : RandomVariable dom borel_sa f}
         {nnf : NonnegativeFunction f} :
-    { g : Ts -> Rbar |
+    exists g : Ts -> Rbar,
       Rbar_NonnegativeFunction g
+      /\ exists (g_rv : RandomVariable dom2 Rbar_borel_sa g),
+          is_conditional_expectation prts dom2 f g.
+  Proof.
+    destruct (NonNegCondexp_is_Rbar_condexp_g f) as [g [?[??]]].
+    exists (Rbar_rvlim g); eauto.
+  Qed.
+
+  Definition IsFiniteExpectation_dec (f: Ts -> R) :
+    {IsFiniteExpectation prts f} + {~ IsFiniteExpectation prts f}.
+  Proof.
+    unfold IsFiniteExpectation.
+    repeat match_destr; eauto.
+  Defined.
+  
+  Lemma NonNegCondexp''  (f : Ts -> R) 
+        {rv : RandomVariable dom borel_sa f}
+        {nnf : NonnegativeFunction f} :
+    { g : Ts -> Rbar |
+      Rbar_NonnegativeFunction g /\
+      (RandomVariable dom2 borel_sa f -> g = (fun x => Finite (f x)))
+      /\ (IsFiniteExpectation prts f -> exists gr, g = fun x => Finite (gr x))
       /\ exists (g_rv : RandomVariable dom2 Rbar_borel_sa g),
           is_conditional_expectation prts dom2 f g }.
   Proof.
     apply constructive_indefinite_description.
-    destruct (NonNegCondexp_is_Rbar_condexp_g f) as [g [?[??]]].
-    exists (Rbar_rvlim g); eauto.
+    destruct (classic (RandomVariable dom2 borel_sa f)) as [rv2 | nrv2].
+    - exists (fun x => Finite (f x)).
+      repeat split; eauto 2.
+      eexists.
+      apply is_conditional_expectation_id.
+    - destruct (NonNegCondexp' f) as [ce [? [??]]].
+      destruct (IsFiniteExpectation_dec f).
+      + exists (fun x => Finite (Rbar_finite_part ce x)).
+        repeat split; try tauto; eauto 2.
+        * unfold Rbar_finite_part.
+          intros a.
+          specialize (H a).
+          destruct (ce a); simpl; trivial; lra.
+        * eexists.
+          now apply is_conditional_expectation_isfe_finite_part.
+      + exists ce.
+        repeat split; eauto 2; tauto.
   Qed.
 
   Definition NonNegCondexp  (f : Ts -> R) 
              {rv : RandomVariable dom borel_sa f}
              {nnf : NonnegativeFunction f} : Ts -> Rbar
-    := proj1_sig (NonNegCondexp' f).
+    := proj1_sig (NonNegCondexp'' f).
 
   Global Instance NonNegCondexp_nneg (f : Ts -> R) 
          {rv : RandomVariable dom borel_sa f}
@@ -4419,19 +4467,9 @@ Section cond_exp2.
     RandomVariable dom2 Rbar_borel_sa (NonNegCondexp f).
   Proof.
     unfold NonNegCondexp, proj1_sig; match_destr.
-    destruct a as [?[??]]; eauto.
+    destruct a as [?[?[?[??]]]]; eauto.
   Qed.
 
-  Lemma conditional_expectation_L2fun_cond_exp 
-        (f : Ts -> R)
-        {rv : RandomVariable dom borel_sa f} {isl : IsLp prts 2 f} :
-    is_conditional_expectation prts dom2 f (LpRRV_rv_X _ (conditional_expectation_L2fun prts sub f)).
-  Proof.
-    intros ???.
-    unfold Rbar_rvmult; simpl.
-    now apply conditional_expectation_L2fun_eq3.
-  Qed.    
-  
   Lemma NonNegCondexp_cond_exp (f : Ts -> R) 
         {rv : RandomVariable dom borel_sa f}
         {nnf : NonnegativeFunction f} :
@@ -4441,23 +4479,46 @@ Section cond_exp2.
     unfold is_conditional_expectation; intros.
     unfold proj1_sig.
     match_destr.
-    destruct a as [?[??]]; eauto.
+    destruct a as [?[?[?[??]]]]; eauto.
   Qed.
-    
-  Lemma NonNegCond_almost_finite (f : Ts -> R)
+
+  Lemma NonNegCondexp_finite (f : Ts -> R)
+          {rv : RandomVariable dom borel_sa f}
+          {nnf : NonnegativeFunction f}
+          {rvce : RandomVariable dom2 Rbar_borel_sa (NonNegCondexp f)}
+          {isfe:IsFiniteExpectation prts f} :
+      exists gr, NonNegCondexp f = fun x => Finite (gr x).
+  Proof.
+    unfold NonNegCondexp.
+    unfold is_conditional_expectation; intros.
+    unfold proj1_sig.
+    match_destr.
+    destruct a as [?[?[?[??]]]]; eauto.
+  Qed.
+
+  Lemma NonNegCondexp_id (f : Ts -> R)
         {rv : RandomVariable dom borel_sa f}
+        {rv2 : RandomVariable dom2 borel_sa f}
         {nnf : NonnegativeFunction f}
         {rvce : RandomVariable dom2 Rbar_borel_sa (NonNegCondexp f)} :
-    IsFiniteExpectation prts f ->
-    almost prts (fun x => is_finite ((NonNegCondexp f) x)).
+    NonNegCondexp f = (fun x => Finite (f x)).
   Proof.
-    intros isfe.
-    apply IsFiniteExpectation_nneg_is_almost_finite; trivial.
-    - apply (RandomVariable_sa_sub sub); trivial.
-    - apply NonNegCondexp_nneg.
-    - eapply (is_conditional_expectation_FiniteExpectation); eauto.
-      apply NonNegCondexp_cond_exp.
+    unfold NonNegCondexp.
+    unfold is_conditional_expectation; intros.
+    unfold proj1_sig.
+    match_destr.
+    destruct a as [?[?[?[??]]]]; eauto.
   Qed.
+  
+  Lemma conditional_expectation_L2fun_cond_exp 
+        (f : Ts -> R)
+        {rv : RandomVariable dom borel_sa f} {isl : IsLp prts 2 f} :
+    is_conditional_expectation prts dom2 f (LpRRV_rv_X _ (conditional_expectation_L2fun prts sub f)).
+  Proof.
+    intros ???.
+    unfold Rbar_rvmult; simpl.
+    now apply conditional_expectation_L2fun_eq3.
+  Qed.    
 
   Definition ConditionalExpectation (f : Ts -> R) 
              {rv : RandomVariable dom borel_sa f} : Ts -> Rbar :=
@@ -4474,7 +4535,7 @@ Section cond_exp2.
     - typeclasses eauto.
   Qed.
 
-  Lemma Condexp_cond_exp (f : Ts -> R) 
+  Theorem Condexp_cond_exp (f : Ts -> R) 
         {rv : RandomVariable dom borel_sa f}
         {isfe:IsFiniteExpectation prts f}
     :
@@ -4551,8 +4612,86 @@ Section cond_exp2.
       repeat rewrite (Rbar_mult_comm _ (EventIndicator dec a)).
       rewrite Rbar_mult_r_plus_distr.
       now rewrite <- Rbar_mult_opp_r.
+  Qed.  
+
+  Global Instance Condexp_nneg (f : Ts -> R) 
+         {rv : RandomVariable dom borel_sa f}
+         {nnf : NonnegativeFunction f} :
+    Rbar_NonnegativeFunction (ConditionalExpectation f).
+  Proof.
+    unfold ConditionalExpectation.
+      
+    assert (rv2neg:RandomVariable dom2 borel_sa (fun x : Ts => neg_fun_part f x)).
+    {
+      rewrite <- neg_fun_part_pos; trivial.
+      typeclasses eauto.
+    } 
+    rewrite (NonNegCondexp_id (fun x : Ts => neg_fun_part f x)).
+    intros ?.
+    unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp.
+    rewrite <- neg_fun_part_pos; trivial.
+    unfold Rbar_opp, const.
+    rewrite Ropp_0, Rbar_plus_0_r.
+    apply NonNegCondexp_nneg.
   Qed.
 
+  Theorem Condexp_id (f : Ts -> R)
+        {rv : RandomVariable dom borel_sa f}
+        {rv2 : RandomVariable dom2 borel_sa f} :
+    rv_eq (ConditionalExpectation f) (fun x => Finite (f x)).
+  Proof.
+    unfold ConditionalExpectation.
+    repeat rewrite NonNegCondexp_id; try typeclasses eauto.
+    unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp; simpl.
+    intros a.
+    f_equal.
+    generalize (rv_pos_neg_id f a).
+    rv_unfold; simpl.
+    lra.
+  Qed.
+
+  Theorem Condexp_finite (f : Ts -> R)
+          {rv : RandomVariable dom borel_sa f}
+          {isfe:IsFiniteExpectation prts f} :
+      exists gr, ConditionalExpectation f = fun x => Finite (gr x).
+  Proof.
+    unfold ConditionalExpectation.
+    unfold is_conditional_expectation; intros.
+    unfold proj1_sig.
+    apply IsFiniteExpectation_parts in isfe.
+    destruct isfe as [isfep isfen].
+    destruct (NonNegCondexp_finite (fun x : Ts => pos_fun_part f x))
+      as [gp eqq1].
+    destruct (NonNegCondexp_finite (fun x : Ts => neg_fun_part f x))
+      as [gn eqq2].
+    rewrite eqq1, eqq2.
+    unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp; simpl.
+    eexists.
+    reflexivity.
+  Qed.
+
+  Definition FiniteConditionalExpectation
+             (f : Ts -> R)
+             {rv : RandomVariable dom borel_sa f}
+             {isfe:IsFiniteExpectation prts f} : Ts -> R.
+  Proof.
+    generalize (Condexp_finite f)
+    ; intros HH.
+    apply constructive_indefinite_description in HH.
+    destruct HH.
+    apply x.
+  Defined.
+
+  Lemma FiniteConditionalExpectation_eq
+             (f : Ts -> R)
+             {rv : RandomVariable dom borel_sa f}
+             {isfe:IsFiniteExpectation prts f} :
+    ConditionalExpectation f = fun x => (Finite (FiniteConditionalExpectation f x)).
+  Proof.
+    unfold FiniteConditionalExpectation.
+    match_destr.
+  Qed.
+  
   Lemma Rbar_Expec_Condexp (f : Ts -> R) 
         {rv : RandomVariable dom borel_sa f}
         {isfe:IsFiniteExpectation prts f}
