@@ -4249,7 +4249,6 @@ Proof.
   ; simpl in *; rbar_prover.
 Qed.
 
-  
 Lemma Rbar_mult_div_fin_cancel_l (a:R) (b:Rbar) : a <> 0 ->
                                                   Rbar_mult (/ a) (Rbar_mult a b) = b.
 Proof.
@@ -4287,3 +4286,4 @@ Proof.
       * apply Rinv_neq_0_compat in H.
         lra.
 Qed.
+

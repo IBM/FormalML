@@ -2226,6 +2226,17 @@ Section is_cond_exp.
     | x :: xs => Rbar_plus x (list_Rbar_sum xs)
     end.
 
+  Lemma list_Rbar_sum_const_mulR {A : Type} f (l : list A) :
+    forall (r:R), list_Rbar_sum (map (fun x => Rbar_mult r (f x)) l)  =
+              Rbar_mult r (list_Rbar_sum (map (fun x => f x) l)).
+  Proof.
+    intro r.
+    induction l; simpl.
+    - f_equal; lra.
+    - rewrite IHl.
+      now rewrite Rbar_mult_r_plus_distr.
+  Qed.
+
   Lemma Rbar_FiniteExpectation_ext rv_X1 rv_X2
         {isfe1:Rbar_IsFiniteExpectation prts rv_X1}
         {isfe2:Rbar_IsFiniteExpectation prts rv_X2}
@@ -2257,7 +2268,43 @@ Section is_cond_exp.
     now apply Rbar_FiniteExpectation_ext.
   Qed.
 
-  Lemma is_conditional_expectation_fin
+  Instance list_sum_rv f l
+           {rv:forall c, RandomVariable dom borel_sa (f c)}
+    : RandomVariable dom borel_sa
+                     (fun omega : Ts => RealAdd.list_sum (map (fun c : R => f c omega) l)).
+  Proof.
+    induction l; simpl.
+    - apply rvconst.
+    - generalize @rvplus_rv; unfold rvplus; intros HH.
+      apply HH; trivial.
+  Qed.
+
+  
+  Lemma FiniteExpectation_list_sum f l 
+        {rv:forall c, RandomVariable dom borel_sa (f c)}
+        {isfe:forall c, IsFiniteExpectation prts (f c)} :
+    Expectation
+            (fun omega => RealAdd.list_sum
+                          (map
+                             (fun c : R =>
+                                (f c omega))
+                             l)) =
+    Some (Finite
+            (RealAdd.list_sum
+               (map
+                  (fun c : R =>
+                     FiniteExpectation prts (f c))
+                  l))).
+  Proof.
+    induction l; simpl.
+    - apply Expectation_const.
+    - generalize Expectation_sum_finite; unfold rvplus; intros HH.
+      apply HH; trivial.
+      + now apply list_sum_rv.
+      + now rewrite <- FiniteExpectation_Expectation.
+  Qed.
+
+  Lemma is_conditional_expectation_finexp
              (f : Ts -> R)
              (ce : Ts -> Rbar)           
              {rvf : RandomVariable dom borel_sa f}
@@ -2277,6 +2324,189 @@ Section is_cond_exp.
     congruence.
   Qed.
 
+  Lemma is_conditional_expectation_isfe_finite_part
+        {f : Ts -> R}
+        {ce : Ts -> Rbar}
+        {rvf : RandomVariable dom borel_sa f}
+        {isfe:IsFiniteExpectation prts f}
+        {rvce : RandomVariable dom2 Rbar_borel_sa ce}            
+    : is_conditional_expectation dom2 f ce ->
+      is_conditional_expectation dom2 f (Rbar_finite_part ce).
+  Proof.
+    intros isce.
+     apply (is_conditional_expectation_FiniteExpectation f _ isce) in isfe.
+     apply (Rbar_IsFiniteExpectation_prob_space_sa_sub_f prts sub) in isfe; trivial.
+     apply finexp_almost_finite_part in isfe; [| now apply RandomVariable_sa_sub].
+     revert isce.
+     apply is_conditional_expectation_proper.
+    - reflexivity.
+    - now apply (almostR2_prob_space_sa_sub_lift_Rbar _ sub).
+  Qed.
+
+  Lemma is_conditional_expectation_isfe_finite_part_b
+        {f : Ts -> R}
+        {ce : Ts -> Rbar}
+        {rvf : RandomVariable dom borel_sa f}
+        {isfe:Rbar_IsFiniteExpectation prts ce}
+        {rvce : RandomVariable dom2 Rbar_borel_sa ce}            
+    : is_conditional_expectation dom2 f (Rbar_finite_part ce) ->
+      is_conditional_expectation dom2 f ce.
+  Proof.
+    intros isce.
+     apply (Rbar_IsFiniteExpectation_prob_space_sa_sub_f prts sub) in isfe; trivial.
+     apply finexp_almost_finite_part in isfe; [| now apply RandomVariable_sa_sub].
+     revert isce.
+     apply is_conditional_expectation_proper.
+    - reflexivity.
+    - now apply (almostR2_prob_space_sa_sub_lift_Rbar _ sub).
+  Qed.
+  
+  Global Instance val_indicator_rv g c
+         {rv:RandomVariable dom borel_sa g} :
+    RandomVariable dom borel_sa (val_indicator g c).
+  Proof.
+    apply EventIndicator_pre_rv.
+    apply sa_le_pt.
+    now apply rv_measurable.
+  Qed.
+
+  Global Instance scale_val_indicator_rv g c
+         {rv:RandomVariable dom borel_sa g} :
+    RandomVariable dom borel_sa (scale_val_indicator g c).
+  Proof.
+    apply rvscale_rv.
+    now apply val_indicator_rv.
+  Qed.
+
+  Lemma IsFiniteExpectation_factor_out_scale_indicator (g:Ts->R) (f:Ts->R)
+        {rvg : RandomVariable dom borel_sa g}
+        {rvf : RandomVariable dom borel_sa f}
+        {isfe:IsFiniteExpectation prts f}
+        (a:R) :
+    IsFiniteExpectation prts (rvmult (scale_val_indicator g a) f).
+  Proof.
+    unfold scale_val_indicator.
+    assert (eqq1: rv_eq
+                     (fun omega : Ts => rvmult (rvscale a (val_indicator g a)) f omega)
+                     (fun omega : Ts => rvscale a (rvmult f (val_indicator g a)) omega)).
+    {
+      intros ?.
+      rv_unfold; lra.
+    }
+    rewrite eqq1.
+    apply IsFiniteExpectation_scale.
+    apply IsFiniteExpectation_indicator; trivial.
+    apply sa_le_pt.
+    now apply rv_measurable.
+Qed.
+
+  Lemma IsFiniteExpectation_list_sum (f : R -> Ts -> R) (l : list R)
+        {rv:forall c : R, RandomVariable dom borel_sa (f c)}
+        {isfe : forall c : R, IsFiniteExpectation prts (f c)} :
+  IsFiniteExpectation prts (fun omega : Ts => RealAdd.list_sum (map (fun c : R => f c omega) l)).
+  Proof.
+    unfold IsFiniteExpectation.
+    now rewrite (FiniteExpectation_list_sum f l).
+  Qed.
+
+  Lemma IsFiniteExpectation_factor_out_frf (g:Ts->R) (f:Ts->R)
+        {rvg : RandomVariable dom borel_sa g}
+        {rvf : RandomVariable dom borel_sa f}
+        {isfe:IsFiniteExpectation prts f}
+        {frfg : FiniteRangeFunction g} :
+    IsFiniteExpectation prts (rvmult (fun x : Ts => g x) f).
+  Proof.
+    cut (IsFiniteExpectation prts (rvmult (fun x : Ts => ( (frf_indicator g)) x) f)).
+    - apply IsFiniteExpectation_proper.
+      intros ?.
+      unfold rvmult.
+      f_equal.
+      now rewrite <- frf_indicator_sum.
+    - unfold frf_indicator.
+      generalize (nodup Req_EM_T frf_vals); intros l.
+      assert (eqq1:rv_eq
+             (rvmult
+                (fun x : Ts => RealAdd.list_sum (map (fun c : R => scale_val_indicator g c x) l))
+                f)
+             (fun x : Ts => RealAdd.list_sum (map (fun c : R => rvmult (scale_val_indicator g c) f x) l))).
+      {
+        intros ?.
+        rv_unfold.
+        rewrite Rmult_comm.
+        rewrite <- list_sum_const_mul.
+        f_equal.
+        apply map_ext; intros.
+        lra.
+      }
+      rewrite eqq1.
+      apply IsFiniteExpectation_list_sum.
+      + typeclasses eauto.
+      + intros.
+        apply IsFiniteExpectation_factor_out_scale_indicator; trivial.
+  Qed.
+
+  Lemma Rbar_IsFiniteExpectation_factor_out_frf (g:Ts->R) (f:Ts->Rbar)
+        {rvg : RandomVariable dom borel_sa g}
+        {rvf : RandomVariable dom Rbar_borel_sa f}
+        {isfe:Rbar_IsFiniteExpectation prts f}
+        {frfg : FiniteRangeFunction g} :
+    Rbar_IsFiniteExpectation prts (Rbar_rvmult (fun x : Ts => g x) f).
+  Proof.
+    generalize (finexp_almost_finite_part prts _ isfe)
+    ; intros eqq.
+    unfold Rbar_IsFiniteExpectation.
+    assert (
+        almostR2 prts eq
+               (Rbar_rvmult (fun x : Ts => g x) f)
+               (Rbar_rvmult (fun x : Ts => g x) (fun x : Ts => Rbar_finite_part f x))).
+    {
+      revert eqq.
+      apply almost_impl.
+      apply all_almost; intros ??.
+      unfold Rbar_rvmult.
+      congruence.
+    }
+
+    erewrite Rbar_Expectation_almostR2_proper; try eapply H.
+    - unfold Rbar_rvmult, Rbar_finite_part; simpl.
+      rewrite <- Expectation_Rbar_Expectation.
+      apply IsFiniteExpectation_factor_out_frf; trivial.
+      + now apply Rbar_real_rv.
+      + now apply Rbar_finexp_finexp.
+    - apply Rbar_rvmult_rv; trivial.
+      now apply Real_Rbar_rv.
+    - apply Rbar_rvmult_rv; trivial.
+      + now apply Real_Rbar_rv.
+      + apply Real_Rbar_rv.
+        now apply Rbar_real_rv.
+  Qed.
+
+  Lemma Rbar_FinExp_FinExp (f:Ts->Rbar) 
+        {rv:RandomVariable dom Rbar_borel_sa f}
+        {isfe:Rbar_IsFiniteExpectation prts f}
+        {isfe':IsFiniteExpectation prts (Rbar_finite_part f)}:
+    Rbar_FiniteExpectation prts f =
+    FiniteExpectation prts (Rbar_finite_part f).
+  Proof.
+    generalize (finexp_almost_finite prts _ isfe)
+    ; intros eqq1.
+    unfold Rbar_FiniteExpectation, FiniteExpectation, proj1_sig.
+    repeat match_destr.
+    rewrite Expectation_Rbar_Expectation in e0.
+    assert (Some (Finite x) = Some (Finite x0)).
+    {
+      rewrite <- e, <- e0.
+      apply Rbar_Expectation_almostR2_proper; trivial.
+      - apply Real_Rbar_rv.
+        now apply Rbar_real_rv.
+      - revert eqq1.
+        apply almost_impl.
+        apply all_almost; intros ??.
+        now rewrite <- H.
+    }
+    now invcs H.
+  Qed.
+
   Lemma is_conditional_expectation_factor_out_frf
         (f g:Ts->R) (ce:Ts->Rbar)
         {frfg : FiniteRangeFunction g}
@@ -2289,19 +2519,74 @@ Section is_cond_exp.
     is_conditional_expectation dom2 f ce ->
     is_conditional_expectation dom2 (rvmult g f) (Rbar_rvmult g ce).
   Proof.
-    intros isfe isce P decP saP.
-    assert (eqq1:rv_eq
+    intros isfe isce.
+    assert (isfe_ce:Rbar_IsFiniteExpectation prts ce).
+    {
+      apply is_conditional_expectation_FiniteExpectation in isce.
+      now apply isce.
+    } 
+    assert (isfe_ce':Rbar_IsFiniteExpectation prts (Rbar_rvmult (fun x : Ts => g x) ce)).
+    {
+      apply Rbar_IsFiniteExpectation_factor_out_frf; trivial.
+      - now apply RandomVariable_sa_sub.
+      - now apply RandomVariable_sa_sub.
+    }
+    assert (isfe_ce'':IsFiniteExpectation prts (fun x => real (ce x))).
+    {
+      apply Rbar_finexp_finexp; trivial.
+      now apply RandomVariable_sa_sub.
+    } 
+
+    apply is_conditional_expectation_isfe_finite_part_b.
+    intros P decP saP.
+    unfold Rbar_rvmult, Rbar_finite_part; simpl.
+    rewrite <- Expectation_Rbar_Expectation.
+
+    apply finexp_almost_finite_part in isfe_ce; [| now apply RandomVariable_sa_sub].
+    symmetry.
+    transitivity (Expectation
+                    (rvmult (rvmult g (fun x => (Finite (ce x)))) (EventIndicator decP))).
+    {
+      apply Expectation_almostR2_proper.
+      + apply rvmult_rv.
+        * apply Rbar_real_rv.
+          apply Rbar_rvmult_rv.
+          -- apply Real_Rbar_rv.
+             apply RandomVariable_sa_sub; trivial.
+          -- now apply RandomVariable_sa_sub.
+        * apply EventIndicator_pre_rv.
+          now apply sub.
+      + apply rvmult_rv.
+        * apply rvmult_rv.
+          -- now apply RandomVariable_sa_sub.
+          -- apply Rbar_real_rv.
+             apply Real_Rbar_rv.
+             apply Rbar_real_rv.
+             now apply RandomVariable_sa_sub.
+        * apply EventIndicator_pre_rv.
+          now apply sub.
+      + apply almostR2_eq_mult_proper; try reflexivity.
+        revert isfe_ce.
+        apply almost_impl.
+        apply all_almost; intros ? eqq.
+        now rewrite eqq.
+    }
+
+
+    assert (eqq1:forall f, rv_eq
               (rvmult (rvmult g f) (EventIndicator decP))
               (rvmult (rvmult (frf_indicator g) f) (EventIndicator decP))).
     {
+      intros.
       apply rvmult_proper; try reflexivity.
       apply rvmult_proper; try reflexivity.
       apply (frf_indicator_sum g).
     }
-    rewrite (Expectation_ext eqq1).
+    rewrite (Expectation_ext (eqq1 f)).
+    rewrite (Expectation_ext (eqq1 ce)).
     unfold frf_indicator.
     
-    assert (eqq2:
+    assert (eqq2: forall f, 
               rv_eq
                 (rvmult (rvmult (frf_indicator g) f) (EventIndicator decP))
                 (fun omega : Ts =>
@@ -2309,141 +2594,187 @@ Section is_cond_exp.
                      (map (fun c : R => (scale_val_indicator g c omega) * (f omega) * EventIndicator decP omega)
                           (nodup Req_EM_T frf_vals)))).
     {
-      intros ?.
-      admit.
+      intros ??.
+      unfold rvmult, frf_indicator.
+      rewrite Rmult_assoc.
+      rewrite Rmult_comm.
+      rewrite <- list_sum_const_mul.
+      f_equal.
+      apply map_ext; intros.
+      lra.
     } 
-    rewrite (Expectation_ext eqq2).
+    rewrite (Expectation_ext (eqq2 f)).
+    rewrite (Expectation_ext (eqq2 ce)).
 
-    assert (isfe1:forall c, IsFiniteExpectation prts
+    assert (isfe1:forall ff, RandomVariable dom borel_sa ff ->
+                        IsFiniteExpectation prts ff ->
+                         forall c, IsFiniteExpectation prts
                                       (fun omega : Ts =>
-                                         val_indicator g c omega * f omega * EventIndicator decP omega)).
+                                         val_indicator g c omega * ff omega * EventIndicator decP omega)).
     {
-      admit.
+      intros.
+      unfold val_indicator.
+      assert (eqq:
+                rv_eq
+                  (fun omega : Ts => val_indicator g c omega * ff omega * EventIndicator decP omega)
+                   (fun omega : Ts =>
+                      (ff omega * EventIndicator (classic_dec (fun omega0 : Ts => g omega0 = c)) omega) *
+                                 EventIndicator decP omega)).
+      {
+        intros ?.
+        unfold val_indicator.
+        lra.
+      }
+      rewrite eqq.
+      apply IsFiniteExpectation_indicator; trivial.
+      - apply rvmult_rv; trivial.
+        apply EventIndicator_pre_rv.
+        apply sa_le_pt.
+        apply rv_measurable.
+        now apply RandomVariable_sa_sub.
+      - now apply sub.
+      - apply IsFiniteExpectation_indicator; trivial.
+        apply sa_le_pt.
+        apply rv_measurable.
+        now apply RandomVariable_sa_sub.
     }
 
-    assert (eqq3:Expectation
-              (fun omega : Ts =>
-                 RealAdd.list_sum
-                   (map
-                      (fun c : R =>
-                          scale_val_indicator g c omega * f omega  * EventIndicator decP omega)
-                      (nodup Req_EM_T frf_vals))) =
-            Some (Finite (RealAdd.list_sum
-              (map
-          (fun c : R =>
-             c * FiniteExpectation prts
-               (fun omega => val_indicator g c omega * f omega *  EventIndicator decP omega))
-          (nodup Req_EM_T frf_vals))))).
+    assert (isfe1':forall ff, RandomVariable dom borel_sa ff ->
+                        IsFiniteExpectation prts ff ->
+                        forall c, IsFiniteExpectation prts
+                                                 (fun omega : Ts =>
+                                                    scale_val_indicator g c omega * ff omega * EventIndicator decP omega)).
     {
-      admit.
-    }
-
-    rewrite eqq3.
-
-    assert (Reqq1:rv_eq
-              (Rbar_rvmult (Rbar_rvmult g ce) (EventIndicator decP))
-              (Rbar_rvmult (Rbar_rvmult (frf_indicator g) ce) (EventIndicator decP))).
-    {
-      unfold Rbar_rvmult.
+      intros.
+      unfold scale_val_indicator.
+      generalize (IsFiniteExpectation_scale prts c _ (isfe:=isfe1 ff H H0 c)).
+      apply IsFiniteExpectation_proper.
       intros ?.
-      do 2 f_equal.
-      now rewrite (frf_indicator_sum g).
+      unfold scale_val_indicator, rvscale.
+      lra.
     }
-    rewrite (Rbar_Expectation_ext Reqq1).
-    unfold frf_indicator.
+
+    assert (rvff:forall ff, RandomVariable dom borel_sa ff ->
+                       forall c, RandomVariable dom borel_sa
+                                                 (fun omega : Ts =>
+                                                    scale_val_indicator g c omega * ff omega * EventIndicator decP omega)).
+    {
+      intros.
+      apply rvmult_rv.
+      - apply rvmult_rv; trivial.
+        apply scale_val_indicator_rv.
+        now apply RandomVariable_sa_sub.
+      - apply EventIndicator_pre_rv.
+        now apply sub.
+    } 
     
-    assert (Reqq2:
-              rv_eq
-                (Rbar_rvmult (Rbar_rvmult (frf_indicator g) ce) (EventIndicator decP))
-                (fun omega : Ts =>
-                   list_Rbar_sum
-                     (map (fun c : R => Rbar_mult (scale_val_indicator g c omega) (Rbar_mult (ce omega) (EventIndicator decP omega)))
-                          (nodup Req_EM_T frf_vals)))).
-    {
-      intros ?.
-      admit.
-    }
-    unfold frf_indicator in *.
-    rewrite (Rbar_Expectation_ext Reqq2).
+    generalize (isfe1' f); intros isfef.
+    cut_to isfef; trivial.
+    
+    rewrite (FiniteExpectation_list_sum _ _ (isfe:=isfef)).
 
-    assert (Risfe1:forall c, Rbar_IsFiniteExpectation prts
-                                      (fun omega : Ts =>
-                                         Rbar_mult (val_indicator g c omega) (Rbar_mult (ce omega) (EventIndicator decP omega)))).
+    assert (RandomVariable dom borel_sa (fun x : Ts => ce x)).
     {
-      admit.
+      apply Rbar_real_rv.
+      now apply RandomVariable_sa_sub.
     }
 
-    assert (Reqq3:Rbar_Expectation
-             (fun omega : Ts =>
-                list_Rbar_sum
-                  (map
-                     (fun c : R =>
-                        Rbar_mult (scale_val_indicator g c omega)
-                                  (Rbar_mult (ce omega) (EventIndicator decP omega)))
-                     (nodup Req_EM_T frf_vals))) = 
-                  Some (Finite (RealAdd.list_sum
-                                  (map
-                                     (fun c : R =>
-                                        c * Rbar_FiniteExpectation prts
-                                                                   (fun omega => Rbar_mult (val_indicator g c omega) (Rbar_mult (ce omega) (EventIndicator decP omega))))
-                                  (nodup Req_EM_T frf_vals))))).
-    {
-      admit.
-    }
+    generalize (rvff ce); intros rvfce.
+    cut_to rvfce; trivial.
+    
+    generalize (isfe1' ce); intros isfece.
+    cut_to isfece; trivial.
 
-    rewrite Reqq3.
-
+    rewrite (FiniteExpectation_list_sum _ _ (isfe:=isfece)).
     do 3 f_equal.
     apply map_ext; intros.
-    f_equal.
-    unfold val_indicator.
+    unfold scale_val_indicator.
 
-    assert (eqq4: rv_eq
-                    (fun omega : Ts =>
-                       EventIndicator (classic_dec (fun omega0 : Ts => g omega0 = a)) omega * f omega *
-                       EventIndicator decP omega)
-
-                    (fun omega : Ts => f omega * EventIndicator
-                                                (classic_dec (
-                                                     pre_event_inter
-                                                       (fun omega0 : Ts => g omega0 = a)
-                                                       P))
-                                                omega)).
+    assert (eqq3: forall ff,
+               rv_eq (fun omega : Ts =>
+                        rvscale a (val_indicator g a) omega * ff omega * EventIndicator decP omega)
+                     (rvscale a (rvmult ff (EventIndicator (classic_dec (pre_event_inter
+                                                                           (fun omega0 : Ts => g omega0 = a) P)))))).
     {
-      intros ?.
-      unfold EventIndicator, pre_event_inter.
+      intros ??.
+      unfold val_indicator, pre_event_inter.
+      rv_unfold.
+      repeat rewrite Rmult_assoc.
+      f_equal.
+      rewrite Rmult_comm.
+      rewrite Rmult_assoc.
+      f_equal.
       repeat match_destr; intuition lra.
     }
 
-    rewrite (FiniteExpectation_ext_alt _ _ _ eqq4).
+    rewrite (FiniteExpectation_ext_alt _ _ _ (eqq3 ce)).
+    rewrite (FiniteExpectation_ext_alt _ _ _ (eqq3 f)).
 
-    assert (Reqq4: rv_eq
-                     (fun omega : Ts =>
-                        Rbar_mult (EventIndicator (classic_dec (fun omega0 : Ts => g omega0 = a)) omega)
-                                  (Rbar_mult (ce omega) (EventIndicator decP omega)))
-                     (fun omega : Ts =>
-                        Rbar_mult  (ce omega) (EventIndicator
-                                                 (classic_dec (
-                                                      pre_event_inter
-                                                        (fun omega0 : Ts => g omega0 = a)
-                                                        P))
-                                                 omega))).
-    { 
-      intros ?.
-      unfold EventIndicator, pre_event_inter.
-      rewrite Rbar_mult_comm.
-      rewrite <- Rbar_mult_assoc; simpl.
-      repeat match_destr; intuition (repeat f_equal; lra).
+    assert (isfee:forall ff, RandomVariable dom borel_sa (fun x : Ts => ff x) ->
+                  IsFiniteExpectation prts ff ->
+                  IsFiniteExpectation prts (rvmult (fun x : Ts => ff x)
+                                                   (EventIndicator
+                                                      (classic_dec (pre_event_inter (fun omega0 : Ts => g omega0 = a) P))))). 
+    {
+      intros.
+      apply IsFiniteExpectation_indicator; trivial.
+      apply sa_inter; trivial.
+      - apply sa_le_pt.
+        apply rv_measurable.
+        now apply RandomVariable_sa_sub.
+      - now apply sub.
     }
 
-    rewrite (Rbar_FiniteExpectation_ext_alt Reqq4).
-    apply (is_conditional_expectation_fin _ _ isce); trivial.
-    apply sa_inter; trivial.
-    apply sa_le_pt.
-    now apply rv_measurable.
-Admitted.
+    generalize (isfee f)
+    ; intros isfef1.
+    cut_to isfef1; trivial.
+    generalize (isfee ce)
+    ; intros isfece1.
+    cut_to isfece1; trivial.
 
+    rewrite (FiniteExpectation_scale' _ _ _ (isfe:=isfef1)).
+    rewrite (FiniteExpectation_scale' _ _ _ (isfe:=isfece1)).
+    f_equal.
+    apply is_conditional_expectation_isfe_finite_part in isce.
 
+    assert (sa_sigma (SigmaAlgebra:=dom2) (pre_event_inter (fun omega0 : Ts => g omega0 = a) P)).
+    {
+      apply sa_inter; trivial.
+      apply sa_le_pt.
+      apply rv_measurable.
+      now apply RandomVariable_sa_sub.
+    } 
+
+    assert (sa_sigma (SigmaAlgebra:=dom) (pre_event_inter (fun omega0 : Ts => g omega0 = a) P)).
+    {
+      apply sa_inter.
+      - apply sa_le_pt.
+        apply rv_measurable.
+        now apply RandomVariable_sa_sub.
+      - now apply sub.
+    } 
+
+    assert (Rbar_IsFiniteExpectation prts
+                                     (Rbar_rvmult (fun x : Ts => Rbar_finite_part ce x)
+                                                  (fun x : Ts =>
+                                                     EventIndicator
+                                                       (classic_dec (pre_event_inter (fun omega0 : Ts => g omega0 = a) P)) x))).
+    {
+      unfold Rbar_rvmult; simpl.
+      unfold Rbar_finite_part.
+      unfold Rbar_IsFiniteExpectation.
+      rewrite <- Expectation_Rbar_Expectation.
+      apply IsFiniteExpectation_indicator; trivial.
+    }
+
+    erewrite (is_conditional_expectation_finexp _ _ isce); trivial.
+    unfold Rbar_rvmult; simpl.
+    erewrite Rbar_FinExp_FinExp.
+    - reflexivity.
+    - apply Real_Rbar_rv.
+      apply rvmult_rv; trivial.
+      apply EventIndicator_pre_rv; trivial.
+  Qed.
 
   Lemma frf_min (f : Ts -> R) 
     {frf : FiniteRangeFunction f} :
