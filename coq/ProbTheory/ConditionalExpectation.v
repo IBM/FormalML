@@ -4676,6 +4676,13 @@ Section cond_exp2.
     lra.
   Qed.
 
+  Corollary Condexp_const c :
+    rv_eq (ConditionalExpectation (const c)) (const (Finite c)).
+  Proof.
+    apply Condexp_id.
+    apply rvconst.
+  Qed.
+
   Theorem Condexp_finite (f : Ts -> R)
           {rv : RandomVariable dom borel_sa f}
           {isfe:IsFiniteExpectation prts f} :
@@ -4791,8 +4798,9 @@ Section cond_exp2.
     eapply (is_conditional_expectation_ale _ sub f1 f2)
     ; trivial
     ; now apply Condexp_cond_exp.
-  Qed.
+  Qed.  
 
+  
   Definition FiniteConditionalExpectation
              (f : Ts -> R)
              {rv : RandomVariable dom borel_sa f}
@@ -4805,7 +4813,7 @@ Section cond_exp2.
     apply x.
   Defined.
 
-  Lemma FiniteConditionalExpectation_eq
+  Lemma FiniteCondexp_eq
              (f : Ts -> R)
              {rv : RandomVariable dom borel_sa f}
              {isfe:IsFiniteExpectation prts f} :
@@ -4814,7 +4822,165 @@ Section cond_exp2.
     unfold FiniteConditionalExpectation.
     match_destr.
   Qed.
+  
+  Global Instance FiniteCondexp_rv (f : Ts -> R) 
+         {rv : RandomVariable dom borel_sa f}
+         {isfe:IsFiniteExpectation prts f} :
+    RandomVariable dom2 borel_sa (FiniteConditionalExpectation f).
+  Proof.
+    generalize (Condexp_rv f).
+    rewrite (FiniteCondexp_eq f).
+    typeclasses eauto.
+  Qed.
 
+  Lemma FiniteCondexp_is_cond_exp (f : Ts -> R) 
+        {rv : RandomVariable dom borel_sa f}
+        {isfe:IsFiniteExpectation prts f}
+    :
+      is_conditional_expectation prts dom2 f (FiniteConditionalExpectation f).
+  Proof.
+    generalize (Condexp_cond_exp f).
+    eapply is_conditional_expectation_proper; trivial.
+    - reflexivity.
+    - apply all_almost; intros.
+      now rewrite (FiniteCondexp_eq f).
+  Qed.
+
+  Theorem FiniteCondexp_cond_exp (f : Ts -> R) 
+        {rv : RandomVariable dom borel_sa f}
+        {isfe:IsFiniteExpectation prts f}
+        {P:pre_event Ts}
+        (dec:dec_pre_event P)
+        (saP:sa_sigma (SigmaAlgebra := dom2) P) :
+    Expectation (rvmult f (EventIndicator dec)) =
+    Expectation (rvmult (FiniteConditionalExpectation f) (EventIndicator dec)).
+  Proof.
+    generalize (FiniteCondexp_is_cond_exp f)
+    ; intros isce.
+    rewrite (isce P dec saP).
+    rewrite Expectation_Rbar_Expectation.
+    reflexivity.
+  Qed.
+
+  Corollary FiniteCondexp_cond_exp_classic (f : Ts -> R) 
+        {rv : RandomVariable dom borel_sa f}
+        {isfe:IsFiniteExpectation prts f}
+        {P:pre_event Ts}
+        (saP:sa_sigma (SigmaAlgebra := dom2) P) :
+    Expectation (rvmult f (EventIndicator (classic_dec P))) =
+    Expectation (rvmult (FiniteConditionalExpectation f) (EventIndicator (classic_dec P))).
+  Proof.
+    now apply FiniteCondexp_cond_exp.
+  Qed.
+
+  Corollary FiniteCondexp_cond_exp_event (f : Ts -> R) 
+        {rv : RandomVariable dom borel_sa f}
+        {isfe:IsFiniteExpectation prts f}
+        {P:event dom2}
+        (dec:dec_event P) :
+    Expectation (rvmult f (EventIndicator dec)) =
+    Expectation (rvmult (FiniteConditionalExpectation f) (EventIndicator dec)).
+  Proof.
+    apply FiniteCondexp_cond_exp.
+    destruct P; trivial.
+  Qed.
+
+  Corollary FiniteCondexp_cond_exp_event_classic (f : Ts -> R) 
+        {rv : RandomVariable dom borel_sa f}
+        {isfe:IsFiniteExpectation prts f}
+        (P:event dom2) :
+    Expectation (rvmult f (EventIndicator (classic_dec P))) =
+    Expectation (rvmult (FiniteConditionalExpectation f) (EventIndicator (classic_dec P))).
+  Proof.
+    apply FiniteCondexp_cond_exp_event.
+  Qed.
+
+  Global Instance FiniteCondexp_nneg (f : Ts -> R) 
+         {rv : RandomVariable dom borel_sa f}
+         {isfe:IsFiniteExpectation prts f}
+         {nnf : NonnegativeFunction f} :
+    NonnegativeFunction (FiniteConditionalExpectation f).
+  Proof.
+    generalize (Condexp_nneg f)
+    ; intros nneg.
+    rewrite (FiniteCondexp_eq f) in nneg.
+    apply nneg.
+  Qed.
+
+  Theorem FiniteCondexp_id (f : Ts -> R)
+          {rv : RandomVariable dom borel_sa f}
+          {rv2 : RandomVariable dom2 borel_sa f}
+          {isfe:IsFiniteExpectation prts f}
+    :
+      rv_eq (FiniteConditionalExpectation f) f.
+  Proof.
+    generalize (Condexp_id f)
+    ; intros eqq.
+    rewrite (FiniteCondexp_eq f) in eqq.
+    intros a.
+    specialize (eqq a).
+    now invcs eqq.
+  Qed.
+
+  Corollary FiniteCondexp_const c :
+    rv_eq (FiniteConditionalExpectation (const c)) (const c).
+  Proof.
+    apply FiniteCondexp_id.
+    apply rvconst.
+  Qed.
+
+  Theorem FiniteCondexp_Expectation (f : Ts -> R) 
+          {rv : RandomVariable dom borel_sa f}
+          {isfe:IsFiniteExpectation prts f}
+    :
+      Expectation (FiniteConditionalExpectation f) =
+      Expectation f.
+  Proof.
+    rewrite (Rbar_Expec_Condexp f).
+    rewrite (FiniteCondexp_eq f).
+    now rewrite Expectation_Rbar_Expectation.
+  Qed.
+
+
+  Theorem FiniteCondexp_proper (f1 f2 : Ts -> R) 
+        {rv1 : RandomVariable dom borel_sa f1}
+        {rv2 : RandomVariable dom borel_sa f2}
+        {isfe1:IsFiniteExpectation prts f1}
+        {isfe2:IsFiniteExpectation prts f2}:
+    almostR2 prts eq f1 f2 ->
+    almostR2 (prob_space_sa_sub prts sub) eq
+             (FiniteConditionalExpectation f1)
+             (FiniteConditionalExpectation f2).
+  Proof.
+    intros eqq1.
+    generalize (ConditionalExpectation_proper f1 f2 eqq1).
+    rewrite (FiniteCondexp_eq f1), (FiniteCondexp_eq f2).
+    apply almost_impl.
+    apply all_almost.
+    intros ? eqq.
+    now invcs eqq.
+  Qed.
+    
+  Lemma FiniteCondexp_ale (f1 f2 : Ts -> R) 
+        {rv1 : RandomVariable dom borel_sa f1}
+        {rv2 : RandomVariable dom borel_sa f2}
+        {isfe1:IsFiniteExpectation prts f1}
+        {isfe2:IsFiniteExpectation prts f2} :
+    almostR2 prts Rle f1 f2 ->
+    almostR2 (prob_space_sa_sub prts sub) Rle
+             (FiniteConditionalExpectation f1)
+             (FiniteConditionalExpectation f2).
+  Proof.
+    intros eqq1.
+    generalize (ConditionalExpectation_ale f1 f2 eqq1).
+    rewrite (FiniteCondexp_eq f1), (FiniteCondexp_eq f2).
+    apply almost_impl.
+    apply all_almost.
+    intros ? eqq.
+    now simpl in eqq.
+  Qed.
+
+  
 End cond_exp2.
 
 Section cond_exp_props.
@@ -4937,42 +5103,6 @@ Section cond_exp_props.
 
   (* If f is dom2-measurable, then its conditional expectation with
      respect to dom2 is almost itself *)
-  Theorem ConditionalExpectation_rv_eq
-          {dom2 : SigmaAlgebra Ts}
-          (sub : sa_sub dom2 dom)
-          f
-          {rv : RandomVariable dom borel_sa f}
-          {rv2 : RandomVariable dom2 borel_sa f} :
-    almostR2 (prob_space_sa_sub prts sub) eq
-             (ConditionalExpectation prts sub f)
-             f.
-  Proof.
-    unfold ConditionalExpectation, Rbar_rvminus.
-    rewrite (NonNegConditionalExpectation_rv_eq (fun x : Ts => pos_fun_part f x))
-      by typeclasses eauto.
-    rewrite (NonNegConditionalExpectation_rv_eq (fun x : Ts => neg_fun_part f x))
-      by typeclasses eauto.
-    apply almostR2_eq_subr.
-    unfold Rbar_rvplus.
-    intros a.
-    generalize (rv_pos_neg_id f a).
-    unfold rvplus, rvopp, rvscale; simpl.
-    intros eqq.
-    f_equal.
-    etransitivity; try (symmetry; eapply eqq).
-    lra.
-  Qed.
-
-  Corollary ConditionalExpectation_const
-            {dom2 : SigmaAlgebra Ts}
-            (sub : sa_sub dom2 dom) c :
-    almostR2 (prob_space_sa_sub prts sub) eq
-             (ConditionalExpectation prts sub (const c))
-             (const c).
-  Proof.
-    apply ConditionalExpectation_rv_eq.
-    apply rvconst.
-  Qed.
 
   Lemma conditional_expectation_L2fun_scale
         {dom2 : SigmaAlgebra Ts}
@@ -5390,8 +5520,8 @@ Section cond_exp_props.
       unfold rvscale.
       rewrite (ConditionalExpectation_proper prts sub _ (const 0))
       ; [| apply almostR2_eq_subr; intros ?; unfold const; lra].
-      rewrite ConditionalExpectation_const.
-      apply almostR2_eq_subr; intros ?.
+      apply all_almost; intros.
+      rewrite (Condexp_const prts sub 0).
       rewrite Rbar_mult_0_l.
       reflexivity.
     - unfold ConditionalExpectation, Rbar_rvminus.
