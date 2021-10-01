@@ -1922,6 +1922,26 @@ Section is_cond_exp.
     - rewrite Rbar_mult_div_fin_cancel_l; trivial.
   Qed.
 
+  Corollary is_conditional_expectation_opp 
+        (f : Ts -> R)
+        (ce : Ts -> Rbar)
+        {rv : RandomVariable dom borel_sa f}
+        {rvce : RandomVariable dom2 Rbar_borel_sa ce}
+    :
+      is_conditional_expectation dom2 f ce ->
+      is_conditional_expectation dom2 (rvopp f) (Rbar_rvopp ce)
+                                 (rvce:=Rbar_rvopp_rv _).
+  Proof.
+    intros isce.
+    apply (is_conditional_expectation_scale (-1)) in isce.
+    eapply (is_conditional_expectation_proper _ _ _ _ (reflexivity _) _ isce).
+    Unshelve.
+    apply all_almost.
+    intros ?.
+    unfold Rbar_rvmult, Rbar_rvopp, const.
+    destruct (ce x); simpl; rbar_prover.
+  Qed.
+
   Theorem is_conditional_expectation_plus
         (f1 f2 : Ts -> R)
         (ce1 ce2 : Ts -> Rbar)
@@ -2000,6 +2020,27 @@ Section is_cond_exp.
       apply rvmult_comm.
   Qed.
 
+  Corollary is_conditional_expectation_minus
+            (f1 f2 : Ts -> R)
+            (ce1 ce2 : Ts -> Rbar)
+            {rvf1 : RandomVariable dom borel_sa f1}
+            {rvf2 : RandomVariable dom borel_sa f2}
+            {isfe1:IsFiniteExpectation prts f1}
+            {isfe2:IsFiniteExpectation prts f2}
+            {rvce1 : RandomVariable dom2 Rbar_borel_sa ce1}
+            {rvce2 : RandomVariable dom2 Rbar_borel_sa ce2}
+    :
+      is_conditional_expectation dom2 f1 ce1 ->
+      is_conditional_expectation dom2 f2 ce2 ->
+      is_conditional_expectation dom2 (rvminus f1 f2) (Rbar_rvminus ce1 ce2)
+                                 (rvce:= Rbar_rvplus_rv _ _).
+  Proof.
+    intros isce1 isce2.
+    apply is_conditional_expectation_plus; trivial.
+    - now apply IsFiniteExpectation_opp.
+    - now apply is_conditional_expectation_opp.
+  Qed.
+  
   Lemma Rbar_rvlim_almost_proper (f1 f2:nat->Ts->R) :
     (forall n, almostR2 prts eq (f1 n) (f2 n)) ->
     almostR2 prts eq (Rbar_rvlim f1) (Rbar_rvlim f2).
@@ -2219,6 +2260,42 @@ Section is_cond_exp.
     ; trivial; try reflexivity.
     eapply is_conditional_expectation_nneg; eauto.
   Qed.
+
+  Theorem is_conditional_expectation_ale
+        (f1 : Ts -> R)
+        (f2 : Ts -> R)
+        (ce1 : Ts -> Rbar)
+        (ce2 : Ts -> Rbar)
+        {rvf1 : RandomVariable dom borel_sa f1}
+        {rvce1 : RandomVariable dom2 Rbar_borel_sa ce1}
+        {isfe1:IsFiniteExpectation prts f1}
+        {rvf2 : RandomVariable dom borel_sa f2}
+        {rvce2 : RandomVariable dom2 Rbar_borel_sa ce2}
+        {isfe2:IsFiniteExpectation prts f2}
+    :
+      almostR2 prts Rle f1 f2 ->
+      is_conditional_expectation dom2 f1 ce1 ->
+      is_conditional_expectation dom2 f2 ce2 ->
+      almostR2 (prob_space_sa_sub prts sub) Rbar_le ce1 ce2.
+  Proof.
+    intros ale isce1 isce2.
+    generalize (is_conditional_expectation_minus _ _ _ _ isce2 isce1)
+    ; intros HH.
+
+    cut (almostR2 (prob_space_sa_sub prts sub) Rbar_le (const 0) (Rbar_rvminus ce2 ce1)).
+    - apply almost_impl.
+      apply all_almost.
+      unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp, const.
+      intros ??.
+      destruct (ce1 x); destruct (ce2 x); simpl in *; rbar_prover.
+    - apply is_conditional_expectation_anneg in HH; trivial.
+      revert ale.
+      apply almost_impl.
+      apply all_almost.
+      intros ??.
+      unfold const, rvminus, rvplus, rvopp, rvscale.
+      lra.
+  Qed.      
 
   Fixpoint list_Rbar_sum (l : list Rbar) : Rbar :=
     match l with
