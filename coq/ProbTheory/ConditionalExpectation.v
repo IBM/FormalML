@@ -4695,28 +4695,6 @@ Section cond_exp2.
     eexists.
     reflexivity.
   Qed.
-
-  Definition FiniteConditionalExpectation
-             (f : Ts -> R)
-             {rv : RandomVariable dom borel_sa f}
-             {isfe:IsFiniteExpectation prts f} : Ts -> R.
-  Proof.
-    generalize (Condexp_finite f)
-    ; intros HH.
-    apply constructive_indefinite_description in HH.
-    destruct HH.
-    apply x.
-  Defined.
-
-  Lemma FiniteConditionalExpectation_eq
-             (f : Ts -> R)
-             {rv : RandomVariable dom borel_sa f}
-             {isfe:IsFiniteExpectation prts f} :
-    ConditionalExpectation f = fun x => (Finite (FiniteConditionalExpectation f x)).
-  Proof.
-    unfold FiniteConditionalExpectation.
-    match_destr.
-  Qed.
   
   Lemma Rbar_Expec_Condexp (f : Ts -> R) 
         {rv : RandomVariable dom borel_sa f}
@@ -4759,45 +4737,6 @@ Section cond_exp2.
        }
         now rewrite (Rbar_Expectation_ext H1) in H.
    Qed.
-
-  (*  Lemma event_Rbar_Rgt_sa (σ:SigmaAlgebra Ts) (x1 x2:Ts->Rbar)
-      {rv1:RandomVariable σ Rbar_borel_sa x1}
-      {rv2:RandomVariable σ Rbar_borel_sa x2}
-      (forall x, ex_Rbar_plus (x1 x) (Rbar_opp (x2 x)))
-  : sa_sigma (fun x => Rbar_gt (x1 x) (x2 x)).
-Proof.
-  apply (sa_proper _ (fun x => (Rbar_rvminus x1 x2) x > 0)).
-  - unfold Rbar_rvminus.
-    intros ?.
-    unfold Rbar_rvminus, Rbar_gt, Rbar_rvopp, Rbar_rvplus.
-    destruct x1; destruct x2; simpl; try (intuition lra).
-
-    
-    + split; trivial; intros.
-
-    intuition lra.
-  - apply sa_le_gt; intros.
-    apply rv_measurable.
-    typeclasses eauto.
-Qed.
-
-  Definition event_Rbar_Rgt (σ:SigmaAlgebra Ts) x1 x2
-      {rv1:RandomVariable σ borel_sa x1}
-      {rv2:RandomVariable σ borel_sa x2} : event σ
-  := exist _ _ (event_Rgt_sa σ x1 x2).
-
-Lemma event_Rbar_Rgt_dec (σ:SigmaAlgebra Ts) x1 x2
-      {rv1:RandomVariable σ borel_sa x1}
-      {rv2:RandomVariable σ borel_sa x2} :
-  dec_event (event_Rgt σ x1 x2).
-Proof.
-  unfold event_Rgt.
-  intros x; simpl.
-  apply Rgt_dec.
-Qed.
-   *)
-
-
   
   Lemma NonNegConditionalExpectation_proper (f1 f2 : Ts -> R) 
         {rv1 : RandomVariable dom borel_sa f1}
@@ -4834,6 +4773,46 @@ Qed.
     - apply Rbar_rvopp_almost_proper.
       apply NonNegConditionalExpectation_proper.
       now apply neg_fun_part_proper_almostR2.
+  Qed.
+
+  Lemma ConditionalExpectation_ale (f1 f2 : Ts -> R) 
+        {rv1 : RandomVariable dom borel_sa f1}
+        {rv2 : RandomVariable dom borel_sa f2}
+        {isfe1:IsFiniteExpectation prts f1}
+        {isfe2:IsFiniteExpectation prts f2}
+
+    :
+    almostR2 prts Rle f1 f2 ->
+    almostR2 (prob_space_sa_sub prts sub) Rbar_le
+             (ConditionalExpectation f1)
+             (ConditionalExpectation f2).
+  Proof.
+    intros eqq.
+    eapply (is_conditional_expectation_ale _ sub f1 f2)
+    ; trivial
+    ; now apply Condexp_cond_exp.
+  Qed.
+
+  Definition FiniteConditionalExpectation
+             (f : Ts -> R)
+             {rv : RandomVariable dom borel_sa f}
+             {isfe:IsFiniteExpectation prts f} : Ts -> R.
+  Proof.
+    generalize (Condexp_finite f)
+    ; intros HH.
+    apply constructive_indefinite_description in HH.
+    destruct HH.
+    apply x.
+  Defined.
+
+  Lemma FiniteConditionalExpectation_eq
+             (f : Ts -> R)
+             {rv : RandomVariable dom borel_sa f}
+             {isfe:IsFiniteExpectation prts f} :
+    ConditionalExpectation f = fun x => (Finite (FiniteConditionalExpectation f x)).
+  Proof.
+    unfold FiniteConditionalExpectation.
+    match_destr.
   Qed.
 
 End cond_exp2.
