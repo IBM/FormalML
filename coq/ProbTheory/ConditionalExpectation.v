@@ -3230,6 +3230,16 @@ Qed.
    
   Qed.
 
+  Lemma is_cond_exp_abs f ce ace
+          {rvf : RandomVariable dom borel_sa f}        
+          {rvce : RandomVariable dom2 borel_sa ce}
+          {rvace : RandomVariable dom2 borel_sa ace}    :
+    is_conditional_expectation dom2 f ce ->
+    is_conditional_expectation dom2 (rvabs f) ace ->    
+    almostR2 prts eq (rvabs ce) ace.
+  Proof.
+    Admitted.
+
   Theorem is_conditional_expectation_factor_out_nneg
           (f g ce ace : Ts -> R)
           {nnegg : NonnegativeFunction g}
@@ -3249,7 +3259,7 @@ Qed.
   Proof.
     intros.
     generalize (simple_approx_pofrf g); intros.
-    assert (almostR2 prts eq (rvabs ce) ace) by admit.
+    generalize (is_cond_exp_abs f ce ace H1 H2); intros.
     assert (forall n, almostR2 prts Rle 
                                (rvabs (Rbar_rvmult (simple_approx g n) ce)) 
                                (rvmult g ace)).
@@ -3263,15 +3273,28 @@ Qed.
                   (rvabs
                      (rvmult (simple_approx g n) ce))
                   (rvmult (simple_approx g n) (rvabs ce))).
-        - admit.
-        - admit.
+        - intro x.
+          unfold rvabs, rvmult.
+          rewrite Rabs_mult.
+          rewrite Rabs_right; trivial.
+          apply Rle_ge, simple_approx_pofrf.
+        - destruct H4 as [? [? ?]].
+          exists x; split; trivial; intros.
+          specialize (H6 x0 H7).
+          rewrite H5.
+          unfold rvmult.
+          now rewrite H6.
       }
       assert (almostR2 prts Rle 
                        (rvmult (simple_approx g n) ace)
                        (rvmult g ace)).
       {
-        generalize (simple_approx_le g nnegg n); intros.
-        admit.
+        apply almostR2_le_subr.
+        intro x.
+        unfold rvmult.
+        apply Rmult_le_compat_r.
+        - apply nnegace.
+        - apply (simple_approx_le g nnegg n).
       }
       eapply almostR2_trans.
       - apply Rle_pre.
