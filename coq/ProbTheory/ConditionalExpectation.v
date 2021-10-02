@@ -3298,6 +3298,88 @@ Qed.
       + now apply event_inter_sub_r in H8.
     Qed.
   
+  Lemma IsFiniteExpectation_abs_id (f : Ts -> R)
+          {rvf : RandomVariable dom borel_sa f} :
+    IsFiniteExpectation prts (rvabs f) ->
+    IsFiniteExpectation prts f.
+  Proof.
+    intros.
+    apply IsFiniteExpectation_bounded with (rv_X1 := rvopp (rvabs f)) (rv_X3 := rvabs f); trivial.
+    - now apply IsFiniteExpectation_opp.
+    - intro x.
+      unfold rvopp, rvabs, rvscale.
+      apply Ropp_le_cancel.
+      ring_simplify.
+      rewrite <- Rabs_Ropp.
+      apply Rle_abs.
+    - intro x.
+      unfold rvabs.
+      apply Rle_abs.
+  Qed.
+
+  Lemma IsFiniteExpectation_abs_bound (f g : Ts -> R)
+          {rvf : RandomVariable dom borel_sa f}
+          {rvg : RandomVariable dom borel_sa g} :
+    rv_le (rvabs f) g ->
+    IsFiniteExpectation prts g ->
+    IsFiniteExpectation prts f.
+  Proof.
+    intros.
+    apply IsFiniteExpectation_abs_id; trivial.
+    apply IsFiniteExpectation_bounded with (rv_X1 := fun (x:Ts) => 0) (rv_X3 := g); trivial.
+    - apply IsFiniteExpectation_const.
+    - intro x.
+      unfold rvabs.
+      apply Rabs_pos.
+   Qed.
+
+  Instance Domainated_convergence0
+          (fn : nat -> Ts -> R)
+          (g : Ts -> R)
+          {rvn : forall n, RandomVariable dom borel_sa (fn n)}
+          {rvg : RandomVariable dom borel_sa g} :
+    (forall n, rv_le (rvabs (fn n)) g) ->
+    IsFiniteExpectation prts g ->
+    forall n, IsFiniteExpectation prts (fn n).
+  Proof.
+    intros.
+    now apply IsFiniteExpectation_abs_bound with (g := g).
+  Qed.
+
+  Instance Domainated_convergence1
+          (fn : nat -> Ts -> R)
+          (f g : Ts -> R)
+          {rvn : forall n, RandomVariable dom borel_sa (fn n)}
+          {rvf : RandomVariable dom borel_sa f}
+          {rvg : RandomVariable dom borel_sa g} 
+          (isfeg : IsFiniteExpectation prts g)
+          (le_fn_g : (forall n, rv_le (rvabs (fn n)) g)) 
+          (lim : almost prts (fun x => is_lim_seq (fun n => fn n x) (f x))) :
+    IsFiniteExpectation prts f.
+  Proof.
+    Admitted.
+
+
+  Theorem Domainated_convergence
+          (fn : nat -> Ts -> R)
+          (f g : Ts -> R)
+          {rvn : forall n, RandomVariable dom borel_sa (fn n)}
+          {rvf : RandomVariable dom borel_sa f}
+          {rvg : RandomVariable dom borel_sa g} 
+          {isfen : forall n, IsFiniteExpectation prts (fn n)}
+          {isfe: IsFiniteExpectation prts f} : 
+    IsFiniteExpectation prts g ->
+    (forall n, rv_le (rvabs (fn n)) g) ->
+    almost prts (fun x => is_lim_seq (fun n => fn n x) (f x)) ->
+    is_lim_seq (fun n => FiniteExpectation prts (fn n)) (FiniteExpectation prts f).
+  Proof.
+    intros.
+    assert (almostR2 prts Rle (rvabs f) g) by admit.
+    
+    
+  Admitted.
+  
+
   Theorem is_conditional_expectation_factor_out_nneg
           (f g ce ace : Ts -> R)
           {nnegg : NonnegativeFunction g}
