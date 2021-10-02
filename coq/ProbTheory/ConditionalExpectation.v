@@ -3230,16 +3230,74 @@ Qed.
    
   Qed.
 
-  Lemma is_cond_exp_abs f ce ace
+  Lemma IsFiniteExpectation_abs f 
+    {rv : RandomVariable dom borel_sa f} :
+    IsFiniteExpectation prts f ->
+    IsFiniteExpectation prts (rvabs f).
+  Proof.
+    intros.
+    generalize (Expectation_pos_part_finite prts f); intros.
+    generalize (Expectation_neg_part_finite prts f); intros.
+    generalize (rv_pos_neg_abs f); intros.
+    rewrite H2.
+    apply IsFiniteExpectation_plus.
+    - typeclasses eauto.
+    - typeclasses eauto.
+    - unfold IsFiniteExpectation.
+      erewrite Expectation_pos_pofrf.
+      now rewrite <- H0.
+    - unfold IsFiniteExpectation.
+      erewrite Expectation_pos_pofrf.
+      now rewrite <- H1.
+  Qed.
+    
+  Lemma is_cond_rle_abs f ce ace
           {rvf : RandomVariable dom borel_sa f}        
           {rvce : RandomVariable dom2 borel_sa ce}
           {rvace : RandomVariable dom2 borel_sa ace}    :
+    IsFiniteExpectation prts f ->
     is_conditional_expectation dom2 f ce ->
     is_conditional_expectation dom2 (rvabs f) ace ->    
-    almostR2 prts eq (rvabs ce) ace.
+    almostR2 prts Rle (rvabs ce) ace.
   Proof.
-    Admitted.
-
+    intros.
+    generalize (IsFiniteExpectation_abs f); intro.
+    assert (f_le_abs: almostR2 prts Rle f (rvabs f)).
+    {
+      apply almostR2_le_subr.
+      intro x; unfold rvabs.
+      apply Rle_abs.
+   }
+    generalize (is_conditional_expectation_ale f (rvabs f) ce ace f_le_abs H0 H1); intros.
+    assert (oppf_le_abs: almostR2 prts Rle (rvopp f) (rvabs f)).    
+    {
+      apply almostR2_le_subr.
+      intro x.
+      unfold rvopp, rvscale, rvabs.
+      replace (-1 * f x) with (- f x) by lra.
+      rewrite <- Rabs_Ropp.
+      apply Rle_abs.
+   }
+    generalize (is_conditional_expectation_opp f ce H0); intros.
+    generalize (is_conditional_expectation_ale (rvopp f) (rvabs f) (Rbar_rvopp ce) ace oppf_le_abs H4 H1); intros.
+    destruct H3 as [? [? ?]].
+    destruct H5 as [? [? ?]].
+    apply (almost_prob_space_sa_sub_lift prts sub).
+    exists (event_inter x x0).
+    split.
+    - now rewrite ps_inter_l1.
+    - intros.
+      specialize (H6 x1); simpl in H6.
+      specialize (H7 x1); unfold rvopp, rvscale in H7; simpl in H7.
+      unfold rvabs.
+      apply Rabs_le.
+      cut_to H6; cut_to H7.
+      + split; lra.
+      + now apply event_inter_sub_r in H8.
+      + now apply event_inter_sub_l in H8.
+      + now apply event_inter_sub_r in H8.
+    Qed.
+  
   Theorem is_conditional_expectation_factor_out_nneg
           (f g ce ace : Ts -> R)
           {nnegg : NonnegativeFunction g}
@@ -3259,7 +3317,7 @@ Qed.
   Proof.
     intros.
     generalize (simple_approx_pofrf g); intros.
-    generalize (is_cond_exp_abs f ce ace H1 H2); intros.
+    generalize (is_cond_rle_abs f ce ace H H1 H2); intros.
     assert (forall n, almostR2 prts Rle 
                                (rvabs (Rbar_rvmult (simple_approx g n) ce)) 
                                (rvmult g ace)).
@@ -3283,7 +3341,8 @@ Qed.
           specialize (H6 x0 H7).
           rewrite H5.
           unfold rvmult.
-          now rewrite H6.
+          apply Rmult_le_compat_l; trivial.
+          apply simple_approx_pofrf.          
       }
       assert (almostR2 prts Rle 
                        (rvmult (simple_approx g n) ace)

@@ -288,6 +288,14 @@ Section defs.
       repeat match_destr; lra.
     Qed.
 
+    Lemma rv_pos_neg_abs (rv_X:Ts->R) : rvabs rv_X === rvplus (pos_fun_part rv_X) (neg_fun_part rv_X).
+    Proof.
+      intros x.
+      unfold rvplus, rvabs, pos_fun_part, neg_fun_part; simpl.
+      unfold Rabs, Rmax, Rmin.
+      repeat match_destr; lra.
+    Qed.
+
     Lemma rvmult_assoc
           (rv_X1 rv_X2 rv_X3 : Ts -> R) :
       (rvmult (rvmult rv_X1 rv_X2) rv_X3) === (rvmult rv_X1 (rvmult rv_X2 rv_X3)).

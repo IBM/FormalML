@@ -284,8 +284,24 @@ Qed.
     apply neg_fun_part_le.
   Qed.
   
+  Lemma Expectation_pos_part_finite (rv_X : Ts -> R)
+        {isfe:IsFiniteExpectation prts rv_X} :
+    is_finite (NonnegExpectation (pos_fun_part rv_X)).
+  Proof.
+    red in isfe.
+    unfold Expectation in isfe.
+    destruct (NonnegExpectation (fun x : Ts => pos_fun_part rv_X x)).
+    destruct (NonnegExpectation (fun x : Ts => neg_fun_part rv_X x)).     
+    now unfold is_finite.
+    simpl in isfe; tauto.
+    simpl in isfe; tauto.     
+    destruct (NonnegExpectation (fun x : Ts => neg_fun_part rv_X x));
+      simpl in isfe; tauto.
+    destruct (NonnegExpectation (fun x : Ts => neg_fun_part rv_X x));
+      simpl in isfe; tauto.
+  Qed.
+
   Lemma Expectation_neg_part_finite (rv_X : Ts -> R)
-(*        {rv:RandomVariable dom borel_sa rv_X} *)
         {isfe:IsFiniteExpectation prts rv_X} :
     is_finite (NonnegExpectation (neg_fun_part rv_X)).
   Proof.
