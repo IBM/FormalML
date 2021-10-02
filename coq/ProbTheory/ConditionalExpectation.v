@@ -3360,8 +3360,24 @@ Qed.
       - apply H5.
       - apply H6.
     }
-    generalize (is_conditional_expectation_factor_out_nneg_both (rvabs f) g ace); intros.
-
+    generalize (IsFiniteExpectation_abs f H); intros.
+    generalize (is_conditional_expectation_factor_out_nneg_both (rvabs f) g ace H6); intros.
+    generalize (IsFiniteExpectation_abs (rvmult f g) H0); intros.
+    assert (rv_eq
+              (rvabs (rvmult f g))
+              (rvmult (rvabs f) g)).
+    {
+      intro x.
+      unfold rvabs, rvmult.
+      rewrite Rabs_mult.
+      replace (Rabs (g x)) with (g x); trivial.
+      rewrite Rabs_right; trivial.
+      apply Rle_ge.
+      apply nnegg.
+   }
+    rewrite H9 in H8.
+    specialize (H7 H8 H2).
+    
    Admitted.
 
 
