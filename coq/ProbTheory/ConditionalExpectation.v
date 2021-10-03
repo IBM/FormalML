@@ -18,17 +18,7 @@ Require Import Almost.
 Require Import utils.Utils.
 Require Import List.
 
-Set Bullet Behavior "Strict Subproofs".
-
-Section sa_sub_prob.
-  Context {Ts:Type} 
-          {dom: SigmaAlgebra Ts}
-          (prts:ProbSpace dom)
-          {dom2 : SigmaAlgebra Ts}
-          (sub : sa_sub dom2 dom).
-
-End sa_sub_prob.
-
+Set Bullet Behavior "Strict Subproofs". 
 
 Section is_cond_exp.
 
