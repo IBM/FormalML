@@ -3399,8 +3399,9 @@ Qed.
          {isfe2:IsFiniteExpectation prts rv_X2} :
     IsFiniteExpectation prts (rvminus rv_X1 rv_X2).
   Proof.
-    Admitted.
-
+    unfold rvminus.
+    typeclasses eauto.
+  Qed.
 
   Theorem Domainated_convergence
           (fn : nat -> Ts -> R)
