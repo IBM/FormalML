@@ -3333,6 +3333,17 @@ Qed.
       apply Rabs_pos.
    Qed.
 
+  Lemma IsFiniteExpectation_abs_bound_almost (f g : Ts -> R)
+          {rvf : RandomVariable dom borel_sa f}
+          {rvg : RandomVariable dom borel_sa g} :
+    almostR2 prts Rle (rvabs f) g ->
+    IsFiniteExpectation prts g ->
+    IsFiniteExpectation prts f.
+  Proof.
+    intros.
+    apply IsFiniteExpectation_abs_id; trivial.
+    Admitted.
+
   Instance Domainated_convergence0
           (fn : nat -> Ts -> R)
           (g : Ts -> R)
@@ -3375,11 +3386,11 @@ Qed.
   Proof.
     intros.
     assert (almostR2 prts Rle (rvabs f) g) by admit.
-    
+    generalize (IsFiniteExpectation_abs_bound f g); intros.
     
   Admitted.
   
-
+Locate almostR2_le_split.
   Theorem is_conditional_expectation_factor_out_nneg
           (f g ce ace : Ts -> R)
           {nnegg : NonnegativeFunction g}
