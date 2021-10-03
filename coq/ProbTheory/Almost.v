@@ -3,6 +3,7 @@ Require Import Equivalence.
 Require Import Program.Basics.
 Require Import Classical ClassicalChoice Reals Lra.
 Require Import utils.Utils ProbSpace.
+Require Import Coquelicot.Rbar.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -327,3 +328,38 @@ Section almostR2_part.
 
   
 End almostR2_part.
+
+Section sa_sub.
+
+  Context {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts:ProbSpace dom)
+          {dom2 : SigmaAlgebra Ts}
+          (sub : sa_sub dom2 dom).
+
+    Lemma almostR2_prob_space_sa_sub_lift {A}
+        RR
+        (f1 f2:Ts -> A):
+    almostR2 (prob_space_sa_sub prts sub) RR f1 f2 ->
+    almostR2 prts RR f1 f2.
+  Proof.
+    intros [p [pone peqq]].
+    red.
+    simpl in *.
+    exists (event_sa_sub sub p).
+    split; trivial.
+  Qed.
+
+  Lemma almost_prob_space_sa_sub_lift
+        (prop : Ts -> Prop) :
+    almost (prob_space_sa_sub prts sub) prop ->
+    almost prts prop.
+  Proof.
+    intros [p [pone peqq]].
+    red.
+    simpl in *.
+    exists (event_sa_sub sub p).
+    split; trivial.
+  Qed.
+
+End sa_sub.

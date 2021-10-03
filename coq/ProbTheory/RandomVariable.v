@@ -527,3 +527,22 @@ Section pullback.
   Qed.
 
 End pullback.
+
+Section sa_sub.
+  Context {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts:ProbSpace dom)
+          {dom2 : SigmaAlgebra Ts}
+          (sub : sa_sub dom2 dom).
+
+  Instance RandomVariable_sa_sub {Td} {cod : SigmaAlgebra Td}
+           x
+           {rv_x:RandomVariable dom2 cod x}
+  : RandomVariable dom cod x.
+  Proof.
+    intros e.
+    specialize (rv_x e).
+    now apply sub.
+  Qed.
+
+End sa_sub.

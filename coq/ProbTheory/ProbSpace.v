@@ -1153,3 +1153,34 @@ Section conditional_probability.
   Qed.
 
 End conditional_probability.
+
+Section sa_sub.
+
+  Context {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts:ProbSpace dom)
+          {dom2 : SigmaAlgebra Ts}
+          (sub : sa_sub dom2 dom).
+  
+  Instance prob_space_sa_sub : ProbSpace dom2.
+  Proof.
+    exists (fun x => ps_P (event_sa_sub sub x)).
+    - repeat red; intros.
+      now rewrite H.
+    - intros.
+      generalize (ps_countable_disjoint_union (fun n => event_sa_sub sub (collection n)))
+      ; intros HH.
+      cut_to HH.
+      + rewrite union_of_collection_sa_sub.
+        unfold sum_of_probs_equals in *.
+        apply HH.
+      + now apply collection_is_pairwise_disjoint_sa_sub.
+    - erewrite ps_proper; try eapply ps_one.
+      unfold Ω, pre_Ω.
+      repeat red; intros; simpl; tauto.
+    - intros.
+      apply ps_pos.
+  Defined.
+
+End sa_sub.
+

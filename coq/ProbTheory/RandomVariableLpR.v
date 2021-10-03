@@ -4619,3 +4619,22 @@ Section more_Lp_props.
 
 End more_Lp_props.
 
+Section sa_sub.
+
+  Context {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts:ProbSpace dom)
+          {dom2 : SigmaAlgebra Ts}
+          (sub : sa_sub dom2 dom).
+  
+  Lemma IsLp_prob_space_sa_sub
+        p (x:Ts->R)
+        {rv:RandomVariable dom2 borel_sa x} :
+    IsLp prts p x <->
+    IsLp (prob_space_sa_sub prts sub) p x.
+  Proof.
+    unfold IsLp, IsFiniteExpectation; intros.
+    now rewrite Expectation_prob_space_sa_sub by typeclasses eauto.
+  Qed.
+
+End sa_sub.

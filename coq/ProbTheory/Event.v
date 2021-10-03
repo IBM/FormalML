@@ -2428,6 +2428,47 @@ Section dec.
 
 End dec.
 
+Section sa_sub.
+
+  Context {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          {dom2 : SigmaAlgebra Ts}
+          (sub : sa_sub dom2 dom).
+  
+  Definition event_sa_sub 
+             (x:event dom2) : event dom
+    := exist _ (event_pre x) (sub _ (proj2_sig x)).
+
+  Global Instance event_sa_sub_equiv_proper :
+    Proper (event_equiv ==> event_equiv) event_sa_sub.
+  Proof.
+    repeat red; intros.
+    simpl.
+    specialize (H x0).
+    destruct x; destruct y; simpl in *.
+    intuition.
+  Qed.
+
+  Lemma collection_is_pairwise_disjoint_sa_sub collection :
+    collection_is_pairwise_disjoint collection ->
+    collection_is_pairwise_disjoint (fun n : nat => event_sa_sub (collection n)).
+  Proof.
+    unfold collection_is_pairwise_disjoint; intros.
+    unfold event_disjoint; simpl.
+    now apply H.
+  Qed.
+
+  Lemma union_of_collection_sa_sub collection :
+    event_equiv
+      (event_sa_sub (union_of_collection collection))
+      (union_of_collection (fun n : nat => event_sa_sub (collection n))).
+  Proof.
+    intros x; simpl.
+    reflexivity.
+  Qed.
+
+End sa_sub.
+
 Coercion event_pre : event >-> Funclass.
 
 Notation "∅" := event_none : prob. (* \emptyset *)

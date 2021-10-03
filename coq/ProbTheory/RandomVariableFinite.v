@@ -1302,3 +1302,47 @@ Proof.
       
 
 End ExpNonNeg.
+
+Section sa_sub.
+
+    Context {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts:ProbSpace dom)
+          {dom2 : SigmaAlgebra Ts}
+          (sub : sa_sub dom2 dom).
+
+  Lemma IsFiniteExpectation_prob_space_sa_sub
+        (x:Ts->R)
+        {rv:RandomVariable dom2 borel_sa x}
+        {isfe:IsFiniteExpectation (prob_space_sa_sub prts sub) x} :
+    IsFiniteExpectation prts x.
+  Proof.
+    unfold IsFiniteExpectation in *.
+    now rewrite Expectation_prob_space_sa_sub in isfe by trivial.
+  Qed.
+
+  Lemma IsFiniteExpectation_prob_space_sa_sub_f
+        (x:Ts->R)
+        {rv:RandomVariable dom2 borel_sa x}
+        {isfe:IsFiniteExpectation prts x} :
+    IsFiniteExpectation (prob_space_sa_sub prts sub) x.
+  Proof.
+    unfold IsFiniteExpectation in *.
+    now erewrite Expectation_prob_space_sa_sub.
+  Qed.
+
+  Lemma FiniteExpectation_prob_space_sa_sub
+        (x:Ts->R)
+        {rv:RandomVariable dom2 borel_sa x}
+        {isfe1:IsFiniteExpectation (prob_space_sa_sub prts sub) x}
+        {isfe2:IsFiniteExpectation prts x} :
+    FiniteExpectation (prob_space_sa_sub prts sub) x =
+    FiniteExpectation prts x.
+  Proof.
+    unfold FiniteExpectation, proj1_sig.
+    repeat match_destr.
+    rewrite Expectation_prob_space_sa_sub in e by trivial.
+    congruence.
+  Qed.
+
+End sa_sub.

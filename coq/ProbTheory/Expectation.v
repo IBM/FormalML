@@ -4707,3 +4707,89 @@ Section EventRestricted.
   Qed.
 End EventRestricted.
 
+Section sa_sub.
+
+    Context {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts:ProbSpace dom)
+          {dom2 : SigmaAlgebra Ts}
+          (sub : sa_sub dom2 dom).
+
+  Lemma NonnegExpectation_prob_space_sa_sub
+        (x:Ts -> R)
+        {pofrf:NonnegativeFunction x}
+        {rv:RandomVariable dom2 borel_sa x}
+        
+    :
+      @NonnegExpectation Ts dom2 (prob_space_sa_sub prts sub)  x pofrf =
+      @NonnegExpectation Ts dom prts x pofrf.
+  Proof.
+    generalize ((RandomVariable_sa_sub sub x (rv_x:=rv)))
+    ; intros rv1.
+    
+
+    assert (forall n, RandomVariable dom borel_sa (simple_approx (fun x0 : Ts => x x0) n)).
+    {
+      apply simple_approx_rv.
+      * now apply positive_Rbar_positive.
+      * typeclasses eauto.
+    } 
+
+    assert (forall n, RandomVariable dom2 borel_sa (simple_approx (fun x0 : Ts => x x0) n)).
+    {
+      apply simple_approx_rv.
+      * now apply positive_Rbar_positive.
+      * typeclasses eauto.
+    } 
+
+    rewrite <- (monotone_convergence x (simple_approx x)
+                                    rv1 pofrf
+                                    (fun n => simple_approx_rv _ _)
+                                    (fun n => simple_approx_pofrf _ _)).
+    rewrite <- (monotone_convergence x (simple_approx x)
+                                    rv pofrf
+                                    (fun n => simple_approx_rv _ _)
+                                    (fun n => simple_approx_pofrf _ _)).
+    - apply Lim_seq_ext; intros n.
+      repeat erewrite <- simple_NonnegExpectation.
+      apply SimpleExpectation_prob_space_sa_sub.
+    - intros n a.
+      apply (simple_approx_le x pofrf n a).
+    - intros n a.
+      apply (simple_approx_increasing x pofrf n a).
+    - intros n.
+      apply simple_expectation_real; trivial.
+      apply simple_approx_frf.
+    - intros.
+      apply (simple_approx_lim_seq x).
+      now apply positive_Rbar_positive.
+    - intros n a.
+      apply (simple_approx_le x pofrf n a).
+    - intros n a.
+      apply (simple_approx_increasing x pofrf n a).
+    - intros n.
+      apply simple_expectation_real; trivial.
+      apply simple_approx_frf.
+    - intros.
+      apply (simple_approx_lim_seq x).
+      now apply positive_Rbar_positive.
+
+      Unshelve.
+      apply simple_approx_frf.
+  Qed.
+
+  Lemma Expectation_prob_space_sa_sub
+        (x:Ts->R)
+        {rv:RandomVariable dom2 borel_sa x} :
+    @Expectation Ts dom2 (prob_space_sa_sub prts sub)  x =
+    @Expectation Ts dom prts x.
+  Proof.
+    generalize ((RandomVariable_sa_sub sub x (rv_x:=rv)))
+    ; intros rv1.
+
+    unfold Expectation.
+    repeat rewrite NonnegExpectation_prob_space_sa_sub by typeclasses eauto.
+    reflexivity.
+  Qed.
+
+End sa_sub.

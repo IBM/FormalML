@@ -82,6 +82,7 @@ PROB_THEORY = \
 	RandomVariableLpNat \
 	RandomVariableLpR \
 	RandomVariableLinf \
+	OrthoProject \
 	RealVectorHilbert \
 	SimpleExpectation \
 	ConditionalExpectation \

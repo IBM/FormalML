@@ -2677,3 +2677,32 @@ Section SimpleConditionalExpectation.
   Qed.
 
 End SimpleConditionalExpectation.  
+
+Section sa_sub.
+
+  Context {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts:ProbSpace dom)
+          {dom2 : SigmaAlgebra Ts}
+          (sub : sa_sub dom2 dom).
+
+  Lemma SimpleExpectation_prob_space_sa_sub
+        (x:Ts->R)
+        {rv:RandomVariable dom borel_sa x} 
+        {rv2:RandomVariable dom2 borel_sa x} 
+        {frf:FiniteRangeFunction x} :
+    @SimpleExpectation Ts dom2 (prob_space_sa_sub prts sub) x rv2 frf =
+    @SimpleExpectation Ts dom prts x rv frf.
+  Proof.
+    unfold SimpleExpectation.
+    f_equal.
+    apply map_ext; intros.
+    f_equal.
+    simpl.
+    apply ps_proper.
+    intros ?.
+    unfold preimage_singleton; simpl.
+    tauto.
+  Qed.
+
+End sa_sub.

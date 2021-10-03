@@ -2695,3 +2695,104 @@ Qed.
 
 End almost.
 
+Section sa_sub.
+
+  Context {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts:ProbSpace dom)
+          {dom2 : SigmaAlgebra Ts}
+          (sub : sa_sub dom2 dom).
+
+  Lemma Rbar_NonnegExpectation_prob_space_sa_sub
+        (x:Ts->Rbar)
+        {pofrf:Rbar_NonnegativeFunction x}
+        {rv:RandomVariable dom2 Rbar_borel_sa x}
+        
+    :
+      @Rbar_NonnegExpectation Ts dom2 (prob_space_sa_sub prts sub) x pofrf =
+      @Rbar_NonnegExpectation Ts dom prts x pofrf.
+  Proof.
+    generalize ((RandomVariable_sa_sub sub x (rv_x:=rv)))
+    ; intros rv1.
+    
+
+    assert (forall n, RandomVariable dom borel_sa (simple_approx (fun x0 : Ts => x x0) n)).
+    {
+      intros.
+      apply simple_approx_rv; trivial.
+    } 
+
+    assert (forall n, RandomVariable dom2 borel_sa (simple_approx (fun x0 : Ts => x x0) n)).
+    {
+      intros.
+      apply simple_approx_rv; trivial.
+    } 
+
+    rewrite <- (Rbar_monotone_convergence x (simple_approx x)
+                                         rv1 pofrf
+                                         (fun n => simple_approx_rv _ _)
+                                         (fun n => simple_approx_pofrf _ _)).
+    rewrite <- (Rbar_monotone_convergence x (simple_approx x)
+                                         rv pofrf
+                                         (fun n => simple_approx_rv _ _)
+                                         (fun n => simple_approx_pofrf _ _)).
+    - apply Lim_seq_ext; intros n.
+      repeat erewrite <- simple_NonnegExpectation.
+      apply SimpleExpectation_prob_space_sa_sub.
+    - intros n a.
+      apply (simple_approx_le x pofrf n a).
+    - intros n a.
+      apply (simple_approx_increasing x pofrf n a).
+    - intros n.
+      apply simple_expectation_real; trivial.
+      apply simple_approx_frf.
+    - intros.
+      apply (simple_approx_lim_seq x); trivial.
+    - intros n a.
+      apply (simple_approx_le x pofrf n a).
+    - intros n a.
+      apply (simple_approx_increasing x pofrf n a).
+    - intros n.
+      apply simple_expectation_real; trivial.
+      apply simple_approx_frf.
+    - intros.
+      apply (simple_approx_lim_seq x); trivial.
+      Unshelve.
+      apply simple_approx_frf.
+  Qed.
+
+  Lemma Rbar_Expectation_prob_space_sa_sub
+        (x:Ts->Rbar)
+        {rv:RandomVariable dom2 Rbar_borel_sa x} :
+    @Rbar_Expectation Ts dom2 (prob_space_sa_sub prts sub)  x =
+    @Rbar_Expectation Ts dom prts x.
+  Proof.
+    generalize ((RandomVariable_sa_sub sub x (rv_x:=rv)))
+    ; intros rv1.
+
+    unfold Rbar_Expectation.
+    repeat rewrite Rbar_NonnegExpectation_prob_space_sa_sub by typeclasses eauto.
+    reflexivity.
+  Qed.
+
+  Lemma Rbar_IsFiniteExpectation_prob_space_sa_sub
+        (x:Ts->Rbar)
+        {rv:RandomVariable dom2 Rbar_borel_sa x}
+        {isfe:Rbar_IsFiniteExpectation (prob_space_sa_sub prts sub) x} :
+    Rbar_IsFiniteExpectation prts x.
+  Proof.
+    unfold Rbar_IsFiniteExpectation in *.
+    now rewrite Rbar_Expectation_prob_space_sa_sub in isfe by trivial.
+  Qed.
+
+  Lemma Rbar_IsFiniteExpectation_prob_space_sa_sub_f
+        (x:Ts->Rbar)
+        {rv:RandomVariable dom2 Rbar_borel_sa x}
+        {isfe:Rbar_IsFiniteExpectation prts x} :
+    Rbar_IsFiniteExpectation (prob_space_sa_sub prts sub) x.
+  Proof.
+    unfold Rbar_IsFiniteExpectation in *.
+    now erewrite Rbar_Expectation_prob_space_sa_sub.
+  Qed.
+  
+End sa_sub.
