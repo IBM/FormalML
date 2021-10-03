@@ -3372,8 +3372,24 @@ Qed.
           (lim : almost prts (fun x => is_lim_seq (fun n => fn n x) (f x))) :
     IsFiniteExpectation prts f.
   Proof.
-    Admitted.
-
+    intros.
+    assert (almostR2 prts Rbar_le (rvabs f) g).
+    {
+      destruct lim as [? [? ?]].
+      exists x; split; trivial.
+      intros.
+      specialize (H0 x0 H1).
+      apply is_lim_seq_abs in H0.
+      unfold rvabs.
+      apply is_lim_seq_le with (u := (fun n : nat => Rabs (fn n x0)) )
+                               (v := (fun n => g x0)); trivial.
+      - intro.
+        specialize (le_fn_g n x0).
+        now unfold rvabs in le_fn_g.
+      - apply is_lim_seq_const.
+    }
+    apply IsFiniteExpectation_abs_bound_almost with (g := g); trivial.
+  Qed.
 
   Theorem Domainated_convergence
           (fn : nat -> Ts -> R)
@@ -3389,8 +3405,7 @@ Qed.
     is_lim_seq (fun n => FiniteExpectation prts (fn n)) (FiniteExpectation prts f).
   Proof.
     intros.
-    assert (almostR2 prts Rle (rvabs f) g) by admit.
-    generalize (IsFiniteExpectation_abs_bound f g); intros.
+    
     
   Admitted.
   
