@@ -3173,6 +3173,196 @@ Section rv_almost.
       + typeclasses eauto.
   Qed.
 
+  Lemma almostR2_map_R_split
+        {Ts:Type}
+        {dom: SigmaAlgebra Ts}
+        (prts: ProbSpace dom)
+        {f1 f2:Ts->R} {RR:R->R->Prop} :
+    almostR2 prts RR f1 f2 ->
+    exists f1' f2', almostR2 prts eq f1 f1' /\
+               almostR2 prts eq f2 f2' /\
+               (forall x, RR (f1' x) (f2' x)) /\
+               (RandomVariable dom borel_sa f1 -> RandomVariable dom borel_sa f1')
+               /\ (RandomVariable dom borel_sa f2 -> RandomVariable dom borel_sa f2').
+  Proof.
+    intros aP.
+    destruct (almost_witness _ aP) as [x Px].
+    destruct aP as [p [pone ph]].
+    exists (rvchoice (fun x => if Req_EM_T (((EventIndicator (classic_dec p))) x) 0 then false else true)
+
+                f1
+                (const (f1 x))
+      ).
+    exists (rvchoice (fun x => if Req_EM_T (((EventIndicator (classic_dec p))) x) 0 then false else true)
+
+                f2
+                (const (f2 x))
+      ).
+    repeat split.
+    - exists p.
+      split; trivial.
+      intros.
+      rv_unfold.
+      destruct (classic_dec p x0); try tauto.
+      destruct (Req_EM_T 1 0); try lra; tauto.
+    - exists p.
+      split; trivial.
+      intros.
+      rv_unfold.
+      destruct (classic_dec p x0); try tauto.
+      destruct (Req_EM_T 1 0); try lra; tauto.
+    - intros.
+      rv_unfold.
+      destruct (classic_dec p x0); try tauto.
+      + destruct (Req_EM_T 1 0); try lra; auto.
+      + destruct (Req_EM_T 0 0); try lra; auto.
+    - intros.
+      apply measurable_rv.
+      eapply rvchoice_rv; trivial.
+      + apply EventIndicator_rv.
+      + typeclasses eauto.
+    - intros.
+      apply measurable_rv.
+      eapply rvchoice_rv; trivial.
+      + apply EventIndicator_rv.
+      + typeclasses eauto.
+  Qed.
+
+  Lemma almostR2_map_R_split_l_bounded
+        {Ts:Type}
+        {dom: SigmaAlgebra Ts}
+        (prts: ProbSpace dom)
+        {f1 f2 f3:Ts->R} {RR:R->R->Prop} :
+    (forall x, RR (f3 x) (f2 x)) ->
+    almostR2 prts RR f1 f2 ->
+    exists f1', almostR2 prts eq f1 f1' /\
+               (forall x, RR (f1' x) (f2 x)) /\
+               (RandomVariable dom borel_sa f1 -> RandomVariable dom borel_sa f3 -> RandomVariable dom borel_sa f1').
+  Proof.
+    intros bound aP.
+    destruct (almost_witness _ aP) as [x Px].
+    destruct aP as [p [pone ph]].
+    exists (rvchoice (fun x => if Req_EM_T (((EventIndicator (classic_dec p))) x) 0 then false else true)
+
+                f1
+                f3
+      ).
+    repeat split.
+    - exists p.
+      split; trivial.
+      intros.
+      rv_unfold.
+      destruct (classic_dec p x0); try tauto.
+      destruct (Req_EM_T 1 0); try lra; tauto.
+    - intros.
+      rv_unfold.
+      destruct (classic_dec p x0); try tauto.
+      + destruct (Req_EM_T 1 0); try lra; auto.
+      + destruct (Req_EM_T 0 0); try lra; auto.
+    - intros.
+      apply measurable_rv.
+      eapply rvchoice_rv; trivial.
+      + apply EventIndicator_rv.
+  Qed.
+
+  Lemma almostR2_map_R_split_l_refl
+        {Ts:Type}
+        {dom: SigmaAlgebra Ts}
+        (prts: ProbSpace dom)
+        {f1 f2:Ts->R} {RR:R->R->Prop} {RR_refl:Reflexive RR}:
+    almostR2 prts RR f1 f2 ->
+    exists f1', almostR2 prts eq f1 f1' /\
+               (forall x, RR (f1' x) (f2 x)) /\
+               (RandomVariable dom borel_sa f1 -> RandomVariable dom borel_sa f2 -> RandomVariable dom borel_sa f1').
+  Proof.
+    intros.
+    now apply (almostR2_map_R_split_l_bounded _ (f3:=f2)).
+  Qed.
+
+  Lemma almostR2_map_R_split_l_const_bounded
+        {Ts:Type}
+        {dom: SigmaAlgebra Ts}
+        (prts: ProbSpace dom)
+        {f1 f2:Ts->R} {RR:R->R->Prop} (c:R):
+    (forall x, RR c (f2 x)) ->
+    almostR2 prts RR f1 f2 ->
+    exists f1', almostR2 prts eq f1 f1' /\
+               (forall x, RR (f1' x) (f2 x)) /\
+               (RandomVariable dom borel_sa f1 -> RandomVariable dom borel_sa f1').
+  Proof.
+    intros cle almRR.
+    destruct (@almostR2_map_R_split_l_bounded _ _ prts f1 f2 (const c) RR)
+      as [?[?[??]]]; trivial.
+    eexists; repeat split; eauto.
+    intros; apply H1; trivial.
+    apply rvconst.
+  Qed.
+
+  Lemma almostR2_flip
+        {Ts Td:Type}
+        {dom: SigmaAlgebra Ts}
+        (prts: ProbSpace dom)
+        {f1 f2:Ts->Td} {RR:Td->Td->Prop} :
+    almostR2 prts RR f1 f2 <->
+    almostR2 prts (flip RR) f2 f1.
+  Proof.
+    apply almost_iff.
+    apply all_almost.
+    unfold flip; tauto.
+  Qed.
+
+
+  Lemma almostR2_map_R_split_r_bounded
+        {Ts:Type}
+        {dom: SigmaAlgebra Ts}
+        (prts: ProbSpace dom)
+        {f1 f2 f3:Ts->R} {RR:R->R->Prop} :
+    (forall x, RR (f1 x) (f3 x)) ->
+    almostR2 prts RR f1 f2 ->
+    exists f2', almostR2 prts eq f2 f2' /\
+               (forall x, RR (f1 x) (f2' x)) /\
+               (RandomVariable dom borel_sa f2 -> RandomVariable dom borel_sa f3 -> RandomVariable dom borel_sa f2').
+  Proof.
+    intros bound aP.
+    apply almostR2_flip in aP.
+    apply (almostR2_map_R_split_l_bounded _ bound aP).
+  Qed.
+
+  Lemma almostR2_map_R_split_r_refl
+        {Ts:Type}
+        {dom: SigmaAlgebra Ts}
+        (prts: ProbSpace dom)
+        {f1 f2:Ts->R} {RR:R->R->Prop} {RR_refl:Reflexive RR}:
+    almostR2 prts RR f1 f2 ->
+    exists f2', almostR2 prts eq f2 f2' /\
+               (forall x, RR (f1 x) (f2' x)) /\
+               (RandomVariable dom borel_sa f1 -> RandomVariable dom borel_sa f2 -> RandomVariable dom borel_sa f2').
+  Proof.
+    intros.
+    destruct (almostR2_map_R_split_r_bounded _ (f1:=f1) (f2:=f2) (f3:=f1) (RR:=RR))
+      as [?[?[??]]]; trivial.
+    eexists; repeat split; eauto.
+  Qed.
+
+  Lemma almostR2_map_R_split_r_const_bounded
+        {Ts:Type}
+        {dom: SigmaAlgebra Ts}
+        (prts: ProbSpace dom)
+        {f1 f2:Ts->R} {RR:R->R->Prop} (c:R):
+    (forall x, RR (f1 x) c) ->
+    almostR2 prts RR f1 f2 ->
+    exists f2', almostR2 prts eq f2 f2' /\
+               (forall x, RR (f1 x) (f2' x)) /\
+               (RandomVariable dom borel_sa f2 -> RandomVariable dom borel_sa f2').
+  Proof.
+    intros cle almRR.
+    destruct (@almostR2_map_R_split_r_bounded _ _ prts f1 f2 (const c) RR)
+      as [?[?[??]]]; trivial.
+    eexists; repeat split; eauto.
+    intros; apply H1; trivial.
+    apply rvconst.
+  Qed.
+
   Lemma almost_map_Rbar_split
         {Ts:Type} 
         {dom: SigmaAlgebra Ts}
@@ -3209,6 +3399,127 @@ Section rv_almost.
       + apply EventIndicator_rv.
       + typeclasses eauto.
 
+  Qed.
+
+  Lemma almostR2_map_Rbar_split_l_bounded
+        {Ts:Type}
+        {dom: SigmaAlgebra Ts}
+        (prts: ProbSpace dom)
+        {f1 f2 f3:Ts->Rbar} {RR:Rbar->Rbar->Prop} :
+    (forall x, RR (f3 x) (f2 x)) ->
+    almostR2 prts RR f1 f2 ->
+    exists f1', almostR2 prts eq f1 f1' /\
+               (forall x, RR (f1' x) (f2 x)) /\
+               (RandomVariable dom Rbar_borel_sa f1 -> RandomVariable dom Rbar_borel_sa f3 -> RandomVariable dom Rbar_borel_sa f1').
+  Proof.
+    intros bound aP.
+    destruct (almost_witness _ aP) as [x Px].
+    destruct aP as [p [pone ph]].
+    exists (Rbar_rvchoice (fun x => if Req_EM_T (((EventIndicator (classic_dec p))) x) 0 then false else true)
+
+                f1
+                f3
+      ).
+    repeat split.
+    - exists p.
+      split; trivial.
+      intros.
+      rv_unfold; unfold Rbar_rvchoice.
+      destruct (classic_dec p x0); try tauto.
+      destruct (Req_EM_T 1 0); try f_equal; try lra.
+    - intros.
+      rv_unfold; unfold Rbar_rvchoice.
+      destruct (classic_dec p x0); try tauto.
+      + destruct (Req_EM_T 1 0); try lra; auto.
+      + destruct (Req_EM_T 0 0); try lra; auto.
+    - intros.
+      apply Rbar_measurable_rv.
+      eapply Rbar_rvchoice_rv; trivial.
+      + apply EventIndicator_rv.
+  Qed.
+
+  Lemma almostR2_map_Rbar_split_l_refl
+        {Ts:Type}
+        {dom: SigmaAlgebra Ts}
+        (prts: ProbSpace dom)
+        {f1 f2:Ts->Rbar} {RR:Rbar->Rbar->Prop} {RR_refl:Reflexive RR}:
+    almostR2 prts RR f1 f2 ->
+    exists f1', almostR2 prts eq f1 f1' /\
+               (forall x, RR (f1' x) (f2 x)) /\
+               (RandomVariable dom Rbar_borel_sa f1 -> RandomVariable dom Rbar_borel_sa f2 -> RandomVariable dom Rbar_borel_sa f1').
+  Proof.
+    intros.
+    now apply (almostR2_map_Rbar_split_l_bounded _ (f3:=f2)).
+  Qed.
+
+  Lemma almostR2_map_Rbar_split_l_const_bounded
+        {Ts:Type}
+        {dom: SigmaAlgebra Ts}
+        (prts: ProbSpace dom)
+        {f1 f2:Ts->Rbar} {RR:Rbar->Rbar->Prop} (c:Rbar):
+    (forall x, RR c (f2 x)) ->
+    almostR2 prts RR f1 f2 ->
+    exists f1', almostR2 prts eq f1 f1' /\
+               (forall x, RR (f1' x) (f2 x)) /\
+               (RandomVariable dom Rbar_borel_sa f1 -> RandomVariable dom Rbar_borel_sa f1').
+  Proof.
+    intros cle almRR.
+    destruct (@almostR2_map_Rbar_split_l_bounded _ _ prts f1 f2 (const c) RR)
+      as [?[?[??]]]; trivial.
+    eexists; repeat split; eauto.
+    intros; apply H1; trivial.
+    apply rvconst.
+  Qed.
+
+  Lemma almostR2_map_Rbar_split_r_bounded
+        {Ts:Type}
+        {dom: SigmaAlgebra Ts}
+        (prts: ProbSpace dom)
+        {f1 f2 f3:Ts->Rbar} {RR:Rbar->Rbar->Prop} :
+    (forall x, RR (f1 x) (f3 x)) ->
+    almostR2 prts RR f1 f2 ->
+    exists f2', almostR2 prts eq f2 f2' /\
+               (forall x, RR (f1 x) (f2' x)) /\
+               (RandomVariable dom Rbar_borel_sa f2 -> RandomVariable dom Rbar_borel_sa f3 -> RandomVariable dom Rbar_borel_sa f2').
+  Proof.
+    intros bound aP.
+    apply almostR2_flip in aP.
+    apply (almostR2_map_Rbar_split_l_bounded _ bound aP).
+  Qed.
+
+  Lemma almostR2_map_Rbar_split_r_refl
+        {Ts:Type}
+        {dom: SigmaAlgebra Ts}
+        (prts: ProbSpace dom)
+        {f1 f2:Ts->Rbar} {RR:Rbar->Rbar->Prop} {RR_refl:Reflexive RR}:
+    almostR2 prts RR f1 f2 ->
+    exists f2', almostR2 prts eq f2 f2' /\
+               (forall x, RR (f1 x) (f2' x)) /\
+               (RandomVariable dom Rbar_borel_sa f1 -> RandomVariable dom Rbar_borel_sa f2 -> RandomVariable dom Rbar_borel_sa f2').
+  Proof.
+    intros.
+    destruct (almostR2_map_Rbar_split_r_bounded _ (f1:=f1) (f2:=f2) (f3:=f1) (RR:=RR))
+      as [?[?[??]]]; trivial.
+    eexists; repeat split; eauto.
+  Qed.
+
+  Lemma almostR2_map_Rbar_split_r_const_bounded
+        {Ts:Type}
+        {dom: SigmaAlgebra Ts}
+        (prts: ProbSpace dom)
+        {f1 f2:Ts->Rbar} {RR:Rbar->Rbar->Prop} (c:Rbar):
+    (forall x, RR (f1 x) c) ->
+    almostR2 prts RR f1 f2 ->
+    exists f2', almostR2 prts eq f2 f2' /\
+               (forall x, RR (f1 x) (f2' x)) /\
+               (RandomVariable dom Rbar_borel_sa f2 -> RandomVariable dom Rbar_borel_sa f2').
+  Proof.
+    intros cle almRR.
+    destruct (@almostR2_map_Rbar_split_r_bounded _ _ prts f1 f2 (const c) RR)
+      as [?[?[??]]]; trivial.
+    eexists; repeat split; eauto.
+    intros; apply H1; trivial.
+    apply rvconst.
   Qed.
 
   Open Scope prob.
@@ -3474,19 +3785,13 @@ Section rv_almost.
          x y :
     almostR2 prts Rle x y ->
     exists x', almostR2 prts eq x x' /\
-          rv_le x' y.
+          rv_le x' y /\
+          (RandomVariable dom borel_sa x ->
+           RandomVariable dom borel_sa y ->
+           RandomVariable dom borel_sa x').
   Proof.
-    intros [p [pone ph]].
-    generalize (fun ts => sa_dec p ts).
-    exists (fun ts => if ClassicalDescription.excluded_middle_informative (p ts) then x ts else y ts).
-    split.
-    - exists p.
-      split; trivial; intros.
-      now match_destr.
-    - intros ?.
-      match_destr.
-      + auto.
-      + reflexivity.
+    intros alm.
+    apply (almostR2_map_R_split_l_refl prts alm).
   Qed.
 
   Lemma almostR2_le_split_r {Ts:Type} 
@@ -3495,19 +3800,14 @@ Section rv_almost.
          x y :
     almostR2 prts Rle x y ->
     exists y', almostR2 prts eq y y' /\
-          rv_le x y'.
+          rv_le x y' /\
+          (RandomVariable dom borel_sa x ->
+           RandomVariable dom borel_sa y ->
+           RandomVariable dom borel_sa y').
+
   Proof.
-    intros [p [pone ph]].
-    generalize (fun ts => sa_dec p ts).
-    exists (fun ts => if ClassicalDescription.excluded_middle_informative (p ts) then y ts else x ts).
-    split.
-    - exists p.
-      split; trivial; intros.
-      now match_destr.
-    - intros ?.
-      match_destr.
-      + auto.
-      + reflexivity.
+    intros alm.
+    apply (almostR2_map_R_split_r_refl prts alm).
   Qed.
 
   Local Existing Instance Rbar_le_pre.
@@ -3518,19 +3818,14 @@ Section rv_almost.
          x y :
     almostR2 prts Rbar_le x y ->
     exists x', almostR2 prts eq x x' /\
-          Rbar_rv_le x' y.
+          Rbar_rv_le x' y /\
+          (RandomVariable dom Rbar_borel_sa x ->
+           RandomVariable dom Rbar_borel_sa x').
+
   Proof.
-    intros [p [pone ph]].
-    generalize (fun ts => sa_dec p ts).
-    exists (fun ts => if ClassicalDescription.excluded_middle_informative (p ts) then x ts else y ts).
-    split.
-    - exists p.
-      split; trivial; intros.
-      now match_destr.
-    - intros ?.
-      match_destr.
-      + auto.
-      + reflexivity.
+    intros alm.
+    assert (m_infty_le:forall a : Ts, Rbar_le m_infty (y a)) by now simpl.
+    apply (almostR2_map_Rbar_split_l_const_bounded prts m_infty m_infty_le alm).
   Qed.
 
   Lemma almostR2_Rbar_le_split_r {Ts:Type} 
@@ -3539,19 +3834,17 @@ Section rv_almost.
          x y :
     almostR2 prts Rbar_le x y ->
     exists y', almostR2 prts eq y y' /\
-          Rbar_rv_le x y'.
+          Rbar_rv_le x y' /\
+          (RandomVariable dom Rbar_borel_sa y ->
+           RandomVariable dom Rbar_borel_sa y').
   Proof.
-    intros [p [pone ph]].
-    generalize (fun ts => sa_dec p ts).
-    exists (fun ts => if ClassicalDescription.excluded_middle_informative (p ts) then y ts else x ts).
-    split.
-    - exists p.
-      split; trivial; intros.
-      now match_destr.
-    - intros ?.
-      match_destr.
-      + auto.
-      + reflexivity.
+    intros alm.
+    assert (le_p_infty:forall a : Ts, Rbar_le (x a) p_infty).
+    {
+      intros.
+      now destruct (x a); simpl.
+    } 
+    apply (almostR2_map_Rbar_split_r_const_bounded prts p_infty le_p_infty alm).
   Qed.
 
 End rv_almost.
