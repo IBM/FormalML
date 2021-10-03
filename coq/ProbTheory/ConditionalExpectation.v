@@ -3391,6 +3391,17 @@ Qed.
     apply IsFiniteExpectation_abs_bound_almost with (g := g); trivial.
   Qed.
 
+  Global Instance IsFiniteExpectation_minus
+         (rv_X1 rv_X2 : Ts -> R)
+         {rv1 : RandomVariable dom borel_sa rv_X1}
+         {rv2 : RandomVariable dom borel_sa rv_X2} 
+         {isfe1:IsFiniteExpectation prts rv_X1}
+         {isfe2:IsFiniteExpectation prts rv_X2} :
+    IsFiniteExpectation prts (rvminus rv_X1 rv_X2).
+  Proof.
+    Admitted.
+
+
   Theorem Domainated_convergence
           (fn : nat -> Ts -> R)
           (f g : Ts -> R)
@@ -3405,7 +3416,37 @@ Qed.
     is_lim_seq (fun n => FiniteExpectation prts (fn n)) (FiniteExpectation prts f).
   Proof.
     intros.
-    
+    pose (h := (fun n => rvplus g (rvminus (rvabs f) (rvabs (rvminus (fn n) f))))).
+    assert (forall n, NonnegativeFunction (h n)).
+    {
+      unfold h.
+      intros n x.
+      rv_unfold.
+      specialize (H0 n x); simpl in H0.
+      replace  (fn n x + -1 * f x) with
+          (fn n x - f x) by lra.
+      unfold Rabs. unfold Rabs in H0.
+      repeat match_destr; ring_simplify; match_destr_in H0; lra.
+   }
+    generalize (Fatou h H2 _); intros.
+    assert (forall n, IsFiniteExpectation prts (rvabs (rvminus (fn n) f))).
+    {
+      intros.
+      apply IsFiniteExpectation_abs.
+      - typeclasses eauto.
+      - now apply IsFiniteExpectation_minus.
+    }
+    assert (forall n, IsFiniteExpectation prts (rvopp (rvabs (rvminus (fn n) f)))).
+    {
+      intros.
+      now apply IsFiniteExpectation_opp.
+    }
+    assert (Rbar_le 0 (LimInf_seq (fun n => (FiniteExpectation prts (rvopp (rvabs (rvminus (fn n) f))))))).
+    {
+      unfold h in H3.
+      admit.
+    }
+    assert (Rbar_le (LimSup_seq (fun n => (FiniteExpectation prts (rvabs (rvminus (fn n) f))))) 0) by admit.
     
   Admitted.
   
