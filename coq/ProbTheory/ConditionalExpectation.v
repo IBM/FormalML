@@ -3340,9 +3340,13 @@ Qed.
     IsFiniteExpectation prts g ->
     IsFiniteExpectation prts f.
   Proof.
-    intros.
-    apply IsFiniteExpectation_abs_id; trivial.
-    Admitted.
+    intros ale isfe.
+    destruct (almostR2_le_split_r _ _ _ ale)
+      as [g' [eqq [lee rvg']]].
+    cut_to rvg'; try typeclasses eauto.
+    eapply IsFiniteExpectation_abs_bound; try eapply lee; trivial.
+    eapply IsFiniteExpectation_proper_almostR2; try eapply isfe; eauto.
+  Qed.
 
   Instance Domainated_convergence0
           (fn : nat -> Ts -> R)
@@ -3390,7 +3394,6 @@ Qed.
     
   Admitted.
   
-Locate almostR2_le_split.
   Theorem is_conditional_expectation_factor_out_nneg
           (f g ce ace : Ts -> R)
           {nnegg : NonnegativeFunction g}
