@@ -2728,8 +2728,39 @@ Qed.
         now apply IsFiniteNonnegExpectation.
       + now apply sub.
   Qed.
-
 End is_cond_exp.
+
+Section is_cond_exp_props.
+  Context {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts: ProbSpace dom)
+          {dom2 : SigmaAlgebra Ts}
+          (sub : sa_sub dom2 dom)
+          {dom3 : SigmaAlgebra Ts}
+          (sub2 : sa_sub dom3 dom2).
+
+  Theorem is_conditional_expectation_tower
+        (f ce1: Ts -> R)
+        (ce2: Ts -> Rbar)
+        {rvf : RandomVariable dom borel_sa f}
+        {rvce1 : RandomVariable dom2 borel_sa ce1}
+        {rvce1' : RandomVariable dom borel_sa ce1}
+        {rvce2 : RandomVariable dom3 Rbar_borel_sa ce2}
+:
+    is_conditional_expectation prts dom2 f (fun x => ce1 x) ->
+    is_conditional_expectation prts dom3 f ce2 ->
+    is_conditional_expectation prts dom3 ce1 ce2.
+  Proof.
+    unfold is_conditional_expectation.
+    intros isce1 isce2 P decP saP.
+    rewrite <- isce2; trivial.
+    rewrite isce1; trivial.
+    - rewrite Expectation_Rbar_Expectation.
+      reflexivity.
+    - apply sub2; trivial.
+  Qed.
+
+End is_cond_exp_props.
 
 Section cond_exp_l2.
 
@@ -3976,7 +4007,16 @@ Section cond_exp2.
        }
         now rewrite (Rbar_Expectation_ext H1) in H.
    Qed.
-  
+
+    Global Instance Condexp_Rbar_isfe (f : Ts -> R) 
+           {rv : RandomVariable dom borel_sa f}
+           {isfe:IsFiniteExpectation prts f}
+      : Rbar_IsFiniteExpectation prts (ConditionalExpectation f).
+    Proof.
+      unfold Rbar_IsFiniteExpectation.
+      rewrite <- Condexp_Expectation; trivial.
+    Qed.
+
   Lemma NonNegCondexp_proper (f1 f2 : Ts -> R) 
         {rv1 : RandomVariable dom borel_sa f1}
         {rv2 : RandomVariable dom borel_sa f2}
@@ -4124,7 +4164,69 @@ Section cond_exp2.
       congruence.
   Qed.
 
+  
 End cond_exp2.
+
+Section cond_exp_props.
+  Context {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts: ProbSpace dom)
+          {dom2 : SigmaAlgebra Ts}
+          (sub : sa_sub dom2 dom)
+          {dom3 : SigmaAlgebra Ts}
+          (sub2 : sa_sub dom3 dom2).
+
+  Theorem Condexp_tower
+        (f ce: Ts -> R)
+        {rvf : RandomVariable dom borel_sa f}
+        {isfe: IsFiniteExpectation prts f}
+        {rvce : RandomVariable dom2 borel_sa ce}
+        {rvce' : RandomVariable dom borel_sa ce}
+    :
+      almostR2 (prob_space_sa_sub prts sub) eq
+               (ConditionalExpectation prts sub f) (fun x => ce x) ->
+      almostR2 (prob_space_sa_sub prts (transitivity sub2 sub)) eq
+               (ConditionalExpectation prts (transitivity sub2 sub) ce)
+               (ConditionalExpectation prts (transitivity sub2 sub) f).
+  Proof.
+    intros afin.
+    assert (ce_isfe:IsFiniteExpectation prts ce).
+    {
+      assert (risfe:Rbar_IsFiniteExpectation prts (ConditionalExpectation prts sub f))
+        by (now apply Condexp_Rbar_isfe).
+      unfold Rbar_IsFiniteExpectation in risfe.
+      generalize (@Rbar_Expectation_almostR2_proper
+                    _ _ 
+                    prts
+                    (ConditionalExpectation prts sub f)
+                    (fun x : Ts => ce x))
+      ; intros HH2.
+        cut_to HH2; trivial.
+      - rewrite HH2 in risfe.
+        rewrite <- Expectation_Rbar_Expectation in risfe.
+        apply risfe.
+      - apply (RandomVariable_sa_sub sub).
+        apply Condexp_rv.
+      - now apply Real_Rbar_rv.
+      - now apply (almost_prob_space_sa_sub_lift prts sub).
+    }
+          
+    generalize (is_conditional_expectation_tower
+                  prts sub2 f ce
+                  (ConditionalExpectation prts (transitivity sub2 sub) f)
+               )
+    ; intros HH.
+    cut_to HH; trivial.
+    - eapply (is_conditional_expectation_unique prts (transitivity sub2 sub) ce); trivial.
+      now apply Condexp_cond_exp.
+    - apply (is_conditional_expectation_proper
+                    prts sub _ _ _ _ (reflexivity _)
+                    (almost_prob_space_sa_sub_lift _ sub _ afin)).
+      now apply Condexp_cond_exp.
+    - now apply Condexp_cond_exp.
+  Qed.
+
+End cond_exp_props.
 
 Section fin_cond_exp.
 
@@ -4275,6 +4377,14 @@ Section fin_cond_exp.
     now rewrite Expectation_Rbar_Expectation.
   Qed.
 
+  Global Instance FiniteCondexp_isfe (f : Ts -> R) 
+          {rv : RandomVariable dom borel_sa f}
+          {isfe:IsFiniteExpectation prts f}
+    : IsFiniteExpectation prts (FiniteConditionalExpectation f).
+  Proof.
+    unfold IsFiniteExpectation.
+    now rewrite FiniteCondexp_Expectation.
+  Qed.
 
   Theorem FiniteCondexp_proper (f1 f2 : Ts -> R) 
         {rv1 : RandomVariable dom borel_sa f1}
@@ -4385,6 +4495,61 @@ Section fin_cond_exp.
   Qed.
   
 End fin_cond_exp.
+
+
+Section fin_cond_exp_props.
+  
+  Context {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts: ProbSpace dom)
+          {dom2 : SigmaAlgebra Ts}
+          (sub : sa_sub dom2 dom)
+          {dom3 : SigmaAlgebra Ts}
+          (sub2 : sa_sub dom3 dom2).
+
+  Lemma FiniteCondexp_tower'
+        (f: Ts -> R)
+        {rvf : RandomVariable dom borel_sa f}
+        {isfe: IsFiniteExpectation prts f}
+        {rv:RandomVariable dom borel_sa (FiniteConditionalExpectation prts sub f)}
+    :
+      almostR2 (prob_space_sa_sub prts (transitivity sub2 sub))
+               eq
+               (FiniteConditionalExpectation
+                  prts
+                  (transitivity sub2 sub)
+                  (FiniteConditionalExpectation prts sub f))
+               (FiniteConditionalExpectation prts (transitivity sub2 sub) f).
+  Proof.
+    generalize (Condexp_tower prts sub sub2 f
+                              (FiniteConditionalExpectation prts sub f)
+               ); intros HH1.
+    cut_to HH1.
+    - repeat rewrite (FiniteCondexp_eq prts _ _) in HH1.
+      revert HH1.
+      apply almost_impl; apply all_almost; intros ??.
+      now invcs H.
+    - now rewrite (FiniteCondexp_eq prts sub f).
+  Qed.
+
+  Theorem FiniteCondexp_tower
+        (f: Ts -> R)
+        {rvf : RandomVariable dom borel_sa f}
+        {isfe: IsFiniteExpectation prts f}
+    :
+      almostR2 (prob_space_sa_sub prts (transitivity sub2 sub))
+               eq
+               (FiniteConditionalExpectation
+                  prts
+                  (transitivity sub2 sub)
+                  (rv:=RandomVariable_sa_sub sub _ (rv_x:=FiniteCondexp_rv prts sub f))
+                  (FiniteConditionalExpectation prts sub f))
+               (FiniteConditionalExpectation prts (transitivity sub2 sub) f).
+  Proof.
+    apply FiniteCondexp_tower'.
+  Qed.
+
+End fin_cond_exp_props.
 
 Section cond_exp_props.
 
