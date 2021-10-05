@@ -4287,3 +4287,44 @@ Proof.
         lra.
 Qed.
 
+Lemma is_LimInf_seq_const_plus (f : nat -> R) (g : R) (l:Rbar) :
+  is_LimInf_seq (fun n => g + f n) l ->
+  is_LimInf_seq f (Rbar_minus l g).
+Proof.
+  destruct l; simpl.
+  - intros HH eps.
+    specialize (HH eps).
+    destruct HH as [HH1 [N HH2]].
+    split.
+    + intros NN.
+      destruct (HH1 NN) as [n [??]].
+      exists n.
+      split; trivial.
+      lra.
+    + exists N.
+      intros n Nle.
+      specialize (HH2 n Nle).
+      lra.
+  - intros HH M.
+    destruct (HH (M + g)) as [N HH1].
+    exists N.
+    intros n Nle.
+    specialize (HH1 n Nle).
+    lra.
+  - intros HH M N.
+    destruct (HH (M + g) N) as [n [Nle leM]].
+    exists n.
+    split; trivial.
+    lra.
+Qed.
+
+Lemma LimInf_seq_const_plus (f : nat -> R) (g : R) :
+  LimInf_seq (fun n => g + f n) = Rbar_plus g (LimInf_seq f).
+Proof.
+  unfold LimInf_seq at 1, proj1_sig.
+  match_destr.
+  apply is_LimInf_seq_const_plus in i.
+  apply is_LimInf_seq_unique in i.
+  rewrite i.
+  destruct x; simpl; rbar_prover.
+Qed.
