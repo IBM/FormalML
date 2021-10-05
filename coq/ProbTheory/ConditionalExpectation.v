@@ -2403,7 +2403,21 @@ Qed.
     typeclasses eauto.
   Qed.
 
-  Theorem Domainated_convergence2
+    Lemma FiniteNonnegExpectation_alt (X:Ts->R) 
+          {posX: NonnegativeFunction X}
+          {isfeX: IsFiniteExpectation prts X} :
+      Finite (FiniteExpectation prts X) = (NonnegExpectation  X).
+    Proof.
+      unfold FiniteExpectation.
+      unfold proj1_sig.
+      match_destr.
+      rewrite (Expectation_pos_pofrf) with  (nnf:=posX) in e.
+      invcs e.
+      rewrite H0.
+      now simpl.
+    Qed.
+
+  Theorem Domainated_convergence
           (fn : nat -> Ts -> R)
           (f g : Ts -> R)
           {rvn : forall n, RandomVariable dom borel_sa (fn n)}
@@ -2413,7 +2427,7 @@ Qed.
           {isfe: IsFiniteExpectation prts f} : 
     IsFiniteExpectation prts g ->
     (forall n, rv_le (rvabs (fn n)) g) ->
-    almost prts (fun x => is_lim_seq (fun n => fn n x) (f x)) ->
+    (forall x, is_lim_seq (fun n => fn n x) (f x)) ->
     is_lim_seq (fun n => FiniteExpectation prts (fn n)) (FiniteExpectation prts f).
   Proof.
     intros.
@@ -2438,11 +2452,6 @@ Qed.
     generalize (Rbar_NN_Fatou (fun n => rvplus g (fn n)) _ _); intros.
     generalize (Rbar_NN_Fatou  (fun n => rvminus g (fn n)) _ _ ); intros.
 
-    assert (forall n, IsFiniteExpectation prts (fn n)).
-    {
-      intros.
-      apply IsFiniteExpectation_abs_bound with (g := g); trivial.
-    }
     assert (forall n, IsFiniteExpectation prts (rvplus g (fn n))).
     {
       intro n.
@@ -2455,37 +2464,149 @@ Qed.
     }
     generalize (fun n => IsFiniteNonnegExpectation prts (rvplus g (fn n))); intros.
     generalize (fun n => IsFiniteNonnegExpectation prts (rvminus g (fn n))); intros.
-    specialize (H4 H9).
-    specialize (H5 H10).
+    specialize (H4 H8).
+    specialize (H5 H9).
     cut_to H4.
     cut_to H5.
 
     - assert (rv_eq (fun omega : Ts => LimInf_seq (fun n : nat => rvplus g (fn n) omega))
-                    (Rbar_rvplus g (fun omega : Ts => LimInf_seq (fun n : nat => (fn n) omega)))).
+                    (rvplus g f)).
       {
         intro x.
         unfold rvplus, Rbar_rvplus.
-        now rewrite LimInf_seq_const_plus.
-      }
+        rewrite LimInf_seq_const_plus.
+        rewrite is_LimInf_seq_unique with (l := f x); trivial.
+        now apply is_lim_LimInf_seq.
+     }
+
       assert (rv_eq (fun omega : Ts => LimInf_seq (fun n : nat => rvminus g (fn n) omega))
-                    (Rbar_rvminus g (fun omega : Ts => LimSup_seq (fun n : nat => (fn n) omega)))).
+                    (rvminus g f)).
       {
         intro x.
         rv_unfold.
         unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp.
         rewrite LimInf_seq_const_plus.
-        f_equal.
-        rewrite <- LimInf_seq_opp.
-        apply LimInf_seq_ext.
-        exists (0%nat); intros.
-        lra.
-     }
-      erewrite (Rbar_NonnegExpectation_ext _ _ H11) in H4.
-      erewrite (Rbar_NonnegExpectation_ext _ _ H12) in H5.      
+        rewrite LimInf_seq_ext with (g := fun n => - (fn n x)).
+        rewrite LimInf_seq_opp.        
+        - rewrite is_LimSup_seq_unique with (l:=f x).
+          + simpl; apply Rbar_finite_eq; lra.
+          + now apply is_lim_LimSup_seq.
+        - exists (0%nat).
+          intros.
+          lra.
+      }
+      erewrite (Rbar_NonnegExpectation_ext _ _ H10) in H4.
+      erewrite (Rbar_NonnegExpectation_ext _ _ H11) in H5.
+
+      erewrite <- NNExpectation_Rbar_NNExpectation in H4.
+      erewrite <- NNExpectation_Rbar_NNExpectation in H5.      
+
+      erewrite <- FiniteNonnegExpectation_alt in H4.
+      erewrite <- FiniteNonnegExpectation_alt in H5.      
+
+      rewrite LimInf_seq_ext with (g := fun n => (FiniteExpectation prts g) + 
+                                                 (FiniteExpectation prts (fn n))) in H4.
+
+      rewrite LimInf_seq_ext with (g := fun n => (FiniteExpectation prts g) -
+                                                 (FiniteExpectation prts (fn n))) in H5.
+
+      rewrite LimInf_seq_const_plus in H4.
+      rewrite LimInf_seq_const_minus in H5.
+
+      erewrite FiniteExpectation_plus in H4.
+      erewrite FiniteExpectation_minus in H5.
+
+      assert (Rbar_le (FiniteExpectation prts f) 
+                      (LimInf_seq (fun n => FiniteExpectation prts (fn n)))).
+      {
+        case_eq (LimInf_seq (fun n => FiniteExpectation prts (fn n))); intros.
+        - rewrite H12 in H4; simpl in H4.
+          simpl.
+          apply Rplus_le_reg_l in H4.
+          apply H4.
+        - now simpl.
+        - rewrite H12 in H4; now simpl in H4.
+      }
+
+      assert (Rbar_le (LimSup_seq (fun n => FiniteExpectation prts (fn n)))
+                      (FiniteExpectation prts f)).
+      {
+        case_eq (LimSup_seq (fun n => FiniteExpectation prts (fn n))); intros.
+        - rewrite H13 in H5; simpl in H5.
+          apply Rplus_le_reg_l in H5.
+          simpl.
+          apply Ropp_le_cancel.
+          apply H5.
+        - rewrite H13 in H5; now simpl in H5.
+        - now simpl.
+      }
+
+      generalize (Rbar_le_trans _ _ _ H13 H12); intros.
+      generalize (LimSup_LimInf_seq_le (fun n => FiniteExpectation prts (fn n))); intros.
+      generalize (Rbar_le_antisym _ _ H14 H15); intros.
+      rewrite H16 in H13.
+      generalize (Rbar_le_antisym _ _ H13 H12); intros.
+
+      assert (Lim_seq (fun n => FiniteExpectation prts (fn n)) = FiniteExpectation prts f).
+      {
+        unfold Lim_seq.
+        rewrite H16, H17.
+        now rewrite x_plus_x_div_2.
+      }
+      rewrite <- H18.
+      apply Lim_seq_correct.
+      now apply ex_lim_LimSup_LimInf_seq.
+
+      exists (0%nat); intros.
+      erewrite <- FiniteNonnegExpectation_alt.
+      simpl.
+      erewrite <- FiniteExpectation_minus.
+      apply FiniteExpectation_pf_irrel.
       
-      
-  Admitted.
-  
+      exists (0%nat); intros.
+      erewrite <- FiniteNonnegExpectation_alt.
+      simpl.
+      erewrite <- FiniteExpectation_plus.
+      apply FiniteExpectation_pf_irrel.
+
+      - apply Rbar_lim_inf_rv.
+        intros.
+        typeclasses eauto.
+
+      - apply Rbar_lim_inf_rv.
+        intros.
+        typeclasses eauto.
+
+        Unshelve.
+        + intro x.
+          unfold rvplus.
+          generalize (is_lim_seq_le (fun n => 0) (fun n => g x + fn n x) 0 (g x + f x)); intros.
+          unfold rvplus in H2.
+          apply H4.
+          * intros.
+            apply H2.
+          * apply is_lim_seq_const.
+          * apply is_lim_seq_plus'; trivial.
+            apply is_lim_seq_const.
+        + intro x.
+          rv_unfold.
+          generalize (is_lim_seq_le (fun n => 0) (fun n => g x + (-1)*fn n x) 0 (g x + (-1)*f x)); intros.         
+          apply H4.
+          * intros.
+            apply H3.
+          * apply is_lim_seq_const.
+          * apply is_lim_seq_plus'.
+            -- apply is_lim_seq_const.
+            -- replace (Finite (-1 * f x)) with (Rbar_mult (-1) (f x)).
+               ++ now apply is_lim_seq_scal_l.
+               ++ now simpl.
+        + easy.
+        + easy.
+        + easy.
+        + easy.
+  Qed.
+
+(*  
   Theorem Domainated_convergence3
           (fn : nat -> Ts -> R)
           (f g : Ts -> R)
@@ -2598,7 +2719,7 @@ Qed.
  *)       
       
     Admitted.
-
+*)
 
   Theorem is_conditional_expectation_factor_out_nneg
           (f g ce ace : Ts -> R)
