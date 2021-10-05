@@ -2728,6 +2728,144 @@ Qed.
         now apply IsFiniteNonnegExpectation.
       + now apply sub.
   Qed.
+
+(*
+  Lemma is_conditional_expectation_monotone_convergence
+        (f : Ts -> R )
+        (ce : Ts -> Rbar )
+        (fn : nat -> Ts -> R)
+        (cen : nat -> Ts -> Rbar)
+        (rvf : RandomVariable dom borel_sa f)
+        {rvce : RandomVariable dom2 Rbar_borel_sa ce}
+        (nnf: NonnegativeFunction f)
+        (nnce: Rbar_NonnegativeFunction ce)
+        (rvfn : forall n, RandomVariable dom borel_sa (fn n))
+        (nnfn : forall n, NonnegativeFunction (fn n))
+        (nncen : forall n, Rbar_NonnegativeFunction (cen n))
+        (rvcen : forall n, RandomVariable dom2 Rbar_borel_sa (cen n))
+    :
+    (forall (n:nat), Rbar_rv_le (fn n) f) ->
+    (forall (n:nat), rv_le (fn n) (fn (S n))) ->
+    (forall (n:nat), is_finite (NonnegExpectation (fn n))) ->
+    (forall (omega:Ts), is_lim_seq (fun n => fn n omega) (f omega)) ->
+    (forall (omega:Ts), is_lim_seq (fun n => cen n omega) (ce omega)) ->
+    (forall (n:nat), is_conditional_expectation dom2 (fn n) (cen n)) ->
+    is_conditional_expectation dom2 f ce.
+  Proof.
+    intros fbound fle ffin limf limce iscen P decP saP.
+
+    
+    assert (rvmultf:
+              RandomVariable dom borel_sa (rvmult f (EventIndicator decP))).
+    {
+      apply rvmult_rv; trivial.
+      apply EventIndicator_pre_rv.
+      now apply sub.
+    } 
+
+    assert (rvmultfn:forall n,
+              RandomVariable dom borel_sa (rvmult (fn n) (EventIndicator decP))).
+    {
+      intros.
+      apply rvmult_rv; trivial.
+      apply EventIndicator_pre_rv.
+      now apply sub.
+    } 
+
+    generalize (monotone_convergence (rvmult f (EventIndicator decP))
+                                     (fun n => rvmult (fn n) (EventIndicator decP))
+                                     _
+                                     (indicator_prod_pos f nnf decP)
+                                     _
+                                     (fun n => (indicator_prod_pos (fn n) (nnfn n) decP))
+
+               )
+    ; intros eqq1.
+    cut_to eqq1.
+    - {
+        rewrite (Expectation_pos_pofrf _ (nnf:=(indicator_prod_pos f nnf decP))).
+        rewrite <- eqq1.
+        assert (rvmultce:
+                  RandomVariable dom Rbar_borel_sa (Rbar_rvmult ce (EventIndicator decP))).
+        {
+          apply Rbar_rvmult_rv; trivial.
+          - now apply RandomVariable_sa_sub.
+          - apply Real_Rbar_rv.
+            apply EventIndicator_pre_rv.
+            now apply sub.
+        } 
+        
+        assert (rvmultcen:forall n,
+                   RandomVariable dom Rbar_borel_sa (Rbar_rvmult (cen n) (EventIndicator decP))).
+        {
+          intros.
+          apply Rbar_rvmult_rv; trivial.
+          - now apply RandomVariable_sa_sub.
+          - apply Real_Rbar_rv.
+            apply EventIndicator_pre_rv.
+            now apply sub.
+        } 
+
+        assert (nnf_multce : Rbar_NonnegativeFunction
+                               (Rbar_rvmult ce (fun x : Ts => EventIndicator decP x))).
+        {
+          apply Rbar_rvmult_nnf; trivial.
+          red; simpl.
+          apply EventIndicator_pos.
+        } 
+
+        assert (nnf_multcen : forall n, Rbar_NonnegativeFunction
+                               (Rbar_rvmult (cen n) (fun x : Ts => EventIndicator decP x))).
+        {
+          intros.
+          apply Rbar_rvmult_nnf; trivial.
+          red; simpl.
+          apply EventIndicator_pos.
+        } 
+
+        assert (nnf_multcen' : forall n, NonnegativeFunction
+                               (Rbar_rvmult (cen n) (fun x : Ts => EventIndicator decP x))).
+        {
+          intros n.
+          specialize (nnf_multcen n).
+          red in nnf_multcen |- *.
+          intros x.
+          specialize (nnf_multcen x).
+          unfold Rbar_rvmult in *.
+          simpl in nnf_multcen.
+          match_destr_in nnf_multcen; simpl; trivial; lra.
+        } 
+        
+        generalize (Rbar_monotone_convergence (Rbar_rvmult ce (EventIndicator decP))
+                                              (fun n => Rbar_rvmult (cen n) (EventIndicator decP))
+                                              _ _ _ _)
+        ; intros eqq2.
+        cut_to eqq2.
+        - rewrite (Rbar_Expectation_pos_pofrf _).
+          f_equal.
+          rewrite <- eqq2.
+          apply Lim_seq_proper.
+          intros n.
+          specialize (iscen n _ decP saP).
+          rewrite (Expectation_pos_pofrf _) in iscen.
+          rewrite (Rbar_Expectation_pos_pofrf _) in iscen.
+          invcs iscen.
+          rewrite H0.
+          rewrite NNExpectation_Rbar_NNExpectation.
+
+          admit.
+        - intros ??.
+          unfold Rbar_rvmult, EventIndicator.
+          match_destr.
+          + repeat rewrite Rbar_mult_1_r.
+            apply bounded.
+      } 
+    specialize (eqq1 ).
+
+    - unfold Rbar_rvlim in HH.
+    
+  Qed.
+*)
 End is_cond_exp.
 
 Section is_cond_exp_props.
