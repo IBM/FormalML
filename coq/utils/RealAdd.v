@@ -4328,3 +4328,12 @@ Proof.
   rewrite i.
   destruct x; simpl; rbar_prover.
 Qed.
+
+  Lemma LimInf_seq_const_minus (f : nat -> R) (g : R) :
+    LimInf_seq (fun n => g - f n) = Rbar_minus g (LimSup_seq f).
+  Proof.
+    unfold Rminus.
+    generalize (LimInf_seq_const_plus (fun n => - f n) g); intros.
+    rewrite H.
+    now rewrite LimInf_seq_opp.
+ Qed.

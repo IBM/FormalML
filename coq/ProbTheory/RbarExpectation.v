@@ -1613,6 +1613,125 @@ Section RbarExpectation.
         typeclasses eauto.                
   Qed.
 *)
+
+  Global Instance Rbar_LimInf_seq_pos
+         (Xn : nat -> Ts -> R)
+         (Xn_pos : forall n, NonnegativeFunction (Xn n)) :
+    Rbar_NonnegativeFunction 
+      (fun omega : Ts => (LimInf_seq (fun n : nat => Xn n omega))).
+  Proof.
+    intro x.
+    generalize (LimInf_le (fun n : nat => 0) (fun n : nat => Xn n x)); intros.
+    cut_to H.
+    - now rewrite LimInf_seq_const in H.
+    - exists (0%nat).
+      intros.
+      apply Xn_pos.
+  Qed.
+
+  Lemma Rbar_NN_Fatou
+        (Xn : nat -> Ts -> R)
+        (Xn_pos : forall n, NonnegativeFunction (Xn n)) 
+        (Xn_rv : forall n, RandomVariable dom borel_sa (Xn n))
+        (fin_exp : forall n, is_finite (NonnegExpectation (Xn n)))
+        (lim_rv : RandomVariable dom Rbar_borel_sa 
+                                 (fun omega => LimInf_seq (fun n => Xn n omega))) :
+    Rbar_le (Rbar_NonnegExpectation (fun omega => LimInf_seq (fun n => Xn n omega)))
+            (LimInf_seq (fun n => NonnegExpectation (Xn n))).
+  Proof.
+    generalize (is_finite_Fatou_Y Xn Xn_pos); intros.
+    generalize (Fatou_Y_pos Xn Xn_pos); intros.
+    assert (forall n, rv_le (fun omega : Ts => Fatou_Y Xn n omega) (Xn n)).
+    - intros; intro x.
+      unfold Fatou_Y.
+      generalize (Inf_seq_correct (fun k : nat => Xn (k + n)%nat x)); intros.
+      apply is_inf_seq_glb in H1.
+      unfold Rbar_is_glb in H1.
+      destruct H1.
+      unfold Rbar_is_lower_bound in H1.
+      specialize (H1 (Xn n x)).
+      assert  (exists n0 : nat, (Finite (Xn n x)) = (Finite (Xn (n0 + n)%nat x))) by
+       (exists (0%nat); f_equal).
+      specialize (H1 H3).
+      unfold Fatou_Y in H.
+      now rewrite <- H in H1.
+    - assert (Lim_seq (fun n => NonnegExpectation (Fatou_Y Xn n)) =  
+              (Rbar_NonnegExpectation (fun omega => LimInf_seq (fun n => Xn n omega)))).
+      + apply Rbar_monotone_convergence with (X:= (fun omega : Ts => LimInf_seq (fun n : nat => Xn n omega))); trivial.
+        * assert (forall (n:nat), Rbar_le (NonnegExpectation (Fatou_Y Xn n))
+                                          (NonnegExpectation (Xn n))); intros.
+          -- now apply NonnegExpectation_le.
+          -- now apply Fatou_Y_rv.
+        * intros; intro x.
+          generalize (inf_limInf (fun k => Xn k x) n); intros HH.
+          rewrite <- (H n x) in HH.
+          apply HH.
+        * intros; intro x.
+          unfold Fatou_Y.
+          do 2 rewrite Inf_eq_glb.
+          generalize (Rbar_glb_subset (fun x0 : Rbar => exists n0 : nat, x0 = Xn (n0 + n)%nat x)
+                                      (fun x0 : Rbar => exists n0 : nat, x0 = Xn (n0 + S n)%nat x)); intros.
+          unfold Fatou_Y in H.
+          generalize (H n x).
+          generalize (H (S n) x).
+          do 2 rewrite Inf_eq_glb; intros.
+          rewrite <- H3 in H2.
+          rewrite <- H4 in H2.    
+          apply H2.
+          intros.
+          destruct H5.
+          exists (S x1).
+          now replace (S x1 + n)%nat with (x1 + S n)%nat by lia.          
+        * intros; now apply Finite_NonnegExpectation_le with (rv_X2 := Xn n) (nnf2 := Xn_pos n).
+        * intros.
+         (* rewrite isf. *)
+          apply (lim_seq_Inf_seq (fun k => Xn k omega)); trivial.
+          -- unfold Fatou_Y in H.
+             intros.
+             apply H.
+          -- intros.
+             now apply Fatou_Y_incr.
+      + rewrite <- H2.
+        replace  (Lim_seq
+       (fun n : nat => NonnegExpectation (fun omega : Ts => Fatou_Y Xn n omega))) with
+        (LimInf_seq
+       (fun n : nat => NonnegExpectation (fun omega : Ts => Fatou_Y Xn n omega))).
+        * apply LimInf_le.
+          exists (0%nat); intros.
+          generalize (NonnegExpectation_le (fun omega : Ts => Fatou_Y Xn n omega) (Xn n) (H1 n)); intros.
+          generalize (Finite_NonnegExpectation_le (Fatou_Y Xn n) (Xn n) _ (Xn_pos n) (H1 n) (fin_exp n)); intros.
+          rewrite <- H5 in H4.
+          rewrite <- (fin_exp n) in H4.
+          apply H4.
+        * rewrite limInf_increasing; trivial.
+          intros.
+          generalize (NonnegExpectation_le 
+                        (fun omega : Ts => Fatou_Y Xn n omega)
+                        (fun omega : Ts => Fatou_Y Xn (S n) omega)); intros.
+          generalize (Finite_NonnegExpectation_le (Fatou_Y Xn n) (Xn n) _ (Xn_pos n) (H1 n) (fin_exp n)); intros.
+          generalize (Finite_NonnegExpectation_le (Fatou_Y Xn (S n)) (Xn (S n)) _ (Xn_pos (S n)) (H1 (S n)) (fin_exp (S n))); intros.                    
+          rewrite <- H4 in H3.
+          rewrite <- H5 in H3.          
+          apply H3.
+          intro x.
+          unfold Fatou_Y.
+          do 2 rewrite Inf_eq_glb.
+          generalize (Rbar_glb_subset (fun x0 : Rbar => exists n0 : nat, x0 = Xn (n0 + n)%nat x)
+                                      (fun x0 : Rbar => exists n0 : nat, x0 = Xn (n0 + S n)%nat x)); intros.
+          unfold Fatou_Y in H.
+          generalize (H n x).
+          generalize (H (S n) x).
+          do 2 rewrite Inf_eq_glb; intros.
+          rewrite <- H7 in H6.
+          rewrite <- H8 in H6.    
+          apply H6.
+          intros.
+          destruct H9.
+          exists (S x1).
+          now replace (S x1 + n)%nat with (x1 + S n)%nat by lia.          
+   Qed.
+
+
 End RbarExpectation.
 
 Section EventRestricted.
