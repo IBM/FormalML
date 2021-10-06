@@ -693,6 +693,20 @@ Section fe.
       now simpl.
     Qed.
     
+    Lemma FiniteNonnegExpectation_alt (X:Ts->R) 
+          {posX: NonnegativeFunction X}
+          {isfeX: IsFiniteExpectation X} :
+      Finite (FiniteExpectation X) = (NonnegExpectation  X).
+    Proof.
+      unfold FiniteExpectation.
+      unfold proj1_sig.
+      match_destr.
+      rewrite (Expectation_pos_pofrf) with  (nnf:=posX) in e.
+      invcs e.
+      rewrite H0.
+      now simpl.
+    Qed.
+
     Lemma IsFiniteNonnegExpectation (X:Ts->R) 
           {posX: NonnegativeFunction X}
           {isfeX: IsFiniteExpectation X} :
@@ -723,7 +737,7 @@ Section fe.
     cut_to H2; trivial.
     - rewrite (Lim_seq_ext _  (fun n : nat => NonnegExpectation (Xn n))).
       + rewrite H2.
-        rewrite FiniteNonnegExpectation with (posX:=posX).
+        rewrite FiniteNonnegExpectation_alt with (posX:=posX).
         red in isfeX.
         rewrite Expectation_pos_pofrf with (nnf:=posX) in isfeX.
         match_destr_in isfeX; try tauto.

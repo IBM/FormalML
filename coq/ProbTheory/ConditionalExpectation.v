@@ -2391,32 +2391,6 @@ Qed.
     apply IsFiniteExpectation_abs_bound_almost with (g := g); trivial.
   Qed.
 
-  Global Instance IsFiniteExpectation_minus
-         (rv_X1 rv_X2 : Ts -> R)
-         {rv1 : RandomVariable dom borel_sa rv_X1}
-         {rv2 : RandomVariable dom borel_sa rv_X2} 
-         {isfe1:IsFiniteExpectation prts rv_X1}
-         {isfe2:IsFiniteExpectation prts rv_X2} :
-    IsFiniteExpectation prts (rvminus rv_X1 rv_X2).
-  Proof.
-    unfold rvminus.
-    typeclasses eauto.
-  Qed.
-
-    Lemma FiniteNonnegExpectation_alt (X:Ts->R) 
-          {posX: NonnegativeFunction X}
-          {isfeX: IsFiniteExpectation prts X} :
-      Finite (FiniteExpectation prts X) = (NonnegExpectation  X).
-    Proof.
-      unfold FiniteExpectation.
-      unfold proj1_sig.
-      match_destr.
-      rewrite (Expectation_pos_pofrf) with  (nnf:=posX) in e.
-      invcs e.
-      rewrite H0.
-      now simpl.
-    Qed.
-
   Theorem Domainated_convergence
           (fn : nat -> Ts -> R)
           (f g : Ts -> R)
