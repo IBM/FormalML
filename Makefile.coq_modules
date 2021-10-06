@@ -28,6 +28,7 @@ ELFIC_UTILS	= R_compl check_sub_structure compatible continuous_linear_map fixed
 UTILS = BasicUtils \
 	Assoc \
 	CoquelicotAdd \
+	ELim_Seq \
 	ExtrFloatishIEEE \
 	improper_integrals \
 	Isomorphism \
