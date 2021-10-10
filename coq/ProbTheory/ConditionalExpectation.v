@@ -2595,18 +2595,104 @@ Qed.
           {rvn : forall n, RandomVariable dom borel_sa (fn n)}
           {rvf : RandomVariable dom borel_sa f}
           {rvg : RandomVariable dom borel_sa g} 
-          {isfen : forall n, IsFiniteExpectation prts (fn n)}
+          {isfefn : forall n, IsFiniteExpectation prts (fn n)}
           {isfe: IsFiniteExpectation prts f} : 
     IsFiniteExpectation prts g ->
     (forall n, almostR2 prts Rle (rvabs (fn n)) g) ->
     (forall x, is_lim_seq (fun n => fn n x) (f x)) ->
     is_lim_seq (fun n => FiniteExpectation prts (fn n)) (FiniteExpectation prts f).
   Proof.
-    intros.
-    generalize (fun n => FiniteExpectation_proper_almostR2 prts (fn n)); intros.
-    
-    Admitted.
+    intros isfeg ale islim.
+    assert (ale':forall n, almostR2 prts (fun x y => Rle (Rabs x) y) (fn n) g).
+    {
+      intros n; generalize (ale n).
+      apply almost_impl; apply all_almost; intros ??.
+      apply H.
+    } 
 
+    destruct (almostR2_le_forall_l_split prts _ _ ale')
+      as [fn' [g' [eqqfn [eqqg [le' [rvf' rvg']]]]]].
+
+    assert (rvfn':forall n, RandomVariable dom borel_sa (fn' n)) by eauto.
+
+    assert (isfefn':forall n, IsFiniteExpectation prts (fn' n)).
+    {
+      intros n.
+      eapply (IsFiniteExpectation_proper_almostR2 prts (fn n)); trivial; typeclasses eauto.
+    } 
+    
+    cut (is_lim_seq (fun n : nat => FiniteExpectation prts (fn' n)) (FiniteExpectation prts f)).
+    - apply is_lim_seq_ext; intros.
+      now apply FiniteExpectation_proper_almostR2; trivial.
+    - destruct (almost_forall _ eqqfn) as [p [pone ph]].
+      unfold pre_inter_of_collection in ph.
+
+      assert (rvfne:(forall n : nat, RandomVariable dom borel_sa (rvmult (fn n) (EventIndicator (classic_dec p))))).
+      {
+        intros.
+        apply rvmult_rv; trivial.
+        apply EventIndicator_rv.
+      }
+
+      assert (rvfe:RandomVariable dom borel_sa (rvmult f (EventIndicator (classic_dec p)))).
+      {
+        apply rvmult_rv; trivial.
+        apply EventIndicator_rv.
+      }
+
+      assert (isfen : forall n : nat, IsFiniteExpectation prts (rvmult (fn n) (EventIndicator (classic_dec p)))).
+      {
+        intros.
+        apply IsFiniteExpectation_indicator; trivial.
+        now destruct p.
+      } 
+      assert (isfe0 : IsFiniteExpectation prts (rvmult f (EventIndicator (classic_dec p)))).
+      {
+        apply IsFiniteExpectation_indicator; trivial.
+        now destruct p.
+      } 
+
+      generalize (Dominated_convergence 
+                    (fun n => rvmult (fn n) (EventIndicator (classic_dec p)))
+                    (rvmult f (EventIndicator (classic_dec p)))
+                    g'
+                 ); intros HH.
+      cut_to HH.
+      + assert (eqq1:FiniteExpectation prts f =
+                     FiniteExpectation prts
+                                       (rvmult f (EventIndicator (classic_dec p)))).
+        {
+          apply FiniteExpectation_proper_almostR2; trivial.
+          exists p; split; trivial; intros.
+          rv_unfold.
+          match_destr; try lra; tauto.
+        }
+        rewrite eqq1.
+        revert HH.
+        apply is_lim_seq_ext; intros.
+        apply FiniteExpectation_proper_almostR2; trivial.
+        exists p; split; trivial; intros.
+        rv_unfold.
+        match_destr; try tauto.
+        rewrite ph; trivial.
+        lra.
+      + eapply IsFiniteExpectation_proper_almostR2; try eapply isfeg; auto.
+      + intros ??.
+        transitivity (rvabs (fn' n) a).
+        * rv_unfold.
+          match_destr.
+          -- rewrite ph; trivial.
+             rewrite Rmult_1_r.
+             reflexivity.
+          -- rewrite Rmult_0_r.
+             rewrite Rabs_R0.
+             apply Rabs_pos.
+        * apply le'.
+      + intros.
+        apply is_lim_seq_mult'; trivial.
+        apply is_lim_seq_const.
+  Qed.
+  
   Lemma Jensen (rv_X : Ts -> R) (phi : R -> R) (a : R) 
         {rv : RandomVariable dom borel_sa rv_X}
         {isfe : IsFiniteExpectation prts rv_X} 

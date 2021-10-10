@@ -3254,6 +3254,129 @@ Section rv_almost.
       + typeclasses eauto.
   Qed.
 
+  Lemma almostR2_le_forall_split
+        {Ts:Type}
+        {dom: SigmaAlgebra Ts}
+        (prts: ProbSpace dom)
+        (f1 f2:nat -> Ts -> R) {RR:R->R->Prop}:
+    (forall n:nat, almostR2 prts RR (f1 n) (f2 n)) ->
+    exists (f1' f2':nat -> Ts -> R),
+      (forall n, almostR2 prts eq (f1 n) (f1' n)) /\
+      (forall n, almostR2 prts eq (f2 n) (f2' n)) /\
+      (forall n x, RR (f1' n x) (f2' n x)) /\
+      (forall n, RandomVariable dom borel_sa (f1 n) ->
+            RandomVariable dom borel_sa (f1' n)) /\
+      (forall n, RandomVariable dom borel_sa (f2 n) ->
+            RandomVariable dom borel_sa (f2' n)).
+  Proof.
+    intros ale.
+    destruct (almost_witness _ (almost_forall _ ale)) as [c lec].
+    destruct (almost_forall _ ale) as [p [pone ph]].
+    unfold pre_inter_of_collection in *.
+    exists (fun n:nat =>
+         rvchoice (fun x => if Req_EM_T (((EventIndicator (classic_dec p))) x) 0 then false else true)
+
+                  (f1 n)
+                  (const (f1 n c))
+      ).
+    exists (fun n:nat =>
+         rvchoice (fun x => if Req_EM_T (((EventIndicator (classic_dec p))) x) 0 then false else true)
+                  
+                  (f2 n)
+                  (const (f2 n c))
+      ).
+    repeat split.
+    - intros.
+      exists p.
+      split; trivial.
+      intros.
+      rv_unfold.
+      destruct (classic_dec p x); try tauto.
+      destruct (Req_EM_T 1 0); try lra; tauto.
+    - exists p.
+      split; trivial.
+      intros.
+      rv_unfold.
+      destruct (classic_dec p x); try tauto.
+      destruct (Req_EM_T 1 0); try lra; tauto.
+    - intros.
+      rv_unfold.
+      destruct (classic_dec p x); try tauto.
+      + destruct (Req_EM_T 1 0); try lra; auto.
+      + destruct (Req_EM_T 0 0); try lra; auto.
+    - intros.
+      apply measurable_rv.
+      eapply rvchoice_rv; trivial.
+      + apply EventIndicator_rv.
+      + typeclasses eauto.
+    - intros.
+      apply measurable_rv.
+      eapply rvchoice_rv; trivial.
+      + apply EventIndicator_rv.
+      + typeclasses eauto.
+  Qed.
+
+    Lemma almostR2_le_forall_l_split
+        {Ts:Type}
+        {dom: SigmaAlgebra Ts}
+        (prts: ProbSpace dom)
+        (f1:nat -> Ts -> R) (f2:Ts->R) {RR:R->R->Prop}:
+    (forall n:nat, almostR2 prts RR (f1 n) f2) ->
+    exists (f1':nat -> Ts -> R) (f2':Ts->R),
+      (forall n, almostR2 prts eq (f1 n) (f1' n)) /\
+      almostR2 prts eq f2 f2' /\
+      (forall n x, RR (f1' n x) (f2' x)) /\
+      (forall n, RandomVariable dom borel_sa (f1 n) ->
+            RandomVariable dom borel_sa (f1' n)) /\
+      (RandomVariable dom borel_sa f2 ->
+       RandomVariable dom borel_sa f2').
+  Proof.
+    intros ale.
+    destruct (almost_witness _ (almost_forall _ ale)) as [c lec].
+    destruct (almost_forall _ ale) as [p [pone ph]].
+    unfold pre_inter_of_collection in *.
+    exists (fun n:nat =>
+         rvchoice (fun x => if Req_EM_T (((EventIndicator (classic_dec p))) x) 0 then false else true)
+
+                  (f1 n)
+                  (const (f1 n c))
+      ).
+    exists (rvchoice (fun x => if Req_EM_T (((EventIndicator (classic_dec p))) x) 0 then false else true)
+                  
+                  f2
+                  (const (f2 c))
+      ).
+    repeat split.
+    - intros.
+      exists p.
+      split; trivial.
+      intros.
+      rv_unfold.
+      destruct (classic_dec p x); try tauto.
+      destruct (Req_EM_T 1 0); try lra; tauto.
+    - exists p.
+      split; trivial.
+      intros.
+      rv_unfold.
+      destruct (classic_dec p x); try tauto.
+      destruct (Req_EM_T 1 0); try lra; tauto.
+    - intros.
+      rv_unfold.
+      destruct (classic_dec p x); try tauto.
+      + destruct (Req_EM_T 1 0); try lra; auto.
+      + destruct (Req_EM_T 0 0); try lra; auto.
+    - intros.
+      apply measurable_rv.
+      eapply rvchoice_rv; trivial.
+      + apply EventIndicator_rv.
+      + typeclasses eauto.
+    - intros.
+      apply measurable_rv.
+      eapply rvchoice_rv; trivial.
+      + apply EventIndicator_rv.
+      + typeclasses eauto.
+  Qed.
+
   Lemma almostR2_map_R_split_l_bounded
         {Ts:Type}
         {dom: SigmaAlgebra Ts}
@@ -3835,7 +3958,7 @@ Section rv_almost.
     intros alm.
     apply (almostR2_map_R_split_r_refl prts alm).
   Qed.
-
+  
   Local Existing Instance Rbar_le_pre.
   
   Lemma almostR2_Rbar_le_split {Ts:Type} 
