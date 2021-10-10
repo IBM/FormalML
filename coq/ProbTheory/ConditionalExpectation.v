@@ -2599,7 +2599,7 @@ Qed.
           {isfe: IsFiniteExpectation prts f} : 
     IsFiniteExpectation prts g ->
     (forall n, almostR2 prts Rle (rvabs (fn n)) g) ->
-    (forall x, is_lim_seq (fun n => fn n x) (f x)) ->
+    (almost prts (fun x => is_lim_seq (fun n => fn n x) (f x))) ->
     is_lim_seq (fun n => FiniteExpectation prts (fn n)) (FiniteExpectation prts f).
   Proof.
     intros isfeg ale islim.
@@ -2624,8 +2624,8 @@ Qed.
     cut (is_lim_seq (fun n : nat => FiniteExpectation prts (fn' n)) (FiniteExpectation prts f)).
     - apply is_lim_seq_ext; intros.
       now apply FiniteExpectation_proper_almostR2; trivial.
-    - destruct (almost_forall _ eqqfn) as [p [pone ph]].
-      unfold pre_inter_of_collection in ph.
+    - destruct (almost_and prts (almost_forall _ eqqfn) islim) as [p [pone ph]].
+      unfold pre_inter_of_collection, pre_event_inter in ph.
 
       assert (rvfne:(forall n : nat, RandomVariable dom borel_sa (rvmult (fn n) (EventIndicator (classic_dec p))))).
       {
@@ -2674,14 +2674,14 @@ Qed.
         exists p; split; trivial; intros.
         rv_unfold.
         match_destr; try tauto.
-        rewrite ph; trivial.
+        rewrite (proj1 (ph x e)).
         lra.
       + eapply IsFiniteExpectation_proper_almostR2; try eapply isfeg; auto.
       + intros ??.
         transitivity (rvabs (fn' n) a).
         * rv_unfold.
           match_destr.
-          -- rewrite ph; trivial.
+          -- rewrite (proj1 (ph a e)); trivial.
              rewrite Rmult_1_r.
              reflexivity.
           -- rewrite Rmult_0_r.
@@ -2689,8 +2689,17 @@ Qed.
              apply Rabs_pos.
         * apply le'.
       + intros.
-        apply is_lim_seq_mult'; trivial.
-        apply is_lim_seq_const.
+        rv_unfold.
+        destruct (classic_dec p x).
+        * rewrite Rmult_1_r.
+          destruct (ph x e) as [_ islim'].
+          revert islim'.
+          apply is_lim_seq_ext; intros.
+          now rewrite Rmult_1_r.
+        * rewrite Rmult_0_r.
+          generalize (is_lim_seq_const 0).
+          apply is_lim_seq_ext; intros.
+          now rewrite Rmult_0_r.
   Qed.
   
   Lemma Jensen (rv_X : Ts -> R) (phi : R -> R) (a : R) 
@@ -3342,7 +3351,7 @@ Qed.
         apply Rmult_le_pos.
         * apply nnegg.
         * apply H18.
-   - intro.
+    - apply all_almost; intros.
      unfold rvmult.
      apply is_lim_seq_mult'.
      + apply is_lim_seq_mult'.
