@@ -2039,6 +2039,32 @@ Section RbarRandomVariables.
   Definition Rbar_rvopp (rv_X : Ts -> Rbar) :=
     (fun omega =>  Rbar_opp (rv_X omega)).
 
+  Instance Rbar_rvopp_measurable (f : Ts -> Rbar) :
+    RbarMeasurable f ->
+    RbarMeasurable (Rbar_rvopp f).
+  Proof.
+    unfold RbarMeasurable, Rbar_rvopp.
+    intros.
+    assert (pre_event_equiv
+              (fun omega : Ts => Rbar_le (Rbar_opp (f omega)) r)
+              (fun omega : Ts => Rbar_ge (f omega) (Rbar_opp r))).
+    {
+      intro x.
+      rewrite <- Rbar_opp_le.
+      rewrite Rbar_opp_involutive.
+      now unfold Rbar_ge.
+    }
+    rewrite H0.
+    now apply Rbar_sa_le_ge.
+  Qed.
+
+  Global Instance Rbar_rvopp_rv (f: Ts -> Rbar)
+         {rv :  RandomVariable dom Rbar_borel_sa f} :
+    RandomVariable dom Rbar_borel_sa (Rbar_rvopp f).
+  Proof.
+    typeclasses eauto.
+  Qed.
+
   Definition Rbar_rvminus (rv_X1 rv_X2 : Ts -> Rbar) :=
     Rbar_rvplus rv_X1 (Rbar_rvopp rv_X2).
 

@@ -707,6 +707,15 @@ Section fe.
       now simpl.
     Qed.
 
+    Lemma FiniteNonnegExpectation_real (X:Ts->R) 
+          {posX: NonnegativeFunction X}
+          {isfeX: IsFiniteExpectation X} :
+      FiniteExpectation X = real (NonnegExpectation  X).
+    Proof.
+      generalize (FiniteNonnegExpectation_alt X); intros.
+      now apply (f_equal real) in H.
+    Qed.
+
     Lemma IsFiniteNonnegExpectation (X:Ts->R) 
           {posX: NonnegativeFunction X}
           {isfeX: IsFiniteExpectation X} :
@@ -742,7 +751,7 @@ Section fe.
         rewrite Expectation_pos_pofrf with (nnf:=posX) in isfeX.
         match_destr_in isfeX; try tauto.
       + intros n.
-        now rewrite FiniteNonnegExpectation with (posX:=Xn_pos n).
+        now rewrite <- FiniteNonnegExpectation_alt with (isfeX := isfe n).
     - intros.
       now apply IsFiniteNonnegExpectation.
   Qed.
@@ -766,7 +775,7 @@ Lemma Fatou_FiniteExpectation
     - intros.
       now apply IsFiniteNonnegExpectation.
     - generalize (Fatou Xn Xn_pos Xn_rv fin_exp isf lim_rv); intros.
-      rewrite FiniteNonnegExpectation with (posX := LimInf_seq_pos Xn Xn_pos).
+      rewrite FiniteNonnegExpectation_alt with (posX := LimInf_seq_pos Xn Xn_pos).
       unfold LimInf_seq.
       destruct (ex_LimInf_seq (fun n : nat => FiniteExpectation (Xn n))).
       generalize (is_LimInf_seq_ext  (fun n : nat => FiniteExpectation (Xn n)) 
@@ -774,9 +783,9 @@ Lemma Fatou_FiniteExpectation
       cut_to H0; trivial.
       apply is_LimInf_seq_unique in H0.      
       rewrite <- H0.
-      now rewrite IsFiniteNonnegExpectation.
+      now simpl.
       intros.
-      now rewrite FiniteNonnegExpectation with (posX :=Xn_pos n).
+      now rewrite <- FiniteNonnegExpectation_alt with (isfeX := isfe_Xn n).
    Qed.
 
   Lemma Lim_seq_increasing_le (f : nat -> R) :
