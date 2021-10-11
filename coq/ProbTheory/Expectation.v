@@ -192,27 +192,6 @@ Section Expectation.
     | _ => None
     end.
 
-
-  Lemma rbar_le_scaled (c : posreal) (x y :Rbar) :
-    Rbar_le x (Rbar_mult c y) <-> Rbar_le (Rbar_div x c) y.
-  Proof.
-    symmetry.
-    rewrite Rbar_mult_pos_le with (z := c).
-    rewrite Rbar_mult_comm.
-    rewrite Rbar_div_mult_pos.
-    now rewrite Rbar_mult_mult_pos.
-  Qed.
-  
-  Lemma rbar_le_scaled2 (c : posreal) (x y :Rbar) :
-    Rbar_le (Rbar_mult c x) y <-> Rbar_le x (Rbar_div y c).
-  Proof.
-    symmetry.
-    rewrite Rbar_mult_pos_le with (z := c).     
-    rewrite Rbar_div_mult_pos.
-    rewrite Rbar_mult_comm.
-    now rewrite Rbar_mult_mult_pos.     
-  Qed.
-
   Lemma lub_rbar_scale0 (c:posreal) (E : R -> Prop) (l:Rbar) :
     is_lub_Rbar E l -> is_lub_Rbar (fun x => E (x/c)) (Rbar_mult c l).
   Proof.

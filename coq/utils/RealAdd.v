@@ -8,7 +8,8 @@ Require Import Coquelicot.Coquelicot.
 Require Import Lia Lra.
 Require Import Reals.Integration.
 Require Import Rtrigo_def.
-Require Import List Finite.
+Require Import List.
+Require Finite.
 Require Import Morphisms Permutation.
 Require Import EquivDec.
 
@@ -2897,7 +2898,7 @@ Section Rmax_list.
     assumption.
   Qed.
 
-  Lemma fin_fun_bounded {A} (finA : Finite A) (f : A -> R) : {D | forall a, f a <= D}.
+  Lemma fin_fun_bounded {A} (finA : Finite.Finite A) (f : A -> R) : {D | forall a, f a <= D}.
   Proof.
     exists (Max_{@elms _ finA}(f)).
     intro a.
@@ -2907,7 +2908,7 @@ Section Rmax_list.
     destruct finA ; eauto.
   Qed.
 
-  Lemma fin_fun_bounded_Rabs {A} (finA : Finite A) (f : A -> R) : { D | forall a, Rabs(f a) <= D }.
+  Lemma fin_fun_bounded_Rabs {A} (finA : Finite.Finite A) (f : A -> R) : { D | forall a, Rabs(f a) <= D }.
   Proof.
     exists (Max_{@elms _ finA}(fun x => Rabs (f x))).
     intros a.
@@ -4336,4 +4337,147 @@ Qed.
     generalize (LimInf_seq_const_plus (fun n => - f n) g); intros.
     rewrite H.
     now rewrite LimInf_seq_opp.
- Qed.
+  Qed.
+
+    Lemma rbar_le_scaled (c : posreal) (x y :Rbar) :
+    Rbar_le x (Rbar_mult c y) <-> Rbar_le (Rbar_div x c) y.
+  Proof.
+    symmetry.
+    rewrite Rbar_mult_pos_le with (z := c).
+    rewrite Rbar_mult_comm.
+    rewrite Rbar_div_mult_pos.
+    now rewrite Rbar_mult_mult_pos.
+  Qed.
+  
+  Lemma rbar_le_scaled2 (c : posreal) (x y :Rbar) :
+    Rbar_le (Rbar_mult c x) y <-> Rbar_le x (Rbar_div y c).
+  Proof.
+    symmetry.
+    rewrite Rbar_mult_pos_le with (z := c).     
+    rewrite Rbar_div_mult_pos.
+    rewrite Rbar_mult_comm.
+    now rewrite Rbar_mult_mult_pos.     
+  Qed.
+
+Lemma Sup_seq_plus (a b : nat -> R) :
+  Rbar_le (Sup_seq (fun x => (a x) + (b x))) (Rbar_plus (Sup_seq a) (Sup_seq b)).
+Proof.
+  repeat rewrite Rbar_sup_eq_lub.
+  unfold Rbar_lub, proj1_sig.
+  repeat match_destr.
+  unfold Rbar_is_lub, Rbar_is_upper_bound in *.
+  destruct r as [ubp lubp].
+  destruct r0 as [ub1 lub1].
+  destruct r1 as [ub2 lub2].
+  apply lubp; intros ? [??]; subst.
+  replace (Finite (a x3 + b x3)) with (Rbar_plus (a x3) (b x3)) by reflexivity.
+  apply Rbar_plus_le_compat; eauto.
+Qed.
+
+Lemma Inf_seq_plus (a b : nat -> R) :
+  Rbar_le (Rbar_plus (Inf_seq a) (Inf_seq b)) (Inf_seq (fun x => (a x) + (b x))).
+Proof.
+  repeat rewrite Inf_eq_glb.
+  unfold Rbar_glb, proj1_sig.
+  repeat match_destr.
+  unfold Rbar_is_glb, Rbar_is_lower_bound in *.
+  destruct r as [lbp1 glbp1].
+  destruct r0 as [lb2 glb2].
+  destruct r1 as [lbp glbp].
+  apply glbp; intros ? [??]; subst.
+  replace (Finite (a x3 + b x3)) with (Rbar_plus (a x3) (b x3)) by reflexivity.
+  apply Rbar_plus_le_compat; eauto.
+Qed.  
+
+Lemma Sup_seq_const c : Sup_seq (fun _ => c) = c.
+Proof.
+  repeat rewrite Rbar_sup_eq_lub.
+  unfold Rbar_lub, proj1_sig.
+  repeat match_destr.
+  destruct r as [ub lub].
+  apply Rbar_le_antisym.
+  - apply lub; intros ? [??]; subst.
+    apply Rbar_le_refl.
+  - apply ub.
+    now exists 0%nat.
+Qed.
+
+Lemma Inf_seq_const c : Inf_seq (fun _ => c) = c.
+Proof.
+  repeat rewrite Inf_eq_glb.
+  unfold Rbar_glb, proj1_sig.
+  repeat match_destr.
+  destruct r as [lb glb].
+  apply Rbar_le_antisym.
+  - apply lb.
+    now exists 0%nat.
+  - apply glb; intros ? [??]; subst.
+    apply Rbar_le_refl.
+Qed.
+
+Lemma Sup_seq_scale c (a : nat -> R) : 0 <= c ->
+  Sup_seq (fun x => c * a x) = Rbar_mult c (Sup_seq a).
+Proof.
+  intros [cpos|?].
+  - repeat rewrite Rbar_sup_eq_lub.
+    unfold Rbar_lub, proj1_sig.
+    repeat match_destr.
+    unfold Rbar_is_lub, Rbar_is_upper_bound in *.
+    destruct r as [ubp lubp].
+    destruct r0 as [ub1 lub1].
+    apply Rbar_le_antisym.
+    + apply lubp; intros ? [??]; subst.
+      specialize (ub1 (a x2)).
+      cut_to ub1; try eauto.
+      unfold Rbar_mult.
+      destruct x0; simpl in *; rbar_prover.
+      apply Rmult_le_compat_l; lra.
+    + cut (Rbar_le x0 (Rbar_div x c)).
+      * apply (rbar_le_scaled2 (mkposreal c cpos)).
+      * apply lub1; intros ? [??]; subst.
+        specialize (ubp (c * (a x2))).
+        cut_to ubp; try eauto.
+        unfold Rbar_mult.
+        generalize (rbar_le_scaled2 (mkposreal c cpos))
+        ; intros HH; simpl in HH.
+        apply HH.
+        destruct x; simpl in *; rbar_prover.
+  - subst.
+    rewrite Rbar_mult_0_l.
+    erewrite Sup_seq_ext; try eapply Sup_seq_const; simpl; intros.
+    now rewrite Rmult_0_l.
+Qed.
+    
+Lemma Inf_seq_scale c (a : nat -> R) : 0 <= c ->
+  Inf_seq (fun x => c * a x) = Rbar_mult c (Inf_seq a).
+Proof.
+  intros [cpos|?].
+  - repeat rewrite Inf_eq_glb.
+    unfold Rbar_glb, proj1_sig.
+    repeat match_destr.
+    unfold Rbar_is_glb, Rbar_is_lower_bound in *.
+    destruct r as [ubp lubp].
+    destruct r0 as [ub1 lub1].
+    apply Rbar_le_antisym.
+    + cut (Rbar_le (Rbar_div x c) x0).
+      * apply (rbar_le_scaled (mkposreal c cpos)).
+      * apply lub1; intros ? [??]; subst.
+        specialize (ubp (c * (a x2))).
+        cut_to ubp; try eauto.
+        unfold Rbar_mult.
+        generalize (rbar_le_scaled (mkposreal c cpos))
+        ; intros HH; simpl in HH.
+        apply HH.
+        destruct x; simpl in *; rbar_prover.
+    + apply lubp; intros ? [??]; subst.
+      specialize (ub1 (a x2)).
+      cut_to ub1; try eauto.
+      unfold Rbar_mult.
+      destruct x0; simpl in *; rbar_prover.
+      apply Rmult_le_compat_l; lra.
+  - subst.
+    rewrite Rbar_mult_0_l.
+    erewrite Inf_seq_ext; try eapply Inf_seq_const; simpl; intros.
+    now rewrite Rmult_0_l.
+Qed.
+
