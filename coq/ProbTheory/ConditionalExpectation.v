@@ -4930,7 +4930,18 @@ Section cond_exp2.
     eexists.
     reflexivity.
   Qed.
-  
+
+  Theorem Condexp_is_finite (f : Ts -> R)
+          {rv : RandomVariable dom borel_sa f}
+          {isfe:IsFiniteExpectation prts f} :
+    forall x, is_finite (ConditionalExpectation f x).
+  Proof.
+    intros.
+    destruct (Condexp_finite f).
+    rewrite H.
+    reflexivity.
+  Qed.
+
   Lemma Condexp_Expectation (f : Ts -> R) 
         {rv : RandomVariable dom borel_sa f}
         {isfe:IsFiniteExpectation prts f}
@@ -5129,6 +5140,59 @@ Section cond_exp2.
       congruence.
   Qed.
 
+  Theorem Condexp_factor_out
+        (f g : Ts -> R)
+        {rvf : RandomVariable dom borel_sa f}
+        {rvg : RandomVariable dom2 borel_sa g}
+        {rvgf: RandomVariable dom borel_sa (rvmult f g)}
+        {isfef: IsFiniteExpectation prts f}
+        {isfefg:IsFiniteExpectation prts (rvmult f g)} :
+    almostR2 (prob_space_sa_sub prts sub) eq
+             (ConditionalExpectation (rvmult f g))
+             (Rbar_rvmult g (ConditionalExpectation f)).
+  Proof.
+    assert (
+     rvce2 : RandomVariable dom2 Rbar_borel_sa
+                            (Rbar_rvmult (fun x => g x) (ConditionalExpectation f))).
+    {
+      apply Rbar_rvmult_rv; typeclasses eauto.
+    }
+    
+    apply (is_conditional_expectation_unique prts sub
+                                              (rvmult f g) _ _).
+    - apply Condexp_cond_exp; typeclasses eauto.
+    - assert (RandomVariable dom borel_sa (rvabs f)) by typeclasses eauto.
+      assert (NonnegativeFunction (rvabs f)) by typeclasses eauto.
+      assert (NonnegativeFunction (fun x : Ts => NonNegCondexp (rvabs f) x)).
+      { 
+        intros x.
+        generalize (NonNegCondexp_nneg (rvabs f) x); simpl.
+        match_destr; simpl; try tauto; lra.
+      } 
+
+      generalize (is_conditional_expectation_factor_out _ sub
+                                                        f g
+                                                        (ConditionalExpectation f)
+                                                        (NonNegCondexp (rvabs f))
+                                                        _ _)
+      ; intros HH.
+      cut_to HH.
+      + revert HH.
+        apply is_conditional_expectation_proper; trivial; try reflexivity.
+        apply all_almost; intros.
+        unfold Rbar_rvmult.
+        rewrite Condexp_is_finite; trivial.
+      + generalize (Condexp_cond_exp f).
+        apply is_conditional_expectation_proper; trivial; try reflexivity.
+        apply all_almost; intros.
+        now rewrite Condexp_is_finite.
+      + generalize (NonNegCondexp_cond_exp (rvabs f)).
+        apply is_conditional_expectation_proper; trivial; try reflexivity.
+        apply all_almost; intros.
+        assert (IsFiniteExpectation prts (rvabs f)) by now apply IsFiniteExpectation_abs.
+        destruct (NonNegCondexp_finite (rvabs f)).
+        now rewrite H3.
+  Qed.
   
 End cond_exp2.
 
@@ -5620,6 +5684,27 @@ Section fin_cond_exp.
           rewrite Rabs_left; trivial.
           lra.
    Qed.
+
+  Theorem FiniteCondexp_factor_out
+        (f g : Ts -> R)
+        {rvf : RandomVariable dom borel_sa f}
+        {rvg : RandomVariable dom2 borel_sa g}
+        {rvgf: RandomVariable dom borel_sa (rvmult f g)}
+        {isfef: IsFiniteExpectation prts f}
+        {isfefg:IsFiniteExpectation prts (rvmult f g)} :
+    almostR2 (prob_space_sa_sub prts sub) eq
+             (FiniteConditionalExpectation (rvmult f g))
+             (rvmult g (FiniteConditionalExpectation f)).
+  Proof.
+    generalize (Condexp_factor_out prts sub f g)
+    ; intros HH.
+    rewrite (FiniteCondexp_eq f), (FiniteCondexp_eq (rvmult f g)) in HH.
+    revert HH.
+    apply almost_impl.
+    apply all_almost; intros ? HH.
+    unfold Rbar_rvmult in HH; simpl in HH.
+    now invcs HH.
+  Qed.    
 
 End fin_cond_exp.
 
