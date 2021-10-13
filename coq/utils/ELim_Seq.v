@@ -1573,3 +1573,795 @@ Proof.
   now rewrite ELimSup_seq_ind_k ELimInf_seq_ind_k.
 Qed.
 
+Lemma ELim_seq_le_loc (u v : nat -> Rbar) :
+  eventually (fun n => Rbar_le (u n) (v n)) ->
+  Rbar_le (ELim_seq u) (ELim_seq v).
+Proof.
+  intros.
+  unfold ELim_seq.
+  apply Rbar_div_pos_le.
+  apply Rbar_plus_le_compat.
+  - now apply ELimSup_le.
+  - now apply ELimInf_le.
+Qed.
+
+Lemma ELim_seq_le (u v : nat -> Rbar) :
+  (forall n, Rbar_le (u n) (v n)) ->
+  Rbar_le (ELim_seq u) (ELim_seq v).
+Proof.
+  intros.
+  apply ELim_seq_le_loc.
+  now apply filter_forall.
+Qed.
+
+Global Instance ELim_le_proper :
+  Proper (pointwise_relation _ Rbar_le ==> Rbar_le) ELim_seq.
+Proof.
+  intros ???.
+  now apply ELim_seq_le.
+Qed.
+
+Lemma is_Elim_seq_le_loc (u v : nat -> Rbar) (l1 l2 : Rbar) :
+  eventually (fun n => Rbar_le (u n) (v n)) ->
+  is_Elim_seq u l1 -> is_Elim_seq v l2 ->
+  Rbar_le l1 l2.
+Proof.
+  intros.
+  apply is_Elim_seq_unique in H0.
+  apply is_Elim_seq_unique in H1.
+  subst.
+  now apply ELim_seq_le_loc.
+Qed.  
+
+Lemma is_Elim_seq_le (u v : nat -> Rbar) (l1 l2 : Rbar) :
+  (forall n, Rbar_le (u n) (v n)) ->
+  is_Elim_seq u l1 -> is_Elim_seq v l2 ->
+  Rbar_le l1 l2.
+Proof.
+  intros.
+  eapply is_Elim_seq_le_loc; eauto.
+  now apply filter_forall.
+Qed.  
+
+Lemma is_ELimSup_seq_le_le_loc (u v w : nat -> Rbar) (l : Rbar) :
+  eventually (fun n => Rbar_le (u n) (v n) /\ Rbar_le (v n) (w n)) ->
+  is_ELimSup_seq u l -> is_ELimSup_seq w l -> is_ELimSup_seq v l.
+Proof.
+  intros.
+  apply is_ELimSup_seq_unique in H0.
+  apply is_ELimSup_seq_unique in H1.
+  assert (le1:Rbar_le (ELimSup_seq u) (ELimSup_seq v)).
+  {
+    apply ELimSup_le.
+    revert H.
+    eapply filter_imp; tauto.
+  } 
+  assert (le2:Rbar_le (ELimSup_seq v) (ELimSup_seq w)).
+  {
+    apply ELimSup_le.
+    revert H.
+    eapply filter_imp; tauto.
+  } 
+  rewrite H0 in le1.
+  rewrite H1 in le2.
+  assert (eqq:l = (ELimSup_seq v)).
+  {
+    apply Rbar_le_antisym; trivial.
+  }
+  rewrite eqq.
+  apply is_ELimSup_seq_correct.
+Qed.
+
+Lemma is_ELimInf_seq_le_le_loc (u v w : nat -> Rbar) (l : Rbar) :
+  eventually (fun n => Rbar_le (u n) (v n) /\ Rbar_le (v n) (w n)) ->
+  is_ELimInf_seq u l -> is_ELimInf_seq w l -> is_ELimInf_seq v l.
+Proof.
+  intros.
+  apply is_ELimInf_seq_unique in H0.
+  apply is_ELimInf_seq_unique in H1.
+  assert (le1:Rbar_le (ELimInf_seq u) (ELimInf_seq v)).
+  {
+    apply ELimInf_le.
+    revert H.
+    eapply filter_imp; tauto.
+  } 
+  assert (le2:Rbar_le (ELimInf_seq v) (ELimInf_seq w)).
+  {
+    apply ELimInf_le.
+    revert H.
+    eapply filter_imp; tauto.
+  } 
+  rewrite H0 in le1.
+  rewrite H1 in le2.
+  assert (eqq:l = (ELimInf_seq v)).
+  {
+    apply Rbar_le_antisym; trivial.
+  }
+  rewrite eqq.
+  apply is_ELimInf_seq_correct.
+Qed.
+
+Lemma is_Elim_seq_le_le_loc (u v w : nat -> Rbar) (l : Rbar) :
+  eventually (fun n => Rbar_le (u n) (v n) /\ Rbar_le (v n) (w n)) ->
+  is_Elim_seq u l -> is_Elim_seq w l -> is_Elim_seq v l.
+Proof.
+  intros ? [??] [??].
+  split.
+  - eapply is_ELimInf_seq_le_le_loc; eauto.
+  - eapply is_ELimSup_seq_le_le_loc; eauto.
+Qed.
+
+Lemma is_Elim_seq_le_le (u v w : nat -> Rbar) (l : Rbar) :
+  (forall n, Rbar_le (u n) (v n) /\ Rbar_le (v n) (w n)) ->
+  is_Elim_seq u l -> is_Elim_seq w l -> is_Elim_seq v l.
+Proof.
+  intros H.
+  apply is_Elim_seq_le_le_loc.
+  now apply filter_forall.
+Qed.
+  
+Lemma is_Elim_seq_le_p_loc (u v : nat -> Rbar) :
+  eventually (fun n => Rbar_le (u n) (v n)) ->
+  is_Elim_seq u p_infty ->
+  is_Elim_seq v p_infty.
+Proof.
+  intros.
+  apply (is_Elim_seq_le_le_loc u _ (fun _ => p_infty)); trivial.
+  - revert H.
+    apply filter_imp; intros.
+    split; trivial.
+    unfold Rbar_le; match_destr.
+  - apply is_Elim_seq_const.
+Qed.
+
+Lemma is_Elim_seq_le_m_loc (u v : nat -> Rbar) :
+  eventually (fun n => Rbar_le (v n) (u n)) ->
+  is_Elim_seq u m_infty ->
+  is_Elim_seq v m_infty.
+Proof.
+  intros.
+  apply (is_Elim_seq_le_le_loc (fun _ => m_infty) _ u ); trivial.
+  - revert H.
+    apply filter_imp; intros.
+    split; simpl; trivial.
+  - apply is_Elim_seq_const.
+Qed.
+
+Lemma preorder_S_le_incr {A} (RR:A->A->Prop) {RR_pre:PreOrder RR} (f:nat->A) :
+  (forall n, RR (f n) (f (S n))) ->
+  forall n m, (n <= m)%nat -> RR (f n) (f m).
+Proof.
+  intros.
+  induction H0.
+  - reflexivity.
+  - etransitivity; eauto.
+Qed.
+
+Lemma preorder_S_le_decr {A} (RR:A->A->Prop) {RR_pre:PreOrder RR} (f:nat->A) :
+  (forall n, RR (f (S n)) (f n)) ->
+  forall n m, (n <= m)%nat -> RR (f m) (f n).
+Proof.
+  intros.
+  induction H0.
+  - reflexivity.
+  - etransitivity; eauto.
+Qed.
+                           
+Lemma is_Elim_seq_decr_compare (u : nat -> Rbar) (l : R) :
+  is_Elim_seq u l
+  -> (forall n, Rbar_le (u (S n)) (u n))
+  -> forall n, Rbar_le l (u n).
+Proof.
+  intros.
+  apply (is_Elim_seq_le_loc u (fun _ => u n)); trivial.
+  - exists n; intros.
+    apply preorder_S_le_decr; trivial.
+    apply Rbar_le_pre.
+  - apply is_Elim_seq_const.
+Qed.
+
+Lemma is_Elim_seq_incr_compare (u : nat -> Rbar) (l : R) :
+  is_Elim_seq u l
+  -> (forall n, Rbar_le (u n) (u (S n)))
+  -> forall n, Rbar_le (u n) l.
+Proof.
+  intros.
+  apply (is_Elim_seq_le_loc (fun _ => u n) u); trivial.
+  - exists n; intros.
+    apply preorder_S_le_incr; trivial.
+    apply Rbar_le_pre.
+  - apply is_Elim_seq_const.
+Qed.
+
+Lemma ex_Elim_seq_decr (u : nat -> Rbar) :
+  (forall n, (Rbar_le (u (S n)) (u n)))
+  -> ex_Elim_seq u.
+Proof.
+  intros.
+  apply (is_Elim_seq_ex_Elim_seq _ (ELimInf_seq u)).
+  split; [apply is_ELimInf_seq_correct |].
+  unfold ELimInf_seq, proj1_sig.
+  match_destr.
+  destruct x.
+  - intros eps.
+    specialize (i eps).
+    split.
+    + intros.
+      destruct i as [_ [??]].
+      exists (max N x).
+      split; try lia.
+      apply H0.
+      lia.
+    + destruct i as [??].
+      destruct (H0 0%nat) as [?[??]].
+      exists x; intros.
+      eapply Rbar_le_lt_trans; try eapply H3.
+      apply preorder_S_le_decr; trivial.
+      apply Rbar_le_pre.
+  - intros M N.
+    specialize (i M).
+    destruct i as [??].
+    exists (max N x).
+    split; try lia.
+    apply H0.
+    lia.
+  - intros M.
+    specialize (i M 0%nat) as [? [??]].
+    exists x; intros.
+      eapply Rbar_le_lt_trans; try eapply H1.
+      apply preorder_S_le_decr; trivial.
+      apply Rbar_le_pre.
+Qed.
+  
+Lemma ex_Elim_seq_incr (u : nat -> Rbar) :
+  (forall n, Rbar_le (u n) (u (S n)))
+  -> ex_Elim_seq u.
+Proof.
+  intros.
+  apply (is_Elim_seq_ex_Elim_seq _ (ELimSup_seq u)).
+  split; [| apply is_ELimSup_seq_correct].
+  unfold ELimSup_seq, proj1_sig.
+  match_destr.
+  destruct x.
+  - intros eps.
+    specialize (i eps).
+    split.
+    + intros.
+      destruct i as [_ [??]].
+      exists (max N x).
+      split; try lia.
+      apply H0.
+      lia.
+    + destruct i as [??].
+      destruct (H0 0%nat) as [?[??]].
+      exists x; intros.
+      eapply Rbar_lt_le_trans; try eapply H3.
+      apply preorder_S_le_incr; trivial.
+      apply Rbar_le_pre.
+  - intros M.
+    specialize (i M 0%nat) as [? [??]].
+    exists x; intros.
+      eapply Rbar_lt_le_trans; try eapply H1.
+      apply preorder_S_le_incr; trivial.
+      apply Rbar_le_pre.
+  - intros M N.
+    specialize (i M).
+    destruct i as [??].
+    exists (max N x).
+    split; try lia.
+    apply H0.
+    lia.
+Qed.
+
+(* TODO: need another boundary condition
+Lemma ex_finite_Elim_seq_decr (u : nat -> Rbar) (M : R) :
+  (forall n, Rbar_le (u (S n)) (u n)) -> (forall n, Rbar_le M (u n))
+  -> ex_finite_Elim_seq u.
+Proof.
+  intros.
+  split.
+  - now apply ex_Elim_seq_decr.
+  - 
+Qed.
+  
+Lemma ex_finite_lim_seq_incr (u : nat -> R) (M : R) :
+  (forall n, (u n) <= (u (S n))) -> (forall n, u n <= M)
+    -> ex_finite_lim_seq u.
+ *)
+
+
+Lemma is_Elim_seq_opp (u : nat -> Rbar) (l : Rbar) :
+  is_Elim_seq u l <-> is_Elim_seq (fun n => Rbar_opp (u n)) (Rbar_opp l).
+Proof.
+  split; intros [??]; split.
+  - now apply is_ELimInf_opp_ELimSup_seq.
+  - now apply is_ELimSup_opp_ELimInf_seq.
+  - now apply is_ELimSup_opp_ELimInf_seq.
+  - now apply is_ELimInf_opp_ELimSup_seq.
+Qed.
+
+Lemma ex_Elim_seq_opp (u : nat -> Rbar) :
+  ex_Elim_seq u <-> ex_Elim_seq (fun n => Rbar_opp (u n)).
+Proof.
+  intros.
+  split; intros HH.
+  - apply ELim_seq_correct in HH.
+    apply is_Elim_seq_opp in HH.
+    eapply is_Elim_seq_ex_Elim_seq; eauto.
+  - apply ELim_seq_correct in HH.
+    apply is_Elim_seq_opp in HH.
+    eapply is_Elim_seq_ex_Elim_seq in HH.
+    revert HH.
+    apply ex_Elim_seq_proper.
+    intros ?.
+    now rewrite Rbar_opp_involutive.
+Qed.
+
+Lemma ELim_seq_opp (u : nat -> Rbar) :
+  ELim_seq (fun n => Rbar_opp (u n)) = Rbar_opp (ELim_seq u).
+Proof.
+  unfold ELim_seq.
+  rewrite ELimSup_seq_opp ELimInf_seq_opp.
+  rewrite Rbar_plus_comm.
+  destruct (ELimSup_seq u); destruct (ELimInf_seq u); simpl; rbar_prover.
+Qed.
+
+Lemma is_Elim_seq_plus_aux (u v : nat -> Rbar) (l1 l2 l : Rbar) :
+  Rbar_le 0 l ->
+  is_Elim_seq u l1 -> is_Elim_seq v l2 ->
+  is_Rbar_plus l1 l2 l ->
+  is_Elim_seq (fun n => Rbar_plus (u n) (v n)) l.
+Proof.
+  intros zpos limu limv isp.
+
+  apply is_Elim_seq_spec in limu.
+  apply is_Elim_seq_spec in limv.
+  apply is_Elim_seq_spec.
+  unfold is_Elim_seq', is_Rbar_plus in *.
+  destruct l.
+  - intros eps.
+    destruct l1; destruct l2; simpl in isp; invcs isp.
+    eapply filter_imp; [| eapply filter_and; [apply (limu (pos_div_2 eps)) | apply (limv (pos_div_2 eps))]]
+    ; simpl; intros ? [??].
+    
+    generalize (Rbar_plus_lt_compat _ _ _ _ H H0)
+    ; intros.
+    destruct (u x); destruct (v x); simpl in *; rbar_prover.
+    rewrite <- double_var in H1.
+    eapply Rle_lt_trans; try eapply H1.
+    eapply Rle_trans; [| eapply Rabs_triang].
+    apply BasicUtils.refl_refl.
+    f_equal; lra.
+  - intros M.
+    destruct l1; destruct l2; invcs isp.
+    + specialize (limu posreal1).
+      specialize (limv (M - r + 1)).
+      eapply filter_imp; [| eapply filter_and; [apply limu | apply limv]]
+      ; simpl; intros ? [??].
+      destruct (u x); destruct (v x); simpl in *; rbar_prover.
+      assert (M < r + r1 - 1) by lra.
+      eapply Rlt_le_trans; try eapply H1.
+      cut (r - 1 <= r0); [lra | ].
+      cut ((r - r0) <= 1); [lra | ].
+      unfold Rabs in *.
+      match_destr_in H; lra.
+    + specialize (limu (M - r + 1)).
+      specialize (limv posreal1).
+      eapply filter_imp; [| eapply filter_and; [apply limu | apply limv]]
+      ; simpl; intros ? [??].
+      destruct (u x); destruct (v x); simpl in *; rbar_prover.
+      assert (M < r + r0 - 1) by lra.
+      eapply Rlt_le_trans; try eapply H1.
+      cut (r - 1 <= r1); [lra | ].
+      cut ((r - r1) <= 1); [lra | ].
+      unfold Rabs in *.
+      match_destr_in H0; lra.
+    + specialize (limu (M / 2)).
+      specialize (limv (M / 2)).
+      eapply filter_imp; [| eapply filter_and; [apply limu | apply limv]]
+      ; simpl; intros ? [??].
+      destruct (u x); destruct (v x); simpl in *; rbar_prover.
+  - simpl in zpos; tauto.
+Qed.    
+
+Lemma is_Elim_seq_plus (u v : nat -> Rbar) (l1 l2 l : Rbar) :
+  is_Elim_seq u l1 -> is_Elim_seq v l2 ->
+  is_Rbar_plus l1 l2 l ->
+  is_Elim_seq (fun n => Rbar_plus (u n) (v n)) l.
+Proof.
+  intros.
+  destruct (Rbar_le_dec 0 l).
+  - eapply is_Elim_seq_plus_aux; eauto.
+  - assert (Rbar_le 0 (Rbar_opp l)).
+    {
+      destruct l; simpl in *; rbar_prover.
+    }
+    apply is_Elim_seq_opp.
+    apply (is_Elim_seq_proper _ _ (fun n => Rbar_plus_opp (u n) (v n))  _ _ (reflexivity _)).
+    apply is_Elim_seq_opp in H.
+    apply is_Elim_seq_opp in H0.
+    apply (is_Elim_seq_plus_aux (fun n => (Rbar_opp (u n))) (fun n => (Rbar_opp (v n))) _ _ _ H2 H H0).
+    unfold is_Rbar_plus in *.
+    destruct l1; destruct l2; destruct l; simpl in *; try invcs H1; rbar_prover.
+Qed.
+
+Lemma is_Elim_seq_plus' (u v : nat -> Rbar) (l1 l2 : R) :
+  is_Elim_seq u l1 -> is_Elim_seq v l2 ->
+  is_Elim_seq (fun n => (Rbar_plus (u n) (v n))) (l1 + l2).
+Proof.
+  intros.
+  replace (Finite (l1 + l2)) with (Rbar_plus l1 l2) by reflexivity.
+  eapply is_Elim_seq_plus; eauto.
+  reflexivity.
+Qed.
+
+Lemma ex_Elim_seq_plus (u v : nat -> Rbar) :
+  ex_Elim_seq u -> ex_Elim_seq v ->
+  ex_Rbar_plus (ELim_seq u) (ELim_seq v) ->
+  ex_Elim_seq (fun n => Rbar_plus (u n) (v n)).
+Proof.
+  intros.
+  apply ELim_seq_correct in H.
+  apply ELim_seq_correct in H0.
+  apply Rbar_plus_correct in H1.
+  eapply is_Elim_seq_ex_Elim_seq.
+  eapply is_Elim_seq_plus; eauto.
+Qed.
+
+Lemma ELim_seq_plus (u v : nat -> Rbar) :
+  ex_Elim_seq u -> ex_Elim_seq v ->
+  ex_Rbar_plus (ELim_seq u) (ELim_seq v) ->
+  ELim_seq (fun n => Rbar_plus (u n) (v n)) = Rbar_plus (ELim_seq u) (ELim_seq v).
+Proof.
+  intros.
+  apply ELim_seq_correct in H.
+  apply ELim_seq_correct in H0.
+  apply Rbar_plus_correct in H1.
+
+  eapply is_Elim_seq_unique.
+  eapply is_Elim_seq_plus; eauto.
+Qed.
+
+Lemma is_Elim_seq_minus (u v : nat -> Rbar) (l1 l2 l : Rbar) :
+  is_Elim_seq u l1 -> is_Elim_seq v l2 ->
+  is_Rbar_minus l1 l2 l ->
+  is_Elim_seq (fun n => Rbar_minus (u n) (v n)) l.
+Proof.
+  intros.
+  unfold Rbar_minus.
+  eapply is_Elim_seq_plus; try eapply H1; trivial.
+  now apply -> is_Elim_seq_opp.
+Qed.
+
+Lemma is_Elim_seq_minus' (u v : nat -> Rbar) (l1 l2 : R) :
+  is_Elim_seq u l1 -> is_Elim_seq v l2 ->
+  is_Elim_seq (fun n => Rbar_minus (u n) (v n)) (l1 - l2).
+Proof.
+  intros.
+  unfold Rbar_minus.
+  eapply is_Elim_seq_plus'; try eapply H1; trivial.
+  now apply is_Elim_seq_opp in H0.
+Qed.
+
+Lemma ex_Elim_seq_minus (u v : nat -> Rbar) :
+  ex_Elim_seq u -> ex_Elim_seq v ->
+  ex_Rbar_minus (ELim_seq u) (ELim_seq v) ->
+  ex_Elim_seq (fun n => Rbar_minus (u n) (v n)).
+Proof.
+  intros.
+  unfold Rbar_minus.
+  apply ex_Elim_seq_plus; trivial.
+  - now apply ex_Elim_seq_opp in H0.
+  - rewrite ELim_seq_opp.
+    apply H1.
+Qed.
+
+Lemma ELim_seq_minus (u v : nat -> Rbar) :
+  ex_Elim_seq u -> ex_Elim_seq v ->
+  ex_Rbar_minus (ELim_seq u) (ELim_seq v) ->
+  ELim_seq (fun n => Rbar_minus (u n) (v n)) = Rbar_minus (ELim_seq u) (ELim_seq v).
+Proof.
+  intros.
+  unfold Rbar_minus.
+  rewrite ELim_seq_plus; trivial.
+  - now rewrite ELim_seq_opp.
+  - now apply ex_Elim_seq_opp in H0.
+  - now rewrite ELim_seq_opp.
+Qed.
+
+Lemma is_Elim_seq_inv_pos (u : nat -> Rbar) (l : Rbar) :
+  is_Elim_seq u l ->
+  Rbar_lt 0 l ->
+  is_Elim_seq (fun n => Rbar_inv (u n)) (Rbar_inv l).
+Proof.
+  intros limu lpos.
+  apply is_Elim_seq_spec in limu.
+  apply is_Elim_seq_spec.
+
+  destruct l; try tauto.
+  - simpl in lpos.
+    intros eps.
+    red in limu; simpl.
+
+    assert (pos:0 < Rmin (eps * ((r / 2) * r)) (r / 2)).
+    { destruct eps; simpl.
+      apply Rmin_pos; try lra.
+      repeat (apply Rmult_lt_0_compat; try lra).
+    }
+    specialize (limu (mkposreal _ pos)).
+    revert limu; apply filter_imp; simpl; intros.
+    destruct (u x); simpl in *; rbar_prover; clear x.
+    assert (r / 2 < r0).
+    {
+      apply Rle_lt_trans with (r - r / 2).
+      apply Req_le ; field.
+      apply Rabs_lt_between'.
+      apply Rlt_le_trans with (1 := H).
+      apply Rmin_r.
+    }
+    assert (H3: 0 < r0) by lra.
+    assert (eqq1:/ r0 + - / r = ((r - r0) / r / r0)).
+    {
+      unfold Rdiv.
+      rewrite Rmult_plus_distr_r.
+      rewrite Rinv_r; try lra.
+      rewrite Rmult_plus_distr_r.
+      repeat rewrite <- Ropp_mult_distr_l.
+      rewrite -> Rinv_r_simpl_m; try lra.
+    }
+    rewrite eqq1.
+    repeat rewrite Rabs_div; try lra.
+    rewrite (Rabs_right r); try lra.
+    rewrite (Rabs_right r0); try lra.
+    rewrite Rabs_minus_sym.
+    eapply Rlt_le_trans.
+    {
+      eapply Rmult_lt_compat_r.
+      - now apply Rinv_pos.
+      - eapply Rmult_lt_compat_r.
+        + now apply Rinv_pos.
+        + apply H.
+    }
+    etransitivity.
+    {
+      eapply Rmult_le_compat_r.
+      - left; now apply Rinv_pos.
+      - eapply Rmult_le_compat_r.
+        + left; now apply Rinv_pos.
+        + apply Rmin_l.
+    }
+
+    cut (eps * (r / 2 * (r * / r) * / r0) <= eps); try lra.
+    rewrite Rinv_r; try lra.
+    rewrite Rmult_1_r.
+    etransitivity.
+    {
+      apply Rmult_le_compat_l.
+      - destruct eps; simpl; lra.
+      - apply Rmult_le_compat_r.
+        + left; now apply Rinv_pos.
+        + left. apply H0.
+    }
+    rewrite Rinv_r; try lra.
+  - intros eps.
+    specialize (limu (/ eps)).
+    revert limu.
+    apply filter_imp; intros.
+    unfold Rbar_minus.
+    simpl.
+    rewrite Ropp_0 Rbar_plus_0_r.
+    destruct (u x); simpl in *; rbar_prover.
+    + apply (Rmult_lt_compat_r eps _ _ (cond_pos eps)) in H.
+      rewrite Rinv_l in H; [| destruct eps; simpl; lra].
+      assert (r <> 0).
+      {
+        intros ?; subst.
+        rewrite Rmult_0_l in H.
+        lra.
+      } 
+      apply (Rmult_lt_compat_l (Rabs (/ r)) _ _) in H.
+      * rewrite Rmult_1_r in H.
+        eapply Rlt_le_trans; try eapply H.
+        unfold Rabs.
+        match_destr.
+        -- repeat rewrite <- Ropp_mult_distr_l.
+           rewrite <- Rmult_assoc.
+           rewrite Rinv_l; trivial.
+           rewrite Rmult_1_l.
+           destruct eps; simpl; lra.
+        -- rewrite <- Rmult_assoc.
+           rewrite Rinv_l; trivial.
+           rewrite Rmult_1_l.
+           lra.
+      * apply Rabs_pos_lt.
+        apply Rinv_neq_0_compat.
+        intros ?; subst.
+        lra.
+    + rewrite Rabs_R0.
+      now destruct eps.
+Qed.    
+
+Lemma is_Elim_seq_inv_neg (u : nat -> Rbar) (l : Rbar) :
+  is_Elim_seq u l ->
+  Rbar_lt 0 (Rbar_opp l) ->
+  is_Elim_seq (fun n => Rbar_inv (u n)) (Rbar_inv l).
+Proof.
+  intros limu lpos.
+  apply is_Elim_seq_spec in limu.
+  apply is_Elim_seq_spec.
+
+  destruct l; try tauto.
+  - simpl in lpos.
+    intros eps.
+    red in limu; simpl.
+
+    assert (pos:0 < Rmin (eps * ((r / 2) * r)) (- r / 2)).
+    { destruct eps; simpl.
+      apply Rmin_pos; try lra.
+      apply Rmult_lt_0_compat; try lra.
+      unfold Rdiv.
+      rewrite Rmult_comm.
+      rewrite <- Rmult_assoc.
+      apply Rmult_lt_0_compat; try lra.
+      rewrite <- Rmult_opp_opp.
+      apply Rmult_lt_0_compat; try lra.
+    }
+    specialize (limu (mkposreal _ pos)).
+    revert limu; apply filter_imp; simpl; intros.
+    destruct (u x); simpl in *; rbar_prover; clear x.
+    assert (- r / 2 < - r0).
+    {
+      apply Rle_lt_trans with (- r - - r / 2).
+      apply Req_le ; field.
+      apply Rabs_lt_between'.
+      unfold Rminus.
+      rewrite <- Ropp_plus_distr.
+      rewrite Rabs_Ropp.
+      apply Rlt_le_trans with (1 := H).
+      apply Rmin_r.
+    }
+    assert (H3: 0 < - r0) by lra.
+    assert (eqq1:/ (- r0) + - / (- r) = (((- r) - (- r0)) / (- r) / (- r0))).
+    {
+      unfold Rdiv.
+      rewrite Rmult_plus_distr_r.
+      rewrite Rinv_r; try lra.
+      rewrite Rmult_plus_distr_r.
+      repeat rewrite <- Ropp_mult_distr_l.
+      rewrite Rmult_1_l.
+      f_equal.
+      repeat rewrite <- Ropp_inv_permute; try lra.
+      rewrite <- Ropp_mult_distr_r.
+      rewrite -> Rinv_r_simpl_m; try lra.
+    }
+    rewrite Rabs_minus_sym.
+    
+    assert (eqq1': / r - / r0 = / - r0 + - / - r).
+    {
+      repeat rewrite <- Ropp_inv_permute; try lra.
+    } 
+    rewrite eqq1'.
+    rewrite eqq1.
+    repeat rewrite Rabs_div; try lra.
+    rewrite (Rabs_right (- r)); try lra.
+    rewrite (Rabs_right (- r0)); try lra.
+    rewrite Rabs_minus_sym.
+    rewrite <- Rabs_Ropp.
+    rewrite Ropp_plus_distr.
+    repeat rewrite Ropp_involutive.
+    eapply Rlt_le_trans.
+    {
+      eapply Rmult_lt_compat_r.
+      - now apply Rinv_pos.
+      - eapply Rmult_lt_compat_r.
+        + now apply Rinv_pos.
+        + apply H.
+    }
+    etransitivity.
+    {
+      eapply Rmult_le_compat_r.
+      - left; now apply Rinv_pos.
+      - eapply Rmult_le_compat_r.
+        + left; now apply Rinv_pos.
+        + apply Rmin_l.
+    }
+
+    cut (eps * (r / 2 * (r * / - r) * / - r0) <= eps); try lra.
+    repeat rewrite <- Ropp_inv_permute; try lra.
+    repeat rewrite <- Ropp_mult_distr_r.
+    rewrite Rinv_r; try lra.
+    rewrite Rmult_1_r.
+    repeat rewrite Ropp_mult_distr_r.
+    etransitivity.
+    {
+      apply Rmult_le_compat_l.
+      - destruct eps; simpl; lra.
+      - apply Rmult_le_compat_r.
+        + left.
+          rewrite Ropp_inv_permute; try lra.
+          apply Rinv_pos; lra.
+        + left.
+          rewrite <- Ropp_mult_distr_r.
+          rewrite Ropp_mult_distr_l.
+          apply H0.
+    }
+    rewrite Rmult_opp_opp.
+    rewrite Rinv_r; try lra.
+  - red.
+    intros eps.
+    specialize (limu (- / eps)).
+    revert limu.
+    apply filter_imp; intros.
+    unfold Rbar_minus.
+    simpl.
+    rewrite Ropp_0 Rbar_plus_0_r.
+    destruct (u x); simpl in *; rbar_prover.
+    + apply (Rmult_lt_compat_r eps _ _ (cond_pos eps)) in H.
+      rewrite <- Ropp_mult_distr_l in H.
+      rewrite Rinv_l in H; [| destruct eps; simpl; lra].
+      assert (r <> 0).
+      {
+        intros ?; subst.
+        rewrite Rmult_0_l in H.
+        lra.
+      } 
+      apply (Rmult_lt_compat_l (Rabs (/ r)) _ _) in H.
+      * rewrite <- Ropp_mult_distr_r in H.
+        rewrite Rmult_1_r in H.
+        apply Ropp_lt_cancel.
+        eapply Rle_lt_trans; try eapply H.
+        unfold Rabs.
+        match_destr.
+        -- repeat rewrite <- Ropp_mult_distr_l.
+           rewrite <- Rmult_assoc.
+           rewrite Rinv_l; trivial.
+           rewrite Rmult_1_l.
+           destruct eps; simpl; lra.
+        -- rewrite <- Rmult_assoc.
+           rewrite Rinv_l; trivial.
+           rewrite Rmult_1_l.
+           destruct eps; simpl.
+           lra.
+      * apply Rabs_pos_lt.
+        apply Rinv_neq_0_compat.
+        intros ?; subst.
+        lra.
+    + rewrite Rabs_R0.
+      now destruct eps.
+Qed.    
+
+Lemma is_Elim_seq_inv (u : nat -> Rbar) (l : Rbar) :
+  is_Elim_seq u l ->
+  l <> 0 ->
+  is_Elim_seq (fun n => Rbar_inv (u n)) (Rbar_inv l).
+Proof.
+  intros.
+  destruct (Rbar_total_order 0 l) as [[?|?]|?].
+  - eapply is_Elim_seq_inv_pos; eauto.
+  - congruence.
+  - eapply is_Elim_seq_inv_neg; eauto.
+    apply Rbar_opp_lt.
+    rewrite Rbar_opp_involutive; simpl.
+    now rewrite Ropp_0.
+Qed.    
+
+Lemma ex_Elim_seq_inv (u : nat -> Rbar) :
+  ex_Elim_seq u
+  -> ELim_seq u <> 0
+  -> ex_Elim_seq (fun n => Rbar_inv (u n)).
+Proof.
+  intros.
+  apply ELim_seq_correct in H.
+  eapply is_Elim_seq_ex_Elim_seq.
+  eapply is_Elim_seq_inv; eauto.
+Qed.
+
+Lemma ELim_seq_inv (u : nat -> R) :
+  ex_Elim_seq u -> (ELim_seq u <> 0)
+  -> ELim_seq (fun n => Rbar_inv (u n)) = Rbar_inv (ELim_seq u).
+Proof.
+  intros.
+  apply ELim_seq_correct in H.
+  eapply is_Elim_seq_unique.
+  eapply is_Elim_seq_inv; eauto.
+Qed.
