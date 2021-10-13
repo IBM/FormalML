@@ -299,15 +299,41 @@ algorithm.
         apply Rbar_mult_0_r.
     Qed.
 
+    (* Product of a list of real numbers. *)
     Fixpoint list_product (l : list R) : R :=
       match l with
       | nil => 1
       | cons x xs => x*list_product xs
       end.
 
+    Lemma list_product_pos (l : list R) :
+      List.Forall (fun r => 0 < r) l -> 0 < list_product l.
+    Proof.
+      intros H.
+      induction l; simpl; try lra.
+      invcs H; try intuition.
+      apply Rmult_lt_0_compat; assumption.
+    Qed.
+
+    Lemma log_list_product (l : list R) :
+      List.Forall (fun r => 0 < r) l ->
+      ln (list_product l) = list_sum (map (fun x => ln x) l).
+    Proof.
+      intros H.
+      induction l.
+      + simpl.
+        apply ln_1.
+      + simpl. invcs H.
+        specialize (IHl H3).
+        rewrite ln_mult; try assumption.
+        - now f_equal.
+        - now apply list_product_pos.
+    Qed.
+
     (* Lemma 4.*)
     Lemma product_sum_helper (l : list R):
-      List.Forall (fun r => 0 <= r <= 1) l -> 1 - list_sum l <= list_product (List.map (fun x => 1 - x) l).
+      List.Forall (fun r => 0 <= r <= 1) l -> 1 - list_sum l <=
+                                        list_product (List.map (fun x => 1 - x) l).
     Proof.
       revert l.
       induction l.
@@ -329,6 +355,41 @@ algorithm.
            rewrite Rmult_comm.
            apply Rmult_le_compat_l ; trivial.
            lra.
+    Qed.
+
+    Lemma prod_f_R0_succ (f : nat -> R) {k : nat} (hk : (0 < k)%nat):
+      prod_f_R0 f k = f 0%nat * prod_f_R0 (fun n => f (S n)) (pred k).
+    Proof.
+      generalize (prod_SO_split f k 0 hk); intros.
+      rewrite H. simpl.
+      f_equal. f_equal.
+      lia.
+    Qed.
+
+    Lemma prod_f_R0_pred (f : nat -> R) {k : nat} (hk : (0 < k)%nat):
+      prod_f_R0 f k = prod_f_R0 f (pred k)*(f k).
+    Proof.
+      generalize (prod_SO_split f k (pred k)); intros.
+      rewrite H; try lia.
+      f_equal.
+      replace (k - pred k - 1)%nat with 0%nat by lia.
+      simpl. f_equal.  lia.
+    Qed.
+
+    Lemma list_product_prod_f_R0 (l : list R) :
+      list_product l =
+      prod_f_R0 (fun n => nth n l 1) (length l).
+    Proof.
+      induction l; try now simpl.
+      simpl.
+      destruct (lt_dec 0 (length l)).
+      + rewrite prod_f_R0_succ; try assumption.
+        rewrite IHl. rewrite Rmult_assoc.
+        f_equal. rewrite prod_f_R0_pred; try assumption.
+        reflexivity.
+      + assert (length l = 0%nat) by lia.
+        rewrite length_zero_iff_nil in H.
+        rewrite H. now simpl.
     Qed.
 
   End qlearn.
