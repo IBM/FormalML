@@ -2,7 +2,7 @@ Require Import List.
 Require Import mdp fixed_point.
 Require Import RealAdd CoquelicotAdd.
 Require Import utils.Utils.
-Require Import Lra Lia.
+Require Import Lra Lia PushNeg.
 Require Import infprod Dvoretzky Expectation RandomVariableFinite.
 Require Import Classical.
 Require Import SigmaAlgebras ProbSpace.
@@ -299,7 +299,7 @@ algorithm.
         apply Rbar_mult_0_r.
     Qed.
 
-    (* Product of a list of real numbers. *)
+    (* Product of a list of real numbers. Move this to RealAdd.v *)
     Fixpoint list_product (l : list R) : R :=
       match l with
       | nil => 1
@@ -390,6 +390,49 @@ algorithm.
       + assert (length l = 0%nat) by lia.
         rewrite length_zero_iff_nil in H.
         rewrite H. now simpl.
+    Qed.
+
+    Lemma list_product_prod_f_R0_map (f : R -> R) (l : list R) :
+      list_product (map f l) =
+      prod_f_R0 (fun n => nth n (map f l) 1) (length l).
+    Proof.
+      rewrite list_product_prod_f_R0.
+      now rewrite map_length.
+    Qed.
+
+    Lemma prod_f_R0_ne_zero {f : nat -> R} :
+      (forall n, f n <> 0) -> (forall k, prod_f_R0 f k <> 0).
+    Proof.
+      intros Hf k.
+      induction k; simpl; try auto.
+    Qed.
+
+    Lemma prod_f_R0_pos {f : nat -> R} :
+      (forall n, 0 < f n) -> (forall k, 0 < prod_f_R0 f k).
+    Proof.
+      intros Hf k.
+      induction k; simpl; try auto.
+      apply Rmult_lt_0_compat; auto.
+    Qed.
+
+    Lemma prod_f_R0_nonneg {f : nat -> R} :
+      (forall n, 0 <= f n) -> (forall k, 0 <= prod_f_R0 f k).
+    Proof.
+      intros Hf k.
+      induction k; simpl; try auto.
+      apply Rmult_le_pos; auto.
+    Qed.
+
+    Lemma prod_f_R0_inv {f : nat -> R} :
+      (forall n, f n <> 0) ->
+      forall k, prod_f_R0 (fun n => 1 / (f n)) k = 1/(prod_f_R0 f k).
+    Proof.
+      intros Hf k.
+      induction k; simpl; try reflexivity.
+      rewrite IHk.
+      field_simplify; [reflexivity|
+      (split; try apply prod_f_R0_ne_zero; try auto)|
+      (split; try apply prod_f_R0_ne_zero; try auto)].
     Qed.
 
   End qlearn.
@@ -807,6 +850,76 @@ algorithm.
       cut_to H2; trivial.
       lra.
       now apply series_finite_sum_shift.
+    Qed.
+
+    Lemma is_lim_seq_pos_inv_p_infty {α : nat -> R} (ha1 : forall n, 0 < α n):
+      is_lim_seq α 0 <-> is_lim_seq (fun n => /α n) p_infty.
+    Proof.
+      rewrite is_lim_seq_p_infty_Reals.
+      rewrite is_lim_seq_Reals.
+      assert (forall n, α n <> 0) by (intros; specialize (ha1 n); lra).
+      assert (forall n, /α n <> 0) by (intros; apply Rinv_neq_0_compat; eauto).
+      split; intros.
+      + revert H1.
+        contrapose. unfold cv_infty, Un_cv.
+        push_neg. intros.
+        destruct H1 as [M HM].
+        exists (/M). split.
+        -- destruct (HM 0%nat) as [k [hk1 hk2]].
+           apply Rlt_gt. apply Rge_le in hk2.
+           apply Rinv_pos.
+           eapply Rlt_le_trans with (r2 := /α k); auto.
+           apply Rinv_pos; auto.
+        -- intros n. specialize (HM n).
+           destruct HM as [k [hk1 hk2]].
+           exists k. split; try auto.
+           unfold R_dist.
+           rewrite Rminus_0_r.
+           rewrite Rabs_pos_eq; [|left; try auto].
+           apply Rle_ge. apply Rge_le in hk2.
+           rewrite <-(Rinv_involutive (α k)); try auto.
+           apply Rinv_le_contravar; auto.
+           apply Rinv_pos; auto.
+      + generalize (cv_infty_cv_R0 (fun n => /α n) H0); intros.
+        specialize (H2 H1).
+        intros eps Heps. specialize (H2 eps Heps).
+        destruct H2 as [N HN]. exists N; intros.
+        specialize (HN n H2).
+        rewrite Rinv_involutive in HN; auto.
+    Qed.
+
+    (* Lemma 3 *)
+    Theorem product_sum_iff {α : nat -> R} (gamma : R) (hg : 0 <= gamma < 1)
+      (ha1 : forall n, 0 <= α n <= 1)
+      (ha2 : is_lim_seq α 0) :
+      is_lim_seq (sum_n α) p_infty <->
+      (forall k, is_lim_seq (fun n => prod_f_R0 (fun m => g_alpha gamma (α (m + k)%nat)) n) 0).
+    Proof.
+      split; intros.
+      - apply product_sum_assumption_a; try eauto.
+      - apply product_sum_assumption_b with (gamma := gamma); try eauto.
+    Qed.
+
+    Theorem product_sum_gamma0 {α : nat -> R} {gamma : R}
+            (ha1 : forall n, 0 <= α n < 1)(ha2 : is_lim_seq α 0)
+            (ha3 : is_lim_seq (sum_n α) p_infty) :
+      (forall k, is_lim_seq (fun n => prod_f_R0 (fun m => 1/(1 - α (m + k)%nat)) n) p_infty).
+    Proof.
+      intros k.
+      rewrite product_sum_iff with (gamma0 := 0) in ha3; try lra; auto.
+      - specialize (ha3 k).
+        unfold g_alpha in ha3.
+        setoid_rewrite prod_f_R0_inv.
+        -- apply is_lim_seq_ext with
+               (v := fun n => prod_f_R0 (fun m => 1 - α (m + k)%nat) n) in ha3.
+        + unfold Rdiv. setoid_rewrite Rmult_1_l.
+          rewrite <-is_lim_seq_pos_inv_p_infty; auto.
+          intros n. apply prod_f_R0_pos; intros.
+          specialize (ha1 (n0+k)%nat); lra.
+           + intros. apply prod_f_R0_proper; [|reflexivity].
+             intros m; lra.
+        -- intros. specialize (ha1 (n0+k)%nat); lra.
+      - intros. specialize (ha1 n). lra.
     Qed.
 
     Fixpoint RMseq (α : nat -> R) (s : nat -> R) (init : R) (n : nat) : R :=
