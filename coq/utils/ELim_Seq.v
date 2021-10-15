@@ -2801,13 +2801,30 @@ Lemma ex_lim_seq_adj (u v : nat -> R) :
   -> is_lim_seq (fun n => v n - u n) 0
   -> ex_finite_lim_seq u /\ ex_finite_lim_seq v /\ Lim_seq u = Lim_seq v.
 
-Image by a continuous function
-
-Lemma is_lim_seq_continuous (f : R -> R) (u : nat -> R) (l : R) :
-  continuity_pt f l -> is_lim_seq u l
-  -> is_lim_seq (fun n => f (u n)) (f l).
-
  *)
+
+Lemma is_Elim_seq_continuous (f : R -> R) (u : nat -> Rbar) (l : R) :
+  continuity_pt f l -> is_Elim_seq u l
+  -> is_Elim_seq (fun n => match u n with
+                       | Finite y => Finite (f y)
+                       | p_infty => p_infty
+                       | m_infty => m_infty
+                       end)
+                (f l).
+Proof.
+  intros cont lim.
+  apply is_Elim_seq_spec in lim.
+  apply is_Elim_seq_spec.
+  intros [eps eps_pos].
+  destruct (continuity_pt_locally f l) as [HH _].
+  specialize (HH cont).
+  destruct (HH (mkposreal eps eps_pos)).
+  generalize (lim x).
+  apply filter_imp; intros.
+  destruct (u x0); simpl in *; try lra.
+  apply H.
+  apply H0.
+Qed.
 
 Lemma is_Elim_seq_abs (u : nat -> Rbar) (l : Rbar) :
   is_Elim_seq u l -> is_Elim_seq (fun n => Rbar_abs (u n)) (Rbar_abs l).
