@@ -316,7 +316,7 @@ Qed.
 
   Lemma zsep2 (x y : R) :
     y - x > 0 ->
-    exists (n : Z), (n > 0)%Z /\ IZR(n)*(y-x) > 1.
+    {n | (n > 0)%Z /\ IZR(n)*(y-x) > 1}.
   Proof.
     destruct (archimed (/ (y - x))); intros.
     exists (up (/ (y - x))).
@@ -346,7 +346,7 @@ Qed.
   Lemma Q_dense :
     forall (l r : R),
     (l < r)%R ->
-    (exists (m:Q), l < Qreals.Q2R m < r).
+    { m:Q | l < Qreals.Q2R m < r}.
   Proof.
     intros.
     assert (r - l > 0) by lra.
@@ -363,6 +363,42 @@ Qed.
       apply H3.
    Qed.
 
+  Lemma Q_dense' :
+    forall (l r : R), l <> r ->
+    { m:Q | Rmin l r < Qreals.Q2R m < Rmax l r}.
+  Proof.
+    intros.
+    destruct (Rlt_dec l r).
+    - destruct (Q_dense  l r r0).
+      exists x.
+      rewrite Rmin_left by lra.
+      now rewrite Rmax_right by lra.
+    - destruct (Q_dense r l).
+      + lra.
+      + exists x.
+        rewrite Rmin_right by lra.
+        now rewrite Rmax_left by lra.
+  Qed.      
+
+  Program Fixpoint Qr (x:R) (n:nat) : Q
+    := match n with
+       | 0%nat => 0%Q
+       | S m => match Req_EM_T (Qreals.Q2R (Qr x m)) x with
+               | left _ => (Qr x m)
+               | right pf =>
+                 proj1_sig (Q_dense' ((x + Qreals.Q2R (Qr x m)) /2) x _)
+               end
+       end.
+  Next Obligation.
+    lra.
+  Defined.
+
+  Lemma Qr_lim x : is_lim_seq (fun n => Qreals.Q2R (Qr x n)) x.
+  Proof.
+    apply is_lim_seq_spec.
+    intros eps.
+  Admitted.
+  
   Lemma Q_neighborhood_included (D:R -> Prop) (x:R) :
         neighbourhood D x -> 
         exists (l r : Q), Q_interval l r x /\
