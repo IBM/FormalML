@@ -17,6 +17,8 @@ Require Import Event.
 Require Import Almost.
 Require Import utils.Utils.
 Require Import List.
+Require Import NumberIso.
+Require Import PushNeg.
 
 Set Bullet Behavior "Strict Subproofs". 
 
@@ -2702,15 +2704,217 @@ Qed.
           now rewrite Rmult_0_r.
   Qed.
   
-  Lemma Jensen (rv_X : Ts -> R) (phi : R -> R) (a : R) 
+  Lemma convex_prop1 (g : R -> R) :
+        (forall c x y, convex g c x y) ->
+        forall (x h1 h2: R),
+          0 < h1 < h2 ->
+          (g (x+h1) - g x)/h1 <= (g (x+h2) - g x)/h2. 
+  Proof.
+    intros.
+    assert (g (x + h1) <= ((h2-h1)/h2) * (g x) + (h1/h2) * (g (x + h2))).
+    {
+      unfold convex in H.
+      specialize (H ((h2-h1)/h2) x (x+h2)).
+      cut_to H.
+      - replace (1 - (h2 - h1)/ h2) with (h1/h2) in H.
+        eapply Rle_trans.
+        shelve.
+        apply H.
+        field; lra.
+        Unshelve.
+        right.
+        apply f_equal.
+        field; lra.
+      - split.
+        + apply Rmult_le_reg_r with (r := h2); try lra.
+          field_simplify; lra.
+        + apply Rmult_le_reg_r with (r := h2); try lra.
+          field_simplify; lra.          
+    }
+    apply Rmult_le_reg_r with (r := h1); try lra.
+    field_simplify; try lra.
+    apply Rplus_le_reg_r with (r := g x); try lra.
+    ring_simplify.
+    eapply Rle_trans.
+    apply H1.
+    field_simplify; lra.
+  Qed.
+
+  (* this proves derivatives are bounded *)
+  Lemma convex_prop2 (g : R -> R) :
+        (forall c x y, convex g c x y) ->
+        forall (x h1 h2: R),
+          0 < h1 -> 0 < h2 ->
+          (g x - g (x - h1))/h1 <= (g (x + h2) - g x)/h2.
+  Proof.
+    intros.
+    specialize (H (h2 /(h1+h2)) (x-h1) (x+h2)).
+    unfold convex in H.
+    cut_to H.
+    - replace (1 - h2 /(h1 + h2)) with (h1 /(h1 + h2)) in H by (field;lra).
+      apply Rmult_le_reg_r with (r := h1); try lra.
+      field_simplify; try lra.
+      apply Rmult_le_reg_r with (r := h2); try lra.      
+      field_simplify; try lra.
+      apply Rplus_le_reg_r with (r := g (x - h1)*h2); try lra.
+      ring_simplify.
+      apply Rplus_le_reg_r with (r := g (x)*h1); try lra.
+      ring_simplify.
+      apply Rmult_le_compat_r with (r := (h1 + h2)) in H; try lra.
+      field_simplify in H; try lra.
+      apply Rge_le; rewrite Rplus_comm; apply Rle_ge.
+      eapply Rle_trans.
+      shelve.
+      apply H.
+      Unshelve.
+      rewrite Rplus_comm.
+      apply Rplus_le_compat; apply Rmult_le_compat_r; try lra; right; apply f_equal; field; lra.
+   - split; apply Rmult_le_reg_r with (r := (h1 + h2)); try lra;
+       field_simplify; try lra.
+  Qed.
+      
+  Lemma convex_support_line0 (phi : R -> R) :
+    (forall c x y, convex phi c x y) ->
+    let del := fun (x:R) => real (Glb_Rbar (fun z => exists (eps:R), 
+                                                eps > 0 /\ 
+                                                (phi (x + eps) - phi(x))/eps = z)) in
+    forall x y,
+      (phi y) >= (phi x + (y-x)*(del x)).
+  Proof.
+    intros.
+    unfold del.
+    unfold Glb_Rbar, proj1_sig; match_destr.
+    unfold is_glb_Rbar in i.
+    unfold is_lb_Rbar in i.
+    destruct i.
+    destruct (Rlt_dec x y).
+    - assert (Rbar_le x0 ((phi y - phi x)/(y-x))).
+      {
+        apply H0.
+        exists (y-x).
+        split; try lra.
+        now replace (x + (y - x)) with (y) by lra.
+      }
+      destruct x0.
+      + simpl in H2.
+        apply Rmult_le_compat_r with (r := y-x) in H2; try lra.
+        unfold Rdiv in H2.
+        rewrite Rmult_assoc in H2.
+        rewrite <- Rinv_l_sym in H2; try lra.
+        rewrite Rmult_1_r in H2.
+        simpl; lra.
+      + now simpl in H2.
+      + generalize (convex_prop2 phi H x); intros.
+        specialize (H1 ((phi x - phi(x-1))/1)).
+        cut_to H1.
+        now simpl in H1.
+        intros.
+        destruct H4 as [? [? ?]].
+        simpl.
+        rewrite <- H5.
+        apply H3; lra.
+  - assert (y <= x) by lra.
+    destruct (Rlt_dec y x).
+    + destruct x0.
+      * generalize (convex_prop2 phi H x); intros.
+        specialize (H3 (x-y)).
+        apply Rle_ge.
+        apply Rplus_le_reg_l with (r := - phi x).
+        rewrite <- Rplus_assoc.
+        rewrite Rplus_opp_l.
+        rewrite Rplus_0_l.
+        apply Ropp_le_cancel.
+        simpl.
+        replace (- ((y - x) * r0)) with ((x - y)*r0) by lra.
+        replace (- (- phi x + phi y)) with (phi x - phi y) by lra.
+        apply Rmult_le_reg_l with (r := /(x-y)).
+        apply Rinv_pos; lra.
+        rewrite <- Rmult_assoc.
+        rewrite <- Rinv_l_sym.
+        rewrite Rmult_1_l.
+        rewrite Rmult_comm.
+        specialize (H1 ((phi x - phi y) * / (x - y))).
+        cut_to H1.
+        now simpl in H1.
+        intros.
+        simpl.
+        destruct H4 as [? [? ?]].
+        specialize (H3 x1).
+        cut_to H3; try lra.
+        replace (x - (x - y)) with (y) in H3 by lra.
+        unfold Rdiv in H3.
+        eapply Rle_trans.
+        apply H3.
+        rewrite <- H5.
+        right.
+        now unfold Rdiv.
+        apply Rgt_not_eq; lra.
+      * specialize (H0 ((phi (x + 1) - phi x)/1)).
+        cut_to H0.
+        now simpl in H0.
+        exists 1.
+        split; try lra.
+      * generalize (convex_prop2 phi H x); intros.
+        specialize (H1 ((phi x - phi(x-1))/1)).
+        cut_to H1.
+        now simpl in H1.
+        intros.
+        destruct H4 as [? [? ?]].
+        simpl.
+        rewrite <- H5.
+        apply H3; lra.
+    + assert (y = x) by lra.
+      rewrite H3.
+      lra.
+   Qed.
+    
+  Lemma convex_support_line (phi : R -> R) :
+        (forall c x y, convex phi c x y) ->
+        forall (x0 :R),
+         {a : R | 
+              forall x, a * (x - x0) <= phi x - phi x0}.
+  Proof.
+    intros.
+    generalize (convex_support_line0 phi H); intros.
+    simpl in H0.
+    exists  (Glb_Rbar (fun z : R => exists eps : R, eps > 0 /\ (phi (x0 + eps) - phi x0) / eps = z)).
+    intros.
+    specialize (H0 x0 x).
+    lra.
+  Qed.
+
+  Lemma convex_4_2_2_a (phi : R -> R) :
+    (forall c x y, convex phi c x y) ->
+    exists (a b : nat -> R),
+    forall (x: R),
+      is_sup_seq (fun n => (a n) * x + (b n)) (phi x).
+  Proof.
+    intros.
+    pose (n_to_Q_to_R := fun (n:nat) => Qreals.Q2R (iso_b n)).
+    pose (a := fun (n : nat) => proj1_sig (convex_support_line phi H (n_to_Q_to_R n))).
+    pose (b := fun (n : nat) => phi (n_to_Q_to_R n) - (a n) * (n_to_Q_to_R n)).
+    exists a; exists b.
+    unfold is_sup_seq; intros.
+    split.
+    - intros.
+      simpl.
+      unfold b, a.
+      unfold proj1_sig; match_destr.
+      specialize (r x).
+      destruct eps; simpl.
+      lra.
+    - 
+Admitted.
+
+  Lemma Jensen (rv_X : Ts -> R) (phi : R -> R)
         {rv : RandomVariable dom borel_sa rv_X}
         {isfe : IsFiniteExpectation prts rv_X} 
         {isfephi : IsFiniteExpectation prts (fun x => phi (rv_X x))} :    
-    (* following implied if phi is convex, constructive? *)
-    (forall x, a * (x - FiniteExpectation prts rv_X) <= phi x - phi (FiniteExpectation prts rv_X)) ->
+    (forall c x y, convex phi c x y) ->
     FiniteExpectation prts (fun x => phi (rv_X x)) >= phi (FiniteExpectation prts rv_X).
   Proof.
     intros.
+    destruct (convex_support_line phi H (FiniteExpectation prts rv_X)) as [a ?].
     pose (b := phi (FiniteExpectation prts rv_X) - a * FiniteExpectation prts rv_X).
     generalize (FiniteExpectation_scale prts a rv_X); intros.
     generalize (FiniteExpectation_const prts b); intros.
@@ -2723,158 +2927,542 @@ Qed.
     apply FiniteExpectation_le.
     intro x.
     rv_unfold.
-    specialize (H (rv_X x)).
+    specialize (r (rv_X x)).
     lra.
   Qed.
 
-  Lemma Jensen_abs (rv_X : Ts -> R) 
-        {rv : RandomVariable dom borel_sa rv_X}
-        {isfe : IsFiniteExpectation prts rv_X} 
-        {isfephi : IsFiniteExpectation prts (fun x => Rabs (rv_X x))} :    
-    FiniteExpectation prts (fun x => Rabs (rv_X x)) >= Rabs (FiniteExpectation prts rv_X).    
-  Proof.
-    destruct (Rle_dec 0 (FiniteExpectation prts rv_X)).
-    - apply (Jensen rv_X Rabs 1).
-      intros.
-      rewrite Rmult_1_l.
-      rewrite (Rabs_right (FiniteExpectation prts rv_X)); try lra.
-      unfold Rminus.
-      apply Rplus_le_compat_r.
-      apply Rle_abs.
-    - apply (Jensen rv_X Rabs (-1)).
-      intros.
-      assert (FiniteExpectation prts rv_X < 0) by lra.
-      rewrite (Rabs_left (FiniteExpectation prts rv_X)); try lra.
-      ring_simplify.
-      rewrite Rplus_comm.
-      apply Rplus_le_compat_l.
-      apply Rabs_maj2.
-   Qed.
-
-(*  
-  Theorem Domainated_convergence3
-          (fn : nat -> Ts -> R)
-          (f g : Ts -> R)
-          {rvn : forall n, RandomVariable dom borel_sa (fn n)}
-          {rvf : RandomVariable dom borel_sa f}
-          {rvg : RandomVariable dom borel_sa g} 
-          {isfen : forall n, IsFiniteExpectation prts (fn n)}
-          {isfe: IsFiniteExpectation prts f} : 
-    IsFiniteExpectation prts g ->
-    (forall n, rv_le (rvabs (fn n)) g) ->
-    (forall x, is_lim_seq (fun n => fn n x) (f x)) ->
-    is_lim_seq (fun n => FiniteExpectation prts (fn n)) (FiniteExpectation prts f).
-  Proof.
-    intros.
-    pose (gn := fun n => rvabs (rvminus (fn n) f)).
-    assert (forall n, IsFiniteExpectation prts (gn n)).
-    {
-      intros.
-      unfold gn.
-      apply IsFiniteExpectation_abs.
-      - typeclasses eauto.
-      - now apply IsFiniteExpectation_minus.
-    }
-    assert (forall x, is_lim_seq (fun n => gn n x) 0).
-    {
-      intro.
-      unfold gn.
-      rv_unfold.
-      replace (Finite 0) with (Rbar_abs 0).
-      - apply is_lim_seq_abs.
-        replace (0) with (f x + -1 * f x) by lra.
-        apply is_lim_seq_plus'; trivial.
-        apply is_lim_seq_const.
-      - simpl.
-        now rewrite Rabs_R0.
-    }
-    assert (rv_le (rvabs f) g).
-    {
-      intro x.
-      unfold rvabs.
-      assert (is_lim_seq (fun n => Rabs (fn n x)) (Rbar_abs (f x))).
-      - now apply is_lim_seq_abs.
-      - simpl in H4.
-        unfold rv_le, rvabs, pointwise_relation in H0.
-        generalize (is_lim_seq_le (fun n => Rabs (fn n x)) (fun n => g x) (Rabs (f x)) (g x)); intros.
-        apply H5; trivial.
-        apply is_lim_seq_const.
-    }
-    assert (forall n, rv_le (gn n) (rvscale 2 g)).
-    {
-      intros n x.
-      unfold gn; rv_unfold.
-      specialize (H0 n x); simpl in H0.
-      generalize (Rabs_triang (fn n x) (-1 * f x)); intros.
-      eapply Rle_trans.
-      - apply H5.
-      - replace (-1 * f x) with (- f x) by lra.
-        rewrite Rabs_Ropp.
-        specialize (H4 x); simpl in H4.
-        replace (2 * g x) with ((g x) + (g x)) by lra.
-        now apply Rplus_le_compat.
-    }
-    assert (forall n, NonnegativeFunction (rvminus (rvscale 2 g) (gn n))).
-    {
-      intros n x.
-      rv_unfold.
-      specialize (H5 n x).
-      unfold gn in H5.
-      unfold gn.
-      lra.
-    }
-    assert (forall x, is_LimInf_seq (fun n => (rvminus (rvscale 2 g) (gn n)) x) (2 * g x)).
-    {
-      intros.
-      apply is_lim_LimInf_seq.
-      rv_unfold; simpl.
-      replace (Finite (2 * g x)) with (Finite (2 * g x + 0)) by now rewrite Rplus_0_r.
-      apply is_lim_seq_plus'.
-      - apply is_lim_seq_const.
-      - replace (Finite 0) with (Rbar_mult (-1) (0)).
-        + now apply is_lim_seq_scal_l.
-        + now rewrite Rbar_mult_0_r.
-   }
-    assert (rv_eq (fun x => LimInf_seq (fun n => (rvminus (rvscale 2 g) (gn n)) x)) 
-                  (rvscale 2 g)).
-    {
-      intro x.
-      specialize (H7 x).
-      now apply is_LimInf_seq_unique in H7.
-    }
-    assert (isfe_Xn : forall n : nat, IsFiniteExpectation prts (rvminus (rvscale 2 g) (gn n))) by admit.
-    assert (isfe_limInf : IsFiniteExpectation prts
-                            (fun omega : Ts =>
-                             LimInf_seq (fun n : nat => rvminus (rvscale 2 g) (gn n) omega))) by admit.
-
-(*
-    generalize (Rbar_NN_Fatou (fun n => rvminus (rvscale 2 g) (gn n)) _ _ _ _); intros fatou.
-    cut_to fatou.
-    - rewrite (FiniteExpectation_ext prts _ _ H8) in fatou.
-      + rewrite LimInf_seq_ext with (g := fun n => (FiniteExpectation prts (rvscale 2 g)) - 
-                                                   (FiniteExpectation prts (gn n))) in fatou.
-        * Search FiniteExpectation.
-          rewrite <- FiniteNonnegExpectation in Fatou.
-      + intro x.
-        specialize (H8 x).
-        apply (f_equal (fun (z:Rbar) => real z)) in H8.
-        rewrite H8.
-
-        now simpl.
- *)       
-      
- *)
-
   (* from theory of probability 1 *)
   (* by Gordan Žitkovic ́ *)
+  
+  Lemma convex_le1 (phi : R -> R) :
+    (forall c x y, convex phi c x y) ->
+    forall (x1 x2 x3 : R),
+      x1 < x2 < x3 ->
+      ((phi x2) - (phi x1))/(x2 - x1) <= ((phi x3) - (phi x2))/(x3 - x2).
+  Proof.
+    intros.
+    unfold convex in H.
+    pose (c := (x3 - x2)/(x3-x1)).
+    specialize (H c x1 x3).
+    assert (c * x1 + (1-c)* x3 = x2).
+    {
+      unfold c.
+      apply Rmult_eq_reg_r with (r := (x3 - x1)); trivial; try lra.
+      field; try lra.
+    }  
+    rewrite H1 in H.
+    cut_to H.
+    apply Rmult_le_reg_r with (r := (x2 - x1)); try lra.
+    field_simplify; trivial; try lra.
+    apply Rmult_le_reg_r with (r := (-x2 + x3)); try lra.
+    field_simplify; trivial; try lra.
+    unfold Rminus.
+    repeat rewrite Rplus_assoc.
+    apply Rplus_le_compat_l.
+    unfold c in H.
+    apply Rmult_le_compat_r with (r := (x3 - x1)) in H.
+    field_simplify in H; lra.
+    left;lra.
+    unfold c.
+    split.
+    apply Rmult_le_reg_r with (r := (x3 - x1)); try lra.
+    - field_simplify; lra.
+    - apply Rmult_le_reg_r with (r := (x3 - x1)); try lra.
+      field_simplify; lra.
+  Qed.
+
+  Lemma convex_le2 (phi : R -> R) :
+    (forall c x y, convex phi c x y) ->
+    forall (x eps1 eps2 : R),
+      eps1 > 0 -> eps2 > 0 ->
+      (phi x - phi (x - eps1)) / eps1 <= (phi (x + eps2) - phi x) / eps2.
+  Proof.
+    intros.
+    generalize (convex_le1 phi H); intros.
+    specialize (H2 (x - eps1) x (x + eps2)).
+    replace (x - (x - eps1)) with (eps1) in H2 by lra.
+    replace (x + eps2 - x) with (eps2) in H2 by lra.
+    apply H2.
+    lra.
+   Qed.
+
+  Definition Rbar_convex (f : R -> Rbar) (a x y : R) :=
+    0<=a<=1 -> Rbar_le (f (a * x + (1-a) * y)) (Rbar_plus (Rbar_mult a (f x)) (Rbar_mult (1-a) (f y))).
+
+  Lemma Rbar_convex_sup_lines_affine (a b : nat -> R) :
+    forall c x y, Rbar_convex (fun x => Sup_seq (fun n => (a n)*x + (b n))) c x y.
+  Proof.
+    intros.
+    unfold Rbar_convex; intros.
+    rewrite Sup_seq_ext with (v := fun n => c * (a n * x + b n) + (1 - c) * (a n * y + b n)).
+    - generalize (Sup_seq_plus (fun n =>  c * (a n * x + b n)) (fun n =>  (1 - c) * (a n * y + b n))); intros.
+      rewrite Sup_seq_scale in H0; try lra.
+      rewrite Sup_seq_scale in H0; try lra.
+      apply H0.
+    - intros.
+      apply Rbar_finite_eq.
+      now ring_simplify.
+  Qed.
+
+  Lemma convex_sup_lines_affine (a b : nat -> R) :
+    (forall x, is_finite (Sup_seq (fun n => a n * x + b n))) ->
+    forall c x y, convex (fun x => real (Sup_seq (fun n => (a n)*x + (b n)))) c x y.
+  Proof.
+    intros.
+    unfold convex; intros.
+    assert (forall n,
+               Finite (a n * (c * x + (1 - c) * y) + b n) = 
+               Finite (c * (a n * x + b n) + (1 - c) * (a n * y + b n))).
+    {
+      intro.
+      apply Rbar_finite_eq.
+      lra.
+    }
+    rewrite (Sup_seq_ext _ _ H1).
+    - generalize (Sup_seq_plus (fun n =>  c * (a n * x + b n)) (fun n =>  (1 - c) * (a n * y + b n))); intros.
+      rewrite Sup_seq_scale in H2; try lra.
+      rewrite Sup_seq_scale in H2; try lra.
+      rewrite <- H in H2 .
+      replace (Rbar_mult (1 - c) (Sup_seq (fun x : nat => a x * y + b x))) with
+          (Finite (Rmult (1 - c) (Sup_seq (fun x : nat => a x * y + b x)))) in H2.
+      + replace (Sup_seq (fun x0 : nat => c * (a x0 * x + b x0) + (1 - c) * (a x0 * y + b x0))) with
+            (Finite (real (Sup_seq (fun x0 : nat => c * (a x0 * x + b x0) + (1 - c) * (a x0 * y + b x0)))))
+          in H2.
+        * apply H2.
+        * symmetry.
+          symmetry in H1.
+          rewrite (Sup_seq_ext _ _ H1).
+          rewrite <- H.
+          symmetry in H1.
+          now rewrite (Sup_seq_ext _ _ H1).
+      + symmetry.
+        now rewrite <- H.
+  Qed.
+
+  Lemma abs_ineq (a x b : R) :
+    a <= x ->
+    x <= b ->
+    Rabs x <= Rmax (- a) b.
+  Proof.
+    intros.
+    destruct (Rle_dec 0 x).
+    - rewrite Rabs_right; try lra.
+      eapply Rle_trans.
+      apply H0.
+      apply Rmax_r.
+    - rewrite Rabs_left; try lra.
+      apply Ropp_le_contravar in H.
+      eapply Rle_trans.
+      apply H.
+      apply Rmax_l.
+   Qed.
+
+  Lemma convex_Lipschitz_continuity (f : R -> R) (a b : R) :
+    (forall c x y, convex f c x y) ->
+    a < b ->
+    exists (M:R), 
+      forall (x y : R),
+        (a < x) /\ (x < y < b) ->
+        Rabs (f y - f x) <= M * (Rabs (y - x)).
+   Proof.
+     intros.
+     exists (Rmax (- (f a - f (a - 1))) (f (b + 1) - f b)).
+     intros.
+     generalize (convex_le1 f H (a-1) a x); intros.
+     generalize (convex_le1 f H a x y); intros.     
+     cut_to H2; try lra.
+     cut_to H3; try lra.
+     generalize (Rle_trans _ _ _ H2 H3); intros.
+     replace (a - (a - 1)) with 1 in H4 by lra.
+     generalize (convex_le1 f H x y b); intros.
+     generalize (convex_le1 f H y b (b+1)); intros.     
+     cut_to H5; try lra.
+     cut_to H6; try lra.
+     generalize (Rle_trans _ _ _ H5 H6); intros.
+     replace (b + 1 - b) with (1) in H7 by lra.
+     clear H2 H3 H5 H6.
+     rewrite Rdiv_1 in H4.
+     rewrite Rdiv_1 in H7.
+     generalize (abs_ineq _ _ _ H4 H7); intros.
+     rewrite Rabs_div in H2; try lra.
+     unfold Rdiv in H2.
+     apply Rmult_le_compat_r with (r := (Rabs (y - x))) in H2.
+     - rewrite Rmult_assoc in H2.
+       rewrite <- Rinv_l_sym with (r := Rabs (y - x)) in H2.
+       + now rewrite Rmult_1_r in H2.
+       + apply Rgt_not_eq.
+         apply Rabs_pos_lt.
+         lra.
+     - apply Rabs_pos.
+  Qed.
+
+   Lemma Rabs_mult_pos (x y m : R) :
+     0 < Rabs y ->
+     Rabs x <= m * Rabs y ->
+     0 <= m.
+   Proof.
+     intros.
+     assert (0 <= m * Rabs y).
+     {
+       apply Rle_trans with (r2 := Rabs x); trivial.
+       apply Rabs_pos.
+     }
+     apply Rmult_le_compat_r with (r := / (Rabs y)) in H1.
+     - rewrite Rmult_0_l in H1.
+       rewrite Rinv_r_simpl_l in H1; trivial.
+       now apply Rgt_not_eq.
+     - left.
+       now apply Rinv_0_lt_compat.
+   Qed.
+
+  Lemma convex_uniform_continuity (f : R -> R) (a b eps : R) :
+        (forall c x y, convex f c x y) ->
+        a < b ->
+        eps > 0 ->
+        exists (delta : R),
+          delta > 0 /\
+          forall (x y: R),
+            a < x /\ x < y /\ y < b ->
+            Rabs (y - x) < delta ->
+            Rabs (f y - f x) < eps.
+  Proof.
+    intros.
+    generalize (convex_Lipschitz_continuity f a b H H0); intros.
+    destruct H2 as [m ?].
+    destruct (Rlt_dec 0 m).
+    - exists (eps/m).
+      split.
+      + now apply Rdiv_lt_0_compat.
+      + intros.
+        specialize (H2 x y H3).
+        eapply Rle_lt_trans.
+        apply H2.
+        apply Rmult_lt_compat_r with (r := m) in H4; trivial.
+        unfold Rdiv in H4.
+        rewrite Rmult_assoc in H4.
+        rewrite <- Rinv_l_sym in H4.
+        * rewrite Rmult_1_r in H4.
+          now rewrite Rmult_comm.
+        * now apply Rgt_not_eq.
+    - destruct (Rlt_dec m 0).
+      + specialize (H2 (a + (b-a)/3) (a + (b-a)/3 + (b-a)/3)).
+        cut_to H2.
+        * assert (0 < Rabs (a + (b - a) / 3 + (b - a) / 3 - (a + (b - a) / 3))).
+          {
+            apply Rabs_pos_lt.
+            lra.
+          }
+          generalize (Rabs_mult_pos _ _ _ H3 H2); intros.
+          lra.
+        * split; lra.
+    + assert (m = 0 ) by lra.
+      exists 1.
+      split; try lra.
+      rewrite H3 in H2.
+      intros.
+      specialize (H2 _ _ H4).
+      rewrite Rmult_0_l in H2.
+      eapply Rle_lt_trans.
+      now apply H2.
+      apply H1.
+   Qed.
+
+  Lemma convex_continuous (f : R -> R) :
+    (forall c x y, convex f c x y) ->
+    forall (a:R), continuity_pt f a.
+  Proof.
+    intros.
+    repeat red.
+    intros.
+    destruct (convex_uniform_continuity f (a-1) (a+1) eps H); trivial; try lra.
+    destruct H1.
+    exists (Rmin x 1).
+    split.
+    - apply Rmin_Rgt.
+      split; lra.
+    - intros.
+      destruct H3.
+      unfold dist in H4; simpl in H4.
+      unfold R_dist in H4.
+      destruct (Rlt_dec a x0).
+      + apply Rmin_Rgt in H4.
+        destruct H4.          
+        apply H2; trivial.
+        split; try lra.
+        split; trivial.
+        apply Rabs_lt_between in H5.
+        lra.
+     + assert (x0 <= a) by lra.
+       apply Rmin_Rgt in H4. 
+       destruct H4.
+       destruct (Rlt_dec x0 a).
+       * specialize (H2 x0 a).
+         rewrite dist_sym.
+         apply H2.
+         apply Rabs_lt_between in H6.         
+         split; lra.
+         apply Rabs_lt_between in H4.
+         apply Rabs_lt_between.
+         lra.
+       * assert (x0 = a) by lra.
+         rewrite H7.
+         unfold dist; simpl.
+         now rewrite R_dist_eq.
+  Qed.      
+
   Lemma convex_4_2_2 (phi : R -> R) :
     (forall c x y, convex phi c x y) ->
     exists (a b : nat -> R),
     forall (x: R),
       is_sup_seq (fun n => (a n) * x + (b n)) (phi x).
   Proof.
-    Admitted.
+    intros.
+    pose (n_to_Q_to_R := fun (n:nat) => Qreals.Q2R (iso_b n)).
+    pose (del := fun (x:R) => Glb_Rbar (fun z => exists (eps:R), eps > 0 /\ 
+                                                                 (phi (x + eps) - phi(x))/eps = z)).
+    pose (a := fun (n : nat) => real (del (n_to_Q_to_R n))).
+    pose (b := fun (n : nat) => phi (n_to_Q_to_R n) - (a n) * (n_to_Q_to_R n)).
+    exists a; exists b.
+    intros.
+    apply Rbar_is_lub_sup_seq.
+    assert (forall (x eps1 eps2 : R),
+               (eps1 > 0) -> (eps2 > 0) ->
+               (Rbar_le ((phi x - phi (x-eps1))/eps1) (del x)) /\
+               (Rbar_le (del x) ((phi (x + eps2) - phi x)/eps2))).
+    {
+      intros.
+      unfold del.
+      unfold Glb_Rbar, proj1_sig.
+      match_destr.
+      destruct i.
+      unfold is_lb_Rbar in *.
+      split.
+      - apply H3; intros.
+        destruct H4 as [? [? ?]].
+        rewrite <- H5.
+        now apply convex_le2.
+      - apply H2.
+        exists eps2.
+        split; trivial.
+    }
+    unfold Rbar_is_lub; unfold Rbar_is_upper_bound.
+    split.
+    - intros.
+      destruct H1.
+      destruct (Rle_dec (n_to_Q_to_R x1) x).
+      + destruct (Req_EM_T (n_to_Q_to_R x1) x).
+        * assert (x0 = phi x).
+          {
+            unfold a, b in H1.
+            unfold a, del in H1.
+            unfold Glb_Rbar, proj1_sig in H1.
+            match_destr_in H1.
+            rewrite e in H1.
+            rewrite H1.
+            apply Rbar_finite_eq; lra.
+          }
+          rewrite H2; apply Rbar_le_refl.
+        * pose (eps := x - (n_to_Q_to_R x1)).
+          assert (eps > 0) by (unfold eps; lra).
+          assert (a x1 * x + b x1 = a x1 * eps + phi (n_to_Q_to_R x1)) by
+              (unfold b, eps; lra).
+          assert (a x1 <= (phi x - phi (n_to_Q_to_R x1))/eps).
+          {
+            unfold a, eps.
+            specialize (H0 (n_to_Q_to_R x1) eps eps H2 H2).
+            destruct H0.
+            unfold eps in H4.
+            replace  (n_to_Q_to_R x1 + (x - n_to_Q_to_R x1)) with (x) in H4 by lra.
+            assert (is_finite (del (n_to_Q_to_R x1))) by apply (is_finite_betw _ _ _ H0 H4).
+            rewrite <- H5 in H4.
+            apply H4.
+          }
+          apply Rmult_le_compat_r with (r := eps) in H4.
+          unfold Rdiv in H4.
+          rewrite Rmult_assoc in H4.
+          rewrite Rinv_l, Rmult_1_r in H4.
+          apply Rplus_le_compat_r with (r := phi (n_to_Q_to_R x1)) in H4.
+          rewrite <- H3 in H4.
+          ring_simplify in H4.
+          rewrite H1.
+          now simpl.
+          now apply Rgt_not_eq.
+          lra.
+      + assert (x < (n_to_Q_to_R x1)) by lra.
+        pose (eps := n_to_Q_to_R x1 - x).
+        assert (eps > 0) by (unfold eps; lra).
+        assert (a x1 * x + b x1 = a x1 * (x - n_to_Q_to_R x1) + phi (n_to_Q_to_R x1)) by (unfold b, eps; lra).
+        assert (a x1 >= (phi x - phi (n_to_Q_to_R x1))/(x - n_to_Q_to_R x1)).
+        {
+          unfold a, eps.
+          specialize (H0 (n_to_Q_to_R x1) eps eps H3 H3).
+          unfold eps in H0.
+          destruct H0.
+          apply Rle_ge.
+          replace  (n_to_Q_to_R x1 - (n_to_Q_to_R x1 - x)) with (x) in H0 by lra.
+          assert (is_finite (del (n_to_Q_to_R x1))) by apply (is_finite_betw _ _ _ H0 H5).
+          rewrite <- H6 in H0.
+          replace ((phi x - phi (n_to_Q_to_R x1)) / (x - n_to_Q_to_R x1)) with
+                  ((phi (n_to_Q_to_R x1) - phi x) / (n_to_Q_to_R x1 - x)).
+          apply H0.
+          replace  (phi x - phi (n_to_Q_to_R x1)) with (- (phi (n_to_Q_to_R x1) - phi x)) by lra.
+          replace  (x - n_to_Q_to_R x1) with (-  (n_to_Q_to_R x1 - x)) by lra.
+          
+          rewrite Ropp_div.
+          rewrite Ropp_div_den.
 
+          now rewrite Ropp_involutive.
+          apply Rgt_not_eq.
+          lra.
+        }
+        apply Ropp_ge_contravar in H5.
+        apply Rmult_ge_compat_r with (r := eps) in H5; try lra.
+        rewrite <- Ropp_mult_distr_l in H5.
+        rewrite Rmult_comm in H5.
+        rewrite Ropp_mult_distr_l in H5.        
+        replace (- a x1 * eps) with (a x1 * (- eps)) in H5 by lra.
+        unfold eps in H5.
+        replace (- (n_to_Q_to_R x1 - x)) with ( x - n_to_Q_to_R x1 ) in H5 by lra.
+        apply Rge_le in H5.
+        unfold Rdiv in H5.
+        rewrite Rmult_comm with (r2 := / (x - n_to_Q_to_R x1)) in H5.
+        rewrite <- Rmult_assoc in H5.
+        rewrite Rinv_r in H5.
+        rewrite Rmult_1_l in H5.
+        apply Rplus_le_compat_r with (r := phi (n_to_Q_to_R x1)) in H5.
+        replace (phi x - phi (n_to_Q_to_R x1) + phi (n_to_Q_to_R x1)) with (phi x) in H5 by lra.
+        rewrite H1.
+        unfold b.
+        ring_simplify in H5.
+        simpl.
+        ring_simplify.
+        apply H5.
+        apply Rlt_not_eq.
+        lra.
+    - intros.
+      assert (forall n, Rbar_le (a n * x + b n) b0).
+      {
+        intros.
+        apply H1.
+        now exists n.
+      }
+      destruct b0.
+      + simpl in H2.
+        simpl.
+        assert (~ (phi x <= r) -> ~ (forall n : nat, a n * x + b n <= r)).
+        {
+          intros.
+          apply Rnot_le_gt in H3.
+          rewrite not_forall.
+          generalize (convex_continuous phi H); intros.
+          
+          generalize (convex_sup_lines_affine a b); intros.          
+          cut_to H5.
+          - generalize (convex_continuous _ H5); intros.
+            assert (forall (x0:R), continuity_pt (fun x => phi x - Sup_seq (fun n => a n * x + b n)) x0).
+            {
+              intros.
+              now apply continuity_pt_minus.
+            }
+            assert (exists (delta:R), delta>0 /\ 
+                                 forall (x0:R), Rabs(x-x0)<delta -> 
+                                                phi x0 > r).
+            {
+              admit.
+            }
+            destruct H8 as [? [? ?]].
+            generalize (Q_dense x (x + x0)); intros.
+            cut_to H10; try lra.
+            destruct H10.
+            pose (mm :=  iso_f (Isomorphism := Q_nat_iso) x1).
+            generalize (iso_b_f (Isomorphism := Q_nat_iso) x1); intros.
+            assert (phi (Qreals.Q2R x1) > r).
+            {
+              apply H9.
+              apply Rabs_lt_between.
+              lra.
+            }
+          admit.
+         - admit.
+        }
+        rewrite not_impl_contr in H3.
+        now apply H3.
+      + now simpl.
+      + specialize (H2 0%nat).
+        now simpl in H2.
+     Admitted.
+
+(*
+      assert ((exists (x:R), phi x > Sup_seq (fun n => a n * x + b n)) -> False).
+      {
+        intros.
+        generalize (convex_continuous phi H); intros.
+        generalize (Rbar_convex_sup_lines_affine a b); intros.
+        assert (forall (x0:R), continuity_pt (fun x => phi x - Sup_seq (fun n => a n * x + b n)) x0).
+        {
+          intros.
+          apply continuity_pt_minus.
+          apply H5.
+          admit.
+        }
+        destruct H4.
+        assert (exists (delta:R), delta>0 /\ 
+                                 forall (x0:R), Rabs(x1-x0)<delta -> 
+                                                phi x0 > Sup_seq (fun n => a n * x0 + b n)).
+        {
+          specialize (H5 x1).
+          repeat red in H5.
+          specialize (H5 ((phi x1) - (Sup_seq (fun n : nat => a n * x1 + b n)))).
+          cut_to H5; try lra.
+          destruct H5 as [? [? ?]].
+          exists x2.
+          split; trivial.
+          intros.
+          specialize (H8 x3).
+          cut_to H8.
+          - unfold dist in H8; simpl in H8.
+            rewrite R_dist_sym in H8.
+            unfold R_dist in H8.
+            apply Rabs_lt_between in H8.
+            destruct H8.
+            unfold Rminus in H10.
+            admit.
+          - split.
+            + unfold D_x.
+              split; try easy.
+              admit.
+            + now rewrite R_dist_sym.
+        }
+        destruct H8 as [? [? ?]].
+        generalize (Q_dense x (x + x0)); intros.
+        cut_to H10; try lra.
+        destruct H10.
+        pose (mm :=  iso_f (Isomorphism := Q_nat_iso) x3).
+        generalize (iso_b_f (Isomorphism := Q_nat_iso) x3); intros.
+        assert (phi (Qreals.Q2R x3) > Sup_seq (fun n => a n * (Qreals.Q2R x3) + b n)).
+        {
+          apply H9.
+          apply Rabs_lt_between.
+          lra.
+        }
+        assert (exists m, phi (n_to_Q_to_R m) > Sup_seq (fun n => a n * (n_to_Q_to_R m) + b n)) by admit.
+        destruct H10.
+        assert (Sup_seq (fun n : nat => a n * n_to_Q_to_R x2 + b n) >=
+                a x2 * (n_to_Q_to_R x2) + b x2).
+        {
+          admit.
+        }
+        assert (a x2 * (n_to_Q_to_R x2) + b x2 = phi (n_to_Q_to_R x2)).
+        {
+          admit.
+        }
+        rewrite H12 in H11.
+        generalize (Rgt_ge_trans _ _ _ H10 H11); intros.
+        lra.
+      }
+      
+    Admitted.
+*)
 
   Lemma is_condexp_Jensen (rv_X ce phice: Ts -> R) (phi : R -> R) (a b : nat -> R) 
         {rv : RandomVariable dom borel_sa rv_X}
