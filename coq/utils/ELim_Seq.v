@@ -2794,7 +2794,89 @@ Proof.
   - rewrite ELim_seq_inv; trivial.
 Qed.
 
+(*
 
+Lemma ex_lim_seq_adj (u v : nat -> R) :
+  (forall n, u n <= u (S n)) -> (forall n, v (S n) <= v n)
+  -> is_lim_seq (fun n => v n - u n) 0
+  -> ex_finite_lim_seq u /\ ex_finite_lim_seq v /\ Lim_seq u = Lim_seq v.
+
+Image by a continuous function
+
+Lemma is_lim_seq_continuous (f : R -> R) (u : nat -> R) (l : R) :
+  continuity_pt f l -> is_lim_seq u l
+  -> is_lim_seq (fun n => f (u n)) (f l).
+
+ *)
+
+Lemma is_Elim_seq_abs (u : nat -> Rbar) (l : Rbar) :
+  is_Elim_seq u l -> is_Elim_seq (fun n => Rbar_abs (u n)) (Rbar_abs l).
+Proof.
+  intros.
+  apply is_Elim_seq_spec in H.
+  apply is_Elim_seq_spec.
+  destruct l.
+  - intros eps.
+    generalize (H eps).
+    apply filter_imp; intros.
+    destruct (u x); simpl in *; try lra.
+    unfold Rabs in *.
+    destruct (Rcase_abs r0)
+    ; destruct (Rcase_abs r)
+    ; match_destr_in H0; try lra
+    ; match_destr; lra.
+  - intros ?.
+    generalize (H M).
+    apply filter_imp; intros.
+    eapply Rbar_lt_le_trans; try eapply H0.
+    destruct (u x); simpl in *; try lra.
+    apply Rle_abs.
+  - intros M.
+    generalize (H (- M)).
+    apply filter_imp; intros.
+    destruct (u x); simpl in *; try lra.
+    unfold Rabs.
+    match_destr; lra.
+Qed.
+  
+Lemma ex_Elim_seq_abs (u : nat -> Rbar) :
+  ex_Elim_seq u -> ex_Elim_seq (fun n => Rbar_abs (u n)).
+Proof.
+  intros.
+  apply ELim_seq_correct in H.
+  eapply is_Elim_seq_ex_Elim_seq.
+  eapply is_Elim_seq_abs; eauto.
+Qed.
+
+Lemma ELim_seq_abs (u : nat -> Rbar) :
+  ex_Elim_seq u ->
+  ELim_seq (fun n => Rbar_abs (u n)) = Rbar_abs (ELim_seq u).
+Proof.
+  intros.
+  apply ELim_seq_correct in H.
+  eapply is_Elim_seq_unique.
+  eapply is_Elim_seq_abs; eauto.
+Qed.
+
+Lemma is_Elim_seq_abs_0 (u : nat -> Rbar) :
+  is_Elim_seq u 0 <-> is_Elim_seq (fun n => Rbar_abs (u n)) 0.
+Proof.
+  intros.
+  split; intros HH.
+  - apply is_Elim_seq_abs in HH.
+    now simpl in HH; rewrite Rabs_R0 in HH.
+  - apply is_Elim_seq_spec in HH.
+    apply is_Elim_seq_spec.
+    intros eps.
+    specialize (HH eps).
+    revert HH; apply filter_imp; intros.
+    destruct (u x); simpl in *; try lra.
+    rewrite Ropp_0 in H.
+    rewrite Ropp_0.
+    rewrite Rplus_0_r in H.
+    rewrite Rplus_0_r.
+    now rewrite Rabs_Rabsolu in H.
+Qed.
 
 Lemma is_Elim_seq_geom (q : R) :
   Rabs q < 1 -> is_Elim_seq (fun n => q ^ n) 0.
