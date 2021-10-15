@@ -1719,7 +1719,7 @@ Proof.
   - etransitivity; eauto.
 Qed.
                            
-Lemma is_Elim_seq_decr_compare (u : nat -> Rbar) (l : R) :
+Lemma is_Elim_seq_decr_compare (u : nat -> Rbar) (l : Rbar) :
   is_Elim_seq u l
   -> (forall n, Rbar_le (u (S n)) (u n))
   -> forall n, Rbar_le l (u n).
@@ -1732,7 +1732,7 @@ Proof.
   - apply is_Elim_seq_const.
 Qed.
 
-Lemma is_Elim_seq_incr_compare (u : nat -> Rbar) (l : R) :
+Lemma is_Elim_seq_incr_compare (u : nat -> Rbar) (l : Rbar) :
   is_Elim_seq u l
   -> (forall n, Rbar_le (u n) (u (S n)))
   -> forall n, Rbar_le (u n) l.
