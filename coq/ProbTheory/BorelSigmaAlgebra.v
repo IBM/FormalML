@@ -393,12 +393,169 @@ Qed.
     lra.
   Defined.
 
-  Lemma Qr_lim x : is_lim_seq (fun n => Qreals.Q2R (Qr x n)) x.
+  Lemma Qr_dist (x : R) (n : nat) :
+    Rabs (Qreals.Q2R (Qr x n) - x) <= (Rabs x) / (2^n).
   Proof.
+    induction n.
+    - simpl.
+      rewrite RMicromega.Q2R_0.
+      unfold Rminus.
+      rewrite Rplus_0_l.
+      rewrite Rabs_Ropp.
+      lra.
+    - simpl.
+  Admitted.
+
+  Lemma Qr_opp (x : R) (n : nat) :
+    Qr (-x) n = Qopp (Qr x n).
+  Proof.
+    induction n.
+    - simpl.
+      unfold Qopp.
+      now simpl.
+    - simpl.
+      Admitted.
+    
+
+  Lemma ln_nneg x :
+    1 <= x -> 0 <= ln x.
+  Proof.
+    intros.
+    destruct (Rlt_dec 1 x).
+    - left.
+      apply ln_increasing in r; try lra.
+      now rewrite ln_1 in r.
+    - assert (x = 1) by lra.
+      rewrite H0.
+      rewrite ln_1; lra.
+   Qed.
+
+  Lemma Qr_lim_pos x : 
+    x > 0 ->
+    is_lim_seq (fun n => Qreals.Q2R (Qr x n)) x.
+  Proof.
+    intro xpos.
     apply is_lim_seq_spec.
     intros eps.
-  Admitted.
-  
+    destruct (Rle_dec 1 (x / eps)).
+    - exists (Z.to_nat(up((ln (x/eps))/(ln 2)))).
+      intros.
+      generalize (Qr_dist x n); intros.
+      eapply Rle_lt_trans.
+      apply H0.
+      apply Rmult_lt_reg_r with (r := 2^n).
+      apply pow_lt; lra.
+      unfold Rdiv.
+      rewrite Rmult_assoc.
+      rewrite <- Rinv_l_sym.
+      + rewrite Rmult_1_r.
+        apply Rmult_lt_reg_l with (r := /eps).
+        * apply Rinv_pos.
+          apply cond_pos.
+        * rewrite <- Rmult_assoc.
+          rewrite <- Rinv_l_sym.
+          rewrite Rmult_1_l.
+          replace (/eps * x) with (x / eps) by lra.
+          -- destruct (archimed (ln (x / eps)/(ln 2))).
+             assert (0 < ln 2).
+             {
+               generalize ln_lt_2; intros.
+               lra.
+             }
+             apply le_INR in H.
+             rewrite INR_up_pos in H.
+             ++ apply Rgt_lt in H1.
+                generalize (Rlt_le_trans _ _ _ H1 H); intros.
+                apply Rmult_lt_compat_r with (r := ln 2) in H4; trivial.
+                unfold Rdiv in H4.
+                rewrite Rmult_assoc in H4.      
+                rewrite <- Rinv_l_sym in H4.
+                ** rewrite Rmult_1_r in H4.
+                   unfold Rdiv.
+                   rewrite <- ln_pow in H4; try lra.
+                   apply ln_lt_inv; trivial.
+                   --- apply Rmult_lt_0_compat; trivial.
+                       apply Rinv_pos.
+                       apply cond_pos.
+                       rewrite Rabs_right; lra.
+                   --- apply pow_lt; lra.
+                   --- rewrite Rabs_right; try lra.
+                       now rewrite Rmult_comm.
+                ** now apply Rgt_not_eq.
+             ++ unfold Rdiv.
+                apply Rle_ge.
+                apply Rmult_le_pos.
+                ** now apply ln_nneg.
+                ** left.
+                   now apply Rinv_pos.
+          -- apply Rgt_not_eq, cond_pos.
+      + apply Rgt_not_eq.
+        apply pow_lt;lra.
+    - exists (1%nat).
+      intros.
+      assert (x / eps < 1) by lra.
+      generalize (Qr_dist x n0); intros.
+      eapply Rle_lt_trans.
+      apply H1.
+      unfold Rdiv.
+      apply Rmult_lt_reg_r with (r := 2^n0).
+      apply pow_lt; lra.
+      rewrite Rmult_assoc.
+      rewrite <- Rinv_l_sym.
+      + rewrite Rmult_1_r.
+        apply Rmult_lt_reg_l with (r := /eps).
+        * apply Rinv_pos.
+          apply cond_pos.
+        * rewrite <- Rmult_assoc.
+          rewrite <- Rinv_l_sym.
+          rewrite Rmult_1_l.
+          rewrite Rmult_comm.
+          unfold Rdiv in H0.
+          eapply Rlt_trans.
+          rewrite Rabs_right; try lra.
+          apply H0.
+          -- apply Rlt_pow_R1; try lra; lia.
+          -- apply Rgt_not_eq, cond_pos.
+      + apply Rgt_not_eq.
+        apply pow_lt; lra.
+   Qed.
+
+  Lemma Qr_lim_neg x : 
+    x < 0 ->
+    is_lim_seq (fun n => Qreals.Q2R (Qr x n)) x.
+  Proof.
+    intros.
+    generalize (Qr_opp x); intros.
+    apply is_lim_seq_ext with (u := fun n => - Qreals.Q2R (Qr (-x) n)).
+    - intros.
+      rewrite H0.
+      rewrite Qreals.Q2R_opp.
+      lra.
+    - apply is_lim_seq_opp.
+      simpl.
+      setoid_rewrite Ropp_involutive.
+      apply Qr_lim_pos.
+      lra.
+  Qed.
+
+  Lemma Qr_lim x :
+    is_lim_seq (fun n => Qreals.Q2R (Qr x n)) x.
+  Proof.
+    destruct (Rlt_dec 0 x).
+    - now apply Qr_lim_pos.
+    - destruct (Rlt_dec x 0).
+      + now apply Qr_lim_neg.
+      + assert (x = 0) by lra.
+        apply is_lim_seq_ext with (u := fun n => 0).
+        * intros.
+          rewrite H.
+          induction n1.
+          -- simpl.
+             now rewrite RMicromega.Q2R_0.
+          -- simpl.
+             Admitted.
+        
+
   Lemma Q_neighborhood_included (D:R -> Prop) (x:R) :
         neighbourhood D x -> 
         exists (l r : Q), Q_interval l r x /\
