@@ -432,6 +432,7 @@ Qed.
       match_destr.
   Admitted.
 
+(*
   Lemma Qr_monotonic (x : R) (n : nat) :
     0 < x ->
     Qle (Qr x n) (Qr x (S n)).
@@ -443,7 +444,8 @@ Qed.
       match_destr.
       unfold proj1_sig; match_destr.
       Admitted.
-
+ *)
+  
   Lemma ln_nneg x :
     1 <= x -> 0 <= ln x.
   Proof.
