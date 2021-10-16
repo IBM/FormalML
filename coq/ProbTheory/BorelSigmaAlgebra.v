@@ -380,18 +380,42 @@ Qed.
         now rewrite Rmax_left by lra.
   Qed.      
 
+(*
   Program Fixpoint Qr (x:R) (n:nat) : Q
     := match n with
        | 0%nat => 0%Q
-       | S m => match Req_EM_T (Qreals.Q2R (Qr x m)) x with
-               | left _ => (Qr x m)
+       | S m => 
+           let old := Qr x m in
+           match Req_EM_T (Qreals.Q2R old) x with
+               | left _ => old
                | right pf =>
-                 proj1_sig (Q_dense' ((x + Qreals.Q2R (Qr x m)) /2) x _)
+                 proj1_sig (Q_dense' ((x + Qreals.Q2R old) /2) x _)
                end
        end.
   Next Obligation.
     lra.
   Defined.
+ *)
+
+  Lemma Qrnext_prop (x : R) (prev : Q) :
+    (Qreals.Q2R prev <> x) ->
+    (x + Qreals.Q2R prev) / 2 <> x.
+  Proof.
+    lra.
+  Qed.
+  
+  Definition Qrnext (x : R) (prev : Q) :Q
+    := match (Req_EM_T (Qreals.Q2R prev) x) with
+       | left _ => prev
+       | right pf =>
+         proj1_sig (Q_dense' ((x + Qreals.Q2R prev) /2) x (Qrnext_prop x prev pf))
+       end.
+
+  Fixpoint Qr (x : R) (n : nat) : Q
+    := match n with
+       | 0%nat => 0%Q
+       | S m => Qrnext x (Qr x m)
+       end.
 
   Lemma Qr_dist (x : R) (n : nat) :
     Rabs (Qreals.Q2R (Qr x n) - x) <= (Rabs x) / (2^n).
@@ -404,18 +428,62 @@ Qed.
       rewrite Rabs_Ropp.
       lra.
     - simpl.
+      unfold Qrnext.
+      match_destr.
   Admitted.
+  
+  Lemma Q_dense'_opp (l r : R) 
+        (neq : l <> r) 
+        (neqopp : -l <> -r) :    
+    proj1_sig (Q_dense' l r neq) = Qopp (proj1_sig (Q_dense' (-l) (-r) neqopp)).
+  Proof.
+    Admitted.
 
   Lemma Qr_opp (x : R) (n : nat) :
-    Qr (-x) n = Qopp (Qr x n).
+    Qeq (Qr (-x) n) (Qopp (Qr x n)).
   Proof.
     induction n.
     - simpl.
       unfold Qopp.
       now simpl.
     - simpl.
+      unfold Qrnext.
+      repeat match_destr.
+      + rewrite IHn in e.
+        rewrite Qreals.Q2R_opp in e.
+        apply (f_equal Ropp) in e.
+        rewrite Ropp_involutive in e.
+        rewrite Ropp_involutive in e.
+        congruence.
+      + admit.
+      + admit.
+  Admitted.
+
+  Lemma Qr_monotonic (x : R) (n : nat) :
+    0 < x ->
+    Qle (Qr x n) (Qr x (S n)).
+  Proof.
+    intros.
+    induction n.
+    - simpl.
+      unfold Qrnext.
+      match_destr.
+      unfold proj1_sig; match_destr.
       Admitted.
-    
+
+  Lemma Qr_zero (n : nat) :
+    Qr 0 n = Qmake 0 1.
+  Proof.
+    induction n.
+    - now simpl.
+    - simpl.
+      unfold Qrnext.
+      match_destr.
+      assert (Qreals.Q2R (Qr 0 n) <> 0) by easy.
+      rewrite IHn in H.
+      rewrite RMicromega.Q2R_0 in H.
+      tauto.
+  Qed.
 
   Lemma ln_nneg x :
     1 <= x -> 0 <= ln x.
@@ -549,13 +617,12 @@ Qed.
         apply is_lim_seq_ext with (u := fun n => 0).
         * intros.
           rewrite H.
-          induction n1.
-          -- simpl.
-             now rewrite RMicromega.Q2R_0.
-          -- simpl.
-             Admitted.
-        
-
+          rewrite Qr_zero.
+          now rewrite RMicromega.Q2R_0.
+        * rewrite H.
+          apply is_lim_seq_const.        
+  Qed.
+  
   Lemma Q_neighborhood_included (D:R -> Prop) (x:R) :
         neighbourhood D x -> 
         exists (l r : Q), Q_interval l r x /\
