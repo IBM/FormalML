@@ -431,33 +431,6 @@ Qed.
       unfold Qrnext.
       match_destr.
   Admitted.
-  
-  Lemma Q_dense'_opp (l r : R) 
-        (neq : l <> r) 
-        (neqopp : -l <> -r) :    
-    proj1_sig (Q_dense' l r neq) = Qopp (proj1_sig (Q_dense' (-l) (-r) neqopp)).
-  Proof.
-    Admitted.
-
-  Lemma Qr_opp (x : R) (n : nat) :
-    Qeq (Qr (-x) n) (Qopp (Qr x n)).
-  Proof.
-    induction n.
-    - simpl.
-      unfold Qopp.
-      now simpl.
-    - simpl.
-      unfold Qrnext.
-      repeat match_destr.
-      + rewrite IHn in e.
-        rewrite Qreals.Q2R_opp in e.
-        apply (f_equal Ropp) in e.
-        rewrite Ropp_involutive in e.
-        rewrite Ropp_involutive in e.
-        congruence.
-      + admit.
-      + admit.
-  Admitted.
 
   Lemma Qr_monotonic (x : R) (n : nat) :
     0 < x ->
@@ -470,20 +443,6 @@ Qed.
       match_destr.
       unfold proj1_sig; match_destr.
       Admitted.
-
-  Lemma Qr_zero (n : nat) :
-    Qr 0 n = Qmake 0 1.
-  Proof.
-    induction n.
-    - now simpl.
-    - simpl.
-      unfold Qrnext.
-      match_destr.
-      assert (Qreals.Q2R (Qr 0 n) <> 0) by easy.
-      rewrite IHn in H.
-      rewrite RMicromega.Q2R_0 in H.
-      tauto.
-  Qed.
 
   Lemma ln_nneg x :
     1 <= x -> 0 <= ln x.
@@ -498,15 +457,14 @@ Qed.
       rewrite ln_1; lra.
    Qed.
 
-  Lemma Qr_lim_pos x : 
-    x > 0 ->
+  Lemma Qr_lim x : 
     is_lim_seq (fun n => Qreals.Q2R (Qr x n)) x.
   Proof.
     intro xpos.
     apply is_lim_seq_spec.
     intros eps.
-    destruct (Rle_dec 1 (x / eps)).
-    - exists (Z.to_nat(up((ln (x/eps))/(ln 2)))).
+    destruct (Rle_dec 1 ((Rabs x) / eps)).
+    - exists (Z.to_nat(up((ln ((Rabs x)/eps))/(ln 2)))).
       intros.
       generalize (Qr_dist x n); intros.
       eapply Rle_lt_trans.
@@ -523,8 +481,8 @@ Qed.
         * rewrite <- Rmult_assoc.
           rewrite <- Rinv_l_sym.
           rewrite Rmult_1_l.
-          replace (/eps * x) with (x / eps) by lra.
-          -- destruct (archimed (ln (x / eps)/(ln 2))).
+          replace (/eps * (Rabs x)) with ((Rabs x) / eps) by lra.
+          -- destruct (archimed (ln ((Rabs x) / eps)/(ln 2))).
              assert (0 < ln 2).
              {
                generalize ln_lt_2; intros.
@@ -542,13 +500,16 @@ Qed.
                    unfold Rdiv.
                    rewrite <- ln_pow in H4; try lra.
                    apply ln_lt_inv; trivial.
-                   --- apply Rmult_lt_0_compat; trivial.
-                       apply Rinv_pos.
-                       apply cond_pos.
-                       rewrite Rabs_right; lra.
+                   --- apply Rmult_lt_0_compat.
+                       +++ assert (0 < Rabs x / eps) by lra.
+                           unfold Rdiv in H5.
+                           apply Rmult_lt_compat_r with (r := eps) in H5.
+                           *** rewrite Rmult_assoc in H5.
+                               rewrite <- Rinv_l_sym in H5; try lra.
+                               apply Rgt_not_eq, cond_pos.
+                           *** apply cond_pos.
+                       +++ apply Rinv_pos, cond_pos.
                    --- apply pow_lt; lra.
-                   --- rewrite Rabs_right; try lra.
-                       now rewrite Rmult_comm.
                 ** now apply Rgt_not_eq.
              ++ unfold Rdiv.
                 apply Rle_ge.
@@ -561,7 +522,7 @@ Qed.
         apply pow_lt;lra.
     - exists (1%nat).
       intros.
-      assert (x / eps < 1) by lra.
+      assert ((Rabs x) / eps < 1) by lra.
       generalize (Qr_dist x n0); intros.
       eapply Rle_lt_trans.
       apply H1.
@@ -576,52 +537,16 @@ Qed.
           apply cond_pos.
         * rewrite <- Rmult_assoc.
           rewrite <- Rinv_l_sym.
-          rewrite Rmult_1_l.
-          rewrite Rmult_comm.
-          unfold Rdiv in H0.
-          eapply Rlt_trans.
-          rewrite Rabs_right; try lra.
-          apply H0.
-          -- apply Rlt_pow_R1; try lra; lia.
+          -- rewrite Rmult_1_l.
+             rewrite Rmult_comm.
+             unfold Rdiv in H0.
+             eapply Rlt_trans.
+             apply H0.
+             apply Rlt_pow_R1; try lra; lia.
           -- apply Rgt_not_eq, cond_pos.
       + apply Rgt_not_eq.
         apply pow_lt; lra.
    Qed.
-
-  Lemma Qr_lim_neg x : 
-    x < 0 ->
-    is_lim_seq (fun n => Qreals.Q2R (Qr x n)) x.
-  Proof.
-    intros.
-    generalize (Qr_opp x); intros.
-    apply is_lim_seq_ext with (u := fun n => - Qreals.Q2R (Qr (-x) n)).
-    - intros.
-      rewrite H0.
-      rewrite Qreals.Q2R_opp.
-      lra.
-    - apply is_lim_seq_opp.
-      simpl.
-      setoid_rewrite Ropp_involutive.
-      apply Qr_lim_pos.
-      lra.
-  Qed.
-
-  Lemma Qr_lim x :
-    is_lim_seq (fun n => Qreals.Q2R (Qr x n)) x.
-  Proof.
-    destruct (Rlt_dec 0 x).
-    - now apply Qr_lim_pos.
-    - destruct (Rlt_dec x 0).
-      + now apply Qr_lim_neg.
-      + assert (x = 0) by lra.
-        apply is_lim_seq_ext with (u := fun n => 0).
-        * intros.
-          rewrite H.
-          rewrite Qr_zero.
-          now rewrite RMicromega.Q2R_0.
-        * rewrite H.
-          apply is_lim_seq_const.        
-  Qed.
   
   Lemma Q_neighborhood_included (D:R -> Prop) (x:R) :
         neighbourhood D x -> 
