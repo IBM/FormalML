@@ -429,22 +429,71 @@ Qed.
       lra.
     - simpl.
       unfold Qrnext.
+      assert (pos1:0 <= Rabs x / (2 * 2 ^ n)).
+      {
+        apply Rdiv_le_0_compat.
+        - apply Rabs_pos.
+        - apply Rmult_lt_0_compat; try lra.
+          apply pow_lt; lra.
+      }
+      assert (nz:2 ^ n <> 0).
+      {
+        apply pow_nonzero; lra.
+      } 
+        
       match_destr.
-  Admitted.
-
-(*
-  Lemma Qr_monotonic (x : R) (n : nat) :
-    0 < x ->
-    Qle (Qr x n) (Qr x (S n)).
-  Proof.
-    intros.
-    induction n.
-    - simpl.
-      unfold Qrnext.
-      match_destr.
-      unfold proj1_sig; match_destr.
-      Admitted.
- *)
+      + rewrite e.
+        rewrite Rminus_eq_0.
+        now rewrite Rabs_R0.
+      + unfold proj1_sig; match_destr.
+        destruct a as [lt1 lt2].
+        unfold Rabs at 1.
+        match_destr.
+        * {
+            cut (- (Qreals.Q2R x0 - x) * 2 <= Rabs x / (2 ^ n)).
+            {
+              intros.
+              apply (Rmult_le_compat_r (/ 2)) in H; try lra.
+              rewrite Rmult_assoc in H.
+              rewrite Rinv_r in H; try lra.
+              rewrite Rmult_1_r in H.
+              eapply Rle_trans; try eapply H.
+              right.
+              rewrite (Rmult_comm 2).
+              unfold Rdiv.
+              rewrite Rinv_mult_distr; trivial.
+              lra.
+            }
+            eapply Rle_trans; try eapply IHn.
+            rewrite Ropp_minus_distr.
+            rewrite Rabs_minus_sym.
+            eapply Rle_trans; [| eapply Rle_abs].
+            field_simplify.
+            unfold Rminus.
+            replace (2*x) with (x+x) by lra.
+            rewrite Rplus_assoc.
+            apply Rplus_le_compat_l.
+            cut (x + Qreals.Q2R (Qr x n) <= (2 * Qreals.Q2R x0)); [lra |].
+            unfold Rmin in lt1.
+            match_destr_in lt1; lra.
+          }
+        * { eapply Rle_trans.
+            - eapply Rplus_le_compat; [| reflexivity].
+              apply Rlt_le; apply lt2.
+            - unfold Rmax.
+              match_destr.
+              + now rewrite Rplus_opp_r.
+              + field_simplify; trivial.
+                unfold Rdiv.
+                rewrite (Rmult_comm 2).
+                rewrite Rinv_mult_distr; trivial.
+                rewrite <- Rmult_assoc.
+                apply Rmult_le_compat_r; try lra.
+                eapply Rle_trans; try eapply IHn.
+                rewrite Rplus_comm.
+                apply Rle_abs.
+          }
+  Qed.
   
   Lemma ln_nneg x :
     1 <= x -> 0 <= ln x.
