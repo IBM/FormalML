@@ -2883,6 +2883,15 @@ Qed.
     lra.
   Qed.
 
+  Lemma qr_support_line_limit (phi : R -> R) (x : R) 
+        (conv: forall c x y, convex phi c x y) :
+    let L := fun n => (phi (Qreals.Q2R (Qr x n))) +
+                      (x - (Qreals.Q2R (Qr x n))) * 
+                      (proj1_sig (convex_support_line phi conv (Qreals.Q2R (Qr x n)))) in
+    is_lim_seq L (phi x).
+  Proof.
+    Admitted.
+
   Lemma convex_4_2_2_a (phi : R -> R) :
     (forall c x y, convex phi c x y) ->
     exists (a b : nat -> R),
@@ -2903,8 +2912,33 @@ Qed.
       specialize (r x).
       destruct eps; simpl.
       lra.
-    - 
-Admitted.
+    - generalize (qr_support_line_limit phi x H); intros.
+      simpl in H0.
+      apply is_lim_seq_spec in H0.
+      unfold is_lim_seq' in H0.
+      destruct (H0 eps).
+      specialize (H1 x0).
+      cut_to H1; try lia.
+      exists (iso_f (Qr x x0)).
+      unfold b.
+      rewrite Rabs_left1 in H1.
+      + replace (n_to_Q_to_R (iso_f (Qr x x0))) with (Qreals.Q2R (Qr x x0)).
+        * replace (a (iso_f (Qr x x0))) with
+              (proj1_sig (convex_support_line phi H (Qreals.Q2R (Qr x x0)))).
+          -- simpl.
+             lra.
+          -- unfold a.
+             replace (n_to_Q_to_R (iso_f (Qr x x0))) with (Qreals.Q2R (Qr x x0)); trivial.
+             unfold n_to_Q_to_R.
+             now rewrite iso_b_f.
+        * unfold n_to_Q_to_R.
+          now rewrite iso_b_f.
+      + unfold proj1_sig.
+        match_destr.
+        generalize (r x); intros.
+        lra.
+   Qed.
+        
 
   Lemma Jensen (rv_X : Ts -> R) (phi : R -> R)
         {rv : RandomVariable dom borel_sa rv_X}
