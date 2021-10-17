@@ -380,23 +380,6 @@ Qed.
         now rewrite Rmax_left by lra.
   Qed.      
 
-(*
-  Program Fixpoint Qr (x:R) (n:nat) : Q
-    := match n with
-       | 0%nat => 0%Q
-       | S m => 
-           let old := Qr x m in
-           match Req_EM_T (Qreals.Q2R old) x with
-               | left _ => old
-               | right pf =>
-                 proj1_sig (Q_dense' ((x + Qreals.Q2R old) /2) x _)
-               end
-       end.
-  Next Obligation.
-    lra.
-  Defined.
- *)
-
   Lemma Qrnext_prop (x : R) (prev : Q) :
     (Qreals.Q2R prev <> x) ->
     (x + Qreals.Q2R prev) / 2 <> x.
