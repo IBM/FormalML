@@ -2883,63 +2883,6 @@ Qed.
     lra.
   Qed.
 
-  Lemma qr_support_line_limit (phi : R -> R) (x : R) 
-        (conv: forall c x y, convex phi c x y) :
-    let L := fun n => (phi (Qreals.Q2R (Qr x n))) +
-                      (x - (Qreals.Q2R (Qr x n))) * 
-                      (proj1_sig (convex_support_line phi conv (Qreals.Q2R (Qr x n)))) in
-    is_lim_seq L (phi x).
-  Proof.
-    Admitted.
-
-  Lemma convex_4_2_2_a (phi : R -> R) :
-    (forall c x y, convex phi c x y) ->
-    exists (a b : nat -> R),
-    forall (x: R),
-      is_sup_seq (fun n => (a n) * x + (b n)) (phi x).
-  Proof.
-    intros.
-    pose (n_to_Q_to_R := fun (n:nat) => Qreals.Q2R (iso_b n)).
-    pose (a := fun (n : nat) => proj1_sig (convex_support_line phi H (n_to_Q_to_R n))).
-    pose (b := fun (n : nat) => phi (n_to_Q_to_R n) - (a n) * (n_to_Q_to_R n)).
-    exists a; exists b.
-    unfold is_sup_seq; intros.
-    split.
-    - intros.
-      simpl.
-      unfold b, a.
-      unfold proj1_sig; match_destr.
-      specialize (r x).
-      destruct eps; simpl.
-      lra.
-    - generalize (qr_support_line_limit phi x H); intros.
-      simpl in H0.
-      apply is_lim_seq_spec in H0.
-      unfold is_lim_seq' in H0.
-      destruct (H0 eps).
-      specialize (H1 x0).
-      cut_to H1; try lia.
-      exists (iso_f (Qr x x0)).
-      unfold b.
-      rewrite Rabs_left1 in H1.
-      + replace (n_to_Q_to_R (iso_f (Qr x x0))) with (Qreals.Q2R (Qr x x0)).
-        * replace (a (iso_f (Qr x x0))) with
-              (proj1_sig (convex_support_line phi H (Qreals.Q2R (Qr x x0)))).
-          -- simpl.
-             lra.
-          -- unfold a.
-             replace (n_to_Q_to_R (iso_f (Qr x x0))) with (Qreals.Q2R (Qr x x0)); trivial.
-             unfold n_to_Q_to_R.
-             now rewrite iso_b_f.
-        * unfold n_to_Q_to_R.
-          now rewrite iso_b_f.
-      + unfold proj1_sig.
-        match_destr.
-        generalize (r x); intros.
-        lra.
-   Qed.
-        
-
   Lemma Jensen (rv_X : Ts -> R) (phi : R -> R)
         {rv : RandomVariable dom borel_sa rv_X}
         {isfe : IsFiniteExpectation prts rv_X} 
@@ -3130,6 +3073,7 @@ Qed.
      - apply Rabs_pos.
   Qed.
 
+        
    Lemma Rabs_mult_pos (x y m : R) :
      0 < Rabs y ->
      Rabs x <= m * Rabs y ->
@@ -3243,6 +3187,118 @@ Qed.
          unfold dist; simpl.
          now rewrite R_dist_eq.
   Qed.      
+
+  Lemma qr_support_line_bound (phi : R -> R) (x : R)
+        (conv: forall c x y, convex phi c x y) :
+    exists (c:R),
+    forall (n:nat),
+      Rabs (proj1_sig (convex_support_line phi conv (Qreals.Q2R (Qr x n)))) < c.
+  Proof.
+    Admitted.
+  
+  Lemma qr_support_line_limit (phi : R -> R) (x : R) 
+        (conv: forall c x y, convex phi c x y) :
+    let L := fun n => (phi (Qreals.Q2R (Qr x n))) +
+                      (x - (Qreals.Q2R (Qr x n))) * 
+                      (proj1_sig (convex_support_line phi conv (Qreals.Q2R (Qr x n)))) in
+    is_lim_seq L (phi x).
+  Proof.
+    simpl.
+    replace (Finite (phi x)) with (Rbar_plus (phi x) 0) by now rewrite Rbar_plus_0_r.
+    apply is_lim_seq_plus'.
+    - apply is_lim_seq_continuous.
+      + now apply convex_continuous.
+      + apply Qr_lim.
+    - assert (is_lim_seq (fun n : nat => (x - Qreals.Q2R (Qr x n))) 0).
+      {
+        replace (0) with (x - x) by lra.
+        apply is_lim_seq_minus'.
+        - apply is_lim_seq_const.
+        - apply Qr_lim.
+      }
+      destruct (qr_support_line_bound phi x conv).
+      apply is_lim_seq_spec.
+      unfold is_lim_seq'.
+      intros.
+      apply is_lim_seq_spec in H.
+      unfold is_lim_seq' in H.
+      assert (0 < x0).
+      {
+        eapply Rle_lt_trans.
+        shelve.
+        apply (H0 0%nat).
+        Unshelve.
+        apply Rabs_pos.
+      }
+      assert (0 < eps / x0).
+      {
+        unfold Rdiv.
+        apply Rmult_lt_0_compat.
+        - apply cond_pos.
+        - now apply Rinv_pos.
+      }
+      destruct (H (mkposreal _ H2)).
+      exists x1.
+      intros.
+      specialize (H3 n H4).
+      rewrite Rminus_0_r.
+      rewrite Rabs_mult.
+      specialize (H0 n).
+      rewrite Rminus_0_r in H3.
+      simpl in H3.
+      replace (pos eps) with ((eps/x0) * (x0)).
+      + apply Rmult_le_0_lt_compat; try apply Rabs_pos; trivial.
+      + unfold Rdiv.
+        rewrite Rmult_assoc.
+        rewrite <- Rinv_l_sym; lra.
+   Qed.
+
+  Lemma convex_4_2_2_a (phi : R -> R) :
+    (forall c x y, convex phi c x y) ->
+    exists (a b : nat -> R),
+    forall (x: R),
+      is_sup_seq (fun n => (a n) * x + (b n)) (phi x).
+  Proof.
+    intros.
+    pose (n_to_Q_to_R := fun (n:nat) => Qreals.Q2R (iso_b n)).
+    pose (a := fun (n : nat) => proj1_sig (convex_support_line phi H (n_to_Q_to_R n))).
+    pose (b := fun (n : nat) => phi (n_to_Q_to_R n) - (a n) * (n_to_Q_to_R n)).
+    exists a; exists b.
+    unfold is_sup_seq; intros.
+    split.
+    - intros.
+      simpl.
+      unfold b, a.
+      unfold proj1_sig; match_destr.
+      specialize (r x).
+      destruct eps; simpl.
+      lra.
+    - generalize (qr_support_line_limit phi x H); intros.
+      simpl in H0.
+      apply is_lim_seq_spec in H0.
+      unfold is_lim_seq' in H0.
+      destruct (H0 eps).
+      specialize (H1 x0).
+      cut_to H1; try lia.
+      exists (iso_f (Qr x x0)).
+      unfold b.
+      rewrite Rabs_left1 in H1.
+      + replace (n_to_Q_to_R (iso_f (Qr x x0))) with (Qreals.Q2R (Qr x x0)).
+        * replace (a (iso_f (Qr x x0))) with
+              (proj1_sig (convex_support_line phi H (Qreals.Q2R (Qr x x0)))).
+          -- simpl.
+             lra.
+          -- unfold a.
+             replace (n_to_Q_to_R (iso_f (Qr x x0))) with (Qreals.Q2R (Qr x x0)); trivial.
+             unfold n_to_Q_to_R.
+             now rewrite iso_b_f.
+        * unfold n_to_Q_to_R.
+          now rewrite iso_b_f.
+      + unfold proj1_sig.
+        match_destr.
+        generalize (r x); intros.
+        lra.
+   Qed.
 
   Lemma convex_4_2_2 (phi : R -> R) :
     (forall c x y, convex phi c x y) ->
@@ -3498,7 +3554,7 @@ Qed.
     Admitted.
 *)
 
-  Lemma is_condexp_Jensen (rv_X ce phice: Ts -> R) (phi : R -> R) (a b : nat -> R) 
+  Lemma is_condexp_Jensen_helper (rv_X ce phice: Ts -> R) (phi : R -> R) (a b : nat -> R) 
         {rv : RandomVariable dom borel_sa rv_X}
         {rvphi : RandomVariable dom borel_sa (fun x => phi (rv_X x))}
         {rvce : RandomVariable dom2 borel_sa ce}
@@ -3508,7 +3564,7 @@ Qed.
         (iscondce : is_conditional_expectation dom2 rv_X ce)
         (iscond_phice : is_conditional_expectation dom2 (fun x => phi (rv_X x)) phice) :
     (forall (x: R),
-      is_sup_seq (fun n => (a n) * x + (b n)) (phi x)) ->
+        is_sup_seq (fun n => (a n) * x + (b n)) (phi x)) -> 
     almostR2 (prob_space_sa_sub prts sub) Rbar_le
       (fun x => phi (ce x)) phice.
   Proof.
@@ -3596,6 +3652,24 @@ Qed.
          now exists (0%nat).
    Qed.
 
+  Lemma is_condexp_Jensen (rv_X ce phice: Ts -> R) (phi : R -> R)
+        {rv : RandomVariable dom borel_sa rv_X}
+        {rvphi : RandomVariable dom borel_sa (fun x => phi (rv_X x))}
+        {rvce : RandomVariable dom2 borel_sa ce}
+        {rvace : RandomVariable dom2 borel_sa phice}          
+        {isfe : IsFiniteExpectation prts rv_X} 
+        {isfephi : IsFiniteExpectation prts (fun x => phi (rv_X x))} 
+        (iscondce : is_conditional_expectation dom2 rv_X ce)
+        (iscond_phice : is_conditional_expectation dom2 (fun x => phi (rv_X x)) phice) :
+    (forall c x y, convex phi c x y) ->
+    almostR2 (prob_space_sa_sub prts sub) Rbar_le
+      (fun x => phi (ce x)) phice.
+   Proof.
+     intros.
+     destruct (convex_4_2_2_a phi H) as [a [b ?]].
+     now apply (is_condexp_Jensen_helper rv_X ce phice phi a b).
+   Qed.
+
   Lemma is_condexp_Jensen_abs (rv_X ce ace : Ts -> R) 
         {rv : RandomVariable dom borel_sa rv_X}
         {rvce : RandomVariable dom2 borel_sa ce}
@@ -3610,7 +3684,7 @@ Qed.
     pose (a := fun (n:nat) => if (Nat.eqb n 0%nat) then 1 else -1).
     pose (b := fun (n:nat) => 0).
     generalize (IsFiniteExpectation_abs rv_X isfe); intros.
-    apply (is_condexp_Jensen rv_X ce ace Rabs a b); trivial.
+    apply (is_condexp_Jensen_helper rv_X ce ace Rabs a b); trivial.
     intros.
     apply Rbar_is_lub_sup_seq.
     unfold Rbar_is_lub.
