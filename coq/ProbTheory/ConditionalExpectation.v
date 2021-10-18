@@ -3188,14 +3188,123 @@ Qed.
          now rewrite R_dist_eq.
   Qed.      
 
-  Lemma qr_support_line_bound (phi : R -> R) (x : R)
+  Lemma support_line_increasing (phi : R -> R) (x1 x2 : R)
         (conv: forall c x y, convex phi c x y) :
-    exists (c:R),
-    forall (n:nat),
-      Rabs (proj1_sig (convex_support_line phi conv (Qreals.Q2R (Qr x n)))) < c.
+    x1 <= x2 ->
+    proj1_sig (convex_support_line phi conv x1) <=
+    proj1_sig (convex_support_line phi conv x2).
   Proof.
     Admitted.
-  
+
+  Lemma qr_support_line_bound (phi : R -> R) (x : R)
+        (conv: forall c x y, convex phi c x y) :
+    exists (c1 c2 :R),
+    forall (n:nat),
+      c1 <= proj1_sig (convex_support_line phi conv (Qreals.Q2R (Qr x n))) <= c2.
+  Proof.
+    generalize (Qr_dist x); intros.
+    assert (forall n, Rabs (Qreals.Q2R (Qr x n)) <= 2 * Rabs x).
+    {
+      intros.
+      specialize (H n).
+      generalize (Rabs_triang_inv (Qreals.Q2R (Qr x n)) x); intros.
+      generalize (Rle_trans _ _ _ H0 H); intros.
+      apply Rplus_le_compat_r with (r := Rabs x) in H1.
+      unfold Rminus in H1.
+      rewrite Rplus_assoc in H1.
+      rewrite Rplus_opp_l in H1.
+      rewrite Rplus_0_r in H1.
+      eapply Rle_trans.
+      apply H1.
+      apply Rplus_le_reg_r with (r := - Rabs x).
+      ring_simplify.
+      unfold Rdiv.
+      replace (Rabs x) with ((Rabs x) * 1) at 2 by lra.
+      apply Rmult_le_compat_l.
+      - apply Rabs_pos.
+      - replace (1) with (/ 1) by lra.
+        apply Rinv_le_contravar; try lra.
+        rewrite <- (pow1 n).
+        apply pow_incr; lra.
+    }
+    assert (forall n, Qreals.Q2R (Qr x n) <= 2*Rabs x).
+    {
+      intros.
+      eapply Rle_trans.
+      shelve.
+      apply (H0 n).
+      Unshelve.
+      apply Rle_abs.
+    }
+    assert (forall n, -2 * Rabs x <= Qreals.Q2R (Qr x n)).
+    {
+      intros.
+      generalize Rabs_maj2; intros.
+      specialize (H0 n).
+      apply Ropp_le_cancel.
+      eapply Rle_trans.
+      apply H2.
+      now replace (- (-2 * Rabs x)) with (2 * Rabs x) by lra.
+    }
+    assert (forall n,  proj1_sig (convex_support_line phi conv (Qreals.Q2R (Qr x n))) <=
+                       proj1_sig (convex_support_line phi conv (2 * Rabs x))).
+    {
+      intros.
+      now apply support_line_increasing.
+    }
+    assert (forall n,  proj1_sig (convex_support_line phi conv (-2 * Rabs x)) <= 
+                       proj1_sig (convex_support_line phi conv (Qreals.Q2R (Qr x n)))).
+                       
+    {
+      intros.
+      now apply support_line_increasing.
+    }
+    exists (proj1_sig (convex_support_line phi conv (-2 * Rabs x))).
+    exists ( proj1_sig (convex_support_line phi conv (2 * Rabs x))).
+    intros.
+    specialize (H3 n).
+    specialize (H4 n).
+    now split.
+  Qed.
+
+   Lemma qr_support_line_bound_abs_lt (phi : R -> R) (x : R)
+        (conv: forall c x y, convex phi c x y) :
+    exists (c : posreal),
+    forall (n:nat),
+      Rabs  (proj1_sig (convex_support_line phi conv (Qreals.Q2R (Qr x n))))  < c.
+   Proof.
+     destruct (qr_support_line_bound phi x conv) as [c1 [c2 ?]].
+     assert (0 < ((Rmax (Rabs c1) (Rabs c2)) + 1)).
+     {
+       apply Rle_lt_trans with (r2 := Rmax (Rabs c1) (Rabs c2)).
+       apply Rmax_Rle.
+       left; apply Rabs_pos.
+       lra.
+     }
+     exists (mkposreal _ H0).
+     intros.
+     specialize (H n).
+     simpl.
+     destruct H.
+     apply Rabs_def1.
+     - eapply Rle_lt_trans.
+       apply H1.
+       apply Rle_lt_trans with (r2 := Rmax (Rabs c1) (Rabs c2)); try lra.
+       apply Rle_trans with (r2 := Rabs c2).
+       + apply Rle_abs.
+       + apply Rmax_r.
+     - eapply Rlt_le_trans.
+       shelve.
+       apply H.
+       Unshelve.
+       apply Ropp_lt_cancel.
+       rewrite Ropp_involutive.
+       apply Rle_lt_trans with (r2 := Rmax (Rabs c1) (Rabs c2)); try lra.       
+       apply Rle_trans with (r2 := Rabs c1).
+       + apply Rabs_maj2.
+       + apply Rmax_l.
+   Qed.
+
   Lemma qr_support_line_limit (phi : R -> R) (x : R) 
         (conv: forall c x y, convex phi c x y) :
     let L := fun n => (phi (Qreals.Q2R (Qr x n))) +
@@ -3216,41 +3325,34 @@ Qed.
         - apply is_lim_seq_const.
         - apply Qr_lim.
       }
-      destruct (qr_support_line_bound phi x conv).
+      destruct (qr_support_line_bound_abs_lt phi x conv).
       apply is_lim_seq_spec.
       unfold is_lim_seq'.
       intros.
       apply is_lim_seq_spec in H.
       unfold is_lim_seq' in H.
-      assert (0 < x0).
-      {
-        eapply Rle_lt_trans.
-        shelve.
-        apply (H0 0%nat).
-        Unshelve.
-        apply Rabs_pos.
-      }
       assert (0 < eps / x0).
       {
         unfold Rdiv.
         apply Rmult_lt_0_compat.
         - apply cond_pos.
-        - now apply Rinv_pos.
+        - apply Rinv_pos, cond_pos.
       }
-      destruct (H (mkposreal _ H2)).
+      destruct (H (mkposreal _ H1)).
       exists x1.
       intros.
-      specialize (H3 n H4).
+      specialize (H2 n H3).
       rewrite Rminus_0_r.
       rewrite Rabs_mult.
       specialize (H0 n).
-      rewrite Rminus_0_r in H3.
-      simpl in H3.
+      rewrite Rminus_0_r in H2.
+      simpl in H2.
       replace (pos eps) with ((eps/x0) * (x0)).
       + apply Rmult_le_0_lt_compat; try apply Rabs_pos; trivial.
       + unfold Rdiv.
         rewrite Rmult_assoc.
-        rewrite <- Rinv_l_sym; lra.
+        rewrite <- Rinv_l_sym; try lra.
+        apply Rgt_not_eq, cond_pos.
    Qed.
 
   Lemma convex_4_2_2_a (phi : R -> R) :
