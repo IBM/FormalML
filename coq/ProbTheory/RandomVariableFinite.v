@@ -1007,6 +1007,100 @@ Lemma Fatou_FiniteExpectation
       now apply ps_pos.
   Qed.    
 
+  
+  Lemma IsFiniteExpectation_abs_id (f : Ts -> R)
+          {rvf : RandomVariable dom borel_sa f} :
+    IsFiniteExpectation (rvabs f) ->
+    IsFiniteExpectation f.
+  Proof.
+    intros.
+    apply IsFiniteExpectation_bounded with (rv_X1 := rvopp (rvabs f)) (rv_X3 := rvabs f); trivial.
+    - now apply IsFiniteExpectation_opp.
+    - intro x.
+      unfold rvopp, rvabs, rvscale.
+      apply Ropp_le_cancel.
+      ring_simplify.
+      rewrite <- Rabs_Ropp.
+      apply Rle_abs.
+    - intro x.
+      unfold rvabs.
+      apply Rle_abs.
+  Qed.
+
+  Lemma IsFiniteExpectation_abs_bound (f g : Ts -> R)
+          {rvf : RandomVariable dom borel_sa f}
+          {rvg : RandomVariable dom borel_sa g} :
+    rv_le (rvabs f) g ->
+    IsFiniteExpectation g ->
+    IsFiniteExpectation f.
+  Proof.
+    intros.
+    apply IsFiniteExpectation_abs_id; trivial.
+    apply IsFiniteExpectation_bounded with (rv_X1 := fun (x:Ts) => 0) (rv_X3 := g); trivial.
+    - apply IsFiniteExpectation_const.
+    - intro x.
+      unfold rvabs.
+      apply Rabs_pos.
+   Qed.
+
+  Lemma IsFiniteExpectation_abs_bound_almost (f g : Ts -> R)
+          {rvf : RandomVariable dom borel_sa f}
+          {rvg : RandomVariable dom borel_sa g} :
+    almostR2 prts Rle (rvabs f) g ->
+    IsFiniteExpectation g ->
+    IsFiniteExpectation f.
+  Proof.
+    intros ale isfe.
+    destruct (almostR2_le_split_r _ _ _ ale)
+      as [g' [eqq [lee rvg']]].
+    cut_to rvg'; try typeclasses eauto.
+    eapply IsFiniteExpectation_abs_bound; try eapply lee; trivial.
+    eapply IsFiniteExpectation_proper_almostR2; try eapply isfe; eauto.
+  Qed.
+
+    Instance Dominated_convergence0
+          (fn : nat -> Ts -> R)
+          (g : Ts -> R)
+          {rvn : forall n, RandomVariable dom borel_sa (fn n)}
+          {rvg : RandomVariable dom borel_sa g} :
+    (forall n, rv_le (rvabs (fn n)) g) ->
+    IsFiniteExpectation g ->
+    forall n, IsFiniteExpectation (fn n).
+  Proof.
+    intros.
+    now apply IsFiniteExpectation_abs_bound with (g := g).
+  Qed.
+
+  Instance Dominated_convergence1
+          (fn : nat -> Ts -> R)
+          (f g : Ts -> R)
+          {rvn : forall n, RandomVariable dom borel_sa (fn n)}
+          {rvf : RandomVariable dom borel_sa f}
+          {rvg : RandomVariable dom borel_sa g} 
+          (isfeg : IsFiniteExpectation g)
+          (le_fn_g : (forall n, rv_le (rvabs (fn n)) g)) 
+          (lim : almost prts (fun x => is_lim_seq (fun n => fn n x) (f x))) :
+    IsFiniteExpectation f.
+  Proof.
+    intros.
+    assert (almostR2 prts Rbar_le (rvabs f) g).
+    {
+      destruct lim as [? [? ?]].
+      exists x; split; trivial.
+      intros.
+      specialize (H0 x0 H1).
+      apply is_lim_seq_abs in H0.
+      unfold rvabs.
+      apply is_lim_seq_le with (u := (fun n : nat => Rabs (fn n x0)) )
+                               (v := (fun n => g x0)); trivial.
+      - intro.
+        specialize (le_fn_g n x0).
+        now unfold rvabs in le_fn_g.
+      - apply is_lim_seq_const.
+    }
+    apply IsFiniteExpectation_abs_bound_almost with (g := g); trivial.
+  Qed.
+  
 End fe.
 
 Hint Rewrite FiniteExpectation_const FiniteExpectation_plus FiniteExpectation_scale FiniteExpectation_opp FiniteExpectation_minus: prob.
