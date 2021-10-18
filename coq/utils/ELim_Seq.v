@@ -1229,84 +1229,6 @@ Definition ex_Elim_seq_cauchy (u : nat -> Rbar) :=
 
 Local Existing Instance Rbar_le_pre.
 
-(*
-Lemma ex_lim_seq_cauchy_corr (u : nat -> Rbar) :
-  (ex_finite_Elim_seq u) <-> ex_Elim_seq_cauchy u.
-Proof.
-  split; intros HH.
-  - intros eps.
-    apply ELim_seq_correct' in HH.
-    apply is_Elim_seq_spec in HH.
-    specialize (HH (pos_div_2 eps)).
-    destruct HH as [N HH].
-    exists N; intros.
-    generalize (HH _ H); intros HH1.
-    generalize (HH _ H0); intros HH2.
-    generalize (Rbar_plus_lt_compat _ _ _ _ HH1 HH2)
-    ; simpl
-    ; intros HH3.
-    rewrite <- double_var in HH3.
-    eapply Rbar_le_lt_trans; try eapply HH3.
-    rewrite (Rbar_abs_minus_sym (u m)).
-    eapply Rbar_le_trans; [| apply Rbar_abs_triang].
-    apply BasicUtils.refl_refl; f_equal.
-    destruct (u n); destruct (u m); simpl; rbar_prover.
-  - red in HH.
-    
-    assert (ex_Elim_seq u).
-    {
-      apply (is_Elim_seq_ex_Elim_seq u (ELimSup_seq u)).
-      red.
-      generalize (is_ELimSup_seq_correct u); intros HH1.
-      split; trivial.
-      red; match_case; intros.
-      - rewrite H in HH1.
-        specialize (HH1 eps).
-        specialize (HH eps).
-        destruct HH as [??].
-        destruct HH1 as [? [??]].
-        admit.
-      - rewrite H in HH1.
-        red in HH1.
-        destruct (HH1 M 0%nat) as [?[??]].
-        case_eq (u x)
-        ; [intros ? eqq1 | intros eqq1..]
-        ; rewrite eqq1 in H1
-        ; simpl in *
-        ; try tauto.
-        + admit.
-        + 
-        
-        
-        case_eq (u n)
-        ; [intros ? eqq1 | intros eqq1..]
-        ; rewrite eqq1 in H1
-        ; simpl in *
-        ; try tauto.
-        
-        
-        exists x; intros.
-        eapply Rbar_lt_le_trans; try eapply H1.
-        apply Rbar_not_lt_le
-        ; intros nlt.
-        case_eq (u x)
-        ; [intros ? eqq1 | intros eqq1..]
-        ; rewrite eqq1 in H1, nlt
-        ; simpl in *
-        ; try tauto.
-        + 
-        + specialize (HH posreal1).
-          destruct HH as [??].
-          specialize (H3 x n).
-          cut_to H3.
-          * rewrite Rbar_abs_minus_sym in H3.
-            rewrite eqq1 in H3.
-            destruct (u n); simpl in *; try tauto.
-  
-Qed.
- *)
-
-
 Lemma is_Elim_seq_INR :
   is_Elim_seq INR p_infty.
 Proof.
@@ -2809,14 +2731,6 @@ Proof.
   - rewrite ELim_seq_inv; trivial.
 Qed.
 
-(*
-
-Lemma ex_lim_seq_adj (u v : nat -> R) :
-  (forall n, u n <= u (S n)) -> (forall n, v (S n) <= v n)
-  -> is_lim_seq (fun n => v n - u n) 0
-  -> ex_finite_lim_seq u /\ ex_finite_lim_seq v /\ Lim_seq u = Lim_seq v.
-
- *)
 
 Lemma is_Elim_seq_continuous (f : R -> R) (u : nat -> Rbar) (l : R) :
   continuity_pt f l -> is_Elim_seq u l
