@@ -4481,3 +4481,17 @@ Proof.
     now rewrite Rmult_0_l.
 Qed.
 
+Lemma Rbar_abs_triang (a b : Rbar) :
+  Rbar_le (Rbar_abs (Rbar_plus a b)) (Rbar_plus (Rbar_abs a) (Rbar_abs b)).
+Proof.
+  destruct a; destruct b; simpl; rbar_prover.
+  apply Rabs_triang.
+Qed.
+
+Lemma Rbar_abs_minus_sym (x y : Rbar) :
+  Rbar_abs (Rbar_minus x y) = Rbar_abs (Rbar_minus y x).
+Proof.
+  destruct x; destruct y; simpl; try solve [rbar_prover; trivial].
+  f_equal.
+  apply Rabs_minus_sym.
+Qed.

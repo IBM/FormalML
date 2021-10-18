@@ -1227,20 +1227,6 @@ Definition ex_Elim_seq_cauchy (u : nat -> Rbar) :=
   forall eps : posreal, exists N : nat, forall n m,
         (N <= n)%nat -> (N <= m)%nat -> Rbar_lt (Rbar_abs (Rbar_minus (u n) (u m))) eps.
 
-Lemma Rbar_abs_triang (a b : Rbar) :
-  Rbar_le (Rbar_abs (Rbar_plus a b)) (Rbar_plus (Rbar_abs a) (Rbar_abs b)).
-Proof.
-  destruct a; destruct b; simpl; rbar_prover.
-  apply Rabs_triang.
-Qed.
-
-Lemma Rbar_abs_minus_sym (x y : Rbar) :
-  Rbar_abs (Rbar_minus x y) = Rbar_abs (Rbar_minus y x).
-Proof.
-  destruct x; destruct y; simpl; try solve [rbar_prover; trivial].
-  now rewrite Rabs_minus_sym.
-Qed.
-
 Local Existing Instance Rbar_le_pre.
 
 (*
@@ -1825,22 +1811,51 @@ Proof.
     lia.
 Qed.
 
-(* TODO: need another boundary condition
-Lemma ex_finite_Elim_seq_decr (u : nat -> Rbar) (M : R) :
-  (forall n, Rbar_le (u (S n)) (u n)) -> (forall n, Rbar_le M (u n))
-  -> ex_finite_Elim_seq u.
+Lemma ex_finite_Elim_seq_decr (u : nat -> Rbar) (M : R) (m:nat):
+  (forall n, Rbar_le (u (S n)) (u n)) -> (forall n, Rbar_le M (u n)) ->
+  (u m <> p_infty) ->
+  ex_finite_Elim_seq u.
 Proof.
   intros.
   split.
   - now apply ex_Elim_seq_decr.
-  - 
+  - generalize (ELim_seq_correct u)
+    ; intros HH.
+    cut_to HH; try now apply ex_Elim_seq_decr.
+    generalize (is_Elim_seq_decr_compare u _ HH H m)
+    ; intros HH2.
+    generalize (is_Elim_seq_const M)
+    ; intros HH3.
+    generalize (is_Elim_seq_le (fun _ : nat => M)  u _ _ H0 HH3 HH)
+    ; intros HH4.
+    destruct (ELim_seq u); destruct (u m);
+      simpl in *; rbar_prover
+      ; try congruence
+      ; try reflexivity.
 Qed.
   
-Lemma ex_finite_lim_seq_incr (u : nat -> R) (M : R) :
-  (forall n, (u n) <= (u (S n))) -> (forall n, u n <= M)
-    -> ex_finite_lim_seq u.
- *)
-
+Lemma ex_finite_Elim_seq_incr (u : nat -> Rbar) (M : R) (m:nat):
+  (forall n, Rbar_le (u n) (u (S n))) -> (forall n, Rbar_le (u n) M) ->
+  (u m <> m_infty) ->
+  ex_finite_Elim_seq u.
+Proof.
+  intros.
+  split.
+  - now apply ex_Elim_seq_incr.
+  - generalize (ELim_seq_correct u)
+    ; intros HH.
+    cut_to HH; try now apply ex_Elim_seq_incr.
+    generalize (is_Elim_seq_incr_compare u _ HH H m)
+    ; intros HH2.
+    generalize (is_Elim_seq_const M)
+    ; intros HH3.
+    generalize (is_Elim_seq_le u  (fun _ : nat => M) _ _ H0 HH HH3)
+    ; intros HH4.
+    destruct (ELim_seq u); destruct (u m);  simpl in *;
+      rbar_prover
+      ; try congruence
+      ; try reflexivity.
+Qed.
 
 Lemma is_Elim_seq_opp (u : nat -> Rbar) (l : Rbar) :
   is_Elim_seq u l <-> is_Elim_seq (fun n => Rbar_opp (u n)) (Rbar_opp l).
