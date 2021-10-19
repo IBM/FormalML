@@ -2079,7 +2079,7 @@ algorithm.
     Qed.
 
     (* Lemma 9*)
-   (* Lemma as_convergent_lemma (C : R) (xinit:Ts->vector R I) (w : nat -> Ts -> vector R I)
+    Lemma as_convergent_lemma (C : R) (xinit:Ts->vector R I) (w : nat -> Ts -> vector R I)
           (rxinit : RandomVariable dom (Rvector_borel_sa I) xinit)
           (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
           (frfxinit : FiniteRangeFunction xinit)
@@ -2096,7 +2096,9 @@ algorithm.
                        (const zero)) ->
       (forall n, SimpleExpectation (rvinner (w n) (w n)) < C)  ->
       (forall x1 y : vector R I, Hnorm (minus (F x1) (F y)) <= gamma * Hnorm (minus x1 y)) ->
-      almost prts (fun w1 => is_lim_seq (fun n => L2_convergent_x xinit w n w1) 0).*)
+      almost prts (fun w1 => is_lim_seq (fun n => (rvmaxabs (L2_convergent_x xinit w n)) w1) 0).
+    Proof.
+     Admitted.
 
   End qlearn3.
 
