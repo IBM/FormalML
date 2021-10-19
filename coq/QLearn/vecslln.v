@@ -353,7 +353,7 @@ Lemma ash_6_1_2  {a x : nat -> R} {x0 : R}(ha : forall n, 0 <= a n)
    Qed.
 
 (* Kronecker Lemma *)
-Lemma ash_6_1_3 {b x : nat -> R} (hb0: b (0%nat) = 0) (hb1 : forall n, 0 < b (S n) < b (S (S n))) (hb2 : is_lim_seq b p_infty)
+Lemma ash_6_1_3 {b x : nat -> R} (hb0: b (0%nat) = 0) (hb1 : forall n, 0 < b (S n) <= b (S (S n))) (hb2 : is_lim_seq b p_infty)
       (hx : ex_series x):
   is_lim_seq (fun n => (sum_f_R0 (fun j => b j * x j) (S n))/(b (S n))) 0.
 Proof.
@@ -425,18 +425,16 @@ Proof.
            rewrite Rminus_0_r.
            left; apply hb1.
       * intros.
-        rewrite <- sum_n_Reals.
-        apply sum_n_pos.
-        intros.
-        destruct (lt_dec 0 n0).
-        -- specialize (hb1 (n0-1)%nat).
-           replace (S (n0-1)) with (n0) in hb1 by lia.
+        induction n.
+        -- simpl.
+           specialize (hb1 0%nat).
            lra.
-        -- assert (n0 = 0%nat) by lia.
-           rewrite H5.
-           rewrite hb0.
-           rewrite Rminus_0_r.
-           apply hb1.
+        -- rewrite sum_f_R0_peel.
+           eapply Rlt_le_trans.
+           ++ apply IHn.
+           ++ assert (b (S (S n)) - b (S n) >= 0).
+              ** specialize (hb1 n); lra.
+              ** lra.
       * apply (is_lim_seq_ext _ _ _ bser).
         apply is_lim_seq_minus with (l1 := p_infty) (l2 := b (0%nat)).
         -- now apply is_lim_seq_incr_1 in hb2.
@@ -478,7 +476,7 @@ Proof.
     now rewrite IHn.
 Qed.
 
-Lemma ash_6_1_3_strong1 {b x : nat -> R} (hb1 : forall n, 0 < b n < b (S n)) (hb2 : is_lim_seq b p_infty)
+Lemma ash_6_1_3_strong1 {b x : nat -> R} (hb1 : forall n, 0 < b n <= b (S n)) (hb2 : is_lim_seq b p_infty)
       (hx : ex_series x):
   is_lim_seq (fun n => (sum_n_m (fun j => b j * x j) 1 n)/(b n)) 0.
 Proof.
@@ -516,7 +514,7 @@ Proof.
     + now apply is_lim_seq_incr_1 in hb2.
 Qed.
 
-Lemma ash_6_1_3_strong {b x : nat -> R} (hb1 : forall n, 0 < b n < b (S n)) (hb2 : is_lim_seq b p_infty)
+Lemma ash_6_1_3_strong {b x : nat -> R} (hb1 : forall n, 0 < b n <= b (S n)) (hb2 : is_lim_seq b p_infty)
       (hx : ex_series x):
   is_lim_seq (fun n => (sum_n (fun j => b j * x j) n)/(b n)) 0.
 Proof.
@@ -3167,7 +3165,7 @@ Qed.
       {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
       (HC : forall n, rv_eq (vector_SimpleConditionalExpectationSA (X n) (vec_filtration_history n X)) (const zero)) :
-    (forall n, 0 < b n < b (S n)) ->
+    (forall n, 0 < b n <= b (S n)) ->
     is_lim_seq b p_infty ->
     ex_series (fun n => SimpleExpectation (rvinner (vecrvscale (/ (b n)) (X n))
                                                    (vecrvscale (/ (b n)) (X n)))) ->
