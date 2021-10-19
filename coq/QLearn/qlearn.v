@@ -923,10 +923,10 @@ algorithm.
       - intros. specialize (ha1 n). lra.
     Qed.
 
-    (*Note: Maybe we need to strengthen this to 0<= α n < 1 ??*)
-    Theorem product_sum_increasing {α : nat -> R} (ha1 : forall n, 0 < α n < 1)
+    (* To be used for Lemma 9. *)
+    Theorem product_sum_increasing {α : nat -> R} (ha1 : forall n, 0 <= α n < 1)
       : forall k:nat, let b := fun n => prod_f_R0 (fun m => 1/ (1 - α (m + k)%nat)) n in
-               forall p, 0 < b p < b (S p).
+               forall p, 0 < b p <= b (S p).
     Proof.
       intros k b p.
       subst b.
@@ -936,15 +936,15 @@ algorithm.
         rewrite Rmult_1_l. apply Rinv_pos.
         specialize (ha1 (n+k)%nat). lra.
       + rewrite <-Rmult_1_r at 1.
-        apply Rmult_lt_compat_l.
-        -- apply prod_f_R0_pos.
+        apply Rmult_le_compat_l.
+        -- apply prod_f_R0_nonneg.
            intros n. unfold Rdiv.
-           rewrite Rmult_1_l. apply Rinv_pos.
+           rewrite Rmult_1_l. left. apply Rinv_pos.
            specialize (ha1 (n+k)%nat); lra.
         -- unfold Rdiv. rewrite Rmult_1_l.
            rewrite <-Rinv_1 at 1.
-           apply Rinv_lt_contravar.
-           rewrite Rmult_1_r. specialize (ha1 (S(p+k)%nat)); lra.
+           apply Rinv_le_contravar.
+           specialize (ha1 (S(p+k)%nat)); lra.
            specialize (ha1 (S (p+k)%nat)); lra.
     Qed.
 
