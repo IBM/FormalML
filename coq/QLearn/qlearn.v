@@ -435,6 +435,37 @@ algorithm.
       (split; try apply prod_f_R0_ne_zero; try auto)].
     Qed.
 
+    Lemma prod_f_R0_n (f : nat -> R) (n : nat) :
+      f n = 0 ->
+      prod_f_R0 f n = 0.
+    Proof.
+      intros.
+      destruct (Nat.eq_dec n 0).
+      - subst.
+        now simpl.
+      - replace (n) with (S (n-1)) by lia.
+        rewrite prod_f_R0_Sn.
+        replace (S (n - 1)) with n by lia.
+        rewrite H.
+        apply Rmult_0_r.
+      Qed.
+
+    Lemma prod_f_R0_n1_n2 (f : nat -> R) (n1 n2 : nat) :
+      (n1 <= n2)%nat ->
+      f n1 = 0 ->
+      prod_f_R0 f n2 = 0.
+    Proof.
+      intros.
+      destruct (lt_dec n1 n2).
+      - rewrite prod_SO_split with (k := n1) (n := n2); trivial.
+        rewrite prod_f_R0_n; trivial.
+        apply Rmult_0_l.
+      - assert (n1 = n2) by lia.
+        rewrite H1 in H0.
+        now apply prod_f_R0_n.
+    Qed.
+
+
   End qlearn.
 
   Section qlearn2.
@@ -498,37 +529,6 @@ algorithm.
               rewrite Rbar_mult_p_infty_pos; trivial.
               lra.
       Qed.
-
-      Lemma prod_f_R0_n (f : nat -> R) (n : nat) :
-        f n = 0 ->
-        prod_f_R0 f n = 0.
-      Proof.
-        intros.
-        destruct (Nat.eq_dec n 0).
-        - subst.
-          now simpl.
-        - replace (n) with (S (n-1)) by lia.
-          rewrite prod_f_R0_Sn.
-          replace (S (n - 1)) with n by lia.
-          rewrite H.
-          apply Rmult_0_r.
-       Qed.
-
-      Lemma prod_f_R0_n1_n2 (f : nat -> R) (n1 n2 : nat) :
-        (n1 <= n2)%nat ->
-        f n1 = 0 ->
-        prod_f_R0 f n2 = 0.
-      Proof.
-        intros.
-        destruct (lt_dec n1 n2).
-        - rewrite prod_SO_split with (k := n1) (n := n2); trivial.
-          rewrite prod_f_R0_n; trivial.
-          apply Rmult_0_l.
-        - assert (n1 = n2) by lia.
-          rewrite H1 in H0.
-          now apply prod_f_R0_n.
-      Qed.
-
       (* Lemma 3, part a *)
       Lemma product_sum_assumption_a (α : nat -> R) gamma :
         0 <= gamma < 1 ->
@@ -861,10 +861,11 @@ algorithm.
       assert (forall n, /α n <> 0) by (intros; apply Rinv_neq_0_compat; eauto).
       split; intros.
       + revert H1.
-        contrapose. unfold cv_infty, Un_cv.
+        contrapose.
+        unfold cv_infty, Un_cv.
         push_neg. intros.
         destruct H1 as [M HM].
-        exists (/M). split.
+        exists (/M); split.
         -- destruct (HM 0%nat) as [k [hk1 hk2]].
            apply Rlt_gt. apply Rge_le in hk2.
            apply Rinv_pos.
@@ -920,6 +921,31 @@ algorithm.
              intros m; lra.
         -- intros. specialize (ha1 (n0+k)%nat); lra.
       - intros. specialize (ha1 n). lra.
+    Qed.
+
+    (*Note: Maybe we need to strengthen this to 0<= α n < 1 ??*)
+    Theorem product_sum_increasing {α : nat -> R} (ha1 : forall n, 0 < α n < 1)
+      : forall k:nat, let b := fun n => prod_f_R0 (fun m => 1/ (1 - α (m + k)%nat)) n in
+               forall p, 0 < b p < b (S p).
+    Proof.
+      intros k b p.
+      subst b.
+      simpl; split.
+      + apply prod_f_R0_pos.
+        intros n. unfold Rdiv.
+        rewrite Rmult_1_l. apply Rinv_pos.
+        specialize (ha1 (n+k)%nat). lra.
+      + rewrite <-Rmult_1_r at 1.
+        apply Rmult_lt_compat_l.
+        -- apply prod_f_R0_pos.
+           intros n. unfold Rdiv.
+           rewrite Rmult_1_l. apply Rinv_pos.
+           specialize (ha1 (n+k)%nat); lra.
+        -- unfold Rdiv. rewrite Rmult_1_l.
+           rewrite <-Rinv_1 at 1.
+           apply Rinv_lt_contravar.
+           rewrite Rmult_1_r. specialize (ha1 (S(p+k)%nat)); lra.
+           specialize (ha1 (S (p+k)%nat)); lra.
     Qed.
 
     Fixpoint RMseq (α : nat -> R) (s : nat -> R) (init : R) (n : nat) : R :=
@@ -2051,6 +2077,26 @@ algorithm.
       - intros.
         apply L2_convergent_hist_partition_measurable.
     Qed.
+
+    (* Lemma 9*)
+   (* Lemma as_convergent_lemma (C : R) (xinit:Ts->vector R I) (w : nat -> Ts -> vector R I)
+          (rxinit : RandomVariable dom (Rvector_borel_sa I) xinit)
+          (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
+          (frfxinit : FiniteRangeFunction xinit)
+          (srw : forall n, FiniteRangeFunction  (w n)) :
+      0 <= C ->
+      0 = gamma ->
+      (forall n, 0 <= α n <= 1) ->
+      is_lim_seq α 0 ->
+      is_lim_seq (sum_n α) p_infty ->
+      ex_lim_seq (sum_n (fun n => (α n)^2)) ->
+      (forall n, rv_eq (vector_SimpleConditionalExpectationSA
+                          (w n)
+                          (L2_convergent_hist (L2_convergent_x xinit w) _ _ n))
+                       (const zero)) ->
+      (forall n, SimpleExpectation (rvinner (w n) (w n)) < C)  ->
+      (forall x1 y : vector R I, Hnorm (minus (F x1) (F y)) <= gamma * Hnorm (minus x1 y)) ->
+      almost prts (fun w1 => is_lim_seq (fun n => L2_convergent_x xinit w n w1) 0).*)
 
   End qlearn3.
 
