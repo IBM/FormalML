@@ -2107,7 +2107,19 @@ algorithm.
         apply (@is_Lipschitz_le_zero_const _ _ (@PreHilbert_NormedModule (@Rvector_PreHilbert I))
                                                (@PreHilbert_NormedModule (@Rvector_PreHilbert I)) F (fun x y => HF y x)).
       }
-
+      clear Hg.
+      assert (HN0 : exists N0, forall n, (n >= N0)%nat -> 0 < 1 - α n).
+      {
+        rewrite is_lim_seq_Reals in Ha2.
+        specialize (Ha2 1 (Rlt_0_1)).
+        unfold R_dist in Ha2. setoid_rewrite Rminus_0_r in Ha2.
+        destruct Ha2 as [N0 HN0]. exists N0.
+        intros n Hn. specialize (HN0 n Hn).
+        rewrite Rabs_pos_eq in HN0; try lra.
+        specialize (Ha1 n); lra.
+      }
+      clear Ha2. destruct HN0 as [N0 HN0].
+      setoid_rewrite (is_lim_seq_incr_n _ N0).
 
      Admitted.
 
