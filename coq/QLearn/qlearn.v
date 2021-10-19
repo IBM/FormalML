@@ -2098,6 +2098,17 @@ algorithm.
       (forall x1 y : vector R I, Hnorm (minus (F x1) (F y)) <= gamma * Hnorm (minus x1 y)) ->
       almost prts (fun w1 => is_lim_seq (fun n => (rvmaxabs (L2_convergent_x xinit w n)) w1) 0).
     Proof.
+      intros Hc Hg Ha1 Ha2 Ha3 Ha4 HCE HE HF.
+      assert (HF' : forall x y, F x = F y).
+      {
+        symmetry in Hg.
+        rewrite Hg in HF.
+        setoid_rewrite Rmult_0_l in HF.
+        apply (@is_Lipschitz_le_zero_const _ _ (@PreHilbert_NormedModule (@Rvector_PreHilbert I))
+                                               (@PreHilbert_NormedModule (@Rvector_PreHilbert I)) F (fun x y => HF y x)).
+      }
+
+
      Admitted.
 
   End qlearn3.

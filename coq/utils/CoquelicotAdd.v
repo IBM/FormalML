@@ -461,7 +461,7 @@ Proof.
 Qed.
 
 Lemma is_Lipschitz_le_zero_const {K1 K2 : AbsRing} {X : NormedModule K1} {Y : NormedModule K2}
-      {F : X -> Y}:
+      (F : X -> Y):
   (forall x y : X, norm (minus (F y) (F x)) <= 0) -> (forall x y, F x = F y).
 Proof.
   intros Hnorm x y.
