@@ -654,7 +654,124 @@ Section vec_cond_exp.
         repeat rewrite vector_FiniteConditionalExpectation_nth.
         apply H1.
   Qed.
-  
+
+  Definition vector_apply {n} {A B} (f : vector (A -> B) n)  (x : vector A n) : vector B n
+    := vector_map (fun '(a,b) => a b) (vector_zip f x).
+
+  Lemma vector_nth_apply {n} {A B} (f : vector (A -> B) n)  (x : vector A n) i pf :
+    vector_nth i pf (vector_apply f x) = (vector_nth i pf f) (vector_nth i pf x).
+  Proof.
+    unfold vector_apply.
+    now rewrite vector_nth_map, vector_nth_zip.
+  Qed.
+
+  Lemma vector_apply_const {n} {A B} (f: A->B) (a:vector A n) : vector_apply (vector_const f n) a = vector_map f a.
+  Proof.
+    apply vector_nth_eq; intros.
+    now rewrite vector_nth_apply, vector_nth_map, vector_nth_const.
+  Qed.
+
+  Lemma vector_FiniteCondexp_Jensen {n} (rv_X : Ts -> vector R n) (phi : vector (R -> R) n)
+        {rv : RandomVariable dom (Rvector_borel_sa n) rv_X}
+        {rvphi : RandomVariable dom (Rvector_borel_sa n) (fun x => vector_apply phi (rv_X x))}
+        {isfe : vector_IsFiniteExpectation prts rv_X}
+        {isfephi : vector_IsFiniteExpectation prts (fun x => vector_apply phi (rv_X x))} :
+    (Forall (fun f => forall c x y, convex f c x y) (proj1_sig phi)) ->
+    almostR2 (prob_space_sa_sub prts sub) (vectorize_relation Rle n)
+      (fun x => vector_apply phi ((vector_FiniteConditionalExpectation rv_X) x))
+      (vector_FiniteConditionalExpectation (fun x => vector_apply phi (rv_X x))).
+  Proof.
+    intros.
+    apply vectorize_relation_almost; intros.
+
+    assert (RandomVariable dom borel_sa (fun x : Ts => vector_nth i pf phi (vecrvnth i pf rv_X x))).
+    {
+      eapply vecrvnth_rv in rvphi.
+      revert rvphi.
+      apply RandomVariable_proper; try reflexivity.
+      intros ?.
+      unfold vecrvnth.
+      now rewrite vector_nth_apply.
+    }
+
+    assert (IsFiniteExpectation prts (fun x : Ts => vector_nth i pf phi (vecrvnth i pf rv_X x))).
+    {
+      eapply vector_IsFiniteExpectation_nth in isfephi.
+        revert isfephi.
+        apply IsFiniteExpectation_proper; intros ?.
+        unfold vecrvnth.
+        now rewrite vector_nth_apply.
+    }
+
+    eapply almost_impl; [| apply (FiniteCondexp_Jensen prts sub (vecrvnth i pf rv_X) (vector_nth i pf phi))].
+    - apply all_almost; intros ??.
+      unfold vecrvnth.
+      rewrite vector_nth_apply.
+      repeat rewrite vector_FiniteConditionalExpectation_nth.
+      rewrite H2.
+      right.
+      apply FiniteConditionalExpectation_ext; intros ?.
+      unfold vecrvnth.
+      now rewrite vector_nth_apply.
+    - now eapply vector_Forall in H.
+  Qed.
+
+  Lemma vecrvabs_unfold {n} (a:Ts -> vector R n) : rv_eq (vecrvabs a)
+                                                  (fun x => vector_apply (vector_const Rabs n) (a x)).
+  Proof.
+    intros ?.
+    unfold vecrvabs, RealVectorHilbert.Rvector_abs.
+    now rewrite vector_apply_const.
+  Qed.
+
+  Lemma vector_FiniteCondexp_Jensen_abs {n} (rv_X : Ts -> vector R n)
+        {rv : RandomVariable dom (Rvector_borel_sa n) rv_X}
+        {isfe : vector_IsFiniteExpectation prts rv_X}
+        {isfephi : vector_IsFiniteExpectation prts (vecrvabs rv_X)} :
+    almostR2 (prob_space_sa_sub prts sub) (vectorize_relation Rle n)
+             (vecrvabs (vector_FiniteConditionalExpectation rv_X))
+             (vector_FiniteConditionalExpectation (vecrvabs rv_X)).
+  Proof.
+
+    assert (rvphi : RandomVariable dom (Rvector_borel_sa n)
+                                   (fun x : Ts => vector_apply (vector_const Rabs n) (rv_X x))).
+    {
+      apply RandomVariable_vector.
+      apply Forall_vector; intros.
+      generalize (rvabs_rv _ (vecrvnth i pf rv_X)).
+      apply RandomVariable_proper; try reflexivity.
+      intros ?.
+      simpl.
+      now rewrite vector_nth_fun_to_vector, vector_nth_apply, vector_nth_const.
+    }
+
+    assert (isfephi' : vector_IsFiniteExpectation prts (fun x : Ts => vector_apply (vector_const Rabs n) (rv_X x))).
+    {
+      apply Forall_vector; intros.
+      eapply vector_IsFiniteExpectation_nth in isfephi.
+      revert isfephi.
+      apply IsFiniteExpectation_proper; intros ?.
+      simpl.
+      rewrite vector_nth_fun_to_vector, vector_nth_apply, vector_nth_const.
+      unfold vecrvnth, vecrvabs.
+      unfold RealVectorHilbert.Rvector_abs.
+      now rewrite vector_nth_map.
+    }
+
+    eapply almost_impl; [| apply (@vector_FiniteCondexp_Jensen _ rv_X (vector_const Rabs n) _ _ _ _)].
+    - apply all_almost; intros ??.
+      rewrite vecrvabs_unfold.
+      rewrite H; intros ??.
+      right.
+      repeat rewrite vector_FiniteConditionalExpectation_nth.
+      apply FiniteConditionalExpectation_ext; intros ?.
+      unfold vecrvnth.
+      now rewrite vecrvabs_unfold.
+    - apply Forall_vector; intros ?????.
+      repeat rewrite vector_nth_const.
+      apply abs_convex.
+  Qed.
+
 End vec_cond_exp.
 
 
