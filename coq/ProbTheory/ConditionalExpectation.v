@@ -4558,6 +4558,20 @@ Section cond_exp2.
     Rbar_rvminus (NonNegCondexp (pos_fun_part f))
                  (NonNegCondexp (neg_fun_part f)).
 
+  Lemma ConditionalExpectation_ext (f1 f2 : Ts -> R)
+        {rv1 : RandomVariable dom borel_sa f1}
+        {rv2 : RandomVariable dom borel_sa f2} :
+    rv_eq f1 f2 ->
+    rv_eq (ConditionalExpectation f1) (ConditionalExpectation f2).
+  Proof.
+    (* classically true *)
+    intros ??.
+    assert (f1 = f2) by now apply functional_extensionality.
+    subst.
+    f_equal.
+    apply proof_irrelevance.
+  Qed.
+
   Global Instance Condexp_rv (f : Ts -> R) 
          {rv : RandomVariable dom borel_sa f} :
     RandomVariable dom2 Rbar_borel_sa (ConditionalExpectation f).
@@ -5057,6 +5071,21 @@ Section fin_cond_exp.
     apply x.
   Defined.
 
+  Lemma FiniteConditionalExpectation_ext (f1 f2 : Ts -> R)
+        {rv1 : RandomVariable dom borel_sa f1}
+        {rv2 : RandomVariable dom borel_sa f2}
+        {isfe1:IsFiniteExpectation prts f1}
+        {isfe2:IsFiniteExpectation prts f2}
+    : rv_eq f1 f2 ->
+      rv_eq (FiniteConditionalExpectation f1) (FiniteConditionalExpectation f2).
+  Proof.
+    (* classically true *)
+    intros ??.
+    assert (f1 = f2) by now apply functional_extensionality.
+    subst.
+    f_equal; apply proof_irrelevance.
+  Qed.
+
   Lemma FiniteCondexp_eq
              (f : Ts -> R)
              {rv : RandomVariable dom borel_sa f}
@@ -5301,168 +5330,24 @@ Section fin_cond_exp.
     invcs eqq.
     lra.
   Qed.
-
         
-  Lemma FiniteCondexp_Jensen (rv_X : Ts -> R) (phi : R -> R) (a b : nat -> R) 
+  Lemma FiniteCondexp_Jensen (rv_X : Ts -> R) (phi : R -> R)
         {rv : RandomVariable dom borel_sa rv_X}
         {rvphi : RandomVariable dom borel_sa (fun x => phi (rv_X x))}
         {isfe : IsFiniteExpectation prts rv_X} 
         {isfephi : IsFiniteExpectation prts (fun x => phi (rv_X x))} :    
-    (forall (x: R),
-      is_sup_seq (fun n => (a n) * x + (b n)) (phi x)) ->
-    almostR2 (prob_space_sa_sub prts sub) Rbar_le
+    (forall c x y, convex phi c x y) ->
+    almostR2 (prob_space_sa_sub prts sub) Rle
       (fun x => phi ((FiniteConditionalExpectation rv_X) x))
       (FiniteConditionalExpectation (fun x => phi (rv_X x))).
   Proof.
     intros.
-    assert (forall (n:nat),
-               (forall (x:R),
-                   (a n) * x + (b n) <= (phi x))).
-    {
-      intros.
-      specialize (H x).
-      apply is_sup_seq_lub in H.
-      destruct H.
-      unfold Rbar_is_upper_bound in H.
-      specialize (H (a n * x + b n)).
-      apply H.
-      now exists n.
-    }
-    generalize (fun n => FiniteCondexp_scale (a n) rv_X); intros.
-    generalize (fun n => FiniteCondexp_const (b n)); intros.
-    generalize (fun n => FiniteCondexp_plus (rvscale (a n) rv_X) (const (b n))); intros.
-    assert (forall n,
-               almostR2 (prob_space_sa_sub prts sub) eq
-                        (FiniteConditionalExpectation (rvplus (rvscale (a n) rv_X) (const (b n))))
-                        (rvplus (rvscale (a n) (FiniteConditionalExpectation rv_X))
-                                (const (b n)))).
-    {
-     intros.
-     generalize (almost_and _ (H1 n) (H3 n)); intros.
-     apply (almost_impl' _ H4).
-     apply all_almost; intros.
-     destruct H5.
-     rewrite H6.
-     unfold rvplus.
-     rewrite H5.
-     now rewrite H2.
-    }
-    clear H1 H2 H3.
-    assert (forall (n:nat),
-               almostR2 prts Rle
-                        (rvplus (rvscale (a n) rv_X) (const (b n)))
-                        (fun x => phi (rv_X x))).
-    {
-      intros.
-      apply all_almost.
-      intros.
-      rv_unfold.
-      apply H0.
-    }
-    generalize (fun n => FiniteCondexp_ale _ _ (H1 n)); intros.
-    clear H1.
-    assert (forall (n:nat),
-               almostR2 (prob_space_sa_sub prts sub) Rle
-                        (rvplus (rvscale (a n) (FiniteConditionalExpectation rv_X)) (const (b n)))
-                        (FiniteConditionalExpectation (fun x : Ts => phi (rv_X x)))).
-    {
-      intros.
-      specialize (H4 n).
-      specialize (H2 n).
-      generalize (almost_and _ H4 H2); intros.
-      apply (almost_impl' _ H1).
-      apply all_almost; intros.
-      destruct H3.
-      now rewrite <- H3.
-   }
-    clear H2.
-    assert (almost (prob_space_sa_sub prts sub) 
-                   (fun x => forall n, 
-                        ((rvplus (rvscale (a n) (FiniteConditionalExpectation rv_X)) (const (b n))) x)
-                          <= (FiniteConditionalExpectation (fun x : Ts => phi (rv_X x))) x)).
-    {
-      apply almost_forall.
-      intros.
-      apply (H1 n).
-    }
-    assert (rv_eq
-              (fun x : Ts => Finite (phi (FiniteConditionalExpectation rv_X x)))
-              (fun x => Sup_seq (fun n => a n * (FiniteConditionalExpectation rv_X x) + b n))).
-    {
-      intro x.
-      specialize (H (FiniteConditionalExpectation rv_X x)).
-      apply is_sup_seq_unique in H.
-      now rewrite H.
-    }
-     apply (almost_impl' _ H2).    
-     apply all_almost.
-     intros.
-     rewrite H3.
-     unfold rvplus, rvscale, const in H5.
-     replace (Finite ( FiniteConditionalExpectation (fun x0 : Ts => phi (rv_X x0)) x)) with
-         (Sup_seq (fun n => ( FiniteConditionalExpectation (fun x0 : Ts => phi (rv_X x0)) x))).
-     - apply Sup_seq_le.
-       intros.
-       simpl.
-       apply H5.
-     - rewrite Rbar_sup_eq_lub.
-       unfold Rbar_lub, proj1_sig.
-       match_destr.
-       destruct r.
-       unfold Rbar_is_upper_bound in *.
-       apply Rbar_le_antisym.
-       + apply H7.
-         intros.
-         destruct H8.
-         rewrite <- H8.
-         apply Rbar_le_refl.
-       + apply H6.
-         now exists (0%nat).
-   Qed.
-
-  Lemma FiniteCondexp_Jensen_abs (rv_X : Ts -> R) 
-        {rv : RandomVariable dom borel_sa rv_X}
-        {isfe : IsFiniteExpectation prts rv_X} 
-        {isfephi : IsFiniteExpectation prts (fun x => Rabs (rv_X x))} :   
-    almostR2 (prob_space_sa_sub prts sub) Rle
-             (rvabs (FiniteConditionalExpectation rv_X))
-             (FiniteConditionalExpectation (rvabs rv_X)).
-  Proof.
-    pose (a := fun (n:nat) => if (Nat.eqb n 0%nat) then 1 else -1).
-    pose (b := fun (n:nat) => 0).
-    generalize (FiniteCondexp_Jensen rv_X Rabs a b); intros.
-    cut_to H.
-    - apply (almost_impl' _ H).
-      apply all_almost.
-      intros.
-      unfold rvabs.
-      apply H0.
-    - intros.
-      apply Rbar_is_lub_sup_seq.
-      unfold Rbar_is_lub.
-      unfold Rbar_is_upper_bound.
-      split; intros.
-      + destruct H0.
-        rewrite H0.
-        unfold a, b.
-        rewrite Rplus_0_r.
-        match_destr.
-        * rewrite Rmult_1_l; simpl.
-          apply Rle_abs.
-        * replace (-1*x) with (-x) by lra; simpl.
-          apply Rabs_maj2.
-      + apply H0.
-        unfold a, b.
-        destruct (Rle_dec 0 x).
-        * exists (0%nat); simpl.
-          rewrite Rplus_0_r, Rmult_1_l.
-          apply Rle_ge in r.
-          now rewrite Rabs_right.
-        * exists (1%nat); simpl.
-          replace (-1 * x + 0) with (-x) by lra.
-          rewrite Rabs_left; trivial.
-          lra.
-   Qed.
+    apply (is_condexp_Jensen prts sub rv_X (FiniteConditionalExpectation rv_X)
+                                  (FiniteConditionalExpectation (fun x : Ts => phi (rv_X x)))
+                                  phi); trivial.
+    - apply FiniteCondexp_is_cond_exp.
+    - apply FiniteCondexp_is_cond_exp.
+  Qed.
 
   Theorem FiniteCondexp_factor_out
         (f g : Ts -> R)

@@ -600,23 +600,55 @@ Proof.
   now repeat rewrite vector_nth_const.
 Qed.
 
-Definition vector_equiv {T:Type} (R:T->T->Prop) {eqR:Equivalence R} (n:nat) : vector T n -> vector T n -> Prop
-  := fun v1 v2 => forall i pf, vector_nth i pf v1 === vector_nth i pf v2.
+Definition vectorize_relation {T:Type} (R:T->T->Prop) (n:nat) : vector T n -> vector T n -> Prop
+  := fun v1 v2 => forall i pf, R (vector_nth i pf v1) (vector_nth i pf v2).
 
-Global Instance vector_equiv_equiv {T:Type} (R:T->T->Prop) {eqR:Equivalence R} {n:nat} : Equivalence (vector_equiv R n).
+Global Instance vectorize_relation_refl {T:Type} (R:T->T->Prop) (n:nat) {refl:Reflexive R} : Reflexive (vectorize_relation R n).
 Proof.
-  constructor
-  ; repeat red; intros.
-  - reflexivity.
-  - symmetry.
-    apply H.
-  - etransitivity.
+  intros ???.
+  reflexivity.
+Qed.
+
+Global Instance vectorize_relation_sym {T:Type} (R:T->T->Prop) (n:nat) {sym:Symmetric R} : Symmetric (vectorize_relation R n).
+Proof.
+  intros ?????.
+  now apply sym.
+Qed.
+
+Global Instance vectorize_relation_trans {T:Type} (R:T->T->Prop) (n:nat) {trans:Transitive R} : Transitive (vectorize_relation R n).
+Proof.
+  intros ???????.
+  etransitivity; eauto.
+Qed.
+
+Global Instance vectorize_relation_equiv {T:Type} (R:T->T->Prop) (n:nat) {equiv:Equivalence R} : Equivalence (vectorize_relation R n).
+Proof.
+  constructor; typeclasses eauto.
+Qed.
+
+Global Instance vectorize_relation_pre {T:Type} (R:T->T->Prop) (n:nat) {pre:PreOrder R} : PreOrder (vectorize_relation R n).
+Proof.
+  constructor; typeclasses eauto.
+Qed.
+
+Global Instance vectorize_relation_part {T}
+       (eqR preR:T->T->Prop) (n:nat) {R_equiv:Equivalence eqR} {R_pre:PreOrder preR} {R_part:PartialOrder eqR preR}:
+    PartialOrder (vectorize_relation eqR n) (vectorize_relation preR n).
+Proof.
+  split ; intros HH.
+  - repeat red.
+    split
+    ; intros ??; now apply R_part.
+  - destruct HH.
+    intros ??.
+    apply R_part.
+    split.
     + apply H.
     + apply H0.
 Qed.
 
-Global Instance vector_equiv_dec {T:Type} (R:T->T->Prop) {eqR:Equivalence R} {eqdecR:EqDec T R} {n:nat}
-  : EqDec (vector T n) (vector_equiv R n).
+Global Instance vectorize_relation_equiv_dec {T:Type} (R:T->T->Prop) {eqR:Equivalence R} {eqdecR:EqDec T R} {n:nat}
+  : EqDec (vector T n) (vectorize_relation R n).
 Proof.
   repeat red.
   destruct x; destruct y; simpl.
@@ -663,14 +695,15 @@ Proof.
       assert (pf1:(0 < S n)%nat) by lia.
       specialize (HH 0%nat pf1).
       unfold vector_nth in HH; simpl in HH.
-      congruence.
+      apply c.
+      apply HH.
 Defined.
 
 Global Instance vector_eq_dec {T:Type} {eqdecR:EqDec T eq} {n:nat}
   : EqDec (vector T n) eq.
 Proof.
   intros x y.
-  destruct (vector_equiv_dec eq x y).
+  destruct (vectorize_relation_equiv_dec eq x y).
   - left.
     unfold equiv in *.
     apply vector_nth_eq.
@@ -693,6 +726,49 @@ Next Obligation.
   now rewrite vector_length in Heq_anonymous.
 Qed.
 
+Lemma vector_to_ovector_proj1_sig {A} {n} (x:vector (option A) n) :
+  listo_to_olist (proj1_sig x) = 
+  match (vectoro_to_ovector x) with
+  | None => None
+  | Some x => Some (proj1_sig x)
+  end.
+Proof.
+  intros; destruct x; simpl; subst.
+  unfold vectoro_to_ovector; simpl.
+  generalize ((@eq_refl (option (list A)) (@listo_to_olist A x))).
+
+  cut(forall o, forall e : o = listo_to_olist x,
+             o =
+             match
+               match
+                 o as anonymous' return (anonymous' = listo_to_olist x -> option (vector A (length x)))
+               with
+               | Some x0 =>
+                 fun Heq_anonymous : Some x0 = listo_to_olist x =>
+                   Some
+                     (exist (fun l : list A => length l = length x) x0
+                            (DVector.vectoro_to_ovector_obligation_1 A (length x)
+                                                                     (exist (fun l : list (option A) => length l = length x) x eq_refl) x0 Heq_anonymous))
+    | None => fun _ : None = listo_to_olist x => None
+               end e
+             with
+             | Some x0 => Some (proj1_sig x0)
+             | None => None
+             end); trivial.
+  intros.
+  destruct o; trivial.
+Qed.
+
+Lemma vectoro_to_ovector_some_eq {A} {n} (v1:vector (option A) n) (v2:vector A n) :
+      vectoro_to_ovector v1 = Some v2 <->
+      listo_to_olist (proj1_sig v1) = Some (proj1_sig v2).
+  Proof.
+    rewrite vector_to_ovector_proj1_sig.
+    match_destr; [| intuition congruence].
+    - split; intros HH; invcs HH; trivial.
+      apply vector_eq in H0; congruence.
+  Qed.
+
 Definition vector_list {A} (l:list A) : vector A (length l)
   := exist _ l (eq_refl _).
 
@@ -705,6 +781,13 @@ Lemma Forall_vectorize_length {T} {n} (l:list (list T))
   length (Forall_vectorize l flen) = length l.
 Proof.
   apply list_dep_zip_length.
+Qed.
+
+Program Definition vector_dep_zip {T} {n} {P:T->Prop} (v:vector T n)
+  : Forall P (proj1_sig v) -> vector (sig P) n
+  := fun ff => exist _ (list_dep_zip _ ff) _.
+Next Obligation.
+  now rewrite list_dep_zip_length, vector_length.
 Qed.
 
 Lemma Forall_vectorize_in {T} {n} (l:list (list T)) 
@@ -785,6 +868,17 @@ Proof.
       simpl in *.
       congruence.
 Defined.
+
+Program Lemma vector_Forall {A} {P:A->Prop} {n:nat} (l:vector A n)
+  : Forall P l -> (forall i pf, P (vector_nth i pf l)).
+Proof.
+  intros.
+  rewrite Forall_forall in H.
+  apply H.
+  apply vector_nth_In.
+Qed.
+
+
 
 Lemma vector_nthS {A} a i (l:list A) pf1 pf2 :
   (vector_nth (S i) pf1

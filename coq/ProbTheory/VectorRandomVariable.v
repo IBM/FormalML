@@ -69,6 +69,14 @@ Section VectorRandomVariables.
     now rewrite vector_nth_create'.
   Qed.
 
+  Lemma vector_of_funs_vector_nth {n} (v:vector (Ts->Td) n) a i pf :
+    vector_nth i pf (vector_of_funs_to_fun_to_vector v a) =
+    vector_nth i pf v a.
+  Proof.
+    unfold vector_of_funs_to_fun_to_vector.
+    now rewrite vector_nth_create'.
+  Qed.
+  
   Lemma vector_of_funs_vector_create n f :
     rv_eq (vector_of_funs_to_fun_to_vector (vector_create 0 n f))
           (fun t=> vector_create 0 n (fun m pf1 pf2 => f m pf1 pf2 t))
@@ -80,7 +88,7 @@ Section VectorRandomVariables.
     rewrite vector_nth_create.
     f_equal; apply le_uniqueness_proof.
   Qed.
-
+  
 End VectorRandomVariables.
 
 Require Import Expectation.
@@ -124,7 +132,7 @@ Section vector_ops.
   Definition rvinner {n} (rv_X1 rv_X2 : Ts -> vector R n) :=
     fun omega => Rvector_inner (rv_X1 omega) (rv_X2 omega).
 
-  Definition vecrvnth {n} i pf (rv_X : Ts -> vector R n) :=
+  Definition vecrvnth {A} {n} i pf (rv_X : Ts -> vector A n) :=
     (fun omega =>  vector_nth i pf (rv_X omega)).
 
   Global Instance vecrvplus_proper {n} : Proper (rv_eq ==> rv_eq ==> rv_eq) (@vecrvplus n).
@@ -601,7 +609,7 @@ Section vector_ops.
     unfold vecrvminus.
     apply Rvector_plus_rv; trivial.
     now apply Rvector_opp_rv.
-  Qed.
+  Defined.
 
   Global Instance Rvector_sum_rv {n} (f : Ts -> vector R n) :
     RandomVariable dom (Rvector_borel_sa n) f ->
@@ -726,6 +734,24 @@ Section vector_ops.
     apply rv.
   Qed.
 
+  Lemma vector_RandomVariable {n} f 
+        {rv : RandomVariable dom (Rvector_borel_sa n) f} :
+    Forall (RandomVariable dom borel_sa) (proj1_sig (iso_f f)).
+  Proof.
+    intros.
+    apply Forall_vector; intros.
+    now apply vec_rv.
+  Qed.
+  
+  Lemma RandomVariable_vector {n} (f:Ts -> vector R n)
+        (frv:Forall (RandomVariable dom borel_sa) (proj1_sig (iso_f f)))
+    : RandomVariable dom (Rvector_borel_sa n) f.
+  Proof.
+    apply RealVectorMeasurableRandomVariable; intros ??.
+    apply rv_measurable.
+    now apply vector_Forall.
+  Qed.
+  
   Global Program Instance frf_vecrvconst n c :
     FiniteRangeFunction (vecrvconst n c)
     := { frf_vals := (vector_const c n)::nil }.

@@ -89,6 +89,7 @@ PROB_THEORY = \
 	ConditionalExpectation \
 	Expectation \
 	RbarExpectation \
+	VectorConditionalExpectation \
 	SigmaAlgebras \
 	VectorRandomVariable \
 	Gaussian

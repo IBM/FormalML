@@ -2062,6 +2062,22 @@ Section list_dep.
     now rewrite list_dep_zip_map1.
   Qed.
 
+  Lemma list_dep_zip_ext2 {T} (P : T -> Prop) (l : list T) (F1 F2:Forall P l) :
+    Forall2 (fun x y => proj1_sig x = proj1_sig y) (list_dep_zip l F1) (list_dep_zip l F2).
+  Proof.
+    induction l; simpl; trivial.
+    constructor; trivial.
+  Qed.
+  
+  Lemma list_dep_zip_ext_map {T B} (P : T -> Prop) (l : list T) (F1 F2:Forall P l) (f1 f2:sig P->B) :
+    (forall x pf1 pf2, In x l -> f1 (exist _ x pf1) = f2 (exist _ x pf2)) ->
+    map f1 (list_dep_zip l F1) = map f2 (list_dep_zip l F2).
+  Proof.
+    intros.
+    induction l; simpl in *; trivial.
+    f_equal; firstorder.
+  Qed.
+
 End list_dep.
 
 Program Fixpoint map_dep {A B} (l:list A) :  (forall x, In x l -> B) -> list B
