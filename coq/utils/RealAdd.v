@@ -1977,37 +1977,6 @@ Proof.
       lra.
   Qed.
 
-Lemma power_convex_nneg (e:R) :
-  1 <= e ->
-  forall (x y a : R), 0<=x -> 0<=y -> convex (fun z => power z e) a x y.
-Proof.
-  unfold convex.
-  intros.
-  destruct (Rlt_dec 0 x); destruct (Rlt_dec 0 y).
-  - now apply power_convex_pos.
-  - assert (y = 0) by lra.
-    rewrite H3.
-    rewrite power0_Sbase.
-    rewrite Rmult_0_r, Rplus_0_r.
-    rewrite Rplus_0_r.
-    now apply power_scale_le.
-  - assert (x = 0) by lra.
-    rewrite H3.
-    rewrite power0_Sbase.
-    rewrite Rmult_0_r, Rplus_0_l.
-    rewrite Rplus_0_l.
-    assert (0 <= (1-a) <= 1) by lra.
-    now apply power_scale_le.
-  - assert (x = 0) by lra.
-    assert (y = 0) by lra.
-    rewrite H3, H4.
-    rewrite power0_Sbase.
-    repeat rewrite Rmult_0_r.
-    repeat rewrite Rplus_0_r.
-    rewrite power0_Sbase.
-    lra.
-  Qed.
-
 Lemma power_increasing (e : R) :
   0 <= e -> increasing (fun z => power z e).
 Proof.
@@ -2026,13 +1995,58 @@ Proof.
     match_destr; try lra.
  Qed.
 
+Lemma power_convex (e:R) :
+  1 <= e ->
+  forall (x y a : R), convex (fun z => power z e) a x y.
+Proof.
+  unfold convex.
+  intros.
+  destruct (Rlt_dec 0 x); destruct (Rlt_dec 0 y).
+  - now apply power_convex_pos.
+  - assert (y <= 0) by lra.
+    assert (power y e = 0) by (unfold power; match_destr; lra).
+    rewrite H2.
+    rewrite Rmult_0_r.
+    rewrite Rplus_0_r.
+    apply Rle_trans with (r2 := power (a*x) e).
+    + apply power_increasing; try lra.
+      apply Rplus_le_reg_l with (r := - a*x).
+      ring_simplify.
+      replace (-a * y + y) with ((1-a)*y) by lra.
+      apply Rmult_le_0_l; lra.
+    + apply power_scale_le; lra.
+  - assert ( x <= 0) by lra.
+    assert (power x e = 0) by (unfold power; match_destr; lra).
+    rewrite H2.
+    rewrite Rmult_0_r.
+    rewrite Rplus_0_l.
+    apply Rle_trans with (r2 := power ((1-a)*y) e).
+    + apply power_increasing; try lra.
+      apply Rplus_le_reg_l with (r := - (1-a)*y).
+      ring_simplify.
+      apply Rmult_le_0_l; lra.
+    + apply power_scale_le; lra.
+  - assert (x <= 0) by lra.
+    assert (y <= 0) by lra.
+    assert (power x e = 0) by (unfold power; match_destr; lra).
+    assert (power y e = 0) by (unfold power; match_destr; lra).    
+    rewrite H3, H4.
+    repeat rewrite Rmult_0_r.
+    rewrite Rplus_0_r.
+    unfold power.
+    match_destr; try lra.
+    assert (a * x + (1-a)* y > 0) by lra.
+    apply Rmult_le_compat_r with (r := a) in H1; try lra.
+    rewrite Rmult_0_l in H1.
+    apply Rmult_le_compat_r with (r := 1-a) in H2; lra.
+ Qed.
+
 Lemma convex_power_abs (e:R):  1 <= e -> forall c x y : R, convex (fun a : R => power (Rabs a) e) c x y.
   Proof.
     intros.
-    generalize (compose_convex_pos (fun z => power z e) Rabs); intros.
+    generalize (compose_convex (fun z => power z e) Rabs); intros.
     apply H0.
-    - apply Rabs_pos.
-    - intros; now apply power_convex_nneg.
+    - intros; now apply power_convex.
     - apply abs_convex.
     - apply power_increasing; lra.
   Qed.
