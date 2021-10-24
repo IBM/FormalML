@@ -5510,6 +5510,16 @@ Section fin_cond_exp.
     now rewrite FiniteCondexp_Expectation.
   Qed.
 
+  Global Instance FiniteCondexp_isfe2 (f : Ts -> R) 
+          {rv : RandomVariable dom borel_sa f}
+          {isfe:IsFiniteExpectation prts f}
+    : IsFiniteExpectation (prob_space_sa_sub prts sub) (FiniteConditionalExpectation f).
+  Proof.
+    generalize (FiniteCondexp_isfe f).
+    apply IsFiniteExpectation_prob_space_sa_sub_f.
+    now apply FiniteCondexp_rv.
+  Qed.
+
   Theorem FiniteCondexp_FiniteExpectation (f : Ts -> R) 
           {rv : RandomVariable dom borel_sa f}
           {isfe:IsFiniteExpectation prts f}
@@ -5521,6 +5531,19 @@ Section fin_cond_exp.
     generalize (FiniteCondexp_Expectation f).
     repeat erewrite FiniteExpectation_Expectation.
     now intros HH; invcs HH.
+  Qed.
+
+  Theorem FiniteCondexp_FiniteExpectation_sub (f : Ts -> R) 
+          {rv : RandomVariable dom borel_sa f}
+          {isfe:IsFiniteExpectation prts f}
+          {isfe':IsFiniteExpectation prts (FiniteConditionalExpectation f)}
+    :
+      FiniteExpectation (prob_space_sa_sub prts sub) (FiniteConditionalExpectation f) =
+      FiniteExpectation prts f.
+  Proof.
+    erewrite <- FiniteCondexp_FiniteExpectation.
+    apply FiniteExpectation_prob_space_sa_sub.
+    now apply FiniteCondexp_rv.
   Qed.
 
   Theorem FiniteCondexp_proper (f1 f2 : Ts -> R) 
@@ -5685,7 +5708,7 @@ Section fin_cond_exp.
     - eapply IsFiniteExpectation_proper_almostR2; eauto. 
   Qed.      
 
-  Instance FiniteCondexp_Lp {p} (pbig:1<=p)
+  Instance FiniteCondexp_Lp_sub {p} (pbig:1<=p)
         (f : Ts -> R) 
         {frv : RandomVariable dom borel_sa f}
         {isfe: IsFiniteExpectation prts f}
@@ -5726,13 +5749,16 @@ Section fin_cond_exp.
       now apply convex_power_abs.
   Qed.
   
-  Lemma FiniteCondexp_Lp' {p} (pbig:1<=p)
+  Instance FiniteCondexp_Lp {p} (pbig:1<=p)
         (f : Ts -> R) 
         {frv : RandomVariable dom borel_sa f}
+        {isfe: IsFiniteExpectation prts f}
         {isl : IsLp prts p f} :
-    IsLp prts p (FiniteConditionalExpectation f (isfe:=IsLp_Finite prts p f pbig)).
+    IsLp (prob_space_sa_sub prts sub) p (FiniteConditionalExpectation f).
   Proof.
-    now apply FiniteCondexp_Lp.
+    apply IsLp_prob_space_sa_sub.
+    - apply FiniteCondexp_rv.
+    - now apply FiniteCondexp_Lp_sub.
   Qed.
 
   Lemma FiniteCondexp_Lp_contractive {p} (pbig:1<=p)
@@ -5740,7 +5766,7 @@ Section fin_cond_exp.
         {frv : RandomVariable dom borel_sa f}
         {isfe: IsFiniteExpectation prts f}
         {isl : IsLp prts p f} :
-    FiniteExpectation prts (rvpower (rvabs (FiniteConditionalExpectation f)) (const p)) (isfe:=FiniteCondexp_Lp pbig f) <=
+    FiniteExpectation (prob_space_sa_sub prts sub) (rvpower (rvabs (FiniteConditionalExpectation f)) (const p)) (isfe:=FiniteCondexp_Lp pbig f) <=
     FiniteExpectation prts (rvpower (rvabs f) (const p)).
   Proof.
     assert (rvphi:RandomVariable dom borel_sa (fun x : Ts => (fun x0 : R => power (Rabs x0) p) (f x))).
@@ -5759,26 +5785,54 @@ Section fin_cond_exp.
     ; intros.
     cut_to H.
     - eapply FiniteExpectation_ale in H.
-      + rewrite (FiniteExpectation_prob_space_sa_sub _ _ _ (isfe2:=(@FiniteCondexp_Lp p pbig f frv isfe isl))) in H.
-        erewrite (FiniteExpectation_prob_space_sa_sub _ _ _) in H.
-        rewrite FiniteCondexp_FiniteExpectation in H.
-        etransitivity; try eapply H.
-        right.
-        apply FiniteExpectation_ext; intros ?.
-        reflexivity.
+      + rewrite FiniteCondexp_FiniteExpectation_sub in H.
+        * etransitivity; try eapply H.
+          right.
+          apply FiniteExpectation_ext; intros ?.
+          reflexivity.
+        * apply FiniteCondexp_isfe.
       + apply rvpower_rv; try typeclasses eauto.
         apply rvconst.
       + typeclasses eauto.
     - intros.
       now apply convex_power_abs.
-      Unshelve.
-      + apply IsFiniteExpectation_prob_space_sa_sub_f.
-        * apply rvpower_rv; try typeclasses eauto.
-          apply rvconst.
-        * apply (FiniteCondexp_Lp pbig f).
-      + apply IsFiniteExpectation_prob_space_sa_sub_f.
-        * typeclasses eauto.
-        * apply  FiniteCondexp_isfe.
+  Qed.
+
+  Lemma FiniteCondexp_Lp_norm_contractive {p} (pbig:1<=p)
+        (f : Ts -> R) 
+        {frv : RandomVariable dom borel_sa f}
+        {isfe: IsFiniteExpectation prts f}
+        {isl : IsLp prts p f} :
+    power (FiniteExpectation (prob_space_sa_sub prts sub)  (rvpower (rvabs (FiniteConditionalExpectation f)) (const p)) (isfe:=FiniteCondexp_Lp pbig f)) (/ p) <=
+    power (FiniteExpectation prts (rvpower (rvabs f) (const p))) (/ p).
+  Proof.
+    assert (HH:forall x isfe ,0 <= FiniteExpectation (prob_space_sa_sub prts sub)  (rvpower (rvabs x) (const p)) (isfe:=isfe)).
+    {
+      intros.
+      replace 0 with (FiniteExpectation (prob_space_sa_sub prts sub) (const 0)).
+      - apply FiniteExpectation_le; intros ?.
+        unfold const, rvpower; simpl.
+        apply power_nonneg.
+      - apply FiniteExpectation_const.
+    }
+    destruct (HH _ (@FiniteCondexp_Lp p pbig f frv isfe isl)).
+    - apply Rle_power_inv_l; trivial.
+      apply (FiniteCondexp_Lp_contractive pbig f).
+    - symmetry in H.
+      assert (RandomVariable dom borel_sa (rvpower (rvabs (FiniteConditionalExpectation f)) (const p))).
+      {
+        apply rvpower_rv; try typeclasses eauto.
+        apply rvabs_rv.
+        apply RandomVariable_sa_sub; trivial.
+        apply FiniteCondexp_rv.
+      } 
+      apply FiniteExpectation_zero_pos in H; trivial.
+      + rewrite (FiniteExpectation_proper_almostR2 _ _ _ H).
+        rewrite FiniteExpectation_const.
+        rewrite power0_Sbase.
+        apply power_nonneg.
+      + typeclasses eauto.
+      + typeclasses eauto.
   Qed.
 
   Lemma FiniteCondexp_L2_inner
@@ -5843,7 +5897,7 @@ Section fin_cond_exp.
       - apply RandomVariable_sa_sub; trivial.
         eapply FiniteCondexp_rv.
       - apply RandomVariable_sa_sub; trivial.
-      - apply (FiniteCondexp_Lp big2); trivial.
+      - apply (FiniteCondexp_Lp_sub big2); trivial.
     }
 
     repeat rewrite (FiniteExpectation_Expectation prts _) in HH.
@@ -5869,7 +5923,7 @@ Section fin_cond_exp.
             
     assert (IsLp prts 2 (rvminus f (FiniteConditionalExpectation f))).
     {
-      generalize (FiniteCondexp_Lp big2 f); intros.
+      generalize (FiniteCondexp_Lp_sub big2 f); intros.
       apply (IsLp_minus prts (bignneg 2 big2) f _).
     }
     apply is_L2_mult_finite; trivial
@@ -6084,7 +6138,260 @@ Section fin_cond_exp_props.
 
 End fin_cond_exp_props.
 
+Section lp_cond_exp.
+  (* We can view Conditional Expectation as an operator between sub-Lp spaces *)
+  
+    Context {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts: ProbSpace dom)
+          {dom2 : SigmaAlgebra Ts}
+          (sub : sa_sub dom2 dom)
+          {p} (pbig:1<=p).
+
+    (* TODO: move *)
+    Lemma dec_event_sa_sub {P:event dom2}
+          (dec:dec_event P) : dec_event (event_sa_sub sub P).
+    Proof.
+      intros x.
+      destruct (dec x).
+      - left; apply p0.
+      - right; apply n.
+    Defined.
+
+    Lemma EventIndicator_sa_sub {P:event dom2}
+          (dec:dec_event P) :
+      rv_eq (EventIndicator (dec_event_sa_sub dec)) (EventIndicator dec).
+    Proof.
+      unfold EventIndicator.
+      intros ?.
+      repeat match_destr; simpl in *; tauto.
+    Qed.
+
+    Definition LpRRVcondexp (f:LpRRV prts p) : LpRRV  (prob_space_sa_sub prts sub) p
+      := pack_LpRRV  (prob_space_sa_sub prts sub) (FiniteConditionalExpectation
+                            prts sub f
+                            (rv:=LpRRV_rv _ f)
+                            (isfe:=IsLp_Finite prts p f pbig
+                                               (rrv:=LpRRV_rv _ _)
+                                               (lp:=LpRRV_lp _ _)
+                                                  ))
+                     (rv:=(FiniteCondexp_rv prts sub f))
+                     (lp:=FiniteCondexp_Lp prts sub pbig f).
+
+    Global Instance LpRRV_condexp_sproper : Proper (LpRRV_seq ==> LpRRV_seq) LpRRVcondexp.
+    Proof.
+      intros ???.
+      now apply FiniteConditionalExpectation_ext.
+    Qed.
+
+    Global Instance LpRRV_condexp_proper :
+      Proper (LpRRV_eq prts ==>
+                       LpRRV_eq (prob_space_sa_sub prts sub)) LpRRVcondexp.
+    Proof.
+      intros ???.
+      now apply FiniteCondexp_proper.
+    Qed.
+
+    (* the universal property of conditional expectation *)
+    Theorem LpRRV_condexp_event (f : LpRRV prts p)
+        {P:event dom2}
+        (dec:dec_event P) :
+      Expectation (LpRRVindicator prts pbig (dec_event_sa_sub dec) f) =
+      Expectation (LpRRVindicator (prob_space_sa_sub prts sub) pbig dec (LpRRVcondexp f)).
+    Proof.
+      generalize (FiniteCondexp_cond_exp_event prts sub f (isfe:=IsLp_Finite _ _ _ pbig (lp:=LpRRV_lp _ _)) dec); intros HH.
+      unfold LpRRVindicator; simpl.
+      etransitivity; [etransitivity; try eapply HH |].
+      - eapply Expectation_ext; intros ?.
+        rewrite rvmult_comm.
+        apply rvmult_proper; try reflexivity.
+        apply EventIndicator_sa_sub.
+      - apply Expectation_ext.
+        rewrite rvmult_comm.
+        apply rvmult_proper; try reflexivity.
+    Qed.
+
+    Corollary LpRRV_condexp_event_classic (f : LpRRV prts p) (P:event dom2) :
+      Expectation (LpRRVindicator prts pbig (dec_event_sa_sub (classic_dec P)) f) =
+      Expectation (LpRRVindicator (prob_space_sa_sub prts sub) pbig (classic_dec P) (LpRRVcondexp f)).
+    Proof.
+      apply LpRRV_condexp_event.
+    Qed.
+
+    Global Instance LpRRV_condexp_nneg (f : LpRRV prts p)
+         {nnf : NonnegativeFunction f} :
+    NonnegativeFunction (LpRRVcondexp f).
+  Proof.
+    apply (FiniteCondexp_nneg prts sub f).
+  Qed.
+
+  Lemma LpRRV_condexp_id
+         (f : LpRRV prts p)
+         {rv2 : RandomVariable dom2 borel_sa f} :
+    LpRRV_seq (LpRRVcondexp f) (LpRRV_sa_sub_f prts sub p f).
+  Proof.
+    intros ?.
+    unfold LpRRVcondexp; simpl.
+    rewrite FiniteCondexp_id; trivial.
+  Qed.
+
+  Lemma LpRRV_condexp_id'
+         (f : LpRRV (prob_space_sa_sub prts sub) p) :
+    LpRRV_seq (LpRRVcondexp (LpRRV_sa_sub _ _ _ f)) f.
+  Proof.
+    intros ?.
+    unfold LpRRVcondexp; simpl.
+    rewrite FiniteCondexp_id; trivial.
+    typeclasses eauto.
+  Qed.
+
+  Corollary LpRRV_condexp_const c :
+    LpRRV_seq (LpRRVcondexp (LpRRVconst _ c)) (LpRRVconst _ c).
+  Proof.
+    eapply LpRRV_condexp_id.
+  Qed.
+
+  Theorem LpRRV_condexp_Expectation (f : LpRRV prts p)
+    :
+      Expectation (LpRRVcondexp f) =
+      Expectation f.
+  Proof.
+    unfold LpRRVcondexp; simpl.
+    now rewrite (FiniteCondexp_Expectation prts sub f).
+  Qed.
+
+  Lemma LpRRV_condexp_ale (f1 f2:LpRRV prts p):
+    almostR2 prts Rle f1 f2 ->
+    almostR2 (prob_space_sa_sub prts sub) Rle
+             (LpRRVcondexp f1)
+             (LpRRVcondexp f2).
+  Proof.
+    apply FiniteCondexp_ale.
+  Qed.
+
+  Lemma LpRRV_condexp_scale c (f : LpRRV prts p) :
+    LpRRV_eq (prob_space_sa_sub prts sub) 
+             (LpRRVcondexp (LpRRVscale _ c f))
+             (LpRRVscale _ c (LpRRVcondexp f)).
+  Proof.
+    red.
+    unfold LpRRVcondexp; simpl.
+    generalize (FiniteCondexp_scale prts sub c f (isfe:=IsLp_Finite _ _ _ pbig (lp:=LpRRV_lp _ _))).
+    apply almost_impl; apply all_almost; intros ??.
+    rewrite <- H.
+    now apply FiniteConditionalExpectation_ext.
+  Qed.
+
+  Lemma LpRRV_condexp_opp (f : LpRRV prts p) :
+    LpRRV_eq (prob_space_sa_sub prts sub)
+             (LpRRVcondexp (LpRRVopp _ f))
+             (LpRRVopp _ (LpRRVcondexp f)).
+  Proof.
+    red.
+    unfold LpRRVcondexp; simpl.
+    generalize (FiniteCondexp_opp prts sub f (isfe:=IsLp_Finite _ _ _ pbig (lp:=LpRRV_lp _ _))).
+    apply almost_impl; apply all_almost; intros ??.
+    rewrite <- H.
+    now apply FiniteConditionalExpectation_ext.
+  Qed.
+
+  Lemma LpRRV_condexp_plus (f1 f2 : LpRRV prts p) :
+    LpRRV_eq (prob_space_sa_sub prts sub)
+             (LpRRVcondexp (LpRRVplus _ f1 f2 (p:=bignneg _ pbig)))
+             (LpRRVplus _ (LpRRVcondexp f1) (LpRRVcondexp f2) (p:=bignneg _ pbig)).
+  Proof.
+    red.
+    unfold LpRRVcondexp; simpl.
+    generalize (FiniteCondexp_plus prts sub f1 f2
+                                   (isfe1:=IsLp_Finite _ _ _ pbig (lp:=LpRRV_lp _ _))
+                                   (isfe2:=IsLp_Finite _ _ _ pbig (lp:=LpRRV_lp _ _))).
+    apply almost_impl; apply all_almost; intros ??.
+    rewrite <- H.
+    now apply FiniteConditionalExpectation_ext.
+  Qed.
+
+  Lemma LpRRV_condexp_minus (f1 f2 : LpRRV prts p) :
+    LpRRV_eq (prob_space_sa_sub prts sub)
+             (LpRRVcondexp (LpRRVminus _ f1 f2 (p:=bignneg _ pbig)))
+             (LpRRVminus _ (LpRRVcondexp f1) (LpRRVcondexp f2) (p:=bignneg _ pbig)).
+  Proof.
+    red.
+    unfold LpRRVcondexp; simpl.
+    generalize (FiniteCondexp_minus prts sub f1 f2
+                                   (isfe1:=IsLp_Finite _ _ _ pbig (lp:=LpRRV_lp _ _))
+                                   (isfe2:=IsLp_Finite _ _ _ pbig (lp:=LpRRV_lp _ _))).
+    apply almost_impl; apply all_almost; intros ??.
+    rewrite <- H.
+    now apply FiniteConditionalExpectation_ext.
+  Qed.
+
+  Lemma LpRRV_condexp_Jensen (f : LpRRV prts p) (phi : R -> R)
+        {rvphi : RandomVariable dom borel_sa (fun x => phi (f x))}
+        {isfephi : IsLp prts p (fun x => phi (f x))} : 
+    (forall c x y, convex phi c x y) ->
+    almostR2 (prob_space_sa_sub prts sub) Rle
+      (fun x => phi ((LpRRVcondexp f) x))
+      (LpRRVcondexp (pack_LpRRV _ (fun x => phi (f x)))).
+  Proof.
+    intros.
+    unfold LpRRVcondexp; simpl.
+    now eapply FiniteCondexp_Jensen.
+  Qed.
+
+  Theorem LpRRV_condexp_factor_out
+          (f : LpRRV prts p)
+          (g : LpRRV (prob_space_sa_sub prts sub) p)
+          {rvfg:RandomVariable dom borel_sa (rvmult f g)}
+        {isfef: IsFiniteExpectation prts f}
+        {isfefg:IsLp prts p (rvmult f g)} :
+    almostR2 (prob_space_sa_sub prts sub) eq
+             (LpRRVcondexp (pack_LpRRV _ (rvmult f g)))
+             (rvmult g (LpRRVcondexp f)).
+  Proof.
+    intros.
+    unfold LpRRVcondexp; simpl.
+    apply (FiniteCondexp_factor_out prts sub f g (isfefg:=IsLp_Finite _ _ _ pbig)).
+  Qed.
+
+  Lemma LpRRV_condexp_contract (f:LpRRV prts p) :
+    LpRRVnorm (prob_space_sa_sub prts sub) (LpRRVcondexp f) <= LpRRVnorm prts f.
+  Proof.
+    apply FiniteCondexp_Lp_norm_contractive.
+  Qed.
+
+  
+
+End lp_cond_exp.
+
+(*
+Section l2_cond_exp.
+
+  Context {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts: ProbSpace dom)
+          {dom2 : SigmaAlgebra Ts}
+          (sub : sa_sub dom2 dom).
+
+    Theorem L2RRV_condexp_factor_out
+          (f : LpRRV prts 2)
+          (g : LpRRV (prob_space_sa_sub prts sub) 2) : 
+    LpRRV_eq (prob_space_sa_sub prts sub)
+             (LpRRVcondexp prts sub big2 (pack_LpRRV _ (rvmult f g)
+                                                     (rv:=rvmult_rv _ _ _)
+                                                     (lp:=is_L2_mult_finite
+                                                            _ _ _
+                                                            ((proj2
+                                                                (IsLp_prob_space_sa_sub _ _ _)) _))))
+             (pack_LpRRV _ (rvmult g (LpRRVcondexp prts sub big2 f))
+             (rv:=rvmult_rv _ _ _) (lp:=is_L2_mult_finite _ _ _ _)).
+  Proof.
+
+End l2_cond_exp.
+ *)
+
 Section cond_exp_props.
+
+    
 
   Context {Ts:Type} 
           {dom: SigmaAlgebra Ts}

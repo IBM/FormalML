@@ -4636,4 +4636,31 @@ Section sa_sub.
     now rewrite Expectation_prob_space_sa_sub by typeclasses eauto.
   Qed.
 
+  Definition LpRRV_sa_sub p
+             (x: LpRRV (prob_space_sa_sub prts sub) p) : LpRRV prts p
+    := pack_LpRRV _ x
+                  (rv:=RandomVariable_sa_sub sub x)
+                  (lp:=(proj2 (IsLp_prob_space_sa_sub p x)) _).
+
+  Definition LpRRV_sa_sub_f p
+             (x:LpRRV prts p)
+             {rv:RandomVariable dom2 borel_sa x}
+    : LpRRV (prob_space_sa_sub prts sub) p
+    := pack_LpRRV _ x (lp:=(proj1 (IsLp_prob_space_sa_sub p x)) _).
+
+  Lemma LpRRV_sa_sub_b_f p (x:LpRRV prts p)
+        {rv:RandomVariable dom2 borel_sa x} :
+    LpRRV_seq (LpRRV_sa_sub p (LpRRV_sa_sub_f p x)) x.
+  Proof.
+    intros ?.
+    now destruct x; simpl.
+  Qed.    
+
+  Lemma LpRRV_sa_sub_f_b p (x:LpRRV (prob_space_sa_sub prts sub) p) :
+    LpRRV_seq (LpRRV_sa_sub_f p (LpRRV_sa_sub p x) (rv:=LpRRV_rv _ _)) x.
+  Proof.
+    intros ?.
+    now destruct x; simpl.
+  Qed.    
+
 End sa_sub.
