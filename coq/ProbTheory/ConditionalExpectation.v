@@ -5908,7 +5908,7 @@ Section fin_cond_exp.
       lra.
     } 
     rewrite (FiniteExpectation_Expectation _ _) in e.
-    invcs e.
+    invcs e. 
     simpl.
     do 2 f_equal.
     apply FiniteExpectation_ext; intros ?.
@@ -5917,6 +5917,117 @@ Section fin_cond_exp.
     lra.
   Qed.    
 
+  Lemma Glb_Rbar_pos (rset : R -> Prop) :
+    (forall (r:R), rset r -> 0 <= r) ->
+    Rbar_le 0 (Glb_Rbar rset).
+  Proof.
+    intros.
+    unfold Glb_Rbar, proj1_sig.
+    match_destr.
+    unfold is_glb_Rbar in i.
+    unfold is_lb_Rbar in i.
+    destruct i.
+    apply H1.
+    intros.
+    now apply H.
+  Qed.
+
+  Lemma finite_Glb_Rbar_pos (rset : R -> Prop) :
+    (forall (r:R), rset r -> 0 <= r) ->
+    (exists (r1 : R), rset r1) ->
+    is_finite (Glb_Rbar rset).
+  Proof.
+    intros.
+    destruct H0.
+    apply bounded_is_finite with (a := 0) (b := x).
+    - now apply Glb_Rbar_pos.
+    - unfold Glb_Rbar, proj1_sig.
+      match_destr.
+      unfold is_glb_Rbar in i.
+      unfold is_lb_Rbar in i.
+      destruct i.
+      now apply H1.
+  Qed.
+  
+  Lemma glb_sqrt (rset : R -> Prop) :
+    (forall (r:R), rset r -> 0 <= r) ->
+    (exists (r1 : R), rset r1) ->
+    (Finite (sqrt (Glb_Rbar rset))) = 
+    Glb_Rbar (fun r => exists r0, rset r0 /\ r = sqrt r0).
+  Proof.
+    intros rset_pos nempty.
+    generalize (Glb_Rbar_pos rset rset_pos); intro pos_sqrt1.
+    assert (pos_sqrt2:Rbar_le 0
+              (Glb_Rbar (fun r => exists r0, rset r0 /\ r = sqrt r0))).
+    {
+      apply Glb_Rbar_pos.
+      intros.
+      destruct H as [? [? ?]].
+      rewrite H0.
+      apply sqrt_pos.
+    }
+    generalize (finite_Glb_Rbar_pos _ rset_pos nempty); intro finite1.
+    assert (finite2: is_finite 
+              (Glb_Rbar (fun r => exists r0, rset r0 /\ r = sqrt r0))).
+    {
+      apply finite_Glb_Rbar_pos.
+      - intros.
+        destruct H as [? [? ?]].
+        rewrite H0.
+        apply sqrt_pos.
+      - destruct nempty.
+        exists (sqrt x); exists x.
+        now split.
+    }
+    unfold Glb_Rbar, proj1_sig in *.
+    repeat match_destr.
+    unfold is_glb_Rbar, is_lb_Rbar in *.
+    destruct i; destruct i0.
+    apply Rbar_le_antisym.
+    - apply H2.
+      intros.
+      destruct H3 as [? [? ?]].
+      rewrite H4.
+      apply sqrt_le_1_alt.
+      specialize (H x2 H3).
+      rewrite <- finite1 in H.
+      simpl in H.
+      apply H.
+    - destruct x; try easy.
+      destruct x0; try easy.
+      simpl.
+      assert (Rbar_le (Rsqr r0) r).
+      {
+        apply H0.
+        intros.
+        generalize (H1 (sqrt x)); intros.
+        cut_to H4.
+        simpl in H4.
+        simpl.
+        replace (x) with (Rsqr (sqrt x)).
+        apply Rsqr_le_abs_1.
+        simpl in pos_sqrt1.
+        apply Rle_ge in pos_sqrt1.
+        simpl in pos_sqrt2.
+        apply Rle_ge in pos_sqrt2.        
+        rewrite Rabs_right; trivial.
+        rewrite Rabs_right; trivial.
+        apply Rle_ge.
+        apply sqrt_pos.
+        rewrite Rsqr_sqrt; trivial.
+        apply (rset_pos _ H3).
+        exists x.
+        split; trivial.
+      }
+      replace (r0) with (sqrt(Rsqr r0)).
+      now apply sqrt_le_1_alt.
+      rewrite sqrt_Rsqr_abs.
+      simpl in pos_sqrt2.
+      rewrite Rabs_right; trivial.
+      simpl in pos_sqrt1.
+      now apply Rle_ge.
+ Qed.
+      
 End fin_cond_exp.
 
 Section fin_cond_exp_props.
