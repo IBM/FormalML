@@ -2079,8 +2079,8 @@ algorithm.
     Qed.
 
     (* Move this. *)
-    Lemma vector_nth_between_rvmaxabs (X : Ts -> vector R I)
-      {rv : RandomVariable dom (Rvector_borel_sa I) X}:
+    Lemma vector_nth_between_rvmaxabs {N} (X : Ts -> vector R N)
+      {rv : RandomVariable dom (Rvector_borel_sa N) X}:
       forall k pf omega, -rvmaxabs X omega <= vector_nth k pf (X omega) <= rvmaxabs X omega.
     Proof.
       intros.
@@ -2092,7 +2092,7 @@ algorithm.
         split_Rabs; lra.
     Qed.
 
-  Lemma Rvector_max_abs_nth_in' n (v:vector R (S n)) :
+  Lemma Rvector_max_abs_nth_in' {n} (v:vector R (S n)) :
     exists i pf, Rvector_max_abs v = Rabs (vector_nth i pf v).
   Proof.
     generalize (Rvector_max_abs_in v)
@@ -2104,8 +2104,39 @@ algorithm.
     eauto.
   Qed.
 
-    Lemma is_lim_seq_rvmaxabs_zero_iff (X : nat -> Ts -> vector R I)
-          {rv : forall n, RandomVariable dom (Rvector_borel_sa I) (X n)} :
+  Lemma filter_finite_imp {A B} {fin:Finite.Finite B} {FF} {filterF:Filter FF} (P:B->A->Prop) : 
+    (forall b, FF (P b)) -> FF (fun x => (forall b, P b x)).
+  Proof.
+    intros HH.
+    destruct fin.
+    cut (FF (fun x : A => forall b : B, In b elms -> P b x)).
+    {
+      apply filter_imp; intros; auto.
+    }
+    clear finite.
+    induction elms.
+    - eapply filter_imp; try eapply filter_true.
+      simpl; intros; tauto.
+    - eapply filter_imp; [| apply filter_and; [apply (HH a) | apply IHelms]].
+      simpl; intros.
+      destruct H0; subst; firstorder.
+  Qed.
+
+  Lemma vector_index_filter_imp {A} {FF} {n} {filterF:Filter FF} (P:forall k, (k < n)%nat->A->Prop):
+    (forall k (pf: (k < n)%nat), FF (P k pf)) ->
+    FF (fun x => (forall k pf, P k pf x)).
+  Proof.
+    intros.
+    cut (FF (fun x => (forall (i:{k | (k < n)%nat}), P (proj1_sig i) (proj2_sig i) x))).
+    {
+      apply filter_imp; intros.
+      apply (H0 (exist _ k pf)).
+    }
+    now apply filter_finite_imp; intros [??]; simpl.
+  Qed.
+
+    Lemma is_lim_seq_rvmaxabs_zero_iff {N} (X : nat -> Ts -> vector R N)
+          {rv : forall n, RandomVariable dom (Rvector_borel_sa N) (X n)} :
       forall omega, is_lim_seq (fun n => rvmaxabs (X n) omega) 0 <->
       (forall k pf, is_lim_seq (fun n => vector_nth k pf (X n omega)) 0).
     Proof.
@@ -2123,12 +2154,32 @@ algorithm.
          intros n.
          apply vector_nth_between_rvmaxabs; eauto.
       ++ intros.
+         unfold is_lim_seq in *.
+         apply is_lim_seq_spec; intros eps.
+         assert (forall k pf, eventually (fun n => Rabs (vector_nth k pf (X n omega) - 0) < eps)).
+         {
+           intros.
+           specialize (H k pf).
+           apply is_lim_seq_spec in H.
+           apply H.
+         } 
+         apply vector_index_filter_imp in H0.
+         revert H0.
+         apply filter_imp; intros.
          unfold rvmaxabs.
-         assert (H' : forall k pf, is_lim_seq (fun n => Rabs(vector_nth k pf (X n omega))) 0)
-           by (intros k pf; now rewrite <-is_lim_seq_abs_0).
-         clear H.
-         generalize (Rvector_max_abs_nth_in'); intros Hr.
-     Admitted.
+         destruct N.
+      * rewrite (vector0_0 (X x omega)).
+        unfold Rvector_max_abs.
+        simpl.
+        vm_compute.
+        repeat match_destr; lra.
+      * destruct (Rvector_max_abs_nth_in' (X x omega)) as [?[? eqq1]].
+        rewrite eqq1.
+        specialize (H0 _ x1).
+        rewrite Rminus_0_r in H0.
+        rewrite Rminus_0_r.
+        now rewrite Rabs_Rabsolu.
+    Qed.
 
     (* Lemma 9*)
     Lemma as_convergent_lemma (C : R) (xinit:Ts->vector R I) (w : nat -> Ts -> vector R I)
