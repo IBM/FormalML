@@ -2078,6 +2078,58 @@ algorithm.
         apply L2_convergent_hist_partition_measurable.
     Qed.
 
+    (* Move this. *)
+    Lemma vector_nth_between_rvmaxabs (X : Ts -> vector R I)
+      {rv : RandomVariable dom (Rvector_borel_sa I) X}:
+      forall k pf omega, -rvmaxabs X omega <= vector_nth k pf (X omega) <= rvmaxabs X omega.
+    Proof.
+      intros.
+      generalize (Rvector_max_abs_nth_le (X omega) k pf); intros.
+      split; intros.
+      - unfold rvmaxabs.
+        split_Rabs; lra.
+      - unfold rvmaxabs.
+        split_Rabs; lra.
+    Qed.
+
+  Lemma Rvector_max_abs_nth_in' n (v:vector R (S n)) :
+    exists i pf, Rvector_max_abs v = Rabs (vector_nth i pf v).
+  Proof.
+    generalize (Rvector_max_abs_in v)
+    ; intros HH.
+    apply In_vector_nth_ex in HH.
+    destruct HH as [?[? eqq]].
+    symmetry in eqq.
+    rewrite vector_nth_map in eqq.
+    eauto.
+  Qed.
+
+    Lemma is_lim_seq_rvmaxabs_zero_iff (X : nat -> Ts -> vector R I)
+          {rv : forall n, RandomVariable dom (Rvector_borel_sa I) (X n)} :
+      forall omega, is_lim_seq (fun n => rvmaxabs (X n) omega) 0 <->
+      (forall k pf, is_lim_seq (fun n => vector_nth k pf (X n omega)) 0).
+    Proof.
+      intros omega.
+      split.
+      ++ intros Hnth k pf.
+         assert (is_lim_seq (fun n => - rvmaxabs (X n) omega) 0).
+         {
+           rewrite is_lim_seq_opp.
+           simpl. setoid_rewrite Ropp_involutive.
+           now rewrite Ropp_0.
+         }
+         apply is_lim_seq_le_le with (w := fun n => rvmaxabs (X n) omega)
+                                     (u := fun n => -rvmaxabs (X n) omega); try assumption.
+         intros n.
+         apply vector_nth_between_rvmaxabs; eauto.
+      ++ intros.
+         unfold rvmaxabs.
+         assert (H' : forall k pf, is_lim_seq (fun n => Rabs(vector_nth k pf (X n omega))) 0)
+           by (intros k pf; now rewrite <-is_lim_seq_abs_0).
+         clear H.
+         generalize (Rvector_max_abs_nth_in'); intros Hr.
+     Admitted.
+
     (* Lemma 9*)
     Lemma as_convergent_lemma (C : R) (xinit:Ts->vector R I) (w : nat -> Ts -> vector R I)
           (rxinit : RandomVariable dom (Rvector_borel_sa I) xinit)
@@ -2120,7 +2172,8 @@ algorithm.
       }
       clear Ha2. destruct HN0 as [N0 HN0].
       setoid_rewrite (is_lim_seq_incr_n _ N0).
-
+      setoid_rewrite is_lim_seq_rvmaxabs_zero_iff.
+      (*product_sum_increasing and product_sum_gamma0 *)
      Admitted.
 
   End qlearn3.
