@@ -6002,7 +6002,8 @@ Section fin_cond_exp.
       destruct i.
       now apply H1.
   Qed.
-  
+
+
   Lemma glb_sqrt (rset : R -> Prop) :
     (forall (r:R), rset r -> 0 <= r) ->
     (exists (r1 : R), rset r1) ->
@@ -6081,7 +6082,139 @@ Section fin_cond_exp.
       simpl in pos_sqrt1.
       now apply Rle_ge.
  Qed.
-      
+
+  Lemma glb_power_half (rset : R -> Prop) :
+    (forall (r:R), rset r -> 0 <= r) ->
+    (exists (r1 : R), rset r1) ->
+    (Rbar_power (Glb_Rbar rset) (/2)) = 
+    Glb_Rbar (fun r => exists r0, rset r0 /\ r = power r0 (/2)).
+  Proof.
+    intros.
+    generalize (glb_sqrt rset H H0); intros.
+    generalize (finite_Glb_Rbar_pos _ H H0); intro finite1.
+    generalize (Glb_Rbar_pos _ H); intro rset_pos.
+    rewrite <- finite1.
+    rewrite <- finite1 in rset_pos.
+    simpl in rset_pos.
+    unfold Rbar_power.
+    rewrite power_sqrt; trivial.
+    symmetry.
+    rewrite Glb_Rbar_eqset with (E2 := (fun r : R => exists r0 : R, rset r0 /\ r = sqrt r0)).
+    now symmetry.
+    intros.
+    split; intros; destruct H2 as [? [? ?]].
+    - exists x0.
+      split; trivial.
+      rewrite H3.
+      rewrite power_sqrt; trivial.
+      now apply H.
+    - exists x0.
+      split; trivial.
+      rewrite H3.
+      rewrite power_sqrt; trivial.
+      now apply H.
+  Qed.
+
+    Lemma FiniteCondexp_L2_min_dist_alt
+        (f : Ts -> R) 
+        {rv : RandomVariable dom borel_sa f}
+        {isl : IsLp prts 2 f} :
+    Finite (FiniteExpectation prts (rvsqr (rvminus f (FiniteConditionalExpectation f))))
+    = 
+     (Glb_Rbar
+      (fun r : R =>
+         exists w : Ts -> R,
+           RandomVariable dom2 borel_sa w /\ IsLp prts 2 w /\
+           Some (Finite r) = lift (fun x => x) (Expectation (rvsqr (rvminus f w))))).
+  Proof.
+    generalize (FiniteCondexp_L2_min_dist f); intros.
+    assert (nempty: exists (r1 : R) (w : Ts -> R),
+               RandomVariable dom2 borel_sa w /\
+               IsLp prts 2 w /\ 
+               Some (Finite r1) = lift (fun x : Rbar => x) (Expectation (rvsqr (rvminus f w)))).
+    {
+      admit.
+    }
+    generalize (glb_power_half
+                  (fun r : R =>
+         exists w : Ts -> R,
+           RandomVariable dom2 borel_sa w /\ IsLp prts 2 w /\
+           Some (Finite r) = lift (fun x => x) (Expectation (rvsqr (rvminus f w))))); intros.
+    cut_to H0; trivial.
+    - rewrite Glb_Rbar_eqset with 
+          (E2 :=
+              (fun r : R =>
+          exists r0 : R,
+            (exists w : Ts -> R,
+               RandomVariable dom2 borel_sa w /\
+               IsLp prts 2 w /\
+               Some (Finite r0) = lift (fun x : Rbar => x) (Expectation (rvsqr (rvminus f w)))) /\
+            r = power r0 (/ 2))) in H.
+      + rewrite <- H0 in H.
+        assert (is_finite
+                  (Glb_Rbar
+           (fun r : R =>
+            exists w : Ts -> R,
+              RandomVariable dom2 borel_sa w /\
+              IsLp prts 2 w /\ Some (Finite r) = lift (fun x : Rbar => x) (Expectation (rvsqr (rvminus f w)))))).
+        {
+          apply finite_Glb_Rbar_pos; trivial.
+          intros.
+          destruct H1 as [? [? [? ?]]].
+          unfold lift in H3.
+          match_case_in H3; intros; rewrite H4 in H3; inversion H3.
+          assert (NonnegativeFunction  (rvsqr (rvminus f x))) by typeclasses eauto.
+          rewrite Expectation_pos_pofrf with (nnf := H5) in H4.
+          invcs H4.
+          generalize (@NonnegExpectation_pos _ _ _ _ H5); intros.
+          rewrite H8 in H4.
+          now simpl in H4.
+        }
+        rewrite <- H1 in H.
+        unfold Rbar_power in H.
+        apply Rbar_finite_eq in H.
+        apply (f_equal (fun x => power x 2)) in H.
+        rewrite power_inv_cancel in H; try lra.
+        * rewrite power_inv_cancel in H; try lra.
+          -- rewrite <- H1.
+             apply Rbar_finite_eq.
+             apply H.
+          -- generalize (Glb_Rbar_pos
+                           (fun r : R =>
+                              exists w : Ts -> R,
+                                RandomVariable dom2 borel_sa w /\
+                                IsLp prts 2 w /\ Some (Finite r) = lift (fun x : Rbar => x) 
+                                                               (Expectation (rvsqr (rvminus f w))))); intros.
+             cut_to H2.
+             ++ rewrite <- H1 in H2.
+                simpl in H2.
+                apply H2.
+             ++ intros.
+                destruct H3 as [? [? [? ?]]].
+                unfold lift in H5.
+                match_case_in H5; intros; rewrite H6 in H5; inversion H5.
+                assert (NonnegativeFunction  (rvsqr (rvminus f x))) by typeclasses eauto.
+                rewrite Expectation_pos_pofrf with (nnf := H7) in H6.
+                invcs H6.
+                generalize (@NonnegExpectation_pos _ _ _ _ H7); intros.
+                rewrite H10 in H6.
+                now simpl in H6.
+        * apply FiniteExpectation_pos.
+          typeclasses eauto.
+      + intros.
+        admit.
+    - intros.
+      destruct H1 as [? [? [? ?]]].
+      unfold lift in H3.
+      match_case_in H3; intros; rewrite H4 in H3; inversion H3.
+      assert (NonnegativeFunction  (rvsqr (rvminus f x))) by typeclasses eauto.
+      rewrite Expectation_pos_pofrf with (nnf := H5) in H4.
+      invcs H4.
+      generalize (@NonnegExpectation_pos _ _ _ _ H5); intros.
+      rewrite H8 in H4.
+      now simpl in H4.
+  Admitted.
+  
 End fin_cond_exp.
 
 Section fin_cond_exp_props.
