@@ -388,6 +388,25 @@ Section fe.
     now simpl in H.
   Qed.
 
+  Lemma FiniteExpectation_ale rv_X1 rv_X2
+        {rrv1:RandomVariable dom borel_sa rv_X1}
+        {rrv2:RandomVariable dom borel_sa rv_X2}
+        {isfe1:IsFiniteExpectation rv_X1}
+        {isfe2:IsFiniteExpectation rv_X2}
+    :
+      almostR2 prts Rle rv_X1 rv_X2 ->
+      FiniteExpectation rv_X1 <= FiniteExpectation rv_X2.
+  Proof.
+    intros.
+    apply almostR2_le_split in H as [? [?[??]]].
+    cut_to H1; trivial.
+    assert (IsFiniteExpectation x).
+    {
+      eapply IsFiniteExpectation_proper_almostR2; try eapply H; trivial.
+    } 
+    rewrite (FiniteExpectation_proper_almostR2 _ _ H).
+    now apply FiniteExpectation_le.
+  Qed.
 
   Lemma IsFiniteExpectation_bounded rv_X1 rv_X2 rv_X3
         {isfe1:IsFiniteExpectation rv_X1}

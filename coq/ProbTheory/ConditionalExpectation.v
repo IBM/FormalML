@@ -5510,6 +5510,19 @@ Section fin_cond_exp.
     now rewrite FiniteCondexp_Expectation.
   Qed.
 
+  Theorem FiniteCondexp_FiniteExpectation (f : Ts -> R) 
+          {rv : RandomVariable dom borel_sa f}
+          {isfe:IsFiniteExpectation prts f}
+          {isfe':IsFiniteExpectation prts (FiniteConditionalExpectation f)}
+    :
+      FiniteExpectation prts (FiniteConditionalExpectation f) =
+      FiniteExpectation prts f.
+  Proof.
+    generalize (FiniteCondexp_Expectation f).
+    repeat erewrite FiniteExpectation_Expectation.
+    now intros HH; invcs HH.
+  Qed.
+
   Theorem FiniteCondexp_proper (f1 f2 : Ts -> R) 
         {rv1 : RandomVariable dom borel_sa f1}
         {rv2 : RandomVariable dom borel_sa f2}
@@ -5672,7 +5685,7 @@ Section fin_cond_exp.
     - eapply IsFiniteExpectation_proper_almostR2; eauto. 
   Qed.      
 
-  Lemma FiniteCondexp_Lp {p} (pbig:1<=p)
+  Instance FiniteCondexp_Lp {p} (pbig:1<=p)
         (f : Ts -> R) 
         {frv : RandomVariable dom borel_sa f}
         {isfe: IsFiniteExpectation prts f}
@@ -5720,6 +5733,52 @@ Section fin_cond_exp.
     IsLp prts p (FiniteConditionalExpectation f (isfe:=IsLp_Finite prts p f pbig)).
   Proof.
     now apply FiniteCondexp_Lp.
+  Qed.
+
+  Lemma FiniteCondexp_Lp_contractive {p} (pbig:1<=p)
+        (f : Ts -> R) 
+        {frv : RandomVariable dom borel_sa f}
+        {isfe: IsFiniteExpectation prts f}
+        {isl : IsLp prts p f} :
+    FiniteExpectation prts (rvpower (rvabs (FiniteConditionalExpectation f)) (const p)) (isfe:=FiniteCondexp_Lp pbig f) <=
+    FiniteExpectation prts (rvpower (rvabs f) (const p)).
+  Proof.
+    assert (rvphi:RandomVariable dom borel_sa (fun x : Ts => (fun x0 : R => power (Rabs x0) p) (f x))).
+    {
+      apply rvpower_rv.
+      - apply rvabs_rv; trivial.
+      - apply rvconst.
+    }
+
+    assert (isfephi:IsFiniteExpectation prts (fun x : Ts => (fun x0 : R => power (Rabs x0) p) (f x))).
+    {
+      apply isl.
+    } 
+
+    generalize (FiniteCondexp_Jensen f (fun x => power (Rabs x) p))
+    ; intros.
+    cut_to H.
+    - eapply FiniteExpectation_ale in H.
+      + rewrite (FiniteExpectation_prob_space_sa_sub _ _ _ (isfe2:=(@FiniteCondexp_Lp p pbig f frv isfe isl))) in H.
+        erewrite (FiniteExpectation_prob_space_sa_sub _ _ _) in H.
+        rewrite FiniteCondexp_FiniteExpectation in H.
+        etransitivity; try eapply H.
+        right.
+        apply FiniteExpectation_ext; intros ?.
+        reflexivity.
+      + apply rvpower_rv; try typeclasses eauto.
+        apply rvconst.
+      + typeclasses eauto.
+    - intros.
+      now apply convex_power_abs.
+      Unshelve.
+      + apply IsFiniteExpectation_prob_space_sa_sub_f.
+        * apply rvpower_rv; try typeclasses eauto.
+          apply rvconst.
+        * apply (FiniteCondexp_Lp pbig f).
+      + apply IsFiniteExpectation_prob_space_sa_sub_f.
+        * typeclasses eauto.
+        * apply  FiniteCondexp_isfe.
   Qed.
 
   Lemma FiniteCondexp_L2_inner
