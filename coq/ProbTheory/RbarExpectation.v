@@ -50,7 +50,7 @@ Section RbarExpectation.
       now apply rv_Rbar_measurable.
     Qed.
 
-    Global Instance Rbar_rvpower_rv (rv_X1 : Ts -> Rbar) (n:Rbar)
+    Global Instance Rbar_rvpower_rv (rv_X1 : Ts -> Rbar) (n:R)
            {rvx1 : RandomVariable dom Rbar_borel_sa rv_X1} :
       RandomVariable dom Rbar_borel_sa (Rbar_rvpower rv_X1 n).
     Proof.

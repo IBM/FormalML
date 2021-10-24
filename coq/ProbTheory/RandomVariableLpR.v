@@ -1621,7 +1621,6 @@ Qed.
         apply rvabs_rv.
         apply rvlim_rv; trivial.
         typeclasses eauto.
-        typeclasses eauto.
         generalize ( monotone_convergence 
                       (rvpower (rvabs (rvlim (fun x : nat => f x))) (const p))
                       (fun n => (rvpower (rvabs (f n)) (const p))) _ _ _ _); intro monc.

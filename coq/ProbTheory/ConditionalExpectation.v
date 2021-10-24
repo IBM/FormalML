@@ -3718,6 +3718,17 @@ Section cond_exp_l2.
     match_destr; tauto.
   Qed.
 
+  Instance conditional_expectation_L2fun_L2
+           (f : Ts -> R) 
+           {rv : RandomVariable dom borel_sa f}
+           {isl : IsLp prts 2 f} :
+    IsLp prts 2 (conditional_expectation_L2fun f).
+  Proof.
+    unfold conditional_expectation_L2fun, proj1_sig.
+    match_destr.
+    destruct x; trivial.
+  Qed.
+
   Lemma conditional_expectation_L2fun_eq
         (f : Ts -> R) 
         {rv : RandomVariable dom borel_sa f}
@@ -3730,6 +3741,54 @@ Section cond_exp_l2.
   Proof.
     unfold conditional_expectation_L2fun, proj1_sig.
     match_destr; tauto.
+  Qed.
+
+  Lemma conditional_expectation_L2fun_eq_finite
+        (f : Ts -> R) 
+        {rv : RandomVariable dom borel_sa f}
+        {isl : IsLp prts 2 f} :
+    is_finite (Glb_Rbar
+      (fun r : R =>
+         exists w : LpRRV prts 2,
+           RandomVariable dom2 borel_sa w /\ r = LpRRVnorm prts (LpRRVminus prts (pack_LpRRV prts f) w))).
+  Proof.
+    assert (phi_ex:exists y : L2RRVq_PreHilbert prts, ortho_phi prts dom2 y).
+    {
+      unfold ortho_phi.
+      exists (LpRRVq_zero _).
+      exists (LpRRVzero _).
+      split.
+      - reflexivity.
+      - typeclasses eauto.
+    } 
+    generalize (@ortho_projection_aux (L2RRVq_PreHilbert prts)
+                                      (ortho_phi prts dom2)
+                                      phi_ex
+                                      (Quot _ (pack_LpRRV prts f)))
+    ; intros.
+    erewrite Glb_Rbar_eqset; try eapply H.
+    intros.
+    split.
+    - intros [?[??]]; subst.
+      exists (Quot _ x0).
+      split.
+      + red; eauto.
+      + unfold norm; simpl.
+        rewrite L2RRVq_norm_norm.
+        unfold minus, plus, opp; simpl.
+        LpRRVq_simpl.
+        rewrite LpRRVq_normE.
+        now rewrite LpRRVminus_plus.
+    - intros [?[??]]; subst.
+      destruct H0 as [?[??]]; subst.
+      exists x.
+      split; trivial.
+      unfold norm; simpl.
+      rewrite L2RRVq_norm_norm.
+      unfold minus, plus, opp; simpl.
+      LpRRVq_simpl.
+      rewrite LpRRVq_normE.
+      now rewrite LpRRVminus_plus.
   Qed.
 
   Lemma conditional_expectation_L2fun_eq1
@@ -5030,7 +5089,191 @@ Section cond_exp2.
       repeat erewrite FiniteExpectation_Expectation.
       now rewrite HH.
   Qed.
-  
+
+  Lemma L2_min_dist_finite
+        (f : Ts -> R) 
+        {rv : RandomVariable dom borel_sa f}
+        {isl : IsLp prts 2 f} :
+    is_finite (Glb_Rbar
+      (fun r : R =>
+         exists w : Ts -> R,
+           RandomVariable dom2 borel_sa w /\ IsLp prts 2 w /\
+           Some (Finite r) = lift (fun x => Rbar_power x (/ 2)) (Expectation (rvsqr (rvminus f w))))).
+  Proof.
+    generalize (conditional_expectation_L2fun_eq_finite prts f)
+    ; intros HH.
+    erewrite Glb_Rbar_eqset; try eapply HH.
+    intros.
+    split.
+    - intros [?[?[??]]]; subst.
+      symmetry in H1.
+      apply some_lift in H1.
+      destruct H1 as [???].
+      assert (RandomVariable dom borel_sa x0).
+      {
+        now apply RandomVariable_sa_sub.
+      }
+      exists (pack_LpRRV prts x0).
+      split; trivial.
+      LpRRV_simpl.
+      unfold LpRRVnorm; simpl.
+      assert (IsFiniteExpectation prts (rvsqr (rvminus f x0))).
+      {
+        assert (IsLp prts 2 (rvminus f x0)).
+        {
+          apply (IsLp_minus prts (bignneg 2 big2) f x0).
+        }
+        apply is_L2_mult_finite; trivial
+        ; now apply rvminus_rv.
+      }
+      rewrite (FiniteExpectation_Expectation _ _) in e.
+      invcs e.
+      simpl in e0.
+      invcs e0.
+      f_equal.
+      apply FiniteExpectation_ext; intros ?.
+      unfold rvsqr, rvpower, rvabs.
+      now rewrite power_abs2_sqr.
+    - intros [[a ??][??]]; subst.
+      exists a.
+      repeat split; trivial.
+      LpRRV_simpl.
+      unfold LpRRVnorm; simpl.
+      assert (IsFiniteExpectation prts (rvsqr (rvminus f a))).
+      {
+        assert (IsLp prts 2 (rvminus f a)).
+        {
+          apply (IsLp_minus prts (bignneg 2 big2) f a).
+        }
+        apply is_L2_mult_finite; trivial
+        ; now apply rvminus_rv.
+      }
+      rewrite (FiniteExpectation_Expectation _ _); simpl.
+      do 3 f_equal.
+      apply FiniteExpectation_ext; intros ?.
+      unfold rvsqr, rvpower, rvabs.
+      now rewrite power_abs2_sqr.
+  Qed.
+
+  Lemma Condexp_L2_min_dist
+        (f : Ts -> R) 
+        {rv : RandomVariable dom borel_sa f}
+        {isl : IsLp prts 2 f} :
+    lift (fun x => Rbar_power x (/ 2))
+         (Rbar_Expectation (Rbar_rvsqr (Rbar_rvminus f (ConditionalExpectation f))))
+    = 
+    Some (Glb_Rbar
+      (fun r : R =>
+         exists w : Ts -> R,
+           RandomVariable dom2 borel_sa w /\ IsLp prts 2 w /\
+           Some (Finite r) = lift (fun x => Rbar_power x (/ 2)) (Expectation (rvsqr (rvminus f w))))).
+  Proof.
+    transitivity (lift (fun x => Rbar_power x (/ 2))
+                 (Expectation (rvpower (rvabs (rvminus f (conditional_expectation_L2fun prts sub f))) (const 2)))).
+    - rewrite Expectation_Rbar_Expectation.
+      f_equal.
+      apply Rbar_Expectation_almostR2_proper.
+      + assert (RandomVariable dom Rbar_borel_sa (ConditionalExpectation f)).
+        {
+          apply RandomVariable_sa_sub; trivial.
+          apply Condexp_rv.
+        }
+        apply Rbar_rvsqr_rv.
+        apply Rbar_rvplus_rv; typeclasses eauto.
+      + apply Real_Rbar_rv.
+        assert (RandomVariable dom borel_sa (conditional_expectation_L2fun prts sub f)).
+        {
+          apply RandomVariable_sa_sub; trivial.
+          apply conditional_expectation_L2fun_rv.
+        }
+        simpl.
+        apply rvpower_rv; try typeclasses eauto.
+      + eapply (almostR2_prob_space_sa_sub_lift prts sub).
+        generalize (Condexp_L2 f).
+        apply almost_impl; apply all_almost; intros ??.
+        unfold Rbar_rvpower, Rbar_rvsqr, Rbar_sqr, Rbar_rvminus, Rbar_rvplus, Rbar_rvopp, rvpower, rvminus, rvplus, rvopp, rvscale, const, rvabs.
+        rewrite H; simpl.
+        rewrite power_abs2_sqr.
+        do 2 f_equal; lra.
+    - generalize (conditional_expectation_L2fun_eq prts sub f); intros HH.
+      unfold LpRRVnorm in HH.
+      simpl in *.
+      
+      assert (isfe:IsFiniteExpectation prts (rvpower (rvabs (rvminus f (conditional_expectation_L2fun prts sub f))) (const 2))).
+      {
+        cut (IsFiniteExpectation prts (rvsqr (rvminus f (conditional_expectation_L2fun prts sub f)))).
+        {
+          apply IsFiniteExpectation_proper; intros ?.
+          unfold rvpower, rvabs.
+          rewrite power_abs2_sqr.
+          reflexivity.
+        }
+        
+        assert (RandomVariable dom borel_sa (conditional_expectation_L2fun prts sub f)).
+        {
+          apply RandomVariable_sa_sub; trivial.
+          apply conditional_expectation_L2fun_rv.
+        }
+        
+        assert (IsLp prts 2 (rvminus f (conditional_expectation_L2fun prts sub f))).
+        {
+          apply (IsLp_minus prts (bignneg 2 big2) f (conditional_expectation_L2fun prts sub f)).
+        }
+        apply is_L2_mult_finite; trivial
+        ; now apply rvminus_rv.
+      }
+      
+      rewrite (FiniteExpectation_Expectation _ _); simpl.
+      f_equal.
+      apply (f_equal Finite) in HH.
+      etransitivity; [| etransitivity; try eapply HH].
+      + f_equal.
+        f_equal.
+        apply FiniteExpectation_ext; reflexivity.
+      + rewrite <- L2_min_dist_finite; trivial.
+        f_equal.
+        f_equal.
+        apply Glb_Rbar_eqset; intros.
+        split.
+        * intros [[a ??][??]]; subst; simpl in *.
+          exists a.
+          repeat split; trivial.
+          assert (IsFiniteExpectation prts (rvsqr (rvminus f a))).
+          {
+            assert (IsLp prts 2 (rvminus f a)).
+            {
+              apply (IsLp_minus prts (bignneg 2 big2) f a).
+            }
+            apply is_L2_mult_finite; trivial
+            ; now apply rvminus_rv.
+          }
+          rewrite (FiniteExpectation_Expectation _ _); simpl.
+          do 3 f_equal.
+          apply FiniteExpectation_ext; intros ?.
+          unfold rvsqr, rvpower, rvabs.
+          now rewrite power_abs2_sqr.
+        * intros [? [?[??]]].
+          generalize (RandomVariable_sa_sub sub x0); intros.
+          assert (IsFiniteExpectation prts (rvsqr (rvminus f x0))).
+          {
+            assert (IsLp prts 2 (rvminus f x0)).
+            {
+              apply (IsLp_minus prts (bignneg 2 big2) f x0).
+            }
+            apply is_L2_mult_finite; trivial
+            ; now apply rvminus_rv.
+          }
+          rewrite (FiniteExpectation_Expectation _ _) in H1.
+          simpl in H1.
+          invcs H1.
+          exists (pack_LpRRV prts x0).
+          split; trivial.
+          f_equal.
+          apply FiniteExpectation_ext; intros ?.
+          unfold rvsqr, rvpower, rvabs.
+          now rewrite power_abs2_sqr.
+  Qed.
+
 End cond_exp2.
 
 Section cond_exp_props.
@@ -5441,7 +5684,6 @@ Section fin_cond_exp.
       apply rvpower_rv.
       - apply rvabs_rv; trivial.
       - apply rvconst.
-      - apply nnfabs.
     }
 
     assert (isfephi:IsFiniteExpectation prts (fun x : Ts => (fun x0 : R => power (Rabs x0) p) (f x))).
@@ -5464,7 +5706,6 @@ Section fin_cond_exp.
           apply RandomVariable_sa_sub; trivial.
           apply FiniteCondexp_rv.
         * apply rvconst.
-        * apply nnfabs. 
       + apply RandomVariable_sa_sub; trivial.
         apply FiniteCondexp_rv.
       + apply FiniteCondexp_isfe. 
@@ -5555,8 +5796,69 @@ Section fin_cond_exp.
     f_equal; lra.
   Qed.
 
-End fin_cond_exp.
+  Instance FiniteCondexp_L2_min_dist_isfe
+        (f : Ts -> R) 
+        {rv : RandomVariable dom borel_sa f}
+        {isl : IsLp prts 2 f} :
+    IsFiniteExpectation prts (rvsqr (rvminus f (FiniteConditionalExpectation f))).
+  Proof.
+    assert (RandomVariable dom borel_sa (FiniteConditionalExpectation f)).
+    {
+      apply RandomVariable_sa_sub; trivial.
+      apply FiniteCondexp_rv.
+    } 
+            
+    assert (IsLp prts 2 (rvminus f (FiniteConditionalExpectation f))).
+    {
+      generalize (FiniteCondexp_Lp big2 f); intros.
+      apply (IsLp_minus prts (bignneg 2 big2) f _).
+    }
+    apply is_L2_mult_finite; trivial
+    ; now apply rvminus_rv.
+  Qed.
 
+  Lemma FiniteCondexp_L2_min_dist
+        (f : Ts -> R) 
+        {rv : RandomVariable dom borel_sa f}
+        {isl : IsLp prts 2 f} :
+    Finite (power 
+      (FiniteExpectation prts (rvsqr (rvminus f (FiniteConditionalExpectation f))))
+      (/ 2))
+    = 
+     (Glb_Rbar
+      (fun r : R =>
+         exists w : Ts -> R,
+           RandomVariable dom2 borel_sa w /\ IsLp prts 2 w /\
+           Some (Finite r) = lift (fun x => Rbar_power x (/ 2)) (Expectation (rvsqr (rvminus f w))))).
+  Proof.
+    generalize (Condexp_L2_min_dist prts sub f)
+    ; intros HH.
+    apply some_lift in HH.
+    destruct HH as [???].
+    rewrite e0.
+    rewrite (FiniteCondexp_eq _) in e.
+    unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp, Rbar_rvsqr in e.
+    simpl in e.
+    rewrite <- Expectation_Rbar_Expectation in e.
+    assert (IsFiniteExpectation prts (fun x : Ts => (f x + - FiniteConditionalExpectation f x)²)).
+    {
+      generalize (FiniteCondexp_L2_min_dist_isfe f).
+      apply IsFiniteExpectation_proper; intros ?.
+      rv_unfold.
+      f_equal.
+      lra.
+    } 
+    rewrite (FiniteExpectation_Expectation _ _) in e.
+    invcs e.
+    simpl.
+    do 2 f_equal.
+    apply FiniteExpectation_ext; intros ?.
+    rv_unfold.
+    f_equal.
+    lra.
+  Qed.    
+
+End fin_cond_exp.
 
 Section fin_cond_exp_props.
   

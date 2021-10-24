@@ -577,7 +577,6 @@ Section RealRandomVariables.
     Qed.
 
     Instance rvpower_measurable (b e : Ts -> R) :
-      (*      (forall (x:Ts), (0 <= b x)%R) -> *)
       RealMeasurable b ->
       RealMeasurable e ->
       RealMeasurable (rvpower b e).
@@ -807,8 +806,17 @@ Section RealRandomVariables.
         typeclasses eauto.
       Qed.
 
-      (* rvpower_rv declared below since it uses NonnegativeFunction *)
-      
+      Global Instance rvpower_rv 
+             (rv_X1 rv_X2 : Ts -> R)
+             {rv1 : RandomVariable dom borel_sa rv_X1}
+             {rv2 : RandomVariable dom borel_sa rv_X2} :
+        RandomVariable dom borel_sa (rvpower rv_X1 rv_X2).
+      Proof.
+        apply measurable_rv.
+        apply rvpower_measurable; trivial
+        ; apply rv_measurable; trivial.
+      Qed.
+
       Global Instance rvsqr_rv
              (rv_X : Ts -> R)
              {rv : RandomVariable dom borel_sa rv_X} :
@@ -1529,19 +1537,6 @@ Section RealRandomVariables.
       intros.
       apply power_nonneg.
     Qed.
-
-    (* Here so that we can state the positivity constraint nicely *)
-    Global Instance rvpower_rv 
-           (rv_X1 rv_X2 : Ts -> R)
-           {rv1 : RandomVariable dom borel_sa rv_X1}
-           {rv2 : RandomVariable dom borel_sa rv_X2}
-           {nnf1: NonnegativeFunction rv_X1}:
-      RandomVariable dom borel_sa (rvpower rv_X1 rv_X2).
-    Proof.
-      apply measurable_rv.
-      apply rvpower_measurable; trivial
-      ; apply rv_measurable; trivial.
-    Qed.
     
     (*
     Definition rvsqrt (rv_X : Ts -> R)
@@ -2072,7 +2067,7 @@ Section RbarRandomVariables.
     := match x with
        | Finite x' => Finite (Rsqr x')
        | p_infty => p_infty
-       | m_infty => m_infty
+       | m_infty => p_infty
        end.
   
   Definition Rbar_rvsqr (rv_X : Ts -> Rbar) :=
@@ -3156,6 +3151,28 @@ Section RbarRandomVariables.
       destruct (Rle_lt_or_eq_dec 0 r r0); lra.
     - destruct (Rle_dec 0 r); try tauto.
       destruct (Rle_lt_or_eq_dec 0 r r0); lra.
+  Qed.
+
+  Global Instance Rbar_rvsqr_rv (x : Ts -> Rbar)
+    {rv:RandomVariable dom Rbar_borel_sa x} :
+    RandomVariable dom Rbar_borel_sa (Rbar_rvsqr x).
+  Proof.
+    eapply (RandomVariable_proper _ _ (reflexivity _) _ _ (reflexivity _) _ (Rbar_rvmult x x)).
+    - intros ?.
+      unfold Rbar_rvsqr, Rbar_rvmult; simpl.
+      unfold Rbar_mult.
+      unfold Rbar_sqr.
+      unfold Rbar_mult'.
+      destruct (x a); simpl; trivial.
+    - now apply Rbar_rvmult_rv.
+  Qed.
+
+  Global Instance Rbar_rvsqr_nnf (x : Ts -> Rbar) :
+    Rbar_NonnegativeFunction (Rbar_rvsqr x).
+  Proof.
+    unfold Rbar_rvsqr; intros ?.
+    destruct (x x0); simpl; trivial.
+    apply Rle_0_sqr.
   Qed.
 
 End RbarRandomVariables.  
