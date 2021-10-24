@@ -2092,18 +2092,6 @@ algorithm.
         split_Rabs; lra.
     Qed.
 
-  Lemma Rvector_max_abs_nth_in' {n} (v:vector R (S n)) :
-    exists i pf, Rvector_max_abs v = Rabs (vector_nth i pf v).
-  Proof.
-    generalize (Rvector_max_abs_in v)
-    ; intros HH.
-    apply In_vector_nth_ex in HH.
-    destruct HH as [?[? eqq]].
-    symmetry in eqq.
-    rewrite vector_nth_map in eqq.
-    eauto.
-  Qed.
-
   Lemma filter_finite_imp {A B} {fin:Finite.Finite B} {FF} {filterF:Filter FF} (P:B->A->Prop) : 
     (forall b, FF (P b)) -> FF (fun x => (forall b, P b x)).
   Proof.
@@ -2173,7 +2161,7 @@ algorithm.
         simpl.
         vm_compute.
         repeat match_destr; lra.
-      * destruct (Rvector_max_abs_nth_in' (X x omega)) as [?[? eqq1]].
+      * destruct (Rvector_max_abs_nth_in (X x omega)) as [?[? eqq1]].
         rewrite eqq1.
         specialize (H0 _ x1).
         rewrite Rminus_0_r in H0.
