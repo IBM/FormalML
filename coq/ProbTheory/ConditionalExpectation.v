@@ -6213,6 +6213,22 @@ Section fin_cond_exp.
         * destruct H1 as [? [? [? ?]]].
           unfold lift in H3.
           case_eq  (Expectation (rvsqr (rvminus f x0))); intros; rewrite H4 in H3; try congruence.
+          assert (Rbar_le 0 r).
+          {
+            assert (NonnegativeFunction  (rvsqr (rvminus f x0))) by typeclasses eauto.
+            rewrite Expectation_pos_pofrf with (nnf := H5) in H4.
+            inversion H4.
+            now generalize (@NonnegExpectation_pos _ _ _ _ H5); intros.
+          }
+          assert (is_finite r).
+          {
+            inversion H3.
+            destruct r.
+            - now simpl.
+            - simpl in H7.
+              discriminate.
+            - now simpl in H5.
+          }
           exists r.
           split.
           -- exists x0.
@@ -6221,10 +6237,12 @@ Section fin_cond_exp.
              unfold lift; unfold lift in H3.
              rewrite H4.
              f_equal.
-             admit.
-          -- unfold lift in H3; simpl in H3.
+             rewrite <- H6.
+             reflexivity.
+          -- rewrite <- H6.
+             rewrite <- H6 in H3.
              invcs H3.
-             admit.
+             reflexivity.
         * destruct H1 as [? [[? [? [? ?]]] ?]].
           exists x1.
           split; trivial.
@@ -6243,8 +6261,7 @@ Section fin_cond_exp.
       generalize (@NonnegExpectation_pos _ _ _ _ H5); intros.
       rewrite H8 in H4.
       now simpl in H4.
-      
-  Admitted.
+   Qed.
   
 End fin_cond_exp.
 
