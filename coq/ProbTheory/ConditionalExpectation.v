@@ -6133,7 +6133,14 @@ Section fin_cond_exp.
                IsLp prts 2 w /\ 
                Some (Finite r1) = lift (fun x : Rbar => x) (Expectation (rvsqr (rvminus f w)))).
     {
-      admit.
+      exists (FiniteExpectation prts (rvsqr (rvminus f (FiniteConditionalExpectation f)))).
+      exists (FiniteConditionalExpectation f).
+      split.
+      - apply FiniteCondexp_rv.
+      - split.
+        + apply FiniteCondexp_Lp_sub; try lra; trivial.
+        + erewrite FiniteExpectation_Expectation.
+          unfold lift; now simpl.
     }
     generalize (glb_power_half
                   (fun r : R =>
@@ -6202,7 +6209,30 @@ Section fin_cond_exp.
         * apply FiniteExpectation_pos.
           typeclasses eauto.
       + intros.
-        admit.
+        split; intros.
+        * destruct H1 as [? [? [? ?]]].
+          unfold lift in H3.
+          case_eq  (Expectation (rvsqr (rvminus f x0))); intros; rewrite H4 in H3; try congruence.
+          exists r.
+          split.
+          -- exists x0.
+             split; trivial.
+             split; trivial.
+             unfold lift; unfold lift in H3.
+             rewrite H4.
+             f_equal.
+             admit.
+          -- unfold lift in H3; simpl in H3.
+             invcs H3.
+             admit.
+        * destruct H1 as [? [[? [? [? ?]]] ?]].
+          exists x1.
+          split; trivial.
+          split; trivial.
+          unfold lift; unfold lift in H3.
+          match_case; intros; rewrite H5 in H3; try congruence.
+          invcs H3.
+          unfold Rbar_power; now simpl.
     - intros.
       destruct H1 as [? [? [? ?]]].
       unfold lift in H3.
@@ -6213,6 +6243,7 @@ Section fin_cond_exp.
       generalize (@NonnegExpectation_pos _ _ _ _ H5); intros.
       rewrite H8 in H4.
       now simpl in H4.
+      
   Admitted.
   
 End fin_cond_exp.
