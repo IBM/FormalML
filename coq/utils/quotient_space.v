@@ -212,50 +212,51 @@ End Quotient.
 
 
 Section Lift.
-  Definition quot_lift {T : Type} (R : T->T->Prop)
-             {equivR:Equivalence R}
-             (f : T -> T) {propR:Proper (R ==> R) f} :
-    quot R -> quot R.
+  Definition quot_lift {T1 T2 : Type} (R1 : T1->T1->Prop) (R2 : T2->T2->Prop)
+             {equivR1:Equivalence R1} {equivR2:Equivalence R2}
+             (f : T1 -> T2) {propR:Proper (R1 ==> R2) f} :
+    quot R1 -> quot R2.
   Proof.
-    assert (Hpf:forall x0 y : T, R x0 y -> Quot R (f x0) = Quot R (f y)).
+    assert (Hpf:forall x0 y : T1, R1 x0 y -> Quot R2 (f x0) = Quot R2 (f y)).
     {
       intros.
       apply eq_Quot; trivial.
       rewrite H.
       reflexivity.
     } 
-    apply (@quot_rec _ _ equivR (quot R) (fun y => Quot R (f y)) Hpf).
+    apply (@quot_rec _ _ equivR1 (quot R2) (fun y => Quot R2 (f y)) Hpf).
   Defined.
 
-  Global Arguments quot_lift {T} R {equivR} f {propR}.
+  Global Arguments quot_lift {T1 T2} {R1 R2} {equivR1} {equivR2} f {propR}.
 
   Lemma quot_liftE
-        {T : Type} (R : T->T->Prop)
-        {equivR:Equivalence R}
-        (f : T -> T) {propR:Proper (R ==> R) f} :
-    forall x, quot_lift R f (Quot R x) = @Quot _ R (f x).
+        {T1 T2 : Type} (R1 : T1->T1->Prop) (R2 : T2->T2->Prop)
+             {equivR1:Equivalence R1} {equivR2:Equivalence R2}
+             (f : T1 -> T2) {propR:Proper (R1 ==> R2) f} :
+    forall x, quot_lift f (Quot R1 x) = @Quot _ R2 (f x).
   Proof.
     intros.
     unfold quot_lift.
     now rewrite quot_recE.
-  Qed.        
+  Qed.
   
-  Definition quot_lift2 {T : Type} (R : T->T->Prop)
-             {equivR:Equivalence R}
-             (f : T -> T -> T) {propR:Proper (R ==> R ==> R) f} :
-    quot R -> quot R -> quot R.
+  Definition quot_lift2 {T1 T2 T3 : Type} (R1 : T1->T1->Prop)  (R2 : T2->T2->Prop)  (R3 : T3->T3->Prop)
+             {equivR1:Equivalence R1} {equivR2:Equivalence R2} {equivR3:Equivalence R3}
+             (f : T1 -> T2 -> T3) {propR:Proper (R1 ==> R2 ==> R3) f} :
+    quot R1 -> quot R2 -> quot R3.
   Proof.
-    generalize (@quot_rec _ _ equivR)
-    ; intros HH.
-    specialize (HH (quot R -> quot R)).
-    assert (Hpf:forall x, forall x0 y : T, R x0 y -> Quot R (f x x0) = Quot R (f x y)).
+    assert (Hpf:forall x, forall x0 y : T2, R2 x0 y -> Quot R3 (f x x0) = Quot R3 (f x y)).
     {
       intros.
       apply eq_Quot; trivial.
       rewrite H.
       reflexivity.
-    } 
-    refine (HH (fun x => (@quot_rec _ _ equivR (quot R) (fun y => Quot R (f x y)) (Hpf x) )) _).
+    }
+    generalize (@quot_rec _ _ equivR1)
+    ; intros HH.
+    specialize (HH (quot R2 -> quot R3)).
+
+    refine (HH (fun x:T1 => (@quot_rec _ _ equivR2 (quot R3) (fun y:T2 => Quot R3 (f x y)) (Hpf x) )) _).
     intros.
     (* we might be able to avoid this, but since quotients use it anyway, it does not really matter *)
     apply FunctionalExtensionality.functional_extensionality; intros.
@@ -266,18 +267,18 @@ Section Lift.
     reflexivity.
   Defined.
 
-  Global Arguments quot_lift2 {T} R {equivR} f {propR}.
+  Global Arguments quot_lift2 {T1 T2 T3} {R1 R2 R3} {equivR1} {equivR2} {equivR3} f {propR}.
   
   Lemma quot_lift2E
-        {T : Type} (R : T->T->Prop)
-        {equivR:Equivalence R}
-        (f : T -> T -> T) {propR:Proper (R ==> R ==> R) f} :
-    forall x y, quot_lift2 R f (Quot R x) (Quot R y) = @Quot _ R (f x y).
+        {T1 T2 T3 : Type} (R1 : T1->T1->Prop)  (R2 : T2->T2->Prop)  (R3 : T3->T3->Prop)
+        {equivR1:Equivalence R1} {equivR2:Equivalence R2} {equivR3:Equivalence R3}
+        (f : T1 -> T2 -> T3) {propR:Proper (R1 ==> R2 ==> R3) f} :
+        forall x y, quot_lift2 f (Quot R1 x) (Quot R2 y) = @Quot _ R3 (f x y).
   Proof.
     intros.
     unfold quot_lift2.
     now repeat rewrite quot_recE.
-  Qed.        
+  Qed.
   
   Definition quot_lift2_to {T S : Type} (R : T->T->Prop)
              {equivR:Equivalence R}

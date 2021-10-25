@@ -623,7 +623,7 @@ Qed.
       Hint Rewrite LpRRVq_zeroE : quot.
 
       Definition LpRRVq_scale (x:R) : LpRRVq -> LpRRVq
-        := quot_lift _ (LpRRVscale x).
+        := quot_lift (LpRRVscale x).
 
       Lemma LpRRVq_scaleE x y : LpRRVq_scale x (Quot _ y)  = Quot _ (LpRRVscale x y).
       Proof.
@@ -633,7 +633,7 @@ Qed.
       Hint Rewrite LpRRVq_scaleE : quot.
       
       Definition LpRRVq_opp  : LpRRVq -> LpRRVq
-        := quot_lift _ LpRRVopp.
+        := quot_lift LpRRVopp.
 
       Lemma LpRRVq_oppE x : LpRRVq_opp (Quot _ x)  = Quot _ (LpRRVopp x).
       Proof.
@@ -643,7 +643,7 @@ Qed.
       Hint Rewrite LpRRVq_oppE : quot.
       
       Definition LpRRVq_abs  : LpRRVq -> LpRRVq
-        := quot_lift _ LpRRVabs.
+        := quot_lift LpRRVabs.
 
     End quoted.
     
@@ -819,7 +819,7 @@ Qed.
     Section quotnneg.
 
       Definition LpRRVq_plus  : LpRRVq p -> LpRRVq p -> LpRRVq p
-        := quot_lift2 _ LpRRVplus.
+        := quot_lift2 LpRRVplus.
       
       Lemma LpRRVq_plusE x y : LpRRVq_plus (Quot _ x) (Quot _ y) = Quot _ (LpRRVplus x y).
       Proof.
@@ -829,7 +829,7 @@ Qed.
       Hint Rewrite LpRRVq_plusE : quot.
 
       Definition LpRRVq_minus  : LpRRVq p -> LpRRVq p -> LpRRVq p
-        := quot_lift2 _ LpRRVminus.
+        := quot_lift2 LpRRVminus.
 
       Lemma LpRRVq_minusE x y : LpRRVq_minus (Quot _ x) (Quot _ y) = Quot _ (LpRRVminus x y).
       Proof.

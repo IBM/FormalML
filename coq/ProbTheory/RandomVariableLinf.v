@@ -1442,7 +1442,7 @@ Qed.
       Hint Rewrite LiRRVq_zeroE : quot.
 
       Definition LiRRVq_scale (x:R) : LiRRVq -> LiRRVq
-        := quot_lift _ (LiRRVscale x).
+        := quot_lift (LiRRVscale x).
 
       Lemma LiRRVq_scaleE x y : LiRRVq_scale x (Quot _ y)  = Quot _ (LiRRVscale x y).
       Proof.
@@ -1452,7 +1452,7 @@ Qed.
       Hint Rewrite LiRRVq_scaleE : quot.
       
       Definition LiRRVq_opp  : LiRRVq -> LiRRVq
-        := quot_lift _ LiRRVopp.
+        := quot_lift LiRRVopp.
 
       Lemma LiRRVq_oppE x : LiRRVq_opp (Quot _ x)  = Quot _ (LiRRVopp x).
       Proof.
@@ -1462,7 +1462,7 @@ Qed.
       Hint Rewrite LiRRVq_oppE : quot.
       
       Definition LiRRVq_abs  : LiRRVq -> LiRRVq
-        := quot_lift _ LiRRVabs.
+        := quot_lift LiRRVabs.
 
       Lemma LiRRVq_absE x : LiRRVq_abs (Quot _ x)  = Quot _ (LiRRVabs x).
       Proof.
@@ -1472,7 +1472,7 @@ Qed.
       Hint Rewrite LiRRVq_absE : quot.
 
       Definition LiRRVq_plus  : LiRRVq -> LiRRVq -> LiRRVq
-        := quot_lift2 _ LiRRVplus.
+        := quot_lift2 LiRRVplus.
       
       Lemma LiRRVq_plusE x y : LiRRVq_plus (Quot _ x) (Quot _ y) = Quot _ (LiRRVplus x y).
       Proof.
@@ -1482,7 +1482,7 @@ Qed.
       Hint Rewrite LiRRVq_plusE : quot.
 
       Definition LiRRVq_minus  : LiRRVq -> LiRRVq -> LiRRVq
-        := quot_lift2 _ LiRRVminus.
+        := quot_lift2 LiRRVminus.
       
       Lemma LiRRVq_minusE x y : LiRRVq_minus (Quot _ x) (Quot _ y) = Quot _ (LiRRVminus x y).
       Proof.
