@@ -129,6 +129,36 @@ Section Rvector_defs.
     lra.
   Qed.
 
+  Lemma Rvector_nth_scale (c : R) (v : vector R n) (i : nat) (pf : (i < n)%nat):
+      vector_nth i pf (Rvector_scale c v) = (c * vector_nth i pf v)%R.
+    Proof.
+      apply vector_nth_map.
+    Qed.
+
+    Lemma Rvector_nth_opp (v : vector R n) (i : nat) (pf : (i < n)%nat):
+      vector_nth i pf (Rvector_opp v) = (-1 * vector_nth i pf v)%R.
+    Proof.
+      apply vector_nth_map.
+    Qed.
+
+    Definition Rvector_minus (x y:vector R n) : vector R n
+      := Rvector_plus x (Rvector_opp y).
+
+    Lemma Rvector_nth_minus (v1 v2 : vector R n) (i : nat) (pf : (i < n)%nat):
+      vector_nth i pf (Rvector_minus v1 v2) = 
+      (vector_nth i pf v1) - (vector_nth i pf v2).
+    Proof.
+      unfold Rvector_minus.
+      rewrite Rvector_nth_plus, Rvector_nth_opp.
+      lra.
+    Qed.
+
+    Lemma Rvector_plus_eq_compat_l (v v1 v2 : vector R n) :
+      v1 = v2 -> Rvector_plus v v1 = Rvector_plus v v2.
+    Proof.
+      congruence.
+    Qed.
+
   (* TODO: move *)
   Lemma combine_assoc {A B C} (x:list A) (y:list B) (z:list C):
     combine x (combine y z) = map (fun '(x,y,z) => (x,(y,z))) (combine (combine x y) z).
