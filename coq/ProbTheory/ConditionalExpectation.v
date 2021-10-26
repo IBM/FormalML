@@ -6229,7 +6229,7 @@ Section fin_cond_exp.
           {
             assert (NonnegativeFunction  (rvsqr (rvminus f x0))) by typeclasses eauto.
             rewrite Expectation_pos_pofrf with (nnf := H5) in H4.
-            inversion H4.
+            inversion H4. 
             now generalize (@NonnegExpectation_pos _ _ _ _ H5); intros.
           }
           assert (is_finite r).
