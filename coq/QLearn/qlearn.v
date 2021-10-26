@@ -2252,7 +2252,7 @@ algorithm.
       lra.
     Qed.
 
-    Lemma Induction_I2_15 (α : nat -> R) (xtilde : nat -> Ts -> R) (xstar : R) (w : nat -> Ts -> R) (C:R) :
+    Lemma Induction_I2_18 (α : nat -> R) (xtilde : nat -> Ts -> R) (w : nat -> Ts -> R) (C:R) :
       (forall n, 0 <= α n <= 1) -> 
       (forall n, forall omega, Rabs (xtilde n omega) <= C) ->
       (forall n, forall omega, 
@@ -2278,6 +2278,355 @@ algorithm.
         + apply Rmult_le_compat_l with (r := 1 - α n) in H3; lra.
      Qed.
 
+    Lemma Induction_I2_18_alt (α : nat -> R) (xtilde : nat -> Ts -> R) (w : nat -> Ts -> R) (C:R) :
+      (forall n, 0 <= α n <= 1) -> 
+      (forall n, forall omega, Rabs (xtilde n omega) <= C) ->
+      (forall n, forall omega, 
+            (- α n)*gamma*C <= (xtilde (S n) omega) -  (1 - α n)*(xtilde n omega) -  (α n)*(w n omega) <= (α n)*gamma*C) ->
+      forall n, forall omega, 
+          - (RMseq α (fun n => gamma * C) C n) <= (xtilde n omega) - (RMseq α (fun n0 => w n0 omega) 0 n) 
+          <= RMseq α (fun n => gamma * C) C n.
+    Proof.
+      intros.
+      induction n.
+      - unfold const; simpl.
+        rewrite Rminus_0_r.
+        specialize (H0 0%nat omega).
+        now apply Rabs_le_between.
+      - simpl.
+        specialize (H1 n omega).
+        unfold plus, scal; simpl.
+        unfold Hierarchy.mult; simpl.
+        destruct IHn.
+        specialize (H n).
+        split.
+        + apply Rmult_le_compat_l with (r := 1 - α n) in H2; lra.
+        + apply Rmult_le_compat_l with (r := 1 - α n) in H3; lra.
+     Qed.
+
+    Lemma Induction_I2_18_Rabs (α : nat -> R) (xtilde : nat -> Ts -> R) (w : nat -> Ts -> R) (C:R) :
+      (forall n, 0 <= α n <= 1) -> 
+      (forall n, forall omega, Rabs (xtilde n omega) <= C) ->
+      (forall n, forall omega, 
+            (- α n)*gamma*C <= (xtilde (S n) omega) -  (1 - α n)*(xtilde n omega) -  (α n)*(w n omega) <= (α n)*gamma*C) ->
+      forall n, forall omega, 
+          Rabs ((xtilde n omega) - (RMseq α (fun n0 => w n0 omega) 0 n)) 
+          <= RMseq α (fun n => gamma * C) C n.
+     Proof.
+       intros.
+       rewrite Rabs_le_between.
+       now apply Induction_I2_18_alt.
+     Qed.
+
+   Lemma Induction_I2_full  (α : nat -> R) (x : nat -> Ts -> R) (w : nat -> Ts -> R) (C:R) (xstar : R) (F : R -> R) :
+      (forall n, 0 <= α n <= 1) -> 
+      0 <= gamma < 1 ->
+      (forall (x y : R), Rabs (F x  - F y) <= gamma * (Rabs (x - y))) ->
+      let xtilde := fun n => fun omega => x n omega - xstar in
+      (forall n, forall omega, Rabs (xtilde n omega) <= C) ->
+      (forall n, forall omega, xtilde (S n) omega = (1 - α n) * (xtilde n omega) +  
+                                                    (α n)*((F (x n omega)) - (F xstar) + (w n omega))) ->
+      forall n, forall omega, 
+          Rabs ((xtilde n omega) - (RMseq α (fun n0 => w n0 omega) 0 n)) <=
+          RMseq α (fun n => gamma * C) C n.
+    Proof.
+      intros.
+      apply Induction_I2_18_Rabs; trivial.
+      intros.
+      specialize (H3 n0 omega0).
+      rewrite H3.
+      unfold xtilde.
+      replace ( (1 - α n0) * (x n0 omega0 - xstar) + 
+                α n0 * (F (x n0 omega0) - F xstar + w n0 omega0) -
+                (1 - α n0) * (x n0 omega0 - xstar) - α n0 * w n0 omega0) with
+          (α n0 * (F (x n0 omega0) - F xstar)) by lra.
+      replace (- α n0 * gamma * C) with (- ( α n0 * gamma * C)) by lra.
+      rewrite <- Rabs_le_between.
+      rewrite Rabs_mult.
+      rewrite Rabs_right.
+      - rewrite Rmult_assoc.
+        apply Rmult_le_compat_l; try apply H.
+        eapply Rle_trans.
+        apply H1.
+        apply Rmult_le_compat_l; try apply H0.
+        unfold xtilde in H2.
+        apply H2.
+      - apply Rle_ge.
+        apply H.
+   Qed.      
+      
+   Lemma Induction_I2_full_vec {k:nat} (α : nat -> R) (x : nat -> Ts -> vector R k) (w : nat -> Ts -> vector R k) (C:R) (xstar : vector R k) (F : vector R k -> vector R k) :
+      (forall n, 0 <= α n <= 1) -> 
+      0 <= gamma < 1 ->
+      (forall (x y : vector R k),
+          Rvector_max_abs (Rvector_minus (F x) (F y)) <= 
+          gamma * Rvector_max_abs (Rvector_minus x y)) ->
+      (forall n,
+          (rv_eq (x (S n))
+                 (vecrvplus
+                    (vecrvscale (1 - α n) (x n)) 
+                    (vecrvscale (α n)
+                                (vecrvplus (fun v => F (x n v)) (w n)))))) ->
+      (forall n, forall omega, 
+            rvmaxabs (vecrvminus (x n) (const xstar)) omega <= C) ->
+      F xstar = xstar ->
+      let xtilde := fun n => fun omega => Rvector_minus (x n omega) xstar in
+      forall n, forall omega, 
+          forall i,
+            forall (pf : (i < k)%nat),
+              Rabs (vector_nth i pf (xtilde n omega) - 
+                    (RMseq α (fun n0 => (vector_nth i pf (w n0 omega))) 0 n)) <=
+              RMseq α (fun n => gamma * C) C n.
+     Proof.
+       intros.
+       generalize (Induction_I2_18_Rabs α (fun n omega => vector_nth i pf (xtilde n omega))
+                                        (fun n omega => vector_nth i pf (w n omega)) C H); intros.
+       assert  (forall (n0 : nat) (omega0 : Ts), Rabs (vector_nth i pf (xtilde n0 omega0)) <= C).
+       {
+         intros.
+         specialize (H3 n0 omega0).
+         generalize (Rvector_max_abs_nth_le (xtilde n0 omega0) i pf); intros.        
+         eapply Rle_trans.
+         apply H6.
+         unfold rvmaxabs in H3.
+         eapply Rle_trans.
+         apply H3.
+         lra.
+       }
+       apply H5; trivial.
+       intros.
+       specialize (H2 n0 omega0).
+       unfold xtilde.
+       rewrite H2.
+       replace  (vector_nth i pf
+                            (Rvector_minus
+                               (vecrvplus (vecrvscale (1 - α n0) (x n0))
+                                          (vecrvscale (α n0) 
+                                                      (vecrvplus 
+                                                         (fun v : Ts => F (x n0 v))
+                                                         (w n0))) 
+                                          omega0) 
+                               xstar) -
+                 (1 - α n0) * vector_nth i pf (Rvector_minus (x n0 omega0) xstar) -
+                 α n0 * vector_nth i pf (w n0 omega0)) with
+           (α n0 * vector_nth i pf (Rvector_minus (F (x n0 omega0)) (F xstar))).
+       - replace (- α n0 * gamma * C) with (- ( α n0 * gamma * C)) by lra.
+         rewrite <- Rabs_le_between.
+         rewrite Rabs_mult.
+         rewrite Rabs_right.
+         + rewrite Rmult_assoc.
+           apply Rmult_le_compat_l; try apply H.
+           specialize (H1 (x n0 omega0) xstar).
+           generalize (Rvector_max_abs_nth_le  (Rvector_minus (F (x n0 omega0)) (F xstar))); intros.
+           eapply Rle_trans.
+           apply H7.
+           eapply Rle_trans.
+           apply H1.
+           apply Rmult_le_compat_l; try apply H0.           
+           specialize (H3 n0 omega0).
+           apply H3.
+         + apply Rle_ge.
+           apply H.
+       - unfold vecrvplus, vecrvscale, Rvector_minus.
+         unfold Rvector_opp.
+         ring_simplify.
+         rewrite Rvector_scale_plus_l.
+         do 5 rewrite Rvector_nth_plus.
+         rewrite H4.
+         do 4 rewrite Rvector_nth_scale.
+         now ring_simplify.
+     Qed.
+
+     Lemma Induction_I2_18_ptwise (α : nat -> R) (xtilde : nat -> Ts -> R) (w : nat -> Ts -> R) (C:R) (omega0 : Ts) :
+      (forall n, 0 <= α n <= 1) -> 
+      (forall n, Rabs (xtilde n omega0) <= C) ->
+      (forall n, 
+            (- α n)*gamma*C <= (xtilde (S n) omega0) -  (1 - α n)*(xtilde n omega0) -  (α n)*(w n omega0) <= (α n)*gamma*C) ->
+      forall n,
+          - (RMseq α (fun n => gamma * C) C n) <= (xtilde n omega0) - (RMseq α (fun n0 => w n0 omega0) 0 n) 
+          <= RMseq α (fun n => gamma * C) C n.
+    Proof.
+      intros.
+      induction n.
+      - unfold const; simpl.
+        rewrite Rminus_0_r.
+        specialize (H0 0%nat).
+        now apply Rabs_le_between.
+      - simpl.
+        specialize (H1 n).
+        unfold plus, scal; simpl.
+        unfold Hierarchy.mult; simpl.
+        destruct IHn.
+        specialize (H n).
+        split.
+        + apply Rmult_le_compat_l with (r := 1 - α n) in H2; lra.
+        + apply Rmult_le_compat_l with (r := 1 - α n) in H3; lra.
+     Qed.
+
+    Lemma Induction_I2_18_Rabs_ptwise (α : nat -> R) (xtilde : nat -> Ts -> R) (w : nat -> Ts -> R) (C:R) (omega0:Ts) :
+      (forall n, 0 <= α n <= 1) -> 
+      (forall n, Rabs (xtilde n omega0) <= C) ->
+      (forall n, 
+            (- α n)*gamma*C <= (xtilde (S n) omega0) -  (1 - α n)*(xtilde n omega0) -  (α n)*(w n omega0) <= (α n)*gamma*C) ->
+      forall n, 
+          Rabs ((xtilde n omega0) - (RMseq α (fun n0 => w n0 omega0) 0 n)) 
+          <= RMseq α (fun n => gamma * C) C n.
+     Proof.
+       intros.
+       rewrite Rabs_le_between.
+       now apply Induction_I2_18_ptwise.
+     Qed.
+
+   Lemma Induction_I2_full_vec_ptwise {k:nat} (α : nat -> R) (x : nat -> Ts -> vector R k) (w : nat -> Ts -> vector R k) (C:R) (xstar : vector R k) (F : vector R k -> vector R k) :
+      (forall n, 0 <= α n <= 1) -> 
+      0 <= gamma < 1 ->
+      (forall (x y : vector R k),
+          Rvector_max_abs (Rvector_minus (F x) (F y)) <= 
+          gamma * Rvector_max_abs (Rvector_minus x y)) ->
+      (forall n,
+          (rv_eq (x (S n))
+                 (vecrvplus
+                    (vecrvscale (1 - α n) (x n)) 
+                    (vecrvscale (α n)
+                                (vecrvplus (fun v => F (x n v)) (w n)))))) ->
+      F xstar = xstar ->
+      let xtilde := fun n => fun omega => Rvector_minus (x n omega) xstar in
+      forall omega0,
+      (forall n, 
+            rvmaxabs (vecrvminus (x n) (const xstar)) omega0 <= C) ->        
+      forall n,
+          forall i,
+            forall (pf : (i < k)%nat),
+              Rabs (vector_nth i pf (xtilde n omega0) - 
+                    (RMseq α (fun n0 => (vector_nth i pf (w n0 omega0))) 0 n)) <=
+              RMseq α (fun n => gamma * C) C n.
+     Proof.
+       intros.
+       generalize (Induction_I2_18_Rabs_ptwise α (fun n omega => vector_nth i pf (xtilde n omega))
+                                        (fun n omega => vector_nth i pf (w n omega)) C omega0 H); intros.
+       assert  (forall (n0 : nat), Rabs (vector_nth i pf (xtilde n0 omega0)) <= C).
+       {
+         intros.
+         specialize (H4 n0).
+         generalize (Rvector_max_abs_nth_le (xtilde n0 omega0) i pf); intros.        
+         eapply Rle_trans.
+         apply H6.
+         unfold rvmaxabs in H3.
+         eapply Rle_trans.
+         apply H4.
+         lra.
+       }
+       apply H5; trivial.
+       intros.
+       specialize (H2 n0).
+       unfold xtilde.
+       rewrite H2.
+       replace  (vector_nth i pf
+                            (Rvector_minus
+                               (vecrvplus (vecrvscale (1 - α n0) (x n0))
+                                          (vecrvscale (α n0) 
+                                                      (vecrvplus 
+                                                         (fun v : Ts => F (x n0 v))
+                                                         (w n0))) 
+                                          omega0) 
+                               xstar) -
+                 (1 - α n0) * vector_nth i pf (Rvector_minus (x n0 omega0) xstar) -
+                 α n0 * vector_nth i pf (w n0 omega0)) with
+           (α n0 * vector_nth i pf (Rvector_minus (F (x n0 omega0)) (F xstar))).
+       - replace (- α n0 * gamma * C) with (- ( α n0 * gamma * C)) by lra.
+         rewrite <- Rabs_le_between.
+         rewrite Rabs_mult.
+         rewrite Rabs_right.
+         + rewrite Rmult_assoc.
+           apply Rmult_le_compat_l; try apply H.
+           specialize (H1 (x n0 omega0) xstar).
+           generalize (Rvector_max_abs_nth_le  (Rvector_minus (F (x n0 omega0)) (F xstar))); intros.
+           eapply Rle_trans.
+           apply H7.
+           eapply Rle_trans.
+           apply H1.
+           apply Rmult_le_compat_l; try apply H0.           
+           specialize (H4 n0).
+           apply H4.
+         + apply Rle_ge.
+           apply H.
+       - unfold vecrvplus, vecrvscale, Rvector_minus.
+         unfold Rvector_opp.
+         ring_simplify.
+         rewrite Rvector_scale_plus_l.
+         do 5 rewrite Rvector_nth_plus.
+         rewrite H3.
+         do 4 rewrite Rvector_nth_scale.
+         now ring_simplify.
+    Qed.
+
+     Lemma Induction_I2_18_prob  (prts : ProbSpace dom) {k:nat} (α : nat -> R) (x : nat -> Ts -> vector R k) (w : nat -> Ts -> vector R k) (C P:R) (xstar : vector R k) (F : vector R k -> vector R k)
+           {rv: forall n, RandomVariable dom borel_sa (rvmaxabs (vecrvminus (x n) (const xstar)))}
+           {rv2: let xtilde := fun n => fun omega => Rvector_minus (x n omega) xstar in
+                 forall n i pf,
+                   RandomVariable dom borel_sa
+                                  (fun omega : Ts =>
+                                     Rabs
+                                       (vector_nth i pf (xtilde n omega) -
+                                        RMseq α (fun n0 : nat => vector_nth i pf (w n0 omega)) 0 n) -
+                                     RMseq α (fun _ : nat => gamma * C) C n)} :
+      (forall n, 0 <= α n <= 1) -> 
+      0 <= gamma < 1 ->
+      (forall (x y : vector R k),
+          Rvector_max_abs (Rvector_minus (F x) (F y)) <= 
+          gamma * Rvector_max_abs (Rvector_minus x y)) ->
+      (forall n,
+          (rv_eq (x (S n))
+                 (vecrvplus
+                    (vecrvscale (1 - α n) (x n)) 
+                    (vecrvscale (α n)
+                                (vecrvplus (fun v => F (x n v)) (w n)))))) ->
+      F xstar = xstar ->
+      ps_P (inter_of_collection
+              (fun n =>
+                 event_le dom (rvmaxabs (vecrvminus (x n) (const xstar))) C)) >= P ->
+      let xtilde := fun n => fun omega => Rvector_minus (x n omega) xstar in
+      ps_P (inter_of_collection
+              (fun n => 
+                 (bounded_inter_of_collection 
+                    (fun i pf =>
+                       event_le 
+                         dom (rv := rv2 n i pf)
+                         (fun omega =>
+                            (Rabs ((vector_nth i pf (xtilde n omega)) - 
+                                   (RMseq α (fun n0 => (vector_nth i pf (w n0 omega))) 0 n))) -
+                            (RMseq α (fun n => gamma * C) C n)) 0)))) >= P.
+     Proof.
+       intros.
+       assert (
+           ps_P (inter_of_collection
+              (fun n =>
+                 event_le dom (rvmaxabs (vecrvminus (x n) (const xstar))) C)) <=
+           ps_P (inter_of_collection
+                   (fun n => 
+                      (bounded_inter_of_collection 
+                         (fun i pf =>
+                            event_le 
+                              dom (rv := rv2 n i pf)
+                              (fun omega =>
+                                 (Rabs ((vector_nth i pf (xtilde n omega)) - 
+                                        (RMseq α (fun n0 => (vector_nth i pf (w n0 omega))) 0 n))) -
+                                 (RMseq α (fun n => gamma * C) C n)) 0))))).
+       {
+         apply ps_sub.
+         intros ? ?.
+         apply inter_of_collection_as_pre.
+         simpl.
+         intros ? ? ?.
+         simpl.
+         apply Rplus_le_reg_r with (r :=  RMseq α (fun _ : nat => gamma * C) C n).
+         unfold Rminus at 1.
+         rewrite Rplus_0_l, Rplus_assoc, Rplus_opp_l, Rplus_0_r.
+         now apply Induction_I2_full_vec_ptwise with (F0 := F).
+       }
+       lra.
+       Qed.
+    
     Lemma RMseq_const_lim (α : nat -> R) (C : R) (init : R):
       0 <= gamma < 1 ->
       (forall n, 0 <= α n <= 1) ->       
@@ -2814,8 +3163,6 @@ algorithm.
       now rewrite Rvector_plus_zero.
     Qed.
 
-    Definition Rvector_minus {n} (x y:vector R n) : vector R n
-      := Rvector_plus x (Rvector_opp y).
 
     Lemma Rabs_le_both (a b : R) :
       Rabs a <= b <-> -b <= a <= b.
@@ -2831,6 +3178,7 @@ algorithm.
       destruct (Rcase_abs a); lra.
     Qed.
 
+   (*
     Lemma plus_nth {n} (v1 v2 : vector R n) (i : nat) (pf : (i < n)%nat):
       vector_nth i pf (Rvector_plus v1 v2) = 
       (vector_nth i pf v1) + (vector_nth i pf v2).
@@ -2859,7 +3207,7 @@ algorithm.
       rewrite plus_nth, opp_nth.
       lra.
     Qed.
-
+*)
 
     Declare Scope Rvector_scope.
     Delimit Scope Rvector_scope with Rvector.
@@ -2869,13 +3217,7 @@ algorithm.
     Notation "c .* v" := (Rvector_scale (c%R) v) (at level 41, right associativity) : Rvector_scope.
     Notation "x + y" := (Rvector_plus x y) (at level 50, left associativity) : Rvector_scope.
 
-    Lemma Rvector_plus_eq_compat_l {n} (v v1 v2 : vector R n) :
-      v1 = v2 -> Rvector_plus v v1 = Rvector_plus v v2.
-    Proof.
-      congruence.
-    Qed.
-
-    Hint Rewrite @plus_nth @scale_nth @mult_nth @minus_nth @opp_nth : vector.
+    Hint Rewrite @Rvector_nth_plus @Rvector_nth_scale @Rvector_nth_mult @Rvector_nth_minus @Rvector_nth_opp : vector.
 
     Lemma eq_vector_nths {T} {n} (v1 v2:vector T n) :
       v1 = v2 ->
@@ -2948,13 +3290,19 @@ algorithm.
           apply sum_n_m_shift.
     Qed.
 
+(*
     Lemma Induction_stepk_I1_15 {n} (k:nat) (eps P C0: posreal) (α : nat -> R)
           (C : R) (w x : nat -> Ts -> vector R (S n)) (xstar : vector R (S n))
           (F : (vector R (S n)) -> (vector R (S n)))
           {prts: ProbSpace dom}                              
           (rx : forall n0, RandomVariable dom (Rvector_borel_sa (S n)) (x n0))
           (rw : forall n0, RandomVariable dom (Rvector_borel_sa (S n)) (w n0))
-          (srw : forall n0, FiniteRangeFunction  (w n0)) :
+          (srw : forall n0, FiniteRangeFunction  (w n0)) 
+          (rvsup : forall nk, RandomVariable dom borel_sa
+                    (fun (omega : Ts) =>
+                       Sup_seq (fun (n0 : nat) =>
+                                  (rvmaxabs (vecrvminus (x (n0 + nk)%nat) (const xstar))) omega))) :
+
       P < 1 ->
       0 <= C ->
       0 <= gamma < 1 ->
@@ -2990,11 +3338,12 @@ algorithm.
              rv_le (rvmaxabs (vecrvminus (x (n0 + nk)%nat) (const xstar)))
              (const (C0 * (gamma + eps) ^ k))) ->
       exists (nk : nat),
-      forall n0, 
         ps_P 
           (event_le dom
-             (rvmaxabs (vecrvminus (x (n0 + nk)%nat) (const xstar)))
-             (C0 * (gamma + eps)^(S k)))
+                    (fun (omega : Ts) =>
+                       Sup_seq (fun (n0 : nat) =>
+                                  (rvmaxabs (vecrvminus (x (n0 + nk)%nat) (const xstar))) omega))
+                    (C0 * (gamma + eps)^(S k)))
         >= P .
     Proof.
       intros Plim Clim glim geps alim aseq sumaseq Fcont Fxstar xrel xlim wexp condexp normbound.
@@ -3089,7 +3438,7 @@ algorithm.
                 + apply Rle_ge.
                   apply Rvector_max_abs_nth_le.
                 + rewrite L2_convergent_x_nth_RMseqTs.
-                  generalize (Induction_I2_15 
+                  generalize (Induction_I2_18 
                                 (fun n0 => α (n0 + nk)%nat) 
                                 (fun n0 => vecrvnth i pf (vecrvminus (x (n0+nk)%nat) (const xstar))) 
                                 (vector_nth i pf xstar) 
@@ -3208,8 +3557,10 @@ algorithm.
             }
             exists ((max x1 x2) + nk)%nat.
             intros.
-            specialize (H11 (n0 + (max x1 x2))%nat).
+
+            specialize (H11 ((max x1 x2))%nat).
             cut_to H11; try lia.
+            
             assert (event_sub 
                       (event_complement
                          (event_ge 
@@ -3244,19 +3595,43 @@ algorithm.
         apply Rmult_le_pos; try lra.
         now apply hilbert.norm_ge_0.
     Qed.
-
+*)
   End qlearn4.
 
   Section qlearn5.
     Context (gamma : R) {Ts : Type}
             {dom: SigmaAlgebra Ts}.
 
+    Lemma is_sup_seq_const (c : R) :
+      is_sup_seq (fun n => c)  c.
+    Proof.
+      unfold is_sup_seq.
+      intros.
+      assert (eps > 0) by apply cond_pos.
+      split.
+      - intros.
+        simpl; lra.
+      - exists (0%nat).
+        simpl; lra.
+   Qed.
+    
+    Lemma Sup_seq_const (c : R) :
+      Sup_seq (fun n => c) = c.
+    Proof.
+      generalize (is_sup_seq_const c); intros.
+      now apply is_sup_seq_unique.
+    Qed.
+
     Lemma Induction_I1_15 {n} (eps P C0: posreal) (α : nat -> R) (C : R) (w x : nat -> Ts -> vector R (S n)) (xstar : vector R (S n))
           (F : (vector R (S n)) -> (vector R (S n)))
           {prts: ProbSpace dom}                              
           (rx : forall n0, RandomVariable dom (Rvector_borel_sa (S n)) (x n0))
           (rw : forall n0, RandomVariable dom (Rvector_borel_sa (S n)) (w n0))
-          (srw : forall n0, FiniteRangeFunction  (w n0)) :
+          (srw : forall n0, FiniteRangeFunction  (w n0))
+          (rvsup : forall nk, RandomVariable dom borel_sa
+                    (fun (omega : Ts) =>
+                       Sup_seq (fun (n0 : nat) =>
+                                  (rvmaxabs (vecrvminus (x (n0 + nk)%nat) (const xstar))) omega))) :
       P < 1 ->
       0 <= C ->
       0 <= gamma < 1 ->
@@ -3289,38 +3664,62 @@ algorithm.
                (const zero)) ->
       forall (k:nat),
       exists (nk : nat),
-      forall n0, 
         ps_P 
           (event_le dom
-             (rvmaxabs (vecrvminus (x (n0 + nk)%nat) (const xstar)))
-             (C0 * (gamma + eps)^k))
-        >= P^k .
+                    (fun (omega : Ts) =>
+                       Sup_seq (fun (n0 : nat) =>
+                                  (rvmaxabs (vecrvminus (x (n0 + nk)%nat) (const xstar))) omega))
+                    (C0 * (gamma + eps)^k))
+        >= 1 - (INR k) * (1 - P).
     Proof.
       intros Plim Clim glim geps alim aseq sumaseq Fcont Fxstar xrel xlim wexp condexp k.
        induction k.
       - exists (0%nat).
         intros.
-        replace (n0 + 0)%nat with n0 by lia.
-        rewrite pow_O.
+        simpl.
+        rewrite Rmult_0_l.
+        rewrite Rminus_0_r.
         rewrite Rmult_1_r.
-        rewrite pow_O; right.
         assert (event_equiv 
-                   (event_le dom
-                      (rvmaxabs (vecrvminus (x (n0 + 0)%nat) (const xstar)))
-                      C0)
+                  (event_le dom
+                            (fun omega : Ts =>
+                               Sup_seq (fun n0 : nat => rvmaxabs (vecrvminus (x (n0 + 0)%nat) 
+                                                                             (const xstar)) omega)) 
+                            C0)
                     Ω).
         {
           intro omega.
           unfold  Ω, pre_Ω, sa_all; simpl.
-          specialize (xlim n0 omega).
-          replace (n0 + 0)%nat with (n0) by lia.
-          tauto.
+          generalize (Sup_seq_le (fun n0 : nat => rvmaxabs (vecrvminus (x (n0 + 0)%nat) 
+                                                                       (const xstar)) omega)
+                                 (fun n0 => C0)); intros.
+          cut_to H.
+          - rewrite Sup_seq_const in H.
+            assert (is_finite
+                      (Sup_seq (fun n0 : nat => rvmaxabs (vecrvminus (x (n0 + 0)%nat) (const xstar)) omega))).
+            {
+              apply bounded_is_finite with (a := 0) (b := C0); trivial.
+              replace (Finite 0) with (Sup_seq (fun n => 0)) by apply Sup_seq_const.
+              apply Sup_seq_le.
+              intros.
+              unfold rvmaxabs.
+              simpl.
+              apply Rvector_max_abs_nonneg.
+            }
+            rewrite <- H0 in H.
+            simpl in H.
+            tauto.
+          - intros.
+            simpl.
+            apply xlim.
         }
-        replace (n0 + 0)%nat with n0 in H by lia.
         rewrite H.
+        right.
         apply ps_one.
       - destruct IHk as [nk IHk].
-
+        
+        
+(*
         assert (pspos : forall n0, 0 < ps_P (event_le dom (rvmaxabs (vecrvminus (x (n0 + nk)%nat) (const xstar))) (C0 * (gamma + eps) ^ k))).
         {
           intros n0.
@@ -3331,9 +3730,12 @@ algorithm.
           apply pow_lt.
           now destruct P.
         } 
+*)
+(*
         pose (condspace := fun n0 =>  event_restricted_prob_space _
                                      (event_le dom (rvmaxabs (vecrvminus (x (n0 + nk)%nat) (const xstar))) (C0 * (gamma + eps) ^ k))
                                      (pspos n0)).
+*)
 (*
         generalize (@Induction_stepk_I1_15 gamma
                                            _
