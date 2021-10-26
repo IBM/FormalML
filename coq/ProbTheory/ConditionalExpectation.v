@@ -5672,6 +5672,18 @@ Section fin_cond_exp.
     - apply FiniteCondexp_is_cond_exp.
   Qed.
 
+  Lemma FiniteCondexp_abs (f: Ts -> R)
+        {rv : RandomVariable dom borel_sa f}
+        {isfe : IsFiniteExpectation prts f}
+        {isfeabs : IsFiniteExpectation prts (rvabs f)} :
+    almostR2 (prob_space_sa_sub prts sub) Rle
+             (rvabs (FiniteConditionalExpectation f))
+             (FiniteConditionalExpectation (rvabs f)).
+  Proof.
+    apply FiniteCondexp_Jensen.
+    apply abs_convex.
+  Qed.
+
   Theorem FiniteCondexp_factor_out
         (f g : Ts -> R)
         {rvf : RandomVariable dom borel_sa f}
