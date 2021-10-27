@@ -1149,8 +1149,7 @@ Lemma Fatou_FiniteExpectation
   Qed.
   
   Lemma FiniteExpectation_indicator {P : event dom}
-        (dec : forall x : Ts, {P x} + {~ P x})
-        {isfe : IsFiniteExpectation (EventIndicator dec)}  :
+        (dec : forall x : Ts, {P x} + {~ P x}) :
     FiniteExpectation (EventIndicator dec) = ps_P P.
   Proof.
     rewrite (FiniteExpectation_simple _).
