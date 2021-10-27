@@ -1119,7 +1119,44 @@ Lemma Fatou_FiniteExpectation
     }
     apply IsFiniteExpectation_abs_bound_almost with (g := g); trivial.
   Qed.
+
+  Lemma FiniteExpectation_simple (rv_X : Ts -> R)
+        {rvx_rv : RandomVariable dom borel_sa rv_X}
+        {frf : FiniteRangeFunction rv_X}
+        {isfe : IsFiniteExpectation rv_X} :
+    FiniteExpectation rv_X = SimpleExpectation rv_X.
+  Proof.
+    generalize (FiniteExpectation_Expectation rv_X).
+    rewrite (Expectation_simple _).
+    congruence.
+  Qed.
+
+  Instance IsFiniteExpectation_simple (rv_X : Ts -> R)
+           {rvx_rv : RandomVariable dom borel_sa rv_X}
+           {frf : FiniteRangeFunction rv_X} :
+    IsFiniteExpectation rv_X.
+  Proof.
+    unfold IsFiniteExpectation.
+    now rewrite (Expectation_simple _).
+  Qed.
+
+  Lemma simple_FiniteExpectation (rv_X : Ts -> R)
+        {rvx_rv : RandomVariable dom borel_sa rv_X}
+        {frf : FiniteRangeFunction rv_X} :
+    SimpleExpectation rv_X = FiniteExpectation rv_X.
+  Proof.
+    now rewrite (FiniteExpectation_simple _).
+  Qed.
   
+  Lemma FiniteExpectation_indicator {P : event dom}
+        (dec : forall x : Ts, {P x} + {~ P x})
+        {isfe : IsFiniteExpectation (EventIndicator dec)}  :
+    FiniteExpectation (EventIndicator dec) = ps_P P.
+  Proof.
+    rewrite (FiniteExpectation_simple _).
+    apply SimpleExpectation_EventIndicator.
+  Qed.
+
 End fe.
 
 Hint Rewrite FiniteExpectation_const FiniteExpectation_plus FiniteExpectation_scale FiniteExpectation_opp FiniteExpectation_minus: prob.
@@ -1435,7 +1472,6 @@ Proof.
         rewrite Nlt.
         lra.
    Qed.
-      
 
 End ExpNonNeg.
 
