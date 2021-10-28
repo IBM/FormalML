@@ -426,10 +426,10 @@ algorithm.
 
     Lemma prod_f_R0_inv {f : nat -> R} :
       (forall n, f n <> 0) ->
-      forall k, prod_f_R0 (fun n => 1 / (f n)) k = 1/(prod_f_R0 f k).
+      forall k, prod_f_R0 (fun n => 1 / (f n)) k = /(prod_f_R0 f k).
     Proof.
       intros Hf k.
-      induction k; simpl; try reflexivity.
+      induction k; simpl; try lra.
       rewrite IHk.
       field_simplify; [reflexivity|
       (split; try apply prod_f_R0_ne_zero; try auto)|
@@ -914,7 +914,7 @@ algorithm.
         setoid_rewrite prod_f_R0_inv.
         -- apply is_lim_seq_ext with
                (v := fun n => prod_f_R0 (fun m => 1 - α (m + k)%nat) n) in ha3.
-        + unfold Rdiv. setoid_rewrite Rmult_1_l.
+        + unfold Rdiv.
           rewrite <-is_lim_seq_pos_inv_p_infty; auto.
           intros n. apply prod_f_R0_pos; intros.
           specialize (ha1 (n0+k)%nat); lra.
@@ -2188,7 +2188,8 @@ algorithm.
                        (const zero)) ->
       (forall n, SimpleExpectation (rvinner (w n) (w n)) < C)  ->
       (forall x1 y : vector R I, Hnorm (minus (F x1) (F y)) <= gamma * Hnorm (minus x1 y)) ->
-      almost prts (fun w1 => is_lim_seq (fun n => (rvmaxabs (L2_convergent_x xinit w n)) w1) 0).
+      almost prts (fun w1 =>
+                     is_lim_seq (fun n => (rvmaxabs (L2_convergent_x xinit w n)) w1) 0).
     Proof.
       intros Hc Hg Ha1 Ha2 Ha3 Ha4 HCE HE HF.
       assert (HF' : forall x y, F x = F y).
@@ -2213,6 +2214,17 @@ algorithm.
       clear Ha2. destruct HN0 as [N0 HN0].
       setoid_rewrite (is_lim_seq_incr_n _ N0).
       setoid_rewrite is_lim_seq_rvmaxabs_zero_iff.
+      assert (Hp1 : let b := fun m => /(prod_f_R0 (fun k => 1 - α (N0 + k)) (m+N0)) in
+      forall w1 k pf n, vector_nth k pf (L2_convergent_x xinit w (n + N0) w1) =
+                            rvscale (b n)
+                                    (fun w0 => rvsum (fun p =>
+                                                     (vecrvnth k pf
+                                                               (vecrvscale (b p) (w k))) ) n w0) w1).
+      {
+        admit.
+      }
+      setoid_rewrite Hp1.
+      unfold rvscale.
       (*product_sum_increasing and product_sum_gamma0 *)
      Admitted.
 
