@@ -452,6 +452,52 @@ Proof.
   now replace (n1 + (S m - n1))%nat with (S m) by lia.
 Qed.
 
+Lemma sum_split_plus {G : AbelianGroup} (f : nat -> G) (n1 n2 k : nat) :
+  (n1 <= n2)%nat -> (0 < k)%nat ->
+  sum_n_m f n1 (n2 + k) = plus (sum_n_m f n1 n2) (sum_n_m f (S n2) (n2 + k)).
+Proof.
+  intros.
+  apply sum_split; lia.
+Qed.
+
+  Lemma ex_seq_sum_shift (α : nat -> R) (nk:nat):
+      ex_lim_seq (sum_n α) ->
+      ex_lim_seq (sum_n (fun n0 => α (n0 + nk)%nat)).
+  Proof.
+    destruct nk.
+    {
+      apply ex_lim_seq_ext; intros.
+      apply sum_n_ext; intros.
+      f_equal; lia.
+    }
+    intros.
+    eapply ex_lim_seq_ext.
+    - intros.
+      apply (RealAdd.sum_n_m_shift α (S nk) n).
+    - unfold sum_n in H.
+      apply (ex_lim_seq_incr_n _ (S nk)) in H.
+      simpl in H.
+
+      cut (ex_lim_seq (fun n : nat => sum_n_m α 0 (nk + S n) - sum_n_m α 0 nk)).
+      {
+        apply ex_lim_seq_ext; intros.
+        rewrite (sum_split_plus α 0 nk (S n)); try lia.
+        unfold plus; simpl.
+        field_simplify.
+        f_equal.
+        lia.
+      }
+      apply ex_lim_seq_minus.
+      + revert H.
+        apply ex_lim_seq_ext; intros.
+        f_equal; lia.
+      + apply ex_lim_seq_const.
+      + rewrite Lim_seq_const.
+        unfold ex_Rbar_minus.
+        apply CoquelicotAdd.ex_Rbar_plus_Finite_r.
+  Qed.
+
+
 Lemma nneg_sum_n_m_sq  (a : nat -> R) (n m : nat) :
   0 <= sum_n_m (fun k => Rsqr (a k)) n m.
 Proof.
