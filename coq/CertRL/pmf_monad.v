@@ -295,10 +295,10 @@ Proof.
       lra.
 Qed.
 
-Global Instance Pmf_MonadLaws : MonadLaws Monad_Pmf := {|
-  bind_of_return := @Pmf_bind_of_ret;
-  bind_associativity := @Pmf_bind_of_bind;
-|}.
+(* Global Instance Pmf_MonadLaws : MonadLaws Monad_Pmf := {| *)
+(*   bind_of_return := @Pmf_bind_of_ret; *)
+(*   bind_associativity := @Pmf_bind_of_bind; *)
+(* | }.*)
 
 
 Definition dist_bind_outcomes_alt
