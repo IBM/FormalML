@@ -120,15 +120,26 @@ Section defs.
     Definition bvmin_choice (rv_X1 rv_X2:Ts -> R) : Ts -> bool
       := fun omega => if Rle_dec (rv_X1 omega) (rv_X2 omega) then true else false.
 
+    Definition Rbar_bvmin_choice (rv_X1 rv_X2:Ts -> Rbar) : Ts -> bool
+      := fun omega => if Rbar_le_dec (rv_X1 omega) (rv_X2 omega) then true else false.
+
     Definition bvmax_choice (rv_X1 rv_X2:Ts -> R) : Ts -> bool
       := fun omega => if Rle_dec (rv_X1 omega) (rv_X2 omega) then false else true.
+
+    Definition Rbar_bvmax_choice (rv_X1 rv_X2:Ts -> Rbar) : Ts -> bool
+      := fun omega => if Rbar_le_dec (rv_X1 omega) (rv_X2 omega) then false else true.
 
     Definition rvmax  (rv_X1 rv_X2 : Ts -> R)
       := fun omega => Rmax (rv_X1 omega) (rv_X2 omega).
 
+    Definition Rbar_rvmax  (rv_X1 rv_X2 : Ts -> Rbar)
+      := fun omega => Rbar_max (rv_X1 omega) (rv_X2 omega).
+
     Definition rvmin  (rv_X1 rv_X2 : Ts -> R)
       := fun omega => Rmin (rv_X1 omega) (rv_X2 omega). 
 
+    Definition Rbar_rvmin  (rv_X1 rv_X2 : Ts -> Rbar)
+      := fun omega => Rbar_min (rv_X1 omega) (rv_X2 omega). 
 
     Program Definition pos_fun_part {Ts:Type} (f : Ts -> R) : (Ts -> nonnegreal) :=
       fun x => mknonnegreal (Rmax (f x) 0) _.
@@ -279,6 +290,20 @@ Section defs.
       now rewrite H, H0.
     Qed.
 
+    Global Instance Rbar_rvmax_proper : Proper (rv_eq ==> rv_eq ==> rv_eq) Rbar_rvmax.
+    Proof.
+      unfold rv_eq, Rbar_rvmax.
+      intros ???????.
+      now rewrite H, H0.
+    Qed.
+
+    Global Instance Rbar_rvmin_proper : Proper (rv_eq ==> rv_eq ==> rv_eq) Rbar_rvmin.
+    Proof.
+      unfold rv_eq, Rbar_rvmin.
+      intros ???????.
+      now rewrite H, H0.
+    Qed.
+
     Local Open Scope equiv_scope.
     Lemma rv_pos_neg_id (rv_X:Ts->R) : rv_X === rvplus (pos_fun_part rv_X) (rvopp (neg_fun_part rv_X)).
     Proof.
@@ -374,7 +399,7 @@ Section defs.
       intro x.
       unfold rvmin, rvminus, rvscale, rvabs, rvopp, rvscale, rvplus.
       unfold Rmin, Rabs.
-      repeat match_destr; lra.
+      repeat match_destr; try lra.
     Qed.
 
     Lemma rvmult_unfold (f g:Ts->R) :
@@ -457,12 +482,34 @@ Section defs.
       match_destr.
     Qed.
 
+    Lemma Rbar_rvmin_choice (rv_X1 rv_X2 : Ts -> Rbar)
+      : Rbar_rvmin rv_X1 rv_X2 === Rbar_rvchoice (Rbar_bvmin_choice rv_X1 rv_X2) rv_X1 rv_X2.
+    Proof.
+      intros a.
+      unfold Rbar_rvmin, Rbar_rvchoice, Rbar_bvmin_choice, Rbar_min, Rmin.
+      destruct (Rbar_le_dec (rv_X1 a) (rv_X2 a))
+      ; destruct (rv_X1 a)
+      ; destruct (rv_X2 a)
+      ; simpl; repeat match_destr; simpl in *; trivial; try lra.
+    Qed.
+
     Lemma rvmax_choice (rv_X1 rv_X2 : Ts -> R)
       : rvmax rv_X1 rv_X2 === rvchoice (bvmax_choice rv_X1 rv_X2) rv_X1 rv_X2.
     Proof.
       intros a.
       unfold rvmax, rvchoice, bvmax_choice, Rmax.
       match_destr.
+    Qed.
+
+    Lemma Rbar_rvmax_choice (rv_X1 rv_X2 : Ts -> Rbar)
+      : Rbar_rvmax rv_X1 rv_X2 === Rbar_rvchoice (Rbar_bvmax_choice rv_X1 rv_X2) rv_X1 rv_X2.
+    Proof.
+      intros a.
+      unfold Rbar_rvmax, Rbar_rvchoice, Rbar_bvmax_choice, Rbar_max, Rmax.
+      destruct (Rbar_le_dec (rv_X1 a) (rv_X2 a))
+      ; destruct (rv_X1 a)
+      ; destruct (rv_X2 a)
+      ; simpl; repeat match_destr; simpl in *; trivial; try lra.
     Qed.
 
     Lemma rvchoice_le_max (c:Ts->bool) (rv_X1 rv_X2 : Ts -> R)
@@ -473,12 +520,32 @@ Section defs.
       repeat match_destr; lra.
     Qed.
 
+    Lemma Rbar_rvchoice_le_max (c:Ts->bool) (rv_X1 rv_X2 : Ts -> Rbar)
+      : Rbar_rv_le (Rbar_rvchoice c rv_X1 rv_X2) (Rbar_rvmax rv_X1 rv_X2).
+    Proof.
+      intros a.
+      unfold Rbar_rvchoice, Rbar_rvmax, Rbar_max, Rmax.
+      repeat match_destr; trivial; try lra
+      ; try apply Rbar_le_refl.
+      apply Rbar_not_le_lt in n.
+      now apply Rbar_lt_le.
+    Qed.
+
     Lemma rvchoice_le_min (c:Ts->bool) (rv_X1 rv_X2 : Ts -> R)
       : rv_le (rvmin rv_X1 rv_X2) (rvchoice c rv_X1 rv_X2).
     Proof.
       intros a.
       unfold rvchoice, rvmin, Rmin.
       repeat match_destr; lra.
+    Qed.
+
+    Lemma Rbar_rvchoice_le_min (c:Ts->bool) (rv_X1 rv_X2 : Ts -> Rbar)
+      : Rbar_rv_le (Rbar_rvmin rv_X1 rv_X2) (Rbar_rvchoice c rv_X1 rv_X2).
+    Proof.
+      intros a.
+      unfold Rbar_rvchoice, Rbar_rvmin, Rbar_min, Rmin.
+      repeat match_destr; simpl in *; trivial; try lra
+      ; try apply Rbar_le_refl.
     Qed.
 
     Lemma rvminus_self (x:Ts->R) : rv_eq (rvminus x x) (const 0).

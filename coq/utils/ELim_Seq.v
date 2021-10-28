@@ -2880,3 +2880,58 @@ Proof.
   now apply Lim_seq.ex_lim_seq_geom_m.
 Qed.
 
+
+(* more stuff *)
+
+    Lemma is_ELimInf_seq_const_plus (f : nat -> Rbar) (g : R) (l:Rbar) :
+    is_ELimInf_seq (fun n => Rbar_plus g (f n)) l ->
+    is_ELimInf_seq f (Rbar_minus l g).
+  Proof.
+    intros HH.
+    destruct l; simpl in *.
+    - intros eps.
+      specialize (HH eps).
+      destruct HH as [HH1 [N HH2]].
+      split.
+      + intros NN.
+        destruct (HH1 NN) as [n [??]].
+        exists n.
+        split; trivial.
+        destruct (f n); try tauto; simpl in *; lra.
+      + exists N.
+        intros n Nle.
+        specialize (HH2 n Nle).
+        destruct (f n); simpl in *; try tauto; lra.
+    - intros M.
+      destruct (HH (M + g)) as [N HH1].
+      exists N.
+      intros n Nle.
+      specialize (HH1 n Nle).
+      destruct (f n); simpl in *; try tauto; lra.
+  - intros M N.
+    destruct (HH (M + g) N) as [n [Nle leM]].
+    exists n.
+    split; trivial.
+    destruct (f n); simpl in *; try tauto; lra.
+Qed.
+
+Lemma ELimInf_seq_const_plus (f : nat -> Rbar) (g : R) :
+  ELimInf_seq (fun n => Rbar_plus g (f n)) = Rbar_plus g (ELimInf_seq f).
+Proof.
+  unfold ELimInf_seq at 1, proj1_sig.
+  match_destr.
+  apply is_ELimInf_seq_const_plus in i.
+  apply is_ELimInf_seq_unique in i.
+  rewrite i.
+  destruct x; simpl; rbar_prover.
+Qed.
+
+Lemma ELimInf_seq_const_minus (f : nat -> Rbar) (g : R) :
+  ELimInf_seq (fun n => Rbar_minus g (f n)) = Rbar_minus g (ELimSup_seq f).
+Proof.
+  unfold Rminus.
+  generalize (ELimInf_seq_const_plus (fun n => Rbar_opp (f n)) g); intros.
+  unfold Rbar_minus.
+  rewrite H.
+  now rewrite ELimInf_seq_opp.
+Qed.

@@ -2188,6 +2188,7 @@ Section Expectation.
           exists (0%nat).
           apply Rle_ge, Xn_pos.
         * unfold Rbar_rvlim in H0.
+          rewrite Elim_seq_fin in H0.
           generalize (ex_lim_seq_incr (fun n => Xn n x)); intros.
           apply Lim_seq_correct in H3; [| intros; apply H].
           generalize (H3); intros.
