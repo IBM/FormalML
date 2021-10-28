@@ -3175,6 +3175,46 @@ Section RbarRandomVariables.
     apply Rle_0_sqr.
   Qed.
 
+   Lemma sup_le_bound (f : nat -> Rbar) (B : Rbar) :
+    (forall n, Rbar_le (f n) B) <-> Rbar_le (Sup_seq f) B.
+  Proof.
+    rewrite Rbar_sup_eq_lub.
+    split; intros.
+    - unfold Rbar_lub, proj1_sig.
+      match_destr.
+      destruct r as [lb glb].
+      apply glb.
+      intros ?[??]; subst.
+      apply H.
+    - unfold Rbar_lub, proj1_sig in H.
+      match_destr_in H.
+      destruct r as [lb glb].
+      unfold Rbar_is_upper_bound in *.
+      eapply Rbar_le_trans; try apply H.
+      apply lb.
+      eauto.
+  Qed.
+
+  Global Instance Sup_seq_rv (f : nat -> Ts-> Rbar)
+         {rv : forall n, RandomVariable dom Rbar_borel_sa (f n)} :
+    RandomVariable dom Rbar_borel_sa (fun x => Sup_seq (fun n => f n x)).
+  Proof.
+    apply Rbar_measurable_rv.
+    unfold RbarMeasurable.
+    intros.
+    apply sa_proper with
+         (x := pre_inter_of_collection
+                 (fun n omega => Rbar_le (f n omega) r)).
+    - intros ?.
+      unfold pre_inter_of_collection.
+      apply sup_le_bound.
+    - apply sa_pre_countable_inter.
+      intros.
+      specialize (rv n).
+      apply rv_Rbar_measurable in rv.
+      apply rv.
+  Qed.
+  
 End RbarRandomVariables.  
 
 Section rv_almost.
