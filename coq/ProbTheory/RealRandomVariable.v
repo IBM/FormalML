@@ -3214,7 +3214,17 @@ Section RbarRandomVariables.
       apply rv_Rbar_measurable in rv.
       apply rv.
   Qed.
-  
+
+  Global Instance Inf_seq_rv (f : nat -> Ts-> Rbar)
+         {rv : forall n, RandomVariable dom Rbar_borel_sa (f n)} :
+    RandomVariable dom Rbar_borel_sa (fun x => Inf_seq (fun n => f n x)).
+  Proof.
+    eapply (RandomVariable_proper _ _ (reflexivity _) _ _ (reflexivity _)).
+    - intros ?.
+      apply Inf_opp_sup.
+    - typeclasses eauto.
+  Qed.
+
 End RbarRandomVariables.  
 
 Section rv_almost.
