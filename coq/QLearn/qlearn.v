@@ -3303,6 +3303,28 @@ algorithm.
           apply sum_n_m_shift.
     Qed.
 
+    Lemma ex_seq_sum_shift (α : nat -> R) (nk:nat):
+      ex_lim_seq (sum_n α) ->
+      ex_lim_seq (sum_n (fun n0 => α (n0 + nk)%nat)).
+    Proof.
+      intros.
+      destruct (Nat.eq_dec nk 0).
+      - subst.
+        eapply (ex_lim_seq_ext _ _ _ H).
+        Unshelve.
+        intros.
+        apply sum_n_ext.
+        intros.
+        f_equal; lia.
+      - apply ex_lim_seq_incr_n with (N := nk) in H.        
+        assert (0 < nk)%nat by lia.
+        apply ex_lim_seq_ext 
+              with (v := (fun n => ((sum_n α (nk-1)%nat) + 
+                                    (sum_n (fun n1 : nat => α (n1 + nk)%nat) n))%R ))
+          in H.
+    Admitted.
+        
+
 (*
     Lemma Induction_stepk_I1_15 {n} (k:nat) (eps P C0: posreal) (α : nat -> R)
           (C : R) (w x : nat -> Ts -> vector R (S n)) (xstar : vector R (S n))
@@ -3708,32 +3730,297 @@ algorithm.
         is_lim_seq (fun n => ps_P (event_lt dom (rvabs (f n)) eps)) 1.
     Proof.
       intros.
-      assert (forall n, ps_P (inter_of_collection (fun m => event_lt dom (rvabs (f (n + m)%nat)) eps)) <=
-                        ps_P (event_lt dom (rvabs (f n)) eps)).
-                        
+      assert (almost prts (fun x => is_lim_seq (fun n =>
+                            EventIndicator (classic_dec (event_lt dom (rvabs (f n)) eps)) x) 1)).
+      {
+        apply almost_impl' with (P1 := (fun x => is_lim_seq (fun n => f n x) 0)); trivial.
+        apply all_almost.
+        intros.
+        unfold EventIndicator; simpl.
+        apply is_lim_seq_spec in H0.
+        apply is_lim_seq_spec.
+        unfold is_lim_seq'.
+        unfold is_lim_seq' in H0.
+        intros.
+        specialize (H0 eps).
+        destruct H0.
+        exists x0.
+        intros.
+        specialize (H0 n H1).
+        unfold rvabs.
+        rewrite Rminus_0_r in H0.
+        match_destr; try lra.
+        replace (1 - 1) with (0) by lra.
+        rewrite Rabs_R0.
+        apply cond_pos.
+      }
+      generalize (Dominated_convergence_almost 
+                    prts 
+                    (fun n => 
+                       EventIndicator (classic_dec (event_lt dom (rvabs (f n)) eps)))
+                    (const 1)
+                 ); intros.
+      specialize (H1 (const 1)).
+      cut_to H1; try typeclasses eauto.
+      assert  (isfefn : forall n : nat,
+                   IsFiniteExpectation prts
+                     (EventIndicator (classic_dec (event_lt dom (rvabs (f n)) eps)))).
       {
         intros.
-        apply ps_sub.
-        intros ? ?.
-        simpl.
-        simpl in H0.
-        specialize (H0 0%nat).
-        now replace (n+0)%nat with (n) in H0 by lia.
+        apply IsFiniteExpectation_simple; try typeclasses eauto.
       }
-      apply is_lim_seq_le_le
-        with (u := fun n =>
-                     ps_P (inter_of_collection (fun m => event_lt dom (rvabs (f (n + m)%nat)) eps)))
-             (w := fun n => 1).
+      specialize (H1 isfefn (IsFiniteExpectation_const prts 1) (IsFiniteExpectation_const prts 1)).
+      cut_to H1.
+      - generalize (fun n => Expectation_EventIndicator (classic_dec (event_lt dom (rvabs (f n)) eps)) ); intros.
+        apply is_lim_seq_ext with (v := (fun n : nat => ps_P (event_lt dom (rvabs (f n)) eps))) in H1.
+        + replace (FiniteExpectation prts (const 1)) with (1) in H1; trivial.
+          now rewrite FiniteExpectation_const.
+        + intros.
+          generalize (FiniteExpectation_indicator prts (classic_dec (event_lt dom (rvabs (f n)) eps))); intros.
+          rewrite <- H3.
+          apply FiniteExpectation_pf_irrel.
       - intros.
-        split; trivial.
-        apply ps_le1.
-      - generalize lim_prob; intros.
-        admit.
-      - apply is_lim_seq_const.
+        apply all_almost.
+        intros.
+        rv_unfold.
+        match_destr.
+        + rewrite Rabs_right; lra.
+        + rewrite Rabs_R0; lra.
+     - now unfold const.     
+   Qed.
 
-        Admitted.
+  Lemma sa_le_Rbar_gt_rv {domm}
+        (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
+    : sa_sigma (fun omega => Rbar_gt (rv_X omega) x).
+  Proof.
+    apply Rbar_sa_le_gt.
+    intros.
+    now apply rv_Rbar_measurable.
+  Qed.
 
+  Definition event_Rbar_gt {domm}
+             (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
+    : event domm
+    := @exist (pre_event Ts) _ _ (sa_le_Rbar_gt_rv rv_X x).
+
+  Lemma sa_le_Rbar_lt_rv {domm}
+        (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
+    : sa_sigma (fun omega => Rbar_lt (rv_X omega) x).
+  Proof.
+    apply Rbar_sa_le_lt.
+    intros.
+    now apply rv_Rbar_measurable.
+  Qed.
+
+  Definition event_Rbar_lt {domm}
+             (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
+    : event domm
+    := @exist (pre_event Ts) _ _ (sa_le_Rbar_lt_rv rv_X x).
+
+  Lemma sa_le_Rbar_le_rv {domm}
+        (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
+    : sa_sigma (fun omega => Rbar_le (rv_X omega) x).
+  Proof.
+    now apply rv_Rbar_measurable.
+  Qed.
+
+  Definition event_Rbar_le {domm}
+             (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
+    : event domm
+    := @exist (pre_event Ts) _ _ (sa_le_Rbar_le_rv rv_X x).
+
+    Lemma conv_as_prob_sup_0 {prts: ProbSpace dom} (f : nat -> Ts -> R)
+          {rv : forall n, RandomVariable dom borel_sa (f n)} 
+          {rv2 : forall n, RandomVariable dom Rbar_borel_sa (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x)))}:
+      almost prts (fun x => is_lim_seq (fun n => f n x) 0) ->
+      forall (eps:posreal),
+        is_lim_seq (fun n => ps_P (event_Rbar_gt (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x))) eps)) 0. 
+      Proof.
+        intros.
+        destruct H as [? [? ?]].
+        pose (A := inter_of_collection (fun m => union_of_collection (fun t => event_gt dom (rvabs (f (m + t)%nat)) eps))).
+        assert (ps_P A = 0).
+        {
+          assert (ps_P x <= ps_P (event_complement A)).
+          {
+            apply ps_sub.
+            intros ? ?.
+            simpl.
+            unfold pre_event_complement.
+            specialize (H0 x0 H1).
+            rewrite not_forall.
+            apply is_lim_seq_spec in H0.
+            specialize (H0 eps).
+            destruct H0.
+            exists x1.
+            unfold rvabs.
+            setoid_rewrite Rminus_0_r in H0.
+            apply all_not_not_ex.
+            intros.
+            specialize (H0 (x1 + n)%nat).
+            cut_to H0; try lia.
+            lra.
+          }
+          rewrite H in H1.
+          rewrite ps_complement in H1.
+          generalize (ps_pos A); intros.
+          lra.
+        }
+        assert (is_lim_seq (fun m => ps_P (union_of_collection (fun t => event_gt dom (rvabs (f (m + t)%nat)) eps))) (ps_P A)).
+        {
+          unfold A.
+          admit.
+        }
+        assert (forall n,
+                   event_equiv
+                     (union_of_collection (fun t : nat => event_gt dom (rvabs (f (n + t)%nat)) eps))
+                     (event_Rbar_gt (fun x0 : Ts => Sup_seq (fun m : nat => Rabs (f (n + m)%nat x0))) eps)).
+        {
+          intros n z.
+          simpl.
+          unfold rvabs.
+          split; intros.
+          - destruct H3.
+            unfold Sup_seq, proj1_sig.
+            destruct (ex_sup_seq (fun m : nat => Rabs (f (n + m)%nat z))).
+            unfold is_sup_seq in i.
+            destruct x1.
+            + simpl in i.
+              assert (Rabs (f (n + x0)%nat z) - eps > 0) by lra.
+              specialize (i (mkposreal _ H4)).
+              destruct i.
+              simpl in H5; simpl in H6.
+              specialize (H5 x0).
+              simpl.
+              lra.
+            + trivial.
+            + specialize (i 0 (0%nat)).
+              simpl in i.
+              generalize (Rabs_pos (f (n + 0)%nat z)); intros.
+              lra.
+          - unfold Sup_seq, proj1_sig in H3.
+            destruct (ex_sup_seq (fun m : nat => Rabs (f (n + m)%nat z))) in H3.            
+            unfold is_sup_seq in i.
+            destruct x0.
+            + simpl in H3.
+              assert (r - eps > 0) by lra.
+              specialize (i (mkposreal _ H4)).
+              simpl in i.
+              destruct i.
+              destruct H6.
+              ring_simplify in H6.
+              exists x0.
+              lra.
+            + specialize (i eps).
+              destruct i.
+              simpl in H4.
+              exists x0.
+              lra.
+            + simpl in H3.
+              assert (eps > 0) by apply cond_pos.
+              lra.
+        }
+        rewrite H1 in H2.
+        apply is_lim_seq_ext with
+            (u := (fun m : nat =>
+          ps_P (union_of_collection (fun t : nat => event_gt dom (rvabs (f (m + t)%nat)) eps)))).
+        - intros.
+          now rewrite H3.
+        - apply H2.
+        
+      Admitted.
       
+                  
+    Lemma conv_as_prob_sup_1 {prts: ProbSpace dom} (f : nat -> Ts -> R)
+          {rv : forall n, RandomVariable dom borel_sa (f n)} 
+          {rv2 : forall n, RandomVariable dom Rbar_borel_sa (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x)))}:
+      almost prts (fun x => is_lim_seq (fun n => f n x) 0) ->
+      forall (eps:posreal),
+        is_lim_seq (fun n => ps_P (event_Rbar_le (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x))) eps)) 1. 
+      Proof.
+        intros.
+        destruct H as [? [? ?]].
+        pose (A := union_of_collection (fun m => inter_of_collection (fun t => event_le dom (rvabs (f (m + t)%nat)) eps))).
+        assert (ps_P A = 1).
+        {
+          assert (ps_P x <= ps_P A).
+          {
+            apply ps_sub.
+            intros ? ?.
+            simpl.
+            specialize (H0 x0 H1).
+            apply is_lim_seq_spec in H0.
+            specialize (H0 eps).
+            destruct H0.
+            exists x1.
+            unfold rvabs.
+            setoid_rewrite Rminus_0_r in H0.
+            intros.
+            specialize (H0 (x1 + n)%nat).
+            cut_to H0; try lia.
+            lra.
+          }
+          rewrite H in H1.
+          generalize (ps_le1 prts A); intros.
+          lra.
+        }
+        assert (is_lim_seq (fun m => ps_P (inter_of_collection (fun t => event_le dom (rvabs (f (m + t)%nat)) eps))) (ps_P A)).
+        {
+          unfold A.
+          apply lim_prob.
+          - intros n ? ?.
+            simpl.
+            simpl in H2.
+            intros.
+            specialize (H2 (S n0)).
+            now replace (S (n + n0)%nat) with (n + S n0)%nat by lia.
+          - intros ?.
+            simpl.
+            tauto.
+        }
+        assert (forall n,
+                   event_equiv
+                     (inter_of_collection (fun t : nat => event_le dom (rvabs (f (n + t)%nat)) eps))
+                     (event_Rbar_le (fun x0 : Ts => Sup_seq (fun m : nat => Rabs (f (n + m)%nat x0))) eps)).
+        {
+          intros n z.
+          simpl.
+          unfold rvabs.
+          split; intros.
+          - replace (Finite eps) with (Sup_seq (fun n => eps)).
+            + apply Sup_seq_le.
+              intros.
+              simpl.
+              apply H3.
+            + apply Sup_seq_const.
+          - rewrite Rbar_sup_eq_lub in H3.
+            unfold Rbar_lub, proj1_sig in H3.
+            match_destr_in H3.
+            unfold Rbar_is_lub, Rbar_is_upper_bound in r.
+            destruct r.
+            generalize (Rbar_le_trans  (Rabs (f (n + n0)%nat z)) x0 eps); intros.
+            simpl in H6.
+            apply H6; trivial.
+            destruct x0.
+            + specialize (H4 ( Rabs (f (n + n0)%nat z))).
+              simpl in H4.
+              apply H4.
+              now exists n0.
+            + trivial.
+            + specialize (H4 (Rabs (f (n + 0)%nat z))).
+              simpl in H4.
+              apply H4.
+              now exists (0%nat).
+         }
+        rewrite H1 in H2.
+        apply is_lim_seq_ext with
+            (u :=  (fun m : nat =>
+          ps_P (inter_of_collection (fun t : nat => event_le dom (rvabs (f (m + t)%nat)) eps)))).
+        - intros.
+          now rewrite H3.
+        - apply H2.
+      Qed.
+          
     Lemma L2_convergent_x_nth_RMseq (i n:nat) (pf : (i < S n)%nat) (α : nat -> R) 
           (w : nat -> Ts -> vector R (S n)) (omega:Ts) :
       forall n0, 
@@ -3757,15 +4044,15 @@ algorithm.
         unfold plus, scal; simpl.
         unfold Hierarchy.mult; simpl.
         ring.
-     Qed.
-                                                                      
+    Qed.
+
     Lemma Induction_I1_17 {n} (eps P C0: posreal) (α : nat -> R) (C : R) (w x : nat -> Ts -> vector R (S n)) (xstar : vector R (S n))
           (F : (vector R (S n)) -> (vector R (S n)))
           {prts: ProbSpace dom}                              
           (rx : forall n0, RandomVariable dom (Rvector_borel_sa (S n)) (x n0))
           (rw : forall n0, RandomVariable dom (Rvector_borel_sa (S n)) (w n0))
           (srw : forall n0, FiniteRangeFunction  (w n0))
-          (rvsup : forall nk, RandomVariable dom borel_sa
+          (rvsup : forall nk, RandomVariable dom Rbar_borel_sa
                     (fun (omega : Ts) =>
                        Sup_seq (fun (n0 : nat) =>
                                   (rvmaxabs (vecrvminus (x (n0 + nk)%nat) (const xstar))) omega))) :
@@ -3776,6 +4063,7 @@ algorithm.
       (forall n, 0 <= α n <= 1) ->       
       is_lim_seq α 0 ->
       is_lim_seq (sum_n α) p_infty ->
+      ex_lim_seq (sum_n (fun n => (α n)^2)) ->
        (forall (x y : vector R (S n)),
           Rvector_max_abs (Rvector_minus (F x) (F y)) <= 
           gamma * Rvector_max_abs (Rvector_minus x y)) ->
@@ -3802,14 +4090,14 @@ algorithm.
       forall (k:nat),
       exists (nk : nat),
         ps_P 
-          (event_le dom
+          (event_Rbar_le
                     (fun (omega : Ts) =>
                        Sup_seq (fun (n0 : nat) =>
                                   (rvmaxabs (vecrvminus (x (n0 + nk)%nat) (const xstar))) omega))
                     (C0 * (gamma + eps)^k))
         >= 1 - (INR k) * (1 - P).
     Proof.
-      intros Plim Clim glim geps alim aseq sumaseq Fcont Fxstar xrel xlim wexp condexp k.
+      intros Plim Clim glim geps alim aseq sumaseq exsumaseq Fcont Fxstar xrel xlim wexp condexp k.
        induction k.
       - exists (0%nat).
         intros.
@@ -3818,7 +4106,7 @@ algorithm.
         rewrite Rminus_0_r.
         rewrite Rmult_1_r.
         assert (event_equiv 
-                  (event_le dom
+                  (event_Rbar_le
                             (fun omega : Ts =>
                                Sup_seq (fun n0 : nat => rvmaxabs (vecrvminus (x (n0 + 0)%nat) 
                                                                              (const xstar)) omega)) 
@@ -3832,19 +4120,6 @@ algorithm.
                                  (fun n0 => C0)); intros.
           cut_to H.
           - rewrite Sup_seq_const in H.
-            assert (is_finite
-                      (Sup_seq (fun n0 : nat => rvmaxabs (vecrvminus (x (n0 + 0)%nat) (const xstar)) omega))).
-            {
-              apply bounded_is_finite with (a := 0) (b := C0); trivial.
-              replace (Finite 0) with (Sup_seq (fun n => 0)) by apply Sup_seq_const.
-              apply Sup_seq_le.
-              intros.
-              unfold rvmaxabs.
-              simpl.
-              apply Rvector_max_abs_nonneg.
-            }
-            rewrite <- H0 in H.
-            simpl in H.
             tauto.
           - intros.
             simpl.
@@ -3858,6 +4133,17 @@ algorithm.
         assert (forall n, 0 <= α (n + nk)%nat <= 1) by (intros; apply alim).
         assert (is_lim_seq (fun n0 : nat => α (n0 + nk)%nat) 0) by now apply is_lim_seq_incr_n.
         specialize (H H0 H1).
+        assert (0 < eps * (C0 * (gamma + eps)^k)/2).
+        {
+          apply Rmult_lt_0_compat; try lra.
+          apply Rmult_lt_0_compat; try apply cond_pos.
+          apply Rmult_lt_0_compat; try apply cond_pos.
+          apply pow_lt.
+          apply Rlt_le_trans with (r2 := eps).
+          apply cond_pos.
+          replace (pos eps) with (0 + eps) at 1 by lra.
+          now apply Rplus_le_compat_r.
+        }
         cut_to H.
         + assert (exists (n2 :nat), 
                      forall n,
@@ -3868,17 +4154,6 @@ algorithm.
                                             eps * (C0 * (gamma + eps)^k)/2).
           {
             apply is_lim_seq_spec in H.
-            assert (0 < eps * (C0 * (gamma + eps)^k)/2).
-            {
-              apply Rmult_lt_0_compat; try lra.
-              apply Rmult_lt_0_compat; try apply cond_pos.
-              apply Rmult_lt_0_compat; try apply cond_pos.
-              apply pow_lt.
-              apply Rlt_le_trans with (r2 := eps).
-              apply cond_pos.
-              replace (pos eps) with (0 + eps) at 1 by lra.
-              now apply Rplus_le_compat_r.
-            }
             specialize (H (mkposreal _ H2)).
             destruct H.
             exists x0.
@@ -3890,7 +4165,7 @@ algorithm.
             lra.
           }
           generalize (as_convergent_lemma (I := S n) 0); intros.
-          specialize (H3 (fun n0 : nat => α (n0 + nk)%nat) F Ts dom prts C (vecrvconst (S n) 0) 
+          specialize (H4 (fun n0 : nat => α (n0 + nk)%nat) F Ts dom prts C (vecrvconst (S n) 0) 
                          (fun n0 : nat => w (n0 + nk)%nat)).
           assert (rxinit : RandomVariable dom (Rvector_borel_sa (S n)) (vecrvconst (S n) 0)) by
             typeclasses eauto.
@@ -3900,7 +4175,7 @@ algorithm.
             intros.
             apply rw.
           }
-          specialize (H3 rxinit rvw).
+          specialize (H4 rxinit rvw).
           assert (frfxinit : FiniteRangeFunction (Ts := Ts) (vecrvconst (S n) 0)) by
             apply frf_vecrvconst.
           assert  (srvw : forall n0 : nat, FiniteRangeFunction ((fun n1 : nat => w (n1 + nk)%nat) n0)).
@@ -3908,15 +4183,71 @@ algorithm.
             intros.
             apply srw.
           }
-          specialize (H3 frfxinit srvw).
-          cut_to H3; trivial.
-          destruct H3 as [? [? ?]].
-          
-
+          specialize (H4 frfxinit srvw).
+          cut_to H4; trivial.
+          * pose (f := (fun n0 w1 =>  
+                                 rvmaxabs
+                                   (L2_convergent_x (F := F)
+                                      (fun n1 : nat => α (n1 + nk)%nat) (vecrvconst (S n) 0)
+                                      (fun n1 : nat => w (n1 + nk)%nat) n0) w1)).
+            assert (forall n0, RandomVariable dom borel_sa (f n0)) by
+                typeclasses eauto.
+            assert (forall n,  
+                       RandomVariable dom Rbar_borel_sa
+                                      (fun x : Ts => Sup_seq (fun m : nat => Rabs (f (n + m)%nat x)))) by
+                typeclasses eauto.
+            generalize (conv_as_prob_sup_1 _ H4  (mkposreal _ H2) ); intros.
+            apply is_lim_seq_spec in H7.
+            assert (1-P > 0) by lra.
+            specialize (H7 (mkposreal _ H8)).
+            destruct H7.
+            simpl in H7.
+            clear condexp.
+            assert (forall n0,  
+                       (x0 <= n0)%nat ->
+                       ps_P
+                         (event_Rbar_le
+                            (fun x : Ts =>
+                               Sup_seq
+                                 (fun m : nat =>
+                                   Rabs
+                                     (rvmaxabs
+                                        (L2_convergent_x (fun n1 : nat => α (n1 + nk)%nat) 
+                                                         (vecrvconst (S n) 0) (fun n1 : nat => w (n1 + nk)%nat) 
+                                                         (n0 + m)) x))) (eps * (C0 * (gamma + eps) ^ k) / 2)) > P).
+            {
+              intros.
+              specialize (H7 n0 H9).
+              rewrite Rabs_minus_sym in H7.
+              rewrite Rabs_right in H7.
+              - lra.
+              - apply Rplus_ge_reg_l with (r := -1).
+                ring_simplify.
+                apply Ropp_ge_contravar.
+                apply Rle_ge.
+                apply ps_le1.
+            }
+            clear H7.
+            destruct H3.
+            exists (max (max x0 x1) nk).
+            admit.
+          * now apply seq_sum_shift.
+          * apply (ex_seq_sum_shift 0 (fun n => α n ^2)  nk  exsumaseq).
+          * admit.
+          * intros.
+            specialize (wexp (n0 + nk)%nat).
+            eapply Rle_lt_trans.
+            shelve.
+            apply wexp.
+            Unshelve.
+            right.
+            apply SimpleExpectation_pf_irrel.
+          * admit.
+        + now apply seq_sum_shift.
           
         Admitted.
 
-    Lemma log_power_base (e b : R ) :
+    Lemma log_power_base (e b : R ) : 
       0 < e -> 0 < b ->
       b <> 1 -> Rpower b (ln e / ln b) = e.
     Proof.
