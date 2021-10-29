@@ -949,7 +949,7 @@ algorithm.
            specialize (ha1 (S (p+k)%nat)); lra.
     Qed.
 
-    Global Instance const_rv {Ts:Type} {dom : SigmaAlgebra Ts}  (c : R) :
+    Instance const_rv {Ts:Type} {dom : SigmaAlgebra Ts}  (c : R) :
         RandomVariable dom borel_sa (fun (x: Ts) => c).
       Proof.
         intros.
@@ -4198,8 +4198,7 @@ algorithm.
                   }
                   rewrite H12.
                   now apply vec_rv.
-                - apply measurable_rv.
-                  apply constant_measurable.
+                - apply const_rv.
             }
             simpl in rv2_18.
             generalize (Induction_I2_18_prob gamma prts (fun n => α (n + nk)%nat)
