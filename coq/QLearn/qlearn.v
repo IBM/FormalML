@@ -4057,21 +4057,8 @@ algorithm.
                          (fun n0 : nat => w (n0 + nk)%nat)).
           assert (rxinit : RandomVariable dom (Rvector_borel_sa (S n)) (vecrvconst (S n) 0)) by
             typeclasses eauto.
-          assert  (rvw : forall n0 : nat,
-               RandomVariable dom (Rvector_borel_sa (S n)) ((fun n1 : nat => w (n1 + nk)%nat) n0)).
-          {
-            intros.
-            apply rw.
-          }
-          specialize (H4 rxinit rvw).
-          assert (frfxinit : FiniteRangeFunction (Ts := Ts) (vecrvconst (S n) 0)) by
-            apply frf_vecrvconst.
-          assert  (srvw : forall n0 : nat, FiniteRangeFunction ((fun n1 : nat => w (n1 + nk)%nat) n0)).
-          {
-            intros.
-            apply srw.
-          }
-          specialize (H4 frfxinit srvw).
+          specialize (H4 (Rvector_const_rv (S n) 0) (fun n2 : nat => rw (n2 + nk)%nat)
+                         (frf_vecrvconst (S n) 0) (fun n2 : nat => srw (n2 + nk)%nat)).
           cut_to H4; trivial.
           * pose (f := (fun n0 w1 =>  
                                  rvmaxabs
@@ -4222,18 +4209,6 @@ algorithm.
                apply IHk.
           * now apply seq_sum_shift.
           * apply (ex_seq_sum_shift (fun n => α n ^2)  nk  exsumaseq).
-          * intros n0.
-            specialize (condexp nk n0).
-            rewrite <- condexp.
-            admit.
-          * intros.
-            specialize (wexp (n0 + nk)%nat).
-            eapply Rle_lt_trans.
-            shelve.
-            apply wexp.
-            Unshelve.
-            right.
-            apply SimpleExpectation_pf_irrel.
           * intros.
             unfold vecrvconst.
             unfold minus, opp, plus, const; simpl.
