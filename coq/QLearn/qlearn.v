@@ -949,14 +949,6 @@ algorithm.
            specialize (ha1 (S (p+k)%nat)); lra.
     Qed.
 
-    Instance const_rv {Ts:Type} {dom : SigmaAlgebra Ts}  (c : R) :
-        RandomVariable dom borel_sa (fun (x: Ts) => c).
-      Proof.
-        intros.
-        apply measurable_rv.
-        apply constant_measurable.
-      Qed.
-
     Fixpoint RMseq (α : nat -> R) (s : nat -> R) (init : R) (n : nat) : R :=
       match n with
       | 0 => init
@@ -969,7 +961,7 @@ algorithm.
     Proof.
       induction n.
       - simpl.
-        typeclasses eauto.
+        apply rvconst.
       - simpl.
         apply rvplus_rv.
         + now apply rvscale_rv.
@@ -4170,7 +4162,7 @@ algorithm.
                   apply vec_rv.
                   apply Rvector_minus_rv.
                   * typeclasses eauto.
-                  * admit.
+                  * apply rvconst.
                 + generalize (rvopp_rv dom); intros.
                   specialize (H10
                                 (fun omega : Ts => RMseq (fun n0 => α (n0 + nk)%nat) (fun n1 : nat => vector_nth i pf (w (n1 + nk)%nat omega)) 0 n0)).
@@ -4198,7 +4190,7 @@ algorithm.
                   }
                   rewrite H12.
                   now apply vec_rv.
-                - apply const_rv.
+                - apply rvconst.
             }
             simpl in rv2_18.
             generalize (Induction_I2_18_prob gamma prts (fun n => α (n + nk)%nat)
@@ -4259,6 +4251,66 @@ algorithm.
         + now apply seq_sum_shift.
           
         Admitted.
+
+    Lemma stochastic_convergence_16 {n} (C0: posreal) (α : nat -> R) (C : R) (w x : nat -> Ts -> vector R (S n)) (xstar : vector R (S n))
+          (F : (vector R (S n)) -> (vector R (S n)))
+          {prts: ProbSpace dom}                              
+          (rx : forall n0, RandomVariable dom (Rvector_borel_sa (S n)) (x n0))
+          (rw : forall n0, RandomVariable dom (Rvector_borel_sa (S n)) (w n0))
+          (srw : forall n0, FiniteRangeFunction  (w n0))
+          (rvsup : forall nk, RandomVariable dom Rbar_borel_sa
+                    (fun (omega : Ts) =>
+                       Sup_seq (fun (n0 : nat) =>
+                                  (rvmaxabs (vecrvminus (x (nk + n0)%nat) (const xstar))) omega))) :
+      0 <= C ->
+      0 <= gamma < 1 ->
+      (forall n, 0 <= α n <= 1) ->       
+      is_lim_seq α 0 ->
+      is_lim_seq (sum_n α) p_infty ->
+      ex_lim_seq (sum_n (fun n => (α n)^2)) ->
+       (forall (x y : vector R (S n)),
+          Rvector_max_abs (Rvector_minus (F x) (F y)) <= 
+          gamma * Rvector_max_abs (Rvector_minus x y)) ->
+       F xstar = xstar ->
+       (forall n,
+           (rv_eq (x (S n))
+                  (vecrvplus
+                     (vecrvscale (1 - α n) (x n)) 
+                    (vecrvscale (α n)
+                                (vecrvplus (fun v => F (x n v)) (w n)))))) ->
+       (forall n, forall omega, 
+            rvmaxabs (vecrvminus (x n) (const xstar)) omega <= C0) ->
+      (forall n0 : nat, SimpleExpectation (rvinner (w n0) (w n0)) < C) ->
+      (forall nk, forall n0,
+          rv_eq
+            (vector_SimpleConditionalExpectationSA 
+               (w ( n0 + nk)%nat)
+               (L2_convergent_hist 
+                  (@L2_convergent_x (S n) (fun k => α (k + nk)%nat) 
+                                    (vecrvconst (S n) 0) Ts 
+                                    (vecrvconst (S n) 0) 
+                                    (fun k => w (k + nk)%nat)) _ _ n0)) 
+            (const zero)) ->
+      almost prts (fun omega => is_lim_seq (fun n =>
+                                         (rvmaxabs (vecrvminus (x n) (const xstar))) omega)
+                                      0).
+    Proof.
+      intros.
+      pose (eps := (1-gamma)/2).
+      assert (gamma + eps < 1).
+      {
+        unfold eps.
+        field_simplify.
+        apply Rmult_lt_reg_r with (r := 2); lra.
+     }
+(*
+      assert (forall (P:R), 
+                 0<P<1 ->
+                 ps_P (fun omega => is_lim_seq (fun n =>
+                                                  (rvmaxabs (vecrvminus (x n) (const xstar))) omega)
+                                               0) >= P).
+*)
+      Admitted.
 
     Lemma log_power_base (e b : R ) : 
       0 < e -> 0 < b ->
