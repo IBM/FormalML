@@ -949,11 +949,32 @@ algorithm.
            specialize (ha1 (S (p+k)%nat)); lra.
     Qed.
 
+    Global Instance const_rv {Ts:Type} {dom : SigmaAlgebra Ts}  (c : R) :
+        RandomVariable dom borel_sa (fun (x: Ts) => c).
+      Proof.
+        intros.
+        apply measurable_rv.
+        apply constant_measurable.
+      Qed.
+
     Fixpoint RMseq (α : nat -> R) (s : nat -> R) (init : R) (n : nat) : R :=
       match n with
       | 0 => init
       | (S k) => plus (scal (1 - α k) (RMseq α s init k)) (scal (α k) (s k))
       end.
+
+    Global Instance RMseq_rv  {Ts:Type} {dom : SigmaAlgebra Ts} (α : nat -> R) (s : nat -> Ts -> R) (init : R) (n : nat) 
+           {rx : forall n, RandomVariable dom borel_sa (s n)} :
+     RandomVariable dom borel_sa (fun omega => RMseq α (fun n => s n omega) init n).
+    Proof.
+      induction n.
+      - simpl.
+        typeclasses eauto.
+      - simpl.
+        apply rvplus_rv.
+        + now apply rvscale_rv.
+        + typeclasses eauto.
+    Qed.
 
     (* Lemma 5.*)
     Lemma helper_bounding_5 (α : nat -> R) (s1 s2 : nat -> R) (init1 init2 : R) :
@@ -3930,7 +3951,7 @@ algorithm.
           (rvsup : forall nk, RandomVariable dom Rbar_borel_sa
                     (fun (omega : Ts) =>
                        Sup_seq (fun (n0 : nat) =>
-                                  (rvmaxabs (vecrvminus (x (n0 + nk)%nat) (const xstar))) omega))) :
+                                  (rvmaxabs (vecrvminus (x (nk + n0)%nat) (const xstar))) omega))) :
       P < 1 ->
       0 <= C ->
       0 <= gamma < 1 ->
@@ -4040,7 +4061,7 @@ algorithm.
             lra.
           }
           generalize (as_convergent_lemma (I := S n) 0); intros.
-          specialize (H4 (fun n0 : nat => α (n0 + nk)%nat) F Ts dom prts C (vecrvconst (S n) 0) 
+          specialize (H4 (fun n0 : nat => α (n0 + nk)%nat) (* F *)(const (@ Rvector_zero (S n))) Ts dom prts C (vecrvconst (S n) 0) 
                          (fun n0 : nat => w (n0 + nk)%nat)).
           assert (rxinit : RandomVariable dom (Rvector_borel_sa (S n)) (vecrvconst (S n) 0)) by
             typeclasses eauto.
@@ -4077,7 +4098,8 @@ algorithm.
             specialize (H7 (mkposreal _ H8)).
             destruct H7.
             simpl in H7.
-            clear condexp.
+            setoid_rewrite Rabs_minus_sym in H7.
+(*            
             assert (forall n0,  
                        (x0 <= n0)%nat ->
                        ps_P
@@ -4095,7 +4117,8 @@ algorithm.
               specialize (H7 n0 H9).
               rewrite Rabs_minus_sym in H7.
               rewrite Rabs_right in H7.
-              - lra.
+              - 
+                admit.
               - apply Rplus_ge_reg_l with (r := -1).
                 ring_simplify.
                 apply Ropp_ge_contravar.
@@ -4103,9 +4126,109 @@ algorithm.
                 apply ps_le1.
             }
             clear H7.
+*)
             destruct H3.
             exists (max (max x0 x1) nk).
-            admit.
+
+            assert (rv2_18 : let xtilde :=
+                  fun (n0 : nat) (omega : Ts) => Rvector_minus (x (n0 + nk)%nat omega) xstar in
+                forall (n0 i : nat) (pf : (i < S n)%nat),
+                RandomVariable dom borel_sa
+                  (fun omega : Ts =>
+                   Rabs
+                     (vector_nth i pf (xtilde n0 omega) -
+                      RMseq (fun n0 => α (n0 + nk)%nat) (fun n1 : nat => vector_nth i pf (w (n1 + nk)%nat omega)) 0 n0) -
+                   RMseq (fun n0 => α (n0 + nk)%nat) (fun _ : nat => gamma * (C0 * (gamma + eps) ^ k)) 
+                         (C0 * (gamma + eps) ^ k) n0)).
+            {
+              simpl.
+              intros.
+              generalize (rvminus_rv dom
+                            (fun omega : Ts =>
+                               Rabs
+                                 (vector_nth i pf (Rvector_minus (x (n0 + nk)%nat omega) xstar) -
+                                  RMseq (fun n0 => α (n0 + nk)%nat) (fun n1 : nat => vector_nth i pf (w (n1 + nk)%nat omega)) 0 n0) )); intros.
+              specialize (H9
+                            (fun omega : Ts =>
+                               RMseq (fun n0 => α (n0 + nk)%nat) (fun _ : nat => gamma * (C0 * (gamma + eps) ^ k)) 
+                                     (C0 * (gamma + eps) ^ k) n0)).
+              rewrite rvminus_unfold in H9.
+              apply H9.
+              - apply rvabs_rv.
+                unfold Rminus.
+                apply rvplus_rv.
+                + assert (rv_eq
+                            (fun omega : Ts => vector_nth i pf (Rvector_minus (x (n0 + nk)%nat omega) xstar))
+                            (vector_nth i pf (iso_f (fun omega : Ts => Rvector_minus (x (n0 + nk)%nat omega) xstar)))).
+
+                  {
+                    intros ?.
+                    unfold iso_f; simpl.
+                    now rewrite vector_nth_fun_to_vector.
+                  }
+                  rewrite H10.
+                  apply vec_rv.
+                  apply Rvector_minus_rv.
+                  * typeclasses eauto.
+                  * admit.
+                + generalize (rvopp_rv dom); intros.
+                  specialize (H10
+                                (fun omega : Ts => RMseq (fun n0 => α (n0 + nk)%nat) (fun n1 : nat => vector_nth i pf (w (n1 + nk)%nat omega)) 0 n0)).
+                  unfold rvopp in H10.
+                  unfold rvscale in H10.
+                  assert (rv_eq
+                            (fun omega : Ts =>
+                               -1 * RMseq (fun n0 => α (n0 + nk)%nat) (fun n1 : nat => vector_nth i pf (w (n1 + nk)%nat omega)) 0 n0)
+                             (fun omega : Ts => - RMseq (fun n0 => α (n0 + nk)%nat) (fun n1 : nat => vector_nth i pf (w (n1 + nk)%nat omega)) 0 n0)).
+                  {
+                    intros ?.
+                    lra.
+                  }
+                  rewrite H11 in H10.
+                  apply H10.
+                  apply RMseq_rv.
+                  intros.
+                  assert (rv_eq
+                            (fun omega : Ts => vector_nth i pf (w (n1 + nk)%nat omega))
+                            (vector_nth i pf (iso_f (w (n1 + nk)%nat)))).
+                  {
+                    intros ?.
+                    unfold iso_f; simpl.
+                    now rewrite vector_nth_fun_to_vector.
+                  }
+                  rewrite H12.
+                  now apply vec_rv.
+                - apply measurable_rv.
+                  apply constant_measurable.
+            }
+            simpl in rv2_18.
+            generalize (Induction_I2_18_prob gamma prts (fun n => α (n + nk)%nat)
+                                             (fun n => x (n + nk)%nat )
+                                             (fun n => w (n + nk)%nat )
+                                             (C0 * (gamma + eps)^k) (1 - INR k * (1 - P)) xstar F (rv2 := rv2_18) ) ; intros.
+            cut_to H9; trivial.
+            -- admit.
+            -- intros ? ?.
+               replace (S n0 + nk)%nat with (S (n0 + nk))%nat by lia.
+               now rewrite xrel.
+            -- assert (event_equiv
+                         (inter_of_collection
+                            (fun n0 : nat =>
+                               event_le dom (rvmaxabs (vecrvminus (x (n0 + nk)%nat) (const xstar))) 
+                                        (C0 * (gamma + eps) ^ k)))
+                         (event_Rbar_le
+                            (fun omega : Ts =>
+                               Sup_seq (fun n0 : nat => rvmaxabs (vecrvminus (x (n0 + nk)%nat)
+                                                                             (const xstar)) omega))
+                            (C0 * (gamma + eps) ^ k))).
+               {
+                 intros ?.
+                 simpl.
+                 rewrite <- sup_le_bound.
+                 now simpl.
+               }
+               rewrite H10.
+               apply IHk.
           * now apply seq_sum_shift.
           * apply (ex_seq_sum_shift (fun n => α n ^2)  nk  exsumaseq).
           * intros n0.
@@ -4120,7 +4243,20 @@ algorithm.
             Unshelve.
             right.
             apply SimpleExpectation_pf_irrel.
-          * admit.
+          * intros.
+            unfold vecrvconst.
+            unfold minus, opp, plus, const; simpl.
+            rewrite Rmult_0_l.
+            right.
+            rewrite Rvector_plus_comm.
+            rewrite Rvector_plus_zero.
+            unfold Rvector_opp.
+            rewrite Rvector_scale_zero.
+            unfold hilbert.Hnorm, hilbert.inner; simpl.
+            unfold Rvector_inner.
+            rewrite Rvector_mult_zero.
+            rewrite Rvector_sum0.
+            apply sqrt_0.
         + now apply seq_sum_shift.
           
         Admitted.
