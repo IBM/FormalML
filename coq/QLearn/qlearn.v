@@ -4287,6 +4287,63 @@ algorithm.
       now replace (x2 + (n1 - n2) + n2)%nat with (x2 + n1)%nat by lia.
     Qed.
 
+    Lemma up_pow_ln (c1 b : posreal) :
+      b < 1 ->
+      c1 < 1 ->
+      c1 >= b ^ Z.to_nat (up ((ln c1)/(ln b))).
+    Proof.
+      intros.
+      assert (ln b <> 0).
+      {
+        apply Rlt_not_eq.
+        apply ln_lt_0.
+        generalize (cond_pos b); intros; lra.
+      }
+      assert (pos c1 = Rpower b ((ln c1)/(ln b))).
+      {
+        unfold Rpower.
+        replace (ln c1 / ln b * ln b) with (ln c1).
+        - rewrite exp_ln; trivial.
+          apply cond_pos.
+        - field_simplify; trivial.
+      }
+      rewrite H2 at 1.
+      rewrite <- Rpower_pow; try apply cond_pos.
+      unfold Rpower.
+      apply Rle_ge.
+      apply exp_increasing_le.
+      rewrite INR_up_pos.
+      - field_simplify; trivial.
+        + apply Rmult_le_reg_r with (r := - /ln b).
+          * rewrite <- Ropp_0.
+            apply Ropp_lt_contravar.
+            apply Rinv_lt_0_compat.
+            apply ln_lt_0.
+            generalize (cond_pos b); intros.
+            lra.
+          * field_simplify; trivial.
+            apply Ropp_le_cancel.
+            field_simplify; trivial.
+            left.
+            apply archimed.
+      - replace (ln c1 / ln b) with ((- ln c1) / (- ln b)).
+        + apply Rle_ge.
+          apply Rdiv_le_0_compat.
+          * rewrite <- Ropp_0.
+            apply Ropp_le_contravar.
+            apply ln_le_0.
+            generalize (cond_pos c1); intros.
+            lra.
+          * rewrite <- Ropp_0.
+            apply Ropp_lt_contravar.
+            apply ln_lt_0.
+            generalize (cond_pos b); intros.
+            lra.
+        + replace (- ln c1) with ((-1)*ln c1) by lra.
+          replace (- ln b) with ((-1)*ln b) by lra.
+          now field_simplify.
+    Qed.
+
     Lemma stochastic_convergence_16 {n} (C0: posreal) (α : nat -> R) (C : R) (w x : nat -> Ts -> vector R (S n)) (xstar : vector R (S n))
           (F : (vector R (S n)) -> (vector R (S n)))
           {prts: ProbSpace dom}                              
@@ -4434,8 +4491,31 @@ algorithm.
           }
           assert (eps0 >= (C0 * (gamma + eps)^k)).
           {
-            unfold k.
-            admit.
+            assert (eps0/C0 >= (gamma + eps) ^ k).
+            {
+              unfold k.
+              assert (0 < eps0 / C0) by
+                  (apply Rdiv_lt_0_compat; apply cond_pos).
+              assert (0 < gamma + eps) by
+                  (apply Rlt_le_trans with (r2 := eps); lra).
+              apply (up_pow_ln (mkposreal _ H20) (mkposreal _ H21)).
+              - simpl; lra.
+              - simpl.
+                unfold Rdiv.
+                apply Rmult_lt_reg_r with (r := C0).
+                + apply cond_pos.
+                + rewrite Rmult_assoc.
+                  rewrite <- Rinv_l_sym.
+                  * lra.
+                  * apply Rgt_not_eq, cond_pos.
+             }
+            apply Rmult_ge_compat_r with (r := C0) in H20.
+            unfold Rdiv in H20.
+            rewrite Rmult_assoc in H20.
+            rewrite <- Rinv_l_sym in H20.
+            - lra.
+            - apply Rgt_not_eq, cond_pos.
+            - left; apply cond_pos.
           }
           destruct H19.
           assert (1 - INR k * (1 - P0) >= P).
