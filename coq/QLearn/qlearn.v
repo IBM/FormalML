@@ -4078,7 +4078,7 @@ algorithm.
             destruct H7.
             simpl in H7.
             setoid_rewrite Rabs_minus_sym in H7.
-(*            
+(*
             assert (forall n0,  
                        (x0 <= n0)%nat ->
                        ps_P
@@ -4094,9 +4094,8 @@ algorithm.
             {
               intros.
               specialize (H7 n0 H9).
-              rewrite Rabs_minus_sym in H7.
               rewrite Rabs_right in H7.
-              - 
+              - (* lra.*)
                 admit.
               - apply Rplus_ge_reg_l with (r := -1).
                 ring_simplify.
@@ -4185,7 +4184,50 @@ algorithm.
                                              (fun n => w (n + nk)%nat )
                                              (C0 * (gamma + eps)^k) (1 - INR k * (1 - P)) xstar F (rv2 := rv2_18) ) ; intros.
             cut_to H9; trivial.
-            -- admit.
+            -- simpl in H9.
+               pose (A := inter_of_collection
+                            (fun n0 : nat =>
+                               bounded_inter_of_collection
+                                 (fun (i : nat) (pf : (i < S n)%nat) =>
+                                    event_le 
+                                      dom
+                                      (fun omega : Ts =>
+                                         Rabs
+                                           (vector_nth i pf (Rvector_minus (x (n0 + nk)%nat omega) xstar)
+                                            -  RMseq (fun n : nat => α (n + nk)%nat)
+                                                     (fun n1 : nat => vector_nth i pf (w (n1 + nk)%nat omega)) 0 n0)
+                                         -
+                                         RMseq (fun n : nat => α (n + nk)%nat)
+                                               (fun _ : nat => gamma * (C0 * (gamma + eps) ^ k)) 
+                                               (C0 * (gamma + eps) ^ k) n0) 0))).
+               pose (B := fun n0 => 
+                            event_Rbar_le
+                              (fun x : Ts =>
+                                 Sup_seq
+                                   (fun m : nat =>
+                                      Rabs
+                                        (rvmaxabs
+                                           (L2_convergent_x 
+                                              (fun n1 : nat => α (n1 + nk)%nat) 
+                                              (vecrvconst (S n) 0) (fun n1 : nat => w (n1 + nk)%nat) 
+                                              (n0 + m)) x))) (eps * (C0 * (gamma + eps) ^ k) / 2)).
+               pose (D := fun n =>
+                            RMseq (fun n0 : nat => α (n0 + nk)%nat) 
+                                  (fun _ : nat => gamma * (C0 * (gamma + eps) ^ k))
+                                  (C0 * (gamma + eps)) (n + x1) <=
+                            gamma * (C0 * (gamma + eps) ^ k) + eps * (C0 * (gamma + eps) ^ k) / 2).
+               pose (E :=
+                       event_Rbar_le
+                          (fun omega : Ts =>
+                             Sup_seq
+                               (fun n0 : nat =>
+                                  rvmaxabs (vecrvminus 
+                                              (x (n0 + Init.Nat.max (Init.Nat.max x0 x1) nk)%nat) 
+                                              (const xstar))
+                                           omega)) 
+                          (C0 * (gamma + eps) ^ S k)).
+               (* show A /\ B /\ D -> E *)
+              admit.
             -- intros ? ?.
                replace (S n0 + nk)%nat with (S (n0 + nk))%nat by lia.
                now rewrite xrel.
@@ -4225,7 +4267,25 @@ algorithm.
             apply sqrt_0.
         + now apply seq_sum_shift.
           
-        Admitted.
+    Admitted.
+
+    Lemma Sup_seq_incr (f : nat -> R) (n1 n2 : nat) :
+      (n1 >= n2)%nat ->
+      Rbar_le (Sup_seq (fun n => f (n + n1)%nat)) (Sup_seq (fun n => f (n + n2)%nat)).
+    Proof.
+      intros.
+      do 2 rewrite Rbar_sup_eq_lub.
+      unfold Rbar_lub, proj1_sig.
+      match_destr; match_destr.
+      unfold Rbar_is_lub, Rbar_is_upper_bound in *.
+      destruct r; destruct r0.
+      apply H1.
+      intros.
+      apply H2.
+      destruct H4.
+      exists (x2 + (n1 - n2))%nat.
+      now replace (x2 + (n1 - n2) + n2)%nat with (x2 + n1)%nat by lia.
+    Qed.
 
     Lemma stochastic_convergence_16 {n} (C0: posreal) (α : nat -> R) (C : R) (w x : nat -> Ts -> vector R (S n)) (xstar : vector R (S n))
           (F : (vector R (S n)) -> (vector R (S n)))
@@ -4278,13 +4338,219 @@ algorithm.
         field_simplify.
         apply Rmult_lt_reg_r with (r := 2); lra.
      }
-(*
-      assert (forall (P:R), 
-                 0<P<1 ->
-                 ps_P (fun omega => is_lim_seq (fun n =>
+      assert (sa_sigma (fun omega => is_lim_seq (fun n =>
                                                   (rvmaxabs (vecrvminus (x n) (const xstar))) omega)
-                                               0) >= P).
-*)
+                                               0)).
+      {
+        admit.
+      }
+      assert (forall (eps0:posreal),
+                 forall (P:R), 
+                   0<P<1 ->
+                   exists (nk:nat),
+                     ps_P 
+                       (event_Rbar_le
+                          (fun (omega : Ts) =>
+                             Sup_seq (fun (n0 : nat) =>
+                                        (rvmaxabs (vecrvminus (x (n0 + nk)%nat) (const xstar))) omega))
+                          eps0) >= P).
+      {
+        intros.
+        destruct (Rlt_dec eps0 C0).
+        - pose (k := Z.to_nat(up (ln (eps0 / C0) / ln (gamma + eps)))).
+          pose (P0 := 1 - (1 - P)/(INR k)).
+          assert (eps > 0) by (unfold eps; lra).
+          assert (0 < (ln (eps0 / C0) / ln (gamma + eps))).
+          {
+            unfold Rdiv.
+            apply Rmult_lt_reg_r with (r := - ln(gamma + eps)).
+            - apply Ropp_lt_cancel.
+              ring_simplify.
+              apply ln_lt_0.
+              lra.
+            - rewrite Rmult_0_l.
+              rewrite Rmult_assoc.
+              replace (/ ln (gamma + eps) * - ln (gamma + eps)) with (-1).
+              + apply Ropp_lt_cancel.
+                ring_simplify.
+                apply ln_lt_0.
+                split.
+                * apply Rmult_lt_0_compat.
+                  -- apply cond_pos.
+                  -- apply Rinv_0_lt_compat, cond_pos.
+                * apply Rmult_lt_reg_r with (r := C0).
+                  -- apply cond_pos.
+                  -- rewrite Rmult_assoc.
+                     rewrite <- Rinv_l_sym.
+                     ++ rewrite Rmult_1_r.
+                        rewrite Rmult_1_l.
+                        lra.
+                     ++ apply Rgt_not_eq, cond_pos.
+              + ring_simplify.
+                replace (- / ln (gamma + eps)) with ((-1)*(/ ln (gamma + eps))) by lra.
+                rewrite Rmult_assoc.
+                rewrite <- Rinv_l_sym.
+                * lra.
+                * apply Rlt_not_eq.
+                  apply ln_lt_0.
+                  lra.
+          }
+          assert (INR k >= 1).
+          {
+            unfold k.
+            rewrite INR_up_pos; try lra.
+            apply up_pos in H15.
+            assert  (up (ln (eps0 / C0) / ln (gamma + eps)) >= 1)%Z by lia.
+            now apply IZR_ge in H16.            
+          }
+          assert (P0 > 0).
+          {
+            unfold P0.
+            apply Rmult_gt_reg_l with (r := INR k); try lra.
+            rewrite Rmult_0_r.
+            field_simplify.
+            lra.
+            apply Rgt_not_eq.
+            lra.
+          }
+          assert (P0 < 1).
+          {
+            unfold P0.
+            apply Rmult_gt_reg_l with (r := INR k); try lra.
+            field_simplify.
+            lra.
+            apply Rgt_not_eq.
+            lra.
+          }
+          assert (exists (nk:nat),
+                     ps_P 
+                       (event_Rbar_le
+                          (fun (omega : Ts) =>
+                             Sup_seq (fun (n0 : nat) =>
+                                        (rvmaxabs (vecrvminus (x (n0 + nk)%nat) (const xstar))) omega))
+                          (C0 * (gamma + eps)^k)) >= 1 - (INR k) * (1 - P0)).
+          {
+            apply (Induction_I1_17 (mkposreal _ H14) (mkposreal _ H17) C0 α C w) with (F := F) (rw := rw) (srw := srw); trivial.
+          }
+          assert (eps0 >= (C0 * (gamma + eps)^k)).
+          {
+            admit.
+          }
+          destruct H19.
+          assert (1 - INR k * (1 - P0) >= P).
+          {
+            admit.
+          }
+          exists x0.
+          apply Rge_trans with (r2 :=  1 - INR k * (1 - P0) ); trivial.
+          eapply Rge_trans.
+          shelve.
+          apply H19.
+          Unshelve.
+          apply Rle_ge.
+          apply ps_sub.
+          intros ? ?.
+          simpl; simpl in H22.
+          apply Rbar_le_trans with (y := (C0 * (gamma + eps) ^ k)); trivial.
+          simpl; lra.
+        - exists (0%nat).
+          assert (event_equiv
+                     (event_Rbar_le
+                        (fun omega : Ts =>
+                           Sup_seq (fun n1 : nat => rvmaxabs (vecrvminus (x (n1 + 0)%nat) 
+                                                                         (const xstar)) omega)) eps0)
+                      Ω).
+          {
+            intros ?.
+            simpl.
+            unfold pre_Ω.
+            split; intros; trivial.
+            replace (Finite eps0) with (Sup_seq (fun n => eps0)).
+            apply Sup_seq_le.
+            - intros.
+              assert (C0 <= eps0) by lra.
+              replace (n1 + 0)%nat with n1 by lia.
+              apply Rbar_le_trans with (y := C0); now simpl.
+            - apply Sup_seq_const.
+          }
+          rewrite H14.
+          rewrite ps_all.
+          lra.
+        }
+      assert (forall (eps:posreal),
+                 is_lim_seq ( fun nk => 
+                                ps_P
+                                  (event_Rbar_le
+                                     (fun omega : Ts =>
+                                        Sup_seq (fun n0 : nat => rvmaxabs 
+                                                                   (vecrvminus (x (n0 + nk)%nat)
+                                                                               (const xstar)) omega)) 
+                                     eps)) 1).
+      {
+        intros.
+        specialize (H13 eps0).
+        apply is_lim_seq_spec.
+        unfold is_lim_seq'.
+        intros.
+        destruct (Rle_dec eps1 1).
+        - specialize (H13 (1 - eps1/2)).
+          assert (0 < eps1) by apply cond_pos.
+          cut_to H13; try lra.
+          destruct H13.
+          exists x0.
+          intros.
+          rewrite Rabs_minus_sym.
+          rewrite Rabs_right.
+          + assert (ps_P
+                      (event_Rbar_le
+                         (fun omega : Ts =>
+                            Sup_seq (fun n0 : nat => rvmaxabs (vecrvminus (x (n0 + x0)%nat) 
+                                                                          (const xstar)) omega))
+                         eps0) <= 
+                    ps_P
+                      (event_Rbar_le
+                         (fun omega : Ts =>
+                            Sup_seq (fun n1 : nat => rvmaxabs (vecrvminus (x (n1 + n0)%nat) 
+                                                                          (const xstar)) omega)) eps0)).
+            {
+              apply ps_sub.
+              intros ? ?.
+              simpl; simpl in H16.
+              eapply Rbar_le_trans.
+              shelve.
+              apply H16.
+              Unshelve.
+              apply (Sup_seq_incr (fun n1 : nat => rvmaxabs (vecrvminus (x n1) (const xstar)) x1)).
+              lia.
+            }
+            lra.
+          + assert (ps_P
+                      (event_Rbar_le
+                         (fun omega : Ts =>
+                            Sup_seq (fun n1 : nat => rvmaxabs (vecrvminus (x (n1 + n0)%nat) 
+                                                                          (const xstar)) omega)) eps0) 
+                    <= 1) by  apply ps_le1.
+            lra.
+       - assert (eps1 > 1) by lra.
+         exists (0%nat).
+         intros.
+         rewrite Rabs_minus_sym.
+         rewrite Rabs_right.
+         + assert (0 <= ps_P
+                          (event_Rbar_le
+                             (fun omega : Ts =>
+                                Sup_seq (fun n2 : nat => rvmaxabs (vecrvminus (x (n2 + n1)%nat) (const xstar)) omega)) eps0)) by apply ps_pos.
+           lra.
+          + assert (ps_P
+                      (event_Rbar_le
+                         (fun omega : Ts =>
+                            Sup_seq (fun n2 : nat => rvmaxabs (vecrvminus (x (n2 + n1)%nat) 
+                                                                          (const xstar)) omega)) eps0) 
+                    <= 1) by  apply ps_le1.
+            lra.
+    }
+
+
       Admitted.
 
     Lemma log_power_base (e b : R ) : 
