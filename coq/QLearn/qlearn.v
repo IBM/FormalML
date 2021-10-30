@@ -4434,12 +4434,14 @@ algorithm.
           }
           assert (eps0 >= (C0 * (gamma + eps)^k)).
           {
+            unfold k.
             admit.
           }
           destruct H19.
           assert (1 - INR k * (1 - P0) >= P).
           {
-            admit.
+            unfold P0.
+            field_simplify; lra.
           }
           exists x0.
           apply Rge_trans with (r2 :=  1 - INR k * (1 - P0) ); trivial.
