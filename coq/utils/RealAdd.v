@@ -1929,6 +1929,15 @@ Proof.
     now right.
 Qed.
 
+Lemma ln_lt_0  (a : R) :
+  0 < a < 1 ->
+  ln a < 0.
+Proof.
+  intros.
+  rewrite <- ln_1.
+  apply ln_increasing; lra.
+Qed.
+
 Lemma ln_le_0  (a : R) :
   0 < a <= 1 ->
   ln a <= 0.
@@ -1936,8 +1945,7 @@ Proof.
   intros.
   destruct (Rlt_dec a 1).
   - left.
-    rewrite <- ln_1.
-    apply ln_increasing; lra.
+    apply ln_lt_0; lra.
   - assert (a = 1) by lra.
     rewrite H0.
     rewrite ln_1; lra.
