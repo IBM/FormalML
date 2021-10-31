@@ -4293,18 +4293,18 @@ algorithm.
       c1 >= b ^ Z.to_nat (up ((ln c1)/(ln b))).
     Proof.
       intros.
+      generalize (cond_pos b); intro bpos.
+      generalize (cond_pos c1); intro c1pos.      
       assert (ln b <> 0).
       {
         apply Rlt_not_eq.
-        apply ln_lt_0.
-        generalize (cond_pos b); intros; lra.
+        apply ln_lt_0; lra.
       }
       assert (pos c1 = Rpower b ((ln c1)/(ln b))).
       {
         unfold Rpower.
         replace (ln c1 / ln b * ln b) with (ln c1).
-        - rewrite exp_ln; trivial.
-          apply cond_pos.
+        - now rewrite exp_ln.
         - field_simplify; trivial.
       }
       rewrite H2 at 1.
@@ -4318,9 +4318,7 @@ algorithm.
           * rewrite <- Ropp_0.
             apply Ropp_lt_contravar.
             apply Rinv_lt_0_compat.
-            apply ln_lt_0.
-            generalize (cond_pos b); intros.
-            lra.
+            now apply ln_lt_0.
           * field_simplify; trivial.
             apply Ropp_le_cancel.
             field_simplify; trivial.
@@ -4331,18 +4329,87 @@ algorithm.
           apply Rdiv_le_0_compat.
           * rewrite <- Ropp_0.
             apply Ropp_le_contravar.
-            apply ln_le_0.
-            generalize (cond_pos c1); intros.
-            lra.
+            apply ln_le_0; lra.
           * rewrite <- Ropp_0.
             apply Ropp_lt_contravar.
-            apply ln_lt_0.
-            generalize (cond_pos b); intros.
-            lra.
+            apply ln_lt_0; lra.
         + replace (- ln c1) with ((-1)*ln c1) by lra.
           replace (- ln b) with ((-1)*ln b) by lra.
           now field_simplify.
     Qed.
+
+    Lemma sa_sigma_is_LimInf_seq (f : nat -> Ts -> R) (c:Rbar)
+          {rv : forall n, RandomVariable dom borel_sa (f n)} :
+      sa_sigma (fun omega => is_LimInf_seq (fun n => f n omega) c).
+    Proof.
+      assert (pre_event_equiv
+                (fun omega => is_LimInf_seq (fun n => f n omega) c)
+                (fun omega => LimInf_seq (fun n => f n omega) = c)).
+      {
+        intros ?.
+        unfold LimInf_seq, proj1_sig.
+        match_destr.
+        split; intros.
+        - apply is_LimInf_seq_unique in i.
+          apply is_LimInf_seq_unique in H.
+          now rewrite <- i, <- H.
+        - now rewrite <- H.
+      }
+      rewrite H.
+      apply Rbar_sa_le_pt.
+      intros.
+      apply Rbar_lim_inf_measurable.
+      typeclasses eauto.
+   Qed.
+
+    Lemma sa_sigma_is_LimSup_seq (f : nat -> Ts -> R) (c:Rbar)
+          {rv : forall n, RandomVariable dom borel_sa (f n)} :
+      sa_sigma (fun omega => is_LimSup_seq (fun n => f n omega) c).
+    Proof.
+      assert (pre_event_equiv
+                (fun omega => is_LimSup_seq (fun n => f n omega) c)
+                (fun omega => LimSup_seq (fun n => f n omega) = c)).
+      {
+        intros ?.
+        unfold LimSup_seq, proj1_sig.
+        match_destr.
+        split; intros.
+        - apply is_LimSup_seq_unique in i.
+          apply is_LimSup_seq_unique in H.
+          now rewrite <- i, <- H.
+        - now rewrite <- H.
+      }
+      rewrite H.
+      apply Rbar_sa_le_pt.
+      intros.
+      apply Rbar_lim_sup_measurable.
+      typeclasses eauto.
+   Qed.
+
+    Lemma sa_sigma_is_lim_seq (f : nat -> Ts -> R) (c:Rbar)
+          {rv : forall n, RandomVariable dom borel_sa (f n)} :
+      sa_sigma (fun omega => is_lim_seq (fun n => f n omega) c).
+    Proof.
+      assert (pre_event_equiv
+                (fun omega : Ts => is_lim_seq (fun n : nat => f n omega) c)
+                (pre_event_inter
+                   (fun omega : Ts => is_LimInf_seq (fun n : nat => f n omega) c)
+                   (fun omega : Ts => is_LimSup_seq (fun n : nat => f n omega) c))).
+      {
+        intros ?.
+        unfold pre_event_inter.
+        split; intros.
+        - split.
+          + now apply is_lim_LimInf_seq.
+          + now apply is_lim_LimSup_seq.
+        - destruct H.
+          now apply is_LimSup_LimInf_lim_seq .
+      }
+      rewrite H.
+      apply sa_inter.
+      - now apply sa_sigma_is_LimInf_seq.
+      - now apply sa_sigma_is_LimSup_seq.
+   Qed.
 
     Lemma stochastic_convergence_16 {n} (C0: posreal) (α : nat -> R) (C : R) (w x : nat -> Ts -> vector R (S n)) (xstar : vector R (S n))
           (F : (vector R (S n)) -> (vector R (S n)))
@@ -4395,12 +4462,7 @@ algorithm.
         field_simplify.
         apply Rmult_lt_reg_r with (r := 2); lra.
      }
-      assert (sa_sigma (fun omega => is_lim_seq (fun n =>
-                                                  (rvmaxabs (vecrvminus (x n) (const xstar))) omega)
-                                               0)).
-      {
-        admit.
-      }
+      generalize (sa_sigma_is_lim_seq (fun n => (rvmaxabs (vecrvminus (x n) (const xstar)))) 0); intros.
       assert (forall (eps0:posreal),
                  forall (P:R), 
                    0<P<1 ->
