@@ -2259,6 +2259,30 @@ Section Expectation.
           apply make_collection_disjoint_disjoint.
   Qed.
 
+  Lemma lim_prob_descending
+        (En : nat -> event dom)
+        (E : event dom) :
+    (forall (n:nat), event_sub (En (S n)) (En n)) ->
+    event_equiv (inter_of_collection En) E ->
+    is_lim_seq (fun n => ps_P (En n)) (ps_P E).
+  Proof.
+    intros.
+    generalize (lim_prob (fun n => event_complement (En n)) (event_complement E)); intros.
+    cut_to H1.
+    - rewrite ps_complement in H1.
+      setoid_rewrite ps_complement in H1.
+      apply is_lim_seq_minus' with (u  := fun n => 1) (l1 := 1) in H1.
+      + replace (1 - (1 - ps_P E)) with (ps_P E) in H1 by lra.
+        apply is_lim_seq_ext with (v := fun n => ps_P (En n)) in H1; trivial.
+        intros; lra.
+      + apply is_lim_seq_const.
+    - intros.
+      apply event_complement_sub_proper.
+      now unfold flip.
+    - rewrite <- inter_of_collection_complement.
+      now apply event_complement_proper.
+  Qed.
+
   Lemma is_lim_seq_list_sum (l:list (nat->R)) (l2:list R) :
     Forall2 is_lim_seq l (map Finite l2) ->
     is_lim_seq (fun n => list_sum (map (fun x => x n) l)) (list_sum l2).
