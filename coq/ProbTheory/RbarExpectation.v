@@ -2564,15 +2564,6 @@ Qed.
     now rewrite <- finexp_Rbar_exp_finpart.
   Qed.
 
-  Lemma finexp_Rbar_finexp rv_X
-        {rv : RandomVariable dom Rbar_borel_sa rv_X} :
-    IsFiniteExpectation rv_X ->
-    IsFiniteExpectation prts (Rbar_finite_part rv_X).
-  Proof.
-    unfold Rbar_IsFiniteExpectation, IsFiniteExpectation; intros.
-    now rewrite <- finexp_Rbar_exp_finpart.
-  Qed.
-
   Global Instance Rbar_IsFiniteExpectation_const (c:R) : Rbar_IsFiniteExpectation (const c).
   Proof.
     red.
