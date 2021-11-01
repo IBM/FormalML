@@ -4862,16 +4862,11 @@ algorithm.
         apply lim_Rbar_le_complement; try lra.
         apply H14.
       }
-
-      assert (
-        forall n0 : nat,
-          RandomVariable dom borel_sa (fun x0 : Ts => rvmaxabs (vecrvminus (x n0) (const xstar)) x0)) by
-        typeclasses eauto.
       assert (forall n0,  RandomVariable dom Rbar_borel_sa
                                         (fun x0 : Ts =>
                                            Sup_seq (fun m : nat => Rabs (rvmaxabs (vecrvminus (x (n0 + m)%nat) (const xstar)) x0)))) by typeclasses eauto.
 
-      apply conv_prob_sup_0_as with (rv2 := H17); trivial.
+      apply conv_prob_sup_0_as with (rv2 := H16); try typeclasses eauto; trivial.
       intros.
       apply is_lim_seq_ext with 
           (u :=
@@ -4894,8 +4889,8 @@ algorithm.
         apply Rle_ge.
         apply rvmaxabs_pos.
       - specialize (H15 eps0).
-        
-Admitted.      
+        apply H15.
+    Qed.
 
     Lemma log_power_base (e b : R ) : 
       0 < e -> 0 < b ->
