@@ -2234,6 +2234,7 @@ algorithm.
                                                      (vecrvnth k pf
                                                                (vecrvscale (b p) (w k))) ) n w0) w1).
       {
+        intros b w1 k pf n.
         admit.
       }
       setoid_rewrite Hp1.

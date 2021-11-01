@@ -1881,6 +1881,7 @@ Proof.
       reflexivity.
 Qed.  
 
+
     Lemma sa_sigma_is_ELimInf_seq (f : nat -> Ts -> Rbar) (c:Rbar)
           {rv : forall n, RandomVariable dom Rbar_borel_sa (f n)} :
       sa_sigma (fun omega => is_ELimInf_seq (fun n => f n omega) c).
@@ -1971,6 +1972,23 @@ Qed.
      now apply Real_Rbar_rv.
   Qed.
 
+Lemma sa_sigma_not_convergent (X : nat -> Ts -> R) (X0 : Ts -> R) (eps : posreal) (N : nat)
+      {rv : forall n, RandomVariable dom borel_sa (X n)}
+      {rv0 : RandomVariable dom borel_sa X0} :
+  sa_sigma (fun omega => exists n : nat, (n >= N)%nat /\ Rabs (X n omega - X0 omega) >= eps).
+Proof.
+  apply sa_countable_union; intros n.
+  apply sa_inter; try apply sa_sigma_const_classic.
+  apply sa_le_ge; intros r.
+  apply Rabs_measurable.
+  generalize (minus_measurable dom (X n) (X0)); intros.
+  rewrite rvminus_unfold in H.
+  apply H.
+  -- apply rv_measurable; try apply rv.
+  -- apply rv_measurable; try apply rv0.
+Qed.
+
+
 Lemma sa_sigma_not_cauchy (X : nat -> Ts -> R) (eps:posreal) (N : nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)} :
   sa_sigma (fun omega =>
@@ -1990,7 +2008,80 @@ Proof.
       rewrite rvminus_unfold in H.
       apply H; now apply rv_measurable.
 Qed.
-                                                  
+
+Lemma sa_sigma_not_full_convergent (X : nat -> Ts -> R) X0
+      {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
+  {rv0 : RandomVariable dom borel_sa X0}:
+  sa_sigma (fun omega => exists (eps : posreal), forall N:nat,
+                  exists (n : nat),
+                    (n >= N)%nat /\
+                    Rabs ((X n omega) - (X0 omega)) >= eps).
+Proof.
+   assert (eqq1:pre_event_equiv
+                 (fun omega => exists (eps : posreal), forall N:nat,
+                        exists (n : nat),
+                          (n >= N)%nat /\
+                          Rabs ((X n omega) - (X0 omega)) >= eps)
+                 (fun omega => exists (eps : QArith_base.Q),
+                      (QArith_base.Qlt {| QArith_base.Qnum := 0; QArith_base.Qden := 1 |} eps) /\
+                      forall N:nat,
+                      exists (n : nat),
+                        (n >= N)%nat /\
+                        Rabs ((X n omega) - (X0 omega)) >= Qreals.Q2R eps)).
+  {
+    intros x.
+    split.
+    - intros [eps HH].
+      destruct (Q_dense 0 eps) as [q [ql qr]].
+      + apply cond_pos.
+      + exists q.
+        split.
+        * apply Qreals.Rlt_Qlt.
+          unfold QArith_base.inject_Z.
+          unfold Qreals.Q2R.
+          simpl.
+          rewrite Rmult_0_l.
+          apply ql.
+        * intros N.
+          destruct (HH N) as [n [Hn1 Hn2]].
+          exists n.
+          intuition lra.
+    - intros [eps [epos HH]].
+      assert (qepspos: 0 < Qreals.Q2R eps).
+      {
+        apply Qreals.Qlt_Rlt in epos.
+        now rewrite RMicromega.Q2R_0 in epos.
+      }
+      exists (mkposreal (Qreals.Q2R eps) qepspos).
+      intros N.
+      destruct (HH N) as [n [Hn1 Hn2]].
+      exists n. intuition lra.
+  }
+  rewrite eqq1.
+  apply sa_countable_union_iso; try typeclasses eauto.
+  intros.
+  destruct (Rlt_dec 0 (Qreals.Q2R i)).
+  - assert (QArith_base.Qlt {| QArith_base.Qnum := 0; QArith_base.Qden := 1 |} i).
+    {
+      apply Qreals.Rlt_Qlt.
+      now rewrite RMicromega.Q2R_0.
+    }
+    eapply (sa_proper _  (fun omega => (forall N : nat,
+      exists n : nat,
+        (n >= N)%nat /\ Rabs (X n omega - X0 omega) >= Qreals.Q2R i))).
+    + firstorder.
+    + apply sa_pre_countable_inter; intros N.
+      now apply (sa_sigma_not_convergent X X0 (mkposreal _ r)).
+  - eapply sa_proper; try apply sa_none.
+    assert (~ QArith_base.Qlt {| QArith_base.Qnum := 0; QArith_base.Qden := 1 |} i).
+    {
+      intros qlt.
+      apply Qreals.Qlt_Rlt in qlt.
+      now rewrite RMicromega.Q2R_0 in qlt.
+    }
+    firstorder.
+Qed.
+
 Lemma sa_sigma_not_full_cauchy (X : nat -> Ts -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)} :
   sa_sigma (fun omega => exists (eps : posreal), forall N:nat,
@@ -2115,6 +2206,43 @@ Lemma ps_union_countable_union_iff (coll : nat -> event dom):
     generalize (pos_INR m). generalize (INR m) as x; intros.
     lra.
   Qed.
+
+ Lemma almost_convergent_iff (X : nat -> Ts -> R) X0
+       {rv : forall n, RandomVariable dom borel_sa (X n)}
+   {rv0 : RandomVariable dom borel_sa X0}:
+   event_equiv ((exist sa_sigma _ (sa_sigma_not_full_convergent X X0)))
+               (union_of_collection
+                  (fun m => inter_of_collection
+                           (fun k => exist sa_sigma _ (sa_sigma_not_convergent X X0 (mkposreal (/(1 + INR m)) (recip_pos _)) k)))).
+ Proof.
+    simpl.
+   intros omega. simpl.
+   split; intros.
+   + destruct H as [eps Heps].
+     generalize (archimed_cor1 eps (cond_pos eps)); intros.
+     destruct H as [N [HN1 HN2]].
+     assert (/(1 + INR N) < eps).
+     {
+       eapply Rlt_trans; eauto.
+       apply Rinv_lt_contravar; try lra.
+       apply Rmult_lt_0_compat; try (now apply lt_0_INR).
+       generalize (pos_INR N). generalize (INR N) as x; intros.
+       lra.
+     }
+     exists N.
+     intros n1.
+     specialize (Heps n1).
+     destruct Heps as [n0 [Hn1 Hn2]].
+     exists n0.
+     repeat split; try trivial.
+     eapply Rge_trans; eauto.
+     lra.
+   + destruct H as [N HN].
+     exists (mkposreal (/(1 + INR N)) (recip_pos _)).
+     simpl. intros N0.
+     specialize (HN N0).
+     assumption.
+ Qed.
 
  Lemma almost_cauchy_iff (X : nat -> Ts -> R)
     {rv : forall n, RandomVariable dom borel_sa (X n)}:
@@ -2267,7 +2395,67 @@ Proof.
        simpl. now push_neg_in Hnot.
 Qed.
 
-Instance rv_max_sum_shift (X : nat -> Ts -> R) (m n : nat) 
+Lemma almost_is_lim_seq_iff (X : nat -> Ts -> R) X0
+      {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
+  {rv0 : RandomVariable dom borel_sa X0}:
+  almost _ (fun omega => is_lim_seq (fun n => X n omega) (X0 omega)) <->
+  (forall (eps:posreal),
+      is_lim_seq (fun N =>
+                    ps_P (exist sa_sigma _ (sa_sigma_not_convergent X X0 eps N))) 0).
+Proof.
+  assert (H1 : forall (eps: posreal),let E := fun n => exist sa_sigma _
+                                                     (sa_sigma_not_convergent X X0 eps n) in
+                                is_lim_seq (fun k => ps_P (E k)) (ps_P (inter_of_collection E))).
+  {
+    intros eps E.
+    apply is_lim_descending.
+    intros n. repeat red. intros omega H.
+    red in H. destruct H as [n0 [m0 H]].
+    exists n0. repeat split; try lia; trivial.
+  }
+  split; intros.
+  + rewrite almost_alt_eq in H.
+    unfold almost_alt in H.
+    destruct H as [E [HE Heps]].
+    specialize (H1 eps). simpl in H1.
+    enough (Hpsp : ps_P (
+                    inter_of_collection(
+                        fun n => (exist sa_sigma _ (sa_sigma_not_convergent X X0 eps n)))) = 0).
+    - now rewrite <-Hpsp.
+    - apply ps_P_sub_zero with E; trivial.
+      intros omega.
+      simpl; specialize (Heps omega).
+      intros. apply Heps. push_neg.
+      setoid_rewrite is_lim_seq_Reals.
+      unfold Un_cv. push_neg. exists eps.
+      split; try apply cond_pos.
+      now unfold R_dist.
+  + (* forall 0<δ, P(B_δ) = 0*)
+    assert (Hinter : forall eps:posreal, let E :=
+         fun n : nat => exist sa_sigma _ (sa_sigma_not_convergent X X0 eps n) in
+                                    (ps_P (inter_of_collection E)) = 0).
+    {
+      intros eps E.
+      rewrite <-Rbar_finite_eq.
+      rewrite <-(is_lim_seq_unique _ _ (H eps)). symmetry.
+      apply is_lim_seq_unique. apply H1.
+    }
+    clear H.
+    rewrite almost_alt_eq.
+    unfold almost_alt.
+    exists (exist sa_sigma _ (sa_sigma_not_full_convergent X X0)).
+    split.
+    ++ rewrite almost_convergent_iff.
+       rewrite <-ps_union_countable_union_iff.
+       intros n; apply (Hinter ({| pos := /(1 + INR n); cond_pos := recip_pos n|})).
+    ++ intros omega Hnot.
+       simpl. setoid_rewrite is_lim_seq_Reals in Hnot.
+       unfold Un_cv in Hnot. push_neg_in Hnot.
+       destruct Hnot as [eps [Heps Hx]].
+       now exists (mkposreal eps Heps).
+Qed.
+
+Instance rv_max_sum_shift (X : nat -> Ts -> R) (m n : nat)
          {rv : forall (n:nat), RandomVariable dom borel_sa (X n)} :
   let Sum := fun j => (rvsum (fun k w => X (k+m)%nat w) j) in
   RandomVariable dom borel_sa (rvmaxlist (fun k : nat => rvabs (Sum k)) n).
