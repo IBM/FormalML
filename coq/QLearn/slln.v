@@ -1954,6 +1954,23 @@ Qed.
       - now apply sa_sigma_is_ELimSup_seq.
    Qed.
 
+   Lemma sa_sigma_is_lim_seq (f : nat -> Ts -> R) (c:Rbar)
+         {rv : forall n, RandomVariable dom borel_sa (f n)} :
+     sa_sigma (fun omega => is_lim_seq (fun n => f n omega) c).
+   Proof.
+     assert (pre_event_equiv
+               (fun omega => is_lim_seq (fun n => f n omega) c)
+               (fun omega => is_Elim_seq (fun n => f n omega) c)).
+     {
+       intros ?.
+       now rewrite is_Elim_seq_fin.
+     }
+     rewrite H.
+     apply sa_sigma_is_Elim_seq.
+     intros.
+     now apply Real_Rbar_rv.
+  Qed.
+
 Lemma sa_sigma_not_cauchy (X : nat -> Ts -> R) (eps:posreal) (N : nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)} :
   sa_sigma (fun omega =>
