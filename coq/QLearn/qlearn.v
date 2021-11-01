@@ -3,7 +3,7 @@ Require Import mdp fixed_point.
 Require Import RealAdd CoquelicotAdd.
 Require Import utils.Utils.
 Require Import Lra Lia PushNeg.
-Require Import infprod Dvoretzky Expectation RandomVariableFinite.
+Require Import infprod Dvoretzky Expectation RandomVariableFinite RbarExpectation.
 Require Import Classical.
 Require Import SigmaAlgebras ProbSpace.
 Require Import DVector RealVectorHilbert VectorRandomVariable.
@@ -3693,24 +3693,37 @@ algorithm.
         intros.
         apply IsFiniteExpectation_simple; try typeclasses eauto.
       }
-      specialize (H1 isfefn (IsFiniteExpectation_const prts 0) (IsFiniteExpectation_const prts 1)).
+      assert (isfefn' : forall n : nat,
+                 Rbar_IsFiniteExpectation prts
+                                          (EventIndicator (classic_dec (event_gt dom (rvabs (f n)) eps)))).
+      {
+        intros.
+        now apply IsFiniteExpectation_Rbar.
+      } 
+      specialize (H1 isfefn' (Rbar_IsFiniteExpectation_const prts 0) (Rbar_IsFiniteExpectation_const prts 1)).
       cut_to H1.
-      - generalize (fun n => Expectation_EventIndicator (classic_dec (event_gt dom (rvabs (f n)) eps)) ); intros.
+      - apply is_Elim_seq_fin in H1.
+        generalize (fun n => Expectation_EventIndicator (classic_dec (event_gt dom (rvabs (f n)) eps)) ); intros.
         apply is_lim_seq_ext with (v := (fun n : nat => ps_P (event_gt dom (rvabs (f n)) eps))) in H1.
-        + replace (FiniteExpectation prts (const 0)) with (0) in H1; trivial.
-          now rewrite FiniteExpectation_const.
+        + replace (Rbar_FiniteExpectation prts (const 0)) with (0) in H1; trivial.
+          now rewrite Rbar_FiniteExpectation_const.
         + intros.
           generalize (FiniteExpectation_indicator prts (classic_dec (event_gt dom (rvabs (f n)) eps))); intros.
           rewrite <- H3.
+          rewrite (Rbar_FinExp_FinExp _ _).
           apply FiniteExpectation_pf_irrel.
       - intros.
         apply all_almost.
         intros.
+        simpl.
         rv_unfold.
         match_destr.
         + rewrite Rabs_right; lra.
         + rewrite Rabs_R0; lra.
-     - now unfold const.     
+      - revert H0.
+        apply almost_impl.
+        apply all_almost; intros ??.
+        now apply is_Elim_seq_fin.
    Qed.
 
     Lemma conv_as_prob_1 {prts: ProbSpace dom} (f : nat -> Ts -> R) 
@@ -3759,24 +3772,34 @@ algorithm.
         intros.
         apply IsFiniteExpectation_simple; try typeclasses eauto.
       }
-      specialize (H1 isfefn (IsFiniteExpectation_const prts 1) (IsFiniteExpectation_const prts 1)).
+      assert  (isfefn' : forall n : nat,
+                   Rbar_IsFiniteExpectation prts
+                     (EventIndicator (classic_dec (event_lt dom (rvabs (f n)) eps)))).
+      {
+        intros.
+        now apply IsFiniteExpectation_Rbar.
+      }
+      specialize (H1 isfefn' (Rbar_IsFiniteExpectation_const prts 1) (Rbar_IsFiniteExpectation_const prts 1)).
       cut_to H1.
       - generalize (fun n => Expectation_EventIndicator (classic_dec (event_lt dom (rvabs (f n)) eps)) ); intros.
+        apply is_Elim_seq_fin in H1.
         apply is_lim_seq_ext with (v := (fun n : nat => ps_P (event_lt dom (rvabs (f n)) eps))) in H1.
-        + replace (FiniteExpectation prts (const 1)) with (1) in H1; trivial.
-          now rewrite FiniteExpectation_const.
+        + now rewrite Rbar_FiniteExpectation_const in H1.
         + intros.
           generalize (FiniteExpectation_indicator prts (classic_dec (event_lt dom (rvabs (f n)) eps))); intros.
           rewrite <- H3.
+          rewrite (Rbar_FinExp_FinExp _ _).
           apply FiniteExpectation_pf_irrel.
       - intros.
         apply all_almost.
-        intros.
+        intros; simpl.
         rv_unfold.
         match_destr.
         + rewrite Rabs_right; lra.
         + rewrite Rabs_R0; lra.
-     - now unfold const.     
+      - revert H0.
+        apply almost_impl; apply all_almost; intros ??.
+        now apply is_Elim_seq_fin.
    Qed.
 
   Lemma sa_le_Rbar_gt_rv {domm}
@@ -4338,20 +4361,20 @@ algorithm.
           now field_simplify.
     Qed.
 
-    Lemma sa_sigma_is_LimInf_seq (f : nat -> Ts -> R) (c:Rbar)
-          {rv : forall n, RandomVariable dom borel_sa (f n)} :
-      sa_sigma (fun omega => is_LimInf_seq (fun n => f n omega) c).
+    Lemma sa_sigma_is_ELimInf_seq (f : nat -> Ts -> Rbar) (c:Rbar)
+          {rv : forall n, RandomVariable dom Rbar_borel_sa (f n)} :
+      sa_sigma (fun omega => is_ELimInf_seq (fun n => f n omega) c).
     Proof.
       assert (pre_event_equiv
-                (fun omega => is_LimInf_seq (fun n => f n omega) c)
-                (fun omega => LimInf_seq (fun n => f n omega) = c)).
+                (fun omega => is_ELimInf_seq (fun n => f n omega) c)
+                (fun omega => ELimInf_seq (fun n => f n omega) = c)).
       {
         intros ?.
-        unfold LimInf_seq, proj1_sig.
+        unfold ELimInf_seq, proj1_sig.
         match_destr.
         split; intros.
-        - apply is_LimInf_seq_unique in i.
-          apply is_LimInf_seq_unique in H.
+        - apply is_ELimInf_seq_unique in i.
+          apply is_ELimInf_seq_unique in H.
           now rewrite <- i, <- H.
         - now rewrite <- H.
       }
@@ -4362,20 +4385,20 @@ algorithm.
       typeclasses eauto.
    Qed.
 
-    Lemma sa_sigma_is_LimSup_seq (f : nat -> Ts -> R) (c:Rbar)
-          {rv : forall n, RandomVariable dom borel_sa (f n)} :
-      sa_sigma (fun omega => is_LimSup_seq (fun n => f n omega) c).
+    Lemma sa_sigma_is_ELimSup_seq (f : nat -> Ts -> Rbar) (c:Rbar)
+          {rv : forall n, RandomVariable dom Rbar_borel_sa (f n)} :
+      sa_sigma (fun omega => is_ELimSup_seq (fun n => f n omega) c).
     Proof.
       assert (pre_event_equiv
-                (fun omega => is_LimSup_seq (fun n => f n omega) c)
-                (fun omega => LimSup_seq (fun n => f n omega) = c)).
+                (fun omega => is_ELimSup_seq (fun n => f n omega) c)
+                (fun omega => ELimSup_seq (fun n => f n omega) = c)).
       {
         intros ?.
-        unfold LimSup_seq, proj1_sig.
+        unfold ELimSup_seq, proj1_sig.
         match_destr.
         split; intros.
-        - apply is_LimSup_seq_unique in i.
-          apply is_LimSup_seq_unique in H.
+        - apply is_ELimSup_seq_unique in i.
+          apply is_ELimSup_seq_unique in H.
           now rewrite <- i, <- H.
         - now rewrite <- H.
       }
@@ -4386,29 +4409,29 @@ algorithm.
       typeclasses eauto.
    Qed.
 
-    Lemma sa_sigma_is_lim_seq (f : nat -> Ts -> R) (c:Rbar)
-          {rv : forall n, RandomVariable dom borel_sa (f n)} :
-      sa_sigma (fun omega => is_lim_seq (fun n => f n omega) c).
+    Lemma sa_sigma_is_Elim_seq (f : nat -> Ts -> Rbar) (c:Rbar)
+          {rv : forall n, RandomVariable dom Rbar_borel_sa (f n)} :
+      sa_sigma (fun omega => is_Elim_seq (fun n => f n omega) c).
     Proof.
       assert (pre_event_equiv
-                (fun omega : Ts => is_lim_seq (fun n : nat => f n omega) c)
+                (fun omega : Ts => is_Elim_seq (fun n : nat => f n omega) c)
                 (pre_event_inter
-                   (fun omega : Ts => is_LimInf_seq (fun n : nat => f n omega) c)
-                   (fun omega : Ts => is_LimSup_seq (fun n : nat => f n omega) c))).
+                   (fun omega : Ts => is_ELimInf_seq (fun n : nat => f n omega) c)
+                   (fun omega : Ts => is_ELimSup_seq (fun n : nat => f n omega) c))).
       {
         intros ?.
         unfold pre_event_inter.
         split; intros.
         - split.
-          + now apply is_lim_LimInf_seq.
-          + now apply is_lim_LimSup_seq.
+          + now apply is_Elim_LimInf_seq.
+          + now apply is_Elim_LimSup_seq.
         - destruct H.
-          now apply is_LimSup_LimInf_lim_seq .
+          now apply is_ELimSup_LimInf_lim_seq .
       }
       rewrite H.
       apply sa_inter.
-      - now apply sa_sigma_is_LimInf_seq.
-      - now apply sa_sigma_is_LimSup_seq.
+      - now apply sa_sigma_is_ELimInf_seq.
+      - now apply sa_sigma_is_ELimSup_seq.
    Qed.
 
     Lemma stochastic_convergence_16 {n} (C0: posreal) (α : nat -> R) (C : R) (w x : nat -> Ts -> vector R (S n)) (xstar : vector R (S n))
@@ -4462,7 +4485,7 @@ algorithm.
         field_simplify.
         apply Rmult_lt_reg_r with (r := 2); lra.
      }
-      generalize (sa_sigma_is_lim_seq (fun n => (rvmaxabs (vecrvminus (x n) (const xstar)))) 0); intros.
+      generalize (sa_sigma_is_Elim_seq (fun n => (rvmaxabs (vecrvminus (x n) (const xstar)))) 0); intros.
       assert (forall (eps0:posreal),
                  forall (P:R), 
                    0<P<1 ->

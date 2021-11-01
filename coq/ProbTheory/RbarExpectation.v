@@ -2564,6 +2564,22 @@ Qed.
     now rewrite <- finexp_Rbar_exp_finpart.
   Qed.
 
+  Lemma finexp_Rbar_finexp rv_X
+        {rv : RandomVariable dom Rbar_borel_sa rv_X} :
+    IsFiniteExpectation rv_X ->
+    IsFiniteExpectation prts (Rbar_finite_part rv_X).
+  Proof.
+    unfold Rbar_IsFiniteExpectation, IsFiniteExpectation; intros.
+    now rewrite <- finexp_Rbar_exp_finpart.
+  Qed.
+
+  Global Instance Rbar_IsFiniteExpectation_const (c:R) : Rbar_IsFiniteExpectation (const c).
+  Proof.
+    red.
+    rewrite <- Expectation_Rbar_Expectation.
+    now rewrite Expectation_const.
+  Qed.
+
   Lemma Rbar_finexp_almost_plus rv_X1 rv_X2
         {rv1 : RandomVariable dom Rbar_borel_sa rv_X1} 
         {rv2 : RandomVariable dom Rbar_borel_sa rv_X2} :    
@@ -2814,6 +2830,13 @@ Qed.
               | [|- context [proj1_sig ?x]] => destruct x; simpl
               | [H: context [proj1_sig ?x] |- _] => destruct x; simpl in H
               end.
+
+  Lemma Rbar_FiniteExpectation_const (c:R) : Rbar_FiniteExpectation (const c) = c.
+  Proof.
+    unfold Rbar_FiniteExpectation; Rbar_simpl_finite.
+    rewrite Rbar_Expectation_const in e.
+    congruence.
+  Qed.
 
   Lemma Rbar_Expectation_sum_finite 
         (rv_X1 rv_X2 : Ts -> Rbar)
