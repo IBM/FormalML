@@ -4657,6 +4657,16 @@ Proof.
   apply Rabs_minus_sym.
 Qed.
 
+Lemma scale_Rmax0 (c:posreal) :
+  forall (x:R),
+    Rmax (c * x) 0 = c * Rmax x 0.
+  intros.
+  replace (0) with (c * 0) at 1 by lra.
+  rewrite RmaxRmult; trivial.
+  left.
+    apply cond_pos.
+Qed.
+
 Section Qinr.
   Lemma zsep1 (x y : R) :
     y - x > 1 ->

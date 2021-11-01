@@ -3133,6 +3133,179 @@ Section RbarRandomVariables.
     - typeclasses eauto.
   Qed.
 
+  Global Instance Rbar_rvabs_nnf
+         (rv_X : Ts -> Rbar) :
+    Rbar_NonnegativeFunction (Rbar_rvabs rv_X).
+  Proof.
+    unfold Rbar_NonnegativeFunction, Rbar_rvabs.
+    intros.
+    unfold Rbar_abs.
+    match_destr.
+    - simpl; apply Rabs_pos.
+    - now simpl.
+    - now simpl.
+  Qed.
+  
+  Global Instance Rbar_rvabs_rv
+         (rv_X : Ts -> Rbar)
+         {rv : RandomVariable dom Rbar_borel_sa rv_X} :
+    RandomVariable dom Rbar_borel_sa (Rbar_rvabs rv_X).
+  Proof.
+    apply Rbar_measurable_rv.
+    apply Rbar_Rabs_measurable.
+    now apply rv_Rbar_measurable.
+  Qed.
+  
+  Global Instance Rbar_rvpower_rv (rv_X1 : Ts -> Rbar) (n:R)
+           {rvx1 : RandomVariable dom Rbar_borel_sa rv_X1} :
+    RandomVariable dom Rbar_borel_sa (Rbar_rvpower rv_X1 n).
+  Proof.
+      apply Rbar_measurable_rv.
+      apply Rbar_power_measurable.
+      now apply rv_Rbar_measurable.
+  Qed.
+
+    Lemma rvmin_INR_le (f : Ts -> R) :
+    forall (n:nat),
+      rv_le (rvmin f (const (INR n))) (rvmin f (const (INR (S n)))).
+  Proof.
+    intros n x.
+    unfold rvmin, const.
+    apply Rle_min_compat_l.
+    apply le_INR.
+    lia.
+  Qed.
+
+  Instance NonNeg_rvmin (f g : Ts -> R)
+           {nnf: NonnegativeFunction f}
+           {nng: NonnegativeFunction g} :
+    NonnegativeFunction (rvmin f g).
+  Proof.
+    unfold NonnegativeFunction in *.
+    unfold rvmin.
+    intros.
+    now apply Rmin_glb.
+  Qed.
+
+  Instance NonNeg_INR (n : nat) :
+    @NonnegativeFunction Ts (const (INR n)).
+  Proof.
+    unfold NonnegativeFunction.
+    intro.
+    apply pos_INR.
+  Qed.
+
+
+  Lemma Rbar_mult_pos_div_pos (x : Rbar) (c : posreal) :
+    x = Rbar_mult_pos (Rbar_div_pos x c) c.
+  Proof.
+    destruct x.
+    - simpl.
+      unfold Rdiv.
+      rewrite Rmult_assoc.
+      rewrite Rinv_l.
+      + now rewrite Rmult_1_r.
+      + apply Rgt_not_eq.
+        apply cond_pos.
+    - now simpl.
+    - now simpl.
+  Qed.
+
+  Lemma  Rbar_le_mult_pos_div_pos (x r : Rbar) (c : posreal) :
+    Rbar_le (Rbar_mult_pos x c) r <-> Rbar_le x (Rbar_div_pos r c).
+  Proof.
+    generalize (cond_pos c); intros.
+    assert (pos c <> 0) by now apply Rgt_not_eq.
+    split; intros.
+    - rewrite Rbar_mult_pos_le with (z := c).
+      now rewrite <- Rbar_mult_pos_div_pos.
+    - rewrite Rbar_mult_pos_le with (z := c) in H1.
+      now rewrite <- Rbar_mult_pos_div_pos in H1.
+  Qed.
+
+  Instance Rbar_mult_pos_measurable (domm :SigmaAlgebra Ts) (f : Ts -> Rbar) (c:posreal) :
+    RbarMeasurable (dom := domm) f ->
+    RbarMeasurable (dom := domm) (fun omega => Rbar_mult_pos (f omega) c).
+  Proof.
+    intros ? r.
+    assert (pre_event_equiv (fun omega : Ts => Rbar_le (Rbar_mult_pos (f omega) c) r)
+                            (fun omega : Ts => Rbar_le (f omega) (Rbar_div_pos r c))).
+    - red; intros.
+      apply Rbar_le_mult_pos_div_pos.
+    - rewrite H0.
+      apply H.
+  Qed.
+
+  Lemma pos_fun_part_scale_pos_eq c f : 
+    0 < c ->
+    rv_eq (fun x => nonneg (pos_fun_part (rvscale c f) x)) (rvscale c (fun x : Ts => pos_fun_part f x)).
+  Proof.
+    intros ??.
+    unfold rvscale; simpl.
+    now rewrite (scale_Rmax0 (mkposreal c H)); simpl.
+  Qed.
+
+  Lemma neg_fun_part_scale_pos_eq c f : 
+    0 < c ->
+    rv_eq (fun x => nonneg (neg_fun_part (rvscale c f) x)) (rvscale c (fun x : Ts => neg_fun_part f x)).
+  Proof.
+    intros ??.
+    unfold rvscale; simpl.
+    rewrite Ropp_mult_distr_r.
+    now rewrite (scale_Rmax0 (mkposreal c H)); simpl.
+  Qed.
+
+  Lemma pos_fun_part_scale_neg_eq c f : 
+    0 < c ->
+    rv_eq (fun x => nonneg (pos_fun_part (rvscale (- c) f) x)) (rvscale c (fun x : Ts => neg_fun_part f x)).
+  Proof.
+    intros ??.
+    unfold rvscale; simpl.
+    rewrite <- (scale_Rmax0 (mkposreal c H)); simpl.
+    f_equal; lra.
+  Qed.
+
+  Lemma neg_fun_part_scale_neg_eq c f : 
+    0 < c ->
+    rv_eq (fun x => nonneg (neg_fun_part (rvscale (- c) f) x)) (rvscale c (fun x : Ts => pos_fun_part f x)).
+  Proof.
+    intros ??.
+    unfold rvscale; simpl.
+    rewrite Ropp_mult_distr_r.
+    rewrite <- (scale_Rmax0 (mkposreal c H)); simpl.
+    f_equal; lra.
+  Qed.
+
+  Lemma Rbar_rvlim_plus_min (f1 f2 : Ts -> R) :
+    rv_eq
+      (Rbar_rvlim
+         (fun n : nat =>
+            rvplus (rvmin f1 (const (INR n))) 
+                   (rvmin f2 (const (INR n)))))
+      (Rbar_rvlim
+         (fun n : nat =>
+            rvmin (rvplus f1 f2) (const (INR n)))). 
+  Proof.
+    intro x.
+    unfold Rbar_rvlim, rvmin, rvplus, const.
+    repeat rewrite Elim_seq_fin.
+    rewrite Lim_seq_plus.
+    - do 3 rewrite Lim_seq_min.
+      now simpl.
+    - apply ex_lim_seq_incr.
+      intros.
+      apply Rle_min_compat_l.
+      apply le_INR.
+      lia.
+    - apply ex_lim_seq_incr.
+      intros.
+      apply Rle_min_compat_l.
+      apply le_INR.
+      lia.
+    - do 2 rewrite Lim_seq_min.
+      now simpl.
+  Qed.
+
 End RbarRandomVariables.  
 
 Section rv_almost.
@@ -4062,6 +4235,21 @@ Section rv_almost.
     apply (almostR2_map_R_split_r_refl prts alm).
   Qed.
   
+  Instance almostR2_eq_Rbar_plus_proper {Ts:Type} 
+         {dom: SigmaAlgebra Ts}
+         (prts: ProbSpace dom)
+          : Proper (almostR2 prts eq ==> almostR2 prts eq  ==> almostR2 prts eq) Rbar_rvplus.
+  Proof.
+    unfold almostR2 in *.
+    intros x1 x2 [Px [Pxall eq_onx]] y1 y2 [Py [Pyall eq_ony]].
+    exists (event_inter Px Py).
+    split.
+    - now apply ps_one_inter.
+    - intros a [Pxa Pya].
+      unfold Rbar_rvplus.
+      now rewrite eq_onx, eq_ony.
+  Qed.
+
   Local Existing Instance Rbar_le_pre.
   
   Lemma almostR2_Rbar_le_split {Ts:Type} 

@@ -27,38 +27,6 @@ Section RbarExpectation.
 
   Local Open Scope prob.
 
-  Global Instance Rbar_rvabs_nnf
-             (rv_X : Ts -> Rbar) :
-      Rbar_NonnegativeFunction (Rbar_rvabs rv_X).
-    Proof.
-      unfold Rbar_NonnegativeFunction, Rbar_rvabs.
-      intros.
-      unfold Rbar_abs.
-      match_destr.
-      - simpl; apply Rabs_pos.
-      - now simpl.
-      - now simpl.
-    Qed.
-
-    Global Instance Rbar_rvabs_rv
-           (rv_X : Ts -> Rbar)
-           {rv : RandomVariable dom Rbar_borel_sa rv_X} :
-      RandomVariable dom Rbar_borel_sa (Rbar_rvabs rv_X).
-    Proof.
-      apply Rbar_measurable_rv.
-      apply Rbar_Rabs_measurable.
-      now apply rv_Rbar_measurable.
-    Qed.
-
-    Global Instance Rbar_rvpower_rv (rv_X1 : Ts -> Rbar) (n:R)
-           {rvx1 : RandomVariable dom Rbar_borel_sa rv_X1} :
-      RandomVariable dom Rbar_borel_sa (Rbar_rvpower rv_X1 n).
-    Proof.
-      apply Rbar_measurable_rv.
-      apply Rbar_power_measurable.
-      now apply rv_Rbar_measurable.
-    Qed.
-
   Definition Rbar_NonnegExpectation
              (rv_X : Ts -> Rbar)
              {pofrf:Rbar_NonnegativeFunction rv_X} :  Rbar   :=

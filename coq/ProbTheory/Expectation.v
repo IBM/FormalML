@@ -285,16 +285,6 @@ Section Expectation.
         lra.
   Qed.
 
-  Lemma scale_Rmax0 (c:posreal) :
-    forall (x:R),
-      Rmax (c * x) 0 = c * Rmax x 0.
-    intros.
-    replace (0) with (c * 0) at 1 by lra.
-    rewrite RmaxRmult; trivial.
-    left.
-    apply cond_pos.
-  Qed.
-
   Lemma Expectation_scale_pos (c:posreal) (rv_X : Ts -> R) :
     NonnegExpectation (fun x : Ts => pos_fun_part (rvscale c rv_X) x) =
     Rbar_mult c (NonnegExpectation (pos_fun_part rv_X)).

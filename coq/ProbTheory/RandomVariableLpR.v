@@ -1022,6 +1022,28 @@ Qed.
           by now apply Rle_antisym.
         now apply  LpFin0_almostR20 in H1; try typeclasses eauto.
       Qed.
+      
+      Lemma LpRRVnorm_const c : p <> 0 -> LpRRVnorm (LpRRVconst c) = Rabs c.
+      Proof.
+        intros.
+        unfold LpRRVnorm; simpl.
+        rv_unfold.
+        generalize (FiniteExpectation_const prts (power (Rabs c) p))
+        ; intros HH.
+        unfold const in HH.
+        erewrite FiniteExpectation_pf_irrel.
+        rewrite HH.
+        apply inv_power_cancel; trivial.
+        apply Rabs_pos.
+      Qed.
+  
+      Lemma LpRRVnorm0 : p <> 0 -> LpRRVnorm LpRRVzero = 0.
+      Proof.
+        intros.
+        unfold LpRRVzero.
+        rewrite LpRRVnorm_const; trivial.
+        now rewrite Rabs_R0.
+      Qed.
 
     End normish.
 
