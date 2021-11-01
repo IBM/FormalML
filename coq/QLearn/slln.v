@@ -7,6 +7,7 @@ Require Import ClassicalChoice.
 Require Import IndefiniteDescription ClassicalDescription.
 Require QArith.
 Require Import BorelSigmaAlgebra.
+Require Import utils.Utils.
 
 Set Bullet Behavior "Strict Subproofs".
 Set Default Goal Selector "!".
@@ -1879,6 +1880,79 @@ Proof.
       ring_simplify.
       reflexivity.
 Qed.  
+
+    Lemma sa_sigma_is_ELimInf_seq (f : nat -> Ts -> Rbar) (c:Rbar)
+          {rv : forall n, RandomVariable dom Rbar_borel_sa (f n)} :
+      sa_sigma (fun omega => is_ELimInf_seq (fun n => f n omega) c).
+    Proof.
+      assert (pre_event_equiv
+                (fun omega => is_ELimInf_seq (fun n => f n omega) c)
+                (fun omega => ELimInf_seq (fun n => f n omega) = c)).
+      {
+        intros ?.
+        unfold ELimInf_seq, proj1_sig.
+        match_destr.
+        split; intros.
+        - apply is_ELimInf_seq_unique in i.
+          apply is_ELimInf_seq_unique in H.
+          now rewrite <- i, <- H.
+        - now rewrite <- H.
+      }
+      rewrite H.
+      apply Rbar_sa_le_pt.
+      intros.
+      apply Rbar_lim_inf_measurable.
+      typeclasses eauto.
+   Qed.
+
+    Lemma sa_sigma_is_ELimSup_seq (f : nat -> Ts -> Rbar) (c:Rbar)
+          {rv : forall n, RandomVariable dom Rbar_borel_sa (f n)} :
+      sa_sigma (fun omega => is_ELimSup_seq (fun n => f n omega) c).
+    Proof.
+      assert (pre_event_equiv
+                (fun omega => is_ELimSup_seq (fun n => f n omega) c)
+                (fun omega => ELimSup_seq (fun n => f n omega) = c)).
+      {
+        intros ?.
+        unfold ELimSup_seq, proj1_sig.
+        match_destr.
+        split; intros.
+        - apply is_ELimSup_seq_unique in i.
+          apply is_ELimSup_seq_unique in H.
+          now rewrite <- i, <- H.
+        - now rewrite <- H.
+      }
+      rewrite H.
+      apply Rbar_sa_le_pt.
+      intros.
+      apply Rbar_lim_sup_measurable.
+      typeclasses eauto.
+   Qed.
+
+    Lemma sa_sigma_is_Elim_seq (f : nat -> Ts -> Rbar) (c:Rbar)
+          {rv : forall n, RandomVariable dom Rbar_borel_sa (f n)} :
+      sa_sigma (fun omega => is_Elim_seq (fun n => f n omega) c).
+    Proof.
+      assert (pre_event_equiv
+                (fun omega : Ts => is_Elim_seq (fun n : nat => f n omega) c)
+                (pre_event_inter
+                   (fun omega : Ts => is_ELimInf_seq (fun n : nat => f n omega) c)
+                   (fun omega : Ts => is_ELimSup_seq (fun n : nat => f n omega) c))).
+      {
+        intros ?.
+        unfold pre_event_inter.
+        split; intros.
+        - split.
+          + now apply is_Elim_LimInf_seq.
+          + now apply is_Elim_LimSup_seq.
+        - destruct H.
+          now apply is_ELimSup_LimInf_lim_seq .
+      }
+      rewrite H.
+      apply sa_inter.
+      - now apply sa_sigma_is_ELimInf_seq.
+      - now apply sa_sigma_is_ELimSup_seq.
+   Qed.
 
 Lemma sa_sigma_not_cauchy (X : nat -> Ts -> R) (eps:posreal) (N : nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)} :
