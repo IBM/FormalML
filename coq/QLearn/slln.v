@@ -13,6 +13,7 @@ Set Default Goal Selector "!".
 
 Import ListNotations.
 
+Section slln.
 
 Lemma ash_6_1_1_a {x : nat -> R}{a : nat -> nat -> R} (ha : forall j, is_lim_seq (fun n => (a n j)) 0)
       (hb1 : forall n, ex_series(fun j => Rabs(a n j)))
@@ -2683,3 +2684,5 @@ Qed.
     apply Rgt_not_eq.
     apply H.
 Qed.
+
+End slln.  
