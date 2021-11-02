@@ -3025,7 +3025,6 @@ Qed.
       + now apply sub.
   Qed.
 
-(*
   Lemma is_conditional_expectation_monotone_convergence
         (f : Ts -> R )
         (ce : Ts -> Rbar )
@@ -3042,13 +3041,14 @@ Qed.
     :
     (forall (n:nat), Rbar_rv_le (fn n) f) ->
     (forall (n:nat), rv_le (fn n) (fn (S n))) ->
-    (forall (n:nat), is_finite (NonnegExpectation (fn n))) ->
-    (forall (omega:Ts), is_lim_seq (fun n => fn n omega) (f omega)) ->
-    (forall (omega:Ts), is_lim_seq (fun n => cen n omega) (ce omega)) ->
+    (forall (n:nat), Rbar_rv_le (cen n) ce) ->
+    (forall (n:nat), Rbar_rv_le (cen n) (cen (S n))) ->
+    (forall (omega:Ts), is_Elim_seq (fun n => fn n omega) (f omega)) ->
+    (forall (omega:Ts), is_Elim_seq (fun n => cen n omega) (ce omega)) ->
     (forall (n:nat), is_conditional_expectation dom2 (fn n) (cen n)) ->
     is_conditional_expectation dom2 f ce.
   Proof.
-    intros fbound fle ffin limf limce iscen P decP saP.
+    intros fbound fle cebound cele limf limce iscen P decP saP.
 
     
     assert (rvmultf:
@@ -3068,7 +3068,7 @@ Qed.
       now apply sub.
     } 
 
-    generalize (monotone_convergence (rvmult f (EventIndicator decP))
+    generalize (Rbar_monotone_convergence (rvmult f (EventIndicator decP))
                                      (fun n => rvmult (fn n) (EventIndicator decP))
                                      _
                                      (indicator_prod_pos f nnf decP)
@@ -3080,6 +3080,7 @@ Qed.
     cut_to eqq1.
     - {
         rewrite (Expectation_pos_pofrf _ (nnf:=(indicator_prod_pos f nnf decP))).
+        rewrite <- (NNExpectation_Rbar_NNExpectation' _ _) in eqq1.
         rewrite <- eqq1.
         assert (rvmultce:
                   RandomVariable dom Rbar_borel_sa (Rbar_rvmult ce (EventIndicator decP))).
@@ -3140,28 +3141,40 @@ Qed.
         - rewrite (Rbar_Expectation_pos_pofrf _).
           f_equal.
           rewrite <- eqq2.
-          apply Lim_seq_proper.
-          intros n.
+          apply ELim_seq_proper; intros n.
           specialize (iscen n _ decP saP).
           rewrite (Expectation_pos_pofrf _) in iscen.
           rewrite (Rbar_Expectation_pos_pofrf _) in iscen.
           invcs iscen.
-          rewrite H0.
-          rewrite NNExpectation_Rbar_NNExpectation.
-
-          admit.
+          now rewrite <- (NNExpectation_Rbar_NNExpectation' _ _).
         - intros ??.
           unfold Rbar_rvmult, EventIndicator.
-          match_destr.
-          + repeat rewrite Rbar_mult_1_r.
-            apply bounded.
-      } 
-    specialize (eqq1 ).
-
-    - unfold Rbar_rvlim in HH.
-    
+          apply Rbar_mult_le_compat_r.
+          + match_destr; simpl; lra.
+          + apply cebound.
+        - intros ??.
+          unfold Rbar_rvmult, EventIndicator.
+          apply Rbar_mult_le_compat_r.
+          + match_destr; simpl; lra.
+          + apply cele.
+        - intros.
+          now apply is_Elim_seq_scal_r'.
+      }
+    - intros ??.
+      unfold Rbar_rvmult, EventIndicator; simpl.
+      apply Rmult_le_compat_r.
+      + match_destr; simpl; lra.
+      + apply fbound.
+    - intros ??.
+      unfold Rbar_rvmult, EventIndicator; simpl.
+      apply Rmult_le_compat_r.
+      + match_destr; simpl; lra.
+      + apply fle.
+    - intros.
+      unfold rvmult.
+      now apply (is_Elim_seq_scal_r' (fun n => fn n omega) (EventIndicator decP omega) (f omega)).
   Qed.
-*)
+
 End is_cond_exp.
 
 Section is_cond_exp_props.
