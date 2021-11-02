@@ -3259,7 +3259,6 @@ Section RbarRandomVariables.
       now simpl.
   Qed.
 
-
   Instance Rbar_rvlim_measurable (f : nat -> Ts -> Rbar) :
     (forall n, RbarMeasurable (f n)) ->
     RbarMeasurable (Rbar_rvlim f).
@@ -3296,6 +3295,83 @@ Section RbarRandomVariables.
     now apply rv_Rbar_measurable.
   Qed.
 
+ Lemma event_Rbar_gt_sa x1 x2
+        {rv1:RandomVariable dom Rbar_borel_sa x1}
+        {rv2:RandomVariable dom Rbar_borel_sa x2}
+    : sa_sigma (fun x => Rbar_gt (x1 x) (x2 x)).
+ Proof.
+   assert (pre_event_equiv
+             (fun x => Rbar_gt (x1 x) (x2 x))
+             (pre_event_union
+                (pre_event_union
+                   (pre_event_inter
+                      (fun x => (x1 x) = p_infty)
+                      (pre_event_complement (fun x => (x2 x) = p_infty)))
+                   (pre_event_inter
+                      (fun x => (x2 x) = m_infty)
+                      (pre_event_complement (fun x => (x1 x) = m_infty))))
+                (pre_event_inter
+                   (pre_event_union
+                      (fun x => is_finite (x1 x))
+                      (fun x => is_finite (x2 x)))
+                   (fun x => Rbar_gt (Rbar_minus (x1 x) (x2 x)) 0)))).
+   - intros ?.
+     unfold pre_event_union, pre_event_inter, pre_event_complement.
+     destruct (x1 x); destruct (x2 x); simpl.
+     + split; intros.
+       * right.
+         unfold is_finite; simpl.
+         intuition lra.
+       * destruct H.
+         -- destruct H; destruct H; discriminate.
+         -- destruct H; lra.
+    + split; intros; try easy.
+      destruct H.
+      * destruct H;destruct H; discriminate.
+      * destruct H; tauto.
+   + split; intros; try easy.
+     right.
+     split; try easy.
+     left; unfold is_finite; now simpl.
+   + split; intros; try easy.
+     right.
+     split; try easy.
+     right; unfold is_finite; now simpl.
+   + split; intros; try easy.
+     destruct H.
+     * destruct H; destruct H; tauto.
+     * destruct H; lra.
+   + split; intros; try easy.
+     left.
+     intuition congruence. 
+   + split; intros; try easy.
+     destruct H; destruct H; destruct H; congruence.
+   + split; intros; try easy.
+     destruct H; destruct H; destruct H; congruence.
+   + split; intros; try easy.
+     destruct H; destruct H; destruct H; congruence.          
+   - rewrite H.
+     apply sa_union.
+     + apply sa_union.
+       * apply sa_inter.
+         -- apply Rbar_sa_le_pt;intros; now apply rv_Rbar_measurable.
+         -- apply sa_complement.
+            apply Rbar_sa_le_pt;intros; now apply rv_Rbar_measurable.
+       * apply sa_inter.
+         -- apply Rbar_sa_le_pt;intros; now apply rv_Rbar_measurable.
+         -- apply sa_complement.
+            apply Rbar_sa_le_pt;intros; now apply rv_Rbar_measurable.
+     + apply sa_inter.
+       * apply sa_union.
+         -- now apply sa_finite_Rbar.
+         -- now apply sa_finite_Rbar.
+       * apply Rbar_sa_le_gt.
+         intros.
+         apply Rbar_minus_measurable.
+         -- now apply rv_Rbar_measurable.
+         -- now apply rv_Rbar_measurable.            
+   Qed.
+     
 End RbarRandomVariables.  
 
 Section rv_almost.
