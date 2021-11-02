@@ -3884,16 +3884,6 @@ Section cond_exp2.
     intros.
     apply Rbar_rvlim_rv.
     - typeclasses eauto.
-    - intros.
-      apply ex_Elim_seq_incr.
-      intros.
-      rv_unfold.
-      match_destr.
-      + setoid_rewrite Rmult_1_r.
-        apply H0.
-        apply e.
-      + setoid_rewrite Rmult_0_r.
-        apply Rbar_le_refl.
   Qed.
 
   Lemma NonNegCondexp_almost_nonneg (f : Ts -> R) 

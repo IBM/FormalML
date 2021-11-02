@@ -917,9 +917,6 @@ Section RbarExpectation.
     intros.
     apply Rbar_monotone_convergence; trivial.
     - apply Rbar_rvlim_rv; trivial.
-      intros x.
-      apply ex_Elim_seq_incr; intros.
-      apply H.
     - intros ??.
       now apply Rbar_rvlim_pos_ge.
     - intros.
