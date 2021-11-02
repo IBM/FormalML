@@ -3326,15 +3326,17 @@ Section RbarRandomVariables.
        * intuition lra.
    - rewrite H.
      apply sa_union.
-     + apply sa_union.
+     + apply rv_Rbar_measurable in rv1.
+       apply rv_Rbar_measurable in rv2.
+       apply sa_union.
        * apply sa_inter.
-         -- apply Rbar_sa_le_pt;intros; now apply rv_Rbar_measurable.
+         -- now apply Rbar_sa_le_pt.
          -- apply sa_complement.
-            apply Rbar_sa_le_pt;intros; now apply rv_Rbar_measurable.
+            now apply Rbar_sa_le_pt.
        * apply sa_inter.
-         -- apply Rbar_sa_le_pt;intros; now apply rv_Rbar_measurable.
+         -- now apply Rbar_sa_le_pt.
          -- apply sa_complement.
-            apply Rbar_sa_le_pt;intros; now apply rv_Rbar_measurable.
+            now apply Rbar_sa_le_pt.
      + apply sa_inter.
        * apply sa_union; now apply sa_finite_Rbar.
        * apply Rbar_sa_le_gt.
