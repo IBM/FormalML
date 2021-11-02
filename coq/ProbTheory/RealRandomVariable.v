@@ -3317,30 +3317,13 @@ Section RbarRandomVariables.
                    (fun x => Rbar_gt (Rbar_minus (x1 x) (x2 x)) 0)))).
    - intros ?.
      unfold pre_event_union, pre_event_inter, pre_event_complement.
-     destruct (x1 x); destruct (x2 x); simpl; split; intros; try easy.
+     destruct (x1 x); destruct (x2 x); simpl; split; intros; try easy; try intuition congruence.
      + right.
        unfold is_finite; simpl.
        intuition lra.
      + destruct H.
-       * destruct H; destruct H; discriminate.
-       * destruct H; lra.
-     + destruct H.
-       * destruct H; destruct H; discriminate.
-       * destruct H; tauto.
-     + right.
-       split; try easy.
-       left; unfold is_finite; now simpl.
-     + right.
-       split; try easy.
-       right; unfold is_finite; now simpl.
-     + destruct H.
-       * destruct H; destruct H; tauto.
-       * destruct H; lra.
-     + left.
-       intuition congruence. 
-     + destruct H; destruct H; destruct H; congruence.
-     + destruct H; destruct H; destruct H; congruence.
-     + destruct H; destruct H; destruct H; congruence.          
+       * intuition congruence.
+       * intuition lra.
    - rewrite H.
      apply sa_union.
      + apply sa_union.
@@ -3353,14 +3336,9 @@ Section RbarRandomVariables.
          -- apply sa_complement.
             apply Rbar_sa_le_pt;intros; now apply rv_Rbar_measurable.
      + apply sa_inter.
-       * apply sa_union.
-         -- now apply sa_finite_Rbar.
-         -- now apply sa_finite_Rbar.
+       * apply sa_union; now apply sa_finite_Rbar.
        * apply Rbar_sa_le_gt.
-         intros.
-         apply Rbar_minus_measurable.
-         -- now apply rv_Rbar_measurable.
-         -- now apply rv_Rbar_measurable.            
+         intros; apply Rbar_minus_measurable; now apply rv_Rbar_measurable.
    Qed.
      
 End RbarRandomVariables.  
