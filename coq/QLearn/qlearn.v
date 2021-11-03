@@ -3206,37 +3206,6 @@ algorithm.
       destruct (Rcase_abs a); lra.
     Qed.
 
-   (*
-    Lemma plus_nth {n} (v1 v2 : vector R n) (i : nat) (pf : (i < n)%nat):
-      vector_nth i pf (Rvector_plus v1 v2) = 
-      (vector_nth i pf v1) + (vector_nth i pf v2).
-    Proof.
-      rewrite Rvector_plus_explode.
-      now rewrite vector_nth_create'.
-    Qed.
-
-    Lemma scale_nth {n} (c : R) (v : vector R n) (i : nat) (pf : (i < n)%nat):
-      vector_nth i pf (Rvector_scale c v) = c * vector_nth i pf v.
-    Proof.
-      apply vector_nth_map.
-    Qed.
-
-    Lemma opp_nth {n} (v : vector R n) (i : nat) (pf : (i < n)%nat):
-      vector_nth i pf (Rvector_opp v) = -1 * vector_nth i pf v.
-    Proof.
-      apply vector_nth_map.
-    Qed.
-
-    Lemma minus_nth {n} (v1 v2 : vector R n) (i : nat) (pf : (i < n)%nat):
-      vector_nth i pf (Rvector_minus v1 v2) = 
-      (vector_nth i pf v1) - (vector_nth i pf v2).
-    Proof.
-      unfold Rvector_minus.
-      rewrite plus_nth, opp_nth.
-      lra.
-    Qed.
-*)
-
     Declare Scope Rvector_scope.
     Delimit Scope Rvector_scope with Rvector.
     Bind Scope Rvector_scope with vector R.
@@ -3844,7 +3813,7 @@ algorithm.
     : event domm
     := @exist (pre_event Ts) _ _ (sa_le_Rbar_le_rv rv_X x).
 
-  Lemma inter_coll_le_sup {prts: ProbSpace dom} (f : nat -> Ts -> R) (eps:posreal)
+  Lemma inter_coll_le_sup {prts: ProbSpace dom} (f : nat -> Ts -> R) (eps:R)
           {rv : forall n, RandomVariable dom borel_sa (f n)} 
           {rv2 : forall n, RandomVariable dom Rbar_borel_sa (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x)))}:
     forall n,
@@ -4013,9 +3982,9 @@ algorithm.
           lra.
         - apply is_lim_seq_const.
           Unshelve.
-          apply rv.
-          apply rvconst.
-          apply rv.
+          + apply rv.
+          + apply rvconst.
+          + apply rv.
     Qed.
 
 
@@ -4042,6 +4011,99 @@ algorithm.
         unfold plus, scal; simpl.
         unfold Hierarchy.mult; simpl.
         ring.
+    Qed.
+
+    Lemma one_minus_a_lt_one_minus_b (a b : R) :
+      1 - a < 1 - b -> a > b.
+    Proof.
+      lra.
+    Qed.
+
+    Lemma rvabs_rvmaxabs {n} (f : Ts -> vector R n) :
+      rv_eq
+        (rvabs (rvmaxabs f))
+        (rvmaxabs f).
+    Proof.
+      intros ?.
+      unfold rvmaxabs, rvabs.
+      rewrite Rabs_right; trivial.
+      apply Rle_ge.
+      apply Rvector_max_abs_nonneg.
+    Qed.
+
+    Lemma Rvector_max_abs_nth_Rabs_le {n} (v : vector R (S n)) (c:R) :
+      Rvector_max_abs v <= c <->
+      forall (i : nat) (pf : (i < S n)%nat),
+        Rabs (vector_nth i pf v) <= c.
+    Proof.
+      split; intros.
+      - eapply Rle_trans.
+        apply Rvector_max_abs_nth_le.
+        apply H.
+      - destruct (Rvector_max_abs_nth_in v) as [? [? ?]].
+        rewrite H0.
+        apply H.
+    Qed.
+    
+
+  Lemma inter_coll_le_sup_pos {prts: ProbSpace dom} (f : nat -> Ts -> R) (eps:R)
+          {rv : forall n, RandomVariable dom borel_sa (f n)} 
+          {nneg : forall n, NonnegativeFunction (f n)}
+          {rv2: forall n, RandomVariable dom Rbar_borel_sa (fun x => Sup_seq (fun m => f (n + m)%nat x))}:
+    forall n,
+      event_equiv
+        (inter_of_collection (fun t : nat => event_le dom (f (n + t)%nat) eps))
+        (event_Rbar_le (fun x0 : Ts => Sup_seq (fun m : nat => f (n + m)%nat x0)) eps).
+    Proof.
+      intros.
+      assert (forall n, rv_eq (f n) (rvabs (f n))).
+      {
+        intros ? ?.
+        unfold rvabs.
+        rewrite Rabs_right; trivial.
+        apply Rle_ge.
+        apply nneg.
+      }
+      assert (forall n, rv_eq
+                (fun x : Ts => Sup_seq (fun m : nat => rvabs (f (n+m)%nat) x))
+                (fun x : Ts => Sup_seq (fun m : nat => (f (n+m)%nat) x))).
+      {
+        intros ? ?.
+        apply Sup_seq_ext.
+        intros.
+        unfold rvabs.
+        rewrite Rabs_right; trivial.
+        apply Rle_ge.
+        apply nneg.
+      }
+      assert (event_equiv
+                (inter_of_collection (fun t : nat => event_le dom (f (n+t)%nat) eps))
+                (inter_of_collection (fun t : nat => event_le dom (rvabs (f (n+t)%nat)) eps))).
+      {
+        intros ?.
+        simpl.
+        split; intros.
+        - now rewrite <- H.
+        - now rewrite H.
+      }
+      rewrite H1.
+      rewrite inter_coll_le_sup.
+      intros ?.
+      simpl.
+      unfold rvabs in H0.
+      now rewrite H0.
+      Unshelve.
+      intros.
+      unfold rvabs in H0.
+      now rewrite H0.
+   Qed.
+
+    Lemma vecrvminus_unfold {n} (x y : Ts -> vector R n)
+      : rv_eq (vecrvminus x y)  (fun a => Rvector_minus (x a) (y a)).
+    Proof.
+      unfold vecrvminus, vecrvplus, Rvector_minus.
+      intros a.
+      f_equal.
     Qed.
 
     Lemma Induction_I1_17 {n} (eps P C0: posreal) (α : nat -> R) (C : R) (w x : nat -> Ts -> vector R (S n)) (xstar : vector R (S n))
@@ -4127,7 +4189,7 @@ algorithm.
         right.
         apply ps_one.
       - destruct IHk as [nk IHk].
-        generalize (RMseq_const_lim gamma (fun n0 => α (n0 + nk)%nat) (C0 * (gamma + eps)^k) (C0 * (gamma + eps)) glim); intros.
+        generalize (RMseq_const_lim gamma (fun n0 => α (n0 + nk)%nat) (C0 * (gamma + eps)^k) (C0 * (gamma + eps)^k) glim); intros.
         assert (forall n, 0 <= α (n + nk)%nat <= 1) by (intros; apply alim).
         assert (is_lim_seq (fun n0 : nat => α (n0 + nk)%nat) 0) by now apply is_lim_seq_incr_n.
         specialize (H H0 H1).
@@ -4147,7 +4209,7 @@ algorithm.
                      forall n,
                        (RMseq (fun n0 : nat => α (n0 + nk)%nat)
                               (fun _ : nat => gamma * (C0 * (gamma + eps) ^ k)) 
-                              (C0 * (gamma + eps))
+                              (C0 * (gamma + eps)^k)
                               (n + n2) ) <= gamma * (C0 * (gamma + eps)^k) + 
                                             eps * (C0 * (gamma + eps)^k)/2).
           {
@@ -4172,7 +4234,7 @@ algorithm.
           cut_to H4; trivial.
           * pose (f := (fun n0 w1 =>  
                                  rvmaxabs
-                                   (L2_convergent_x (F := F)
+                                   (L2_convergent_x (F := (const (@ Rvector_zero (S n))))
                                       (fun n1 : nat => α (n1 + nk)%nat) (vecrvconst (S n) 0)
                                       (fun n1 : nat => w (n1 + nk)%nat) n0) w1)).
             assert (forall n0, RandomVariable dom borel_sa (f n0)) by
@@ -4188,36 +4250,8 @@ algorithm.
             destruct H7.
             simpl in H7.
             setoid_rewrite Rabs_minus_sym in H7.
-(*
-            assert (forall n0,  
-                       (x0 <= n0)%nat ->
-                       ps_P
-                         (event_Rbar_le
-                            (fun x : Ts =>
-                               Sup_seq
-                                 (fun m : nat =>
-                                   Rabs
-                                     (rvmaxabs
-                                        (L2_convergent_x (fun n1 : nat => α (n1 + nk)%nat) 
-                                                         (vecrvconst (S n) 0) (fun n1 : nat => w (n1 + nk)%nat) 
-                                                         (n0 + m)) x))) (eps * (C0 * (gamma + eps) ^ k) / 2)) > P).
-            {
-              intros.
-              specialize (H7 n0 H9).
-              rewrite Rabs_right in H7.
-              - (* lra.*)
-                admit.
-              - apply Rplus_ge_reg_l with (r := -1).
-                ring_simplify.
-                apply Ropp_ge_contravar.
-                apply Rle_ge.
-                apply ps_le1.
-            }
-            clear H7.
-*)
             destruct H3.
-            exists (max (max x0 x1) nk).
-
+            exists (x0 + x1 + nk)%nat.
             assert (rv2_18 : let xtilde :=
                   fun (n0 : nat) (omega : Ts) => Rvector_minus (x (n0 + nk)%nat omega) xstar in
                 forall (n0 i : nat) (pf : (i < S n)%nat),
@@ -4293,6 +4327,92 @@ algorithm.
                                              (fun n => x (n + nk)%nat )
                                              (fun n => w (n + nk)%nat )
                                              (C0 * (gamma + eps)^k) (1 - INR k * (1 - P)) xstar F (rv2 := rv2_18) ) ; intros.
+            assert (forall n0,
+                       (x0 <= n0)%nat ->
+                       ps_P
+                         (inter_of_collection 
+                            (fun m => 
+                               event_le 
+                                 dom 
+                                 (rvabs 
+                                    (rvmaxabs
+                                       (L2_convergent_x (F := const Rvector_zero)
+                                                        (fun n1 : nat => α (n1 + nk)%nat) 
+                                                        (vecrvconst (S n) 0) (fun n1 : nat => w (n1 + nk)%nat) 
+                                                        (n0 + m))))
+                                 (eps * (C0 * (gamma + eps) ^ k) / 2))) > P).
+            {
+              intros.
+              specialize (H7 n0 H10).
+              rewrite Rabs_right in H7.
+              - apply one_minus_a_lt_one_minus_b in H7.
+                eapply Rge_gt_trans.
+                shelve.
+                apply H7.
+                Unshelve.
+                right.
+                apply ps_proper.
+                rewrite (inter_coll_le_sup
+                           (fun t =>  (rvmaxabs
+                                         (L2_convergent_x 
+                                            (F := const Rvector_zero) 
+                                            (fun n1 : nat => α (n1 + nk)%nat) 
+                                            (vecrvconst (S n) 0)
+                                            (fun n1 : nat => w (n1 + nk)%nat) (t))))  
+                           (mkposreal _ H2) n0).
+                simpl.
+                intros ?.
+                unfold event_Rbar_le; simpl.
+                erewrite Sup_seq_ext; try reflexivity.
+              - apply Ropp_ge_cancel.
+                apply Rle_ge.
+                apply Rplus_le_reg_r with (r := 1).
+                ring_simplify.
+                apply ps_le1.
+            }
+            clear H7.
+            assert (forall n0,
+                       (x0 <= n0)%nat ->
+                       ps_P
+                         (inter_of_collection 
+                            (fun m =>
+                               bounded_inter_of_collection
+                                 (fun (i : nat) (pf : (i < S n)%nat) =>
+                                    event_le 
+                                      dom 
+                                      (fun omega =>
+                                      (Rabs
+                                         (RMseq (fun n1 : nat => α (n1 + nk)%nat)
+                                               (fun n1 : nat => vector_nth i pf (w (n1 + nk)%nat omega))
+                                               0 (n0 + m)%nat)))
+                                      (eps * (C0 * (gamma + eps) ^ k) / 2)))) > P).
+            {
+              intros.
+              specialize (H10 n0 H7).
+              eapply Rge_gt_trans.
+              shelve.
+              apply H10.
+              Unshelve.
+              right.
+              apply ps_proper.
+              intros ?.
+              simpl.
+              unfold pre_bounded_inter_of_collection; simpl.
+              split; intros.
+              - specialize (H11 n1).
+                rewrite rvabs_rvmaxabs.
+                unfold rvmaxabs.
+                rewrite Rvector_max_abs_nth_Rabs_le.
+                intros.
+                now rewrite L2_convergent_x_nth_RMseq.
+              - specialize (H11 n1).
+                rewrite rvabs_rvmaxabs in H11.
+                unfold rvmaxabs in H11.
+                rewrite Rvector_max_abs_nth_Rabs_le in H11.
+                specialize (H11 i pf).
+                now rewrite L2_convergent_x_nth_RMseq in H11.
+            }
+            clear H10.
             cut_to H9; trivial.
             -- simpl in H9.
                pose (A := inter_of_collection
@@ -4310,21 +4430,23 @@ algorithm.
                                          RMseq (fun n : nat => α (n + nk)%nat)
                                                (fun _ : nat => gamma * (C0 * (gamma + eps) ^ k)) 
                                                (C0 * (gamma + eps) ^ k) n0) 0))).
-               pose (B := fun n0 => 
-                            event_Rbar_le
-                              (fun x : Ts =>
-                                 Sup_seq
-                                   (fun m : nat =>
-                                      Rabs
-                                        (rvmaxabs
-                                           (L2_convergent_x 
-                                              (fun n1 : nat => α (n1 + nk)%nat) 
-                                              (vecrvconst (S n) 0) (fun n1 : nat => w (n1 + nk)%nat) 
-                                              (n0 + m)) x))) (eps * (C0 * (gamma + eps) ^ k) / 2)).
+               pose (B := fun n0 =>
+                            (inter_of_collection
+                               (fun m : nat =>
+                                   bounded_inter_of_collection
+                                     (fun (i : nat) (pf : (i < S n)%nat) =>
+                                        event_le 
+                                          dom
+                                          (fun omega : Ts =>
+                                             Rabs
+                                               (RMseq (fun n1 : nat => α (n1 + nk)%nat)
+                                                      (fun n1 : nat => vector_nth i pf (w (n1 + nk)%nat omega)) 0 
+                                                      (n0 + m))) 
+                                          (eps * (C0 * (gamma + eps) ^ k) / 2))))).
                pose (D := fun n =>
                             RMseq (fun n0 : nat => α (n0 + nk)%nat) 
                                   (fun _ : nat => gamma * (C0 * (gamma + eps) ^ k))
-                                  (C0 * (gamma + eps)) (n + x1) <=
+                                  (C0 * (gamma + eps)^k) (n + x1) <=
                             gamma * (C0 * (gamma + eps) ^ k) + eps * (C0 * (gamma + eps) ^ k) / 2).
                pose (E :=
                        event_Rbar_le
@@ -4332,12 +4454,125 @@ algorithm.
                              Sup_seq
                                (fun n0 : nat =>
                                   rvmaxabs (vecrvminus 
-                                              (x (n0 + Init.Nat.max (Init.Nat.max x0 x1) nk)%nat) 
+                                              (x ((x0 + x1 + nk) + n0)%nat) 
                                               (const xstar))
                                            omega)) 
                           (C0 * (gamma + eps) ^ S k)).
-               (* show A /\ B /\ D -> E *)
-              admit.
+               (* show A /\ B -> E *)
+               (* ps_P (A) >= 1 - INR k *(1-P) by H9 *)
+               (* B comes from H7 with prob > P for n0 >= x0*)
+               (* D is absolute from H3 *)
+               assert (forall (x:Ts), ((A x) /\ (forall n0, (x0 <= n0)%nat -> (B n0 x)) /\ (forall n0, (D n0))) -> E x).
+               {
+                 unfold A, B, D, E.
+                 intros.
+                 generalize (inter_coll_le_sup_pos
+                               (fun n0 : nat =>
+                                  rvmaxabs (vecrvminus (x n0)%nat 
+                                                       (const xstar)))); intros.
+                 specialize (H11  (C0 * (gamma + eps) ^ S k)).
+                 assert (forall n0,
+                             RandomVariable dom borel_sa (rvmaxabs (vecrvminus (x n0) (const xstar)))) 
+                   by typeclasses eauto.
+                 assert  (forall n0 : nat, NonnegativeFunction (rvmaxabs (vecrvminus (x n0) (const xstar)))).
+                 {
+                   intros.
+                   unfold rvmaxabs.
+                   unfold NonnegativeFunction.
+                   intros.
+                   apply Rvector_max_abs_nonneg.
+                 }
+                 specialize (H11 H12 H13 rvsup).
+                 specialize (H11 (x0 + x1 + nk)%nat).
+                 specialize (H11 x2).
+                 simpl in H11.
+                 simpl.
+                 rewrite <- H11.
+                 intros.
+                 unfold rvmaxabs.
+                 rewrite Rvector_max_abs_nth_Rabs_le; intros.
+                 destruct H10 as [AA [BB DD]].
+                 simpl in AA.
+                 simpl in BB.
+                 specialize (AA (x0 + x1 + n0)%nat).
+                 unfold pre_bounded_inter_of_collection in AA.
+                 specialize (AA i pf).
+                 simpl in AA.
+                 replace (x0 + x1 + n0 + nk)%nat with (x0 + x1 + nk + n0)%nat in AA by lia.
+                 specialize (BB (x0 + x1)%nat).
+                 cut_to BB; try lia.
+                 specialize (BB n0).
+                 unfold pre_bounded_inter_of_collection in BB.
+                 specialize (BB i pf).
+                 simpl in BB.
+                 specialize (DD (x0 + n0)%nat).
+                 rewrite Rabs_le_between.
+                 clear H11.
+                 rewrite Rabs_le_between in BB.
+                 apply Rplus_le_compat_r with 
+                     (r :=
+                        RMseq (fun n : nat => α (n + nk)%nat) 
+                              (fun _ : nat => gamma * (C0 * (gamma + eps) ^ k))
+                              (C0 * (gamma + eps) ^ k) 
+                              (x0 + x1 + n0)%nat) in AA.
+                 ring_simplify in AA.
+                 rewrite Rabs_le_between in AA.
+                 replace (x0 + n0 + x1)%nat with (x0 + x1 + n0)%nat in DD by lia.
+                 rewrite vecrvminus_unfold.
+                 unfold const.
+                 lra.
+              }
+               assert (ps_P (event_inter A (inter_of_collection (fun t => B (t + x0)%nat))) <= ps_P E).
+               {
+                 apply ps_sub.
+                 intros ? [? ?].
+                 apply H10.
+                 split; trivial.
+                 split.
+                 intros.
+                 specialize (H12 (n0 - x0)%nat).
+                 unfold proj1_sig in H12.
+                 replace (n0 - x0 + x0)%nat with n0 in H12 by lia.
+                 apply H12.
+                 unfold D.
+                 apply H3.
+               }
+               assert (ps_P A >= 1 - INR k * (1 - P)).
+               {
+                 unfold A.
+                 apply H9.
+               }
+               assert (ps_P  (inter_of_collection (fun t => B (t + x0)%nat)) > P).
+               {
+                 unfold B.
+                 specialize (H7 x0).
+                 cut_to H7; try lia.
+                 erewrite ps_proper; try eapply H7.
+                 symmetry.
+                 rewrite <- inter_of_collection_nested_plus.
+                 apply inter_of_collection_proper; intros ?.
+                 apply inter_of_collection_proper; intros ?.                 
+                 replace (x0 + (a0 + a))%nat with (a + x0 +a0)%nat by lia.
+                 reflexivity.
+               }
+               generalize (ps_union prts A (inter_of_collection (fun t => B (t + x0)%nat))); intros.
+               generalize (ps_le1 prts (event_union A (inter_of_collection (fun t : nat => B (t + x0)%nat)))); intros.
+               assert (ps_P E >= (1 - INR k * (1 - P)) + P - 1) by lra.
+               assert (1 - INR k * (1 - P) + P - 1 =  1 - INR (S k) * (1 - P)).
+               {
+                 rewrite S_INR.
+                 ring.
+               }
+               rewrite H17 in H16.
+               unfold E in H16.
+               erewrite ps_proper; try eapply H16.
+               intros ?.
+               simpl.
+               rewrite Sup_seq_ext with
+                   (v := (fun n0 : nat => rvmaxabs (vecrvminus (x (x0 + x1 + nk + n0)%nat) (const xstar)) x2 )).
+               reflexivity.
+               intros.
+               now replace (n0 + (x0 + x1 + nk))%nat with (x0 + x1 + nk + n0)%nat by lia.
             -- intros ? ?.
                replace (S n0 + nk)%nat with (S (n0 + nk))%nat by lia.
                now rewrite xrel.
@@ -4376,8 +4611,7 @@ algorithm.
             rewrite Rvector_sum0.
             apply sqrt_0.
         + now apply seq_sum_shift.
-          
-    Admitted.
+     Qed.
 
     Lemma Sup_seq_incr (f : nat -> R) (n1 n2 : nat) :
       (n1 >= n2)%nat ->

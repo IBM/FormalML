@@ -2103,8 +2103,7 @@ Section event.
     - apply H.
   Qed.
 
-  Corollary inter_of_collection_nested_plus (P:nat -> event σ) (f:nat->nat->nat)
-    (fsurj:forall x, exists a b, f a b = x) :
+  Corollary inter_of_collection_nested_plus (P:nat -> event σ) :
     event_equiv
       (inter_of_collection
          (fun n =>
