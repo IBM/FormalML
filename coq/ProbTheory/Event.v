@@ -1,4 +1,17 @@
 Require Import Program.Basics.
+Require Import Classical.
+Require Import QArith Coq.Reals.Rbase Coq.Reals.RList.
+Require Import Coq.Reals.Rfunctions.
+Require Import Coq.Reals.Rprod Coq.Reals.ROrderedType.
+Require Import Ranalysis_reg utils.Finite.
+Require Import Coquelicot.Coquelicot.
+Require Import Lia Lra.
+Require Import Reals.Integration.
+Require Import Rtrigo_def.
+Require Import List.
+Require Finite.
+
+Require Import Program.Basics.
 Require Import Coq.Reals.Rbase.
 Require Import Coq.Reals.Rfunctions.
 Require Import Coq.Reals.RiemannInt.
@@ -882,7 +895,7 @@ Section pre_ev.
         * apply Forall_forall.
           intros x xinn t.
           destruct (In_nth _ _ (fun _ : T => False) xinn) as [b [??]].
-          specialize (H 0 (S b)).
+          specialize (H 0%nat (S b)).
           cut_to H; [| congruence].
           specialize (H t).
           simpl in H.
@@ -2009,7 +2022,7 @@ Section event.
 
   Lemma In_collection_take (En : nat -> event σ) a n:
     In a (collection_take En n) ->
-    exists m, m < n /\ a = En m.
+    exists m, (m < n)%nat /\ a = En m.
   Proof.
     intros inn.
     unfold collection_take in *.
@@ -2073,6 +2086,34 @@ Section event.
       eexists; split; eauto.
       rewrite collection_take_Sn, in_app_iff; simpl.
       tauto.
+  Qed.
+
+  Lemma inter_of_collection_nested_collapse (P:nat -> event σ) (f:nat->nat->nat)
+    (fsurj:forall x, exists a b, f a b = x) :
+    event_equiv
+      (inter_of_collection
+         (fun n =>
+            (inter_of_collection
+               (fun m => P (f m n)))))
+      (inter_of_collection P).
+  Proof.
+    split; simpl; intros.
+    - destruct (fsurj n) as [a [b ?]]; subst.
+      eauto.
+    - apply H.
+  Qed.
+
+  Corollary inter_of_collection_nested_plus (P:nat -> event σ) (f:nat->nat->nat)
+    (fsurj:forall x, exists a b, f a b = x) :
+    event_equiv
+      (inter_of_collection
+         (fun n =>
+            (inter_of_collection
+               (fun m => P (m + n)%nat))))
+      (inter_of_collection P).
+  Proof.
+    apply inter_of_collection_nested_collapse; intros.
+    exists x; exists 0%nat; lia.
   Qed.
 
 End event.
