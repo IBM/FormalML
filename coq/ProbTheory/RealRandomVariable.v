@@ -3342,7 +3342,30 @@ Section RbarRandomVariables.
        * apply Rbar_sa_le_gt.
          intros; apply Rbar_minus_measurable; now apply rv_Rbar_measurable.
    Qed.
-     
+
+   Definition event_Rbar_gt  x1 x2
+             {rv1:RandomVariable dom Rbar_borel_sa x1}
+             {rv2:RandomVariable dom Rbar_borel_sa x2} : event dom
+    := exist _ _ (event_Rbar_gt_sa x1 x2).
+
+  Lemma event_Rbar_gt_dec x1 x2
+        {rv1:RandomVariable dom Rbar_borel_sa x1}
+        {rv2:RandomVariable dom Rbar_borel_sa x2} :
+    dec_event (event_Rbar_gt x1 x2).
+  Proof.
+    unfold event_Rbar_gt.
+    intros x; simpl.
+    apply Rbar_lt_dec.
+  Qed.
+
+  Definition dec_sa_event_Rbar_gt x1 x2
+             {rv1:RandomVariable dom borel_sa x1}
+             {rv2:RandomVariable dom borel_sa x2}
+    : dec_sa_event 
+    := {| dsa_event := event_Rbar_gt x1 x2
+          ; dsa_dec := event_Rbar_gt_dec x1 x2
+       |}.
+
 End RbarRandomVariables.  
 
 Section rv_almost.
