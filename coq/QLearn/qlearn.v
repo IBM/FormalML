@@ -3845,7 +3845,7 @@ algorithm.
       (forall n, 0 <= α n <= 1) ->       
       is_lim_seq α 0 ->
       is_lim_seq (sum_n α) p_infty ->
-      ex_lim_seq (sum_n (fun n => (α n)^2)) ->
+      ex_series (fun n => (α n)^2) ->
        (forall (x y : vector R (S n)),
           Rvector_max_abs (Rvector_minus (F x) (F y)) <= 
           gamma * Rvector_max_abs (Rvector_minus x y)) ->
@@ -3879,7 +3879,7 @@ algorithm.
                     (C0 * (gamma + eps)^k))
         >= 1 - (INR k) * (1 - P).
     Proof.
-      intros Plim Clim glim geps alim aseq sumaseq exsumaseq Fcont Fxstar xrel xlim wexp condexp k.
+      intros Plim Clim glim geps alim aseq sumaseq exser_asq Fcont Fxstar xrel xlim wexp condexp k.
        induction k.
       - exists (0%nat).
         intros.
@@ -4317,7 +4317,9 @@ algorithm.
                rewrite H10.
                apply IHk.
           * now apply seq_sum_shift.
-          * admit. (* apply (ex_seq_sum_shift (fun n => α n ^2)  nk  exsumaseq).*)
+          * setoid_rewrite Nat.add_comm.
+            rewrite ex_series_incr_n in exser_asq.
+            apply exser_asq.
           * intros.
             unfold vecrvconst.
             unfold minus, opp, plus, const; simpl.
@@ -4333,7 +4335,7 @@ algorithm.
             rewrite Rvector_sum0.
             apply sqrt_0.
         + now apply seq_sum_shift.
-    Admitted.
+    Qed.
 
     Lemma Sup_seq_incr (f : nat -> R) (n1 n2 : nat) :
       (n1 >= n2)%nat ->
@@ -4537,7 +4539,7 @@ algorithm.
       (forall n, 0 <= α n <= 1) ->       
       is_lim_seq α 0 ->
       is_lim_seq (sum_n α) p_infty ->
-      ex_lim_seq (sum_n (fun n => (α n)^2)) ->
+      ex_series (fun n => (α n)^2) ->
        (forall (x y : vector R (S n)),
           Rvector_max_abs (Rvector_minus (F x) (F y)) <= 
           gamma * Rvector_max_abs (Rvector_minus x y)) ->
