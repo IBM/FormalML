@@ -586,11 +586,20 @@ Proof.
   now rewrite vector_nth_create.
 Qed.
 
+
 Lemma vector_nth_ext {T} {n} (v:vector T n) i pf1 pf2:
   vector_nth i pf1 v = vector_nth i pf2 v.
 Proof.
   f_equal.
   apply le_uniqueness_proof.
+Qed.
+
+Lemma vector_nth_ext' {T} {n} (v1 v2 : vector T n) i pf1 pf2 :
+  v1 = v2 -> vector_nth i pf1 v1 = vector_nth i pf2 v2.
+Proof.
+  intros Hv1v2.
+  rewrite Hv1v2.
+  apply vector_nth_ext.
 Qed.
 
 Lemma vector_map_const {A B} {n} (c:A) (f:A->B) : vector_map f (vector_const c n) = vector_const (f c) n.

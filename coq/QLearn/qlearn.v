@@ -2184,6 +2184,39 @@ algorithm.
         now rewrite Rabs_Rabsolu.
     Qed.
 
+(* can be deleted.
+
+ Lemma L2_convergent_scale_recurrence (xinit:Ts->vector R I) (w : nat -> Ts -> vector R I)
+          (rxinit : RandomVariable dom (Rvector_borel_sa I) xinit)
+          (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
+          (frfxinit : FiniteRangeFunction xinit)
+          (srw : forall n, FiniteRangeFunction  (w n)) :
+      let b := fun k => /(prod_f_R0 (fun j => (1 - α j)) (pred k)) in
+      (forall x, F x = Rvector_zero) ->
+      forall n w0, (1 <= n)%nat -> (α n < 1)%R ->(vecrvscale (b (S n)) (fun omega => L2_convergent_x xinit w (S n) omega) w0) =
+             Rvector_plus ((vecrvscale (b n) (fun omega =>
+                                                (L2_convergent_x xinit w n) omega) w0))
+                   (vecrvscale ((b (S n)) * α n) (w n) w0).
+    Proof.
+      intros b HF n w0 Hn Ha.
+      simpl. unfold vecrvscale, vecrvplus.
+      rewrite Rvector_scale_plus_l.
+      rewrite Rvector_scale_scale. f_equal.
+      unfold b, F_alpha, vecrvscale,vecrvplus.
+      rewrite Rvector_scale_plus_l.
+      do 2 rewrite Rvector_scale_scale.
+      rewrite HF. rewrite Rvector_scale_zero.
+      rewrite Rvector_plus_zero.
+      f_equal. simpl.
+      replace n with (S (pred n)) by lia.
+      simpl. rewrite Rinv_mult_distr.
+      + rewrite Rmult_assoc. rewrite Rinv_l; try lra.
+        simpl. replace (S (pred n)) with n by lia.
+        lra.
+      + admit.
+      + replace (S (pred n)) with n by lia; try lra.
+    Admitted.*)
+
     (* Lemma 9*)
     Lemma as_convergent_lemma (C : R) (xinit:Ts->vector R I) (w : nat -> Ts -> vector R I)
           (rxinit : RandomVariable dom (Rvector_borel_sa I) xinit)
@@ -2214,6 +2247,10 @@ algorithm.
         apply (@is_Lipschitz_le_zero_const _ _ (@PreHilbert_NormedModule (@Rvector_PreHilbert I))
                                                (@PreHilbert_NormedModule (@Rvector_PreHilbert I)) F (fun x y => HF y x)).
       }
+      assert (HF'' : forall x, F x  = Rvector_zero).
+      {
+        admit.
+      }
       clear Hg.
       assert (HN0 : exists N0, forall n, (n >= N0)%nat -> 0 < 1 - α n).
       {
@@ -2221,26 +2258,44 @@ algorithm.
         specialize (Ha2 1 (Rlt_0_1)).
         unfold R_dist in Ha2. setoid_rewrite Rminus_0_r in Ha2.
         destruct Ha2 as [N0 HN0]. exists N0.
-        intros n Hn. specialize (HN0 n Hn).
+        intros n Hn.
+        (*assert ( HN0' : (n >= N0)%nat) by lia.*)
+        specialize (HN0 n Hn).
         rewrite Rabs_pos_eq in HN0; try lra.
         specialize (Ha1 n); lra.
       }
       clear Ha2. destruct HN0 as [N0 HN0].
       setoid_rewrite (is_lim_seq_incr_n _ N0).
       setoid_rewrite is_lim_seq_rvmaxabs_zero_iff.
-      assert (Hp1 : let b := fun m => /(prod_f_R0 (fun k => 1 - α (N0 + k)) (m+N0)) in
-      forall w1 k pf n, vector_nth k pf (L2_convergent_x xinit w (n + N0) w1) =
-                            rvscale (b n)
-                                    (fun w0 => rvsum (fun p =>
-                                                     (vecrvnth k pf
-                                                               (vecrvscale (b p) (w k))) ) n w0) w1).
+      assert (Hp1 : let b := fun m => /(prod_f_R0 (fun k => 1 - α (k + N0)) (pred (m))) in
+                    let y := (fun n => vecrvscale (b n) (fun omega => L2_convergent_x xinit w (n + N0)%nat omega)) in
+            forall n w0, (0 < n)%nat -> (y (S n) w0) = Rvector_plus (y n w0) (vecrvscale ((b (S n)%nat) * α (n + N0)%nat) (w (n + N0)%nat) w0)).
       {
-        intros b w1 k pf n.
-        admit.
+        intros b y n Hn w0. unfold y.
+        simpl. unfold vecrvscale, vecrvplus.
+        rewrite Rvector_scale_plus_l.
+        rewrite Rvector_scale_scale. f_equal.
+        unfold b, F_alpha, vecrvscale,vecrvplus.
+        rewrite Rvector_scale_plus_l.
+        do 2 rewrite Rvector_scale_scale.
+        rewrite HF''. rewrite Rvector_scale_zero.
+        rewrite Rvector_plus_zero.
+        f_equal. simpl.
+        rewrite prod_f_R0_pred. assert (n+N0 >= N0)%nat by lia.
+        rewrite Rinv_mult_distr.
+        + rewrite Rmult_assoc. rewrite Rinv_l; try lra.
+          specialize (HN0 (n+N0)%nat H); lra.
+        + apply prod_f_R0_ne_zero. intros n0; assert (H0 : (n0 + N0 >= N0)%nat) by lia.
+          specialize ( HN0 _ H0); lra.
+        + specialize (HN0 _ H); lra.
+        + assumption.
       }
-      setoid_rewrite Hp1.
-      unfold rvscale.
-      (*product_sum_increasing and product_sum_gamma0 *)
+      (*assert (Hp2 :let b := fun m => /(prod_f_R0 (fun k => 1 - α (k + N0)) (pred (m))) in
+                   let y := (fun n => vecrvscale (b n) (fun omega => L2_convergent_x xinit w (n + N0)%nat omega)) in
+              forall n w0, y (S n) w0 = rvsum ()
+            )*)
+      (*use the lemmas `product_sum_increasing' and ``product_sum_gamma0`` when
+       invoking the kolmogorov strong law. *)
      Admitted.
 
   End qlearn3.
