@@ -2208,7 +2208,8 @@ algorithm.
           (frfxinit : FiniteRangeFunction xinit)
           (srw : forall n, FiniteRangeFunction  (w n)) :
       0 <= C ->
-      0 = gamma ->
+      F = const (Rvector_zero) ->
+
       (forall n, 0 <= α n <= 1) ->
       is_lim_seq α 0 ->
       is_lim_seq (sum_n α) p_infty ->
@@ -2218,24 +2219,10 @@ algorithm.
                           (L2_convergent_hist (L2_convergent_x xinit w) _ _ n))
                        (const zero)) ->
       (forall n, SimpleExpectation (rvinner (w n) (w n)) < C)  ->
-      (forall x1 y : vector R I, Hnorm (minus (F x1) (F y)) <= gamma * Hnorm (minus x1 y)) ->
       almost prts (fun w1 =>
                      is_lim_seq (fun n => (rvmaxabs (L2_convergent_x xinit w n)) w1) 0).
     Proof.
-      intros Hc Hg Ha1 Ha2 Ha3 Ha4 HCE HE HF.
-      assert (HF' : forall x y, F x = F y).
-      {
-        symmetry in Hg.
-        rewrite Hg in HF.
-        setoid_rewrite Rmult_0_l in HF.
-        apply (@is_Lipschitz_le_zero_const _ _ (@PreHilbert_NormedModule (@Rvector_PreHilbert I))
-                                               (@PreHilbert_NormedModule (@Rvector_PreHilbert I)) F (fun x y => HF y x)).
-      }
-      assert (HF'' : forall x, F x  = Rvector_zero).
-      {
-        admit.
-      }
-      clear Hg.
+      intros Hc HF Ha1 Ha2 Ha3 Ha4 HCE HE.
       assert (HN0 : exists N0, forall n, (n >= N0)%nat -> 0 < 1 - α n).
       {
         rewrite is_lim_seq_Reals in Ha2.
@@ -2262,7 +2249,7 @@ algorithm.
         unfold b, F_alpha, vecrvscale,vecrvplus.
         rewrite Rvector_scale_plus_l.
         do 2 rewrite Rvector_scale_scale.
-        rewrite HF''. rewrite Rvector_scale_zero.
+        rewrite HF. unfold const. rewrite Rvector_scale_zero.
         rewrite Rvector_plus_zero.
         f_equal. simpl.
         rewrite prod_f_R0_pred. assert (n+N0 >= N0)%nat by lia.
@@ -2319,13 +2306,11 @@ algorithm.
             )*)
       (*use the lemmas `product_sum_increasing' and ``product_sum_gamma0`` when
        invoking the kolmogorov strong law. *)
-      Locate product_sum_increasing.
+
       pose (b := fun (m:nat) => (prod_f_R0 (fun k => /(1 - α (k + N0))) (pred (m)))).
       pose (z := fun (n:nat) => if (Nat.eq_dec n 0)
                                then  (fun omega => L2_convergent_x xinit w N0 omega)
                                 else vecrvscale ((b n)*(α (n + N0)%nat)) (w (n + N0)%nat)).
-      Locate prod_f_R0_inv.
-      Search Rinv.
       assert (rv : forall n : nat, RandomVariable dom (Rvector_borel_sa I) (z n)) by admit.
       assert (frf : forall n : nat, FiniteRangeFunction (z n)) by admit.
       generalize (vec_Ash_6_2_2 z b); intros Kol.
@@ -4322,20 +4307,6 @@ algorithm.
           * setoid_rewrite Nat.add_comm.
             rewrite ex_series_incr_n in exser_asq.
             apply exser_asq.
-          * intros.
-            unfold vecrvconst.
-            unfold minus, opp, plus, const; simpl.
-            rewrite Rmult_0_l.
-            right.
-            rewrite Rvector_plus_comm.
-            rewrite Rvector_plus_zero.
-            unfold Rvector_opp.
-            rewrite Rvector_scale_zero.
-            unfold hilbert.Hnorm, hilbert.inner; simpl.
-            unfold Rvector_inner.
-            rewrite Rvector_mult_zero.
-            rewrite Rvector_sum0.
-            apply sqrt_0.
         + now apply seq_sum_shift.
     Qed.
 
@@ -4852,41 +4823,5 @@ algorithm.
         apply H15.
     Qed.
 
-    Lemma log_power_base (e b : R ) : 
-      0 < e -> 0 < b ->
-      b <> 1 -> Rpower b (ln e / ln b) = e.
-    Proof.
-      intros.
-      assert (exp (ln (Rpower b (ln e / ln b))) = exp (ln e)).
-      { 
-        f_equal.
-        rewrite Rpower_ln.
-        field.
-        destruct (Rlt_dec b 1).
-        - apply Rlt_not_eq.
-          rewrite <- ln_1.
-          apply ln_increasing; lra.
-        - apply Rgt_not_eq.
-          rewrite <- ln_1.
-          apply ln_increasing; lra.
-      }
-      rewrite exp_ln in H2; [|apply Rpower_pos].
-      now rewrite exp_ln in H2.
-    Qed.
-      
-    Lemma Rpower_lt1 (b y z : R ) :
-      0 < b < 1 -> y < z -> Rpower b y > Rpower b z.
-    Proof.
-      intros.
-      unfold Rpower.
-      apply exp_increasing.
-      assert (ln b < 0).
-      - destruct H.
-        rewrite <- ln_1.
-        apply ln_increasing; lra.
-      - rewrite Rmult_comm with (r1 := z).
-        rewrite Rmult_comm with (r1 := y).
-        now apply Rmult_lt_gt_compat_neg_l.
-    Qed.
 
   End qlearn5.

@@ -1205,6 +1205,9 @@ Section Rpower.
         repeat rewrite Rpower_pow by trivial.
         trivial.
   Qed.
+
+
+
 End Rpower.
 
 Section power.
@@ -1562,6 +1565,44 @@ Section ineqs.
     match_destr; try lra.
     apply Rpower_base_1.
   Qed.
+
+    Lemma log_power_base (e b : R ) : 
+      0 < e -> 0 < b ->
+      b <> 1 -> Rpower b (ln e / ln b) = e.
+    Proof.
+      intros.
+      assert (exp (ln (Rpower b (ln e / ln b))) = exp (ln e)).
+      { 
+        f_equal.
+        rewrite Rpower_ln.
+        field.
+        destruct (Rlt_dec b 1).
+        - apply Rlt_not_eq.
+          rewrite <- ln_1.
+          apply ln_increasing; lra.
+        - apply Rgt_not_eq.
+          rewrite <- ln_1.
+          apply ln_increasing; lra.
+      }
+      rewrite exp_ln in H2; [|apply Rpower_pos].
+      now rewrite exp_ln in H2.
+    Qed.
+      
+    Lemma Rpower_lt1 (b y z : R ) :
+      0 < b < 1 -> y < z -> Rpower b y > Rpower b z.
+    Proof.
+      intros.
+      unfold Rpower.
+      apply exp_increasing.
+      assert (ln b < 0).
+      - destruct H.
+        rewrite <- ln_1.
+        apply ln_increasing; lra.
+      - rewrite Rmult_comm with (r1 := z).
+        rewrite Rmult_comm with (r1 := y).
+        now apply Rmult_lt_gt_compat_neg_l.
+    Qed.
+
 
   Lemma sum_one_le : forall x y : R, 0 <= x -> 0 <= y -> x + y = 1 -> x <= 1.
   Proof.
