@@ -2305,7 +2305,7 @@ algorithm.
       (*use the lemmas `product_sum_increasing' and ``product_sum_gamma0`` when
        invoking the kolmogorov strong law. *)
 
-      pose (b := fun (m:nat) => (prod_f_R0 (fun k => /(1 - α (k + N0))) (pred (m)))).
+      pose (b := fun (m:nat) => (prod_f_R0 (fun k => /(1 - α (k + N0))) m)).
       pose (z := fun (n:nat) => if (Nat.eq_dec n 0)
                                then  (fun omega => L2_convergent_x (const Rvector_zero) w N0 omega)
                                 else vecrvscale ((b n)*(α (n + N0)%nat)) (w (n + N0)%nat)).
@@ -2315,6 +2315,19 @@ algorithm.
       cut_to Kol.
       - revert Kol;apply almost_impl; apply all_almost; intros ??.
         intros; specialize (H k pf).
+        eapply is_lim_seq_ext; try eapply H.
+        intros.
+        admit.
+      - admit.
+      - unfold b.
+        apply product_sum_increasing.
+        intros.
+        split.
+        + apply Ha1.
+        + admit.
+      - admit.
+      - admit.
+      - typeclasses eauto.        
       
      Admitted.
 
