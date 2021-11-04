@@ -2213,7 +2213,7 @@ algorithm.
       (forall n, 0 <= α n <= 1) ->
       is_lim_seq α 0 ->
       is_lim_seq (sum_n α) p_infty ->
-      ex_lim_seq (sum_n (fun n => (α n)^2)) ->
+      ex_series (fun n => (α n)^2) ->  (* ex_lim_seq (sum_n (fun n => (α n)^2)) -> *)
       (forall n, rv_eq (vector_SimpleConditionalExpectationSA
                           (w n)
                           (L2_convergent_hist (L2_convergent_x xinit w) _ _ n))
@@ -2275,12 +2275,62 @@ algorithm.
         + specialize (HN0 _ H); lra.
         + assumption.
       }
+      assert (H60_2 : ex_series (fun n => SimpleExpectation (rvinner (vecrvscale (α (N0+1 + n)%nat) (w (N0+1 + n)%nat))
+                                                                     (vecrvscale (α (N0+1 + n)%nat) (w (N0+1 + n)%nat))))).
+      {
+        apply ex_series_ext with 
+            (a :=  (fun n =>  (α ((N0+1) + n)%nat)^2* SimpleExpectation (rvinner (w (N0+1 + n)%nat)
+                                                                                 (w (N0+1 + n)%nat)))).
+        - intros.
+          rewrite scaleSimpleExpectation.
+          apply SimpleExpectation_ext.
+          intros ?.
+          unfold rvscale, rvinner, vecrvscale.
+          symmetry.
+          rewrite Rvector_inner_scal.
+          rewrite Rvector_inner_comm.
+          rewrite Rvector_inner_scal.
+          ring.
+        - generalize (ex_series_le
+                        (fun n : nat =>
+                           α (N0+1 + n) ^ 2 * SimpleExpectation (rvinner (w (N0+1 + n)%nat) (w (N0+1 + n)%nat)))
+                        (fun n => (α (N0+1 + n)%nat)^2 * C)); intros.
+          apply H.
+          + intros.
+            unfold norm; simpl; unfold abs; simpl.
+            rewrite Rmult_1_r.
+            replace (α (N0+1+ n) * α (N0+1+ n)) with ((α (N0 + 1 + n))^2) by ring.
+            rewrite Rabs_right.
+            * apply Rmult_le_compat_l.
+              -- apply pow2_ge_0.
+              -- left; apply HE.
+            * apply Rle_ge, Rmult_le_pos.
+              -- apply pow2_ge_0.
+              -- apply SimpleExpectation_pos.
+                 intros.
+                 apply rv_inner_ge_0.
+          + apply ex_series_scal_r.
+            rewrite ex_series_incr_n in Ha4.
+            apply Ha4.
+      }
+        
       (*assert (Hp2 :let b := fun m => /(prod_f_R0 (fun k => 1 - α (k + N0)) (pred (m))) in
                    let y := (fun n => vecrvscale (b n) (fun omega => L2_convergent_x xinit w (n + N0)%nat omega)) in
               forall n w0, y (S n) w0 = rvsum ()
             )*)
       (*use the lemmas `product_sum_increasing' and ``product_sum_gamma0`` when
        invoking the kolmogorov strong law. *)
+      pose (b := fun (m:nat) => /(prod_f_R0 (fun k => 1 - α (k + N0)) (pred (m)))).
+      pose (z := fun (n:nat) => if (Nat.eq_dec n 0)
+                               then  (fun omega => L2_convergent_x xinit w N0 omega)
+                                else vecrvscale ((b n)*(α (n + N0)%nat)) (w (n + N0)%nat)).
+      assert (rv : forall n : nat, RandomVariable dom (Rvector_borel_sa I) (z n)) by admit.
+      assert (frf : forall n : nat, FiniteRangeFunction (z n)) by admit.
+      generalize (vec_Ash_6_2_2 z b); intros Kol.
+      cut_to Kol.
+      - revert Kol;apply almost_impl; apply all_almost; intros ??.
+        intros; specialize (H k pf).
+      
      Admitted.
 
   End qlearn3.
@@ -4267,7 +4317,7 @@ algorithm.
                rewrite H10.
                apply IHk.
           * now apply seq_sum_shift.
-          * apply (ex_seq_sum_shift (fun n => α n ^2)  nk  exsumaseq).
+          * admit. (* apply (ex_seq_sum_shift (fun n => α n ^2)  nk  exsumaseq).*)
           * intros.
             unfold vecrvconst.
             unfold minus, opp, plus, const; simpl.
@@ -4283,7 +4333,7 @@ algorithm.
             rewrite Rvector_sum0.
             apply sqrt_0.
         + now apply seq_sum_shift.
-     Qed.
+    Admitted.
 
     Lemma Sup_seq_incr (f : nat -> R) (n1 n2 : nat) :
       (n1 >= n2)%nat ->
