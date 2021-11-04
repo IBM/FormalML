@@ -427,7 +427,7 @@ algorithm.
 
     Lemma prod_f_R0_inv {f : nat -> R} :
       (forall n, f n <> 0) ->
-      forall k, prod_f_R0 (fun n => 1 / (f n)) k = /(prod_f_R0 f k).
+      forall k, prod_f_R0 (fun n => / (f n)) k = /(prod_f_R0 f k).
     Proof.
       intros Hf k.
       induction k; simpl; try lra.
@@ -906,7 +906,7 @@ algorithm.
     Theorem product_sum_gamma0 {α : nat -> R} {gamma : R}
             (ha1 : forall n, 0 <= α n < 1)(ha2 : is_lim_seq α 0)
             (ha3 : is_lim_seq (sum_n α) p_infty) :
-      (forall k, is_lim_seq (fun n => prod_f_R0 (fun m => 1/(1 - α (m + k)%nat)) n) p_infty).
+      (forall k, is_lim_seq (fun n => prod_f_R0 (fun m => /(1 - α (m + k)%nat)) n) p_infty).
     Proof.
       intros k.
       rewrite product_sum_iff with (gamma0 := 0) in ha3; try lra; auto.
@@ -927,24 +927,23 @@ algorithm.
 
     (* To be used for Lemma 9. *)
     Theorem product_sum_increasing {α : nat -> R} (ha1 : forall n, 0 <= α n < 1)
-      : forall k:nat, let b := fun n => prod_f_R0 (fun m => 1/ (1 - α (m + k)%nat)) n in
+      : forall k:nat, let b := fun n => prod_f_R0 (fun m => / (1 - α (m + k)%nat)) n in
                forall p, 0 < b p <= b (S p).
     Proof.
       intros k b p.
       subst b.
       simpl; split.
       + apply prod_f_R0_pos.
-        intros n. unfold Rdiv.
-        rewrite Rmult_1_l. apply Rinv_pos.
+        intros n.
+        apply Rinv_pos.
         specialize (ha1 (n+k)%nat). lra.
       + rewrite <-Rmult_1_r at 1.
         apply Rmult_le_compat_l.
         -- apply prod_f_R0_nonneg.
-           intros n. unfold Rdiv.
-           rewrite Rmult_1_l. left. apply Rinv_pos.
+           intros n. 
+           left. apply Rinv_pos.
            specialize (ha1 (n+k)%nat); lra.
-        -- unfold Rdiv. rewrite Rmult_1_l.
-           rewrite <-Rinv_1 at 1.
+        -- rewrite <-Rinv_1 at 1.
            apply Rinv_le_contravar.
            specialize (ha1 (S(p+k)%nat)); lra.
            specialize (ha1 (S (p+k)%nat)); lra.
@@ -2213,7 +2212,7 @@ algorithm.
       (forall n, 0 <= α n <= 1) ->
       is_lim_seq α 0 ->
       is_lim_seq (sum_n α) p_infty ->
-      ex_series (fun n => (α n)^2) ->  (* ex_lim_seq (sum_n (fun n => (α n)^2)) -> *)
+      ex_series (fun n => (α n)^2) -> 
       (forall n, rv_eq (vector_SimpleConditionalExpectationSA
                           (w n)
                           (L2_convergent_hist (L2_convergent_x xinit w) _ _ n))
@@ -2320,10 +2319,13 @@ algorithm.
             )*)
       (*use the lemmas `product_sum_increasing' and ``product_sum_gamma0`` when
        invoking the kolmogorov strong law. *)
-      pose (b := fun (m:nat) => /(prod_f_R0 (fun k => 1 - α (k + N0)) (pred (m)))).
+      Locate product_sum_increasing.
+      pose (b := fun (m:nat) => (prod_f_R0 (fun k => /(1 - α (k + N0))) (pred (m)))).
       pose (z := fun (n:nat) => if (Nat.eq_dec n 0)
                                then  (fun omega => L2_convergent_x xinit w N0 omega)
                                 else vecrvscale ((b n)*(α (n + N0)%nat)) (w (n + N0)%nat)).
+      Locate prod_f_R0_inv.
+      Search Rinv.
       assert (rv : forall n : nat, RandomVariable dom (Rvector_borel_sa I) (z n)) by admit.
       assert (frf : forall n : nat, FiniteRangeFunction (z n)) by admit.
       generalize (vec_Ash_6_2_2 z b); intros Kol.
