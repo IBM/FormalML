@@ -2184,38 +2184,23 @@ algorithm.
         now rewrite Rabs_Rabsolu.
     Qed.
 
-(* can be deleted.
 
- Lemma L2_convergent_scale_recurrence (xinit:Ts->vector R I) (w : nat -> Ts -> vector R I)
-          (rxinit : RandomVariable dom (Rvector_borel_sa I) xinit)
-          (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
-          (frfxinit : FiniteRangeFunction xinit)
-          (srw : forall n, FiniteRangeFunction  (w n)) :
-      let b := fun k => /(prod_f_R0 (fun j => (1 - α j)) (pred k)) in
-      (forall x, F x = Rvector_zero) ->
-      forall n w0, (1 <= n)%nat -> (α n < 1)%R ->(vecrvscale (b (S n)) (fun omega => L2_convergent_x xinit w (S n) omega) w0) =
-             Rvector_plus ((vecrvscale (b n) (fun omega =>
-                                                (L2_convergent_x xinit w n) omega) w0))
-                   (vecrvscale ((b (S n)) * α n) (w n) w0).
+    (* Move this. *)
+    Lemma Rvector_nth_sum_telescope {f vec : nat -> vector R I}
+          (Hf : forall n, f (S n) = Rvector_plus (f n) (vec n)) :
+      forall n i pf, vector_nth i pf (Rvector_minus (f (S n)) (f 0%nat))
+                = sum_f_R0 (fun k => vector_nth i pf (vec k)) n.
     Proof.
-      intros b HF n w0 Hn Ha.
-      simpl. unfold vecrvscale, vecrvplus.
-      rewrite Rvector_scale_plus_l.
-      rewrite Rvector_scale_scale. f_equal.
-      unfold b, F_alpha, vecrvscale,vecrvplus.
-      rewrite Rvector_scale_plus_l.
-      do 2 rewrite Rvector_scale_scale.
-      rewrite HF. rewrite Rvector_scale_zero.
-      rewrite Rvector_plus_zero.
-      f_equal. simpl.
-      replace n with (S (pred n)) by lia.
-      simpl. rewrite Rinv_mult_distr.
-      + rewrite Rmult_assoc. rewrite Rinv_l; try lra.
-        simpl. replace (S (pred n)) with n by lia.
-        lra.
-      + admit.
-      + replace (S (pred n)) with n by lia; try lra.
-    Admitted.*)
+      intros n i pf.
+      induction n.
+      + simpl. rewrite Hf. rewrite Rvector_nth_minus.
+        rewrite Rvector_nth_plus. ring.
+      + simpl. rewrite Rvector_nth_minus.
+        rewrite <-IHn. rewrite Hf.
+        rewrite Rvector_nth_plus.
+        rewrite Rvector_nth_minus.
+        ring.
+    Qed.
 
     (* Lemma 9*)
     Lemma as_convergent_lemma (C : R) (xinit:Ts->vector R I) (w : nat -> Ts -> vector R I)
