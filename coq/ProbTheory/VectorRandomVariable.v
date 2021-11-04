@@ -529,12 +529,15 @@ Section vector_ops.
     apply Rvector_mult_measurable; trivial.
   Qed.
 
+(*
+  redundant since we have rvconst
   Global Instance Rvector_const_rv n c :
     RandomVariable dom (Rvector_borel_sa n) (vecrvconst n c).
   Proof.
     apply RealVectorMeasurableRandomVariable.
     apply Rvector_const_measurable.
   Qed.
+*)
 
   Global Instance Rvector_plus_rv {n} (f g : Ts -> vector R n) :
     RandomVariable dom (Rvector_borel_sa n)  f ->

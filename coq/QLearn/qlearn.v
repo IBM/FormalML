@@ -2202,10 +2202,8 @@ algorithm.
     Qed.
 
     (* Lemma 9*)
-    Lemma as_convergent_lemma (C : R) (xinit:Ts->vector R I) (w : nat -> Ts -> vector R I)
-          (rxinit : RandomVariable dom (Rvector_borel_sa I) xinit)
+    Lemma as_convergent_lemma (C : R) (w : nat -> Ts -> vector R I)
           (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
-          (frfxinit : FiniteRangeFunction xinit)
           (srw : forall n, FiniteRangeFunction  (w n)) :
       0 <= C ->
       F = const (Rvector_zero) ->
@@ -2216,11 +2214,11 @@ algorithm.
       ex_series (fun n => (α n)^2) -> 
       (forall n, rv_eq (vector_SimpleConditionalExpectationSA
                           (w n)
-                          (L2_convergent_hist (L2_convergent_x xinit w) _ _ n))
+                          (L2_convergent_hist (L2_convergent_x (const Rvector_zero) w) _ _ n))
                        (const zero)) ->
       (forall n, SimpleExpectation (rvinner (w n) (w n)) < C)  ->
       almost prts (fun w1 =>
-                     is_lim_seq (fun n => (rvmaxabs (L2_convergent_x xinit w n)) w1) 0).
+                     is_lim_seq (fun n => (rvmaxabs (L2_convergent_x (const Rvector_zero) w n)) w1) 0).
     Proof.
       intros Hc HF Ha1 Ha2 Ha3 Ha4 HCE HE.
       assert (HN0 : exists N0, forall n, (n >= N0)%nat -> 0 < 1 - α n).
@@ -2239,7 +2237,7 @@ algorithm.
       setoid_rewrite (is_lim_seq_incr_n _ N0).
       setoid_rewrite is_lim_seq_rvmaxabs_zero_iff.
       assert (Hp1 : let b := fun m => /(prod_f_R0 (fun k => 1 - α (k + N0)) (pred (m))) in
-                    let y := (fun n => vecrvscale (b n) (fun omega => L2_convergent_x xinit w (n + N0)%nat omega)) in
+                    let y := (fun n => vecrvscale (b n) (fun omega => L2_convergent_x (const Rvector_zero) w (n + N0)%nat omega)) in
             forall n w0, (0 < n)%nat -> (y (S n) w0) = Rvector_plus (y n w0) (vecrvscale ((b (S n)%nat) * α (n + N0)%nat) (w (n + N0)%nat) w0)).
       {
         intros b y n Hn w0. unfold y.
@@ -2301,7 +2299,7 @@ algorithm.
       }
         
       (*assert (Hp2 :let b := fun m => /(prod_f_R0 (fun k => 1 - α (k + N0)) (pred (m))) in
-                   let y := (fun n => vecrvscale (b n) (fun omega => L2_convergent_x xinit w (n + N0)%nat omega)) in
+                   let y := (fun n => vecrvscale (b n) (fun omega => L2_convergent_x (const Rvector_zero) w (n + N0)%nat omega)) in
               forall n w0, y (S n) w0 = rvsum ()
             )*)
       (*use the lemmas `product_sum_increasing' and ``product_sum_gamma0`` when
@@ -2309,7 +2307,7 @@ algorithm.
 
       pose (b := fun (m:nat) => (prod_f_R0 (fun k => /(1 - α (k + N0))) (pred (m)))).
       pose (z := fun (n:nat) => if (Nat.eq_dec n 0)
-                               then  (fun omega => L2_convergent_x xinit w N0 omega)
+                               then  (fun omega => L2_convergent_x (const Rvector_zero) w N0 omega)
                                 else vecrvscale ((b n)*(α (n + N0)%nat)) (w (n + N0)%nat)).
       assert (rv : forall n : nat, RandomVariable dom (Rvector_borel_sa I) (z n)) by admit.
       assert (frf : forall n : nat, FiniteRangeFunction (z n)) by admit.
@@ -3852,8 +3850,8 @@ algorithm.
                (w ( n0 + nk)%nat)
                (L2_convergent_hist 
                   (@L2_convergent_x (S n) (fun k => α (k + nk)%nat) 
-                                    (vecrvconst (S n) 0) Ts 
-                                    (vecrvconst (S n) 0) 
+                                    (const Rvector_zero) Ts 
+                                    (const Rvector_zero) 
                                     (fun k => w (k + nk)%nat)) _ _ n0)) 
                (const zero)) ->
       forall (k:nat),
@@ -3934,20 +3932,16 @@ algorithm.
             lra.
           }
           generalize (as_convergent_lemma (I := S n) 0); intros.
-          specialize (H4 (fun n0 : nat => α (n0 + nk)%nat) (* F *)(const (@ Rvector_zero (S n))) Ts dom prts C (vecrvconst (S n) 0) 
+          specialize (H4 (fun n0 : nat => α (n0 + nk)%nat) (const (@ Rvector_zero (S n))) Ts dom prts C
                          (fun n0 : nat => w (n0 + nk)%nat)).
-          assert (rxinit : RandomVariable dom (Rvector_borel_sa (S n)) (vecrvconst (S n) 0)) by
-            typeclasses eauto.
-          specialize (H4 (Rvector_const_rv (S n) 0) (fun n2 : nat => rw (n2 + nk)%nat)
-                         (frf_vecrvconst (S n) 0) (fun n2 : nat => srw (n2 + nk)%nat)).
+          specialize (H4 (fun n2 : nat => rw (n2 + nk)%nat) (fun n2 : nat => srw (n2 + nk)%nat)).
           cut_to H4; trivial.
           * pose (f := (fun n0 w1 =>  
                                  rvmaxabs
                                    (L2_convergent_x (F := (const (@ Rvector_zero (S n))))
-                                      (fun n1 : nat => α (n1 + nk)%nat) (vecrvconst (S n) 0)
+                                      (fun n1 : nat => α (n1 + nk)%nat) (const Rvector_zero)
                                       (fun n1 : nat => w (n1 + nk)%nat) n0) w1)).
-            assert (forall n0, RandomVariable dom borel_sa (f n0)) by
-                typeclasses eauto.
+            assert (forall n0, RandomVariable dom borel_sa (f n0)) by typeclasses eauto.
             assert (forall n,  
                        RandomVariable dom Rbar_borel_sa
                                       (fun x : Ts => Sup_seq (fun m : nat => Rabs (f (n + m)%nat x)))) by
@@ -4047,7 +4041,7 @@ algorithm.
                                     (rvmaxabs
                                        (L2_convergent_x (F := const Rvector_zero)
                                                         (fun n1 : nat => α (n1 + nk)%nat) 
-                                                        (vecrvconst (S n) 0) (fun n1 : nat => w (n1 + nk)%nat) 
+                                                        (const Rvector_zero) (fun n1 : nat => w (n1 + nk)%nat) 
                                                         (n0 + m))))
                                  (eps * (C0 * (gamma + eps) ^ k) / 2))) > P).
             {
@@ -4066,7 +4060,7 @@ algorithm.
                                          (L2_convergent_x 
                                             (F := const Rvector_zero) 
                                             (fun n1 : nat => α (n1 + nk)%nat) 
-                                            (vecrvconst (S n) 0)
+                                            (const Rvector_zero)
                                             (fun n1 : nat => w (n1 + nk)%nat) (t))))  
                            (mkposreal _ H2) n0).
                 simpl.
@@ -4309,7 +4303,7 @@ algorithm.
             apply exser_asq.
         + now apply seq_sum_shift.
     Qed.
-
+    
     Lemma Sup_seq_incr (f : nat -> R) (n1 n2 : nat) :
       (n1 >= n2)%nat ->
       Rbar_le (Sup_seq (fun n => f (n + n1)%nat)) (Sup_seq (fun n => f (n + n2)%nat)).
@@ -4532,8 +4526,8 @@ algorithm.
                (w ( n0 + nk)%nat)
                (L2_convergent_hist 
                   (@L2_convergent_x (S n) (fun k => α (k + nk)%nat) 
-                                    (vecrvconst (S n) 0) Ts 
-                                    (vecrvconst (S n) 0) 
+                                    (const Rvector_zero) Ts 
+                                    (const Rvector_zero) 
                                     (fun k => w (k + nk)%nat)) _ _ n0)) 
             (const zero)) ->
       almost prts (fun omega => is_lim_seq (fun n =>
