@@ -262,6 +262,23 @@ Section almostR2_part.
     ; apply almost_proper; intros ?[??]; tauto.
   Qed.
 
+  Global Instance almostR2_eq_proper {RR:Td->Td->Prop} :
+    Proper (almostR2 prts eq ==> almostR2 prts eq ==> iff) (almostR2 prts RR).
+  Proof.
+    cut (Proper (almostR2 prts eq ==> almostR2 prts eq ==> impl) (almostR2 prts RR)).
+    {
+      intros ???????.
+      split; intros HH
+      ; eapply H; try eapply HH
+      ; trivial
+      ; now symmetry.
+    }       
+    intros ???????.
+    generalize (almost_and _ (almost_and _ H H0) H1).
+    apply almost_impl; apply all_almost; intros ? [[??]?].
+    congruence.
+  Qed.
+
   Lemma almost_map_split {B} {f:Ts->B} {P:B->Prop} :
     almost prts (fun x => P (f x)) ->
     exists f', almostR2 prts eq f f' /\

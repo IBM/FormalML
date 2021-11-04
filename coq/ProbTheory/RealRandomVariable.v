@@ -903,11 +903,12 @@ Section RealRandomVariables.
              {rvc : RandomVariable dom borel_sa rv_C}
              {rv1 : RandomVariable dom borel_sa rv_X1}
              {rv2 : RandomVariable dom borel_sa rv_X2}  :
-        RealMeasurable (rvchoice (fun x => if Req_EM_T (rv_C x) 0 then false else true) rv_X1 rv_X2).
+        RandomVariable dom borel_sa (rvchoice (fun x => if Req_EM_T (rv_C x) 0 then false else true) rv_X1 rv_X2).
       Proof.
-        typeclasses eauto.
+        apply measurable_rv.
+        apply rvchoice_measurable
+        ; now apply rv_measurable.
       Qed.
-
 
     End rvs.
 
@@ -1857,8 +1858,9 @@ Section RbarRandomVariables.
          {rvc : RandomVariable dom borel_sa rv_C}
          {rv1 : RandomVariable dom Rbar_borel_sa rv_X1}
          {rv2 : RandomVariable dom Rbar_borel_sa rv_X2}  :
-    RbarMeasurable (Rbar_rvchoice (fun x => if Req_EM_T (rv_C x) 0 then false else true) rv_X1 rv_X2).
+    RandomVariable dom Rbar_borel_sa (Rbar_rvchoice (fun x => if Req_EM_T (rv_C x) 0 then false else true) rv_X1 rv_X2).
   Proof.
+    apply Rbar_measurable_rv.
     apply Rbar_rvchoice_measurable.
     - now apply rv_measurable.
     - typeclasses eauto.
@@ -3401,7 +3403,6 @@ Section rv_almost.
       + destruct (Req_EM_T 1 0); try lra; auto.
       + destruct (Req_EM_T 0 0); try lra; auto.
     - intros.
-      apply measurable_rv.
       eapply rvchoice_rv; trivial.
       + apply EventIndicator_rv.
       + typeclasses eauto.
@@ -3451,12 +3452,10 @@ Section rv_almost.
       + destruct (Req_EM_T 1 0); try lra; auto.
       + destruct (Req_EM_T 0 0); try lra; auto.
     - intros.
-      apply measurable_rv.
       eapply rvchoice_rv; trivial.
       + apply EventIndicator_rv.
       + typeclasses eauto.
     - intros.
-      apply measurable_rv.
       eapply rvchoice_rv; trivial.
       + apply EventIndicator_rv.
       + typeclasses eauto.
@@ -3513,12 +3512,10 @@ Section rv_almost.
       + destruct (Req_EM_T 1 0); try lra; auto.
       + destruct (Req_EM_T 0 0); try lra; auto.
     - intros.
-      apply measurable_rv.
       eapply rvchoice_rv; trivial.
       + apply EventIndicator_rv.
       + typeclasses eauto.
     - intros.
-      apply measurable_rv.
       eapply rvchoice_rv; trivial.
       + apply EventIndicator_rv.
       + typeclasses eauto.
@@ -3574,12 +3571,10 @@ Section rv_almost.
       + destruct (Req_EM_T 1 0); try lra; auto.
       + destruct (Req_EM_T 0 0); try lra; auto.
     - intros.
-      apply measurable_rv.
       eapply rvchoice_rv; trivial.
       + apply EventIndicator_rv.
       + typeclasses eauto.
     - intros.
-      apply measurable_rv.
       eapply rvchoice_rv; trivial.
       + apply EventIndicator_rv.
       + typeclasses eauto.
@@ -3637,15 +3632,73 @@ Section rv_almost.
         unfold const.
         apply lec.
     - intros.
-      apply Rbar_measurable_rv.
       apply Rbar_rvchoice_rv; trivial.
       + apply EventIndicator_rv.
       + typeclasses eauto.
     - intros.
-      apply Rbar_measurable_rv.
       apply Rbar_rvchoice_rv; trivial.
       + apply EventIndicator_rv.
       + typeclasses eauto.
+  Qed.
+
+  Lemma almostR2_Rbar_le_fixup_forall_r_split
+        {Ts:Type}
+        {dom: SigmaAlgebra Ts}
+        (prts: ProbSpace dom)
+        (f1:Ts -> Rbar) (f2:nat -> Ts->Rbar) {RR:Rbar->Rbar->Prop} {RRrefl:Reflexive RR}:
+    (forall n:nat, almostR2 prts RR f1 (f2 n)) ->
+    exists (f2':nat->Ts->Rbar),
+      (forall n, almostR2 prts eq (f2 n) (f2' n)) /\
+      (forall n x, RR (f1 x) (f2' n x)) /\
+      (forall n, RandomVariable dom Rbar_borel_sa f1 -> RandomVariable dom Rbar_borel_sa (f2 n) ->
+            RandomVariable dom Rbar_borel_sa (f2' n)).
+  Proof.
+    intros ale.
+    destruct (almost_witness _ (almost_forall _ ale)) as [c lec].
+    destruct (almost_forall _ ale) as [p [pone ph]].
+    unfold pre_inter_of_collection in *.
+    exists (fun n => Rbar_rvchoice (fun x => if Req_EM_T (((EventIndicator (classic_dec p))) x) 0 then false else true)
+                  
+                  (f2 n)
+                  f1
+      ).
+    repeat split.
+    - intros.
+      exists p.
+      split; trivial.
+      intros.
+      unfold Rbar_rvchoice, EventIndicator.
+      destruct (classic_dec p x); try tauto.
+      destruct (Req_EM_T 1 0); try lra; tauto.
+    - intros.
+      unfold Rbar_rvchoice, EventIndicator.
+      destruct (classic_dec p x); try tauto.
+      + destruct (Req_EM_T 1 0); try lra; auto.
+      + destruct (Req_EM_T 0 0); try lra; auto.
+    - intros.
+      apply Rbar_rvchoice_rv; trivial.
+      + apply EventIndicator_rv.
+  Qed.
+
+  Lemma almostR2_Rbar_le_forall_r_split
+        {Ts:Type}
+        {dom: SigmaAlgebra Ts}
+        (prts: ProbSpace dom)
+        (f1:Ts -> Rbar) (f2:nat -> Ts->Rbar) {RR:Rbar->Rbar->Prop}:
+    (forall n:nat, almostR2 prts RR f1 (f2 n)) ->
+    exists (f1':Ts->Rbar) (f2':nat -> Ts -> Rbar),
+      almostR2 prts eq f1 f1' /\
+      (forall n, almostR2 prts eq (f2 n) (f2' n)) /\
+      (forall n x, RR (f1' x) (f2' n x)) /\
+      (RandomVariable dom Rbar_borel_sa f1 ->
+       RandomVariable dom Rbar_borel_sa f1') /\
+      (forall n, RandomVariable dom Rbar_borel_sa (f2 n) ->
+            RandomVariable dom Rbar_borel_sa (f2' n)).
+  Proof.
+    intros.
+    destruct (almostR2_Rbar_le_forall_l_split _ f2 f1 (RR:=flip RR) H)
+      as [f1'[f2'[?[?[?[??]]]]]].
+    exists f2'; exists f1'; intuition.
   Qed.
 
   Lemma almostR2_Rbar_R_le_forall_l_split
@@ -3700,15 +3753,13 @@ Section rv_almost.
         unfold const.
         apply lec.
     - intros.
-      apply Rbar_measurable_rv.
       apply Rbar_rvchoice_rv; trivial.
       + apply EventIndicator_rv.
       + typeclasses eauto.
     - intros.
       unfold Rbar_rvchoice.
-      apply measurable_rv.
       generalize (rvchoice_rv dom (EventIndicator (classic_dec p)) f2 (const (f2 c))).
-      apply RealMeasurable_proper; intros ?.
+      apply RandomVariable_proper; try reflexivity; intros ?.
       unfold rvchoice.
       repeat match_destr.
   Qed.
@@ -3745,7 +3796,6 @@ Section rv_almost.
       + destruct (Req_EM_T 1 0); try lra; auto.
       + destruct (Req_EM_T 0 0); try lra; auto.
     - intros.
-      apply measurable_rv.
       eapply rvchoice_rv; trivial.
       + apply EventIndicator_rv.
   Qed.
@@ -3879,7 +3929,6 @@ Section rv_almost.
       + destruct (Req_EM_T 1 0); try lra; auto.
       + destruct (Req_EM_T 0 0); try lra; auto.
     - intros.
-      apply Rbar_measurable_rv.
       eapply Rbar_rvchoice_rv; trivial.
       + apply EventIndicator_rv.
       + typeclasses eauto.
@@ -3918,7 +3967,6 @@ Section rv_almost.
       + destruct (Req_EM_T 1 0); try lra; auto.
       + destruct (Req_EM_T 0 0); try lra; auto.
     - intros.
-      apply Rbar_measurable_rv.
       eapply Rbar_rvchoice_rv; trivial.
       + apply EventIndicator_rv.
   Qed.
@@ -4007,6 +4055,91 @@ Section rv_almost.
     apply rvconst.
   Qed.
 
+  Lemma almostR2_seq_split
+        {Ts:Type}
+        {dom: SigmaAlgebra Ts}
+        (prts: ProbSpace dom)
+        {f:nat->Ts->R} {RR:R->R->Prop} :
+    (forall n : nat, almostR2 prts RR (f n) (f (S n))) ->
+    exists f':nat->Ts->R,
+      (forall n, almostR2 prts eq (f n) (f' n)) /\
+      (forall n x, RR (f' n x) (f' (S n) x)) /\
+      (forall n, RandomVariable dom borel_sa (f n) -> RandomVariable dom borel_sa (f' n)).
+  Proof.
+    intros.
+    apply almost_forall in H.
+    destruct (almost_witness _ H) as [x Px].
+    destruct H as [p [pone ph]].
+    red in Px.
+    exists (fun n =>
+         rvchoice (fun x => if Req_EM_T (((EventIndicator (classic_dec p))) x) 0 then false else true)
+                  
+                  (f n)
+                  (const (f n x))
+      ).
+    repeat split.
+    - intros.
+      exists p.
+      split; trivial.
+      intros.
+      rv_unfold.
+      destruct (classic_dec p x0); try tauto.
+      destruct (Req_EM_T 1 0); try lra; tauto.
+    - intros.
+      rv_unfold.
+      destruct (classic_dec p x0); try tauto.
+      + destruct (Req_EM_T 1 0); try lra; auto.
+        now apply ph.
+      + destruct (Req_EM_T 0 0); try lra; auto.
+    - intros.
+      eapply rvchoice_rv; trivial.
+      + apply EventIndicator_rv.
+      + typeclasses eauto.
+  Qed.
+
+    Lemma almostR2_Rbar_seq_split
+        {Ts:Type}
+        {dom: SigmaAlgebra Ts}
+        (prts: ProbSpace dom)
+        {f:nat->Ts->Rbar} {RR:Rbar->Rbar->Prop} :
+    (forall n : nat, almostR2 prts RR (f n) (f (S n))) ->
+    exists f':nat->Ts->Rbar,
+      (forall n, almostR2 prts eq (f n) (f' n)) /\
+      (forall n x, RR (f' n x) (f' (S n) x)) /\
+      (forall n, RandomVariable dom Rbar_borel_sa (f n) -> RandomVariable dom Rbar_borel_sa (f' n)).
+    Proof.
+    intros.
+    apply almost_forall in H.
+    destruct (almost_witness _ H) as [x Px].
+    destruct H as [p [pone ph]].
+    red in Px.
+    exists (fun n =>
+         Rbar_rvchoice (fun x => if Req_EM_T (((EventIndicator (classic_dec p))) x) 0 then false else true)
+                  
+                  (f n)
+                  (const (f n x))
+      ).
+    repeat split.
+    - intros.
+      exists p.
+      split; trivial.
+      intros.
+      unfold Rbar_rvchoice, EventIndicator.
+      destruct (classic_dec p x0); try tauto.
+      destruct (Req_EM_T 1 0); try lra; tauto.
+    - intros.
+      unfold Rbar_rvchoice, EventIndicator.
+      destruct (classic_dec p x0); try tauto.
+      + destruct (Req_EM_T 1 0); try lra; auto.
+        now apply ph.
+      + destruct (Req_EM_T 0 0); try lra; auto.
+        apply Px.
+    - intros.
+      eapply Rbar_rvchoice_rv; trivial.
+      + apply EventIndicator_rv.
+      + typeclasses eauto.
+  Qed.
+  
   Open Scope prob.
   Global Instance almostR2_eq_plus_proper
          {Ts:Type} 

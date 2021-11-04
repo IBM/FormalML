@@ -1055,7 +1055,7 @@ Section is_cond_exp.
     - now apply is_conditional_expectation_opp.
   Qed.
   
-  Lemma Rbar_rvlim_almost_proper (f1 f2:nat->Ts->R) :
+  Lemma Rbar_rvlim_almost_proper (f1 f2:nat->Ts->Rbar) :
     (forall n, almostR2 prts eq (f1 n) (f2 n)) ->
     almostR2 prts eq (Rbar_rvlim f1) (Rbar_rvlim f2).
   Proof.
@@ -1284,7 +1284,7 @@ Section is_cond_exp.
     eapply is_conditional_expectation_nneg; eauto.
   Qed.
 
-  Theorem is_conditional_expectation_ale
+    Theorem is_conditional_expectation_ale
         (f1 : Ts -> R)
         (f2 : Ts -> R)
         (ce1 : Ts -> Rbar)
@@ -3174,7 +3174,169 @@ Qed.
       unfold rvmult.
       now apply (is_Elim_seq_scal_r' (fun n => fn n omega) (EventIndicator decP omega) (f omega)).
   Qed.
+  
+  Lemma is_conditional_expectation_monotone_convergence_almost
+        (f : Ts -> R )
+        (ce : Ts -> Rbar )
+        (fn : nat -> Ts -> R)
+        (cen : nat -> Ts -> Rbar)
+        (rvf : RandomVariable dom borel_sa f)
+        {rvce : RandomVariable dom2 Rbar_borel_sa ce}
+        (nnf: almostR2 prts Rle (const 0) f)
+        (nnce: almostR2 (prob_space_sa_sub prts sub) Rbar_le (const 0) ce)
+        (rvfn : forall n, RandomVariable dom borel_sa (fn n))
+        (nnfn : forall n, almostR2 prts Rle (const 0) (fn n))
+        (nncen : forall n, almostR2 (prob_space_sa_sub prts sub) Rbar_le (const 0) (cen n))
+        (rvcen : forall n, RandomVariable dom2 Rbar_borel_sa (cen n))
+    :
+    (forall (n:nat), almostR2 prts Rle (fn n) f) ->
+    (forall (n:nat), almostR2 prts Rle (fn n) (fn (S n))) ->
+    (forall (n:nat), almostR2 (prob_space_sa_sub prts sub) Rbar_le (cen n) ce) ->
+    (forall (n:nat), almostR2 (prob_space_sa_sub prts sub) Rbar_le (cen n) (cen (S n))) ->
+    (almost prts (fun omega => is_Elim_seq (fun n => fn n omega) (f omega))) ->
+    (almost (prob_space_sa_sub prts sub) (fun (omega:Ts) => is_Elim_seq (fun n => cen n omega) (ce omega))) ->
+    (forall (n:nat), is_conditional_expectation dom2 (fn n) (cen n)) ->
+    is_conditional_expectation dom2 f ce.
+  Proof.
+    intros fnbound fnincr cenbound cenincr flim celim iscen.
 
+    apply almost_forall in nnfn.
+    apply almost_forall in nncen.
+    apply almost_forall in fnbound.
+    apply almost_forall in fnincr.
+    apply almost_forall in cenbound.
+    apply almost_forall in cenincr.
+
+    generalize (almost_and _ nnf (almost_and _ nnfn (almost_and _ fnbound (almost_and _ fnincr flim))))
+    ; intros almostf.
+    generalize (almost_and _ nnce (almost_and _ nncen (almost_and _ cenbound (almost_and _ cenincr celim)))); intros almostce.
+    
+    destruct almostf as [pf [pfone pfH]].
+    destruct almostce as [pce [pceone pceH]].
+
+    (* we are going to use the following almost equal replacements *)
+    
+    pose (f' :=
+            (rvchoice (fun x => if Req_EM_T (((EventIndicator (classic_dec pf))) x) 0 then false else true)
+
+                f
+                (const 0)
+            )).
+    pose (ce' :=
+            (Rbar_rvchoice (fun x => if Req_EM_T (((EventIndicator (classic_dec pce))) x) 0 then false else true)
+
+                ce
+                (const (Finite 0))
+         )).
+
+    pose (fn' := fun n =>
+                   (rvchoice (fun x => if Req_EM_T (((EventIndicator (classic_dec pf))) x) 0 then false else true)
+                             
+                             (fn n)
+                             (const 0)
+         )).
+    pose (cen' := fun n =>
+                   (Rbar_rvchoice (fun x => if Req_EM_T (((EventIndicator (classic_dec pce))) x) 0 then false else true)
+                             
+                             (cen n)
+                             (const (Finite 0))
+         )).
+    
+    assert (feqq:almostR2 prts eq f' f).
+    {
+      exists pf.
+      split; trivial.
+      intros.
+      unfold f', EventIndicator, rvchoice.
+      destruct (classic_dec pf x); try tauto.
+      destruct (Req_EM_T 1 0); try lra.
+    } 
+    assert (ceeqq:almostR2 (prob_space_sa_sub prts sub) eq ce' ce).
+    {
+      exists pce.
+      split; trivial.
+      intros.
+      unfold ce', EventIndicator, Rbar_rvchoice.
+      destruct (classic_dec pce x); try tauto.
+      now destruct (Req_EM_T 1 0); try lra.
+    }
+
+    assert (fneqq:forall n, almostR2 prts eq (fn' n) (fn n)).
+    {
+      intros.
+      exists pf.
+      split; trivial.
+      intros.
+      unfold fn', EventIndicator, rvchoice.
+      destruct (classic_dec pf x); try tauto.
+      destruct (Req_EM_T 1 0); try lra.
+    } 
+    assert (ceneqq:forall n, almostR2 (prob_space_sa_sub prts sub) eq (cen' n) (cen n)).
+    {
+      intros.
+      exists pce.
+      split; trivial.
+      intros.
+      unfold cen', EventIndicator, Rbar_rvchoice.
+      destruct (classic_dec pce x); try tauto.
+      now destruct (Req_EM_T 1 0); try lra.
+    }
+
+    assert (rvf' : RandomVariable dom borel_sa f').
+    {
+      unfold f'.
+      apply rvchoice_rv; trivial; typeclasses eauto.
+    } 
+    assert (rvce' : RandomVariable dom2 Rbar_borel_sa ce').
+    {
+      unfold ce'.
+      apply Rbar_rvchoice_rv; trivial; typeclasses eauto.
+    }
+
+    assert (rvfn' : forall n, RandomVariable dom borel_sa (fn' n)).
+    {
+      intros.
+      unfold fn'.
+      apply rvchoice_rv; trivial; typeclasses eauto.
+    } 
+    assert (rvcen' : forall n, RandomVariable dom2 Rbar_borel_sa (cen' n)).
+    {
+      intros.
+      unfold cen'.
+      apply Rbar_rvchoice_rv; trivial; typeclasses eauto.
+    }
+    
+    cut (is_conditional_expectation dom2 f' ce').
+    {
+      apply is_conditional_expectation_proper; trivial.
+      eapply almost_prob_space_sa_sub_lift; eauto.
+    }
+
+    assert (iscen' : forall n : nat, is_conditional_expectation dom2 (fn' n) (cen' n)).
+    {
+      intros.
+      generalize (iscen n).
+      apply is_conditional_expectation_proper.
+      - now symmetry.
+      - symmetry.
+        eapply almost_prob_space_sa_sub_lift.
+        apply ceneqq.
+    } 
+
+    eapply (@is_conditional_expectation_monotone_convergence _ _ fn' cen')
+    ; unfold f', fn', ce', cen', rvchoice, Rbar_rvchoice, EventIndicator, const, pre_inter_of_collection in *
+    ; repeat intros ?
+    ; try (destruct (classic_dec _ _)
+           ; destruct (Req_EM_T _ _); try lra
+           ; try destruct (pfH _ e) as [? [? [? [??]]]]
+           ; try destruct (pceH _ e) as [? [? [? [??]]]]
+           ; simpl; trivial
+           ; try apply Rbar_le_refl
+           ; try apply Rle_refl
+           ; try apply is_Elim_seq_const).
+    - apply H0.
+    - now apply iscen'.
+  Qed.
 End is_cond_exp.
 
 Section is_cond_exp_props.
@@ -4282,7 +4444,7 @@ Section cond_exp2.
     match_destr.
     destruct a as [?[?[?[??]]]]; eauto.
   Qed.
-  
+
   Lemma conditional_expectation_L2fun_cond_exp 
         (f : Ts -> R)
         {rv : RandomVariable dom borel_sa f} {isl : IsLp prts 2 f} :
@@ -4293,10 +4455,41 @@ Section cond_exp2.
     now apply conditional_expectation_L2fun_eq3.
   Qed.    
 
+  Lemma NonNegCondexp_ext (f1 f2 : Ts -> R)
+        {rv1 : RandomVariable dom borel_sa f1}
+        {rv2 : RandomVariable dom borel_sa f2}
+        {nnf1 : NonnegativeFunction f1}
+        {nnf2 : NonnegativeFunction f2} :
+    rv_eq f1 f2 ->
+    rv_eq (NonNegCondexp f1) (NonNegCondexp f2).
+  Proof.
+    (* classically true *)
+    intros ??.
+    assert (f1 = f2) by now apply functional_extensionality.
+    subst.
+    f_equal
+    ; apply proof_irrelevance.
+  Qed.
+
   Definition ConditionalExpectation (f : Ts -> R) 
              {rv : RandomVariable dom borel_sa f} : Ts -> Rbar :=
     Rbar_rvminus (NonNegCondexp (pos_fun_part f))
                  (NonNegCondexp (neg_fun_part f)).
+
+  Lemma Condexp_nneg_simpl (f : Ts -> R) 
+        {rv : RandomVariable dom borel_sa f}
+        {nnf : NonnegativeFunction f} :
+    rv_eq (ConditionalExpectation f) (NonNegCondexp f).
+  Proof.
+    unfold ConditionalExpectation; intros ?.
+    unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp.
+    rewrite <- (NonNegCondexp_ext _ _ (pos_fun_part_pos _)).
+    rewrite <- (NonNegCondexp_ext _ _ (neg_fun_part_pos f) (nnf1:=nnfconst _ (Rle_refl _))).
+    rewrite (NonNegCondexp_id (const 0)).
+    unfold const; simpl.
+    rewrite Ropp_0.
+    now rewrite Rbar_plus_0_r.
+  Qed.    
 
   Lemma ConditionalExpectation_ext (f1 f2 : Ts -> R)
         {rv1 : RandomVariable dom borel_sa f1}
@@ -4304,13 +4497,19 @@ Section cond_exp2.
     rv_eq f1 f2 ->
     rv_eq (ConditionalExpectation f1) (ConditionalExpectation f2).
   Proof.
-    (* classically true *)
     intros ??.
-    assert (f1 = f2) by now apply functional_extensionality.
-    subst.
+    unfold ConditionalExpectation.
+    unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp.
     f_equal.
-    apply proof_irrelevance.
-  Qed.
+    - apply NonNegCondexp_ext; intros ?.
+      unfold pos_fun_part; simpl.
+      now f_equal.
+    - f_equal.
+      apply NonNegCondexp_ext; intros ?.
+      unfold neg_fun_part; simpl.
+      f_equal.
+      now rewrite H.
+  Qed.      
 
   Global Instance Condexp_rv (f : Ts -> R) 
          {rv : RandomVariable dom borel_sa f} :
@@ -4322,6 +4521,20 @@ Section cond_exp2.
     - typeclasses eauto.
   Qed.
 
+  Lemma Condexp_cond_exp_nneg (f : Ts -> R) 
+        {rv : RandomVariable dom borel_sa f}
+        {isfe:NonnegativeFunction f}
+    :
+      is_conditional_expectation prts dom2 f (ConditionalExpectation f).
+  Proof.
+    generalize (NonNegCondexp_cond_exp f).
+    apply is_conditional_expectation_proper; trivial.
+    - reflexivity.
+    - apply all_almost; intros.
+      symmetry.
+      apply Condexp_nneg_simpl.
+  Qed.
+  
   Theorem Condexp_cond_exp (f : Ts -> R) 
         {rv : RandomVariable dom borel_sa f}
         {isfe:IsFiniteExpectation prts f}
@@ -4962,6 +5175,148 @@ Section cond_exp2.
           now rewrite power_abs2_sqr.
   Qed.
 
+  (* I think this is doable without IsFiniteExpectation, but it needs
+     more work on Nonnegative conditional expectation *)
+  Lemma Condexp_monotone_convergence
+        (f : Ts -> R)
+        (fn : nat -> Ts -> R)
+        {rvf : RandomVariable dom borel_sa f}
+        {rvfn : forall n, RandomVariable dom borel_sa (fn n)}
+        (nnf: almostR2 prts Rle (const 0) f)
+        (nnfn : forall n, almostR2 prts Rle (const 0) (fn n))
+        (fbound:forall (n:nat), almostR2 prts Rle (fn n) f)
+        (fincr:forall (n:nat), almostR2 prts Rle (fn n) (fn (S n)))
+        {isfef:IsFiniteExpectation prts f}
+        {isfefn:forall n, IsFiniteExpectation prts (fn n)}
+        (flim:almost prts (fun omega => is_Elim_seq (fun n => fn n omega) (f omega))) :
+    almost (prob_space_sa_sub prts sub)
+           (fun omega => is_Elim_seq (fun n => ConditionalExpectation (fn n) omega) (ConditionalExpectation f omega)).
+  Proof.
+    
+    assert (rvce : RandomVariable dom2 Rbar_borel_sa
+                                  (Rbar_rvlim (fun n : nat => ConditionalExpectation (fn n)))).
+    {
+      apply Rbar_rvlim_rv; trivial.
+      typeclasses eauto.
+    }
+
+    assert (lece:forall n, almostR2 (prob_space_sa_sub prts sub)
+                          Rbar_le (ConditionalExpectation (fn n)) (ConditionalExpectation (fn (S n)))).
+    {
+      intros.
+      apply Condexp_ale; trivial.
+    }
+
+    assert (nnfcen:forall n : nat,
+        almostR2 (prob_space_sa_sub prts sub) Rbar_le (fun x : Ts => const 0 x)
+                 (ConditionalExpectation (fn n))).
+    {
+      intros.
+      eapply is_conditional_expectation_anneg.
+      - apply nnfn.
+      - now apply Condexp_cond_exp.
+    } 
+
+    assert (nnfce: almostR2 (prob_space_sa_sub prts sub) Rbar_le (fun x : Ts => const 0 x)
+                             (Rbar_rvlim (fun n : nat => ConditionalExpectation (fn n)))).
+    {
+      apply almostR2_Rbar_le_fixup_forall_r_split in nnfcen; try apply Rbar_le_pre.
+      destruct nnfcen as [f1' [?[??]]].
+      assert (HH: forall n, RandomVariable dom2 Rbar_borel_sa (f1' n)) by intuition.
+      clear H1.
+      apply Rbar_rvlim_almost_proper in H.
+      revert H.
+      apply almost_impl; apply all_almost; intros ??.
+      rewrite H.
+      apply Rbar_rvlim_nnf; intros ??.
+      apply H0.
+    } 
+
+    assert (boundce:forall n : nat,
+        almostR2 (prob_space_sa_sub prts sub) Rbar_le (ConditionalExpectation (fn n))
+                 (Rbar_rvlim (fun n0 : nat => ConditionalExpectation (fn n0)))).
+    {
+      intros.
+      destruct (almost_and _ (almost_forall _ lece) (almost_forall _ nnfcen)) as [pce [??]].
+      pose (cen' :=
+              fun n => (Rbar_rvchoice (fun x => if Req_EM_T (((EventIndicator (classic_dec pce))) x) 0 then false else true)
+                             
+                             (ConditionalExpectation (fn n))
+                             (const (Finite 0))
+           )).
+
+    assert (ceneqq:forall n, almostR2 (prob_space_sa_sub prts sub) eq (cen' n) (ConditionalExpectation (fn n))).
+    {
+      intros.
+      exists pce.
+      split; trivial.
+      intros.
+      unfold cen', EventIndicator, Rbar_rvchoice.
+      destruct (classic_dec pce x); try tauto.
+      now destruct (Req_EM_T 1 0); try lra.
+    }
+
+    generalize (Rbar_rvlim_almost_proper _ _ _ ceneqq); apply almost_impl.
+    generalize (ceneqq n); apply almost_impl.
+    apply almost_forall in lece.
+    apply almost_forall in nnfcen.
+    destruct lece as [p1 [??]].
+    destruct nnfcen as [p2 [??]].
+
+    exists (event_inter pce (event_inter p1 p2)); split.
+    { rewrite ps_inter_l1; trivial.
+      rewrite ps_inter_l1; trivial.
+    }
+    intros ????.
+    rewrite <- H6.
+    rewrite <- H7.
+    apply Rbar_rvlim_pos_ge; unfold cen', Rbar_rvchoice, EventIndicator.
+      - intros ??.
+        destruct (classic_dec _ _)
+        ; destruct (Req_EM_T _ _); try lra; try apply Rbar_le_refl.
+        now apply H0.
+      - intros ??.
+        destruct (classic_dec _ _)
+        ; destruct (Req_EM_T _ _); try lra; try apply Rbar_le_refl.
+        now apply H0.
+    } 
+
+    generalize (is_conditional_expectation_monotone_convergence_almost
+                  prts sub
+                  f (Rbar_rvlim (fun n : nat => ConditionalExpectation (fn n)))
+                  fn
+                  (fun n => ConditionalExpectation (fn n))
+                  rvf
+                  nnf
+                  nnfce
+                  rvfn
+                  nnfn
+                  nnfcen
+                  _
+                  fbound
+                  fincr
+                  boundce
+                  lece
+                  flim
+               ) ; intros HH.
+    cut_to HH; trivial.
+    - generalize (Condexp_cond_exp f); intros HH2.
+      generalize (is_conditional_expectation_unique _ sub _ _ _ HH HH2); intros HH3.
+      generalize (almost_and _ (almost_forall _ lece) HH3).
+      apply almost_impl; apply all_almost; intros ? [HH4 HH5].
+      rewrite <- HH5.
+      apply ELim_seq_correct.
+      apply ex_Elim_seq_incr; intros.
+      apply HH4.
+    - generalize (almost_forall _ lece).
+      apply almost_impl; apply all_almost; intros ??.
+      apply ELim_seq_correct.
+      apply ex_Elim_seq_incr; intros.
+      apply H.
+    - intros.
+      now apply Condexp_cond_exp.
+  Qed.
+  
 End cond_exp2.
 
 Section cond_exp_props.
@@ -5962,7 +6317,30 @@ Section fin_cond_exp.
       rewrite H8 in H4.
       now simpl in H4.
    Qed.
-  
+
+    Lemma FiniteCondexp_monotone_convergence
+        (f : Ts -> R)
+        (fn : nat -> Ts -> R)
+        {rvf : RandomVariable dom borel_sa f}
+        {rvfn : forall n, RandomVariable dom borel_sa (fn n)}
+        {isfef:IsFiniteExpectation prts f}
+        {isfefn:forall n, IsFiniteExpectation prts (fn n)}
+        (nnf: almostR2 prts Rle (const 0) f)
+        (nnfn : forall n, almostR2 prts Rle (const 0) (fn n))
+        (fbound:forall (n:nat), almostR2 prts Rle (fn n) f)
+        (fincr:forall (n:nat), almostR2 prts Rle (fn n) (fn (S n)))
+        (flim:almost prts (fun omega => is_Elim_seq (fun n => fn n omega) (f omega))) :
+    almost (prob_space_sa_sub prts sub)
+           (fun omega => is_Elim_seq (fun n => FiniteConditionalExpectation (fn n) omega) (FiniteConditionalExpectation f omega)).
+    Proof.
+      generalize (Condexp_monotone_convergence prts sub f fn nnf nnfn fbound fincr flim).
+      apply almost_impl; apply all_almost; intros ?.
+      unfold impl.
+      apply is_Elim_seq_proper
+      ; repeat intros ?
+      ; now rewrite (FiniteCondexp_eq _).
+    Qed.
+
 End fin_cond_exp.
 
 Section fin_cond_exp_props.
