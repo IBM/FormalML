@@ -2200,6 +2200,7 @@ algorithm.
         ring.
     Qed.
 
+(*
     (* Lemma 9*)
     Lemma as_convergent_lemma (C : R) (w : nat -> Ts -> vector R I)
           (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
@@ -2319,8 +2320,8 @@ algorithm.
       - admit.
       - typeclasses eauto.
      Admitted.
+*)
 
-    (* Lemma 9*)
     (*
     (* following lemma probably has a much simpler proof *)
     Lemma vec_SimpCondexpSA_zero (n : nat) (l : list dec_sa_event) :
@@ -2347,7 +2348,7 @@ algorithm.
      Qed.
 *)
     (* Lemma 9*)
-    Lemma as_convergent_lemma_split_alpha_lt_1 (C : R) (w : nat -> Ts -> vector R I)
+    Lemma as_convergent_lemma (C : R) (w : nat -> Ts -> vector R I)
           (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
           (srw : forall n, FiniteRangeFunction  (w n)) :
       0 <= C ->
@@ -4024,7 +4025,8 @@ algorithm.
       0 <= C ->
       0 <= gamma < 1 ->
       gamma + eps < 1 ->
-      (forall n, 0 <= α n <= 1) ->       
+(*      (forall n, 0 <= α n <= 1) -> *)
+      (forall n, 0 <= α n < 1) ->             
       is_lim_seq α 0 ->
       is_lim_seq (sum_n α) p_infty ->
       ex_series (fun n => (α n)^2) ->
@@ -4094,7 +4096,12 @@ algorithm.
         apply ps_one.
       - destruct IHk as [nk IHk].
         generalize (RMseq_const_lim gamma (fun n0 => α (n0 + nk)%nat) (C0 * (gamma + eps)^k) (C0 * (gamma + eps)^k) glim); intros.
-        assert (forall n, 0 <= α (n + nk)%nat <= 1) by (intros; apply alim).
+        assert (forall n, 0 <= α (n + nk)%nat <= 1).
+        {
+          intros.
+          specialize (alim (n0 + nk)%nat).
+          lra.
+        }
         assert (is_lim_seq (fun n0 : nat => α (n0 + nk)%nat) 0) by now apply is_lim_seq_incr_n.
         specialize (H H0 H1).
         assert (0 < eps * (C0 * (gamma + eps)^k)/2).
@@ -4700,7 +4707,8 @@ algorithm.
                                   (rvmaxabs (vecrvminus (x (nk + n0)%nat) (const xstar))) omega))) :
       0 <= C ->
       0 <= gamma < 1 ->
-      (forall n, 0 <= α n <= 1) ->       
+      (*      (forall n, 0 <= α n <= 1) ->       *)
+      (forall n, 0 <= α n < 1) ->  
       is_lim_seq α 0 ->
       is_lim_seq (sum_n α) p_infty ->
       ex_series (fun n => (α n)^2) ->
