@@ -777,6 +777,14 @@ Proof.
     now apply list_union_Forall2_prop.
 Qed.
 
+Lemma is_partition_list_trivial {T} {σ:SigmaAlgebra T} :
+  is_partition_list (Ω :: nil) (σ:=σ).
+Proof.
+  split.
+  - repeat constructor.
+  - apply list_union_singleton.
+Qed.
+
 Section dec.
 
   Context {Ts:Type} {dom:SigmaAlgebra Ts}.
