@@ -3356,6 +3356,55 @@ Qed.
       apply SimpleExpectation_pf_irrel.
   Qed.
 
+  Lemma gen_simple_conditional_expectation_scale_zero P dec :
+    rv_eq (gen_simple_conditional_expectation_scale P (const 0) dec) (const 0).
+  Proof.
+    unfold gen_simple_conditional_expectation_scale.
+    match_destr; unfold EventIndicator; intros ?; unfold rvscale, const.
+    - lra.
+    - unfold rvmult.
+      assert (eqq1:rv_eq (fun omega : Ts => 0 * (if dec omega then 1 else 0)) (const 0)).
+      {
+        intros ?; unfold const; lra.
+      }
+      rewrite (SimpleExpectation_ext eqq1).
+      rewrite SimpleExpectation_const.
+      lra.
+  Qed.
+    
+  Lemma SimpleConditionalExpectationSA_zero (n : nat) (l : list dec_sa_event) :
+    rv_eq (SimpleConditionalExpectationSA (const 0) l) (const 0).
+  Proof.
+    intros ?.
+    unfold SimpleConditionalExpectationSA.
+    induction l; simpl; trivial.
+    unfold rvplus; simpl.
+    rewrite gen_simple_conditional_expectation_scale_zero.
+    unfold const.
+    field_simplify.
+    apply IHl.
+  Qed.      
+                                    
+  Lemma vec_SimpCondexpSA_zero (n : nat) (l : list dec_sa_event) :
+    rv_eq
+      (vector_SimpleConditionalExpectationSA (const (@Rvector_zero n)) l)
+      (const zero).
+  Proof.
+    unfold vector_SimpleConditionalExpectationSA; simpl; intros ?.
+    apply vector_nth_eq; intros.
+    rewrite vector_of_funs_vector_nth, vector_nth_create.
+    simpl.
+    unfold const, zero; simpl.
+    rewrite Rvector_nth_zero; simpl.
+    replace 0 with (const 0 a) by reflexivity.
+    rewrite <- (SimpleConditionalExpectationSA_zero n l a).
+    apply SimpleConditionalExpectationSA_ext; try reflexivity.
+    intros ?.
+    rewrite vector_nth_fun_to_vector.
+    unfold const, zero; simpl.
+    now rewrite Rvector_nth_zero; simpl.
+  Qed.
+
 End ash.
 
 
