@@ -903,50 +903,49 @@ algorithm.
       - apply product_sum_assumption_b with (gamma := gamma); try eauto.
     Qed.
 
-    Theorem product_sum_gamma0 {α : nat -> R} {gamma : R}
-            (ha1 : forall n, 0 <= α n < 1)(ha2 : is_lim_seq α 0)
+    Theorem product_sum_gamma0 {α : nat -> R} {N0 : nat} (ha0 : forall n, 0 <= α n <= 1)
+            (ha1 : forall n, (n >= N0)%nat -> 0 <= α n < 1)(ha2 : is_lim_seq α 0)
             (ha3 : is_lim_seq (sum_n α) p_infty) :
-      (forall k, is_lim_seq (fun n => prod_f_R0 (fun m => /(1 - α (m + k)%nat)) n) p_infty).
+      (is_lim_seq (fun n => prod_f_R0 (fun m => /(1 - α (m + N0)%nat)) n) p_infty).
     Proof.
-      intros k.
-      rewrite product_sum_iff with (gamma0 := 0) in ha3; try lra; auto.
-      - specialize (ha3 k).
+      rewrite product_sum_iff with (gamma := 0) in ha3; try lra; auto.
+      - specialize (ha3 N0).
         unfold g_alpha in ha3.
         setoid_rewrite prod_f_R0_inv.
         -- apply is_lim_seq_ext with
-               (v := fun n => prod_f_R0 (fun m => 1 - α (m + k)%nat) n) in ha3.
+               (v := fun n => prod_f_R0 (fun m => 1 - α (m + N0)%nat) n) in ha3.
         + unfold Rdiv.
           rewrite <-is_lim_seq_pos_inv_p_infty; auto.
           intros n. apply prod_f_R0_pos; intros.
-          specialize (ha1 (n0+k)%nat); lra.
+          specialize (ha1 (n0+N0)%nat). cut_to ha1; try lra; try lia.
            + intros. apply prod_f_R0_proper; [|reflexivity].
              intros m; lra.
-        -- intros. specialize (ha1 (n0+k)%nat); lra.
-      - intros. specialize (ha1 n). lra.
+        -- intros; specialize (ha1 (n0+N0)%nat); cut_to ha1 ; try lra; try lia.
     Qed.
 
     (* To be used for Lemma 9. *)
-    Theorem product_sum_increasing {α : nat -> R} (ha1 : forall n, 0 <= α n < 1)
-      : forall k:nat, let b := fun n => prod_f_R0 (fun m => / (1 - α (m + k)%nat)) n in
+    Theorem product_sum_increasing
+        {α : nat -> R} {N0 : nat} (ha1 : forall n, (N0 <= n)%nat -> 0 <= α n < 1)
+      : let b := fun n => prod_f_R0 (fun m => / (1 - α (m + N0)%nat)) n in
                forall p, 0 < b p <= b (S p).
     Proof.
-      intros k b p.
+      intros b p.
       subst b.
       simpl; split.
       + apply prod_f_R0_pos.
         intros n.
         apply Rinv_pos.
-        specialize (ha1 (n+k)%nat). lra.
+        specialize (ha1 (n+N0)%nat). cut_to ha1; try lra; try lia.
       + rewrite <-Rmult_1_r at 1.
         apply Rmult_le_compat_l.
         -- apply prod_f_R0_nonneg.
-           intros n. 
+           intros n.
            left. apply Rinv_pos.
-           specialize (ha1 (n+k)%nat); lra.
+           specialize (ha1 (n+N0)%nat). cut_to ha1; try lra; try lia.
         -- rewrite <-Rinv_1 at 1.
            apply Rinv_le_contravar.
-           specialize (ha1 (S(p+k)%nat)); lra.
-           specialize (ha1 (S (p+k)%nat)); lra.
+           specialize (ha1 (S(p+N0)%nat)). cut_to ha1; try lra; try lia.
+           specialize (ha1 (S (p+N0)%nat)). cut_to ha1; try lra; try lia.
     Qed.
 
     Fixpoint RMseq (α : nat -> R) (s : nat -> R) (init : R) (n : nat) : R :=
@@ -2233,7 +2232,7 @@ algorithm.
         rewrite Rabs_pos_eq in HN0; try lra.
         specialize (Ha1 n); lra.
       }
-      clear Ha2. destruct HN0 as [N0 HN0].
+      destruct HN0 as [N0 HN0].
       setoid_rewrite (is_lim_seq_incr_n _ N0).
       setoid_rewrite is_lim_seq_rvmaxabs_zero_iff.
       assert (Hp1 : let b := fun m => /(prod_f_R0 (fun k => 1 - α (k + N0)) (pred (m))) in
@@ -2297,14 +2296,6 @@ algorithm.
             rewrite ex_series_incr_n in Ha4.
             apply Ha4.
       }
-        
-      (*assert (Hp2 :let b := fun m => /(prod_f_R0 (fun k => 1 - α (k + N0)) (pred (m))) in
-                   let y := (fun n => vecrvscale (b n) (fun omega => L2_convergent_x (const Rvector_zero) w (n + N0)%nat omega)) in
-              forall n w0, y (S n) w0 = rvsum ()
-            )*)
-      (*use the lemmas `product_sum_increasing' and ``product_sum_gamma0`` when
-       invoking the kolmogorov strong law. *)
-
       pose (b := fun (m:nat) => (prod_f_R0 (fun k => /(1 - α (k + N0))) m)).
       pose (z := fun (n:nat) => if (Nat.eq_dec n 0)
                                then  (fun omega => L2_convergent_x (const Rvector_zero) w N0 omega)
@@ -2319,16 +2310,14 @@ algorithm.
         intros.
         admit.
       - admit.
-      - unfold b.
-        apply product_sum_increasing.
-        intros.
-        split.
-        + apply Ha1.
-        + admit.
+      - unfold b. clear Kol.
+        apply product_sum_increasing. intros n Hn; specialize (HN0 n Hn).
+        split. specialize (Ha1 n); lra. lra.
+      - unfold b. apply product_sum_gamma0; auto.
+        intros; split; try apply (Ha1 n).
+        specialize (HN0 n H); lra.
       - admit.
-      - admit.
-      - typeclasses eauto.        
-      
+      - typeclasses eauto.
      Admitted.
 
   End qlearn3.
