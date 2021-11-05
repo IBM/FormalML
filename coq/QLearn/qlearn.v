@@ -2455,6 +2455,16 @@ algorithm.
         eapply is_lim_seq_ext; try eapply H.
         intros.
         simpl.
+        unfold rvscale, rvplus, vecrvnth, rvsum.
+        assert (b n <> 0).
+        {
+          apply Rgt_not_eq.
+          apply product_sum_increasing.
+          intros; apply Ha1.
+        }
+        apply Rmult_eq_reg_l with (r := b n); trivial.
+        rewrite <- Rmult_assoc.
+        rewrite Rinv_r_simpl_r; trivial.
         admit.
       - unfold z0, N0.
         simpl.
@@ -2465,7 +2475,10 @@ algorithm.
       - intros.
         unfold z.
         generalize (vector_SimpleConditionalExpectationSA_vecrvscale (w (n + N0)%nat)
-                                                                     (b n * α (n + N0))); intros.
+                                                                     (b n * α (n + N0))
+                    (vec_filtration_history_split 
+                       n z0
+                       (fun n0 : nat => vecrvscale (b n0 * α (n0 + N0)) (w (n0 + N0)%nat)))) ; intros.
         admit.
       - unfold b0, b.
         simpl.
