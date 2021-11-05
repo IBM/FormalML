@@ -3216,26 +3216,46 @@ Qed.
                                       (vec_filtration_history_split k X0 X)
     end.
 
+  Lemma refine_dec_sa_partitions_empty v : 
+    Forall2 dsa_equiv (refine_dec_sa_partitions v [dsa_Ω]) v.
+  Proof.
+    unfold refine_dec_sa_partitions.
+    induction v; simpl; trivial.
+    constructor; trivial.
+    intros ?; simpl.
+    apply pre_event_inter_true_r.
+  Qed.    
 
-(*
   Lemma vec_filt_hist_split_equiv {size:nat}
            (X0 : Ts -> vector R size) (X : nat -> Ts -> vector R size) 
            {frf0 : FiniteRangeFunction X0}          
            {frf : forall n, FiniteRangeFunction (X n)}
            {rv0 : RandomVariable dom (Rvector_borel_sa size) X0}          
-           {rv : forall n, RandomVariable dom (Rvector_borel_sa size) (X n)} 
-           (frf' : forall n, FiniteRangeFunction 
-                               (fun n => match n with
-                                         | 0%nat => X0
-                                         | S k => X k
-                                         end)) :
-    forall n,
-      vec_filtration_history_split n X0 X =
-      vec_filtration_history n (fun n => match n with
-                                         | 0%nat => X0
-                                         | S k => X k
-                                          end).
-*)
+           {rv : forall n, RandomVariable dom (Rvector_borel_sa size) (X n)} :
+    forall m,
+      Forall2
+        dsa_equiv
+        (vec_filtration_history_split m X0 X)
+        (vec_filtration_history (S m) (fun n => match n with
+                                             | 0%nat => X0
+                                             | S k => X k
+                                             end)
+                                (frf:=  fun n => match n with
+                                              | 0 => frf0
+                                              | S k => frf k
+                                              end)
+                                (rv:=  fun n => match n with
+                                              | 0 => rv0
+                                              | S k => rv k
+                                              end
+        )).
+  Proof.
+    induction m; simpl.
+    - symmetry.
+      apply refine_dec_sa_partitions_empty.
+    - apply refine_dec_sa_partitions_proper; trivial.
+      reflexivity.
+  Qed.
 
    (* b0 and X0 are the first terms of b and X split off *)
     Lemma vec_Ash_6_2_2_split {size:nat} 
@@ -3275,11 +3295,21 @@ Qed.
                          | 0%nat => X0
                          | S k => X k
                          end).
-    assert (rv' : forall n : nat, RandomVariable dom (Rvector_borel_sa size) (X' n)) by
-        (induction n; now unfold X').
+    pose (rv' 
+            := fun n => match n as n' return
+                           RandomVariable dom (Rvector_borel_sa size) (X' n')
+                     with
+                     | 0 => rv0
+                     | S k => rv k
+                     end).
 
-    assert (frf' : forall n : nat, FiniteRangeFunction (X' n)) by
-        (induction n; now unfold X').        
+    pose (frf' 
+            := fun n => match n as n' return
+                           FiniteRangeFunction (X' n')
+                     with
+                     | 0 => frf0
+                     | S k => frf k
+                     end).
 
     generalize (vec_Ash_6_2_2 X' b'); intros.
     cut_to H.
@@ -3304,14 +3334,16 @@ Qed.
         intros.
         replace (n0 + 1)%nat with (S n0) by lia.
         now simpl.
-    - induction n.
+    - intros ??.
+      destruct n.
       + simpl.
         rewrite <- HC0.
-        intros ?.
-        admit.
-      + simpl.
-        admit.
-    - induction n.
+        apply vector_SimpleConditionalExpectationSA_ext; reflexivity.
+      + rewrite <- (HC n).
+        apply vector_SimpleConditionalExpectationSA_ext; try reflexivity.
+        symmetry.
+        apply vec_filt_hist_split_equiv.
+    - destruct n.
       + simpl; lra.
       + now simpl.
     - unfold b'.
@@ -3322,8 +3354,7 @@ Qed.
       eapply ex_series_ext.
       intros.
       apply SimpleExpectation_pf_irrel.
-  Admitted.
-      
+  Qed.
 
 End ash.
 
