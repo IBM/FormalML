@@ -2346,7 +2346,27 @@ algorithm.
         rewrite Rvector_scale0.
         reflexivity.
      Qed.
-*)
+     *)
+
+    Lemma condexp_hist_scaled  (w : nat -> Ts -> vector R I) (b : nat -> R)
+          (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
+          (srw : forall n, FiniteRangeFunction  (w n)) :
+     (forall n, rv_eq (vector_SimpleConditionalExpectationSA
+                         (w n)
+                         (L2_convergent_hist (L2_convergent_x (const Rvector_zero) w) _ _ n))
+                      (const zero)) ->
+     forall n, 
+       rv_eq
+         (vector_SimpleConditionalExpectationSA 
+            (vecrvscale (b n) (w n))
+            (vec_filtration_history_split n (const Rvector_zero)
+                                          (fun n0 : nat => vecrvscale (b n0) (w n0)))) 
+         (const zero).
+    Proof.
+      intros.
+      specialize (H n).
+      Admitted.
+
     (* Lemma 9*)
     Lemma as_convergent_lemma (C : R) (w : nat -> Ts -> vector R I)
           (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
@@ -2466,6 +2486,10 @@ algorithm.
         apply Rmult_eq_reg_l with (r := b n); trivial.
         rewrite <- Rmult_assoc.
         rewrite Rinv_r_simpl_r; trivial.
+        unfold z0, const.
+        simpl.
+        rewrite Rvector_nth_zero.
+        rewrite Rplus_0_l.
         admit.
       - unfold z0, N0.
         simpl.
@@ -2475,6 +2499,10 @@ algorithm.
         apply vector_SimpleConditionalExpectationSA_ext; reflexivity.
       - intros.
         unfold z.
+        unfold z0.
+        unfold N0.
+        simpl.
+        intros ?.
         generalize (vector_SimpleConditionalExpectationSA_vecrvscale (w (n + N0)%nat)
                                                                      (b n * α (n + N0))
                     (vec_filtration_history_split 
