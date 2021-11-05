@@ -3203,4 +3203,128 @@ Qed.
       apply H.
     Qed.
 
+  Fixpoint vec_filtration_history_split {size:nat} (n : nat) 
+           (X0 : Ts -> vector R size) (X : nat -> Ts -> vector R size) 
+           {frf0 : FiniteRangeFunction X0}          
+           {frf : forall n, FiniteRangeFunction (X n)}
+           {rv0 : RandomVariable dom (Rvector_borel_sa size) X0}          
+           {rv : forall n, RandomVariable dom (Rvector_borel_sa size) (X n)}
+    : list dec_sa_event :=
+    match n with
+    | 0%nat => (vec_induced_sigma_generators frf0)
+    | S k => refine_dec_sa_partitions (vec_induced_sigma_generators (frf k)) 
+                                      (vec_filtration_history_split k X0 X)
+    end.
+
+
+(*
+  Lemma vec_filt_hist_split_equiv {size:nat}
+           (X0 : Ts -> vector R size) (X : nat -> Ts -> vector R size) 
+           {frf0 : FiniteRangeFunction X0}          
+           {frf : forall n, FiniteRangeFunction (X n)}
+           {rv0 : RandomVariable dom (Rvector_borel_sa size) X0}          
+           {rv : forall n, RandomVariable dom (Rvector_borel_sa size) (X n)} 
+           (frf' : forall n, FiniteRangeFunction 
+                               (fun n => match n with
+                                         | 0%nat => X0
+                                         | S k => X k
+                                         end)) :
+    forall n,
+      vec_filtration_history_split n X0 X =
+      vec_filtration_history n (fun n => match n with
+                                         | 0%nat => X0
+                                         | S k => X k
+                                          end).
+*)
+
+   (* b0 and X0 are the first terms of b and X split off *)
+    Lemma vec_Ash_6_2_2_split {size:nat} 
+          (X0 : Ts -> vector R size) (X : nat -> Ts -> vector R size) 
+          (b0 : R) (b : nat -> R) 
+          {rv0 : RandomVariable dom (Rvector_borel_sa size) X0}          
+          {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
+          {frf0 : FiniteRangeFunction X0}          
+          {frf : forall (n:nat), FiniteRangeFunction (X (n))}
+          (HC0 : rv_eq (vector_SimpleConditionalExpectationSA X0 [dsa_Ω]) (const zero)) 
+          (HC : forall n, rv_eq (vector_SimpleConditionalExpectationSA 
+                                   (X n) 
+                                   (vec_filtration_history_split n X0 X)) (const zero)) :
+      0 < b0 <= b 0%nat ->
+      (forall n, 0 < b n <= b (S n)) ->
+      is_lim_seq b p_infty ->
+      ex_series (fun n => SimpleExpectation 
+                            (rvinner (vecrvscale (/ (b n)) (X n))
+                                     (vecrvscale (/ (b n)) (X n)))) ->
+      almost Prts 
+             (fun (x : Ts) => 
+                (forall (i:nat) (pf : (i<size)%nat),
+                    is_lim_seq (fun n => 
+                                  (rvscale (/ (b n))
+                                           (rvplus
+                                              (vecrvnth i pf X0)
+                                              (rvsum (fun k => (vecrvnth i pf (X k))) n)))
+                                    x) 
+                               0)). 
+  Proof.
+    intros Hb0 Hb Hb2 HS.
+    pose (b' := fun n => match n with
+                         | 0%nat => b0
+                         | S k => b k
+                         end).
+    pose (X' := fun n => match n with
+                         | 0%nat => X0
+                         | S k => X k
+                         end).
+    assert (rv' : forall n : nat, RandomVariable dom (Rvector_borel_sa size) (X' n)) by
+        (induction n; now unfold X').
+
+    assert (frf' : forall n : nat, FiniteRangeFunction (X' n)) by
+        (induction n; now unfold X').        
+
+    generalize (vec_Ash_6_2_2 X' b'); intros.
+    cut_to H.
+    - revert H;apply almost_impl; apply all_almost; intros ??.
+      intros.
+      specialize (H i pf).
+      apply is_lim_seq_incr_1 in H.
+      eapply is_lim_seq_ext; try eapply H.
+      intros.
+      simpl.
+      induction n.
+      + f_equal.
+      + unfold rvscale, rvsum, rvplus.
+        f_equal.
+        unfold sum_n.
+        rewrite sum_Sn_m; try lia.
+        unfold plus; simpl.
+        f_equal.
+        replace (S (S n)) with (S n + 1)%nat by lia.
+        rewrite sum_shift.
+        apply sum_n_m_ext.
+        intros.
+        replace (n0 + 1)%nat with (S n0) by lia.
+        now simpl.
+    - induction n.
+      + simpl.
+        rewrite <- HC0.
+        intros ?.
+        admit.
+      + simpl.
+        admit.
+    - induction n.
+      + simpl; lra.
+      + now simpl.
+    - unfold b'.
+      now apply is_lim_seq_incr_1.
+    - unfold b', X'.
+      apply ex_series_incr_1.
+      revert HS.
+      eapply ex_series_ext.
+      intros.
+      apply SimpleExpectation_pf_irrel.
+  Admitted.
+      
+
 End ash.
+
+

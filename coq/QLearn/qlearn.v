@@ -2320,6 +2320,169 @@ algorithm.
       - typeclasses eauto.
      Admitted.
 
+    (* Lemma 9*)
+    Lemma as_convergent_lemma_split (C : R) (w : nat -> Ts -> vector R I)
+          (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
+          (srw : forall n, FiniteRangeFunction  (w n)) :
+      0 <= C ->
+      F = const (Rvector_zero) ->
+
+      (forall n, 0 <= α n <= 1) ->
+      is_lim_seq α 0 ->
+      is_lim_seq (sum_n α) p_infty ->
+      ex_series (fun n => (α n)^2) -> 
+      (forall n, rv_eq (vector_SimpleConditionalExpectationSA
+                          (w n)
+                          (L2_convergent_hist (L2_convergent_x (const Rvector_zero) w) _ _ n))
+                       (const zero)) ->
+      (forall n, SimpleExpectation (rvinner (w n) (w n)) < C)  ->
+      almost prts (fun w1 =>
+                     is_lim_seq (fun n => (rvmaxabs (L2_convergent_x (const Rvector_zero) w n)) w1) 0).
+    Proof.
+      intros Hc HF Ha1 Ha2 Ha3 Ha4 HCE HE.
+      assert (HN0 : exists N0, forall n, (n >= N0)%nat -> 0 < 1 - α n).
+      {
+        rewrite is_lim_seq_Reals in Ha2.
+        specialize (Ha2 1 (Rlt_0_1)).
+        unfold R_dist in Ha2. setoid_rewrite Rminus_0_r in Ha2.
+        destruct Ha2 as [N0 HN0]. exists N0.
+        intros n Hn.
+        (*assert ( HN0' : (n >= N0)%nat) by lia.*)
+        specialize (HN0 n Hn).
+        rewrite Rabs_pos_eq in HN0; try lra.
+        specialize (Ha1 n); lra.
+      }
+      destruct HN0 as [N0 HN0].
+      setoid_rewrite (is_lim_seq_incr_n _ N0).
+      setoid_rewrite is_lim_seq_rvmaxabs_zero_iff.
+      assert (Hp1 : let b := fun m => /(prod_f_R0 (fun k => 1 - α (k + N0)) (pred (m))) in
+                    let y := (fun n => vecrvscale (b n) (fun omega => L2_convergent_x (const Rvector_zero) w (n + N0)%nat omega)) in
+            forall n w0, (0 < n)%nat -> (y (S n) w0) = Rvector_plus (y n w0) (vecrvscale ((b (S n)%nat) * α (n + N0)%nat) (w (n + N0)%nat) w0)).
+      {
+        intros b y n Hn w0. unfold y.
+        simpl. unfold vecrvscale, vecrvplus.
+        rewrite Rvector_scale_plus_l.
+        rewrite Rvector_scale_scale. f_equal.
+        unfold b, F_alpha, vecrvscale,vecrvplus.
+        rewrite Rvector_scale_plus_l.
+        do 2 rewrite Rvector_scale_scale.
+        rewrite HF. unfold const. rewrite Rvector_scale_zero.
+        rewrite Rvector_plus_zero.
+        f_equal. simpl.
+        rewrite prod_f_R0_pred. assert (n+N0 >= N0)%nat by lia.
+        rewrite Rinv_mult_distr.
+        + rewrite Rmult_assoc. rewrite Rinv_l; try lra.
+          specialize (HN0 (n+N0)%nat H); lra.
+        + apply prod_f_R0_ne_zero. intros n0; assert (H0 : (n0 + N0 >= N0)%nat) by lia.
+          specialize ( HN0 _ H0); lra.
+        + specialize (HN0 _ H); lra.
+        + assumption.
+      }
+      assert (H60_2 : ex_series (fun n => SimpleExpectation (rvinner (vecrvscale (α (n + N0)%nat) (w (n + N0)%nat))
+                                                                     (vecrvscale (α (n + N0)%nat) (w (n + N0)%nat))))).
+      {
+        apply ex_series_ext with 
+            (a :=  (fun n =>  (α (n + N0)%nat)^2* SimpleExpectation (rvinner (w (n + N0)%nat)
+                                                                             (w (n + N0)%nat)))).
+        - intros.
+          rewrite scaleSimpleExpectation.
+          apply SimpleExpectation_ext.
+          intros ?.
+          unfold rvscale, rvinner, vecrvscale.
+          symmetry.
+          rewrite Rvector_inner_scal.
+          rewrite Rvector_inner_comm.
+          rewrite Rvector_inner_scal.
+          ring.
+        - generalize (ex_series_le
+                        (fun n : nat =>
+                           α (n + N0) ^ 2 * SimpleExpectation (rvinner (w (n + N0)%nat) (w (n + N0)%nat)))
+                        (fun n => (α (n + N0)%nat)^2 * C)); intros.
+          apply H.
+          + intros.
+            unfold norm; simpl; unfold abs; simpl.
+            rewrite Rmult_1_r.
+            replace (α (n + N0) * α (n + N0)) with ((α (n + N0))^2) by ring.
+            rewrite Rabs_right.
+            * apply Rmult_le_compat_l.
+              -- apply pow2_ge_0.
+              -- left; apply HE.
+            * apply Rle_ge, Rmult_le_pos.
+              -- apply pow2_ge_0.
+              -- apply SimpleExpectation_pos.
+                 intros.
+                 apply rv_inner_ge_0.
+          + apply ex_series_scal_r.
+            rewrite ex_series_incr_n in Ha4.
+            setoid_rewrite Nat.add_comm.
+            apply Ha4.
+      }
+      pose (b0 := 1).
+      pose (b := fun (m:nat) => (prod_f_R0 (fun k => /(1 - α (k + N0))) m)).
+      pose (z0 := (fun omega => L2_convergent_x (const Rvector_zero) w N0 omega)).
+      pose (z := fun (n:nat) => vecrvscale ((b n)*(α (n + N0)%nat)) (w (n + N0)%nat)).
+      assert (rv : forall n : nat, RandomVariable dom (Rvector_borel_sa I) (z n)) by typeclasses eauto.
+      assert (rv0 : RandomVariable dom (Rvector_borel_sa I) z0).
+      {
+        unfold z0.
+        apply L2_convergent_x_rv; typeclasses eauto.
+      }
+      assert (frf : forall n : nat, FiniteRangeFunction (z n)) by typeclasses eauto.
+      assert (frf0 : FiniteRangeFunction z0).
+      {
+        unfold z0.
+        apply L2_convergent_x_frf; trivial.
+        typeclasses eauto.
+      }
+      generalize (vec_Ash_6_2_2_split z0 z b0 b); intros Kol.
+      cut_to Kol.
+      - revert Kol;apply almost_impl; apply all_almost; intros ??.
+        intros; specialize (H k pf).
+        eapply is_lim_seq_ext; try eapply H.
+        intros.
+        simpl.
+        admit.
+      - specialize (HCE 0%nat). clear Kol Hp1.
+        unfold z0.
+        admit.
+      - admit.
+      - unfold b0, b.
+        simpl.
+        split; try lra.
+        replace (1) with (/ 1) at 1 by lra.
+        apply Rinv_le_contravar.
+        apply HN0; try lra; try lia.
+        specialize (Ha1 N0); lra.
+      - unfold b. clear Kol.
+        apply product_sum_increasing. intros n Hn; specialize (HN0 n Hn).
+        split. specialize (Ha1 n); lra. lra.
+      - unfold b. apply product_sum_gamma0; auto.
+        intros; split; try apply (Ha1 n).
+        specialize (HN0 n H); lra.
+      - revert H60_2.
+        apply ex_series_ext.
+        intros.
+        apply SimpleExpectation_ext.
+        intros ?.
+        unfold z, rvinner, rvscale, vecrvscale.
+        rewrite Rvector_scale_scale.
+        rewrite <- Rmult_assoc.
+        rewrite <- Rinv_l_sym.
+        * rewrite Rmult_1_l.
+          rewrite Rvector_inner_scal.
+          symmetry.
+          rewrite Rvector_inner_comm.
+          rewrite Rvector_inner_scal.
+          ring.
+        * apply Rgt_not_eq.
+          apply product_sum_increasing.
+          intros. specialize (HN0 n0 H).
+          split. specialize (Ha1 n0); lra; lra.
+          lra.
+      - intros; typeclasses eauto.
+
+     Admitted.
+
   End qlearn3.
 
   Section qlearn4.
