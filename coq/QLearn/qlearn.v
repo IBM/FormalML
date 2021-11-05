@@ -2321,13 +2321,39 @@ algorithm.
      Admitted.
 
     (* Lemma 9*)
-    Lemma as_convergent_lemma_split (C : R) (w : nat -> Ts -> vector R I)
+    (*
+    (* following lemma probably has a much simpler proof *)
+    Lemma vec_SimpCondexpSA_zero (n : nat) (l : list dec_sa_event) :
+      is_partition_list (map dsa_event l) ->
+      rv_eq
+        (vector_SimpleConditionalExpectationSA (const (@Rvector_zero n)) l)
+        (const zero).
+    Proof.
+      intros.
+      assert (rv_eq
+                (vector_SimpleConditionalExpectationSA (vecrvscale 0 (const (@Rvector_zero n))) l)
+                (vector_SimpleConditionalExpectationSA (const Rvector_zero) l)).
+      - apply vector_SimpleConditionalExpectationSA_ext.
+        + intros ?.
+          unfold vecrvscale, const.          
+          now rewrite Rvector_scale0.          
+        + reflexivity.
+      - rewrite <- H0.
+        rewrite vector_SimpleConditionalExpectationSA_vecrvscale; trivial.
+        intros ?.
+        unfold vecrvscale.
+        rewrite Rvector_scale0.
+        reflexivity.
+     Qed.
+*)
+    (* Lemma 9*)
+    Lemma as_convergent_lemma_split_alpha_lt_1 (C : R) (w : nat -> Ts -> vector R I)
           (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
           (srw : forall n, FiniteRangeFunction  (w n)) :
       0 <= C ->
       F = const (Rvector_zero) ->
 
-      (forall n, 0 <= α n <= 1) ->
+      (forall n, 0 <= α n < 1) ->
       is_lim_seq α 0 ->
       is_lim_seq (sum_n α) p_infty ->
       ex_series (fun n => (α n)^2) -> 
@@ -2340,21 +2366,8 @@ algorithm.
                      is_lim_seq (fun n => (rvmaxabs (L2_convergent_x (const Rvector_zero) w n)) w1) 0).
     Proof.
       intros Hc HF Ha1 Ha2 Ha3 Ha4 HCE HE.
-      assert (HN0 : exists N0, forall n, (n >= N0)%nat -> 0 < 1 - α n).
-      {
-        rewrite is_lim_seq_Reals in Ha2.
-        specialize (Ha2 1 (Rlt_0_1)).
-        unfold R_dist in Ha2. setoid_rewrite Rminus_0_r in Ha2.
-        destruct Ha2 as [N0 HN0]. exists N0.
-        intros n Hn.
-        (*assert ( HN0' : (n >= N0)%nat) by lia.*)
-        specialize (HN0 n Hn).
-        rewrite Rabs_pos_eq in HN0; try lra.
-        specialize (Ha1 n); lra.
-      }
-      destruct HN0 as [N0 HN0].
-      setoid_rewrite (is_lim_seq_incr_n _ N0).
       setoid_rewrite is_lim_seq_rvmaxabs_zero_iff.
+      pose (N0 := 0%nat).
       assert (Hp1 : let b := fun m => /(prod_f_R0 (fun k => 1 - α (k + N0)) (pred (m))) in
                     let y := (fun n => vecrvscale (b n) (fun omega => L2_convergent_x (const Rvector_zero) w (n + N0)%nat omega)) in
             forall n w0, (0 < n)%nat -> (y (S n) w0) = Rvector_plus (y n w0) (vecrvscale ((b (S n)%nat) * α (n + N0)%nat) (w (n + N0)%nat) w0)).
@@ -2372,10 +2385,11 @@ algorithm.
         rewrite prod_f_R0_pred. assert (n+N0 >= N0)%nat by lia.
         rewrite Rinv_mult_distr.
         + rewrite Rmult_assoc. rewrite Rinv_l; try lra.
-          specialize (HN0 (n+N0)%nat H); lra.
-        + apply prod_f_R0_ne_zero. intros n0; assert (H0 : (n0 + N0 >= N0)%nat) by lia.
-          specialize ( HN0 _ H0); lra.
-        + specialize (HN0 _ H); lra.
+          unfold N0; replace (n + 0)%nat with (n) by lia.
+          specialize (Ha1 n); lra.
+        + apply prod_f_R0_ne_zero.
+          intros. specialize (Ha1 (n0 + N0)%nat). lra.
+        + specialize (Ha1 (n + N0)%nat); lra.
         + assumption.
       }
       assert (H60_2 : ex_series (fun n => SimpleExpectation (rvinner (vecrvscale (α (n + N0)%nat) (w (n + N0)%nat))
@@ -2442,23 +2456,29 @@ algorithm.
         intros.
         simpl.
         admit.
-      - specialize (HCE 0%nat). clear Kol Hp1.
-        unfold z0.
+      - unfold z0, N0.
+        simpl.
+        generalize (vec_SimpCondexpSA_zero I (dsa_Ω :: nil)); intros.
+        simpl in H.
+        rewrite <- H.
+        apply vector_SimpleConditionalExpectationSA_ext; reflexivity.
+      - intros.
+        unfold z.
+        generalize (vector_SimpleConditionalExpectationSA_vecrvscale (w (n + N0)%nat)
+                                                                     (b n * α (n + N0))); intros.
         admit.
-      - admit.
       - unfold b0, b.
         simpl.
         split; try lra.
         replace (1) with (/ 1) at 1 by lra.
-        apply Rinv_le_contravar.
-        apply HN0; try lra; try lia.
-        specialize (Ha1 N0); lra.
+        specialize (Ha1 N0).
+        apply Rinv_le_contravar; lra.
       - unfold b. clear Kol.
-        apply product_sum_increasing. intros n Hn; specialize (HN0 n Hn).
-        split. specialize (Ha1 n); lra. lra.
+        apply product_sum_increasing.
+        intros.
+        specialize (Ha1 n); lra.
       - unfold b. apply product_sum_gamma0; auto.
-        intros; split; try apply (Ha1 n).
-        specialize (HN0 n H); lra.
+        intros; specialize (Ha1 n); lra.
       - revert H60_2.
         apply ex_series_ext.
         intros.
@@ -2476,8 +2496,7 @@ algorithm.
           ring.
         * apply Rgt_not_eq.
           apply product_sum_increasing.
-          intros. specialize (HN0 n0 H).
-          split. specialize (Ha1 n0); lra; lra.
+          intros. specialize (Ha1 n0).
           lra.
       - intros; typeclasses eauto.
 
