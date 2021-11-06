@@ -2473,6 +2473,7 @@ algorithm.
       cut_to Kol.
       - revert Kol;apply almost_impl; apply all_almost; intros ??.
         intros; specialize (H k pf).
+        apply is_lim_seq_incr_1.
         eapply is_lim_seq_ext; try eapply H.
         intros.
         simpl.
@@ -2490,7 +2491,54 @@ algorithm.
         simpl.
         rewrite Rvector_nth_zero.
         rewrite Rplus_0_l.
-        admit.
+        unfold z.
+        induction n.
+        + simpl.
+          rewrite sum_O.
+          unfold F_alpha.
+          unfold vecrvplus, vecrvscale.
+          rewrite HF.
+          unfold const.
+          do 2 rewrite Rvector_scale_zero.
+          rewrite Rvector_plus_zero.
+          rewrite Rvector_plus_comm.
+          rewrite Rvector_plus_zero.
+          unfold N0.
+          do 2 rewrite Rvector_nth_scale.
+          replace (0 + 0)%nat with (0)%nat by lia.
+          now rewrite Rmult_assoc.
+        + cut_to IHn.
+          * unfold F_alpha.
+            rewrite sum_Sn.
+            rewrite IHn.
+            unfold plus; simpl.
+            unfold F_alpha, vecrvplus, vecrvscale.
+            rewrite HF.
+            unfold const.
+            do 2 rewrite Rvector_scale_zero.
+            rewrite Rvector_nth_scale.          
+            do 4 rewrite Rvector_nth_plus.
+            do 4 rewrite Rvector_nth_scale.
+            rewrite Rvector_nth_zero.
+            do 2 rewrite Rvector_nth_plus.
+            do 2 rewrite Rvector_nth_scale.          
+            rewrite Rvector_nth_zero.
+            unfold N0.
+            replace (n + 0)%nat with n by lia.
+            do 2 rewrite Rplus_0_r.
+            unfold b.
+            simpl.
+            unfold N0.
+            replace (n + 0)%nat with n by lia.
+            field.
+            apply Rgt_not_eq.
+            specialize (Ha1 (S n)).
+            lra.
+          * unfold b.
+            apply Rgt_not_eq.
+            apply product_sum_increasing.
+            intros.
+            apply Ha1.
       - unfold z0, N0.
         simpl.
         generalize (vec_SimpCondexpSA_zero I (dsa_Ω :: nil)); intros.
