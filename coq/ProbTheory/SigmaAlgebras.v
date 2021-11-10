@@ -43,6 +43,16 @@ Next Obligation.
   firstorder.
 Qed.
 
+Lemma trivial_sa_sub {T} (sa:SigmaAlgebra T) : 
+  sa_sub (trivial_sa T) sa.
+Proof.
+  intros ?[?|?].
+  - rewrite H.
+    apply sa_none.
+  - rewrite H.
+    apply sa_all.
+Qed.
+
 Program Instance discrete_sa (T:Type) : SigmaAlgebra T
   := {
       sa_sigma := fun _ => True 

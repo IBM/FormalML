@@ -583,7 +583,7 @@ Section filtration.
     apply pullback_rv.
   Qed.
 
-  Instance sa_filtration_lt_rv
+  Instance sa_filtration_history_lt_rv
         {rv : forall n, RandomVariable dom cod (X n)}
         (n : nat) (j:nat) (jlt: (j < n)%nat) :
     RandomVariable (filtration_history_sa n) cod (X j).
@@ -598,29 +598,19 @@ Section filtration.
   Definition filtration_history_limit_sa : SigmaAlgebra Ts
     := countable_union_sa (fun k => pullback_sa _ (X k)).
 
-  Lemma trivial_sa_sub (sa:SigmaAlgebra Ts) : 
-    sa_sub (trivial_sa Ts) sa.
-  Proof.
-    intros ?[?|?].
-    - rewrite H.
-      apply sa_none.
-    - rewrite H.
-      apply sa_all.
-  Qed.
-
-  Lemma filtration_history_sa_sub :
-    (forall n, RandomVariable dom cod (X n)) ->
-    forall n, sa_sub  (filtration_history_sa n) dom.
+  Lemma filtration_history_sa_sub 
+    {rv:forall n, RandomVariable dom cod (X n)} :
+    forall n, sa_sub (filtration_history_sa n) dom.
   Proof.
     induction n; simpl.
     - apply trivial_sa_sub.
     - unfold union_sa.
       intros ??.
-      apply H0.
+      apply H.
       unfold all_included, pre_event_union.
       intros.
-      destruct H1.
-      + now apply (pullback_rv_sub dom cod (X n) (H n)).
+      destruct H0.
+      + now apply (pullback_rv_sub dom cod (X n) (rv n)).
       + now apply IHn.
    Qed.      
 
@@ -646,6 +636,17 @@ Section filtration.
     apply pullback_rv.
   Qed.
   
+  Lemma filtration_history_limit_sa_sub 
+    {rv:forall n, RandomVariable dom cod (X n)} :
+    sa_sub filtration_history_limit_sa dom.
+  Proof.
+    intros ??.
+    apply H; intros ?[?[?[??]]].
+    apply (sa_proper _ (fun omega : Ts => x1 (X x0 omega))).
+    - now intros ?; rewrite H1.
+    - apply (rv x0 (exist _ x1 H0)).
+  Qed.
+
 End filtration.
   
 Section sa_sub.

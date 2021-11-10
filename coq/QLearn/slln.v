@@ -747,21 +747,21 @@ Lemma expec_cross_zero_condexp (X : nat -> Ts -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
       {frf : forall (n:nat), FiniteRangeFunction (X n)}
       (HC : forall n, 
-          rv_eq (ConditionalExpectation Prts (filtration_history_sa_sub X _ n) (X n))
+          rv_eq (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X n))
                 (const 0))  :
   forall (j k : nat), 
     (j < k)%nat ->
     SimpleExpectation(rvmult (X k) (X j)) = 0.
  Proof.
    intros j k jltk.
-   generalize (Condexp_Expectation Prts (filtration_history_sa_sub X rv k)); intros.
+   generalize (Condexp_Expectation Prts (filtration_history_sa_sub X k)); intros.
    assert (rv0 : RandomVariable dom borel_sa (rvmult (X k) (X j))) by typeclasses eauto.
    specialize (H (rvmult (X k) (X j)) _).
    cut_to H.
-   - generalize (Condexp_factor_out Prts (filtration_history_sa_sub X rv k)); intros.
+   - generalize (Condexp_factor_out Prts (filtration_history_sa_sub X k)); intros.
      specialize (H0 (X k) (X j) _).
      assert (rvj: RandomVariable (filtration_history_sa X k) borel_sa (X j)) by 
-       now apply  sa_filtration_lt_rv.
+       now apply  sa_filtration_history_lt_rv.
      specialize (H0 rvj _).
      cut_to H0.
      * Admitted.
