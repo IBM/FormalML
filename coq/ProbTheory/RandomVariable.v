@@ -558,6 +558,7 @@ Section filtration.
                       (filtration_history_sa k)
     end.
 
+
   Lemma filtration_history_sa_S_sub n :
     sa_sub (filtration_history_sa n) (filtration_history_sa (S n)).
   Proof.
@@ -606,6 +607,22 @@ Section filtration.
     - rewrite H.
       apply sa_all.
   Qed.
+
+  Lemma filtration_history_sa_sub :
+    (forall n, RandomVariable dom cod (X n)) ->
+    forall n, sa_sub  (filtration_history_sa n) dom.
+  Proof.
+    induction n; simpl.
+    - apply trivial_sa_sub.
+    - unfold union_sa.
+      intros ??.
+      apply H0.
+      unfold all_included, pre_event_union.
+      intros.
+      destruct H1.
+      + now apply (pullback_rv_sub dom cod (X n) (H n)).
+      + now apply IHn.
+   Qed.      
 
   Lemma filtration_history_limit_sa_le_sub n : 
     sa_sub (filtration_history_sa n) filtration_history_limit_sa.
