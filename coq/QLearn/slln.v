@@ -745,26 +745,48 @@ Qed.
 
 Lemma expec_cross_zero_condexp (X : nat -> Ts -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
-      {frf : forall (n:nat), FiniteRangeFunction (X n)}
+      {frf : forall (n:nat), IsFiniteExpectation Prts (X n)}
+      {frfmult : forall (k j:nat), IsFiniteExpectation Prts (rvmult (X k) (X j))}
       (HC : forall n, 
           rv_eq (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X n))
                 (const 0))  :
   forall (j k : nat), 
     (j < k)%nat ->
-    SimpleExpectation(rvmult (X k) (X j)) = 0.
+    Expectation(rvmult (X k) (X j)) = Some (Rbar.Finite 0).
  Proof.
    intros j k jltk.
    generalize (Condexp_Expectation Prts (filtration_history_sa_sub X k)); intros.
    assert (rv0 : RandomVariable dom borel_sa (rvmult (X k) (X j))) by typeclasses eauto.
    specialize (H (rvmult (X k) (X j)) _).
-   cut_to H.
-   - generalize (Condexp_factor_out Prts (filtration_history_sa_sub X k)); intros.
-     specialize (H0 (X k) (X j) _).
-     assert (rvj: RandomVariable (filtration_history_sa X k) borel_sa (X j)) by 
+   cut_to H; trivial.
+   generalize (Condexp_factor_out Prts (filtration_history_sa_sub X k)); intros.
+   specialize (H0 (X k) (X j) _).
+   assert (rvj: RandomVariable (filtration_history_sa X k) borel_sa (X j)) by 
        now apply  sa_filtration_history_lt_rv.
-     specialize (H0 rvj _).
-     cut_to H0.
-     * Admitted.
+   specialize (H0 rvj _).
+   cut_to H0; trivial.
+   assert (eqq1:
+             almostR2 (prob_space_sa_sub Prts (filtration_history_sa_sub X k)) eq
+                      (ConditionalExpectation Prts (filtration_history_sa_sub X k) (rvmult (X k) (X j)))
+                      (const 0)).
+   {
+     revert H0.
+     apply almost_impl; apply all_almost; intros ??.
+     rewrite H0.
+     unfold Rbar_rvmult.
+     rewrite HC.
+     unfold const.
+     now rewrite Rbar_mult_0_r.
+   }
+   apply almostR2_prob_space_sa_sub_lift in eqq1.
+   erewrite RbarExpectation.Rbar_Expectation_almostR2_proper in H; try eapply eqq1.
+   - rewrite H.
+     apply RbarExpectation.Rbar_Expectation_const.
+   - generalize (Condexp_rv _ (filtration_history_sa_sub X k) (rvmult (X k) (X j))).
+     eapply RandomVariable_sa_sub.
+     now apply filtration_history_sa_sub.
+   - typeclasses eauto.
+ Qed.
 
 Lemma SimpleExpectation_rvsum {n}  
       (X : nat -> Ts -> R)
