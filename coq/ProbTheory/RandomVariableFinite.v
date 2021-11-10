@@ -671,7 +671,6 @@ Section fe.
 
   Lemma sum_expectation
         (Xn : nat -> Ts -> R)
-        (Xn_pos : forall n, NonnegativeFunction (Xn n))
         (Xn_rv : forall n, RandomVariable dom borel_sa  (Xn n)) 
         (isfe : forall n, IsFiniteExpectation (Xn n)) :
     forall (n:nat),
