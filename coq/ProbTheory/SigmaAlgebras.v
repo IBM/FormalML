@@ -515,6 +515,45 @@ Proof.
   reflexivity.
 Qed.
 
+Definition union_sa {T : Type} (sa1 sa2:SigmaAlgebra T) :=
+  generated_sa (pre_event_union (@sa_sigma _ sa1) 
+                                (@sa_sigma _ sa2)).
+
+Lemma union_sa_proper {T:Type}  :
+  Proper (sa_equiv ==> sa_equiv ==> sa_equiv) (@union_sa T).
+Proof.
+  intros ??????.
+  unfold union_sa, pre_event_union.
+  apply generated_sa_equiv_subs.
+  split.
+  - intros ??; firstorder.
+  - intros ?; firstorder.
+Qed.
+
+Lemma union_sa_sub_proper {T:Type}  :
+  Proper (sa_sub ==> sa_sub ==> sa_sub) (@union_sa T).
+Proof.
+  intros ??????.
+  unfold union_sa, pre_event_union.
+  intros ??; firstorder.
+Qed.
+
+Lemma union_sa_sub_l {T : Type} (sa1 sa2:SigmaAlgebra T) :
+  sa_sub sa1 (union_sa sa1 sa2).
+Proof.
+  intros ????; simpl.
+  apply H0.
+  now left.
+Qed.
+
+Lemma union_sa_sub_r {T : Type} (sa1 sa2:SigmaAlgebra T) :
+  sa_sub sa2 (union_sa sa1 sa2).
+Proof.
+  intros ????; simpl.
+  apply H0.
+  now right.
+Qed.
+
 Definition is_countable {T} (e:pre_event T)
   := exists (coll:nat -> T -> Prop),
     (forall n t1 t2, coll n t1 -> coll n t2 -> t1 = t2) /\

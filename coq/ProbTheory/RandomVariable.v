@@ -47,6 +47,17 @@ Proof.
     apply (H2 (exist _ x2 (HH s))).
 Qed.
 
+Instance RandomVariable_proper_le {Ts Td : Type} :
+  Proper (sa_sub ==> sa_sub --> rv_eq ==> impl) (@RandomVariable Ts Td).
+Proof.
+  unfold RandomVariable.
+  intros ???????????.
+  rewrite <- H1.
+  apply H.
+  destruct B.
+  apply (H2 (exist _ x2 (H0 _ s))).
+Qed.
+
 Global Instance rv_preimage_proper
        {Ts:Type}
        {Td:Type}
@@ -528,6 +539,63 @@ Section pullback.
 
 End pullback.
 
+Require Import Lia.
+
+Section filtration.
+  Context {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          {Td:Type}
+          {cod: SigmaAlgebra Td}.
+
+  Context (X : nat -> Ts -> Td).
+  
+  Fixpoint sa_filtration_history
+           (n : nat)
+    : SigmaAlgebra Ts :=
+    match n with
+    | 0%nat => trivial_sa Ts
+    | S k => union_sa (pullback_sa _ (X k)) 
+                      (sa_filtration_history k)
+    end.
+
+  Lemma sa_filtration_history_S_sub n :
+    sa_sub (sa_filtration_history n) (sa_filtration_history (S n)).
+  Proof.
+    apply union_sa_sub_r.
+  Qed.
+
+  Lemma sa_filtration_history_le_sub n m : n <= m ->
+    sa_sub (sa_filtration_history n) (sa_filtration_history m).
+  Proof.
+    induction 1.
+    - reflexivity.
+    - rewrite IHle.
+      apply sa_filtration_history_S_sub.
+  Qed.
+
+  Instance sa_filtration_history_rv {rv : forall n, RandomVariable dom cod (X n)} n :
+    RandomVariable (sa_filtration_history (S n)) cod (X n).
+  Proof.
+    simpl.
+    intros ?.
+    apply union_sa_sub_l.
+    apply pullback_rv.
+  Qed.
+
+  Instance sa_filtration_lt_rv
+        {rv : forall n, RandomVariable dom cod (X n)}
+        (n : nat) (j:nat) (jlt: (j < n)%nat) :
+    RandomVariable (sa_filtration_history n) cod (X j).
+  Proof.
+    eapply (RandomVariable_proper_le (sa_filtration_history (S j))).
+    - now apply sa_filtration_history_le_sub.
+    - reflexivity.
+    - reflexivity.
+    - apply sa_filtration_history_rv.
+  Qed.
+
+End filtration.
+  
 Section sa_sub.
   Context {Ts:Type} 
           {dom: SigmaAlgebra Ts}
