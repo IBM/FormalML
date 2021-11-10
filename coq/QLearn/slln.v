@@ -752,7 +752,7 @@ Lemma expec_cross_zero_condexp (X : nat -> Ts -> R)
                 (const 0))  :
   forall (j k : nat), 
     (j < k)%nat ->
-    Expectation(rvmult (X k) (X j)) = Some (Rbar.Finite 0).
+    FiniteExpectation Prts (rvmult (X k) (X j)) = 0.
  Proof.
    intros j k jltk.
    generalize (Condexp_Expectation Prts (filtration_history_sa_sub X k)); intros.
@@ -780,8 +780,9 @@ Lemma expec_cross_zero_condexp (X : nat -> Ts -> R)
    }
    apply almostR2_prob_space_sa_sub_lift in eqq1.
    erewrite RbarExpectation.Rbar_Expectation_almostR2_proper in H; try eapply eqq1.
-   - rewrite H.
-     apply RbarExpectation.Rbar_Expectation_const.
+   - rewrite RbarExpectation.Rbar_Expectation_const in H.
+     rewrite (FiniteExpectation_Expectation _ _) in H.
+     congruence.
    - generalize (Condexp_rv _ (filtration_history_sa_sub X k) (rvmult (X k) (X j))).
      eapply RandomVariable_sa_sub.
      now apply filtration_history_sa_sub.
