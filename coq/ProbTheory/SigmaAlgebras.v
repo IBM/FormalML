@@ -384,7 +384,19 @@ Lemma generated_sa_equiv_subs {X:Type} (E1 E2:pre_event X -> Prop) :
 Proof.
   firstorder.
 Qed.
-             
+
+Global Instance generated_sa_sub_proper {X:Type}  :
+  Proper (pre_event_sub ==> sa_sub) (@generated_sa X).
+Proof.
+  firstorder.
+Qed.
+
+Global Instance generated_sa_proper {X:Type}  :
+  Proper (pre_event_equiv ==> sa_equiv) (@generated_sa X).
+Proof.
+  firstorder.
+Qed.
+
 Definition pre_event_set_product {T₁ T₂} (s₁ : pre_event T₁ -> Prop) (s₂ : pre_event T₂ -> Prop) : pre_event (T₁ * T₂) -> Prop
   := fun (e:pre_event (T₁ * T₂)) =>
        exists e₁ e₂,
@@ -519,7 +531,7 @@ Definition union_sa {T : Type} (sa1 sa2:SigmaAlgebra T) :=
   generated_sa (pre_event_union (@sa_sigma _ sa1) 
                                 (@sa_sigma _ sa2)).
 
-Lemma union_sa_proper {T:Type}  :
+Global Instance union_sa_proper {T:Type}  :
   Proper (sa_equiv ==> sa_equiv ==> sa_equiv) (@union_sa T).
 Proof.
   intros ??????.
@@ -530,7 +542,7 @@ Proof.
   - intros ?; firstorder.
 Qed.
 
-Lemma union_sa_sub_proper {T:Type}  :
+Global Instance union_sa_sub_proper {T:Type}  :
   Proper (sa_sub ==> sa_sub ==> sa_sub) (@union_sa T).
 Proof.
   intros ??????.
@@ -552,6 +564,38 @@ Proof.
   intros ????; simpl.
   apply H0.
   now right.
+Qed.
+
+Definition countable_union_sa {T : Type} (sas:nat->SigmaAlgebra T) :=
+  generated_sa (pre_union_of_collection (fun n => (@sa_sigma _ (sas n)))).
+
+Global Instance countable_union_sa_sub_proper {T:Type}  :
+  Proper (pointwise_relation _ sa_sub ==> sa_sub) (@countable_union_sa T).
+Proof.
+  intros ???.
+  unfold countable_union_sa, pre_union_of_collection.
+  apply generated_sa_sub_proper.
+  intros ? [n ?].
+  specialize (H n).
+  eauto.
+Qed.
+
+Lemma countable_union_sa_proper {T:Type}  :
+  Proper (pointwise_relation _ sa_equiv ==> sa_equiv) (@countable_union_sa T).
+Proof.
+  intros ???.
+  unfold countable_union_sa, pre_union_of_collection.
+  apply generated_sa_proper; intros ?.
+  split; intros [n ?]
+  ; exists n; now apply H.
+Qed.
+
+Lemma countable_union_sa_sub {T : Type} (sas:nat -> SigmaAlgebra T) :
+  forall n, sa_sub (sas n) (countable_union_sa sas).
+Proof.
+  intros ?????; simpl.
+  apply H0.
+  now exists n.
 Qed.
 
 Definition is_countable {T} (e:pre_event T)
