@@ -748,26 +748,27 @@ Lemma expec_cross_zero_condexp (X : nat -> Ts -> R)
       {frf : forall (n:nat), IsFiniteExpectation Prts (X n)}
       {frfmult : forall (k j:nat), IsFiniteExpectation Prts (rvmult (X k) (X j))}
       (HC : forall n, 
-          rv_eq (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X n))
+          rv_eq (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
                 (const 0))  :
   forall (j k : nat), 
     (j < k)%nat ->
     FiniteExpectation Prts (rvmult (X k) (X j)) = 0.
- Proof.
-   intros j k jltk.
-   generalize (Condexp_Expectation Prts (filtration_history_sa_sub X k)); intros.
-   assert (rv0 : RandomVariable dom borel_sa (rvmult (X k) (X j))) by typeclasses eauto.
-   specialize (H (rvmult (X k) (X j)) _).
+Proof.
+  intros j k jltk.
+  destruct k; try lia.
+  generalize (Condexp_Expectation Prts (filtration_history_sa_sub X k)); intros.
+   assert (rv0 : RandomVariable dom borel_sa (rvmult (X (S k)) (X j))) by typeclasses eauto.
+   specialize (H (rvmult (X (S k)) (X j)) _).
    cut_to H; trivial.
    generalize (Condexp_factor_out Prts (filtration_history_sa_sub X k)); intros.
-   specialize (H0 (X k) (X j) _).
-   assert (rvj: RandomVariable (filtration_history_sa X k) borel_sa (X j)) by 
-       now apply filtration_history_sa_lt_rv.
+   specialize (H0 (X (S k)) (X j) _).
+   assert (rvj: RandomVariable (filtration_history_sa X k) borel_sa (X j))
+     by (apply filtration_history_sa_le_rv; lia).
    specialize (H0 rvj _).
    cut_to H0; trivial.
    assert (eqq1:
              almostR2 (prob_space_sa_sub Prts (filtration_history_sa_sub X k)) eq
-                      (ConditionalExpectation Prts (filtration_history_sa_sub X k) (rvmult (X k) (X j)))
+                      (ConditionalExpectation Prts (filtration_history_sa_sub X k) (rvmult (X (S k)) (X j)))
                       (const 0)).
    {
      revert H0.
@@ -783,7 +784,7 @@ Lemma expec_cross_zero_condexp (X : nat -> Ts -> R)
    - rewrite RbarExpectation.Rbar_Expectation_const in H.
      rewrite (FiniteExpectation_Expectation _ _) in H.
      congruence.
-   - generalize (Condexp_rv _ (filtration_history_sa_sub X k) (rvmult (X k) (X j))).
+   - generalize (Condexp_rv _ (filtration_history_sa_sub X k) (rvmult (X (S k)) (X j))).
      eapply RandomVariable_sa_sub.
      now apply filtration_history_sa_sub.
    - typeclasses eauto.

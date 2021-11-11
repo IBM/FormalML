@@ -564,7 +564,7 @@ Section filtration.
 
     Global Instance filtrate_sa_rv {Td} {doms: nat -> SigmaAlgebra Ts} {cod: SigmaAlgebra Td} (rv:Ts->Td) n :
       RandomVariable (doms n) cod rv ->
-      RandomVariable (filtrate_sa doms (S n)) cod rv.
+      RandomVariable (filtrate_sa doms n) cod rv.
     Proof.
       eapply RandomVariable_proper_le; try reflexivity.
       apply filtrate_sa_sub.
@@ -586,41 +586,40 @@ Section filtration_history.
   Qed.
   
   Global Instance filtration_history_sa_rv n :
-    RandomVariable (filtration_history_sa (S n)) cod (X n).
+    RandomVariable (filtration_history_sa n) cod (X n).
   Proof.
     apply filtrate_sa_rv.
     apply pullback_rv.
   Qed.
 
-  Instance filtration_history_sa_lt_rv
-        (n : nat) (j:nat) (jlt: (j < n)%nat) :
+  Instance filtration_history_sa_le_rv
+        (n : nat) (j:nat) (jlt: (j <= n)%nat) :
     RandomVariable (filtration_history_sa n) cod (X j).
   Proof.
-    eapply (RandomVariable_proper_le (filtration_history_sa (S j)))
+    eapply (RandomVariable_proper_le (filtration_history_sa j))
     ; try reflexivity.
     - unfold filtration_history_sa.
-      apply is_filtration_le.
-      + try typeclasses eauto.
-      + lia.
+      apply is_filtration_le; trivial.
+      typeclasses eauto.
     - apply filtration_history_sa_rv.
   Qed.
 
-  Lemma filtration_history_sa_sub_lt {dom:SigmaAlgebra Ts} n
-        (rv:forall k, k < n -> RandomVariable dom cod (X k)) :
+  Lemma filtration_history_sa_sub_le {dom:SigmaAlgebra Ts} n
+        (rv:forall k, k <= n -> RandomVariable dom cod (X k)) :
     sa_sub (filtration_history_sa n) dom.
   Proof.
     intros.
     unfold filtration_history_sa.
     apply filtrate_sa_sub_all; intros.
     apply pullback_rv_sub; eauto.
-  Qed.    
+  Qed.
 
   Lemma filtration_history_sa_sub {dom:SigmaAlgebra Ts}
     {rv:forall n, RandomVariable dom cod (X n)} :
     forall n, sa_sub (filtration_history_sa n) dom.
   Proof.
     intros.
-    apply filtration_history_sa_sub_lt; auto.
+    apply filtration_history_sa_sub_le; auto.
   Qed.
 
   Definition filtration_history_limit_sa : SigmaAlgebra Ts
@@ -659,7 +658,7 @@ Section adapted.
     := is_adapted : forall (n:nat), RandomVariable (sas n) cod (X n).
 
   Global Instance filtration_history_sa_is_adapted (X : nat -> Ts -> Td) :
-    IsAdapted X (fun n => filtration_history_sa X (S n)).
+    IsAdapted X (filtration_history_sa X).
   Proof.
     intros n.
     apply filtration_history_sa_rv.

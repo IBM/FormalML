@@ -936,8 +936,8 @@ Section filtration.
     Context (sas:nat->SigmaAlgebra Ts).
     Fixpoint filtrate_sa (n : nat) : SigmaAlgebra Ts
       := match n with
-         | 0%nat => trivial_sa Ts
-         | S k => union_sa (sas k) (filtrate_sa k)
+         | 0%nat => sas 0%nat
+         | S k => union_sa (sas (S k)) (filtrate_sa k)
          end.
   End fs.
 
@@ -948,17 +948,20 @@ Section filtration.
     apply union_sa_sub_r.
   Qed.
 
-  Lemma filtrate_sa_sub (sas:nat->SigmaAlgebra Ts) (n : nat) : sa_sub (sas n) (filtrate_sa sas (S n)).
+  Lemma filtrate_sa_sub (sas:nat->SigmaAlgebra Ts) (n : nat) : sa_sub (sas n) (filtrate_sa sas n).
   Proof.
-    apply union_sa_sub_l.
+    unfold filtrate_sa.
+    destruct n; simpl.
+    - reflexivity.
+    - apply union_sa_sub_l.
   Qed.
 
   Lemma filtrate_sa_sub_all (sas:nat->SigmaAlgebra Ts) (dom : SigmaAlgebra Ts) (n : nat) :
-    (forall k, k < n -> sa_sub (sas k) dom) -> sa_sub (filtrate_sa sas n) dom.
+    (forall k, k <= n -> sa_sub (sas k) dom) -> sa_sub (filtrate_sa sas n) dom.
   Proof.
     simpl.
     induction n; simpl; intros.
-    - apply trivial_sa_sub.
+    - apply H; trivial.
     - apply union_sa_sub_both; eauto.
   Qed.
   
@@ -972,7 +975,9 @@ Section filtration.
     - intros ? [n ?].
       revert x H.
       induction n; simpl in *; intros.
-      + apply trivial_sa_sub; eauto.
+      + apply H0.
+        red.
+        eauto.
       + apply H.
         intros ? [?|?].
         * apply H0.
@@ -981,7 +986,7 @@ Section filtration.
     - intros ? [n ?].
       intros ??.
       apply H0.
-      exists (S n).
+      exists n.
       now apply filtrate_sa_sub.
   Qed.
 
