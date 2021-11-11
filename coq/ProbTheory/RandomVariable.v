@@ -651,4 +651,18 @@ Section filtration_history.
   Qed.
 
 End filtration_history.
-  
+
+Section adapted.
+  Context {Ts:Type} {Td:Type} {cod: SigmaAlgebra Td}.
+
+  Class IsAdapted (X : nat -> Ts -> Td) (sas : nat -> SigmaAlgebra Ts)
+    := is_adapted : forall (n:nat), RandomVariable (sas n) cod (X n).
+
+  Global Instance filtration_history_sa_is_adapted (X : nat -> Ts -> Td) :
+    IsAdapted X (fun n => filtration_history_sa X (S n)).
+  Proof.
+    intros n.
+    apply filtration_history_sa_rv.
+  Qed.
+
+End adapted.
