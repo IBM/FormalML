@@ -537,6 +537,28 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma nested_pullback_sa_equiv {X Y Z : Type} (sa : SigmaAlgebra Z) (f : X -> Y) (g : Y -> Z) :
+  sa_equiv (pullback_sa sa (fun x => g (f x))) (pullback_sa (pullback_sa sa g) f).
+Proof.
+  apply sa_equiv_subs.
+  split.
+  - intros ??.
+    simpl in *.
+    red.
+    red in H.
+    destruct H as [? [? ?]].
+    exists (fun x => x0 (g x)).
+    split; trivial.
+    now apply pullback_sa_pullback.
+  - intros ??.
+    simpl in *.
+    destruct H as [?[[?[??]]?]]; simpl in *.
+    red.
+    exists x1.
+    split; trivial.
+    firstorder.
+  Qed.
+
 Section isos.
   Context {Ts:Type} {Td:Type} {cod: SigmaAlgebra Td}.
 
