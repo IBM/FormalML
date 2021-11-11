@@ -576,6 +576,17 @@ Proof.
   now right.
 Qed.
 
+Lemma union_sa_sub_both {T : Type} {sa1 sa2 dom:SigmaAlgebra T} :
+  sa_sub sa1 dom ->
+  sa_sub sa2 dom ->
+  sa_sub (union_sa sa1 sa2) dom.
+Proof.
+  unfold union_sa; intros.
+  intros ? HH.
+  apply HH.
+  intros ? [?|?]; auto.
+Qed.  
+
 Definition countable_union_sa {T : Type} (sas:nat->SigmaAlgebra T) :=
   generated_sa (pre_union_of_collection (fun n => (@sa_sigma _ (sas n)))).
 
@@ -606,6 +617,16 @@ Proof.
   intros ?????; simpl.
   apply H0.
   now exists n.
+Qed.
+
+Lemma countable_union_sa_sub_all {T : Type} {sas:nat -> SigmaAlgebra T} {dom: SigmaAlgebra T} :
+  (forall n, sa_sub (sas n) dom) ->
+  sa_sub (countable_union_sa sas) dom.
+Proof.
+  intros ???; simpl.
+  apply H0.
+  intros ?[??].
+  eapply H; eauto.
 Qed.
 
 Definition is_countable {T} (e:pre_event T)
@@ -895,3 +916,80 @@ Section dec.
   Qed.
 
 End dec.
+
+Section filtration.
+  Context {Ts:Type}.
+
+  Class IsFiltration (sas:nat->SigmaAlgebra Ts)
+    := is_filtration : forall n, sa_sub (sas n) (sas (S n)).
+
+  Lemma is_filtration_le (sas:nat->SigmaAlgebra Ts) {isf:IsFiltration sas}
+    : forall k n, k <= n -> sa_sub (sas k) (sas n).
+  Proof.
+    induction 1.
+    - reflexivity.
+    - rewrite IHle.
+      apply is_filtration.
+  Qed.
+
+  Section fs.
+    Context (sas:nat->SigmaAlgebra Ts).
+    Fixpoint filtrate_sa (n : nat) : SigmaAlgebra Ts
+      := match n with
+         | 0%nat => trivial_sa Ts
+         | S k => union_sa (sas k) (filtrate_sa k)
+         end.
+  End fs.
+
+  Global Instance filtrate_sa_is_filtration (sas:nat->SigmaAlgebra Ts) :
+    IsFiltration (filtrate_sa sas).
+  Proof.
+    intros n; simpl.
+    apply union_sa_sub_r.
+  Qed.
+
+  Lemma filtrate_sa_sub (sas:nat->SigmaAlgebra Ts) (n : nat) : sa_sub (sas n) (filtrate_sa sas (S n)).
+  Proof.
+    apply union_sa_sub_l.
+  Qed.
+
+  Lemma filtrate_sa_sub_all (sas:nat->SigmaAlgebra Ts) (dom : SigmaAlgebra Ts) (n : nat) :
+    (forall k, k < n -> sa_sub (sas k) dom) -> sa_sub (filtrate_sa sas n) dom.
+  Proof.
+    simpl.
+    induction n; simpl; intros.
+    - apply trivial_sa_sub.
+    - apply union_sa_sub_both; eauto.
+  Qed.
+  
+  (* In the limit, its all the same *)
+  Lemma filtrate_sa_countable_union (sas:nat->SigmaAlgebra Ts) :
+    sa_equiv (countable_union_sa (filtrate_sa sas)) (countable_union_sa sas).
+  Proof.
+    unfold countable_union_sa.
+    apply generated_sa_equiv_subs.
+    split.
+    - intros ? [n ?].
+      revert x H.
+      induction n; simpl in *; intros.
+      + apply trivial_sa_sub; eauto.
+      + apply H.
+        intros ? [?|?].
+        * apply H0.
+          red; eauto.
+        * apply IHn; trivial.
+    - intros ? [n ?].
+      intros ??.
+      apply H0.
+      exists (S n).
+      now apply filtrate_sa_sub.
+  Qed.
+
+  Lemma filtrate_sa_countable_union_sub  (sas:nat->SigmaAlgebra Ts) n :
+    sa_sub (filtrate_sa sas n) (countable_union_sa sas).
+  Proof.
+    rewrite <- filtrate_sa_countable_union.
+    apply countable_union_sa_sub.
+  Qed.
+
+End filtration.

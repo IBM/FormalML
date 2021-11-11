@@ -762,7 +762,7 @@ Lemma expec_cross_zero_condexp (X : nat -> Ts -> R)
    generalize (Condexp_factor_out Prts (filtration_history_sa_sub X k)); intros.
    specialize (H0 (X k) (X j) _).
    assert (rvj: RandomVariable (filtration_history_sa X k) borel_sa (X j)) by 
-       now apply  sa_filtration_history_lt_rv.
+       now apply filtration_history_sa_lt_rv.
    specialize (H0 rvj _).
    cut_to H0; trivial.
    assert (eqq1:

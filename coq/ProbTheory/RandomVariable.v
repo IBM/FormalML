@@ -1,5 +1,5 @@
 Require Export Program.Basics.
-Require Import List Morphisms.
+Require Import List Morphisms Lia.
 
 Require Export LibUtils BasicUtils ProbSpace SigmaAlgebras.
 Require Classical.
@@ -539,116 +539,6 @@ Section pullback.
 
 End pullback.
 
-Require Import Lia.
-
-Section filtration.
-  Context {Ts:Type} 
-          {dom: SigmaAlgebra Ts}
-          {Td:Type}
-          {cod: SigmaAlgebra Td}.
-
-  Context (X : nat -> Ts -> Td).
-  
-  Fixpoint filtration_history_sa
-           (n : nat)
-    : SigmaAlgebra Ts :=
-    match n with
-    | 0%nat => trivial_sa Ts
-    | S k => union_sa (pullback_sa _ (X k)) 
-                      (filtration_history_sa k)
-    end.
-
-
-  Lemma filtration_history_sa_S_sub n :
-    sa_sub (filtration_history_sa n) (filtration_history_sa (S n)).
-  Proof.
-    apply union_sa_sub_r.
-  Qed.
-
-  Lemma filtration_history_sa_le_sub n m : n <= m ->
-    sa_sub (filtration_history_sa n) (filtration_history_sa m).
-  Proof.
-    induction 1.
-    - reflexivity.
-    - rewrite IHle.
-      apply filtration_history_sa_S_sub.
-  Qed.
-
-  Instance filtration_history_sa_rv {rv : forall n, RandomVariable dom cod (X n)} n :
-    RandomVariable (filtration_history_sa (S n)) cod (X n).
-  Proof.
-    simpl.
-    intros ?.
-    apply union_sa_sub_l.
-    apply pullback_rv.
-  Qed.
-
-  Instance sa_filtration_history_lt_rv
-        {rv : forall n, RandomVariable dom cod (X n)}
-        (n : nat) (j:nat) (jlt: (j < n)%nat) :
-    RandomVariable (filtration_history_sa n) cod (X j).
-  Proof.
-    eapply (RandomVariable_proper_le (filtration_history_sa (S j))).
-    - now apply filtration_history_sa_le_sub.
-    - reflexivity.
-    - reflexivity.
-    - apply filtration_history_sa_rv.
-  Qed.
-
-  Definition filtration_history_limit_sa : SigmaAlgebra Ts
-    := countable_union_sa (fun k => pullback_sa _ (X k)).
-
-  Lemma filtration_history_sa_sub 
-    {rv:forall n, RandomVariable dom cod (X n)} :
-    forall n, sa_sub (filtration_history_sa n) dom.
-  Proof.
-    induction n; simpl.
-    - apply trivial_sa_sub.
-    - unfold union_sa.
-      intros ??.
-      apply H.
-      unfold all_included, pre_event_union.
-      intros.
-      destruct H0.
-      + now apply (pullback_rv_sub dom cod (X n) (rv n)).
-      + now apply IHn.
-   Qed.      
-
-  Lemma filtration_history_limit_sa_le_sub n : 
-    sa_sub (filtration_history_sa n) filtration_history_limit_sa.
-  Proof.
-    induction n; simpl.
-    - apply trivial_sa_sub.
-    - unfold union_sa.
-      apply generated_sa_sub_sub.
-      intros ?[?|?].
-      + apply generated_sa_sub.
-        red; eauto.
-      + now apply IHn.
-  Qed.
-
-  Instance filtration_history_limit_sa_rv {rv : forall n, RandomVariable dom cod (X n)} n :
-    RandomVariable (filtration_history_limit_sa) cod (X n).
-  Proof.
-    simpl.
-    intros ?.
-    eapply countable_union_sa_sub.
-    apply pullback_rv.
-  Qed.
-  
-  Lemma filtration_history_limit_sa_sub 
-    {rv:forall n, RandomVariable dom cod (X n)} :
-    sa_sub filtration_history_limit_sa dom.
-  Proof.
-    intros ??.
-    apply H; intros ?[?[?[??]]].
-    apply (sa_proper _ (fun omega : Ts => x1 (X x0 omega))).
-    - now intros ?; rewrite H1.
-    - apply (rv x0 (exist _ x1 H0)).
-  Qed.
-
-End filtration.
-  
 Section sa_sub.
   Context {Ts:Type} 
           {dom: SigmaAlgebra Ts}
@@ -667,3 +557,98 @@ Section sa_sub.
   Qed.
 
 End sa_sub.
+
+
+Section filtration.
+    Context {Ts:Type}.
+
+    Global Instance filtrate_sa_rv {Td} {doms: nat -> SigmaAlgebra Ts} {cod: SigmaAlgebra Td} (rv:Ts->Td) n :
+      RandomVariable (doms n) cod rv ->
+      RandomVariable (filtrate_sa doms (S n)) cod rv.
+    Proof.
+      eapply RandomVariable_proper_le; try reflexivity.
+      apply filtrate_sa_sub.
+    Qed.
+    
+End filtration.
+
+Section filtration_history.
+  Context {Ts:Type} {Td:Type} {cod: SigmaAlgebra Td}.
+
+  Context (X : nat -> Ts -> Td).
+  
+  Definition filtration_history_sa : nat -> SigmaAlgebra Ts :=
+    filtrate_sa (fun n => pullback_sa cod (X n)).
+
+  Global Instance filtration_history_sa_is_filtration : IsFiltration (filtration_history_sa).
+  Proof.
+    typeclasses eauto.
+  Qed.
+  
+  Global Instance filtration_history_sa_rv n :
+    RandomVariable (filtration_history_sa (S n)) cod (X n).
+  Proof.
+    apply filtrate_sa_rv.
+    apply pullback_rv.
+  Qed.
+
+  Instance filtration_history_sa_lt_rv
+        (n : nat) (j:nat) (jlt: (j < n)%nat) :
+    RandomVariable (filtration_history_sa n) cod (X j).
+  Proof.
+    eapply (RandomVariable_proper_le (filtration_history_sa (S j)))
+    ; try reflexivity.
+    - unfold filtration_history_sa.
+      apply is_filtration_le.
+      + try typeclasses eauto.
+      + lia.
+    - apply filtration_history_sa_rv.
+  Qed.
+
+  Lemma filtration_history_sa_sub_lt {dom:SigmaAlgebra Ts} n
+        (rv:forall k, k < n -> RandomVariable dom cod (X k)) :
+    sa_sub (filtration_history_sa n) dom.
+  Proof.
+    intros.
+    unfold filtration_history_sa.
+    apply filtrate_sa_sub_all; intros.
+    apply pullback_rv_sub; eauto.
+  Qed.    
+
+  Lemma filtration_history_sa_sub {dom:SigmaAlgebra Ts}
+    {rv:forall n, RandomVariable dom cod (X n)} :
+    forall n, sa_sub (filtration_history_sa n) dom.
+  Proof.
+    intros.
+    apply filtration_history_sa_sub_lt; auto.
+  Qed.
+
+  Definition filtration_history_limit_sa : SigmaAlgebra Ts
+    := countable_union_sa (fun k => pullback_sa _ (X k)).
+
+  Lemma filtration_history_limit_sa_le_sub n : 
+    sa_sub (filtration_history_sa n) filtration_history_limit_sa.
+  Proof.
+    apply filtrate_sa_countable_union_sub.
+  Qed.
+
+  Global Instance filtration_history_limit_sa_rv n :
+    RandomVariable (filtration_history_limit_sa) cod (X n).
+  Proof.
+    simpl.
+    intros ?.
+    eapply countable_union_sa_sub.
+    apply pullback_rv.
+  Qed.
+  
+  Lemma filtration_history_limit_sa_sub (dom:SigmaAlgebra Ts)
+    {rv:forall n, RandomVariable dom cod (X n)} :
+    sa_sub filtration_history_limit_sa dom.
+  Proof.
+    intros.
+    apply countable_union_sa_sub_all; intros.
+    now apply pullback_rv_sub.
+  Qed.
+
+End filtration_history.
+  
