@@ -651,6 +651,47 @@ Section filtration_history.
 
 End filtration_history.
 
+Section filtration_history_props.
+
+  Context {Ts:Type} {Td:Type} {cod: SigmaAlgebra Td}.
+
+  Lemma filtration_history_sa_iso_l_sub
+        (rv1 : nat -> Ts -> Td) (f g : nat -> Td -> Td)
+        (inv:forall n x, g n (f n x) = x)
+        (g_sigma:forall k s, sa_sigma s -> sa_sigma (fun x => s (g k x))) :
+    forall n, sa_sub (filtration_history_sa rv1 n) ((filtration_history_sa (fun n x => f n (rv1 n x)) n)).
+  Proof.
+    unfold filtration_history_sa.
+    intros.
+    apply filtrate_sa_sub_proper; intros k.
+    eapply pullback_sa_iso_l_sub; eauto.
+  Qed.
+
+  Lemma filtration_history_sa_f_sub
+        (rv1 : nat -> Ts -> Td) (f : nat -> Td -> Td)
+        (f_sigma:forall k s, sa_sigma s -> sa_sigma (fun x => s (f k x))) :
+    forall n, sa_sub ((filtration_history_sa (fun n x => f n (rv1 n x)) n)) (filtration_history_sa rv1 n).
+  Proof.
+    unfold filtration_history_sa.
+    intros.
+    apply filtrate_sa_sub_proper; intros k.
+    eapply pullback_sa_f_sub; eauto.
+  Qed.
+
+  Lemma filtration_history_sa_isos
+        (rv1 : nat -> Ts -> Td) (f g : nat -> Td -> Td)
+        (inv:forall n x, g n (f n x) = x)
+        (f_sigma:forall k s, sa_sigma s -> sa_sigma (fun x => s (f k x)))
+        (g_sigma:forall k s, sa_sigma s -> sa_sigma (fun x => s (g k x))) :
+    forall n, sa_equiv (filtration_history_sa rv1 n) ((filtration_history_sa (fun n x => f n (rv1 n x)) n)).
+  Proof.
+    unfold filtration_history_sa; intros.
+    apply filtrate_sa_proper; intros k.
+    apply (pullback_sa_isos (rv1 k) (f k) (g k)); auto.
+  Qed.
+
+End filtration_history_props.
+
 Section adapted.
   Context {Ts:Type} {Td:Type} {cod: SigmaAlgebra Td}.
 

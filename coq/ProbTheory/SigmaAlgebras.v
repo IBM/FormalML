@@ -537,6 +537,50 @@ Proof.
   reflexivity.
 Qed.
 
+Section isos.
+  Context {Ts:Type} {Td:Type} {cod: SigmaAlgebra Td}.
+
+  Lemma pullback_sa_iso_l_sub (rv1 : Ts -> Td) (f g : Td -> Td)
+    (inv:forall x, g (f x) = x)
+    (g_sigma:forall s, sa_sigma s -> sa_sigma (fun x => s (g x))) :
+    sa_sub (pullback_sa _ rv1) (pullback_sa _ (fun x => f (rv1 x))).
+  Proof.
+    intros ? [? [??]]; simpl in *.
+    red.
+    exists (fun x => x0 (g x)).
+    split.
+    - auto.
+    - intros.
+      split; intros ?.
+      + now rewrite inv, <- H0.
+      + now rewrite inv, <- H0 in H1.
+  Qed.
+
+  Lemma pullback_sa_f_sub (rv1 : Ts -> Td) (f : Td -> Td)
+    (f_sigma:forall s, sa_sigma s -> sa_sigma (fun x => s (f x))) :
+    sa_sub (pullback_sa _ (fun x => f (rv1 x))) (pullback_sa _ rv1).
+  Proof.
+    intros ? [? [??]]; simpl in *.
+    red.
+    exists (fun x => x0 (f x)).
+    split; auto.
+  Qed.
+
+  Lemma pullback_sa_isos (rv1 : Ts -> Td) (f g : Td -> Td)
+    (inv:forall x, g (f x) = x)
+    (f_sigma:forall s, sa_sigma s -> sa_sigma (fun x => s (g x)))
+    (g_sigma:forall s, sa_sigma s -> sa_sigma (fun x => s (f x))) :
+    sa_equiv (pullback_sa _ rv1) (pullback_sa _ (fun x => f (rv1 x))).
+  Proof.
+    apply sa_equiv_subs.
+    split.
+    - eapply pullback_sa_iso_l_sub; eauto.
+    - now apply pullback_sa_f_sub.
+  Qed.
+
+End isos.
+
+
 Definition union_sa {T : Type} (sa1 sa2:SigmaAlgebra T) :=
   generated_sa (pre_event_union (@sa_sigma _ sa1) 
                                 (@sa_sigma _ sa2)).
@@ -995,6 +1039,22 @@ Section filtration.
   Proof.
     rewrite <- filtrate_sa_countable_union.
     apply countable_union_sa_sub.
+  Qed.
+
+  Global Instance filtrate_sa_sub_proper : Proper (pointwise_relation _ sa_sub ==> pointwise_relation _ sa_sub) filtrate_sa.
+  Proof.
+    intros ??? n.
+    induction n; simpl.
+    - apply H.
+    - now apply union_sa_sub_proper. 
+  Qed.
+
+  Global Instance filtrate_sa_proper : Proper (pointwise_relation _ sa_equiv ==> pointwise_relation _ sa_equiv) filtrate_sa.
+  Proof.
+    intros ????.
+    apply antisymmetry; apply filtrate_sa_sub_proper; intros n
+    ; specialize (H n); apply sa_equiv_subs in H
+    ; tauto.
   Qed.
 
 End filtration.
