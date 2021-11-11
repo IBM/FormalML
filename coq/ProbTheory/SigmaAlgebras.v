@@ -557,7 +557,14 @@ Proof.
     exists x1.
     split; trivial.
     firstorder.
-  Qed.
+Qed.
+
+Lemma pullback_sa_compose_equiv {X Y Z : Type} (sa : SigmaAlgebra Z) (f : X -> Y) (g : Y -> Z) :
+  sa_equiv (pullback_sa sa (compose g f)) (pullback_sa (pullback_sa sa g) f).
+Proof.
+  rewrite <- nested_pullback_sa_equiv.
+  apply pullback_sa_proper; try reflexivity.
+Qed.
 
 Section isos.
   Context {Ts:Type} {Td:Type} {cod: SigmaAlgebra Td}.

@@ -537,6 +537,22 @@ Section pullback.
       apply frv.
   Qed.
 
+  Lemma pullback_sa_compose_sub
+        {Ts:Type} {Td:Type}
+        (dom : SigmaAlgebra Ts)
+        (cod: SigmaAlgebra Td)
+        (f: Ts -> Td) (g:Td -> Td):
+    sa_sub (pullback_sa cod g) cod ->
+    sa_sub (pullback_sa cod (compose g f)) (pullback_sa cod f).
+  Proof.
+    intros.
+    rewrite pullback_sa_compose_equiv.
+    apply pullback_rv_sub.
+    generalize (pullback_rv cod f).
+    apply RandomVariable_proper_le; try reflexivity.
+    now unfold flip.
+  Qed.    
+
 End pullback.
 
 Section sa_sub.
