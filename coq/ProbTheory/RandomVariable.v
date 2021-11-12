@@ -570,14 +570,13 @@ Section pullback.
         (cod: SigmaAlgebra Td)
         (rvf : RandomVariable cod cod f)
         (rvg : RandomVariable cod cod g)
-        (inv:forall (rv : Ts -> Td) , compose g (compose f rv) = rv) :
+        (inv:forall (rv : Ts -> Td) , rv_eq (compose g (compose f rv)) rv) :
     sa_equiv (pullback_sa cod rv1) (pullback_sa cod (compose f rv1)).
   Proof.
     apply sa_equiv_subs.
     split.
-    - replace (rv1) with (compose g (compose f rv1)) at 1.
-      + now apply pullback_sa_compose_sub_rv.
-      + apply inv.
+    - rewrite <- (inv rv1) at 1.
+      now apply pullback_sa_compose_sub_rv.
     - now apply pullback_sa_compose_sub_rv.
   Qed.
     
