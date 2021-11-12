@@ -124,6 +124,14 @@ Section Const.
 
 End Const.
 
+Instance id_rv {Ts} {dom:SigmaAlgebra Ts} : RandomVariable dom dom (fun x => x).
+Proof.
+  intros ?.
+  unfold event_preimage.
+  destruct B; simpl.
+  apply s.
+Qed.
+
 Section Simple.
   Context {Ts:Type} {Td:Type}.
 
