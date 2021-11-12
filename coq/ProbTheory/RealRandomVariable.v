@@ -910,6 +910,17 @@ Section RealRandomVariables.
         ; now apply rv_measurable.
       Qed.
 
+      Instance continuous_compose_rv
+               (f: Ts -> R) (g:R->R)
+               {frv : RandomVariable dom borel_sa f}
+               (gcont : continuity g) :
+        RandomVariable dom borel_sa (compose g f).
+      Proof.
+        apply measurable_rv.
+        apply measurable_continuous; trivial.
+        now apply rv_measurable.
+      Qed.        
+
     End rvs.
 
   End measurable.
@@ -1723,6 +1734,22 @@ Section RealRandomVariables.
 End RealRandomVariables.
 
 Section MoreRealRandomVariable.
+
+  Instance id_rv {Ts} {dom:SigmaAlgebra Ts} : RandomVariable dom dom (fun x => x).
+  Proof.
+    intros ?.
+    unfold event_preimage.
+    destruct B; simpl.
+    apply s.
+  Qed.
+  
+  Instance continuity_rv (g : R -> R) :
+    continuity g ->
+    RandomVariable borel_sa borel_sa g.
+  Proof.
+    intros gcont.
+    apply (continuous_compose_rv borel_sa (fun x => x) g gcont).
+  Qed.
 
   Context {Ts:Type}.
 
