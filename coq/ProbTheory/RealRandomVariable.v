@@ -4595,6 +4595,69 @@ Section EventRestricted.
 
 End EventRestricted.
 
+Section real_pullback.
+  
+  Lemma pullback_sa_plus_sub {Ts} (x1 x2 : Ts -> R) :
+    sa_sub (pullback_sa borel_sa (rvplus x1 x2)) (union_sa (pullback_sa _ x1) (pullback_sa _ x2)).
+  Proof.
+    apply pullback_rv_sub.
+    apply rvplus_rv.
+    - generalize (pullback_rv borel_sa x1).
+      apply RandomVariable_proper_le; try reflexivity.
+      apply union_sa_sub_l.
+    - generalize (pullback_rv borel_sa x2).
+      apply RandomVariable_proper_le; try reflexivity.
+      apply union_sa_sub_r.
+  Qed.
+
+  Lemma pullback_sa_minus_sub {Ts} (x1 x2 : Ts -> R) :
+    sa_sub (pullback_sa borel_sa (rvminus x1 x2)) (union_sa (pullback_sa _ x1) (pullback_sa _ x2)).
+  Proof.
+    apply pullback_rv_sub.
+    apply rvminus_rv.
+    - generalize (pullback_rv borel_sa x1).
+      apply RandomVariable_proper_le; try reflexivity.
+      apply union_sa_sub_l.
+    - generalize (pullback_rv borel_sa x2).
+      apply RandomVariable_proper_le; try reflexivity.
+      apply union_sa_sub_r.
+  Qed.
+
+  Lemma pullback_sa_mult_sub {Ts} (x1 x2 : Ts -> R) :
+    sa_sub (pullback_sa borel_sa (rvmult x1 x2)) (union_sa (pullback_sa _ x1) (pullback_sa _ x2)).
+  Proof.
+    apply pullback_rv_sub.
+    apply rvmult_rv.
+    - generalize (pullback_rv borel_sa x1).
+      apply RandomVariable_proper_le; try reflexivity.
+      apply union_sa_sub_l.
+    - generalize (pullback_rv borel_sa x2).
+      apply RandomVariable_proper_le; try reflexivity.
+      apply union_sa_sub_r.
+  Qed.
+
+
+  Lemma pullback_sa_plus_equiv {Ts} (x1 x2 : Ts -> R) :
+    sa_equiv (union_sa (pullback_sa _ x1) (pullback_sa _ x2)) (union_sa (pullback_sa _ x1) (pullback_sa borel_sa (rvplus x1 x2))).
+  Proof.
+    apply sa_equiv_subs.
+    split.
+    - apply union_sa_sub_both.
+      + apply union_sa_sub_l.
+      + assert (rv_eq x2 (rvminus (rvplus x1 x2) x1)).
+        {
+          intros ?; rv_unfold; lra.
+        }
+        rewrite H at 1.
+        rewrite union_sa_comm.
+        apply pullback_sa_minus_sub.
+    - apply union_sa_sub_both.
+      + apply union_sa_sub_l.
+      + apply pullback_sa_plus_sub.
+  Qed.
+
+End real_pullback.
+
 (*
 Section prob.
   Local Open Scope R.

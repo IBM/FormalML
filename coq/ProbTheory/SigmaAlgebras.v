@@ -649,6 +649,13 @@ Proof.
   now right.
 Qed.
 
+Lemma union_sa_comm {T : Type} (sa1 sa2:SigmaAlgebra T) :
+  sa_equiv (union_sa sa1 sa2) (union_sa sa2 sa1).
+Proof.
+  apply generated_sa_proper.
+  apply pre_event_union_comm.
+Qed.
+
 Lemma union_sa_sub_both {T : Type} {sa1 sa2 dom:SigmaAlgebra T} :
   sa_sub sa1 dom ->
   sa_sub sa2 dom ->
