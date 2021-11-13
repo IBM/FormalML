@@ -1403,3 +1403,28 @@ Section vector_ops_ext.
   Qed.
 
 End vector_ops_ext.
+
+Section real_pullback.
+
+  Lemma pullback_sa_vecrvscale_equiv {Ts} {n} (c:R) (x : Ts -> vector R n) : c <> 0 ->
+    sa_equiv (pullback_sa (Rvector_borel_sa n) x) (pullback_sa (Rvector_borel_sa n) (vecrvscale c x)).
+  Proof.
+    intros cnzero.
+    apply sa_equiv_subs.
+    split.
+    - apply pullback_rv_sub.
+      generalize (Rvector_scale_rv (/ c) (vecrvscale c x) (dom:=(pullback_sa (Rvector_borel_sa n) (vecrvscale c x)))); intros HH.
+      cut_to HH.
+      + revert HH.
+        apply RandomVariable_proper; try reflexivity.
+        intros ?.
+        unfold vecrvscale.
+        rewrite Rvector_scale_scale.
+        rewrite Rinv_l, Rvector_scale1; trivial.
+      + apply pullback_rv.
+    - apply pullback_rv_sub.
+      apply Rvector_scale_rv.
+      apply pullback_rv.
+  Qed.
+ 
+End real_pullback.
