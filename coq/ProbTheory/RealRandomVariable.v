@@ -4656,6 +4656,73 @@ Section real_pullback.
       + apply pullback_sa_plus_sub.
   Qed.
 
+  Lemma history_pair_plus_equiv {Ts} (x : nat -> Ts -> R) :
+    rv_eq (x 0%nat) (const 0) ->
+    forall n,
+      sa_equiv (filtration_history_sa (fun n => (x (S n))) n) 
+               (filtration_history_sa (fun n => rvplus (x n) (x (S n))) n).
+ Proof.
+   intros.
+   induction n.
+   - simpl.
+     rewrite H.
+     unfold rvplus, const.
+     now setoid_rewrite Rplus_0_l.
+   - simpl.
+     rewrite <- IHn.
+     apply sa_equiv_subs.
+     split.
+     + apply union_sa_sub_both.
+       * assert (rv_eq (x (S (S n))) (rvminus (rvplus (x (S n)) (x (S (S n)))) (x (S n)))).
+        {
+          intros ?; rv_unfold; lra.
+        }
+        rewrite H0 at 1.
+        rewrite union_sa_comm.
+        apply pullback_rv_sub.
+        apply rvminus_rv.
+         -- generalize (pullback_rv borel_sa (rvplus (x (S n)) (x (S (S n))))).
+            apply RandomVariable_proper_le; try reflexivity.
+            apply union_sa_sub_r.
+         -- generalize (filtration_history_sa_rv (fun n => x (S n)) n).
+            apply RandomVariable_proper_le; try reflexivity.           
+            apply union_sa_sub_l.
+       * apply union_sa_sub_r.
+     + apply union_sa_sub_both.
+       * apply pullback_rv_sub.
+         apply rvplus_rv.
+         -- generalize (filtration_history_sa_rv (fun n => x (S n)) n); intros.
+            revert H0.
+            apply RandomVariable_sa_sub.
+            apply union_sa_sub_r.
+         -- generalize (pullback_rv borel_sa (x (S (S n)))); intros.
+            revert H0.
+            apply RandomVariable_sa_sub.
+            apply union_sa_sub_l.
+       * apply union_sa_sub_r.
+   Qed.
+
+  Lemma pullback_sa_rvscale_equiv {Ts} (c:R) (x : Ts -> R) : c <> 0 ->
+    sa_equiv (pullback_sa borel_sa x) (pullback_sa borel_sa (rvscale c x)).
+  Proof.
+    intros cnzero.
+    apply sa_equiv_subs.
+    split.
+    - apply pullback_rv_sub.
+      generalize (rvscale_rv (pullback_sa borel_sa (rvscale c x)) (/ c) (rvscale c x) ); intros HH.
+      cut_to HH.
+      + revert HH.
+        apply RandomVariable_proper; try reflexivity.
+        intros ?.
+        unfold rvscale.
+        rewrite <- Rmult_assoc.
+        now rewrite Rinv_l, Rmult_1_l.
+      + apply pullback_rv.
+    - apply pullback_rv_sub.
+      apply rvscale_rv.
+      apply pullback_rv.
+  Qed.
+
 End real_pullback.
 
 (*
