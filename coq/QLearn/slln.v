@@ -746,49 +746,28 @@ Qed.
 Lemma expec_cross_zero_finexp (X : nat -> Ts -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
       {frf : forall (n:nat), IsFiniteExpectation Prts (X n)}
-      {frfmult : forall (k j:nat), IsFiniteExpectation Prts (rvmult (X k) (X j))}
+      {frfmult : forall (k j:nat), IsFiniteExpectation Prts (rvmult (X k) (X j))} 
       (HC : forall n, 
           rv_eq (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
                 (const 0))  :
   forall (j k : nat), 
     (j < k)%nat ->
-    FiniteExpectation Prts (rvmult (X k) (X j)) = 0.
+    FiniteExpectation Prts (rvmult (X j) (X k)) = 0.
 Proof.
   intros j k jltk.
   destruct k; try lia.
-  generalize (Condexp_Expectation Prts (filtration_history_sa_sub X k)); intros.
-   assert (rv0 : RandomVariable dom borel_sa (rvmult (X (S k)) (X j))) by typeclasses eauto.
-   specialize (H (rvmult (X (S k)) (X j)) _).
-   cut_to H; trivial.
-   generalize (Condexp_factor_out Prts (filtration_history_sa_sub X k)); intros.
-   specialize (H0 (X (S k)) (X j) _).
-   assert (rvj: RandomVariable (filtration_history_sa X k) borel_sa (X j))
-     by (apply filtration_history_sa_le_rv; lia).
-   specialize (H0 rvj _).
-   cut_to H0; trivial.
-   assert (eqq1:
-             almostR2 (prob_space_sa_sub Prts (filtration_history_sa_sub X k)) eq
-                      (ConditionalExpectation Prts (filtration_history_sa_sub X k) (rvmult (X (S k)) (X j)))
-                      (const 0)).
-   {
-     revert H0.
-     apply almost_impl; apply all_almost; intros ??.
-     rewrite H0.
-     unfold Rbar_rvmult.
-     rewrite HC.
-     unfold const.
-     now rewrite Rbar_mult_0_r.
-   }
-   apply almostR2_prob_space_sa_sub_lift in eqq1.
-   erewrite RbarExpectation.Rbar_Expectation_almostR2_proper in H; try eapply eqq1.
-   - rewrite RbarExpectation.Rbar_Expectation_const in H.
-     rewrite (FiniteExpectation_Expectation _ _) in H.
-     congruence.
-   - generalize (Condexp_rv _ (filtration_history_sa_sub X k) (rvmult (X (S k)) (X j))).
-     eapply RandomVariable_sa_sub.
-     now apply filtration_history_sa_sub.
-   - typeclasses eauto.
- Qed.
+  eapply FiniteCondexp_factor_out_zero_swapped with (sub := filtration_history_sa_sub X k).
+  - apply filtration_history_sa_le_rv.
+    lia.
+  - generalize (FiniteCondexp_eq Prts (filtration_history_sa_sub X k) (X (S k))); intros.
+    specialize (HC k).
+    rewrite H in HC.
+    intros z.
+    specialize (HC z).
+    simpl in HC.
+    apply Rbar_finite_eq in HC.
+    apply HC.
+  Qed.
 
 Lemma SimpleExpectation_rvsum {n}  
       (X : nat -> Ts -> R)
@@ -846,7 +825,7 @@ Lemma expec_cross_zero_sum_shift_finexp (X : nat -> Ts -> R) (m:nat)
                 (const 0))  :
   forall (j k : nat), 
     (j < k)%nat ->
-    FiniteExpectation Prts (rvsum (fun n => rvmult (X (k+m)%nat) (X (n+m)%nat)) j) = 0.
+    FiniteExpectation Prts (rvsum (fun n => rvmult (X (n+m)%nat) (X (k+m)%nat)) j) = 0.
 Proof.
   intros.
   rewrite <- sum_expectation.
@@ -1775,13 +1754,8 @@ Qed.
   Lemma indicator_prod_cross_shift_finexp (j m:nat) (eps:R) (X: nat -> Ts -> R) 
       {rv : forall n, RandomVariable dom borel_sa (X n)}
       {frf : forall n, FiniteRangeFunction (X n)} 
-      {isfe : forall (n:nat), IsFiniteExpectation Prts (X n)}
-      {isfe_mult : forall (k j:nat), IsFiniteExpectation Prts (rvmult (X k) (X j))}
-      {isfe_mult_sum: forall (k j:nat),
-                             IsFiniteExpectation Prts (rvmult (rvsum (fun n : nat => X (n + m)%nat) j) 
-                                                              (X (k + m)%nat))}
       (HC : forall n, 
-          rv_eq (FiniteConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
+          rv_eq (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
                 (const 0))  :
   let Xm := fun n => X (n + m)%nat in 
   SimpleExpectation 
@@ -1790,85 +1764,12 @@ Qed.
             (X (S (j + m)))) = 0.
   Proof.
     intros.
-    generalize (FiniteCondexp_FiniteExpectation Prts (filtration_history_sa_sub X (j+m))); intros.
-    assert (rv_eq
-               (rvmult (rvmult (cutoff_eps_rv j eps (rvsum Xm)) (cutoff_indicator (S j) eps (rvsum Xm)))
-                       (X (S (j + m))))
-               (rvmult (X (S (j + m)))
-                       (rvmult (cutoff_eps_rv j eps (rvsum Xm)) (cutoff_indicator (S j) eps (rvsum Xm))))) by apply rvmult_comm.
-    rewrite (SimpleExpectation_ext H0).
-    clear H0.
-    rewrite simple_FiniteExpectation.
-    erewrite <- H.
-    generalize (FiniteCondexp_factor_out Prts (filtration_history_sa_sub X (j+m))); intros.
-    specialize (H0 (X (S (j+m)))
-                  (rvmult (cutoff_eps_rv j eps (rvsum Xm))
-                          (cutoff_indicator (S j) eps (rvsum Xm)))).
-    unfold Xm in H0.
-    assert (
-        RandomVariable (filtration_history_sa X (j + m)) borel_sa
-                       (rvmult (cutoff_eps_rv j eps (rvsum (fun n : nat => X (n + m)%nat)))
-                               (cutoff_indicator (S j) eps (rvsum (fun n : nat => X (n + m)%nat))))).
-    {
-      apply rvmult_rv; admit.
-    }
-    specialize (H0 (rv (S (j + m))%nat) H1).
-    assert  (rvgf : RandomVariable dom borel_sa
-                   (rvmult (X (S (j + m))%nat)
-                      (rvmult (cutoff_eps_rv j eps (rvsum (fun n : nat => X (n + m)%nat)))
-                         (cutoff_indicator (S j) eps (rvsum (fun n : nat => X (n + m)%nat)))))) by admit.
-   assert (isfef : IsFiniteExpectation Prts (X (S (j + m))%nat)) by apply isfe.
-   assert (isfefg : IsFiniteExpectation 
-                      Prts
-                      (rvmult (X (S (j + m))%nat)
-                              (rvmult (cutoff_eps_rv j eps (rvsum (fun n : nat => X (n + m)%nat)))
-                                      (cutoff_indicator (S j) eps (rvsum (fun n : nat => X (n + m)%nat)))))) by admit.
-   specialize (H0 rvgf isfef isfefg).
-   unfold Xm.
-   assert (eqq1:
-             almostR2 (prob_space_sa_sub Prts (filtration_history_sa_sub X (j + m))) eq
-                      (FiniteConditionalExpectation Prts (filtration_history_sa_sub X (j + m))
-                                       (rvmult (X (S (j + m))%nat)
-                                               (rvmult (cutoff_eps_rv j eps (rvsum (fun n : nat => X (n + m)%nat)))
-                                                       (cutoff_indicator (S j) eps (rvsum (fun n : nat => X (n + m)%nat))))))
-                      (const 0)).
-   {
-     revert H0.
-     apply almost_impl; apply all_almost; intros ??.
-     rewrite H0.
-     unfold Rbar_rvmult.
-     specialize (HC (j+m)%nat x).
-     admit.
-     (*
-     rewrite (HC x).
-     unfold const.
-     now rewrite Rbar_mult_0_r.
-     *)
-   }
-   apply almostR2_prob_space_sa_sub_lift in eqq1.
-   erewrite FiniteExpectation_proper_almostR2.
+    eapply SimpleCondexp_factor_out_zero with (sub := filtration_history_sa_sub X (j + m)%nat); trivial.
+    apply rvmult_rv.
+    - admit.
+    - admit.
     Admitted.
-(*    
-    pose (l := @filtration_history ((S j)+m)%nat _ frf rv).
-    pose (Xm := fun n => X (n + m)%nat).
-    generalize (part_list_history ((S j)+m)%nat X); intros ispart.
-    simpl.
-    rewrite gen_conditional_tower_law with (l0 := l); trivial.
-    generalize (gen_conditional_scale_measurable (rvmult (cutoff_eps_rv j eps (rvsum Xm))
-                                                         (cutoff_indicator (S j) eps (rvsum Xm))) (Xm (S j)) l ispart); intros.
-    unfold l in H; unfold l.
-    unfold Xm in *.
-    cut_to H.
-    - rewrite (HC ((S j)+m)%nat) in H.
-      unfold Xm in *.
-      rewrite (SimpleExpectation_ext H).
-      rewrite (SimpleExpectation_ext (rvmult_zero _)).
-      now rewrite SimpleExpectation_const.
-    - apply partition_measurable_rvmult; trivial.
-      + apply partition_measurable_cutoff_eps_shift.
-      + apply partition_measurable_cutoff_ind_shift.
-  Qed.
-*)
+
 Lemma ash_6_1_4 (X: nat -> Ts -> R) (eps:posreal) (m:nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
       {frf : forall (n:nat), FiniteRangeFunction (X n)}
@@ -1925,10 +1826,22 @@ Proof.
      rewrite <- sumSimpleExpectation.
      rewrite <- Rplus_assoc.
      rewrite <- scaleSimpleExpectation.
-     assert (isfe_mult : forall k j : nat, IsFiniteExpectation Prts (rvmult (X k) (X j))) by admit.
+     assert (isfe_mult : forall k j : nat, IsFiniteExpectation Prts (rvmult (X k) (X j))).
+     {
+       intros.
+       apply IsFiniteExpectation_simple.
+       - typeclasses eauto.
+       - typeclasses eauto.
+     }
      assert (isfe_mult_sum : forall k j : nat,
                   IsFiniteExpectation Prts
-                    (rvmult (rvsum (fun n : nat => X (n + m)%nat) j) (X (k + m)%nat))) by admit.
+                    (rvmult (rvsum (fun n : nat => X (n + m)%nat) j) (X (k + m)%nat))).
+     {
+       intros.
+       apply IsFiniteExpectation_simple.
+       - typeclasses eauto.
+       - typeclasses eauto.
+     }
      generalize (expec_cross_zero_sum2_shift_finexp X m HC); intros.
      replace (SimpleExpectation (rvmult (Sum j) (X (S j + m)%nat))) with 0.
      + ring_simplify.
@@ -2015,10 +1928,7 @@ Proof.
                              (cutoff_indicator (S j) eps Sum))
                      (X ((S j)+m)%nat))) by now rewrite rvmult_assoc.
         erewrite (SimpleExpectation_ext H0).
-        eapply indicator_prod_cross_shift_finexp.
-        * admit.
-        * admit.
-        * admit.
+        now eapply indicator_prod_cross_shift_finexp.
      + rewrite H0.
        lra.
  }
@@ -2046,7 +1956,7 @@ Proof.
      simpl. now ring_simplify.
    + rewrite <-Rsqr_pow2. unfold Rsqr. eapply Rle_trans; try (apply pow2_ge_0).
      lra.
- Admitted.
+ Qed.
 
 Lemma var_sum_cross_0_offset (X : nat -> Ts -> R) (m : nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
