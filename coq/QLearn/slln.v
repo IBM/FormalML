@@ -748,7 +748,8 @@ Lemma expec_cross_zero_finexp (X : nat -> Ts -> R)
       {frf : forall (n:nat), IsFiniteExpectation Prts (X n)}
       {frfmult : forall (k j:nat), IsFiniteExpectation Prts (rvmult (X k) (X j))} 
       (HC : forall n, 
-          rv_eq (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
+          almostR2 Prts eq
+                   (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
                 (const 0))  :
   forall (j k : nat), 
     (j < k)%nat ->
@@ -759,15 +760,11 @@ Proof.
   eapply FiniteCondexp_factor_out_zero_swapped with (sub := filtration_history_sa_sub X k).
   - apply filtration_history_sa_le_rv.
     lia.
-  - generalize (FiniteCondexp_eq Prts (filtration_history_sa_sub X k) (X (S k))); intros.
-    specialize (HC k).
-    rewrite H in HC.
-    intros z.
-    specialize (HC z).
-    simpl in HC.
-    apply Rbar_finite_eq in HC.
+  - specialize (HC k).
+    erewrite (FiniteCondexp_eq _ ) in HC.
+    apply (almost_f_equal _ real) in HC.
     apply HC.
-  Qed.
+ Qed.
 
 Lemma SimpleExpectation_rvsum {n}  
       (X : nat -> Ts -> R)
@@ -821,7 +818,8 @@ Lemma expec_cross_zero_sum_shift_finexp (X : nat -> Ts -> R) (m:nat)
       {frf : forall (n:nat), IsFiniteExpectation Prts (X n)}
       {frfmult : forall (k j:nat), IsFiniteExpectation Prts (rvmult (X k) (X j))}
       (HC : forall n, 
-          rv_eq (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
+          almostR2 Prts eq
+                   (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
                 (const 0))  :
   forall (j k : nat), 
     (j < k)%nat ->
@@ -854,6 +852,7 @@ Proof.
 Lemma expec_cross_zero_sum2_shift (X : nat -> Ts -> R) (m : nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
       {frf : forall (n:nat), FiniteRangeFunction (X n)}
+
       (HC : forall n, 
           rv_eq (SimpleConditionalExpectationSA (X n) (filtration_history n X)) (const 0))  :
   forall (j k : nat), 
@@ -876,7 +875,8 @@ Lemma expec_cross_zero_sum2_shift_finexp (X : nat -> Ts -> R) (m : nat)
                              IsFiniteExpectation Prts (rvmult (rvsum (fun n : nat => X (n + m)%nat) j) 
                                                               (X (k + m)%nat))}
       (HC : forall n, 
-          rv_eq (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
+          almostR2 Prts eq
+                   (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
                 (const 0))  :
   forall (j k : nat), 
     (j < k)%nat ->
@@ -1780,9 +1780,9 @@ Section slln_extra.
       {rv : forall n, RandomVariable dom borel_sa (X n)}
       {frf : forall n, FiniteRangeFunction (X n)} 
       (HC : forall n, 
-          rv_eq (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
-                (const 0))
-    :
+          almostR2 Prts eq
+                   (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
+                (const 0))  :
     let Xm := fun n => X (n + m)%nat in
   SimpleExpectation (Prts:=Prts)
     (rvmult (rvmult (cutoff_eps_rv j eps (rvsum Xm))
@@ -1811,7 +1811,8 @@ Lemma ash_6_1_4 (X: nat -> Ts -> R) (eps:posreal) (m:nat)
       {frf : forall (n:nat), FiniteRangeFunction (X n)}
       {isfe : forall (n:nat), IsFiniteExpectation Prts (X n)}
       (HC : forall n, 
-          rv_eq (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
+          almostR2 Prts eq
+                   (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
                 (const 0))  :
   let Sum := fun j => (rvsum (fun n => X (n + m)%nat) j) in
   forall (n:nat), ps_P (event_ge dom (rvmaxlist (fun k => rvabs(Sum k)) n) eps) <=
@@ -2039,7 +2040,8 @@ Lemma var_sum_cross_0_offset_finexp (X : nat -> Ts -> R) (m : nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
       {frf : forall (n:nat), FiniteRangeFunction (X n)}
       (HC : forall n, 
-          rv_eq (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
+          almostR2 Prts eq
+                   (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
                 (const 0))  :
   let Xm := fun n => X (n + m)%nat in
   forall j, SimpleExpectation(rvsqr (rvsum Xm j)) =
@@ -2721,7 +2723,8 @@ Lemma Ash_6_2_1_helper (X : nat -> Ts -> R) (eps : posreal) (m : nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
       (HC : forall n, 
-          rv_eq (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
+          almostR2 Prts eq
+                   (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
                 (const 0))  :
   let Sum := fun j => rvsum (fun k => X (k+m)%nat) j in
   Rbar_le (Lim_seq (fun n => ps_P (event_ge dom (rvmaxlist (fun k => rvabs (Sum k)) n) eps)))
@@ -2866,7 +2869,8 @@ Qed.
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
       (HC : forall n, 
-          rv_eq (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
+          almostR2 Prts eq
+                   (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
                 (const 0))  :
    let Sum := fun j => rvsum X j in
     Rbar_le (ps_P (union_of_collection (fun k =>  event_ge dom (rvabs (rvminus (Sum (k + (S m))%nat) (Sum m))) eps)))
@@ -2912,7 +2916,8 @@ Qed.
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
       (HC : forall n, 
-          rv_eq (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
+          almostR2 Prts eq
+                   (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
                 (const 0))  :
     ex_series (fun n => SimpleExpectation (rvsqr (X n))) ->
    let Sum := fun j => rvsum X j in
@@ -3062,7 +3067,8 @@ Qed.
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
       (HC : forall n, 
-          rv_eq (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
+          almostR2 Prts eq
+                   (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
                 (const 0))  :
     ex_series (fun n => SimpleExpectation (rvsqr (X n))) ->
     almost Prts (fun (x : Ts) => ex_series (fun n => X n x)).
@@ -3208,7 +3214,8 @@ Qed.
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
       (HC : forall n, 
-          rv_eq (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
+          almostR2 Prts eq
+                   (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
                 (const 0))  :
     (forall n, 0 < b n <= b (S n)) ->
     is_lim_seq b p_infty ->
