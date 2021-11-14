@@ -22,69 +22,6 @@ Require Import DVector.
 
 Set Bullet Behavior "Strict Subproofs". 
 
-Section vec_exp.
-
-  Context {Ts:Type} 
-          {dom: SigmaAlgebra Ts}
-          (prts: ProbSpace dom).
-
-  Class vector_IsFiniteExpectation {n} (rv_X : Ts -> vector R n) 
-    := is_vector_finite_expectation :
-         Forall (IsFiniteExpectation prts) (proj1_sig (iso_f rv_X)).
-
-  Global Instance vector_IsFiniteExpectation_nth {n} (f: Ts -> vector R n) i pf
-             {isfe:vector_IsFiniteExpectation f} :
-    IsFiniteExpectation prts (vecrvnth i pf f).
-  Proof.
-    generalize (vector_Forall _ isfe i pf); intros.
-    simpl in H.
-    rewrite vector_nth_fun_to_vector in H.
-    apply H.
-  Qed.
-
-  Definition vector_IsFiniteExpectation_Finite {n} (rv_X:Ts -> vector R n)
-        {isfe:vector_IsFiniteExpectation rv_X} :
-    { x : vector R n | vector_Expectation rv_X = Some (vector_map Finite x)}.
-  Proof.
-    exists (vector_map (fun x => FiniteExpectation prts (proj1_sig x) (isfe:=proj2_sig x))
-                  (vector_dep_zip _ isfe)).
-    red in isfe.
-
-    apply vectoro_to_ovector_some_eq.
-    rewrite vector_map_map.
-    revert isfe.
-    simpl iso_f.
-    generalize (fun_to_vector_to_vector_of_funs rv_X); clear
-    ; intros.
-
-    simpl.
-    induction (proj1_sig v); simpl; trivial.
-    generalize isfe; intros isfe'.
-    invcs isfe.
-    rewrite (FiniteExpectation_Expectation _ a).
-    rewrite (IHl H2).
-    f_equal.
-    f_equal.
-    - f_equal.
-      now apply FiniteExpectation_ext.
-    - apply list_dep_zip_ext_map; intros; simpl.
-      f_equal.
-      now apply FiniteExpectation_ext.
-  Qed.
-
-  Definition vector_FiniteExpectation {n} (rv_X:Ts -> vector R n)
-             {isfe:vector_IsFiniteExpectation rv_X} : vector R n
-    := proj1_sig (vector_IsFiniteExpectation_Finite rv_X).
-
-  Lemma vector_FiniteExpectation_Expectation {n} (rv_X:Ts->vector R n)
-        {isfe:vector_IsFiniteExpectation rv_X} : 
-    vector_Expectation rv_X = Some (vector_map Finite (vector_FiniteExpectation rv_X)).
-  Proof.
-    unfold vector_FiniteExpectation, proj1_sig.
-    match_destr.
-  Qed.
-
-End vec_exp.
 
 Section vec_util.
 
@@ -194,7 +131,179 @@ Section vec_util.
   Qed.
 
 End vec_util.
+
+Section vec_exp.
+
+  Context {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts: ProbSpace dom).
+
+  Class vector_IsFiniteExpectation {n} (rv_X : Ts -> vector R n) 
+    := is_vector_finite_expectation :
+         Forall (IsFiniteExpectation prts) (proj1_sig (iso_f rv_X)).
+
+  Global Instance vector_IsFiniteExpectation_nth {n} (f: Ts -> vector R n) i pf
+             {isfe:vector_IsFiniteExpectation f} :
+    IsFiniteExpectation prts (vecrvnth i pf f).
+  Proof.
+    generalize (vector_Forall _ isfe i pf); intros.
+    simpl in H.
+    rewrite vector_nth_fun_to_vector in H.
+    apply H.
+  Qed.
+
+  Definition vector_IsFiniteExpectation_Finite {n} (rv_X:Ts -> vector R n)
+        {isfe:vector_IsFiniteExpectation rv_X} :
+    { x : vector R n | vector_Expectation rv_X = Some (vector_map Finite x)}.
+  Proof.
+    exists (vector_map (fun x => FiniteExpectation prts (proj1_sig x) (isfe:=proj2_sig x))
+                  (vector_dep_zip _ isfe)).
+    red in isfe.
+
+    apply vectoro_to_ovector_some_eq.
+    rewrite vector_map_map.
+    revert isfe.
+    simpl iso_f.
+    generalize (fun_to_vector_to_vector_of_funs rv_X); clear
+    ; intros.
+
+    simpl.
+    induction (proj1_sig v); simpl; trivial.
+    generalize isfe; intros isfe'.
+    invcs isfe.
+    rewrite (FiniteExpectation_Expectation _ a).
+    rewrite (IHl H2).
+    f_equal.
+    f_equal.
+    - f_equal.
+      now apply FiniteExpectation_ext.
+    - apply list_dep_zip_ext_map; intros; simpl.
+      f_equal.
+      now apply FiniteExpectation_ext.
+  Qed.
+
+  Definition vector_FiniteExpectation {n} (rv_X:Ts -> vector R n)
+             {isfe:vector_IsFiniteExpectation rv_X} : vector R n
+    := proj1_sig (vector_IsFiniteExpectation_Finite rv_X).
+
+  Lemma vector_FiniteExpectation_Expectation {n} (rv_X:Ts->vector R n)
+        {isfe:vector_IsFiniteExpectation rv_X} : 
+    vector_Expectation rv_X = Some (vector_map Finite (vector_FiniteExpectation rv_X)).
+  Proof.
+    unfold vector_FiniteExpectation, proj1_sig.
+    match_destr.
+  Qed.
+
+  Lemma vector_Expectation_const n c
+        {rv:RandomVariable dom (Rvector_borel_sa n) (const c)}
+    :
+      vector_Expectation (const c) = Some (vector_map Finite c).
+  Proof.
+    unfold vector_Expectation.
+    simpl.
+    assert (eqq1:vector_map Expectation (fun_to_vector_to_vector_of_funs (const c)) =
+                 (vector_map Some (vector_map Finite c))).
+    {
+      apply vector_nth_eq; intros.
+      repeat rewrite vector_nth_map.
+      rewrite vector_nth_fun_to_vector.
+      replace  (fun x : Ts => vector_nth i pf (const c x)) with (const (B:=Ts) (vector_nth i pf c)) by reflexivity.
+      now rewrite Expectation_const.
+    }
+    rewrite eqq1.
+    apply vectoro_to_ovector_some_eq.
+    simpl.
+    rewrite <- listo_to_olist_simpl_lift_map.
+    now rewrite lift_map_id.
+  Qed.    
+
+  Lemma vector_FiniteExpectation_const n c
+        {rv:RandomVariable dom (Rvector_borel_sa n) (const c)}
+        {isfe:vector_IsFiniteExpectation (const c)}
+    :
+      vector_FiniteExpectation (const c) = c.
+  Proof.
+    generalize (vector_Expectation_const n c).
+    rewrite (vector_FiniteExpectation_Expectation _).
+    intros.
+    invcs H.
+    apply (f_equal (fun x => map real x)) in H1.
+    
+    repeat rewrite map_map in H1.
+    repeat rewrite map_id in H1.
+    now apply vector_eq.
+  Qed.
+        
+  Lemma vector_IsFiniteExpectation_proper_almostR2 {n} rv_X1 rv_X2
+        {rrv1:RandomVariable dom (Rvector_borel_sa n) rv_X1}
+        {rrv2:RandomVariable dom (Rvector_borel_sa n) rv_X2}
+        {isfe1:vector_IsFiniteExpectation rv_X1}
+    :
+      almostR2 prts eq rv_X1 rv_X2 ->
+      vector_IsFiniteExpectation rv_X2.
+  Proof.
+    intros.
+    destruct (vector_nth_eq_almost prts rv_X1 rv_X2)  as [_ HH].
+    specialize (HH H).
+    unfold vector_IsFiniteExpectation.
+    apply Forall_vector; intros.
+    unfold vector_IsFiniteExpectation in isfe1.
+    eapply vector_Forall in isfe1.
+    specialize (HH i pf).
+    eapply IsFiniteExpectation_proper_almostR2; try eapply isfe1.
+    - now apply vec_rv.
+    - now apply vec_rv.
+    - destruct (vector_nth_eq_almost prts rv_X1 rv_X2) as [_ HH2].
+      simpl.
+      repeat rewrite vector_nth_fun_to_vector.
+      now apply HH2.
+  Qed.
+
+    Lemma vector_Expectation_proper_almostR2 {n} rv_X1 rv_X2
+        {rrv1:RandomVariable dom (Rvector_borel_sa n) rv_X1}
+        {rrv2:RandomVariable dom (Rvector_borel_sa n) rv_X2}
+    :
+      almostR2 prts eq rv_X1 rv_X2 ->
+      vector_Expectation rv_X1 = vector_Expectation rv_X2.
+  Proof.
+    intros.
+    unfold vector_Expectation.
+    f_equal.
+    apply vector_nth_eq; intros.
+    repeat rewrite vector_nth_map.
+    simpl.
+    repeat rewrite vector_nth_fun_to_vector.
+        
+    destruct (vector_nth_eq_almost prts rv_X1 rv_X2) as [_ HH2].
+    simpl.
+    specialize (HH2 H i pf).
+    apply Expectation_almostR2_proper; trivial
+    ; now apply vecrvnth_rv.
+  Qed.    
+
+  Lemma vector_FiniteExpectation_proper_almostR2 {n} rv_X1 rv_X2
+        {rrv1:RandomVariable dom (Rvector_borel_sa n) rv_X1}
+        {rrv2:RandomVariable dom (Rvector_borel_sa n) rv_X2}
+        {isfe1:vector_IsFiniteExpectation rv_X1}
+        {isfe2:vector_IsFiniteExpectation rv_X2}
+    :
+      almostR2 prts eq rv_X1 rv_X2 ->
+      vector_FiniteExpectation rv_X1 = vector_FiniteExpectation rv_X2.
+  Proof.
+    intros.
+    generalize (vector_Expectation_proper_almostR2 rv_X1 rv_X2 H).
+    repeat rewrite (vector_FiniteExpectation_Expectation _).
+    intros HH.
+    invcs HH.
+    apply (f_equal (fun x => map real x)) in H1.
+    
+    repeat rewrite map_map in H1.
+    repeat rewrite map_id in H1.
+    now apply vector_eq.
+  Qed.
   
+End vec_exp.
+
 Section vec_cond_exp.
 
     Context {Ts:Type} 
@@ -439,6 +548,23 @@ Section vec_cond_exp.
     - apply FiniteCondexp_isfe.
   Qed.
 
+  Corollary vector_FiniteCondexp_FiniteExpectation {n} (f : Ts -> vector R n) 
+          {rv : RandomVariable dom (Rvector_borel_sa n) f}
+          {isfe:vector_IsFiniteExpectation prts f}
+    :
+      vector_FiniteExpectation prts (vector_FiniteConditionalExpectation f) =
+      vector_FiniteExpectation prts f.
+  Proof.
+    generalize (vector_FiniteCondexp_Expectation f).
+    repeat rewrite (vector_FiniteExpectation_Expectation _ _).
+    intros HH.
+    invcs HH.
+    apply (f_equal (fun x => map real x)) in H0.
+    
+    repeat rewrite map_map in H0.
+    repeat rewrite map_id in H0.
+    now apply vector_eq.
+  Qed.
 
   Theorem vector_FiniteCondexp_proper {n} (f1 f2 : Ts -> vector R n) 
           {rv1 : RandomVariable dom (Rvector_borel_sa n) f1}
@@ -770,6 +896,44 @@ Section vec_cond_exp.
     - apply Forall_vector; intros ?????.
       repeat rewrite vector_nth_const.
       apply abs_convex.
+  Qed.
+
+  Lemma vector_FiniteCondexp_factor_out_zero  {n}
+        (f g : Ts -> vector R n)
+        {rvf : RandomVariable dom (Rvector_borel_sa n) f}
+        {rvgf: RandomVariable dom2 (Rvector_borel_sa n) g}
+        {isfef:vector_IsFiniteExpectation prts f}
+        {isfefg:vector_IsFiniteExpectation prts (vecrvmult f g)} :
+    almostR2 prts eq (vector_FiniteConditionalExpectation f) (const RealVectorHilbert.Rvector_zero) ->
+    vector_FiniteExpectation prts (vecrvmult f g) = RealVectorHilbert.Rvector_zero.
+  Proof.
+    intros.
+    assert (rvfg : RandomVariable dom  (Rvector_borel_sa n) (vecrvmult f g)).
+    {
+      apply Rvector_mult_rv; trivial.
+      now apply RandomVariable_sa_sub.
+    }
+    generalize (vector_FiniteCondexp_FiniteExpectation (vecrvmult f g)); intros.
+    generalize (vector_FiniteCondexp_factor_out f g); intros.
+    assert (almostR2 prts eq (vector_FiniteConditionalExpectation (vecrvmult f g))
+                     (const RealVectorHilbert.Rvector_zero)).
+    {
+      apply almostR2_prob_space_sa_sub_lift in H1.
+      revert H1; apply almost_impl.
+      revert H; apply almost_impl.
+      apply all_almost; intros ???.
+      rewrite H1.
+      unfold vecrvmult.
+      rewrite H.
+      unfold const.
+      now rewrite RealVectorHilbert.Rvector_mult_zero.
+    }
+    erewrite vector_FiniteExpectation_proper_almostR2 in H0; try eapply H2.
+    - rewrite vector_FiniteExpectation_const in H0; eauto.
+      apply rvconst.
+    - apply RandomVariable_sa_sub; trivial.
+      typeclasses eauto.
+    - apply rvconst.
   Qed.
 
 End vec_cond_exp.

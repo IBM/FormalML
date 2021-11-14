@@ -5754,7 +5754,7 @@ Section fin_cond_exp.
         {rvg : RandomVariable dom2 borel_sa g}
         {isfef: IsFiniteExpectation prts f} 
         {isfefg:IsFiniteExpectation prts (rvmult f g)} : 
-    rv_eq (FiniteConditionalExpectation f) (const 0) ->
+    almostR2 prts eq (FiniteConditionalExpectation f) (const 0) ->
     FiniteExpectation prts (rvmult f g) = 0.
   Proof.
     intros.
@@ -5765,18 +5765,19 @@ Section fin_cond_exp.
     }
     generalize (FiniteCondexp_FiniteExpectation (rvmult f g)); intros.
     generalize (FiniteCondexp_factor_out f g); intros.
-    assert (almostR2 (prob_space_sa_sub prts sub) eq (FiniteConditionalExpectation (rvmult f g))
+    assert (almostR2 prts eq (FiniteConditionalExpectation (rvmult f g))
                      (const 0)).
     {
-      revert H1.
-      apply almost_impl; apply all_almost; intros ??.
+      apply almostR2_prob_space_sa_sub_lift in H1.
+      revert H1; apply almost_impl.
+      revert H; apply almost_impl.
+      apply all_almost; intros ???.
       rewrite H1.
       unfold rvmult.
       rewrite H.
       unfold const.
       now rewrite Rmult_0_r.
     }
-    apply almostR2_prob_space_sa_sub_lift in H2.
     erewrite FiniteExpectation_proper_almostR2 in H0; try eapply H2.
     - now rewrite FiniteExpectation_const in H0.
     - apply RandomVariable_sa_sub; trivial.
@@ -5790,7 +5791,7 @@ Section fin_cond_exp.
         {rvg : RandomVariable dom2 borel_sa g}
         {isfef: IsFiniteExpectation prts f}
         {isfefg:IsFiniteExpectation prts (rvmult g f)} :
-    rv_eq (FiniteConditionalExpectation f) (const 0) ->
+     almostR2 prts eq (FiniteConditionalExpectation f) (const 0) ->
     FiniteExpectation prts (rvmult g f) = 0.
   Proof.
     intros.
@@ -5813,7 +5814,7 @@ Section fin_cond_exp.
         {rvgf : RandomVariable dom borel_sa (rvmult g f)}        
         {frf : FiniteRangeFunction f}
         {frg : FiniteRangeFunction g} :
-    rv_eq (ConditionalExpectation prts sub f) (const 0) -> 
+     almostR2 prts eq (ConditionalExpectation prts sub f) (const 0) -> 
     SimpleExpectation (rvmult g f) = 0.
   Proof.
     intros.
@@ -5828,12 +5829,8 @@ Section fin_cond_exp.
     rewrite simple_FiniteExpectation.
     rewrite <- H0.
     - apply FiniteExpectation_pf_irrel.
-    - generalize (FiniteCondexp_eq f); intros.
-      rewrite H1 in H.
-      intros z.
-      specialize (H z).
-      simpl in H.
-      apply Rbar_finite_eq in H.
+    - rewrite (FiniteCondexp_eq _) in H.
+      apply (almost_f_equal _ real) in H.
       apply H.
     Qed.
 
