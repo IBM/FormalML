@@ -1102,7 +1102,7 @@ Proof.
     + apply rm.
  Qed.
 
-Instance rv_cutoff_eps_rv (n : nat) (eps : R) (X : nat -> Ts -> R) 
+Global Instance rv_cutoff_eps_rv (n : nat) (eps : R) (X : nat -> Ts -> R) 
          {rv: forall n, RandomVariable dom borel_sa (X n)} :
   RandomVariable dom borel_sa (cutoff_eps_rv n eps X).
 Proof.
@@ -1150,7 +1150,7 @@ Proof.
       * apply IHn.
   Qed. 
 
-Instance nnf_cutoff_eps_rv (n : nat) (eps : R) (X : nat -> Ts -> R) 
+Global Instance nnf_cutoff_eps_rv (n : nat) (eps : R) (X : nat -> Ts -> R) 
          {nnf: forall n, NonnegativeFunction (X n)} :
   NonnegativeFunction (cutoff_eps_rv n eps X).
 Proof.
@@ -1187,7 +1187,7 @@ Qed.
 
 Local Obligation Tactic := idtac.
 
-Program Instance frf_cutoff_eps_rv (n : nat) (eps : R) (X : nat -> Ts -> R) 
+Global Program Instance frf_cutoff_eps_rv (n : nat) (eps : R) (X : nat -> Ts -> R) 
          {frf: forall n, FiniteRangeFunction (X n)} :
   FiniteRangeFunction (cutoff_eps_rv n eps X) := {
   frf_vals := flat_map (fun k => frf_vals (FiniteRangeFunction := frf k)) (seq 0 (S n))
@@ -1231,7 +1231,7 @@ Next Obligation.
   apply ClassicalDescription.excluded_middle_informative.
 Defined.
 
-Instance cutoff_ind_rv (j:nat) (eps:R) (X: nat -> Ts -> R) 
+Global Instance cutoff_ind_rv (j:nat) (eps:R) (X: nat -> Ts -> R) 
       {rv : forall n, RandomVariable dom borel_sa (X n)}
       {fsf : forall n, FiniteRangeFunction (X n)} :
   RandomVariable dom borel_sa
@@ -1751,14 +1751,40 @@ Qed.
       + apply partition_measurable_cutoff_ind_shift.
   Qed.
 
+End slln.
+
+Section condexp.
+  Lemma Condexp_sa_proper {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts: ProbSpace dom)
+          {dom2 dom2' : SigmaAlgebra Ts}
+          (sub : sa_sub dom2 dom)
+          (sub' : sa_sub dom2' dom)
+          (sub_equiv:sa_equiv dom2 dom2')
+          (f1 f2 : Ts -> R) 
+          {rv1 : RandomVariable dom borel_sa f1}
+          {rv2 : RandomVariable dom borel_sa f2} :
+    almostR2 prts eq f1 f2 ->
+    almostR2 (prob_space_sa_sub prts sub) eq
+             (ConditionalExpectation prts sub f1)
+             (ConditionalExpectation prts sub' f2).
+  Proof.
+  Admitted.
+End condexp.
+
+Section slln_extra.
+
+  Context {Ts:Type} {dom: SigmaAlgebra Ts}{Prts: ProbSpace dom}.
+
   Lemma indicator_prod_cross_shift_finexp (j m:nat) (eps:R) (X: nat -> Ts -> R) 
       {rv : forall n, RandomVariable dom borel_sa (X n)}
       {frf : forall n, FiniteRangeFunction (X n)} 
       (HC : forall n, 
           rv_eq (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
-                (const 0))  :
-  let Xm := fun n => X (n + m)%nat in 
-  SimpleExpectation 
+                (const 0))
+    :
+    let Xm := fun n => X (n + m)%nat in
+  SimpleExpectation (Prts:=Prts)
     (rvmult (rvmult (cutoff_eps_rv j eps (rvsum Xm))
                     (cutoff_indicator (S j) eps (rvsum Xm)))
             (X (S (j + m)))) = 0.
@@ -1766,9 +1792,19 @@ Qed.
     intros.
     eapply SimpleCondexp_factor_out_zero with (sub := filtration_history_sa_sub X (j + m)%nat); trivial.
     apply rvmult_rv.
-    - admit.
-    - admit.
-    Admitted.
+    - unfold Xm.
+      (* TODO: I think this lemma needs to be forall n0 <= j *)
+      apply rv_cutoff_eps_rv; intros.
+      apply rvsum_rv; intros.
+      unfold Xm.
+      apply filtration_history_sa_le_rv.
+      admit.
+    - unfold Xm.
+      (* TODO: I think this lemma needs to be forall n <= j *)
+      apply cutoff_ind_rv; auto; intros.
+      apply filtration_history_sa_le_rv.
+      admit.
+  Admitted.
 
 Lemma ash_6_1_4 (X: nat -> Ts -> R) (eps:posreal) (m:nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
@@ -2638,7 +2674,7 @@ Proof.
        now exists (mkposreal eps Heps).
 Qed.
 
-Instance rv_max_sum_shift (X : nat -> Ts -> R) (m n : nat)
+Global Instance rv_max_sum_shift (X : nat -> Ts -> R) (m n : nat)
          {rv : forall (n:nat), RandomVariable dom borel_sa (X n)} :
   let Sum := fun j => (rvsum (fun k w => X (k+m)%nat w) j) in
   RandomVariable dom borel_sa (rvmaxlist (fun k : nat => rvabs (Sum k)) n).
@@ -3115,22 +3151,58 @@ Qed.
         intros.
         now unfold const.
   Qed.
-      
+
   Lemma SCESA_scale_condexp (X : nat -> Ts -> R) (b : nat -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
       (HC : forall n, 
-          rv_eq (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
+          almostR2 Prts eq
+                   (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
                 (const 0))  :
     (forall n, b n <> 0) ->
-    forall n, rv_eq (ConditionalExpectation Prts
-                                            (filtration_history_sa_sub 
-                                               (fun n0 : nat => rvscale (/ b n0) (X n0)) n)
-                                            (rvscale (/ (b (S n))) (X (S n))))
-
+    forall n, almostR2 Prts eq
+           (ConditionalExpectation Prts
+                                   (filtration_history_sa_sub 
+                                      (fun n0 : nat => rvscale (/ b n0) (X n0)) n)
+                                   (rvscale (/ (b (S n))) (X (S n))))
+           
               (const 0).
   Proof.
-    Admitted.
+    intros.
+    assert (forall n,
+               sa_equiv (filtration_history_sa X n)
+                        (filtration_history_sa (fun n0 => (rvscale (/ b n0) (X n0))) n)).
+    {
+      intros.
+      apply filtrate_sa_proper.
+      intros ??.
+      apply pullback_sa_rvscale_equiv.
+      now apply Rinv_neq_0_compat.
+    }
+    assert (isfe : IsFiniteExpectation Prts (X (S n))) by (intros; now apply IsFiniteExpectation_simple).
+    generalize (Condexp_scale Prts (filtration_history_sa_sub (fun n0 => (rvscale (/ b n0) (X n0))) n)
+                              (/ b (S n)) (X (S n))); intros.
+    specialize (HC n).
+    specialize (H0 n).
+    apply almostR2_prob_space_sa_sub_lift in H1.
+    revert HC; apply almost_impl.
+    revert H1; apply almost_impl.
+
+    generalize (Condexp_sa_proper Prts
+                                  (filtration_history_sa_sub X n)
+                                  (filtration_history_sa_sub (fun n0 : nat => rvscale (/ b n0) (X n0)) n)
+                                  H0 (X (S n)) (X (S n)) (reflexivity _))
+    ; intros HH.
+    apply almostR2_prob_space_sa_sub_lift in HH.
+    revert HH; apply almost_impl.
+    apply all_almost; intros ????.
+    rewrite H2.
+    unfold Rbar_rvmult.
+    rewrite <- H1.
+    rewrite H3.
+    unfold const.
+    now rewrite Rbar_mult_0_r.
+  Qed.
 
   Lemma Ash_6_2_2 (X : nat -> Ts -> R) (b : nat -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
@@ -3169,4 +3241,4 @@ Qed.
     apply H.
 Qed.
 
-End slln.  
+End slln_extra.
