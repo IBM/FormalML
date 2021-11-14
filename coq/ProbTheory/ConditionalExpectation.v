@@ -5748,6 +5748,95 @@ Section fin_cond_exp.
     now invcs HH.
   Qed.
 
+  Lemma FiniteCondexp_factor_out_zero
+        (f g : Ts -> R)
+        {rvf : RandomVariable dom borel_sa f}
+        {rvg : RandomVariable dom2 borel_sa g}
+        {isfef: IsFiniteExpectation prts f} 
+        {isfefg:IsFiniteExpectation prts (rvmult f g)} : 
+    rv_eq (FiniteConditionalExpectation f) (const 0) ->
+    FiniteExpectation prts (rvmult f g) = 0.
+  Proof.
+    intros.
+    assert (rvfg : RandomVariable dom borel_sa (rvmult f g)).
+    {
+      apply rvmult_rv; trivial.
+      now apply RandomVariable_sa_sub.
+    }
+    generalize (FiniteCondexp_FiniteExpectation (rvmult f g)); intros.
+    generalize (FiniteCondexp_factor_out f g); intros.
+    assert (almostR2 (prob_space_sa_sub prts sub) eq (FiniteConditionalExpectation (rvmult f g))
+                     (const 0)).
+    {
+      revert H1.
+      apply almost_impl; apply all_almost; intros ??.
+      rewrite H1.
+      unfold rvmult.
+      rewrite H.
+      unfold const.
+      now rewrite Rmult_0_r.
+    }
+    apply almostR2_prob_space_sa_sub_lift in H2.
+    erewrite FiniteExpectation_proper_almostR2 in H0; try eapply H2.
+    - now rewrite FiniteExpectation_const in H0.
+    - apply RandomVariable_sa_sub; trivial.
+      typeclasses eauto.
+    - apply rvconst.
+  Qed.
+      
+  Lemma FiniteCondexp_factor_out_zero_swapped
+        (f g : Ts -> R)
+        {rvf : RandomVariable dom borel_sa f}
+        {rvg : RandomVariable dom2 borel_sa g}
+        {isfef: IsFiniteExpectation prts f}
+        {isfefg:IsFiniteExpectation prts (rvmult g f)} :
+    rv_eq (FiniteConditionalExpectation f) (const 0) ->
+    FiniteExpectation prts (rvmult g f) = 0.
+  Proof.
+    intros.
+    assert (IsFiniteExpectation prts (rvmult f g)).
+    {
+      revert isfefg.
+      apply IsFiniteExpectation_proper.
+      now rewrite rvmult_comm.
+    }
+    generalize (FiniteCondexp_factor_out_zero f g H); intros.
+    rewrite <- H1.
+    apply FiniteExpectation_ext.
+    now rewrite rvmult_comm.
+  Qed.
+  
+  Lemma SimpleCondexp_factor_out_zero
+        (f g : Ts -> R)
+        {rvf : RandomVariable dom borel_sa f}
+        {rvg : RandomVariable dom2 borel_sa g}
+        {rvgf : RandomVariable dom borel_sa (rvmult g f)}        
+        {frf : FiniteRangeFunction f}
+        {frg : FiniteRangeFunction g} :
+    rv_eq (ConditionalExpectation prts sub f) (const 0) -> 
+    SimpleExpectation (rvmult g f) = 0.
+  Proof.
+    intros.
+    assert (isfe: IsFiniteExpectation prts f) by
+        now apply IsFiniteExpectation_simple.
+    assert (isfefg: IsFiniteExpectation prts (rvmult g f)).
+    {
+      apply IsFiniteExpectation_simple; trivial.
+      typeclasses eauto.
+    }
+    generalize (FiniteCondexp_factor_out_zero_swapped f g); intros.
+    rewrite simple_FiniteExpectation.
+    rewrite <- H0.
+    - apply FiniteExpectation_pf_irrel.
+    - generalize (FiniteCondexp_eq f); intros.
+      rewrite H1 in H.
+      intros z.
+      specialize (H z).
+      simpl in H.
+      apply Rbar_finite_eq in H.
+      apply H.
+    Qed.
+
   Lemma IsLp_almost_bounded n rv_X1 rv_X2
         (rle:almostR2 prts Rle (rvpower (rvabs rv_X1) (const n)) rv_X2)
         {rv1:RandomVariable dom borel_sa (rvpower (rvabs rv_X1) (const n))}
