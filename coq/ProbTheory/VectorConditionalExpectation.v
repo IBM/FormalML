@@ -936,6 +936,45 @@ Section vec_cond_exp.
     - apply rvconst.
   Qed.
 
+  Lemma vector_FiniteCondexp_factor_out_zero_swapped {n}
+        (f g : Ts -> vector R n)
+        {rvf : RandomVariable dom (Rvector_borel_sa n) f}
+        {rvgf: RandomVariable dom2 (Rvector_borel_sa n) g}
+        {isfef:vector_IsFiniteExpectation prts f}
+        {isfefg:vector_IsFiniteExpectation prts (vecrvmult g f)} :
+    almostR2 prts eq (vector_FiniteConditionalExpectation f) (const RealVectorHilbert.Rvector_zero) ->
+    vector_FiniteExpectation prts (vecrvmult g f) = RealVectorHilbert.Rvector_zero.
+  Proof.
+    intros.
+    assert (RandomVariable dom (Rvector_borel_sa n) (vecrvmult g f)).
+    {
+      apply Rvector_mult_rv; trivial.
+      now apply RandomVariable_sa_sub.
+    }
+    assert (RandomVariable dom (Rvector_borel_sa n) (vecrvmult f g)).
+    {
+      apply Rvector_mult_rv; trivial.
+      now apply RandomVariable_sa_sub.
+    }
+    assert (vector_IsFiniteExpectation prts (vecrvmult f g)).
+    {
+      generalize (vector_IsFiniteExpectation_proper_almostR2 _ (vecrvmult g f)); intros.
+      specialize (H2 (vecrvmult f g) _ _ isfefg).
+      apply H2.
+      apply all_almost.
+      intros.
+      unfold vecrvmult.
+      now rewrite RealVectorHilbert.Rvector_mult_comm.
+    }
+    generalize (vector_FiniteCondexp_factor_out_zero f g H); intros.
+    rewrite <- H3.
+    apply vector_FiniteExpectation_proper_almostR2; trivial.
+    apply all_almost.
+    intros.
+    unfold vecrvmult.
+    now rewrite RealVectorHilbert.Rvector_mult_comm.
+  Qed.
+
 End vec_cond_exp.
 
 
