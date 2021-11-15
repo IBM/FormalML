@@ -465,7 +465,7 @@ Proof.
 Qed.
 
 Definition rvmaxlist (X : nat -> Ts -> R) (N : nat) : Ts -> R :=
-  fun (omega : Ts) => Rmax_list (List.map (fun n => X n omega) (List.seq 0 (S N))).
+  fun (omega : Ts) => Rmax_list_map (List.seq 0 (S N)) (fun n => X n omega).
 
 Lemma rvmaxlist_monotone (X : nat -> Ts -> R) :
   forall n omega, rvmaxlist X n omega <= rvmaxlist X (S n) omega.
@@ -479,17 +479,17 @@ Proof.
     f_equal.
   }
   rewrite H.
+  unfold Rmax_list_map.
   rewrite Rmax_list_app.
   + apply Rmax_l.
   + apply seq_not_nil; lia.
 Qed.
 
-
 Global Instance frfrvmaxlist (X : nat -> Ts -> R)
        {rv : forall n, FiniteRangeFunction (X n)} (N : nat):
   FiniteRangeFunction (rvmaxlist X N).
 Proof.
-  unfold rvmaxlist.
+  unfold rvmaxlist, Rmax_list_map.
   generalize (0%nat).
   induction N; simpl; intros s.
   - apply rv.
@@ -500,25 +500,6 @@ Proof.
     destruct N.
     + simpl; auto.
     + eapply FiniteRangeFunction_ext; try eapply frf.
-      intros ?.
-      reflexivity.
-Qed.
-
-Global Instance rvmaxlist_rv (X : nat -> Ts -> R)
-       {rv : forall n, RandomVariable dom borel_sa (X n)} (N : nat):
-  RandomVariable dom borel_sa (rvmaxlist X N).
-Proof.
-   unfold rvmaxlist.
-  generalize (0%nat).
-  induction N; simpl; intros s.
-  - apply rv.
-  - assert (frf:RandomVariable dom borel_sa (fun omega => Rmax (X s omega) (Rmax_list (map (fun n : nat => X n omega) (seq (S s) (S N)))))).
-    {
-      apply rvmax_rv; auto.
-    }
-    destruct N.
-    + simpl; auto.
-    + eapply RandomVariable_proper; try reflexivity; try eapply frf.
       intros ?.
       reflexivity.
 Qed.
@@ -1075,12 +1056,13 @@ Proof.
 Qed.
 
 Instance max_list_measurable (k : nat) (X : nat -> Ts -> R)
-  {rm: forall n, RealMeasurable dom (X n)} :
+  {rm: forall n, (n <= k)%nat -> RealMeasurable dom (X n)} :
     RealMeasurable dom (fun omega => Rmax_list_map (seq 0 (S k)) (fun n => X n omega)).
 Proof.
   unfold Rmax_list_map.
   induction k.
-  - now simpl.
+  - simpl.
+    apply rm; lia.
   - unfold RealMeasurable in *; intros.
     assert (pre_event_equiv
                (fun omega : Ts =>
@@ -1099,21 +1081,52 @@ Proof.
     rewrite H.
     apply sa_inter.
     + apply IHk.
+      intros.
+      apply rm.
+      lia.
     + apply rm.
+      lia.
  Qed.
 
+(*
+Global Instance rvmaxlist_rv (X : nat -> Ts -> R) (N : nat)
+       {rv : forall n, RandomVariable dom borel_sa (X n)} :
+  RandomVariable dom borel_sa (rvmaxlist X N).
+Proof.
+  intros.
+  apply measurable_rv.
+  apply max_list_measurable; intros.
+  apply rv_measurable.
+  apply rv.
+Qed.
+*)
+Global Instance rvmaxlist_rv  (X : nat -> Ts -> R) (N : nat)
+       {rv : forall n, (n <= N)%nat -> RandomVariable dom borel_sa (X n)} :
+  RandomVariable dom borel_sa (rvmaxlist X N).
+Proof.
+  intros.
+  apply measurable_rv.
+  apply max_list_measurable; intros.
+  apply rv_measurable.
+  apply rv; lia.
+Qed.
+
 Global Instance rv_cutoff_eps_rv (n : nat) (eps : R) (X : nat -> Ts -> R) 
-         {rv: forall n, RandomVariable dom borel_sa (X n)} :
+         {rv: forall k, (k <= n)%nat -> RandomVariable dom borel_sa (X k)} :
   RandomVariable dom borel_sa (cutoff_eps_rv n eps X).
 Proof.
   unfold cutoff_eps_rv.
   apply measurable_rv.
-  assert (mrv : forall n, RealMeasurable dom (X n)) 
-    by (intro; now apply rv_measurable).
+  assert (mrv : forall k, (k <= n)%nat -> RealMeasurable dom (X k)).
+  {
+    intros.
+    apply rv_measurable.
+    apply rv; lia.
+  }
   unfold RealMeasurable in *.
   intros.
   induction n.
-  - simpl; apply mrv.
+  - simpl; apply mrv; lia.
   - simpl.
     assert (pre_event_equiv
                (fun omega : Ts =>
@@ -1139,15 +1152,23 @@ Proof.
       * apply sa_le_lt.
         apply max_list_measurable.
         intros.
-        now apply Rabs_measurable.
-      * apply mrv.
+        apply Rabs_measurable.
+        unfold RealMeasurable.
+        apply mrv; lia.
+      * apply mrv; lia.
     + apply sa_inter.
       * apply sa_complement.
         apply sa_le_lt.
         apply max_list_measurable.        
         intros.
-        now apply Rabs_measurable.        
+        apply Rabs_measurable.        
+        unfold RealMeasurable.
+        apply mrv; lia.
       * apply IHn.
+        -- intros.
+           apply rv; lia.
+        -- intros.
+           apply mrv; lia.
   Qed. 
 
 Global Instance nnf_cutoff_eps_rv (n : nat) (eps : R) (X : nat -> Ts -> R) 
@@ -1232,7 +1253,7 @@ Next Obligation.
 Defined.
 
 Global Instance cutoff_ind_rv (j:nat) (eps:R) (X: nat -> Ts -> R) 
-      {rv : forall n, RandomVariable dom borel_sa (X n)}
+      {rv : forall n, (n<=j)%nat -> RandomVariable dom borel_sa (X n)}
       {fsf : forall n, FiniteRangeFunction (X n)} :
   RandomVariable dom borel_sa
                  (cutoff_indicator (S j) eps (rvsum X)).
@@ -1245,9 +1266,10 @@ Proof.
   apply max_list_measurable.        
   intros.
   apply Rabs_measurable.
-  apply rvsum_measurable.
+  apply rvsum_measurable_loc.
   intros.
-  now apply rv_measurable.
+  apply rv_measurable.
+  apply rv; lia.
 Qed.
 
   Lemma partition_measurable_rvplus (rv_X1 rv_X2 : Ts -> R)
@@ -1529,6 +1551,7 @@ Lemma filtration_history_rvsum_var_const_shift (X : nat -> Ts -> R) (eps : R) (m
      now rewrite (H0 x).
   Qed.
 
+
   Lemma partition_measurable_Rmax_list_map (j : nat) (X : nat -> Ts -> R)
         {rv : forall n, RandomVariable dom borel_sa (X n)}
         {frf : forall n, FiniteRangeFunction (X n)}
@@ -1793,18 +1816,15 @@ Section slln_extra.
     eapply SimpleCondexp_factor_out_zero with (sub := filtration_history_sa_sub X (j + m)%nat); trivial.
     apply rvmult_rv.
     - unfold Xm.
-      (* TODO: I think this lemma needs to be forall n0 <= j *)
       apply rv_cutoff_eps_rv; intros.
-      apply rvsum_rv; intros.
-      unfold Xm.
+      apply rvsum_rv_loc; intros.
       apply filtration_history_sa_le_rv.
-      admit.
+      lia.
     - unfold Xm.
-      (* TODO: I think this lemma needs to be forall n <= j *)
       apply cutoff_ind_rv; auto; intros.
       apply filtration_history_sa_le_rv.
-      admit.
-  Admitted.
+      lia.
+  Qed.
 
 Lemma ash_6_1_4 (X: nat -> Ts -> R) (eps:posreal) (m:nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
@@ -2677,14 +2697,14 @@ Proof.
 Qed.
 
 Global Instance rv_max_sum_shift (X : nat -> Ts -> R) (m n : nat)
-         {rv : forall (n:nat), RandomVariable dom borel_sa (X n)} :
+         {rv : forall (k:nat), (k <= m+n)%nat -> RandomVariable dom borel_sa (X k)} :
   let Sum := fun j => (rvsum (fun k w => X (k+m)%nat w) j) in
   RandomVariable dom borel_sa (rvmaxlist (fun k : nat => rvabs (Sum k)) n).
 Proof.
   apply rvmaxlist_rv; intros.
   apply rvabs_rv.
-  apply rvsum_rv; intros.
-  apply rv.
+  apply rvsum_rv_loc; intros.
+  apply rv; lia.
 Defined.
 
 Transparent rv_max_sum_shift.
@@ -2811,7 +2831,7 @@ Qed.
       lia.
     - intros rvm.
       simpl in rvm.
-      unfold rvmaxlist in rvm.
+      unfold rvmaxlist, Rmax_list_map in rvm.
       generalize (Rmax_list_In (map (fun n : nat => f n x) (seq 0 (S n))))
       ; intros HH.
       cut_to HH; [| simpl; congruence].
@@ -3080,6 +3100,8 @@ Qed.
     clear H1.
     generalize (Ash_6_2_1_helper5 X HC H); intros.
     simpl in H1.
+   Admitted.
+(*
     rewrite <- H0 in H1.
     unfold almost.
     destruct H1 as [E HE].
@@ -3088,7 +3110,8 @@ Qed.
     apply cauchy_seq_at_ex_series.
     apply H2.
   Qed.
-
+ *)
+  
   Lemma induced_sigma_scale (X : nat -> Ts -> R) (b : nat -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
       {frf : forall (n:nat), FiniteRangeFunction (X (n))} :

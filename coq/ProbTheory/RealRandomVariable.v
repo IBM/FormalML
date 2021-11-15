@@ -252,6 +252,37 @@ Section RealRandomVariables.
           now apply plus_measurable.
     Qed.
 
+    Instance rvsum_measurable_loc (n:nat)
+             (Xn : nat -> Ts -> R)
+             (Xn_rv : forall m, (m <= n)%nat -> RealMeasurable (Xn m)) :
+      RealMeasurable (rvsum Xn n).
+    Proof.
+      unfold RealMeasurable in *.
+      induction n; intros.
+      - assert (pre_event_equiv (fun omega : Ts => rvsum Xn 0 omega <= r)
+                                (fun omega : Ts => Xn 0%nat omega <= r)).
+        + intro x.
+          unfold rvsum, Hierarchy.sum_n.
+          now rewrite Hierarchy.sum_n_n.
+        + rewrite H.
+          apply Xn_rv; lia.
+      - assert (pre_event_equiv  (fun omega : Ts => rvsum Xn (S n) omega <= r)
+                                 (fun omega => (rvplus (rvsum Xn n) (Xn (S n))) omega <= r)).
+        + intro x.
+          unfold rvsum, rvplus, Hierarchy.sum_n.
+          rewrite Hierarchy.sum_n_Sm.
+          now unfold plus; simpl.
+          lia.
+        + rewrite H.
+          apply plus_measurable.
+          * unfold RealMeasurable.
+            apply IHn.
+            intros.
+            apply Xn_rv; lia.
+          * unfold RealMeasurable.
+            apply Xn_rv; lia.
+    Qed.
+
     Instance minus_measurable (f g : Ts -> R) :
       RealMeasurable f ->
       RealMeasurable g ->
@@ -781,6 +812,18 @@ Section RealRandomVariables.
         apply measurable_rv.
         apply rvsum_measurable; intros.
         now apply rv_measurable.
+      Qed.
+
+      Global Instance rvsum_rv_loc (n:nat)
+             (Xn : nat -> Ts -> R)
+             (Xn_rv : forall m, (m <= n)%nat -> RandomVariable dom borel_sa (Xn m)) :
+        RandomVariable dom borel_sa (rvsum Xn n).
+      Proof.
+        intros.
+        apply measurable_rv.
+        apply rvsum_measurable_loc; intros.
+        apply rv_measurable.
+        apply Xn_rv; lia.
       Qed.
 
       Global Instance rvminus_rv
