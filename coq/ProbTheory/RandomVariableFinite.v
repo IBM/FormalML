@@ -661,12 +661,14 @@ Section fe.
       intro x.
       now rewrite sum_n_n.
     - rewrite (IsFiniteExpectation_proper _ (rvplus (rvsum Xn n) (Xn (S n)))).
-      apply IsFiniteExpectation_plus; trivial.
-      now apply rvsum_rv.
-      intro x.
-      unfold rvsum, rvplus, sum_n.
-      rewrite sum_n_Sm; [|lia].      
-      now unfold plus; simpl.
+      + apply IsFiniteExpectation_plus; trivial.
+        apply rvsum_rv.
+        intros.
+        apply Xn_rv.
+      + intro x.
+        unfold rvsum, rvplus, sum_n.
+        rewrite sum_n_Sm; [|lia].      
+        now unfold plus; simpl.
    Qed.
 
   Lemma sum_expectation
