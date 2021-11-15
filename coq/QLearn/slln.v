@@ -3100,8 +3100,6 @@ Qed.
     clear H1.
     generalize (Ash_6_2_1_helper5 X HC H); intros.
     simpl in H1.
-   Admitted.
-(*
     rewrite <- H0 in H1.
     unfold almost.
     destruct H1 as [E HE].
@@ -3110,7 +3108,6 @@ Qed.
     apply cauchy_seq_at_ex_series.
     apply H2.
   Qed.
- *)
   
   Lemma induced_sigma_scale (X : nat -> Ts -> R) (b : nat -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}

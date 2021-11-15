@@ -804,7 +804,7 @@ Section RealRandomVariables.
         typeclasses eauto.
       Qed.
 
-      Global Instance rvsum_rv (Xn : nat -> Ts -> R)
+      Instance rvsum_rv (Xn : nat -> Ts -> R)
              {rv : forall (n:nat), RandomVariable dom borel_sa (Xn n)} :
         forall (n:nat), RandomVariable dom borel_sa (rvsum Xn n).
       Proof.
