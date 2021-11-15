@@ -1,1 +1,1 @@
--R coq FormalML -arg -set -arg "Warnings=+default,-ambiguous-path,-typechecker,-ssr-search-moved"
+-R coq FormalML -arg -set -arg "Warnings=+default,-ambiguous-path,-typechecker,-ssr-search-moved,-deprecated"

@@ -3,7 +3,7 @@ include Makefile.coq_modules
 
 COQ_FILES = $(addprefix coq/,$(MODULES:%=%.v))
 
-all: coq ocaml
+all: coq # ocaml
 
 coq: Makefile.coq
 	@$(MAKE) -f Makefile.coq

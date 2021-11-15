@@ -1,12 +1,14 @@
+Require Import Flocq.IEEE754.BinarySingleNaN.
 Require Import BinInt.
+
+Require Import FloatishDef.
 
 Require Import Flocq.IEEE754.Binary.
 Require Import Flocq.IEEE754.Bits.
 
-Require Import FloatishDef.
 
 Definition IEEE_float := binary64.
-Definition IEEE_zero := B754_zero 53 1024 false.
+Definition IEEE_zero : IEEE_float := B754_zero 53 1024 false.
 Definition IEEE_opp := b64_opp.
 Definition IEEE_plus := b64_plus mode_NE.
 Definition IEEE_minus := b64_minus mode_NE.
@@ -64,7 +66,6 @@ Axiom IEEE_ln : IEEE_float -> IEEE_float.
 Axiom IEEE_pi : IEEE_float.
 Axiom IEEE_sin : IEEE_float -> IEEE_float.
 Axiom IEEE_cos : IEEE_float -> IEEE_float.  
-
 
 Local Instance floatish_IEEE : floatish :=
   {

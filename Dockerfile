@@ -24,5 +24,5 @@ COPY --chown=coq:coq ocaml ./formal_ml/ocaml
 RUN ["/bin/bash", "--login", "-c", "set -x && cd formal_ml && \
      make && make doc"]
 
-CMD ["/bin/bash", "--login", "-c", "set -x && cd formal_ml && \
-    make test"]
+# CMD ["/bin/bash", "--login", "-c", "set -x && cd formal_ml && \
+#     make test"]

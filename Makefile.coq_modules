@@ -109,5 +109,6 @@ MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	$(addprefix NeuralNetworks/,$(NEURAL_NETWORKS)) \
 	$(addprefix ProbTheory/,$(PROB_THEORY)) \
 	$(addprefix CertRL/,$(CERTRL)) \
-	$(addprefix QLearn/,$(QLEARN))
+	$(addprefix QLearn/,$(QLEARN)) \
+	API
 	

@@ -1,3 +1,4 @@
+Require Import Qreals.
 Require Import Reals.
 
 Require Import Lra Lia.
@@ -207,8 +208,8 @@ Section RealRandomVariables.
                   (pre_union_of_collection
                      (fun (n:nat) => 
                         pre_event_inter
-                          (fun omega : Ts => f omega > r - Qreals.Q2R (iso_b n))
-                          (fun omega : Ts => g omega > Qreals.Q2R (iso_b n))))).
+                          (fun omega : Ts => f omega > r - Q2R (iso_b n))
+                          (fun omega : Ts => g omega > Q2R (iso_b n))))).
         + unfold pre_event_equiv, pre_union_of_collection, pre_event_inter; intros.
           split; intros.
           * assert (g x > r - f x) by lra.

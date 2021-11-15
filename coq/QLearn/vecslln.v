@@ -1,3 +1,4 @@
+Require Import Qreals.
 Require Import Lra Lia Reals RealAdd RandomVariableL2 Coquelicot.Coquelicot.
 Require Import Morphisms Finite List ListAdd Permutation infprod Almost NumberIso.
 Require Import Sums SimpleExpectation PushNeg.
@@ -2294,7 +2295,7 @@ Qed.
                         forall N:nat,
                         exists (n m : nat),
                           (n >= N)%nat /\ (m >= N)%nat /\
-                          hilbert.Hnorm (minus (X n omega) (X m omega)) >= Qreals.Q2R eps)).
+                          hilbert.Hnorm (minus (X n omega) (X m omega)) >= Q2R eps)).
     {
       intros x.
       split.
@@ -2305,7 +2306,7 @@ Qed.
           split.
           * apply Qreals.Rlt_Qlt.
             unfold QArith_base.inject_Z.
-            unfold Qreals.Q2R.
+            unfold Q2R.
             simpl.
             rewrite Rmult_0_l.
             apply ql.
@@ -2314,12 +2315,12 @@ Qed.
             exists n; exists m.
             intuition lra.
       - intros [eps [epos HH]].
-        assert (qepspos: 0 < Qreals.Q2R eps).
+        assert (qepspos: 0 < Q2R eps).
         {
           apply Qreals.Qlt_Rlt in epos.
           now rewrite RMicromega.Q2R_0 in epos.
         }
-        exists (mkposreal (Qreals.Q2R eps) qepspos).
+        exists (mkposreal (Q2R eps) qepspos).
         intros N.
         destruct (HH N) as [n [m [? [HH3]]]].
         exists n; exists m.
@@ -2328,7 +2329,7 @@ Qed.
     rewrite eqq1.
     apply sa_countable_union_iso; try typeclasses eauto.
     intros.
-    destruct (Rlt_dec 0 (Qreals.Q2R i)).
+    destruct (Rlt_dec 0 (Q2R i)).
     - assert (QArith_base.Qlt {| QArith_base.Qnum := 0; QArith_base.Qden := 1 |} i).
       {
         apply Qreals.Rlt_Qlt.
@@ -2336,7 +2337,7 @@ Qed.
       } 
       eapply (sa_proper _  (fun omega => (forall N : nat,
                                              exists n m : nat,
-                                               (n >= N)%nat /\ (m >= N)%nat /\ hilbert.Hnorm (minus (X n omega) (X m omega)) >= Qreals.Q2R i))).
+                                               (n >= N)%nat /\ (m >= N)%nat /\ hilbert.Hnorm (minus (X n omega) (X m omega)) >= Q2R i))).
       + firstorder.
       + apply sa_pre_countable_inter; intros N.
         now apply (vec_sa_sigma_not_cauchy X (mkposreal _ r)).
@@ -3241,11 +3242,11 @@ Qed.
                                              | S k => X k
                                              end)
                                 (frf:=  fun n => match n with
-                                              | 0 => frf0
+                                              | 0%nat => frf0
                                               | S k => frf k
                                               end)
                                 (rv:=  fun n => match n with
-                                              | 0 => rv0
+                                              | 0%nat => rv0
                                               | S k => rv k
                                               end
         )).
@@ -3299,7 +3300,7 @@ Qed.
             := fun n => match n as n' return
                            RandomVariable dom (Rvector_borel_sa size) (X' n')
                      with
-                     | 0 => rv0
+                     | 0%nat => rv0
                      | S k => rv k
                      end).
 
@@ -3307,7 +3308,7 @@ Qed.
             := fun n => match n as n' return
                            FiniteRangeFunction (X' n')
                      with
-                     | 0 => frf0
+                     | 0%nat => frf0
                      | S k => frf k
                      end).
 
