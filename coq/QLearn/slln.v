@@ -1,3 +1,4 @@
+Require Import Qreals.
 Require Import Lra Lia Reals RealAdd RandomVariableL2 Coquelicot.Coquelicot.
 Require Import Morphisms Finite List ListAdd Permutation infprod Almost NumberIso.
 Require Import Sums SimpleExpectation PushNeg.
@@ -2268,7 +2269,7 @@ Proof.
                       forall N:nat,
                       exists (n : nat),
                         (n >= N)%nat /\
-                        Rabs ((X n omega) - (X0 omega)) >= Qreals.Q2R eps)).
+                        Rabs ((X n omega) - (X0 omega)) >= Q2R eps)).
   {
     intros x.
     split.
@@ -2279,7 +2280,7 @@ Proof.
         split.
         * apply Qreals.Rlt_Qlt.
           unfold QArith_base.inject_Z.
-          unfold Qreals.Q2R.
+          unfold Q2R.
           simpl.
           rewrite Rmult_0_l.
           apply ql.
@@ -2288,12 +2289,12 @@ Proof.
           exists n.
           intuition lra.
     - intros [eps [epos HH]].
-      assert (qepspos: 0 < Qreals.Q2R eps).
+      assert (qepspos: 0 < Q2R eps).
       {
         apply Qreals.Qlt_Rlt in epos.
         now rewrite RMicromega.Q2R_0 in epos.
       }
-      exists (mkposreal (Qreals.Q2R eps) qepspos).
+      exists (mkposreal (Q2R eps) qepspos).
       intros N.
       destruct (HH N) as [n [Hn1 Hn2]].
       exists n. intuition lra.
@@ -2301,7 +2302,7 @@ Proof.
   rewrite eqq1.
   apply sa_countable_union_iso; try typeclasses eauto.
   intros.
-  destruct (Rlt_dec 0 (Qreals.Q2R i)).
+  destruct (Rlt_dec 0 (Q2R i)).
   - assert (QArith_base.Qlt {| QArith_base.Qnum := 0; QArith_base.Qden := 1 |} i).
     {
       apply Qreals.Rlt_Qlt.
@@ -2309,7 +2310,7 @@ Proof.
     }
     eapply (sa_proper _  (fun omega => (forall N : nat,
       exists n : nat,
-        (n >= N)%nat /\ Rabs (X n omega - X0 omega) >= Qreals.Q2R i))).
+        (n >= N)%nat /\ Rabs (X n omega - X0 omega) >= Q2R i))).
     + firstorder.
     + apply sa_pre_countable_inter; intros N.
       now apply (sa_sigma_not_convergent X X0 (mkposreal _ r)).
@@ -2340,7 +2341,7 @@ Proof.
                       forall N:nat,
                       exists (n m : nat),
                         (n >= N)%nat /\ (m >= N)%nat /\
-                        Rabs ((X n omega) - (X m omega)) >= Qreals.Q2R eps)).
+                        Rabs ((X n omega) - (X m omega)) >= Q2R eps)).
   {
     intros x.
     split.
@@ -2351,7 +2352,7 @@ Proof.
         split.
         * apply Qreals.Rlt_Qlt.
           unfold QArith_base.inject_Z.
-          unfold Qreals.Q2R.
+          unfold Q2R.
           simpl.
           rewrite Rmult_0_l.
           apply ql.
@@ -2360,12 +2361,12 @@ Proof.
           exists n; exists m.
           intuition lra.
     - intros [eps [epos HH]].
-      assert (qepspos: 0 < Qreals.Q2R eps).
+      assert (qepspos: 0 < Q2R eps).
       {
         apply Qreals.Qlt_Rlt in epos.
         now rewrite RMicromega.Q2R_0 in epos.
       }
-      exists (mkposreal (Qreals.Q2R eps) qepspos).
+      exists (mkposreal (Q2R eps) qepspos).
       intros N.
       destruct (HH N) as [n [m [? [HH3]]]].
       exists n; exists m.
@@ -2374,7 +2375,7 @@ Proof.
   rewrite eqq1.
   apply sa_countable_union_iso; try typeclasses eauto.
   intros.
-  destruct (Rlt_dec 0 (Qreals.Q2R i)).
+  destruct (Rlt_dec 0 (Q2R i)).
   - assert (QArith_base.Qlt {| QArith_base.Qnum := 0; QArith_base.Qden := 1 |} i).
     {
       apply Qreals.Rlt_Qlt.
@@ -2382,7 +2383,7 @@ Proof.
     } 
     eapply (sa_proper _  (fun omega => (forall N : nat,
       exists n m : nat,
-        (n >= N)%nat /\ (m >= N)%nat /\ Rabs (X n omega - X m omega) >= Qreals.Q2R i))).
+        (n >= N)%nat /\ (m >= N)%nat /\ Rabs (X n omega - X m omega) >= Q2R i))).
     + firstorder.
     + apply sa_pre_countable_inter; intros N.
       now apply (sa_sigma_not_cauchy X (mkposreal _ r)).

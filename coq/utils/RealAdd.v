@@ -1,3 +1,4 @@
+Require Import Qreals.
 Require Import Program.Basics.
 Require Import Classical.
 Require Import QArith Coq.Reals.Rbase Coq.Reals.RList.
@@ -918,7 +919,8 @@ Section expprops.
     + destruct (Rlt_or_le x 0).
       -- left. apply exp_ineq3. lra.
       -- destruct H0.
-         ++ left. now apply exp_ineq1.
+         ++ left.
+            apply exp_ineq1; lra.
          ++ right. subst ; simpl.
             rewrite exp_0 ; lra.
     + left. now apply exp_ineq2.
@@ -4735,10 +4737,10 @@ Section Qinr.
 
   Lemma Qmult_den (num den : Z) :
     (0 < den)%Z ->
-    IZR num = IZR den * Qreals.Q2R (Qmake num (Z.to_pos den)).
+    IZR num = IZR den * Q2R (Qmake num (Z.to_pos den)).
   Proof.
     intros.
-    unfold Qreals.Q2R.
+    unfold Q2R.
     simpl.
     replace (Z.pos (Z.to_pos den)) with den.
     - field.
@@ -4751,7 +4753,7 @@ Section Qinr.
   Lemma Q_dense :
     forall (l r : R),
     (l < r)%R ->
-    { m:Q | l < Qreals.Q2R m < r}.
+    { m:Q | l < Q2R m < r}.
   Proof.
     intros.
     assert (r - l > 0) by lra.
@@ -4770,7 +4772,7 @@ Section Qinr.
 
   Lemma Q_dense' :
     forall (l r : R), l <> r ->
-    { m:Q | Rmin l r < Qreals.Q2R m < Rmax l r}.
+    { m:Q | Rmin l r < Q2R m < Rmax l r}.
   Proof.
     intros.
     destruct (Rlt_dec l r).
@@ -4786,17 +4788,17 @@ Section Qinr.
   Qed.      
 
   Lemma Qrnext_prop (x : R) (prev : Q) :
-    (Qreals.Q2R prev <> x) ->
-    (x + Qreals.Q2R prev) / 2 <> x.
+    (Q2R prev <> x) ->
+    (x + Q2R prev) / 2 <> x.
   Proof.
     lra.
   Qed.
   
   Definition Qrnext (x : R) (prev : Q) :Q
-    := match (Req_EM_T (Qreals.Q2R prev) x) with
+    := match (Req_EM_T (Q2R prev) x) with
        | left _ => prev
        | right pf =>
-         proj1_sig (Q_dense' ((x + Qreals.Q2R prev) /2) x (Qrnext_prop x prev pf))
+         proj1_sig (Q_dense' ((x + Q2R prev) /2) x (Qrnext_prop x prev pf))
        end.
 
   Fixpoint Qr (x : R) (n : nat) : Q
@@ -4806,7 +4808,7 @@ Section Qinr.
        end.
 
   Lemma Qr_dist (x : R) (n : nat) :
-    Rabs (Qreals.Q2R (Qr x n) - x) <= (Rabs x) / (2^n).
+    Rabs (Q2R (Qr x n) - x) <= (Rabs x) / (2^n).
   Proof.
     induction n.
     - simpl.
@@ -4838,7 +4840,7 @@ Section Qinr.
         unfold Rabs at 1.
         match_destr.
         * {
-            cut (- (Qreals.Q2R x0 - x) * 2 <= Rabs x / (2 ^ n)).
+            cut (- (Q2R x0 - x) * 2 <= Rabs x / (2 ^ n)).
             {
               intros.
               apply (Rmult_le_compat_r (/ 2)) in H; try lra.
@@ -4861,7 +4863,7 @@ Section Qinr.
             replace (2*x) with (x+x) by lra.
             rewrite Rplus_assoc.
             apply Rplus_le_compat_l.
-            cut (x + Qreals.Q2R (Qr x n) <= (2 * Qreals.Q2R x0)); [lra |].
+            cut (x + Q2R (Qr x n) <= (2 * Q2R x0)); [lra |].
             unfold Rmin in lt1.
             match_destr_in lt1; lra.
           }
@@ -4897,7 +4899,7 @@ Section Qinr.
    Qed.
 
   Lemma Qr_lim x : 
-    is_lim_seq (fun n => Qreals.Q2R (Qr x n)) x.
+    is_lim_seq (fun n => Q2R (Qr x n)) x.
   Proof.
     intro xpos.
     apply is_lim_seq_spec.
@@ -5493,14 +5495,14 @@ Section convex2.
         (conv: forall c x y, convex phi c x y) :
     exists (c1 c2 :R),
     forall (n:nat),
-      c1 <= proj1_sig (convex_support_line phi conv (Qreals.Q2R (Qr x n))) <= c2.
+      c1 <= proj1_sig (convex_support_line phi conv (Q2R (Qr x n))) <= c2.
   Proof.
     generalize (Qr_dist x); intros.
-    assert (forall n, Rabs (Qreals.Q2R (Qr x n)) <= 2 * Rabs x).
+    assert (forall n, Rabs (Q2R (Qr x n)) <= 2 * Rabs x).
     {
       intros.
       specialize (H n).
-      generalize (Rabs_triang_inv (Qreals.Q2R (Qr x n)) x); intros.
+      generalize (Rabs_triang_inv (Q2R (Qr x n)) x); intros.
       generalize (Rle_trans _ _ _ H0 H); intros.
       apply Rplus_le_compat_r with (r := Rabs x) in H1.
       unfold Rminus in H1.
@@ -5520,7 +5522,7 @@ Section convex2.
         rewrite <- (pow1 n).
         apply pow_incr; lra.
     }
-    assert (forall n, Qreals.Q2R (Qr x n) <= 2*Rabs x).
+    assert (forall n, Q2R (Qr x n) <= 2*Rabs x).
     {
       intros.
       eapply Rle_trans.
@@ -5529,7 +5531,7 @@ Section convex2.
       Unshelve.
       apply Rle_abs.
     }
-    assert (forall n, -2 * Rabs x <= Qreals.Q2R (Qr x n)).
+    assert (forall n, -2 * Rabs x <= Q2R (Qr x n)).
     {
       intros.
       generalize Rabs_maj2; intros.
@@ -5539,14 +5541,14 @@ Section convex2.
       apply H2.
       now replace (- (-2 * Rabs x)) with (2 * Rabs x) by lra.
     }
-    assert (forall n,  proj1_sig (convex_support_line phi conv (Qreals.Q2R (Qr x n))) <=
+    assert (forall n,  proj1_sig (convex_support_line phi conv (Q2R (Qr x n))) <=
                        proj1_sig (convex_support_line phi conv (2 * Rabs x))).
     {
       intros.
       now apply support_line_increasing.
     }
     assert (forall n,  proj1_sig (convex_support_line phi conv (-2 * Rabs x)) <= 
-                       proj1_sig (convex_support_line phi conv (Qreals.Q2R (Qr x n)))).
+                       proj1_sig (convex_support_line phi conv (Q2R (Qr x n)))).
                        
     {
       intros.
@@ -5564,7 +5566,7 @@ Section convex2.
         (conv: forall c x y, convex phi c x y) :
     exists (c : posreal),
     forall (n:nat),
-      Rabs  (proj1_sig (convex_support_line phi conv (Qreals.Q2R (Qr x n))))  < c.
+      Rabs  (proj1_sig (convex_support_line phi conv (Q2R (Qr x n))))  < c.
    Proof.
      destruct (qr_support_line_bound phi x conv) as [c1 [c2 ?]].
      assert (0 < ((Rmax (Rabs c1) (Rabs c2)) + 1)).
@@ -5600,9 +5602,9 @@ Section convex2.
 
   Lemma qr_support_line_limit (phi : R -> R) (x : R) 
         (conv: forall c x y, convex phi c x y) :
-    let L := fun n => (phi (Qreals.Q2R (Qr x n))) +
-                      (x - (Qreals.Q2R (Qr x n))) * 
-                      (proj1_sig (convex_support_line phi conv (Qreals.Q2R (Qr x n)))) in
+    let L := fun n => (phi (Q2R (Qr x n))) +
+                      (x - (Q2R (Qr x n))) * 
+                      (proj1_sig (convex_support_line phi conv (Q2R (Qr x n)))) in
     is_lim_seq L (phi x).
   Proof.
     simpl.
@@ -5611,7 +5613,7 @@ Section convex2.
     - apply is_lim_seq_continuous.
       + now apply convex_continuous.
       + apply Qr_lim.
-    - assert (is_lim_seq (fun n : nat => (x - Qreals.Q2R (Qr x n))) 0).
+    - assert (is_lim_seq (fun n : nat => (x - Q2R (Qr x n))) 0).
       {
         replace (0) with (x - x) by lra.
         apply is_lim_seq_minus'.
@@ -5658,7 +5660,7 @@ Section convex2.
       is_sup_seq (fun n => (a n) * x + (b n)) (phi x).
   Proof.
     intros.
-    pose (n_to_Q_to_R := fun (n:nat) => Qreals.Q2R (iso_b n)).
+    pose (n_to_Q_to_R := fun (n:nat) => Q2R (iso_b n)).
     pose (a := fun (n : nat) => proj1_sig (convex_support_line phi H (n_to_Q_to_R n))).
     pose (b := fun (n : nat) => phi (n_to_Q_to_R n) - (a n) * (n_to_Q_to_R n)).
     exists a; exists b.
@@ -5681,13 +5683,13 @@ Section convex2.
       exists (iso_f (Qr x x0)).
       unfold b.
       rewrite Rabs_left1 in H1.
-      + replace (n_to_Q_to_R (iso_f (Qr x x0))) with (Qreals.Q2R (Qr x x0)).
+      + replace (n_to_Q_to_R (iso_f (Qr x x0))) with (Q2R (Qr x x0)).
         * replace (a (iso_f (Qr x x0))) with
-              (proj1_sig (convex_support_line phi H (Qreals.Q2R (Qr x x0)))).
+              (proj1_sig (convex_support_line phi H (Q2R (Qr x x0)))).
           -- simpl.
              lra.
           -- unfold a.
-             replace (n_to_Q_to_R (iso_f (Qr x x0))) with (Qreals.Q2R (Qr x x0)); trivial.
+             replace (n_to_Q_to_R (iso_f (Qr x x0))) with (Q2R (Qr x x0)); trivial.
              unfold n_to_Q_to_R.
              now rewrite iso_b_f.
         * unfold n_to_Q_to_R.

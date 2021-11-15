@@ -1,3 +1,4 @@
+Require Import Qreals.
 Require Import Coquelicot.Coquelicot.
 Require Import ProbSpace SigmaAlgebras.
 Require Import Reals.
@@ -302,7 +303,7 @@ Qed.
   Qed.
 
   Definition Q_interval (l r : Q) (x:R) : Prop :=
-    Qreals.Q2R l < x < Qreals.Q2R r.  
+    Q2R l < x < Q2R r.  
   
   Lemma Q_neighborhood_included (D:R -> Prop) (x:R) :
         neighbourhood D x -> 
@@ -340,7 +341,7 @@ Qed.
         destruct H as [l0 H]; destruct H as [r0 H].
         destruct H.
         unfold included,disc,Q_interval in *.
-        assert (0 < Rmin (x - Qreals.Q2R l0) (Qreals.Q2R r0 - x))%R.
+        assert (0 < Rmin (x - Q2R l0) (Q2R r0 - x))%R.
         + apply Rmin_pos; lra.
         + exists (mkposreal _ H2); intros; apply H1.
           rewrite Rcomplements.Rabs_lt_between in H3; simpl in H3.
@@ -382,8 +383,8 @@ Qed.
         apply sa_countable_union; intros.
         generalize (sa_open_intervals f H); intros.
         unfold Q_interval.
-        specialize (H4 (Qreals.Q2R (iso_b (fst (@iso_b _ nat nat_pair_encoder n))))
-                       (Qreals.Q2R (iso_b (snd (@iso_b _ nat nat_pair_encoder n))))).
+        specialize (H4 (Q2R (iso_b (fst (@iso_b _ nat nat_pair_encoder n))))
+                       (Q2R (iso_b (snd (@iso_b _ nat nat_pair_encoder n))))).
         apply sa_inter; trivial.
         apply sa_sigma_const_classic.
     Qed.

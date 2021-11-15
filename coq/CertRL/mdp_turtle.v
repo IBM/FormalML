@@ -125,9 +125,9 @@ Section turtle.
     option (turtle_state max_x max_y)
     := (let '(x,y) := s in
         match a with
-        | Up => if y == 0 then None else Some (x, y-1)
+        | Up => if proj1_sig y == 0 then None else Some (x, y-1)
         | Down => if lt_dec (y+1) max_y then Some (x, y+1) else None
-        | Left => if x == 0 then None else Some (x-1, y)
+        | Left => if proj1_sig x == 0 then None else Some (x-1, y)
         | Right => if lt_dec (x+1) max_x then Some (x+1, y) else None
         end)%nat.
   Next Obligation.
