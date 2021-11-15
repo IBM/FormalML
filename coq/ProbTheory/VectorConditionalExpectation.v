@@ -961,12 +961,23 @@ Section vec_cond_exp.
     - apply rvconst.
   Qed.
 
+  Instance IsFiniteExpectation_vecrvsum {n}
+           (f : Ts -> vector R n)
+           {isfe: vector_IsFiniteExpectation prts f} :
+    IsFiniteExpectation prts (vecrvsum f).
+  Proof.
+    Admitted.
+
+
   Instance IsFiniteExpectation_inner_vecrvmult {n}
            (f g : Ts -> vector R n)
            {isfe: vector_IsFiniteExpectation prts (vecrvmult f g)} :
     IsFiniteExpectation prts (rvinner f g).
   Proof.
-    Admitted.
+    generalize (IsFiniteExpectation_vecrvsum (vecrvmult f g)).
+    apply IsFiniteExpectation_proper.
+    apply rvinner_unfold.
+  Qed.
            
   Lemma vector_FiniteCondexp_factor_out_inner_zero  {n}
         (f g : Ts -> vector R n)
