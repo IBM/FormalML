@@ -898,10 +898,26 @@ Section vec_cond_exp.
       apply abs_convex.
   Qed.
 
+  Instance IsFiniteExpectation_vecrvsum {n}
+           (f : Ts -> vector R n)
+           {isfe: vector_IsFiniteExpectation prts f} :
+    IsFiniteExpectation prts (vecrvsum f).
+  Proof.
+    Admitted.
+
+  Instance IsFiniteExpectation_inner_vecrvmult {n}
+           (f g : Ts -> vector R n)
+           {isfe: vector_IsFiniteExpectation prts (vecrvmult f g)} :
+    IsFiniteExpectation prts (rvinner f g).
+  Proof.
+    generalize (IsFiniteExpectation_vecrvsum (vecrvmult f g)).
+    apply IsFiniteExpectation_proper.
+    apply rvinner_unfold.
+  Qed.
+
   Lemma FiniteExpectation_vecrvsum {n}
         (f : Ts -> vector R n)
         {rvf : RandomVariable dom (Rvector_borel_sa n) f}
-        {isfe: IsFiniteExpectation prts (vecrvsum f)}
         {isfev:vector_IsFiniteExpectation prts f} :
     FiniteExpectation prts (vecrvsum f) =
     RealVectorHilbert.Rvector_sum (vector_FiniteExpectation prts f).
@@ -912,15 +928,14 @@ Section vec_cond_exp.
         (f g : Ts -> vector R n)
         {rvf : RandomVariable dom (Rvector_borel_sa n) f}
         {rvgf: RandomVariable dom (Rvector_borel_sa n) g}
-        {isfefg:vector_IsFiniteExpectation prts (vecrvmult f g)} 
-        {isfe_inner:IsFiniteExpectation prts (rvinner f g)} :    
+        {isfefg:vector_IsFiniteExpectation prts (vecrvmult f g)} :
     FiniteExpectation prts (rvinner f g) = 
     RealVectorHilbert.Rvector_sum (vector_FiniteExpectation prts (vecrvmult f g)).
   Proof.
-    generalize (rvinner_unfold f g); intros.
-    rewrite (FiniteExpectation_ext prts _ _ H).
-    apply FiniteExpectation_vecrvsum.
-    typeclasses eauto.
+    generalize (FiniteExpectation_vecrvsum (vecrvmult f g)); intros.
+    rewrite <- H.
+    apply FiniteExpectation_ext.
+    apply rvinner_unfold.
   Qed.
 
   Lemma vector_FiniteCondexp_factor_out_zero  {n}
@@ -961,30 +976,12 @@ Section vec_cond_exp.
     - apply rvconst.
   Qed.
 
-  Instance IsFiniteExpectation_vecrvsum {n}
-           (f : Ts -> vector R n)
-           {isfe: vector_IsFiniteExpectation prts f} :
-    IsFiniteExpectation prts (vecrvsum f).
-  Proof.
-    Admitted.
-
-
-  Instance IsFiniteExpectation_inner_vecrvmult {n}
-           (f g : Ts -> vector R n)
-           {isfe: vector_IsFiniteExpectation prts (vecrvmult f g)} :
-    IsFiniteExpectation prts (rvinner f g).
-  Proof.
-    generalize (IsFiniteExpectation_vecrvsum (vecrvmult f g)).
-    apply IsFiniteExpectation_proper.
-    apply rvinner_unfold.
-  Qed.
            
   Lemma vector_FiniteCondexp_factor_out_inner_zero  {n}
         (f g : Ts -> vector R n)
         {rvf : RandomVariable dom (Rvector_borel_sa n) f}
         {rvgf: RandomVariable dom2 (Rvector_borel_sa n) g}
         {isfef:vector_IsFiniteExpectation prts f} 
-(*       {isfe_inner:IsFiniteExpectation prts (rvinner f g)}    *)
         {isfefg:vector_IsFiniteExpectation prts (vecrvmult f g)} :
     almostR2 prts eq (vector_FiniteConditionalExpectation f) (const RealVectorHilbert.Rvector_zero) ->
     FiniteExpectation prts (rvinner f g) = 0.
