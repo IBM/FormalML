@@ -2334,8 +2334,7 @@ algorithm.
  Qed.         
 
  Lemma shift_history_equiv (f g : nat -> Ts -> vector R I) :
-   rv_eq (f 0%nat) (const Rvector_zero) ->
-   rv_eq (g 0%nat) (const Rvector_zero) ->
+   rv_eq (f 0%nat) (g 0%nat) ->
    (forall (n:nat),
        sa_equiv
          (filtration_history_sa (cod := Rvector_borel_sa I) (fun n0 => f (S n0)) n)
@@ -2388,7 +2387,6 @@ algorithm.
             reflexivity.
           - apply shift_history_equiv.
             + now simpl.
-            + now rewrite H1.
             + apply H4.
         }
         assert (
