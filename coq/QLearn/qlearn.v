@@ -2333,6 +2333,19 @@ algorithm.
    now apply Rinv_neq_0_compat.
  Qed.         
 
+ Lemma shift_history_equiv (f g : nat -> Ts -> vector R I) :
+   rv_eq (f 0%nat) (const Rvector_zero) ->
+   rv_eq (g 0%nat) (const Rvector_zero) ->
+   (forall (n:nat),
+       sa_equiv
+         (filtration_history_sa (cod := Rvector_borel_sa I) (fun n0 => f (S n0)) n)
+         (filtration_history_sa (cod := Rvector_borel_sa I) (fun n0 => g (S n0)) n)) ->
+   forall (n:nat),
+     sa_equiv (filtration_history_sa (cod := Rvector_borel_sa I) f n)
+              (filtration_history_sa (cod := Rvector_borel_sa I) g n).
+ Proof.
+   Admitted.
+
     Lemma condexp_hist_z (w z: nat -> Ts -> vector R I) (b : nat -> R)
           (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n)) 
           (rx : forall n, RandomVariable dom (Rvector_borel_sa I)
@@ -2373,7 +2386,10 @@ algorithm.
           - simpl.
             rewrite H1.
             reflexivity.
-          - admit.
+          - apply shift_history_equiv.
+            + now simpl.
+            + now rewrite H1.
+            + apply H4.
         }
         assert (
           almostR2 
@@ -2422,7 +2438,7 @@ algorithm.
         now rewrite H1.
       - trivial.
       - apply H2.
-      Admitted.
+    Qed.
 
     (* Lemma 9*)
     Lemma as_convergent_lemma (C : R) (w : nat -> Ts -> vector R I)
