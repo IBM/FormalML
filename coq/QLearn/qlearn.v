@@ -2332,18 +2332,50 @@ algorithm.
    intros.
    now apply Rinv_neq_0_compat.
  Qed.         
+  
+  Lemma filtrate_sa_shift1 {Td} (f : nat -> SigmaAlgebra Td) n :
+    sa_equiv (filtrate_sa f (S n))
+             (union_sa (f 0%nat) (filtrate_sa (fun k => f (S k)) n)).
+  Proof.
+    induction n; simpl.
+    - apply union_sa_comm.
+    - rewrite IHn.
+      rewrite union_sa_assoc.
+      rewrite (union_sa_comm (f (S (S n)))).
+      rewrite <- union_sa_assoc.
+      reflexivity.
+  Qed.
+    
+  Lemma shift_filtrate_sa {Td} (f g : nat -> SigmaAlgebra Td) :
+    sa_equiv (f 0%nat) (g 0%nat) ->
+    (forall n, sa_equiv (filtrate_sa (fun k => f (S k)) n)
+                   (filtrate_sa (fun k => g (S k)) n)) ->
+    forall n, sa_equiv (filtrate_sa f n)
+                  (filtrate_sa g n).
+  Proof.
+    intros eqq0 eqqn.
+    destruct n.
+    - now simpl.
+    - repeat  rewrite filtrate_sa_shift1.
+      now apply union_sa_proper.
+  Qed.
 
- Lemma shift_history_equiv (f g : nat -> Ts -> vector R I) :
-   rv_eq (f 0%nat) (g 0%nat) ->
+ Lemma shift_history_equiv {Td} (cod:SigmaAlgebra Td) (f g : nat -> Ts -> Td) :
+   sa_equiv
+     (pullback_sa cod (f 0%nat))
+     (pullback_sa cod (g 0%nat))  ->
    (forall (n:nat),
        sa_equiv
-         (filtration_history_sa (cod := Rvector_borel_sa I) (fun n0 => f (S n0)) n)
-         (filtration_history_sa (cod := Rvector_borel_sa I) (fun n0 => g (S n0)) n)) ->
+         (filtration_history_sa (cod := cod) (fun n0 => f (S n0)) n)
+         (filtration_history_sa (cod := cod) (fun n0 => g (S n0)) n)) ->
    forall (n:nat),
-     sa_equiv (filtration_history_sa (cod := Rvector_borel_sa I) f n)
-              (filtration_history_sa (cod := Rvector_borel_sa I) g n).
- Proof.
-   Admitted.
+     sa_equiv (filtration_history_sa (cod := cod) f n)
+              (filtration_history_sa (cod := cod) g n).
+  Proof.
+    intros eqqs0 eqqsn n.
+    now apply shift_filtrate_sa.
+  Qed.
+
 
     Lemma condexp_hist_z (w z: nat -> Ts -> vector R I) (b : nat -> R)
           (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n)) 
@@ -2386,7 +2418,7 @@ algorithm.
             rewrite H1.
             reflexivity.
           - apply shift_history_equiv.
-            + now simpl.
+            + now apply pullback_sa_proper.
             + apply H4.
         }
         assert (

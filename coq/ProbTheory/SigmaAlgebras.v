@@ -656,6 +656,50 @@ Proof.
   apply pre_event_union_comm.
 Qed.
 
+Lemma union_sa_generated_l_simpl {T : Type} (a b:pre_event T -> Prop) :
+  generated_sa
+    (pre_event_union (sa_sigma (SigmaAlgebra:=(generated_sa a))) b)
+    ===
+    generated_sa
+    (pre_event_union a b).
+Proof.
+  split; intros HH; simpl in *; intros.
+  - apply HH.
+    intros ? [?|?].
+    + apply H0; intros ??.
+      apply H; red; tauto.
+    + apply H; red; tauto.
+  - apply HH.
+    intros ? [?|?].
+    + apply H.
+      red.
+      left; intros.
+      now apply H1.
+    + apply H.
+      red; tauto.
+Qed.
+
+Lemma union_sa_generated_r_simpl {T : Type} (a b:pre_event T -> Prop) :
+  generated_sa
+    (pre_event_union a (sa_sigma (SigmaAlgebra:=(generated_sa b))))
+    ===
+    generated_sa
+    (pre_event_union a b).
+Proof.
+  rewrite pre_event_union_comm.
+  rewrite union_sa_generated_l_simpl.
+  now rewrite pre_event_union_comm.
+Qed.
+
+Lemma union_sa_assoc {T : Type} (sa1 sa2 sa3:SigmaAlgebra T) :
+  sa_equiv (union_sa sa1 (union_sa sa2 sa3)) (union_sa (union_sa sa1 sa2) sa3).
+Proof.
+  unfold union_sa.
+  rewrite union_sa_generated_l_simpl, union_sa_generated_r_simpl.
+  apply generated_sa_proper.
+  apply pre_event_union_assoc.
+Qed.
+
 Lemma union_sa_sub_both {T : Type} {sa1 sa2 dom:SigmaAlgebra T} :
   sa_sub sa1 dom ->
   sa_sub sa2 dom ->
