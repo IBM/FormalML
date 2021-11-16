@@ -1237,7 +1237,7 @@ Lemma vec_expec_cross_zero {size:nat} (X : nat -> Ts -> vector R size)
       + apply rm; lia.
   Qed.
 
-  Instance vec_rv_cutoff_eps_rv {size:nat} (n : nat) (eps : R) (X : nat -> Ts -> vector R size) 
+  Global Instance vec_rv_cutoff_eps_rv {size:nat} (n : nat) (eps : R) (X : nat -> Ts -> vector R size) 
            {rv: forall k, (k <= n)%nat -> RandomVariable dom (Rvector_borel_sa size) (X k)} :
     RandomVariable dom (Rvector_borel_sa size) (vec_cutoff_eps_rv n eps X).
   Proof.
@@ -1287,7 +1287,9 @@ Lemma vec_expec_cross_zero {size:nat} (X : nat -> Ts -> vector R size)
                 apply rv; lia.
              ++ intros.
                 rewrite vector_nth_fun_to_vector.
-                admit.
+                apply rv_measurable.
+                apply vecrvnth_rv.
+                apply rv; lia.
       + red; intros.
         match_destr.
         * split; intros.
@@ -1304,7 +1306,7 @@ Lemma vec_expec_cross_zero {size:nat} (X : nat -> Ts -> vector R size)
              ++ destruct H.
                 tauto.
              ++ destruct H; trivial.
-  Admitted.
+  Qed.
 
   (*
 Instance vec_nnf_cutoff_eps_rv {size:nat} (n : nat) (eps : R) (X : nat -> Ts -> vector R size) 
@@ -1345,7 +1347,7 @@ Qed.
 
   Local Obligation Tactic := idtac.
 
-  Program Instance vec_frf_cutoff_eps_rv {size:nat} (n : nat) (eps : R) (X : nat -> Ts -> vector R size) 
+  Global Program Instance vec_frf_cutoff_eps_rv {size:nat} (n : nat) (eps : R) (X : nat -> Ts -> vector R size) 
           {frf: forall n, FiniteRangeFunction (X n)} :
     FiniteRangeFunction (vec_cutoff_eps_rv n eps X) := {
     frf_vals := flat_map (fun k => frf_vals (FiniteRangeFunction := frf k)) (seq 0 (S n))
@@ -1977,7 +1979,10 @@ End ash.
           apply filtration_history_sa_le_rv.
           lia.
         * admit.
-      + admit.
+      + apply vec_rv_cutoff_eps_rv; intros.
+        apply rvsumvec_rv; intros.
+        apply filtration_history_sa_le_rv.
+        lia.
     Admitted.
   
   Lemma rvnorm_hnorm {size:nat} (X : Ts -> vector R size) :
@@ -2168,24 +2173,12 @@ End ash.
           rewrite <- H2.
           apply FiniteExpectation_pf_irrel.
     }
-    assert (forall j, FiniteRangeFunction 
-                        (vecrvminus (vec_cutoff_eps_rv (S j) eps Sum) 
-                                    (vec_cutoff_eps_rv j eps Sum))) by admit.
-    assert (forall j, FiniteRangeFunction
-                        (rvinner (vec_cutoff_eps_rv (S j) eps Sum) 
-                                 (vec_cutoff_eps_rv (S j) eps Sum) )) by typeclasses eauto.
-    assert (forall j, FiniteRangeFunction
-                        (rvinner (vec_cutoff_eps_rv j eps Sum) 
-                                 (vec_cutoff_eps_rv j eps Sum) )) by typeclasses eauto.
-
-    Search rvinner.
-    Locate frfinner.
     assert (Zrel: forall j,
-               SimpleExpectation(rvinner (vec_cutoff_eps_rv (S j) eps Sum)
+               SimpleExpectation (rvinner (vec_cutoff_eps_rv (S j) eps Sum)
                                          (vec_cutoff_eps_rv (S j) eps Sum)) =
-               SimpleExpectation(rvinner (vec_cutoff_eps_rv j eps Sum)
+               SimpleExpectation (rvinner (vec_cutoff_eps_rv j eps Sum)
                                          (vec_cutoff_eps_rv j eps Sum)) + 
-               SimpleExpectation(rvinner (vecrvminus (vec_cutoff_eps_rv (S j) eps Sum) 
+               SimpleExpectation  (rvinner (vecrvminus (vec_cutoff_eps_rv (S j) eps Sum) 
                                                      (vec_cutoff_eps_rv j eps Sum))
                                          (vecrvminus (vec_cutoff_eps_rv (S j) eps Sum) 
                                                      (vec_cutoff_eps_rv j eps Sum)))).
