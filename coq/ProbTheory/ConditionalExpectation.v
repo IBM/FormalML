@@ -6704,6 +6704,103 @@ Section lp_cond_exp.
     apply FiniteCondexp_Lp_norm_contractive.
   Qed.
 
-  
-
 End lp_cond_exp.
+
+Section condexp.
+  Lemma is_condexp_expectation_sa_sub_proper {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts: ProbSpace dom)
+          {dom2 dom2' : SigmaAlgebra Ts}
+          (sub : sa_sub dom2 dom)
+          (sub' : sa_sub dom2' dom)
+          (sub_sub:sa_sub dom2' dom2)
+          (f : Ts -> R) 
+          {rvf : RandomVariable dom borel_sa f}
+          (ce : Ts -> Rbar) 
+          {rvce : RandomVariable dom2 Rbar_borel_sa ce}
+          {rvce' : RandomVariable dom2' Rbar_borel_sa ce} :
+    is_conditional_expectation prts dom2 f ce ->
+    is_conditional_expectation prts dom2' f ce.
+  Proof.
+    intros ????.
+    rewrite H; trivial.
+    now apply sub_sub.
+  Qed.
+
+  Lemma NonNegCondexp_sa_proper {Ts:Type} 
+        {dom: SigmaAlgebra Ts}
+        (prts: ProbSpace dom)
+        {dom2 dom2' : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        (sub' : sa_sub dom2' dom)
+        (sub_equiv:sa_equiv dom2 dom2')
+        (f : Ts -> R) 
+        {rv : RandomVariable dom borel_sa f}
+        {nnf:NonnegativeFunction f} :
+    almostR2 (prob_space_sa_sub prts sub) eq
+             (NonNegCondexp prts sub f)
+             (NonNegCondexp prts sub' f).
+  Proof.
+    apply sa_equiv_subs in sub_equiv.
+    destruct sub_equiv as [sub'_sub sub_sub'].
+    generalize (NonNegCondexp_cond_exp prts sub' f); intros isc.
+    generalize (NonNegCondexp_rv prts sub' f); intros rvce'.
+    assert (rvce : RandomVariable dom2 Rbar_borel_sa (NonNegCondexp prts sub' f)).
+    {
+      generalize (NonNegCondexp_rv prts sub' f).
+      apply RandomVariable_proper_le; trivial; try reflexivity.
+    }
+    generalize (is_condexp_expectation_sa_sub_proper
+                  prts sub' sub sub'_sub f
+                  (NonNegCondexp prts sub' f)
+                  isc)
+    ; intros isc'.
+    generalize (NonNegCondexp_cond_exp prts sub f); intros isc2.
+    apply (@is_conditional_expectation_nneg_unique _ _ prts _ sub f
+                                                  (NonNegCondexp prts sub f)
+                                                  (NonNegCondexp prts sub' f) _ _ _)
+    ; trivial.
+    - apply NonNegCondexp_nneg.
+    - apply NonNegCondexp_nneg.
+  Qed.
+
+  Lemma Condexp_sa_proper {Ts:Type} 
+        {dom: SigmaAlgebra Ts}
+        (prts: ProbSpace dom)
+        {dom2 dom2' : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        (sub' : sa_sub dom2' dom)
+        (sub_equiv:sa_equiv dom2 dom2')
+        (f : Ts -> R) 
+        {rvf : RandomVariable dom borel_sa f} :
+    almostR2 (prob_space_sa_sub prts sub) eq
+             (ConditionalExpectation prts sub f)
+             (ConditionalExpectation prts sub' f).
+  Proof.
+    unfold ConditionalExpectation.
+    unfold Rbar_rvminus.
+    apply Rbar_rvplus_almost_proper.
+    - now apply NonNegCondexp_sa_proper.
+    - apply Rbar_rvopp_almost_proper.
+      now apply NonNegCondexp_sa_proper.
+  Qed.    
+
+  (*
+  Lemma FiniteCondexp_sa_proper {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts: ProbSpace dom)
+          {dom2 dom2' : SigmaAlgebra Ts}
+          (sub : sa_sub dom2 dom)
+          (sub' : sa_sub dom2' dom)
+          (sub_equiv:sa_equiv dom2 dom2')
+          (f1 f2 : Ts -> R) 
+          {rv1 : RandomVariable dom borel_sa f1}
+          {rv2 : RandomVariable dom borel_sa f2} :
+    almostR2 prts eq f1 f2 ->
+    almostR2 (prob_space_sa_sub prts sub) eq
+             (ConditionalExpectation prts sub f1)
+             (ConditionalExpectation prts sub' f2).
+  Proof.
+  Admitted.
+*)
+End condexp.
