@@ -3199,7 +3199,7 @@ Qed.
     generalize (Condexp_sa_proper Prts
                                   (filtration_history_sa_sub X n)
                                   (filtration_history_sa_sub (fun n0 : nat => rvscale (/ b n0) (X n0)) n)
-                                  H0 (X (S n)) (X (S n)) (reflexivity _))
+                                  H0 (X (S n)))
     ; intros HH.
     apply almostR2_prob_space_sa_sub_lift in HH.
     revert HH; apply almost_impl.
