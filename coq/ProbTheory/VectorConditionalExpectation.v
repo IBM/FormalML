@@ -1114,7 +1114,7 @@ Section vec_cond_exp_props.
 
 End vec_cond_exp_props.
 Section condexp.
-  Lemma vector_FiniteCondexp_sa_proper {n : nat} {Ts:Type} 
+  Lemma vector_FiniteCondexp_all_proper {n : nat} {Ts:Type} 
           {dom: SigmaAlgebra Ts}
           (prts: ProbSpace dom)
           {dom2 dom2' : SigmaAlgebra Ts}
@@ -1131,6 +1131,15 @@ Section condexp.
              (vector_FiniteConditionalExpectation prts sub f1)
              (vector_FiniteConditionalExpectation prts sub' f2).
   Proof.
-  Admitted.
+    intros eqq1.
+    apply vector_nth_eq_almost; intros.
+    generalize (FiniteCondexp_all_proper prts sub sub' sub_equiv (vecrvnth i pf f1) (vecrvnth i pf f2))
+    ; intros HH.
+    cut_to HH; [| now apply vector_nth_eq_almost].
+    revert HH.
+    apply almost_impl; apply all_almost; intros ??.
+    now repeat rewrite vector_FiniteConditionalExpectation_nth'.
+  Qed.
+
 End condexp.
 

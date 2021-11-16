@@ -2432,7 +2432,7 @@ algorithm.
                (vecrvscale (b (S n) * α n) (w n)))).
         {
           symmetry in H5.
-          generalize (vector_FiniteCondexp_sa_proper 
+          generalize (vector_FiniteCondexp_all_proper 
                         prts 
                     (filtration_history_sa_sub (cod := Rvector_borel_sa I) z n)    
                     (filtration_history_sa_sub (cod := Rvector_borel_sa I) 
