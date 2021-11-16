@@ -1113,3 +1113,24 @@ Section vec_cond_exp_props.
   Qed.
 
 End vec_cond_exp_props.
+Section condexp.
+  Lemma vector_FiniteCondexp_sa_proper {n : nat} {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts: ProbSpace dom)
+          {dom2 dom2' : SigmaAlgebra Ts}
+          (sub : sa_sub dom2 dom)
+          (sub' : sa_sub dom2' dom)
+          (sub_equiv:sa_equiv dom2 dom2')
+          (f1 f2 : Ts -> vector R n) 
+          {rv1 : RandomVariable dom (Rvector_borel_sa n) f1}
+          {rv2 : RandomVariable dom (Rvector_borel_sa n) f2} 
+          {isfe1 : vector_IsFiniteExpectation prts f1}
+          {isfe2 : vector_IsFiniteExpectation prts f2} :
+    almostR2 prts eq f1 f2 ->
+    almostR2 (prob_space_sa_sub prts sub) eq
+             (vector_FiniteConditionalExpectation prts sub f1)
+             (vector_FiniteConditionalExpectation prts sub' f2).
+  Proof.
+  Admitted.
+End condexp.
+

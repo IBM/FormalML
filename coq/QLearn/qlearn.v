@@ -2332,7 +2332,7 @@ algorithm.
    intros.
    now apply Rinv_neq_0_compat.
  Qed.         
-                 
+
     Lemma condexp_hist_z (w z: nat -> Ts -> vector R I) (b : nat -> R)
           (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n)) 
           (rx : forall n, RandomVariable dom (Rvector_borel_sa I)
@@ -2343,9 +2343,10 @@ algorithm.
      (forall n, rv_eq (vector_FiniteConditionalExpectation
                          prts (filtration_history_sa_sub (cod := Rvector_borel_sa I) 
                                                          (L2_convergent_x (const Rvector_zero) w)
-                                                         n) (w (S n)))
+                                                         n) (w n))
                       (const Rvector_zero)) ->
      (forall n, b n <> 0) ->
+     rv_eq (z 0%nat) (const Rvector_zero) ->
      (forall n,
          rv_eq (L2_convergent_x (const Rvector_zero) w (S n)) 
                (vecrvplus 
@@ -2353,36 +2354,76 @@ algorithm.
                   (vecrvscale (/ (b (S n))) (z (S n))))) ->
      (forall n,
          rv_eq (z (S n)) (vecrvscale ((b (S n)) * α n) (w n))) ->
-      forall n, 
-        rv_eq
+     forall n,
+       almostR2 prts eq
           (vector_FiniteConditionalExpectation
              prts (filtration_history_sa_sub (cod := Rvector_borel_sa I) z n)  (z (S n)))
           (const Rvector_zero).
     Proof.
       intros.
-      induction n.
-      - specialize (H 0%nat).
-        simpl.
-        simpl in H.
-        rewrite vector_SimpleConditionalExpectationSA_vecrvscale.
-        + assert (rv_eq (vector_SimpleConditionalExpectationSA 
-                           (w 0%nat)
-                           (vec_induced_sigma_generators (frf_crv (const (@Rvector_zero I)))))
-                        (const zero)  ). 
-          {
-            
-            
-          }
-          rewrite H0.
-          unfold vecrvscale.
-          unfold const, zero; simpl.
-          rewrite Rvector_scale_zero.
-          reflexivity.
-        + apply vec_induced_gen_ispart.
-      - 
-      
+      generalize (iso_hist_x_z_b  (L2_convergent_x (const Rvector_zero) w) z b); intros.
+      cut_to H4.
+      - assert (forall n : nat,
+                   sa_equiv
+                     (filtration_history_sa (cod := Rvector_borel_sa I) (L2_convergent_x (const Rvector_zero) w) n)
+                     (filtration_history_sa (cod := Rvector_borel_sa I) z n)).
+        {
+          intros.
+          destruct n0.
+          - simpl.
+            rewrite H1.
+            reflexivity.
+          - admit.
+        }
+        assert (
+          almostR2 
+            prts eq
+            (vector_FiniteConditionalExpectation 
+               prts (filtration_history_sa_sub (cod := Rvector_borel_sa I) z n) (z (S n)))
+            (vector_FiniteConditionalExpectation 
+               prts (filtration_history_sa_sub (cod := Rvector_borel_sa I) 
+                                               (L2_convergent_x (const Rvector_zero) w) n)
+               (vecrvscale (b (S n) * α n) (w n)))).
+        {
+          symmetry in H5.
+          generalize (vector_FiniteCondexp_sa_proper 
+                        prts 
+                    (filtration_history_sa_sub (cod := Rvector_borel_sa I) z n)    
+                    (filtration_history_sa_sub (cod := Rvector_borel_sa I) 
+                                               (L2_convergent_x (const Rvector_zero) w) n)
+                    (H5 n)
+                    (z (S n))
+                    (vecrvscale (b (S n) * α n) (w n))); intros.
+          apply almost_prob_space_sa_sub_lift in H6.          
+          apply H6.
+          apply all_almost.
+          intros.
+          apply H3.
+        }
+        generalize (vector_FiniteCondexp_scale 
+                      prts 
+                      (filtration_history_sa_sub (cod := Rvector_borel_sa I)
+                                                 (L2_convergent_x (const Rvector_zero) w) n) 
+                      (b (S n) * α n) (w n)); intros.
+        apply almost_prob_space_sa_sub_lift in H7.
+        revert H6; apply almost_impl.
+        revert H7; apply almost_impl.
+        apply all_almost.
+        intros ???.
+        rewrite H7.
+        rewrite H6.
+        unfold vecrvscale.
+        rewrite H.
+        unfold const.
+        now rewrite Rvector_scale_zero.
+      - simpl.
+        reflexivity.
+      - simpl.
+        now rewrite H1.
+      - trivial.
+      - apply H2.
       Admitted.
-*)
+
     (* Lemma 9*)
     Lemma as_convergent_lemma (C : R) (w : nat -> Ts -> vector R I)
           (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
@@ -2572,8 +2613,9 @@ algorithm.
         + simpl.
           unfold const.
           specialize (HCE 0%nat).
-          
-        generalize (vector_SimpleConditionalExpectationSA_vecrvscale (w (n + N0)%nat)
+          admit.
+        + 
+          generalize (vector_SimpleConditionalExpectationSA_vecrvscale (w (n + N0)%nat)
                                                                      (b n * α (n + N0))
                     (vec_filtration_history_split 
                        n z0
