@@ -301,6 +301,72 @@ Section vec_exp.
     repeat rewrite map_id in H1.
     now apply vector_eq.
   Qed.
+
+  Lemma vector_nth_SimpleExpectation {n}
+        (f : Ts -> vector R n)
+        {rvf : RandomVariable dom (Rvector_borel_sa n) f}
+        {isfev: FiniteRangeFunction f}
+        i pf :
+    vector_nth i pf (vector_SimpleExpectation f) = 
+      SimpleExpectation (vecrvnth i pf f).
+  Proof.
+    unfold vector_SimpleExpectation.
+    rewrite vector_nth_create.
+    apply SimpleExpectation_ext.
+    intros ?.
+    simpl.
+    rewrite vector_nth_fun_to_vector.
+    apply vector_nth_ext.
+  Qed.
+
+  Lemma vector_nth_FiniteExpectation {n}
+        (f : Ts -> vector R n)
+        {rvf : RandomVariable dom (Rvector_borel_sa n) f}
+        {isfev: vector_IsFiniteExpectation f}
+        i pf :
+    vector_nth i pf (vector_FiniteExpectation f) = 
+      FiniteExpectation prts (vecrvnth i pf f).
+  Proof.
+    unfold vector_FiniteExpectation, FiniteExpectation, proj1_sig.
+    repeat match_destr.
+    unfold vector_Expectation in e.
+    apply vectoro_to_ovector_some_eq in e.
+    apply listo_to_olist_some in e.
+    rewrite proj1_sig_vector_map in e.
+    repeat rewrite <- proj1_sig_vector_map in e.
+    apply vector_eq in e.
+    apply (f_equal (vector_nth i pf)) in e.
+    repeat rewrite vector_nth_map in e.
+    simpl in e.
+    rewrite vector_nth_fun_to_vector in e.
+    unfold vecrvnth in e0.
+    rewrite e0 in e.
+    congruence.
+  Qed.
+
+  Instance vector_IsFiniteExpectation_simple {n} (rv_X : Ts -> vector R n)
+           {rvx_rv : RandomVariable dom (Rvector_borel_sa n) rv_X}
+           {frf : FiniteRangeFunction rv_X} :
+    vector_IsFiniteExpectation rv_X.
+  Proof.
+    unfold vector_IsFiniteExpectation.
+    apply Forall_vector; intros.
+    apply IsFiniteExpectation_simple.
+    - now apply vec_rv.
+    - now apply vec_frf.
+  Qed.
+    
+  Lemma vector_FiniteExpectation_simple {n} (rv_X : Ts -> vector R n)
+        {rvx_rv : RandomVariable dom (Rvector_borel_sa n) rv_X}
+        {frf : FiniteRangeFunction rv_X}
+        {isfe : vector_IsFiniteExpectation rv_X} :
+    vector_FiniteExpectation rv_X = vector_SimpleExpectation rv_X.
+  Proof.
+    apply vector_nth_eq; intros.
+    rewrite vector_nth_FiniteExpectation; trivial.
+    rewrite vector_nth_SimpleExpectation.
+    apply FiniteExpectation_simple.
+  Qed.
   
 End vec_exp.
 
@@ -910,31 +976,6 @@ Section vec_cond_exp.
       red in isfe.
       rewrite Forall_forall in isfe.
       auto.
-    Qed.
-
-    Lemma vector_nth_FiniteExpectation {n}
-          (f : Ts -> vector R n)
-          {rvf : RandomVariable dom (Rvector_borel_sa n) f}
-          {isfev: vector_IsFiniteExpectation prts f}
-          i pf :
-      vector_nth i pf (vector_FiniteExpectation prts f) = 
-        FiniteExpectation prts (vecrvnth i pf f).
-    Proof.
-      unfold vector_FiniteExpectation, FiniteExpectation, proj1_sig.
-      repeat match_destr.
-      unfold vector_Expectation in e.
-      apply vectoro_to_ovector_some_eq in e.
-      apply listo_to_olist_some in e.
-      rewrite proj1_sig_vector_map in e.
-      repeat rewrite <- proj1_sig_vector_map in e.
-      apply vector_eq in e.
-      apply (f_equal (vector_nth i pf)) in e.
-      repeat rewrite vector_nth_map in e.
-      simpl in e.
-      rewrite vector_nth_fun_to_vector in e.
-      unfold vecrvnth in e0.
-      rewrite e0 in e.
-      congruence.
     Qed.
     
     Lemma FiniteExpectation_vecrvsum' {n}
