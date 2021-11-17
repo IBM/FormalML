@@ -304,6 +304,8 @@ Section vec_exp.
   
 End vec_exp.
 
+Require Finite.
+
 Section vec_cond_exp.
 
     Context {Ts:Type} 
@@ -898,15 +900,103 @@ Section vec_cond_exp.
       apply abs_convex.
   Qed.
 
-  Instance IsFiniteExpectation_vecrvsum {n}
+    Lemma vector_isfe_In_isfe {n}
            (f : Ts -> vector R n)
-           {isfe: vector_IsFiniteExpectation prts f} :
-    IsFiniteExpectation prts (vecrvsum f).
-  Proof.
-    Admitted.
+           {isfe: vector_IsFiniteExpectation prts f}
+           (c : Ts -> R)
+           (pf : In c (proj1_sig (iso_f f))) :
+      IsFiniteExpectation prts c.
+    Proof.
+      red in isfe.
+      rewrite Forall_forall in isfe.
+      auto.
+    Qed.
 
-  Instance IsFiniteExpectation_inner_vecrvmult {n}
+    Lemma vector_nth_FiniteExpectation {n}
+          (f : Ts -> vector R n)
+          {rvf : RandomVariable dom (Rvector_borel_sa n) f}
+          {isfev: vector_IsFiniteExpectation prts f}
+          i pf :
+      vector_nth i pf (vector_FiniteExpectation prts f) = 
+        FiniteExpectation prts (vecrvnth i pf f).
+    Proof.
+      unfold vector_FiniteExpectation, FiniteExpectation, proj1_sig.
+      repeat match_destr.
+      unfold vector_Expectation in e.
+      apply vectoro_to_ovector_some_eq in e.
+      apply listo_to_olist_some in e.
+      rewrite proj1_sig_vector_map in e.
+      repeat rewrite <- proj1_sig_vector_map in e.
+      apply vector_eq in e.
+      apply (f_equal (vector_nth i pf)) in e.
+      repeat rewrite vector_nth_map in e.
+      simpl in e.
+      rewrite vector_nth_fun_to_vector in e.
+      unfold vecrvnth in e0.
+      rewrite e0 in e.
+      congruence.
+    Qed.
+    
+    Lemma FiniteExpectation_vecrvsum' {n}
+           (f : Ts -> vector R n)
+           {rvf : RandomVariable dom (Rvector_borel_sa n) f}
+           {isfe: vector_IsFiniteExpectation prts f} :
+    Expectation (vecrvsum f) = 
+      Some (Finite
+              (RealVectorHilbert.Rvector_sum
+                 (vector_FiniteExpectation prts f))).
+    Proof.
+      unfold vecrvsum.
+      assert (rv_eq (fun omega : Ts => RealAdd.list_sum (proj1_sig (f omega)))
+                    (fun omega : Ts => RealAdd.list_sum (map (fun x => x omega) (proj1_sig (iso_f (Isomorphism:=(@vector_iso Ts R n)) f)) ))).
+      {
+        intros ?.
+        f_equal.
+        rewrite <- proj1_sig_vector_map.
+        f_equal.
+        apply vector_nth_eq; intros.
+        rewrite vector_nth_map.
+        simpl iso_f.
+        now rewrite vector_nth_fun_to_vector.
+      }
+      rewrite H.
+      erewrite FiniteExpectation_list_sum_in.
+      - unfold RealVectorHilbert.Rvector_sum.
+        rewrite <- proj1_sig_vector_map_onto.
+        do 4 f_equal.
+        apply vector_nth_eq; intros.
+        match goal with
+          | [|- context [vector_map_onto ?v ?f ]] => destruct (vector_nth_map_onto
+                                                     v f i pf)
+        end.
+        rewrite H0.
+        rewrite vector_nth_FiniteExpectation; trivial.
+        apply FiniteExpectation_ext; intros ?.
+        simpl.
+        now rewrite vector_nth_fun_to_vector.
+      - intros.
+        apply In_vector_nth_ex in H0.
+        destruct H0 as [? [??]]; subst.
+        now apply vec_rv.
+        Unshelve.
+        intros.
+        eapply vector_isfe_In_isfe; eauto.
+    Qed.
+
+    Instance IsFiniteExpectation_vecrvsum {n}
+             (f : Ts -> vector R n)
+             {rvf : RandomVariable dom (Rvector_borel_sa n) f}
+             {isfe: vector_IsFiniteExpectation prts f} :
+      IsFiniteExpectation prts (vecrvsum f).
+    Proof.
+      red.
+      now rewrite (FiniteExpectation_vecrvsum' f).
+    Qed.
+
+    Global Instance IsFiniteExpectation_inner_vecrvmult {n}
            (f g : Ts -> vector R n)
+           {rvf:RandomVariable dom (Rvector_borel_sa n) f}
+           {rvg:RandomVariable dom (Rvector_borel_sa n) g}
            {isfe: vector_IsFiniteExpectation prts (vecrvmult f g)} :
     IsFiniteExpectation prts (rvinner f g).
   Proof.
@@ -920,9 +1010,12 @@ Section vec_cond_exp.
         {rvf : RandomVariable dom (Rvector_borel_sa n) f}
         {isfev:vector_IsFiniteExpectation prts f} :
     FiniteExpectation prts (vecrvsum f) =
-    RealVectorHilbert.Rvector_sum (vector_FiniteExpectation prts f).
-  Proof.
-  Admitted.
+      RealVectorHilbert.Rvector_sum (vector_FiniteExpectation prts f).
+    Proof.
+      generalize (FiniteExpectation_Expectation prts (vecrvsum f)).
+      rewrite (FiniteExpectation_vecrvsum' _).
+      congruence.
+    Qed.
         
   Lemma FiniteExpectation_rvinner {n}
         (f g : Ts -> vector R n)
@@ -976,10 +1069,10 @@ Section vec_cond_exp.
     - apply rvconst.
   Qed.
 
-           
   Lemma vector_FiniteCondexp_factor_out_inner_zero  {n}
         (f g : Ts -> vector R n)
         {rvf : RandomVariable dom (Rvector_borel_sa n) f}
+        {rvg: RandomVariable dom (Rvector_borel_sa n) g}
         {rvgf: RandomVariable dom2 (Rvector_borel_sa n) g}
         {isfef:vector_IsFiniteExpectation prts f} 
         {isfefg:vector_IsFiniteExpectation prts (vecrvmult f g)} :
@@ -990,12 +1083,12 @@ Section vec_cond_exp.
     rewrite  FiniteExpectation_rvinner with (isfefg0 := isfefg); trivial.
     - rewrite vector_FiniteCondexp_factor_out_zero with (rvf0 := rvf) (isfef0 := isfef); trivial.
       now rewrite RealVectorHilbert.Rvector_sum0.
-    - now apply RandomVariable_sa_sub.
   Qed.
 
   Lemma vector_FiniteCondexp_factor_out_inner_zero_swapped {n}
         (f g : Ts -> vector R n)
         {rvf : RandomVariable dom (Rvector_borel_sa n) f}
+        {rvg: RandomVariable dom (Rvector_borel_sa n) g}
         {rvgf: RandomVariable dom2 (Rvector_borel_sa n) g}
         {isfef:vector_IsFiniteExpectation prts f}
         {isfefg:vector_IsFiniteExpectation prts (vecrvmult g f)} :
@@ -1006,12 +1099,10 @@ Section vec_cond_exp.
     assert (RandomVariable dom (Rvector_borel_sa n) (vecrvmult g f)).
     {
       apply Rvector_mult_rv; trivial.
-      now apply RandomVariable_sa_sub.
     }
     assert (RandomVariable dom (Rvector_borel_sa n) (vecrvmult f g)).
     {
       apply Rvector_mult_rv; trivial.
-      now apply RandomVariable_sa_sub.
     }
     assert (vector_IsFiniteExpectation prts (vecrvmult f g)).
     {

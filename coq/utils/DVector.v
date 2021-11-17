@@ -934,3 +934,16 @@ Proof.
   destruct inn as [?[??]]; subst.
   auto.
 Qed.
+
+Lemma proj1_sig_vector_map {A B} {n} (f:A->B) (v:vector A n) :
+  proj1_sig (vector_map f v) = map f (proj1_sig v).
+Proof.
+  reflexivity.
+Qed.
+
+Lemma proj1_sig_vector_map_onto {A B} {n} (v:vector A n) (f:forall a, In a (proj1_sig v) -> B) :
+  proj1_sig (vector_map_onto v f) = map_onto (proj1_sig v) f.
+Proof.
+  reflexivity.
+Qed.
+  
