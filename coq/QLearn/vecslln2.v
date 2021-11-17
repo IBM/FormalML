@@ -1936,6 +1936,7 @@ End ash.
    
   Lemma vec_indicator_prod_cross_shift {size:nat} (j m:nat) (eps:R) (X: nat -> Ts -> vector R size) 
         {rv : forall n, RandomVariable dom (Rvector_borel_sa size) (X n)}
+        {frf : forall n, FiniteRangeFunction (X n)}
         {isfe_in : let Xm := fun n => X (n + m)%nat in 
                    IsFiniteExpectation 
                      Prts
@@ -1978,12 +1979,12 @@ End ash.
         * intros.
           apply filtration_history_sa_le_rv.
           lia.
-        * admit.
+        * easy.
       + apply vec_rv_cutoff_eps_rv; intros.
         apply rvsumvec_rv; intros.
         apply filtration_history_sa_le_rv.
         lia.
-    Admitted.
+     Qed.
   
   Lemma rvnorm_hnorm {size:nat} (X : Ts -> vector R size) :
     forall omega,
@@ -2070,17 +2071,6 @@ End ash.
                     (SimpleExpectation (rvinner (Sum n) (Sum n)))/eps^2.
   Proof.
     intros.
-    assert (rvcut:RandomVariable dom (Rvector_borel_sa size) (vec_cutoff_eps_rv n eps Sum)).
-    {
-      apply vec_rv_cutoff_eps_rv; intros.
-      apply rvsumvec_rv; intros; apply rv.
-    }
-
-    assert (rvcut2:RandomVariable dom borel_sa (rvnorm (vec_cutoff_eps_rv n eps Sum))).
-    {
-      apply rvsqrt_rv.
-      now apply Rvector_inner_rv.
-    }
     assert (H1 : event_equiv (event_ge dom (rvmaxlist (fun k => rvnorm(Sum k)) n) eps)
                              (event_ge dom (rvnorm(vec_cutoff_eps_rv n eps Sum)) eps)).
     {
@@ -2279,7 +2269,10 @@ End ash.
             now unfold Sum, rvsumvec.
           }
           erewrite (SimpleExpectation_ext H0).
-          now apply vec_indicator_prod_cross_shift.
+          rewrite simple_FiniteExpectation.
+          apply vec_indicator_prod_cross_shift with (isfe0 := isfe) (rv0 := rv); trivial.
+          simpl.
+          admit.
         + rewrite H0.
           lra.
     }
@@ -2316,12 +2309,40 @@ End ash.
         now rewrite Rvector_plus_zero.
       * rewrite Rvector_inner_zero.
         apply Rvector_inner_pos.
-  Qed.
+        
+        Unshelve.
+        -- apply Rvector_inner_rv.
+           ++ apply vec_rv_cutoff_eps_rv.
+              intros.
+              apply rvsumvec_rv.
+              intros.
+              apply rv.
+           ++ apply Rvector_scale_rv_rv.
+              ** now apply vec_cutoff_ind_rv.
+              ** apply rv.
+        -- typeclasses eauto.
+        -- apply Rvector_inner_rv.
+           ++ apply Rvector_scale_rv_rv.
+              ** now apply vec_cutoff_ind_rv.
+              ** apply vec_rv_cutoff_eps_rv.
+                 intros.
+                 apply rvsumvec_rv.
+                 intros.
+                 apply rv.
+           ++ apply rv.
+        -- typeclasses eauto.
+       Admitted.
+
 
   Lemma vec_var_sum_cross_0_offset {size:nat} (X : nat -> Ts -> vector R size) (m : nat)
         {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X n)}
         {frf : forall (n:nat), FiniteRangeFunction (X n)}
-        (HC : forall n, rv_eq (vector_SimpleConditionalExpectationSA (X n) (vec_filtration_history n X)) (const zero)) :
+        {isfe : forall n, vector_IsFiniteExpectation Prts (X n)}
+        (HC : forall (n:nat), 
+          almostR2 Prts eq
+              (vector_FiniteConditionalExpectation 
+                 Prts (filtration_history_sa_sub (cod := Rvector_borel_sa size) X n) (X (S n))) 
+              (const Rvector_zero)) :
     let Xm := fun n => X (n + m)%nat in
     forall j, SimpleExpectation(rvinner (rvsumvec Xm j) (rvsumvec Xm j)) =
               sum_n (fun n => SimpleExpectation (rvinner (X (n + m)%nat) (X (n + m)%nat))) j.
@@ -2352,11 +2373,23 @@ End ash.
         rewrite <- sumSimpleExpectation.
         rewrite <- sumSimpleExpectation.
         rewrite <- scaleSimpleExpectation.
-        rewrite (vec_expec_cross_zero_sum2_shift X m HC); try lia.
-        rewrite <- IHj.
-        ring_simplify.
-        reflexivity.
-  Qed.  
+        assert (isfe_in : forall j k : nat, IsFiniteExpectation Prts (rvinner (X j) (X k))) by admit.
+        assert (isfe_mult : forall j k : nat, vector_IsFiniteExpectation Prts (vecrvmult (X j) (X k))) by admit.
+        assert(isfe_sum : forall j k : nat,
+             IsFiniteExpectation Prts
+               (rvinner (rvsumvec (fun n : nat => X (n + m)%nat) j) (X (k + m)%nat))) by admit.
+        generalize (vec_expec_cross_zero_sum2_shift X m HC); intros.
+        specialize (H0 j (S j)).
+        cut_to H0; try lia.
+        replace (SimpleExpectation (rvinner (rvsumvec Xm j) (X (S j + m)%nat))) with 0.
+        * rewrite <- IHj.
+          ring_simplify.
+          reflexivity.
+        * rewrite simple_FiniteExpectation.
+          unfold Xm.
+          rewrite <- H0.
+          apply FiniteExpectation_pf_irrel.
+   Admitted.
 
   Lemma vec_sa_sigma_not_cauchy {size:nat} (X : nat -> Ts -> vector R size) (eps:posreal) (N : nat)
         {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X n)} :
@@ -2689,15 +2722,21 @@ End ash.
     (*ash 6.2.1 *)
     Lemma vec_Ash_6_2_1_helper {size:nat} (X : nat -> Ts -> vector R size) (eps : posreal) (m : nat)
           {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
+          {isfe : forall (n:nat), vector_IsFiniteExpectation Prts (X n)}
           {frf : forall (n:nat), FiniteRangeFunction (X (n))}
-          (HC : forall n, rv_eq (vector_SimpleConditionalExpectationSA (X n) (vec_filtration_history n X)) (const zero)) :
+          (HC : forall (n:nat), 
+              almostR2 Prts eq
+                       (vector_FiniteConditionalExpectation 
+                          Prts (filtration_history_sa_sub (cod := Rvector_borel_sa size) X n) (X (S n))) 
+                       (const Rvector_zero)) :
+
       let Sum := fun j => rvsumvec (fun k => X (k+m)%nat) j in
       Rbar_le (Lim_seq (fun n => ps_P (event_ge dom (rvmaxlist (fun k => rvnorm (Sum k)) n) eps)))
               (Rbar_div_pos (LimSup_seq (sum_n (fun n => SimpleExpectation (rvinner (X (n + m)%nat) (X (n + m)%nat))))) (mkposreal _ (sqr_pos eps))).
     Proof.
       intros.
       generalize (vec_ash_6_1_4 X); intros.
-      specialize (H eps m _ _ HC).
+      specialize (H eps m _ _ isfe HC).
       simpl in H.
       generalize (Lim_seq_le _ _ H); intros.
       unfold Sum.
@@ -2853,8 +2892,14 @@ End ash.
     
     Lemma vec_Ash_6_2_1_helper4 {size:nat} (X : nat -> Ts -> vector R size) (eps : posreal) (m : nat) 
           {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
+          {isfe : forall (n:nat), vector_IsFiniteExpectation Prts (X n)}
           {frf : forall (n:nat), FiniteRangeFunction (X (n))}
-          (HC : forall n, rv_eq (vector_SimpleConditionalExpectationSA (X n) (vec_filtration_history n X)) (const zero)) :
+          (HC : forall (n:nat), 
+              almostR2 Prts eq
+                       (vector_FiniteConditionalExpectation 
+                          Prts (filtration_history_sa_sub (cod := Rvector_borel_sa size) X n) (X (S n))) 
+                       (const Rvector_zero)) :
+
       let Sum := fun j => rvsumvec X j in
       Rbar_le (ps_P (union_of_collection (fun k =>  event_ge dom (rvnorm (vecrvminus (Sum (k + (S m))%nat) (Sum m))) eps)))
               (Rbar_div_pos (LimSup_seq (sum_n (fun n => SimpleExpectation (rvinner (X (n + (S m))%nat)  (X (n + (S m))%nat))))) (mkposreal _ (sqr_pos eps))).
@@ -2899,7 +2944,13 @@ End ash.
     Lemma vec_Ash_6_2_1_helper5 {size:nat} (X : nat -> Ts -> vector R size)
           {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
           {frf : forall (n:nat), FiniteRangeFunction (X (n))}
-          (HC : forall n, rv_eq (vector_SimpleConditionalExpectationSA (X n) (vec_filtration_history n X)) (const zero)) :
+          {isfe : forall (n:nat), vector_IsFiniteExpectation Prts (X n)}
+          (HC : forall (n:nat), 
+              almostR2 Prts eq
+                       (vector_FiniteConditionalExpectation 
+                          Prts (filtration_history_sa_sub (cod := Rvector_borel_sa size) X n) (X (S n))) 
+                       (const Rvector_zero)) :
+
       ex_series (fun n => SimpleExpectation (rvinner (X n) (X n))) ->
       let Sum := fun j => rvsumvec X j in
       forall (eps : posreal),
@@ -3075,7 +3126,12 @@ End ash.
     Lemma vec_Ash_6_2_1 {size:nat} (X : nat -> Ts -> vector R size)
           {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
           {frf : forall (n:nat), FiniteRangeFunction (X (n))}
-          (HC : forall n, rv_eq (vector_SimpleConditionalExpectationSA (X n) (vec_filtration_history n X)) (const zero)) :
+          {isfe : forall (n:nat), vector_IsFiniteExpectation Prts (X n)}
+          (HC : forall (n:nat), 
+              almostR2 Prts eq
+                       (vector_FiniteConditionalExpectation 
+                          Prts (filtration_history_sa_sub (cod := Rvector_borel_sa size) X n) (X (S n))) 
+                       (const Rvector_zero)) :
       ex_series (fun n => SimpleExpectation (rvinner (X n) (X n))) ->
       almost Prts (fun (x : Ts) => 
                      (forall (i:nat) (pf : (i<size)%nat),
@@ -3242,37 +3298,77 @@ End ash.
 
     Lemma vec_SCESA_scale {size:nat} (X : nat -> Ts -> vector R size) (b : nat -> R)
           {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
-          {frf : forall (n:nat), FiniteRangeFunction (X (n))}
-          (HC : forall n, rv_eq (vector_SimpleConditionalExpectationSA (X n) (vec_filtration_history n X)) (const zero)) :
+(*          {frf : forall (n:nat), FiniteRangeFunction (X (n))} *)
+          {isfe : forall (n:nat), vector_IsFiniteExpectation Prts (X n)}
+          (HC : forall (n:nat), 
+              almostR2 Prts eq
+                       (vector_FiniteConditionalExpectation 
+                          Prts (filtration_history_sa_sub (cod := Rvector_borel_sa size) X n) (X (S n))) 
+                       (const Rvector_zero)) :
       (forall n, b n <> 0) ->
-      forall n, rv_eq (vector_SimpleConditionalExpectationSA 
-                         (vecrvscale (/ (b n)) (X n))           
-                         (vec_filtration_history n (fun n0 : nat => vecrvscale (/ b n0) (X n0))))
-                      (const (vector_const 0 size)).
+      forall n, almostR2 Prts eq 
+                         (vector_FiniteConditionalExpectation Prts
+                            (filtration_history_sa_sub (cod := Rvector_borel_sa size) 
+                                                       (fun n0 : nat => vecrvscale (/ b n0) (X n0)) n)
+                            (vecrvscale (/ (b (S n))) (X (S n))))
+                         (const Rvector_zero).
     Proof.
       intros bneq n.
-      transitivity (vector_SimpleConditionalExpectationSA (vecrvscale (/ b n) (X n))
-                                                          (vec_filtration_history n X)).
-      { 
-        apply vector_SimpleConditionalExpectationSA_ext.
-        - easy.
-        - symmetry.
-          now apply vec_filtration_history_scale.
-      }
-      rewrite vector_SimpleConditionalExpectationSA_vecrvscale.
-      - rewrite HC.
-        intro x.
-        unfold vecrvscale, const.
-        unfold zero; simpl.
-        rewrite Rvector_scale_zero.
-        reflexivity.
-      - apply vec_part_list_history.
-    Qed.
+      assert (forall n,
+                 sa_equiv (filtration_history_sa (cod := Rvector_borel_sa size) X n)
+                          (filtration_history_sa (cod := Rvector_borel_sa size)
+                                                 (fun n0 => (vecrvscale (/ b n0) (X n0))) n)).
+    {
+      intros.
+      apply filtrate_sa_proper.
+      intros ??.
+      apply pullback_sa_vecrvscale_equiv.
+      now apply Rinv_neq_0_compat.
+    }
+    generalize (vector_FiniteCondexp_scale 
+                  Prts 
+                  (filtration_history_sa_sub (cod := Rvector_borel_sa size)
+                                             (fun n0 => (vecrvscale (/ b n0) (X n0))) n)
+                              (/ b (S n)) (X (S n))); intros.
+    specialize (HC n).
+    apply almostR2_prob_space_sa_sub_lift in H0.
+    revert HC; apply almost_impl.
+    revert H0; apply almost_impl.
+
+    generalize (vector_FiniteCondexp_all_proper
+                  Prts
+                  (filtration_history_sa_sub (cod := Rvector_borel_sa size) X n)
+                  (filtration_history_sa_sub (cod := Rvector_borel_sa size)
+                                             (fun n0 : nat => vecrvscale (/ b n0) (X n0)) n)
+                  (H n) (X (S n)) (X (S n))); intros HH.
+    cut_to HH.
+    - apply almostR2_prob_space_sa_sub_lift in HH.
+      revert HH; apply almost_impl.
+      apply all_almost; intros ????.
+      rewrite H1.
+      rewrite H0 in H2.
+      
+      unfold vecrvscale.
+      apply (f_equal (fun z => Rvector_scale (/ b (S n)) z)) in H2.
+      unfold const in H2.
+      rewrite Rvector_scale_zero in H2.
+      unfold const.
+      unfold vecrvscale.
+      rewrite <- H2.
+      reflexivity.
+    - apply all_almost.
+      now intros.
+   Qed.
     
     Lemma vec_Ash_6_2_2 {size:nat} (X : nat -> Ts -> vector R size) (b : nat -> R)
           {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
           {frf : forall (n:nat), FiniteRangeFunction (X (n))}
-          (HC : forall n, rv_eq (vector_SimpleConditionalExpectationSA (X n) (vec_filtration_history n X)) (const zero)) :
+          {isfe : forall (n:nat), vector_IsFiniteExpectation Prts (X n)}
+          (HC : forall (n:nat), 
+              almostR2 Prts eq
+                       (vector_FiniteConditionalExpectation 
+                          Prts (filtration_history_sa_sub (cod := Rvector_borel_sa size) X n) (X (S n))) 
+                       (const Rvector_zero)) :
       (forall n, 0 < b n <= b (S n)) ->
       is_lim_seq b p_infty ->
       ex_series (fun n => SimpleExpectation (rvinner (vecrvscale (/ (b n)) (X n))
