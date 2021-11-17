@@ -279,6 +279,38 @@ Section almostR2_part.
     congruence.
   Qed.
 
+    Lemma almost_bounded_forall 
+        (P:nat->Prop)
+        (dec:forall n, {P n} + {~ P n})
+        {Pn:forall i (pf:P i), pre_event Ts} :
+    (forall i pf1 pf2 x, Pn i pf1 x -> Pn i pf2 x) ->
+    (forall n pf, almost prts (Pn n pf)) ->
+    almost prts (fun x => forall n pf, Pn n pf x).
+  Proof.
+    intros prop a.
+    assert (forall n, almost prts (
+                          match dec n with
+                          | left pf => (Pn n pf)
+                          | right _ => fun _ => True
+                          end
+                        )).
+    {
+      intros.
+      match_destr.
+      now apply all_almost.
+    }
+    apply almost_forall in H.
+    revert H.
+    apply almost_impl.
+    apply all_almost.
+    intros ??.
+    red in H.
+    intros.
+    specialize (H n).
+    match_destr_in H; try tauto.
+    eapply prop; eauto.
+  Qed.
+
   Lemma almost_map_split {B} {f:Ts->B} {P:B->Prop} :
     almost prts (fun x => P (f x)) ->
     exists f', almostR2 prts eq f f' /\

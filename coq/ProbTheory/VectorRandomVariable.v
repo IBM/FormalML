@@ -1428,3 +1428,77 @@ Section real_pullback.
   Qed.
  
 End real_pullback.
+
+Section almost.
+
+  Program Lemma vector_Forall2_almost_nth_iff
+          {Ts Td:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts: ProbSpace dom)
+          {n}
+          (P:Td->Td->Prop) (v1 v2:Ts -> vector Td n) :
+    (forall (i : nat) (pf : (i < n)%nat), almostR2 prts P (vecrvnth i pf v1) (vecrvnth i pf v2)) <->
+    almostR2 prts (Forall2 P) v1 v2.
+  Proof.
+    split; intros HH.
+    - apply almost_bounded_forall in HH.
+      + revert HH.
+        apply almost_impl.
+        apply all_almost; intros ??.
+        now apply vector_Forall2_nth_iff.
+      + intros.
+        apply lt_dec.
+      + unfold vecrvnth.
+        intros.
+        now repeat rewrite (vector_nth_ext _ _ pf2 pf1).
+    - intros.
+      revert HH.
+      apply almost_impl.
+      apply all_almost; intros ??.
+      unfold vecrvnth.
+      now apply vector_Forall2_nth_iff.
+  Qed.
+
+  Lemma vector_nth_eq_almost {Ts Td:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts: ProbSpace dom)
+          {n} (v1 v2:Ts -> vector Td n) :
+    (forall i pf, almostR2 prts eq (vecrvnth i pf v1) (vecrvnth i pf v2)) <->
+    almostR2 prts eq v1 v2.
+  Proof.
+    split; intros.
+    - apply vector_Forall2_almost_nth_iff in H.
+      revert H.
+      apply almost_impl.
+      apply all_almost; intros ??.
+      now apply vector_eqs.
+    - apply vector_Forall2_almost_nth_iff.
+      revert H.
+      apply almost_impl.
+      apply all_almost; intros ??.
+      rewrite H.
+      reflexivity.
+  Qed.
+
+  Lemma vectorize_relation_almost {Ts Td:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts: ProbSpace dom)
+          (RR:Td->Td->Prop) {n} (v1 v2:Ts -> vector Td n) :
+    (forall i pf, almostR2 prts RR (vecrvnth i pf v1) (vecrvnth i pf v2)) <->
+    almostR2 prts (vectorize_relation RR n) v1 v2.
+  Proof.
+    split; intros.
+    - apply vector_Forall2_almost_nth_iff in H.
+      revert H.
+      apply almost_impl.
+      apply all_almost; intros ??.
+      intros ??.
+      now apply vector_Forall2_nth_iff.
+    - apply vector_Forall2_almost_nth_iff.
+      revert H.
+      apply almost_impl.
+      apply all_almost; intros ??.
+      now apply vector_Forall2_nth_iff.
+  Qed.
+
+End almost.
