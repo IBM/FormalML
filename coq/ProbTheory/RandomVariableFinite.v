@@ -1157,6 +1157,95 @@ Lemma Fatou_FiniteExpectation
     apply SimpleExpectation_EventIndicator.
   Qed.
 
+    Instance list_sum_rv {T} f l
+           {rv:forall c, RandomVariable dom borel_sa (f c)}
+    : RandomVariable dom borel_sa
+                     (fun omega : Ts => RealAdd.list_sum (map (fun c : T => f c omega) l)).
+  Proof.
+    induction l; simpl.
+    - apply rvconst.
+    - generalize @rvplus_rv; unfold rvplus; intros HH.
+      apply HH; trivial.
+  Qed.
+
+  Instance list_sum_in_rv {T} f l
+           {rv:forall c, In c l -> RandomVariable dom borel_sa (f c)}
+    : RandomVariable dom borel_sa
+                     (fun omega : Ts => RealAdd.list_sum (map (fun c : T => f c omega) l)).
+  Proof.
+    induction l; simpl.
+    - apply rvconst.
+    - generalize @rvplus_rv; unfold rvplus; intros HH.
+      apply HH; simpl in *; auto.
+  Qed.
+  
+  Lemma FiniteExpectation_list_sum {T} f l 
+        {rv:forall c, RandomVariable dom borel_sa (f c)}
+        {isfe:forall c, IsFiniteExpectation (f c)} :
+    Expectation
+            (fun omega => RealAdd.list_sum
+                          (map
+                             (fun c : T =>
+                                (f c omega))
+                             l)) =
+    Some (Finite
+            (RealAdd.list_sum
+               (map
+                  (fun c : T =>
+                     FiniteExpectation (f c))
+                  l))).
+  Proof.
+    induction l; simpl.
+    - apply Expectation_const.
+    - generalize Expectation_sum_finite; unfold rvplus; intros HH.
+      apply HH; trivial.
+      + now apply list_sum_rv.
+      + now rewrite <- FiniteExpectation_Expectation.
+  Qed.
+    
+  Lemma FiniteExpectation_list_sum_in {T} f l 
+        {rv:forall c, In c l -> RandomVariable dom borel_sa (f c)}
+        {isfe:forall c, In c l -> IsFiniteExpectation (f c)} :
+    Expectation
+            (fun omega => RealAdd.list_sum
+                          (map
+                             (fun c : T =>
+                                (f c omega))
+                             l)) =
+    Some (Finite
+            (RealAdd.list_sum
+               (map_onto l
+                  (fun c pf =>
+                     FiniteExpectation (f c) (isfe:=isfe c pf)) 
+                  ))).
+  Proof.
+    induction l; simpl.
+    - apply Expectation_const.
+    - generalize Expectation_sum_finite; unfold rvplus; intros HH.
+      apply HH; simpl in *; auto.
+      + apply list_sum_in_rv; auto.
+      + now rewrite <- FiniteExpectation_Expectation.
+  Qed.
+
+  
+  Lemma IsFiniteExpectation_list_sum {T} (f : T -> Ts -> R) (l : list T)
+        {rv:forall c : T, RandomVariable dom borel_sa (f c)}
+        {isfe : forall c : T, IsFiniteExpectation (f c)} :
+  IsFiniteExpectation (fun omega : Ts => RealAdd.list_sum (map (fun c : T => f c omega) l)).
+  Proof.
+    unfold IsFiniteExpectation.
+    now rewrite (FiniteExpectation_list_sum f l).
+  Qed.
+
+  Lemma IsFiniteExpectation_list_sum_in {T} (f : T -> Ts -> R) (l : list T)
+        {rv:forall c : T, In c l ->RandomVariable dom borel_sa (f c)}
+        {isfe : forall c : T, In c l -> IsFiniteExpectation (f c)} :
+  IsFiniteExpectation (fun omega : Ts => RealAdd.list_sum (map (fun c : T => f c omega) l)).
+  Proof.
+    unfold IsFiniteExpectation.
+    now rewrite (FiniteExpectation_list_sum_in f l).
+  Qed.
+
 End fe.
 
 Hint Rewrite FiniteExpectation_const FiniteExpectation_plus FiniteExpectation_scale FiniteExpectation_opp FiniteExpectation_minus: prob.
@@ -1518,3 +1607,4 @@ Section sa_sub.
   Qed.
 
 End sa_sub.
+

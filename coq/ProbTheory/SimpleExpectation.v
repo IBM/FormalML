@@ -1102,6 +1102,23 @@ Section SimpleExpectation.
   Definition scale_val_indicator (f : Ts -> R) (c : R) :=
     rvscale c (val_indicator f c).
 
+  Global Instance val_indicator_rv g c
+         {rv:RandomVariable dom borel_sa g} :
+    RandomVariable dom borel_sa (val_indicator g c).
+  Proof.
+    apply EventIndicator_pre_rv.
+    apply sa_le_pt.
+    now apply rv_measurable.
+  Qed.
+
+  Global Instance scale_val_indicator_rv g c
+         {rv:RandomVariable dom borel_sa g} :
+    RandomVariable dom borel_sa (scale_val_indicator g c).
+  Proof.
+    apply rvscale_rv.
+    now apply val_indicator_rv.
+  Qed.
+
   Definition frf_indicator (f : Ts -> R)
         {frf : FiniteRangeFunction f} :=
     (fun omega =>
@@ -1647,8 +1664,7 @@ Section SimpleConditionalExpectation.
     - symmetry.
       erewrite SimpleExpectation_pf_irrel.
       apply SimpleExpectation_const.
-    - unfold ListAdd.map_dep_obligation_2.
-      rewrite IHl by (simpl in *; intuition).
+    - rewrite IHl by (simpl in *; intuition).
       erewrite sumSimpleExpectation.
       apply SimpleExpectation_pf_irrel.
   Qed.
@@ -1817,7 +1833,6 @@ Section SimpleConditionalExpectation.
         * simpl in *.
           unfold rvmult.
           rewrite Rmult_plus_distr_l.
-          unfold ListAdd.map_dep_obligation_2.
           f_equal.
           now rewrite IHl.
         * now invcs is_disj.

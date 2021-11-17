@@ -2080,15 +2080,24 @@ Section list_dep.
 
 End list_dep.
 
-Program Fixpoint map_dep {A B} (l:list A) :  (forall x, In x l -> B) -> list B
+Program Fixpoint map_onto {A B} (l:list A) (f:forall a, In a l -> B) : list B
   := match l with
-     | nil => fun f => nil
-     | x::xs => fun f => (f x _) :: map_dep xs _
+     | [] => []
+     | x::l' => f x _ :: map_onto l' (fun a pf => f a _)
      end.
 Next Obligation.
-  eapply f.
-  right; eassumption.
-Defined.
+  simpl; auto.
+Qed.
+Next Obligation.
+  simpl; auto.
+Qed.
+
+Lemma map_onto_length  {A B} (l:list A) (f:forall a, In a l -> B) :
+  length (map_onto l f) = length l.
+Proof.
+  induction l; simpl; congruence.
+Qed.
+
 
 Lemma filter_map_swap {A B} (P:B->bool) (f:A->B) (l:list A) :
   filter P (map f l) = map f (filter (fun x => P (f x)) l).

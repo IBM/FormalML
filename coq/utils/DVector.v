@@ -62,25 +62,6 @@ Proof.
   now destruct v; simpl.
 Qed.
 
-(* This should move *)
-Program Fixpoint map_onto {A B} (l:list A) (f:forall a, In a l -> B) : list B
-  := match l with
-     | [] => []
-     | x::l' => f x _ :: map_onto l' (fun a pf => f a _)
-     end.
-Next Obligation.
-  simpl; auto.
-Qed.
-Next Obligation.
-  simpl; auto.
-Qed.
-
-Lemma map_onto_length  {A B} (l:list A) (f:forall a, In a l -> B) :
-  length (map_onto l f) = length l.
-Proof.
-  induction l; simpl; congruence.
-Qed.
-
 Program Definition vector_map_onto {A B:Type}
         {n:nat} (v:vector A n) (f:forall a, In a v->B) : vector B n
   := map_onto v f.
@@ -946,4 +927,40 @@ Lemma proj1_sig_vector_map_onto {A B} {n} (v:vector A n) (f:forall a, In a (proj
 Proof.
   reflexivity.
 Qed.
-  
+
+Lemma vector_dep_zip_map1 {T : Type} {P : T -> Prop} {n} (l : vector T n) (Fp : Forall P (proj1_sig l)) :
+  vector_map (proj1_sig (P:=P)) (vector_dep_zip l Fp) = l.
+Proof.
+  apply vector_eq.
+  unfold vector_dep_zip.
+  unfold vector_map; simpl.
+  now rewrite list_dep_zip_map1.
+Qed.      
+
+Lemma vector_dep_zip_nth_proj1 {T} {n} {P:T->Prop} (v:vector T n)
+      (fl:Forall P (proj1_sig v)) :
+  forall i pf,
+    proj1_sig (vector_nth i pf (vector_dep_zip v fl)) =
+      vector_nth i pf v.
+Proof.
+  intros.
+  rewrite <- (vector_nth_map (@proj1_sig _ _)).
+  now rewrite vector_dep_zip_map1.
+Qed.
+
+
+Definition vector_apply {n} {A B} (f : vector (A -> B) n)  (x : vector A n) : vector B n
+  := vector_map (fun '(a,b) => a b) (vector_zip f x).
+
+Lemma vector_nth_apply {n} {A B} (f : vector (A -> B) n)  (x : vector A n) i pf :
+  vector_nth i pf (vector_apply f x) = (vector_nth i pf f) (vector_nth i pf x).
+Proof.
+  unfold vector_apply.
+  now rewrite vector_nth_map, vector_nth_zip.
+Qed.
+
+Lemma vector_apply_const {n} {A B} (f: A->B) (a:vector A n) : vector_apply (vector_const f n) a = vector_map f a.
+Proof.
+  apply vector_nth_eq; intros.
+  now rewrite vector_nth_apply, vector_nth_map, vector_nth_const.
+Qed.
