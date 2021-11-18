@@ -1044,6 +1044,9 @@ End dec.
 Section filtration.
   Context {Ts:Type}.
 
+  Class IsSubAlgebras (dom:SigmaAlgebra Ts) (sas:nat->SigmaAlgebra Ts)
+    := is_sub_algebras : forall n, sa_sub (sas n) dom.
+    
   Class IsFiltration (sas:nat->SigmaAlgebra Ts)
     := is_filtration : forall n, sa_sub (sas n) (sas (S n)).
 
@@ -1087,6 +1090,15 @@ Section filtration.
     induction n; simpl; intros.
     - apply H; trivial.
     - apply union_sa_sub_both; eauto.
+  Qed.
+
+  Global Instance filtrate_sa_is_sub_algebra
+         (sas:nat->SigmaAlgebra Ts) (dom : SigmaAlgebra Ts) {subs : IsSubAlgebras dom sas} :
+    IsSubAlgebras dom (filtrate_sa sas).
+  Proof.
+    intros ?.
+    apply filtrate_sa_sub_all; intros.
+    apply subs.
   Qed.
   
   (* In the limit, its all the same *)

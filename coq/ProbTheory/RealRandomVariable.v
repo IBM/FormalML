@@ -4393,6 +4393,26 @@ Section rv_almost.
     intros; auto.
   Qed.
 
+  Lemma almostR2_Rle_ge
+         {Ts:Type} 
+         {dom: SigmaAlgebra Ts}
+         (prts: ProbSpace dom) x y:
+    almostR2 prts Rle x y -> almostR2 prts Rge y x.
+  Proof.
+    apply almost_impl; apply all_almost; intros ??.
+    now apply Rle_ge.
+  Qed.
+
+  Lemma almostR2_Rge_le
+         {Ts:Type} 
+         {dom: SigmaAlgebra Ts}
+         (prts: ProbSpace dom) x y:
+    almostR2 prts Rge x y -> almostR2 prts Rle y x.
+  Proof.
+    apply almost_impl; apply all_almost; intros ??.
+    now apply Rge_le.
+  Qed.
+
   Lemma almostR2_eq_pow_abs_proper
         {Ts:Type} 
         {dom: SigmaAlgebra Ts}

@@ -744,7 +744,7 @@ Section filtration_history_props.
 End filtration_history_props.
 
 Section adapted.
-  Context {Ts:Type} {Td:Type} {cod: SigmaAlgebra Td}.
+  Context {Ts:Type} {Td:Type} (cod: SigmaAlgebra Td).
 
   Class IsAdapted (X : nat -> Ts -> Td) (sas : nat -> SigmaAlgebra Ts)
     := is_adapted : forall (n:nat), RandomVariable (sas n) cod (X n).
