@@ -22,7 +22,8 @@ Set Bullet Behavior "Strict Subproofs".
 
 Section martingale.
   Local Open Scope R.
-  
+  Local Existing Instance Rge_pre.
+
   Context {Ts:Type} 
           {dom: SigmaAlgebra Ts}
           (prts: ProbSpace dom).
@@ -37,7 +38,7 @@ Section martingale.
     := is_martingale :
       forall n, almostR2 prts RR (Y n) (FiniteConditionalExpectation prts (sub n) (Y (S n))).
 
-  Lemma IsMartingale_proper (RR:R->R->Prop) {pre:PreOrder RR}
+  Lemma is_martingale_eq_proper (RR:R->R->Prop) {pre:PreOrder RR}
         (Y1 Y2 : nat -> Ts -> R) (sas1 sas2 : nat -> SigmaAlgebra Ts)
         {rv1:forall n, RandomVariable dom borel_sa (Y1 n)}
         {rv2:forall n, RandomVariable dom borel_sa (Y2 n)}
@@ -62,8 +63,7 @@ Section martingale.
     - symmetry; auto.
   Qed.
 
-
-  Lemma IsMartingale_proper_iff (RR:R->R->Prop) {pre:PreOrder RR}
+  Lemma is_martingale_eq_proper_iff (RR:R->R->Prop) {pre:PreOrder RR}
         (Y1 Y2 : nat -> Ts -> R) (sas1 sas2 : nat -> SigmaAlgebra Ts)
         {rv1:forall n, RandomVariable dom borel_sa (Y1 n)}
         {rv2:forall n, RandomVariable dom borel_sa (Y2 n)}
@@ -80,13 +80,13 @@ Section martingale.
     IsMartingale RR Y1 sas1 <-> IsMartingale RR Y2 sas2.
   Proof.
     intros; split; intros.
-    - eapply (IsMartingale_proper RR Y1 Y2); eauto.
-    - eapply (IsMartingale_proper RR Y2 Y1); eauto.
+    - eapply (is_martingale_eq_proper RR Y1 Y2); eauto.
+    - eapply (is_martingale_eq_proper RR Y2 Y1); eauto.
       + intros; symmetry; auto.
       + intros; symmetry; auto.
   Qed.
   
-  Lemma IsMartingale_proper_transport (RR:R->R->Prop) {pre:PreOrder RR}
+  Lemma is_martingale_eq_proper_transport (RR:R->R->Prop) {pre:PreOrder RR}
         (Y1 Y2 : nat -> Ts -> R) (sas1 sas2 : nat -> SigmaAlgebra Ts)
         {rv1:forall n, RandomVariable dom borel_sa (Y1 n)}
         {rv2:forall n, RandomVariable dom borel_sa (Y2 n)}
@@ -103,7 +103,7 @@ Section martingale.
                                            (filt:=IsFiltration_proper' _ _ sas_eqq filt1)
                                            (sub:=IsSubAlgebras_eq_proper' _ _ (reflexivity _) _ _ sas_eqq sub1).
   Proof.
-    now apply IsMartingale_proper.
+    now apply is_martingale_eq_proper.
   Qed.
 
   Example IsSubMartingale 
@@ -115,7 +115,6 @@ Section martingale.
           {sub:IsSubAlgebras dom sas}
     := IsMartingale Rle Y sas.
   
-  Local Existing Instance Rge_pre.
   Example IsSuperMartingale 
         (Y : nat -> Ts -> R) (sas : nat -> SigmaAlgebra Ts)
         {rv:forall n, RandomVariable dom borel_sa (Y n)}
@@ -143,7 +142,7 @@ Section martingale.
       apply H0.
   Qed.
   
-  Instance is_martingale_eq_any {RR:R->R->Prop} {pre:PreOrder RR}
+  Instance is_martingale_eq_any (RR:R->R->Prop) {pre:PreOrder RR}
         (Y : nat -> Ts -> R) (sas : nat -> SigmaAlgebra Ts)
         {rv:forall n, RandomVariable dom borel_sa (Y n)}
         {isfe:forall n, IsFiniteExpectation prts (Y n)}
@@ -222,11 +221,173 @@ Section martingale.
    IsMartingale Rge (fun n => rvopp (Y n)) sas <-> IsMartingale Rle Y sas.
   Proof.
     rewrite <- is_sub_martingale_neg.
-    apply IsMartingale_proper_iff; try reflexivity.
+    apply is_martingale_eq_proper_iff; try reflexivity.
     intros; apply all_almost; intros ?.
     now rewrite rvopp_opp.
   Qed.    
+
+  Lemma is_sub_martingale_proper 
+        (Y1 Y2 : nat -> Ts -> R) (sas1 sas2 : nat -> SigmaAlgebra Ts)
+        {rv1:forall n, RandomVariable dom borel_sa (Y1 n)}
+        {rv2:forall n, RandomVariable dom borel_sa (Y2 n)}
+        {isfe1:forall n, IsFiniteExpectation prts (Y1 n)}
+        {isfe2:forall n, IsFiniteExpectation prts (Y2 n)}
+        {adapt1:IsAdapted borel_sa Y1 sas1}
+        {adapt2:IsAdapted borel_sa Y2 sas2}
+        {filt1:IsFiltration sas1}
+        {filt2:IsFiltration sas2}
+        {sub1:IsSubAlgebras dom sas1}
+        {sub2:IsSubAlgebras dom sas2} :
+    (forall n, almostR2 prts eq (Y1 n) (Y2 n)) ->
+    (forall n, sa_sub (sas2 n) (sas1 n)) ->
+    IsMartingale Rle Y1 sas1 -> IsMartingale Rle Y2 sas2.
+  Proof.
+    intros eqq1 eqq2 mart.
+    assert (adopt2':IsAdapted borel_sa Y2 sas1).
+    {
+      generalize adapt2.
+      apply is_adapted_proper; trivial.
+      reflexivity.
+    } 
+
+    assert (mart':IsMartingale Rle Y2 sas1).
+    {
+      now apply (is_martingale_eq_proper _ _ _ _ _ eqq1 (fun n => reflexivity _)).
+    } 
+    clear Y1 adapt1 rv1 isfe1 eqq1 mart.
+    intros n.
+    red in mart'.
+    assert (RandomVariable dom borel_sa (FiniteConditionalExpectation prts (sub1 n) (Y2 (S n)))).
+    {
+      generalize (FiniteCondexp_rv prts (sub1 n) (Y2 (S n))).
+      apply RandomVariable_sa_sub.
+      apply sub1.
+    } 
+
+    generalize (FiniteCondexp_tower' prts (sub1 n) (eqq2 n) (Y2 (S n)))
+    ; intros HH.
+    apply almostR2_prob_space_sa_sub_lift in HH.
+
+    transitivity (FiniteConditionalExpectation prts (transitivity (eqq2 n) (sub1 n))
+                                               (FiniteConditionalExpectation prts (sub1 n) (Y2 (S n)))).
+    - generalize (FiniteCondexp_ale prts (sub2 n) _ _ (mart' n))
+      ; intros HH2.
+      apply almostR2_prob_space_sa_sub_lift in HH2.
+      transitivity (FiniteConditionalExpectation prts (sub2 n) (Y2 n)).
+      + eapply almostR2_subrelation.
+        * apply eq_subrelation.
+          typeclasses eauto.
+        * apply all_almost; intros ?.
+          symmetry.
+          apply FiniteCondexp_id; trivial.
+      + rewrite HH2.
+        eapply almostR2_subrelation.
+        * apply eq_subrelation.
+          typeclasses eauto.
+        * eapply (almostR2_prob_space_sa_sub_lift prts (sub2 n)).
+          eapply FiniteCondexp_all_proper; reflexivity.
+    - eapply almostR2_subrelation.
+      + apply eq_subrelation.
+        typeclasses eauto.
+      + rewrite HH.
+        symmetry.
+        eapply (almostR2_prob_space_sa_sub_lift prts (sub2 n)).
+        eapply FiniteCondexp_all_proper; reflexivity.
+  Qed.
   
+  Lemma is_super_martingale_proper 
+        (Y1 Y2 : nat -> Ts -> R) (sas1 sas2 : nat -> SigmaAlgebra Ts)
+        {rv1:forall n, RandomVariable dom borel_sa (Y1 n)}
+        {rv2:forall n, RandomVariable dom borel_sa (Y2 n)}
+        {isfe1:forall n, IsFiniteExpectation prts (Y1 n)}
+        {isfe2:forall n, IsFiniteExpectation prts (Y2 n)}
+        {adapt1:IsAdapted borel_sa Y1 sas1}
+        {adapt2:IsAdapted borel_sa Y2 sas2}
+        {filt1:IsFiltration sas1}
+        {filt2:IsFiltration sas2}
+        {sub1:IsSubAlgebras dom sas1}
+        {sub2:IsSubAlgebras dom sas2} :
+    (forall n, almostR2 prts eq (Y1 n) (Y2 n)) ->
+    (forall n, sa_sub (sas2 n) (sas1 n)) ->
+    IsMartingale Rge Y1 sas1 -> IsMartingale Rge Y2 sas2.
+  Proof.
+    intros eqq1 eqq2 mart.
+    apply is_sub_martingale_neg.
+    apply is_sub_martingale_neg in mart.
+    revert mart.
+    eapply is_sub_martingale_proper; eauto.
+    intros.
+    now apply almostR2_eq_opp_proper.
+  Qed.
+
+  Lemma is_martingale_proper 
+        (Y1 Y2 : nat -> Ts -> R) (sas1 sas2 : nat -> SigmaAlgebra Ts)
+        {rv1:forall n, RandomVariable dom borel_sa (Y1 n)}
+        {rv2:forall n, RandomVariable dom borel_sa (Y2 n)}
+        {isfe1:forall n, IsFiniteExpectation prts (Y1 n)}
+        {isfe2:forall n, IsFiniteExpectation prts (Y2 n)}
+        {adapt1:IsAdapted borel_sa Y1 sas1}
+        {adapt2:IsAdapted borel_sa Y2 sas2}
+        {filt1:IsFiltration sas1}
+        {filt2:IsFiltration sas2}
+        {sub1:IsSubAlgebras dom sas1}
+        {sub2:IsSubAlgebras dom sas2} :
+    (forall n, almostR2 prts eq (Y1 n) (Y2 n)) ->
+    (forall n, sa_sub (sas2 n) (sas1 n)) ->
+    IsMartingale eq Y1 sas1 -> IsMartingale eq Y2 sas2.
+  Proof.
+    intros.
+    apply is_martingale_sub_super_eq.
+    - apply (is_martingale_eq_any Rle) in H1.
+      revert H1.
+      eapply is_sub_martingale_proper; eauto.
+    - apply (is_martingale_eq_any Rge) in H1.
+      revert H1.
+      eapply is_super_martingale_proper; eauto.
+  Qed.
+
+  Corollary is_sub_martingale_natural
+        (Y : nat -> Ts -> R) (sas : nat -> SigmaAlgebra Ts)
+        {rv:forall n, RandomVariable dom borel_sa (Y n)}
+        {isfe:forall n, IsFiniteExpectation prts (Y n)}
+        {adapt:IsAdapted borel_sa Y sas}
+        {filt:IsFiltration sas}
+        {sub:IsSubAlgebras dom sas} :
+    IsMartingale Rle Y sas ->
+    IsMartingale Rle Y (filtration_history_sa Y).
+  Proof.
+    apply is_sub_martingale_proper; try reflexivity.
+    now apply filtration_history_sa_is_least.
+  Qed.
+
+  Corollary is_super_martingale_natural
+        (Y : nat -> Ts -> R) (sas : nat -> SigmaAlgebra Ts)
+        {rv:forall n, RandomVariable dom borel_sa (Y n)}
+        {isfe:forall n, IsFiniteExpectation prts (Y n)}
+        {adapt:IsAdapted borel_sa Y sas}
+        {filt:IsFiltration sas}
+        {sub:IsSubAlgebras dom sas} :
+    IsMartingale Rge Y sas ->
+    IsMartingale Rge Y (filtration_history_sa Y).
+  Proof.
+    apply is_super_martingale_proper; try reflexivity.
+    now apply filtration_history_sa_is_least.
+  Qed.
+
+  Corollary is_martingale_natural
+        (Y : nat -> Ts -> R) (sas : nat -> SigmaAlgebra Ts)
+        {rv:forall n, RandomVariable dom borel_sa (Y n)}
+        {isfe:forall n, IsFiniteExpectation prts (Y n)}
+        {adapt:IsAdapted borel_sa Y sas}
+        {filt:IsFiltration sas}
+        {sub:IsSubAlgebras dom sas} :
+    IsMartingale eq Y sas ->
+    IsMartingale eq Y (filtration_history_sa Y).
+  Proof.
+    apply is_martingale_proper; try reflexivity.
+    now apply filtration_history_sa_is_least.
+  Qed.
+
   Lemma is_sub_martingale_lt
         (Y : nat -> Ts -> R) (sas : nat -> SigmaAlgebra Ts)
         {rv:forall n, RandomVariable dom borel_sa (Y n)}

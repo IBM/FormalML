@@ -700,6 +700,16 @@ Section filtration_history.
     now apply pullback_rv_sub.
   Qed.
 
+  Global Instance filtration_history_is_sub_algebra
+         (dom:SigmaAlgebra Ts)
+         {rv:forall n, RandomVariable dom cod (X n)} :
+    IsSubAlgebras dom (filtration_history_sa).
+  Proof.
+    apply filtrate_sa_is_sub_algebra.
+    intros ?.
+    now apply pullback_rv_sub.
+  Qed.
+
 End filtration_history.
 
 Section filtration_history_props.
@@ -740,6 +750,7 @@ Section filtration_history_props.
     apply filtrate_sa_proper; intros k.
     apply (pullback_sa_isos (rv1 k) (f k) (g k)); auto.
   Qed.
+  
 
 End filtration_history_props.
 
@@ -755,5 +766,37 @@ Section adapted.
     intros n.
     apply filtration_history_sa_rv.
   Qed.
+
+  Global Instance is_adapted_proper : Proper (pointwise_relation _ rv_eq ==> pointwise_relation _ sa_sub ==> impl) IsAdapted.
+  Proof.
+    intros ????????.
+    generalize (H1 n).
+    apply RandomVariable_proper_le; trivial.
+    reflexivity.
+  Qed.
+
+  Global Instance is_adapted_eq_proper : Proper (pointwise_relation _ rv_eq ==> pointwise_relation _ sa_equiv ==> iff) IsAdapted.
+  Proof.
+    intros ??????.
+    split; apply is_adapted_proper; trivial.
+    - intros ?; apply sa_equiv_sub; trivial.
+    - now symmetry.
+    - intros ?; apply sa_equiv_sub; now symmetry.
+  Qed.
+
+  Lemma filtration_history_sa_is_least
+        (X : nat -> Ts -> Td) sas
+        {filt:IsFiltration sas}
+        {adapt:IsAdapted X sas}:
+    forall n, sa_sub (filtration_history_sa X n) (sas n).
+  Proof.
+    unfold filtration_history_sa.
+    intros.
+    apply filtrate_sa_sub_all; intros.
+    transitivity (sas k).
+    - apply pullback_rv_sub.
+      apply adapt.
+    - now apply is_filtration_le.
+  Qed.    
 
 End adapted.
