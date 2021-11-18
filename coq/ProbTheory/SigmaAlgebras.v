@@ -1059,6 +1059,50 @@ Section filtration.
       apply is_filtration.
   Qed.
 
+  Global Instance IsSubAlgebras_proper :
+    Proper (sa_sub ==> pointwise_relation _ sa_sub --> impl) IsSubAlgebras.
+  Proof.
+    unfold IsSubAlgebras.
+    intros ????????.
+    now rewrite <- H0, H1.
+  Qed.
+
+  Global Instance IsSubAlgebras_eq_proper' :
+    Proper (sa_equiv ==> pointwise_relation _ sa_equiv ==> impl) IsSubAlgebras.
+  Proof.
+    intros ??????.
+    apply IsSubAlgebras_proper.
+    - rewrite H; reflexivity.
+    - symmetry in H0.
+      rewrite H0.
+      reflexivity.
+  Qed.
+
+  Global Instance IsSubAlgebras_eq_proper :
+    Proper (sa_equiv ==> pointwise_relation _ sa_equiv ==> iff) IsSubAlgebras.
+  Proof.
+    intros ??????.
+    split; apply IsSubAlgebras_eq_proper'; trivial
+    ; now symmetry.
+  Qed.
+
+
+  Global Instance IsFiltration_proper' :
+    Proper (pointwise_relation _ sa_equiv ==> impl) IsFiltration.
+  Proof.
+    intros ?????.
+    rewrite <- (H n), <- (H (S n)).
+    apply H0.
+  Qed.
+  
+  Global Instance IsFiltration_proper :
+    Proper (pointwise_relation _ sa_equiv ==> iff) IsFiltration.
+  Proof.
+      intros ???.
+      split; apply IsFiltration_proper'; trivial.
+      now symmetry.
+  Qed.
+
   Section fs.
     Context (sas:nat->SigmaAlgebra Ts).
     Fixpoint filtrate_sa (n : nat) : SigmaAlgebra Ts

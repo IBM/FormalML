@@ -92,6 +92,7 @@ PROB_THEORY = \
 	VectorConditionalExpectation \
 	SigmaAlgebras \
 	VectorRandomVariable \
+	Martingale \
 	Gaussian
 
 

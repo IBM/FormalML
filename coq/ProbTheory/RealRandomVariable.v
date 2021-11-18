@@ -4789,6 +4789,22 @@ Section real_pullback.
 
 End real_pullback.
 
+Section adapted.
+  Context {Ts:Type}.
+
+  Global Instance is_adapted_rv Y (sas:nat->SigmaAlgebra Ts) :
+    IsAdapted borel_sa Y sas -> 
+    IsAdapted borel_sa (fun n => rvopp (Y n)) sas.
+  Proof.
+    unfold IsAdapted.
+    intros.
+    typeclasses eauto.
+  Qed.
+  
+End adapted.
+
+
+
 (*
 Section prob.
   Local Open Scope R.
