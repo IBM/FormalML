@@ -2691,6 +2691,30 @@ Section SimpleConditionalExpectation.
       apply H3.
   Qed.
 
+    Lemma SimpleConditionalExpectationSA_rvscale (c:R)
+          (rv_X : Ts -> R)
+          {rv : RandomVariable dom borel_sa rv_X}
+          {frf : FiniteRangeFunction rv_X}
+          (l : list dec_sa_event) :
+      is_partition_list (map dsa_event l) ->
+      rv_eq (SimpleConditionalExpectationSA (rvscale c rv_X) l)
+            (rvscale c (SimpleConditionalExpectationSA rv_X l  )).
+    Proof.
+      intros.
+      transitivity (SimpleConditionalExpectationSA (rvmult (const c) rv_X) l).
+      { 
+        apply SimpleConditionalExpectationSA_ext.
+        - intros x.
+          now unfold rvscale, rvmult, const.
+        - easy.
+      }
+      apply gen_conditional_scale_measurable; trivial.
+      unfold partition_measurable; intros.
+      exists c.
+      repeat red.
+      reflexivity.
+    Qed.
+
 End SimpleConditionalExpectation.  
 
 Section sa_sub.
