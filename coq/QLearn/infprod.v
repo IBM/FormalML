@@ -384,7 +384,7 @@ Proof.
   unfold derivable_pt, derivable_pt_abs.
   exists (/ x).
   now apply derivable_pt_lim_ln.
-Qed.
+Defined.
 
 Lemma log_product_iff_product (a : nat -> posreal) (l:posreal): 
   is_lim_seq (fun n => (ln (part_prod_pos a n))) (ln l) <-> is_lim_seq (part_prod_pos a) l .
