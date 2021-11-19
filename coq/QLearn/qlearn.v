@@ -923,7 +923,56 @@ algorithm.
         -- intros; specialize (ha1 (n0+N0)%nat); cut_to ha1 ; try lra; try lia.
     Qed.
 
+    Theorem product_sum_gamma0_0 {α : nat -> R} 
+            (ha1 : forall n, 0 <= α n < 1) (ha2 : is_lim_seq α 0)
+            (ha3 : is_lim_seq (sum_n α) p_infty) :
+      (is_lim_seq (fun n => prod_f_R0 (fun m => /(1 - α m)) n) p_infty).
+    Proof.
+      rewrite product_sum_iff with (gamma := 0) in ha3; try lra; auto.
+      - specialize (ha3 0%nat).
+        unfold g_alpha in ha3.
+        setoid_rewrite prod_f_R0_inv.
+        + apply is_lim_seq_ext with
+              (v := fun n => prod_f_R0 (fun m => 1 - α (m)%nat) n) in ha3.
+          unfold Rdiv.
+          rewrite <-is_lim_seq_pos_inv_p_infty; auto.
+          intros n. apply prod_f_R0_pos; intros.
+          specialize (ha1 (n0)%nat); lra.
+          intros. apply prod_f_R0_proper; [|reflexivity].
+          intros m.
+          replace (m + 0)%nat with m by lia.
+          lra.
+        + intros; specialize (ha1 (n0)%nat).
+          lra.
+      - intros.
+        specialize (ha1 n).
+        lra.
+    Qed.
+
     (* To be used for Lemma 9. *)
+    Theorem product_sum_increasing0
+        {α : nat -> R} (ha1 : forall n, 0 <= α n < 1)
+      : let b := fun n => prod_f_R0 (fun m => / (1 - α (m)%nat)) n in
+               forall p, 0 < b p <= b (S p).
+    Proof.
+      intros b p.
+      subst b.
+      simpl; split.
+      + apply prod_f_R0_pos.
+        intros n.
+        apply Rinv_pos.
+        specialize (ha1 (n)%nat); try lra.
+      + rewrite <-Rmult_1_r at 1.
+        apply Rmult_le_compat_l.
+        -- apply prod_f_R0_nonneg.
+           intros n.
+           left. apply Rinv_pos.
+           specialize (ha1 (n)%nat).
+           lra.
+        -- rewrite <-Rinv_1 at 1.
+           apply Rinv_le_contravar; specialize (ha1 (S(p)%nat)); lra.
+    Qed.
+
     Theorem product_sum_increasing
         {α : nat -> R} {N0 : nat} (ha1 : forall n, (N0 <= n)%nat -> 0 <= α n < 1)
       : let b := fun n => prod_f_R0 (fun m => / (1 - α (m + N0)%nat)) n in
@@ -2473,6 +2522,7 @@ algorithm.
     (* Lemma 9*)
     Lemma as_convergent_lemma (C : R) (w : nat -> Ts -> vector R I)
           (rw : forall n, RandomVariable dom (Rvector_borel_sa I) (w n))
+          (isfew : forall n, vector_IsFiniteExpectation prts (w n))
           (srw : forall n, FiniteRangeFunction  (w n)) :
       0 <= C ->
       F = const (Rvector_zero) ->
@@ -2481,10 +2531,11 @@ algorithm.
       is_lim_seq α 0 ->
       is_lim_seq (sum_n α) p_infty ->
       ex_series (fun n => (α n)^2) -> 
-      (forall n, rv_eq (vector_SimpleConditionalExpectationSA
-                          (w n)
-                          (L2_convergent_hist (L2_convergent_x (const Rvector_zero) w) _ _ n))
-                       (const zero)) ->
+     (forall n, rv_eq (vector_FiniteConditionalExpectation
+                         prts (filtration_history_sa_sub (cod := Rvector_borel_sa I) 
+                                                         (L2_convergent_x (const Rvector_zero) w)
+                                                         n) (w n))
+                      (const Rvector_zero)) ->
       (forall n, SimpleExpectation (rvinner (w n) (w n)) < C)  ->
       almost prts (fun w1 =>
                      is_lim_seq (fun n => (rvmaxabs (L2_convergent_x (const Rvector_zero) w n)) w1) 0).
@@ -2555,131 +2606,127 @@ algorithm.
             setoid_rewrite Nat.add_comm.
             apply Ha4.
       }
-      pose (b0 := 1).
-      pose (b := fun (m:nat) => (prod_f_R0 (fun k => /(1 - α (k + N0))) m)).
-      pose (z0 := (fun omega => L2_convergent_x (const Rvector_zero) w N0 omega)).
-      pose (z := fun (n:nat) => vecrvscale ((b n)*(α (n + N0)%nat)) (w (n + N0)%nat)).
-      assert (rv : forall n : nat, RandomVariable dom (Rvector_borel_sa I) (z n)) by typeclasses eauto.
-      assert (rv0 : RandomVariable dom (Rvector_borel_sa I) z0).
+      pose (b := fun (m:nat) => 
+                   match m with
+                   | 0 => 1
+                   | S n => (prod_f_R0 (fun k => /(1 - α (k))) n)
+                   end).
+      pose (z := fun (m:nat) =>
+                   match m with
+                   | 0 => (const Rvector_zero) 
+                   | S n => vecrvscale ((b m)*(α n)) (w n)
+                   end).
+      assert (rv : forall n : nat, RandomVariable dom (Rvector_borel_sa I) (z n)).
       {
-        unfold z0.
-        apply L2_convergent_x_rv; typeclasses eauto.
+        destruct n.
+        - simpl; typeclasses eauto.
+        - simpl; typeclasses eauto.
       }
-      assert (frf : forall n : nat, FiniteRangeFunction (z n)) by typeclasses eauto.
-      assert (frf0 : FiniteRangeFunction z0).
+      assert (rx : forall n : nat,
+                 RandomVariable dom (Rvector_borel_sa I) 
+                                (L2_convergent_x (const Rvector_zero) w n)) by typeclasses eauto.
+      assert (frf : forall n : nat, FiniteRangeFunction (z n)).
       {
-        unfold z0.
-        apply L2_convergent_x_frf; trivial.
-        typeclasses eauto.
+        destruct n.
+        - simpl; typeclasses eauto.
+        - simpl; typeclasses eauto.
       }
-      generalize (vec_Ash_6_2_2_split z0 z b0 b); intros Kol.
-      cut_to Kol.
+      assert (isfez : forall n : nat, vector_IsFiniteExpectation prts (z n)).
+      {
+        destruct n.
+        - simpl; typeclasses eauto.
+        - simpl.
+          apply vector_IsFiniteExpectation_simple; typeclasses eauto.
+      }
+      assert (bneq0: forall n, b n <> 0).
+      {
+        intros.
+        destruct n.
+        - simpl; lra.
+        - simpl.
+          apply Rgt_not_eq.
+          apply product_sum_increasing0.
+          intros; apply Ha1.
+      }
+      generalize (vec_Ash_6_2_2 z b); intros Kol.
+      cut_to Kol; trivial.
       - revert Kol;apply almost_impl; apply all_almost; intros ??.
         intros; specialize (H k pf).
-        apply is_lim_seq_incr_1.
         eapply is_lim_seq_ext; try eapply H.
         intros.
         simpl.
         unfold rvscale, rvplus, vecrvnth, rvsum.
-        assert (b n <> 0).
-        {
-          apply Rgt_not_eq.
-          apply product_sum_increasing.
-          intros; apply Ha1.
-        }
+        unfold vecrvplus.
         apply Rmult_eq_reg_l with (r := b n); trivial.
         rewrite <- Rmult_assoc.
         rewrite Rinv_r_simpl_r; trivial.
-        unfold z0, const.
+        unfold const.
         simpl.
-        rewrite Rvector_nth_zero.
-        rewrite Rplus_0_l.
         unfold z.
         induction n.
-        + simpl.
-          rewrite sum_O.
+        + rewrite sum_O.
+          simpl.
           unfold F_alpha.
           unfold vecrvplus, vecrvscale.
+          unfold const.
+          lra.
+        + unfold F_alpha.
+          rewrite sum_Sn.
+          rewrite IHn.
+          unfold plus; simpl.
+          unfold F_alpha, vecrvplus, vecrvscale.
           rewrite HF.
           unfold const.
-          do 2 rewrite Rvector_scale_zero.
+          rewrite Rvector_scale_zero.
+          do 2 rewrite Rvector_nth_plus.
+          do 3 rewrite Rvector_nth_scale.          
+          rewrite Rvector_nth_zero.
+          rewrite Rplus_0_r.
+          rewrite Rmult_plus_distr_l.
+          f_equal; try lra.
+          rewrite <- Rmult_assoc.
+          f_equal.
+          destruct n.
+          * simpl.
+            rewrite <- Rinv_l_sym; trivial.
+            specialize (Ha1 0%nat); lra.
+          * simpl.
+            rewrite Rmult_assoc.
+            rewrite <- Rinv_l_sym; try lra.
+            specialize (Ha1 (S n)); lra.
+      - generalize (condexp_hist_z w z b rw _ _ HCE); intros.
+        apply H; trivial.
+        + now simpl.
+        + intros.
+          simpl.
+          unfold F_alpha.
+          rewrite HF.
+          unfold vecrvplus, vecrvscale, const.
+          intros ?; simpl.
+          rewrite Rvector_scale_zero.
           rewrite Rvector_plus_zero.
-          rewrite Rvector_plus_comm.
-          rewrite Rvector_plus_zero.
-          unfold N0.
-          do 2 rewrite Rvector_nth_scale.
-          replace (0 + 0)%nat with (0)%nat by lia.
-          now rewrite Rmult_assoc.
-        + cut_to IHn.
-          * unfold F_alpha.
-            rewrite sum_Sn.
-            rewrite IHn.
-            unfold plus; simpl.
-            unfold F_alpha, vecrvplus, vecrvscale.
-            rewrite HF.
-            unfold const.
-            do 2 rewrite Rvector_scale_zero.
-            rewrite Rvector_nth_scale.          
-            do 4 rewrite Rvector_nth_plus.
-            do 4 rewrite Rvector_nth_scale.
-            rewrite Rvector_nth_zero.
-            do 2 rewrite Rvector_nth_plus.
-            do 2 rewrite Rvector_nth_scale.          
-            rewrite Rvector_nth_zero.
-            unfold N0.
-            replace (n + 0)%nat with n by lia.
-            do 2 rewrite Rplus_0_r.
-            unfold b.
-            simpl.
-            unfold N0.
-            replace (n + 0)%nat with n by lia.
-            field.
-            apply Rgt_not_eq.
-            specialize (Ha1 (S n)).
-            lra.
-          * unfold b.
-            apply Rgt_not_eq.
-            apply product_sum_increasing.
-            intros.
-            apply Ha1.
-      - unfold z0, N0.
-        simpl.
-        generalize (vec_SimpCondexpSA_zero I (dsa_Ω :: nil)); intros.
-        simpl in H.
-        rewrite <- H.
-        apply vector_SimpleConditionalExpectationSA_ext; reflexivity.
+          f_equal.
+          rewrite Rvector_scale_scale.
+          f_equal.
+          field.
+          specialize (bneq0 (S n0)).
+          unfold b in bneq0; now simpl in bneq0.
+        + intros.
+          unfold z; now simpl.
       - intros.
-        unfold z.
-        unfold z0.
-        unfold N0.
-        simpl.
-        intros ?.
-        clear Kol H60_2 Hp1 Ha2 Ha3 Ha4 HE.
-        induction n.
+        destruct n.
         + simpl.
-          unfold const.
-          specialize (HCE 0%nat).
-          admit.
-        + 
-          generalize (vector_SimpleConditionalExpectationSA_vecrvscale (w (n + N0)%nat)
-                                                                     (b n * α (n + N0))
-                    (vec_filtration_history_split 
-                       n z0
-                       (fun n0 : nat => vecrvscale (b n0 * α (n0 + N0)) (w (n0 + N0)%nat)))) ; intros.
-        admit.
-      - unfold b0, b.
-        simpl.
-        split; try lra.
-        replace (1) with (/ 1) at 1 by lra.
-        specialize (Ha1 N0).
-        apply Rinv_le_contravar; lra.
-      - unfold b. clear Kol.
-        apply product_sum_increasing.
-        intros.
-        specialize (Ha1 n); lra.
-      - unfold b. apply product_sum_gamma0; auto.
-        intros; specialize (Ha1 n); lra.
-      - revert H60_2.
+          split; try lra.
+          replace (1) with (/ 1) at 1 by lra.
+          specialize (Ha1 0%nat).
+          apply Rinv_le_contravar; lra.
+        + simpl.
+          now apply product_sum_increasing0.
+      - apply is_lim_seq_incr_1.
+        unfold b. simpl.
+        now apply product_sum_gamma0_0.
+      - apply ex_series_incr_1.
+        revert H60_2.
         apply ex_series_ext.
         intros.
         apply SimpleExpectation_ext.
@@ -2687,20 +2734,12 @@ algorithm.
         unfold z, rvinner, rvscale, vecrvscale.
         rewrite Rvector_scale_scale.
         rewrite <- Rmult_assoc.
-        rewrite <- Rinv_l_sym.
-        * rewrite Rmult_1_l.
-          rewrite Rvector_inner_scal.
-          symmetry.
-          rewrite Rvector_inner_comm.
-          rewrite Rvector_inner_scal.
-          ring.
-        * apply Rgt_not_eq.
-          apply product_sum_increasing.
-          intros. specialize (Ha1 n0).
-          lra.
-      - intros; typeclasses eauto.
-
-     Admitted.
+        rewrite <- Rinv_l_sym; trivial.
+        rewrite Rmult_1_l.
+        unfold N0.
+        now replace (n + 0)%nat with (n) by lia.
+      - typeclasses eauto.
+    Qed.
 
   End qlearn3.
 
@@ -4202,6 +4241,7 @@ algorithm.
           {prts: ProbSpace dom}                              
           (rx : forall n0, RandomVariable dom (Rvector_borel_sa (S n)) (x n0))
           (rw : forall n0, RandomVariable dom (Rvector_borel_sa (S n)) (w n0))
+          (isfew : forall n0, vector_IsFiniteExpectation prts (w n0))
           (srw : forall n0, FiniteRangeFunction  (w n0))
           (rvsup : forall nk, RandomVariable dom Rbar_borel_sa
                     (fun (omega : Ts) =>
@@ -4229,16 +4269,18 @@ algorithm.
        (forall n, forall omega, 
             rvmaxabs (vecrvminus (x n) (const xstar)) omega <= C0) ->
       (forall n0 : nat, SimpleExpectation (rvinner (w n0) (w n0)) < C) ->
-      (forall nk, forall n0,
-          rv_eq
-            (vector_SimpleConditionalExpectationSA 
-               (w ( n0 + nk)%nat)
-               (L2_convergent_hist 
-                  (@L2_convergent_x (S n) (fun k => α (k + nk)%nat) 
-                                    (const Rvector_zero) Ts 
-                                    (const Rvector_zero) 
-                                    (fun k => w (k + nk)%nat)) _ _ n0)) 
-               (const zero)) ->
+     (forall nk, forall n0,
+         rv_eq (vector_FiniteConditionalExpectation
+                  prts (filtration_history_sa_sub 
+                          (cod := Rvector_borel_sa (S n)) 
+                          (@L2_convergent_x (S n)
+                                            (fun k => α (k + nk)%nat) 
+                                            (const Rvector_zero) Ts
+                                            (const Rvector_zero) 
+                                            (fun k => w (k + nk)%nat))
+                          n0) 
+                  (w (n0 + nk)%nat))
+         (const Rvector_zero)) ->
       forall (k:nat),
       exists (nk : nat),
         ps_P 
@@ -4321,10 +4363,10 @@ algorithm.
             apply Rabs_lt_between in H.
             lra.
           }
-          generalize (as_convergent_lemma (I := S n) 0); intros.
+          generalize (as_convergent_lemma (I := S n) ); intros.
           specialize (H4 (fun n0 : nat => α (n0 + nk)%nat) (const (@ Rvector_zero (S n))) Ts dom prts C
                          (fun n0 : nat => w (n0 + nk)%nat)).
-          specialize (H4 (fun n2 : nat => rw (n2 + nk)%nat) (fun n2 : nat => srw (n2 + nk)%nat)).
+          specialize (H4 (fun n2 : nat => rw (n2 + nk)%nat) _ (fun n2 : nat => srw (n2 + nk)%nat)).
           cut_to H4; trivial.
           * pose (f := (fun n0 w1 =>  
                                  rvmaxabs
@@ -4886,6 +4928,7 @@ algorithm.
           {prts: ProbSpace dom}                              
           (rx : forall n0, RandomVariable dom (Rvector_borel_sa (S n)) (x n0))
           (rw : forall n0, RandomVariable dom (Rvector_borel_sa (S n)) (w n0))
+          (isfew : forall n0, vector_IsFiniteExpectation prts (w n0))
           (srw : forall n0, FiniteRangeFunction  (w n0))
           (rvsup : forall nk, RandomVariable dom Rbar_borel_sa
                     (fun (omega : Ts) =>
@@ -4911,16 +4954,18 @@ algorithm.
        (forall n, forall omega, 
             rvmaxabs (vecrvminus (x n) (const xstar)) omega <= C0) ->
       (forall n0 : nat, SimpleExpectation (rvinner (w n0) (w n0)) < C) ->
-      (forall nk, forall n0,
-          rv_eq
-            (vector_SimpleConditionalExpectationSA 
-               (w ( n0 + nk)%nat)
-               (L2_convergent_hist 
-                  (@L2_convergent_x (S n) (fun k => α (k + nk)%nat) 
-                                    (const Rvector_zero) Ts 
-                                    (const Rvector_zero) 
-                                    (fun k => w (k + nk)%nat)) _ _ n0)) 
-            (const zero)) ->
+     (forall nk, forall n0,
+         rv_eq (vector_FiniteConditionalExpectation
+                  prts (filtration_history_sa_sub 
+                          (cod := Rvector_borel_sa (S n)) 
+                          (@L2_convergent_x (S n)
+                                            (fun k => α (k + nk)%nat) 
+                                            (const Rvector_zero) Ts
+                                            (const Rvector_zero) 
+                                            (fun k => w (k + nk)%nat))
+                          n0) 
+                  (w (n0 + nk)%nat))
+         (const Rvector_zero)) ->
       almost prts (fun omega => is_lim_seq (fun n =>
                                          (rvmaxabs (vecrvminus (x n) (const xstar))) omega)
                                       0).
@@ -5020,7 +5065,7 @@ algorithm.
                                         (rvmaxabs (vecrvminus (x (n0 + nk)%nat) (const xstar))) omega))
                           (C0 * (gamma + eps)^k)) >= 1 - (INR k) * (1 - P0)).
           {
-            apply (Induction_I1_17 (mkposreal _ H14) (mkposreal _ H17) C0 α C w) with (F := F) (rw := rw) (srw := srw); trivial.
+            apply (Induction_I1_17 (mkposreal _ H14) (mkposreal _ H17) C0 α C w) with (F := F) (rw := rw) (srw := srw) (isfew := isfew); trivial.
           }
           assert (eps0 >= (C0 * (gamma + eps)^k)).
           {
