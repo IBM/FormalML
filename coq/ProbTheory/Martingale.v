@@ -582,7 +582,7 @@ Section martingale.
     apply is_filtration_le; trivial; lia.
   Qed.
 
-  Lemma doob_meyer_decomposition
+  Theorem doob_meyer_decomposition
         (Y : nat -> Ts -> R) (sas : nat -> SigmaAlgebra Ts)
         {rv:forall n, RandomVariable dom borel_sa (Y n)}
         {isfe:forall n, IsFiniteExpectation prts (Y n)}
@@ -753,7 +753,74 @@ Section martingale.
         unfold const in H.
         lra.
   Qed.
-        
+
+  Instance is_adapted_convex  (Y : nat -> Ts -> R) (sas : nat -> SigmaAlgebra Ts) (phi:R->R)
+           {adapt:IsAdapted borel_sa Y sas}:
+    (forall c x y, convex phi c x y) ->
+    IsAdapted borel_sa (fun (n : nat) (omega : Ts) => phi (Y n omega)) sas.
+  Proof.
+    intros ??.
+    apply continuous_compose_rv.
+    - apply adapt.
+    - intros ?.
+      now apply convex_continuous.
+  Qed.
+
+  Lemma is_martingale_convex
+        (Y : nat -> Ts -> R) (sas : nat -> SigmaAlgebra Ts) (phi:R->R)
+        {rv:forall n, RandomVariable dom borel_sa (Y n)}
+        {isfe:forall n, IsFiniteExpectation prts (Y n)}
+        {adapt:IsAdapted borel_sa Y sas}
+        {filt:IsFiltration sas}
+        {sub:IsSubAlgebras dom sas}
+        {mart:IsMartingale eq Y sas}
+        {rvphi : forall n, RandomVariable dom borel_sa (fun x => phi (Y n x))} 
+        {isfephi : forall n, IsFiniteExpectation prts (fun x => phi (Y n x))}
+        {adaptphi:IsAdapted borel_sa (fun (n : nat) (omega : Ts) => phi (Y n omega)) sas}
+    : 
+    (forall c x y, convex phi c x y) ->
+    IsMartingale Rle (fun n omega => (phi (Y n omega))) sas.
+  Proof.
+    intros c ?.
+    specialize (mart n).
+    generalize (FiniteCondexp_Jensen prts (sub n) (Y (S n)) phi c)
+    ; intros HH.
+    apply (almostR2_prob_space_sa_sub_lift prts) in HH.
+    rewrite <- HH.
+    eapply almostR2_subrelation.
+    - apply eq_subrelation.
+      typeclasses eauto.
+    - now apply almost_f_equal.
+  Qed.
+  
+  Lemma is_sub_martingale_incr_convex
+        (Y : nat -> Ts -> R) (sas : nat -> SigmaAlgebra Ts) (phi:R->R)
+        {rv:forall n, RandomVariable dom borel_sa (Y n)}
+        {isfe:forall n, IsFiniteExpectation prts (Y n)}
+        {adapt:IsAdapted borel_sa Y sas}
+        {filt:IsFiltration sas}
+        {sub:IsSubAlgebras dom sas}
+        {mart:IsMartingale Rle Y sas}
+        {rvphi : forall n, RandomVariable dom borel_sa (fun x => phi (Y n x))} 
+        {isfephi : forall n, IsFiniteExpectation prts (fun x => phi (Y n x))}
+        {adaptphi:IsAdapted borel_sa (fun (n : nat) (omega : Ts) => phi (Y n omega)) sas}
+    : 
+    (forall c x y, convex phi c x y) ->
+    (forall x y, x <= y -> phi x <= phi y) ->
+    IsMartingale Rle (fun n omega => (phi (Y n omega))) sas.
+  Proof.
+    intros c incr ?.
+    specialize (mart n).
+    generalize (FiniteCondexp_Jensen prts (sub n) (Y (S n)) phi c)
+    ; intros HH.
+    apply (almostR2_prob_space_sa_sub_lift prts) in HH.
+    rewrite <- HH.
+    revert mart.
+    apply almost_impl.
+    apply all_almost; intros ??.
+    now apply incr in H.
+  Qed.
+
 End martingale.
 
 
