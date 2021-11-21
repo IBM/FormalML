@@ -224,7 +224,7 @@ Section martingale.
     apply is_martingale_eq_proper_iff; try reflexivity.
     intros; apply all_almost; intros ?.
     now rewrite rvopp_opp.
-  Qed.    
+  Qed.
 
   Lemma is_sub_martingale_proper 
         (Y1 Y2 : nat -> Ts -> R) (sas1 sas2 : nat -> SigmaAlgebra Ts)
@@ -558,53 +558,254 @@ Section martingale.
       now apply is_martingale_eq_any.
   Qed.
 
-  Section levy.
+  Lemma is_adapted_filtration_pred (Y : nat -> Ts -> R) (sas : nat -> SigmaAlgebra Ts)
+        {filt:IsFiltration sas}
+        {adapt:IsAdapted borel_sa Y (fun n => sas (pred n))} :
+    IsAdapted borel_sa Y sas.
+  Proof.
+    intros n.
+    generalize (adapt n).
+    eapply RandomVariable_proper_le; try reflexivity.
+    destruct n; simpl.
+    - reflexivity.
+    - apply filt.
+  Qed.
 
-    Context (X:Ts -> R)
-            {rv:RandomVariable dom borel_sa X}
-            {isfe:IsFiniteExpectation prts X}
-            (sas : nat -> SigmaAlgebra Ts)
-            {sub:IsSubAlgebras dom sas}.
+  Lemma is_adapted_filtration_shift k (Y : nat -> Ts -> R) (sas : nat -> SigmaAlgebra Ts)
+        {filt:IsFiltration sas}
+        {adapt:IsAdapted borel_sa Y (fun n => sas (n - k)%nat)} :
+    IsAdapted borel_sa Y sas.
+  Proof.
+    intros n.
+    generalize (adapt n).
+    eapply RandomVariable_proper_le; try reflexivity.
+    apply is_filtration_le; trivial; lia.
+  Qed.
 
-    Definition levy_martingale
-      : nat -> Ts -> R
-      := fun n => FiniteConditionalExpectation prts (sub n) X.
+  Lemma doob_meyer_decomposition
+        (Y : nat -> Ts -> R) (sas : nat -> SigmaAlgebra Ts)
+        {rv:forall n, RandomVariable dom borel_sa (Y n)}
+        {isfe:forall n, IsFiniteExpectation prts (Y n)}
+        {adapt:IsAdapted borel_sa Y sas}
+        {filt:IsFiltration sas}
+        {sub:IsSubAlgebras dom sas}
+        {mart:IsMartingale Rle Y sas} :
+    { M : nat -> Ts -> R |
+      let A := fun n => rvminus (Y n) (M n) in
+      exists (rvM:forall n, RandomVariable dom borel_sa (M n))
+        (isfeM:forall n, IsFiniteExpectation prts (M n))
+        (adaptM:IsAdapted borel_sa M sas),
+        IsMartingale eq M sas
+        /\ IsAdapted borel_sa A (fun n => sas (pred n))
+        /\ (forall n, RandomVariable dom borel_sa (A n))
+        /\ (forall n, IsFiniteExpectation prts (A n))
+        /\ (forall n, almostR2 prts Rle (A n) (A (S n)))}.
+  Proof.
+    pose (dn := fun n => FiniteConditionalExpectation prts (sub n) (rvminus (Y (S n)) (Y n))).
+    pose (An := fun n => match n with
+                      | 0 => const 0
+                      | S k => rvsum (fun i => dn i) k
+                      end).
+    exists (fun n => rvminus (Y n) (An n)).
+    intros A.
 
-    Global Instance levy_martingale_rv :
-      forall n : nat, RandomVariable dom borel_sa (levy_martingale n).
-    Proof.
-      intros n.
-      unfold levy_martingale.
-      generalize (FiniteCondexp_rv prts (sub n) X).
-      apply RandomVariable_sa_sub.
-      apply sub.
-    Qed.
+    assert (Aeq: pointwise_relation _ rv_eq A An).
+    {
+      unfold A.
+      intros ??.
+      rv_unfold; lra.
+    } 
 
+    assert (rvdn:(forall n : nat, RandomVariable dom borel_sa (dn n))).
+    {
+      unfold dn; intros.
+      apply FiniteCondexp_rv'.
+    } 
 
-    Global Instance levy_martingale_is_adapted : IsAdapted borel_sa levy_martingale sas.
-    Proof.
-      intros n.
-      unfold levy_martingale.
-      apply FiniteCondexp_rv.
-    Qed.
-
-    Global Instance levy_martingale_is_martingale {filt:IsFiltration sas} :
-      IsMartingale eq levy_martingale sas.
-    Proof.
-      intros n.
-      unfold levy_martingale.
-      generalize (FiniteCondexp_tower' prts (sub (S n)) (filt n) X)
-      ; intros HH.
-      apply almostR2_prob_space_sa_sub_lift in HH.
-      transitivity (FiniteConditionalExpectation prts (transitivity (filt n) (sub (S n))) X).
-      - eapply (almostR2_prob_space_sa_sub_lift prts (sub n)).
-        apply (FiniteCondexp_all_proper _ _ _); reflexivity.
-      - rewrite <- HH.
-        symmetry.
-        eapply (almostR2_prob_space_sa_sub_lift prts (sub n)).
-        apply (FiniteCondexp_all_proper _ _ _); reflexivity.
-    Qed.        
-
-  End levy.
+    assert (isfedn:forall n : nat, IsFiniteExpectation prts (dn n)).
+    {
+      unfold dn; intros.
+      unfold IsFiniteExpectation.
+      rewrite FiniteCondexp_Expectation.
+      now apply IsFiniteExpectation_minus.
+    } 
     
+    assert (rvAn:(forall n : nat, RandomVariable dom borel_sa (An n))).
+    {
+      unfold An.
+      intros [|?]; simpl
+      ; try apply rvconst.
+      now apply rvsum_rv.
+    } 
+        
+    assert (isfeAn:forall n : nat, IsFiniteExpectation prts (An n)).
+    {
+      unfold An.
+      intros [|?]; simpl.
+      - apply IsFiniteExpectation_const.
+      - now apply IsFiniteExpectation_sum.
+    }
+
+    assert (adaptdn:IsAdapted borel_sa dn sas)
+      by (intros n; apply FiniteCondexp_rv).
+
+    assert (adaptSAn:IsAdapted borel_sa An (fun n => sas (pred n))).
+    { 
+      unfold An.
+      intros [|?]; simpl.
+      - typeclasses eauto.
+      - apply rvsum_rv_loc; intros.
+        unfold dn.
+        generalize (adaptdn m).
+        eapply RandomVariable_proper_le; trivial; try reflexivity.
+        apply is_filtration_le; trivial.
+    }
+
+    assert (adaptAn:IsAdapted borel_sa An sas).
+    {
+      now apply is_adapted_filtration_pred.
+    } 
+
+    exists _, _, _.
+
+    assert (dnnneg : forall n, almostR2 prts Rle (const 0) (dn n)).
+    {
+      intros n.
+      unfold dn.
+      generalize (FiniteCondexp_minus prts (sub n) (Y (S n)) (Y n))
+      ; intros HH.
+      apply (almostR2_prob_space_sa_sub_lift prts) in HH.
+      generalize (adapt n); intros HH2.
+      generalize (mart n); apply almost_impl.
+      revert HH; apply almost_impl.
+      apply all_almost; intros ???.
+      rewrite H.
+      rv_unfold.
+      rewrite (FiniteCondexp_id prts (sub n) (Y n)).
+      lra.
+    } 
+    repeat split.
+    - intros n.
+      generalize (FiniteCondexp_minus prts (sub n) (Y (S n)) (An (S n)))
+      ; intros HH1.
+      apply (almostR2_prob_space_sa_sub_lift prts) in HH1.
+      rewrite HH1.
+      generalize (adaptSAn (S n)); intros HH2.
+      simpl pred in HH2.
+      generalize (FiniteCondexp_id prts (sub n) (An (S n)))
+      ; intros HH3.
+      eapply almostR2_eq_subr in HH3.
+      rewrite HH3.
+
+      clear HH1 HH3.
+      destruct n as [|?]; simpl in *.
+      + unfold dn.
+        generalize (FiniteCondexp_minus prts (sub 0)%nat (Y 1%nat) (Y 0%nat))
+        ; intros HH.
+        apply (almostR2_prob_space_sa_sub_lift prts) in HH.
+        revert HH.
+        apply almost_impl.
+        apply all_almost; intros ??.
+        rv_unfold; unfold rvsum.
+        rewrite Hierarchy.sum_O.
+        rewrite H.
+        generalize (adapt 0%nat); intros.
+        rewrite (FiniteCondexp_id _ _ (Y 0%nat)).
+        lra.
+      +
+        generalize (FiniteCondexp_minus prts (sub (S n)) (Y (S (S n))) (Y (S n)))
+        ; intros HH.
+        apply (almostR2_prob_space_sa_sub_lift prts) in HH.
+        revert HH.
+        apply almost_impl.
+        apply all_almost; intros ??.
+        rv_unfold; unfold rvsum.
+        rewrite Hierarchy.sum_Sn.
+        unfold Hierarchy.plus; simpl.
+        unfold dn.
+        rewrite H.
+        field_simplify.
+        generalize (adapt (S n)); intros.
+        rewrite (FiniteCondexp_id _ _ (Y (S n))).
+        lra.
+    - now intros; rewrite Aeq.
+    - now intros; rewrite Aeq.
+    - now intros; rewrite Aeq.
+    - intros n.
+      cut (almostR2 prts Rle (An n) (An (S n))).
+      {
+        apply almost_impl; apply all_almost; intros ??.
+        now repeat rewrite Aeq.
+      }
+      unfold An.
+      unfold rvsum.
+      destruct n.
+      + simpl.
+        generalize (dnnneg 0%nat); apply almost_impl.
+        apply all_almost; intros ??; simpl.
+        now rewrite Hierarchy.sum_O.
+      + simpl.
+        generalize (dnnneg (S n)); apply almost_impl.
+        apply all_almost; intros ??; simpl.
+        rewrite Hierarchy.sum_Sn.
+        unfold Hierarchy.plus; simpl.
+        replace (n - 0)%nat with n by lia.
+        unfold const in H.
+        lra.
+  Qed.
+        
 End martingale.
+
+
+Section levy.
+
+  Context {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts: ProbSpace dom).
+
+  Context (X:Ts -> R)
+          {rv:RandomVariable dom borel_sa X}
+          {isfe:IsFiniteExpectation prts X}
+          (sas : nat -> SigmaAlgebra Ts)
+          {sub:IsSubAlgebras dom sas}.
+
+  Definition levy_martingale
+    : nat -> Ts -> R
+    := fun n => FiniteConditionalExpectation prts (sub n) X.
+
+  Global Instance levy_martingale_rv :
+    forall n : nat, RandomVariable dom borel_sa (levy_martingale n).
+  Proof.
+    intros n.
+    unfold levy_martingale.
+    generalize (FiniteCondexp_rv prts (sub n) X).
+    apply RandomVariable_sa_sub.
+    apply sub.
+  Qed.
+
+
+  Global Instance levy_martingale_is_adapted : IsAdapted borel_sa levy_martingale sas.
+  Proof.
+    intros n.
+    unfold levy_martingale.
+    apply FiniteCondexp_rv.
+  Qed.
+
+  Global Instance levy_martingale_is_martingale {filt:IsFiltration sas} :
+    IsMartingale prts eq levy_martingale sas.
+  Proof.
+    intros n.
+    unfold levy_martingale.
+    generalize (FiniteCondexp_tower' prts (sub (S n)) (filt n) X)
+    ; intros HH.
+    apply almostR2_prob_space_sa_sub_lift in HH.
+    transitivity (FiniteConditionalExpectation prts (transitivity (filt n) (sub (S n))) X).
+    - eapply (almostR2_prob_space_sa_sub_lift prts (sub n)).
+      apply (FiniteCondexp_all_proper _ _ _); reflexivity.
+    - rewrite <- HH.
+      symmetry.
+      eapply (almostR2_prob_space_sa_sub_lift prts (sub n)).
+      apply (FiniteCondexp_all_proper _ _ _); reflexivity.
+  Qed.        
+
+End levy.

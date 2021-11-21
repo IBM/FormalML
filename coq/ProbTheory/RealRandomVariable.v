@@ -4792,7 +4792,7 @@ End real_pullback.
 Section adapted.
   Context {Ts:Type}.
 
-  Global Instance is_adapted_rv Y (sas:nat->SigmaAlgebra Ts) :
+  Global Instance is_adapted_opp Y (sas:nat->SigmaAlgebra Ts) :
     IsAdapted borel_sa Y sas -> 
     IsAdapted borel_sa (fun n => rvopp (Y n)) sas.
   Proof.
@@ -4800,7 +4800,42 @@ Section adapted.
     intros.
     typeclasses eauto.
   Qed.
-  
+
+  Global Instance is_adapted_plus X Y (sas:nat->SigmaAlgebra Ts) :
+    IsAdapted borel_sa X sas ->
+    IsAdapted borel_sa Y sas -> 
+    IsAdapted borel_sa (fun n => rvplus (X n) (Y n)) sas.
+  Proof.
+    unfold IsAdapted; intros.
+    typeclasses eauto.
+  Qed.
+
+  Global Instance is_adapted_minus X Y (sas:nat->SigmaAlgebra Ts) :
+    IsAdapted borel_sa X sas ->
+    IsAdapted borel_sa Y sas -> 
+    IsAdapted borel_sa (fun n => rvminus (X n) (Y n)) sas.
+  Proof.
+    unfold IsAdapted; intros.
+    typeclasses eauto.
+  Qed.
+
+  Global Instance is_adapted_mult X Y (sas:nat->SigmaAlgebra Ts) :
+    IsAdapted borel_sa X sas ->
+    IsAdapted borel_sa Y sas -> 
+    IsAdapted borel_sa (fun n => rvmult (X n) (Y n)) sas.
+  Proof.
+    unfold IsAdapted; intros.
+    typeclasses eauto.
+  Qed.
+
+  Global Instance is_adapted_abs Y (sas:nat->SigmaAlgebra Ts) :
+    IsAdapted borel_sa Y sas -> 
+    IsAdapted borel_sa (fun n => rvabs (Y n)) sas.
+  Proof.
+    unfold IsAdapted; intros.
+    typeclasses eauto.
+  Qed.
+
 End adapted.
 
 

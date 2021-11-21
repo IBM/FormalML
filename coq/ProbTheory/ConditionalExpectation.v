@@ -5364,7 +5364,7 @@ Section fin_cond_exp.
     match_destr.
   Qed.
   
-  Global Instance FiniteCondexp_rv (f : Ts -> R) 
+    Global Instance FiniteCondexp_rv (f : Ts -> R) 
          {rv : RandomVariable dom borel_sa f}
          {isfe:IsFiniteExpectation prts f} :
     RandomVariable dom2 borel_sa (FiniteConditionalExpectation f).
@@ -5374,6 +5374,15 @@ Section fin_cond_exp.
     typeclasses eauto.
   Qed.
 
+    Instance FiniteCondexp_rv' (f : Ts -> R) 
+           {rv : RandomVariable dom borel_sa f}
+           {isfe:IsFiniteExpectation prts f} :
+      RandomVariable dom borel_sa (FiniteConditionalExpectation f).
+    Proof.
+      generalize (FiniteCondexp_rv f).
+      eapply RandomVariable_proper_le; trivial; try reflexivity.
+    Qed.
+    
   Lemma FiniteCondexp_is_cond_exp (f : Ts -> R) 
         {rv : RandomVariable dom borel_sa f}
         {isfe:IsFiniteExpectation prts f}
@@ -5901,9 +5910,6 @@ Section fin_cond_exp.
       assert (RandomVariable dom borel_sa (rvpower (rvabs (FiniteConditionalExpectation f)) (const p))).
       {
         apply rvpower_rv; try typeclasses eauto.
-        apply rvabs_rv.
-        apply RandomVariable_sa_sub; trivial.
-        apply FiniteCondexp_rv.
       } 
       apply FiniteExpectation_zero_pos in H; trivial.
       + rewrite (FiniteExpectation_proper_almostR2 _ _ _ H).
