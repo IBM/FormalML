@@ -1059,6 +1059,12 @@ Section filtration.
       apply is_filtration.
   Qed.
 
+  Global Instance is_filtration_const (c:SigmaAlgebra Ts) : IsFiltration (fun _ : nat => c).
+    Proof.
+      intros ?.
+      reflexivity.
+    Qed.
+
   Global Instance IsSubAlgebras_proper :
     Proper (sa_sub ==> pointwise_relation _ sa_sub --> impl) IsSubAlgebras.
   Proof.

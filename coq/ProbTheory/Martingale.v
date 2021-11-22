@@ -823,40 +823,31 @@ Section martingale.
 
   Section stopping_times.
 
+    (* This definition is commonly used when the index set is nat *)
     Definition stopping_time_pre_event (rt:Ts->option nat) (n:nat) : pre_event Ts
+      := fun x => rt x = Some n.
+
+    (* This definition is commonly used for more general (including positive real valued) index sets *)
+    Definition stopping_time_pre_event_alt (rt:Ts->option nat) (n:nat) : pre_event Ts
       := (fun x => match rt x with
                 | None => False
                 | Some a => (a <= n)%nat
                 end).
 
-    Definition stopping_time_pre_event_alt (rt:Ts->option nat) (n:nat) : pre_event Ts
-      := fun x => rt x = Some n.
-
-    (*
-    Lemma stopping_time_pre_event_alt (rt:Ts->option nat) (n:nat) :
-      pre_event_equiv (stopping_time_pre_event rt n)
-                      (pre_event_union (fun x => rt x = None)
-                                       (pre_union_of_collection
-                                          (fun a => (fun x => rt x = Some a /\ a <= n))%nat)).
+    Lemma stopping_time_pre_event_dec (rt:Ts->option nat) (n:nat) :
+      dec_pre_event (stopping_time_pre_event rt n).
     Proof.
-      unfold stopping_time_pre_event, pre_union_of_collection.
       intros ?.
-      split; intros ?.
-      - match_case_in H; intros.
-        + right.
-          rewrite H0 in H.
-          eauto.
-        + rewrite H0 in H.
-          now left.
-      - destruct H.
-        + destruct (rt x).
-        + destruct H as [? [??]].
-          now rewrite H.
-    Qed.
-     *)
-    
-    Definition stopping_time_pre_event_dec (rt:Ts->option nat) (n:nat) :
-      dec_pre_event (stopping_time_pre_event rt n)
+      unfold stopping_time_pre_event.
+      destruct (rt x).
+      - destruct (Nat.eq_dec n0 n).
+        + left; congruence.
+        + right; congruence.
+      - right; congruence.
+    Defined.
+
+    Definition stopping_time_pre_event_alt_dec (rt:Ts->option nat) (n:nat) :
+      dec_pre_event (stopping_time_pre_event_alt rt n)
       := (fun x => match rt x as aa
                         return {match aa with
                                 | None => False
@@ -870,17 +861,6 @@ Section martingale.
                   | Some a => le_dec a n
                 end).
 
-    Lemma stopping_time_pre_event_alt_dec (rt:Ts->option nat) (n:nat) :
-      dec_pre_event (stopping_time_pre_event_alt rt n).
-    Proof.
-      intros ?.
-      unfold stopping_time_pre_event_alt.
-      destruct (rt x).
-      - destruct (Nat.eq_dec n0 n).
-        + left; congruence.
-        + right; congruence.
-      - right; congruence.
-    Defined.
 
     Definition is_stopping_time (rt:Ts->option nat) (sas: nat -> SigmaAlgebra Ts)
       := forall n, sa_sigma (SigmaAlgebra := sas n) (stopping_time_pre_event rt n).
@@ -888,31 +868,12 @@ Section martingale.
     Definition is_stopping_time_alt (rt:Ts->option nat) (sas: nat -> SigmaAlgebra Ts)
       := forall n, sa_sigma (SigmaAlgebra := sas n) (stopping_time_pre_event_alt rt n).
 
+    (* For filtrations, the two definitions coincide *)
     Lemma is_stopping_time_as_alt  (rt:Ts->option nat) (sas: nat -> SigmaAlgebra Ts) {filt:IsFiltration sas}:
       is_stopping_time rt sas <-> is_stopping_time_alt rt sas.
     Proof.
       unfold is_stopping_time, stopping_time_pre_event, is_stopping_time_alt, stopping_time_pre_event_alt.
       split; intros HH n.
-      - destruct n.
-        + eapply sa_proper; try eapply HH; intros ?.
-          destruct (rt x); try intuition congruence.
-          split; intros HH2.
-          * invcs HH2.
-            reflexivity.
-          * apply le_n_0_eq in HH2; congruence.
-        + generalize (HH (S n)); intros HH1.
-          generalize (HH n); intros HH2.
-          apply sa_complement in HH2.
-          apply filt in HH2.
-          eapply sa_proper; [| eapply sa_inter; [exact HH1 | exact HH2]].
-          intros ?.
-          unfold pre_event_inter, pre_event_complement.
-          destruct (rt x); split; intros HH3.
-          * invcs HH3; lia.
-          * f_equal.
-            lia.
-          * discriminate.
-          * tauto.
       - assert (pre_event_equiv
                   (fun x : Ts => match rt x with
                               | Some a => (a <= n)%nat
@@ -946,6 +907,26 @@ Section martingale.
         eapply (is_filtration_le _ x0).
         + lia.
         + apply HH.
+      - destruct n.
+        + eapply sa_proper; try eapply HH; intros ?.
+          destruct (rt x); try intuition congruence.
+          split; intros HH2.
+          * invcs HH2.
+            reflexivity.
+          * apply le_n_0_eq in HH2; congruence.
+        + generalize (HH (S n)); intros HH1.
+          generalize (HH n); intros HH2.
+          apply sa_complement in HH2.
+          apply filt in HH2.
+          eapply sa_proper; [| eapply sa_inter; [exact HH1 | exact HH2]].
+          intros ?.
+          unfold pre_event_inter, pre_event_complement.
+          destruct (rt x); split; intros HH3.
+          * invcs HH3; lia.
+          * f_equal.
+            lia.
+          * discriminate.
+          * tauto.
     Qed.
 
     Example is_stopping_time_constant (c:option nat) (sas: nat -> SigmaAlgebra Ts)
@@ -984,7 +965,10 @@ Section martingale.
       ; intuition lra.
     Qed.
     
-    Lemma is_stopping_time_min (rt1 rt2:Ts->option nat) (sas: nat -> SigmaAlgebra Ts) :
+    Lemma is_stopping_time_min
+          (rt1 rt2:Ts->option nat)
+          (sas: nat -> SigmaAlgebra Ts)
+          {filt:IsFiltration sas}:
       is_stopping_time rt1 sas ->
       is_stopping_time rt2 sas ->
       is_stopping_time (fun x => match rt1 x, rt2 x with
@@ -994,45 +978,52 @@ Section martingale.
                               | Some a, Some b => Some (min a b)
                               end) sas.
     Proof.
-      intros s1 s2 ?.
-      unfold is_stopping_time in *.
-      specialize (s1 n); specialize (s2 n).
+      intros s1 s2.
+      apply is_stopping_time_as_alt in s1; trivial.
+      apply is_stopping_time_as_alt in s2; trivial.
+      apply is_stopping_time_as_alt; trivial; intros n.
+      unfold is_stopping_time_alt in *.
+      specialize (s1 n); specialize (s2 n); intros.
       eapply sa_proper; [| eapply sa_union; [exact s1 | exact s2]].
       intros ?.
-      unfold stopping_time_pre_event, pre_event_inter, pre_event_union.
+      unfold stopping_time_pre_event_alt, pre_event_inter, pre_event_union.
       destruct (rt1 x); destruct (rt2 x); simpl; try tauto.
       destruct (Nat.min_spec_le n0 n1) as [[??]|[??]]; rewrite H0
       ; intuition.
     Qed.
 
-    Lemma is_stopping_time_max (rt1 rt2:Ts->option nat) (sas: nat -> SigmaAlgebra Ts) :
+    Lemma is_stopping_time_max
+          (rt1 rt2:Ts->option nat)
+          (sas: nat -> SigmaAlgebra Ts)
+          {filt:IsFiltration sas}:
       is_stopping_time rt1 sas ->
       is_stopping_time rt2 sas ->
       is_stopping_time (fun x => lift2 max (rt1 x) (rt2 x)) sas.
     Proof.
-      intros s1 s2 ?.
-      unfold is_stopping_time in *.
-      specialize (s1 n); specialize (s2 n).
+      intros s1 s2.
+      apply is_stopping_time_as_alt in s1; trivial.
+      apply is_stopping_time_as_alt in s2; trivial.
+      apply is_stopping_time_as_alt; trivial; intros n.
+      unfold is_stopping_time_alt in *.
+      specialize (s1 n); specialize (s2 n); intros.
       eapply sa_proper; [| eapply sa_inter; [exact s1 | exact s2]].
       intros ?.
-      unfold stopping_time_pre_event, pre_event_inter, pre_event_union.
+      unfold stopping_time_pre_event_alt, pre_event_inter, pre_event_union.
       destruct (rt1 x); destruct (rt2 x); simpl; try tauto.
       destruct (Nat.max_spec_le n0 n1) as [[??]|[??]]; rewrite H0
       ; intuition.
     Qed.
 
-
-    Lemma is_stopping_time_plus (rt1 rt2:Ts->option nat) (sas: nat -> SigmaAlgebra Ts) {filt:IsFiltration sas}:
+    Lemma is_stopping_time_plus
+          (rt1 rt2:Ts->option nat)
+          (sas: nat -> SigmaAlgebra Ts)
+          {filt:IsFiltration sas}:
       is_stopping_time rt1 sas ->
       is_stopping_time rt2 sas ->
       is_stopping_time (fun x => lift2 plus (rt1 x) (rt2 x)) sas.
     Proof.
-      intros s1 s2.
-      apply is_stopping_time_as_alt in s1; trivial.
-      apply is_stopping_time_as_alt in s2; trivial.
-      apply is_stopping_time_as_alt; trivial.
-      unfold is_stopping_time_alt, stopping_time_pre_event_alt in *.
-      intros n.
+      intros s1 s2 n.
+      unfold is_stopping_time, stopping_time_pre_event in *.
 
       assert (pre_event_equiv (fun x : Ts => lift2 Init.Nat.add (rt1 x) (rt2 x) = Some n)
                               (pre_list_union (map (fun k => (pre_event_inter
@@ -1076,7 +1067,165 @@ Section martingale.
       + eapply (is_filtration_le _ (n - x0)); [lia | eauto].
     Qed.
 
-    End stopping_times.
+    Definition past_before_sa_sigma (rt:Ts->option nat) (sas: nat -> SigmaAlgebra Ts)
+               (a:pre_event Ts) : Prop
+      := forall n, sa_sigma (SigmaAlgebra:=sas n) (pre_event_inter a (stopping_time_pre_event rt n)).
+
+    Program Global Instance past_before_sa  (rt:Ts->option nat) (sas: nat -> SigmaAlgebra Ts)
+            (stop:is_stopping_time rt sas)
+      :
+      SigmaAlgebra Ts
+      := {|
+        sa_sigma := past_before_sa_sigma rt sas
+      |} .
+    Next Obligation.
+      intros n.
+      rewrite pre_event_inter_comm.
+      rewrite pre_event_inter_countable_union_distr.
+      apply sa_countable_union; intros.
+      rewrite pre_event_inter_comm.
+      apply H.
+    Qed.
+    Next Obligation.
+      intros n.
+
+      assert (eqq:pre_event_equiv (pre_event_inter (pre_event_complement A) (stopping_time_pre_event rt n))
+                              (pre_event_diff (stopping_time_pre_event rt n) (pre_event_inter A (stopping_time_pre_event rt n))))
+             by firstorder.
+      rewrite eqq.
+      apply sa_diff.
+      - apply stop.
+      - apply H.
+    Qed.
+    Next Obligation.
+      intros ?.
+      rewrite pre_event_inter_true_l.
+      apply stop.
+    Qed.
+    
+    Lemma past_before_stopping_sa_sigma
+          (rt:Ts->option nat)
+          (sas: nat -> SigmaAlgebra Ts)
+          (stop:is_stopping_time rt sas) :
+      forall n, sa_sigma (SigmaAlgebra:=past_before_sa rt sas stop) (stopping_time_pre_event rt n).
+    Proof.
+      intros n k.
+      destruct (Nat.eq_dec n k).
+      - specialize (stop n).
+        subst.
+        now rewrite pre_event_inter_self.
+      - eapply sa_proper; try eapply sa_none.
+        unfold pre_event_inter, pre_event_none.
+        intros ?.
+        split; [| tauto].
+        unfold stopping_time_pre_event, stopping_time_pre_event.
+        intros [??]; congruence.
+    Qed.
+
+    Lemma past_before_sa_le (rt1 rt2:Ts->option nat)
+          (sas: nat -> SigmaAlgebra Ts)
+          {filt: IsFiltration sas}
+          (stop1:is_stopping_time rt1 sas)
+          (stop2:is_stopping_time rt2 sas) :
+      (forall x, match rt1 x, rt2 x with
+           | Some a, Some b => (a <= b)%nat
+           | Some _, None => True
+           | None, Some _ => False
+           | None, None => True
+            end) ->
+      sa_sub (past_before_sa rt1 sas stop1) (past_before_sa rt2 sas stop2).
+    Proof.
+      intros rtle x.
+      simpl; unfold past_before_sa_sigma; intros sax n.
+      assert (eqq:pre_event_equiv
+                    (pre_event_inter x (stopping_time_pre_event rt2 n))
+                    (pre_list_union (map (fun k =>
+                                            (pre_event_inter
+                                               x
+                                               (pre_event_inter
+                                                  (stopping_time_pre_event rt1 k)
+                                                  (stopping_time_pre_event rt2 n))))
+                                         (seq 0 (S n))))).
+      {
+        intros ?.
+        split.
+        - intros [??].
+          red.
+          specialize (rtle x0).
+          repeat match_option_in rtle; try congruence; try tauto.
+          red in H0.
+          rewrite eqq0 in H0.
+          invcs H0.
+
+          exists ((fun k : nat =>
+                pre_event_inter
+                  x
+                  (pre_event_inter
+                     (stopping_time_pre_event rt1 k)
+                     (stopping_time_pre_event rt2 n))) n0).
+          split.
+          + apply in_map_iff.
+            eexists; split; trivial.
+            apply in_seq; lia.
+          + red.
+            split; trivial.
+            split; trivial.
+        - intros [? [??]].
+          apply in_map_iff in H.
+          destruct H as [? [??]]; subst.
+          destruct H0 as [?[??]].
+          split; trivial.
+      }
+      rewrite eqq.
+      apply sa_pre_list_union; intros ??.
+      apply in_map_iff in H.
+      destruct H as [? [??]]; subst.
+      apply in_seq in H0.
+      rewrite pre_event_inter_assoc.
+      apply sa_inter.
+      - generalize (sax x1).
+        apply is_filtration_le; trivial.
+        lia.
+      - apply stop2.
+    Qed.
+
+    Lemma past_before_sa_eq_in (rt1 rt2:Ts->option nat)
+          (sas: nat -> SigmaAlgebra Ts)
+          {filt: IsFiltration sas}
+          (stop1:is_stopping_time rt1 sas)
+          (stop2:is_stopping_time rt2 sas) :
+      sa_sigma (SigmaAlgebra:=past_before_sa rt1 sas stop1) (fun x => rt1 x = rt2 x).
+    Proof.
+      simpl.
+      red; intros n.
+      assert (eqq: pre_event_equiv
+                     (pre_event_inter (fun x : Ts => rt1 x = rt2 x) (stopping_time_pre_event rt1 n))
+                     (pre_event_inter
+                        (stopping_time_pre_event rt1 n)
+                        (stopping_time_pre_event rt2 n))).
+      {
+        unfold pre_event_inter, stopping_time_pre_event.
+        intros ?; intuition congruence.
+      }
+      rewrite eqq.
+      apply sa_inter.
+      - apply stop1.
+      - apply stop2.
+    Qed.
+
+    Lemma past_before_sa_eq_in' (rt1 rt2:Ts->option nat)
+          (sas: nat -> SigmaAlgebra Ts)
+          {filt: IsFiltration sas}
+          (stop1:is_stopping_time rt1 sas)
+          (stop2:is_stopping_time rt2 sas) :
+      sa_sigma (SigmaAlgebra:=past_before_sa rt2 sas stop2) (fun x => rt1 x = rt2 x).
+    Proof.
+      generalize (past_before_sa_eq_in rt2 rt1 sas stop2 stop1).
+      apply sa_proper.
+      intros ?; intuition.
+    Qed.
+    
+  End stopping_times.
     
 End martingale.
 
