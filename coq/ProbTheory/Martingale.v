@@ -1075,6 +1075,8 @@ Section martingale.
       + eapply (is_filtration_le _ x0); [lia | eauto].
       + eapply (is_filtration_le _ (n - x0)); [lia | eauto].
     Qed.
+
+    End stopping_times.
     
 End martingale.
 
