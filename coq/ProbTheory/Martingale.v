@@ -1224,6 +1224,104 @@ Section martingale.
       apply sa_proper.
       intros ?; intuition.
     Qed.
+
+    Definition opt_nat_as_Rbar (n:option nat) : Rbar.Rbar
+      := match n with
+         | Some a => Rbar.Finite (INR a)
+         | None => Rbar.p_infty
+         end.
+
+    Lemma Rabs_INR_lt_1_eq a b :
+      Rabs (INR a - INR b) < 1 -> a = b.
+    Proof.
+      unfold Rabs.
+      match_destr; intros.
+      - assert (INR a < INR b) by lra.
+        apply INR_lt in H0.
+        assert (INR b < INR a + 1) by lra.
+        rewrite <- S_INR in H1.
+        apply INR_lt in H1.
+        lia.
+      - assert (INR b <= INR a) by lra.
+        apply INR_le in H0.
+        assert (INR a < INR b + 1) by lra.
+        rewrite <- S_INR in H1.
+        apply INR_lt in H1.
+        lia.
+    Qed.
+
+    Lemma is_stopping_time_lim (rtn:nat->Ts->option nat)
+          (sas: nat -> SigmaAlgebra Ts)
+          {filt: IsFiltration sas}
+          (stop:forall n, is_stopping_time (rtn n) sas)
+          (rt:Ts->option nat) :
+      (forall omega, is_Elim_seq (fun n => (opt_nat_as_Rbar (rtn n omega))) (opt_nat_as_Rbar (rt omega))) ->
+      is_stopping_time rt sas.
+    Proof.
+      intros islim n.
+      unfold is_stopping_time in stop.
+      unfold stopping_time_pre_event in *.
+      generalize (fun k => stop k n); intros stop'.
+
+      assert (eqq1:pre_event_equiv
+                (fun x : Ts => rt x = Some n)
+                (fun x => Hierarchy.eventually (fun k => rtn k x = Some n))).
+      {
+        intros x.
+        specialize (islim x).
+        apply is_Elim_seq_spec in islim.
+        split; intros HH.
+        + rewrite HH in islim.
+          simpl in islim.
+          specialize (islim posreal_one).
+          revert islim.
+          apply eventually_impl.
+          apply all_eventually; intros ?.
+          case_eq (rtn x0 x); simpl; intros; try tauto.
+          f_equal.
+          now apply Rabs_INR_lt_1_eq.
+        + case_eq (rt x); intros; rewrite H in islim; simpl in *.
+          * f_equal.
+            specialize (islim posreal_one).
+            generalize (eventually_and _ _ islim HH)
+            ; intros [??].
+            specialize (H0 _ (reflexivity _)).
+            destruct H0 as [HH2 eqq].
+            rewrite eqq in HH2.
+            simpl in HH2.
+            symmetry.
+            now apply Rabs_INR_lt_1_eq.
+          * specialize (islim (INR n)).
+            generalize (eventually_and _ _ islim HH)
+            ; intros [??].
+            specialize (H0 _ (reflexivity _)).
+            destruct H0 as [HH2 eqq].
+            rewrite eqq in HH2.
+            simpl in HH2.
+            lra.
+      }
+      rewrite eqq1; clear eqq1.
+      unfold Hierarchy.eventually.
+      apply sa_countable_union; intros.
+      apply sa_pre_countable_inter; intros.
+
+      assert (eqq2:pre_event_equiv
+                (fun x : Ts => (n0 <= n1)%nat -> rtn n1 x = Some n)
+                (pre_event_union (pre_event_complement (fun _ => n0 <= n1))%nat (fun x => rtn n1 x = Some n))).
+      {
+        intros ?.
+        unfold pre_event_union, pre_event_complement.
+        split; intros.
+        - destruct (le_dec n0 n1); eauto.
+        - destruct H; tauto.
+      }
+      rewrite eqq2; clear eqq2.
+      apply sa_union.
+      - apply sa_complement.
+        apply sa_sigma_const.
+        destruct (le_dec n0 n1); tauto.
+      - apply stop'.
+    Qed.
     
   End stopping_times.
     
