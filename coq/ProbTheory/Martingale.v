@@ -1717,10 +1717,10 @@ Section martingale.
       apply all_almost; intros ???.
       rv_unfold.
       rewrite (FiniteCondexp_id prts (sub (S n)) (X (S n)) (rv2:=adaptX (S n))).
-      apply Rmult_le_pos; trivial
+      apply Rmult_le_pos; trivial.
       lra.
   Qed.
-
+  
 End martingale.
 
 Section levy.
