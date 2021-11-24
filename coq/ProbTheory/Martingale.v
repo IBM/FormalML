@@ -558,6 +558,9 @@ Section martingale.
       now apply is_martingale_eq_any.
   Qed.
 
+  Definition is_predictable (Y : nat -> Ts -> R) (sas : nat -> SigmaAlgebra Ts)
+    := IsAdapted borel_sa (fun x => Y (S x)) sas.
+
   Lemma is_adapted_filtration_pred (Y : nat -> Ts -> R) (sas : nat -> SigmaAlgebra Ts)
         {filt:IsFiltration sas}
         {adapt:IsAdapted borel_sa Y (fun n => sas (pred n))} :
@@ -569,6 +572,15 @@ Section martingale.
     destruct n; simpl.
     - reflexivity.
     - apply filt.
+  Qed.
+
+  Lemma is_adapted_filtration_pred_predictable (Y : nat -> Ts -> R) (sas : nat -> SigmaAlgebra Ts)
+        {filt:IsFiltration sas}
+        {adapt:IsAdapted borel_sa Y (fun n => sas (pred n))} :
+    is_predictable Y sas.
+  Proof.
+    intros n.
+    apply (adapt (S n)).
   Qed.
 
   Lemma is_adapted_filtration_shift k (Y : nat -> Ts -> R) (sas : nat -> SigmaAlgebra Ts)
@@ -964,6 +976,14 @@ Section martingale.
       destruct (stopping_time_pre_event_dec rt n x)
       ; intuition lra.
     Qed.
+
+    Definition lift2_min (x y : option nat)
+      := match x, y with
+         | None, None => None
+         | Some a, None => Some a
+         | None, Some b => Some b
+         | Some a, Some b => Some (min a b)
+         end.
     
     Lemma is_stopping_time_min
           (rt1 rt2:Ts->option nat)
@@ -971,12 +991,7 @@ Section martingale.
           {filt:IsFiltration sas}:
       is_stopping_time rt1 sas ->
       is_stopping_time rt2 sas ->
-      is_stopping_time (fun x => match rt1 x, rt2 x with
-                              | None, None => None
-                              | Some a, None => Some a
-                              | None, Some b => Some b
-                              | Some a, Some b => Some (min a b)
-                              end) sas.
+      is_stopping_time (fun x => lift2_min (rt1 x) (rt2 x)) sas.
     Proof.
       intros s1 s2.
       apply is_stopping_time_as_alt in s1; trivial.
@@ -1324,7 +1339,388 @@ Section martingale.
     Qed.
     
   End stopping_times.
-    
+
+  Definition process_under (Y : nat -> Ts -> R) (T:Ts -> option nat) (x : Ts) : R
+    := match T x with
+       | None => 0
+       | Some n => Y n x
+       end.
+
+  Definition lift1_min (x:nat) (y : option nat)
+      := match y with
+         | None => x
+         | Some b => min x b
+         end.
+
+  Lemma lift1_lift2_min (x:nat) (y : option nat) :
+    lift2_min (Some x) y = Some (lift1_min x y).
+  Proof.
+    destruct y; reflexivity.
+  Qed.
+  
+  Definition process_stopped_at (Y : nat -> Ts -> R) (T:Ts -> option nat) (n:nat) (x : Ts) : R
+    := Y (lift1_min n (T x)) x.
+
+  Definition martingale_transform (H X : nat -> Ts -> R) (n:nat) : Ts -> R
+    := match n with
+       | 0%nat => const 0
+       | S m => rvsum (fun k => rvmult (H (S k)) (rvminus (X (S k)) (X k))) m
+       end.
+
+  Global Instance martingale_transform_rv  (H X : nat -> Ts -> R)
+         {rvH:forall n, RandomVariable dom borel_sa (H n)}
+         {rvX:forall n, RandomVariable dom borel_sa (X n)} : 
+    forall n : nat, RandomVariable dom borel_sa (martingale_transform H X n).
+  Proof.
+    intros [| n]; simpl; 
+    typeclasses eauto.
+  Qed.
+
+  Global Instance martingale_transform_isfe  (H X : nat -> Ts -> R)
+         {isfe0:IsFiniteExpectation prts (X 0%nat)}
+         {isfe:forall n, IsFiniteExpectation prts (rvmult (H (S n)) (rvminus (X (S n)) (X n)))}
+         {rvH:forall n, RandomVariable dom borel_sa (H n)}
+         {rvX:forall n, RandomVariable dom borel_sa (X n)} :
+    forall n : nat, IsFiniteExpectation prts (martingale_transform H X n).
+  Proof.
+    intros [| n]; simpl; trivial.
+    typeclasses eauto.
+    apply IsFiniteExpectation_sum; trivial.
+    typeclasses eauto.
+  Qed.
+
+  Global Instance martingale_transform_adapted  (H X : nat -> Ts -> R) sas
+         {adapt:IsAdapted borel_sa X sas}
+         {filt:IsFiltration sas} :
+    is_predictable H sas ->
+    IsAdapted borel_sa (martingale_transform H X) sas.
+  Proof.
+    intros is_pre [|n]; simpl.
+    - typeclasses eauto. 
+    - apply rvsum_rv_loc; intros.
+      apply rvmult_rv.
+      + generalize (is_pre m).
+        apply RandomVariable_proper_le; try reflexivity.
+        apply is_filtration_le; trivial.
+        lia.
+      + apply rvminus_rv.
+        * generalize (adapt (S m)).
+          apply RandomVariable_proper_le; try reflexivity.
+          apply is_filtration_le; trivial.
+          lia.
+        * generalize (adapt m).
+          apply RandomVariable_proper_le; try reflexivity.
+          apply is_filtration_le; trivial.
+          lia.
+  Qed.
+
+  Lemma martingale_transform_predictable_martingale
+        (H X : nat -> Ts -> R) (sas:nat->SigmaAlgebra Ts)
+        {adaptX:IsAdapted borel_sa X sas}
+        {filt:IsFiltration sas}
+        {sub : IsSubAlgebras dom sas}
+        {rvH:forall n, RandomVariable dom borel_sa (H n)}
+        {rvX:forall n, RandomVariable dom borel_sa (X n)}
+        {rv:forall n : nat, RandomVariable dom borel_sa (martingale_transform H X n)}
+        {isfeX:forall n, IsFiniteExpectation prts (X n)}
+        {isfeS:forall n, IsFiniteExpectation prts (rvmult (H (S n)) (rvminus (X (S n)) (X n)))}
+        {isfe : forall n : nat, IsFiniteExpectation prts (martingale_transform H X n)}
+        {adapt:IsAdapted borel_sa (martingale_transform H X) sas}
+        (predict: is_predictable H sas)
+        {mart:IsMartingale eq X sas} :
+    IsMartingale eq (martingale_transform H X) sas.
+  Proof.
+    intros [|n]; simpl.
+    - cut (almostR2 prts eq (const 0)
+                    (FiniteConditionalExpectation prts (sub 0%nat)
+                                                  (rvmult (H 1%nat) (rvminus (X 1%nat) (X 0%nat))))).
+      {
+        intros HH; rewrite HH.
+        apply (almostR2_prob_space_sa_sub_lift prts (sub 0%nat)).
+        apply FiniteCondexp_proper.
+        apply all_almost; intros ?; unfold rvsum; simpl.
+        now rewrite Hierarchy.sum_O.
+      }
+
+      cut (almostR2 prts eq (const 0)
+                    (rvmult (H 1%nat) (FiniteConditionalExpectation prts (sub 0%nat)
+                                                  (rvminus (X 1%nat) (X 0%nat))))).
+      {
+        intros HH; rewrite HH.
+        apply (almostR2_prob_space_sa_sub_lift prts (sub 0%nat)).
+        now rewrite FiniteCondexp_factor_out_l.
+      }
+
+      cut (almostR2 prts eq (const 0)
+                    (rvmult (H 1%nat) (rvminus (FiniteConditionalExpectation prts (sub 0%nat) (X 1%nat))
+                                             (FiniteConditionalExpectation prts (sub 0%nat) (X 0%nat))))).
+      {
+        intros HH; rewrite HH.
+        apply (almostR2_prob_space_sa_sub_lift prts (sub 0%nat)).
+        apply almostR2_eq_mult_proper; try reflexivity.
+        now rewrite FiniteCondexp_minus.
+      } 
+
+      rewrite <- (mart 0%nat).
+      apply all_almost; intros ?.
+      rv_unfold.
+      rewrite (FiniteCondexp_id prts (sub 0%nat) (X 0%nat) (rv2:=adaptX 0%nat)).
+      lra.
+    - cut (almostR2 prts eq (rvsum (fun k : nat => rvmult (H (S k)) (rvminus (X (S k)) (X k))) n)
+                    (FiniteConditionalExpectation prts (sub (S n))
+                                                  (rvplus (rvsum (fun k : nat => rvmult (H (S k)) (rvminus (X (S k)) (X k))) n) (rvmult (H (S (S n))) (rvminus (X (S (S n))) (X (S n))))))).
+      {
+        intros HH; rewrite HH.
+        apply (almostR2_prob_space_sa_sub_lift prts (sub (S n)%nat)).
+        apply FiniteCondexp_proper.
+        apply all_almost; intros ?; unfold rvsum; simpl.
+        rewrite Hierarchy.sum_Sn.
+        unfold Hierarchy.plus; simpl.
+        reflexivity.
+      }
+      cut (almostR2 prts eq (rvsum (fun k : nat => rvmult (H (S k)) (rvminus (X (S k)) (X k))) n)
+                    (rvplus
+                       (FiniteConditionalExpectation
+                          prts (sub (S n))
+                          (rvsum (fun k : nat => rvmult (H (S k)) (rvminus (X (S k)) (X k))) n))
+                       (FiniteConditionalExpectation
+                          prts (sub (S n))
+                          (rvmult (H (S (S n))) (rvminus (X (S (S n))) (X (S n))))))).
+      {
+        intros HH; etransitivity; try eapply HH.
+        apply (almostR2_prob_space_sa_sub_lift prts (sub (S n)%nat)).
+        now rewrite FiniteCondexp_plus.
+      }
+
+      cut (almostR2 prts eq (rvsum (fun k : nat => rvmult (H (S k)) (rvminus (X (S k)) (X k))) n)
+                    (rvplus
+                       (rvsum (fun k : nat => rvmult (H (S k)) (rvminus (X (S k)) (X k))) n)
+                       (FiniteConditionalExpectation
+                          prts (sub (S n))
+                          (rvmult (H (S (S n))) (rvminus (X (S (S n))) (X (S n))))))).
+      {
+        intros HH; etransitivity; try eapply HH.
+        apply (almostR2_prob_space_sa_sub_lift prts (sub (S n)%nat)).
+        apply almostR2_eq_plus_proper; try reflexivity.
+        apply all_almost; intros ?.
+        symmetry.
+        apply FiniteCondexp_id.
+        apply rvsum_rv_loc; intros.
+        apply rvmult_rv.
+        - generalize (predict m).
+          eapply RandomVariable_proper_le; try reflexivity.
+          apply is_filtration_le; trivial.
+          lia.
+        - apply rvminus_rv.
+          + generalize (adaptX (S m)).
+            eapply RandomVariable_proper_le; try reflexivity.
+            apply is_filtration_le; trivial.
+            lia.
+          + generalize (adaptX m).
+            eapply RandomVariable_proper_le; try reflexivity.
+            apply is_filtration_le; trivial.
+            lia.
+      }
+
+      cut (almostR2 prts eq (const 0)
+                    (FiniteConditionalExpectation prts (sub (S n))
+                                                  (rvmult (H (S (S n))) (rvminus (X (S (S n))) (X (S n)))))).
+      {
+        apply almost_impl; apply all_almost; intros ??; rv_unfold; lra.
+      }
+
+      cut (almostR2 prts eq (const 0)
+               (rvmult (H (S (S n))) (FiniteConditionalExpectation prts (sub (S n))
+                                                                   (rvminus (X (S (S n))) (X (S n)))))).
+      {
+        intros HH; etransitivity; try eapply HH.
+        apply (almostR2_prob_space_sa_sub_lift prts (sub (S n)%nat)).
+        now rewrite FiniteCondexp_factor_out_l.
+      }
+
+      cut (almostR2 prts eq (const 0)
+                    (rvmult (H (S (S n))) (rvminus (FiniteConditionalExpectation prts (sub (S n)) (X (S (S n))))
+                                             (FiniteConditionalExpectation prts (sub (S n)) (X (S n)))))).
+      {
+        intros HH; rewrite HH.
+        apply (almostR2_prob_space_sa_sub_lift prts (sub (S n))).
+        apply almostR2_eq_mult_proper; try reflexivity.
+        now rewrite FiniteCondexp_minus.
+      } 
+
+      rewrite <- (mart (S n)).
+      apply all_almost; intros ?.
+      rv_unfold.
+      rewrite (FiniteCondexp_id prts (sub (S n)) (X (S n)) (rv2:=adaptX (S n))).
+      lra.
+  Qed.
+
+    Lemma martingale_transform_predictable_sub_martingale
+        (H X : nat -> Ts -> R) (sas:nat->SigmaAlgebra Ts)
+        {adaptX:IsAdapted borel_sa X sas}
+        {filt:IsFiltration sas}
+        {sub : IsSubAlgebras dom sas}
+        {rvH:forall n, RandomVariable dom borel_sa (H n)}
+        {rvX:forall n, RandomVariable dom borel_sa (X n)}
+        {rv:forall n : nat, RandomVariable dom borel_sa (martingale_transform H X n)}
+        {isfeX:forall n, IsFiniteExpectation prts (X n)}
+        {isfeS:forall n, IsFiniteExpectation prts (rvmult (H (S n)) (rvminus (X (S n)) (X n)))}
+        {isfe : forall n : nat, IsFiniteExpectation prts (martingale_transform H X n)}
+        {adapt:IsAdapted borel_sa (martingale_transform H X) sas}
+        (predict: is_predictable H sas)
+        (Hpos: forall n, almostR2 prts Rle (const 0) (H n))
+        {mart:IsMartingale Rle X sas} :
+    IsMartingale Rle (martingale_transform H X) sas.
+  Proof.
+    intros [|n]; simpl.
+    - cut (almostR2 prts Rle (const 0)
+                    (FiniteConditionalExpectation prts (sub 0%nat)
+                                                  (rvmult (H 1%nat) (rvminus (X 1%nat) (X 0%nat))))).
+      {
+        intros HH; rewrite HH.
+        apply (almostR2_prob_space_sa_sub_lift prts (sub 0%nat)).
+        apply FiniteCondexp_ale.
+        apply all_almost; intros ?; unfold rvsum; simpl.
+        now rewrite Hierarchy.sum_O.
+      }
+
+      cut (almostR2 prts Rle (const 0)
+                    (rvmult (H 1%nat) (FiniteConditionalExpectation prts (sub 0%nat)
+                                                  (rvminus (X 1%nat) (X 0%nat))))).
+      {
+        intros HH; rewrite HH.
+        apply (almostR2_prob_space_sa_sub_lift prts (sub 0%nat)).
+        eapply almostR2_subrelation; [apply eq_subrelation; typeclasses eauto| ].
+        now rewrite FiniteCondexp_factor_out_l.
+      }
+
+      cut (almostR2 prts Rle (const 0)
+                    (rvmult (H 1%nat) (rvminus (FiniteConditionalExpectation prts (sub 0%nat) (X 1%nat))
+                                             (FiniteConditionalExpectation prts (sub 0%nat) (X 0%nat))))).
+      {
+        intros HH; rewrite HH.
+        apply (almostR2_prob_space_sa_sub_lift prts (sub 0%nat)).
+        eapply almostR2_subrelation; [apply eq_subrelation; typeclasses eauto| ].
+        apply almostR2_eq_mult_proper; try reflexivity.
+        now rewrite FiniteCondexp_minus.
+      }
+
+      cut (almostR2 prts Rle (const 0)
+                    (rvmult (H 1%nat)
+                            (rvminus (FiniteConditionalExpectation prts (sub 0%nat) (X 1%nat))
+                                     (X 0%nat)))).
+      { 
+        intros HH; rewrite HH.
+        apply (almostR2_prob_space_sa_sub_lift prts (sub 0%nat)).
+        eapply almostR2_subrelation; [apply eq_subrelation; typeclasses eauto| ].
+        apply almostR2_eq_mult_proper; try reflexivity.
+        apply almostR2_eq_minus_proper; try reflexivity.
+        apply all_almost; intros ?.
+        now rewrite (FiniteCondexp_id prts (sub 0%nat) (X 0%nat) (rv2:=adaptX 0%nat)).
+      }
+      
+      generalize (mart 0%nat); apply almost_impl.
+      generalize (Hpos 1%nat); apply almost_impl.
+      apply all_almost; intros ???.
+      rv_unfold.
+      apply Rmult_le_pos; trivial.
+      lra.
+    - cut (almostR2 prts Rle (rvsum (fun k : nat => rvmult (H (S k)) (rvminus (X (S k)) (X k))) n)
+                    (FiniteConditionalExpectation prts (sub (S n))
+                                                  (rvplus (rvsum (fun k : nat => rvmult (H (S k)) (rvminus (X (S k)) (X k))) n) (rvmult (H (S (S n))) (rvminus (X (S (S n))) (X (S n))))))).
+      {
+        intros HH; rewrite HH.
+        apply (almostR2_prob_space_sa_sub_lift prts (sub (S n)%nat)).
+        apply FiniteCondexp_ale.
+        apply all_almost; intros ?; unfold rvsum; simpl.
+        rewrite Hierarchy.sum_Sn.
+        unfold Hierarchy.plus; simpl.
+        reflexivity.
+      }
+      cut (almostR2 prts Rle (rvsum (fun k : nat => rvmult (H (S k)) (rvminus (X (S k)) (X k))) n)
+                    (rvplus
+                       (FiniteConditionalExpectation
+                          prts (sub (S n))
+                          (rvsum (fun k : nat => rvmult (H (S k)) (rvminus (X (S k)) (X k))) n))
+                       (FiniteConditionalExpectation
+                          prts (sub (S n))
+                          (rvmult (H (S (S n))) (rvminus (X (S (S n))) (X (S n))))))).
+      {
+        intros HH; etransitivity; try eapply HH.
+        apply (almostR2_prob_space_sa_sub_lift prts (sub (S n)%nat)).
+        eapply almostR2_subrelation; [apply eq_subrelation; typeclasses eauto| ].
+        now rewrite FiniteCondexp_plus.
+      }
+
+      cut (almostR2 prts Rle (rvsum (fun k : nat => rvmult (H (S k)) (rvminus (X (S k)) (X k))) n)
+                    (rvplus
+                       (rvsum (fun k : nat => rvmult (H (S k)) (rvminus (X (S k)) (X k))) n)
+                       (FiniteConditionalExpectation
+                          prts (sub (S n))
+                          (rvmult (H (S (S n))) (rvminus (X (S (S n))) (X (S n))))))).
+      {
+        intros HH; etransitivity; try eapply HH.
+        apply (almostR2_prob_space_sa_sub_lift prts (sub (S n)%nat)).
+        eapply almostR2_subrelation; [apply eq_subrelation; typeclasses eauto| ].
+
+        apply almostR2_eq_plus_proper; try reflexivity.
+        apply all_almost; intros ?.
+        symmetry.
+        apply FiniteCondexp_id.
+        apply rvsum_rv_loc; intros.
+        apply rvmult_rv.
+        - generalize (predict m).
+          eapply RandomVariable_proper_le; try reflexivity.
+          apply is_filtration_le; trivial.
+          lia.
+        - apply rvminus_rv.
+          + generalize (adaptX (S m)).
+            eapply RandomVariable_proper_le; try reflexivity.
+            apply is_filtration_le; trivial.
+            lia.
+          + generalize (adaptX m).
+            eapply RandomVariable_proper_le; try reflexivity.
+            apply is_filtration_le; trivial.
+            lia.
+      }
+
+      cut (almostR2 prts Rle (const 0)
+                    (FiniteConditionalExpectation prts (sub (S n))
+                                                  (rvmult (H (S (S n))) (rvminus (X (S (S n))) (X (S n)))))).
+      {
+        apply almost_impl; apply all_almost; intros ??; rv_unfold; lra.
+      }
+
+      cut (almostR2 prts Rle (const 0)
+               (rvmult (H (S (S n))) (FiniteConditionalExpectation prts (sub (S n))
+                                                                   (rvminus (X (S (S n))) (X (S n)))))).
+      {
+        intros HH; etransitivity; try eapply HH.
+        apply (almostR2_prob_space_sa_sub_lift prts (sub (S n)%nat)).
+        eapply almostR2_subrelation; [apply eq_subrelation; typeclasses eauto| ].
+        now rewrite FiniteCondexp_factor_out_l.
+      }
+
+      cut (almostR2 prts Rle (const 0)
+                    (rvmult (H (S (S n))) (rvminus (FiniteConditionalExpectation prts (sub (S n)) (X (S (S n))))
+                                             (FiniteConditionalExpectation prts (sub (S n)) (X (S n)))))).
+      {
+        intros HH; rewrite HH.
+        apply (almostR2_prob_space_sa_sub_lift prts (sub (S n))).
+        eapply almostR2_subrelation; [apply eq_subrelation; typeclasses eauto| ].
+        apply almostR2_eq_mult_proper; try reflexivity.
+        now rewrite FiniteCondexp_minus.
+      } 
+
+      generalize (mart (S n)); apply almost_impl.
+      generalize (Hpos (S (S n))); apply almost_impl.
+      apply all_almost; intros ???.
+      rv_unfold.
+      rewrite (FiniteCondexp_id prts (sub (S n)) (X (S n)) (rv2:=adaptX (S n))).
+      apply Rmult_le_pos; trivial
+      lra.
+  Qed.
+
 End martingale.
 
 Section levy.

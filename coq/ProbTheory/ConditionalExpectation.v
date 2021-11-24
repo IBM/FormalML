@@ -5643,7 +5643,7 @@ Section fin_cond_exp.
     invcs eqq.
     lra.
   Qed.
-        
+
   Lemma FiniteCondexp_Jensen (rv_X : Ts -> R) (phi : R -> R)
         {rv : RandomVariable dom borel_sa rv_X}
         {rvphi : RandomVariable dom borel_sa (fun x => phi (rv_X x))}
@@ -5694,8 +5694,38 @@ Section fin_cond_exp.
     unfold Rbar_rvmult in HH; simpl in HH.
     now invcs HH.
   Qed.
-
-  Lemma FiniteCondexp_factor_out_zero
+    
+    Theorem FiniteCondexp_factor_out_l
+            (f g : Ts -> R)
+            {rvf : RandomVariable dom borel_sa f}
+            {rvg : RandomVariable dom2 borel_sa g}
+            {rvgf: RandomVariable dom borel_sa (rvmult g f)}
+            {isfef: IsFiniteExpectation prts f}
+            {isfefg:IsFiniteExpectation prts (rvmult g f)} :
+      almostR2 (prob_space_sa_sub prts sub) eq
+               (FiniteConditionalExpectation (rvmult g f))
+               (rvmult g (FiniteConditionalExpectation f)).
+    Proof.
+      assert (RandomVariable dom borel_sa (rvmult f g)).
+      {
+        generalize rvgf.
+        apply RandomVariable_proper; try reflexivity.
+        unfold rvmult; intros ?; lra.
+      }
+      assert (IsFiniteExpectation prts (rvmult f g)).
+      {
+        generalize isfefg.
+        apply IsFiniteExpectation_proper.
+        unfold rvmult; intros ?; lra.
+      } 
+      
+      rewrite <- (FiniteCondexp_factor_out f g).
+      apply FiniteCondexp_proper.
+      apply all_almost.
+      unfold rvmult; intros ?; lra.
+    Qed.
+    
+    Lemma FiniteCondexp_factor_out_zero
         (f g : Ts -> R)
         {rvf : RandomVariable dom borel_sa f}
         {rvg : RandomVariable dom2 borel_sa g}
