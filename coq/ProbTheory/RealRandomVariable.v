@@ -7,6 +7,7 @@ Require Import Morphisms EquivDec Program Equivalence.
 Require Import Coquelicot.Coquelicot.
 Require Import Classical_Prop.
 Require Import Classical.
+Require Import IndefiniteDescription ClassicalDescription.
 
 Require Import Utils.
 Require Import NumberIso.
@@ -4786,6 +4787,57 @@ Section real_pullback.
       apply rvscale_rv.
       apply pullback_rv.
   Qed.
+
+  Lemma event_measurable_iff_expressible {Ts : Type} {Td : Type}
+        {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
+        (X : Ts -> Td) (A : event dom)
+        {rv_X : RandomVariable dom cod X} :
+    @sa_sigma Ts (pullback_sa cod X) A ->
+    exists g : Td -> R, 
+      RandomVariable cod borel_sa g /\
+      forall x, 
+         EventIndicator (classic_dec A) x = g (X x).
+  Proof.
+    intros.
+    destruct H as [? [? ?]].
+    exists (EventIndicator (classic_dec x)).
+    split.
+    - now apply (EventIndicator_pre_rv cod (classic_dec x)).
+    - intros.
+      unfold EventIndicator.
+      specialize (H0 x0).
+      match_destr; match_destr; intuition.
+  Qed.
+
+ Lemma event_measurable_iff_expressible' {Ts : Type} {Td : Type}
+        {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
+        (X : Ts -> Td) (A : event dom)
+        {rv_X : RandomVariable dom cod X} :
+    @sa_sigma Ts (pullback_sa cod X) A ->
+    { g : Td -> R | 
+      RandomVariable cod borel_sa g /\
+      forall x, 
+        EventIndicator (classic_dec A) x = g (X x)}.
+ Proof.
+   intros.
+   apply constructive_indefinite_description.
+   now apply event_measurable_iff_expressible.
+ Qed.
+
+  Lemma frf_measurable_iff_expressible {Ts : Type} {Td : Type}
+        {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
+        (X : Ts -> Td) (Y : Ts -> R)
+        {rv_X : RandomVariable dom cod X}
+        {fr_Y : FiniteRangeFunction Y}
+        {rv_y : RandomVariable (pullback_sa cod X) borel_sa Y} :
+    exists g : Td -> R, 
+      RandomVariable cod borel_sa g /\
+      (forall x, Y x = g (X x)).
+  Proof.
+    intros.
+    generalize (frf_preimage_indicator Y); intros.
+    Admitted.    
+
 
 End real_pullback.
 
