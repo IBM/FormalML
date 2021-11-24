@@ -1546,7 +1546,6 @@ algorithm.
         simpl.
         rewrite H.
         unfold rvinner, vecrvminus, vecrvplus, vecrvopp, vecrvscale.
-        Check inner_plus_l.
         repeat rewrite (rv_inner_plus_l).
         repeat rewrite (rv_inner_plus_r).
         repeat rewrite (rv_inner_scal_l).

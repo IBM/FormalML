@@ -98,7 +98,8 @@ PROB_THEORY = \
 
 QLEARN = \
 	Dvoretzky \
-        infprod \
+	qlearn \
+    infprod \
 	sumtest \
    	slln \
 	vecslln
