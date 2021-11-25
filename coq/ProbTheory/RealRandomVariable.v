@@ -4824,11 +4824,6 @@ Section rv_expressible.
    now apply event_measurable_iff_expressible.
  Qed.
 
- Definition rv_point_event {Ts:Type} (dom : SigmaAlgebra Ts)
-            (Y : Ts -> R) (c : R)
-            {rv : RandomVariable dom borel_sa Y} : event dom
-   := exist _ (fun (x: Ts) => Y x = c) (sa_preimage_singleton Y c).
-   
  Lemma pt_event_measurable_is_expressible {Ts : Type} {Td : Type}
         {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
         (X : Ts -> Td) (Y : Ts -> R) (c : R)
@@ -4840,16 +4835,15 @@ Section rv_expressible.
         point_preimage_indicator Y c x = g (X x).
  Proof.
    intros.
-   generalize (event_measurable_iff_expressible X (rv_point_event (pullback_sa cod X) Y c)); intros.
+   generalize (event_measurable_iff_expressible X (preimage_singleton Y c)); intros.
    destruct H as [? [? ?]].
    exists x.
    split; trivial.
    intros.
    rewrite <- (H0 x0).
-   unfold point_preimage_indicator, EventIndicator, rv_point_event.
+   unfold point_preimage_indicator, EventIndicator, preimage_singleton.
    match_destr; match_destr; tauto.
  Qed.
-   
    
  Lemma pt_event_measurable_is_expressible' {Ts : Type} {Td : Type}
         {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
