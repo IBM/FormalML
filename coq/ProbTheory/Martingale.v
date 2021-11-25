@@ -1720,7 +1720,242 @@ Section martingale.
       apply Rmult_le_pos; trivial.
       lra.
   Qed.
+
+  Section find.
+    Context {P: nat -> Prop} (dec:forall a, {P a} + {~ P a}).
+
+    Fixpoint find_first  n : option nat
+      := match n with
+         | 0 => if dec 0%nat then Some 0%nat else None
+         | S k => match find_first k with
+                 | Some x => Some x
+                 | None => if dec (S k) then Some (S k) else None
+                 end
+         end.
+
+    Lemma find_first_some n k : find_first n = Some k -> P k.
+      induction n; simpl.
+      - match_destr; congruence.
+      - match_option.
+        + intros; apply IHn; congruence.
+        + match_destr; congruence.
+    Qed.
+
+    Lemma find_first_none n : find_first n = None -> forall k, (k <= n)%nat -> ~ P k.
+      induction n; simpl.
+      - match_destr; intros.
+        assert (k = 0)%nat by lia.
+        congruence.
+      - match_option.
+        match_destr.
+        intros.
+        apply Nat.le_succ_r in H0.
+        destruct H0.
+        + auto.
+        + congruence.
+    Qed.
+
+    Lemma find_first_some_first n k : find_first n = Some k -> forall i, (i < k)%nat -> ~ P i.
+      induction n; simpl.
+      - match_destr; intros.
+        invcs H; lia.
+      - match_option.
+        + intros; apply IHn; congruence.
+        + match_destr; intros.
+          invcs H.
+          apply (find_first_none n); trivial.
+          lia.
+    Qed.
+    
+  End find.
   
+  Definition classic_min_of_sumbool (P: nat -> Prop) :
+    { n : nat | P n /\ forall k, (k < n)%nat -> ~ P k} + {forall n, ~ P n}.
+  Proof.
+    destruct (ClassicalDescription.excluded_middle_informative (exists n, P n /\ forall k, (k < n)%nat -> ~ P k)).
+    - left.
+      assert ( exists! n : nat, P n /\ (forall k : nat, (k < n)%nat -> ~ P k)).
+      {
+        destruct e as [n [Pn Pmin]].
+        exists n.
+        split; [auto| intros ?[??]].
+        apply antisymmetry.
+        - apply NPeano.Nat.nlt_ge.
+          intros ?.
+          specialize (Pmin _ H1); tauto.
+        - apply NPeano.Nat.nlt_ge.
+          intros ?.
+          specialize (H0 _ H1); tauto.
+      } 
+      now apply constructive_definite_description in H.
+    - right.
+      intros k pk.
+      case_eq (find_first (classic_dec P) k).
+      + intros.
+        apply n.
+        exists n0.
+        split.
+        * eapply find_first_some; eauto.
+        * apply (find_first_some_first _ _ _ H).
+      + intros HH.
+        eapply find_first_none in HH; eauto.
+  Qed.
+
+  Definition classic_min_of (P: nat -> Prop) : option nat
+    := match classic_min_of_sumbool P with
+       | inleft n => Some (proj1_sig n)
+       | inright _ => None
+       end.
+
+  Lemma classic_min_of_some P k : classic_min_of P = Some k -> P k.
+  Proof.
+    unfold classic_min_of.
+    match_destr.
+    destruct s as [?[??]].
+    now intros HH; invcs HH.
+  Qed.  
+
+  Lemma classic_min_of_some_first P k : classic_min_of P = Some k -> forall j, (j < k)%nat -> ~ P j.
+  Proof.
+    unfold classic_min_of.
+    match_destr.
+    destruct s as [?[??]].
+    now intros HH; invcs HH.
+  Qed.  
+
+  Lemma classic_min_of_none P : classic_min_of P = None -> forall k, ~ P k.
+  Proof.
+    unfold classic_min_of.
+    match_destr.
+  Qed.  
+
+  Definition hitting_time
+             (X : nat -> Ts -> R)
+             (B:event borel_sa)
+             (a:Ts) : option nat
+    := classic_min_of (fun k => B (X k a)).
+  
+  Lemma hitting_time_is_stop
+        (X : nat -> Ts -> R) (sas:nat->SigmaAlgebra Ts)
+        {filt:IsFiltration sas}
+        {adaptX:IsAdapted borel_sa X sas}
+        (B:event borel_sa) : is_stopping_time (hitting_time X B) sas.
+  Proof.
+    unfold hitting_time.
+    intros ?.
+    unfold stopping_time_pre_event.
+    apply (sa_proper _ (fun x => B (X n x) /\
+                                forall k, (k < n)%nat -> ~ B (X k x))).
+    - intros ?.
+      split; intros HH.
+      + case_eq (classic_min_of (fun k : nat => B (X k x))); intros.
+        * destruct HH as [??].
+          f_equal.
+          apply antisymmetry
+          ; apply not_lt
+          ; intros HH.
+          -- eapply classic_min_of_some_first in H; eauto.
+          -- specialize (H1 _ HH).
+             apply classic_min_of_some in H; eauto.
+        * eapply classic_min_of_none in H.
+          elim H.
+          apply HH.
+      + split.
+        * now apply classic_min_of_some in HH.
+        * now apply classic_min_of_some_first.
+    - apply sa_inter.
+      + apply adaptX.
+      + apply sa_pre_countable_inter; intros.
+        destruct (lt_dec n0 n).
+        * apply (sa_proper _ (fun x => ~ B (X n0 x))).
+          -- intros ?; tauto.
+          -- apply sa_complement.
+             generalize (adaptX n0 B).
+             eapply is_filtration_le; trivial.
+             lia.
+        * apply (sa_proper _ pre_Ω).
+          -- unfold pre_Ω ; intros ?.
+             split; try tauto.
+          -- apply sa_all.
+  Qed.
+
+  Fixpoint hitting_time_n
+             (X : nat -> Ts -> R)
+             (B:event borel_sa)
+             (n:nat)
+             (a:Ts) : option nat
+    := match n with
+       | 0 => hitting_time X B a
+       | S m => match hitting_time_n X B m a with
+               | None => None
+               | Some hitk =>
+                   match classic_min_of (fun k => B (X (k + S hitk)%nat a)) with
+                   | None => None
+                   | Some a => Some (a + S hitk)%nat
+                   end
+               end
+       end.
+
+
+  Lemma hitting_time_n_is_stop
+        (X : nat -> Ts -> R) (sas:nat->SigmaAlgebra Ts)
+        {filt:IsFiltration sas}
+        {adaptX:IsAdapted borel_sa X sas}
+        (B:event borel_sa) n : is_stopping_time (hitting_time_n X B n) sas.
+  Proof.
+    induction n; simpl.
+    - now apply hitting_time_is_stop.
+    - intros a.
+      unfold stopping_time_pre_event.
+      apply (sa_proper _ (fun x =>
+                            (exists hitk,
+                                (hitk < a)%nat /\
+                                 hitting_time_n X B n x = Some hitk /\
+                                   classic_min_of (fun k : nat => B (X (k + S hitk)%nat x)) = Some (a-S hitk)%nat))).
+      + intros ?.
+        split; intros HH.
+        * destruct HH as [?[?[??]]].
+          rewrite H0, H1.
+          f_equal.
+          lia.
+        * match_option_in HH.
+          match_option_in HH.
+          invcs HH.
+          exists n0; repeat split; trivial.
+          -- lia.
+          -- rewrite eqq0.
+             f_equal; lia.
+      + apply sa_countable_union; intros.
+        unfold is_stopping_time, stopping_time_pre_event in IHn.
+        * destruct (lt_dec n0 a).
+          -- apply sa_inter.
+             ++ apply sa_sigma_const.
+                now left.
+             ++ apply sa_inter.
+                ** generalize (IHn n0).
+                   apply is_filtration_le; trivial.
+                   lia.
+                ** assert (IsFiltration (fun k : nat => sas (k + S n0)%nat)).
+                   {
+                     intros ?; apply filt.
+                   }
+                   assert (IsAdapted borel_sa (fun k : nat => X (k + S n0)%nat) (fun k : nat => sas (k + S n0)%nat)).
+                   {
+                     intros ?; apply adaptX.
+                   } 
+
+                   generalize (hitting_time_is_stop (fun k => X (k + S n0)) (fun k => (sas (k + S n0))) B)%nat
+                   ; intros HH.
+                   red in HH.
+                   unfold is_stopping_time, stopping_time_pre_event, hitting_time in HH.
+                   generalize (HH (a - S n0)%nat).
+                   assert ((Init.Nat.add (Init.Nat.sub a (S n0)) (S n0)) = a) by lia.
+                   now rewrite H1.
+          -- apply (sa_proper _ pre_event_none).
+             ++ unfold pre_event_none; intros ?; tauto.
+             ++ auto with prob.
+  Qed.
+
 End martingale.
 
 Section levy.
