@@ -4866,12 +4866,18 @@ Section rv_expressible.
  Qed.
 
   Lemma list_sum_rv {Ts} {dom} (f : R -> (Ts -> R)) (l : list R)
-        {rv: forall (c:R), RandomVariable dom borel_sa (f c)} :
+        {rv: forall (c:R), In c l -> RandomVariable dom borel_sa (f c)} :
     RandomVariable dom borel_sa (fun z => (list_sum (map (fun c => f c z) l))).
   Proof.
     induction l; simpl.
     - apply rvconst.
-    - now apply rvplus_rv.
+    - apply rvplus_rv.
+      + apply rv.
+        simpl; now left.
+      + apply IHl.
+        intros.
+        apply rv.
+        now apply in_cons.
    Qed.
 
   Lemma frf_measurable_is_expressible {Ts : Type} {Td : Type}
@@ -4924,19 +4930,6 @@ Section rv_expressible.
       now apply frf_measurable_is_expressible.
     Qed.
 
-    Lemma nonneg_measurable_is_expressible {Ts : Type} {Td : Type}
-          {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
-          (X : Ts -> Td) (Y : Ts -> R)
-          {rv_X : RandomVariable dom cod X}
-          {fr_Y : NonnegativeFunction Y}
-          {rv_y : RandomVariable (pullback_sa cod X) borel_sa Y} :
-      exists g : Td -> R, 
-        RandomVariable cod borel_sa g /\
-        forall x, Y x = g (X x).
-    Proof.
-      Admitted.
-
-      
 End rv_expressible.
 
 Section adapted.
