@@ -4788,43 +4788,93 @@ Section real_pullback.
       apply pullback_rv.
   Qed.
 
+End real_pullback.
+Section rv_expressible.
+
   Lemma event_measurable_iff_expressible {Ts : Type} {Td : Type}
         {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
-        (X : Ts -> Td) (A : event dom)
+        (X : Ts -> Td) (A : event (pullback_sa cod X))
         {rv_X : RandomVariable dom cod X} :
-    @sa_sigma Ts (pullback_sa cod X) A ->
     exists g : Td -> R, 
       RandomVariable cod borel_sa g /\
       forall x, 
          EventIndicator (classic_dec A) x = g (X x).
   Proof.
-    intros.
-    destruct H as [? [? ?]].
-    exists (EventIndicator (classic_dec x)).
+    destruct A.
+    destruct s as [? [? ?]].
+    exists (EventIndicator (classic_dec x0)).
     split.
-    - now apply (EventIndicator_pre_rv cod (classic_dec x)).
+    - now apply (EventIndicator_pre_rv cod (classic_dec x0)).
     - intros.
       unfold EventIndicator.
-      specialize (H0 x0).
+      generalize (i x1); intros. 
       match_destr; match_destr; intuition.
   Qed.
 
  Lemma event_measurable_iff_expressible' {Ts : Type} {Td : Type}
         {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
-        (X : Ts -> Td) (A : event dom)
+        (X : Ts -> Td) (A : event (pullback_sa cod X))
         {rv_X : RandomVariable dom cod X} :
-    @sa_sigma Ts (pullback_sa cod X) A ->
     { g : Td -> R | 
       RandomVariable cod borel_sa g /\
       forall x, 
         EventIndicator (classic_dec A) x = g (X x)}.
  Proof.
-   intros.
    apply constructive_indefinite_description.
    now apply event_measurable_iff_expressible.
  Qed.
 
-  Lemma frf_measurable_iff_expressible {Ts : Type} {Td : Type}
+ Definition rv_point_event {Ts:Type} (dom : SigmaAlgebra Ts)
+            (Y : Ts -> R) (c : R)
+            {rv : RandomVariable dom borel_sa Y} : event dom
+   := exist _ (fun (x: Ts) => Y x = c) (sa_preimage_singleton Y c).
+   
+ Lemma pt_event_measurable_is_expressible {Ts : Type} {Td : Type}
+        {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
+        (X : Ts -> Td) (Y : Ts -> R) (c : R)
+        {rv_X : RandomVariable dom cod X} 
+        {rv_Y : RandomVariable (pullback_sa cod X) borel_sa Y} :
+   exists (g : Td -> R),
+      RandomVariable cod borel_sa g /\
+      forall x, 
+        point_preimage_indicator Y c x = g (X x).
+ Proof.
+   intros.
+   generalize (event_measurable_iff_expressible X (rv_point_event (pullback_sa cod X) Y c)); intros.
+   destruct H as [? [? ?]].
+   exists x.
+   split; trivial.
+   intros.
+   rewrite <- (H0 x0).
+   unfold point_preimage_indicator, EventIndicator, rv_point_event.
+   match_destr; match_destr; tauto.
+ Qed.
+   
+   
+ Lemma pt_event_measurable_is_expressible' {Ts : Type} {Td : Type}
+        {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
+        (X : Ts -> Td) (Y : Ts -> R) (c : R)
+        {rv_X : RandomVariable dom cod X} 
+        {rv_Y : RandomVariable (pullback_sa cod X) borel_sa Y} :
+   {g : Td -> R |
+      RandomVariable cod borel_sa g /\
+      forall x, 
+        point_preimage_indicator Y c x = g (X x)}.
+  Proof.
+   apply constructive_indefinite_description.
+   now apply pt_event_measurable_is_expressible.
+ Qed.
+
+  Lemma list_sum_rv {Ts} {dom} (f : R -> (Ts -> R)) (l : list R)
+        {rv: forall (c:R), RandomVariable dom borel_sa (f c)} :
+    RandomVariable dom borel_sa (fun z => (list_sum (map (fun c => f c z) l))).
+  Proof.
+    induction l; simpl.
+    - apply rvconst.
+    - now apply rvplus_rv.
+   Qed.
+
+  Lemma frf_measurable_is_expressible {Ts : Type} {Td : Type}
         {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
         (X : Ts -> Td) (Y : Ts -> R)
         {rv_X : RandomVariable dom cod X}
@@ -4832,14 +4882,62 @@ Section real_pullback.
         {rv_y : RandomVariable (pullback_sa cod X) borel_sa Y} :
     exists g : Td -> R, 
       RandomVariable cod borel_sa g /\
-      (forall x, Y x = g (X x)).
+      forall x, Y x = g (X x).
   Proof.
     intros.
     generalize (frf_preimage_indicator Y); intros.
-    Admitted.    
+    exists (fun (z : Td ) =>
+             (list_sum
+                (map 
+                   (fun (c : R) =>
+                      c * 
+                      ((proj1_sig (pt_event_measurable_is_expressible' X Y c)) z))
+                   (nodup Req_EM_T frf_vals)))).
+    split.
+    - apply list_sum_rv.
+      intros.
+      unfold proj1_sig.
+      match_destr.
+      destruct a.
+      now apply rvscale_rv.
+    - intros.
+      rewrite (H x).
+      f_equal.
+      apply map_ext.
+      intro.
+      f_equal.
+      unfold proj1_sig.
+      now match_destr.
+   Qed.
 
+    Lemma frf_measurable_is_expressible' {Ts : Type} {Td : Type}
+        {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
+        (X : Ts -> Td) (Y : Ts -> R)
+        {rv_X : RandomVariable dom cod X}
+        {fr_Y : FiniteRangeFunction Y}
+        {rv_y : RandomVariable (pullback_sa cod X) borel_sa Y} :
+      { g : Td -> R | 
+        RandomVariable cod borel_sa g /\
+        forall x, Y x = g (X x)}.
+    Proof.
+      apply constructive_indefinite_description.
+      now apply frf_measurable_is_expressible.
+    Qed.
 
-End real_pullback.
+    Lemma nonneg_measurable_is_expressible {Ts : Type} {Td : Type}
+          {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
+          (X : Ts -> Td) (Y : Ts -> R)
+          {rv_X : RandomVariable dom cod X}
+          {fr_Y : NonnegativeFunction Y}
+          {rv_y : RandomVariable (pullback_sa cod X) borel_sa Y} :
+      exists g : Td -> R, 
+        RandomVariable cod borel_sa g /\
+        forall x, Y x = g (X x).
+    Proof.
+      Admitted.
+
+      
+End rv_expressible.
 
 Section adapted.
   Context {Ts:Type}.
