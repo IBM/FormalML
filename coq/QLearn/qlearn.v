@@ -11,6 +11,7 @@ Require Import RandomVariableL2.
 Require hilbert.
 Require Import vecslln.
 Require Import ConditionalExpectation VectorConditionalExpectation.
+Require Import IndefiniteDescription ClassicalDescription.
 Require slln.
 
 Set Bullet Behavior "Strict Subproofs".
@@ -21,6 +22,174 @@ This file is a work-in-progress proof of convergence of the classical Q-learning
 algorithm.
 ****************************************************************************************
 *)
+
+Section rv_expressible.
+
+  Lemma increasing_seq (f : nat -> R) :
+    (forall n, f n <= f (S n)) ->
+    forall (n d : nat),
+      f n <= f (n + d)%nat.
+   Proof.
+    intros.
+    induction d.
+    - replace (n + 0)%nat with n by lia.
+      lra.
+    - eapply Rle_trans.
+      + apply IHd.
+      + replace (n + S d)%nat with (S (n + d))%nat by lia.
+        apply H.
+  Qed.
+
+  Lemma is_sup_seq_increasing (f : nat -> R) :
+    (forall n, f n <= f (S n)) ->
+    forall (x:R),
+      is_sup_seq f x <-> is_lim_seq f x.
+  Proof.
+    intros.
+    unfold is_sup_seq.
+    split; intros.
+    - apply is_lim_seq_spec.
+      unfold is_lim_seq'.
+      intros.
+      destruct (H0 eps).
+      simpl in H1.
+      simpl in H2.
+      destruct H2.
+      exists x0.
+      intros.
+      rewrite Rabs_lt_between.
+      specialize (H1 n).
+      split.
+      + generalize (increasing_seq f H x0 (n-x0)%nat); intros.
+        replace (x0 + (n - x0))%nat with n in H4 by lia.
+        lra.
+      + lra.
+    - apply is_lim_seq_spec in H0.
+      unfold is_lim_seq' in H0.
+      simpl.
+      destruct (H0 eps).
+      split.
+      + intros.
+        generalize (H1 n); intros.
+        destruct (le_dec x0 n).
+        * specialize (H2 l).
+          rewrite Rabs_lt_between in H2.
+          lra.
+        * specialize (H1 x0).
+          generalize (increasing_seq f H n (x0-n)%nat); intros.
+          replace (n + (x0 - n))%nat with x0 in H3 by lia.
+          eapply Rle_lt_trans.
+          -- apply H3.
+          -- cut_to H1; try lia.
+             rewrite Rabs_lt_between in H1.
+             lra.
+      + exists x0.
+        specialize (H1 x0).
+        cut_to H1; try lia.
+        rewrite Rabs_lt_between in H1.        
+        lra.
+  Qed.
+
+    Lemma nonneg_measurable_is_expressible {Ts : Type} {Td : Type}
+          {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
+          (X : Ts -> Td) (Y : Ts -> R)
+          {rv_X : RandomVariable dom cod X}
+          {nn_Y : NonnegativeFunction Y}
+          {rv_y : RandomVariable (pullback_sa cod X) borel_sa Y} :
+      exists g : Td -> R, 
+        RandomVariable cod borel_sa g /\
+        forall x, Finite (Y x) = Finite (g (X x)).
+    Proof.
+      generalize (simple_approx_lim_seq Y nn_Y); intros.
+      generalize (fun n => simple_approx_frf Y n); intros frf.
+      assert (forall n, RandomVariable (pullback_sa cod X) borel_sa (simple_approx Y n)).
+      {
+        intros.
+        apply simple_approx_rv; trivial.
+        now apply borel_Rbar_borel.
+      }
+      generalize (fun n =>
+                    frf_measurable_is_expressible' X (simple_approx Y n)); intros.
+      exists (fun z => Sup_seq (fun n => (proj1_sig (X0 n)) z)).
+      split.
+      - apply Rbar_real_rv.
+        apply Sup_seq_rv.
+        intros.
+        apply Real_Rbar_rv.
+        unfold proj1_sig.
+        now match_destr.
+      - intros.
+        specialize (H x).
+        rewrite <- is_sup_seq_increasing in H.
+        apply is_sup_seq_unique in H.
+        + rewrite <- H.
+          assert (is_finite (Sup_seq (fun n : nat => proj1_sig (X0 n) (X x)))).
+          {
+            admit.
+          }
+          rewrite  H1.
+          apply Sup_seq_ext.
+          intros.
+          unfold proj1_sig.
+          match_destr.
+          destruct a.
+          rewrite Rbar_finite_eq.
+          apply H3.
+        + intros.
+          now apply simple_approx_increasing.
+    Admitted.
+    
+    Lemma nonneg_measurable_is_expressible' {Ts : Type} {Td : Type}
+          {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
+          (X : Ts -> Td) (Y : Ts -> R)
+          {rv_X : RandomVariable dom cod X}
+          {nn_Y : NonnegativeFunction Y}
+          {rv_y : RandomVariable (pullback_sa cod X) borel_sa Y} :
+      {g : Td -> R |
+        RandomVariable cod borel_sa g /\
+        forall x, Finite(Y x) = Finite (g (X x))}.
+   Proof.
+      apply constructive_indefinite_description.
+      now apply nonneg_measurable_is_expressible.
+    Qed.
+
+    Lemma measurable_is_expressible {Ts : Type} {Td : Type}
+          {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
+          (X : Ts -> Td) (Y : Ts -> R)
+          {rv_X : RandomVariable dom cod X}
+          {rv_y : RandomVariable (pullback_sa cod X) borel_sa Y} :
+      exists g : Td -> R, 
+        RandomVariable cod borel_sa g /\
+        forall x, (Y x) = (g (X x)).
+    Proof.
+      generalize (nonneg_measurable_is_expressible' X (pos_fun_part Y)); intros pos.
+      generalize (nonneg_measurable_is_expressible' X (neg_fun_part Y)); intros neg.
+      exists (rvminus (proj1_sig pos) (proj1_sig neg)).
+      split.
+      - apply rvminus_rv.
+        + unfold proj1_sig.
+          now match_destr.
+        + unfold proj1_sig.
+          now match_destr.
+      - intros.
+        unfold proj1_sig.
+        match_destr; match_destr.
+        destruct a; destruct a0.
+        specialize (H0 x).
+        specialize (H2 x).
+        rewrite rvminus_unfold.
+        apply Rbar_finite_eq in H0.
+        apply Rbar_finite_eq in H2.
+        rewrite <- H0.
+        rewrite <- H2.
+        generalize (rv_pos_neg_id Y); intros.
+        specialize (H3 x).
+        rewrite H3.
+        unfold rvplus, rvopp, rvscale.
+        lra.
+    Qed.
+
+End rv_expressible.
 
   Section qlearn.
 
