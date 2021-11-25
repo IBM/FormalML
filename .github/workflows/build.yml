@@ -12,7 +12,7 @@ jobs:
       matrix:
         coq_version:
           - '8.12.2'
-          - '8.14.0'
+#          - '8.14.0'
         ocaml_version:
           - '4.07-flambda'
     steps:
