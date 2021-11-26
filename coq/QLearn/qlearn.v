@@ -96,9 +96,9 @@ Section rv_expressible.
           {rv_X : RandomVariable dom cod X}
           {nn_Y : NonnegativeFunction Y}
           {rv_y : RandomVariable (pullback_sa cod X) borel_sa Y} :
-      exists g : Td -> R, 
-        RandomVariable cod borel_sa g /\
-        forall x, Finite (Y x) = Finite (g (X x)).
+      exists g : Td -> Rbar, 
+        RandomVariable cod Rbar_borel_sa g /\
+        forall x, Finite (Y x) = (g (X x)).
     Proof.
       generalize (simple_approx_lim_seq Y nn_Y); intros.
       generalize (fun n => simple_approx_frf Y n); intros frf.
@@ -112,8 +112,7 @@ Section rv_expressible.
                     frf_measurable_is_expressible' X (simple_approx Y n)); intros.
       exists (fun z => Sup_seq (fun n => (proj1_sig (X0 n)) z)).
       split.
-      - apply Rbar_real_rv.
-        apply Sup_seq_rv.
+      - apply Sup_seq_rv.
         intros.
         apply Real_Rbar_rv.
         unfold proj1_sig.
@@ -121,23 +120,18 @@ Section rv_expressible.
       - intros.
         specialize (H x).
         rewrite <- is_sup_seq_increasing in H.
-        apply is_sup_seq_unique in H.
-        + rewrite <- H.
-          assert (is_finite (Sup_seq (fun n : nat => proj1_sig (X0 n) (X x)))).
-          {
-            admit.
-          }
-          rewrite  H1.
+        + apply is_sup_seq_unique in H.
+          rewrite <- H.
           apply Sup_seq_ext.
           intros.
           unfold proj1_sig.
           match_destr.
           destruct a.
           rewrite Rbar_finite_eq.
-          apply H3.
+          apply H2.
         + intros.
           now apply simple_approx_increasing.
-    Admitted.
+     Qed.
     
     Lemma nonneg_measurable_is_expressible' {Ts : Type} {Td : Type}
           {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
@@ -145,9 +139,9 @@ Section rv_expressible.
           {rv_X : RandomVariable dom cod X}
           {nn_Y : NonnegativeFunction Y}
           {rv_y : RandomVariable (pullback_sa cod X) borel_sa Y} :
-      {g : Td -> R |
-        RandomVariable cod borel_sa g /\
-        forall x, Finite(Y x) = Finite (g (X x))}.
+      {g : Td -> Rbar |
+        RandomVariable cod Rbar_borel_sa g /\
+        forall x, Finite(Y x) = (g (X x))}.
    Proof.
       apply constructive_indefinite_description.
       now apply nonneg_measurable_is_expressible.
@@ -158,15 +152,15 @@ Section rv_expressible.
           (X : Ts -> Td) (Y : Ts -> R)
           {rv_X : RandomVariable dom cod X}
           {rv_y : RandomVariable (pullback_sa cod X) borel_sa Y} :
-      exists g : Td -> R, 
-        RandomVariable cod borel_sa g /\
-        forall x, (Y x) = (g (X x)).
+      exists g : Td -> Rbar, 
+        RandomVariable cod Rbar_borel_sa g /\
+        forall x, Finite (Y x) = (g (X x)).
     Proof.
       generalize (nonneg_measurable_is_expressible' X (pos_fun_part Y)); intros pos.
       generalize (nonneg_measurable_is_expressible' X (neg_fun_part Y)); intros neg.
-      exists (rvminus (proj1_sig pos) (proj1_sig neg)).
+      exists (Rbar_rvminus (proj1_sig pos) (proj1_sig neg)).
       split.
-      - apply rvminus_rv.
+      - apply Rbar_rvminus_rv.
         + unfold proj1_sig.
           now match_destr.
         + unfold proj1_sig.
@@ -177,16 +171,29 @@ Section rv_expressible.
         destruct a; destruct a0.
         specialize (H0 x).
         specialize (H2 x).
-        rewrite rvminus_unfold.
-        apply Rbar_finite_eq in H0.
-        apply Rbar_finite_eq in H2.
+        unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp.
         rewrite <- H0.
         rewrite <- H2.
         generalize (rv_pos_neg_id Y); intros.
         specialize (H3 x).
         rewrite H3.
         unfold rvplus, rvopp, rvscale.
+        simpl.
+        apply Rbar_finite_eq.
         lra.
+    Qed.
+
+    Lemma measurable_is_expressible' {Ts : Type} {Td : Type}
+          {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
+          (X : Ts -> Td) (Y : Ts -> R)
+          {rv_X : RandomVariable dom cod X}
+          {rv_y : RandomVariable (pullback_sa cod X) borel_sa Y} :
+      {g : Td -> Rbar |
+        RandomVariable cod Rbar_borel_sa g /\
+        forall x, Finite (Y x) = (g (X x))}.
+    Proof.
+      apply constructive_indefinite_description.
+      now apply measurable_is_expressible.
     Qed.
 
 End rv_expressible.
