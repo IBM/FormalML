@@ -90,6 +90,57 @@ Section rv_expressible.
         lra.
   Qed.
 
+  Lemma Rbar_is_sup_seq_increasing (f : nat -> R) :
+    (forall n, f n <= f (S n)) ->
+    forall (x:Rbar),
+      is_sup_seq f x <-> is_lim_seq f x.
+  Proof.
+    intros.
+    destruct x.
+    - now apply is_sup_seq_increasing.
+    - unfold is_sup_seq.
+      split; intros.
+      + apply is_lim_seq_spec.
+        unfold is_lim_seq'.
+        intros.
+        destruct (H0 M).
+        simpl in H1.
+        exists x.
+        intros.
+        eapply Rlt_le_trans.
+        * apply H1.
+        * generalize (increasing_seq f H x (n-x)%nat); intros.
+          now replace (x + (n - x))%nat with n in H3 by lia.
+     + apply is_lim_seq_spec in H0.
+       destruct (H0 M).
+       simpl.
+       exists x.
+       apply H1.
+       lia.
+   - unfold is_sup_seq.
+     split; intros.
+     + apply is_lim_seq_spec.
+       unfold is_lim_seq'.
+       intros.
+       specialize (H0 M).
+       exists 0%nat.
+       intros.
+       apply H0.
+     + apply is_lim_seq_spec in H0.
+       specialize (H0 M).
+       destruct H0.
+       simpl.
+       destruct (le_dec x n).
+       * now apply H0.
+       * assert (n < x)%nat by lia.
+         generalize (increasing_seq f H n (x - n)%nat); intros.
+         replace (n + (x - n))%nat with x in H2 by lia.
+         eapply Rle_lt_trans.
+         -- apply H2.
+         -- apply H0.
+            lia.
+    Qed.    
+
     Lemma nonneg_measurable_is_expressible {Ts : Type} {Td : Type}
           {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
           (X : Ts -> Td) (Y : Ts -> R)
