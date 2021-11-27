@@ -1,7 +1,7 @@
 Require Import mdp fixed_point pmf_monad Finite ListAdd Reals.
 Require Import Coq.Lists.List.
 Require Import micromega.Lra.
-Require Import RealAdd.
+Require Import RealAdd LibUtilsListAdd EquivDec.
 
 Import ListNotations.
 Set Bullet Behavior "Strict Subproofs".
@@ -258,5 +258,85 @@ Proof.
   eapply Rle_trans; try (eapply (Rmax_list_Rsqr_Rabs_3) ; trivial).
   right; trivial.
 Qed.
+
+  Lemma Rmax_list_map_add {A} (f g : A -> R) (l : list A):
+    Max_{ l}(fun a : A => (f a + g a)) <=
+    Max_{ l}(fun a : A => (f a)) + (Max_{ l}(fun a : A => (g a))).
+  Proof.
+    destruct (is_nil_dec l).
+    - subst; simpl. lra.
+    - rewrite Rmax_list_le_iff.
+      intros x Hx. rewrite in_map_iff in Hx.
+      destruct Hx as [a [Ha Hina]].
+      rewrite <-Ha.
+      apply Rplus_le_compat; try (apply Rmax_spec; rewrite in_map_iff; exists a; split ; trivial).
+      rewrite map_not_nil.
+      congruence.
+  Qed.
+
+  Lemma Rmax_list_map_indep {A} (c : R) {l : list A} (hl : [] <> l):
+    Max_{l}(fun _ => c) = c.
+  Proof.
+    apply Rle_antisym.
+    + rewrite Rmax_list_le_iff; try rewrite map_not_nil; try easy.
+      intros x Hx. rewrite in_map_iff in Hx.
+      destruct Hx as [x0 [Hx0 Hx0']].
+      now subst.
+    + apply Rmax_spec.
+      rewrite in_map_iff.
+      rewrite not_nil_exists in hl.
+      destruct hl as [x Hx].
+      exists x; easy.
+  Qed.
+
+Lemma Rmax_list_const_add' {A}(l : list A) (f : A -> R) (d : R) :
+    Rmax_list (List.map (fun x => f x + d) l) =
+    if (is_nil_dec l) then 0 else ((Rmax_list (map f l)) + d).
+Proof.
+  destruct (is_nil_dec l); subst; try easy.
+  induction l.
+    - simpl; intuition reflexivity.
+    - simpl in *.
+      destruct l.
+      + simpl ; reflexivity.
+      + simpl in * ; rewrite IHl.
+        now rewrite Rcomplements.Rplus_max_distr_r.
+        rewrite BasicUtils.ne_symm. rewrite not_nil_exists.
+        exists a0; simpl. now left.
+  Qed.
+
+Lemma Q_is_bounded c W :
+    let (ls, _) := fs M in
+    let (las,_) := act_finite M in
+    Max_{ls}(fun s' => Max_{las}(bellmanQ W s')) <= c + γ*Max_{las}(W).
+Proof.
+  destruct (fs M) as [states ?].
+  destruct (act_finite M) as [stacts ?].
+  unfold bellmanQ.
+  assert (H0 : [] <> stacts) by admit.
+  assert (H1 : Max_{states} (fun s' =>
+              Max_{stacts}(fun sa : {x : state M & act M x} => let (s,a):= sa in
+                           reward s a s' + γ*(Max_{ act_list s' }(fun a => W(existT _ s' a))))) <=
+               Max_{states} (fun s' => Max_{stacts}(fun sa : {x : state M & act M x} =>
+                                                   let (s,a):= sa in reward s a s'))
+              +  γ*( Max_{states}(fun s' => Max_{stacts}(fun sa => Max_{ act_list s' }(fun a => W(existT _ s' a)))))).
+  {
+    setoid_rewrite <-Rmax_list_map_const_mul; try lra.
+    eapply Rle_trans.
+    2: apply Rmax_list_map_add. simpl.
+    apply Rmax_list_fun_le; intros s.
+    setoid_rewrite Rmax_list_map_indep; trivial.
+    generalize  (γ *(Max_{ act_list s}
+                         (fun a0 : act M s => W (existT (act M) s a0)))); intros.
+    right. rewrite <-Rmax_list_map_indep with (l := stacts) (c0 := r) at 1; trivial.
+    admit.
+  }
+  eapply Rle_trans; eauto. clear H1.
+  apply Rplus_le_compat.
+  + admit.
+  + apply Rmult_le_compat_l; try lra.
+    admit.
+Admitted.
+
 
 End bellmanQ.
