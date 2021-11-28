@@ -1,5 +1,5 @@
 Require Import mdp fixed_point pmf_monad Finite ListAdd Reals.
-Require Import Coq.Lists.List.
+Require Import Coq.Lists.List LibUtils.
 Require Import micromega.Lra.
 Require Import RealAdd LibUtilsListAdd EquivDec.
 
@@ -274,20 +274,23 @@ Qed.
       congruence.
   Qed.
 
-  Lemma Rmax_list_map_indep {A} (c : R) {l : list A} (hl : [] <> l):
-    Max_{l}(fun _ => c) = c.
+  Lemma Rmax_list_map_indep {A} (l : list A) (c : R):
+    Max_{l}(fun _ => c) = if is_nil_dec l then 0 else c.
   Proof.
+    destruct (is_nil_dec l); try now subst.
     apply Rle_antisym.
     + rewrite Rmax_list_le_iff; try rewrite map_not_nil; try easy.
       intros x Hx. rewrite in_map_iff in Hx.
       destruct Hx as [x0 [Hx0 Hx0']].
-      now subst.
+      now subst. congruence.
     + apply Rmax_spec.
       rewrite in_map_iff.
-      rewrite not_nil_exists in hl.
-      destruct hl as [x Hx].
+      rewrite BasicUtils.ne_symm in n.
+      rewrite not_nil_exists in n.
+      destruct n as [x Hx].
       exists x; easy.
   Qed.
+
 
 Lemma Rmax_list_const_add' {A}(l : list A) (f : A -> R) (d : R) :
     Rmax_list (List.map (fun x => f x + d) l) =
@@ -305,15 +308,19 @@ Proof.
         exists a0; simpl. now left.
   Qed.
 
-Lemma Q_is_bounded c W :
+Lemma Q_is_bounded W :
     let (ls, _) := fs M in
     let (las,_) := act_finite M in
-    Max_{ls}(fun s' => Max_{las}(bellmanQ W s')) <= c + γ*Max_{las}(W).
+    Max_{ls}(fun s' => Max_{las}(bellmanQ W s')) <= Max_{ ls}
+  (fun s' : state M =>
+   Max_{ las}(fun sa : {x : state M & act M x} => let (s, a) := sa in reward s a s')) + γ*Max_{las}(W).
 Proof.
   destruct (fs M) as [states ?].
   destruct (act_finite M) as [stacts ?].
   unfold bellmanQ.
-  assert (H0 : [] <> stacts) by admit.
+  assert (G1 : [] <> states) by (rewrite not_nil_exists; now exists (@ne M)).
+  assert (H0 : [] <> stacts) by (rewrite not_nil_exists; now exists (existT _ (@ne M) (@na M (@ne M)))).
+  assert (G2 : forall s : M.(state), [] <> act_list s) by (intros s; apply act_list_not_nil).
   assert (H1 : Max_{states} (fun s' =>
               Max_{stacts}(fun sa : {x : state M & act M x} => let (s,a):= sa in
                            reward s a s' + γ*(Max_{ act_list s' }(fun a => W(existT _ s' a))))) <=
@@ -326,17 +333,33 @@ Proof.
     2: apply Rmax_list_map_add. simpl.
     apply Rmax_list_fun_le; intros s.
     setoid_rewrite Rmax_list_map_indep; trivial.
+    destruct (is_nil_dec stacts); try subst. intuition.
     generalize  (γ *(Max_{ act_list s}
                          (fun a0 : act M s => W (existT (act M) s a0)))); intros.
-    right. rewrite <-Rmax_list_map_indep with (l := stacts) (c0 := r) at 1; trivial.
-    admit.
+    generalize (Rmax_list_map_add (fun sa : {x : state M & act M x} => let (s0, a) := sa in reward s0 a s) (fun _ => r) stacts); intros.
+    rewrite (Rmax_list_map_indep) with (c := r) in H; trivial.
+    match_destr_in H; simpl. intuition.
+    eapply Rle_trans. 2: apply H.
+    right. apply Rmax_list_map_ext.
+    intros a.
+    now destruct a.
   }
   eapply Rle_trans; eauto. clear H1.
   apply Rplus_le_compat.
-  + admit.
+  + now right.
   + apply Rmult_le_compat_l; try lra.
-    admit.
-Admitted.
+    setoid_rewrite Rmax_list_map_indep.
+    match_destr; subst. intuition.
+    apply Rmax_spec. rewrite in_map_iff.
+    generalize (Rmax_list_map_exist (fun s' => Max_{ act_list s'}(fun a => W (existT _ s' a))) _ G1); intros.
+    destruct H as [s0 [Hs0 Heq1]].
+    generalize (Rmax_list_map_exist (fun a => W (existT _ s0 a)) _ (G2 s0)); intros.
+    destruct H as [a [Ha1 Heq2]].
+    exists (existT _ s0 a).
+    rewrite <-Heq1. rewrite Heq2.
+    split; trivial.
+Qed.
+
 
 
 End bellmanQ.
