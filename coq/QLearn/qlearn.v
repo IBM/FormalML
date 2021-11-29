@@ -1538,18 +1538,19 @@ End rv_expressible.
     Qed.
 
     (* Lemma 7. stochastic *)
-    Lemma bounding_7_alt {SS : Type} (α : nat -> R) (gamma C : R) (f : nat -> X -> Finite.Finite SS -> X) (init : X) :
+
+  Lemma bounding_7_alt {SS : Type} (hSS : Finite.Finite SS) (α : nat -> R) (gamma C : R) (f : nat -> X -> SS -> X) (init : X) :
       0 <= gamma < 1 -> 0 <= C ->
       (forall n, 0 <= (α n) <= 1) ->
-      (forall n x, forall (s:Finite.Finite SS), norm (f n x s) <= gamma * norm x + C) ->
+      (forall n x, forall (s:SS), norm (f n x s) <= gamma * norm x + C) ->
       is_lim_seq α 0 ->
       (forall k, is_lim_seq (fun n => prod_f_R0 (fun m => g_alpha gamma (α (m+k)%nat)) n) 0) ->
       exists B, 
-        forall (s_seq : nat -> Finite.Finite SS), 
+        forall (s_seq : nat -> SS), 
         forall n, norm ( RMseqX α (fun n x => f n x (s_seq n)) init n) <= B.
     Proof.
       intros.
-      assert (forall (s_seq : nat -> Finite.Finite SS), 
+      assert (forall (s_seq : nat -> SS), 
               forall (n:nat), 
                 norm(RMseqX α (fun n x => f n x (s_seq n)) init (S n)) <= 
                 (1 - α n)*norm(RMseqX α (fun n x => f n x (s_seq n)) init n) + 
@@ -1570,7 +1571,7 @@ End rv_expressible.
         apply H2.
       }
 
-      assert (forall (s_seq : nat -> Finite.Finite SS),
+      assert (forall (s_seq : nat -> SS),
                  forall n,
                    norm(RMseqX α (fun n x => f n x (s_seq n)) init (S n)) <=
                    (g_alpha gamma  (α n)) * norm(RMseqX α (fun n x => f n x (s_seq n)) init n) + (α n)*C).
@@ -1582,7 +1583,7 @@ End rv_expressible.
         lra.
      }
 
-      assert (forall (s_seq : nat -> Finite.Finite SS),
+      assert (forall (s_seq : nat -> SS),
                  forall n, norm(RMseqX α (fun n x => f n x (s_seq n)) init n) <=
                            RMseqG α (norm init) gamma C n).
       { 
