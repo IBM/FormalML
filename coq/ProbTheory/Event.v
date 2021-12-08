@@ -717,6 +717,26 @@ Section pre_ev.
       firstorder.
   Qed.
 
+  Lemma pre_event_union_diff_distr {T} (A:pre_event T) (l: list (pre_event T)) :
+    pre_list_union l \ A === pre_list_union (map (fun x => x \ A) l).
+  Proof.
+    unfold equiv, pre_event_equiv, pre_union_of_collection, pre_list_collection, pre_list_union.
+    intros x.
+    split.
+    - intros [[?[??]] ?].
+      exists (x0 \ A); split.
+      + apply in_map_iff.
+        eauto.
+      + firstorder.
+    - intros [?[??]].
+      apply in_map_iff in H.
+      destruct H as [?[??]]; subst.
+      apply pre_event_diff_derived in H0.
+      destruct H0.
+      apply pre_event_diff_derived.
+      split; eauto.
+  Qed.
+
   Lemma pre_list_union_union {T} (l:list (pre_event T)) :
     pre_union_of_collection (pre_list_collection l ∅) === pre_list_union l.
   Proof.
@@ -1985,9 +2005,9 @@ Section event.
 
   Section take.
   (* define primitives for taking a prefix of a collection *)
-  Definition collection_take (En : nat -> event σ) (n:nat) := map En (seq 0 n).
+  Definition collection_take {A} (En : nat -> A) (n:nat) := map En (seq 0 n).
 
-  Lemma collection_take_length (En : nat -> event σ) (n:nat) :
+  Lemma collection_take_length {A} (En : nat -> A) (n:nat) :
     length (collection_take En n) = n.
   Proof.
     unfold collection_take.
@@ -2020,7 +2040,7 @@ Section event.
         now simpl.
   Qed.
 
-  Lemma In_collection_take (En : nat -> event σ) a n:
+  Lemma In_collection_take {A} (En : nat -> A) a n:
     In a (collection_take En n) ->
     exists m, (m < n)%nat /\ a = En m.
   Proof.
@@ -2034,7 +2054,7 @@ Section event.
     now simpl in H0.
   Qed.
   
-  Lemma collection_take_Sn n En :
+  Lemma collection_take_Sn {A} n (En : nat -> A) :
     (collection_take En (S n)) = collection_take En n ++ (En n::nil).
   Proof.
     unfold collection_take.
@@ -2042,7 +2062,7 @@ Section event.
     reflexivity.
   Qed.
 
-  Lemma collection_take1 En : collection_take En 1 = [En 0%nat].
+  Lemma collection_take1 {A} (En : nat -> A) : collection_take En 1 = [En 0%nat].
   Proof.
     reflexivity.
   Qed.
