@@ -1008,6 +1008,9 @@ Section measure.
       now rewrite <- IHl; simpl.
   Qed.
 
+  Class is_complete_measure (μ:event σ -> Rbar) {μ_meas:is_measure μ}
+    := measure_is_complete : forall a b, pre_event_sub a (event_pre b) -> μ b = 0 -> sa_sigma a.
+
 End measure.
 
 
@@ -1536,7 +1539,8 @@ Section outer_measure.
     - apply make_pre_collection_disjoint_disjoint.
   Qed.
 
-  Instance μ_measurable_sa (μ:pre_event T -> R) {μ_outer:is_outer_measure μ} :
+  (* These results are also called Caratheodory’s Theorem *)
+  Instance μ_measurable_sa (μ:pre_event T -> Rbar) {μ_outer:is_outer_measure μ} :
     SigmaAlgebra T
     := {|
       sa_sigma E := μ_measurable μ E
@@ -1545,22 +1549,32 @@ Section outer_measure.
     ; sa_all := μ_measurable_Ω μ
     |}.
 
-  
+  Global Instance μ_measurable_sa_measure (μ:pre_event T -> Rbar) {μ_outer:is_outer_measure μ} :
+    is_measure (σ:=μ_measurable_sa μ) μ.
+  Proof.
+    constructor.
+    - intros ???.
+      red in H.
+      now rewrite H.
+    - apply outer_measure_none.
+    - intros.
+      apply outer_measure_nneg.
+    - intros.
+      apply (μ_measurable_countable_disjoint_additivity μ); trivial.
+      intros.
+      now destruct (B n); simpl.
+  Qed.
+
+  Global Instance μ_measurable_sa_complete_measure (μ:pre_event T -> Rbar) {μ_outer:is_outer_measure μ} :
+    is_complete_measure (σ:=μ_measurable_sa μ) μ.
+  Proof.
+    intros ????.
+    apply μ_measurable_0. 
+    rewrite <- H0.
+    apply antisymmetry.
+    - now rewrite H.
+    - rewrite H0.
+      apply outer_measure_nneg.
+  Qed.
   
 End outer_measure.
-
-Section omf.
-
-  Context {T:Type}.
-  Context {σ:SigmaAlgebra T}.
-  Context {ps:ProbSpace σ}.
-
-
-  Definition outer_measure_of (A:pre_event T) 
-    := Glb_Rbar (fun (x : R) =>
-                   exists (an:nat->event σ),
-                     pre_event_sub A (union_of_collection an)
-                     /\ sum_of_probs_equals ps_P an x).
-
-  
-End omf.
