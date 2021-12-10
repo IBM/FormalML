@@ -665,12 +665,12 @@ Section util.
   Qed.
 
   Lemma seq_sum_list_sum {T}
-        (f:pre_event T -> Rbar) (B:list (pre_event T)) d :
+        (f:T -> Rbar) (B:list T) d :
     f d = 0 ->
-    ELim_seq (fun i : nat => sum_Rbar_n (fun n : nat => f (pre_list_collection B d n)) i) = list_Rbar_sum (map f B).
+    ELim_seq (fun i : nat => sum_Rbar_n (fun n : nat => f (nth n B d)) i) = list_Rbar_sum (map f B).
   Proof.
     intros.
-    rewrite (ELim_seq_ext_loc _ (fun _ => sum_Rbar_n (fun n : nat => f (pre_list_collection B d n)) (length B))).
+    rewrite (ELim_seq_ext_loc _ (fun _ => sum_Rbar_n (fun n : nat => f (nth n B d)) (length B))).
     - rewrite ELim_seq_const.
       unfold sum_Rbar_n.
       f_equal.
@@ -686,12 +686,11 @@ Section util.
       rewrite (seq_shiftn_map (length B)).
       rewrite map_map.
       rewrite (map_ext
-                 (fun x : nat => f (pre_list_collection B d (length B + x)))
+                 (fun x : nat => f (nth (length B + x) B d ))
                  (fun x : nat => 0)).
       + rewrite fold_right_Rbar_plus_const.
         now rewrite Rbar_mult_0_r.
       + intros ?.
-        unfold pre_list_collection.
         rewrite nth_overflow; trivial.
         lia.
   Qed.
@@ -837,9 +836,183 @@ Section util.
 End util.
 
 Section measure.
+  Local Existing Instance Rbar_le_pre.
+  Local Existing Instance Rbar_le_part.
+
   Context {T:Type}.
   Context {σ:SigmaAlgebra T}.
-  Context {ps:ProbSpace σ}.
+
+  Class is_measure (μ:event σ -> Rbar)
+    := mk_measure {
+        measure_proper :> Proper (event_equiv ==> eq) μ
+      ; measure_none : μ event_none = 0%R
+      ; measure_nneg a : Rbar_le 0 (μ a)
+      ; measure_countable_disjoint_union (B:nat->event σ) :
+        collection_is_pairwise_disjoint B ->
+        μ (union_of_collection B) = (ELim_seq (fun i : nat => sum_Rbar_n (fun n : nat => μ (B n)) i))
+      }.
+  
+  Lemma measure_list_disjoint_union (μ:event σ -> Rbar) {μ_meas:is_measure μ} (l: list (event σ)) :
+    (* Assume: collection is a subset of Sigma and its elements are pairwise disjoint. *)
+    ForallOrdPairs event_disjoint l ->
+    μ (list_union l) = list_Rbar_sum (map μ l).
+  Proof.
+    intros Hd.
+    generalize (measure_countable_disjoint_union (list_collection l ∅)); intros HH.
+    cut_to HH.
+    - unfold sum_of_probs_equals in HH.
+      erewrite measure_proper in HH; [| eapply list_union_union ].
+      rewrite HH.
+      unfold list_collection.
+      apply (seq_sum_list_sum _ _ ∅).
+      apply measure_none.
+    - apply list_collection_disjoint; trivial.
+  Qed.
+
+  Lemma measure_disjoint_union (μ:event σ -> Rbar) {μ_meas:is_measure μ} (a b: event σ) :
+    (* Assume: collection is a subset of Sigma and its elements are pairwise disjoint. *)
+    event_disjoint a b ->
+    μ (a ∪ b) = Rbar_plus (μ a) (μ b).
+  Proof.
+    intros Hd.
+    generalize (measure_list_disjoint_union μ [a; b]); intros HH.
+    rewrite list_union_cons, list_union_singleton in HH.
+    simpl in HH.
+    rewrite Rbar_plus_0_r in HH.
+    apply HH.
+    now repeat constructor.
+  Qed.    
+  
+  Global Instance measure_monotone (μ:event σ -> Rbar) {μ_meas:is_measure μ} :
+    Proper (event_sub ==> Rbar_le) μ.
+  Proof.
+    intros ???.
+    rewrite (sub_diff_union _ _ H).
+    rewrite measure_disjoint_union; trivial.
+    - rewrite <- (Rbar_plus_0_l (μ x)) at 1.
+      apply Rbar_plus_le_compat; try reflexivity.
+      apply measure_nneg.
+    - firstorder.
+  Qed.
+  
+  Lemma measure_all_one_ps_le1 (μ:event σ -> Rbar) {μ_meas:is_measure μ}
+        (measure_all:μ Ω = R1) A : Rbar_le (μ A) R1.
+  Proof.
+    rewrite <- measure_all.
+    apply measure_monotone; firstorder.
+  Qed.
+
+  Lemma measure_all_one_ps_fin (μ:event σ -> Rbar) {μ_meas:is_measure μ}
+        (measure_all:μ Ω = R1) A : is_finite (μ A).
+  Proof.
+    eapply bounded_is_finite.
+    - apply measure_nneg.
+    - apply measure_all_one_ps_le1; trivial.
+  Qed.
+
+  Lemma is_measure_ex_Elim_seq
+        (μ:event σ -> Rbar) {μ_meas:is_measure μ} (E:nat->event σ) :
+    ex_Elim_seq (fun i : nat => sum_Rbar_n (fun n : nat => μ (E n)) i).
+  Proof.
+    apply ex_Elim_seq_incr; intros.
+    apply sum_Rbar_n_pos_incr; intros.
+    apply measure_nneg.
+  Qed.
+
+  Program Instance measure_all_one_ps (μ:event σ -> Rbar) {μ_meas:is_measure μ}
+           (measure_all:μ Ω = R1) :
+    ProbSpace σ
+    := {|
+      ps_P x := real (μ x)
+    |}.
+  Next Obligation.
+    intros ???.
+    now rewrite H.
+  Qed.
+  Next Obligation.
+    unfold sum_of_probs_equals.
+    apply infinite_sum_infinite_sum'.
+    apply infinite_sum_is_lim_seq.
+    rewrite measure_countable_disjoint_union; trivial.
+    apply is_Elim_seq_fin.
+
+    assert (isfin:is_finite (ELim_seq (fun i : nat => sum_Rbar_n (fun n : nat => μ (collection n)) i))).
+    {
+      cut (ex_finite_Elim_seq (fun i : nat => sum_Rbar_n (fun n : nat => μ (collection n)) i))
+      ; [ now intros [??] |].
+      eapply ex_finite_Elim_seq_incr with (M:=Finite 1) (m:=0%nat).
+      - intros.
+        apply sum_Rbar_n_pos_incr.
+        intros; apply measure_nneg.
+      - intros.
+        unfold sum_Rbar_n.
+        rewrite <- map_map.
+        rewrite <- measure_list_disjoint_union; trivial.
+        + replace 1 with R1 by lra; simpl.
+          rewrite <- measure_all.
+          apply measure_monotone; trivial.
+          firstorder.
+        + now apply collection_take_preserves_disjoint.
+      - now unfold sum_Rbar_n; simpl.
+    }         
+    rewrite isfin.
+    rewrite <- ELim_seq_incr_1.
+    erewrite ELim_seq_ext; try eapply ELim_seq_correct.
+    - apply ex_Elim_seq_incr; intros.
+      apply sum_f_R0_pos_incr.
+      intros.
+      generalize (measure_nneg (collection i)); simpl.
+      match_destr; simpl; try tauto; try lra.
+    - intros; simpl.
+      rewrite sum_f_R0_sum_f_R0'.
+      rewrite sum_f_R0'_as_fold_right.
+      unfold sum_Rbar_n, list_Rbar_sum.
+      rewrite fold_right_map.
+      induction (seq 0 (S n)); simpl; trivial.
+      rewrite IHl.
+      rewrite <- measure_all_one_ps_fin; trivial.
+  Qed.
+  Next Obligation.
+    now rewrite measure_all.
+  Qed.
+  Next Obligation.
+    generalize (measure_nneg A); simpl.
+    match_destr; simpl; try tauto; try lra.
+  Qed.
+
+  Lemma ps_measure (ps:ProbSpace σ) : is_measure ps_P.
+  Proof.
+    constructor.
+    - intros ???.
+      f_equal.
+      now apply ps_proper.
+    - f_equal.
+      apply ps_none.
+    - intros; simpl.
+      apply ps_pos.
+    - intros.
+      generalize (ps_countable_disjoint_union B H); intros HH.
+      unfold sum_of_probs_equals in HH.
+      apply infinite_sum_infinite_sum' in HH.
+      apply infinite_sum_is_lim_seq in HH.
+      apply is_Elim_seq_fin in HH.
+      apply is_Elim_seq_unique in HH.
+      rewrite <- ELim_seq_incr_1.
+      rewrite <- HH.
+      apply ELim_seq_ext; intros.
+      rewrite sum_f_R0_sum_f_R0'.
+      rewrite sum_f_R0'_as_fold_right.
+      unfold sum_Rbar_n, list_Rbar_sum.
+      rewrite fold_right_map.
+      induction (seq 0 (S n)); simpl; trivial.
+      now rewrite <- IHl; simpl.
+  Qed.
+
+End measure.
+
+
+Section outer_measure.
+  Context {T:Type}.
 
   Local Existing Instance Rbar_le_pre.
   Local Existing Instance Rbar_le_part.
@@ -891,7 +1064,9 @@ Section measure.
     intros.
     rewrite <- (seq_sum_list_sum _ _ pre_event_none).
     - apply outer_measure_countable_subadditive.
-      now rewrite pre_list_union_union.
+      generalize (pre_list_union_union B).
+      unfold pre_list_collection; intros HH.
+      now rewrite HH.
     - apply outer_measure_none.
   Qed.
 
@@ -1370,19 +1545,22 @@ Section measure.
     ; sa_all := μ_measurable_Ω μ
     |}.
 
-End measure.
+  
+  
+End outer_measure.
 
-(*
+Section omf.
+
+  Context {T:Type}.
+  Context {σ:SigmaAlgebra T}.
+  Context {ps:ProbSpace σ}.
+
+
   Definition outer_measure_of (A:pre_event T) 
     := Glb_Rbar (fun (x : R) =>
-                   exists (an:nat->event S),
+                   exists (an:nat->event σ),
                      pre_event_sub A (union_of_collection an)
                      /\ sum_of_probs_equals ps_P an x).
 
- *)
   
-  
-
-  
-
-  
+End omf.
