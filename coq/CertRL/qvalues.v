@@ -1,6 +1,6 @@
 Require Import mdp fixed_point pmf_monad Finite ListAdd Reals.
 Require Import Coq.Lists.List LibUtils.
-Require Import micromega.Lra.
+Require Import micromega.Lra qlearn.
 Require Import RealAdd LibUtilsListAdd EquivDec.
 
 Import ListNotations.
@@ -235,6 +235,16 @@ Proof.
     apply Rplus_le_compat; apply Rmax_list_map_nonneg; intros; apply Rabs_pos.
 Qed.
 
+Lemma minus_Rsqr_le (a b : R):
+  a - b² <= a.
+Proof.
+  rewrite <-Rminus_0_r.
+  unfold Rminus. apply Rplus_le_compat_l.
+  apply Ropp_le_contravar.
+  rewrite Rsqr_pow2. apply pow2_ge_0.
+Qed.
+
+
 Definition summand_bound W := fun (s : M.(state)) a => let (ls,_) := fs M in
                       (Max_{ ls}(fun a0 : state M => Rabs ((fun _ : state M => act_expt_reward s a) a0)) +
      (Max_{ ls} (fun a0 : state M => Rabs ((fun a1 : state M => γ * (Max_{ act_list a1}(fun a2 : act M a1 => W (existT (act M) a1 a2)))) a0))))².
@@ -360,6 +370,138 @@ Proof.
     split; trivial.
 Qed.
 
+Local Instance EqDecsigT : EqDec (sigT M.(act)) eq.
+Proof.
+  intros x y.
+  apply ClassicalDescription.excluded_middle_informative.
+Qed.
 
+Definition bellmanQ' (sa0 : sigT M.(act)) : Rfct(sigT M.(act)) -> M.(state) -> Rfct(sigT M.(act))
+  := fun W => fun s' sa => if (sa == sa0) then
+                       let (s,a) := sa in
+                       reward s a s' + γ*Max_{act_list s'}(fun a => W (existT _ s' a))
+                       else W sa.
+
+Definition bellmanQbar' (sa0 : sigT M.(act)) : Rfct (sigT M.(act)) -> Rfct (sigT M.(act))
+  := fun W => fun sa => if (sa == sa0) then
+                  let (s,a) := sa in
+                  act_expt_reward s a +
+                  γ*expt_value (t s a)(fun s' => Max_{act_list s'}(fun a => W (existT _ s' a)))
+                  else let (s,a) := sa in W (existT _ s a).
+
+(* This is w. *)
+Definition stochasticBellmanQ' (sa0 : sigT M.(act)) :=
+  fun W => fun s' sa => (bellmanQ' sa0 W s' sa - bellmanQbar' sa0 W sa).
+
+(* Lemma 12 *)
+Theorem expt_value_stochasticBellmanQ' W :
+  forall (sa sa0 : sigT M.(act)),
+    let (s,a) := sa in
+    expt_value (t s a) (fun s' => stochasticBellmanQ' sa0 W s' sa) = 0.
+Proof.
+  intros.
+  destruct sa.
+  unfold stochasticBellmanQ'.
+  rewrite expt_value_sub.
+  rewrite expt_value_const.
+  unfold bellmanQbar', bellmanQ'.
+  match_destr.
+  + rewrite expt_value_add.
+    rewrite expt_value_const_mul. unfold act_expt_reward. lra.
+  + rewrite expt_value_const; lra.
+Qed.
+
+ Theorem expt_value_bellmanQbar sa0 W :
+   forall sa : sigT M.(act), let (s,a) := sa in
+                        expt_value (t s a) (fun a0 : state M => bellmanQ' sa0 W a0 (existT (act M) s a)) =
+  (bellmanQbar' sa0 W (existT (act M) s a)).
+ Proof.
+   intros [s a].
+   unfold bellmanQbar'.
+   unfold bellmanQ'.
+   match_destr.
+   + now rewrite expt_value_add, expt_value_const_mul.
+   + now rewrite expt_value_const.
+ Qed.
+
+Theorem expt_value_rsqr_stochasticBellmanQ' W :
+  forall (sa sa0 : sigT M.(act)),
+    let (s,a) := sa in
+    expt_value (t s a) (fun s' => (stochasticBellmanQ' sa0 W s' sa)²) =
+    expt_value (t s a) (fun s' => (bellmanQ' sa0 W s' sa)²) - (bellmanQbar' sa0 W sa)².
+Proof.
+  intros [s a] sa0.
+  unfold stochasticBellmanQ'.
+  setoid_rewrite Rsqr_minus.
+  rewrite expt_value_sub.
+  rewrite expt_value_add.
+  rewrite expt_value_const.
+  setoid_rewrite Rmult_assoc.
+  rewrite expt_value_const_mul.
+  setoid_rewrite Rmult_comm at 4.
+  rewrite expt_value_const_mul.
+  rewrite (expt_value_bellmanQbar sa0 W (existT _ s a)).
+  rewrite <-Rmult_assoc. unfold Rsqr. ring.
+Qed.
+
+Definition summand_bound' W := fun (s : M.(state)) a => let (ls,_) := fs M in
+(Max_{ ls}(fun a0 : state M => Rabs ((fun _ : state M => act_expt_reward s a) a0)) +
+ (Max_{ ls} (fun a0 : state M =>
+  Rabs ((fun a1 : state M => γ *
+  (Max_{ act_list a1}(fun a2 : act M a1 => W (existT (act M) a1 a2)))) a0))))².
+
+Lemma Rmax_list_const {A : Type} (r : R) (l : list A):
+  [] <> l -> Max_{l}(fun _ => r) = r.
+Proof.
+  intros Hl.
+  symmetry.
+  apply Rle_antisym.
+  + apply Rmax_spec.
+    rewrite in_map_iff.
+    rewrite not_nil_exists in Hl.
+    destruct Hl as [a Ha].
+    exists a. split; trivial.
+  + rewrite Rmax_list_le_iff.
+    -- intros a Ha.
+       rewrite in_map_iff in Ha.
+       destruct Ha as [b [? ?]].
+       subst; lra.
+    -- now rewrite map_not_nil.
+Qed.
+
+Theorem noise_variance_bound' (sa0 : sigT M.(act)) W :
+  forall sa : sigT M.(act), let (s,a) := sa in
+                       let (ls,_) := fs M in
+                       variance (t s a) (fun s' => stochasticBellmanQ' sa0 W s' sa) <=
+                       (Max_{ ls}(fun a0 : state M => Rabs (reward s a a0)) +
+                        γ*(Max_{ ls} (fun a0 : state M => Rabs (Max_{ act_list a0}(fun a1 : act M a0 => W (existT (act M) a0 a1))))))².
+Proof.
+  intros [s a].
+  generalize (summand_bounded W s a); intros.
+  generalize (expt_value_le_max (fs M) (t s a)); intros.
+  destruct (fs M) as [ls ?].
+  assert (Hls: [] <> ls) by (apply not_nil_exists; exists (ne M); trivial).
+  assert (Hγ1 : Rabs (γ) = γ) by (apply Rabs_pos_eq; lra).
+  assert (Hγ2 : 0 <= Rabs γ) by (apply Rabs_pos).
+  rewrite variance_eq.
+  rewrite (expt_value_rsqr_stochasticBellmanQ' W (existT _ s a) sa0).
+  unfold stochasticBellmanQ'. rewrite expt_value_sub.
+  rewrite expt_value_const. rewrite Rsqr_minus at 1.
+  rewrite (expt_value_bellmanQbar sa0 W (existT _ s a)).
+  rewrite Rsqr_pow2. ring_simplify.
+  rewrite <-Rsqr_pow2.
+  eapply Rle_trans; try apply minus_Rsqr_le.
+  eapply Rle_trans; try apply H0.
+  eapply Rle_trans; try (eapply (Rmax_list_Rsqr_Rabs_1) ; trivial).
+  eapply Rle_trans; try (eapply (Rmax_list_Rsqr_Rabs_2) ; trivial).
+  unfold bellmanQ'; match_destr.
+  + eapply Rle_trans; try (eapply (Rmax_list_Rsqr_Rabs_3) ; trivial).
+    setoid_rewrite Rabs_mult.
+    rewrite Rmax_list_map_const_mul; trivial.
+    rewrite Hγ1. now right.
+  + rewrite Rmax_list_const; trivial.
+    rewrite <-(Rplus_0_l (Rabs(W(existT _ s a)))).
+    rewrite <-(Rmult_1_l (Rabs(W(existT _ s a)))).
+Admitted.
 
 End bellmanQ.
