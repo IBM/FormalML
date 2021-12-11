@@ -444,12 +444,6 @@ Proof.
   rewrite <-Rmult_assoc. unfold Rsqr. ring.
 Qed.
 
-Definition summand_bound' W := fun (s : M.(state)) a => let (ls,_) := fs M in
-(Max_{ ls}(fun a0 : state M => Rabs ((fun _ : state M => act_expt_reward s a) a0)) +
- (Max_{ ls} (fun a0 : state M =>
-  Rabs ((fun a1 : state M => γ *
-  (Max_{ act_list a1}(fun a2 : act M a1 => W (existT (act M) a1 a2)))) a0))))².
-
 Lemma Rmax_list_const {A : Type} (r : R) (l : list A):
   [] <> l -> Max_{l}(fun _ => r) = r.
 Proof.
@@ -469,6 +463,7 @@ Proof.
     -- now rewrite map_not_nil.
 Qed.
 
+(* Lemma 13. *)
 Theorem noise_variance_bound' (sa0 : sigT M.(act)) W :
   forall sa : sigT M.(act), let (s,a) := sa in
                        let (ls,_) := fs M in
@@ -477,12 +472,12 @@ Theorem noise_variance_bound' (sa0 : sigT M.(act)) W :
                         γ*(Max_{ ls} (fun a0 : state M => Rabs (Max_{ act_list a0}(fun a1 : act M a0 => W (existT (act M) a0 a1))))))².
 Proof.
   intros [s a].
-  generalize (summand_bounded W s a); intros.
   generalize (expt_value_le_max (fs M) (t s a)); intros.
   destruct (fs M) as [ls ?].
   assert (Hls: [] <> ls) by (apply not_nil_exists; exists (ne M); trivial).
   assert (Hγ1 : Rabs (γ) = γ) by (apply Rabs_pos_eq; lra).
   assert (Hγ2 : 0 <= Rabs γ) by (apply Rabs_pos).
+  destruct (existT _ s a == sa0).
   rewrite variance_eq.
   rewrite (expt_value_rsqr_stochasticBellmanQ' W (existT _ s a) sa0).
   unfold stochasticBellmanQ'. rewrite expt_value_sub.
@@ -491,7 +486,7 @@ Proof.
   rewrite Rsqr_pow2. ring_simplify.
   rewrite <-Rsqr_pow2.
   eapply Rle_trans; try apply minus_Rsqr_le.
-  eapply Rle_trans; try apply H0.
+  eapply Rle_trans; try apply H.
   eapply Rle_trans; try (eapply (Rmax_list_Rsqr_Rabs_1) ; trivial).
   eapply Rle_trans; try (eapply (Rmax_list_Rsqr_Rabs_2) ; trivial).
   unfold bellmanQ'; match_destr.
@@ -499,9 +494,14 @@ Proof.
     setoid_rewrite Rabs_mult.
     rewrite Rmax_list_map_const_mul; trivial.
     rewrite Hγ1. now right.
-  + rewrite Rmax_list_const; trivial.
-    rewrite <-(Rplus_0_l (Rabs(W(existT _ s a)))).
-    rewrite <-(Rmult_1_l (Rabs(W(existT _ s a)))).
-Admitted.
+  + intuition.
+  + rewrite variance_eq.
+    unfold stochasticBellmanQ', bellmanQ', bellmanQbar'.
+    match_destr. intuition.
+    do 2 rewrite expt_value_const.
+    rewrite Rminus_eq_0.
+    rewrite Rsqr_pow2. apply pow2_ge_0.
+Qed.
+
 
 End bellmanQ.
