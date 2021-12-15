@@ -785,6 +785,24 @@ Section util.
         rewrite nth_overflow; trivial.
         lia.
   Qed.
+
+    Global Instance list_Rbar_sum_monotone : Proper (Forall2 Rbar_le ==> Rbar_le) list_Rbar_sum.
+  Proof.
+    intros ???.
+    induction H; simpl.
+    - reflexivity.
+    - now apply Rbar_plus_le_compat.
+  Qed.
+    
+  Global Instance sum_Rbar_n_monotone : Proper (pointwise_relation _ Rbar_le ==> eq ==> Rbar_le) sum_Rbar_n.
+  Proof.
+    intros ??????; subst.
+    apply list_Rbar_sum_monotone.
+    apply Forall2_map_f.
+    apply Forall2_refl_in.
+    apply Forall_forall; intros.
+    apply H.
+  Qed.
   
   Lemma pre_list_union_map_none {A B} (l:list A) :
     pre_event_equiv (pre_list_union (map (fun _  => pre_event_none) l)) (@pre_event_none B).
@@ -794,7 +812,7 @@ Section util.
     - now rewrite pre_list_union_cons, IHl, pre_event_union_false_l.
   Qed.
 
-    Global Instance pre_list_union_sub_proper {A} :
+  Global Instance pre_list_union_sub_proper {A} :
     Proper (Forall2 pre_event_sub ==> pre_event_sub) (@pre_list_union A).
   Proof.
     intros ????[?[??]].
@@ -984,6 +1002,19 @@ Section measure.
       apply Rbar_plus_le_compat; try reflexivity.
       apply measure_nneg.
     - firstorder.
+  Qed.
+
+  Lemma measure_countable_sub_union (μ:event σ -> Rbar) {μ_meas:is_measure μ} (B:nat->event σ) :
+    Rbar_le (μ (union_of_collection B)) (ELim_seq (fun i : nat => sum_Rbar_n (fun n : nat => μ (B n)) i)).
+  Proof.
+    rewrite make_collection_disjoint_union.
+    rewrite measure_countable_disjoint_union.
+    - intros.
+      apply ELim_seq_le; intros.
+      apply sum_Rbar_n_monotone; trivial; intros ?.
+      apply measure_monotone; trivial.
+      apply make_collection_disjoint_sub.
+    - apply make_collection_disjoint_disjoint.
   Qed.
   
   Lemma measure_all_one_ps_le1 (μ:event σ -> Rbar) {μ_meas:is_measure μ}
@@ -1715,24 +1746,6 @@ Section omf.
     apply sum_Rbar_n_nneg_nneg; intros.
     apply measure_nneg.
   Qed.
-
-  Global Instance list_Rbar_sum_monotone : Proper (Forall2 Rbar_le ==> Rbar_le) list_Rbar_sum.
-  Proof.
-    intros ???.
-    induction H; simpl.
-    - reflexivity.
-    - now apply Rbar_plus_le_compat.
-  Qed.
-    
-  Global Instance sum_Rbar_n_monotone : Proper (pointwise_relation _ Rbar_le ==> eq ==> Rbar_le) sum_Rbar_n.
-  Proof.
-    intros ??????; subst.
-    apply list_Rbar_sum_monotone.
-    apply Forall2_map_f.
-    apply Forall2_refl_in.
-    apply Forall_forall; intros.
-    apply H.
-  Qed.
   
   Global Instance outer_μ_of_covers_monotone : Proper (pointwise_relation _ event_sub ==> Rbar_le) outer_μ_of_covers.
   Proof.
@@ -1947,7 +1960,36 @@ Section omf.
     - intros HH; rewrite HH in nneg; simpl in nneg; contradiction.
   Qed.
 
-  
-  
-  
+  Lemma outer_μ_μ (A:event σ) : outer_μ A = μ A.
+  Proof.
+    unfold outer_μ.
+    unfold Glb_Rbar, proj1_sig; match_destr.
+    destruct i as [lb glb].
+    unfold is_lb_Rbar in *.
+    apply antisymmetry.
+    - case_eq (μ A); simpl.
+      + intros.
+        apply lb.
+        exists (list_collection [A] ∅).
+        split.
+        * intros ??.
+          now (exists 0%nat; simpl).
+        * unfold outer_μ_of_covers.
+          unfold list_collection.
+          rewrite seq_sum_list_sum.
+          -- simpl.
+             now rewrite Rbar_plus_0_r.
+          -- apply measure_none.
+      + intros; now destruct x.
+      + intros.
+        generalize (measure_nneg A); rewrite H.
+        now destruct x.
+    - apply glb; intros ? [? [??]].
+      rewrite H0.
+      unfold outer_μ_of_covers.
+      transitivity (μ (union_of_collection x1)).
+      + now apply measure_monotone.
+      + now apply measure_countable_sub_union.
+  Qed.
+
 End omf.
