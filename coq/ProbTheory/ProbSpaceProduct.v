@@ -114,55 +114,6 @@ Qed.
 
 End pre_make_disjoint.
 
-Section demorgan.
-    Context {T:Type}.
-
-    Lemma pre_event_complement_union (E1 E2:pre_event T) :
-      pre_event_equiv (pre_event_complement (pre_event_union E1 E2))
-                      (pre_event_inter (pre_event_complement E1) (pre_event_complement E2)).
-    Proof.
-    red; intros.
-    split; intros.
-    - now apply not_or_and.
-    - now apply and_not_or.
-  Qed.
-
-    Lemma pre_event_complement_inter (E1 E2:pre_event T) :
-      pre_event_equiv (pre_event_complement (pre_event_inter E1 E2))
-                      (pre_event_union (pre_event_complement E1) (pre_event_complement E2)).
-    Proof.
-    red; intros.
-    split; intros.
-    - now apply not_and_or.
-    - now apply or_not_and.
-  Qed.
-
-  Lemma pre_event_complement_union_of_collection (E : nat -> pre_event T) :
-    pre_event_equiv (pre_event_complement (pre_union_of_collection E))
-                    (pre_inter_of_collection (fun n => pre_event_complement (E n))).
-  Proof.
-    intros ?.
-    unfold pre_event_complement, pre_inter_of_collection, pre_union_of_collection.
-    firstorder.
-  Qed.
-
-    Lemma pre_event_inter_diff' (a b c:pre_event T) :
-      pre_event_equiv (pre_event_inter a (pre_event_diff b c))
-                      (pre_event_diff (pre_event_inter a b) (pre_event_inter a c)).
-    Proof.
-      firstorder.
-    Qed.
-
-    Lemma pre_event_inter_diff (a b c:pre_event T) :
-      pre_event_equiv (pre_event_inter a (pre_event_diff b c))
-                      (pre_event_diff (pre_event_inter a b) c).
-    Proof.
-      repeat rewrite pre_event_diff_derived.
-      now rewrite <- pre_event_inter_assoc.
-    Qed.
-
-End demorgan.
-
 Section dynkin.
 
   Context {T:Type}.
@@ -597,7 +548,7 @@ Section util.
   Local Existing Instance Rbar_le_pre.
   Local Existing Instance Rbar_le_part.
 
-    Definition list_Rbar_sum (l : list Rbar) : Rbar
+  Definition list_Rbar_sum (l : list Rbar) : Rbar
     := fold_right Rbar_plus (Finite 0) l.
                
   Lemma list_Rbar_sum_const_mulR {A : Type} f (l : list A) :
@@ -646,7 +597,147 @@ Section util.
     reflexivity.
   Qed.
 
-    Lemma map_const_repeat {A B} (c:A) (l:list B) : map (fun _ => c) l = repeat c (length l).
+  Lemma list_Rbar_sum_nneg_nneg (l:list Rbar) :
+    (forall x, In x l -> Rbar_le 0 x) ->
+    Rbar_le 0 (list_Rbar_sum l).
+  Proof.
+    intros.
+    induction l; [reflexivity |].
+    simpl list_Rbar_sum.
+    apply Rbar_plus_nneg_compat.
+    - apply H; simpl; tauto.
+    - apply IHl; intros.
+      apply H; simpl; tauto.
+  Qed.
+
+  Lemma sum_Rbar_n_nneg_nneg (f : nat -> Rbar) n :
+    (forall i : nat, (i <= n)%nat -> Rbar_le 0 (f i)) ->
+    Rbar_le 0 (sum_Rbar_n f n).
+  Proof.
+    intros.
+    apply list_Rbar_sum_nneg_nneg; intros.
+    apply in_map_iff in H0.
+    destruct H0 as [? [??]]; subst.
+    apply in_seq in H1.
+    apply H; lia.
+  Qed.
+
+  Lemma nneg_fold_right_Rbar_plus_nneg l :
+        Forall (Rbar_le 0) l ->
+        Rbar_le 0 (fold_right Rbar_plus 0 l).
+  Proof.
+    induction l.
+    - simpl; reflexivity.
+    -  simpl map; simpl fold_right.
+       intros HH; invcs HH.
+       apply Rbar_plus_nneg_compat; auto.
+  Qed.
+
+  Lemma list_Rbar_sum_nneg_perm (l1 l2:list Rbar) :
+    Forall (Rbar_le 0) l1 ->
+    Forall (Rbar_le 0) l2 ->
+    Permutation l1 l2 ->
+    list_Rbar_sum l1 = list_Rbar_sum l2.
+  Proof.
+    intros.
+    unfold list_Rbar_sum.
+    induction H1; simpl; trivial.
+    - invcs H; invcs H0; now rewrite IHPermutation.
+    - invcs H; invcs H0; invcs H4; invcs H5.
+      repeat rewrite <- Rbar_plus_assoc
+      ; try apply ex_Rbar_plus_pos; trivial
+      ; try apply nneg_fold_right_Rbar_plus_nneg
+      ; trivial.
+      f_equal.
+      now rewrite Rbar_plus_comm.
+    - assert (Forall (Rbar_le 0) l')
+        by now rewrite <- H1_.
+      now rewrite IHPermutation1, IHPermutation2.
+  Qed.
+
+  Lemma nneg_fold_right_Rbar_plus_acc l acc :
+    Rbar_le 0 acc ->
+    Forall (Rbar_le 0) l ->    
+    fold_right Rbar_plus acc l = Rbar_plus acc (fold_right Rbar_plus (Finite 0) l).
+  Proof.
+    intros pos1 pos2; revert pos1.
+    induction pos2; intros.
+    - now rewrite Rbar_plus_0_r.
+    - simpl.
+      rewrite IHpos2; trivial.
+      repeat rewrite <- Rbar_plus_assoc_nneg; trivial
+      ; try now apply nneg_fold_right_Rbar_plus_nneg.
+      f_equal.
+      apply Rbar_plus_comm.
+  Qed.
+
+  Lemma list_Rbar_sum_nneg_plus (l1 l2 : list Rbar) :
+    Forall (Rbar_le 0) l1 ->
+    Forall (Rbar_le 0) l2 ->
+    list_Rbar_sum (l1 ++ l2) =
+      Rbar_plus (list_Rbar_sum l1) (list_Rbar_sum l2).
+  Proof.
+    intros.
+    unfold list_Rbar_sum.
+    rewrite fold_right_app.
+    rewrite nneg_fold_right_Rbar_plus_acc; trivial
+    ; try now apply nneg_fold_right_Rbar_plus_nneg.
+    now rewrite Rbar_plus_comm.
+  Qed.    
+
+  Lemma sum_Rbar_n_nneg_plus (f g:nat->Rbar) (n:nat) :
+    (forall x, (x < n)%nat -> Rbar_le 0 (f x)) ->
+    (forall x, (x < n)%nat -> Rbar_le 0 (g x)) ->
+      sum_Rbar_n (fun x => Rbar_plus (f x) (g x)) n =
+        Rbar_plus (sum_Rbar_n f n) (sum_Rbar_n g n).
+  Proof.
+    unfold sum_Rbar_n; intros.
+    induction n; [simpl; f_equal; lra | ].
+    rewrite seq_Sn.
+    rewrite plus_0_l.
+
+    repeat rewrite map_app.
+    repeat rewrite list_Rbar_sum_nneg_plus; simpl
+    ; try solve [apply Forall_forall; intros ? HH
+                 ; apply in_map_iff in HH
+                 ; destruct HH as [? [? HH]]; subst
+                 ; apply in_seq in HH
+                 ; try apply Rbar_plus_nneg_compat
+                 ; try (apply H || apply H0); lia
+                |
+                  repeat constructor
+                  ; try apply Rbar_plus_nneg_compat
+                  ; try (apply H || apply H0); lia].
+    rewrite IHn
+    ; intros; try solve [(apply H || apply H0); lia].
+    repeat rewrite Rbar_plus_0_r.
+    repeat rewrite <- Rbar_plus_assoc_nneg
+    ; trivial
+    ; try apply Rbar_plus_nneg_compat
+    ; (try solve [
+            try (apply list_Rbar_sum_nneg_nneg
+                 ; intros ? HH
+                 ; apply in_map_iff in HH
+                 ; destruct HH as [? [? HH]]; subst
+                 ; apply in_seq in HH)
+            ; try (apply H || apply H0); lia]).
+    f_equal.
+    repeat rewrite Rbar_plus_assoc_nneg
+    ; trivial
+    ; (try solve [
+            try (apply list_Rbar_sum_nneg_nneg
+                 ; intros ? HH
+                 ; apply in_map_iff in HH
+                 ; destruct HH as [? [? HH]]; subst
+                 ; apply in_seq in HH)
+            ; try (apply H || apply H0); lia]).
+    f_equal.
+    apply Rbar_plus_comm.
+  Qed.      
+    
+
+  
+  Lemma map_const_repeat {A B} (c:A) (l:list B) : map (fun _ => c) l = repeat c (length l).
   Proof.
     induction l; simpl; congruence.
   Qed.
@@ -1168,10 +1259,10 @@ Section outer_measure.
         (μ:pre_event T -> Rbar) {μ_outer:is_outer_measure μ} l :
     Rbar_le 0 (fold_right Rbar_plus 0 (map μ l)).
   Proof.
-    induction l.
-    - simpl; reflexivity.
-    -  simpl map; simpl fold_right.
-      auto with prob.
+    apply nneg_fold_right_Rbar_plus_nneg.
+    apply Forall_map.
+    apply Forall_forall; intros.
+    auto with prob.
   Qed.
   
   Lemma list_Rbar_sum_measure_perm (μ:pre_event T -> Rbar) {μ_outer:is_outer_measure μ} {l1 l2} :
@@ -1179,17 +1270,9 @@ Section outer_measure.
     list_Rbar_sum (map μ l1) = list_Rbar_sum (map μ l2).
   Proof.
     intros.
-    unfold list_Rbar_sum.
-    induction H; simpl; trivial.
-    - now rewrite IHPermutation.
-    - repeat rewrite <- Rbar_plus_assoc
-      ; try apply ex_Rbar_plus_pos
-      ; try apply outer_measure_nneg
-      ; try apply measure_fold_right_Rbar_plus_nneg
-      ; trivial.
-      f_equal.
-      now rewrite Rbar_plus_comm.
-    - now rewrite IHPermutation1.
+    apply list_Rbar_sum_nneg_perm
+    ; try solve [ apply Forall_map; apply Forall_forall; intros; auto with prob].
+    now apply Permutation_map.
   Qed.
 
   (* Note that A does not need to be measurable *)
@@ -1578,3 +1661,293 @@ Section outer_measure.
   Qed.
   
 End outer_measure.
+
+Section omf.
+  Local Existing Instance Rbar_le_pre.
+  Local Existing Instance Rbar_le_part.
+
+
+  Context {T:Type}.
+  Context {σ:SigmaAlgebra T}.
+  Context (μ:event σ -> Rbar).
+  Context {μ_meas:is_measure μ}.
+
+  (* hm, this is not quite right for measures can be infinite, since Glb_Rbar
+     does not range over them.  If all covers are infinite, then I think this would be wrong.
+     This should not cause a problem for our uses.
+   *)
+
+  Definition outer_μ_of_covers (an:nat->event σ) : Rbar :=
+    ELim_seq (fun i : nat => sum_Rbar_n (fun n : nat => μ (an n)) i).
+  
+  Definition outer_μ (A:pre_event T) : Rbar
+    := Glb_Rbar (fun (x : R) =>
+                   exists (an:nat->event σ),
+                     pre_event_sub A (union_of_collection an) /\
+                     Finite x = outer_μ_of_covers an).
+
+  Lemma ELim_seq_pos (f : nat -> Rbar) :
+    (forall n, Rbar_le 0 (f n)) ->
+    Rbar_le 0 (ELim_seq f).
+  Proof.
+    intros.
+    generalize (ELim_seq_le (fun _ => 0) f); intros.
+    rewrite ELim_seq_const in H0.
+    now apply H0.
+  Qed.
+
+  Lemma outer_μ_nneg (A:pre_event T) 
+    : Rbar_le 0 (outer_μ A).
+  Proof.
+    unfold outer_μ.
+    unfold Glb_Rbar, proj1_sig; match_destr; destruct i as [lb glb].
+    apply glb; intros ?[?[??]]; subst.
+    rewrite H0.
+    apply ELim_seq_pos; intros.
+    apply sum_Rbar_n_nneg_nneg; intros.
+    apply measure_nneg.
+  Qed.
+
+  Lemma outer_μ_of_covers_nneg (an:nat->event σ) :
+    Rbar_le 0 (outer_μ_of_covers an).
+  Proof.
+    apply ELim_seq_pos; intros.
+    apply sum_Rbar_n_nneg_nneg; intros.
+    apply measure_nneg.
+  Qed.
+
+  Global Instance list_Rbar_sum_monotone : Proper (Forall2 Rbar_le ==> Rbar_le) list_Rbar_sum.
+  Proof.
+    intros ???.
+    induction H; simpl.
+    - reflexivity.
+    - now apply Rbar_plus_le_compat.
+  Qed.
+    
+  Global Instance sum_Rbar_n_monotone : Proper (pointwise_relation _ Rbar_le ==> eq ==> Rbar_le) sum_Rbar_n.
+  Proof.
+    intros ??????; subst.
+    apply list_Rbar_sum_monotone.
+    apply Forall2_map_f.
+    apply Forall2_refl_in.
+    apply Forall_forall; intros.
+    apply H.
+  Qed.
+  
+  Global Instance outer_μ_of_covers_monotone : Proper (pointwise_relation _ event_sub ==> Rbar_le) outer_μ_of_covers.
+  Proof.
+    intros ???.
+    apply ELim_seq_le; intros.
+    apply sum_Rbar_n_monotone; trivial.
+    intros ?.
+    now apply measure_monotone.
+  Qed.
+
+  Global Instance outer_μ_outer_measure : is_outer_measure outer_μ.
+  Proof.
+    unfold outer_μ, outer_μ_of_covers.
+    apply is_outer_measure_alt_iff.
+    constructor.
+    - apply antisymmetry; try apply outer_μ_nneg.
+      unfold Glb_Rbar, proj1_sig; match_destr; destruct i as [lb glb].
+      apply lb.
+      exists (fun _ => event_none).
+      split.
+      + firstorder.
+      + rewrite <- (ELim_seq_const 0).
+        apply ELim_seq_ext; intros.
+        unfold sum_Rbar_n.
+        induction (seq 0 n); simpl; trivial.
+        rewrite IHl, measure_none; simpl.
+        now rewrite Rbar_plus_0_l.
+    - intros.
+      apply outer_μ_nneg.
+    - intros ???.
+      eapply is_glb_Rbar_subset
+      ; [| apply Glb_Rbar_correct..]
+      ; simpl.
+      intros ? [? [??]].
+      exists x1.
+      split; trivial.
+      now rewrite H.
+    - intros B.
+      unfold Glb_Rbar, proj1_sig; match_destr; destruct i as [lb glb].
+      unfold is_lb_Rbar in *.
+      assert (lim_sum_nneg:Rbar_le 0 (ELim_seq
+       (fun i : nat =>
+        sum_Rbar_n
+          (fun n : nat =>
+           match
+             ex_glb_Rbar
+               (fun x0 : R =>
+                @ex (forall _ : nat, @event T σ)
+                  (fun an : forall _ : nat, @event T σ =>
+                   and (@pre_event_sub T (B n) (@event_pre T σ (@union_of_collection T σ an)))
+                     (@eq Rbar (Finite x0)
+                        (ELim_seq (fun i0 : nat => sum_Rbar_n (fun n0 : nat => μ (an n0)) i0)))))
+             return Rbar
+           with
+           | @exist _ _ a _ => a
+           end) i))).
+      {
+        apply ELim_seq_pos; intros.
+        apply sum_Rbar_n_nneg_nneg; intros k klt.
+        match_destr; destruct i as [lb2 glb2].
+        apply glb2.
+        intros ? [?[??]]; subst.
+        rewrite H0.
+        apply outer_μ_of_covers_nneg.
+      }
+      case_eq ((ELim_seq
+       (fun i : nat =>
+        sum_Rbar_n
+          (fun n : nat =>
+           match
+             ex_glb_Rbar
+               (fun x0 : R =>
+                @ex (forall _ : nat, @event T σ)
+                  (fun an : forall _ : nat, @event T σ =>
+                   and (@pre_event_sub T (B n) (@event_pre T σ (@union_of_collection T σ an)))
+                     (@eq Rbar (Finite x0)
+                        (ELim_seq (fun i0 : nat => sum_Rbar_n (fun n0 : nat => μ (an n0)) i0)))))
+             return Rbar
+           with
+           | @exist _ _ a _ => a
+           end) i))); intros.
+      + (* finite *)
+        apply lb.
+        clear x lb glb.
+        match type of H with
+        | ELim_seq ?x = _  => generalize (ELim_seq_correct x)
+        end
+        ; rewrite H
+        ; intros HH.
+        cut_to HH.
+        * {
+          clear H.
+          apply is_Elim_seq_spec in HH.
+          simpl in HH.
+          (*cut (forall (ϵ:posreal),
+                exists an : nat -> event σ,
+                  pre_event_sub (pre_union_of_collection B) (union_of_collection an) /\
+                    r ELim_seq (fun i : nat => sum_Rbar_n (fun n : nat => μ (an n)) i)
+
+
+          
+          assert (forall n, exists (cn : nat -> event σ),
+                     pre_event_sub an (union_of_collection cn) /\
+                       outer_μ_of_covers cn = ).
+
+                     
+          
+          
+          
+          (fun n0 : nat =>
+                      let (a, _) :=
+                        ex_glb_Rbar
+                          (fun x0 : R =>
+                           exists an : nat -> event σ,
+                             pre_event_sub (B n0) (fun t : T => exists n1 : nat, proj1_sig (an n1) t) /\
+                             x0 = ELim_seq (fun i0 : nat => sum_Rbar_n (fun n1 : nat => μ (an n1)) i0)) in
+                      a)
+           *)
+          admit.
+          }
+        * apply ex_Elim_seq_incr; intros.
+          apply sum_Rbar_n_pos_incr; intros.
+          match_destr.
+          destruct i0 as [lb0 glb0].
+          apply glb0; intros ? [?[??]].
+          rewrite H1.
+          apply  outer_μ_of_covers_nneg.
+      + (* p_infty *)
+        now destruct x; simpl.
+      + rewrite H in lim_sum_nneg.
+        destruct x; simpl in lim_sum_nneg; contradiction.
+  Admitted.
+  
+  Lemma outer_μ_is_measurable (A:event σ) : μ_measurable outer_μ A.
+  Proof.
+    apply μ_measurable_simpl; intros B.
+    unfold outer_μ.
+    unfold Glb_Rbar, proj1_sig.
+    repeat match_destr.
+    destruct i as [lb1 glb1].    
+    destruct i0 as [lb2 glb2].
+    destruct i1 as [lb0 glb0].
+    apply glb0; intros ? [?[??]].
+    rewrite H0; clear x2 H0.
+    unfold is_lb_Rbar in *.
+    assert (nneg:Rbar_le 0 (outer_μ_of_covers x3)).
+    {
+      apply outer_μ_of_covers_nneg.
+    } 
+    case_eq (outer_μ_of_covers x3); simpl.
+    - (* finite *)
+      intros ? eqq1.
+      assert (isf1:is_finite (outer_μ_of_covers (fun n : nat => x3 n ∩ A))).
+      {
+        eapply (bounded_is_finite 0 r); simpl.
+        + apply outer_μ_of_covers_nneg.
+        + rewrite <- eqq1.
+          apply outer_μ_of_covers_monotone.
+          intros ?.
+          auto with prob.
+      }
+      specialize (lb1 (outer_μ_of_covers (fun n => event_inter (x3 n) A))).
+      cut_to lb1.
+      + assert (isf2:is_finite (outer_μ_of_covers (fun n : nat => (x3 n) \ A))).
+        {
+          eapply (bounded_is_finite 0 r); simpl.
+          + apply outer_μ_of_covers_nneg.
+          + rewrite <- eqq1.
+            apply outer_μ_of_covers_monotone.
+            intros ?.
+            auto with prob.
+        }
+        specialize (lb2 (outer_μ_of_covers (fun n => event_diff (x3 n) A))).
+        cut_to lb2.
+        * {
+          rewrite isf1 in lb1.
+          rewrite isf2 in lb2.
+          etransitivity.
+          - eapply Rbar_plus_le_compat; try eassumption.
+          - unfold outer_μ_of_covers.
+            rewrite <- ELim_seq_plus.
+            + rewrite <- eqq1.
+              unfold outer_μ_of_covers.
+              apply ELim_seq_le; intros.
+              rewrite <- sum_Rbar_n_nneg_plus by (intros; apply measure_nneg).
+              apply sum_Rbar_n_monotone; trivial; intros ?.
+              rewrite <- measure_disjoint_union; trivial.
+              * apply measure_monotone; trivial.
+                firstorder.
+              * firstorder.
+            + now apply is_measure_ex_Elim_seq.
+            + now apply is_measure_ex_Elim_seq.
+            + apply ex_Rbar_plus_pos
+              ; apply outer_μ_of_covers_nneg.
+        } 
+        * rewrite isf2.
+          eexists; split; try reflexivity.
+          rewrite H.
+          repeat rewrite pre_of_union_of_collection.
+          now rewrite pre_event_countable_union_diff_distr.
+      + rewrite isf1.
+        eexists; split; try reflexivity.
+        rewrite H.
+        repeat rewrite pre_of_union_of_collection.
+        rewrite pre_event_inter_comm.
+        rewrite pre_event_inter_countable_union_distr.
+        apply pre_union_of_collection_sub_proper; intros ?.
+        rewrite pre_event_inter_comm.
+        reflexivity.
+    - intros; simpl.
+      unfold Rbar_le; match_destr.
+    - intros HH; rewrite HH in nneg; simpl in nneg; contradiction.
+  Qed.
+
+  
+  
+  
+End omf.

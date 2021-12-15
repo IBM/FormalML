@@ -517,8 +517,81 @@ Section pre_ev.
     repeat rewrite subs; trivial.
   Qed.  
 
+  Lemma pre_event_complement_union {T:Type} (E1 E2:pre_event T) :
+    pre_event_equiv (pre_event_complement (pre_event_union E1 E2))
+                    (pre_event_inter (pre_event_complement E1) (pre_event_complement E2)).
+  Proof.
+    red; intros.
+    split; intros.
+    - now apply not_or_and.
+    - now apply and_not_or.
+  Qed.
+
+  Lemma pre_event_complement_inter {T:Type} (E1 E2:pre_event T) :
+    pre_event_equiv (pre_event_complement (pre_event_inter E1 E2))
+                    (pre_event_union (pre_event_complement E1) (pre_event_complement E2)).
+  Proof.
+    red; intros.
+    split; intros.
+    - now apply not_and_or.
+    - now apply or_not_and.
+  Qed.
+
+  Lemma pre_event_complement_union_of_collection {T:Type} (E : nat -> pre_event T) :
+    pre_event_equiv (pre_event_complement (pre_union_of_collection E))
+                    (pre_inter_of_collection (fun n => pre_event_complement (E n))).
+  Proof.
+    intros ?.
+    unfold pre_event_complement, pre_inter_of_collection, pre_union_of_collection.
+    firstorder.
+  Qed.
+
+  Lemma pre_event_inter_diff' {T:Type} (a b c:pre_event T) :
+    pre_event_equiv (pre_event_inter a (pre_event_diff b c))
+                    (pre_event_diff (pre_event_inter a b) (pre_event_inter a c)).
+  Proof.
+    firstorder.
+  Qed.
+
+  Lemma pre_event_inter_diff {T:Type} (a b c:pre_event T) :
+    pre_event_equiv (pre_event_inter a (pre_event_diff b c))
+                    (pre_event_diff (pre_event_inter a b) c).
+  Proof.
+    repeat rewrite pre_event_diff_derived.
+    now rewrite <- pre_event_inter_assoc.
+  Qed.
+
   Lemma pre_event_inter_countable_union_distr {T} (A:pre_event T) (coll:nat->pre_event T) :
     A ∩ pre_union_of_collection coll === pre_union_of_collection (fun n => A ∩ (coll n)).
+  Proof.
+    firstorder.
+  Qed.
+
+  Lemma pre_event_inter_countable_inter_distr {T} (A:pre_event T) (coll:nat->pre_event T) :
+    A ∩ pre_inter_of_collection coll === pre_inter_of_collection (fun n => A ∩ (coll n)).
+  Proof.
+    intros ?.
+    split.
+    - intros [??] ?.
+      now split.
+    - intros ?.
+      destruct (H 0%nat) as [??].
+      split; trivial.
+      intros n.
+      now destruct (H n).
+  Qed.
+
+  Lemma pre_event_diff_countable_union_distr {T} (A:pre_event T) (coll:nat->pre_event T) :
+    A \ pre_union_of_collection coll === pre_inter_of_collection (fun n => A \ (coll n)).
+  Proof.
+    rewrite pre_event_diff_derived, pre_event_complement_union_of_collection.
+    rewrite pre_event_inter_countable_inter_distr.
+    apply pre_inter_of_collection_proper; intros ?.
+    now rewrite pre_event_diff_derived.
+  Qed.
+
+  Lemma pre_event_countable_union_diff_distr {T} (A:pre_event T) (coll:nat->pre_event T) :
+    (pre_union_of_collection coll) \ A === pre_union_of_collection (fun n => (coll n) \ A).
   Proof.
     firstorder.
   Qed.
@@ -1573,6 +1646,12 @@ Section event.
     event_equiv (union_of_collection collection) (union_of_collection_pre collection).
   Proof.
     intros ?; reflexivity.
+  Qed.
+
+  Lemma pre_of_union_of_collection (E:nat -> event σ) :
+    pre_event_equiv (event_pre (union_of_collection E)) (pre_union_of_collection (fun n => event_pre (E n))).
+  Proof.
+    reflexivity.
   Qed.
 
   Lemma inter_of_collection_as_pre  (collection: nat -> (event σ)) :
