@@ -29,6 +29,7 @@ UTILS = BasicUtils \
 	Assoc \
 	CoquelicotAdd \
 	ELim_Seq \
+	Elub \
 	ExtrFloatishIEEE \
 	improper_integrals \
 	Isomorphism \
