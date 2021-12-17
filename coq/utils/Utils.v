@@ -12,6 +12,5 @@ Require Export PairEncoding.
 Require Export NumberIso.
 Require Export RealAdd.
 Require Export ELim_Seq.
-Require Export Elub.
 Require Export RiemannAdd.
 Require Export Sums.
