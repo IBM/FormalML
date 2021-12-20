@@ -9,7 +9,7 @@ Require Import Lra Lia.
 Require Import List Permutation.
 Require Import Morphisms EquivDec.
 Require Import Equivalence.
-Require Import Classical ClassicalFacts.
+Require Import Classical ClassicalFacts ClassicalChoice.
 Require Ensembles.
 
 Require Import Utils DVector.
@@ -1693,6 +1693,7 @@ Section outer_measure.
   
 End outer_measure.
 
+
 Section omf.
   Local Existing Instance Rbar_le_pre.
   Local Existing Instance Rbar_le_part.
@@ -1703,19 +1704,14 @@ Section omf.
   Context (μ:event σ -> Rbar).
   Context {μ_meas:is_measure μ}.
 
-  (* hm, this is not quite right for measures can be infinite, since Glb_Rbar
-     does not range over them.  If all covers are infinite, then I think this would be wrong.
-     This should not cause a problem for our uses.
-   *)
-
   Definition outer_μ_of_covers (an:nat->event σ) : Rbar :=
     ELim_seq (fun i : nat => sum_Rbar_n (fun n : nat => μ (an n)) i).
   
   Definition outer_μ (A:pre_event T) : Rbar
-    := Glb_Rbar (fun (x : R) =>
+    := Rbar_glb (fun (x : Rbar) =>
                    exists (an:nat->event σ),
                      pre_event_sub A (union_of_collection an) /\
-                     Finite x = outer_μ_of_covers an).
+                       x = outer_μ_of_covers an).
 
   Lemma ELim_seq_pos (f : nat -> Rbar) :
     (forall n, Rbar_le 0 (f n)) ->
@@ -1731,9 +1727,8 @@ Section omf.
     : Rbar_le 0 (outer_μ A).
   Proof.
     unfold outer_μ.
-    unfold Glb_Rbar, proj1_sig; match_destr; destruct i as [lb glb].
+    unfold Rbar_glb, proj1_sig; match_destr; destruct r as [lb glb].
     apply glb; intros ?[?[??]]; subst.
-    rewrite H0.
     apply ELim_seq_pos; intros.
     apply sum_Rbar_n_nneg_nneg; intros.
     apply measure_nneg.
@@ -1756,13 +1751,345 @@ Section omf.
     now apply measure_monotone.
   Qed.
 
+  Lemma is_finite_dec (a:Rbar) : {is_finite a} + {~ is_finite a}.
+  Proof.
+    unfold is_finite; destruct a; simpl; intuition congruence.
+  Qed.
+
+  (** * Extended Emptiness is decidable *)
+
+  Definition Rbar_Empty (E : Rbar -> Prop) :=
+    Rbar_glb (fun x => x = 0 \/ E x) = Rbar_lub (fun x => x = 0 \/ E x)
+    /\ Rbar_glb (fun x => x = 1 \/ E x) = Rbar_lub (fun x => x = 1 \/ E x).
+
+  Lemma Rbar_Empty_correct_1 (E : Rbar -> Prop) :
+    Rbar_Empty E -> forall x, ~ E x.
+  Proof.
+    intros.
+    unfold Rbar_Empty, Rbar_glb, Rbar_lub, proj1_sig in *.
+    repeat match_destr_in H.
+    destruct H; subst.
+    unfold Rbar_is_glb, Rbar_is_lub in *.
+    intuition.
+    assert (x1 = 0)
+      by (apply Rbar_le_antisym; eauto).
+    assert (x3 = 1)
+      by (apply Rbar_le_antisym; eauto).
+    subst.
+    specialize (H2 x).
+    cut_to H2; [| tauto].
+    specialize (H4 x).
+    cut_to H4; [| tauto].
+    generalize (Rbar_le_trans _ _ _ H4 H2); simpl; lra.
+  Qed.
+
+  Lemma Rbar_Empty_correct_2 (E : Rbar -> Prop) :
+    (forall x, ~ E x) -> Rbar_Empty E.
+  Proof.
+    intros H.
+    unfold Rbar_Empty, Rbar_glb, Rbar_lub, proj1_sig in *.
+    repeat match_destr.
+    unfold Rbar_is_glb, Rbar_is_lub in *.
+    destruct r; destruct r0; destruct r1; destruct r2.
+    assert (x = Finite 0).
+    {
+      apply Rbar_le_antisym; eauto 3.
+      apply H1; intros ?[]; subst; [reflexivity | eelim H; eauto].
+    }
+    assert (x0 = Finite 0).
+    {
+      apply Rbar_le_antisym; eauto 3.
+      apply H3; intros ?[]; subst; [reflexivity | eelim H; eauto].
+    } 
+    assert (x1 = Finite 1).
+    {
+      apply Rbar_le_antisym; eauto 3.
+      apply H5; intros ?[]; subst; [reflexivity | eelim H; eauto].
+    } 
+    assert (x2 = Finite 1).
+    {
+      apply Rbar_le_antisym; eauto 3.
+      apply H7; intros ?[]; subst; [reflexivity | eelim H; eauto].
+    }
+    split; congruence.
+  Qed.
+
+  Lemma Rbar_Empty_dec (E : Rbar -> Prop) :
+    {~Rbar_Empty E}+{Rbar_Empty E}.
+  Proof.
+    unfold Rbar_Empty.
+    destruct (Rbar_eq_dec (Rbar_glb (fun x => x = 0 \/ E x)) (Rbar_lub (fun x => x = 0 \/ E x))).
+    - destruct (Rbar_eq_dec (Rbar_glb (fun x => x = 1 \/ E x)) (Rbar_lub (fun x => x = 1 \/ E x))).
+      + right; tauto.
+      + left; tauto.
+    - left; tauto.
+  Defined.
+
+  Lemma not_Rbar_Empty_dec (E : Rbar -> Prop) : (Decidable.decidable (exists x, E x)) ->
+                                        {(exists x, E x)} + {(forall x, ~ E x)}.
+  Proof.
+    intros.
+    destruct (Rbar_Empty_dec E).
+    - left.
+      destruct H; trivial.
+      contradict n.
+      apply Rbar_Empty_correct_2; intros ??.
+      apply H; eauto.
+    - right; intros.
+      now apply Rbar_Empty_correct_1.
+  Qed.      
+
+  Lemma Rbar_uniqueness_dec P : (exists ! x : Rbar, P x) -> {x : Rbar | P x}.
+  Proof.
+    intros HH.
+    exists (Rbar_lub P).
+    destruct HH as [? [??]].
+    replace (Rbar_lub P) with x; trivial.
+    apply sym_eq, Rbar_is_lub_unique.
+    split.
+    - intros ??.
+      rewrite (H0 _ H1); apply Rbar_le_refl.
+    - firstorder.
+  Qed.
+
+  Lemma Rbar_is_glb_fin_close_classic {E a} (eps:posreal):
+    Rbar_is_glb E (Finite a) -> exists x, E x /\ Rbar_le x (a + eps).
+  Proof.
+    intros HH1.
+    apply NNPP; intros HH2.
+    generalize (not_ex_all_not _ _ HH2); intros HH3.
+    assert (Rbar_is_glb E (Finite (a + eps))).
+    {
+      destruct HH1.
+      split.
+      - intros ??.
+        specialize (H _ H1).
+        specialize (HH3 x).
+        intuition.
+        apply Rbar_not_le_lt in H3.
+        now apply Rbar_lt_le.
+      - intros.
+        eapply Rbar_le_trans; try now eapply H0.
+        simpl.
+        destruct eps; simpl; lra.
+    }
+    apply Rbar_is_glb_unique in HH1.
+    apply Rbar_is_glb_unique in H.
+    rewrite H in HH1.
+    invcs HH1.
+    destruct eps; simpl in *; lra.
+  Qed.
+
+  Lemma Rle_forall_le: forall a b : R, (forall eps : posreal, a <= b + eps) -> a <= b.
+  Proof.
+    intros.
+    apply Rlt_forall_le; intros.
+    specialize (H (pos_div_2 eps)).
+    simpl in H.
+    eapply Rle_lt_trans; try eapply H.
+    destruct eps; simpl.
+    lra.
+  Qed.
+
+  Lemma Rbar_le_forall_Rbar_le: forall a b : Rbar, (forall eps : posreal, Rbar_le a (Rbar_plus b eps)) -> Rbar_le a b.
+  Proof.
+    intros [] []; simpl; intros HH; trivial
+    ; try (apply HH; exact posreal1).
+    now apply Rle_forall_le.
+  Qed.
+
+  Lemma Elim_seq_sum_pos_fin_n_fin f r :
+    (forall n, Rbar_le 0 (f n)) ->
+    ELim_seq
+        (fun i : nat => sum_Rbar_n f i) = Finite r ->
+    forall n, is_finite (f n).
+  Proof.
+    intros.
+    generalize (ELim_seq_pos _ H); intros nneglim.
+    case_eq (f n); intros; simpl; [reflexivity |..].
+    - assert (HH:Rbar_le (ELim_seq (fun _ => sum_Rbar_n f (S n))) (ELim_seq (fun i : nat => sum_Rbar_n f i))).
+      {
+        apply ELim_seq_le_loc.
+        exists (S n); intros.
+        apply (le_ind (S n) (fun x => Rbar_le (sum_Rbar_n f (S n)) (sum_Rbar_n f x))); trivial.
+        - reflexivity.
+        - intros.
+          eapply Rbar_le_trans; try eapply H4.
+          apply sum_Rbar_n_pos_incr; trivial.
+      }
+      rewrite ELim_seq_const in HH.
+      rewrite H0 in HH.
+      
+      unfold sum_Rbar_n in HH.
+      rewrite seq_Sn, map_app in HH; simpl in HH.
+      rewrite H1 in HH.
+      erewrite list_Rbar_sum_nneg_perm in HH
+      ; try eapply Permutation_app_comm.
+      + simpl in HH.
+        unfold Rbar_plus in HH; simpl in HH.
+        assert (Rbar_le 0 (list_Rbar_sum (map f (seq 0 n)))).
+        {
+          apply list_Rbar_sum_nneg_nneg; intros.
+          apply in_map_iff in H2.
+          now destruct H2 as [?[??]]; subst.
+        }
+        destruct (list_Rbar_sum (map f (seq 0 n))); simpl in HH
+        ; try contradiction.
+      + apply Forall_app.
+        * apply Forall_map; apply Forall_forall; intros; trivial.
+        * repeat constructor.
+      + apply Forall_app.
+        * repeat constructor.
+        * apply Forall_map; apply Forall_forall; intros; trivial.
+    - specialize (H n).
+      rewrite H1 in H.
+      simpl in H.
+      contradiction.
+  Qed.
+
+  Lemma Rbar_glb_ge (E:Rbar->Prop) c :
+    (forall x, E x -> Rbar_le c x) ->
+    Rbar_le c (Rbar_glb E).
+  Proof.
+    unfold Rbar_glb, proj1_sig; match_destr; intros.
+    apply r; intros ??.
+    now apply H.
+  Qed.
+
+  Lemma list_Rbar_sum_map_finite (l:list R) : list_Rbar_sum (map Finite l) = list_sum l.
+  Proof.
+    unfold list_Rbar_sum.
+    induction l; simpl; trivial.
+    now rewrite IHl; simpl.
+  Qed.
+
+  Lemma Lim_seq_sum_2n2 : Lim_seq (fun n : nat => list_sum (map (fun x : nat => / 2 ^ x) (seq 0 n))) = 2.
+  Proof.
+    generalize (is_series_geom (1/2))
+    ; intros HH.
+    cut_to HH; [| rewrite Rabs_pos_eq; lra].
+    apply is_series_Reals in HH.
+    apply infinite_sum_is_lim_seq in HH.
+    replace (/ (1 - 1 / 2)) with 2 in HH by lra.
+    apply is_lim_seq_unique in HH.
+    erewrite Lim_seq_ext in HH
+    ; [| intros; rewrite <- sum_f_R0_sum_f_R0'; reflexivity].
+    erewrite Lim_seq_ext in HH
+    ; [| intros; rewrite <- sum_f_R0'_list_sum; reflexivity].
+    rewrite <- Lim_seq_incr_1.
+    rewrite <- HH.
+    apply Lim_seq_ext; intros.
+    f_equal.
+    apply map_ext; intros.
+    replace (1/2) with (/2) by lra.
+    rewrite Rinv_pow; try lra.
+  Qed.
+
+  Lemma Lim_seq_sum_2n : Lim_seq (fun n : nat => list_sum (map (fun x : nat => / 2 ^ (S x)) (seq 0 n))) = 1.
+  Proof.
+    transitivity (Lim_seq (fun n : nat => list_sum (map (fun x : nat => / 2 ^ x) (seq 1 n)))).
+    - apply Lim_seq_ext; intros.
+      now rewrite <- seq_shift, map_map.
+    - generalize (Lim_seq_sum_2n2); intros HH.
+      rewrite <- Lim_seq_incr_1 in HH.
+      erewrite Lim_seq_ext in HH
+      ; [| intros; rewrite <- cons_seq; simpl; reflexivity].
+      rewrite Lim_seq_plus in HH.
+      + rewrite Lim_seq_const in HH.
+        rewrite Rinv_1 in HH.
+        destruct (Lim_seq (fun n : nat => list_sum (map (fun x : nat => / 2 ^ x) (seq 1 n)))); simpl in *
+        ; invcs HH; try lra.
+        f_equal; lra.
+      + apply ex_lim_seq_const.
+      + apply ex_lim_seq_incr; intros.
+        rewrite seq_Sn, map_app, list_sum_cat.
+        simpl.
+        assert (0 < (/ (2 * 2 ^ n))).
+        {
+          intros.
+          apply Rinv_pos.
+          generalize (pow_lt 2 n); lra.
+        }
+        lra.
+      + apply ex_Rbar_plus_pos.
+        * rewrite Lim_seq_const; simpl; lra.
+        * apply Lim_seq_pos; intros.
+          apply list_sum_pos_pos'.
+          apply Forall_map.
+          apply Forall_forall; intros.
+          left.
+          apply Rinv_pos.
+          apply pow_lt; lra.
+  Qed.
+
+  Lemma ELim_seq_sum_2n : ELim_seq (fun n : nat => list_sum (map (fun x : nat => / 2 ^ (S x)) (seq 0 n))) = 1.
+  Proof.
+    rewrite Elim_seq_fin.
+    apply Lim_seq_sum_2n.
+  Qed.
+
+
+  Lemma ELim_seq_Rbar_sum_2n :
+    ELim_seq (sum_Rbar_n (fun x : nat => Finite (/ 2 ^ (S x)))) = 1.
+  Proof.
+    unfold sum_Rbar_n.
+    erewrite ELim_seq_ext
+    ; [| intros ?; rewrite <- map_map; rewrite list_Rbar_sum_map_finite; reflexivity].
+    apply ELim_seq_sum_2n.
+  Qed.
+    
+  Lemma ELim_seq_sum_eps2n f eps :
+    (0 <= eps) ->
+    (forall x, Rbar_le 0 (f x)) ->
+    ELim_seq (fun i => sum_Rbar_n (fun a => Rbar_plus (f a) (eps / 2 ^ (S a))) i) =
+      Rbar_plus (ELim_seq (fun i => sum_Rbar_n f i)) eps.
+  Proof.
+    intros.
+    assert (epsdivpos:forall i, 0 <= (eps / (2 * 2 ^ i))).
+    {
+      intros.
+      apply Rdiv_le_0_compat; trivial.
+      apply Rmult_lt_0_compat; try lra.
+      apply pow_lt; lra.
+    } 
+
+    erewrite ELim_seq_ext
+    ; [| intros; rewrite sum_Rbar_n_nneg_plus; [reflexivity |..]]
+    ; trivial.
+    - rewrite ELim_seq_plus.
+      + f_equal.
+        rewrite (ELim_seq_ext _ (sum_Rbar_n (fun x : nat => Rbar_mult eps (/ 2 ^ (S x))))) by reflexivity.
+        unfold sum_Rbar_n.
+        erewrite ELim_seq_ext
+        ; [| intros; apply list_Rbar_sum_const_mulR].
+        generalize ELim_seq_Rbar_sum_2n.
+        unfold sum_Rbar_n; intros HH.
+        rewrite ELim_seq_scal_l.
+        * rewrite HH.
+          now rewrite Rbar_mult_1_r.
+        * now rewrite HH.
+      + apply ex_Elim_seq_incr; intros.
+        now apply sum_Rbar_n_pos_incr.
+      + apply ex_Elim_seq_incr; intros.
+        apply sum_Rbar_n_pos_incr; intros; simpl; trivial.
+      + apply ex_Rbar_plus_pos
+        ; apply ELim_seq_pos
+        ; intros
+        ; apply sum_Rbar_n_nneg_nneg
+        ; intros
+        ; trivial
+        ; simpl
+        ; trivial.
+    - intros; simpl; trivial.
+  Qed.
+
   Global Instance outer_μ_outer_measure : is_outer_measure outer_μ.
   Proof.
-    unfold outer_μ, outer_μ_of_covers.
+    unfold outer_μ.
     apply is_outer_measure_alt_iff.
     constructor.
     - apply antisymmetry; try apply outer_μ_nneg.
-      unfold Glb_Rbar, proj1_sig; match_destr; destruct i as [lb glb].
+      unfold Rbar_glb, proj1_sig; match_destr; destruct r as [lb glb].
       apply lb.
       exists (fun _ => event_none).
       split.
@@ -1776,118 +2103,143 @@ Section omf.
     - intros.
       apply outer_μ_nneg.
     - intros ???.
-      eapply is_glb_Rbar_subset
-      ; [| apply Glb_Rbar_correct..]
-      ; simpl.
-      intros ? [? [??]].
+      apply Rbar_glb_subset
+      ; intros ? [? [??]].
       exists x1.
       split; trivial.
       now rewrite H.
     - intros B.
-      unfold Glb_Rbar, proj1_sig; match_destr; destruct i as [lb glb].
-      unfold is_lb_Rbar in *.
-      assert (lim_sum_nneg:Rbar_le 0 (ELim_seq
-       (fun i : nat =>
-        sum_Rbar_n
-          (fun n : nat =>
-           match
-             ex_glb_Rbar
-               (fun x0 : R =>
-                @ex (forall _ : nat, @event T σ)
-                  (fun an : forall _ : nat, @event T σ =>
-                   and (@pre_event_sub T (B n) (@event_pre T σ (@union_of_collection T σ an)))
-                     (@eq Rbar (Finite x0)
-                        (ELim_seq (fun i0 : nat => sum_Rbar_n (fun n0 : nat => μ (an n0)) i0)))))
-             return Rbar
-           with
-           | @exist _ _ a _ => a
-           end) i))).
+      assert (lim_seq_nneg:
+               Rbar_le 0
+                       (ELim_seq
+                          (fun i : nat =>
+                             sum_Rbar_n
+                               (fun n : nat =>
+                                  Rbar_glb
+                                    (fun x : Rbar =>
+                                       exists an : nat -> event σ,
+                                         pre_event_sub (B n) (union_of_collection an) /\ x = outer_μ_of_covers an)) i))).
       {
         apply ELim_seq_pos; intros.
         apply sum_Rbar_n_nneg_nneg; intros k klt.
-        match_destr; destruct i as [lb2 glb2].
-        apply glb2.
-        intros ? [?[??]]; subst.
-        rewrite H0.
+        apply Rbar_glb_ge; intros ? [?[??]]; subst.
         apply outer_μ_of_covers_nneg.
-      }
-      case_eq ((ELim_seq
+      } 
+      case_eq (ELim_seq
        (fun i : nat =>
         sum_Rbar_n
           (fun n : nat =>
-           match
-             ex_glb_Rbar
-               (fun x0 : R =>
-                @ex (forall _ : nat, @event T σ)
-                  (fun an : forall _ : nat, @event T σ =>
-                   and (@pre_event_sub T (B n) (@event_pre T σ (@union_of_collection T σ an)))
-                     (@eq Rbar (Finite x0)
-                        (ELim_seq (fun i0 : nat => sum_Rbar_n (fun n0 : nat => μ (an n0)) i0)))))
-             return Rbar
-           with
-           | @exist _ _ a _ => a
-           end) i))); intros.
+           Rbar_glb
+             (fun x : Rbar =>
+              exists an : nat -> event σ,
+                pre_event_sub (B n) (union_of_collection an) /\ x = outer_μ_of_covers an)) i)).
       + (* finite *)
-        apply lb.
-        clear x lb glb.
-        match type of H with
-        | ELim_seq ?x = _  => generalize (ELim_seq_correct x)
-        end
-        ; rewrite H
-        ; intros HH.
-        cut_to HH.
-        * {
-          clear H.
-          apply is_Elim_seq_spec in HH.
-          simpl in HH.
-          (*cut (forall (ϵ:posreal),
-                exists an : nat -> event σ,
-                  pre_event_sub (pre_union_of_collection B) (union_of_collection an) /\
-                    r ELim_seq (fun i : nat => sum_Rbar_n (fun n : nat => μ (an n)) i)
+        intros ??.
 
+        assert (isnneg : forall n,
+                   Rbar_le 0
+                           (Rbar_glb
+                              (fun x : Rbar =>
+                                 exists an : nat -> event σ,
+                                   pre_event_sub (B n) (union_of_collection an) /\
+                                     x = outer_μ_of_covers an))).
+        {
+          intros.
+          apply Rbar_glb_ge; intros ? [?[??]]; subst.
+          apply outer_μ_of_covers_nneg.
+        } 
 
-          
-          assert (forall n, exists (cn : nat -> event σ),
-                     pre_event_sub an (union_of_collection cn) /\
-                       outer_μ_of_covers cn = ).
+        assert (isfin : forall n,
+                   is_finite (Rbar_glb
+                                (fun x : Rbar =>
+                                   exists an : nat -> event σ,
+                                     pre_event_sub (B n) (union_of_collection an) /\
+                                       x = outer_μ_of_covers an))).
+        {
+          apply (Elim_seq_sum_pos_fin_n_fin _ _ isnneg H).
+        }
 
-                     
-          
-          
-          
-          (fun n0 : nat =>
-                      let (a, _) :=
-                        ex_glb_Rbar
-                          (fun x0 : R =>
-                           exists an : nat -> event σ,
-                             pre_event_sub (B n0) (fun t : T => exists n1 : nat, proj1_sig (an n1) t) /\
-                             x0 = ELim_seq (fun i0 : nat => sum_Rbar_n (fun n1 : nat => μ (an n1)) i0)) in
-                      a)
-           *)
-          admit.
-          }
-        * apply ex_Elim_seq_incr; intros.
-          apply sum_Rbar_n_pos_incr; intros.
-          match_destr.
-          destruct i0 as [lb0 glb0].
-          apply glb0; intros ? [?[??]].
-          rewrite H1.
-          apply  outer_μ_of_covers_nneg.
-      + (* p_infty *)
-        now destruct x; simpl.
-      + rewrite H in lim_sum_nneg.
-        destruct x; simpl in lim_sum_nneg; contradiction.
-  Admitted.
+        apply Rbar_le_forall_Rbar_le; intros eps.
+
+        
+        
+        assert (p:forall n,
+                 exists (e:event σ),
+                   pre_event_sub (B n) e /\
+                     Rbar_le (μ e)
+                             (Rbar_plus (
+                                  outer_μ (B n))
+                                        (eps/(pow 2 (S n))))).
+        {
+          intros n.
+          specialize (isfin n).
+          unfold outer_μ, Rbar_glb, proj1_sig in *; match_destr.
+          rewrite <- isfin in r0.
+          assert (posdiv: 0 < (eps / 2 ^ (S n))).
+          {
+            apply Rdiv_lt_0_compat.
+            - apply cond_pos.
+            - apply pow_lt; lra.
+          } 
+          destruct (Rbar_is_glb_fin_close_classic (mkposreal _ posdiv) r0) as [? [[?[??]] ?]]; subst.
+          exists (union_of_collection x1).
+          split; trivial.
+          simpl in H2.
+          rewrite <- isfin; simpl.
+          eapply Rbar_le_trans; try eapply H2.
+          now apply measure_countable_sub_union.
+        }
+ 
+        apply choice in p; trivial.
+        
+        destruct p as [an HH].
+
+        rewrite <- H.
+
+        assert (le1:
+                 Rbar_le
+                   (ELim_seq
+                      (fun i : nat =>
+                         sum_Rbar_n
+                           (fun x : nat => μ (an x)) i))
+                   (ELim_seq
+                      (fun i : nat =>
+                         sum_Rbar_n
+                           (fun x : nat => (Rbar_plus (outer_μ (B x)) (eps / 2 ^ S x))) i))).
+        {
+          apply ELim_seq_le; intros.
+          apply sum_Rbar_n_monotone; trivial; intros ?.
+          apply HH.
+        }
+        rewrite ELim_seq_sum_eps2n in le1; trivial
+        ; try solve [destruct eps; simpl; lra].
+        etransitivity
+        ; [etransitivity |]
+        ; [ | apply le1 | ].
+        * unfold Rbar_glb, proj1_sig; match_destr.
+          apply r0.
+          exists an.
+          split; trivial.
+          intros ??.
+          destruct H0.
+          exists x1.
+          now apply (HH x1).
+        * reflexivity.
+      + intros H.
+        unfold Rbar_le; match_destr.
+      + intros H. rewrite H in lim_seq_nneg.
+        now simpl in lim_seq_nneg.
+  Qed.
   
   Lemma outer_μ_is_measurable (A:event σ) : μ_measurable outer_μ A.
   Proof.
     apply μ_measurable_simpl; intros B.
     unfold outer_μ.
-    unfold Glb_Rbar, proj1_sig.
+    unfold Rbar_glb, proj1_sig.
     repeat match_destr.
-    destruct i as [lb1 glb1].    
-    destruct i0 as [lb2 glb2].
-    destruct i1 as [lb0 glb0].
+    destruct r as [lb1 glb1].    
+    destruct r0 as [lb2 glb2].
+    destruct r1 as [lb0 glb0].
     apply glb0; intros ? [?[??]].
     rewrite H0; clear x2 H0.
     unfold is_lb_Rbar in *.
@@ -1898,31 +2250,11 @@ Section omf.
     case_eq (outer_μ_of_covers x3); simpl.
     - (* finite *)
       intros ? eqq1.
-      assert (isf1:is_finite (outer_μ_of_covers (fun n : nat => x3 n ∩ A))).
-      {
-        eapply (bounded_is_finite 0 r); simpl.
-        + apply outer_μ_of_covers_nneg.
-        + rewrite <- eqq1.
-          apply outer_μ_of_covers_monotone.
-          intros ?.
-          auto with prob.
-      }
       specialize (lb1 (outer_μ_of_covers (fun n => event_inter (x3 n) A))).
       cut_to lb1.
-      + assert (isf2:is_finite (outer_μ_of_covers (fun n : nat => (x3 n) \ A))).
-        {
-          eapply (bounded_is_finite 0 r); simpl.
-          + apply outer_μ_of_covers_nneg.
-          + rewrite <- eqq1.
-            apply outer_μ_of_covers_monotone.
-            intros ?.
-            auto with prob.
-        }
-        specialize (lb2 (outer_μ_of_covers (fun n => event_diff (x3 n) A))).
+      + specialize (lb2 (outer_μ_of_covers (fun n => event_diff (x3 n) A))).
         cut_to lb2.
         * {
-          rewrite isf1 in lb1.
-          rewrite isf2 in lb2.
           etransitivity.
           - eapply Rbar_plus_le_compat; try eassumption.
           - unfold outer_μ_of_covers.
@@ -1941,12 +2273,12 @@ Section omf.
             + apply ex_Rbar_plus_pos
               ; apply outer_μ_of_covers_nneg.
         } 
-        * rewrite isf2.
+        * 
           eexists; split; try reflexivity.
           rewrite H.
           repeat rewrite pre_of_union_of_collection.
           now rewrite pre_event_countable_union_diff_distr.
-      + rewrite isf1.
+      + 
         eexists; split; try reflexivity.
         rewrite H.
         repeat rewrite pre_of_union_of_collection.
@@ -1963,8 +2295,8 @@ Section omf.
   Lemma outer_μ_μ (A:event σ) : outer_μ A = μ A.
   Proof.
     unfold outer_μ.
-    unfold Glb_Rbar, proj1_sig; match_destr.
-    destruct i as [lb glb].
+    unfold Rbar_glb, proj1_sig; match_destr.
+    destruct r as [lb glb].
     unfold is_lb_Rbar in *.
     apply antisymmetry.
     - case_eq (μ A); simpl.
