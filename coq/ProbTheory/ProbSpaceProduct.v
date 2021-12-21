@@ -1693,6 +1693,440 @@ Section outer_measure.
   
 End outer_measure.
 
+Section algebra.
+
+  Class Algebra (T:Type) :=
+    {
+      alg_in : pre_event T -> Prop;
+      
+      alg_in_list_union (l: list (pre_event T)) : Forall alg_in l -> alg_in (pre_list_union l);
+      
+      alg_in_complement (A:pre_event T) : alg_in A -> alg_in (pre_event_complement A) ;
+    
+      alg_in_all : alg_in pre_Ω 
+                        
+    }.
+
+  Global Instance alg_proper {T} (s: Algebra T) : Proper (pre_event_equiv ==> iff) alg_in.
+  Proof.
+    intros ?? eqq.
+    red in eqq.
+    cut (x = y); [intros; subst; intuition | ].
+    apply Ensembles.Extensionality_Ensembles.
+    unfold Ensembles.Same_set, Ensembles.Included, Ensembles.In.
+    firstorder.
+  Qed.
+
+  Lemma alg_in_none {T} (s: Algebra T) : alg_in pre_event_none.
+  Proof.
+    rewrite <- pre_event_not_all.
+    apply alg_in_complement.
+    apply alg_in_all.
+  Qed.
+  
+  Lemma alg_in_list_inter {T} {alg:Algebra T}
+        (l: list (pre_event T)) :
+    Forall alg_in l ->
+    alg_in (pre_list_inter l).
+  Proof.
+    intros.
+    cut (alg_in (pre_event_complement (pre_list_union (map pre_event_complement l)))).
+    - apply alg_proper; intros ?.
+      unfold pre_list_inter, pre_event_complement, pre_list_union.
+      split.
+      + intros ? [?[??]].
+        apply in_map_iff in H1.
+        destruct H1 as [?[??]]; subst.
+        apply H2.
+        apply (H0 _ H3).
+      + intros ???.
+        generalize (not_ex_all_not _ _ H0); intros HH.
+        apply NNPP; intros ?.
+        apply (HH (pre_event_complement a)).
+        split; trivial.
+        now apply in_map.
+    - apply alg_in_complement.
+      apply alg_in_list_union.
+      apply Forall_map.
+      revert H.
+      apply Forall_impl; intros.
+      now apply alg_in_complement.
+  Qed.
+
+  Lemma alg_in_union {T} {alg:Algebra T}
+        (a b : pre_event T) :
+    alg_in a -> alg_in b ->
+    alg_in (pre_event_union a b).
+  Proof.
+    intros.
+    generalize (alg_in_list_union [a;b]); simpl.
+    rewrite pre_list_union_cons.
+    rewrite pre_list_union_singleton.
+    intros HH; apply HH.
+    now repeat constructor.
+  Qed.
+
+  Lemma alg_in_inter {T} {alg:Algebra T}
+        (a b : pre_event T) :
+    alg_in a -> alg_in b ->
+    alg_in (pre_event_inter a b).
+  Proof.
+    intros.
+    generalize (alg_in_list_inter [a;b]); simpl.
+    rewrite pre_list_inter_cons.
+    rewrite pre_list_inter_singleton.
+    intros HH; apply HH.
+    now repeat constructor.
+  Qed.
+
+  Lemma alg_in_diff {T} {alg:Algebra T}
+        (a b : pre_event T) :
+    alg_in a -> alg_in b ->
+    alg_in (pre_event_diff a b).
+  Proof.
+    intros.
+    rewrite pre_event_diff_derived.
+    apply alg_in_inter; trivial.
+    now apply alg_in_complement.
+  Qed.
+
+  Definition alg_set {T} (A:Algebra T): Type := {x | alg_in x}.
+  Definition alg_pre {T} {A:Algebra T} : alg_set A -> (T->Prop)
+    := fun e => proj1_sig e.
+
+  Lemma alg_set_in {T} {Alg:Algebra T} (a:alg_set Alg) : alg_in (alg_pre a).
+  Proof.
+    now destruct a.
+  Qed.
+  
+  Definition alg_sub {T} {Alg:Algebra T} (x y:alg_set Alg) :=
+    pre_event_sub (proj1_sig x) (proj1_sig y).
+
+  Definition alg_equiv {T} {Alg:Algebra T} (x y:alg_set Alg) :=
+    pre_event_equiv (proj1_sig x) (proj1_sig y).
+
+  Global Instance alg_equiv_equiv {T} {Alg:Algebra T} : Equivalence alg_equiv.
+  Proof.
+    firstorder.
+  Qed.
+  
+  Global Instance alg_equiv_sub {T} {Alg:Algebra T}  : subrelation alg_equiv alg_sub.
+  Proof.
+    firstorder.
+  Qed.
+
+  Global Instance alg_sub_pre {T} {Alg:Algebra T}  : PreOrder alg_sub.
+  Proof.
+    firstorder.
+  Qed.
+
+  Global Instance alg_sub_part {T} {Alg:Algebra T}  : PartialOrder alg_equiv alg_sub.
+  Proof.
+    firstorder.
+  Qed.
+
+  Coercion alg_pre : alg_set >-> Funclass.
+
+  Definition alg_none {T} {Alg : Algebra T} : alg_set Alg
+    := exist _ _ (alg_in_none _).
+
+  Definition alg_all {T} {Alg : Algebra T} : alg_set Alg
+    := exist _ _ alg_in_all.
+
+  Program Definition alg_list_union {T} {Alg:Algebra T} (l: list (alg_set Alg)) :
+    alg_set Alg
+    := exist _ (pre_list_union (map alg_pre l)) _.
+  Next Obligation.
+    apply alg_in_list_union.
+    apply Forall_map.
+    apply Forall_forall; intros.
+    apply alg_set_in.
+  Qed.
+
+  Program Definition alg_list_inter {T} {Alg:Algebra T} (l: list (alg_set Alg)) :
+    alg_set Alg
+    := exist _ (pre_list_inter (map alg_pre l)) _.
+  Next Obligation.
+    apply alg_in_list_inter.
+    apply Forall_map.
+    apply Forall_forall; intros.
+    apply alg_set_in.
+  Qed.
+
+  Definition alg_union {T} {Alg:Algebra T} (a b : alg_set Alg) : alg_set Alg
+    := exist _ (pre_event_union a b) (alg_in_union _ _ (alg_set_in a) (alg_set_in b)).
+
+  Definition alg_inter {T} {Alg:Algebra T} (a b : alg_set Alg) : alg_set Alg
+    := exist _ (pre_event_inter a b) (alg_in_inter _ _ (alg_set_in a) (alg_set_in b)).
+
+  Definition alg_diff {T} {Alg:Algebra T} (a b : alg_set Alg) : alg_set Alg
+    := exist _ (pre_event_diff a b) (alg_in_diff _ _ (alg_set_in a) (alg_set_in b)).
+
+  Context {T} {Alg:Algebra T}.
+
+  Global Instance alg_union_proper : Proper (alg_equiv ==> alg_equiv ==> alg_equiv) alg_union.
+  Proof.
+    intros ???????; simpl.
+    red in H, H0.
+    now apply pre_event_union_proper.
+  Qed.
+    
+  Global Instance alg_inter_proper : Proper (alg_equiv ==> alg_equiv ==> alg_equiv) alg_inter.
+  Proof.
+    intros ???????; simpl.
+    red in H, H0.
+    now apply pre_event_inter_proper.
+  Qed.
+
+  Global Instance alg_diff_proper : Proper (alg_equiv ==> alg_equiv ==> alg_equiv) alg_diff.
+  Proof.
+    intros ???????; simpl.
+    red in H, H0.
+    now apply pre_event_diff_proper.
+  Qed.
+  
+  Lemma alg_sub_diff_union (A B : alg_set Alg) :
+    alg_sub B A ->
+    alg_equiv A (alg_union (alg_diff A B) B).
+  Proof.
+    unfold alg_union, alg_diff, alg_inter, alg_equiv, alg_sub; simpl.
+    unfold pre_event_union, pre_event_diff, pre_event_inter, pre_event_sub.
+    repeat red; simpl; intros.
+    split; intros.
+    - destruct (classic (proj1_sig B x)); tauto.
+    - intuition.
+  Qed.
+
+  Lemma alg_list_union_nil :
+    alg_equiv (alg_list_union []) alg_none.
+  Proof.
+    firstorder.
+  Qed.
+
+  Lemma alg_list_union_cons  (x1 : alg_set Alg) (l:list (alg_set Alg)):
+    alg_equiv (alg_list_union (x1::l)) (alg_union x1 (alg_list_union l)).
+  Proof.
+    apply pre_list_union_cons.
+  Qed.
+
+  Lemma alg_list_union_singleton  (En:alg_set Alg) :
+    alg_equiv (alg_list_union [En]) En.
+  Proof.
+    rewrite alg_list_union_cons, alg_list_union_nil.
+    red. unfold alg_union; simpl.
+    now rewrite pre_event_union_false_r.
+  Qed.
+
+End algebra.
+
+Section premeasure.
+
+  Local Existing Instance Rbar_le_pre.
+  Local Existing Instance Rbar_le_part.
+
+  Context {T:Type}.
+  Context {Alg:Algebra T}.
+
+  (* we could generalize events, but that is too much work for now :-) *)
+  Class is_premeasure (λ:alg_set Alg -> Rbar)
+    := mk_premeasure {
+        premeasure_proper :> Proper (alg_equiv ==> eq) λ 
+      ; premeasure_none : λ alg_none = 0%R
+      ; premeasure_nneg a : Rbar_le 0 (λ a)
+      ; premeasure_countable_disjoint_union (B:nat->alg_set Alg) :
+        pre_collection_is_pairwise_disjoint (fun x => B x) ->
+        forall (pf:alg_in (pre_union_of_collection (fun x => B x))),
+        λ (exist _ _ pf) = (ELim_seq (fun i : nat => sum_Rbar_n (fun n : nat => λ (B n)) i))
+      }.
+
+  Section props.
+    Context (λ:alg_set Alg -> Rbar) {μ_meas:is_premeasure λ}.
+
+    Lemma premeasure_list_disjoint_union (a: list (alg_set Alg)) :
+      ForallOrdPairs pre_event_disjoint (map alg_pre a) ->
+      λ (alg_list_union a) = list_Rbar_sum (map λ a).
+    Proof.
+      intros Hd.
+      generalize (premeasure_countable_disjoint_union (fun n => nth n a alg_none)); intros HH.
+      cut_to HH.
+      - assert (pf : alg_in (pre_union_of_collection (fun x : nat => nth x a alg_none))).
+        {
+          generalize (pre_list_union_union (map alg_pre a))
+          ; intros eqq.
+          unfold pre_list_collection in eqq.
+          case_eq (alg_list_union a).
+          unfold alg_list_union; simpl; intros ???; invcs H.
+          rewrite <- eqq in a0.
+          revert a0.
+          apply alg_proper; intros ?.
+          apply pre_union_of_collection_proper; intros ??.
+          now rewrite <- map_nth.
+        }
+        specialize (HH pf).
+        erewrite premeasure_proper; try rewrite HH.
+        + apply (seq_sum_list_sum _ _ alg_none).
+          apply premeasure_none.
+        + intros ?; simpl.
+          rewrite <- (pre_list_union_union (map alg_pre a) x).
+          apply pre_union_of_collection_proper; intros ??.
+          now rewrite <- map_nth.
+      - apply pre_list_collection_disjoint in Hd.
+        revert Hd.
+        apply pre_collection_is_pairwise_disjoint_pre_event_equiv_proper; intros ??.
+        unfold pre_list_collection.
+        now rewrite <- map_nth.
+    Qed.
+
+    Lemma premeasure_disjoint_union (a b: alg_set Alg) :
+      pre_event_disjoint a b ->
+      λ (alg_union a b) = Rbar_plus (λ a) (λ b).
+    Proof.
+      intros Hd.
+      generalize (premeasure_list_disjoint_union [a; b]); simpl; intros HH.
+      rewrite alg_list_union_cons, alg_list_union_singleton in HH.
+      rewrite Rbar_plus_0_r in HH.
+      apply HH.
+      now repeat constructor.
+    Qed.    
+
+    Global Instance premeasure_monotone  :
+      Proper (alg_sub ==> Rbar_le) λ.
+    Proof.
+      intros ???.
+      rewrite (alg_sub_diff_union _ _ H).
+      rewrite premeasure_disjoint_union; trivial.
+      - rewrite <- (Rbar_plus_0_l (λ x)) at 1.
+        apply Rbar_plus_le_compat; try reflexivity.
+        apply premeasure_nneg.
+      - simpl; firstorder.
+    Qed.
+
+    Definition alg_make_collection_disjoint (coll:nat->alg_set Alg) : nat -> alg_set Alg
+      := fun x => alg_diff (coll x) (alg_list_union
+                                    (collection_take coll x)).
+
+    Lemma alg_make_collection_disjoint_sub (En:nat -> alg_set Alg) n :
+      alg_sub (alg_make_collection_disjoint En n) (En n).
+    Proof.
+      now intros x [??].
+    Qed.
+
+    Lemma alg_make_collection_disjoint_in (coll:nat->alg_set Alg) (x:nat) (e:T) :
+      proj1_sig (alg_make_collection_disjoint coll x) e <->
+        (proj1_sig (coll x) e /\ forall y, (y < x)%nat -> ~ proj1_sig (coll y) e).
+    Proof.
+      split.
+      - unfold alg_make_collection_disjoint; intros HH.
+        destruct HH as [H1 H2].
+        split; trivial.
+        intros y ylt cy.
+        apply H2.
+        exists (coll y).
+        split; trivial.
+        apply in_map.
+        unfold collection_take.
+        apply in_map.
+        apply in_seq.
+        lia.
+      - intros [ce fce].
+        unfold make_collection_disjoint.
+        split; trivial.
+        intros [n [Hn ?]].
+        apply in_map_iff in Hn.
+        destruct Hn as [? [??]]; subst.
+        apply In_collection_take in H1.
+        destruct H1 as [? [??]]; subst.
+        eapply fce; eauto.
+    Qed.
+    
+    Lemma alg_make_collection_disjoint_disjoint (coll:nat->alg_set Alg) :
+      pre_collection_is_pairwise_disjoint (alg_make_collection_disjoint coll).
+    Proof.
+      intros x y xyneq e e1 e2.
+      apply alg_make_collection_disjoint_in in e1.
+      apply alg_make_collection_disjoint_in in e2.
+      destruct e1 as [H11 H12].
+      destruct e2 as [H21 H22].
+      destruct (not_eq _ _ xyneq) as [xlt|ylt].
+      - eapply H22; eauto.
+      - eapply H12; eauto.
+    Qed.
+
+    Lemma pre_alg_make_collection_disjoint_union (coll:nat->alg_set Alg)  :
+      pre_event_equiv (pre_union_of_collection (fun x : nat => coll x))
+        (pre_union_of_collection (alg_make_collection_disjoint coll)).
+    Proof.
+      unfold pre_union_of_collection.
+      intros t.
+      split; intros [n Hn].
+      - simpl.
+        generalize (excluded_middle_entails_unrestricted_minimization classic (fun n => proj1_sig (coll n) t))
+        ; intros HH.
+        specialize (HH _ Hn).
+        destruct HH as [m mmin].
+        exists m.
+        destruct mmin.
+        unfold make_collection_disjoint.
+        split; trivial.
+        unfold union_of_collection.
+        intros [nn Hnn].
+        unfold collection_take in Hnn.
+        rewrite map_map in Hnn.
+        destruct Hnn as [??].
+        apply in_map_iff in H1.
+        destruct H1 as [?[??]]; subst.
+        apply in_seq in H3.
+        specialize (H0 _ H2).
+        lia.
+      - apply alg_make_collection_disjoint_in in Hn.
+        exists n; tauto.
+  Qed.
+
+    Lemma alg_make_collection_disjoint_union (coll:nat->alg_set Alg) 
+      (pf1:alg_in (pre_union_of_collection (fun x : nat => coll x)))
+        (pf2:alg_in (pre_union_of_collection (alg_make_collection_disjoint coll))) :
+      alg_equiv (exist _ _ pf1) (exist _ _ pf2).
+    Proof.
+      red; simpl.
+      apply pre_alg_make_collection_disjoint_union.
+    Qed.
+
+    Lemma alg_make_collection_disjoint_union_alg_in (coll:nat->alg_set Alg) 
+      (pf1:alg_in (pre_union_of_collection (fun x : nat => coll x))) :
+      alg_in (pre_union_of_collection (alg_make_collection_disjoint coll)).
+    Proof.
+      revert pf1.
+      apply alg_proper.
+      symmetry.
+      apply pre_alg_make_collection_disjoint_union.
+    Qed.
+
+    Lemma alg_make_collection_disjoint_union' (coll:nat->alg_set Alg) 
+          (pf1:alg_in (pre_union_of_collection (fun x : nat => coll x))) :
+      alg_equiv (exist _ _ pf1) (exist _ _ (alg_make_collection_disjoint_union_alg_in _ pf1)).
+    Proof.
+      red; simpl.
+      apply pre_alg_make_collection_disjoint_union.
+    Qed.
+
+    Lemma premeasure_countable_sub_union (B:nat->alg_set Alg) :
+        forall (pf:alg_in (pre_union_of_collection (fun x => B x))),
+          Rbar_le (λ (exist _ _ pf)) (ELim_seq (fun i : nat => sum_Rbar_n (fun n : nat => λ (B n)) i)).
+    Proof.
+      intros.
+      rewrite alg_make_collection_disjoint_union'.
+      rewrite premeasure_countable_disjoint_union.
+    - intros.
+      apply ELim_seq_le; intros.
+      apply sum_Rbar_n_monotone; trivial; intros ?.
+      apply premeasure_monotone; trivial.
+      apply alg_make_collection_disjoint_sub.
+    - apply alg_make_collection_disjoint_disjoint.
+  Qed.
+
+  End props.
+  
+End premeasure.
 
 Section omf.
   Local Existing Instance Rbar_le_pre.
@@ -1700,18 +2134,18 @@ Section omf.
 
 
   Context {T:Type}.
-  Context {σ:SigmaAlgebra T}.
-  Context (μ:event σ -> Rbar).
-  Context {μ_meas:is_measure μ}.
+  Context {Alg:Algebra T}.
+  Context (λ:alg_set Alg -> Rbar).
+  Context {λ_meas:is_premeasure λ}.
 
-  Definition outer_μ_of_covers (an:nat->event σ) : Rbar :=
-    ELim_seq (fun i : nat => sum_Rbar_n (fun n : nat => μ (an n)) i).
+  Definition outer_λ_of_covers (an:nat->alg_set Alg) : Rbar :=
+    ELim_seq (fun i : nat => sum_Rbar_n (fun n : nat => λ (an n)) i).
   
-  Definition outer_μ (A:pre_event T) : Rbar
+  Definition outer_λ (A:pre_event T) : Rbar
     := Rbar_glb (fun (x : Rbar) =>
-                   exists (an:nat->event σ),
-                     pre_event_sub A (union_of_collection an) /\
-                       x = outer_μ_of_covers an).
+                   exists (an:nat->alg_set Alg),
+                     pre_event_sub A (pre_union_of_collection an) /\
+                       x = outer_λ_of_covers an).
 
   Lemma ELim_seq_pos (f : nat -> Rbar) :
     (forall n, Rbar_le 0 (f n)) ->
@@ -1723,32 +2157,32 @@ Section omf.
     now apply H0.
   Qed.
 
-  Lemma outer_μ_nneg (A:pre_event T) 
-    : Rbar_le 0 (outer_μ A).
+  Lemma outer_λ_nneg (A:pre_event T) 
+    : Rbar_le 0 (outer_λ A).
   Proof.
-    unfold outer_μ.
+    unfold outer_λ.
     unfold Rbar_glb, proj1_sig; match_destr; destruct r as [lb glb].
     apply glb; intros ?[?[??]]; subst.
     apply ELim_seq_pos; intros.
     apply sum_Rbar_n_nneg_nneg; intros.
-    apply measure_nneg.
+    apply premeasure_nneg.
   Qed.
 
-  Lemma outer_μ_of_covers_nneg (an:nat->event σ) :
-    Rbar_le 0 (outer_μ_of_covers an).
+  Lemma outer_λ_of_covers_nneg (an:nat->alg_set Alg) :
+    Rbar_le 0 (outer_λ_of_covers an).
   Proof.
     apply ELim_seq_pos; intros.
     apply sum_Rbar_n_nneg_nneg; intros.
-    apply measure_nneg.
+    apply premeasure_nneg.
   Qed.
   
-  Global Instance outer_μ_of_covers_monotone : Proper (pointwise_relation _ event_sub ==> Rbar_le) outer_μ_of_covers.
+  Global Instance outer_λ_of_covers_monotone : Proper (pointwise_relation _ alg_sub ==> Rbar_le) outer_λ_of_covers.
   Proof.
     intros ???.
     apply ELim_seq_le; intros.
     apply sum_Rbar_n_monotone; trivial.
     intros ?.
-    now apply measure_monotone.
+    now apply premeasure_monotone.
   Qed.
 
   Lemma is_finite_dec (a:Rbar) : {is_finite a} + {~ is_finite a}.
@@ -2083,25 +2517,36 @@ Section omf.
     - intros; simpl; trivial.
   Qed.
 
-  Global Instance outer_μ_outer_measure : is_outer_measure outer_μ.
+  Lemma ELim_seq_Elim_seq_pair (f:nat->nat->Rbar) :
+    (forall a b, Rbar_le 0 (f a b)) ->
+    ELim_seq
+      (fun i : nat =>
+         sum_Rbar_n (fun x0 : nat => ELim_seq (fun i0 : nat => sum_Rbar_n (fun n : nat => (f x0 n)) i0)) i) =
+      ELim_seq (fun i : nat => sum_Rbar_n (fun n : nat => let '(a, b) := iso_b (Isomorphism:=nat_pair_encoder) n in (f a b)) i).
   Proof.
-    unfold outer_μ.
+  Admitted.
+
+  Global Instance outer_λ_outer_measure : is_outer_measure outer_λ.
+  Proof.
+    unfold outer_λ.
     apply is_outer_measure_alt_iff.
     constructor.
-    - apply antisymmetry; try apply outer_μ_nneg.
+    - apply antisymmetry; try apply outer_λ_nneg.
       unfold Rbar_glb, proj1_sig; match_destr; destruct r as [lb glb].
       apply lb.
-      exists (fun _ => event_none).
+      exists (fun _ => alg_none).
       split.
-      + firstorder.
+      + simpl.
+        rewrite pre_union_of_collection_const.
+        reflexivity.
       + rewrite <- (ELim_seq_const 0).
         apply ELim_seq_ext; intros.
         unfold sum_Rbar_n.
         induction (seq 0 n); simpl; trivial.
-        rewrite IHl, measure_none; simpl.
+        rewrite IHl, premeasure_none; simpl.
         now rewrite Rbar_plus_0_l.
     - intros.
-      apply outer_μ_nneg.
+      apply outer_λ_nneg.
     - intros ???.
       apply Rbar_glb_subset
       ; intros ? [? [??]].
@@ -2117,13 +2562,13 @@ Section omf.
                                (fun n : nat =>
                                   Rbar_glb
                                     (fun x : Rbar =>
-                                       exists an : nat -> event σ,
-                                         pre_event_sub (B n) (union_of_collection an) /\ x = outer_μ_of_covers an)) i))).
+                                       exists an : nat -> alg_set Alg,
+                                         pre_event_sub (B n) (pre_union_of_collection an) /\ x = outer_λ_of_covers an)) i))).
       {
         apply ELim_seq_pos; intros.
         apply sum_Rbar_n_nneg_nneg; intros k klt.
         apply Rbar_glb_ge; intros ? [?[??]]; subst.
-        apply outer_μ_of_covers_nneg.
+        apply outer_λ_of_covers_nneg.
       } 
       case_eq (ELim_seq
        (fun i : nat =>
@@ -2131,8 +2576,8 @@ Section omf.
           (fun n : nat =>
            Rbar_glb
              (fun x : Rbar =>
-              exists an : nat -> event σ,
-                pre_event_sub (B n) (union_of_collection an) /\ x = outer_μ_of_covers an)) i)).
+                exists an : nat -> alg_set Alg,
+                pre_event_sub (B n) (pre_union_of_collection an) /\ x = outer_λ_of_covers an)) i)).
       + (* finite *)
         intros ??.
 
@@ -2140,40 +2585,38 @@ Section omf.
                    Rbar_le 0
                            (Rbar_glb
                               (fun x : Rbar =>
-                                 exists an : nat -> event σ,
-                                   pre_event_sub (B n) (union_of_collection an) /\
-                                     x = outer_μ_of_covers an))).
+                                 exists an : nat -> alg_set Alg,
+                                   pre_event_sub (B n) (pre_union_of_collection an) /\
+                                     x = outer_λ_of_covers an))).
         {
           intros.
           apply Rbar_glb_ge; intros ? [?[??]]; subst.
-          apply outer_μ_of_covers_nneg.
+          apply outer_λ_of_covers_nneg.
         } 
 
         assert (isfin : forall n,
                    is_finite (Rbar_glb
                                 (fun x : Rbar =>
-                                   exists an : nat -> event σ,
-                                     pre_event_sub (B n) (union_of_collection an) /\
-                                       x = outer_μ_of_covers an))).
+                                   exists an : nat -> alg_set Alg,
+                                     pre_event_sub (B n) (pre_union_of_collection an) /\
+                                       x = outer_λ_of_covers an))).
         {
           apply (Elim_seq_sum_pos_fin_n_fin _ _ isnneg H).
         }
 
         apply Rbar_le_forall_Rbar_le; intros eps.
 
-        
-        
         assert (p:forall n,
-                 exists (e:event σ),
-                   pre_event_sub (B n) e /\
-                     Rbar_le (μ e)
+                 exists (en:nat -> alg_set Alg),
+                   pre_event_sub (B n) (pre_union_of_collection en) /\
+                     Rbar_le (outer_λ_of_covers en)
                              (Rbar_plus (
-                                  outer_μ (B n))
+                                  outer_λ (B n))
                                         (eps/(pow 2 (S n))))).
         {
           intros n.
           specialize (isfin n).
-          unfold outer_μ, Rbar_glb, proj1_sig in *; match_destr.
+          unfold outer_λ, Rbar_glb, proj1_sig in *; match_destr.
           rewrite <- isfin in r0.
           assert (posdiv: 0 < (eps / 2 ^ (S n))).
           {
@@ -2182,12 +2625,12 @@ Section omf.
             - apply pow_lt; lra.
           } 
           destruct (Rbar_is_glb_fin_close_classic (mkposreal _ posdiv) r0) as [? [[?[??]] ?]]; subst.
-          exists (union_of_collection x1).
+          exists x1.
+          simpl.
           split; trivial.
           simpl in H2.
           rewrite <- isfin; simpl.
-          eapply Rbar_le_trans; try eapply H2.
-          now apply measure_countable_sub_union.
+          trivial.
         }
  
         apply choice in p; trivial.
@@ -2201,11 +2644,11 @@ Section omf.
                    (ELim_seq
                       (fun i : nat =>
                          sum_Rbar_n
-                           (fun x : nat => μ (an x)) i))
+                           (fun x : nat => outer_λ_of_covers (an x)) i))
                    (ELim_seq
                       (fun i : nat =>
                          sum_Rbar_n
-                           (fun x : nat => (Rbar_plus (outer_μ (B x)) (eps / 2 ^ S x))) i))).
+                           (fun x : nat => (Rbar_plus (outer_λ (B x)) (eps / 2 ^ S x))) i))).
         {
           apply ELim_seq_le; intros.
           apply sum_Rbar_n_monotone; trivial; intros ?.
@@ -2218,12 +2661,24 @@ Section omf.
         ; [ | apply le1 | ].
         * unfold Rbar_glb, proj1_sig; match_destr.
           apply r0.
-          exists an.
-          split; trivial.
-          intros ??.
-          destruct H0.
-          exists x1.
-          now apply (HH x1).
+          exists (fun n => let '(a,b) := iso_b (Isomorphism:=nat_pair_encoder) n in an a b).
+          split.
+          -- intros ? [??].
+             destruct (HH x1).
+             destruct (H1 x0 H0).
+             exists (iso_f (Isomorphism:=nat_pair_encoder) (x1, x2)).
+             now rewrite iso_b_f.
+          -- unfold outer_λ_of_covers.
+             transitivity (ELim_seq
+                             (fun i : nat =>
+                                sum_Rbar_n (fun n : nat => (let '(a, b) := iso_b n in λ (an a b))) i)).
+             ++ apply ELim_seq_Elim_seq_pair; intros.
+                apply premeasure_nneg.
+             ++ apply ELim_seq_ext; intros ?.
+                unfold sum_Rbar_n.
+                f_equal.
+                apply map_ext; intros ?.
+                now destruct (iso_b a).
         * reflexivity.
       + intros H.
         unfold Rbar_le; match_destr.
@@ -2231,10 +2686,10 @@ Section omf.
         now simpl in lim_seq_nneg.
   Qed.
   
-  Lemma outer_μ_is_measurable (A:event σ) : μ_measurable outer_μ A.
+  Lemma outer_λ_is_measurable (A:alg_set Alg) : μ_measurable outer_λ A.
   Proof.
     apply μ_measurable_simpl; intros B.
-    unfold outer_μ.
+    unfold outer_λ.
     unfold Rbar_glb, proj1_sig.
     repeat match_destr.
     destruct r as [lb1 glb1].    
@@ -2243,35 +2698,39 @@ Section omf.
     apply glb0; intros ? [?[??]].
     rewrite H0; clear x2 H0.
     unfold is_lb_Rbar in *.
-    assert (nneg:Rbar_le 0 (outer_μ_of_covers x3)).
+    assert (nneg:Rbar_le 0 (outer_λ_of_covers x3)).
     {
-      apply outer_μ_of_covers_nneg.
+      apply outer_λ_of_covers_nneg.
     } 
-    case_eq (outer_μ_of_covers x3); simpl.
+    case_eq (outer_λ_of_covers x3); simpl.
     - (* finite *)
       intros ? eqq1.
-      specialize (lb1 (outer_μ_of_covers (fun n => event_inter (x3 n) A))).
+      specialize (lb1 (outer_λ_of_covers (fun n => alg_inter (x3 n) A))).
       cut_to lb1.
-      + specialize (lb2 (outer_μ_of_covers (fun n => event_diff (x3 n) A))).
+      + specialize (lb2 (outer_λ_of_covers (fun n => alg_diff (x3 n) A))).
         cut_to lb2.
         * {
           etransitivity.
           - eapply Rbar_plus_le_compat; try eassumption.
-          - unfold outer_μ_of_covers.
+          - unfold outer_λ_of_covers.
             rewrite <- ELim_seq_plus.
             + rewrite <- eqq1.
-              unfold outer_μ_of_covers.
+              unfold outer_λ_of_covers.
               apply ELim_seq_le; intros.
-              rewrite <- sum_Rbar_n_nneg_plus by (intros; apply measure_nneg).
+              rewrite <- sum_Rbar_n_nneg_plus by (intros; apply premeasure_nneg).
               apply sum_Rbar_n_monotone; trivial; intros ?.
-              rewrite <- measure_disjoint_union; trivial.
-              * apply measure_monotone; trivial.
-                firstorder.
-              * firstorder.
-            + now apply is_measure_ex_Elim_seq.
-            + now apply is_measure_ex_Elim_seq.
+              rewrite <- premeasure_disjoint_union; trivial.
+              * apply premeasure_monotone; trivial.
+                intros ?; simpl; firstorder.
+              * intros ?; simpl; firstorder.
+            + apply ex_Elim_seq_incr; intros.
+              apply sum_Rbar_n_pos_incr; intros.
+              apply premeasure_nneg.
+            + apply ex_Elim_seq_incr; intros.
+              apply sum_Rbar_n_pos_incr; intros.
+              apply premeasure_nneg.
             + apply ex_Rbar_plus_pos
-              ; apply outer_μ_of_covers_nneg.
+              ; apply outer_λ_of_covers_nneg.
         } 
         * 
           eexists; split; try reflexivity.
@@ -2292,36 +2751,59 @@ Section omf.
     - intros HH; rewrite HH in nneg; simpl in nneg; contradiction.
   Qed.
 
-  Lemma outer_μ_μ (A:event σ) : outer_μ A = μ A.
+  Lemma outer_λ_λ (A:alg_set Alg) : outer_λ A = λ A.
   Proof.
-    unfold outer_μ.
+    unfold outer_λ.
     unfold Rbar_glb, proj1_sig; match_destr.
     destruct r as [lb glb].
     unfold is_lb_Rbar in *.
     apply antisymmetry.
-    - case_eq (μ A); simpl.
+    - case_eq (λ A); simpl.
       + intros.
         apply lb.
-        exists (list_collection [A] ∅).
+        exists (fun n => nth n [A] alg_none).
         split.
         * intros ??.
           now (exists 0%nat; simpl).
-        * unfold outer_μ_of_covers.
-          unfold list_collection.
+        * unfold outer_λ_of_covers.
           rewrite seq_sum_list_sum.
           -- simpl.
              now rewrite Rbar_plus_0_r.
-          -- apply measure_none.
+          -- apply premeasure_none.
       + intros; now destruct x.
       + intros.
-        generalize (measure_nneg A); rewrite H.
+        generalize (premeasure_nneg A); rewrite H.
         now destruct x.
     - apply glb; intros ? [? [??]].
       rewrite H0.
-      unfold outer_μ_of_covers.
-      transitivity (μ (union_of_collection x1)).
-      + now apply measure_monotone.
-      + now apply measure_countable_sub_union.
+      pose (B n := alg_inter A (alg_make_collection_disjoint x1 n)).
+      assert (eqq1:pre_event_equiv A (pre_union_of_collection B)).
+      {
+        unfold B.
+        transitivity (pre_union_of_collection (fun n : nat => pre_event_inter A (alg_make_collection_disjoint x1 n)))
+        ; try reflexivity.
+
+        rewrite <- pre_event_inter_countable_union_distr.
+        rewrite <- pre_alg_make_collection_disjoint_union.
+        firstorder.
+      } 
+      assert (pf:alg_in (pre_union_of_collection (fun n : nat => B n))).
+      {
+        rewrite <- eqq1.
+        apply alg_set_in.
+      }
+      assert (eqq2:alg_equiv A (exist _ _ pf)) by apply eqq1.
+      rewrite eqq2.
+      rewrite premeasure_countable_disjoint_union.
+      + apply ELim_seq_le; intros.
+        apply sum_Rbar_n_monotone; trivial; intros ?.
+        apply premeasure_monotone; trivial; intros ? [??].
+        apply alg_make_collection_disjoint_in in H2.
+        now destruct H2 as [??].
+      + apply pre_collection_is_pairwise_disjoint_inter.
+        apply alg_make_collection_disjoint_disjoint.
   Qed.
 
 End omf.
+
+
