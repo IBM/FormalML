@@ -2543,17 +2543,27 @@ Section omf.
   Qed.
 
   Lemma sum_Rbar_n_Sn (f : nat -> Rbar) (n : nat) :
+    (forall n, Rbar_le 0 (f n)) ->
     sum_Rbar_n f (S n) = Rbar_plus (sum_Rbar_n f n) (f n).
   Proof.
-  Admitted.
-
+    intros.
+    unfold sum_Rbar_n.
+    rewrite seq_Sn; simpl.
+    rewrite map_app.
+    rewrite list_Rbar_sum_nneg_plus.
+    - simpl.
+      now rewrite Rbar_plus_0_r.
+    - now apply Forall_map; apply Forall_forall; intros.
+    - now apply Forall_map; apply Forall_forall; intros.
+  Qed.
+  
   Lemma sum_Rbar_n_pos_Sn (f : nat -> Rbar) (n : nat) :
     (forall n, Rbar_le 0 (f n)) ->
     Rbar_le (sum_Rbar_n f n) (sum_Rbar_n f (S n)).
   Proof.
     intros.
     replace (sum_Rbar_n f n) with (Rbar_plus (sum_Rbar_n f n) 0).
-    - rewrite sum_Rbar_n_Sn.
+    - rewrite sum_Rbar_n_Sn; trivial.
       apply Rbar_plus_le_compat.
       + apply Rbar_le_refl.
       + apply H.
@@ -2564,14 +2574,9 @@ Section omf.
     (forall n, Rbar_le (f n) (g n)) ->
     Rbar_le (sum_Rbar_n f n) (sum_Rbar_n g n).
   Proof.
-    induction n; intros.
-    - simpl.
-      lra.
-    - do 2 rewrite sum_Rbar_n_Sn.
-      apply Rbar_plus_le_compat.
-      + now apply IHn.
-      + apply H.
-   Qed.
+    intros.
+    apply sum_Rbar_n_monotone; trivial.
+  Qed.
 
   Lemma list_Rbar_sum_cat (l1 l2 : list Rbar) :
     (forall x1, In x1 l1 -> Rbar_le 0 x1) ->
@@ -2826,7 +2831,8 @@ Global Instance Rbar_eqdec : EqDec Rbar eq := Rbar_eq_dec.
           rewrite IHn.
           rewrite <- ELim_seq_plus.
           -- apply ELim_seq_ext; intros.
-             now rewrite sum_Rbar_n_Sn.
+             rewrite sum_Rbar_n_Sn; trivial; intros.
+             now apply sum_Rbar_n_nneg_nneg.
           -- apply ex_Elim_seq_incr; intros.
              apply sum_Rbar_n_le; intros.
              now apply sum_Rbar_n_pos_Sn.
@@ -2838,6 +2844,9 @@ Global Instance Rbar_eqdec : EqDec Rbar eq := Rbar_eq_dec.
                 now apply sum_Rbar_n_nneg_nneg.
              ++ apply ELim_seq_pos; intros.
                 now apply sum_Rbar_n_nneg_nneg.
+          -- intros.
+             apply ELim_seq_pos; intros.
+             now apply sum_Rbar_n_nneg_nneg; intros.
     - apply Elim_seq_le_bound; intros.
       destruct (bound_pair_iso_b_sum_Rbar f n).
       apply H.
