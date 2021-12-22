@@ -2596,7 +2596,32 @@ Section omf.
       (j <= n)%nat ->
       let '(a1,a2) := iso_b j in (a1 <= n1)%nat /\ (a2 <= n2)%nat.
   Proof.
-  Admitted.
+    induction n.
+    - exists (fst (iso_b 0%nat)).
+      exists (snd (iso_b 0%nat)).
+      intros.
+      assert (j = 0%nat) by lia.
+      rewrite H0.
+      destruct (iso_b 0%nat).
+      split; now simpl.
+    - destruct IHn as [n1 [n2 ?]].
+      exists (max n1 (fst (iso_b (S n)))).
+      exists (max n2 (snd (iso_b (S n)))).
+      intros.
+      destruct (le_dec j n).
+      + specialize (H j l).
+        destruct (iso_b j).
+        destruct H.
+        split; eapply le_trans.
+        * apply H.
+        * apply Nat.le_max_l.
+        * apply H1.
+        * apply Nat.le_max_l.
+      + assert (j = S n) by lia.
+        rewrite H1.
+        destruct (iso_b (S n)).
+        simpl; split; apply Nat.le_max_r.
+  Qed.
 
   Lemma bound_pair_iso_b_sum_Rbar (f : nat -> nat -> Rbar) (x : nat) :
     (forall a b, Rbar_le 0 (f a b)) ->
@@ -2608,18 +2633,25 @@ Section omf.
     exists n0; exists n.
   Admitted.
 
-  Lemma Elim_seq_pos_ind (f : nat -> Rbar) :
-    (forall n, Rbar_le 0 (f n)) ->
+  Lemma Elim_seq_incr_elem (f : nat -> Rbar) :
+    (forall n, Rbar_le (f n) (f (S n))) ->
     forall n, Rbar_le (f n) (ELim_seq f).
   Proof.
-    Admitted.
-
-  Lemma Elim_seq_pos_sum_Rbar (f : nat -> nat -> Rbar) (x x0 : nat) :
-    (forall a b, Rbar_le 0 (f a b)) ->
-    Rbar_le (sum_Rbar_n (fun x1 : nat => sum_Rbar_n (fun n1 : nat => f x1 n1) x) x0)
-            (ELim_seq (fun i : nat => sum_Rbar_n (fun x1 : nat => ELim_seq (fun i0 : nat => sum_Rbar_n (fun n0 : nat => f x1 n0) i0)) i)).
-    Proof.
-   Admitted.
+    intros.
+    replace (f n) with (ELim_seq (fun _ => f n)) by now rewrite ELim_seq_const.
+    apply ELim_seq_le_loc.
+    exists n.
+    intros.
+    pose (h := (n0-n)%nat).
+    replace (n0) with (h + n)%nat by lia.
+    induction h.
+    - replace (0 + n)%nat with n by lia.
+      apply Rbar_le_refl.
+    - eapply Rbar_le_trans.
+      + apply IHh.
+      + replace (S h + n)%nat with (S (h+n))%nat by lia.
+        apply H.
+  Qed.
 
   Lemma ELim_seq_Elim_seq_pair (f:nat->nat->Rbar) :
     (forall a b, Rbar_le 0 (f a b)) ->
@@ -2644,10 +2676,9 @@ Section omf.
         apply H.
         eapply Rbar_le_trans.
         * apply H0.
-        * apply Elim_seq_pos_ind; intros.
-          apply sum_Rbar_n_nneg_nneg.
-          intros.
-          now destruct (iso_b i).
+        * apply Elim_seq_incr_elem; intros.
+          apply sum_Rbar_n_pos_Sn; intros.
+          now destruct (iso_b n2).
       + symmetry.
         induction n.
         * unfold sum_Rbar_n.
@@ -2674,8 +2705,16 @@ Section omf.
       apply H.
       eapply Rbar_le_trans.
       + apply H0.
-      + now apply Elim_seq_pos_sum_Rbar.
-   Qed.
+      + apply Rbar_le_trans with
+            (y := sum_Rbar_n (fun x1 : nat => ELim_seq (fun i0 : nat => sum_Rbar_n (fun n0 : nat => f x1 n0) i0)) x0).
+        * apply sum_Rbar_n_le; intros.
+          apply Elim_seq_incr_elem; intros.
+          now apply sum_Rbar_n_pos_Sn.
+        * apply Elim_seq_incr_elem; intros.
+          apply sum_Rbar_n_pos_Sn; intros.
+          apply ELim_seq_pos; intros.
+          now apply sum_Rbar_n_nneg_nneg.
+  Qed.
 
   Global Instance outer_λ_outer_measure : is_outer_measure outer_λ.
   Proof.
