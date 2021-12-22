@@ -2543,7 +2543,7 @@ Section omf.
   Qed.
 
   Lemma sum_Rbar_n_Sn (f : nat -> Rbar) (n : nat) :
-    sum_Rbar_n f (S n) = Rbar_plus (sum_Rbar_n f n) (f (S n)).
+    sum_Rbar_n f (S n) = Rbar_plus (sum_Rbar_n f n) (f n).
   Proof.
   Admitted.
 
@@ -2573,6 +2573,97 @@ Section omf.
       + apply H.
    Qed.
 
+  Lemma list_Rbar_sum_cat (l1 l2 : list Rbar) :
+    (forall x1, In x1 l1 -> Rbar_le 0 x1) ->
+    (forall x2, In x2 l2 -> Rbar_le 0 x2) ->    
+    list_Rbar_sum (l1 ++ l2) = Rbar_plus (list_Rbar_sum l1) (list_Rbar_sum l2).
+  Proof.
+    induction l1.
+    * simpl.
+      now rewrite Rbar_plus_0_l.
+    * intros.
+      simpl.
+      rewrite IHl1; trivial.
+      -- rewrite Rbar_plus_assoc_nneg; trivial.
+         ++ apply H.
+            simpl.
+            now left.
+         ++ apply list_Rbar_sum_nneg_nneg.
+            intros.
+            apply H.
+            now apply in_cons.
+         ++ apply list_Rbar_sum_nneg_nneg.
+            intros.
+            now apply H0.
+      -- intros; apply H.
+         now apply in_cons.
+   Qed.
+
+   Lemma list_Rbar_sum_nest_prod (f : nat -> nat -> Rbar ) (l1 l2 : list nat) :
+    (forall a b, Rbar_le 0 (f a b)) ->
+     list_Rbar_sum
+       (map (fun i : nat => list_Rbar_sum (map (fun j : nat => f i j) l2)) l1) =
+     list_Rbar_sum (map (fun '(a, b) => f a b) (list_prod l1 l2)).
+   Proof.
+     intros.
+     induction l1.
+     - simpl.
+       induction l2.
+       + now simpl.
+       + reflexivity.
+     - simpl.
+       rewrite IHl1, map_app, list_Rbar_sum_cat.
+       + f_equal.
+         now rewrite map_map.
+       + intros.
+         rewrite in_map_iff in H0.
+         destruct H0 as [[? ?] [? ?]].
+         now rewrite <- H0.
+       + intros.
+         rewrite in_map_iff in H0.
+         destruct H0 as [[? ?] [? ?]].
+         now rewrite <- H0.
+    Qed.
+
+   Lemma sum_Rbar_n_pair_list_sum (f : nat -> nat -> Rbar ) (n m : nat) :
+    (forall a b, Rbar_le 0 (f a b)) ->
+     sum_Rbar_n (fun x0 => sum_Rbar_n (fun n1 => f x0 n1) m) n = 
+     list_Rbar_sum (map (fun '(a, b) => f a b) (list_prod (seq 0 n) (seq 0 m))).
+   Proof.
+     intros.
+     unfold sum_Rbar_n.
+     apply list_Rbar_sum_nest_prod.
+     apply H.
+   Qed.
+
+Lemma list_Rbar_sum_pos_sublist_le (l1 l2 : list Rbar) :
+  (forall x, In x l2 -> Rbar_le 0 x) ->
+  sublist l1 l2 ->
+  Rbar_le (list_Rbar_sum l1) (list_Rbar_sum l2).
+Proof.
+  intros pos subl.
+  induction subl.
+  - simpl.
+    lra.
+  - simpl.
+    apply Rbar_plus_le_compat.
+    + apply Rbar_le_refl.
+    + apply IHsubl.
+      intros.
+      apply pos.
+      simpl; now right.
+  - simpl.
+    replace (list_Rbar_sum l1) with (Rbar_plus 0 (list_Rbar_sum l1)) by now rewrite Rbar_plus_0_l.
+    apply Rbar_plus_le_compat.
+    + apply pos.
+      simpl.
+      now left.
+    + eapply IHsubl.
+      intros.
+      apply pos.
+      simpl; now right.
+Qed.
+
   Lemma bound_iso_f_pairs_sum_Rbar (f :nat -> nat -> Rbar) (n0 n : nat) :
     (forall a b, Rbar_le 0 (f a b)) ->
     exists (x : nat),
@@ -2580,18 +2671,41 @@ Section omf.
               (sum_Rbar_n (fun n1 : nat => let '(a, b) := iso_b n1 in f a b) x).
   Proof.
     intros.
-    destruct (pair_encode_contains_square (max n0 n)).
+    destruct (pair_encode_contains_square2 (max n0 n)).    
     exists x.
-    Admitted.
+    rewrite sum_Rbar_n_pair_list_sum; trivial.
+    unfold sum_Rbar_n.
+    apply list_Rbar_sum_pos_sublist_le.
+    - intros.
+      rewrite in_map_iff in H1.
+      destruct H1 as [? [? ?]].
+      destruct (iso_b x1).
+      rewrite <- H1.
+      now apply H.
+    -     
+  Admitted.
+
 
   Lemma bound_pair_iso_b_sum_Rbar (f : nat -> nat -> Rbar) (x : nat) :
+
     (forall a b, Rbar_le 0 (f a b)) ->
     exists (n : nat),
       Rbar_le (sum_Rbar_n (fun n1 : nat => let '(a, b) := iso_b n1 in f a b) x)
               (sum_Rbar_n (fun x0 : nat => sum_Rbar_n (fun n1 : nat => f x0 n1) n) n).
   Proof.
-    destruct (square_contains_pair_encode x) as [n ?].
+    intros.
+    destruct (square_contains_pair_encode2 x) as [n ?].
     exists n.
+    rewrite sum_Rbar_n_pair_list_sum; trivial.
+    unfold sum_Rbar_n.
+    apply list_Rbar_sum_pos_sublist_le.
+    - intros.
+      rewrite in_map_iff in H1.
+      destruct H1 as [? [? ?]].
+      destruct x1.
+      rewrite <- H1.
+      now apply H.    
+    - 
   Admitted.
 
   Lemma Elim_seq_incr_elem (f : nat -> Rbar) :
