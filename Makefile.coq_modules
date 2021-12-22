@@ -73,6 +73,7 @@ PROB_THEORY = \
 	Almost \
 	BorelSigmaAlgebra \
 	DiscreteProbSpace \
+	Dynkin \
 	Event \
 	ProbSpace \
 	FunctionsToReal \

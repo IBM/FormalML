@@ -2490,15 +2490,6 @@ Section dec.
       + apply in_map_iff; eauto.
   Qed.        
 
-  Lemma Forall2_concat {A} R (l1 l2:list (list A)):
-    Forall2 (Forall2 R) l1 l2 ->
-    Forall2 R (concat l1) (concat l2).
-  Proof.
-    induction 1; simpl.
-    - constructor.
-    - apply Forall2_app; auto.
-  Qed.
-    
   Lemma refine_dec_sa_partitions_symm (l1 l2 : list dec_sa_event) :
     exists l',
       Permutation (refine_dec_sa_partitions l1 l2) l' /\
@@ -2607,6 +2598,98 @@ Section sa_sub.
   Qed.
 
 End sa_sub.
+
+Section pre_make_disjoint.
+  Context {T:Type}.
+  
+  Definition make_pre_collection_disjoint (coll:nat->pre_event T) : nat -> pre_event T
+    := fun x => pre_event_diff (coll x) ((pre_union_of_collection (fun y =>
+                                                                  if lt_dec y x
+                                                                  then coll y
+                                                                  else pre_event_none))).
+
+  Lemma make_pre_collection_disjoint_sub (En:nat -> pre_event T) n : pre_event_sub (make_pre_collection_disjoint En n) (En n).
+  Proof.
+    now intros x [??].
+  Qed.
+
+  Lemma make_pre_collection_disjoint0 (En:nat -> pre_event T) :
+    pre_event_equiv (make_pre_collection_disjoint En 0) (En 0%nat).
+  Proof.
+    unfold make_pre_collection_disjoint.
+    red; intros.
+    split; intros.
+    - destruct H; trivial.
+    - split; trivial.
+      unfold pre_union_of_collection.
+      intros [? HH].
+      match_destr_in HH.
+      lia.
+  Qed.
+
+  Hint Rewrite @make_pre_collection_disjoint0 : prob.
+
+  Lemma make_pre_collection_disjoint_in (coll:nat->pre_event T) (x:nat) (e:T) :
+    make_pre_collection_disjoint coll x e <->
+      (coll x) e /\ forall y, (y < x)%nat -> ~ (coll y) e.
+  Proof.
+    split.
+    - unfold make_pre_collection_disjoint; intros HH.
+      destruct HH as [H1 H2].
+      split; trivial.
+      intros y ylt cy.
+      apply H2.
+      exists y.
+      destruct (lt_dec y x); intuition.
+    - intros [ce fce].
+      unfold make_pre_collection_disjoint.
+      split; trivial.
+      unfold pre_union_of_collection.
+      intros [n Hn].
+      destruct (lt_dec n x); trivial.
+      eapply fce; eauto.
+  Qed.
+  
+  Lemma make_pre_collection_disjoint_disjoint (coll:nat->pre_event T) :
+    pre_collection_is_pairwise_disjoint (make_pre_collection_disjoint coll).
+  Proof.
+    intros x y xyneq e e1 e2.
+    apply make_pre_collection_disjoint_in in e1.
+    apply make_pre_collection_disjoint_in in e2.
+    destruct e1 as [H11 H12].
+    destruct e2 as [H21 H22].
+    destruct (not_eq _ _ xyneq) as [xlt|ylt].
+    - eapply H22; eauto.
+    - eapply H12; eauto.
+  Qed.
+
+  
+  Lemma make_pre_collection_disjoint_union (coll:nat->pre_event T) :
+    pre_event_equiv (pre_union_of_collection coll)
+                    (pre_union_of_collection (make_pre_collection_disjoint coll)).
+  Proof.
+    unfold pre_union_of_collection.
+    intros t.
+    split; intros [n Hn].
+    - simpl.
+      generalize (excluded_middle_entails_unrestricted_minimization classic (fun n => coll n t))
+      ; intros HH.
+      specialize (HH _ Hn).
+      destruct HH as [m mmin].
+      exists m.
+      destruct mmin.
+      unfold make_pre_collection_disjoint.
+      split; trivial.
+      unfold pre_union_of_collection.
+      intros [nn Hnn].
+      destruct (lt_dec nn m); [ | tauto].
+      specialize (H0 _ Hnn).
+      lia.
+    - apply make_pre_collection_disjoint_in in Hn.
+      exists n; tauto.
+  Qed.
+
+End pre_make_disjoint.
 
 Coercion event_pre : event >-> Funclass.
 

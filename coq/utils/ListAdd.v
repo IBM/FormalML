@@ -2187,3 +2187,12 @@ Proof.
       now inversion H2.
 Qed.
 
+Lemma Forall2_concat {A} R (l1 l2:list (list A)):
+  Forall2 (Forall2 R) l1 l2 ->
+  Forall2 R (concat l1) (concat l2).
+Proof.
+  induction 1; simpl.
+  - constructor.
+  - apply Forall2_app; auto.
+Qed.
+    
