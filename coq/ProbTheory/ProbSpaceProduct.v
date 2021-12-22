@@ -17,6 +17,7 @@ Import ListNotations.
 Require Export Event SigmaAlgebras ProbSpace.
 Require Export RandomVariable VectorRandomVariable.
 Require Import ClassicalDescription.
+Require Import DiscreteProbSpace.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -2572,21 +2573,14 @@ Section omf.
       + apply H.
    Qed.
 
-  Lemma bound_iso_f_pairs (n1 n2 : nat) :
-    exists (m : nat),
-    forall (a1 a2 : nat), 
-      (a1 <= n1)%nat /\ (a2 <= n2)%nat ->
-      (iso_f (a1, a2) <= m)%nat.
-  Proof.
-  Admitted.
-
   Lemma bound_iso_f_pairs_sum_Rbar (f :nat -> nat -> Rbar) (n0 n : nat) :
     (forall a b, Rbar_le 0 (f a b)) ->
     exists (x : nat),
       Rbar_le (sum_Rbar_n (fun x0 : nat => sum_Rbar_n (fun n1 : nat => f x0 n1) n0) n)
               (sum_Rbar_n (fun n1 : nat => let '(a, b) := iso_b n1 in f a b) x).
   Proof.
-    destruct (bound_iso_f_pairs n0 n) as [x ?].
+    intros.
+    destruct (pair_encode_contains_square (max n0 n)).
     exists x.
     Admitted.
 
