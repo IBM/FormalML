@@ -2718,13 +2718,6 @@ Global Instance Rbar_eqdec : EqDec Rbar eq := Rbar_eq_dec.
     - apply Forall_map.
       now apply Forall_forall; intros [??] ?.
   Qed.
-
-  (* TODO: Move to Isomorphism and prove iso_f version *)
-  Lemma iso_b_nodup {A B} {iso:Isomorphism A B} l :
-    NoDup l ->
-    NoDup (map iso_b l).
-  Proof.
-  Admitted.
         
   Lemma bound_pair_iso_b_sum_Rbar (f : nat -> nat -> Rbar) (x : nat) :
 

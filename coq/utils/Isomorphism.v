@@ -81,3 +81,30 @@ Global Instance nat_to_N_iso : Isomorphism nat N
       iso_f_b := N2Nat.id ;
       iso_b_f := Nat2N.id ;
     }.
+
+Section nd.
+  Lemma iso_b_nodup {A B} {iso:Isomorphism A B} l :
+    NoDup l ->
+    NoDup (map iso_b l).
+  Proof.
+    intros.
+    apply (NoDup_map_inv (iso_f)).
+    rewrite map_map.
+    erewrite map_ext; try rewrite map_id; trivial.
+    intros.
+    now rewrite iso_f_b.
+  Qed.
+
+  Lemma iso_f_nodup {A B} {iso:Isomorphism A B} l :
+    NoDup l ->
+    NoDup (map iso_f l).
+  Proof.
+    intros.
+    apply (NoDup_map_inv (iso_b)).
+    rewrite map_map.
+    erewrite map_ext; try rewrite map_id; trivial.
+    intros.
+    now rewrite iso_b_f.
+  Qed.
+
+End nd.
