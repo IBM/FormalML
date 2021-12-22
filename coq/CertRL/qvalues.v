@@ -463,15 +463,86 @@ Proof.
     -- now rewrite map_not_nil.
 Qed.
 
+Lemma Rmax_list_Rabs_pos {A : Type} (l : list A) (f : A -> R) :
+  0 <= Max_{l} (fun a => Rabs (f a)).
+Proof.
+  destruct (is_nil_dec l); try subst.
+  + now simpl.
+  + rewrite BasicUtils.ne_symm in n.
+    generalize (Rmax_list_map_exist (fun a => Rabs(f a)) l n).
+    intros [a [Ha1 Ha2]].
+    rewrite <-Ha2.
+    apply Rabs_pos.
+Qed.
+
+Lemma Rplus_le_compat_Rsqr {a b c d : R} (hab : 0 <= a <= c) (hbd : 0 <= b <= d) :
+  (a + b)² <= (c + d)².
+Proof.
+  do 2 rewrite Rsqr_plus.
+  apply Rplus_le_compat.
+  apply Rplus_le_compat.
+  + apply Rsqr_le_abs_1.
+    rewrite Rabs_right; try rewrite Rabs_right; try intuition lra.
+  + apply Rsqr_le_abs_1.
+    rewrite Rabs_right; try rewrite Rabs_right; try intuition lra.
+  + apply Rmult_le_compat; try intuition lra.
+Qed.
+
+(* Move this somewhere else. *)
+Lemma Rmax_list_map_dep_prod {A : Type} {B : A -> Type} (la : list A) (lb : forall a, list (B a))
+      (Hb : forall a, [] <> lb a) (f : forall x :A, B x -> R):
+         Max_{ la}(fun a => Max_{lb a} (fun b => f a b)) =
+         Max_{list_dep_prod la lb}(fun ab : {x : A & B x} => let (a,b) := ab in f a b).
+ Proof.
+   destruct (is_nil_dec la); subst; try simpl; try easy.
+   assert (Ha : [] <> la) by congruence. clear n.
+   apply Rle_antisym.
+    ++  rewrite Rmax_list_le_iff.
+    -- intros x Hx. eapply (@Rmax_list_ge _ _ x).
+       ** rewrite in_map_iff in *.
+          destruct Hx as [a [Hx' HInx']].
+          set (Hmax := Rmax_list_map_exist (fun b : B a=> f a b) (lb a) (Hb a)).
+          destruct Hmax as [b [Hb1 Hb2]].
+          exists (existT _ a b). simpl. split; [now rewrite <-Hx' |].
+          apply in_dep_prod; trivial.
+       ** now right.
+    -- now rewrite map_not_nil.
+       ++ rewrite Rmax_list_le_iff.
+    * intros x Hx.
+      rewrite in_map_iff in Hx.
+      destruct Hx as [ab [Hab1 HInab1]].
+      eapply Rmax_list_ge.
+      --- rewrite in_map_iff.
+          exists (projT1 ab). split ; trivial.
+          destruct ab; simpl.
+          setoid_rewrite in_dep_prod_iff in HInab1.
+          destruct HInab1 ; trivial.
+      --- eapply (Rmax_list_ge _ _ (f (projT1 ab) (projT2 ab))).
+          +++ rewrite in_map_iff. exists (projT2 ab). split ; trivial.
+              destruct ab as [a b]; simpl.
+              rewrite in_dep_prod_iff in HInab1.
+              destruct HInab1 ; trivial.
+          +++ rewrite <-Hab1; destruct ab; simpl. right ; trivial.
+    * rewrite map_not_nil.
+      rewrite not_nil_exists in Ha.
+      destruct Ha as [a H]. specialize (Hb a).
+      rewrite not_nil_exists in Hb.
+      destruct Hb as [b Hb].
+      rewrite not_nil_exists.
+      exists (existT _ a b). rewrite in_dep_prod_iff; split; trivial.
+ Qed.
+
+
 (* Lemma 13. *)
 Theorem noise_variance_bound' (sa0 : sigT M.(act)) W :
   forall sa : sigT M.(act), let (s,a) := sa in
                        let (ls,_) := fs M in
                        variance (t s a) (fun s' => stochasticBellmanQ' sa0 W s' sa) <=
-                       (Max_{ ls}(fun a0 : state M => Rabs (reward s a a0)) +
+                       (Max_{ls}(fun s' => Max_{ls}(fun s => Max_{act_list s}( fun a => Rabs (reward s a s')))) +
                         γ*(Max_{ ls} (fun a0 : state M => Rabs (Max_{ act_list a0}(fun a1 : act M a0 => W (existT (act M) a0 a1))))))².
 Proof.
   intros [s a].
+  assert (Ha : forall s : M.(state), [] <> act_list s) by (intros s0; apply act_list_not_nil).
   generalize (expt_value_le_max (fs M) (t s a)); intros.
   destruct (fs M) as [ls ?].
   assert (Hls: [] <> ls) by (apply not_nil_exists; exists (ne M); trivial).
@@ -491,9 +562,19 @@ Proof.
   eapply Rle_trans; try (eapply (Rmax_list_Rsqr_Rabs_2) ; trivial).
   unfold bellmanQ'; match_destr.
   + eapply Rle_trans; try (eapply (Rmax_list_Rsqr_Rabs_3) ; trivial).
-    setoid_rewrite Rabs_mult.
-    rewrite Rmax_list_map_const_mul; trivial.
-    rewrite Hγ1. now right.
+    apply Rplus_le_compat_Rsqr.
+    -- split; [apply Rmax_list_Rabs_pos|].
+       apply Rmax_list_fun_le; intros s'.
+       unfold act_list.
+       rewrite Rmax_list_map_dep_prod.
+       +++  apply Rmax_spec; rewrite in_map_iff.
+            exists (existT _ s a). split; trivial.
+            rewrite in_dep_prod_iff; split; trivial.
+            apply fa.
+       +++ intros. apply act_list_not_nil.
+    -- split; [apply Rmax_list_Rabs_pos|].
+       setoid_rewrite Rabs_mult.
+       rewrite Hγ1. rewrite Rmax_list_map_const_mul; lra.
   + intuition.
   + rewrite variance_eq.
     unfold stochasticBellmanQ', bellmanQ', bellmanQbar'.
@@ -502,6 +583,8 @@ Proof.
     rewrite Rminus_eq_0.
     rewrite Rsqr_pow2. apply pow2_ge_0.
 Qed.
+
+
 
 
 End bellmanQ.
