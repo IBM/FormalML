@@ -2517,6 +2517,110 @@ Section omf.
     - intros; simpl; trivial.
   Qed.
 
+  Lemma ELim_seq_sup_incr (f : nat -> Rbar) :
+    (forall n, Rbar_le (f n) (f (S n))) ->
+    ELim_seq f = ELimSup_seq f.
+  Proof.
+    intros.
+    unfold ELim_seq.
+    apply ex_Elim_seq_incr in H.
+    unfold ex_Elim_seq in H.
+    rewrite <- H.
+    destruct (ELimSup_seq f); simpl; try congruence.
+    apply Rbar_finite_eq.
+    lra.
+  Qed.
+
+  Lemma Elim_seq_le_bound (f : nat -> Rbar) (B:Rbar) :
+    (forall n, Rbar_le (f n) B) ->
+    Rbar_le (ELim_seq f) B.
+  Proof.
+    intros.
+    replace B with (ELim_seq (fun _ => B)).
+    now apply ELim_seq_le.
+    apply ELim_seq_const.
+  Qed.
+
+  Lemma sum_Rbar_n_Sn (f : nat -> Rbar) (n : nat) :
+    sum_Rbar_n f (S n) = Rbar_plus (sum_Rbar_n f n) (f (S n)).
+  Proof.
+  Admitted.
+
+  Lemma sum_Rbar_n_pos_Sn (f : nat -> Rbar) (n : nat) :
+    (forall n, Rbar_le 0 (f n)) ->
+    Rbar_le (sum_Rbar_n f n) (sum_Rbar_n f (S n)).
+  Proof.
+    intros.
+    replace (sum_Rbar_n f n) with (Rbar_plus (sum_Rbar_n f n) 0).
+    - rewrite sum_Rbar_n_Sn.
+      apply Rbar_plus_le_compat.
+      + apply Rbar_le_refl.
+      + apply H.
+    - now rewrite Rbar_plus_0_r.
+  Qed.
+
+  Lemma sum_Rbar_n_le (f g : nat -> Rbar) (n : nat) :
+    (forall n, Rbar_le (f n) (g n)) ->
+    Rbar_le (sum_Rbar_n f n) (sum_Rbar_n g n).
+  Proof.
+    induction n; intros.
+    - simpl.
+      lra.
+    - do 2 rewrite sum_Rbar_n_Sn.
+      apply Rbar_plus_le_compat.
+      + now apply IHn.
+      + apply H.
+   Qed.
+
+  Lemma bound_iso_f_pairs (n1 n2 : nat) :
+    exists (m : nat),
+    forall (a1 a2 : nat), 
+      (a1 <= n1)%nat /\ (a2 <= n2)%nat ->
+      (iso_f (a1, a2) <= m)%nat.
+  Proof.
+  Admitted.
+
+  Lemma bound_iso_f_pairs_sum_Rbar (f :nat -> nat -> Rbar) (n0 n : nat) :
+    (forall a b, Rbar_le 0 (f a b)) ->
+    exists (x : nat),
+      Rbar_le (sum_Rbar_n (fun x0 : nat => sum_Rbar_n (fun n1 : nat => f x0 n1) n0) n)
+              (sum_Rbar_n (fun n1 : nat => let '(a, b) := iso_b n1 in f a b) x).
+  Proof.
+    destruct (bound_iso_f_pairs n0 n) as [x ?].
+    exists x.
+    Admitted.
+
+  Lemma bound_pair_iso_b (n : nat) :
+    exists (n1 n2 : nat),
+    forall (j : nat), 
+      (j <= n)%nat ->
+      let '(a1,a2) := iso_b j in (a1 <= n1)%nat /\ (a2 <= n2)%nat.
+  Proof.
+  Admitted.
+
+  Lemma bound_pair_iso_b_sum_Rbar (f : nat -> nat -> Rbar) (x : nat) :
+    (forall a b, Rbar_le 0 (f a b)) ->
+    exists (n0 n : nat),
+      Rbar_le (sum_Rbar_n (fun n1 : nat => let '(a, b) := iso_b n1 in f a b) x)
+              (sum_Rbar_n (fun x0 : nat => sum_Rbar_n (fun n1 : nat => f x0 n1) n0) n).
+  Proof.
+    destruct (bound_pair_iso_b x) as [n0 [n ?]].
+    exists n0; exists n.
+  Admitted.
+
+  Lemma Elim_seq_pos_ind (f : nat -> Rbar) :
+    (forall n, Rbar_le 0 (f n)) ->
+    forall n, Rbar_le (f n) (ELim_seq f).
+  Proof.
+    Admitted.
+
+  Lemma Elim_seq_pos_sum_Rbar (f : nat -> nat -> Rbar) (x x0 : nat) :
+    (forall a b, Rbar_le 0 (f a b)) ->
+    Rbar_le (sum_Rbar_n (fun x1 : nat => sum_Rbar_n (fun n1 : nat => f x1 n1) x) x0)
+            (ELim_seq (fun i : nat => sum_Rbar_n (fun x1 : nat => ELim_seq (fun i0 : nat => sum_Rbar_n (fun n0 : nat => f x1 n0) i0)) i)).
+    Proof.
+   Admitted.
+
   Lemma ELim_seq_Elim_seq_pair (f:nat->nat->Rbar) :
     (forall a b, Rbar_le 0 (f a b)) ->
     ELim_seq
@@ -2524,7 +2628,54 @@ Section omf.
          sum_Rbar_n (fun x0 : nat => ELim_seq (fun i0 : nat => sum_Rbar_n (fun n : nat => (f x0 n)) i0)) i) =
       ELim_seq (fun i : nat => sum_Rbar_n (fun n : nat => let '(a, b) := iso_b (Isomorphism:=nat_pair_encoder) n in (f a b)) i).
   Proof.
-  Admitted.
+    intros.
+    apply Rbar_le_antisym.
+    - apply Elim_seq_le_bound; intros.
+      replace (sum_Rbar_n
+                 (fun x0 : nat =>
+                    ELim_seq 
+                      (fun i0 : nat => sum_Rbar_n (fun n0 : nat => f x0 n0) i0)) n)
+              with
+                (ELim_seq (fun i0 =>
+                             (sum_Rbar_n (fun x0 =>
+                                            (sum_Rbar_n (fun n0 => f x0 n0) i0)) n))).
+      + apply Elim_seq_le_bound; intros.
+        destruct (bound_iso_f_pairs_sum_Rbar f n0 n).
+        apply H.
+        eapply Rbar_le_trans.
+        * apply H0.
+        * apply Elim_seq_pos_ind; intros.
+          apply sum_Rbar_n_nneg_nneg.
+          intros.
+          now destruct (iso_b i).
+      + symmetry.
+        induction n.
+        * unfold sum_Rbar_n.
+          simpl.
+          now rewrite ELim_seq_const.
+        * rewrite sum_Rbar_n_Sn.
+          rewrite IHn.
+          rewrite <- ELim_seq_plus.
+          -- apply ELim_seq_ext; intros.
+             now rewrite sum_Rbar_n_Sn.
+          -- apply ex_Elim_seq_incr; intros.
+             apply sum_Rbar_n_le; intros.
+             now apply sum_Rbar_n_pos_Sn.
+          -- apply ex_Elim_seq_incr; intros.
+             now apply sum_Rbar_n_pos_Sn.
+          -- apply ex_Rbar_plus_pos.
+             ++ apply ELim_seq_pos; intros.
+                apply sum_Rbar_n_nneg_nneg; intros.
+                now apply sum_Rbar_n_nneg_nneg.
+             ++ apply ELim_seq_pos; intros.
+                now apply sum_Rbar_n_nneg_nneg.
+    - apply Elim_seq_le_bound; intros.
+      destruct (bound_pair_iso_b_sum_Rbar f n) as [? [? ?]].
+      apply H.
+      eapply Rbar_le_trans.
+      + apply H0.
+      + now apply Elim_seq_pos_sum_Rbar.
+   Qed.
 
   Global Instance outer_λ_outer_measure : is_outer_measure outer_λ.
   Proof.
