@@ -584,7 +584,21 @@ Proof.
     rewrite Rsqr_pow2. apply pow2_ge_0.
 Qed.
 
-
-
+Theorem noise_total_variance_bound (sa0 : sigT M.(act)) W : exists c : R,
+  let (lsa,_) := act_finite M in
+  list_sum (map (fun sa : {x : state M & _}  => let (s,a) := sa in
+                variance (t s a) (fun s' => stochasticBellmanQ' sa0 W s' sa)) lsa)
+  <= c.
+Proof.
+  generalize (noise_variance_bound' sa0 W); intros Hnvb.
+  destruct (fs M) as [ls ?].
+  destruct (act_finite M) as [lsa ?].
+  exists (list_sum (map (fun _ => (Max_{ls}(fun s' => Max_{ls}(fun s => Max_{act_list s}( fun a => Rabs (reward s a s')))) +
+                        γ*(Max_{ ls} (fun a0 : state M => Rabs (Max_{ act_list a0}(fun a1 : act M a0 => W (existT (act M) a0 a1))))))²) lsa)).
+  apply list_sum_le; intros sa.
+  specialize (Hnvb sa).
+  destruct sa as [s a].
+  apply Hnvb.
+Qed.
 
 End bellmanQ.
