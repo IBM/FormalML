@@ -2664,6 +2664,8 @@ Proof.
       simpl; now right.
 Qed.
 
+Global Instance Rbar_eqdec : EqDec Rbar eq := Rbar_eq_dec.
+
   Lemma bound_iso_f_pairs_sum_Rbar (f :nat -> nat -> Rbar) (n0 n : nat) :
     (forall a b, Rbar_le 0 (f a b)) ->
     exists (x : nat),
@@ -2671,21 +2673,59 @@ Qed.
               (sum_Rbar_n (fun n1 : nat => let '(a, b) := iso_b n1 in f a b) x).
   Proof.
     intros.
-    destruct (pair_encode_contains_square2 (max n0 n)).    
-    exists x.
+    destruct (pair_encode_contains_square (max n0 n)).    
+    exists (S x).
     rewrite sum_Rbar_n_pair_list_sum; trivial.
-    unfold sum_Rbar_n.
-    apply list_Rbar_sum_pos_sublist_le.
-    - intros.
-      rewrite in_map_iff in H1.
-      destruct H1 as [? [? ?]].
-      destruct (iso_b x1).
-      rewrite <- H1.
-      now apply H.
-    -     
+
+    assert (subl:exists l, Permutation (list_prod (seq 0 n) (seq 0 n0)) l /\
+                        sublist l (map iso_b (seq 0 (S x)))).
+    {
+      apply incl_NoDup_sublist_perm.
+      - apply NoDup_prod
+        ; apply seq_NoDup.
+      - intros [??] ?.
+        apply in_prod_iff in H1.
+        apply in_map_iff.
+        exists (iso_f (n1,n2)).
+        split.
+        + now rewrite iso_b_f.
+        + apply in_seq.
+          split; [lia |].
+          rewrite plus_0_l.
+          apply le_lt_n_Sm.
+          destruct H1.
+          apply in_seq in H1.
+          apply in_seq in H2.
+          apply H0; lia.
+    } 
+
+    destruct subl as [?[??]].
+    apply (Permutation_map (fun '(a, b) => f a b)) in H1.
+    apply (sublist_map (fun '(a, b) => f a b)) in H2.
+
+    rewrite (list_Rbar_sum_nneg_perm
+               (map (fun '(a, b) => f a b) (list_prod (seq 0 n) (seq 0 n0)))
+               (map (fun '(a, b) => f a b) x0)); trivial.
+    - apply list_Rbar_sum_pos_sublist_le.
+      + intros.
+        apply in_map_iff in H3.
+        destruct H3 as [?[??]].
+        subst.
+        match_destr.
+      + now rewrite map_map in H2.
+    - apply Forall_map.
+      now apply Forall_forall; intros [??] ?.
+    - apply Forall_map.
+      now apply Forall_forall; intros [??] ?.
+  Qed.
+
+  (* TODO: Move to Isomorphism and prove iso_f version *)
+  Lemma iso_b_nodup {A B} {iso:Isomorphism A B} l :
+    NoDup l ->
+    NoDup (map iso_b l).
+  Proof.
   Admitted.
-
-
+        
   Lemma bound_pair_iso_b_sum_Rbar (f : nat -> nat -> Rbar) (x : nat) :
 
     (forall a b, Rbar_le 0 (f a b)) ->
@@ -2694,19 +2734,49 @@ Qed.
               (sum_Rbar_n (fun x0 : nat => sum_Rbar_n (fun n1 : nat => f x0 n1) n) n).
   Proof.
     intros.
-    destruct (square_contains_pair_encode2 x) as [n ?].
-    exists n.
+    destruct (square_contains_pair_encode x) as [n ?].
+    exists (S n).
     rewrite sum_Rbar_n_pair_list_sum; trivial.
     unfold sum_Rbar_n.
-    apply list_Rbar_sum_pos_sublist_le.
-    - intros.
-      rewrite in_map_iff in H1.
-      destruct H1 as [? [? ?]].
-      destruct x1.
-      rewrite <- H1.
-      now apply H.    
-    - 
-  Admitted.
+
+    assert (subl:exists l, Permutation (map iso_b (seq 0 x)) l /\
+                        sublist l (list_prod (seq 0 (S n)) (seq 0 (S n)))).
+    {
+      apply incl_NoDup_sublist_perm.
+      - apply iso_b_nodup.
+        apply seq_NoDup.
+      - intros [??] ?.
+        apply in_map_iff in H1.
+        apply in_prod_iff.
+        destruct H1 as [?[??]].
+        apply in_seq in H2.
+        specialize (H0 x0).
+        cut_to H0; try lia.
+        rewrite H1 in H0.
+        split; apply in_seq; lia.
+    } 
+
+    destruct subl as [?[??]].
+    apply (Permutation_map (fun '(a, b) => f a b)) in H1.
+    apply (sublist_map (fun '(a, b) => f a b)) in H2.
+
+    rewrite (list_Rbar_sum_nneg_perm
+               (map (fun n1 : nat => let '(a, b) := iso_b n1 in f a b) (seq 0 x))
+               (map (fun '(a, b) => f a b) x0)
+             ); trivial.
+    - apply list_Rbar_sum_pos_sublist_le; trivial.
+      intros.
+      apply in_map_iff in H3.
+      destruct H3 as [?[??]].
+      subst.
+      match_destr.
+    - apply Forall_map.
+      apply Forall_forall; intros; match_destr.
+    - apply Forall_map.
+      apply Forall_forall; intros; match_destr.
+    - rewrite <- H1.
+      now rewrite map_map.
+  Qed.
 
   Lemma Elim_seq_incr_elem (f : nat -> Rbar) :
     (forall n, Rbar_le (f n) (f (S n))) ->
