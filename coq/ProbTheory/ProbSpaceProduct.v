@@ -2584,47 +2584,14 @@ Section omf.
     exists x.
     Admitted.
 
-  Lemma bound_pair_iso_b (n : nat) :
-    exists (n1 n2 : nat),
-    forall (j : nat), 
-      (j <= n)%nat ->
-      let '(a1,a2) := iso_b j in (a1 <= n1)%nat /\ (a2 <= n2)%nat.
-  Proof.
-    induction n.
-    - exists (fst (iso_b 0%nat)).
-      exists (snd (iso_b 0%nat)).
-      intros.
-      assert (j = 0%nat) by lia.
-      rewrite H0.
-      destruct (iso_b 0%nat).
-      split; now simpl.
-    - destruct IHn as [n1 [n2 ?]].
-      exists (max n1 (fst (iso_b (S n)))).
-      exists (max n2 (snd (iso_b (S n)))).
-      intros.
-      destruct (le_dec j n).
-      + specialize (H j l).
-        destruct (iso_b j).
-        destruct H.
-        split; eapply le_trans.
-        * apply H.
-        * apply Nat.le_max_l.
-        * apply H1.
-        * apply Nat.le_max_l.
-      + assert (j = S n) by lia.
-        rewrite H1.
-        destruct (iso_b (S n)).
-        simpl; split; apply Nat.le_max_r.
-  Qed.
-
   Lemma bound_pair_iso_b_sum_Rbar (f : nat -> nat -> Rbar) (x : nat) :
     (forall a b, Rbar_le 0 (f a b)) ->
-    exists (n0 n : nat),
+    exists (n : nat),
       Rbar_le (sum_Rbar_n (fun n1 : nat => let '(a, b) := iso_b n1 in f a b) x)
-              (sum_Rbar_n (fun x0 : nat => sum_Rbar_n (fun n1 : nat => f x0 n1) n0) n).
+              (sum_Rbar_n (fun x0 : nat => sum_Rbar_n (fun n1 : nat => f x0 n1) n) n).
   Proof.
-    destruct (bound_pair_iso_b x) as [n0 [n ?]].
-    exists n0; exists n.
+    destruct (square_contains_pair_encode x) as [n ?].
+    exists n.
   Admitted.
 
   Lemma Elim_seq_incr_elem (f : nat -> Rbar) :
@@ -2695,12 +2662,12 @@ Section omf.
              ++ apply ELim_seq_pos; intros.
                 now apply sum_Rbar_n_nneg_nneg.
     - apply Elim_seq_le_bound; intros.
-      destruct (bound_pair_iso_b_sum_Rbar f n) as [? [? ?]].
+      destruct (bound_pair_iso_b_sum_Rbar f n).
       apply H.
       eapply Rbar_le_trans.
       + apply H0.
       + apply Rbar_le_trans with
-            (y := sum_Rbar_n (fun x1 : nat => ELim_seq (fun i0 : nat => sum_Rbar_n (fun n0 : nat => f x1 n0) i0)) x0).
+            (y := sum_Rbar_n (fun x1 : nat => ELim_seq (fun i0 : nat => sum_Rbar_n (fun n0 : nat => f x1 n0) i0)) x).
         * apply sum_Rbar_n_le; intros.
           apply Elim_seq_incr_elem; intros.
           now apply sum_Rbar_n_pos_Sn.
