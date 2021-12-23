@@ -502,6 +502,24 @@ Proof.
   lra.
 Qed.
 
+Lemma Rle_forall_le: forall a b : R, (forall eps : posreal, a <= b + eps) -> a <= b.
+Proof.
+  intros.
+  apply Rlt_forall_le; intros.
+  specialize (H (pos_div_2 eps)).
+  simpl in H.
+  eapply Rle_lt_trans; try eapply H.
+  destruct eps; simpl.
+  lra.
+Qed.
+
+Lemma Rbar_le_forall_Rbar_le: forall a b : Rbar, (forall eps : posreal, Rbar_le a (Rbar_plus b eps)) -> Rbar_le a b.
+Proof.
+  intros [] []; simpl; intros HH; trivial
+  ; try (apply HH; exact (mkposreal 1 Rlt_0_1)).
+  now apply Rle_forall_le.
+Qed.
+
 
 Lemma is_Lipschitz_cond {K : AbsRing} {X : NormedModule K}{Y : NormedModule R_AbsRing}
       {F : X -> Y} (γ : R):

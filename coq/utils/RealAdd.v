@@ -117,6 +117,8 @@ Proof.
   now apply Rbar_lt_le.
 Qed.
 
+Global Instance Rbar_eqdec : EqDec Rbar eq := Rbar_eq_dec.
+
 
 Lemma INR_nzero {n} :
   (n > 0)%nat -> INR n <> 0.
