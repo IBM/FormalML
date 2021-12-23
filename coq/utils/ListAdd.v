@@ -2196,3 +2196,7 @@ Proof.
   - apply Forall2_app; auto.
 Qed.
     
+Lemma map_const_repeat {A B} (c:A) (l:list B) : map (fun _ => c) l = repeat c (length l).
+Proof.
+  induction l; simpl; congruence.
+Qed.

@@ -228,13 +228,6 @@ Section dynkin.
     firstorder.
   Qed.
 
-  Lemma pre_collection_is_pairwise_disjoint_inter (an:nat->pre_event T) (a:pre_event T) :
-    pre_collection_is_pairwise_disjoint an ->
-    pre_collection_is_pairwise_disjoint (fun n : nat => pre_event_inter a (an n)).
-  Proof.
-    firstorder.
-  Qed.
-
   Instance pi_generated_lambda_pi (C:pre_event T -> Prop) {cpi:Pi_system C} : Pi_system (generated_lambda C).
   Proof.
     pose (Da := fun a => fun x => (generated_lambda C) (pre_event_inter a x)).

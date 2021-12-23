@@ -2691,6 +2691,154 @@ Section pre_make_disjoint.
 
 End pre_make_disjoint.
 
+
+Section more_pre_props.  
+  Lemma pre_list_union_map_none {A B} (l:list A) :
+    pre_event_equiv (pre_list_union (map (fun _  => pre_event_none) l)) (@pre_event_none B).
+  Proof.
+    induction l; simpl.
+    - now rewrite pre_list_union_nil.
+    - now rewrite pre_list_union_cons, IHl, pre_event_union_false_l.
+  Qed.
+
+  Global Instance pre_list_union_sub_proper {A} :
+    Proper (Forall2 pre_event_sub ==> pre_event_sub) (@pre_list_union A).
+  Proof.
+    intros ????[?[??]].
+    red.
+    destruct (Forall2_In_l H H0) as [? [??]].
+    eauto.
+  Qed.
+
+  Global Instance pre_list_inter_sub_proper {A} :
+    Proper (Forall2 pre_event_sub ==> pre_event_sub) (@pre_list_inter A).
+  Proof.
+    intros ???????.
+    destruct (Forall2_In_r H H1) as [? [??]].
+    red in H0.
+    apply H3.
+    apply H0; simpl; eauto.
+  Qed.
+
+  Global Instance pre_list_union_proper {A} :
+    Proper (Forall2 pre_event_equiv ==> pre_event_equiv) (@pre_list_union A).
+  Proof.
+    intros ????.
+    split.
+    - apply pre_list_union_sub_proper; trivial.
+      eapply Forall2_incl; try eapply H; intros.
+      firstorder.
+    - apply pre_list_union_sub_proper; trivial.
+      symmetry in H.
+      eapply Forall2_incl; try eapply H; intros.
+      firstorder.
+  Qed.
+
+  Global Instance pre_list_inter_proper {A} :
+    Proper (Forall2 pre_event_equiv ==> pre_event_equiv) (@pre_list_inter A).
+  Proof.
+    intros ????.
+    split.
+    - apply pre_list_inter_sub_proper; trivial.
+      eapply Forall2_incl; try eapply H; intros.
+      firstorder.
+    - apply pre_list_inter_sub_proper; trivial.
+      symmetry in H.
+      eapply Forall2_incl; try eapply H; intros.
+      firstorder.
+  Qed.
+
+  Lemma pre_collection_take_nth_in {A} a (En:nat -> pre_event A) n x:
+    nth a (collection_take En n) pre_event_none x <->
+      (a < n /\ (En a) x)%nat.
+  Proof.
+    unfold collection_take.
+    split.
+    - intros na.
+      destruct (lt_dec a n).
+      + split; trivial.
+        destruct (map_nth_in_exists En (seq 0 n) pre_event_none a).
+        * now rewrite seq_length.
+        * rewrite H in na.
+          rewrite seq_nth in na by trivial.
+          now simpl in na.
+      + rewrite nth_overflow in na.
+        * red in na; tauto.
+        * rewrite map_length, seq_length.
+          lia.
+    - intros [alt Ea].
+      destruct (map_nth_in_exists En (seq 0 n) pre_event_none a).
+      + now rewrite seq_length.
+      + rewrite H.
+        rewrite seq_nth by trivial.
+        now simpl.
+  Qed.
+
+  Lemma pre_collection_take_sub {A} (En:nat -> pre_event A) n :
+    pointwise_relation _ pre_event_sub (pre_list_collection (collection_take En n) pre_event_none) En.
+  Proof.
+    repeat red; intros.
+    apply pre_collection_take_nth_in in H.
+    tauto.
+  Qed.
+
+  Lemma pre_collection_take_preserves_disjoint {A} (En:nat -> pre_event A) n:
+    pre_collection_is_pairwise_disjoint En ->
+    ForallOrdPairs pre_event_disjoint (collection_take En n).
+  Proof.
+    intros disj.
+    apply pre_list_collection_disjoint.
+    eapply pre_collection_is_pairwise_disjoint_pre_event_sub_proper; eauto.
+    apply pre_collection_take_sub.
+  Qed.
+
+  Lemma pre_list_union_take_collection_sub {A} (E:nat->pre_event A) n :
+    pre_event_sub (pre_list_union (collection_take E n)) (pre_union_of_collection E).
+  Proof.
+    rewrite <- pre_list_union_union.
+
+    apply pre_union_of_collection_sub_proper.
+    apply pre_collection_take_sub.
+  Qed.
+
+  Lemma pre_event_diff_diff_l {A} (a b c : pre_event A) :
+    pre_event_equiv (pre_event_diff (pre_event_diff a b) c) (pre_event_diff a (pre_event_union b c)).
+  Proof.
+    firstorder.
+  Qed.
+
+  Lemma pre_union_of_collection_lt_S {A} (E:nat->pre_event A) n :
+    pre_event_equiv (pre_union_of_collection (fun y : nat => if lt_dec y (S n) then E y else pre_event_none))
+                    (pre_event_union (E n) (pre_union_of_collection (fun y : nat => if lt_dec y n then E y else pre_event_none))).
+  Proof.
+    intros ?; split.
+    - intros [? HH].
+      match_destr_in HH; try contradiction.
+      destruct (Nat.eq_dec x0 n).
+      * subst.
+        now left.
+      * right.
+        exists x0.
+        match_destr.
+        lia.
+    - intros [|[??]].
+      + exists n.
+        match_destr; try lia.
+      + match_destr_in H; try contradiction.
+        exists x0.
+        match_destr.
+        lia.
+  Qed.
+
+  Lemma pre_collection_is_pairwise_disjoint_inter {T} (an:nat->pre_event T) (a:pre_event T) :
+    pre_collection_is_pairwise_disjoint an ->
+    pre_collection_is_pairwise_disjoint (fun n : nat => pre_event_inter a (an n)).
+  Proof.
+    firstorder.
+  Qed.
+
+End more_pre_props.
+
 Coercion event_pre : event >-> Funclass.
 
 Notation "∅" := event_none : prob. (* \emptyset *)

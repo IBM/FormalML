@@ -39,6 +39,7 @@ UTILS = BasicUtils \
 	Quotient \
 	quotient_space \
 	RealAdd \
+	RbarAdd \
 	RiemannAdd \
 	StreamAdd \
 	StreamLimits \
@@ -77,6 +78,7 @@ PROB_THEORY = \
 	Event \
 	ProbSpace \
 	FunctionsToReal \
+	Measures \
 	RandomVariable \
 	RealRandomVariable \
 	RandomVariableFinite \
