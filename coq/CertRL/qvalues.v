@@ -639,21 +639,52 @@ Proof.
     rewrite IHl. rewrite e; lra.
 Qed.
 
+Lemma list_sum_ind_count_occ {A : Type} {eq : EqDec A eq}(l : list A)(a0 : A):
+  list_sum (map (fun a => if (a == a0) then 1 else 0) l) =
+  INR (count_occ eq l a0).
+Proof.
+  induction l; try now simpl.
+  simpl; match_destr.
+  + match_destr.
+    -- rewrite IHl.
+       rewrite S_INR; lra.
+    -- intuition.
+  + match_destr.
+    -- intuition.
+    -- rewrite Rplus_0_l.
+       assumption.
+Qed.
 
 Theorem total_variance_stochasticBellmanQ' (sa0 : sigT M.(act)) W :
   let (lsa,_) := act_finite M in
+  let lsa_nodup := nodup EqDecsigT lsa in
   list_sum (map (fun sa : {x : M.(state) & _} => let (s,a) := sa in
-                                              variance (t s a) (fun s' => stochasticBellmanQ' sa0 W s' sa)) lsa) = let (s0,a0) := sa0 in
+                                              variance (t s a) (fun s' => stochasticBellmanQ' sa0 W s' sa)) lsa_nodup) =
+  let (s0,a0) := sa0 in
 variance (t s0 a0) (fun s' => stochasticBellmanQ' (existT _ s0 a0) W s' (existT _ s0 a0)).
 Proof.
   destruct (act_finite M) as [lsa ?].
+  intros lsa_nodup.
   rewrite list_sum_split with (a0 := sa0).
   rewrite <-Rplus_0_r.
   f_equal.
   + destruct sa0 as [s0 a0].
     rewrite list_sum_split_ind.
     rewrite <-Rmult_1_r. f_equal.
-    admit.
+    rewrite list_sum_ind_count_occ.
+    replace 1 with (INR 1) by reflexivity.
+    f_equal.
+    generalize (nodup_In EqDecsigT lsa); intros.
+    assert (Hf : forall x, In x (nodup EqDecsigT lsa)).
+    {
+      intros x. rewrite H. apply finite.
+    }
+    revert Hf.
+    generalize (NoDup_count_occ' EqDecsigT lsa_nodup); intros.
+    assert (Hnd : NoDup lsa_nodup) by (apply NoDup_nodup).
+    rewrite H0 in Hnd. apply Hnd.
+    unfold lsa_nodup.
+    rewrite nodup_In. apply finite.
   + apply list_sum0_is0.
     rewrite Forall_map.
     rewrite Forall_forall; intros sa Hsa.
@@ -664,6 +695,6 @@ Proof.
     setoid_rewrite expt_value_zero.
     setoid_rewrite Rminus_eq_0.
     setoid_rewrite Rsqr_0. apply expt_value_zero.
-Admitted.
+Qed.
 
 End bellmanQ.
