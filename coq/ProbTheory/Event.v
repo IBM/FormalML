@@ -153,6 +153,10 @@ Section pre_ev.
     firstorder.
   Qed.
 
+  Global Instance pre_event_disjoint_eq_proper {A} : Proper (pre_event_equiv ==> pre_event_equiv ==> iff) (@pre_event_disjoint A).
+  Proof.
+    firstorder.
+  Qed.
 
   Lemma pre_event_diff_derived {T} (A B:T->Prop) : A \ B === A ∩ ¬B.
   Proof.
@@ -954,6 +958,38 @@ Section pre_ev.
     reflexivity.
   Qed.
 
+  Lemma pre_event_complement_list_union {T:Type} (E:list (pre_event T)) :
+    pre_event_equiv (pre_event_complement (pre_list_union E))
+                    (pre_list_inter (map pre_event_complement E)).
+  Proof.
+    induction E; simpl.
+    - rewrite pre_list_union_nil, pre_list_inter_nil.
+      apply pre_event_not_none.
+    - rewrite pre_list_union_cons, pre_list_inter_cons.
+      rewrite pre_event_complement_union.
+      now rewrite IHE.
+  Qed.
+
+  Lemma pre_event_complement_list_inter {T:Type} (E:list (pre_event T)) :
+    pre_event_equiv (pre_event_complement (pre_list_inter E))
+                    (pre_list_union (map pre_event_complement E)).
+  Proof.
+    induction E; simpl.
+    - rewrite pre_list_union_nil, pre_list_inter_nil.
+      apply pre_event_not_all.
+    - rewrite pre_list_union_cons, pre_list_inter_cons.
+      rewrite pre_event_complement_inter.
+      now rewrite IHE.
+  Qed.
+
+  Lemma pre_list_union_concat {T} (l:list (list (pre_event T))) :
+    pre_event_equiv (pre_list_union (concat l)) (pre_list_union (map pre_list_union l)).
+  Proof.
+    induction l; simpl.
+    - reflexivity.
+    - rewrite pre_list_union_app, pre_list_union_cons.
+      now rewrite IHl.
+  Qed.
 
   Lemma pre_list_collection_disjoint {T} (l:list (pre_event T)) :
     ForallOrdPairs pre_event_disjoint l <->
@@ -2835,6 +2871,28 @@ Section more_pre_props.
     pre_collection_is_pairwise_disjoint (fun n : nat => pre_event_inter a (an n)).
   Proof.
     firstorder.
+  Qed.
+
+  Lemma pre_event_inter_sub_l_equiv {A:Type} (a b:pre_event A) :
+    pre_event_sub a b ->
+    pre_event_equiv (pre_event_inter a b) a.
+  Proof.
+    firstorder.
+  Qed.
+
+  Lemma pre_list_disjoint_inter {A} (a:pre_event A) (l:list (pre_event A)) :
+    ForallOrdPairs pre_event_disjoint l ->
+    ForallOrdPairs pre_event_disjoint (map (pre_event_inter a) l).
+  Proof.
+    intros HH.
+    induction HH.
+    - constructor.
+    - simpl.
+      constructor; trivial.
+      apply Forall_map.
+      revert H.
+      apply Forall_impl; intros ? disj ? [??] [??].
+      eapply disj; eauto.
   Qed.
 
 End more_pre_props.

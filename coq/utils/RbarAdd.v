@@ -52,6 +52,18 @@ Section sums.
     auto.
   Qed.
 
+  Lemma Rbar_mult_nneg_compat (a b : Rbar) :
+    Rbar_le 0 a ->
+    Rbar_le 0 b ->
+    Rbar_le 0 (Rbar_mult a b).
+  Proof.
+    destruct a; destruct b; simpl; rbar_prover.
+    intros.
+    generalize (Rmult_le_compat  0 r 0 r0); intros HH.
+    rewrite Rmult_0_r in HH.
+    apply HH; lra.
+  Qed.
+
   Lemma sum_Rbar_n_pos_incr (f : nat -> Rbar) :
     (forall i : nat, Rbar_le 0 (f i)) ->
     forall n : nat, Rbar_le (sum_Rbar_n f n) (sum_Rbar_n f (S n)).
@@ -1056,6 +1068,79 @@ Qed.
  Qed.
 
 
+ Lemma list_Rbar_sum_const c l : list_Rbar_sum (map (fun _ : nat => c) l) = Rbar_mult c (INR (length l)).
+ Proof.
+   induction l.
+   - now rewrite Rbar_mult_0_r.
+   - simpl length.
+     rewrite S_INR.
+     simpl.
+     rewrite IHl.
+     replace (Finite (INR (length l) + 1)) with (Rbar_plus (INR (length l)) 1) by reflexivity.
+     rewrite Rbar_mult_plus_distr_l; simpl.
+     + rewrite Rbar_mult_1_r.
+       now rewrite Rbar_plus_comm.
+     + apply pos_INR.
+     + lra.
+ Qed.
+
+ Lemma sum_Rbar_n0 n : sum_Rbar_n (fun _ : nat => 0) n = 0.
+ Proof.
+   unfold sum_Rbar_n.
+   rewrite list_Rbar_sum_const.
+   now rewrite Rbar_mult_0_l.
+ Qed.   
+   
+ Lemma Elim_seq_sum0 : ELim_seq (sum_Rbar_n (fun _ : nat => 0)) = 0.
+ Proof.
+   rewrite (ELim_seq_ext _ (fun _ => 0)).
+   + apply ELim_seq_const.
+   + intros.
+     apply sum_Rbar_n0.
+ Qed.
+
+ Lemma list_Rbar_ELim_seq_nneg_nested_swap {A:Type} (X:list A) (f:A->nat->Rbar) :
+   (forall a b, In a X -> Rbar_le 0 (f a b)) ->
+   list_Rbar_sum (map (fun x => (ELim_seq (sum_Rbar_n (fun j : nat => (f x j))))) X) =
+     ELim_seq
+        (sum_Rbar_n (fun i : nat => list_Rbar_sum (map (fun x => f x i) X))).
+ Proof.
+   symmetry.
+   induction X.
+   - simpl.
+     now rewrite Elim_seq_sum0.
+   - simpl.
+     rewrite <- IHX by firstorder.
+     rewrite <- ELim_seq_plus.
+     + apply ELim_seq_ext; intros.
+       rewrite sum_Rbar_n_nneg_plus; trivial.
+       * firstorder.
+       * intros.
+         apply list_Rbar_sum_nneg_nneg; intros.
+         apply in_map_iff in H1.
+         destruct H1 as [?[??]]; subst.
+         firstorder.
+     + apply ex_Elim_seq_incr; intros.
+       apply sum_Rbar_n_pos_incr; firstorder.
+     + apply ex_Elim_seq_incr; intros.
+       apply sum_Rbar_n_pos_incr; intros.
+       apply list_Rbar_sum_nneg_nneg; intros.
+         apply in_map_iff in H0.
+         destruct H0 as [?[??]]; subst.
+         firstorder.
+     + apply ex_Rbar_plus_pos.
+       * apply ELim_seq_nneg; intros.
+         apply sum_Rbar_n_nneg_nneg; intros.
+         firstorder.
+       * apply ELim_seq_nneg; intros.
+         apply sum_Rbar_n_nneg_nneg; intros.
+         apply list_Rbar_sum_nneg_nneg; intros.
+         apply in_map_iff in H1.
+         destruct H1 as [?[??]]; subst.
+         firstorder.
+ Qed.
+
+  
  Lemma list_Rbar_ELim_seq_nneg_nested_swap_nat (f : nat -> nat -> Rbar) (n : nat) :
    (forall a b, Rbar_le 0 (f a b)) ->
    (sum_Rbar_n
@@ -1094,14 +1179,6 @@ Qed.
          now apply sum_Rbar_n_nneg_nneg; intros.
    Qed.
 
-  Lemma list_Rbar_ELim_seq_nneg_nested_swap {A:Type} (X:list A) (f:A->nat->Rbar) :
-    (forall a b, In a X -> Rbar_le 0 (f a b)) ->
-    list_Rbar_sum (map (fun x => (ELim_seq (sum_Rbar_n (fun j : nat => (f x j))))) X) =
-      ELim_seq
-        (sum_Rbar_n (fun i : nat => list_Rbar_sum (map (fun x => f x i) X))).
-  Proof.
-    Admitted.
-          
 
 (*
   Lemma ELim_seq_sum_nneg_nested_swap (f:nat->nat->Rbar) :

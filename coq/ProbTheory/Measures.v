@@ -1534,4 +1534,1100 @@ Section omf.
 
 End omf.
 
+Section semi_algebra.
 
+  Class SemiAlgebra (T:Type) :=
+    {
+      salg_in : pre_event T -> Prop;
+
+      salg_nempty : exists a, salg_in a;      
+
+      salg_in_inter (a b:pre_event T) : salg_in a -> salg_in b -> salg_in (pre_event_inter a b);
+
+      salg_in_complement (a:pre_event T) :
+      salg_in a ->
+      exists l,
+        pre_event_equiv (pre_event_complement a) (pre_list_union l) /\
+          ForallOrdPairs pre_event_disjoint l /\
+          Forall salg_in l
+    }.
+
+  Global Instance salg_proper {T} (s: SemiAlgebra T) : Proper (pre_event_equiv ==> iff) salg_in.
+  Proof.
+    intros ?? eqq.
+    red in eqq.
+    cut (x = y); [intros; subst; intuition | ].
+    apply Ensembles.Extensionality_Ensembles.
+    unfold Ensembles.Same_set, Ensembles.Included, Ensembles.In.
+    firstorder.
+  Qed.
+
+  Lemma pre_list_disjoint_concat_from_parts {A B} (f:A->list (pre_event B)) l:
+    Forall (fun x  => ForallOrdPairs pre_event_disjoint (f x)) l ->
+    ForallOrdPairs pre_event_disjoint (map pre_list_union (map f l)) ->
+    ForallOrdPairs pre_event_disjoint (concat (map f l)).
+  Proof.
+  Admitted.
+    
+  Definition salgebra_algebra_in {T} (s: SemiAlgebra T) (x:pre_event T) :=
+    exists (l:list (pre_event T)),
+      Forall salg_in l /\
+        ForallOrdPairs pre_event_disjoint l /\
+        pre_event_equiv x (pre_list_union l).
+
+  Lemma salgebra_algebra_none {T:Type} (s:SemiAlgebra T) :
+    salgebra_algebra_in s pre_Ω.
+  Proof.
+    destruct salg_nempty as [X inX].
+    destruct (salg_in_complement X inX) as [? [?[??]]].
+    exists (X::x).
+    split; [| split].
+    - constructor; trivial.
+    - repeat constructor; trivial.
+      apply Forall_forall; intros ?????.
+      assert (HH:pre_list_union x x1) by (red; eauto).
+      apply H in HH.
+      now apply HH.
+    - rewrite pre_list_union_cons.
+      rewrite <- H.
+      rewrite pre_event_union_complement.
+      + reflexivity.
+      + apply sa_pre_dec.
+  Qed.
+
+    (* semi-algebras provide just enough structure to pull the make disjoint trick, although
+     doing so is somewhat more painful *)
+  Lemma salgebra_algebra_simpl {T:Type} (s:SemiAlgebra T) x :
+    (exists (l:list (pre_event T)),
+        Forall salg_in l /\
+          pre_event_equiv x (pre_list_union l)) <->
+      (exists (l:list (pre_event T)),
+          Forall salg_in l /\
+            ForallOrdPairs pre_event_disjoint l /\
+            pre_event_equiv x (pre_list_union l)).
+  Proof.
+    split.
+    - intros [l [??]].
+      cut (exists l' : list (pre_event T),
+              Forall salg_in l' /\ ForallOrdPairs pre_event_disjoint l' /\ pre_event_equiv (pre_list_union l') (pre_list_union l)).
+      {
+        intros [l' [?[??]]].
+        exists l'.
+        rewrite H3.
+        tauto.
+      } 
+      clear x H0.
+      induction H.
+      + exists nil.
+        repeat split; trivial; constructor.
+      + destruct IHForall as [l' [?[??]]].
+
+        cut (exists l'0 : list (pre_event T),
+                Forall salg_in l'0 /\
+                  ForallOrdPairs pre_event_disjoint l'0 /\ pre_event_equiv (pre_list_union l'0) (pre_list_union (x :: l'))).
+        {
+          intros [ll [?[??]]].
+          exists ll.
+          split; trivial.
+          split; trivial.
+          rewrite H6.
+          repeat rewrite pre_list_union_cons.
+          now rewrite H3.
+        } 
+        clear l H0 H3.
+        destruct (salg_in_complement _ H) as [ll2 [?[??]]].
+        exists (x :: (concat (map (fun e => (map (pre_event_inter e) ll2)) l'))).
+        {
+          split; [| split].
+          - constructor; trivial.
+            induction l'; simpl; trivial.
+            apply Forall_app.
+            + apply Forall_map.
+              apply Forall_forall; intros.
+              invcs H1.
+              apply salg_in_inter; trivial.
+              rewrite Forall_forall in H4; auto.
+            + invcs H1; invcs H2.
+              apply IHl'; auto.
+          - constructor.
+            + apply Forall_forall; intros ? inn.
+              apply in_concat in inn.
+              destruct inn as [? [??]].
+              apply in_map_iff in H5.
+              destruct H5 as [?[??]]; subst.
+              apply in_map_iff in H6.
+              destruct H6 as [?[??]]; subst.
+              apply pre_event_complement_proper in H0.
+              rewrite pre_event_not_not in H0; [| apply sa_pre_dec].
+              intros ??[??].
+              apply H0 in H5.
+              apply H5.
+              red; eauto.
+            + apply pre_list_disjoint_concat_from_parts.
+              * apply Forall_forall; intros ? inn.
+                now apply pre_list_disjoint_inter.
+              * rewrite map_map.
+                induction H2; simpl; [constructor |].
+                constructor.
+                -- apply Forall_map.
+                   revert H2.
+                   apply Forall_impl; intros ??.
+                   repeat rewrite <-  pre_event_inter_pre_list_union_distr.
+                   firstorder.
+                -- invcs H1; auto.
+          - repeat rewrite pre_list_union_cons.
+            rewrite pre_list_union_concat.
+            split.
+            + intros [?|?].
+              * now left.
+              * destruct H5 as [? [??]].
+                apply in_map_iff in H5.
+                destruct H5 as [? [??]]; subst.
+                apply in_map_iff in H7.
+                destruct H7 as [? [??]]; subst.
+                destruct H6 as [? [??]].
+                apply in_map_iff in H5.
+                destruct H5 as [? [??]]; subst.
+                destruct H6.
+                right.
+                exists x1; eauto.
+            + intros [?|?].
+              * now left.
+              * red.
+                destruct H5 as [? [??]].
+                classical_right.
+                red.
+                rewrite map_map.
+                exists (pre_list_union (map (pre_event_inter x1) ll2)).
+                split.
+                -- apply in_map_iff.
+                   eauto.
+                -- red.
+                   assert (pre_list_union ll2 x0).
+                   {
+                     apply H0.
+                     apply H7.
+                   }
+                   destruct H8 as [? [??]].
+                   exists (pre_event_inter x1 x2).
+                   split.
+                   ++ now apply in_map.
+                   ++ red; tauto.
+        }
+    - intros [? [?[??]]]; eauto.
+  Qed.
+
+  Program Instance SemiAlgebra_Algebra {T:Type} (s:SemiAlgebra T) : Algebra T
+    := {|
+      alg_in (x:pre_event T) := salgebra_algebra_in s x
+    |}.
+  Next Obligation.
+    apply salgebra_algebra_simpl.
+    induction H.
+    - exists nil.
+      split; [constructor | reflexivity].
+    - destruct H as [l1 [?[??]]].
+      destruct IHForall as [l2 [??]].
+      exists (l1 ++ l2).
+      split.
+      + now apply Forall_app.
+      + rewrite pre_list_union_cons, pre_list_union_app.
+        rewrite H2, H4.
+        reflexivity.
+  Qed.
+  Next Obligation.
+    apply salgebra_algebra_simpl.
+    apply salgebra_algebra_simpl in H.
+    destruct H as [ll [??]].
+    cut (exists l : list (pre_event T),
+            Forall salg_in l /\ pre_event_equiv (pre_list_inter (map pre_event_complement ll)) (pre_list_union l)).
+    {
+      intros [l [??]].
+      exists l.
+      split; trivial.
+      rewrite H0.
+      now rewrite pre_event_complement_list_union.
+    }
+    clear A H0.
+    induction H.
+    - simpl.
+      destruct (salgebra_algebra_none s) as [?[??]].
+      exists x.
+      split; trivial.
+      now rewrite pre_list_inter_nil.
+    - destruct IHForall as [l0 [??]].
+      simpl.
+      destruct (salg_in_complement x) as [lx [? [??]]]; trivial.
+      exists (concat (map (fun x => (map (pre_event_inter x) lx)) l0)).
+      split.
+      + apply Forall_forall; intros ? inn.
+        apply in_concat in inn.
+        destruct inn as [? [inn1 inn2]].
+        apply in_map_iff in inn1.
+        destruct inn1 as [? [? inn1]]; subst.
+        apply in_map_iff in inn2.
+        destruct inn2 as [? [? inn2]]; subst.
+        rewrite Forall_forall in H1, H5.
+        apply salg_in_inter; auto.
+      + rewrite pre_list_inter_cons.
+        rewrite H3, H2.
+        rewrite pre_event_inter_pre_list_union_distr.
+        rewrite pre_list_union_concat.
+        apply pre_list_union_proper.
+        rewrite map_map.
+        apply Forall2_map_f.
+        apply Forall2_refl.
+        intros ?.
+        rewrite pre_event_inter_comm.
+        now rewrite pre_event_inter_pre_list_union_distr.
+  Qed.
+  Next Obligation.
+    apply salgebra_algebra_none.
+  Qed.
+
+  Lemma SemiAlgebra_in_algebra {T} (s:SemiAlgebra T):
+    pre_event_sub salg_in (alg_in (Algebra:=SemiAlgebra_Algebra s)).
+  Proof.
+    intros ab ?.
+    apply salgebra_algebra_simpl.
+    exists [ab].
+    split.
+    - now repeat constructor.
+    - now rewrite pre_list_union_singleton.
+  Qed.
+
+  Lemma SemiAlgebra_Algebra_generates_same {T} (s:SemiAlgebra T):
+    sa_equiv (generated_sa (alg_in (Algebra:=SemiAlgebra_Algebra s)))
+             (generated_sa salg_in).
+  Proof.
+    apply sa_equiv_subs; split.
+    - apply generated_sa_sub_sub; intros ????.
+      red in H0.
+      destruct H as [?[?[_ ?]]].
+      rewrite H1.
+      apply sa_pre_list_union; intros.
+      apply H0.
+      rewrite Forall_forall in H; auto.
+    - apply generated_sa_sub_proper.
+      intros ??.
+      now apply SemiAlgebra_in_algebra.
+  Qed.
+  
+  Definition salg_set {T} (A:SemiAlgebra T): Type := {x | salg_in x}.
+  Definition salg_pre {T} {A:SemiAlgebra T} : salg_set A -> (T->Prop)
+    := fun e => proj1_sig e.
+
+  Lemma salg_set_in {T} {SAlg:SemiAlgebra T} (a:salg_set SAlg) : salg_in (salg_pre a).
+  Proof.
+    now destruct a.
+  Qed.
+  
+  Definition salg_sub {T} {SAlg:SemiAlgebra T} (x y:salg_set SAlg) :=
+    pre_event_sub (proj1_sig x) (proj1_sig y).
+
+  Definition salg_equiv {T} {SAlg:SemiAlgebra T} (x y:salg_set SAlg) :=
+    pre_event_equiv (proj1_sig x) (proj1_sig y).
+
+  Global Instance salg_equiv_equiv {T} {SAlg:SemiAlgebra T} : Equivalence salg_equiv.
+  Proof.
+    firstorder.
+  Qed.
+  
+  Global Instance salg_equiv_sub {T} {SAlg:SemiAlgebra T}  : subrelation salg_equiv salg_sub.
+  Proof.
+    firstorder.
+  Qed.
+
+  Global Instance salg_sub_pre {T} {SAlg:SemiAlgebra T}  : PreOrder salg_sub.
+  Proof.
+    firstorder.
+  Qed.
+
+  Global Instance salg_sub_part {T} {SAlg:SemiAlgebra T}  : PartialOrder salg_equiv salg_sub.
+  Proof.
+    firstorder.
+  Qed.
+
+  Coercion salg_pre : salg_set >-> Funclass.
+
+  Definition salg_inter {T} {SAlg:SemiAlgebra T} (a b : salg_set SAlg) : salg_set SAlg
+    := exist _ (pre_event_inter a b) (salg_in_inter _ _ (salg_set_in a) (salg_set_in b)).
+
+  Context {T} {SAlg:SemiAlgebra T}.
+
+  Global Instance salg_inter_proper : Proper (salg_equiv ==> salg_equiv ==> salg_equiv) salg_inter.
+  Proof.
+    intros ???????; simpl.
+    red in H, H0.
+    now apply pre_event_inter_proper.
+  Qed.
+
+End semi_algebra.
+
+Section semi_premeasure.
+  
+  Local Existing Instance Rbar_le_pre.
+  Local Existing Instance Rbar_le_part.
+
+  Context {T:Type}.
+  Context {SAlg:SemiAlgebra T}.
+
+  Class is_semipremeasure (λ:salg_set SAlg -> Rbar)
+    := mk_semipremeasure {
+        semipremeasure_proper :> Proper (salg_equiv ==> eq) λ 
+      ; semipremeasure_nneg a : Rbar_le 0 (λ a)
+                                    
+      ; semipremeasure_list_disjoint_union (B:list (salg_set SAlg)) :
+        ForallOrdPairs pre_event_disjoint (map salg_pre B) ->
+        forall (pf:salg_in (pre_list_union (map salg_pre B))),
+        λ (exist _ _ pf) = list_Rbar_sum (map λ B)
+
+      ; semipremeasure_countable_disjoint_union (B:nat->salg_set SAlg) :
+        pre_collection_is_pairwise_disjoint (fun x => B x) ->
+        forall (pf:salg_in (pre_union_of_collection (fun x => B x))),
+        λ (exist _ _ pf) = (ELim_seq (fun i : nat => sum_Rbar_n (fun n : nat => λ (B n)) i))
+
+      }.
+
+  (* If the semialgebra containts ∅, and the function assigns 0 to it, then
+     the list condition is implied by the countable condition 
+   *)
+  
+  Lemma semipremeasure_with_zero_simpl (λ:salg_set SAlg -> Rbar)
+        (proper : Proper (salg_equiv ==> eq) λ)
+        (nneg : forall a, Rbar_le 0 (λ a))
+        (has_none : salg_in pre_event_none)
+        (none: λ (exist _ _ has_none) = 0)
+        (countable_disjoint_union : forall (B:nat->salg_set SAlg),
+        pre_collection_is_pairwise_disjoint (fun x => B x) ->
+        forall (pf:salg_in (pre_union_of_collection (fun x => B x))),
+        λ (exist _ _ pf) = (ELim_seq (fun i : nat => sum_Rbar_n (fun n : nat => λ (B n)) i))) :
+    is_semipremeasure λ.
+  Proof.
+    apply mk_semipremeasure; trivial.
+    intros.
+    specialize (countable_disjoint_union (fun n => nth n B (exist salg_in pre_event_none has_none))).
+    cut_to countable_disjoint_union.
+    - assert (pff : salg_in
+                       (pre_union_of_collection
+                          (fun x : nat =>
+                             (fun n : nat => nth n B (exist salg_in pre_event_none has_none)) x))).
+      {
+        eapply salg_proper.
+        - apply pre_union_of_collection_proper; intros ?.
+          rewrite map_nth; simpl.
+          reflexivity.
+        - simpl.
+          rewrite <- pre_list_union_union in pf.
+          apply pf.
+      }
+      etransitivity; [etransitivity |]
+      ; [ | apply (countable_disjoint_union pff) |].
+      + apply proper; simpl.
+        red; simpl.
+        rewrite <- pre_list_union_union.
+        apply pre_union_of_collection_proper.
+        unfold pre_list_collection.
+        intros ??.
+        rewrite <- map_nth.
+        simpl.
+        reflexivity.
+      + apply seq_sum_list_sum.
+        apply none.
+    - apply pre_list_collection_disjoint in H.
+      intros ??????.
+      specialize (H _ _ H0 x).
+      rewrite <- map_nth in H1.
+      rewrite <- map_nth in H2.
+      simpl in *.
+      eauto.
+  Qed.
+
+  Lemma semipremeasure_disjoint_list_irrel (λ:salg_set SAlg -> Rbar) {meas:is_semipremeasure λ}
+        (R S:list (salg_set SAlg)):
+    ForallOrdPairs pre_event_disjoint (map salg_pre R) ->
+    ForallOrdPairs pre_event_disjoint (map salg_pre S) ->
+    pre_event_equiv (pre_list_union (map salg_pre R)) (pre_list_union (map salg_pre S)) ->
+    list_Rbar_sum (map λ R) = list_Rbar_sum (map λ S).
+  Proof.
+      intros disjR disjS eqq.
+
+      assert (eqqr:forall Ri, In Ri R ->
+                         λ Ri =
+                           list_Rbar_sum (map λ (map (fun s => salg_inter Ri s) S))).
+      {
+        intros.
+
+        assert (eqq':Forall2 pre_event_equiv
+                             (map (fun s : salg_set SAlg => pre_event_inter Ri s) S)
+                             (map (pre_event_inter Ri) (map salg_pre S))).
+        {
+          rewrite map_map.
+          apply Forall2_map_f.
+          now apply Forall2_refl; intros ?.
+        }
+        assert (eqqi:pre_event_equiv
+                       (pre_list_union (map salg_pre (map (fun s : salg_set SAlg => salg_inter Ri s) S)))
+                       Ri).
+        {
+          unfold salg_inter.
+          rewrite map_map; simpl.
+          rewrite eqq'.
+          rewrite <- pre_event_inter_pre_list_union_distr.
+          rewrite <- eqq.
+          apply pre_event_inter_sub_l_equiv.
+          intros ??.
+          eexists; split; try apply H0.
+          apply in_map_iff; eauto.
+        }           
+      
+        assert (pf:salg_in (pre_list_union (map salg_pre (map (fun s : salg_set SAlg => salg_inter Ri s) S)))).
+        {
+          rewrite eqqi.
+          now destruct Ri; simpl.
+        }
+        
+        rewrite <- semipremeasure_list_disjoint_union with (pf0:=pf).
+        - apply semipremeasure_proper.
+          now red.
+        - apply pre_list_disjoint_inter with (a:=Ri) in disjS.
+          rewrite map_map in disjS.
+          now rewrite map_map.
+      }
+
+      assert (eqqs:forall Si, In Si S ->
+                 λ Si =
+                   list_Rbar_sum (map λ (map (fun r => salg_inter r Si) R))).
+      {
+        intros.
+
+        assert (eqq':Forall2 pre_event_equiv
+                             (map (fun x : salg_set SAlg => pre_event_inter x Si) R)
+                             (map (pre_event_inter Si) (map salg_pre R))).
+        {
+          rewrite map_map.
+          apply Forall2_map_f.
+          apply Forall2_refl; intros ?.
+          apply pre_event_inter_comm.
+        }
+        assert (eqqi:pre_event_equiv
+                       (pre_list_union (map salg_pre (map (fun r : salg_set SAlg => salg_inter r Si) R)))
+                       Si).
+        {
+          unfold salg_inter.
+          rewrite map_map; simpl.
+          rewrite eqq'.
+          rewrite <- pre_event_inter_pre_list_union_distr.
+          rewrite eqq.
+          apply pre_event_inter_sub_l_equiv.
+          intros ??.
+          eexists; split; try apply H0.
+          apply in_map_iff; eauto.
+        }           
+      
+        assert (pf:salg_in (pre_list_union (map salg_pre (map (fun r : salg_set SAlg => salg_inter r Si) R)))).
+        {
+          rewrite eqqi.
+          now destruct Si; simpl.
+        } 
+        rewrite <- semipremeasure_list_disjoint_union with (pf0:=pf).
+        - apply semipremeasure_proper.
+          now red.
+        - apply pre_list_disjoint_inter with (a:=Si) in disjR.
+          rewrite map_map in disjR.
+          rewrite map_map.
+          revert disjR.
+          apply (ForallOrdPairs_Forall2_prop pre_event_equiv).
+          + intros ???????. eapply pre_event_disjoint_eq_proper; eauto; symmetry; eauto.
+          + apply Forall2_map_f.
+            apply Forall2_refl.
+            intros ?; simpl.
+            apply pre_event_inter_comm.
+      }
+
+      assert (eqq1:list_Rbar_sum (map λ R) = list_Rbar_sum (map (fun Ri => list_Rbar_sum (map λ (map (fun s : salg_set SAlg => salg_inter Ri s) S))) R)).
+      {
+        f_equal.
+        apply map_ext_in; intros.
+        now apply eqqr.
+      }
+
+      assert (eqq2:list_Rbar_sum (map λ S) = list_Rbar_sum (map (fun Si => list_Rbar_sum (map λ (map (fun r : salg_set SAlg => salg_inter r Si) R))) S)).
+      {
+        f_equal.
+        apply map_ext_in; intros.
+        now apply eqqs.
+      }
+      rewrite eqq1, eqq2.
+      erewrite map_ext
+      ; [| intros; rewrite map_map; reflexivity].
+      rewrite list_Rbar_sum_nneg_nested_swap.
+      - f_equal.
+        apply map_ext; intros.
+        now rewrite map_map.
+      - intros.
+        apply semipremeasure_nneg.
+  Qed.
+
+    Lemma semipremeasure_disjoint_list_countable_irrel (λ:salg_set SAlg -> Rbar) {meas:is_semipremeasure λ}
+          (R:list (salg_set SAlg))
+          (S:nat -> salg_set SAlg):
+    ForallOrdPairs pre_event_disjoint (map salg_pre R) ->
+    pre_collection_is_pairwise_disjoint (fun x => S x) ->
+    pre_event_equiv (pre_list_union (map salg_pre R))  (pre_union_of_collection S) ->
+    
+    list_Rbar_sum (map λ R) = ELim_seq (fun i : nat => sum_Rbar_n (fun n : nat => λ (S n)) i).
+    Proof.
+      intros disjR disjS eqq.
+
+      assert (eqqr:forall Ri, In Ri R ->
+                    λ Ri =
+                      ELim_seq (sum_Rbar_n (fun j : nat => λ (salg_inter Ri (S j))))).
+      {
+        intros.
+
+        assert (eqqi:pre_event_equiv
+                  (pre_union_of_collection (fun x : nat => salg_inter Ri (S x)))
+                  Ri).
+        {
+          unfold salg_inter; simpl.
+          rewrite <- pre_event_inter_countable_union_distr.
+          rewrite <- eqq.
+          apply pre_event_inter_sub_l_equiv.
+          intros ??.
+          eexists; split; try apply H0.
+          now apply in_map.
+        }           
+      
+        assert (pf:salg_in (pre_union_of_collection (fun x : nat => salg_inter Ri (S x)))).
+        {
+          rewrite eqqi.
+          now destruct Ri; simpl.
+        } 
+        rewrite <- semipremeasure_countable_disjoint_union with (pf0:=pf).
+        - apply semipremeasure_proper.
+          now red.
+        - now apply pre_collection_is_pairwise_disjoint_inter.
+      }
+
+      assert (eqqs:forall j, 
+                 λ (S j) =
+                   list_Rbar_sum (map λ (map (fun r => salg_inter r (S j)) R))).
+      {
+        intros.
+
+        assert (eqq':Forall2 pre_event_equiv
+                             (map (fun x : salg_set SAlg => pre_event_inter x (S j)) R)
+                             (map (pre_event_inter (S j)) (map salg_pre R))).
+        {
+          rewrite map_map.
+          apply Forall2_map_f.
+          apply Forall2_refl; intros ?.
+          apply pre_event_inter_comm.
+        }
+        assert (eqqi:pre_event_equiv
+                       (pre_list_union (map salg_pre (map (fun r : salg_set SAlg => salg_inter r (S j)) R)))
+                       (S j)).
+        {
+          unfold salg_inter.
+          rewrite map_map; simpl.
+          rewrite eqq'.
+          rewrite <- pre_event_inter_pre_list_union_distr.
+          rewrite eqq.
+          apply pre_event_inter_sub_l_equiv.
+          intros ??.
+          red; eauto.
+        }           
+      
+        assert (pf:salg_in (pre_list_union (map salg_pre (map (fun r : salg_set SAlg => salg_inter r (S j)) R)))).
+        {
+          rewrite eqqi.
+          now destruct (S j); simpl.
+        } 
+        rewrite <- semipremeasure_list_disjoint_union with (pf0:=pf).
+        - apply semipremeasure_proper.
+          now red.
+        - apply pre_list_disjoint_inter with (a:=S j) in disjR.
+          rewrite map_map in disjR.
+          rewrite map_map.
+          revert disjR.
+          apply (ForallOrdPairs_Forall2_prop pre_event_equiv).
+          + intros ???????. eapply pre_event_disjoint_eq_proper; eauto; symmetry; eauto.
+          + apply Forall2_map_f.
+            apply Forall2_refl.
+            intros ?; simpl.
+            apply pre_event_inter_comm.
+      }
+
+      assert (eqq1:list_Rbar_sum (map λ R) = list_Rbar_sum (map (fun Ri => ELim_seq (sum_Rbar_n (fun j : nat => λ (salg_inter Ri (S j))))) R)).
+      {
+        f_equal.
+        apply map_ext_in; intros.
+        now apply eqqr.
+      }
+
+      assert (eqq2:  ELim_seq (fun i : nat => sum_Rbar_n (fun n : nat => λ (S n)) i) =
+                       ELim_seq (fun i : nat => sum_Rbar_n (fun n : nat =>
+                                                         list_Rbar_sum (map λ (map (fun r : salg_set SAlg => salg_inter r (S n)) R))) i)).
+      {
+        apply ELim_seq_ext; intros.
+        unfold sum_Rbar_n; f_equal.
+        apply map_ext; intros.
+        apply eqqs.
+      } 
+
+      rewrite eqq1, eqq2.
+      rewrite list_Rbar_ELim_seq_nneg_nested_swap.
+      - apply ELim_seq_ext; intros.
+        unfold sum_Rbar_n.
+        f_equal.
+        apply map_ext; intros.
+        now rewrite map_map.
+      - intros.
+        apply semipremeasure_nneg.
+  Qed.
+
+  (* Now, we can extend a semipremeasure on a semialgebra to a premeasure on the generated algebra *)
+
+  (* very classic *)
+  Definition premeasure_of_semipremeasure (λ:salg_set SAlg -> Rbar) {meas:is_semipremeasure λ} :
+    (alg_set (SemiAlgebra_Algebra SAlg) -> Rbar).
+  Proof.
+    intros [x xin].
+    simpl in xin.
+    apply IndefiniteDescription.constructive_indefinite_description in xin.
+    destruct xin as [a [Fin eqq]].
+    exact (list_Rbar_sum (map λ (list_dep_zip _ Fin))).
+  Defined.
+
+  (* but, at least it is well defined *)
+  Global Instance premeasure_of_semipremeasure_proper (λ:salg_set SAlg -> Rbar) {meas:is_semipremeasure λ} :
+    Proper (alg_equiv ==> eq) (premeasure_of_semipremeasure λ).
+  Proof.
+    unfold premeasure_of_semipremeasure.
+    intros ???.
+    destruct x; destruct y; simpl in *.
+    red in H; simpl in H.
+    repeat match_destr.
+    destruct a1; destruct a2.
+    apply semipremeasure_disjoint_list_irrel; trivial.
+    - unfold salg_pre, salg_set; simpl.
+      now rewrite list_dep_zip_map1.
+    - unfold salg_pre, salg_set; simpl.
+      now rewrite list_dep_zip_map1.
+    - unfold salg_pre, salg_set; simpl.
+      repeat rewrite list_dep_zip_map1.
+      now rewrite <- H1, <- H3.
+  Qed.
+
+  (*
+  Global Instance premeasure_of_semipremeasure_premeasure (λ:salg_set SAlg -> Rbar) {meas:is_semipremeasure λ} :
+    is_premeasure (premeasure_of_semipremeasure λ).
+  Proof.
+    constructor.
+    - apply premeasure_of_semipremeasure_proper.
+    - unfold premeasure_of_semipremeasure.
+      unfold alg_none.
+      repeat match_destr.
+      destruct a.
+      rewrite (semipremeasure_disjoint_list_irrel _ _ nil).
+      + now simpl.
+      + unfold salg_pre, salg_set; simpl.
+        now rewrite list_dep_zip_map1.
+      + simpl; constructor.
+      + unfold salg_pre, salg_set; simpl.
+        rewrite list_dep_zip_map1.
+        rewrite pre_list_union_nil.
+        now symmetry.
+    - intros.
+      unfold premeasure_of_semipremeasure.
+      destruct a.
+      repeat match_destr.
+      apply list_Rbar_sum_nneg_nneg; intros.
+      apply in_map_iff in H.
+      destruct H as [? [??]]; subst.
+      apply semipremeasure_nneg.
+    - intros.
+      unfold premeasure_of_semipremeasure at 1.
+      repeat match_destr.
+      destruct a as [??].
+      assert (forall i, exists S,
+                   ForallOrdPairs pre_event_disjoint S /\
+                   pre_event_equiv (B i) (pre_list_union S) /\
+                   exists (F:Forall salg_in S),
+                     premeasure_of_semipremeasure λ (B i) =
+                       (list_Rbar_sum (map λ (list_dep_zip _ F)))).
+      {
+        intros.
+        unfold premeasure_of_semipremeasure.
+        repeat match_destr.
+        destruct a0.
+        eauto.
+      } 
+      apply choice in H2.
+      destruct H2 as [l HH].
+
+      assert (forall x, exists F : Forall salg_in (l x),
+                 premeasure_of_semipremeasure λ (B x) = list_Rbar_sum (map λ (list_dep_zip (l x) F))).
+      {
+        intros a.
+        destruct (HH a); tauto.
+      }
+      apply (Coq.Logic.ChoiceFacts.non_dep_dep_functional_choice choice) in H2.
+      destruct H2 as [??].
+      transitivity (ELim_seq (sum_Rbar_n (fun n : nat =>
+                                            list_Rbar_sum (map λ (list_dep_zip (l n) (x0 n)))))).
+      + 
+
+
+        generalize (semipremeasure_disjoint_list_countable_irrel
+                      λ
+                      (list_dep_zip x f)
+                      (fun n => list_Rbar_sum (map λ (list_dep_zip (l n) (x0 n))))).
+
+        
+
+        assert (pfin:forall i,
+                   salg_in (pre_list_union (map salg_pre (list_dep_zip (l i) (x0 i))))).
+        {
+          intros.
+          unfold salg_pre, salg_set; simpl.
+          rewrite list_dep_zip_map1.
+          
+          - destruct (HH i) as [_ [HH2 _]].
+            symmetry.
+            apply HH2.
+          - destruct (B i); simpl.
+            destruct a.
+
+          
+        transitivity (ELim_seq (sum_Rbar_n (fun n : nat => λ (pre_list_union (list_dep_zip (l n) (x0 n)))))).
+
+
+        
+        
+        (*  ; semipremeasure_list_disjoint_union (B:list (salg_set SAlg)) :
+        ForallOrdPairs pre_event_disjoint (map salg_pre B) ->
+        forall (pf:salg_in (pre_list_union (map salg_pre B))),
+        λ (exist _ _ pf) = list_Rbar_sum (map λ B)
+
+      ; semipremeasure_countable_disjoint_union (B:nat->salg_set SAlg) *)
+        admit.
+      + apply ELim_seq_ext; intros.
+        unfold sum_Rbar_n; f_equal.
+        apply map_ext; intros.
+        auto.
+
+      Lemma semipremeasure_disjoint_list_countable_irrel (λ:salg_set SAlg -> Rbar) {meas:is_semipremeasure λ}
+          (R:list (salg_set SAlg))
+          (S:nat -> salg_set SAlg):
+    ForallOrdPairs pre_event_disjoint (map salg_pre R) ->
+    pre_collection_is_pairwise_disjoint (fun x => S x) ->
+    pre_event_equiv (pre_list_union (map salg_pre R))  (pre_union_of_collection S) ->
+    
+    list_Rbar_sum (map λ R) = ELim_seq (fun i : nat => sum_Rbar_n (fun n : nat => λ (S n)) i).
+      
+      
+      
+      
+  *)
+
+End semi_premeasure.
+
+(*
+Section measure_product.
+
+  Context {X Y:Type}.
+  Context {A:SigmaAlgebra X}.
+  Context {B:SigmaAlgebra Y}.
+
+  Context (α : event A -> Rbar) (meas_α : is_measure α).
+  Context (β : event B -> Rbar) (meas_β : is_measure β).
+  
+  Definition is_measurable_rectangle (ab : pre_event (X*Y)) : Prop
+    := exists (a:event A) (b:event B), forall x y, ab (x,y) <-> a x /\ b y.
+
+  Program Instance PairSemiAlgebra : SemiAlgebra (X*Y)
+    := {|
+      salg_in (x:pre_event (X*Y)) := is_measurable_rectangle x
+    |}.
+  Next Obligation.
+    exists pre_Ω.
+    exists Ω, Ω; intros; unfold Ω, pre_Ω; simpl.
+    tauto.
+  Qed.
+  Next Obligation.
+    destruct H as [a1[b1 ?]]; destruct H0 as [a2[b2 ?]].
+    exists (event_inter a1 a2).
+    exists (event_inter b1 b2).
+    intros.
+    split; intros [??].
+    - apply H in H1.
+      apply H0 in H2.
+      repeat split; try apply H1; try apply H2.
+    - destruct H1.
+      destruct H2.
+      split.
+      + apply H.
+        split; trivial.
+      + apply H0.
+        split; trivial.
+  Qed.
+  Next Obligation.
+    destruct H as [a1[b1 ?]].
+    exists ([(fun ab => event_complement a1 (fst ab) /\ b1 (snd ab))
+        ; (fun ab => a1 (fst ab) /\ event_complement b1 (snd ab))
+        ; (fun ab => event_complement a1 (fst ab) /\ event_complement b1 (snd ab))]).
+    split;[ | split].
+    - intros [x y].
+      destruct a1; destruct b1; simpl.
+      unfold pre_list_union, pre_event_complement.
+      specialize (H x y).
+      apply not_iff_compat in H.
+      simpl in *; split.
+      + intros ?.
+        apply H in H0.
+        apply not_and_or in H0.
+        destruct H0.
+        * destruct (classic (x1 y)).
+          -- eexists; split; [left; reflexivity |].
+             now simpl.
+          -- eexists; split; [right; right; left; reflexivity |].
+             now simpl.
+        * destruct (classic (x0 x)).
+          -- eexists; split; [right; left; reflexivity |].
+             now simpl.
+          -- eexists; split; [right; right; left; reflexivity |].
+             now simpl.
+      + intros [??].
+        apply H.
+        repeat destruct H0; simpl in *; tauto.
+    - repeat constructor; intros ???
+      ; destruct a1; destruct b1; simpl in *; firstorder.
+    - repeat constructor.
+      + exists (event_complement a1), b1; intros; tauto.
+      + exists a1, (event_complement b1); intros; tauto.
+      + exists (event_complement a1), (event_complement b1); intros; tauto.
+  Qed.
+
+  (*
+  Program Instance PairAlgebra : Algebra (X*Y)
+    := {|
+      alg_in (x:pre_event (X*Y)) := exists (l:list (pre_event (X*Y))),
+        Forall is_measurable_rectangle l /\
+        pre_event_equiv x (pre_list_union l)
+  |}.
+  Next Obligation.
+    induction H.
+    - exists nil.
+      split; [constructor | reflexivity].
+    - destruct H as [l1 [??]].
+      destruct IHForall as [l2 [??]].
+      exists (l1 ++ l2).
+      split.
+      + now apply Forall_app.
+      + rewrite pre_list_union_cons, pre_list_union_app.
+        rewrite H1, H3.
+        reflexivity.
+  Qed.
+  Next Obligation.
+    cut (exists l : list (pre_event (X * Y)),
+            Forall is_measurable_rectangle l /\ pre_event_equiv (pre_list_inter (map pre_event_complement H)) (pre_list_union l)).
+    {
+      intros [l [??]].
+      exists l.
+      split; trivial.
+      rewrite H1.
+      now rewrite pre_event_complement_list_union.
+    }
+    clear A0 H1.
+    induction H0.
+    - exists [pre_Ω].
+      split.
+      + repeat constructor.
+        apply is_measurable_rectangle_all.
+      + simpl. rewrite pre_list_inter_nil, pre_list_union_singleton.
+        reflexivity.
+    - destruct IHForall as [l0 [??]].
+      simpl.
+      destruct (is_union_measurable_rectangle_complement x) as [lx [??]]; trivial.
+      exists (concat (map (fun x => (map (pre_event_inter x) lx)) l0)).
+      split.
+      + apply Forall_forall; intros ? inn.
+        apply in_concat in inn.
+        destruct inn as [? [inn1 inn2]].
+        apply in_map_iff in inn1.
+        destruct inn1 as [? [? inn1]]; subst.
+        apply in_map_iff in inn2.
+        destruct inn2 as [? [? inn2]]; subst.
+        rewrite Forall_forall in H1, H3.
+        apply is_measurable_rectangle_inter; auto.
+      + rewrite pre_list_inter_cons.
+        rewrite H4, H2.
+        rewrite pre_event_inter_pre_list_union_distr.
+        rewrite pre_list_union_concat.
+        apply pre_list_union_proper.
+        rewrite map_map.
+        apply Forall2_map_f.
+        apply Forall2_refl.
+        intros ?.
+        rewrite pre_event_inter_comm.
+        now rewrite pre_event_inter_pre_list_union_distr.
+  Qed.
+  Next Obligation.
+    exists [pre_Ω].
+    split.
+    - repeat constructor.
+      apply is_measurable_rectangle_all.
+    - now rewrite pre_list_union_singleton.
+  Qed.
+
+  Lemma measurable_rectangle_in_pair_algebra :
+    pre_event_sub is_measurable_rectangle (alg_in (Algebra:=PairAlgebra)).
+  Proof.
+    intros ab ?.
+    exists [ab].
+    split.
+    - now repeat constructor.
+    - now rewrite pre_list_union_singleton.
+  Qed.
+*)
+
+  (*
+  (* the SigmaAlgebra generated from the PairAlgebra is the same as that generated
+     directly from the underlying measurable rectangles relation *)
+  Lemma PairAlgebra_generates_same :
+    sa_equiv (generated_sa (alg_in (Algebra:=PairAlgebra)))
+             (generated_sa is_measurable_rectangle).
+  Proof.
+    apply sa_equiv_subs; split.
+    - apply generated_sa_sub_sub; intros ????.
+      red in H0.
+      destruct H as [?[??]].
+      rewrite H1.
+      apply sa_pre_list_union; intros.
+      apply H0.
+      rewrite Forall_forall in H; auto.
+    - apply generated_sa_sub_proper.
+      apply measurable_rectangle_in_pair_algebra.
+  Qed.
+*)
+  (* this is very classic *)
+  Definition measurable_rectangle_product_λ ab :
+    is_measurable_rectangle ab -> Rbar.
+  Proof.
+    unfold is_measurable_rectangle.
+    intros HH.
+    apply IndefiniteDescription.constructive_indefinite_description in HH.
+    destruct HH as [a HH].
+    apply IndefiniteDescription.constructive_indefinite_description in HH.
+    destruct HH as [b HH].
+    exact (Rbar_mult (α a) (β b)).
+  Defined.
+
+  (* well, at least the definition is meaningful *)
+  Lemma measurable_rectangle_product_λ_ext ab
+        (pf1 pf2:is_measurable_rectangle ab) :
+    measurable_rectangle_product_λ ab pf1 = measurable_rectangle_product_λ ab pf2.
+  Proof.
+    unfold measurable_rectangle_product_λ.
+    repeat match_destr.
+    destruct e as [??].
+    destruct e0 as [??].
+    destruct pf1 as [? [??]].
+    destruct pf2 as [? [??]].
+
+    destruct (classic_event_none_or_has x) as [[??]|?].
+    - destruct (classic_event_none_or_has x0) as [[??]|?].
+      + destruct (i x9 x10) as [_ ?].
+          cut_to H5; [| tauto].
+          apply i0 in H5.
+          destruct H5.
+          f_equal.
+        * apply measure_proper; intros c.
+          split; intros HH.
+          -- specialize (i c x10).
+             destruct i as [_ ?].
+             cut_to H7; [| tauto].
+             apply i0 in H7.
+             tauto.
+          -- specialize (i0 c x10).
+             destruct i0 as [_ ?].
+             cut_to H7; [| tauto].
+             apply i in H7.
+             tauto.
+        * apply measure_proper; intros c.
+          split; intros HH.
+          -- specialize (i x9 c).
+             destruct i as [_ ?].
+             cut_to H7; [| tauto].
+             apply i0 in H7.
+             tauto.
+          -- specialize (i0 x9 c).
+             destruct i0 as [_ ?].
+             cut_to H7; [| tauto].
+             apply i in H7.
+             tauto.
+      + rewrite H4.
+        destruct (classic_event_none_or_has x2) as [[??]|?].
+        * destruct (classic_event_none_or_has x1) as [[??]|?].
+          -- specialize (i0 x11 x10).
+             destruct i0 as [_ ?].
+             cut_to H7; [| tauto].
+             apply i in H7.
+             destruct H7 as [_ HH].
+             apply H4 in HH.
+             red in HH; tauto.
+          -- rewrite H6.
+             repeat rewrite measure_none.
+             now rewrite Rbar_mult_0_l, Rbar_mult_0_r.
+        * rewrite H5.
+          repeat rewrite measure_none.
+          now repeat rewrite Rbar_mult_0_r.
+    - rewrite H3.
+      destruct (classic_event_none_or_has x1) as [[??]|?].
+      + destruct (classic_event_none_or_has x2) as [[??]|?].
+        * destruct (i0 x9 x10) as [_ ?].
+          cut_to H6; [| tauto].
+          apply i in H6.
+          destruct H6 as [HH _].
+          apply H3 in HH.
+          red in HH; tauto.
+        * rewrite H5.
+          repeat rewrite measure_none.
+          now rewrite Rbar_mult_0_l, Rbar_mult_0_r.
+      + rewrite H4.
+        repeat rewrite measure_none.
+        now repeat rewrite Rbar_mult_0_l.
+  Qed.
+
+  Lemma measurable_rectangle_product_λ_nneg ab (pf:is_measurable_rectangle ab) :
+    Rbar_le 0 (measurable_rectangle_product_λ ab pf).
+  Proof.
+    unfold measurable_rectangle_product_λ.
+    repeat match_destr.
+    apply Rbar_mult_nneg_compat; apply measure_nneg.
+  Qed.
+  
+  Lemma measurable_rectangle_product_λ_additive (c:nat -> pre_event (X * Y))
+    (disj:pre_collection_is_pairwise_disjoint c)
+    (measn:forall n, is_measurable_rectangle (c n)) 
+    (meas:is_measurable_rectangle (pre_union_of_collection c)) :
+    measurable_rectangle_product_λ (pre_union_of_collection c) meas = 
+      ELim_seq (fun i : nat => sum_Rbar_n (fun n : nat => measurable_rectangle_product_λ (c n) (measn n)) i).
+  Proof.y
+
+    assert (
+    
+    
+    intros.
+      
+    measure_countable_disjoint_union (B:nat->event σ) :
+      collection_is_pairwise_disjoint B ->
+      μ (union_of_collection B) = (ELim_seq (fun i : nat => sum_Rbar_n (fun n : nat => μ (B n)) i))
+
+    measurable_rectangle_product_λ ab pf1 = measurable_rectangle_product_λ ab pf2.
+
+  
+End measure_product.
+*)
