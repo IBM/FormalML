@@ -709,6 +709,45 @@ Section lim_sum.
          now apply in_cons.
    Qed.
 
+  
+ Lemma list_Rbar_sum_nneg_nested_prod {A B:Type} (X:list A) (Y:list B) (f:A->B->Rbar) :
+    (forall x y, In x X -> In y Y -> Rbar_le 0 (f x y)) ->
+    list_Rbar_sum (map (fun x => list_Rbar_sum (map (fun y => f x y) Y)) X) =
+    list_Rbar_sum (map (fun xy => f (fst xy) (snd xy)) (list_prod X Y)).
+   Proof.
+     intros.
+     induction X.
+     - simpl.
+       induction Y.
+       + now simpl.
+       + reflexivity.
+     - simpl.
+       rewrite IHX, map_app, list_Rbar_sum_cat.
+       + f_equal.
+         now rewrite map_map.
+       + intros.
+         rewrite in_map_iff in H0.
+         destruct H0 as [[? ?] [? ?]].
+         rewrite <- H0.
+         apply in_map_iff in H1.
+         destruct H1 as [? [? ?]].
+         inversion H1.
+         apply H.
+         * simpl; now left.
+         * now rewrite <- H5.
+       + intros.
+         rewrite in_map_iff in H0.
+         destruct H0 as [[? ?] [? ?]].
+         rewrite <- H0.
+         rewrite in_prod_iff in H1.
+         apply H.
+         * now apply in_cons.
+         * easy.
+       + intros.
+         apply H; trivial.
+         now apply in_cons.
+    Qed.
+
    Lemma list_Rbar_sum_nest_prod (f : nat -> nat -> Rbar ) (l1 l2 : list nat) :
     (forall a b, Rbar_le 0 (f a b)) ->
      list_Rbar_sum
@@ -966,5 +1005,115 @@ Qed.
           apply ELim_seq_nneg; intros.
           now apply sum_Rbar_n_nneg_nneg.
   Qed.
+
+ Lemma list_Rbar_sum_nneg_nested_prod_swap {A B:Type} (X:list A) (Y:list B) (f:A->B->Rbar) :
+   (forall x y, In x X -> In y Y -> Rbar_le 0 (f x y)) ->
+   list_Rbar_sum (map (fun xy => f (fst xy) (snd xy)) (list_prod X Y)) =
+   list_Rbar_sum (map (fun yx => f (snd yx) (fst yx)) (list_prod Y X)).
+   Proof.
+     intros.
+     apply list_Rbar_sum_nneg_perm.
+     - apply Forall_forall.
+       intros.
+       rewrite in_map_iff in H0.
+       destruct H0 as [? [? ?]].
+       rewrite <- H0.
+       destruct x0.
+       apply H; now apply in_prod_iff in H1.
+     - apply Forall_forall.
+       intros.
+       rewrite in_map_iff in H0.       
+       destruct H0 as [? [? ?]].
+       rewrite <- H0.
+       destruct x0.
+       apply H; now apply in_prod_iff in H1.
+     - generalize (list_prod_swap X Y); intros.
+       replace (map (fun yx : B * A => f (snd yx) (fst yx)) (list_prod Y X)) with
+           (map (fun xy : A * B => f (fst xy) (snd xy))
+                (map swap (list_prod Y X))).
+       + apply Permutation_map.
+         apply H0.
+       + unfold swap.
+         rewrite map_map.
+         apply map_ext.
+         intros.
+         now simpl.
+   Qed.
+
+ Lemma list_Rbar_sum_nneg_nested_swap {A B:Type} (X:list A) (Y:list B) (f:A->B->Rbar) :
+    (forall x y, In x X -> In y Y -> Rbar_le 0 (f x y)) ->
+    list_Rbar_sum (map (fun x => list_Rbar_sum (map (fun y => f x y) Y)) X) =
+      list_Rbar_sum (map (fun y => list_Rbar_sum (map (fun x => f x y) X)) Y).
+ Proof.
+   intros.
+   rewrite list_Rbar_sum_nneg_nested_prod.
+   - rewrite list_Rbar_sum_nneg_nested_prod.
+     + now apply list_Rbar_sum_nneg_nested_prod_swap.
+     + intros.
+       now apply H.
+   - intros.
+     now apply H.
+ Qed.
+
+
+ Lemma list_Rbar_ELim_seq_nneg_nested_swap_nat (f : nat -> nat -> Rbar) (n : nat) :
+   (forall a b, Rbar_le 0 (f a b)) ->
+   (sum_Rbar_n
+      (fun x0 : nat =>
+         ELim_seq 
+           (fun i0 : nat => sum_Rbar_n (fun n0 : nat => f x0 n0) i0)) n) =
+   (ELim_seq (fun i0 =>
+                (sum_Rbar_n (fun x0 =>
+                               (sum_Rbar_n (fun n0 => f x0 n0) i0)) n))).
+   Proof.
+      + symmetry.
+        induction n.
+        * unfold sum_Rbar_n.
+          simpl.
+          now rewrite ELim_seq_const.
+        * rewrite sum_Rbar_n_Sn.
+          rewrite <- IHn.
+          rewrite <- ELim_seq_plus.
+          -- apply ELim_seq_ext; intros.
+             rewrite sum_Rbar_n_Sn; trivial; intros.
+             now apply sum_Rbar_n_nneg_nneg.
+          -- apply ex_Elim_seq_incr; intros.
+             apply sum_Rbar_n_monotone; trivial; intros ?.
+             now apply sum_Rbar_n_pos_Sn.
+          -- apply ex_Elim_seq_incr; intros.
+             now apply sum_Rbar_n_pos_Sn.
+          -- apply ex_Rbar_plus_pos.
+             ++ apply ELim_seq_nneg; intros.
+                apply sum_Rbar_n_nneg_nneg; intros.
+                now apply sum_Rbar_n_nneg_nneg.
+             ++ apply ELim_seq_nneg; intros.
+                now apply sum_Rbar_n_nneg_nneg.
+          -- intros.
+             apply ELim_seq_nneg; intros.
+             now apply sum_Rbar_n_nneg_nneg; intros.
+   Qed.
+
+  Lemma list_Rbar_ELim_seq_nneg_nested_swap {A:Type} (X:list A) (f:A->nat->Rbar) :
+    (forall a b, In a X -> Rbar_le 0 (f a b)) ->
+    list_Rbar_sum (map (fun x => (ELim_seq (sum_Rbar_n (fun j : nat => (f x j))))) X) =
+      ELim_seq
+        (sum_Rbar_n (fun i : nat => list_Rbar_sum (map (fun x => f x i) X))).
+  Proof.
+    Admitted.
+          
+
+(*
+  Lemma ELim_seq_sum_nneg_nested_swap (f:nat->nat->Rbar) :
+    (forall a b, Rbar_le 0 (f a b)) ->
+    ELim_seq
+      (sum_Rbar_n (fun i : nat => ELim_seq (sum_Rbar_n (fun j : nat => (f i j))))) =
+      ELim_seq
+        (sum_Rbar_n (fun i : nat => ELim_seq (sum_Rbar_n (fun j : nat => (f j i))))).
+  Proof.
+    intros.
+    rewrite ELim_seq_Elim_seq_pair.
+    - rewrite ELim_seq_Elim_seq_pair.    
+      + 
+*)
 
 End lim_sum.
