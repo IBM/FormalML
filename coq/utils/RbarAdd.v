@@ -1066,31 +1066,32 @@ Qed.
                 (sum_Rbar_n (fun x0 =>
                                (sum_Rbar_n (fun n0 => f x0 n0) i0)) n))).
    Proof.
-      + symmetry.
-        induction n.
-        * unfold sum_Rbar_n.
-          simpl.
-          now rewrite ELim_seq_const.
-        * rewrite sum_Rbar_n_Sn.
-          rewrite <- IHn.
-          rewrite <- ELim_seq_plus.
-          -- apply ELim_seq_ext; intros.
-             rewrite sum_Rbar_n_Sn; trivial; intros.
-             now apply sum_Rbar_n_nneg_nneg.
-          -- apply ex_Elim_seq_incr; intros.
-             apply sum_Rbar_n_monotone; trivial; intros ?.
-             now apply sum_Rbar_n_pos_Sn.
-          -- apply ex_Elim_seq_incr; intros.
-             now apply sum_Rbar_n_pos_Sn.
-          -- apply ex_Rbar_plus_pos.
-             ++ apply ELim_seq_nneg; intros.
-                apply sum_Rbar_n_nneg_nneg; intros.
-                now apply sum_Rbar_n_nneg_nneg.
-             ++ apply ELim_seq_nneg; intros.
-                now apply sum_Rbar_n_nneg_nneg.
-          -- intros.
-             apply ELim_seq_nneg; intros.
-             now apply sum_Rbar_n_nneg_nneg; intros.
+     intros.
+     induction n.
+     - unfold sum_Rbar_n.
+       simpl.
+       now rewrite ELim_seq_const.
+     - rewrite sum_Rbar_n_Sn.
+       rewrite IHn.
+       rewrite <- ELim_seq_plus.
+       + intros.
+         apply ELim_seq_ext; intros.
+         rewrite sum_Rbar_n_Sn; trivial; intros.
+         now apply sum_Rbar_n_nneg_nneg.
+       + apply ex_Elim_seq_incr; intros.
+         apply sum_Rbar_n_monotone; trivial; intros ?.
+         now apply sum_Rbar_n_pos_Sn.
+       + apply ex_Elim_seq_incr; intros.
+         now apply sum_Rbar_n_pos_Sn.
+       + apply ex_Rbar_plus_pos.
+         * apply ELim_seq_nneg; intros.
+           apply sum_Rbar_n_nneg_nneg; intros.
+           now apply sum_Rbar_n_nneg_nneg.
+         * apply ELim_seq_nneg; intros.
+           now apply sum_Rbar_n_nneg_nneg.
+       + intros.
+         apply ELim_seq_nneg; intros.
+         now apply sum_Rbar_n_nneg_nneg; intros.
    Qed.
 
   Lemma list_Rbar_ELim_seq_nneg_nested_swap {A:Type} (X:list A) (f:A->nat->Rbar) :
