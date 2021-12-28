@@ -96,7 +96,8 @@ PROB_THEORY = \
 	SigmaAlgebras \
 	VectorRandomVariable \
 	Martingale \
-	Gaussian
+	Gaussian \
+	ProductSpace
 
 
 QLEARN = \
