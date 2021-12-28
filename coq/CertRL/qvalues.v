@@ -1,6 +1,7 @@
 Require Import mdp fixed_point pmf_monad Finite ListAdd Reals.
 Require Import Coq.Lists.List LibUtils.
-Require Import micromega.Lra qlearn.
+Require Import micromega.Lra. (*  qlearn. *)
+Require Import ClassicalDescription.
 Require Import RealAdd LibUtilsListAdd EquivDec.
 
 Import ListNotations.

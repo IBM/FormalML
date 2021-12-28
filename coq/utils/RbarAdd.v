@@ -3,7 +3,6 @@ Require Import Reals.
 Require Import LibUtils List Permutation RealAdd ELim_Seq ListAdd Sums CoquelicotAdd Isomorphism PairEncoding.
 Require Import Reals Psatz Morphisms.
 
-
 Require Import Classical_Prop Classical_Pred_Type.
 
 Set Bullet Behavior "Strict Subproofs".
@@ -1140,47 +1139,103 @@ Qed.
          firstorder.
  Qed.
 
-  
- Lemma list_Rbar_ELim_seq_nneg_nested_swap_nat (f : nat -> nat -> Rbar) (n : nat) :
-   (forall a b, Rbar_le 0 (f a b)) ->
-   (sum_Rbar_n
-      (fun x0 : nat =>
-         ELim_seq 
-           (fun i0 : nat => sum_Rbar_n (fun n0 : nat => f x0 n0) i0)) n) =
-   (ELim_seq (fun i0 =>
-                (sum_Rbar_n (fun x0 =>
-                               (sum_Rbar_n (fun n0 => f x0 n0) i0)) n))).
-   Proof.
-     intros.
-     induction n.
-     - unfold sum_Rbar_n.
-       simpl.
-       now rewrite ELim_seq_const.
-     - rewrite sum_Rbar_n_Sn.
-       rewrite IHn.
-       rewrite <- ELim_seq_plus.
-       + intros.
-         apply ELim_seq_ext; intros.
-         rewrite sum_Rbar_n_Sn; trivial; intros.
-         now apply sum_Rbar_n_nneg_nneg.
-       + apply ex_Elim_seq_incr; intros.
-         apply sum_Rbar_n_monotone; trivial; intros ?.
-         now apply sum_Rbar_n_pos_Sn.
-       + apply ex_Elim_seq_incr; intros.
-         now apply sum_Rbar_n_pos_Sn.
-       + apply ex_Rbar_plus_pos.
-         * apply ELim_seq_nneg; intros.
-           apply sum_Rbar_n_nneg_nneg; intros.
-           now apply sum_Rbar_n_nneg_nneg.
-         * apply ELim_seq_nneg; intros.
-           now apply sum_Rbar_n_nneg_nneg.
-       + intros.
-         apply ELim_seq_nneg; intros.
-         now apply sum_Rbar_n_nneg_nneg; intros.
-   Qed.
+  Definition swap_num_as_pair (n:nat) :=
+    let '(a, b) := iso_b (Isomorphism:=nat_pair_encoder) n in
+    iso_f (b,a).
 
+  Lemma sum_Rbar_n_iso_swap (f:nat->nat->Rbar) (n : nat) :
+    (forall a b, Rbar_le 0 (f a b)) ->
+    exists (m : nat),
+      Rbar_le
+        (sum_Rbar_n (fun n0 : nat => let '(a, b) := iso_b n0 in f a b) n)
+        (sum_Rbar_n (fun n0 : nat => let '(a, b) := iso_b n0 in f b a) m).
+  Proof.
+    intros.
+    exists (S (list_max (map swap_num_as_pair (seq 0 n)))).
+    unfold sum_Rbar_n.
+    assert (subl:exists l,
+               Permutation (map iso_b (seq 0 n)) l /\
+               sublist l 
+                       (map swap (map iso_b
+                                      (seq 0 (S (list_max
+                                                (map swap_num_as_pair (seq 0 n)))))))).
+    {
+      apply incl_NoDup_sublist_perm.
+      - apply iso_b_nodup.
+        apply seq_NoDup.
+      - intros [??] ?.
+        apply in_map_iff in H0.
+        destruct H0 as [?[??]].
+        rewrite in_map_iff.
+        exists (n1,n0).
+        split.
+        + now unfold swap; simpl.
+        + rewrite in_map_iff.
+          exists (iso_f (n1, n0)).
+          split.
+          * now rewrite iso_b_f.
+          * rewrite in_seq.
+            split.
+            -- lia.
+            -- unfold swap_num_as_pair.
+               assert (iso_f (n1, n0) <=
+                       (list_max
+                          (map (fun n2 : nat => let '(a, b) := iso_b n2 in iso_f (b, a)) (seq 0 n))))%nat.
+               {
+                 generalize (list_max_upper
+                               (map (fun n2 : nat => let '(a, b) := iso_b n2 in iso_f (b, a)) (seq 0 n)))%nat; intros.
+                 rewrite Forall_forall in H2.
+                 apply H2.
+                 rewrite in_map_iff.
+                 exists x.
+                 split; trivial.
+                 destruct (iso_b x).
+                 now inversion H0.
+               }
+               lia.
+    }
+    destruct subl as [? [? ?]].
+    apply (Permutation_map (fun '(a, b) => f a b)) in H0.
+    apply (sublist_map (fun '(a, b) => f a b)) in H1.
+    rewrite (list_Rbar_sum_nneg_perm
+               (map (fun n1 : nat => let '(a, b) := iso_b n1 in f a b) (seq 0 n))
+               (map (fun '(a, b) => f a b) x)
+             ); trivial.
+    - apply list_Rbar_sum_pos_sublist_le; trivial.
+      + intros.
+        rewrite in_map_iff in H2.
+        destruct H2 as [? [? ?]].
+        rewrite <- H2.
+        now destruct (iso_b x1).
+      + unfold swap in H1.
+        rewrite map_map, map_map in H1.
+        rewrite map_ext with
+            (g :=  (fun x : nat => f (snd (iso_b x)) (fst (iso_b x)))).
+        * apply H1.
+        * intros.
+          destruct (iso_b a).
+          now simpl.
+    - rewrite Forall_map, Forall_forall.
+      intros.
+      now destruct (iso_b x0).
+    - rewrite Forall_map, Forall_forall.
+      intros.
+      now destruct x0.
+    - now rewrite map_map in H0.
+    Qed.
 
-(*
+  Lemma sum_Rbar_n_iso_swap2 (f:nat->nat->Rbar) (n : nat) :
+    (forall a b, Rbar_le 0 (f a b)) ->
+    exists (m : nat),
+      Rbar_le
+        (sum_Rbar_n (fun n0 : nat => let '(a, b) := iso_b n0 in f b a) n)
+        (sum_Rbar_n (fun n0 : nat => let '(a, b) := iso_b n0 in f a b) m).
+  Proof.
+    intros.
+    apply (sum_Rbar_n_iso_swap (fun a b => f b a)).
+    now intros.
+  Qed.
+
   Lemma ELim_seq_sum_nneg_nested_swap (f:nat->nat->Rbar) :
     (forall a b, Rbar_le 0 (f a b)) ->
     ELim_seq
@@ -1190,8 +1245,30 @@ Qed.
   Proof.
     intros.
     rewrite ELim_seq_Elim_seq_pair.
-    - rewrite ELim_seq_Elim_seq_pair.    
-      + 
-*)
+    rewrite ELim_seq_Elim_seq_pair.
+    - apply Rbar_le_antisym.
+      + apply Elim_seq_le_bound; intros.
+        destruct (sum_Rbar_n_iso_swap f n H).
+        eapply Rbar_le_trans.
+        * apply H0.
+        * apply Elim_seq_incr_elem.
+          intros.
+          apply sum_Rbar_n_pos_Sn.
+          intros.
+          destruct (iso_b n1).
+          apply H.
+      + apply Elim_seq_le_bound; intros.
+        destruct (sum_Rbar_n_iso_swap2 f n H).
+        eapply Rbar_le_trans.
+        * apply H0.
+        * apply Elim_seq_incr_elem.
+          intros.
+          apply sum_Rbar_n_pos_Sn.
+          intros.
+          destruct (iso_b n1).
+          apply H.
+    - intros; apply H.
+    - intros; apply H.
+  Qed.
 
 End lim_sum.

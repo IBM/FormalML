@@ -1,5 +1,5 @@
 Require Import List.
-Require Import mdp fixed_point.
+Require Import mdp qvalues fixed_point.
 Require Import RealAdd CoquelicotAdd.
 Require Import utils.Utils.
 Require Import Lra Lia PushNeg.
@@ -22,6 +22,49 @@ This file is a work-in-progress proof of convergence of the classical Q-learning
 algorithm.
 ****************************************************************************************
 *)
+
+Section testQ.
+
+  Context {M : MDP}.
+  
+  Definition Ts := {x : state M & act M x} .
+  Definition Td := Rfct Ts.
+
+  Context {r : Ts -> state M -> R} {gamma : R} (α : nat -> R).
+
+  Definition maxactval := fun W s' => Max_{@act_list M s'}(fun a => W (existT _ s' a)).
+
+  Fixpoint tvector (A:Type) (n:nat) : Type
+    := match n with
+       | 0%nat => unit
+       | S m => prod A (tvector A m)
+       end.
+
+  Fixpoint Q (init:Td) (combine:Ts->Td->Td) (n:nat) : tvector Ts n -> Td
+    := match n as n' return tvector Ts n' -> Td with
+       | 0 => fun _ => init
+       | S m => fun '(a, x) =>
+                 let b := Q init combine m x in
+                 combine a b
+       end.
+
+  Definition BellQ (n:nat) (QQ : Td) (sa : Ts) (s' : state M) : Td :=
+    fun sa1 => if EqDecsigT sa sa1 then 
+                    (r sa s') + gamma * maxactval QQ s'
+                  else (QQ sa1).
+
+  Definition Qcombine (n:nat) (sa : Ts) (s' : state M) (W : Td) : Td :=
+    fun sa1 => (1 - α n) * (W sa1) + (α n) * ((BellQ n W sa s') sa1).
+
+  Fixpoint Q1 (init:Td) (n:nat) (s' : Ts) : tvector Ts n -> Td
+    := match n as n' return tvector Ts n' -> Td with
+       | 0 => fun _ => init
+       | S m => fun '(a, x) =>
+                 let b := Q1 init m a x in
+                 Qcombine m a (projT1 s') b 
+       end.
+
+End testQ.
 
 Section rv_expressible.
 
