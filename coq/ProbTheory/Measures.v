@@ -1567,8 +1567,36 @@ Section semi_algebra.
     ForallOrdPairs pre_event_disjoint (map pre_list_union (map f l)) ->
     ForallOrdPairs pre_event_disjoint (concat (map f l)).
   Proof.
-  Admitted.
-    
+    intros.
+    induction l; simpl; trivial.
+    invcs H; invcs H0.
+    cut_to IHl; trivial.
+    induction (f a); simpl; trivial.
+    invcs H3.
+    cut_to IHl0; trivial.
+    - constructor; trivial.
+      apply Forall_app; trivial.
+      rewrite Forall_forall; intros ??.
+      rewrite Forall_forall in H2.
+      apply in_concat in H.
+      destruct H as [?[??]].
+      apply in_map_iff in H.
+      destruct H as [?[??]]; subst.
+      specialize (H2 (pre_list_union (f x1))).
+      cut_to H2.
+      + intros b ??.
+        apply (H2 b)
+        ; red; simpl; eauto.
+      + apply in_map.
+        now apply in_map.
+    - revert H2.
+      apply Forall_impl; intros.
+      rewrite pre_list_union_cons in H.
+      intros ???.
+      eapply H; try eapply H2.
+      red; eauto.
+  Qed.
+  
   Definition salgebra_algebra_in {T} (s: SemiAlgebra T) (x:pre_event T) :=
     exists (l:list (pre_event T)),
       Forall salg_in l /\
