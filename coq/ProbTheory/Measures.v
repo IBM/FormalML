@@ -2103,7 +2103,6 @@ Section semi_premeasure.
     ForallOrdPairs pre_event_disjoint (map salg_pre R) ->
     pre_collection_is_pairwise_disjoint (fun x => S x) ->
     pre_event_equiv (pre_list_union (map salg_pre R))  (pre_union_of_collection S) ->
-    
     list_Rbar_sum (map λ R) = ELim_seq (fun i : nat => sum_Rbar_n (fun n : nat => λ (S n)) i).
     Proof.
       intros disjR disjS eqq.
@@ -2213,12 +2212,99 @@ Section semi_premeasure.
         now rewrite map_map.
       - intros.
         apply semipremeasure_nneg.
-  Qed.
+    Qed.
+
+    Ltac nth_destr_in H
+      := match type of H with
+         | context [nth ?a ?b ?c] => let HH := fresh "ntheq" in
+                                    destruct (nth_in_or_default a b c) as [HH|HH]
+                                    ; [| rewrite HH in H]
+         end.
+
+    (* this should be true without needing none
+       but that is a bit of a pain to show
+       and in practice we have none, so it it not needed for now *)
+    Lemma semipremeasure_disjoint_list_countable_list_irrel_with_default
+          (λ:salg_set SAlg -> Rbar) {meas:is_semipremeasure λ}
+          (has_none : salg_in pre_event_none)
+          (none: λ (exist _ _ has_none) = 0)
+          (R:list (salg_set SAlg))
+          (S:nat -> list (salg_set SAlg)):
+      ForallOrdPairs pre_event_disjoint (map salg_pre R) ->
+      pre_collection_is_pairwise_disjoint (fun x => pre_list_union (map salg_pre (S x))) ->
+      (forall n, ForallOrdPairs pre_event_disjoint (map salg_pre (S n))) ->
+      pre_event_equiv (pre_list_union (map salg_pre R)) (pre_union_of_collection (fun x => (pre_list_union (map salg_pre (S x))))) ->
+      list_Rbar_sum (map λ R) = ELim_seq (sum_Rbar_n (fun n : nat => (list_Rbar_sum (map λ (S n))))).
+    Proof.
+      intros.
+      transitivity (
+          ELim_seq (sum_Rbar_n (fun n : nat =>
+                                  ELim_seq (fun i : nat => sum_Rbar_n (fun k : nat => λ (nth k (S n) (exist _ _ has_none))) i)))).
+      - rewrite ELim_seq_Elim_seq_pair.
+        + transitivity (
+              ELim_seq
+                (fun i : nat =>
+                   sum_Rbar_n (fun n : nat => λ (nth (snd (iso_b n)) (S (fst (iso_b n))) (exist salg_in pre_event_none has_none)))
+                              i)).
+          * apply semipremeasure_disjoint_list_countable_irrel; trivial.
+            -- red in H0.
+               intros ??????.
+               nth_destr_in H4; [| red in H4; tauto].
+               nth_destr_in H5; [| red in H5; tauto].
+               destruct (Nat.eq_dec (fst (iso_b n1)) (fst (iso_b n2))).
+               ++ rewrite e in *.
+                  specialize (H1 (fst (iso_b n2))).
+                  apply pre_list_collection_disjoint in H1.
+                  destruct (Nat.eq_dec (snd (iso_b n1)) (snd (iso_b n2))).
+                  ** assert (iso_b (Isomorphism:=nat_pair_encoder) n1 = iso_b (Isomorphism:=nat_pair_encoder) n2).
+                     { apply injective_projections; trivial. }
+                     apply (f_equal (iso_f (Isomorphism:=nat_pair_encoder))) in H6.
+                     repeat rewrite iso_f_b in H6.
+                     auto.
+                  ** apply (H1 _ _ n x).
+                     --- red.
+                         now rewrite <- map_nth in H4.
+                     --- red.
+                         now rewrite <- map_nth in H5.
+               ++ apply (H0 _ _ n x).
+                  ** eexists; split; try apply H4.
+                     now apply in_map.
+                  ** eexists; split; try apply H5.
+                     now apply in_map.
+            -- rewrite H2; intros x.
+               { 
+                 split.
+                 - intros [?[?[??]]].
+                   red.
+                   apply in_map_iff in H3.
+                   destruct H3 as [?[??]]; subst.
+                   apply In_nth with (d:=(exist salg_in pre_event_none has_none)) in H5.
+                   destruct H5 as [?[??]]; subst.
+                   exists (iso_f (x0, x1)).
+                   now repeat rewrite iso_b_f; simpl.
+                 - intros [??].
+                   red.
+                   nth_destr_in H3; [| red in H3; tauto].
+                   exists (fst (iso_b x0)).
+                   eexists; split; try apply H3.
+                   apply in_map_iff; eauto.
+               } 
+          * apply ELim_seq_ext; intros.
+            unfold sum_Rbar_n; f_equal; intros.
+            apply map_ext; intros.
+            match_destr.
+        + intros.
+          apply semipremeasure_nneg.
+      - apply ELim_seq_ext; intros.
+        unfold sum_Rbar_n at 1 3; f_equal.
+        apply map_ext; intros.
+        now rewrite seq_sum_list_sum.
+    Qed.
 
   (* Now, we can extend a semipremeasure on a semialgebra to a premeasure on the generated algebra *)
 
   (* very classic *)
-  Definition premeasure_of_semipremeasure (λ:salg_set SAlg -> Rbar) {meas:is_semipremeasure λ} :
+  Definition premeasure_of_semipremeasure (λ:salg_set SAlg -> Rbar) :
     (alg_set (SemiAlgebra_Algebra SAlg) -> Rbar).
   Proof.
     intros [x xin].
@@ -2248,12 +2334,15 @@ Section semi_premeasure.
       now rewrite <- H1, <- H3.
   Qed.
 
-  (*
-  Global Instance premeasure_of_semipremeasure_premeasure (λ:salg_set SAlg -> Rbar) {meas:is_semipremeasure λ} :
+  Global Instance premeasure_of_semipremeasure_premeasure
+         (λ:salg_set SAlg -> Rbar) {meas:is_semipremeasure λ}
+         (has_none : salg_in pre_event_none)
+         (none: λ (exist _ _ has_none) = 0)
+    :
     is_premeasure (premeasure_of_semipremeasure λ).
   Proof.
     constructor.
-    - apply premeasure_of_semipremeasure_proper.
+    - now apply premeasure_of_semipremeasure_proper.
     - unfold premeasure_of_semipremeasure.
       unfold alg_none.
       repeat match_destr.
@@ -2305,63 +2394,137 @@ Section semi_premeasure.
       destruct H2 as [??].
       transitivity (ELim_seq (sum_Rbar_n (fun n : nat =>
                                             list_Rbar_sum (map λ (list_dep_zip (l n) (x0 n)))))).
-      + 
-
-
-        generalize (semipremeasure_disjoint_list_countable_irrel
-                      λ
-                      (list_dep_zip x f)
-                      (fun n => list_Rbar_sum (map λ (list_dep_zip (l n) (x0 n))))).
-
-        
-
-        assert (pfin:forall i,
-                   salg_in (pre_list_union (map salg_pre (list_dep_zip (l i) (x0 i))))).
-        {
-          intros.
+      + apply (semipremeasure_disjoint_list_countable_list_irrel_with_default _ has_none none); trivial.
+        * unfold salg_pre, salg_set; simpl.
+          now rewrite list_dep_zip_map1.
+        * unfold salg_pre, salg_set; simpl.
+          eapply pre_collection_is_pairwise_disjoint_pre_event_sub_proper
+          ; try eapply H.
+          intros ?.
+          rewrite list_dep_zip_map1.
+          destruct (HH a) as [?[??]].
+          rewrite H4.
+          reflexivity.
+        * intros.
           unfold salg_pre, salg_set; simpl.
           rewrite list_dep_zip_map1.
-          
-          - destruct (HH i) as [_ [HH2 _]].
-            symmetry.
-            apply HH2.
-          - destruct (B i); simpl.
-            destruct a.
-
-          
-        transitivity (ELim_seq (sum_Rbar_n (fun n : nat => λ (pre_list_union (list_dep_zip (l n) (x0 n)))))).
-
-
-        
-        
-        (*  ; semipremeasure_list_disjoint_union (B:list (salg_set SAlg)) :
-        ForallOrdPairs pre_event_disjoint (map salg_pre B) ->
-        forall (pf:salg_in (pre_list_union (map salg_pre B))),
-        λ (exist _ _ pf) = list_Rbar_sum (map λ B)
-
-      ; semipremeasure_countable_disjoint_union (B:nat->salg_set SAlg) *)
-        admit.
+          now destruct (HH n).
+        * unfold salg_pre, salg_set; simpl.
+          repeat rewrite list_dep_zip_map1.
+          intros ?.
+          split.
+          -- intros HH2.
+             apply H1 in HH2.
+             destruct HH2 as [n HH2].
+             exists n.
+             rewrite list_dep_zip_map1.
+             destruct (HH n) as [_ [HH3 _]].
+             now apply HH3.
+          -- intros [?[?[??]]].
+             rewrite list_dep_zip_map1 in H3.
+             destruct (HH x2) as [_ [HH3 _]].
+             apply H1.
+             exists x2.
+             apply HH3.
+             red; eauto.
       + apply ELim_seq_ext; intros.
         unfold sum_Rbar_n; f_equal.
         apply map_ext; intros.
         auto.
+  Qed.
 
-      Lemma semipremeasure_disjoint_list_countable_irrel (λ:salg_set SAlg -> Rbar) {meas:is_semipremeasure λ}
-          (R:list (salg_set SAlg))
-          (S:nat -> salg_set SAlg):
-    ForallOrdPairs pre_event_disjoint (map salg_pre R) ->
-    pre_collection_is_pairwise_disjoint (fun x => S x) ->
-    pre_event_equiv (pre_list_union (map salg_pre R))  (pre_union_of_collection S) ->
-    
-    list_Rbar_sum (map λ R) = ELim_seq (fun i : nat => sum_Rbar_n (fun n : nat => λ (S n)) i).
-      
-      
-      
-      
-  *)
+    Lemma premeasure_of_semipremeasure_same
+        (λ : salg_set SAlg -> Rbar)
+        {meas : is_semipremeasure λ}
+        x
+        (pf1 : salg_in x)
+        (pf2 : alg_in (Algebra:=(SemiAlgebra_Algebra SAlg)) x) :
+      premeasure_of_semipremeasure λ (exist _ x pf2) = λ (exist _ x pf1).
+    Proof.
+      unfold premeasure_of_semipremeasure.
+      repeat match_destr.
+      destruct a.
+      assert (pf:salg_in (pre_list_union (map salg_pre (list_dep_zip x0 f)))).
+      {
+        unfold salg_pre, salg_set.
+        rewrite list_dep_zip_map1.
+        now rewrite <- H0.
+      }
+      rewrite <- (semipremeasure_list_disjoint_union ((list_dep_zip x0 f))) with (pf0:=pf).
+      - eapply semipremeasure_proper; red; simpl.
+        unfold salg_pre, salg_set.
+        rewrite list_dep_zip_map1.
+        now symmetry.
+      - unfold salg_pre, salg_set.
+        now rewrite list_dep_zip_map1.
+    Qed.
 
 End semi_premeasure.
 
+Section caratheodory_semi.
+  Local Existing Instance Rbar_le_pre.
+  Local Existing Instance Rbar_le_part.
+
+  Context {T:Type}.
+  Context {SAlg:SemiAlgebra T}.
+  Context (has_none : salg_in pre_event_none).
+  Context (λ:salg_set SAlg -> Rbar).
+  Context {meas:is_semipremeasure λ}.
+  Context (none: λ (exist _ _ has_none) = 0).
+
+  Instance semi_σ : SigmaAlgebra T
+    := μ_measurable_sa (μ_outer:=outer_λ_outer_measure _
+                                       (λ_meas:=premeasure_of_semipremeasure_premeasure
+                                                  _ has_none none))
+                       (outer_λ (premeasure_of_semipremeasure λ)).
+
+  Lemma semi_σ_in : pre_event_sub salg_in (sa_sigma (SigmaAlgebra:=semi_σ)).
+  Proof.
+    intros ??.
+    simpl.
+    apply SemiAlgebra_in_algebra in H.
+    generalize (outer_λ_is_measurable (Alg:=SemiAlgebra_Algebra SAlg))
+    ; intros HH.
+    specialize (HH _ (premeasure_of_semipremeasure_premeasure _ has_none none)).
+    specialize (HH (exist _ _ H)).
+    now simpl in HH.
+  Qed.
+
+  Lemma semi_σ_sa_sigma (x:salg_set SAlg) : sa_sigma x.
+  Proof.
+    destruct x; simpl.
+    now apply semi_σ_in.
+  Qed.
+
+  Definition semi_as_semi_σ (x:salg_set SAlg) : event semi_σ
+    := exist _ _ (semi_σ_sa_sigma x).
+  
+  Definition semi_μ : pre_event T -> Rbar
+    := outer_λ ((premeasure_of_semipremeasure λ)).
+
+  Instance semi_μ_measurable : is_measure (σ:=semi_σ) semi_μ.
+  Proof.
+    apply μ_measurable_sa_measure.
+  Qed.
+
+  Lemma semi_μ_λ (x:salg_set SAlg) : semi_μ x = λ x.
+  Proof.
+    unfold semi_μ.
+    destruct x; simpl.
+
+    generalize (outer_λ_λ (Alg:=SemiAlgebra_Algebra SAlg))
+    ; intros HH.
+    specialize (HH _ (premeasure_of_semipremeasure_premeasure _ has_none none)).
+    assert (alg_in (Algebra:=SemiAlgebra_Algebra SAlg) x)
+      by (now apply SemiAlgebra_in_algebra).
+    specialize (HH (exist _ _ H)).
+    simpl alg_pre in HH.
+    rewrite HH.
+    now apply premeasure_of_semipremeasure_same.
+  Qed.
+
+End caratheodory_semi.
+  
 (*
 Section measure_product.
 
