@@ -1224,18 +1224,6 @@ Qed.
     - now rewrite map_map in H0.
     Qed.
 
-  Lemma sum_Rbar_n_iso_swap2 (f:nat->nat->Rbar) (n : nat) :
-    (forall a b, Rbar_le 0 (f a b)) ->
-    exists (m : nat),
-      Rbar_le
-        (sum_Rbar_n (fun n0 : nat => let '(a, b) := iso_b n0 in f b a) n)
-        (sum_Rbar_n (fun n0 : nat => let '(a, b) := iso_b n0 in f a b) m).
-  Proof.
-    intros.
-    apply (sum_Rbar_n_iso_swap (fun a b => f b a)).
-    now intros.
-  Qed.
-
   Lemma ELim_seq_sum_nneg_nested_swap (f:nat->nat->Rbar) :
     (forall a b, Rbar_le 0 (f a b)) ->
     ELim_seq
@@ -1251,24 +1239,19 @@ Qed.
         destruct (sum_Rbar_n_iso_swap f n H).
         eapply Rbar_le_trans.
         * apply H0.
-        * apply Elim_seq_incr_elem.
-          intros.
-          apply sum_Rbar_n_pos_Sn.
-          intros.
-          destruct (iso_b n1).
-          apply H.
+        * apply Elim_seq_incr_elem; intros.
+          apply sum_Rbar_n_pos_Sn; intros.
+          now destruct (iso_b n1).
       + apply Elim_seq_le_bound; intros.
-        destruct (sum_Rbar_n_iso_swap2 f n H).
-        eapply Rbar_le_trans.
-        * apply H0.
-        * apply Elim_seq_incr_elem.
-          intros.
-          apply sum_Rbar_n_pos_Sn.
-          intros.
-          destruct (iso_b n1).
-          apply H.
-    - intros; apply H.
-    - intros; apply H.
+        destruct (sum_Rbar_n_iso_swap (fun a b => f b a) n).
+        * now intros.
+        * eapply Rbar_le_trans.
+          -- apply H0.
+          -- apply Elim_seq_incr_elem; intros.
+             apply sum_Rbar_n_pos_Sn; intros.
+             now destruct (iso_b n1).
+    - now intros.
+    - now intros.
   Qed.
 
 End lim_sum.
