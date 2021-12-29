@@ -375,3 +375,57 @@ Section measure_product.
   
 End measure_product.
 
+Section ps_product.
+  Context {X Y:Type}.
+  Context {A:SigmaAlgebra X}.
+  Context {B:SigmaAlgebra Y}.
+
+  Context (ps1 : ProbSpace A).
+  Context (ps2 : ProbSpace B).
+
+  Instance product_ps : ProbSpace (product_sa A B).
+  Proof.
+    apply (measure_all_one_ps (product_measure (ps_P (σ:=A)) (ps_measure _) (ps_P (σ:=B)) (ps_measure _))).
+    generalize (product_measure_product (ps_P (σ:=A)) (ps_measure _) (ps_P (σ:=B)) (ps_measure _) Ω Ω)
+    ; intros HH.
+    repeat rewrite ps_one in HH.
+    rewrite Rbar_mult_1_r in HH.
+    rewrite <- HH.
+    assert (pre_eqq:pre_event_equiv
+              pre_Ω
+              (fun '(x,y) => @pre_Ω X x /\ @pre_Ω Y y)).
+    {
+      intros [??]; tauto.
+    }
+    assert (sa:sa_sigma (SigmaAlgebra:=product_sa A B) (fun '(x,y) => @pre_Ω X x /\ @pre_Ω Y y)).
+    { 
+      rewrite <- pre_eqq.
+      apply sa_all.
+    }
+    apply (measure_proper (σ:=product_sa A B) (μ:=product_measure (fun x : event A => ps_P x) (ps_measure ps1) (fun x : event B => ps_P x) 
+                                                                  (ps_measure ps2)) Ω (exist _ _ sa)).
+    now red; simpl.
+  Defined.
+
+  Lemma product_sa_sa (a:event A) (b:event B) :
+    sa_sigma (SigmaAlgebra:=product_sa A B) (fun '(x,y) => a x /\ b y).
+  Proof.
+    apply generated_sa_sub.
+    red.
+    destruct a; destruct b; simpl.
+    exists x; exists x0.
+    firstorder.
+  Qed.
+
+  Definition product_sa_event (a:event A) (b:event B) : event (product_sa A B)
+    := exist _ _ (product_sa_sa a b).
+  
+  Theorem product_sa_product (a:event A) (b:event B) :
+    ps_P (ProbSpace:=product_ps) (product_sa_event a b) =
+      ps_P a * ps_P b.
+  Proof.
+    simpl.
+    now rewrite product_measure_product; simpl.
+  Qed.
+  
+End ps_product.
