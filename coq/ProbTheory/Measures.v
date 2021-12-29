@@ -213,6 +213,67 @@ Section measure.
 
 End measure.
 
+Global Instance is_measure_proper {A} :
+  Proper (sa_sub --> (pre_event_equiv ==> eq) ==> impl) (@is_measure A).
+Proof.
+  intros ???????.
+  constructor.
+  - intros ???.
+    repeat red in H0.
+    rewrite <- (H0 _ _ (reflexivity x1)).
+    rewrite <- (H0 _ _ (reflexivity y1)).    
+    generalize (measure_proper (is_measure:=H1) (event_sa_sub H x1) (event_sa_sub H y1))
+    ; simpl; intros HH.
+    apply HH.
+    now red; simpl.
+  - red in H0.
+    generalize measure_none; simpl.
+    now rewrite (H0 _ _ (reflexivity pre_event_none)).
+  - intros.
+    rewrite <- (H0 _ _ (reflexivity a)).
+    now generalize (measure_nneg (event_sa_sub H a)); simpl.
+  - intros.
+    generalize (measure_countable_disjoint_union (fun n => event_sa_sub H (B n)))
+    ; intros HH
+    ; cut_to HH.
+    + simpl in HH.
+      etransitivity; [etransitivity |]; [| apply HH |].
+      * now rewrite (H0 _ _ (reflexivity _)).
+      * apply ELim_seq_ext; intros.
+        unfold sum_Rbar_n; f_equal.
+        apply map_ext; intros.
+        now rewrite (H0 _ _ (reflexivity _)).
+    + apply collection_is_pairwise_disjoint_pre in H2.
+      apply collection_is_pairwise_disjoint_pre.
+      now unfold collection_pre; simpl.
+Qed.
+
+Global Instance is_measure_proper_sub {A}
+       (sa1 sa2:SigmaAlgebra A)
+       (sub:sa_sub sa1 sa2) μ {μ_meas:is_measure (σ:=sa2) μ} :
+  is_measure (σ:=sa1) (fun x => μ (event_sa_sub sub x)).
+Proof.
+  constructor.
+  - intros ???.
+    generalize (measure_proper (event_sa_sub sub x) (event_sa_sub sub y))
+    ; simpl; intros HH.
+    apply HH.
+    now red; simpl.
+  - rewrite <- measure_none; simpl.
+    now apply measure_proper.
+  - intros.
+    now generalize (measure_nneg (event_sa_sub sub a)); simpl.
+  - intros.
+    generalize (measure_countable_disjoint_union (fun n => event_sa_sub sub (B n)))
+    ; intros HH
+    ; cut_to HH.
+    + simpl in HH.
+      rewrite <- HH.
+      now apply measure_proper.
+    + apply collection_is_pairwise_disjoint_pre in H.
+      apply collection_is_pairwise_disjoint_pre.
+      now unfold collection_pre; simpl.
+Qed.
 
 Section outer_measure.
   Context {T:Type}.
@@ -2505,7 +2566,7 @@ Section caratheodory_semi.
   Proof.
     apply μ_measurable_sa_measure.
   Qed.
-
+  
   Lemma semi_μ_λ (x:salg_set SAlg) : semi_μ x = λ x.
   Proof.
     unfold semi_μ.

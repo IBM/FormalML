@@ -235,6 +235,143 @@ Section measure_product.
       now rewrite measure_none, Rbar_mult_0_l.
   Qed.
 
+  (* this lemma could be used to clean up some of the above *)
+  Lemma measurable_rectangle_eq_decompose
+        (fx:event A) (fy:event B) (gx:event A) (gy:event B) :
+    (forall (x : X) (y : Y), fx x /\ fy y <-> gx x /\ gy y) ->
+    ((event_equiv fx ∅ \/ event_equiv fy ∅) /\ (event_equiv gx ∅ \/ event_equiv gy ∅))
+    \/ (event_equiv fx gx /\ event_equiv fy gy).
+  Proof.
+    intros.
+    destruct (classic_event_none_or_has fx) as [[??]|?].
+    - destruct (classic_event_none_or_has fy) as [[??]|?].
+      + right.
+        split; intros c; split; intros HH.
+        * destruct (H c x0) as [[??] _]; tauto.
+        * destruct (H c x0) as [_ [??]]; trivial.
+          split; trivial.
+          destruct (H x x0) as [[??] _]; tauto.
+        * destruct (H x c) as [[??] _]; tauto.
+        * destruct (H x c) as [_ [??]]; trivial.
+          split; trivial.
+          destruct (H x x0) as [[??] _]; tauto.
+      + destruct (classic_event_none_or_has gx) as [[??]|?]; [| eauto].
+        destruct (classic_event_none_or_has gy) as [[??]|?]; [| eauto].
+        destruct (H x0 x1) as [_ [??]]; [tauto |].
+        apply H1 in H5; tauto.
+    - left.
+      destruct (classic_event_none_or_has gx) as [[??]|?]; [| eauto].
+      destruct (classic_event_none_or_has gy) as [[??]|?]; [| eauto].
+      destruct (H x x0) as [_ [??]]; [tauto |].
+      apply H0 in H3; tauto.
+  Qed.      
+
+  Instance measurable_rectangle_pm_semipremeasure : is_semipremeasure measurable_rectangle_pm.
+  Proof.
+    apply (semipremeasure_with_zero_simpl) with (has_none:=is_measurable_rectangle_none).
+    - apply measurable_rectangle_pm_proper.
+    - apply measurable_rectangle_pm_nneg.
+    - apply measurable_rectangle_pm_none.
+    - {
+        intros c cdisj pf.
+
+        assert (HH:forall s, exists (ab:(event A * event B)), forall x y, (c s) (x,y) <-> fst ab x /\ snd ab y).
+        {
+          intros.
+          destruct (c s); simpl.
+          destruct s0 as [?[??]].
+          exists (x0,x1); auto.
+        }
+        apply choice in HH.
+        destruct HH.
+        transitivity (ELim_seq (sum_Rbar_n
+                                  (fun n : nat =>
+                                     (Rbar_mult (α (fst (x n))) (β (snd (x n))))))).
+        - unfold measurable_rectangle_pm.
+          repeat match_destr.
+          clear e.
+          admit.
+        - apply ELim_seq_ext; intros.
+          unfold sum_Rbar_n.
+          f_equal.
+          apply map_ext; intros.
+          unfold measurable_rectangle_pm.
+          specialize (H a).
+          repeat match_destr.
+          simpl in H.
+          assert (eqq:forall a1 b1, fst (x a) a1 /\ snd (x a) b1 <-> x1 a1 /\ x2 b1).
+          {
+            intros.
+            etransitivity.
+            - symmetry; apply H.
+            - apply i.
+          }
+          clear H i e.
+          apply measurable_rectangle_eq_decompose in eqq.
+          destruct eqq as [[[?|?][?|?]]|[??]]
+          ; try solve [
+                rewrite H, H0
+                ; repeat rewrite measure_none
+                ; repeat rewrite Rbar_mult_0_r
+                ; repeat rewrite Rbar_mult_0_l; trivial].      
+  Admitted.
+
+  Definition product_measure := semi_μ measurable_rectangle_pm.
+
+  Instance product_measure_is_measurable_large :
+    is_measure (σ:= semi_σ is_measurable_rectangle_none
+                           measurable_rectangle_pm
+                           measurable_rectangle_pm_none
+               ) product_measure
+    := semi_μ_measurable _ _ _.
+  
+  Global Instance product_measure_is_measurable :
+    is_measure (σ:=product_sa A B) product_measure.
+  Proof.
+    generalize product_measure_is_measurable_large; intros HH.
+    assert (sub:sa_sub (product_sa A B)
+                       (semi_σ is_measurable_rectangle_none
+                               measurable_rectangle_pm
+                               measurable_rectangle_pm_none
+           )).
+    {
+      unfold product_sa; intros ?.
+      apply generated_sa_minimal; simpl; intros.
+      apply semi_σ_in.
+      simpl.
+      destruct H as [?[?[?[??]]]].
+      red.
+      exists (exist _ _ H).
+      exists (exist _ _ H0); intros.
+      apply H1.
+    } 
+    apply (is_measure_proper_sub _ _ sub) in HH.
+    now simpl in HH.
+  Qed.
+
+  Theorem product_measure_product (a:event A) (b:event B) :
+    product_measure (fun '(x,y) => a x /\ b y) = Rbar_mult (α a) (β b).
+  Proof.
+    unfold product_measure.
+    generalize (semi_μ_λ is_measurable_rectangle_none _ measurable_rectangle_pm_none)
+    ; intros HH.
+    assert (pin:salg_in (fun '(x1, y) => a x1 /\ b y)).
+    {
+      simpl.
+      exists a; exists b; tauto.
+    }
+    specialize (HH (exist _ _ pin)).
+    simpl in *.
+    rewrite HH.
+    repeat match_destr.
+    apply measurable_rectangle_eq_decompose in i.
+    destruct i as [[[?|?][?|?]]|[??]]
+    ; try solve [
+          rewrite H, H0
+          ; repeat rewrite measure_none
+          ; repeat rewrite Rbar_mult_0_r
+          ; repeat rewrite Rbar_mult_0_l; trivial].      
+  Qed.
   
 End measure_product.
 

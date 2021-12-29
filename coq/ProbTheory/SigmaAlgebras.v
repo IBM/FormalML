@@ -410,22 +410,17 @@ Qed.
 Definition pre_event_set_product {T₁ T₂} (s₁ : pre_event T₁ -> Prop) (s₂ : pre_event T₂ -> Prop) : pre_event (T₁ * T₂) -> Prop
   := fun (e:pre_event (T₁ * T₂)) =>
        exists e₁ e₂,
-         s₁ e₁ /\ s₂ e₂ ->
+         s₁ e₁ /\ s₂ e₂ /\
          e === (fun '(x₁, x₂) => e₁ x₁ /\ e₂ x₂).
 
 Instance event_set_product_proper {T1 T2} : Proper (equiv ==> equiv ==> equiv) (@pre_event_set_product T1 T2).
 Proof.
   repeat red.
   unfold equiv, pre_event_equiv, pre_event_set_product; simpl; intros.
-  split; intros [x2 [x3 HH]].
-  - unfold equiv in *.
-    exists x2, x3.
-    intros [??]; apply HH.
-    firstorder.
-  - unfold equiv in *.
-    exists x2, x3.
-    intros [??]; apply HH.
-    firstorder.
+  split; intros [x2 [x3 [? [? HH]]]]
+  ; unfold equiv in *
+  ; exists x2, x3
+  ; firstorder.
 Qed.
 
 Instance product_sa {T₁ T₂} (sa₁:SigmaAlgebra T₁) (sa₂:SigmaAlgebra T₂) : SigmaAlgebra (T₁ * T₂)
