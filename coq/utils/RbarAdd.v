@@ -31,6 +31,14 @@ Section sums.
   Definition sum_Rbar_n (f:nat->Rbar) (n:nat) : Rbar
     := list_Rbar_sum (map f (seq 0 n)).
 
+  Global Instance sum_Rbar_n_proper : Proper (pointwise_relation _ eq ==> eq ==> eq) sum_Rbar_n.
+  Proof.
+    intros ??????.
+    unfold sum_Rbar_n.
+    f_equal; subst.
+    now apply map_ext; intros.
+  Qed.
+  
   Instance fold_right_plus_le_proper :
     Proper (Rbar_le ==> Forall2 Rbar_le ==> Rbar_le) (fold_right Rbar_plus).
   Proof.

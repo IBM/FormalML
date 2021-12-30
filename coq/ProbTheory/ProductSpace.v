@@ -266,57 +266,32 @@ Section measure_product.
       apply H0 in H3; tauto.
   Qed.      
 
+  Definition product_measure := semi_μ measurable_rectangle_pm.
+
+  (* This hypothesis is true, however all the proofs that I have found use 
+     the MCT (monotone convergence theorom) over the measure integral, which we have not defined
+     in general.
+     However, our immediate goal is to define the product of probability spaces,
+     where we have defined it (Expectation), and proven the MCT.
+     So for now, we leave it as an obligation, which we will discharge in the context we care about
+   *)
+  Definition measure_rectangle_pm_additive_Hyp :=
+             forall B0 : nat -> salg_set PairSemiAlgebra,
+  pre_collection_is_pairwise_disjoint (fun x : nat => B0 x) ->
+  forall pf : salg_in (pre_union_of_collection (fun x : nat => B0 x)),
+  measurable_rectangle_pm (exist salg_in (pre_union_of_collection (fun x : nat => B0 x)) pf) =
+    ELim_seq (fun i : nat => sum_Rbar_n (fun n : nat => measurable_rectangle_pm (B0 n)) i).
+
+  Context (Hyp : measure_rectangle_pm_additive_Hyp).
+          
   Instance measurable_rectangle_pm_semipremeasure : is_semipremeasure measurable_rectangle_pm.
   Proof.
     apply (semipremeasure_with_zero_simpl) with (has_none:=is_measurable_rectangle_none).
     - apply measurable_rectangle_pm_proper.
     - apply measurable_rectangle_pm_nneg.
     - apply measurable_rectangle_pm_none.
-    - {
-        intros c cdisj pf.
-
-        assert (HH:forall s, exists (ab:(event A * event B)), forall x y, (c s) (x,y) <-> fst ab x /\ snd ab y).
-        {
-          intros.
-          destruct (c s); simpl.
-          destruct s0 as [?[??]].
-          exists (x0,x1); auto.
-        }
-        apply choice in HH.
-        destruct HH.
-        transitivity (ELim_seq (sum_Rbar_n
-                                  (fun n : nat =>
-                                     (Rbar_mult (α (fst (x n))) (β (snd (x n))))))).
-        - unfold measurable_rectangle_pm.
-          repeat match_destr.
-          clear e.
-          admit.
-        - apply ELim_seq_ext; intros.
-          unfold sum_Rbar_n.
-          f_equal.
-          apply map_ext; intros.
-          unfold measurable_rectangle_pm.
-          specialize (H a).
-          repeat match_destr.
-          simpl in H.
-          assert (eqq:forall a1 b1, fst (x a) a1 /\ snd (x a) b1 <-> x1 a1 /\ x2 b1).
-          {
-            intros.
-            etransitivity.
-            - symmetry; apply H.
-            - apply i.
-          }
-          clear H i e.
-          apply measurable_rectangle_eq_decompose in eqq.
-          destruct eqq as [[[?|?][?|?]]|[??]]
-          ; try solve [
-                rewrite H, H0
-                ; repeat rewrite measure_none
-                ; repeat rewrite Rbar_mult_0_r
-                ; repeat rewrite Rbar_mult_0_l; trivial].      
-  Admitted.
-
-  Definition product_measure := semi_μ measurable_rectangle_pm.
+    - exact Hyp.
+  Qed.
 
   Instance product_measure_is_measurable_large :
     is_measure (σ:= semi_σ is_measurable_rectangle_none
@@ -324,7 +299,9 @@ Section measure_product.
                            measurable_rectangle_pm_none
                ) product_measure
     := semi_μ_measurable _ _ _.
-  
+
+  (* we can cut down to the (possibly smaller)
+     generated sigma algebra *)
   Global Instance product_measure_is_measurable :
     is_measure (σ:=product_sa A B) product_measure.
   Proof.
@@ -375,6 +352,7 @@ Section measure_product.
   
 End measure_product.
 
+Require Import RandomVariableFinite.
 Section ps_product.
   Context {X Y:Type}.
   Context {A:SigmaAlgebra X}.
@@ -383,10 +361,314 @@ Section ps_product.
   Context (ps1 : ProbSpace A).
   Context (ps2 : ProbSpace B).
 
+  Lemma sum_Rbar_n_finite_sum_n f n:
+    sum_Rbar_n (fun x => Finite (f x)) (S n) = Finite (sum_n f n).
+  Proof.
+    rewrite sum_n_fold_right_seq.
+    unfold sum_Rbar_n, list_Rbar_sum.
+    generalize (0).
+    induction n; trivial; intros.
+    rewrite seq_Sn.
+    repeat rewrite map_app.
+    repeat rewrite fold_right_app.
+    now rewrite <- IHn.
+  Qed.
+
+  Lemma Lim_seq_sum_Elim f :
+    Lim_seq (sum_n f) = ELim_seq (sum_Rbar_n (fun x => Finite (f x))).
+  Proof.
+    rewrite <- ELim_seq_incr_1.
+    rewrite <- Elim_seq_fin.
+    apply ELim_seq_ext; intros.
+    now rewrite sum_Rbar_n_finite_sum_n.
+  Qed.    
+
+  Lemma rbar_nneg_nneg x :
+    Rbar_le 0 x ->
+    0 <= x.
+  Proof.
+    destruct x; simpl; try lra.
+  Qed.
+
+  Lemma rvlim_isfe {S} {σ:SigmaAlgebra S} (ps:ProbSpace σ) (f:nat->S->R) : (forall omega, NonnegativeFunction (f omega)) -> (forall omega, ex_finite_lim_seq (fun n => f n omega)) -> IsFiniteExpectation ps (rvlim f).
+  Proof.
+    intros.
+  Admitted.
+
+
+  Lemma product_measure_Hyp_ps :
+    measure_rectangle_pm_additive_Hyp (ps_P (σ:=A)) (ps_measure _) (ps_P (σ:=B)) (ps_measure _).
+  Proof.
+    red.
+    intros c cdisj pf.
+
+    assert (HH:forall s, exists (ab:(event A * event B)), forall x y, (c s) (x,y) <-> fst ab x /\ snd ab y).
+    {
+      intros.
+      destruct (c s); simpl.
+      destruct s0 as [?[??]].
+      exists (x0,x1); auto.
+    }
+    apply choice in HH.
+    destruct HH as [cp HH].
+    pose (α := (ps_P (σ:=A))).
+    pose (β := (ps_P (σ:=B))).
+    transitivity (ELim_seq (sum_Rbar_n
+                              (fun n : nat =>
+                                 (Rbar_mult (α (fst (cp n))) (β (snd (cp n))))))).
+    - unfold measurable_rectangle_pm.
+      repeat match_destr.
+      clear e.
+      rename x into a.
+      rename x0 into b.
+      assert (forall x y, (exists n, (fst (cp n) x) /\ snd (cp n) y) <-> a x /\ b y).
+      {
+        unfold pre_union_of_collection in i.
+        intros.
+        rewrite <- (i x y).
+        split; intros [??]
+        ; apply HH in H; eauto.
+      }
+
+      unfold α, β in *.
+      simpl.
+      rewrite <- Lim_seq_sum_Elim.
+      Existing Instance IsFiniteExpectation_simple.
+      
+      assert (eqq1:forall (a:event A) (b:event B),
+                 (ps_P a) * (ps_P b) =
+                   (FiniteExpectation ps1 (EventIndicator (classic_dec a))) * (FiniteExpectation ps2 (EventIndicator (classic_dec b)))).
+      {
+        intros.
+        now repeat rewrite FiniteExpectation_indicator.
+      }
+      
+      assert (eqq2:forall (a:event A) (b:event B),
+                 (ps_P a) * (ps_P b) =
+                   FiniteExpectation ps2
+                                     (rvscale (FiniteExpectation ps1 (EventIndicator (classic_dec a)))
+                                              (EventIndicator (classic_dec b))
+             )).
+      {
+        intros; rewrite eqq1.
+        now rewrite FiniteExpectation_scale.
+      }
+
+      assert (eqq3': forall (a:event A) (b:event B),
+                 rv_eq (rvscale (FiniteExpectation ps1 (EventIndicator (classic_dec a))) (EventIndicator (classic_dec b)))
+                       (fun y : Y =>
+                          FiniteExpectation ps1 (fun x : X => EventIndicator (classic_dec b) y * EventIndicator (classic_dec a) x))).
+      {
+        intros ???.
+        unfold rvscale.
+        rewrite Rmult_comm.
+        now rewrite <- FiniteExpectation_scale.
+      }
+      
+      assert (isfe3:forall (a:event A) (b:event B),
+                   IsFiniteExpectation ps2
+                                     (fun y => FiniteExpectation ps1 (fun x => (EventIndicator (classic_dec b) y) * (EventIndicator (classic_dec a) x)))).
+      {
+        intros.
+        eapply IsFiniteExpectation_proper; try (symmetry; eapply eqq3').
+        typeclasses eauto.
+      } 
+
+      assert (eqq3:forall (a:event A) (b:event B),
+                 (ps_P a) * (ps_P b) =
+                   FiniteExpectation ps2
+                                     (fun y => FiniteExpectation ps1 (fun x => (EventIndicator (classic_dec b) y) * (EventIndicator (classic_dec a) x)))).
+                            
+      {
+        intros; rewrite eqq2.
+        apply FiniteExpectation_ext.
+        apply eqq3'.
+      } 
+
+      clear eqq1 eqq2 eqq3'.
+
+      rewrite eqq3.
+      symmetry.
+      etransitivity.
+      {
+        apply Lim_seq_ext; intros ?.
+        apply sum_n_ext; intros.
+        rewrite eqq3.
+        reflexivity.
+      }
+
+      {
+        assert (rvf: forall n, RandomVariable B borel_sa
+                                    (fun y : Y =>
+                                       FiniteExpectation ps1
+                       (fun x : X =>
+                          EventIndicator (classic_dec (snd (cp n))) y * EventIndicator (classic_dec (fst (cp n))) x))).
+        {
+          intros n.
+          setoid_rewrite FiniteExpectation_scale.
+          setoid_rewrite rvmult_comm.
+          unfold rvmult.
+          apply rvscale_rv.
+          typeclasses eauto.
+        }
+        assert (exf:forall omega : Y,
+                   ex_finite_lim_seq
+                     (fun n : nat =>
+                        sum_n
+                          (fun n0 : nat =>
+                             FiniteExpectation ps1
+                                               (fun x : X =>
+                                                  EventIndicator (classic_dec (snd (cp n0))) omega * EventIndicator (classic_dec (fst (cp n0))) x))
+                          n)).
+        {
+          intros.
+          intros.
+          apply ex_finite_lim_seq_correct.
+          split.
+          - apply ex_lim_seq_incr.
+            intros.
+            apply sum_n_pos_incr; intros; try lia.
+            apply FiniteExpectation_pos.
+            typeclasses eauto.
+          - rewrite (Lim_seq_ext _
+                                 (sum_n (fun n0 =>
+                                           EventIndicator (classic_dec (snd (cp n0))) omega *
+                                             FiniteExpectation ps1 (EventIndicator (classic_dec (fst (cp n0))))))).
+            2: {
+              intros.
+              apply sum_n_ext; intros.
+              setoid_rewrite FiniteExpectation_scale.
+              reflexivity.
+            }
+            rewrite (Lim_seq_ext _
+                                 (sum_n
+                                    (fun n0 : nat =>
+                                       EventIndicator (classic_dec (snd (cp n0))) omega * ps_P(fst (cp n0))))).
+            2: {
+              intros.
+              apply sum_n_ext; intros.
+              now rewrite FiniteExpectation_indicator.
+            }
+            unfold EventIndicator.
+            admit.
+        } 
+        erewrite series_expectation.
+        Unshelve.
+        shelve.
+        - intros ??.
+          apply FiniteExpectation_pos.
+          typeclasses eauto.
+        - trivial. 
+        - apply rvlim_rv; trivial.
+          intros.
+          apply rvsum_rv; intros; trivial.
+        - intros.
+          specialize (exf omega).
+          apply ex_finite_lim_seq_correct in exf.
+          apply exf.
+        - intros ?.
+          apply rbar_nneg_nneg.
+          apply Lim_seq_pos; intros.
+          apply rvsum_pos; intros ??.
+          apply FiniteExpectation_pos.
+          typeclasses eauto.
+        - intros; specialize (exf omega).
+          apply ex_finite_lim_seq_correct in exf.
+          apply exf.
+        - apply rvlim_isfe; intros; try apply exf.
+          apply rvsum_pos; intros ??.
+          apply FiniteExpectation_pos.
+          typeclasses eauto.
+      }
+      Unshelve.
+      f_equal.
+      apply FiniteExpectation_ext; intros y.
+      {
+        unfold rvsum.
+        assert (exf2:forall omega, ex_finite_lim_seq
+                       (fun n : nat =>
+                          sum_n
+                            (fun n0 : nat =>
+                               EventIndicator (classic_dec (snd (cp n0))) y * EventIndicator (classic_dec (fst (cp n0))) omega) n)).
+        {
+          intros.
+          apply ex_finite_lim_seq_correct.
+          split.
+          - apply ex_lim_seq_incr.
+            intros.
+            apply sum_n_pos_incr; try lia; intros.
+            unfold EventIndicator.
+            repeat match_destr; lra.
+          - unfold EventIndicator.
+            (* in fact, there is at most one that it holds for *)
+            admit.
+        } 
+
+        erewrite series_expectation
+        ; try typeclasses eauto.
+        Unshelve.
+        shelve.
+        - apply rvlim_rv; intros.
+          apply rvsum_rv; intros.
+          + typeclasses eauto.
+          + apply exf2.
+        - intros; specialize (exf2 omega).
+          apply ex_finite_lim_seq_correct in exf2.
+          apply exf2.
+        - intros; specialize (exf2 omega).
+          apply ex_finite_lim_seq_correct in exf2.
+          apply exf2.
+        - apply rvlim_isfe; trivial.
+          typeclasses eauto.
+      }
+      Unshelve.
+      f_equal.
+      apply FiniteExpectation_ext; intros x.
+      unfold EventIndicator, rvsum.
+      (* now we finally have it down to points *)
+      {
+        admit.
+      }
+    - apply ELim_seq_ext; intros.
+      unfold sum_Rbar_n.
+      f_equal.
+      apply map_ext; intros.
+      unfold measurable_rectangle_pm.
+      clear n.
+      specialize (HH a).
+      repeat match_destr.
+      simpl in HH.
+      assert (eqq:forall a1 b1, fst (cp a) a1 /\ snd (cp a) b1 <-> x0 a1 /\ x1 b1).
+      {
+        intros.
+        etransitivity.
+        - symmetry; apply HH.
+        - apply i.
+      }
+      clear HH i e.
+      apply measurable_rectangle_eq_decompose in eqq.
+      unfold α, β in *.
+      destruct eqq as [[[?|?][?|?]]|[??]]
+      ; try solve [
+            rewrite H, H0
+            ; repeat rewrite ps_none
+            ; repeat rewrite Rbar_mult_0_r
+            ; repeat rewrite Rbar_mult_0_l; trivial].      
+  Admitted.
+  
+  (* We discharge the extra hypothesis here *)
+  Instance product_measure_is_measurable_ps :
+    is_measure (σ:=product_sa A B)
+               (product_measure (ps_P (σ:=A)) (ps_measure _) (ps_P (σ:=B)) (ps_measure _)).
+  Proof.
+    apply product_measure_is_measurable.
+    apply product_measure_Hyp_ps.
+  Qed.
+
   Instance product_ps : ProbSpace (product_sa A B).
   Proof.
     apply (measure_all_one_ps (product_measure (ps_P (σ:=A)) (ps_measure _) (ps_P (σ:=B)) (ps_measure _))).
-    generalize (product_measure_product (ps_P (σ:=A)) (ps_measure _) (ps_P (σ:=B)) (ps_measure _) Ω Ω)
+    generalize (product_measure_product (ps_P (σ:=A)) (ps_measure _) (ps_P (σ:=B)) (ps_measure _) product_measure_Hyp_ps Ω Ω)
     ; intros HH.
     repeat rewrite ps_one in HH.
     rewrite Rbar_mult_1_r in HH.
@@ -425,7 +707,8 @@ Section ps_product.
       ps_P a * ps_P b.
   Proof.
     simpl.
-    now rewrite product_measure_product; simpl.
+    rewrite product_measure_product; simpl; trivial.
+    apply product_measure_Hyp_ps.
   Qed.
   
 End ps_product.
