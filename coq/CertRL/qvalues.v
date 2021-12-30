@@ -698,4 +698,21 @@ Proof.
     setoid_rewrite Rsqr_0. apply expt_value_zero.
 Qed.
 
+Ltac rmax_le_tac := rewrite Rmax_list_le_iff;
+                    [intros x [s [Hs1 Hs2]] %in_map_iff; subst | rewrite map_not_nil; try assumption].
+
+Lemma Q_is_bounded' W sa0 :
+    let (ls, _) := fs M in
+    let (las,_) := act_finite M in
+    Max_{ls} (fun s' => Max_{las}(fun sa => bellmanQ' sa0 W s' sa)) <=
+    Rmax(Max_{ ls}
+  (fun s' : state M =>
+     Max_{ las}(fun sa : {x : state M & act M x} => let (s, a) := sa in reward s a s')) +
+    γ*Max_{las}(W)) (Max_{las}(W)).
+Proof.
+  destruct act_finite as [lsa ?].
+  destruct fs as [ls ?].
+  rmax_le_tac.
+Admitted.
+
 End bellmanQ.
