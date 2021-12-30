@@ -353,6 +353,8 @@ Section measure_product.
 End measure_product.
 
 Require Import RandomVariableFinite.
+Require Import RbarExpectation.
+
 Section ps_product.
   Context {X Y:Type}.
   Context {A:SigmaAlgebra X}.
@@ -389,11 +391,6 @@ Section ps_product.
   Proof.
     destruct x; simpl; try lra.
   Qed.
-
-  Lemma rvlim_isfe {S} {σ:SigmaAlgebra S} (ps:ProbSpace σ) (f:nat->S->R) : (forall omega, NonnegativeFunction (f omega)) -> (forall omega, ex_finite_lim_seq (fun n => f n omega)) -> IsFiniteExpectation ps (rvlim f).
-  Proof.
-    intros.
-  Admitted.
 
   Lemma lim_seq_sum_singleton_is_one f :
     (forall n1 n2, n1 <> n2 -> f n1 = 0 \/ f n2 = 0) ->
@@ -450,6 +447,204 @@ Section ps_product.
     now rewrite H0.
   Qed.
 
+  Lemma Rbar_NonnegExpectation_const_pinfty {Ts} {dom: SigmaAlgebra Ts} (prts:ProbSpace dom)
+        (pf:Rbar_NonnegativeFunction (const (B:=Ts) p_infty)) :
+    Rbar_NonnegExpectation (const p_infty) = p_infty.
+  Proof.
+    generalize (Rbar_NonnegExpectation_pos (const p_infty)); intros HH.
+    unfold Rbar_NonnegExpectation, SimpleExpectationSup in *.
+    unfold Lub_Rbar in *.
+    repeat match goal with
+             [|- context [proj1_sig ?x]] => destruct x; simpl
+           end.
+    simpl in *.
+    unfold is_lub_Rbar in *.
+    unfold is_ub_Rbar in *.
+    destruct i.
+    destruct x; simpl; try tauto.
+    specialize (H (r+1)).
+    simpl in H.
+    cut_to H; try lra.
+    exists (const (r+1)).
+    exists (rvconst _ _ _).
+    exists (frfconst _).
+    repeat split.
+    - apply nnfconst; lra.
+    - now rewrite SimpleExpectation_const.
+  Qed.      
+
+  Lemma Rbar_NonnegExpectation_const' {Ts} {dom: SigmaAlgebra Ts} (prts:ProbSpace dom)
+        (c : Rbar) (nneg:Rbar_le 0 c) (nnf:Rbar_NonnegativeFunction (const (B:=Ts) c)) :
+    Rbar_NonnegExpectation (const c) = c.
+  Proof.
+    generalize (Rbar_NonnegExpectation_pos (const c)); intros HH.
+    destruct c; simpl in *; try lra.
+    - eapply Rbar_NonnegExpectation_const.
+      Unshelve.
+      trivial.
+    - apply Rbar_NonnegExpectation_const_pinfty.
+  Qed.
+
+(*  Lemma Rbar_NonnegExpectation_pinfty_prob {Ts} {dom: SigmaAlgebra Ts} (prts:ProbSpace dom)
+        rv_X
+        {rv:RandomVariable dom Rbar_borel_sa rv_X}
+        {pofrf:Rbar_NonnegativeFunction rv_X} :
+    ps_P (fun x => rv x = p_infty) <> 0 ->
+    Rbar_NonnegExpectation rv_X = p_infty.
+
+  Rbar_NonnegExpectation (Rbar_rvmult (const p_infty) rv_X) = p_infty
+*)
+                                                                
+  Lemma Rbar_NonnegExpectation_scale' {Ts} {dom: SigmaAlgebra Ts} (prts:ProbSpace dom) c
+        (rv_X : Ts -> Rbar)
+        {rv:RandomVariable dom Rbar_borel_sa rv_X}
+        {pofrf:Rbar_NonnegativeFunction rv_X}
+        {pofrf2:Rbar_NonnegativeFunction (Rbar_rvmult (const c) rv_X)} :
+    Rbar_le 0 c ->
+    Rbar_NonnegExpectation (Rbar_rvmult (const c) rv_X) =
+    Rbar_mult c (Rbar_NonnegExpectation rv_X).
+  Proof.
+    intros.
+    destruct c; simpl in H; try lra.
+    - destruct H.
+      + apply (Rbar_NonnegExpectation_scale (mkposreal _ H)).
+      + subst.
+        rewrite Rbar_mult_0_l.
+        rewrite <- Rbar_NonnegExpectation_const0.
+        apply Rbar_NonnegExpectation_ext; intros ?.
+        unfold const; simpl.
+        unfold Rbar_rvmult.
+        now rewrite Rbar_mult_0_l.
+    - destruct (Rbar_eq_dec (Rbar_NonnegExpectation rv_X) 0).
+      + rewrite e.
+        apply (f_equal Some) in e.
+        rewrite <- Rbar_Expectation_pos_pofrf in e.
+        apply Rbar_Expectation_nonneg_zero_almost_zero in e; trivial.
+        rewrite Rbar_mult_0_r.
+        rewrite <- (Rbar_NonnegExpectation_const 0 (reflexivity _)).
+        apply (Rbar_NonnegExpectation_almostR2_proper).
+        * apply Rbar_rvmult_rv; typeclasses eauto.
+        * typeclasses eauto.
+        * revert e.
+          apply almost_impl, all_almost; intros ??.
+          unfold Rbar_rvmult, const in *.
+          rewrite H0.
+          now rewrite Rbar_mult_0_r.
+      + transitivity p_infty.
+        * admit.
+        * unfold Rbar_mult; simpl.
+          generalize (Rbar_NonnegExpectation_pos rv_X); intros.
+          destruct ( Rbar_NonnegExpectation rv_X ); simpl in *; rbar_prover.
+          congruence.
+  Admitted.
+
+  Lemma sum_Rbar_n_rv {Ts} {dom: SigmaAlgebra Ts} 
+        (Xn : nat -> Ts -> Rbar)
+        (Xn_rv : forall n, RandomVariable dom Rbar_borel_sa (Xn n)) :
+    forall n,
+      RandomVariable dom Rbar_borel_sa (fun a : Ts => sum_Rbar_n (fun n=> Xn n a) n).
+  Proof.
+    unfold sum_Rbar_n.
+    intros n.
+    generalize 0%nat.
+    induction n; intros.
+    - apply rvconst.
+    - apply Rbar_rvplus_rv; trivial.
+Qed.     
+
+  Lemma Rbar_NonnegExpectation_sum {Ts} {dom: SigmaAlgebra Ts} (prts:ProbSpace dom)
+        (Xn : nat -> Ts -> Rbar)
+        (Xn_rv : forall n, RandomVariable dom Rbar_borel_sa (Xn n))
+        (Xn_pos : forall n, Rbar_NonnegativeFunction (Xn n))
+        (Xlim_pos : forall n, Rbar_NonnegativeFunction (fun omega : Ts => sum_Rbar_n (fun n : nat => Xn n omega) n))
+    : forall n,
+    sum_Rbar_n (fun n => Rbar_NonnegExpectation (Xn n)) n =
+      Rbar_NonnegExpectation (fun omega => sum_Rbar_n (fun n => (Xn n omega)) n).
+  Proof.
+    intros.
+    unfold sum_Rbar_n.
+    induction n.
+    - simpl.
+      erewrite <- Rbar_NonnegExpectation_const0 at 1; reflexivity.
+    - symmetry.
+        assert (Rbar_NonnegativeFunction
+                  (fun a : Ts =>
+                     Rbar_plus (list_Rbar_sum (map (fun n0 : nat => Xn n0 a) (seq 0 n)))
+                               (list_Rbar_sum (map (fun n0 : nat => Xn n0 a) [(0 + n)%nat])))).
+        {
+          intros ?.
+          apply Rbar_plus_nneg_compat; apply list_Rbar_sum_nneg_nneg; intros
+          ; apply in_map_iff in H
+          ; destruct H as [?[??]]; subst; apply Xn_pos.
+        } 
+          
+
+      transitivity (Rbar_NonnegExpectation
+                      (fun a => (Rbar_plus (list_Rbar_sum (map (fun n0 : nat => Xn n0 a) (seq 0 n)))
+                                 (list_Rbar_sum (map (fun n0 : nat => Xn n0 a) [(0 + n)%nat]))))).
+      + apply Rbar_NonnegExpectation_ext; intros ?.
+        rewrite seq_Sn.
+        rewrite map_app.
+        rewrite list_Rbar_sum_nneg_plus.
+        * reflexivity.
+        * apply Forall_map; apply Forall_forall; intros; apply Xn_pos.
+        * apply Forall_map; apply Forall_forall; intros; apply Xn_pos.
+      + setoid_rewrite Rbar_NonnegExpectation_plus.
+        * rewrite seq_Sn.
+          rewrite map_app.
+          rewrite list_Rbar_sum_nneg_plus.
+          -- rewrite IHn.
+             f_equal.
+             simpl.
+             rewrite Rbar_plus_0_r.
+             apply Rbar_NonnegExpectation_ext.
+             intros ?.
+             now rewrite Rbar_plus_0_r.
+          -- apply Forall_map; apply Forall_forall; intros; apply Rbar_NonnegExpectation_pos.
+          -- apply Forall_map; apply Forall_forall; intros; apply Rbar_NonnegExpectation_pos.
+        * apply sum_Rbar_n_rv; trivial.
+        * simpl.
+          apply Rbar_rvplus_rv; trivial.
+          apply rvconst.
+          Unshelve.
+          simpl.
+          intros ?.
+          rewrite Rbar_plus_0_r.
+          apply Xn_pos.
+  Qed.
+
+  Lemma Rbar_series_expectation {Ts} {dom: SigmaAlgebra Ts} (prts:ProbSpace dom)
+        (Xn : nat -> Ts -> Rbar)
+        (Xn_rv : forall n, RandomVariable dom Rbar_borel_sa (Xn n))
+        (Xn_pos : forall n, Rbar_NonnegativeFunction (Xn n))
+        (Xlim_pos : Rbar_NonnegativeFunction (fun omega : Ts => ELim_seq (sum_Rbar_n (fun n : nat => Xn n omega))))
+    :
+    ELim_seq
+      (sum_Rbar_n
+         (fun n : nat =>
+            Rbar_NonnegExpectation (Xn n))) =
+      Rbar_NonnegExpectation (fun omega => ELim_seq (sum_Rbar_n (fun n => (Xn n omega)))).
+  Proof.
+    assert (forall n, Rbar_NonnegativeFunction (fun omega : Ts => sum_Rbar_n (fun i : nat => Xn i omega) n)).
+    {
+      intros ??.
+      apply sum_Rbar_n_nneg_nneg; intros.
+      apply Xn_pos.
+    } 
+
+    transitivity (ELim_seq (fun n => Rbar_NonnegExpectation (fun omega => (sum_Rbar_n (fun i => Xn i omega) n)))).
+    {
+      apply ELim_seq_ext; intros.
+      now apply Rbar_NonnegExpectation_sum.
+    }
+    rewrite monotone_convergence_Rbar_rvlim; trivial.
+    - intros.
+      now apply sum_Rbar_n_rv.
+    - intros ??.
+      apply sum_Rbar_n_pos_incr; intros.
+      apply Xn_pos.
+  Qed.
+  
   Lemma product_measure_Hyp_ps :
     measure_rectangle_pm_additive_Hyp (ps_P (σ:=A)) (ps_measure _) (ps_P (σ:=B)) (ps_measure _).
   Proof.
@@ -486,225 +681,159 @@ Section ps_product.
 
       unfold α, β in *.
       simpl.
-      rewrite <- Lim_seq_sum_Elim.
       Existing Instance IsFiniteExpectation_simple.
       
       assert (eqq1:forall (a:event A) (b:event B),
-                 (ps_P a) * (ps_P b) =
-                   (FiniteExpectation ps1 (EventIndicator (classic_dec a))) * (FiniteExpectation ps2 (EventIndicator (classic_dec b)))).
+                 Finite ((ps_P a) * (ps_P b)) =
+                   Rbar_mult (Rbar_NonnegExpectation (EventIndicator (classic_dec a))) (Rbar_NonnegExpectation (EventIndicator (classic_dec b)))).
       {
         intros.
-        now repeat rewrite FiniteExpectation_indicator.
+        generalize (Expectation_pos_pofrf (EventIndicator (classic_dec a0)))
+        ; intros HH1.
+        generalize (Expectation_pos_pofrf (EventIndicator (classic_dec b0)))
+        ; intros HH2.
+        rewrite Expectation_EventIndicator in HH1.
+        rewrite Expectation_EventIndicator in HH2.
+        invcs HH1; invcs HH2.
+        rewrite NNExpectation_Rbar_NNExpectation in H1.
+        rewrite NNExpectation_Rbar_NNExpectation in H2.
+        rewrite <- H1, <- H2.
+        now simpl.
       }
-      
+
+      assert (poffrf:forall (a:event A) (b:event B),
+               Rbar_NonnegativeFunction (Rbar_rvmult (const (Rbar_NonnegExpectation (EventIndicator (classic_dec a))))
+                                                   (EventIndicator (classic_dec b))
+             )).
+      {
+        intros.
+        apply Rbar_rvmult_nnf.
+        - intros ?.
+          apply Rbar_NonnegExpectation_pos.
+        - typeclasses eauto.
+      }       
       assert (eqq2:forall (a:event A) (b:event B),
-                 (ps_P a) * (ps_P b) =
-                   FiniteExpectation ps2
-                                     (rvscale (FiniteExpectation ps1 (EventIndicator (classic_dec a)))
-                                              (EventIndicator (classic_dec b))
+                 Finite ((ps_P a) * (ps_P b)) =
+                   Rbar_NonnegExpectation 
+                                     (Rbar_rvmult (const (Rbar_NonnegExpectation (EventIndicator (classic_dec a))))
+                                                   (EventIndicator (classic_dec b))
              )).
       {
         intros; rewrite eqq1.
-        now rewrite FiniteExpectation_scale.
-      }
+        erewrite Rbar_NonnegExpectation_scale'.
+        - reflexivity.
+        - typeclasses eauto.
+        - apply Rbar_NonnegExpectation_pos.
+      } 
 
       assert (eqq3': forall (a:event A) (b:event B),
-                 rv_eq (rvscale (FiniteExpectation ps1 (EventIndicator (classic_dec a))) (EventIndicator (classic_dec b)))
+                 rv_eq
+                   (Rbar_rvmult (const (Rbar_NonnegExpectation (EventIndicator (classic_dec a))))
+                                (fun x : Y => EventIndicator (classic_dec b) x))
+
                        (fun y : Y =>
-                          FiniteExpectation ps1 (fun x : X => EventIndicator (classic_dec b) y * EventIndicator (classic_dec a) x))).
+                          Rbar_NonnegExpectation (fun x : X => EventIndicator (classic_dec b) y * EventIndicator (classic_dec a) x))).
       {
         intros ???.
-        unfold rvscale.
-        rewrite Rmult_comm.
-        now rewrite <- FiniteExpectation_scale.
-      }
-      
-      assert (isfe3:forall (a:event A) (b:event B),
-                   IsFiniteExpectation ps2
-                                     (fun y => FiniteExpectation ps1 (fun x => (EventIndicator (classic_dec b) y) * (EventIndicator (classic_dec a) x)))).
+        unfold Rbar_rvmult, const.
+        repeat rewrite NNExpectation_Rbar_NNExpectation.
+        simpl.
+        rewrite Rbar_mult_comm.
+        erewrite <- Rbar_NonnegExpectation_scale'; trivial.
+        - typeclasses eauto.
+        - unfold EventIndicator; match_destr; simpl; lra.
+      } 
+
+      assert (pos2:forall (a:event A) (b:event B),
+               Rbar_NonnegativeFunction (fun y => Rbar_NonnegExpectation (fun x => (EventIndicator (classic_dec b) y) * (EventIndicator (classic_dec a) x)))).
       {
-        intros.
-        eapply IsFiniteExpectation_proper; try (symmetry; eapply eqq3').
-        typeclasses eauto.
+        intros ???.
+        apply Rbar_NonnegExpectation_pos.
+      }
+
+      assert (forall (a:event A) (b:event B) y,
+                 Rbar_NonnegativeFunction (fun x => (EventIndicator (classic_dec b) y) * (EventIndicator (classic_dec a) x))).
+      {
+        intros ????.
+        unfold EventIndicator; repeat match_destr; simpl; lra.
       } 
 
       assert (eqq3:forall (a:event A) (b:event B),
-                 (ps_P a) * (ps_P b) =
-                   FiniteExpectation ps2
-                                     (fun y => FiniteExpectation ps1 (fun x => (EventIndicator (classic_dec b) y) * (EventIndicator (classic_dec a) x)))).
+                 Finite ((ps_P a) * (ps_P b)) =
+                   Rbar_NonnegExpectation 
+                                     (fun y => Rbar_NonnegExpectation (fun x => (EventIndicator (classic_dec b) y) * (EventIndicator (classic_dec a) x)))).
                             
       {
         intros; rewrite eqq2.
-        apply FiniteExpectation_ext.
+        f_equal.
+        apply Rbar_NonnegExpectation_ext.
         apply eqq3'.
       } 
 
       clear eqq1 eqq2 eqq3'.
-
       rewrite eqq3.
       symmetry.
       etransitivity.
       {
-        apply Lim_seq_ext; intros ?.
-        apply sum_n_ext; intros.
+        apply ELim_seq_ext; intros ?.
+        apply sum_Rbar_n_proper; [| reflexivity]; intros ?.
         rewrite eqq3.
         reflexivity.
       }
 
       {
-        assert (rvf: forall n, RandomVariable B borel_sa
+        assert (rvf: forall n, RandomVariable B Rbar_borel_sa
                                     (fun y : Y =>
-                                       FiniteExpectation ps1
+                                       Rbar_NonnegExpectation
                        (fun x : X =>
                           EventIndicator (classic_dec (snd (cp n))) y * EventIndicator (classic_dec (fst (cp n))) x))).
         {
           intros n.
-          setoid_rewrite FiniteExpectation_scale.
-          setoid_rewrite rvmult_comm.
-          unfold rvmult.
-          apply rvscale_rv.
-          typeclasses eauto.
+          eapply (RandomVariable_proper _ _ (reflexivity _) _ _ (reflexivity _)
+                 _ (fun y : Y =>
+                       Rbar_NonnegExpectation
+                         (Rbar_rvmult (const (Finite (EventIndicator (classic_dec (snd (cp n))) y))) (EventIndicator (classic_dec (fst (cp n))))))).
+          { intros ?; reflexivity. }
+          eapply (RandomVariable_proper _ _ (reflexivity _) _ _ (reflexivity _)
+                                        _ (fun y : Y =>
+                                             (Rbar_mult (EventIndicator (classic_dec (snd (cp n))) y)
+                       (Rbar_NonnegExpectation
+                          (EventIndicator (classic_dec (fst (cp n)))))))).
+          {
+            intros ?.
+            apply Rbar_NonnegExpectation_scale'.
+            - typeclasses eauto.
+            - unfold EventIndicator; simpl; match_destr; lra.
+          }
+          apply Rbar_rvmult_rv.
+          - typeclasses eauto.
+          - apply rvconst.
         }
-        assert (exf:forall omega : Y,
-                   ex_finite_lim_seq
-                     (fun n : nat =>
-                        sum_n
-                          (fun n0 : nat =>
-                             FiniteExpectation ps1
-                                               (fun x : X =>
-                                                  EventIndicator (classic_dec (snd (cp n0))) omega * EventIndicator (classic_dec (fst (cp n0))) x))
-                          n)).
-        {
-          intros.
-          intros.
-          apply ex_finite_lim_seq_correct.
-          split.
-          - apply ex_lim_seq_incr.
-            intros.
-            apply sum_n_pos_incr; intros; try lia.
-            apply FiniteExpectation_pos.
-            typeclasses eauto.
-          - rewrite (Lim_seq_ext _
-                                 (sum_n (fun n0 =>
-                                           EventIndicator (classic_dec (snd (cp n0))) omega *
-                                             FiniteExpectation ps1 (EventIndicator (classic_dec (fst (cp n0))))))).
-            2: {
-              intros.
-              apply sum_n_ext; intros.
-              setoid_rewrite FiniteExpectation_scale.
-              reflexivity.
-            }
-            rewrite (Lim_seq_ext _
-                                 (sum_n
-                                    (fun n0 : nat =>
-                                       EventIndicator (classic_dec (snd (cp n0))) omega * ps_P(fst (cp n0))))).
-            2: {
-              intros.
-              apply sum_n_ext; intros.
-              now rewrite FiniteExpectation_indicator.
-            }
-            unfold EventIndicator.
-            
-            
-            (*
-            apply lim_seq_sum_singleton_finite; intros.
-            repeat match_destr; try lra.
-            repeat rewrite Rmult_1_l.
-            
-
-            
-            destruct (Req_EM_T (ps_P (fst (cp n1))) 0); try eauto 2.
-            destruct (Req_EM_T (ps_P (fst (cp n2))) 0); try eauto 2.
-            apply zero_prob_or_witness in n.
-            destruct n as [x1 cpx1].
-            apply zero_prob_or_witness in n0.
-            destruct n0 as [x2 cpx2].
-            destruct (HH n1 x1 omega) as [_ HH1].
-            cut_to HH1; [| tauto].
-            destruct (HH n2 x2 omega) as [_ HH2].
-            cut_to HH2; [| tauto].
-             *)
-            admit.
-        } 
-        erewrite series_expectation.
+        erewrite Rbar_series_expectation; trivial.
         Unshelve.
         shelve.
-        - intros ??.
-          apply FiniteExpectation_pos.
-          typeclasses eauto.
-        - trivial. 
-        - apply rvlim_rv; trivial.
-          intros.
-          apply rvsum_rv; intros; trivial.
-        - intros.
-          specialize (exf omega).
-          apply ex_finite_lim_seq_correct in exf.
-          apply exf.
         - intros ?.
-          apply rbar_nneg_nneg.
-          apply Lim_seq_pos; intros.
-          apply rvsum_pos; intros ??.
-          apply FiniteExpectation_pos.
-          typeclasses eauto.
-        - intros; specialize (exf omega).
-          apply ex_finite_lim_seq_correct in exf.
-          apply exf.
-        - apply rvlim_isfe; intros; try apply exf.
-          apply rvsum_pos; intros ??.
-          apply FiniteExpectation_pos.
-          typeclasses eauto.
+          apply ELim_seq_nneg; intros.
+          apply sum_Rbar_n_nneg_nneg; intros ??.
+          apply Rbar_NonnegExpectation_pos.
       }
       Unshelve.
-      f_equal.
-      apply FiniteExpectation_ext; intros y.
+      apply Rbar_NonnegExpectation_ext; intros y.
       {
-        unfold rvsum.
-        assert (exf2:forall omega, ex_finite_lim_seq
-                       (fun n : nat =>
-                          sum_n
-                            (fun n0 : nat =>
-                               EventIndicator (classic_dec (snd (cp n0))) y * EventIndicator (classic_dec (fst (cp n0))) omega) n)).
-        {
-          intros.
-          apply ex_finite_lim_seq_correct.
-          split.
-          - apply ex_lim_seq_incr.
-            intros.
-            apply sum_n_pos_incr; try lia; intros.
-            unfold EventIndicator.
-            repeat match_destr; lra.
-          - unfold EventIndicator.
-            (* in fact, there is at most one that it holds for *)
-            apply lim_seq_sum_singleton_finite; intros.
-            repeat match_destr; try lra.
-            destruct (HH n1 omega y) as [_ HH1].
-            cut_to HH1; [| tauto].
-            destruct (HH n2 omega y) as [_ HH2].
-            cut_to HH2; [| tauto].
-            eelim cdisj; eauto.
-        } 
-
-        erewrite series_expectation
-        ; try typeclasses eauto.
+        erewrite Rbar_series_expectation; trivial.
         Unshelve.
         shelve.
-        - apply rvlim_rv; intros.
-          apply rvsum_rv; intros.
-          + typeclasses eauto.
-          + apply exf2.
-        - intros; specialize (exf2 omega).
-          apply ex_finite_lim_seq_correct in exf2.
-          apply exf2.
-        - intros; specialize (exf2 omega).
-          apply ex_finite_lim_seq_correct in exf2.
-          apply exf2.
-        - apply rvlim_isfe; trivial.
+        - intros.
           typeclasses eauto.
+        - intros ?.
+          apply ELim_seq_nneg; intros.
+          apply sum_Rbar_n_nneg_nneg; intros ??.
+          unfold EventIndicator; simpl; repeat match_destr; lra.
       }
       Unshelve.
-      f_equal.
-      apply FiniteExpectation_ext; intros x.
-      unfold EventIndicator, rvsum.
+      apply Rbar_NonnegExpectation_ext; intros x.
+      unfold EventIndicator.
+      rewrite <- Lim_seq_sum_Elim.
       (* now we finally have it down to points *)
       {
         destruct (lim_seq_sum_singleton_is_one
@@ -718,6 +847,7 @@ Section ps_product.
           cut_to HH2; [| tauto].
           eelim cdisj; eauto.
         - setoid_rewrite HH2.
+          f_equal.
           destruct (Req_EM_T ((if classic_dec (snd (cp m)) y then 1 else 0) * (if classic_dec (fst (cp m)) x then 1 else 0)) 0).
           + rewrite e in HH2.
             rewrite e.
@@ -725,7 +855,6 @@ Section ps_product.
             destruct (H x y) as [_ HH3].
             cut_to HH3; [| tauto].
             destruct HH3 as [n [cpnx cpny]].
-            
             
             assert (HH4:forall n,
                        Finite (sum_n
@@ -756,7 +885,7 @@ Section ps_product.
               + apply sum_n_nneg; intros.
                 repeat match_destr; lra.
             }
-            repeat match_destr_in H0; try tauto; lra.
+            repeat match_destr_in H1; try tauto; lra.
           + repeat match_destr_in n; try lra.
             destruct (H x y) as [HH3 _].
             cut_to HH3;[| eauto].
@@ -787,7 +916,7 @@ Section ps_product.
             ; repeat rewrite ps_none
             ; repeat rewrite Rbar_mult_0_r
             ; repeat rewrite Rbar_mult_0_l; trivial].      
-  Admitted.
+  Qed.
   
   (* We discharge the extra hypothesis here *)
   Instance product_measure_is_measurable_ps :
