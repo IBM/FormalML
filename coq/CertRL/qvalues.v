@@ -698,8 +698,21 @@ Proof.
     setoid_rewrite Rsqr_0. apply expt_value_zero.
 Qed.
 
-Ltac rmax_le_tac := rewrite Rmax_list_le_iff;
-                    [intros x [s [Hs1 Hs2]] %in_map_iff; subst | rewrite map_not_nil; try assumption].
+(* Move these.*)
+Ltac solve_exists_in :=
+  match goal with
+  | [a : ?A, fin : forall x : ?A, In x ?ls |- exists a : ?A, In a ?ls] => exists a; try (apply fin)
+  end.
+
+Ltac rmax_compare :=
+  match goal with
+    | [ |- Rmax_list _ <= _] => rewrite Rmax_list_le_iff;
+                    [intros ?x [?s [<-?Hs]] %in_map_iff |
+                     rewrite map_not_nil, not_nil_exists; solve_exists_in]
+    | [ |- _ <= Rmax_list _ ] =>  apply Rmax_spec; rewrite in_map_iff; try solve_exists_in
+  end.
+
+
 
 Lemma Q_is_bounded' W sa0 :
     let (ls, _) := fs M in
@@ -712,7 +725,27 @@ Lemma Q_is_bounded' W sa0 :
 Proof.
   destruct act_finite as [lsa ?].
   destruct fs as [ls ?].
-  rmax_le_tac.
-Admitted.
+  rmax_compare.
+  rmax_compare.
+  unfold bellmanQ'.
+  match_destr.
+  + rewrite e.
+    destruct sa0 as [s1 a1].
+    rewrite Rmax_Rle. left.
+    apply Rplus_le_compat.
+    -- rewrite Rmax_list_map_dep_prod.
+       rmax_compare. exists (existT _ s (existT _ s1 a1)).
+       split; [trivial | intuition].
+       apply in_dep_prod; trivial.
+       intros. rewrite not_nil_exists.
+       now exists s0.
+    -- apply Rmult_le_compat_l; try intuition lra.
+       rmax_compare.
+       generalize (Rmax_list_map_exist (fun a => W (existT _ s a)) (act_list s) (act_list_not_nil s)); intros [a [Ha1 Ha2]].
+       exists (existT _ s a). split; trivial.
+  + rewrite Rmax_Rle. right.
+    rmax_compare. exists s0.
+    split; trivial.
+Qed.
 
 End bellmanQ.
