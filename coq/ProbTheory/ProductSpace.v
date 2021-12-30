@@ -395,6 +395,60 @@ Section ps_product.
     intros.
   Admitted.
 
+  Lemma lim_seq_sum_singleton_is_one f :
+    (forall n1 n2, n1 <> n2 -> f n1 = 0 \/ f n2 = 0) ->
+    exists n, Lim_seq (sum_n f) = f n.
+  Proof.
+    intros.
+    destruct (classic (exists m, f m <> 0)%type) as [[n ?]|].
+    - rewrite <- (Lim_seq_incr_n _ n).
+      assert (eqq:forall x,
+                 sum_n f (x + n) =
+                   f n).
+      {
+        intros.
+        induction x; simpl.
+        - destruct n.
+          + now rewrite sum_O.
+          + rewrite sum_Sn.
+            erewrite sum_n_ext_loc; try rewrite sum_n_zero.
+            * unfold plus; simpl; lra.
+            * intros ??; simpl.
+              destruct (H (S n) n0); try lra.
+              lia.
+        - rewrite sum_Sn, IHx.
+          unfold plus; simpl.
+          destruct (H n (S (x + n))); try lra.
+          lia.
+      }
+      rewrite (Lim_seq_ext _ _ eqq).
+      rewrite Lim_seq_const.
+      eauto.
+    - assert (eqq:forall x,
+                 sum_n f x = 0).
+      {
+        intros.
+        erewrite sum_n_ext; try eapply sum_n_zero.
+        intros ?; simpl.
+        destruct (Req_EM_T (f n) 0); trivial.
+        elim H0; eauto.
+      }
+      rewrite (Lim_seq_ext _ _ eqq).
+      rewrite Lim_seq_const.
+      exists (0%nat).
+      f_equal; symmetry.
+      destruct (Req_EM_T (f 0%nat) 0); trivial.
+      elim H0; eauto.
+  Qed.
+
+  Lemma lim_seq_sum_singleton_finite f :
+    (forall n1 n2, n1 <> n2 -> f n1 = 0 \/ f n2 = 0) ->
+    is_finite (Lim_seq (sum_n f)).
+  Proof.
+    intros.
+    destruct (lim_seq_sum_singleton_is_one f H).
+    now rewrite H0.
+  Qed.
 
   Lemma product_measure_Hyp_ps :
     measure_rectangle_pm_additive_Hyp (ps_P (σ:=A)) (ps_measure _) (ps_P (σ:=B)) (ps_measure _).
@@ -550,6 +604,26 @@ Section ps_product.
               now rewrite FiniteExpectation_indicator.
             }
             unfold EventIndicator.
+            
+            
+            (*
+            apply lim_seq_sum_singleton_finite; intros.
+            repeat match_destr; try lra.
+            repeat rewrite Rmult_1_l.
+            
+
+            
+            destruct (Req_EM_T (ps_P (fst (cp n1))) 0); try eauto 2.
+            destruct (Req_EM_T (ps_P (fst (cp n2))) 0); try eauto 2.
+            apply zero_prob_or_witness in n.
+            destruct n as [x1 cpx1].
+            apply zero_prob_or_witness in n0.
+            destruct n0 as [x2 cpx2].
+            destruct (HH n1 x1 omega) as [_ HH1].
+            cut_to HH1; [| tauto].
+            destruct (HH n2 x2 omega) as [_ HH2].
+            cut_to HH2; [| tauto].
+             *)
             admit.
         } 
         erewrite series_expectation.
@@ -601,7 +675,13 @@ Section ps_product.
             repeat match_destr; lra.
           - unfold EventIndicator.
             (* in fact, there is at most one that it holds for *)
-            admit.
+            apply lim_seq_sum_singleton_finite; intros.
+            repeat match_destr; try lra.
+            destruct (HH n1 omega y) as [_ HH1].
+            cut_to HH1; [| tauto].
+            destruct (HH n2 omega y) as [_ HH2].
+            cut_to HH2; [| tauto].
+            eelim cdisj; eauto.
         } 
 
         erewrite series_expectation
@@ -627,7 +707,60 @@ Section ps_product.
       unfold EventIndicator, rvsum.
       (* now we finally have it down to points *)
       {
-        admit.
+        destruct (lim_seq_sum_singleton_is_one
+                    (fun n0 : nat =>
+                       (if classic_dec (snd (cp n0)) y then 1 else 0) * (if classic_dec (fst (cp n0)) x then 1 else 0))) as [m HH2].
+        - intros.
+          repeat match_destr; try lra.
+          destruct (HH n1 x y) as [_ HH1].
+          cut_to HH1; [| tauto].
+          destruct (HH n2 x y) as [_ HH2].
+          cut_to HH2; [| tauto].
+          eelim cdisj; eauto.
+        - setoid_rewrite HH2.
+          destruct (Req_EM_T ((if classic_dec (snd (cp m)) y then 1 else 0) * (if classic_dec (fst (cp m)) x then 1 else 0)) 0).
+          + rewrite e in HH2.
+            rewrite e.
+            repeat match_destr; simpl; try lra.
+            destruct (H x y) as [_ HH3].
+            cut_to HH3; [| tauto].
+            destruct HH3 as [n [cpnx cpny]].
+            
+            
+            assert (HH4:forall n,
+                       Finite (sum_n
+                          (fun n0 : nat =>
+                             (if classic_dec (snd (cp n0)) y then 1 else 0) *
+                               (if classic_dec (fst (cp n0)) x then 1 else 0)) n) = Finite 0).
+            {
+              intros.
+              apply Rbar_le_antisym.
+              - rewrite <- HH2.
+                apply Lim_seq_increasing_le; intros.
+                apply sum_n_pos_incr; intros; try lia.
+                repeat match_destr; lra.
+              - apply sum_n_nneg; intros.
+                repeat match_destr; lra.
+            }
+            assert ((if classic_dec (snd (cp n)) y then 1 else 0) * (if classic_dec (fst (cp n)) x then 1 else 0) = 0).
+            {
+              specialize (HH4 n).
+              apply (f_equal real) in HH4; simpl in HH4.
+            destruct n.
+            - now rewrite sum_O in HH4.
+            - rewrite sum_Sn in HH4.
+              unfold plus in HH4; simpl in *.
+              rewrite Rplus_comm in HH4.
+              apply Rplus_eq_0_l in HH4; trivial.
+              + repeat match_destr; lra.
+              + apply sum_n_nneg; intros.
+                repeat match_destr; lra.
+            }
+            repeat match_destr_in H0; try tauto; lra.
+          + repeat match_destr_in n; try lra.
+            destruct (H x y) as [HH3 _].
+            cut_to HH3;[| eauto].
+            repeat match_destr; tauto.
       }
     - apply ELim_seq_ext; intros.
       unfold sum_Rbar_n.
