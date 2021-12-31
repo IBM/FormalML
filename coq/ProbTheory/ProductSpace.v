@@ -485,16 +485,112 @@ Section ps_product.
     - apply Rbar_NonnegExpectation_const_pinfty.
   Qed.
 
-(*  Lemma Rbar_NonnegExpectation_pinfty_prob {Ts} {dom: SigmaAlgebra Ts} (prts:ProbSpace dom)
+  Lemma Rbar_NonnegExpectation_inf_mult_indicator {Ts} {dom: SigmaAlgebra Ts} (prts:ProbSpace dom)
+        {P : event dom}
+        (dec : dec_event P)
+        {pofrf:Rbar_NonnegativeFunction (Rbar_rvmult (const p_infty) (EventIndicator dec))} :
+    ps_P P <> 0 ->
+    Rbar_NonnegExpectation (Rbar_rvmult (const p_infty) (EventIndicator dec)) = p_infty.
+  Proof.
+    intros.
+    generalize (Rbar_NonnegExpectation_pos (Rbar_rvmult (const p_infty) (EventIndicator dec))); intros HH.
+    unfold Rbar_NonnegExpectation, SimpleExpectationSup in *.
+    unfold Lub_Rbar in *.
+    repeat match goal with
+             [|- context [proj1_sig ?x]] => destruct x; simpl
+           end.
+    simpl in *.
+    unfold is_lub_Rbar in *.
+    unfold is_ub_Rbar in *.
+    destruct i.
+    destruct x; simpl; try tauto.
+    specialize (H0 (r+1)).
+    simpl in H0.
+    cut_to H0; try lra.
+    exists (rvscale ((r+1)/(ps_P P)) (EventIndicator dec)).
+    exists _.
+    exists _.
+    repeat split.
+    - intro x.
+      unfold rvscale, EventIndicator.
+      match_destr; try lra.
+      rewrite Rmult_1_r.
+      apply Rdiv_le_0_compat; try lra.
+      generalize (ps_pos P); intros.
+      lra.
+    - intro x.
+      unfold rvscale, const, Rbar_rvmult, EventIndicator.
+      match_destr.
+      + rewrite Rbar_mult_1_r.
+        now simpl.
+      + rewrite Rbar_mult_0_r.
+        rewrite Rmult_0_r.
+        now simpl.
+    - rewrite <- scaleSimpleExpectation.
+      rewrite (SimpleExpectation_EventIndicator dec).
+      unfold Rdiv.
+      rewrite Rmult_assoc.
+      rewrite Rinv_l; lra.
+  Qed.
+    
+  Lemma Rbar_NonnegExpectation_pinfty_prob {Ts} {dom: SigmaAlgebra Ts} (prts:ProbSpace dom)
         rv_X
         {rv:RandomVariable dom Rbar_borel_sa rv_X}
         {pofrf:Rbar_NonnegativeFunction rv_X} :
-    ps_P (fun x => rv x = p_infty) <> 0 ->
+    ps_P (exist _ _ (sa_pinf_Rbar rv_X rv)) <> 0 ->
     Rbar_NonnegExpectation rv_X = p_infty.
+Proof.
+  intros.
+  assert (Rbar_NonnegExpectation (Rbar_rvmult rv_X
+                                              (EventIndicator (classic_dec (fun x => rv_X x = p_infty)))) = p_infty).
+  {
+    assert (rv_eq
+               (Rbar_rvmult rv_X
+                            (EventIndicator (classic_dec (fun x => rv_X x = p_infty))))
+               (Rbar_rvmult (const p_infty)
+                            (EventIndicator (classic_dec (fun x => rv_X x = p_infty))))).
+    {
+      intro x.
+      unfold Rbar_rvmult, EventIndicator.
+      match_destr.
+      - now rewrite e.
+      - now do 2 rewrite Rbar_mult_0_r.
+    }
+    erewrite (Rbar_NonnegExpectation_ext _ _ H0).
+(*
+    generalize (Rbar_NonnegExpectation_inf_mult_indicator 
+                  prts
+                  (classic_dec (fun x0 : Ts => rv_X x0 = p_infty))).
+*)                  
+    admit.
+  }
+  assert (Rbar_rv_le
+             (Rbar_rvmult 
+                rv_X
+                (fun x : Ts =>
+                   EventIndicator (classic_dec (fun x0 : Ts => rv_X x0 = p_infty)) x))
+             rv_X).
+  {
+    intro x.
+    unfold Rbar_rvmult, EventIndicator.
+    match_destr.
+    - rewrite Rbar_mult_1_r.
+      apply Rbar_le_refl.
+    - rewrite Rbar_mult_0_r.
+      apply pofrf.
+  }
+  generalize (Rbar_NonnegExpectation_le _ _ H1); intros.
+  rewrite H0 in H2.
+  destruct (Rbar_NonnegExpectation rv_X); tauto.
+  Unshelve.
+  apply Rbar_rvmult_nnf.
+  - unfold Rbar_NonnegativeFunction, const; intros.
+    now simpl.
+  - typeclasses eauto.
 
-  Rbar_NonnegExpectation (Rbar_rvmult (const p_infty) rv_X) = p_infty
-*)
-                                                                
+  Admitted.
+
+  
   Lemma Rbar_NonnegExpectation_scale' {Ts} {dom: SigmaAlgebra Ts} (prts:ProbSpace dom) c
         (rv_X : Ts -> Rbar)
         {rv:RandomVariable dom Rbar_borel_sa rv_X}
@@ -531,7 +627,19 @@ Section ps_product.
           rewrite H0.
           now rewrite Rbar_mult_0_r.
       + transitivity p_infty.
-        * admit.
+        * assert (rvm:RandomVariable dom Rbar_borel_sa (Rbar_rvmult (const p_infty) rv_X)) 
+            by (apply Rbar_rvmult_rv; typeclasses eauto).
+          apply Rbar_NonnegExpectation_pinfty_prob with (rv0 := rvm).
+          assert (pre_event_equiv
+                    (fun x : Ts => Rbar_rvmult (const p_infty) rv_X x = p_infty)
+                    (pre_event_complement (fun x : Ts => rv_X x = 0))).
+          {
+            intro x.
+            unfold Rbar_rvmult, const, pre_event_complement.
+            destruct (rv_X x); admit.
+          }
+          
+          admit.
         * unfold Rbar_mult; simpl.
           generalize (Rbar_NonnegExpectation_pos rv_X); intros.
           destruct ( Rbar_NonnegExpectation rv_X ); simpl in *; rbar_prover.
