@@ -632,15 +632,29 @@ Qed.
           {
             intro x.
             unfold Rbar_rvmult, const, pre_event_complement.
-            destruct (rv_X x); admit.
+            generalize (pofrf x); simpl; intros HH.
+            destruct (rv_X x); simpl; rbar_prover; intuition (try invcs H1; subst; try lra; try congruence).
           }
-          
-          admit.
+          assert (sa2:sa_sigma (pre_event_complement (fun x : Ts => rv_X x = 0))).
+          {
+            rewrite <- H0.
+            apply (sa_pinf_Rbar (Rbar_rvmult (const p_infty) rv_X) rvm).
+          } 
+          rewrite (ps_proper _ (exist _ _ sa2)); [| apply H0].
+          intros ps0.
+
+          apply n.
+          apply Rbar_NonnegExpectation_almostR2_0.
+          apply almost_alt_eq.
+          red.
+          eexists.
+          split; [apply ps0 |].
+          now unfold const, pre_event_complement; simpl.
         * unfold Rbar_mult; simpl.
           generalize (Rbar_NonnegExpectation_pos rv_X); intros.
           destruct ( Rbar_NonnegExpectation rv_X ); simpl in *; rbar_prover.
           congruence.
-  Admitted.
+  Qed.
 
   Lemma sum_Rbar_n_rv {Ts} {dom: SigmaAlgebra Ts} 
         (Xn : nat -> Ts -> Rbar)
