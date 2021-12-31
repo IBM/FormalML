@@ -119,6 +119,13 @@ Qed.
 
 Global Instance Rbar_eqdec : EqDec Rbar eq := Rbar_eq_dec.
 
+Lemma rbar_nneg_nneg x :
+  Rbar_le 0 x ->
+  0 <= x.
+Proof.
+  destruct x; simpl; try lra.
+Qed.
+
 
 Lemma INR_nzero {n} :
   (n > 0)%nat -> INR n <> 0.

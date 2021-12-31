@@ -1262,4 +1262,81 @@ Qed.
     - now intros.
   Qed.
 
+    Lemma sum_Rbar_n_finite_sum_n f n:
+    sum_Rbar_n (fun x => Finite (f x)) (S n) = Finite (sum_n f n).
+  Proof.
+    rewrite sum_n_fold_right_seq.
+    unfold sum_Rbar_n, list_Rbar_sum.
+    generalize (0).
+    induction n; trivial; intros.
+    rewrite seq_Sn.
+    repeat rewrite map_app.
+    repeat rewrite fold_right_app.
+    now rewrite <- IHn.
+  Qed.
+
+  Lemma Lim_seq_sum_Elim f :
+    Lim_seq (sum_n f) = ELim_seq (sum_Rbar_n (fun x => Finite (f x))).
+  Proof.
+    rewrite <- ELim_seq_incr_1.
+    rewrite <- Elim_seq_fin.
+    apply ELim_seq_ext; intros.
+    now rewrite sum_Rbar_n_finite_sum_n.
+  Qed.    
+
+  Lemma lim_seq_sum_singleton_is_one f :
+    (forall n1 n2, n1 <> n2 -> f n1 = 0 \/ f n2 = 0) ->
+    exists n, Lim_seq (sum_n f) = f n.
+  Proof.
+    intros.
+    destruct (classic (exists m, f m <> 0)%type) as [[n ?]|].
+    - rewrite <- (Lim_seq_incr_n _ n).
+      assert (eqq:forall x,
+                 sum_n f (x + n) =
+                   f n).
+      {
+        intros.
+        induction x; simpl.
+        - destruct n.
+          + now rewrite sum_O.
+          + rewrite sum_Sn.
+            erewrite sum_n_ext_loc; try rewrite sum_n_zero.
+            * unfold plus; simpl; lra.
+            * intros ??; simpl.
+              destruct (H (S n) n0); try lra.
+              lia.
+        - rewrite sum_Sn, IHx.
+          unfold plus; simpl.
+          destruct (H n (S (x + n))); try lra.
+          lia.
+      }
+      rewrite (Lim_seq_ext _ _ eqq).
+      rewrite Lim_seq_const.
+      eauto.
+    - assert (eqq:forall x,
+                 sum_n f x = 0).
+      {
+        intros.
+        erewrite sum_n_ext; try eapply sum_n_zero.
+        intros ?; simpl.
+        destruct (Req_EM_T (f n) 0); trivial.
+        elim H0; eauto.
+      }
+      rewrite (Lim_seq_ext _ _ eqq).
+      rewrite Lim_seq_const.
+      exists (0%nat).
+      f_equal; symmetry.
+      destruct (Req_EM_T (f 0%nat) 0); trivial.
+      elim H0; eauto.
+  Qed.
+
+  Lemma lim_seq_sum_singleton_finite f :
+    (forall n1 n2, n1 <> n2 -> f n1 = 0 \/ f n2 = 0) ->
+    is_finite (Lim_seq (sum_n f)).
+  Proof.
+    intros.
+    destruct (lim_seq_sum_singleton_is_one f H).
+    now rewrite H0.
+  Qed.
+
 End lim_sum.
