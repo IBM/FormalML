@@ -18,7 +18,7 @@ Require Export Event SigmaAlgebras ProbSpace.
 Require Export RandomVariable VectorRandomVariable.
 Require Import ClassicalDescription.
 Require Import Measures.
-Require Import DiscreteProbSpace.
+Require Import Dynkin.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -645,7 +645,7 @@ Section ps_product.
     apply product_measure_Hyp_ps.
   Qed.
 
-  Instance product_ps : ProbSpace (product_sa A B).
+  Global Instance product_ps : ProbSpace (product_sa A B).
   Proof.
     apply (measure_all_one_ps (product_measure (ps_P (σ:=A)) (ps_measure _) (ps_P (σ:=B)) (ps_measure _))).
     generalize (product_measure_product (ps_P (σ:=A)) (ps_measure _) (ps_P (σ:=B)) (ps_measure _) product_measure_Hyp_ps Ω Ω)
@@ -669,7 +669,7 @@ Section ps_product.
     now red; simpl.
   Defined.
 
-  Lemma product_sa_sa (a:event A) (b:event B) :
+  Theorem product_sa_sa (a:event A) (b:event B) :
     sa_sigma (SigmaAlgebra:=product_sa A B) (fun '(x,y) => a x /\ b y).
   Proof.
     apply generated_sa_sub.
@@ -690,5 +690,42 @@ Section ps_product.
     rewrite product_measure_product; simpl; trivial.
     apply product_measure_Hyp_ps.
   Qed.
-  
+
+  Lemma pre_event_set_product_pi : Pi_system (pre_event_set_product (@sa_sigma _ A) (@sa_sigma _ B)).
+  Proof.
+    unfold pre_event_set_product; intros ?[?[?[?[??]]]]?[?[?[?[??]]]].
+    exists (pre_event_inter x x1).
+    exists (pre_event_inter x0 x2).
+    split; [| split].
+    - now apply sa_inter.
+    - now apply sa_inter.
+    - rewrite H1, H4.
+      unfold pre_event_inter; simpl; intros [??].
+      tauto.
+  Qed.
+            
+  (* product_ps is the unique probability space that preserves the product rule. *)
+  Theorem product_ps_unique (ps:ProbSpace (product_sa A B)) :
+    (forall a b, ps_P (ProbSpace:=ps) (product_sa_event a b) =
+              ps_P a * ps_P b) ->
+    forall x, ps_P (ProbSpace:=ps) x = ps_P (ProbSpace:=product_ps) x.
+  Proof.
+    intros.
+    apply pi_prob_extension_unique.
+    - apply pre_event_set_product_pi.
+    - intros.
+      assert (exists x y, event_equiv (generated_sa_base_event Ca) (product_sa_event x y)).
+      {
+        destruct Ca as [?[?[?[??]]]]; simpl.
+        exists (exist _ x0 s).
+        exists (exist _ x1 s0).
+        intros ?; simpl.
+        apply e.
+      } 
+      destruct H0 as [?[? eqq]].
+      repeat rewrite eqq.
+      rewrite H.
+      now rewrite product_sa_product.
+  Qed.
+
 End ps_product.
