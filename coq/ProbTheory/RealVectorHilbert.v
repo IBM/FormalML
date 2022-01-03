@@ -1176,5 +1176,28 @@ Section more_lemmas.
     - rewrite Rvector_nth_plus.
       now rewrite IHk.
   Qed.
+  
+  Lemma Rvector_max_abs_zero {n} (v : vector R n) :
+    Rvector_max_abs v = 0 <-> v = Rvector_zero.
+  Proof.
+    split; intros HH.
+    - apply vector_nth_eq; intros.
+      generalize (vector_nth_In v i pf); intros HH2.
+      generalize (Rvector_max_abs_in_le _ _ HH2).
+      rewrite HH; intros HH3.
+      rewrite Rvector_nth_zero.
+      assert (Rabs (vector_nth i pf v)=0).
+      {
+        apply antisymmetry; trivial.
+        apply Rabs_pos.
+      }
+      now apply Rabs_eq_0 in H.
+    - destruct n.
+      + rewrite (vector0_0 v); reflexivity.
+      + destruct (Rvector_max_abs_nth_in v) as [?[? eqq]].
+        rewrite eqq, HH.
+        rewrite Rvector_nth_zero.
+        now rewrite Rabs_R0.
+  Qed.
 
 End more_lemmas.
