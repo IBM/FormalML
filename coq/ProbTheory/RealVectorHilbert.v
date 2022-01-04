@@ -1230,5 +1230,19 @@ Section more_lemmas.
     rewrite Rabs_pos_eq; trivial.
     apply cond_nonneg.
   Qed.
-    
+
+  Lemma Rvector_max_abs_triang {n} (v1 v2 : vector R n) :
+    Rvector_max_abs (Rvector_plus v1 v2) <= Rvector_max_abs v1 + Rvector_max_abs v2.
+  Proof.
+    destruct n.
+    - rewrite (vector0_0 _).
+      rewrite (vector0_0 v1).
+      rewrite (vector0_0 v2).
+      vm_compute; lra.
+    - destruct (Rvector_max_abs_nth_in (Rvector_plus v1 v2)) as [?[? eqq]].
+      rewrite eqq, Rvector_nth_plus, Rabs_triang.
+      apply Rplus_le_compat
+      ; apply Rvector_max_abs_nth_le.
+  Qed.
+
 End more_lemmas.
