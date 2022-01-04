@@ -1200,4 +1200,35 @@ Section more_lemmas.
         now rewrite Rabs_R0.
   Qed.
 
+  Lemma Rvector_max_abs_scale {n} c (v : vector R n) :
+    Rvector_max_abs (Rvector_scale c v) = Rabs c * Rvector_max_abs v.
+  Proof.
+    destruct v.
+    unfold Rvector_scale, vector_map, Rvector_max_abs, vector_fold_left; simpl.
+    clear e.
+    cut (forall s,
+            0 <= s ->
+             fold_left Rmax (map Rabs (map (fun a : R => c * a) x)) (Rabs c * s) =
+               Rabs c * fold_left Rmax (map Rabs x) s).
+    {
+      intros.
+      rewrite <- H by lra.
+      now rewrite Rmult_0_r.
+    }
+    induction x; simpl; trivial; intros.
+    rewrite Rabs_mult.
+    rewrite <- IHx.
+    - now rewrite <- Rmult_max_distr_l by apply Rabs_pos.
+    - rewrite H.
+      apply Rmax_l.
+  Qed.
+
+  Lemma Rvector_max_abs_scale_nneg {n} (c:nonnegreal) (v : vector R n) :
+    Rvector_max_abs (Rvector_scale c v) = c * Rvector_max_abs v.
+  Proof.
+    rewrite (Rvector_max_abs_scale c v).
+    rewrite Rabs_pos_eq; trivial.
+    apply cond_nonneg.
+  Qed.
+    
 End more_lemmas.
