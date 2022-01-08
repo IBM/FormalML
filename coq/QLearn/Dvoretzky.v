@@ -1,7 +1,7 @@
 Require Import Reals Sums Lra Lia.
 Require Import Coquelicot.Coquelicot.
 Require Import LibUtils.
-Require Import Expectation.
+Require Import Expectation ConditionalExpectation.
 Require Import infprod.
 
 Require Import List Permutation.
@@ -35,7 +35,7 @@ Section Dvoretzky.
  Notation "x .²" := (rvsqr x) (at level 1) : rv.
 
  Local Open Scope rv.
-
+  
       
  Lemma frf_vals_offset
         (offset: R)
@@ -47,19 +47,31 @@ Section Dvoretzky.
    now f_equal.
  Qed.
 
+Definition ConditionalExpectation_rv (g f : R -> R)
+           {rvf: RandomVariable dom borel_sa f}
+           {rvg: RandomVariable dom borel_sa g}  : R -> Rbar :=
+  ConditionalExpectation prts (pullback_rv_sub dom borel_sa g rvg) f.
+
+Definition FiniteConditionalExpectation_rv (g f : R -> R)
+           {rvf: RandomVariable dom borel_sa f}
+           {rvg: RandomVariable dom borel_sa g}           
+           {isfe : IsFiniteExpectation prts f} : R -> R :=
+  FiniteConditionalExpectation prts (pullback_rv_sub dom borel_sa g rvg) f.
+
 Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
       (rvy : RandomVariable dom borel_sa (Y n)) 
       (svy : FiniteRangeFunction (Y n)) 
       (rvx : RandomVariable dom borel_sa (X n)) 
       (svx: FiniteRangeFunction (X n))
-      (rvt : RandomVariable dom borel_sa (fun r:R => T n (X n r))) 
+      (rvt : RandomVariable dom borel_sa (fun r:R => T n (X n r)))
+      (rvt2 : RandomVariable borel_sa borel_sa (fun r:R => T n r))       
       (svt: FiniteRangeFunction (fun r:R => T n (X n r))) 
       (rvx2 : RandomVariable dom borel_sa (X (S n)))
       (svx2: FiniteRangeFunction (X (S n))) :
   (forall (n:nat), F n >= 0) ->
   (forall (n:nat) (r:R), Rle (Rabs ((T n r) - theta)) (F n * Rabs (r-theta))) ->
   (forall (n:nat), rv_eq (X (S n)) (rvplus (fun r => T n (X n r)) (Y n))) ->
-  rv_eq (SimpleConditionalExpectation (Y n) (X n)) (const 0) ->
+  rv_eq (ConditionalExpectation_rv (X n) (Y n)) (const 0) ->
   Rle (SimpleExpectation (rvsqr (rvminus (X (S n)) (const theta)) ))
       ((Rsqr (F n)) * SimpleExpectation (rvsqr (rvminus (X n) (const (theta))))
        + SimpleExpectation (rvsqr (Y n))).
@@ -89,58 +101,34 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
    rewrite <- scaleSimpleExpectation.
    rewrite <- Rplus_assoc.
    apply Rplus_le_compat_r.
-   generalize (conditional_tower_law (rvmult (rvminus (fun r : R => T n (X n r)) (const theta))
-                                             (Y n)) 
-                                     (X n) _ _) ; intros tower.
-   generalize (conditional_scale_measurable (rvminus (fun r:R => T n (X n r)) (const theta))
-                                            (Y n) (X n)); intros cond_scale.
-   cut_to cond_scale.
-   - rewrite <- tower.
-     rewrite (SimpleExpectation_transport _ cond_scale).
-     assert (eqq4:rv_eq  (rvmult (rvminus (fun r : R => T n (X n r)) (const theta))
-                                 (SimpleConditionalExpectation (Y n) (X n)))
-                         (const 0)).
-     {
-       rewrite H2.
-       unfold rvmult, const; intros ?; simpl; field.
-     } 
-     rewrite (SimpleExpectation_transport _ eqq4).
-     rewrite (SimpleExpectation_pf_irrel _ (frfconst _)).
-     rewrite SimpleExpectation_const.
-     rewrite Rmult_0_r, Rplus_0_r.
-     specialize (H n).
-     rewrite (scaleSimpleExpectation (Rsqr (F n))).
-     
-     apply SimpleExpectation_le; try typeclasses eauto.
-     intros x.
-     unfold rvsqr, rvscale.
-     specialize (H0 n (X n x)).
-     rewrite <- Rabs_right with (r:=F n) in H0; trivial.
-     rewrite <- Rabs_mult in H0.
-     apply Rsqr_le_abs_1 in H0.
-     rewrite Rsqr_mult in H0.
-     unfold rvminus, rvopp, rvplus, rvscale, const.
-     unfold Rminus in H0.
-     replace (-1 * theta) with (-theta) by lra.
-     apply H0.
-   - unfold simple_sigma_measurable.
-     unfold event_preimage, event_singleton.
-     destruct svx.
-     destruct svt.
-     unfold RandomVariable.frf_vals; simpl.
-     unfold rvminus, rvopp, rvplus, rvscale, const.
-     intros.
-     
-     destruct (classic ( exists x, X n x = c2)).
-     + exists (T n c2 + (-1)*theta).
-       intros x; simpl.
-       unfold pre_event_preimage, pre_event_singleton; intros eqq2.
-       now rewrite eqq2.
-     + exists (T n (X n 0) + (-1)*theta).
-       intros ?; simpl.
-       unfold pre_event_preimage, pre_event_singleton; intros eqq2.
-       elim H5.
-       eauto.
+   assert (SimpleExpectation (((fun r : R => T n (X n r)) .- const theta) .* Y n) = 0).
+   {
+     apply SimpleCondexp_factor_out_zero 
+       with (sub := (pullback_rv_sub dom borel_sa (X n) rvx)) (rvf := rvy).
+     - apply rvminus_rv.
+       + apply (compose_rv (dom2 := borel_sa)); trivial.
+         apply pullback_rv.
+       + typeclasses eauto.
+     - apply all_almost.
+       intros.
+       apply H2.
+  }
+   rewrite H4.
+   rewrite Rmult_0_r, Rplus_0_r.
+   specialize (H n).
+   rewrite (scaleSimpleExpectation (Rsqr (F n))).
+   apply SimpleExpectation_le; try typeclasses eauto.
+   intros x.
+   unfold rvsqr, rvscale.
+   specialize (H0 n (X n x)).
+   rewrite <- Rabs_right with (r:=F n) in H0; trivial.
+   rewrite <- Rabs_mult in H0.
+   apply Rsqr_le_abs_1 in H0.
+   rewrite Rsqr_mult in H0.
+   unfold rvminus, rvopp, rvplus, rvscale, const.
+   unfold Rminus in H0.
+   replace (-1 * theta) with (-theta) by lra.
+   apply H0.
   Qed.
 
   Lemma exp_sum (a : nat -> R) (n : nat) :

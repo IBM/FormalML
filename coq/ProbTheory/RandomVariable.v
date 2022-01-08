@@ -132,6 +132,20 @@ Proof.
   apply s.
 Qed.
 
+Instance compose_rv {Ts1 Ts2 Ts3} 
+         {dom1:SigmaAlgebra Ts1} 
+         {dom2:SigmaAlgebra Ts2}
+         {dom3:SigmaAlgebra Ts3}
+         (f : Ts1 -> Ts2)
+         (g : Ts2 -> Ts3)
+         {rvf : RandomVariable dom1 dom2 f}
+         {rvg : RandomVariable dom2 dom3 g} :
+         RandomVariable dom1 dom3 (compose g f).
+Proof.
+  intros ?.
+  apply (rvf (exist _ _ (rvg B))).
+Qed.  
+
 Section Simple.
   Context {Ts:Type} {Td:Type}.
 
