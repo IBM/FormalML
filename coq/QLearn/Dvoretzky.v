@@ -63,8 +63,7 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
       (svy : FiniteRangeFunction (Y n)) 
       (rvx : RandomVariable dom borel_sa (X n)) 
       (svx: FiniteRangeFunction (X n))
-      (rvt : RandomVariable dom borel_sa (fun r:R => T n (X n r)))
-      (rvt2 : RandomVariable borel_sa borel_sa (fun r:R => T n r))       
+      (rvt : RandomVariable borel_sa borel_sa (fun r:R => T n r))        
       (svt: FiniteRangeFunction (fun r:R => T n (X n r))) 
       (rvx2 : RandomVariable dom borel_sa (X (S n)))
       (svx2: FiniteRangeFunction (X (S n))) :
@@ -95,6 +94,8 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
      lra.
    }
    rewrite (SimpleExpectation_transport _ eqq1).
+   assert (rvtx: RandomVariable dom borel_sa (fun r:R => T n (X n r)))
+          by now apply (compose_rv (dom2 := borel_sa)).
    rewrite (SimpleExpectation_pf_irrel _ _).
    rewrite <- sumSimpleExpectation; try typeclasses eauto.
    rewrite <- sumSimpleExpectation; try typeclasses eauto.
