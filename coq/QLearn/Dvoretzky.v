@@ -70,7 +70,7 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
   (forall (n:nat), F n >= 0) ->
   (forall (n:nat) (r:R), Rle (Rabs ((T n r) - theta)) (F n * Rabs (r-theta))) ->
   (forall (n:nat), rv_eq (X (S n)) (rvplus (fun r => T n (X n r)) (Y n))) ->
-  rv_eq (ConditionalExpectation_rv (X n) (Y n)) (const 0) ->
+  almostR2 prts eq (ConditionalExpectation_rv (X n) (Y n)) (const 0) ->
   Rle (SimpleExpectation (rvsqr (rvminus (X (S n)) (const theta)) ))
       ((Rsqr (F n)) * SimpleExpectation (rvsqr (rvminus (X n) (const (theta))))
        + SimpleExpectation (rvsqr (Y n))).
@@ -105,15 +105,12 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
    assert (SimpleExpectation (((fun r : R => T n (X n r)) .- const theta) .* Y n) = 0).
    {
      apply SimpleCondexp_factor_out_zero 
-       with (sub := (pullback_rv_sub dom borel_sa (X n) rvx)) (rvf := rvy).
-     - apply rvminus_rv.
-       + apply (compose_rv (dom2 := borel_sa)); trivial.
-         apply pullback_rv.
-       + typeclasses eauto.
-     - apply all_almost.
-       intros.
-       apply H2.
-  }
+       with (sub := (pullback_rv_sub dom borel_sa (X n) rvx)) (rvf := rvy); trivial.
+     apply rvminus_rv.
+     - apply (compose_rv (dom2 := borel_sa)); trivial.
+       apply pullback_rv.
+     - typeclasses eauto.
+   }
    rewrite H4.
    rewrite Rmult_0_r, Rplus_0_r.
    specialize (H n).
@@ -127,7 +124,6 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
    apply Rsqr_le_abs_1 in H0.
    rewrite Rsqr_mult in H0.
    unfold rvminus, rvopp, rvplus, rvscale, const.
-   unfold Rminus in H0.
    replace (-1 * theta) with (-theta) by lra.
    apply H0.
   Qed.
