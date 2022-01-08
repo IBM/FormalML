@@ -132,10 +132,7 @@ Proof.
   apply s.
 Qed.
 
-Instance compose_rv {Ts1 Ts2 Ts3} 
-         {dom1:SigmaAlgebra Ts1} 
-         {dom2:SigmaAlgebra Ts2}
-         {dom3:SigmaAlgebra Ts3}
+Instance compose_rv {Ts1 Ts2 Ts3} {dom1 dom2 dom3}
          (f : Ts1 -> Ts2)
          (g : Ts2 -> Ts3)
          {rvf : RandomVariable dom1 dom2 f}
