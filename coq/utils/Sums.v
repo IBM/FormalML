@@ -1150,15 +1150,11 @@ Lemma lim_0_nneg (a : nat -> R) :
   (forall n, 0 <= a n) ->
   forall n, a n = 0.
 Proof.
-  intros ser nneg n.
+  intros ser nneg.
   assert (serex:ex_series a) by (eexists; eauto).
   generalize (sum_f_R0_nonneg_le_Series serex nneg); intros HH.
   rewrite (is_series_unique _ _ ser) in HH.
-  assert (forall N, sum_f_R0 a N = 0).
-  {
-    intros.
-    apply antisymmetry; trivial.
-    apply sum_f_R0_nneg; trivial.
-  }
-  eapply sum_f_R0_0_inv in H; eauto.
+  apply sum_f_R0_0_inv; intros n.
+  apply antisymmetry; trivial.
+  apply sum_f_R0_nneg; trivial.
 Qed.
