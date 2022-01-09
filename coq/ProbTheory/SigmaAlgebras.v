@@ -413,7 +413,7 @@ Definition pre_event_set_product {T₁ T₂} (s₁ : pre_event T₁ -> Prop) (s�
          s₁ e₁ /\ s₂ e₂ /\
          e === (fun '(x₁, x₂) => e₁ x₁ /\ e₂ x₂).
 
-Instance event_set_product_proper {T1 T2} : Proper (equiv ==> equiv ==> equiv) (@pre_event_set_product T1 T2).
+Instance pre_event_set_product_proper {T1 T2} : Proper (equiv ==> equiv ==> equiv) (@pre_event_set_product T1 T2).
 Proof.
   repeat red.
   unfold equiv, pre_event_equiv, pre_event_set_product; simpl; intros.
@@ -443,6 +443,57 @@ Proof.
     apply all_included_proper.
     rewrite H, H0.
     reflexivity.
+Qed.
+
+(* dependent product *)
+Definition pre_event_set_dep_product {T₁:Type} {T₂:T₁->Type} (s₁ : pre_event T₁ -> Prop) (s₂ : forall x, pre_event (T₂ x) -> Prop) : pre_event (sigT T₂) -> Prop
+  := fun (e:pre_event (sigT T₂)) =>
+       exists (e₁:pre_event T₁) (e₂:forall x, pre_event (T₂ x)),
+         s₁ e₁ /\ (forall x, e₁ x -> s₂ x (e₂ x)) /\
+         e === (fun x12 => e₁ (projT1 x12) /\ e₂ _ (projT2 x12)).
+
+
+Lemma pre_event_set_dep_product_proper {T1:Type} {T2:T1->Type}
+      (s1x s1y : pre_event T1 -> Prop)
+      (s1equiv : equiv s1x s1y)
+      (s2x s2y : forall x, pre_event (T2 x) -> Prop)
+      (s2equiv : (forall x y, s2x x y <-> s2y x y)) :
+    pre_event_equiv (pre_event_set_dep_product s1x s2x)
+                    (pre_event_set_dep_product s1y s2y).
+Proof.
+  repeat red.
+  unfold equiv, pre_event_equiv, pre_event_set_dep_product; simpl; intros.
+  split; intros [x2 [x3 [? [? HH]]]]
+  ; unfold equiv in *
+  ; exists x2, x3
+  ; firstorder.
+Qed.
+
+Instance dep_product_sa {T₁:Type} {T₂:T₁->Type}
+         (sa₁:SigmaAlgebra T₁) (sa₂:forall x, SigmaAlgebra (T₂ x)) : SigmaAlgebra (sigT T₂)
+  := generated_sa (pre_event_set_dep_product (@sa_sigma _ sa₁) (fun x => @sa_sigma _ (sa₂ x))).
+
+Lemma dep_product_sa_proper {T1 T2}
+      (s1x s1y : SigmaAlgebra T1)
+      (s1equiv : equiv s1x s1y)
+      (s2x s2y : forall x, SigmaAlgebra (T2 x))
+      (s2equiv : (forall x, equiv (s2x x) (s2y x))) :
+  sa_equiv (dep_product_sa s1x s2x) (dep_product_sa s1y s2y).
+Proof.
+  repeat red; unfold equiv, sa_equiv in *; simpl.
+  intros.
+  split; intros HH.
+  - intros.
+    apply HH.
+    revert H.
+    apply all_included_proper.
+    now apply pre_event_set_dep_product_proper.
+  - intros.
+    apply HH.
+    revert H.
+    apply all_included_proper.
+    apply pre_event_set_dep_product_proper; symmetry; trivial.
+    apply s2equiv.
 Qed.
 
 Definition pre_event_push_forward {X Y:Type} (f:X->Y) (ex:pre_event X) : pre_event Y

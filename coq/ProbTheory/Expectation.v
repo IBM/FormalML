@@ -284,7 +284,7 @@ Section Expectation.
         destruct c; simpl.
         lra.
   Qed.
-
+  
   Lemma Expectation_scale_pos (c:posreal) (rv_X : Ts -> R) :
     NonnegExpectation (fun x : Ts => pos_fun_part (rvscale c rv_X) x) =
     Rbar_mult c (NonnegExpectation (pos_fun_part rv_X)).
@@ -719,6 +719,24 @@ Section Expectation.
       split; [ apply (nnfconst c nnc) |].
       unfold rv_le, const; intros ?.
       lra.
+  Qed.
+  
+  Lemma NonnegExpectation_scale' c
+        (rv_X : Ts -> R)
+        {pofrf:NonnegativeFunction rv_X}
+        {pofrf2:NonnegativeFunction (rvscale c rv_X)} :
+    0 <= c ->
+    NonnegExpectation (rvscale c rv_X) =
+    Rbar_mult c (NonnegExpectation rv_X).
+  Proof.
+    intros [].
+    - rewrite <- (NonnegExpectation_scale (mkposreal _ H)); simpl.
+      apply NonnegExpectation_pf_irrel.
+    - subst.
+      rewrite Rbar_mult_0_l.
+      rewrite (NonnegExpectation_ext _ (nnfconst 0 (reflexivity _))).
+      + apply NonnegExpectation_const.
+      + intros ?; unfold rvscale, const; lra.
   Qed.
 
   Lemma Expectation_scale (c: R) 

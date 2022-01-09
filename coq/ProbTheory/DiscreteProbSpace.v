@@ -18,6 +18,7 @@ Require Export Event SigmaAlgebras ProbSpace.
 Require Export RandomVariable VectorRandomVariable.
 Require Import Coquelicot.Coquelicot.
 Require Import ClassicalDescription.
+Require Import ProductSpace.
 
 Set Bullet Behavior "Strict Subproofs".
 

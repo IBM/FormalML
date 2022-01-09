@@ -97,7 +97,8 @@ PROB_THEORY = \
 	VectorRandomVariable \
 	Martingale \
 	Gaussian \
-	ProductSpace
+	ProductSpace \
+	ProductSpaceDep
 
 
 QLEARN = \

@@ -1456,6 +1456,19 @@ Section RealRandomVariables.
       now left.
     Qed.
 
+     Instance scale_nneg_nnf c
+           (rv_X : Ts -> R)
+           {nnf : NonnegativeFunction rv_X} :
+       0 <= c ->
+      NonnegativeFunction (rvscale c rv_X).
+    Proof.
+      red; intros.
+      red in nnf.
+      specialize (nnf x).
+      replace (0) with (c*0) by lra.    
+      apply Rmult_le_compat_l; trivial.
+    Qed.
+
     Global Instance rvplus_nnf (rv_X1 rv_X2 : Ts -> R)
            {rv1 : NonnegativeFunction rv_X1}
            {rv2 : NonnegativeFunction rv_X2} :
