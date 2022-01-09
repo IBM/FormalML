@@ -1132,3 +1132,33 @@ Proof.
   intros.
   rewrite Rabs_pos_eq; auto.
 Qed.
+
+Lemma sum_f_R0_0_inv (a:nat->R) :
+  (forall n : nat, sum_f_R0 a n = 0) ->
+  forall n, a n = 0.
+Proof.
+  intros eqq.
+  destruct n.
+  - now specialize (eqq 0)%nat; simpl in eqq.
+  - generalize (eqq n); intros eqq1.
+    generalize (eqq (S n)); simpl; intros eqq2.
+    lra.
+Qed.
+
+Lemma lim_0_nneg (a : nat -> R) :
+  is_series a 0 ->
+  (forall n, 0 <= a n) ->
+  forall n, a n = 0.
+Proof.
+  intros ser nneg n.
+  assert (serex:ex_series a) by (eexists; eauto).
+  generalize (sum_f_R0_nonneg_le_Series serex nneg); intros HH.
+  rewrite (is_series_unique _ _ ser) in HH.
+  assert (forall N, sum_f_R0 a N = 0).
+  {
+    intros.
+    apply antisymmetry; trivial.
+    apply sum_f_R0_nneg; trivial.
+  }
+  eapply sum_f_R0_0_inv in H; eauto.
+Qed.
