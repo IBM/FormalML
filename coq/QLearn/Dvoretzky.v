@@ -18,7 +18,8 @@ Require Import LM.hilbert Classical IndefiniteDescription.
 Section Dvoretzky.
   
  Context 
-   {dom: SigmaAlgebra R}
+   {Ts : Type}
+   {dom: SigmaAlgebra Ts}
    {prts: ProbSpace dom}.
 
  (* scalar version of T *)
@@ -47,24 +48,26 @@ Section Dvoretzky.
    now f_equal.
  Qed.
 
-Definition ConditionalExpectation_rv (g f : R -> R)
+Definition ConditionalExpectation_rv (g f : Ts -> R)
            {rvf: RandomVariable dom borel_sa f}
-           {rvg: RandomVariable dom borel_sa g}  : R -> Rbar :=
+           {rvg: RandomVariable dom borel_sa g}  : Ts -> Rbar :=
   ConditionalExpectation prts (pullback_rv_sub dom borel_sa g rvg) f.
 
-Definition FiniteConditionalExpectation_rv (g f : R -> R)
+Definition FiniteConditionalExpectation_rv (g f : Ts -> R)
            {rvf: RandomVariable dom borel_sa f}
            {rvg: RandomVariable dom borel_sa g}           
-           {isfe : IsFiniteExpectation prts f} : R -> R :=
+           {isfe : IsFiniteExpectation prts f} : Ts -> R :=
   FiniteConditionalExpectation prts (pullback_rv_sub dom borel_sa g rvg) f.
 
-Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
+Lemma Dvoretzky_rel (n:nat) (theta:R) (X Y : nat -> Ts -> R)
+      (T : nat -> R -> R)
+      (F : nat -> R)
       (rvy : RandomVariable dom borel_sa (Y n)) 
       (svy : FiniteRangeFunction (Y n)) 
       (rvx : RandomVariable dom borel_sa (X n)) 
       (svx: FiniteRangeFunction (X n))
       (rvt : RandomVariable borel_sa borel_sa (fun r:R => T n r))        
-      (svt: FiniteRangeFunction (fun r:R => T n (X n r))) 
+      (svt: FiniteRangeFunction (fun r:Ts => T n (X n r))) 
       (rvx2 : RandomVariable dom borel_sa (X (S n)))
       (svx2: FiniteRangeFunction (X (S n))) :
   (forall (n:nat), F n >= 0) ->
@@ -82,10 +85,10 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
     now rewrite H1.
     rewrite (SimpleExpectation_transport (frfsqr (rvminus (X (S n)) (const theta)))
                                         (rvsqr_proper _ _ H3)).    
-   assert (eqq1:rv_eq (rvsqr (rvminus (rvplus (fun r : R => T n (X n r)) (Y n)) (const theta))) 
-                      (rvplus (rvsqr (rvminus (fun r : R => T n (X n r)) (const theta)))
+   assert (eqq1:rv_eq (rvsqr (rvminus (rvplus (fun r : Ts => T n (X n r)) (Y n)) (const theta))) 
+                      (rvplus (rvsqr (rvminus (fun r : Ts => T n (X n r)) (const theta)))
                               (rvplus
-                                 (rvscale 2 (rvmult (rvminus (fun r : R => T n (X n r)) (const theta))
+                                 (rvscale 2 (rvmult (rvminus (fun r : Ts => T n (X n r)) (const theta))
                                                     (Y n)))
                             (rvsqr (Y n))))).
    { intros r.
@@ -94,7 +97,7 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
      lra.
    }
    rewrite (SimpleExpectation_transport _ eqq1).
-   assert (rvtx: RandomVariable dom borel_sa (fun r:R => T n (X n r)))
+   assert (rvtx: RandomVariable dom borel_sa (fun r:Ts => T n (X n r)))
           by now apply (compose_rv (dom2 := borel_sa)).
    rewrite (SimpleExpectation_pf_irrel _ _).
    rewrite <- sumSimpleExpectation; try typeclasses eauto.
@@ -102,7 +105,7 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
    rewrite <- scaleSimpleExpectation.
    rewrite <- Rplus_assoc.
    apply Rplus_le_compat_r.
-   assert (SimpleExpectation (((fun r : R => T n (X n r)) .- const theta) .* Y n) = 0).
+   assert (SimpleExpectation (((fun r : Ts => T n (X n r)) .- const theta) .* Y n) = 0).
    {
      apply SimpleCondexp_factor_out_zero 
        with (sub := (pullback_rv_sub dom borel_sa (X n) rvx)) (rvf := rvy); trivial.
@@ -208,5 +211,61 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (T X Y : nat -> R -> R) (F : nat -> R)
         replace (pos eps) with (exp (ln eps)); [| apply exp_ln, cond_pos].
         now apply exp_increasing.
   Qed.
+
+  Lemma SimpleExpectation_nneg (f : Ts -> R)
+        {frf: FiniteRangeFunction f}
+        {rvf : RandomVariable dom borel_sa f} :
+    NonnegativeFunction f ->
+    0 <= SimpleExpectation f.
+  Proof.
+    intros.
+    replace (0) with (SimpleExpectation (const 0)).
+    - apply SimpleExpectation_le.
+      apply H.
+    - apply SimpleExpectation_const.
+  Qed.
+
+  Lemma SimpleExpectation_sq_nneg (f : Ts -> R)
+        {frf: FiniteRangeFunction f}
+        {rvf : RandomVariable dom borel_sa f} :
+    0 <= SimpleExpectation (rvsqr f).
+  Proof.
+    apply SimpleExpectation_nneg.
+    intro x.
+    apply Rle_0_sqr.
+  Qed.
+
+  Lemma Dvoretzky_8_F_le_1 (theta:R) 
+        ( X Y : nat -> Ts -> R)
+        (T : nat -> R -> R)
+        (F : nat -> posreal)
+        (rvy : forall n, RandomVariable dom borel_sa (Y n)) 
+        (svy : forall n, FiniteRangeFunction (Y n)) 
+        (rvx : forall n, RandomVariable dom borel_sa (X n)) 
+        (svx: forall n, FiniteRangeFunction (X n))
+        (rvt : forall n, RandomVariable borel_sa borel_sa (fun r:R => T n r))        
+        (svt: forall n, FiniteRangeFunction (fun r:Ts => T n (X n r))) :
+  (forall (n:nat), F n >= 0) ->
+  (forall (n:nat) (r:R), Rle (Rabs ((T n r) - theta)) (F n * Rabs (r-theta))) ->
+  (forall (n:nat), rv_eq (X (S n)) (rvplus (fun r => T n (X n r)) (Y n))) ->
+  (forall (n:nat), almostR2 prts eq (ConditionalExpectation_rv (X n) (Y n)) (fun x : Ts => const 0 x)) ->
+  (forall n, F n <= 1) ->
+  ex_series (fun n => SimpleExpectation (rvsqr (Y n))) ->
+  is_lim_seq (part_prod F) 0 ->
+  is_lim_seq (fun n => SimpleExpectation (rvsqr (rvminus (X n) (const theta)))) 0.
+ Proof.
+  intros.
+  apply (Dvoretzky4B_Vpos F (fun n => SimpleExpectation (rvsqr (Y n)))); trivial.
+  - intros.
+    apply SimpleExpectation_sq_nneg.
+  - intros.
+    apply SimpleExpectation_sq_nneg.
+  - intros.
+    unfold pos_sq_fun, pos_sq; simpl.
+    replace ((F n) * (F n)) with (Rsqr (F n)) by now simpl.
+    generalize (Dvoretzky_rel n theta X Y T F (rvy n) (svy n) (rvx n) (svx n)
+                              (rvt n) (svt n) (rvx (S n)) (svx (S n))); intros rel.
+    now apply rel.
+ Qed.
 
 End Dvoretzky.
