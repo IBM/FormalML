@@ -3132,7 +3132,6 @@ Section Rmax_list.
     apply finite.
   Qed.
 
-  (* Move this to RealAdd. *)
   Lemma Rmax_list_app {A} {l : list A} (a : A) (f : A -> R) (hl : [] <> l) :
     Rmax_list (map f (l ++ [a])) = Rmax (Rmax_list (map f l)) (f a).
   Proof.
@@ -3276,6 +3275,26 @@ Section Rmax_list.
     rewrite map_ext_in with (f:= f)(g := g); trivial.
   Qed.
 
+  Lemma Rmax_list_plus_r (f g : nat -> R) (r : R) (n h : nat) :
+    (forall (c:nat), 
+        (c <= h)%nat ->
+        f (n + c)%nat + r = g (n + c)%nat) ->
+    Rmax_list (map f (seq n (S h))) + r = Rmax_list (map g (seq n (S h))).
+  Proof.
+    intros.
+    generalize (Rmax_list_const_add (map f (seq n (S h))) r); intros HH.
+    assert (nnil:map f (seq n (S h)) <> []) by (simpl; congruence).
+    match_destr_in HH.
+    rewrite <- HH.
+    f_equal.
+    rewrite map_map.
+    apply map_ext_in; intros ? inn.
+    specialize (H (a-n)%nat).
+    apply in_seq in inn.
+    replace (n + (a - n))%nat with a in H by lia.
+    apply H; lia.
+  Qed.
+  
 End Rmax_list.
 
 (* Lemmas about limits of sequences/series. *)
