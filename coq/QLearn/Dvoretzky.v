@@ -387,6 +387,15 @@ Section Derman_Sacks.
   Proof.
   Admitted.
 
+  Lemma Rmax_list_plus_r (f g : nat -> R) (r : R) (n h : nat) :
+    (forall (c:nat), 
+        (c < h)%nat ->
+        f (n + c)%nat + r = g (n + c)%nat) ->
+    Rmax_list (map f (seq n h)) + r = Rmax_list (map g (seq n h)).
+  Proof.
+    Admitted.
+                     
+
   Lemma DS_1_helper (a b c delta zeta : nat -> R) (N0 N : nat)
     (b1pos :forall n, 0 <= b n) :
     (forall n, 
@@ -482,7 +491,16 @@ Section Derman_Sacks.
               replace (delta (S (h + N)) + - c (S (h + N))) with
                   (B (S (h + N)%nat) * (f (S (h + N)%nat))).
               ++ right.
-                 admit.
+                 apply Rmax_list_plus_r.
+                 intros.
+                 subst B.
+                 unfold part_prod.
+                 rewrite part_prod_n_S; try lia.
+                 simpl.
+                 rewrite sum_n_Sm; try lia.
+                 unfold plus; simpl.
+                 field.
+                 apply Rgt_not_eq, part_prod_n_pos.                 
               ++ subst f; simpl; field.
                  apply Rgt_not_eq, part_prod_n_pos.                 
          * symmetry.
