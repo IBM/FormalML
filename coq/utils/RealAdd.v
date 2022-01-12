@@ -2946,6 +2946,21 @@ Section Rmax_list.
       -- rewrite map_not_nil. congruence.
   Qed.
 
+  Lemma Rmax_list_map_plus {A} (f g : A -> R) (l : list A) :
+    Max_{ l} (fun a => f a + g a) <=
+    Max_{ l} (f) + Max_{ l} (g).
+   Proof.
+    destruct (is_nil_dec l).
+    - subst; simpl. lra.
+    - rewrite Rmax_list_le_iff.
+      + intros x Hx. rewrite in_map_iff in Hx.
+        destruct Hx as [a [Ha Hina]].
+        rewrite <-Ha.
+        apply Rplus_le_compat; try (apply Rmax_spec; rewrite in_map_iff; exists a; split ; trivial).
+      + rewrite map_not_nil.
+        congruence.
+  Qed.
+
   Lemma Rmax_list_map_triangle {A} (f g : A -> R) (l : list A):
     Max_{ l}(fun a : A => Rabs (f a + g a)) <=
     Max_{ l}(fun a : A => Rabs (f a)) + (Max_{ l}(fun a : A => Rabs (g a))).
