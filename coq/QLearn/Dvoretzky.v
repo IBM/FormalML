@@ -389,9 +389,9 @@ Section Derman_Sacks.
 
   Lemma Rmax_list_plus_r (f g : nat -> R) (r : R) (n h : nat) :
     (forall (c:nat), 
-        (c < h)%nat ->
+        (c <= h)%nat ->
         f (n + c)%nat + r = g (n + c)%nat) ->
-    Rmax_list (map f (seq n h)) + r = Rmax_list (map g (seq n h)).
+    Rmax_list (map f (seq n (S h))) + r = Rmax_list (map g (seq n (S h))).
   Proof.
     Admitted.
                      
@@ -514,9 +514,7 @@ Section Derman_Sacks.
          apply Rgt_not_eq.
          apply part_prod_n_pos.
 
-      Admitted.
-
-    
+      Qed.
 
   Lemma DS_1 (a b c delta zeta : nat -> R) :
     (forall n, 0 <= a n) ->
