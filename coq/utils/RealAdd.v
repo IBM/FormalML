@@ -3179,7 +3179,7 @@ Section Rmax_list.
     split; intros Heps.
     + unfold Rmax_list_map in Heps.
       generalize (Rmax_list_map_exist X (seq 0%nat n)); intros.
-      generalize (seq_not_nil n Hn); intros.
+      generalize (seq_not_nil 0 n Hn); intros.
       specialize (H H0).
       destruct H as [k [Hin Heq]].
       exists k; intros.

@@ -203,12 +203,11 @@ Section Seq.
       trivial.
   Qed.
 
-  Lemma seq_not_nil : forall n, (0 < n)%nat  -> [] <> seq 0 n.
+  Lemma seq_not_nil : forall m n, (0 < n)%nat  -> [] <> seq m n.
   Proof.
     induction n; simpl; intuition.
     generalize (nil_cons H0); trivial.
   Qed.
-
 
   Lemma sublist_seq_le :
     forall n k, (n <= k)%nat -> sublist (seq 0 n) (seq 0 k).
