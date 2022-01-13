@@ -670,33 +670,33 @@ Section Derman_Sacks.
 
       Qed.
 
-  Lemma DS_1 (a b c delta zeta : nat -> R) :
+    Lemma DS_1_part1 (a b c delta zeta : nat -> R) (N0 N:nat)
+          (b1pos : forall n, 0 <= b n) :
     (forall n, 0 <= a n) ->
-    (forall n, 0 <= b n) ->
+    (N > N0)%nat ->
     (forall n, 0 <= c n) ->
-    (forall n, 0 <= delta n) ->
+    (forall n, 0 <= zeta n) ->
     is_lim_seq a 0 ->
     ex_series b ->
     ex_series delta ->
     is_lim_seq (sum_n c) p_infty ->
-    (exists (N : nat), 
-        forall n, (n>= N)%nat -> 
-                  zeta (S n) <= Rmax (a n) ((1+b n)*zeta n + delta n - c n)) ->
-    is_lim_seq zeta 0.
+    (forall n, (n>= N0)%nat -> 
+               zeta (S n) <= Rmax (a n) ((1+b n)*zeta n + delta n - c n)) ->
+    let B := part_prod (fun i => mkposreal _ (pos1 (b i) (b1pos i))) in
+    exists (N1 : nat),
+      (N1 > N)%nat ->
+      forall n, 
+        (n > N1)%nat ->
+        zeta (S n) <= (Rmax_list
+                         (map (fun k => 
+                                 (B n)/(B k)*(a k)  +
+                                 (B n) * sum_n_m (fun j => (delta j - c j)/(B j)) (S k) n)
+                              (seq N (S (n-N))%nat))).
   Proof.
     intros.
-    pose (B := part_prod (fun i => mkposreal _ (pos1 (b i) (H0 i)))).
-    destruct H7 as [N ?].
-    assert (forall (n:nat),
-               (n > N)%nat ->
-               zeta (S n) <= Rmax (((B n)/(B (N-1)%nat))*(zeta N) +
-                                   (B n) * sum_n_m (fun j => (delta j - c j)/(B j)) N n)
-                                  (Rmax_list
-                                     (map (fun k => 
-                                             (B n)/(B k)*(a k)  +
-                                             (B n) * sum_n_m (fun j => (delta j - c j)/(B j)) (S k) n) 
-                                          (seq N (S (n-N))%nat)))) by admit.
-    generalize (Fprod_B2 b H0 H4); intros.
+    generalize (DS_1_helper a b c delta zeta N0 N b1pos); intros.
+    cut_to H8; trivial.
+    generalize (Fprod_B2 b b1pos H4); intros.
     destruct H9 as [BB ?].
     assert (Bincr:forall m, B m <= B (S m)).
     {
@@ -707,12 +707,12 @@ Section Derman_Sacks.
       simpl.
       replace
         (part_prod_n
-           (fun n0 : nat => {| pos := 1 + b n0; cond_pos := pos1 (b n0) (H0 n0) |}) 0 m) with
+           (fun n0 : nat => {| pos := 1 + b n0; cond_pos := pos1 (b n0) (b1pos n0) |}) 0 m) with
           ((part_prod_n
-              (fun n0 : nat => {| pos := 1 + b n0; cond_pos := pos1 (b n0) (H0 n0) |}) 0 m)*1) at 1 by lra.
+              (fun n0 : nat => {| pos := 1 + b n0; cond_pos := pos1 (b n0) (b1pos n0) |}) 0 m)*1) at 1 by lra.
       apply Rmult_le_compat_l.
       + left; apply pos_part_prod_n.
-      + generalize (H0 (S m)); lra.
+      + generalize (b1pos (S m)); lra.
     }
     assert (forall m, B m <= BB).
     {
@@ -794,24 +794,159 @@ Section Derman_Sacks.
                                     (l2 := p_infty); trivial.
         now unfold is_Rbar_minus, is_Rbar_plus; simpl.
     }
-        
-    assert (exists (N1:nat),
-               forall (n:nat), 
-                 (n > N1)%nat ->
-                 (((B n)/(B (N-1)%nat))*(zeta N) +
-                  (B n) * sum_n_m (fun j => (delta j - c j)/(B j)) N n) < 0) by admit.
-    apply is_lim_seq_le_le_loc with
-        (u := const 0) (w := (fun n =>
-                               (Rmax_list
-                                     (map (fun k => 
-                                             (B n)/(B k)*(a k)  +
-                                             (B n) * sum_n_m (fun j => (delta j - c j)/(B j)) (S k) n) 
-                                          (seq N (S (n-N))%nat))))).   
-    
-    
-    Admitted.
+    assert (is_lim_seq 
+              (fun n => (B n)* sum_n_m (fun j : nat => (delta j - c j) / B j) N n) m_infty).
+    {
+      assert (is_lim_seq 
+              (fun n => sum_n_m (fun j : nat => (delta j - c j) / B j) N n) m_infty).
+      - rewrite is_lim_seq_incr_n with (N := N).
+        apply is_lim_seq_ext with
+            (u := fun n => 
+                    (sum_n_m (fun j : nat => (delta j - c j) / B j) 0 (n + N)) -
+                    (sum_n_m (fun j : nat => (delta j - c j) / B j) 0 (N-1))).
+        intros.
+        rewrite sum_split with (m := (N-1)%nat); try lia.        
+        unfold plus; simpl; ring_simplify.
+        replace (S (N-1))%nat with N by lia; trivial.
+        apply is_lim_seq_minus with 
+            (l1 := m_infty)
+            (l2 := sum_n_m (fun j : nat => (delta j - c j) / B j) 0 (N - 1)).
+        + now rewrite is_lim_seq_incr_n with (N := N) in H13.
+        + apply is_lim_seq_const.
+        + now unfold is_Rbar_minus, is_Rbar_plus; simpl.
+      - apply is_lim_seq_mult with (l1 := Lim_seq (fun n => B n)) (l2 := m_infty); trivial.
+        + apply Lim_seq_correct.
+          now apply ex_lim_seq_incr.
+        + apply is_Rbar_mult_sym.
+          apply is_Rbar_mult_m_infty_pos.
+          apply Rbar_lt_le_trans with (y := B 0%nat).
+          * unfold B; simpl.
+            apply part_prod_n_pos.
+          * replace (Finite (B 0%nat)) with (Lim_seq (const (B 0%nat))) by apply Lim_seq_const.
+            apply Lim_seq_le_loc.
+            exists (0%nat); intros.
+            unfold const.
+            induction n.
+            -- lra.
+            -- eapply Rle_trans.
+               apply IHn; try lia.
+               apply Bincr.
+     }
+    assert (
+      exists (N1 : nat),
+        (N1 > N)%nat ->
+        forall n, 
+          (n > N1)%nat ->
+          (B n / B (N - 1)%nat * zeta N +
+           B n * sum_n_m (fun j : nat => (delta j - c j) / B j) N n) < 0).
+    {
+      assert (is_lim_seq
+                (fun n => B n / B (N - 1)%nat * zeta N +
+                          B n * sum_n_m (fun j : nat => (delta j - c j) / B j) N n) m_infty).
+      - assert (forall n, B n / B (N-1)%nat * zeta N <= BB / B(N-1)%nat * zeta N).
+        {
+          intros.
+          unfold Rdiv.
+          apply Rmult_le_compat_r; trivial.
+          apply Rmult_le_compat_r; trivial.
+          left; apply Rinv_0_lt_compat.
+          apply part_prod_n_pos.
+        }
+        apply is_lim_seq_spec.
+        unfold is_lim_seq'.
+        intros.
+        apply is_lim_seq_spec in H14.
+        unfold is_lim_seq' in H14.
+        specialize (H14 ((M - BB /B(N-1)%nat * zeta N))).
+        destruct H14.
+        exists x.
+        intros.
+        specialize (H14 n H16).
+        specialize (H15 n).
+        lra.
+      - apply is_lim_seq_spec in H15.
+        unfold is_lim_seq' in H15.
+        specialize (H15 0).
+        destruct H15.
+        exists (max x N).
+        intros.
+        specialize (H15 n).
+        now cut_to H15; try lia.
+    }
+    destruct H15.
+    exists x; intros.
+    specialize (H8 n).
+    cut_to H8; try lia.
+    rewrite Rmax_right in H8.
+    now unfold B.
+    left.
+    eapply Rlt_le_trans.
+    apply H15; try lia.
+    apply Rmax_Rle in H8.
+    destruct H8.
+    - specialize (H15 H16 n H17).
+      specialize (H2 (S n)).
+      unfold B in H15.
+      lra.
+    - specialize (H2 (S n)).
+      lra.
+  Qed.
 
-
+  Lemma DS_1_part2 (a b c delta zeta : nat -> R) (N0 N:nat)
+        (b1pos : forall n, 0 <= b n) :
+    (forall n, 0 <= a n) ->
+    (N > N0)%nat ->
+    (forall n, 0 <= c n) ->
+    (forall n, 0 <= zeta n) ->
+    is_lim_seq a 0 ->
+    ex_series b ->
+    ex_series delta ->
+    is_lim_seq (sum_n c) p_infty ->
+    (forall n, (n>= N0)%nat -> 
+               zeta (S n) <= Rmax (a n) ((1+b n)*zeta n + delta n - c n)) ->
+    let B := part_prod (fun i => mkposreal _ (pos1 (b i) (b1pos i))) in
+    
+    exists (N1 : nat),
+      (N1 > N)%nat ->
+      forall n, 
+        (n > N1)%nat ->
+        zeta (S n) <=
+        (Lim_seq B) *
+        (Sup_seq (fun n => a (n + N)%nat) +
+         (Rmax_list
+           (map (fun k => Rabs
+                            (sum_n_m (fun j => (delta j)/(B j)) (S k) n))
+                (seq N (S (n-N))%nat)))).
+   Proof.
+     intros.
+     generalize (DS_1_part1 a b c delta zeta N0 N b1pos); intros.
+     cut_to H8; trivial.
+     destruct H8.
+     exists x; intros.
+     specialize (H8 H9 n H10).
+     eapply Rle_trans.
+     apply H8.
+     generalize (Rmax_list_map_plus
+                   (fun k => (B n)/(B k)*(a k))
+                   (fun k =>
+                      (B n) * sum_n_m (fun j => (delta j - c j)/(B j)) (S k) n)
+                   (seq N (S (n-N))%nat)); intros.
+     eapply Rle_trans.
+     apply H11.
+     rewrite Rmult_plus_distr_l.
+     apply Rplus_le_compat.
+     - admit.
+     - rewrite <- Rmax_list_map_const_mul.
+       + apply Rmax_list_fun_le.
+         intros.
+         admit.
+       + generalize (Lim_seq_pos B); intros.
+         destruct (Lim_seq B); try now simpl.
+         simpl in H12; apply H12.
+         intros.
+         left; apply part_prod_n_pos.
+     
+     Admitted.
   
 
 End Derman_Sacks.    
