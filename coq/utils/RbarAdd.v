@@ -1340,3 +1340,76 @@ Qed.
   Qed.
 
 End lim_sum.
+
+Section Rmax_list.
+
+  Lemma Rmax_list_lim_Sup_seq (a : nat -> R) (N : nat) :
+    Lim_seq (fun M => Rmax_list (map a (seq N M))) = Sup_seq (fun n0 : nat => a (n0 + N)%nat).
+  Proof.
+    rewrite <- Elim_seq_fin.
+    rewrite <- ELim_seq_incr_1.
+    apply is_Elim_seq_unique.
+    apply is_Elim_seq_fin.
+    apply lim_seq_is_lub_incr.
+    - intros.
+      rewrite (seq_Sn _ (S n)).
+      rewrite Rmax_list_app.
+      + apply Rmax_l.
+      + simpl; congruence.
+    - split.
+      + intros n [??]; subst.
+        generalize (Rmax_list_In (map a (seq N (S x)))); intros HH.
+        cut_to HH; [| simpl; congruence].
+        apply in_map_iff in HH.
+        destruct HH as [?[??]].
+        rewrite <- H.
+        apply in_seq in H0.
+        apply (Sup_seq_minor_le _ _ (x0-N)).
+        replace (x0 - N + N)%nat with x0 by lia.
+        apply Rbar_le_refl.
+      + intros ??.
+        red in H.
+        unfold Sup_seq, proj1_sig.
+        match_destr.
+        destruct x; simpl in i.
+        * apply Rbar_le_forall_Rbar_le; intros eps.
+          destruct (i eps) as [?[??]].
+          specialize (H (Rmax_list (map a (seq N (S x))))).
+          cut_to H; [| eauto].
+          generalize (@Rmax_spec (map a (seq N (S x))) (a (x+N)%nat)); intros HH.
+          cut_to HH.
+          -- destruct b; simpl in *; lra.
+          -- apply in_map.
+             apply in_seq.
+             lia.
+        * destruct b; simpl; trivial.
+          -- destruct (i r).
+             specialize (H (Rmax_list (map a (seq N (S x))))).
+             cut_to H; [| eauto].
+             generalize (@Rmax_spec (map a (seq N (S x))) (a (x+N)%nat)); intros HH.
+             cut_to HH.
+             ++ simpl in *; lra.
+             ++ apply in_map.
+                apply in_seq.
+                lia.
+          -- apply (H (a N)).
+             exists 0%nat.
+             reflexivity.
+        * now simpl.
+  Qed.
+
+  Lemma Rmax_list_Sup_seq (a : nat -> R) (N M : nat) :
+    Rbar_le (Rmax_list (map a (seq N (S M)))) (Sup_seq (fun n0 : nat => a (n0 + N)%nat)).
+  Proof.
+    rewrite <- Rmax_list_lim_Sup_seq.
+    rewrite <- Elim_seq_fin.
+    rewrite <- ELim_seq_incr_1.
+    apply (Elim_seq_incr_elem (fun x : nat => Rmax_list (map a (seq N (S x))))); intros.
+    rewrite (seq_Sn _ (S n)).
+    rewrite Rmax_list_app.
+    - simpl.
+      apply Rmax_l.
+    - simpl; congruence.
+  Qed.
+
+End Rmax_list.
