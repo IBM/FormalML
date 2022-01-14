@@ -892,6 +892,25 @@ Section Derman_Sacks.
       lra.
   Qed.
 
+  Lemma Rmax_list_Sup_seq (a : nat -> R) (N M : nat) :
+        Rmax_list (map a (seq N (S M))) <= Sup_seq (fun n0 : nat => a (n0 + N)%nat).
+  Proof.
+  Admitted.
+
+  Lemma Rmult_le_compat2 (r1 r2 r3 r4 : R) :
+    0 <= r1 -> 0 <= r2 -> 0 <= r4 ->
+    r1 <= r2 -> r3 <= r4 ->
+    r1 * r3 <= r2 * r4.
+  Proof.
+    intros.
+    destruct (Rle_dec 0 r3).
+    - now apply Rmult_le_compat.
+    - apply Rle_trans with (r2 := 0).
+      + rewrite Rmult_comm.
+        apply Rmult_le_0_r; lra.
+      + now apply Rmult_le_pos.
+  Qed.
+
   Lemma DS_1_part2 (a b c delta zeta : nat -> R) (N0 N:nat)
         (b1pos : forall n, 0 <= b n) :
     (forall n, 0 <= a n) ->
@@ -926,6 +945,35 @@ Section Derman_Sacks.
      specialize (H8 H9 n H10).
      eapply Rle_trans.
      apply H8.
+     assert (Blim:Rbar_le (B n) (Lim_seq B)).
+     {
+       apply Lim_seq_increasing_le.
+       intros.
+       subst B.
+       unfold part_prod.
+       rewrite part_prod_n_S; try lia.
+       simpl.
+       replace
+         (part_prod_n
+            (fun i : nat => {| pos := 1 + b i; cond_pos := pos1 (b i) (b1pos i) |}) 0 n0) with
+           ((part_prod_n
+               (fun i : nat => {| pos := 1 + b i; cond_pos := pos1 (b i) (b1pos i) |}) 0 n0)*1) at 1 by lra.
+       apply Rmult_le_compat_l.
+       - left; apply pos_part_prod_n.
+       - generalize (b1pos (S n0)); lra.
+     }
+     assert (fin_LimB: is_finite (Lim_seq B)).
+     { 
+       generalize (Fprod_B2 b b1pos H4); intros.
+       destruct H11.
+       apply bounded_is_finite with (a := 0) (b := x0); trivial.
+       apply Lim_seq_pos.
+       intros.
+       left.
+       apply pos_part_prod.
+     }
+     rewrite <- fin_LimB in Blim.
+     simpl in Blim.
      generalize (Rmax_list_map_plus
                    (fun k => (B n)/(B k)*(a k))
                    (fun k =>
@@ -935,19 +983,134 @@ Section Derman_Sacks.
      apply H11.
      rewrite Rmult_plus_distr_l.
      apply Rplus_le_compat.
-     - admit.
+     - apply Rle_trans with
+           (r2 :=  Rmax_list (map (fun k : nat => B n * a k) (seq N (S (n - N)))) ).
+       + apply Rmax_list_fun_le.
+         intros.
+         apply Rmult_le_compat_r; trivial.
+         unfold Rdiv.
+         replace (B n) with ((B n)*1) at 2 by lra.
+         apply Rmult_le_compat_l.
+         * left.
+           apply pos_part_prod.
+         * replace (1) with (/1) by lra.
+           apply Rinv_le_contravar; try lra.
+           unfold B.
+           assert (0 < 1) by lra.
+           assert (part_prod (fun i => mkposreal _ H12) a0 <=
+                   part_prod (fun i : nat => {| pos := 1 + b i; cond_pos := pos1 (b i) (b1pos i) |}) a0).
+           {
+             apply part_prod_le2.
+             intros; simpl.
+             generalize (b1pos j); lra.
+           }
+           eapply Rle_trans.
+           shelve.
+           apply H13.
+           Unshelve.
+           right.
+           clear H13.
+           induction a0.
+           -- unfold part_prod, part_prod_n.
+              simpl; lra.
+           -- unfold part_prod.
+              rewrite part_prod_n_S; try lia.
+              unfold part_prod in IHa0.
+              rewrite <- IHa0.
+              simpl; lra.
+       + assert (forall n, 0<B n).
+         {
+           intros.
+           apply pos_part_prod.
+         }
+         rewrite Rmax_list_map_const_mul; [| now left].
+         apply Rmult_le_compat; trivial.
+         * now left.
+         * now apply Rmax_list_map_nonneg.
+         * apply Rmax_list_Sup_seq.
      - rewrite <- Rmax_list_map_const_mul.
        + apply Rmax_list_fun_le.
          intros.
-         admit.
+         apply Rmult_le_compat2.
+         * left; apply pos_part_prod.
+         * generalize (Lim_seq_pos B); intros.
+           cut_to H12; [|left; apply pos_part_prod].
+           now rewrite <- fin_LimB in H12.
+         * apply Rabs_pos.
+         * 
+           assert (Bincr:forall m, B m <= B (S m)).
+           {
+             intros.
+             subst B.
+             unfold part_prod.
+             rewrite part_prod_n_S; try lia.
+             simpl.
+             replace
+               (part_prod_n
+                  (fun n0 : nat => {| pos := 1 + b n0; cond_pos := pos1 (b n0) (b1pos n0) |}) 0 m) with
+                 ((part_prod_n
+                     (fun n0 : nat => {| pos := 1 + b n0; cond_pos := pos1 (b n0) (b1pos n0) |}) 0 m)*1) at 1 by lra.
+             apply Rmult_le_compat_l.
+             + left; apply pos_part_prod_n.
+             + generalize (b1pos (S m)); lra.
+           }
+           generalize (Lim_seq_increasing_le B); intros.
+           now cut_to H12.
+         * assert (forall n,
+                      ((fun j : nat => (delta j - c j) / B j) n) =
+                      ((fun j : nat => plus (delta j/B j) (- c j / B j)) n)).
+           {
+             intros.
+             unfold plus; simpl.
+             field.
+             apply Rgt_not_eq.
+             apply pos_part_prod.
+           }
+           rewrite (sum_n_m_ext _ _ _ _ H12).
+           rewrite sum_n_m_plus.
+           unfold plus; simpl.
+           replace  (Rabs (sum_n_m (fun j : nat => delta j / B j) (S a0) n)) with
+               (Rabs (sum_n_m (fun j : nat => delta j / B j) (S a0) n) + 0) by lra.
+           apply Rplus_le_compat.
+           -- apply Rle_abs.
+           -- replace (0) with (sum_n_m (const 0) (S a0) n).
+              ++ apply sum_n_m_le.
+                 intros.
+                 unfold const.
+                 unfold Rdiv.
+                 apply Rmult_le_0_r.
+                 ** specialize (H1 k).
+                    lra.
+                 ** left.
+                    apply Rinv_0_lt_compat.
+                    apply pos_part_prod.
+              ++ replace (const 0) with (fun (n:nat) => (@zero R_AbelianGroup)).
+                 ** rewrite sum_n_m_const_zero.
+                    now unfold zero.
+                 ** now unfold const, zero; simpl.
        + generalize (Lim_seq_pos B); intros.
          destruct (Lim_seq B); try now simpl.
          simpl in H12; apply H12.
          intros.
          left; apply part_prod_n_pos.
-     
-     Admitted.
+     Qed.
   
+  Lemma DS_1 (a b c delta zeta : nat -> R) (N0 : nat)
+        (b1pos : forall n, 0 <= b n) :
+    (forall n, 0 <= a n) ->
+    (forall n, 0 <= c n) ->
+    (forall n, 0 <= zeta n) ->
+    is_lim_seq a 0 ->
+    ex_series b ->
+    ex_series delta ->
+    is_lim_seq (sum_n c) p_infty ->
+    (forall n, (n>= N0)%nat -> 
+               zeta (S n) <= Rmax (a n) ((1+b n)*zeta n + delta n - c n)) ->
+    is_lim_seq zeta 0.
+  Proof.
+    intros.
+    generalize (DS_1_part2 a b c delta zeta N0); intros.
+    Admitted.
 
 End Derman_Sacks.    
   
