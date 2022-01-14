@@ -670,6 +670,16 @@ Section Derman_Sacks.
 
       Qed.
 
+   Lemma sup_seq_pos (f : nat -> R) :
+     (forall n, 0 <= f n) ->
+     Rbar_le 0 (Sup_seq f).
+   Proof.
+     intros.
+     replace (Finite 0) with (Sup_seq (fun _ => 0)).
+     now apply Sup_seq_le.
+     apply Sup_seq_const.
+   Qed.
+   
     Lemma DS_1_part1 (a b c delta zeta : nat -> R) (N0 N:nat)
           (b1pos : forall n, 0 <= b n) :
     (forall n, 0 <= a n) ->
@@ -1025,12 +1035,7 @@ Section Derman_Sacks.
              apply is_lim_seq_bounded in H3.
              destruct H3 as [? ?].
              apply bounded_is_finite with (a := 0) (b := x0).
-             - replace (Finite 0) with (Sup_seq (const 0)).
-               + apply Sup_seq_le.
-                 intros; unfold const.
-                 now simpl.
-               + unfold const.
-                 apply Sup_seq_const.
+             - now apply sup_seq_pos.
              - apply sup_le_bound.
                intros.
                specialize (H3 (n0 + N)%nat).
@@ -1104,8 +1109,8 @@ Section Derman_Sacks.
          intros.
          left; apply part_prod_n_pos.
      Qed.
-  
-  Lemma DS_1 (a b c delta zeta : nat -> R) (N0 : nat)
+
+  Lemma DS_1 (a b c delta zeta : nat -> R)
         (b1pos : forall n, 0 <= b n) :
     (forall n, 0 <= a n) ->
     (forall n, 0 <= c n) ->
@@ -1114,11 +1119,13 @@ Section Derman_Sacks.
     ex_series b ->
     ex_series delta ->
     is_lim_seq (sum_n c) p_infty ->
-    (forall n, (n>= N0)%nat -> 
-               zeta (S n) <= Rmax (a n) ((1+b n)*zeta n + delta n - c n)) ->
+    (exists (N0:nat),
+      (forall n, (n>= N0)%nat -> 
+               zeta (S n) <= Rmax (a n) ((1+b n)*zeta n + delta n - c n))) ->
     is_lim_seq zeta 0.
   Proof.
     intros.
+    destruct H6 as [N0 ?].
     apply is_lim_seq_spec.
     unfold is_lim_seq'.
     intros.
@@ -1154,7 +1161,14 @@ Section Derman_Sacks.
         apply Bincr.
       - now simpl in H8.
     }
-
+     assert (fin_LimB: is_finite (Lim_seq B)).
+     { 
+       apply bounded_is_finite with (a := 0) (b := BB); trivial.
+       apply Lim_seq_pos.
+       intros.
+       left.
+       apply pos_part_prod.
+     }
     assert (ex_series (fun j => (delta j)/(B j))).
     {
       unfold Rdiv.
@@ -1175,7 +1189,71 @@ Section Derman_Sacks.
                  (NN >= N2)%nat ->
                  (Lim_seq B *
                   (Sup_seq (fun n0 : nat => a (n0 + NN)%nat))) <
-                 (eps/2)) by admit.
+                 (eps/2)).
+    {
+      apply is_lim_seq_spec in H2.
+      unfold is_lim_seq' in H2.
+      assert (0 < eps / ((2 * BB) + 1)).
+      {
+        apply Rdiv_lt_0_compat.
+        - apply cond_pos.
+        - assert (0 < BB).
+          + apply Rlt_le_trans with (r2 := B 0%nat); trivial.
+            apply pos_part_prod.
+          + lra.
+      }
+      specialize (H2 (mkposreal _ H10)).
+      destruct H2.
+      exists x; intros.
+      replace (eps/2) with (BB * (eps/(2*BB))).
+      - apply Rle_lt_trans with
+            (r2 := BB * Sup_seq (fun n0 : nat => a (n0 + NN)%nat)).
+        + apply Rmult_le_compat_r.
+          * generalize (sup_seq_pos (fun n0 : nat => a (n0 + NN)%nat)); intros.
+            cut_to H12; trivial.
+            destruct ( Sup_seq (fun n0 : nat => a (n0 + NN)%nat)); trivial.
+            simpl; lra.
+            simpl; lra.            
+          * unfold B in fin_LimB.
+            rewrite <- fin_LimB in H7.
+            now simpl in H7.
+        + apply Rmult_lt_compat_l.
+          apply Rlt_le_trans with
+              (r2 := (B 0%nat)); trivial.
+          apply pos_part_prod.
+          apply Rle_lt_trans with
+              (r2 := eps / (2 * BB + 1)).
+          * generalize (sup_le_bound  
+                          (fun n0 : nat => a (n0 + NN)%nat)
+                          (eps / (2 * BB + 1))); intros.
+            destruct H12.
+            cut_to H12.
+            -- destruct ( Sup_seq (fun n0 : nat => a (n0 + NN)%nat)); trivial.
+               simpl; lra.
+               simpl; lra.
+            -- intros.
+               specialize (H2 (n + NN)%nat).
+               cut_to H2; try lia.
+               rewrite Rminus_0_r in H2.
+               rewrite Rabs_right in H2.
+               now left.
+               apply Rle_ge, H.
+          * unfold Rdiv.
+            apply Rmult_lt_compat_l.
+            -- apply cond_pos.
+            -- apply Rinv_lt_contravar.
+               ++ assert (0 < BB).
+                  ** apply Rlt_le_trans with (r2 := B 0%nat); trivial.
+                     apply pos_part_prod.
+                  ** apply Rmult_lt_0_compat; lra.
+               ++ lra.
+      - field.
+        apply Rgt_not_eq.
+        apply Rlt_le_trans with
+            (r2 := (B 0%nat)); trivial.
+        apply pos_part_prod.
+    }
+        
     destruct H10 as [N2 ?].
     
     assert (exists N3,
