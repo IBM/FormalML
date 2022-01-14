@@ -1827,14 +1827,49 @@ Section martingale.
   Proof.
     unfold classic_min_of.
     match_destr.
-  Qed.  
+  Qed.
+
+  Global Instance classic_min_of_proper :
+    Proper (pointwise_relation _ iff ==> eq) classic_min_of.
+  Proof.
+    intros ???.
+    unfold classic_min_of.
+    repeat match_destr.
+    - destruct s as [?[??]].
+      destruct s0 as [?[??]]; simpl.
+      f_equal.
+      apply antisymmetry.
+      + apply not_lt; intros HH.
+        apply H in y0.
+        specialize (n _ HH); tauto.
+      + apply not_lt; intros HH.
+        apply H in x1.
+        specialize (n0 _ HH); tauto.
+    - destruct s as [?[??]].
+      elim (n x0).
+      now apply H.
+    - destruct s as [?[??]].
+      elim (n x0).
+      now apply H.
+  Qed.
 
   Definition hitting_time
              (X : nat -> Ts -> R)
              (B:event borel_sa)
              (a:Ts) : option nat
     := classic_min_of (fun k => B (X k a)).
-  
+
+  Global Instance hitting_time_proper :
+      Proper (pointwise_relation _ (pointwise_relation _ eq) ==> event_equiv ==> pointwise_relation _ eq)
+             hitting_time.
+    Proof.
+      intros ???????.
+      unfold hitting_time.
+      apply classic_min_of_proper; intros ?.
+      rewrite H.
+      apply H0.
+    Qed.
+
   Lemma hitting_time_is_stop
         (X : nat -> Ts -> R) (sas:nat->SigmaAlgebra Ts)
         {filt:IsFiltration sas}
@@ -1955,6 +1990,226 @@ Section martingale.
              ++ unfold pre_event_none; intros ?; tauto.
              ++ auto with prob.
   Qed.
+
+    Lemma is_stopping_time_compose_incr (sas : nat -> SigmaAlgebra Ts) (t1: Ts -> option nat) (t2 : nat -> Ts -> option nat)
+          {filt:IsFiltration sas} :
+
+      is_stopping_time t1 sas ->
+      (forall old, is_stopping_time (t2 old) sas) ->
+      (forall old n ts, t2 old ts = Some n -> old <= n)%nat ->
+      is_stopping_time (fun ts =>
+                          match (t1 ts) with
+                          | Some old => t2 old ts
+                          | None => None
+                          end
+                       ) sas.
+    Proof.
+      intros stop1 stop2 incr2 n.
+      unfold stopping_time_pre_event.
+      apply (sa_proper _ (fun x => exists old, old <= n /\ t1 x = Some old /\ t2 old x = Some n)%nat).
+      - intros ?.
+        match_destr.
+        + split.
+          * intros [?[?[??]]].
+            now invcs H0.
+          * eauto. 
+        + split; [| congruence].
+          intros [?[?[??]]]; congruence.
+      - apply sa_countable_union; intros old.
+        destruct (le_dec old n).
+        + apply sa_inter.
+          * eapply sa_proper; try eapply sa_all.
+            firstorder.
+          * apply sa_inter.
+            -- generalize (stop1 old).
+               now apply is_filtration_le.
+            -- apply stop2.
+        + eapply sa_proper; try eapply sa_none.
+          firstorder.
+    Qed.
+    
+    Definition hitting_time_from
+               (X : nat -> Ts -> R)
+               (old:nat)
+               (B:event borel_sa)
+               (a:Ts) : option nat
+      := match hitting_time (fun k => X (k + old)%nat) B a with
+         | None => None
+         | Some k => Some (k + old)%nat
+         end.
+
+    Global Instance hitting_time_from_proper :
+      Proper (pointwise_relation _ (pointwise_relation _ eq) ==> eq ==> event_equiv ==> pointwise_relation _ eq)
+             hitting_time_from.
+    Proof.
+      intros ??????????.
+      unfold hitting_time_from.
+      subst.
+      erewrite hitting_time_proper.
+      - reflexivity.
+      - intros ?; apply H.
+      - trivial.
+    Qed.
+
+    Lemma hitting_time_from0
+          (X : nat -> Ts -> R)
+          (B:event borel_sa)
+          (a:Ts) :
+      hitting_time_from X 0%nat B a = hitting_time X B a.
+    Proof.
+      unfold hitting_time_from.
+      erewrite hitting_time_proper.
+      shelve.
+      {
+        intros ?.
+        rewrite plus_0_r.
+        reflexivity.
+      }
+      {
+        reflexivity.
+      }
+      Unshelve.
+      match_destr.
+      now rewrite plus_0_r.
+    Qed.
+    
+    Lemma hitting_time_from_is_stop
+          (X : nat -> Ts -> R) (old:nat) (sas:nat->SigmaAlgebra Ts)
+          {filt:IsFiltration sas}
+          {adaptX:IsAdapted borel_sa X sas}
+          (B:event borel_sa) : is_stopping_time (hitting_time_from X old B) sas.
+    Proof.
+    unfold hitting_time_from, hitting_time.
+    intros ?.
+    unfold stopping_time_pre_event.
+    destruct (le_dec old n).
+    - apply (sa_proper _ (fun x => B (X (n)%nat x) /\
+                                forall k, (old <= k < n)%nat -> ~ B (X k x))).
+      {
+        intros ?.
+        split; intros HH.
+        - case_eq (classic_min_of (fun k : nat => B (X (k+old)%nat x))); intros.
+          + destruct HH as [??].
+            f_equal.
+            apply antisymmetry
+            ; apply not_lt
+            ; intros HH.
+            * apply (classic_min_of_some_first _ _ H (n-old)); [lia |].
+              now replace (n - old + old)%nat with n by lia.
+            * specialize (H1 (n0 + old)%nat).
+              cut_to H1; [| lia].
+             apply classic_min_of_some in H; eauto.
+          + eapply classic_min_of_none with (k:=(n-old)%nat) in H.
+            elim H.
+              replace (n - old + old)%nat with n by lia.
+              apply HH.
+        - match_option_in HH.
+          invcs HH.
+          split.
+          + now apply classic_min_of_some in eqq.
+          + intros.
+            generalize (classic_min_of_some_first _ _ eqq (k-old)%nat); intros HH.
+            replace (k - old + old)%nat with k in HH by lia.
+            apply HH.
+            lia.
+      }
+      apply sa_inter.
+      + apply adaptX.
+      + apply sa_pre_countable_inter; intros.
+        destruct (le_dec old n0).
+        {
+          destruct (lt_dec n0 n).
+          - apply (sa_proper _ (fun x => ~ B (X n0 x))).
+            + intros ?; tauto.
+            + apply sa_complement.
+             generalize (adaptX n0 B).
+             eapply is_filtration_le; trivial.
+             lia.
+          - apply (sa_proper _ pre_Ω).
+            + unfold pre_Ω ; intros ?.
+              split; try tauto.
+            + apply sa_all.
+        }
+        apply (sa_proper _ pre_Ω).
+        * unfold pre_Ω ; intros ?.
+          split; try tauto.
+        * apply sa_all.
+    - apply (sa_proper _ event_none).
+      + intros ?.
+        split; intros HH; [red in HH; tauto |].
+        match_destr_in HH.
+        invcs HH.
+        lia.
+      + apply sa_none.
+    Qed.
+
+    Lemma hitting_time_from_ge
+          (X : nat -> Ts -> R) (old:nat) (sas:nat->SigmaAlgebra Ts)
+          {filt:IsFiltration sas}
+          {adaptX:IsAdapted borel_sa X sas}
+          (B:event borel_sa) ts (n:nat) :
+      hitting_time_from X old B ts = Some n ->
+      (old <= n)%nat.
+    Proof.
+      unfold hitting_time_from.
+      match_destr.
+      intros HH; invcs HH.
+      lia.
+    Qed.
+
+    Section doob_upcrossing_times.
+      
+      Context
+        (M : nat -> Ts -> R) (sas : nat -> SigmaAlgebra Ts)
+        {rv:forall n, RandomVariable dom borel_sa (M n)}
+        {isfe:forall n, IsFiniteExpectation prts (M n)}
+        {adapt:IsAdapted borel_sa M sas}
+        {filt:IsFiltration sas}
+        {sub:IsSubAlgebras dom sas}
+        {mart:IsMartingale Rle M sas}.
+
+    Fixpoint upcrossing_times a b (n:nat) : Ts -> option nat
+               := fun ts =>
+                    match n with
+                    | 0%nat => Some 0%nat
+                    | 1%nat => hitting_time M (event_le _ id a) ts
+                    | S m => match upcrossing_times a b m ts with
+                            | None => None
+                            | Some old => if Nat.even m
+                                         then hitting_time_from M (S old) (event_le _ id a) ts
+                                         else hitting_time_from M (S old) (event_ge _ id b) ts
+                                                   
+                            end
+                    end.
+
+    Lemma upcrossing_times_is_stop a b n : is_stopping_time (upcrossing_times a b n) sas.
+    Proof.
+      destruct n; simpl.
+      - apply is_stopping_time_constant.
+      - induction n; simpl.
+        + now apply hitting_time_is_stop.
+        + apply is_stopping_time_compose_incr; trivial.
+          * intros.
+            match_destr; apply hitting_time_from_is_stop; trivial.
+          * intros.
+            match_destr_in H
+            ; eapply hitting_time_from_ge in H; eauto; lia.
+    Qed.
+
+    (* we want sup{k | upcrossing_times a b (2*k) <= n}.  For integer k, this is the same as
+       inf{k | upcrossing_times a b (2*k) > n} - 1
+       which we can calculate using classic_min_of
+     *)
+    Definition upcrossing_var a b n ts :=
+      match classic_min_of (fun k => match upcrossing_times a b (2*k) ts with
+                            | Some k => (k > n)%nat
+                            | None => False
+                                  end) with
+      | Some k => Some (k - 1)%nat
+      | None => None
+      end.
+
+  End doob_upcrossing_times.
 
 End martingale.
 
