@@ -1110,6 +1110,185 @@ Section Derman_Sacks.
          left; apply part_prod_n_pos.
      Qed.
 
+   Lemma Radd_minus (r1 r2 r3 : R) :
+     r1 = r2 + r3 <-> r1 - r2 = r3.
+   Proof.
+     split; intros; try lra.
+   Qed.
+
+  Lemma Radd_radd_minus (r1 r2 r3 r4 : R):
+    r1 + r2 = r3 + r4 <-> r3 - r1 = r2 - r4.
+  Proof.
+    split; intros; try lra.
+  Qed.
+
+   Lemma sum_n_m_Series1 (f : nat -> R) (n m : nat) :
+     (0 < n <= m)%nat ->
+     ex_series f ->
+     sum_n_m f n m = Series (fun i => f (n + i)%nat) -
+                     Series (fun i => f (S m + i)%nat).
+   Proof.
+     intros.
+     assert (Hn : (0 < n)%nat) by (now destruct H).
+     assert (Hm : (0 < S m)%nat) by lia.
+     generalize (Series_incr_n f n Hn H0); intros. 
+     generalize (Series_incr_n f _ Hm H0); intros.
+     rewrite H1 in H2.
+     rewrite Radd_radd_minus in H2.
+     rewrite <-H2. simpl.
+     do 2 rewrite <-sum_n_Reals.
+     replace n with (S (pred n)) by lia.
+     rewrite sum_n_m_sum_n; try lia.
+     reflexivity.
+   Qed.
+
+   Lemma sum_n_m_Series (f : nat -> R) (n m : nat) :
+     (n <= m)%nat ->
+     ex_series f ->
+     sum_n_m f n m = Series (fun i => f (n + i)%nat) -
+                     Series (fun i => f (S m + i)%nat).
+   Proof.
+     intros. 
+     destruct (lt_dec 0 n).
+     - apply sum_n_m_Series1; trivial; lia.
+     - assert (n=0)%nat by lia.
+       setoid_rewrite H1.
+       assert (Hm : (0 < S m)%nat) by lia.
+       generalize (Series_incr_n f _ Hm H0); intros.
+       rewrite Series_ext with (b := f); [|now setoid_rewrite Nat.add_0_l].
+       rewrite H2.
+       unfold Rminus.
+       rewrite Rplus_assoc, Rplus_opp_r, Rplus_0_r.
+       replace (pred (S m)) with m by lia.
+       now rewrite <- sum_n_Reals.
+   Qed.
+
+   Lemma sum_series_eps (f : nat -> R) :
+     ex_series f ->
+     forall (eps : posreal),
+     exists (N : nat),
+     forall (n k : nat),
+       (n >= N)%nat ->
+       Rabs (sum_n_m f n (n + k)%nat) < eps.
+   Proof.
+     intros.
+     generalize (zerotails f H); intros.
+     apply is_lim_seq_spec in H0.
+     unfold is_lim_seq' in H0.
+     assert (0 < eps) by apply cond_pos.
+     assert (0 < eps/2) by lra.
+     destruct (H0 (mkposreal _ H2)).
+     exists (S x).
+     intros.
+     rewrite sum_n_m_Series; trivial; try lia.
+     unfold Rminus.
+     apply Rle_lt_trans with
+         (r2 := (Rabs (Series (fun i : nat => f (n + i)%nat))) +
+                (Rabs (- Series (fun i : nat => f (S (n + k) + i)%nat)) )).
+     apply Rabs_triang.
+     replace (pos eps) with ((mkposreal _ H2) + (mkposreal _ H2)); [|simpl; lra].
+     apply Rplus_lt_compat.
+     - specialize (H3 (n-1)%nat).
+       cut_to H3; try lia.
+       setoid_rewrite Rminus_0_r in H3.
+       rewrite Series_ext with (b := (fun i : nat => f (n + i)%nat)) in H3; trivial.
+       intros.
+       f_equal; lia.
+     - rewrite Rabs_Ropp.
+       specialize (H3 (n + k)%nat).
+       cut_to H3; try lia.
+       setoid_rewrite Rminus_0_r in H3.
+       rewrite Series_ext with (b := (fun i : nat => f (S (n + k) + i)%nat)) in H3; trivial.       
+  Qed.
+
+  Lemma Rmax_list_map_seq_lt_gen (eps : R) {n0 n : nat} (X : nat -> R):
+    (0 < n)%nat -> Rmax_list (map X (seq n0 n)) < eps <-> (forall k, (k < n)%nat -> X (n0 + k)%nat < eps).
+  Proof.
+    intros Hn. split.
+    + intros Heps k Hk.
+      rewrite Rmax_list_lt_iff in Heps; try (apply map_not_nil; now apply seq_not_nil).
+      apply Heps.
+      rewrite in_map_iff.
+      exists (n0 + k)%nat; split; trivial.
+      rewrite in_seq; lia.
+    + intros Heps.
+      rewrite Rmax_list_lt_iff; try (apply map_not_nil; now apply seq_not_nil).
+      intros x Hx. rewrite in_map_iff in Hx.
+      destruct Hx as [k [Hk1 Hk2]].
+      rewrite <-Hk1.
+      specialize (Heps (k-n0)%nat).
+      apply in_seq in Hk2.
+      replace (n0 + (k - n0))%nat with (k) in Heps; try lia.
+      apply Heps; trivial; lia.
+  Qed.
+
+   Lemma Rmax_list_sum_series_eps (f : nat -> R) :
+     ex_series f ->
+     forall (eps : posreal),
+     exists (NN : nat),
+     forall (n N : nat),
+       (N >= NN)%nat ->
+       (n >= N)%nat ->
+        Rmax_list
+          (map
+             (fun k : nat =>
+                Rabs (sum_n_m f k n))
+             (seq N (S (n - N)))) < eps.
+   Proof.
+     intros.
+     generalize (sum_series_eps _ H eps); intros.
+     destruct H0.
+     exists x.
+     intros.
+     apply Rmax_list_map_seq_lt_gen; try lia.
+     intros.
+     specialize (H0 (N + k)%nat (n - (N + k))%nat).
+     replace ((N + k) + (n - (N + k)))%nat with (n) in H0; try lia.
+     apply H0; lia.
+   Qed.
+
+   Lemma map_shiftn_seq (f : nat -> R) (n m : nat) :
+     map f (seq n m) = map (fun n0 => f (n + n0)%nat) (seq 0 m).
+   Proof.
+     rewrite seq_shiftn_map.
+     now rewrite map_map.
+   Qed.
+
+   Lemma Rmax_list_map_seq_mn (X : nat -> R) (n m : nat) :
+     Rmax_list_map (seq n m) X = Rmax_list_map (seq 0 m) (fun k => X (n + k)%nat). 
+   Proof.
+     unfold Rmax_list_map.
+     now rewrite map_shiftn_seq.
+   Qed.
+
+   (*
+Lemma Rmax_list_sum_series_eps2(f : nat -> R) :
+     ex_series f ->
+     forall (eps : posreal),
+     exists (NN : nat),
+     forall (n N : nat),
+       (N >= NN)%nat ->
+       (n > (S N))%nat ->
+        Rmax_list
+          (map
+             (fun k : nat =>
+                Rabs (sum_n_m f (S k) (n-1)%nat))
+             (seq N (S ((n-1) - N)))) < eps.
+   Proof.
+     intros.
+     generalize (sum_series_eps _ H eps); intros.
+     destruct H0.
+     exists x.
+     intros.
+     apply Rmax_list_map_seq_lt_gen; try lia.
+     intros.
+     specialize (H0 (S (N + k))%nat ((n-1) - (S (N + k)))%nat).
+     replace (S (N + k) + (n-1 - (S (N + k))))%nat with (n-1)%nat in H0.
+     - apply H0; lia.
+     - 
+   Qed.
+*)
+
   Lemma DS_1 (a b c delta zeta : nat -> R)
         (b1pos : forall n, 0 <= b n) :
     (forall n, 0 <= a n) ->
@@ -1260,7 +1439,7 @@ Section Derman_Sacks.
                forall NN, 
                  (NN >= N3)%nat ->
                  forall n, 
-                   (n >= NN)%nat ->
+                   (n > (S NN))%nat ->
                      (Lim_seq B *
                       Rmax_list
                         (map
@@ -1268,7 +1447,32 @@ Section Derman_Sacks.
                               Rabs (sum_n_m (fun j : nat => delta j / B j) (S k) (n-1)))
                            (seq NN (S (n-1 - NN))))) <
                      (eps/2)
-           ) by admit.
+           ).
+    {
+      generalize (Rmax_list_sum_series_eps  (fun j : nat => delta j / B j) H9); intros.
+       assert (0 < eps / ((2 * BB) + 1)).
+      {
+        apply Rdiv_lt_0_compat.
+        - apply cond_pos.
+        - assert (0 < BB).
+          + apply Rlt_le_trans with (r2 := B 0%nat); trivial.
+            apply pos_part_prod.
+          + lra.
+      }
+      specialize (H11 (mkposreal _ H12)).
+      destruct H11.
+      exists x.
+      intros.
+      specialize (H11 (n-1)%nat (NN+1)%nat).
+      cut_to H11; try lia.
+      
+      
+      apply zerotails in H9.
+      apply is_lim_seq_spec in H9.
+      unfold is_lim_seq' in H9.
+
+      admit.
+    }
 
     destruct H11 as [N3 ?].
     
