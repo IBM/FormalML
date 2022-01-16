@@ -1122,6 +1122,46 @@ Section Derman_Sacks.
     split; intros; try lra.
   Qed.
 
+
+  Lemma sum_n_m_Series_alt (f : nat -> R) (n m : nat) :
+     (n <= m)%nat ->
+     ex_series f ->
+     sum_n_m f n m = Series (fun i => f (n + i)%nat) -
+                     Series (fun i => f (S m + i)%nat).
+   Proof.
+     intros. 
+     destruct (n == 0%nat).
+     + setoid_rewrite e. clear H.
+       induction m.
+       -- cbn. rewrite (Series_incr_1); [lra |assumption].
+       -- simpl. rewrite sum_n_Sm;[|lia].
+          rewrite IHm. cbn.
+          rewrite (Series_incr_1 (fun i => f (S(m + i)))).
+          setoid_rewrite <-Nat.add_succ_l.
+          replace (S m + 0)%nat with (S m) by lia.
+          ring_simplify.
+          now setoid_rewrite plus_n_Sm at 2.
+          setoid_rewrite <-plus_Sn_m.
+          now rewrite <-ex_series_incr_n.
+     +
+       assert (Hn : (0 < n)%nat).
+       {
+         destruct n.
+         + intuition.
+         + lia.
+       }
+     assert (Hm : (0 < S m)%nat) by lia.
+     generalize (Series_incr_n f n Hn H0); intros.
+     generalize (Series_incr_n f _ Hm H0); intros.
+     rewrite H1 in H2.
+     rewrite Radd_radd_minus in H2.
+     rewrite <-H2. simpl.
+     do 2 rewrite <-sum_n_Reals.
+     replace n with (S (pred n)) by lia.
+     rewrite sum_n_m_sum_n; try lia.
+     reflexivity.
+   Qed.
+   
    Lemma sum_n_m_Series1 (f : nat -> R) (n m : nat) :
      (0 < n <= m)%nat ->
      ex_series f ->
@@ -1141,6 +1181,7 @@ Section Derman_Sacks.
      rewrite sum_n_m_sum_n; try lia.
      reflexivity.
    Qed.
+   
 
    Lemma sum_n_m_Series (f : nat -> R) (n m : nat) :
      (n <= m)%nat ->
@@ -1202,7 +1243,8 @@ Section Derman_Sacks.
   Qed.
 
   Lemma Rmax_list_map_seq_lt_gen (eps : R) {n0 n : nat} (X : nat -> R):
-    (0 < n)%nat -> Rmax_list (map X (seq n0 n)) < eps <-> (forall k, (k < n)%nat -> X (n0 + k)%nat < eps).
+    (0 < n)%nat -> Rmax_list (map X (seq n0 n)) < eps <->
+                   (forall k, (k < n)%nat -> X (n0 + k)%nat < eps).
   Proof.
     intros Hn. split.
     + intros Heps k Hk.
@@ -1233,7 +1275,7 @@ Section Derman_Sacks.
           (map
              (fun k : nat =>
                 Rabs (sum_n_m f k n))
-             (seq N (S (n - N)))) < eps.
+             (seq N (S (n - N)))) < eps. 
    Proof.
      intros.
      generalize (sum_series_eps _ H eps); intros.
@@ -1242,6 +1284,7 @@ Section Derman_Sacks.
      intros.
      apply Rmax_list_map_seq_lt_gen; try lia.
      intros.
+     
      specialize (H0 (N + k)%nat (n - (N + k))%nat).
      replace ((N + k) + (n - (N + k)))%nat with (n) in H0; try lia.
      apply H0; lia.
@@ -1261,8 +1304,26 @@ Section Derman_Sacks.
      now rewrite map_shiftn_seq.
    Qed.
 
-   (*
-Lemma Rmax_list_sum_series_eps2(f : nat -> R) :
+   Lemma map_shift1_seq (f : nat -> R) (n m : nat) :
+     map f (seq (S n) m) = map (fun n0 => f (S n0)%nat) (seq n m).
+   Proof.
+     rewrite seq_shiftn_map.
+     symmetry.
+     rewrite seq_shiftn_map.
+     do 2 rewrite map_map.
+     apply map_ext.
+     reflexivity.
+   Qed.
+
+   Lemma Rmax_list_map_seq_incr1 (X : nat -> R) (n m : nat) :
+     Rmax_list (map X (seq (S n) m)) = Rmax_list (map (fun k => X (S k)) (seq n m)).
+   Proof.
+     now rewrite map_shift1_seq.
+   Qed.
+                                                      
+
+(*
+   Lemma Rmax_list_sum_series_eps2(f : nat -> R) :
      ex_series f ->
      forall (eps : posreal),
      exists (NN : nat),
@@ -1285,10 +1346,9 @@ Lemma Rmax_list_sum_series_eps2(f : nat -> R) :
      specialize (H0 (S (N + k))%nat ((n-1) - (S (N + k)))%nat).
      replace (S (N + k) + (n-1 - (S (N + k))))%nat with (n-1)%nat in H0.
      - apply H0; lia.
-     - 
+     -  
    Qed.
 *)
-
   Lemma DS_1 (a b c delta zeta : nat -> R)
         (b1pos : forall n, 0 <= b n) :
     (forall n, 0 <= a n) ->
@@ -1463,14 +1523,57 @@ Lemma Rmax_list_sum_series_eps2(f : nat -> R) :
       destruct H11.
       exists x.
       intros.
-      specialize (H11 (n-1)%nat (NN+1)%nat).
+      specialize (H11 (n-1)%nat (S NN)%nat).
       cut_to H11; try lia.
+      rewrite  Rmax_list_map_seq_incr1 in H11.
+      replace (Rmax_list
+                 (map
+                    (fun k : nat => Rabs (sum_n_m (fun j : nat => delta j / B j) 
+                                                  (S k) (n - 1)))
+                    (seq NN (S (n - 1 - NN))))) with
+          (Rmax_list
+                 (map
+                    (fun k : nat => Rabs (sum_n_m (fun j : nat => delta j / B j) 
+                                                  (S k) (n - 1)))
+                    (seq NN (S (n - 1 - S NN))))).
+      - apply Rle_lt_trans with
+            (r2 := BB * 
+                   (Rmax_list
+                      (map
+                         (fun k : nat => Rabs (sum_n_m (fun j : nat => delta j / B j) 
+                                                       (S k) (n - 1)))
+                         (seq NN (S (n - 1 - S NN)))))).
+        + apply Rmult_le_compat_r.
+          * apply Rmax_list_map_nonneg.
+            intros.
+            apply Rabs_pos.
+          * unfold B in fin_LimB.
+            rewrite <- fin_LimB in H7.
+            now simpl in H7.
+        + assert ( 0 < BB).
+          {
+            apply Rlt_le_trans with
+                (r2 := B 0%nat); trivial.
+            apply pos_part_prod.
+          }
+          apply Rlt_trans with
+              (r2 := BB * (eps / (2 * BB + 1))).
+          * apply Rmult_lt_compat_l; trivial.
+          * field_simplify.
+            rewrite Rmult_comm.
+            unfold Rdiv.
+            rewrite Rmult_assoc.
+            apply Rmult_lt_compat_l.
+            -- apply cond_pos.
+            -- apply Rmult_lt_reg_l with (r := 2); try lra.
+               replace (2 * / 2) with 1 by lra.
+               rewrite <- Rmult_assoc.
+               apply Rmult_lt_reg_r with (r := 2 * BB + 1); try lra.
+               field_simplify; try lra.
+            -- apply Rgt_not_eq; lra.
+      - symmetry.
+               
       
-      
-      apply zerotails in H9.
-      apply is_lim_seq_spec in H9.
-      unfold is_lim_seq' in H9.
-
       admit.
     }
 
