@@ -1320,9 +1320,19 @@ Section Derman_Sacks.
    Proof.
      now rewrite map_shift1_seq.
    Qed.
-                                                      
 
-(*
+   Lemma Rmax_list_Sn (f : nat -> R) (n : nat) {m : nat} (hm : (0<m)%nat) :
+     Rmax_list (map f (seq n (S m))) = Rmax (Rmax_list (map f (seq n m))) (f (n + m)%nat).
+   Proof.
+     rewrite seq_S. 
+     rewrite Rmax_list_app.
+     reflexivity.
+     rewrite seq_shiftn_map.
+     rewrite map_not_nil.
+     now apply seq_not_nil.
+   Qed. 
+   
+   (* to handle out of range limit *)
    Lemma Rmax_list_sum_series_eps2(f : nat -> R) :
      ex_series f ->
      forall (eps : posreal),
@@ -1344,12 +1354,20 @@ Section Derman_Sacks.
      apply Rmax_list_map_seq_lt_gen; try lia.
      intros.
      specialize (H0 (S (N + k))%nat ((n-1) - (S (N + k)))%nat).
-     replace (S (N + k) + (n-1 - (S (N + k))))%nat with (n-1)%nat in H0.
-     - apply H0; lia.
-     -  
+     destruct (lt_dec k (n - 1 - N)%nat).
+     - replace (S (N + k) + (n-1 - (S (N + k))))%nat with (n-1)%nat in H0.
+       + apply H0; lia.
+       + lia.
+     - assert (k = (n - 1 - N)%nat) by lia.
+       assert ((S (N + k)) > (n - 1))%nat by lia.
+       rewrite sum_n_m_zero; try lia.
+       unfold zero; simpl.
+       rewrite Rabs_R0.
+       apply cond_pos.
    Qed.
-*)
-  Lemma DS_1 (a b c delta zeta : nat -> R)
+
+          
+  Lemma DS_lemma1 (a b c delta zeta : nat -> R)
         (b1pos : forall n, 0 <= b n) :
     (forall n, 0 <= a n) ->
     (forall n, 0 <= c n) ->
@@ -1509,7 +1527,7 @@ Section Derman_Sacks.
                      (eps/2)
            ).
     {
-      generalize (Rmax_list_sum_series_eps  (fun j : nat => delta j / B j) H9); intros.
+      generalize (Rmax_list_sum_series_eps2  (fun j : nat => delta j / B j) H9); intros.
        assert (0 < eps / ((2 * BB) + 1)).
       {
         apply Rdiv_lt_0_compat.
@@ -1523,26 +1541,15 @@ Section Derman_Sacks.
       destruct H11.
       exists x.
       intros.
-      specialize (H11 (n-1)%nat (S NN)%nat).
+      specialize (H11 n NN).
       cut_to H11; try lia.
-      rewrite  Rmax_list_map_seq_incr1 in H11.
-      replace (Rmax_list
-                 (map
-                    (fun k : nat => Rabs (sum_n_m (fun j : nat => delta j / B j) 
-                                                  (S k) (n - 1)))
-                    (seq NN (S (n - 1 - NN))))) with
-          (Rmax_list
-                 (map
-                    (fun k : nat => Rabs (sum_n_m (fun j : nat => delta j / B j) 
-                                                  (S k) (n - 1)))
-                    (seq NN (S (n - 1 - S NN))))).
-      - apply Rle_lt_trans with
-            (r2 := BB * 
-                   (Rmax_list
+      apply Rle_lt_trans with
+          (r2 := BB * 
+                 (Rmax_list
                       (map
                          (fun k : nat => Rabs (sum_n_m (fun j : nat => delta j / B j) 
                                                        (S k) (n - 1)))
-                         (seq NN (S (n - 1 - S NN)))))).
+                         (seq NN (S (n - 1 - NN)))))).
         + apply Rmult_le_compat_r.
           * apply Rmax_list_map_nonneg.
             intros.
@@ -1571,10 +1578,6 @@ Section Derman_Sacks.
                apply Rmult_lt_reg_r with (r := 2 * BB + 1); try lra.
                field_simplify; try lra.
             -- apply Rgt_not_eq; lra.
-      - symmetry.
-               
-      
-      admit.
     }
 
     destruct H11 as [N3 ?].
@@ -1601,8 +1604,7 @@ Section Derman_Sacks.
     apply Rplus_lt_compat.
     apply H10.
     apply H11.
-
-    Admitted.
+  Qed.
 
 End Derman_Sacks.    
   
