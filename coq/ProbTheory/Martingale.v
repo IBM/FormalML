@@ -1853,6 +1853,7 @@ Section martingale.
       now apply H.
   Qed.
 
+  
   Definition hitting_time
              (X : nat -> Ts -> R)
              (B:event borel_sa)
@@ -2265,3 +2266,399 @@ Section levy.
   Qed.        
 
 End levy.
+
+Require Import Coquelicot.Coquelicot.
+
+Definition zerotails_prop a ϵ n : Prop :=
+  forall N, (n <= N)%nat -> Rabs (Series (fun k => a (S (N+k)%nat))) < ϵ.
+
+Lemma zerotails_witness_pack (a : nat -> R) :
+  ex_series a -> forall (ϵ:posreal), { n : nat | zerotails_prop a ϵ n  /\ forall n', zerotails_prop a ϵ n' -> (n <= n')%nat }.
+Proof.
+  intros.
+  case_eq (classic_min_of (zerotails_prop a ϵ)).
+  - intros.
+    exists n.
+    split.
+    + now apply classic_min_of_some in H0.
+    + intros.
+      apply NPeano.Nat.nlt_ge; intros nlt.
+      eapply classic_min_of_some_first in H0; try apply nlt.
+      tauto.
+  - intros.
+    generalize (classic_min_of_none _ H0); intros.
+    apply zerotails in H.
+    apply is_lim_seq_spec in H.
+    simpl in H.
+    elimtype False.
+    destruct (H ϵ) as [N ?].
+    elim (H1 N).
+    red; intros.
+    specialize (H2 _ H3).
+    now rewrite Rminus_0_r in H2.
+Qed.
+
+Definition zerotails_witness (a : nat -> R)
+           (pf:ex_series a) (ϵ:posreal) : nat
+  := proj1_sig (zerotails_witness_pack a pf ϵ).
+
+Lemma zerotails_witness_prop (a : nat -> R) (pf:ex_series a) (ϵ:posreal) :
+  forall N, ((zerotails_witness a pf ϵ) <= N)%nat -> Rabs (Series (fun k => a (S N + k)%nat)) < ϵ.
+Proof.
+  unfold zerotails_witness, proj1_sig.
+  match_destr.
+  tauto.
+Qed.
+
+Lemma zerotails_prop_nondecr a ϵ1 ϵ2 n :
+    ϵ1 <= ϵ2 ->
+    zerotails_prop a ϵ1 n -> zerotails_prop a ϵ2 n.
+Proof.
+  unfold zerotails_prop; intros.
+  eapply Rlt_le_trans; try apply H.
+  now apply H0.
+Qed.  
+
+Lemma zerotails_witness_min (a : nat -> R) (pf:ex_series a) (ϵ:posreal) :
+  forall n', (forall N, (n' <= N)%nat -> Rabs (Series (fun k => a (S N + k)%nat)) < ϵ) ->
+        ((zerotails_witness a pf ϵ) <= n')%nat.
+Proof.
+  unfold zerotails_witness, proj1_sig.
+  match_destr.
+  tauto.
+Qed.
+
+Lemma zerotails_witness_nondecr (a : nat -> R) (pf:ex_series a) (ϵ1 ϵ2:posreal) :
+  ϵ2 <= ϵ1 ->
+  (zerotails_witness a pf ϵ1 <= zerotails_witness a pf ϵ2)%nat.
+Proof.
+  intros.
+  unfold zerotails_witness, proj1_sig; repeat match_destr.
+  apply a0.
+  eapply zerotails_prop_nondecr; try apply H.
+  tauto.
+Qed.
+
+Definition inv_2_pow_posreal (k:nat) : posreal.
+Proof.
+  exists (/ (2 ^ k)).
+  apply Rinv_0_lt_compat.
+  apply pow_lt; lra.
+Defined.
+
+Definition zerotails_eps2k_fun' (a : nat -> R) (pf:ex_series a) (k:nat) : nat
+  := zerotails_witness a pf (inv_2_pow_posreal k).
+
+Definition zerotails_eps2k_fun (a : nat -> R) (pf:ex_series a) (k:nat) : nat
+  := zerotails_eps2k_fun' a pf k + k.
+
+Lemma zerotails_eps2k_fun_shifted_bound (a : nat -> R) (pf:ex_series a) (k:nat)
+  : Rabs (Series (fun x => a (S (x+ (zerotails_eps2k_fun a pf k)%nat)))) < (/ (2 ^ k)).
+Proof.
+  unfold zerotails_eps2k_fun.
+  unfold zerotails_eps2k_fun'.
+  unfold zerotails_witness, proj1_sig.
+  match_destr.
+  destruct a0 as [r _].
+  simpl in r.
+  specialize (r (x+k)%nat).
+  eapply Rle_lt_trans; try apply r; try lia.
+  right; f_equal.
+  apply Series_ext; intros.
+  f_equal; lia.
+Qed.
+
+Lemma zerotails_eps2k_double_sum_ex (a : nat -> R) (pf:ex_series a) :
+  ex_series (fun k => Series (fun x => a (S (x+ (zerotails_eps2k_fun a pf k)%nat)))).
+Proof.
+  eapply (@ex_series_le R_AbsRing R_CompleteNormedModule _ (fun k =>  (/ (2 ^ k)))).
+  - intros.
+    left.
+    apply zerotails_eps2k_fun_shifted_bound.
+  - generalize (ex_series_geom (1/2)); intros HH.
+    cut_to HH.
+    + revert HH.
+      apply ex_series_ext; intros.
+      rewrite Rinv_pow; try lra.
+      f_equal.
+      lra.
+    + rewrite Rabs_right; lra.
+Qed.
+
+Lemma zerotails_eps2k_fun'_nondecr a pf n :
+  ((zerotails_eps2k_fun' a pf n) <= (zerotails_eps2k_fun'  a pf (S n)))%nat.
+Proof.
+  unfold zerotails_eps2k_fun'.
+  apply zerotails_witness_nondecr.
+  simpl.
+  assert (0 < 2) by lra.
+  assert (0 < 2 ^ n).
+  {
+    apply pow_lt; lra.
+  }
+  rewrite <- (Rmult_1_l (/ 2 ^ n)).
+  rewrite Rinv_mult_distr.
+  - apply Rmult_le_compat_r; try lra.
+    left.
+    apply Rinv_0_lt_compat.
+    apply pow_lt; lra.
+  - lra.
+  - apply pow_nzero; lra.
+Qed.
+
+Lemma zerotails_incr_mult_strict_incr a pf n :
+  ((zerotails_eps2k_fun a pf n) < (zerotails_eps2k_fun a pf (S n)))%nat.
+Proof.
+  unfold zerotails_eps2k_fun.
+  generalize (zerotails_eps2k_fun'_nondecr a pf n); lia.
+Qed.
+
+Lemma zerotails_incr_mult_strict_incr_lt a pf m n :
+  (m < n)%nat ->
+  ((zerotails_eps2k_fun a pf m) < (zerotails_eps2k_fun a pf n))%nat.
+Proof.
+  intros.
+  induction H.
+  - apply zerotails_incr_mult_strict_incr.
+  - rewrite IHle.
+    apply  zerotails_incr_mult_strict_incr.
+Qed.
+
+Definition zerotails_incr_mult (a : nat -> R) (pf:ex_series a) n : nat
+  := length (filter (fun k => if le_dec (zerotails_eps2k_fun a pf k) n then true else false) (seq 0 n)).
+
+Lemma zerotails_eps2k_fun_unbounded a pf :
+  forall m, exists k, (m < (zerotails_eps2k_fun a pf k))%nat.
+Proof.
+  unfold zerotails_eps2k_fun; intros.
+  exists (S m).
+  lia.
+Qed.
+
+Lemma filter_le_length {A:Type} (f1 f2:A->bool) (l:list A) :
+  (forall x, In x l -> f1 x = true -> f2 x = true) ->
+  (length (filter f1 l) <= length (filter f2 l))%nat.
+Proof.
+  induction l; simpl; trivial; intros.
+  cut_to IHl; [| firstorder].
+  specialize (H a).
+  destruct (f1 a).
+  - rewrite H by tauto.
+    simpl; lia.
+  - destruct (f2 a); simpl; lia.
+Qed.
+
+Lemma zerotails_incr_mult_incr a pf n :
+  exists m, (n < m)%nat /\
+         (zerotails_incr_mult a pf n < zerotails_incr_mult a pf m)%nat.
+Proof.
+  unfold zerotails_incr_mult.
+  destruct (zerotails_eps2k_fun_unbounded a pf (zerotails_eps2k_fun a pf n)) as [m HH].
+  exists ((n + S (zerotails_eps2k_fun a pf m))%nat).
+  assert (nlt:(n < n + S (zerotails_eps2k_fun a pf m))%nat).
+  {
+    lia.
+  } 
+  split; trivial.
+  rewrite seq_plus, filter_app, app_length.
+    assert (prop1:
+             (length
+     (filter
+        (fun k : nat => if le_dec (zerotails_eps2k_fun a pf k) n then true else false)
+        (seq 0 n)) <=
+   length
+     (filter
+        (fun k : nat =>
+         if le_dec (zerotails_eps2k_fun a pf k) (n + S (zerotails_eps2k_fun a pf m))
+         then true
+         else false) (seq 0 n)))%nat).
+    {
+      generalize (seq 0 n); induction l; trivial.
+      apply filter_le_length; intros.
+      match_destr_in H0.
+      match_destr.
+      lia.
+    } 
+    assert (prop2:(0 <
+     length
+     (filter
+        (fun k : nat =>
+         if le_dec (zerotails_eps2k_fun a pf k) (n + S (zerotails_eps2k_fun a pf m))
+         then true
+         else false) (seq (0 + n) (S (zerotails_eps2k_fun a pf m)))))%nat).
+    {
+      assert (inseq:In m ((seq (0 + n) (S (zerotails_eps2k_fun a pf m)))%nat)).
+      {
+        apply in_seq.
+        split.
+        - assert (~ (m < n))%nat; try lia.
+          intros HH2.
+          generalize (zerotails_incr_mult_strict_incr_lt a pf m n HH2).
+          lia.
+        - unfold zerotails_eps2k_fun in *.
+          lia.
+      }
+      assert (inf:In m
+                  (filter
+        (fun k : nat =>
+         if le_dec (zerotails_eps2k_fun a pf k) (n + S (zerotails_eps2k_fun a pf m))
+         then true
+         else false) (seq (0 + n) (S (zerotails_eps2k_fun a pf m))))%nat).
+      {
+        apply filter_In.
+        split; trivial.
+        match_destr.
+        lia.
+      }
+      destruct (filter
+             (fun k : nat =>
+              if
+               le_dec (zerotails_eps2k_fun a pf k) (n + S (zerotails_eps2k_fun a pf m))
+              then true
+              else false) (seq (0 + n) (S (zerotails_eps2k_fun a pf m))))
+      ; simpl in *; try lia.
+    } 
+    lia.
+Qed.
+
+Definition zerotails_incr_mult_real (a : nat -> R) (pf:ex_series a) n : R
+  := INR (zerotails_incr_mult a pf n).
+
+Lemma zerotails_incr_mult_unbounded a pf M :
+  exists m, (M < zerotails_incr_mult a pf m)%nat.
+Proof.
+  induction M.
+  - destruct (zerotails_incr_mult_incr a pf 0)%nat.
+    exists x.
+    lia.
+  - destruct IHM.
+    destruct (zerotails_incr_mult_incr a pf x) as [? [??]].
+    exists x0.
+    lia.
+Qed.
+
+Lemma zerotails_incr_mult_incr_incr a pf x n :
+  (x <= n)%nat -> 
+  ((zerotails_incr_mult a pf x) <= (zerotails_incr_mult a pf n))%nat.
+Proof.
+  intros.
+  unfold zerotails_incr_mult.
+  replace n with (x + (n - x))%nat by lia.
+  rewrite seq_plus, filter_app, app_length.
+  cut (length
+     (filter
+        (fun k : nat => if le_dec (zerotails_eps2k_fun a pf k) x then true else false)
+        (seq 0 x)) <=
+   length
+     (filter
+        (fun k : nat =>
+         if le_dec (zerotails_eps2k_fun a pf k) (x + (n - x)) then true else false)
+        (seq 0 x)))%nat; [lia |].
+  apply filter_le_length; intros.
+  match_destr_in H1.
+  match_destr.
+  elim n0.
+  unfold zerotails_eps2k_fun.
+  lia.
+Qed.
+
+Lemma zerotails_incr_mult_real_unbounded (a : nat -> R) (pf:ex_series a) :
+  is_lim_seq (zerotails_incr_mult_real a pf) p_infty.
+Proof.
+  apply is_lim_seq_spec; simpl.
+  intros.
+  red.
+  unfold zerotails_incr_mult_real.
+  pose (MM:=Rmax M 0).
+  
+  destruct (zerotails_incr_mult_unbounded a pf (Z.to_nat (up MM))).
+  exists x; intros.
+
+  assert (le1:((zerotails_incr_mult a pf x) <= (zerotails_incr_mult a pf n))%nat).
+  {
+    now apply zerotails_incr_mult_incr_incr.
+  } 
+
+  assert (lt1:(Z.to_nat (up MM) < zerotails_incr_mult a pf n)%nat) by lia.
+
+  eapply Rle_lt_trans
+  ; [| apply lt_INR; apply lt1].
+
+  destruct (archimed MM).
+  rewrite INR_up_pos.
+  - apply (Rle_trans _ MM).
+    + apply Rmax_l.
+    + lra.
+  - unfold MM.
+    apply Rle_ge.
+    apply Rmax_r.
+Qed.
+
+Lemma Series_zero : Series (fun _ => 0) = 0.
+Proof.
+Admitted.
+
+Lemma zerotails_eps2k_double_sum_eq (a : nat -> R) (pf:ex_series a) {anneg:NonnegativeFunction a}:
+  Series (fun k => Series (fun x => a (S (x+ (zerotails_eps2k_fun a pf k)%nat)))) =
+    Series (fun n => zerotails_incr_mult_real a pf n * (a n)).
+Proof.
+  transitivity (
+      Series (fun k : nat => Series (fun n : nat =>
+                                  a n *
+                                    if le_dec (S (zerotails_eps2k_fun a pf k)) n 
+                                    then 1 else 0))).
+  {
+    apply Series_ext; intros.
+    rewrite (Series_incr_n_aux
+               (fun n0 : nat =>
+                  a n0 * (if le_dec (S (zerotails_eps2k_fun a pf n))%nat n0 then 1 else 0))
+               (S (zerotails_eps2k_fun a pf n))).
+    - apply Series_ext; intros.
+      match_destr.
+      + field_simplify.
+        f_equal.
+        lia.
+      + elim n1.
+        lia.
+    - intros.
+      match_destr; try lra.
+      unfold zerotails_eps2k_fun in *.
+      lia.
+  } 
+  transitivity (Series
+    (fun n : nat =>
+     Series
+       (fun k : nat =>
+        a n * (if le_dec (S (zerotails_eps2k_fun a pf k)) n then 1 else 0)))).
+  {
+    (* summation interchange *)
+    admit.
+  }
+  apply Series_ext; intros.
+  rewrite Series_scal_l.
+  rewrite Rmult_comm; f_equal.
+  unfold zerotails_incr_mult_real, zerotails_incr_mult.
+  (*
+  rewrite (Series_incr_n _ (S n)).
+  - erewrite (Series_ext _ (fun _ => 0)).
+    + rewrite Series_zero.
+      simpl.
+      rewrite Rplus_0_r.
+      induction n.
+      * simpl; trivial.
+      * rewrite seq_Sn.
+        rewrite filter_app, app_length.
+        rewrite plus_INR.
+        simpl.
+        rewrite IHn.
+        
+    + intros.
+      match_destr.
+      unfold zerotails_eps2k_fun in *.
+      lia.
+  - lia.
+  - 
+*)
+Admitted.
+  
+  
