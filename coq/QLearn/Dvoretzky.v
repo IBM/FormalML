@@ -326,6 +326,11 @@ End Dvoretzky.
 
 Section Derman_Sacks.
 
+ Context 
+   {Ts : Type}
+   {dom: SigmaAlgebra Ts}
+   {prts: ProbSpace dom}.
+
   Lemma ex_series_nneg_bounded (f g : nat -> R) :
     (forall n, 0 <= f n) ->
     (forall n, f n <= g n) ->
@@ -406,7 +411,7 @@ Section Derman_Sacks.
     lra.
   Qed.
   
-  Lemma Abel_descending_convergence (a b : nat -> R) :
+  Lemma Abel_descending_convergence  (a b : nat -> R) :
     ex_series b ->
     (forall n, a n >= a (S n)) ->
     (exists M, forall n, a n >= M) ->
@@ -548,6 +553,158 @@ Section Derman_Sacks.
           apply Rle_trans with (r2 := Rabs (sum_n b 0%nat)); trivial.
           apply Rabs_pos.
         * apply H11.
+  Qed.
+
+  Lemma Abel_ascending_convergence  (a b : nat -> R) :
+    ex_series b ->
+    (forall n, a n <= a (S n)) ->
+    (exists M, forall n, a n <= M) ->
+    ex_series (fun n => a n * b n).
+  Proof.
+    intros.
+    pose (B := sum_n b).
+    assert (forall n, sum_n (fun j => a j * b j) (S n) = 
+                      (a (S n))*(B (S n)) + sum_n (fun j => (B j) * (a j - (a (S j)))) n).
+    {
+      intros.
+      do 2 rewrite sum_n_Reals.
+      induction n.
+      - unfold B.
+        rewrite sum_n_Reals.
+        simpl.
+        rewrite sum_O.
+        ring_simplify; lra.
+      - replace (S (S n)) with (S (n+1)) by lia.
+        simpl.
+        replace (n+1)%nat with (S n) by lia.
+        rewrite IHn.
+        apply Rplus_eq_reg_r with (r := sum_f_R0 (fun j : nat => B j * (a (j) - a (S j))) n).
+        ring_simplify.
+        apply Rplus_eq_reg_r with (r := - (a (S n) * B (S n))).
+        ring_simplify.
+        unfold B.
+        do 2 rewrite sum_n_Reals.        
+        replace (S n) with (n+1)%nat by lia.
+        simpl.
+        now ring_simplify.
+    }
+    rewrite <- ex_finite_lim_series.
+    rewrite ex_finite_lim_seq_S.
+    apply (ex_finite_lim_seq_ext _ _ H2).
+    generalize (ex_series_bounded _ H); intros.
+    rewrite <- ex_finite_lim_series in H.
+    destruct H.
+    assert (ex_finite_lim_seq a).
+    {
+      destruct H1.
+      apply ex_finite_lim_seq_incr with (M := x0).
+      - intros.
+        specialize (H0 n).
+        lra.
+      - intros.
+        specialize (H1 n).
+        lra.
+    }
+    destruct H4.
+    apply ex_finite_lim_seq_plus.
+    - unfold ex_finite_lim_seq.
+      exists (x0 * x).
+      apply is_lim_seq_mult'.
+      + now apply is_lim_seq_incr_1 in H4.
+      + now apply is_lim_seq_incr_1 in H.
+    - destruct H3.
+      unfold B.
+      assert (forall n,
+                 (sum_n (fun j : nat => Rabs (sum_n b j * (a j - a (S j)))) n)  <=
+                 (sum_n (fun j : nat => scal x1 (Rabs (a j - a (S j)))) n)).
+      {
+        intros.
+        apply sum_n_le_loc; intros.
+        rewrite Rabs_mult.
+        apply Rmult_le_compat_r; trivial.
+        apply Rabs_pos.
+      }
+      assert (forall i h, a i <= a (i + h)%nat).
+      {
+        induction h.
+        - replace (i + 0)%nat with i by lia; lra.
+        - eapply Rle_trans.
+          apply IHh.
+          now replace (i + S h)%nat with (S (i + h))%nat by lia.
+      }
+      assert (forall i j, (i<=j)%nat -> a i <= a j).
+      {
+        intros.
+        specialize (H6 i (j - i)%nat).
+        now replace (i + (j - i))%nat with j in H6 by lia.
+      }
+      assert (forall n, sum_n (fun j => Rabs (a j - a (S j))) n = Rabs(a (0%nat) - a (S n))).
+      {
+        induction n.
+        - now rewrite sum_O.
+        - rewrite sum_Sn.
+          rewrite IHn.
+          unfold plus; simpl.
+          Search Rabs.
+          rewrite Rabs_left1, Rabs_left1, Rabs_left1.
+          + ring.
+          + specialize (H7 (0%nat) (S (S n))).
+            cut_to H7; try lia.
+            lra.
+          + specialize (H0 (S n)); lra.
+          + specialize (H7 (0%nat) (S n)).
+            cut_to H7; try lia.
+            lra.
+     }
+      assert (forall n,
+                 (sum_n (fun j : nat => Rabs (sum_n b j * (a j - a (S j)))) n)  <=
+                 x1 * Rabs((a 0%nat) - a (S n))).
+      {
+        intros.
+        specialize (H5 n).
+        rewrite sum_n_scal_l in H5.
+        unfold scal in H5; simpl in H5.
+        unfold mult in H5; simpl in H5.
+        now rewrite H8 in H5.
+      }
+      rewrite ex_finite_lim_series.
+      apply ex_series_Rabs.
+      destruct H1.
+      assert (forall n, Rabs (a n) <= Rmax (x2) (- (a 0%nat))).
+      {
+        intros.
+        apply Rabs_le_between_Rmax.
+        split; trivial.
+        apply H7; lia.
+      }
+      assert (forall n, Rabs (- a 0%nat + a (S n)) <= Rmax (x2) (- a 0%nat) + Rabs (a (S n)) ).
+      {
+        intros.
+        unfold Rminus.
+        generalize (Rabs_triang (- a 0%nat) (a (S n))); intros.
+        eapply Rle_trans.
+        apply H11.
+        apply Rplus_le_compat_r.
+        now rewrite Rabs_Ropp.
+      }
+      apply ex_series_pos_bounded with (B := x1 * (2* Rmax x2 (- a 0%nat))).
+      + intros.
+        apply Rabs_pos.
+      + intros.
+        eapply Rle_trans.
+        apply H9.
+        apply Rmult_le_compat_l.
+        * specialize (H3 0%nat).
+          apply Rle_trans with (r2 := Rabs (sum_n b 0%nat)); trivial.
+          apply Rabs_pos.
+        * rewrite <- Rabs_Ropp.
+          rewrite Ropp_minus_distr.
+          unfold Rminus.
+          rewrite Rplus_comm.
+          eapply Rle_trans.
+          apply H11.
+          specialize (H10 (S n)).
+          lra.
   Qed.
 
   Lemma DS_1_helper (a b c delta zeta : nat -> R) (N0 N : nat)
@@ -1242,6 +1399,24 @@ Section Derman_Sacks.
        rewrite Series_ext with (b := (fun i : nat => f (S (n + k) + i)%nat)) in H3; trivial.       
   Qed.
 
+   (* cauchy convergence test *)
+   Lemma Cauchy_convergence_test (f : nat -> R) :
+       ex_series f <->
+       forall (eps : posreal),
+       exists (N : nat),
+       forall (n p: nat),
+         (n > N)%nat ->
+         Rabs (sum_n_m f n (n+p)%nat) < eps.
+  Proof.
+    split; intros.
+    - generalize (sum_series_eps f H eps); intros.
+      destruct H0.
+      exists (S x); intros.
+      apply H0; lia.
+    - Admitted.
+         
+
+   
   Lemma Rmax_list_map_seq_lt_gen (eps : R) {n0 n : nat} (X : nat -> R):
     (0 < n)%nat -> Rmax_list (map X (seq n0 n)) < eps <->
                    (forall k, (k < n)%nat -> X (n0 + k)%nat < eps).
@@ -1263,6 +1438,7 @@ Section Derman_Sacks.
       replace (n0 + (k - n0))%nat with (k) in Heps; try lia.
       apply Heps; trivial; lia.
   Qed.
+
 
    Lemma Rmax_list_sum_series_eps (f : nat -> R) :
      ex_series f ->
@@ -1289,6 +1465,10 @@ Section Derman_Sacks.
      replace ((N + k) + (n - (N + k)))%nat with (n) in H0; try lia.
      apply H0; lia.
    Qed.
+
+ 
+
+
 
    Lemma map_shiftn_seq (f : nat -> R) (n m : nat) :
      map f (seq n m) = map (fun n0 => f (n + n0)%nat) (seq 0 m).
@@ -1604,6 +1784,123 @@ Section Derman_Sacks.
     apply Rplus_lt_compat.
     apply H10.
     apply H11.
+  Qed.
+
+  Lemma Paolo_converge (a: nat -> R) :
+    (forall n, 0 <= a n) ->
+    ex_series a ->
+    exists (b : nat -> R),
+      (forall n, 0 < b n) /\
+      is_lim_seq b p_infty /\
+      ex_series (fun n => a n * b n).
+   Proof.
+     intros apos aconv.
+     generalize (zerotails a aconv); intros.
+     apply is_lim_seq_spec in H.
+     unfold is_lim_seq' in H.
+   Admitted.
+
+   Lemma Paolo_div (a : nat -> R) :
+    (forall n, 0 <= a n) ->
+    ex_series a ->
+    exists (b : nat -> R),
+      (forall n, 0 < b n) /\
+      is_lim_seq b 0 /\
+      ex_series (fun n => a n / Rsqr (b n)).
+    Proof.
+      intros apos aconv.
+      generalize (Paolo_converge a apos aconv); intros.
+      destruct H as [? [? [? ?]]].
+      exists (fun n => sqrt (/ (x n))).
+      split.
+      - intros.
+        apply sqrt_lt_R0.
+        now apply Rinv_0_lt_compat.
+      - split.
+        + replace (0) with (sqrt 0) by apply sqrt_0.
+          apply is_lim_seq_continuous.
+          apply continuity_pt_sqrt; lra.
+          replace (Finite 0) with (Rbar_inv p_infty); [| now simpl].
+          apply is_lim_seq_inv; trivial; discriminate.
+        + apply ex_series_ext with
+              (a0 := fun n => a n * x n); trivial.
+          intros.
+          unfold Rdiv.
+          f_equal.
+          rewrite Rsqr_sqrt.
+          * rewrite Rinv_involutive; trivial.          
+            now apply Rgt_not_eq, Rlt_gt.
+          * left.
+            now apply Rinv_0_lt_compat.
+   Qed.
+
+  Lemma DS_Dvor_aa (a : nat -> R) (Y : nat -> Ts -> R) 
+        (isfe : forall n, IsFiniteExpectation prts (rvsqr (Y n))) :
+    (forall n, 0 < a n) ->
+    is_lim_seq a 0 ->
+    ex_series (fun n => FiniteExpectation prts (rvsqr (Y n))) ->
+    exists (aa : nat -> R),
+      is_lim_seq aa 0 /\
+      (forall n, a n <= aa n) /\
+      ex_series (fun n => FiniteExpectation prts (rvsqr (Y n)) / Rsqr (aa n)).
+  Proof.
+    intros.
+    generalize (Paolo_div (fun n => FiniteExpectation prts (rvsqr (Y n)))); intros.
+    cut_to H2; trivial.
+    - destruct H2 as [? [? [? ?]]].
+      exists (fun n => Rmax (a n) (x n)).
+      split.
+      + apply is_lim_seq_spec.
+        apply is_lim_seq_spec in H0.
+        apply is_lim_seq_spec in H3.
+        unfold is_lim_seq' in *.
+        intros.
+        destruct (H0 eps).
+        destruct (H3 eps).
+        exists (max x0 x1).
+        intros.
+        specialize (H5 n); specialize (H6 n).
+        cut_to H5; try lia.
+        cut_to H6; try lia.
+        rewrite Rminus_0_r in H5.
+        rewrite Rminus_0_r in H6.
+        rewrite Rminus_0_r.
+        specialize (H n); specialize (H2 n).
+        rewrite Rabs_right in *; try lra.
+        * unfold Rmax; match_destr.
+        * apply Rle_ge, Rmax_Rle; lra.
+      + split.
+        * intros.
+          apply Rmax_l.
+        * generalize (ex_series_le  (fun n : nat => FiniteExpectation prts (rvsqr (Y n)) / (Rmax (a n) (x n))²)
+                                    (fun n : nat => FiniteExpectation prts (rvsqr (Y n)) / (x n)²)); intros.
+          apply H5; trivial.
+          intros.
+          unfold norm; simpl.
+          unfold abs; simpl.
+          rewrite Rabs_right.
+          -- unfold Rdiv.
+             apply Rmult_le_compat_l.
+             ++ apply FiniteExpectation_pos, nnfsqr.
+             ++ apply Rinv_le_contravar.
+                ** apply Rsqr_pos_lt.
+                   apply Rgt_not_eq.
+                   apply H2.
+                ** unfold Rmax; match_destr; try lra.
+                   assert (x n <= a n) by lra.
+                   apply Rsqr_le_abs_1.
+                   rewrite Rabs_right.
+                   --- rewrite Rabs_right; trivial.
+                       apply Rle_ge; now left.
+                   --- apply Rle_ge; now left.                   
+          -- apply Rle_ge, Rdiv_le_0_compat.
+             ++ apply FiniteExpectation_pos, nnfsqr.
+             ++ apply Rsqr_pos_lt.
+                apply Rgt_not_eq.
+                unfold Rmax; match_destr; now apply Rlt_gt.
+    - intros.
+      apply FiniteExpectation_pos.
+      apply nnfsqr.
   Qed.
 
 End Derman_Sacks.    
