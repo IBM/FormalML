@@ -8,6 +8,7 @@ Require Import Ranalysis_reg utils.Finite.
 Require Import Coquelicot.Coquelicot.
 Require Import Lia Lra.
 Require Import Reals.Integration.
+Require Import Coq.Reals.SeqProp.
 Require Import Rtrigo_def.
 Require Import List.
 Require Finite.
@@ -5744,3 +5745,208 @@ Section convex2.
    Qed.
 
 End convex2.
+
+Section Paolo_converge.
+
+   Lemma tails_succ_sub {a : nat -> R} (ha : ex_series a) :
+    let r := fun n => Series(fun k => a((n+k)%nat)) in
+      forall n, a n = r n - r (S n).
+  Proof.
+    intros r n.
+    unfold r.
+    rewrite Series_incr_1.
+    setoid_rewrite plus_n_Sm.
+    ring_simplify. f_equal; lia.
+    now rewrite <-ex_series_incr_n.
+  Qed.
+
+  Lemma rudin_12_b_aux0 {a : nat -> R}(ha : ex_series a)(ha' : forall n, 0 < a n):
+    let r:= fun n => Series(fun k => a((n+k)%nat)) in
+    forall n, 0 < r (S n) < r n.
+  Proof.
+    intros r n.
+    split.
+    + unfold r.
+      apply Series_pos.
+      now rewrite <-ex_series_incr_n.
+      intros. apply ha'.
+    + generalize (tails_succ_sub ha); intros.
+      setoid_rewrite H in ha'.
+      specialize (ha' n).
+      unfold r; lra.
+  Qed.
+
+  Lemma rudin_12_b_aux1 {a : nat -> R} (ha : ex_series a)(ha' : forall n, 0 < a n):
+    let r := fun n => Series(fun k => a((n+k)%nat)) in
+    forall n, sqrt(r n) + sqrt(r (S n)) < 2*sqrt(r n).
+  Proof.
+    intros r n.
+    replace (2*sqrt(r n)) with (sqrt(r n) + sqrt(r n)) by lra.
+    apply Rplus_lt_compat_l with (r := sqrt (r n)).
+    apply sqrt_lt_1_alt.
+    split.
+    + unfold r. apply Series_nonneg;[|intros n0; left; apply ha'].
+      now rewrite <-ex_series_incr_n.
+    + unfold r.
+      rewrite Series_incr_1 with (a := fun k => (a (n+k)%nat));[|now rewrite <-ex_series_incr_n] .
+      setoid_rewrite <-plus_n_Sm.
+      setoid_rewrite plus_n_Sm.
+      rewrite <-Rplus_0_l at 1.
+      apply Rplus_lt_compat_r.
+      apply ha'.
+  Qed.
+
+  Lemma rudin_12_b_aux2 {a : nat -> R} (ha : ex_series a)(ha' : forall n, 0 < a n) :
+    let r := fun n => Series(fun k => a((n+k)%nat)) in
+      forall n, a n = (sqrt(r n) + sqrt(r (S n)))*(sqrt(r n) - sqrt(r (S n))).
+  Proof.
+    intros r n.
+    rewrite Rsqr_plus_minus.
+    rewrite Rsqr_sqrt;[| apply Series_nonneg].
+    rewrite Rsqr_sqrt;[| apply Series_nonneg].
+    now apply tails_succ_sub.
+    now rewrite <-ex_series_incr_n.
+    intros. left. apply ha'.
+    now rewrite <-ex_series_incr_n.
+    intros. left. apply ha'.
+  Qed.
+
+
+  Lemma rudin_12_b_aux3 {a : nat -> R}(ha : ex_series a) (ha' : forall n, 0 < a n):
+    let r := fun n => Series(fun k => a((n+k)%nat)) in
+    forall n, a n*/sqrt(r n) < 2*(sqrt(r n) - sqrt(r (S n))).
+  Proof.
+    intros r n.
+    generalize (rudin_12_b_aux0 ha ha'); intros.
+    assert (hr1 : 0 < sqrt(r n)).
+    {
+      apply sqrt_lt_R0. specialize (H n).
+      destruct H. eapply Rlt_trans; eauto.
+    }
+    assert (hr2 : 0 <> sqrt(r n)) by lra.
+    replace (a n) with ((sqrt(r n) + sqrt(r (S n)))*(sqrt(r n) - sqrt(r (S n))))
+                       by (symmetry; rewrite rudin_12_b_aux2; trivial).
+    rewrite <-Rmult_1_r.
+    rewrite <-Rinv_r with (r := (sqrt(r n)));[| congruence].
+    rewrite <-Rmult_assoc.
+    apply Rmult_lt_compat_r.
+    ++ now apply Rinv_pos.
+    ++ rewrite Rmult_comm.
+       rewrite Rmult_comm with (r1 := 2).
+       rewrite Rmult_assoc. apply Rmult_lt_compat_l.
+       enough (sqrt(r (S n)) < sqrt(r n)) by lra.
+       apply sqrt_lt_1_alt.
+       destruct (H n). split; [left; apply H0| apply H1].
+       apply rudin_12_b_aux1; trivial.
+  Qed.
+
+  Lemma rudin_12_b_aux4 {a : nat -> R}(ha : ex_series a) (ha' : forall n, 0 < a n) :
+    let r := fun n => Series(fun k => a((n+k)%nat)) in
+    forall m, sum_f_R0 (fun n => a n */ sqrt(r n)) m < 2*(sqrt(r 0%nat) - sqrt(r(S m))).
+  Proof.
+    intros r m.
+    induction m; simpl.
+    + apply (rudin_12_b_aux3 ha ha').
+    + replace (2*(sqrt(r 0%nat) - sqrt(r(S(S m))))) with
+          (2*(sqrt(r 0%nat) - sqrt(r(S m))) + 2*((sqrt(r (S m))) - sqrt(r(S(S m))))) by lra.
+      apply (Rplus_lt_compat _ _ _ _ IHm).
+      apply (rudin_12_b_aux3); auto.
+  Qed.
+
+  Lemma is_lim_seq_inv_pos_p_infty {a : nat -> R}(ha: is_lim_seq a 0) (ha' : forall n, 0 < a n):
+    is_lim_seq (fun n => / a n) p_infty.
+  Proof.
+    rewrite is_lim_seq_p_infty_Reals.
+    rewrite is_lim_seq_Reals in ha.
+    unfold cv_infty. unfold Rseries.Un_cv in ha.
+    unfold R_dist in ha. setoid_rewrite Rminus_0_r in ha.
+    assert (ha'' : forall n, 0 <= a n) by (intros; left; trivial).
+    intros M. specialize (ha (/(1+Rabs (M)))).
+    assert (/(1 + Rabs(M)) > 0).
+    {
+      apply Rlt_gt.
+      apply Rinv_pos.
+      replace (0) with (0+0) by lra.
+      apply Rplus_lt_le_compat; try lra.
+      apply Rabs_pos.
+    }
+    specialize (ha H).
+    destruct ha as [N HN].
+    exists N; intros n Hn.
+    eapply Rlt_trans with (r2 := 1 + Rabs M).
+    rewrite <-Rplus_0_l at 1.
+    apply Rplus_lt_le_compat; [lra|].
+    apply Rle_abs.
+    specialize (HN n Hn). rewrite Rabs_pos_eq in HN; firstorder.
+    replace (1 + Rabs M) with (//(1 + Rabs M)).
+    apply Rinv_lt_contravar; trivial.
+    apply Rmult_lt_0_compat; firstorder.
+    rewrite Rinv_involutive; trivial.
+    enough (0 < 1 + Rabs M) by lra.
+    replace 0 with (0 + 0) by lra.
+    apply Rplus_lt_le_compat; try lra.
+    apply Rabs_pos.
+  Qed.
+
+ Lemma Paolo_converge (a: nat -> R) :
+    (forall n, 0 < a n) ->
+    ex_series a ->
+    exists (b : nat -> R),
+      (forall n, 0 < b n) /\
+      is_lim_seq b p_infty /\
+      ex_series (fun n => a n * b n).
+   Proof.
+     intros Ha1 Ha2.
+     pose (r := fun n => Series(fun k => a((n+k)%nat))).
+     assert (Hr : is_lim_seq r 0).
+     {
+       generalize (zerotails a Ha2); intros.
+       unfold r.
+       setoid_rewrite is_lim_seq_incr_1.
+       now setoid_rewrite <-Nat.add_succ_l in H.
+     }
+     assert (Hr' : is_lim_seq (fun n => sqrt(r n)) 0).
+     {
+       generalize (is_lim_seq_continuous (sqrt) r 0); intros.
+       cut_to H; trivial.
+       now rewrite sqrt_0 in H.
+       apply continuity_pt_sqrt; lra.
+     }
+     exists (fun n => 1/sqrt(r n)).
+     split.
+     + intros n.
+       apply Rdiv_lt_0_compat; try lra.
+       apply sqrt_lt_R0.
+       unfold r. apply (Series_pos);[|intros; apply Ha1].
+       now rewrite <-ex_series_incr_n.
+     + split.
+       ** unfold Rdiv.
+          setoid_rewrite Rmult_1_l.
+          apply (is_lim_seq_inv_pos_p_infty Hr'); intros.
+          apply sqrt_lt_R0.
+          unfold r. apply (Series_pos);[|intros; apply Ha1].
+          now rewrite <-ex_series_incr_n.
+       ** unfold Rdiv. setoid_rewrite Rmult_1_l.
+          rewrite <-ex_finite_lim_series.
+          apply ex_finite_lim_seq_incr with (M := 2*(sqrt(r 0%nat))).
+          -- intros. do 2 rewrite sum_n_Reals.
+             simpl. apply Rplus_le_compat1_l.
+             apply Rmult_le_pos;[left; apply Ha1|left].
+             apply Rinv_pos.
+             apply sqrt_lt_R0.
+             unfold r. apply (Series_pos);[|intros; apply Ha1].
+             now rewrite <-ex_series_incr_n.
+          -- intros n. rewrite sum_n_Reals.
+             left. eapply Rlt_trans.
+             apply (rudin_12_b_aux4 Ha2 Ha1); intros.
+             apply Rmult_lt_compat_l; try lra.
+             replace (sqrt (r 0%nat)) with (sqrt(r 0%nat) - 0) by lra.
+             unfold r; simpl. apply Rplus_lt_compat_l.
+             apply Ropp_lt_contravar.
+             rewrite <-sqrt_0. apply sqrt_lt_1_alt.
+             split; try lra.
+             apply Series_pos; [|intros; try apply Ha1].
+             setoid_rewrite <-plus_Sn_m. now rewrite <-ex_series_incr_n.
+   Qed.
+
+  End Paolo_converge.
