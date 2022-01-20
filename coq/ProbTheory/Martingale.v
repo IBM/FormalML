@@ -2500,16 +2500,7 @@ Proof.
   repeat rewrite zerotails_incr_mult_trunc.
   repeat rewrite sum_n_Reals.
   rewrite (sum_f_R0_split _ (n + S (zerotails_eps2k_fun a pf m)) n).
-  - (*rewrite <- (Rplus_0_r (sum_f_R0
-       (fun n0 : nat =>
-        match
-          le_dec (S (zerotails_eps2k_fun a pf n0)) n
-          return (AbelianGroup.sort R_AbelianGroup)
-        with
-        | left _ => IZR (Zpos xH)
-        | right _ => IZR Z0
-        end) n)). *)
-    apply Rplus_le_compat.
+  - apply Rplus_le_compat.
     + apply sum_growing; intros.
       repeat match_destr; try lra; try lia.
     + replace ((n + S (zerotails_eps2k_fun a pf m) - S n))%nat with (zerotails_eps2k_fun a pf m) by lia.
