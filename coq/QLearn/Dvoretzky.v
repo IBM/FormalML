@@ -645,7 +645,6 @@ Section Derman_Sacks.
         - rewrite sum_Sn.
           rewrite IHn.
           unfold plus; simpl.
-          Search Rabs.
           rewrite Rabs_left1, Rabs_left1, Rabs_left1.
           + ring.
           + specialize (H7 (0%nat) (S (S n))).
@@ -1786,20 +1785,6 @@ Section Derman_Sacks.
     apply H11.
   Qed.
 
-  Lemma Paolo_converge (a: nat -> R) :
-    (forall n, 0 <= a n) ->
-    ex_series a ->
-    exists (b : nat -> R),
-      (forall n, 0 < b n) /\
-      is_lim_seq b p_infty /\
-      ex_series (fun n => a n * b n).
-   Proof.
-     intros apos aconv.
-     generalize (zerotails a aconv); intros.
-     apply is_lim_seq_spec in H.
-     unfold is_lim_seq' in H.
-   Admitted.
-
    Lemma Paolo_div (a : nat -> R) :
     (forall n, 0 <= a n) ->
     ex_series a ->
@@ -1809,7 +1794,7 @@ Section Derman_Sacks.
       ex_series (fun n => a n / Rsqr (b n)).
     Proof.
       intros apos aconv.
-      generalize (Paolo_converge a apos aconv); intros.
+      generalize (Paolo_final a apos aconv); intros.
       destruct H as [? [? [? ?]]].
       exists (fun n => sqrt (/ (x n))).
       split.
@@ -1903,5 +1888,23 @@ Section Derman_Sacks.
       apply nnfsqr.
   Qed.
 
+  Theorem Dvoretzky_DS
+        ( X Y : nat -> Ts -> R)
+        (T : nat -> R -> R)
+        (alpha beta gamma : nat -> posreal)
+        (rvy : forall n, RandomVariable dom borel_sa (Y n)) 
+        (svy : forall n, FiniteRangeFunction (Y n)) 
+        (rvx : forall n, RandomVariable dom borel_sa (X n)) 
+        (svx: forall n, FiniteRangeFunction (X n))
+        (rvt : forall n, RandomVariable borel_sa borel_sa (fun r:R => T n r))        
+        (svt: forall n, FiniteRangeFunction (fun r:Ts => T n (X n r))) :
+  (forall (n:nat), rv_eq (X (S n)) (rvplus (fun r => T n (X n r)) (Y n))) ->
+  (forall (n:nat), almostR2 prts eq (ConditionalExpectation_rv (X n) (Y n)) (fun x : Ts => const 0 x)) ->
+  ex_series (fun n => SimpleExpectation (rvsqr (Y n))) ->
+  ex_series (fun n => SimpleExpectation (rvsqr (Y n)) / Rsqr (alpha n)) ->
+  is_lim_seq (fun n => SimpleExpectation (rvsqr (X n))) 0.
+ Proof.
+   intros.
+   Admitted.
 End Derman_Sacks.    
   
