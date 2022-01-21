@@ -5760,7 +5760,22 @@ Section tails.
     now rewrite <-ex_series_incr_n.
   Qed.
 
-  Lemma rudin_12_b_aux0 {a : nat -> R}(ha : ex_series a)(ha' : forall n, 0 < a n):
+  Lemma tail_series_nonneg_le {a : nat -> R}(ha : ex_series a)(ha' : forall n, 0 <= a n):
+    forall n, 0 <= tail_series a (S n) <= tail_series a n.
+  Proof.
+    intros n.
+    split.
+    + unfold tail_series.
+      apply Series_nonneg.
+      now rewrite <-ex_series_incr_n.
+      intros. apply ha'.
+    + generalize (tail_succ_sub ha); intros.
+      setoid_rewrite H in ha'.
+      specialize (ha' n); lra.
+  Qed.
+
+
+  Lemma tail_series_pos_lt {a : nat -> R}(ha : ex_series a)(ha' : forall n, 0 < a n):
     forall n, 0 < tail_series a (S n) < tail_series a n.
   Proof.
     intros n.
@@ -5774,10 +5789,38 @@ Section tails.
       specialize (ha' n); lra.
   Qed.
 
+  Lemma tail_series_nonneg_eventually_pos (a : nat -> R) :
+    (forall n, 0 <= a n) ->
+    (forall n, exists h, 0 < a (n + h)%nat) ->
+    ex_series a ->
+    forall n, 0 < tail_series a n.
+  Proof.
+    intros. unfold tail_series.
+    destruct (H0 n).
+    eapply Rlt_le_trans; eauto.
+    apply Rle_trans with
+        (r2 := sum_f_R0 (fun k => a (n+k)%nat) x).
+    - destruct (Nat.eq_dec 0%nat x).
+      + rewrite <- e.
+        now simpl.
+      + replace (x) with (S (x - 1)) at 2 by lia.
+        simpl.
+        replace (a ( n + x)%nat) with (0 + a (n + x)%nat) by lra.
+        apply Rplus_le_compat.
+        * rewrite <- sum_n_Reals.
+          apply sum_n_nneg.
+          intros.
+          apply H.
+        * now replace (S (x - 1)) with (x) by lia.
+    - apply sum_f_R0_nonneg_le_Series.
+      + now apply ex_series_incr_n.
+      + intros; apply H.
+  Qed.
+
   Lemma rudin_12_b_aux1 {a : nat -> R} (ha : ex_series a)(ha' : forall n, 0 < a n):
     forall n, sqrt(tail_series a n) + sqrt(tail_series a (S n)) < 2*sqrt(tail_series a n).
   Proof.
-    intros n.
+   intros n.
     replace (2*sqrt(tail_series a n)) with (sqrt(tail_series a n) + sqrt(tail_series a n)) by lra.
     apply Rplus_lt_compat_l with (r := sqrt (tail_series a n)).
     apply sqrt_lt_1_alt.
@@ -5791,6 +5834,18 @@ Section tails.
       rewrite <-Rplus_0_l at 1.
       apply Rplus_lt_compat_r.
       apply ha'.
+   Qed.
+
+  Lemma rudin_12_b_aux1_nonneg {a : nat -> R} (ha : ex_series a)(ha' : forall n, 0 <= a n)
+        (ha'' : forall n, exists h, 0 < a (n + h)%nat):
+    forall n, sqrt(tail_series a n) + sqrt(tail_series a (S n)) <= 2*sqrt(tail_series a n).
+  Proof.
+    intros n.
+    replace (2*sqrt(tail_series a n)) with (sqrt(tail_series a n) + sqrt(tail_series a n)) by lra.
+    apply Rplus_le_compat_l with (r := sqrt (tail_series a n)).
+    apply sqrt_le_1_alt.
+    generalize (tail_series_nonneg_le ha ha' n); intros.
+    lra.
   Qed.
 
   Lemma rudin_12_b_aux2 {a : nat -> R} (ha : ex_series a)(ha' : forall n, 0 < a n) :
@@ -5807,12 +5862,25 @@ Section tails.
     intros. left. apply ha'.
   Qed.
 
+  Lemma rudin_12_b_aux2_nonneg {a : nat -> R} (ha : ex_series a)(ha' : forall n, 0 <= a n):
+      forall n, a n = (sqrt(tail_series a n) + sqrt(tail_series a (S n)))*(sqrt(tail_series a n) - sqrt(tail_series a (S n))).
+  Proof.
+     intros n.
+    rewrite Rsqr_plus_minus.
+    rewrite Rsqr_sqrt;[| apply Series_nonneg].
+    rewrite Rsqr_sqrt;[| apply Series_nonneg].
+    now apply tail_succ_sub.
+    now rewrite <-ex_series_incr_n.
+    intros. apply ha'.
+    now rewrite <-ex_series_incr_n.
+    intros. apply ha'.
+  Qed.
 
   Lemma rudin_12_b_aux3 {a : nat -> R}(ha : ex_series a) (ha' : forall n, 0 < a n):
     forall n, a n*/sqrt(tail_series a n) < 2*(sqrt(tail_series a n) - sqrt(tail_series a (S n))).
   Proof.
     intros n.
-    generalize (rudin_12_b_aux0 ha ha'); intros.
+    generalize (tail_series_pos_lt ha ha'); intros.
     assert (hr1 : 0 < sqrt(tail_series a n)).
     {
       apply sqrt_lt_R0. specialize (H n).
@@ -5835,6 +5903,35 @@ Section tails.
        apply rudin_12_b_aux1; trivial.
   Qed.
 
+  Lemma rudin_12_b_aux3_nonneg {a : nat -> R}(ha : ex_series a) (ha' : forall n, 0 <= a n)
+    (ha'' : forall n, exists h, 0 < a (n + h)%nat) :
+    forall n, a n*/sqrt(tail_series a n) <= 2*(sqrt(tail_series a n) - sqrt(tail_series a (S n))).
+  Proof.
+    intros n.
+    generalize (tail_series_nonneg_le ha ha'); intros.
+    assert (hr1 : 0 < sqrt(tail_series a n)).
+    {
+      apply sqrt_lt_R0. specialize (H n).
+      destruct H.
+      apply tail_series_nonneg_eventually_pos; auto.
+    }
+    assert (hr2 : 0 <> sqrt(tail_series a n)) by lra.
+    replace (a n) with ((sqrt(tail_series a n) + sqrt(tail_series a (S n)))*(sqrt(tail_series a n) - sqrt(tail_series a (S n))))
+                       by (symmetry; rewrite rudin_12_b_aux2_nonneg; trivial).
+    rewrite <-Rmult_1_r.
+    rewrite <-Rinv_r with (r := (sqrt(tail_series a n)));[| congruence].
+    rewrite <-Rmult_assoc.
+    apply Rmult_le_compat_r.
+    ++ left. now apply Rinv_pos.
+    ++ rewrite Rmult_comm.
+       rewrite Rmult_comm with (r1 := 2).
+       rewrite Rmult_assoc. apply Rmult_le_compat_l.
+       enough (sqrt(tail_series a (S n)) <= sqrt(tail_series a n)) by lra.
+       apply sqrt_le_1_alt.
+       apply (H n).
+       apply rudin_12_b_aux1_nonneg; trivial.
+  Qed.
+
   Lemma rudin_12_b_aux4 {a : nat -> R}(ha : ex_series a) (ha' : forall n, 0 < a n) :
     forall m, sum_f_R0 (fun n => a n */ sqrt(tail_series a n)) m < 2*(sqrt(tail_series a 0%nat) - sqrt(tail_series a(S m))).
   Proof.
@@ -5845,6 +5942,19 @@ Section tails.
           (2*(sqrt(tail_series a 0%nat) - sqrt(tail_series a (S m))) + 2*((sqrt(tail_series a (S m))) - sqrt(tail_series a(S(S m))))) by lra.
       apply (Rplus_lt_compat _ _ _ _ IHm).
       apply (rudin_12_b_aux3); auto.
+  Qed.
+
+  Lemma rudin_12_b_aux4_nonneg {a : nat -> R}(ha : ex_series a) (ha' : forall n, 0 <= a n)
+   (ha'' : forall n, exists h, 0 < a (n + h)%nat):
+    forall m, sum_f_R0 (fun n => a n */ sqrt(tail_series a n)) m <= 2*(sqrt(tail_series a 0%nat) - sqrt(tail_series a(S m))).
+  Proof.
+    intros m.
+    induction m; simpl.
+    + apply (rudin_12_b_aux3_nonneg ha ha' ha'').
+    + replace (2*(sqrt(tail_series a 0%nat) - sqrt(tail_series a(S(S m))))) with
+          (2*(sqrt(tail_series a 0%nat) - sqrt(tail_series a (S m))) + 2*((sqrt(tail_series a (S m))) - sqrt(tail_series a(S(S m))))) by lra.
+      apply (Rplus_le_compat _ _ _ _ IHm).
+      apply (rudin_12_b_aux3_nonneg); auto.
   Qed.
 
   Lemma is_lim_seq_inv_pos_p_infty {a : nat -> R}(ha: is_lim_seq a 0) (ha' : forall n, 0 < a n):
@@ -5952,7 +6062,53 @@ Section tails.
       is_lim_seq b p_infty /\
       ex_series (fun n => a n * b n).
    Proof.
-   Admitted.
-
+     intros Ha1 Hpos Ha2.
+     pose (r := fun n => tail_series a n).
+     assert (Hr : is_lim_seq r 0).
+     {
+       generalize (zerotails a Ha2); intros.
+       unfold r.
+       setoid_rewrite is_lim_seq_incr_1.
+       now setoid_rewrite <-Nat.add_succ_l in H.
+     }
+     assert (Hr' : is_lim_seq (fun n => sqrt(r n)) 0).
+     {
+       generalize (is_lim_seq_continuous (sqrt) r 0); intros.
+       cut_to H; trivial.
+       now rewrite sqrt_0 in H.
+       apply continuity_pt_sqrt; lra.
+     }
+     exists (fun n => 1/sqrt(tail_series a n)).
+     split.
+     + intros n.
+       apply Rdiv_lt_0_compat; try lra.
+       apply sqrt_lt_R0.
+       apply tail_series_nonneg_eventually_pos; auto.
+     + split.
+       ** unfold Rdiv.
+          setoid_rewrite Rmult_1_l.
+          apply (is_lim_seq_inv_pos_p_infty Hr'); intros.
+          apply sqrt_lt_R0.
+          unfold r. apply tail_series_nonneg_eventually_pos; auto.
+       ** unfold Rdiv. setoid_rewrite Rmult_1_l.
+          rewrite <-ex_finite_lim_series.
+          apply ex_finite_lim_seq_incr with (M := 2*(sqrt(r 0%nat))).
+          -- intros. do 2 rewrite sum_n_Reals.
+             simpl. apply Rplus_le_compat1_l.
+             apply Rmult_le_pos;[apply Ha1|left].
+             apply Rinv_pos.
+             apply sqrt_lt_R0.
+             unfold r.
+             apply tail_series_nonneg_eventually_pos; auto.
+          -- intros n. rewrite sum_n_Reals.
+             eapply Rle_trans.
+             apply (rudin_12_b_aux4_nonneg Ha2 Ha1); intros; try auto.
+             apply Rmult_le_compat_l; try lra.
+             replace (sqrt (r 0%nat)) with (sqrt(r 0%nat) - 0) by lra.
+             unfold r; simpl. apply Rplus_le_compat_l.
+             apply Ropp_le_contravar.
+             rewrite <-sqrt_0. apply sqrt_le_1_alt.
+             left. apply tail_series_nonneg_eventually_pos; auto.
+    Qed.
 
   End tails.
