@@ -1794,7 +1794,9 @@ Section Derman_Sacks.
       ex_series (fun n => a n / Rsqr (b n)).
     Proof.
       intros apos aconv.
-      generalize (Paolo_final a apos aconv); intros.
+      generalize (Paolo_final a apos); intros.
+      destruct H as [H _].
+      specialize (H aconv).
       destruct H as [? [? [? ?]]].
       exists (fun n => sqrt (/ (x n))).
       split.
@@ -1905,6 +1907,5 @@ Section Derman_Sacks.
   is_lim_seq (fun n => SimpleExpectation (rvsqr (X n))) 0.
  Proof.
    intros.
-   Admitted.
-End Derman_Sacks.    
-  
+ Admitted.
+End Derman_Sacks.
