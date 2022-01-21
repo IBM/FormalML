@@ -6018,43 +6018,55 @@ Section tails.
 
  Theorem Paolo_final (a : nat -> R):
    (forall n, 0 <= a n) ->
-   ex_series a ->
+   ex_series a <->
    exists (b : nat -> R),
      (forall n, 0 < b n) /\
      is_lim_seq b p_infty /\
      ex_series (fun n => a n * b n).
  Proof.
    intros.
-   destruct (eventually_pos_dec a) as [H1|H2].
-   + apply Paolo_converge_nonneg; auto.
-   + push_neg_in H2.
-     destruct H2 as [N0 HN0].
-     exists (fun n => 1 + INR n).
-     split.
-     -- intros n.
-        rewrite Rplus_comm.
-        apply INRp1_pos.
-     -- split.
-        ++ generalize (is_lim_seq_INR); intros.
-           eapply is_lim_seq_le_p_loc with (u := fun n => INR n); auto.
-           exists 0%nat. intros; lra.
-        ++ setoid_rewrite Rmult_plus_distr_l.
-           setoid_rewrite Rmult_1_r.
-           apply ex_series_plus with (b := fun n => (a n)*(INR n)); trivial.
-           apply ex_series_incr_n  with (n := N0).
-           assert (forall n, a (N0 + n)%nat = 0).
-           {
-             intros.
-             apply Rle_antisym.
-             - apply Rge_le, HN0.
-             - apply H.
-           }
-           apply ex_series_ext with
-               (a0 := const 0); try (apply ex_series_const0).
-           intros.
-           unfold const.
-           rewrite H1.
-           lra.
+   split; intros.
+   --- destruct (eventually_pos_dec a) as [H1|H2].
+       + apply Paolo_converge_nonneg; auto.
+       + push_neg_in H2.
+         destruct H2 as [N0 HN0].
+         exists (fun n => 1 + INR n).
+         split.
+         -- intros n.
+            rewrite Rplus_comm.
+            apply INRp1_pos.
+         -- split.
+            ++ generalize (is_lim_seq_INR); intros.
+               eapply is_lim_seq_le_p_loc with (u := fun n => INR n); auto.
+               exists 0%nat. intros; lra.
+            ++ setoid_rewrite Rmult_plus_distr_l.
+               setoid_rewrite Rmult_1_r.
+               apply ex_series_plus with (b := fun n => (a n)*(INR n)); trivial.
+               apply ex_series_incr_n  with (n := N0).
+               assert (forall n, a (N0 + n)%nat = 0).
+               {
+                 intros.
+                 apply Rle_antisym.
+                 - apply Rge_le, HN0.
+                 - apply H.
+               }
+               apply ex_series_ext with
+                   (a0 := const 0); try (apply ex_series_const0).
+               intros.
+               unfold const.
+               rewrite H1.
+               lra.
+  --- destruct H0 as [b [Hb1 [Hb2 Hb3]]].
+      rewrite is_lim_seq_p_infty_Reals in Hb2.
+      destruct (Hb2 1%R) as [N0 HN0].
+      apply ex_series_incr_n with (n := N0).
+      apply ex_series_incr_n with (n := N0) in Hb3.
+      apply (ex_series_le (fun n => a (N0 + n)%nat) (fun n => a (N0 + n)%nat * b (N0 + n)%nat)); auto.
+      intros n.
+      rewrite Rabs_pos_eq; trivial.
+      rewrite <-Rmult_1_r at 1.
+      apply Rmult_le_compat; try (trivial; lra).
+      left. apply HN0; lia.
  Qed.
 
  End tails.
